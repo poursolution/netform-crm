@@ -1565,6 +1565,10 @@ html,body{height:100%}
     <div class="modalbody" id="bulkBody"></div>
   </div>
 </div>
+<!-- DNS·TLS 를 미리 잡아 둔다 — 첫 호출에서 0.25~0.4초가 빠진다 (2026-09-04) -->
+<link rel="preconnect" href="https://nfrnd.app.n8n.cloud" crossorigin>
+<link rel="preconnect" href="https://ymfbmpnizxvqsamnczow.supabase.co" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 'use strict';
@@ -2232,7 +2236,16 @@ async function loadData(quiet){
         $('#live').textContent='📦 캐시 '+hhmm(new Date(cj.at))+' · 최신 데이터 불러오는 중…';
       }}
   }catch(e){}
-  if(!painted&&!quiet&&!已)$('#load').style.display='flex';
+  if(!painted&&!quiet&&!已){
+    $('#load').style.display='flex';
+    /* 6초를 말없이 기다리게 하지 않는다 — 무엇을 하는 중인지 쓴다 */
+    var lt=document.querySelector('#load .t'),step=0;
+    var STEPS=['서버에 연결하는 중…','영업 데이터를 받는 중…','거의 다 됐습니다…'];
+    if(lt){lt.textContent=STEPS[0];
+      var ti=setInterval(function(){
+        step++;if(step>=STEPS.length||$('#load').style.display==='none'){clearInterval(ti);return}
+        lt.textContent=STEPS[step]},2200);}
+  }
   if(!quiet)$('#err').style.display='none';
   try{
     var r=await fetchTimeout(API,45000);
@@ -3358,7 +3371,7 @@ function assignTo(r){
   G.sgNotice=(q.site||'선택 현장')+'을(를) '+r+' 담당으로 배정했습니다. 실제 구축 시 잔디·카카오 알림이 함께 발송됩니다.';paint();
 }
 function nudge(r,cnt){
-  G.sgNotice=r+' 담당자에게 응대 지연 '+cnt+'건의 묶음 알림을 생성했습니다. 기능 시안에서는 발송 직전 상태까지 확인하며, 실제 발송은 잔디·카카오 자격증명 연결 후 동작합니다.';paint();
+  G.sgNotice=r+' 담당자에게 응대 지연 '+cnt+'건의 묶음 알림을 만들었습니다. 지금은 발송 직전까지 준비되며, 실제 전송은 잔디·카카오 연결이 끝나면 이어집니다.';paint();
 }
 
 /* [삭제됨 v3.6] 구버전 paintPerf — 마지막 정의만 사용 */
@@ -3550,7 +3563,7 @@ function closeDetail(){
   $('#detailView').classList.remove('on');$('#detailView').setAttribute('aria-hidden','true');
   document.body.style.overflow='';CUR_DETAIL=null;paint();
 }
-function openDrwBase(t,s,b){openDetail(t,s,'<div class="detailgrid"><div class="dcard"><h3>상세 정보</h3>'+b+'</div><div class="dcard"><h3>관리 원칙</h3><div class="detailnotice">모든 현장은 담당자·최근 활동·다음 행동일이 연결되어야 합니다. 변경 내용은 이 기능 시안에서 즉시 저장됩니다.</div></div></div>')}
+function openDrwBase(t,s,b){openDetail(t,s,'<div class="detailgrid"><div class="dcard"><h3>상세 정보</h3>'+b+'</div><div class="dcard"><h3>관리 원칙</h3><div class="detailnotice">모든 현장은 담당자·최근 활동·다음 행동일이 연결되어야 합니다. 변경 내용은 입력 즉시 저장되고 서버로 전송됩니다.</div></div></div>')}
 function closeDrw(){$('#ovl').style.display='none';$('#drw').classList.remove('on');closeDetail()}
 function rowsHTML(pairs){return pairs.map(function(p){return '<div class="drow2"><span class="k">'+p[0]+'</span><span class="v">'+(p[1]||'—')+'</span></div>'}).join('')}
 var CHECKS=['최초 연락 완료','현장 조건 확인','의사결정권자 확인','견적서 발송 확인','다음 행동일 확정','후속 통화 기록'];
@@ -5862,7 +5875,9 @@ function paint(){
      ② 다른 창에 갔다 돌아왔을 때 즉시
    상세·입력 중일 때는 건너뛴다 — 쓰던 폼이 날아가면 안 된다.
    ══════════════════════════════════════════════════════════ */
-var SYNC_MS=60000;
+/* 60초는 두 사람이 같은 현장을 동시에 볼 때 너무 길다.
+   숨은 탭·입력 중·상세 열림에는 어차피 건너뛰므로 20초로 줄여도 서버 부담이 적다. */
+var SYNC_MS=20000;
 function syncBusy(){
   var a=document.activeElement;
   if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return true;   /* 입력 중 */
@@ -5899,6 +5914,45 @@ window.addEventListener('focus',syncNow);
 
 var _loadData=loadData,CRM_DEBUG=/[?&]debug=1/.test(location.search);
 loadData=async function(q){LAST_SYNC=Date.now();await _loadData(q);if(CRM_DEBUG){window.__CRM=B;window.__CRM_STATE=G}};
+/* ── n8n 예열 (2026-09-04) ────────────────────────────────────
+   n8n Cloud 워커는 쉬면 잠든다 — 깨우는 데만 1.5~3초가 든다.
+   그 시간이 «첫 사람» 한테만 몰리는데, 하필 로그인 직후라 제일 눈에 띈다.
+   로그인 화면이 떠 있는 동안 미리 한 번 두드려 깨워 둔다.
+   토큰이 없으니 서버는 «로그인이 필요합니다» 로 바로 막는다 — 데이터는 안 나간다. */
+(function warmUp(){
+  try{fetch(API,{method:'GET',cache:'no-store'}).catch(function(){})}catch(e){}
+})();
+
+/* ── 실시간 공유 (2026-09-04) ─────────────────────────────────
+   ① 내가 서버에 쓰고 나면 곧바로 다시 읽는다 (남이 보는 화면과 어긋나지 않게)
+   ② Supabase Realtime 이 켜져 있으면 남의 변경도 즉시 받는다.
+      안 켜져 있으면 아무 일도 일어나지 않는다 — 20초 재조회가 그대로 바닥을 받친다. */
+function syncSoon(ms){
+  setTimeout(function(){LAST_SYNC=0;syncNow()},ms||900);
+}
+(function realtimeIfAvailable(){
+  if(!AUTH_ON)return;
+  var tries=0;
+  var t=setInterval(function(){
+    tries++;
+    if(tries>40){clearInterval(t);return}          /* 20초 안에 못 붙으면 포기 */
+    if(!SB||!TOKEN||!SB.channel)return;
+    clearInterval(t);
+    try{
+      SB.channel('crm-live')
+        .on('postgres_changes',{event:'*',schema:'public',table:'opportunities'},function(){syncSoon(400)})
+        .on('postgres_changes',{event:'*',schema:'public',table:'inquiries'},function(){syncSoon(400)})
+        .on('postgres_changes',{event:'*',schema:'public',table:'activities'},function(){syncSoon(400)})
+        .subscribe(function(st){
+          if(st==='SUBSCRIBED'){
+            var l=document.getElementById('live');
+            if(l)l.title='실시간 연결됨 — 다른 사람의 변경이 바로 반영됩니다';
+          }
+        });
+    }catch(e){}
+  },500);
+})();
+
 /* 로그인이 켜져 있으면 세션 복구를 기다렸다가 부른다.
    세션이 없으면 로그인 화면이 떠 있는 상태이므로 여기서 부르지 않는다 —
    로그인에 성공하는 순간 authAdmit() 이 부른다. */

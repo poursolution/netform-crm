@@ -515,6 +515,10 @@ body.svc .phone{width:100%;max-width:none;border:0;border-radius:0;box-shadow:no
   </div>
 </div>
 
+<!-- DNS·TLS 를 미리 잡아 둔다 — 모바일 회선일수록 효과가 크다 (2026-09-04) -->
+<link rel="preconnect" href="https://nfrnd.app.n8n.cloud" crossorigin>
+<link rel="preconnect" href="https://ymfbmpnizxvqsamnczow.supabase.co" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 'use strict';
@@ -1041,7 +1045,11 @@ function rebuildAdmin(){
      ② 다른 창에 갔다 돌아왔을 때 즉시
    상세·입력 중일 때는 건너뛴다 — 쓰던 폼이 날아가면 안 된다.
    ══════════════════════════════════════════════════════════ */
-var SYNC_MS=60000;
+/* PC 와 같은 20초. 현장에서 바꾼 것이 사무실 화면에 20초 안에는 뜬다. */
+var SYNC_MS=20000;
+/* n8n 워커 예열 — 로그인 화면에서 이름·번호를 치는 몇 초를 그냥 버리지 않는다.
+   토큰이 없어 서버는 바로 막는다 (데이터는 나가지 않는다). */
+(function(){try{fetch(CRM_API,{method:'GET',cache:'no-store'}).catch(function(){})}catch(e){}})();
 function syncBusy(){
   var a=document.activeElement;
   if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return true;   /* 입력 중 */
