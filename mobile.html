@@ -1,0 +1,2113 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<title>영업관리 앱 v2 목업</title>
+<style>
+/* ═══ 참고 디자인 시스템 (POUR 파트너 와이어프레임) 그대로 ═══ */
+:root{
+  --blue:#3366FF; --blue-dark:#2A55E0; --blue-50:#EEF3FF; --blue-100:#DCE6FF;
+  --ink:#1B1C1F; --ink-2:#3B4148; --sub:#8B95A1; --sub-2:#B0B8C1;
+  --line:#EFF1F4; --line-2:#E2E5EA; --bg:#F2F4F6; --card:#FFFFFF;
+  --ok:#15AA72; --ok-bg:#E7F7EF; --warn:#F2941B; --warn-bg:#FEF4E4;
+  --danger:#F04452; --danger-bg:#FDECEE; --violet:#7A5AF8; --violet-bg:#F0EDFE;
+  --radius:18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:"Pretendard Variable",Pretendard,'Malgun Gothic',-apple-system,system-ui,sans-serif;background:#dfe3e8;color:var(--ink);-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
+button{font:inherit;border:0;background:none;cursor:pointer;color:inherit;padding:0}
+button:focus-visible{outline:3px solid var(--blue);outline-offset:2px;border-radius:8px}
+svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+svg.i.sm{width:16px;height:16px}
+
+/* ── 화면전환 바 (목업 전용) ── */
+.mock-nav{position:sticky;top:0;z-index:200;height:46px;display:flex;align-items:center;gap:6px;padding:0 14px;background:#16181d;color:#9aa3af;font-size:12.5px;overflow-x:auto;overflow-y:hidden;-ms-overflow-style:none;scrollbar-width:none}
+.mock-nav::-webkit-scrollbar{display:none}
+.mock-nav>*{flex-shrink:0;white-space:nowrap}
+.mock-nav .lbl{color:#fff;font-weight:700;margin-right:4px}
+.mock-nav .sep{color:#3a3f47;padding:0 2px}
+.mock-nav button{color:#cfd4da;background:#262a31;padding:5px 11px;border-radius:8px;transition:.15s}
+.mock-nav button[data-on="1"]{background:var(--blue);color:#fff}
+
+/* ── 스테이지 / 폰 프레임 ── */
+.stage{display:flex;justify-content:center;padding:26px 16px 60px}
+.phone{position:relative;width:392px;max-width:100%;height:min(844px,calc(100vh - 130px));background:var(--card);border-radius:46px;border:11px solid #0e0f12;box-shadow:0 30px 70px -24px rgba(15,23,42,.55),0 8px 20px rgba(15,23,42,.18);overflow:hidden;display:flex;flex-direction:column}
+.statusbar{height:44px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:13px;font-weight:700;background:var(--bg);position:relative;z-index:5}
+.statusbar .notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:96px;height:24px;background:#0e0f12;border-radius:0 0 16px 16px}
+.phone-body{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;background:var(--bg);scroll-behavior:smooth}
+.phone-body::-webkit-scrollbar{width:0}
+/* ── 실서비스 모드 (2026-09-02) ──────────────────────────────
+   흐름도·화면전환 바·폰 테두리·가짜 상태바는 «설계 확인용» 목업이다.
+   담당자가 여는 주소에서는 앱이 화면 전체를 쓴다.
+   목업을 보려면 ?debug=1 또는 ?preview=1 을 붙인다. */
+body.svc .mock-nav,body.svc #flowwrap,body.svc .statusbar{display:none!important}
+body.svc .stage{display:block;padding:0}
+body.svc .phone{width:100%;max-width:none;border:0;border-radius:0;box-shadow:none;height:100vh;height:100dvh}
+.fadein{animation:fade .28s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.fadein{animation:none}}
+
+/* ── 앱바 ── */
+.home-bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:12px 18px 8px;background:var(--bg)}
+.home-bar .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:17px}
+.home-bar .mark{width:30px;height:30px;border-radius:9px;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:800;font-size:14px}
+.home-bar .rgt{display:flex;align-items:center;gap:8px}
+.appbar{position:sticky;top:0;z-index:20;height:54px;flex-shrink:0;display:flex;align-items:center;gap:8px;padding:0 8px;background:rgba(242,244,246,.92);backdrop-filter:blur(10px)}
+.appbar .ttl{font-size:16px;font-weight:700;flex:1;text-align:center}
+.iconbtn{width:40px;height:40px;border-radius:12px;color:var(--ink-2);display:grid;place-items:center}
+.iconbtn:hover{background:var(--line)}
+.appbar .spacer{width:40px}
+.body{padding:14px 18px 26px;display:flex;flex-direction:column;gap:12px}
+.sec-h{display:flex;align-items:center;justify-content:space-between;margin:4px 2px -4px}
+.sec-h h2{font-size:15.5px;font-weight:700;margin:0}
+.sec-h span{font-size:12.5px;color:var(--sub);font-weight:600}
+.card{background:var(--card);border-radius:var(--radius);border:1px solid var(--line);padding:16px}
+.card.tight{padding:6px 16px}
+
+/* ── 배너 (그라데이션) ── */
+.banner{position:relative;border-radius:20px;padding:19px 20px;color:#fff;overflow:hidden;background:linear-gradient(135deg,#3366FF,#5B7BFF 55%,#7A5AF8)}
+.banner .eyebrow{font-size:12px;font-weight:700;opacity:.92}
+.banner h3{margin:6px 0 3px;font-size:20px;font-weight:800;line-height:1.3}
+.banner p{margin:0;font-size:12.5px;opacity:.9}
+.banner .glow{position:absolute;right:-30px;top:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.16)}
+.banner .bprog{height:6px;background:rgba(255,255,255,.25);border-radius:6px;overflow:hidden;margin-top:13px}
+.banner .bprog i{display:block;height:100%;background:#fff;border-radius:6px;transition:width .4s}
+
+/* ── 버튼/배지/세그 ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:48px;padding:0 18px;border-radius:13px;font-weight:700;font-size:15px;transition:.13s;width:100%}
+.btn:active{transform:scale(.985)}
+.btn-primary{background:var(--blue);color:#fff;box-shadow:0 6px 16px -6px rgba(51,102,255,.6)}
+.btn-primary:disabled{background:var(--line-2);color:var(--sub-2);box-shadow:none}
+.btn-line{background:#fff;color:var(--ink-2);border:1px solid var(--line-2)}
+.btn-sm{height:36px;padding:0 13px;font-size:13px;border-radius:10px;width:auto}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:8px;font-size:11.5px;font-weight:700}
+.badge-blue{background:var(--blue-50);color:var(--blue)}
+.badge-ok{background:var(--ok-bg);color:var(--ok)}
+.badge-warn{background:var(--warn-bg);color:var(--warn)}
+.badge-danger{background:var(--danger-bg);color:var(--danger)}
+.badge-violet{background:var(--violet-bg);color:var(--violet)}
+.badge-gray{background:var(--bg);color:var(--sub)}
+.seg{display:flex;background:#e9ecf0;border-radius:12px;padding:4px;gap:4px}
+.seg button{flex:1;font-weight:600;font-size:13px;color:var(--sub);padding:8px 6px;border-radius:9px}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+
+/* ── 리스트 행 (아이콘 타일) ── */
+.lrow{display:flex;align-items:center;gap:13px;padding:13px 2px;cursor:pointer;width:100%;text-align:left}
+.lrow+.lrow{border-top:1px solid var(--line)}
+.lrow .ic{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;flex-shrink:0}
+.lrow .meta{flex:1;min-width:0;display:block}
+.lrow .meta .t{display:block;font-size:14.5px;font-weight:700;letter-spacing:-.3px}
+.lrow .meta .s{display:block;font-size:12px;color:var(--sub);margin-top:2px;font-weight:500}
+.lrow .meta .w{display:block;font-size:11.5px;font-weight:700;color:var(--danger);margin-bottom:1px}
+.lrow .meta .w.soft{color:var(--sub)}
+.lrow.dim{opacity:.42}
+.lrow.dim .t{text-decoration:line-through}
+.callbtn{width:44px;height:44px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;flex-shrink:0;box-shadow:0 6px 14px -6px rgba(51,102,255,.6)}
+.callbtn.done{background:var(--bg);color:var(--sub-2);box-shadow:none}
+.minis{display:flex;flex-direction:column;gap:5px;flex-shrink:0}
+.mini{font-size:12px;font-weight:700;border-radius:10px;padding:8px 13px;white-space:nowrap}
+.mini.ok{background:var(--ok-bg);color:var(--ok)}.mini.skip{background:var(--bg);color:var(--sub)}
+.chev{color:var(--sub-2);flex-shrink:0}
+
+/* 인트로 카드 (폼 상단 파스텔) */
+.intro{border-radius:16px;padding:15px 16px;display:flex;gap:12px;align-items:flex-start}
+.intro .iic{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;flex-shrink:0;background:rgba(255,255,255,.7)}
+.intro .t{font-size:15px;font-weight:800}
+.intro .d{font-size:12px;margin-top:3px;line-height:1.55;font-weight:500}
+
+/* ── 바텀시트 ── */
+.sheet{position:absolute;inset:0;z-index:60;display:none}
+.sheet.open{display:block}
+.sheet-bg{position:absolute;inset:0;background:rgba(15,23,42,.42);animation:fade .2s ease}
+.sheet-card{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:22px 22px 0 0;padding:8px 18px 24px;max-height:84%;overflow-y:auto;animation:slideup .26s cubic-bezier(.2,.8,.3,1)}
+@keyframes slideup{from{transform:translateY(100%)}to{transform:none}}
+.sheet-grip{width:38px;height:4px;border-radius:4px;background:var(--line-2);margin:6px auto 12px}
+.cchip{display:flex;align-items:center;gap:11px;width:100%;text-align:left;font-size:14.5px;font-weight:700;border-radius:14px;padding:14px 15px;margin-bottom:8px;letter-spacing:-.3px;border:1px solid var(--line)}
+.cchip .cic{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;flex-shrink:0}
+.cchip.g{background:var(--ok-bg);border-color:transparent;color:#0d7a52}.cchip.g .cic{background:rgba(255,255,255,.75);color:var(--ok)}
+.cchip.y{background:var(--warn-bg);border-color:transparent;color:#a36312}.cchip.y .cic{background:rgba(255,255,255,.75);color:var(--warn)}
+.cchip.gr{background:var(--bg);border-color:transparent;color:var(--ink-2)}.cchip.gr .cic{background:#fff;color:var(--sub)}
+.cchip.b{background:var(--blue-50);border-color:transparent;color:var(--blue-dark)}.cchip.b .cic{background:rgba(255,255,255,.8);color:var(--blue)}
+.cchip.r{background:var(--danger-bg);border-color:transparent;color:#c22f3c}.cchip.r .cic{background:rgba(255,255,255,.8);color:var(--danger)}
+.chiprow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chiprow .cchip{margin-bottom:0;justify-content:center;text-align:center;padding:13px 6px}
+.voice{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--sub);padding-top:10px}
+.amt{font-size:32px;font-weight:800;text-align:center;letter-spacing:-.5px;padding:8px 0 4px;font-variant-numeric:tabular-nums;color:var(--blue)}
+.amt small{font-size:14px;color:var(--sub);font-weight:700}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.pad button{padding:14px 0;font-size:19px;font-weight:700;border-radius:12px;background:var(--bg)}
+.pad button:active{background:var(--blue-50)}
+
+/* ── 로그인 ── */
+.login{padding:40px 26px 30px;display:flex;flex-direction:column}
+.login .emblem{width:74px;height:74px;border-radius:50%;background:var(--blue-50);display:grid;place-items:center;margin:6px auto 14px;position:relative}
+.login .emblem .hex{width:40px;height:40px;border-radius:12px;background:var(--blue);transform:rotate(15deg)}
+.login h2{font-size:20px;font-weight:800;margin:0;text-align:center}
+.login .s{font-size:12.5px;color:var(--sub);font-weight:500;margin-top:6px;text-align:center;line-height:1.6}
+.repgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:20px}
+.repgrid button{background:#fff;border:1.5px solid var(--line-2);border-radius:13px;padding:12px 8px;font-size:14.5px;font-weight:700}
+.repgrid button.sel{border-color:var(--blue);background:var(--blue-50);color:var(--blue)}
+.repgrid button .role{display:block;font-size:10.5px;font-weight:600;color:var(--sub);margin-top:2px}
+.repgrid button.sel .role{color:var(--blue)}
+.pinrow{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}
+.pindot{width:12px;height:12px;border-radius:50%;background:var(--line-2)}
+.pindot.f{background:var(--blue)}
+.remember{font-size:12px;color:var(--sub);font-weight:500;text-align:center;margin-top:12px}
+
+/* ── 딜 상세: 점 스테퍼 (참고안) ── */
+.dsteps{list-style:none;display:flex;gap:4px;margin:0;padding:0}
+.dsteps li{flex:1;text-align:center;font-size:9.5px;color:var(--sub);line-height:1.25;min-width:0}
+.dsteps li .d{display:block;width:19px;height:19px;margin:0 auto 4px;border-radius:50%;background:var(--bg);border:1.5px solid var(--line-2);color:var(--sub-2);font-size:9.5px;font-weight:800;line-height:16px}
+.dsteps li.done .d{background:var(--blue);border-color:var(--blue);color:#fff;animation:stepin .35s ease backwards}
+.dsteps li:nth-child(1) .d{animation-delay:.05s}
+.dsteps li:nth-child(2) .d{animation-delay:.15s}
+.dsteps li:nth-child(3) .d{animation-delay:.25s}
+.dsteps li:nth-child(4) .d{animation-delay:.35s}
+.dsteps li:nth-child(5) .d{animation-delay:.45s}
+.dsteps li:nth-child(6) .d{animation-delay:.55s}
+.dsteps li:nth-child(7) .d{animation-delay:.65s}
+.dsteps li:nth-child(8) .d{animation-delay:.75s}
+.dsteps li.now{color:var(--blue);font-weight:800}
+.dsteps li.now .d{background:#fff;border-color:var(--blue);color:var(--blue);animation:steppulse 1.6s ease-in-out .45s infinite}
+@keyframes stepin{from{transform:scale(.35);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes steppulse{0%,100%{box-shadow:0 0 0 3px rgba(51,102,255,.18)}50%{box-shadow:0 0 0 9px rgba(51,102,255,.05)}}
+@media (prefers-reduced-motion:reduce){.dsteps li .d{animation:none !important;box-shadow:0 0 0 3px rgba(51,102,255,.16)}}
+.timeline{list-style:none;margin:0;padding:4px 0 0}
+.tl{position:relative;padding:0 0 18px 30px}
+.tl:last-child{padding-bottom:0}
+.tl::before{content:"";position:absolute;left:8px;top:18px;bottom:-2px;width:2px;background:var(--line-2)}
+.tl:last-child::before{display:none}
+.tl-dot{position:absolute;left:1px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;border:2.5px solid var(--line-2)}
+.tl.done .tl-dot{background:var(--blue);border-color:var(--blue)}
+.tl.done::before{background:var(--blue)}
+.tl-t{font-size:13.5px;font-weight:700}
+.tl-d{font-size:11.5px;color:var(--sub);margin-top:1px}
+.submitbar{position:sticky;bottom:0;z-index:15;padding:12px 18px 16px;background:linear-gradient(to top,var(--bg) 72%,rgba(242,244,246,0))}
+.kv{display:flex;justify-content:space-between;font-size:13px;padding:5px 0}
+.kv .k{color:var(--sub)}.kv .v{font-weight:700}
+
+/* ── 접수완료/축하 ── */
+.done-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px 26px;gap:6px;min-height:76%}
+.done-ring{width:88px;height:88px;border-radius:50%;background:var(--ok-bg);display:grid;place-items:center;color:var(--ok);margin-bottom:10px;animation:pop .4s cubic-bezier(.2,.9,.3,1.4)}
+@keyframes pop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+.done-wrap h2{font-size:20px;font-weight:800;margin:0}
+.done-wrap p{color:var(--sub);font-size:13.5px;margin:2px 0 0;line-height:1.6}
+.done-card{width:100%;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-top:14px;text-align:left}
+
+/* ── 관제: 스탯 타일 ── */
+.mystat{display:flex;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.mystat>button{flex:1;text-align:center;padding:14px 4px;border-radius:0}
+.mystat>button+button{border-left:1px solid var(--line)}
+.mystat .n{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
+.mystat .n.r{color:var(--danger)}.mystat .n.y{color:var(--warn)}.mystat .n.g{color:var(--ok)}.mystat .n.b{color:var(--blue)}
+.mystat .l{font-size:10.5px;color:var(--sub);margin-top:2px;font-weight:600}
+.mystat>button.on{background:var(--blue-50)}
+.prow{display:flex;align-items:center;gap:11px;padding:12px 2px}
+.prow+.prow{border-top:1px solid var(--line)}
+.prow .pn{font-weight:700;flex:1;min-width:0;font-size:13.5px}
+.prow .pn .ps{display:block;color:var(--sub);font-weight:500;font-size:11.5px;margin-top:1px}
+.krow{width:100%;display:flex;align-items:center;gap:11px;padding:13px 2px;text-align:left}
+.krow+.krow{border-top:1px solid var(--line)}
+.krow .knm{font-size:13.5px;font-weight:700;flex:1;min-width:0}
+.krow .kct{font-size:12px;font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.kwarn{font-size:10.5px;color:var(--danger);font-weight:700}
+.gauge .gt{font-size:12.5px;font-weight:600;color:var(--sub)}
+.gauge .gv{font-size:22px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums}
+.gbar{height:8px;background:var(--bg);border-radius:99px;overflow:hidden;margin-top:10px}
+.gbar i{display:block;height:100%;background:var(--blue);border-radius:99px}
+.hint{font-size:11.5px;color:var(--sub);font-weight:500;line-height:1.6}
+.profile{display:flex;align-items:center;gap:13px}
+.profile .ph{width:52px;height:52px;border-radius:16px;background:var(--blue-50);color:var(--blue);display:grid;place-items:center;font-size:20px;font-weight:800}
+.profile .nm2{font-size:16px;font-weight:800}
+.profile .rl{font-size:12px;color:var(--sub);font-weight:500;margin-top:1px}
+
+/* ── 하단 탭바 ── */
+.rbox{margin-top:2px}
+.rtabs{display:flex;gap:6px;margin-bottom:8px}
+.rtabs button{flex:1;padding:10px 8px;border:1px solid var(--line-2);border-radius:11px;background:#fff;font:inherit;font-size:12.5px;font-weight:700;color:var(--sub)}
+.rtabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.rbox textarea{width:100%;min-height:88px;border:1px solid var(--line-2);border-radius:12px;padding:12px;font:inherit;font-size:14.5px;line-height:1.6;outline:none;box-sizing:border-box;resize:vertical}
+.rrec.on{background:var(--danger);color:#fff;border-color:var(--danger)}
+.bizline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;padding:11px 13px;border:1px solid var(--line-2);border-radius:12px;background:#fff;text-align:left}
+.bizline .bl{font-size:11px;color:var(--sub);font-weight:700}
+.bizline .bv{font-size:14px;font-weight:800}
+.bizline .bo{font-size:11.5px;color:var(--sub);flex:1}
+.advcard{background:#FFFBF2;border-color:#F5D9A6!important}
+.advrow{display:grid;grid-template-columns:78px 1fr;gap:3px 10px;font-size:13px;padding:3px 0}
+.advrow>span{color:var(--sub);font-size:11.5px;font-weight:700}
+.rsum{padding:11px 13px;border:1px solid var(--line-2);border-radius:12px;background:#fff}
+.rsum .rh{display:flex;gap:7px;align-items:center;font-size:11.5px;color:var(--sub);margin-bottom:5px;flex-wrap:wrap}
+.srcm{display:inline-block;padding:2px 6px;border-radius:5px;font-size:9.5px;font-weight:800}
+.srcm.jandi{background:#FEF3C7;color:#92400E}
+.srcm.crm{background:var(--blue-50);color:var(--blue-dark)}
+.srcm.mobile{background:#D1FAE5;color:#065F46}
+.srcm.auto{background:#EEF0F4;color:#5B6478}
+.rstm{display:inline-block;padding:2px 6px;border-radius:5px;font-size:9.5px;font-weight:800;background:var(--blue-50);color:var(--blue-dark)}
+.tabbar{position:sticky;bottom:0;z-index:18;display:flex;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:7px 6px 10px}
+.tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--sub-2);padding:4px 0}
+.tabbar button .tl2{font-size:10.5px;font-weight:600}
+.tabbar button.on{color:var(--blue)}
+
+/* 토스트 */
+.toast{position:absolute;left:50%;bottom:86px;transform:translateX(-50%) translateY(8px);background:rgba(16,20,28,.92);color:#fff;font-size:12.5px;font-weight:600;padding:9px 16px;border-radius:11px;opacity:0;pointer-events:none;transition:.2s;z-index:90;white-space:nowrap;max-width:86%;overflow:hidden;text-overflow:ellipsis}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ══ 흐름도 + 화면 지도 ══ */
+#flowwrap{display:none;max-width:1280px;margin:0 auto;padding:26px 22px 90px}
+#flowwrap.on{display:block}
+#flowwrap h1{font-size:22px;font-weight:900;letter-spacing:-.5px;margin:0}
+#flowwrap .fsub{font-size:13px;color:var(--ink-2);font-weight:600;margin-top:6px}
+.flow{margin-top:30px}
+.flow>h2{font-size:16px;font-weight:900;margin:0}
+.flow>.fs{font-size:12px;color:var(--sub);font-weight:700;margin-top:2px}
+.frow{display:flex;gap:8px;align-items:stretch;overflow-x:auto;padding:14px 2px 6px}
+.fstep{width:230px;flex-shrink:0;display:flex;flex-direction:column}
+.fcap{font-size:12px;font-weight:800;margin-bottom:7px;display:flex;align-items:center}
+.fcap b{display:inline-grid;place-items:center;width:19px;height:19px;background:var(--blue);color:#fff;border-radius:50%;font-size:10.5px;margin-right:7px;flex-shrink:0}
+.ms{flex:1;background:#fff;border:1px solid var(--line-2);border-radius:16px;padding:13px}
+.ms.dark{background:#1f242e;color:#fff;border-color:#1f242e}
+.farr{align-self:center;color:var(--sub);font-size:16px;font-weight:900;flex-shrink:0;padding-bottom:22px}
+.fnote{font-size:10.5px;color:var(--sub);font-weight:600;margin-top:7px;line-height:1.6}
+.fnote em{font-style:normal;color:var(--ok);font-weight:800}
+.ms .fchip{display:block;text-align:center;font-size:12px;font-weight:800;border-radius:10px;padding:10px 0;margin-bottom:6px}
+.fchip.g{background:var(--ok-bg);color:var(--ok)}.fchip.y{background:var(--warn-bg);color:var(--warn)}.fchip.gr{background:var(--bg);color:var(--ink-2)}.fchip.b{background:var(--blue-50);color:var(--blue)}.fchip.r{background:var(--danger-bg);color:var(--danger)}
+.m-why{font-size:10.5px;font-weight:700;color:var(--danger)}
+.m-nm{font-size:13.5px;font-weight:800;letter-spacing:-.3px}
+.m-sub{font-size:10.5px;color:var(--sub);font-weight:600}
+.m-row{padding:8px 0;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.m-row:last-child{border-bottom:0}
+.m-call{width:32px;height:32px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-size:13px;flex-shrink:0;margin-left:auto}
+.m-more{font-size:10.5px;color:var(--sub-2);font-weight:700;text-align:center;padding-top:7px}
+.m-h{font-size:14px;font-weight:800;margin-bottom:7px}
+.m-h .bl{color:var(--blue)}
+.m-ok{font-size:12px;font-weight:700;padding:4px 0}
+.m-ok::before{content:'✓ ';color:var(--ok);font-weight:900}
+.m-c{text-align:center}
+.m-big{width:52px;height:52px;border-radius:50%;background:var(--ok-bg);color:var(--ok);display:grid;place-items:center;font-size:24px;margin:6px auto}
+.m-c .t1{font-size:14px;font-weight:800}
+.m-c .t2{font-size:10.5px;color:var(--sub);font-weight:600;margin-top:3px;line-height:1.6}
+.m-jandi{font-size:11.5px;line-height:1.6;font-weight:600}
+.m-jandi .jb{background:#fff;color:var(--ink);border-radius:9px;padding:9px 11px;margin-top:7px;font-weight:700;font-size:11.5px}
+.m-jandi .jbtn{display:block;background:var(--blue);color:#fff;text-align:center;border-radius:9px;padding:8px 0;margin-top:7px;font-weight:800;font-size:11.5px}
+.m-sig{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.m-sig div{background:var(--bg);border-radius:9px;padding:7px}
+.m-sig .sl{font-size:9px;font-weight:800;color:var(--sub)}
+.m-sig .svv{font-size:12px;font-weight:900;margin-top:1px}
+.m-krow{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:11.5px;font-weight:750;padding:6px 0;border-bottom:1px solid var(--line)}
+.m-krow:last-child{border-bottom:0}
+.m-krow .r{color:var(--sub);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.m-amt{font-size:19px;font-weight:900;text-align:center;padding:3px 0;font-variant-numeric:tabular-nums;color:var(--blue)}
+.m-amt small{font-size:10px;color:var(--sub)}
+.m-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:5px}
+.m-pad span{background:var(--bg);border-radius:6px;text-align:center;font-size:11px;font-weight:800;padding:6px 0}
+.m-btn{display:block;background:var(--blue);color:#fff;text-align:center;border-radius:9px;padding:9px 0;font-weight:800;font-size:11.5px;margin-top:8px}
+.mapwrap{margin-top:44px;border-top:2px solid var(--ink);padding-top:18px}
+.mapwrap>h2{font-size:17px;font-weight:900;margin:0}
+.mapwrap>.fs{font-size:12.5px;color:var(--ink-2);font-weight:600;margin-top:4px;line-height:1.7}
+.maplegend{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:11px}
+.mapgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-top:14px}
+.mapbox{background:#fff;border:1px solid var(--line-2);border-radius:14px;padding:13px 14px}
+.mapbox h3{font-size:13.5px;font-weight:900;margin:0 0 2px;display:flex;justify-content:space-between;align-items:baseline}
+.mapbox h3 .ct{font-size:11px;color:var(--sub);font-weight:800}
+.mapbox .who{font-size:10.5px;color:var(--sub);font-weight:700;margin-bottom:8px}
+.mapbox ul{margin:0;padding:0;list-style:none}
+.mapbox li{font-size:12px;font-weight:600;color:var(--ink-2);padding:4.5px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px;align-items:center}
+.mapbox li:last-child{border-bottom:0}
+.mapbox li .badge{font-size:9.5px;padding:2px 7px;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<!-- ════════ 화면전환 바 ════════ -->
+<nav class="mock-nav" id="mocknav">
+  <span class="lbl">📱 화면</span>
+  <button data-v="flow" onclick="nav('flow')">흐름도</button>
+  <span class="sep">·</span>
+  <button data-v="login" onclick="nav('login')">1 로그인</button>
+  <button data-v="today" onclick="nav('today')">2 오늘</button>
+  <button data-v="sheet" onclick="nav('sheet')">3 결과 기재</button>
+  <button data-v="mine" onclick="nav('mine')">4 내 건</button>
+  <button data-v="deal" onclick="nav('deal')">5 딜 상세</button>
+  <button data-v="won" onclick="nav('won')">6 수주 완료</button>
+  <button data-v="my" onclick="nav('my')">7 내 실적</button>
+  <span class="sep">|</span>
+  <span class="lbl">관리자</span>
+  <button data-v="ctrl" onclick="nav('ctrl')">8 관제</button>
+  <button data-v="pipe" onclick="nav('pipe')">9 파이프라인</button>
+  <button data-v="perf" onclick="nav('perf')">10 실적</button>
+</nav>
+
+<!-- ════════ 흐름도 ════════ -->
+<div id="flowwrap">
+  <h1>영업관리 앱 — 화면 흐름</h1>
+  <div class="fsub">번호가 곧 흐름입니다. 위 화면전환 바로 어느 단계든 바로 이동 · 폰에서는 실제로 조작됩니다. (예시 데이터)</div>
+
+  <section class="flow">
+    <h2>Ⓐ 담당자의 하루 — 잔디는 문 1번 + 영수증 1번</h2>
+    <div class="fs">아침 1통 → 오늘 페이지에서 연속 처리 → 저녁 영수증 1통. 중간 왕복 없음.</div>
+    <div class="frow">
+      <div class="fstep"><div class="fcap"><b>1</b>아침 9시 · 잔디 1통</div>
+        <div class="ms dark"><div class="m-jandi">☀️ 황윤선님, 오늘 몫 <b>6건</b><div class="jb">🔴 급한 것 1 · 전화 4 · 확인 2</div><span class="jbtn">오늘 할 일 열기</span></div></div>
+        <div class="fnote">버튼 1개 — 건별 링크·대화 없음</div></div>
+      <span class="farr">→</span>
+      <div class="fstep"><div class="fcap"><b>2</b>오늘 — 급한 순</div>
+        <div class="ms"><div class="m-h">오늘 6건 중 <span class="bl">6건</span></div>
+          <div class="m-row"><div><div class="m-why">🔴 회의 날짜 잡아야 함</div><div class="m-nm">산들마을2단지</div><div class="m-sub">4.3억 · 회장님</div></div><span class="m-call">📞</span></div>
+          <div class="m-row"><div><div class="m-why">내일 경쟁 PT</div><div class="m-nm">미사강변풍경채</div></div><span class="m-call">📞</span></div>
+          <div class="m-more">…4건 더</div></div>
+        <div class="fnote">왜 하는지 한 줄 + 현장명 크게</div></div>
+      <span class="farr">→</span>
+      <div class="fstep"><div class="fcap"><b>3</b>📞 실제 전화 → 결과 칩</div>
+        <div class="ms"><span class="fchip g">😊 진행됨 — 다음 잡음</span><span class="fchip y">⏸ 다음주 다시</span><span class="fchip gr">📵 못 받으심</span></div>
+        <div class="fnote">끊고 오면 이 화면이 떠 있음 — 탭 1번이 기재의 전부 · 🎤 음성 메모 선택</div></div>
+      <span class="farr">→</span>
+      <div class="fstep"><div class="fcap"><b>4</b>뒤에서 자동으로</div>
+        <div class="ms"><div class="m-ok">시트·CRM 기재</div><div class="m-ok">다음 약속 예약</div><div class="m-ok">관제 SLA 반영</div><div class="m-ok">부재중 → 내일 재등장</div></div>
+        <div class="fnote"><em>담당자 할 일 없음</em></div></div>
+      <span class="farr">→</span>
+      <div class="fstep"><div class="fcap"><b>5</b>끝 — 영수증 1통</div>
+        <div class="ms m-c"><div class="m-big">✓</div><div class="t1">오늘 할 일 끝!</div><div class="t2">잔디: "오늘 완료 🎉"<br>내일 몫은 아침 9시</div></div>
+        <div class="fnote">안 하고 닫으면 내일 다시 나옴</div></div>
+    </div>
+  </section>
+
+  <section class="flow">
+    <h2>Ⓑ 단계 이동 · 수주 — 버튼 하나, 필수 입력 1개</h2>
+    <div class="fs">단계 사전이 후보를 정함 — 담당자는 고르지 않고 확인만.</div>
+    <div class="frow">
+      <div class="fstep"><div class="fcap"><b>1</b>내 건 — 롤업 그룹</div>
+        <div class="ms"><div class="m-h">내 건 <span class="bl">10건</span></div>
+          <div class="m-krow"><span>▼ 경쟁·임박·입찰</span><span class="r">1건</span></div>
+          <div class="m-krow"><span>▼ 공사 임박</span><span class="r">1건</span></div>
+          <div class="m-krow"><span>▼ 관계 유지 <span class="kwarn">32일 정체</span></span><span class="r">2건</span></div>
+          <div class="m-more">5묶음(설계·발송·관계·경쟁·계약) — PC와 동일 체계</div></div>
+        <div class="fnote">금액대(대형/일반/수의)는 태그로</div></div>
+      <span class="farr">→</span>
+      <div class="fstep"><div class="fcap"><b>2</b>딜 상세 → [다음으로]</div>
+        <div class="ms"><div class="m-nm" style="font-size:14px">[하남] 미사강변풍경채</div><div class="m-sub">대형 · 1.2억 · 현재: 경쟁단계(PT)</div><span class="m-btn">다음으로 →</span></div>
+        <div class="fnote">예외 이동은 단계명 길게(사유 필수·기록)</div></div>
+      <span class="farr">→</span>
+      <div class="fstep"><div class="fcap"><b>3</b>후보 칩</div>
+        <div class="ms"><span class="fchip y">응답 없음 — 유대 관리</span><span class="fchip g">계약 협의 시작</span><span class="fchip r">실주</span></div>
+        <div class="fnote">실주 → 사유 칩 <em>필수</em> · 배드핏 → 유형 칩</div></div>
+      <span class="farr">→</span>
+      <div class="fstep"><div class="fcap"><b>4</b>필수 입력 — 딱 1개</div>
+        <div class="ms"><div class="m-sub" style="color:var(--danger);font-weight:800">계약 금액 *필수</div><div class="m-amt">12,000<small> 만원</small></div><div class="m-pad"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div></div>
+        <div class="fnote">500만 이하 수의계약 자동 분류</div></div>
+      <span class="farr">→</span>
+      <div class="fstep"><div class="fcap"><b>5</b>축하 + 자동 집계</div>
+        <div class="ms m-c"><div class="m-big">🎉</div><div class="t1">수주 축하합니다!</div><div class="t2">실적 집계 · 기록 · 관리자 반영<br>전부 자동</div></div>
+        <div class="fnote"><em>수기 취합 0</em></div></div>
+    </div>
+  </section>
+
+  <section class="flow">
+    <h2>Ⓒ 관리자 — 같은 주소, 역할만 다른 화면</h2>
+    <div class="fs">겸직(황윤선·이승우)은 [내 영업 ⇄ 관리] 스위치.</div>
+    <div class="frow">
+      <div class="fstep"><div class="fcap"><b>1</b>관제 신호 4</div>
+        <div class="ms"><div class="m-sig"><div><div class="sl">배정 SLA</div><div class="svv" style="color:var(--danger)">🔴 2건</div></div><div><div class="sl">응대 초과</div><div class="svv" style="color:var(--danger)">🔴 235건</div></div><div><div class="sl">부하</div><div class="svv" style="color:var(--warn)">🟡 2명</div></div><div><div class="sl">유입</div><div class="svv" style="color:var(--ok)">🟢 정상</div></div></div></div>
+        <div class="fnote">아침 한 화면으로 상황 파악</div></div>
+      <span class="farr">→</span>
+      <div class="fstep"><div class="fcap"><b>2</b>신호 탭 → 즉시 조치</div>
+        <div class="ms"><div class="m-krow"><span>[안양] 두산위브 <span class="kwarn">12일</span></span><span class="m-btn" style="display:inline;padding:5px 10px;margin:0">송보람 배정</span></div><div class="m-krow"><span>[인천] 신동아 <span class="kwarn">23일</span></span><span class="m-btn" style="display:inline;padding:5px 10px;margin:0">김성민 배정</span></div></div>
+        <div class="fnote">기존 배정 자동화 호출 — 잔디 알림 자동</div></div>
+      <span class="farr">→</span>
+      <div class="fstep"><div class="fcap"><b>3</b>파이프라인 → 드릴다운</div>
+        <div class="ms"><div class="m-krow"><span>관계 유지 <span class="kwarn">98% 정체</span></span><span class="r">104건</span></div><div class="m-krow"><span>경쟁·입찰</span><span class="r">9건 · 26.2억</span></div><div class="m-more">담당자 탭 → 그 사람 '내 건' 재사용</div></div>
+        <div class="fnote">화면 두 벌 안 만듦 · 수치도 같은 쿼리</div></div>
+      <span class="farr">→</span>
+      <div class="fstep"><div class="fcap"><b>4</b>최종 그림</div>
+        <div class="ms m-c"><div class="m-big" style="background:var(--blue-50);color:var(--blue)">📄</div><div class="t1">매월 1일 자동 보고</div><div class="t2">담당자 칩 탭이 이 보고서의 원료<br>(12/1 첫 가동 목표)</div></div>
+        <div class="fnote">사람 손 없이 대표 보고</div></div>
+    </div>
+  </section>
+
+  <section class="mapwrap">
+    <h2>전체 화면 지도 — 모바일이 커버해야 할 47화면</h2>
+    <div class="fs">위 흐름도는 등뼈 3줄이고, 실제 스코프는 아래 전체입니다. <b>47화면 전부 목업 구현 완료(✓)</b> — V1·V1.5·V2 모든 항목이 예시 데이터로 동작합니다. 실서비스 전환 시 데이터·API만 연결하면 됩니다.</div>
+    <div class="maplegend"><span class="badge badge-ok">✓ 목업 완료</span><span class="badge badge-blue">V1 · 첫 배포</span><span class="badge badge-warn">V1.5 · 한 달 내</span><span class="badge badge-violet">V2 · 분기 내</span></div>
+    <div class="mapgrid">
+      <div class="mapbox"><h3>공통 <span class="ct">5화면</span></h3><div class="who">전원</div><ul>
+        <li>로그인 (이름+PIN)<span class="badge badge-ok">✓</span></li>
+        <li>기기 기억·자동 진입 (예시)<span class="badge badge-ok">✓</span></li>
+        <li>PIN 재설정 (관리자 재발급)<span class="badge badge-ok">✓</span></li>
+        <li>알림함 (리마인드 모아보기)<span class="badge badge-ok">✓</span></li>
+        <li>설정 (조용한 시간·휴가 위임)<span class="badge badge-ok">✓</span></li>
+      </ul></div>
+      <div class="mapbox"><h3>오늘 <span class="ct">6화면</span></h3><div class="who">담당자</div><ul>
+        <li>오늘 리스트 (급한 순)<span class="badge badge-ok">✓</span></li>
+        <li>통화 결과 칩 시트<span class="badge badge-ok">✓</span></li>
+        <li>확인형 항목 (확인/넘기기)<span class="badge badge-ok">✓</span></li>
+        <li>넘김 사유·스누즈 시트<span class="badge badge-ok">✓</span></li>
+        <li>음성 메모 녹음 상태<span class="badge badge-ok">✓</span></li>
+        <li>완료 화면 (영수증)<span class="badge badge-ok">✓</span></li>
+      </ul></div>
+      <div class="mapbox"><h3>내 건 · 딜 <span class="ct">10화면</span></h3><div class="who">담당자</div><ul>
+        <li>내 건 그룹 리스트 (5묶음 · PC 동일)<span class="badge badge-ok">✓</span></li>
+        <li>검색 (내 건 연락처 포함)<span class="badge badge-ok">✓</span></li>
+        <li>필터 (금액대·정체)<span class="badge badge-ok">✓</span></li>
+        <li>딜 상세 (타임라인)<span class="badge badge-ok">✓</span></li>
+        <li>단계 이동 — 후보 칩 시트<span class="badge badge-ok">✓</span></li>
+        <li>필수 입력 시트 4종 (날짜·월·금액·사유)<span class="badge badge-ok">✓</span></li>
+        <li>예외 이동 (전체 단계+사유)<span class="badge badge-ok">✓</span></li>
+        <li>수주 축하<span class="badge badge-ok">✓</span></li>
+        <li>사진 첨부·보기<span class="badge badge-ok">✓</span></li>
+        <li>문자·자료 템플릿 발송<span class="badge badge-ok">✓</span></li>
+      </ul></div>
+      <div class="mapbox"><h3>견적문의 관제 <span class="ct">9화면</span></h3><div class="who">관리자</div><ul>
+        <li>관제 홈 (신호 4)<span class="badge badge-ok">✓</span></li>
+        <li>배정 대기 목록<span class="badge badge-ok">✓</span></li>
+        <li>배정 시트 (부하 표시+추천)<span class="badge badge-ok">✓</span></li>
+        <li>문의 상세 (원문·이력·전화)<span class="badge badge-ok">✓</span></li>
+        <li>응대 초과 목록 (담당자별)<span class="badge badge-ok">✓</span></li>
+        <li>쪼기 발송 확인 (미리보기)<span class="badge badge-ok">✓</span></li>
+        <li>담당자 부하 상세 (드릴 재사용)<span class="badge badge-ok">✓</span></li>
+        <li>브랜드 유입 상세 (주별 추이)<span class="badge badge-ok">✓</span></li>
+        <li>중복현장 게이트 경고<span class="badge badge-ok">✓</span></li>
+      </ul></div>
+      <div class="mapbox"><h3>파이프라인 <span class="ct">8화면</span></h3><div class="who">관리자</div><ul>
+        <li>롤업 요약 (5묶음 · PC 동일)<span class="badge badge-ok">✓</span></li>
+        <li>단계별 딜 목록<span class="badge badge-ok">✓</span></li>
+        <li>담당자별 드릴다운 (내 건 재사용)<span class="badge badge-ok">✓</span></li>
+        <li>딜 상세 관리자 뷰 (+재배정)<span class="badge badge-ok">✓</span></li>
+        <li>재배정 시트 (이력 동반)<span class="badge badge-ok">✓</span></li>
+        <li>장기정체·조치 필요 필터<span class="badge badge-ok">✓</span></li>
+        <li>포캐스트 (4버킷)<span class="badge badge-ok">✓</span></li>
+        <li>종료 목록 (수주·실주·배드핏)<span class="badge badge-ok">✓</span></li>
+      </ul></div>
+      <div class="mapbox"><h3>실적 · 코칭 <span class="ct">5화면</span></h3><div class="who">관리자 + 본인</div><ul>
+        <li>내 실적 (게이지·스트릭)<span class="badge badge-ok">✓</span></li>
+        <li>위생 정리 목록 (바로 처리)<span class="badge badge-ok">✓</span></li>
+        <li>실적 랭킹<span class="badge badge-ok">✓</span></li>
+        <li>개인 상세 (3축 신호등)<span class="badge badge-ok">✓</span></li>
+        <li>코칭 신호 → 면담 안건<span class="badge badge-ok">✓</span></li>
+      </ul></div>
+      <div class="mapbox"><h3>리포트 · 브리핑 <span class="ct">4화면</span></h3><div class="who">관리자</div><ul>
+        <li>리포트 홈<span class="badge badge-ok">✓</span></li>
+        <li>주간 브리핑<span class="badge badge-ok">✓</span></li>
+        <li>월간 보고 미리보기·발송<span class="badge badge-ok">✓</span></li>
+        <li>중복현장 목록·비교<span class="badge badge-ok">✓</span></li>
+      </ul></div>
+      <div class="mapbox"><h3>발굴 (아웃바운드) <span class="ct">3화면</span></h3><div class="who">담당자 · 발굴 탭</div><ul>
+        <li>발굴 등록 (경로 칩 4종)<span class="badge badge-ok">✓</span></li>
+        <li>명함·현수막 촬영 인식 (예시)<span class="badge badge-ok">✓</span></li>
+        <li>중복 경고 ("이 현장 이미 있어요")<span class="badge badge-ok">✓</span></li>
+      </ul></div>
+    </div>
+    <div class="fs" style="margin-top:14px"><b>읽는 법</b> — V1(첫 배포)은 ✓12 + 파랑 15 = <b>27화면</b>이 실제 첫 스코프.
+    시트·목록·드릴다운이 공유 컴포넌트라 구현 단위는 화면 수보다 훨씬 적습니다.</div>
+  </section>
+</div>
+
+<!-- ════════ 폰 ════════ -->
+<div class="stage" id="stage">
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="notch"></span><span style="display:flex;gap:5px;align-items:center;font-size:11px">●●●</span></div>
+    <div class="phone-body" id="scr"></div>
+    <div class="tabbar" id="tabbar"></div>
+    <div class="toast" id="toast"></div>
+    <div class="sheet" id="sheetwrap"><div class="sheet-bg" onclick="closeSheet()"></div><div class="sheet-card" id="sheetcard"></div></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+'use strict';
+/* ── SVG 아이콘 (참고안 스트로크 스타일) ── */
+var IC={
+ sun:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+ folder:'<svg class="i" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+ chart:'<svg class="i" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+ phone:'<svg class="i" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3A19.5 19.5 0 0 1 5.1 13 19.8 19.8 0 0 1 2 4.2 2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c1 .3 2 .6 3 .7a2 2 0 0 1 1.6 2z"/></svg>',
+ check:'<svg class="i" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
+ bell:'<svg class="i" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
+ alert:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+ doc:'<svg class="i" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+ mic:'<svg class="i sm" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>',
+ camera:'<svg class="i sm" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+ chev:'<svg class="i sm" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>',
+ back:'<svg class="i" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>',
+ siren:'<svg class="i" viewBox="0 0 24 24"><path d="M6 18h12l-1-7a5 5 0 0 0-10 0z"/><line x1="4" y1="21" x2="20" y2="21"/><line x1="12" y1="3" x2="12" y2="5"/><line x1="5" y1="6" x2="6.5" y2="7.5"/><line x1="19" y1="6" x2="17.5" y2="7.5"/></svg>',
+ clock:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+ user:'<svg class="i" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+ plus:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
+ gear:'<svg class="i sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.2 4.2l2.8 2.8M17 17l2.8 2.8M1 12h4M19 12h4M4.2 19.8L7 17M17 7l2.8-2.8"/></svg>',
+ msg:'<svg class="i sm" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
+};
+function tile(icon,fg,bg){return '<span class="ic" style="background:'+bg+';color:'+fg+'">'+icon+'</span>'}
+
+/* ── 데이터 (예시) ── */
+/* user_id 와 role 을 함께 들고 다닌다 — 모든 조회·기록이 이 id 를 owner 로 쓴다.
+   ⚠ PIN 검증은 서버 Auth(JWT) 로 옮겨야 한다. 지금은 화면 진입만 막는 수준 */
+var REPS=[
+ {id:'u_hys',nm:'황윤선',role:'dual'},{id:'u_lsw',nm:'이승우',role:'dual'},{id:'u_sbr',nm:'송보람',role:'admin'},
+ {id:'u_lps',nm:'이필선',role:'rep'},{id:'u_hjy',nm:'한준엽',role:'rep'},{id:'u_ksm',nm:'김성민',role:'rep'},
+ {id:'u_jjh',nm:'정정훈',role:'rep'},{id:'u_chs',nm:'조현식',role:'rep'}
+];
+/* ══════════════════════════════════════════════════════════════════════
+   CRM CORE — PC(넷폼CRM_v4_1)의 STAGE_MASTER 와 글자 하나까지 같아야 한다.
+   ▸ 저장하는 것은 stage_code(first_contact…expansion) + outcome(won/lost/badfit/nocontact)
+   ▸ g_mgmt / g_consult / SS2G / GRP2G 같은 «모바일 전용 그룹»은 저장하지 않는다.
+     그룹은 화면에서만 macro 로 묶는다 (PC KB5 와 동일한 5묶음).
+   ▸ 확률·SLA·이름을 다른 곳에 다시 적지 말 것. 바꿀 일이 있으면 여기만 고친다.
+   ══════════════════════════════════════════════════════════════════════ */
+var STAGE_MASTER={
+ first_contact:{name:'1차 접촉·니즈파악',macro:'design',order:1, prob:.10,sla:7},
+ consulting   :{name:'컨설팅 설계',      macro:'design',order:2, prob:.20,sla:10},
+ sent         :{name:'자료 발송완료',    macro:'sent',  order:3, prob:.35,sla:7},
+ rapport      :{name:'유대관계 강화',    macro:'rel',   order:4, prob:.20,sla:30},
+ silent       :{name:'침묵 관리',        macro:'rel',   order:5, prob:.15,sla:30},
+ waiting      :{name:'대기고객(사후보류)',macro:'rel',  order:6, prob:.05,sla:180},
+ compete      :{name:'경쟁단계(PT)',     macro:'comp',  order:7, prob:.55,sla:14},
+ imminent     :{name:'공사 임박',        macro:'comp',  order:8, prob:.70,sla:14},
+ bidding      :{name:'입찰단계',         macro:'comp',  order:9, prob:.80,sla:7},
+ contract     :{name:'계약단계',         macro:'con',   order:10,prob:.90,sla:14},
+ construction :{name:'시공단계',         macro:'con',   order:11,prob:1,  sla:60},
+ completion   :{name:'준공단계',         macro:'con',   order:12,prob:1,  sla:30},
+ expansion    :{name:'확장단계',         macro:'con',   order:13,prob:1,  sla:90},
+ won      :{name:'Closed Won',macro:'won',   order:99,prob:1,sla:0},
+ lost     :{name:'Closed Lost (영업관리 배드핏)',macro:'lost',  order:99,prob:0,sla:0},
+ /* 배드핏은 «두 종류» 다 — PC 와 동일하게 나눈다 (같은 칸에 넣으면 원인을 못 본다)
+    ① badfit_lead 견적 배드핏  : 견적문의 응대 중 우리와 방향이 안 맞는 경우 → 유입 품질 문제
+    ② badfit_pipe 영업관리 배드핏: 견적까지 나갔는데 뺏기거나 못 챙겨 놓친 경우 → 우리 실행 문제 */
+ badfit      :{name:'배드핏',           macro:'closed',order:99,prob:0,sla:0},
+ badfit_lead :{name:'견적 배드핏',      macro:'closed',order:99,prob:0,sla:0},
+ badfit_pipe :{name:'영업관리 배드핏',  macro:'closed',order:99,prob:0,sla:0},
+ nocontact:{name:'연락두절', macro:'closed',order:99,prob:0,sla:0}
+};
+/* ══════════════════════════════════════════════════════════
+   사업유형 — Stage 와 «별개» 축 (PC 와 같은 규칙, 2026-09-02)
+
+     originBusiness   최초 등록 사업유형 (안 바뀜 — 실적 귀속 기준)
+     currentBusiness  현재 진행 사업유형 (전환되면 이것만 바뀐다)
+     code(stage)      영업 단계 — 위 둘과 완전히 다른 축
+
+   POUR솔루션·아파트스퀘어에서 시작했어도 «같은 딜 ID 를 유지한 채»
+   사업유형만 기술자문으로 바꾼다. 딜을 닫고 새로 만들면 영업 흐름이 끊긴다.
+   그래서 기술자문 전용 칸반을 따로 만들지 않는다 — 필터로 본다.
+   ══════════════════════════════════════════════════════════ */
+var BIZ_TYPES=['POUR솔루션','아파트스퀘어','석민이앤씨','기술자문'];
+function bizOf(d){return (d&&(d.currentBusiness||d.sub))||'미지정'}
+function bizOrigin(d){return (d&&(d.originBusiness||d.sub))||'미지정'}
+function isAdvisory(d){return bizOf(d)==='기술자문'}
+function bizShort(b){return {'POUR솔루션':'POUR','아파트스퀘어':'스퀘어','석민이앤씨':'석민','기술자문':'기술자문'}[b]||b}
+function macroNm(k){var g=MACRO5.filter(function(x){return x.k===k})[0];return g?g.nm:k}
+function stageLabel(c){var m=STAGE_MASTER[String(c||'')];return m?m.name:String(c||'미정')}
+function stageSla(c){var m=STAGE_MASTER[String(c||'')];return m?m.sla:30}
+/* SLA = «언제부터 위험한가» · nextDays = «언제 다시 움직일 것인가». 둘은 다르다 (§15)
+   대기고객을 7일 뒤로 잡으면 대기의 의미가 사라진다 */
+var NEXT_DAYS={first_contact:1,consulting:3,sent:3,rapport:30,silent:30,waiting:180,
+ compete:3,imminent:2,bidding:1,contract:7,construction:7,completion:14,expansion:30};
+function nextDays(c){var v=NEXT_DAYS[String(c||'')];return v==null?7:v}
+function forecastProbability(c){var m=STAGE_MASTER[String(c||'')];return m?m.prob:0}
+function macroOf(c){var m=STAGE_MASTER[String(c||'')];return m?m.macro:'design'}
+/* 종료 4종 — closed 하나로 뭉치지 않는다. 사유까지 끝까지 보존 */
+var OUTCOMES={
+ won      :{nm:'수주',    need:'amount',color:'g' },
+ lost     :{nm:'실주',    need:'reason',color:'r' },
+ badfit   :{nm:'배드핏',  need:'btype', color:'gr'},
+ nocontact:{nm:'연락두절',need:'ncause',color:'gr'}
+};
+/* ══ 결정 B (2026-09-01) : 영업기회는 «수주(WON)» 에서 끝나고, 그 뒤는 Delivery 다 ══
+   sales  : first_contact ~ bidding  → Opportunity (예측 대상)
+   delivery: contract ~ expansion    → 이미 수주한 건의 이행 (예측 아님, 확정 매출)
+   준공 후 추가공사는 이 건을 다시 열지 않고 «새 Opportunity» 를 만든다 (§21) */
+/* contract = «계약 협의 중»(prob 90%) 이지 수주가 아니다. 수주는 [수주 확정] 행동으로만 기록된다.
+   따라서 phase 는 outcome 으로 갈린다 — 협의 중에는 영업 파이프라인에 남는다 (§18 결정) */
+var SALES_CODES=['first_contact','consulting','sent','rapport','silent','waiting','compete','imminent','bidding','contract'];
+var DELIVERY_CODES=['contract','construction','completion'];
+function phaseOf(d){return d.outcome==='won'?'delivery':(SALES_CODES.indexOf(d.code)>=0?'sales':'delivery')}
+function isOpen(d){return !d.outcome}                          /* 영업 파이프라인 (수주 전) */
+function isWon(d){return d.outcome==='won'}
+function inDelivery(d){return d.outcome==='won'&&DELIVERY_CODES.indexOf(d.code)>=0}
+function isClosedOut(d){return !!d.outcome&&!inDelivery(d)}    /* 실주·배드핏·연락두절 + 준공 이후 */
+/* 계약 단계 이후인데 outcome 이 없는 서버 데이터는 «이미 수주한 건» 으로 본다 */
+/* 시공·준공·확장 코드인데 outcome 이 없는 서버 데이터는 이미 수주한 건 (계약 «협의 중» contract 는 제외) */
+function fixPhase(d){if(!d.outcome&&['construction','completion','expansion'].indexOf(d.code)>=0){d.outcome='won';d.won_amount=d.won_amount||d.amt||0}return d}
+/* 화면 그룹 — PC KB5 와 같은 5묶음. 저장값이 아니라 code 에서 파생한다 */
+var MACRO5=[
+ {k:'design',nm:'컨설팅 설계'},{k:'sent',nm:'자료 발송완료'},{k:'rel',nm:'관계 관리'},
+ {k:'comp',nm:'경쟁·임박·입찰'},{k:'con',nm:'계약·시공'}
+];
+MACRO5.forEach(function(g){g.codes=Object.keys(STAGE_MASTER).filter(function(c){return STAGE_MASTER[c].macro===g.k})});
+/* 단계 이동 후보 — 코드 단위. 진행 이동만 여기서 다루고, 종료 4종은 어디서든 가능 */
+var NEXT_BY_CODE={
+ first_contact:[['consulting','설계 착수'],['sent','자료 보냈어요'],['rapport','당장은 아님 — 유대 관리']],
+ consulting   :[['sent','자료 발송완료'],['rapport','응답 없음 — 유대 관리']],
+ sent         :[['compete','경쟁 PT 잡힘'],['imminent','공사 임박'],['rapport','응답 없음 — 유대 관리']],
+ rapport      :[['compete','경쟁 PT 잡힘'],['imminent','공사 임박'],['sent','자료 재발송'],['silent','3개월 경과 — 침묵 관리']],
+ silent       :[['rapport','다시 살아남 — 유대'],['compete','경쟁 PT 잡힘'],['imminent','공사 임박'],['waiting','대기고객(반기 관리)']],
+ waiting      :[['rapport','재활성 — 유대 관리'],['imminent','공사 임박']],
+ compete      :[['imminent','최종 협의 단계'],['bidding','입찰 공고 나옴'],['contract','계약 협의 시작']],
+ imminent     :[['contract','계약 협의 시작'],['bidding','입찰로 전환']],
+ bidding      :[['contract','낙찰 — 계약 협의']],
+ contract     :[],
+ construction :[],
+ completion   :[],
+ expansion    :[]
+};
+/* 수주 확정은 단계 이동이 아니라 별도 행동('win') 이다 */
+function isWinMove(code){return code==='win'}
+/* 수주 후 이행 단계 — Project 의 delivery_stage 에 해당 */
+var NEXT_DELIVERY={contract:[['construction','착공']],construction:[['completion','준공']],completion:[]};
+function nextOptions(d){
+ if(d.outcome==='won')return NEXT_DELIVERY[d.code]||[];
+ var L=(NEXT_BY_CODE[d.code]||[]).slice();
+ if(d.code==='contract')L.push(['win','수주 확정 🎉 (계약서 날인)']);
+ return L;
+}
+function canAdvance(d){return isOpen(d)||inDelivery(d)}
+function tagOf(a){return a>=100000000?['badge-danger','대형']:a>5000000?['badge-blue','일반']:a>0?['badge-gray','수의']:['badge-gray','미정']}
+/* 예시 데이터 — ?demo=1 일 때만 쓰인다. 저장 필드는 실서비스와 동일하게 code / outcome / *_at
+   _lag = 마지막 활동이 며칠 전인지 (부팅 시 lastAt 으로 환산 — 정체는 생성일이 아니라 활동일 기준) */
+var DEALS=[
+ {id:1,nm:'[하남] 미사강변풍경채',rep:'황윤선',code:'compete',gj:['방수','아스팔트 슁글'],amt:120000000,_lag:0,sub:'내일 PT · 경쟁 1개사',tl:[['8/22','PT 일정 협의 — 반응 좋음'],['8/12','견적 발송 (적산팀 경유)'],['7/18','첫 문의 접수']]},
+ {id:2,nm:'[의정부] 산들마을2단지',rep:'황윤선',code:'imminent',gj:['방수','슬라브(듀얼복합)'],amt:430000000,_lag:2,sub:'회장님 — 회의 날짜 확정 필요',tl:[['8/25','현장 실측 완료'],['8/10','컨설팅 자료 발송']]},
+ {id:3,nm:'[포천] 농협하나로 물류센터',rep:'이필선',code:'sent',gj:['방수','금속기와'],amt:80000000,_lag:3,sub:'발송 +3일 무응답',tl:[['8/27','견적서 발송']]},
+ {id:4,nm:'[수원] 세곡푸르지오',rep:'김성민',code:'sent',gj:['재도장','재도장(외부)'],amt:35000000,_lag:1,sub:'',tl:[['8/29','자료 발송']]},
+ {id:5,nm:'[용인] 신갈현대아파트',rep:'황윤선',code:'first_contact',gj:['방수','배수로'],amt:0,_lag:0,sub:'신규 배정 8/29',tl:[['8/29','배정 — 첫 전화 예정']]},
+ {id:6,nm:'[수원] 조원주공뉴타운2단지',rep:'황윤선',code:'rapport',gj:['지하주차장','에폭시'],amt:290000000,_lag:32,sub:'마지막 접촉 32일 전',tl:[['7/29','안부 통화 — 하반기 예산 논의']]},
+ {id:7,nm:'[성남] 백현한라비발디2차',rep:'한준엽',code:'silent',gj:['재도장','재도장(외부+부대)'],amt:70000000,_lag:18,sub:'',tl:[['8/12','현장 방문']]},
+ {id:8,nm:'[홍성] 홍성미성아파트',rep:'이필선',code:'contract',outcome:'won',won_amount:150000000,gj:['방수','슬라브(우레탄)'],amt:150000000,_lag:0,sub:'계약 완료 · 착공 대기',tl:[['8/20','계약 체결 1.5억']]},
+ {id:9,nm:'[강서] 강서힐스테이트',rep:'한준엽',code:'construction',outcome:'won',won_amount:150000000,gj:['지하주차장','유도방수'],amt:150000000,_lag:0,sub:'이번 주 현장 확인',tl:[['8/26','주간 현장 체크 정상']]},
+ {id:16,nm:'[시흥] 은계파크자이',rep:'조현식',code:'sent',gj:['방수','슬라브(PVC)'],amt:60000000,_lag:6,sub:'발송 +6일 무응답 — 확인 전화 필요',tl:[['8/25','컨설팅 자료 발송']]},
+ {id:13,nm:'[안양] 만안로얄아파트',rep:'조현식',code:'consulting',gj:['방수','에폭시'],amt:0,_lag:5,sub:'자료 작성 중 (7일 내 발송)',tl:[['8/26','니즈 파악 통화']]},
+ {id:14,nm:'[고양] 백송마을아파트',rep:'김성민',code:'completion',outcome:'won',won_amount:210000000,gj:['재도장','재도장(외부+부대)'],amt:210000000,_lag:1,sub:'준공 검사 대기',tl:[['8/30','준공 검사 일정 확정']]},
+ {id:15,nm:'[서울] 목동센트럴파크',rep:'정정훈',code:'bidding',gj:['지하주차장','유도방수'],amt:180000000,_lag:4,sub:'입찰 서류 제출 완료',tl:[['8/27','입찰 공고 지원']]},
+ {id:11,nm:'[평택] 보성청실아파트',rep:'정정훈',code:'waiting',gj:['재도장','재도장(외부)'],amt:0,_lag:190,sub:'반기 재접촉 대상',tl:[['2/20','대기 전환 — 반기 1회 확인']]},
+ {id:12,nm:'[부천] 로얄아파트',rep:'이필선',code:'silent',gj:['방수','에폭시'],amt:45000000,_lag:75,sub:'월 1회 동향 확인',tl:[['6/17','침묵 관리 전환']]},
+ {id:10,nm:'[속초] 청초대우아파트',rep:'황윤선',code:'expansion',outcome:'won',won_amount:0,gj:['방수','아스팔트 슁글'],amt:0,_lag:0,sub:'준공 +3주 — 확장 제안 타이밍',tl:[['8/8','준공 완료']]}
+];
+/* ── 딜 표준화: 어떤 경로로 들어와도 같은 필드를 갖게 한다 ──
+   code / outcome / stage_entered_at / last_activity_at / last_customer_contact_at / next_action */
+function isoNow(){return new Date().toISOString()}
+function daysAgoIso(n){return new Date(Date.now()-(n||0)*864e5).toISOString()}
+function normalizeDeal(d){
+ if(!STAGE_MASTER[d.code])d.code='first_contact';
+ fixPhase(d);
+ if(d.outcome==='won'&&!d.delivery)d.delivery={stage:d.code==='contract'?'contract_signed':d.code,at:d.won_at||d.stageAt};
+ if(d._lag!=null&&!d.lastAt){d.lastAt=daysAgoIso(d._lag);d.contactAt=daysAgoIso(d._lag)}
+ d.stageAt=d.stageAt||d.lastAt||isoNow();
+ d.lastAt=d.lastAt||d.stageAt;
+ d.activities=d.activities||[];
+ d.tl=d.tl||[];
+ d.postpone=d.postpone||0;
+ return d;
+}
+DEALS.forEach(normalizeDeal);
+/* 정체 = 마지막 활동 기준 경과일. 임계값은 STAGE_MASTER.sla 하나만 본다 (PC 와 동일) */
+function ageOf(d){var t=d.lastAt||d.stageAt;if(!t)return null;var n=Math.floor((Date.now()-new Date(t).getTime())/864e5);return isNaN(n)?null:Math.max(0,n)}
+function isStale(d){var a=ageOf(d);return isOpen(d)&&a!=null&&a>=stageSla(d.code)}
+function staleTxt(d){var a=ageOf(d);return a==null?'':a+'일 무변동'}
+/* ── Activity / Next Action — PC 와 같은 구조로 쌓는다 ── */
+function meId(){return G.user?G.user.id:null}
+function addActivity(d,type,note,result,contact){
+ var a={id:'act-'+Date.now()+'-'+Math.floor(Math.random()*1e4),opportunity_id:d.id,type:type,note:note||'',
+        result:result||'',occurred_at:isoNow(),actor_id:meId(),stage_code:d.code};
+ d.activities.push(a);d.lastAt=a.occurred_at;
+ if(contact)d.contactAt=a.occurred_at;                /* 고객과 실제 통화·미팅한 경우만 */
+ d.tl.unshift(['오늘',(note||type)+(result?' — '+result:'')]);
+ pushWrite('activity',{opportunity_id:d.id,type:type,note:note,result:result,occurred_at:a.occurred_at});
+ return a;
+}
+function setNextAction(d,type,text,plusDays){
+ var due=new Date(Date.now()+(plusDays||0)*864e5).toISOString().slice(0,10);
+ d.nextAction={id:'na-'+Date.now(),opportunity_id:d.id,type:type,text:text,due_at:due,
+               status:'open',owner_id:meId(),created_at:isoNow()};
+ pushWrite('next_action',{opportunity_id:d.id,type:type,text:text,due_at:due});
+ return d.nextAction;
+}
+function completeNextAction(d){if(d.nextAction){d.nextAction.status='done';d.nextAction.completed_at=isoNow();
+ pushWrite('next_action_complete',{opportunity_id:d.id,action_id:d.nextAction.id})}}
+function dueDays(d){if(!d.nextAction||d.nextAction.status!=='open')return null;
+ var t=new Date(d.nextAction.due_at+'T23:59:59').getTime();return Math.ceil((t-Date.now())/864e5)}
+/* ── 서버 쓰기 큐 — 구글시트가 아니라 PC 와 같은 CRM API 로 보낸다 ──
+   엔드포인트 준비 전에는 큐에 쌓이고 화면에 «서버 반영 대기 N건» 으로 보인다.
+   목업이라고 로컬에만 저장한 뒤 «기재 완료» 라고 말하지 않기 위함. */
+/* crm-write = PC와 같은 Supabase 로 들어가는 공통 쓰기 API (2026-09-01 개통).
+   ⚠ 지금은 관리자 키를 쿼리로 붙인다 — 서버 Auth(JWT) 로 옮기면 이 줄과 헤더만 바뀐다 */
+var WRITE_API='https://nfrnd.app.n8n.cloud/webhook/crm-write',WQ_KEY='nf_write_q_v1';
+/* 새로고침으로 큐가 날아가면 «완료» 라고 말한 기록이 사라진다 → localStorage 에 보관 */
+var WRITE_Q=(function(){try{return JSON.parse(localStorage.getItem(WQ_KEY)||'[]')}catch(e){return []}})();
+function saveQ(){try{localStorage.setItem(WQ_KEY,JSON.stringify(WRITE_Q.slice(-300)))}catch(e){}}
+var _wseq=0;
+/* write_id = 멱등키. 같은 요청이 두 번 도착해도 서버가 한 번만 처리하게 한다 */
+function newWriteId(){var d=new Date(),p=function(x,l){return String(x).padStart(l||2,'0')};
+ return 'W'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getTime()%1e6,6)+'-'+p(++_wseq,3)}
+function pushWrite(op,payload,localId){
+ WRITE_Q.push({write_id:newWriteId(),op:op,payload:payload,actor_id:meId(),local_id:localId||null,
+               opportunity_id:payload&&payload.opportunity_id||null,created_at:isoNow(),version:1,status:'pending'});
+ saveQ();flushWrites();updatePendingBadge();
+}
+/* 임시 id(new-/tmp-) → 서버 UUID 대응표. 새로고침해도 남아야 큐가 스스로 복구된다 */
+var ID_MAP=(function(){try{return JSON.parse(localStorage.getItem('nf_idmap_v1')||'{}')}catch(e){return {}}})();
+function saveMap(){try{localStorage.setItem('nf_idmap_v1',JSON.stringify(ID_MAP))}catch(e){}}
+function isTempId(v){return /^(new|tmp)-/.test(String(v||''))}
+var MAX_TRIES=5;
+function flushWrites(){
+ var busy={};   /* 같은 딜의 요청은 한 번에 하나만 — 생성보다 활동이 먼저 도착하는 것을 막는다 */
+ WRITE_Q.forEach(function(w){if(w.status==='sending')busy[w.opportunity_id||w.local_id||'_']=true});
+ WRITE_Q.filter(function(w){return w.status==='pending'}).forEach(function(w){
+  var oid=w.payload&&w.payload.opportunity_id;
+  /* 앞선 생성 요청이 끝나 서버 id 가 정해졌으면 지금이라도 갈아끼운다 */
+  if(isTempId(oid)&&ID_MAP[oid]){w.payload.opportunity_id=ID_MAP[oid];w.opportunity_id=ID_MAP[oid];oid=ID_MAP[oid]}
+  /* 아직 서버 id 를 모르는 건은 보내지 않는다 — 보내봐야 500 만 나고 재시도만 쌓인다 */
+  if(isTempId(oid))return;
+  var key=w.opportunity_id||w.local_id||'_';
+  if(busy[key])return;                       /* 같은 딜은 순서대로 */
+  busy[key]=true;w.status='sending';
+  fetch(WRITE_API,{method:'POST',headers:authHeaders({'Content-Type':'application/json'}),body:JSON.stringify(w)})
+   .then(function(r){return r.ok?r.json().catch(function(){return {ok:true}}):Promise.reject(new Error('HTTP '+r.status))})
+   .then(function(res){
+     w.status='done';w.acked_at=isoNow();
+     /* 서버가 새 딜을 만들면 진짜 opportunity_id 를 돌려준다 — 임시 id 를 즉시 교체 */
+     if(res&&res.new_opportunity_id&&(w.op==='opportunity_create'||w.op==='lead_create')){
+       var tmp=w.local_id,nid=res.new_opportunity_id;
+       if(tmp){ID_MAP[tmp]=nid;saveMap();
+         var d=DEALS.find(function(x){return x.id===tmp});
+         if(d){d.id=nid;if(G.deal===tmp)G.deal=nid}
+         WRITE_Q.forEach(function(q){if(q.payload&&q.payload.opportunity_id===tmp){q.payload.opportunity_id=nid;q.opportunity_id=nid}});
+       }
+     }
+     saveQ();updatePendingBadge();flushWrites();   /* 뒤에 밀려 있던 같은 딜 요청 이어서 */
+   })
+   .catch(function(){
+     w.tries=(w.tries||0)+1;
+     /* 무한 재시도 금지 — 상한을 넘기면 실패로 확정하고 사용자에게 보인다 */
+     w.status=w.tries>=MAX_TRIES?'failed':'pending';
+     saveQ();updatePendingBadge();
+   });
+ });
+}
+function pendingCount(){return WRITE_Q.filter(function(w){return w.status==='pending'||w.status==='sending'}).length}
+function failedCount(){return WRITE_Q.filter(function(w){return w.status==='failed'}).length}
+/* 실패로 확정된 건을 다시 보낸다 (배지 탭) */
+function retryFailed(){WRITE_Q.forEach(function(w){if(w.status==='failed'){w.status='pending';w.tries=0}});saveQ();flushWrites();updatePendingBadge();toast('재전송을 시도합니다')}
+/* 실패 요청이 pending 으로 멈춰있지 않게 30초 자동 재시도 + 온라인 복귀 시 즉시 재전송 */
+setInterval(function(){var st=false;WRITE_Q.forEach(function(w){if(w.status==='sending'){w.status='pending';st=true}});if(st)saveQ();flushWrites()},30000);
+window.addEventListener('online',function(){flushWrites()});
+function updatePendingBadge(){var el=document.getElementById('pendBadge');if(!el)return;
+ var n=pendingCount(),f=failedCount();
+ el.textContent=f?('전송 실패 '+f+'건 · 다시 시도'):(n?'서버 반영 대기 '+n+'건':'');
+ el.style.display=(n||f)?'':'none';
+ el.style.cursor=f?'pointer':'default';
+ el.onclick=f?retryFailed:null;}
+
+/* ── 실데이터 연동: PC와 같은 crm-api 번들 (n8n→Supabase) ──
+   성공 시 딜·파이프라인 집계가 실데이터로 교체됨. 실패 시 예시 데이터 유지. */
+var BUILD='2026-09-04';   /* 화면 하단·로그인에 표시 — 이 값이 오래됐으면 캐시된 옛 파일이다 */
+var LIVE=false,LOAD_ERR=null;
+var DEMO=/[?&]demo=1/.test(location.search);   /* 예시 데이터는 명시적으로 켤 때만 */
+/* 흐름도(flow)는 설계 확인용 문서다. 실제 사용자 라우트에 포함시키지 않는다.
+   ?debug=1 / ?preview=1 일 때만 목업 크롬과 flow 화면이 열린다. */
+var DEVVIEW=/[?&](debug|preview)=1/.test(location.search);
+/* 로그인 기억 — 새로고침해도 «오늘»로 바로 들어가려면 기기에 남겨야 한다 */
+var LAST_KEY='nf_last_user';
+function rememberUser(u){try{localStorage.setItem(LAST_KEY,JSON.stringify({nm:u.nm,role:u.role}))}catch(e){}}
+function recallUser(){try{var j=JSON.parse(localStorage.getItem(LAST_KEY)||'null');
+ if(!j||!j.nm)return null;
+ return (REPS||[]).filter(function(r){return r.nm===j.nm})[0]||null}catch(e){return null}}
+var CRM_API='https://nfrnd.app.n8n.cloud/webhook/crm-api';
+/* ══════════════════════════════════════════════════════════
+   로그인 (2026-09-02) — PC 와 «같은» 계정·같은 규칙
+
+     아이디   = 이름
+     비밀번호 = 본인 핸드폰 번호 전체
+
+   PIN 4자리 목업을 걷어냈다. 이제 서버가 실제로 검증한다.
+   로그인에 성공해도 public.users 에 등록된 사람이 아니면 들여보내지 않는다.
+
+   토큰은 crm-api / crm-write 호출에 함께 실어 보낸다 — 서버가 «누가 보냈는지»
+   알아야 웹훅 키 하나로 열려 있는 지금 상태를 끝낼 수 있다.
+   ══════════════════════════════════════════════════════════ */
+var SUPABASE_URL='https://ymfbmpnizxvqsamnczow.supabase.co';
+var SUPABASE_ANON='sb_publishable_Lrv2O_5Nr96a1HQF6n65zA_7OsqCz3X';
+var SB=null, TOKEN=null;
+/* 화면과 서버가 같은 표를 써야 한다 — PC 의 LOGIN_ID 와 글자까지 동일 */
+var LOGIN_ID={'황윤선':'hwangyunseon','이필선':'ipilseon','한준엽':'hanjunyeop',
+  '정정훈':'jeongjeonghun','김성민':'kimseongmin','이승우':'iseungwoo',
+  '송보람':'songboram','조현식':'johyeonsik','조재연':'jojaeyeon',
+  '주현진':'juhyeonjin','한인규':'haningyu','경남지사':'gyeongnam'};
+var LOGIN_DOMAIN='@crm.netform.co.kr';
+function loginEmailOf(nm){var k=String(nm||'').replace(/\s+/g,'');return LOGIN_ID[k]?LOGIN_ID[k]+LOGIN_DOMAIN:null}
+function authReady(){
+  if(SB||!window.supabase||!SUPABASE_ANON)return SB;
+  SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,
+      {auth:{persistSession:true,autoRefreshToken:true}});
+  return SB;
+}
+/* 앱을 열 때 이전 로그인이 살아 있으면 바로 들여보낸다 */
+async function authRestore(){
+  if(!authReady())return false;
+  var s=(await SB.auth.getSession()).data.session;
+  if(!s)return false;
+  return await authAdmit(s);
+}
+async function authAdmit(session){
+  var email=((session.user&&session.user.email)||'').toLowerCase();
+  var r=await SB.from('users').select('name,role,active').eq('email',email).maybeSingle();
+  if(r.error||!r.data||!r.data.active){
+    await SB.auth.signOut();
+    G.loginErr=r.error?('확인 실패: '+r.error.message)
+      :'등록된 담당자가 아니거나 사용이 중지된 계정입니다. 영업관리팀에 문의하세요.';
+    return false;
+  }
+  TOKEN=session.access_token;
+  G.user={nm:r.data.name,role:r.data.role,email:email};
+  G.mode=(r.data.role==='admin')?'admin':'rep';
+  G.loginErr=null;
+  return true;
+}
+async function doSignIn(){
+  if(!authReady()){G.loginErr='로그인 모듈을 불러오지 못했습니다. 통신 상태를 확인해 주세요.';return rLogin()}
+  var nm=(G.lgName||'').trim(), pw=(G.lgPw||'').replace(/[^0-9]/g,'');
+  if(!nm||!pw){G.loginErr='이름과 핸드폰 번호를 모두 입력해 주세요.';return rLogin()}
+  var em=loginEmailOf(nm);
+  if(!em){G.loginErr='등록되지 않은 이름입니다. 정확히 입력했는지 확인해 주세요.';return rLogin()}
+  G.lgBusy=true;rLogin();
+  var {data,error}=await SB.auth.signInWithPassword({email:em,password:pw});
+  G.lgBusy=false;
+  if(error){G.loginErr='이름 또는 핸드폰 번호가 맞지 않습니다.';return rLogin()}
+  if(await authAdmit(data.session)){
+    G.lgPw='';
+    loadLive();                                   /* 토큰이 생긴 지금 부른다 */
+    nav(G.mode==='admin'?'ctrl':'today');
+  } else rLogin();
+}
+function askSignOut(){if(confirm('로그아웃할까요?'))doSignOut()}
+async function doSignOut(){if(SB)await SB.auth.signOut();TOKEN=null;G.user=null;location.reload()}
+/* 서버 호출에 «누가 보냈는지» 를 실어 보낸다 */
+function authHeaders(base){
+  var h=base||{};
+  if(TOKEN)h['Authorization']='Bearer '+TOKEN;
+  return h;
+}
+var BUNDLE=null;   /* crm-api 원본 — 딜 외에 견적문의·응대 이력이 들어 있다 */
+/* 잔디 응대내용 파싱 — PC 와 «같은 규칙» 이어야 한다. 한쪽만 고치지 말 것.
+   실제 응대는 «라벨:값» 이 아니라 자유 서술이다(전체 389건 중 라벨형은 8건).
+   구조화 항목은 문의 원본(detail)에서 오고, 여기서는 노이즈만 걷어낸다. */
+var JMAP=[[/누구.*유입|유입\s*경로/,'유입경로'],[/어떤\s*공사|공사.*규모|공사\s*내용/,'공사내용'],
+  [/왜\s*공사|공사\s*사유|공사이유/,'공사사유'],[/요구\s*사항|요청\s*사항/,'요구사항'],
+  [/예산|금액/,'예산'],[/일정|시기|미팅\s*일자/,'일정'],
+  [/문의\s*담당자|고객\s*유형/,'고객유형'],[/준비\s*자료/,'준비자료']];
+var JNOISE=/^(?:[-=_·]{2,}|응대내용\s*등록|\[[^\]]*\]\s*응대내용\s*등록|전화응대\s*완료|응대\s*완료)$/;
+function parseJandi(body){var f=[],tail=[],title='';
+ String(body||'').split(/\r?\n/).forEach(function(ln){
+   var t=ln.trim();
+   if(!t||JNOISE.test(t))return;
+   var h=t.match(/^\[([^\]]{2,30})\]$/);   /* [1차 문의 파악] → 제목 */
+   if(h&&!title&&!tail.length&&!f.length){title=h[1].trim();return}
+   var m=t.match(/^([^:]{2,20}?)\s*:\s*(\S.*)$/),lb=null;
+   if(m){JMAP.forEach(function(r){if(!lb&&r[0].test(m[1]))lb=r[1]});
+     if(lb){f.push([lb,m[2].trim()]);return}}
+   tail.push(t)});
+ return {title:title,fields:f,tail:tail.join('\n')}}
+function jandiTime(s){
+ var m=String(s||'').match(/(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.\s*(AM|PM|오전|오후)?\s*(\d{1,2}):(\d{2})/);
+ if(!m)return '';var h=parseInt(m[5],10),ap=m[4]||'',p2=function(x){return String(x).length<2?'0'+x:''+x};
+ if(/PM|오후/.test(ap)&&h<12)h+=12; if(/(AM|오전)/.test(ap)&&h===12)h=0;
+ return m[1]+'-'+p2(m[2])+'-'+p2(m[3])+'T'+p2(h)+':'+m[6]}
+/* 이 딜과 같은 현장의 응대 기록 — 잔디·CRM·모바일·자동을 한 줄기로 (PC 와 동일)
+   출처는 배지로만 구분한다. 별도 영역으로 쪼개면 «어디를 봐야 하는지» 가 다시 생긴다. */
+function respOf(d){
+ var R=[],L=(BUNDLE&&BUNDLE.inquiries)||[];
+ var Q=L.filter(function(q){return (d.site_id&&q.site_id===d.site_id)||(q.site&&q.site===d.nm)});
+ Q.forEach(function(q){
+  (q.responses||[]).forEach(function(r){var pj=parseJandi(r.body);
+   R.push({at:jandiTime(r.at)||q.at,src:'jandi',ttl:pj.title||r.kind||'응대 기록',
+     who:q.responder||q.assignee||'',fields:pj.fields,body:pj.tail,st:q.status||''})});
+  var dt=q.detail||{};
+  R.push({at:q.at,src:'auto',ttl:'견적문의 접수',who:q.assignee||'미배정',
+   fields:[['유입경로',dt.inflow||dt.channel||''],['공사유형',dt.workType||''],
+     ['단지개요',dt.complex||''],['고객유형',dt.customerType||'']].filter(function(x){return x[1]}),
+   body:[dt.inquiry||'',dt.note||''].filter(Boolean).join('\n'),st:q.status||''});
+  if(q.assigned_at||dt.assignComment)R.push({at:q.assigned_at||q.at,src:'auto',ttl:'담당자 배정',
+   who:q.assignee||'',fields:[],body:dt.assignComment||'',st:''})});
+ (d.activities||[]).forEach(function(a){
+   R.push({at:a.at||a.occurred_at,src:(a.src==='mobile'?'mobile':'crm'),ttl:a.type||'활동',
+     who:a.actor||d.rep,fields:[],body:(a.note||'')+(a.result?' · '+a.result:''),st:''})});
+ /* 같은 시각·같은 내용은 하나로 (잔디↔CRM 중복 방지) */
+ var seen={},U=[];
+ R.forEach(function(x){var k=String(x.at||'').slice(0,16)+'|'+(x.body||'').slice(0,40);
+   if(seen[k])return;seen[k]=1;if(x.at||x.body||x.fields.length)U.push(x)});
+ return U.sort(function(a,b){return String(b.at||'').localeCompare(String(a.at||''))})}
+function fmtEok(s){return (s/1e8).toFixed(1).replace(/\.0$/,'')+'억'}
+/* 서버 stage 문자열 → STAGE_MASTER 코드. PC 와 같은 해석을 쓴다 */
+function codeOfServer(d){
+ if(STAGE_MASTER[d.code])return d.code;
+ var t=String(d.stage||d.status||'');
+ if(/확장/.test(t))return 'expansion';       if(/준공/.test(t))return 'completion';
+ if(/시공|착공/.test(t))return 'construction';if(/계약/.test(t))return 'contract';
+ if(/입찰/.test(t))return 'bidding';          if(/임박/.test(t))return 'imminent';
+ if(/경쟁|PT/.test(t))return 'compete';       if(/대기|보류/.test(t))return 'waiting';
+ if(/침묵/.test(t))return 'silent';           if(/유대/.test(t))return 'rapport';
+ if(/발송/.test(t))return 'sent';             if(/컨설팅|설계/.test(t))return 'consulting';
+ return 'first_contact';
+}
+function outcomeOfServer(d){
+ var t=String(d.stage||d.status||'')+' '+String(d.grp||'');
+ if(d.code==='won'||/수주\s*성공/.test(t))return 'won';
+ if(d.code==='lost'||/실주|수주\s*실패/.test(t))return 'lost';
+ if(d.code==='badfit'||/배드핏/.test(t))return 'badfit';
+ if(d.code==='nocontact'||/연락두절/.test(t))return 'nocontact';
+ return null;
+}
+function loadLive(){
+ /* 서버 필터가 준비되면 ?owner=me 로 바꾼다. 그 전까지는 받은 뒤 클라이언트에서 내 것만 남긴다 */
+ fetch(CRM_API,{cache:'no-store',headers:authHeaders({})}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(b){
+  BUNDLE=b;   /* 잔디 응대 이력을 딜 상세에서 쓰려면 원본이 필요하다 (PC 와 같은 데이터) */
+  var ds=[],seq=0;
+  (b.deals||[]).forEach(function(d){
+   var code=codeOfServer(d),oc=outcomeOfServer(d);
+   if(oc==='won'&&code==='won')code='contract';       /* 수주는 outcome, 단계는 계약 이후로 본다 */
+   /* P0 ⑦ : 종료돼도 «어느 단계에서 끝났는지» 를 덮어쓰지 않는다.
+      실주 분석("우리는 어느 단계에서 가장 많이 지는가")의 유일한 원천이다 */
+   if(oc&&!STAGE_MASTER[code])code='first_contact';
+   /* 서버가 code='lost' 처럼 결과만 준 경우 «어느 단계에서 끝났는지» 는 원본에 없다.
+      임의로 채우지 않고 미상으로 표시한다 — 단계별 실주 분석은 이 필드가 채워진 뒤부터 유효 */
+   var unk=(oc&&['won','lost','badfit','nocontact'].indexOf(code)>=0);
+   /* P0 ① : id 는 DB 가 만든다. 모바일이 새로 매기면 Write 가 엉뚱한 건에 붙는다 */
+   var oid=d.opportunity_id||d.id||d.deal_id||d.key||('tmp-'+(++seq));
+   ds.push(normalizeDeal({id:oid,server_id:d.opportunity_id||d.id||null,site_id:d.site_id||null,
+     nm:d.site||'(무명)',rep:d.assignee||'미배정',code:code,outcome:oc,stage_unknown:unk,
+     amt:d.amt||0,won_amount:oc==='won'?(d.amt||0):null,sub:d.brand||'',
+     /* 사업유형 3축 — PC 번들이 내려주는 값을 그대로 쓴다 (모바일이 새로 판단하지 않는다) */
+     originBusiness:d.originBusiness||d.brand||'',
+     currentBusiness:d.currentBusiness||d.brand||'',
+     businessHistory:d.businessHistory||[],
+     advisory:d.advisory||null,
+     lastAt:d.lastActivity||d.updated||d.modified||d.created||null,
+     stageAt:d.stageChangedAt||d.updated||d.created||null,
+     tl:[[String(d.created||'').slice(0,10),'등록 (릴레잇 이관)']]}));
+  });
+  if(!ds.length)throw new Error('빈 응답');
+  DEALS=ds;LIVE=true;LOAD_ERR=null;
+  rebuildAdmin();
+  toast('실데이터 연결됨 — 딜 '+ds.length+'건');
+  if(CUR!=='flow'&&CUR!=='login')render();
+ }).catch(function(e){
+  LOAD_ERR=String(e&&e.message||e);
+  /* 실서비스에서는 예시 데이터로 조용히 넘어가지 않는다 — 잠금 화면을 띄운다 */
+  if(!DEMO){DEALS=[];LIVE=false;if(CUR!=='flow'&&CUR!=='login')render()}
+ });
+}
+/* 관리자 화면 집계도 실데이터에서 계산 (하드코딩 제거) */
+function rebuildAdmin(){
+ var open=DEALS.filter(isOpen),tA=0;open.forEach(function(d){tA+=d.amt||0});
+ /* P0 ④ : 가짜 숫자를 실데이터처럼 보여주지 않는다. 아직 못 받는 값은 «수집 중» */
+ var noNext=open.filter(function(d){return !d.nextAction}).length;
+ var overdue=open.filter(function(d){var v=dueDays(d);return v!=null&&v<0}).length;
+ var staleN=open.filter(isStale).length;
+ var loadMap={};open.forEach(function(d){loadMap[d.rep]=(loadMap[d.rep]||0)+1});
+ var avg=Object.keys(loadMap).length?open.length/Object.keys(loadMap).length:0;
+ var heavy=Object.keys(loadMap).filter(function(r){return loadMap[r]>avg*1.5});
+ ADMIN.sig=[{k:'assign',l:'미배정',v:'수집 중',c:'gr'},          /* 문의(Inquiry)는 아직 이 앱이 안 받는다 */
+            {k:'due',l:'기한초과',v:overdue+'건',c:overdue?'r':'g'},
+            {k:'load',l:'부하 과다',v:heavy.length+'명',c:heavy.length?'y':'g'},
+            {k:'inflow',l:'정체',v:staleN+'건',c:staleN?'y':'g'}];
+ ADMIN.assign=[];
+ ADMIN.due=Object.keys(loadMap).map(function(r){var L=open.filter(function(d){return d.rep===r&&(function(v){return v!=null&&v<0})(dueDays(d))});
+   return {nm:r,ps:'기한초과 '+L.length+'건'}}).filter(function(x){return /[1-9]/.test(x.ps)}).sort(function(a,b){return parseInt(b.ps.replace(/\D/g,''))-parseInt(a.ps.replace(/\D/g,''))});
+ ADMIN.load=heavy.map(function(r){return {nm:r,ps:'진행 '+loadMap[r]+'건 — 팀 평균 '+Math.round(avg)+'건'}});
+ ADMIN.inflow=[{nm:'유입 집계',ps:'견적문의 API 연동 후 표시 — 수집 중'}];
+ ADMIN.noNext=noNext;
+ ADMIN.pipe=MACRO5.map(function(g){
+  var L=open.filter(function(d){return macroOf(d.code)===g.k}),amt=0;L.forEach(function(d){amt+=d.amt||0});
+  var m=L.filter(isStale).length;
+  return [g.nm,L.length,fmtEok(amt),m?'정체 '+m:''];
+ });
+ ADMIN.pipe_closed=[
+  ['won','수주 성공',DEALS.filter(function(d){return d.outcome==='won'}).length,'—'],
+  ['lost','수주 실패',DEALS.filter(function(d){return d.outcome==='lost'}).length,'—'],
+  ['badfit','배드핏',DEALS.filter(function(d){return d.outcome==='badfit'}).length,'—'],
+  ['nocontact','연락두절',DEALS.filter(function(d){return d.outcome==='nocontact'}).length,'—']];
+ var byRep={};open.forEach(function(d){byRep[d.rep]=(byRep[d.rep]||0)+(d.amt||0)*forecastProbability(d.code)});
+ ADMIN.rank=Object.keys(byRep).sort(function(a,b){return byRep[b]-byRep[a]}).slice(0,6)
+   .map(function(r){return [r,fmtEok(byRep[r])]});
+ G.pipeTitle='파이프라인 · '+open.length+'건 · '+fmtEok(tA);
+}
+
+/* ══════════════════════════════════════════════════════════
+   주기 재조회 — PC 와 모바일이 «같은 사실» 을 보게 (2026-09-02)
+
+   한쪽에서 바꾼 것이 다른 열린 화면에 «즉시» 뜨지는 않는다.
+   그건 Supabase Realtime 을 붙여야 한다. 지금은 정직하게 재조회다:
+     ① 60초마다 (화면이 보일 때만 — 숨은 탭은 서버를 두드리지 않는다)
+     ② 다른 창에 갔다 돌아왔을 때 즉시
+   상세·입력 중일 때는 건너뛴다 — 쓰던 폼이 날아가면 안 된다.
+   ══════════════════════════════════════════════════════════ */
+var SYNC_MS=60000;
+function syncBusy(){
+  var a=document.activeElement;
+  if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return true;   /* 입력 중 */
+  if(typeof SR_ACTIVE!=='undefined'&&SR_ACTIVE)return true;        /* 음성 녹음 중 */
+  if(typeof MSR_ON!=='undefined'&&MSR_ON)return true;
+  return false;
+}
+function syncNow(){
+  if(document.hidden||syncBusy())return;
+  if(G.deal||G.sub)return;                       /* 딜 상세·시트를 보고 있으면 건너뛴다 */
+  if(document.getElementById('sheetwrap').classList.contains('open'))return;
+  loadLive();
+}
+setInterval(syncNow,SYNC_MS);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)syncNow()});
+window.addEventListener('focus',syncNow);
+
+loadLive();
+/* ── 오늘 할 일 — 고정 배열이 아니라 내 딜 + Next Action + 기한 + 우선순위에서 계산 ──
+   순서: 1 기한초과 → 2 오늘 마감 → 3 미응대 → 4 PT/입찰/계약 임박 → 5 다음 행동 없음 → 6 장기정체
+   (서버 /v1/mobile/today 가 생기면 이 함수를 그 응답으로 교체한다) */
+function buildToday(){
+ var out=[];
+ myDeals().filter(isOpen).forEach(function(d){
+  var dd=dueDays(d),a=ageOf(d),code=d.code,r=null;
+  if(dd!=null&&dd<0)          r={p:1,why:'기한 '+Math.abs(dd)+'일 초과',urgent:1};
+  else if(dd===0)             r={p:2,why:'오늘 마감',urgent:1};
+  else if(code==='first_contact'&&!d.activities.length) r={p:3,why:'새로 배정 — 첫 응대',urgent:1};
+  else if(['compete','imminent','bidding','contract'].indexOf(code)>=0&&(dd==null||dd<=7))
+                              r={p:4,why:stageLabel(code)+' — 챙길 것',urgent:0};
+  else if(!d.nextAction)      r={p:5,why:'다음 행동 없음',urgent:0};
+  else if(isStale(d))         r={p:6,why:staleTxt(d),urgent:0};
+  if(r)out.push({ref:d.id,action_id:(d.nextAction&&d.nextAction.id)||'',p:r.p,why:r.why,urgent:r.urgent,nm:d.nm,
+    sub:amtTxt(d.amt)+' · '+stageLabel(d.code),call:['construction','completion','expansion'].indexOf(code)<0});
+ });
+ return out.sort(function(x,y){return x.p-y.p}).slice(0,12);
+}
+var ADMIN={
+ sig:[],   /* 실데이터에서 계산 — rebuildAdmin() 참조. 없는 값은 «수집 중» 으로 표시한다 */
+ assign:[{nm:'[안양] 두산위브',ps:'12일째 · 석민이앤씨',rec:'송보람',gj:'방수 · 금속기와'},{nm:'[인천] 신동아아파트',ps:'23일째 · POUR솔루션',rec:'김성민',gj:'재도장 · 재도장(외부)',dup:'2025.11 실주(가격) 이력 1건 — 같은 현장 추정'}],
+ due:[{nm:'이필선',ps:'초과 72건 · 최장 +248일'},{nm:'한준엽',ps:'초과 54건'},{nm:'황윤선',ps:'초과 55건'}],
+ load:[{nm:'이필선',ps:'진행 72건 — 팀 평균 2배'},{nm:'한준엽',ps:'진행 54건'}],
+ inflow:[{nm:'석민이앤씨',ps:'유입 6건'},{nm:'POUR솔루션',ps:'유입 27건'},{nm:'POUR공법',ps:'유입 13건'},{nm:'아파트스퀘어',ps:'유입 7건'}],
+ pipe:[],   /* 실데이터에서 rebuildAdmin() 이 채운다 — 예시 숫자를 실적처럼 보여주지 않는다 */
+ pipe_closed:[['won','수주 성공',149,'73.9억'],['lost','수주 실패',197,'—'],['badfit','기타 (정리 필요)',24,'—']],
+ rank:[['이필선','29.2억'],['황윤선','19.5억'],['한준엽','14.9억'],['정정훈','4.1억']]
+};
+/* 견적문의 배정건 응대 초과 (예시) — 상태별 폴백(발송3·방문5·응대7·보류14일) 기준 초과 */
+var INQS=[
+ {rep:'이필선',nm:'[부천] 중동은하마을',st:'배정완료 · 미응대',over:2,gj:'방수 · 아스팔트 슁글'},
+ {rep:'이필선',nm:'[인천] 부평현대아파트',st:'견적서 발송예정',over:4,gj:'재도장 · 재도장(외부)'},
+ {rep:'한준엽',nm:'[김포] 사우아이파크',st:'전화응대 완료',over:9,gj:'방수 · 금속기와'},
+ {rep:'황윤선',nm:'[수원] 정자동중앙하이츠',st:'현장방문예정',over:3,gj:'지하주차장 · 에폭시'}
+];
+
+/* ── 상태 ── */
+var G={user:null,mode:'rep',tab:'today',pin:'',sel:null,done:{},deal:null,drill:null,stage:null,sub:null,filt:'all',amtVal:'',_og:{}};
+/* ── JSON 이벤트 로그: 모든 기재가 구조화 JSON으로 쌓임 → 구글시트 적재 ── */
+var LOG=[];
+/* ⚠ 저장의 정본은 Supabase(CRM API) 다 — 위 WRITE_Q 가 그 경로.
+   구글시트는 «감사 로그 백업/내보내기» 용도로만 남긴다. 여기로 먼저 쓰면 PC와 이중관리가 된다. */
+var SAVE_PATH={type:'google_sheets_backup_only',doc_id:'1dMhCSzniLwYwRvvto9tECNNOP4-bbojfz84yWEBSlVo',sheet:'앱기재로그'};
+function logEv(type,data){
+ var e={ts:new Date().toISOString(),rep:G.user?G.user.nm:'',type:type};
+ for(var k in data)e[k]=data[k];
+ LOG.push(e);
+}
+function exportJSON(){
+ return JSON.stringify({exported_at:new Date().toISOString(),source:'영업관리 앱 v2 목업',
+  save_path:SAVE_PATH,event_count:LOG.length,events:LOG,
+  deals:DEALS.map(function(d){return {opportunity_id:d.id,name:d.nm,owner:d.rep,stage_code:d.code,stage_name:stageLabel(d.code),outcome:d.outcome||null,close_reason:d.close_reason||null,amount:d.amt,won_amount:d.won_amount||null,gj_major:d.gj?d.gj[0]:null,gj_minor:d.gj?d.gj[1]:null,last_activity_at:d.lastAt,stage_entered_at:d.stageAt,stale_days:ageOf(d),next_action:d.nextAction||null,activities:d.activities,timeline:d.tl}})
+ },null,2);
+}
+/* 담당자 부하 (배정 추천용 예시) */
+/* 부하는 실데이터(진행 중인 영업 건 수)에서 계산한다 — 하드코딩 표를 쓰면 추천이 거짓말이 된다 */
+function repLoad(){var m={};REPS.forEach(function(r){m[r.nm]=0});
+ DEALS.filter(isOpen).forEach(function(d){m[d.rep]=(m[d.rep]||0)+1});return m}
+/* 공종 체계 — 릴레잇 실데이터 추출 (2026-08-31, 딜 754건 기재 기준)
+   대분류: 방수380 · 지하주차장148 · 재도장125 · 균열보수69 · 기타26 */
+var GJ={
+ '방수':['아스팔트 슁글','금속기와','배수로','슬라브(듀얼복합)','슬라브(우레탄)','슬라브(PVC)','에폭시','기타'],
+ '지하주차장':['에폭시','유도방수','배면차수','재도장(내부)'],
+ '재도장':['재도장(외부)','재도장(외부+부대)','재도장(외부+내부)','재도장(외부+내부+부대)','재도장(내부)'],
+ '균열보수':['균열보수','재도장(외부) 동반','기타'],
+ '기타':['아스콘','보도블럭','기타']
+};
+var scr=document.getElementById('scr'),tabbar=document.getElementById('tabbar');
+function esc(s){return String(s==null?'':s).replace(/</g,'&lt;').replace(/"/g,'&quot;')}
+/* HTML 속성값 전용 — id 를 onclick 안에 문자열로 끼워 넣으면 따옴표 때문에 속성이 잘린다.
+   그래서 값은 data-* 로 넘기고 핸들러는 this.dataset 으로 읽는다 */
+function escAttr(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._m);t._m=setTimeout(function(){t.classList.remove('show')},2200)}
+function amtTxt(a){return a>=100000000?(a/1e8).toFixed(1).replace(/\.0$/,'')+'억':a>0?Math.round(a/1e6)/10+'천만':'금액 미정'}
+
+/* ── 화면전환 ── */
+var CUR='flow';
+/* 화면전환 바(목업)용 — 실데이터에서도 항상 존재하는 딜을 하나 고른다.
+   예전에는 G.deal=1 처럼 예시 id 를 박아둬서 실데이터에서는 화면이 열리지 않았다 */
+function pickSampleDeal(){
+ var mine=myDeals().filter(isOpen);
+ return mine[0]||myDeals()[0]||DEALS.filter(isOpen)[0]||DEALS[0]||null;
+}
+function nav(v){
+ if(v==='flow'&&!DEVVIEW)v=G.user?'today':'login';   /* 실서비스에 흐름도 라우트는 없다 */
+ CUR=v;
+ document.querySelectorAll('.mock-nav button').forEach(function(b){b.dataset.on=b.dataset.v===v?'1':'0'});
+ var flow=v==='flow';
+ document.getElementById('flowwrap').classList.toggle('on',flow);
+ document.getElementById('stage').style.display=flow?'none':'flex';
+ if(flow)return;
+ closeSheet();
+ G.sub=null;G.drill=null; /* 화면 점프 시 서브 화면·드릴 상태 초기화 */
+ if(v==='login'){G.user=null;G.pin='';G.sel=null;return render()}
+ /* 목업은 아무 화면이나 바로 열어보라고 REPS[0] 으로 자동 로그인한다.
+    실서비스에서 그러면 로그인을 건너뛰게 되므로 로그인으로 되돌린다. */
+ if(!G.user){if(!DEVVIEW)return nav('login');G.user=REPS[0];G.mode='rep'}
+ if(v==='today'){G.mode='rep';G.tab='today';G.deal=null;render()}
+ else if(v==='sheet'){G.mode='rep';G.tab='today';G.deal=null;render();var TD=G._today||[];var i=-1;for(var k=0;k<TD.length;k++){if(TD[k].call&&!isDone(TD[k])){i=k;break}}if(i<0)i=0;if(TD.length)callFlow(i)}
+ else if(v==='mine'){G.mode='rep';G.tab='mine';G.deal=null;render()}
+ else if(v==='deal'){G.mode='rep';G.tab='mine';var _d=pickSampleDeal();G.deal=_d?_d.id:null;render()}
+ else if(v==='won'){G.mode='rep';G.tab='mine';renderWonDemo()}
+ else if(v==='my'){G.mode='rep';G.tab='my';G.deal=null;render()}
+ else if(v==='ctrl'){G.mode='admin';G.tab='ctrl';G.deal=null;G.drill=null;G.stage=null;render()}
+ else if(v==='pipe'){G.mode='admin';G.tab='pipe';G.deal=null;G.drill=null;G.stage=null;render()}
+ else if(v==='perf'){G.mode='admin';G.tab='perf';G.deal=null;G.drill=null;G.stage=null;render()}
+}
+
+/* ── 1 로그인 ── */
+function rLogin(){
+ tabbar.innerHTML='';
+ var busy=G.lgBusy?' disabled':'';
+ scr.innerHTML='<div class="login fadein"><div class="emblem"><div class="hex"></div></div>'
+ +'<h2>영업관리</h2><div class="s">이름과 <b>본인 핸드폰 번호</b>로 로그인하세요<br>주소는 하나 — 화면은 역할이 정합니다</div>'
+ +'<div style="width:100%;margin-top:20px;text-align:left">'
+ +'<div class="hint" style="margin-bottom:6px">이름</div>'
+ +'<input id="lg-nm" value="'+escAttr(G.lgName||'')+'" oninput="G.lgName=this.value" placeholder="예: 황윤선" autocomplete="username"'
+ +' style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:14px;font:inherit;font-size:16px;outline:none;box-sizing:border-box">'
+ +'<div class="hint" style="margin:14px 0 6px">핸드폰 번호</div>'
+ +'<input id="lg-pw" type="password" inputmode="numeric" value="'+escAttr(G.lgPw||'')+'" oninput="G.lgPw=this.value"'
+ +' onkeydown="if(event.key===\'Enter\')doSignIn()" placeholder="01012345678" autocomplete="current-password"'
+ +' style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:14px;font:inherit;font-size:16px;outline:none;box-sizing:border-box"></div>'
+ +(G.loginErr?'<div class="card tight" style="background:var(--danger-bg);border-color:transparent;margin-top:12px;padding:12px 14px"><div class="hint" style="color:#c22f3c">'+esc(G.loginErr)+'</div></div>':'')
+ +'<button class="btn btn-primary" style="margin-top:16px"'+busy+' onclick="doSignIn()">'+(G.lgBusy?'확인 중…':'로그인하기')+'</button>'
+ +'<div class="remember">비밀번호는 본인 핸드폰 번호입니다. 로그인이 안 되면 영업관리팀에 문의하세요.</div>'
+ +'<div class="remember" style="font-size:10px;color:var(--sub2)">빌드 '+BUILD+(LIVE?' · 실데이터 '+DEALS.length+'건':'')+'</div></div>';
+}
+/* PIN 목업은 폐기 — 서버 인증으로 대체됨 (2026-09-02) */
+function pickRep(i){G.sel=i;rLogin()}
+function pinKey(k){if(k==='⌫')G.pin=G.pin.slice(0,-1);else if(G.pin.length<4)G.pin+=k;rLogin()}
+/* ⚠ 서버 Auth 전까지의 임시 처리. Production 에서는
+   POST /v1/auth/login → JWT → user_id·role 을 서버가 내려주고, 모든 조회에 토큰을 실어야 한다. */
+function doLogin(){
+ /* PIN 목업은 폐기됐다 — 서버 인증(doSignIn)만 유효하다.
+    이 함수를 남겨두면 인증을 우회하는 통로가 되므로 실제로 막는다. */
+ return toast('이름과 핸드폰 번호로 로그인해 주세요');
+ if(G.sel==null||G.pin.length!==4)return toast('담당자와 PIN 4자리를 입력해 주세요');
+ G.user=REPS[G.sel];G.last=G.user;rememberUser(G.user);G.pin='';
+ /* 담당자·겸직(dual)은 항상 «오늘» 로 시작한다 — 관리 화면은 상단 토글로 전환.
+    관리 전담(admin) 계정만 관제로 (그 역할엔 오늘 탭 자체가 없음) */
+ G.mode=G.user.role==='admin'?'admin':'rep';
+ nav(G.mode==='admin'?'ctrl':'today');
+}
+/* 내 건 = 로그인한 사람의 건. 관리자가 특정 담당자를 열람할 때는 who 로 지정 */
+function myDeals(who){
+ var nm=who||(G.user?G.user.nm:null);
+ if(!nm)return [];
+ if(!who&&G.mode==='admin')return DEALS;          /* 관리자 모드는 전체 열람 */
+ return DEALS.filter(function(d){return d.rep===nm});
+}
+
+/* ── 공통 렌더 ── */
+/* 서버에서 못 받아왔는데 예시 현장을 진짜인 것처럼 보여주면 안 된다 — 조회·수정을 잠근다 */
+function rLocked(){
+ tabbar.innerHTML='';
+ scr.innerHTML='<div class="done-wrap fadein"><div class="done-ring" style="font-size:30px;background:var(--danger-bg);color:var(--danger)">!</div>'
+ +'<h2>서버 연결 실패</h2><p>최신 데이터를 확인할 수 없어 조회·수정이 잠겼습니다.<br><span style="font-size:11px;color:var(--sub-2)">'+esc(LOAD_ERR||'네트워크 오류')+'</span></p>'
+ +'<button class="btn btn-primary" style="margin-top:16px" onclick="LOAD_ERR=null;loadLive();toast(\'다시 시도 중…\')">다시 시도</button>'
+ +'<div class="hint" style="margin-top:10px">예시 데이터로 화면만 둘러보려면 주소 끝에 <b>?demo=1</b> 을 붙이세요</div></div>';
+}
+function render(){
+ if(!G.user)return rLogin();
+ if(!LIVE&&!DEMO)return rLocked();
+ var tabs=G.mode==='admin'
+  ?[['ctrl',IC.siren,'관제'],['pipe',IC.chart,'파이프라인'],['perf',IC.user,'실적'],['rpt',IC.doc,'리포트']]
+  :[['today',IC.sun,'오늘'],['mine',IC.folder,'내 건'],['find',IC.plus,'+ 영업'],['my',IC.chart,'내 실적']];
+ tabbar.innerHTML=tabs.map(function(t){return '<button class="'+(G.tab===t[0]?'on':'')+'" onclick="G.tab=\''+t[0]+'\';G.deal=null;G.drill=null;G.stage=null;G.sub=null;render()">'+t[1]+'<span class="tl2">'+t[2]+'</span></button>'}).join('');
+ var head='<div class="home-bar"><div class="brand"><span class="mark">N</span>영업관리</div><div class="rgt">'
+  +'<button class="iconbtn" style="width:34px;height:34px" aria-label="알림함" onclick="G.sub={t:\'noti\'};render()">'+IC.bell+'</button>'
+  +(G.user.role==='dual'?'<div class="seg" style="padding:3px"><button class="'+(G.mode==='rep'?'on':'')+'" style="padding:5px 11px;font-size:11.5px" onclick="switchMode(\'rep\')">내 영업</button><button class="'+(G.mode==='admin'?'on':'')+'" style="padding:5px 11px;font-size:11.5px" onclick="switchMode(\'admin\')">관리</button></div>':'')
+  +'<button class="badge badge-gray" onclick="askSignOut()">'+esc(G.user.nm)+' ⏻</button>'
+  +'<span class="badge badge-danger" id="pendBadge" style="display:none"></span>'
+  +(DEMO&&!LIVE?'<span class="badge badge-gray">예시 데이터</span>':'')+'</div></div>';
+ if(G.deal!=null)return rDeal();
+ if(G.sub)return rSub(head);
+ ({today:rToday,mine:rMine,find:rProspect,my:rMy,ctrl:rCtrl,pipe:rPipe,perf:rPerf,rpt:rRpt})[G.tab](head);
+}
+function switchMode(m){G.mode=m;G.tab=m==='admin'?'ctrl':'today';G.deal=null;G.drill=null;G.stage=null;render()}
+
+/* ── 2 오늘 ── */
+function rToday(head){
+ var TODAY=buildToday();                       /* 고정 배열 제거 — 매번 내 딜에서 계산 */
+ G._today=TODAY;
+ if(!TODAY.length){scr.innerHTML=head+'<div class="body fadein"><div class="done-wrap"><div class="done-ring">'+IC.check+'</div><h2>오늘 챙길 게 없어요</h2><p>기한 지난 건·다음 행동 없는 건이 하나도 없습니다</p></div></div>';return}
+ var doneN=TODAY.filter(isDone).length,left=Math.max(0,TODAY.length-doneN),pct=Math.round(doneN/TODAY.length*100);
+ var rows=TODAY.map(function(t,i){
+  var done=doneLabel(t);
+  var tl=done?tile(IC.check,'var(--sub-2)','var(--bg)')
+   :t.urgent?tile(IC.siren,'var(--danger)','var(--danger-bg)')
+   :t.call?tile(IC.phone,'var(--blue)','var(--blue-50)')
+   :tile(IC.check,'var(--ok)','var(--ok-bg)');
+  var right=done?'<span class="callbtn done">'+IC.check+'</span>'
+   :t.call?'<button class="callbtn" onclick="event.stopPropagation();callFlow('+i+')" aria-label="전화">'+IC.phone+'</button>'
+   :'<span class="minis"><button class="mini ok" onclick="event.stopPropagation();quick('+i+',\'확인 완료\')">확인</button><button class="mini skip" onclick="event.stopPropagation();skipSheet('+i+')">넘기기</button></span>';
+  return '<div class="lrow '+(done?'dim':'')+'" data-id="'+escAttr(t.ref)+'" onclick="G.deal=this.dataset.id;G.tab=\'mine\';render()">'+tl
+   +'<span class="meta"><span class="w '+(t.urgent&&!done?'':'soft')+'">'+esc(done||t.why)+'</span><span class="t">'+esc(t.nm)+'</span><span class="s">'+esc(t.sub)+'</span></span>'+right+'</div>';
+ }).join('');
+ scr.innerHTML=head+'<div class="body fadein">'
+ +'<div class="banner"><span class="glow"></span><div class="eyebrow">'+(left?new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'long'}):'수고했어요')+'</div><h3>'+(left?'오늘 몫 '+TODAY.length+'건 중\n<span style="opacity:.95">'+left+'건 남았어요</span>':'오늘 다 끝났어요 🎉')+'</h3><p>기한초과 → 오늘마감 → 미응대 순으로 정렬했어요</p><div class="bprog"><i style="width:'+pct+'%"></i></div></div>'
+ +'<div class="card tight">'+rows+'</div>'
+ +(left===0?'<div class="done-wrap" style="min-height:auto;padding:16px"><div class="done-ring" style="width:64px;height:64px">'+IC.check+'</div><h2 style="font-size:17px">기재는 자동으로 됐어요</h2><p>내일 몫은 아침 9시에 알려드릴게요</p></div>':'')
+ +'</div>';
+}
+function todayDeal(i){var t=(G._today||[])[i];return t?DEALS.find(function(x){return x.id===t.ref}):null}
+/* 완료 표시는 순번이 아니라 건 자체에 붙인다 — Today 는 매번 다시 계산되므로 순번은 다른 건으로 밀린다 */
+function doneKey(t){return t?('k:'+t.ref+'|'+new Date().toISOString().slice(0,10)):''}
+function isDone(t){return !!G.done[doneKey(t)]}
+/* 화면에는 «무슨 결과로 처리했는지» 문구를 보여준다 (boolean 을 그대로 쓰면 true 가 찍힘) */
+function doneLabel(t){var v=G.done[doneKey(t)];return typeof v==='string'?v:(v?'처리 완료':'')}
+function markDone(i,label){var t=(G._today||[])[i];if(t)G.done[doneKey(t)]=label}
+function quick(i,label){
+ var d=todayDeal(i);if(d){completeNextAction(d);addActivity(d,'확인',label,'',false);setNextAction(d,'후속확인','다음 확인',7)}
+ markDone(i,label);toast('확인 기록 · 다음 확인 7일 뒤로 예약');render();
+}
+
+/* ── 3 결과 기재 시트 ── */
+function openSheet(introHtml,body){
+ document.getElementById('sheetcard').innerHTML='<div class="sheet-grip"></div>'+introHtml+body;
+ document.getElementById('sheetwrap').classList.add('open');
+}
+function closeSheet(){document.getElementById('sheetwrap').classList.remove('open')}
+function intro(bg,fg,icon,t,d){return '<div class="intro" style="background:'+bg+';color:'+fg+'"><span class="iic" style="color:'+fg+'">'+icon+'</span><div><div class="t">'+t+'</div><div class="d">'+d+'</div></div></div><div style="height:12px"></div>'}
+function callFlow(i){
+ var t=(G._today||[])[i];if(!t)return;
+ openSheet(intro('var(--blue-50)','var(--blue-dark)',IC.phone,esc(t.nm),'통화 끝나셨죠? 결과만 골라주세요 — 활동·다음 약속이 함께 기록됩니다'),
+  [['g','check','진행됨 — 다음 잡음'],['y','clock','다음주 다시'],['gr','phone','못 받으심 (내일 재시도)']].map(function(c){
+   return '<button class="cchip '+c[0]+'" onclick="pickToday('+i+',\''+c[2]+'\')"><span class="cic">'+IC[c[1]]+'</span>'+c[2]+'</button>'}).join('')
+  +'<div class="voice">'+IC.mic+' 남길 말 있으면 길게 눌러 말하기 (선택)</div>');
+}
+/* 결과 칩 = 화면은 한 번 터치, 뒤에서는 Activity + Next Action + 기한이 정확히 쌓인다.
+   Stage 는 여기서 바꾸지 않는다 (단계 이동은 딜 상세의 [다음으로]) */
+function pickToday(i,label){
+ var d=todayDeal(i);
+ if(d){
+  completeNextAction(d);
+  if(label.indexOf('진행')>=0){addActivity(d,'전화','통화 — 진행됨','다음 일정 협의',true);setNextAction(d,'후속확인','통화 후속 확인',3)}
+  else if(label.indexOf('다음주')>=0){d.postpone++;addActivity(d,'전화','고객 요청으로 후속 연기','재연락 요청 (연기 '+d.postpone+'회)',true);setNextAction(d,'재연락','고객 요청 재연락',7)}
+  else{addActivity(d,'부재','전화 부재 — 못 받으심','',false);setNextAction(d,'재통화','재통화 시도',1)}
+ }
+ markDone(i,label);closeSheet();
+ toast(label.indexOf('못 받')>=0?'부재 기록 · 내일 재통화 예약':'활동 기록 · 다음 행동 예약 완료');
+ render();
+}
+
+/* ── 4 내 건 ── */
+function fdeal(d){return G.filt==='all'?true:G.filt==='stale'?isStale(d):tagOf(d.amt)[1]==={L:'대형',M:'일반',S:'수의'}[G.filt]}
+function rMine(head,readonlyRep){
+ /* ★ 내 건 = 내 건. 로그인 사용자(또는 관리자가 지정한 담당자)의 딜만 본다.
+    서버 필터가 준비되면 GET /v1/opportunities?owner=me 로 대체한다 */
+ var all=myDeals(readonlyRep);
+ /* 사업유형 필터 — 기술자문으로 전환된 뒤에도 어느 사업인지 바로 구분되게 (칸반을 따로 만들지 않는다) */
+ if(G.bizF&&G.bizF!=='전체')all=all.filter(function(d){return bizOf(d)===G.bizF});
+ var mine=all.filter(isOpen);                          /* 영업 파이프라인 (수주 전) */
+ var deliv=all.filter(inDelivery);                     /* 수주 후 이행 — 계약·시공·준공 */
+ var body=MACRO5.filter(function(g){return g.k!=='con'}).map(function(g,gi){
+  var list=mine.filter(function(d){return macroOf(d.code)===g.k}).filter(readonlyRep?function(){return true}:fdeal);
+  if(!list.length)return '';
+  var key='g'+gi, open=G._og[key]!==false;
+  return '<div class="card tight" style="padding:2px 16px"><button class="lrow" onclick="tgGrp(\''+key+'\')">'+tile(IC.folder,'var(--blue)','var(--blue-50)')
+   +'<span class="meta"><span class="t">'+g.nm+'</span><span class="s">'+list.length+'건</span></span><span class="chev" style="transform:rotate('+(open?90:0)+'deg)">'+IC.chev+'</span></button>'
+   +(open?list.map(function(d){var tg=tagOf(d.amt);return '<button class="lrow" style="padding-left:14px" data-id="'+escAttr(d.id)+'" onclick="G.deal=this.dataset.id;render()"><span class="meta"><span class="t">'+esc(d.nm)+(isStale(d)?' <span class="kwarn">'+staleTxt(d)+'</span>':'')+'</span><span class="s">'+bizShort(bizOf(d))+' · '+stageLabel(d.code)+' · '+amtTxt(d.amt)+(bizOrigin(d)!==bizOf(d)?' <span style="color:#B45309">('+bizShort(bizOrigin(d))+'→'+bizShort(bizOf(d))+')</span>':'')+'</span></span><span class="badge '+tg[0]+'">'+tg[1]+'</span><span class="chev">'+IC.chev+'</span></button>'}).join(''):'')
+   +'</div>';
+ }).join('');
+ if(deliv.length){
+  var dopen=G._og.deliv!==false;
+  body+='<div class="card tight" style="padding:2px 16px"><button class="lrow" onclick="tgGrp(\'deliv\')">'+tile(IC.check,'var(--ok)','var(--ok-bg)')
+   +'<span class="meta"><span class="t">시공 진행 (수주 후)</span><span class="s">'+deliv.length+'건 · 영업 예측에는 포함되지 않습니다</span></span><span class="chev" style="transform:rotate('+(dopen?90:0)+'deg)">'+IC.chev+'</span></button>'
+   +(dopen?deliv.map(function(d){return '<button class="lrow" style="padding-left:14px" data-id="'+escAttr(d.id)+'" onclick="G.deal=this.dataset.id;render()"><span class="meta"><span class="t">'+esc(d.nm)+'</span><span class="s">'+stageLabel(d.code)+' · 수주 '+amtTxt(d.won_amount||d.amt)+'</span></span><span class="badge badge-ok">수주</span><span class="chev">'+IC.chev+'</span></button>'}).join(''):'')
+   +'</div>';
+ }
+ var closedN=all.filter(isClosedOut).length;
+ if(closedN)body+='<button class="mmore card tight" style="padding:12px 16px;width:100%;text-align:left" onclick="G.sub={t:\'closed\'};render()">종료 '+closedN+'건 (수주·실주·배드핏·연락두절) →</button>';
+ var top=readonlyRep
+  ?'<div class="appbar"><button class="iconbtn" onclick="G.drill=null;render()">'+IC.back+'</button><span class="ttl">'+esc(readonlyRep)+'님의 건</span><span class="spacer"></span></div>'
+  :head;
+ scr.innerHTML=top+'<div class="body fadein">'
+ +'<div class="sec-h"><h2>'+(readonlyRep?esc(readonlyRep)+'님의 건 · '+mine.length+'건':'내 건 · '+mine.length+'건')+'</h2>'+(readonlyRep?'<span class="badge badge-violet">관리자 열람 · 읽기 전용</span>':'<button onclick="G.sub={t:\'search\'};render()" style="color:var(--blue);font-weight:700;font-size:12.5px">검색</button>')+'</div>'
+ +'<div class="chiprow" style="margin-bottom:8px">'+['전체'].concat(BIZ_TYPES).map(function(b){
+    var c=all.filter(function(d){return b==='전체'||bizOf(d)===b}).length;
+    return '<button class="cchip '+((G.bizF||'전체')===b?'b':'gr')+'" style="font-size:12px;padding:10px 4px" data-b="'+escAttr(b)+'" onclick="G.bizF=this.dataset.b;render()">'+esc(bizShort(b))+' '+c+'</button>'}).join('')+'</div>'
+ +(readonlyRep?'':'<div class="seg">'+[['all','전체'],['L','대형'],['M','일반'],['S','수의'],['stale','정체']].map(function(f){return '<button class="'+(G.filt===f[0]?'on':'')+'" onclick="G.filt=\''+f[0]+'\';render()">'+f[1]+'</button>'}).join('')+'</div>')
+ +body+'</div>';
+}
+function tgGrp(key){G._og[key]=G._og[key]===false;render()}
+
+/* ── 5 딜 상세 ── */
+function rDeal(){
+ var d=DEALS.find(function(x){return x.id===G.deal});
+ if(!d){G.deal=null;toast('해당 현장을 찾을 수 없습니다');return render()}
+ /* 스테퍼는 PC 와 같은 macro 5묶음. 현재 위치는 저장된 code 에서 파생한다 */
+ var mk=macroOf(d.code),idx=MACRO5.map(function(g){return g.k}).indexOf(mk);
+ var steps='<ul class="dsteps">'+MACRO5.map(function(g,i){return '<li class="'+(i<idx?'done':i===idx?'now':'')+'"><span class="d">'+(i<idx?'✓':(i+1))+'</span>'+g.nm+'</li>'}).join('')+'</ul>';
+ var tg=tagOf(d.amt);
+ tabbar.innerHTML='';
+ scr.innerHTML='<div class="appbar"><button class="iconbtn" onclick="G.deal=null;render()">'+IC.back+'</button><span class="ttl">딜 상세</span>'+(G.mode==='admin'?'<button style="color:var(--violet);font-weight:700;font-size:13px;padding:0 6px" onclick="reassignSheet()">재배정</button>':'<span class="spacer"></span>')+'</div>'
+ +'<div class="body fadein" style="padding-bottom:0">'
+ +'<div><div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap"><span class="badge '+tg[0]+'">'+tg[1]+'</span><span class="badge badge-blue">'+stageLabel(d.code)+'</span>'+(d.outcome?'<span class="badge '+(d.outcome==='won'?'badge-ok':'badge-danger')+'">'+OUTCOMES[d.outcome].nm+(d.close_reason?' · '+esc(d.close_reason):'')+'</span>':'')+(d.gj?'<span class="badge badge-violet">'+d.gj[0]+' · '+d.gj[1]+'</span>':'')+(isStale(d)?'<span class="badge badge-danger">'+staleTxt(d)+'</span>':'')+'</div>'
+ +'<div style="font-size:19px;font-weight:800;letter-spacing:-.4px">'+esc(d.nm)+'</div><div class="hint" style="margin-top:2px">'+amtTxt(d.amt)+'</div></div>'
+ /* 사업유형은 «한 줄 요약»만. 누르면 전환 이력이 펼쳐진다 (첫 화면에 긴 이력을 늘어놓지 않는다) */
+ +'<div class="card tight" style="padding:0;border:0;background:transparent"><button class="bizline" onclick="bizHistSheet()">'
+   +'<span><span class="bl">사업유형</span><br><span class="bv">'+esc(bizOf(d))+'</span></span>'
+   +'<span class="bo">'+(bizOrigin(d)!==bizOf(d)?'최초 '+esc(bizOrigin(d))+' → 현재 '+esc(bizOf(d)):'최초 등록 그대로')+'</span>'
+   +'<span class="chev">'+IC.chev+'</span></button></div>'
+ +advCardM(d)
+ +'<div class="card">'+steps+'</div>'
+ +respCardM(d)
+ +'<div class="card"><div class="sec-h" style="margin:0 0 6px"><h2>타임라인</h2><span style="display:flex;gap:10px"><button onclick="voiceMemo()" style="color:var(--blue);font-weight:700;font-size:12.5px;display:flex;align-items:center;gap:4px">'+IC.mic+'음성</button><button onclick="photoSheet()" style="color:var(--sub);font-weight:700;font-size:12.5px;display:flex;align-items:center;gap:4px">'+IC.camera+'사진</button><button onclick="tmplSheet()" style="color:var(--violet);font-weight:700;font-size:12.5px;display:flex;align-items:center;gap:4px">'+IC.msg+'템플릿</button></span></div>'
+ +'<ul class="timeline">'+d.tl.map(function(t){return '<li class="tl done"><span class="tl-dot"></span><div class="tl-t">'+esc(t[1])+'</div><div class="tl-d">'+esc(t[0])+'</div></li>'}).join('')+'</ul></div>'
+ +'</div>'
+ +(canAdvance(d)?'<div class="submitbar"><button class="btn btn-primary" onclick="nextSheet()">'+(d.outcome==='won'?'시공 단계 진행 →':'다음 단계로 →')+'</button><button class="btn btn-line" style="margin-top:7px" onclick="bizSheet()">사업유형 변경</button><button class="hint" style="display:block;width:100%;text-align:center;margin-top:7px" onclick="exSheet()">예외 이동 · 종료 처리 — 전체 단계에서 선택 (사유 필수)</button></div>'
+   :'<div class="submitbar"><div class="hint" style="text-align:center">'+OUTCOMES[d.outcome].nm+' 로 종료된 건입니다'+(d.closed_at?' · '+String(d.closed_at).slice(0,10):'')+'</div></div>');
+}
+/* 기술자문일 «때만» 펼친다 — 모든 딜에 보여주면 화면이 복잡해진다 */
+function advCardM(d){
+ if(!isAdvisory(d))return '';
+ var a=d.advisory||{};
+ var rows=[['공사명',a.work_name],['공종',a.work_type],['계약업체',a.contractor],
+           ['낙찰금액',a.bid_amount?amtTxt(Number(a.bid_amount)):null],
+           ['자문료',a.advisory_fee?amtTxt(Number(a.advisory_fee)):null],
+           ['정산액',a.settled?amtTxt(Number(a.settled)):null],
+           ['진행상태',a.work_status]].filter(function(r){return r[1]});
+ return '<div class="card advcard"><div class="sec-h" style="margin:0 0 6px"><h2>기술자문 정보</h2></div>'
+  +(rows.length?rows.map(function(r){return '<div class="advrow"><span>'+esc(r[0])+'</span><div>'+esc(String(r[1]))+'</div></div>'}).join('')
+    :'<div class="hint">아직 기술자문 정보가 입력되지 않았습니다 — 계약업체·낙찰금액부터 채워주세요.</div>')
+  +'</div>'}
+
+/* 최근 응대 1건만 요약. 나머지는 [응대 전체보기] 로 (현장에서 장문을 다 펼치지 않는다) */
+var SRCM={jandi:'JANDI',crm:'CRM',mobile:'모바일',auto:'자동'};
+function respCardM(d){
+ var R=respOf(d);if(!R.length)return '';
+ var x=R[0];
+ return '<div class="card"><div class="sec-h" style="margin:0 0 8px"><h2>최근 응대</h2>'
+  +(R.length>1?'<button onclick="respSheet()" style="color:var(--blue);font-weight:700;font-size:12.5px">응대 전체보기 ('+R.length+')</button>':'')+'</div>'
+  +'<div class="rsum"><div class="rh"><span class="srcm '+x.src+'">'+SRCM[x.src]+'</span><b style="color:var(--ink);font-size:12.5px">'+esc(x.ttl)+'</b>'
+   +(x.st?'<span class="rstm">'+esc(x.st)+'</span>':'')
+   +'<span>'+String(x.at||'').slice(5,10).replace('-','/')+' · '+esc(x.who||'')+'</span></div>'
+  +x.fields.slice(0,3).map(function(f){return '<div class="advrow"><span>'+esc(f[0])+'</span><div>'+esc(f[1])+'</div></div>'}).join('')
+  +(x.body?'<div style="margin-top:6px;font-size:13px;line-height:1.6;color:var(--ink-2);white-space:pre-wrap">'+esc(x.body)+'</div>':'')
+  +'</div></div>'}
+function respSheet(){
+ var d=DEALS.find(function(x){return x.id===G.deal});if(!d)return;
+ var R=respOf(d);
+ openSheet(intro('var(--blue-50)','var(--blue-dark)',IC.msg,'응대 이력 '+R.length+'건','CRM·잔디·모바일 기록을 시간순으로 모았습니다'),
+  R.slice(0,30).map(function(x){
+   return '<div class="rsum" style="margin-bottom:8px"><div class="rh"><span class="srcm '+x.src+'">'+SRCM[x.src]+'</span><b style="color:var(--ink);font-size:12.5px">'+esc(x.ttl)+'</b>'
+    +(x.st?'<span class="rstm">'+esc(x.st)+'</span>':'')
+    +'<span>'+String(x.at||'').slice(5,10).replace('-','/')+' · '+esc(x.who||'')+'</span></div>'
+    +x.fields.map(function(f){return '<div class="advrow"><span>'+esc(f[0])+'</span><div>'+esc(f[1])+'</div></div>'}).join('')
+    +(x.body?'<div style="margin-top:6px;font-size:13px;line-height:1.6;color:var(--ink-2);white-space:pre-wrap">'+esc(x.body)+'</div>':'')
+    +'</div>'}).join(''))}
+
+/* 다음으로 — 진행 이동 후보(코드 단위) + 종료 4종. Stage 이동과 Outcome 종료를 섞지 않는다 */
+function nextSheet(){
+ var d=DEALS.find(function(x){return x.id===G.deal});
+ var fwd=nextOptions(d).map(function(n,i){
+   var win=isWinMove(n[0]);
+   return '<button class="cchip '+(win?'g':'b')+'" onclick="moveTo('+i+')"><span class="cic">'+IC[win?'check':'chart']+'</span>'+n[1]+'</button>'}).join('');
+ var close=d.outcome?'':'<div class="hint" style="margin:12px 2px 6px">종료 처리 — 사유가 있어야 저장됩니다</div>'
+  +'<div class="chiprow">'+['lost','badfit','nocontact'].map(function(o){
+   return '<button class="cchip '+OUTCOMES[o].color+'" onclick="closeSheetFlow(\''+o+'\')">'+OUTCOMES[o].nm+'</button>'}).join('')+'</div>';
+ if(d.outcome==='won'&&d.code==='completion')close='<div class="hint" style="margin:12px 2px 6px">준공 완료 — 추가공사는 이 건을 다시 열지 않고 새 영업기회로 만듭니다 (§21)</div><button class="cchip b" onclick="spawnExpansion()"><span class="cic">'+IC.plus+'</span>확장 영업기회 만들기</button>';
+ openSheet(intro('var(--blue-50)','var(--blue-dark)',IC.chart,esc(d.nm),'지금 상황에 맞는 것 하나만 — 현재 «'+stageLabel(d.code)+'»'),fwd+close);
+}
+function moveTo(i){
+ var d=DEALS.find(function(x){return x.id===G.deal}),n=nextOptions(d)[i];
+ if(!n)return;
+ /* 클릭만으로 다음 단계로 넘기지 않는다 — 근거를 받고 저장한다 (CRM 공통 규칙) */
+ G.mvTo=n[0];
+ openSheet(intro('var(--blue-50)','var(--blue-dark)',IC.chart,esc(stageLabel(d.code))+' → '+esc(n[1]),'무엇을 확인했고 왜 넘기는지 남겨야 저장됩니다'),
+  mReason('mv','예: 관리소장과 통화해 시공사 별도 선정 확인, 입찰 참여로 진행')
+  +'<button class="btn btn-primary" style="margin-top:14px" data-gate="mv" disabled onclick="commitMoveWithReason()">다음 단계로 저장</button>');
+ mrGate('mv');return}
+function commitMoveWithReason(){
+ var d=DEALS.find(function(x){return x.id===G.deal});
+ if(!d||!G.mvTo)return;
+ if(!mrOk('mv'))return toast('변경 근거를 남겨야 저장할 수 있어요');
+ var to=G.mvTo;G.mvTo=null;
+ return commitMove(d,to,mrVal('mv'),mrSrc('mv'))}
+function moveToLegacy(i){
+ var d=DEALS.find(function(x){return x.id===G.deal}),n=nextOptions(d)[i];
+ if(!n)return;
+ if(isWinMove(n[0])){G.amtVal='';return amtSheet(n[0])}   /* 수주 확정 → 금액 필수 */
+ commitMove(d,n[0],null);
+}
+/* 종료 4종 — 각각 필수 입력이 다르다 (실주=사유, 배드핏=유형, 연락두절=시도 근거) */
+function closeSheetFlow(o){
+ var C={lost:{t:'실주 사유',d:'사유 없이 실주 처리는 안 됩니다 — 월별 분석의 원료예요',opt:['가격','일정','타업체 선정','내부 사정','기타']},
+        badfit:{t:'배드핏 유형',d:'유입 개선 데이터로 쌓입니다',opt:['지역 밖','공사범위 밖','규모 미달','스팸·기타']},
+        nocontact:{t:'연락두절 처리 근거',d:'전화 한 번 안 받은 것은 연락두절이 아닙니다 — 3회 이상 시도 + 문자/카톡 후에만',opt:['3회 이상 시도','문자·카톡까지 무응답','번호 결번·변경','담당자 퇴사·교체']}}[o];
+ openSheet(intro(o==='lost'?'var(--danger-bg)':'var(--bg)',o==='lost'?'#c22f3c':'var(--ink-2)',IC.alert,C.t+' <span style="font-size:12px">*필수</span>',C.d),
+  '<div class="chiprow">'+C.opt.map(function(r){return '<button class="cchip '+(G.clKind===r?'b':'gr')+'" data-r="'+escAttr(r)+'" onclick="G.clKind=this.dataset.r;closeSheetFlow(\''+o+'\')">'+r+'</button>'}).join('')+'</div>'
+  +'<div class="hint" style="margin:14px 0 6px">무슨 일이 있었는지 <span style="color:var(--danger)">*</span></div>'
+  +mReason('cl','예: 3회 통화 시도 후 문자까지 보냈으나 무응답, 타사 선정 확인')
+  +'<button class="btn btn-primary" style="margin-top:14px" data-gate="cl" disabled onclick="commitCloseR(\''+o+'\')">종료 저장</button>');
+ mrGate('cl');
+}
+function commitCloseR(o){
+ if(!G.clKind)return toast('분류를 먼저 골라주세요');
+ if(!mrOk('cl'))return toast('종료 근거를 남겨야 저장할 수 있어요');
+ var kind=G.clKind;G.clKind=null;
+ return commitClose(o,kind,mrVal('cl'),mrSrc('cl'))}
+function commitClose(o,reason,why,src){
+ var d=DEALS.find(function(x){return x.id===G.deal});if(!d)return;
+ if(!why||String(why).trim().length<5)return toast('종료 근거가 없어 저장하지 않았습니다');
+ d.outcome=o;d.close_reason=reason;d.closed_at=isoNow();      /* closed 로 뭉치지 않는다 — 어디서 왜 끝났는지 남는다 */
+ addActivity(d,'종료',OUTCOMES[o].nm+' 처리 ('+stageLabel(d.code)+' 단계에서)',reason+' · '+why,false);
+ completeNextAction(d);d.nextAction=null;
+ pushWrite('close',{opportunity_id:d.id,outcome:o,reason:reason+' · '+why,reason_source:src||'text',stage_code:d.code,closed_at:d.closed_at});
+ closeSheet();toast(OUTCOMES[o].nm+' 종료 — 사유까지 저장했습니다');G.deal=null;render();
+}
+function amtSheet(to){
+ var num=G.amtVal?parseInt(G.amtVal,10):0;
+ openSheet(intro('var(--ok-bg)','#0d7a52',IC.check,'계약 금액 <span style="font-size:12px;color:var(--danger)">*필수 — 예외 없음</span>','만원 단위 · 500만 이하는 수의계약으로 자동 분류'),
+  '<div class="amt">'+(num?num.toLocaleString():'0')+'<small> 만원</small></div>'
+  +'<div class="pad">'+[1,2,3,4,5,6,7,8,9,'00',0,'⌫'].map(function(n){return '<button onclick="amtKey(\''+n+'\',\''+to+'\')">'+n+'</button>'}).join('')+'</div>'
+  +'<button class="btn btn-primary" style="margin-top:12px" '+(num?'':'disabled')+' onclick="amtOk(\''+to+'\')">🎉 수주 확정</button>');
+}
+function amtKey(k,to){if(k==='⌫')G.amtVal=G.amtVal.slice(0,-1);else if(G.amtVal.length<7)G.amtVal+=k;amtSheet(to)}
+/* 수주 확정 = 영업기회 종료 + Project(이행) 시작. 서버에서는 한 Transaction 이어야 한다 (§35) */
+function amtOk(to){
+ var num=parseInt(G.amtVal||'0',10);if(!num)return;
+ var d=DEALS.find(function(x){return x.id===G.deal});if(!d)return;
+ d.amt=num*10000;d.won_amount=d.amt;d.outcome='won';d.won_at=isoNow();
+ d.delivery={stage:'contract_signed',at:d.won_at};
+ addActivity(d,'수주','계약서 날인 — 수주 확정',num.toLocaleString()+'만원'+(num<=500?' · 수의계약':''),false);
+ completeNextAction(d);setNextAction(d,'착공준비','착공 일정 협의',nextDays('contract'));
+ pushWrite('win',{opportunity_id:d.id,outcome:'won',won_amount:d.won_amount,won_at:d.won_at,stage_code:d.code,create_project:true});
+ closeSheet();renderWon(d,num);
+}
+/* §21 : 준공 후 추가공사 = 기존 건 재오픈이 아니라 «새 영업기회» */
+function spawnExpansion(){
+ var d=DEALS.find(function(x){return x.id===G.deal});if(!d)return;
+ var nd=normalizeDeal({id:'new-'+Date.now(),site_id:d.site_id||null,nm:d.nm,rep:d.rep,code:'first_contact',
+   amt:0,source:'existing_customer',parent_opportunity_id:d.id,sub:'확장 영업기회',
+   tl:[['오늘','준공 현장 확장 제안 — 새 영업기회 생성']]});
+ DEALS.push(nd);addActivity(nd,'발굴','확장 영업기회 생성','원 건: '+d.nm,false);
+ setNextAction(nd,'확장제안','추가공사 니즈 확인',7);
+ pushWrite('opportunity_create',{site_id:d.site_id||null,name:d.nm,owner:d.rep,source:'existing_customer',parent_opportunity_id:d.id},nd.id);
+ closeSheet();G.deal=nd.id;toast('확장 영업기회를 새로 만들었습니다');render();
+}
+function renderWon(d,num){
+ closeSheet();tabbar.innerHTML='';
+ scr.innerHTML='<div class="done-wrap fadein"><div class="done-ring" style="font-size:34px">🎉</div><h2>수주 축하합니다!</h2><p>'+esc(d.nm)+'</p>'
+ +'<div class="done-card"><div class="kv"><span class="k">계약 금액</span><span class="v" style="color:var(--blue)">'+num.toLocaleString()+'만원</span></div><div class="kv"><span class="k">분류</span><span class="v">'+(num<=500?'수의계약 (자동)':'일반 계약')+'</span></div><div class="kv"><span class="k">저장</span><span class="v">outcome=won · won_at 기록</span></div><div class="kv"><span class="k">서버 반영</span><span class="v" style="color:'+(pendingCount()?'var(--warn)':'var(--ok)')+'">'+(pendingCount()?'대기 '+pendingCount()+'건 (재시도 중)':'완료')+'</span></div></div>'
+ +'<button class="btn btn-primary" style="margin-top:16px" onclick="render()">확인</button></div>';
+}
+function renderWonDemo(){
+ var d=DEALS.filter(isWon)[0]||pickSampleDeal();
+ if(!d){toast('표시할 딜이 없습니다');return render()}
+ renderWon(d,Math.round((d.won_amount||d.amt||120000000)/10000));
+}
+function commitMoveR(to,reason){var d=DEALS.find(function(x){return x.id===G.deal});commitMove(d,to,reason)}
+/* 진행 단계 이동만 담당 (종료는 commitClose). 이동 시 활동·다음 행동·기한이 함께 쌓인다 */
+function commitMove(d,to,note,src){
+ if(!STAGE_MASTER[to])return;
+ if(!note||String(note).trim().length<5)return toast('변경 근거가 없어 저장하지 않았습니다');
+ var from=stageLabel(d.code);
+ d.code=to;d.stageAt=isoNow();
+ addActivity(d,'단계전환',from+' → '+stageLabel(to),note||'',false);
+ completeNextAction(d);
+ setNextAction(d,'후속',stageLabel(to)+' 후속 조치',nextDays(to));
+ pushWrite('transition',{opportunity_id:d.id,from:from,to:to,note:note||'',reason:note||'',reason_source:src||'text',at:d.stageAt});
+ closeSheet();
+ if(!isWinMove(to))toast(stageLabel(to)+'로 이동 · 다음 행동 '+nextDays(to)+'일 뒤로 예약');
+ if(CUR!=='won')render();
+}
+
+/* ══════════════════════════════════════════════════════════
+   변경 근거 — 음성을 «메모»가 아니라 «입력 방식»으로 격상 (2026-09-02)
+
+   CRM 상태를 바꾸는 모든 행동(등록·단계·사업유형·담당자·보류·종료)은
+   근거 없이 저장할 수 없다. 현장에서 타이핑하기 어려우니 음성을 나란히 둔다.
+   단, 음성 원본만 남기지 않는다 — «변환된 텍스트를 정본»으로 함께 저장한다.
+   그래야 나중에 검색·요약·보고서가 된다.
+   ══════════════════════════════════════════════════════════ */
+var MSR=window.SpeechRecognition||window.webkitSpeechRecognition, MSR_ON=null, RMIN=5;
+function mReason(id,ph){
+ return '<div class="rbox" id="'+id+'" data-src="text">'
+  +'<div class="rtabs"><button class="on" data-m="text" onclick="mrMode(\''+id+'\',\'text\')">⌨ 직접 입력</button>'
+  +'<button data-m="voice" onclick="mrMode(\''+id+'\',\'voice\')">'+IC.mic+' 음성 입력</button></div>'
+  +'<textarea id="'+id+'-t" oninput="mrGate(\''+id+'\')" placeholder="'+escAttr(ph||'무엇을 확인했고 왜 바꾸는지 적어주세요')+'"></textarea>'
+  +'<div class="rvo" style="display:none"><button class="btn btn-line rrec" id="'+id+'-b" onclick="mrRec(\''+id+'\')">'+IC.mic+' 녹음 시작</button>'
+  +'<div class="hint" id="'+id+'-h" style="margin-top:6px">말하면 자동으로 텍스트가 됩니다. 저장 전에 고칠 수 있어요.</div></div></div>'}
+function mrVal(id){var e=document.getElementById(id+'-t');return e?e.value.trim():''}
+function mrSrc(id){var b=document.getElementById(id);return (b&&b.dataset.src)||'text'}
+function mrOk(id){return mrVal(id).length>=RMIN}
+function mrGate(id){var ok=mrOk(id);
+ Array.prototype.forEach.call(document.querySelectorAll('[data-gate="'+id+'"]'),function(b){
+   b.disabled=!ok;b.style.opacity=ok?'':'.45'});return ok}
+function mrMode(id,m){var b=document.getElementById(id);if(!b)return;
+ Array.prototype.forEach.call(b.querySelectorAll('.rtabs button'),function(x){x.classList.toggle('on',x.dataset.m===m)});
+ b.querySelector('.rvo').style.display=(m==='voice')?'':'none';b.dataset.src=m;
+ if(m==='voice'&&!MSR)document.getElementById(id+'-h').textContent='이 브라우저는 음성 인식을 지원하지 않습니다 — 직접 입력해 주세요.'}
+function mrRec(id){
+ var btn=document.getElementById(id+'-b'),hint=document.getElementById(id+'-h'),ta=document.getElementById(id+'-t');
+ if(!MSR){hint.textContent='이 브라우저는 음성 인식을 지원하지 않습니다.';return}
+ if(MSR_ON){MSR_ON.stop();return}
+ var r=new MSR();r.lang='ko-KR';r.continuous=true;r.interimResults=true;
+ var base=ta.value?ta.value.replace(/\s+$/,'')+' ':'',fin='';
+ r.onresult=function(e){var itv='';
+   for(var i=e.resultIndex;i<e.results.length;i++){var s=e.results[i][0].transcript;
+     if(e.results[i].isFinal)fin+=s; else itv+=s}
+   ta.value=base+fin+itv;mrGate(id)};
+ r.onerror=function(e){hint.textContent='음성 인식 오류('+(e.error||'')+') — 직접 입력해 주세요.'};
+ r.onend=function(){MSR_ON=null;btn.classList.remove('on');btn.innerHTML=IC.mic+' 녹음 시작';
+   hint.textContent=ta.value?'텍스트로 변환했습니다. 확인 후 저장하세요.':'인식된 내용이 없습니다.';mrGate(id)};
+ try{r.start()}catch(err){hint.textContent='마이크를 시작할 수 없습니다.';return}
+ MSR_ON=r;btn.classList.add('on');btn.innerHTML='■ 녹음 중지';hint.textContent='듣는 중… 끝나면 중지를 누르세요.'}
+
+/* ── 사업유형 변경 — 단계 이동과 «다른 버튼». 같은 딜 ID 유지 ── */
+function bizSheet(){
+ var d=DEALS.find(function(x){return x.id===G.deal});if(!d)return;
+ var cur=bizOf(d);
+ openSheet(intro('#FFF7E6','#B45309',IC.chart,'사업유형 변경','영업 단계는 그대로 — 사업유형만 바꿉니다 (같은 딜 유지)'),
+  '<div class="hint" style="margin:0 0 6px">현재 <b>'+esc(cur)+'</b> → 변경할 사업유형 <span style="color:var(--danger)">*</span></div>'
+  +'<div class="chiprow">'+BIZ_TYPES.filter(function(b){return b!==cur}).map(function(b){
+     return '<button class="cchip '+(G.bzTo===b?'b':'gr')+'" data-b="'+escAttr(b)+'" onclick="G.bzTo=this.dataset.b;bizSheet()">'+esc(b)+'</button>'}).join('')+'</div>'
+  +'<div class="hint" style="margin:14px 0 6px">변경 근거 <span style="color:var(--danger)">*</span></div>'
+  +mReason('bz','예: 외부 시공사 낙찰 후 기술자문 계약으로 진행하기로 협의')
+  +'<div class="hint" style="margin:14px 0 6px">다음 행동</div>'
+  +'<input id="bz-na" value="'+escAttr(G.bzNa||'')+'" oninput="G.bzNa=this.value" placeholder="예: 기술자문 계약서 작성" style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box">'
+  +'<button class="btn btn-primary" style="margin-top:14px" data-gate="bz" disabled onclick="commitBiz()">변경 저장</button>');
+ mrGate('bz');
+ if(G.bzTo)mrGate('bz');
+}
+function commitBiz(){
+ var d=DEALS.find(function(x){return x.id===G.deal});if(!d)return;
+ var to=G.bzTo;if(!to)return toast('변경할 사업유형을 골라주세요');
+ if(!mrOk('bz'))return toast('변경 근거를 남겨야 저장할 수 있어요');
+ var from=bizOf(d),why=mrVal('bz'),src=mrSrc('bz'),at=isoNow();
+ d.businessHistory=(d.businessHistory||[]).concat([{at:at,from:from,to:to,reason:why,source:src,actor:G.user.nm}]);
+ d.currentBusiness=to; d.originBusiness=d.originBusiness||from; d.sub=to;   /* 최초 유입은 덮지 않는다 */
+ addActivity(d,'사업유형',from+' → '+to,why,false);
+ var na=(G.bzNa||'').trim();
+ if(na){completeNextAction(d);setNextAction(d,'후속',na,3)}
+ pushWrite('service_change',{opportunity_id:d.id,from_service:from,to_service:to,
+   origin_channel:d.originBusiness,reason:why,reason_source:src,next_action:na||null,at:at});
+ G.bzTo=null;G.bzNa='';closeSheet();toast(from+' → '+to+' 로 변경 — 근거까지 저장했어요');render()}
+
+/* 사업유형 변경 이력 — 한 줄 요약을 누르면 펼친다 */
+function bizHistSheet(){
+ var d=DEALS.find(function(x){return x.id===G.deal});if(!d)return;
+ var H=(d.businessHistory||[]).slice().reverse();
+ openSheet(intro('#FFF7E6','#B45309',IC.chart,'사업유형 변경 이력','최초 '+esc(bizOrigin(d))+' → 현재 '+esc(bizOf(d))),
+  (H.length?H.map(function(h){
+    return '<div class="card tight" style="padding:12px 14px"><div style="font-weight:800;font-size:13.5px">'+esc(h.from)+' → '+esc(h.to)+'</div>'
+     +'<div class="hint" style="margin-top:2px">'+String(h.at||'').slice(5,10).replace('-','/')+' · '+esc(h.actor||'')+(h.source==='voice'?' · 🎙 음성':'')+'</div>'
+     +'<div style="margin-top:7px;font-size:13px;line-height:1.6;color:var(--ink-2)">'+esc(h.reason||'')+'</div></div>'}).join('')
+   :'<div class="card tight" style="padding:12px 14px"><div style="font-weight:800;font-size:13.5px">최초 등록 · '+esc(bizOrigin(d))+'</div><div class="hint" style="margin-top:4px">아직 사업유형을 바꾼 적이 없습니다.</div></div>'))}
+
+/* ── 음성 메모 ── */
+function voiceMemo(){
+ var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ var d=DEALS.find(function(x){return x.id===G.deal});
+ if(!SR){d.tl.unshift(['오늘','🎤 (예시) "소장님 다음주 화요일 방문 확정" — 음성→텍스트 자동 저장']);toast('이 브라우저는 음성 인식 미지원 — 예시 메모 추가');return render()}
+ var r=new SR();r.lang='ko-KR';
+ toast('🎤 말씀하세요…');
+ r.onresult=function(e){d.tl.unshift(['오늘','🎤 '+e.results[0][0].transcript]);toast('음성 메모 저장됨');render()};
+ r.onerror=function(){toast('인식 실패 — 다시 눌러주세요')};
+ r.start();
+}
+
+/* ── 7 내 실적 ── */
+/* 내 실적 — 하드코딩 제거. 로그인 사용자의 딜에서 계산한다 (PC 관리팀 KPI 와 같은 식)
+   서버 준비 시 GET /v1/mobile/me/metrics 로 교체 */
+function rMy(head){
+ var mine=myDeals(),open=mine.filter(isOpen);
+ var wonList=mine.filter(isWon),wonAmt=0;wonList.forEach(function(d){wonAmt+=(d.won_amount||d.amt||0)});
+ var wgt=0;open.forEach(function(d){wgt+=(d.amt||0)*forecastProbability(d.code)});
+ var noamt=open.filter(function(d){return !d.amt}).length,stale=open.filter(isStale).length;
+ var __td=(G._today&&G._today.length?G._today:buildToday());
+ var todayN=__td.length,doneN=__td.filter(isDone).length;   /* 누적 키가 아니라 오늘 목록 기준 */
+ scr.innerHTML=head+'<div class="body fadein">'
+ +'<div class="card profile"><span class="ph">'+esc(G.user.nm.slice(0,1))+'</span><div><div class="nm2">'+esc(G.user.nm)+'</div><div class="rl">내 것만 보여요 — 남과 비교 없음</div></div></div>'
+ +'<div class="mystat"><button><div class="n b">'+(wonAmt?fmtEok(wonAmt):'—')+'</div><div class="l">수주 '+wonList.length+'건</div></button>'
+ +'<button><div class="n">'+doneN+'/'+todayN+'</div><div class="l">오늘 처리</div></button>'
+ +'<button onclick="G.sub={t:\'hyg\'};render()"><div class="n y">'+(noamt+stale)+'건</div><div class="l">위생 정리 ›</div></button></div>'
+ +'<div class="card gauge"><div class="gt">진행 '+open.length+'건 · 가중 예상</div><div class="gv">'+fmtEok(wgt)+' <small style="font-size:12px;color:var(--sub);font-weight:600">/ 분기 목표 미설정</small></div><div class="gbar"><i style="width:'+Math.min(100,Math.round(wgt/1e9*100))+'%"></i></div></div>'
+ +'<div class="card gauge"><div class="gt">정리할 것</div><div class="gv">'+(noamt+stale?'⚠ '+(noamt+stale)+'건':'🟢 없음')+'</div><div class="hint" style="margin-top:5px">금액 미입력 '+noamt+' · 단계 SLA 초과 '+stale+'</div></div></div>';
+}
+
+/* ── 8 관제 ── */
+function rCtrl(head){
+ G.sigK=G.sigK||'assign';
+ var cards='<div class="mystat">'+ADMIN.sig.map(function(s){return '<button class="'+(G.sigK===s.k?'on':'')+'" onclick="G.sigK=\''+s.k+'\';render()"><div class="n '+s.c+'">'+s.v+'</div><div class="l">'+s.l+'</div></button>'}).join('')+'</div>';
+ var rows=ADMIN[G.sigK].map(function(r,i){
+  var btn=G.sigK==='assign'?(r.done?'<span class="badge badge-ok">배정됨</span>':'<button class="btn btn-primary btn-sm" onclick="assignSheet('+i+')">배정</button>')
+   :G.sigK==='due'?'<button class="btn btn-line btn-sm" onclick="nudgeSheet(\''+r.nm+'\')">쪼기</button>'
+   :G.sigK==='load'?'<button class="btn btn-line btn-sm" onclick="drill(\''+r.nm+'\')">보기</button>':'';
+  var go=G.sigK==='assign'?'G.sub={t:\'inq\',i:'+i+'};render()'
+   :G.sigK==='due'?'G.sub={t:\'overdue\',nm:\''+r.nm+'\',ps:\''+r.ps+'\'};render()'
+   :G.sigK==='inflow'?'G.sub={t:\'inflow\',nm:\''+r.nm+'\',ps:\''+r.ps+'\'};render()'
+   :'drill(\''+r.nm+'\')';
+  return '<div class="prow">'+tile(G.sigK==='inflow'?IC.chart:G.sigK==='assign'?IC.siren:IC.clock,G.sigK==='assign'?'var(--danger)':'var(--sub)',G.sigK==='assign'?'var(--danger-bg)':'var(--bg)')+'<span class="pn" style="cursor:pointer" onclick="'+go+'">'+esc(r.nm)+'<span class="ps">'+esc(r.ps)+' · 상세 보기 ›</span></span>'+btn+'</div>';
+ }).join('');
+ scr.innerHTML=head+'<div class="body fadein"><div class="sec-h"><h2>견적문의 관제</h2><span>신호를 누르면 그 자리에서 조치</span></div>'
+ +cards+'<div class="card tight" style="padding:4px 16px">'+(rows||'<div class="hint" style="padding:14px 2px">'+(G.sigK==='assign'||G.sigK==='inflow'?'견적문의 API 연동 후 표시됩니다 — 수집 중':'해당 건이 없습니다 🎉')+'</div>')+'</div>'
+ +'<div class="card" style="background:var(--blue-50);border-color:transparent"><div class="hint" style="color:var(--blue-dark)">배정 버튼은 기존 배정 자동화를 그대로 호출 — 담당자 잔디 알림까지 자동입니다</div></div></div>';
+}
+function doAssign(i){ADMIN.assign[i].done=1;toast('배정 완료 — '+ADMIN.assign[i].rec+' 잔디 알림 발송');render()}
+function drill(nm){G.tab='pipe';G.drill=nm;render()}
+
+/* ── 9 파이프라인 ── */
+function rPipe(head){
+ if(G.drill)return rMine(head,G.drill);
+ if(G.stage)return rStageList(G.stage);
+ var rows=ADMIN.pipe.map(function(p,i){return '<button class="krow" onclick="G.stage=\''+MACRO5[i].k+'\';G.ssf=null;G.alf=null;render()">'+tile(IC.chart,'var(--blue)','var(--blue-50)')+'<span class="knm">'+p[0]+(p[3]?' <span class="kwarn">'+p[3]+'</span>':'')+'</span><span class="kct">'+p[1]+'건 · '+p[2]+'</span><span class="chev">'+IC.chev+'</span></button>'}).join('');
+ /* 포캐스트도 정적 값이 아니라 amount × STAGE_MASTER.prob 로 계산 (PC weighted() 와 같은 식) */
+ var fcOpen=DEALS.filter(isOpen);
+ function band(codes){var L=fcOpen.filter(function(d){return codes.indexOf(d.code)>=0}),w=0;L.forEach(function(d){w+=(d.amt||0)*forecastProbability(d.code)});return [L.length,w]}
+ var b1=band(['contract','construction','completion']),b2=band(['compete','imminent','bidding']),
+     b3=band(['first_contact','consulting','sent','rapport','silent']),b4=band(['waiting','expansion']);
+ var fc='<div class="card"><div class="prow" style="border:0">'+tile(IC.check,'var(--ok)','var(--ok-bg)')+'<span class="pn">확실시 (계약·시공)<span class="ps">'+b1[0]+'건 · 90~100%</span></span><span class="kct">'+fmtEok(b1[1])+'</span></div></div>'
+ +'<div class="card"><div class="prow" style="border:0">'+tile(IC.chart,'var(--blue)','var(--blue-50)')+'<span class="pn">유력 (경쟁·임박·입찰)<span class="ps">'+b2[0]+'건 · 55~80%</span></span><span class="kct">'+fmtEok(b2[1])+'</span></div></div>'
+ +'<div class="card"><div class="prow" style="border:0">'+tile(IC.folder,'var(--sub)','var(--bg)')+'<span class="pn">파이프라인 (설계~관계)<span class="ps">'+b3[0]+'건 · 10~35%</span></span><span class="kct">'+fmtEok(b3[1])+'</span></div></div>'
+ +'<div class="card"><div class="prow" style="border:0">'+tile(IC.clock,'var(--sub)','var(--bg)')+'<span class="pn">장기 (대기·확장)<span class="ps">'+b4[0]+'건</span></span><span class="kct">'+fmtEok(b4[1])+'</span></div></div>'
+ +'<div class="card" style="background:var(--warn-bg);border-color:transparent"><div class="hint" style="color:#a36312">분기 목표액 미설정 — 확정되면 목표 대비 게이지로 표시됩니다. 확률은 PC와 같은 STAGE_MASTER 값을 씁니다</div></div>';
+ var closedRows=ADMIN.pipe_closed.map(function(c){
+  var col=c[0]==='won'?['var(--ok)','var(--ok-bg)']:c[0]==='lost'?['var(--danger)','var(--danger-bg)']:['var(--sub)','var(--bg)'];
+  return '<button class="krow" onclick="G.cl=\''+c[0]+'\';G.sub={t:\'closed\'};render()">'+tile(c[0]==='won'?IC.check:IC.alert,col[0],col[1])+'<span class="knm">'+c[1]+'</span><span class="kct">'+c[2]+'건'+(c[3]!=='—'?' · '+c[3]:'')+'</span><span class="chev">'+IC.chev+'</span></button>';
+ }).join('');
+ scr.innerHTML=head+'<div class="body fadein"><div class="sec-h"><h2>'+(G.pipeTitle||'파이프라인 · 183건 · 275.6억')+'</h2><button class="badge badge-danger" onclick="G.sub={t:\'stale\'};render()">조치 필요 보기</button></div>'
+ +(LIVE?'<div class="badge badge-ok" style="align-self:flex-start">실데이터 · Supabase 연동</div>':'<div class="badge badge-gray" style="align-self:flex-start">예시 데이터 (서버 미연결)</div>')
+ +'<div class="seg">'+[['st','단계별'],['fc','포캐스트']].map(function(v){return '<button class="'+((G.pv||'st')===v[0]?'on':'')+'" onclick="G.pv=\''+v[0]+'\';render()">'+v[1]+'</button>'}).join('')+'</div>'
+ +((G.pv||'st')==='fc'?fc:'<div class="card tight" style="padding:2px 16px">'+rows+'</div><div class="card tight" style="padding:2px 16px">'+closedRows+'</div>')
+ +'<div class="sec-h"><h2>담당자별</h2><span>탭 → 그 사람 \'내 건\' 재사용</span></div>'
+ +'<div class="card tight" style="padding:2px 16px">'+ADMIN.rank.map(function(r){return '<button class="krow" onclick="drill(\''+r[0]+'\')">'+tile(IC.user,'var(--violet)','var(--violet-bg)')+'<span class="knm">'+r[0]+'</span><span class="kct">'+r[1]+'</span><span class="chev">'+IC.chev+'</span></button>'}).join('')+'</div></div>';
+}
+
+/* ── 9b 단계별 딜 목록 (파이프라인 드릴다운) ── */
+function rStageList(st){
+ var meta=ADMIN.pipe[MACRO5.map(function(g){return g.k}).indexOf(st)]||['',0,'',''];
+ var all=DEALS.filter(function(d){return isOpen(d)&&macroOf(d.code)===st});
+ /* 세부 단계(저장 15단계) 필터 + 주의 상태 필터(무응답/정체) */
+ var AL=st==='sent'?{label:'발송 후 무응답',days:3}:{label:'단계 SLA 초과',days:30};
+ var alerts=all.filter(isStale);
+ var ssList=[];all.forEach(function(d){var s=stageLabel(d.code);if(ssList.indexOf(s)<0)ssList.push(s)});
+ var list=G.ssf?all.filter(function(d){return stageLabel(d.code)===G.ssf}):all;
+ if(G.alf)list=list.filter(isStale);
+ var ssSeg='';
+ if(ssList.length>1||alerts.length){
+  ssSeg='<div class="seg"><button class="'+(!G.ssf&&!G.alf?'on':'')+'" onclick="G.ssf=null;G.alf=null;render()">전체 '+all.length+'</button>'
+   +(ssList.length>1?ssList.map(function(s){return '<button class="'+(G.ssf===s?'on':'')+'" onclick="G.ssf=\''+s+'\';G.alf=null;render()">'+s+' '+all.filter(function(d){return stageLabel(d.code)===s}).length+'</button>'}).join(''):'')
+   +(alerts.length?'<button class="'+(G.alf?'on':'')+'" style="color:var(--danger)" onclick="G.alf=!G.alf;render()">'+AL.label+' '+alerts.length+'</button>':'')
+   +'</div>';
+ }
+ scr.innerHTML='<div class="appbar"><button class="iconbtn" onclick="G.stage=null;G.ssf=null;G.alf=null;render()">'+IC.back+'</button><span class="ttl">'+macroNm(st)+(G.ssf?' · '+G.ssf:'')+(G.alf?' · '+AL.label:'')+'</span><span class="spacer"></span></div>'
+ +'<div class="body fadein"><div class="sec-h"><h2>'+macroNm(st)+' · '+meta[1]+'건 · '+meta[2]+'</h2>'
+ +(meta[3]?'<button class="badge badge-danger" onclick="G.alf=!G.alf;render()">'+meta[3]+(G.alf?' ✕':' — 보기')+'</button>':'<span>정체일 순</span>')+'</div>'
+ +ssSeg
+ +'<div class="card tight" style="padding:2px 16px">'
+ +(list.length?list.map(function(d){var tg=tagOf(d.amt);return '<div class="lrow" data-id="'+escAttr(d.id)+'" onclick="G.deal=this.dataset.id;render()">'+tile(IC.folder,'var(--blue)','var(--blue-50)')
+   +'<span class="meta"><span class="t">'+esc(d.nm)+(isStale(d)?' <span class="kwarn">'+staleTxt(d)+'</span>':'')+'</span><span class="s">'+esc(d.rep)+' · '+amtTxt(d.amt)+(d.sub?' · '+esc(d.sub):'')+'</span></span>'
+   +'<span class="badge '+tg[0]+'">'+tg[1]+'</span><span class="chev">'+IC.chev+'</span></div>'}).join('')
+  :'<div class="hint" style="padding:18px 2px">이 단계의 예시 딜이 없습니다 — 실서비스에서는 전 담당자 건이 표시됩니다</div>')
+ +'</div>'
+ +(G.alf&&list.length?'<button class="btn btn-line" onclick="nudgeSheet(\''+(function(){var r=[];list.forEach(function(d){if(r.indexOf(d.rep)<0)r.push(d.rep)});return r.join(', ')})()+'\',\''+macroNm(st)+' '+AL.label+' '+list.length+'건\')">'+IC.bell+' 이 목록 담당자 쪼기</button>':'')
+ +'<div class="card" style="background:var(--blue-50);border-color:transparent"><div class="hint" style="color:var(--blue-dark)">건을 누르면 딜 상세 — 실서비스에서는 담당자·금액·정체일 정렬과 재배정 버튼이 붙습니다</div></div></div>';
+}
+
+/* ── 서브 화면 라우터 (V1 구현분) ── */
+function rSub(head){
+ var s=G.sub;
+ ({search:rSearch,inq:rInq,overdue:rOverdue,inflow:rInflow,stale:rStale,hyg:rHyg,
+   noti:rNoti,set:rSet,closed:rClosed,axis:rAxis,brief:rBrief,monthly:rMonthly,dups:rDups,coach:rCoach})[s.t](head,s);
+}
+function subBack(){G.sub=null;render()}
+function appbarS(title,right){return '<div class="appbar"><button class="iconbtn" onclick="subBack()">'+IC.back+'</button><span class="ttl">'+title+'</span>'+(right||'<span class="spacer"></span>')+'</div>'}
+function dealRow(d,extra){var tg=tagOf(d.amt);return '<div class="lrow" data-id="'+escAttr(d.id)+'" onclick="G.deal=this.dataset.id;render()">'+tile(IC.folder,'var(--blue)','var(--blue-50)')
+ +'<span class="meta"><span class="t">'+esc(d.nm)+' <span class="badge badge-gray" style="font-size:9.5px;padding:1px 6px">'+stageLabel(d.code)+'</span>'+(isStale(d)?' <span class="kwarn">'+staleTxt(d)+'</span>':'')+'</span><span class="s">'+esc(d.rep)+' · '+amtTxt(d.amt)+(d.gj?' · '+esc(d.gj[1]):'')+(extra?' · '+extra:'')+'</span></span>'
+ +'<span class="badge '+tg[0]+'">'+tg[1]+'</span><span class="chev">'+IC.chev+'</span></div>'}
+
+/* 검색 — 입력은 부분 갱신(포커스 유지) */
+function rSearch(){
+ scr.innerHTML=appbarS('검색')+'<div class="body fadein">'
+ +'<input id="srch" placeholder="현장명·담당자 검색" style="width:100%;border:1.5px solid var(--blue);background:#fff;border-radius:13px;padding:14px;font:inherit;font-size:15px;outline:none" oninput="srchDo(this.value)">'
+ +'<div id="srchres"><div class="hint" style="padding:8px 2px">내 건 '+myDeals().length+'건에서 찾습니다 — 연락처는 내 건 범위만</div></div></div>';
+ setTimeout(function(){var e=document.getElementById('srch');if(e)e.focus()},50);
+}
+function srchDo(q){
+ q=(q||'').trim();
+ var box=document.getElementById('srchres');if(!box)return;
+ if(!q){box.innerHTML='<div class="hint" style="padding:8px 2px">내 건 '+myDeals().length+'건에서 찾습니다</div>';return}
+ /* 접근권한 문제 — 남의 건이 검색으로 새면 안 된다 */
+ var list=myDeals().filter(function(d){return d.nm.indexOf(q)>=0||d.rep.indexOf(q)>=0});
+ box.innerHTML=list.length?'<div class="card tight" style="padding:2px 16px">'+list.map(function(d){return dealRow(d)}).join('')+'</div>'
+  :'<div class="hint" style="padding:14px 2px">"'+esc(q)+'" 결과 없음 — 중복 방지를 위해 신규 등록 전 꼭 검색하세요</div>';
+}
+
+/* 문의 상세 (관제 → 배정 대기 건) */
+function rInq(head,s){
+ var q=(ADMIN.assign||[])[s.i];
+ /* 견적문의(Inquiry)는 아직 이 앱이 서버에서 받지 않는다 — 없으면 안내 화면 */
+ if(!q){scr.innerHTML=appbarS('문의 상세')+'<div class="body fadein">'
+  +intro('var(--bg)','var(--ink-2)',IC.doc,'견적문의 수집 중','문의(Inquiry) API 연동 후 이 화면에서 접수·배정·최초응대를 처리합니다')
+  +'<div class="card"><div class="hint">PC 견적문의 화면에서는 지금도 배정할 수 있습니다.</div></div></div>';return}
+ scr.innerHTML=appbarS('문의 상세')+'<div class="body fadein">'
+ +intro('var(--danger-bg)','#c22f3c',IC.siren,esc(q.nm),q.ps+' — 배정 SLA 초과')
+ +'<div class="card"><div class="kv"><span class="k">유입</span><span class="v">홈페이지 견적문의</span></div><div class="kv"><span class="k">연락처</span><span class="v">010-****-1234</span></div><div class="kv"><span class="k">공종</span><span class="v" style="color:var(--violet)">'+(q.gj||'방수 · 금속기와')+'</span></div><div class="kv"><span class="k">문의 내용</span><span class="v" style="font-weight:600;text-align:right">"우수관 쪽 누수가 있어 견적 요청드립니다"</span></div><div class="kv"><span class="k">과거 이력</span><span class="v">'+(q.dup?'⚠ 유사 현장 발견':'동일 현장 없음 (게이트 통과)')+'</span></div></div>'
+ +(q.dup?'<div class="card" style="background:var(--danger-bg);border-color:transparent"><div class="hint" style="color:#c22f3c;font-weight:700">⚠ 중복현장 게이트 — '+q.dup+'</div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-line btn-sm" style="flex:1" onclick="toast(\'기존 건에 이어붙이기 — 과거 노트 포함 배정 (목업)\')">기존 건에 연결</button><button class="btn btn-line btn-sm" style="flex:1" onclick="toast(\'별개 현장으로 처리 — 사유 기록 (목업)\')">별개 현장</button></div></div>':'')
+ +'<div style="display:flex;gap:8px"><button class="btn btn-line" style="flex:1" onclick="toast(\'전화 연결 (목업)\')">'+IC.phone+' 전화</button><button class="btn btn-primary" style="flex:1" onclick="assignSheet('+s.i+')">배정하기</button></div></div>';
+}
+
+/* 배정 시트 — 부하 표시 + 최저 부하 추천 */
+function assignSheet(i){
+ var q=(ADMIN.assign||[])[i];
+ if(!q){toast('배정할 문의가 없습니다 — 문의 API 연동 후 표시됩니다');return}
+ var reps=(function(){var L=repLoad();return Object.keys(L).sort(function(a,b){return L[a]-L[b]})})();
+ openSheet(intro('var(--blue-50)','var(--blue-dark)',IC.user,esc(q.nm)+' 배정','부하가 낮은 순 — 맨 위가 추천입니다'),
+  reps.map(function(r,ri){return '<button class="cchip '+(ri===0?'b':'gr')+'" onclick="pickAssign('+i+',\''+r+'\')"><span class="cic">'+IC.user+'</span>'+r+' · 진행 '+repLoad()[r]+'건'+(ri===0?' <span class="badge badge-blue" style="margin-left:auto">추천</span>':'')+'</button>'}).join(''));
+}
+function pickAssign(i,r){ADMIN.assign[i].done=1;ADMIN.assign[i].rec=r;closeSheet();G.sub=null;toast('배정 완료 — '+r+' 잔디 알림 발송');render()}
+
+/* 응대 초과 목록 — 해당 담당자 데이터만 + 단계별 그룹·단계별 쪼기 */
+function rOverdue(head,s){
+ var mine=DEALS.filter(function(d){return d.rep===s.nm&&isOpen(d)&&isStale(d)});
+ var by={};mine.forEach(function(d){var k=macroOf(d.code);(by[k]=by[k]||[]).push(d)});
+ var body=MACRO5.map(function(g){return g.k}).filter(function(st){return by[st]}).map(function(st){
+  var L=by[st];var lbl=st==='sent'?'발송 후 무응답':'정체';
+  return '<div class="sec-h"><h2>'+macroNm(st)+' · '+lbl+' '+L.length+'건</h2><button class="btn btn-line btn-sm" onclick="nudgeSheet(\''+s.nm+'\',\''+macroNm(st)+' '+lbl+' '+L.length+'건\')">이 단계 쪼기</button></div>'
+   +'<div class="card tight" style="padding:2px 16px">'+L.map(function(d){return dealRow(d,staleTxt(d))}).join('')+'</div>';
+ }).join('');
+ var iq=INQS.filter(function(q){return q.rep===s.nm});
+ var iqBody='';
+ if(iq.length){
+  iqBody='<div class="sec-h"><h2>견적문의 응대 · 초과 '+iq.length+'건</h2><button class="btn btn-line btn-sm" onclick="nudgeSheet(\''+s.nm+'\',\'견적문의 응대 초과 '+iq.length+'건\')">이 단계 쪼기</button></div>'
+   +'<div class="card tight" style="padding:2px 16px">'+iq.map(function(q){
+     return '<div class="lrow" onclick="toast(\'문의 상세 — 원문·연락처·이력 (목업 생략)\')">'+tile(IC.phone,'var(--warn)','var(--warn-bg)')
+      +'<span class="meta"><span class="t">'+esc(q.nm)+' <span class="kwarn">기준 +'+q.over+'일</span></span><span class="s">'+q.st+' · '+q.gj+'</span></span><span class="chev">'+IC.chev+'</span></div>';
+    }).join('')+'</div>';
+ }
+ var total=mine.length+iq.length;
+ scr.innerHTML=appbarS(s.nm+' · 응대 초과')+'<div class="body fadein">'
+ +intro('var(--warn-bg)','#a36312',IC.clock,s.nm+'님 — 초과 '+total+'건','견적문의 + 파이프라인 단계별로 나눠 쪼을 수 있습니다 · 같은 사람 하루 1회 제한')
+ +iqBody
+ +(body||'')
+ +(!iqBody&&!body?'<div class="card"><div class="hint">기준일 초과 건이 없습니다 (예시 데이터 기준)</div></div>':'')
+ +(total?'<button class="btn btn-primary" onclick="nudgeSheet(\''+s.nm+'\',\'전체 '+total+'건\')">'+IC.bell+' 전체 쪼기</button>':'')+'</div>';
+}
+
+/* 쪼기 발송 확인 — ctx로 단계·범위 명시 */
+function nudgeSheet(nm,ctx){
+ ctx=ctx||'응대 기준일 초과 건';
+ openSheet(intro('var(--warn-bg)','#a36312',IC.bell,'쪼기 미리보기 — '+ctx,'팀 채널(운영3팀)로 발송됩니다 · 하루 1회 제한'),
+  '<div class="card" style="margin-bottom:10px"><div class="hint" style="color:var(--ink-2)">📣 '+nm+'님, <b>'+ctx+'</b> 처리 부탁드립니다.<br>오늘 몫에 올라가 있어요 — 3일째 초과 시 팀 에스컬레이션됩니다.</div></div>'
+  +'<button class="btn btn-primary" onclick="closeSheet();toast(\'쪼기 발송 완료 — 팀 채널 + 이행률 기록\')">팀 채널로 발송</button>');
+}
+
+/* 브랜드 유입 상세 */
+function rInflow(head,s){
+ var W=[['1주',8],['2주',12],['3주',15],['4주',18]];
+ var mx=18;
+ scr.innerHTML=appbarS(s.nm+' · 유입 30일')+'<div class="body fadein">'
+ +intro('var(--ok-bg)','#0d7a52',IC.chart,s.nm+' — '+s.ps,'최근 30일 유입 추이와 최근 접수입니다')
+ +'<div class="card"><div class="gt" style="font-size:12.5px;font-weight:600;color:var(--sub)">주별 유입</div><div style="display:flex;align-items:flex-end;gap:10px;height:90px;margin-top:12px">'
+ +W.map(function(w){return '<div style="flex:1;text-align:center"><div style="background:var(--blue-50);border-radius:8px 8px 0 0;height:'+Math.round(w[1]/mx*70)+'px;position:relative"><div style="position:absolute;top:-18px;left:0;right:0;font-size:11px;font-weight:800;color:var(--blue)">'+w[1]+'</div></div><div class="hint" style="margin-top:4px">'+w[0]+'</div></div>'}).join('')
+ +'</div></div>'
+ +'<div class="card tight" style="padding:4px 16px"><div class="prow">'+tile(IC.doc,'var(--blue)','var(--blue-50)')+'<span class="pn">[안양] 두산위브<span class="ps">8/19 · 옥상 방수</span></span><span class="badge badge-danger">미배정</span></div><div class="prow">'+tile(IC.doc,'var(--sub)','var(--bg)')+'<span class="pn">[수원] 세곡푸르지오<span class="ps">8/29 · 배정 완료</span></span><span class="badge badge-ok">배정</span></div></div></div>';
+}
+
+/* 장기정체·조치 필요 필터 */
+function rStale(){
+ var stale=DEALS.filter(isStale),noamt=DEALS.filter(function(d){return !d.amt&&isOpen(d)});
+ scr.innerHTML=appbarS('조치 필요')+'<div class="body fadein">'
+ +intro('var(--danger-bg)','#c22f3c',IC.siren,'조치 필요 '+(stale.length+noamt.length)+'건','데이터가 썩으면 보고서도 썩습니다 — 금요일 위생 점검 대상')
+ +'<div class="sec-h"><h2>단계 기준 초과 (SLA)</h2><span>'+stale.length+'건</span></div>'
+ +'<div class="card tight" style="padding:2px 16px">'+(stale.map(function(d){return dealRow(d)}).join('')||'<div class="hint" style="padding:12px 2px">없음</div>')+'</div>'
+ +'<div class="sec-h"><h2>금액 미입력</h2><span>'+noamt.length+'건</span></div>'
+ +'<div class="card tight" style="padding:2px 16px">'+(noamt.map(function(d){return dealRow(d)}).join('')||'<div class="hint" style="padding:12px 2px">없음</div>')+'</div></div>';
+}
+
+/* 내 위생 정리 목록 */
+function rHyg(){
+ var noamt=myDeals().filter(function(d){return !d.amt&&isOpen(d)}),stale=myDeals().filter(isStale);
+ scr.innerHTML=appbarS('내 위생 정리')+'<div class="body fadein">'
+ +intro('var(--warn-bg)','#a36312',IC.check,'금요일까지 정리하면 🟢','건을 누르면 바로 그 자리에서 처리됩니다')
+ +'<div class="sec-h"><h2>금액 미입력</h2><span>'+noamt.length+'건</span></div>'
+ +'<div class="card tight" style="padding:2px 16px">'+noamt.map(function(d){return dealRow(d)}).join('')+'</div>'
+ +'<div class="sec-h"><h2>단계 기준 초과 (SLA)</h2><span>'+stale.length+'건</span></div>'
+ +'<div class="card tight" style="padding:2px 16px">'+stale.map(function(d){return dealRow(d)}).join('')+'</div></div>';
+}
+
+/* 넘김 사유 시트 */
+function skipSheet(i){
+ var t=(G._today||[])[i];if(!t)return;
+ openSheet(intro('var(--bg)','var(--ink-2)',IC.clock,esc(t.nm)+' — 넘기는 이유','사유가 있어야 리마인드가 똑똑해집니다'),
+  '<div class="chiprow">'+['오늘 바빠서','고객이 보류 요청','자료 준비 후에','기타'].map(function(r){return '<button class="cchip gr" onclick="pickSkip('+i+',\''+r+'\')">'+r+'</button>'}).join('')+'</div>');
+}
+function pickSkip(i,r){
+ var d=todayDeal(i);
+ if(d){d.postpone++;addActivity(d,'연기','오늘 처리 넘김',r+' (연기 '+d.postpone+'회)',false);setNextAction(d,'재시도','넘긴 건 다시 확인',1)}
+ markDone(i,'넘김('+r+')');closeSheet();toast('내일 다시 올라와요 — 사유·연기 횟수 기록됨');render();
+}
+
+/* 예외 이동 (전체 단계 + 사유 필수) */
+function exSheet(){
+ var d=DEALS.find(function(x){return x.id===G.deal});
+ openSheet(intro('var(--violet-bg)','var(--violet)',IC.alert,'예외 이동','순서를 건너뛰는 이동 — 사유가 필수이고 기록에 남습니다'),
+  Object.keys(NEXT_BY_CODE).filter(function(s){return s!==d.code}).map(function(s){return '<button class="cchip gr" onclick="exReason(\''+s+'\')">'+stageLabel(s)+'</button>'}).join(''));
+}
+function exReason(to){
+ openSheet(intro('var(--violet-bg)','var(--violet)',IC.alert,stageLabel(to)+'로 예외 이동 — 사유 <span style="font-size:12px;color:var(--danger)">*필수</span>',''),
+  '<div class="chiprow">'+['잘못 기재했음','고객 상황 급변','과거 건 정리','기타'].map(function(r){return '<button class="cchip gr" onclick="commitMoveR(\''+to+'\',\'예외: '+r+'\')">'+r+'</button>'}).join('')+'</div>');
+}
+
+/* 재배정 시트 (관리자) */
+function reassignSheet(){
+ var d=DEALS.find(function(x){return x.id===G.deal});
+ var reps=(function(){var L=repLoad();return Object.keys(L).sort(function(a,b){return L[a]-L[b]})})().filter(function(r){return r!==d.rep});
+ openSheet(intro('var(--violet-bg)','var(--violet)',IC.user,'재배정 — 현재 '+esc(d.rep),'이력·노트가 전부 따라갑니다 (기억 상속)'),
+  reps.map(function(r,ri){return '<button class="cchip '+(ri===0?'b':'gr')+'" onclick="pickReassign(\''+r+'\')"><span class="cic">'+IC.user+'</span>'+r+' · 진행 '+repLoad()[r]+'건'+(ri===0?' <span class="badge badge-blue" style="margin-left:auto">추천</span>':'')+'</button>'}).join(''));
+}
+function pickReassign(r){
+ var d=DEALS.find(function(x){return x.id===G.deal});if(!d)return;
+ var from=d.rep;d.rep=r;
+ addActivity(d,'담당자변경',from+' → '+r,'재배정 (이력 동반)',false);
+ pushWrite('assign',{opportunity_id:d.id,from:from,to:r});   /* 완료라고 말하는 행동은 반드시 서버로 */
+ closeSheet();toast('재배정 완료 — '+r);render();
+}
+
+/* ══════════ V1.5 · V2 구현분 (예시 데이터) ══════════ */
+
+/* ══════════════════════════════════════════════════════════
+   + 영업 추가 — 예전 «발굴» 탭 (2026-09-02 개편)
+
+   PC 파이프라인과 같은 축으로 등록한다. 현장명·공종만 받던 예전 폼으로는
+   이 딜이 어느 사업(POUR/스퀘어/석민/기술자문)인지 알 수 없어
+   나중에 파이프라인에서 분류가 안 됐다.
+
+   등록도 «근거»를 받는다 — 처음부터 출처가 명확해야 나중에 추적된다.
+   ══════════════════════════════════════════════════════════ */
+function rProspect(head){
+ var biz=G.pbiz||BIZ_TYPES[0];
+ scr.innerHTML=head+'<div class="body fadein">'
+ +intro('var(--blue-50)','var(--blue-dark)',IC.plus,'＋ 영업 추가','현장에서 바로 등록 — PC 파이프라인에 즉시 생깁니다')
+ +'<div class="card"><div class="hint" style="margin-bottom:6px">아파트명 <span style="color:var(--danger)">*</span></div>'
+ +'<input id="pname" value="'+esc(G.pnm||'')+'" oninput="G.pnm=this.value" placeholder="예: [수원] 광교더리브아파트" style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box">'
+ +'<button class="btn btn-line" style="margin-top:10px" onclick="scanCard()">'+IC.camera+' 명함·현수막 촬영으로 자동 인식</button>'
+ +'<div class="hint" style="margin-top:14px;margin-bottom:6px">공사명 <span style="color:var(--danger)">*</span></div>'
+ +'<input id="pwork" value="'+esc(G.pwork||'')+'" oninput="G.pwork=this.value" placeholder="예: 옥상 방수 재도장공사" style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box">'
+ +'<div class="hint" style="margin-top:14px;margin-bottom:6px">사업유형 <span style="color:var(--danger)">*</span> — 나중에 전환할 수 있습니다</div>'
+ +'<div class="chiprow">'+BIZ_TYPES.map(function(b){return '<button class="cchip '+(biz===b?'b':'gr')+'" data-b="'+escAttr(b)+'" onclick="G.pbiz=this.dataset.b;render()">'+esc(b)+'</button>'}).join('')+'</div>'
+ +'<div class="hint" style="margin-top:14px;margin-bottom:6px">공종 (대분류) <span style="color:var(--danger)">*</span></div>'
+ +'<div class="chiprow">'+Object.keys(GJ).map(function(g){return '<button class="cchip '+(G.pgj1===g?'b':'gr')+'" onclick="G.pgj1=\''+g+'\';G.pgj2=null;render()">'+g+'</button>'}).join('')+'</div>'
+ +(G.pgj1?'<div class="hint" style="margin-top:12px;margin-bottom:6px">공종 (소분류) — '+G.pgj1+'</div><div class="chiprow">'+GJ[G.pgj1].map(function(g){return '<button class="cchip '+(G.pgj2===g?'b':'gr')+'" style="font-size:12.5px;padding:11px 4px" onclick="G.pgj2=\''+g+'\';render()">'+g+'</button>'}).join('')+'</div>':'')
+ +'<div class="hint" style="margin-top:14px;margin-bottom:6px">담당자</div>'
+ +'<div class="rsum" style="padding:13px"><b>'+esc(G.user?G.user.nm:'')+'</b> <span class="hint">· 로그인 사용자</span></div>'
+ +'<div class="hint" style="margin-top:14px;margin-bottom:6px">영업 등록 근거 <span style="color:var(--danger)">*</span></div>'
+ +mReason('nd','예: 직접 발굴한 현장. 재도장 입찰 예정이며 기술자문으로 영업 시작.')
+ +'<button class="btn btn-primary" style="margin-top:14px" data-gate="nd" disabled onclick="addProspect()">등록하기</button></div>'
+ +'<div class="card" style="background:var(--blue-50);border-color:transparent"><div class="hint" style="color:var(--blue-dark)">이미 있는 현장이면 기존 건에 이어붙습니다 (중복 게이트). 등록하면 PC 파이프라인에서도 바로 보입니다.</div></div></div>';
+ mrGate('nd');
+}
+function scanCard(){
+ G.scanN=(G.scanN||0)+1;
+ G.pnm=G.scanN%2?'[속초] 청초대우아파트':'[안양] 만안로얄아파트';
+ toast('촬영 인식 완료 — 현장명 자동 입력'+(G.scanN%2?' (중복 데모)':''));render();
+}
+function addProspect(){
+ var nm=(G.pnm||'').trim(), work=(G.pwork||'').trim(), biz=G.pbiz||BIZ_TYPES[0];
+ if(!nm)return toast('아파트명을 입력하거나 촬영 인식을 눌러주세요');
+ if(!work)return toast('공사명을 입력해 주세요');
+ if(!G.pgj1)return toast('공종 대분류를 골라주세요');
+ if(!mrOk('nd'))return toast('영업 등록 근거를 남겨야 저장할 수 있어요');
+ var core=nm.replace(/\[.*?\]\s*/,'');
+ var dup=DEALS.find(function(d){return core&&d.nm.indexOf(core)>=0});
+ if(dup)return dupSheet(dup);
+ var why=mrVal('nd'), src=mrSrc('nd'), gj=[G.pgj1,G.pgj2||'미정'];
+ var nd=normalizeDeal({id:100+DEALS.length,nm:nm,rep:G.user.nm,gj:gj,amt:0,code:'first_contact',lead:1,
+   origin:biz,sub:biz,originBusiness:biz,currentBusiness:biz,businessHistory:[],
+   advisory:(biz==='기술자문'?{work_name:work,work_type:gj[1]}:null),
+   tl:[['오늘','영업 등록 ('+biz+' · '+work+')']]});
+ DEALS.push(nd);addActivity(nd,'영업등록',work+' · '+biz,why,false);setNextAction(nd,'첫통화','등록 후 첫 통화',1);
+ pushWrite('opportunity_create',{name:nm,work_name:work,work_type:gj[1],brand:biz,owner:G.user.nm,
+   reason:why,reason_source:src,origin:biz,gj:gj},nd.id);
+ G.pnm='';G.pwork='';G.pgj1=null;G.pgj2=null;G.tab='mine';
+ toast(biz+' 영업으로 등록 — 내 건과 PC 파이프라인에 추가됐어요');render();
+}
+function dupSheet(d){
+ openSheet(intro('var(--danger-bg)','#c22f3c',IC.alert,'이 현장, 이미 있어요','같은 현장을 두 번 만들면 이력이 갈라집니다'),
+  dealRow(d)+'<div style="height:8px"></div>'
+  +'<button class="cchip b" data-id="'+escAttr(d.id)+'" onclick="closeSheet();G.deal=this.dataset.id;G.tab=\'mine\';render()"><span class="cic">'+IC.folder+'</span>기존 건 열기 — 이력에 이어붙이기</button>'
+  +'<button class="cchip gr" onclick="closeSheet();toast(\'별개 현장으로 등록 — 사유가 기록됩니다 (목업)\')">그래도 새 건으로 등록</button>');
+}
+
+/* 알림함 (V1.5) */
+function rNoti(){
+ scr.innerHTML=appbarS('알림함')+'<div class="body fadein">'
+ +'<div class="sec-h"><h2>오늘</h2><span>아침 9시 · 하루 1회 묶음</span></div>'
+ +'<div class="card tight" style="padding:4px 16px">'
+ +'<div class="prow">'+tile(IC.sun,'var(--blue)','var(--blue-50)')+'<span class="pn">오늘 몫 6건이 도착했어요<span class="ps">09:00 · 잔디에도 발송됨</span></span><button class="btn btn-line btn-sm" onclick="G.sub=null;G.tab=\'today\';render()">열기</button></div>'
+ +'<div class="prow">'+tile(IC.clock,'var(--warn)','var(--warn-bg)')+'<span class="pn">농협하나로 — 발송 +3일 무응답<span class="ps">확인 전화 권장</span></span><button class="btn btn-line btn-sm" onclick="G.sub=null;G.deal=3;render()">보기</button></div>'
+ +'</div>'
+ +'<div class="sec-h"><h2>이번 주</h2><span></span></div>'
+ +'<div class="card tight" style="padding:4px 16px">'
+ +'<div class="prow">'+tile(IC.check,'var(--ok)','var(--ok-bg)')+'<span class="pn">금요 위생 점검 — 정리 2건<span class="ps">금액 미입력 1 · 30일 무변동 1</span></span><button class="btn btn-line btn-sm" onclick="G.sub={t:\'hyg\'};render()">정리</button></div>'
+ +'<div class="prow">'+tile(IC.bell,'var(--sub)','var(--bg)')+'<span class="pn">조용한 시간 설정 가능<span class="ps">알림은 아침 9시에만 — 설정에서 변경</span></span><button class="btn btn-line btn-sm" onclick="G.sub={t:\'set\'};render()">설정</button></div>'
+ +'</div></div>';
+}
+
+/* 설정 (V1.5: 조용한 시간 · 휴가 위임) */
+function rSet(){
+ G.set=G.set||{quiet:true,hour:'9시',vac:false,deleg:null};
+ var s=G.set;
+ scr.innerHTML=appbarS('설정')+'<div class="body fadein">'
+ +'<div class="card"><div class="prow" style="border:0"><span class="pn">조용한 시간 (21시~8시)<span class="ps">이 시간엔 어떤 알림도 오지 않아요</span></span><button class="badge '+(s.quiet?'badge-ok':'badge-gray')+'" onclick="G.set.quiet=!G.set.quiet;render()">'+(s.quiet?'켜짐':'꺼짐')+'</button></div></div>'
+ +'<div class="card"><div class="hint" style="margin-bottom:8px">아침 알림 시각</div><div class="chiprow" style="grid-template-columns:1fr 1fr 1fr">'+['8시','9시','10시'].map(function(h){return '<button class="cchip '+(s.hour===h?'b':'gr')+'" onclick="G.set.hour=\''+h+'\';render()">'+h+'</button>'}).join('')+'</div></div>'
+ +'<div class="card"><div class="prow" style="border:0"><span class="pn">휴가 모드<span class="ps">내 건을 임시로 동료에게 위임합니다</span></span><button class="badge '+(s.vac?'badge-warn':'badge-gray')+'" onclick="G.set.vac=!G.set.vac;render()">'+(s.vac?'사용 중':'꺼짐')+'</button></div>'
+ +(s.vac?'<div class="hint" style="margin:6px 0 8px">위임 대상</div><div class="chiprow">'+['송보람','한준엽','김성민','정정훈'].map(function(r){return '<button class="cchip '+(s.deleg===r?'b':'gr')+'" onclick="G.set.deleg=\''+r+'\';toast(\'휴가 중 알림이 '+r+'님에게 갑니다\');render()">'+r+'</button>'}).join('')+'</div>':'')
+ +'</div></div>';
+}
+
+/* 종료 목록 — 실데이터 4종 (수주/실주/배드핏/연락두절). 예시 표 CLOSED_EX 는 삭제했다 */
+function rClosed(){
+ G.cl=G.cl||'won';
+ var base=(G.mode==='admin'?DEALS:myDeals());
+ var cnt={};['won','lost','badfit','nocontact'].forEach(function(o){cnt[o]=base.filter(function(d){return d.outcome===o}).length});
+ var list=base.filter(function(d){return d.outcome===G.cl})
+   .sort(function(a,b){return String(b.closed_at||b.won_at||'').localeCompare(String(a.closed_at||a.won_at||''))});
+ var rows=list.slice(0,60).map(function(d){
+  var when=String(d.closed_at||d.won_at||'').slice(0,10),tg=tagOf(d.won_amount||d.amt);
+  return '<div class="lrow" data-id="'+escAttr(d.id)+'" onclick="G.deal=this.dataset.id;render()">'
+   +tile(d.outcome==='won'?IC.check:IC.alert,d.outcome==='won'?'var(--ok)':'var(--sub)',d.outcome==='won'?'var(--ok-bg)':'var(--bg)')
+   +'<span class="meta"><span class="t">'+esc(d.nm)+'</span><span class="s">'+esc(d.rep)+' · '+amtTxt(d.won_amount||d.amt)
+   +' · '+(d.stage_unknown?'종료 단계 미기록':stageLabel(d.code)+'에서 종료')+(when?' · '+when:'')+'</span></span>'
+   +'<span class="badge '+(d.outcome==='won'?tg[0]:'badge-gray')+'">'+esc(d.outcome==='won'?tg[1]:(d.close_reason||OUTCOMES[d.outcome].nm))+'</span></div>';
+ }).join('');
+ scr.innerHTML=appbarS('종료 목록')+'<div class="body fadein">'
+ +'<div class="seg">'+['won','lost','badfit','nocontact'].map(function(o){return '<button class="'+(G.cl===o?'on':'')+'" data-o="'+o+'" onclick="G.cl=this.dataset.o;render()">'+OUTCOMES[o].nm+' '+cnt[o]+'</button>'}).join('')+'</div>'
+ +'<div class="card tight" style="padding:4px 16px">'+(rows||'<div class="hint" style="padding:14px 2px">해당 건이 없습니다</div>')+'</div>'
+ +(list.length>60?'<div class="hint" style="padding:6px 2px">최근 60건만 표시</div>':'')
+ +'<div class="card" style="background:var(--blue-50);border-color:transparent"><div class="hint" style="color:var(--blue-dark)">'+(G.cl==='lost'?'실주는 «어느 단계에서 졌는지» 까지 남습니다 — 단계별 실주 분석의 원료':G.cl==='badfit'?'배드핏은 유입 개선 데이터 — 실주와 별도 집계':G.cl==='nocontact'?'연락두절은 3회 이상 시도 후에만 처리됩니다':'수의계약(≤500만)은 자동 분류됩니다')+'</div></div></div>';
+}
+
+/* 개인 상세 — 3축 신호등 (V1.5) */
+function rAxis(head,s){
+ scr.innerHTML=appbarS(s.nm+' · 3축 진단')+'<div class="body fadein">'
+ +'<div class="card"><div class="prow" style="border:0">'+tile(IC.check,'var(--ok)','var(--ok-bg)')+'<span class="pn">성과 🟢<span class="ps">수주 '+s.amt+' · 승률 43% (팀 평균)</span></span></div></div>'
+ +'<div class="card"><div class="prow" style="border:0">'+tile(IC.phone,'var(--sub)','var(--bg)')+'<span class="pn">활동 ⚪ 수집 중<span class="ps">오늘페이지 칩 데이터가 쌓이면 실측 전환 (9월)</span></span></div></div>'
+ +'<div class="card"><div class="prow" style="border:0">'+tile(IC.clock,'var(--warn)','var(--warn-bg)')+'<span class="pn">규율 🟡<span class="ps">다음 약속 보유율 낮음 · 정체 건 있음</span></span></div></div>'
+ +'<button class="btn btn-primary" onclick="coachSheet(\''+s.nm+'\')">면담 안건 만들기</button></div>';
+}
+
+/* 코칭 신호 → 면담 안건 (V2) */
+function rCoach(){
+ var rows=[['황윤선','방치 55건 — 관계 유지 몰림','badge-warn','🟡'],['이필선','방치 52건 · 부하 72건','badge-warn','🟡'],['김성민','승률 25% (팀 43%) — 병목: 자료 발송 후','badge-danger','🔴']];
+ scr.innerHTML=appbarS('코칭 신호')+'<div class="body fadein">'
+ +intro('var(--warn-bg)','#a36312',IC.user,'이번 주 코칭 신호 3건','팀 평균 대비 병목을 자동 감지했습니다')
+ +'<div class="card tight" style="padding:4px 16px">'+rows.map(function(r){return '<div class="prow">'+tile(IC.user,'var(--warn)','var(--warn-bg)')+'<span class="pn">'+r[3]+' '+r[0]+'<span class="ps">'+r[1]+'</span></span><button class="btn btn-line btn-sm" onclick="coachSheet(\''+r[0]+'\')">안건</button></div>'}).join('')+'</div></div>';
+}
+function coachSheet(nm){
+ openSheet(intro('var(--violet-bg)','var(--violet)',IC.doc,nm+'님 면담 안건 (자동 생성)','데이터가 만든 초안 — 수정해서 쓰세요'),
+  '<div class="card" style="margin-bottom:10px"><div class="m-ok">정체 상위 3건 같이 리뷰 (조원주공 32일 외)</div><div class="m-ok">관계 유지 몰림 — 재접촉/종결 분류 기준 합의</div><div class="m-ok">지원 필요사항 청취 (적산팀 대기 등)</div></div>'
+  +'<button class="btn btn-primary" onclick="closeSheet();toast(\'면담 안건 저장 — 잔디 1:1로 발송 (목업)\')">잔디로 보내기</button>');
+}
+
+/* 주간 브리핑 (V1.5) */
+function rBrief(){
+ scr.innerHTML=appbarS('주간 브리핑')+'<div class="body fadein">'
+ +'<div class="banner"><span class="glow"></span><div class="eyebrow">9월 1주 · 매주 월 08:30 잔디 자동 발송</div><h3>지난주: 수주 1건 · 1.2억</h3><p>처리 34건 · 신규 유입 12건 · 이행률 71%</p></div>'
+ +'<div class="sec-h"><h2>이번 주 예정</h2><span>다음 액션일 도래</span></div>'
+ +'<div class="card tight" style="padding:4px 16px"><div class="prow">'+tile(IC.chart,'var(--blue)','var(--blue-50)')+'<span class="pn">미사강변풍경채 PT<span class="ps">화요일 · 황윤선</span></span></div><div class="prow">'+tile(IC.siren,'var(--danger)','var(--danger-bg)')+'<span class="pn">산들마을2단지 회의 확정<span class="ps">임박 · 황윤선</span></span></div><div class="prow">'+tile(IC.check,'var(--ok)','var(--ok-bg)')+'<span class="pn">강서힐스테이트 주간 체크<span class="ps">금요일 · 한준엽</span></span></div></div>'
+ +'<div class="sec-h"><h2>위험 TOP 3</h2><span>금액 × 방치일</span></div>'
+ +'<div class="card tight" style="padding:4px 16px"><div class="prow">'+tile(IC.alert,'var(--danger)','var(--danger-bg)')+'<span class="pn">강동롯데캐슬퍼스트<span class="ps">23.0억 · 431일 무변동</span></span></div><div class="prow">'+tile(IC.alert,'var(--warn)','var(--warn-bg)')+'<span class="pn">조원주공뉴타운2단지<span class="ps">2.9억 · 32일</span></span></div><div class="prow">'+tile(IC.alert,'var(--warn)','var(--warn-bg)')+'<span class="pn">배곧호반<span class="ps">6.9억 · 153일</span></span></div></div></div>';
+}
+
+/* 월간 보고 미리보기·발송 (V1.5) */
+function rMonthly(){
+ scr.innerHTML=appbarS('월간 보고')+'<div class="body fadein">'
+ +intro('var(--blue-50)','var(--blue-dark)',IC.doc,'9월 1일 발송 예정본','사람 손 없이 대표 보고 — 12/1 완전 자동이 목표')
+ +'<div class="card"><div class="kv"><span class="k">8월 수주</span><span class="v">실사 확정 중</span></div><div class="kv"><span class="k">가중 예상매출</span><span class="v" style="color:var(--blue)">89.4억</span></div><div class="kv"><span class="k">파이프라인</span><span class="v">183건 · 275.6억</span></div><div class="kv"><span class="k">3축 진단</span><span class="v">성과 실측 · 활동/규율 수집 중</span></div><div class="kv"><span class="k">코칭 신호</span><span class="v">3건 (면담 안건 자동)</span></div></div>'
+ +'<div style="display:flex;gap:8px"><button class="btn btn-line" style="flex:1" onclick="toast(\'PDF 미리보기 생성 (목업)\')">PDF 미리보기</button><button class="btn btn-primary" style="flex:1" onclick="toast(\'대표 보고 채널로 발송 (목업)\')">잔디 발송</button></div></div>';
+}
+
+/* 중복현장 목록·비교 (V1.5) */
+function rDups(){
+ G._dg=G._dg||{};
+ var GRP=[['이편한세상광안비치',4,[['석민이앤씨 · 이필선 · 시공단계','2024~'],['POUR솔루션 · 황윤선 · 자료 발송','2026.3'],['표기 변형 2건','아파트 有/無']]],['신영프로방스',3,[['석민이앤씨 · 한준엽 · 수주','2025.9'],['표기 변형 2건','띄어쓰기']]],['인천국제공항 주차장',3,[['POUR솔루션 · 김성민 · 실주','2025.4'],['표기 변형 2건','붙여쓰기']]]];
+ scr.innerHTML=appbarS('중복현장')+'<div class="body fadein">'
+ +intro('var(--warn-bg)','#a36312',IC.alert,'같은 현장 추정 45쌍','자동 병합하지 않습니다 — 확인 후 병합만')
+ +GRP.map(function(g,gi){var open=G._dg[gi];return '<div class="card tight" style="padding:2px 16px"><div class="lrow" onclick="G._dg['+gi+']=!G._dg['+gi+'];render()">'+tile(IC.folder,'var(--warn)','var(--warn-bg)')+'<span class="meta"><span class="t">'+g[0]+'</span><span class="s">'+g[1]+'건 등록</span></span><span class="chev" style="transform:rotate('+(open?90:0)+'deg)">'+IC.chev+'</span></div>'
+  +(open?g[2].map(function(r){return '<div class="prow" style="padding-left:14px"><span class="pn" style="font-size:12.5px">'+r[0]+'<span class="ps">'+r[1]+'</span></span></div>'}).join('')+'<button class="btn btn-line btn-sm" style="margin:8px 0 10px" onclick="toast(\'병합 요청 기록 — 관리자 확인 후 처리 (목업)\')">확인했어요 — 병합 요청</button>':'')
+  +'</div>'}).join('')+'</div>';
+}
+
+/* 사진 첨부·보기 (V1.5) */
+function photoSheet(){
+ var d=DEALS.find(function(x){return x.id===G.deal});
+ d.ph=d.ph||['linear-gradient(135deg,#b9caf4,#7a9df8)','linear-gradient(135deg,#f4e2b9,#f8c97a)'];
+ openSheet(intro('var(--blue-50)','var(--blue-dark)',IC.camera,'현장 사진 '+d.ph.length+'장','촬영하면 타임라인에 자동 첨부됩니다'),
+  '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">'+d.ph.map(function(p){return '<div style="aspect-ratio:1;border-radius:12px;background:'+p+'"></div>'}).join('')+'</div>'
+  +'<button class="btn btn-primary" onclick="addPhoto()">'+IC.camera+' 촬영·추가</button>');
+}
+function addPhoto(){
+ var d=DEALS.find(function(x){return x.id===G.deal});
+ d.ph.push('linear-gradient(135deg,#c4f4b9,#7af8b5)');
+ d.tl.unshift(['오늘','📷 현장 사진 1장 첨부']);
+ photoSheet();toast('사진 첨부 — 타임라인 기재됨');
+}
+
+/* 문자·자료 템플릿 발송 (V2) */
+function tmplSheet(){
+ var d=DEALS.find(function(x){return x.id===G.deal});
+ openSheet(intro('var(--violet-bg)','var(--violet)',IC.msg,'템플릿 발송','탭 1번 발송 — 기록은 자동입니다'),
+  [['견적서 안내 문자','"견적서 보내드렸습니다. 검토 후 편하신 시간 알려주세요"'],['자료 재발송 (이메일)','컨설팅 자료 4종 세트 재발송'],['방문 확정 문자','"O일 O시 방문 예정입니다. 변경 시 회신 주세요"']].map(function(t,i){
+   return '<button class="cchip '+(i===0?'b':'gr')+'" onclick="sendTmpl(\''+t[0]+'\')"><span class="cic">'+IC.msg+'</span><span style="text-align:left"><span style="display:block">'+t[0]+'</span><span style="display:block;font-size:11px;font-weight:600;opacity:.7">'+t[1]+'</span></span></button>'}).join(''));
+}
+function sendTmpl(nm){
+ var d=DEALS.find(function(x){return x.id===G.deal});
+ d.tl.unshift(['오늘','💬 '+nm+' 발송 — 자동 기재']);
+ closeSheet();toast('발송 완료 · 타임라인 기재');render();
+}
+
+/* ── 10 실적 / 리포트 ── */
+function rPerf(head){
+ scr.innerHTML=head+'<div class="body fadein"><div class="sec-h"><h2>담당자 실적</h2><span>분기 누적</span></div>'
+ +'<div class="card tight" style="padding:4px 16px">'+ADMIN.rank.map(function(r,i){return '<div class="prow" style="cursor:pointer" onclick="G.sub={t:\'axis\',nm:\''+r[0]+'\',amt:\''+r[1]+'\'};render()">'+tile('<b style="font-size:14px">'+(i+1)+'</b>',i===0?'var(--blue)':'var(--sub)',i===0?'var(--blue-50)':'var(--bg)')+'<span class="pn">'+r[0]+(i===0?' 🥇':'')+'<span class="ps">3축 진단 보기 ›</span></span><span class="kct">'+r[1]+'</span></div>'}).join('')+'</div>'
+ +'<div class="card" style="background:var(--warn-bg);border-color:transparent"><div class="hint" style="color:#a36312">활동·규율 축은 오늘페이지 데이터가 쌓이면 실측 전환 — 현재 성과 축만 실측</div><button class="btn btn-line btn-sm" style="margin-top:8px" onclick="G.sub={t:\'coach\'};render()">코칭 신호 3건 보기</button></div></div>';
+}
+function rRpt(head){
+ scr.innerHTML=head+'<div class="body fadein"><div class="sec-h"><h2>리포트</h2><span>매월 1일 자동 발송 목표</span></div>'
+ +'<div class="card gauge"><div class="gt">분기 수주 (26Q3)</div><div class="gv">실사 진행 중</div><div class="hint" style="margin-top:5px">시공·계약 1년 무변동 13건 종결 확인 후 확정</div></div>'
+ +'<div class="card gauge"><div class="gt">가중 예상매출</div><div class="gv">89.4억</div><div class="hint" style="margin-top:5px">가중치(20·35·60·80%)는 승인 대기 기준값</div></div>'
+ +'<div class="card tight" style="padding:4px 16px">'
+ +'<div class="prow" style="cursor:pointer" onclick="G.sub={t:\'brief\'};render()">'+tile(IC.sun,'var(--blue)','var(--blue-50)')+'<span class="pn">주간 브리핑<span class="ps">매주 월 08:30 · 잔디 자동 발송</span></span><span class="chev">'+IC.chev+'</span></div>'
+ +'<div class="prow" style="cursor:pointer" onclick="G.sub={t:\'monthly\'};render()">'+tile(IC.doc,'var(--blue)','var(--blue-50)')+'<span class="pn">월간 보고 미리보기·발송<span class="ps">매월 1일 · 대표 보고</span></span><span class="chev">'+IC.chev+'</span></div>'
+ +'<div class="prow" style="cursor:pointer" onclick="G.sub={t:\'dups\'};render()">'+tile(IC.alert,'var(--warn)','var(--warn-bg)')+'<span class="pn">중복현장 목록·비교<span class="ps">45쌍 · 확인 후 병합</span></span><span class="chev">'+IC.chev+'</span></div>'
+ +'</div>'
+ +'<div class="card" style="background:var(--blue-50);border-color:transparent"><div class="hint" style="color:var(--blue-dark)">이 화면이 매월 1일 PDF·잔디 보고로 자동 발송되는 것이 최종 그림 (12/1 목표)</div></div></div>';
+}
+
+/* ── 시작 화면 ──────────────────────────────────────────────
+   Supabase 세션이 살아 있으면 → 오늘 (관리자면 관제) · 없으면 → 로그인
+   ?debug=1 / ?preview=1 → 설계용 흐름도 · ?demo=1 → 서버 없이 예시 데이터
+
+   «로그인 기억» 은 Supabase 가 이미 해 준다. 이름만 로컬에 저장해 두고 바로
+   들여보내면 토큰 없이 서버를 불러 «서버 연결 실패» 가 뜬다 — 실제로 그랬다. */
+if(!DEVVIEW)document.body.classList.add('svc');
+if(DEVVIEW){nav('flow')}
+else if(DEMO){G.user=REPS[0];G.mode='rep';nav('today')}
+else{
+  nav('login');                                   /* 확인되기 전까지는 로그인 화면 */
+  authRestore().then(function(ok){
+    if(ok){loadLive();nav(G.mode==='admin'?'ctrl':'today')}
+    else nav('login');
+  }).catch(function(){nav('login')});
+}
+</script>
+</body>
+</html>

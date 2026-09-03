@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-store">
+<title>넷폼 CRM</title>
+<!--
+  ══════════════════════════════════════════════════════════════════════
+  넷폼 CRM 진입점 — 주소 하나, 화면 둘 (2026-09-02)
+
+      https://crm.netform.co.kr
+                 │
+          [접속 환경 확인]
+                 │
+      ┌──────────┴──────────┐
+     PC                   모바일
+      │                     │
+  넷폼CRM_v4_1        mobile
+      │                     │
+      └──────────┬──────────┘
+              crm-api / crm-write
+                 │
+              Supabase
+
+  CRM 을 두 개 만드는 것이 아니다. 화면만 둘이고 데이터는 하나다.
+
+  ── 왜 iframe 인가 ──
+  진짜 «내부 Rewrite» 는 서버(Nginx/Vercel/Cloudflare)가 해야 한다.
+  아직 서버가 없으므로, 정적 호스팅에서도 «주소가 바뀌지 않는» 같은 결과를
+  내려고 전체화면 iframe 으로 감쌌다. 주소창은 계속 crm.netform.co.kr 이다.
+  서버에 올릴 때는 deploy/ 의 rewrite 설정을 쓰면 이 파일 없이도 동작한다.
+
+  ── 판단 순서 ──
+  ① ?view=pc / ?view=mobile          ← 주소에 적힌 것이 최우선 (테스트·링크 공유)
+  ② 이 기기에 저장된 사용자의 선택 (localStorage)
+  ③ 자동 판정 (UA + 화면폭 + 터치)
+
+  주소가 1순위인 이유: 저장된 선택이 이기면 ?view=pc 를 붙여도 무시돼서
+  «주소는 pc 인데 화면은 모바일» 같은 상태가 생긴다. 지금 무엇을 보고 있는지는
+  주소만 봐도 알 수 있어야 한다. 그래서 토글을 누르면 주소도 같이 바꾼다.
+  기기는 «어떤 UI 를 보여줄지» 만 정한다. «무엇을 보여줄지» 는 로그인 권한이 정한다.
+  ══════════════════════════════════════════════════════════════════════
+-->
+<style>
+  html,body{margin:0;height:100%;background:#F4F6FA;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif}
+  #app{position:fixed;inset:0;width:100%;height:100%;border:0;display:block}
+  /* 모바일 화면을 «PC 브라우저에서» 볼 때 — 1900px 폭으로 늘어나면 모바일처럼 보이지 않는다.
+     폰 폭으로 가운데 세운다. 진짜 폰(좁은 화면)에서는 아래 규칙이 적용되지 않아 전체를 그대로 쓴다. */
+  @media (min-width:900px){
+    body.mob{background:#E4E9F2}
+    body.mob #app{inset:auto;left:50%;top:18px;transform:translateX(-50%);
+      width:400px;height:calc(100vh - 36px);max-height:880px;
+      border-radius:30px;background:#fff;
+      box-shadow:0 26px 70px rgba(20,30,55,.26),0 0 0 9px #14161b}
+  }
+  /* 화면 전환 스위치 — 자동 판정이 틀렸을 때를 위한 작은 탈출구 */
+  #vtog{position:fixed;z-index:9999;right:10px;bottom:10px;display:flex;gap:6px;
+        background:rgba(255,255,255,.93);backdrop-filter:blur(8px);
+        border:1px solid #E3E7EF;border-radius:999px;padding:5px;
+        box-shadow:0 6px 20px rgba(20,30,55,.14);font-size:11.5px;transition:opacity .25s}
+  #vtog.hide{opacity:.18}
+  /* 모바일 앱은 하단에 탭바(오늘·내 건·+영업·내 실적)가 있다.
+     토글이 그 위에 겹치면 «내 실적» 을 누를 수 없다. 탭바 위로 올린다. */
+  #vtog.m{bottom:calc(68px + env(safe-area-inset-bottom,0px))}
+  #vtog button{border:0;background:transparent;color:#6B7488;font:inherit;font-weight:700;
+        padding:6px 11px;border-radius:999px;cursor:pointer}
+  #vtog button.on{background:#1D2D50;color:#fff}
+  #boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+        flex-direction:column;gap:12px;color:#6B7488;font-size:13px}
+  #boot b{color:#1D2D50;font-size:15px;letter-spacing:-.3px}
+  .sp{width:26px;height:26px;border:2.5px solid #E3E7EF;border-top-color:#2C6BED;
+      border-radius:50%;animation:sp .8s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="boot"><div class="sp"></div><b>넷폼 CRM</b><span id="bootmsg">접속 환경을 확인하고 있습니다…</span></div>
+<script>
+var PC_APP     = 'crm.html';
+var MOBILE_APP = 'mobile.html';
+var KEY = 'nf_view_pref';
+
+/* 자동 판정 — 화면폭 하나만 보면 태블릿·창 축소에서 흔들린다.
+   그래서 UA(모바일 기기) 를 먼저 보고, 폭과 터치는 보조로 쓴다. */
+function autoView(){
+  var ua = navigator.userAgent || '';
+  var isPhone  = /Android|iPhone|iPod|Windows Phone/i.test(ua);
+  var isTablet = /iPad/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+  var narrow   = Math.min(screen.width || 9999, window.innerWidth || 9999) <= 820;
+  if (isPhone) return 'mobile';
+  if (isTablet) return narrow ? 'mobile' : 'pc';   /* 태블릿은 가로면 PC 화면이 낫다 */
+  return narrow && (navigator.maxTouchPoints > 0) ? 'mobile' : 'pc';
+}
+
+function decide(){
+  var q = (location.search.match(/[?&]view=(pc|mobile)/) || [])[1];
+  if (q) { try{ localStorage.setItem(KEY, q) }catch(e){} return q; }
+  var saved = null;
+  try { saved = localStorage.getItem(KEY) } catch(e){}
+  if (saved === 'pc' || saved === 'mobile') return saved;
+  return autoView();
+}
+
+var view = decide();
+
+function mount(v){
+  view = v;
+  try { localStorage.setItem(KEY, v) } catch(e){}
+  /* 서버 rewrite(deploy/README) 가 사용자의 선택을 읽을 수 있게 쿠키로도 남긴다 */
+  try { document.cookie = 'nf_view=' + v + ';path=/;max-age=31536000;samesite=lax' } catch(e){}
+  /* 주소도 같이 바꾼다 — 새로고침해도, 링크로 공유해도 같은 화면이 뜬다.
+     replaceState 라 뒤로가기 기록은 늘리지 않는다. */
+  /* 진단 파라미터는 «주소를 다시 쓰기 전에» 읽는다.
+     먼저 replaceState 로 ?view= 만 남기면 debug/demo 가 지워져
+     정작 iframe 에 넘길 것이 사라진다 (실제로 그렇게 한 번 어긋났다). */
+  var pass = ['debug','preview','demo'].filter(function(k){
+    return new RegExp('[?&]' + k + '=1').test(location.search) }).map(function(k){ return k + '=1' });
+  var extra = pass.length ? '&' + pass.join('&') : '';
+  try { history.replaceState(null, '', location.pathname + '?view=' + v + extra) } catch(e){}
+  var src = (v === 'mobile' ? MOBILE_APP : PC_APP);
+  var f = document.getElementById('app');
+  if (!f) {
+    f = document.createElement('iframe');
+    f.id = 'app';
+    f.setAttribute('allow', 'microphone; geolocation');   /* 음성 근거 입력에 마이크가 필요하다 */
+    document.body.appendChild(f);
+  }
+  /* 캐시된 옛 빌드가 뜨는 사고를 막는다 (배포 직후 가장 흔한 오해) */
+  /* 진단용 파라미터는 안쪽 앱까지 넘긴다 —
+     ?debug=1 / ?preview=1 (설계용 흐름도) · ?demo=1 (서버 없이 예시 데이터).
+     이걸 안 넘기면 주소창에 붙여도 iframe 안에서는 아무 일도 일어나지 않는다. */
+  f.src = encodeURI(src) + '?t=' + Date.now() + extra;
+  f.onload = function(){ var b = document.getElementById('boot'); if (b) b.remove(); };
+  document.body.classList.toggle('mob', v === 'mobile');
+  paintToggle();
+  document.title = (v === 'mobile' ? '넷폼 CRM · 담당자' : '넷폼 CRM');
+}
+
+function paintToggle(){
+  var t = document.getElementById('vtog');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'vtog';
+    document.body.appendChild(t);
+    /* 방해되지 않게 평소엔 흐리게, 손이 닿으면 진하게 */
+    t.addEventListener('pointerenter', function(){ t.classList.remove('hide') });
+    setTimeout(function(){ t.classList.add('hide') }, 4000);
+  }
+  t.classList.toggle('m', view === 'mobile');
+  t.innerHTML =
+    '<button class="' + (view === 'pc' ? 'on' : '') + '" onclick="mount(\'pc\')">PC 화면</button>' +
+    '<button class="' + (view === 'mobile' ? 'on' : '') + '" onclick="mount(\'mobile\')">모바일 화면</button>';
+}
+
+document.getElementById('bootmsg').textContent =
+  (view === 'mobile' ? '모바일 — 담당자 앱을 엽니다' : 'PC — 관리 CRM 을 엽니다');
+mount(view);
+
+/* 창을 크게/작게 바꿔도 «사용자가 직접 고른 뒤에는» 마음대로 바꾸지 않는다.
+   저장된 선택이 없을 때만 자동 판정을 다시 적용한다. */
+var rz;
+window.addEventListener('resize', function(){
+  var saved = null; try { saved = localStorage.getItem(KEY) } catch(e){}
+  if (saved) return;
+  clearTimeout(rz);
+  rz = setTimeout(function(){ var a = autoView(); if (a !== view) mount(a) }, 400);
+});
+</script>
+</body>
+</html>
