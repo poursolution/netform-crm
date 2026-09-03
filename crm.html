@@ -360,6 +360,11 @@ body{background:var(--bg);font-family:"Pretendard Variable",Pretendard,-apple-sy
 .bact button[disabled]{opacity:.42;cursor:not-allowed}
 .bact .bph{margin-left:auto;font-size:12px;font-weight:800;color:var(--sub);font-variant-numeric:tabular-nums}
 .bact .bph.no{color:var(--danger)}
+.bact button.bph{margin-left:auto;padding:6px 9px;border-color:#fecaca;background:#fff;color:var(--danger);font-size:11.5px}
+.bact button.bph:hover{border-color:var(--danger);background:var(--danger-bg)}
+.quickcontactbox{width:min(430px,94vw)}
+.quickcontactbox .modalbody{padding-top:14px}.quickcontactbox .detailnotice{margin:0 0 12px}
+.quickcontactbox .dactions{justify-content:flex-end;margin-top:14px}
 .callbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;background:var(--warn-bg);border-bottom:1px solid var(--line);font-size:12px;font-weight:800;color:var(--warn-t)}
 .callbar button{margin-left:auto;border:none;background:var(--blue);color:#fff;border-radius:8px;padding:8px 12px;font-size:11.5px;font-weight:850;cursor:pointer}
 .callbar button.gh{background:#fff;color:var(--sub);border:1px solid var(--line);margin-left:0}
@@ -1593,6 +1598,12 @@ html,body{height:100%}
   <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="bulkTitle">
     <div class="modalhead"><h3 id="bulkTitle">선택 현장 일괄 조치</h3><button class="modalclose" onclick="closeBulkDialog()">✕</button></div>
     <div class="modalbody" id="bulkBody"></div>
+  </div>
+</div>
+<div class="modalshade" id="quickContactModal" aria-hidden="true" onclick="if(event.target===this)closeQuickContact()">
+  <div class="modalbox quickcontactbox" role="dialog" aria-modal="true" aria-labelledby="quickContactTitle">
+    <div class="modalhead"><h3 id="quickContactTitle">관리소장 연락처 등록</h3><button class="modalclose" onclick="closeQuickContact()" aria-label="닫기">✕</button></div>
+    <div class="modalbody" id="quickContactBody"></div>
   </div>
 </div>
 <!-- DNS·TLS 를 미리 잡아 둔다 — 첫 호출에서 0.25~0.4초가 빠진다 (2026-09-04) -->
@@ -3658,6 +3669,31 @@ function saveContactInfo(){if(!CUR_DETAIL||CUR_DETAIL.kind!=='deal')return;var i
  if(!office||!name||!mobile){showDetailErr('관리사무소 대표전화·관리소장 성명·관리소장 휴대폰은 필수입니다.');return}if(phoneN(office).length<8||phoneN(mobile).length<10){showDetailErr('전화번호 형식을 확인해 주세요.');return}
  var old=contactInfo(item,p),at=isoNow(),c={officeTel:office,officeEmail:email,managerName:name,managerMobile:mobile,managerRole:'관리소장',personKey:'mobile:'+phoneN(mobile),currentSite:item.site,status:'current',startedAt:old.startedAt||at};p.contact=item.contact=c;item.office_phone=office;item.manager_name=name;item.manager_mobile=mobile;item.person_key=c.personKey;upsertPerson(c,item.site,office,at);
  p.activities=p.activities||[];p.activities.push({type:'업무',note:'관리사무소/관리소장 연락처 확인',result:name+' · '+phoneFmt(mobile),at:at,actor:(ME&&ME.name)||repN(item.assignee)});saveLocal();pushWrite('contact_upsert',{opportunity_id:item.id,person_key:c.personKey,site_name:item.site,office_phone:office,office_email:email||null,manager_name:name,manager_mobile:mobile,manager_role:'관리소장',started_at:c.startedAt});renderDetail();showDetailErr(saveMsg('관리사무소와 관리소장 연락처를 저장했습니다.'),true)}
+var QUICK_CONTACT=null;
+function openQuickContact(){
+ if(!CUR_DETAIL||CUR_DETAIL.kind!=='deal')return;
+ var item=CUR_DETAIL.item,p=currentPatch(),c=contactInfo(item,p),m=$('#quickContactModal'),b=$('#quickContactBody');
+ QUICK_CONTACT={item:item,key:dealKey(item),overflow:document.body.style.overflow};
+ b.innerHTML='<div class="detailnotice"><b>'+esc(item.site||'현장명 미입력')+'</b>의 관리소장을 Contact로 등록합니다. 저장하면 전화·문자 버튼에서 바로 사용합니다.</div>'
+  +'<div class="formgrid"><div class="field full"><label>관리사무소 대표전화 <span class="req">*</span></label><input id="qc-office" inputmode="tel" autocomplete="tel" value="'+escAttr(c.officeTel)+'" placeholder="예: 02-1234-5678"></div>'
+  +'<div class="field"><label>관리소장 성명 <span class="req">*</span></label><input id="qc-name" value="'+escAttr(c.name)+'" placeholder="예: 홍길동"></div>'
+  +'<div class="field"><label>관리소장 휴대폰 <span class="req">*</span></label><input id="qc-mobile" inputmode="tel" autocomplete="tel" value="'+escAttr(c.mobile)+'" placeholder="예: 010-1234-5678"></div>'
+  +'<div class="field full"><label>관리사무소 이메일</label><input id="qc-email" type="email" value="'+escAttr(c.officeEmail)+'" placeholder="선택 입력"></div></div>'
+  +'<div class="modalerr" id="qc-err"></div><div class="dactions"><button class="dact" onclick="closeQuickContact()">취소</button><button class="dact pri" onclick="saveQuickContact()">연락처 저장</button></div>';
+ m.classList.add('on');m.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';setTimeout(function(){var x=$('#qc-office');if(x)x.focus()},30)
+}
+function closeQuickContact(){var m=$('#quickContactModal'),old=QUICK_CONTACT;if(m){m.classList.remove('on');m.setAttribute('aria-hidden','true')}QUICK_CONTACT=null;document.body.style.overflow=old?old.overflow:''}
+function quickContactErr(msg,ok){var e=$('#qc-err');if(!e)return;e.style.display='block';e.style.color=ok?'var(--ok)':'var(--danger)';e.style.background=ok?'var(--ok-bg)':'var(--danger-bg)';e.textContent=msg}
+function saveQuickContact(){
+ if(!QUICK_CONTACT)return;var item=QUICK_CONTACT.item,p=itemPatch(item,'deal'),office=(($('#qc-office')||{}).value||'').trim(),name=(($('#qc-name')||{}).value||'').trim(),mobile=(($('#qc-mobile')||{}).value||'').trim(),email=(($('#qc-email')||{}).value||'').trim();
+ if(!office||!name||!mobile){quickContactErr('관리사무소 대표전화·관리소장 성명·관리소장 휴대폰은 필수입니다.');return}
+ if(phoneN(office).length<8||phoneN(mobile).length<10){quickContactErr('전화번호 형식을 확인해 주세요.');return}
+ var old=contactInfo(item,p),at=isoNow(),c={officeTel:office,officeEmail:email,managerName:name,managerMobile:mobile,managerRole:'관리소장',personKey:'mobile:'+phoneN(mobile),currentSite:item.site,status:'current',startedAt:old.startedAt||at};
+ p.contact=item.contact=c;item.office_phone=office;item.office_email=email;item.manager_name=name;item.manager_mobile=mobile;item.person_key=c.personKey;upsertPerson(c,item.site,office,at);
+ p.activities=p.activities||[];p.activities.push({type:'업무',note:'관리사무소/관리소장 연락처 확인',result:name+' · '+phoneFmt(mobile),at:at,actor:(ME&&ME.name)||repN(item.assignee)});
+ saveLocal();pushWrite('contact_upsert',{opportunity_id:item.id,person_key:c.personKey,site_name:item.site,office_phone:office,office_email:email||null,manager_name:name,manager_mobile:mobile,manager_role:'관리소장',started_at:c.startedAt});
+ closeQuickContact();renderDetail();showDetailErr(saveMsg('관리사무소와 관리소장 연락처를 저장했습니다.'),true)
+}
 function contactActivity(type,note,result){if(!CUR_DETAIL||CUR_DETAIL.kind!=='deal')return;var item=CUR_DETAIL.item,at=isoNow(),actor=(ME&&ME.name)||repN(item.assignee),row=logActivity(type,note,result||'',at,actor);saveLocal();pushWrite('activity',{opportunity_id:item.id,type:type,note:note,result:result||'',occurred_at:row.at});}
 function contactDial(which){var c=contactInfo(CUR_DETAIL.item,currentPatch()),num=which==='office'?c.officeTel:c.mobile,label=which==='office'?'관리사무소':'관리소장';if(!num){showDetailErr(label+' 전화번호가 없습니다.');return}contactActivity('전화',label+' 전화 시도',phoneFmt(num));setTimeout(function(){location.href='tel:'+phoneN(num)},80)}
 function contactSms(){var c=contactInfo(CUR_DETAIL.item,currentPatch());if(!c.mobile){showDetailErr('관리소장 휴대폰 번호가 없습니다.');return}contactActivity('문자','관리소장 문자 작성 시작',phoneFmt(c.mobile));location.href='sms:'+phoneN(c.mobile)}
@@ -4136,6 +4172,8 @@ function digitsOnly(v){var o='',t=String(v||'');for(var i=0;i<t.length;i++){var 
    그래서 lineage 연결 건수가 곧 «전화를 걸 수 있는 현장» 의 수다. */
 function briefPhone(item,kind){
  if(kind==='inq')return {tel:digitsOnly(item.phone),raw:item.phone||'',via:''};
+ var c=contactInfo(item,itemPatch(item,'deal'));
+ if(c.mobile)return {tel:digitsOnly(c.mobile),raw:phoneFmt(c.mobile),via:'관리소장'};
  var L=inqOfDeal(item)||[];
  for(var i=0;i<L.length;i++){if(L[i].phone)return {tel:digitsOnly(L[i].phone),raw:L[i].phone,via:'견적문의'}}
  return {tel:'',raw:'',via:''}}
@@ -4186,8 +4224,8 @@ function briefHTML(item,kind,p){
     : '<button disabled title="이 현장에 연락처가 없습니다">📞 전화</button>'
       +'<button disabled title="이 현장에 연락처가 없습니다">✉ 문자</button>')
   +'<button data-a="일정" onclick="detailTabFocus(this.dataset.a)">📅 다음 행동</button>'
-  +'<span class="bph'+(ph.tel?'':' no')+'">'
-  +(ph.tel?esc(ph.raw)+(ph.via?' · '+esc(ph.via)+'에서':''):'연락처 없음')+'</span></div>';
+  +(ph.tel?'<span class="bph">'+esc(ph.raw)+(ph.via?' · '+esc(ph.via):'')+'</span>'
+    :(kind==='deal'?'<button class="bph no" onclick="openQuickContact()">＋ 연락처 없음</button>':'<span class="bph no">연락처 없음</span>'))+'</div>';
  var myKey=(kind==='deal')?dealKey(item):inqKey(item);
  var pend=(G.callPend&&G.callPend.k===myKey)?G.callPend:null;
  if(pend)bar+='<div class="callbar"><span>📞 '+esc(pend.t)
