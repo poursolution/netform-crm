@@ -2023,7 +2023,9 @@ function customerAge(item,p){
 /* 2026-09-01 Core: 브라우저 저장소에 고객 연락처·영업 노트를 남기지 않는다.
    캐시는 목록을 즉시 띄우기 위한 것이고, 연락처는 서버 응답으로만 채운다. */
 var PII_KEYS=/(contact|phone|tel|mobile|email|mail|연락처|전화번호|휴대|이메일)/i;
-var CACHE_TTL=6*3600*1000;
+/* 캐시는 인증 통과 뒤에만 읽는다. 6시간이 지나도 최대 7일간 즉시 화면을 먼저
+   보여주고 서버 응답으로 교체한다 — 매일 첫 접속마다 n8n을 기다리지 않게 한다. */
+var CACHE_FRESH_TTL=6*3600*1000,CACHE_MAX_TTL=7*24*3600*1000;
 function stripForCache(v){
   if(Array.isArray(v))return v.map(stripForCache);
   if(v&&typeof v==='object'){
@@ -2258,12 +2260,13 @@ async function loadData(quiet){
     var c=localStorage.getItem(CACHE_KEY);
     if(c){var cj=JSON.parse(c);
       /* v1 캐시에는 고객 연락처가 그대로 들어 있다 → 발견 즉시 폐기 */
-      if(!cj||cj.v!==2||!cj.at||(Date.now()-cj.at)>CACHE_TTL){localStorage.removeItem(CACHE_KEY);cj=null}
+      if(!cj||cj.v!==2||!cj.at||(Date.now()-cj.at)>CACHE_MAX_TTL){localStorage.removeItem(CACHE_KEY);cj=null}
       if(cj&&cj.data&&cj.data.deals){
+        var cacheAge=Date.now()-cj.at,cacheOld=cacheAge>CACHE_FRESH_TTL;
         applyBundle(cj.data);painted=true;
         $('#load').style.display='none';
         $('#live').className='live';
-        $('#live').textContent='📦 캐시 '+hhmm(new Date(cj.at))+' · 최신 데이터 불러오는 중…';
+        $('#live').textContent=(cacheOld?'📦 최근 저장본 ':'📦 캐시 ')+hhmm(new Date(cj.at))+' · 최신 데이터 불러오는 중…';
       }}
   }catch(e){}
   if(!painted&&!quiet&&!已){
