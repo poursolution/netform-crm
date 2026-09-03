@@ -318,6 +318,30 @@ body.svc .phone{width:100%;max-width:none;border:0;border-radius:0;box-shadow:no
 .mapbox li{font-size:12px;font-weight:600;color:var(--ink-2);padding:4.5px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px;align-items:center}
 .mapbox li:last-child{border-bottom:0}
 .mapbox li .badge{font-size:9.5px;padding:2px 7px;flex-shrink:0}
+
+
+/* ═══ v2.4 모바일 영업 UX · 관리소장 연락처 ═══ */
+.modebar{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:13px;padding:5px;margin:0 18px 8px;box-shadow:0 1px 3px rgba(20,30,55,.04)}
+.modebar button{flex:1;padding:8px 7px;border-radius:9px;font-size:12px;font-weight:800;color:var(--sub)}
+.modebar button.on{background:var(--ink);color:#fff}
+.saleshero{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.saleshero button{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 13px;text-align:left}
+.saleshero button b{display:block;font-size:18px;color:var(--ink)}
+.saleshero button span{display:block;margin-top:2px;font-size:10.5px;color:var(--sub);font-weight:700}
+.saleshero button.pri{background:var(--blue-50);border-color:var(--blue-100)}
+.saleshero button.pri b{color:var(--blue-dark)}
+.mcontact{background:linear-gradient(135deg,#fff,var(--blue-50));border-color:var(--blue-100)!important}
+.mcontact-head{display:flex;align-items:center;gap:10px}
+.mcontact-av{width:42px;height:42px;border-radius:13px;background:var(--blue);color:#fff;display:grid;place-items:center;font-size:15px;font-weight:900;flex:0 0 auto}
+.mcontact-main{flex:1;min-width:0}.mcontact-main b{display:block;font-size:15px}.mcontact-main span{display:block;font-size:11px;color:var(--sub);margin-top:2px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mcontact-state{font-size:10px;font-weight:800;border-radius:999px;padding:4px 8px;background:var(--ok-bg);color:var(--ok);white-space:nowrap}.mcontact-state.move{background:var(--warn-bg);color:var(--warn)}
+.mcontact-num{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:11px}.mcontact-num>div{background:#fff;border:1px solid var(--line);border-radius:11px;padding:9px 10px}.mcontact-num small{display:block;font-size:9.5px;color:var(--sub);font-weight:700}.mcontact-num strong{display:block;font-size:12.5px;margin-top:3px;font-variant-numeric:tabular-nums}
+.mcontact-act{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.mcontact-act button{border:1px solid var(--line-2);background:#fff;border-radius:11px;padding:10px 7px;font-size:12px;font-weight:800;color:var(--ink-2)}.mcontact-act button.pri{background:var(--blue);border-color:var(--blue);color:#fff}.mcontact-act button:disabled{opacity:.38}
+.mcontact-voice{width:100%;margin-top:7px;border:0;background:var(--violet-bg);color:var(--violet);border-radius:11px;padding:10px;font-size:12px;font-weight:800}
+.mcontact-foot{display:flex;gap:6px;margin-top:8px}.mcontact-foot button{flex:1;border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 5px;font-size:11px;font-weight:750;color:var(--sub)}
+.contact-hint-m{font-size:11px;line-height:1.55;background:var(--blue-50);color:var(--blue-dark);border-radius:10px;padding:9px 10px;margin-top:8px;display:none}
+@media(max-width:360px){.mcontact-num{grid-template-columns:1fr}.saleshero{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -839,6 +863,18 @@ var LOGIN_ID={'황윤선':'hwangyunseon','이필선':'ipilseon','한준엽':'han
   '주현진':'juhyeonjin','한인규':'haningyu','경남지사':'gyeongnam'};
 var LOGIN_DOMAIN='@crm.netform.co.kr';
 function loginEmailOf(nm){var k=String(nm||'').replace(/\s+/g,'');return LOGIN_ID[k]?LOGIN_ID[k]+LOGIN_DOMAIN:null}
+
+function canonicalRep(n){
+ var raw=String(n||'').trim(), compact=raw.replace(/[\s()（）·_\-]/g,'');
+ var names=Object.keys(LOGIN_ID);
+ for(var i=0;i<names.length;i++){var k=names[i].replace(/\s+/g,'');if(compact.indexOf(k)>=0)return names[i]}
+ return raw;
+}
+function canManage(){return !!(G.user&&(G.user.role==='admin'||G.user.role==='dual'))}
+var MODE_KEY='nf_mobile_mode_v2';
+function savedMode(){try{var x=localStorage.getItem(MODE_KEY);return x==='admin'||x==='rep'?x:null}catch(e){return null}}
+function saveMode(x){try{localStorage.setItem(MODE_KEY,x)}catch(e){}}
+
 function authReady(){
   if(SB||!window.supabase||!SUPABASE_ANON)return SB;
   SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,
@@ -863,7 +899,8 @@ async function authAdmit(session){
   }
   TOKEN=session.access_token;
   G.user={nm:r.data.name,role:r.data.role,email:email};
-  G.mode=(r.data.role==='admin')?'admin':'rep';
+  /* 모바일은 현장 영업이 1순위. 관리자/겸직도 기본은 내 영업, 필요할 때 관리로 전환 */
+  G.mode=(r.data.role==='admin'||r.data.role==='dual')?(savedMode()||'rep'):'rep';
   G.loginErr=null;
   return true;
 }
@@ -985,6 +1022,11 @@ function loadLive(){
      currentBusiness:d.currentBusiness||d.brand||'',
      businessHistory:d.businessHistory||[],
      advisory:d.advisory||null,
+     contact:d.contact||null,office_phone:d.office_phone||d.officeTel||'',office_email:d.office_email||'',
+     manager_name:d.manager_name||d.managerName||'',manager_mobile:d.manager_mobile||d.managerMobile||'',
+     manager_role:d.manager_role||d.managerRole||'관리소장',person_key:d.person_key||'',
+     manager_current_site:d.manager_current_site||'',manager_status:d.manager_status||'',manager_left_at:d.manager_left_at||'',
+     address:d.address||d.site_address||'',
      lastAt:d.lastActivity||d.updated||d.modified||d.created||null,
      stageAt:d.stageChangedAt||d.updated||d.created||null,
      tl:[[String(d.created||'').slice(0,10),'등록 (릴레잇 이관)']]}));
@@ -1214,10 +1256,10 @@ function doLogin(){
 }
 /* 내 건 = 로그인한 사람의 건. 관리자가 특정 담당자를 열람할 때는 who 로 지정 */
 function myDeals(who){
- var nm=who||(G.user?G.user.nm:null);
+ var nm=canonicalRep(who||(G.user?G.user.nm:null));
  if(!nm)return [];
- if(!who&&G.mode==='admin')return DEALS;          /* 관리자 모드는 전체 열람 */
- return DEALS.filter(function(d){return d.rep===nm});
+ if(!who&&G.mode==='admin')return DEALS;          /* 관리 모드에서만 전체 */
+ return DEALS.filter(function(d){return canonicalRep(d.rep)===nm});
 }
 
 /* ── 공통 렌더 ── */
@@ -1234,11 +1276,11 @@ function render(){
  if(!LIVE&&!DEMO)return rLocked();
  var tabs=G.mode==='admin'
   ?[['ctrl',IC.siren,'관제'],['pipe',IC.chart,'파이프라인'],['perf',IC.user,'실적'],['rpt',IC.doc,'리포트']]
-  :[['today',IC.sun,'오늘'],['mine',IC.folder,'내 건'],['find',IC.plus,'+ 영업'],['my',IC.chart,'내 실적']];
+  :[['today',IC.sun,'오늘'],['mine',IC.folder,'내 영업'],['find',IC.plus,'+ 영업'],['my',IC.chart,'내 실적']];
  tabbar.innerHTML=tabs.map(function(t){return '<button class="'+(G.tab===t[0]?'on':'')+'" onclick="G.tab=\''+t[0]+'\';G.deal=null;G.drill=null;G.stage=null;G.sub=null;render()">'+t[1]+'<span class="tl2">'+t[2]+'</span></button>'}).join('');
  var head='<div class="home-bar"><div class="brand"><span class="mark">N</span>영업관리</div><div class="rgt">'
   +'<button class="iconbtn" style="width:34px;height:34px" aria-label="알림함" onclick="G.sub={t:\'noti\'};render()">'+IC.bell+'</button>'
-  +(G.user.role==='dual'?'<div class="seg" style="padding:3px"><button class="'+(G.mode==='rep'?'on':'')+'" style="padding:5px 11px;font-size:11.5px" onclick="switchMode(\'rep\')">내 영업</button><button class="'+(G.mode==='admin'?'on':'')+'" style="padding:5px 11px;font-size:11.5px" onclick="switchMode(\'admin\')">관리</button></div>':'')
+  +(canManage()?'<div class="seg" style="padding:3px"><button class="'+(G.mode==='rep'?'on':'')+'" style="padding:5px 11px;font-size:11.5px" onclick="switchMode(\'rep\')">내 영업</button><button class="'+(G.mode==='admin'?'on':'')+'" style="padding:5px 11px;font-size:11.5px" onclick="switchMode(\'admin\')">관리</button></div>':'')
   +'<button class="badge badge-gray" onclick="askSignOut()">'+esc(G.user.nm)+' ⏻</button>'
   +'<span class="badge badge-danger" id="pendBadge" style="display:none"></span>'
   +(DEMO&&!LIVE?'<span class="badge badge-gray">예시 데이터</span>':'')+'</div></div>';
@@ -1246,7 +1288,7 @@ function render(){
  if(G.sub)return rSub(head);
  ({today:rToday,mine:rMine,find:rProspect,my:rMy,ctrl:rCtrl,pipe:rPipe,perf:rPerf,rpt:rRpt})[G.tab](head);
 }
-function switchMode(m){G.mode=m;G.tab=m==='admin'?'ctrl':'today';G.deal=null;G.drill=null;G.stage=null;render()}
+function switchMode(m){if(m==='admin'&&!canManage())return;G.mode=m;saveMode(m);G.tab=m==='admin'?'ctrl':'today';G.deal=null;G.drill=null;G.stage=null;G.sub=null;render()}
 
 /* ── 2 오늘 ── */
 function rToday(head){
@@ -1268,7 +1310,8 @@ function rToday(head){
  }).join('');
  scr.innerHTML=head+'<div class="body fadein">'
  +'<div class="banner"><span class="glow"></span><div class="eyebrow">'+(left?new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'long'}):'수고했어요')+'</div><h3>'+(left?'오늘 몫 '+TODAY.length+'건 중\n<span style="opacity:.95">'+left+'건 남았어요</span>':'오늘 다 끝났어요 🎉')+'</h3><p>기한초과 → 오늘마감 → 미응대 순으로 정렬했어요</p><div class="bprog"><i style="width:'+pct+'%"></i></div></div>'
- +'<div class="card tight">'+rows+'</div>'
+ +'<div class="saleshero"><button class="pri" onclick="G.tab=\'mine\';render()"><b>'+myDeals().filter(isOpen).length+'건</b><span>내 영업 전체 보기 →</span></button><button onclick="G.tab=\'find\';render()"><b>＋</b><span>새 영업 등록</span></button></div>'
+  +'<div class="card tight">'+rows+'</div>'
  +(left===0?'<div class="done-wrap" style="min-height:auto;padding:16px"><div class="done-ring" style="width:64px;height:64px">'+IC.check+'</div><h2 style="font-size:17px">기재는 자동으로 됐어요</h2><p>내일 몫은 아침 9시에 알려드릴게요</p></div>':'')
  +'</div>';
 }
@@ -1342,10 +1385,10 @@ function rMine(head,readonlyRep){
  var closedN=all.filter(isClosedOut).length;
  if(closedN)body+='<button class="mmore card tight" style="padding:12px 16px;width:100%;text-align:left" onclick="G.sub={t:\'closed\'};render()">종료 '+closedN+'건 (수주·실주·배드핏·연락두절) →</button>';
  var top=readonlyRep
-  ?'<div class="appbar"><button class="iconbtn" onclick="G.drill=null;render()">'+IC.back+'</button><span class="ttl">'+esc(readonlyRep)+'님의 건</span><span class="spacer"></span></div>'
+  ?'<div class="appbar"><button class="iconbtn" onclick="G.drill=null;render()">'+IC.back+'</button><span class="ttl">'+esc(readonlyRep)+'님의 영업</span><span class="spacer"></span></div>'
   :head;
  scr.innerHTML=top+'<div class="body fadein">'
- +'<div class="sec-h"><h2>'+(readonlyRep?esc(readonlyRep)+'님의 건 · '+mine.length+'건':'내 건 · '+mine.length+'건')+'</h2>'+(readonlyRep?'<span class="badge badge-violet">관리자 열람 · 읽기 전용</span>':'<button onclick="G.sub={t:\'search\'};render()" style="color:var(--blue);font-weight:700;font-size:12.5px">검색</button>')+'</div>'
+ +'<div class="sec-h"><h2>'+(readonlyRep?esc(readonlyRep)+'님의 영업 · '+mine.length+'건':'내 영업 · '+mine.length+'건')+'</h2>'+(readonlyRep?'<span class="badge badge-violet">관리자 열람 · 읽기 전용</span>':'<button onclick="G.sub={t:\'search\'};render()" style="color:var(--blue);font-weight:700;font-size:12.5px">검색</button>')+'</div>'
  +'<div class="chiprow" style="margin-bottom:8px">'+['전체'].concat(BIZ_TYPES).map(function(b){
     var c=all.filter(function(d){return b==='전체'||bizOf(d)===b}).length;
     return '<button class="cchip '+((G.bizF||'전체')===b?'b':'gr')+'" style="font-size:12px;padding:10px 4px" data-b="'+escAttr(b)+'" onclick="G.bizF=this.dataset.b;render()">'+esc(bizShort(b))+' '+c+'</button>'}).join('')+'</div>'
@@ -1353,6 +1396,51 @@ function rMine(head,readonlyRep){
  +body+'</div>';
 }
 function tgGrp(key){G._og[key]=G._og[key]===false;render()}
+
+
+/* ═══ 관리사무소 · 관리소장 연락처 / 인물 이력 ═══ */
+function phoneN(v){return String(v||'').replace(/[^0-9]/g,'')}
+function phoneFmt(v){var n=phoneN(v);if(!n)return '미입력';if(n.length===11)return n.slice(0,3)+'-'+n.slice(3,7)+'-'+n.slice(7);if(n.length===10)return n.slice(0,3)+'-'+n.slice(3,6)+'-'+n.slice(6);return String(v||'')}
+function normSiteM(v){return String(v||'').replace(/\[[^\]]*\]/g,'').replace(/아파트|APT|\s|[-_.,]/gi,'').toLowerCase()}
+function contactInfoM(d){var c=(d&&d.contact)||{};var mob=c.managerMobile||d.manager_mobile||d.managerMobile||'';return {
+ officeTel:c.officeTel||d.office_phone||d.officeTel||'',officeEmail:c.officeEmail||d.office_email||'',
+ name:c.managerName||d.manager_name||d.managerName||'',mobile:mob,role:c.managerRole||d.manager_role||'관리소장',
+ personKey:c.personKey||d.person_key||(phoneN(mob)?'mobile:'+phoneN(mob):''),currentSite:c.currentSite||d.manager_current_site||d.nm||'',
+ status:c.status||d.manager_status||'current',startedAt:c.startedAt||d.manager_started_at||'',leftAt:c.leftAt||d.manager_left_at||''};}
+var PERSON_KEY='nf_mobile_people_v1';
+function peopleM(){try{return JSON.parse(localStorage.getItem(PERSON_KEY)||'{}')}catch(e){return {}}}
+function savePeopleM(P){try{localStorage.setItem(PERSON_KEY,JSON.stringify(P))}catch(e){}}
+function upsertPersonM(c,site,office,at){if(!c.personKey)return;var P=peopleM(),p=P[c.personKey]||(P[c.personKey]={name:c.name,mobile:c.mobile,currentSite:site,history:[]});p.name=c.name||p.name;p.mobile=c.mobile||p.mobile;p.currentSite=site||p.currentSite;p.history=p.history||[];var cur=p.history.filter(function(h){return !h.to})[0];if(cur&&normSiteM(cur.site)!==normSiteM(site)){cur.to=String(at||isoNow()).slice(0,10)}var same=p.history.filter(function(h){return !h.to&&normSiteM(h.site)===normSiteM(site)})[0];if(!same)p.history.push({site:site,officeTel:office||'',from:String(at||isoNow()).slice(0,10),to:''});savePeopleM(P)}
+function contactDealsM(mobile){var n=phoneN(mobile),seen={};if(!n)return [];return DEALS.filter(function(d){return phoneN(contactInfoM(d).mobile)===n}).filter(function(d){var k=normSiteM(d.nm);if(seen[k])return false;seen[k]=1;return true})}
+function managerHintM(){var e=document.getElementById('pmobile'),h=document.getElementById('pcontacthint');if(!e||!h)return;var L=contactDealsM(e.value);h.style.display=L.length?'block':'none';h.textContent=L.length?('🔗 기존 관리소장 기록: '+L.map(function(d){return d.nm}).join(' → ')+' · 같은 휴대폰 번호는 동일 인물로 연결합니다.') : ''}
+function contactHistoryM(d){var c=contactInfoM(d),P=peopleM(),p=P[c.personKey],rows=p&&p.history?p.history.slice():[];if(!rows.length)contactDealsM(c.mobile).forEach(function(x){var xc=contactInfoM(x);rows.push({site:x.nm,from:String(xc.startedAt||x.stageAt||'').slice(0,10),to:xc.leftAt?String(xc.leftAt).slice(0,10):''})});rows.sort(function(a,b){return String(b.from||'').localeCompare(String(a.from||''))});return rows}
+function contactCardM(d){var c=contactInfoM(d),moved=c.currentSite&&normSiteM(c.currentSite)!==normSiteM(d.nm),H=contactHistoryM(d);return '<div class="card mcontact">'
+ +'<div class="mcontact-head"><span class="mcontact-av">'+esc((c.name||'관').slice(0,1))+'</span><span class="mcontact-main"><b>'+(c.name?esc(c.name)+' '+esc(c.role):'관리소장 미등록')+'</b><span>'+(moved?'이 현장 과거 근무 · 현재 '+esc(c.currentSite):'현재 근무지 · '+esc(d.nm))+'</span></span><span class="mcontact-state '+(moved?'move':'')+'">'+(moved?'이동':'연락처')+'</span></div>'
+ +'<div class="mcontact-num"><div><small>관리사무소</small><strong>'+esc(phoneFmt(c.officeTel))+'</strong></div><div><small>관리소장 휴대폰</small><strong>'+esc(phoneFmt(c.mobile))+'</strong></div></div>'
+ +'<div class="mcontact-act"><button '+(!c.officeTel?'disabled':'')+' onclick="callContactM(\'office\')">📞 관리사무소</button><button class="pri" '+(!c.mobile?'disabled':'')+' onclick="callContactM(\'mobile\')">📱 소장 전화</button><button '+(!c.mobile?'disabled':'')+' onclick="smsContactM()">✉ 문자</button><button '+(!c.mobile?'disabled':'')+' onclick="kakaoContactM()">💬 카카오</button></div>'
+ +'<button class="mcontact-voice" '+(!c.mobile?'disabled':'')+' onclick="callMemoSheetM()">🎙 통화 완료 → 내용 말하기</button>'
+ +'<div class="mcontact-foot"><button onclick="contactEditSheetM()">연락처 수정</button><button onclick="managerMoveSheetM()">근무지 이동</button>'+(H.length?'<button onclick="historySheetM()">이력 '+H.length+'건</button>':'')+'</div></div>'}
+function callContactM(kind){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)});if(!d)return;var c=contactInfoM(d),num=kind==='office'?c.officeTel:c.mobile,label=kind==='office'?'관리사무소':'관리소장';if(!num)return toast(label+' 번호가 없습니다');addActivity(d,'전화',label+' 전화 시도',phoneFmt(num),false);setTimeout(function(){location.href='tel:'+phoneN(num)},80)}
+function smsContactM(){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),c=contactInfoM(d||{});if(!c.mobile)return toast('관리소장 휴대폰 번호가 없습니다');addActivity(d,'문자','관리소장 문자 작성 시작',phoneFmt(c.mobile),false);location.href='sms:'+phoneN(c.mobile)}
+function kakaoContactM(){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),c=contactInfoM(d||{});if(!c.mobile)return toast('관리소장 휴대폰 번호가 없습니다');addActivity(d,'카카오','관리소장 카카오톡 연락 준비',phoneFmt(c.mobile),false);var t=phoneFmt(c.mobile);try{navigator.clipboard.writeText(t).then(function(){toast('관리소장 번호를 복사했습니다 — 카카오톡에서 검색하세요')}).catch(function(){toast(t)})}catch(e){toast(t)}}
+function contactEditSheetM(){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),c=contactInfoM(d||{});if(!d)return;openSheet(intro('var(--blue-50)','var(--blue-dark)',IC.user,'관리사무소 · 관리소장','현장과 사람을 분리해서 관리합니다'),
+ '<div class="hint">관리사무소 대표전화 <span style="color:var(--danger)">*</span></div><input id="ce-office" inputmode="tel" value="'+escAttr(c.officeTel)+'" style="width:100%;margin:6px 0 10px;border:1px solid var(--line-2);border-radius:11px;padding:12px;font:inherit">'
+ +'<div class="hint">관리소장 성명 <span style="color:var(--danger)">*</span></div><input id="ce-name" value="'+escAttr(c.name)+'" style="width:100%;margin:6px 0 10px;border:1px solid var(--line-2);border-radius:11px;padding:12px;font:inherit">'
+ +'<div class="hint">관리소장 휴대폰 <span style="color:var(--danger)">*</span></div><input id="ce-mobile" inputmode="tel" value="'+escAttr(c.mobile)+'" style="width:100%;margin:6px 0 10px;border:1px solid var(--line-2);border-radius:11px;padding:12px;font:inherit">'
+ +'<div class="hint">관리사무소 이메일</div><input id="ce-email" type="email" value="'+escAttr(c.officeEmail)+'" style="width:100%;margin:6px 0 10px;border:1px solid var(--line-2);border-radius:11px;padding:12px;font:inherit">'
+ +'<button class="btn btn-primary" onclick="saveContactM()">연락처 저장</button>')}
+function saveContactM(){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)});if(!d)return;var office=(document.getElementById('ce-office').value||'').trim(),name=(document.getElementById('ce-name').value||'').trim(),mobile=(document.getElementById('ce-mobile').value||'').trim(),email=(document.getElementById('ce-email').value||'').trim();if(!office||!name||!mobile)return toast('대표전화·관리소장 성명·휴대폰은 필수입니다');if(phoneN(office).length<8||phoneN(mobile).length<10)return toast('전화번호 형식을 확인해 주세요');var old=contactInfoM(d),at=isoNow(),c={officeTel:office,officeEmail:email,managerName:name,managerMobile:mobile,managerRole:'관리소장',personKey:'mobile:'+phoneN(mobile),currentSite:d.nm,status:'current',startedAt:old.startedAt||at};d.contact=c;d.office_phone=office;d.office_email=email;d.manager_name=name;d.manager_mobile=mobile;d.manager_role='관리소장';d.person_key=c.personKey;upsertPersonM({name:name,mobile:mobile,personKey:c.personKey},d.nm,office,at);pushWrite('contact_upsert',{opportunity_id:d.id,person_key:c.personKey,site_name:d.nm,office_phone:office,office_email:email||null,manager_name:name,manager_mobile:mobile,manager_role:'관리소장',started_at:c.startedAt});addActivity(d,'업무','관리사무소/관리소장 연락처 확인',name+' · '+phoneFmt(mobile),false);closeSheet();toast('연락처를 저장했습니다');render()}
+function callMemoSheetM(){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),c=contactInfoM(d||{});if(!d)return;openSheet(intro('var(--violet-bg)','var(--violet)',IC.mic,(c.name||'관리소장')+' 통화 완료','말하면 텍스트로 바뀝니다. 확인 후 활동으로 저장하세요'),mReason('cm','예: 옥상 방수 범위 확인. 다음 주 화요일 견적 검토 여부 다시 연락하기.')+'<button class="btn btn-primary" style="margin-top:12px" data-gate="cm" disabled onclick="saveCallMemoM()">통화 내용 저장</button>');mrGate('cm');mrMode('cm','voice')}
+function saveCallMemoM(){if(!mrOk('cm'))return toast('통화 내용을 남겨주세요');var d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),c=contactInfoM(d||{}),txt=mrVal('cm');addActivity(d,'전화',(c.name||'관리소장')+' 통화 완료',txt,true);closeSheet();toast('통화 내용을 활동 이력에 저장했습니다');render()}
+function managerMoveSheetM(){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),c=contactInfoM(d||{});if(!d)return;if(!c.name||!c.mobile)return toast('먼저 관리소장 연락처를 저장해 주세요');var today=isoNow().slice(0,10);openSheet(intro('var(--warn-bg)','#a36312',IC.user,c.name+' 관리소장 근무지 이동','기존 현장 기록은 지우지 않고 과거 근무 이력으로 남깁니다'),
+ '<div class="hint">현재 근무지</div><div class="rsum" style="margin:6px 0 10px"><b>'+esc(d.nm)+'</b></div>'
+ +'<div class="hint">새 근무지 <span style="color:var(--danger)">*</span></div><input id="mm-site" placeholder="예: 매탄임광아파트" style="width:100%;margin:6px 0 10px;border:1px solid var(--line-2);border-radius:11px;padding:12px;font:inherit">'
+ +'<div class="hint">새 관리사무소 전화</div><input id="mm-office" inputmode="tel" placeholder="예: 031-123-4567" style="width:100%;margin:6px 0 10px;border:1px solid var(--line-2);border-radius:11px;padding:12px;font:inherit">'
+ +'<div class="hint">이동일 <span style="color:var(--danger)">*</span></div><input id="mm-date" type="date" value="'+today+'" style="width:100%;margin:6px 0 10px;border:1px solid var(--line-2);border-radius:11px;padding:12px;font:inherit">'
+ +mReason('mm','예: 관리소장님 통화로 9월부터 매탄임광아파트로 이동 확인')+'<button class="btn btn-primary" style="margin-top:12px" data-gate="mm" disabled onclick="saveManagerMoveM()">근무지 이동 저장</button>');mrGate('mm')}
+function saveManagerMoveM(){if(!mrOk('mm'))return toast('이동 사유를 남겨주세요');var d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),c=contactInfoM(d||{}),to=(document.getElementById('mm-site').value||'').trim(),office=(document.getElementById('mm-office').value||'').trim(),dt=(document.getElementById('mm-date').value||'').trim(),why=mrVal('mm');if(!to||!dt)return toast('새 근무지와 이동일은 필수입니다');if(normSiteM(to)===normSiteM(d.nm))return toast('현재 현장과 같은 근무지입니다');var P=peopleM(),p=P[c.personKey]||(P[c.personKey]={name:c.name,mobile:c.mobile,currentSite:d.nm,history:[]});p.history=p.history||[];var cur=p.history.filter(function(h){return !h.to&&normSiteM(h.site)===normSiteM(d.nm)})[0];if(cur)cur.to=dt;else p.history.push({site:d.nm,from:String(c.startedAt||d.stageAt||'').slice(0,10),to:dt});p.currentSite=to;p.history.push({site:to,officeTel:office,from:dt,to:'',reason:why});savePeopleM(P);d.contact=Object.assign({},d.contact||{},{officeTel:c.officeTel,officeEmail:c.officeEmail,managerName:c.name,managerMobile:c.mobile,managerRole:c.role,personKey:c.personKey,currentSite:to,status:'moved',leftAt:dt});d.manager_current_site=to;d.manager_status='moved';d.manager_left_at=dt;var target=DEALS.filter(function(x){return x!==d&&normSiteM(x.nm)===normSiteM(to)})[0];if(target&&!contactInfoM(target).mobile){var nc={officeTel:office,officeEmail:'',managerName:c.name,managerMobile:c.mobile,managerRole:c.role,personKey:c.personKey,currentSite:to,status:'current',startedAt:dt};target.contact=nc;target.office_phone=office;target.manager_name=c.name;target.manager_mobile=c.mobile;target.person_key=c.personKey}pushWrite('contact_move',{opportunity_id:d.id,person_key:c.personKey,manager_name:c.name,manager_mobile:c.mobile,from_site:d.nm,to_site:to,to_office_phone:office||null,moved_at:dt,reason:why});addActivity(d,'업무',c.name+' 관리소장 근무지 이동',d.nm+' → '+to+' · '+why,false);closeSheet();toast('근무지 이동 이력을 저장했습니다');render()}
+function historySheetM(){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),H=contactHistoryM(d||{});if(!d)return;openSheet(intro('var(--blue-50)','var(--blue-dark)',IC.user,'관리소장 근무 이력','현장이 바뀌어도 사람의 관계 이력은 이어집니다'),H.map(function(h){return '<div class="rsum" style="margin-bottom:8px"><b>'+esc(h.site||'-')+'</b><div class="hint" style="margin-top:4px">'+esc(h.from||'-')+' → '+esc(h.to||'현재')+'</div></div>'}).join('')||'<div class="hint">근무 이력이 없습니다.</div>')}
+
 
 /* ── 5 딜 상세 ── */
 function rDeal(){
@@ -1368,6 +1456,7 @@ function rDeal(){
  +'<div><div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap"><span class="badge '+tg[0]+'">'+tg[1]+'</span><span class="badge badge-blue">'+stageLabel(d.code)+'</span>'+(d.outcome?'<span class="badge '+(d.outcome==='won'?'badge-ok':'badge-danger')+'">'+OUTCOMES[d.outcome].nm+(d.close_reason?' · '+esc(d.close_reason):'')+'</span>':'')+(d.gj?'<span class="badge badge-violet">'+d.gj[0]+' · '+d.gj[1]+'</span>':'')+(isStale(d)?'<span class="badge badge-danger">'+staleTxt(d)+'</span>':'')+'</div>'
  +'<div style="font-size:19px;font-weight:800;letter-spacing:-.4px">'+esc(d.nm)+'</div><div class="hint" style="margin-top:2px">'+amtTxt(d.amt)+'</div></div>'
  /* 사업유형은 «한 줄 요약»만. 누르면 전환 이력이 펼쳐진다 (첫 화면에 긴 이력을 늘어놓지 않는다) */
+ +contactCardM(d)
  +'<div class="card tight" style="padding:0;border:0;background:transparent"><button class="bizline" onclick="bizHistSheet()">'
    +'<span><span class="bl">사업유형</span><br><span class="bv">'+esc(bizOf(d))+'</span></span>'
    +'<span class="bo">'+(bizOrigin(d)!==bizOf(d)?'최초 '+esc(bizOrigin(d))+' → 현재 '+esc(bizOf(d)):'최초 등록 그대로')+'</span>'
@@ -1753,7 +1842,7 @@ function srchDo(q){
  var box=document.getElementById('srchres');if(!box)return;
  if(!q){box.innerHTML='<div class="hint" style="padding:8px 2px">내 건 '+myDeals().length+'건에서 찾습니다</div>';return}
  /* 접근권한 문제 — 남의 건이 검색으로 새면 안 된다 */
- var list=myDeals().filter(function(d){return d.nm.indexOf(q)>=0||d.rep.indexOf(q)>=0});
+ var list=myDeals().filter(function(d){var c=contactInfoM(d),hay=[d.nm,d.rep,c.name,c.mobile,c.officeTel].join(' ');return hay.indexOf(q)>=0||phoneN(hay).indexOf(phoneN(q))>=0});
  box.innerHTML=list.length?'<div class="card tight" style="padding:2px 16px">'+list.map(function(d){return dealRow(d)}).join('')+'</div>'
   :'<div class="hint" style="padding:14px 2px">"'+esc(q)+'" 결과 없음 — 중복 방지를 위해 신규 등록 전 꼭 검색하세요</div>';
 }
@@ -1903,24 +1992,24 @@ function pickReassign(r){
 function rProspect(head){
  var biz=G.pbiz||BIZ_TYPES[0];
  scr.innerHTML=head+'<div class="body fadein">'
- +intro('var(--blue-50)','var(--blue-dark)',IC.plus,'＋ 영업 추가','현장에서 바로 등록 — PC 파이프라인에 즉시 생깁니다')
+ +intro('var(--blue-50)','var(--blue-dark)',IC.plus,'＋ 영업 추가','현장에서 바로 등록 — 연락처까지 함께 저장합니다')
  +'<div class="card"><div class="hint" style="margin-bottom:6px">아파트명 <span style="color:var(--danger)">*</span></div>'
- +'<input id="pname" value="'+esc(G.pnm||'')+'" oninput="G.pnm=this.value" placeholder="예: [수원] 광교더리브아파트" style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box">'
+ +'<input id="pname" value="'+escAttr(G.pnm||'')+'" oninput="G.pnm=this.value" placeholder="예: [수원] 광교더리브아파트" style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box">'
  +'<button class="btn btn-line" style="margin-top:10px" onclick="scanCard()">'+IC.camera+' 명함·현수막 촬영으로 자동 인식</button>'
- +'<div class="hint" style="margin-top:14px;margin-bottom:6px">공사명 <span style="color:var(--danger)">*</span></div>'
- +'<input id="pwork" value="'+esc(G.pwork||'')+'" oninput="G.pwork=this.value" placeholder="예: 옥상 방수 재도장공사" style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box">'
- +'<div class="hint" style="margin-top:14px;margin-bottom:6px">사업유형 <span style="color:var(--danger)">*</span> — 나중에 전환할 수 있습니다</div>'
- +'<div class="chiprow">'+BIZ_TYPES.map(function(b){return '<button class="cchip '+(biz===b?'b':'gr')+'" data-b="'+escAttr(b)+'" onclick="G.pbiz=this.dataset.b;render()">'+esc(b)+'</button>'}).join('')+'</div>'
- +'<div class="hint" style="margin-top:14px;margin-bottom:6px">공종 (대분류) <span style="color:var(--danger)">*</span></div>'
- +'<div class="chiprow">'+Object.keys(GJ).map(function(g){return '<button class="cchip '+(G.pgj1===g?'b':'gr')+'" onclick="G.pgj1=\''+g+'\';G.pgj2=null;render()">'+g+'</button>'}).join('')+'</div>'
- +(G.pgj1?'<div class="hint" style="margin-top:12px;margin-bottom:6px">공종 (소분류) — '+G.pgj1+'</div><div class="chiprow">'+GJ[G.pgj1].map(function(g){return '<button class="cchip '+(G.pgj2===g?'b':'gr')+'" style="font-size:12.5px;padding:11px 4px" onclick="G.pgj2=\''+g+'\';render()">'+g+'</button>'}).join('')+'</div>':'')
- +'<div class="hint" style="margin-top:14px;margin-bottom:6px">담당자</div>'
- +'<div class="rsum" style="padding:13px"><b>'+esc(G.user?G.user.nm:'')+'</b> <span class="hint">· 로그인 사용자</span></div>'
- +'<div class="hint" style="margin-top:14px;margin-bottom:6px">영업 등록 근거 <span style="color:var(--danger)">*</span></div>'
- +mReason('nd','예: 직접 발굴한 현장. 재도장 입찰 예정이며 기술자문으로 영업 시작.')
+ +'<div class="hint" style="margin-top:14px;margin-bottom:6px">공사명 <span style="color:var(--danger)">*</span></div><input id="pwork" value="'+escAttr(G.pwork||'')+'" oninput="G.pwork=this.value" placeholder="예: 옥상 방수 재도장공사" style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box">'
+ +'<div class="hint" style="margin-top:14px;margin-bottom:6px">현장 주소</div><input id="paddr" value="'+escAttr(G.paddr||'')+'" oninput="G.paddr=this.value" placeholder="예: 경기 수원시 영통구 ..." style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box">'
+ +'<div class="hint" style="margin-top:14px;margin-bottom:6px">관리사무소 대표전화 <span style="color:var(--danger)">*</span></div><input id="poffice" inputmode="tel" value="'+escAttr(G.poffice||'')+'" oninput="G.poffice=this.value" placeholder="예: 031-123-4567" style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box">'
+ +'<div class="hint" style="margin-top:14px;margin-bottom:6px">관리소장 성명 <span style="color:var(--danger)">*</span></div><input id="pmanager" value="'+escAttr(G.pmanager||'')+'" oninput="G.pmanager=this.value" placeholder="예: 김민수" style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box">'
+ +'<div class="hint" style="margin-top:14px;margin-bottom:6px">관리소장 휴대폰 <span style="color:var(--danger)">*</span></div><input id="pmobile" inputmode="tel" value="'+escAttr(G.pmobile||'')+'" oninput="G.pmobile=this.value;managerHintM()" placeholder="예: 010-1234-5678" style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box"><div id="pcontacthint" class="contact-hint-m"></div>'
+ +'<div class="hint" style="margin-top:14px;margin-bottom:6px">관리사무소 이메일</div><input id="pemail" type="email" value="'+escAttr(G.pemail||'')+'" oninput="G.pemail=this.value" placeholder="예: office@example.com" style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box">'
+ +'<div class="hint" style="margin-top:14px;margin-bottom:6px">사업유형 <span style="color:var(--danger)">*</span> — 나중에 전환할 수 있습니다</div><div class="chiprow">'+BIZ_TYPES.map(function(b){return '<button class="cchip '+(biz===b?'b':'gr')+'" data-b="'+escAttr(b)+'" onclick="G.pbiz=this.dataset.b;render()">'+esc(b)+'</button>'}).join('')+'</div>'
+ +'<div class="hint" style="margin-top:14px;margin-bottom:6px">공종 (대분류) <span style="color:var(--danger)">*</span></div><div class="chiprow">'+Object.keys(GJ).map(function(g){return '<button class="cchip '+(G.pgj1===g?'b':'gr')+'" data-g="'+escAttr(g)+'" onclick="G.pgj1=this.dataset.g;G.pgj2=null;render()">'+esc(g)+'</button>'}).join('')+'</div>'
+ +(G.pgj1?'<div class="hint" style="margin-top:12px;margin-bottom:6px">공종 (소분류) — '+esc(G.pgj1)+'</div><div class="chiprow">'+GJ[G.pgj1].map(function(g){return '<button class="cchip '+(G.pgj2===g?'b':'gr')+'" style="font-size:12.5px;padding:11px 4px" data-g="'+escAttr(g)+'" onclick="G.pgj2=this.dataset.g;render()">'+esc(g)+'</button>'}).join('')+'</div>':'')
+ +'<div class="hint" style="margin-top:14px;margin-bottom:6px">담당자</div><div class="rsum" style="padding:13px"><b>'+esc(G.user?G.user.nm:'')+'</b> <span class="hint">· 로그인 사용자</span></div>'
+ +'<div class="hint" style="margin-top:14px;margin-bottom:6px">영업 등록 근거 <span style="color:var(--danger)">*</span></div>'+mReason('nd','예: 직접 발굴한 현장. 재도장 입찰 예정이며 기술자문으로 영업 시작.')
  +'<button class="btn btn-primary" style="margin-top:14px" data-gate="nd" disabled onclick="addProspect()">등록하기</button></div>'
- +'<div class="card" style="background:var(--blue-50);border-color:transparent"><div class="hint" style="color:var(--blue-dark)">이미 있는 현장이면 기존 건에 이어붙습니다 (중복 게이트). 등록하면 PC 파이프라인에서도 바로 보입니다.</div></div></div>';
- mrGate('nd');
+ +'<div class="card" style="background:var(--blue-50);border-color:transparent"><div class="hint" style="color:var(--blue-dark)">아파트와 관리소장을 따로 관리합니다. 관리소장이 다른 단지로 이동해도 기존 관계 이력은 유지됩니다.</div></div></div>';
+ mrGate('nd');setTimeout(managerHintM,0);
 }
 function scanCard(){
  G.scanN=(G.scanN||0)+1;
@@ -1928,24 +2017,21 @@ function scanCard(){
  toast('촬영 인식 완료 — 현장명 자동 입력'+(G.scanN%2?' (중복 데모)':''));render();
 }
 function addProspect(){
- var nm=(G.pnm||'').trim(), work=(G.pwork||'').trim(), biz=G.pbiz||BIZ_TYPES[0];
+ var nm=(G.pnm||'').trim(),work=(G.pwork||'').trim(),biz=G.pbiz||BIZ_TYPES[0],address=(G.paddr||'').trim(),office=(G.poffice||'').trim(),manager=(G.pmanager||'').trim(),mobile=(G.pmobile||'').trim(),email=(G.pemail||'').trim();
  if(!nm)return toast('아파트명을 입력하거나 촬영 인식을 눌러주세요');
  if(!work)return toast('공사명을 입력해 주세요');
+ if(!office||!manager||!mobile)return toast('관리사무소 대표전화·관리소장 성명·휴대폰은 필수입니다');
+ if(phoneN(office).length<8||phoneN(mobile).length<10)return toast('전화번호 형식을 확인해 주세요');
  if(!G.pgj1)return toast('공종 대분류를 골라주세요');
  if(!mrOk('nd'))return toast('영업 등록 근거를 남겨야 저장할 수 있어요');
- var core=nm.replace(/\[.*?\]\s*/,'');
- var dup=DEALS.find(function(d){return core&&d.nm.indexOf(core)>=0});
- if(dup)return dupSheet(dup);
- var why=mrVal('nd'), src=mrSrc('nd'), gj=[G.pgj1,G.pgj2||'미정'];
- var nd=normalizeDeal({id:100+DEALS.length,nm:nm,rep:G.user.nm,gj:gj,amt:0,code:'first_contact',lead:1,
-   origin:biz,sub:biz,originBusiness:biz,currentBusiness:biz,businessHistory:[],
-   advisory:(biz==='기술자문'?{work_name:work,work_type:gj[1]}:null),
-   tl:[['오늘','영업 등록 ('+biz+' · '+work+')']]});
+ var core=nm.replace(/\[.*?\]\s*/,'');var dup=DEALS.find(function(d){return core&&d.nm.indexOf(core)>=0});if(dup)return dupSheet(dup);
+ var why=mrVal('nd'),src=mrSrc('nd'),gj=[G.pgj1,G.pgj2||'미정'],at=isoNow(),personKey='mobile:'+phoneN(mobile);
+ var contact={officeTel:office,officeEmail:email,managerName:manager,managerMobile:mobile,managerRole:'관리소장',personKey:personKey,currentSite:nm,status:'current',startedAt:at};
+ upsertPersonM({name:manager,mobile:mobile,personKey:personKey},nm,office,at);
+ var nd=normalizeDeal({id:'new-'+Date.now(),nm:nm,rep:G.user.nm,gj:gj,amt:0,code:'first_contact',lead:1,address:address,origin:biz,sub:biz,originBusiness:biz,currentBusiness:biz,businessHistory:[],contact:contact,office_phone:office,office_email:email,manager_name:manager,manager_mobile:mobile,manager_role:'관리소장',person_key:personKey,advisory:(biz==='기술자문'?{work_name:work,work_type:gj[1]}:null),tl:[['오늘','영업 등록 ('+biz+' · '+work+')']]});
  DEALS.push(nd);addActivity(nd,'영업등록',work+' · '+biz,why,false);setNextAction(nd,'첫통화','등록 후 첫 통화',1);
- pushWrite('opportunity_create',{name:nm,work_name:work,work_type:gj[1],brand:biz,owner:G.user.nm,
-   reason:why,reason_source:src,origin:biz,gj:gj},nd.id);
- G.pnm='';G.pwork='';G.pgj1=null;G.pgj2=null;G.tab='mine';
- toast(biz+' 영업으로 등록 — 내 건과 PC 파이프라인에 추가됐어요');render();
+ pushWrite('opportunity_create',{name:nm,work_name:work,work_type:gj[1],brand:biz,owner:G.user.nm,address:address||null,reason:why,reason_source:src,origin:biz,gj:gj,office_phone:office,office_email:email||null,manager_name:manager,manager_mobile:mobile,manager_role:'관리소장',person_key:personKey,contact_started_at:at},nd.id);
+ G.pnm='';G.pwork='';G.paddr='';G.poffice='';G.pmanager='';G.pmobile='';G.pemail='';G.pgj1=null;G.pgj2=null;G.tab='mine';toast(biz+' 영업과 관리소장 연락처를 등록했습니다');render();
 }
 function dupSheet(d){
  openSheet(intro('var(--danger-bg)','#c22f3c',IC.alert,'이 현장, 이미 있어요','같은 현장을 두 번 만들면 이력이 갈라집니다'),
