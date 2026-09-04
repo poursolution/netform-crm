@@ -148,3 +148,98 @@ select
     where nullif(deal ->> 'manager_mobile', '') is not null
   ) as bundle_with_manager
 from bundle;
+
+-- Multi-contact extension. The legacy manager_* columns remain the primary-contact
+-- compatibility layer; every other site stakeholder is stored as a Contact.
+begin;
+
+-- Bring the customer name/phone already present in quotation inquiries into the
+-- site directory. raw."담당자" is an internal sales rep and is intentionally ignored.
+insert into public.contacts (organization_id, name, title, phone, mobile, role, person_key, current_site, created_at, updated_at)
+select d.organization_id, trim(i.contact_name), '담당자', trim(i.phone), trim(i.phone), '담당자',
+       'inquiry:' || i.id::text, coalesce(o.name, i.site_name), coalesce(i.received_at, now()), now()
+from public.inquiries i
+join public.deals d on d.id = i.deal_id
+left join public.organizations o on o.id = d.organization_id
+where nullif(trim(i.contact_name), '') is not null
+  and length(regexp_replace(coalesce(i.phone,''), '\D', '', 'g')) >= 8
+  and not exists (
+    select 1 from public.contacts c
+    where c.organization_id = d.organization_id
+      and regexp_replace(coalesce(c.mobile,c.phone,''), '\D', '', 'g') = regexp_replace(i.phone, '\D', '', 'g')
+  );
+
+-- All existing organization contacts are valid site contacts. Multiple people at
+-- the same apartment are expected and must not be collapsed to one manager.
+with src as (
+  select distinct on (c.person_key, o.name)
+    c.person_key, d.id deal_id, o.name site_name,
+    coalesce(c.created_at, d.created_at, now())::date started_at
+  from public.contacts c
+  join public.organizations o on o.id = c.organization_id
+  join public.deals d on d.organization_id = c.organization_id
+  where c.person_key is not null
+  order by c.person_key, o.name, d.updated_at desc nulls last
+)
+insert into public.contact_assignments (person_key, opportunity_id, site_name, started_at, status, reason)
+select person_key, deal_id, site_name, started_at, 'current', '현장 복수 연락처 연결'
+from src
+on conflict (person_key, site_name) where ended_at is null do nothing;
+
+create or replace function public.crm_site_contacts(p_opportunity_id uuid)
+returns jsonb language sql stable security definer set search_path=public as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'id', c.id, 'person_key', c.person_key, 'name', c.name,
+    'role', coalesce(nullif(c.role,''), nullif(c.title,''), '담당자'),
+    'mobile', coalesce(c.mobile,c.phone), 'current_site', c.current_site,
+    'office_phone', ca.office_phone, 'started_at', ca.started_at,
+    'ended_at', ca.ended_at, 'status', coalesce(ca.status,'current')
+  ) order by case when coalesce(c.role,c.title)='관리소장' then 0 else 1 end, c.name), '[]'::jsonb)
+  from public.deals d
+  join public.contacts c on c.organization_id = d.organization_id
+  left join public.contact_assignments ca on ca.person_key=c.person_key and ca.ended_at is null
+  where d.id=p_opportunity_id;
+$$;
+
+create or replace function public.crm_contact_upsert(p jsonb)
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare k text; cid uuid; org uuid; primary_contact boolean;
+begin
+  k := coalesce(nullif(p->>'person_key',''), 'mobile:' || regexp_replace(coalesce(p->>'manager_mobile',''), '\D','','g'));
+  select organization_id into org from public.deals where id=(p->>'opportunity_id')::uuid;
+  update public.contacts set organization_id=coalesce(org,organization_id), name=p->>'manager_name',
+    title=coalesce(p->>'manager_role','담당자'), phone=p->>'manager_mobile', mobile=p->>'manager_mobile',
+    role=coalesce(p->>'manager_role','담당자'), current_site=p->>'site_name', updated_at=now()
+  where person_key=k returning id into cid;
+  if cid is null then
+    insert into public.contacts (organization_id,name,title,phone,mobile,role,person_key,current_site,created_at,updated_at)
+    values (org,p->>'manager_name',coalesce(p->>'manager_role','담당자'),p->>'manager_mobile',p->>'manager_mobile',coalesce(p->>'manager_role','담당자'),k,p->>'site_name',now(),now())
+    returning id into cid;
+  end if;
+  insert into public.contact_assignments(person_key,opportunity_id,site_name,office_phone,started_at,status,reason)
+  values(k,(p->>'opportunity_id')::uuid,p->>'site_name',p->>'office_phone',coalesce((p->>'started_at')::date,current_date),'current','CRM 연락처 저장')
+  on conflict (person_key,site_name) where ended_at is null do update set office_phone=excluded.office_phone,status='current';
+  primary_contact := coalesce((p->>'is_primary')::boolean,false) or coalesce(p->>'manager_role','')='관리소장';
+  if primary_contact then
+    update public.deals set office_phone=coalesce(nullif(p->>'office_phone',''),office_phone), office_email=coalesce(nullif(p->>'office_email',''),office_email),
+      manager_name=p->>'manager_name',manager_mobile=p->>'manager_mobile',manager_role=p->>'manager_role',person_key=k,
+      manager_current_site=p->>'site_name',manager_status='current',updated_at=now()
+    where id=(p->>'opportunity_id')::uuid;
+  end if;
+  return jsonb_build_object('ok',true,'contact_id',cid,'person_key',k,'is_primary',primary_contact);
+end $$;
+
+do $$
+declare fn text;
+begin
+  select pg_get_functiondef('public.crm_bundle()'::regprocedure) into fn;
+  if position('''contacts''' in fn)=0 then
+    fn := replace(fn, '''office_phone'', d.office_phone', '''contacts'', public.crm_site_contacts(d.id), ''office_phone'', d.office_phone');
+    execute fn;
+  end if;
+end $$;
+
+commit;
+
+select count(*) as contacts, count(distinct organization_id) as sites_with_contacts from public.contacts;
+select jsonb_array_length(public.crm_site_contacts(id)) as contact_count from public.deals order by contact_count desc limit 5;
