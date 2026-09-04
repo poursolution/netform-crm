@@ -1464,7 +1464,7 @@ html,body{height:100%}
       <span class="syncbadge ok" id="syncBadge" title="서버 반영 상태 — 실패 시 눌러 재전송">🟢 서버 동기화 완료</span>
       <span class="ib" title="오늘 리마인드는 아침 9시 잔디로 자동 발송">🔔<span class="dot"></span></span>
       <span class="me"><span class="av">관</span><span class="nm2">관리자</span></span>
-      <button class="rf clk" onclick="runDiag()" title="연결 점검 — 데이터가 안 뜰 때 원인 확인" style="background:#fff;border:1px solid var(--line2);color:var(--ink2);margin-right:-4px">🔍</button><button class="rf clk" onclick="loadData()" title="새로고침">↻</button>
+      <button class="rf clk" onclick="exportFullDataJSON()" title="전체 CRM 데이터 JSON 내보내기" style="width:auto;padding:0 10px;background:#fff;border:1px solid var(--line2);color:var(--blue);font-size:10px;font-weight:900">JSON</button><button class="rf clk" onclick="runDiag()" title="연결 점검 — 데이터가 안 뜰 때 원인 확인" style="background:#fff;border:1px solid var(--line2);color:var(--ink2);margin-right:-4px">🔍</button><button class="rf clk" onclick="loadData()" title="새로고침">↻</button>
     </div>
     <div class="err" id="err"></div>
     <div class="periodbar" id="periodbar"></div>
@@ -2090,6 +2090,23 @@ function stripForCache(v){
 function inqKey(q){return String(q.id||q.row||[q.site,q.at].join('|'))}
 function loadLocal(){try{LOCAL=JSON.parse(localStorage.getItem(LOCAL_KEY)||'{"deals":{},"inquiries":{}}')}catch(e){LOCAL={deals:{},inquiries:{}}}LOCAL.deals=LOCAL.deals||{};LOCAL.inquiries=LOCAL.inquiries||{};LOCAL.created=LOCAL.created||[]}
 function saveLocal(){localStorage.setItem(LOCAL_KEY,JSON.stringify(LOCAL))}
+/* 전체 백업 — 인증정보는 제외하고 CRM 데이터·로컬 수정·쓰기 대기열만 담는다. */
+function buildFullExport(){
+ var data=B||{},keys=Object.keys(data),counts={};
+ keys.forEach(function(k){var v=data[k];counts[k]=Array.isArray(v)?v.length:(v&&typeof v==='object'?Object.keys(v).length:(v==null?0:1))});
+ return {format:'netform-crm-full-export',version:1,exported_at:new Date().toISOString(),
+   source:{repository:'poursolution/netform-crm',page:location.pathname},summary:counts,
+   data:data,local_overrides:LOCAL||{deals:{},inquiries:{}},crm_write_queue:WRITE_Q||[]};
+}
+function exportFullDataJSON(){
+ if(!B){alert('데이터를 불러온 뒤 다시 시도해 주세요.');return}
+ var payload=buildFullExport(),stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\..*/,''),
+   blob=new Blob(['\ufeff',JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'}),
+   url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='netform-crm-full-'+stamp+'.json';document.body.appendChild(a);a.click();a.remove();
+ setTimeout(function(){URL.revokeObjectURL(url)},1500);
+ var live=document.getElementById('live');if(live){live.textContent='JSON 내보내기 완료';setTimeout(function(){if(typeof updateLiveStatus==='function')updateLiveStatus()},1600)}
+}
 /* ══════════════════════════════════════════════════════════════
    v4.2 P0(§3 §23): 서버 쓰기 — 모바일 담당자앱과 «같은» crm-write 를 쓴다.
    여기를 통과해야 다른 PC·모바일에서도 같은 사실이 보인다.
