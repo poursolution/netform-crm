@@ -188,17 +188,20 @@ on conflict (person_key, site_name) where ended_at is null do nothing;
 
 create or replace function public.crm_site_contacts(p_opportunity_id uuid)
 returns jsonb language sql stable security definer set search_path=public as $$
-  select coalesce(jsonb_agg(jsonb_build_object(
-    'id', c.id, 'person_key', c.person_key, 'name', c.name,
-    'role', coalesce(nullif(c.role,''), nullif(c.title,''), '담당자'),
-    'mobile', coalesce(c.mobile,c.phone), 'current_site', c.current_site,
-    'office_phone', ca.office_phone, 'started_at', ca.started_at,
-    'ended_at', ca.ended_at, 'status', coalesce(ca.status,'current')
-  ) order by case when coalesce(c.role,c.title)='관리소장' then 0 else 1 end, c.name), '[]'::jsonb)
-  from public.deals d
-  join public.contacts c on c.organization_id = d.organization_id
-  left join public.contact_assignments ca on ca.person_key=c.person_key and ca.ended_at is null
-  where d.id=p_opportunity_id;
+  with rows as (
+    select jsonb_build_object(
+      'id', c.id, 'person_key', c.person_key, 'name', c.name,
+      'role', coalesce(nullif(c.role,''), nullif(c.title,''), '담당자'),
+      'mobile', coalesce(c.mobile,c.phone), 'current_site', c.current_site,
+      'office_phone', ca.office_phone, 'started_at', ca.started_at,
+      'ended_at', ca.ended_at, 'status', coalesce(ca.status,'current')
+    ) obj, case when coalesce(c.role,c.title)='관리소장' then 0 else 1 end ord, c.name
+    from public.deals d
+    join public.contacts c on c.organization_id = d.organization_id
+    left join public.contact_assignments ca on ca.person_key=c.person_key and ca.ended_at is null
+    where d.id=p_opportunity_id
+  )
+  select case when count(*) > 1 then jsonb_agg(obj order by ord,name) else '[]'::jsonb end from rows;
 $$;
 
 create or replace function public.crm_contact_upsert(p jsonb)
