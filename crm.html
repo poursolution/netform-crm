@@ -268,6 +268,9 @@ body{background:var(--bg);font-family:"Pretendard Variable",Pretendard,-apple-sy
 .spform .og.full input[type=date]{max-width:170px}
 .spbtns{grid-column:1/-1;display:flex;gap:6px;margin-top:2px}
 .spbtns .dact{flex:0 0 auto}
+.spform-head{grid-column:1/-1;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-bottom:9px;border-bottom:1px solid var(--line2)}
+.spform-head b{display:block;font-size:13px;color:var(--ink)}.spform-head span{display:block;margin-top:3px;font-size:10.5px;color:var(--sub)}
+.spstep{grid-column:1/-1;font-size:10px;font-weight:900;color:var(--blue);letter-spacing:.03em;margin-top:3px}
 .spmsg{grid-column:1/-1;display:none;font-size:11.5px;font-weight:700;color:var(--danger);background:#FDECEE;border-radius:9px;padding:8px 11px}
 /* 영업관리 배드핏 성격 요약 — 놓침(우리 실행 실패)을 가장 눈에 띄게 */
 .lkbar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 4px}
@@ -4788,38 +4791,42 @@ function splitForm(kind){G.splitForm=(G.splitForm===kind?null:kind);paint()}
 function splitInlinePanel(d){
  var f=G.splitForm,k=dealKey(d);
  var bar='<div style="display:flex;gap:6px;flex-wrap:wrap">'
-  +'<button class="mbadge '+(f==='act'?'blue':'gray')+'" style="padding:9px 14px;border:0;cursor:pointer;font-family:inherit" onclick="splitForm(\'act\')">＋ 활동 기록</button>'
-  +'<button class="mbadge '+(f==='next'?'blue':'gray')+'" style="padding:9px 14px;border:0;cursor:pointer;font-family:inherit" onclick="splitForm(\'next\')">🗓 다음 행동</button>'
-  +'<button class="mbadge '+(f==='stage'?'blue':'gray')+'" style="padding:9px 14px;border:0;cursor:pointer;font-family:inherit" onclick="splitForm(\'stage\')">단계 전환</button>'
+  +'<button class="mbadge '+(f==='act'?'blue':'gray')+'" style="padding:9px 14px;border:0;cursor:pointer;font-family:inherit" onclick="splitForm(\'act\')">＋ 한 일 기록</button>'
+  +'<button class="mbadge '+(f==='next'?'blue':'gray')+'" style="padding:9px 14px;border:0;cursor:pointer;font-family:inherit" onclick="splitForm(\'next\')">🗓 다음 할 일</button>'
+  +'<button class="mbadge '+(f==='stage'?'blue':'gray')+'" style="padding:9px 14px;border:0;cursor:pointer;font-family:inherit" onclick="splitForm(\'stage\')">→ 단계 바꾸기</button>'
   +'</div>';
  if(!f)return bar;
  var body='';
  if(f==='act'){
-  body='<div class="og"><label>활동 유형</label><select id="sp-act-type">'+ACTIVITY_TYPES.map(function(x){return '<option>'+x+'</option>'}).join('')+'</select></div>'
+  body='<div class="spform-head"><div><b>방금 한 일을 기록합니다</b><span>단계는 바뀌지 않고 활동 이력만 추가됩니다.</span></div></div>'
+   +'<div class="og"><label>어떤 활동인가요?</label><select id="sp-act-type">'+ACTIVITY_TYPES.map(function(x){return '<option>'+x+'</option>'}).join('')+'</select></div>'
    +'<div class="og full"><label>무엇을 했는지 <span class="req">*</span></label><input id="sp-act-note" placeholder="예: 관리소장 통화 — 예산 일정 확인"></div>'
    +'<div class="og full"><label>결과</label><input id="sp-act-result" placeholder="예: 9월 중 재검토, 9/8 재통화 요청"></div>'
    +'<label style="font-size:11px;color:var(--sub);display:flex;gap:6px;align-items:center;margin-top:4px"><input type="checkbox" id="sp-act-contact" checked> 고객과 실제로 통화·미팅함 (고객접촉일 갱신)</label>'
    +'<div class="spbtns"><button class="dact pri" onclick="spSaveAct()">활동 저장</button><button class="dact" onclick="splitForm(null)">닫기</button></div>';
  } else if(f==='next'){
   var na=actionObj(d,itemPatch(d,'deal'));
-  body='<div class="og"><label>행동 유형</label><select id="sp-na-type">'+ACTIVITY_TYPES.map(function(x){return '<option '+(na&&na.type===x?'selected':'')+'>'+x+'</option>'}).join('')+'</select></div>'
+  body='<div class="spform-head"><div><b>앞으로 할 일을 예약합니다</b><span>오늘 할 일과 기한 알림에 반영됩니다.</span></div></div>'
+   +'<div class="og"><label>행동 유형</label><select id="sp-na-type">'+ACTIVITY_TYPES.map(function(x){return '<option '+(na&&na.type===x?'selected':'')+'>'+x+'</option>'}).join('')+'</select></div>'
    +'<div class="og"><label>기한 <span class="req">*</span></label><input id="sp-na-due" type="date" value="'+escAttr(na&&na.due||'')+'"></div>'
    +'<div class="og full"><label>다음에 할 일 <span class="req">*</span></label><input id="sp-na-text" value="'+escAttr(na&&na.text||'')+'" placeholder="예: 견적 검토 여부 확인 전화"></div>'
    +'<div class="spbtns"><button class="dact pri" onclick="spSaveNext()">다음 행동 저장</button><button class="dact" onclick="splitForm(null)">닫기</button></div>';
  } else {
   var idx=flowIndex(d,'deal');
-  body='<div class="og full"><label>이동할 단계 <span class="req">*</span></label><select id="sp-tr-target" onchange="spTargetChanged()">'+transitionOptions(idx,'deal')+'</select></div>'
+  body='<div class="spform-head"><div><b>영업 단계를 바꿉니다</b><span>세 묶음만 순서대로 입력하면 됩니다.</span></div></div>'
+   +'<div class="spstep">1. 어디로 이동하나요?</div><div class="og full"><label>이동할 단계 <span class="req">*</span></label><select id="sp-tr-target" onchange="spTargetChanged()">'+transitionOptions(idx,'deal')+'</select></div>'
    +'<div class="og full" id="sp-reason-wrap" style="display:none"><label>종료 사유 <span class="req">*</span></label><select id="sp-tr-reason"></select></div>'
-   +'<div class="og full"><label>한 일 <span class="req">*</span></label><input id="sp-tr-did" placeholder="예: PT 일정 협의 완료"></div>'
-   +'<div class="og full"><label>결과 <span class="req">*</span></label><input id="sp-tr-result" placeholder="예: 경쟁 2개사 확인, 9/15 PT"></div>'
-   +'<div class="og full"><label>다음 행동 · 기한</label><input id="sp-tr-next" placeholder="예: PT 자료 최종 확인"> <input id="sp-tr-due" type="date"></div>'
+   +'<div class="spstep">2. 이번에 무엇이 끝났나요?</div><div class="og"><label>한 일 <span class="req">*</span></label><input id="sp-tr-did" placeholder="예: PT 일정 협의 완료"></div>'
+   +'<div class="og"><label>그 결과 <span class="req">*</span></label><input id="sp-tr-result" placeholder="예: 9/15 PT 확정"></div>'
+   +'<div class="spstep" id="sp-next-step">3. 다음에는 무엇을 하나요?</div><div class="og" id="sp-next-wrap"><label>다음 할 일 <span class="req">*</span></label><input id="sp-tr-next" placeholder="예: PT 자료 최종 확인"></div>'
+   +'<div class="og" id="sp-due-wrap"><label>언제까지 <span class="req">*</span></label><input id="sp-tr-due" type="date"></div>'
    +'<div class="spbtns"><button class="dact pri" onclick="spSaveStage()">전환 저장</button><button class="dact" onclick="splitForm(null)">닫기</button></div>';
  }
  return bar+'<div class="spform">'+body+'<div class="spmsg" id="sp-msg"></div></div>';
 }
 /* 이름 충돌 주의: 아래(견적문의)에도 splitSel 이 있어 여기는 딜 전용 이름을 쓴다 */
 function splitDealSel(){return (B.deals||[]).filter(function(x){return dealKey(x)===G.splitKey})[0]}
-function spMsg(m){var e=document.getElementById('sp-msg');if(e){e.textContent=m;e.style.display='block'}}
+function spMsg(m,focus){var e=document.getElementById('sp-msg');if(e){e.textContent=m;e.style.display='block'}if(focus){var x=document.getElementById(focus);if(x){x.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(function(){x.focus()},200)}}}
 function spSaveAct(){
  var d=splitDealSel();if(!d)return;
  var type=$('#sp-act-type').value,note=$('#sp-act-note').value.trim(),res=$('#sp-act-result').value.trim(),
@@ -4848,8 +4855,9 @@ function spSaveNext(){
 /* 스플릿 인라인: 종료 대상이면 사유 목록을 그 자리에서 바꿔 준다 */
 function spTargetChanged(){var s=$('#sp-tr-target');if(!s)return;var v=s.value,
  need=['lost','badfit','badfit_lead','badfit_pipe','nocontact','hold'].indexOf(v)>=0,
- w=$('#sp-reason-wrap'),r=$('#sp-tr-reason');
+ terminal=isTerminalTarget(v),w=$('#sp-reason-wrap'),r=$('#sp-tr-reason'),n=$('#sp-next-wrap'),d=$('#sp-due-wrap'),h=$('#sp-next-step');
  if(w)w.style.display=need?'block':'none';
+ if(n)n.style.display=terminal?'none':'';if(d)d.style.display=terminal?'none':'';if(h)h.style.display=terminal?'none':'';
  if(r&&need)r.innerHTML=reasonOptionsFor(v);}
 function spSaveStage(){
  var d=splitDealSel();if(!d)return;
@@ -4858,9 +4866,8 @@ function spSaveStage(){
      reason=$('#sp-tr-reason')?$('#sp-tr-reason').value:'',
      terminal=isTerminalTarget(target),
      needReason=['lost','badfit','badfit_lead','badfit_pipe','nocontact','hold'].indexOf(target)>=0;
- if(!did||!res){spMsg('한 일과 결과를 모두 입력해야 단계를 옮길 수 있습니다.');return}
- if(needReason&&!reason){spMsg('종료 사유를 선택해 주세요 — 뺏긴 건지 우리가 놓친 건지 구분해 기록합니다.');return}
- if(!terminal&&(!next||!due)){spMsg('다음 행동과 기한도 함께 입력해 주세요.');return}
+ var missing=[],first='';if(!did){missing.push('한 일');first=first||'sp-tr-did'}if(!res){missing.push('결과');first=first||'sp-tr-result'}if(needReason&&!reason){missing.push('종료 사유');first=first||'sp-tr-reason'}if(!terminal&&!next){missing.push('다음 할 일');first=first||'sp-tr-next'}if(!terminal&&!due){missing.push('기한');first=first||'sp-tr-due'}
+ if(missing.length){spMsg('확인해 주세요: '+missing.join(' · '),first);return}
  /* 상세 화면과 «같은 규칙» 이어야 한다 — 한쪽만 막으면 다른 경로로 빠져나간다 */
  if(target==='sent'&&!(quoteAmt(d)||oppAmt(d))){
    spMsg('자료 발송 단계부터는 금액이 필요합니다 — 딜 상세에서 견적금액(또는 예상금액)을 먼저 입력해 주세요.');return}
