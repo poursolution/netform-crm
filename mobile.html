@@ -938,7 +938,9 @@ function authHeaders(base){
 var BUNDLE=null;   /* crm-api 원본 — 딜 외에 견적문의·응대 이력이 들어 있다 */
 var CLOSED_INQ=['수주','실주','배드핏','연락두절','종결','종료'];
 function inquiryKeyM(q){return String(q&&q.id||q&&q.inquiry_id||q&&q.row||[q&&q.site,q&&q.at].join('|'))}
-function inquiryViewM(q){var dt=q&&q.detail||{},at=q&&q.at||q&&q.created_at||q&&q.created||'',phone=q&&q.phone||q&&q.mobile||q&&q.contact_phone||dt.phone||dt.mobile||'';return {raw:q,key:inquiryKeyM(q),nm:q.site||q.site_name||q.name||'현장명 미입력',rep:q.assignee||'미배정',ps:(at?String(at).slice(0,10)+' · ':'')+(q.status||'접수'),phone:phone,gj:dt.workType||q.work_type||q.category||'',body:dt.inquiry||dt.note||q.message||q.content||'',inflow:dt.inflow||dt.channel||q.channel||'홈페이지 견적문의',status:q.status||'접수',done:!!q.assignee}}
+function inquiryViewM(q){var dt=q&&q.detail||{},at=q&&q.at||q&&q.created_at||q&&q.created||'',phone=q&&q.phone||q&&q.mobile||q&&q.contact_phone||dt.phone||dt.mobile||'',rep=q.assignee||q.assignee_name||'미배정';return {raw:q,key:inquiryKeyM(q),nm:q.site||q.site_name||q.name||'현장명 미입력',rep:rep,ps:(at?String(at).slice(0,10)+' · ':'')+(q.status||'접수'),phone:phone,gj:dt.workType||q.work_type||q.category||'',body:dt.inquiry||dt.note||q.message||q.content||'',inflow:dt.inflow||dt.channel||q.channel||'홈페이지 견적문의',status:q.status||'접수',dealId:q.deal_id||q.opportunity_id||null,at:at,done:rep!=='미배정'}}
+function inquiryStateM(q){if(q.dealId||/영업전환|전환완료/.test(q.status))return 'converted';if(!q.done)return 'unassigned';if(/응대|통화|방문|견적/.test(q.status))return 'handling';return 'assigned'}
+function myInquiriesM(who){var nm=canonicalRep(who||(G.user&&G.user.nm));return ((ADMIN&&ADMIN.inquiries)||[]).filter(function(q){return canonicalRep(q.rep)===nm&&CLOSED_INQ.indexOf(q.status)<0&&inquiryStateM(q)!=='converted'})}
 /* 잔디 응대내용 파싱 — PC 와 «같은 규칙» 이어야 한다. 한쪽만 고치지 말 것.
    실제 응대는 «라벨:값» 이 아니라 자유 서술이다(전체 389건 중 라벨형은 8건).
    구조화 항목은 문의 원본(detail)에서 오고, 여기서는 노이즈만 걷어낸다. */
@@ -1070,6 +1072,7 @@ function rebuildAdmin(){
             {k:'load',l:'부하 과다',v:heavy.length+'명',c:heavy.length?'y':'g'},
             {k:'inflow',l:'정체',v:staleN+'건',c:staleN?'y':'g'}];
  ADMIN.assign=unInq;
+ ADMIN.inquiries=allInq;
  ADMIN.due=REP_INTERNAL.map(function(r){var L=internalOpen.filter(function(d){return d.rep===r&&(function(v){return v!=null&&v<0})(dueDays(d))});
    return {nm:r,ps:'기한초과 '+L.length+'건'}}).filter(function(x){return /[1-9]/.test(x.ps)});
  ADMIN.load=heavy.map(function(r){return {nm:r,ps:'진행 '+loadMap[r]+'건 — 팀 평균 '+Math.round(avg)+'건'}});
@@ -1128,6 +1131,7 @@ loadLive();
    (서버 /v1/mobile/today 가 생기면 이 함수를 그 응답으로 교체한다) */
 function buildToday(){
  var out=[];
+ myInquiriesM().forEach(function(q){out.push({kind:'inquiry',ref:q.key,p:0,why:'신규 문의 · 최초 응대 필요',urgent:1,nm:q.nm,sub:(q.gj||q.inflow)+' · '+q.status,call:!!phoneN(q.phone)})});
  myDeals().filter(isOpen).forEach(function(d){
   var dd=dueDays(d),a=ageOf(d),code=d.code,r=null;
   if(dd!=null&&dd<0)          r={p:1,why:'기한 '+Math.abs(dd)+'일 초과',urgent:1};
@@ -1150,7 +1154,7 @@ var ADMIN={
  inflow:[{nm:'석민이앤씨',ps:'유입 6건'},{nm:'POUR솔루션',ps:'유입 27건'},{nm:'POUR공법',ps:'유입 13건'},{nm:'아파트스퀘어',ps:'유입 7건'}],
  pipe:[],   /* 실데이터에서 rebuildAdmin() 이 채운다 — 예시 숫자를 실적처럼 보여주지 않는다 */
  pipe_closed:[['won','수주 성공',149,'73.9억'],['lost','수주 실패',197,'—'],['badfit','기타 (정리 필요)',24,'—']],
- rank:[['이필선','29.2억'],['황윤선','19.5억'],['한준엽','14.9억'],['정정훈','4.1억']]
+ rank:[['이필선','29.2억'],['황윤선','19.5억'],['한준엽','14.9억'],['정정훈','4.1억']],inquiries:[]
 };
 /* 견적문의 배정건 응대 초과 (예시) — 상태별 폴백(발송3·방문5·응대7·보류14일) 기준 초과 */
 var INQS=[
@@ -1323,7 +1327,7 @@ function rToday(head){
   var right=done?'<span class="callbtn done">'+IC.check+'</span>'
    :t.call?'<button class="callbtn" onclick="event.stopPropagation();startTodayCall('+i+')" aria-label="전화">'+IC.phone+'</button>'
    :'<span class="minis"><button class="mini ok" onclick="event.stopPropagation();quick('+i+',\'확인 완료\')">확인</button><button class="mini skip" onclick="event.stopPropagation();skipSheet('+i+')">넘기기</button></span>';
-  return '<div class="lrow '+(done?'dim':'')+'" data-id="'+escAttr(t.ref)+'" onclick="G.deal=this.dataset.id;G.tab=\'mine\';render()">'+tl
+  return '<div class="lrow '+(done?'dim':'')+'" onclick="openTodayItem('+i+')">'+tl
    +'<span class="meta"><span class="w '+(t.urgent&&!done?'':'soft')+'">'+esc(done||t.why)+'</span><span class="t">'+esc(t.nm)+'</span><span class="s">'+esc(t.sub)+'</span></span>'+right+'</div>';
  }).join('');
  scr.innerHTML=head+'<div class="body fadein">'
@@ -1333,7 +1337,9 @@ function rToday(head){
  +(left===0?'<div class="done-wrap" style="min-height:auto;padding:16px"><div class="done-ring" style="width:64px;height:64px">'+IC.check+'</div><h2 style="font-size:17px">기재는 자동으로 됐어요</h2><p>내일 몫은 아침 9시에 알려드릴게요</p></div>':'')
  +'</div>';
 }
-function todayDeal(i){var t=(G._today||[])[i];return t?DEALS.find(function(x){return x.id===t.ref}):null}
+function todayDeal(i){var t=(G._today||[])[i];return t&&t.kind!=='inquiry'?DEALS.find(function(x){return String(x.id)===String(t.ref)}):null}
+function todayInquiry(i){var t=(G._today||[])[i];return t&&t.kind==='inquiry'?(ADMIN.inquiries||[]).filter(function(q){return String(q.key)===String(t.ref)})[0]:null}
+function openTodayItem(i){var q=todayInquiry(i);if(q){G.sub={t:'inqAssigned',key:q.key};render();return}var d=todayDeal(i);if(d){G.deal=d.id;G.tab='mine';render()}}
 /* 완료 표시는 순번이 아니라 건 자체에 붙인다 — Today 는 매번 다시 계산되므로 순번은 다른 건으로 밀린다 */
 function doneKey(t){return t?('k:'+t.ref+'|'+new Date().toISOString().slice(0,10)):''}
 function isDone(t){return !!G.done[doneKey(t)]}
@@ -1359,14 +1365,15 @@ function callFlow(i){
    return '<button class="cchip '+c[0]+'" onclick="pickToday('+i+',\''+c[2]+'\')"><span class="cic">'+IC[c[1]]+'</span>'+c[2]+'</button>'}).join('')
   +'<div class="voice">'+IC.mic+' 남길 말 있으면 길게 눌러 말하기 (선택)</div>');
 }
-function startTodayCall(i){var d=todayDeal(i),c=contactInfoM(d||{}),num=c.mobile||c.officeTel;if(!d)return;if(!phoneN(num)){toast('등록된 관리소장·관리사무소 전화번호가 없습니다');return}G.todayCallPending=i;addActivity(d,'전화','전화 시도 — '+phoneFmt(num),'',false);try{location.href='tel:'+phoneN(num)}catch(e){G.todayCallPending=null;toast('전화 앱을 열지 못했습니다')}}
+function startTodayCall(i){var q=todayInquiry(i),d=todayDeal(i),c=contactInfoM(d||{}),num=q?q.phone:(c.mobile||c.officeTel);if(!q&&!d)return;if(!phoneN(num)){toast('등록된 전화번호가 없습니다');return}G.todayCallPending=i;if(d)addActivity(d,'전화','전화 시도 — '+phoneFmt(num),'',false);try{location.href='tel:'+phoneN(num)}catch(e){G.todayCallPending=null;toast('전화 앱을 열지 못했습니다')}}
 function resumeTodayCall(){if(G.todayCallPending==null)return;var i=G.todayCallPending;G.todayCallPending=null;setTimeout(function(){callFlow(i)},350)}
 document.addEventListener('visibilitychange',function(){if(!document.hidden)resumeTodayCall()});
 window.addEventListener('focus',resumeTodayCall);
 /* 결과 칩 = 화면은 한 번 터치, 뒤에서는 Activity + Next Action + 기한이 정확히 쌓인다.
    Stage 는 여기서 바꾸지 않는다 (단계 이동은 딜 상세의 [다음으로]) */
 function pickToday(i,label){
- var d=todayDeal(i);
+ var q=todayInquiry(i),d=todayDeal(i);
+ if(q){var at=isoNow();q.status=label.indexOf('못 받')>=0?'배정완료':label.indexOf('다음주')>=0?'응대중':'전화응대 완료';q.ps=String(at).slice(0,10)+' · '+q.status;if(q.raw){q.raw.status=q.status;q.raw.responded_at=at}pushWrite('inquiry_assign',{inquiry_id:q.key,inquiry_row:q.raw&&q.raw.row||null,from:q.rep,to:q.rep,status:q.status,at:at,response:label});}
  if(d){
   completeNextAction(d);
   if(label.indexOf('진행')>=0){addActivity(d,'전화','통화 — 진행됨','다음 일정 협의',true);setNextAction(d,'후속확인','통화 후속 확인',3)}
@@ -1777,18 +1784,19 @@ function rMy(head){
 function rCtrl(head){
  G.sigK=G.sigK||'assign';
  var cards='<div class="mystat">'+ADMIN.sig.map(function(s){return '<button class="'+(G.sigK===s.k?'on':'')+'" onclick="G.sigK=\''+s.k+'\';render()"><div class="n '+s.c+'">'+s.v+'</div><div class="l">'+s.l+'</div></button>'}).join('')+'</div>';
+ var stateTabs='';if(G.sigK==='assign'){G.inqState=G.inqState||'unassigned';var states=[['unassigned','미배정'],['assigned','배정완료'],['handling','응대중'],['converted','영업전환']];ADMIN.assign=(ADMIN.inquiries||[]).filter(function(q){return inquiryStateM(q)===G.inqState});stateTabs='<div class="seg">'+states.map(function(x){var n=(ADMIN.inquiries||[]).filter(function(q){return inquiryStateM(q)===x[0]}).length;return '<button class="'+(G.inqState===x[0]?'on':'')+'" onclick="G.inqState=\''+x[0]+'\';render()">'+x[1]+' '+n+'</button>'}).join('')+'</div>'}
  var rows=ADMIN[G.sigK].map(function(r,i){
   var btn=G.sigK==='assign'?(r.done?'<span class="badge badge-ok">배정됨</span>':'<button class="btn btn-primary btn-sm" onclick="assignSheet('+i+')">배정</button>')
    :G.sigK==='due'?'<button class="btn btn-line btn-sm" onclick="nudgeSheet(\''+r.nm+'\')">쪼기</button>'
    :G.sigK==='load'?'<button class="btn btn-line btn-sm" onclick="drill(\''+r.nm+'\')">보기</button>':'';
-  var go=G.sigK==='assign'?'assignSheet('+i+')'
+  var go=G.sigK==='assign'?(r.done?'G.sub={t:\'inq\',i:'+i+'};render()':'assignSheet('+i+')')
    :G.sigK==='due'?'G.sub={t:\'overdue\',nm:\''+r.nm+'\',ps:\''+r.ps+'\'};render()'
    :G.sigK==='inflow'?'G.sub={t:\'inflow\',nm:\''+r.nm+'\',ps:\''+r.ps+'\'};render()'
    :'drill(\''+r.nm+'\')';
   return '<div class="prow">'+tile(G.sigK==='inflow'?IC.chart:G.sigK==='assign'?IC.siren:IC.clock,G.sigK==='assign'?'var(--danger)':'var(--sub)',G.sigK==='assign'?'var(--danger-bg)':'var(--bg)')+'<span class="pn" style="cursor:pointer" onclick="'+go+'">'+esc(r.nm)+'<span class="ps">'+esc(r.ps)+' · 상세 보기 ›</span></span>'+btn+'</div>';
  }).join('');
  scr.innerHTML=head+'<div class="body fadein"><div class="sec-h"><h2>견적문의 관제</h2><span>신호를 누르면 그 자리에서 조치</span></div>'
- +cards+'<div class="card tight" style="padding:4px 16px">'+(rows||'<div class="hint" style="padding:14px 2px">해당 건이 없습니다 🎉</div>')+'</div>'
+ +cards+stateTabs+'<div class="card tight" style="padding:4px 16px">'+(rows||'<div class="hint" style="padding:14px 2px">해당 건이 없습니다 🎉</div>')+'</div>'
  +'<div class="card" style="background:var(--blue-50);border-color:transparent"><div class="hint" style="color:var(--blue-dark)">배정 버튼은 기존 배정 자동화를 그대로 호출 — 담당자 잔디 알림까지 자동입니다</div></div></div>';
 }
 function doAssign(i){ADMIN.assign[i].done=1;toast('배정 완료 — '+ADMIN.assign[i].rec+' 잔디 알림 발송');render()}
@@ -1855,7 +1863,7 @@ function rStageList(st){
 /* ── 서브 화면 라우터 (V1 구현분) ── */
 function rSub(head){
  var s=G.sub;
- ({search:rSearch,inq:rInq,overdue:rOverdue,inflow:rInflow,stale:rStale,hyg:rHyg,
+ ({search:rSearch,inq:rInq,inqAssigned:rInqAssigned,overdue:rOverdue,inflow:rInflow,stale:rStale,hyg:rHyg,
    noti:rNoti,set:rSet,closed:rClosed,axis:rAxis,brief:rBrief,monthly:rMonthly,dups:rDups,coach:rCoach})[s.t](head,s);
 }
 function subBack(){G.sub=null;render()}
@@ -1893,6 +1901,8 @@ function rInq(head,s){
  +'<div style="display:flex;gap:8px"><button class="btn btn-line" style="flex:1" onclick="callInquiry('+s.i+')">'+IC.phone+' 전화</button><button class="btn btn-primary" style="flex:1" onclick="assignSheet('+s.i+')">'+(q.rep==='미배정'?'배정하기':'재배정')+'</button></div></div>';
 }
 function callInquiry(i){var q=(ADMIN.assign||[])[i];if(!q||!phoneN(q.phone))return toast('등록된 연락처가 없습니다');try{location.href='tel:'+phoneN(q.phone)}catch(e){toast('전화 앱을 열지 못했습니다')}}
+function rInqAssigned(head,s){var q=(ADMIN.inquiries||[]).filter(function(x){return String(x.key)===String(s.key)})[0];if(!q){subBack();return}scr.innerHTML=appbarS('신규 문의 · 최초 응대')+'<div class="body fadein">'+intro('var(--danger-bg)','#c22f3c',IC.phone,esc(q.nm),'담당자 · '+esc(q.rep)+' · '+esc(q.status))+'<div class="card"><div class="kv"><span class="k">연락처</span><button class="v" style="color:var(--blue)" onclick="location.href=\'tel:'+phoneN(q.phone)+'\'">'+esc(phoneFmt(q.phone))+'</button></div><div class="kv"><span class="k">공종</span><span class="v">'+esc(q.gj||'미입력')+'</span></div><div class="kv"><span class="k">문의 내용</span><span class="v" style="text-align:right">'+esc(q.body||'미입력')+'</span></div></div><button class="btn btn-primary" onclick="location.href=\'tel:'+phoneN(q.phone)+'\'">'+IC.phone+' 전화하기</button><div class="sec-h"><h2>통화 결과</h2><span>선택하면 문의 상태가 갱신됩니다</span></div><div class="card tight" style="padding:10px">'+['진행됨 — 다음 잡음','다음주 다시','못 받으심 (내일 재시도)'].map(function(v){return '<button class="cchip gr" data-v="'+escAttr(v)+'" onclick="recordInquiryResponse(\''+escAttr(q.key)+'\',this.dataset.v)">'+v+'</button>'}).join('')+'</div></div>'}
+function recordInquiryResponse(key,label){var q=(ADMIN.inquiries||[]).filter(function(x){return String(x.key)===String(key)})[0];if(!q)return;var at=isoNow();q.status=label.indexOf('못 받')>=0?'배정완료':label.indexOf('다음주')>=0?'응대중':'전화응대 완료';q.ps=String(at).slice(0,10)+' · '+q.status;if(q.raw){q.raw.status=q.status;q.raw.responded_at=at}pushWrite('inquiry_assign',{inquiry_id:q.key,inquiry_row:q.raw&&q.raw.row||null,from:q.rep,to:q.rep,status:q.status,at:at,response:label});G.done['k:'+q.key+'|'+new Date().toISOString().slice(0,10)]=label;toast('응대 결과를 저장했습니다');G.sub=null;render()}
 
 /* 배정 시트 — 부하 표시 + 최저 부하 추천 */
 function assignSheet(i){
