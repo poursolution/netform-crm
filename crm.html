@@ -2527,8 +2527,14 @@ function paintTowerMoney(){
 }
 /* 금액을 누르면 «현장 목록» 이 아니라 «이 돈이 어디에 어떻게 있는가» 를 먼저 보여준다 */
 function towerDrill(k){
+ /* 상단 금액 카드는 모두 그 숫자를 만든 현장 목록으로 바로 간다.
+    예전처럼 카드 아래에 분석표를 붙이면 긴 대시보드에서는 변화가 화면 밖에 생겨
+    클릭이 안 된 것처럼 보였다. 가중 예상도 원금액이 아니라 같은 진행 모집단을 연다. */
+ if(k==='quote'){towerGoRep(G.rep,null,null,'all');return}
+ if(k==='pipe'||k==='wt'){towerGoRep(G.rep,null,null,'active');return}
+ if(k==='won'){towerGoWon(G.rep);return}
  if(k==='risk'){towerGoRep(G.rep,null,null,'risk');return}
- G.towerDrill=(G.towerDrill===k?null:k);paint()}
+ G.towerDrill=null;paint()}
 function paintTowerDrill(){
  var host=$('#d-drill');if(!host)return;
  if(!G.towerDrill){host.innerHTML='';return}
@@ -2563,7 +2569,7 @@ function towerDrillReset(){G.quickClosed=false;G.pipeNoAmt=false;G.pipeStatus='�
 function towerGoStage(ci){towerDrillReset();G.pipeOrigin=null;G.pipeView='split';G.splitCol=ci;G.splitAct=null;goPage('pipe')}
 function towerGoAct(k){towerDrillReset();G.pipeOrigin=null;G.pipeView='split';G.splitCol=null;G.splitAct=k;goPage('pipe')}
 function towerGoRep(nm,ci,act,origin){towerDrillReset();G.inqMetric=null;G.rep=nm;G.pipeOrigin=origin||null;G.pipeView='split';G.splitCol=(ci==null?null:ci);G.splitAct=act||null;goPage('pipe')}
-function towerGoWon(nm){towerDrillReset();G.inqMetric=null;G.pipeOrigin='won';G.rep=nm||G.rep;G.pipeView='split';G.splitCol=null;G.splitAct=null;goPage('pipe')}
+function towerGoWon(nm){towerDrillReset();G.inqMetric=null;G.pipeOrigin='wonPeriod';G.rep=nm||G.rep;G.pipeView='split';G.splitCol=null;G.splitAct=null;goPage('pipe')}
 
 /* ── SALES PIPE (2026-09-02) ───────────────────────────────────
    막대그래프가 아니다. 하나의 현장이 처음 들어와 수주될 때까지
@@ -3998,12 +4004,12 @@ function sortPipe(a,b){return sortByPriority(a,b)}
 function stageEnteredTS(d){return String(stageEnteredAtOf(d)||'')}
 /* 기간·담당자·사업유형·검색만 건 «전체» 집합 — 종료 건도 들어 있다.
    pipeFiltered() 는 진행 건(ACT_GRP)만 남기므로 종료 필터는 이쪽을 쓴다. */
-function pipeScoped(){return B.deals.filter(function(d){return inPeriod(d.created)
+function pipeScoped(){return B.deals.filter(function(d){return (G.pipeOrigin==='wonPeriod'?(isWon(d)&&inPeriod(d.closed)):inPeriod(d.created))
  &&(G.brand==='전체'||d.brand===G.brand)&&(G.rep==='전체'||repN(d.assignee)===G.rep)
  &&metricDealMatch(d,G.pipeOrigin)
  &&(!G.q||((d.site||'')+' '+(d.assignee||'')+' '+(d.stage||'')).includes(G.q))})}
-function metricDealMatch(d,k){if(!k||k==='all'||k==='active')return true;if(k==='self')return isSelfGen(d);if(k==='assigned')return isAssignedLead(d);if(k==='won')return isWon(d);if(k==='closedLost')return !towerActive(d)&&!isWon(d);if(k==='due'){var a=actionObj(d,itemPatch(d,'deal'));return !!(a&&a.due)}if(k==='risk')return liveActs().some(function(x){return x.f(d)});if(k==='stageStale')return (stageAge(d)||0)>=30;return true}
-function metricDealLabel(k,n){var m={self:'직접영업',assigned:'배정 리드',all:'전체 영업기회',active:'진행 Pipeline',won:'수주',closedLost:'종료(실주·배드핏·연락두절)',due:'기한 설정',risk:'관리필요',stageStale:'장기정체'};return (m[k]||'근거 목록')+' '+n+'건'}
+function metricDealMatch(d,k){if(!k||k==='all'||k==='active')return true;if(k==='self')return isSelfGen(d);if(k==='assigned')return isAssignedLead(d);if(k==='won'||k==='wonPeriod')return isWon(d);if(k==='closedLost')return !towerActive(d)&&!isWon(d);if(k==='due'){var a=actionObj(d,itemPatch(d,'deal'));return !!(a&&a.due)}if(k==='risk')return liveActs().some(function(x){return x.f(d)});if(k==='stageStale')return (stageAge(d)||0)>=30;return true}
+function metricDealLabel(k,n){var m={self:'직접영업',assigned:'배정 리드',all:'전체 영업기회',active:'진행 Pipeline',won:'수주',wonPeriod:'수주일 기준 수주',closedLost:'종료(실주·배드핏·연락두절)',due:'기한 설정',risk:'관리필요',stageStale:'장기정체'};return (m[k]||'근거 목록')+' '+n+'건'}
 /* ══ «없는 데이터» 를 «문제» 로 세지 않는다 (2026-09-02) ══════
    지금 서버 번들에는 next_action 이 한 건도 없다 (진행 202건 중 0건).
    그 상태에서 «다음 행동 없음 202건» 을 띄우면 100% 가 문제로 보이고,
@@ -5077,7 +5083,7 @@ function paintSplit(){
  closeDocked();detachDetail();
  var toggle=document.querySelectorAll('.viewtg .clk');if(toggle[1])toggle[1].textContent='⚡ 빠른 관리';if(toggle[0])toggle[0].textContent='🗂️ 칸반';
  var A=pipeFiltered(),SC=pipeScoped(),ci=G.splitCol==null?-1:Number(G.splitCol),actF=splitActFn(G.splitAct),D;
- if(['self','assigned','all','won','closedLost'].indexOf(G.pipeOrigin)>=0)D=SC.slice();
+ if(['self','assigned','all','won','wonPeriod','closedLost'].indexOf(G.pipeOrigin)>=0)D=SC.slice();
  else if(G.quickClosed)D=SC.filter(function(d){return d.code==='won'||d.code==='lost'||d.grp==='기타'});
  else{D=ci>=0?A.filter(function(d){return PD_COLS[ci].codes.indexOf(d.code)>=0}):A;if(actF)D=D.filter(actF);if(G.pipeNoAmt)D=D.filter(function(d){return !oppAmt(d)&&!quoteAmt(d)})}
  D=D.slice().sort(sortByPriority);var keys=D.map(dealKey);if(keys.indexOf(G.splitKey)<0)G.splitKey=keys[0];var sel=D[keys.indexOf(G.splitKey)];
