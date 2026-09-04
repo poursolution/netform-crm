@@ -892,6 +892,7 @@ html,body{height:100%}
    그래서 «구조적으로» 막는다 — 스플릿에 끼워진(.docked) 상태가 아니면 절대 보이지 않는다.
    상세는 항상 목록 옆에서 본다. 목록이 사라지는 화면은 이 CRM 에 없다. */
 .detailview.on:not(.docked){display:none!important}
+.detailview.on.fullview:not(.docked){display:block!important}
 
 .detailview.on{display:block;animation:pin .22s ease}
 .detailtop{position:sticky;top:0;z-index:3;background:rgba(244,246,251,.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--line2);padding:13px 24px}
@@ -3647,7 +3648,7 @@ function openDetail(t,s,b){
 function closeDetail(){
   if(isDocked())return;   /* 스플릿에서는 «닫기» 가 없다 — 목록이 옆에 그대로 있다 */
   closeTransition();
-  $('#detailView').classList.remove('on');$('#detailView').setAttribute('aria-hidden','true');
+  $('#detailView').classList.remove('on','fullview');$('#detailView').setAttribute('aria-hidden','true');
   document.body.style.overflow='';CUR_DETAIL=null;paint();
 }
 function openDrwBase(t,s,b){openDetail(t,s,'<div class="detailgrid"><div class="dcard"><h3>상세 정보</h3>'+b+'</div><div class="dcard"><h3>관리 원칙</h3><div class="detailnotice">모든 현장은 담당자·최근 활동·다음 행동일이 연결되어야 합니다. 변경 내용은 입력 즉시 저장되고 서버로 전송됩니다.</div></div></div>')}
@@ -4835,6 +4836,7 @@ function showSplitEdit(d,kind,body){
  if(kind==='stage')spTargetChanged();
  setTimeout(function(){var x=b.querySelector('input:not([type=date]),select');if(x)x.focus()},30)
 }
+var QUICK_ACTIVITY_TYPES=['전화','문자','카카오','현장방문','견적','기타'];
 function splitInlinePanel(d){
  var f=G.splitForm,k=dealKey(d);
  var bar='<div style="display:flex;gap:6px;flex-wrap:wrap">'
@@ -4846,7 +4848,7 @@ function splitInlinePanel(d){
  var body='';
  if(f==='act'){
   body='<div class="spform-head"><div><b>방금 한 일을 기록합니다</b><span>단계는 바뀌지 않고 활동 이력만 추가됩니다.</span></div></div>'
-   +'<div class="og"><label>어떤 활동인가요?</label><select id="sp-act-type">'+ACTIVITY_TYPES.map(function(x){return '<option>'+x+'</option>'}).join('')+'</select></div>'
+   +'<div class="og"><label>어떤 활동인가요?</label><select id="sp-act-type">'+QUICK_ACTIVITY_TYPES.map(function(x){return '<option>'+x+'</option>'}).join('')+'</select></div>'
    +'<div class="og full"><label>무엇을 했는지 <span class="req">*</span></label><input id="sp-act-note" placeholder="예: 관리소장 통화 — 예산 일정 확인"></div>'
    +'<div class="og full"><label>결과</label><input id="sp-act-result" placeholder="예: 9월 중 재검토, 9/8 재통화 요청"></div>'
    +'<label style="font-size:11px;color:var(--sub);display:flex;gap:6px;align-items:center;margin-top:4px"><input type="checkbox" id="sp-act-contact" checked> 고객과 실제로 통화·미팅함 (고객접촉일 갱신)</label>'
@@ -5020,7 +5022,7 @@ function paintSplit(){
  if(_l2){_l2.scrollTop=keep;G.splitScroll=keep}}
 /* 빠른 관리 v2 — 전체 상세를 도킹하지 않고, 즉시 행동에 필요한 정보만 표시한다. */
 function quickClosedToggle(){G.quickClosed=!G.quickClosed;G.splitCol=null;G.splitAct=null;G.pipeNoAmt=false;G.splitKey=null;paint()}
-function openFullDealFromQuick(){var d=splitDealSel();if(!d)return;G._toSplit=1;try{drwDeal(JSON.stringify(d))}finally{G._toSplit=0}}
+function openFullDealFromQuick(){var d=splitDealSel(),dv=document.getElementById('detailView');if(!d||!dv)return;detachDetail();dv.classList.add('fullview');G._toSplit=1;try{drwDeal(JSON.stringify(d));dv.classList.add('on','fullview');dv.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';dv.scrollTop=0}finally{G._toSplit=0}}
 function quickPanelHTML(d){
  var p=itemPatch(d,'deal'),pri=priorityInfo(d,'deal'),na=actionObj(d,p),dd=na&&na.due?daysTo(na.due):null,c=contactInfo(d,p);
  var acts=(p.activities||d.activities||[]).slice().sort(function(a,b){return String(b.at||b.created_at||'').localeCompare(String(a.at||a.created_at||''))}).slice(0,3);
