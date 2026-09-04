@@ -126,3 +126,39 @@ PC·모바일 현장 상세에는 다음 기능을 같은 영업기회 데이터
 3. `attachment_complete`는 Storage 객체 존재 여부를 확인하는 `crm_attachment_complete`, 실패 시 `crm_attachment_mark_failed`에 연결합니다.
 4. `favorite_set`, `opportunity_touch`는 각각 `crm_favorite_set`, `crm_opportunity_touch` RPC에 연결합니다.
 5. `crm-api`는 로그인 사용자의 `crm_user_opportunity_states(user_key)` 결과를 각 딜의 `favorite`, `last_viewed_at`, `last_worked_at`에 병합합니다. 첨부 메타데이터는 `crm_bundle()`의 `attachments`에서 내려옵니다. 다운로드는 공개 URL이 아니라 필요할 때만 signed download URL을 발급합니다.
+
+## 경남지사 운영 단위
+
+경남지사는 본사 내부 영업과 다른 운영 단위로 관리합니다. 운영 소속은 `team=gyeongnam`, 대표 보고 분류는 `reporting_group=external`이며, 이 두 값을 이름 조건문 대신 담당자 Master에서 읽습니다.
+
+- 견적문의 직접 배정: `inquiry_assignable=true`인 본사 영업 6명(황윤선·이필선·한준엽·정정훈·김성민·조현식)
+- 초기 지사 구성원: 조민준, 김훈. 견적문의 본사 배정창에는 노출하지 않습니다.
+- 지사 우선 인계 Pool: `경남지사 미지정`
+- 견적문의 배정창: 본사 영업 6명 / 경남지사로 인계
+- 경남지사 페이지: 조민준 / 김훈 / 미지정 중 실담당자 지정
+- 경남지사 페이지: 배정 → 담당자 지정 → 최초응대 → 영업기회 → 경쟁·입찰 → 수주 Funnel, 본사 인계표, 지사 담당자 흐름, 위험, 6개월 추이
+- 내부 `관리팀 KPI`와 `담당자 실적`: 경남지사 실행 데이터 제외
+- `리포트 · 대표 보고`: 회사 전체 실적에는 포함하되 담당자 분석에서는 외부채널로 분리하고 경남지사 Badge 표시
+
+서버 반영 순서:
+
+1. [`sql/20260905_gyeongnam_branch.sql`](sql/20260905_gyeongnam_branch.sql)을 Supabase에 적용합니다.
+2. `crm-api` 번들에 `crm_sales_people()` 결과를 `sales_people` 배열로 포함합니다.
+3. `crm-write`의 기존 `inquiry_assign` 분기는 같은 `crm_inquiry_assign` RPC를 계속 호출합니다. RPC가 담당자 Master를 조회해 `assignment_group`, `branch_code`, `reporting_group`을 함께 저장합니다.
+4. 영업기회 생성 시 견적문의의 세 분류 필드를 함께 복사하고, `crm-api`의 `deals`/`inquiries` 응답에도 해당 필드를 포함합니다.
+
+## 견적문의와 기술자문 경계
+
+`기술자문`은 견적문의 유입 브랜드가 아니라 Pipeline의 영업기회 사업유형입니다. 따라서 견적문의의 브랜드 칩, 활성 건수, 미배정·응대·메이드·배정 KPI와 담당자 업무부하에서는 항상 제외합니다. 직접 기술자문 영업 등록과 기존 POUR솔루션·아파트스퀘어 영업기회의 기술자문 전환은 계속 허용합니다.
+
+기존 데이터에서 브랜드가 `기술자문`인 문의는 자동 삭제하거나 정상 문의로 임의 변경하지 않습니다. 견적문의 Control Center의 `기존 기술자문 확인` 탭에만 표시하고 관리자가 다음 중 하나를 확정합니다.
+
+- 실제 견적문의: POUR솔루션·POUR공법·아파트스퀘어 등 실제 유입 브랜드로 재분류
+- 기술자문 영업: 원본 문의를 보존한 채 기술자문 영업기회를 만들고 유입 이력을 연결
+
+서버 반영 순서:
+
+1. [`sql/20260905_technical_inquiry_boundary.sql`](sql/20260905_technical_inquiry_boundary.sql)을 Supabase에 적용합니다.
+2. `crm-write`에 `inquiry_reclassify` 분기를 추가해 브랜드, `legacy_review_status`, 검토자·검토시각을 저장합니다.
+3. 기술자문 영업기회 이관은 기존 `opportunity_create`와 `inquiry_status` 분기를 사용하고 `origin_inquiry_id`를 보존합니다.
+4. 서버 KPI 쿼리도 `regexp_replace(coalesce(brand,''),'\s','','g') <> '기술자문'` 조건을 적용해 화면과 같은 정본을 사용합니다.
