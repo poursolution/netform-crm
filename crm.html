@@ -2101,8 +2101,12 @@ function flushWrites(){
   var key=w.opportunity_id||'_';if(busy[key])return;busy[key]=1;w.status='sending';
   fetch(WRITE_API,{method:'POST',headers:authHeaders({'Content-Type':'application/json'}),body:JSON.stringify(w)})
    .then(function(r){return r.ok?r.json().catch(function(){return {ok:true}}):Promise.reject(new Error('HTTP '+r.status))})
-   .then(function(res){adoptServerId(w,res);w.status='done';w.acked_at=isoNow();saveWQ();updateSyncBadge();flushWrites()})
-   .catch(function(){w.tries=(w.tries||0)+1;w.status=w.tries>=MAX_TRIES?'failed':'pending';saveWQ();updateSyncBadge()});
+   .then(function(res){
+     /* n8n은 분기 미구현·DB 오류도 HTTP 200으로 응답할 수 있다. 명시적 실패를 ACK로 오인하지 않는다. */
+     if(res&&res.ok===false)throw new Error(res.error||res.message||('서버가 '+w.op+' 저장을 거부했습니다'));
+     adoptServerId(w,res);w.status='done';w.acked_at=isoNow();delete w.last_error;saveWQ();updateSyncBadge();flushWrites()
+   })
+   .catch(function(err){w.tries=(w.tries||0)+1;w.last_error=String(err&&err.message||err||'서버 저장 실패').slice(0,240);w.status=w.tries>=MAX_TRIES?'failed':'pending';saveWQ();updateSyncBadge()});
  });
 }
 /* 서버가 딜을 만들면 new_opportunity_id 를 돌려준다.

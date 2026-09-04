@@ -792,7 +792,10 @@ function flushWrites(){
   fetch(WRITE_API,{method:'POST',headers:authHeaders({'Content-Type':'application/json'}),body:JSON.stringify(w)})
    .then(function(r){return r.ok?r.json().catch(function(){return {ok:true}}):Promise.reject(new Error('HTTP '+r.status))})
    .then(function(res){
+     /* n8n이 HTTP 200으로 오류 JSON을 보내도 성공 처리하지 않는다. */
+     if(res&&res.ok===false)throw new Error(res.error||res.message||('서버가 '+w.op+' 저장을 거부했습니다'));
      w.status='done';w.acked_at=isoNow();
+     delete w.last_error;
      /* 서버가 새 딜을 만들면 진짜 opportunity_id 를 돌려준다 — 임시 id 를 즉시 교체 */
      if(res&&res.new_opportunity_id&&(w.op==='opportunity_create'||w.op==='lead_create')){
        var tmp=w.local_id,nid=res.new_opportunity_id;
@@ -804,8 +807,9 @@ function flushWrites(){
      }
      saveQ();updatePendingBadge();flushWrites();   /* 뒤에 밀려 있던 같은 딜 요청 이어서 */
    })
-   .catch(function(){
+   .catch(function(err){
      w.tries=(w.tries||0)+1;
+     w.last_error=String(err&&err.message||err||'서버 저장 실패').slice(0,240);
      /* 무한 재시도 금지 — 상한을 넘기면 실패로 확정하고 사용자에게 보인다 */
      w.status=w.tries>=MAX_TRIES?'failed':'pending';
      saveQ();updatePendingBadge();
