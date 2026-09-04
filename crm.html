@@ -1165,8 +1165,26 @@ html,body{height:100%}
 .rate-cell b{display:block;margin-top:2px;font-size:11px;color:var(--ink);font-variant-numeric:tabular-nums}
 .rate-cell:hover{border-color:var(--blue-100);background:var(--blue-50)}
 .dash-chart-foot{margin-top:11px;border-top:1px solid var(--line);padding-top:9px;color:var(--sub);font-size:9px;line-height:1.5;font-weight:650}
+.chart-track.compete i{background:linear-gradient(90deg,#E7A63B,#F1C66D)}
+.dashboard-flow-grid,.dashboard-split-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.overview-card{background:#fff;border:1px solid #EDF0F5;border-radius:16px;padding:17px 18px;box-shadow:0 1px 2px rgba(20,30,55,.04);min-width:0}
+.overview-title{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.overview-title h3{margin:0;color:var(--ink);font-size:14px;letter-spacing:-.025em}.overview-title p{margin:4px 0 0;color:var(--sub);font-size:10px;line-height:1.45;font-weight:650}
+.flow-funnel{display:grid;gap:7px}.flow-step{display:grid;grid-template-columns:25px 105px minmax(0,1fr) 56px 67px;gap:8px;align-items:center;width:100%;border:0;background:transparent;padding:0;cursor:pointer;text-align:left;font-family:inherit}
+.flow-step .num{display:grid;place-items:center;width:22px;height:22px;border-radius:7px;background:var(--blue-50);color:var(--blue-d);font-size:9px;font-weight:900}.flow-step:last-child .num{background:var(--ok-bg);color:var(--ok)}
+.flow-step .name{font-size:10.5px;color:var(--ink);font-weight:900;white-space:nowrap}.flow-step .name small{display:block;margin-top:2px;color:var(--sub);font-size:8.5px;font-weight:750}.flow-step .rail{height:24px;background:#EEF1F6;border-radius:7px;overflow:hidden}.flow-step .rail i{display:block;height:100%;min-width:2px;border-radius:7px;background:linear-gradient(90deg,#315BD4,#8CA4EA)}.flow-step:last-child .rail i{background:linear-gradient(90deg,#169960,#52C48B)}
+.flow-step .count{font-size:11px;color:var(--ink);font-weight:900;text-align:right;font-variant-numeric:tabular-nums}.flow-step .conv{text-align:right;font-size:8.5px;font-weight:800;color:var(--sub);white-space:nowrap}.flow-step .conv.ok{color:var(--ok)}.flow-step:hover .name{color:var(--blue)}
+.amount-flow{display:grid;gap:8px}.amount-row{display:grid;grid-template-columns:92px minmax(0,1fr) 66px;gap:9px;align-items:center;border:0;background:transparent;padding:0;cursor:pointer;text-align:left;font-family:inherit}.amount-row span{font-size:10px;color:var(--ink2);font-weight:800}.amount-row .rail{height:11px;background:#EEF1F6;border-radius:99px;overflow:hidden}.amount-row .rail i{display:block;height:100%;min-width:2px;border-radius:99px;background:linear-gradient(90deg,#2D59D3,#88A1EA)}.amount-row.hot .rail i{background:linear-gradient(90deg,#E59D2E,#F3C76F)}.amount-row.won .rail i{background:linear-gradient(90deg,#169960,#52C48B)}.amount-row b{text-align:right;font-size:10.5px;color:var(--ink);font-variant-numeric:tabular-nums}.amount-row:hover span{color:var(--blue)}
+.forecast-callout{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding:12px 13px;border-radius:12px;background:linear-gradient(135deg,#EEF2FF,#F7F8FE);border:1px solid #E2E8FB}.forecast-callout span{font-size:10px;color:var(--sub);font-weight:800}.forecast-callout b{font-size:19px;color:var(--blue-d);letter-spacing:-.03em}.forecast-callout small{font-size:9px;color:var(--sub)}
+.stage-bars{display:grid;gap:9px}.stage-row{display:grid;grid-template-columns:94px minmax(0,1fr) 70px;gap:9px;align-items:center;border:0;background:transparent;padding:0;cursor:pointer;text-align:left;font-family:inherit}.stage-row span{font-size:10px;color:var(--ink2);font-weight:800}.stage-row .rail{height:13px;border-radius:99px;background:#EEF1F6;overflow:hidden}.stage-row .rail i{display:block;height:100%;min-width:2px;border-radius:99px;background:linear-gradient(90deg,#4269D7,#9BAEE7)}.stage-row b{text-align:right;font-size:10px;color:var(--ink);font-variant-numeric:tabular-nums}.stage-row:hover span{color:var(--blue)}
+.dash-seg{display:flex;gap:3px;background:var(--bg);padding:3px;border-radius:999px}.dash-seg button{border:0;background:transparent;color:var(--sub);font-size:9px;font-weight:800;border-radius:999px;padding:5px 10px;cursor:pointer}.dash-seg button.on{background:var(--ink);color:#fff}
+.brand-overview{width:100%;border-collapse:collapse}.brand-overview th{padding:8px 7px;text-align:right;border-bottom:1px solid var(--line);font-size:9px;color:var(--sub);white-space:nowrap}.brand-overview th:first-child,.brand-overview td:first-child{text-align:left}.brand-overview td{padding:10px 7px;text-align:right;border-bottom:1px solid var(--line);font-size:10px;color:var(--ink2);font-weight:750;font-variant-numeric:tabular-nums}.brand-overview tr:last-child td{border-bottom:0}.brand-overview tbody tr{cursor:pointer}.brand-overview tbody tr:hover td,.brand-overview tbody tr.on td{background:var(--blue-50);color:var(--blue-d)}.brand-overview .brand-name{font-weight:900;color:var(--ink)}.brand-overview .won{color:var(--ok);font-weight:900}
+.health-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}.health-signal{border:1px solid #EDF0F5;background:#fff;border-radius:12px;padding:12px 13px;text-align:left;cursor:pointer;min-width:0;font-family:inherit}.health-signal:hover{border-color:var(--blue-100);transform:translateY(-1px)}.health-signal span{display:block;font-size:9px;color:var(--sub);font-weight:800}.health-signal b{display:block;margin-top:5px;font-size:19px;color:var(--ink);letter-spacing:-.03em}.health-signal small{display:block;margin-top:3px;font-size:9px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.health-signal.critical b{color:var(--danger)}.health-signal.watch b{color:var(--warn-t)}
+.trend-legend{display:flex;gap:11px;flex-wrap:wrap;font-size:9px;color:var(--sub);font-weight:800}.trend-legend i{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:4px}.trend-chart{height:185px;display:grid;grid-template-columns:repeat(6,1fr);gap:14px;align-items:end;padding:14px 8px 0}.trend-month{height:100%;display:grid;grid-template-rows:1fr auto;gap:7px}.trend-columns{display:flex;align-items:flex-end;justify-content:center;gap:4px;height:100%;border-bottom:1px solid var(--line)}.trend-columns i{display:block;width:16%;min-width:6px;min-height:2px;border-radius:4px 4px 0 0}.trend-columns .inq{background:#A8B7DD}.trend-columns .opp{background:#4169D8}.trend-columns .won{background:#23AE72}.trend-month>span{text-align:center;font-size:9px;color:var(--sub);font-weight:800}.trend-summary{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:10px;color:var(--sub);font-weight:750}.trend-summary b{color:var(--ink);font-size:12px}
 @media(max-width:1160px){.dash-chart-grid{grid-template-columns:1fr}}
+@media(max-width:1160px){.dashboard-flow-grid,.dashboard-split-grid{grid-template-columns:1fr}.health-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:720px){.dash-chart-head{align-items:flex-start;flex-direction:column}.dash-chart-head .chart-hint{display:none}.dash-chart{padding:14px}.rate-chart-row{grid-template-columns:52px repeat(3,minmax(64px,1fr));overflow-x:auto}.dash-chart-grid{gap:9px}}
+@media(max-width:720px){.flow-step{grid-template-columns:22px 88px minmax(85px,1fr) 38px 56px}.health-grid{grid-template-columns:repeat(2,1fr)}.trend-chart{gap:7px;padding-left:0;padding-right:0}.trend-columns i{width:20%}}
 /* ══ Control Tower ══════════════════════════════════════════
    디자인 문법 (2026-09-02 · 참고 예시 반영)
      배경  아주 옅은 회색  · 카드  흰색
@@ -1197,7 +1215,7 @@ html,body{height:100%}
 .towerhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:2px 0 2px}
 .towerhead b{font-size:13px;font-weight:900;letter-spacing:.06em;color:var(--ink)}
 .towerhead span{font-size:11px;color:var(--sub);font-weight:600}
-.moneyrow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.moneyrow{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
 @media(max-width:1400px){.moneyrow{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:900px){.moneyrow{grid-template-columns:repeat(2,1fr)}}
 .micon.red{background:var(--danger-bg)}
@@ -1212,8 +1230,10 @@ html,body{height:100%}
 .micon.indigo{background:#E8ECFD}
 .micon.violet{background:var(--violet-bg)}
 .micon.green{background:var(--ok-bg)}
+.micon.amber{background:var(--warn-bg)}
 .mcard2 .lb{font-size:11.5px;font-weight:800;color:var(--sub);letter-spacing:-.01em}
 .mcard2 .v{font-size:27px;font-weight:900;letter-spacing:-.04em;line-height:1.1;font-variant-numeric:tabular-nums}
+.mcard2 .v small{font-size:12px;margin-left:3px;color:var(--sub);letter-spacing:0}
 .mcard2 .n{font-size:11.5px;color:var(--ink2);font-weight:700;margin-top:3px}
 /* 커버리지는 숫자만 쓰지 않고 «채워진 만큼» 을 막대로도 보여준다 */
 .mcard2 .cv{margin-top:11px;font-size:10px;font-weight:700;color:var(--sub2);position:relative}
@@ -1583,28 +1603,28 @@ html,body{height:100%}
   <div class="authnote">비밀번호는 <b style="display:inline">본인 핸드폰 번호 전체</b>입니다 (예: 01012345678).<br>하이픈은 넣어도 되고 안 넣어도 됩니다. 로그인이 안 되면 영업관리팀에 문의하세요.</div>
 </div></div>
     <div class="apage on" id="pg-dash">
-      <div class="towerhead"><b>SALES CONTROL TOWER</b><span>돈이 어디까지 왔고 · 누가 움직이고 있고 · 어디서 막혀 있는가</span>
+      <div class="towerhead"><b>SALES CONTROL TOWER</b><span>유입부터 전환·파이프라인·수주·사람·위험까지 한 화면에서 확인</span>
         <div class="rolesw" id="d-roles"></div></div>
       <div class="headline" id="d-headline" data-role="lead analysis exec"></div>
       <div class="moneyrow" id="d-money" data-role="lead analysis exec"></div>
-      <div class="card" id="d-pipe" data-role="lead exec"></div>
+      <div id="d-pipe" data-role="lead exec"></div>
       <div id="d-drill" data-role="lead exec"></div>
-      <!-- SALES PIPE는 단계 위치, 아래 전환 차트는 담당자 비교와 정확한 숫자 확인에 쓴다. -->
+      <div id="d-stagebrand" data-role="lead exec"></div>
       <div id="d-charts" data-role="lead exec"></div>
       <!-- 담당자 표는 «견적문의 → 메이드 → 수주» 를 한 줄로 읽는 자리라 폭을 다 쓴다.
            대표 화면도 «같은» 표를 쓴다 — 간소판을 따로 두면 두 화면의 숫자가 갈라진다. -->
       <div class="card" id="d-repmgmt" data-role="lead exec"></div>
-      <div class="card" id="d-neck" data-role="lead"></div>
+      <div class="card" id="d-health" data-role="lead analysis exec"></div>
+      <div class="card" id="d-trend" data-role="lead analysis exec"></div>
+      <div class="card" id="d-neck" data-role="analysis"></div>
       <div class="card" id="d-yoy" data-role="exec"></div>
       <div class="card" id="d-neck2" data-role="exec"></div>
       <!-- 월별 추이·유입 출처는 매일 보는 것이 아니다 — 2차 분석으로 내렸다 -->
       <div class="towergrid" data-role="analysis">
-        <div class="card" id="d-trend"></div>
         <div class="card" id="d-origin"></div>
       </div>
       <div class="card" id="d-mine" data-role="sales"></div>
       <div class="card" id="d-today" data-role="exec"></div>
-      <div class="card" id="d-health" data-role="analysis"></div>
       <!-- 구버전 대시보드(브랜드칩·문의 KPI·월별추이·도넛·담당자랭킹·알림)는 2026-09-02 제거.
            Control Tower 와 정보가 겹쳐 첫 화면이 다시 복잡해졌다.
            문의 추이·분포는 견적문의 관제, 담당자 랭킹은 담당자 실적 페이지에 그대로 있다. -->
@@ -2330,6 +2350,7 @@ function inqBase(withRep,withClosed){
      &&(!G.q||((q.site||'')+' '+(q.assignee||'')).includes(G.q))
      &&(withClosed||!G.hideClosed||!isClosedInq(q))
      &&(G.page!=='inq'||!G.briefInquiryKind||briefInquiryMatch(q,G.briefInquiryKind))
+     &&(G.page!=='inq'||!G.inqIssueKind||inquiryIssueMatch(q,G.inqIssueKind))
      &&(G.page!=='inq'||G.inqMetric!=='made'||inquiryHasMadeDeal(q))
      &&(G.page!=='inq'||G.inqMetric!=='assigned'||inquiryAssigned(q))})}
 function inqs(){return inqBase(true,false)}
@@ -2595,10 +2616,12 @@ function eok(n){return (n/1e8).toFixed(1).replace(/\.0$/,'')+'억'}
 function paintTowerMoney(){
  var host=$('#d-money');if(!host)return;
  var A=towerBase(),act=A.filter(towerActive),won=A.filter(isWon);
- /* 견적 배정액 = 이 기간에 손에 쥔 전체(진행+수주+실주). 견적금액이 있으면 그것부터 본다 */
+ var Q=inqBase(true,true);
  var qs=function(d){return quoteAmt(d)||oppAmt(d)};
  var mQ=sumBy(A,qs),cQ=amtCover(A,qs);
  var mP=sumBy(act,oppAmt),cP=amtCover(act,oppAmt);
+ var comp=act.filter(function(d){return PD_COLS[2].codes.indexOf(d.code)>=0});
+ var mComp=sumBy(comp,oppAmt),cComp=amtCover(comp,oppAmt);
  var mW=weighted(act);
  var ws=function(d){return wonAmt(d)||oppAmt(d)};
  var wonP=wonInPeriod();                       /* 이 기간에 «수주한» 것 */
@@ -2611,29 +2634,24 @@ function paintTowerMoney(){
    return isWon(d)&&c&&c.slice(0,4)===py&&(parseInt(c.slice(5,7),10)-1)<=mNow
     &&(G.brand==='전체'||d.brand===G.brand)&&(G.rep==='전체'||repN(d.assignee)===G.rep)}),ws)}
  var wonDiff=(pyAmt)?Math.round((mWon-pyAmt)/pyAmt*100):null;
- var LA0=liveActs(), riskL=act.filter(function(d){return LA0.some(function(a){return a.f(d)})});
- var mRisk=sumBy(riskL,oppAmt);
- var asg=A.filter(isAssignedLead), self=A.filter(isSelfGen);
  var cards=[
-  {k:'quote',lb:'올해 등록 영업',v:mQ,n:A.length+'건',cov:cQ,ic:'📥',tone:'blue',
-   rt:'배정 '+asg.length+' · 직접영업 '+self.length,
-   tip:'배정 리드 '+eok(sumBy(asg,qs))+' + 직접영업 '+eok(sumBy(self,qs))+' (출처 미기록 '+(A.length-asg.length-self.length)+'건 포함)'},
+  {k:'inq',lb:'견적문의',v:Q.length,unit:'건',raw:1,n:'전체 유입 규모',ic:'📥',tone:'blue',tip:'이 기간에 접수된 전체 견적문의'},
+  {k:'quote',lb:'영업기회',v:A.length,unit:'건',raw:1,n:eok(mQ),cov:cQ,ic:'🧩',tone:'blue',tip:'이 기간에 등록된 전체 영업기회'},
   {k:'pipe',lb:'현재 진행 영업',v:mP,n:act.length+'건',cov:cP,ic:'🧭',tone:'indigo',
-   rt:'배정→진행 '+pctOf(act.length,A.length)+'%',tip:'지금 살아 움직이는 금액'},
+   rt:'기회 중 '+pctOf(act.length,A.length)+'%',tip:'지금 살아 움직이는 Pipeline 금액'},
+  {k:'comp',lb:'경쟁·입찰',v:mComp,n:comp.length+'건',cov:cComp,ic:'⚡',tone:'amber',
+   rt:'진행의 '+pctOf(mComp,mP)+'%',tip:'경쟁·PT·입찰 단계에 있는 금액'},
   {k:'wt',lb:'가중 예상매출',v:mW,n:'단계확률 적용',cov:null,ic:'📈',tone:'violet',
    rt:null,tip:'진행 금액 × 단계별 확률'},
   {k:'won',lb:'수주 확정',v:mWon,n:wonP.length+'건',cov:cWon,ok:1,ic:'🏆',tone:'green',
    rt:(wonDiff!==null?'전년 동기 '+(wonDiff>=0?'▲ +':'▼ ')+wonDiff+'%'
         :'금액수주 '+pctOf(mWon,mQ)+'%'),
    tip:'이 기간에 수주 «확정» 된 금액입니다 (유입 시점이 아니라 수주한 날 기준)  ·  참고: 이 기간 유입분만 놓고 보면 '+won.length+'건 '+eok(sumBy(won,ws))+' 수주, 금액수주율 '+pctOf(sumBy(won,ws),mQ)+'%'},
-  /* 위험금액을 상단으로 — 관리자에게는 가중예상만큼 중요하다 */
-  {k:'risk',lb:'위험금액',v:mRisk,n:riskL.length+'건',cov:null,ic:'⚠️',tone:'red',bad:1,
-   rt:'진행의 '+pctOf(mRisk,mP)+'%',tip:'관리 문제로 멈춰 있는 금액 — 오늘 손대면 살릴 수 있는 돈'}
  ];
  host.innerHTML=cards.map(function(c){
   return '<div class="mcard2 '+(c.bad?'risk ':'')+(G.towerDrill===c.k?'on':'')+'" title="'+escAttr(c.tip)+'" data-k="'+c.k+'" onclick="towerDrill(this.dataset.k)">'
    +'<div class="mtop"><span class="micon '+c.tone+'">'+c.ic+'</span><div class="lb">'+esc(c.lb)+'</div></div>'
-   +'<div class="v">'+eok(c.v)+'</div>'
+   +'<div class="v">'+(c.raw?c.v+'<small>'+esc(c.unit||'')+'</small>':eok(c.v))+'</div>'
    +'<div class="n">'+esc(c.n)+'</div>'
    +(c.cov?'<div class="cv'+(c.cov.pct<70?' bad':'')+'"><i style="width:'+c.cov.pct+'%"></i><span>금액 입력 '+c.cov.n+'/'+c.cov.t+'건 ('+c.cov.pct+'%)</span></div>':'')
    +(c.rt?'<div class="rt'+(c.ok?' ok':'')+'">'+esc(c.rt)+'</div>':'')
@@ -2645,8 +2663,10 @@ function towerDrill(k){
  /* 상단 금액 카드는 모두 그 숫자를 만든 현장 목록으로 바로 간다.
     예전처럼 카드 아래에 분석표를 붙이면 긴 대시보드에서는 변화가 화면 밖에 생겨
     클릭이 안 된 것처럼 보였다. 가중 예상도 원금액이 아니라 같은 진행 모집단을 연다. */
+ if(k==='inq'){towerGoInq(G.rep);return}
  if(k==='quote'){towerGoRep(G.rep,null,null,'all');return}
  if(k==='pipe'||k==='wt'){towerGoRep(G.rep,null,null,'active');return}
+ if(k==='comp'){towerGoRep(G.rep,2,null);return}
  if(k==='won'){towerGoWon(G.rep);return}
  if(k==='risk'){towerGoRep(G.rep,null,null,'risk');return}
  G.towerDrill=null;paint()}
@@ -2680,7 +2700,7 @@ function paintTowerDrill(){
   +'</div>';
 }
 /* 숫자를 누르면 «그 숫자를 만든 현장 목록» 으로 간다 — 대시보드 전체의 원칙 */
-function towerDrillReset(){G.quickClosed=false;G.pipeNoAmt=false;G.pipeStatus='전체';G.pipeSub='전체';G.pipeAge='전체';G.splitStage=null;G.splitClosed=null;G.splitKey=null}
+function towerDrillReset(){G.quickClosed=false;G.pipeNoAmt=false;G.quickStageCodes=null;G.quickIssueKind='all';G.briefInquiryKind=null;G.inqIssueKind=null;G.pipeStatus='전체';G.pipeSub='전체';G.pipeAge='전체';G.splitStage=null;G.splitClosed=null;G.splitKey=null}
 function towerGoStage(ci){towerDrillReset();G.pipeOrigin=null;G.pipeView='split';G.splitCol=ci;G.splitAct=null;goPage('pipe')}
 function towerGoAct(k){towerDrillReset();G.pipeOrigin=null;G.pipeView='split';G.splitCol=null;G.splitAct=k;goPage('pipe')}
 function towerGoRep(nm,ci,act,origin){towerDrillReset();G.inqMetric=null;G.rep=nm;G.pipeOrigin=origin||null;G.pipeView='split';G.splitCol=(ci==null?null:ci);G.splitAct=act||null;goPage('pipe')}
@@ -2710,62 +2730,39 @@ function pipeBox(o){
   +(o.risk&&o.risk.n?'<div class="pbr">🔴 '+o.risk.n+'건 · '+eok(o.risk.amt)+' 위험</div>':'')
   +(o.badge?'<div class="pbb">'+esc(o.badge)+'</div>':'')
   +'</div>'}
+function dashboardGoStages(codes,label){
+ towerDrillReset();G.pipeOrigin=null;G.quickIssueKind='all';G.quickStageCodes=String(codes||'').split('|').filter(Boolean);
+ G.reportStageLabel=label||'선택 단계';G.pipeView='split';G.splitCol=null;G.splitAct=null;G.splitKey=null;goPage('pipe')
+}
 function paintSalesPipe(){
  var host=$('#d-pipe');if(!host)return;
- var A=towerBase(),act=A.filter(towerActive),won=A.filter(isWon),LA=liveActs();
- /* 왼쪽 절반 — 견적문의. 파이프라인과 «더하지 않는다» */
- var Q=(B.inquiries||[]).filter(function(q){return inPeriod(inquiryDate(q))
-   &&(G.brand==='전체'||q.brand===G.brand)&&(G.rep==='전체'||repN(q.assignee)===G.rep)});
- var ph=function(names){return Q.filter(function(q){return names.indexOf(inqPhase(q))>=0})};
- var inq=[
-  {nm:'견적문의',L:Q,tip:'이 기간에 접수된 전체 문의'},
-  {nm:'응대완료',L:ph(['응대 완료','견적 준비','견적 발송완료']),tip:'전화·방문 응대가 끝난 건'},
-  {nm:'견적준비',L:ph(['견적 준비','견적 발송완료']),tip:'견적서를 준비·발송 중인 건 — 여기서 파이프라인으로 인계된다'}
+ var A=towerBase(),act=A.filter(towerActive),Q=inqBase(true,true),made=Q.filter(inquiryHasMadeDeal);
+ var comp=act.filter(function(d){return PD_COLS[2].codes.indexOf(d.code)>=0});
+ var wonP=wonInPeriod();
+ var qAmt=sumBy(A,function(d){return quoteAmt(d)||oppAmt(d)}),pAmt=sumBy(act,oppAmt),cAmt=sumBy(comp,oppAmt);
+ var wonAmtPeriod=sumBy(wonP,function(d){return wonAmt(d)||oppAmt(d)});
+ var funnel=[
+  {nm:'견적문의',n:Q.length,amt:null,conv:'기준',go:'towerGoInq(G.rep)'},
+  {nm:'메이드',n:made.length,amt:null,conv:pctOf(made.length,Q.length)+'%',go:"towerGoInq(G.rep,'made')"},
+  {nm:'영업기회',n:A.length,amt:qAmt,conv:A.length<=made.length?pctOf(A.length,made.length)+'%':'직접·과거 포함',go:"towerGoRep(G.rep,null,null,'all')"},
+  {nm:'경쟁·입찰',n:comp.length,amt:cAmt,conv:'기회 중 '+pctOf(comp.length,A.length)+'%',go:'towerGoRep(G.rep,2,null)'},
+  {nm:'수주',n:wonP.length,amt:wonAmtPeriod,conv:'확정일 기준',go:'towerGoWon(G.rep)'}
  ];
- /* 오른쪽 — 파이프라인 4구간 + 수주 */
- var cols=PD_COLS.map(function(c,ci){
-   var L=act.filter(function(d){return c.codes.indexOf(d.code)>=0});
-   var R=L.filter(function(d){return LA.some(function(a){return a.f(d)})});
-   /* 사업유형 전환은 별도 관이 아니라 «배지» 다 — Stage 는 그대로 간다 */
-   var adv=L.filter(function(d){return bizOf(d)==='기술자문'}).length;
-   return {nm:c.nm,ci:ci,n:L.length,amt:sumBy(L,oppAmt),risk:{n:R.length,amt:sumBy(R,oppAmt)},
-     adv:adv}});
- var closed=A.filter(function(d){return !towerActive(d)&&!isWon(d)});
- var stuck=act.filter(function(d){return (stageAge(d)||0)>=30});
- host.innerHTML='<div class="ch"><div><h3>SALES PIPE</h3><div class="sub">현장이 들어와 수주까지 «한 관» 을 타고 가는 흐름 · 칸을 누르면 그 구간 진단 · 아래로 빠지는 가지가 이탈입니다</div></div></div>'
-  +'<div class="spipe">'
-   /* 1행 — 견적문의 구간 */
-   +'<div class="spiperow"><span class="plabel">견적문의</span>'
-    +inq.map(function(x,i){
-      /* 칸 사이에 전환율을 넣는다 — 따로 Funnel 카드를 두면 같은 질문을 두 번 하게 된다 */
-      var r=i?pctOf(x.L.length,inq[i-1].L.length):null;
-      return (i?'<span class="parw conv'+(r<60?' bad':'')+'">→<em>'+r+'%</em></span>':'')
-      +pipeBox({nm:x.nm,n:x.L.length,amt:null,tip:x.tip,cls:'inq',go:"towerGoInqPhase('"+(i===0?'전체':(i===1?'응대 완료':'견적 준비'))+"')"})}).join('')
-    +'<span class="parw join">╗</span></div>'
-   +'<div class="pjoin"><span>견적서 작성 완료 → 파이프라인 인계</span>'
-    +'<em title="origin_inquiry_id 가 아직 0% 라 두 구간을 합산하지 않습니다">연결 미확정</em></div>'
-   /* 2행 — 파이프라인 */
-   +'<div class="spiperow pipe"><span class="plabel">PIPELINE</span>'
-    /* 파이프라인 칸은 «현재 머무는 건수» 다 — 인접 칸끼리 나누면 277% 같은 값이 나온다.
-       (앞 칸이 비어 있고 뒤 칸이 쌓여 있으면 전환율이 아니라 재고 분포다)
-       전환율은 누적이 성립하는 견적문의 구간에만 붙인다. */
-    +cols.map(function(c,i){
-      return (i?'<span class="parw">→</span>':'')
-      +pipeBox({nm:c.nm,n:c.n,amt:c.amt,risk:c.risk,ci:c.ci,on:G.pipeDiag===c.ci,
-        badge:c.adv?'🔀 기술자문 '+c.adv:'',go:'towerDiag('+c.ci+')'})}).join('')
-    +'<span class="parw">→</span>'
-    +pipeBox({nm:'수주',n:won.length,amt:sumBy(won,function(d){return wonAmt(d)||oppAmt(d)}),
-      cls:'won',go:'towerGoWon()'})
-   +'</div>'
-   /* 3행 — 관에서 빠지는 가지 */
-   +'<div class="pbranch">'
-    +'<span class="bl">↓ 관에서 빠짐</span>'
-    +'<button class="bbox warn" onclick="towerGoRep(G.rep,null,null,\'stageStale\')">'+UIT.stale+' <b>'+stuck.length+'건 · '+eok(sumBy(stuck,oppAmt))+'</b></button>'
-    +'<button class="bbox gray" onclick="towerGoClosedAll()">종료(실주·배드핏·연락두절) <b>'+closed.length+'건 · '+eok(sumBy(closed,dealAmt))+'</b></button>'
-   +'</div>'
-  +'</div>'
-  +'<div id="d-diag"></div>';
- paintTowerDiag();
+ var fmax=Math.max.apply(null,funnel.map(function(x){return x.n}).concat([1]));
+ var fhtml=funnel.map(function(x,i){return '<button class="flow-step" onclick="'+x.go+'"><span class="num">0'+(i+1)+'</span><span class="name">'+esc(x.nm)+(x.amt!=null?'<small>'+eok(x.amt)+'</small>':'')+'</span><span class="rail"><i style="width:'+chartWidth(x.n,fmax)+'%"></i></span><span class="count">'+x.n+'건</span><span class="conv'+(i===4?' ok':'')+'">'+esc(x.conv)+'</span></button>'}).join('');
+ var hotCodes=['imminent','bidding','contract'],hot=act.filter(function(d){return hotCodes.indexOf(d.code)>=0}),hotAmt=sumBy(hot,oppAmt);
+ var money=[
+  {nm:'전체 영업기회',amt:qAmt,go:"towerGoRep(G.rep,null,null,'all')"},
+  {nm:'진행 Pipeline',amt:pAmt,go:"towerGoRep(G.rep,null,null,'active')"},
+  {nm:'경쟁·입찰',amt:cAmt,cls:'hot',go:'towerGoRep(G.rep,2,null)'},
+  {nm:'수주 임박',amt:hotAmt,cls:'hot',go:"dashboardGoStages('imminent|bidding|contract','수주 임박')"},
+  {nm:'수주 확정',amt:wonAmtPeriod,cls:'won',go:'towerGoWon(G.rep)'}
+ ],mmax=Math.max.apply(null,money.map(function(x){return x.amt}).concat([1]));
+ var mhtml=money.map(function(x){return '<button class="amount-row '+(x.cls||'')+'" onclick="'+x.go+'"><span>'+esc(x.nm)+'</span><span class="rail"><i style="width:'+chartWidth(x.amt,mmax)+'%"></i></span><b>'+eok(x.amt)+'</b></button>'}).join('');
+ host.innerHTML='<section class="dashboard-flow-grid">'
+  +'<article class="overview-card"><div class="overview-title"><div><h3>영업 Funnel</h3><p>견적문의가 기회가 되고 수주까지 가는 과정 · 클릭하면 근거 목록</p></div></div><div class="flow-funnel">'+fhtml+'</div><div class="dash-chart-foot">문의→메이드는 현장명 연결 기준 최소값입니다. 직접영업·과거 데이터가 있어 메이드→기회 전환율은 임의 계산하지 않습니다. 수주는 계약 확정일 기준입니다.</div></article>'
+  +'<article class="overview-card"><div class="overview-title"><div><h3>금액 Flow</h3><p>건수와 분리해, 돈이 현재 어디에 몰려 있는지 확인</p></div></div><div class="amount-flow">'+mhtml+'</div><div class="forecast-callout"><span>가중 예상매출<small>진행금액 × 단계별 확률</small></span><b>'+eok(weighted(act))+'</b></div><div class="dash-chart-foot">수주 확정은 수주일 기준입니다. 나머지 금액은 영업기회 등록일 기준이라 서로 더하지 않습니다.</div></article>'
+  +'</section>';
 }
 function towerGoInqPhase(phase){G.pipeOrigin=null;G.rep=G.rep||'전체';G.inqMetric=null;G.inqView='console';G.inqPhase=phase||'전체';G.hideClosed=false;goPage('inq')}
 function towerGoClosedAll(){towerDrillReset();G.pipeOrigin='closedLost';G.pipeView='split';G.splitCol=null;G.splitAct=null;goPage('pipe')}
@@ -2814,24 +2811,20 @@ function paintTowerToday(){
      +'<span class="am"><b>'+eok(oppAmt(d))+'</b><span>바로 열기</span></span></div>'}).join('')+'</div>'
    :'<div class="nodata">지금 개입이 필요한 현장이 없습니다.</div>');
 }
-/* ── 월별 수주 추이 — «돈이 실제로 언제 들어왔는가» ─────────────
-   당월 실적이다. 코호트(그 달에 배정받은 리드가 나중에 얼마가 됐는가)와는 다르다.
-   코호트는 lineage 가 연결된 뒤에야 정확해지므로 지금은 당월만 낸다. */
+/* ── 최근 6개월 흐름 — 문의·기회·수주가 함께 좋아지는지 본다. */
 function paintTowerTrend(){
  var host=$('#d-trend');if(!host)return;
- var W=(B.deals||[]).filter(function(d){return d.code==='won'&&d.closed
-   &&(G.brand==='전체'||d.brand===G.brand)&&(G.rep==='전체'||repN(d.assignee)===G.rep)});
- var m={},keys=[];
- for(var i=11;i>=0;i--){var dt=new Date();dt.setMonth(dt.getMonth()-i);
-   var k=dt.getFullYear()+'-'+('0'+(dt.getMonth()+1)).slice(-2);keys.push(k);m[k]={n:0,amt:0}}
- W.forEach(function(d){var k=String(d.closed).slice(0,7);if(m[k]){m[k].n++;m[k].amt+=(wonAmt(d)||oppAmt(d))}});
- var mx=Math.max.apply(null,keys.map(function(k){return m[k].amt}).concat([1]));
- var tot=keys.reduce(function(a,k){return a+m[k].amt},0);
- host.innerHTML='<div class="ch"><div><h3>월별 수주 추이</h3><div class="sub">계약 확정일 기준 «당월 실적» · 최근 12개월 합계 '+eok(tot)+'</div></div></div>'
-  +'<div class="mbars">'+keys.map(function(k){var v=m[k];
-    return '<div class="mbar" title="'+escAttr(k+' · '+v.n+'건 · '+eok(v.amt))+'">'
-     +'<i style="height:'+Math.round(v.amt/mx*100)+'%"></i>'
-     +'<span>'+k.slice(5)+'</span></div>'}).join('')+'</div>';
+ var now=new Date(),year=G.year==='전체'?now.getFullYear():Number(G.year),month=G.quarter?G.quarter*3-1:(year===now.getFullYear()?now.getMonth():11);
+ var end=new Date(year,month,1),m={},keys=[];
+ for(var i=5;i>=0;i--){var dt=new Date(end.getFullYear(),end.getMonth()-i,1),k=dt.getFullYear()+'-'+('0'+(dt.getMonth()+1)).slice(-2);keys.push(k);m[k]={inq:0,opp:0,won:0}}
+ function scope(x){return (G.brand==='전체'||x.brand===G.brand)&&(G.rep==='전체'||repN(x.assignee)===G.rep)&&(!G.q||JSON.stringify(x).toLowerCase().indexOf(G.q.toLowerCase())>=0)}
+ (B.inquiries||[]).filter(scope).forEach(function(q){var k=String(inquiryDate(q)).slice(0,7);if(m[k])m[k].inq++});
+ (B.deals||[]).filter(scope).forEach(function(d){var k=String(d.created||'').slice(0,7);if(m[k])m[k].opp++;if(isWon(d)){k=String(d.closed||d.created||'').slice(0,7);if(m[k])m[k].won++}});
+ var mx=Math.max.apply(null,keys.reduce(function(a,k){return a.concat([m[k].inq,m[k].opp,m[k].won])},[1]));
+ var total=keys.reduce(function(a,k){a.inq+=m[k].inq;a.opp+=m[k].opp;a.won+=m[k].won;return a},{inq:0,opp:0,won:0});
+ host.innerHTML='<div class="ch"><div><h3>최근 6개월 흐름</h3><div class="sub">문의 유입이 영업기회와 수주로 이어지는 방향을 월별로 비교합니다</div></div><div class="trend-legend"><span><i style="background:#A8B7DD"></i>견적문의</span><span><i style="background:#4169D8"></i>영업기회</span><span><i style="background:#23AE72"></i>수주</span></div></div>'
+  +'<div class="trend-chart">'+keys.map(function(k){var v=m[k];return '<div class="trend-month" title="'+escAttr(k+' · 문의 '+v.inq+' · 기회 '+v.opp+' · 수주 '+v.won)+'"><div class="trend-columns"><i class="inq" style="height:'+chartWidth(v.inq,mx)+'%"></i><i class="opp" style="height:'+chartWidth(v.opp,mx)+'%"></i><i class="won" style="height:'+chartWidth(v.won,mx)+'%"></i></div><span>'+k.slice(5)+'월</span></div>'}).join('')+'</div>'
+  +'<div class="trend-summary"><span>6개월 문의 <b>'+total.inq+'건</b></span><span>영업기회 <b>'+total.opp+'건</b></span><span>수주 <b>'+total.won+'건</b></span><span>막대에 마우스를 올리면 월별 수치를 확인할 수 있습니다.</span></div>';
 }
 /* ── 직접영업 vs 배정리드 ──────────────────────────────────────
    출처를 끝까지 보존해야 «누가 스스로 만들었는가» 를 성과에서 가릴 수 있다. */
@@ -3199,7 +3192,7 @@ function inqMadeStats(){
    if(M&&M.length){out[nm].made++;out._made++;
      if(M.some(isWon))out[nm].won++}});
  return out}
-function towerGoInq(nm,metric){G.pipeOrigin=null;G.rep=nm;G.inqMetric=metric||null;G.inqView='console';G.inqPhase='전체';
+function towerGoInq(nm,metric){towerDrillReset();G.pipeOrigin=null;G.rep=nm;G.inqMetric=metric||null;G.inqView='console';G.inqPhase='전체';
  G.hideClosed=false;   /* 표의 분모가 «종결 포함» 이라 목록도 맞춰 준다 */
  goPage('inq')}
 /* 담당자 표의 비율·금액도 근거 목록으로 이어진다.
@@ -3243,49 +3236,52 @@ function towerRepSnapshot(scope){
     .sort(function(a,b){return repCompare(a.nm,b.nm)});
   return {rows:rows,IM:IM,A:A};
 }
+G.dashStageMode=G.dashStageMode||'count';
+function setDashStageMode(v){G.dashStageMode=v;paint()}
+function dashboardDealsAllBrands(){return (B.deals||[]).filter(function(d){return inPeriod(d.created)
+ &&(G.rep==='전체'||repN(d.assignee)===G.rep)
+ &&(!G.q||((d.site||'')+' '+(d.assignee||'')+' '+(d.stage||'')).includes(G.q))})}
+function dashboardInqsAllBrands(){return (B.inquiries||[]).filter(function(q){return inPeriod(inquiryDate(q))
+ &&(G.rep==='전체'||repN(q.assignee)===G.rep)
+ &&(!G.q||((q.site||'')+' '+(q.assignee||'')).includes(G.q))})}
+function paintTowerStageBrand(){
+ var host=$('#d-stagebrand');if(!host)return;
+ var act=towerBase().filter(towerActive),mode=G.dashStageMode||'count';
+ var stages=[
+  {nm:'1차접촉·설계',codes:['first_contact','consulting']},
+  {nm:'자료발송',codes:['sent']},
+  {nm:'관계관리',codes:['rapport','silent','waiting']},
+  {nm:'경쟁·PT',codes:['compete']},
+  {nm:'입찰',codes:['imminent','bidding']},
+  {nm:'계약·시공',codes:['contract','construction','completion','expansion']}
+ ].map(function(s){var L=act.filter(function(d){return s.codes.indexOf(d.code)>=0});return {nm:s.nm,codes:s.codes,n:L.length,amt:sumBy(L,oppAmt)}});
+ var smax=Math.max.apply(null,stages.map(function(s){return mode==='amount'?s.amt:s.n}).concat([1]));
+ var shtml=stages.map(function(s){var v=mode==='amount'?s.amt:s.n,label=mode==='amount'?eok(s.amt):s.n+'건';return '<button class="stage-row" data-codes="'+s.codes.join('|')+'" data-label="'+escAttr(s.nm)+'" onclick="dashboardGoStages(this.dataset.codes,this.dataset.label)"><span>'+esc(s.nm)+'</span><span class="rail"><i style="width:'+chartWidth(v,smax)+'%"></i></span><b>'+label+'</b></button>'}).join('');
+ var D=dashboardDealsAllBrands(),Q=dashboardInqsAllBrands();
+ var W=(B.deals||[]).filter(function(d){return isWon(d)&&inPeriod(d.closed||d.created)
+   &&(G.rep==='전체'||repN(d.assignee)===G.rep)
+   &&(!G.q||((d.site||'')+' '+(d.assignee||'')+' '+(d.stage||'')).includes(G.q))});
+ var brands=BRANDS.map(function(b){var db=D.filter(function(d){return d.brand===b}),active=db.filter(towerActive),comp=active.filter(function(d){return PD_COLS[2].codes.indexOf(d.code)>=0}),won=W.filter(function(d){return d.brand===b});return {nm:b,inq:Q.filter(function(q){return q.brand===b}).length,opp:db.length,pipe:sumBy(active,oppAmt),comp:sumBy(comp,oppAmt),won:sumBy(won,function(d){return wonAmt(d)||oppAmt(d)})}});
+ var bhtml=brands.map(function(r){return '<tr class="'+(G.brand===r.nm?'on':'')+'" data-b="'+escAttr(r.nm)+'" onclick="G.brand=G.brand===this.dataset.b?\'전체\':this.dataset.b;paint()"><td class="brand-name">'+esc(r.nm)+'</td><td>'+r.inq+'</td><td>'+r.opp+'</td><td>'+eok(r.pipe)+'</td><td>'+eok(r.comp)+'</td><td class="won">'+eok(r.won)+'</td></tr>'}).join('');
+ host.innerHTML='<section class="dashboard-split-grid">'
+  +'<article class="overview-card"><div class="overview-title"><div><h3>현재 Stage 분포</h3><p>현장이 어느 단계에 몰려 있는지 확인 · 막대 클릭 → 해당 현장</p></div><div class="dash-seg"><button class="'+(mode==='count'?'on':'')+'" onclick="setDashStageMode(\'count\')">건수</button><button class="'+(mode==='amount'?'on':'')+'" onclick="setDashStageMode(\'amount\')">금액</button></div></div><div class="stage-bars">'+shtml+'</div></article>'
+  +'<article class="overview-card"><div class="overview-title"><div><h3>사업유형별 상황</h3><p>어떤 사업이 유입되고, 경쟁까지 가고, 실제 수주되는지 비교</p></div></div><div class="table-scroll"><table class="brand-overview"><thead><tr><th>사업유형</th><th>문의</th><th>기회</th><th>Pipeline</th><th>경쟁·입찰</th><th>수주</th></tr></thead><tbody>'+bhtml+'</tbody></table></div><div class="dash-chart-foot">사업유형을 누르면 전체 화면이 좁혀지고, 선택된 유형을 다시 누르면 전체로 돌아옵니다. 기존 POUR공법 데이터도 유지합니다.</div></article>'
+  +'</section>';
+}
 function chartWidth(v,max){return !v||!max?0:Math.max(2,Math.round(v*1000/max)/10)}
 function paintTowerCharts(){
-  var host=$('#d-charts');if(!host)return;
-  var snap=towerRepSnapshot('internal'),rows=snap.rows,A=snap.A;
-  if(!rows.length){host.innerHTML='<div class="dash-chart-wrap"><div class="dash-chart-head"><div><h3>영업 흐름 차트</h3><p>선택한 담당자의 비교 데이터가 없습니다.</p></div></div></div>';return}
-  var maxAmt=Math.max.apply(null,rows.map(function(r){return Math.max(r.p,r.w)}).concat([1]));
-  var money=rows.map(function(r){
-    return '<div class="money-chart-row" data-chart-rep="'+escAttr(r.nm)+'"><button class="chart-rep" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'active\')">'+esc(r.nm)+'</button><div class="money-bars">'
-      +'<button class="chart-track pipe'+(r.p?'':' zero')+'" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'active\')" aria-label="'+escAttr(r.nm)+' 진행 파이프라인 '+eok(r.p)+'"><i style="width:'+chartWidth(r.p,maxAmt)+'%"></i><b>'+eok(r.p)+'</b></button>'
-      +'<button class="chart-track won'+(r.w?'':' zero')+'" data-n="'+escAttr(r.nm)+'" onclick="towerGoWon(this.dataset.n)" aria-label="'+escAttr(r.nm)+' 수주 '+eok(r.w)+'"><i style="width:'+chartWidth(r.w,maxAmt)+'%"></i><b>'+eok(r.w)+'</b></button>'
-      +'</div></div>'}).join('');
-  var selected=G.rep==='전체'?null:G.rep,iq=selected?(snap.IM[selected]||{n:0,made:0}):{n:snap.IM._n,made:snap.IM._made};
-  var act=A.filter(towerActive),comp=act.filter(function(d){return PD_COLS[2].codes.indexOf(d.code)>=0}),won=A.filter(isWon);
-  var funnel=[
-    {nm:'견적문의',n:iq.n,go:'towerGoInq(G.rep)'},
-    {nm:'메이드',n:iq.made,go:'towerGoInq(G.rep,\'made\')'},
-    {nm:'영업기회',n:A.length,go:'towerGoRep(G.rep,null,null,\'all\')'},
-    {nm:'경쟁·입찰',n:comp.length,go:'towerGoRep(G.rep,2,null)'},
-    {nm:'수주',n:won.length,go:'towerGoWon(G.rep)'}
-  ],fmax=Math.max.apply(null,funnel.map(function(x){return x.n}).concat([1]));
-  var funnelHtml=funnel.map(function(x){return '<button class="funnel-stage" onclick="'+x.go+'" aria-label="'+escAttr(x.nm+' '+x.n+'건 근거 보기')+'"><span>'+esc(x.nm)+'</span><span class="funnel-rail"><i style="width:'+chartWidth(x.n,fmax)+'%"></i></span><b>'+x.n+'</b></button>'}).join('');
-  var riskMax=Math.max.apply(null,rows.map(function(r){var x=r.riskParts;return x.noResponse+x.nextMissing+x.overdue+x.all}).concat([1]));
-  function riskSeg(cls,label,n,nm,key){
-    if(!n)return '';
-    var click=key==='risk'?"towerGoRepMetric(this.dataset.n,'risk')":"goOpsIssue('"+key+"',this.dataset.n,null)";
-    return '<button class="'+cls+'" style="width:'+chartWidth(n,riskMax)+'%" data-n="'+escAttr(nm)+'" onclick="'+click+'" title="'+escAttr(label+' '+n+'건 · 클릭해 근거 보기')+'" aria-label="'+escAttr(nm+' '+label+' '+n+'건')+'"></button>';
-  }
-  var riskHtml=rows.map(function(r){var x=r.riskParts,total=x.noResponse+x.nextMissing+x.overdue+x.all;
-    return '<div class="risk-chart-row" data-risk-rep="'+escAttr(r.nm)+'"><button class="chart-rep" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'risk\')">'+esc(r.nm)+'</button>'
-      +(total?'<div class="risk-stack">'+riskSeg('noresp','미응대',x.noResponse,r.nm,'noResponse')+riskSeg('nonext','Next 없음',x.nextMissing,r.nm,'nextMissing')+riskSeg('overdue','기한초과',x.overdue,r.nm,'overdue')+riskSeg('allrisk','관리필요',x.all,r.nm,'risk')+'</div>':'<div class="risk-zero">경고 신호 없음</div>')
-      +'<span class="risk-total" title="항목별 경고 신호 합계 · 한 현장에 여러 신호가 있을 수 있습니다">'+total+'</span></div>'}).join('');
-  function rateCell(label,v,nm,source,good){var shown=v==null?'—':v+'%',w=v==null?0:Math.max(0,Math.min(100,v));
-    return '<button class="rate-cell'+(v!=null&&v>=good?' good':'')+'" style="--rate:'+w+'%" data-n="'+escAttr(nm)+'" onclick="towerGoRepMetric(this.dataset.n,\''+source+'\')" aria-label="'+escAttr(nm+' '+label+' '+shown)+'"><span>'+esc(label)+'</span><b>'+shown+'</b></button>'}
-  var rateHtml=rows.map(function(r){return '<div class="rate-chart-row" data-rate-rep="'+escAttr(r.nm)+'"><button class="chart-rep" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'all\')">'+esc(r.nm)+'</button>'
-    +rateCell('메이드율',r.iq?r.mrate:null,r.nm,'inqAll',25)
-    +rateCell('금액수주율',r.conv,r.nm,'all',30)
-    +rateCell('응대율',r.ql.resp,r.nm,'inqAssigned',80)+'</div>'}).join('');
-  host.innerHTML='<section class="dash-chart-wrap"><div class="dash-chart-head"><div><h3>한눈에 보는 담당자 영업 흐름</h3><p>차트로 차이를 보고, 아래 표에서 정확한 숫자를 비교합니다.</p></div><span class="chart-hint">막대 클릭 → 근거 목록</span></div><div class="dash-chart-grid">'
-    +'<article class="dash-chart"><div class="dash-chart-top"><div><h4>담당자별 Pipeline · 수주액</h4><p>현재 기간에 등록된 영업기회 기준 · 표와 동일한 모집단</p></div><div class="dash-chart-legend"><span><i style="background:#3769E8"></i>진행</span><span><i style="background:#18A66A"></i>수주</span></div></div><div class="money-chart">'+money+'</div><div class="dash-chart-foot">상단 «수주 확정»은 수주일 기준, 이 차트와 아래 표의 수주액은 영업기회 등록일 기준입니다.</div></article>'
-    +'<article class="dash-chart"><div class="dash-chart-top"><div><h4>문의에서 수주까지</h4><p>전체 전환 흐름 · 현재 기간/사업유형/담당자 기준</p></div></div><div class="funnel-chart">'+funnelHtml+'</div><div class="dash-chart-foot">문의→메이드는 현장명 연결 기준 최소값입니다. 과거 문의 연결정보가 부족해 실제 전환보다 낮을 수 있습니다.</div></article>'
-    +'<article class="dash-chart"><div class="dash-chart-top"><div><h4>담당자별 관리 리스크</h4><p>누구를 먼저 챙겨야 하는지 경고 신호로 비교</p></div><div class="dash-chart-legend"><span><i style="background:#E24C4B"></i>미응대</span><span><i style="background:#F28B56"></i>Next</span><span><i style="background:#F1B645"></i>기한</span><span><i style="background:#8A5CC7"></i>관리필요</span></div></div><div class="risk-chart">'+riskHtml+'</div><div class="dash-chart-foot">오른쪽 숫자는 경고 신호 합계입니다. 한 현장에 Next 없음·기한초과·관리필요가 함께 잡힐 수 있어 중복 집계됩니다.</div></article>'
-    +'<article class="dash-chart"><div class="dash-chart-top"><div><h4>전환 · 수주 · 응대 품질</h4><p>볼륨이 아닌 전환 성과와 실행 품질 비교</p></div></div><div class="rate-chart">'+rateHtml+'</div><div class="dash-chart-foot">초록 밑줄은 기준 도달: 메이드율 25% · 금액수주율 30% · 응대율 80% 이상.</div></article>'
-    +'</div></section>';
+ var host=$('#d-charts');if(!host)return;
+ var rows=towerRepSnapshot('internal').rows;
+ if(!rows.length){host.innerHTML='<section class="dash-chart-wrap"><div class="nodata">담당자별 비교 데이터가 없습니다.</div></section>';return}
+ var maxAmt=Math.max.apply(null,rows.map(function(r){return Math.max(r.p,r.c,r.w)}).concat([1]));
+ var html=rows.map(function(r){
+   return '<div class="money-chart-row" data-chart-rep="'+escAttr(r.nm)+'"><button class="chart-rep" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'active\')">'+esc(r.nm)+'</button><div class="money-bars">'
+    +'<button class="chart-track pipe'+(r.p?'':' zero')+'" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'active\')" aria-label="'+escAttr(r.nm+' 진행 Pipeline '+eok(r.p))+'"><i style="width:'+chartWidth(r.p,maxAmt)+'%"></i><b>'+eok(r.p)+'</b></button>'
+    +'<button class="chart-track compete'+(r.c?'':' zero')+'" data-n="'+escAttr(r.nm)+'" onclick="towerGoRep(this.dataset.n,2,null)" aria-label="'+escAttr(r.nm+' 경쟁 입찰 '+eok(r.c))+'"><i style="width:'+chartWidth(r.c,maxAmt)+'%"></i><b>'+eok(r.c)+'</b></button>'
+    +'<button class="chart-track won'+(r.w?'':' zero')+'" data-n="'+escAttr(r.nm)+'" onclick="towerGoWon(this.dataset.n)" aria-label="'+escAttr(r.nm+' 수주 '+eok(r.w))+'"><i style="width:'+chartWidth(r.w,maxAmt)+'%"></i><b>'+eok(r.w)+'</b></button>'
+    +'</div></div>'}).join('');
+ host.innerHTML='<section class="dash-chart-wrap"><div class="dash-chart-head"><div><h3>담당자별 Pipeline · 경쟁·입찰 · 수주</h3><p>전체 흐름을 사람 기준으로 분해합니다. 아래 표에서 정확한 수치와 관리상태를 확인할 수 있습니다.</p></div><span class="chart-hint">막대 클릭 → 근거 목록</span></div>'
+  +'<article class="dash-chart"><div class="dash-chart-top"><div><h4>담당자별 금액 흐름</h4><p>'+esc(periodLabel())+' 등록 영업기회 기준 · 담당자 순서 고정</p></div><div class="dash-chart-legend"><span><i style="background:#3769E8"></i>진행</span><span><i style="background:#8254D5"></i>경쟁·입찰</span><span><i style="background:#18A66A"></i>수주</span></div></div><div class="money-chart">'+html+'</div><div class="dash-chart-foot">수주 막대와 아래 표의 수주액은 영업기회 등록기간 기준입니다. 상단 «수주 확정»은 계약 확정일 기준입니다.</div></article></section>';
 }
 function paintTowerReps(){
  var host=$('#d-repmgmt');if(!host)return;
@@ -3389,23 +3385,26 @@ function paintTowerAction(){
 }
 function towerGoNeck(ci,k){towerDrillReset();G.pipeOrigin='risk';G.pipeView='split';G.splitCol=ci;G.splitAct=null;goPage('pipe')}
 
-/* ── 4층 · Process 건강도 ──────────────────────────────────── */
+/* ── 전체 영업 건강도 — 관리팀 점수가 아니라 현재 흐름의 막힘이다. */
 function paintTowerHealth(){
  var host=$('#d-health');if(!host)return;
- var act=towerBase().filter(towerActive);
- var un=(B.inquiries||[]).filter(function(q){return inPeriod(inquiryDate(q))&&repN(q.assignee)==='미배정'&&!isClosedInq(q)});
- var noAmt=act.filter(function(d){return !oppAmt(d)});
- var items=[{nm:'미배정 문의',n:un.length,amt:null,go:"G.inqMetric=null;G.rep='미배정';goPage('inq')"}]
-  .concat(liveActs().map(function(a){var L=act.filter(a.f);
-    return {nm:a.nm,n:L.length,amt:sumBy(L,oppAmt),go:"towerGoAct('"+a.k+"')"}}))
-  .concat([{nm:'금액 미입력',n:noAmt.length,amt:null,go:"towerGoNoAmt()",
-    hint:'금액이 비면 위 전환율이 실제보다 좋아 보입니다'}]);
- host.innerHTML='<div class="ch"><div><h3>Process 건강도</h3><div class="sub">사람이 아니라 «놓친 일» 을 셉니다 · 누르면 해당 현장 목록으로</div></div></div>'
-  +'<div class="hrow">'+items.map(function(x){
-    return '<button class="hchip '+(x.n?'bad':'')+'" onclick="'+x.go+'" title="'+escAttr(x.hint||'')+'">'
-     +'<b>'+x.n+(x.amt?' <em style="font-size:11px;color:var(--sub)">· '+eok(x.amt)+'</em>':'')+'</b><span>'+esc(x.nm)+'</span></button>'}).join('')
-    +SPLIT_ACTS.filter(function(a){return a.need&&!metricReady(a.need)}).map(function(a){
-      return '<span class="hchip" style="cursor:default;opacity:.65" title="서버 번들에 next_action 이 한 건도 없어 계산할 수 없습니다"><b style="font-size:12px;color:var(--sub)">측정 불가</b><span>'+esc(a.nm)+'</span></span>'}).join('')+'</div>';
+ var act=towerBase().filter(towerActive),Q=inqBase(true,true).filter(function(q){return !isClosedInq(q)});
+ var un=Q.filter(function(q){return !inquiryAssigned(q)}),noResp=Q.filter(function(q){return inquiryAssigned(q)&&!inquiryResponded(q)});
+ var nextReady=metricReady('next'),dueReady=metricReady('due');
+ var noNext=nextReady?act.filter(function(d){return issueSet(d).indexOf('nextMissing')>=0}):[];
+ var overdue=dueReady?act.filter(function(d){return issueSet(d).indexOf('overdue')>=0}):[];
+ var stale=act.filter(function(d){return issueSet(d).indexOf('stale')>=0});
+ var noAmt=act.filter(function(d){return !oppAmt(d)&&!quoteAmt(d)});
+ var items=[
+  {nm:'미배정 문의',n:un.length,sub:'문의 단계',cls:'critical',go:"goOpsIssue('unassigned',G.rep,null)"},
+  {nm:'미응대',n:noResp.length,sub:'배정 후 응대 없음',cls:'critical',go:"goOpsIssue('noResponse',G.rep,null)"},
+  {nm:'Next Action 없음',n:nextReady?noNext.length:null,sub:nextReady?eok(sumBy(noNext,oppAmt)):'서버 데이터 없음',cls:'watch',go:"goOpsIssue('nextMissing',G.rep,null)"},
+  {nm:'기한초과',n:dueReady?overdue.length:null,sub:dueReady?eok(sumBy(overdue,oppAmt)):'서버 데이터 없음',cls:'critical',go:"goOpsIssue('overdue',G.rep,null)"},
+  {nm:'장기정체',n:stale.length,sub:eok(sumBy(stale,oppAmt))+' · Stage SLA 초과',cls:'watch',go:"goOpsIssue('stale',G.rep,null)"},
+  {nm:'금액 미입력',n:noAmt.length,sub:'우선순위 산정 필요',cls:'watch',go:'towerGoNoAmt()'}
+ ];
+ host.innerHTML='<div class="ch"><div><h3>전체 영업 건강도</h3><div class="sub">현재 시스템에서 흐름이 막힌 지점입니다 · 숫자를 누르면 정확한 근거 목록으로 이동합니다</div></div></div>'
+  +'<div class="health-grid">'+items.map(function(x){var disabled=x.n==null;return '<button class="health-signal '+x.cls+'" '+(disabled?'disabled':'onclick="'+x.go+'"')+'><span>'+esc(x.nm)+'</span><b>'+(disabled?'측정 불가':x.n+'건')+'</b><small>'+esc(x.sub)+'</small></button>'}).join('')+'</div>';
 }
 function towerGoNoAmt(){towerDrillReset();G.pipeOrigin=null;G.pipeView='split';G.splitCol=null;G.splitAct=null;G.pipeNoAmt=true;
  if(G.page!=='pipe')goPage('pipe');else paint()}
@@ -3445,28 +3444,26 @@ function applyHomeRole(){
    return '<button class="'+(r===x[0]?'on':'')+'" data-r="'+x[0]+'" onclick="setHomeRole(this.dataset.r)">'+esc(x[1])+'</button>'}).join('');
 }
 
-/* 첫 줄 — 대시보드가 «오늘 개입해야 할 이유» 를 먼저 말한다.
-   숫자만 늘어놓으면 관리자는 스스로 해석해야 한다. 해석을 화면이 먼저 한다. */
+/* 첫 줄 — 전체 영업이 어디서 어디까지 흘렀는지 한 문장으로 요약한다. */
 function paintHeadline(){
  var host=$('#d-headline');if(!host)return;
- var A=towerBase(),act=A.filter(towerActive),LA=liveActs();
+ var A=towerBase(),act=A.filter(towerActive),LA=liveActs(),Q=inqBase(true,true);
+ var comp=act.filter(function(d){return PD_COLS[2].codes.indexOf(d.code)>=0});
+ var won=(B.deals||[]).filter(function(d){return isWon(d)&&inPeriod(d.closed||d.created)&&(G.brand==='전체'||d.brand===G.brand)&&(G.rep==='전체'||repN(d.assignee)===G.rep)&&(!G.q||JSON.stringify(d).toLowerCase().indexOf(G.q.toLowerCase())>=0)});
  var risk=act.filter(function(d){return LA.some(function(a){return a.f(d)})});
  var rAmt=sumBy(risk,oppAmt),pAmt=sumBy(act,oppAmt);
- var inAmt=sumBy(A,function(d){return quoteAmt(d)||oppAmt(d)});
- var lvl=pctOf(rAmt,pAmt);
- host.className='headline'+(lvl>=25?' bad':(lvl>=10?' warn':''));
- host.innerHTML='<span class="hl1">'+esc(periodLabel())+' <b>'+eok(inAmt)+'</b>이(가) 들어왔고, '
-  +'지금 <b class="r">'+eok(rAmt)+'</b>이(가) 관리 위험 상태입니다.</span>'
-  +'<span class="hl2">진행 '+eok(pAmt)+'의 '+lvl+'% · '+risk.length+'건</span>'
+ host.className='headline';
+ host.innerHTML='<span class="hl1">견적문의 <b>'+Q.length+'건</b> → 영업기회 <b>'+A.length+'건</b> → 진행 <b>'+eok(pAmt)+'</b> → 경쟁·입찰 <b>'+eok(sumBy(comp,oppAmt))+'</b> → 수주 <b style="color:var(--ok)">'+eok(sumBy(won,function(d){return wonAmt(d)||oppAmt(d)}))+'</b></span>'
+  +'<span class="hl2">'+esc(periodLabel())+' · 관리필요 '+risk.length+'건 · '+eok(rAmt)+'</span>'
   +(risk.length?'<button class="hlgo" onclick="towerGoRep(G.rep,null,null,\'risk\')">지금 보기 →</button>':'');
 }
 function periodLabel(){return (G.year==='전체'?'전체 기간':G.year+'년')+(G.quarter?' '+G.quarter+'분기':'');}
 function paintTower(){
  applyRoleHome();
  var r=G.homeRole||'lead';
- paintHeadline();paintTowerMoney();paintSalesPipe();paintTowerToday();
- if(r==='lead'){paintTowerCharts();paintTowerReps();paintTowerAction()}
- if(r==='analysis'){paintTowerTrend();paintTowerOrigin();paintTowerHealth()}
+ paintHeadline();paintTowerMoney();paintSalesPipe();paintTowerStageBrand();paintTowerHealth();paintTowerTrend();paintTowerToday();
+ if(r==='lead'){paintTowerCharts();paintTowerReps()}
+ if(r==='analysis'){paintTowerOrigin();paintTowerAction()}
  if(r==='exec'){paintTowerCharts();paintTowerReps();paintExecYoY();paintTowerNeck2()}
  if(r==='sales')paintTowerMine();
  applyHomeRole();
@@ -4684,6 +4681,7 @@ function issueSet(d){var p=itemPatch(d,'deal'),na=actionObj(d,p),aa=activityAge(
 function issueLabels(d){var k=issueSet(d),p=itemPatch(d,'deal'),na=actionObj(d,p),aa=activityAge(d),due=na&&na.due?daysTo(na.due):null,out=[];if(k.indexOf('nextMissing')>=0)out.push('Next Action 없음');if(k.indexOf('overdue')>=0)out.push('기한초과 D+'+Math.abs(due));if(k.indexOf('longTerm')>=0)out.push((aa||0)+'일 장기 미정리');else if(k.indexOf('stale')>=0)out.push((aa||0)+'일 무활동');if(k.indexOf('crmIncomplete')>=0)out.push('영업정보 미입력');if(!out.length&&na&&due!==null&&due>0)out.push('정상 대기 · D-'+due);return out}
 function inquiryAssigned(q){return repN(q.assignee)!=='미배정'}
 function inquiryResponded(q){var s=String(q.status||'접수');return ['접수','신규','담당자 배정','배정완료',''].indexOf(s)<0||!!(q.firstActivity||q.first_activity||q.respondedAt||q.responded_at)}
+function inquiryIssueMatch(q,kind){if(isClosedInq(q))return false;if(kind==='unassigned')return !inquiryAssigned(q);if(kind==='noResponse')return inquiryAssigned(q)&&!inquiryResponded(q);return true}
 function inquiryCreatedAt(q){return q.received_at||q.created_at||q.created||q.at||''}
 function inquiryAssignedAt(q){return q.assigned_at||q.assignedAt||(q.detail&&q.detail.assigned_at)||''}
 function inquiryRespondedAt(q){return q.first_activity||q.firstActivity||q.responded_at||q.respondedAt||(q.detail&&q.detail.responded_at)||''}
@@ -4701,8 +4699,9 @@ function goOpsIssue(kind,rep,stage){
     사용자가 이전 확대관리에서 걸어 둔 세부상태·데이터기간이 드릴다운에 섞이면 안 된다. */
  G.pipeSub='전체';G.pipeAge='전체';G.pipeSort='우선순위';G.opsIssue='all';
  if(kind==='unassigned'||kind==='noResponse'){
-  G.ctlFilter=kind==='unassigned'?'미배정':'미응대';goPage('inq');return
+  towerDrillReset();G.inqIssueKind=kind;G.inqMetric=null;G.inqView='console';G.inqPhase='전체';G.hideClosed=false;goPage('inq');return
  }
+ towerDrillReset();
  G.opsIssue=kind||'all';G.quickIssueKind=kind||'all';G.stageCol=null;G.splitCol=(stage===undefined||stage===null)?null:Number(stage);G.splitStage=null;G.splitAct=null;G.splitKey=null;G.pipeView='split';goPage('pipe')
 }
 function goBriefIssue(kind,rep){
@@ -4844,6 +4843,7 @@ function briefSetBrand(v){G.brand=v||'전체';paintBrief();setTimeout(function()
 function briefFocusRep(v,anchor){G.rep=v;paint();setTimeout(function(){briefJump(anchor||'brief-reps')},0)}
 function briefInquiryMatch(q,kind){if(!briefScopeInquiry(q,targetNameFilter()))return false;if(kind==='unassigned')return !inquiryAssigned(q);if(kind==='noResponse')return inquiryAssigned(q)&&!inquiryResponded(q);return true}
 function clearBriefInquiry(){G.briefInquiryKind=null;G.inqPhase='전체';paint()}
+function clearInquiryIssue(){G.inqIssueKind=null;G.inqPhase='전체';paint()}
 function briefGoIssue(kind,rep){var w=briefWeekWindow(),map={nextMissing:'briefNextMissing',overdue:'briefOverdue',stale:'briefStale'};G.briefFrom=w.startKey;G.briefTo=w.endKey;G.rep=rep&&rep!=='전체'?rep:(targetNameFilter()||'전체');G.pipeSub='전체';G.pipeAge='전체';G.pipeSort='우선순위';G.stagePage=1;if(kind==='unassigned'||kind==='noResponse'){G.briefInquiryKind=kind;G.inqMetric=null;G.inqView='console';G.inqPhase='전체';G.hideClosed=true;goPage('inq');return}G.briefInquiryKind=null;G.opsIssue=map[kind]||kind;G.stageCol=-1;G.pipeView='stage';goPage('pipe')}
 function briefViewButtons(){var h=document.getElementById('b-view');if(h)h.innerHTML='<button class="'+(G.briefView==='week'?'on':'')+'" onclick="setBriefView(\'week\')">주간 의사결정판</button><button class="'+(G.briefView==='month'?'on':'')+'" onclick="setBriefView(\'month\')">월간 일정</button>'}
 function briefFilterOptions(target){return '<label>담당자<select onchange="briefSetRep(this.value)"><option value="전체" '+(!target?'selected':'')+'>전체 담당자</option>'+PERFORMANCE_TARGET_NAMES.map(function(n){return '<option '+(target===n?'selected':'')+'>'+n+'</option>'}).join('')+'</select></label><label>사업유형<select onchange="briefSetBrand(this.value)"><option value="전체" '+(G.brand==='전체'?'selected':'')+'>전체 사업유형</option>'+BRANDS.map(function(n){return '<option '+(G.brand===n?'selected':'')+'>'+n+'</option>'}).join('')+'</select></label>'}
@@ -5591,6 +5591,7 @@ function paintInq(){
  var wait=awaitingPromotion(Q),made=localCreatedDeals().length;
  var bn='';
  if(G.briefInquiryKind)bn+='<div class="mgmtbar blue" style="margin-top:10px"><span class="em2">📅</span>주간 브리핑 근거 · <b>'+(G.briefInquiryKind==='unassigned'?'미배정':'최초 미응대')+' '+Q.length+'건</b><button class="act" onclick="clearBriefInquiry()">필터 해제</button></div>';
+ if(G.inqIssueKind)bn+='<div class="mgmtbar blue" style="margin-top:10px"><span class="em2">🔎</span>대시보드 근거 · <b>'+(G.inqIssueKind==='unassigned'?'미배정 문의':'배정 후 미응대')+' '+Q.length+'건</b><button class="act" onclick="clearInquiryIssue()">필터 해제</button></div>';
  if(wait.length)bn+='<div class="mgmtbar" style="margin-top:10px"><span class="em2">📤</span>견적서를 보냈지만 <b>'+wait.length+'건</b>이 파이프라인에 아직 안 넘어갔습니다 — 스플릿에서 «파이프라인으로 넘기기»<button class="act" onclick="G.inqPhase=\'인계 대기\';G.inqView=\'split\';G.inqSelKey=null;paint()">인계 대기만 보기</button></div>';
  if(made)bn+='<div class="mgmtbar blue" style="margin-top:8px"><span class="em2">💾</span>인계로 만든 신규 딜 <b>'+made+'건</b>은 이 브라우저에만 저장돼 있습니다 — 서버 반영 필요<button class="act" onclick="exportPromotions()">인계 건 내보내기</button></div>';
  $('#sg-signals').innerHTML+=bn;
