@@ -5047,6 +5047,8 @@ function paintSplit(){
  var list=D.slice(0,120).map(function(d){var k=dealKey(d),pr=priorityInfo(d,'deal');return '<div class="mlrow '+(k===G.splitKey?'sel':'')+'" data-k="'+escAttr(k)+'" onclick="G.splitScroll=this.parentElement.scrollTop;G.splitKey=this.dataset.k;G.splitForm=null;paint()"><span class="mmeta"><span class="mt">'+esc(d.site||'현장명 미입력')+'</span><span class="ms">'+esc(repN(d.assignee))+' · '+esc(stageNoLabel(dealStage(d)))+' · '+fmtAmt(d.amt)+(stageAge(d)!=null?' · D+'+stageAge(d):'')+'</span></span><span class="mbadge '+mstateCls(pr)+'">'+pr.label+'</span></div>'}).join('');
  $('#p-main').innerHTML=filters+'<div class="quickmanage"><div class="mcard quicklist">'+list+'</div>'+quickPanelHTML(sel)+'</div>';var l=document.querySelector('.quicklist');if(l)l.scrollTop=G.splitScroll||0;
 }
+var paintPipeBase=paintPipe;
+paintPipe=function(){paintPipeBase();var v=document.querySelectorAll('.viewtg .clk');if(v[0])v[0].textContent='🗂️ 칸반';if(v[1])v[1].textContent='⚡ 빠른 관리'};
 /* ═══ 견적문의 확정 조합 (2026-08-31): 접수 피드 + 지역 버블 + 보드/콘솔 + 담당자 뷰 — 한 페이지 4뷰 토글 ═══ */
 function regionOf(s){s=String(s||'');
  if(/서울|인천|경기|수원|용인|하남|파주|김포|부천|안양|고양|성남|광명|시흥|안산|평택|의정부|남양주|구리|과천|군포|오산|화성|양주|포천|이천|안성|검단|미사|위례|동탄|판교|일산|분당|GTX|운정|노원|강남|송파|마들/.test(s))return '수도권';
