@@ -81,7 +81,7 @@
 <script>
 var PC_APP     = 'crm.html';
 var MOBILE_APP = 'mobile.html';
-var APP_BUILD  = '20260904-perfboard1';
+var APP_BUILD  = '20260904-mobile-label2';
 var KEY = 'nf_view_pref';
 
 /* 자동 판정 — 화면폭 하나만 보면 태블릿·창 축소에서 흔들린다.
@@ -139,7 +139,7 @@ function mount(v){
   f.onload = function(){ var b = document.getElementById('boot'); if (b) b.remove(); };
   document.body.classList.toggle('mob', v === 'mobile');
   paintToggle();
-  document.title = (v === 'mobile' ? '넷폼 CRM · 담당자' : '넷폼 CRM');
+  document.title = (v === 'mobile' ? '넷폼 CRM · 모바일' : '넷폼 CRM · PC');
 }
 
 function paintToggle(){
@@ -154,12 +154,12 @@ function paintToggle(){
   }
   t.classList.toggle('m', view === 'mobile');
   t.innerHTML =
-    '<button class="' + (view === 'pc' ? 'on' : '') + '" onclick="mount(\'pc\')">PC 화면</button>' +
-    '<button class="' + (view === 'mobile' ? 'on' : '') + '" onclick="mount(\'mobile\')">모바일 화면</button>';
+    '<button class="' + (view === 'pc' ? 'on' : '') + '" onclick="mount(\'pc\')">PC</button>' +
+    '<button class="' + (view === 'mobile' ? 'on' : '') + '" onclick="mount(\'mobile\')">모바일</button>';
 }
 
 document.getElementById('bootmsg').textContent =
-  (view === 'mobile' ? '모바일 — 담당자 앱을 엽니다' : 'PC — 관리 CRM 을 엽니다');
+  (view === 'mobile' ? '모바일 CRM을 엽니다' : 'PC CRM을 엽니다');
 mount(view);
 
 /* 창을 크게/작게 바꿔도 «사용자가 직접 고른 뒤에는» 마음대로 바꾸지 않는다.

@@ -38,7 +38,7 @@ body{background:var(--bg);font-family:"Pretendard Variable",Pretendard,-apple-sy
 .brandlogo .nm span{display:block;font-size:9.5px;font-weight:700;color:var(--nav-sec);letter-spacing:.06em;margin-top:2px}
 .menu{display:flex;flex-direction:column;gap:1px}
 .menu .sec{font-size:10px;font-weight:800;color:var(--nav-sec);letter-spacing:.08em;margin:16px 10px 6px}
-.mi{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;font-size:13px;font-weight:600;color:var(--nav-t);transition:.13s}
+.mi{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;font-size:13px;font-weight:600;color:var(--nav-t);transition:.13s;text-decoration:none}
 .mi .ic{width:19px;text-align:center;font-size:13.5px;opacity:.72}
 .mi:hover{background:var(--nav2);color:#fff}
 .mi.on{background:var(--blue);color:#fff;font-weight:800}
@@ -942,7 +942,7 @@ html,body{height:100%}
   .detaillead,.activitygrid{grid-template-columns:1fr}.stickytools{bottom:8px;justify-content:stretch}.stickytools .dact{flex:1;min-width:0}.historyrow{grid-template-columns:90px 1fr}.historyrow span:last-child{display:none}
 }
 
-/* 담당자 전용 모바일 화면 — 관리자 화면의 색·간격 체계를 그대로 사용 */
+/* 통합 모바일 화면 — 관리자 화면의 색·간격 체계를 그대로 사용 */
 .mobilework{display:grid;grid-template-columns:minmax(330px,410px) 1fr;gap:18px;align-items:start}
 /* 모바일 앱 전체 폭 임베드 — 원본(mobile.html)이 자체 폰 베젤·화면전환 바를 그리므로 여기서는 크게 비워주기만 함 */
 .mobembedwrap{margin-bottom:16px}
@@ -1461,7 +1461,7 @@ html,body{height:100%}
       <div class="mi clk" data-p="mgmt" onclick="nav(this)"><span class="ic">🛡️</span>관리팀 KPI</div>
       <div class="sec">관리</div>
       <div class="mi clk" data-p="perf" onclick="nav(this)"><span class="ic">👥</span>담당자 실적</div>
-      <div class="mi clk" data-p="mobile" onclick="nav(this)"><span class="ic">📱</span>담당자 앱<span class="badge" style="background:var(--violet-bg);color:var(--violet)">M</span></div>
+      <a class="mi clk" href="./?view=mobile"><span class="ic">📱</span>모바일</a>
       <div class="mi clk" data-p="brief" onclick="nav(this)"><span class="ic">📅</span>주간 브리핑<span class="badge" style="background:var(--blue-50);color:var(--blue)">월</span></div>
       <div class="mi clk" data-p="sites" onclick="nav(this)"><span class="ic">🏢</span>현장(고객)</div>
       <div class="mi clk" data-p="report" onclick="nav(this)"><span class="ic">📈</span>리포트 (대표 보고)</div>
@@ -1557,9 +1557,9 @@ html,body{height:100%}
     </div>
 
     <div class="apage" id="pg-mobile">
-      <!-- 기본은 모바일 화면만 전체 폭 임베드. 관리 항목(가이드·SLA 표)은 아래 토글로 따로 봄 -->
+      <!-- 기본은 모바일만 전체 폭 임베드. 관리 항목(가이드·SLA 표)은 아래 토글로 따로 봄 -->
       <div class="mobseg" style="margin-bottom:10px">
-        <button id="mv-app" class="on" onclick="setMobPanel(false)">📱 모바일 화면</button>
+        <button id="mv-app" class="on" onclick="setMobPanel(false)">📱 모바일</button>
         <button id="mv-panel" onclick="setMobPanel(true)">📋 관리 항목 · SLA 표</button>
       </div>
       <div id="m-phone" class="mobembedwrap"></div>
@@ -1606,7 +1606,7 @@ html,body{height:100%}
         <div class="card"><div class="ch"><div><h3>🐢 흐름 미이행 · 정체 TOP</h3><div class="sub">"누가 안 하고, 누가 멈춰있나" — 자동 감지 (성과 축 기준)</div></div></div><div class="alerts" id="r-flow"></div></div>
         <div class="card"><div class="ch"><div><h3>📋 대표 보고 요약 (자동 생성)</h3><div class="sub">이달의 한 줄 진단</div></div></div><div class="alerts" id="r-sum"></div></div>
       </div>
-      <div class="mgmtbar"><span class="em2">🚦</span>3축 진단 중 <b>성과 축만 실측</b> — 활동·규율 축은 담당자 앱 도입 후 자동 산출되어 신호등이 완성됩니다 · 가중치(설계20·발송35·PT60·임박80%)는 승인 대기 기준값</div>
+      <div class="mgmtbar"><span class="em2">🚦</span>3축 진단 중 <b>성과 축만 실측</b> — 활동·규율 축은 모바일 운영 데이터가 쌓이면 자동 산출되어 신호등이 완성됩니다 · 가중치(설계20·발송35·PT60·임박80%)는 승인 대기 기준값</div>
     </div>
 
 
@@ -1679,7 +1679,7 @@ html,body{height:100%}
    상태  : 전역 G{page, year, quarter, rep, brand, pipeView, stageCol, ssfPC …}
    렌더  : paint() 라우터(파일 맨 아래 ★최종본) → 페이지별 paintXxx()
    페이지: dash 대시보드 · inq 견적문의 관제 · pipe 파이프라인(칸반 7그룹)
-           mgmt 관리팀 KPI · perf 담당자 실적 · mobile 담당자 앱 · brief 주간
+           mgmt 관리팀 KPI · perf 담당자 실적 · mobile 모바일 · brief 주간
            sites 현장 · report 리포트 · dup 중복현장
    체계  : 저장 15단계(code) → 화면 7그룹(grp) → 그룹 안 세부 필터(G.ssfPC)
    ═══════════════════════════════════════════ */
@@ -1985,7 +1985,7 @@ var TITLES={dash:['영업 대시보드','전 브랜드 통합 현황 · Supabase
  pipe:['파이프라인','견적문의부터 계약·공사·종료까지 6단계 추적 · 릴레잇은 이관 데이터만 사용'],
  inq:['견적문의 관제','신호 4개만 · 위젯을 누르면 그 자리에서 조치'],
  perf:['담당자 실적','대표 보고용 · 실적 / 미래 가능성 / 관리 리스크'],
- mobile:['담당자 앱','모바일 전용 · 오늘 할 일과 초기 집중관리부터 처리'],
+ mobile:['모바일','현장 전용 · 오늘 할 일과 초기 집중관리부터 처리'],
  brief:['주간 브리핑','매주 월요일 08:30 자동 생성 → 잔디 발송 · 회의 준비 0분'],
  sites:['현장(고객)','딜 기준 현장 마스터 · 행 클릭 = 상세'],
  report:['월간 영업 보고서','대표 보고용 · 성과/활동/규율 3축 진단 · 매월 1일 자동 생성 예정'],
@@ -2137,7 +2137,7 @@ function exportFullDataJSON(){
  var live=document.getElementById('live');if(live){live.textContent='JSON 내보내기 완료';setTimeout(function(){if(typeof updateLiveStatus==='function')updateLiveStatus()},1600)}
 }
 /* ══════════════════════════════════════════════════════════════
-   v4.2 P0(§3 §23): 서버 쓰기 — 모바일 담당자앱과 «같은» crm-write 를 쓴다.
+   v4.2 P0(§3 §23): 서버 쓰기 — 모바일과 «같은» crm-write 를 쓴다.
    여기를 통과해야 다른 PC·모바일에서도 같은 사실이 보인다.
    · write_id = 멱등키 (같은 요청이 두 번 가도 서버가 한 번만 처리)
    · 실패해도 큐에 남고 30초마다 재시도 · 새로고침해도 localStorage 에 보존
@@ -3550,7 +3550,7 @@ function openDealAt(i){
   renderDealDetail();
 }
 function setMobView(v){G.mobView=v;paintMobile()}
-/* 담당자 앱 페이지 토글: 기본 = 모바일 화면만, 켜면 관리 항목(가이드·SLA 표)만 따로 표시 */
+/* 모바일 페이지 토글: 기본 = 모바일만, 켜면 관리 항목(가이드·SLA 표)만 따로 표시 */
 function setMobPanel(on){G.mobPanel=!!on;
   var ph=document.getElementById('m-phone'),pn=document.getElementById('m-panel');
   if(ph)ph.style.display=on?'none':'block';
@@ -3564,7 +3564,7 @@ function mobSla(d,limit){
   var p=detailPatchFor('deal',dealKey(d)),na=actionObj(d,p),due=na&&na.due?daysTo(na.due):null;
   return {days:days,limit:ownLimit,late:due!=null?due<0:days>ownLimit,missing:!na,action:na,due:due};
 }
-/* 담당자 앱 — 폰(#m-phone)에는 새로 구축한 모바일 앱(같은 폴더의 mobile.html, 47화면 목업 + crm-api 실데이터 연동)을
+/* 모바일 — 폰(#m-phone)에는 새로 구축한 모바일 CRM(같은 폴더의 mobile.html, 47화면 목업 + crm-api 실데이터 연동)을
    iframe으로 통째로 임베드. 한 번만 만들고 리페인트 때 재사용해 새로고침을 막음.
    옆(#m-list)의 관리자용 SLA 표는 그대로 유지 — 담당자 탭·7/30일 전환에 따라 다시 그림 */
 function paintMobile(){
@@ -4179,7 +4179,7 @@ function journeyStageClick(i){if(CUR_DETAIL){G.journeyStage=G.journeyStage===i?n
    그래서 하나의 시간순 타임라인으로 합치고, 출처만 배지로 구분한다.
      [JANDI]  잔디 응대폼에 등록된 실제 응대내용
      [CRM]    CRM 에서 직접 남긴 활동
-     [모바일] 담당자앱에서 (음성 포함) 남긴 기록
+     [모바일] 현장에서 (음성 포함) 남긴 기록
      [자동]   접수·배정 등 시스템이 남긴 것
 
    잔디 원문을 그대로 붙이지 않는다. 자동 알림 문구는 버리고
@@ -4571,7 +4571,7 @@ function goBriefIssue(kind,rep){
 }
 function numLink(n,kind,rep,stage){return '<button class="linknum" onclick="goOpsIssue(\''+kind+'\',\''+(rep||'전체')+'\','+(stage===undefined?'null':stage)+')">'+n+'</button>'}
 /* value가 '수집 중'이면 회색 대기 카드로 표시 — 앱이 아직 안 모은 데이터로 0%/100% 허수를 보여주지 않기 위함 */
-function metricCard(label,value,target,problem,kind,tone,help){var pend=value==='수집 중';return '<button class="ops-kpi '+(pend?'pend':(tone||''))+'" title="'+esc(pend?'담당자 앱 도입 후 자동 집계됩니다':(help||'문제 현장 바로보기'))+'" onclick="goOpsIssue(\''+kind+'\',\''+(targetNameFilter()||'전체')+'\',null)"><div class="ok-top"><span>'+label+'</span><i class="ok-dot"></i></div><div class="ok-value">'+value+'</div><div class="ok-meta"><span>목표 '+target+'</span>'+(pend?'<span>앱 수집 후 자동 집계</span>':'<span class="ok-problem">문제 '+problem+'건 →</span>')+'</div></button>'}
+function metricCard(label,value,target,problem,kind,tone,help){var pend=value==='수집 중';return '<button class="ops-kpi '+(pend?'pend':(tone||''))+'" title="'+esc(pend?'모바일 운영 후 자동 집계됩니다':(help||'문제 현장 바로보기'))+'" onclick="goOpsIssue(\''+kind+'\',\''+(targetNameFilter()||'전체')+'\',null)"><div class="ok-top"><span>'+label+'</span><i class="ok-dot"></i></div><div class="ok-value">'+value+'</div><div class="ok-meta"><span>목표 '+target+'</span>'+(pend?'<span>모바일 수집 후 자동 집계</span>':'<span class="ok-problem">문제 '+problem+'건 →</span>')+'</div></button>'}
 function paintMgmt(){var root=document.getElementById('mgmt-root');if(!root)return;var S=managementStats(targetNameFilter()),resolved=(LOCAL.resolvedStale||[]).filter(function(x){return Date.now()-new Date(x.at).getTime()<7*86400000}).length,resRate=pct(resolved,resolved+S.stale.length),
 /* Next Action이 단 1건도 기록되지 않았다면 활동 데이터 수집 전 상태 — 관련 지표는 0%/100% 허수 대신 '수집 중' */
 collecting=S.D.length>0&&S.nextMissing.length===S.D.length,
@@ -6242,7 +6242,7 @@ function advisoryPanel(item){
    ★ 최종 paint() 라우터 — 위쪽(659행 부근)에 같은 이름의 구버전이 있지만
    JS는 마지막 정의가 이기므로 실제로 도는 것은 이 함수다.
    페이지를 추가하면 반드시 "여기"에 케이스를 넣을 것. (2026-09-01: 누락됐던
-   mobile 케이스 복구 — 담당자 앱 화면이 빈 폰으로 나오던 원인)
+   mobile 케이스 복구 — 모바일 화면이 빈 폰으로 나오던 원인)
    ══════════════════════════════════════════════════════════════ */
 function paint(){
  if(!B)return;                      /* 데이터 로드 전 호출 방지 */
@@ -6257,7 +6257,7 @@ function paint(){
  if(G.page==='pipe')paintPipe();    /* 파이프라인 (칸반 7그룹) */
  if(G.page==='mgmt')paintMgmt();    /* 관리팀 KPI */
  if(G.page==='perf')paintPerf();    /* 담당자 실적 */
- if(G.page==='mobile')paintMobile();/* 담당자 앱 미리보기 ← 누락 복구 */
+ if(G.page==='mobile')paintMobile();/* 모바일 미리보기 ← 누락 복구 */
  if(G.page==='brief')paintBrief();  /* 주간 브리핑 */
  if(G.page==='sites')paintSites();  /* 현장(고객) */
  if(G.page==='report')paintReport();/* 리포트 (대표 보고) */
