@@ -1110,13 +1110,70 @@ html,body{height:100%}
 #pg-dash .detailnotice{border-radius:11px;font-size:11px;line-height:1.6}
 /* 표 안 담당자 이름을 조금 더 크게 — 사람이 기준인 표라서 */
 #pg-dash #d-repmgmt .rtbl td:first-child{font-size:12.5px}
+/* ══ 대표용 직관 차트 ════════════════════════════════════════
+   외부 차트 라이브러리를 쓰지 않는다 — 첫 화면 로딩을 늘리지 않고,
+   표와 같은 실데이터를 CSS 막대로 읽기 쉽게 바꾼다. */
+.dash-chart-wrap{display:flex;flex-direction:column;gap:12px}
+.dash-chart-head{display:flex;align-items:end;justify-content:space-between;gap:14px;padding:0 2px}
+.dash-chart-head h3{margin:0;font-size:15px;letter-spacing:-.025em;color:var(--ink)}
+.dash-chart-head p{margin:4px 0 0;font-size:10.5px;color:var(--sub);font-weight:650}
+.dash-chart-head .chart-hint{flex-shrink:0;font-size:10px;color:var(--blue-d);font-weight:850;background:var(--blue-50);border-radius:999px;padding:6px 10px}
+.dash-chart-grid{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:12px}
+.dash-chart{background:#fff;border:1px solid #EDF0F5;border-radius:16px;padding:16px 17px;min-width:0;box-shadow:0 1px 2px rgba(20,30,55,.04)}
+.dash-chart-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px}
+.dash-chart-top h4{margin:0;font-size:13px;color:var(--ink);letter-spacing:-.02em}
+.dash-chart-top p{margin:3px 0 0;color:var(--sub);font-size:9.5px;line-height:1.45;font-weight:650}
+.dash-chart-legend{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end;color:var(--sub);font-size:9px;font-weight:800}
+.dash-chart-legend i{display:inline-block;width:7px;height:7px;border-radius:3px;margin-right:4px;vertical-align:0}
+.dash-chart button{font:inherit}
+.money-chart,.risk-chart,.rate-chart{display:grid;gap:9px}
+.money-chart-row{display:grid;grid-template-columns:58px minmax(0,1fr);gap:9px;align-items:center}
+.chart-rep{border:0;background:transparent;color:var(--ink);padding:0;text-align:left;font-size:10.5px;font-weight:900;cursor:pointer;white-space:nowrap}
+.chart-rep:hover{color:var(--blue)}
+.money-bars{display:grid;gap:5px}
+.chart-track{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 66px;align-items:center;min-height:18px;border:0;background:transparent;padding:0;cursor:pointer;text-align:right}
+.chart-track:before{content:'';position:absolute;left:0;right:70px;height:7px;border-radius:99px;background:#EEF1F6}
+.chart-track i{position:relative;display:block;height:7px;border-radius:99px;min-width:2px;transition:width .28s ease,filter .15s ease}
+.chart-track:hover i{filter:saturate(1.2) brightness(.94)}
+.chart-track b{font-size:9.5px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.chart-track.pipe i{background:linear-gradient(90deg,#3769E8,#6D8FF0)}
+.chart-track.won i{background:linear-gradient(90deg,#18A66A,#45C78B)}
+.chart-track.zero i{min-width:0}
+.funnel-chart{display:grid;gap:8px}
+.funnel-stage{display:grid;grid-template-columns:88px minmax(0,1fr) 42px;gap:8px;align-items:center;border:0;background:transparent;padding:0;cursor:pointer;text-align:left}
+.funnel-stage span{font-size:10px;color:var(--ink2);font-weight:800;white-space:nowrap}
+.funnel-stage .funnel-rail{height:25px;background:#EEF1F6;border-radius:8px;overflow:hidden}
+.funnel-stage i{display:block;height:100%;min-width:2px;background:linear-gradient(90deg,#254FCB,#7B98ED);border-radius:8px;transition:width .28s ease}
+.funnel-stage:nth-child(2) i{background:linear-gradient(90deg,#315BD4,#8CA4EA)}
+.funnel-stage:nth-child(3) i{background:linear-gradient(90deg,#476AD7,#9BAEE7)}
+.funnel-stage:nth-child(4) i{background:linear-gradient(90deg,#596FCE,#A7B4DF)}
+.funnel-stage:last-child i{background:linear-gradient(90deg,#169960,#52C48B)}
+.funnel-stage:hover i{filter:saturate(1.2) brightness(.95)}
+.funnel-stage b{font-size:11px;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
+.risk-chart-row{display:grid;grid-template-columns:58px minmax(0,1fr) 28px;gap:9px;align-items:center}
+.risk-stack{height:20px;background:#F1F3F7;border-radius:7px;display:flex;overflow:hidden}
+.risk-stack button{height:100%;min-width:0;border:0;padding:0;cursor:pointer;transition:filter .15s ease}
+.risk-stack button:hover{filter:brightness(.9)}
+.risk-stack .noresp{background:#E24C4B}.risk-stack .nonext{background:#F28B56}.risk-stack .overdue{background:#F1B645}.risk-stack .allrisk{background:#8A5CC7}
+.risk-total{font-size:10px;color:var(--danger);font-weight:900;text-align:right;font-variant-numeric:tabular-nums}
+.risk-zero{height:20px;display:flex;align-items:center;color:var(--sub2);font-size:9px;font-weight:750}
+.rate-chart-row{display:grid;grid-template-columns:58px repeat(3,minmax(0,1fr));gap:7px;align-items:stretch}
+.rate-cell{position:relative;overflow:hidden;border:1px solid #EDF0F5;background:#F8F9FC;border-radius:9px;padding:7px 8px;cursor:pointer;text-align:left;min-width:0}
+.rate-cell:before{content:'';position:absolute;left:0;bottom:0;height:3px;width:var(--rate);background:#6F86CB}
+.rate-cell.good:before{background:var(--ok)}
+.rate-cell span{display:block;font-size:8px;color:var(--sub);font-weight:800;white-space:nowrap}
+.rate-cell b{display:block;margin-top:2px;font-size:11px;color:var(--ink);font-variant-numeric:tabular-nums}
+.rate-cell:hover{border-color:var(--blue-100);background:var(--blue-50)}
+.dash-chart-foot{margin-top:11px;border-top:1px solid var(--line);padding-top:9px;color:var(--sub);font-size:9px;line-height:1.5;font-weight:650}
+@media(max-width:1160px){.dash-chart-grid{grid-template-columns:1fr}}
+@media(max-width:720px){.dash-chart-head{align-items:flex-start;flex-direction:column}.dash-chart-head .chart-hint{display:none}.dash-chart{padding:14px}.rate-chart-row{grid-template-columns:52px repeat(3,minmax(64px,1fr));overflow-x:auto}.dash-chart-grid{gap:9px}}
 /* ══ Control Tower ══════════════════════════════════════════
    디자인 문법 (2026-09-02 · 참고 예시 반영)
      배경  아주 옅은 회색  · 카드  흰색
      라운드 크게(16px)     · 그림자 아주 약하게
      아이콘 파스텔 박스     · 숫자 크게, 라벨 작게
      여백  넉넉하게        · 선 최소화
-   장식용 차트는 넣지 않는다 — 없는 데이터로 스파크라인을 그리면 거짓이 된다. */
+   장식용 차트는 넣지 않는다 — 차트는 표와 같은 실데이터·같은 모집단만 쓴다. */
 /* .apage 는 .on 일 때만 보인다. id 셀렉터는 class 보다 우선순위가 높아서
    #pg-dash 에 display 를 주면 «항상 보이는» 페이지가 되어 다른 메뉴를 덮는다.
    그래서 반드시 .on 을 함께 건다. */
@@ -1532,7 +1589,8 @@ html,body{height:100%}
       <div class="moneyrow" id="d-money" data-role="lead analysis exec"></div>
       <div class="card" id="d-pipe" data-role="lead exec"></div>
       <div id="d-drill" data-role="lead exec"></div>
-      <!-- 리드 흐름 Funnel 은 SALES PIPE 안으로 흡수했다 (2026-09-02) — 같은 질문을 두 번 하지 않는다 -->
+      <!-- SALES PIPE는 단계 위치, 아래 전환 차트는 담당자 비교와 정확한 숫자 확인에 쓴다. -->
+      <div id="d-charts" data-role="lead exec"></div>
       <!-- 담당자 표는 «견적문의 → 메이드 → 수주» 를 한 줄로 읽는 자리라 폭을 다 쓴다.
            대표 화면도 «같은» 표를 쓴다 — 간소판을 따로 두면 두 화면의 숫자가 갈라진다. -->
       <div class="card" id="d-repmgmt" data-role="lead exec"></div>
@@ -3107,7 +3165,7 @@ function repQuality(nm){
    resp: asg.length?Math.round(resp.length*100/asg.length):null,
    next: act.length?Math.round(withNext.length*100/act.length):null,
    keep: due.length?Math.round(kept.length*100/due.length):null,
-   n:{asg:asg.length,act:act.length,due:due.length}};
+   n:{asg:asg.length,resp:resp.length,act:act.length,withNext:withNext.length,due:due.length,kept:kept.length}};
 }
 /* 결과 × Process 교차 해석 — 사람을 한 줄로 줄 세우지 않는다 */
 function repVerdict(conv,q,riskAmt,pipeAmt){
@@ -3152,36 +3210,87 @@ function towerGoRepMetric(nm,source){
  if(source==='inqAssigned')return towerGoInq(nm,'assigned');
  towerGoRep(nm,null,null,source||null);
 }
+/* 차트와 표가 같은 숫자를 쓰는 단일 계산원.
+   같은 지표를 화면마다 다시 계산하면 반올림보다 더 위험한 «모집단 차이»가 생긴다. */
+function towerRepSnapshot(scope){
+  scope=scope||'internal';
+  var A=towerBase(),riskReadyNext=metricReady('next'),riskReadyDue=metricReady('due');
+  var names=(scope==='internal')?REP_INTERNAL.slice()
+    :(scope==='external')?repsOf('external')
+    :repsOf('scored');
+  if(scope!=='internal')names=names.filter(function(n){return A.some(function(d){return repN(d.assignee)===n})});
+  if(G.rep!=='전체')names=names.filter(function(n){return n===G.rep});
+  var IM=inqMadeStats();
+  var rows=names.map(function(nm){
+    var iq=IM[nm]||{n:0,made:0,won:0};
+    var M=A.filter(function(d){return repN(d.assignee)===nm});
+    var act=M.filter(towerActive),won=M.filter(isWon);
+    var comp=act.filter(function(d){return PD_COLS[2].codes.indexOf(d.code)>=0});
+    var q=sumBy(M,function(d){return quoteAmt(d)||oppAmt(d)});
+    var w=sumBy(won,function(d){return wonAmt(d)||oppAmt(d)});
+    var risk=act.filter(function(d){return liveActs().some(function(a){return a.f(d)})});
+    var asg=M.filter(isAssignedLead),self=M.filter(isSelfGen);
+    var pAmt=sumBy(act,oppAmt),rAmt=sumBy(risk,oppAmt),cv=pctOf(w,q),ql=repQuality(nm);
+    var noNext=riskReadyNext?act.filter(function(d){return !actionObj(d,itemPatch(d,'deal'))}):[];
+    var overdue=riskReadyDue?act.filter(function(d){return priorityInfo(d,'deal').key==='기한초과'}):[];
+    return {nm:nm,iq:iq.n,made:iq.made,mrate:pctOf(iq.made,iq.n),iwon:iq.won,
+      lead:M.length,asg:asg.length,asgAmt:sumBy(asg,function(d){return quoteAmt(d)||oppAmt(d)}),
+      self:self.length,selfAmt:sumBy(self,function(d){return quoteAmt(d)||oppAmt(d)}),
+      q:q,p:pAmt,c:sumBy(comp,oppAmt),compN:comp.length,w:w,wonN:won.length,
+      conv:cv,risk:risk.length,riskAmt:rAmt,
+      riskParts:{noResponse:Math.max(0,ql.n.asg-ql.n.resp),nextMissing:noNext.length,overdue:overdue.length,all:risk.length},
+      ql:ql,vd:repVerdict(cv,ql,rAmt,pAmt)}})
+    .sort(function(a,b){return repCompare(a.nm,b.nm)});
+  return {rows:rows,IM:IM,A:A};
+}
+function chartWidth(v,max){return !v||!max?0:Math.max(2,Math.round(v*1000/max)/10)}
+function paintTowerCharts(){
+  var host=$('#d-charts');if(!host)return;
+  var snap=towerRepSnapshot('internal'),rows=snap.rows,A=snap.A;
+  if(!rows.length){host.innerHTML='<div class="dash-chart-wrap"><div class="dash-chart-head"><div><h3>영업 흐름 차트</h3><p>선택한 담당자의 비교 데이터가 없습니다.</p></div></div></div>';return}
+  var maxAmt=Math.max.apply(null,rows.map(function(r){return Math.max(r.p,r.w)}).concat([1]));
+  var money=rows.map(function(r){
+    return '<div class="money-chart-row" data-chart-rep="'+escAttr(r.nm)+'"><button class="chart-rep" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'active\')">'+esc(r.nm)+'</button><div class="money-bars">'
+      +'<button class="chart-track pipe'+(r.p?'':' zero')+'" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'active\')" aria-label="'+escAttr(r.nm)+' 진행 파이프라인 '+eok(r.p)+'"><i style="width:'+chartWidth(r.p,maxAmt)+'%"></i><b>'+eok(r.p)+'</b></button>'
+      +'<button class="chart-track won'+(r.w?'':' zero')+'" data-n="'+escAttr(r.nm)+'" onclick="towerGoWon(this.dataset.n)" aria-label="'+escAttr(r.nm)+' 수주 '+eok(r.w)+'"><i style="width:'+chartWidth(r.w,maxAmt)+'%"></i><b>'+eok(r.w)+'</b></button>'
+      +'</div></div>'}).join('');
+  var selected=G.rep==='전체'?null:G.rep,iq=selected?(snap.IM[selected]||{n:0,made:0}):{n:snap.IM._n,made:snap.IM._made};
+  var act=A.filter(towerActive),comp=act.filter(function(d){return PD_COLS[2].codes.indexOf(d.code)>=0}),won=A.filter(isWon);
+  var funnel=[
+    {nm:'견적문의',n:iq.n,go:'towerGoInq(G.rep)'},
+    {nm:'메이드',n:iq.made,go:'towerGoInq(G.rep,\'made\')'},
+    {nm:'영업기회',n:A.length,go:'towerGoRep(G.rep,null,null,\'all\')'},
+    {nm:'경쟁·입찰',n:comp.length,go:'towerGoRep(G.rep,2,null)'},
+    {nm:'수주',n:won.length,go:'towerGoWon(G.rep)'}
+  ],fmax=Math.max.apply(null,funnel.map(function(x){return x.n}).concat([1]));
+  var funnelHtml=funnel.map(function(x){return '<button class="funnel-stage" onclick="'+x.go+'" aria-label="'+escAttr(x.nm+' '+x.n+'건 근거 보기')+'"><span>'+esc(x.nm)+'</span><span class="funnel-rail"><i style="width:'+chartWidth(x.n,fmax)+'%"></i></span><b>'+x.n+'</b></button>'}).join('');
+  var riskMax=Math.max.apply(null,rows.map(function(r){var x=r.riskParts;return x.noResponse+x.nextMissing+x.overdue+x.all}).concat([1]));
+  function riskSeg(cls,label,n,nm,key){
+    if(!n)return '';
+    var click=key==='risk'?"towerGoRepMetric(this.dataset.n,'risk')":"goOpsIssue('"+key+"',this.dataset.n,null)";
+    return '<button class="'+cls+'" style="width:'+chartWidth(n,riskMax)+'%" data-n="'+escAttr(nm)+'" onclick="'+click+'" title="'+escAttr(label+' '+n+'건 · 클릭해 근거 보기')+'" aria-label="'+escAttr(nm+' '+label+' '+n+'건')+'"></button>';
+  }
+  var riskHtml=rows.map(function(r){var x=r.riskParts,total=x.noResponse+x.nextMissing+x.overdue+x.all;
+    return '<div class="risk-chart-row" data-risk-rep="'+escAttr(r.nm)+'"><button class="chart-rep" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'risk\')">'+esc(r.nm)+'</button>'
+      +(total?'<div class="risk-stack">'+riskSeg('noresp','미응대',x.noResponse,r.nm,'noResponse')+riskSeg('nonext','Next 없음',x.nextMissing,r.nm,'nextMissing')+riskSeg('overdue','기한초과',x.overdue,r.nm,'overdue')+riskSeg('allrisk','관리필요',x.all,r.nm,'risk')+'</div>':'<div class="risk-zero">경고 신호 없음</div>')
+      +'<span class="risk-total" title="항목별 경고 신호 합계 · 한 현장에 여러 신호가 있을 수 있습니다">'+total+'</span></div>'}).join('');
+  function rateCell(label,v,nm,source,good){var shown=v==null?'—':v+'%',w=v==null?0:Math.max(0,Math.min(100,v));
+    return '<button class="rate-cell'+(v!=null&&v>=good?' good':'')+'" style="--rate:'+w+'%" data-n="'+escAttr(nm)+'" onclick="towerGoRepMetric(this.dataset.n,\''+source+'\')" aria-label="'+escAttr(nm+' '+label+' '+shown)+'"><span>'+esc(label)+'</span><b>'+shown+'</b></button>'}
+  var rateHtml=rows.map(function(r){return '<div class="rate-chart-row" data-rate-rep="'+escAttr(r.nm)+'"><button class="chart-rep" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'all\')">'+esc(r.nm)+'</button>'
+    +rateCell('메이드율',r.iq?r.mrate:null,r.nm,'inqAll',25)
+    +rateCell('금액수주율',r.conv,r.nm,'all',30)
+    +rateCell('응대율',r.ql.resp,r.nm,'inqAssigned',80)+'</div>'}).join('');
+  host.innerHTML='<section class="dash-chart-wrap"><div class="dash-chart-head"><div><h3>한눈에 보는 담당자 영업 흐름</h3><p>차트로 차이를 보고, 아래 표에서 정확한 숫자를 비교합니다.</p></div><span class="chart-hint">막대 클릭 → 근거 목록</span></div><div class="dash-chart-grid">'
+    +'<article class="dash-chart"><div class="dash-chart-top"><div><h4>담당자별 Pipeline · 수주액</h4><p>현재 기간에 등록된 영업기회 기준 · 표와 동일한 모집단</p></div><div class="dash-chart-legend"><span><i style="background:#3769E8"></i>진행</span><span><i style="background:#18A66A"></i>수주</span></div></div><div class="money-chart">'+money+'</div><div class="dash-chart-foot">상단 «수주 확정»은 수주일 기준, 이 차트와 아래 표의 수주액은 영업기회 등록일 기준입니다.</div></article>'
+    +'<article class="dash-chart"><div class="dash-chart-top"><div><h4>문의에서 수주까지</h4><p>전체 전환 흐름 · 현재 기간/사업유형/담당자 기준</p></div></div><div class="funnel-chart">'+funnelHtml+'</div><div class="dash-chart-foot">문의→메이드는 현장명 연결 기준 최소값입니다. 과거 문의 연결정보가 부족해 실제 전환보다 낮을 수 있습니다.</div></article>'
+    +'<article class="dash-chart"><div class="dash-chart-top"><div><h4>담당자별 관리 리스크</h4><p>누구를 먼저 챙겨야 하는지 경고 신호로 비교</p></div><div class="dash-chart-legend"><span><i style="background:#E24C4B"></i>미응대</span><span><i style="background:#F28B56"></i>Next</span><span><i style="background:#F1B645"></i>기한</span><span><i style="background:#8A5CC7"></i>관리필요</span></div></div><div class="risk-chart">'+riskHtml+'</div><div class="dash-chart-foot">오른쪽 숫자는 경고 신호 합계입니다. 한 현장에 Next 없음·기한초과·관리필요가 함께 잡힐 수 있어 중복 집계됩니다.</div></article>'
+    +'<article class="dash-chart"><div class="dash-chart-top"><div><h4>전환 · 수주 · 응대 품질</h4><p>볼륨이 아닌 전환 성과와 실행 품질 비교</p></div></div><div class="rate-chart">'+rateHtml+'</div><div class="dash-chart-foot">초록 밑줄은 기준 도달: 메이드율 25% · 금액수주율 30% · 응대율 80% 이상.</div></article>'
+    +'</div></section>';
+}
 function paintTowerReps(){
  var host=$('#d-repmgmt');if(!host)return;
- var A=towerBase(),scope=G.repScope||'internal',riskKey=(liveActs()[0]||{}).k||'stale';
- /* 대상자는 담당자 정본에서 온다. 송보람·미배정 같은 값은 성과 표에 올리지 않는다.
-    내부 6명은 «데이터가 0건이어도» 줄을 남긴다 — 비어 있다는 것 자체가 관리 정보다. */
- var names=(scope==='internal')?REP_INTERNAL.slice()
-   :(scope==='external')?repsOf('external')
-   :repsOf('scored');
- if(scope!=='internal')names=names.filter(function(n){return A.some(function(d){return repN(d.assignee)===n})});
- var IM=inqMadeStats();
- var rows=names.map(function(nm){
-   var iq=IM[nm]||{n:0,made:0,won:0};
-   var M=A.filter(function(d){return repN(d.assignee)===nm});
-   var act=M.filter(towerActive),won=M.filter(isWon);
-   var comp=act.filter(function(d){return PD_COLS[2].codes.indexOf(d.code)>=0});
-   var q=sumBy(M,function(d){return quoteAmt(d)||oppAmt(d)});
-   var w=sumBy(won,function(d){return wonAmt(d)||oppAmt(d)});
-   var risk=act.filter(function(d){return liveActs().some(function(a){return a.f(d)})});
-   /* «받은 리드» 는 보유 건수가 아니다 — 회사가 배정해 준 것만 센다.
-      직접영업은 따로 세야 «스스로 만든 사람» 이 묻히지 않는다. */
-   var asg=M.filter(isAssignedLead), self=M.filter(isSelfGen);
-   var pAmt=sumBy(act,oppAmt), rAmt=sumBy(risk,oppAmt), cv=pctOf(w,q);
-   var ql=repQuality(nm);
-   return {nm:nm,iq:iq.n,made:iq.made,mrate:pctOf(iq.made,iq.n),iwon:iq.won,
-     lead:M.length,asg:asg.length,asgAmt:sumBy(asg,function(d){return quoteAmt(d)||oppAmt(d)}),
-     self:self.length,selfAmt:sumBy(self,function(d){return quoteAmt(d)||oppAmt(d)}),
-     q:q,p:pAmt,c:sumBy(comp,oppAmt),w:w,
-     conv:cv,risk:risk.length,riskAmt:rAmt,
-     ql:ql,vd:repVerdict(cv,ql,rAmt,pAmt)}})
-  .sort(function(a,b){return repCompare(a.nm,b.nm)});
+ var scope=G.repScope||'internal',snap=towerRepSnapshot(scope),rows=snap.rows,IM=snap.IM;
+ var names=rows.map(function(r){return r.nm});
  var SC=[['internal','내부 '+REP_INTERNAL.length+'명'],['external','외부'],['scored','전체']];
  host.innerHTML='<div class="ch"><div><h3>담당자별 영업현황</h3><div class="sub">숫자를 누르면 그 숫자를 만든 현장 목록으로 갑니다 · 결과(수주)와 Process(관리필요)를 따로 봅니다</div></div>'
   +'<div class="mseg sm">'+SC.map(function(x){
@@ -3356,9 +3465,9 @@ function paintTower(){
  applyRoleHome();
  var r=G.homeRole||'lead';
  paintHeadline();paintTowerMoney();paintSalesPipe();paintTowerToday();
- if(r==='lead'){paintTowerReps();paintTowerAction()}
+ if(r==='lead'){paintTowerCharts();paintTowerReps();paintTowerAction()}
  if(r==='analysis'){paintTowerTrend();paintTowerOrigin();paintTowerHealth()}
- if(r==='exec'){paintTowerReps();paintExecYoY();paintTowerNeck2()}
+ if(r==='exec'){paintTowerCharts();paintTowerReps();paintExecYoY();paintTowerNeck2()}
  if(r==='sales')paintTowerMine();
  applyHomeRole();
 }
