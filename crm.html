@@ -2860,13 +2860,19 @@ function nearbyHTML(item){
   +N.list.slice(0,4).map(function(x){
     var a=x.age,cls=(a==null?'g':(a>=60?'r':(a>=30?'w':'g')));
     var na=actionObj(x.d,itemPatch(x.d,'deal'));
-    return '<div class="nbrow" data-k="'+escAttr(dealKey(x.d))+'" onclick="todoOpen(this.dataset.k)">'
+    return '<div class="nbrow" data-k="'+escAttr(dealKey(x.d))+'" onclick="nearbyOpen(this.dataset.k)">'
      +'<div><div class="ns">'+esc(String(x.d.site||'').replace(/^\s*\[[^\]]*\]\s*/,''))+'</div>'
      +'<div class="nm2">'+esc(stageNoLabel(dealStage(x.d)))
      +(na&&na.text?' · 다음 '+esc(String(na.text).slice(0,20)):' · 다음 행동 없음')+'</div></div>'
      +'<div class="na2 '+cls+'">'+(a==null?'접촉 기록 없음':'마지막 접촉 '+a+'일 전')+'</div></div>'}).join('')
   +(N.list.length>4?'<div class="nbfoot">이 지역에 '+N.list.length+'곳이 더 있습니다 — 지역 화면에서 전부 보기</div>':'')
   +'</div>'}
+function nearbyOpen(k){
+ var d=(B.deals||[]).filter(function(x){return dealKey(x)===k})[0];if(!d)return;
+ /* 상세 모달 안에서는 뒤쪽 파이프라인이 아니라 현재 모달 내용만 교체한다. */
+ if(G._detailPopup&&CUR_DETAIL){CUR_DETAIL={kind:'deal',key:dealKey(d),item:d};G.detailTab='개요';renderDealDetail();var dv=document.getElementById('detailView');if(dv)dv.scrollTop=0;return}
+ openPipeSplit(d)
+}
 /* ══ 오늘 할 일 (2026-09-03) ═══════════════════════════════════
    영업사원 홈. 파이프라인 전체가 아니라 «오늘 손댈 것» 만 놓는다.
    각 줄에서 전화·완료·연기가 끝나야 의미가 있다 — 상세로 들어가야 하면 안 쓴다. */
