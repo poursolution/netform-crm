@@ -939,7 +939,7 @@ var BUNDLE=null;   /* crm-api 원본 — 딜 외에 견적문의·응대 이력�
 var CLOSED_INQ=['수주','실주','배드핏','연락두절','종결','종료'];
 function inquiryKeyM(q){return String(q&&q.id||q&&q.inquiry_id||q&&q.row||[q&&q.site,q&&q.at].join('|'))}
 function inquiryViewM(q){var dt=q&&q.detail||{},at=q&&q.at||q&&q.created_at||q&&q.created||'',phone=q&&q.phone||q&&q.mobile||q&&q.contact_phone||dt.phone||dt.mobile||'',rep=q.assignee||q.assignee_name||'미배정';return {raw:q,key:inquiryKeyM(q),nm:q.site||q.site_name||q.name||'현장명 미입력',rep:rep,ps:(at?String(at).slice(0,10)+' · ':'')+(q.status||'접수'),phone:phone,gj:dt.workType||q.work_type||q.category||'',body:dt.inquiry||dt.note||q.message||q.content||'',inflow:dt.inflow||dt.channel||q.channel||'홈페이지 견적문의',status:q.status||'접수',dealId:q.deal_id||q.opportunity_id||null,at:at,done:rep!=='미배정'}}
-function inquiryStateM(q){if(q.dealId||/영업전환|전환완료/.test(q.status))return 'converted';if(!q.done)return 'unassigned';if(/응대|통화|방문|견적/.test(q.status))return 'handling';return 'assigned'}
+function inquiryStateM(q){if(CLOSED_INQ.indexOf(q.status)>=0)return 'closed';if(q.dealId||/영업전환|전환완료/.test(q.status))return 'converted';if(!q.done)return 'unassigned';if(/응대|통화|방문|견적/.test(q.status))return 'handling';return 'assigned'}
 function myInquiriesM(who){var nm=canonicalRep(who||(G.user&&G.user.nm));return ((ADMIN&&ADMIN.inquiries)||[]).filter(function(q){return canonicalRep(q.rep)===nm&&CLOSED_INQ.indexOf(q.status)<0&&inquiryStateM(q)!=='converted'})}
 /* 잔디 응대내용 파싱 — PC 와 «같은 규칙» 이어야 한다. 한쪽만 고치지 말 것.
    실제 응대는 «라벨:값» 이 아니라 자유 서술이다(전체 389건 중 라벨형은 8건).
