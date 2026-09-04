@@ -1795,6 +1795,7 @@ var API='https://nfrnd.app.n8n.cloud/webhook/crm-api'; // 2026-08-31 보안 잠�
 /* 신규 종료 입력은 수주/실주/배드핏/연락두절만 사용한다.
    종결/종료는 과거 데이터 판별용으로만 남겨 삭제 없이 «기타 종료»로 보여준다. */
 var CLOSED_ST=['수주','실주','배드핏','연락두절','종결','종료'];
+var CLOSED_INPUT_ST=['수주','실주','배드핏','연락두절'];
 /* 설계서 「견적문의 통합흐름 v2」 §02 — 현장방문예정·견적서 발송(예정/완료) = Qualified 게이트.
    이 상태가 되면 브랜드 파이프라인 건으로 승격한다 (견적 요청 = 파이프라인 시작) */
 /* 파이프라인 인계 시점 = «견적준비» 다 (2026-09-02 확정).
@@ -5496,13 +5497,15 @@ function autoPromote(q){
   var at=isoNow(),info=promotedInfo(q),target,msg;
   var wantCode=qualifyStage(q.status),wantName=qualifyName(q.status);
   if(info.linked){
-    var d=info.deal,pd=detailPatchFor('deal',dealKey(d));
+    var d=info.deal,pd=detailPatchFor('deal',dealKey(d)),oldCode=d.code;
     if(['won','lost','badfit','nocontact'].indexOf(d.code)>=0)return '이미 종료된 딜입니다';
     if(stageRank(d.code)>=stageRank(wantCode))return '파이프라인 딜은 이미 «'+esc(subStatus(d))+'» 단계라 그대로 둡니다';
     d.code=pd.code=wantCode;d.stage=pd.stage=wantName;d.grp=pd.grp='영업·관리';d.lastActivity=pd.lastActivity=at;
     d.stageEnteredAt=pd.stageEnteredAt=at;pd.lastSalesActivityAt=at;
     pd.activities=(pd.activities||[]).concat([{type:'단계전환',note:'견적문의 → 파이프라인 인계 (상태 변경 연동)',result:wantName,at:at,actor:'관리자'}]);
     target=d;msg='기존 파이프라인 딜을 «'+wantName+'»로 올렸습니다';
+    pushWrite('transition',{opportunity_id:d.id,from:oldCode,to:wantCode,
+      note:promoteReason(q.status),origin_inquiry_id:q.id||null});
   }else{
     /* ── lineage (2026-09-02) ────────────────────────────────
        어느 문의에서 출발했는지를 딜에 «심는다». 이게 없으면
@@ -5557,7 +5560,7 @@ function splitActForm(q){
   var a=G.inqAct;if(!a)return '';
   if(a==='next')return '<div class="sp-form"><input id="spNextText" placeholder="다음 행동 (예: 견적 확인 전화)" autofocus><span class="sp-hint">기한 필수</span>'
     +'<input id="spNextDue" type="date" required><button class="pri" onclick="splitSaveNext()">저장</button><button onclick="inqAct(null)">취소</button></div>';
-  if(a==='status')return '<div class="sp-form"><select id="spStatus">'+INQ_STATUS_LIST.concat(CLOSED_ST).map(function(s){return '<option '+(s===(q.status||'접수')?'selected':'')+'>'+esc(s)+'</option>'}).join('')+'</select>'
+  if(a==='status')return '<div class="sp-form"><select id="spStatus">'+INQ_STATUS_LIST.concat(CLOSED_INPUT_ST).map(function(s){return '<option '+(s===(q.status||'접수')?'selected':'')+'>'+esc(s)+'</option>'}).join('')+'</select>'
     +'<button class="pri" onclick="splitSaveStatus()">변경</button><button onclick="inqAct(null)">취소</button><span class="sp-hint">이력에 자동 기록됩니다</span></div>';
   if(a==='rep')return '<div class="sp-form"><select id="spRep"><option value="">담당자 선택</option>'+assignableReps().map(function(r){return '<option '+(r===repN(q.assignee)?'selected':'')+'>'+esc(r)+'</option>'}).join('')+'</select>'
     +'<input id="spRepReason" placeholder="변경 사유 (필수)"><button class="pri" onclick="splitSaveRep()">변경</button><button onclick="inqAct(null)">취소</button></div>';
@@ -5687,7 +5690,7 @@ function promoteToPipeline(){
   var amt=man>0?Math.round(man*10000):0;
   var at=isoNow(),info=promotedInfo(q),target,moved=false,notice='';
   if(info.linked){
-    var d=info.deal,pd=detailPatchFor('deal',dealKey(d));
+    var d=info.deal,pd=detailPatchFor('deal',dealKey(d)),oldCode=d.code;
     var wc=qualifyStage(q.status),wn=qualifyName(q.status);
     /* v4.2 P0(§7): 단계가 실제로 올라갔는지 여부까지 이력·안내에 그대로 반영한다 */
     moved=stageRank(d.code)<stageRank(wc);
@@ -5697,12 +5700,20 @@ function promoteToPipeline(){
     pd.activities=(pd.activities||[]).concat([{type:'단계전환',note:promoteReason(q.status),result:(moved?wn:'단계 유지 ('+subStatus(d)+')')+(amt?' · 예상 '+fmtAmt(amt):''),at:at,actor:'관리자'}]);
     target=d;
     notice=moved?('기존 파이프라인 딜을 «'+wn+'»로 올렸습니다'):('기존 파이프라인 딜은 이미 «'+subStatus(d)+'» 단계라 그대로 두었습니다');
+    if(moved)pushWrite('transition',{opportunity_id:d.id,from:oldCode,to:wc,
+      note:promoteReason(q.status),origin_inquiry_id:q.id||null,amount:(amt||null)});
   }else{
     var nd={id:'local-'+Date.now(),site:q.site||'현장명 미입력',brand:q.brand||'',
       assignee:repN(q.assignee)==='미배정'?'':q.assignee,amt:amt,code:qualifyStage(q.status),
       stage:qualifyName(q.status),grp:'영업·관리',created:at,lastActivity:at,stageEnteredAt:at,
       work:q.work||'',fromInquiry:inqKey(q),localCreated:true};
     localCreatedDeals().push(nd);B.deals.push(nd);target=nd;moved=true;
+    pushWrite('opportunity_create',{name:nd.site,work_name:q.work||'',work_type:q.work||'',
+      brand:nd.brand,owner:repN(q.assignee)==='미배정'?null:q.assignee,
+      amount:(amt||null),stage_code:nd.code,stage_name:nd.stage,
+      origin_inquiry_id:q.id||null,site_id:q.site_id||null,
+      origin_source:'견적문의',client_ref:nd.id,
+      reason:promoteReason(q.status),reason_source:'manual',origin:nd.brand,at:at});
     notice='파이프라인에 «'+qualifyName(q.status)+'» 단계로 새 딜을 만들었습니다';
   }
   var pq=detailPatchFor('inq',inqKey(q));
