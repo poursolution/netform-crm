@@ -3034,6 +3034,12 @@ function inqMadeStats(){
 function towerGoInq(nm){G.rep=nm;G.inqView='console';G.inqPhase='전체';
  G.hideClosed=false;   /* 표의 분모가 «종결 포함» 이라 목록도 맞춰 준다 */
  goPage('inq')}
+/* 담당자 표의 비율·금액도 근거 목록으로 이어진다.
+   문의에서 계산한 값은 견적문의로, 딜에서 계산한 값은 해당 담당자 Pipeline으로 보낸다. */
+function towerGoRepMetric(nm,source){
+ if(source==='inq')return towerGoInq(nm);
+ towerGoRep(nm,null,null);
+}
 function paintTowerReps(){
  var host=$('#d-repmgmt');if(!host)return;
  var A=towerBase(),scope=G.repScope||'internal',riskKey=(liveActs()[0]||{}).k||'stale';
@@ -3076,23 +3082,23 @@ function paintTowerReps(){
     var mcls=r.iq?(r.mrate>=25?'hi':(r.mrate<10?'lo':'')):'';
     return '<tr><td>'+esc(r.nm)+'</td>'
      +'<td class="clk" data-n="'+escAttr(r.nm)+'" onclick="towerGoInq(this.dataset.n)">'+r.iq+'</td>'
-     +'<td>'+(r.iq?r.made:'—')+(r.iwon?'<small style="display:block;font-weight:700;color:var(--ok)">수주 '+r.iwon+'</small>':'')+'</td>'
-     +'<td class="conv '+mcls+'">'+(r.iq?r.mrate+'%':'—')+'</td>'
+     +'<td class="clk" title="이 수치의 견적문의 근거 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'inq\')">'+(r.iq?r.made:'—')+(r.iwon?'<small style="display:block;font-weight:700;color:var(--ok)">수주 '+r.iwon+'</small>':'')+'</td>'
+     +'<td class="clk conv '+mcls+'" title="메이드율의 견적문의 근거 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'inq\')">'+(r.iq?r.mrate+'%':'—')+'</td>'
      +'<td class="clk" data-n="'+escAttr(r.nm)+'" onclick="towerGoRep(this.dataset.n,null,null)">'+r.asg
        +'<small style="display:block;font-weight:700;color:var(--sub)">'+eok(r.asgAmt)+'</small></td>'
-     +'<td>'+r.self+(r.self?'<small style="display:block;font-weight:700;color:var(--sub)">'+eok(r.selfAmt)+'</small>':'')+'</td>'
-     +'<td>'+eok(r.q)+'</td>'
+     +'<td class="clk" title="직접영업 근거 현장 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'deal\')">'+r.self+(r.self?'<small style="display:block;font-weight:700;color:var(--sub)">'+eok(r.selfAmt)+'</small>':'')+'</td>'
+     +'<td class="clk" title="영업기회 금액의 현장 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'deal\')">'+eok(r.q)+'</td>'
      +'<td class="clk" data-n="'+escAttr(r.nm)+'" onclick="towerGoRep(this.dataset.n,null,null)">'+eok(r.p)+'</td>'
      +'<td class="clk" data-n="'+escAttr(r.nm)+'" onclick="towerGoRep(this.dataset.n,2,null)">'+eok(r.c)+'</td>'
      +'<td class="clk" data-n="'+escAttr(r.nm)+'" onclick="towerGoWon(this.dataset.n)">'+eok(r.w)+'</td>'
-     +'<td class="conv '+cls+'">'+r.conv+'%</td>'
+     +'<td class="clk conv '+cls+'" title="금액수주율의 Pipeline 근거 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'deal\')">'+r.conv+'%</td>'
      +(scope==='external'?''
-       :'<td class="q'+(r.ql.resp!=null&&r.ql.resp<80?' lo':'')+'">'+(r.ql.resp==null?'—':r.ql.resp+'%')+'</td>'
-       +'<td class="q'+(r.ql.next!=null&&r.ql.next<80?' lo':'')+'">'+(r.ql.next==null?'—':r.ql.next+'%')+'</td>'
-       +'<td class="q'+(r.ql.keep!=null&&r.ql.keep<80?' lo':'')+'">'+(r.ql.keep==null?'—':r.ql.keep+'%')+'</td>'
+       :'<td class="clk q'+(r.ql.resp!=null&&r.ql.resp<80?' lo':'')+'" title="응대율의 견적문의 근거 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'inq\')">'+(r.ql.resp==null?'—':r.ql.resp+'%')+'</td>'
+       +'<td class="clk q'+(r.ql.next!=null&&r.ql.next<80?' lo':'')+'" title="Next 설정률의 Pipeline 근거 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'deal\')">'+(r.ql.next==null?'—':r.ql.next+'%')+'</td>'
+       +'<td class="clk q'+(r.ql.keep!=null&&r.ql.keep<80?' lo':'')+'" title="기한준수율의 Pipeline 근거 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'deal\')">'+(r.ql.keep==null?'—':r.ql.keep+'%')+'</td>'
        +'<td class="clk" data-n="'+escAttr(r.nm)+'" data-k="'+escAttr(riskKey)+'" onclick="towerGoRep(this.dataset.n,null,this.dataset.k)"><span class="'+(r.risk?'warnN':'')+'">'+r.risk+'</span>'
        +(r.riskAmt?'<small style="display:block;font-weight:700;color:var(--sub)">'+eok(r.riskAmt)+'</small>':'')+'</td>'
-       +'<td><i class="vd '+r.vd.k+'">'+esc(r.vd.t)+'</i></td>')+'</tr>'}).join('')
+       +'<td class="clk" title="진단의 Pipeline 근거 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'deal\')"><i class="vd '+r.vd.k+'">'+esc(r.vd.t)+'</i></td>')+'</tr>'}).join('')
   +'</tbody></table></div>'
   +(names.length?'':'<div class="nodata">이 구분에 해당하는 담당자가 없습니다.</div>')
   +'<div class="detailnotice" style="margin-top:9px"><b>견적문의 → 메이드</b>는 현장명으로 파이프라인 딜을 찾아 이은 결과입니다 — 전체 '
