@@ -502,7 +502,7 @@ body.svc .phone{width:100%;max-width:none;border:0;border-radius:0;box-shadow:no
         <li>재배정 시트 (이력 동반)<span class="badge badge-ok">✓</span></li>
         <li>장기정체·조치 필요 필터<span class="badge badge-ok">✓</span></li>
         <li>포캐스트 (4버킷)<span class="badge badge-ok">✓</span></li>
-        <li>종료 목록 (수주·실주·배드핏)<span class="badge badge-ok">✓</span></li>
+        <li>종료 목록 (수주·실주·배드핏·연락두절)<span class="badge badge-ok">✓</span></li>
       </ul></div>
       <div class="mapbox"><h3>실적 · 코칭 <span class="ct">5화면</span></h3><div class="who">관리자 + 본인</div><ul>
         <li>내 실적 (게이지·스트릭)<span class="badge badge-ok">✓</span></li>
@@ -2119,7 +2119,7 @@ function rCoach(){
 }
 function coachSheet(nm){
  openSheet(intro('var(--violet-bg)','var(--violet)',IC.doc,nm+'님 면담 안건 (자동 생성)','데이터가 만든 초안 — 수정해서 쓰세요'),
-  '<div class="card" style="margin-bottom:10px"><div class="m-ok">정체 상위 3건 같이 리뷰 (조원주공 32일 외)</div><div class="m-ok">관계 유지 몰림 — 재접촉/종결 분류 기준 합의</div><div class="m-ok">지원 필요사항 청취 (적산팀 대기 등)</div></div>'
+  '<div class="card" style="margin-bottom:10px"><div class="m-ok">정체 상위 3건 같이 리뷰 (조원주공 32일 외)</div><div class="m-ok">관계 유지 몰림 — 재접촉/종료 결과 분류 기준 합의</div><div class="m-ok">지원 필요사항 청취 (적산팀 대기 등)</div></div>'
   +'<button class="btn btn-primary" onclick="closeSheet();toast(\'면담 안건 저장 — 잔디 1:1로 발송 (목업)\')">잔디로 보내기</button>');
 }
 

@@ -1792,6 +1792,8 @@ if(/[?&]login=1/.test(location.search))
    키가 이 파일 안에 있어서 소스 보기만으로 전체 데이터가 열리던 상태였다.
    이제 로그인 토큰(Authorization: Bearer)으로만 통과한다 — authHeaders() 참고. */
 var API='https://nfrnd.app.n8n.cloud/webhook/crm-api'; // 2026-08-31 보안 잠금 — n8n '키 검증' 노드와 세트, 회전 시 함께 교체
+/* 신규 종료 입력은 수주/실주/배드핏/연락두절만 사용한다.
+   종결/종료는 과거 데이터 판별용으로만 남겨 삭제 없이 «기타 종료»로 보여준다. */
 var CLOSED_ST=['수주','실주','배드핏','연락두절','종결','종료'];
 /* 설계서 「견적문의 통합흐름 v2」 §02 — 현장방문예정·견적서 발송(예정/완료) = Qualified 게이트.
    이 상태가 되면 브랜드 파이프라인 건으로 승격한다 (견적 요청 = 파이프라인 시작) */
@@ -1901,13 +1903,13 @@ function macroOf(code){var m=STAGE_MASTER[String(code||'')];return m?m.macro:'de
 function isBadfitLead(d){return d.code==='badfit_lead'||/견적\s*배드핏|부적합\s*고객/i.test(String(d.stage||''))}
 /* 릴레잇 확인(2026-09-02): 파이프라인 리스트의 «수주 실패 (Closed lost)» 가 곧 영업관리 배드핏이다.
    견적까지 나간 우리 영업대상을 타사에 뺏기거나 못 챙겨 놓친 건 — 별도 상태가 아니라 이것으로 기록해 왔다. */
-function isBadfitPipe(d){return d.code==='badfit_pipe'||d.code==='lost'||/영업관리\s*배드핏/i.test(String(d.stage||''))}
+function isBadfitPipe(d){return d.code==='badfit_pipe'||/영업관리\s*배드핏/i.test(String(d.stage||''))}
 function isBadfit(d){return isBadfitLead(d)||isBadfitPipe(d)||d.code==='badfit'||/배드핏|bad\s*fit/i.test(String(d.stage||'')+' '+String(d.status||'')+' '+String(d.grp||''))}
 function isNoContact(d){return d.code==='nocontact'||/연락두절/.test(String(d.stage||'')+' '+String(d.status||''))}
-function closedBucket(d){if(d.code==='won')return '수주';
-  if(isBadfitLead(d))return '견적 배드핏';if(isBadfitPipe(d))return '영업관리 배드핏';
-  if(isBadfit(d))return '견적 배드핏';   /* 종류 미상은 유입 쪽으로 (과거 데이터) */
-  if(isNoContact(d))return '연락두절';return '기타'}
+function closedBucket(d){if(d.code==='won'||String(d.stage||d.status||'')==='수주')return '수주';
+  if(d.code==='lost'||String(d.stage||d.status||'')==='실주')return '실주';
+  if(isBadfit(d))return '배드핏';
+  if(isNoContact(d))return '연락두절';return '기타 종료'}
 /* 2026-09-01 지시 — 아래 담당자의 데이터는 모든 화면·집계에서 제외한다.
    이름을 추가·삭제하려면 이 배열만 고치면 됨 (로드 시점에 걸러지므로 전 페이지에 일괄 적용) */
 var EXCLUDED_REPS=['주현진','한인규'];
@@ -3382,7 +3384,7 @@ function pipeDeals(){return B.deals.filter(function(d){return inPeriod(d.created
  &&(!G.q||((d.site||'')+' '+(d.assignee||'')+' '+(d.stage||'')).includes(G.q))})}
 function setPipeView(v){G.pipeView=v;paint()}
 function openStage(ci){G.pipeView='stage';G.stageCol=ci;G.ssfPC=null;paint()}
-function setClosedTab(t){G.closedTab=(t==='수주'?'Closed Won':t==='실주'||t==='영업관리 배드핏'?'Closed Lost':t);G.pipeView='closed';paint()}
+function setClosedTab(t){G.closedTab=t;G.pipeView='closed';paint()}
 /* [삭제됨 v3.6] 구버전 flowIndex — 마지막 정의만 사용 */
 
 /* [삭제됨 v3.6] 구버전 flowHTML — 마지막 정의만 사용 */
@@ -3414,7 +3416,7 @@ function paintRotList(rot){
    놓침 = 우리가 못 챙겨 잃은 것 = 우리가 고칠 수 있는 손실. 이 숫자가 줄어야 실행이 좋아진 것. */
 function lostKindOfDeal(d){var p=itemPatch(d,'deal');return p.lostKind||d.lostKind||d.lost_kind||null}
 function lostKindBar(tab,rows){
- if((tab!=='Closed Lost'&&tab!=='영업관리 배드핏')||!rows.length)return '';
+ if(tab!=='실주'||!rows.length)return '';
  var g={'뺏김':[],'놓침':[],'미분류':[]};
  rows.forEach(function(d){var k=lostKindOfDeal(d);(g[k]||g['미분류']).push(d)});
  var cell=function(k,desc,cls){var L=g[k];
@@ -3427,24 +3429,22 @@ function lostKindBar(tab,rows){
   +'</div>';
 }
 function paintClosed(won,lost,etc){
-  var t=G.closedTab,base=(B.deals||[]).filter(function(d){return inPeriod(d.created)&&(G.brand==='전체'||d.brand===G.brand)&&(G.rep==='전체'||repN(d.assignee)===G.rep)});
-  var rows= t==='Closed Lost'?lost
-          : t==='영업관리 배드핏'||t==='실주'?lost
-          : t==='견적 배드핏'?base.filter(isBadfitLead)
+  var t=({'Closed Won':'수주','Closed Lost':'실주','영업관리 배드핏':'실주','견적 배드핏':'배드핏','기타':'기타 종료'}[G.closedTab]||G.closedTab||'수주'),base=(B.deals||[]).filter(function(d){return inPeriod(d.created)&&(G.brand==='전체'||d.brand===G.brand)&&(G.rep==='전체'||repN(d.assignee)===G.rep)});
+  var rows= t==='실주'?lost
           : t==='배드핏'?base.filter(isBadfit)
           : t==='연락두절'?base.filter(isNoContact)
-          : t==='기타'?etc.filter(function(d){return closedBucket(d)==='기타'})
+          : t==='기타 종료'?etc.filter(function(d){return closedBucket(d)==='기타 종료'})
           : won;
   rows=rows.slice().sort(function(a,b){return (b.amt||0)-(a.amt||0)});
-  if((t==='Closed Lost'||t==='영업관리 배드핏')&&G.lostKind)rows=rows.filter(function(d){return (lostKindOfDeal(d)||'미분류')===G.lostKind});
-  var DESC={'Closed Won':'계약까지 간 건 — 담당자·브랜드별 실적의 원천','Closed Lost':'견적까지 나간 우리 영업대상을 타사에 뺏기거나 못 챙겨 놓친 건 — 우리 실행 지표(패인 분석용)','견적 배드핏':'견적문의 응대 중 우리와 방향이 안 맞아 종료 — 유입 품질 지표(마케팅·채널 개선용)','영업관리 배드핏':'견적까지 나간 우리 영업대상인데 타사에 뺏기거나 못 챙겨 놓친 건 — 우리 실행 지표(패인 분석용)','수주':'계약까지 간 건 — 담당자·브랜드별 실적의 원천',
+  if(t==='실주'&&G.lostKind)rows=rows.filter(function(d){return (lostKindOfDeal(d)||'미분류')===G.lostKind});
+  var DESC={'수주':'계약까지 간 건 — 담당자·브랜드별 실적의 원천',
             '실주':'경쟁에서 진 건 — 사유를 남겨야 월별 Lost 분석이 됩니다',
             '배드핏':'우리 일이 아니었던 건 — 유입·검증 개선용 (실주와 별도 집계)',
             '연락두절':'재시도일이 오면 다시 살아납니다',
-            '기타':'분류가 안 된 건 — 위 4종 중 하나로 정리해 주세요'};
+            '기타 종료':'과거 종결·종료 데이터입니다 — 위 4종 중 하나로 재분류해 주세요'};
   $('#p-main').innerHTML='<div class="closedhead"><button class="reset" onclick="G.pipeView=\'kb\';G.stageCol=null;G.consoleMacro=null;paint()">← 칸반으로</button>'
    +'<div><h3>종료 · '+esc(t)+' <b>'+rows.length+'건</b> · '+fmtAmt(sum(rows))+'</h3><small>'+esc(DESC[t]||'')+'</small></div>'
-   +'<div class="closedtabs">'+['Closed Won','Closed Lost','견적 배드핏','연락두절','기타'].map(function(x){
+   +'<div class="closedtabs">'+['수주','실주','배드핏','연락두절','기타 종료'].map(function(x){
       return '<button class="'+(t===x?'on':'')+'" data-t="'+x+'" onclick="setClosedTab(this.dataset.t)">'+x+'</button>'}).join('')+'</div></div>'
    +lostKindBar(t,rows)
    +'<div class="tbl">'
@@ -3888,7 +3888,7 @@ function closeTransition(){var h=document.getElementById('inlineTransition');if(
 function trStageQuick(item){
  var cur=dealStage(item),cand=nextStageCandidates(cur);
  var next=cand.map(function(c){return '<button type="button" class="trq next" onclick="trPick(\''+c+'\')">'+esc(stageNoLabel(c))+'</button>'}).join('');
- var end=[['won','수주 성공'],['lost','수주 실패 — 뺏김·놓침'],['badfit_lead','견적 배드핏'],['nocontact','연락두절']]
+ var end=[['won','수주'],['lost','실주'],['badfit_lead','배드핏'],['nocontact','연락두절']]
    .map(function(x){return '<button type="button" class="trq end" onclick="trPick(\''+x[0]+'\')">'+esc(x[1])+'</button>'}).join('');
  return '<div class="trquick"><div><span>정상적인 다음 단계</span>'+(next||'<em>마지막 진행 단계입니다</em>')+'</div>'
    +'<div><span>종료 처리</span>'+end+'</div></div>';
@@ -3930,7 +3930,7 @@ function reasonOptionsFor(target){
 }
 function stageTargetLabel(v){if(v.indexOf('step:')===0)return FLOW_STEPS[parseInt(v.split(':')[1],10)];
  if(PIPE_PROGRESS.indexOf(v)>=0)return stageNoLabel(v);   /* 실제 진행 단계 */
- return {won:'수주 성공',lost:'영업관리 배드핏',badfit:'배드핏',badfit_lead:'견적 배드핏',badfit_pipe:'영업관리 배드핏',nocontact:'연락두절',hold:'보류'}[v]||v}
+ return {won:'수주',lost:'실주',badfit:'배드핏',badfit_lead:'배드핏',badfit_pipe:'배드핏',nocontact:'연락두절',hold:'보류'}[v]||v}
 /* [삭제됨 v3.6] 구버전 applyStageTarget — 마지막 정의만 사용 */
 
 function confirmTransition(){if(!CUR_DETAIL)return;var target=$('#tr-target').value,did=$('#tr-did').value.trim(),result=$('#tr-result').value.trim(),next=$('#tr-next')?$('#tr-next').value.trim():'',due=$('#tr-due')?$('#tr-due').value:'',assignee=$('#tr-assignee').value,reason=$('#tr-reason')?$('#tr-reason').value:'',why=reasonValue('rs-tr'),terminal=isTerminalTarget(target),reasonNeeded=['lost','badfit','badfit_lead','badfit_pipe','nocontact','hold'].indexOf(target)>=0,err=$('#tr-err'),missing=[],focus=null;if(!did){missing.push('한 일');focus=focus||$('#tr-did')}if(!result){missing.push('결과');focus=focus||$('#tr-result')}if(!assignee){missing.push('담당자');focus=focus||$('#tr-assignee')}if(!terminal&&!next){missing.push('다음 행동');focus=focus||$('#tr-next')}if(!terminal&&!due){missing.push('기한');focus=focus||$('#tr-due')}if(reasonNeeded&&!reason){missing.push('종료/보류 사유');focus=focus||$('#tr-reason')}if(!reasonOk('rs-tr')){missing.push('변경 근거 5자 이상');focus=focus||$('#rs-tr-text')}if(missing.length){err.style.display='block';err.textContent='확인해 주세요: '+missing.join(' · ');if(focus){focus.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(function(){focus.focus()},250)}return}var item=CUR_DETAIL.item,p=currentPatch(),from=currentStageLabel(item,CUR_DETAIL.kind),oldAssignee=repN(item.assignee),at=isoNow();
@@ -4063,7 +4063,7 @@ function liveActs(){return SPLIT_ACTS.filter(function(a){return !a.need||metricR
 var CLOSED_FILTERS=[
  {k:'won',nm:'수주',f:function(d){return d.code==='won'}},
  {k:'lost',nm:'실주',f:function(d){return d.code==='lost'}},
- {k:'badfit_lead',nm:'견적 배드핏',f:isBadfitLead},
+ {k:'badfit',nm:'배드핏',f:isBadfit},
  {k:'nocontact',nm:'연락두절',f:isNoContact}
 ];
 function splitActFn(k){for(var i=0;i<SPLIT_ACTS.length;i++)if(SPLIT_ACTS[i].k===k)return SPLIT_ACTS[i].f;return null}
@@ -4444,8 +4444,8 @@ function drwSite(s){var k=JSON.parse(s),D=B.deals.filter(function(d){return d.si
 function transitionOptions(idx,kind){
  if(kind==='inq'){
    var opts=[];for(var i=0;i<=5;i++)opts.push({v:'step:'+i,n:FLOW_STEPS[i]});
-   opts.push({v:'won',n:'수주 성공'},{v:'lost',n:'영업관리 배드핏 — 뺏김·놓침 (수주 실패)'},
-     {v:'badfit_lead',n:'견적 배드핏 — 방향 불일치'},{v:'nocontact',n:'연락두절'},{v:'hold',n:'보류'});
+   opts.push({v:'won',n:'수주'},{v:'lost',n:'실주'},
+     {v:'badfit_lead',n:'배드핏'},{v:'nocontact',n:'연락두절'},{v:'hold',n:'보류'});
    return opts.map(function(o){var def=idx<5?'step:'+(idx+1):'won';
      return '<option value="'+o.v+'" '+(o.v===def?'selected':'')+'>'+o.n+'</option>'}).join('');
  }
@@ -4733,8 +4733,8 @@ var KB5=[
  {k:'con',    nm:'계약·시공',      sub:'(계약~확장)',      bar:'var(--ok)',    codes:[]},
  /* 종료 2열 — 파이프라인 끝이 화면에서 잘려 보이지 않도록 칸반에 같이 세운다.
     closed:true 인 열은 진행 예측(가중)에서 빠지고, 목록은 종료 건에서 가져온다. */
- {k:'won',    nm:'Closed Won',   sub:'(수주 성공)',       bar:'var(--ok)',    codes:[], closed:'won'},
- {k:'lost',   nm:'Closed Lost',  sub:'(영업관리 배드핏)',  bar:'var(--danger)',codes:[], closed:'lost'}
+ {k:'won',    nm:'수주',         sub:'',                  bar:'var(--ok)',    codes:[], closed:'won'},
+ {k:'lost',   nm:'실주',         sub:'',                  bar:'var(--danger)',codes:[], closed:'lost'}
 ];
 /* v4.1: 열에 속한 단계 목록도 Master 에서 파생한다 (k = STAGE_MASTER.macro).
    여기에 단계 코드를 다시 적으면 Master 와 어긋날 수 있다 */
@@ -5238,13 +5238,13 @@ function paintInq(){
  var Q=inqs();
  var un=Q.filter(function(q){return repN(q.assignee)==='미배정'});
  $('#sg-top').innerHTML='<div><b>견적문의</b><small>콘솔 · 스플릿 · 접수 피드 · 지역 — 행을 누르면 스플릿에서 이어서 처리</small></div>'
-  +'<div class="sg-kpi" id="sg-kpi">'+Q.length+'건'+(G.hideClosed&&hidden?' <em style="font-style:normal;color:var(--sub2)">(종결 '+hidden+'건 숨김)</em>':'')+' · 미배정 <b style="color:var(--danger)">'+un.length+'</b>건</div>';
+  +'<div class="sg-kpi" id="sg-kpi">'+Q.length+'건'+(G.hideClosed&&hidden?' <em style="font-style:normal;color:var(--sub2)">(종료 '+hidden+'건 숨김)</em>':'')+' · 미배정 <b style="color:var(--danger)">'+un.length+'</b>건</div>';
  var v=G.inqView||'console';if(v==='rep')v=G.inqView='console';
  $('#sg-signals').innerHTML='<div class="mseg" style="margin-bottom:4px">'
   +[['console','📋 콘솔'],['split','🪟 스플릿'],['feed','📥 접수 피드'],['region','🗺️ 지역'],['link','🔗 연결 확인']].map(function(x){
      return '<button class="'+(v===x[0]?'on':'')+'" data-v="'+x[0]+'" onclick="G.inqView=this.dataset.v;G.inqNotice=\'\';paint()">'+x[1]+'</button>'}).join('')
-  +'<button class="hidetgl '+(G.hideClosed?'on':'')+'" onclick="toggleHideClosed()" title="수주·실주·배드핏·연락두절·종결·종료 상태를 목록에서 제외합니다">'
-  +'<span class="sw"><i></i></span>종결·배드핏 숨김 <em>'+hidden+'건</em></button></div>'
+  +'<button class="hidetgl '+(G.hideClosed?'on':'')+'" onclick="toggleHideClosed()" title="수주·실주·배드핏·연락두절 상태와 과거 종료 데이터를 목록에서 제외합니다">'
+  +'<span class="sw"><i></i></span>종료 건 숨김 <em>'+hidden+'건</em></button></div>'
   +inqBrandChips();
  var wait=awaitingPromotion(Q),made=localCreatedDeals().length;
  var bn='';
@@ -5386,16 +5386,16 @@ function inqRegion(Q){
    칩에서 사람을 고르면 inqs()가 이미 그 사람으로 걸러져 들어온다 */
 function inqRepView(Q){
  if(G.rep==='전체'){
-  $('#sg-panel').innerHTML='<div class="mcard" style="padding:26px;text-align:center"><div style="font-size:26px;margin-bottom:8px">👆</div><b style="font-size:14px">위 담당자 칩에서 사람을 선택하세요</b><div style="font-size:11.5px;color:var(--sub);margin-top:6px">선택한 담당자의 문의만 ⚠ 응대 필요 → 📞 진행 → ✓ 종결 순으로 정리해 보여줍니다.<br>담당자 개인 링크(오늘페이지 토큰)와 같은 데이터입니다.</div></div>';return}
+ $('#sg-panel').innerHTML='<div class="mcard" style="padding:26px;text-align:center"><div style="font-size:26px;margin-bottom:8px">👆</div><b style="font-size:14px">위 담당자 칩에서 사람을 선택하세요</b><div style="font-size:11.5px;color:var(--sub);margin-top:6px">선택한 담당자의 문의만 ⚠ 응대 필요 → 📞 진행 → ✓ 종료 순으로 정리해 보여줍니다.<br>담당자 개인 링크(오늘페이지 토큰)와 같은 데이터입니다.</div></div>';return}
  var sel=G.rep,L=Q;
  var need=L.filter(function(q){return CLOSED_ST.indexOf(q.status)<0&&priorityInfo(q,'inq').rank<=5});
  var prog=L.filter(function(q){return CLOSED_ST.indexOf(q.status)<0&&priorityInfo(q,'inq').rank>5});
  var done=L.filter(function(q){return CLOSED_ST.indexOf(q.status)>=0});
  var sec=function(t,arr,hint,empty){return '<div class="msech" style="margin-top:14px"><h2 style="font-size:14.5px">'+t+' · '+arr.length+'건</h2><span class="mhint">'+hint+'</span></div><div class="mcard">'+(arr.slice(0,15).map(function(q){return inqRowHTML(q)}).join('')||'<div style="padding:16px;text-align:center;font-size:11px;color:var(--sub)">'+empty+'</div>')+'</div>'};
- $('#sg-panel').innerHTML='<div class="mcard" style="padding:14px 18px;display:flex;gap:14px;align-items:center"><span style="width:40px;height:40px;border-radius:50%;background:var(--violet-bg);color:var(--violet);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;flex-shrink:0">'+esc(repInit(sel))+'</span><div><b style="font-size:15px">'+esc(sel)+'</b><div style="font-size:11px;color:var(--sub);margin-top:2px">담당 문의 '+L.length+'건 · 응대 필요 '+need.length+' · 진행 '+prog.length+' · 종결 '+done.length+'</div></div><span class="mbadge blue" style="margin-left:auto" title="담당자 개인 링크(오늘페이지 토큰)와 같은 데이터를 봅니다">🔗 담당자 공유용 화면</span></div>'
+ $('#sg-panel').innerHTML='<div class="mcard" style="padding:14px 18px;display:flex;gap:14px;align-items:center"><span style="width:40px;height:40px;border-radius:50%;background:var(--violet-bg);color:var(--violet);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;flex-shrink:0">'+esc(repInit(sel))+'</span><div><b style="font-size:15px">'+esc(sel)+'</b><div style="font-size:11px;color:var(--sub);margin-top:2px">담당 문의 '+L.length+'건 · 응대 필요 '+need.length+' · 진행 '+prog.length+' · 종료 '+done.length+'</div></div><span class="mbadge blue" style="margin-left:auto" title="담당자 개인 링크(오늘페이지 토큰)와 같은 데이터를 봅니다">🔗 담당자 공유용 화면</span></div>'
  +sec('⚠ 응대 필요',need,'기한초과·미응대·무행동 우선','응대 필요 건 없음 🎉')
  +sec('📞 진행 중',prog,'정상 진행·대기 순','진행 중 건 없음')
- +sec('✓ 종결',done.slice().reverse(),'최근 종결 순','종결 건 없음')}
+ +sec('✓ 종료',done.slice().reverse(),'최근 종료 순','종료 건 없음')}
 /* ══════════════════════════════════════════════════════════════
    견적문의 스플릿 뷰 (B안 · 2026-09-01)
    왼쪽 압축 목록 + 오른쪽 상시 상세. ↑↓ 키로 이동, 상세를 열고 닫는
@@ -5835,7 +5835,7 @@ function splitCheckBlock(q){
 /* 다음 행동 카드 안의 완료/단계 버튼 */
 function splitActionBar(q){
   var na=actionObj(q,itemPatch(q,'inq')),idx=flowIndex(q,'inq');
-  var next=idx<5?FLOW_STEPS[idx+1]:'수주·실주·종료';
+ var next=idx<5?FLOW_STEPS[idx+1]:'수주·실주·배드핏·연락두절';
   return '<div class="sp-abar">'
    +(na&&na.text?'<button class="sp-ab done" onclick="splitDoneAction()">✓ 이 행동 완료</button>':'')
    +'<button class="sp-ab" onclick="iqForm(\'next\')">다음: '+esc(next)+' →</button>'
@@ -5849,7 +5849,7 @@ function iqInlineForm(q,idx){
  var f=G.iqForm;if(!f)return '';
  var body='';
  if(f==='next'){
-  var to=idx<5?FLOW_STEPS[idx+1]:'수주·실주·종료';
+ var to=idx<5?FLOW_STEPS[idx+1]:'수주·실주·배드핏·연락두절';
   body='<div class="og full"><label>«'+esc(to)+'»로 올립니다 — 한 일 <span class="req">*</span></label><input id="iq-did" placeholder="예: 관리소장 통화 — 현장방문 일정 확정"></div>'
    +'<div class="og full"><label>결과 <span class="req">*</span></label><input id="iq-res" placeholder="예: 9/8 오전 방문 확정"></div>'
    +'<div class="og"><label>다음 행동 <span class="req">*</span></label><input id="iq-next" placeholder="예: 방문 전 도면 요청"></div>'
