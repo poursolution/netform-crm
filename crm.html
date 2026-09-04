@@ -893,7 +893,7 @@ html,body{height:100%}
    상세는 항상 목록 옆에서 본다. 목록이 사라지는 화면은 이 CRM 에 없다. */
 .detailview.on:not(.docked){display:none!important}
 .detailview.on.fullview:not(.docked){display:block!important}
-.detailview.detailmodal{inset:4vh max(24px,calc((100vw - 1080px)/2));border-radius:18px;background:var(--bg);box-shadow:0 24px 80px rgba(15,25,50,.32);max-height:92vh;overflow-y:auto}
+.detailview.detailmodal{inset:6vh max(24px,calc((100vw - 920px)/2));border-radius:18px;background:var(--bg);box-shadow:0 24px 80px rgba(15,25,50,.32);max-height:88vh;overflow-y:auto}
 .detailview.detailmodal .detailtop{border-radius:18px 18px 0 0}
 @media(max-width:760px){.detailview.detailmodal{inset:12px;border-radius:14px;max-height:calc(100vh - 24px)}.detailview.detailmodal .detailbody{padding:14px 12px 28px}}
 
@@ -6178,7 +6178,7 @@ window.addEventListener('focus',syncNow);
   return r}})();
 
 var _loadData=loadData,CRM_DEBUG=/[?&]debug=1/.test(location.search),DETAIL_REQUESTED=false;
-function openRequestedDetail(){if(DETAIL_REQUESTED||!B)return;var key=new URL(location.href).searchParams.get('detail');if(!key)return;var d=(B.deals||[]).filter(function(x){return dealKey(x)===key})[0];if(!d)return;DETAIL_REQUESTED=true;var dv=document.getElementById('detailView');if(dv)dv.classList.add('fullview');G._toSplit=1;try{drwDeal(JSON.stringify(d));if(dv){dv.classList.add('on','fullview');dv.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';dv.scrollTop=0}}finally{G._toSplit=0}}
+function openRequestedDetail(){if(DETAIL_REQUESTED||!B)return;var key=new URL(location.href).searchParams.get('detail');if(!key)return;var d=(B.deals||[]).filter(function(x){return dealKey(x)===key})[0];if(!d)return;DETAIL_REQUESTED=true;var dv=document.getElementById('detailView'),ov=document.getElementById('ovl');G._detailPopup=true;G._toSplit=1;try{drwDeal(JSON.stringify(d));if(dv){dv.classList.add('on','fullview','detailmodal');dv.setAttribute('aria-hidden','false');var back=dv.querySelector('.backbtn');if(back)back.textContent='✕ 닫기';document.body.style.overflow='hidden';dv.scrollTop=0}if(ov){ov.style.display='block';ov.style.zIndex='69'}}finally{G._toSplit=0}}
 loadData=async function(q){LAST_SYNC=Date.now();await _loadData(q);if(CRM_DEBUG){window.__CRM=B;window.__CRM_STATE=G}openRequestedDetail()};
 /* ── n8n 예열 (2026-09-04) ────────────────────────────────────
    n8n Cloud 워커는 쉬면 잠든다 — 깨우는 데만 1.5~3초가 든다.
