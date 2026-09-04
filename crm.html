@@ -2500,14 +2500,14 @@ function paintTowerMoney(){
  var mRisk=sumBy(riskL,oppAmt);
  var asg=A.filter(isAssignedLead), self=A.filter(isSelfGen);
  var cards=[
-  {k:'quote',lb:'영업기회',v:mQ,n:A.length+'건',cov:cQ,ic:'📥',tone:'blue',
+  {k:'quote',lb:'올해 등록 영업',v:mQ,n:A.length+'건',cov:cQ,ic:'📥',tone:'blue',
    rt:'배정 '+asg.length+' · 직접영업 '+self.length,
    tip:'배정 리드 '+eok(sumBy(asg,qs))+' + 직접영업 '+eok(sumBy(self,qs))+' (출처 미기록 '+(A.length-asg.length-self.length)+'건 포함)'},
-  {k:'pipe',lb:'Pipeline 진행',v:mP,n:act.length+'건',cov:cP,ic:'🧭',tone:'indigo',
+  {k:'pipe',lb:'현재 진행 영업',v:mP,n:act.length+'건',cov:cP,ic:'🧭',tone:'indigo',
    rt:'배정→진행 '+pctOf(act.length,A.length)+'%',tip:'지금 살아 움직이는 금액'},
   {k:'wt',lb:'가중 예상매출',v:mW,n:'단계확률 적용',cov:null,ic:'📈',tone:'violet',
    rt:null,tip:'진행 금액 × 단계별 확률'},
-  {k:'won',lb:'수주금액',v:mWon,n:wonP.length+'건',cov:cWon,ok:1,ic:'🏆',tone:'green',
+  {k:'won',lb:'수주 확정',v:mWon,n:wonP.length+'건',cov:cWon,ok:1,ic:'🏆',tone:'green',
    rt:(wonDiff!==null?'전년 동기 '+(wonDiff>=0?'▲ +':'▼ ')+wonDiff+'%'
         :'금액수주 '+pctOf(mWon,mQ)+'%'),
    tip:'이 기간에 수주 «확정» 된 금액입니다 (유입 시점이 아니라 수주한 날 기준)  ·  참고: 이 기간 유입분만 놓고 보면 '+won.length+'건 '+eok(sumBy(won,ws))+' 수주, 금액수주율 '+pctOf(sumBy(won,ws),mQ)+'%'},
@@ -2552,7 +2552,7 @@ function paintTowerDrill(){
  var dead=SPLIT_ACTS.filter(function(a){return a.need&&!metricReady(a.need)});
  var cov=amtCover(D,f);
  host.innerHTML='<div class="card" style="margin-top:10px"><div class="ch"><div><h3>'
-  +esc({quote:'견적 배정금액',pipe:'Pipeline 진행',wt:'가중 예상매출',won:'수주금액'}[G.towerDrill]||'금액')
+  +esc({quote:'올해 등록 영업',pipe:'현재 진행 영업',wt:'가중 예상매출',won:'수주 확정'}[G.towerDrill]||'금액')
   +' '+eok(sumBy(D,f))+'</h3><div class="sub">구간별로 나눠 본 다음, 그중 «관리상 위험한 금액» 을 봅니다 · 금액 입력 '+cov.n+'/'+cov.t+'건</div></div>'
   +'<button class="dact" onclick="towerDrill(null)">닫기</button></div>'
   +'<div class="table-scroll"><table class="rtbl"><thead><tr><th>구간</th><th>건수</th><th>금액</th></tr></thead><tbody>'
@@ -4009,7 +4009,7 @@ function pipeScoped(){return B.deals.filter(function(d){return (G.pipeOrigin==='
  &&metricDealMatch(d,G.pipeOrigin)
  &&(!G.q||((d.site||'')+' '+(d.assignee||'')+' '+(d.stage||'')).includes(G.q))})}
 function metricDealMatch(d,k){if(!k||k==='all'||k==='active')return true;if(k==='self')return isSelfGen(d);if(k==='assigned')return isAssignedLead(d);if(k==='won'||k==='wonPeriod')return isWon(d);if(k==='closedLost')return !towerActive(d)&&!isWon(d);if(k==='due'){var a=actionObj(d,itemPatch(d,'deal'));return !!(a&&a.due)}if(k==='risk')return liveActs().some(function(x){return x.f(d)});if(k==='stageStale')return (stageAge(d)||0)>=30;return true}
-function metricDealLabel(k,n){var m={self:'직접영업',assigned:'배정 리드',all:'전체 영업기회',active:'진행 Pipeline',won:'수주',wonPeriod:'수주일 기준 수주',closedLost:'종료(실주·배드핏·연락두절)',due:'기한 설정',risk:'관리필요',stageStale:'장기정체'};return (m[k]||'근거 목록')+' '+n+'건'}
+function metricDealLabel(k,n){var m={self:'직접영업',assigned:'배정 리드',all:'올해 등록 영업',active:'현재 진행 영업',won:'수주',wonPeriod:'수주일 기준 수주 확정',closedLost:'종료(실주·배드핏·연락두절)',due:'기한 설정',risk:'관리필요',stageStale:'장기정체'};return (m[k]||'근거 목록')+' '+n+'건'}
 /* ══ «없는 데이터» 를 «문제» 로 세지 않는다 (2026-09-02) ══════
    지금 서버 번들에는 next_action 이 한 건도 없다 (진행 202건 중 0건).
    그 상태에서 «다음 행동 없음 202건» 을 띄우면 100% 가 문제로 보이고,
