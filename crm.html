@@ -1915,6 +1915,8 @@ var EXCLUDED_REPS=['주현진','한인규'];
 var REP_INTERNAL=['황윤선','이필선','한준엽','김성민','정정훈','조현식'];
 var REP_NO_SCORE=['송보람'];                 /* 성과·관리 대상 제외 (데이터는 유지) */
 var REP_SYSTEM=['미배정','중복건','중복'];    /* 사람이 아닌 값 */
+function repOrder(n){var i=REP_INTERNAL.indexOf(repN(n));return i>=0?i:REP_INTERNAL.length+100}
+function repCompare(a,b){var ai=repOrder(a),bi=repOrder(b),ax=REPS.indexOf(a),bx=REPS.indexOf(b);return ai-bi||((ax<0?999:ax)-(bx<0?999:bx))||String(a).localeCompare(String(b),'ko')}
 function repClass(n){n=repN(n);
  if(!n||REP_SYSTEM.indexOf(n)>=0)return 'system';
  if(REP_NO_SCORE.indexOf(n)>=0)return 'noscore';
@@ -3269,7 +3271,7 @@ function paintTower(){
 function paintDash(){paintTower()}
 
 /* ═══ 담당자 마스터 · 기준일 규칙 (공용) ═══ */
-var REPS=['송보람','경남지사','이승우','황윤선','이필선','한준엽','정정훈','김성민','조현식'];
+var REPS=['황윤선','이필선','한준엽','김성민','정정훈','조현식','송보람','경남지사','이승우'];
 /* 시트에 같은 사람이 여러 표기로 저장돼 있어 repN()이 이 표로 하나로 합침. 새 표기가 발견되면 여기에만 추가하면 됨 */
 var REP_ALIAS={'lsw':'이승우','LSW':'이승우','u_hys':'황윤선','송보림':'송보람','서비스운영팀(송보림)':'송보람','서비스운영팀':'송보람','서비스운영3팀 송보림':'송보람','서비스운영3팀 송보람':'송보람','서비스운영팀(송보람)':'송보람','서비스운영팀(주현진)':'주현진'};
 function repN(n){if(!n||!String(n).trim())return '미배정';n=String(n).trim();
@@ -3922,7 +3924,7 @@ TITLES.inq=['견적문의 관제','잔디 견적문의 유입 → 배정 → 응
 
 function uniq(a){var o={},r=[];(a||[]).forEach(function(x){x=repN(x);if(x&&x!=='미배정'&&!o[x]){o[x]=1;r.push(x)}});return r}
 /* 담당자 칩 후보: 딜·문의·사용자 목록의 표기를 repN()으로 정규화해 중복 표기를 하나로 합침. '중복건' 같은 비인격 라벨은 제외 */
-function allAssignees(){var a=[];(B&&B.deals||[]).forEach(function(x){a.push(repN(x.assignee))});(B&&B.inquiries||[]).forEach(function(x){a.push(repN(x.assignee))});(B&&B.users||[]).forEach(function(x){a.push(repN(x.name||x.displayName||x.full_name))});return uniq(a.concat(REPS)).filter(function(n){return n&&n!=='중복건'&&n!=='미배정'}).sort(function(x,y){return x.localeCompare(y,'ko')})}
+function allAssignees(){var a=[];(B&&B.deals||[]).forEach(function(x){a.push(repN(x.assignee))});(B&&B.inquiries||[]).forEach(function(x){a.push(repN(x.assignee))});(B&&B.users||[]).forEach(function(x){a.push(repN(x.name||x.displayName||x.full_name))});return uniq(a.concat(REPS)).filter(function(n){return n&&n!=='중복건'&&n!=='미배정'}).sort(repCompare)}
 /* 배정 창구는 전 담당자 개방 (2026-09-01 확정) — 한인규만 시스템 접근 제외 유지 */
 function assignableReps(){return allAssignees().filter(function(r){return EXCLUDED_REPS.indexOf(r)<0})}
 function repOptions(selected){return ['미배정'].concat(assignableReps()).map(function(r){return '<option value="'+escAttr(r)+'" '+(repN(selected)===r?'selected':'')+'>'+esc(r)+'</option>'}).join('')}
@@ -4601,7 +4603,7 @@ function curDetailRep(){
 }
 /* ★ 담당자 칩 바 — 파일 내 paintRepTabs 정의 중 이것이 마지막이라 실제로 동작하는 버전.
    perf/brief/mgmt(실적 관리 대상 5인)는 0건이어도 고정 노출, 나머지 페이지는 현재 목록에 건수가 있는 담당자만 노출 */
-function paintRepTabs(){var r=document.getElementById('reptabs');if(!r)return;var limited=['perf','brief','mgmt'].indexOf(G.page)>=0,names=limited?PERFORMANCE_TARGET_NAMES:allAssignees();/* 견적문의 화면의 칩은 그 화면과 «같은» 기준으로 센다 (종결 숨김 포함).
+function paintRepTabs(){var r=document.getElementById('reptabs');if(!r)return;var limited=['dash','perf','brief','mgmt','report','mobile'].indexOf(G.page)>=0,names=limited?PERFORMANCE_TARGET_NAMES:allAssignees();/* 견적문의 화면의 칩은 그 화면과 «같은» 기준으로 센다 (종결 숨김 포함).
    activeInquiryList() 는 관리팀 KPI·주간 브리핑이 쓰는 별도 기준이라 건드리지 않는다. */
  var src=G.page==='inq'?inqBase(false,false):activeDealList();var cnt={};src.forEach(function(x){var n=repN(x.assignee);cnt[n]=(cnt[n]||0)+1});if(!limited)names=names.filter(function(n){return cnt[n]});
 /* 매트릭스 셀 클릭 등으로 잡힌 필터(예: 미배정)는 칩 목록에 없어도 임시 칩으로 노출 — 리셋하면 필터가 조용히 무효화됨 */

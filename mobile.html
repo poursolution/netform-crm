@@ -572,10 +572,12 @@ function tile(icon,fg,bg){return '<span class="ic" style="background:'+bg+';colo
 /* ── 데이터 (예시) ── */
 /* user_id 와 role 을 함께 들고 다닌다 — 모든 조회·기록이 이 id 를 owner 로 쓴다.
    ⚠ PIN 검증은 서버 Auth(JWT) 로 옮겨야 한다. 지금은 화면 진입만 막는 수준 */
+var REP_INTERNAL=['황윤선','이필선','한준엽','김성민','정정훈','조현식'];
 var REPS=[
- {id:'u_hys',nm:'황윤선',role:'dual'},{id:'u_lsw',nm:'이승우',role:'dual'},{id:'u_sbr',nm:'송보람',role:'admin'},
- {id:'u_lps',nm:'이필선',role:'rep'},{id:'u_hjy',nm:'한준엽',role:'rep'},{id:'u_ksm',nm:'김성민',role:'rep'},
- {id:'u_jjh',nm:'정정훈',role:'rep'},{id:'u_chs',nm:'조현식',role:'rep'}
+ {id:'u_hys',nm:'황윤선',role:'dual'},{id:'u_lps',nm:'이필선',role:'rep'},
+ {id:'u_hjy',nm:'한준엽',role:'rep'},{id:'u_ksm',nm:'김성민',role:'rep'},
+ {id:'u_jjh',nm:'정정훈',role:'rep'},{id:'u_chs',nm:'조현식',role:'rep'},
+ {id:'u_lsw',nm:'이승우',role:'dual'},{id:'u_sbr',nm:'송보람',role:'admin'}
 ];
 /* ══════════════════════════════════════════════════════════════════════
    CRM CORE — PC(넷폼CRM_v4_1)의 STAGE_MASTER 와 글자 하나까지 같아야 한다.
@@ -1054,16 +1056,17 @@ function rebuildAdmin(){
  var noNext=open.filter(function(d){return !d.nextAction}).length;
  var overdue=open.filter(function(d){var v=dueDays(d);return v!=null&&v<0}).length;
  var staleN=open.filter(isStale).length;
- var loadMap={};open.forEach(function(d){loadMap[d.rep]=(loadMap[d.rep]||0)+1});
- var avg=Object.keys(loadMap).length?open.length/Object.keys(loadMap).length:0;
- var heavy=Object.keys(loadMap).filter(function(r){return loadMap[r]>avg*1.5});
+ var internalOpen=open.filter(function(d){return REP_INTERNAL.indexOf(d.rep)>=0}),loadMap={};
+ REP_INTERNAL.forEach(function(r){loadMap[r]=0});internalOpen.forEach(function(d){loadMap[d.rep]++});
+ var avg=REP_INTERNAL.length?internalOpen.length/REP_INTERNAL.length:0;
+ var heavy=REP_INTERNAL.filter(function(r){return loadMap[r]>avg*1.5});
  ADMIN.sig=[{k:'assign',l:'미배정',v:'수집 중',c:'gr'},          /* 문의(Inquiry)는 아직 이 앱이 안 받는다 */
             {k:'due',l:'기한초과',v:overdue+'건',c:overdue?'r':'g'},
             {k:'load',l:'부하 과다',v:heavy.length+'명',c:heavy.length?'y':'g'},
             {k:'inflow',l:'정체',v:staleN+'건',c:staleN?'y':'g'}];
  ADMIN.assign=[];
- ADMIN.due=Object.keys(loadMap).map(function(r){var L=open.filter(function(d){return d.rep===r&&(function(v){return v!=null&&v<0})(dueDays(d))});
-   return {nm:r,ps:'기한초과 '+L.length+'건'}}).filter(function(x){return /[1-9]/.test(x.ps)}).sort(function(a,b){return parseInt(b.ps.replace(/\D/g,''))-parseInt(a.ps.replace(/\D/g,''))});
+ ADMIN.due=REP_INTERNAL.map(function(r){var L=internalOpen.filter(function(d){return d.rep===r&&(function(v){return v!=null&&v<0})(dueDays(d))});
+   return {nm:r,ps:'기한초과 '+L.length+'건'}}).filter(function(x){return /[1-9]/.test(x.ps)});
  ADMIN.load=heavy.map(function(r){return {nm:r,ps:'진행 '+loadMap[r]+'건 — 팀 평균 '+Math.round(avg)+'건'}});
  ADMIN.inflow=[{nm:'유입 집계',ps:'견적문의 API 연동 후 표시 — 수집 중'}];
  ADMIN.noNext=noNext;
@@ -1077,9 +1080,8 @@ function rebuildAdmin(){
   ['lost','수주 실패',DEALS.filter(function(d){return d.outcome==='lost'}).length,'—'],
   ['badfit','배드핏',DEALS.filter(function(d){return d.outcome==='badfit'}).length,'—'],
   ['nocontact','연락두절',DEALS.filter(function(d){return d.outcome==='nocontact'}).length,'—']];
- var byRep={};open.forEach(function(d){byRep[d.rep]=(byRep[d.rep]||0)+(d.amt||0)*forecastProbability(d.code)});
- ADMIN.rank=Object.keys(byRep).sort(function(a,b){return byRep[b]-byRep[a]}).slice(0,6)
-   .map(function(r){return [r,fmtEok(byRep[r])]});
+ var byRep={};REP_INTERNAL.forEach(function(r){byRep[r]=0});internalOpen.forEach(function(d){byRep[d.rep]+=(d.amt||0)*forecastProbability(d.code)});
+ ADMIN.rank=REP_INTERNAL.map(function(r){return [r,fmtEok(byRep[r])]});
  G.pipeTitle='파이프라인 · '+open.length+'건 · '+fmtEok(tA);
 }
 
