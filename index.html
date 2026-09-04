@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-store">
 <title>넷폼 CRM</title>
+<link rel="preconnect" href="https://nfrnd.app.n8n.cloud" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <!--
   ══════════════════════════════════════════════════════════════════════
   넷폼 CRM 진입점 — 주소 하나, 화면 둘 (2026-09-02)
@@ -79,6 +81,7 @@
 <script>
 var PC_APP     = 'crm.html';
 var MOBILE_APP = 'mobile.html';
+var APP_BUILD  = '20260904-perf1';
 var KEY = 'nf_view_pref';
 
 /* 자동 판정 — 화면폭 하나만 보면 태블릿·창 축소에서 흔들린다.
@@ -130,7 +133,9 @@ function mount(v){
   /* 진단용 파라미터는 안쪽 앱까지 넘긴다 —
      ?debug=1 / ?preview=1 (설계용 흐름도) · ?demo=1 (서버 없이 예시 데이터).
      이걸 안 넘기면 주소창에 붙여도 iframe 안에서는 아무 일도 일어나지 않는다. */
-  f.src = encodeURI(src) + '?t=' + Date.now() + extra;
+  /* 매 접속마다 Date.now()를 붙이면 브라우저가 같은 HTML도 다시 받는다.
+     빌드 번호는 배포 때만 바꿔 반복 접속에서는 캐시를 재사용한다. */
+  f.src = encodeURI(src) + '?v=' + APP_BUILD + extra;
   f.onload = function(){ var b = document.getElementById('boot'); if (b) b.remove(); };
   document.body.classList.toggle('mob', v === 'mobile');
   paintToggle();

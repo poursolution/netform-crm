@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>넷폼 영업관리 CRM</title>
+<link rel="preconnect" href="https://nfrnd.app.n8n.cloud" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
 /* ═══════════════════════════════════════════════════════════════
@@ -6223,15 +6225,6 @@ window.addEventListener('focus',syncNow);
 var _loadData=loadData,CRM_DEBUG=/[?&]debug=1/.test(location.search),DETAIL_REQUESTED=false;
 function openRequestedDetail(){if(DETAIL_REQUESTED||!B)return;var key=new URL(location.href).searchParams.get('detail');if(!key)return;var d=(B.deals||[]).filter(function(x){return dealKey(x)===key})[0];if(!d)return;DETAIL_REQUESTED=true;var dv=document.getElementById('detailView'),ov=document.getElementById('ovl');G._detailPopup=true;G._toSplit=1;try{drwDeal(JSON.stringify(d));if(dv){dv.classList.add('on','fullview','detailmodal');dv.setAttribute('aria-hidden','false');var back=dv.querySelector('.backbtn');if(back)back.textContent='✕ 닫기';document.body.style.overflow='hidden';dv.scrollTop=0}if(ov){ov.style.display='block';ov.style.zIndex='69'}}finally{G._toSplit=0}}
 loadData=async function(q){LAST_SYNC=Date.now();await _loadData(q);if(CRM_DEBUG){window.__CRM=B;window.__CRM_STATE=G}openRequestedDetail()};
-/* ── n8n 예열 (2026-09-04) ────────────────────────────────────
-   n8n Cloud 워커는 쉬면 잠든다 — 깨우는 데만 1.5~3초가 든다.
-   그 시간이 «첫 사람» 한테만 몰리는데, 하필 로그인 직후라 제일 눈에 띈다.
-   로그인 화면이 떠 있는 동안 미리 한 번 두드려 깨워 둔다.
-   토큰이 없으니 서버는 «로그인이 필요합니다» 로 바로 막는다 — 데이터는 안 나간다. */
-(function warmUp(){
-  try{fetch(API,{method:'GET',cache:'no-store'}).catch(function(){})}catch(e){}
-})();
-
 /* ── 실시간 공유 (2026-09-04) ─────────────────────────────────
    ① 내가 서버에 쓰고 나면 곧바로 다시 읽는다 (남이 보는 화면과 어긋나지 않게)
    ② Supabase Realtime 이 켜져 있으면 남의 변경도 즉시 받는다.
