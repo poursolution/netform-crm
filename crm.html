@@ -371,6 +371,7 @@ body{background:var(--bg);font-family:"Pretendard Variable",Pretendard,-apple-sy
 .spliteditbox{width:min(540px,94vw)}.spliteditbox .modalbody{padding:14px 16px 17px}
 .spliteditbox .spform{margin:0;border:0;background:#fff;padding:0;max-height:72vh;overflow:auto}
 .newdealbox{width:min(680px,95vw)}.newdealbox .modalbody{max-height:78vh;overflow:auto}
+.addressmap{display:flex;gap:7px}.addressmap input{flex:1}.addressmap button{flex:0 0 auto;border:1px solid #f1d34f;background:#fee500;color:#191919;border-radius:9px;padding:0 13px;font:inherit;font-size:11px;font-weight:850;cursor:pointer}.addressmap button:hover{background:#f7dc00}
 .callbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;background:var(--warn-bg);border-bottom:1px solid var(--line);font-size:12px;font-weight:800;color:var(--warn-t)}
 .callbar button{margin-left:auto;border:none;background:var(--blue);color:#fff;border-radius:8px;padding:8px 12px;font-size:11.5px;font-weight:850;cursor:pointer}
 .callbar button.gh{background:#fff;color:var(--sub);border:1px solid var(--line);margin-left:0}
@@ -5924,6 +5925,7 @@ function confirmBizChange(){
 
 /* + 영업 추가 — 등록도 «근거»를 받는다. 처음부터 출처가 명확해진다 */
 function closeNewDeal(){var m=document.getElementById('newDealModal');if(m){m.classList.remove('on');m.setAttribute('aria-hidden','true')}}
+function openKakaoAddress(){var a=((document.getElementById('nd-address')||{}).value||'').trim(),e=document.getElementById('nd-err');if(!a){if(e){e.style.display='block';e.textContent='현장 주소를 먼저 입력해 주세요.'}var x=document.getElementById('nd-address');if(x)x.focus();return}window.open('https://map.kakao.com/link/search/'+encodeURIComponent(a),'_blank','noopener')}
 function openNewDeal(){
  var m=document.getElementById('newDealModal'),h=document.getElementById('newDealBody');if(!m||!h)return;
  h.innerHTML='<div class="detailnotice" style="margin-top:0">새 영업기회와 관리소장 Contact를 함께 등록합니다.</div>'
@@ -5937,7 +5939,7 @@ function openNewDeal(){
   +'<div class="field"><label>관리소장 성명 <span class="req">*</span></label><input id="nd-manager-name" placeholder="예: 김OO"></div>'
   +'<div class="field"><label>관리소장 휴대폰 <span class="req">*</span></label><input id="nd-manager-mobile" inputmode="tel" placeholder="예: 010-1234-5678" oninput="checkManagerHistory()"></div>'
   +'<div class="field"><label>관리사무소 이메일</label><input id="nd-office-email" type="email" placeholder="예: office@example.com"></div>'
-  +'<div class="field full"><label>현장 주소</label><input id="nd-address" placeholder="예: 경기 수원시 영통구 ..."></div>'
+  +'<div class="field full"><label>현장 주소</label><div class="addressmap"><input id="nd-address" placeholder="예: 경기 수원시 영통구 ..." onkeydown="if(event.key===\'Enter\'){event.preventDefault();openKakaoAddress()}"><button type="button" onclick="openKakaoAddress()">📍 카카오맵 확인</button></div></div>'
   +'<div class="contacthint" id="nd-contact-hint"></div></div>'
   +reasonBlock('rs-new','영업 등록 근거','예: 황윤선 상무가 직접 발굴한 현장. 재도장 입찰 예정이며 기술자문으로 영업 시작.')
   +'<div class="dactions" style="justify-content:flex-end"><button class="dact" onclick="closeNewDeal()">취소</button>'
