@@ -4830,7 +4830,7 @@ function splitForm(kind){
 }
 function showSplitEdit(d,kind,body){
  if(G.splitForm!==kind)return;var m=$('#splitEditModal'),b=$('#splitEditBody'),t=$('#splitEditTitle');if(!m||!b)return;
- t.textContent=(kind==='act'?'한 일 기록':kind==='next'?'다음 할 일':'단계 바꾸기')+' · '+(d.site||'현장');
+ t.textContent=(kind==='act'?'방금 한 일 기록':kind==='next'?'다음 행동 예약':'단계 바꾸기')+' · '+(d.site||'현장');
  b.innerHTML='<div class="spform">'+body+'<div class="spmsg" id="sp-msg"></div></div>';
  m.classList.add('on');m.setAttribute('aria-hidden','false');
  if(kind==='stage')spTargetChanged();
@@ -5030,11 +5030,11 @@ function quickPanelHTML(d){
  var recent=acts.length?acts.map(function(a){return '<div class="quickactivity"><time>'+esc(String(a.at||a.created_at||'').slice(5,10).replace('-','/'))+'</time><div><b>'+esc(a.note||a.type||'활동')+'</b>'+(a.result?'<div>'+esc(a.result)+'</div>':'')+'</div></div>'}).join(''):'<div class="detailnotice">최근 활동이 없습니다. 첫 활동을 기록해 주세요.</div>';
  var contact=(c.name||c.mobile||c.officeTel)
   ?'<div class="quickcontact"><div><b>'+esc(c.name||'관리소장')+' '+esc(c.role||'관리소장')+'</b><small>'+esc(phoneFmt(c.officeTel))+' · '+esc(phoneFmt(c.mobile))+'</small></div><div class="contactactions"><button '+(!c.mobile?'disabled':'')+' onclick="contactDial(\'mobile\')">📞 전화</button><button '+(!c.mobile?'disabled':'')+' onclick="contactSms()">✉ 문자</button><button '+(!c.mobile?'disabled':'')+' onclick="contactKakao()">💬 카카오</button></div></div>'
-  :'<button class="quickfull" style="margin:0" onclick="openFullDealFromQuick()">연락처 없음 · 등록하기</button>';
+  :'<button class="quickfull" style="margin:0" onclick="openQuickContact()">연락처 없음 · 등록하기</button>';
  return '<section class="quickpanel"><div class="quickhero"><h3>'+esc(d.site||'현장명 미입력')+'</h3><p>'+esc(d.brand||'사업유형 미지정')+' · '+esc(repN(d.assignee))+' · '+esc(stageNoLabel(dealStage(d)))+'</p><strong>'+fmtAmt(oppAmt(d)||quoteAmt(d)||d.amt||0)+'</strong></div>'
   +'<div class="quickbody"><div class="quicksection"><h4>다음 행동</h4><div class="quicknext '+(dd!=null&&dd<0?'over':'')+'"><b>'+esc(na&&(na.text||na.title)||'다음 행동 미입력')+'</b><span>'+(na?esc(na.due||'기한 미입력')+(dd!=null?(dd<0?' · '+Math.abs(dd)+'일 초과 🔴':dd===0?' · 오늘':' · D-'+dd):''):'지금 다음 행동을 지정해 주세요')+'</span></div></div>'
   +'<div class="quicksection"><h4>관리소장 연락</h4>'+contact+'</div><div class="quicksection"><h4>최근 활동</h4><div class="quickrecent">'+recent+'</div></div>'
-  +'<div class="quickactions"><button class="primary" onclick="splitForm(\'act\')">＋ 활동</button><button onclick="splitForm(\'next\')">📅 다음 행동</button><button onclick="splitForm(\'stage\')">단계 변경</button><button class="quickfull" onclick="openFullDealFromQuick()">전체 상세 보기 →</button></div>'+splitInlinePanel(d).replace(/^<div[^>]*>[\s\S]*<\/div>$/,'')+'</div></section>'}
+  +'<div class="quickactions"><button class="primary" onclick="splitForm(\'act\')">＋ 한 일 기록</button><button onclick="splitForm(\'next\')">📅 다음 행동 예약</button><button onclick="splitForm(\'stage\')">단계 변경</button><button class="quickfull" onclick="openFullDealFromQuick()">전체 상세 보기 →</button></div>'+splitInlinePanel(d).replace(/^<div[^>]*>[\s\S]*<\/div>$/,'')+'</div></section>'}
 function paintSplit(){
  closeDocked();detachDetail();
  var toggle=document.querySelectorAll('.viewtg .clk');if(toggle[1])toggle[1].textContent='⚡ 빠른 관리';if(toggle[0])toggle[0].textContent='🗂️ 칸반';
