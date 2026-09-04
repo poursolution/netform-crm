@@ -370,6 +370,7 @@ body{background:var(--bg);font-family:"Pretendard Variable",Pretendard,-apple-sy
 .quickcontactbox .dactions{justify-content:flex-end;margin-top:14px}
 .spliteditbox{width:min(540px,94vw)}.spliteditbox .modalbody{padding:14px 16px 17px}
 .spliteditbox .spform{margin:0;border:0;background:#fff;padding:0;max-height:72vh;overflow:auto}
+.newdealbox{width:min(680px,95vw)}.newdealbox .modalbody{max-height:78vh;overflow:auto}
 .callbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;background:var(--warn-bg);border-bottom:1px solid var(--line);font-size:12px;font-weight:800;color:var(--warn-t)}
 .callbar button{margin-left:auto;border:none;background:var(--blue);color:#fff;border-radius:8px;padding:8px 12px;font-size:11.5px;font-weight:850;cursor:pointer}
 .callbar button.gh{background:#fff;color:var(--sub);border:1px solid var(--line);margin-left:0}
@@ -1615,6 +1616,12 @@ html,body{height:100%}
   <div class="modalbox spliteditbox" role="dialog" aria-modal="true" aria-labelledby="splitEditTitle">
     <div class="modalhead"><h3 id="splitEditTitle">빠른 입력</h3><button class="modalclose" onclick="splitForm(null)" aria-label="닫기">✕</button></div>
     <div class="modalbody" id="splitEditBody"></div>
+  </div>
+</div>
+<div class="modalshade" id="newDealModal" aria-hidden="true" onclick="if(event.target===this)closeNewDeal()">
+  <div class="modalbox newdealbox" role="dialog" aria-modal="true" aria-labelledby="newDealTitle">
+    <div class="modalhead"><h3 id="newDealTitle">＋ 영업 추가</h3><button class="modalclose" onclick="closeNewDeal()" aria-label="닫기">✕</button></div>
+    <div class="modalbody" id="newDealBody"></div>
   </div>
 </div>
 <!-- DNS·TLS 를 미리 잡아 둔다 — 첫 호출에서 0.25~0.4초가 빠진다 (2026-09-04) -->
@@ -5916,14 +5923,10 @@ function confirmBizChange(){
  showDetailErr(saveMsg('사업유형을 '+from+' → '+to+' 로 변경하고 근거를 이력에 남겼습니다 (딜 ID 유지).'),true)}
 
 /* + 영업 추가 — 등록도 «근거»를 받는다. 처음부터 출처가 명확해진다 */
-function closeNewDeal(){var h=document.getElementById('newDealPanel');if(h)h.remove()}
+function closeNewDeal(){var m=document.getElementById('newDealModal');if(m){m.classList.remove('on');m.setAttribute('aria-hidden','true')}}
 function openNewDeal(){
- var anchor=document.getElementById('p-brands');if(!anchor)return;
- if(document.getElementById('newDealPanel')){closeNewDeal();return}
- anchor.insertAdjacentHTML('afterend','<div class="dcard" id="newDealPanel" style="border:2px solid var(--blue);margin:10px 0"></div>');
- var h=document.getElementById('newDealPanel');
- h.innerHTML='<h3 style="margin-top:0">＋ 영업 추가</h3>'
-  +'<p>새 영업기회를 파이프라인에 바로 등록합니다. 어떤 사업유형으로 시작하든 나중에 전환할 수 있습니다.</p>'
+ var m=document.getElementById('newDealModal'),h=document.getElementById('newDealBody');if(!m||!h)return;
+ h.innerHTML='<div class="detailnotice" style="margin-top:0">새 영업기회와 관리소장 Contact를 함께 등록합니다.</div>'
   +'<div class="formgrid"><div class="field"><label>아파트명 <span class="req">*</span></label><input id="nd-site" placeholder="예: 광교더리브아파트"></div>'
   +'<div class="field"><label>공사명 <span class="req">*</span></label><input id="nd-work" placeholder="예: 옥상 방수 재도장"></div>'
   +'<div class="field"><label>공종</label><input id="nd-type" placeholder="예: 방수"></div>'
@@ -5938,8 +5941,8 @@ function openNewDeal(){
   +'<div class="contacthint" id="nd-contact-hint"></div></div>'
   +reasonBlock('rs-new','영업 등록 근거','예: 황윤선 상무가 직접 발굴한 현장. 재도장 입찰 예정이며 기술자문으로 영업 시작.')
   +'<div class="dactions" style="justify-content:flex-end"><button class="dact" onclick="closeNewDeal()">취소</button>'
-  +'<button class="dact pri" data-gate="rs-new" disabled onclick="saveNewDeal()">영업 등록</button></div><div class="modalerr" id="nd-err"></div>';
- reasonGate('rs-new');h.scrollIntoView({behavior:'smooth',block:'center'})}
+  +'<button class="dact pri" onclick="saveNewDeal()">영업 등록</button></div><div class="modalerr" id="nd-err"></div>';
+ m.classList.add('on');m.setAttribute('aria-hidden','false');setTimeout(function(){var x=document.getElementById('nd-site');if(x)x.focus()},30)}
 function saveNewDeal(){
  var site=(document.getElementById('nd-site').value||'').trim(),work=(document.getElementById('nd-work').value||'').trim(),
      wt=(document.getElementById('nd-type').value||'').trim(),biz=document.getElementById('nd-biz').value,
@@ -6053,7 +6056,7 @@ function syncBusy(){
 var LAST_SYNC=0;
 function syncNow(){
   if(document.hidden||syncBusy())return;
-  if(CUR_DETAIL||document.getElementById('inlineBiz')||document.getElementById('newDealPanel'))return;
+  if(CUR_DETAIL||document.getElementById('inlineBiz')||(document.getElementById('newDealModal')||{}).classList&&document.getElementById('newDealModal').classList.contains('on'))return;
   if(Date.now()-LAST_SYNC<SYNC_MS)return;
   LAST_SYNC=Date.now();
   loadData(true);
