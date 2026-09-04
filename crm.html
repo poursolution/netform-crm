@@ -2386,8 +2386,18 @@ async function loadData(quiet){
   $('#load').style.display='none';
 }
 
-function nav(el){$$('.mi').forEach(function(m){m.classList.remove('on')});el.classList.add('on');G.page=el.dataset.p;syncPage()}
-function goPage(p){$$('.mi').forEach(function(m){m.classList.toggle('on',m.dataset.p===p)});G.page=p;syncPage()}
+/* 메뉴를 바꿀 때 열린 상세/입력 모달의 반투명 배경과 스크롤 잠금이
+   다음 화면에 남지 않도록 한 곳에서 정리한다. */
+function clearTransientUI(){
+ $$('.modalshade.on').forEach(function(m){m.classList.remove('on');m.setAttribute('aria-hidden','true')});
+ var dv=$('#detailView'),ov=$('#ovl'),dr=$('#drw');
+ if(dv){dv.classList.remove('on','fullview','detailmodal','docked');dv.setAttribute('aria-hidden','true')}
+ if(ov)ov.style.display='none';if(dr)dr.classList.remove('on');
+ document.body.style.overflow='';G._detailPopup=false;G._toSplit=0;CUR_DETAIL=null;
+ TRANSITION_CTX=null;QUICK_CONTACT=null;KAKAO_DRAFT=null;
+}
+function nav(el){clearTransientUI();$$('.mi').forEach(function(m){m.classList.remove('on')});el.classList.add('on');G.page=el.dataset.p;syncPage()}
+function goPage(p){clearTransientUI();$$('.mi').forEach(function(m){m.classList.toggle('on',m.dataset.p===p)});G.page=p;syncPage()}
 function syncPage(){G.lastRep=null;   /* 페이지를 옮기면 «방금 본 현장» 은 이 화면의 맥락이 아니다 */
  $$('.apage').forEach(function(pg){pg.classList.remove('on')});$('#pg-'+G.page).classList.add('on');
  $('#ptitle').textContent=TITLES[G.page][0];$('#psub').textContent=TITLES[G.page][1];paint()}
