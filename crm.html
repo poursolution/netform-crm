@@ -5022,7 +5022,7 @@ function paintSplit(){
  if(_l2){_l2.scrollTop=keep;G.splitScroll=keep}}
 /* 빠른 관리 v2 — 전체 상세를 도킹하지 않고, 즉시 행동에 필요한 정보만 표시한다. */
 function quickClosedToggle(){G.quickClosed=!G.quickClosed;G.splitCol=null;G.splitAct=null;G.pipeNoAmt=false;G.splitKey=null;paint()}
-function openFullDealFromQuick(){var d=splitDealSel(),dv=document.getElementById('detailView');if(!d||!dv)return;detachDetail();dv.classList.add('fullview');G._toSplit=1;try{drwDeal(JSON.stringify(d));dv.classList.add('on','fullview');dv.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';dv.scrollTop=0}finally{G._toSplit=0}}
+function openFullDealFromQuick(){var d=splitDealSel();if(!d)return;var u=new URL(location.href);u.search='';u.searchParams.set('detail',dealKey(d));window.open(u.toString(),'_blank','noopener')}
 function quickPanelHTML(d){
  var p=itemPatch(d,'deal'),pri=priorityInfo(d,'deal'),na=actionObj(d,p),dd=na&&na.due?daysTo(na.due):null,c=contactInfo(d,p);
  var acts=(p.activities||d.activities||[]).slice().sort(function(a,b){return String(b.at||b.created_at||'').localeCompare(String(a.at||a.created_at||''))}).slice(0,3);
@@ -6138,8 +6138,9 @@ window.addEventListener('focus',syncNow);
   try{if(CUR_DETAIL)G.lastRep=curDetailRep();paintRepTabs()}catch(e){}
   return r}})();
 
-var _loadData=loadData,CRM_DEBUG=/[?&]debug=1/.test(location.search);
-loadData=async function(q){LAST_SYNC=Date.now();await _loadData(q);if(CRM_DEBUG){window.__CRM=B;window.__CRM_STATE=G}};
+var _loadData=loadData,CRM_DEBUG=/[?&]debug=1/.test(location.search),DETAIL_REQUESTED=false;
+function openRequestedDetail(){if(DETAIL_REQUESTED||!B)return;var key=new URL(location.href).searchParams.get('detail');if(!key)return;var d=(B.deals||[]).filter(function(x){return dealKey(x)===key})[0];if(!d)return;DETAIL_REQUESTED=true;var dv=document.getElementById('detailView');if(dv)dv.classList.add('fullview');G._toSplit=1;try{drwDeal(JSON.stringify(d));if(dv){dv.classList.add('on','fullview');dv.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';dv.scrollTop=0}}finally{G._toSplit=0}}
+loadData=async function(q){LAST_SYNC=Date.now();await _loadData(q);if(CRM_DEBUG){window.__CRM=B;window.__CRM_STATE=G}openRequestedDetail()};
 /* ── n8n 예열 (2026-09-04) ────────────────────────────────────
    n8n Cloud 워커는 쉬면 잠든다 — 깨우는 데만 1.5~3초가 든다.
    그 시간이 «첫 사람» 한테만 몰리는데, 하필 로그인 직후라 제일 눈에 띈다.
