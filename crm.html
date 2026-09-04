@@ -1028,6 +1028,18 @@ html,body{height:100%}
    상세를 두 벌로 만들지 않는다. #detailView 노드를 여기로 옮겨 재사용한다.
    전체화면일 때 쓰던 fixed·오버레이 성질만 벗긴다. */
 .splitdetail{position:sticky;top:10px;min-width:0}
+.quickmanage{display:grid;grid-template-columns:minmax(280px,38fr) minmax(420px,62fr);gap:14px;align-items:start}
+.quicklist{max-height:calc(100vh - 250px);overflow:auto;padding:6px}
+.quickpanel{position:sticky;top:10px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 36px rgba(25,50,82,.10);overflow:hidden}
+.quickhero{padding:18px 20px 14px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,#fff 55%,var(--blue-50))}
+.quickhero h3{font-size:19px;margin:0 0 5px;color:var(--ink)}.quickhero p{margin:0;color:var(--sub);font-size:11px}.quickhero strong{display:block;margin-top:11px;font-size:18px;color:var(--blue-d)}
+.quickbody{padding:16px 20px}.quicksection{margin-bottom:16px}.quicksection>h4{margin:0 0 8px;font-size:10px;letter-spacing:.08em;color:var(--sub)}
+.quicknext{border:1px solid var(--blue-50);background:var(--blue-50);border-radius:13px;padding:13px 14px}.quicknext b{display:block;font-size:14px;color:var(--ink)}.quicknext span{display:block;margin-top:5px;font-size:11px;color:var(--sub)}.quicknext.over{background:var(--danger-bg);border-color:#ffd5d5}.quicknext.over span{color:var(--danger);font-weight:800}
+.quickcontact{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:12px 14px}.quickcontact b{font-size:14px}.quickcontact small{display:block;color:var(--sub);margin-top:4px}.quickcontact .contactactions{margin:0;flex-wrap:nowrap}
+.quickrecent{display:grid;gap:6px}.quickactivity{display:grid;grid-template-columns:64px 1fr;gap:9px;padding:8px 0;border-bottom:1px solid var(--line);font-size:11px}.quickactivity:last-child{border-bottom:0}.quickactivity time{color:var(--sub)}.quickactivity b{color:var(--ink)}
+.quickactions{display:flex;gap:7px;flex-wrap:wrap;padding-top:2px}.quickactions button,.quickfull{border:1px solid var(--blue-50);background:#fff;color:var(--blue-d);border-radius:9px;padding:9px 12px;font-weight:800;font-size:11px;cursor:pointer}.quickactions button:hover,.quickfull:hover{background:var(--blue-50)}.quickactions .primary{background:var(--blue);border-color:var(--blue);color:#fff}.quickfull{margin-left:auto}
+.quickfilters{display:grid;gap:7px;margin-bottom:12px}.quickfilters .pfrow{margin:0}.quick-empty{padding:36px;text-align:center;color:var(--sub);background:#fff;border:1px solid var(--line);border-radius:14px}
+@media(max-width:980px){.quickmanage{grid-template-columns:1fr}.quicklist{max-height:360px}.quickpanel{position:static}.quickcontact{align-items:flex-start;flex-direction:column}}
 .detailview.docked{position:static;inset:auto;z-index:auto;display:block;overflow:visible;
   background:var(--card);border:1px solid var(--line2);border-radius:16px;animation:none;
   max-height:calc(100vh - 210px);overflow-y:auto;overscroll-behavior:contain}
@@ -5004,6 +5016,37 @@ function paintSplit(){
  dockDetail(sel);
  var _l2=document.querySelector('.splitlist');
  if(_l2){_l2.scrollTop=keep;G.splitScroll=keep}}
+/* 빠른 관리 v2 — 전체 상세를 도킹하지 않고, 즉시 행동에 필요한 정보만 표시한다. */
+function quickClosedToggle(){G.quickClosed=!G.quickClosed;G.splitCol=null;G.splitAct=null;G.pipeNoAmt=false;G.splitKey=null;paint()}
+function openFullDealFromQuick(){var d=splitDealSel();if(!d)return;G._toSplit=1;try{drwDeal(JSON.stringify(d))}finally{G._toSplit=0}}
+function quickPanelHTML(d){
+ var p=itemPatch(d,'deal'),pri=priorityInfo(d,'deal'),na=actionObj(d,p),dd=na&&na.due?daysTo(na.due):null,c=contactInfo(d,p);
+ var acts=(p.activities||d.activities||[]).slice().sort(function(a,b){return String(b.at||b.created_at||'').localeCompare(String(a.at||a.created_at||''))}).slice(0,3);
+ CUR_DETAIL={kind:'deal',key:dealKey(d),item:d};
+ var recent=acts.length?acts.map(function(a){return '<div class="quickactivity"><time>'+esc(String(a.at||a.created_at||'').slice(5,10).replace('-','/'))+'</time><div><b>'+esc(a.note||a.type||'활동')+'</b>'+(a.result?'<div>'+esc(a.result)+'</div>':'')+'</div></div>'}).join(''):'<div class="detailnotice">최근 활동이 없습니다. 첫 활동을 기록해 주세요.</div>';
+ var contact=(c.name||c.mobile||c.officeTel)
+  ?'<div class="quickcontact"><div><b>'+esc(c.name||'관리소장')+' '+esc(c.role||'관리소장')+'</b><small>'+esc(phoneFmt(c.officeTel))+' · '+esc(phoneFmt(c.mobile))+'</small></div><div class="contactactions"><button '+(!c.mobile?'disabled':'')+' onclick="contactDial(\'mobile\')">📞 전화</button><button '+(!c.mobile?'disabled':'')+' onclick="contactSms()">✉ 문자</button><button '+(!c.mobile?'disabled':'')+' onclick="contactKakao()">💬 카카오</button></div></div>'
+  :'<button class="quickfull" style="margin:0" onclick="openFullDealFromQuick()">연락처 없음 · 등록하기</button>';
+ return '<section class="quickpanel"><div class="quickhero"><h3>'+esc(d.site||'현장명 미입력')+'</h3><p>'+esc(d.brand||'사업유형 미지정')+' · '+esc(repN(d.assignee))+' · '+esc(stageNoLabel(dealStage(d)))+'</p><strong>'+fmtAmt(oppAmt(d)||quoteAmt(d)||d.amt||0)+'</strong></div>'
+  +'<div class="quickbody"><div class="quicksection"><h4>다음 행동</h4><div class="quicknext '+(dd!=null&&dd<0?'over':'')+'"><b>'+esc(na&&(na.text||na.title)||'다음 행동 미입력')+'</b><span>'+(na?esc(na.due||'기한 미입력')+(dd!=null?(dd<0?' · '+Math.abs(dd)+'일 초과 🔴':dd===0?' · 오늘':' · D-'+dd):''):'지금 다음 행동을 지정해 주세요')+'</span></div></div>'
+  +'<div class="quicksection"><h4>관리소장 연락</h4>'+contact+'</div><div class="quicksection"><h4>최근 활동</h4><div class="quickrecent">'+recent+'</div></div>'
+  +'<div class="quickactions"><button class="primary" onclick="splitForm(\'act\')">＋ 활동</button><button onclick="splitForm(\'next\')">📅 다음 행동</button><button onclick="splitForm(\'stage\')">단계 변경</button><button class="quickfull" onclick="openFullDealFromQuick()">전체 상세 보기 →</button></div>'+splitInlinePanel(d).replace(/^<div[^>]*>[\s\S]*<\/div>$/,'')+'</div></section>'}
+function paintSplit(){
+ closeDocked();detachDetail();
+ var toggle=document.querySelectorAll('.viewtg .clk');if(toggle[1])toggle[1].textContent='⚡ 빠른 관리';if(toggle[0])toggle[0].textContent='🗂️ 칸반';
+ var A=pipeFiltered(),SC=pipeScoped(),ci=G.splitCol==null?-1:Number(G.splitCol),actF=splitActFn(G.splitAct),D;
+ if(G.quickClosed)D=SC.filter(function(d){return d.code==='won'||d.code==='lost'||d.grp==='기타'});
+ else{D=ci>=0?A.filter(function(d){return PD_COLS[ci].codes.indexOf(d.code)>=0}):A;if(actF)D=D.filter(actF);if(G.pipeNoAmt)D=D.filter(function(d){return !oppAmt(d)&&!quoteAmt(d)})}
+ D=D.slice().sort(sortByPriority);var keys=D.map(dealKey);if(keys.indexOf(G.splitKey)<0)G.splitKey=keys[0];var sel=D[keys.indexOf(G.splitKey)];
+ var issueBase=ci>=0?A.filter(function(d){return PD_COLS[ci].codes.indexOf(d.code)>=0}):A;
+ var filters='<div class="quickfilters"><div class="pfrow"><span class="pfl">파이프라인</span><button class="pfc '+(!G.quickClosed&&ci<0?'on':'')+'" onclick="G.quickClosed=false;setSplitCol(null)">전체 <em>'+A.length+'</em></button>'
+  +PD_COLS.map(function(c,i){return '<button class="pfc '+(!G.quickClosed&&ci===i?'on':'')+'" onclick="G.quickClosed=false;setSplitCol('+i+')">'+esc(c.nm)+' <em>'+A.filter(function(d){return c.codes.indexOf(d.code)>=0}).length+'</em></button>'}).join('')
+  +'<button class="pfc e '+(G.quickClosed?'on':'')+'" onclick="quickClosedToggle()">종료 현장 보기</button></div>'
+  +(!G.quickClosed?'<div class="pfrow sub"><span class="pfl">바로 찾기</span>'+SPLIT_ACTS.map(function(a){return '<button class="pfc a '+(G.splitAct===a.k?'on':'')+'" onclick="setSplitAct(\''+a.k+'\')">'+esc(a.nm)+' <em>'+issueBase.filter(a.f).length+'</em></button>'}).join('')+'<button class="pfc q '+(G.pipeNoAmt?'on':'')+'" onclick="setNoAmt()">금액 미입력 <em>'+issueBase.filter(function(d){return !oppAmt(d)&&!quoteAmt(d)}).length+'</em></button><span class="pfl" style="margin-left:auto">담당자 '+esc(G.rep||'전체')+'</span></div>':'')+'</div>';
+ if(!sel){$('#p-main').innerHTML=filters+'<div class="quick-empty">선택한 조건에 해당하는 현장이 없습니다.</div>';return}
+ var list=D.slice(0,120).map(function(d){var k=dealKey(d),pr=priorityInfo(d,'deal');return '<div class="mlrow '+(k===G.splitKey?'sel':'')+'" data-k="'+escAttr(k)+'" onclick="G.splitScroll=this.parentElement.scrollTop;G.splitKey=this.dataset.k;G.splitForm=null;paint()"><span class="mmeta"><span class="mt">'+esc(d.site||'현장명 미입력')+'</span><span class="ms">'+esc(repN(d.assignee))+' · '+esc(stageNoLabel(dealStage(d)))+' · '+fmtAmt(d.amt)+(stageAge(d)!=null?' · D+'+stageAge(d):'')+'</span></span><span class="mbadge '+mstateCls(pr)+'">'+pr.label+'</span></div>'}).join('');
+ $('#p-main').innerHTML=filters+'<div class="quickmanage"><div class="mcard quicklist">'+list+'</div>'+quickPanelHTML(sel)+'</div>';var l=document.querySelector('.quicklist');if(l)l.scrollTop=G.splitScroll||0;
+}
 /* ═══ 견적문의 확정 조합 (2026-08-31): 접수 피드 + 지역 버블 + 보드/콘솔 + 담당자 뷰 — 한 페이지 4뷰 토글 ═══ */
 function regionOf(s){s=String(s||'');
  if(/서울|인천|경기|수원|용인|하남|파주|김포|부천|안양|고양|성남|광명|시흥|안산|평택|의정부|남양주|구리|과천|군포|오산|화성|양주|포천|이천|안성|검단|미사|위례|동탄|판교|일산|분당|GTX|운정|노원|강남|송파|마들/.test(s))return '수도권';
