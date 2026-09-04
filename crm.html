@@ -3513,7 +3513,9 @@ function assignTo(r){
   if(!q){G.sgNotice='배정할 견적문의를 먼저 선택해 주세요.';paint();return}
   var p=LOCAL.inquiries[inqKey(q)]||(LOCAL.inquiries[inqKey(q)]={});
   q.assignee=p.assignee=r;if(!q.status||q.status==='접수')q.status=p.status='배정완료';
-  p.lastActivity=q.lastActivity=new Date().toISOString();saveLocal();G.sgCase=null;
+  p.lastActivity=q.lastActivity=new Date().toISOString();
+  pushWrite('inquiry_assign',{inquiry_id:inqKey(q),inquiry_row:q.row||null,from:'미배정',to:r,status:q.status,at:p.lastActivity});
+  saveLocal();G.sgCase=null;
   G.sgNotice=(q.site||'선택 현장')+'을(를) '+r+' 담당으로 배정했습니다. 실제 구축 시 잔디·카카오 알림이 함께 발송됩니다.';paint();
 }
 function nudge(r,cnt){
@@ -5143,7 +5145,7 @@ function inqPhase(q){if(repN(q.assignee)==='미배정')return '미배정';var t=
  if(/견적.*발송\s*완료/.test(t))return '견적 발송완료';
  if(/견적.*발송|현장\s*방문/.test(t))return '견적 준비';
  if(/전화|응대|방문/.test(t))return '응대 완료';return '응대 대기'}
-function quickAssign(k,rep){var q=(B.inquiries||[]).filter(function(x){return inqKey(x)===k})[0];if(!q)return;var p=detailPatchFor('inq',k),from=repN(q.assignee),at=isoNow();p.assignmentHistory=p.assignmentHistory||[];p.assignmentHistory.push({at:at,from:from,to:rep,actor:'관리자',reason:'피드 빠른 배정'});q.assignee=p.assignee=rep;if(!q.status||q.status==='접수')q.status=p.status='배정완료';p.activities=p.activities||[];p.activities.push({type:'담당자변경',note:from+' → '+rep,result:'피드에서 빠른 배정',at:at,actor:'관리자'});saveLocal();paint()}
+function quickAssign(k,rep){var q=(B.inquiries||[]).filter(function(x){return inqKey(x)===k})[0];if(!q)return;var p=detailPatchFor('inq',k),from=repN(q.assignee),at=isoNow();p.assignmentHistory=p.assignmentHistory||[];p.assignmentHistory.push({at:at,from:from,to:rep,actor:'관리자',reason:'피드 빠른 배정'});q.assignee=p.assignee=rep;if(!q.status||q.status==='접수')q.status=p.status='배정완료';p.activities=p.activities||[];p.activities.push({type:'담당자변경',note:from+' → '+rep,result:'피드에서 빠른 배정',at:at,actor:'관리자'});pushWrite('inquiry_assign',{inquiry_id:k,inquiry_row:q.row||null,from:from,to:rep,status:q.status,reason:'피드 빠른 배정',at:at});saveLocal();paint()}
 function inqRowHTML(q,extra){var p=priorityInfo(q,'inq');return '<div class="mlrow" onclick=\'drwInq('+JSON.stringify(JSON.stringify(q))+')\'><span class="mtile" style="background:var(--blue-50);color:var(--blue)">📌</span><span class="mmeta"><span class="mt">'+esc(q.site||'현장명 미입력')+(repN(q.assignee)==='미배정'?'<i class="mwarn">미배정</i>':'')+trustChips(q,'inq')+'</span><span class="ms">'+esc(repN(q.assignee))+' · '+esc(q.status||'접수')+(q.work?' · '+esc(q.work):'')+(extra||'')+'</span></span><span class="mbadge '+mstateCls(p)+'">'+p.label+'</span><span class="mchev">›</span></div>'}
 /* ══ lineage 소급 연결 (2026-09-02) ═══════════════════════════
    오늘부터 들어오는 인계는 origin_inquiry_id 가 자동으로 붙는다.

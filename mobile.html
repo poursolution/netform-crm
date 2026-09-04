@@ -935,6 +935,9 @@ function authHeaders(base){
   return h;
 }
 var BUNDLE=null;   /* crm-api 원본 — 딜 외에 견적문의·응대 이력이 들어 있다 */
+var CLOSED_INQ=['수주','실주','배드핏','연락두절','종결','종료'];
+function inquiryKeyM(q){return String(q&&q.id||q&&q.inquiry_id||q&&q.row||[q&&q.site,q&&q.at].join('|'))}
+function inquiryViewM(q){var dt=q&&q.detail||{},at=q&&q.at||q&&q.created_at||q&&q.created||'',phone=q&&q.phone||q&&q.mobile||q&&q.contact_phone||dt.phone||dt.mobile||'';return {raw:q,key:inquiryKeyM(q),nm:q.site||q.site_name||q.name||'현장명 미입력',rep:q.assignee||'미배정',ps:(at?String(at).slice(0,10)+' · ':'')+(q.status||'접수'),phone:phone,gj:dt.workType||q.work_type||q.category||'',body:dt.inquiry||dt.note||q.message||q.content||'',inflow:dt.inflow||dt.channel||q.channel||'홈페이지 견적문의',status:q.status||'접수',done:!!q.assignee}}
 /* 잔디 응대내용 파싱 — PC 와 «같은 규칙» 이어야 한다. 한쪽만 고치지 말 것.
    실제 응대는 «라벨:값» 이 아니라 자유 서술이다(전체 389건 중 라벨형은 8건).
    구조화 항목은 문의 원본(detail)에서 오고, 여기서는 노이즈만 걷어낸다. */
@@ -1060,15 +1063,17 @@ function rebuildAdmin(){
  REP_INTERNAL.forEach(function(r){loadMap[r]=0});internalOpen.forEach(function(d){loadMap[d.rep]++});
  var avg=REP_INTERNAL.length?internalOpen.length/REP_INTERNAL.length:0;
  var heavy=REP_INTERNAL.filter(function(r){return loadMap[r]>avg*1.5});
- ADMIN.sig=[{k:'assign',l:'미배정',v:'수집 중',c:'gr'},          /* 문의(Inquiry)는 아직 이 앱이 안 받는다 */
+ var allInq=((BUNDLE&&BUNDLE.inquiries)||[]).map(inquiryViewM),unInq=allInq.filter(function(q){return !q.done&&CLOSED_INQ.indexOf(q.status)<0});
+ ADMIN.sig=[{k:'assign',l:'미배정',v:unInq.length+'건',c:unInq.length?'r':'g'},
             {k:'due',l:'기한초과',v:overdue+'건',c:overdue?'r':'g'},
             {k:'load',l:'부하 과다',v:heavy.length+'명',c:heavy.length?'y':'g'},
             {k:'inflow',l:'정체',v:staleN+'건',c:staleN?'y':'g'}];
- ADMIN.assign=[];
+ ADMIN.assign=unInq;
  ADMIN.due=REP_INTERNAL.map(function(r){var L=internalOpen.filter(function(d){return d.rep===r&&(function(v){return v!=null&&v<0})(dueDays(d))});
    return {nm:r,ps:'기한초과 '+L.length+'건'}}).filter(function(x){return /[1-9]/.test(x.ps)});
  ADMIN.load=heavy.map(function(r){return {nm:r,ps:'진행 '+loadMap[r]+'건 — 팀 평균 '+Math.round(avg)+'건'}});
- ADMIN.inflow=[{nm:'유입 집계',ps:'견적문의 API 연동 후 표시 — 수집 중'}];
+ var inflow={};allInq.forEach(function(q){inflow[q.inflow]=(inflow[q.inflow]||0)+1});
+ ADMIN.inflow=Object.keys(inflow).map(function(k){return {nm:k,ps:'유입 '+inflow[k]+'건'}});
  ADMIN.noNext=noNext;
  ADMIN.pipe=MACRO5.map(function(g){
   var L=open.filter(function(d){return macroOf(d.code)===g.k}),amt=0;L.forEach(function(d){amt+=d.amt||0});
@@ -1315,7 +1320,7 @@ function rToday(head){
    :t.call?tile(IC.phone,'var(--blue)','var(--blue-50)')
    :tile(IC.check,'var(--ok)','var(--ok-bg)');
   var right=done?'<span class="callbtn done">'+IC.check+'</span>'
-   :t.call?'<button class="callbtn" onclick="event.stopPropagation();callFlow('+i+')" aria-label="전화">'+IC.phone+'</button>'
+   :t.call?'<button class="callbtn" onclick="event.stopPropagation();startTodayCall('+i+')" aria-label="전화">'+IC.phone+'</button>'
    :'<span class="minis"><button class="mini ok" onclick="event.stopPropagation();quick('+i+',\'확인 완료\')">확인</button><button class="mini skip" onclick="event.stopPropagation();skipSheet('+i+')">넘기기</button></span>';
   return '<div class="lrow '+(done?'dim':'')+'" data-id="'+escAttr(t.ref)+'" onclick="G.deal=this.dataset.id;G.tab=\'mine\';render()">'+tl
    +'<span class="meta"><span class="w '+(t.urgent&&!done?'':'soft')+'">'+esc(done||t.why)+'</span><span class="t">'+esc(t.nm)+'</span><span class="s">'+esc(t.sub)+'</span></span>'+right+'</div>';
@@ -1353,6 +1358,10 @@ function callFlow(i){
    return '<button class="cchip '+c[0]+'" onclick="pickToday('+i+',\''+c[2]+'\')"><span class="cic">'+IC[c[1]]+'</span>'+c[2]+'</button>'}).join('')
   +'<div class="voice">'+IC.mic+' 남길 말 있으면 길게 눌러 말하기 (선택)</div>');
 }
+function startTodayCall(i){var d=todayDeal(i),c=contactInfoM(d||{}),num=c.mobile||c.officeTel;if(!d)return;if(!phoneN(num)){toast('등록된 관리소장·관리사무소 전화번호가 없습니다');return}G.todayCallPending=i;addActivity(d,'전화','전화 시도 — '+phoneFmt(num),'',false);try{location.href='tel:'+phoneN(num)}catch(e){G.todayCallPending=null;toast('전화 앱을 열지 못했습니다')}}
+function resumeTodayCall(){if(G.todayCallPending==null)return;var i=G.todayCallPending;G.todayCallPending=null;setTimeout(function(){callFlow(i)},350)}
+document.addEventListener('visibilitychange',function(){if(!document.hidden)resumeTodayCall()});
+window.addEventListener('focus',resumeTodayCall);
 /* 결과 칩 = 화면은 한 번 터치, 뒤에서는 Activity + Next Action + 기한이 정확히 쌓인다.
    Stage 는 여기서 바꾸지 않는다 (단계 이동은 딜 상세의 [다음으로]) */
 function pickToday(i,label){
@@ -1465,6 +1474,7 @@ function rDeal(){
  tabbar.innerHTML='';
  scr.innerHTML='<div class="appbar"><button class="iconbtn" onclick="G.deal=null;render()">'+IC.back+'</button><span class="ttl">딜 상세</span>'+(G.mode==='admin'?'<button style="color:var(--violet);font-weight:700;font-size:13px;padding:0 6px" onclick="reassignSheet()">재배정</button>':'<span class="spacer"></span>')+'</div>'
  +'<div class="body fadein" style="padding-bottom:0">'
+ +'<div class="card" style="margin-bottom:12px;background:'+(d.rep==='미배정'?'var(--danger-bg)':'var(--blue-50)')+';border-color:transparent"><div class="kv"><span class="k">담당자</span><span class="v" style="color:'+(d.rep==='미배정'?'var(--danger)':'var(--blue-dark)')+'">'+esc(d.rep)+(d.rep==='미배정'?' 🔴':'')+'</span></div></div>'
  +'<div><div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap"><span class="badge '+tg[0]+'">'+tg[1]+'</span><span class="badge badge-blue">'+stageLabel(d.code)+'</span>'+(d.outcome?'<span class="badge '+(d.outcome==='won'?'badge-ok':'badge-danger')+'">'+OUTCOMES[d.outcome].nm+(d.close_reason?' · '+esc(d.close_reason):'')+'</span>':'')+(d.gj?'<span class="badge badge-violet">'+d.gj[0]+' · '+d.gj[1]+'</span>':'')+(isStale(d)?'<span class="badge badge-danger">'+staleTxt(d)+'</span>':'')+'</div>'
  +'<div style="font-size:19px;font-weight:800;letter-spacing:-.4px">'+esc(d.nm)+'</div><div class="hint" style="margin-top:2px">'+amtTxt(d.amt)+'</div></div>'
  /* 사업유형은 «한 줄 요약»만. 누르면 전환 이력이 펼쳐진다 (첫 화면에 긴 이력을 늘어놓지 않는다) */
@@ -1759,14 +1769,14 @@ function rCtrl(head){
   var btn=G.sigK==='assign'?(r.done?'<span class="badge badge-ok">배정됨</span>':'<button class="btn btn-primary btn-sm" onclick="assignSheet('+i+')">배정</button>')
    :G.sigK==='due'?'<button class="btn btn-line btn-sm" onclick="nudgeSheet(\''+r.nm+'\')">쪼기</button>'
    :G.sigK==='load'?'<button class="btn btn-line btn-sm" onclick="drill(\''+r.nm+'\')">보기</button>':'';
-  var go=G.sigK==='assign'?'G.sub={t:\'inq\',i:'+i+'};render()'
+  var go=G.sigK==='assign'?'assignSheet('+i+')'
    :G.sigK==='due'?'G.sub={t:\'overdue\',nm:\''+r.nm+'\',ps:\''+r.ps+'\'};render()'
    :G.sigK==='inflow'?'G.sub={t:\'inflow\',nm:\''+r.nm+'\',ps:\''+r.ps+'\'};render()'
    :'drill(\''+r.nm+'\')';
   return '<div class="prow">'+tile(G.sigK==='inflow'?IC.chart:G.sigK==='assign'?IC.siren:IC.clock,G.sigK==='assign'?'var(--danger)':'var(--sub)',G.sigK==='assign'?'var(--danger-bg)':'var(--bg)')+'<span class="pn" style="cursor:pointer" onclick="'+go+'">'+esc(r.nm)+'<span class="ps">'+esc(r.ps)+' · 상세 보기 ›</span></span>'+btn+'</div>';
  }).join('');
  scr.innerHTML=head+'<div class="body fadein"><div class="sec-h"><h2>견적문의 관제</h2><span>신호를 누르면 그 자리에서 조치</span></div>'
- +cards+'<div class="card tight" style="padding:4px 16px">'+(rows||'<div class="hint" style="padding:14px 2px">'+(G.sigK==='assign'||G.sigK==='inflow'?'견적문의 API 연동 후 표시됩니다 — 수집 중':'해당 건이 없습니다 🎉')+'</div>')+'</div>'
+ +cards+'<div class="card tight" style="padding:4px 16px">'+(rows||'<div class="hint" style="padding:14px 2px">해당 건이 없습니다 🎉</div>')+'</div>'
  +'<div class="card" style="background:var(--blue-50);border-color:transparent"><div class="hint" style="color:var(--blue-dark)">배정 버튼은 기존 배정 자동화를 그대로 호출 — 담당자 잔디 알림까지 자동입니다</div></div></div>';
 }
 function doAssign(i){ADMIN.assign[i].done=1;toast('배정 완료 — '+ADMIN.assign[i].rec+' 잔디 알림 발송');render()}
@@ -1862,26 +1872,25 @@ function srchDo(q){
 /* 문의 상세 (관제 → 배정 대기 건) */
 function rInq(head,s){
  var q=(ADMIN.assign||[])[s.i];
- /* 견적문의(Inquiry)는 아직 이 앱이 서버에서 받지 않는다 — 없으면 안내 화면 */
  if(!q){scr.innerHTML=appbarS('문의 상세')+'<div class="body fadein">'
-  +intro('var(--bg)','var(--ink-2)',IC.doc,'견적문의 수집 중','문의(Inquiry) API 연동 후 이 화면에서 접수·배정·최초응대를 처리합니다')
-  +'<div class="card"><div class="hint">PC 견적문의 화면에서는 지금도 배정할 수 있습니다.</div></div></div>';return}
+  +intro('var(--bg)','var(--ink-2)',IC.doc,'문의 정보를 찾을 수 없습니다','목록을 새로 불러온 뒤 다시 선택해 주세요')+'</div>';return}
  scr.innerHTML=appbarS('문의 상세')+'<div class="body fadein">'
- +intro('var(--danger-bg)','#c22f3c',IC.siren,esc(q.nm),q.ps+' — 배정 SLA 초과')
- +'<div class="card"><div class="kv"><span class="k">유입</span><span class="v">홈페이지 견적문의</span></div><div class="kv"><span class="k">연락처</span><span class="v">010-****-1234</span></div><div class="kv"><span class="k">공종</span><span class="v" style="color:var(--violet)">'+(q.gj||'방수 · 금속기와')+'</span></div><div class="kv"><span class="k">문의 내용</span><span class="v" style="font-weight:600;text-align:right">"우수관 쪽 누수가 있어 견적 요청드립니다"</span></div><div class="kv"><span class="k">과거 이력</span><span class="v">'+(q.dup?'⚠ 유사 현장 발견':'동일 현장 없음 (게이트 통과)')+'</span></div></div>'
+ +intro(q.rep==='미배정'?'var(--danger-bg)':'var(--blue-50)',q.rep==='미배정'?'#c22f3c':'var(--blue-dark)',IC.user,esc(q.nm),'담당자 · '+esc(q.rep)+(q.rep==='미배정'?' 🔴':''))
+ +'<div class="card"><div class="kv"><span class="k">유입</span><span class="v">'+esc(q.inflow)+'</span></div><div class="kv"><span class="k">연락처</span><span class="v">'+esc(phoneFmt(q.phone))+'</span></div><div class="kv"><span class="k">공종</span><span class="v" style="color:var(--violet)">'+esc(q.gj||'미입력')+'</span></div><div class="kv"><span class="k">문의 내용</span><span class="v" style="font-weight:600;text-align:right">'+esc(q.body||'미입력')+'</span></div></div>'
  +(q.dup?'<div class="card" style="background:var(--danger-bg);border-color:transparent"><div class="hint" style="color:#c22f3c;font-weight:700">⚠ 중복현장 게이트 — '+q.dup+'</div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-line btn-sm" style="flex:1" onclick="toast(\'기존 건에 이어붙이기 — 과거 노트 포함 배정 (목업)\')">기존 건에 연결</button><button class="btn btn-line btn-sm" style="flex:1" onclick="toast(\'별개 현장으로 처리 — 사유 기록 (목업)\')">별개 현장</button></div></div>':'')
- +'<div style="display:flex;gap:8px"><button class="btn btn-line" style="flex:1" onclick="toast(\'전화 연결 (목업)\')">'+IC.phone+' 전화</button><button class="btn btn-primary" style="flex:1" onclick="assignSheet('+s.i+')">배정하기</button></div></div>';
+ +'<div style="display:flex;gap:8px"><button class="btn btn-line" style="flex:1" onclick="callInquiry('+s.i+')">'+IC.phone+' 전화</button><button class="btn btn-primary" style="flex:1" onclick="assignSheet('+s.i+')">'+(q.rep==='미배정'?'배정하기':'재배정')+'</button></div></div>';
 }
+function callInquiry(i){var q=(ADMIN.assign||[])[i];if(!q||!phoneN(q.phone))return toast('등록된 연락처가 없습니다');try{location.href='tel:'+phoneN(q.phone)}catch(e){toast('전화 앱을 열지 못했습니다')}}
 
 /* 배정 시트 — 부하 표시 + 최저 부하 추천 */
 function assignSheet(i){
  var q=(ADMIN.assign||[])[i];
  if(!q){toast('배정할 문의가 없습니다 — 문의 API 연동 후 표시됩니다');return}
- var reps=(function(){var L=repLoad();return Object.keys(L).sort(function(a,b){return L[a]-L[b]})})();
- openSheet(intro('var(--blue-50)','var(--blue-dark)',IC.user,esc(q.nm)+' 배정','부하가 낮은 순 — 맨 위가 추천입니다'),
-  reps.map(function(r,ri){return '<button class="cchip '+(ri===0?'b':'gr')+'" onclick="pickAssign('+i+',\''+r+'\')"><span class="cic">'+IC.user+'</span>'+r+' · 진행 '+repLoad()[r]+'건'+(ri===0?' <span class="badge badge-blue" style="margin-left:auto">추천</span>':'')+'</button>'}).join(''));
+ var cur=q.rep||'미배정',reps=REP_INTERNAL.slice(),loads=repLoad(),min=Math.min.apply(null,reps.map(function(r){return loads[r]||0})),recommended=reps.filter(function(r){return (loads[r]||0)===min})[0];
+ openSheet(intro(cur==='미배정'?'var(--danger-bg)':'var(--blue-50)',cur==='미배정'?'#c22f3c':'var(--blue-dark)',IC.user,esc(q.nm)+' 배정','현재 담당자 · '+esc(cur)+(cur==='미배정'?' 🔴':'')+' · 정해진 담당자 순서'),
+  reps.map(function(r){var rec=r===recommended;return '<button class="cchip '+(rec?'b':'gr')+'" onclick="pickAssign('+i+',\''+r+'\')"><span class="cic">'+IC.user+'</span>'+r+' · 진행 '+loads[r]+'건'+(rec?' <span class="badge badge-blue" style="margin-left:auto">추천</span>':'')+'</button>'}).join(''));
 }
-function pickAssign(i,r){ADMIN.assign[i].done=1;ADMIN.assign[i].rec=r;closeSheet();G.sub=null;toast('배정 완료 — '+r+' 잔디 알림 발송');render()}
+function pickAssign(i,r){var q=ADMIN.assign[i];if(!q)return;var from=q.rep||'미배정',at=isoNow();q.done=true;q.rec=r;q.rep=r;q.status=q.status==='접수'?'배정완료':q.status;if(q.raw){q.raw.assignee=r;q.raw.status=q.status;q.raw.assigned_at=at}pushWrite('inquiry_assign',{inquiry_id:q.key,inquiry_row:q.raw&&q.raw.row||null,from:from,to:r,status:q.status,at:at});closeSheet();G.sub={t:'inq',i:i};toast(r+' 담당으로 배정 요청을 보냈습니다');render()}
 
 /* 응대 초과 목록 — 해당 담당자 데이터만 + 단계별 그룹·단계별 쪼기 */
 function rOverdue(head,s){
