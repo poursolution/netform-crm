@@ -1823,8 +1823,8 @@ var STAGE_MASTER={
  construction :{name:'시공단계',         macro:'con',   order:11,prob:1,  sla:60},
  completion   :{name:'준공단계',         macro:'con',   order:12,prob:1,  sla:30},
  expansion    :{name:'확장단계',         macro:'con',   order:13,prob:1,  sla:90},
- won      :{name:'Closed Won',macro:'won',   order:99,prob:1,sla:0},
- lost     :{name:'Closed Lost (영업관리 배드핏)',macro:'lost',  order:99,prob:0,sla:0},   /* 릴레잇 원본 상태명은 «수주 실패 (Closed lost)» */
+ won      :{name:'수주',macro:'won',   order:99,prob:1,sla:0},
+ lost     :{name:'실주',macro:'lost',  order:99,prob:0,sla:0},   /* 원본 Closed Won/Lost 코드는 유지하고 화면 명칭만 통일 */
  /* 배드핏은 «두 종류» 다 — 성격도 관리도 다르다 (stage_catalog 에도 이미 이렇게 정의돼 있다)
     ① badfit_lead 견적 배드핏  : 견적문의 응대 중 «우리와 방향이 안 맞는» 경우 (잠재고객 단계에서 종료)
     ② badfit_pipe 영업관리 배드핏: 견적까지 나간 «우리 영업대상»인데 타사에 뺏기거나 우리가 못 챙겨 놓친 경우
