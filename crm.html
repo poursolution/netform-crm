@@ -2207,8 +2207,11 @@ function inqBase(withRep,withClosed){
      &&(G.brand==='전체'||q.brand===G.brand)
      &&(!withRep||G.rep==='전체'||repN(q.assignee)===G.rep)
      &&(!G.q||((q.site||'')+' '+(q.assignee||'')).includes(G.q))
-     &&(withClosed||!G.hideClosed||!isClosedInq(q))})}
+     &&(withClosed||!G.hideClosed||!isClosedInq(q))
+     &&(G.page!=='inq'||G.inqMetric!=='made'||inquiryHasMadeDeal(q))
+     &&(G.page!=='inq'||G.inqMetric!=='assigned'||inquiryAssigned(q))})}
 function inqs(){return inqBase(true,false)}
+function inquiryHasMadeDeal(q){var k=normSite(q.site);return !!k&&(B.deals||[]).some(function(d){return normSite(d.site)===k})}
 /* 담당자별 집계 — 사람 성과를 비교하는 자리이므로 정본을 따른다.
    미배정·중복 같은 시스템 값과 성과 제외 대상(송보람)은 여기서 빠진다.
    회사 전체 금액을 볼 때는 이 함수를 쓰지 않는다 (그때는 딜 전체를 그대로 센다). */
@@ -2538,10 +2541,10 @@ function paintTowerDrill(){
   +'</div>';
 }
 /* 숫자를 누르면 «그 숫자를 만든 현장 목록» 으로 간다 — 대시보드 전체의 원칙 */
-function towerGoStage(ci){G.pipeView='split';G.splitCol=ci;G.splitStage=null;G.splitAct=null;G.splitClosed=null;G.splitKey=null;goPage('pipe')}
-function towerGoAct(k){G.pipeView='split';G.splitCol=null;G.splitStage=null;G.splitAct=k;G.splitClosed=null;G.splitKey=null;goPage('pipe')}
-function towerGoRep(nm,ci,act,origin){G.rep=nm;G.pipeOrigin=origin||null;G.pipeView='split';G.splitCol=(ci==null?null:ci);G.splitStage=null;G.splitAct=act||null;G.splitClosed=null;G.splitKey=null;goPage('pipe')}
-function towerGoWon(nm){G.rep=nm||G.rep;G.pipeView='split';G.splitCol=null;G.splitStage=null;G.splitAct=null;G.splitClosed='won';G.splitKey=null;goPage('pipe')}
+function towerGoStage(ci){G.pipeOrigin=null;G.pipeView='split';G.splitCol=ci;G.splitStage=null;G.splitAct=null;G.splitClosed=null;G.splitKey=null;goPage('pipe')}
+function towerGoAct(k){G.pipeOrigin=null;G.pipeView='split';G.splitCol=null;G.splitStage=null;G.splitAct=k;G.splitClosed=null;G.splitKey=null;goPage('pipe')}
+function towerGoRep(nm,ci,act,origin){G.inqMetric=null;G.rep=nm;G.pipeOrigin=origin||null;G.pipeView='split';G.splitCol=(ci==null?null:ci);G.splitStage=null;G.splitAct=act||null;G.splitClosed=null;G.splitKey=null;goPage('pipe')}
+function towerGoWon(nm){G.inqMetric=null;G.pipeOrigin=null;G.rep=nm||G.rep;G.pipeView='split';G.splitCol=null;G.splitStage=null;G.splitAct=null;G.splitClosed='won';G.splitKey=null;goPage('pipe')}
 
 /* ── SALES PIPE (2026-09-02) ───────────────────────────────────
    막대그래프가 아니다. 하나의 현장이 처음 들어와 수주될 때까지
@@ -3049,15 +3052,16 @@ function inqMadeStats(){
    if(M&&M.length){out[nm].made++;out._made++;
      if(M.some(isWon))out[nm].won++}});
  return out}
-function towerGoInq(nm){G.rep=nm;G.inqView='console';G.inqPhase='전체';
+function towerGoInq(nm,metric){G.pipeOrigin=null;G.rep=nm;G.inqMetric=metric||null;G.inqView='console';G.inqPhase='전체';
  G.hideClosed=false;   /* 표의 분모가 «종결 포함» 이라 목록도 맞춰 준다 */
  goPage('inq')}
 /* 담당자 표의 비율·금액도 근거 목록으로 이어진다.
    문의에서 계산한 값은 견적문의로, 딜에서 계산한 값은 해당 담당자 Pipeline으로 보낸다. */
 function towerGoRepMetric(nm,source){
- if(source==='inq')return towerGoInq(nm);
- if(source==='self')return towerGoRep(nm,null,null,'self');
- towerGoRep(nm,null,null);
+ if(source==='inq'||source==='inqAll')return towerGoInq(nm,null);
+ if(source==='inqMade')return towerGoInq(nm,'made');
+ if(source==='inqAssigned')return towerGoInq(nm,'assigned');
+ towerGoRep(nm,null,null,source||null);
 }
 function paintTowerReps(){
  var host=$('#d-repmgmt');if(!host)return;
@@ -3101,23 +3105,23 @@ function paintTowerReps(){
     var mcls=r.iq?(r.mrate>=25?'hi':(r.mrate<10?'lo':'')):'';
     return '<tr><td>'+esc(r.nm)+'</td>'
      +'<td class="clk" data-n="'+escAttr(r.nm)+'" onclick="towerGoInq(this.dataset.n)">'+r.iq+'</td>'
-     +'<td class="clk" title="이 수치의 견적문의 근거 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'inq\')">'+(r.iq?r.made:'—')+(r.iwon?'<small style="display:block;font-weight:700;color:var(--ok)">수주 '+r.iwon+'</small>':'')+'</td>'
-     +'<td class="clk conv '+mcls+'" title="메이드율의 견적문의 근거 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'inq\')">'+(r.iq?r.mrate+'%':'—')+'</td>'
-     +'<td class="clk" data-n="'+escAttr(r.nm)+'" onclick="towerGoRep(this.dataset.n,null,null)">'+r.asg
+     +'<td class="clk" title="이 수치의 견적문의 근거 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'inqMade\')">'+(r.iq?r.made:'—')+(r.iwon?'<small style="display:block;font-weight:700;color:var(--ok)">수주 '+r.iwon+'</small>':'')+'</td>'
+     +'<td class="clk conv '+mcls+'" title="메이드율의 전체 견적문의 근거 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'inqAll\')">'+(r.iq?r.mrate+'%':'—')+'</td>'
+     +'<td class="clk" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'assigned\')">'+r.asg
        +'<small style="display:block;font-weight:700;color:var(--sub)">'+eok(r.asgAmt)+'</small></td>'
      +'<td class="clk" title="직접영업 근거 현장 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'self\')">'+r.self+(r.self?'<small style="display:block;font-weight:700;color:var(--sub)">'+eok(r.selfAmt)+'</small>':'')+'</td>'
-     +'<td class="clk" title="영업기회 금액의 현장 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'deal\')">'+eok(r.q)+'</td>'
-     +'<td class="clk" data-n="'+escAttr(r.nm)+'" onclick="towerGoRep(this.dataset.n,null,null)">'+eok(r.p)+'</td>'
+     +'<td class="clk" title="영업기회 금액의 현장 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'all\')">'+eok(r.q)+'</td>'
+     +'<td class="clk" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'active\')">'+eok(r.p)+'</td>'
      +'<td class="clk" data-n="'+escAttr(r.nm)+'" onclick="towerGoRep(this.dataset.n,2,null)">'+eok(r.c)+'</td>'
      +'<td class="clk" data-n="'+escAttr(r.nm)+'" onclick="towerGoWon(this.dataset.n)">'+eok(r.w)+'</td>'
-     +'<td class="clk conv '+cls+'" title="금액수주율의 Pipeline 근거 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'deal\')">'+r.conv+'%</td>'
+     +'<td class="clk conv '+cls+'" title="금액수주율의 전체 영업기회 근거 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'all\')">'+r.conv+'%</td>'
      +(scope==='external'?''
-       :'<td class="clk q'+(r.ql.resp!=null&&r.ql.resp<80?' lo':'')+'" title="응대율의 견적문의 근거 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'inq\')">'+(r.ql.resp==null?'—':r.ql.resp+'%')+'</td>'
-       +'<td class="clk q'+(r.ql.next!=null&&r.ql.next<80?' lo':'')+'" title="Next 설정률의 Pipeline 근거 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'deal\')">'+(r.ql.next==null?'—':r.ql.next+'%')+'</td>'
-       +'<td class="clk q'+(r.ql.keep!=null&&r.ql.keep<80?' lo':'')+'" title="기한준수율의 Pipeline 근거 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'deal\')">'+(r.ql.keep==null?'—':r.ql.keep+'%')+'</td>'
-       +'<td class="clk" data-n="'+escAttr(r.nm)+'" data-k="'+escAttr(riskKey)+'" onclick="towerGoRep(this.dataset.n,null,this.dataset.k)"><span class="'+(r.risk?'warnN':'')+'">'+r.risk+'</span>'
+       :'<td class="clk q'+(r.ql.resp!=null&&r.ql.resp<80?' lo':'')+'" title="응대율의 배정 견적문의 근거 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'inqAssigned\')">'+(r.ql.resp==null?'—':r.ql.resp+'%')+'</td>'
+       +'<td class="clk q'+(r.ql.next!=null&&r.ql.next<80?' lo':'')+'" title="Next 설정률의 진행 Pipeline 근거 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'active\')">'+(r.ql.next==null?'—':r.ql.next+'%')+'</td>'
+       +'<td class="clk q'+(r.ql.keep!=null&&r.ql.keep<80?' lo':'')+'" title="기한준수율의 기한 설정 현장 근거 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'due\')">'+(r.ql.keep==null?'—':r.ql.keep+'%')+'</td>'
+       +'<td class="clk" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'risk\')"><span class="'+(r.risk?'warnN':'')+'">'+r.risk+'</span>'
        +(r.riskAmt?'<small style="display:block;font-weight:700;color:var(--sub)">'+eok(r.riskAmt)+'</small>':'')+'</td>'
-       +'<td class="clk" title="진단의 Pipeline 근거 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'deal\')"><i class="vd '+r.vd.k+'">'+esc(r.vd.t)+'</i></td>')+'</tr>'}).join('')
+       +'<td class="clk" title="진단의 진행 Pipeline 근거 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'active\')"><i class="vd '+r.vd.k+'">'+esc(r.vd.t)+'</i></td>')+'</tr>'}).join('')
   +'</tbody></table></div>'
   +(names.length?'':'<div class="nodata">이 구분에 해당하는 담당자가 없습니다.</div>')
   +'<div class="detailnotice" style="margin-top:9px"><b>견적문의 → 메이드</b>는 현장명으로 파이프라인 딜을 찾아 이은 결과입니다 — 전체 '
@@ -3977,8 +3981,10 @@ function stageEnteredTS(d){return String(stageEnteredAtOf(d)||'')}
    pipeFiltered() 는 진행 건(ACT_GRP)만 남기므로 종료 필터는 이쪽을 쓴다. */
 function pipeScoped(){return B.deals.filter(function(d){return inPeriod(d.created)
  &&(G.brand==='전체'||d.brand===G.brand)&&(G.rep==='전체'||repN(d.assignee)===G.rep)
- &&(!G.pipeOrigin||G.pipeOrigin!=='self'||isSelfGen(d))
+ &&metricDealMatch(d,G.pipeOrigin)
  &&(!G.q||((d.site||'')+' '+(d.assignee||'')+' '+(d.stage||'')).includes(G.q))})}
+function metricDealMatch(d,k){if(!k||k==='all'||k==='active')return true;if(k==='self')return isSelfGen(d);if(k==='assigned')return isAssignedLead(d);if(k==='due'){var a=actionObj(d,itemPatch(d,'deal'));return !!(a&&a.due)}if(k==='risk')return liveActs().some(function(x){return x.f(d)});return true}
+function metricDealLabel(k,n){var m={self:'직접영업',assigned:'배정 리드',all:'전체 영업기회',active:'진행 Pipeline',due:'기한 설정',risk:'관리필요'};return (m[k]||'근거 목록')+' '+n+'건'}
 /* ══ «없는 데이터» 를 «문제» 로 세지 않는다 (2026-09-02) ══════
    지금 서버 번들에는 next_action 이 한 건도 없다 (진행 202건 중 0건).
    그 상태에서 «다음 행동 없음 202건» 을 띄우면 100% 가 문제로 보이고,
@@ -4017,7 +4023,7 @@ function setSplitStage(c){G.splitStage=(G.splitStage===c?null:c);G.splitKey=null
 function setSplitAct(k){G.splitAct=(G.splitAct===k?null:k);G.splitKey=null;paint()}
 function setNoAmt(){G.pipeNoAmt=!G.pipeNoAmt;G.splitKey=null;paint()}
 function setSplitClosed(k){G.splitClosed=(G.splitClosed===k?null:k);G.splitCol=null;G.splitStage=null;G.splitAct=null;G.pipeNoAmt=false;G.splitKey=null;paint()}
-function pipeFiltered(){var D=B.deals.filter(function(d){return inPeriod(d.created)&&ACT_GRP.indexOf(d.grp)>=0&&(G.brand==='전체'||d.brand===G.brand)&&(G.rep==='전체'||repN(d.assignee)===G.rep)&&(!G.pipeOrigin||G.pipeOrigin!=='self'||isSelfGen(d))&&(!G.q||((d.site||'')+' '+(d.assignee||'')+' '+(d.stage||'')).includes(G.q))});if(G.pipeStatus!=='전체')D=D.filter(function(d){return priorityInfo(d,'deal').key===G.pipeStatus});if(G.pipeSub!=='전체')D=D.filter(function(d){return subStatus(d)===G.pipeSub});if(G.pipeAge!=='전체'){var n=parseInt(G.pipeAge,10);D=D.filter(function(d){return (age(d)||0)>=n})}return D}
+function pipeFiltered(){var D=B.deals.filter(function(d){return inPeriod(d.created)&&ACT_GRP.indexOf(d.grp)>=0&&(G.brand==='전체'||d.brand===G.brand)&&(G.rep==='전체'||repN(d.assignee)===G.rep)&&metricDealMatch(d,G.pipeOrigin)&&(!G.q||((d.site||'')+' '+(d.assignee||'')+' '+(d.stage||'')).includes(G.q))});if(G.pipeStatus!=='전체')D=D.filter(function(d){return priorityInfo(d,'deal').key===G.pipeStatus});if(G.pipeSub!=='전체')D=D.filter(function(d){return subStatus(d)===G.pipeSub});if(G.pipeAge!=='전체'){var n=parseInt(G.pipeAge,10);D=D.filter(function(d){return (age(d)||0)>=n})}return D}
 function sharedFilterBar(D){var reps=['전체'].concat(allAssignees()),subs=['전체'].concat(Array.from(new Set(D.map(subStatus))).sort(function(a,b){return a.localeCompare(b,'ko')}));return '<div class="opsbar"><div class="og"><label>담당자</label><select onchange="G.rep=this.value;G.stageCol=null;paint()">'+reps.map(function(r){return '<option '+(G.rep===r?'selected':'')+'>'+esc(r)+'</option>'}).join('')+'</select></div><div class="og"><label>세부상태</label><select onchange="G.pipeSub=this.value;paint()">'+subs.map(function(s){return '<option '+(G.pipeSub===s?'selected':'')+'>'+esc(s)+'</option>'}).join('')+'</select></div><div class="og"><label>관리상태</label><select onchange="G.pipeStatus=this.value;paint()">'+['전체','기한초과','미응대','무행동','장기정체','다음행동없음','오늘','정상','미래대기'].map(function(s){return '<option '+(G.pipeStatus===s?'selected':'')+'>'+s+'</option>'}).join('')+'</select></div><div class="og"><label>오래된 데이터</label><select onchange="G.pipeAge=this.value;paint()">'+[['전체','전체'],['30','30일+'],['90','90일+'],['180','180일+'],['365','365일+']].map(function(x){return '<option value="'+x[0]+'" '+(G.pipeAge===x[0]?'selected':'')+'>'+x[1]+'</option>'}).join('')+'</select></div><div class="og"><label>정렬</label><select onchange="G.pipeSort=this.value;paint()">'+['우선순위','최근 활동','오래된 활동','금액 큰순','담당자'].map(function(s){return '<option '+((G.pipeSort||'우선순위')===s?'selected':'')+'>'+s+'</option>'}).join('')+'</select></div><button class="reset" onclick="G.rep=&quot;전체&quot;;G.pipeSub=&quot;전체&quot;;G.pipeStatus=&quot;전체&quot;;G.pipeAge=&quot;전체&quot;;G.pipeSort=&quot;우선순위&quot;;G.stageCol=null;paint()">필터 초기화</button></div>'}
 function pipelineMatrix(D){var reps=allAssignees().filter(function(r){return D.some(function(d){return repN(d.assignee)===r})}).sort(repCompare).slice(0,12);var h='<div class="matrix"><div class="matrix-title"><div><b>담당자 × 영업 Stage</b><br><small>건수와 조치 필요 수를 동시에 확인 · 셀 클릭 시 해당 목록</small></div><small>공통 필터 적용</small></div><div class="matrix-scroll"><div class="matrix-grid" style="grid-template-columns:130px repeat('+PD_COLS.length+',minmax(92px,1fr))"><div class="mh">담당자</div>'+PD_COLS.map(function(c){return '<div class="mh">'+c.nm+'</div>'}).join('');/* 열 수를 PD_COLS에 맞춤 — CSS 기본값은 구 5열이라 행이 밀림 */reps.forEach(function(r){h+='<div class="mr">'+esc(repInit(r))+' '+esc(r)+'</div>';PD_COLS.forEach(function(c,ci){var a=D.filter(function(d){return repN(d.assignee)===r&&c.codes.indexOf(d.code)>=0}),issue=a.filter(function(d){return priorityInfo(d,'deal').rank<=5}).length;h+='<div class="mc" data-rep="'+esc(r)+'" data-stage="'+ci+'" onclick="matrixFilter(this.dataset.rep,Number(this.dataset.stage))"><b>'+a.length+'</b>'+(issue?'<em>'+issue+' 조치</em>':'<span>—</span>')+'</div>'})});return h+'</div></div></div>'}
 function matrixFilter(rep,ci){G.rep=rep;G.stageCol=ci;G.pipeView='stage';paint()}
@@ -5052,7 +5058,7 @@ function paintSplit(){
  closeDocked();detachDetail();
  var toggle=document.querySelectorAll('.viewtg .clk');if(toggle[1])toggle[1].textContent='⚡ 빠른 관리';if(toggle[0])toggle[0].textContent='🗂️ 칸반';
  var A=pipeFiltered(),SC=pipeScoped(),ci=G.splitCol==null?-1:Number(G.splitCol),actF=splitActFn(G.splitAct),D;
- if(G.pipeOrigin==='self')D=SC.slice();
+ if(['self','assigned','all'].indexOf(G.pipeOrigin)>=0)D=SC.slice();
  else if(G.quickClosed)D=SC.filter(function(d){return d.code==='won'||d.code==='lost'||d.grp==='기타'});
  else{D=ci>=0?A.filter(function(d){return PD_COLS[ci].codes.indexOf(d.code)>=0}):A;if(actF)D=D.filter(actF);if(G.pipeNoAmt)D=D.filter(function(d){return !oppAmt(d)&&!quoteAmt(d)})}
  D=D.slice().sort(sortByPriority);var keys=D.map(dealKey);if(keys.indexOf(G.splitKey)<0)G.splitKey=keys[0];var sel=D[keys.indexOf(G.splitKey)];
@@ -5060,7 +5066,7 @@ function paintSplit(){
  var filters='<div class="quickfilters"><div class="pfrow"><span class="pfl">파이프라인</span><button class="pfc '+(!G.quickClosed&&ci<0?'on':'')+'" onclick="G.quickClosed=false;setSplitCol(null)">전체 <em>'+A.length+'</em></button>'
   +PD_COLS.map(function(c,i){return '<button class="pfc '+(!G.quickClosed&&ci===i?'on':'')+'" onclick="G.quickClosed=false;setSplitCol('+i+')">'+esc(c.nm)+' <em>'+A.filter(function(d){return c.codes.indexOf(d.code)>=0}).length+'</em></button>'}).join('')
   +'<button class="pfc e '+(G.quickClosed?'on':'')+'" onclick="quickClosedToggle()">종료 현장 보기</button></div>'
-  +(G.pipeOrigin==='self'?'<div class="pfrow sub"><span class="pfl">근거 목록</span><button class="pfc on">직접영업 '+D.length+'건</button><button class="pfreset" onclick="G.pipeOrigin=null;G.splitKey=null;paint()">직접영업 필터 해제</button><span class="pfl" style="margin-left:auto">담당자 '+esc(G.rep||'전체')+'</span></div>':(!G.quickClosed?'<div class="pfrow sub"><span class="pfl">바로 찾기</span>'+SPLIT_ACTS.map(function(a){return '<button class="pfc a '+(G.splitAct===a.k?'on':'')+'" onclick="setSplitAct(\''+a.k+'\')">'+esc(a.nm)+' <em>'+issueBase.filter(a.f).length+'</em></button>'}).join('')+'<button class="pfc q '+(G.pipeNoAmt?'on':'')+'" onclick="setNoAmt()">금액 미입력 <em>'+issueBase.filter(function(d){return !oppAmt(d)&&!quoteAmt(d)}).length+'</em></button><span class="pfl" style="margin-left:auto">담당자 '+esc(G.rep||'전체')+'</span></div>':''))+'</div>';
+  +(G.pipeOrigin?'<div class="pfrow sub"><span class="pfl">근거 목록</span><button class="pfc on">'+esc(metricDealLabel(G.pipeOrigin,D.length))+'</button><button class="pfreset" onclick="G.pipeOrigin=null;G.splitKey=null;paint()">근거 필터 해제</button><span class="pfl" style="margin-left:auto">담당자 '+esc(G.rep||'전체')+'</span></div>':(!G.quickClosed?'<div class="pfrow sub"><span class="pfl">바로 찾기</span>'+SPLIT_ACTS.map(function(a){return '<button class="pfc a '+(G.splitAct===a.k?'on':'')+'" onclick="setSplitAct(\''+a.k+'\')">'+esc(a.nm)+' <em>'+issueBase.filter(a.f).length+'</em></button>'}).join('')+'<button class="pfc q '+(G.pipeNoAmt?'on':'')+'" onclick="setNoAmt()">금액 미입력 <em>'+issueBase.filter(function(d){return !oppAmt(d)&&!quoteAmt(d)}).length+'</em></button><span class="pfl" style="margin-left:auto">담당자 '+esc(G.rep||'전체')+'</span></div>':''))+'</div>';
  if(!sel){$('#p-main').innerHTML=filters+'<div class="quick-empty">선택한 조건에 해당하는 현장이 없습니다.</div>';return}
  var list=D.slice(0,120).map(function(d){var k=dealKey(d),pr=priorityInfo(d,'deal');return '<div class="mlrow '+(k===G.splitKey?'sel':'')+'" data-k="'+escAttr(k)+'" onclick="G.splitScroll=this.parentElement.scrollTop;G.splitKey=this.dataset.k;G.splitForm=null;paint()"><span class="mmeta"><span class="mt">'+esc(d.site||'현장명 미입력')+'</span><span class="ms">'+esc(repN(d.assignee))+' · '+esc(stageNoLabel(dealStage(d)))+' · '+fmtAmt(d.amt)+(stageAge(d)!=null?' · D+'+stageAge(d):'')+'</span></span><span class="mbadge '+mstateCls(pr)+'">'+pr.label+'</span></div>'}).join('');
  $('#p-main').innerHTML=filters+'<div class="quickmanage"><div class="mcard quicklist">'+list+'</div>'+quickPanelHTML(sel)+'</div>';var l=document.querySelector('.quicklist');if(l)l.scrollTop=G.splitScroll||0;
