@@ -368,6 +368,8 @@ body{background:var(--bg);font-family:"Pretendard Variable",Pretendard,-apple-sy
 .quickcontactbox{width:min(430px,94vw)}
 .quickcontactbox .modalbody{padding-top:14px}.quickcontactbox .detailnotice{margin:0 0 12px}
 .quickcontactbox .dactions{justify-content:flex-end;margin-top:14px}
+.spliteditbox{width:min(540px,94vw)}.spliteditbox .modalbody{padding:14px 16px 17px}
+.spliteditbox .spform{margin:0;border:0;background:#fff;padding:0;max-height:72vh;overflow:auto}
 .callbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;background:var(--warn-bg);border-bottom:1px solid var(--line);font-size:12px;font-weight:800;color:var(--warn-t)}
 .callbar button{margin-left:auto;border:none;background:var(--blue);color:#fff;border-radius:8px;padding:8px 12px;font-size:11.5px;font-weight:850;cursor:pointer}
 .callbar button.gh{background:#fff;color:var(--sub);border:1px solid var(--line);margin-left:0}
@@ -1607,6 +1609,12 @@ html,body{height:100%}
   <div class="modalbox quickcontactbox" role="dialog" aria-modal="true" aria-labelledby="quickContactTitle">
     <div class="modalhead"><h3 id="quickContactTitle">관리소장 연락처 등록</h3><button class="modalclose" onclick="closeQuickContact()" aria-label="닫기">✕</button></div>
     <div class="modalbody" id="quickContactBody"></div>
+  </div>
+</div>
+<div class="modalshade" id="splitEditModal" aria-hidden="true" onclick="if(event.target===this)splitForm(null)">
+  <div class="modalbox spliteditbox" role="dialog" aria-modal="true" aria-labelledby="splitEditTitle">
+    <div class="modalhead"><h3 id="splitEditTitle">빠른 입력</h3><button class="modalclose" onclick="splitForm(null)" aria-label="닫기">✕</button></div>
+    <div class="modalbody" id="splitEditBody"></div>
   </div>
 </div>
 <!-- DNS·TLS 를 미리 잡아 둔다 — 첫 호출에서 0.25~0.4초가 빠진다 (2026-09-04) -->
@@ -4781,13 +4789,20 @@ function injectConsoleTabs(){var host=document.querySelector('#p-main .stage-con
 function splitOpen(tab){var d=(B.deals||[]).filter(function(x){return dealKey(x)===G.splitKey})[0];if(!d)return;drwDeal(JSON.stringify(d));if(tab)detailTabFocus(tab)}
 /* [삭제됨 v3.6] 구버전 splitTransition — 마지막 정의만 사용 */
 
-/* ══════════════════════════════════════════════════════════════
-   스플릿 인라인 편집 (2026-09-02)
-   «＋ 활동 기록»·«다음 행동»·«단계 전환»을 새 창으로 띄우지 않는다.
-   오른쪽 미리보기 안에서 바로 입력하고, 저장하면 서버(crm-write)까지 간다.
-   목록 위치·선택 상태가 유지돼서 여러 건을 연속으로 처리할 수 있다.
-   ══════════════════════════════════════════════════════════════ */
-function splitForm(kind){G.splitForm=(G.splitForm===kind?null:kind);paint()}
+/* 스플릿 빠른 편집은 작은 팝업으로 연다. 상세 영역 높이와 목록 위치는 바뀌지 않는다. */
+function splitForm(kind){
+ var m=$('#splitEditModal');
+ if(!kind){G.splitForm=null;if(m){m.classList.remove('on');m.setAttribute('aria-hidden','true')}return}
+ G.splitForm=kind;paint();
+}
+function showSplitEdit(d,kind,body){
+ if(G.splitForm!==kind)return;var m=$('#splitEditModal'),b=$('#splitEditBody'),t=$('#splitEditTitle');if(!m||!b)return;
+ t.textContent=(kind==='act'?'한 일 기록':kind==='next'?'다음 할 일':'단계 바꾸기')+' · '+(d.site||'현장');
+ b.innerHTML='<div class="spform">'+body+'<div class="spmsg" id="sp-msg"></div></div>';
+ m.classList.add('on');m.setAttribute('aria-hidden','false');
+ if(kind==='stage')spTargetChanged();
+ setTimeout(function(){var x=b.querySelector('input:not([type=date]),select');if(x)x.focus()},30)
+}
 function splitInlinePanel(d){
  var f=G.splitForm,k=dealKey(d);
  var bar='<div style="display:flex;gap:6px;flex-wrap:wrap">'
@@ -4822,7 +4837,8 @@ function splitInlinePanel(d){
    +'<div class="og" id="sp-due-wrap"><label>언제까지 <span class="req">*</span></label><input id="sp-tr-due" type="date"></div>'
    +'<div class="spbtns"><button class="dact pri" onclick="spSaveStage()">전환 저장</button><button class="dact" onclick="splitForm(null)">닫기</button></div>';
  }
- return bar+'<div class="spform">'+body+'<div class="spmsg" id="sp-msg"></div></div>';
+ setTimeout(function(){showSplitEdit(d,f,body)},0);
+ return bar;
 }
 /* 이름 충돌 주의: 아래(견적문의)에도 splitSel 이 있어 여기는 딜 전용 이름을 쓴다 */
 function splitDealSel(){return (B.deals||[]).filter(function(x){return dealKey(x)===G.splitKey})[0]}
@@ -4840,7 +4856,7 @@ function spSaveAct(){
  saveLocal();
  pushWrite('activity',{opportunity_id:d.id,type:type,note:note,result:res,occurred_at:at});
  if(isContact)pushWrite('contact',{opportunity_id:d.id,type:type,at:at});
- G.splitForm=null;paint();
+ splitForm(null);paint();
 }
 function spSaveNext(){
  var d=splitDealSel();if(!d)return;
@@ -4850,7 +4866,7 @@ function spSaveNext(){
  var obj={id:'na-'+Date.now(),type:type,text:text,due:due,assignee:repN(d.assignee),status:'open',createdAt:isoNow()};
  p.nextActionObj=d.nextActionObj=obj;p.nextAction=d.nextAction=due;p.nextActionText=d.nextActionText=text;
  saveLocal();pushWrite('next_action',{opportunity_id:d.id,type:type,text:text,due_at:due});
- G.splitForm=null;paint();
+ splitForm(null);paint();
 }
 /* 스플릿 인라인: 종료 대상이면 사유 목록을 그 자리에서 바꿔 준다 */
 function spTargetChanged(){var s=$('#sp-tr-target');if(!s)return;var v=s.value,
@@ -4889,7 +4905,7 @@ function spSaveStage(){
    won_amount:(target==='won'?(wonAmt(d)||oppAmt(d)||null):null)});
  else{pushWrite('transition',{opportunity_id:d.id,from:from,to:d.code,note:did});
       if(next)pushWrite('next_action',{opportunity_id:d.id,type:'전화',text:next,due_at:due})}
- G.splitForm=null;paint();
+ splitForm(null);paint();
 }
 function paintSplit(){
  /* 필터는 한 방향으로만 좁힌다 — 기간·담당자·사업유형(pipeFiltered)
