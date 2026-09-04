@@ -2540,7 +2540,7 @@ function paintTowerDrill(){
 /* 숫자를 누르면 «그 숫자를 만든 현장 목록» 으로 간다 — 대시보드 전체의 원칙 */
 function towerGoStage(ci){G.pipeView='split';G.splitCol=ci;G.splitStage=null;G.splitAct=null;G.splitClosed=null;G.splitKey=null;goPage('pipe')}
 function towerGoAct(k){G.pipeView='split';G.splitCol=null;G.splitStage=null;G.splitAct=k;G.splitClosed=null;G.splitKey=null;goPage('pipe')}
-function towerGoRep(nm,ci,act){G.rep=nm;G.pipeView='split';G.splitCol=(ci==null?null:ci);G.splitStage=null;G.splitAct=act||null;G.splitClosed=null;G.splitKey=null;goPage('pipe')}
+function towerGoRep(nm,ci,act,origin){G.rep=nm;G.pipeOrigin=origin||null;G.pipeView='split';G.splitCol=(ci==null?null:ci);G.splitStage=null;G.splitAct=act||null;G.splitClosed=null;G.splitKey=null;goPage('pipe')}
 function towerGoWon(nm){G.rep=nm||G.rep;G.pipeView='split';G.splitCol=null;G.splitStage=null;G.splitAct=null;G.splitClosed='won';G.splitKey=null;goPage('pipe')}
 
 /* ── SALES PIPE (2026-09-02) ───────────────────────────────────
@@ -3056,6 +3056,7 @@ function towerGoInq(nm){G.rep=nm;G.inqView='console';G.inqPhase='전체';
    문의에서 계산한 값은 견적문의로, 딜에서 계산한 값은 해당 담당자 Pipeline으로 보낸다. */
 function towerGoRepMetric(nm,source){
  if(source==='inq')return towerGoInq(nm);
+ if(source==='self')return towerGoRep(nm,null,null,'self');
  towerGoRep(nm,null,null);
 }
 function paintTowerReps(){
@@ -3104,7 +3105,7 @@ function paintTowerReps(){
      +'<td class="clk conv '+mcls+'" title="메이드율의 견적문의 근거 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'inq\')">'+(r.iq?r.mrate+'%':'—')+'</td>'
      +'<td class="clk" data-n="'+escAttr(r.nm)+'" onclick="towerGoRep(this.dataset.n,null,null)">'+r.asg
        +'<small style="display:block;font-weight:700;color:var(--sub)">'+eok(r.asgAmt)+'</small></td>'
-     +'<td class="clk" title="직접영업 근거 현장 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'deal\')">'+r.self+(r.self?'<small style="display:block;font-weight:700;color:var(--sub)">'+eok(r.selfAmt)+'</small>':'')+'</td>'
+     +'<td class="clk" title="직접영업 근거 현장 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'self\')">'+r.self+(r.self?'<small style="display:block;font-weight:700;color:var(--sub)">'+eok(r.selfAmt)+'</small>':'')+'</td>'
      +'<td class="clk" title="영업기회 금액의 현장 목록 열기" data-n="'+escAttr(r.nm)+'" onclick="towerGoRepMetric(this.dataset.n,\'deal\')">'+eok(r.q)+'</td>'
      +'<td class="clk" data-n="'+escAttr(r.nm)+'" onclick="towerGoRep(this.dataset.n,null,null)">'+eok(r.p)+'</td>'
      +'<td class="clk" data-n="'+escAttr(r.nm)+'" onclick="towerGoRep(this.dataset.n,2,null)">'+eok(r.c)+'</td>'
@@ -3976,6 +3977,7 @@ function stageEnteredTS(d){return String(stageEnteredAtOf(d)||'')}
    pipeFiltered() 는 진행 건(ACT_GRP)만 남기므로 종료 필터는 이쪽을 쓴다. */
 function pipeScoped(){return B.deals.filter(function(d){return inPeriod(d.created)
  &&(G.brand==='전체'||d.brand===G.brand)&&(G.rep==='전체'||repN(d.assignee)===G.rep)
+ &&(!G.pipeOrigin||G.pipeOrigin!=='self'||isSelfGen(d))
  &&(!G.q||((d.site||'')+' '+(d.assignee||'')+' '+(d.stage||'')).includes(G.q))})}
 /* ══ «없는 데이터» 를 «문제» 로 세지 않는다 (2026-09-02) ══════
    지금 서버 번들에는 next_action 이 한 건도 없다 (진행 202건 중 0건).
@@ -4015,7 +4017,7 @@ function setSplitStage(c){G.splitStage=(G.splitStage===c?null:c);G.splitKey=null
 function setSplitAct(k){G.splitAct=(G.splitAct===k?null:k);G.splitKey=null;paint()}
 function setNoAmt(){G.pipeNoAmt=!G.pipeNoAmt;G.splitKey=null;paint()}
 function setSplitClosed(k){G.splitClosed=(G.splitClosed===k?null:k);G.splitCol=null;G.splitStage=null;G.splitAct=null;G.pipeNoAmt=false;G.splitKey=null;paint()}
-function pipeFiltered(){var D=B.deals.filter(function(d){return inPeriod(d.created)&&ACT_GRP.indexOf(d.grp)>=0&&(G.brand==='전체'||d.brand===G.brand)&&(G.rep==='전체'||repN(d.assignee)===G.rep)&&(!G.q||((d.site||'')+' '+(d.assignee||'')+' '+(d.stage||'')).includes(G.q))});if(G.pipeStatus!=='전체')D=D.filter(function(d){return priorityInfo(d,'deal').key===G.pipeStatus});if(G.pipeSub!=='전체')D=D.filter(function(d){return subStatus(d)===G.pipeSub});if(G.pipeAge!=='전체'){var n=parseInt(G.pipeAge,10);D=D.filter(function(d){return (age(d)||0)>=n})}return D}
+function pipeFiltered(){var D=B.deals.filter(function(d){return inPeriod(d.created)&&ACT_GRP.indexOf(d.grp)>=0&&(G.brand==='전체'||d.brand===G.brand)&&(G.rep==='전체'||repN(d.assignee)===G.rep)&&(!G.pipeOrigin||G.pipeOrigin!=='self'||isSelfGen(d))&&(!G.q||((d.site||'')+' '+(d.assignee||'')+' '+(d.stage||'')).includes(G.q))});if(G.pipeStatus!=='전체')D=D.filter(function(d){return priorityInfo(d,'deal').key===G.pipeStatus});if(G.pipeSub!=='전체')D=D.filter(function(d){return subStatus(d)===G.pipeSub});if(G.pipeAge!=='전체'){var n=parseInt(G.pipeAge,10);D=D.filter(function(d){return (age(d)||0)>=n})}return D}
 function sharedFilterBar(D){var reps=['전체'].concat(allAssignees()),subs=['전체'].concat(Array.from(new Set(D.map(subStatus))).sort(function(a,b){return a.localeCompare(b,'ko')}));return '<div class="opsbar"><div class="og"><label>담당자</label><select onchange="G.rep=this.value;G.stageCol=null;paint()">'+reps.map(function(r){return '<option '+(G.rep===r?'selected':'')+'>'+esc(r)+'</option>'}).join('')+'</select></div><div class="og"><label>세부상태</label><select onchange="G.pipeSub=this.value;paint()">'+subs.map(function(s){return '<option '+(G.pipeSub===s?'selected':'')+'>'+esc(s)+'</option>'}).join('')+'</select></div><div class="og"><label>관리상태</label><select onchange="G.pipeStatus=this.value;paint()">'+['전체','기한초과','미응대','무행동','장기정체','다음행동없음','오늘','정상','미래대기'].map(function(s){return '<option '+(G.pipeStatus===s?'selected':'')+'>'+s+'</option>'}).join('')+'</select></div><div class="og"><label>오래된 데이터</label><select onchange="G.pipeAge=this.value;paint()">'+[['전체','전체'],['30','30일+'],['90','90일+'],['180','180일+'],['365','365일+']].map(function(x){return '<option value="'+x[0]+'" '+(G.pipeAge===x[0]?'selected':'')+'>'+x[1]+'</option>'}).join('')+'</select></div><div class="og"><label>정렬</label><select onchange="G.pipeSort=this.value;paint()">'+['우선순위','최근 활동','오래된 활동','금액 큰순','담당자'].map(function(s){return '<option '+((G.pipeSort||'우선순위')===s?'selected':'')+'>'+s+'</option>'}).join('')+'</select></div><button class="reset" onclick="G.rep=&quot;전체&quot;;G.pipeSub=&quot;전체&quot;;G.pipeStatus=&quot;전체&quot;;G.pipeAge=&quot;전체&quot;;G.pipeSort=&quot;우선순위&quot;;G.stageCol=null;paint()">필터 초기화</button></div>'}
 function pipelineMatrix(D){var reps=allAssignees().filter(function(r){return D.some(function(d){return repN(d.assignee)===r})}).sort(repCompare).slice(0,12);var h='<div class="matrix"><div class="matrix-title"><div><b>담당자 × 영업 Stage</b><br><small>건수와 조치 필요 수를 동시에 확인 · 셀 클릭 시 해당 목록</small></div><small>공통 필터 적용</small></div><div class="matrix-scroll"><div class="matrix-grid" style="grid-template-columns:130px repeat('+PD_COLS.length+',minmax(92px,1fr))"><div class="mh">담당자</div>'+PD_COLS.map(function(c){return '<div class="mh">'+c.nm+'</div>'}).join('');/* 열 수를 PD_COLS에 맞춤 — CSS 기본값은 구 5열이라 행이 밀림 */reps.forEach(function(r){h+='<div class="mr">'+esc(repInit(r))+' '+esc(r)+'</div>';PD_COLS.forEach(function(c,ci){var a=D.filter(function(d){return repN(d.assignee)===r&&c.codes.indexOf(d.code)>=0}),issue=a.filter(function(d){return priorityInfo(d,'deal').rank<=5}).length;h+='<div class="mc" data-rep="'+esc(r)+'" data-stage="'+ci+'" onclick="matrixFilter(this.dataset.rep,Number(this.dataset.stage))"><b>'+a.length+'</b>'+(issue?'<em>'+issue+' 조치</em>':'<span>—</span>')+'</div>'})});return h+'</div></div></div>'}
 function matrixFilter(rep,ci){G.rep=rep;G.stageCol=ci;G.pipeView='stage';paint()}
@@ -5050,14 +5052,15 @@ function paintSplit(){
  closeDocked();detachDetail();
  var toggle=document.querySelectorAll('.viewtg .clk');if(toggle[1])toggle[1].textContent='⚡ 빠른 관리';if(toggle[0])toggle[0].textContent='🗂️ 칸반';
  var A=pipeFiltered(),SC=pipeScoped(),ci=G.splitCol==null?-1:Number(G.splitCol),actF=splitActFn(G.splitAct),D;
- if(G.quickClosed)D=SC.filter(function(d){return d.code==='won'||d.code==='lost'||d.grp==='기타'});
+ if(G.pipeOrigin==='self')D=SC.slice();
+ else if(G.quickClosed)D=SC.filter(function(d){return d.code==='won'||d.code==='lost'||d.grp==='기타'});
  else{D=ci>=0?A.filter(function(d){return PD_COLS[ci].codes.indexOf(d.code)>=0}):A;if(actF)D=D.filter(actF);if(G.pipeNoAmt)D=D.filter(function(d){return !oppAmt(d)&&!quoteAmt(d)})}
  D=D.slice().sort(sortByPriority);var keys=D.map(dealKey);if(keys.indexOf(G.splitKey)<0)G.splitKey=keys[0];var sel=D[keys.indexOf(G.splitKey)];
  var issueBase=ci>=0?A.filter(function(d){return PD_COLS[ci].codes.indexOf(d.code)>=0}):A;
  var filters='<div class="quickfilters"><div class="pfrow"><span class="pfl">파이프라인</span><button class="pfc '+(!G.quickClosed&&ci<0?'on':'')+'" onclick="G.quickClosed=false;setSplitCol(null)">전체 <em>'+A.length+'</em></button>'
   +PD_COLS.map(function(c,i){return '<button class="pfc '+(!G.quickClosed&&ci===i?'on':'')+'" onclick="G.quickClosed=false;setSplitCol('+i+')">'+esc(c.nm)+' <em>'+A.filter(function(d){return c.codes.indexOf(d.code)>=0}).length+'</em></button>'}).join('')
   +'<button class="pfc e '+(G.quickClosed?'on':'')+'" onclick="quickClosedToggle()">종료 현장 보기</button></div>'
-  +(!G.quickClosed?'<div class="pfrow sub"><span class="pfl">바로 찾기</span>'+SPLIT_ACTS.map(function(a){return '<button class="pfc a '+(G.splitAct===a.k?'on':'')+'" onclick="setSplitAct(\''+a.k+'\')">'+esc(a.nm)+' <em>'+issueBase.filter(a.f).length+'</em></button>'}).join('')+'<button class="pfc q '+(G.pipeNoAmt?'on':'')+'" onclick="setNoAmt()">금액 미입력 <em>'+issueBase.filter(function(d){return !oppAmt(d)&&!quoteAmt(d)}).length+'</em></button><span class="pfl" style="margin-left:auto">담당자 '+esc(G.rep||'전체')+'</span></div>':'')+'</div>';
+  +(G.pipeOrigin==='self'?'<div class="pfrow sub"><span class="pfl">근거 목록</span><button class="pfc on">직접영업 '+D.length+'건</button><button class="pfreset" onclick="G.pipeOrigin=null;G.splitKey=null;paint()">직접영업 필터 해제</button><span class="pfl" style="margin-left:auto">담당자 '+esc(G.rep||'전체')+'</span></div>':(!G.quickClosed?'<div class="pfrow sub"><span class="pfl">바로 찾기</span>'+SPLIT_ACTS.map(function(a){return '<button class="pfc a '+(G.splitAct===a.k?'on':'')+'" onclick="setSplitAct(\''+a.k+'\')">'+esc(a.nm)+' <em>'+issueBase.filter(a.f).length+'</em></button>'}).join('')+'<button class="pfc q '+(G.pipeNoAmt?'on':'')+'" onclick="setNoAmt()">금액 미입력 <em>'+issueBase.filter(function(d){return !oppAmt(d)&&!quoteAmt(d)}).length+'</em></button><span class="pfl" style="margin-left:auto">담당자 '+esc(G.rep||'전체')+'</span></div>':''))+'</div>';
  if(!sel){$('#p-main').innerHTML=filters+'<div class="quick-empty">선택한 조건에 해당하는 현장이 없습니다.</div>';return}
  var list=D.slice(0,120).map(function(d){var k=dealKey(d),pr=priorityInfo(d,'deal');return '<div class="mlrow '+(k===G.splitKey?'sel':'')+'" data-k="'+escAttr(k)+'" onclick="G.splitScroll=this.parentElement.scrollTop;G.splitKey=this.dataset.k;G.splitForm=null;paint()"><span class="mmeta"><span class="mt">'+esc(d.site||'현장명 미입력')+'</span><span class="ms">'+esc(repN(d.assignee))+' · '+esc(stageNoLabel(dealStage(d)))+' · '+fmtAmt(d.amt)+(stageAge(d)!=null?' · D+'+stageAge(d):'')+'</span></span><span class="mbadge '+mstateCls(pr)+'">'+pr.label+'</span></div>'}).join('');
  $('#p-main').innerHTML=filters+'<div class="quickmanage"><div class="mcard quicklist">'+list+'</div>'+quickPanelHTML(sel)+'</div>';var l=document.querySelector('.quicklist');if(l)l.scrollTop=G.splitScroll||0;
