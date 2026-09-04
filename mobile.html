@@ -343,6 +343,9 @@ body.svc .phone{width:100%;max-width:none;border:0;border-radius:0;box-shadow:no
 .contact-hint-m{font-size:11px;line-height:1.55;background:var(--blue-50);color:var(--blue-dark);border-radius:10px;padding:9px 10px;margin-top:8px;display:none}
 @media(max-width:360px){.mcontact-num{grid-template-columns:1fr}.saleshero{grid-template-columns:1fr}}
 
+/* 영업기회 공종 다중 선택 — 작은 화면에서도 대분류별로 바로 누른다. */
+.m-workpicker{margin-top:14px;border:1px solid var(--blue-100);border-radius:14px;background:var(--blue-50);padding:12px}.m-workhead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.m-workhead b{font-size:13px;color:var(--ink)}.m-workhead span{font-size:10px;color:var(--sub)}.m-workscope{border-radius:999px;padding:4px 8px;background:#fff;color:var(--blue);font-size:10px;font-weight:900;white-space:nowrap}.m-workscope.multi{background:var(--violet-bg);color:var(--violet)}.m-workgroup{margin-top:11px}.m-workgroup>strong{display:block;margin-bottom:6px;font-size:11px;color:var(--ink-2)}.m-workopts{display:flex;gap:6px;flex-wrap:wrap}.m-workopt{border:1px solid var(--line-2);background:#fff;color:var(--ink-2);border-radius:999px;padding:9px 11px;font-size:11.5px;font-weight:800}.m-workopt.on{border-color:var(--blue);background:var(--blue);color:#fff}.m-workselected{margin-top:12px;padding-top:10px;border-top:1px dashed var(--blue-100)}.m-workchips{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}.m-workchip{border:1px solid var(--blue-100);background:#fff;color:var(--blue-dark);border-radius:8px;padding:6px 8px;font-size:10px;font-weight:800}.m-workprimary,.m-workother{width:100%;box-sizing:border-box;margin-top:9px;border:1px solid var(--blue-100);border-radius:10px;background:#fff;padding:11px;font:inherit;font-size:12px;color:var(--ink)}.m-worksummary{margin-top:9px;border-radius:10px;background:#fff;padding:9px 10px}.m-worksummary small{display:block;color:var(--sub);font-size:9.5px;font-weight:800}.m-worksummary b{display:block;margin-top:3px;color:var(--ink);font-size:11.5px;line-height:1.45}.m-worksummary.missing b{color:var(--danger)}
+
 </style>
 </head>
 <body>
@@ -728,6 +731,7 @@ function normalizeDeal(d){
  d.activities=d.activities||[];
  d.tl=d.tl||[];
  d.postpone=d.postpone||0;
+ d.workItems=d.workItems||d.work_items||[];d.primaryWork=d.primaryWork||d.primary_work||'';d.workScopeType=d.workScopeType||d.work_scope_type||'';d.workSummary=d.workSummary||d.work_summary||'';
  return d;
 }
 DEALS.forEach(normalizeDeal);
@@ -1034,6 +1038,8 @@ function loadLive(){
      originBusiness:d.originBusiness||d.brand||'',
      currentBusiness:d.currentBusiness||d.brand||'',
      businessHistory:d.businessHistory||[],
+     work:d.work||d.work_name||'',work_name:d.work_name||d.work||'',work_type:d.work_type||d.workType||'',
+     primaryWork:d.primaryWork||d.primary_work||'',workItems:d.workItems||d.work_items||[],workScopeType:d.workScopeType||d.work_scope_type||'',workSummary:d.workSummary||d.work_summary||'',gj:d.gj||null,
      advisory:d.advisory||null,
      contact:d.contact||null,contacts:Array.isArray(d.contacts)?d.contacts:[],office_phone:d.office_phone||d.officeTel||'',office_email:d.office_email||'',
      manager_name:d.manager_name||d.managerName||'',manager_mobile:d.manager_mobile||d.managerMobile||'',
@@ -1179,22 +1185,26 @@ function logEv(type,data){
 function exportJSON(){
  return JSON.stringify({exported_at:new Date().toISOString(),source:'영업관리 앱 v2 목업',
   save_path:SAVE_PATH,event_count:LOG.length,events:LOG,
-  deals:DEALS.map(function(d){return {opportunity_id:d.id,name:d.nm,owner:d.rep,stage_code:d.code,stage_name:stageLabel(d.code),outcome:d.outcome||null,close_reason:d.close_reason||null,amount:d.amt,won_amount:d.won_amount||null,gj_major:d.gj?d.gj[0]:null,gj_minor:d.gj?d.gj[1]:null,last_activity_at:d.lastAt,stage_entered_at:d.stageAt,stale_days:ageOf(d),next_action:d.nextAction||null,activities:d.activities,timeline:d.tl}})
+  deals:DEALS.map(function(d){return {opportunity_id:d.id,name:d.nm,owner:d.rep,stage_code:d.code,stage_name:stageLabel(d.code),outcome:d.outcome||null,close_reason:d.close_reason||null,amount:d.amt,won_amount:d.won_amount||null,primaryWork:d.primaryWork||d.primary_work||null,workItems:workItemsM(d).map(function(w){return w.key}),workScopeType:workItemsM(d).length>1?'multi':workItemsM(d).length===1?'single':'unclassified',workSummary:dealWorkSummaryM(d),gj_major:d.gj?d.gj[0]:null,gj_minor:d.gj?d.gj[1]:null,last_activity_at:d.lastAt,stage_entered_at:d.stageAt,stale_days:ageOf(d),next_action:d.nextAction||null,activities:d.activities,timeline:d.tl}})
  },null,2);
 }
 /* 담당자 부하 (배정 추천용 예시) */
 /* 부하는 실데이터(진행 중인 영업 건 수)에서 계산한다 — 하드코딩 표를 쓰면 추천이 거짓말이 된다 */
 function repLoad(){var m={};REPS.forEach(function(r){m[r.nm]=0});
  DEALS.filter(isOpen).forEach(function(d){m[d.rep]=(m[d.rep]||0)+1});return m}
-/* 공종 체계 — 릴레잇 실데이터 추출 (2026-08-31, 딜 754건 기재 기준)
-   대분류: 방수380 · 지하주차장148 · 재도장125 · 균열보수69 · 기타26 */
-var GJ={
- '방수':['아스팔트 슁글','금속기와','배수로','슬라브(듀얼복합)','슬라브(우레탄)','슬라브(PVC)','에폭시','기타'],
- '지하주차장':['에폭시','유도방수','배면차수','재도장(내부)'],
- '재도장':['재도장(외부)','재도장(외부+부대)','재도장(외부+내부)','재도장(외부+내부+부대)','재도장(내부)'],
- '균열보수':['균열보수','재도장(외부) 동반','기타'],
- '기타':['아스콘','보도블럭','기타']
-};
+/* PC와 동일한 공종 정본. 기존 gj/work_type은 표시 호환만 하고 자동 확정하지 않는다. */
+var WORK_MASTER=[
+ {group:'옥상',items:['싱글','금속기와','듀얼','우레탄','PVC']},
+ {group:'재도장',items:['외+내부','외부','내부']},
+ {group:'지하주차장',items:['에폭시','배면차수','지하주차장 재도장']},
+ {group:'기타',items:['기타']}
+];
+function workKeyM(g,i){return String(g||'')+'>'+String(i||'')}
+function workPartsM(v){if(!v)return null;if(typeof v==='object'){var g=v.group||v.major||v.category||'',i=v.item||v.minor||v.name||v.label||'';return g&&i?{group:g,item:i,key:workKeyM(g,i)}:null}var p=String(v).trim().split(/\s*>\s*/);return p.length>1&&p[0]&&p.slice(1).join('>')?{group:p[0],item:p.slice(1).join('>'),key:workKeyM(p[0],p.slice(1).join('>'))}:null}
+function legacyWorkM(d){var major=d&&Array.isArray(d.gj)?d.gj[0]:'',raw=d&&Array.isArray(d.gj)?d.gj[1]:'',a=d&&d.advisory||{};raw=raw||d&&((d.work_type||d.workType)||a.work_type)||'';if(!String(raw).trim())return null;var map={'아스팔트 슁글':'싱글','슬라브(듀얼복합)':'듀얼','슬라브(우레탄)':'우레탄','슬라브(PVC)':'PVC','재도장(외부+내부)':'외+내부','재도장(외부)':'외부','재도장(내부)':'내부'};var item=map[raw]||String(raw).replace(/^재도장\(|\)$/g,''),group=/지하주차장|에폭시|배면차수/.test(String(major)+' '+raw)?'지하주차장':/재도장/.test(String(major)+' '+raw)?'재도장':/기타/.test(major)?'기타':'옥상';return {group:group,item:item,key:workKeyM(group,item),legacy:true}}
+function workItemsM(d){var src=d&&(d.workItems||d.work_items)||[];if(typeof src==='string'){try{src=JSON.parse(src)}catch(e){src=src.split(',')}}if(!Array.isArray(src))src=[];var out=[],seen={};src.forEach(function(v){var w=workPartsM(v);if(w&&!seen[w.key]){seen[w.key]=1;out.push(w)}});if(!out.length){var old=legacyWorkM(d);if(old)out.push(old)}return out}
+function workSummaryFromM(items){if(!items||!items.length)return '공종 미분류';var groups={};items.forEach(function(w){(groups[w.group]=groups[w.group]||[]).push(w.item)});return Object.keys(groups).map(function(g){return g+'('+groups[g].join('·')+')'}).join(' + ')}
+function dealWorkSummaryM(d){return d&&(d.workSummary||d.work_summary)||workSummaryFromM(workItemsM(d))}
 var scr=document.getElementById('scr'),tabbar=document.getElementById('tabbar');
 function esc(s){return String(s==null?'':s).replace(/</g,'&lt;').replace(/"/g,'&quot;')}
 /* HTML 속성값 전용 — id 를 onclick 안에 문자열로 끼워 넣으면 따옴표 때문에 속성이 잘린다.
@@ -1356,7 +1366,8 @@ function openSheet(introHtml,body){
  document.getElementById('sheetcard').innerHTML='<div class="sheet-grip"></div>'+introHtml+body;
  document.getElementById('sheetwrap').classList.add('open');
 }
-function closeSheet(){document.getElementById('sheetwrap').classList.remove('open')}
+function restoreProspectWorkDraftM(){var x=G._prospectWorkDraft;if(!x)return;G.pWorkItems=x.items;G.pPrimaryWork=x.primary;G.pWorkOther=x.other;delete G._prospectWorkDraft}
+function closeSheet(){document.getElementById('sheetwrap').classList.remove('open');restoreProspectWorkDraftM()}
 function intro(bg,fg,icon,t,d){return '<div class="intro" style="background:'+bg+';color:'+fg+'"><span class="iic" style="color:'+fg+'">'+icon+'</span><div><div class="t">'+t+'</div><div class="d">'+d+'</div></div></div><div style="height:12px"></div>'}
 function callFlow(i){
  var t=(G._today||[])[i];if(!t)return;
@@ -1494,7 +1505,7 @@ function rDeal(){
  scr.innerHTML='<div class="appbar"><button class="iconbtn" onclick="G.deal=null;render()">'+IC.back+'</button><span class="ttl">딜 상세</span>'+(G.mode==='admin'?'<button style="color:var(--violet);font-weight:700;font-size:13px;padding:0 6px" onclick="reassignSheet()">재배정</button>':'<span class="spacer"></span>')+'</div>'
  +'<div class="body fadein" style="padding-bottom:0">'
  +'<div class="card" style="margin-bottom:12px;background:'+(d.rep==='미배정'?'var(--danger-bg)':'var(--blue-50)')+';border-color:transparent"><div class="kv"><span class="k">담당자</span><span class="v" style="color:'+(d.rep==='미배정'?'var(--danger)':'var(--blue-dark)')+'">'+esc(d.rep)+(d.rep==='미배정'?' 🔴':'')+'</span></div></div>'
- +'<div><div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap"><span class="badge '+tg[0]+'">'+tg[1]+'</span><span class="badge badge-blue">'+stageLabel(d.code)+'</span>'+(d.outcome?'<span class="badge '+(d.outcome==='won'?'badge-ok':'badge-danger')+'">'+OUTCOMES[d.outcome].nm+(d.close_reason?' · '+esc(d.close_reason):'')+'</span>':'')+(d.gj?'<span class="badge badge-violet">'+d.gj[0]+' · '+d.gj[1]+'</span>':'')+(isStale(d)?'<span class="badge badge-danger">'+staleTxt(d)+'</span>':'')+'</div>'
+ +'<div><div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap"><span class="badge '+tg[0]+'">'+tg[1]+'</span><span class="badge badge-blue">'+stageLabel(d.code)+'</span>'+(d.outcome?'<span class="badge '+(d.outcome==='won'?'badge-ok':'badge-danger')+'">'+OUTCOMES[d.outcome].nm+(d.close_reason?' · '+esc(d.close_reason):'')+'</span>':'')+'<span class="badge '+(workItemsM(d).length?'badge-violet':'badge-danger')+'">'+esc(dealWorkSummaryM(d))+'</span><button class="badge badge-gray" onclick="workSheetM()">'+(workItemsM(d).length?'공종 수정':'공종 분류')+'</button>'+(isStale(d)?'<span class="badge badge-danger">'+staleTxt(d)+'</span>':'')+'</div>'
  +'<div style="font-size:19px;font-weight:800;letter-spacing:-.4px">'+esc(d.nm)+'</div><div class="hint" style="margin-top:2px">'+amtTxt(d.amt)+'</div></div>'
  /* 사업유형은 현재값과 행동을 분리한다. 정보 줄 전체를 눌러 이력이 뜨면 사용자는 변경 방법을 알 수 없다. */
  +contactCardM(d)
@@ -1510,6 +1521,14 @@ function rDeal(){
  +'</div>'
  +(canAdvance(d)?'<div class="submitbar"><button class="btn btn-primary" onclick="nextSheet()">'+(d.outcome==='won'?'시공 단계 진행 →':'다음 단계로 →')+'</button><button class="btn btn-line" style="margin-top:7px" onclick="bizSheet()">사업유형 변경</button><button class="hint" style="display:block;width:100%;text-align:center;margin-top:7px" onclick="exSheet()">예외 이동 · 종료 처리 — 전체 단계에서 선택 (사유 필수)</button></div>'
    :'<div class="submitbar"><div class="hint" style="text-align:center">'+OUTCOMES[d.outcome].nm+' 로 종료된 건입니다'+(d.closed_at?' · '+String(d.closed_at).slice(0,10):'')+'</div></div>');
+}
+function knownWorkKeyM(k){return WORK_MASTER.some(function(g){return g.items.some(function(i){return workKeyM(g.group,i)===k})})}
+function workSheetM(){
+ var d=DEALS.find(function(x){return String(x.id)===String(G.deal)});if(!d)return;G._prospectWorkDraft={items:(G.pWorkItems||[]).slice(),primary:G.pPrimaryWork||'',other:G.pWorkOther||''};G.pWorkItems=[];G.pPrimaryWork='';G.pWorkOther='';workItemsM(d).forEach(function(w){if(w.group==='기타'){if(G.pWorkItems.indexOf('기타>기타')<0)G.pWorkItems.push('기타>기타');G.pWorkOther=w.item}else if(knownWorkKeyM(w.key))G.pWorkItems.push(w.key)});var pk=d.primaryWork||d.primary_work||'',pp=workPartsM(pk);G.pPrimaryWork=pp&&pp.group==='기타'?'기타>기타':pk;if(G.pWorkItems.length===1)G.pPrimaryWork=G.pWorkItems[0];
+ openSheet(intro('var(--blue-50)','var(--blue-dark)',IC.folder,'공종 분류·수정','이 영업기회에만 적용됩니다. 같은 아파트의 다른 공사는 바뀌지 않습니다'),'<div id="p-workpicker" class="m-workpicker">'+prospectWorkHTML()+'</div>'+mReason('workedit','예: 공사 범위 확인 결과 옥상 금속기와와 외부 재도장 복합공종으로 확정.')+'<button class="btn btn-primary" style="margin-top:12px" data-gate="workedit" disabled onclick="saveWorkSheetM()">공종 저장</button><button class="btn btn-line" style="margin-top:8px" onclick="closeSheet()">취소</button>')
+}
+function saveWorkSheetM(){
+ var d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),other=document.getElementById('pworkother');if(!d)return;if(other)G.pWorkOther=other.value;var works=prospectWorkItems(),multi=works.length>1,raw=multi?G.pPrimaryWork:((G.pWorkItems||[])[0]||''),primary=workPartsM(raw);if(primary&&raw==='기타>기타'&&String(G.pWorkOther||'').trim())primary={group:'기타',item:String(G.pWorkOther).trim(),key:workKeyM('기타',String(G.pWorkOther).trim())};if(!works.length)return toast('공종을 하나 이상 선택해 주세요');if((G.pWorkItems||[]).indexOf('기타>기타')>=0&&!String(G.pWorkOther||'').trim())return toast('기타 공종명을 직접 입력해 주세요');if(multi&&!primary)return toast('복합공종의 대표 공종을 선택해 주세요');if(!mrOk('workedit'))return toast('공종 분류 근거를 5자 이상 남겨 주세요');var keys=works.map(function(w){return w.key}),scope=multi?'multi':'single',summary=workSummaryFromM(works),at=isoNow();d.primaryWork=d.primary_work=primary.key;d.workItems=d.work_items=keys;d.workScopeType=d.work_scope_type=scope;d.workSummary=d.work_summary=summary;d.work_type=primary.item;d.gj=[primary.group,primary.item];d.tl.unshift(['오늘','공종 분류 — '+summary+' · '+mrVal('workedit')]);pushWrite('opportunity_work_set',{opportunity_id:d.id,primaryWork:primary.key,workItems:keys,workScopeType:scope,workSummary:summary,primary_work:primary.key,work_items:keys,work_scope_type:scope,work_summary:summary,work_type:primary.item,reason:mrVal('workedit'),reason_source:mrSrc('workedit'),actor_name:G.user.nm,at:at});closeSheet();toast('공종 저장 요청을 보냈습니다');render()
 }
 /* 기술자문일 «때만» 펼친다 — 모든 딜에 보여주면 화면이 복잡해진다 */
 function advCardM(d){
@@ -1869,7 +1888,7 @@ function rSub(head){
 function subBack(){G.sub=null;render()}
 function appbarS(title,right){return '<div class="appbar"><button class="iconbtn" onclick="subBack()">'+IC.back+'</button><span class="ttl">'+title+'</span>'+(right||'<span class="spacer"></span>')+'</div>'}
 function dealRow(d,extra){var tg=tagOf(d.amt);return '<div class="lrow" data-id="'+escAttr(d.id)+'" onclick="G.deal=this.dataset.id;render()">'+tile(IC.folder,'var(--blue)','var(--blue-50)')
- +'<span class="meta"><span class="t">'+esc(d.nm)+' <span class="badge badge-gray" style="font-size:9.5px;padding:1px 6px">'+stageLabel(d.code)+'</span>'+(isStale(d)?' <span class="kwarn">'+staleTxt(d)+'</span>':'')+'</span><span class="s">'+esc(d.rep)+' · '+amtTxt(d.amt)+(d.gj?' · '+esc(d.gj[1]):'')+(extra?' · '+extra:'')+'</span></span>'
+ +'<span class="meta"><span class="t">'+esc(d.nm)+' <span class="badge badge-gray" style="font-size:9.5px;padding:1px 6px">'+stageLabel(d.code)+'</span>'+(isStale(d)?' <span class="kwarn">'+staleTxt(d)+'</span>':'')+'</span><span class="s">'+esc(d.rep)+' · '+amtTxt(d.amt)+' · '+esc(dealWorkSummaryM(d))+(extra?' · '+extra:'')+'</span></span>'
  +'<span class="badge '+tg[0]+'">'+tg[1]+'</span><span class="chev">'+IC.chev+'</span></div>'}
 
 /* 검색 — 입력은 부분 갱신(포커스 유지) */
@@ -2032,6 +2051,11 @@ function pickReassign(r){
 
    등록도 «근거»를 받는다 — 처음부터 출처가 명확해야 나중에 추적된다.
    ══════════════════════════════════════════════════════════ */
+function prospectWorkItems(){G.pWorkItems=G.pWorkItems||[];return G.pWorkItems.map(function(k){var w=workPartsM(k);if(k==='기타>기타'&&String(G.pWorkOther||'').trim())w={group:'기타',item:String(G.pWorkOther).trim(),key:workKeyM('기타',String(G.pWorkOther).trim())};return w}).filter(Boolean)}
+function toggleProspectWork(k){G.pWorkItems=G.pWorkItems||[];var before=G.pWorkItems.length,i=G.pWorkItems.indexOf(k);if(i>=0)G.pWorkItems.splice(i,1);else G.pWorkItems.push(k);if(G.pWorkItems.length===1)G.pPrimaryWork=G.pWorkItems[0];else if(before===1&&G.pWorkItems.length===2)G.pPrimaryWork='';else if(G.pWorkItems.indexOf(G.pPrimaryWork)<0)G.pPrimaryWork='';paintProspectWork()}
+function prospectWorkHTML(){G.pWorkItems=G.pWorkItems||[];var items=prospectWorkItems(),multi=items.length>1;return '<div class="m-workhead"><div><b>공종 선택 <span style="color:var(--danger)">*</span></b><br><span>복수 선택 시 복합공종 자동 판정</span></div><i class="m-workscope '+(multi?'multi':'')+'">'+(multi?'복합공종':items.length?'단일공종':'선택 필요')+'</i></div>'+WORK_MASTER.map(function(g){return '<div class="m-workgroup"><strong>'+esc(g.group)+'</strong><div class="m-workopts">'+g.items.map(function(i){var k=workKeyM(g.group,i);return '<button type="button" class="m-workopt '+(G.pWorkItems.indexOf(k)>=0?'on':'')+'" data-k="'+escAttr(k)+'" onclick="toggleProspectWork(this.dataset.k)">'+esc(i)+'</button>'}).join('')+'</div></div>'}).join('')+(G.pWorkItems.indexOf('기타>기타')>=0?'<input id="pworkother" class="m-workother" value="'+escAttr(G.pWorkOther||'')+'" oninput="G.pWorkOther=this.value;paintProspectWorkSummary()" placeholder="기타 공종 직접 입력">':'')+'<div class="m-workselected"><span class="hint">선택된 공종 · '+items.length+'개</span><div class="m-workchips">'+(items.length?items.map(function(w){return '<span class="m-workchip">'+esc(w.group)+' › '+esc(w.item)+'</span>'}).join(''):'<span class="m-workchip" style="color:var(--danger)">아직 선택하지 않았습니다</span>')+'</div>'+(multi?'<select id="pworkprimary" class="m-workprimary" onchange="G.pPrimaryWork=this.value;paintProspectWorkSummary()"><option value="">대표 공종 선택 *</option>'+G.pWorkItems.map(function(k){var j=G.pWorkItems.indexOf(k),w=items[j]||workPartsM(k);return '<option value="'+escAttr(k)+'" '+(G.pPrimaryWork===k?'selected':'')+'>'+esc(w.group+' › '+w.item)+'</option>'}).join('')+'</select>':'')+'<div class="m-worksummary '+(items.length?'':'missing')+'"><small>저장 요약</small><b id="pworksummary">'+esc(workSummaryFromM(items))+'</b></div></div>'}
+function paintProspectWork(){var h=document.getElementById('p-workpicker');if(h)h.innerHTML=prospectWorkHTML()}
+function paintProspectWorkSummary(){var e=document.getElementById('pworkother');if(e)G.pWorkOther=e.value;var h=document.getElementById('pworksummary');if(h)h.textContent=workSummaryFromM(prospectWorkItems())}
 function rProspect(head){
  var biz=G.pbiz||BIZ_TYPES[0];
  scr.innerHTML=head+'<div class="body fadein">'
@@ -2040,15 +2064,15 @@ function rProspect(head){
  +'<input id="pname" value="'+escAttr(G.pnm||'')+'" oninput="G.pnm=this.value" placeholder="예: [수원] 광교더리브아파트" style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box">'
  +'<button class="btn btn-line" style="margin-top:10px" onclick="scanCard()">'+IC.camera+' 명함·현수막 촬영으로 자동 인식</button>'
  +'<div class="hint" style="margin-top:14px;margin-bottom:6px">공사명 <span style="color:var(--danger)">*</span></div><input id="pwork" value="'+escAttr(G.pwork||'')+'" oninput="G.pwork=this.value" placeholder="예: 옥상 방수 재도장공사" style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box">'
+ +'<div id="p-workpicker" class="m-workpicker">'+prospectWorkHTML()+'</div>'
+ +'<div class="hint" style="margin-top:14px;margin-bottom:6px">사업유형 <span style="color:var(--danger)">*</span> — 나중에 전환할 수 있습니다</div><div class="chiprow">'+BIZ_TYPES.map(function(b){return '<button class="cchip '+(biz===b?'b':'gr')+'" data-b="'+escAttr(b)+'" onclick="G.pbiz=this.dataset.b;render()">'+esc(b)+'</button>'}).join('')+'</div>'
+ +'<div class="hint" style="margin-top:14px;margin-bottom:6px">담당자</div><div class="rsum" style="padding:13px"><b>'+esc(G.user?G.user.nm:'')+'</b> <span class="hint">· 로그인 사용자</span></div>'
+ +'<div class="hint" style="margin-top:14px;margin-bottom:6px">예상금액(원)</div><input id="pamt" type="number" min="0" step="1000000" value="'+escAttr(G.pamt||'')+'" oninput="G.pamt=this.value" placeholder="예: 150000000" style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box">'
  +'<div class="hint" style="margin-top:14px;margin-bottom:6px">현장 주소</div><input id="paddr" value="'+escAttr(G.paddr||'')+'" oninput="G.paddr=this.value" placeholder="예: 경기 수원시 영통구 ..." style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box">'
  +'<div class="hint" style="margin-top:14px;margin-bottom:6px">관리사무소 대표전화 <span style="color:var(--danger)">*</span></div><input id="poffice" inputmode="tel" value="'+escAttr(G.poffice||'')+'" oninput="G.poffice=this.value" placeholder="예: 031-123-4567" style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box">'
  +'<div class="hint" style="margin-top:14px;margin-bottom:6px">관리소장 성명 <span style="color:var(--danger)">*</span></div><input id="pmanager" value="'+escAttr(G.pmanager||'')+'" oninput="G.pmanager=this.value" placeholder="예: 김민수" style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box">'
  +'<div class="hint" style="margin-top:14px;margin-bottom:6px">관리소장 휴대폰 <span style="color:var(--danger)">*</span></div><input id="pmobile" inputmode="tel" value="'+escAttr(G.pmobile||'')+'" oninput="G.pmobile=this.value;managerHintM()" placeholder="예: 010-1234-5678" style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box"><div id="pcontacthint" class="contact-hint-m"></div>'
  +'<div class="hint" style="margin-top:14px;margin-bottom:6px">관리사무소 이메일</div><input id="pemail" type="email" value="'+escAttr(G.pemail||'')+'" oninput="G.pemail=this.value" placeholder="예: office@example.com" style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box">'
- +'<div class="hint" style="margin-top:14px;margin-bottom:6px">사업유형 <span style="color:var(--danger)">*</span> — 나중에 전환할 수 있습니다</div><div class="chiprow">'+BIZ_TYPES.map(function(b){return '<button class="cchip '+(biz===b?'b':'gr')+'" data-b="'+escAttr(b)+'" onclick="G.pbiz=this.dataset.b;render()">'+esc(b)+'</button>'}).join('')+'</div>'
- +'<div class="hint" style="margin-top:14px;margin-bottom:6px">공종 (대분류) <span style="color:var(--danger)">*</span></div><div class="chiprow">'+Object.keys(GJ).map(function(g){return '<button class="cchip '+(G.pgj1===g?'b':'gr')+'" data-g="'+escAttr(g)+'" onclick="G.pgj1=this.dataset.g;G.pgj2=null;render()">'+esc(g)+'</button>'}).join('')+'</div>'
- +(G.pgj1?'<div class="hint" style="margin-top:12px;margin-bottom:6px">공종 (소분류) — '+esc(G.pgj1)+'</div><div class="chiprow">'+GJ[G.pgj1].map(function(g){return '<button class="cchip '+(G.pgj2===g?'b':'gr')+'" style="font-size:12.5px;padding:11px 4px" data-g="'+escAttr(g)+'" onclick="G.pgj2=this.dataset.g;render()">'+esc(g)+'</button>'}).join('')+'</div>':'')
- +'<div class="hint" style="margin-top:14px;margin-bottom:6px">담당자</div><div class="rsum" style="padding:13px"><b>'+esc(G.user?G.user.nm:'')+'</b> <span class="hint">· 로그인 사용자</span></div>'
  +'<div class="hint" style="margin-top:14px;margin-bottom:6px">영업 등록 근거 <span style="color:var(--danger)">*</span></div>'+mReason('nd','예: 직접 발굴한 현장. 재도장 입찰 예정이며 기술자문으로 영업 시작.')
  +'<button class="btn btn-primary" style="margin-top:14px" data-gate="nd" disabled onclick="addProspect()">등록하기</button></div>'
  +'<div class="card" style="background:var(--blue-50);border-color:transparent"><div class="hint" style="color:var(--blue-dark)">아파트와 관리소장을 따로 관리합니다. 관리소장이 다른 단지로 이동해도 기존 관계 이력은 유지됩니다.</div></div></div>';
@@ -2060,27 +2084,29 @@ function scanCard(){
  toast('촬영 인식 완료 — 현장명 자동 입력'+(G.scanN%2?' (중복 데모)':''));render();
 }
 function addProspect(){
- var nm=(G.pnm||'').trim(),work=(G.pwork||'').trim(),biz=G.pbiz||BIZ_TYPES[0],address=(G.paddr||'').trim(),office=(G.poffice||'').trim(),manager=(G.pmanager||'').trim(),mobile=(G.pmobile||'').trim(),email=(G.pemail||'').trim();
+ var nm=(G.pnm||'').trim(),work=(G.pwork||'').trim(),biz=G.pbiz||BIZ_TYPES[0],amount=Number(G.pamt||0),address=(G.paddr||'').trim(),office=(G.poffice||'').trim(),manager=(G.pmanager||'').trim(),mobile=(G.pmobile||'').trim(),email=(G.pemail||'').trim();
  if(!nm)return toast('아파트명을 입력하거나 촬영 인식을 눌러주세요');
  if(!work)return toast('공사명을 입력해 주세요');
  if(!office||!manager||!mobile)return toast('관리사무소 대표전화·관리소장 성명·휴대폰은 필수입니다');
  if(phoneN(office).length<8||phoneN(mobile).length<10)return toast('전화번호 형식을 확인해 주세요');
- if(!G.pgj1)return toast('공종 대분류를 골라주세요');
+ var other=document.getElementById('pworkother');if(other)G.pWorkOther=other.value;var works=prospectWorkItems(),multi=works.length>1,primaryRaw=multi?G.pPrimaryWork:((G.pWorkItems||[])[0]||''),primary=workPartsM(primaryRaw);if(primary&&primaryRaw==='기타>기타'&&String(G.pWorkOther||'').trim())primary={group:'기타',item:String(G.pWorkOther).trim(),key:workKeyM('기타',String(G.pWorkOther).trim())};
+ if(!works.length)return toast('공종을 하나 이상 선택해 주세요');
+ if((G.pWorkItems||[]).indexOf('기타>기타')>=0&&!String(G.pWorkOther||'').trim())return toast('기타 공종명을 직접 입력해 주세요');
+ if(multi&&!primary)return toast('복합공종의 대표 공종을 선택해 주세요');
  if(!mrOk('nd'))return toast('영업 등록 근거를 남겨야 저장할 수 있어요');
- var core=nm.replace(/\[.*?\]\s*/,'');var dup=DEALS.find(function(d){return core&&d.nm.indexOf(core)>=0});if(dup)return dupSheet(dup);
- var why=mrVal('nd'),src=mrSrc('nd'),gj=[G.pgj1,G.pgj2||'미정'],at=isoNow(),personKey='mobile:'+phoneN(mobile);
+ var core=nm.replace(/\[.*?\]\s*/,''),summary=workSummaryFromM(works),sameSite=DEALS.find(function(d){return core&&d.nm.indexOf(core)>=0}),dup=DEALS.find(function(d){return core&&d.nm.indexOf(core)>=0&&String(d.work||d.work_name||'').trim()===work&&dealWorkSummaryM(d)===summary});if(dup)return dupSheet(dup);
+ var why=mrVal('nd'),src=mrSrc('nd'),workKeys=works.map(function(w){return w.key}),scope=multi?'multi':'single',gj=[primary.group,primary.item],at=isoNow(),personKey='mobile:'+phoneN(mobile);
  var contact={officeTel:office,officeEmail:email,managerName:manager,managerMobile:mobile,managerRole:'관리소장',personKey:personKey,currentSite:nm,status:'current',startedAt:at};
  upsertPersonM({name:manager,mobile:mobile,personKey:personKey},nm,office,at);
- var nd=normalizeDeal({id:'new-'+Date.now(),nm:nm,rep:G.user.nm,gj:gj,amt:0,code:'first_contact',lead:1,address:address,origin:biz,sub:biz,originBusiness:biz,currentBusiness:biz,businessHistory:[],contact:contact,office_phone:office,office_email:email,manager_name:manager,manager_mobile:mobile,manager_role:'관리소장',person_key:personKey,advisory:(biz==='기술자문'?{work_name:work,work_type:gj[1]}:null),tl:[['오늘','영업 등록 ('+biz+' · '+work+')']]});
+ var nd=normalizeDeal({id:'new-'+Date.now(),site_id:sameSite&&sameSite.site_id||null,nm:nm,rep:G.user.nm,gj:gj,work:work,work_name:work,work_type:primary.item,primaryWork:primary.key,workItems:workKeys,workScopeType:scope,workSummary:summary,amt:amount||0,code:'first_contact',lead:1,address:address,origin:biz,sub:biz,originBusiness:biz,currentBusiness:biz,businessHistory:[],contact:contact,office_phone:office,office_email:email,manager_name:manager,manager_mobile:mobile,manager_role:'관리소장',person_key:personKey,advisory:(biz==='기술자문'?{work_name:work,work_type:summary}:null),tl:[['오늘','영업 등록 ('+biz+' · '+work+' · '+summary+')']]});
  DEALS.push(nd);addActivity(nd,'영업등록',work+' · '+biz,why,false);setNextAction(nd,'첫통화','등록 후 첫 통화',1);
- pushWrite('opportunity_create',{name:nm,work_name:work,work_type:gj[1],brand:biz,owner:G.user.nm,address:address||null,reason:why,reason_source:src,origin:biz,gj:gj,office_phone:office,office_email:email||null,manager_name:manager,manager_mobile:mobile,manager_role:'관리소장',person_key:personKey,contact_started_at:at},nd.id);
- G.pnm='';G.pwork='';G.paddr='';G.poffice='';G.pmanager='';G.pmobile='';G.pemail='';G.pgj1=null;G.pgj2=null;G.tab='mine';toast(biz+' 영업과 관리소장 연락처를 등록했습니다');render();
+ pushWrite('opportunity_create',{site_id:nd.site_id||null,name:nm,work_name:work,work_type:primary.item,primaryWork:primary.key,workItems:workKeys,workScopeType:scope,workSummary:summary,primary_work:primary.key,work_items:workKeys,work_scope_type:scope,work_summary:summary,brand:biz,owner:G.user.nm,amount:amount||null,address:address||null,reason:why,reason_source:src,origin:biz,gj:gj,office_phone:office,office_email:email||null,manager_name:manager,manager_mobile:mobile,manager_role:'관리소장',person_key:personKey,contact_started_at:at},nd.id);
+ G.pnm='';G.pwork='';G.pamt='';G.paddr='';G.poffice='';G.pmanager='';G.pmobile='';G.pemail='';G.pWorkItems=[];G.pPrimaryWork='';G.pWorkOther='';G.tab='mine';toast(biz+' 영업과 공종·관리소장 연락처를 등록했습니다');render();
 }
 function dupSheet(d){
- openSheet(intro('var(--danger-bg)','#c22f3c',IC.alert,'이 현장, 이미 있어요','같은 현장을 두 번 만들면 이력이 갈라집니다'),
+ openSheet(intro('var(--danger-bg)','#c22f3c',IC.alert,'같은 영업기회가 이미 있어요','현장·공사명·공종이 모두 같은 영업기회입니다. 같은 현장의 다른 공종은 별도로 등록할 수 있습니다.'),
   dealRow(d)+'<div style="height:8px"></div>'
-  +'<button class="cchip b" data-id="'+escAttr(d.id)+'" onclick="closeSheet();G.deal=this.dataset.id;G.tab=\'mine\';render()"><span class="cic">'+IC.folder+'</span>기존 건 열기 — 이력에 이어붙이기</button>'
-  +'<button class="cchip gr" onclick="closeSheet();toast(\'별개 현장으로 등록 — 사유가 기록됩니다 (목업)\')">그래도 새 건으로 등록</button>');
+  +'<button class="cchip b" data-id="'+escAttr(d.id)+'" onclick="closeSheet();G.deal=this.dataset.id;G.tab=\'mine\';render()"><span class="cic">'+IC.folder+'</span>기존 영업기회 열기 — 이력에 이어붙이기</button>');
 }
 
 /* 알림함 (V1.5) */
