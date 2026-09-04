@@ -1510,7 +1510,7 @@ html,body{height:100%}
         <div class="card" id="d-origin"></div>
       </div>
       <div class="card" id="d-mine" data-role="sales"></div>
-      <div class="card" id="d-today" data-role="exec sales"></div>
+      <div class="card" id="d-today" data-role="exec"></div>
       <div class="card" id="d-health" data-role="analysis"></div>
       <!-- 구버전 대시보드(브랜드칩·문의 KPI·월별추이·도넛·담당자랭킹·알림)는 2026-09-02 제거.
            Control Tower 와 정보가 겹쳐 첫 화면이 다시 복잡해졌다.
@@ -2510,15 +2510,16 @@ function paintTowerMoney(){
 }
 /* 금액을 누르면 «현장 목록» 이 아니라 «이 돈이 어디에 어떻게 있는가» 를 먼저 보여준다 */
 function towerDrill(k){
- if(k==='risk'){var a=liveActs()[0];towerGoAct(a?a.k:'stale');return}
+ if(k==='risk'){towerGoRep(G.rep,null,null,'risk');return}
  G.towerDrill=(G.towerDrill===k?null:k);paint()}
 function paintTowerDrill(){
  var host=$('#d-drill');if(!host)return;
  if(!G.towerDrill){host.innerHTML='';return}
- var A=towerBase(),act=A.filter(towerActive),won=A.filter(isWon);
+ var A=towerBase(),act=A.filter(towerActive),won=wonInPeriod();
  var D=G.towerDrill==='won'?won:(G.towerDrill==='quote'?A:act);
  var f=G.towerDrill==='won'?function(d){return wonAmt(d)||oppAmt(d)}
-      :(G.towerDrill==='quote'?function(d){return quoteAmt(d)||oppAmt(d)}:oppAmt);
+      :(G.towerDrill==='quote'?function(d){return quoteAmt(d)||oppAmt(d)}
+      :(G.towerDrill==='wt'?function(d){return oppAmt(d)*forecastProbability(d.code)}:oppAmt));
  var rows=PD_COLS.map(function(c){var L=D.filter(function(d){return c.codes.indexOf(d.code)>=0});
    return {nm:c.nm,n:L.length,amt:sumBy(L,f),ci:PD_COLS.indexOf(c)}}).filter(function(x){return x.n});
  if(G.towerDrill==='won')rows=[{nm:'수주 완료',n:won.length,amt:sumBy(won,f),ci:null}];
@@ -2528,7 +2529,7 @@ function paintTowerDrill(){
  var dead=SPLIT_ACTS.filter(function(a){return a.need&&!metricReady(a.need)});
  var cov=amtCover(D,f);
  host.innerHTML='<div class="card" style="margin-top:10px"><div class="ch"><div><h3>'
-  +esc({quote:'견적 배정금액',pipe:'Pipeline 진행',won:'수주금액'}[G.towerDrill]||'금액')
+  +esc({quote:'견적 배정금액',pipe:'Pipeline 진행',wt:'가중 예상매출',won:'수주금액'}[G.towerDrill]||'금액')
   +' '+eok(sumBy(D,f))+'</h3><div class="sub">구간별로 나눠 본 다음, 그중 «관리상 위험한 금액» 을 봅니다 · 금액 입력 '+cov.n+'/'+cov.t+'건</div></div>'
   +'<button class="dact" onclick="towerDrill(null)">닫기</button></div>'
   +'<div class="table-scroll"><table class="rtbl"><thead><tr><th>구간</th><th>건수</th><th>금액</th></tr></thead><tbody>'
@@ -2541,10 +2542,11 @@ function paintTowerDrill(){
   +'</div>';
 }
 /* 숫자를 누르면 «그 숫자를 만든 현장 목록» 으로 간다 — 대시보드 전체의 원칙 */
-function towerGoStage(ci){G.pipeOrigin=null;G.pipeView='split';G.splitCol=ci;G.splitStage=null;G.splitAct=null;G.splitClosed=null;G.splitKey=null;goPage('pipe')}
-function towerGoAct(k){G.pipeOrigin=null;G.pipeView='split';G.splitCol=null;G.splitStage=null;G.splitAct=k;G.splitClosed=null;G.splitKey=null;goPage('pipe')}
-function towerGoRep(nm,ci,act,origin){G.inqMetric=null;G.rep=nm;G.pipeOrigin=origin||null;G.pipeView='split';G.splitCol=(ci==null?null:ci);G.splitStage=null;G.splitAct=act||null;G.splitClosed=null;G.splitKey=null;goPage('pipe')}
-function towerGoWon(nm){G.inqMetric=null;G.pipeOrigin=null;G.rep=nm||G.rep;G.pipeView='split';G.splitCol=null;G.splitStage=null;G.splitAct=null;G.splitClosed='won';G.splitKey=null;goPage('pipe')}
+function towerDrillReset(){G.quickClosed=false;G.pipeNoAmt=false;G.pipeStatus='전체';G.pipeSub='전체';G.pipeAge='전체';G.splitStage=null;G.splitClosed=null;G.splitKey=null}
+function towerGoStage(ci){towerDrillReset();G.pipeOrigin=null;G.pipeView='split';G.splitCol=ci;G.splitAct=null;goPage('pipe')}
+function towerGoAct(k){towerDrillReset();G.pipeOrigin=null;G.pipeView='split';G.splitCol=null;G.splitAct=k;goPage('pipe')}
+function towerGoRep(nm,ci,act,origin){towerDrillReset();G.inqMetric=null;G.rep=nm;G.pipeOrigin=origin||null;G.pipeView='split';G.splitCol=(ci==null?null:ci);G.splitAct=act||null;goPage('pipe')}
+function towerGoWon(nm){towerDrillReset();G.inqMetric=null;G.pipeOrigin='won';G.rep=nm||G.rep;G.pipeView='split';G.splitCol=null;G.splitAct=null;goPage('pipe')}
 
 /* ── SALES PIPE (2026-09-02) ───────────────────────────────────
    막대그래프가 아니다. 하나의 현장이 처음 들어와 수주될 때까지
@@ -2600,7 +2602,7 @@ function paintSalesPipe(){
       /* 칸 사이에 전환율을 넣는다 — 따로 Funnel 카드를 두면 같은 질문을 두 번 하게 된다 */
       var r=i?pctOf(x.L.length,inq[i-1].L.length):null;
       return (i?'<span class="parw conv'+(r<60?' bad':'')+'">→<em>'+r+'%</em></span>':'')
-      +pipeBox({nm:x.nm,n:x.L.length,amt:null,tip:x.tip,cls:'inq',go:"goPage('inq')"})}).join('')
+      +pipeBox({nm:x.nm,n:x.L.length,amt:null,tip:x.tip,cls:'inq',go:"towerGoInqPhase('"+(i===0?'전체':(i===1?'응대 완료':'견적 준비'))+"')"})}).join('')
     +'<span class="parw join">╗</span></div>'
    +'<div class="pjoin"><span>견적서 작성 완료 → 파이프라인 인계</span>'
     +'<em title="origin_inquiry_id 가 아직 0% 라 두 구간을 합산하지 않습니다">연결 미확정</em></div>'
@@ -2620,14 +2622,15 @@ function paintSalesPipe(){
    /* 3행 — 관에서 빠지는 가지 */
    +'<div class="pbranch">'
     +'<span class="bl">↓ 관에서 빠짐</span>'
-    +'<button class="bbox warn" onclick="towerGoAct(\'stale\')">'+UIT.stale+' <b>'+stuck.length+'건 · '+eok(sumBy(stuck,oppAmt))+'</b></button>'
+    +'<button class="bbox warn" onclick="towerGoRep(G.rep,null,null,\'stageStale\')">'+UIT.stale+' <b>'+stuck.length+'건 · '+eok(sumBy(stuck,oppAmt))+'</b></button>'
     +'<button class="bbox gray" onclick="towerGoClosedAll()">종료(실주·배드핏·연락두절) <b>'+closed.length+'건 · '+eok(sumBy(closed,dealAmt))+'</b></button>'
    +'</div>'
   +'</div>'
   +'<div id="d-diag"></div>';
  paintTowerDiag();
 }
-function towerGoClosedAll(){G.pipeView='split';G.splitCol=null;G.splitStage=null;G.splitAct=null;G.splitClosed='lost';G.splitKey=null;goPage('pipe')}
+function towerGoInqPhase(phase){G.pipeOrigin=null;G.rep=G.rep||'전체';G.inqMetric=null;G.inqView='console';G.inqPhase=phase||'전체';G.hideClosed=false;goPage('inq')}
+function towerGoClosedAll(){towerDrillReset();G.pipeOrigin='closedLost';G.pipeView='split';G.splitCol=null;G.splitAct=null;goPage('pipe')}
 /* 파이프 칸 클릭 → 목록이 아니라 «진단» 부터. 파이프 → 원인 → 사람 → 현장 순서 */
 function towerDiag(ci){G.pipeDiag=(G.pipeDiag===ci?null:ci);paint()}
 function paintTowerDiag(){
@@ -3189,7 +3192,7 @@ function paintTowerAction(){
      +'<span class="am"><b>'+eok(oppAmt(d))+'</b><span>바로 열기</span></span></div>'}).join('')+'</div>'
    :'<div class="nodata">지금 개입이 필요한 현장이 없습니다.</div>');
 }
-function towerGoNeck(ci,k){G.pipeView='split';G.splitCol=ci;G.splitStage=null;G.splitAct=k||null;G.splitClosed=null;G.splitKey=null;goPage('pipe')}
+function towerGoNeck(ci,k){towerDrillReset();G.pipeOrigin='risk';G.pipeView='split';G.splitCol=ci;G.splitAct=null;goPage('pipe')}
 
 /* ── 4층 · Process 건강도 ──────────────────────────────────── */
 function paintTowerHealth(){
@@ -3197,7 +3200,7 @@ function paintTowerHealth(){
  var act=towerBase().filter(towerActive);
  var un=(B.inquiries||[]).filter(function(q){return inPeriod(inquiryDate(q))&&repN(q.assignee)==='미배정'&&!isClosedInq(q)});
  var noAmt=act.filter(function(d){return !oppAmt(d)});
- var items=[{nm:'미배정 문의',n:un.length,amt:null,go:"G.rep='미배정';goPage('inq')"}]
+ var items=[{nm:'미배정 문의',n:un.length,amt:null,go:"G.inqMetric=null;G.rep='미배정';goPage('inq')"}]
   .concat(liveActs().map(function(a){var L=act.filter(a.f);
     return {nm:a.nm,n:L.length,amt:sumBy(L,oppAmt),go:"towerGoAct('"+a.k+"')"}}))
   .concat([{nm:'금액 미입력',n:noAmt.length,amt:null,go:"towerGoNoAmt()",
@@ -3209,8 +3212,7 @@ function paintTowerHealth(){
     +SPLIT_ACTS.filter(function(a){return a.need&&!metricReady(a.need)}).map(function(a){
       return '<span class="hchip" style="cursor:default;opacity:.65" title="서버 번들에 next_action 이 한 건도 없어 계산할 수 없습니다"><b style="font-size:12px;color:var(--sub)">측정 불가</b><span>'+esc(a.nm)+'</span></span>'}).join('')+'</div>';
 }
-function towerGoNoAmt(){G.pipeView='split';G.splitCol=null;G.splitStage=null;G.splitAct=null;
- G.splitClosed=null;G.splitKey=null;G.pipeNoAmt=true;
+function towerGoNoAmt(){towerDrillReset();G.pipeOrigin=null;G.pipeView='split';G.splitCol=null;G.splitAct=null;G.pipeNoAmt=true;
  if(G.page!=='pipe')goPage('pipe');else paint()}
 /* ══ 역할별 홈 (2026-09-02) ═══════════════════════════════════
    화면은 하나인데 보는 사람의 질문이 다르다.
@@ -3261,7 +3263,7 @@ function paintHeadline(){
  host.innerHTML='<span class="hl1">'+esc(periodLabel())+' <b>'+eok(inAmt)+'</b>이(가) 들어왔고, '
   +'지금 <b class="r">'+eok(rAmt)+'</b>이(가) 관리 위험 상태입니다.</span>'
   +'<span class="hl2">진행 '+eok(pAmt)+'의 '+lvl+'% · '+risk.length+'건</span>'
-  +(risk.length?'<button class="hlgo" data-k="'+escAttr(LA[0]?LA[0].k:'stale')+'" onclick="towerGoAct(this.dataset.k)">지금 보기 →</button>':'');
+  +(risk.length?'<button class="hlgo" onclick="towerGoRep(G.rep,null,null,\'risk\')">지금 보기 →</button>':'');
 }
 function periodLabel(){return (G.year==='전체'?'전체 기간':G.year+'년')+(G.quarter?' '+G.quarter+'분기':'');}
 function paintTower(){
@@ -3983,8 +3985,8 @@ function pipeScoped(){return B.deals.filter(function(d){return inPeriod(d.create
  &&(G.brand==='전체'||d.brand===G.brand)&&(G.rep==='전체'||repN(d.assignee)===G.rep)
  &&metricDealMatch(d,G.pipeOrigin)
  &&(!G.q||((d.site||'')+' '+(d.assignee||'')+' '+(d.stage||'')).includes(G.q))})}
-function metricDealMatch(d,k){if(!k||k==='all'||k==='active')return true;if(k==='self')return isSelfGen(d);if(k==='assigned')return isAssignedLead(d);if(k==='due'){var a=actionObj(d,itemPatch(d,'deal'));return !!(a&&a.due)}if(k==='risk')return liveActs().some(function(x){return x.f(d)});return true}
-function metricDealLabel(k,n){var m={self:'직접영업',assigned:'배정 리드',all:'전체 영업기회',active:'진행 Pipeline',due:'기한 설정',risk:'관리필요'};return (m[k]||'근거 목록')+' '+n+'건'}
+function metricDealMatch(d,k){if(!k||k==='all'||k==='active')return true;if(k==='self')return isSelfGen(d);if(k==='assigned')return isAssignedLead(d);if(k==='won')return isWon(d);if(k==='closedLost')return !towerActive(d)&&!isWon(d);if(k==='due'){var a=actionObj(d,itemPatch(d,'deal'));return !!(a&&a.due)}if(k==='risk')return liveActs().some(function(x){return x.f(d)});if(k==='stageStale')return (stageAge(d)||0)>=30;return true}
+function metricDealLabel(k,n){var m={self:'직접영업',assigned:'배정 리드',all:'전체 영업기회',active:'진행 Pipeline',won:'수주',closedLost:'종료(실주·배드핏·연락두절)',due:'기한 설정',risk:'관리필요',stageStale:'장기정체'};return (m[k]||'근거 목록')+' '+n+'건'}
 /* ══ «없는 데이터» 를 «문제» 로 세지 않는다 (2026-09-02) ══════
    지금 서버 번들에는 next_action 이 한 건도 없다 (진행 202건 중 0건).
    그 상태에서 «다음 행동 없음 202건» 을 띄우면 100% 가 문제로 보이고,
@@ -5058,7 +5060,7 @@ function paintSplit(){
  closeDocked();detachDetail();
  var toggle=document.querySelectorAll('.viewtg .clk');if(toggle[1])toggle[1].textContent='⚡ 빠른 관리';if(toggle[0])toggle[0].textContent='🗂️ 칸반';
  var A=pipeFiltered(),SC=pipeScoped(),ci=G.splitCol==null?-1:Number(G.splitCol),actF=splitActFn(G.splitAct),D;
- if(['self','assigned','all'].indexOf(G.pipeOrigin)>=0)D=SC.slice();
+ if(['self','assigned','all','won','closedLost'].indexOf(G.pipeOrigin)>=0)D=SC.slice();
  else if(G.quickClosed)D=SC.filter(function(d){return d.code==='won'||d.code==='lost'||d.grp==='기타'});
  else{D=ci>=0?A.filter(function(d){return PD_COLS[ci].codes.indexOf(d.code)>=0}):A;if(actF)D=D.filter(actF);if(G.pipeNoAmt)D=D.filter(function(d){return !oppAmt(d)&&!quoteAmt(d)})}
  D=D.slice().sort(sortByPriority);var keys=D.map(dealKey);if(keys.indexOf(G.splitKey)<0)G.splitKey=keys[0];var sel=D[keys.indexOf(G.splitKey)];
