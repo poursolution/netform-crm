@@ -1,0 +1,71 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "mode": "REAL_BROWSER_ASSEMBLED_UI_ADAPTER_QUEUE_ACK",
+  "run_id": "stg-e2e-20260906t114801z-385da328",
+  "fixture_plan_sha256": "dcb80f05b1cd2ea7a3d97d93f3561da3ba185b23bfdf0a64cfe7111eb6525d2f",
+  "started_at": "2026-09-06T11:51:11.492Z",
+  "status": "FAIL",
+  "cleanup_required": true,
+  "results": [
+    {
+      "scenario": "cross-cutting-receipt-replay",
+      "step": "cross-cutting-receipt-replay:1",
+      "status": "PASS",
+      "kind": "policy_assertion",
+      "surface": "local"
+    },
+    {
+      "scenario": "frozen-direct-assign-pc-mobile",
+      "step": "frozen-direct-assign-pc-mobile:1",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "inquiry_assign",
+      "request_id": "1cea0011-6f48-4b58-b3a4-a81372d88968",
+      "surface": "crm.html",
+      "replay": true
+    },
+    {
+      "scenario": "frozen-direct-assign-pc-mobile",
+      "step": "frozen-direct-assign-pc-mobile:2",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "inquiry_assign",
+      "request_id": "8ff9c148-16d9-482f-82c9-90f5d85b5516",
+      "surface": "mobile.html",
+      "replay": true
+    },
+    {
+      "scenario": "mobile-inquiry-response-outcomes",
+      "step": "mobile-inquiry-response-outcomes:1",
+      "status": "FAIL",
+      "code": "Error",
+      "http_status": null
+    }
+  ],
+  "blocked": [
+    {
+      "scenario": "attachment-lifecycle",
+      "reason": "STORAGE_INSERT_POLICY_ACTION_TIME_CONFIRMATION_REQUIRED"
+    }
+  ],
+  "completed_at": "2026-09-06T11:51:22.600Z",
+  "failure_point": "mobile-inquiry-response-outcomes:1",
+  "scenario_pass": 2,
+  "step_pass": 3,
+  "step_fail": 1,
+  "blocked_count": 1,
+  "http_requests": 84,
+  "write_requests": 4,
+  "production_requests": 0,
+  "n8n_requests": 0,
+  "violations": [],
+  "errors": [
+    {
+      "scenario": "mobile-inquiry-response-outcomes",
+      "step": "mobile-inquiry-response-outcomes:1",
+      "code": "Error",
+      "http_status": null
+    }
+  ]
+}

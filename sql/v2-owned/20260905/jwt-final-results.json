@@ -1,0 +1,79 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "V2_PATH_ISOLATION_PASS",
+  "total": 11,
+  "pass": 11,
+  "fail": 0,
+  "skip": 0,
+  "results": [
+    {
+      "id": 1,
+      "name": "anon denied all four v2 entrypoints",
+      "status": "PASS"
+    },
+    {
+      "id": 2,
+      "name": "real authenticated identities without access_review fail closed",
+      "status": "PASS"
+    },
+    {
+      "id": 3,
+      "name": "Rep A own Deal and Inquiry succeed",
+      "status": "PASS"
+    },
+    {
+      "id": 4,
+      "name": "Rep A denied Rep B including shared-site Opportunity",
+      "status": "PASS"
+    },
+    {
+      "id": 5,
+      "name": "Rep B denied Rep A",
+      "status": "PASS"
+    },
+    {
+      "id": 6,
+      "name": "consultation own Inquiry only; Deal/work denied",
+      "status": "PASS"
+    },
+    {
+      "id": 7,
+      "name": "branch explicit scopes only",
+      "status": "PASS"
+    },
+    {
+      "id": 8,
+      "name": "both admins explicit scopes only; MFA remains AAL1",
+      "status": "PASS"
+    },
+    {
+      "id": 9,
+      "name": "own contact allowed; foreign and shared-site ID denied",
+      "status": "PASS"
+    },
+    {
+      "id": 10,
+      "name": "own work persists; foreign work/version conflict denied",
+      "status": "PASS"
+    },
+    {
+      "id": 11,
+      "name": "server audit actor Auth UUID + CRM UUID",
+      "status": "PASS",
+      "expected_auth_uid": "b5295979-d6c9-48f2-971a-2dea418b75e6",
+      "expected_user_id": "f6090500-0001-4000-8000-000000000001",
+      "event_ids": [
+        "dd58259c-78a1-477f-b618-b865abe53766",
+        "33f47b47-c30d-4970-8b94-c47f23b7c506"
+      ],
+      "evidence": "jwt-final-audit.json"
+    }
+  ],
+  "public_diff": [],
+  "private_diff": [],
+  "legacy_functions_unchanged": 17,
+  "managed_defaults": "PLATFORM_MANAGED_RESIDUAL / unchanged",
+  "mfa": "MFA_NOT_ENROLLED / AAL1",
+  "production": "NO-GO / no connection",
+  "generated_at": "2026-09-05T13:49:46.993Z"
+}

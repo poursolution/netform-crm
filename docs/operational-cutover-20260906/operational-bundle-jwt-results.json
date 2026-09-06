@@ -1,0 +1,100 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "run_id": "13868e3d-4ad2-4326-b687-93be46989ec0",
+  "started_at": "2026-09-05T23:56:09.898Z",
+  "status": "JWT_PASS_PRIVATE_EVIDENCE_PENDING",
+  "failure_point": null,
+  "operations": [
+    "opportunity_work_set",
+    "inquiry_assign",
+    "inquiry_unassign",
+    "service_change"
+  ],
+  "results": [
+    {
+      "name": "roles map real JWT Auth UUID to reviewed CRM UUID",
+      "status": "PASS"
+    },
+    {
+      "name": "scoped read candidate exposes Deal work and Inquiry compatibility fields",
+      "status": "PASS"
+    },
+    {
+      "name": "role scopes expose only the selected owner Inquiry and Deal",
+      "status": "PASS"
+    },
+    {
+      "name": "opportunity_work_set writes, refreshes, and keeps server actor UUIDs",
+      "status": "PASS"
+    },
+    {
+      "name": "opportunity_work_set replay is stable, reuse and stale version are 409, other owner is denied",
+      "status": "PASS"
+    },
+    {
+      "name": "service_change writes one atomic result, refreshes, and keeps server actor UUIDs",
+      "status": "PASS"
+    },
+    {
+      "name": "service_change replay is stable, reuse and stale version are 409, other owner is denied",
+      "status": "PASS"
+    },
+    {
+      "name": "direct_assign writes exactly one visible assignment history and server audit identity",
+      "status": "PASS"
+    },
+    {
+      "name": "direct_assign replay/reuse and non-admin role denial remain enforced",
+      "status": "PASS"
+    },
+    {
+      "name": "inquiry_unassign resets only an unanswered Inquiry and writes one visible history row",
+      "status": "PASS"
+    },
+    {
+      "name": "inquiry_unassign replay/reuse and non-admin role denial remain enforced",
+      "status": "PASS"
+    }
+  ],
+  "completed_at": "2026-09-05T23:56:12.156Z",
+  "pass": 11,
+  "fail": 0,
+  "skip": 0,
+  "request_ids": [
+    "3e86f28d-c077-578d-88f8-4818a11e9b96",
+    "69681ff3-7113-5afa-86ef-aaa4f1232e4c",
+    "32545484-5424-5baa-8aa6-a3e7edbbfff8",
+    "13363ac1-adbf-5aef-86ac-f1511e4cd242",
+    "342dd742-fc3f-5d18-8033-2342d11263f5",
+    "cbbaea29-17f0-5571-93e8-a3f3ab005a91",
+    "e2ed0d42-5f0c-5cdf-9a5b-4c5dd1864c40"
+  ],
+  "deal_audit_event_ids": [
+    "0aa6a72d-5533-4bd7-8404-ba448b2f517d",
+    "f49888d2-67f6-4e71-890e-01ce1cd98cbe",
+    "83340b4a-6931-4220-85d5-72266c0ae733",
+    "17071485-4b92-45c8-9218-36f5ad286426"
+  ],
+  "inquiry_audit_event_ids": [
+    "c1fb08c2-c882-4b7e-be23-47013e0b8212",
+    "6396141c-336f-453f-9c7b-125c1f3d11b3",
+    "df5376a2-cf6b-45f4-8dc5-f5cf3b018077"
+  ],
+  "public_history_tokens": {
+    "assignment": [
+      "TEST ASSIGN 13868e3d-4ad2-4326-b687-93be46989ec0",
+      "TEST UNASSIGN 13868e3d-4ad2-4326-b687-93be46989ec0"
+    ],
+    "business": [
+      "TEST SERVICE 13868e3d-4ad2-4326-b687-93be46989ec0"
+    ]
+  },
+  "http_requests": 58,
+  "n8n_requests": 0,
+  "production_requests": 0,
+  "restore": {
+    "attempted": true,
+    "status": "PASS"
+  },
+  "error_type": null
+}

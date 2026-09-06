@@ -1,0 +1,11 @@
+{
+  "engine": "PGlite / PostgreSQL 17.5",
+  "realCloseReopen": true,
+  "postCommitRollback": true,
+  "publicMetadataDiff": [],
+  "CRM46Preserved": true,
+  "Auth6Preserved": true,
+  "committedBusinessWritePreserved": true,
+  "auditPreservedInPrivateArchive": true,
+  "hostedRollbackExecuted": false
+}

@@ -1,0 +1,29 @@
+'use strict';
+// Real Auth/JWT only, named Staging only. Never log requests, tokens, passwords or response bodies.
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto');
+const REF='rprechiaglyjaydkmxsu',dir=path.resolve(__dirname,'../sql/phase1');
+const config=JSON.parse(fs.readFileSync('C:/Users/Administrator/crm-staging-private/v2-client.json','utf8'));
+const secrets=JSON.parse(fs.readFileSync('C:/Users/Administrator/crm-staging-private/auth-synthetic-20260905.json','utf8'));
+if(config.project_ref!==REF||secrets.project_ref!==REF||config.url!==`https://${REF}.supabase.co`)throw Error('Wrong Staging configuration');
+const mapping=require('../sql/baseline/20260905/synthetic/auth-mapping.json'),results=[],sessions={};
+async function call(route,body,token){const r=await fetch(config.url+route,{method:'POST',headers:{apikey:config.publishable_key,'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});return {status:r.status,data:await r.json()};}
+const rpc=(n,args,kind)=>call('/rest/v1/rpc/'+n,args,sessions[kind]?.access_token);
+async function check(name,run){try{await run();results.push({name,status:'PASS'});}catch(e){results.push({name,status:'FAIL',reason:e.code||e.name});throw e;}}
+async function main(){try{
+ for(const a of secrets.accounts){assert.ok(a.email.endsWith('@example.invalid'));const r=await call('/auth/v1/token?grant_type=password',{email:a.email,password:a.password});assert.equal(r.status,200);sessions[a.kind]=r.data;}
+ await check('six actual JWT profile UUID/source-role/permission/mode mappings',async()=>{for(const [i,a] of mapping.accounts.entries()){const r=await rpc('crm_profile_scoped_v2',{},a.kind);assert.equal(r.status,200);assert.equal(r.data.auth_uid,a.auth_uid);assert.equal(r.data.source_role,['rep','rep','viewer','rep','admin','admin'][i]);assert.deepEqual(r.data.allowed_modes,i>=4?['rep','admin']:['rep']);}});
+ await check('anon profile/write denied',async()=>{for(const [n,args] of [['crm_profile_scoped_v2',{}],['crm_write_command_v2',{p_request_id:crypto.randomUUID(),p_operation:'opportunity_work_set',p_object_id:'f6090500-0006-4000-8000-000000000001',p_expected_version:1,p_payload:{}}]])assert.ok([401,403].includes((await rpc(n,args)).status));});
+ const deal='f6090500-0006-4000-8000-000000000001',read=await rpc('crm_read_scoped_v2',{p_deal_id:deal,p_limit:1},'INTERNAL_REP');assert.equal(read.status,200);const current=read.data.deals[0];
+ const command={p_request_id:crypto.randomUUID(),p_operation:'opportunity_work_set',p_object_id:deal,p_expected_version:current.version,p_payload:{primary_work:current.primary_work,work_items:current.work_items,reason:'TEST Phase1 ACK idempotency, preserve existing work classification'}};
+ await check('other rep and consultation cannot write Rep A Deal',async()=>{for(const role of ['OTHER_REP','CONSULT'])assert.equal((await rpc('crm_write_command_v2',command,role)).status,403);});
+ await check('client actor injection rejected',async()=>{assert.equal((await rpc('crm_write_command_v2',{...command,p_payload:{...command.p_payload,actor_name:'TEST FORGED'}},'INTERNAL_REP')).status,400);});
+ let ack;
+ await check('concurrent duplicate requests one version and one audit id',async()=>{const [a,b]=await Promise.all([rpc('crm_write_command_v2',command,'INTERNAL_REP'),rpc('crm_write_command_v2',command,'INTERNAL_REP')]);assert.equal(a.status,200);assert.equal(b.status,200);assert.equal(a.data.version,current.version+1);assert.equal(a.data.audit_event_id,b.data.audit_event_id);assert.notEqual(a.data.replayed,b.data.replayed);ack=a.data;assert.equal(ack.actor_auth_uid,mapping.accounts[0].auth_uid);assert.equal(ack.actor_user_id,'f6090500-0001-4000-8000-000000000001');});
+ await check('retry after lost ACK returns same receipt',async()=>{const r=await rpc('crm_write_command_v2',command,'INTERNAL_REP');assert.equal(r.status,200);assert.equal(r.data.replayed,true);assert.equal(r.data.audit_event_id,ack.audit_event_id);});
+ await check('same key changed payload is HTTP409',async()=>{assert.equal((await rpc('crm_write_command_v2',{...command,p_payload:{...command.p_payload,reason:'TEST CHANGED REQUEST'}},'INTERNAL_REP')).status,409);});
+ await check('new key stale version is HTTP409',async()=>{assert.equal((await rpc('crm_write_command_v2',{...command,p_request_id:crypto.randomUUID()},'INTERNAL_REP')).status,409);});
+ await check('exactly one version increment, existing classification unchanged',async()=>{const r=await rpc('crm_read_scoped_v2',{p_deal_id:deal,p_limit:1},'INTERNAL_REP');assert.equal(r.data.deals[0].version,current.version+1);assert.equal(r.data.deals[0].primary_work,current.primary_work);assert.deepEqual(r.data.deals[0].work_items,current.work_items);});
+ const jwt=sessions.ADMIN_MFA.access_token.split('.')[1];await check('MFA account remains AAL1 (not MFA PASS)',async()=>{assert.equal(JSON.parse(Buffer.from(jwt,'base64url').toString()).aal,'aal1');});
+ fs.writeFileSync(path.join(dir,'staging-command-proof.json'),JSON.stringify({request_id:command.p_request_id,object_id:deal,previous_version:current.version,ack},null,2));
+ }finally{for(const session of Object.values(sessions)){await fetch(config.url+'/auth/v1/logout?scope=local',{method:'POST',headers:{apikey:config.publishable_key,Authorization:'Bearer '+session.access_token}}).catch(()=>{});}fs.writeFileSync(path.join(dir,'staging-jwt-results.json'),JSON.stringify({project_ref:REF,at:new Date().toISOString(),results,legacy_unchanged:true,scope:'Phase1 common transport RPC, not browser UI parity',production_requests:0},null,2));console.log(JSON.stringify({pass:results.filter(r=>r.status==='PASS').length,fail:results.filter(r=>r.status==='FAIL').length}));}}
+main().catch(()=>{console.error('Phase1 Staging test failed; sanitized results saved.');process.exitCode=1;});

@@ -1,0 +1,74 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "mode": "READ_ONLY",
+  "status": "BLOCKERS_CONFIRMED",
+  "observed_at": "2026-09-06T15:02:07.0774258+09:00",
+  "contacts": {
+    "total": 5,
+    "person_key_present": 5,
+    "mobile_person_key": 0,
+    "emails_nonempty": 5,
+    "custom_fields_nonempty": 5,
+    "custom_field_keys": {
+      "synthetic_batch": 5
+    }
+  },
+  "contact_assignments": {
+    "total": 4,
+    "open": 4,
+    "with_opportunity_id": 4,
+    "without_opportunity_id": 0,
+    "orphan_opportunity_id": 0,
+    "opportunity_id_fk_count": 0,
+    "open_people_multiple_sites": 0,
+    "sites_with_multiple_deals": 1
+  },
+  "schema": {
+    "contact_related_tables": [
+      "contact_assignments",
+      "contacts"
+    ],
+    "consent_or_relationship_columns": [],
+    "contacts_has_emails_jsonb": true,
+    "contacts_has_custom_fields_jsonb": true,
+    "contact_assignments_has_opportunity_id_uuid": true
+  },
+  "functions": {
+    "crm_contact_upsert": {
+      "canonical_md5": "7c07f791a29bf81af2a2120caa180b72",
+      "acl": [
+        "postgres",
+        "service_role"
+      ]
+    },
+    "crm_contact_move": {
+      "canonical_md5": "e687961172aab2cfa4c8435f172f6ed5",
+      "acl": [
+        "postgres",
+        "service_role"
+      ]
+    },
+    "crm_contacts_scoped_v2": {
+      "canonical_md5": "1a58be86503cb53bdc3a9a784eb4add2",
+      "acl": [
+        "postgres",
+        "authenticated"
+      ]
+    },
+    "crm_site_contacts": {
+      "canonical_md5": "d35ee1893ff7f2c73d19288fc0739750",
+      "public_execute": true
+    }
+  },
+  "conclusion": {
+    "contact_upsert": "NEEDS_VERIFICATION_BLOCKED: no approved durable consent/opt-out storage and current rows establish no such custom_fields convention",
+    "contact_relationship": "NEEDS_VERIFICATION_BLOCKED: no relation or column for Deal-contact relationship semantics",
+    "contact_move": "NEEDS_VERIFICATION_BLOCKED: at least one Site has multiple Deals and payload has no destination UUID; assignment opportunity_id also has no FK",
+    "legacy_service_functions_safe_for_authenticated_adapter": false,
+    "read_candidate_changed": false
+  },
+  "writes_performed": 0,
+  "production_requests": 0,
+  "n8n_requests": 0
+}

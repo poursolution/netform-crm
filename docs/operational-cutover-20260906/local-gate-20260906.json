@@ -1,0 +1,24 @@
+{
+  "gate": "Gate 1 — Local",
+  "status": "PASS",
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "executed_at": "2026-09-07",
+  "command": "node --test",
+  "test_files": 169,
+  "tests": 893,
+  "pass": 877,
+  "fail": 0,
+  "skip": 16,
+  "skip_policy": "REMOTE_ONLY_SKIP_IS_NOT_PASS",
+  "fixture_setup_cleanup_restore": {
+    "status": "PASS",
+    "evidence": [
+      "tests/crm-baseline-rollback.test.cjs: baseline COMMIT -> close/reopen -> rollback COMMIT -> before diff zero",
+      "tests/crm-baseline-rollback.test.cjs: captured Staging-after fixture -> COMMIT/reconnect -> canonical rollback -> exact before diff zero",
+      "tests/crm-phase1-db.test.cjs: post-COMMIT rollback works after closing and reopening the database"
+    ]
+  },
+  "staging_mutation_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false
+}

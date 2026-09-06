@@ -1,0 +1,6 @@
+<!doctype html><meta charset="utf-8"><title>금액 입력 격리 검수</title>
+<script src="../money-input.js"></script>
+<style>body{font:15px/1.6 sans-serif;margin:40px;max-width:640px}label{display:block;margin-bottom:8px}input,button{font:inherit;padding:12px;border:1px solid #dce2eb;border-radius:10px}input{width:300px}button{background:#315dff;color:white;margin-top:16px}output{display:block;margin-top:16px}</style>
+<label for="amount">V1 견적금액(원)</label><input id="amount" data-money type="text" value="1043900000">
+<div><button onclick="document.getElementById('result').textContent=JSON.stringify({amount:MoneyInput.parse(document.getElementById('amount').value)})">저장값 확인 (서버 요청 없음)</button></div>
+<output id="result"></output>

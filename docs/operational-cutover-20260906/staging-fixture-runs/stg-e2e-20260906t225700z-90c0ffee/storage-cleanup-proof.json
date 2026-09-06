@@ -1,0 +1,15 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "run_id": "stg-e2e-20260906t225700z-90c0ffee",
+  "status": "REMOVED_VIA_STORAGE_API_VERIFIED_ZERO",
+  "bucket": "crm-site-files",
+  "object_id": "9ca6bfba-f4fb-49fc-af37-b5914ca20845",
+  "object_path": "deals/b8ff1bd7-e0c7-417d-9521-937ee3ab1db0/26ae0b44-d1de-4f91-8e4c-a52234a7f03f",
+  "actor_auth_uid": "b5295979-d6c9-48f2-971a-2dea418b75e6",
+  "remove_response_matches": 1,
+  "post_delete_matches": 0,
+  "http_requests": 5,
+  "production_requests": 0,
+  "n8n_requests": 0
+}

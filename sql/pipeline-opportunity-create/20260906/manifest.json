@@ -1,0 +1,63 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "LOCAL_CHAIN_CANDIDATE_AFTER_REACHABLE_BUNDLE_NOT_APPLIED",
+  "classification": "DERIVED_SAFE_LOCAL_CANDIDATE",
+  "operation": "opportunity_create",
+  "intent": "direct_pc_mobile_only",
+  "prerequisite": "reachable-operations-bundle/20260906",
+  "site_identity": {
+    "canonical": "common exact key: remove bracket tags, whitespace and 아파트; lowercase",
+    "broad_match": "PC/mobile-only variants require explicit site selection",
+    "substring_match": "forbidden",
+    "collision": "409"
+  },
+  "creator_owner_matrix": {
+    "rep": "approved rep target",
+    "admin": "approved rep target",
+    "branch": "self only",
+    "consultation": "denied"
+  },
+  "surface_side_effects": {
+    "pc": {
+      "activity": 1,
+      "next_action": 0
+    },
+    "mobile": {
+      "activity": 1,
+      "next_action": 1
+    }
+  },
+  "absorbed_children": [
+    "mobile activity",
+    "mobile next_action"
+  ],
+  "blocked_meanings": [
+    "inquiry_promote",
+    "technical_inquiry_transfer",
+    "expansion_convert",
+    "semantic_duplicate_auto_merge"
+  ],
+  "rollback": "PRE_RUNTIME_CREATE_USE_ONLY",
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "files_sha256": {
+    "helper.sql": "bfdae8d7546d2f7479dc7d2e2cf1a7d21221980bf49e0d20d9867c4288b3507b",
+    "build.cjs": "8dfcead529456b1915bfcd93a4a58b9d4b633c84772ce954b369fc0bade50c0a",
+    "db.test.cjs": "c83b55b24978c4bafee20baeed280ff8416149483d00e91456b5d6e02f25746c",
+    "contract.test.cjs": "4c0601ce9173657de8753bd5e9d98fcc2a601487e1789f9530749a5bd8acd9f7",
+    "ui.test.cjs": "bab80e024dbce276e817e292a453f6e2fe84b44c90a98d15cee7677074443d12",
+    "review.md": "ed141de6df59e033a04f9a5ee97fe5c9f8e76d2b5e7fe779eeae34884feca503",
+    "staging-apply-after-reachable-bundle.sql": "b7963b6e56d6415169359355744c2fd80c89a1da48957a391b2bd29932d28948",
+    "rollback-before-runtime-create.sql": "8d4a7e5ae577793d9f1898855c97942008e019cce32c186e4bb81cf75b64ea47",
+    "operational-adapter.candidate.js": "7b2236bde3d27dbbe877aa41b85cb2bd71c988141b486cf6bf8c14c9a04fc69b",
+    "operational-overlay.candidate.js": "b21115d19c92e9dd1faebb3a49968541638666544894d7698919e6c0633fa58b"
+  },
+  "source_sha256": {
+    "crm.html": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "mobile.html": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "sql/reachable-operations-bundle/20260906/manifest.json": "dc8f8db1823ea1dacb1a3210a26c59a9dd16cc8902368eb1095eccbc1798e7af",
+    "docs/operational-cutover-20260906/pipeline-lifecycle-contracts.md": "df59041bb44244dcc2570f2e88503bd396ed3e7e712f5467824e4c88d269f452",
+    "docs/operational-cutover-20260906/opportunity-create-resolution-20260906.json": "7bc08a443c6dca6b75afc06b28a189d69ba7c77b84486dc4ffeb34b827b99051"
+  }
+}

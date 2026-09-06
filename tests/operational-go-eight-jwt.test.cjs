@@ -1,0 +1,49 @@
+'use strict';
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const crypto=require('node:crypto');
+const Adapter=require('../staging-operational-full/operational-adapter.js');
+
+const REF='rprechiaglyjaydkmxsu',PRODUCTION_REF='ymfbmpnizxvqsamnczow',ORIGIN=`https://${REF}.supabase.co`;
+const AUTH_FILE=process.env.STAGING_SYNTHETIC_AUTH_FILE;
+const REQUIRED=['CRM_RUN_OPERATIONAL_GO_EIGHT_STAGING','STAGING_PROJECT_REF','STAGING_CONFIRM_PROJECT_REF','STAGING_SUPABASE_URL','STAGING_PUBLISHABLE_KEY','STAGING_SYNTHETIC_AUTH_FILE'];
+const missing=REQUIRED.filter(k=>!process.env[k]);
+const forbidden=Object.entries(process.env).filter(([k,v])=>String(v||'').includes(PRODUCTION_REF)||(/n8n.*url|url.*n8n/i.test(k)&&v));
+const I_CONSULT='f6090700-0005-4000-8000-000000000001',I_BRANCH='f6090700-0005-4000-8000-000000000002';
+const D_ASSIGN='f6090700-0006-4000-8000-000000000001',D_CONTACT='f6090700-0006-4000-8000-000000000002';
+const PERSON='mobile:01099990000',OUT=path.resolve(__dirname,'../docs/operational-cutover-20260906/staging-go-eight-jwt-results.json');
+
+test('GO-eight environment excludes Production and n8n',()=>assert.deepEqual(forbidden,[]));
+if(missing.length||forbidden.length)test('final operational blocker JWT gate',{skip:`SKIP (not PASS): ${missing.length?'missing '+missing.join(', '):'unsafe environment'}`},()=>{});
+else test('final operational blocker JWT gate',{timeout:180000},async t=>{
+ assert.equal(process.env.STAGING_PROJECT_REF,REF);assert.equal(process.env.STAGING_CONFIRM_PROJECT_REF,REF);assert.equal(new URL(process.env.STAGING_SUPABASE_URL).origin,ORIGIN);assert.match(process.env.STAGING_PUBLISHABLE_KEY,/^sb_publishable_/);
+ const secret=JSON.parse(fs.readFileSync(AUTH_FILE,'utf8'));assert.equal(secret.project_ref,REF);
+ const accounts=Object.fromEntries(secret.accounts.map(x=>[x.kind,x]));
+ const sessions={},profiles={},requests=[],results=[];let failure=null,step='initialize';
+ const proof={project_ref:REF,project_name:'netform-crm-staging',mode:'JWT_FINAL_OPERATIONAL_BLOCKERS',started_at:new Date().toISOString(),fixture_run_id:'stg-go-eight-20260907',status:'FAIL',results};
+ function record(route){const u=new URL(route,ORIGIN);assert.equal(u.origin,ORIGIN);assert.notEqual(u.hostname,`${PRODUCTION_REF}.supabase.co`);requests.push(u.pathname);return u;}
+ async function api(route,{body,token}={}){const response=await fetch(record(route),{method:'POST',redirect:'error',signal:AbortSignal.timeout(20000),headers:{apikey:process.env.STAGING_PUBLISHABLE_KEY,'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:JSON.stringify(body||{})});let data=null;try{data=await response.json();}catch{}return {status:response.status,data};}
+ async function login(kind){const a=accounts[kind];assert.ok(a&&a.email.endsWith('@example.invalid')&&a.password);const r=await api('/auth/v1/token?grant_type=password',{body:{email:a.email,password:a.password}});assert.equal(r.status,200,`${kind} login`);sessions[kind]=r.data;const p=await api('/rest/v1/rpc/crm_profile_scoped_v2',{body:{},token:r.data.access_token});assert.equal(p.status,200);profiles[kind]=p.data;}
+ const rpc=(kind,name,body)=>api(`/rest/v1/rpc/${name}`,{body,token:sessions[kind].access_token});
+ async function check(name,fn){step=name;await t.test(name,async()=>{try{await fn();results.push({name,status:'PASS'});}catch(e){results.push({name,status:'FAIL',error_type:e.code||e.name});throw e;}});}
+ async function command(kind,operation,objectId,expectedVersion,legacyPayload){const normalized=Adapter.normalize(operation,objectId,expectedVersion,legacyPayload),request_id=crypto.randomUUID(),q={request_id,operation,object_id:objectId,expected_version:expectedVersion,payload:normalized.payload,auth_uid:profiles[kind].auth_uid,user_id:profiles[kind].user_id};const body={p_request_id:request_id,p_operation:operation,p_object_id:objectId,p_expected_version:expectedVersion,p_payload:normalized.payload},r=await rpc(kind,'crm_write_command_v2',body);assert.equal(r.status,200,`${operation}: ${JSON.stringify(r.data)}`);Adapter.validateAck(r.data,q);const replay=await rpc(kind,'crm_write_command_v2',body);assert.equal(replay.status,200);assert.equal(replay.data.replayed,true);return {q,body,ack:r.data};}
+ try{
+  await login('ADMIN');await login('INTERNAL_REP');
+  await check('inquiry consultant normalizes Golden payload and persists with replay safety',async()=>{await command('ADMIN','inquiry_consultant',I_CONSULT,0,{inquiry_id:I_CONSULT,consultant_name:'TEST CONSULT',consultation_status:'assigned',consulted_at:new Date().toISOString(),clear_legacy_sales_owner:false,changed_by:'client-display'});});
+  await check('branch handoff uses nullable pool ownership',async()=>{const x=await command('ADMIN','inquiry_assign',I_BRANCH,0,{inquiry_id:I_BRANCH,to:'경남지사',assignment_group:'gyeongnam',branch_code:'gyeongnam',intent:'branch_handoff',reason:'경남 권역 문의'});assert.equal(x.ack.assigned_to,null);});
+  await check('branch owner assign resolves the approved branch UUID',async()=>{const x=await command('ADMIN','inquiry_assign',I_BRANCH,0,{inquiry_id:I_BRANCH,to:'TEST GYEONGNAM',assignment_group:'gyeongnam',branch_code:'gyeongnam',intent:'branch_owner_assign',reason:'지사 실담당 지정'});assert.equal(x.ack.assigned_to,'f6090500-0001-4000-8000-000000000004');});
+  await check('branch owner can return to the nullable pool without fake user UUID',async()=>{const x=await command('ADMIN','inquiry_assign',I_BRANCH,0,{inquiry_id:I_BRANCH,to:'경남지사',assignment_group:'gyeongnam',branch_code:'gyeongnam',intent:'branch_owner_pool',reason:'지사 내부 미지정'});assert.equal(x.ack.assigned_to,null);});
+  await check('pipeline reassignment persists UUID owner and one version',async()=>{const x=await command('ADMIN','assign',D_ASSIGN,1,{opportunity_id:D_ASSIGN,from:'TEST INTERNAL_REP',to:'TEST OTHER_REP',reason:'관리자 재배정',reason_source:'text',at:new Date().toISOString()});assert.equal(x.ack.assigned_to,'f6090500-0001-4000-8000-000000000002');assert.equal(x.ack.version,2);});
+  await check('contact upsert, relationship, and move form one versioned chain',async()=>{const up=await command('ADMIN','contact_upsert',D_CONTACT,1,{opportunity_id:D_CONTACT,person_key:PERSON,site_name:'TEST GO CONTACT',office_phone:'0311234567',office_email:'go@example.invalid',manager_name:'TEST CONTACT',manager_mobile:'01099990000',manager_role:'관리소장',is_primary:true,started_at:'2026-09-07',sms_consent:true,kakao_consent:false,consent_at:'2026-09-07T00:00:00Z',opt_out_at:null,send_blocked:false,send_blocked_reason:null});assert.equal(up.ack.version,2);const rel=await command('ADMIN','contact_relationship',D_CONTACT,2,{opportunity_id:D_CONTACT,person_key:PERSON,decision_role:'의사결정자',relationship_tone:'우호적'});assert.equal(rel.ack.version,3);const move=await command('ADMIN','contact_move',D_CONTACT,3,{opportunity_id:D_CONTACT,person_key:PERSON,manager_name:'TEST CONTACT',manager_mobile:'01099990000',from_site:'TEST GO CONTACT',to_site:'TEST GO MOVED',to_office_phone:'0317654321',moved_at:'2026-09-07',reason:'근무지 이동 확인'});assert.equal(move.ack.version,4);});
+  await check('manager comment uses the server actor CRM UUID as object id',async()=>{await command('ADMIN','rep_manager_comment',profiles.ADMIN.user_id,0,{rep_name:'TEST OTHER_REP',week_start:'2026-09-07',comment:'GO 전환 확인 코멘트',status:'open',created_by:'client-display',updated_at:new Date().toISOString()});});
+  await check('same request id with a different payload returns 409',async()=>{const request_id=crypto.randomUUID(),body={p_request_id:request_id,p_operation:'rep_manager_comment',p_object_id:profiles.ADMIN.user_id,p_expected_version:0,p_payload:{rep_name:'TEST OTHER_REP',week_start:'2026-09-07',comment:'first',status:'open'}};assert.equal((await rpc('ADMIN','crm_write_command_v2',body)).status,200);body.p_payload={...body.p_payload,comment:'different'};assert.equal((await rpc('ADMIN','crm_write_command_v2',body)).status,409);});
+  await check('non-admin cannot execute manager-only pipeline assignment',async()=>{const r=await rpc('INTERNAL_REP','crm_write_command_v2',{p_request_id:crypto.randomUUID(),p_operation:'assign',p_object_id:D_ASSIGN,p_expected_version:2,p_payload:{to_name:'TEST INTERNAL_REP',reason:'권한 거절 확인'}});assert.ok([401,403].includes(r.status));assert.equal(r.data?.code,'42501');});
+  await check('scoped reads return the final inquiry and deal state',async()=>{const r=await rpc('ADMIN','crm_operational_source_v1',{p_domain:'deal_core',p_after:null,p_limit:100});assert.equal(r.status,200);const assign=r.data.items.find(x=>x.id===D_ASSIGN),contact=r.data.items.find(x=>x.id===D_CONTACT);assert.equal(assign.owner_id,'f6090500-0001-4000-8000-000000000002');assert.equal(assign.version,2);assert.equal(contact.version,4);assert.ok(Array.isArray(contact.contacts)&&contact.contacts.some(x=>x.person_key===PERSON));const i=await rpc('ADMIN','crm_operational_source_v1',{p_domain:'inquiry_core',p_after:null,p_limit:100});assert.equal(i.status,200);const branch=i.data.items.find(x=>x.id===I_BRANCH),consult=i.data.items.find(x=>x.id===I_CONSULT);assert.equal(branch.assigned_to,null);assert.equal(branch.branch_code,'gyeongnam');assert.equal(consult.consultant_name,'TEST CONSULT');});
+ }catch(e){failure=e;}finally{
+  for(const s of Object.values(sessions))try{await api('/auth/v1/logout?scope=local',{body:{},token:s.access_token});}catch{}
+  Object.assign(proof,{completed_at:new Date().toISOString(),status:failure?'FAIL':'PASS',failure_point:failure?step:null,pass:results.filter(x=>x.status==='PASS').length,fail:results.filter(x=>x.status==='FAIL').length,skip:0,http_requests:requests.length,n8n_requests:0,production_requests:0,error_type:failure?.code||failure?.name||null});fs.writeFileSync(OUT,JSON.stringify(proof,null,2)+'\n');
+ }
+ if(failure)throw failure;
+});

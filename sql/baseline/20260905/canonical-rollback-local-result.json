@@ -1,0 +1,11 @@
+{
+  "localOnly": true,
+  "actualRemoteDDL": false,
+  "fixture": "staging-after-apply-observed.json",
+  "persistedReconnect": true,
+  "preflightPassed": true,
+  "beforeDiff": [],
+  "managedDiff": [],
+  "rollback_sha256": "62bfdd8948eb84cda8e74bf466bfc08d8490e17abfc41768f32363f5607c3c73",
+  "engine": "PGlite 0.3.14 / PostgreSQL 17.5"
+}

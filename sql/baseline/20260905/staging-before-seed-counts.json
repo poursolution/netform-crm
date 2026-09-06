@@ -1,0 +1,25 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "auth_users": 0,
+  "crm_counts": {
+    "deals": 0,
+    "notes": 0,
+    "sites": 0,
+    "users": 0,
+    "contacts": 0,
+    "projects": 0,
+    "inquiries": 0,
+    "activities": 0,
+    "audit_logs": 0,
+    "next_actions": 0,
+    "organizations": 0,
+    "stage_catalog": 0,
+    "stage_history": 0,
+    "advisory_deals": 0,
+    "dashboard_state": 0,
+    "business_history": 0,
+    "assignment_history": 0,
+    "contact_assignments": 0
+  },
+  "auth_triggers": []
+}

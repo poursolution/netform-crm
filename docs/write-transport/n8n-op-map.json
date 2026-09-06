@@ -1,0 +1,1579 @@
+[
+  {
+    "op": "activity",
+    "input_fields": [
+      "meaningful_contact",
+      "note",
+      "occurred_at",
+      "opportunity_id",
+      "result",
+      "type"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 3528
+      },
+      {
+        "file": "crm.html",
+        "line": 4603
+      },
+      {
+        "file": "crm.html",
+        "line": 4676
+      },
+      {
+        "file": "crm.html",
+        "line": 5230
+      },
+      {
+        "file": "crm.html",
+        "line": 6009
+      },
+      {
+        "file": "crm.html",
+        "line": 7517
+      },
+      {
+        "file": "crm.html",
+        "line": 7525
+      },
+      {
+        "file": "crm.html",
+        "line": 7601
+      },
+      {
+        "file": "crm.html",
+        "line": 7692
+      },
+      {
+        "file": "crm.html",
+        "line": 7968
+      },
+      {
+        "file": "mobile.html",
+        "line": 770
+      },
+      {
+        "file": "issue-modal.js",
+        "line": 66
+      },
+      {
+        "file": "stage-transition-ui.js",
+        "line": 73
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "activity"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "amount",
+    "input_fields": [
+      "amount",
+      "opportunity_id",
+      "quote_amount",
+      "won_amount"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 4671
+      },
+      {
+        "file": "issue-modal.js",
+        "line": 65
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "amount"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "assign",
+    "input_fields": [
+      "at",
+      "from",
+      "handover",
+      "opportunity_id",
+      "reason",
+      "reason_source",
+      "to"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 5264
+      },
+      {
+        "file": "mobile.html",
+        "line": 2058
+      },
+      {
+        "file": "mobile.html",
+        "line": 2400
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "assign"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "campaign_create",
+    "input_fields": [
+      "activity_on_success",
+      "body",
+      "campaign_id",
+      "category_group",
+      "category_key",
+      "category_label",
+      "created_at",
+      "created_by",
+      "excluded_count",
+      "recipient_count",
+      "recipients",
+      "scheduled_at",
+      "status",
+      "template_key"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 8046
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "campaign_create"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "close",
+    "input_fields": [
+      "<expression: inspect call site>",
+      "closed_at",
+      "lost_kind",
+      "opportunity_id",
+      "outcome",
+      "reason",
+      "reason_source",
+      "stage_code",
+      "won_amount"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 4778
+      },
+      {
+        "file": "crm.html",
+        "line": 6057
+      },
+      {
+        "file": "mobile.html",
+        "line": 1653
+      },
+      {
+        "file": "stage-transition-ui.js",
+        "line": 71
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "close"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "contact",
+    "input_fields": [
+      "at",
+      "opportunity_id",
+      "type"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 6010
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "contact"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "contact_move",
+    "input_fields": [
+      "from_site",
+      "manager_mobile",
+      "manager_name",
+      "moved_at",
+      "opportunity_id",
+      "person_key",
+      "reason",
+      "to_office_phone",
+      "to_site"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 4619
+      },
+      {
+        "file": "mobile.html",
+        "line": 1515
+      }
+    ],
+    "observed_status": "ROUTING_ONLY",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "public.crm_contact_move",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "contact_move"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "contact_relationship",
+    "input_fields": [
+      "decision_role",
+      "opportunity_id",
+      "person_key",
+      "relationship_tone"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7553
+      },
+      {
+        "file": "mobile.html",
+        "line": 2393
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "contact_relationship"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "contact_upsert",
+    "input_fields": [
+      "consent_at",
+      "is_primary",
+      "kakao_consent",
+      "manager_mobile",
+      "manager_name",
+      "manager_role",
+      "office_email",
+      "office_phone",
+      "opportunity_id",
+      "opt_out_at",
+      "person_key",
+      "send_blocked",
+      "send_blocked_reason",
+      "site_name",
+      "sms_consent",
+      "started_at"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 4577
+      },
+      {
+        "file": "crm.html",
+        "line": 4600
+      },
+      {
+        "file": "crm.html",
+        "line": 7465
+      },
+      {
+        "file": "crm.html",
+        "line": 7469
+      },
+      {
+        "file": "mobile.html",
+        "line": 1499
+      },
+      {
+        "file": "mobile.html",
+        "line": 1506
+      },
+      {
+        "file": "mobile.html",
+        "line": 2298
+      }
+    ],
+    "observed_status": "ROUTING_ONLY",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "public.crm_contact_upsert",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "contact_upsert"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "customer_support_action",
+    "input_fields": [
+      "<expression: inspect call site>"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 3868
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "customer_support_action"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "expansion_pool_update",
+    "input_fields": [
+      "created_opportunity_id",
+      "expansion_status",
+      "last_contact_at",
+      "need_note",
+      "next_contact_at",
+      "opportunity_id",
+      "relationship_state",
+      "source_opportunity_id",
+      "updated_at"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 4452
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "expansion_pool_update"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "expansion_pool_upsert",
+    "input_fields": [
+      "at",
+      "candidate_work_items",
+      "completion_date",
+      "expansion_status",
+      "next_contact_at",
+      "opportunity_id",
+      "owner_name",
+      "relationship_state",
+      "site_id",
+      "site_name",
+      "source_opportunity_id",
+      "source_won_amount",
+      "source_work_summary"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 4450
+      },
+      {
+        "file": "mobile.html",
+        "line": 1673
+      },
+      {
+        "file": "stage-transition-ui.js",
+        "line": 77
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "expansion_pool_upsert"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "favorite_set",
+    "input_fields": [
+      "favorite",
+      "opportunity_id",
+      "user_key"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7605
+      },
+      {
+        "file": "mobile.html",
+        "line": 2431
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "favorite_set"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "handover",
+    "input_fields": [
+      "created_at",
+      "from",
+      "opportunity_id",
+      "reason",
+      "summary",
+      "to"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7562
+      },
+      {
+        "file": "mobile.html",
+        "line": 2400
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "handover"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "inquiry_assign",
+    "input_fields": [
+      "assignment_group",
+      "at",
+      "branch_code",
+      "changed_by",
+      "consultant_name",
+      "from",
+      "inquiry_id",
+      "inquiry_row",
+      "owner_group",
+      "reason",
+      "reporting_group",
+      "response",
+      "status",
+      "to"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 4257
+      },
+      {
+        "file": "crm.html",
+        "line": 7813
+      },
+      {
+        "file": "mobile.html",
+        "line": 1411
+      },
+      {
+        "file": "mobile.html",
+        "line": 1943
+      },
+      {
+        "file": "mobile.html",
+        "line": 1953
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "inquiry_assign"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "inquiry_consultant",
+    "input_fields": [
+      "changed_by",
+      "clear_legacy_sales_owner",
+      "consultant_name",
+      "consultation_status",
+      "consulted_at",
+      "inquiry_id"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7824
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "inquiry_consultant"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "inquiry_duplicate",
+    "input_fields": [
+      "inquiry_id",
+      "resolution",
+      "resolved_at",
+      "resolved_by",
+      "target_inquiry_id"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7828
+      },
+      {
+        "file": "crm.html",
+        "line": 7828
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "inquiry_duplicate"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "inquiry_followup",
+    "input_fields": [
+      "due_at",
+      "inquiry_id",
+      "reason"
+    ],
+    "source_locations": [
+      {
+        "file": "mobile.html",
+        "line": 2380
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "inquiry_followup"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "inquiry_purge",
+    "input_fields": [
+      "inquiry_id",
+      "purged_at",
+      "purged_by"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7820
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "inquiry_purge"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "inquiry_reclassify",
+    "input_fields": [
+      "from_brand",
+      "inquiry_id",
+      "review_status",
+      "reviewed_at",
+      "reviewed_by",
+      "to_brand"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7787
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "inquiry_reclassify"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "inquiry_restore",
+    "input_fields": [
+      "inquiry_id",
+      "restored_at",
+      "restored_by"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7819
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "inquiry_restore"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "inquiry_status",
+    "input_fields": [
+      "at",
+      "changed_by",
+      "from_status",
+      "inquiry_id",
+      "legacy_review_status",
+      "reason",
+      "to_status"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7788
+      },
+      {
+        "file": "crm.html",
+        "line": 7816
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "inquiry_status"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "inquiry_trash",
+    "input_fields": [
+      "archive_protected",
+      "delete_note",
+      "delete_reason",
+      "deleted_at",
+      "deleted_by",
+      "inquiry_id",
+      "purge_at"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7818
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "inquiry_trash"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "inquiry_unassign",
+    "input_fields": [
+      "at",
+      "changed_by",
+      "from",
+      "inquiry_id",
+      "reason"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7816
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "inquiry_unassign"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "lineage_link",
+    "input_fields": [
+      "inquiry_site",
+      "opportunity_id",
+      "origin_inquiry_id",
+      "site_id"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 6272
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "lineage_link"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "message_log",
+    "input_fields": [
+      "<expression: inspect call site>"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7525
+      },
+      {
+        "file": "crm.html",
+        "line": 7692
+      },
+      {
+        "file": "crm.html",
+        "line": 7968
+      },
+      {
+        "file": "mobile.html",
+        "line": 2337
+      },
+      {
+        "file": "mobile.html",
+        "line": 2512
+      },
+      {
+        "file": "mobile.html",
+        "line": 2570
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "message_log"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "message_stage_advanced",
+    "input_fields": [
+      "advanced_at",
+      "from_stage",
+      "opportunity_id",
+      "to_stage"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7697
+      },
+      {
+        "file": "mobile.html",
+        "line": 2516
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "message_stage_advanced"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "next_action",
+    "input_fields": [
+      "action_id",
+      "assignee",
+      "channel",
+      "draft_body",
+      "due_at",
+      "opportunity_id",
+      "postpone_count",
+      "scheduled_at",
+      "template_key",
+      "text",
+      "type"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 3559
+      },
+      {
+        "file": "crm.html",
+        "line": 4681
+      },
+      {
+        "file": "crm.html",
+        "line": 4783
+      },
+      {
+        "file": "crm.html",
+        "line": 6020
+      },
+      {
+        "file": "crm.html",
+        "line": 6061
+      },
+      {
+        "file": "crm.html",
+        "line": 7517
+      },
+      {
+        "file": "crm.html",
+        "line": 7525
+      },
+      {
+        "file": "crm.html",
+        "line": 7675
+      },
+      {
+        "file": "crm.html",
+        "line": 7692
+      },
+      {
+        "file": "crm.html",
+        "line": 7880
+      },
+      {
+        "file": "crm.html",
+        "line": 7968
+      },
+      {
+        "file": "mobile.html",
+        "line": 777
+      },
+      {
+        "file": "mobile.html",
+        "line": 2335
+      },
+      {
+        "file": "mobile.html",
+        "line": 2380
+      },
+      {
+        "file": "issue-modal.js",
+        "line": 67
+      },
+      {
+        "file": "stage-transition-ui.js",
+        "line": 74
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "next_action"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "next_action_complete",
+    "input_fields": [
+      "action_id",
+      "at",
+      "due_at",
+      "opportunity_id",
+      "text"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 3548
+      },
+      {
+        "file": "mobile.html",
+        "line": 781
+      },
+      {
+        "file": "issue-modal.js",
+        "line": 66
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "next_action_complete"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "opportunity_create",
+    "input_fields": [
+      "address",
+      "amount",
+      "assignment_group",
+      "at",
+      "branch_code",
+      "brand",
+      "client_ref",
+      "contact_started_at",
+      "gj",
+      "manager_mobile",
+      "manager_name",
+      "manager_role",
+      "name",
+      "office_email",
+      "office_phone",
+      "origin",
+      "origin_inquiry_id",
+      "origin_source",
+      "owner",
+      "owner_group",
+      "person_key",
+      "primaryWork",
+      "primary_work",
+      "reason",
+      "reason_source",
+      "reporting_group",
+      "site_id",
+      "source_opportunity_id",
+      "stage_code",
+      "stage_name",
+      "workItems",
+      "workScopeType",
+      "workSummary",
+      "work_items",
+      "work_name",
+      "work_scope_type",
+      "work_summary",
+      "work_type"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 6579
+      },
+      {
+        "file": "crm.html",
+        "line": 6770
+      },
+      {
+        "file": "crm.html",
+        "line": 7207
+      },
+      {
+        "file": "crm.html",
+        "line": 7788
+      },
+      {
+        "file": "mobile.html",
+        "line": 2123
+      }
+    ],
+    "observed_status": "PARTIAL_VISIBLE_RULE_ONLY",
+    "storage_rule": [
+      "brand/current_business/origin_business receive payload brand or null",
+      "amount uses Number(payload.amount || 0) || null",
+      "lead_create source=outbound; opportunity_create source=existing_customer",
+      "outbound_channel receives payload origin or null",
+      "origin_inquiry_id and site_id are dedicated columns, not only list_fields",
+      "list_fields includes name, work_name, work_type, register_reason, reason_source, gj, parent_opportunity_id, site_id",
+      "assignee_name uses payload owner then prepared actor then unassigned display label; UUID ownership handling is NOT visible in this branch",
+      "activity deal_id is initially null; a separate 생성ID 반영 node exists, but its rule is UNKNOWN"
+    ],
+    "db_target": "public.deals (POST node)",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "opportunity_create",
+      "new_opportunity_id": "server UUID required"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "opportunity_touch",
+    "input_fields": [
+      "opportunity_id",
+      "touch_kind",
+      "touched_at",
+      "user_key"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7604
+      },
+      {
+        "file": "mobile.html",
+        "line": 2430
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "opportunity_touch"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "opportunity_work_set",
+    "input_fields": [
+      "actor_name",
+      "at",
+      "opportunity_id",
+      "primaryWork",
+      "primary_work",
+      "reason",
+      "reason_source",
+      "workItems",
+      "workScopeType",
+      "workSummary",
+      "work_items",
+      "work_scope_type",
+      "work_summary",
+      "work_type"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7148
+      },
+      {
+        "file": "mobile.html",
+        "line": 1555
+      }
+    ],
+    "observed_status": "ROUTING_ONLY",
+    "storage_rule": "Baseline SQL separately available; n8n payload adaptation/ACK/error handling remain NEEDS_VERIFICATION",
+    "db_target": "public.crm_opportunity_work_set",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "opportunity_work_set"
+    },
+    "supabase_replacement": "crm_write_command_v2: existing guarded work handler; read-time expected_version required",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "quote_version",
+    "input_fields": [
+      "amount",
+      "created_at",
+      "created_by",
+      "opportunity_id",
+      "reason",
+      "version_no"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7558
+      },
+      {
+        "file": "mobile.html",
+        "line": 2397
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "quote_version"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "relationship_hold",
+    "input_fields": [
+      "hold_until",
+      "opportunity_id",
+      "person_key",
+      "reason"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7675
+      },
+      {
+        "file": "mobile.html",
+        "line": 2501
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "relationship_hold"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "relationship_response",
+    "input_fields": [
+      "cancel_pending_cadence",
+      "opportunity_id",
+      "person_key",
+      "response_at",
+      "response_kind"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7695
+      },
+      {
+        "file": "mobile.html",
+        "line": 2514
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "relationship_response"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "rep_manager_comment",
+    "input_fields": [
+      "comment",
+      "completed_at",
+      "created_by",
+      "rep_name",
+      "status",
+      "updated_at",
+      "week_start"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 3833
+      },
+      {
+        "file": "crm.html",
+        "line": 3834
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "rep_manager_comment"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "service_change",
+    "input_fields": [
+      "at",
+      "from_service",
+      "next_action",
+      "next_due",
+      "opportunity_id",
+      "origin_channel",
+      "reason",
+      "reason_source",
+      "to_service"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7120
+      },
+      {
+        "file": "mobile.html",
+        "line": 1775
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "service_change"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "stage_check",
+    "input_fields": [
+      "checked",
+      "item_index",
+      "item_text",
+      "opportunity_id",
+      "stage_code"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7544
+      },
+      {
+        "file": "crm.html",
+        "line": 7630
+      },
+      {
+        "file": "mobile.html",
+        "line": 2386
+      },
+      {
+        "file": "mobile.html",
+        "line": 2459
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "stage_check"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "transition",
+    "input_fields": [
+      "<expression: inspect call site>",
+      "amount",
+      "assignment_group",
+      "at",
+      "branch_code",
+      "from",
+      "note",
+      "opportunity_id",
+      "origin_inquiry_id",
+      "reason",
+      "reason_source",
+      "reporting_group",
+      "to"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 4781
+      },
+      {
+        "file": "crm.html",
+        "line": 6060
+      },
+      {
+        "file": "crm.html",
+        "line": 6563
+      },
+      {
+        "file": "crm.html",
+        "line": 6762
+      },
+      {
+        "file": "mobile.html",
+        "line": 1701
+      },
+      {
+        "file": "stage-transition-ui.js",
+        "line": 71
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "transition"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "waiting_context",
+    "input_fields": [
+      "actor_name",
+      "at",
+      "expected_resume_at",
+      "opportunity_id",
+      "waiting_customer_statement",
+      "waiting_evidence",
+      "waiting_reason",
+      "waiting_speaker",
+      "wake_up_at"
+    ],
+    "source_locations": [
+      {
+        "file": "crm.html",
+        "line": 7880
+      },
+      {
+        "file": "crm.html",
+        "line": 7944
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "waiting_context"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  },
+  {
+    "op": "win",
+    "input_fields": [
+      "create_project",
+      "opportunity_id",
+      "outcome",
+      "stage_code",
+      "won_amount",
+      "won_at"
+    ],
+    "source_locations": [
+      {
+        "file": "mobile.html",
+        "line": 1672
+      }
+    ],
+    "observed_status": "UNKNOWN / NEEDS_VERIFICATION",
+    "storage_rule": "UNKNOWN / NEEDS_VERIFICATION",
+    "db_target": "UNKNOWN / NEEDS_VERIFICATION",
+    "existing_ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+    "client_expected_ack": {
+      "ok": true,
+      "write_id": "original write_id when returned",
+      "operation": "win"
+    },
+    "supabase_replacement": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher",
+    "transaction": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+    "idempotency": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION."
+  }
+]

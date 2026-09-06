@@ -1,0 +1,42 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "run_id": "stg-e2e-20260906t125239z-fc70f2d2",
+  "verified_at": "2026-09-06T21:14:15.5639396Z",
+  "status": "PASS",
+  "cleanup": {
+    "manifest_fixture_rows_deleted": 433,
+    "generated_residual_rows_deleted": 15,
+    "total_database_rows_deleted": 448,
+    "storage_objects_deleted": 1,
+    "storage_method": "Supabase Dashboard exact object deletion",
+    "temporary_storage_policies": "NOT_APPLIED_NOT_NEEDED",
+    "local_storage_cleanup_script": "NOT_RUN_DASHBOARD_USED"
+  },
+  "post_cleanup": {
+    "verified_fixture_db_rows_remaining": 0,
+    "generated_residual_rows_remaining": 0,
+    "storage_objects_remaining": 0,
+    "temporary_storage_policies_remaining": 0,
+    "permanent_insert_policy_count": 1,
+    "canonical_deals": 5,
+    "canonical_deals_md5": "30b2067a1a74de986aa33a36b9c0942b",
+    "canonical_inquiries": 5,
+    "canonical_inquiries_md5": "d15e22087063729eedf6e5211d4ff327",
+    "transaction_mode": "READ ONLY"
+  },
+  "evidence": {
+    "manifest_cleanup_file": "cleanup-exact.sql",
+    "manifest_cleanup_sha256": "3dfe6eebb429a9c6b7340adf6ddc38db37a8190749ce4afb5d34e45348536942",
+    "residual_cleanup_file": "cleanup-generated-residual-exact.sql",
+    "residual_cleanup_sha256": "d2f6835a5368f8ec722b95dcbd60a574597a14c5d7ad033251ed3b52bbd60810",
+    "verification_file": "cleanup-exact-verify.sql",
+    "verification_sha256": "31684629ceb5146075dd9da97847c8bf670f388b80f1e18bc7626ce736d70cff",
+    "residual_verification_file": "cleanup-generated-residual-verify.sql",
+    "residual_verification_sha256": "bafbd13846e494bf5be65454b14d40aeb541b2afb0a92e20341c7829645f7ec3",
+    "canonical_baseline_file": "cleanup-canonical-baseline-final.json",
+    "canonical_baseline_sha256": "9c8634ee04fe0b2c06fed5bab18ef89051d26e259d69de53edef9b98843af5b0"
+  },
+  "production_requests": 0,
+  "n8n_requests": 0
+}

@@ -1,0 +1,20 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "operation": "service_change",
+  "classification": "DERIVED_SAFE",
+  "apply_sha256": "ec59555d78417baac68492c71db2cdb5ab1f77eba1fe4f0f6b04afc5fc6fd1e9",
+  "rollback_sha256": "0fdb9d4a0f5a7d17f53348043ae661aea320c2d5f8720add9ed59dc3493a7aba",
+  "file_sha256": {
+    "candidate.sql": "756f08f94e31b001670b4eb6d65f37389ea7b029aa7050483b57941d78f90d74",
+    "review.md": "4752fbd13691f23e94b5c87c3d4a505b84f4a67e34b517345a20c5286cc165cb",
+    "db.test.cjs": "e70dd2a5da9dda2ae3ad6887717e4cfe82a7eed6e717621d40ed992ee53c0f04"
+  },
+  "source_sha256": {
+    "staging_snapshot": "01829e365a2a93e06c71fe5ba667a1ba5e266c53aa1ea78e53355d1667c089e6",
+    "pc_ui": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "mobile_ui": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd"
+  },
+  "frozen_dispatcher_oid": 16965,
+  "frozen_dispatcher_body_sha256": "b71756d2a084c24f0dd586d6700d1c1d7276bad432965a91133f54723ac5b6d4",
+  "status": "LOCAL_CANDIDATE_NOT_APPLIED"
+}

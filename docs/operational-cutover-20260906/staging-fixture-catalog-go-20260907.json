@@ -1,0 +1,6962 @@
+{
+  "mode": "READ_ONLY_POST_APPLY_CATALOG",
+  "status": "PASS",
+  "columns": [
+    {
+      "name": "user_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.access_review",
+      "generated": ""
+    },
+    {
+      "name": "reviewed_auth_uid",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.access_review",
+      "generated": ""
+    },
+    {
+      "name": "source_role",
+      "type": "text",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.access_review",
+      "generated": ""
+    },
+    {
+      "name": "permission_role",
+      "type": "text",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.access_review",
+      "generated": ""
+    },
+    {
+      "name": "approved",
+      "type": "boolean",
+      "default": "false",
+      "ordinal": 5,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.access_review",
+      "generated": ""
+    },
+    {
+      "name": "reviewed_by",
+      "type": "text",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.access_review",
+      "generated": ""
+    },
+    {
+      "name": "reviewed_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.access_review",
+      "generated": ""
+    },
+    {
+      "name": "expires_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.access_review",
+      "generated": ""
+    },
+    {
+      "name": "event_id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.attachment_audit_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_auth_uid",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.attachment_audit_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_user_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.attachment_audit_events",
+      "generated": ""
+    },
+    {
+      "name": "deal_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.attachment_audit_events",
+      "generated": ""
+    },
+    {
+      "name": "attachment_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.attachment_audit_events",
+      "generated": ""
+    },
+    {
+      "name": "action",
+      "type": "text",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.attachment_audit_events",
+      "generated": ""
+    },
+    {
+      "name": "before_data",
+      "type": "jsonb",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.attachment_audit_events",
+      "generated": ""
+    },
+    {
+      "name": "after_data",
+      "type": "jsonb",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.attachment_audit_events",
+      "generated": ""
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 9,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.attachment_audit_events",
+      "generated": ""
+    },
+    {
+      "name": "event_id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.audit_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_auth_uid",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.audit_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_user_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.audit_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.audit_events",
+      "generated": ""
+    },
+    {
+      "name": "deal_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.audit_events",
+      "generated": ""
+    },
+    {
+      "name": "action",
+      "type": "text",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.audit_events",
+      "generated": ""
+    },
+    {
+      "name": "before_data",
+      "type": "jsonb",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.audit_events",
+      "generated": ""
+    },
+    {
+      "name": "after_data",
+      "type": "jsonb",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.audit_events",
+      "generated": ""
+    },
+    {
+      "name": "reason",
+      "type": "text",
+      "default": null,
+      "ordinal": 9,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.audit_events",
+      "generated": ""
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 10,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.audit_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_auth_uid",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.command_receipts",
+      "generated": ""
+    },
+    {
+      "name": "request_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.command_receipts",
+      "generated": ""
+    },
+    {
+      "name": "actor_user_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.command_receipts",
+      "generated": ""
+    },
+    {
+      "name": "operation",
+      "type": "text",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.command_receipts",
+      "generated": ""
+    },
+    {
+      "name": "object_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.command_receipts",
+      "generated": ""
+    },
+    {
+      "name": "expected_version",
+      "type": "integer",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.command_receipts",
+      "generated": ""
+    },
+    {
+      "name": "payload",
+      "type": "jsonb",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.command_receipts",
+      "generated": ""
+    },
+    {
+      "name": "ack",
+      "type": "jsonb",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.command_receipts",
+      "generated": ""
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 9,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.command_receipts",
+      "generated": ""
+    },
+    {
+      "name": "id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.customer_support_actions",
+      "generated": ""
+    },
+    {
+      "name": "request_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.customer_support_actions",
+      "generated": ""
+    },
+    {
+      "name": "client_ref",
+      "type": "text",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.customer_support_actions",
+      "generated": ""
+    },
+    {
+      "name": "target_type",
+      "type": "text",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.customer_support_actions",
+      "generated": ""
+    },
+    {
+      "name": "target_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.customer_support_actions",
+      "generated": ""
+    },
+    {
+      "name": "site_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.customer_support_actions",
+      "generated": ""
+    },
+    {
+      "name": "rep_user_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.customer_support_actions",
+      "generated": ""
+    },
+    {
+      "name": "rep_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.customer_support_actions",
+      "generated": ""
+    },
+    {
+      "name": "action_key",
+      "type": "text",
+      "default": null,
+      "ordinal": 9,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.customer_support_actions",
+      "generated": ""
+    },
+    {
+      "name": "action_label",
+      "type": "text",
+      "default": null,
+      "ordinal": 10,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.customer_support_actions",
+      "generated": ""
+    },
+    {
+      "name": "reason",
+      "type": "text",
+      "default": null,
+      "ordinal": 11,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.customer_support_actions",
+      "generated": ""
+    },
+    {
+      "name": "completion_rule",
+      "type": "text",
+      "default": null,
+      "ordinal": 12,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.customer_support_actions",
+      "generated": ""
+    },
+    {
+      "name": "status",
+      "type": "text",
+      "default": "'requested'::text",
+      "ordinal": 13,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.customer_support_actions",
+      "generated": ""
+    },
+    {
+      "name": "requested_by_auth_uid",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 14,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.customer_support_actions",
+      "generated": ""
+    },
+    {
+      "name": "requested_by_user_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 15,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.customer_support_actions",
+      "generated": ""
+    },
+    {
+      "name": "requested_by_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 16,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.customer_support_actions",
+      "generated": ""
+    },
+    {
+      "name": "requested_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 17,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.customer_support_actions",
+      "generated": ""
+    },
+    {
+      "name": "attachment_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_attachments",
+      "generated": ""
+    },
+    {
+      "name": "deal_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_attachments",
+      "generated": ""
+    },
+    {
+      "name": "bucket_id",
+      "type": "text",
+      "default": "'crm-site-files'::text",
+      "ordinal": 3,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_attachments",
+      "generated": ""
+    },
+    {
+      "name": "object_path",
+      "type": "text",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_attachments",
+      "generated": ""
+    },
+    {
+      "name": "file_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_attachments",
+      "generated": ""
+    },
+    {
+      "name": "mime_type",
+      "type": "text",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_attachments",
+      "generated": ""
+    },
+    {
+      "name": "size_bytes",
+      "type": "bigint",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_attachments",
+      "generated": ""
+    },
+    {
+      "name": "category",
+      "type": "text",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_attachments",
+      "generated": ""
+    },
+    {
+      "name": "tags",
+      "type": "text[]",
+      "default": "'{}'::text[]",
+      "ordinal": 9,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_attachments",
+      "generated": ""
+    },
+    {
+      "name": "memo",
+      "type": "text",
+      "default": null,
+      "ordinal": 10,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.deal_attachments",
+      "generated": ""
+    },
+    {
+      "name": "uploaded_by_user_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 11,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_attachments",
+      "generated": ""
+    },
+    {
+      "name": "uploaded_by_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 12,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_attachments",
+      "generated": ""
+    },
+    {
+      "name": "status",
+      "type": "text",
+      "default": "'pending'::text",
+      "ordinal": 13,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_attachments",
+      "generated": ""
+    },
+    {
+      "name": "pending_expires_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 14,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_attachments",
+      "generated": ""
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 15,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_attachments",
+      "generated": ""
+    },
+    {
+      "name": "ready_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 16,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.deal_attachments",
+      "generated": ""
+    },
+    {
+      "name": "failed_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 17,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.deal_attachments",
+      "generated": ""
+    },
+    {
+      "name": "failure_reason",
+      "type": "text",
+      "default": null,
+      "ordinal": 18,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.deal_attachments",
+      "generated": ""
+    },
+    {
+      "name": "event_id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_close_events",
+      "generated": ""
+    },
+    {
+      "name": "request_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_close_events",
+      "generated": ""
+    },
+    {
+      "name": "deal_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_close_events",
+      "generated": ""
+    },
+    {
+      "name": "from_stage",
+      "type": "text",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_close_events",
+      "generated": ""
+    },
+    {
+      "name": "outcome",
+      "type": "text",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_close_events",
+      "generated": ""
+    },
+    {
+      "name": "closed_date",
+      "type": "date",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_close_events",
+      "generated": ""
+    },
+    {
+      "name": "category",
+      "type": "text",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_close_events",
+      "generated": ""
+    },
+    {
+      "name": "detail",
+      "type": "text",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_close_events",
+      "generated": ""
+    },
+    {
+      "name": "reason_source",
+      "type": "text",
+      "default": null,
+      "ordinal": 9,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_close_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_auth_uid",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 10,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_close_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_user_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 11,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_close_events",
+      "generated": ""
+    },
+    {
+      "name": "recorded_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 12,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_close_events",
+      "generated": ""
+    },
+    {
+      "name": "stage_history_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 13,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_close_events",
+      "generated": ""
+    },
+    {
+      "name": "activity_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 14,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_close_events",
+      "generated": ""
+    },
+    {
+      "name": "completed_action_ids",
+      "type": "jsonb",
+      "default": null,
+      "ordinal": 15,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_close_events",
+      "generated": ""
+    },
+    {
+      "name": "event_id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_won_events",
+      "generated": ""
+    },
+    {
+      "name": "request_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_won_events",
+      "generated": ""
+    },
+    {
+      "name": "deal_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_won_events",
+      "generated": ""
+    },
+    {
+      "name": "from_stage",
+      "type": "text",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_won_events",
+      "generated": ""
+    },
+    {
+      "name": "completion_date",
+      "type": "date",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_won_events",
+      "generated": ""
+    },
+    {
+      "name": "completion_checks",
+      "type": "jsonb",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_won_events",
+      "generated": ""
+    },
+    {
+      "name": "won_amount",
+      "type": "bigint",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_won_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_auth_uid",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_won_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_user_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 9,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_won_events",
+      "generated": ""
+    },
+    {
+      "name": "recorded_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 10,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_won_events",
+      "generated": ""
+    },
+    {
+      "name": "stage_history_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 11,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_won_events",
+      "generated": ""
+    },
+    {
+      "name": "activity_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 12,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_won_events",
+      "generated": ""
+    },
+    {
+      "name": "completed_action_ids",
+      "type": "jsonb",
+      "default": null,
+      "ordinal": 13,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.deal_won_events",
+      "generated": ""
+    },
+    {
+      "name": "source_deal_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool",
+      "generated": ""
+    },
+    {
+      "name": "site_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.expansion_pool",
+      "generated": ""
+    },
+    {
+      "name": "owner_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.expansion_pool",
+      "generated": ""
+    },
+    {
+      "name": "source_work_summary",
+      "type": "text",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.expansion_pool",
+      "generated": ""
+    },
+    {
+      "name": "source_won_amount",
+      "type": "bigint",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool",
+      "generated": ""
+    },
+    {
+      "name": "completion_date",
+      "type": "date",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool",
+      "generated": ""
+    },
+    {
+      "name": "next_contact_at",
+      "type": "date",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool",
+      "generated": ""
+    },
+    {
+      "name": "candidate_work_items",
+      "type": "jsonb",
+      "default": "'[\"타공종 확인\"]'::jsonb",
+      "ordinal": 8,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool",
+      "generated": ""
+    },
+    {
+      "name": "relationship_state",
+      "type": "text",
+      "default": "'기존고객'::text",
+      "ordinal": 9,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool",
+      "generated": ""
+    },
+    {
+      "name": "expansion_status",
+      "type": "text",
+      "default": "'신규 대상'::text",
+      "ordinal": 10,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool",
+      "generated": ""
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 11,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool",
+      "generated": ""
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 12,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool",
+      "generated": ""
+    },
+    {
+      "name": "version",
+      "type": "integer",
+      "default": "1",
+      "ordinal": 13,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool",
+      "generated": ""
+    },
+    {
+      "name": "event_id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool_events",
+      "generated": ""
+    },
+    {
+      "name": "request_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool_events",
+      "generated": ""
+    },
+    {
+      "name": "source_deal_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool_events",
+      "generated": ""
+    },
+    {
+      "name": "kind",
+      "type": "text",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool_events",
+      "generated": ""
+    },
+    {
+      "name": "note",
+      "type": "text",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.expansion_pool_events",
+      "generated": ""
+    },
+    {
+      "name": "before_status",
+      "type": "text",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool_events",
+      "generated": ""
+    },
+    {
+      "name": "after_status",
+      "type": "text",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool_events",
+      "generated": ""
+    },
+    {
+      "name": "before_next_contact_at",
+      "type": "date",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool_events",
+      "generated": ""
+    },
+    {
+      "name": "after_next_contact_at",
+      "type": "date",
+      "default": null,
+      "ordinal": 9,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_auth_uid",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 10,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_user_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 11,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 12,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool_events",
+      "generated": ""
+    },
+    {
+      "name": "occurred_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 13,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.expansion_pool_events",
+      "generated": ""
+    },
+    {
+      "name": "event_id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.inquiry_audit_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_auth_uid",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.inquiry_audit_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_user_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.inquiry_audit_events",
+      "generated": ""
+    },
+    {
+      "name": "inquiry_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.inquiry_audit_events",
+      "generated": ""
+    },
+    {
+      "name": "action",
+      "type": "text",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.inquiry_audit_events",
+      "generated": ""
+    },
+    {
+      "name": "before_data",
+      "type": "jsonb",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.inquiry_audit_events",
+      "generated": ""
+    },
+    {
+      "name": "after_data",
+      "type": "jsonb",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.inquiry_audit_events",
+      "generated": ""
+    },
+    {
+      "name": "reason",
+      "type": "text",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.inquiry_audit_events",
+      "generated": ""
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 9,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.inquiry_audit_events",
+      "generated": ""
+    },
+    {
+      "name": "id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "request_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "deal_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "contact_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "person_key",
+      "type": "text",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "recipient_phone",
+      "type": "text",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "channel",
+      "type": "text",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "template_key",
+      "type": "text",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "template_title",
+      "type": "text",
+      "default": null,
+      "ordinal": 9,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "template_kind",
+      "type": "text",
+      "default": null,
+      "ordinal": 10,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "template_grade",
+      "type": "text",
+      "default": null,
+      "ordinal": 11,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "purpose",
+      "type": "text",
+      "default": null,
+      "ordinal": 12,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "body",
+      "type": "text",
+      "default": null,
+      "ordinal": 13,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "message_context",
+      "type": "text",
+      "default": "'deal'::text",
+      "ordinal": 14,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "quote_version_no",
+      "type": "integer",
+      "default": null,
+      "ordinal": 15,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "quote_attachment_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 16,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "attachment_refs",
+      "type": "uuid[]",
+      "default": "'{}'::uuid[]",
+      "ordinal": 17,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "status",
+      "type": "text",
+      "default": null,
+      "ordinal": 18,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "attestation_kind",
+      "type": "text",
+      "default": "'user_attested'::text",
+      "ordinal": 19,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "actor_auth_uid",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 20,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "actor_user_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 21,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "actor_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 22,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "activity_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 23,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "next_action_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 24,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "occurred_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 25,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "response_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 26,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "response_kind",
+      "type": "text",
+      "default": null,
+      "ordinal": 27,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "response_activity_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 28,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.message_outcomes",
+      "generated": ""
+    },
+    {
+      "name": "next_action_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_reminders",
+      "generated": ""
+    },
+    {
+      "name": "request_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_reminders",
+      "generated": ""
+    },
+    {
+      "name": "deal_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_reminders",
+      "generated": ""
+    },
+    {
+      "name": "scheduled_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_reminders",
+      "generated": ""
+    },
+    {
+      "name": "channel",
+      "type": "text",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_reminders",
+      "generated": ""
+    },
+    {
+      "name": "template_key",
+      "type": "text",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_reminders",
+      "generated": ""
+    },
+    {
+      "name": "draft_body",
+      "type": "text",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_reminders",
+      "generated": ""
+    },
+    {
+      "name": "actor_auth_uid",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_reminders",
+      "generated": ""
+    },
+    {
+      "name": "actor_user_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 9,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_reminders",
+      "generated": ""
+    },
+    {
+      "name": "actor_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 10,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_reminders",
+      "generated": ""
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": "clock_timestamp()",
+      "ordinal": 11,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.message_reminders",
+      "generated": ""
+    },
+    {
+      "name": "event_id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.next_action_postponements",
+      "generated": ""
+    },
+    {
+      "name": "request_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.next_action_postponements",
+      "generated": ""
+    },
+    {
+      "name": "event_kind",
+      "type": "text",
+      "default": "'postpone'::text",
+      "ordinal": 3,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.next_action_postponements",
+      "generated": ""
+    },
+    {
+      "name": "next_action_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.next_action_postponements",
+      "generated": ""
+    },
+    {
+      "name": "replacement_action_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.next_action_postponements",
+      "generated": ""
+    },
+    {
+      "name": "deal_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.next_action_postponements",
+      "generated": ""
+    },
+    {
+      "name": "before_due_at",
+      "type": "date",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.next_action_postponements",
+      "generated": ""
+    },
+    {
+      "name": "after_due_at",
+      "type": "date",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.next_action_postponements",
+      "generated": ""
+    },
+    {
+      "name": "postpone_count",
+      "type": "integer",
+      "default": null,
+      "ordinal": 9,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.next_action_postponements",
+      "generated": ""
+    },
+    {
+      "name": "actor_auth_uid",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 10,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.next_action_postponements",
+      "generated": ""
+    },
+    {
+      "name": "actor_user_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 11,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.next_action_postponements",
+      "generated": ""
+    },
+    {
+      "name": "actor_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 12,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.next_action_postponements",
+      "generated": ""
+    },
+    {
+      "name": "changed_at",
+      "type": "timestamp with time zone",
+      "default": "clock_timestamp()",
+      "ordinal": 13,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.next_action_postponements",
+      "generated": ""
+    },
+    {
+      "name": "scope_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.object_scope",
+      "generated": ""
+    },
+    {
+      "name": "user_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.object_scope",
+      "generated": ""
+    },
+    {
+      "name": "deal_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.object_scope",
+      "generated": ""
+    },
+    {
+      "name": "inquiry_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.object_scope",
+      "generated": ""
+    },
+    {
+      "name": "can_write",
+      "type": "boolean",
+      "default": "false",
+      "ordinal": 5,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.object_scope",
+      "generated": ""
+    },
+    {
+      "name": "reviewed_by",
+      "type": "text",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.object_scope",
+      "generated": ""
+    },
+    {
+      "name": "expires_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.object_scope",
+      "generated": ""
+    },
+    {
+      "name": "id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.quote_versions",
+      "generated": ""
+    },
+    {
+      "name": "deal_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.quote_versions",
+      "generated": ""
+    },
+    {
+      "name": "version_no",
+      "type": "integer",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.quote_versions",
+      "generated": ""
+    },
+    {
+      "name": "amount",
+      "type": "bigint",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.quote_versions",
+      "generated": ""
+    },
+    {
+      "name": "reason",
+      "type": "text",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.quote_versions",
+      "generated": ""
+    },
+    {
+      "name": "actor_auth_uid",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.quote_versions",
+      "generated": ""
+    },
+    {
+      "name": "actor_user_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.quote_versions",
+      "generated": ""
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 8,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.quote_versions",
+      "generated": ""
+    },
+    {
+      "name": "id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.relationship_events",
+      "generated": ""
+    },
+    {
+      "name": "request_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.relationship_events",
+      "generated": ""
+    },
+    {
+      "name": "deal_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.relationship_events",
+      "generated": ""
+    },
+    {
+      "name": "contact_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.relationship_events",
+      "generated": ""
+    },
+    {
+      "name": "person_key",
+      "type": "text",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.relationship_events",
+      "generated": ""
+    },
+    {
+      "name": "event_kind",
+      "type": "text",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.relationship_events",
+      "generated": ""
+    },
+    {
+      "name": "message_outcome_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.relationship_events",
+      "generated": ""
+    },
+    {
+      "name": "activity_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.relationship_events",
+      "generated": ""
+    },
+    {
+      "name": "next_action_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 9,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.relationship_events",
+      "generated": ""
+    },
+    {
+      "name": "hold_until",
+      "type": "date",
+      "default": null,
+      "ordinal": 10,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.relationship_events",
+      "generated": ""
+    },
+    {
+      "name": "reason",
+      "type": "text",
+      "default": null,
+      "ordinal": 11,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.relationship_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_auth_uid",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 12,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.relationship_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_user_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 13,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.relationship_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 14,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.relationship_events",
+      "generated": ""
+    },
+    {
+      "name": "business_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 15,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.relationship_events",
+      "generated": ""
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 16,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.relationship_events",
+      "generated": ""
+    },
+    {
+      "name": "event_id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.stage_transition_events",
+      "generated": ""
+    },
+    {
+      "name": "request_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.stage_transition_events",
+      "generated": ""
+    },
+    {
+      "name": "deal_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.stage_transition_events",
+      "generated": ""
+    },
+    {
+      "name": "from_stage",
+      "type": "text",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.stage_transition_events",
+      "generated": ""
+    },
+    {
+      "name": "to_stage",
+      "type": "text",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.stage_transition_events",
+      "generated": ""
+    },
+    {
+      "name": "transition_date",
+      "type": "date",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.stage_transition_events",
+      "generated": ""
+    },
+    {
+      "name": "fields",
+      "type": "jsonb",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.stage_transition_events",
+      "generated": ""
+    },
+    {
+      "name": "skip_reason",
+      "type": "text",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.stage_transition_events",
+      "generated": ""
+    },
+    {
+      "name": "memo",
+      "type": "text",
+      "default": null,
+      "ordinal": 9,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.stage_transition_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_auth_uid",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 10,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.stage_transition_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_user_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 11,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.stage_transition_events",
+      "generated": ""
+    },
+    {
+      "name": "recorded_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 12,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.stage_transition_events",
+      "generated": ""
+    },
+    {
+      "name": "stage_history_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 13,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.stage_transition_events",
+      "generated": ""
+    },
+    {
+      "name": "activity_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 14,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.stage_transition_events",
+      "generated": ""
+    },
+    {
+      "name": "next_action_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 15,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.stage_transition_events",
+      "generated": ""
+    },
+    {
+      "name": "actor_user_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.user_opportunity_state",
+      "generated": ""
+    },
+    {
+      "name": "deal_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.user_opportunity_state",
+      "generated": ""
+    },
+    {
+      "name": "favorite",
+      "type": "boolean",
+      "default": "false",
+      "ordinal": 3,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.user_opportunity_state",
+      "generated": ""
+    },
+    {
+      "name": "last_viewed_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.user_opportunity_state",
+      "generated": ""
+    },
+    {
+      "name": "last_worked_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": false,
+      "relation": "crm_security.user_opportunity_state",
+      "generated": ""
+    },
+    {
+      "name": "view_count",
+      "type": "bigint",
+      "default": "0",
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.user_opportunity_state",
+      "generated": ""
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "crm_security.user_opportunity_state",
+      "generated": ""
+    },
+    {
+      "name": "id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.activities",
+      "generated": ""
+    },
+    {
+      "name": "deal_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.activities",
+      "generated": ""
+    },
+    {
+      "name": "organization_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.activities",
+      "generated": ""
+    },
+    {
+      "name": "actor_email",
+      "type": "text",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.activities",
+      "generated": ""
+    },
+    {
+      "name": "actor_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.activities",
+      "generated": ""
+    },
+    {
+      "name": "type",
+      "type": "text",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.activities",
+      "generated": ""
+    },
+    {
+      "name": "detail",
+      "type": "jsonb",
+      "default": "'{}'::jsonb",
+      "ordinal": 7,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.activities",
+      "generated": ""
+    },
+    {
+      "name": "occurred_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 8,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.activities",
+      "generated": ""
+    },
+    {
+      "name": "id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.assignment_history",
+      "generated": ""
+    },
+    {
+      "name": "opportunity_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.assignment_history",
+      "generated": ""
+    },
+    {
+      "name": "inquiry_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.assignment_history",
+      "generated": ""
+    },
+    {
+      "name": "from_owner",
+      "type": "text",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.assignment_history",
+      "generated": ""
+    },
+    {
+      "name": "to_owner",
+      "type": "text",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.assignment_history",
+      "generated": ""
+    },
+    {
+      "name": "reason",
+      "type": "text",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.assignment_history",
+      "generated": ""
+    },
+    {
+      "name": "actor_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.assignment_history",
+      "generated": ""
+    },
+    {
+      "name": "changed_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 8,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.assignment_history",
+      "generated": ""
+    },
+    {
+      "name": "id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.contact_assignments",
+      "generated": ""
+    },
+    {
+      "name": "person_key",
+      "type": "text",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.contact_assignments",
+      "generated": ""
+    },
+    {
+      "name": "opportunity_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.contact_assignments",
+      "generated": ""
+    },
+    {
+      "name": "site_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.contact_assignments",
+      "generated": ""
+    },
+    {
+      "name": "office_phone",
+      "type": "text",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.contact_assignments",
+      "generated": ""
+    },
+    {
+      "name": "started_at",
+      "type": "date",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.contact_assignments",
+      "generated": ""
+    },
+    {
+      "name": "ended_at",
+      "type": "date",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.contact_assignments",
+      "generated": ""
+    },
+    {
+      "name": "status",
+      "type": "text",
+      "default": "'current'::text",
+      "ordinal": 8,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.contact_assignments",
+      "generated": ""
+    },
+    {
+      "name": "reason",
+      "type": "text",
+      "default": null,
+      "ordinal": 9,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.contact_assignments",
+      "generated": ""
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 10,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.contact_assignments",
+      "generated": ""
+    },
+    {
+      "name": "id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.contacts",
+      "generated": ""
+    },
+    {
+      "name": "relate_id",
+      "type": "text",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.contacts",
+      "generated": ""
+    },
+    {
+      "name": "organization_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.contacts",
+      "generated": ""
+    },
+    {
+      "name": "name",
+      "type": "text",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.contacts",
+      "generated": ""
+    },
+    {
+      "name": "title",
+      "type": "text",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.contacts",
+      "generated": ""
+    },
+    {
+      "name": "phone",
+      "type": "text",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.contacts",
+      "generated": ""
+    },
+    {
+      "name": "emails",
+      "type": "jsonb",
+      "default": "'[]'::jsonb",
+      "ordinal": 7,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.contacts",
+      "generated": ""
+    },
+    {
+      "name": "custom_fields",
+      "type": "jsonb",
+      "default": "'{}'::jsonb",
+      "ordinal": 8,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.contacts",
+      "generated": ""
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 9,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.contacts",
+      "generated": ""
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 10,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.contacts",
+      "generated": ""
+    },
+    {
+      "name": "person_key",
+      "type": "text",
+      "default": null,
+      "ordinal": 11,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.contacts",
+      "generated": ""
+    },
+    {
+      "name": "mobile",
+      "type": "text",
+      "default": null,
+      "ordinal": 12,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.contacts",
+      "generated": ""
+    },
+    {
+      "name": "role",
+      "type": "text",
+      "default": "'관리소장'::text",
+      "ordinal": 13,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.contacts",
+      "generated": ""
+    },
+    {
+      "name": "current_site",
+      "type": "text",
+      "default": null,
+      "ordinal": 14,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.contacts",
+      "generated": ""
+    },
+    {
+      "name": "id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "relate_id",
+      "type": "text",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "relate_key",
+      "type": "text",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "organization_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "contact_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "brand",
+      "type": "text",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "list_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "stage_code",
+      "type": "text",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "stage_raw",
+      "type": "text",
+      "default": null,
+      "ordinal": 9,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "stage_group",
+      "type": "text",
+      "default": null,
+      "ordinal": 10,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "assignee_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 11,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "assignee_email",
+      "type": "text",
+      "default": null,
+      "ordinal": 12,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "amount",
+      "type": "bigint",
+      "default": null,
+      "ordinal": 13,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "source",
+      "type": "text",
+      "default": "'inbound'::text",
+      "ordinal": 14,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "outbound_channel",
+      "type": "text",
+      "default": null,
+      "ordinal": 15,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "lost_reason",
+      "type": "text",
+      "default": null,
+      "ordinal": 16,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "badfit_type",
+      "type": "text",
+      "default": null,
+      "ordinal": 17,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "next_action",
+      "type": "text",
+      "default": null,
+      "ordinal": 18,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "next_action_date",
+      "type": "date",
+      "default": null,
+      "ordinal": 19,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "list_fields",
+      "type": "jsonb",
+      "default": "'{}'::jsonb",
+      "ordinal": 20,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "closed_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 21,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 22,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 23,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "site_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 24,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "owner_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 25,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "origin_inquiry_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 26,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "lifecycle_status",
+      "type": "text",
+      "default": "'active'::text",
+      "ordinal": 27,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "outcome",
+      "type": "text",
+      "default": null,
+      "ordinal": 28,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "wake_up_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 29,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "amount_unknown_reason",
+      "type": "text",
+      "default": null,
+      "ordinal": 30,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "stage_entered_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 31,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "last_activity_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 32,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "last_customer_contact_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 33,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "opened_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 34,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "version",
+      "type": "integer",
+      "default": "1",
+      "ordinal": 35,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "lost_kind",
+      "type": "text",
+      "default": null,
+      "ordinal": 36,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "origin_channel",
+      "type": "text",
+      "default": null,
+      "ordinal": 37,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "service_type",
+      "type": "text",
+      "default": null,
+      "ordinal": 38,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "service_history",
+      "type": "jsonb",
+      "default": "'[]'::jsonb",
+      "ordinal": 39,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "origin_business",
+      "type": "text",
+      "default": null,
+      "ordinal": 40,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "current_business",
+      "type": "text",
+      "default": null,
+      "ordinal": 41,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "business_history",
+      "type": "jsonb",
+      "default": "'[]'::jsonb",
+      "ordinal": 42,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "office_phone",
+      "type": "text",
+      "default": null,
+      "ordinal": 43,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "office_email",
+      "type": "text",
+      "default": null,
+      "ordinal": 44,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "manager_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 45,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "manager_mobile",
+      "type": "text",
+      "default": null,
+      "ordinal": 46,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "person_key",
+      "type": "text",
+      "default": null,
+      "ordinal": 47,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "manager_role",
+      "type": "text",
+      "default": "'관리소장'::text",
+      "ordinal": 48,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "manager_current_site",
+      "type": "text",
+      "default": null,
+      "ordinal": 49,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "manager_started_at",
+      "type": "date",
+      "default": null,
+      "ordinal": 50,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "manager_status",
+      "type": "text",
+      "default": null,
+      "ordinal": 51,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "manager_left_at",
+      "type": "date",
+      "default": null,
+      "ordinal": 52,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "primary_work",
+      "type": "text",
+      "default": null,
+      "ordinal": 53,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "work_items",
+      "type": "jsonb",
+      "default": "'[]'::jsonb",
+      "ordinal": 54,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "work_scope_type",
+      "type": "text",
+      "default": null,
+      "ordinal": 55,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "work_summary",
+      "type": "text",
+      "default": null,
+      "ordinal": 56,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "stage_checklist",
+      "type": "jsonb",
+      "default": "'{}'::jsonb",
+      "ordinal": 57,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "stage_contexts",
+      "type": "jsonb",
+      "default": "'{}'::jsonb",
+      "ordinal": 58,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "won_amount",
+      "type": "bigint",
+      "default": null,
+      "ordinal": 59,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "completion_date",
+      "type": "date",
+      "default": null,
+      "ordinal": 60,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.deals",
+      "generated": ""
+    },
+    {
+      "name": "id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "brand",
+      "type": "text",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "site_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "address",
+      "type": "text",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "contact_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "phone",
+      "type": "text",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "assignee_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "status",
+      "type": "text",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "deal_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 9,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "received_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 10,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "sheet_row",
+      "type": "integer",
+      "default": null,
+      "ordinal": 11,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "raw",
+      "type": "jsonb",
+      "default": "'{}'::jsonb",
+      "ordinal": 12,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 13,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "site_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 14,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "source_channel",
+      "type": "text",
+      "default": null,
+      "ordinal": 15,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "assigned_to",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 16,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "assigned_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 17,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "first_response_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 18,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "qualified_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 19,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "opportunity_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 20,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 21,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "inquiry_type",
+      "type": "text",
+      "default": null,
+      "ordinal": 22,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "channel",
+      "type": "text",
+      "default": null,
+      "ordinal": 23,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "source",
+      "type": "text",
+      "default": null,
+      "ordinal": 24,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "work_type",
+      "type": "text",
+      "default": null,
+      "ordinal": 25,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "responded_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 26,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "next_action_date",
+      "type": "date",
+      "default": null,
+      "ordinal": 27,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "close_reason",
+      "type": "text",
+      "default": null,
+      "ordinal": 28,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.inquiries",
+      "generated": ""
+    },
+    {
+      "name": "id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.next_actions",
+      "generated": ""
+    },
+    {
+      "name": "deal_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.next_actions",
+      "generated": ""
+    },
+    {
+      "name": "inquiry_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.next_actions",
+      "generated": ""
+    },
+    {
+      "name": "action_type",
+      "type": "text",
+      "default": "'기타'::text",
+      "ordinal": 4,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.next_actions",
+      "generated": ""
+    },
+    {
+      "name": "title",
+      "type": "text",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.next_actions",
+      "generated": ""
+    },
+    {
+      "name": "due_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.next_actions",
+      "generated": ""
+    },
+    {
+      "name": "assignee_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.next_actions",
+      "generated": ""
+    },
+    {
+      "name": "status",
+      "type": "text",
+      "default": "'open'::text",
+      "ordinal": 8,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.next_actions",
+      "generated": ""
+    },
+    {
+      "name": "completed_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 9,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.next_actions",
+      "generated": ""
+    },
+    {
+      "name": "source_activity_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 10,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.next_actions",
+      "generated": ""
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 11,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.next_actions",
+      "generated": ""
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 12,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.next_actions",
+      "generated": ""
+    },
+    {
+      "name": "id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.organizations",
+      "generated": ""
+    },
+    {
+      "name": "relate_id",
+      "type": "text",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.organizations",
+      "generated": ""
+    },
+    {
+      "name": "name",
+      "type": "text",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.organizations",
+      "generated": ""
+    },
+    {
+      "name": "region",
+      "type": "text",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.organizations",
+      "generated": ""
+    },
+    {
+      "name": "address",
+      "type": "text",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.organizations",
+      "generated": ""
+    },
+    {
+      "name": "manager_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.organizations",
+      "generated": ""
+    },
+    {
+      "name": "manager_email",
+      "type": "text",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.organizations",
+      "generated": ""
+    },
+    {
+      "name": "custom_fields",
+      "type": "jsonb",
+      "default": "'{}'::jsonb",
+      "ordinal": 8,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.organizations",
+      "generated": ""
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 9,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.organizations",
+      "generated": ""
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 10,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.organizations",
+      "generated": ""
+    },
+    {
+      "name": "site_id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.sites",
+      "generated": ""
+    },
+    {
+      "name": "site_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.sites",
+      "generated": ""
+    },
+    {
+      "name": "norm_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.sites",
+      "generated": ""
+    },
+    {
+      "name": "address",
+      "type": "text",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.sites",
+      "generated": ""
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 5,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.sites",
+      "generated": ""
+    },
+    {
+      "name": "id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.stage_history",
+      "generated": ""
+    },
+    {
+      "name": "opportunity_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.stage_history",
+      "generated": ""
+    },
+    {
+      "name": "inquiry_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.stage_history",
+      "generated": ""
+    },
+    {
+      "name": "from_stage",
+      "type": "text",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.stage_history",
+      "generated": ""
+    },
+    {
+      "name": "to_stage",
+      "type": "text",
+      "default": null,
+      "ordinal": 5,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.stage_history",
+      "generated": ""
+    },
+    {
+      "name": "reason",
+      "type": "text",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.stage_history",
+      "generated": ""
+    },
+    {
+      "name": "actor_id",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 7,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.stage_history",
+      "generated": ""
+    },
+    {
+      "name": "actor_name",
+      "type": "text",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.stage_history",
+      "generated": ""
+    },
+    {
+      "name": "changed_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 9,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.stage_history",
+      "generated": ""
+    },
+    {
+      "name": "user_id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.users",
+      "generated": ""
+    },
+    {
+      "name": "name",
+      "type": "text",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.users",
+      "generated": ""
+    },
+    {
+      "name": "email",
+      "type": "text",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.users",
+      "generated": ""
+    },
+    {
+      "name": "role",
+      "type": "text",
+      "default": "'rep'::text",
+      "ordinal": 4,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.users",
+      "generated": ""
+    },
+    {
+      "name": "active",
+      "type": "boolean",
+      "default": "true",
+      "ordinal": 5,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.users",
+      "generated": ""
+    },
+    {
+      "name": "auth_uid",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 6,
+      "identity": "",
+      "not_null": false,
+      "relation": "public.users",
+      "generated": ""
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 7,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.users",
+      "generated": ""
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 8,
+      "identity": "",
+      "not_null": true,
+      "relation": "public.users",
+      "generated": ""
+    },
+    {
+      "name": "id",
+      "type": "text",
+      "default": null,
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "storage.buckets",
+      "generated": ""
+    },
+    {
+      "name": "name",
+      "type": "text",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": true,
+      "relation": "storage.buckets",
+      "generated": ""
+    },
+    {
+      "name": "owner",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.buckets",
+      "generated": ""
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 4,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.buckets",
+      "generated": ""
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 5,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.buckets",
+      "generated": ""
+    },
+    {
+      "name": "public",
+      "type": "boolean",
+      "default": "false",
+      "ordinal": 6,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.buckets",
+      "generated": ""
+    },
+    {
+      "name": "avif_autodetection",
+      "type": "boolean",
+      "default": "false",
+      "ordinal": 7,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.buckets",
+      "generated": ""
+    },
+    {
+      "name": "file_size_limit",
+      "type": "bigint",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.buckets",
+      "generated": ""
+    },
+    {
+      "name": "allowed_mime_types",
+      "type": "text[]",
+      "default": null,
+      "ordinal": 9,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.buckets",
+      "generated": ""
+    },
+    {
+      "name": "owner_id",
+      "type": "text",
+      "default": null,
+      "ordinal": 10,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.buckets",
+      "generated": ""
+    },
+    {
+      "name": "type",
+      "type": "storage.buckettype",
+      "default": "'STANDARD'::storage.buckettype",
+      "ordinal": 11,
+      "identity": "",
+      "not_null": true,
+      "relation": "storage.buckets",
+      "generated": ""
+    },
+    {
+      "name": "versioning_status",
+      "type": "text",
+      "default": "'DISABLED'::text",
+      "ordinal": 12,
+      "identity": "",
+      "not_null": true,
+      "relation": "storage.buckets",
+      "generated": ""
+    },
+    {
+      "name": "id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "identity": "",
+      "not_null": true,
+      "relation": "storage.objects",
+      "generated": ""
+    },
+    {
+      "name": "bucket_id",
+      "type": "text",
+      "default": null,
+      "ordinal": 2,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.objects",
+      "generated": ""
+    },
+    {
+      "name": "name",
+      "type": "text",
+      "default": null,
+      "ordinal": 3,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.objects",
+      "generated": ""
+    },
+    {
+      "name": "owner",
+      "type": "uuid",
+      "default": null,
+      "ordinal": 4,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.objects",
+      "generated": ""
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 5,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.objects",
+      "generated": ""
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 6,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.objects",
+      "generated": ""
+    },
+    {
+      "name": "last_accessed_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "ordinal": 7,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.objects",
+      "generated": ""
+    },
+    {
+      "name": "metadata",
+      "type": "jsonb",
+      "default": null,
+      "ordinal": 8,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.objects",
+      "generated": ""
+    },
+    {
+      "name": "path_tokens",
+      "type": "text[]",
+      "default": "string_to_array(name, '/'::text)",
+      "ordinal": 9,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.objects",
+      "generated": "s"
+    },
+    {
+      "name": "version",
+      "type": "text",
+      "default": null,
+      "ordinal": 10,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.objects",
+      "generated": ""
+    },
+    {
+      "name": "owner_id",
+      "type": "text",
+      "default": null,
+      "ordinal": 11,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.objects",
+      "generated": ""
+    },
+    {
+      "name": "user_metadata",
+      "type": "jsonb",
+      "default": null,
+      "ordinal": 12,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.objects",
+      "generated": ""
+    },
+    {
+      "name": "archived_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "ordinal": 13,
+      "identity": "",
+      "not_null": false,
+      "relation": "storage.objects",
+      "generated": ""
+    },
+    {
+      "name": "is_delete_marker",
+      "type": "boolean",
+      "default": "false",
+      "ordinal": 14,
+      "identity": "",
+      "not_null": true,
+      "relation": "storage.objects",
+      "generated": ""
+    },
+    {
+      "name": "is_versioned",
+      "type": "boolean",
+      "default": "false",
+      "ordinal": 15,
+      "identity": "",
+      "not_null": true,
+      "relation": "storage.objects",
+      "generated": ""
+    }
+  ],
+  "indexes": [
+    {
+      "name": "access_review_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "crm_security.access_review",
+      "definition": "CREATE UNIQUE INDEX access_review_pkey ON crm_security.access_review USING btree (user_id)"
+    },
+    {
+      "name": "access_review_reviewed_auth_uid_key",
+      "unique": true,
+      "primary": false,
+      "relation": "crm_security.access_review",
+      "definition": "CREATE UNIQUE INDEX access_review_reviewed_auth_uid_key ON crm_security.access_review USING btree (reviewed_auth_uid)"
+    },
+    {
+      "name": "attachment_audit_events_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "crm_security.attachment_audit_events",
+      "definition": "CREATE UNIQUE INDEX attachment_audit_events_pkey ON crm_security.attachment_audit_events USING btree (event_id)"
+    },
+    {
+      "name": "audit_events_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "crm_security.audit_events",
+      "definition": "CREATE UNIQUE INDEX audit_events_pkey ON crm_security.audit_events USING btree (event_id)"
+    },
+    {
+      "name": "command_receipts_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "crm_security.command_receipts",
+      "definition": "CREATE UNIQUE INDEX command_receipts_pkey ON crm_security.command_receipts USING btree (actor_auth_uid, request_id)"
+    },
+    {
+      "name": "customer_support_actions_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "crm_security.customer_support_actions",
+      "definition": "CREATE UNIQUE INDEX customer_support_actions_pkey ON crm_security.customer_support_actions USING btree (id)"
+    },
+    {
+      "name": "customer_support_actions_request_id_key",
+      "unique": true,
+      "primary": false,
+      "relation": "crm_security.customer_support_actions",
+      "definition": "CREATE UNIQUE INDEX customer_support_actions_request_id_key ON crm_security.customer_support_actions USING btree (request_id)"
+    },
+    {
+      "name": "customer_support_actions_requested_by_user_id_client_ref_key",
+      "unique": true,
+      "primary": false,
+      "relation": "crm_security.customer_support_actions",
+      "definition": "CREATE UNIQUE INDEX customer_support_actions_requested_by_user_id_client_ref_key ON crm_security.customer_support_actions USING btree (requested_by_user_id, client_ref)"
+    },
+    {
+      "name": "deal_attachments_object_path_key",
+      "unique": true,
+      "primary": false,
+      "relation": "crm_security.deal_attachments",
+      "definition": "CREATE UNIQUE INDEX deal_attachments_object_path_key ON crm_security.deal_attachments USING btree (object_path)"
+    },
+    {
+      "name": "deal_attachments_pending_idx",
+      "unique": false,
+      "primary": false,
+      "relation": "crm_security.deal_attachments",
+      "definition": "CREATE INDEX deal_attachments_pending_idx ON crm_security.deal_attachments USING btree (pending_expires_at) WHERE (status = 'pending'::text)"
+    },
+    {
+      "name": "deal_attachments_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "crm_security.deal_attachments",
+      "definition": "CREATE UNIQUE INDEX deal_attachments_pkey ON crm_security.deal_attachments USING btree (attachment_id)"
+    },
+    {
+      "name": "deal_attachments_ready_idx",
+      "unique": false,
+      "primary": false,
+      "relation": "crm_security.deal_attachments",
+      "definition": "CREATE INDEX deal_attachments_ready_idx ON crm_security.deal_attachments USING btree (deal_id, created_at DESC) WHERE (status = 'ready'::text)"
+    },
+    {
+      "name": "deal_close_events_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "crm_security.deal_close_events",
+      "definition": "CREATE UNIQUE INDEX deal_close_events_pkey ON crm_security.deal_close_events USING btree (event_id)"
+    },
+    {
+      "name": "deal_close_events_request_id_key",
+      "unique": true,
+      "primary": false,
+      "relation": "crm_security.deal_close_events",
+      "definition": "CREATE UNIQUE INDEX deal_close_events_request_id_key ON crm_security.deal_close_events USING btree (request_id)"
+    },
+    {
+      "name": "deal_won_events_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "crm_security.deal_won_events",
+      "definition": "CREATE UNIQUE INDEX deal_won_events_pkey ON crm_security.deal_won_events USING btree (event_id)"
+    },
+    {
+      "name": "deal_won_events_request_id_key",
+      "unique": true,
+      "primary": false,
+      "relation": "crm_security.deal_won_events",
+      "definition": "CREATE UNIQUE INDEX deal_won_events_request_id_key ON crm_security.deal_won_events USING btree (request_id)"
+    },
+    {
+      "name": "expansion_pool_next_contact_idx",
+      "unique": false,
+      "primary": false,
+      "relation": "crm_security.expansion_pool",
+      "definition": "CREATE INDEX expansion_pool_next_contact_idx ON crm_security.expansion_pool USING btree (next_contact_at, source_deal_id)"
+    },
+    {
+      "name": "expansion_pool_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "crm_security.expansion_pool",
+      "definition": "CREATE UNIQUE INDEX expansion_pool_pkey ON crm_security.expansion_pool USING btree (source_deal_id)"
+    },
+    {
+      "name": "expansion_pool_events_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "crm_security.expansion_pool_events",
+      "definition": "CREATE UNIQUE INDEX expansion_pool_events_pkey ON crm_security.expansion_pool_events USING btree (event_id)"
+    },
+    {
+      "name": "expansion_pool_events_request_id_key",
+      "unique": true,
+      "primary": false,
+      "relation": "crm_security.expansion_pool_events",
+      "definition": "CREATE UNIQUE INDEX expansion_pool_events_request_id_key ON crm_security.expansion_pool_events USING btree (request_id)"
+    },
+    {
+      "name": "expansion_pool_events_source_idx",
+      "unique": false,
+      "primary": false,
+      "relation": "crm_security.expansion_pool_events",
+      "definition": "CREATE INDEX expansion_pool_events_source_idx ON crm_security.expansion_pool_events USING btree (source_deal_id, occurred_at, event_id)"
+    },
+    {
+      "name": "inquiry_audit_events_inquiry_changed",
+      "unique": false,
+      "primary": false,
+      "relation": "crm_security.inquiry_audit_events",
+      "definition": "CREATE INDEX inquiry_audit_events_inquiry_changed ON crm_security.inquiry_audit_events USING btree (inquiry_id, created_at DESC)"
+    },
+    {
+      "name": "inquiry_audit_events_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "crm_security.inquiry_audit_events",
+      "definition": "CREATE UNIQUE INDEX inquiry_audit_events_pkey ON crm_security.inquiry_audit_events USING btree (event_id)"
+    },
+    {
+      "name": "message_outcomes_deal_time_idx",
+      "unique": false,
+      "primary": false,
+      "relation": "crm_security.message_outcomes",
+      "definition": "CREATE INDEX message_outcomes_deal_time_idx ON crm_security.message_outcomes USING btree (deal_id, occurred_at DESC, id DESC)"
+    },
+    {
+      "name": "message_outcomes_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "crm_security.message_outcomes",
+      "definition": "CREATE UNIQUE INDEX message_outcomes_pkey ON crm_security.message_outcomes USING btree (id)"
+    },
+    {
+      "name": "message_outcomes_request_id_key",
+      "unique": true,
+      "primary": false,
+      "relation": "crm_security.message_outcomes",
+      "definition": "CREATE UNIQUE INDEX message_outcomes_request_id_key ON crm_security.message_outcomes USING btree (request_id)"
+    },
+    {
+      "name": "message_reminders_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "crm_security.message_reminders",
+      "definition": "CREATE UNIQUE INDEX message_reminders_pkey ON crm_security.message_reminders USING btree (next_action_id)"
+    },
+    {
+      "name": "message_reminders_request_id_key",
+      "unique": true,
+      "primary": false,
+      "relation": "crm_security.message_reminders",
+      "definition": "CREATE UNIQUE INDEX message_reminders_request_id_key ON crm_security.message_reminders USING btree (request_id)"
+    },
+    {
+      "name": "next_action_postponements_deal_count_uq",
+      "unique": true,
+      "primary": false,
+      "relation": "crm_security.next_action_postponements",
+      "definition": "CREATE UNIQUE INDEX next_action_postponements_deal_count_uq ON crm_security.next_action_postponements USING btree (deal_id, postpone_count)"
+    },
+    {
+      "name": "next_action_postponements_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "crm_security.next_action_postponements",
+      "definition": "CREATE UNIQUE INDEX next_action_postponements_pkey ON crm_security.next_action_postponements USING btree (event_id)"
+    },
+    {
+      "name": "next_action_postponements_request_id_key",
+      "unique": true,
+      "primary": false,
+      "relation": "crm_security.next_action_postponements",
+      "definition": "CREATE UNIQUE INDEX next_action_postponements_request_id_key ON crm_security.next_action_postponements USING btree (request_id)"
+    },
+    {
+      "name": "crm_scope_deal",
+      "unique": true,
+      "primary": false,
+      "relation": "crm_security.object_scope",
+      "definition": "CREATE UNIQUE INDEX crm_scope_deal ON crm_security.object_scope USING btree (user_id, deal_id) WHERE (deal_id IS NOT NULL)"
+    },
+    {
+      "name": "crm_scope_inquiry",
+      "unique": true,
+      "primary": false,
+      "relation": "crm_security.object_scope",
+      "definition": "CREATE UNIQUE INDEX crm_scope_inquiry ON crm_security.object_scope USING btree (user_id, inquiry_id) WHERE (inquiry_id IS NOT NULL)"
+    },
+    {
+      "name": "object_scope_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "crm_security.object_scope",
+      "definition": "CREATE UNIQUE INDEX object_scope_pkey ON crm_security.object_scope USING btree (scope_id)"
+    },
+    {
+      "name": "quote_versions_deal_id_version_no_key",
+      "unique": true,
+      "primary": false,
+      "relation": "crm_security.quote_versions",
+      "definition": "CREATE UNIQUE INDEX quote_versions_deal_id_version_no_key ON crm_security.quote_versions USING btree (deal_id, version_no)"
+    },
+    {
+      "name": "quote_versions_deal_version_idx",
+      "unique": false,
+      "primary": false,
+      "relation": "crm_security.quote_versions",
+      "definition": "CREATE INDEX quote_versions_deal_version_idx ON crm_security.quote_versions USING btree (deal_id, version_no)"
+    },
+    {
+      "name": "quote_versions_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "crm_security.quote_versions",
+      "definition": "CREATE UNIQUE INDEX quote_versions_pkey ON crm_security.quote_versions USING btree (id)"
+    },
+    {
+      "name": "relationship_events_deal_time_idx",
+      "unique": false,
+      "primary": false,
+      "relation": "crm_security.relationship_events",
+      "definition": "CREATE INDEX relationship_events_deal_time_idx ON crm_security.relationship_events USING btree (deal_id, business_at DESC, id DESC)"
+    },
+    {
+      "name": "relationship_events_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "crm_security.relationship_events",
+      "definition": "CREATE UNIQUE INDEX relationship_events_pkey ON crm_security.relationship_events USING btree (id)"
+    },
+    {
+      "name": "relationship_events_request_id_key",
+      "unique": true,
+      "primary": false,
+      "relation": "crm_security.relationship_events",
+      "definition": "CREATE UNIQUE INDEX relationship_events_request_id_key ON crm_security.relationship_events USING btree (request_id)"
+    },
+    {
+      "name": "stage_transition_events_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "crm_security.stage_transition_events",
+      "definition": "CREATE UNIQUE INDEX stage_transition_events_pkey ON crm_security.stage_transition_events USING btree (event_id)"
+    },
+    {
+      "name": "stage_transition_events_request_id_key",
+      "unique": true,
+      "primary": false,
+      "relation": "crm_security.stage_transition_events",
+      "definition": "CREATE UNIQUE INDEX stage_transition_events_request_id_key ON crm_security.stage_transition_events USING btree (request_id)"
+    },
+    {
+      "name": "user_opportunity_state_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "crm_security.user_opportunity_state",
+      "definition": "CREATE UNIQUE INDEX user_opportunity_state_pkey ON crm_security.user_opportunity_state USING btree (actor_user_id, deal_id)"
+    },
+    {
+      "name": "user_opportunity_state_recent_idx",
+      "unique": false,
+      "primary": false,
+      "relation": "crm_security.user_opportunity_state",
+      "definition": "CREATE INDEX user_opportunity_state_recent_idx ON crm_security.user_opportunity_state USING btree (actor_user_id, last_viewed_at DESC, last_worked_at DESC)"
+    },
+    {
+      "name": "activities_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "public.activities",
+      "definition": "CREATE UNIQUE INDEX activities_pkey ON public.activities USING btree (id)"
+    },
+    {
+      "name": "idx_act_actor_time",
+      "unique": false,
+      "primary": false,
+      "relation": "public.activities",
+      "definition": "CREATE INDEX idx_act_actor_time ON public.activities USING btree (actor_email, occurred_at)"
+    },
+    {
+      "name": "idx_act_deal",
+      "unique": false,
+      "primary": false,
+      "relation": "public.activities",
+      "definition": "CREATE INDEX idx_act_deal ON public.activities USING btree (deal_id)"
+    },
+    {
+      "name": "assignment_history_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "public.assignment_history",
+      "definition": "CREATE UNIQUE INDEX assignment_history_pkey ON public.assignment_history USING btree (id)"
+    },
+    {
+      "name": "idx_assign_hist_opp",
+      "unique": false,
+      "primary": false,
+      "relation": "public.assignment_history",
+      "definition": "CREATE INDEX idx_assign_hist_opp ON public.assignment_history USING btree (opportunity_id, changed_at)"
+    },
+    {
+      "name": "contact_assign_open",
+      "unique": true,
+      "primary": false,
+      "relation": "public.contact_assignments",
+      "definition": "CREATE UNIQUE INDEX contact_assign_open ON public.contact_assignments USING btree (person_key, site_name) WHERE (ended_at IS NULL)"
+    },
+    {
+      "name": "contact_assignments_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "public.contact_assignments",
+      "definition": "CREATE UNIQUE INDEX contact_assignments_pkey ON public.contact_assignments USING btree (id)"
+    },
+    {
+      "name": "contacts_person_key_uq",
+      "unique": true,
+      "primary": false,
+      "relation": "public.contacts",
+      "definition": "CREATE UNIQUE INDEX contacts_person_key_uq ON public.contacts USING btree (person_key)"
+    },
+    {
+      "name": "contacts_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "public.contacts",
+      "definition": "CREATE UNIQUE INDEX contacts_pkey ON public.contacts USING btree (id)"
+    },
+    {
+      "name": "contacts_relate_id_key",
+      "unique": true,
+      "primary": false,
+      "relation": "public.contacts",
+      "definition": "CREATE UNIQUE INDEX contacts_relate_id_key ON public.contacts USING btree (relate_id)"
+    },
+    {
+      "name": "idx_contact_org",
+      "unique": false,
+      "primary": false,
+      "relation": "public.contacts",
+      "definition": "CREATE INDEX idx_contact_org ON public.contacts USING btree (organization_id)"
+    },
+    {
+      "name": "idx_contact_phone",
+      "unique": false,
+      "primary": false,
+      "relation": "public.contacts",
+      "definition": "CREATE INDEX idx_contact_phone ON public.contacts USING btree (phone)"
+    },
+    {
+      "name": "deals_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "public.deals",
+      "definition": "CREATE UNIQUE INDEX deals_pkey ON public.deals USING btree (id)"
+    },
+    {
+      "name": "deals_primary_work_idx",
+      "unique": false,
+      "primary": false,
+      "relation": "public.deals",
+      "definition": "CREATE INDEX deals_primary_work_idx ON public.deals USING btree (primary_work) WHERE (primary_work IS NOT NULL)"
+    },
+    {
+      "name": "deals_relate_id_key",
+      "unique": true,
+      "primary": false,
+      "relation": "public.deals",
+      "definition": "CREATE UNIQUE INDEX deals_relate_id_key ON public.deals USING btree (relate_id)"
+    },
+    {
+      "name": "deals_work_items_gin",
+      "unique": false,
+      "primary": false,
+      "relation": "public.deals",
+      "definition": "CREATE INDEX deals_work_items_gin ON public.deals USING gin (work_items)"
+    },
+    {
+      "name": "idx_deal_assignee",
+      "unique": false,
+      "primary": false,
+      "relation": "public.deals",
+      "definition": "CREATE INDEX idx_deal_assignee ON public.deals USING btree (assignee_email)"
+    },
+    {
+      "name": "idx_deal_brand_stage",
+      "unique": false,
+      "primary": false,
+      "relation": "public.deals",
+      "definition": "CREATE INDEX idx_deal_brand_stage ON public.deals USING btree (brand, stage_code)"
+    },
+    {
+      "name": "idx_deal_next",
+      "unique": false,
+      "primary": false,
+      "relation": "public.deals",
+      "definition": "CREATE INDEX idx_deal_next ON public.deals USING btree (next_action_date)"
+    },
+    {
+      "name": "idx_deal_org",
+      "unique": false,
+      "primary": false,
+      "relation": "public.deals",
+      "definition": "CREATE INDEX idx_deal_org ON public.deals USING btree (organization_id)"
+    },
+    {
+      "name": "idx_deals_current_biz",
+      "unique": false,
+      "primary": false,
+      "relation": "public.deals",
+      "definition": "CREATE INDEX idx_deals_current_biz ON public.deals USING btree (current_business)"
+    },
+    {
+      "name": "idx_deals_lost_kind",
+      "unique": false,
+      "primary": false,
+      "relation": "public.deals",
+      "definition": "CREATE INDEX idx_deals_lost_kind ON public.deals USING btree (lost_kind) WHERE (lost_kind IS NOT NULL)"
+    },
+    {
+      "name": "idx_deals_origin",
+      "unique": false,
+      "primary": false,
+      "relation": "public.deals",
+      "definition": "CREATE INDEX idx_deals_origin ON public.deals USING btree (origin_channel)"
+    },
+    {
+      "name": "idx_deals_origin_biz",
+      "unique": false,
+      "primary": false,
+      "relation": "public.deals",
+      "definition": "CREATE INDEX idx_deals_origin_biz ON public.deals USING btree (origin_business)"
+    },
+    {
+      "name": "idx_deals_outcome",
+      "unique": false,
+      "primary": false,
+      "relation": "public.deals",
+      "definition": "CREATE INDEX idx_deals_outcome ON public.deals USING btree (outcome)"
+    },
+    {
+      "name": "idx_deals_owner",
+      "unique": false,
+      "primary": false,
+      "relation": "public.deals",
+      "definition": "CREATE INDEX idx_deals_owner ON public.deals USING btree (owner_id)"
+    },
+    {
+      "name": "idx_deals_service",
+      "unique": false,
+      "primary": false,
+      "relation": "public.deals",
+      "definition": "CREATE INDEX idx_deals_service ON public.deals USING btree (service_type)"
+    },
+    {
+      "name": "idx_deals_site",
+      "unique": false,
+      "primary": false,
+      "relation": "public.deals",
+      "definition": "CREATE INDEX idx_deals_site ON public.deals USING btree (site_id)"
+    },
+    {
+      "name": "idx_deals_stage_entered",
+      "unique": false,
+      "primary": false,
+      "relation": "public.deals",
+      "definition": "CREATE INDEX idx_deals_stage_entered ON public.deals USING btree (stage_entered_at)"
+    },
+    {
+      "name": "idx_inq_assigned",
+      "unique": false,
+      "primary": false,
+      "relation": "public.inquiries",
+      "definition": "CREATE INDEX idx_inq_assigned ON public.inquiries USING btree (assigned_to, assigned_at)"
+    },
+    {
+      "name": "idx_inq_brand",
+      "unique": false,
+      "primary": false,
+      "relation": "public.inquiries",
+      "definition": "CREATE INDEX idx_inq_brand ON public.inquiries USING btree (brand)"
+    },
+    {
+      "name": "idx_inq_phone",
+      "unique": false,
+      "primary": false,
+      "relation": "public.inquiries",
+      "definition": "CREATE INDEX idx_inq_phone ON public.inquiries USING btree (phone)"
+    },
+    {
+      "name": "idx_inq_site",
+      "unique": false,
+      "primary": false,
+      "relation": "public.inquiries",
+      "definition": "CREATE INDEX idx_inq_site ON public.inquiries USING btree (site_id)"
+    },
+    {
+      "name": "inquiries_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "public.inquiries",
+      "definition": "CREATE UNIQUE INDEX inquiries_pkey ON public.inquiries USING btree (id)"
+    },
+    {
+      "name": "idx_next_actions_assignee_open",
+      "unique": false,
+      "primary": false,
+      "relation": "public.next_actions",
+      "definition": "CREATE INDEX idx_next_actions_assignee_open ON public.next_actions USING btree (assignee_name, status, due_at)"
+    },
+    {
+      "name": "idx_next_actions_deal_open",
+      "unique": false,
+      "primary": false,
+      "relation": "public.next_actions",
+      "definition": "CREATE INDEX idx_next_actions_deal_open ON public.next_actions USING btree (deal_id, status, due_at)"
+    },
+    {
+      "name": "idx_next_actions_inquiry_open",
+      "unique": false,
+      "primary": false,
+      "relation": "public.next_actions",
+      "definition": "CREATE INDEX idx_next_actions_inquiry_open ON public.next_actions USING btree (inquiry_id, status, due_at)"
+    },
+    {
+      "name": "next_actions_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "public.next_actions",
+      "definition": "CREATE UNIQUE INDEX next_actions_pkey ON public.next_actions USING btree (id)"
+    },
+    {
+      "name": "idx_org_name",
+      "unique": false,
+      "primary": false,
+      "relation": "public.organizations",
+      "definition": "CREATE INDEX idx_org_name ON public.organizations USING btree (name)"
+    },
+    {
+      "name": "organizations_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "public.organizations",
+      "definition": "CREATE UNIQUE INDEX organizations_pkey ON public.organizations USING btree (id)"
+    },
+    {
+      "name": "organizations_relate_id_key",
+      "unique": true,
+      "primary": false,
+      "relation": "public.organizations",
+      "definition": "CREATE UNIQUE INDEX organizations_relate_id_key ON public.organizations USING btree (relate_id)"
+    },
+    {
+      "name": "sites_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "public.sites",
+      "definition": "CREATE UNIQUE INDEX sites_pkey ON public.sites USING btree (site_id)"
+    },
+    {
+      "name": "uq_sites_norm",
+      "unique": true,
+      "primary": false,
+      "relation": "public.sites",
+      "definition": "CREATE UNIQUE INDEX uq_sites_norm ON public.sites USING btree (norm_name)"
+    },
+    {
+      "name": "idx_stage_hist_opp",
+      "unique": false,
+      "primary": false,
+      "relation": "public.stage_history",
+      "definition": "CREATE INDEX idx_stage_hist_opp ON public.stage_history USING btree (opportunity_id, changed_at)"
+    },
+    {
+      "name": "stage_history_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "public.stage_history",
+      "definition": "CREATE UNIQUE INDEX stage_history_pkey ON public.stage_history USING btree (id)"
+    },
+    {
+      "name": "idx_users_auth",
+      "unique": false,
+      "primary": false,
+      "relation": "public.users",
+      "definition": "CREATE INDEX idx_users_auth ON public.users USING btree (auth_uid)"
+    },
+    {
+      "name": "users_name_key",
+      "unique": true,
+      "primary": false,
+      "relation": "public.users",
+      "definition": "CREATE UNIQUE INDEX users_name_key ON public.users USING btree (name)"
+    },
+    {
+      "name": "users_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "public.users",
+      "definition": "CREATE UNIQUE INDEX users_pkey ON public.users USING btree (user_id)"
+    },
+    {
+      "name": "bname",
+      "unique": true,
+      "primary": false,
+      "relation": "storage.buckets",
+      "definition": "CREATE UNIQUE INDEX bname ON storage.buckets USING btree (name)"
+    },
+    {
+      "name": "buckets_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "storage.buckets",
+      "definition": "CREATE UNIQUE INDEX buckets_pkey ON storage.buckets USING btree (id)"
+    },
+    {
+      "name": "bucketid_objname",
+      "unique": true,
+      "primary": false,
+      "relation": "storage.objects",
+      "definition": "CREATE UNIQUE INDEX bucketid_objname ON storage.objects USING btree (bucket_id, name)"
+    },
+    {
+      "name": "idx_objects_bucket_id_name",
+      "unique": false,
+      "primary": false,
+      "relation": "storage.objects",
+      "definition": "CREATE INDEX idx_objects_bucket_id_name ON storage.objects USING btree (bucket_id, name COLLATE \"C\")"
+    },
+    {
+      "name": "idx_objects_bucket_id_name_lower",
+      "unique": false,
+      "primary": false,
+      "relation": "storage.objects",
+      "definition": "CREATE INDEX idx_objects_bucket_id_name_lower ON storage.objects USING btree (bucket_id, lower(name) COLLATE \"C\")"
+    },
+    {
+      "name": "name_prefix_search",
+      "unique": false,
+      "primary": false,
+      "relation": "storage.objects",
+      "definition": "CREATE INDEX name_prefix_search ON storage.objects USING btree (name text_pattern_ops)"
+    },
+    {
+      "name": "objects_pkey",
+      "unique": true,
+      "primary": true,
+      "relation": "storage.objects",
+      "definition": "CREATE UNIQUE INDEX objects_pkey ON storage.objects USING btree (id)"
+    }
+  ],
+  "policies": [
+    {
+      "name": "own row read",
+      "check": null,
+      "roles": [
+        "16485"
+      ],
+      "using": "(lower(email) = lower((auth.jwt() ->> 'email'::text)))",
+      "command": "r",
+      "relation": "public.users",
+      "permissive": true
+    },
+    {
+      "name": "crm_attachment_insert_v1",
+      "check": "((bucket_id = 'crm-site-files'::text) AND public.crm_attachment_object_insert_allowed(bucket_id, name))",
+      "roles": [
+        "16485"
+      ],
+      "using": null,
+      "command": "a",
+      "relation": "storage.objects",
+      "permissive": true
+    }
+  ],
+  "triggers": [
+    {
+      "name": "trg_contacts_upd",
+      "relation": "public.contacts",
+      "definition": "CREATE TRIGGER trg_contacts_upd BEFORE UPDATE ON public.contacts FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()"
+    },
+    {
+      "name": "trg_deals_upd",
+      "relation": "public.deals",
+      "definition": "CREATE TRIGGER trg_deals_upd BEFORE UPDATE ON public.deals FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()"
+    },
+    {
+      "name": "trg_inq_upd",
+      "relation": "public.inquiries",
+      "definition": "CREATE TRIGGER trg_inq_upd BEFORE UPDATE ON public.inquiries FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()"
+    },
+    {
+      "name": "trg_next_actions_upd",
+      "relation": "public.next_actions",
+      "definition": "CREATE TRIGGER trg_next_actions_upd BEFORE UPDATE ON public.next_actions FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()"
+    },
+    {
+      "name": "trg_organizations_upd",
+      "relation": "public.organizations",
+      "definition": "CREATE TRIGGER trg_organizations_upd BEFORE UPDATE ON public.organizations FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()"
+    },
+    {
+      "name": "trg_users_upd",
+      "relation": "public.users",
+      "definition": "CREATE TRIGGER trg_users_upd BEFORE UPDATE ON public.users FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()"
+    },
+    {
+      "name": "enforce_bucket_name_length_trigger",
+      "relation": "storage.buckets",
+      "definition": "CREATE TRIGGER enforce_bucket_name_length_trigger BEFORE INSERT OR UPDATE OF name ON storage.buckets FOR EACH ROW EXECUTE FUNCTION storage.enforce_bucket_name_length()"
+    },
+    {
+      "name": "protect_buckets_delete",
+      "relation": "storage.buckets",
+      "definition": "CREATE TRIGGER protect_buckets_delete BEFORE DELETE ON storage.buckets FOR EACH STATEMENT EXECUTE FUNCTION storage.protect_delete()"
+    },
+    {
+      "name": "protect_objects_delete",
+      "relation": "storage.objects",
+      "definition": "CREATE TRIGGER protect_objects_delete BEFORE DELETE ON storage.objects FOR EACH STATEMENT EXECUTE FUNCTION storage.protect_delete()"
+    },
+    {
+      "name": "update_objects_updated_at",
+      "relation": "storage.objects",
+      "definition": "CREATE TRIGGER update_objects_updated_at BEFORE UPDATE ON storage.objects FOR EACH ROW EXECUTE FUNCTION storage.update_updated_at_column()"
+    }
+  ],
+  "constraints": [
+    {
+      "name": "access_review_permission_role_check",
+      "type": "c",
+      "relation": "crm_security.access_review",
+      "definition": "CHECK (permission_role = ANY (ARRAY['rep'::text, 'consultation'::text, 'branch'::text, 'admin'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "access_review_pkey",
+      "type": "p",
+      "relation": "crm_security.access_review",
+      "definition": "PRIMARY KEY (user_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "access_review_reviewed_auth_uid_key",
+      "type": "u",
+      "relation": "crm_security.access_review",
+      "definition": "UNIQUE (reviewed_auth_uid)",
+      "referenced_relation": null
+    },
+    {
+      "name": "access_review_source_role_check",
+      "type": "c",
+      "relation": "crm_security.access_review",
+      "definition": "CHECK (source_role = ANY (ARRAY['rep'::text, 'admin'::text, 'dual'::text, 'viewer'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "access_review_user_id_fkey",
+      "type": "f",
+      "relation": "crm_security.access_review",
+      "definition": "FOREIGN KEY (user_id) REFERENCES public.users(user_id)",
+      "referenced_relation": "public.users"
+    },
+    {
+      "name": "attachment_audit_events_action_check",
+      "type": "c",
+      "relation": "crm_security.attachment_audit_events",
+      "definition": "CHECK (action = ANY (ARRAY['attachment_prepare'::text, 'attachment_complete'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "attachment_audit_events_actor_user_id_fkey",
+      "type": "f",
+      "relation": "crm_security.attachment_audit_events",
+      "definition": "FOREIGN KEY (actor_user_id) REFERENCES public.users(user_id)",
+      "referenced_relation": "public.users"
+    },
+    {
+      "name": "attachment_audit_events_after_data_check",
+      "type": "c",
+      "relation": "crm_security.attachment_audit_events",
+      "definition": "CHECK (jsonb_typeof(after_data) = 'object'::text)",
+      "referenced_relation": null
+    },
+    {
+      "name": "attachment_audit_events_attachment_id_fkey",
+      "type": "f",
+      "relation": "crm_security.attachment_audit_events",
+      "definition": "FOREIGN KEY (attachment_id) REFERENCES crm_security.deal_attachments(attachment_id)",
+      "referenced_relation": "crm_security.deal_attachments"
+    },
+    {
+      "name": "attachment_audit_events_before_data_check",
+      "type": "c",
+      "relation": "crm_security.attachment_audit_events",
+      "definition": "CHECK (jsonb_typeof(before_data) = 'object'::text)",
+      "referenced_relation": null
+    },
+    {
+      "name": "attachment_audit_events_deal_id_fkey",
+      "type": "f",
+      "relation": "crm_security.attachment_audit_events",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES public.deals(id)",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "attachment_audit_events_pkey",
+      "type": "p",
+      "relation": "crm_security.attachment_audit_events",
+      "definition": "PRIMARY KEY (event_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "audit_events_pkey",
+      "type": "p",
+      "relation": "crm_security.audit_events",
+      "definition": "PRIMARY KEY (event_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "command_receipts_operation_check",
+      "type": "c",
+      "relation": "crm_security.command_receipts",
+      "definition": "CHECK (operation = ANY (ARRAY['opportunity_work_set'::text, 'inquiry_assign'::text, 'service_change'::text, 'inquiry_unassign'::text, 'favorite_set'::text, 'opportunity_touch'::text, 'next_action'::text, 'activity'::text, 'quote_version'::text, 'next_action_complete'::text, 'stage_check'::text, 'transition'::text, 'close'::text, 'amount'::text, 'waiting_context'::text, 'inquiry_reclassify'::text, 'inquiry_status'::text, 'inquiry_trash'::text, 'inquiry_restore'::text, 'inquiry_purge'::text, 'inquiry_followup'::text, 'opportunity_create'::text, 'lineage_link'::text, 'attachment_prepare'::text, 'attachment_complete'::text, 'expansion_pool_update'::text, 'expansion_note'::text, 'customer_support_action'::text, 'message_log'::text, 'relationship_hold'::text, 'relationship_response'::text, 'inquiry_consultant'::text, 'assign'::text, 'contact_upsert'::text, 'contact_relationship'::text, 'contact_move'::text, 'rep_manager_comment'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "command_receipts_pkey",
+      "type": "p",
+      "relation": "crm_security.command_receipts",
+      "definition": "PRIMARY KEY (actor_auth_uid, request_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "customer_support_actions_action_key_check",
+      "type": "c",
+      "relation": "crm_security.customer_support_actions",
+      "definition": "CHECK (action_key = ANY (ARRAY['response_request'::text, 'inquiry_review'::text, 'call'::text, 'message'::text, 'recontact_result'::text, 'waiting_context'::text, 'manager_consult'::text, 'waiting_review'::text, 'material_support'::text, 'meeting_check'::text, 'contact_check'::text, 'contact_activity'::text, 'reactivate_review'::text, 'dormant_review'::text, 'recontact_schedule'::text, 'support_detail'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "customer_support_actions_pkey",
+      "type": "p",
+      "relation": "crm_security.customer_support_actions",
+      "definition": "PRIMARY KEY (id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "customer_support_actions_request_id_key",
+      "type": "u",
+      "relation": "crm_security.customer_support_actions",
+      "definition": "UNIQUE (request_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "customer_support_actions_requested_by_user_id_client_ref_key",
+      "type": "u",
+      "relation": "crm_security.customer_support_actions",
+      "definition": "UNIQUE (requested_by_user_id, client_ref)",
+      "referenced_relation": null
+    },
+    {
+      "name": "customer_support_actions_status_check",
+      "type": "c",
+      "relation": "crm_security.customer_support_actions",
+      "definition": "CHECK (status = 'requested'::text)",
+      "referenced_relation": null
+    },
+    {
+      "name": "customer_support_actions_target_type_check",
+      "type": "c",
+      "relation": "crm_security.customer_support_actions",
+      "definition": "CHECK (target_type = ANY (ARRAY['deal'::text, 'inq'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_attachments_bucket_id_check",
+      "type": "c",
+      "relation": "crm_security.deal_attachments",
+      "definition": "CHECK (bucket_id = 'crm-site-files'::text)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_attachments_category_check",
+      "type": "c",
+      "relation": "crm_security.deal_attachments",
+      "definition": "CHECK (category = ANY (ARRAY['현장사진'::text, '견적자료'::text, '도면'::text, '회의자료'::text, '계약관련'::text, '기타'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_attachments_deal_id_fkey",
+      "type": "f",
+      "relation": "crm_security.deal_attachments",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES public.deals(id) ON DELETE RESTRICT",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "deal_attachments_file_name_check",
+      "type": "c",
+      "relation": "crm_security.deal_attachments",
+      "definition": "CHECK (length(file_name) >= 1 AND length(file_name) <= 255)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_attachments_memo_check",
+      "type": "c",
+      "relation": "crm_security.deal_attachments",
+      "definition": "CHECK (memo IS NULL OR length(memo) <= 4000)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_attachments_mime_type_check",
+      "type": "c",
+      "relation": "crm_security.deal_attachments",
+      "definition": "CHECK (length(mime_type) >= 3 AND length(mime_type) <= 200)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_attachments_object_path_key",
+      "type": "u",
+      "relation": "crm_security.deal_attachments",
+      "definition": "UNIQUE (object_path)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_attachments_pkey",
+      "type": "p",
+      "relation": "crm_security.deal_attachments",
+      "definition": "PRIMARY KEY (attachment_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_attachments_size_bytes_check",
+      "type": "c",
+      "relation": "crm_security.deal_attachments",
+      "definition": "CHECK (size_bytes >= 1 AND size_bytes <= 20971520)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_attachments_status_check",
+      "type": "c",
+      "relation": "crm_security.deal_attachments",
+      "definition": "CHECK (status = ANY (ARRAY['pending'::text, 'ready'::text, 'failed'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_attachments_tags_check",
+      "type": "c",
+      "relation": "crm_security.deal_attachments",
+      "definition": "CHECK (cardinality(tags) <= 20)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_attachments_uploaded_by_user_id_fkey",
+      "type": "f",
+      "relation": "crm_security.deal_attachments",
+      "definition": "FOREIGN KEY (uploaded_by_user_id) REFERENCES public.users(user_id)",
+      "referenced_relation": "public.users"
+    },
+    {
+      "name": "deal_close_events_activity_id_fkey",
+      "type": "f",
+      "relation": "crm_security.deal_close_events",
+      "definition": "FOREIGN KEY (activity_id) REFERENCES public.activities(id) ON DELETE RESTRICT",
+      "referenced_relation": "public.activities"
+    },
+    {
+      "name": "deal_close_events_actor_user_id_fkey",
+      "type": "f",
+      "relation": "crm_security.deal_close_events",
+      "definition": "FOREIGN KEY (actor_user_id) REFERENCES public.users(user_id) ON DELETE RESTRICT",
+      "referenced_relation": "public.users"
+    },
+    {
+      "name": "deal_close_events_completed_action_ids_check",
+      "type": "c",
+      "relation": "crm_security.deal_close_events",
+      "definition": "CHECK (jsonb_typeof(completed_action_ids) = 'array'::text)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_close_events_deal_id_fkey",
+      "type": "f",
+      "relation": "crm_security.deal_close_events",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES public.deals(id) ON DELETE RESTRICT",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "deal_close_events_outcome_check",
+      "type": "c",
+      "relation": "crm_security.deal_close_events",
+      "definition": "CHECK (outcome = ANY (ARRAY['lost'::text, 'badfit'::text, 'nocontact'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_close_events_pkey",
+      "type": "p",
+      "relation": "crm_security.deal_close_events",
+      "definition": "PRIMARY KEY (event_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_close_events_request_id_key",
+      "type": "u",
+      "relation": "crm_security.deal_close_events",
+      "definition": "UNIQUE (request_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_close_events_stage_history_id_fkey",
+      "type": "f",
+      "relation": "crm_security.deal_close_events",
+      "definition": "FOREIGN KEY (stage_history_id) REFERENCES public.stage_history(id) ON DELETE RESTRICT",
+      "referenced_relation": "public.stage_history"
+    },
+    {
+      "name": "deal_won_events_activity_id_fkey",
+      "type": "f",
+      "relation": "crm_security.deal_won_events",
+      "definition": "FOREIGN KEY (activity_id) REFERENCES public.activities(id) ON DELETE RESTRICT",
+      "referenced_relation": "public.activities"
+    },
+    {
+      "name": "deal_won_events_actor_user_id_fkey",
+      "type": "f",
+      "relation": "crm_security.deal_won_events",
+      "definition": "FOREIGN KEY (actor_user_id) REFERENCES public.users(user_id) ON DELETE RESTRICT",
+      "referenced_relation": "public.users"
+    },
+    {
+      "name": "deal_won_events_completed_action_ids_check",
+      "type": "c",
+      "relation": "crm_security.deal_won_events",
+      "definition": "CHECK (jsonb_typeof(completed_action_ids) = 'array'::text)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_won_events_completion_checks_check",
+      "type": "c",
+      "relation": "crm_security.deal_won_events",
+      "definition": "CHECK (jsonb_typeof(completion_checks) = 'array'::text)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_won_events_deal_id_fkey",
+      "type": "f",
+      "relation": "crm_security.deal_won_events",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES public.deals(id) ON DELETE RESTRICT",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "deal_won_events_from_stage_check",
+      "type": "c",
+      "relation": "crm_security.deal_won_events",
+      "definition": "CHECK (from_stage = 'completion'::text)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_won_events_pkey",
+      "type": "p",
+      "relation": "crm_security.deal_won_events",
+      "definition": "PRIMARY KEY (event_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_won_events_request_id_key",
+      "type": "u",
+      "relation": "crm_security.deal_won_events",
+      "definition": "UNIQUE (request_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deal_won_events_stage_history_id_fkey",
+      "type": "f",
+      "relation": "crm_security.deal_won_events",
+      "definition": "FOREIGN KEY (stage_history_id) REFERENCES public.stage_history(id) ON DELETE RESTRICT",
+      "referenced_relation": "public.stage_history"
+    },
+    {
+      "name": "deal_won_events_won_amount_check",
+      "type": "c",
+      "relation": "crm_security.deal_won_events",
+      "definition": "CHECK (won_amount > 0)",
+      "referenced_relation": null
+    },
+    {
+      "name": "expansion_pool_candidate_work_items_check",
+      "type": "c",
+      "relation": "crm_security.expansion_pool",
+      "definition": "CHECK (jsonb_typeof(candidate_work_items) = 'array'::text)",
+      "referenced_relation": null
+    },
+    {
+      "name": "expansion_pool_expansion_status_check",
+      "type": "c",
+      "relation": "crm_security.expansion_pool",
+      "definition": "CHECK (expansion_status = ANY (ARRAY['신규 대상'::text, '접촉 예정'::text, '관계 관리중'::text, '추가 니즈 확인'::text, '신규 영업기회 생성'::text, '보류/휴면'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "expansion_pool_owner_id_fkey",
+      "type": "f",
+      "relation": "crm_security.expansion_pool",
+      "definition": "FOREIGN KEY (owner_id) REFERENCES public.users(user_id) ON DELETE SET NULL",
+      "referenced_relation": "public.users"
+    },
+    {
+      "name": "expansion_pool_pkey",
+      "type": "p",
+      "relation": "crm_security.expansion_pool",
+      "definition": "PRIMARY KEY (source_deal_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "expansion_pool_relationship_state_check",
+      "type": "c",
+      "relation": "crm_security.expansion_pool",
+      "definition": "CHECK (relationship_state = '기존고객'::text)",
+      "referenced_relation": null
+    },
+    {
+      "name": "expansion_pool_site_id_fkey",
+      "type": "f",
+      "relation": "crm_security.expansion_pool",
+      "definition": "FOREIGN KEY (site_id) REFERENCES public.sites(site_id) ON DELETE RESTRICT",
+      "referenced_relation": "public.sites"
+    },
+    {
+      "name": "expansion_pool_source_deal_id_fkey",
+      "type": "f",
+      "relation": "crm_security.expansion_pool",
+      "definition": "FOREIGN KEY (source_deal_id) REFERENCES public.deals(id) ON DELETE RESTRICT",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "expansion_pool_source_won_amount_check",
+      "type": "c",
+      "relation": "crm_security.expansion_pool",
+      "definition": "CHECK (source_won_amount > 0)",
+      "referenced_relation": null
+    },
+    {
+      "name": "expansion_pool_version_positive",
+      "type": "c",
+      "relation": "crm_security.expansion_pool",
+      "definition": "CHECK (version > 0)",
+      "referenced_relation": null
+    },
+    {
+      "name": "expansion_pool_event_note_shape",
+      "type": "c",
+      "relation": "crm_security.expansion_pool_events",
+      "definition": "CHECK ((kind = 'note'::text) = (note IS NOT NULL))",
+      "referenced_relation": null
+    },
+    {
+      "name": "expansion_pool_events_actor_user_id_fkey",
+      "type": "f",
+      "relation": "crm_security.expansion_pool_events",
+      "definition": "FOREIGN KEY (actor_user_id) REFERENCES public.users(user_id) ON DELETE RESTRICT",
+      "referenced_relation": "public.users"
+    },
+    {
+      "name": "expansion_pool_events_kind_check",
+      "type": "c",
+      "relation": "crm_security.expansion_pool_events",
+      "definition": "CHECK (kind = ANY (ARRAY['status_change'::text, 'next_contact_change'::text, 'status_and_next_contact'::text, 'note'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "expansion_pool_events_pkey",
+      "type": "p",
+      "relation": "crm_security.expansion_pool_events",
+      "definition": "PRIMARY KEY (event_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "expansion_pool_events_request_id_key",
+      "type": "u",
+      "relation": "crm_security.expansion_pool_events",
+      "definition": "UNIQUE (request_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "expansion_pool_events_source_deal_id_fkey",
+      "type": "f",
+      "relation": "crm_security.expansion_pool_events",
+      "definition": "FOREIGN KEY (source_deal_id) REFERENCES public.deals(id) ON DELETE RESTRICT",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "inquiry_audit_events_action_check",
+      "type": "c",
+      "relation": "crm_security.inquiry_audit_events",
+      "definition": "CHECK (action = ANY (ARRAY['direct_assign'::text, 'direct_reassign'::text, 'inquiry_unassign'::text, 'inquiry_reclassify'::text, 'inquiry_hold'::text, 'inquiry_trash'::text, 'inquiry_restore'::text, 'inquiry_purge'::text, 'inquiry_followup'::text, 'inquiry_response_progress'::text, 'inquiry_response_next_week_retry'::text, 'inquiry_response_missed_retry'::text, 'inquiry_pipeline_promote'::text, 'inquiry_lineage_link'::text, 'inquiry_stage_progress'::text, 'inquiry_next_set'::text, 'inquiry_next_complete'::text, 'inquiry_check'::text, 'technical_inquiry_transfer'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "inquiry_audit_events_pkey",
+      "type": "p",
+      "relation": "crm_security.inquiry_audit_events",
+      "definition": "PRIMARY KEY (event_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "message_outcomes_activity_id_fkey",
+      "type": "f",
+      "relation": "crm_security.message_outcomes",
+      "definition": "FOREIGN KEY (activity_id) REFERENCES public.activities(id)",
+      "referenced_relation": "public.activities"
+    },
+    {
+      "name": "message_outcomes_actor_user_id_fkey",
+      "type": "f",
+      "relation": "crm_security.message_outcomes",
+      "definition": "FOREIGN KEY (actor_user_id) REFERENCES public.users(user_id)",
+      "referenced_relation": "public.users"
+    },
+    {
+      "name": "message_outcomes_attachment_refs_check",
+      "type": "c",
+      "relation": "crm_security.message_outcomes",
+      "definition": "CHECK (cardinality(attachment_refs) <= 10)",
+      "referenced_relation": null
+    },
+    {
+      "name": "message_outcomes_attestation_kind_check",
+      "type": "c",
+      "relation": "crm_security.message_outcomes",
+      "definition": "CHECK (attestation_kind = 'user_attested'::text)",
+      "referenced_relation": null
+    },
+    {
+      "name": "message_outcomes_channel_check",
+      "type": "c",
+      "relation": "crm_security.message_outcomes",
+      "definition": "CHECK (channel = ANY (ARRAY['sms'::text, 'kakao'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "message_outcomes_check",
+      "type": "c",
+      "relation": "crm_security.message_outcomes",
+      "definition": "CHECK (status = 'sent'::text AND activity_id IS NOT NULL OR status <> 'sent'::text AND activity_id IS NULL AND next_action_id IS NULL)",
+      "referenced_relation": null
+    },
+    {
+      "name": "message_outcomes_contact_id_fkey",
+      "type": "f",
+      "relation": "crm_security.message_outcomes",
+      "definition": "FOREIGN KEY (contact_id) REFERENCES public.contacts(id) ON DELETE RESTRICT",
+      "referenced_relation": "public.contacts"
+    },
+    {
+      "name": "message_outcomes_deal_id_fkey",
+      "type": "f",
+      "relation": "crm_security.message_outcomes",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES public.deals(id) ON DELETE RESTRICT",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "message_outcomes_message_context_check",
+      "type": "c",
+      "relation": "crm_security.message_outcomes",
+      "definition": "CHECK (message_context = 'deal'::text)",
+      "referenced_relation": null
+    },
+    {
+      "name": "message_outcomes_next_action_id_fkey",
+      "type": "f",
+      "relation": "crm_security.message_outcomes",
+      "definition": "FOREIGN KEY (next_action_id) REFERENCES public.next_actions(id)",
+      "referenced_relation": "public.next_actions"
+    },
+    {
+      "name": "message_outcomes_pkey",
+      "type": "p",
+      "relation": "crm_security.message_outcomes",
+      "definition": "PRIMARY KEY (id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "message_outcomes_request_id_key",
+      "type": "u",
+      "relation": "crm_security.message_outcomes",
+      "definition": "UNIQUE (request_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "message_outcomes_response_activity_id_fkey",
+      "type": "f",
+      "relation": "crm_security.message_outcomes",
+      "definition": "FOREIGN KEY (response_activity_id) REFERENCES public.activities(id)",
+      "referenced_relation": "public.activities"
+    },
+    {
+      "name": "message_outcomes_status_check",
+      "type": "c",
+      "relation": "crm_security.message_outcomes",
+      "definition": "CHECK (status = ANY (ARRAY['sent'::text, 'failed'::text, 'cancelled'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "message_outcomes_template_kind_check",
+      "type": "c",
+      "relation": "crm_security.message_outcomes",
+      "definition": "CHECK (template_kind = ANY (ARRAY['info'::text, 'promo'::text, 'mixed'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "message_reminders_actor_user_id_fkey",
+      "type": "f",
+      "relation": "crm_security.message_reminders",
+      "definition": "FOREIGN KEY (actor_user_id) REFERENCES public.users(user_id)",
+      "referenced_relation": "public.users"
+    },
+    {
+      "name": "message_reminders_channel_check",
+      "type": "c",
+      "relation": "crm_security.message_reminders",
+      "definition": "CHECK (channel = ANY (ARRAY['sms'::text, 'kakao'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "message_reminders_deal_id_fkey",
+      "type": "f",
+      "relation": "crm_security.message_reminders",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES public.deals(id) ON DELETE CASCADE",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "message_reminders_draft_body_check",
+      "type": "c",
+      "relation": "crm_security.message_reminders",
+      "definition": "CHECK (length(draft_body) >= 1 AND length(draft_body) <= 8000)",
+      "referenced_relation": null
+    },
+    {
+      "name": "message_reminders_next_action_id_fkey",
+      "type": "f",
+      "relation": "crm_security.message_reminders",
+      "definition": "FOREIGN KEY (next_action_id) REFERENCES public.next_actions(id) ON DELETE CASCADE",
+      "referenced_relation": "public.next_actions"
+    },
+    {
+      "name": "message_reminders_pkey",
+      "type": "p",
+      "relation": "crm_security.message_reminders",
+      "definition": "PRIMARY KEY (next_action_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "message_reminders_request_id_key",
+      "type": "u",
+      "relation": "crm_security.message_reminders",
+      "definition": "UNIQUE (request_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "message_reminders_template_key_check",
+      "type": "c",
+      "relation": "crm_security.message_reminders",
+      "definition": "CHECK (length(template_key) >= 1 AND length(template_key) <= 100)",
+      "referenced_relation": null
+    },
+    {
+      "name": "next_action_postponements_actor_user_id_fkey",
+      "type": "f",
+      "relation": "crm_security.next_action_postponements",
+      "definition": "FOREIGN KEY (actor_user_id) REFERENCES public.users(user_id)",
+      "referenced_relation": "public.users"
+    },
+    {
+      "name": "next_action_postponements_check",
+      "type": "c",
+      "relation": "crm_security.next_action_postponements",
+      "definition": "CHECK (after_due_at > before_due_at)",
+      "referenced_relation": null
+    },
+    {
+      "name": "next_action_postponements_deal_id_fkey",
+      "type": "f",
+      "relation": "crm_security.next_action_postponements",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES public.deals(id) ON DELETE CASCADE",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "next_action_postponements_event_kind_check",
+      "type": "c",
+      "relation": "crm_security.next_action_postponements",
+      "definition": "CHECK (event_kind = ANY (ARRAY['postpone'::text, 'today_next_week'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "next_action_postponements_next_action_id_fkey",
+      "type": "f",
+      "relation": "crm_security.next_action_postponements",
+      "definition": "FOREIGN KEY (next_action_id) REFERENCES public.next_actions(id) ON DELETE CASCADE",
+      "referenced_relation": "public.next_actions"
+    },
+    {
+      "name": "next_action_postponements_pkey",
+      "type": "p",
+      "relation": "crm_security.next_action_postponements",
+      "definition": "PRIMARY KEY (event_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "next_action_postponements_postpone_count_check",
+      "type": "c",
+      "relation": "crm_security.next_action_postponements",
+      "definition": "CHECK (postpone_count > 0)",
+      "referenced_relation": null
+    },
+    {
+      "name": "next_action_postponements_replacement_action_id_fkey",
+      "type": "f",
+      "relation": "crm_security.next_action_postponements",
+      "definition": "FOREIGN KEY (replacement_action_id) REFERENCES public.next_actions(id) ON DELETE SET NULL",
+      "referenced_relation": "public.next_actions"
+    },
+    {
+      "name": "next_action_postponements_request_id_key",
+      "type": "u",
+      "relation": "crm_security.next_action_postponements",
+      "definition": "UNIQUE (request_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "object_scope_check",
+      "type": "c",
+      "relation": "crm_security.object_scope",
+      "definition": "CHECK (((deal_id IS NOT NULL)::integer + (inquiry_id IS NOT NULL)::integer) = 1)",
+      "referenced_relation": null
+    },
+    {
+      "name": "object_scope_deal_id_fkey",
+      "type": "f",
+      "relation": "crm_security.object_scope",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES public.deals(id)",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "object_scope_inquiry_id_fkey",
+      "type": "f",
+      "relation": "crm_security.object_scope",
+      "definition": "FOREIGN KEY (inquiry_id) REFERENCES public.inquiries(id)",
+      "referenced_relation": "public.inquiries"
+    },
+    {
+      "name": "object_scope_pkey",
+      "type": "p",
+      "relation": "crm_security.object_scope",
+      "definition": "PRIMARY KEY (scope_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "object_scope_user_id_fkey",
+      "type": "f",
+      "relation": "crm_security.object_scope",
+      "definition": "FOREIGN KEY (user_id) REFERENCES public.users(user_id)",
+      "referenced_relation": "public.users"
+    },
+    {
+      "name": "quote_versions_actor_user_id_fkey",
+      "type": "f",
+      "relation": "crm_security.quote_versions",
+      "definition": "FOREIGN KEY (actor_user_id) REFERENCES public.users(user_id)",
+      "referenced_relation": "public.users"
+    },
+    {
+      "name": "quote_versions_amount_check",
+      "type": "c",
+      "relation": "crm_security.quote_versions",
+      "definition": "CHECK (amount > 0)",
+      "referenced_relation": null
+    },
+    {
+      "name": "quote_versions_deal_id_fkey",
+      "type": "f",
+      "relation": "crm_security.quote_versions",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES public.deals(id) ON DELETE CASCADE",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "quote_versions_deal_id_version_no_key",
+      "type": "u",
+      "relation": "crm_security.quote_versions",
+      "definition": "UNIQUE (deal_id, version_no)",
+      "referenced_relation": null
+    },
+    {
+      "name": "quote_versions_pkey",
+      "type": "p",
+      "relation": "crm_security.quote_versions",
+      "definition": "PRIMARY KEY (id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "quote_versions_reason_check",
+      "type": "c",
+      "relation": "crm_security.quote_versions",
+      "definition": "CHECK (length(TRIM(BOTH FROM reason)) >= 2)",
+      "referenced_relation": null
+    },
+    {
+      "name": "quote_versions_version_no_check",
+      "type": "c",
+      "relation": "crm_security.quote_versions",
+      "definition": "CHECK (version_no > 0)",
+      "referenced_relation": null
+    },
+    {
+      "name": "relationship_events_activity_id_fkey",
+      "type": "f",
+      "relation": "crm_security.relationship_events",
+      "definition": "FOREIGN KEY (activity_id) REFERENCES public.activities(id)",
+      "referenced_relation": "public.activities"
+    },
+    {
+      "name": "relationship_events_actor_user_id_fkey",
+      "type": "f",
+      "relation": "crm_security.relationship_events",
+      "definition": "FOREIGN KEY (actor_user_id) REFERENCES public.users(user_id)",
+      "referenced_relation": "public.users"
+    },
+    {
+      "name": "relationship_events_check",
+      "type": "c",
+      "relation": "crm_security.relationship_events",
+      "definition": "CHECK (event_kind = 'hold'::text AND hold_until IS NOT NULL AND message_outcome_id IS NULL AND activity_id IS NULL AND next_action_id IS NOT NULL OR event_kind = 'response'::text AND hold_until IS NULL AND message_outcome_id IS NOT NULL AND activity_id IS NOT NULL)",
+      "referenced_relation": null
+    },
+    {
+      "name": "relationship_events_contact_id_fkey",
+      "type": "f",
+      "relation": "crm_security.relationship_events",
+      "definition": "FOREIGN KEY (contact_id) REFERENCES public.contacts(id) ON DELETE RESTRICT",
+      "referenced_relation": "public.contacts"
+    },
+    {
+      "name": "relationship_events_deal_id_fkey",
+      "type": "f",
+      "relation": "crm_security.relationship_events",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES public.deals(id) ON DELETE RESTRICT",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "relationship_events_event_kind_check",
+      "type": "c",
+      "relation": "crm_security.relationship_events",
+      "definition": "CHECK (event_kind = ANY (ARRAY['hold'::text, 'response'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "relationship_events_message_outcome_id_fkey",
+      "type": "f",
+      "relation": "crm_security.relationship_events",
+      "definition": "FOREIGN KEY (message_outcome_id) REFERENCES crm_security.message_outcomes(id) ON DELETE RESTRICT",
+      "referenced_relation": "crm_security.message_outcomes"
+    },
+    {
+      "name": "relationship_events_next_action_id_fkey",
+      "type": "f",
+      "relation": "crm_security.relationship_events",
+      "definition": "FOREIGN KEY (next_action_id) REFERENCES public.next_actions(id)",
+      "referenced_relation": "public.next_actions"
+    },
+    {
+      "name": "relationship_events_pkey",
+      "type": "p",
+      "relation": "crm_security.relationship_events",
+      "definition": "PRIMARY KEY (id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "relationship_events_request_id_key",
+      "type": "u",
+      "relation": "crm_security.relationship_events",
+      "definition": "UNIQUE (request_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "stage_transition_events_activity_id_fkey",
+      "type": "f",
+      "relation": "crm_security.stage_transition_events",
+      "definition": "FOREIGN KEY (activity_id) REFERENCES public.activities(id) ON DELETE RESTRICT",
+      "referenced_relation": "public.activities"
+    },
+    {
+      "name": "stage_transition_events_actor_user_id_fkey",
+      "type": "f",
+      "relation": "crm_security.stage_transition_events",
+      "definition": "FOREIGN KEY (actor_user_id) REFERENCES public.users(user_id) ON DELETE RESTRICT",
+      "referenced_relation": "public.users"
+    },
+    {
+      "name": "stage_transition_events_deal_id_fkey",
+      "type": "f",
+      "relation": "crm_security.stage_transition_events",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES public.deals(id) ON DELETE RESTRICT",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "stage_transition_events_fields_check",
+      "type": "c",
+      "relation": "crm_security.stage_transition_events",
+      "definition": "CHECK (jsonb_typeof(fields) = 'object'::text)",
+      "referenced_relation": null
+    },
+    {
+      "name": "stage_transition_events_next_action_id_fkey",
+      "type": "f",
+      "relation": "crm_security.stage_transition_events",
+      "definition": "FOREIGN KEY (next_action_id) REFERENCES public.next_actions(id) ON DELETE RESTRICT",
+      "referenced_relation": "public.next_actions"
+    },
+    {
+      "name": "stage_transition_events_pkey",
+      "type": "p",
+      "relation": "crm_security.stage_transition_events",
+      "definition": "PRIMARY KEY (event_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "stage_transition_events_request_id_key",
+      "type": "u",
+      "relation": "crm_security.stage_transition_events",
+      "definition": "UNIQUE (request_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "stage_transition_events_stage_history_id_fkey",
+      "type": "f",
+      "relation": "crm_security.stage_transition_events",
+      "definition": "FOREIGN KEY (stage_history_id) REFERENCES public.stage_history(id) ON DELETE RESTRICT",
+      "referenced_relation": "public.stage_history"
+    },
+    {
+      "name": "user_opportunity_state_actor_user_id_fkey",
+      "type": "f",
+      "relation": "crm_security.user_opportunity_state",
+      "definition": "FOREIGN KEY (actor_user_id) REFERENCES public.users(user_id) ON DELETE CASCADE",
+      "referenced_relation": "public.users"
+    },
+    {
+      "name": "user_opportunity_state_deal_id_fkey",
+      "type": "f",
+      "relation": "crm_security.user_opportunity_state",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES public.deals(id) ON DELETE CASCADE",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "user_opportunity_state_pkey",
+      "type": "p",
+      "relation": "crm_security.user_opportunity_state",
+      "definition": "PRIMARY KEY (actor_user_id, deal_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "user_opportunity_state_view_count_check",
+      "type": "c",
+      "relation": "crm_security.user_opportunity_state",
+      "definition": "CHECK (view_count >= 0)",
+      "referenced_relation": null
+    },
+    {
+      "name": "activities_deal_id_fkey",
+      "type": "f",
+      "relation": "public.activities",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES public.deals(id) ON DELETE CASCADE",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "activities_organization_id_fkey",
+      "type": "f",
+      "relation": "public.activities",
+      "definition": "FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE SET NULL",
+      "referenced_relation": "public.organizations"
+    },
+    {
+      "name": "activities_pkey",
+      "type": "p",
+      "relation": "public.activities",
+      "definition": "PRIMARY KEY (id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "assignment_history_inquiry_id_fkey",
+      "type": "f",
+      "relation": "public.assignment_history",
+      "definition": "FOREIGN KEY (inquiry_id) REFERENCES public.inquiries(id) ON DELETE CASCADE",
+      "referenced_relation": "public.inquiries"
+    },
+    {
+      "name": "assignment_history_opportunity_id_fkey",
+      "type": "f",
+      "relation": "public.assignment_history",
+      "definition": "FOREIGN KEY (opportunity_id) REFERENCES public.deals(id) ON DELETE CASCADE",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "assignment_history_pkey",
+      "type": "p",
+      "relation": "public.assignment_history",
+      "definition": "PRIMARY KEY (id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "contact_assignments_person_key_fkey",
+      "type": "f",
+      "relation": "public.contact_assignments",
+      "definition": "FOREIGN KEY (person_key) REFERENCES public.contacts(person_key)",
+      "referenced_relation": "public.contacts"
+    },
+    {
+      "name": "contact_assignments_pkey",
+      "type": "p",
+      "relation": "public.contact_assignments",
+      "definition": "PRIMARY KEY (id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "contacts_organization_id_fkey",
+      "type": "f",
+      "relation": "public.contacts",
+      "definition": "FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE SET NULL",
+      "referenced_relation": "public.organizations"
+    },
+    {
+      "name": "contacts_pkey",
+      "type": "p",
+      "relation": "public.contacts",
+      "definition": "PRIMARY KEY (id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "contacts_relate_id_key",
+      "type": "u",
+      "relation": "public.contacts",
+      "definition": "UNIQUE (relate_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deals_contact_id_fkey",
+      "type": "f",
+      "relation": "public.deals",
+      "definition": "FOREIGN KEY (contact_id) REFERENCES public.contacts(id) ON DELETE SET NULL",
+      "referenced_relation": "public.contacts"
+    },
+    {
+      "name": "deals_lifecycle_status_check",
+      "type": "c",
+      "relation": "public.deals",
+      "definition": "CHECK (lifecycle_status = ANY (ARRAY['active'::text, 'parked'::text, 'closed'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "deals_lost_kind_check",
+      "type": "c",
+      "relation": "public.deals",
+      "definition": "CHECK (lost_kind IS NULL OR (lost_kind = ANY (ARRAY['뺏김'::text, '놓침'::text, '기타'::text])))",
+      "referenced_relation": null
+    },
+    {
+      "name": "deals_organization_id_fkey",
+      "type": "f",
+      "relation": "public.deals",
+      "definition": "FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE SET NULL",
+      "referenced_relation": "public.organizations"
+    },
+    {
+      "name": "deals_origin_inquiry_id_fkey",
+      "type": "f",
+      "relation": "public.deals",
+      "definition": "FOREIGN KEY (origin_inquiry_id) REFERENCES public.inquiries(id) ON DELETE SET NULL",
+      "referenced_relation": "public.inquiries"
+    },
+    {
+      "name": "deals_outcome_check",
+      "type": "c",
+      "relation": "public.deals",
+      "definition": "CHECK (outcome IS NULL OR (outcome = ANY (ARRAY['won'::text, 'lost'::text, 'badfit'::text, 'nocontact'::text])))",
+      "referenced_relation": null
+    },
+    {
+      "name": "deals_owner_id_fkey",
+      "type": "f",
+      "relation": "public.deals",
+      "definition": "FOREIGN KEY (owner_id) REFERENCES public.users(user_id) ON DELETE SET NULL",
+      "referenced_relation": "public.users"
+    },
+    {
+      "name": "deals_pkey",
+      "type": "p",
+      "relation": "public.deals",
+      "definition": "PRIMARY KEY (id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deals_relate_id_key",
+      "type": "u",
+      "relation": "public.deals",
+      "definition": "UNIQUE (relate_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deals_site_id_fkey",
+      "type": "f",
+      "relation": "public.deals",
+      "definition": "FOREIGN KEY (site_id) REFERENCES public.sites(site_id) ON DELETE SET NULL",
+      "referenced_relation": "public.sites"
+    },
+    {
+      "name": "deals_won_amount_positive",
+      "type": "c",
+      "relation": "public.deals",
+      "definition": "CHECK (won_amount IS NULL OR won_amount > 0)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deals_won_truth_consistent",
+      "type": "c",
+      "relation": "public.deals",
+      "definition": "CHECK (outcome = 'won'::text AND lifecycle_status = 'closed'::text AND stage_code = 'won'::text AND won_amount IS NOT NULL AND completion_date IS NOT NULL OR outcome IS DISTINCT FROM 'won'::text AND won_amount IS NULL)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deals_work_items_array",
+      "type": "c",
+      "relation": "public.deals",
+      "definition": "CHECK (jsonb_typeof(work_items) = 'array'::text)",
+      "referenced_relation": null
+    },
+    {
+      "name": "deals_work_scope_consistent",
+      "type": "c",
+      "relation": "public.deals",
+      "definition": "CHECK (jsonb_array_length(work_items) = 0 AND primary_work IS NULL AND work_scope_type IS NULL AND work_summary IS NULL OR jsonb_array_length(work_items) = 1 AND work_scope_type = 'single'::text AND NULLIF(primary_work, ''::text) IS NOT NULL AND work_items ? primary_work AND NULLIF(work_summary, ''::text) IS NOT NULL OR jsonb_array_length(work_items) >= 2 AND work_scope_type = 'multi'::text AND NULLIF(primary_work, ''::text) IS NOT NULL AND work_items ? primary_work AND NULLIF(work_summary, ''::text) IS NOT NULL)",
+      "referenced_relation": null
+    },
+    {
+      "name": "inquiries_assigned_to_fkey",
+      "type": "f",
+      "relation": "public.inquiries",
+      "definition": "FOREIGN KEY (assigned_to) REFERENCES public.users(user_id) ON DELETE SET NULL",
+      "referenced_relation": "public.users"
+    },
+    {
+      "name": "inquiries_deal_id_fkey",
+      "type": "f",
+      "relation": "public.inquiries",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES public.deals(id) ON DELETE SET NULL",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "inquiries_opportunity_id_fkey",
+      "type": "f",
+      "relation": "public.inquiries",
+      "definition": "FOREIGN KEY (opportunity_id) REFERENCES public.deals(id) ON DELETE SET NULL",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "inquiries_pkey",
+      "type": "p",
+      "relation": "public.inquiries",
+      "definition": "PRIMARY KEY (id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "inquiries_site_id_fkey",
+      "type": "f",
+      "relation": "public.inquiries",
+      "definition": "FOREIGN KEY (site_id) REFERENCES public.sites(site_id) ON DELETE SET NULL",
+      "referenced_relation": "public.sites"
+    },
+    {
+      "name": "next_action_one_owner",
+      "type": "c",
+      "relation": "public.next_actions",
+      "definition": "CHECK (deal_id IS NOT NULL AND inquiry_id IS NULL OR deal_id IS NULL AND inquiry_id IS NOT NULL)",
+      "referenced_relation": null
+    },
+    {
+      "name": "next_actions_deal_id_fkey",
+      "type": "f",
+      "relation": "public.next_actions",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES public.deals(id) ON DELETE CASCADE",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "next_actions_inquiry_id_fkey",
+      "type": "f",
+      "relation": "public.next_actions",
+      "definition": "FOREIGN KEY (inquiry_id) REFERENCES public.inquiries(id) ON DELETE CASCADE",
+      "referenced_relation": "public.inquiries"
+    },
+    {
+      "name": "next_actions_pkey",
+      "type": "p",
+      "relation": "public.next_actions",
+      "definition": "PRIMARY KEY (id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "next_actions_source_activity_id_fkey",
+      "type": "f",
+      "relation": "public.next_actions",
+      "definition": "FOREIGN KEY (source_activity_id) REFERENCES public.activities(id) ON DELETE SET NULL",
+      "referenced_relation": "public.activities"
+    },
+    {
+      "name": "next_actions_status_check",
+      "type": "c",
+      "relation": "public.next_actions",
+      "definition": "CHECK (status = ANY (ARRAY['open'::text, 'completed'::text, 'cancelled'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "organizations_pkey",
+      "type": "p",
+      "relation": "public.organizations",
+      "definition": "PRIMARY KEY (id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "organizations_relate_id_key",
+      "type": "u",
+      "relation": "public.organizations",
+      "definition": "UNIQUE (relate_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "sites_pkey",
+      "type": "p",
+      "relation": "public.sites",
+      "definition": "PRIMARY KEY (site_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "stage_history_actor_id_fkey",
+      "type": "f",
+      "relation": "public.stage_history",
+      "definition": "FOREIGN KEY (actor_id) REFERENCES public.users(user_id) ON DELETE SET NULL",
+      "referenced_relation": "public.users"
+    },
+    {
+      "name": "stage_history_inquiry_id_fkey",
+      "type": "f",
+      "relation": "public.stage_history",
+      "definition": "FOREIGN KEY (inquiry_id) REFERENCES public.inquiries(id) ON DELETE CASCADE",
+      "referenced_relation": "public.inquiries"
+    },
+    {
+      "name": "stage_history_opportunity_id_fkey",
+      "type": "f",
+      "relation": "public.stage_history",
+      "definition": "FOREIGN KEY (opportunity_id) REFERENCES public.deals(id) ON DELETE CASCADE",
+      "referenced_relation": "public.deals"
+    },
+    {
+      "name": "stage_history_pkey",
+      "type": "p",
+      "relation": "public.stage_history",
+      "definition": "PRIMARY KEY (id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "users_name_key",
+      "type": "u",
+      "relation": "public.users",
+      "definition": "UNIQUE (name)",
+      "referenced_relation": null
+    },
+    {
+      "name": "users_pkey",
+      "type": "p",
+      "relation": "public.users",
+      "definition": "PRIMARY KEY (user_id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "users_role_check",
+      "type": "c",
+      "relation": "public.users",
+      "definition": "CHECK (role = ANY (ARRAY['rep'::text, 'admin'::text, 'dual'::text, 'viewer'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "buckets_pkey",
+      "type": "p",
+      "relation": "storage.buckets",
+      "definition": "PRIMARY KEY (id)",
+      "referenced_relation": null
+    },
+    {
+      "name": "buckets_versioning_dark_check",
+      "type": "c",
+      "relation": "storage.buckets",
+      "definition": "CHECK (versioning_status = 'DISABLED'::text)",
+      "referenced_relation": null
+    },
+    {
+      "name": "buckets_versioning_standard_only_check",
+      "type": "c",
+      "relation": "storage.buckets",
+      "definition": "CHECK (type = 'STANDARD'::storage.buckettype OR versioning_status = 'DISABLED'::text)",
+      "referenced_relation": null
+    },
+    {
+      "name": "buckets_versioning_status_check",
+      "type": "c",
+      "relation": "storage.buckets",
+      "definition": "CHECK (versioning_status = ANY (ARRAY['DISABLED'::text, 'ENABLED'::text, 'SUSPENDED'::text]))",
+      "referenced_relation": null
+    },
+    {
+      "name": "objects_bucketId_fkey",
+      "type": "f",
+      "relation": "storage.objects",
+      "definition": "FOREIGN KEY (bucket_id) REFERENCES storage.buckets(id)",
+      "referenced_relation": "storage.buckets"
+    },
+    {
+      "name": "objects_pkey",
+      "type": "p",
+      "relation": "storage.objects",
+      "definition": "PRIMARY KEY (id)",
+      "referenced_relation": null
+    }
+  ],
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "current_user": "postgres",
+  "n8n_accessed": false,
+  "project_name": "netform-crm-staging",
+  "table_security": [
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "crm_security.access_review",
+      "force_rls": false,
+      "anon_write": false,
+      "anon_select": false,
+      "authenticated_write": false,
+      "authenticated_select": false
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "crm_security.attachment_audit_events",
+      "force_rls": false,
+      "anon_write": false,
+      "anon_select": false,
+      "authenticated_write": false,
+      "authenticated_select": false
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "crm_security.audit_events",
+      "force_rls": false,
+      "anon_write": false,
+      "anon_select": false,
+      "authenticated_write": false,
+      "authenticated_select": false
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "crm_security.command_receipts",
+      "force_rls": false,
+      "anon_write": false,
+      "anon_select": false,
+      "authenticated_write": false,
+      "authenticated_select": false
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "crm_security.customer_support_actions",
+      "force_rls": false,
+      "anon_write": false,
+      "anon_select": false,
+      "authenticated_write": false,
+      "authenticated_select": false
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "crm_security.deal_attachments",
+      "force_rls": false,
+      "anon_write": false,
+      "anon_select": false,
+      "authenticated_write": false,
+      "authenticated_select": false
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "crm_security.deal_close_events",
+      "force_rls": false,
+      "anon_write": false,
+      "anon_select": false,
+      "authenticated_write": false,
+      "authenticated_select": false
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "crm_security.deal_won_events",
+      "force_rls": false,
+      "anon_write": false,
+      "anon_select": false,
+      "authenticated_write": false,
+      "authenticated_select": false
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "crm_security.expansion_pool",
+      "force_rls": false,
+      "anon_write": false,
+      "anon_select": false,
+      "authenticated_write": false,
+      "authenticated_select": false
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "crm_security.expansion_pool_events",
+      "force_rls": false,
+      "anon_write": false,
+      "anon_select": false,
+      "authenticated_write": false,
+      "authenticated_select": false
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "crm_security.inquiry_audit_events",
+      "force_rls": false,
+      "anon_write": false,
+      "anon_select": false,
+      "authenticated_write": false,
+      "authenticated_select": false
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "crm_security.message_outcomes",
+      "force_rls": false,
+      "anon_write": false,
+      "anon_select": false,
+      "authenticated_write": false,
+      "authenticated_select": false
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "crm_security.message_reminders",
+      "force_rls": true,
+      "anon_write": false,
+      "anon_select": false,
+      "authenticated_write": false,
+      "authenticated_select": false
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "crm_security.next_action_postponements",
+      "force_rls": true,
+      "anon_write": false,
+      "anon_select": false,
+      "authenticated_write": false,
+      "authenticated_select": false
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "crm_security.object_scope",
+      "force_rls": false,
+      "anon_write": false,
+      "anon_select": false,
+      "authenticated_write": false,
+      "authenticated_select": false
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "crm_security.quote_versions",
+      "force_rls": false,
+      "anon_write": false,
+      "anon_select": false,
+      "authenticated_write": false,
+      "authenticated_select": false
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "crm_security.relationship_events",
+      "force_rls": false,
+      "anon_write": false,
+      "anon_select": false,
+      "authenticated_write": false,
+      "authenticated_select": false
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "crm_security.stage_transition_events",
+      "force_rls": false,
+      "anon_write": false,
+      "anon_select": false,
+      "authenticated_write": false,
+      "authenticated_select": false
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "crm_security.user_opportunity_state",
+      "force_rls": false,
+      "anon_write": false,
+      "anon_select": false,
+      "authenticated_write": false,
+      "authenticated_select": false
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "public.activities",
+      "force_rls": false,
+      "anon_write": true,
+      "anon_select": true,
+      "authenticated_write": true,
+      "authenticated_select": true
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "rls": false,
+      "owner": "postgres",
+      "relation": "public.assignment_history",
+      "force_rls": false,
+      "anon_write": true,
+      "anon_select": true,
+      "authenticated_write": true,
+      "authenticated_select": true
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "public.contact_assignments",
+      "force_rls": false,
+      "anon_write": true,
+      "anon_select": true,
+      "authenticated_write": true,
+      "authenticated_select": true
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "public.contacts",
+      "force_rls": false,
+      "anon_write": true,
+      "anon_select": true,
+      "authenticated_write": true,
+      "authenticated_select": true
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "public.deals",
+      "force_rls": false,
+      "anon_write": true,
+      "anon_select": true,
+      "authenticated_write": true,
+      "authenticated_select": true
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "public.inquiries",
+      "force_rls": false,
+      "anon_write": true,
+      "anon_select": true,
+      "authenticated_write": true,
+      "authenticated_select": true
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "public.next_actions",
+      "force_rls": false,
+      "anon_write": true,
+      "anon_select": true,
+      "authenticated_write": true,
+      "authenticated_select": true
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "public.organizations",
+      "force_rls": false,
+      "anon_write": true,
+      "anon_select": true,
+      "authenticated_write": true,
+      "authenticated_select": true
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "public.sites",
+      "force_rls": false,
+      "anon_write": true,
+      "anon_select": true,
+      "authenticated_write": true,
+      "authenticated_select": true
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "rls": false,
+      "owner": "postgres",
+      "relation": "public.stage_history",
+      "force_rls": false,
+      "anon_write": true,
+      "anon_select": true,
+      "authenticated_write": true,
+      "authenticated_select": true
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "rls": true,
+      "owner": "postgres",
+      "relation": "public.users",
+      "force_rls": false,
+      "anon_write": true,
+      "anon_select": true,
+      "authenticated_write": true,
+      "authenticated_select": true
+    },
+    {
+      "acl": "{supabase_storage_admin=a*r*w*d*D*x*t*m*/supabase_storage_admin,service_role=arwdDxtm/supabase_storage_admin,authenticated=arwdDxtm/supabase_storage_admin,anon=arwdDxtm/supabase_storage_admin,postgres=a*r*w*d*D*x*t*m*/supabase_storage_admin}",
+      "rls": true,
+      "owner": "supabase_storage_admin",
+      "relation": "storage.buckets",
+      "force_rls": false,
+      "anon_write": true,
+      "anon_select": true,
+      "authenticated_write": true,
+      "authenticated_select": true
+    },
+    {
+      "acl": "{supabase_storage_admin=a*r*w*d*D*x*t*m*/supabase_storage_admin,service_role=arwdDxtm/supabase_storage_admin,authenticated=arwdDxtm/supabase_storage_admin,anon=arwdDxtm/supabase_storage_admin,postgres=a*r*w*d*D*x*t*m*/supabase_storage_admin}",
+      "rls": true,
+      "owner": "supabase_storage_admin",
+      "relation": "storage.objects",
+      "force_rls": false,
+      "anon_write": true,
+      "anon_select": true,
+      "authenticated_write": true,
+      "authenticated_select": true
+    }
+  ],
+  "target_relations": [
+    "public.activities",
+    "public.assignment_history",
+    "public.contact_assignments",
+    "public.contacts",
+    "public.deals",
+    "public.inquiries",
+    "public.next_actions",
+    "public.organizations",
+    "public.sites",
+    "public.stage_history",
+    "public.users",
+    "crm_security.access_review",
+    "crm_security.audit_events",
+    "crm_security.command_receipts",
+    "crm_security.inquiry_audit_events",
+    "crm_security.object_scope",
+    "crm_security.attachment_audit_events",
+    "crm_security.customer_support_actions",
+    "crm_security.deal_attachments",
+    "crm_security.deal_close_events",
+    "crm_security.deal_won_events",
+    "crm_security.expansion_pool",
+    "crm_security.expansion_pool_events",
+    "crm_security.message_outcomes",
+    "crm_security.message_reminders",
+    "crm_security.next_action_postponements",
+    "crm_security.quote_versions",
+    "crm_security.relationship_events",
+    "crm_security.stage_transition_events",
+    "crm_security.user_opportunity_state",
+    "storage.buckets",
+    "storage.objects"
+  ],
+  "candidate_columns": [
+    "public.deals.stage_checklist",
+    "public.deals.stage_contexts",
+    "public.deals.won_amount",
+    "public.deals.completion_date"
+  ],
+  "canonical_presence": {
+    "public.deals": {
+      "present": 5,
+      "expected": 5
+    },
+    "public.sites": {
+      "present": 5,
+      "expected": 5
+    },
+    "public.users": {
+      "present": 6,
+      "expected": 6
+    },
+    "public.contacts": {
+      "present": 5,
+      "expected": 5
+    },
+    "public.inquiries": {
+      "present": 5,
+      "expected": 5
+    },
+    "public.activities": {
+      "present": 5,
+      "expected": 5
+    },
+    "public.next_actions": {
+      "present": 6,
+      "expected": 6
+    },
+    "public.organizations": {
+      "present": 5,
+      "expected": 5
+    },
+    "public.contact_assignments": {
+      "present": 4,
+      "expected": 4
+    }
+  },
+  "public_entrypoints": [
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "public.crm_expansion_context(jsonb)",
+      "anon_execute": false,
+      "security_definer": true,
+      "authenticated_execute": true
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "public.crm_expansion_note(jsonb)",
+      "anon_execute": false,
+      "security_definer": true,
+      "authenticated_execute": true
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "public.crm_operational_source_v1(text,uuid,integer)",
+      "anon_execute": false,
+      "security_definer": true,
+      "authenticated_execute": true
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "public.crm_write_command_v2(uuid,text,uuid,integer,jsonb)",
+      "anon_execute": false,
+      "security_definer": true,
+      "authenticated_execute": true
+    }
+  ],
+  "candidate_relations": [
+    "crm_security.attachment_audit_events",
+    "crm_security.customer_support_actions",
+    "crm_security.deal_attachments",
+    "crm_security.deal_close_events",
+    "crm_security.deal_won_events",
+    "crm_security.expansion_pool",
+    "crm_security.expansion_pool_events",
+    "crm_security.message_outcomes",
+    "crm_security.message_reminders",
+    "crm_security.next_action_postponements",
+    "crm_security.quote_versions",
+    "crm_security.relationship_events",
+    "crm_security.stage_transition_events",
+    "crm_security.user_opportunity_state"
+  ],
+  "production_accessed": false,
+  "transaction_read_only": true,
+  "staging_ddl_dml_performed": false
+}

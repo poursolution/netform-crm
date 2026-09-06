@@ -1,0 +1,53 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "source": "staging-phase1 generated copies",
+  "output": "staging-operational",
+  "connected_operations": [
+    "opportunity_work_set",
+    "inquiry_assign",
+    "inquiry_unassign",
+    "service_change"
+  ],
+  "other_operations": "FAIL_CLOSED",
+  "public_write_rpc": "crm_write_command_v2",
+  "read_rpc": "crm_read_scoped_v2",
+  "read_pagination": "shared_uuid_cursor_deduplicated_per_page",
+  "files": {
+    "adapter_sha256": "5507e616f0deb85e7f6a34cf557a4131dfc33e122ccc87731c0aa9e85d1b768b",
+    "pagination_sha256": "2389354d8e6f32683040a9fd206e8441f0afc71718968e422503d33e3771a0ab",
+    "overlay_sha256": "bed36ca9745876997ded0372b098795eb8fe90ac0ab1390f9ff3e4a50c821cfa",
+    "transport_sha256": "ff8d71596a344e851e738d2e83da324f2e86453f40a783a36bcec02c5e57e114",
+    "review_sha256": "346e4b9218981714befaed9a6c843a36f7dd36c798197dcf05328caff47078e1",
+    "test_sha256": "a6c7f4480a07118a4e8ce294458c05919ac4063655b7f5d88812684e904e5f00",
+    "operational_bundle_manifest_sha256": "2486d31e10e81d412552f6f51de9e68000fc71972445b853913117e051fa0de7",
+    "browser_read_evidence_sha256": "90ac36b546f32f61560ff30a8e387fb48e2d17d47d68c15a95f65de13c0bf310",
+    "browser_session_evidence_sha256": "a02f71772b8975feb2b2d3b0c8b89ea9da681635f7819af46be3d82162f2fa0f",
+    "browser_write_evidence_sha256": "691d2df2dc0449bc3b8b5bc86e9b75e2100b51e70968158cfe8e6846e35953bc"
+  },
+  "pages": {
+    "crm.html": {
+      "base_sha256": "90c539ec275f323786ee8ad3ef4ef545180dd3ff535ca61b9d680b20bbf53f47",
+      "candidate_sha256": "6a34712e3794aee2e876990112bc5b4a7f95a348548ff7e51206473be4c3fd0c",
+      "adapter_index": 95,
+      "pagination_index": 142,
+      "transport_index": 192,
+      "overlay_index": 1154544,
+      "boot_index": 1154586,
+      "body_end": 1155255
+    },
+    "mobile.html": {
+      "base_sha256": "87739c43aeddabbbc40e9e047a0c308abaf59ec9b64566301a71982fe0c9efe8",
+      "candidate_sha256": "f5cba20542fd85a4e4729f28b7f3e069b5af0f902a14a38d93635f54dd050de1",
+      "adapter_index": 95,
+      "pagination_index": 142,
+      "transport_index": 192,
+      "overlay_index": 311942,
+      "boot_index": 311984,
+      "body_end": 312902
+    }
+  },
+  "browser_read_status": "PASS",
+  "browser_session_status": "PASS",
+  "browser_transport_write_status": "PASS",
+  "status": "LOCAL_UI_CANDIDATE_BROWSER_TRANSPORT_PASS_NOT_DEPLOYED"
+}

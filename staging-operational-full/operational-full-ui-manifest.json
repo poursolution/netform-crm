@@ -1,0 +1,90 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "LOCAL_31_OP_UI_ASSEMBLED_NOT_DEPLOYED",
+  "source": "staging-phase1 UI plus operational-full-local-candidate/20260906 assets",
+  "output": "staging-operational-full",
+  "connected_operations": [
+    "opportunity_work_set",
+    "inquiry_assign",
+    "service_change",
+    "inquiry_unassign",
+    "favorite_set",
+    "opportunity_touch",
+    "next_action",
+    "activity",
+    "quote_version",
+    "next_action_complete",
+    "stage_check",
+    "transition",
+    "close",
+    "amount",
+    "waiting_context",
+    "inquiry_reclassify",
+    "inquiry_status",
+    "inquiry_trash",
+    "inquiry_restore",
+    "inquiry_purge",
+    "inquiry_followup",
+    "opportunity_create",
+    "lineage_link",
+    "attachment_prepare",
+    "attachment_complete",
+    "expansion_pool_update",
+    "expansion_note",
+    "customer_support_action",
+    "message_log",
+    "relationship_hold",
+    "relationship_response"
+  ],
+  "operation_count": 31,
+  "legacy_write_endpoint": "urn:netform-crm:legacy-write-disabled",
+  "forbidden_references": {
+    "n8n": 0,
+    "production_ref": 0
+  },
+  "source_sha256": {
+    "candidate_manifest": "213bb02c492dac1dc548c4a64433f79cd7fe824be3fe25355fc2872621818721",
+    "adapter": "88af52ed8c3e2684d1b0a89735e2ac4731a55e25946e89434a054c87dee941bc",
+    "overlay": "c7200ef41b0ac9007ba4bf8b0054fb19b74d367795b8d8fb71dd8081630050c4",
+    "transport": "53f50ba5362c4689cef444ce30096c23f7f7b9cecbd313140ce44303ef3b9469"
+  },
+  "output_sha256": {
+    "adapter": "88af52ed8c3e2684d1b0a89735e2ac4731a55e25946e89434a054c87dee941bc",
+    "overlay": "c7200ef41b0ac9007ba4bf8b0054fb19b74d367795b8d8fb71dd8081630050c4",
+    "transport": "53f50ba5362c4689cef444ce30096c23f7f7b9cecbd313140ce44303ef3b9469"
+  },
+  "pages": {
+    "index.html": {
+      "source_sha256": "16e2d3e8ed6ed306c62d00e9e4c5817c7f5730ce1f18270a1ef7c26627ca79fc",
+      "output_sha256": "ddf470858340469bd4f514c91ed361f06d07453c06fd06a352e3d5b4fb4e3b16",
+      "config_index": 54,
+      "adapter_index": 95,
+      "transport_index": 142,
+      "overlay_index": null,
+      "body_end": 7355
+    },
+    "crm.html": {
+      "source_sha256": "90c539ec275f323786ee8ad3ef4ef545180dd3ff535ca61b9d680b20bbf53f47",
+      "output_sha256": "ef63dce69b36ff1d96383d4c22b7cd69aa85ef76ff48ecc1ba6d039f18f871f2",
+      "config_index": 54,
+      "adapter_index": 95,
+      "transport_index": 142,
+      "overlay_index": 1154486,
+      "body_end": 1155197
+    },
+    "mobile.html": {
+      "source_sha256": "87739c43aeddabbbc40e9e047a0c308abaf59ec9b64566301a71982fe0c9efe8",
+      "output_sha256": "a8135a9a235953c0729f3a68e0d8c3d01381a8dbfcf28436af927c7bb950be82",
+      "config_index": 54,
+      "adapter_index": 95,
+      "transport_index": 142,
+      "overlay_index": 311884,
+      "body_end": 312844
+    }
+  },
+  "local_browser_revalidation_required": true,
+  "staging_deployment_performed": false,
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false
+}

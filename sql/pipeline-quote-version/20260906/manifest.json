@@ -1,0 +1,34 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "LOCAL_CHAIN_CANDIDATE_AFTER_ACTION_NOT_APPLIED",
+  "prerequisites": [
+    "personal-state-compat/20260906",
+    "pipeline-action-bundle/20260906"
+  ],
+  "operation": "quote_version",
+  "meaning": "append_only_server_numbered_quote_version",
+  "amount_axes": {
+    "deals_amount": "expected",
+    "quote_versions": "append_only_private_table",
+    "won_amount": "blocked"
+  },
+  "staging_ddl_dml_performed": false,
+  "files_sha256": {
+    "helper.sql": "2b47283f79ab076ecf837b578873852f15c84b26a39b3b1f68ced45073ec6dbf",
+    "adapter-contract.js": "6d2fe53cec3f2de47e687611112c67cbe4acc06ea4c89ff63c8295f090504519",
+    "contract.test.cjs": "4dfda9a8d07049659aa3e1201bfee3c3e160b322934d69c803551337fa896763",
+    "db.test.cjs": "044ef5aa7a3e347cc9a4abb9f675bd69e0ae6a7115765ac0935cfedcd31481de",
+    "ui.test.cjs": "4aa273d9232930ad3e488a6e4bdc9d38ca93e83f4aaddb9c5afaf8092d0780de",
+    "review.md": "d67c1b5bd58c5bd05a6f5930d9f97fc0506588317bc1c83661cb6e3014539c93",
+    "staging-apply-after-action.sql": "31ad24009457bf84259b15be6c8f718a8c638a20bea27fc071a45b67d94db513",
+    "rollback-after-action.sql": "dc92395ae9ee112b6a3194d1b25d5b3f45e84f604147c35f7b135da9103616a1",
+    "operational-adapter.candidate.js": "85286d044e237eb2d4109e877a5ce7d7f9d64862804d296b026e9bf26477e4af",
+    "operational-overlay.candidate.js": "7d6b5360bc54b1684398ab80f11839bab3cf9beb97721d1afff0dfea4a725770"
+  },
+  "source_sha256": {
+    "golden_sql": "911291f1ec26a9c690c41ce8b67b6c0c26e5d0442385dfdf017e718ce59823bf",
+    "golden_pc": "f73daf1598a2271d38fb38fba32b81cc8cc842e860b98983ce7f3c972c2274e2",
+    "golden_mobile": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "action_manifest": "f484908d4370e825ea74f9d791ff92ebbe51d582d5c0bbe645a20ce0565c3c9f"
+  }
+}

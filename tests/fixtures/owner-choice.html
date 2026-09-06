@@ -1,0 +1,11 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="connect-src 'none'"><title>담당자 추천 · 격리 검수</title>
+<link rel="stylesheet" href="../../owner-choice.css">
+<style>body{font-family:Pretendard,'Malgun Gothic',sans-serif;background:#f1f4f8;color:#1b1f24;padding:24px;margin:0}main{max-width:580px;margin:auto;background:white;padding:24px;border-radius:16px}h1{font-size:23px}p{line-height:1.6}label{display:block;margin:12px 0 8px;font-size:13px}select{padding:10px;font-size:14px}button{font-family:inherit}output{display:block;margin-top:18px;font-size:13px}.field{margin-top:20px}</style>
+<main><h1>이 고객의 다음 영업,<br>이어갈 사람부터.</h1><p>검수용 가상 현장 · 서버 연결·저장·발송 없음</p><label for="scenario">상황</label><select id="scenario"><option value="hq">본사 · 기존 담당 황윤선</option><option value="branch">경남지사 · 기존 담당 김훈</option><option value="none">경남지사 · 실담당 미지정</option><option value="staff">기존 상담담당 · 자동배정 안 함</option></select><div id="form"></div><output id="result" aria-live="polite"></output></main>
+<script src="../../people-eligibility.js"></script><script src="../../owner-choice.js"></script><script>
+// 테스트용 데이터. 실제 CRM은 SALES_PEOPLE_MASTER를 사용합니다.
+const master=['황윤선','이필선','한준엽','정정훈','김성민','조현식'].map(name=>({name,role:'sales',salesRep:true,team:'head_office'})).concat(['조민준','김훈'].map(name=>({name,role:'branch_sales',salesRep:true,team:'gyeongnam'})),[{name:'조재연',role:'consultation',team:'head_office',salesRep:false}]);
+const contexts={hq:{sourceOwner:'황윤선'},branch:{sourceOwner:'김훈'},none:{assignmentGroup:'gyeongnam'},staff:{sourceOwner:'조재연'}};
+function render(){document.getElementById('form').innerHTML='<div class="field"><label for="nd-rep">영업담당자</label><select id="nd-rep" required>'+PeopleEligibility.options(master,'expansion',contexts[document.getElementById('scenario').value])+'</select></div>';const select=document.getElementById('nd-rep');select.addEventListener('change',()=>{document.getElementById('result').textContent='선택: '+select.value+' · 아직 저장하지 않음'});document.getElementById('result').textContent='실제 저장은 실행하지 않습니다.';OwnerChoice.scan()}
+document.getElementById('scenario').addEventListener('change',render);render();
+</script></html>

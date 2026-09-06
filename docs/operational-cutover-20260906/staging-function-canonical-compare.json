@@ -1,0 +1,72 @@
+{
+  "project_id": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "captured_at": "2026-09-06T01:20:00Z",
+  "mode": "READ_ONLY",
+  "method": {
+    "definition_match": "Normalize CRLF and CR to LF, then compare MD5.",
+    "semantic_match": "Tokenize PL/pgSQL/SQL bodies, discard whitespace and comments outside literals, lowercase unquoted identifiers, and compare the complete token sequence.",
+    "note": "Raw pg_get_functiondef MD5 is retained as an exact live apply guard; canonical comparison is used only to establish that the recorded raw baseline is the same contract."
+  },
+  "functions": [
+    {
+      "signature": "public.crm_contacts_scoped_v2(uuid)",
+      "live_oid": 18065,
+      "live_definition_md5_raw": "415dc8fc1826aec86a0a916147480a71",
+      "live_definition_md5_lf": "1a58be86503cb53bdc3a9a784eb4add2",
+      "local_definition_md5_lf": "1a58be86503cb53bdc3a9a784eb4add2",
+      "live_prosrc_md5_lf": "43cb3265fe64e78e840bf067326541a5",
+      "local_body_md5_lf": "43cb3265fe64e78e840bf067326541a5",
+      "canonical_match": true
+    },
+    {
+      "signature": "crm_security.can_deal(uuid,boolean)",
+      "live_oid": 18061,
+      "live_definition_md5_raw": "efdf75e2004fb4d7248b43eb06adcaeb",
+      "live_definition_md5_lf": "05d51a3c77344504a05a0e932cfcb15d",
+      "local_definition_md5_lf": "05d51a3c77344504a05a0e932cfcb15d",
+      "live_prosrc_md5_lf": "03c70f9036e2674715bf915a05cd8d11",
+      "local_body_md5_lf": "03c70f9036e2674715bf915a05cd8d11",
+      "canonical_match": true
+    },
+    {
+      "signature": "public.crm_write_command_v2(uuid,text,uuid,integer,jsonb)",
+      "live_oid": 18115,
+      "live_definition_md5_raw": "04ad2b922c42ca79c6ec854f79c19583",
+      "local_definition_md5_lf": "ced884d83489e74ee6906c01c72d1e7a",
+      "local_tokens": 1556,
+      "live_tokens": 1556,
+      "semantic_token_match": true
+    },
+    {
+      "signature": "public.crm_read_scoped_v2(uuid,integer,uuid,uuid)",
+      "live_oid": 18064,
+      "live_definition_md5_raw": "d1cde3372f07295076fc62bf28d12a01",
+      "local_definition_md5_lf": "919c4abff86e37beeb62ccb15beba33e",
+      "local_tokens": 732,
+      "live_tokens": 732,
+      "semantic_token_match": true
+    },
+    {
+      "signature": "crm_security.crm_write_command_v2_frozen_20260906(uuid,text,uuid,integer,jsonb)",
+      "live_oid": 18077,
+      "live_definition_md5_raw": "1ad250f71a5af65317ab3362239752e8",
+      "local_definition_md5_lf": "1ad250f71a5af65317ab3362239752e8",
+      "local_tokens": 2064,
+      "live_tokens": 2064,
+      "semantic_token_match": true
+    },
+    {
+      "signature": "crm_security.crm_inquiry_unassign_command_v1(uuid,uuid,jsonb)",
+      "live_oid": 18112,
+      "live_definition_md5_raw": "803074f7a3974777c766fe4487069fb0",
+      "local_definition_md5_lf": "ed9244cb2a3f8ad1be31ce1b3b9f5e89",
+      "local_tokens": 794,
+      "live_tokens": 794,
+      "semantic_token_match": true
+    }
+  ],
+  "staging_ddl_dml_performed": false,
+  "production_requests": 0,
+  "n8n_requests": 0
+}

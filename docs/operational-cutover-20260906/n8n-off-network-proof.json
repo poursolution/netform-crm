@@ -1,0 +1,34 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "INTERACTIVE_STAGING_ZERO_EXTERNAL_BOUNDARY_E2E_PENDING",
+  "boundary": {
+    "interactive_crm_read_write": "SUPABASE_ONLY",
+    "interactive_n8n_requests": 0,
+    "unapproved_n8n_requests": 0,
+    "approved_external_n8n_requests": "NOT_MEASURED",
+    "approved_external_e2e": false,
+    "allowed_external_lanes": [
+      "quote inquiry intake",
+      "technical consultation intake and notification",
+      "SMS/Kakao provider send, schedule and callback"
+    ]
+  },
+  "staging_evidence": {
+    "mutation_steps": 75,
+    "mutation_interactive_n8n_requests": 0,
+    "browser_read_combinations": 12,
+    "browser_read_n8n_requests": 0,
+    "production_requests": 0
+  },
+  "evidence": {
+    "approved_boundary": "n8n-allowed-boundary.md",
+    "approved_boundary_sha256": "f930c1c5b517a6e0eacaa64a6f90b2106413cb356f7d9131f04d0a7b4e8e3ec7",
+    "mutation_proof": "staging-fixture-runs/stg-e2e-20260906t125239z-fc70f2d2/browser-mutation-proof.json",
+    "mutation_proof_sha256": "65dc4594789e729585c2773a4c473fa8cf2da5d6faf94ed6dda6239d6842052c",
+    "browser_read": "operational-full-ui-browser-read.json",
+    "browser_read_sha256": "c0b6b708ce700da88afcab96ad2b5ab5d5a00384ed1f63bb9cfe57d91154ebe4"
+  },
+  "remaining": "Run each approved external lane once with a test recipient/source and prove correlation, callback/read-back, failure state, and duplicate count zero.",
+  "production_accessed": false,
+  "n8n_body_accessed": false
+}

@@ -1,0 +1,312 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "mode": "JWT_DISPOSABLE_MUTATION_HAPPY_REPLAY",
+  "run_id": "stg-e2e-20260906t110431z-d7e9f2a4",
+  "catalog_sha256": "ea9dd6932d7e57ac51c23dd7f53b8f41c889336defcd84bf0b5fc26ab5030872",
+  "candidate_apply_sha256": "81a44efa1331454059ac59c83cc9931cc3aaa5070140c2321a3bcafcdd6e469e",
+  "scenario_count": 35,
+  "operation_count": 31,
+  "started_at": "2026-09-06T11:08:21.829Z",
+  "status": "FAIL",
+  "cleanup_required": true,
+  "results": [
+    {
+      "scenario": "cross-cutting-receipt-replay",
+      "step": "cross-cutting-receipt-replay:1",
+      "status": "PASS",
+      "kind": "policy_assertion"
+    },
+    {
+      "scenario": "frozen-direct-assign-pc-mobile",
+      "step": "frozen-direct-assign-pc-mobile:1",
+      "status": "FAIL",
+      "http_status": 400,
+      "api_code": "22023",
+      "error_type": "Error"
+    },
+    {
+      "scenario": "mobile-inquiry-response-outcomes",
+      "step": "mobile-inquiry-response-outcomes:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "pc-inquiry-progress",
+      "step": "pc-inquiry-progress:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "frozen-inquiry-unassign",
+      "step": "frozen-inquiry-unassign:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "inquiry-hold",
+      "step": "inquiry-hold:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "inquiry-next-complete-check",
+      "step": "inquiry-next-complete-check:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "inquiry-followup",
+      "step": "inquiry-followup:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "inquiry-pipeline-promote-lineage",
+      "step": "inquiry-pipeline-promote-lineage:1",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "transition",
+      "request_id": "273c39a8-8b15-4bc8-9003-d44baa8baa74",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-pipeline-promote-lineage",
+      "step": "inquiry-pipeline-promote-lineage:2",
+      "status": "FAIL",
+      "http_status": 409,
+      "api_code": "PT409",
+      "error_type": "Error"
+    },
+    {
+      "scenario": "inquiry-trash-restore",
+      "step": "inquiry-trash-restore:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "inquiry-purge",
+      "step": "inquiry-purge:1",
+      "status": "FAIL",
+      "http_status": 403,
+      "api_code": "42501",
+      "error_type": "Error"
+    },
+    {
+      "scenario": "inquiry-reclassify",
+      "step": "inquiry-reclassify:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "technical-inquiry-transfer",
+      "step": "technical-inquiry-transfer:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "frozen-inquiry-read-refresh",
+      "step": "frozen-inquiry-read-refresh:1",
+      "status": "PASS",
+      "kind": "read",
+      "rpc": "crm_read_scoped_v2"
+    },
+    {
+      "scenario": "pipeline-opportunity-create",
+      "step": "pipeline-opportunity-create:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "pipeline-stage-transition",
+      "step": "pipeline-stage-transition:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "pipeline-close-nonwon",
+      "step": "pipeline-close-nonwon:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "pipeline-close-won-expansion",
+      "step": "pipeline-close-won-expansion:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "pipeline-expected-amount",
+      "step": "pipeline-expected-amount:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "frozen-opportunity-work",
+      "step": "frozen-opportunity-work:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "frozen-service-change",
+      "step": "frozen-service-change:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "pipeline-activity-and-contact",
+      "step": "pipeline-activity-and-contact:1",
+      "status": "FAIL",
+      "http_status": 409,
+      "api_code": "PT409",
+      "error_type": "Error"
+    },
+    {
+      "scenario": "deal-next-action-lifecycle",
+      "step": "deal-next-action-lifecycle:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "mobile-today-outcomes",
+      "step": "mobile-today-outcomes:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "pipeline-waiting-context",
+      "step": "pipeline-waiting-context:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "pipeline-quote-version",
+      "step": "pipeline-quote-version:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "pipeline-stage-check",
+      "step": "pipeline-stage-check:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "customer-and-operational-reads",
+      "step": "customer-and-operational-reads:1",
+      "status": "PASS",
+      "kind": "read",
+      "rpc": "crm_operational_source_v1"
+    },
+    {
+      "scenario": "expansion-pool-update-note-context",
+      "step": "expansion-pool-update-note-context:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "attachment-lifecycle",
+      "step": "attachment-lifecycle:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "personalization",
+      "step": "personalization:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "message-log",
+      "step": "message-log:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "message-reminder",
+      "step": "message-reminder:1",
+      "status": "FAIL",
+      "http_status": 409,
+      "api_code": "PT409",
+      "error_type": "Error"
+    },
+    {
+      "scenario": "relationship-cadence",
+      "step": "relationship-cadence:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    },
+    {
+      "scenario": "customer-support-request",
+      "step": "customer-support-request:1",
+      "status": "FAIL",
+      "http_status": null,
+      "api_code": null,
+      "error_type": "ERR_ASSERTION"
+    }
+  ],
+  "completed_at": "2026-09-06T11:08:24.952Z",
+  "failure_point": "customer-support-request:1",
+  "pass": 4,
+  "fail": 32,
+  "skip": 0,
+  "http_requests": 48,
+  "crm_writes": 1,
+  "storage_writes": 0,
+  "staging_ddl_dml_performed": false,
+  "n8n_requests": 0,
+  "production_requests": 0,
+  "error_type": "Error"
+}

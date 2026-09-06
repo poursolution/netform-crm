@@ -1,0 +1,79 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+  "operations": [
+    "relationship_hold",
+    "relationship_response"
+  ],
+  "ui_coverage_candidate": [
+    "M05"
+  ],
+  "prerequisite": "message-log-compat/20260906",
+  "surface": "pc_mobile",
+  "contracts": {
+    "hold": {
+      "absorbed_child": "next_action",
+      "effects": [
+        "private hold event",
+        "Deal wake_up_at/version",
+        "replacement open Next Action",
+        "audit",
+        "receipt"
+      ],
+      "activity": "none; preserve current UI"
+    },
+    "response": {
+      "absorbed_child": "meaningful activity",
+      "outbound_link": "latest same Deal/person sent and unresponded user-attested message outcome at or before activity",
+      "next_cancel": "only linked outcome open next_action_id",
+      "effects": [
+        "message response marker",
+        "meaningful Activity",
+        "private response event",
+        "Deal activity/contact timestamps/version",
+        "audit",
+        "receipt"
+      ]
+    }
+  },
+  "authority": "server UUID actor/contact/time; bounded Activity business occurrence only",
+  "read_derivations": [
+    "last_outbound_at",
+    "outbound_attempts",
+    "last_customer_response_at",
+    "relationship hold aliases",
+    "message response_at/response_kind"
+  ],
+  "blocked": [
+    "direct unwrapped relationship writes",
+    "provider delivery inference",
+    "unrelated Next Action cancellation",
+    "synthetic hold Activity"
+  ],
+  "implementation_present": true,
+  "rollback": "relationship events/responses/receipts archived; M02 write/read layer restored",
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "files_sha256": {
+    "build.cjs": "88c3ee1e603c34890b28465ba0121091cf5934e8f622747ff1d0f878ec41b287",
+    "helper.sql": "cdf4f7b44f00ef42c7bcdb8d5e5190d550805a2483ed7396e00aca898622b820",
+    "rollback-fragment.sql": "0b14c094237874d399a420d3af06c7cfec477082cfb96ee716c82f372808229e",
+    "contract.test.cjs": "066b0a4a5e7d0a048a6a6504158f7d23288cdb01080d49efa7ed922b80718969",
+    "db.test.cjs": "e046d324c2437984c19e105b5b067c6b53eefbdc965f1ac52364822553241510",
+    "ui.test.cjs": "8461de65893702c64b2b38d551025b1a49a83ccd9dc3353a26e7704e840249c4",
+    "review.md": "1adb899548bb2664265a4d6d8db18a05fcfe14d82b2f5dc692dbf1747a86cf2c",
+    "staging-apply-after-message-log.sql": "6ee01a34fc1ee5548eef0f63a374a2e4b2019033e5631d23cbe114015a606310",
+    "rollback-before-message-log.sql": "ca41ad48cb2b96c4aa3e3eeeea4f0103a7c0a5c59f58bd86b2bcdabbeb2a99b3",
+    "operational-adapter.candidate.js": "88af52ed8c3e2684d1b0a89735e2ac4731a55e25946e89434a054c87dee941bc",
+    "operational-overlay.candidate.js": "c7200ef41b0ac9007ba4bf8b0054fb19b74d367795b8d8fb71dd8081630050c4",
+    "transport.candidate.js": "53f50ba5362c4689cef444ce30096c23f7f7b9cecbd313140ce44303ef3b9469"
+  },
+  "source_sha256": {
+    "sql/message-log-compat/20260906/manifest.json": "6010b7bec980e69c2041518368e0095a0ebedde0f768186e8145f7ff03d4e78b",
+    "crm.html": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "mobile.html": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "sql/20260905_relationship_messaging.sql": "5b5324e830abef79d370cffe266fd57955bc7f5051dee078204afe42d0f0b5fd",
+    "docs/operational-cutover-20260906/coverage-matrix.csv": "66b015765e4fa6e96d8e3b233a7a3411a50be1d4ff4054d7d757baedc22947c4"
+  }
+}

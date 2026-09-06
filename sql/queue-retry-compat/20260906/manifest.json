@@ -1,0 +1,38 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+  "capability": "queue_retry",
+  "ui_coverage_candidate": [
+    "C04"
+  ],
+  "prerequisite": "customer-support-action/20260906",
+  "surface": "pc_mobile",
+  "meaning": "manual retry reuses the exact uncertain queue command and request_id",
+  "retryable_statuses": [
+    "uncertain"
+  ],
+  "non_retryable_statuses": [
+    "conflict",
+    "rejected"
+  ],
+  "server_dependency": "existing common command receipt and operation-specific ACK",
+  "database_changes": false,
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "files_sha256": {
+    "build.cjs": "d5dd4f6f47916214c8fb52c8370e940c4519aefda0ff984460d74948b691c769",
+    "review.md": "9274fe6396f1013f3ba905cfeeea43466a4c14b9fede5a30a2fe0d2cef4c84ae",
+    "contract.test.cjs": "206602e0cd3fcbc2856af40a3ebdac38363504ff4afd2c2fa8373b569ccf99e5",
+    "ui.test.cjs": "1eb8928031d967df9d92439a9b4e37c652f062b5da8aa50e8b183d1eec134604",
+    "operational-adapter.candidate.js": "a6a9be2b35763d7175e185a8d1504a2708d71f02b95227426ca298fdb454c602",
+    "operational-overlay.candidate.js": "a65bd277ecf5694cca5f22b03926f6d9361232b76093c1232a6ec7f879edf8fc",
+    "transport.candidate.js": "3c0fe2d46857b7469b90859d4c02e2dd356aadf1a94f8f8548efefad2b2f95d5"
+  },
+  "source_sha256": {
+    "sql/customer-support-action/20260906/manifest.json": "b9b3164427e8cf921f00d39934df8a06799870866b95744d4cd22a78a926e34b",
+    "crm.html": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "mobile.html": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "docs/operational-cutover-20260906/coverage-matrix.csv": "66b015765e4fa6e96d8e3b233a7a3411a50be1d4ff4054d7d757baedc22947c4"
+  }
+}

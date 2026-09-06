@@ -1,0 +1,71 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "COMPLETED_EXACT_FIXTURE_CLEANUP_PASS",
+  "run_id": "stg-e2e-20260906t125239z-fc70f2d2",
+  "bucket": "crm-site-files",
+  "object_id": "c5838a9b-7aee-44fd-af88-58331d88f772",
+  "object_path": "deals/431d2489-6e72-44c3-a8d4-41e95d0f0804/31b422c8-ad61-4336-b161-b8c00432d6db",
+  "owner_id": "b5295979-d6c9-48f2-971a-2dea418b75e6",
+  "procedure": [
+    "confirmed the exact object id/path once in the Supabase Dashboard",
+    "removed only the exact object after user approval",
+    "observed the Dashboard success result for exactly one file",
+    "verified the exact object count is zero with read-only SQL"
+  ],
+  "execution_method": "SUPABASE_DASHBOARD_EXACT_OBJECT_DELETE",
+  "temporary_policy_required": false,
+  "temporary_policy_status": "NOT_APPLIED_NOT_NEEDED",
+  "runbook": "docs/operational-cutover-20260906/staging-exact-cleanup-runbook.md",
+  "runbook_sha256": "a8256467ee9d058549ccc3d0694652a4c6371e3170078aec722693576123dcc8",
+  "temporary_policy_apply_file": "storage-cleanup-policy-apply.sql",
+  "temporary_policy_apply_sha256": "270b6d322c906b93d6a18744b47e874ad9467dc3edfd43c3cd03849ab6af8fcf",
+  "temporary_policy_rollback_file": "storage-cleanup-policy-rollback.sql",
+  "temporary_policy_rollback_sha256": "c5e1d89a5d3850ab482efe8940cfdacc6f93392cb0dc1f0ba0525ffe38a0b882",
+  "cleanup_script": "scripts/remove-exact-staging-storage-object.cjs",
+  "cleanup_script_sha256": "5678a12d55e713375cae525109802e244d9d30a6e8489afc5ea47ad1162ffa7b",
+  "database_cleanup_file": "cleanup-exact.sql",
+  "database_cleanup_sha256": "3dfe6eebb429a9c6b7340adf6ddc38db37a8190749ce4afb5d34e45348536942",
+  "post_cleanup_verification_file": "cleanup-exact-verify.sql",
+  "post_cleanup_verification_sha256": "31684629ceb5146075dd9da97847c8bf670f388b80f1e18bc7626ce736d70cff",
+  "canonical_baseline_file": "cleanup-canonical-baseline-final.json",
+  "canonical_baseline_sha256": "9c8634ee04fe0b2c06fed5bab18ef89051d26e259d69de53edef9b98843af5b0",
+  "canonical_baseline": {
+    "deals": {
+      "count": 5,
+      "md5": "30b2067a1a74de986aa33a36b9c0942b"
+    },
+    "inquiries": {
+      "count": 5,
+      "md5": "d15e22087063729eedf6e5211d4ff327"
+    }
+  },
+  "cleanup_builder": "scripts/build-exact-staging-fixture-cleanup.cjs",
+  "cleanup_builder_sha256": "4c6df2525ee9605a09e02a68f0cd945df261e827876bbc3aff6660075fde0faa",
+  "residual_cleanup_plan": "cleanup-generated-residual-plan.json",
+  "residual_cleanup_plan_sha256": "ac1674daafd1159b9f77578890478cf6608c9e9762274885afe3febac4b2fca5",
+  "current_verification": "cleanup-verification-current.json",
+  "current_verification_sha256": "efb2151256e1e05e7641326b61d8f90211e7b45adb670d8e1fa4061c8dcd68aa",
+  "temporary_policies": [
+    {
+      "name": "crm_fixture_cleanup_select_20260906",
+      "command": "SELECT",
+      "role": "authenticated"
+    },
+    {
+      "name": "crm_fixture_cleanup_delete_20260906",
+      "command": "DELETE",
+      "role": "authenticated"
+    }
+  ],
+  "temporary_policy_scope": {
+    "object_id": "c5838a9b-7aee-44fd-af88-58331d88f772",
+    "bucket": "crm-site-files",
+    "object_path": "deals/431d2489-6e72-44c3-a8d4-41e95d0f0804/31b422c8-ad61-4336-b161-b8c00432d6db",
+    "owner_id": "b5295979-d6c9-48f2-971a-2dea418b75e6",
+    "jwt_owner_must_match": true
+  },
+  "broad_prefix_delete": false,
+  "direct_sql_delete": false,
+  "production_accessed": false,
+  "n8n_accessed": false
+}

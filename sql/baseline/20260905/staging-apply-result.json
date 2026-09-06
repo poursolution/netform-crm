@@ -1,0 +1,150 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "query_url": "https://supabase.com/dashboard/project/rprechiaglyjaydkmxsu/sql/5f47a3cd-2e5c-41d2-87e9-a978666d5c95",
+  "observed_at": "2026-09-05T12:42:24.037Z",
+  "approved_apply_sha256": "89dce8ae467f614a1857dca82b49a7d17cf5483da97d2540cd814c0d4a9ea2de",
+  "editorClipboard_sha256": "3cbc5a4df1e8dece3f8098a122006ccd24860ef1e54ebb2a52602f5cf15dd3d6",
+  "editorMatchesIgnoringLineEndings": true,
+  "executionResult": "Success. No rows returned",
+  "transactionCommitted": true,
+  "beforeMetadataMd5": "79ac8834d044680a11becab8df6bd1d6",
+  "afterMetadataMd5": "ee9a0407d84f3080bec238f368cc20fb",
+  "sourceMetadataMd5": "9872dac5bc6f60f19fc7c4a5514af0af",
+  "beforeCounts": {
+    "tables": 0,
+    "views": 0,
+    "functions": 0,
+    "sequences": 0,
+    "policies": 0
+  },
+  "afterCounts": {
+    "tables": 18,
+    "views": 5,
+    "functions": 17,
+    "sequences": 2,
+    "constraints": 63,
+    "indexes": 67,
+    "triggers": 8,
+    "policies": 2
+  },
+  "allPayloadDiff": [
+    "functions"
+  ],
+  "strictDefinitionDifferences": [
+    {
+      "signature": "_done_today(text)",
+      "onlyLineEndings": true,
+      "expectedDefinitionSha256": "ba57a6ad6058941b60c705382a120cc8aac5efa57797667167db6895be2b4512",
+      "actualDefinitionSha256": "c1292716eb33e6e37c3bdeb56e7e6b13e4b352f0d5fdc396d469f34f0def9b9b",
+      "expectedCRLF": 0,
+      "actualCRLF": 4
+    },
+    {
+      "signature": "apply_business_change(uuid,text,text,text,text,text,date)",
+      "onlyLineEndings": true,
+      "expectedDefinitionSha256": "df858194e70e24ee908586caec6fb3f08ffcb1018c50f1968f8d3a5c505bc324",
+      "actualDefinitionSha256": "6fc11e19c3715022c8891087f5ed2b315807a41e7658da7d85170726a93474d4",
+      "expectedCRLF": 0,
+      "actualCRLF": 32
+    },
+    {
+      "signature": "crm_bundle()",
+      "onlyLineEndings": true,
+      "expectedDefinitionSha256": "f92de96e32ac7c818e3b75c5717b2d1793f1d50293b4ef7963c7106223a65c32",
+      "actualDefinitionSha256": "bf88e76116e8507c9bf3b1f4eb20bb549ea868db551b0cda7a133c525243dec0",
+      "expectedCRLF": 4,
+      "actualCRLF": 89
+    },
+    {
+      "signature": "metrics_channel_flow()",
+      "onlyLineEndings": true,
+      "expectedDefinitionSha256": "de64464ffcc79a9d1dddb83fd3014c6cf84d9c832fd6f8093f14c31e6ace78be",
+      "actualDefinitionSha256": "30e2ef323dc3f548010fe06dbb3eba3d0042669a406bd3ee86bcc582a0f19893",
+      "expectedCRLF": 0,
+      "actualCRLF": 17
+    },
+    {
+      "signature": "metrics_lost_breakdown(text)",
+      "onlyLineEndings": true,
+      "expectedDefinitionSha256": "ac545e9d3997bf77e8cc0df92dbc364e69e45b3fb67bb11d33a6848743e1a728",
+      "actualDefinitionSha256": "43028c76d09d8da9740f8f3050573626d89f5d9cecec41bc629ba2e8688c8e78",
+      "expectedCRLF": 0,
+      "actualCRLF": 17
+    },
+    {
+      "signature": "metrics_operations(text)",
+      "onlyLineEndings": true,
+      "expectedDefinitionSha256": "9066f9152771015e67d4c1d3927c6c992c3e00ebaa3e98916d87ff33fc832f95",
+      "actualDefinitionSha256": "be1ad0a882dd23a2018706c4b013cad5c4d7f18335636cd3b5df6d073d123b85",
+      "expectedCRLF": 0,
+      "actualCRLF": 71
+    },
+    {
+      "signature": "parse_responses(text)",
+      "onlyLineEndings": true,
+      "expectedDefinitionSha256": "5d3aea19b5c34d999584994d6d362df1a44e6edbfefdb62ad2e3a4f329c56def",
+      "actualDefinitionSha256": "798341b5d5fb81a98f3ee4f786a36952a3e6bff92ddcc8ec34534f18e2ef9abd",
+      "expectedCRLF": 0,
+      "actualCRLF": 23
+    },
+    {
+      "signature": "require_reason(text,text)",
+      "onlyLineEndings": true,
+      "expectedDefinitionSha256": "a7a0ee256da5c41345e5c9c26821d4674f7e7752534cf9bb1414350910434034",
+      "actualDefinitionSha256": "ac1c4bbed97dc04bce4d8cb82e6dfe2c6d56546e93d79d574743fb092c475ae1",
+      "expectedCRLF": 0,
+      "actualCRLF": 5
+    },
+    {
+      "signature": "set_updated_at()",
+      "onlyLineEndings": true,
+      "expectedDefinitionSha256": "072180b6a47679c137fffdee688b69e3707e47893ec962b20156e22c41ad770e",
+      "actualDefinitionSha256": "485d7ce35c0db277ee323f2a97c7410eaf54f9e43d5b480f42a28344556b2a44",
+      "expectedCRLF": 0,
+      "actualCRLF": 1
+    },
+    {
+      "signature": "stage_sla_days(text)",
+      "onlyLineEndings": true,
+      "expectedDefinitionSha256": "44c6476f5f0b3c0260557c1af6e38252bd0305d8018a33767438268256bf2333",
+      "actualDefinitionSha256": "b054243ec9bd92162b994e28a9e86b4116d05edf66b807c9f743eb8660c8fd7a",
+      "expectedCRLF": 0,
+      "actualCRLF": 8
+    },
+    {
+      "signature": "today_counts()",
+      "onlyLineEndings": true,
+      "expectedDefinitionSha256": "38467b9d4663b0982a2c9a14a9bf11b8b17d167c0218fcef5378f7b5a99a440d",
+      "actualDefinitionSha256": "fa5267c845df8800953715b4e7cb60e4b36f3cdbdfc977377350fba93967b417",
+      "expectedCRLF": 0,
+      "actualCRLF": 5
+    },
+    {
+      "signature": "today_tasks(text)",
+      "onlyLineEndings": true,
+      "expectedDefinitionSha256": "552b43cb9ed8abc8680a5e75d06c0a6bfbad1ba5ad36e86f88bff3b8ed87f9b8",
+      "actualDefinitionSha256": "ddec0b6b846aa1ba6985c8f398885e78e690690af202c5f17c5c660462f2ddad",
+      "expectedCRLF": 0,
+      "actualCRLF": 48
+    },
+    {
+      "signature": "work_items_today(text)",
+      "onlyLineEndings": true,
+      "expectedDefinitionSha256": "a71d753e75efc581ae4172ef59d2ffe8e9f265475263700261c914de3f91c014",
+      "actualDefinitionSha256": "d9322be10b0fe19532d8cb4989ab429b291c6166d9211092b393765f84f08ff7",
+      "expectedCRLF": 0,
+      "actualCRLF": 32
+    }
+  ],
+  "baselineReproductionPass": false,
+  "stoppedOnDiff": true,
+  "productionConnected": false,
+  "productionChanged": false,
+  "otherProjectsChanged": false,
+  "authCreated": false,
+  "seedExecuted": false,
+  "v2Applied": false,
+  "rollbackExecuted": false,
+  "rollbackWarning": "Source definition MD5 guard will reject 13 line-ending-different functions; do not execute existing rollback as-is."
+}

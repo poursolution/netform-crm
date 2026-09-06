@@ -1,0 +1,65 @@
+{
+  "generated_at": "2026-09-06T16:18:14.6086557+09:00",
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "project_status": "ACTIVE_HEALTHY",
+  "database_version": "17.6",
+  "mode": "READ_ONLY",
+  "status": "PASS",
+  "checks": {
+    "current_user": "postgres",
+    "frozen_dispatcher": {
+      "oid": 18115,
+      "md5": "04ad2b922c42ca79c6ec854f79c19583",
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "security_definer": true,
+      "config": ["search_path=\"\""]
+    },
+    "scoped_read": {
+      "oid": 18064,
+      "md5": "d1cde3372f07295076fc62bf28d12a01",
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "security_definer": true,
+      "config": ["search_path=\"\""]
+    },
+    "frozen_private_dispatcher": {
+      "oid": 18077,
+      "md5": "1ad250f71a5af65317ab3362239752e8",
+      "acl": "{postgres=X/postgres}",
+      "security_definer": true,
+      "config": ["search_path=\"\""]
+    },
+    "inquiry_unassign_helper": {
+      "oid": 18112,
+      "md5": "803074f7a3974777c766fe4487069fb0",
+      "acl": "{postgres=X/postgres}",
+      "security_definer": true,
+      "config": ["search_path=\"\""]
+    },
+    "contacts_scoped_read": {
+      "oid": 18065,
+      "normalized_md5": "1a58be86503cb53bdc3a9a784eb4add2",
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "language": "plpgsql",
+      "volatility": "stable",
+      "parallel": "unsafe",
+      "strict": false,
+      "leakproof": false
+    },
+    "can_deal": {
+      "oid": 18061,
+      "normalized_md5": "05d51a3c77344504a05a0e932cfcb15d"
+    },
+    "receipt_operation_check": "CHECK (operation = ANY (ARRAY['opportunity_work_set'::text, 'inquiry_assign'::text, 'service_change'::text, 'inquiry_unassign'::text]))",
+    "required_relations_present": true,
+    "required_core_columns_present": true,
+    "required_customer_asset_columns_present": true,
+    "candidate_objects_absent": true,
+    "attachment_bucket_absent_or_exact": true,
+    "attachment_insert_policy_absent": true
+  },
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "conclusion": "The cumulative 25-operation package has no read-only baseline drift at its frozen four-operation starting point. This is not approval to apply and is not JWT/E2E evidence."
+}

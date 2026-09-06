@@ -1,0 +1,15 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "NOT_RUN",
+  "run_id": "stg-e2e-20260906t104311z-5b1c448b",
+  "bucket": "crm-attachments",
+  "prefix": "crm-staging-e2e/stg-e2e-20260906t104311z-5b1c448b/",
+  "procedure": [
+    "list objects under the exact run prefix",
+    "remove only the returned exact paths with the Supabase Storage API",
+    "list the prefix again and require zero objects"
+  ],
+  "direct_sql_delete": false,
+  "production_accessed": false,
+  "n8n_accessed": false
+}

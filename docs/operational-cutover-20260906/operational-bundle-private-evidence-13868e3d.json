@@ -1,0 +1,49 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "run_id": "13868e3d-4ad2-4326-b687-93be46989ec0",
+  "source": "supabase_connector_read_only",
+  "read_only": true,
+  "captured_at": "2026-09-05T23:56:57.735219+00:00",
+  "receipt_counts": {
+    "13363ac1-adbf-5aef-86ac-f1511e4cd242": 1,
+    "32545484-5424-5baa-8aa6-a3e7edbbfff8": 1,
+    "342dd742-fc3f-5d18-8033-2342d11263f5": 1,
+    "3e86f28d-c077-578d-88f8-4818a11e9b96": 1,
+    "69681ff3-7113-5afa-86ef-aaa4f1232e4c": 1,
+    "cbbaea29-17f0-5571-93e8-a3f3ab005a91": 1,
+    "e2ed0d42-5f0c-5cdf-9a5b-4c5dd1864c40": 1
+  },
+  "deal_audit_counts": {
+    "0aa6a72d-5533-4bd7-8404-ba448b2f517d": 1,
+    "17071485-4b92-45c8-9218-36f5ad286426": 1,
+    "83340b4a-6931-4220-85d5-72266c0ae733": 1,
+    "f49888d2-67f6-4e71-890e-01ce1cd98cbe": 1
+  },
+  "inquiry_audit_counts": {
+    "6396141c-336f-453f-9c7b-125c1f3d11b3": 1,
+    "c1fb08c2-c882-4b7e-be23-47013e0b8212": 1,
+    "df5376a2-cf6b-45f4-8dc5-f5cf3b018077": 1
+  },
+  "assignment_history_counts": {
+    "TEST ASSIGN 13868e3d-4ad2-4326-b687-93be46989ec0": 1,
+    "TEST UNASSIGN 13868e3d-4ad2-4326-b687-93be46989ec0": 1
+  },
+  "business_history_counts": {
+    "TEST SERVICE 13868e3d-4ad2-4326-b687-93be46989ec0": 1
+  },
+  "private_schema_usage_authenticated": false,
+  "private_schema_usage_anon": false,
+  "visible_deal": {
+    "brand": "TEST",
+    "version": 27,
+    "work_items": ["TEST JWT WORK"],
+    "primary_work": "TEST JWT WORK",
+    "work_summary": "TEST JWT WORK"
+  },
+  "harness_inquiry_restore": {
+    "status": "배정완료",
+    "assigned_to": "f6090500-0001-4000-8000-000000000001",
+    "responded_at": null,
+    "first_response_at": null
+  }
+}

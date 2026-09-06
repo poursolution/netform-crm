@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>영업관리 CRM 운영 매뉴얼</title>
+  <style>
+    :root{--navy:#101a2c;--navy2:#172844;--blue:#3267ff;--mint:#17a87b;--orange:#f08a38;--red:#e84f61;--ink:#182033;--sub:#687187;--line:#dde4f0;--paper:#f5f7fb;--white:#fff;--shadow:0 20px 60px rgba(18,34,66,.12)}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font-family:Pretendard,"Noto Sans KR",system-ui,sans-serif;line-height:1.65;letter-spacing:-.02em}a{color:inherit}img{display:block;max-width:100%}
+    .topbar{position:sticky;z-index:20;top:0;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:13px max(22px,calc((100vw - 1260px)/2));border-bottom:1px solid rgba(255,255,255,.1);background:rgba(16,26,44,.94);color:#fff;backdrop-filter:blur(16px)}
+    .brand{display:flex;align-items:center;gap:11px;font-weight:900}.brand i{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:var(--blue);font-style:normal}.brand small{display:block;color:#8fa4c8;font-size:10px;letter-spacing:.1em}.topnav{display:flex;gap:6px;overflow:auto}.topnav a{flex:none;border-radius:999px;padding:7px 11px;color:#bac6db;font-size:12px;text-decoration:none}.topnav a:hover{background:#253652;color:#fff}
+    .hero{position:relative;overflow:hidden;background:var(--navy);color:#fff}.hero:after{position:absolute;right:-10%;top:-50%;width:650px;height:650px;border:100px solid rgba(61,108,255,.1);border-radius:50%;content:""}.hero-inner{position:relative;z-index:1;max-width:1260px;margin:auto;padding:70px 24px 64px}.eyebrow{color:#78a0ff;font-size:12px;font-weight:900;letter-spacing:.16em}.hero h1{max-width:850px;margin:13px 0 18px;font-size:clamp(38px,6vw,72px);line-height:1.03;letter-spacing:-.065em}.hero p{max-width:760px;margin:0;color:#b5c1d7;font-size:17px}.hero-meta{display:flex;flex-wrap:wrap;gap:9px;margin-top:28px}.hero-meta span{border:1px solid rgba(255,255,255,.13);border-radius:999px;padding:8px 12px;background:rgba(255,255,255,.055);font-size:12px;font-weight:800}.hero-meta b{color:#75e0bd}
+    main{max-width:1260px;margin:auto;padding:24px}.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:-42px 0 46px;position:relative;z-index:2}.quick a{min-height:128px;border:1px solid #e1e7f1;border-radius:20px;background:#fff;padding:20px;text-decoration:none;box-shadow:var(--shadow)}.quick i{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#eef3ff;color:var(--blue);font-style:normal;font-weight:900}.quick b{display:block;margin-top:13px;font-size:18px}.quick small{color:var(--sub)}
+    .section{scroll-margin-top:85px;margin:0 0 70px}.section-head{display:grid;grid-template-columns:80px 1fr minmax(240px,.52fr);gap:18px;align-items:start;margin-bottom:20px}.section-no{color:var(--blue);font-size:48px;font-weight:950;line-height:1}.section h2{margin:0;font-size:34px;line-height:1.15;letter-spacing:-.05em}.section-lead{margin:7px 0 0;color:var(--sub)}.why{border-left:3px solid var(--blue);padding-left:14px;color:#4a5670;font-size:13px}.why b{display:block;color:var(--ink);font-size:14px}
+    .route{display:flex;gap:0;margin:16px 0 20px;overflow:auto}.route span{position:relative;flex:1;min-width:125px;padding:11px 27px 11px 13px;background:#eaf0fb;color:#59657a;font-size:12px;font-weight:850}.route span:first-child{border-radius:10px 0 0 10px}.route span:last-child{border-radius:0 10px 10px 0}.route span:not(:last-child):after{position:absolute;z-index:1;right:-14px;top:0;border-top:23px solid transparent;border-bottom:23px solid transparent;border-left:14px solid #eaf0fb;content:""}.route span.on{background:var(--blue);color:#fff}.route span.on:after{border-left-color:var(--blue)}
+    .shot-step{display:grid;grid-template-columns:minmax(0,1.72fr) minmax(280px,.72fr);gap:18px;margin:16px 0 24px;border:1px solid var(--line);border-radius:22px;background:#fff;padding:14px;box-shadow:0 10px 30px rgba(20,40,80,.06)}.shot-step:nth-child(even){grid-template-columns:minmax(280px,.72fr) minmax(0,1.72fr)}.shot-step:nth-child(even) .frame{order:2}.frame{overflow:hidden;border:1px solid #dfe5ef;border-radius:14px;background:#e9edf4}.frame img{width:100%;height:auto}.instruction{align-self:center;padding:10px 10px 10px 3px}.stepnum{display:inline-grid;place-items:center;min-width:34px;height:34px;border-radius:11px;background:var(--navy);color:#fff;font-size:13px;font-weight:900}.instruction h3{margin:10px 0 4px;font-size:21px;line-height:1.3}.instruction p{margin:0;color:var(--sub);font-size:13px}.instruction ol{margin:12px 0 0;padding-left:20px;font-size:13px}.instruction li+li{margin-top:5px}.done{margin-top:12px;border-radius:11px;background:#ecf9f4;padding:10px;color:#087c59;font-size:12px;font-weight:850}.care{background:#fff3f0;color:#b64d35}
+    .rule-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}.rule{border:1px solid var(--line);border-radius:15px;background:#fff;padding:15px}.rule b{display:block;margin-bottom:4px}.rule p{margin:0;color:var(--sub);font-size:12px}.rule.red{border-color:#ffd5d9}.rule.green{border-color:#bfeada}
+    .empty-note{display:flex;gap:12px;align-items:flex-start;border:1px dashed #f0a351;border-radius:15px;background:#fff8ee;padding:15px;margin:13px 0;color:#85521b}.empty-note i{font-style:normal;font-size:20px}.empty-note p{margin:0;font-size:13px}
+    .gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.gallery-card{overflow:hidden;border:1px solid var(--line);border-radius:18px;background:#fff}.gallery-card img{width:100%;aspect-ratio:16/10;object-fit:cover;object-position:top}.gallery-card div{padding:13px}.gallery-card b{display:block}.gallery-card small{color:var(--sub)}
+    .phone-gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.phone-card{overflow:hidden;border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:0 12px 34px rgba(25,37,65,.08)}.phone-card img{width:100%;aspect-ratio:390/720;object-fit:cover;object-position:top}.phone-card div{padding:13px}.phone-card b{display:block}.phone-card small{color:var(--sub);font-size:11px}.mode-label{display:flex;align-items:center;gap:10px;margin:26px 0 12px;font-size:19px}.mode-label:after{height:1px;flex:1;background:var(--line);content:""}
+    .checklist{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:0;list-style:none}.checklist li{border:1px solid var(--line);border-radius:12px;background:#fff;padding:11px 13px;font-size:13px}.checklist li:before{margin-right:8px;color:var(--mint);font-weight:900;content:"✓"}
+    footer{margin-top:70px;background:var(--navy);color:#aebbd2}.footer-inner{max-width:1260px;margin:auto;padding:38px 24px}.footer-inner b{color:#fff}.footer-inner p{margin:5px 0 0;font-size:13px}
+    .lightbox{position:fixed;z-index:99;inset:0;display:none;place-items:center;padding:22px;background:rgba(4,10,22,.92)}.lightbox.on{display:grid}.lightbox img{max-width:96vw;max-height:92vh;border-radius:12px}.frame img,.gallery-card img,.phone-card img{cursor:zoom-in}
+    @media(max-width:900px){.topnav{display:none}.quick{grid-template-columns:1fr 1fr}.section-head{grid-template-columns:55px 1fr}.section-head .why{grid-column:2}.section-no{font-size:34px}.shot-step,.shot-step:nth-child(even){grid-template-columns:1fr}.shot-step:nth-child(even) .frame{order:0}.phone-gallery{grid-template-columns:1fr 1fr}.gallery{grid-template-columns:1fr}.rule-grid{grid-template-columns:1fr}.hero-inner{padding-top:50px}}
+    @media(max-width:520px){main{padding:15px}.quick{margin-top:-25px}.quick a{min-height:110px;padding:15px}.hero p{font-size:14px}.section h2{font-size:28px}.section-head{grid-template-columns:1fr}.section-no{font-size:22px}.section-head .why{grid-column:auto}.phone-gallery{grid-template-columns:1fr 1fr;gap:8px}.checklist{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><i>N</i><span>영업관리 CRM<small>OPERATOR FIELD GUIDE</small></span></div>
+    <nav class="topnav"><a href="#inquiry">견적문의</a><a href="#pipeline">파이프라인</a><a href="#expansion">확장관리</a><a href="#message">문자발송</a><a href="#mobile">모바일</a><a href="#all-menu">전체 메뉴</a></nav>
+  </header>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">CURRENT UI · STEP BY STEP</div>
+      <h1>누르는 순서까지 보이는<br>영업관리 운영 매뉴얼</h1>
+      <p>현재 CRM 화면을 기준으로, 어디에 들어가서 무엇을 확인하고 어떤 순서로 저장하는지 빠짐없이 정리했습니다. 화면의 고객명·건수·금액은 실제 조회 시점에 따라 달라질 수 있습니다.</p>
+      <div class="hero-meta"><span><b>운영 검증 완료</b></span><span><b>48장</b> 실제 화면 캡처</span><span>PC + 모바일</span><span>최종 실행 전 확인 포함</span><span>갱신일 2026.09.07</span></div>
+    </div>
+  </section>
+
+  <main>
+    <nav class="quick">
+      <a href="#inquiry"><i>01</i><b>견적문의</b><small>접수 → 배정 → 응대 → 전환</small></a>
+      <a href="#pipeline"><i>02</i><b>파이프라인</b><small>활동 → Next → 단계 → 종료</small></a>
+      <a href="#expansion"><i>03</i><b>확장관리</b><small>기존 수주 → 재접촉 → 새 기회</small></a>
+      <a href="#message"><i>04</i><b>문자발송</b><small>대상 → 문구 → 미리보기 → 실행</small></a>
+    </nav>
+
+    <section class="section" id="inquiry">
+      <div class="section-head"><div class="section-no">01</div><div><h2>견적문의 — 접수부터 정리까지</h2><p class="section-lead">새 문의는 먼저 담당과 최초응대 상태를 확인합니다. 문의를 바로 영업기회로 보지 말고, 배정과 응대가 끝난 뒤 전환합니다.</p></div><div class="why"><b>왜 이 순서인가요?</b>미배정 문의와 응대 지연을 먼저 없애야 고객 연락이 빠지지 않고, 이후 파이프라인 담당과 이력이 정확히 이어집니다.</div></div>
+      <div class="route"><span class="on">목록 확인</span><span>빠른 처리</span><span>담당 배정</span><span>최초응대</span><span>영업 전환</span><span>보류·정리</span></div>
+
+      <article class="shot-step"><div class="frame"><img src="assets/pc-inquiry-01-list.png" alt="견적문의 목록 화면"></div><div class="instruction"><span class="stepnum">1</span><h3>견적문의 메뉴에서 오늘 처리할 건 찾기</h3><p>왼쪽 <b>견적문의</b>를 누른 뒤 상단의 미배정·최초응대 대기 수를 먼저 봅니다.</p><ol><li>상태 카드에서 신규·미배정·배정완료를 선택합니다.</li><li>접수일, 현장, 공종, 상담담당, 영업담당을 확인합니다.</li><li>한 건은 행을 누르고, 여러 건은 체크박스로 선택합니다.</li></ol><div class="done">완료 확인 · 선택한 문의가 목록 하단의 처리 영역에 잡힙니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-inquiry-02-quick-menu.png" alt="견적문의 빠른 처리 메뉴"></div><div class="instruction"><span class="stepnum">2</span><h3>점 세 개로 작업 종류 선택</h3><p>행 오른쪽의 <b>⋯</b>을 누르면 상세, 상담담당, 배정, 보류, 중복, 휴지통 작업이 한 번에 보입니다.</p><ol><li>정보를 먼저 볼 때는 상세 처리.</li><li>고객 상담 담당은 상담담당 지정.</li><li>영업 책임자를 정할 때는 영업담당 배정.</li></ol><div class="done">원칙 · 목적이 다른 버튼을 섞지 말고 필요한 작업 하나만 고릅니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-inquiry-03-detail.png" alt="견적문의 상세 화면"></div><div class="instruction"><span class="stepnum">3</span><h3>상세에서 문의 내용과 연락처 검토</h3><ol><li>현장명·연락처·유입 사업유형을 확인합니다.</li><li>문의 공종과 고객 요청 내용을 읽습니다.</li><li>현재 담당, 응대 이력, 다음 행동을 확인합니다.</li><li>오류가 있으면 전환 전에 문의 정보부터 바로잡습니다.</li></ol><div class="done">완료 확인 · 누가, 어떤 문의에, 언제 연락해야 하는지 설명할 수 있어야 합니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-inquiry-04-assign.png" alt="견적문의 최초 영업담당 배정 화면"></div><div class="instruction"><span class="stepnum">4</span><h3>최초 영업담당 배정</h3><ol><li>추천 표시와 진행 건수를 참고합니다.</li><li>담당자 행을 눌러 한 명을 선택합니다.</li><li>필요하면 배정 사유를 적습니다.</li><li><b>본사 영업담당 배정</b>을 눌러 마칩니다.</li></ol><div class="done">완료 확인 · 목록의 영업담당이 선택한 사람으로 바뀌고 배정 시각이 표시됩니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-inquiry-05-reassign.png" alt="견적문의 재배정 화면"></div><div class="instruction"><span class="stepnum">5</span><h3>재배정은 사유까지 남기기</h3><ol><li>현재 담당과 새 담당이 다른지 확인합니다.</li><li>새 담당자를 선택합니다.</li><li>지역·공종·업무량 등 실제 변경 사유를 입력합니다.</li><li>재배정 버튼이 활성화되면 저장합니다.</li></ol><div class="done care">주의 · 사유 없는 재배정은 하지 않습니다. 이전 담당과 변경 사유는 이력으로 남습니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-inquiry-06-consultant.png" alt="상담담당자 지정 화면"></div><div class="instruction"><span class="stepnum">6</span><h3>상담담당과 영업담당 구분</h3><p>상담담당은 최초 상담·접수 운영을 맡고, 영업담당은 이후 영업기회를 책임집니다.</p><ol><li>상담을 실제로 진행한 직원을 고릅니다.</li><li>상담담당 없음은 실제 미지정일 때만 사용합니다.</li><li>저장 후 최초응대 기록 유무를 확인합니다.</li></ol><div class="done">완료 확인 · 상담담당과 영업담당이 각각 올바르게 표시됩니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-inquiry-07-hold.png" alt="견적문의 보류 화면"></div><div class="instruction"><span class="stepnum">7</span><h3>보류할 때 다시 볼 근거 남기기</h3><ol><li>고객 요청, 일정 연기 등 보류 사유를 구체적으로 씁니다.</li><li>가능하면 다시 확인할 시점을 함께 기록합니다.</li><li>보류 처리 후 활성 문의 집계에서 상태를 확인합니다.</li></ol><div class="done care">보류는 삭제가 아닙니다. 다시 연락할 가능성이 있으면 휴지통 대신 보류를 사용합니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-inquiry-08-duplicate.png" alt="중복 문의 처리 화면"></div><div class="instruction"><span class="stepnum">8</span><h3>중복 문의는 원본을 먼저 정하기</h3><ol><li>현장명, 전화번호, 접수일을 비교합니다.</li><li>계속 사용할 원본 문의를 선택합니다.</li><li>새 정보가 원본에 반영됐는지 확인합니다.</li><li>중복 건만 중복 처리합니다.</li></ol><div class="done">완료 확인 · 동일 고객이 두 건의 활성 문의로 남지 않습니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-inquiry-09-trash.png" alt="견적문의 휴지통 화면"></div><div class="instruction"><span class="stepnum">9</span><h3>정말 불필요한 건만 휴지통 이동</h3><ol><li>삭제 사유를 목록에서 고릅니다.</li><li>추가 설명이 필요하면 메모를 남깁니다.</li><li>영업기회와 연결된 문의인지 마지막으로 확인합니다.</li><li>휴지통으로 이동을 누릅니다.</li></ol><div class="done care">주의 · 전환된 원본 문의는 이력 보호 대상입니다. 단순 정리 목적으로 완전삭제하지 않습니다.</div></div></article>
+    </section>
+
+    <section class="section" id="pipeline">
+      <div class="section-head"><div class="section-no">02</div><div><h2>파이프라인 — 매일 움직이는 법</h2><p class="section-lead">카드는 보기만 하는 현황판이 아닙니다. 한 일을 기록하고, 다음 행동을 예약하고, 근거가 생겼을 때만 단계를 이동합니다.</p></div><div class="why"><b>핵심 운영 원칙</b>활동 기록 → 다음 행동 → 단계 전환 순서입니다. 단계만 올리면 왜 바뀌었는지 알 수 없고 오늘 할 일에서도 빠집니다.</div></div>
+      <div class="route"><span class="on">칸반</span><span>현장 선택</span><span>한 일 기록</span><span>다음 행동</span><span>공종·금액</span><span>단계 전환</span></div>
+
+      <article class="shot-step"><div class="frame"><img src="assets/pc-pipeline-01-board.png" alt="파이프라인 칸반"></div><div class="instruction"><span class="stepnum">1</span><h3>칸반에서 우선순위 찾기</h3><ol><li>연도·분기·담당자·공종 필터를 확인합니다.</li><li>다음 행동 없음, 기한초과, 장기정체를 먼저 누릅니다.</li><li>단계별 건수와 금액을 비교합니다.</li><li>작업할 현장 카드를 누릅니다.</li></ol><div class="done">완료 확인 · 선택한 조건과 현장 목록이 서로 맞습니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-pipeline-02-split.png" alt="파이프라인 빠른 관리 화면"></div><div class="instruction"><span class="stepnum">2</span><h3>빠른 관리에서 현재 상태 읽기</h3><ol><li>왼쪽 목록에서 현장을 선택합니다.</li><li>오른쪽에서 현재 단계, 담당, 금액, 최근 활동을 확인합니다.</li><li>여기서 한 일·다음 할 일·단계 변경 중 하나를 선택합니다.</li><li>더 많은 정보가 필요하면 상세를 엽니다.</li></ol><div class="done">완료 확인 · 지금 할 작업 하나가 명확해집니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-pipeline-03-activity.png" alt="파이프라인 활동 기록"></div><div class="instruction"><span class="stepnum">3</span><h3>방금 한 일을 사실대로 기록</h3><ol><li>전화·문자·카카오·방문·견적 중 활동 유형을 고릅니다.</li><li>무엇을 했는지 적습니다.</li><li>고객 반응이나 결과를 적습니다.</li><li>실제 접촉이면 고객 접촉 체크를 유지합니다.</li><li>활동 저장을 누릅니다.</li></ol><div class="done">완료 확인 · 최근 활동 시각과 타임라인에 새 기록이 보입니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-pipeline-04-next-action.png" alt="다음 행동 등록"></div><div class="instruction"><span class="stepnum">4</span><h3>다음 행동과 기한을 함께 예약</h3><ol><li>전화·방문·자료 전달 등 행동 유형을 고릅니다.</li><li>실행 날짜를 선택합니다.</li><li>누가 읽어도 알 수 있게 행동 내용을 적습니다.</li><li>다음 행동 저장을 누릅니다.</li></ol><div class="done">완료 확인 · 대시보드 오늘 할 일과 현장 상세에 같은 내용이 표시됩니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-pipeline-05-stage-quick.png" alt="빠른 단계 변경"></div><div class="instruction"><span class="stepnum">5</span><h3>빠른 단계 변경 전 필수값 확인</h3><p>단계 변경은 현장 상태를 실제보다 앞서 보이게 만들 수 있으므로 활동과 근거를 먼저 남깁니다.</p><ol><li>현재 단계와 이동할 단계를 비교합니다.</li><li>요구되는 금액·일정·사유를 확인합니다.</li><li>뒤로 가는 이동은 변경 이유를 구체적으로 씁니다.</li></ol><div class="done care">단계를 먼저 바꾸고 나중에 기록하지 않습니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-pipeline-06-detail.png" alt="파이프라인 현장 상세"></div><div class="instruction"><span class="stepnum">6</span><h3>현장 상세에서 전체 맥락 확인</h3><ol><li>상단에서 현재 문제와 추천 행동을 봅니다.</li><li>개요, 공종·금액, 연락·활동, 일정·Next, 변경이력을 차례로 확인합니다.</li><li>연락처와 최근 고객 발언을 확인합니다.</li><li>하단 실행 버튼으로 필요한 작업을 엽니다.</li></ol><div class="done">완료 확인 · 활동·다음 행동·단계가 서로 모순되지 않습니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-pipeline-07-work-amount.png" alt="공종과 금액 화면"></div><div class="instruction"><span class="stepnum">7</span><h3>공종·금액을 각각 확인</h3><ol><li>공종·금액 탭을 누릅니다.</li><li>대표 공종과 전체 공종 조합을 확인합니다.</li><li>예상금액과 견적금액의 의미가 맞는지 확인합니다.</li><li>수정 전 기존 값과 근거를 확인합니다.</li></ol><div class="done">완료 확인 · 카드 요약과 상세의 공종·금액이 같습니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-pipeline-08-work-edit.png" alt="공종 수정 화면"></div><div class="instruction"><span class="stepnum">8</span><h3>공종은 선택 → 대표공종 → 근거 순서</h3><ol><li>해당 공종을 하나 이상 선택합니다.</li><li>복합공종이면 대표 공종을 지정합니다.</li><li>저장 요약을 읽어 의도한 조합인지 확인합니다.</li><li>분류 근거를 적고 공종 저장을 누릅니다.</li></ol><div class="done">완료 확인 · 대표 공종, 공종 목록, 저장 요약이 함께 갱신됩니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-pipeline-09-transition.png" alt="파이프라인 단계 전환 화면"></div><div class="instruction"><span class="stepnum">9</span><h3>단계 전환은 근거와 다음 계획까지</h3><ol><li>목표 단계를 고릅니다.</li><li>전환 사유와 근거를 입력합니다.</li><li>필요한 결과·금액·일정을 채웁니다.</li><li>전환 후 할 일을 확인합니다.</li><li>최종 확인 후 전환합니다.</li></ol><div class="done care">수주·실주는 종료 결과입니다. 금액과 종료 사유를 다시 확인한 뒤 실행합니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-pipeline-10-new-deal.png" alt="새 영업 추가 화면"></div><div class="instruction"><span class="stepnum">10</span><h3>새 영업기회 등록</h3><ol><li>아파트명과 공사명을 입력합니다.</li><li>공종·사업유형·담당자를 선택합니다.</li><li>금액, 관리사무소, 관리소장 연락처를 입력합니다.</li><li>현장 주소를 확인합니다.</li><li>등록 근거를 적고 영업 등록을 누릅니다.</li></ol><div class="done">완료 확인 · 새 현장이 초기 단계에 생성되고 담당자 목록에 나타납니다.</div></div></article>
+    </section>
+
+    <section class="section" id="expansion">
+      <div class="section-head"><div class="section-no">03</div><div><h2>확장관리 — 수주 이후 다음 매출 찾기</h2><p class="section-lead">완료된 거래는 그대로 보존하고, 재접촉 시점과 추가 니즈를 별도 목록에서 관리합니다.</p></div><div class="why"><b>파이프라인과 다른 점</b>확장관리는 새 영업 단계가 아니라 기존 고객 관리 목록입니다. 새 견적이 실제로 생길 때만 새 영업기회로 전환합니다.</div></div>
+      <div class="route"><span class="on">대상 확인</span><span>다음 접촉일</span><span>접촉·니즈</span><span>견적 확인</span><span>새 영업 전환</span></div>
+      <div class="empty-note"><i>ⓘ</i><p><b>현재 조회 데이터에는 확장관리 대상이 없습니다.</b><br>매뉴얼을 위해 임의 고객을 만들지 않았습니다. 아래 화면처럼 대상이 비어 있는 것이 현재 실제 상태이며, 수주 완료 고객이 확장 대상 조건을 충족하면 카드가 나타납니다.</p></div>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-expansion-01-pool.png" alt="확장관리 현재 목록"></div><div class="instruction"><span class="stepnum">1</span><h3>확장관리 목록을 여는 순서</h3><ol><li>왼쪽 <b>확장관리</b>를 누릅니다.</li><li>전체·관리대상·접촉예정·관계관리·니즈확인 상태를 확인합니다.</li><li>담당자 필터로 본인 고객을 좁힙니다.</li><li>대상이 생기면 다음 접촉일이 가까운 카드부터 처리합니다.</li></ol><div class="done">완료 확인 · 기존 수주 고객만 보이고 진행 중 영업은 섞이지 않습니다.</div></div></article>
+      <div class="rule-grid">
+        <div class="rule"><b>카드가 생기면 ①</b><p>기존 수주 공종·금액·준공일·당시 담당자를 먼저 확인합니다.</p></div>
+        <div class="rule"><b>연락 후 ②</b><p>다음 접촉일과 상태를 바꾸고, 접촉 결과와 확인한 니즈를 기록합니다.</p></div>
+        <div class="rule green"><b>새 견적이 생기면 ③</b><p>실제 견적 발송 기록을 선택하고 새 영업기회로 전환합니다. 이전 수주 건은 그대로 둡니다.</p></div>
+      </div>
+      <ul class="checklist"><li>관리대상: 아직 연락 전</li><li>접촉예정: 다음 연락일 확정</li><li>관계관리: 대화 진행 중</li><li>니즈확인: 추가 공사 요구 확인</li><li>보류: 재개 시점이 먼 고객</li><li>전환 완료: 새 영업기회에서 계속 관리</li></ul>
+    </section>
+
+    <section class="section" id="message">
+      <div class="section-head"><div class="section-no">04</div><div><h2>문자발송 — 대상부터 결과 확인까지</h2><p class="section-lead">문자를 먼저 쓰지 않습니다. 대상 조건과 수신 가능 여부를 확인한 뒤 문구를 고르고, 실제 치환 결과를 보고, 마지막에 즉시 또는 예약을 선택합니다.</p></div><div class="why"><b>왜 4단계인가요?</b>잘못된 고객, 오래된 번호, 수신을 원하지 않는 연락처, 이름이 틀린 문구를 발송 전에 걸러내기 위해서입니다.</div></div>
+      <div class="route"><span class="on">대상 선택</span><span>문구 선택</span><span>미리보기</span><span>즉시·예약</span><span>이력 확인</span></div>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-message-01-audience.png" alt="문자 대상 선택 화면"></div><div class="instruction"><span class="stepnum">1</span><h3>발송 목적과 대상 고르기</h3><ol><li>왼쪽 <b>문자발송</b>을 누릅니다.</li><li>영업단계·관계관리·시즌·재활성·기존고객 중 목적을 선택합니다.</li><li>담당자·사업유형·공종·지역·관계온도·최근접촉 필터를 적용합니다.</li><li>발송 가능 표시가 있는 연락처만 체크합니다.</li><li>자동 제외 사유를 읽고 선택 완료를 누릅니다.</li></ol><div class="done">완료 확인 · 관리 대상, 발송 가능, 자동 제외, 현재 선택 수가 맞습니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-message-02-template.png" alt="문자 문구 선택 화면"></div><div class="instruction"><span class="stepnum">2</span><h3>목적에 맞는 문구 선택·수정</h3><ol><li>제시된 문구 중 하나를 고릅니다.</li><li>실제 보낼 문장을 읽고 필요한 부분만 고칩니다.</li><li>고객호칭·현장명·담당자명·공종요약 변수를 확인합니다.</li><li>과장 표현이나 불필요한 광고 문구를 제거합니다.</li><li>개인화 미리보기를 누릅니다.</li></ol><div class="done">완료 확인 · 빈 문구가 없고, 변수 표기가 정확합니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-message-03-preview.png" alt="문자 개인화 미리보기"></div><div class="instruction"><span class="stepnum">3</span><h3>고객별 치환 결과 확인</h3><ol><li>선택 인원과 실제 발송 가능 인원을 비교합니다.</li><li>고객명·현장명·담당자명이 자연스럽게 보이는지 확인합니다.</li><li>제외된 고객이 있다면 이유를 확인합니다.</li><li>이상이 있으면 대상 수정 또는 문구 수정으로 돌아갑니다.</li><li>문제가 없을 때만 최종 발송 설정으로 갑니다.</li></ol><div class="done care">현재 화면처럼 실제 발송 가능이 0명이면 실행하지 말고 연락처·동의 상태를 먼저 확인합니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-message-04-final.png" alt="문자 최종 발송 설정"></div><div class="instruction"><span class="stepnum">4</span><h3>즉시 또는 예약 중 하나 선택</h3><ol><li>최종 대상 수를 다시 확인합니다.</li><li>지금 실행이면 즉시 등록을 선택합니다.</li><li>예약이면 날짜와 시각을 정확히 지정합니다.</li><li>중복 클릭하지 말고 완료 안내를 기다립니다.</li><li>실행 이력에서 결과를 확인합니다.</li></ol><div class="done care">대상 수가 0명이면 버튼을 누르지 않습니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-message-05-schedule.png" alt="예약 문자 목록"></div><div class="instruction"><span class="stepnum">5</span><h3>예약 실행 확인</h3><p>예약 실행 탭에서 예정 시각, 목적, 대상 수를 확인합니다. 시각이나 대상이 잘못됐다면 실행 전에 수정하거나 취소합니다.</p><div class="done">완료 확인 · 같은 목적의 예약이 중복으로 잡혀 있지 않습니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-message-06-history.png" alt="문자 실행 이력"></div><div class="instruction"><span class="stepnum">6</span><h3>실행 이력에서 완료·대기·실패 확인</h3><ol><li>실행 일시와 작성자를 확인합니다.</li><li>대상 수와 완료 상태를 확인합니다.</li><li>실패가 있으면 번호와 제외 사유를 확인합니다.</li><li>고객 응답과 다음 행동 연결 여부를 봅니다.</li></ol><div class="done">완료 확인 · 고객별 활동 이력에도 같은 발송 기록이 나타납니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-message-07-library.png" alt="문자 문구 자료실"></div><div class="instruction"><span class="stepnum">7</span><h3>문구·자료 탭 활용</h3><p>목적별 기본 문구를 미리 읽고 사용할 문구를 고릅니다. 현장 상황과 맞지 않는 표현은 발송 화면에서 수정합니다.</p><div class="done">원칙 · 기본 문구는 출발점이며, 최종 문장은 담당자가 직접 확인합니다.</div></div></article>
+      <article class="shot-step"><div class="frame"><img src="assets/pc-message-08-analysis.png" alt="문자 성과분석"></div><div class="instruction"><span class="stepnum">8</span><h3>성과분석으로 후속 행동 정하기</h3><ol><li>발송 완료, 고객 응답, 다음 행동, 단계 전진을 비교합니다.</li><li>응답이 낮은 문구는 다음 실행에서 바꿉니다.</li><li>응답 고객은 파이프라인의 다음 행동으로 연결합니다.</li></ol><div class="done">완료 확인 · 문자 자체가 아니라 이후 영업 행동까지 이어졌는지 봅니다.</div></div></article>
+    </section>
+
+    <section class="section" id="mobile">
+      <div class="section-head"><div class="section-no">05</div><div><h2>모바일 하단 메뉴 — 전 화면 안내</h2><p class="section-lead">모바일은 역할 모드에 따라 하단 네 개 메뉴가 바뀝니다. 아래는 실제 화면을 탭 순서 그대로 배열했습니다.</p></div><div class="why"><b>공통 사용법</b>하단 탭 선택 → 카드 선택 → 상세 확인 → 한 일 또는 다음 행동 저장 순서로 사용합니다.</div></div>
+      <h3 class="mode-label">내 영업 모드</h3>
+      <div class="phone-gallery">
+        <article class="phone-card"><img src="assets/mobile-rep-01-today.png" alt="모바일 오늘 탭"><div><b>1. 오늘</b><small>기한초과·오늘 일정·새 문의를 우선 처리합니다.</small></div></article>
+        <article class="phone-card"><img src="assets/mobile-rep-02-my-sales.png" alt="모바일 내 영업 탭"><div><b>2. 내 영업</b><small>내가 맡은 현장을 단계·위험·다음 행동 기준으로 봅니다.</small></div></article>
+        <article class="phone-card"><img src="assets/mobile-rep-03-add-sales.png" alt="모바일 영업 추가 탭"><div><b>3. + 영업</b><small>새 현장과 연락처, 공종, 담당 근거를 입력합니다.</small></div></article>
+        <article class="phone-card"><img src="assets/mobile-rep-04-performance.png" alt="모바일 내 실적 탭"><div><b>4. 내 실적</b><small>기간별 진행·수주·활동 결과를 확인합니다.</small></div></article>
+      </div>
+      <h3 class="mode-label">관리 모드</h3>
+      <div class="phone-gallery">
+        <article class="phone-card"><img src="assets/mobile-admin-01-control.png" alt="모바일 관제 탭"><div><b>1. 관제</b><small>전체 주의 건과 미배정·기한 문제를 빠르게 봅니다.</small></div></article>
+        <article class="phone-card"><img src="assets/mobile-admin-02-pipeline.png" alt="모바일 파이프라인 탭"><div><b>2. 파이프라인</b><small>단계별·종료별·담당자별 현황을 내려가며 확인합니다.</small></div></article>
+        <article class="phone-card"><img src="assets/mobile-admin-03-performance.png" alt="모바일 실적 탭"><div><b>3. 실적</b><small>담당자별 실행과 결과를 비교합니다.</small></div></article>
+        <article class="phone-card"><img src="assets/mobile-admin-04-report.png" alt="모바일 리포트 탭"><div><b>4. 리포트</b><small>요약 지표와 기간별 흐름을 확인합니다.</small></div></article>
+      </div>
+      <article class="shot-step" style="margin-top:24px"><div class="frame" style="max-width:390px;margin:auto"><img src="assets/mobile-deal-detail.png" alt="모바일 현장 상세"></div><div class="instruction"><span class="stepnum">상세</span><h3>모바일 현장 처리 순서</h3><ol><li>내 영업 또는 관리 파이프라인에서 현장을 누릅니다.</li><li>현재 단계, 담당, 금액, 연락처를 확인합니다.</li><li>전화·문자 후 활동 결과를 기록합니다.</li><li>다음 행동과 날짜를 저장합니다.</li><li>근거가 갖춰졌을 때만 단계를 바꿉니다.</li><li>뒤로 가서 카드 요약이 갱신됐는지 확인합니다.</li></ol><div class="done">PC와 모바일 중 어느 화면에서 저장해도 새로고침 후 같은 값이어야 합니다.</div></div></article>
+    </section>
+
+    <section class="section" id="all-menu">
+      <div class="section-head"><div class="section-no">06</div><div><h2>PC 전체 메뉴 화면 모음</h2><p class="section-lead">자주 쓰는 네 업무 외 보조 메뉴도 빠짐없이 현재 화면으로 정리했습니다. 이미지를 누르면 크게 볼 수 있습니다.</p></div><div class="why"><b>찾는 순서</b>왼쪽 메뉴 선택 → 상단 기간·담당 필터 확인 → 표 또는 카드 선택 → 상세 확인.</div></div>
+      <div class="gallery">
+        <article class="gallery-card"><img src="assets/pc-dashboard.png" alt="대시보드"><div><b>대시보드</b><small>오늘 우선조치부터 실행합니다.</small></div></article>
+        <article class="gallery-card"><img src="assets/pc-menu-customer-assets.png" alt="고객 자산"><div><b>고객 자산</b><small>현장·사람·거래·관계 이력을 함께 봅니다.</small></div></article>
+        <article class="gallery-card"><img src="assets/pc-menu-salespeople.png" alt="영업사원 관리"><div><b>영업사원 관리</b><small>활성 담당자와 업무 범위를 확인합니다.</small></div></article>
+        <article class="gallery-card"><img src="assets/pc-menu-kpi.png" alt="관리팀 KPI"><div><b>관리팀 KPI</b><small>관리 지표와 주의 건을 확인합니다.</small></div></article>
+        <article class="gallery-card"><img src="assets/pc-menu-gyeongnam.png" alt="경남지사"><div><b>경남지사</b><small>지사 문의·담당·진행 현황을 확인합니다.</small></div></article>
+        <article class="gallery-card"><img src="assets/pc-menu-weekly.png" alt="주간 브리핑"><div><b>주간 브리핑</b><small>이번 주 계획과 위험을 정리합니다.</small></div></article>
+        <article class="gallery-card"><img src="assets/pc-menu-sales-dashboard.png" alt="영업 대시보드"><div><b>영업 대시보드</b><small>기간·금액·단계 흐름을 분석합니다.</small></div></article>
+        <article class="gallery-card"><img src="assets/pc-menu-performance.png" alt="담당자 실적"><div><b>담당자 실적</b><small>사람별 실행과 결과를 비교합니다.</small></div></article>
+        <article class="gallery-card"><img src="assets/pc-menu-work-analysis.png" alt="공종 분석"><div><b>공종 분석</b><small>공종별 건수와 금액을 확인합니다.</small></div></article>
+        <article class="gallery-card"><img src="assets/pc-menu-report.png" alt="리포트 대표 보고"><div><b>리포트·대표 보고</b><small>핵심 지표와 근거 목록을 확인합니다.</small></div></article>
+        <article class="gallery-card"><img src="assets/pc-menu-data-cleanup.png" alt="데이터 정리"><div><b>데이터 정리</b><small>중복·누락 후보를 검토하되 원본 확인 후 처리합니다.</small></div></article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><div class="section-no">07</div><div><h2>저장 전 마지막 확인</h2><p class="section-lead">어떤 화면에서도 아래 여섯 가지를 지키면 이력과 다음 행동이 끊기지 않습니다.</p></div></div>
+      <ul class="checklist"><li>현재 현장·고객이 맞는지 확인</li><li>담당자가 실제 책임자와 같은지 확인</li><li>변경 전 값을 한번 읽기</li><li>사유·결과를 구체적으로 기록</li><li>다음 행동과 날짜를 함께 저장</li><li>새로고침 후 같은 값인지 확인</li></ul>
+    </section>
+  </main>
+
+  <footer><div class="footer-inner"><b>영업관리 CRM 운영 매뉴얼</b><p>현재 조회 데이터와 현재 PC·모바일 화면을 기준으로 작성했습니다. 화면의 건수·고객명·금액은 업무 데이터 갱신에 따라 달라집니다.</p></div></footer>
+  <div class="lightbox" id="lightbox" aria-hidden="true"><img alt="확대 화면"></div>
+  <script>
+    const box=document.getElementById('lightbox'),full=box.querySelector('img');
+    document.querySelectorAll('.frame img,.gallery-card img,.phone-card img').forEach(img=>img.addEventListener('click',()=>{full.src=img.src;full.alt=img.alt;box.classList.add('on');box.setAttribute('aria-hidden','false')}));
+    box.addEventListener('click',()=>{box.classList.remove('on');box.setAttribute('aria-hidden','true');full.removeAttribute('src')});
+    addEventListener('keydown',e=>{if(e.key==='Escape')box.click()});
+  </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path');
+const P=require('../next-action-picker.js');
+test('다음 행동은 정확히 8개, 사진·메모·업무는 선택지에서 제외',()=>{assert.equal(P.groups.length,8);for(const t of ['사진','메모','업무','PT','문자','카카오'])assert.ok(!P.groups.includes(t))});
+test('기존 연락/방문 유형은 새 상위 분류에 대응',()=>{for(const t of ['문자','카카오'])assert.equal(P.category(t),'메시지');for(const t of ['현장방문','회의','PT','현장설명'])assert.equal(P.category(t),'방문·미팅');assert.equal(P.category('계약'),'입찰·계약 업무')});
+test('채널과 방문 세부유형을 저장·재표시해도 유지',()=>{for(const t of ['문자','카카오','현장방문','회의','PT','현장설명']){const g=P.category(t);assert.equal(P.wireType(g,t,t),t);assert.match(P.html('test',t,'','txt','due'),new RegExp('<option selected>'+t+'</option>'))}});
+test('기존 이메일·계약·기타 기록은 임의 변경하지 않음',()=>{for(const t of ['이메일','자료전달','견적','계약','입찰','사진','메모','알 수 없는 예전 유형'])assert.equal(P.wireType(P.category(t),null,t),t)});
+test('선택한 유형에만 2차 선택 노출',()=>{assert.doesNotMatch(P.html('test','전화','','txt','due'),/id="test-sub"/);assert.match(P.html('test','문자','','txt','due'),/>채널</);assert.match(P.html('test','PT','','txt','due'),/>방문 유형</)});
+test('견적 발송 후 3일 / 경쟁 단계 PT 일정 확인 추천',()=>{assert.equal(P.recommendation('sent').days,3);assert.equal(P.recommendation('sent').type,'후속접촉');assert.equal(P.recommendation('compete').text,'PT 일정 확인');assert.equal(P.recommendation('completion'),null)});
+test('상세/빠른등록에서 공용 picker를 사용하고 활동기록은 유지',()=>{const html=fs.readFileSync(path.join(__dirname,'../crm.html'),'utf8');for(const id of ['dv-na-type','sp-na-type']){assert.ok(html.includes("NextActionPicker.html('"+id));assert.ok(html.includes("NextActionPicker.read('"+id));assert.ok(!html.includes('<select id="'+id+'">'))}assert.match(html,/ACTIVITY_TYPES=\['전화','문자','카카오','이메일','현장방문','사진'/)});

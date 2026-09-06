@@ -1,0 +1,18 @@
+{
+  "request_id": "fb5904cf-83c6-4414-aaa8-864ccaca0b03",
+  "object_id": "f6090500-0006-4000-8000-000000000001",
+  "previous_version": 4,
+  "ack": {
+    "ok": true,
+    "version": 5,
+    "replayed": false,
+    "object_id": "f6090500-0006-4000-8000-000000000001",
+    "operation": "opportunity_work_set",
+    "request_id": "fb5904cf-83c6-4414-aaa8-864ccaca0b03",
+    "actor_user_id": "f6090500-0001-4000-8000-000000000001",
+    "actor_auth_uid": "b5295979-d6c9-48f2-971a-2dea418b75e6",
+    "audit_event_id": "9c91abf9-4239-467d-9998-e2cceb6e58f4",
+    "contract_version": 1,
+    "previous_version": 4
+  }
+}

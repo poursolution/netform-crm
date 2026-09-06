@@ -1,0 +1,68 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+  "operation": "customer_support_action",
+  "ui_coverage_candidate": [
+    "O02"
+  ],
+  "prerequisite": "mobile-today-outcome/20260906",
+  "surface": "pc_admin_only",
+  "meaning": "append-only requested support record; downstream action is independent",
+  "allowed_action_keys": [
+    "response_request",
+    "inquiry_review",
+    "call",
+    "message",
+    "recontact_result",
+    "waiting_context",
+    "manager_consult",
+    "waiting_review",
+    "material_support",
+    "meeting_check",
+    "contact_check",
+    "contact_activity",
+    "reactivate_review",
+    "dormant_review",
+    "recontact_schedule",
+    "support_detail"
+  ],
+  "server_rules": {
+    "actor": "approved unexpired admin UUID",
+    "scope": "current can_deal(...,true) or can_inquiry target scope",
+    "target_owner": "approved active rep UUID from locked target",
+    "status": "requested only",
+    "idempotency": "common command receipt; client_ref preserved only for UI correlation"
+  },
+  "read_additions": [
+    "customer_support_action admin-scoped operational source"
+  ],
+  "blocked": [
+    "downstream completion inference",
+    "client actor/time/status/rep/site authority",
+    "O01 head-office rep eligibility"
+  ],
+  "rollback": "request ledger/receipts archived; P09M write/read layer restored",
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "files_sha256": {
+    "build.cjs": "6be88568044962d25c0e9bd18e3ae1c595b83b336e5d09c3ad6863611b9cfb5a",
+    "helper.sql": "ac9ed27aefe582f59d2b717b2a9c112a40cd09e3626806321e96f7e69e08ac73",
+    "rollback-fragment.sql": "86d3fcaf16851295e942bc16af4ae0ab8777f01adae0eebbb03b43687d7bb745",
+    "contract.test.cjs": "3e80a5dfe9feed36b17446c62e560697214dd4282293b57746eec2ff8d02a341",
+    "db.test.cjs": "d512a24c502cdd33d55d3951e274d869c426b5b7afbf706aa26103e67e5dc437",
+    "ui.test.cjs": "da41a885f3f214a6a81e82ff2f6fae81ebcb29d578450669b9bef5e19106a4fc",
+    "review.md": "2ae96644af9589695f631cff068800ccd56f5a3b66f8db2435f61cd8c2871451",
+    "staging-apply-after-mobile-today.sql": "1327b8a002ef336b00db7ed7db70aaf7e2702122eb95d047c0141da77634e2af",
+    "rollback-before-mobile-today.sql": "334d31d5e92402f4665e3c3dcafa65d788e668114381953b2b361d49bf8ff275",
+    "operational-adapter.candidate.js": "a6a9be2b35763d7175e185a8d1504a2708d71f02b95227426ca298fdb454c602",
+    "operational-overlay.candidate.js": "155f4e622ecf39908909acdf04576d4a2bbd28caa7592abd79e2c74e33d9ba64",
+    "transport.candidate.js": "3c0fe2d46857b7469b90859d4c02e2dd356aadf1a94f8f8548efefad2b2f95d5"
+  },
+  "source_sha256": {
+    "sql/mobile-today-outcome/20260906/manifest.json": "143706e0b53f910827ac7d253c136122c9ecc8d7d588315b602c2fb98eec60d2",
+    "crm.html": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "sql/20260905_customer_support_actions.sql": "30960f8a230c639e8e9e25402086eafc259a54c46fe74bba99bfdd6d2ad63fc1",
+    "docs/operational-cutover-20260906/coverage-matrix.csv": "66b015765e4fa6e96d8e3b233a7a3411a50be1d4ff4054d7d757baedc22947c4"
+  }
+}

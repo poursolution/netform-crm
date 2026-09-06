@@ -1,0 +1,23 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "CONTRACT_REVIEW_ONLY",
+  "public_dispatcher_changed": false,
+  "candidate_sql_created": false,
+  "rollback_created": false,
+  "adapter_created": false,
+  "connected_operations": [],
+  "confirmed_external_actions": [
+    "M01:phone_sms_kakao_app_open",
+    "M03:composer_clipboard_copy"
+  ],
+  "needs_verification": [
+    "M01:attempt_activity",
+    "M02:message_log",
+    "M04:message_reminder",
+    "M05:relationship_hold",
+    "M05:relationship_response",
+    "M06:campaign_create_and_delivery"
+  ],
+  "remote_access_performed": false,
+  "staging_ddl_dml_performed": false
+}

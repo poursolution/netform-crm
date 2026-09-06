@@ -1,0 +1,39 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "checked_at": "2026-09-06",
+  "check_kind": "READ_ONLY_PG_CATALOG",
+  "query_scope": [
+    "public.crm_export_create(jsonb)",
+    "public.crm_cleanup_state()",
+    "public.crm_cleanup_preview(jsonb)",
+    "public.crm_cleanup_apply(jsonb)"
+  ],
+  "present": [],
+  "absent": [
+    "public.crm_export_create(jsonb)",
+    "public.crm_cleanup_state()",
+    "public.crm_cleanup_preview(jsonb)",
+    "public.crm_cleanup_apply(jsonb)"
+  ],
+  "control_present": [
+    {
+      "signature": "public.crm_read_scoped_v2(uuid,integer,uuid,uuid)",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anon_execute": false,
+      "definition_md5": "5fe13081a33bcfee6a4e989f4680b3b4"
+    },
+    {
+      "signature": "public.crm_operational_source_v1(text,uuid,integer)",
+      "security_definer": true,
+      "authenticated_execute": true,
+      "anon_execute": false,
+      "definition_md5": "3883c86d284982544eb9e9cb380ca7c3"
+    }
+  ],
+  "verdict": "A05_AND_O04_ARE_NOT_UNVERIFIED_DEPLOYED_PATHS;_THEIR_PUBLIC_ENTRYPOINTS_ARE_NOT_CONNECTED_IN_STAGING",
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false
+}

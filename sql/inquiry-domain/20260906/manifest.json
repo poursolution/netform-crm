@@ -1,0 +1,22 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+  "derived_safe": [
+    "inquiry_unassign"
+  ],
+  "blocked": [
+    "inquiry_status",
+    "inquiry_trash",
+    "inquiry_restore",
+    "inquiry_consultant",
+    "inquiry_followup",
+    "response_update",
+    "branch_handoff",
+    "branch_owner_assign"
+  ],
+  "files": {
+    "candidate.sql": "c668360a32831b4bf21b4ce1cf7e70e0b8b9ddc31df90146badf9ed9df2e0d31",
+    "rollback.sql": "750b741ef70af3614c2fd7f11abc10a461800ea68163638c3c5884cd28bc9c34",
+    "review.md": "04f6e63e0801af6dede289f1d96325e123d7b4dcdc439c810e9b3d91a995bfd6"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "LOCAL_CHAIN_CANDIDATE_AFTER_CLOSE_NOT_APPLIED",
+  "prerequisites": [
+    "pipeline-close-nonwon/20260906"
+  ],
+  "operation": "amount",
+  "intent": "expected_amount_only",
+  "quote_amount_semantics": "latest_quote_concurrency_snapshot",
+  "won_amount_semantics": "must_be_null",
+  "blocked_meanings": [
+    "direct_quote_amount_edit",
+    "won_amount_edit",
+    "closed_deal_amount_edit"
+  ],
+  "staging_ddl_dml_performed": false,
+  "files_sha256": {
+    "helper.sql": "e99f7588ea8c27c19115626385a2f9fdd5e6c992197825eb03c10cacda49e8b4",
+    "adapter-contract.js": "8ec93aee0249a896523cd457f1a9d5eeb31e2f84526eec2ce5dbd7f41ce5d166",
+    "contract.test.cjs": "8849ffb46662c384be0c6525a17051838121d51496f65c95d69e7567d34491ef",
+    "db.test.cjs": "9be7491abfb813987b50ccacb0f9a1043012660e471426bdbfa9cbad497d30b5",
+    "ui.test.cjs": "35058e36aca82178e814c65b0a3f15124a2dad0addad74fedffa710d3c0b6fa8",
+    "review.md": "51e0ca124d03ef480e67f17d22a4b941e3a34173b56e9ebe70a22ce23ba6d5cb",
+    "staging-apply-after-close.sql": "83d97f5995ba9ac526c3240cb7d607f72de224b8c38053ce22c1312d42c03c82",
+    "rollback-after-close.sql": "cb52dbe6bc749161882e1f37e628a64a85e27d48fea2727d3ef11e11a7bc7fe4",
+    "operational-adapter.candidate.js": "2169025a99d7f90388086870b12c78d016dcd111206fab74da9e997316608fbf",
+    "operational-overlay.candidate.js": "e5b2f7da442a204beddedd9b6bdb77c9cc2bf5e26d8b78079e1efab2b9094a85"
+  },
+  "source_sha256": {
+    "golden_pc": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "golden_mobile": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "issue_modal": "7a2b2f1ee66e509b5d26ce0f3585a6e5e6ffc2f3f0b045d9f5a8b690a2e14391",
+    "quote_manifest": "a31a3ecd1dfb90c59fac7f57ba4dd97a7d68f921f9680cb9d47bef626c970556",
+    "close_manifest": "ecabd4ce4d88981589ff0c50a22790651fa0e0386feda67799b5d94bc810177f"
+  }
+}

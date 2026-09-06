@@ -1,0 +1,1176 @@
+{
+  "views": null,
+  "schema": {
+    "acl": [
+      "postgres=UC/postgres"
+    ],
+    "owner": "postgres"
+  },
+  "columns": [
+    {
+      "acl": null,
+      "name": "user_id",
+      "type": "uuid",
+      "table": "access_review",
+      "default": null,
+      "ordinal": 1,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "reviewed_auth_uid",
+      "type": "uuid",
+      "table": "access_review",
+      "default": null,
+      "ordinal": 2,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "source_role",
+      "type": "text",
+      "table": "access_review",
+      "default": null,
+      "ordinal": 3,
+      "storage": "x",
+      "identity": "",
+      "not_null": true,
+      "collation": "\"default\"",
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "permission_role",
+      "type": "text",
+      "table": "access_review",
+      "default": null,
+      "ordinal": 4,
+      "storage": "x",
+      "identity": "",
+      "not_null": true,
+      "collation": "\"default\"",
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "approved",
+      "type": "boolean",
+      "table": "access_review",
+      "default": "false",
+      "ordinal": 5,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "reviewed_by",
+      "type": "text",
+      "table": "access_review",
+      "default": null,
+      "ordinal": 6,
+      "storage": "x",
+      "identity": "",
+      "not_null": true,
+      "collation": "\"default\"",
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "reviewed_at",
+      "type": "timestamp with time zone",
+      "table": "access_review",
+      "default": "now()",
+      "ordinal": 7,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "expires_at",
+      "type": "timestamp with time zone",
+      "table": "access_review",
+      "default": null,
+      "ordinal": 8,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "actor_user_id",
+      "type": "uuid",
+      "table": "assignment_rules",
+      "default": null,
+      "ordinal": 1,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "entity_kind",
+      "type": "text",
+      "table": "assignment_rules",
+      "default": null,
+      "ordinal": 2,
+      "storage": "x",
+      "identity": "",
+      "not_null": true,
+      "collation": "\"default\"",
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "object_id",
+      "type": "uuid",
+      "table": "assignment_rules",
+      "default": null,
+      "ordinal": 3,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "target_user_id",
+      "type": "uuid",
+      "table": "assignment_rules",
+      "default": null,
+      "ordinal": 4,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "expires_at",
+      "type": "timestamp with time zone",
+      "table": "assignment_rules",
+      "default": null,
+      "ordinal": 5,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "event_id",
+      "type": "uuid",
+      "table": "audit_events",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "actor_auth_uid",
+      "type": "uuid",
+      "table": "audit_events",
+      "default": null,
+      "ordinal": 2,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "actor_user_id",
+      "type": "uuid",
+      "table": "audit_events",
+      "default": null,
+      "ordinal": 3,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "actor_name",
+      "type": "text",
+      "table": "audit_events",
+      "default": null,
+      "ordinal": 4,
+      "storage": "x",
+      "identity": "",
+      "not_null": true,
+      "collation": "\"default\"",
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "deal_id",
+      "type": "uuid",
+      "table": "audit_events",
+      "default": null,
+      "ordinal": 5,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "action",
+      "type": "text",
+      "table": "audit_events",
+      "default": null,
+      "ordinal": 6,
+      "storage": "x",
+      "identity": "",
+      "not_null": true,
+      "collation": "\"default\"",
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "before_data",
+      "type": "jsonb",
+      "table": "audit_events",
+      "default": null,
+      "ordinal": 7,
+      "storage": "x",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "after_data",
+      "type": "jsonb",
+      "table": "audit_events",
+      "default": null,
+      "ordinal": 8,
+      "storage": "x",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "reason",
+      "type": "text",
+      "table": "audit_events",
+      "default": null,
+      "ordinal": 9,
+      "storage": "x",
+      "identity": "",
+      "not_null": true,
+      "collation": "\"default\"",
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "table": "audit_events",
+      "default": "now()",
+      "ordinal": 10,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "id",
+      "type": "uuid",
+      "table": "business_events",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "entity_kind",
+      "type": "text",
+      "table": "business_events",
+      "default": null,
+      "ordinal": 2,
+      "storage": "x",
+      "identity": "",
+      "not_null": true,
+      "collation": "\"default\"",
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "object_id",
+      "type": "uuid",
+      "table": "business_events",
+      "default": null,
+      "ordinal": 3,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "action",
+      "type": "text",
+      "table": "business_events",
+      "default": null,
+      "ordinal": 4,
+      "storage": "x",
+      "identity": "",
+      "not_null": true,
+      "collation": "\"default\"",
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "actor_auth_uid",
+      "type": "uuid",
+      "table": "business_events",
+      "default": null,
+      "ordinal": 5,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "actor_user_id",
+      "type": "uuid",
+      "table": "business_events",
+      "default": null,
+      "ordinal": 6,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "actor_name",
+      "type": "text",
+      "table": "business_events",
+      "default": null,
+      "ordinal": 7,
+      "storage": "x",
+      "identity": "",
+      "not_null": true,
+      "collation": "\"default\"",
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "before_data",
+      "type": "jsonb",
+      "table": "business_events",
+      "default": null,
+      "ordinal": 8,
+      "storage": "x",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "after_data",
+      "type": "jsonb",
+      "table": "business_events",
+      "default": null,
+      "ordinal": 9,
+      "storage": "x",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "reason",
+      "type": "text",
+      "table": "business_events",
+      "default": null,
+      "ordinal": 10,
+      "storage": "x",
+      "identity": "",
+      "not_null": true,
+      "collation": "\"default\"",
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "table": "business_events",
+      "default": "now()",
+      "ordinal": 11,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "scope_id",
+      "type": "uuid",
+      "table": "object_scope",
+      "default": null,
+      "ordinal": 1,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "user_id",
+      "type": "uuid",
+      "table": "object_scope",
+      "default": null,
+      "ordinal": 2,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "deal_id",
+      "type": "uuid",
+      "table": "object_scope",
+      "default": null,
+      "ordinal": 3,
+      "storage": "p",
+      "identity": "",
+      "not_null": false,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "inquiry_id",
+      "type": "uuid",
+      "table": "object_scope",
+      "default": null,
+      "ordinal": 4,
+      "storage": "p",
+      "identity": "",
+      "not_null": false,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "can_write",
+      "type": "boolean",
+      "table": "object_scope",
+      "default": "false",
+      "ordinal": 5,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "reviewed_by",
+      "type": "text",
+      "table": "object_scope",
+      "default": null,
+      "ordinal": 6,
+      "storage": "x",
+      "identity": "",
+      "not_null": true,
+      "collation": "\"default\"",
+      "generated": "",
+      "compression": ""
+    },
+    {
+      "acl": null,
+      "name": "expires_at",
+      "type": "timestamp with time zone",
+      "table": "object_scope",
+      "default": null,
+      "ordinal": 7,
+      "storage": "p",
+      "identity": "",
+      "not_null": true,
+      "collation": null,
+      "generated": "",
+      "compression": ""
+    }
+  ],
+  "indexes": [
+    {
+      "name": "access_review_pkey",
+      "ready": true,
+      "table": "access_review",
+      "valid": true,
+      "clustered": false,
+      "definition": "CREATE UNIQUE INDEX access_review_pkey ON crm_security.access_review USING btree (user_id)",
+      "constraint_owned": true,
+      "replica_identity": false
+    },
+    {
+      "name": "access_review_reviewed_auth_uid_key",
+      "ready": true,
+      "table": "access_review",
+      "valid": true,
+      "clustered": false,
+      "definition": "CREATE UNIQUE INDEX access_review_reviewed_auth_uid_key ON crm_security.access_review USING btree (reviewed_auth_uid)",
+      "constraint_owned": true,
+      "replica_identity": false
+    },
+    {
+      "name": "assignment_rules_pkey",
+      "ready": true,
+      "table": "assignment_rules",
+      "valid": true,
+      "clustered": false,
+      "definition": "CREATE UNIQUE INDEX assignment_rules_pkey ON crm_security.assignment_rules USING btree (actor_user_id, entity_kind, object_id, target_user_id)",
+      "constraint_owned": true,
+      "replica_identity": false
+    },
+    {
+      "name": "audit_events_pkey",
+      "ready": true,
+      "table": "audit_events",
+      "valid": true,
+      "clustered": false,
+      "definition": "CREATE UNIQUE INDEX audit_events_pkey ON crm_security.audit_events USING btree (event_id)",
+      "constraint_owned": true,
+      "replica_identity": false
+    },
+    {
+      "name": "business_events_pkey",
+      "ready": true,
+      "table": "business_events",
+      "valid": true,
+      "clustered": false,
+      "definition": "CREATE UNIQUE INDEX business_events_pkey ON crm_security.business_events USING btree (id)",
+      "constraint_owned": true,
+      "replica_identity": false
+    },
+    {
+      "name": "crm_scope_deal",
+      "ready": true,
+      "table": "object_scope",
+      "valid": true,
+      "clustered": false,
+      "definition": "CREATE UNIQUE INDEX crm_scope_deal ON crm_security.object_scope USING btree (user_id, deal_id) WHERE (deal_id IS NOT NULL)",
+      "constraint_owned": false,
+      "replica_identity": false
+    },
+    {
+      "name": "crm_scope_inquiry",
+      "ready": true,
+      "table": "object_scope",
+      "valid": true,
+      "clustered": false,
+      "definition": "CREATE UNIQUE INDEX crm_scope_inquiry ON crm_security.object_scope USING btree (user_id, inquiry_id) WHERE (inquiry_id IS NOT NULL)",
+      "constraint_owned": false,
+      "replica_identity": false
+    },
+    {
+      "name": "object_scope_pkey",
+      "ready": true,
+      "table": "object_scope",
+      "valid": true,
+      "clustered": false,
+      "definition": "CREATE UNIQUE INDEX object_scope_pkey ON crm_security.object_scope USING btree (scope_id)",
+      "constraint_owned": true,
+      "replica_identity": false
+    }
+  ],
+  "version": "17.5",
+  "creators": [
+    {
+      "role": "pg_database_owner",
+      "inherit": true,
+      "can_login": false,
+      "superuser": false,
+      "bypass_rls": false,
+      "executor_member": true,
+      "can_create_public": true
+    },
+    {
+      "role": "postgres",
+      "inherit": true,
+      "can_login": true,
+      "superuser": true,
+      "bypass_rls": true,
+      "executor_member": true,
+      "can_create_public": true
+    },
+    {
+      "role": "supabase_admin",
+      "inherit": true,
+      "can_login": false,
+      "superuser": true,
+      "bypass_rls": false,
+      "executor_member": true,
+      "can_create_public": true
+    }
+  ],
+  "database": {
+    "ctype": "C.UTF-8",
+    "locale": null,
+    "collate": "C",
+    "provider": "c"
+  },
+  "encoding": "UTF8",
+  "policies": null,
+  "triggers": null,
+  "functions": [
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "strict": false,
+      "language": "sql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "crm_security.actor()",
+      "definition": "CREATE OR REPLACE FUNCTION crm_security.actor()\n RETURNS TABLE(user_id uuid, auth_uid uuid, display_name text, permission_role text)\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\n SELECT u.user_id,u.auth_uid,u.name,r.permission_role\n FROM public.users u JOIN crm_security.access_review r ON r.user_id=u.user_id\n WHERE auth.uid() IS NOT NULL AND u.auth_uid=auth.uid() AND u.active AND r.approved\n AND r.reviewed_auth_uid=u.auth_uid AND r.source_role=u.role AND r.expires_at>now()\n AND (SELECT count(*) FROM public.users x WHERE x.auth_uid=u.auth_uid)=1\n$function$\n",
+      "volatility": "s",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "strict": false,
+      "language": "sql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "crm_security.business_can_write(text,uuid)",
+      "definition": "CREATE OR REPLACE FUNCTION crm_security.business_can_write(k text, target uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\n SELECT CASE WHEN k='deal' THEN crm_security.can_deal(target,true) WHEN k='inquiry' THEN EXISTS(\n SELECT 1 FROM crm_security.actor() a JOIN public.inquiries i ON i.id=target WHERE\n (a.permission_role IN('rep','consultation') AND i.assigned_to=a.user_id) OR\n (a.permission_role IN('branch','admin') AND EXISTS(SELECT 1 FROM crm_security.object_scope s WHERE s.user_id=a.user_id AND s.inquiry_id=target AND s.can_write AND s.expires_at>now()))) ELSE false END\n$function$\n",
+      "volatility": "s",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "strict": false,
+      "language": "plpgsql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "crm_security.business_lock(text,uuid,text)",
+      "definition": "CREATE OR REPLACE FUNCTION crm_security.business_lock(k text, target uuid, token text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nDECLARE r jsonb; BEGIN\n IF auth.uid() IS NULL THEN RAISE EXCEPTION 'forbidden' USING ERRCODE='42501'; END IF;\n PERFORM 1 FROM public.users WHERE auth_uid=auth.uid() FOR SHARE;\n PERFORM 1 FROM crm_security.access_review WHERE reviewed_auth_uid=auth.uid() FOR SHARE;\n PERFORM 1 FROM crm_security.object_scope s JOIN crm_security.actor() a ON a.user_id=s.user_id WHERE s.deal_id=target OR s.inquiry_id=target FOR SHARE OF s;\n IF NOT crm_security.business_can_write(k,target) THEN RAISE EXCEPTION 'forbidden' USING ERRCODE='42501'; END IF;\n IF k='deal' THEN SELECT to_jsonb(d) INTO r FROM public.deals d WHERE id=target FOR UPDATE;\n ELSE SELECT to_jsonb(i) INTO r FROM public.inquiries i WHERE id=target FOR UPDATE; END IF;\n IF r IS NULL OR NOT crm_security.business_can_write(k,target) THEN RAISE EXCEPTION 'forbidden' USING ERRCODE='42501'; END IF;\n IF token IS NULL OR (k='deal' AND r->>'version' IS DISTINCT FROM token) OR (k='inquiry' AND (r->>'updated_at')::timestamptz IS DISTINCT FROM token::timestamptz) THEN RAISE EXCEPTION 'version conflict' USING ERRCODE='PT409'; END IF;\n RETURN r;\nEND $function$\n",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "strict": false,
+      "language": "plpgsql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "crm_security.business_log(text,uuid,text,jsonb,jsonb,text)",
+      "definition": "CREATE OR REPLACE FUNCTION crm_security.business_log(k text, target uuid, act text, before_row jsonb, after_row jsonb, why text)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nDECLARE a record; eid uuid; BEGIN\n SELECT * INTO a FROM crm_security.actor(); IF NOT FOUND THEN RAISE EXCEPTION 'forbidden' USING ERRCODE='42501'; END IF;\n IF why IS NULL OR length(trim(why))<2 OR length(why)>2000 THEN RAISE EXCEPTION 'reason required' USING ERRCODE='22023'; END IF;\n INSERT INTO crm_security.business_events(entity_kind,object_id,action,actor_auth_uid,actor_user_id,actor_name,before_data,after_data,reason)\n VALUES(k,target,act,a.auth_uid,a.user_id,a.display_name,before_row,after_row,why) RETURNING id INTO eid;\n RETURN eid;\nEND $function$\n",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "strict": false,
+      "language": "sql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "crm_security.can_deal(uuid,boolean)",
+      "definition": "CREATE OR REPLACE FUNCTION crm_security.can_deal(target uuid, writing boolean DEFAULT false)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\n SELECT EXISTS(SELECT 1 FROM crm_security.actor() a JOIN public.deals d ON d.id=target\n WHERE (a.permission_role='rep' AND d.owner_id=a.user_id)\n OR (a.permission_role IN('branch','admin') AND EXISTS(SELECT 1 FROM crm_security.object_scope s\n WHERE s.user_id=a.user_id AND s.deal_id=d.id AND s.expires_at>now() AND (NOT writing OR s.can_write))))\n$function$\n",
+      "volatility": "s",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "strict": false,
+      "language": "sql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "crm_security.can_inquiry(uuid)",
+      "definition": "CREATE OR REPLACE FUNCTION crm_security.can_inquiry(target uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\n SELECT EXISTS(SELECT 1 FROM crm_security.actor() a JOIN public.inquiries i ON i.id=target\n WHERE (a.permission_role IN('rep','consultation') AND i.assigned_to=a.user_id)\n OR (a.permission_role IN('branch','admin') AND EXISTS(SELECT 1 FROM crm_security.object_scope s\n WHERE s.user_id=a.user_id AND s.inquiry_id=i.id AND s.expires_at>now())))\n$function$\n",
+      "volatility": "s",
+      "security_definer": true
+    }
+  ],
+  "relations": [
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "name": "access_review",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "name": "assignment_rules",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "name": "audit_events",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "name": "business_events",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "name": "object_scope",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    }
+  ],
+  "sequences": null,
+  "extensions": [
+    {
+      "name": "plpgsql",
+      "owner": "postgres",
+      "schema": "pg_catalog",
+      "version": "1.0"
+    }
+  ],
+  "constraints": [
+    {
+      "name": "access_review_permission_role_check",
+      "type": "c",
+      "table": "access_review",
+      "deferred": false,
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK (permission_role = ANY (ARRAY['rep'::text, 'consultation'::text, 'branch'::text, 'admin'::text]))"
+    },
+    {
+      "name": "access_review_pkey",
+      "type": "p",
+      "table": "access_review",
+      "deferred": false,
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (user_id)"
+    },
+    {
+      "name": "access_review_reviewed_auth_uid_key",
+      "type": "u",
+      "table": "access_review",
+      "deferred": false,
+      "validated": true,
+      "deferrable": false,
+      "definition": "UNIQUE (reviewed_auth_uid)"
+    },
+    {
+      "name": "access_review_source_role_check",
+      "type": "c",
+      "table": "access_review",
+      "deferred": false,
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK (source_role = ANY (ARRAY['rep'::text, 'admin'::text, 'dual'::text, 'viewer'::text]))"
+    },
+    {
+      "name": "access_review_user_id_fkey",
+      "type": "f",
+      "table": "access_review",
+      "deferred": false,
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(user_id)"
+    },
+    {
+      "name": "assignment_rules_actor_user_id_fkey",
+      "type": "f",
+      "table": "assignment_rules",
+      "deferred": false,
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (actor_user_id) REFERENCES users(user_id)"
+    },
+    {
+      "name": "assignment_rules_entity_kind_check",
+      "type": "c",
+      "table": "assignment_rules",
+      "deferred": false,
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK (entity_kind = ANY (ARRAY['deal'::text, 'inquiry'::text]))"
+    },
+    {
+      "name": "assignment_rules_pkey",
+      "type": "p",
+      "table": "assignment_rules",
+      "deferred": false,
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (actor_user_id, entity_kind, object_id, target_user_id)"
+    },
+    {
+      "name": "assignment_rules_target_user_id_fkey",
+      "type": "f",
+      "table": "assignment_rules",
+      "deferred": false,
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (target_user_id) REFERENCES users(user_id)"
+    },
+    {
+      "name": "audit_events_pkey",
+      "type": "p",
+      "table": "audit_events",
+      "deferred": false,
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (event_id)"
+    },
+    {
+      "name": "business_events_entity_kind_check",
+      "type": "c",
+      "table": "business_events",
+      "deferred": false,
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK (entity_kind = ANY (ARRAY['deal'::text, 'inquiry'::text]))"
+    },
+    {
+      "name": "business_events_pkey",
+      "type": "p",
+      "table": "business_events",
+      "deferred": false,
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "object_scope_check",
+      "type": "c",
+      "table": "object_scope",
+      "deferred": false,
+      "validated": true,
+      "deferrable": false,
+      "definition": "CHECK (((deal_id IS NOT NULL)::integer + (inquiry_id IS NOT NULL)::integer) = 1)"
+    },
+    {
+      "name": "object_scope_deal_id_fkey",
+      "type": "f",
+      "table": "object_scope",
+      "deferred": false,
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (deal_id) REFERENCES deals(id)"
+    },
+    {
+      "name": "object_scope_inquiry_id_fkey",
+      "type": "f",
+      "table": "object_scope",
+      "deferred": false,
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (inquiry_id) REFERENCES inquiries(id)"
+    },
+    {
+      "name": "object_scope_pkey",
+      "type": "p",
+      "table": "object_scope",
+      "deferred": false,
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (scope_id)"
+    },
+    {
+      "name": "object_scope_user_id_fkey",
+      "type": "f",
+      "table": "object_scope",
+      "deferred": false,
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(user_id)"
+    }
+  ],
+  "custom_types": null,
+  "dependencies": [
+    {
+      "type": "n",
+      "source": "function crm_security.actor()",
+      "target": "schema crm_security"
+    },
+    {
+      "type": "n",
+      "source": "function crm_security.can_deal(uuid,boolean)",
+      "target": "schema crm_security"
+    },
+    {
+      "type": "n",
+      "source": "function crm_security.can_inquiry(uuid)",
+      "target": "schema crm_security"
+    },
+    {
+      "type": "n",
+      "source": "function crm_security.business_can_write(text,uuid)",
+      "target": "schema crm_security"
+    },
+    {
+      "type": "n",
+      "source": "function crm_security.business_lock(text,uuid,text)",
+      "target": "language plpgsql"
+    },
+    {
+      "type": "n",
+      "source": "function crm_security.business_lock(text,uuid,text)",
+      "target": "schema crm_security"
+    },
+    {
+      "type": "n",
+      "source": "function crm_security.business_log(text,uuid,text,jsonb,jsonb,text)",
+      "target": "language plpgsql"
+    },
+    {
+      "type": "n",
+      "source": "function crm_security.business_log(text,uuid,text,jsonb,jsonb,text)",
+      "target": "schema crm_security"
+    },
+    {
+      "type": "n",
+      "source": "table crm_security.access_review",
+      "target": "schema crm_security"
+    },
+    {
+      "type": "n",
+      "source": "table crm_security.object_scope",
+      "target": "schema crm_security"
+    },
+    {
+      "type": "n",
+      "source": "table crm_security.audit_events",
+      "target": "schema crm_security"
+    },
+    {
+      "type": "n",
+      "source": "table crm_security.business_events",
+      "target": "schema crm_security"
+    },
+    {
+      "type": "n",
+      "source": "table crm_security.assignment_rules",
+      "target": "schema crm_security"
+    },
+    {
+      "type": "a",
+      "source": "default value for column approved of table crm_security.access_review",
+      "target": "column approved of table crm_security.access_review"
+    },
+    {
+      "type": "a",
+      "source": "default value for column reviewed_at of table crm_security.access_review",
+      "target": "column reviewed_at of table crm_security.access_review"
+    },
+    {
+      "type": "a",
+      "source": "default value for column can_write of table crm_security.object_scope",
+      "target": "column can_write of table crm_security.object_scope"
+    },
+    {
+      "type": "a",
+      "source": "default value for column event_id of table crm_security.audit_events",
+      "target": "column event_id of table crm_security.audit_events"
+    },
+    {
+      "type": "a",
+      "source": "default value for column created_at of table crm_security.audit_events",
+      "target": "column created_at of table crm_security.audit_events"
+    },
+    {
+      "type": "a",
+      "source": "default value for column id of table crm_security.business_events",
+      "target": "column id of table crm_security.business_events"
+    },
+    {
+      "type": "a",
+      "source": "default value for column created_at of table crm_security.business_events",
+      "target": "column created_at of table crm_security.business_events"
+    }
+  ],
+  "custom_collations": null,
+  "default_privileges": [
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "type": "f",
+      "schema": null,
+      "creator": "postgres"
+    }
+  ],
+  "_guardHashes": {
+    "schema": "1b9541895fcea1f9220c33cbf263896e",
+    "relations": "bcee5679875bff8d52a7576333d68420",
+    "columns": "23621db8db53a3a0c885e1efe1805a72",
+    "constraints": "994ddfa99f0d439c5c8b71552b90fb57",
+    "indexes": "338f13956630118a7e4bc857e0475116",
+    "sequences": "37a6259cc0c1dae299a7866489dff0bd",
+    "functions": "e9fc00613c3a767f970fd881441565db",
+    "views": "37a6259cc0c1dae299a7866489dff0bd",
+    "triggers": "37a6259cc0c1dae299a7866489dff0bd",
+    "policies": "37a6259cc0c1dae299a7866489dff0bd",
+    "default_privileges": "4828b0ad9c231f5b6d492f0fb4462106",
+    "custom_types": "37a6259cc0c1dae299a7866489dff0bd",
+    "custom_collations": "37a6259cc0c1dae299a7866489dff0bd",
+    "dependencies": "2285c89c0b26a56103c44a809b93e977"
+  }
+}

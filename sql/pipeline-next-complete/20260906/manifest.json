@@ -1,0 +1,32 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "LOCAL_CHAIN_CANDIDATE_AFTER_OPERATIONAL_SOURCE_NOT_APPLIED",
+  "prerequisites": [
+    "personal-state-compat/20260906",
+    "pipeline-action-bundle/20260906",
+    "pipeline-quote-version/20260906",
+    "operational-read-source/20260906"
+  ],
+  "operation": "next_action_complete",
+  "identity": "server_next_action_uuid_only",
+  "compound_activity": "absorbed_into_completion_transaction",
+  "staging_ddl_dml_performed": false,
+  "files_sha256": {
+    "helper.sql": "b0b082647f5a67665fd52bfdbce76a5f5e1a4539777e08d93c19fbc6b2ac1f96",
+    "adapter-contract.js": "5e2a9da1491bdb1c02f7cc0cee9e37d8b792ffe4eb241ab774a78c902053b4ad",
+    "contract.test.cjs": "d6adeaa5cf367f84c6d3702bf5da8893feedd35b784878db55d6824dd1c8cde9",
+    "db.test.cjs": "c53e86dac9843101494d546a731294fc96cfc4953ccd77e3a1e27c62658a7668",
+    "ui.test.cjs": "3a6a86be2803db8cf0cb66bb8bd78163dc9c568715b2d439bf341f13b7fad272",
+    "review.md": "a0fc6488c9da202bfdf1d5a667982b8179e9e8b47b343775c6a48263911ca2e2",
+    "staging-apply-after-operational-source.sql": "9b12389ee315ca1795128bed4c9bd5aa1835eb38953259e9ed41aee4c585b3be",
+    "rollback-after-operational-source.sql": "7d2b651f7c8ebbe1e5275f21a99f35054ca638fc19100fe1954f91c8671e26ea",
+    "operational-adapter.candidate.js": "942e9019d4fc055bad06fcf3e4e7fb518e5e813e7895e87b00c5cd8f691308da",
+    "operational-overlay.candidate.js": "1c48ee63362be67737a3a32eecb6691728a3bce2f3b0ed6d51d2b9ea2de311c7"
+  },
+  "source_sha256": {
+    "golden_pc": "f73daf1598a2271d38fb38fba32b81cc8cc842e860b98983ce7f3c972c2274e2",
+    "golden_mobile": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "quote_manifest": "a31a3ecd1dfb90c59fac7f57ba4dd97a7d68f921f9680cb9d47bef626c970556",
+    "operational_source_manifest": "b3d2b807eca3d5a46b55077c149e65ae24323fd886e989f551c10b394a331ae6"
+  }
+}

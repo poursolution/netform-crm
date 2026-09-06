@@ -1,0 +1,8 @@
+SET crm.phase11_ref='rprechiaglyjaydkmxsu';
+BEGIN;
+DO $guard$ BEGIN IF current_user<>'postgres' OR current_setting('crm.phase11_ref',true) IS DISTINCT FROM 'rprechiaglyjaydkmxsu' THEN RAISE EXCEPTION 'Staging only'; END IF;
+IF NOT EXISTS(SELECT 1 FROM crm_security.access_review r WHERE to_jsonb(r)=$expected${"user_id":"f6090500-0001-4000-8000-000000000003","approved":false,"expires_at":"2026-09-12T13:43:18.190566+00:00","reviewed_at":"2026-09-05T13:43:18.190566+00:00","reviewed_by":"synthetic-v2-stage-20260905","source_role":"viewer","permission_role":"consultation","reviewed_auth_uid":"7dcd36d5-03ed-4e25-aa57-ce88512ee130"}$expected$::jsonb)
+THEN RAISE EXCEPTION 'Approval fixture drift'; END IF; END $guard$;
+UPDATE crm_security.access_review SET approved=true WHERE user_id='f6090500-0001-4000-8000-000000000003' AND reviewed_auth_uid='7dcd36d5-03ed-4e25-aa57-ce88512ee130';
+DO $guard$ BEGIN IF NOT EXISTS(SELECT 1 FROM crm_security.access_review r WHERE to_jsonb(r)=$expected${"user_id":"f6090500-0001-4000-8000-000000000003","approved":true,"expires_at":"2026-09-12T13:43:18.190566+00:00","reviewed_at":"2026-09-05T13:43:18.190566+00:00","reviewed_by":"synthetic-v2-stage-20260905","source_role":"viewer","permission_role":"consultation","reviewed_auth_uid":"7dcd36d5-03ed-4e25-aa57-ce88512ee130"}$expected$::jsonb) THEN RAISE EXCEPTION 'Fixture postcondition'; END IF; END $guard$;
+COMMIT;

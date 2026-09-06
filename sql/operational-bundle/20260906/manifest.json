@@ -1,0 +1,33 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "operations": [
+    "opportunity_work_set",
+    "inquiry_assign",
+    "service_change",
+    "inquiry_unassign"
+  ],
+  "read": "crm_read_scoped_v2 inquiry compatibility",
+  "classification": "LOCAL_COMBINED_CANDIDATE_NOT_APPLIED",
+  "apply_order": "single transaction",
+  "live_guard": {
+    "dispatcher_definition_md5": "0febf128445d3fe539d0d1f2bc63e3d7",
+    "read_definition_md5": "c4eb651d77355533220825381b013b88",
+    "oid_enforced": false
+  },
+  "apply_sha256": "8d4818347e4737ace3b4b1e07728c4051dadd7e4f646d873f7cc1ac88eb91e64",
+  "rollback_sha256": "844c01d9d42e051baeca39076451d4b912eb3f314bb4732c3b21661082673530",
+  "candidate_sha256": "62d95506fa1554cc48eb1ed977dd99c93246605d48258b414ca247b8c7dc95df",
+  "source_sha256": {
+    "staging_snapshot": "01829e365a2a93e06c71fe5ba667a1ba5e266c53aa1ea78e53355d1667c089e6",
+    "live_staging_preflight": "17a4721963a77c56657913370ea070bf98fb4dcaaca0d39d2eb1d23007c30720",
+    "service_candidate": "756f08f94e31b001670b4eb6d65f37389ea7b029aa7050483b57941d78f90d74",
+    "unassign_candidate": "c668360a32831b4bf21b4ce1cf7e70e0b8b9ddc31df90146badf9ed9df2e0d31",
+    "read_candidate": "70247896749ea4c3b64e01b10e3596c1ad2fe54afb0504cd3671307025dd161d"
+  },
+  "local_fixture_dispatcher_oid": 16965,
+  "frozen_dispatcher_body_sha256": "b71756d2a084c24f0dd586d6700d1c1d7276bad432965a91133f54723ac5b6d4",
+  "readme_sha256": "55a043d6f3dda9638ac7702e1fe395bbcfe7f150d5b19b0c5a488f189215f284",
+  "review_sha256": "c9234d693962494168bf6015b574537a476393cdbe826bd78ebd00b7d37af6ac",
+  "test_sha256": "00c85416cb0067b5f942ac27241d32a38c874d0f1a5a7d6fb476daef7623f7eb",
+  "status": "LOCAL_CANDIDATE_NOT_APPLIED"
+}

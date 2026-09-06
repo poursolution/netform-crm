@@ -1,0 +1,54 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "checked_at": "2026-09-06",
+  "mode": "READ_ONLY",
+  "production_access": 0,
+  "n8n_access": 0,
+  "staging_mutations": 0,
+  "schema": {
+    "inquiries_timestamp_columns": [
+      "first_response_at timestamptz null",
+      "responded_at timestamptz null"
+    ],
+    "inquiry_response_body_column": null,
+    "inquiry_response_history_relation": null,
+    "inquiry_activity_relation": null,
+    "deal_only_activity_relation": "public.activities(deal_id, organization_id, detail)"
+  },
+  "synthetic_rows": {
+    "inquiries": 5,
+    "statuses": {
+      "접수": 5
+    },
+    "first_response_at_set": 0,
+    "responded_at_set": 0,
+    "response_like_raw_keys": []
+  },
+  "ui": {
+    "operation": "inquiry_assign",
+    "internal_intent": "response_update",
+    "reachable_handlers": [
+      "mobile.html:pickToday",
+      "mobile.html:recordInquiryResponse"
+    ],
+    "labels": [
+      "진행됨 — 다음 잡음",
+      "다음주 다시",
+      "못 받으심 (내일 재시도)"
+    ],
+    "client_fields_not_authoritative": [
+      "from",
+      "to",
+      "status",
+      "at"
+    ]
+  },
+  "golden": {
+    "inquiry_control_center_has_response_function": false,
+    "inquiry_control_center_has_first_response_at": true,
+    "response_body_storage_rule": null
+  },
+  "classification": "NEEDS_VERIFICATION_BLOCKED",
+  "missing_rule": "문의 응대 본문 append-only 저장 relation과 '못 받음'의 first_response_at/responded_at 정책"
+}

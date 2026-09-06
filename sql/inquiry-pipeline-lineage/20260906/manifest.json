@@ -1,0 +1,47 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "operations": [
+    "opportunity_create",
+    "transition",
+    "lineage_link"
+  ],
+  "intents": [
+    "inquiry_promote_create",
+    "inquiry_promote_existing",
+    "lineage_link"
+  ],
+  "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+  "surface": "pc_only",
+  "blocked": [
+    "technical_inquiry_transfer",
+    "branch_handoff",
+    "branch_owner_assign"
+  ],
+  "lineage_rule": "one inquiry to one Deal; lineage-first read, legacy site fallback only",
+  "back_link_rule": "do not write inquiries.deal_id/opportunity_id; preserve existing UI one-way deals.origin_inquiry_id contract",
+  "automatic_status_rule": "only /견적.*발송/ status is updated atomically by auto promotion",
+  "staging_readonly_preflight": "PASS",
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "files_sha256": {
+    "build.cjs": "c2ed52372e669aa2971080fe8d6c306216a58227cc7646ef90690d060a5d9e58",
+    "helper.sql": "79fd534eea91c03b2670ed0c891c41dbbecc7ad72f7113e964c39c45fb201850",
+    "rollback-fragment.sql": "e5c6d1e30466d177be0bdfc2199a981ccf30d02f1cfe742e286c981b67e10d8d",
+    "review.md": "2e1fac7cc60774c73bce9ec05e7261af525200bb89d8671aa440aeed2da20656",
+    "contract.test.cjs": "55815eccbc889d4d9027c4611bd7d1191255ea5fa74f288d23f0e72a3d815699",
+    "db.test.cjs": "0b86e68ed548b4f1bd0fe5fce68d9fccc3592ad7b012ba46ed70ebbc0967f23a",
+    "ui.test.cjs": "f2b4ada43483682183d3e363eb322a0f5873aa52382595724693466f85b0c86c",
+    "staging-preflight.json": "96695f300ae60e8862f27b34097212adff17409ba51dfe046bc19f1062033fd8",
+    "staging-apply-after-inquiry-response.sql": "226397d3d167abf086a7497a51e748f599075a975dfce704a98fe0474922cf91",
+    "rollback-before-inquiry-response.sql": "f358a5824dd66a0d016e4cded59f2264bb416b502e4b4e93e0bf251129e0c0ca",
+    "operational-adapter.candidate.js": "13b64049e8a7dd909f58795242bc425e34ba89e903eed1cc54dfe0ac32e9e29e",
+    "operational-overlay.candidate.js": "d797d83b4554045a60ab8f3ef8584028b12523e585ef41e6b7f3ca8c60a1ebdd"
+  },
+  "source_sha256": {
+    "sql/inquiry-response-progress/20260906/manifest.json": "8acc946d6a631e488b7e26eb6d379cc7a3ee701df95f1347651d5136897dd861",
+    "crm.html": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "scripts/crm-inquiry-read-compat.cjs": "0ce2e1b4b6708f1d5bebe6d68c9e5cf42c4167e2c3ae32a61fc5cfa470f39b23",
+    "sql/operational-bundle/20260906/after.json": "34f289ac4709d71c03ba60cbf3b9bca28fd9189b1490ccb9c3229e2171a11ce8"
+  }
+}

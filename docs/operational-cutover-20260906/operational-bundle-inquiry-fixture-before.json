@@ -1,0 +1,11 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "inquiry_id": "f6090500-0005-4000-8000-000000000005",
+  "assigned_to": "f6090500-0001-4000-8000-000000000005",
+  "assigned_at": "2026-09-05T00:00:00+00:00",
+  "assignee_name": "TEST ADMIN",
+  "status": "접수",
+  "first_response_at": null,
+  "responded_at": null,
+  "source": "supabase_connector_read_only_before_fixture_preparation"
+}

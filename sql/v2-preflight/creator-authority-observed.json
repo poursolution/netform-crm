@@ -1,0 +1,109 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "creators": [
+    {
+      "rolname": "pg_database_owner",
+      "rolsuper": false,
+      "rolcanlogin": false,
+      "executor_member": true,
+      "can_create_public": true,
+      "executor_inherits": true,
+      "function_defaults": null,
+      "owns_public_function": false,
+      "session_can_set_role": true,
+      "has_function_defaults": false
+    },
+    {
+      "rolname": "postgres",
+      "rolsuper": false,
+      "rolcanlogin": true,
+      "executor_member": true,
+      "can_create_public": true,
+      "executor_inherits": true,
+      "function_defaults": [
+        {
+          "acl": [
+            "postgres=X/postgres",
+            "anon=X/postgres",
+            "authenticated=X/postgres",
+            "service_role=X/postgres"
+          ],
+          "schema": "public"
+        },
+        {
+          "acl": [
+            "postgres=X/postgres",
+            "anon=X/postgres",
+            "authenticated=X/postgres",
+            "service_role=X/postgres"
+          ],
+          "schema": "storage"
+        }
+      ],
+      "owns_public_function": true,
+      "session_can_set_role": true,
+      "has_function_defaults": true
+    },
+    {
+      "rolname": "supabase_admin",
+      "rolsuper": true,
+      "rolcanlogin": true,
+      "executor_member": false,
+      "can_create_public": true,
+      "executor_inherits": false,
+      "function_defaults": [
+        {
+          "acl": [
+            "postgres=X/supabase_admin",
+            "anon=X/supabase_admin",
+            "authenticated=X/supabase_admin",
+            "service_role=X/supabase_admin"
+          ],
+          "schema": "public"
+        },
+        {
+          "acl": [
+            "postgres=X*/supabase_admin"
+          ],
+          "schema": "extensions"
+        },
+        {
+          "acl": [
+            "postgres=X/supabase_admin",
+            "dashboard_user=X/supabase_admin"
+          ],
+          "schema": "realtime"
+        },
+        {
+          "acl": [
+            "postgres=X/supabase_admin",
+            "anon=X/supabase_admin",
+            "authenticated=X/supabase_admin",
+            "service_role=X/supabase_admin"
+          ],
+          "schema": "graphql_public"
+        },
+        {
+          "acl": [
+            "postgres=X/supabase_admin",
+            "anon=X/supabase_admin",
+            "authenticated=X/supabase_admin",
+            "service_role=X/supabase_admin"
+          ],
+          "schema": "graphql"
+        }
+      ],
+      "owns_public_function": false,
+      "session_can_set_role": false,
+      "has_function_defaults": true
+    }
+  ],
+  "executor": "postgres",
+  "session_user": "postgres",
+  "database_owner": "postgres",
+  "auth_user_count": 6,
+  "public_functions": 17,
+  "executor_superuser": false,
+  "crm_security_exists": false,
+  "global_function_default_rows": 0
+}

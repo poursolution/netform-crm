@@ -1,0 +1,58 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "operation": "inquiry_status",
+  "intent": "progress",
+  "ui_coverage_candidate": [
+    "I04"
+  ],
+  "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+  "surface": "pc_only",
+  "allowed_targets": [
+    "step:0",
+    "step:1",
+    "step:2",
+    "step:3",
+    "step:4",
+    "step:5"
+  ],
+  "blocked_targets": [
+    "hold",
+    "lost",
+    "badfit_lead",
+    "nocontact"
+  ],
+  "roles": [
+    "assigned_rep",
+    "assigned_consultation",
+    "scoped_admin"
+  ],
+  "transaction": [
+    "inquiries status/response timestamps/next_action_date",
+    "cancel prior open inquiry next actions",
+    "insert open inquiry next action",
+    "stage_history",
+    "private inquiry audit",
+    "command receipt"
+  ],
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "files_sha256": {
+    "build.cjs": "43884f35d8f96fca15a9ca0421edf706a13229f7c88d58efdf32b1d52dad93a6",
+    "helper.sql": "d8ef33a4a111472e9db2d1b6c386b296872ea476f217482283e9499ad0ca7deb",
+    "rollback-fragment.sql": "564c5b669d9de6e0f0cef09a988fe040ce5d20c7f7f5732b46774949e6f84a29",
+    "review.md": "1c0b26ae8310942db03ae924b621033f10de41fd6f4f79827a4eade7c4c47dd4",
+    "contract.test.cjs": "dde1de2cc0171551ec5a7805cec727c5b15802219d074e4dffc78fb988b078ba",
+    "db.test.cjs": "93370bb795ffb6a24ab455e1d54cccb68d07d240807ca58a1daa9470a08ee469",
+    "ui.test.cjs": "7e8707544edc745dd5652ce9a4c83c50029fd436829bf6121134b8b466cad7b7",
+    "staging-apply-after-inquiry-pipeline.sql": "f373a9926166e14d0c819b841442c91143c3860cdd711f0057d01bc57f7f742b",
+    "rollback-before-inquiry-pipeline.sql": "94f18109e773a4ac87986c3cef2be87ff7cddef8db3e442389208e06aa37bd14",
+    "operational-adapter.candidate.js": "7f681e87da10adf8aeb24eb6b17efe4b27344fcd50b625d40c141e267449ac92",
+    "operational-overlay.candidate.js": "a2784427dc9045cba41b1aa4e092f98838a6b1fc8a0585e3626d3b7bbba46b87"
+  },
+  "source_sha256": {
+    "sql/inquiry-pipeline-lineage/20260906/manifest.json": "89239121e7afe0ff660d7095b8312a424f387183f54b97e7a2a0d4f2dc9bab3a",
+    "crm.html": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "sql/operational-bundle/20260906/after.json": "34f289ac4709d71c03ba60cbf3b9bca28fd9189b1490ccb9c3229e2171a11ce8"
+  }
+}

@@ -1,0 +1,767 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "mode": "JWT_DISPOSABLE_MUTATION_HAPPY_REPLAY",
+  "run_id": "stg-e2e-20260906t225700z-90c0ffee",
+  "catalog_sha256": "0e490976ad6c886b0c6f3b5156399fada9547844527188053094454c6a7a0a5f",
+  "candidate_apply_sha256": "81a44efa1331454059ac59c83cc9931cc3aaa5070140c2321a3bcafcdd6e469e",
+  "scenario_count": 35,
+  "operation_count": 31,
+  "started_at": "2026-09-06T23:01:51.382Z",
+  "status": "PASS",
+  "cleanup_required": true,
+  "results": [
+    {
+      "scenario": "cross-cutting-receipt-replay",
+      "step": "cross-cutting-receipt-replay:1",
+      "status": "PASS",
+      "kind": "policy_assertion",
+      "actor": null
+    },
+    {
+      "scenario": "frozen-direct-assign-pc-mobile",
+      "step": "frozen-direct-assign-pc-mobile:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "inquiry_assign",
+      "request_id": "ebe3d6f0-e14a-4d77-a52b-79464b5214d5",
+      "replay": true
+    },
+    {
+      "scenario": "frozen-direct-assign-pc-mobile",
+      "step": "frozen-direct-assign-pc-mobile:2",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "inquiry_assign",
+      "request_id": "1edc2ea2-a93c-487f-8bc9-90517c6835b5",
+      "replay": true
+    },
+    {
+      "scenario": "mobile-inquiry-response-outcomes",
+      "step": "mobile-inquiry-response-outcomes:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "inquiry_assign",
+      "request_id": "dd6c6e89-7e0b-4bd1-ab65-5e711c31cefe",
+      "replay": true
+    },
+    {
+      "scenario": "mobile-inquiry-response-outcomes",
+      "step": "mobile-inquiry-response-outcomes:2",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "inquiry_assign",
+      "request_id": "0908f521-f7a8-4c0c-ba56-679208123fc5",
+      "replay": true
+    },
+    {
+      "scenario": "mobile-inquiry-response-outcomes",
+      "step": "mobile-inquiry-response-outcomes:3",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "inquiry_assign",
+      "request_id": "bb787b73-db43-4f4d-8cf4-c91cb8b12685",
+      "replay": true
+    },
+    {
+      "scenario": "pc-inquiry-progress",
+      "step": "pc-inquiry-progress:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "inquiry_status",
+      "request_id": "d13abd0c-0869-4722-95d6-5af05ed8953d",
+      "replay": true
+    },
+    {
+      "scenario": "frozen-inquiry-unassign",
+      "step": "frozen-inquiry-unassign:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "inquiry_assign",
+      "request_id": "a5654de5-f321-4c94-ae48-22c82953db9b",
+      "replay": true
+    },
+    {
+      "scenario": "frozen-inquiry-unassign",
+      "step": "frozen-inquiry-unassign:2",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "inquiry_unassign",
+      "request_id": "8d435b85-f149-4c0a-ae96-d6fdd3c3e881",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-hold",
+      "step": "inquiry-hold:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "inquiry_status",
+      "request_id": "acaf8c09-c9c7-4091-9a10-78ab5eb84ea4",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-next-complete-check",
+      "step": "inquiry-next-complete-check:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "next_action",
+      "request_id": "f4968dea-3771-4f3f-bfc2-13daeab2436c",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-next-complete-check",
+      "step": "inquiry-next-complete-check:2",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "next_action_complete",
+      "request_id": "6c4b4f27-fa3e-4f32-8991-41bb84be59d8",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-next-complete-check",
+      "step": "inquiry-next-complete-check:3",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "stage_check",
+      "request_id": "68072427-59d4-4a03-9df7-052b6598fc3c",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-followup",
+      "step": "inquiry-followup:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "inquiry_followup",
+      "request_id": "65783abe-a707-4fa5-99eb-9d47d71c426a",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-pipeline-promote-lineage",
+      "step": "inquiry-pipeline-promote-lineage:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "transition",
+      "request_id": "ba750945-19c7-454d-8dc9-96216d38e0f6",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-pipeline-promote-lineage",
+      "step": "inquiry-pipeline-promote-lineage:2",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "opportunity_create",
+      "request_id": "ea94dfcd-f85f-46d9-ae85-18153a25890d",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-pipeline-promote-lineage",
+      "step": "inquiry-pipeline-promote-lineage:3",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "lineage_link",
+      "request_id": "25c9020c-7e5b-481d-bbef-0ecfe3002b64",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-trash-restore",
+      "step": "inquiry-trash-restore:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "inquiry_trash",
+      "request_id": "0bc1483c-9371-4a1b-b6d8-229afef696a4",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-trash-restore",
+      "step": "inquiry-trash-restore:2",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "inquiry_restore",
+      "request_id": "532f958f-4cee-465f-a8b8-0dd46ba278c1",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-purge",
+      "step": "inquiry-purge:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "inquiry_trash",
+      "request_id": "c88b41d5-031d-4a41-b503-f0bca73b21ba",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-purge",
+      "step": "inquiry-purge:2",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN_MFA",
+      "operation": "inquiry_purge",
+      "request_id": "91383d1f-382e-4ec2-b9a0-cec421c2685b",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-reclassify",
+      "step": "inquiry-reclassify:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "inquiry_reclassify",
+      "request_id": "f0e48af7-9247-4f4d-aadb-236b984c8ee1",
+      "replay": true
+    },
+    {
+      "scenario": "technical-inquiry-transfer",
+      "step": "technical-inquiry-transfer:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "opportunity_create",
+      "request_id": "d4778710-c1ad-4590-8e1c-3a02950be6aa",
+      "replay": true
+    },
+    {
+      "scenario": "frozen-inquiry-read-refresh",
+      "step": "frozen-inquiry-read-refresh:1",
+      "status": "PASS",
+      "kind": "read",
+      "actor": "INTERNAL_REP",
+      "rpc": "crm_read_scoped_v2"
+    },
+    {
+      "scenario": "pipeline-opportunity-create",
+      "step": "pipeline-opportunity-create:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "opportunity_create",
+      "request_id": "7164b1dd-adc0-4bd0-93d2-abea3ac553be",
+      "replay": true
+    },
+    {
+      "scenario": "pipeline-stage-transition",
+      "step": "pipeline-stage-transition:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "transition",
+      "request_id": "d1f1e45b-33f8-47f4-ac33-48612774858a",
+      "replay": true
+    },
+    {
+      "scenario": "pipeline-close-nonwon",
+      "step": "pipeline-close-nonwon:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "close",
+      "request_id": "2be01784-0cbe-4b08-bb34-fe03c11ef7e2",
+      "replay": true
+    },
+    {
+      "scenario": "pipeline-close-won-expansion",
+      "step": "pipeline-close-won-expansion:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "close",
+      "request_id": "595e4222-561c-4023-a834-3e1f606c6a08",
+      "replay": true
+    },
+    {
+      "scenario": "pipeline-expected-amount",
+      "step": "pipeline-expected-amount:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "amount",
+      "request_id": "135f12a8-b9d1-48fe-add0-03994c7bb8f5",
+      "replay": true
+    },
+    {
+      "scenario": "frozen-opportunity-work",
+      "step": "frozen-opportunity-work:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "opportunity_work_set",
+      "request_id": "53509f36-2139-4aee-b9a6-19fae48b8b65",
+      "replay": true
+    },
+    {
+      "scenario": "frozen-service-change",
+      "step": "frozen-service-change:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "service_change",
+      "request_id": "f6f2e58e-324b-4975-9662-35a3d5bd91c1",
+      "replay": true
+    },
+    {
+      "scenario": "pipeline-activity-and-contact",
+      "step": "pipeline-activity-and-contact:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "activity",
+      "request_id": "4fee35d9-fedf-4c90-b679-395f032b00d8",
+      "replay": true
+    },
+    {
+      "scenario": "deal-next-action-lifecycle",
+      "step": "deal-next-action-lifecycle:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "next_action",
+      "request_id": "10149e12-866e-4d46-8a2a-d115cd802caf",
+      "replay": true
+    },
+    {
+      "scenario": "deal-next-action-lifecycle",
+      "step": "deal-next-action-lifecycle:2",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "next_action_complete",
+      "request_id": "58aed858-f884-45e3-8bbb-3ae68568d516",
+      "replay": true
+    },
+    {
+      "scenario": "mobile-today-outcomes",
+      "step": "mobile-today-outcomes:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "next_action",
+      "request_id": "744f6592-7113-4426-9245-a7bf18d8a5c0",
+      "replay": true
+    },
+    {
+      "scenario": "mobile-today-outcomes",
+      "step": "mobile-today-outcomes:2",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "next_action_complete",
+      "request_id": "9f7508e4-4a43-4cf0-8000-e30b1d55074a",
+      "replay": true
+    },
+    {
+      "scenario": "mobile-today-outcomes",
+      "step": "mobile-today-outcomes:3",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "next_action",
+      "request_id": "5e507943-f658-4bd2-93d2-77215b1bd2a8",
+      "replay": true
+    },
+    {
+      "scenario": "mobile-today-outcomes",
+      "step": "mobile-today-outcomes:4",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "next_action_complete",
+      "request_id": "a8e63dd1-d3b5-47c1-bf3c-dfaa45c80a74",
+      "replay": true
+    },
+    {
+      "scenario": "mobile-today-outcomes",
+      "step": "mobile-today-outcomes:5",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "next_action",
+      "request_id": "fdacc405-34db-4a66-b42f-6ca213315279",
+      "replay": true
+    },
+    {
+      "scenario": "mobile-today-outcomes",
+      "step": "mobile-today-outcomes:6",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "next_action_complete",
+      "request_id": "8eb2b8aa-7213-4927-ab06-7fd3a3b284b6",
+      "replay": true
+    },
+    {
+      "scenario": "pipeline-waiting-context",
+      "step": "pipeline-waiting-context:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "waiting_context",
+      "request_id": "ddeb0fb7-fde3-49b2-b2a9-1b96b894138e",
+      "replay": true
+    },
+    {
+      "scenario": "pipeline-waiting-context",
+      "step": "pipeline-waiting-context:2",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "next_action",
+      "request_id": "fa01e230-ca8b-4845-a314-b4b0c3d6c9ad",
+      "replay": true
+    },
+    {
+      "scenario": "pipeline-quote-version",
+      "step": "pipeline-quote-version:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "quote_version",
+      "request_id": "ad6a2f60-31ff-43a8-99ef-8be496d0af5c",
+      "replay": true
+    },
+    {
+      "scenario": "pipeline-stage-check",
+      "step": "pipeline-stage-check:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "stage_check",
+      "request_id": "aab03bb1-615e-46d4-b61f-16dffbeb0392",
+      "replay": true
+    },
+    {
+      "scenario": "customer-and-operational-reads",
+      "step": "customer-and-operational-reads:1",
+      "status": "PASS",
+      "kind": "read",
+      "actor": "INTERNAL_REP",
+      "rpc": "crm_operational_source_v1"
+    },
+    {
+      "scenario": "expansion-pool-update-note-context",
+      "step": "expansion-pool-update-note-context:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "close",
+      "request_id": "a4793b32-c148-4002-b2de-1034982e7e3d",
+      "replay": true
+    },
+    {
+      "scenario": "expansion-pool-update-note-context",
+      "step": "expansion-pool-update-note-context:2",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "expansion_pool_update",
+      "request_id": "485167c9-3eb8-4fb9-ab17-de2bb4fa1e74",
+      "replay": true
+    },
+    {
+      "scenario": "expansion-pool-update-note-context",
+      "step": "expansion-pool-update-note-context:3",
+      "status": "PASS",
+      "kind": "direct_rpc",
+      "actor": "INTERNAL_REP",
+      "rpc": "crm_expansion_note",
+      "request_id": "f2ef0c10-7898-4411-9391-4c7aea8c07a2",
+      "replay": true
+    },
+    {
+      "scenario": "expansion-pool-update-note-context",
+      "step": "expansion-pool-update-note-context:context",
+      "status": "PASS",
+      "kind": "direct_rpc",
+      "actor": "INTERNAL_REP",
+      "rpc": "crm_expansion_context"
+    },
+    {
+      "scenario": "attachment-lifecycle",
+      "step": "attachment-lifecycle:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "attachment_prepare",
+      "request_id": "f21e799c-8a31-4f13-9b59-290e235db864",
+      "replay": true
+    },
+    {
+      "scenario": "attachment-lifecycle",
+      "step": "attachment-lifecycle:put",
+      "status": "PASS",
+      "kind": "storage_put",
+      "actor": "INTERNAL_REP",
+      "bucket": "crm-site-files",
+      "object_path": "deals/b8ff1bd7-e0c7-417d-9521-937ee3ab1db0/26ae0b44-d1de-4f91-8e4c-a52234a7f03f"
+    },
+    {
+      "scenario": "attachment-lifecycle",
+      "step": "attachment-lifecycle:2",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "attachment_complete",
+      "request_id": "14e3482a-639b-441e-9afc-5a3014cb53a5",
+      "replay": true
+    },
+    {
+      "scenario": "personalization",
+      "step": "personalization:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "favorite_set",
+      "request_id": "b41a8daf-6393-4843-b0c2-2c5607bc5aa6",
+      "replay": true
+    },
+    {
+      "scenario": "personalization",
+      "step": "personalization:2",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "opportunity_touch",
+      "request_id": "d8220cf6-226c-419b-9bfa-786008ca1ca5",
+      "replay": true
+    },
+    {
+      "scenario": "message-log",
+      "step": "message-log:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "message_log",
+      "request_id": "a97fd26f-8655-4726-9888-b399cf9bb1f7",
+      "replay": true
+    },
+    {
+      "scenario": "message-reminder",
+      "step": "message-reminder:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "next_action",
+      "request_id": "67649b70-f0ff-40c9-96ee-c5f3c678707c",
+      "replay": true
+    },
+    {
+      "scenario": "relationship-cadence",
+      "step": "relationship-cadence:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "relationship_hold",
+      "request_id": "2a56a878-87a8-407f-8947-c83b7fe23da3",
+      "replay": true
+    },
+    {
+      "scenario": "relationship-cadence",
+      "step": "relationship-cadence:2",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "message_log",
+      "request_id": "2a322ac0-d641-41c0-915a-aba63df81ca0",
+      "replay": true
+    },
+    {
+      "scenario": "relationship-cadence",
+      "step": "relationship-cadence:3",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "INTERNAL_REP",
+      "operation": "relationship_response",
+      "request_id": "80a0c26b-2bd5-48cb-ba8f-62aa12d9ad3c",
+      "replay": true
+    },
+    {
+      "scenario": "customer-support-request",
+      "step": "customer-support-request:1",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "customer_support_action",
+      "request_id": "8b30aff5-060a-416a-8e8c-b8a8a8e20da6",
+      "replay": true
+    },
+    {
+      "scenario": "customer-support-request",
+      "step": "customer-support-request:2",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "customer_support_action",
+      "request_id": "9de93e05-fdac-4927-802b-924d4673435c",
+      "replay": true
+    },
+    {
+      "scenario": "customer-support-request",
+      "step": "customer-support-request:3",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "customer_support_action",
+      "request_id": "7c00e463-568e-4720-92e5-763c5da277f2",
+      "replay": true
+    },
+    {
+      "scenario": "customer-support-request",
+      "step": "customer-support-request:4",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "customer_support_action",
+      "request_id": "2fb26d17-78fc-455a-a7a7-4596dbc54005",
+      "replay": true
+    },
+    {
+      "scenario": "customer-support-request",
+      "step": "customer-support-request:5",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "customer_support_action",
+      "request_id": "02ccf45c-e351-49ac-acd4-358366fcb28f",
+      "replay": true
+    },
+    {
+      "scenario": "customer-support-request",
+      "step": "customer-support-request:6",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "customer_support_action",
+      "request_id": "36361ce8-3ba5-429f-856d-b613b58564a0",
+      "replay": true
+    },
+    {
+      "scenario": "customer-support-request",
+      "step": "customer-support-request:7",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "customer_support_action",
+      "request_id": "aca3838f-1b92-4f4e-99bd-4780d7224802",
+      "replay": true
+    },
+    {
+      "scenario": "customer-support-request",
+      "step": "customer-support-request:8",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "customer_support_action",
+      "request_id": "a33349d3-598c-4af3-b4cc-d0ec5b662bdb",
+      "replay": true
+    },
+    {
+      "scenario": "customer-support-request",
+      "step": "customer-support-request:9",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "customer_support_action",
+      "request_id": "f5552f16-cf21-4eff-a96d-4d0388efa342",
+      "replay": true
+    },
+    {
+      "scenario": "customer-support-request",
+      "step": "customer-support-request:10",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "customer_support_action",
+      "request_id": "b84baa29-2002-438b-a272-9f3c5061461c",
+      "replay": true
+    },
+    {
+      "scenario": "customer-support-request",
+      "step": "customer-support-request:11",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "customer_support_action",
+      "request_id": "75644be7-333a-46eb-a58c-1fe32ea896de",
+      "replay": true
+    },
+    {
+      "scenario": "customer-support-request",
+      "step": "customer-support-request:12",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "customer_support_action",
+      "request_id": "10573ca1-3ce4-4884-a08f-df37cc956e2c",
+      "replay": true
+    },
+    {
+      "scenario": "customer-support-request",
+      "step": "customer-support-request:13",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "customer_support_action",
+      "request_id": "a5018678-b83b-423a-a3e7-76f8239b6746",
+      "replay": true
+    },
+    {
+      "scenario": "customer-support-request",
+      "step": "customer-support-request:14",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "customer_support_action",
+      "request_id": "4cfca8ca-353c-467e-91c6-3af2f485e76c",
+      "replay": true
+    },
+    {
+      "scenario": "customer-support-request",
+      "step": "customer-support-request:15",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "customer_support_action",
+      "request_id": "df0b0a7b-756a-4bbe-a46e-aa05cf75e6be",
+      "replay": true
+    },
+    {
+      "scenario": "customer-support-request",
+      "step": "customer-support-request:16",
+      "status": "PASS",
+      "kind": "write",
+      "actor": "ADMIN",
+      "operation": "customer_support_action",
+      "request_id": "b9f4a622-d874-4fa6-b48c-4247c0251289",
+      "replay": true
+    }
+  ],
+  "completed_at": "2026-09-06T23:01:59.182Z",
+  "failure_point": null,
+  "pass": 75,
+  "fail": 0,
+  "skip": 0,
+  "http_requests": 157,
+  "crm_writes": 70,
+  "storage_writes": 1,
+  "staging_ddl_dml_performed": false,
+  "n8n_requests": 0,
+  "production_requests": 0,
+  "error_type": null
+}

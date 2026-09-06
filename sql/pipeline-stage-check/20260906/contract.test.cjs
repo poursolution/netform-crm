@@ -1,0 +1,5 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict'),c=require('./adapter-contract.js');
+const deal='f6090500-0006-4000-8000-000000000001';
+test('manual stage check strips display text from the canonical payload',()=>{const x=c.normalize(deal,4,{opportunity_id:deal,stage_code:'first_contact',item_index:1,item_text:'공사 예정시기 확인',checked:true});assert.deepEqual(x.payload,{stage_code:'first_contact',item_index:1,checked:true});});
+test('automatic, unknown and text-drift items fail closed',()=>{assert.throws(()=>c.normalize(deal,4,{opportunity_id:deal,stage_code:'first_contact',item_index:0,item_text:'관리주체·연락처 확인',checked:true}),/STAGE_CHECK_ITEM_NOT_MANUAL/);assert.throws(()=>c.normalize(deal,4,{opportunity_id:deal,stage_code:'first_contact',item_index:1,item_text:'다른 문구',checked:true}),/STAGE_CHECK_ITEM_NOT_MANUAL/);assert.throws(()=>c.normalize(deal,4,{opportunity_id:deal,stage_code:'expansion',item_index:0,item_text:'기존 공사 이력 확인',checked:true}),/STAGE_CHECK_ITEM_NOT_MANUAL/);});

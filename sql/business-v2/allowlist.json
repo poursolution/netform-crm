@@ -1,0 +1,189 @@
+[
+  {
+    "signature": "crm_activity_add_scoped_v2(text,uuid,text,text,text)",
+    "owner": "postgres",
+    "acl": [
+      "postgres=X/postgres",
+      "authenticated=X/postgres"
+    ],
+    "config": [
+      "search_path=\"\""
+    ]
+  },
+  {
+    "signature": "crm_assign_scoped_v2(text,uuid,uuid,text,text)",
+    "owner": "postgres",
+    "acl": [
+      "postgres=X/postgres",
+      "authenticated=X/postgres"
+    ],
+    "config": [
+      "search_path=\"\""
+    ]
+  },
+  {
+    "signature": "crm_assignment_targets_scoped_v2(text,uuid)",
+    "owner": "postgres",
+    "acl": [
+      "postgres=X/postgres",
+      "authenticated=X/postgres"
+    ],
+    "config": [
+      "search_path=\"\""
+    ]
+  },
+  {
+    "signature": "crm_contacts_scoped_v2(uuid)",
+    "owner": "postgres",
+    "acl": [
+      "postgres=X/postgres",
+      "authenticated=X/postgres"
+    ],
+    "config": [
+      "search_path=\"\""
+    ]
+  },
+  {
+    "signature": "crm_dashboard_scoped_v2(date,date,text,uuid)",
+    "owner": "postgres",
+    "acl": [
+      "postgres=X/postgres",
+      "authenticated=X/postgres"
+    ],
+    "config": [
+      "search_path=\"\""
+    ]
+  },
+  {
+    "signature": "crm_deal_amount_scoped_v2(uuid,bigint,integer,text)",
+    "owner": "postgres",
+    "acl": [
+      "postgres=X/postgres",
+      "authenticated=X/postgres"
+    ],
+    "config": [
+      "search_path=\"\""
+    ]
+  },
+  {
+    "signature": "crm_deal_stage_scoped_v2(uuid,text,integer,text)",
+    "owner": "postgres",
+    "acl": [
+      "postgres=X/postgres",
+      "authenticated=X/postgres"
+    ],
+    "config": [
+      "search_path=\"\""
+    ]
+  },
+  {
+    "signature": "crm_deals_scoped_v2(uuid,integer)",
+    "owner": "postgres",
+    "acl": [
+      "postgres=X/postgres",
+      "authenticated=X/postgres"
+    ],
+    "config": [
+      "search_path=\"\""
+    ]
+  },
+  {
+    "signature": "crm_inquiries_scoped_v2(uuid,integer)",
+    "owner": "postgres",
+    "acl": [
+      "postgres=X/postgres",
+      "authenticated=X/postgres"
+    ],
+    "config": [
+      "search_path=\"\""
+    ]
+  },
+  {
+    "signature": "crm_inquiry_response_scoped_v2(uuid,text,text)",
+    "owner": "postgres",
+    "acl": [
+      "postgres=X/postgres",
+      "authenticated=X/postgres"
+    ],
+    "config": [
+      "search_path=\"\""
+    ]
+  },
+  {
+    "signature": "crm_inquiry_status_scoped_v2(uuid,text,text,text)",
+    "owner": "postgres",
+    "acl": [
+      "postgres=X/postgres",
+      "authenticated=X/postgres"
+    ],
+    "config": [
+      "search_path=\"\""
+    ]
+  },
+  {
+    "signature": "crm_next_add_scoped_v2(text,uuid,text,text,timestamp with time zone,text)",
+    "owner": "postgres",
+    "acl": [
+      "postgres=X/postgres",
+      "authenticated=X/postgres"
+    ],
+    "config": [
+      "search_path=\"\""
+    ]
+  },
+  {
+    "signature": "crm_next_complete_scoped_v2(uuid,text)",
+    "owner": "postgres",
+    "acl": [
+      "postgres=X/postgres",
+      "authenticated=X/postgres"
+    ],
+    "config": [
+      "search_path=\"\""
+    ]
+  },
+  {
+    "signature": "crm_profile_scoped_v2()",
+    "owner": "postgres",
+    "acl": [
+      "postgres=X/postgres",
+      "authenticated=X/postgres"
+    ],
+    "config": [
+      "search_path=\"\""
+    ]
+  },
+  {
+    "signature": "crm_read_scoped_v2(uuid,integer,uuid,uuid)",
+    "owner": "postgres",
+    "acl": [
+      "postgres=X/postgres",
+      "authenticated=X/postgres"
+    ],
+    "config": [
+      "search_path=\"\""
+    ]
+  },
+  {
+    "signature": "crm_today_scoped_v2(date)",
+    "owner": "postgres",
+    "acl": [
+      "postgres=X/postgres",
+      "authenticated=X/postgres"
+    ],
+    "config": [
+      "search_path=\"\""
+    ]
+  },
+  {
+    "signature": "crm_work_set_scoped_v2(uuid,text,jsonb,text,integer)",
+    "owner": "postgres",
+    "acl": [
+      "postgres=X/postgres",
+      "authenticated=X/postgres"
+    ],
+    "config": [
+      "search_path=\"\""
+    ]
+  }
+]

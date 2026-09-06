@@ -1,0 +1,66 @@
+{
+  "workflow_id": "J5u7dtzgibqVSGud",
+  "workflow_name": "CRM 쓰기 API (crm-write · 멱등)",
+  "observed_on": "2026-09-06",
+  "workflow_state": "Inactive / Saved",
+  "evidence_scope": "Visible workflow graph, switch configuration, and a partial visible creation branch only. No execution history or workflow execution. Not a full exported workflow.",
+  "inspection_status": "STOPPED_UNSAFE_UI_AUTOMATIC_VARIABLE_DISCLOSURE",
+  "route_conditions": [
+    {"index":0,"input":"prepared.route","equals":"act"},
+    {"index":1,"input":"prepared.route","equals":"na"},
+    {"index":2,"input":"prepared.route","equals":"nadone"},
+    {"index":3,"input":"prepared.route","equals":"deal"},
+    {"index":4,"input":"prepared.route","equals":"create"},
+    {"index":5,"input":"prepared.route","equals":"biz"},
+    {"index":6,"input":"prepared.op","equals":"contact_upsert"},
+    {"index":7,"input":"prepared.op","equals":"contact_move"},
+    {"index":8,"input":"prepared.op","equals":"opportunity_work_set"}
+  ],
+  "graph_targets": [
+    {"node":"다음행동 저장","method":"POST","target":"public.next_actions"},
+    {"node":"다음행동 완료","method":"UNKNOWN","target":"NEEDS_VERIFICATION"},
+    {"node":"딜 갱신","method":"UNKNOWN","target":"NEEDS_VERIFICATION"},
+    {"node":"딜 생성","method":"POST","target":"public.deals"},
+    {"node":"감사 활동 기록","method":"POST","target":"public.activities"},
+    {"node":"감사 로그","method":"POST","target":"public.audit_logs"},
+    {"node":"HTTP Request","method":"POST","target":"public.crm_contact_upsert"},
+    {"node":"HTTP Request1","method":"POST","target":"public.crm_contact_move"},
+    {"node":"공종 저장","method":"POST","target":"public.crm_opportunity_work_set"}
+  ],
+  "graph_order": [
+    "토큰 검증 → 검증·준비 → 중복 확인 → 이미 처리?",
+    "이미 처리? → 중복 응답 또는 op 분기",
+    "다음행동 저장/다음행동 완료/딜 갱신 → 감사 활동 기록",
+    "딜 생성 → 생성ID 반영 → 감사 활동 기록",
+    "감사 활동 기록 → 감사 로그 → 응답"
+  ],
+  "transaction_semantics": "Sequential HTTP nodes are visible. A shared database transaction is NOT proven. Compensation, partial failure and retry behavior remain NEEDS_VERIFICATION.",
+  "duplicate_semantics": "Duplicate lookup/branch exists; lookup key, atomic uniqueness, actor scope, race handling and stored response remain NEEDS_VERIFICATION.",
+  "ack": "UNKNOWN / NEEDS_VERIFICATION: response node exists; its expression was not inspected.",
+  "partial_creation_rule": {
+    "ops": ["opportunity_create", "lead_create"],
+    "status": "PARTIAL_VISIBLE_RULE_ONLY",
+    "validation": "needReason called; its exact validation is UNKNOWN. STAGES membership selects payload stage_code; otherwise first_contact.",
+    "target": "public.deals (POST node)",
+    "fields": ["brand", "current_business", "origin_business", "stage_code", "stage_entered_at", "stage_raw", "assignee_name", "amount", "source", "outbound_channel", "origin_inquiry_id", "site_id", "list_fields", "created_at", "updated_at"],
+    "rules": [
+      "brand/current_business/origin_business receive payload brand or null",
+      "amount uses Number(payload.amount || 0) || null",
+      "lead_create source=outbound; opportunity_create source=existing_customer",
+      "outbound_channel receives payload origin or null",
+      "origin_inquiry_id and site_id are dedicated columns, not only list_fields",
+      "list_fields includes name, work_name, work_type, register_reason, reason_source, gj, parent_opportunity_id, site_id",
+      "assignee_name uses payload owner then prepared actor then unassigned display label; UUID ownership handling is NOT visible in this branch",
+      "activity deal_id is initially null; a separate 생성ID 반영 node exists, but its rule is UNKNOWN"
+    ],
+    "unknown": ["full stage allowlist", "required fields and needReason", "Auth UUID/CRM UUID authorization", "database UUID return handling", "new_opportunity_id ACK", "structured work fields after creation", "contact/site creation", "inquiry conversion atomicity", "branch scope rules"]
+  },
+  "fallback_observation": "A visible final else sets activity type=app_write and route=act. Whether a particular unsupported op can reach it depends on uninspected earlier validation. Do not label an audit-only write as successful business storage.",
+  "direct_op_rules": {
+    "contact_upsert": {"status":"ROUTING_ONLY","target":"public.crm_contact_upsert","storage_rule":"UNKNOWN / NEEDS_VERIFICATION"},
+    "contact_move": {"status":"ROUTING_ONLY","target":"public.crm_contact_move","storage_rule":"UNKNOWN / NEEDS_VERIFICATION"},
+    "opportunity_work_set": {"status":"ROUTING_ONLY","target":"public.crm_opportunity_work_set","storage_rule":"Baseline SQL separately available; n8n payload adaptation/ACK/error handling remain NEEDS_VERIFICATION"}
+  },
+  "sensitive_content": "No credential value, token, key, password, customer payload or historical execution data is included in this artifact. UI automatic disclosure occurred in a tool result; do not claim that no secret was output. Review rotation separately; no credential changes performed.",
+  "remote_changes": 0
+}

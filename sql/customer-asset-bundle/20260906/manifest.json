@@ -1,0 +1,52 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "LOCAL_STAGING_READY_LIVE_PREFLIGHT_PASS_NOT_APPLIED",
+  "connected_operations": [],
+  "business_data_dml": false,
+  "live_preflight": {
+    "status": "PASS",
+    "oid": 18065,
+    "do_not_guess_oid": true,
+    "comparison": "LF_NORMALIZED_DEFINITION_MD5",
+    "expected_definition_md5": "1a58be86503cb53bdc3a9a784eb4add2",
+    "expected_candidate_definition_md5": "7e811c93e73ba945a0dfea164da55fcd",
+    "expected_can_deal_definition_md5": "05d51a3c77344504a05a0e932cfcb15d",
+    "expected_owner": "postgres",
+    "expected_acl": "{postgres=X/postgres,authenticated=X/postgres}",
+    "expected_config": [
+      "search_path=\"\""
+    ],
+    "actual_definition_md5": "415dc8fc1826aec86a0a916147480a71",
+    "actual_definition_md5_lf": "1a58be86503cb53bdc3a9a784eb4add2",
+    "actual_can_deal_definition_md5": "efdf75e2004fb4d7248b43eb06adcaeb",
+    "actual_can_deal_definition_md5_lf": "05d51a3c77344504a05a0e932cfcb15d",
+    "raw_definition_diff_explained": "CRLF_TO_LF_ONLY"
+  },
+  "write_verdicts": {
+    "contact_upsert": "NEEDS_VERIFICATION",
+    "contact_relationship": "NEEDS_VERIFICATION",
+    "contact_move": "NEEDS_VERIFICATION"
+  },
+  "read_verdicts": {
+    "deal_contact_timeline": "DERIVED_SAFE_LOCAL_READ",
+    "site_1n_timeline": "NEEDS_VERIFICATION"
+  },
+  "files_sha256": {
+    "candidate.sql": "68e997eaf008dca3d218871afbb107c334589937b85705ccbdb0fdaa48c2d0e1",
+    "rollback.sql": "6b1d205ef2c28f0bc8cd5e1fa863efaa1dd9ea8dc620923f1452a833809513ab",
+    "preflight.sql": "f218e596fafde960c011d2028921dacb880a86e6240fa103db4f1d727a68508e",
+    "staging-apply-checklist.md": "012a2bbc9895b4cedbaae1aa9be7150a579afe7b185061a50b87cf9b4452aad7",
+    "adapter-contract.js": "8cca37982b2771fc0aa905553f77081506245f0b93c2a45513b7fcd070e2edb6",
+    "fixtures.json": "59d74fd67d7f2d76bfa3bdf2160580489ccf064f44153444c421af58e4be7952",
+    "review.md": "b75abaac418a5818aeab7c0251fe80b9fea1d0e81661d5cb36fffc1d938ed110",
+    "contract.test.cjs": "4f1a97c9030f54b007413074395e6f7f3a97fb303bd0b22a28bac272d04ee53b",
+    "db.test.cjs": "fc8af8796085f48aca618655a818a8635017467e8cead9caee6de04e66ffd1ea",
+    "staging-preflight.json": "c64a03c01f3b5b7ab9e457f0d63a0fae154673e9428cb0ad8baefa9c6c840560"
+  },
+  "source_sha256": {
+    "golden_pc": "f73daf1598a2271d38fb38fba32b81cc8cc842e860b98983ce7f3c972c2274e2",
+    "golden_mobile": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "staging_snapshot": "01829e365a2a93e06c71fe5ba667a1ba5e266c53aa1ea78e53355d1667c089e6",
+    "staging_preflight_dispatcher_read_only": "17a4721963a77c56657913370ea070bf98fb4dcaaca0d39d2eb1d23007c30720"
+  }
+}

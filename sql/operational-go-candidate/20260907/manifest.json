@@ -1,0 +1,16 @@
+{
+  "project_name": "netform-crm-staging",
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "LOCAL_PASS_AWAITING_EXACT_STAGING_APPLY_APPROVAL",
+  "scope": ["I16", "I17", "I18", "P02", "A01", "A02", "A03", "O01"],
+  "files": {
+    "staging-apply.sql": "adf2bac44f5ff093e236f98b115f283abf19304fd7b15fcea835f446740542bc",
+    "rollback.sql": "f828e17315b1727f7e8cf4128ec741ce8d4d1eb87c3b348fd97aa53c0bc33503"
+  },
+  "expected_live_hashes": {
+    "public.crm_write_command_v2(uuid,text,uuid,integer,jsonb)": "432d79d939cd782a318034089fbb6c95",
+    "public.crm_operational_source_v1(text,uuid,integer)": "3883c86d284982544eb9e9cb380ca7c3"
+  },
+  "production_accessed": false,
+  "n8n_accessed": false
+}

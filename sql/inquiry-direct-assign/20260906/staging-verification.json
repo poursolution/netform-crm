@@ -1,0 +1,102 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "operation": "inquiry_assign",
+  "intent": "direct_assign",
+  "run_id": "989e97a7-6937-4b44-a8f6-7ab715397b73",
+  "started_at": "2026-09-05T23:01:46.820Z",
+  "status": "STAGING_COMPAT_PASS",
+  "results": [
+    {
+      "name": "mobile first assignment allows no reason and preserves legacy ACK",
+      "status": "PASS"
+    },
+    {
+      "name": "initial state alone becomes assigned complete and refresh agrees",
+      "status": "PASS"
+    },
+    {
+      "name": "same request id replays without another change",
+      "status": "PASS"
+    },
+    {
+      "name": "same request id with another payload returns 409",
+      "status": "PASS"
+    },
+    {
+      "name": "reassignment without reason is rejected and state is unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "reject target TEST CONSULT",
+      "status": "PASS"
+    },
+    {
+      "name": "reject target TEST GYEONGNAM",
+      "status": "PASS"
+    },
+    {
+      "name": "reject target TEST INACTIVE REP",
+      "status": "PASS"
+    },
+    {
+      "name": "reject target TEST UNAPPROVED REP",
+      "status": "PASS"
+    },
+    {
+      "name": "reject target TEST EXPIRED REP",
+      "status": "PASS"
+    },
+    {
+      "name": "non-admin user cannot assign scoped inquiry",
+      "status": "PASS"
+    },
+    {
+      "name": "PC reasoned reassignment succeeds and preserves status",
+      "status": "PASS"
+    },
+    {
+      "name": "mobile reasoned reassignment matches PC result contract and preserves status",
+      "status": "PASS"
+    },
+    {
+      "name": "branch handoff, branch owner assignment, and response update remain disconnected",
+      "status": "PASS"
+    }
+  ],
+  "completed_at": "2026-09-05T23:01:49.014Z",
+  "inquiry_id": "f6090500-0005-4000-8000-000000000005",
+  "request_ids": {
+    "first": "891800d6-7024-546c-ad25-910859e04902",
+    "pc": "da8ab274-3e0c-5497-bc27-a3645e20ef41",
+    "mobile": "b10c827a-1a61-5ce9-997f-d94a08522f1d"
+  },
+  "audit_event_ids": [
+    "d81bbc8d-e515-4109-97f3-5d724c1ff3be",
+    "cc65389b-76cd-42a6-ac4d-e1b593688ac4",
+    "b52a1859-fbeb-4665-adad-ef77ffd68c4f"
+  ],
+  "reasons": {
+    "pc": "TEST PC reassign 989e97a7-6937-4b44-a8f6-7ab715397b73",
+    "mobile": "TEST MOBILE reassign 989e97a7-6937-4b44-a8f6-7ab715397b73"
+  },
+  "actor_auth_uid": "2ed567fb-ce77-438c-804b-0dec3abda6f8",
+  "actor_user_id": "f6090500-0001-4000-8000-000000000005",
+  "final_assigned_to": "f6090500-0001-4000-8000-000000000001",
+  "final_status": "배정완료",
+  "http_requests": 22,
+  "n8n_requests": 0,
+  "production_requests": 0,
+  "database_verification": {
+    "audit_rows": 3,
+    "audit_actor_matches": 3,
+    "history_rows": 3,
+    "first_history": 1,
+    "pc_history": 1,
+    "mobile_history": 1,
+    "receipt_rows": 3,
+    "replay_duplicate_history": 0,
+    "replay_duplicate_audit": 0,
+    "fixture_restored": true,
+    "temporary_users_remaining": 0
+  }
+}

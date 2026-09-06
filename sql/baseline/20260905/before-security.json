@@ -1,0 +1,2300 @@
+{
+  "source_metadata_md5": "9872dac5bc6f60f19fc7c4a5514af0af",
+  "schema": {
+    "acl": [
+      "pg_database_owner=UC/pg_database_owner",
+      "=U/pg_database_owner",
+      "postgres=U/pg_database_owner",
+      "anon=U/pg_database_owner",
+      "authenticated=U/pg_database_owner",
+      "service_role=U/pg_database_owner"
+    ],
+    "owner": "pg_database_owner"
+  },
+  "relations": [
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "name": "activities",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": false,
+      "kind": "r",
+      "name": "advisory_deals",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": false,
+      "kind": "r",
+      "name": "assignment_history",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "name": "audit_logs",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": false,
+      "kind": "r",
+      "name": "business_history",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=rwU/postgres",
+        "anon=rwU/postgres",
+        "authenticated=rwU/postgres",
+        "service_role=rwU/postgres"
+      ],
+      "rls": false,
+      "kind": "S",
+      "name": "business_history_id_seq",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "n"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "name": "contact_assignments",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "name": "contacts",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "name": "dashboard_state",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "name": "deals",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "name": "inquiries",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "name": "next_actions",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": false,
+      "kind": "r",
+      "name": "notes",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": false,
+      "kind": "v",
+      "name": "opportunities",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "n"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "name": "organizations",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": false,
+      "kind": "r",
+      "name": "projects",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "name": "sites",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": false,
+      "kind": "r",
+      "name": "stage_catalog",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=rwU/postgres",
+        "anon=rwU/postgres",
+        "authenticated=rwU/postgres",
+        "service_role=rwU/postgres"
+      ],
+      "rls": false,
+      "kind": "S",
+      "name": "stage_catalog_id_seq",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "n"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": false,
+      "kind": "r",
+      "name": "stage_history",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "kind": "r",
+      "name": "users",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "d"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": false,
+      "kind": "v",
+      "name": "v_assignee",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "n"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": false,
+      "kind": "v",
+      "name": "v_dup_org",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "n"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": false,
+      "kind": "v",
+      "name": "v_funnel",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "n"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": false,
+      "kind": "v",
+      "name": "v_kanban",
+      "owner": "postgres",
+      "options": null,
+      "force_rls": false,
+      "tablespace": "0",
+      "persistence": "p",
+      "replica_identity": "n"
+    }
+  ],
+  "column_acl": [
+    {
+      "table": "activities",
+      "column": "id",
+      "acl": null
+    },
+    {
+      "table": "activities",
+      "column": "deal_id",
+      "acl": null
+    },
+    {
+      "table": "activities",
+      "column": "organization_id",
+      "acl": null
+    },
+    {
+      "table": "activities",
+      "column": "actor_email",
+      "acl": null
+    },
+    {
+      "table": "activities",
+      "column": "actor_name",
+      "acl": null
+    },
+    {
+      "table": "activities",
+      "column": "type",
+      "acl": null
+    },
+    {
+      "table": "activities",
+      "column": "detail",
+      "acl": null
+    },
+    {
+      "table": "activities",
+      "column": "occurred_at",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "advisory_id",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "site_id",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "site_name",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "work_name",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "work_type",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "contractor",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "owner_name",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "owner_kind",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "bid_amount",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "lrc",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "exec_amount",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "pour_amount",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "advisory_fee",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "settled",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "contract_date",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "start_date",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "end_date",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "status",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "origin_channel",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "source_sheet",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "source_row",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "raw",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "created_at",
+      "acl": null
+    },
+    {
+      "table": "advisory_deals",
+      "column": "updated_at",
+      "acl": null
+    },
+    {
+      "table": "assignment_history",
+      "column": "id",
+      "acl": null
+    },
+    {
+      "table": "assignment_history",
+      "column": "opportunity_id",
+      "acl": null
+    },
+    {
+      "table": "assignment_history",
+      "column": "inquiry_id",
+      "acl": null
+    },
+    {
+      "table": "assignment_history",
+      "column": "from_owner",
+      "acl": null
+    },
+    {
+      "table": "assignment_history",
+      "column": "to_owner",
+      "acl": null
+    },
+    {
+      "table": "assignment_history",
+      "column": "reason",
+      "acl": null
+    },
+    {
+      "table": "assignment_history",
+      "column": "actor_name",
+      "acl": null
+    },
+    {
+      "table": "assignment_history",
+      "column": "changed_at",
+      "acl": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "event_id",
+      "acl": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "write_id",
+      "acl": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "actor_name",
+      "acl": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "actor_id",
+      "acl": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "entity_type",
+      "acl": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "entity_id",
+      "acl": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "action",
+      "acl": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "before",
+      "acl": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "after",
+      "acl": null
+    },
+    {
+      "table": "audit_logs",
+      "column": "created_at",
+      "acl": null
+    },
+    {
+      "table": "business_history",
+      "column": "id",
+      "acl": null
+    },
+    {
+      "table": "business_history",
+      "column": "deal_id",
+      "acl": null
+    },
+    {
+      "table": "business_history",
+      "column": "from_business",
+      "acl": null
+    },
+    {
+      "table": "business_history",
+      "column": "to_business",
+      "acl": null
+    },
+    {
+      "table": "business_history",
+      "column": "reason",
+      "acl": null
+    },
+    {
+      "table": "business_history",
+      "column": "reason_source",
+      "acl": null
+    },
+    {
+      "table": "business_history",
+      "column": "actor_name",
+      "acl": null
+    },
+    {
+      "table": "business_history",
+      "column": "changed_at",
+      "acl": null
+    },
+    {
+      "table": "contact_assignments",
+      "column": "id",
+      "acl": null
+    },
+    {
+      "table": "contact_assignments",
+      "column": "person_key",
+      "acl": null
+    },
+    {
+      "table": "contact_assignments",
+      "column": "opportunity_id",
+      "acl": null
+    },
+    {
+      "table": "contact_assignments",
+      "column": "site_name",
+      "acl": null
+    },
+    {
+      "table": "contact_assignments",
+      "column": "office_phone",
+      "acl": null
+    },
+    {
+      "table": "contact_assignments",
+      "column": "started_at",
+      "acl": null
+    },
+    {
+      "table": "contact_assignments",
+      "column": "ended_at",
+      "acl": null
+    },
+    {
+      "table": "contact_assignments",
+      "column": "status",
+      "acl": null
+    },
+    {
+      "table": "contact_assignments",
+      "column": "reason",
+      "acl": null
+    },
+    {
+      "table": "contact_assignments",
+      "column": "created_at",
+      "acl": null
+    },
+    {
+      "table": "contacts",
+      "column": "id",
+      "acl": null
+    },
+    {
+      "table": "contacts",
+      "column": "relate_id",
+      "acl": null
+    },
+    {
+      "table": "contacts",
+      "column": "organization_id",
+      "acl": null
+    },
+    {
+      "table": "contacts",
+      "column": "name",
+      "acl": null
+    },
+    {
+      "table": "contacts",
+      "column": "title",
+      "acl": null
+    },
+    {
+      "table": "contacts",
+      "column": "phone",
+      "acl": null
+    },
+    {
+      "table": "contacts",
+      "column": "emails",
+      "acl": null
+    },
+    {
+      "table": "contacts",
+      "column": "custom_fields",
+      "acl": null
+    },
+    {
+      "table": "contacts",
+      "column": "created_at",
+      "acl": null
+    },
+    {
+      "table": "contacts",
+      "column": "updated_at",
+      "acl": null
+    },
+    {
+      "table": "contacts",
+      "column": "person_key",
+      "acl": null
+    },
+    {
+      "table": "contacts",
+      "column": "mobile",
+      "acl": null
+    },
+    {
+      "table": "contacts",
+      "column": "role",
+      "acl": null
+    },
+    {
+      "table": "contacts",
+      "column": "current_site",
+      "acl": null
+    },
+    {
+      "table": "dashboard_state",
+      "column": "id",
+      "acl": null
+    },
+    {
+      "table": "dashboard_state",
+      "column": "data",
+      "acl": null
+    },
+    {
+      "table": "dashboard_state",
+      "column": "updated_at",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "id",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "relate_id",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "relate_key",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "organization_id",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "contact_id",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "brand",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "list_name",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "stage_code",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "stage_raw",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "stage_group",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "assignee_name",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "assignee_email",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "amount",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "source",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "outbound_channel",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "lost_reason",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "badfit_type",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "next_action",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "next_action_date",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "list_fields",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "closed_at",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "created_at",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "updated_at",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "site_id",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "owner_id",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "origin_inquiry_id",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "lifecycle_status",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "outcome",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "wake_up_at",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "amount_unknown_reason",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "stage_entered_at",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "last_activity_at",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "last_customer_contact_at",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "opened_at",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "version",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "lost_kind",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "origin_channel",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "service_type",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "service_history",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "origin_business",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "current_business",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "business_history",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "office_phone",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "office_email",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "manager_name",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "manager_mobile",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "person_key",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "manager_role",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "manager_current_site",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "manager_started_at",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "manager_status",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "manager_left_at",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "primary_work",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "work_items",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "work_scope_type",
+      "acl": null
+    },
+    {
+      "table": "deals",
+      "column": "work_summary",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "id",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "brand",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "site_name",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "address",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "contact_name",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "phone",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "assignee_name",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "status",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "deal_id",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "received_at",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "sheet_row",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "raw",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "created_at",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "site_id",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "source_channel",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "assigned_to",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "assigned_at",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "first_response_at",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "qualified_at",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "opportunity_id",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "updated_at",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "inquiry_type",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "channel",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "source",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "work_type",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "responded_at",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "next_action_date",
+      "acl": null
+    },
+    {
+      "table": "inquiries",
+      "column": "close_reason",
+      "acl": null
+    },
+    {
+      "table": "next_actions",
+      "column": "id",
+      "acl": null
+    },
+    {
+      "table": "next_actions",
+      "column": "deal_id",
+      "acl": null
+    },
+    {
+      "table": "next_actions",
+      "column": "inquiry_id",
+      "acl": null
+    },
+    {
+      "table": "next_actions",
+      "column": "action_type",
+      "acl": null
+    },
+    {
+      "table": "next_actions",
+      "column": "title",
+      "acl": null
+    },
+    {
+      "table": "next_actions",
+      "column": "due_at",
+      "acl": null
+    },
+    {
+      "table": "next_actions",
+      "column": "assignee_name",
+      "acl": null
+    },
+    {
+      "table": "next_actions",
+      "column": "status",
+      "acl": null
+    },
+    {
+      "table": "next_actions",
+      "column": "completed_at",
+      "acl": null
+    },
+    {
+      "table": "next_actions",
+      "column": "source_activity_id",
+      "acl": null
+    },
+    {
+      "table": "next_actions",
+      "column": "created_at",
+      "acl": null
+    },
+    {
+      "table": "next_actions",
+      "column": "updated_at",
+      "acl": null
+    },
+    {
+      "table": "notes",
+      "column": "id",
+      "acl": null
+    },
+    {
+      "table": "notes",
+      "column": "relate_id",
+      "acl": null
+    },
+    {
+      "table": "notes",
+      "column": "organization_id",
+      "acl": null
+    },
+    {
+      "table": "notes",
+      "column": "deal_id",
+      "acl": null
+    },
+    {
+      "table": "notes",
+      "column": "author_name",
+      "acl": null
+    },
+    {
+      "table": "notes",
+      "column": "author_email",
+      "acl": null
+    },
+    {
+      "table": "notes",
+      "column": "body",
+      "acl": null
+    },
+    {
+      "table": "notes",
+      "column": "posted_at",
+      "acl": null
+    },
+    {
+      "table": "notes",
+      "column": "created_at",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "opportunity_id",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "site_id",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "origin_inquiry_id",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "owner_id",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "owner_name",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "sales_stage_code",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "lifecycle_status",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "outcome",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "amount",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "amount_unknown_reason",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "stage_entered_at",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "last_activity_at",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "last_customer_contact_at",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "opened_at",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "closed_at",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "wake_up_at",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "version",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "brand",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "created_at",
+      "acl": null
+    },
+    {
+      "table": "opportunities",
+      "column": "updated_at",
+      "acl": null
+    },
+    {
+      "table": "organizations",
+      "column": "id",
+      "acl": null
+    },
+    {
+      "table": "organizations",
+      "column": "relate_id",
+      "acl": null
+    },
+    {
+      "table": "organizations",
+      "column": "name",
+      "acl": null
+    },
+    {
+      "table": "organizations",
+      "column": "region",
+      "acl": null
+    },
+    {
+      "table": "organizations",
+      "column": "address",
+      "acl": null
+    },
+    {
+      "table": "organizations",
+      "column": "manager_name",
+      "acl": null
+    },
+    {
+      "table": "organizations",
+      "column": "manager_email",
+      "acl": null
+    },
+    {
+      "table": "organizations",
+      "column": "custom_fields",
+      "acl": null
+    },
+    {
+      "table": "organizations",
+      "column": "created_at",
+      "acl": null
+    },
+    {
+      "table": "organizations",
+      "column": "updated_at",
+      "acl": null
+    },
+    {
+      "table": "projects",
+      "column": "project_id",
+      "acl": null
+    },
+    {
+      "table": "projects",
+      "column": "opportunity_id",
+      "acl": null
+    },
+    {
+      "table": "projects",
+      "column": "site_id",
+      "acl": null
+    },
+    {
+      "table": "projects",
+      "column": "delivery_stage",
+      "acl": null
+    },
+    {
+      "table": "projects",
+      "column": "contract_amount",
+      "acl": null
+    },
+    {
+      "table": "projects",
+      "column": "contract_date",
+      "acl": null
+    },
+    {
+      "table": "projects",
+      "column": "start_date",
+      "acl": null
+    },
+    {
+      "table": "projects",
+      "column": "completion_date",
+      "acl": null
+    },
+    {
+      "table": "projects",
+      "column": "created_at",
+      "acl": null
+    },
+    {
+      "table": "projects",
+      "column": "updated_at",
+      "acl": null
+    },
+    {
+      "table": "sites",
+      "column": "site_id",
+      "acl": null
+    },
+    {
+      "table": "sites",
+      "column": "site_name",
+      "acl": null
+    },
+    {
+      "table": "sites",
+      "column": "norm_name",
+      "acl": null
+    },
+    {
+      "table": "sites",
+      "column": "address",
+      "acl": null
+    },
+    {
+      "table": "sites",
+      "column": "created_at",
+      "acl": null
+    },
+    {
+      "table": "stage_catalog",
+      "column": "id",
+      "acl": null
+    },
+    {
+      "table": "stage_catalog",
+      "column": "brand",
+      "acl": null
+    },
+    {
+      "table": "stage_catalog",
+      "column": "code",
+      "acl": null
+    },
+    {
+      "table": "stage_catalog",
+      "column": "name",
+      "acl": null
+    },
+    {
+      "table": "stage_catalog",
+      "column": "stage_group",
+      "acl": null
+    },
+    {
+      "table": "stage_catalog",
+      "column": "sort",
+      "acl": null
+    },
+    {
+      "table": "stage_catalog",
+      "column": "weight",
+      "acl": null
+    },
+    {
+      "table": "stage_catalog",
+      "column": "remind_rule",
+      "acl": null
+    },
+    {
+      "table": "stage_catalog",
+      "column": "display_group",
+      "acl": null
+    },
+    {
+      "table": "stage_history",
+      "column": "id",
+      "acl": null
+    },
+    {
+      "table": "stage_history",
+      "column": "opportunity_id",
+      "acl": null
+    },
+    {
+      "table": "stage_history",
+      "column": "inquiry_id",
+      "acl": null
+    },
+    {
+      "table": "stage_history",
+      "column": "from_stage",
+      "acl": null
+    },
+    {
+      "table": "stage_history",
+      "column": "to_stage",
+      "acl": null
+    },
+    {
+      "table": "stage_history",
+      "column": "reason",
+      "acl": null
+    },
+    {
+      "table": "stage_history",
+      "column": "actor_id",
+      "acl": null
+    },
+    {
+      "table": "stage_history",
+      "column": "actor_name",
+      "acl": null
+    },
+    {
+      "table": "stage_history",
+      "column": "changed_at",
+      "acl": null
+    },
+    {
+      "table": "users",
+      "column": "user_id",
+      "acl": null
+    },
+    {
+      "table": "users",
+      "column": "name",
+      "acl": null
+    },
+    {
+      "table": "users",
+      "column": "email",
+      "acl": null
+    },
+    {
+      "table": "users",
+      "column": "role",
+      "acl": null
+    },
+    {
+      "table": "users",
+      "column": "active",
+      "acl": null
+    },
+    {
+      "table": "users",
+      "column": "auth_uid",
+      "acl": null
+    },
+    {
+      "table": "users",
+      "column": "created_at",
+      "acl": null
+    },
+    {
+      "table": "users",
+      "column": "updated_at",
+      "acl": null
+    },
+    {
+      "table": "v_assignee",
+      "column": "assignee_name",
+      "acl": null
+    },
+    {
+      "table": "v_assignee",
+      "column": "total",
+      "acl": null
+    },
+    {
+      "table": "v_assignee",
+      "column": "open_cnt",
+      "acl": null
+    },
+    {
+      "table": "v_assignee",
+      "column": "won_cnt",
+      "acl": null
+    },
+    {
+      "table": "v_assignee",
+      "column": "won_amt",
+      "acl": null
+    },
+    {
+      "table": "v_assignee",
+      "column": "lost_cnt",
+      "acl": null
+    },
+    {
+      "table": "v_assignee",
+      "column": "badfit_cnt",
+      "acl": null
+    },
+    {
+      "table": "v_dup_org",
+      "column": "norm",
+      "acl": null
+    },
+    {
+      "table": "v_dup_org",
+      "column": "cnt",
+      "acl": null
+    },
+    {
+      "table": "v_dup_org",
+      "column": "names",
+      "acl": null
+    },
+    {
+      "table": "v_dup_org",
+      "column": "ids",
+      "acl": null
+    },
+    {
+      "table": "v_funnel",
+      "column": "brand",
+      "acl": null
+    },
+    {
+      "table": "v_funnel",
+      "column": "stage_group",
+      "acl": null
+    },
+    {
+      "table": "v_funnel",
+      "column": "stage",
+      "acl": null
+    },
+    {
+      "table": "v_funnel",
+      "column": "cnt",
+      "acl": null
+    },
+    {
+      "table": "v_funnel",
+      "column": "amt",
+      "acl": null
+    },
+    {
+      "table": "v_kanban",
+      "column": "brand",
+      "acl": null
+    },
+    {
+      "table": "v_kanban",
+      "column": "display_group",
+      "acl": null
+    },
+    {
+      "table": "v_kanban",
+      "column": "cnt",
+      "acl": null
+    },
+    {
+      "table": "v_kanban",
+      "column": "amt",
+      "acl": null
+    }
+  ],
+  "functions": [
+    {
+      "acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": null,
+      "strict": false,
+      "language": "sql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "_done_today(text)",
+      "volatility": "v",
+      "security_definer": false,
+      "definition_sha256": "ba57a6ad6058941b60c705382a120cc8aac5efa57797667167db6895be2b4512"
+    },
+    {
+      "acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": null,
+      "strict": false,
+      "language": "plpgsql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "apply_business_change(uuid,text,text,text,text,text,date)",
+      "volatility": "v",
+      "security_definer": false,
+      "definition_sha256": "df858194e70e24ee908586caec6fb3f08ffcb1018c50f1968f8d3a5c505bc324"
+    },
+    {
+      "acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=public, pg_temp"
+      ],
+      "strict": false,
+      "language": "sql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "crm_bundle()",
+      "volatility": "s",
+      "security_definer": true,
+      "definition_sha256": "f92de96e32ac7c818e3b75c5717b2d1793f1d50293b4ef7963c7106223a65c32"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=public, pg_temp"
+      ],
+      "strict": false,
+      "language": "plpgsql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "crm_contact_move(jsonb)",
+      "volatility": "v",
+      "security_definer": true,
+      "definition_sha256": "8d10d377e2ed48dab4e267ead8c358708fea32e1031f205506bc2d210308a1cc"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=public"
+      ],
+      "strict": false,
+      "language": "plpgsql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "crm_contact_upsert(jsonb)",
+      "volatility": "v",
+      "security_definer": true,
+      "definition_sha256": "d463e01a1ce9bde085c16dac5be369619ed8cd09a8a7e6ee28d005ff2f81ee9d"
+    },
+    {
+      "acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=public"
+      ],
+      "strict": false,
+      "language": "plpgsql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "crm_opportunity_work_set(jsonb)",
+      "volatility": "v",
+      "security_definer": true,
+      "definition_sha256": "8ce5ee277f446a945d0fc958fb725fdee6d8d625a5d7e0e40a78668b35884ec6"
+    },
+    {
+      "acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=public"
+      ],
+      "strict": false,
+      "language": "sql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "crm_site_contacts(uuid)",
+      "volatility": "s",
+      "security_definer": true,
+      "definition_sha256": "f66afb89cc0cc2ddae1fb2f08f46a9239e7a35825318e3868100c17f54b79487"
+    },
+    {
+      "acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": null,
+      "strict": false,
+      "language": "sql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "metrics_channel_flow()",
+      "volatility": "s",
+      "security_definer": false,
+      "definition_sha256": "de64464ffcc79a9d1dddb83fd3014c6cf84d9c832fd6f8093f14c31e6ace78be"
+    },
+    {
+      "acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": null,
+      "strict": false,
+      "language": "sql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "metrics_lost_breakdown(text)",
+      "volatility": "s",
+      "security_definer": false,
+      "definition_sha256": "ac545e9d3997bf77e8cc0df92dbc364e69e45b3fb67bb11d33a6848743e1a728"
+    },
+    {
+      "acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": null,
+      "strict": false,
+      "language": "sql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "metrics_operations(text)",
+      "volatility": "s",
+      "security_definer": false,
+      "definition_sha256": "9066f9152771015e67d4c1d3927c6c992c3e00ebaa3e98916d87ff33fc832f95"
+    },
+    {
+      "acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": null,
+      "strict": false,
+      "language": "plpgsql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "parse_responses(text)",
+      "volatility": "i",
+      "security_definer": false,
+      "definition_sha256": "5d3aea19b5c34d999584994d6d362df1a44e6edbfefdb62ad2e3a4f329c56def"
+    },
+    {
+      "acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": null,
+      "strict": false,
+      "language": "plpgsql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "require_reason(text,text)",
+      "volatility": "i",
+      "security_definer": false,
+      "definition_sha256": "a7a0ee256da5c41345e5c9c26821d4674f7e7752534cf9bb1414350910434034"
+    },
+    {
+      "acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": null,
+      "strict": false,
+      "language": "plpgsql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "set_updated_at()",
+      "volatility": "v",
+      "security_definer": false,
+      "definition_sha256": "072180b6a47679c137fffdee688b69e3707e47893ec962b20156e22c41ad770e"
+    },
+    {
+      "acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": null,
+      "strict": false,
+      "language": "sql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "stage_sla_days(text)",
+      "volatility": "i",
+      "security_definer": false,
+      "definition_sha256": "44c6476f5f0b3c0260557c1af6e38252bd0305d8018a33767438268256bf2333"
+    },
+    {
+      "acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": null,
+      "strict": false,
+      "language": "sql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "today_counts()",
+      "volatility": "v",
+      "security_definer": true,
+      "definition_sha256": "38467b9d4663b0982a2c9a14a9bf11b8b17d167c0218fcef5378f7b5a99a440d"
+    },
+    {
+      "acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": null,
+      "strict": false,
+      "language": "sql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "today_tasks(text)",
+      "volatility": "v",
+      "security_definer": true,
+      "definition_sha256": "552b43cb9ed8abc8680a5e75d06c0a6bfbad1ba5ad36e86f88bff3b8ed87f9b8"
+    },
+    {
+      "acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": null,
+      "strict": false,
+      "language": "sql",
+      "parallel": "u",
+      "leakproof": false,
+      "signature": "work_items_today(text)",
+      "volatility": "s",
+      "security_definer": false,
+      "definition_sha256": "a71d753e75efc581ae4172ef59d2ffe8e9f265475263700261c914de3f91c014"
+    }
+  ],
+  "policies": [
+    {
+      "cmd": "ALL",
+      "qual": "true",
+      "roles": [
+        "public"
+      ],
+      "tablename": "dashboard_state",
+      "permissive": "PERMISSIVE",
+      "policyname": "allow all",
+      "schemaname": "public",
+      "with_check": "true"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(lower(email) = lower((auth.jwt() ->> 'email'::text)))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "users",
+      "permissive": "PERMISSIVE",
+      "policyname": "own row read",
+      "schemaname": "public",
+      "with_check": null
+    }
+  ],
+  "default_privileges": [
+    {
+      "acl": [
+        "postgres=rwU/postgres",
+        "anon=rwU/postgres",
+        "authenticated=rwU/postgres",
+        "service_role=rwU/postgres"
+      ],
+      "type": "S",
+      "schema": "public",
+      "creator": "postgres"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "type": "f",
+      "schema": "public",
+      "creator": "postgres"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "type": "r",
+      "schema": "public",
+      "creator": "postgres"
+    },
+    {
+      "acl": [
+        "postgres=rwU/supabase_admin",
+        "anon=rwU/supabase_admin",
+        "authenticated=rwU/supabase_admin",
+        "service_role=rwU/supabase_admin"
+      ],
+      "type": "S",
+      "schema": "public",
+      "creator": "supabase_admin"
+    },
+    {
+      "acl": [
+        "postgres=X/supabase_admin",
+        "anon=X/supabase_admin",
+        "authenticated=X/supabase_admin",
+        "service_role=X/supabase_admin"
+      ],
+      "type": "f",
+      "schema": "public",
+      "creator": "supabase_admin"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/supabase_admin",
+        "anon=arwdDxtm/supabase_admin",
+        "authenticated=arwdDxtm/supabase_admin",
+        "service_role=arwdDxtm/supabase_admin"
+      ],
+      "type": "r",
+      "schema": "public",
+      "creator": "supabase_admin"
+    }
+  ],
+  "creators": [
+    {
+      "role": "pg_database_owner",
+      "inherit": true,
+      "can_login": false,
+      "superuser": false,
+      "bypass_rls": false,
+      "executor_member": true,
+      "can_create_public": true
+    },
+    {
+      "role": "postgres",
+      "inherit": true,
+      "can_login": true,
+      "superuser": false,
+      "bypass_rls": true,
+      "executor_member": true,
+      "can_create_public": true
+    },
+    {
+      "role": "supabase_admin",
+      "inherit": true,
+      "can_login": true,
+      "superuser": true,
+      "bypass_rls": true,
+      "executor_member": false,
+      "can_create_public": true
+    }
+  ]
+}

@@ -1,0 +1,241 @@
+{
+  "golden": "6c1b570b8d79f908a7340292944acf96cecc9d68",
+  "source": "current approved local overlays (original files never modified)",
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "files": [
+    {
+      "file": "crm-export.js",
+      "source_sha256": "a5e413081d0b84cf66d3e94a9969822d6c0c50cc303c866e75b2a836c7222670",
+      "copy_sha256": "a5e413081d0b84cf66d3e94a9969822d6c0c50cc303c866e75b2a836c7222670"
+    },
+    {
+      "file": "crm-read.js",
+      "source_sha256": "ebdd58450449f13f4a1331e60ef09c8be14afa7b74802b05f81e81ab62d42730",
+      "copy_sha256": "ebdd58450449f13f4a1331e60ef09c8be14afa7b74802b05f81e81ab62d42730"
+    },
+    {
+      "file": "crm.html",
+      "source_sha256": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+      "copy_sha256": "90c539ec275f323786ee8ad3ef4ef545180dd3ff535ca61b9d680b20bbf53f47"
+    },
+    {
+      "file": "data-cleanup-ui.js",
+      "source_sha256": "a724dd6503ad8a95a29452c7311656a4a646fb9f69758fdc19a80a1da604150a",
+      "copy_sha256": "a724dd6503ad8a95a29452c7311656a4a646fb9f69758fdc19a80a1da604150a"
+    },
+    {
+      "file": "data-cleanup.css",
+      "source_sha256": "09b6488f827ece281de72107915c870ea31522125334f3bf43329445a5accb45",
+      "copy_sha256": "09b6488f827ece281de72107915c870ea31522125334f3bf43329445a5accb45"
+    },
+    {
+      "file": "data-cleanup.js",
+      "source_sha256": "7fc99f3d86fc05db564e9bc7c844513dc1f60fe1add0d3d4b5f5ab6bd6615a6f",
+      "copy_sha256": "7fc99f3d86fc05db564e9bc7c844513dc1f60fe1add0d3d4b5f5ab6bd6615a6f"
+    },
+    {
+      "file": "expansion-flow.js",
+      "source_sha256": "06a00c00ccb42fee9a1e9186adb7c3b56f96f3c9ae379e3ce1fc67d7e6c84663",
+      "copy_sha256": "06a00c00ccb42fee9a1e9186adb7c3b56f96f3c9ae379e3ce1fc67d7e6c84663"
+    },
+    {
+      "file": "expansion-pool.css",
+      "source_sha256": "450d1eb1beb0d65ce9a6170804eaadcf1f349d8f5277402879526d35f8ae2beb",
+      "copy_sha256": "450d1eb1beb0d65ce9a6170804eaadcf1f349d8f5277402879526d35f8ae2beb"
+    },
+    {
+      "file": "expansion-pool.js",
+      "source_sha256": "3a59c5d19ef7bb3f44c194f4dfb7e0edfe953276683c48abcc5174d03c8016e7",
+      "copy_sha256": "3a59c5d19ef7bb3f44c194f4dfb7e0edfe953276683c48abcc5174d03c8016e7"
+    },
+    {
+      "file": "index.html",
+      "source_sha256": "1a43d93b8b99cfb9383631877cb737b61b277b59b1ca3fe31cfe0cfa1504e5ee",
+      "copy_sha256": "16e2d3e8ed6ed306c62d00e9e4c5817c7f5730ce1f18270a1ef7c26627ca79fc"
+    },
+    {
+      "file": "issue-modal.css",
+      "source_sha256": "0896af727f12a21d563e2e703028812cb2cb31ac496b2452928c9804e19201e5",
+      "copy_sha256": "0896af727f12a21d563e2e703028812cb2cb31ac496b2452928c9804e19201e5"
+    },
+    {
+      "file": "issue-modal.js",
+      "source_sha256": "7a2b2f1ee66e509b5d26ce0f3585a6e5e6ffc2f3f0b045d9f5a8b690a2e14391",
+      "copy_sha256": "7a2b2f1ee66e509b5d26ce0f3585a6e5e6ffc2f3f0b045d9f5a8b690a2e14391"
+    },
+    {
+      "file": "message-salutation.js",
+      "source_sha256": "70a273b77b4ec85f7c9f7ee9f3d249e11e7a5cc7f55f4bb2fb690d62d7957474",
+      "copy_sha256": "70a273b77b4ec85f7c9f7ee9f3d249e11e7a5cc7f55f4bb2fb690d62d7957474"
+    },
+    {
+      "file": "mobile.html",
+      "source_sha256": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+      "copy_sha256": "87739c43aeddabbbc40e9e047a0c308abaf59ec9b64566301a71982fe0c9efe8"
+    },
+    {
+      "file": "money-input.js",
+      "source_sha256": "9bffc3ca4685e0fac2efcfc78d4d5f4f2739b4f9bf8fbf6157b462a41a9d0eb2",
+      "copy_sha256": "9bffc3ca4685e0fac2efcfc78d4d5f4f2739b4f9bf8fbf6157b462a41a9d0eb2"
+    },
+    {
+      "file": "next-action-picker.css",
+      "source_sha256": "5d149225c510ee10e58c6f6ce7686715414533d8948de484c5dbd585a670d387",
+      "copy_sha256": "5d149225c510ee10e58c6f6ce7686715414533d8948de484c5dbd585a670d387"
+    },
+    {
+      "file": "next-action-picker.js",
+      "source_sha256": "be9e041da4388f3fd515e358cf99d7b04634e0b72b47eff9b59317f35cfd4d07",
+      "copy_sha256": "be9e041da4388f3fd515e358cf99d7b04634e0b72b47eff9b59317f35cfd4d07"
+    },
+    {
+      "file": "owner-choice.css",
+      "source_sha256": "3e16fb7de16b17a828c473e6ac3610bb069b59e0f025708500fb5df2b429abac",
+      "copy_sha256": "3e16fb7de16b17a828c473e6ac3610bb069b59e0f025708500fb5df2b429abac"
+    },
+    {
+      "file": "owner-choice.js",
+      "source_sha256": "5c715c678a53649c315394020861dcd7bc79b85a11eb24fe192e90c62dbe0d95",
+      "copy_sha256": "5c715c678a53649c315394020861dcd7bc79b85a11eb24fe192e90c62dbe0d95"
+    },
+    {
+      "file": "people-eligibility.js",
+      "source_sha256": "ac0acdef13597b6ff8f77c83f368a84067d4bb3da974bcfc55ae1e6ec11e6896",
+      "copy_sha256": "ac0acdef13597b6ff8f77c83f368a84067d4bb3da974bcfc55ae1e6ec11e6896"
+    },
+    {
+      "file": "stage-transition-ui.js",
+      "source_sha256": "c3fc39eee42159ac036776b9067e5d26de660b59f71d770f71e835d86d2010f7",
+      "copy_sha256": "c3fc39eee42159ac036776b9067e5d26de660b59f71d770f71e835d86d2010f7"
+    },
+    {
+      "file": "stage-transition.css",
+      "source_sha256": "d996284132d1a0c2171249f36457ab1e6a8817b20a4ea1960350d976262cb244",
+      "copy_sha256": "d996284132d1a0c2171249f36457ab1e6a8817b20a4ea1960350d976262cb244"
+    },
+    {
+      "file": "stage-transition.js",
+      "source_sha256": "469241cdab31838e1ea2e04d056daf1bda433f7497601dc8bbe8dd91e921db78",
+      "copy_sha256": "469241cdab31838e1ea2e04d056daf1bda433f7497601dc8bbe8dd91e921db78"
+    },
+    {
+      "file": "write-ack.js",
+      "source_sha256": "df42acfaf242fdb2747fdc7d996fe57250b0b6a870b0b11d7b3cdea919363124",
+      "copy_sha256": "df42acfaf242fdb2747fdc7d996fe57250b0b6a870b0b11d7b3cdea919363124"
+    }
+  ],
+  "patches": [
+    {
+      "file": "crm.html",
+      "function": "loginEmailOf",
+      "before_sha256": "d402a9c83bfa2e2448d53cba7c416f479984355db33c0f8bdadb1732f1e509e4"
+    },
+    {
+      "file": "crm.html",
+      "function": "authAdmit",
+      "before_sha256": "b3d1ff93ce65aba48565f4a20541ece2c79157f690e779d40c14e98a09b7561c"
+    },
+    {
+      "file": "crm.html",
+      "function": "authSignOut",
+      "before_sha256": "4894339a86261a17ea5a0b24c596d0793a6398f2565fa5d82667b5e7cc6a589c"
+    },
+    {
+      "file": "crm.html",
+      "function": "pushWrite",
+      "before_sha256": "dc83bc89d7f7fd11f032d3a7c110268da4ce5eb838e92d0187b98c7d7fa0858d"
+    },
+    {
+      "file": "crm.html",
+      "function": "flushWrites",
+      "before_sha256": "f262e7e862136d7c2dd7b74e8989b7ff882f551769ca326c43bc82b6f8140412"
+    },
+    {
+      "file": "crm.html",
+      "function": "retryFailedWrites",
+      "before_sha256": "93d09d5a254b6fde53412f92c8f0f554d181701da0cd2038cc04ff3e9148512d"
+    },
+    {
+      "file": "crm.html",
+      "function": "loadData",
+      "before_sha256": "7f4950ac4a3ddf57e1e503003c058dbd027f7fbe9e0b44e20e6ef47693bfca04"
+    },
+    {
+      "file": "crm.html",
+      "function": "setHomeRole",
+      "before_sha256": "1d914b021185a2434ed3760e08085be421d8ccabbe1b62797dd81bf74b65948c"
+    },
+    {
+      "file": "crm.html",
+      "function": "applyHomeRole",
+      "before_sha256": "8e348aff3e80e640abdd87ce53ff77040998f0ff162354da7c156afdd979e268"
+    },
+    {
+      "file": "crm.html",
+      "function": "saveWorkEdit",
+      "before_sha256": "098377e8dd555fee286937390297455858ae343eb51cdd33c28fc052b9d52b66"
+    },
+    {
+      "file": "mobile.html",
+      "function": "pushWrite",
+      "before_sha256": "a5fac7fd1b917903c10e2b04bccf2ce4c85611199ee2edf8686379e4a23ea4e0"
+    },
+    {
+      "file": "mobile.html",
+      "function": "flushWrites",
+      "before_sha256": "26b9a0e1970629044b6fb26136a6e7ebf819ac26512c2971b19fe8f306ce7424"
+    },
+    {
+      "file": "mobile.html",
+      "function": "retryFailed",
+      "before_sha256": "978c41c525474f84f09acbda58c05cfe9439626a57c5b340d2ea21912d8be6b1"
+    },
+    {
+      "file": "mobile.html",
+      "function": "loginEmailOf",
+      "before_sha256": "cafa6fe0de373a4c1991b2c7a49290026e07de41b6a34c12558ba1e93c75116a"
+    },
+    {
+      "file": "mobile.html",
+      "function": "canManage",
+      "before_sha256": "05a81519fc40c994a5f71dd0f6b8952600cf8e22fd2e9915065e2e26bdea984e"
+    },
+    {
+      "file": "mobile.html",
+      "function": "authAdmit",
+      "before_sha256": "c9dfaa632f0fbeedfbb591c741267ec64449a103f9051f76bea8439c3f078eba"
+    },
+    {
+      "file": "mobile.html",
+      "function": "doSignOut",
+      "before_sha256": "faf483c0359e8ad1eaec5cd785ddc000bf09d95514c8f92bdad974516a12a553"
+    },
+    {
+      "file": "mobile.html",
+      "function": "loadLive",
+      "before_sha256": "cde3960c1df2fa3d0b64a11db456c9226a7dd59d55a26cbab0e6a7bd8a5ed7cf"
+    },
+    {
+      "file": "mobile.html",
+      "function": "switchMode",
+      "before_sha256": "877d4567f6192d1402961c553dfb692b0e548f63fa6d2fb6b36d56ca2b3da7b9"
+    },
+    {
+      "file": "mobile.html",
+      "function": "workSheetM",
+      "before_sha256": "3a2843b6a04a01c96ba983aa3e0d87e34c334dd77caa9ade058cb9a1347af75f"
+    },
+    {
+      "file": "mobile.html",
+      "function": "saveWorkSheetM",
+      "before_sha256": "149408193cbfbc27bb5deefe991caa1db919b6389d723833ef7eceb4b04e6f9c"
+    }
+  ],
+  "missing_assets": [],
+  "vendor": {
+    "name": "@supabase/supabase-js",
+    "version": "2.115.0",
+    "sha256": "f387e5935730a6d9599a281986a176eafce5ebbe7514446222d21aa029e31dd5",
+    "license": "vendor/supabase-LICENSE.txt"
+  }
+}

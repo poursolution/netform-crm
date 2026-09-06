@@ -1,0 +1,26 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+const root=path.resolve(__dirname,'..'),dir=path.join(root,'sql/phase1'),docs=path.join(root,'docs/parity-20260905');
+const updates=require('./crm-phase1-parity.cjs'),meta=require('./crm-baseline-metadata.cjs');
+const before=require('../sql/phase1/before.json'),after=require('../sql/phase1/after.json'),diffs={};
+for(const stage of ['before','after'])for(const schema of ['public','private'])diffs[stage+'_'+schema]=meta.diff((stage==='before'?before:after)[schema],JSON.parse(fs.readFileSync(path.join(dir,`staging-${stage}-${schema}.json`))));
+if(Object.values(diffs).some(d=>d.length))throw Error('Unexpected schema diff');
+const apply=fs.readFileSync(path.join(dir,'staging-apply.sql')),sha=crypto.createHash('sha256').update(apply).digest('hex');
+if(sha!=='9d3c7c234d7f7f314192b47151d644dd3f1c50e6fabd1e80d25b68511441523d')throw Error('Applied SQL hash changed');
+fs.writeFileSync(path.join(dir,'deployment-evidence.json'),JSON.stringify({project_ref:'rprechiaglyjaydkmxsu',apply_sha256:sha,status:'APPLIED_STAGING',diffs,production_actions:0,first_attempt:'SQL generator dollar-quote syntax error; no execution; corrected exact-file test passed before retry',legacy_acl_rls_unchanged:true},null,2));
+fs.writeFileSync(path.join(dir,'manifest.json'),JSON.stringify({project_ref:'rprechiaglyjaydkmxsu',apply_sha256:sha,status:'APPLIED_STAGING',evidence:'deployment-evidence.json'},null,2));
+const matrix=JSON.parse(fs.readFileSync(path.join(docs,'parity-matrix.json')));
+matrix.feature_rows=matrix.feature_rows.map(r=>({...r,...updates[r.id]}));
+for(const k of Object.keys(matrix.status_counts))matrix.status_counts[k]=matrix.feature_rows.filter(r=>r.status===k).length;
+matrix.phase1_update={report:'../crm-phase1-results-20260905.md',staging_only:true,exact_parity_claimed:false};
+matrix.remote_database_actions_this_stage=1;matrix.remote_database_actions_note='Phase1 committed migration count only; see dedicated report for reads and synthetic RPC writes.';
+fs.writeFileSync(path.join(docs,'parity-matrix.json'),JSON.stringify(matrix,null,2));
+const csv=(rows,keys)=>'\ufeff'+[keys.join(','),...rows.map(r=>keys.map(k=>'"'+String(r[k]??'').replaceAll('"','""')+'"').join(','))].join('\n');
+fs.writeFileSync(path.join(docs,'parity-matrix.csv'),csv(matrix.feature_rows,['id','name','read','write','v2','status','gap','test']));
+let md=fs.readFileSync(path.join(docs,'README.md'),'utf8');
+const esc=s=>String(s).replaceAll('|','&#124;');
+for(const [id,u]of Object.entries(updates)){md=md.split('\n').map(line=>{if(!line.startsWith('| '+id+' '))return line;const cells=line.split(' | ');cells[4]=esc(u.v2);cells[5]=u.status;cells[6]=esc(u.gap);return cells.join(' | ');}).join('\n');}
+md=md.replace('EXACT_PARITY 0 / V2_IMPLEMENTED_NOT_UI_CONNECTED 2 / CONTRACT_MISSING 78 / UI_MISSING 0 / TEST_MISSING 5','EXACT_PARITY 0 / V2_IMPLEMENTED_NOT_UI_CONNECTED 1 / CONTRACT_MISSING 77 / UI_MISSING 0 / TEST_MISSING 7');
+if(!md.includes('## Phase 1 구현 갱신'))md+='\n\n## Phase 1 구현 갱신\n\n[실제 적용·시험·남은 Gate 보고서](../crm-phase1-results-20260905.md). F02~F06만 갱신했다. 기존 인벤토리의 원격 미실행 설명은 최초 조사 시점의 기록이다. 지금은 Staging Phase1 SQL만 적용했으며 Production/Legacy는 변경하지 않았다. 최종 정본은 Golden + 사용자 승인 최신 Overlay이며, Closed Won → 확장관리 Pool → 실제 견적 발송 → 새 Opportunity를 유지한다.\n';
+fs.writeFileSync(path.join(docs,'README.md'),md);
+console.log(JSON.stringify({schema_diff:0,apply_sha256:sha,status_counts:matrix.status_counts}));

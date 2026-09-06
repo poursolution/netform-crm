@@ -1,0 +1,5 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict'),c=require('./adapter-contract.js');
+const id='f6090500-0006-4000-8000-000000000001';
+test('expected amount keeps quote as concurrency snapshot and blocks won editing',()=>{assert.deepEqual(c.normalize(id,4,{opportunity_id:id,amount:88000000,quote_amount:99000000,won_amount:null}).payload,{amount:88000000,quote_amount:99000000,won_amount:null});assert.deepEqual(c.normalize(id,4,{opportunity_id:id,amount:0,quote_amount:null,won_amount:null}).payload,{amount:0,quote_amount:null,won_amount:null});assert.throws(()=>c.normalize(id,4,{opportunity_id:id,amount:1,quote_amount:null,won_amount:1}),/AMOUNT_INTENT_NOT_CONNECTED/);});
+test('invalid units, decimals and extra client state fail closed',()=>{for(const p of [{opportunity_id:id,amount:-1,quote_amount:null,won_amount:null},{opportunity_id:id,amount:1.5,quote_amount:null,won_amount:null},{opportunity_id:id,amount:1,quote_amount:0,won_amount:null},{opportunity_id:id,amount:1,quote_amount:null,won_amount:null,actor:'client'}])assert.throws(()=>c.normalize(id,4,p));});

@@ -1,0 +1,39 @@
+{
+  "source_metadata_md5": "9872dac5bc6f60f19fc7c4a5514af0af",
+  "sql_sha256": "1899adacb05b6fe07d187f76fe2fc57a1842be40fb73a47fad9a951eb5e4de78",
+  "counts": {
+    "tables": 18,
+    "tableColumns": 241,
+    "viewColumns": 40,
+    "functions": 17,
+    "views": 5,
+    "indexes": 67,
+    "constraints": 63,
+    "triggers": 8,
+    "sequences": 2,
+    "policies": 2
+  },
+  "functionOrder": [
+    "set_updated_at()",
+    "require_reason(text,text)",
+    "stage_sla_days(text)",
+    "parse_responses(text)",
+    "_done_today(text)",
+    "crm_site_contacts(uuid)",
+    "crm_contact_upsert(jsonb)",
+    "crm_contact_move(jsonb)",
+    "crm_opportunity_work_set(jsonb)",
+    "apply_business_change(uuid,text,text,text,text,text,date)",
+    "metrics_channel_flow()",
+    "metrics_lost_breakdown(text)",
+    "metrics_operations(text)",
+    "work_items_today(text)",
+    "today_tasks(text)",
+    "today_counts()",
+    "crm_bundle()"
+  ],
+  "secretPatternFindings": [],
+  "containsOriginalInsecureAcl": true,
+  "stagingApplied": false,
+  "productionApplied": false
+}

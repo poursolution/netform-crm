@@ -1,0 +1,22 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "LOCAL_PRIVATE_FRAGMENTS_NOT_APPLIED",
+  "connected_operations": [],
+  "connected_reads": [],
+  "requests": [
+    { "domain": "deal_core", "after": null, "limit": 100, "expected": "DERIVED_SAFE_PRIVATE_FRAGMENT" },
+    { "domain": "inquiry_core", "after": null, "limit": 100, "expected": "DERIVED_SAFE_PRIVATE_FRAGMENT" },
+    { "domain": "company_report", "after": null, "limit": 100, "expected_error": "DOMAIN_NOT_DERIVED_SAFE" },
+    { "domain": "gyeongnam", "after": null, "limit": 100, "expected_error": "DOMAIN_NOT_DERIVED_SAFE" },
+    { "domain": "deal_core", "after": "client-row-id", "limit": 100, "expected_error": "INVALID_CURSOR" },
+    { "domain": "deal_core", "after": null, "limit": 101, "expected_error": "INVALID_LIMIT" }
+  ],
+  "blocked_fields": [
+    "quote_amount",
+    "won_amount",
+    "performance_target",
+    "branch_pool",
+    "reporting_group",
+    "company_scope_complete"
+  ]
+}

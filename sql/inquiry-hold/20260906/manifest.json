@@ -1,0 +1,32 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "LOCAL_CHAIN_CANDIDATE_AFTER_RECLASSIFY_NOT_APPLIED",
+  "prerequisites": [
+    "inquiry-reclassify/20260906"
+  ],
+  "operation": "inquiry_status",
+  "intent": "hold_only",
+  "blocked_meanings": [
+    "technical_inquiry_promote",
+    "arbitrary_status_change",
+    "hold_release"
+  ],
+  "staging_ddl_dml_performed": false,
+  "files_sha256": {
+    "helper.sql": "bb8a68dd019baaa806103913c54803fc6ee955da0604731b1dbf424a579821c9",
+    "adapter-contract.js": "8317606b7ef137e48aca9a998e6c0b3ccab45fb609e7cfc57ed016a9c72f5d47",
+    "contract.test.cjs": "3c6a89f85a1eb64688ccfe1e187565d7331812b59456f6532feffc486d255ae5",
+    "db.test.cjs": "88c124fa6d7eb031a735fcb0c72a540c3c08d6d5174061847aecb6f7e83de9aa",
+    "ui.test.cjs": "cec29154e37dc144201436a6c8fca68ea7f4a2795dab2aea3dcbc29e6627ff65",
+    "review.md": "df02c61be0c66aab5ce7ca2cd3ed54576f089c7cf3f0db22a85e5e3e5b03f776",
+    "staging-apply-after-reclassify.sql": "ca5d0ccdef23a4f835d9b89331b10b53f0e1023a41087f811833038a512f89d1",
+    "rollback-after-reclassify.sql": "f8b37979301e33c2b5828a677cb839ad140e43e737ab37dd4cc60bd5dcef0520",
+    "operational-adapter.candidate.js": "acd37a9351574b2746011dbab88d73982a57fcaeaa6ff56c7a4e9a19c926006f",
+    "operational-overlay.candidate.js": "6100ed73cce67d1367dff35983059ecc8584bdaec3fd4dead90d315f05488448"
+  },
+  "source_sha256": {
+    "golden_pc": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "reclassify_manifest": "39199fbe79040c8f17c91e27f8eb3d03d9f1da97bf04d38b1c2c7f2de39491d0",
+    "inquiry_contracts": "e6f4e720cefb6335e78fe82cbbf7b1252820822ae6e69cdb1179636dda142784"
+  }
+}

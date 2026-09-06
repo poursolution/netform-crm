@@ -1,0 +1,33 @@
+{
+  "project_id": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "project_status": "ACTIVE_HEALTHY",
+  "captured_at": "2026-09-06T00:48:42.447598+00:00",
+  "mode": "READ_ONLY",
+  "function": {
+    "signature": "public.crm_contacts_scoped_v2(uuid)",
+    "oid": 18065,
+    "definition_md5": "415dc8fc1826aec86a0a916147480a71",
+    "definition_md5_lf": "1a58be86503cb53bdc3a9a784eb4add2",
+    "owner": "postgres",
+    "security_definer": true,
+    "language": "plpgsql",
+    "volatility": "s",
+    "strict": false,
+    "parallel": "u",
+    "leakproof": false,
+    "config": ["search_path=\"\""],
+    "acl": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  "can_deal_definition_md5": "efdf75e2004fb4d7248b43eb06adcaeb",
+  "can_deal_definition_md5_lf": "05d51a3c77344504a05a0e932cfcb15d",
+  "expected_definition_md5": "1a58be86503cb53bdc3a9a784eb4add2",
+  "expected_can_deal_definition_md5": "05d51a3c77344504a05a0e932cfcb15d",
+  "matches_expected": true,
+  "raw_definition_diff_explained": "CRLF_TO_LF_ONLY",
+  "canonical_evidence": "docs/operational-cutover-20260906/staging-function-canonical-compare.json",
+  "decision": "CANONICAL_MATCH_NOT_APPLIED",
+  "staging_ddl_dml_performed": false,
+  "production_requests": 0,
+  "n8n_requests": 0
+}

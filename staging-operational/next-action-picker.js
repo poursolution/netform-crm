@@ -1,0 +1,18 @@
+/* Planning categories are separate from activity logging. Wire types stay compatible. */
+(function(root){
+ 'use strict';
+ const groups=['전화','메시지','이메일·자료발송','방문·미팅','견적·자료 준비','후속접촉','입찰·계약 업무','기타'];
+ const leaves={'전화':['전화','재통화'],'메시지':['문자','카카오'],'이메일·자료발송':['이메일','자료전달','견적 발송'],'방문·미팅':['현장방문','방문','회의','PT','현장설명'],'견적·자료 준비':['견적','견적 작성','견적 수정'],'후속접촉':['후속접촉','후속확인','후속','재접촉','재연락','재시도'],'입찰·계약 업무':['입찰','계약'],'기타':['기타']};
+ const secondary={'메시지':['문자','카카오'],'방문·미팅':['현장방문','회의','PT','현장설명']};
+ const escape=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ function category(type){return groups.find(g=>g===type||leaves[g].includes(type))||'기타'}
+ function wireType(group,sub,original){if(secondary[group])return secondary[group].includes(sub)?sub:secondary[group][0];if(original&&category(original)===group)return original;return (leaves[group]||leaves['기타'])[0]}
+ function recommendation(stage){if(stage==='sent')return {type:'후속접촉',text:'견적 검토 여부 확인',days:3,label:'3일 후 후속접촉'};if(stage==='compete')return {type:'후속접촉',text:'PT 일정 확인',days:1,label:'PT 일정 확인'};return null}
+ function subHtml(id,g,type){return secondary[g]?'<label for="'+id+'-sub">'+(g==='메시지'?'채널':'방문 유형')+'</label><select id="'+id+'-sub">'+secondary[g].map(t=>'<option '+(t===type||type==='방문'&&t==='현장방문'?'selected':'')+'>'+t+'</option>').join('')+'</select>':''}
+ function html(id,type,stage,textId,dueId){const original=type||'',g=type?category(type):'전화',r=recommendation(stage);return '<fieldset class="next-picker" id="'+id+'-picker"><legend>무엇을 할 예정인가요?</legend><select hidden id="'+id+'" data-original="'+escape(original)+'" onchange="NextActionPicker.change(\''+id+'\')">'+groups.map(t=>'<option '+(t===g?'selected':'')+'>'+t+'</option>').join('')+'</select><div class="next-picker-buttons">'+groups.map(t=>'<button type="button" data-group="'+t+'" aria-pressed="'+(t===g)+'" onclick="NextActionPicker.choose(\''+id+'\',this.dataset.group)">'+t+'</button>').join('')+'</div><div class="next-picker-sub" id="'+id+'-details">'+subHtml(id,g,original)+'</div>'+(original&&!secondary[g]&&original!==g?'<small>기존 기록: '+escape(original)+' · 내용은 그대로 유지됩니다.</small>':'')+(r?'<button class="next-picker-recommend" type="button" data-stage="'+escape(stage)+'" onclick="NextActionPicker.recommend(\''+id+'\',this.dataset.stage,\''+textId+'\',\''+dueId+'\')">추천 · '+r.label+'</button>':'')+'</fieldset>'}
+ function change(id){const e=document.getElementById(id);if(!e)return;document.querySelectorAll('#'+id+'-picker [data-group]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.group===e.value)));document.getElementById(id+'-details').innerHTML=subHtml(id,e.value,e.dataset.original)}
+ function choose(id,g){const e=document.getElementById(id);if(!e||!groups.includes(g)||e.value===g)return;e.value=g;change(id)}
+ function read(id){const e=document.getElementById(id),s=document.getElementById(id+'-sub');return e?wireType(e.value,s&&s.value,e.dataset.original):''}
+ function recommend(id,stage,textId,dueId){const r=recommendation(stage),text=document.getElementById(textId),due=document.getElementById(dueId);if(!r||!text||!due)return;if((text.value||due.value)&&!root.confirm('작성 중인 내용과 기한을 추천으로 바꿀까요?'))return;choose(id,category(r.type));text.value=r.text;const date=new Date();date.setDate(date.getDate()+r.days);due.value=date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0')}
+ const api={groups,category,wireType,recommendation,html,change,choose,read,recommend};root.NextActionPicker=api;if(typeof module!=='undefined')module.exports=api;
+})(typeof window==='undefined'?globalThis:window);

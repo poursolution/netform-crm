@@ -1,0 +1,44 @@
+{
+  "supplement_metadata_md5": "b1b40bbe49d6caedb5b35af19f325ab6",
+  "scope": "Reviewed environment summary from separate metadata SELECT; not the entire supplemental payload",
+  "column_type_schemas": ["pg_catalog"],
+  "public_custom_domains_enums_collations": [],
+  "inheritance": [],
+  "relation_kinds": {"S":2,"i":67,"r":18,"v":5},
+  "routine_kinds": {"f":17},
+  "database_collversion": "153.121",
+  "default_collation": {"schema":"pg_catalog","name":"default","provider":"d","deterministic":true},
+  "roles": [
+    {"name":"anon","login":false,"inherit":true,"superuser":false,"bypassrls":false},
+    {"name":"authenticated","login":false,"inherit":true,"superuser":false,"bypassrls":false},
+    {"name":"pg_database_owner","login":false,"inherit":true,"superuser":false,"bypassrls":false},
+    {"name":"postgres","login":true,"inherit":true,"superuser":false,"bypassrls":true},
+    {"name":"service_role","login":false,"inherit":true,"superuser":false,"bypassrls":true},
+    {"name":"supabase_admin","login":true,"inherit":true,"superuser":true,"bypassrls":true}
+  ],
+  "role_memberships_columns": ["role","member","grantor","admin","inherit","set"],
+  "role_memberships": [
+    ["anon","authenticator","supabase_admin",false,false,true],
+    ["anon","postgres","supabase_admin",true,true,true],
+    ["authenticated","authenticator","supabase_admin",false,false,true],
+    ["authenticated","postgres","supabase_admin",true,true,true],
+    ["authenticator","postgres","supabase_admin",true,true,true],
+    ["pg_create_subscription","postgres","supabase_admin",true,true,true],
+    ["pg_monitor","postgres","supabase_admin",true,true,true],
+    ["pg_read_all_data","postgres","supabase_admin",true,true,true],
+    ["pg_signal_backend","postgres","supabase_admin",true,true,true],
+    ["service_role","authenticator","supabase_admin",false,false,true],
+    ["service_role","postgres","supabase_admin",true,true,true],
+    ["supabase_privileged_role","postgres","supabase_admin",false,true,true]
+  ],
+  "event_triggers": [
+    {"name":"issue_graphql_placeholder","event":"sql_drop","tags":["DROP EXTENSION"],"enabled":"O","function":"set_graphql_placeholder()"},
+    {"name":"issue_pg_cron_access","event":"ddl_command_end","tags":["CREATE EXTENSION"],"enabled":"O","function":"grant_pg_cron_access()"},
+    {"name":"issue_pg_graphql_access","event":"ddl_command_end","tags":["CREATE EXTENSION"],"enabled":"O","function":"grant_pg_graphql_access()"},
+    {"name":"issue_pg_net_access","event":"ddl_command_end","tags":["CREATE EXTENSION"],"enabled":"O","function":"grant_pg_net_access()"},
+    {"name":"pgrst_ddl_watch","event":"ddl_command_end","tags":null,"enabled":"O","function":"pgrst_ddl_watch()"},
+    {"name":"pgrst_drop_watch","event":"sql_drop","tags":null,"enabled":"O","function":"pgrst_drop_watch()"}
+  ],
+  "additional_catalog_dependency_rows_reviewed":313,
+  "note":"Managed role memberships and event triggers are environment preconditions; baseline SQL must not create or alter them. Full primary pg_depend rows are retained in source-metadata.json. Index/FK/trigger dependency edges are also generated from their complete definitions."
+}

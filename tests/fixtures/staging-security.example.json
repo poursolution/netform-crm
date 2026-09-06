@@ -1,0 +1,94 @@
+{
+  "projectRef": "REPLACE_WITH_STAGING_REF",
+  "reviewedSyntheticOnly": false,
+  "contractsReviewed": false,
+  "users": {
+    "INTERNAL_REP": "REPLACE_AUTH_UUID",
+    "OTHER_REP": "REPLACE_AUTH_UUID",
+    "CONSULT": "REPLACE_AUTH_UUID",
+    "GYEONGNAM": "REPLACE_AUTH_UUID",
+    "ADMIN": "REPLACE_AUTH_UUID",
+    "ADMIN_MFA": "REPLACE_SEPARATE_MFA_ADMIN_AUTH_UUID"
+  },
+  "ownOpportunityId": "REPLACE_SYNTHETIC_REP_DEAL_UUID",
+  "otherOpportunityId": "REPLACE_SYNTHETIC_OTHER_DEAL_UUID",
+  "consultInquiryId": "REPLACE_SYNTHETIC_CONSULT_INQUIRY_UUID",
+  "gyeongnamOpportunityId": "REPLACE_SYNTHETIC_GYEONGNAM_DEAL_UUID",
+  "otherInquiryId": "REPLACE_SYNTHETIC_INQUIRY",
+  "otherUserKey": "REPLACE_OTHER_USER_KEY",
+  "repName": "Synthetic rep",
+  "export": {
+    "from": "2026-09-01",
+    "to": "2026-09-05",
+    "brand": "TEST",
+    "reason": "Synthetic staging verification",
+    "columns": [
+      "site",
+      "brand",
+      "stage",
+      "created"
+    ],
+    "limit": 1
+  },
+  "ownWrite": null,
+  "readWriteAudit": null,
+  "signedUrl": null,
+  "anonWrites": [
+    {
+      "name": "crm_inquiry_assign",
+      "body": {
+        "p_inquiry_id": "REPLACE",
+        "p_to": "Synthetic rep",
+        "p_changed_by": "forged",
+        "p_reason": "synthetic"
+      }
+    },
+    {
+      "name": "crm_inquiry_unassign",
+      "body": {
+        "p_inquiry_id": "REPLACE",
+        "p_changed_by": "forged",
+        "p_reason": "synthetic"
+      }
+    },
+    {
+      "name": "crm_inquiry_status",
+      "body": {
+        "p_inquiry_id": "REPLACE",
+        "p_status": "보류",
+        "p_changed_by": "forged",
+        "p_reason": "synthetic"
+      }
+    },
+    {
+      "name": "crm_inquiry_trash",
+      "body": {
+        "p_inquiry_id": "REPLACE",
+        "p_deleted_by": "forged",
+        "p_delete_reason": "synthetic",
+        "p_delete_note": null
+      }
+    },
+    {
+      "name": "crm_inquiry_restore",
+      "body": {
+        "p_inquiry_id": "REPLACE",
+        "p_restored_by": "forged"
+      }
+    },
+    {
+      "name": "crm_inquiry_duplicate",
+      "body": {
+        "p_inquiry_id": "REPLACE",
+        "p_resolution": "keep_separate",
+        "p_target_inquiry_id": null
+      }
+    },
+    {
+      "name": "crm_inquiry_purge",
+      "body": {
+        "p_inquiry_id": "REPLACE"
+      }
+    }
+  ]
+}

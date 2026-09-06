@@ -1,0 +1,8 @@
+{
+  "status": "FINAL_METADATA_AND_46_ROWS_PASS",
+  "crm_rows": 46,
+  "auth_count": 6,
+  "audit_count": 3,
+  "private_schema_usage_anon": false,
+  "private_schema_usage_authenticated": false
+}

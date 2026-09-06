@@ -1,0 +1,37 @@
+{
+  "contact_upsert": {
+    "opportunity_id": "f6090500-0006-4000-8000-000000000001",
+    "person_key": "mobile:01012345678",
+    "site_name": "TEST 아파트 A",
+    "office_phone": "02-000-0000",
+    "office_email": "office@example.invalid",
+    "manager_name": "TEST MANAGER",
+    "manager_mobile": "010-1234-5678",
+    "manager_role": "관리소장",
+    "is_primary": true,
+    "started_at": "2026-09-06T00:00:00.000Z",
+    "sms_consent": true,
+    "kakao_consent": false,
+    "consent_at": "2026-09-06T00:00:00.000Z",
+    "opt_out_at": null,
+    "send_blocked": false,
+    "send_blocked_reason": null
+  },
+  "contact_relationship": {
+    "opportunity_id": "f6090500-0006-4000-8000-000000000001",
+    "person_key": "mobile:01012345678",
+    "decision_role": "의사결정자",
+    "relationship_tone": "우호적"
+  },
+  "contact_move": {
+    "opportunity_id": "f6090500-0006-4000-8000-000000000001",
+    "person_key": "mobile:01012345678",
+    "manager_name": "TEST MANAGER",
+    "manager_mobile": "010-1234-5678",
+    "from_site": "TEST 아파트 A",
+    "to_site": "TEST 아파트 B",
+    "to_office_phone": "02-111-1111",
+    "moved_at": "2026-09-06",
+    "reason": "관리소장 통화 확인"
+  }
+}

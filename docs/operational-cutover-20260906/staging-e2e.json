@@ -1,0 +1,68 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "PARTIAL_31_OP_BROWSER_PASS_FIXTURE_CLEANUP_PASS_REACHABLE_64_INCOMPLETE",
+  "verified_at": "2026-09-06T14:27:34Z",
+  "scope": {
+    "operation_count": 31,
+    "scenario_count": 35,
+    "step_count": 75,
+    "pass": 75,
+    "fail": 0,
+    "skip": 0,
+    "browser_http_requests": 290,
+    "browser_write_requests_including_replay": 136,
+    "unique_executed_request_ids": 67,
+    "storage_writes": 1
+  },
+  "coverage": {
+    "denominator": "64_LOGICAL_REACHABLE_ACTIONS",
+    "pass": 38,
+    "blocked": 22,
+    "out_of_scope": 4,
+    "complete": false
+  },
+  "cleanup": {
+    "status": "PASS",
+    "verified_fixture_db_rows_remaining": 0,
+    "verified_generated_residual_rows_remaining": 0,
+    "verified_storage_objects_remaining": 0,
+    "database_rows_deleted": 448,
+    "storage_objects_deleted": 1,
+    "scope": "41 preallocated fixture entity UUIDs, 67 executed request UUIDs, and 15 exact server-generated TEST/E2E residual rows",
+    "exact_cleanup": "staging-fixture-runs/stg-e2e-20260906t125239z-fc70f2d2/cleanup-exact.sql",
+    "exact_cleanup_sha256": "3dfe6eebb429a9c6b7340adf6ddc38db37a8190749ce4afb5d34e45348536942",
+    "exact_cleanup_verification": "staging-fixture-runs/stg-e2e-20260906t125239z-fc70f2d2/cleanup-exact-verify.sql",
+    "exact_cleanup_verification_sha256": "31684629ceb5146075dd9da97847c8bf670f388b80f1e18bc7626ce736d70cff",
+    "residual_cleanup": "staging-fixture-runs/stg-e2e-20260906t125239z-fc70f2d2/cleanup-generated-residual-exact.sql",
+    "residual_cleanup_sha256": "d2f6835a5368f8ec722b95dcbd60a574597a14c5d7ad033251ed3b52bbd60810",
+    "canonical_baseline": "staging-fixture-runs/stg-e2e-20260906t125239z-fc70f2d2/cleanup-canonical-baseline-final.json",
+    "canonical_baseline_sha256": "9c8634ee04fe0b2c06fed5bab18ef89051d26e259d69de53edef9b98843af5b0",
+    "storage_policy_apply": "staging-fixture-runs/stg-e2e-20260906t125239z-fc70f2d2/storage-cleanup-policy-apply.sql",
+    "storage_policy_apply_sha256": "270b6d322c906b93d6a18744b47e874ad9467dc3edfd43c3cd03849ab6af8fcf",
+    "storage_policy_rollback": "staging-fixture-runs/stg-e2e-20260906t125239z-fc70f2d2/storage-cleanup-policy-rollback.sql",
+    "storage_policy_rollback_sha256": "c5e1d89a5d3850ab482efe8940cfdacc6f93392cb0dc1f0ba0525ffe38a0b882",
+    "runbook": "staging-exact-cleanup-runbook.md",
+    "runbook_sha256": "a8256467ee9d058549ccc3d0694652a4c6371e3170078aec722693576123dcc8",
+    "current_verification": "staging-fixture-runs/stg-e2e-20260906t125239z-fc70f2d2/cleanup-verification-current.json",
+    "current_verification_sha256": "efb2151256e1e05e7641326b61d8f90211e7b45adb670d8e1fa4061c8dcd68aa",
+    "canonical_rows_mutated": false
+  },
+  "network": {
+    "interactive_n8n_requests": 0,
+    "production_requests": 0,
+    "network_violations": 0
+  },
+  "evidence": {
+    "browser_mutation_proof": "staging-fixture-runs/stg-e2e-20260906t125239z-fc70f2d2/browser-mutation-proof.json",
+    "browser_mutation_proof_sha256": "65dc4594789e729585c2773a4c473fa8cf2da5d6faf94ed6dda6239d6842052c",
+    "negative_role_harness": "scripts/run-operational-role-denial-staging.cjs",
+    "negative_role_harness_sha256": "5af2658de0ff097bfe0d69f988895338e4ab4355183ddff7d7cc5a6f6bed8137"
+  },
+  "remaining": [
+    "22 reachable actions need a final PASS/BLOCKED operating disposition",
+    "Staging negative mutation role proof is pending for OTHER_REP, CONSULT and GYEONGNAM",
+    "approved external n8n boundary needs test-recipient E2E"
+  ],
+  "production_accessed": false,
+  "n8n_body_accessed": false
+}

@@ -1,0 +1,26 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "run_id": "stg-e2e-20260906t110014z-a6b4c8d2",
+  "mode": "READ_ONLY_POST_CLEANUP_VERIFICATION",
+  "status": "PASS",
+  "cleanup_sha256": "5bb4cefc03ff4c1d90e60814ddf7dff188d07e233562626ae8eabc53463af1d1",
+  "transaction_read_only": true,
+  "remaining_fixture_inquiries": 0,
+  "remaining_fixture_deals": 0,
+  "remaining_storage_objects": 0,
+  "canonical_inquiries": 5,
+  "canonical_deals": 5,
+  "canonical_restored": true,
+  "mutation_node_tests": {
+    "pass": 30,
+    "fail": 7,
+    "skip": 0
+  },
+  "mutation_scenarios": {
+    "pass": 29,
+    "fail": 6
+  },
+  "production_accessed": false,
+  "n8n_accessed": false
+}

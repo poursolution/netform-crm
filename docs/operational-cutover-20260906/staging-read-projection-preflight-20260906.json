@@ -1,0 +1,103 @@
+{
+  "project_id": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "project_status": "ACTIVE_HEALTHY",
+  "database_version": "17.6.1.166",
+  "captured_at": "2026-09-06T04:09:56.844525+00:00",
+  "mode": "READ_ONLY",
+  "current_public_read": {
+    "signature": "public.crm_read_scoped_v2(uuid,integer,uuid,uuid)",
+    "definition_md5": "d1cde3372f07295076fc62bf28d12a01",
+    "security_definer": true,
+    "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+    "deal_fields": [
+      "id",
+      "site_id",
+      "owner_id",
+      "stage_code",
+      "brand",
+      "primary_work",
+      "work_items",
+      "work_scope_type",
+      "work_summary",
+      "version"
+    ],
+    "inquiry_fields": [
+      "id",
+      "sheet_row",
+      "row",
+      "brand",
+      "site_name",
+      "site",
+      "address",
+      "contact_name",
+      "contact",
+      "phone",
+      "assignee_name",
+      "assignee",
+      "assigned_to",
+      "status",
+      "deal_id",
+      "opportunity_id",
+      "received_at",
+      "created_at",
+      "at",
+      "site_id",
+      "source_channel",
+      "channel",
+      "work_type",
+      "work",
+      "assigned_at",
+      "first_response_at",
+      "responded_at",
+      "next_action_date",
+      "due",
+      "detail",
+      "assignment_history"
+    ],
+    "pagination": {
+      "cursor": "one shared p_after UUID for deals and inquiries",
+      "limit": "one shared p_limit, max 100",
+      "has_more": false,
+      "next_cursor": false,
+      "browser_mitigation": "shared UUID cursor dedupe/exhaustion candidate; 12 role/surface reads PASS"
+    }
+  },
+  "scope_functions": {
+    "can_deal_definition_md5": "efdf75e2004fb4d7248b43eb06adcaeb",
+    "can_inquiry_definition_md5": "fafccdcdebca339fc7ab965574ed9d09",
+    "rep_deal_scope": "deals.owner_id = actor.user_id",
+    "rep_and_consultation_inquiry_scope": "inquiries.assigned_to = actor.user_id",
+    "branch_and_admin_scope": "unexpired crm_security.object_scope rows only",
+    "company_all_implicit": false
+  },
+  "available_relations": [
+    "public.deals",
+    "public.inquiries",
+    "public.sites",
+    "public.organizations",
+    "public.contacts",
+    "public.activities",
+    "public.next_actions",
+    "public.stage_history",
+    "public.assignment_history",
+    "crm_security.access_review",
+    "crm_security.object_scope"
+  ],
+  "missing_current_chain_relations": [
+    "crm_security.quote_versions",
+    "crm_security.user_opportunity_state"
+  ],
+  "missing_business_semantics": [
+    "company-wide approved reporting scope",
+    "performance target source",
+    "branch pool/routing/reporting-group source",
+    "provider-confirmed quote/message dispatch source",
+    "attachment metadata source",
+    "ASQ project read contract"
+  ],
+  "supabase_current_platform_note": "New public tables/functions must use explicit grants; RLS and grants are separate controls. Candidates use explicit function grants and private helpers.",
+  "staging_ddl_dml_performed": false,
+  "production_requests": 0,
+  "n8n_requests": 0
+}

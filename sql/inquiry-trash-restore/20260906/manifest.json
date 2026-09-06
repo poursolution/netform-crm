@@ -1,0 +1,35 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "LOCAL_CHAIN_CANDIDATE_AFTER_HOLD_NOT_APPLIED",
+  "prerequisites": [
+    "inquiry-hold/20260906"
+  ],
+  "operations": [
+    "inquiry_trash",
+    "inquiry_restore"
+  ],
+  "intent": "soft_trash_restore_only",
+  "blocked_meanings": [
+    "inquiry_purge",
+    "automatic_purge",
+    "non_admin_management"
+  ],
+  "staging_ddl_dml_performed": false,
+  "files_sha256": {
+    "helper.sql": "c058f4a7146b148f67534d3d8d4d93c5b4b277dede94cccfac3b9fa0429df233",
+    "adapter-contract.js": "7e6d38e32214e5222c878875d8ae477ee87f88e5592b08dc248f7523d2fd4f70",
+    "contract.test.cjs": "889988bd120535c024b2ad13eadf341d84e4fdb22a8ae9b3a1a4a0eafdd17167",
+    "db.test.cjs": "506946a76a5740ac36c60faddd1356a63bf3418f71170c8dc36a20a00fdd7e32",
+    "ui.test.cjs": "14994221c08985923fdfc484e3d0833cb04dc5ccc89e00138ba235f8fcc5d16d",
+    "review.md": "3fa05087f0bc2c8ecf19179c6fc18a195ad18d1b68f29ceb34c45c3af2a740bd",
+    "staging-apply-after-hold.sql": "2b2da917b2afe52f03742f688691d1891f550468bee916699bfc52c073b1cfe8",
+    "rollback-after-hold.sql": "9cc69dabaa7d43f1def8c367102293fdd8b12bbad63836453c41c91abdb6e58d",
+    "operational-adapter.candidate.js": "2abd0c4ab7e07a35a28f074d568ff03deeb7e2ed7315f906b90a05af044074ff",
+    "operational-overlay.candidate.js": "f3f81fb7542efac85008040851be8b0e8cf0932c520156d98fda20d54c48d058"
+  },
+  "source_sha256": {
+    "golden_pc": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "hold_manifest": "cffc5e3bcd7b88b5f96b52fe7ed26ca1b5183d4b3f00ed2e95b166a6d4812ada",
+    "inquiry_contracts": "e6f4e720cefb6335e78fe82cbbf7b1252820822ae6e69cdb1179636dda142784"
+  }
+}

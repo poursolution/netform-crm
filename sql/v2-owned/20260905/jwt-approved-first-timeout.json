@@ -1,0 +1,107 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "mode": "approved",
+  "executed_at": "2026-09-05T13:44:00.947Z",
+  "claims": [
+    {
+      "kind": "INTERNAL_REP",
+      "auth_uid": "b5295979-d6c9-48f2-971a-2dea418b75e6",
+      "role": "authenticated",
+      "aal": "aal1",
+      "issued_at": 1788615817,
+      "expires_at": 1788619417
+    },
+    {
+      "kind": "OTHER_REP",
+      "auth_uid": "ebf842f3-a2ca-4408-ab67-c10d44538d5e",
+      "role": "authenticated",
+      "aal": "aal1",
+      "issued_at": 1788615817,
+      "expires_at": 1788619417
+    },
+    {
+      "kind": "CONSULT",
+      "auth_uid": "7dcd36d5-03ed-4e25-aa57-ce88512ee130",
+      "role": "authenticated",
+      "aal": "aal1",
+      "issued_at": 1788615817,
+      "expires_at": 1788619417
+    },
+    {
+      "kind": "GYEONGNAM",
+      "auth_uid": "c55d57b1-8fdf-4263-9425-296ebb57df18",
+      "role": "authenticated",
+      "aal": "aal1",
+      "issued_at": 1788615817,
+      "expires_at": 1788619417
+    },
+    {
+      "kind": "ADMIN",
+      "auth_uid": "2ed567fb-ce77-438c-804b-0dec3abda6f8",
+      "role": "authenticated",
+      "aal": "aal1",
+      "issued_at": 1788615818,
+      "expires_at": 1788619418
+    },
+    {
+      "kind": "ADMIN_MFA",
+      "auth_uid": "171a2449-3eca-4ee2-9f33-c4a10fc8a29f",
+      "role": "authenticated",
+      "aal": "aal1",
+      "issued_at": 1788615818,
+      "expires_at": 1788619418
+    }
+  ],
+  "results": [
+    {
+      "id": 1,
+      "name": "anon denied all four v2 entrypoints",
+      "status": "PASS"
+    },
+    {
+      "id": 3,
+      "name": "Rep A own Deal and Inquiry succeed",
+      "status": "PASS"
+    },
+    {
+      "id": 4,
+      "name": "Rep A denied Rep B including shared-site Opportunity",
+      "status": "PASS"
+    },
+    {
+      "id": 5,
+      "name": "Rep B denied Rep A",
+      "status": "PASS"
+    },
+    {
+      "id": 6,
+      "name": "consultation own Inquiry only; Deal/work denied",
+      "status": "PASS"
+    },
+    {
+      "id": 7,
+      "name": "branch explicit scopes only",
+      "status": "PASS"
+    },
+    {
+      "id": 8,
+      "name": "both admins explicit scopes only; MFA remains AAL1",
+      "status": "PASS"
+    },
+    {
+      "id": 9,
+      "name": "own contact allowed; foreign and shared-site ID denied",
+      "status": "PASS"
+    }
+  ],
+  "writes": [
+    {
+      "id": "f6090500-0006-4000-8000-000000000001",
+      "version": 2,
+      "audit_event_id": "e01cb407-23ad-4353-a55c-fa05c1a110ca"
+    }
+  ],
+  "mfa": "MFA_NOT_ENROLLED / AAL1",
+  "legacy": "UNCHANGED / EXPECTED_OUTSTANDING_RISK",
+  "production_connections": 0
+}

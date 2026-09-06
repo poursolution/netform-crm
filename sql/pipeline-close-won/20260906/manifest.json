@@ -1,0 +1,64 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+  "operation": "close",
+  "intent": "won",
+  "ui_coverage_candidate": [
+    "P04W",
+    "P16"
+  ],
+  "prerequisite": "operational-cutover-candidate/20260906",
+  "absorbed_children": [
+    "activity",
+    "expansion_pool_upsert"
+  ],
+  "server_rules": {
+    "from_stage": "completion",
+    "required_checks": [
+      "공사 완료",
+      "준공검사 완료"
+    ],
+    "won_amount": "positive bigint separate from expected amount",
+    "completion_date": "required and not after transition date",
+    "next_contact_days": 30,
+    "pool_fields": "server-derived from Deal UUID/site/owner/work"
+  },
+  "private_relations": [
+    "crm_security.deal_won_events",
+    "crm_security.expansion_pool"
+  ],
+  "read_additions": [
+    "deal_core.won_amount",
+    "deal_core.completion_date",
+    "expansion_pool actor-scoped domain"
+  ],
+  "rollback_runtime_limit": "BEFORE_ANY_DEAL_WON_EVENT",
+  "staging_readonly_preflight": "PASS",
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "files_sha256": {
+    "build.cjs": "3dcb0c5597aa3704aae302f261fc3cea1440ef8ff6a483f6a8bd67a585937377",
+    "helper.sql": "638cedb5bad34cc34c799503ef39c9ff576ece84df13f27099ec788992ac6c11",
+    "rollback-fragment.sql": "041eae4031ed1a764ceff6725ff7c6605d6d54f91fff8f7d8947c30c67c404ca",
+    "contract.test.cjs": "a292dc87d95b991c5f50753f222da8c641ec9bd2841b89f93adec2e93087b9e9",
+    "ui.test.cjs": "e1d02e55b0bbc03d4d00c46249e75b919d73f3c35422b6716f372e8814f68cb6",
+    "db.test.cjs": "59a483888cd3b35b728834caf6306a7c8cb6d7c54a30f0c18e3603d199277f25",
+    "review.md": "fd6ddb0c817fc12acb5b3af66f7e944ef17553aaac534f2daafc970de09ba15c",
+    "staging-readonly-preflight-20260906.json": "0795336726cb83adcdafecfea916e655572bb7f23f54474991d74d81ecf1e63c",
+    "staging-apply-after-operational-cutover.sql": "63c46fa937141f39c9fed82ad074a2d90cff6ad3a49e02e74d3f6ecff12ca5f3",
+    "rollback-before-operational-cutover.sql": "5a58c3362464dce184249f1bf0e69a650d11fea2b364952c63222e8d030a9cc2",
+    "operational-adapter.candidate.js": "4a1b1814cd62e09c11a7bbba1937329d2b2cffdaeb00c24d338fea8888f0a3ec",
+    "operational-overlay.candidate.js": "d3addbf46cffb8d38da2e7eabefd7f9a1a910e6ce5a77b7d7a677c366db97f64",
+    "transport.candidate.js": "d1382cad334fd51b60bdba372496bf63b054a3da00f0180c1896400d09503629"
+  },
+  "source_sha256": {
+    "sql/operational-cutover-candidate/20260906/manifest.json": "22a9f6b39b4a8502d296c231d384f9fc75de4b5890ee136c4e505f881f626e9e",
+    "stage-transition.js": "469241cdab31838e1ea2e04d056daf1bda433f7497601dc8bbe8dd91e921db78",
+    "stage-transition-ui.js": "c3fc39eee42159ac036776b9067e5d26de660b59f71d770f71e835d86d2010f7",
+    "crm.html": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "mobile.html": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "sql/20260905_expansion_management.sql": "c41d01b24a64528e6f09c76f875fcf687b24b43e51f336d2d3bc7ef73c9fc392",
+    "docs/operational-cutover-20260906/pipeline-lifecycle-contracts.md": "df59041bb44244dcc2570f2e88503bd396ed3e7e712f5467824e4c88d269f452"
+  }
+}

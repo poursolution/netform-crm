@@ -1,0 +1,4 @@
+-- LOCAL REVIEW MARKER ONLY; there is no database candidate in this bundle.
+-- O03 is confirmed to be browser-local and must not be connected to the public
+-- dispatcher. X01-X03, A05, O01-O02, O04-O06 remain NEEDS_VERIFICATION.
+-- Intentionally contains no DDL, DML, grants, or function replacement.

@@ -1,0 +1,65 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "run_id": "263874de-008a-4c4b-aae8-5589fec79790",
+  "resumed_from": "03fc781c-4cb6-49b2-ae68-4aed1f0bf942",
+  "at": "2026-09-06T00:22:03.201Z",
+  "scope": "real browser operational transport, synthetic records only",
+  "results": [
+    {
+      "name": "PC final transport writes same work values with correlated ACK",
+      "status": "PASS"
+    },
+    {
+      "name": "mobile final transport writes same service value once",
+      "status": "PASS"
+    },
+    {
+      "name": "PC queue replays prior direct_assign receipt without mutation",
+      "status": "PASS"
+    },
+    {
+      "name": "mobile queue replays prior inquiry_unassign receipt without mutation",
+      "status": "PASS"
+    }
+  ],
+  "operations": [
+    {
+      "operation": "opportunity_work_set",
+      "request_id": "0567ea6e-4ab3-48e6-928e-45558b258cc9",
+      "replayed": false,
+      "changed": null,
+      "previous_version": 28,
+      "version": 29
+    },
+    {
+      "operation": "service_change",
+      "request_id": "9531543c-23b3-464e-83c2-a4e17aea07ab",
+      "replayed": false,
+      "changed": null,
+      "previous_version": 29,
+      "version": 30
+    },
+    {
+      "operation": "inquiry_assign",
+      "request_id": "32545484-5424-5baa-8aa6-a3e7edbbfff8",
+      "replayed": true,
+      "changed": true,
+      "previous_version": null,
+      "version": null
+    },
+    {
+      "operation": "inquiry_unassign",
+      "request_id": "13363ac1-adbf-5aef-86ac-f1511e4cd242",
+      "replayed": true,
+      "changed": true,
+      "previous_version": null,
+      "version": null
+    }
+  ],
+  "visible_state_preserved": true,
+  "append_only_synthetic_evidence_retained": true,
+  "network_requests": 123,
+  "violations": [],
+  "production_requests": 0,
+  "n8n_requests": 0
+}

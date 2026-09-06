@@ -1,0 +1,37 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "LOCAL_CONTRACT_REVIEW_NOT_DEPLOYED",
+  "connected_operations": [],
+  "database_candidates": [],
+  "safe_local_contracts": [
+    "O03"
+  ],
+  "verdicts": {
+    "X01": "NEEDS_VERIFICATION",
+    "X02": "NEEDS_VERIFICATION",
+    "X03": "NEEDS_VERIFICATION",
+    "A05": "NEEDS_VERIFICATION",
+    "O01": "NEEDS_VERIFICATION",
+    "O02": "NEEDS_VERIFICATION",
+    "O03": "CONFIRMED_LOCAL_ONLY",
+    "O04": "NEEDS_VERIFICATION",
+    "O05": "NEEDS_VERIFICATION_REACHABLE_MOCK",
+    "O06": "NEEDS_VERIFICATION_REACHABLE_MOCK"
+  },
+  "files_sha256": {
+    "adapter-contract.js": "44a9619c433819d3527b2f042328f0f831aa6bdcd5a46b7b1a7575d116374351",
+    "candidate.sql": "b883f0d6b16668fe59986b014c907201004b8043284f7f6e397508b2d9b00ce6",
+    "rollback.sql": "8c5aadd3e89e17f01c208a61875054010ab92430b45d4a39081ed96818808caa",
+    "review.md": "a68a2697c6022e9cd1bfd2377d1004e7f317517840f98b8d402bf371d9c7940f",
+    "contract.test.cjs": "e0ffd38a2fd744ec5faa52acaecd758ace1227d145439075b951d408d3bb3347"
+  },
+  "evidence_sha256": {
+    "golden_pc": "f73daf1598a2271d38fb38fba32b81cc8cc842e860b98983ce7f3c972c2274e2",
+    "golden_mobile": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "expansion_pool": "3a59c5d19ef7bb3f44c194f4dfb7e0edfe953276683c48abcc5174d03c8016e7",
+    "expansion_flow": "06a00c00ccb42fee9a1e9186adb7c3b56f96f3c9ae379e3ce1fc67d7e6c84663",
+    "cleanup_ui": "a724dd6503ad8a95a29452c7311656a4a646fb9f69758fdc19a80a1da604150a",
+    "export_ui": "a5e413081d0b84cf66d3e94a9969822d6c0c50cc303c866e75b2a836c7222670",
+    "staging_snapshot": "01829e365a2a93e06c71fe5ba667a1ba5e266c53aa1ea78e53355d1667c089e6"
+  }
+}

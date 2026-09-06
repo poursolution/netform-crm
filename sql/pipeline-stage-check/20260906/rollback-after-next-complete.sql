@@ -1,0 +1,43 @@
+SET crm.stage_check_ref='rprechiaglyjaydkmxsu';
+BEGIN;
+SET LOCAL search_path=pg_catalog;
+SET LOCAL lock_timeout='3s';
+SET LOCAL statement_timeout='60s';
+DO $guard$ BEGIN
+ IF current_setting('crm.stage_check_ref',true) IS DISTINCT FROM 'rprechiaglyjaydkmxsu'
+  OR to_regprocedure('public.crm_write_command_v2(uuid,text,uuid,integer,jsonb)') IS NULL
+  OR to_regprocedure('crm_security.crm_write_command_v2_next_complete_20260906(uuid,text,uuid,integer,jsonb)') IS NULL
+  OR to_regprocedure('crm_security.crm_stage_check_command_v1(uuid,uuid,integer,jsonb)') IS NULL
+  OR to_regprocedure('crm_security.crm_operational_source_fragment_v1(text,uuid,integer)') IS NULL
+  OR to_regprocedure('crm_security.crm_operational_source_fragment_pre_stage_20260906(text,uuid,integer)') IS NULL
+  OR to_regnamespace('crm_stage_check_archive') IS NOT NULL
+  OR (SELECT pg_get_constraintdef(oid,true) FROM pg_constraint WHERE conrelid='crm_security.command_receipts'::regclass AND conname='command_receipts_operation_check') IS DISTINCT FROM $expected$CHECK (operation = ANY (ARRAY['opportunity_work_set'::text, 'inquiry_assign'::text, 'service_change'::text, 'inquiry_unassign'::text, 'favorite_set'::text, 'opportunity_touch'::text, 'next_action'::text, 'activity'::text, 'quote_version'::text, 'next_action_complete'::text, 'stage_check'::text]))$expected$
+ THEN RAISE EXCEPTION 'stage-check rollback drift'; END IF;
+END $guard$;
+CREATE SCHEMA crm_stage_check_archive AUTHORIZATION postgres;
+REVOKE ALL ON SCHEMA crm_stage_check_archive FROM PUBLIC,anon,authenticated,service_role;
+CREATE TABLE crm_stage_check_archive.deal_stage_checklist AS SELECT id AS deal_id,stage_checklist,clock_timestamp() AS archived_at FROM public.deals WHERE stage_checklist<>'{}'::jsonb;
+CREATE TABLE crm_stage_check_archive.command_receipts AS SELECT * FROM crm_security.command_receipts WHERE operation='stage_check';
+REVOKE ALL ON crm_stage_check_archive.deal_stage_checklist,crm_stage_check_archive.command_receipts FROM PUBLIC,anon,authenticated,service_role;
+DELETE FROM crm_security.command_receipts WHERE operation='stage_check';
+DROP FUNCTION public.crm_write_command_v2(uuid,text,uuid,integer,jsonb);
+DROP FUNCTION crm_security.crm_stage_check_command_v1(uuid,uuid,integer,jsonb);
+ALTER FUNCTION crm_security.crm_write_command_v2_next_complete_20260906(uuid,text,uuid,integer,jsonb) RENAME TO crm_write_command_v2;
+ALTER FUNCTION crm_security.crm_write_command_v2(uuid,text,uuid,integer,jsonb) SET SCHEMA public;
+REVOKE EXECUTE ON FUNCTION public.crm_write_command_v2(uuid,text,uuid,integer,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.crm_write_command_v2(uuid,text,uuid,integer,jsonb) TO authenticated;
+DROP FUNCTION crm_security.crm_operational_source_fragment_v1(text,uuid,integer);
+ALTER FUNCTION crm_security.crm_operational_source_fragment_pre_stage_20260906(text,uuid,integer) RENAME TO crm_operational_source_fragment_v1;
+REVOKE EXECUTE ON FUNCTION crm_security.crm_operational_source_fragment_v1(text,uuid,integer) FROM PUBLIC,anon,authenticated,service_role;
+ALTER TABLE public.deals DROP COLUMN stage_checklist;
+ALTER TABLE crm_security.command_receipts DROP CONSTRAINT command_receipts_operation_check;
+ALTER TABLE crm_security.command_receipts ADD CONSTRAINT command_receipts_operation_check CHECK(operation IN ('opportunity_work_set','inquiry_assign','service_change','inquiry_unassign','favorite_set','opportunity_touch','next_action','activity','quote_version','next_action_complete'));
+DO $post$ BEGIN
+ IF to_regprocedure('crm_security.crm_write_command_v2_next_complete_20260906(uuid,text,uuid,integer,jsonb)') IS NOT NULL
+  OR to_regprocedure('crm_security.crm_stage_check_command_v1(uuid,uuid,integer,jsonb)') IS NOT NULL
+  OR to_regprocedure('crm_security.crm_operational_source_fragment_pre_stage_20260906(text,uuid,integer)') IS NOT NULL
+  OR EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='deals' AND column_name='stage_checklist')
+  OR (SELECT pg_get_constraintdef(oid,true) FROM pg_constraint WHERE conrelid='crm_security.command_receipts'::regclass AND conname='command_receipts_operation_check') IS DISTINCT FROM $expected$CHECK (operation = ANY (ARRAY['opportunity_work_set'::text, 'inquiry_assign'::text, 'service_change'::text, 'inquiry_unassign'::text, 'favorite_set'::text, 'opportunity_touch'::text, 'next_action'::text, 'activity'::text, 'quote_version'::text, 'next_action_complete'::text]))$expected$
+ THEN RAISE EXCEPTION 'stage-check rollback verification drift'; END IF;
+END $post$;
+COMMIT;

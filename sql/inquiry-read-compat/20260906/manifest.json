@@ -1,0 +1,12 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "source_snapshot": "sql/inquiry-direct-assign/20260906/after.json",
+  "source_function_sha256": "de66a2eca9c25fdbfb5cfbb30a16951640000e86cccda34ca723650bf3cf513c",
+  "candidate_sha256": "70247896749ea4c3b64e01b10e3596c1ad2fe54afb0504cd3671307025dd161d",
+  "rollback_sha256": "075f96cf244bbd6657d41e8f6e48f25bae05d8601d87d0259d287ef05eab4bb6",
+  "status": "LOCAL_CANDIDATE_NOT_APPLIED",
+  "blocked": [
+    "response_body_storage",
+    "response_actor_authority"
+  ]
+}

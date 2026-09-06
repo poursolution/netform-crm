@@ -1,0 +1,32 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "LOCAL_PRIVATE_FRAGMENTS_NOT_APPLIED",
+  "connected_operations": [],
+  "connected_reads": [],
+  "verdicts": {
+    "pc_dashboard_source": "DERIVED_SAFE_PRIVATE_FRAGMENT",
+    "mobile_mine": "DERIVED_SAFE_PRIVATE_FRAGMENT",
+    "pc_dashboard_kpi": "NEEDS_VERIFICATION",
+    "pc_performance": "NEEDS_VERIFICATION",
+    "pc_report": "NEEDS_VERIFICATION",
+    "pc_gyeongnam": "NEEDS_VERIFICATION",
+    "mobile_today": "NEEDS_VERIFICATION",
+    "mobile_control": "NEEDS_VERIFICATION",
+    "mobile_search": "NEEDS_VERIFICATION",
+    "c03_full_read": "NEEDS_VERIFICATION"
+  },
+  "files_sha256": {
+    "candidate.sql": "252823c67f3441c75e744cab11e217edb3dfa4dad7b622bbff74bbe97bb6cf46",
+    "rollback.sql": "b08b78845970262b56f89c5039e044806addc56e88902c8e865bb11e3f4af9bd",
+    "contract.js": "b68bf677ece4a2afa5aa15e4ec91a3b8213e535f5aee935ffaa6ff4f648a1733",
+    "fixtures.json": "1e538feefddd96304dc3d1390d729834ce2679775098842cf6eeaba317e17018",
+    "review.md": "2892a9c46dd7b7e920ed72872b7f3ec9f200078da98988e198b4dfbb0723c5b8",
+    "contract.test.cjs": "389a292ce4fa7038abcc2824f1f0de1ec49c20acbcba5b024af0c9c9889a2bf2",
+    "db.test.cjs": "b6ea01eb2c30a2714695ebfc40a60abc830f3d61dc66d3e954193b7660112ff3"
+  },
+  "source_sha256": {
+    "golden_pc": "f73daf1598a2271d38fb38fba32b81cc8cc842e860b98983ce7f3c972c2274e2",
+    "golden_mobile": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "staging_snapshot": "01829e365a2a93e06c71fe5ba667a1ba5e266c53aa1ea78e53355d1667c089e6"
+  }
+}

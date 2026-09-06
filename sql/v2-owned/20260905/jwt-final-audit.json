@@ -1,0 +1,104 @@
+{
+  "deal": {
+    "id": "f6090500-0006-4000-8000-000000000001",
+    "version": 4,
+    "work_items": [
+      "TEST JWT WORK"
+    ],
+    "primary_work": "TEST JWT WORK"
+  },
+  "audit": [
+    {
+      "action": "work_set",
+      "reason": "TEST synthetic real JWT verification",
+      "deal_id": "f6090500-0006-4000-8000-000000000001",
+      "event_id": "e01cb407-23ad-4353-a55c-fa05c1a110ca",
+      "actor_name": "TEST INTERNAL_REP",
+      "after_data": {
+        "version": 2,
+        "updated_at": "2026-09-05T13:43:39.607518+00:00",
+        "work_items": [
+          "TEST JWT WORK"
+        ],
+        "primary_work": "TEST JWT WORK",
+        "work_summary": "TEST JWT WORK",
+        "work_scope_type": "single"
+      },
+      "created_at": "2026-09-05T13:43:39.607518+00:00",
+      "before_data": {
+        "version": 1,
+        "updated_at": "2026-09-05T00:00:00+00:00",
+        "work_items": [],
+        "primary_work": null,
+        "work_summary": null,
+        "work_scope_type": null
+      },
+      "actor_user_id": "f6090500-0001-4000-8000-000000000001",
+      "actor_auth_uid": "b5295979-d6c9-48f2-971a-2dea418b75e6"
+    },
+    {
+      "action": "work_set",
+      "reason": "TEST synthetic real JWT verification",
+      "deal_id": "f6090500-0006-4000-8000-000000000001",
+      "event_id": "dd58259c-78a1-477f-b618-b865abe53766",
+      "actor_name": "TEST INTERNAL_REP",
+      "after_data": {
+        "version": 3,
+        "updated_at": "2026-09-05T13:47:53.550533+00:00",
+        "work_items": [
+          "TEST JWT WORK"
+        ],
+        "primary_work": "TEST JWT WORK",
+        "work_summary": "TEST JWT WORK",
+        "work_scope_type": "single"
+      },
+      "created_at": "2026-09-05T13:47:53.550533+00:00",
+      "before_data": {
+        "version": 2,
+        "updated_at": "2026-09-05T13:43:39.607518+00:00",
+        "work_items": [
+          "TEST JWT WORK"
+        ],
+        "primary_work": "TEST JWT WORK",
+        "work_summary": "TEST JWT WORK",
+        "work_scope_type": "single"
+      },
+      "actor_user_id": "f6090500-0001-4000-8000-000000000001",
+      "actor_auth_uid": "b5295979-d6c9-48f2-971a-2dea418b75e6"
+    },
+    {
+      "action": "work_set",
+      "reason": "TEST synthetic real JWT verification",
+      "deal_id": "f6090500-0006-4000-8000-000000000001",
+      "event_id": "33f47b47-c30d-4970-8b94-c47f23b7c506",
+      "actor_name": "TEST INTERNAL_REP",
+      "after_data": {
+        "version": 4,
+        "updated_at": "2026-09-05T13:47:53.65087+00:00",
+        "work_items": [
+          "TEST JWT WORK"
+        ],
+        "primary_work": "TEST JWT WORK",
+        "work_summary": "TEST JWT WORK",
+        "work_scope_type": "single"
+      },
+      "created_at": "2026-09-05T13:47:53.65087+00:00",
+      "before_data": {
+        "version": 3,
+        "updated_at": "2026-09-05T13:47:53.550533+00:00",
+        "work_items": [
+          "TEST JWT WORK"
+        ],
+        "primary_work": "TEST JWT WORK",
+        "work_summary": "TEST JWT WORK",
+        "work_scope_type": "single"
+      },
+      "actor_user_id": "f6090500-0001-4000-8000-000000000001",
+      "actor_auth_uid": "b5295979-d6c9-48f2-971a-2dea418b75e6"
+    }
+  ],
+  "scopes": 6,
+  "activity": null,
+  "approvals": 6,
+  "auth_count": 6
+}

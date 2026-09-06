@@ -1,0 +1,58 @@
+{
+  "views": {
+    "c_order_hash": "c50422769a9ac1982edb92a6bd0894fe",
+    "default_order_hash": "c50422769a9ac1982edb92a6bd0894fe"
+  },
+  "schema": {
+    "c_order_hash": "793bc7fc6b640d7fb530c67862bceb9b",
+    "default_order_hash": "793bc7fc6b640d7fb530c67862bceb9b"
+  },
+  "columns": {
+    "c_order_hash": "01d4e671166f1f3bbdb708da470dff31",
+    "default_order_hash": "b0bee830ba7bd1f39c84557ece493800"
+  },
+  "indexes": {
+    "c_order_hash": "e46e18edd383c0c94a9d307774ab7357",
+    "default_order_hash": "b8735b2c1f642c13b4f700fd962fa5f0"
+  },
+  "policies": {
+    "c_order_hash": "43460d0b92d895f19d4495bf429bfb21",
+    "default_order_hash": "43460d0b92d895f19d4495bf429bfb21"
+  },
+  "triggers": {
+    "c_order_hash": "257d543ef610f2acbc3ebb3efc70af82",
+    "default_order_hash": "257d543ef610f2acbc3ebb3efc70af82"
+  },
+  "functions": {
+    "c_order_hash": "a2b16ccc4725bcde73e9846cba92b22a",
+    "default_order_hash": "d6f18be8b358f4dc0679a4402e0e3252"
+  },
+  "relations": {
+    "c_order_hash": "55cef2065d9d7899725f14a95ef8bfc9",
+    "default_order_hash": "55cef2065d9d7899725f14a95ef8bfc9"
+  },
+  "sequences": {
+    "c_order_hash": "ff220ef0b2fe715b7c6e6080ee5f5493",
+    "default_order_hash": "ff220ef0b2fe715b7c6e6080ee5f5493"
+  },
+  "constraints": {
+    "c_order_hash": "670ce82527917ccebd39bba46b395e82",
+    "default_order_hash": "670ce82527917ccebd39bba46b395e82"
+  },
+  "custom_types": {
+    "c_order_hash": "37a6259cc0c1dae299a7866489dff0bd",
+    "default_order_hash": "37a6259cc0c1dae299a7866489dff0bd"
+  },
+  "dependencies": {
+    "c_order_hash": "1e580cc6cad0099e337b938fb93d9e18",
+    "default_order_hash": "1e580cc6cad0099e337b938fb93d9e18"
+  },
+  "custom_collations": {
+    "c_order_hash": "37a6259cc0c1dae299a7866489dff0bd",
+    "default_order_hash": "37a6259cc0c1dae299a7866489dff0bd"
+  },
+  "default_privileges": {
+    "c_order_hash": "22e92fa38d906880390ad376f630875f",
+    "default_order_hash": "f81cf60e6ae6a58e138a05dc8c1388a7"
+  }
+}

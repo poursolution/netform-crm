@@ -1,0 +1,55 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+  "operation": "next_action",
+  "intent": "postpone",
+  "ui_coverage_candidate": [
+    "P09X"
+  ],
+  "prerequisite": "message-reminder/20260906",
+  "surface": "pc_mobile",
+  "payload": [
+    "action_id",
+    "due_at"
+  ],
+  "server_rules": {
+    "scope": "crm_security.can_deal(deal_id,true)",
+    "identity": "server-projected current open Next Action UUID",
+    "date": "strictly later than current due and server KST date",
+    "counter": "append-only per-Deal server count",
+    "transaction": "same Next Action due + event + non-meaningful Activity + Deal version + audit + receipt"
+  },
+  "read_additions": [
+    "next_action.postpone_count"
+  ],
+  "blocked": [
+    "temporary client action id",
+    "earlier or same date",
+    "client postpone_count",
+    "standalone derived Activity"
+  ],
+  "rollback": "event/audit/receipt archived; changed business due and Activity retained; M04 remains active",
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "files_sha256": {
+    "build.cjs": "79f41fc1c686a9ee62b1973889a90c9fd66a48dbcef057c242e8fc7a2a4cf52b",
+    "helper.sql": "6fb5efc52775203483458a18ffd2eb76f336aed18ace32b7b60f32a720a8bbf9",
+    "rollback-fragment.sql": "17065aed5c15d4c9cab9c648229e398b65da7707d16b1597780c90a08d6bb6b8",
+    "contract.test.cjs": "4dd5de792725909cde5f238c2771ae9706baaed062ca1ef9c427ef84442ebff8",
+    "db.test.cjs": "729aaa255182510bbc48c6f2e6820049705dab677522f2c1dde09b109028801d",
+    "ui.test.cjs": "c57f90f4fe2e2f580d43817f87d94d8479e56314c32ac67a3588443e769dcca0",
+    "review.md": "d0da0f923f6c3148efb6ebaf5e1696598750bddfad297c40d5e589ce8e0cc315",
+    "staging-apply-after-message-reminder.sql": "55e8ab2d831f3cd3b981784cd9541021e34b8a974f5a0ff28ce515168fe10891",
+    "rollback-before-message-reminder.sql": "4b7987fd3281236716ad06d3bf07a7803de10c0076a9f8d219361a4e2b86b58b",
+    "operational-adapter.candidate.js": "af9cf727ab969ec4062eaf7c0d8c537ceeb95cd566fc4597394acf52becd39b3",
+    "operational-overlay.candidate.js": "e0d692de99c3a5e58368d7f3933d4d3d028b2744ac6030fc380c9dfd83f6c3b4",
+    "transport.candidate.js": "43abb4c6f37a9de65268f79dce45e2b154d2927854054babc9625fd131c6333a"
+  },
+  "source_sha256": {
+    "sql/message-reminder/20260906/manifest.json": "a679eebfe4bbe169a73fbafa6ca6e005b62df1506d1614187ede4d2062bad58b",
+    "crm.html": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "mobile.html": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "docs/operational-cutover-20260906/coverage-matrix.csv": "66b015765e4fa6e96d8e3b233a7a3411a50be1d4ff4054d7d757baedc22947c4"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "PUBLIC_CONNECT_BLOCKED_SELECTOR_REQUIRED",
+  "connected_reads": [],
+  "existing_ui_calls": [
+    {
+      "screen": "pc_dashboard",
+      "resource": "operational",
+      "args": { "limit": 100 },
+      "current_rpc_args": { "p_after": null, "p_limit": 100, "p_deal_id": null, "p_inquiry_id": null },
+      "required_discriminator": "dashboard_source"
+    },
+    {
+      "screen": "mobile_mine",
+      "resource": "operational",
+      "args": { "limit": 100 },
+      "current_rpc_args": { "p_after": null, "p_limit": 100, "p_deal_id": null, "p_inquiry_id": null },
+      "required_discriminator": "mine_source"
+    }
+  ],
+  "future_envelope": {
+    "resource": "dashboard_source|mine_source",
+    "scope_completeness": "actor_authorized_rows_only",
+    "pagination": {
+      "completeness": "complete|partial",
+      "has_more": false,
+      "next_cursor": null
+    }
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "tables": [
+    {
+      "row_diff": 0,
+      "row_count": 5,
+      "table_name": "activities"
+    },
+    {
+      "row_diff": 0,
+      "row_count": 0,
+      "table_name": "advisory_deals"
+    },
+    {
+      "row_diff": 0,
+      "row_count": 0,
+      "table_name": "assignment_history"
+    },
+    {
+      "row_diff": 0,
+      "row_count": 0,
+      "table_name": "audit_logs"
+    },
+    {
+      "row_diff": 0,
+      "row_count": 0,
+      "table_name": "business_history"
+    },
+    {
+      "row_diff": 0,
+      "row_count": 4,
+      "table_name": "contact_assignments"
+    },
+    {
+      "row_diff": 0,
+      "row_count": 5,
+      "table_name": "contacts"
+    },
+    {
+      "row_diff": 0,
+      "row_count": 0,
+      "table_name": "dashboard_state"
+    },
+    {
+      "row_diff": 0,
+      "row_count": 5,
+      "table_name": "deals"
+    },
+    {
+      "row_diff": 0,
+      "row_count": 5,
+      "table_name": "inquiries"
+    },
+    {
+      "row_diff": 0,
+      "row_count": 6,
+      "table_name": "next_actions"
+    },
+    {
+      "row_diff": 0,
+      "row_count": 0,
+      "table_name": "notes"
+    },
+    {
+      "row_diff": 0,
+      "row_count": 5,
+      "table_name": "organizations"
+    },
+    {
+      "row_diff": 0,
+      "row_count": 0,
+      "table_name": "projects"
+    },
+    {
+      "row_diff": 0,
+      "row_count": 5,
+      "table_name": "sites"
+    },
+    {
+      "row_diff": 0,
+      "row_count": 0,
+      "table_name": "stage_catalog"
+    },
+    {
+      "row_diff": 0,
+      "row_count": 0,
+      "table_name": "stage_history"
+    },
+    {
+      "row_diff": 0,
+      "row_count": 6,
+      "table_name": "users"
+    }
+  ],
+  "mappings": [
+    {
+      "name": "TEST ADMIN",
+      "role": "admin",
+      "user_id": "f6090500-0001-4000-8000-000000000005",
+      "auth_uid": "2ed567fb-ce77-438c-804b-0dec3abda6f8"
+    },
+    {
+      "name": "TEST ADMIN_MFA",
+      "role": "admin",
+      "user_id": "f6090500-0001-4000-8000-000000000006",
+      "auth_uid": "171a2449-3eca-4ee2-9f33-c4a10fc8a29f"
+    },
+    {
+      "name": "TEST CONSULT",
+      "role": "viewer",
+      "user_id": "f6090500-0001-4000-8000-000000000003",
+      "auth_uid": "7dcd36d5-03ed-4e25-aa57-ce88512ee130"
+    },
+    {
+      "name": "TEST GYEONGNAM",
+      "role": "rep",
+      "user_id": "f6090500-0001-4000-8000-000000000004",
+      "auth_uid": "c55d57b1-8fdf-4263-9425-296ebb57df18"
+    },
+    {
+      "name": "TEST INTERNAL_REP",
+      "role": "rep",
+      "user_id": "f6090500-0001-4000-8000-000000000001",
+      "auth_uid": "b5295979-d6c9-48f2-971a-2dea418b75e6"
+    },
+    {
+      "name": "TEST OTHER_REP",
+      "role": "rep",
+      "user_id": "f6090500-0001-4000-8000-000000000002",
+      "auth_uid": "ebf842f3-a2ca-4408-ab67-c10d44538d5e"
+    }
+  ],
+  "uuid_null": 0,
+  "auth_links": 6,
+  "mfa_factors": 0,
+  "uuid_duplicates": 0,
+  "deal_owner_links": 5,
+  "exact_fixture_diff": 0,
+  "inquiry_owner_links": 5
+}

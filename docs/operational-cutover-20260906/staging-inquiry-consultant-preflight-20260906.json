@@ -1,0 +1,27 @@
+{
+  "captured_at": "2026-09-06",
+  "mode": "STAGING_READ_ONLY",
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "production_ref_accessed": false,
+  "n8n_accessed": false,
+  "ddl_dml_executed": false,
+  "facts": {
+    "public_sales_people_exists": false,
+    "crm_security_access_review_exists": true,
+    "active_user_name_duplicate_count": 0,
+    "reviewed_identity_groups": [
+      {"source_role": "admin", "permission_role": "admin", "count": 2, "currently_eligible": 2},
+      {"source_role": "rep", "permission_role": "branch", "count": 1, "currently_eligible": 1},
+      {"source_role": "rep", "permission_role": "rep", "count": 2, "currently_eligible": 2},
+      {"source_role": "viewer", "permission_role": "consultation", "count": 1, "currently_eligible": 1}
+    ]
+  },
+  "verdict": "NEEDS_VERIFICATION_BLOCKED",
+  "missing_rule": "상담 가능한 rep와 회사 상담역을 함께 식별하는 UUID 기반 eligibility 정본을 승인해야 한다.",
+  "forbidden_inferences": [
+    "permission_role=consultation만을 전체 UI 상담 후보로 간주",
+    "모든 permission_role=rep를 상담 가능 후보로 간주",
+    "고유한 표시 이름을 권한 정본으로 간주"
+  ]
+}

@@ -1,0 +1,4 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict'),build=require('./build.cjs');
+test('browser transport admits note/context but not historical finish helper',()=>{const source=build.transport();assert.match(source,/rpcAllow=new Set\(\[[^\]]*'crm_expansion_note','crm_expansion_context'/);assert.doesNotMatch(source,/rpcAllow=new Set\(\[[^\]]*crm_expansion_finish/);});
+test('candidate reuses X01 adapter/overlay without broadening queued operations',()=>{const manifest=build.build(),adapter=require('./operational-adapter.candidate.js');assert.ok(!adapter.operations.includes('expansion_note'));assert.ok(adapter.operations.includes('expansion_pool_update'));assert.deepEqual(manifest.rpcs,['crm_expansion_note','crm_expansion_context']);assert.equal(manifest.staging_ddl_dml_performed,false);});

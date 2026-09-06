@@ -1,0 +1,3720 @@
+{
+  "scope": "current PC/mobile and directly included local scripts; dynamic arguments explicitly retained",
+  "sources": [
+    {
+      "file": "crm.html",
+      "sha256": "f73daf1598a2271d38fb38fba32b81cc8cc842e860b98983ce7f3c972c2274e2"
+    },
+    {
+      "file": "mobile.html",
+      "sha256": "7cc7ad50805829e347468b91b048b521ab930f6710eca778d0e0ebdd918f2fad"
+    },
+    {
+      "file": "message-salutation.js",
+      "sha256": "70a273b77b4ec85f7c9f7ee9f3d249e11e7a5cc7f55f4bb2fb690d62d7957474"
+    },
+    {
+      "file": "money-input.js",
+      "sha256": "9bffc3ca4685e0fac2efcfc78d4d5f4f2739b4f9bf8fbf6157b462a41a9d0eb2"
+    },
+    {
+      "file": "people-eligibility.js",
+      "sha256": "ac0acdef13597b6ff8f77c83f368a84067d4bb3da974bcfc55ae1e6ec11e6896"
+    },
+    {
+      "file": "owner-choice.js",
+      "sha256": "5c715c678a53649c315394020861dcd7bc79b85a11eb24fe192e90c62dbe0d95"
+    },
+    {
+      "file": "write-ack.js",
+      "sha256": "df42acfaf242fdb2747fdc7d996fe57250b0b6a870b0b11d7b3cdea919363124"
+    },
+    {
+      "file": "crm-read.js",
+      "sha256": "ebdd58450449f13f4a1331e60ef09c8be14afa7b74802b05f81e81ab62d42730"
+    },
+    {
+      "file": "crm-export.js",
+      "sha256": "a5e413081d0b84cf66d3e94a9969822d6c0c50cc303c866e75b2a836c7222670"
+    },
+    {
+      "file": "issue-modal.js",
+      "sha256": "7a2b2f1ee66e509b5d26ce0f3585a6e5e6ffc2f3f0b045d9f5a8b690a2e14391"
+    },
+    {
+      "file": "data-cleanup.js",
+      "sha256": "7fc99f3d86fc05db564e9bc7c844513dc1f60fe1add0d3d4b5f5ab6bd6615a6f"
+    },
+    {
+      "file": "data-cleanup-ui.js",
+      "sha256": "a724dd6503ad8a95a29452c7311656a4a646fb9f69758fdc19a80a1da604150a"
+    },
+    {
+      "file": "next-action-picker.js",
+      "sha256": "be9e041da4388f3fd515e358cf99d7b04634e0b72b47eff9b59317f35cfd4d07"
+    },
+    {
+      "file": "expansion-flow.js",
+      "sha256": "06a00c00ccb42fee9a1e9186adb7c3b56f96f3c9ae379e3ce1fc67d7e6c84663"
+    },
+    {
+      "file": "expansion-pool.js",
+      "sha256": "3a59c5d19ef7bb3f44c194f4dfb7e0edfe953276683c48abcc5174d03c8016e7"
+    },
+    {
+      "file": "stage-transition.js",
+      "sha256": "469241cdab31838e1ea2e04d056daf1bda433f7497601dc8bbe8dd91e921db78"
+    },
+    {
+      "file": "stage-transition-ui.js",
+      "sha256": "c3fc39eee42159ac036776b9067e5d26de660b59f71d770f71e835d86d2010f7"
+    }
+  ],
+  "calls": [
+    {
+      "file": "crm.html",
+      "line": 3528,
+      "operations": [
+        "activity"
+      ],
+      "operation_expression": "'activity'",
+      "payload": "{opportunity_id:d.id,type:type,note:row.note,result:row.result,occurred_at:at}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "note",
+        "result",
+        "occurred_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 3548,
+      "operations": [
+        "next_action_complete"
+      ],
+      "operation_expression": "'next_action_complete'",
+      "payload": "{opportunity_id:d.id,text:na.text||'',due_at:na.due||'',at:isoNow()}",
+      "payload_fields": [
+        "opportunity_id",
+        "text",
+        "due_at",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 3559,
+      "operations": [
+        "next_action"
+      ],
+      "operation_expression": "'next_action'",
+      "payload": "{opportunity_id:d.id,type:na.type||'전화',text:na.text||'',due_at:due}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "text",
+        "due_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 3833,
+      "operations": [
+        "rep_manager_comment"
+      ],
+      "operation_expression": "'rep_manager_comment'",
+      "payload": "{rep_name:rep,week_start:week,comment:text,status:row.status,created_by:actor,updated_at:at}",
+      "payload_fields": [
+        "rep_name",
+        "week_start",
+        "comment",
+        "status",
+        "created_by",
+        "updated_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 3834,
+      "operations": [
+        "rep_manager_comment"
+      ],
+      "operation_expression": "'rep_manager_comment'",
+      "payload": "{rep_name:rep,week_start:week,comment:row.comment,status:status,created_by:row.created_by,updated_at:at,completed_at:row.completed_at}",
+      "payload_fields": [
+        "rep_name",
+        "week_start",
+        "comment",
+        "status",
+        "created_by",
+        "updated_at",
+        "completed_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 3868,
+      "operations": [
+        "customer_support_action"
+      ],
+      "operation_expression": "'customer_support_action'",
+      "payload": "record",
+      "payload_fields": null,
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 4257,
+      "operations": [
+        "inquiry_assign"
+      ],
+      "operation_expression": "'inquiry_assign'",
+      "payload": "{inquiry_id:inqKey(q),inquiry_row:q.row||null,from:'미배정',to:r,status:q.status,at:p.lastActivity}",
+      "payload_fields": [
+        "inquiry_id",
+        "inquiry_row",
+        "from",
+        "to",
+        "status",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 4450,
+      "operations": [
+        "expansion_pool_upsert"
+      ],
+      "operation_expression": "'expansion_pool_upsert'",
+      "payload": "{opportunity_id:d.id,source_opportunity_id:d.id,site_id:x.siteId,site_name:x.site,source_work_summary:x.sourceWorkSummary,source_won_amount:x.wonAmount,completion_date:x.completionDate,owner_name:x.owner,next_contact_at:x.nextContactAt,candidate_work_items:x.candidates,relationship_state:x.relationshipState,expansion_status:x.status,at:at||isoNow()}",
+      "payload_fields": [
+        "opportunity_id",
+        "source_opportunity_id",
+        "site_id",
+        "site_name",
+        "source_work_summary",
+        "source_won_amount",
+        "completion_date",
+        "owner_name",
+        "next_contact_at",
+        "candidate_work_items",
+        "relationship_state",
+        "expansion_status",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 4452,
+      "operations": [
+        "expansion_pool_update"
+      ],
+      "operation_expression": "'expansion_pool_update'",
+      "payload": "{opportunity_id:v.sourceOpportunityId,source_opportunity_id:v.sourceOpportunityId,expansion_status:v.status,next_contact_at:v.nextContactAt,last_contact_at:v.lastContactAt,relationship_state:v.relationshipState,created_opportunity_id:v.createdOpportunityId||null,need_note:v.needNote||null,updated_at:isoNow()}",
+      "payload_fields": [
+        "opportunity_id",
+        "source_opportunity_id",
+        "expansion_status",
+        "next_contact_at",
+        "last_contact_at",
+        "relationship_state",
+        "created_opportunity_id",
+        "need_note",
+        "updated_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 4577,
+      "operations": [
+        "contact_upsert"
+      ],
+      "operation_expression": "'contact_upsert'",
+      "payload": "{opportunity_id:item.id,person_key:c.personKey,site_name:item.site,office_phone:office,office_email:email||null,manager_name:name,manager_mobile:mobile,manager_role:'관리소장',started_at:c.startedAt}",
+      "payload_fields": [
+        "opportunity_id",
+        "person_key",
+        "site_name",
+        "office_phone",
+        "office_email",
+        "manager_name",
+        "manager_mobile",
+        "manager_role",
+        "started_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 4600,
+      "operations": [
+        "contact_upsert"
+      ],
+      "operation_expression": "'contact_upsert'",
+      "payload": "{opportunity_id:item.id,person_key:key,site_name:item.site,office_phone:office,office_email:email||null,manager_name:name,manager_mobile:mobile,manager_role:role,is_primary:role==='관리소장',started_at:at}",
+      "payload_fields": [
+        "opportunity_id",
+        "person_key",
+        "site_name",
+        "office_phone",
+        "office_email",
+        "manager_name",
+        "manager_mobile",
+        "manager_role",
+        "is_primary",
+        "started_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 4603,
+      "operations": [
+        "activity"
+      ],
+      "operation_expression": "'activity'",
+      "payload": "{opportunity_id:item.id,type:type,note:note,result:result||'',occurred_at:row.at}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "note",
+        "result",
+        "occurred_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 4619,
+      "operations": [
+        "contact_move"
+      ],
+      "operation_expression": "'contact_move'",
+      "payload": "{opportunity_id:item.id,person_key:c.personKey,manager_name:c.name,manager_mobile:c.mobile,from_site:item.site,to_site:to,to_office_phone:office||null,moved_at:dt,reason:why}",
+      "payload_fields": [
+        "opportunity_id",
+        "person_key",
+        "manager_name",
+        "manager_mobile",
+        "from_site",
+        "to_site",
+        "to_office_phone",
+        "moved_at",
+        "reason"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 4671,
+      "operations": [
+        "amount"
+      ],
+      "operation_expression": "'amount'",
+      "payload": "{opportunity_id:item.id,amount:amt,quote_amount:q||null,won_amount:w||null}",
+      "payload_fields": [
+        "opportunity_id",
+        "amount",
+        "quote_amount",
+        "won_amount"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 4676,
+      "operations": [
+        "activity"
+      ],
+      "operation_expression": "'activity'",
+      "payload": "{opportunity_id:CUR_DETAIL.item.id,type:type,note:note,result:result,occurred_at:_row.at}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "note",
+        "result",
+        "occurred_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 4681,
+      "operations": [
+        "next_action"
+      ],
+      "operation_expression": "'next_action'",
+      "payload": "{opportunity_id:item.id,type:type,text:text,due_at:due,assignee:assignee}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "text",
+        "due_at",
+        "assignee"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 4778,
+      "operations": [
+        "close"
+      ],
+      "operation_expression": "'close'",
+      "payload": "{opportunity_id:item.id,outcome:target,reason:reason||result,\n   lost_kind:(target==='lost'?lostKindOf(reason):null),stage_code:fromCode,closed_at:at,\n   won_amount:(target==='won'?(wonAmt(item)||oppAmt(item)||null):null)}",
+      "payload_fields": [
+        "opportunity_id",
+        "outcome",
+        "reason",
+        "lost_kind",
+        "stage_code",
+        "closed_at",
+        "won_amount"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 4781,
+      "operations": [
+        "transition"
+      ],
+      "operation_expression": "'transition'",
+      "payload": "{opportunity_id:item.id,from:from,to:item.code,note:did}",
+      "payload_fields": [
+        "opportunity_id",
+        "from",
+        "to",
+        "note"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 4783,
+      "operations": [
+        "next_action"
+      ],
+      "operation_expression": "'next_action'",
+      "payload": "{opportunity_id:item.id,type:'전화',text:next,due_at:due}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "text",
+        "due_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 5230,
+      "operations": [
+        "activity"
+      ],
+      "operation_expression": "'activity'",
+      "payload": "{opportunity_id:item.id,type:'전화',\r\n     note:row.note,result:'',occurred_at:row.at}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "note",
+        "result",
+        "occurred_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 5264,
+      "operations": [
+        "assign"
+      ],
+      "operation_expression": "'assign'",
+      "payload": "{opportunity_id:item.id,from:from,to:to,reason:reason,reason_source:reasonSource('rs-asg'),at:at}",
+      "payload_fields": [
+        "opportunity_id",
+        "from",
+        "to",
+        "reason",
+        "reason_source",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 6009,
+      "operations": [
+        "activity"
+      ],
+      "operation_expression": "'activity'",
+      "payload": "{opportunity_id:d.id,type:type,note:note,result:res,occurred_at:at}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "note",
+        "result",
+        "occurred_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 6010,
+      "operations": [
+        "contact"
+      ],
+      "operation_expression": "'contact'",
+      "payload": "{opportunity_id:d.id,type:type,at:at}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 6020,
+      "operations": [
+        "next_action"
+      ],
+      "operation_expression": "'next_action'",
+      "payload": "{opportunity_id:d.id,type:type,text:text,due_at:due}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "text",
+        "due_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 6057,
+      "operations": [
+        "close"
+      ],
+      "operation_expression": "'close'",
+      "payload": "{opportunity_id:d.id,outcome:target,reason:reason||res,\n   lost_kind:(target==='lost'?lostKindOf(reason):null),stage_code:spFromCode,closed_at:at,\n   won_amount:(target==='won'?(wonAmt(d)||oppAmt(d)||null):null)}",
+      "payload_fields": [
+        "opportunity_id",
+        "outcome",
+        "reason",
+        "lost_kind",
+        "stage_code",
+        "closed_at",
+        "won_amount"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 6060,
+      "operations": [
+        "transition"
+      ],
+      "operation_expression": "'transition'",
+      "payload": "{opportunity_id:d.id,from:from,to:d.code,note:did}",
+      "payload_fields": [
+        "opportunity_id",
+        "from",
+        "to",
+        "note"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 6061,
+      "operations": [
+        "next_action"
+      ],
+      "operation_expression": "'next_action'",
+      "payload": "{opportunity_id:d.id,type:'전화',text:next,due_at:due}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "text",
+        "due_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 6272,
+      "operations": [
+        "lineage_link"
+      ],
+      "operation_expression": "'lineage_link'",
+      "payload": "{opportunity_id:d.id,origin_inquiry_id:q.id,\r\n   site_id:q.site_id||null,inquiry_site:q.site||''}",
+      "payload_fields": [
+        "opportunity_id",
+        "origin_inquiry_id",
+        "site_id",
+        "inquiry_site"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 6563,
+      "operations": [
+        "transition"
+      ],
+      "operation_expression": "'transition'",
+      "payload": "{opportunity_id:d.id,from:oldCode,to:wantCode,\n      note:promoteReason(q.status),origin_inquiry_id:q.id||null,assignment_group:q.assignment_group||q.assignmentGroup||null,branch_code:q.branch_code||q.branchCode||null,reporting_group:q.reporting_group||q.reportingGroup||null}",
+      "payload_fields": [
+        "opportunity_id",
+        "from",
+        "to",
+        "note",
+        "origin_inquiry_id",
+        "assignment_group",
+        "branch_code",
+        "reporting_group"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 6579,
+      "operations": [
+        "opportunity_create"
+      ],
+      "operation_expression": "'opportunity_create'",
+      "payload": "{name:nd.site,work_name:q.work||'',work_type:null,\n      brand:nd.brand,owner:salesOwner,\n      amount:null,stage_code:wantCode,stage_name:wantName,\r\n      origin_inquiry_id:q.id||null,site_id:q.site_id||null,\r\n      origin_source:'견적문의',client_ref:nd.id,assignment_group:nd.assignment_group,owner_group:nd.owner_group,branch_code:nd.branch_code,reporting_group:nd.reporting_group,\n      reason:promoteReason(q.status),reason_source:'auto',origin:nd.brand,at:at}",
+      "payload_fields": [
+        "name",
+        "work_name",
+        "work_type",
+        "brand",
+        "owner",
+        "amount",
+        "stage_code",
+        "stage_name",
+        "origin_inquiry_id",
+        "site_id",
+        "origin_source",
+        "client_ref",
+        "assignment_group",
+        "owner_group",
+        "branch_code",
+        "reporting_group",
+        "reason",
+        "reason_source",
+        "origin",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 6762,
+      "operations": [
+        "transition"
+      ],
+      "operation_expression": "'transition'",
+      "payload": "{opportunity_id:d.id,from:oldCode,to:wc,\n      note:promoteReason(q.status),origin_inquiry_id:q.id||null,amount:(amt||null),assignment_group:q.assignment_group||q.assignmentGroup||null,branch_code:q.branch_code||q.branchCode||null,reporting_group:q.reporting_group||q.reportingGroup||null}",
+      "payload_fields": [
+        "opportunity_id",
+        "from",
+        "to",
+        "note",
+        "origin_inquiry_id",
+        "amount",
+        "assignment_group",
+        "branch_code",
+        "reporting_group"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 6770,
+      "operations": [
+        "opportunity_create"
+      ],
+      "operation_expression": "'opportunity_create'",
+      "payload": "{name:nd.site,work_name:q.work||'',work_type:null,\n      brand:nd.brand,owner:salesOwner,\n      amount:(amt||null),stage_code:nd.code,stage_name:nd.stage,\n      origin_inquiry_id:q.id||null,site_id:q.site_id||null,\n      origin_source:'견적문의',client_ref:nd.id,assignment_group:nd.assignment_group,owner_group:nd.owner_group,branch_code:nd.branch_code,reporting_group:nd.reporting_group,\n      reason:promoteReason(q.status),reason_source:'manual',origin:nd.brand,at:at}",
+      "payload_fields": [
+        "name",
+        "work_name",
+        "work_type",
+        "brand",
+        "owner",
+        "amount",
+        "stage_code",
+        "stage_name",
+        "origin_inquiry_id",
+        "site_id",
+        "origin_source",
+        "client_ref",
+        "assignment_group",
+        "owner_group",
+        "branch_code",
+        "reporting_group",
+        "reason",
+        "reason_source",
+        "origin",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7120,
+      "operations": [
+        "service_change"
+      ],
+      "operation_expression": "'service_change'",
+      "payload": "{opportunity_id:item.id,from_service:from,to_service:to,\r\n   origin_channel:item.originBusiness,reason:why,reason_source:src,\r\n   next_action:next||null,next_due:due||null,at:at}",
+      "payload_fields": [
+        "opportunity_id",
+        "from_service",
+        "to_service",
+        "origin_channel",
+        "reason",
+        "reason_source",
+        "next_action",
+        "next_due",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7148,
+      "operations": [
+        "opportunity_work_set"
+      ],
+      "operation_expression": "'opportunity_work_set'",
+      "payload": "{opportunity_id:item.id,primaryWork:primary.key,workItems:keys,workScopeType:scope,workSummary:summary,primary_work:primary.key,work_items:keys,work_scope_type:scope,work_summary:summary,work_type:primary.item,reason:reasonValue('rs-work'),reason_source:reasonSource('rs-work'),actor_name:(ME&&ME.name)||repN(item.assignee),at:at}",
+      "payload_fields": [
+        "opportunity_id",
+        "primaryWork",
+        "workItems",
+        "workScopeType",
+        "workSummary",
+        "primary_work",
+        "work_items",
+        "work_scope_type",
+        "work_summary",
+        "work_type",
+        "reason",
+        "reason_source",
+        "actor_name",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7207,
+      "operations": [
+        "opportunity_create"
+      ],
+      "operation_expression": "'opportunity_create'",
+      "payload": "{name:site,work_name:work,work_type:primary.item,primaryWork:primary.key,workItems:workKeys,workScopeType:scope,workSummary:workSummary,primary_work:primary.key,work_items:workKeys,work_scope_type:scope,work_summary:workSummary,brand:biz,owner:rep,address:address||null,\n   amount:amt||null,reason:why,reason_source:src,origin:biz,at:at,\r\n   office_phone:officeTel,office_email:officeEmail||null,manager_name:managerName,manager_mobile:managerMobile,\r\n   manager_role:'관리소장',person_key:personKey,contact_started_at:at,\n   source_opportunity_id:expansionSource&&expansionSource.sourceOpportunityId||null,origin_source:expansionSource?'existing_customer_expansion':'direct',client_ref:nd.id}",
+      "payload_fields": [
+        "name",
+        "work_name",
+        "work_type",
+        "primaryWork",
+        "workItems",
+        "workScopeType",
+        "workSummary",
+        "primary_work",
+        "work_items",
+        "work_scope_type",
+        "work_summary",
+        "brand",
+        "owner",
+        "address",
+        "amount",
+        "reason",
+        "reason_source",
+        "origin",
+        "at",
+        "office_phone",
+        "office_email",
+        "manager_name",
+        "manager_mobile",
+        "manager_role",
+        "person_key",
+        "contact_started_at",
+        "source_opportunity_id",
+        "origin_source",
+        "client_ref"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7465,
+      "operations": [
+        "contact_upsert"
+      ],
+      "operation_expression": "'contact_upsert'",
+      "payload": "{opportunity_id:item.id,person_key:key,site_name:item.site,office_phone:office||null,office_email:email||null,manager_name:name,manager_mobile:mobile,manager_role:role,is_primary:role==='관리소장',started_at:c.startedAt,sms_consent:sms,kakao_consent:kakao,consent_at:c.consentAt||null,opt_out_at:optOutAt||null,send_blocked:blocked,send_blocked_reason:blockReason||null}",
+      "payload_fields": [
+        "opportunity_id",
+        "person_key",
+        "site_name",
+        "office_phone",
+        "office_email",
+        "manager_name",
+        "manager_mobile",
+        "manager_role",
+        "is_primary",
+        "started_at",
+        "sms_consent",
+        "kakao_consent",
+        "consent_at",
+        "opt_out_at",
+        "send_blocked",
+        "send_blocked_reason"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7469,
+      "operations": [
+        "contact_upsert"
+      ],
+      "operation_expression": "'contact_upsert'",
+      "payload": "{opportunity_id:item.id,person_key:c.personKey,site_name:item.site,office_phone:office,office_email:email||null,manager_name:name,manager_mobile:mobile,manager_role:'관리소장',started_at:c.startedAt,sms_consent:c.smsConsent,kakao_consent:c.kakaoConsent,consent_at:c.consentAt||null,opt_out_at:c.optOutAt||null,send_blocked:c.sendBlocked,send_blocked_reason:c.sendBlockedReason||null}",
+      "payload_fields": [
+        "opportunity_id",
+        "person_key",
+        "site_name",
+        "office_phone",
+        "office_email",
+        "manager_name",
+        "manager_mobile",
+        "manager_role",
+        "started_at",
+        "sms_consent",
+        "kakao_consent",
+        "consent_at",
+        "opt_out_at",
+        "send_blocked",
+        "send_blocked_reason"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7517,
+      "operations": [
+        "activity"
+      ],
+      "operation_expression": "'activity'",
+      "payload": "{opportunity_id:item.id,type:row.type,note:row.note,result:row.result,occurred_at:at,meaningful_contact:false}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "note",
+        "result",
+        "occurred_at",
+        "meaningful_contact"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7517,
+      "operations": [
+        "next_action"
+      ],
+      "operation_expression": "'next_action'",
+      "payload": "{opportunity_id:item.id,type:obj.type,text:obj.text,due_at:due,scheduled_at:obj.scheduledAt,channel:REL_MSG.channel,template_key:t.key,draft_body:relationshipBody()}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "text",
+        "due_at",
+        "scheduled_at",
+        "channel",
+        "template_key",
+        "draft_body"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7525,
+      "operations": [
+        "message_log"
+      ],
+      "operation_expression": "'message_log'",
+      "payload": "payload",
+      "payload_fields": null,
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7525,
+      "operations": [
+        "activity"
+      ],
+      "operation_expression": "'activity'",
+      "payload": "{opportunity_id:item.id,type:row.type,note:row.note,result:row.result,occurred_at:at,meaningful_contact:false}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "note",
+        "result",
+        "occurred_at",
+        "meaningful_contact"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7525,
+      "operations": [
+        "next_action"
+      ],
+      "operation_expression": "'next_action'",
+      "payload": "{opportunity_id:item.id,type:obj.type,text:obj.text,due_at:due}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "text",
+        "due_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7544,
+      "operations": [
+        "stage_check"
+      ],
+      "operation_expression": "'stage_check'",
+      "payload": "{opportunity_id:d.id,stage_code:dealStage(d),item_index:i,item_text:A[i],checked:st[i]}",
+      "payload_fields": [
+        "opportunity_id",
+        "stage_code",
+        "item_index",
+        "item_text",
+        "checked"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7553,
+      "operations": [
+        "contact_relationship"
+      ],
+      "operation_expression": "'contact_relationship'",
+      "payload": "{opportunity_id:item.id,person_key:key,decision_role:decision,relationship_tone:tone}",
+      "payload_fields": [
+        "opportunity_id",
+        "person_key",
+        "decision_role",
+        "relationship_tone"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7558,
+      "operations": [
+        "quote_version"
+      ],
+      "operation_expression": "'quote_version'",
+      "payload": "{opportunity_id:d.id,version_no:row.version_no,amount:amount,reason:reason,created_at:row.created_at,created_by:row.created_by}",
+      "payload_fields": [
+        "opportunity_id",
+        "version_no",
+        "amount",
+        "reason",
+        "created_at",
+        "created_by"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7562,
+      "operations": [
+        "handover"
+      ],
+      "operation_expression": "'handover'",
+      "payload": "{opportunity_id:d.id,from:from,to:to,reason:reason,summary:h,created_at:h.at}",
+      "payload_fields": [
+        "opportunity_id",
+        "from",
+        "to",
+        "reason",
+        "summary",
+        "created_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7601,
+      "operations": [
+        "activity"
+      ],
+      "operation_expression": "'activity'",
+      "payload": "{opportunity_id:d.id,type:'파일첨부',note:note,result:memo,occurred_at:row.at}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "note",
+        "result",
+        "occurred_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7604,
+      "operations": [
+        "opportunity_touch"
+      ],
+      "operation_expression": "'opportunity_touch'",
+      "payload": "{opportunity_id:d.id,user_key:execUserKey(),touch_kind:kind,touched_at:at}",
+      "payload_fields": [
+        "opportunity_id",
+        "user_key",
+        "touch_kind",
+        "touched_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7605,
+      "operations": [
+        "favorite_set"
+      ],
+      "operation_expression": "'favorite_set'",
+      "payload": "{opportunity_id:d.id,user_key:execUserKey(),favorite:!!d.favorite}",
+      "payload_fields": [
+        "opportunity_id",
+        "user_key",
+        "favorite"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7630,
+      "operations": [
+        "stage_check"
+      ],
+      "operation_expression": "'stage_check'",
+      "payload": "{opportunity_id:d.id,stage_code:dealStage(d),item_index:i,item_text:x.text,checked:st[i]}",
+      "payload_fields": [
+        "opportunity_id",
+        "stage_code",
+        "item_index",
+        "item_text",
+        "checked"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7675,
+      "operations": [
+        "relationship_hold"
+      ],
+      "operation_expression": "'relationship_hold'",
+      "payload": "{opportunity_id:item.id,person_key:(REL_MSG&&REL_MSG.contact.personKey)||null,hold_until:wake,reason:p.waitingReason}",
+      "payload_fields": [
+        "opportunity_id",
+        "person_key",
+        "hold_until",
+        "reason"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7675,
+      "operations": [
+        "next_action"
+      ],
+      "operation_expression": "'next_action'",
+      "payload": "{opportunity_id:item.id,type:obj.type,text:obj.text,due_at:wake}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "text",
+        "due_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7692,
+      "operations": [
+        "message_log"
+      ],
+      "operation_expression": "'message_log'",
+      "payload": "payload",
+      "payload_fields": null,
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7692,
+      "operations": [
+        "activity"
+      ],
+      "operation_expression": "'activity'",
+      "payload": "{opportunity_id:item.id,type:row.type,note:row.note,result:row.result,occurred_at:at,meaningful_contact:false}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "note",
+        "result",
+        "occurred_at",
+        "meaningful_contact"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7692,
+      "operations": [
+        "next_action"
+      ],
+      "operation_expression": "'next_action'",
+      "payload": "{opportunity_id:item.id,type:obj.type,text:obj.text,due_at:due}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "text",
+        "due_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7695,
+      "operations": [
+        "relationship_response"
+      ],
+      "operation_expression": "'relationship_response'",
+      "payload": "{opportunity_id:item.id,person_key:(relationshipContact(item)||{}).personKey||null,response_at:row.at,response_kind:row.type,cancel_pending_cadence:true}",
+      "payload_fields": [
+        "opportunity_id",
+        "person_key",
+        "response_at",
+        "response_kind",
+        "cancel_pending_cadence"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7697,
+      "operations": [
+        "message_stage_advanced"
+      ],
+      "operation_expression": "'message_stage_advanced'",
+      "payload": "{opportunity_id:item.id,from_stage:from,to_stage:dealStage(item),advanced_at:isoNow()}",
+      "payload_fields": [
+        "opportunity_id",
+        "from_stage",
+        "to_stage",
+        "advanced_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7787,
+      "operations": [
+        "inquiry_reclassify"
+      ],
+      "operation_expression": "'inquiry_reclassify'",
+      "payload": "{inquiry_id:inqKey(q),from_brand:'기술자문',to_brand:brand,review_status:'reclassified',reviewed_at:at,reviewed_by:actor}",
+      "payload_fields": [
+        "inquiry_id",
+        "from_brand",
+        "to_brand",
+        "review_status",
+        "reviewed_at",
+        "reviewed_by"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7788,
+      "operations": [
+        "opportunity_create"
+      ],
+      "operation_expression": "'opportunity_create'",
+      "payload": "{name:nd.site,work_name:nd.work,work_type:null,brand:'기술자문',owner:owner||null,amount:nd.amt||null,stage_code:nd.code,stage_name:nd.stage,origin_inquiry_id:q.id||inqKey(q),site_id:q.site_id||null,origin_source:'기존 기술자문 문의 검토',client_ref:id,reason:'기존 기술자문 문의를 Pipeline 영업기회로 이관',reason_source:'admin_review',origin:'기술자문',at:at}",
+      "payload_fields": [
+        "name",
+        "work_name",
+        "work_type",
+        "brand",
+        "owner",
+        "amount",
+        "stage_code",
+        "stage_name",
+        "origin_inquiry_id",
+        "site_id",
+        "origin_source",
+        "client_ref",
+        "reason",
+        "reason_source",
+        "origin",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7788,
+      "operations": [
+        "inquiry_status"
+      ],
+      "operation_expression": "'inquiry_status'",
+      "payload": "{inquiry_id:inqKey(q),from_status:oldStatus,to_status:'영업전환',reason:'기술자문 영업기회 이관',changed_by:actor,at:at,legacy_review_status:'promoted'}",
+      "payload_fields": [
+        "inquiry_id",
+        "from_status",
+        "to_status",
+        "reason",
+        "changed_by",
+        "at",
+        "legacy_review_status"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7813,
+      "operations": [
+        "inquiry_assign"
+      ],
+      "operation_expression": "'inquiry_assign'",
+      "payload": "{inquiry_id:inqKey(q),inquiry_row:q.row||null,from:from,to:to,status:q.status,reason:reason,changed_by:actor,at:at,assignment_group:group,owner_group:group,branch_code:branch,reporting_group:profile.reportingGroup,consultant_name:inquiryConsultant(q)||null}",
+      "payload_fields": [
+        "inquiry_id",
+        "inquiry_row",
+        "from",
+        "to",
+        "status",
+        "reason",
+        "changed_by",
+        "at",
+        "assignment_group",
+        "owner_group",
+        "branch_code",
+        "reporting_group",
+        "consultant_name"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7816,
+      "operations": [
+        "inquiry_unassign"
+      ],
+      "operation_expression": "'inquiry_unassign'",
+      "payload": "{inquiry_id:inqKey(q),from:from,reason:reason,changed_by:actor,at:at}",
+      "payload_fields": [
+        "inquiry_id",
+        "from",
+        "reason",
+        "changed_by",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7816,
+      "operations": [
+        "inquiry_status"
+      ],
+      "operation_expression": "'inquiry_status'",
+      "payload": "{inquiry_id:inqKey(q),from_status:fromStatus,to_status:'보류',reason:reason,changed_by:actor,at:at}",
+      "payload_fields": [
+        "inquiry_id",
+        "from_status",
+        "to_status",
+        "reason",
+        "changed_by",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7818,
+      "operations": [
+        "inquiry_trash"
+      ],
+      "operation_expression": "'inquiry_trash'",
+      "payload": "{inquiry_id:inqKey(q),deleted_at:at,deleted_by:actor,delete_reason:reason,delete_note:note||null,purge_at:purge,archive_protected:protectedRow}",
+      "payload_fields": [
+        "inquiry_id",
+        "deleted_at",
+        "deleted_by",
+        "delete_reason",
+        "delete_note",
+        "purge_at",
+        "archive_protected"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7819,
+      "operations": [
+        "inquiry_restore"
+      ],
+      "operation_expression": "'inquiry_restore'",
+      "payload": "{inquiry_id:k,restored_at:at,restored_by:actor}",
+      "payload_fields": [
+        "inquiry_id",
+        "restored_at",
+        "restored_by"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7820,
+      "operations": [
+        "inquiry_purge"
+      ],
+      "operation_expression": "'inquiry_purge'",
+      "payload": "{inquiry_id:k,purged_at:at,purged_by:inqCtlActor()}",
+      "payload_fields": [
+        "inquiry_id",
+        "purged_at",
+        "purged_by"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7824,
+      "operations": [
+        "inquiry_consultant"
+      ],
+      "operation_expression": "'inquiry_consultant'",
+      "payload": "{inquiry_id:inqKey(q),consultant_name:to||null,consultation_status:to?'assigned':'none',consulted_at:to?at:null,clear_legacy_sales_owner:legacyConsult,changed_by:actor}",
+      "payload_fields": [
+        "inquiry_id",
+        "consultant_name",
+        "consultation_status",
+        "consulted_at",
+        "clear_legacy_sales_owner",
+        "changed_by"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7828,
+      "operations": [
+        "inquiry_duplicate"
+      ],
+      "operation_expression": "'inquiry_duplicate'",
+      "payload": "{inquiry_id:k,resolution:'linked',target_inquiry_id:target,resolved_at:at,resolved_by:inqCtlActor()}",
+      "payload_fields": [
+        "inquiry_id",
+        "resolution",
+        "target_inquiry_id",
+        "resolved_at",
+        "resolved_by"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7828,
+      "operations": [
+        "inquiry_duplicate"
+      ],
+      "operation_expression": "'inquiry_duplicate'",
+      "payload": "{inquiry_id:k,resolution:'keep_separate',resolved_at:at,resolved_by:inqCtlActor()}",
+      "payload_fields": [
+        "inquiry_id",
+        "resolution",
+        "resolved_at",
+        "resolved_by"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7880,
+      "operations": [
+        "waiting_context"
+      ],
+      "operation_expression": "'waiting_context'",
+      "payload": "{opportunity_id:d.id,waiting_reason:reason,waiting_speaker:speaker,waiting_customer_statement:statement,wake_up_at:wake,waiting_evidence:evidence,expected_resume_at:resume,actor_name:actor,at:at}",
+      "payload_fields": [
+        "opportunity_id",
+        "waiting_reason",
+        "waiting_speaker",
+        "waiting_customer_statement",
+        "wake_up_at",
+        "waiting_evidence",
+        "expected_resume_at",
+        "actor_name",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7880,
+      "operations": [
+        "next_action"
+      ],
+      "operation_expression": "'next_action'",
+      "payload": "{opportunity_id:d.id,type:obj.type,text:obj.text,due_at:wake}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "text",
+        "due_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7944,
+      "operations": [
+        "waiting_context"
+      ],
+      "operation_expression": "'waiting_context'",
+      "payload": "{opportunity_id:d.id,waiting_reason:ctx.reason,waiting_speaker:ctx.speaker,waiting_customer_statement:ctx.statement,wake_up_at:ctx.wake,waiting_evidence:ctx.evidence,expected_resume_at:ctx.resume,actor_name:actor,at:at}",
+      "payload_fields": [
+        "opportunity_id",
+        "waiting_reason",
+        "waiting_speaker",
+        "waiting_customer_statement",
+        "wake_up_at",
+        "waiting_evidence",
+        "expected_resume_at",
+        "actor_name",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7968,
+      "operations": [
+        "message_log"
+      ],
+      "operation_expression": "'message_log'",
+      "payload": "payload",
+      "payload_fields": null,
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7968,
+      "operations": [
+        "activity"
+      ],
+      "operation_expression": "'activity'",
+      "payload": "{opportunity_id:item.id,type:row.type,note:row.note,result:row.result,occurred_at:at,meaningful_contact:false}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "note",
+        "result",
+        "occurred_at",
+        "meaningful_contact"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 7968,
+      "operations": [
+        "next_action"
+      ],
+      "operation_expression": "'next_action'",
+      "payload": "{opportunity_id:item.id,type:obj.type,text:obj.text,due_at:due}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "text",
+        "due_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "crm.html",
+      "line": 8046,
+      "operations": [
+        "campaign_create"
+      ],
+      "operation_expression": "'campaign_create'",
+      "payload": "{campaign_id:id,category_key:c.key,category_label:c.label,category_group:c.group,template_key:obj.template_key,body:obj.body,status:obj.status,scheduled_at:scheduled,created_at:at,created_by:obj.created_by,recipient_count:obj.recipient_count,excluded_count:obj.excluded_count,recipients:obj.recipients,activity_on_success:true}",
+      "payload_fields": [
+        "campaign_id",
+        "category_key",
+        "category_label",
+        "category_group",
+        "template_key",
+        "body",
+        "status",
+        "scheduled_at",
+        "created_at",
+        "created_by",
+        "recipient_count",
+        "excluded_count",
+        "recipients",
+        "activity_on_success"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 770,
+      "operations": [
+        "activity"
+      ],
+      "operation_expression": "'activity'",
+      "payload": "{opportunity_id:d.id,type:type,note:note,result:result,occurred_at:a.occurred_at,meaningful_contact:!!contact}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "note",
+        "result",
+        "occurred_at",
+        "meaningful_contact"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 777,
+      "operations": [
+        "next_action"
+      ],
+      "operation_expression": "'next_action'",
+      "payload": "{opportunity_id:d.id,type:type,text:text,due_at:due}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "text",
+        "due_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 781,
+      "operations": [
+        "next_action_complete"
+      ],
+      "operation_expression": "'next_action_complete'",
+      "payload": "{opportunity_id:d.id,action_id:d.nextAction.id}",
+      "payload_fields": [
+        "opportunity_id",
+        "action_id"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 1411,
+      "operations": [
+        "inquiry_assign"
+      ],
+      "operation_expression": "'inquiry_assign'",
+      "payload": "{inquiry_id:q.key,inquiry_row:q.raw&&q.raw.row||null,from:q.rep,to:q.rep,status:q.status,at:at,response:label}",
+      "payload_fields": [
+        "inquiry_id",
+        "inquiry_row",
+        "from",
+        "to",
+        "status",
+        "at",
+        "response"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 1499,
+      "operations": [
+        "contact_upsert"
+      ],
+      "operation_expression": "'contact_upsert'",
+      "payload": "{opportunity_id:d.id,person_key:c.personKey,site_name:d.nm,office_phone:office,office_email:email||null,manager_name:name,manager_mobile:mobile,manager_role:'관리소장',started_at:c.startedAt}",
+      "payload_fields": [
+        "opportunity_id",
+        "person_key",
+        "site_name",
+        "office_phone",
+        "office_email",
+        "manager_name",
+        "manager_mobile",
+        "manager_role",
+        "started_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 1506,
+      "operations": [
+        "contact_upsert"
+      ],
+      "operation_expression": "'contact_upsert'",
+      "payload": "{opportunity_id:d.id,person_key:key,site_name:d.nm,office_phone:office||null,office_email:email||null,manager_name:name,manager_mobile:mobile,manager_role:role,is_primary:role==='관리소장',started_at:at}",
+      "payload_fields": [
+        "opportunity_id",
+        "person_key",
+        "site_name",
+        "office_phone",
+        "office_email",
+        "manager_name",
+        "manager_mobile",
+        "manager_role",
+        "is_primary",
+        "started_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 1515,
+      "operations": [
+        "contact_move"
+      ],
+      "operation_expression": "'contact_move'",
+      "payload": "{opportunity_id:d.id,person_key:c.personKey,manager_name:c.name,manager_mobile:c.mobile,from_site:d.nm,to_site:to,to_office_phone:office||null,moved_at:dt,reason:why}",
+      "payload_fields": [
+        "opportunity_id",
+        "person_key",
+        "manager_name",
+        "manager_mobile",
+        "from_site",
+        "to_site",
+        "to_office_phone",
+        "moved_at",
+        "reason"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 1555,
+      "operations": [
+        "opportunity_work_set"
+      ],
+      "operation_expression": "'opportunity_work_set'",
+      "payload": "{opportunity_id:d.id,primaryWork:primary.key,workItems:keys,workScopeType:scope,workSummary:summary,primary_work:primary.key,work_items:keys,work_scope_type:scope,work_summary:summary,work_type:primary.item,reason:mrVal('workedit'),reason_source:mrSrc('workedit'),actor_name:G.user.nm,at:at}",
+      "payload_fields": [
+        "opportunity_id",
+        "primaryWork",
+        "workItems",
+        "workScopeType",
+        "workSummary",
+        "primary_work",
+        "work_items",
+        "work_scope_type",
+        "work_summary",
+        "work_type",
+        "reason",
+        "reason_source",
+        "actor_name",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 1653,
+      "operations": [
+        "close"
+      ],
+      "operation_expression": "'close'",
+      "payload": "{opportunity_id:d.id,outcome:o,reason:reason+' · '+why,reason_source:src||'text',stage_code:d.code,closed_at:d.closed_at}",
+      "payload_fields": [
+        "opportunity_id",
+        "outcome",
+        "reason",
+        "reason_source",
+        "stage_code",
+        "closed_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 1672,
+      "operations": [
+        "win"
+      ],
+      "operation_expression": "'win'",
+      "payload": "{opportunity_id:d.id,outcome:'won',won_amount:d.won_amount,won_at:d.won_at,stage_code:sourceStage,create_project:false}",
+      "payload_fields": [
+        "opportunity_id",
+        "outcome",
+        "won_amount",
+        "won_at",
+        "stage_code",
+        "create_project"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 1673,
+      "operations": [
+        "expansion_pool_upsert"
+      ],
+      "operation_expression": "'expansion_pool_upsert'",
+      "payload": "{opportunity_id:d.id,source_opportunity_id:d.id,site_id:d.site_id||null,site_name:d.nm,source_work_summary:d.workSummary||d.work_name||d.work_type||'공종 미분류',source_won_amount:d.won_amount,completion_date:d.won_at.slice(0,10),owner_name:d.rep,next_contact_at:new Date(Date.now()+30*864e5).toISOString().slice(0,10),candidate_work_items:['타공종 확인'],relationship_state:'기존고객',expansion_status:'신규 대상',at:d.won_at}",
+      "payload_fields": [
+        "opportunity_id",
+        "source_opportunity_id",
+        "site_id",
+        "site_name",
+        "source_work_summary",
+        "source_won_amount",
+        "completion_date",
+        "owner_name",
+        "next_contact_at",
+        "candidate_work_items",
+        "relationship_state",
+        "expansion_status",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 1701,
+      "operations": [
+        "transition"
+      ],
+      "operation_expression": "'transition'",
+      "payload": "{opportunity_id:d.id,from:from,to:to,note:note||'',reason:note||'',reason_source:src||'text',at:d.stageAt}",
+      "payload_fields": [
+        "opportunity_id",
+        "from",
+        "to",
+        "note",
+        "reason",
+        "reason_source",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 1775,
+      "operations": [
+        "service_change"
+      ],
+      "operation_expression": "'service_change'",
+      "payload": "{opportunity_id:d.id,from_service:from,to_service:to,\r\n   origin_channel:d.originBusiness,reason:why,reason_source:src,next_action:na||null,at:at}",
+      "payload_fields": [
+        "opportunity_id",
+        "from_service",
+        "to_service",
+        "origin_channel",
+        "reason",
+        "reason_source",
+        "next_action",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 1943,
+      "operations": [
+        "inquiry_assign"
+      ],
+      "operation_expression": "'inquiry_assign'",
+      "payload": "{inquiry_id:q.key,inquiry_row:q.raw&&q.raw.row||null,from:q.rep,to:q.rep,status:q.status,at:at,response:label}",
+      "payload_fields": [
+        "inquiry_id",
+        "inquiry_row",
+        "from",
+        "to",
+        "status",
+        "at",
+        "response"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 1953,
+      "operations": [
+        "inquiry_assign"
+      ],
+      "operation_expression": "'inquiry_assign'",
+      "payload": "{inquiry_id:q.key,inquiry_row:q.raw&&q.raw.row||null,from:from,to:r,status:q.status,at:at}",
+      "payload_fields": [
+        "inquiry_id",
+        "inquiry_row",
+        "from",
+        "to",
+        "status",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2058,
+      "operations": [
+        "assign"
+      ],
+      "operation_expression": "'assign'",
+      "payload": "{opportunity_id:d.id,from:from,to:r}",
+      "payload_fields": [
+        "opportunity_id",
+        "from",
+        "to"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2123,
+      "operations": [
+        "opportunity_create"
+      ],
+      "operation_expression": "'opportunity_create'",
+      "payload": "{site_id:nd.site_id||null,name:nm,work_name:work,work_type:primary.item,primaryWork:primary.key,workItems:workKeys,workScopeType:scope,workSummary:summary,primary_work:primary.key,work_items:workKeys,work_scope_type:scope,work_summary:summary,brand:biz,owner:G.user.nm,amount:amount||null,address:address||null,reason:why,reason_source:src,origin:biz,gj:gj,office_phone:office,office_email:email||null,manager_name:manager,manager_mobile:mobile,manager_role:'관리소장',person_key:personKey,contact_started_at:at}",
+      "payload_fields": [
+        "site_id",
+        "name",
+        "work_name",
+        "work_type",
+        "primaryWork",
+        "workItems",
+        "workScopeType",
+        "workSummary",
+        "primary_work",
+        "work_items",
+        "work_scope_type",
+        "work_summary",
+        "brand",
+        "owner",
+        "amount",
+        "address",
+        "reason",
+        "reason_source",
+        "origin",
+        "gj",
+        "office_phone",
+        "office_email",
+        "manager_name",
+        "manager_mobile",
+        "manager_role",
+        "person_key",
+        "contact_started_at"
+      ],
+      "local_id": "nd.id",
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2298,
+      "operations": [
+        "contact_upsert"
+      ],
+      "operation_expression": "'contact_upsert'",
+      "payload": "{opportunity_id:d.id,person_key:key,site_name:d.nm,office_phone:office||null,office_email:email||null,manager_name:name,manager_mobile:mobile,manager_role:role,is_primary:role==='관리소장',started_at:raw.started_at,sms_consent:sms,kakao_consent:kakao,consent_at:raw.consent_at,opt_out_at:raw.opt_out_at,send_blocked:blocked,send_blocked_reason:blockReason||null}",
+      "payload_fields": [
+        "opportunity_id",
+        "person_key",
+        "site_name",
+        "office_phone",
+        "office_email",
+        "manager_name",
+        "manager_mobile",
+        "manager_role",
+        "is_primary",
+        "started_at",
+        "sms_consent",
+        "kakao_consent",
+        "consent_at",
+        "opt_out_at",
+        "send_blocked",
+        "send_blocked_reason"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2335,
+      "operations": [
+        "next_action"
+      ],
+      "operation_expression": "'next_action'",
+      "payload": "{opportunity_id:d.id,type:obj.type,text:obj.text,due_at:due,scheduled_at:obj.scheduled_at,channel:RM_M.channel,template_key:t.key,draft_body:rmBodyM()}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "text",
+        "due_at",
+        "scheduled_at",
+        "channel",
+        "template_key",
+        "draft_body"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2337,
+      "operations": [
+        "message_log"
+      ],
+      "operation_expression": "'message_log'",
+      "payload": "payload",
+      "payload_fields": null,
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2380,
+      "operations": [
+        "next_action"
+      ],
+      "operation_expression": "'next_action'",
+      "payload": "{opportunity_id:d.id,type:a.type,text:a.text,due_at:due,postpone_count:d.postpone}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "text",
+        "due_at",
+        "postpone_count"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2380,
+      "operations": [
+        "inquiry_followup"
+      ],
+      "operation_expression": "'inquiry_followup'",
+      "payload": "{inquiry_id:t.ref,due_at:due,reason:'담당자 연기'}",
+      "payload_fields": [
+        "inquiry_id",
+        "due_at",
+        "reason"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2386,
+      "operations": [
+        "stage_check"
+      ],
+      "operation_expression": "'stage_check'",
+      "payload": "{opportunity_id:d.id,stage_code:d.code,item_index:i,item_text:stageGuideItemsM(d)[i],checked:st[i]}",
+      "payload_fields": [
+        "opportunity_id",
+        "stage_code",
+        "item_index",
+        "item_text",
+        "checked"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2393,
+      "operations": [
+        "contact_relationship"
+      ],
+      "operation_expression": "'contact_relationship'",
+      "payload": "{opportunity_id:d.id,person_key:c.personKey||G.relContactKey,decision_role:role,relationship_tone:tone}",
+      "payload_fields": [
+        "opportunity_id",
+        "person_key",
+        "decision_role",
+        "relationship_tone"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2397,
+      "operations": [
+        "quote_version"
+      ],
+      "operation_expression": "'quote_version'",
+      "payload": "{opportunity_id:d.id,version_no:row.version_no,amount:amount,reason:reason,created_at:row.created_at,created_by:row.created_by}",
+      "payload_fields": [
+        "opportunity_id",
+        "version_no",
+        "amount",
+        "reason",
+        "created_at",
+        "created_by"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2400,
+      "operations": [
+        "assign"
+      ],
+      "operation_expression": "'assign'",
+      "payload": "{opportunity_id:d.id,from:from,to:r,handover:h}",
+      "payload_fields": [
+        "opportunity_id",
+        "from",
+        "to",
+        "handover"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2400,
+      "operations": [
+        "handover"
+      ],
+      "operation_expression": "'handover'",
+      "payload": "{opportunity_id:d.id,from:from,to:r,summary:h}",
+      "payload_fields": [
+        "opportunity_id",
+        "from",
+        "to",
+        "summary"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2430,
+      "operations": [
+        "opportunity_touch"
+      ],
+      "operation_expression": "'opportunity_touch'",
+      "payload": "{opportunity_id:d.id,user_key:execUserKeyM(),touch_kind:kind,touched_at:at}",
+      "payload_fields": [
+        "opportunity_id",
+        "user_key",
+        "touch_kind",
+        "touched_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2431,
+      "operations": [
+        "favorite_set"
+      ],
+      "operation_expression": "'favorite_set'",
+      "payload": "{opportunity_id:d.id,user_key:execUserKeyM(),favorite:!!d.favorite}",
+      "payload_fields": [
+        "opportunity_id",
+        "user_key",
+        "favorite"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2459,
+      "operations": [
+        "stage_check"
+      ],
+      "operation_expression": "'stage_check'",
+      "payload": "{opportunity_id:d.id,stage_code:d.code,item_index:i,item_text:x.text,checked:st[i]}",
+      "payload_fields": [
+        "opportunity_id",
+        "stage_code",
+        "item_index",
+        "item_text",
+        "checked"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2501,
+      "operations": [
+        "relationship_hold"
+      ],
+      "operation_expression": "'relationship_hold'",
+      "payload": "{opportunity_id:d.id,person_key:(contactInfoM(d)||{}).personKey||null,hold_until:wake,reason:d.waitingReason}",
+      "payload_fields": [
+        "opportunity_id",
+        "person_key",
+        "hold_until",
+        "reason"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2512,
+      "operations": [
+        "message_log"
+      ],
+      "operation_expression": "'message_log'",
+      "payload": "payload",
+      "payload_fields": null,
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2514,
+      "operations": [
+        "relationship_response"
+      ],
+      "operation_expression": "'relationship_response'",
+      "payload": "{opportunity_id:d.id,person_key:(contactInfoM(d)||{}).personKey||null,response_at:a.occurred_at,response_kind:a.type,cancel_pending_cadence:true}",
+      "payload_fields": [
+        "opportunity_id",
+        "person_key",
+        "response_at",
+        "response_kind",
+        "cancel_pending_cadence"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2516,
+      "operations": [
+        "message_stage_advanced"
+      ],
+      "operation_expression": "'message_stage_advanced'",
+      "payload": "{opportunity_id:d.id,from_stage:from,to_stage:d.code,advanced_at:isoNow()}",
+      "payload_fields": [
+        "opportunity_id",
+        "from_stage",
+        "to_stage",
+        "advanced_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "mobile.html",
+      "line": 2570,
+      "operations": [
+        "message_log"
+      ],
+      "operation_expression": "'message_log'",
+      "payload": "payload",
+      "payload_fields": null,
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "issue-modal.js",
+      "line": 65,
+      "operations": [
+        "amount"
+      ],
+      "operation_expression": "'amount'",
+      "payload": "{opportunity_id:d.id,amount,quote_amount:quoteAmt(d)||null,won_amount:wonAmt(d)||null}",
+      "payload_fields": [
+        "opportunity_id",
+        "amount",
+        "quote_amount",
+        "won_amount"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "issue-modal.js",
+      "line": 66,
+      "operations": [
+        "next_action_complete"
+      ],
+      "operation_expression": "'next_action_complete'",
+      "payload": "{opportunity_id:d.id,action_id:a.id,text:a.text,due_at:a.due||a.due_at,at}",
+      "payload_fields": [
+        "opportunity_id",
+        "action_id",
+        "text",
+        "due_at",
+        "at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "issue-modal.js",
+      "line": 66,
+      "operations": [
+        "activity"
+      ],
+      "operation_expression": "'activity'",
+      "payload": "{opportunity_id:d.id,type:a.type||'기타',note:a.text,result,occurred_at:at,meaningful_contact:false}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "note",
+        "result",
+        "occurred_at",
+        "meaningful_contact"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "issue-modal.js",
+      "line": 67,
+      "operations": [
+        "next_action"
+      ],
+      "operation_expression": "'next_action'",
+      "payload": "{opportunity_id:d.id,action_id:obj.id,type:actionType,text,due_at:due,assignee:obj.assignee}",
+      "payload_fields": [
+        "opportunity_id",
+        "action_id",
+        "type",
+        "text",
+        "due_at",
+        "assignee"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "stage-transition-ui.js",
+      "line": 71,
+      "operations": [
+        "close",
+        "transition"
+      ],
+      "operation_expression": "terminal?'close':'transition'",
+      "payload": "payload",
+      "payload_fields": null,
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "stage-transition-ui.js",
+      "line": 73,
+      "operations": [
+        "activity"
+      ],
+      "operation_expression": "'activity'",
+      "payload": "{opportunity_id:d.id,type:'단계전환',note:S.definitions[to].label,result:text,occurred_at:at,meaningful_contact:false}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "note",
+        "result",
+        "occurred_at",
+        "meaningful_contact"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "stage-transition-ui.js",
+      "line": 74,
+      "operations": [
+        "next_action"
+      ],
+      "operation_expression": "'next_action'",
+      "payload": "{opportunity_id:d.id,type:next.type,text:next.text,due_at:next.due}",
+      "payload_fields": [
+        "opportunity_id",
+        "type",
+        "text",
+        "due_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    },
+    {
+      "file": "stage-transition-ui.js",
+      "line": 77,
+      "operations": [
+        "expansion_pool_upsert"
+      ],
+      "operation_expression": "'expansion_pool_upsert'",
+      "payload": "{opportunity_id:d.id,source_opportunity_id:d.id,site_id:d.site_id||null,site_name:d.nm,source_work_summary:d.workSummary||'공종 미분류',source_won_amount:d.won_amount,completion_date:update.completion_date,owner_name:d.rep,expansion_status:'신규 대상',relationship_state:'기존고객',candidate_work_items:['타공종 확인'],next_contact_at:new Date(new Date(update.completion_date+'T00:00:00Z').getTime()+30*864e5).toISOString().slice(0,10)}",
+      "payload_fields": [
+        "opportunity_id",
+        "source_opportunity_id",
+        "site_id",
+        "site_name",
+        "source_work_summary",
+        "source_won_amount",
+        "completion_date",
+        "owner_name",
+        "expansion_status",
+        "relationship_state",
+        "candidate_work_items",
+        "next_contact_at"
+      ],
+      "local_id": null,
+      "resolution": "STATIC"
+    }
+  ],
+  "operations": [
+    {
+      "op": "activity",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 3528
+        },
+        {
+          "file": "crm.html",
+          "line": 4603
+        },
+        {
+          "file": "crm.html",
+          "line": 4676
+        },
+        {
+          "file": "crm.html",
+          "line": 5230
+        },
+        {
+          "file": "crm.html",
+          "line": 6009
+        },
+        {
+          "file": "crm.html",
+          "line": 7517
+        },
+        {
+          "file": "crm.html",
+          "line": 7525
+        },
+        {
+          "file": "crm.html",
+          "line": 7601
+        },
+        {
+          "file": "crm.html",
+          "line": 7692
+        },
+        {
+          "file": "crm.html",
+          "line": 7968
+        },
+        {
+          "file": "mobile.html",
+          "line": 770
+        },
+        {
+          "file": "issue-modal.js",
+          "line": 66
+        },
+        {
+          "file": "stage-transition-ui.js",
+          "line": 73
+        }
+      ],
+      "payload_fields": [
+        "meaningful_contact",
+        "note",
+        "occurred_at",
+        "opportunity_id",
+        "result",
+        "type"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "activity"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "amount",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 4671
+        },
+        {
+          "file": "issue-modal.js",
+          "line": 65
+        }
+      ],
+      "payload_fields": [
+        "amount",
+        "opportunity_id",
+        "quote_amount",
+        "won_amount"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "amount"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "assign",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 5264
+        },
+        {
+          "file": "mobile.html",
+          "line": 2058
+        },
+        {
+          "file": "mobile.html",
+          "line": 2400
+        }
+      ],
+      "payload_fields": [
+        "at",
+        "from",
+        "handover",
+        "opportunity_id",
+        "reason",
+        "reason_source",
+        "to"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "assign"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "campaign_create",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 8046
+        }
+      ],
+      "payload_fields": [
+        "activity_on_success",
+        "body",
+        "campaign_id",
+        "category_group",
+        "category_key",
+        "category_label",
+        "created_at",
+        "created_by",
+        "excluded_count",
+        "recipient_count",
+        "recipients",
+        "scheduled_at",
+        "status",
+        "template_key"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "campaign_create"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "close",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 4778
+        },
+        {
+          "file": "crm.html",
+          "line": 6057
+        },
+        {
+          "file": "mobile.html",
+          "line": 1653
+        },
+        {
+          "file": "stage-transition-ui.js",
+          "line": 71
+        }
+      ],
+      "payload_fields": [
+        "<expression: inspect call site>",
+        "closed_at",
+        "lost_kind",
+        "opportunity_id",
+        "outcome",
+        "reason",
+        "reason_source",
+        "stage_code",
+        "won_amount"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "close"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "contact",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 6010
+        }
+      ],
+      "payload_fields": [
+        "at",
+        "opportunity_id",
+        "type"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "contact"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "contact_move",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 4619
+        },
+        {
+          "file": "mobile.html",
+          "line": 1515
+        }
+      ],
+      "payload_fields": [
+        "from_site",
+        "manager_mobile",
+        "manager_name",
+        "moved_at",
+        "opportunity_id",
+        "person_key",
+        "reason",
+        "to_office_phone",
+        "to_site"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "contact_move"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "contact_relationship",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7553
+        },
+        {
+          "file": "mobile.html",
+          "line": 2393
+        }
+      ],
+      "payload_fields": [
+        "decision_role",
+        "opportunity_id",
+        "person_key",
+        "relationship_tone"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "contact_relationship"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "contact_upsert",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 4577
+        },
+        {
+          "file": "crm.html",
+          "line": 4600
+        },
+        {
+          "file": "crm.html",
+          "line": 7465
+        },
+        {
+          "file": "crm.html",
+          "line": 7469
+        },
+        {
+          "file": "mobile.html",
+          "line": 1499
+        },
+        {
+          "file": "mobile.html",
+          "line": 1506
+        },
+        {
+          "file": "mobile.html",
+          "line": 2298
+        }
+      ],
+      "payload_fields": [
+        "consent_at",
+        "is_primary",
+        "kakao_consent",
+        "manager_mobile",
+        "manager_name",
+        "manager_role",
+        "office_email",
+        "office_phone",
+        "opportunity_id",
+        "opt_out_at",
+        "person_key",
+        "send_blocked",
+        "send_blocked_reason",
+        "site_name",
+        "sms_consent",
+        "started_at"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "contact_upsert"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "customer_support_action",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 3868
+        }
+      ],
+      "payload_fields": [
+        "<expression: inspect call site>"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "customer_support_action"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "expansion_pool_update",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 4452
+        }
+      ],
+      "payload_fields": [
+        "created_opportunity_id",
+        "expansion_status",
+        "last_contact_at",
+        "need_note",
+        "next_contact_at",
+        "opportunity_id",
+        "relationship_state",
+        "source_opportunity_id",
+        "updated_at"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "expansion_pool_update"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "expansion_pool_upsert",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 4450
+        },
+        {
+          "file": "mobile.html",
+          "line": 1673
+        },
+        {
+          "file": "stage-transition-ui.js",
+          "line": 77
+        }
+      ],
+      "payload_fields": [
+        "at",
+        "candidate_work_items",
+        "completion_date",
+        "expansion_status",
+        "next_contact_at",
+        "opportunity_id",
+        "owner_name",
+        "relationship_state",
+        "site_id",
+        "site_name",
+        "source_opportunity_id",
+        "source_won_amount",
+        "source_work_summary"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "expansion_pool_upsert"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "favorite_set",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7605
+        },
+        {
+          "file": "mobile.html",
+          "line": 2431
+        }
+      ],
+      "payload_fields": [
+        "favorite",
+        "opportunity_id",
+        "user_key"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "favorite_set"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "handover",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7562
+        },
+        {
+          "file": "mobile.html",
+          "line": 2400
+        }
+      ],
+      "payload_fields": [
+        "created_at",
+        "from",
+        "opportunity_id",
+        "reason",
+        "summary",
+        "to"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "handover"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "inquiry_assign",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 4257
+        },
+        {
+          "file": "crm.html",
+          "line": 7813
+        },
+        {
+          "file": "mobile.html",
+          "line": 1411
+        },
+        {
+          "file": "mobile.html",
+          "line": 1943
+        },
+        {
+          "file": "mobile.html",
+          "line": 1953
+        }
+      ],
+      "payload_fields": [
+        "assignment_group",
+        "at",
+        "branch_code",
+        "changed_by",
+        "consultant_name",
+        "from",
+        "inquiry_id",
+        "inquiry_row",
+        "owner_group",
+        "reason",
+        "reporting_group",
+        "response",
+        "status",
+        "to"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "inquiry_assign"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "inquiry_consultant",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7824
+        }
+      ],
+      "payload_fields": [
+        "changed_by",
+        "clear_legacy_sales_owner",
+        "consultant_name",
+        "consultation_status",
+        "consulted_at",
+        "inquiry_id"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "inquiry_consultant"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "inquiry_duplicate",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7828
+        },
+        {
+          "file": "crm.html",
+          "line": 7828
+        }
+      ],
+      "payload_fields": [
+        "inquiry_id",
+        "resolution",
+        "resolved_at",
+        "resolved_by",
+        "target_inquiry_id"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "inquiry_duplicate"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "inquiry_followup",
+      "call_sites": [
+        {
+          "file": "mobile.html",
+          "line": 2380
+        }
+      ],
+      "payload_fields": [
+        "due_at",
+        "inquiry_id",
+        "reason"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "inquiry_followup"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "inquiry_purge",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7820
+        }
+      ],
+      "payload_fields": [
+        "inquiry_id",
+        "purged_at",
+        "purged_by"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "inquiry_purge"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "inquiry_reclassify",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7787
+        }
+      ],
+      "payload_fields": [
+        "from_brand",
+        "inquiry_id",
+        "review_status",
+        "reviewed_at",
+        "reviewed_by",
+        "to_brand"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "inquiry_reclassify"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "inquiry_restore",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7819
+        }
+      ],
+      "payload_fields": [
+        "inquiry_id",
+        "restored_at",
+        "restored_by"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "inquiry_restore"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "inquiry_status",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7788
+        },
+        {
+          "file": "crm.html",
+          "line": 7816
+        }
+      ],
+      "payload_fields": [
+        "at",
+        "changed_by",
+        "from_status",
+        "inquiry_id",
+        "legacy_review_status",
+        "reason",
+        "to_status"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "inquiry_status"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "inquiry_trash",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7818
+        }
+      ],
+      "payload_fields": [
+        "archive_protected",
+        "delete_note",
+        "delete_reason",
+        "deleted_at",
+        "deleted_by",
+        "inquiry_id",
+        "purge_at"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "inquiry_trash"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "inquiry_unassign",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7816
+        }
+      ],
+      "payload_fields": [
+        "at",
+        "changed_by",
+        "from",
+        "inquiry_id",
+        "reason"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "inquiry_unassign"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "lineage_link",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 6272
+        }
+      ],
+      "payload_fields": [
+        "inquiry_site",
+        "opportunity_id",
+        "origin_inquiry_id",
+        "site_id"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "lineage_link"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "message_log",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7525
+        },
+        {
+          "file": "crm.html",
+          "line": 7692
+        },
+        {
+          "file": "crm.html",
+          "line": 7968
+        },
+        {
+          "file": "mobile.html",
+          "line": 2337
+        },
+        {
+          "file": "mobile.html",
+          "line": 2512
+        },
+        {
+          "file": "mobile.html",
+          "line": 2570
+        }
+      ],
+      "payload_fields": [
+        "<expression: inspect call site>"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "message_log"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "message_stage_advanced",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7697
+        },
+        {
+          "file": "mobile.html",
+          "line": 2516
+        }
+      ],
+      "payload_fields": [
+        "advanced_at",
+        "from_stage",
+        "opportunity_id",
+        "to_stage"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "message_stage_advanced"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "next_action",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 3559
+        },
+        {
+          "file": "crm.html",
+          "line": 4681
+        },
+        {
+          "file": "crm.html",
+          "line": 4783
+        },
+        {
+          "file": "crm.html",
+          "line": 6020
+        },
+        {
+          "file": "crm.html",
+          "line": 6061
+        },
+        {
+          "file": "crm.html",
+          "line": 7517
+        },
+        {
+          "file": "crm.html",
+          "line": 7525
+        },
+        {
+          "file": "crm.html",
+          "line": 7675
+        },
+        {
+          "file": "crm.html",
+          "line": 7692
+        },
+        {
+          "file": "crm.html",
+          "line": 7880
+        },
+        {
+          "file": "crm.html",
+          "line": 7968
+        },
+        {
+          "file": "mobile.html",
+          "line": 777
+        },
+        {
+          "file": "mobile.html",
+          "line": 2335
+        },
+        {
+          "file": "mobile.html",
+          "line": 2380
+        },
+        {
+          "file": "issue-modal.js",
+          "line": 67
+        },
+        {
+          "file": "stage-transition-ui.js",
+          "line": 74
+        }
+      ],
+      "payload_fields": [
+        "action_id",
+        "assignee",
+        "channel",
+        "draft_body",
+        "due_at",
+        "opportunity_id",
+        "postpone_count",
+        "scheduled_at",
+        "template_key",
+        "text",
+        "type"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "next_action"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "next_action_complete",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 3548
+        },
+        {
+          "file": "mobile.html",
+          "line": 781
+        },
+        {
+          "file": "issue-modal.js",
+          "line": 66
+        }
+      ],
+      "payload_fields": [
+        "action_id",
+        "at",
+        "due_at",
+        "opportunity_id",
+        "text"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "next_action_complete"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "opportunity_create",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 6579
+        },
+        {
+          "file": "crm.html",
+          "line": 6770
+        },
+        {
+          "file": "crm.html",
+          "line": 7207
+        },
+        {
+          "file": "crm.html",
+          "line": 7788
+        },
+        {
+          "file": "mobile.html",
+          "line": 2123
+        }
+      ],
+      "payload_fields": [
+        "address",
+        "amount",
+        "assignment_group",
+        "at",
+        "branch_code",
+        "brand",
+        "client_ref",
+        "contact_started_at",
+        "gj",
+        "manager_mobile",
+        "manager_name",
+        "manager_role",
+        "name",
+        "office_email",
+        "office_phone",
+        "origin",
+        "origin_inquiry_id",
+        "origin_source",
+        "owner",
+        "owner_group",
+        "person_key",
+        "primaryWork",
+        "primary_work",
+        "reason",
+        "reason_source",
+        "reporting_group",
+        "site_id",
+        "source_opportunity_id",
+        "stage_code",
+        "stage_name",
+        "workItems",
+        "workScopeType",
+        "workSummary",
+        "work_items",
+        "work_name",
+        "work_scope_type",
+        "work_summary",
+        "work_type"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "opportunity_create",
+        "new_opportunity_id": "server UUID required"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "opportunity_touch",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7604
+        },
+        {
+          "file": "mobile.html",
+          "line": 2430
+        }
+      ],
+      "payload_fields": [
+        "opportunity_id",
+        "touch_kind",
+        "touched_at",
+        "user_key"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "opportunity_touch"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "opportunity_work_set",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7148
+        },
+        {
+          "file": "mobile.html",
+          "line": 1555
+        }
+      ],
+      "payload_fields": [
+        "actor_name",
+        "at",
+        "opportunity_id",
+        "primaryWork",
+        "primary_work",
+        "reason",
+        "reason_source",
+        "workItems",
+        "workScopeType",
+        "workSummary",
+        "work_items",
+        "work_scope_type",
+        "work_summary",
+        "work_type"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "opportunity_work_set"
+      },
+      "dispatcher": "crm_write_command_v2: existing guarded work handler; read-time expected_version required"
+    },
+    {
+      "op": "quote_version",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7558
+        },
+        {
+          "file": "mobile.html",
+          "line": 2397
+        }
+      ],
+      "payload_fields": [
+        "amount",
+        "created_at",
+        "created_by",
+        "opportunity_id",
+        "reason",
+        "version_no"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "quote_version"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "relationship_hold",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7675
+        },
+        {
+          "file": "mobile.html",
+          "line": 2501
+        }
+      ],
+      "payload_fields": [
+        "hold_until",
+        "opportunity_id",
+        "person_key",
+        "reason"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "relationship_hold"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "relationship_response",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7695
+        },
+        {
+          "file": "mobile.html",
+          "line": 2514
+        }
+      ],
+      "payload_fields": [
+        "cancel_pending_cadence",
+        "opportunity_id",
+        "person_key",
+        "response_at",
+        "response_kind"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "relationship_response"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "rep_manager_comment",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 3833
+        },
+        {
+          "file": "crm.html",
+          "line": 3834
+        }
+      ],
+      "payload_fields": [
+        "comment",
+        "completed_at",
+        "created_by",
+        "rep_name",
+        "status",
+        "updated_at",
+        "week_start"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "rep_manager_comment"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "service_change",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7120
+        },
+        {
+          "file": "mobile.html",
+          "line": 1775
+        }
+      ],
+      "payload_fields": [
+        "at",
+        "from_service",
+        "next_action",
+        "next_due",
+        "opportunity_id",
+        "origin_channel",
+        "reason",
+        "reason_source",
+        "to_service"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "service_change"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "stage_check",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7544
+        },
+        {
+          "file": "crm.html",
+          "line": 7630
+        },
+        {
+          "file": "mobile.html",
+          "line": 2386
+        },
+        {
+          "file": "mobile.html",
+          "line": 2459
+        }
+      ],
+      "payload_fields": [
+        "checked",
+        "item_index",
+        "item_text",
+        "opportunity_id",
+        "stage_code"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "stage_check"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "transition",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 4781
+        },
+        {
+          "file": "crm.html",
+          "line": 6060
+        },
+        {
+          "file": "crm.html",
+          "line": 6563
+        },
+        {
+          "file": "crm.html",
+          "line": 6762
+        },
+        {
+          "file": "mobile.html",
+          "line": 1701
+        },
+        {
+          "file": "stage-transition-ui.js",
+          "line": 71
+        }
+      ],
+      "payload_fields": [
+        "<expression: inspect call site>",
+        "amount",
+        "assignment_group",
+        "at",
+        "branch_code",
+        "from",
+        "note",
+        "opportunity_id",
+        "origin_inquiry_id",
+        "reason",
+        "reason_source",
+        "reporting_group",
+        "to"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "transition"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "waiting_context",
+      "call_sites": [
+        {
+          "file": "crm.html",
+          "line": 7880
+        },
+        {
+          "file": "crm.html",
+          "line": 7944
+        }
+      ],
+      "payload_fields": [
+        "actor_name",
+        "at",
+        "expected_resume_at",
+        "opportunity_id",
+        "waiting_customer_statement",
+        "waiting_evidence",
+        "waiting_reason",
+        "waiting_speaker",
+        "wake_up_at"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "waiting_context"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    },
+    {
+      "op": "win",
+      "call_sites": [
+        {
+          "file": "mobile.html",
+          "line": 1672
+        }
+      ],
+      "payload_fields": [
+        "create_project",
+        "opportunity_id",
+        "outcome",
+        "stage_code",
+        "won_amount",
+        "won_at"
+      ],
+      "expected_ack": {
+        "ok": true,
+        "write_id": "original write_id when returned",
+        "operation": "win"
+      },
+      "dispatcher": "NOT_CONNECTED: preserve op; confirm existing storage/authorization semantics before extending dispatcher"
+    }
+  ]
+}

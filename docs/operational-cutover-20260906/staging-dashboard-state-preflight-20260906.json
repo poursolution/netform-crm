@@ -1,0 +1,72 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "captured_at": "2026-09-06T03:37:09.666474Z",
+  "mode": "READ_ONLY",
+  "relation": {
+    "schema": "public",
+    "name": "dashboard_state",
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "data",
+        "type": "jsonb",
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "nullable": true,
+        "default": "now()"
+      }
+    ],
+    "row_count": 0,
+    "rls_enabled": true,
+    "rls_forced": false,
+    "policies": [
+      {
+        "name": "allow all",
+        "command": "ALL",
+        "roles": [
+          "public"
+        ],
+        "qual": "true",
+        "with_check": "true"
+      }
+    ],
+    "browser_privileges": {
+      "anon": [
+        "DELETE",
+        "INSERT",
+        "REFERENCES",
+        "SELECT",
+        "TRIGGER",
+        "TRUNCATE",
+        "UPDATE"
+      ],
+      "authenticated": [
+        "DELETE",
+        "INSERT",
+        "REFERENCES",
+        "SELECT",
+        "TRIGGER",
+        "TRUNCATE",
+        "UPDATE"
+      ]
+    }
+  },
+  "conclusion": {
+    "reuse_for_annual_goal": false,
+    "reason": "The existing relation is empty and its PUBLIC allow-all policy plus direct browser privileges do not provide actor scope, audit, or a shared-versus-personal annual-goal contract.",
+    "missing_rule": "Decide whether the annual goal is organization-wide or personal, then define the authorized writer, read scope, audit, and conflict behavior before any Supabase migration."
+  },
+  "writes_performed": 0,
+  "production_requests": 0,
+  "n8n_requests": 0
+}

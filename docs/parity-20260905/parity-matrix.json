@@ -1,0 +1,3322 @@
+{
+  "golden_commit": "6c1b570b8d79f908a7340292944acf96cecc9d68",
+  "feature_count": 85,
+  "status_counts": {
+    "EXACT_PARITY": 0,
+    "V2_IMPLEMENTED_NOT_UI_CONNECTED": 1,
+    "CONTRACT_MISSING": 77,
+    "UI_MISSING": 0,
+    "TEST_MISSING": 7
+  },
+  "source_files": 60,
+  "control_occurrences": 2086,
+  "surface_occurrences": 1506,
+  "events": 1782,
+  "write_sites": 232,
+  "unique_literal_operations": 49,
+  "dynamic_call_candidates": 10,
+  "unresolved_control_occurrences": 1627,
+  "semantic_inventory_100_percent": false,
+  "remote_database_actions_this_stage": 1,
+  "phase1_update": {
+    "staging_only": true,
+    "exact_parity_claimed": false
+  },
+  "parity_verdict": "NO-GO",
+  "feature_rows": [
+    {
+      "id": "F01",
+      "name": "통합 진입점·PC/모바일 자동/수동 전환",
+      "anchors": [
+        "golden/index.html#autoView",
+        "golden/index.html#decide",
+        "golden/index.html#mount"
+      ],
+      "read": "URL view → 저장 선택 → UA/터치/폭",
+      "write": "nf_view_pref / nf_view 쿠키; iframe URL",
+      "v2": "기존 index 유지 + Staging endpoint guard 필요",
+      "status": "TEST_MISSING",
+      "gap": "축약 staging 파일은 기존 iframe/토글/딥링크 대체물이 아님",
+      "test": "PC/폰/태블릿·명시 view 우선·새로고침·debug/demo 전달",
+      "evidence": [
+        {
+          "file": "golden/index.html",
+          "name": "autoView",
+          "line": 89,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/index.html#L89",
+          "definitions": 1
+        },
+        {
+          "file": "golden/index.html",
+          "name": "decide",
+          "line": 99,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/index.html#L99",
+          "definitions": 1
+        },
+        {
+          "file": "golden/index.html",
+          "name": "mount",
+          "line": 110,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/index.html#L110",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F02",
+      "name": "로그인·승인대기·프로필",
+      "anchors": [
+        "golden/crm.html#authAdmit",
+        "golden/crm.html#authSignIn",
+        "golden/mobile.html#authAdmit",
+        "golden/mobile.html#doSignIn"
+      ],
+      "read": "Supabase Auth + users 이메일 조회",
+      "write": "Auth password sign-in / 승인거부 sign-out",
+      "v2": "crm_profile_scoped_v2 + original PC/mobile copy auth adapter",
+      "status": "TEST_MISSING",
+      "gap": "원본 복제본 + 실제 JWT JSDOM 12/12. 실제 브라우저 로그인/승인거부/이름변경 회귀 미완료. 비밀번호 숫자 강제 변환 제거. PC overlay 파일2개 누락.",
+      "test": "실제 6 JWT 로그인·inactive 거절·이름변경에도 UUID 동일; 기존 폼 회귀",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "authAdmit",
+          "line": 2074,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2074",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "authSignIn",
+          "line": 2098,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2098",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "authAdmit",
+          "line": 927,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L927",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "doSignIn",
+          "line": 943,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L943",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F03",
+      "name": "세션 복원·로그아웃·갱신",
+      "anchors": [
+        "golden/crm.html#authInit",
+        "golden/crm.html#authWatch",
+        "golden/crm.html#authSignOut",
+        "golden/mobile.html#authRestore"
+      ],
+      "read": "SB.auth.getSession/onAuthStateChange",
+      "write": "SB.auth.signOut; 새로고침",
+      "v2": "Staging/ref/Auth UID/v1 isolated session and app storage",
+      "status": "TEST_MISSING",
+      "gap": "JSDOM 실제 JWT 세션복원/로그아웃 및 로컬 계정교체 캐시/큐 제거 PASS. 실제 브라우저 refresh 만료/계정교체/다중탭은 미검증.",
+      "test": "refresh 만료/로그아웃/두 계정 전환 뒤 타인 캐시·큐 0",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "authInit",
+          "line": 2059,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2059",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "authWatch",
+          "line": 2119,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2119",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "authSignOut",
+          "line": 2126,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2126",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "authRestore",
+          "line": 921,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L921",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F04",
+      "name": "rep/admin/dual 모드·역할별 홈",
+      "anchors": [
+        "golden/crm.html#applyRoleHome",
+        "golden/crm.html#setHomeRole",
+        "golden/mobile.html#switchMode",
+        "golden/mobile.html#rLocked"
+      ],
+      "read": "ME.role / G.user.role; 화면 역할 선택",
+      "write": "기기 모드 localStorage",
+      "v2": "server source_role + permission_role + allowed_modes; mobile original mode controls",
+      "status": "TEST_MISSING",
+      "gap": "6계정 실제 JWT 매핑 및 JSDOM 관리/내 영업 전환 PASS. dual 실제 계정 없음; PC 역할별 홈/브라우저 회귀 미완료. 모드는 서버 scope를 확대하지 않음.",
+      "test": "dual 내 영업↔관리·consult/branch 허용 화면, 모드 전환으로 scope 확장 불가",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "applyRoleHome",
+          "line": 3763,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L3763",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "setHomeRole",
+          "line": 3767,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L3767",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "switchMode",
+          "line": 1349,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1349",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "rLocked",
+          "line": 1325,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1325",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F05",
+      "name": "공통 조회·자동동기화·진단",
+      "anchors": [
+        "golden/crm.html#loadData",
+        "golden/crm.html#applyBundle",
+        "golden/mobile.html#loadLive",
+        "golden/crm.html#runDiag"
+      ],
+      "read": "n8n crm-api → B / DEALS / ADMIN; cache fallback",
+      "write": "배경조회/캐시; 진단 복사",
+      "v2": "Phase1.read(resource,args): complete/partial/unavailable envelope; target work_items reader",
+      "status": "CONTRACT_MISSING",
+      "gap": "Phase1 공통 contract 준비. 전체 B bundle을 만들지 않음. 업무별 reader/전체필드/자동동기화/진단은 후속 Phase 대상이며 아직 unavailable.",
+      "test": "동일 UUID PC→모바일 재조회·오류/빈 응답·변경 중 재조회·Legacy 호출0",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "loadData",
+          "line": 2731,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2731",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "applyBundle",
+          "line": 2703,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2703",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "loadLive",
+          "line": 1042,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1042",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "runDiag",
+          "line": 2658,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2658",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F06",
+      "name": "쓰기 큐·ACK·재시도·서버 UUID 채택",
+      "anchors": [
+        "golden/crm.html#pushWrite",
+        "golden/crm.html#flushWrites",
+        "golden/crm.html#adoptServerId",
+        "golden/mobile.html#flushWrites"
+      ],
+      "read": "WRITE_Q / WQ / 임시 ID 맵",
+      "write": "n8n crm-write POST {op,payload,write_id}; localStorage 재시도",
+      "v2": "crm_write_command_v2(uuid,text,uuid,integer,jsonb) + private receipts + isolated queue",
+      "status": "CONTRACT_MISSING",
+      "gap": "공종용 공통 ACK/멱등성/409 실제 Staging PASS. 기존 업무 handler는 expected_version 전달이 없어 fail-closed; 업무별 UI binding/신규 UUID 생성 계약은 미완료. 거짓 전체 Parity PASS 금지.",
+      "test": "응답유실/오프라인/중복클릭/새로고침에도 중복 Deal0·거짓 저장완료0",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "pushWrite",
+          "line": 2520,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2520",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "flushWrites",
+          "line": 2529,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2529",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "adoptServerId",
+          "line": 2548,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2548",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "flushWrites",
+          "line": 812,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L812",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F07",
+      "name": "대시보드 기간·브랜드·담당자·드릴다운",
+      "anchors": [
+        "golden/crm.html#paintPeriod",
+        "golden/crm.html#dashboardDealScope",
+        "golden/crm.html#towerDrill",
+        "golden/crm.html#paintTowerStageBrand"
+      ],
+      "read": "B.deals/inquiries; 기간·snapshot·권한 범위별 client 계산",
+      "write": "필터/선택은 로컬 UI",
+      "v2": "crm_dashboard_scoped_v2 초안 보류",
+      "status": "CONTRACT_MISSING",
+      "gap": "단순 생성일 SUM은 기존 시점/브랜드·기술문의 제외·snapshot 의미와 다름",
+      "test": "같은 합성 fixture를 기존 계산식과 v2에 넣어 모든 필터/클릭 숫자 일치",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "paintPeriod",
+          "line": 2809,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2809",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "dashboardDealScope",
+          "line": 2865,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2865",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "towerDrill",
+          "line": 2946,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2946",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "paintTowerStageBrand",
+          "line": 3543,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L3543",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F08",
+      "name": "금액 정본·예상매출·가중 Pipeline",
+      "anchors": [
+        "golden/crm.html#quoteAmt",
+        "golden/crm.html#wonAmt",
+        "golden/crm.html#oppAmt",
+        "golden/crm.html#paintTowerMoney",
+        "golden/crm.html#paintForecast"
+      ],
+      "read": "quote_amount/won_amount/opportunity amount + STAGE_MASTER.prob",
+      "write": "조회 전용",
+      "v2": "금액 분리 reader/집계 계약 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "단일 amount로 합치면 예상/견적/수주와 missing coverage 손실",
+      "test": "미입력은0으로 단정하지 않음; 금액단위·확률·수주일 기준 비교",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "quoteAmt",
+          "line": 2396,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2396",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "wonAmt",
+          "line": 2397,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2397",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "oppAmt",
+          "line": 2398,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2398",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "paintTowerMoney",
+          "line": 2903,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2903",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "paintForecast",
+          "line": 3945,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L3945",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F09",
+      "name": "대시보드 유입·전환 Funnel·병목",
+      "anchors": [
+        "golden/crm.html#paintSalesPipe",
+        "golden/crm.html#paintTowerFunnel",
+        "golden/crm.html#paintTowerNeck2",
+        "golden/crm.html#paintTowerOrigin"
+      ],
+      "read": "B.inquiries/deals + origin/전환 link/단계",
+      "write": "조회·드릴다운",
+      "v2": "Funnel scoped aggregate 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "회사 전체 vs 허용 범위, 문의/Deal 중복계수·유입 원천 보존 필요",
+      "test": "유입/배정/응대/전환/수주 건수와 원본 드릴다운 일치",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "paintSalesPipe",
+          "line": 3029,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L3029",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "paintTowerFunnel",
+          "line": 3418,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L3418",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "paintTowerNeck2",
+          "line": 3141,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L3141",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "paintTowerOrigin",
+          "line": 3125,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L3125",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F10",
+      "name": "연간 목표·전년비·기간 추이",
+      "anchors": [
+        "golden/crm.html#yearGoal",
+        "golden/crm.html#setYearGoal",
+        "golden/crm.html#paintExecYoY",
+        "golden/crm.html#paintTowerTrend"
+      ],
+      "read": "기간별 수주/배정; yearGoal 설정",
+      "write": "localStorage 연간 목표",
+      "v2": "목표 저장·시계열 scoped API 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "목표 수정 범위/공유 여부·전년비 빈 이력 표시 보존",
+      "test": "연도/분기·연간 목표 변경·이력 없는 기간 처리",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "yearGoal",
+          "line": 3153,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L3153",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "setYearGoal",
+          "line": 3154,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L3154",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "paintExecYoY",
+          "line": 3176,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L3176",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "paintTowerTrend",
+          "line": 3109,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L3109",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F11",
+      "name": "담당자 배정→응대→경쟁→수주 흐름",
+      "anchors": [
+        "golden/crm.html#repFlowData",
+        "golden/crm.html#openRepFlowDrawer",
+        "golden/crm.html#paintTowerReps"
+      ],
+      "read": "담당자 Master + inquiries + stage events",
+      "write": "필터/상세 이동",
+      "v2": "담당자 flow aggregate 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "실제 Stage 이력 없으면 수집중, 경남 내부평가 제외 유지",
+      "test": "본사6명·기간 경계·경쟁 진입·부족이력 미확정 표시",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "repFlowData",
+          "line": 3645,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L3645",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "openRepFlowDrawer",
+          "line": 3661,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L3661",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "paintTowerReps",
+          "line": 3585,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L3585",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F12",
+      "name": "견적문의 Control Center 탭/카드/필터",
+      "anchors": [
+        "golden/crm.html#inqCtlPartition",
+        "golden/crm.html#inqCtlRows",
+        "golden/crm.html#inqCtlConsole",
+        "golden/crm.html#inqCtlCounts"
+      ],
+      "read": "B.inquiries + trash/기술자문 분리 + LOCAL patches",
+      "write": "탭/보기/선택/검색",
+      "v2": "crm_inquiries_scoped_v2 초안 보류",
+      "status": "CONTRACT_MISSING",
+      "gap": "활성/휴지통/기술자문/미배정/SLA/체크박스 전체 계약 부족",
+      "test": "각 탭·건수·선택행·필터 조합·기술문의와 휴지통 활성집계 제외",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "inqCtlPartition",
+          "line": 7407,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7407",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "inqCtlRows",
+          "line": 7457,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7457",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "inqCtlConsole",
+          "line": 7483,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7483",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "inqCtlCounts",
+          "line": 7464,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7464",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F13",
+      "name": "본사6명 단일·일괄 배정/재배정",
+      "anchors": [
+        "golden/crm.html#inqCtlOpenAssign",
+        "golden/crm.html#inqCtlRepStats",
+        "golden/crm.html#inqCtlConfirmAssign"
+      ],
+      "read": "sales_people inquiry_assignable + 업무부하",
+      "write": "inquiry_assign (crm-write)",
+      "v2": "crm_assign/assignment_targets 초안 보류",
+      "status": "CONTRACT_MISSING",
+      "gap": "6명 UUID Master·단일/일괄·부하점수·확인창을 보존해야 함; 현재 초안 target4명만",
+      "test": "6명 목록/경남 제외·부하식·다건 실패·원 담당 이력",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "inqCtlOpenAssign",
+          "line": 7498,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7498",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "inqCtlRepStats",
+          "line": 7496,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7496",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "inqCtlConfirmAssign",
+          "line": 7504,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7504",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F14",
+      "name": "문의 미배정 회수·보류·사유",
+      "anchors": [
+        "golden/crm.html#inqCtlOpenReason",
+        "golden/crm.html#inqCtlConfirmReason"
+      ],
+      "read": "문의 상태/배정/이력",
+      "write": "inquiry_unassign / inquiry_status",
+      "v2": "목적별 v2 회수/보류 RPC 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "단순 status UPDATE로 배정/보류 이력 전체 의미 대체 불가",
+      "test": "회수 뒤 담당NULL·미배정카드, 보류사유 필수·활성통계",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "inqCtlOpenReason",
+          "line": 7505,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7505",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "inqCtlConfirmReason",
+          "line": 7506,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7506",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F15",
+      "name": "최초응대·후속응대·통화결과",
+      "anchors": [
+        "golden/crm.html#splitSaveLog",
+        "golden/crm.html#splitSaveStatus",
+        "golden/mobile.html#recordInquiryResponse"
+      ],
+      "read": "문의 담당/응대시각/활동",
+      "write": "activity / inquiry_assign / inquiry_status",
+      "v2": "crm_inquiry_response/status 초안 보류",
+      "status": "CONTRACT_MISSING",
+      "gap": "응대결과·최초시각 보존·상담자와 영업자 분리·실제 기존 status 목록 필요",
+      "test": "두번 응대 최초시각 불변·PC모바일 동일·권한 분리",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "splitSaveLog",
+          "line": 6312,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L6312",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "splitSaveStatus",
+          "line": 6210,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L6210",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "recordInquiryResponse",
+          "line": 1950,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1950",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F16",
+      "name": "문의 Next/기한/완료/연기",
+      "anchors": [
+        "golden/crm.html#splitSaveNext",
+        "golden/crm.html#splitDoneAction",
+        "golden/mobile.html#applyTodayPostponeM"
+      ],
+      "read": "문의 nextAction + assigned owner",
+      "write": "next_action / next_action_complete / inquiry_followup",
+      "v2": "crm_next_add/complete 초안; 연기 미구현",
+      "status": "CONTRACT_MISSING",
+      "gap": "문의 followup·연기사유/횟수·채널·일정 유형 보존 부족",
+      "test": "문의/Deal ID 분리·완료와 단순열기 구분·연기후 날짜/이력",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "splitSaveNext",
+          "line": 6199,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L6199",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "splitDoneAction",
+          "line": 6576,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L6576",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "applyTodayPostponeM",
+          "line": 2379,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2379",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F17",
+      "name": "문의→Pipeline 전환·금액·중복방지",
+      "anchors": [
+        "golden/crm.html#promoteToPipeline",
+        "golden/crm.html#autoPromote",
+        "golden/crm.html#adoptServerId"
+      ],
+      "read": "origin_inquiry_id/client_ref/기존 연결 Deal",
+      "write": "opportunity_create + inquiry_status/lineage_link",
+      "v2": "원자적 inquiry-convert v2 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "원문·상담담당·브랜드·공종·UUID 영업담당·전환시점/중복방지 필요",
+      "test": "견적단계전환·원문의 보존·재시도 Deal1개·PC모바일 동일 링크",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "promoteToPipeline",
+          "line": 6447,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L6447",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "autoPromote",
+          "line": 6255,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L6255",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "adoptServerId",
+          "line": 2548,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2548",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F18",
+      "name": "문의 휴지통·활성 제외",
+      "anchors": [
+        "golden/crm.html#inqCtlOpenTrash",
+        "golden/crm.html#inqCtlConfirmTrash",
+        "golden/crm.html#inqCtlTrash"
+      ],
+      "read": "deleted_at/reason/by/purge_at/연결보호",
+      "write": "inquiry_trash",
+      "v2": "v2 trash 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "soft-delete 의미·30일 대상 표시·연결문의 보호 보존",
+      "test": "집계제외/원문보존/사유/actor 서버확정",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "inqCtlOpenTrash",
+          "line": 7507,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7507",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "inqCtlConfirmTrash",
+          "line": 7508,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7508",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "inqCtlTrash",
+          "line": 7512,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7512",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F19",
+      "name": "문의 복원",
+      "anchors": [
+        "golden/crm.html#inqCtlRestore"
+      ],
+      "read": "휴지통 원본",
+      "write": "inquiry_restore",
+      "v2": "v2 restore 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "복원후 담당·상태·전환 관계 보존",
+      "test": "복원후 활성·이력·범위 일치",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "inqCtlRestore",
+          "line": 7509,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7509",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F20",
+      "name": "문의 영구삭제·보호",
+      "anchors": [
+        "golden/crm.html#inqCtlHardDelete"
+      ],
+      "read": "관리자·archive_protected·Deal link",
+      "write": "inquiry_purge",
+      "v2": "v2 purge 없음; 기존 보안계획 MFA 필요",
+      "status": "CONTRACT_MISSING",
+      "gap": "기능은 삭제하지 않되 admin+AAL2 승인/보호계약 필요; 이번엔 실행금지",
+      "test": "합성 연결문의 삭제거부·AAL1거부·감사; 운영 삭제금지",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "inqCtlHardDelete",
+          "line": 7510,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7510",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F21",
+      "name": "문의 중복 확인/연결/별도유지",
+      "anchors": [
+        "golden/crm.html#inqCtlOpenDuplicate",
+        "golden/crm.html#inqCtlResolveDuplicate"
+      ],
+      "read": "문의 후보/duplicate relation",
+      "write": "inquiry_duplicate 또는 inquiry_trash",
+      "v2": "v2 duplicate 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "자동 병합 금지·원문 보존·같은 현장 다른기회 유지",
+      "test": "link/keep/trash 각각·잘못된 ID·동시변경 거절",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "inqCtlOpenDuplicate",
+          "line": 7515,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7515",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "inqCtlResolveDuplicate",
+          "line": 7516,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7516",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F22",
+      "name": "경남지사 인계 Pool",
+      "anchors": [
+        "golden/crm.html#inqCtlOpenBranchHandoffConfirm",
+        "golden/crm.html#inqCtlConfirmBranchHandoff"
+      ],
+      "read": "본사 문의/sales_people team/reporting_group",
+      "write": "inquiry_assign → 경남지사 미지정",
+      "v2": "지사인계 v2 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "현 v2 branch는 명시 ID scope뿐; 미지정 Pool과 routing authority 없음",
+      "test": "본사6명 배정창과 분리·인계후 지사 미지정·상담이력 보존",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "inqCtlOpenBranchHandoffConfirm",
+          "line": 7499,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7499",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "inqCtlConfirmBranchHandoff",
+          "line": 7500,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7500",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F23",
+      "name": "경남 실담당자 지정/미지정 복귀",
+      "anchors": [
+        "golden/crm.html#gnOpenOwner",
+        "golden/crm.html#gnConfirmOwner",
+        "golden/crm.html#gnSetOwnerPool"
+      ],
+      "read": "branch Master 조민준/김훈/미지정",
+      "write": "inquiry_assign / 담당 변경",
+      "v2": "지사 owner assignment v2 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "표시 이름은 보존, UUID·team 기반 지정 권한/Pool 필요",
+      "test": "두 지사 담당 UUID만·본사정보차단·미지정 복귀",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "gnOpenOwner",
+          "line": 5274,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L5274",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "gnConfirmOwner",
+          "line": 5275,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L5275",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "gnSetOwnerPool",
+          "line": 5276,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L5276",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F24",
+      "name": "경남 Funnel/인계표/위험/6개월추이",
+      "anchors": [
+        "golden/crm.html#gnData",
+        "golden/crm.html#gnTrend",
+        "golden/crm.html#paintGyeongnam"
+      ],
+      "read": "branch_code/team/reporting_group + inquiries/deals",
+      "write": "필터/행 drilldown",
+      "v2": "branch scoped dashboard 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "단일 generic 대시보드는 지사 UI/관리계약 대체 못함",
+      "test": "인계→실배정→응대→Deal→경쟁→수주, 본사KPI 제외·회사실적 외부분리",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "gnData",
+          "line": 5254,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L5254",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "gnTrend",
+          "line": 5264,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L5264",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "paintGyeongnam",
+          "line": 5265,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L5265",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F25",
+      "name": "기술자문 문의 제외·기존자료 검토",
+      "anchors": [
+        "golden/crm.html#operationalInquiries",
+        "golden/crm.html#inqTechReview",
+        "golden/crm.html#inqTechReclassify"
+      ],
+      "read": "brand 기술자문 구별; legacy_review_status",
+      "write": "inquiry_reclassify",
+      "v2": "v2 재분류/기술문의 scoped reader 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "새 dashboard 초안에 기술문의 제외 규칙 없음",
+      "test": "활성KPI 제외·전용탭에 원문유지·재분류 뒤 집계",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "operationalInquiries",
+          "line": 2316,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2316",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "inqTechReview",
+          "line": 7475,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7475",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "inqTechReclassify",
+          "line": 7477,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7477",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F26",
+      "name": "기술자문 Deal 생성/사업유형 전환",
+      "anchors": [
+        "golden/crm.html#inqTechPromote",
+        "golden/crm.html#confirmBizChange",
+        "golden/crm.html#advisoryPanel",
+        "golden/mobile.html#commitBiz"
+      ],
+      "read": "Deal service/brand/advisory/origin lineage",
+      "write": "opportunity_create / service_change / inquiry_status",
+      "v2": "v2 business-type/technical-convert 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "기술자문은 Pipeline 사업유형; 상담브랜드로 임의전환 금지",
+      "test": "기존유입보존·자문상세/금액·한번전환·타 사업 변경이력",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "inqTechPromote",
+          "line": 7478,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7478",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "confirmBizChange",
+          "line": 6808,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L6808",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "advisoryPanel",
+          "line": 6919,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L6919",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "commitBiz",
+          "line": 1772,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1772",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F27",
+      "name": "Pipeline Kanban/목록/분할/표/정렬",
+      "anchors": [
+        "golden/crm.html#paintPipe",
+        "golden/crm.html#paintKanban",
+        "golden/crm.html#paintSplit",
+        "golden/crm.html#paintStageListV2"
+      ],
+      "read": "B.deals + Stage/amount/owner/risk/Next",
+      "write": "필터/보기/선택 UI",
+      "v2": "crm_read_scoped_v2 부분 / deals reader 초안",
+      "status": "CONTRACT_MISSING",
+      "gap": "기존 모든 보기·stage column·정렬·기간/브랜드·관리카드 필드 부족",
+      "test": "모든 보기 동일 ID집합/금액·상세유지·역할별 비노출",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "paintPipe",
+          "line": 4638,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4638",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "paintKanban",
+          "line": 5600,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L5600",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "paintSplit",
+          "line": 5865,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L5865",
+          "definitions": 2
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "paintStageListV2",
+          "line": 5393,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L5393",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F28",
+      "name": "Pipeline 전체 Stage·Journey",
+      "anchors": [
+        "golden/crm.html#nextStageCandidates",
+        "golden/crm.html#stageJourneyHTML",
+        "golden/crm.html#journeyStageClick",
+        "golden/mobile.html#nextOptions"
+      ],
+      "read": "STAGE_MASTER/PIPE_NO/PIPE_PROGRESS",
+      "write": "transition / close / win",
+      "v2": "crm_deal_stage_scoped_v2 초안 보류",
+      "status": "CONTRACT_MISSING",
+      "gap": "Golden은 expansion Stage 존재; local은 제거+Pool. 둘을 자동합치지 말고 결정이력 필요",
+      "test": "전 Stage 후보/순서/확률/SLA/종료분류 Golden과 비교",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "nextStageCandidates",
+          "line": 2231,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2231",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "stageJourneyHTML",
+          "line": 4664,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4664",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "journeyStageClick",
+          "line": 4690,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4690",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "nextOptions",
+          "line": 716,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L716",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F29",
+      "name": "단계별 입력·금액 Gate·복합변경",
+      "anchors": [
+        "golden/crm.html#confirmTransition",
+        "golden/crm.html#transitionTargetChanged",
+        "golden/mobile.html#commitMoveWithReason",
+        "golden/mobile.html#commitMove"
+      ],
+      "read": "한 일/결과/담당/근거/Next/금액",
+      "write": "transition + activity + next_action 또는 close/win",
+      "v2": "원자적 structured-transition RPC 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "새 초안은 stage+reason만; 필수 입력·정본 history·연관변경 누락",
+      "test": "sent 금액/수주금액 Gate·종료이전stage·권한/409·전체 transaction",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "confirmTransition",
+          "line": 4479,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4479",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "transitionTargetChanged",
+          "line": 4444,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4444",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "commitMoveWithReason",
+          "line": 1619,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1619",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "commitMove",
+          "line": 1700,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1700",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F30",
+      "name": "수주/실주/배드핏/연락두절·사유",
+      "anchors": [
+        "golden/crm.html#reasonOptionsFor",
+        "golden/crm.html#paintClosed",
+        "golden/mobile.html#commitClose"
+      ],
+      "read": "outcome/closed_at/lost_kind/기존stage/won_amount",
+      "write": "close / win",
+      "v2": "terminal v2 계약 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "뺏김/놓침/기타·견적/영업 배드핏·Closed 통계 보존",
+      "test": "종료 전 단계 기록·Next 종료정책·매출/분류·원본보존",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "reasonOptionsFor",
+          "line": 4463,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4463",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "paintClosed",
+          "line": 3914,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L3914",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "commitClose",
+          "line": 1648,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1648",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F31",
+      "name": "예상/견적/수주 금액 수정",
+      "anchors": [
+        "golden/crm.html#saveBasics",
+        "golden/mobile.html#amtOk"
+      ],
+      "read": "oppAmt/quoteAmt/wonAmt",
+      "write": "amount",
+      "v2": "crm_deal_amount_scoped_v2 초안 보류",
+      "status": "CONTRACT_MISSING",
+      "gap": "하나의 amount UPDATE로 세 금액 의미/원·만원 단위 유지 못함",
+      "test": "공란/0/억/원·만원·반올림·필수금액·감사+동시수정",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "saveBasics",
+          "line": 4388,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4388",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "amtOk",
+          "line": 1666,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1666",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F32",
+      "name": "Deal 담당자 변경·일괄 재배정",
+      "anchors": [
+        "golden/crm.html#saveAssigneeChange",
+        "golden/crm.html#applyBulkV2",
+        "golden/mobile.html#pickReassign"
+      ],
+      "read": "owner/담당자Master/이력/권한",
+      "write": "assign + handover",
+      "v2": "crm_assign_scoped_v2 초안 보류",
+      "status": "CONTRACT_MISSING",
+      "gap": "역할/team eligibility·다건·인수인계와 별도할당권한 필요",
+      "test": "UUID이관·원담당비노출·동일site 타기회불변·관리scope",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "saveAssigneeChange",
+          "line": 4979,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4979",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "applyBulkV2",
+          "line": 4635,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4635",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "pickReassign",
+          "line": 2399,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2399",
+          "definitions": 2
+        }
+      ]
+    },
+    {
+      "id": "F33",
+      "name": "공종 구조화 편집·복합·기타",
+      "anchors": [
+        "golden/crm.html#workItemsOf",
+        "golden/crm.html#saveWorkEdit",
+        "golden/mobile.html#saveWorkSheetM"
+      ],
+      "read": "primaryWork/workItems/workScopeType/workSummary",
+      "write": "opportunity_work_set",
+      "v2": "crm_work_set_scoped_v2(uuid,text,jsonb,text,integer,text)",
+      "status": "V2_IMPLEMENTED_NOT_UI_CONNECTED",
+      "gap": "기존 work editor와 미연결; actor 없는 새5인자 초안 미적용. 기존 multi/primary/기타 정본 보존",
+      "test": "단일/복합/기타/대표필수·기존미분류 보존·version conflict",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "workItemsOf",
+          "line": 2365,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2365",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "saveWorkEdit",
+          "line": 6847,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L6847",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "saveWorkSheetM",
+          "line": 1556,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1556",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F34",
+      "name": "신규 영업기회·유입·사업유형/공종",
+      "anchors": [
+        "golden/crm.html#openNewDeal",
+        "golden/crm.html#saveNewDeal",
+        "golden/mobile.html#addProspect"
+      ],
+      "read": "사이트/연락처/사업유형/공종/담당자",
+      "write": "opportunity_create",
+      "v2": "create v2 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "Site1:N·임시ID→서버UUID·origin/문의link·중복안내 부족",
+      "test": "동일 Site의 다른공사·연도 새Deal·이중submit·기존Deal 불변",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "openNewDeal",
+          "line": 6852,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L6852",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "saveNewDeal",
+          "line": 6873,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L6873",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "addProspect",
+          "line": 2112,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2112",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F35",
+      "name": "Deal Next 등록·기한·담당",
+      "anchors": [
+        "golden/crm.html#saveNextAction",
+        "golden/mobile.html#setNextAction",
+        "golden/mobile.html#nextSheet"
+      ],
+      "read": "nextActionObj/type/text/due/owner",
+      "write": "next_action",
+      "v2": "crm_next_add_scoped_v2 초안 보류",
+      "status": "CONTRACT_MISSING",
+      "gap": "현재 초안4유형만; 기존 상세유형/담당/추천/기간과 다름",
+      "test": "기존유형 전수·빈기한·타담당·UTC/KST 경계·기존 예약 유지",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "saveNextAction",
+          "line": 4406,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4406",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "setNextAction",
+          "line": 778,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L778",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "nextSheet",
+          "line": 1599,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1599",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F36",
+      "name": "Next 완료·연기·반복연기 위험",
+      "anchors": [
+        "golden/crm.html#completeNextAction",
+        "golden/crm.html#todoDelay",
+        "golden/crm.html#bumpPostpone",
+        "golden/mobile.html#todayCompleteM",
+        "golden/mobile.html#todayPostponeM"
+      ],
+      "read": "action ID/status/due/postpone history",
+      "write": "next_action_complete / next_action",
+      "v2": "complete 초안; postpone 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "반복연기 횟수·근거·완료activity·다음추천 유지",
+      "test": "완료후재조회·두번완료·연기사유/날짜/관리카드·lost응답",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "completeNextAction",
+          "line": 4409,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4409",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "todoDelay",
+          "line": 3393,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L3393",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "bumpPostpone",
+          "line": 2432,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2432",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "todayCompleteM",
+          "line": 2377,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2377",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "todayPostponeM",
+          "line": 2378,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2378",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F37",
+      "name": "활동·음성근거·실접촉/시스템갱신 구별",
+      "anchors": [
+        "golden/crm.html#addDetailActivity",
+        "golden/crm.html#logActivity",
+        "golden/crm.html#reasonRec",
+        "golden/mobile.html#voiceMemo",
+        "golden/mobile.html#saveCallMemoM"
+      ],
+      "read": "activities/timeline + meaningful contact",
+      "write": "activity / relationship_response",
+      "v2": "crm_activity_add_scoped_v2 초안 보류",
+      "status": "CONTRACT_MISSING",
+      "gap": "새private business_events만 쓰면 기존 activities 소비자가 못 읽음; 실제접촉 판정/음성 source 부족",
+      "test": "전화시도≠양방향접촉·음성미지원fallback·내용/결과/actor서버확정",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "addDetailActivity",
+          "line": 4401,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4401",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "logActivity",
+          "line": 7212,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7212",
+          "definitions": 2
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "reasonRec",
+          "line": 6756,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L6756",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "voiceMemo",
+          "line": 1798,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1798",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "saveCallMemoM",
+          "line": 1510,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1510",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F38",
+      "name": "활동/단계/배정 통합 Timeline",
+      "anchors": [
+        "golden/crm.html#unifiedTimeline",
+        "golden/crm.html#activityTimeline",
+        "golden/crm.html#stageHistoryHTML",
+        "golden/mobile.html#historySheetM"
+      ],
+      "read": "activity/stage/assignment/inquiry lineage 이력",
+      "write": "조회·필터/더보기",
+      "v2": "history scoped reader 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "최근30행 generic feed로 전체 Timeline 대체 불가",
+      "test": "종류별필터·시간정렬·서버재접속·타Opportunity 이력차단",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "unifiedTimeline",
+          "line": 4763,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4763",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "activityTimeline",
+          "line": 4822,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4822",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "stageHistoryHTML",
+          "line": 4260,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4260",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "historySheetM",
+          "line": 1518,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1518",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F39",
+      "name": "Deal Command Center·고객문제/다음행동",
+      "anchors": [
+        "golden/crm.html#dccDecorateDetail",
+        "golden/crm.html#dccRecommendations",
+        "golden/crm.html#dccAction",
+        "golden/crm.html#dccSaveWaitingContext"
+      ],
+      "read": "waiting_reason/recontact/입대의일정·최근접촉·이슈",
+      "write": "waiting_context + activity/next_action",
+      "v2": "v2 command-center projection/context 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "핵심상세 탭/카드·입력·위험해소 근거 보존",
+      "test": "무활동/Next없음/기한초과 카드→기존동작·저장후실제해소만",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "dccDecorateDetail",
+          "line": 7607,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7607",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "dccRecommendations",
+          "line": 7545,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7545",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "dccAction",
+          "line": 7554,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7554",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "dccSaveWaitingContext",
+          "line": 7568,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7568",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F40",
+      "name": "연락처 Opportunity별 조회",
+      "anchors": [
+        "golden/crm.html#siteContacts",
+        "golden/crm.html#contactDirectoryHTML",
+        "golden/mobile.html#siteContactsM"
+      ],
+      "read": "contacts/contact_assignments/person history",
+      "write": "조회 전용",
+      "v2": "crm_contacts_scoped_v2(uuid) 부분 구현",
+      "status": "CONTRACT_MISSING",
+      "gap": "RPC는 Deal 단일contact만 반환; 여러 연락처/직함/동의/history 필드는 추가 필요; 범위 내 부분 구현",
+      "test": "같은 Site 다른기회 연락처 혼입0·다중연락처 목록/대표·권한",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "siteContacts",
+          "line": 4274,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4274",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "contactDirectoryHTML",
+          "line": 4275,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4275",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "siteContactsM",
+          "line": 1477,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1477",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F41",
+      "name": "연락처 등록/수정·관리자 이동",
+      "anchors": [
+        "golden/crm.html#saveQuickContact",
+        "golden/crm.html#saveContactInfo",
+        "golden/crm.html#saveManagerMove",
+        "golden/mobile.html#saveContactM"
+      ],
+      "read": "contacts/people/contact_assignment",
+      "write": "contact_upsert / contact / contact_move",
+      "v2": "contact-write v2 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "직함/대표번호/개인휴대폰·재직기간·이동이력·동의 범위 보존",
+      "test": "이름같음 자동병합금지·이동시 양쪽현장/history·UUID+권한",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "saveQuickContact",
+          "line": 4321,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4321",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "saveContactInfo",
+          "line": 4301,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4301",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "saveManagerMove",
+          "line": 4341,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4341",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "saveContactM",
+          "line": 1508,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1508",
+          "definitions": 2
+        }
+      ]
+    },
+    {
+      "id": "F42",
+      "name": "전화·번호복사·카카오 외부앱",
+      "anchors": [
+        "golden/crm.html#contactDial",
+        "golden/crm.html#briefCall",
+        "golden/crm.html#contactKakao",
+        "golden/mobile.html#callContactM"
+      ],
+      "read": "선택 연락처/mobile/officeTel",
+      "write": "tel/sms/kakao URI / clipboard; CRM activity는 별도",
+      "v2": "scoped contacts + 기존 UI bridge",
+      "status": "CONTRACT_MISSING",
+      "gap": "외부앱열기와 발송/통화성공 분리·선택연락처 유지",
+      "test": "빈번호차단·호출 URI·앱복귀결과확인·단순열기로 성공기록0",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "contactDial",
+          "line": 4331,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4331",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "briefCall",
+          "line": 4935,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4935",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "contactKakao",
+          "line": 7219,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7219",
+          "definitions": 2
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "callContactM",
+          "line": 1504,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1504",
+          "definitions": 2
+        }
+      ]
+    },
+    {
+      "id": "F43",
+      "name": "관계관리 문구추천·개별 문자/카카오",
+      "anchors": [
+        "golden/crm.html#relationshipTemplates",
+        "golden/crm.html#openRelationshipMessage",
+        "golden/mobile.html#messageSheetM"
+      ],
+      "read": "stage/contact/work/Next/lastMeaningful/lastOutbound",
+      "write": "외부 앱 / clipboard + message_log",
+      "v2": "messaging scoped read/write 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "추천2~3개/내용편집/초안·실제발송확인·후속Next 유지",
+      "test": "단계/계절/견적템플릿·개별Deal맥락·copy≠sent",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "relationshipTemplates",
+          "line": 7164,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7164",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "openRelationshipMessage",
+          "line": 7200,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7200",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "messageSheetM",
+          "line": 2331,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2331",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F44",
+      "name": "수신동의/거부·시간대·빈도·피로도",
+      "anchors": [
+        "golden/crm.html#relationshipGuard",
+        "golden/crm.html#relV8Stats",
+        "golden/mobile.html#rmGuardM"
+      ],
+      "read": "consent/optout/messageLogs/personKey+phone/recent30",
+      "write": "contact_upsert + consent SQL; message_log",
+      "v2": "서버 consent/dispatch guard 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "클라이언트검사만 복제불가; 기존 안전규칙 동일하게 서버확정",
+      "test": "동의없음/거부/시간외/3무응답/30일3회/optout번호없음 차단",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "relationshipGuard",
+          "line": 7184,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7184",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "relV8Stats",
+          "line": 7342,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7342",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "rmGuardM",
+          "line": 2323,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2323",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F45",
+      "name": "메시지 로그·실발송 확인·성과",
+      "anchors": [
+        "golden/crm.html#relationshipConfirm",
+        "golden/crm.html#relV8MetricsHTML",
+        "golden/mobile.html#rmConfirmM"
+      ],
+      "read": "message_logs/response/stage_advanced",
+      "write": "message_log / relationship_response / message_stage_advanced",
+      "v2": "v2 message audit 계약 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "발송→응답→Next→Stage연결·실패/보류/자유작성등급·actorUUID 필요",
+      "test": "로그/활동/후속Next 일관성·실패시sent금지·반복확인 멱등",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "relationshipConfirm",
+          "line": 7213,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7213",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "relV8MetricsHTML",
+          "line": 7366,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7366",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "rmConfirmM",
+          "line": 2336,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2336",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F46",
+      "name": "관계온도·잠든고객·접촉보류",
+      "anchors": [
+        "golden/crm.html#relV8Insight",
+        "golden/crm.html#relV8Hold",
+        "golden/mobile.html#reactivationM"
+      ],
+      "read": "meaningful/outbound/attempts/hold/wake/score",
+      "write": "relationship_hold + next_action",
+      "v2": "relationship scoped aggregate/mutation 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "HOT/WARM/COOL/DORMANT·NextBestAction·holduntil 동일 계산",
+      "test": "회신으로 무응답리셋·장기보류 제외·실주후재활성·실접촉주기",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "relV8Insight",
+          "line": 7348,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7348",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "relV8Hold",
+          "line": 7365,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7365",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "reactivationM",
+          "line": 2369,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2369",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F47",
+      "name": "단계 체크리스트 자동/수동",
+      "anchors": [
+        "golden/crm.html#execGuideAuto",
+        "golden/crm.html#toggleExecGuide",
+        "golden/mobile.html#stageGuideAutoM",
+        "golden/mobile.html#toggleStageGuideM"
+      ],
+      "read": "stage + contacts/work/quote/Next/attachments/activities",
+      "write": "stage_check",
+      "v2": "checklist v2 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "자동항목 직접체크금지·필수미완료는경고·stage별정본 보존",
+      "test": "전stage자동조건·수동toggle·기존항목index·두기기동기화",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "execGuideAuto",
+          "line": 7317,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7317",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "toggleExecGuide",
+          "line": 7320,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7320",
+          "definitions": 2
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "stageGuideAutoM",
+          "line": 2455,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2455",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "toggleStageGuideM",
+          "line": 2458,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2458",
+          "definitions": 2
+        }
+      ]
+    },
+    {
+      "id": "F48",
+      "name": "고객 관계도·의사결정 역할",
+      "anchors": [
+        "golden/crm.html#execRelationPanel",
+        "golden/mobile.html#relationshipEditSheetM",
+        "golden/mobile.html#saveRelationshipM"
+      ],
+      "read": "여러 연락처 decision_role/relationship_status",
+      "write": "contact_relationship",
+      "v2": "relationship-map v2 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "contact 한명 축약금지·Deal/Contact 조합 권한 필요",
+      "test": "의사결정자/영향자/관계상태·동일사람다른현장 분리",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "execRelationPanel",
+          "line": 7244,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7244",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "relationshipEditSheetM",
+          "line": 2391,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2391",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "saveRelationshipM",
+          "line": 2392,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2392",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F49",
+      "name": "견적 Version·조정사유·계약비교",
+      "anchors": [
+        "golden/crm.html#execQuotePanel",
+        "golden/crm.html#saveExecQuoteVersion",
+        "golden/mobile.html#saveQuoteVersionM"
+      ],
+      "read": "quote_versions/current_quote/won_amount",
+      "write": "quote_version",
+      "v2": "quote-version v2 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "V1/V2/V3 append-only·발송시각·최종계약차액 보존",
+      "test": "동시추가versionunique·과거불변·빈사유·권한·PC모바일",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "execQuotePanel",
+          "line": 7246,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7246",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "saveExecQuoteVersion",
+          "line": 7248,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7248",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "saveQuoteVersionM",
+          "line": 2396,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2396",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F50",
+      "name": "담당자 인수인계 요약/이력",
+      "anchors": [
+        "golden/crm.html#execHandoverSummary",
+        "golden/crm.html#execHandoverPanel",
+        "golden/mobile.html#pickReassign"
+      ],
+      "read": "현재stage/금액/핵심고객/최근활동/Next",
+      "write": "assign + handover",
+      "v2": "assignment 초안에 handover 원자성 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "자동요약·이전/이후 담당·사유·조회권한 이관 필요",
+      "test": "재배정1번=인계기록1개·기존증거보존·실패시둘다rollback",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "execHandoverSummary",
+          "line": 7249,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7249",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "execHandoverPanel",
+          "line": 7250,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7250",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "pickReassign",
+          "line": 2399,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2399",
+          "definitions": 2
+        }
+      ]
+    },
+    {
+      "id": "F51",
+      "name": "첨부자료 준비/업로드/완료/실패",
+      "anchors": [
+        "golden/crm.html#uploadExecAttachment",
+        "golden/crm.html#saveExecAttachments",
+        "golden/mobile.html#uploadAttachmentM"
+      ],
+      "read": "attachment metadata / selected files",
+      "write": "attachment_prepare → signed upload PUT → attachment_complete",
+      "v2": "v2 Storage 계약 없음; 이번 단계 미실행",
+      "status": "CONTRACT_MISSING",
+      "gap": "20MB/분류/태그·privatebucket·사전권한/완료검증·부분실패필요",
+      "test": "타ID/path변조거절·파일존재·실패정리·메타데이터만브라우저",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "uploadExecAttachment",
+          "line": 7290,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7290",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "saveExecAttachments",
+          "line": 7291,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7291",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "uploadAttachmentM",
+          "line": 2423,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2423",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F52",
+      "name": "사진 Gallery·파일다운로드",
+      "anchors": [
+        "golden/crm.html#execAttachPanel",
+        "golden/crm.html#toggleExecAttachmentGallery",
+        "golden/mobile.html#openAttachmentGalleryM"
+      ],
+      "read": "attachments/signed download URL",
+      "write": "signed URL 발급 후 다운로드",
+      "v2": "v2 metadata/download authorization 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "gallery/원본/메모/태그·만료갱신·scope 필요; 공개URL 금지",
+      "test": "다른기회 파일0·만료URL재발급·20MB/사진표시·PC모바일",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "execAttachPanel",
+          "line": 7280,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7280",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "toggleExecAttachmentGallery",
+          "line": 7281,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7281",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "openAttachmentGalleryM",
+          "line": 2425,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2425",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F53",
+      "name": "즐겨찾기·최근 본/작업 현장",
+      "anchors": [
+        "golden/crm.html#execTouch",
+        "golden/crm.html#toggleExecFavorite",
+        "golden/mobile.html#quickSitesHTMLM"
+      ],
+      "read": "user_opportunity_states + favorite/last_viewed/worked",
+      "write": "favorite_set / opportunity_touch",
+      "v2": "AuthUID 기반 user-state v2 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "client user_key 신뢰제거하면서 빠른현장 기능 유지",
+      "test": "임의 user_key 거절·계정격리·PC모바일공유·타site혼입0",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "execTouch",
+          "line": 7294,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7294",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "toggleExecFavorite",
+          "line": 7295,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7295",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "quickSitesHTMLM",
+          "line": 2431,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2431",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F54",
+      "name": "CRM에게 물어보기·조건검색",
+      "anchors": [
+        "golden/crm.html#execAskQuery",
+        "golden/crm.html#runExecAsk",
+        "golden/mobile.html#crmAskM",
+        "golden/mobile.html#rSearch"
+      ],
+      "read": "loaded deals/contact/activity/Next에 조건검색",
+      "write": "조회 전용",
+      "v2": "scoped search/필수 read fields 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "자연어조건/20행·7행표시/검색조건 설명 유지·전체번들fallback 금지",
+      "test": "오늘전화/1억Next없음/이번주방문/미접촉/연락처누락/기술자문",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "execAskQuery",
+          "line": 7326,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7326",
+          "definitions": 2
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "runExecAsk",
+          "line": 7328,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L7328",
+          "definitions": 2
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "crmAskM",
+          "line": 2464,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2464",
+          "definitions": 2
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "rSearch",
+          "line": 1921,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1921",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F55",
+      "name": "고객 자산 Site1:N·관계 Timeline",
+      "anchors": [
+        "golden/crm.html#siteMasterData",
+        "golden/crm.html#siteTimeline",
+        "golden/crm.html#openSiteMaster"
+      ],
+      "read": "Site + linked deals/inquiries/contacts/history",
+      "write": "상세 이동; 신규기회 생성은 별도",
+      "v2": "Site projection v2 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "같은아파트 다른공사/연도/사업별Opportunity·미허용자식 제외",
+      "test": "Site한개에A/B기회·허용기회만·수주/공종장부/연락처이동",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "siteMasterData",
+          "line": 4169,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4169",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "siteTimeline",
+          "line": 4176,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4176",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "openSiteMaster",
+          "line": 4182,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4182",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F56",
+      "name": "중복현장 비교·연결 검토",
+      "anchors": [
+        "golden/crm.html#renderDups",
+        "golden/mobile.html#rDups",
+        "golden/mobile.html#dupSheet"
+      ],
+      "read": "B.dups / orgs/deals",
+      "write": "기존 UI 비교·제안/lineage_link 경로 별도검증",
+      "v2": "v2 duplicate-site reader/resolution 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "Golden의 병합전상태와 로컬 데이터정리센터는 별개 구현",
+      "test": "원본ID/이력/매출유지·같은site다른deal 자동병합0",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "renderDups",
+          "line": 4189,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4189",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "rDups",
+          "line": 2228,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2228",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "dupSheet",
+          "line": 2132,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2132",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F57",
+      "name": "공종 분석·대표공종/조합 drilldown",
+      "anchors": [
+        "golden/crm.html#workAnalysisData",
+        "golden/crm.html#paintWorkAnalysis",
+        "golden/crm.html#workAnalysisDrill"
+      ],
+      "read": "workItems/primaryWork + 금액/사업유형/기간",
+      "write": "필터/정렬/행 이동",
+      "v2": "work analytics v2 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "복합공종 합계 중복계수/대표 기준·미분류 항목 유지",
+      "test": "대표합계·복합조합·필터/금액/드릴다운원본 일치",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "workAnalysisData",
+          "line": 4139,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4139",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "paintWorkAnalysis",
+          "line": 4149,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4149",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "workAnalysisDrill",
+          "line": 4147,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4147",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F58",
+      "name": "담당자 실적/KPI/목표/근거",
+      "anchors": [
+        "golden/crm.html#performanceStats",
+        "golden/crm.html#perfKpiGroups",
+        "golden/crm.html#showPerfEvidence",
+        "golden/mobile.html#rPerf"
+      ],
+      "read": "본사 담당 Master+deal/inquiry/activities/stagehistory",
+      "write": "조회/필터/근거Drawer",
+      "v2": "KPI scoped contract 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "정본분모/목표/가중/수집중·branch제외·상담≠영업을 그대로",
+      "test": "동일fixture로점수/수주/미래/위험/누락일치·partial전체표시금지",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "performanceStats",
+          "line": 5125,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L5125",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "perfKpiGroups",
+          "line": 5138,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L5138",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "showPerfEvidence",
+          "line": 5162,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L5162",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "rPerf",
+          "line": 2267,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2267",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F59",
+      "name": "관리카드·SLA·무활동·Next없음",
+      "anchors": [
+        "golden/crm.html#managementStats",
+        "golden/crm.html#issueSet",
+        "golden/crm.html#paintMgmt",
+        "golden/mobile.html#rHyg"
+      ],
+      "read": "실제활동일/시스템갱신일/기한/필수항목",
+      "write": "드릴다운·별도 활동/Next/상태 Action",
+      "v2": "management projection v2 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "활동을 추가했다는 이유만으로이슈자동해결 금지·수주임박카드 유지",
+      "test": "미응대/3시간/90일/단계SLA/금액누락/무활동/Next 0 각각",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "managementStats",
+          "line": 5075,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L5075",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "issueSet",
+          "line": 5061,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L5061",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "paintMgmt",
+          "line": 5095,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L5095",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "rHyg",
+          "line": 2021,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2021",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F60",
+      "name": "대표보고·기간실적·의사결정",
+      "anchors": [
+        "golden/crm.html#paintReportV2",
+        "golden/crm.html#reportPeriodDeals",
+        "golden/crm.html#briefDecisionRows",
+        "golden/mobile.html#rRpt"
+      ],
+      "read": "실적/미래가능성/리스크/외부채널+기간",
+      "write": "조회/필터/원본 drilldown",
+      "v2": "executive report v2 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "경남은회사전체포함/담당자외부분리·미확정숫자표시 필요",
+      "test": "금액시점/수주수/고위험/대표결정 카드와원본일치",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "paintReportV2",
+          "line": 5312,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L5312",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "reportPeriodDeals",
+          "line": 5284,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L5284",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "briefDecisionRows",
+          "line": 5220,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L5220",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "rRpt",
+          "line": 2272,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2272",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F61",
+      "name": "주간/월간 브리핑·잔디연동 표기",
+      "anchors": [
+        "golden/crm.html#paintBriefV2",
+        "golden/crm.html#paintBriefMonth",
+        "golden/mobile.html#rBrief",
+        "golden/mobile.html#rMonthly"
+      ],
+      "read": "주간 stage history/지난주진행/이번주Next",
+      "write": "UI 조회; README/화면 자동잔디 표기, 서버워크플로 미확보",
+      "v2": "brief aggregate + 외부자동화계약 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "UI 자동생성 문구만으로 실제스케줄/발송 구현 확정 불가",
+      "test": "월요일경계·이력부족·담당필터; 외부발송은별도스테이징승인",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "paintBriefV2",
+          "line": 5233,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L5233",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "paintBriefMonth",
+          "line": 4120,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L4120",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "rBrief",
+          "line": 2210,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2210",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "rMonthly",
+          "line": 2220,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2220",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F62",
+      "name": "모바일 오늘 그룹·우선순위",
+      "anchors": [
+        "golden/mobile.html#buildToday",
+        "golden/mobile.html#rToday",
+        "golden/mobile.html#execTaskRowM"
+      ],
+      "read": "myDeals/myInquiries→new/overdue/visit/today 우선순위",
+      "write": "조회·상세로 이동",
+      "v2": "crm_today_scoped_v2 초안 보류",
+      "status": "CONTRACT_MISSING",
+      "gap": "초안tasks due bucket만; 신규배정/이번주방문/Next없음/정체규칙 누락",
+      "test": "new/overdue/visit/today 각 fixture·정렬60한도·문의Deal 분리",
+      "evidence": [
+        {
+          "file": "golden/mobile.html",
+          "name": "buildToday",
+          "line": 2348,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2348",
+          "definitions": 2
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "rToday",
+          "line": 2375,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2375",
+          "definitions": 2
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "execTaskRowM",
+          "line": 2367,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2367",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F63",
+      "name": "모바일 오늘 전화/완료/연기",
+      "anchors": [
+        "golden/mobile.html#startTodayCall",
+        "golden/mobile.html#resumeTodayCall",
+        "golden/mobile.html#todayCompleteM",
+        "golden/mobile.html#applyTodayPostponeM"
+      ],
+      "read": "오늘row→정확한Inquiry/Deal",
+      "write": "tel + activity/next_action_complete/inquiry_followup",
+      "v2": "업무원자 RPC+기존 Sheet 미연결",
+      "status": "CONTRACT_MISSING",
+      "gap": "앱복귀 통화결과·완료라벨·연기일수·맞는 parent version 유지",
+      "test": "통화취소/복귀/번호없음·문의응대vsDeal완료·연기다음날",
+      "evidence": [
+        {
+          "file": "golden/mobile.html",
+          "name": "startTodayCall",
+          "line": 1405,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1405",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "resumeTodayCall",
+          "line": 1406,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1406",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "todayCompleteM",
+          "line": 2377,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2377",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "applyTodayPostponeM",
+          "line": 2379,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2379",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F64",
+      "name": "모바일 방문동선·위치없음 처리",
+      "anchors": [
+        "golden/mobile.html#nearbyForM",
+        "golden/mobile.html#nearbyHTMLM",
+        "golden/crm.html#nearbySites"
+      ],
+      "read": "실제 lat/lng + 거리10km",
+      "write": "지도/상세 이동; 조회전용",
+      "v2": "scoped coordinates read 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "좌표없을때가짜거리 금지·유효좌표 권한범위 유지",
+      "test": "좌표없음/0/10km경계·타담당현장 미노출",
+      "evidence": [
+        {
+          "file": "golden/mobile.html",
+          "name": "nearbyForM",
+          "line": 2365,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2365",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "nearbyHTMLM",
+          "line": 2366,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2366",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "nearbySites",
+          "line": 3244,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L3244",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F65",
+      "name": "모바일 내 건·관리·Stage·종료·실적",
+      "anchors": [
+        "golden/mobile.html#rMine",
+        "golden/mobile.html#rCtrl",
+        "golden/mobile.html#rPipe",
+        "golden/mobile.html#rClosed",
+        "golden/mobile.html#rMy"
+      ],
+      "read": "DEALS/ADMIN + role/mode/state filters",
+      "write": "상세·배정·전환 Action",
+      "v2": "기존 mobile 어댑터 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "축약 mobile.html은 기존하단탭/Sheet/관리 drilldown과 다름",
+      "test": "rep/admin/dual·전체탭·분류·뒤로가기·같은ID 상세",
+      "evidence": [
+        {
+          "file": "golden/mobile.html",
+          "name": "rMine",
+          "line": 1427,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1427",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "rCtrl",
+          "line": 1829,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1829",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "rPipe",
+          "line": 1851,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1851",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "rClosed",
+          "line": 2166,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2166",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "rMy",
+          "line": 1812,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1812",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F66",
+      "name": "모바일 신규영업·검색·알림·설정",
+      "anchors": [
+        "golden/mobile.html#rProspect",
+        "golden/mobile.html#rSearch",
+        "golden/mobile.html#rNoti",
+        "golden/mobile.html#rSet"
+      ],
+      "read": "로컬 G/공지/검색/담당 Master",
+      "write": "opportunity_create·설정·로그아웃",
+      "v2": "v2 신규/알림/설정계약 미완성",
+      "status": "CONTRACT_MISSING",
+      "gap": "보이는버튼과 demo/placeholder 기능 구별필요; 숨겨서완료금지",
+      "test": "모든탭·신규저장·중복안내·명함/음성미지원·권한",
+      "evidence": [
+        {
+          "file": "golden/mobile.html",
+          "name": "rProspect",
+          "line": 2085,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2085",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "rSearch",
+          "line": 1921,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1921",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "rNoti",
+          "line": 2139,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2139",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "rSet",
+          "line": 2154,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2154",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F67",
+      "name": "전체 JSON/전환목록/모바일 JSON Export",
+      "anchors": [
+        "golden/crm.html#buildFullExport",
+        "golden/crm.html#exportFullDataJSON",
+        "golden/crm.html#exportPromotions",
+        "golden/mobile.html#exportJSON"
+      ],
+      "read": "B/LOCAL/WRITE_Q 또는 mobile state",
+      "write": "Blob 다운로드",
+      "v2": "전체 export admin+MFA audit 서버계약 미완료",
+      "status": "CONTRACT_MISSING",
+      "gap": "보안요건상 기존 무제한다운로드를 그대로 복제할수없음; 기능삭제 대신 범위/권한변경 명시승인 필요",
+      "test": "일반계정거절·admin AAL1거절·audit/컬럼범위/횟수; 이번발급금지",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "buildFullExport",
+          "line": 2490,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2490",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "exportFullDataJSON",
+          "line": 2497,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2497",
+          "definitions": 1
+        },
+        {
+          "file": "golden/crm.html",
+          "name": "exportPromotions",
+          "line": 6500,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L6500",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "exportJSON",
+          "line": 1211,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L1211",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "F68",
+      "name": "실적/설정의 저장값·진단/데모 경계",
+      "anchors": [
+        "golden/crm.html#runDiag",
+        "golden/mobile.html#rSet",
+        "golden/index.html#paintToggle"
+      ],
+      "read": "UI state/cache/demo flags",
+      "write": "localStorage/session/UI settings",
+      "v2": "정확한 기존key 이관·격리설계 필요",
+      "status": "TEST_MISSING",
+      "gap": "디자인/데모 화면은 실제업무 PASS에서 분리; existingcache/queue 노출금지",
+      "test": "?demo/preview/debug와실계정 구분·강제prodURL거절·계정별namespace",
+      "evidence": [
+        {
+          "file": "golden/crm.html",
+          "name": "runDiag",
+          "line": 2658,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/crm.html#L2658",
+          "definitions": 1
+        },
+        {
+          "file": "golden/mobile.html",
+          "name": "rSet",
+          "line": 2154,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/mobile.html#L2154",
+          "definitions": 1
+        },
+        {
+          "file": "golden/index.html",
+          "name": "paintToggle",
+          "line": 145,
+          "url": "https://github.com/poursolution/netform-crm/blob/6c1b570b8d79f908a7340292944acf96cecc9d68/index.html#L145",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "L01",
+      "name": "로컬 공통 crm-read.js v1 직접조회",
+      "anchors": [
+        "local/crm-read.js#read",
+        "local/crm.html#loadData"
+      ],
+      "read": "crm_read_bundle/_crmRead.version1 actorId scope",
+      "write": "조회 전용; n8nwrite 유지",
+      "v2": "기존4 v2와 계약 불일치",
+      "status": "CONTRACT_MISSING",
+      "gap": "Golden에는 파일없음; public v1candidate와 실제v2필드adapter 필요",
+      "test": "v1검증기를v2완료로오인금지·두화면 동일소스·failclosed",
+      "evidence": [
+        {
+          "file": "local/crm-read.js",
+          "name": "read",
+          "line": 19,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/crm-read.js:19",
+          "definitions": 1
+        },
+        {
+          "file": "local/crm.html",
+          "name": "loadData",
+          "line": 2886,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/crm.html:2886",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "L02",
+      "name": "로컬 오늘 홈 Action-first",
+      "anchors": [
+        "local/crm.html#paintTodayHome"
+      ],
+      "read": "미배정/지연/Next/관리개입/재접촉 data",
+      "write": "기존상세/메시지 Action",
+      "v2": "today-home scoped projection 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "Golden 기본dash와 로컬home 차이; 요청UX동결목록에 별도보존",
+      "test": "우선순위행→정확한상세·문제해결후카드·role별",
+      "evidence": [
+        {
+          "file": "local/crm.html",
+          "name": "paintTodayHome",
+          "line": 3909,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/crm.html:3909",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "L03",
+      "name": "로컬 영업사원 관리 People Control Tower",
+      "anchors": [
+        "local/crm.html#paintRepManagement",
+        "local/crm.html#repManagerSaveComment"
+      ],
+      "read": "본사6명 flow/부하/stage/댓글",
+      "write": "rep_manager_comment",
+      "v2": "rep-management v2 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "Golden에는관리센터미포함; 주차약속/코멘트점수제외 보존",
+      "test": "주차저장·진행+신규×2+연체×3+(오늘+미응대)×2·branch제외",
+      "evidence": [
+        {
+          "file": "local/crm.html",
+          "name": "paintRepManagement",
+          "line": 3844,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/crm.html:3844",
+          "definitions": 1
+        },
+        {
+          "file": "local/crm.html",
+          "name": "repManagerSaveComment",
+          "line": 3831,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/crm.html:3831",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "L04",
+      "name": "로컬 고객관리 지원/관리자 개입",
+      "anchors": [
+        "local/crm.html#repManagerInterventions",
+        "local/crm.html#repSupportRecord"
+      ],
+      "read": "고객관계/미응대/보류/지원요청",
+      "write": "customer_support_action",
+      "v2": "support-action v2 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "요청과 실제완료의 근거를분리·위임후실행정본 필요",
+      "test": "요청만으로완료0·실제통화/Next/입대의일정으로완료",
+      "evidence": [
+        {
+          "file": "local/crm.html",
+          "name": "repManagerInterventions",
+          "line": 3836,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/crm.html:3836",
+          "definitions": 1
+        },
+        {
+          "file": "local/crm.html",
+          "name": "repSupportRecord",
+          "line": 3866,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/crm.html:3866",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "L05",
+      "name": "로컬 Campaign/고객 실행센터 대상선택",
+      "anchors": [
+        "local/crm.html#campaignAllTargets",
+        "local/crm.html#campaignGuard",
+        "local/crm.html#campaignFilteredTargets"
+      ],
+      "read": "Stage/접촉/사업유형/공종/담당/지역/온도/contact/log",
+      "write": "다중선택·개인화 preview",
+      "v2": "campaign audience scoped contract 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "Golden엔개별메시징만; 연락처중복정규화/동의/범위필요",
+      "test": "같은번호다른Opportunity중복발송0·+82/수신거부/30일빈도",
+      "evidence": [
+        {
+          "file": "local/crm.html",
+          "name": "campaignAllTargets",
+          "line": 8010,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/crm.html:8010",
+          "definitions": 1
+        },
+        {
+          "file": "local/crm.html",
+          "name": "campaignGuard",
+          "line": 8009,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/crm.html:8009",
+          "definitions": 1
+        },
+        {
+          "file": "local/crm.html",
+          "name": "campaignFilteredTargets",
+          "line": 8011,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/crm.html:8011",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "L06",
+      "name": "로컬 Campaign 예약/발송/결과/분석",
+      "anchors": [
+        "local/crm.html#campaignQueue",
+        "local/crm.html#campaignHistoryPage",
+        "local/crm.html#campaignAnalysisPage"
+      ],
+      "read": "campaigns/message logs/template",
+      "write": "campaign_create → provider callback crm_campaign_delivery (SQL선언)",
+      "v2": "Edge/provider + v2 campaign API 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "실제provider/n8n구현미확보·browser sent위조금지",
+      "test": "queued/scheduled→실제callback후sent·중복receipt·실패·범위",
+      "evidence": [
+        {
+          "file": "local/crm.html",
+          "name": "campaignQueue",
+          "line": 8045,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/crm.html:8045",
+          "definitions": 1
+        },
+        {
+          "file": "local/crm.html",
+          "name": "campaignHistoryPage",
+          "line": 8048,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/crm.html:8048",
+          "definitions": 1
+        },
+        {
+          "file": "local/crm.html",
+          "name": "campaignAnalysisPage",
+          "line": 8050,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/crm.html:8050",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "L07",
+      "name": "로컬 개별 Contextual Composer/견적참조",
+      "anchors": [
+        "local/crm.html#contextualHeaderHTML"
+      ],
+      "read": "Deal+선택Contact+quoteVersion+attachments",
+      "write": "message_log context/참조",
+      "v2": "v2 context message contract 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "개별Drawer/모바일Sheet 유지·대량메뉴로이동금지",
+      "test": "현재Deal 유지·견적Version/파일참조·후속Next·실제확인",
+      "evidence": [
+        {
+          "file": "local/crm.html",
+          "name": "contextualHeaderHTML",
+          "line": 7958,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/crm.html:7958",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "L08",
+      "name": "로컬 확장관리 Pool/상태/재접촉",
+      "anchors": [
+        "local/crm.html#expansionRecords",
+        "local/crm.html#expansionSave",
+        "local/expansion-pool.js#render"
+      ],
+      "read": "expansion_pool/source ClosedWon/completion",
+      "write": "expansion_pool_upsert/update / crm_expansion_note",
+      "v2": "expansion scoped contract 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "Golden expansion Stage와상충; 로컬Pool제거금지·준공근거/30일추천보존",
+      "test": "과거Deal재오픈0·완료원본유지·상태이력/니즈·원담당",
+      "evidence": [
+        {
+          "file": "local/crm.html",
+          "name": "expansionRecords",
+          "line": 4446,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/crm.html:4446",
+          "definitions": 1
+        },
+        {
+          "file": "local/crm.html",
+          "name": "expansionSave",
+          "line": 4449,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/crm.html:4449",
+          "definitions": 1
+        },
+        {
+          "file": "local/expansion-pool.js",
+          "name": "render",
+          "line": 9,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/expansion-pool.js:9",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "L09",
+      "name": "로컬 견적실발송→새 Opportunity 원자전환",
+      "anchors": [
+        "local/expansion-flow.js#request",
+        "local/expansion-pool.js#convert"
+      ],
+      "read": "expansion_quote_dispatches/currentPool/신규견적",
+      "write": "expansion_quote_convert (동적 호출) / crm_expansion_finish SQL",
+      "v2": "실발송검증+원자convert v2 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "로컬README도서버분기없다고명시; 일반opportunity_create로대체금지",
+      "test": "provider신규견적증거·idempotency expansion:source·child sent/origin·기존Deal불변",
+      "evidence": [
+        {
+          "file": "local/expansion-flow.js",
+          "name": "request",
+          "line": 9,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/expansion-flow.js:9",
+          "definitions": 1
+        },
+        {
+          "file": "local/expansion-pool.js",
+          "name": "convert",
+          "line": 40,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/expansion-pool.js:40",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "L10",
+      "name": "로컬 데이터정리/중복센터 Preview/Apply",
+      "anchors": [
+        "local/data-cleanup-ui.js#render",
+        "local/data-cleanup.js#classify"
+      ],
+      "read": "crm_cleanup_state/preview + local candidates",
+      "write": "crm_cleanup_apply (동적 RPC transport)",
+      "v2": "v2 cleanup 승인/범위계약 미확인",
+      "status": "CONTRACT_MISSING",
+      "gap": "Golden dup와달리Site정본연결/문의활동병합/사람이동; 로컬SQL만",
+      "test": "fingerprint stale 거절·모든원본/매출/첨부/견적보존·재시도멱등",
+      "evidence": [
+        {
+          "file": "local/data-cleanup-ui.js",
+          "name": "render",
+          "line": 13,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/data-cleanup-ui.js:13",
+          "definitions": 1
+        },
+        {
+          "file": "local/data-cleanup.js",
+          "name": "classify",
+          "line": 10,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/data-cleanup.js:10",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "L11",
+      "name": "로컬 아파트스퀘어 운영상태 연결",
+      "anchors": [
+        "local/crm.html#asqProjectFor",
+        "local/crm.html#asqOperationHTML"
+      ],
+      "read": "asq_projects by site/opportunity/asq_project_id",
+      "write": "외부동기화 crm_asq_project_sync (SQL); 브라우저read-only",
+      "v2": "ASQ scoped reader/서버sync 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "CRM/ASQ정본경계·연결없으면대기·운영수정API를브라우저에주지않음",
+      "test": "잘못된link거절·동일site타사업비노출·읽기전용·https URL",
+      "evidence": [
+        {
+          "file": "local/crm.html",
+          "name": "asqProjectFor",
+          "line": 7885,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/crm.html:7885",
+          "definitions": 1
+        },
+        {
+          "file": "local/crm.html",
+          "name": "asqOperationHTML",
+          "line": 7890,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/crm.html:7890",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "L12",
+      "name": "로컬 구조화 Stage 전환/UI",
+      "anchors": [
+        "local/stage-transition.js#validate",
+        "local/stage-transition-ui.js#open"
+      ],
+      "read": "stage definitions/form/action plan",
+      "write": "기존 transition/close/next Action or structured SQL candidate",
+      "v2": "기존v2에는동일structured contract 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "필수입력/금액/기간/종료/Next의전체plan 보존·소형stageRPC로대체금지",
+      "test": "stage별필수값·모달UX/현재값·원자저장/충돌",
+      "evidence": [
+        {
+          "file": "local/stage-transition.js",
+          "name": "validate",
+          "line": 28,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/stage-transition.js:28",
+          "definitions": 1
+        },
+        {
+          "file": "local/stage-transition-ui.js",
+          "name": "open",
+          "line": 42,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/stage-transition-ui.js:42",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "L13",
+      "name": "로컬 담당자 eligibility/상담자 분리",
+      "anchors": [
+        "local/people-eligibility.js#eligible",
+        "local/owner-choice.js#mount",
+        "local/crm.html#inqCtlRecordAssignment"
+      ],
+      "read": "sales_people/users role/team + consultant vs salesowner",
+      "write": "inquiry_consultant / inquiry_assign / assign",
+      "v2": "UUID permission + eligibility 승인계약 없음",
+      "status": "CONTRACT_MISSING",
+      "gap": "표시이름을UUID권한으로대체하되 담당자분류/선택 UX 유지",
+      "test": "상담담당≠영업담당·본사6/지사/관리/비활성·승인만료",
+      "evidence": [
+        {
+          "file": "local/people-eligibility.js",
+          "name": "eligible",
+          "line": 13,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/people-eligibility.js:13",
+          "definitions": 1
+        },
+        {
+          "file": "local/owner-choice.js",
+          "name": "mount",
+          "line": 5,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/owner-choice.js:5",
+          "definitions": 1
+        },
+        {
+          "file": "local/crm.html",
+          "name": "inqCtlRecordAssignment",
+          "line": 7812,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/crm.html:7812",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "L14",
+      "name": "로컬 공용 Next Picker 8분류",
+      "anchors": [
+        "local/next-action-picker.js#html"
+      ],
+      "read": "공용분류→기존세부type/추천",
+      "write": "기존 next_action 세부유형 저장",
+      "v2": "새Next 초안4type은동등아님",
+      "status": "CONTRACT_MISSING",
+      "gap": "전화/메시지/이메일자료/방문미팅/견적준비/후속/입찰계약/기타 유지",
+      "test": "2차유형·기존사진메모예약불변·추천은클릭후만저장",
+      "evidence": [
+        {
+          "file": "local/next-action-picker.js",
+          "name": "html",
+          "line": 12,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/next-action-picker.js:12",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "L15",
+      "name": "로컬 금액쉼표/단위·파서",
+      "anchors": [
+        "local/money-input.js#parse"
+      ],
+      "read": "data-money 입력값",
+      "write": "기존 amount/quote/create payload 숫자",
+      "v2": "UI helper 보존 + 모든 금액계약 미연결",
+      "status": "TEST_MISSING",
+      "gap": "원/만원/붙여넣기·빈값·거짓0 금지; Golden과별도localoverlay",
+      "test": "모든금액폼/IME/붙여넣기·단위·validation·PC모바일",
+      "evidence": [
+        {
+          "file": "local/money-input.js",
+          "name": "parse",
+          "line": 5,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/money-input.js:5",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "L16",
+      "name": "로컬 메시지 호칭/실제직함",
+      "anchors": [
+        "local/message-salutation.js#address"
+      ],
+      "read": "site/name/role 실제 표시값",
+      "write": "템플릿생성; 기존이력 불변",
+      "v2": "UI helper 보존 + messaging adapter 미연결",
+      "status": "TEST_MISSING",
+      "gap": "직함없으면관계자님·관리소장추정금지·중복님금지",
+      "test": "개별/시즌/캠페인·누락현장/직함·기존문구불변",
+      "evidence": [
+        {
+          "file": "local/message-salutation.js",
+          "name": "address",
+          "line": 13,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/message-salutation.js:13",
+          "definitions": 1
+        }
+      ]
+    },
+    {
+      "id": "L17",
+      "name": "로컬 이슈 모달·ACK 강화",
+      "anchors": [
+        "local/issue-modal.js#open",
+        "local/write-ack.js#validate"
+      ],
+      "read": "현재이슈·서버operation/ID ACK",
+      "write": "기존 write ACK validation",
+      "v2": "v2 목적별 ACK와기존모달연결 미완성",
+      "status": "CONTRACT_MISSING",
+      "gap": "일반HTTP200/ok true로복합업무완료 오인금지",
+      "test": "operation/원본ID/새UUID/상태 exactACK·누락/실패·취소",
+      "evidence": [
+        {
+          "file": "local/issue-modal.js",
+          "name": "open",
+          "line": 35,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/issue-modal.js:35",
+          "definitions": 1
+        },
+        {
+          "file": "local/write-ack.js",
+          "name": "validate",
+          "line": 5,
+          "url": "C:/Users/Administrator/Documents/영업관리/netform-crm/write-ack.js:5",
+          "definitions": 1
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "LOCAL_CHAIN_CANDIDATE_AFTER_TRASH_RESTORE_NOT_APPLIED",
+  "prerequisites": [
+    "inquiry-trash-restore/20260906"
+  ],
+  "operations": [
+    "inquiry_purge"
+  ],
+  "intent": "admin_manual_irreversible_purge_only",
+  "blocked_meanings": [
+    "automatic_purge",
+    "non_admin_purge",
+    "linked_inquiry_purge"
+  ],
+  "rollback": "PRE_USE_ONLY_RUNTIME_PURGE_IS_IRREVERSIBLE",
+  "staging_ddl_dml_performed": false,
+  "files_sha256": {
+    "helper.sql": "a1abb31baf1e477ddb8ad04650b757c99587cd92d2e33595b810567245281ada",
+    "adapter-contract.js": "5082639c0f738458b51e92f68db7898b004d90d750d8b14a164b346095212a3b",
+    "contract.test.cjs": "70f8e95eb4db1b1ed0a62e54355a2be137c97756beb8bb1329a02d19e01d7862",
+    "db.test.cjs": "3f5cc6d50da86ff594cc0b970100f3f885508a342ee91d5b33f8684fd7d14001",
+    "ui.test.cjs": "684e90830365dd8d89e135c1593d0fe7f1a2578df7649f3635a8e9f0f0578e17",
+    "review.md": "cb615084a230c9817ecd4864a1bc26d2bf4ebe106a8261fecb6c9a1dd638313c",
+    "staging-apply-after-trash-restore.sql": "afc98ec5eccf88da1837c2a85032d3ff726264a9a8993ffeb44a9791ccadd759",
+    "rollback-after-trash-restore.sql": "c1815baf32beae46c88e1155848fe93df9c4aafb27b32254c62d172f795be115",
+    "operational-adapter.candidate.js": "0d67af4523cc684256d21da54e7c3546a5451b8354ef181f73132e383cd4b638",
+    "operational-overlay.candidate.js": "cee0dbc79eb114f439a1c58302c36454011cfac2263c7b0380e2e438d75fae32"
+  },
+  "source_sha256": {
+    "golden_pc": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "trash_manifest": "bb4e5280971da4a5703bf5f56391887c8e5320d01051edca1a8f39a62730aee7",
+    "inquiry_contracts": "e6f4e720cefb6335e78fe82cbbf7b1252820822ae6e69cdb1179636dda142784"
+  }
+}

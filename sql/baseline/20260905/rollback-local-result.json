@@ -1,0 +1,15 @@
+{
+  "localOnly": true,
+  "engine": "PGlite 0.3.14 / PG17.5",
+  "actualSupabaseTest": false,
+  "closeReopenPersistentDatabase": true,
+  "baselineCommitted": true,
+  "rollbackCommitted": true,
+  "metadataDiff": [],
+  "managedMetadataDiff": [],
+  "beforeTables": 0,
+  "afterBaselineTables": 18,
+  "afterRollbackTables": 0,
+  "baseline_sha256": "1899adacb05b6fe07d187f76fe2fc57a1842be40fb73a47fad9a951eb5e4de78",
+  "rollback_sha256": "62bfdd8948eb84cda8e74bf466bfc08d8490e17abfc41768f32363f5607c3c73"
+}

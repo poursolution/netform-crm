@@ -1,0 +1,1874 @@
+{
+  "catalog": [
+    {
+      "type": "n",
+      "source": "function set_updated_at()",
+      "target": "language plpgsql"
+    },
+    {
+      "type": "n",
+      "source": "function set_updated_at()",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "function stage_sla_days(text)",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "function metrics_operations(text)",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "function work_items_today(text)",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "function metrics_lost_breakdown(text)",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "function metrics_channel_flow()",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "function apply_business_change(uuid,text,text,text,text,text,date)",
+      "target": "language plpgsql"
+    },
+    {
+      "type": "n",
+      "source": "function apply_business_change(uuid,text,text,text,text,text,date)",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "function require_reason(text,text)",
+      "target": "language plpgsql"
+    },
+    {
+      "type": "n",
+      "source": "function require_reason(text,text)",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "function _done_today(text)",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "function today_tasks(text)",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "function today_counts()",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "function parse_responses(text)",
+      "target": "language plpgsql"
+    },
+    {
+      "type": "n",
+      "source": "function parse_responses(text)",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "function crm_bundle()",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "function crm_contact_upsert(jsonb)",
+      "target": "language plpgsql"
+    },
+    {
+      "type": "n",
+      "source": "function crm_contact_upsert(jsonb)",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "function crm_contact_move(jsonb)",
+      "target": "language plpgsql"
+    },
+    {
+      "type": "n",
+      "source": "function crm_contact_move(jsonb)",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "function crm_site_contacts(uuid)",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "function crm_opportunity_work_set(jsonb)",
+      "target": "language plpgsql"
+    },
+    {
+      "type": "n",
+      "source": "function crm_opportunity_work_set(jsonb)",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "table dashboard_state",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "table organizations",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "table contacts",
+      "target": "schema public"
+    },
+    {
+      "type": "a",
+      "source": "sequence stage_catalog_id_seq",
+      "target": "column id of table stage_catalog"
+    },
+    {
+      "type": "n",
+      "source": "sequence stage_catalog_id_seq",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "table stage_catalog",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "table deals",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "table notes",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "table activities",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "table inquiries",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "table next_actions",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "table users",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "table sites",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "table projects",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "table stage_history",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "table assignment_history",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "table audit_logs",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "view opportunities",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "table advisory_deals",
+      "target": "schema public"
+    },
+    {
+      "type": "a",
+      "source": "sequence business_history_id_seq",
+      "target": "column id of table business_history"
+    },
+    {
+      "type": "n",
+      "source": "sequence business_history_id_seq",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "table business_history",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "view v_assignee",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "view v_dup_org",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "view v_funnel",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "view v_kanban",
+      "target": "schema public"
+    },
+    {
+      "type": "n",
+      "source": "table contact_assignments",
+      "target": "schema public"
+    },
+    {
+      "type": "a",
+      "source": "default value for column updated_at of table dashboard_state",
+      "target": "column updated_at of table dashboard_state"
+    },
+    {
+      "type": "a",
+      "source": "default value for column id of table organizations",
+      "target": "column id of table organizations"
+    },
+    {
+      "type": "a",
+      "source": "default value for column custom_fields of table organizations",
+      "target": "column custom_fields of table organizations"
+    },
+    {
+      "type": "a",
+      "source": "default value for column created_at of table organizations",
+      "target": "column created_at of table organizations"
+    },
+    {
+      "type": "a",
+      "source": "default value for column updated_at of table organizations",
+      "target": "column updated_at of table organizations"
+    },
+    {
+      "type": "a",
+      "source": "default value for column id of table contacts",
+      "target": "column id of table contacts"
+    },
+    {
+      "type": "a",
+      "source": "default value for column emails of table contacts",
+      "target": "column emails of table contacts"
+    },
+    {
+      "type": "a",
+      "source": "default value for column custom_fields of table contacts",
+      "target": "column custom_fields of table contacts"
+    },
+    {
+      "type": "a",
+      "source": "default value for column created_at of table contacts",
+      "target": "column created_at of table contacts"
+    },
+    {
+      "type": "a",
+      "source": "default value for column updated_at of table contacts",
+      "target": "column updated_at of table contacts"
+    },
+    {
+      "type": "n",
+      "source": "default value for column id of table stage_catalog",
+      "target": "sequence stage_catalog_id_seq"
+    },
+    {
+      "type": "a",
+      "source": "default value for column id of table stage_catalog",
+      "target": "column id of table stage_catalog"
+    },
+    {
+      "type": "a",
+      "source": "default value for column brand of table stage_catalog",
+      "target": "column brand of table stage_catalog"
+    },
+    {
+      "type": "a",
+      "source": "default value for column id of table deals",
+      "target": "column id of table deals"
+    },
+    {
+      "type": "a",
+      "source": "default value for column source of table deals",
+      "target": "column source of table deals"
+    },
+    {
+      "type": "a",
+      "source": "default value for column list_fields of table deals",
+      "target": "column list_fields of table deals"
+    },
+    {
+      "type": "a",
+      "source": "default value for column created_at of table deals",
+      "target": "column created_at of table deals"
+    },
+    {
+      "type": "a",
+      "source": "default value for column updated_at of table deals",
+      "target": "column updated_at of table deals"
+    },
+    {
+      "type": "a",
+      "source": "default value for column id of table notes",
+      "target": "column id of table notes"
+    },
+    {
+      "type": "a",
+      "source": "default value for column created_at of table notes",
+      "target": "column created_at of table notes"
+    },
+    {
+      "type": "a",
+      "source": "default value for column id of table activities",
+      "target": "column id of table activities"
+    },
+    {
+      "type": "a",
+      "source": "default value for column detail of table activities",
+      "target": "column detail of table activities"
+    },
+    {
+      "type": "a",
+      "source": "default value for column occurred_at of table activities",
+      "target": "column occurred_at of table activities"
+    },
+    {
+      "type": "a",
+      "source": "default value for column id of table inquiries",
+      "target": "column id of table inquiries"
+    },
+    {
+      "type": "a",
+      "source": "default value for column raw of table inquiries",
+      "target": "column raw of table inquiries"
+    },
+    {
+      "type": "a",
+      "source": "default value for column created_at of table inquiries",
+      "target": "column created_at of table inquiries"
+    },
+    {
+      "type": "a",
+      "source": "default value for column id of table next_actions",
+      "target": "column id of table next_actions"
+    },
+    {
+      "type": "a",
+      "source": "default value for column action_type of table next_actions",
+      "target": "column action_type of table next_actions"
+    },
+    {
+      "type": "a",
+      "source": "default value for column status of table next_actions",
+      "target": "column status of table next_actions"
+    },
+    {
+      "type": "a",
+      "source": "default value for column created_at of table next_actions",
+      "target": "column created_at of table next_actions"
+    },
+    {
+      "type": "a",
+      "source": "default value for column updated_at of table next_actions",
+      "target": "column updated_at of table next_actions"
+    },
+    {
+      "type": "a",
+      "source": "default value for column user_id of table users",
+      "target": "column user_id of table users"
+    },
+    {
+      "type": "a",
+      "source": "default value for column role of table users",
+      "target": "column role of table users"
+    },
+    {
+      "type": "a",
+      "source": "default value for column active of table users",
+      "target": "column active of table users"
+    },
+    {
+      "type": "a",
+      "source": "default value for column created_at of table users",
+      "target": "column created_at of table users"
+    },
+    {
+      "type": "a",
+      "source": "default value for column updated_at of table users",
+      "target": "column updated_at of table users"
+    },
+    {
+      "type": "a",
+      "source": "default value for column site_id of table sites",
+      "target": "column site_id of table sites"
+    },
+    {
+      "type": "a",
+      "source": "default value for column created_at of table sites",
+      "target": "column created_at of table sites"
+    },
+    {
+      "type": "a",
+      "source": "default value for column lifecycle_status of table deals",
+      "target": "column lifecycle_status of table deals"
+    },
+    {
+      "type": "a",
+      "source": "default value for column version of table deals",
+      "target": "column version of table deals"
+    },
+    {
+      "type": "a",
+      "source": "default value for column updated_at of table inquiries",
+      "target": "column updated_at of table inquiries"
+    },
+    {
+      "type": "a",
+      "source": "default value for column project_id of table projects",
+      "target": "column project_id of table projects"
+    },
+    {
+      "type": "a",
+      "source": "default value for column delivery_stage of table projects",
+      "target": "column delivery_stage of table projects"
+    },
+    {
+      "type": "a",
+      "source": "default value for column created_at of table projects",
+      "target": "column created_at of table projects"
+    },
+    {
+      "type": "a",
+      "source": "default value for column updated_at of table projects",
+      "target": "column updated_at of table projects"
+    },
+    {
+      "type": "a",
+      "source": "default value for column id of table stage_history",
+      "target": "column id of table stage_history"
+    },
+    {
+      "type": "a",
+      "source": "default value for column changed_at of table stage_history",
+      "target": "column changed_at of table stage_history"
+    },
+    {
+      "type": "a",
+      "source": "default value for column id of table assignment_history",
+      "target": "column id of table assignment_history"
+    },
+    {
+      "type": "a",
+      "source": "default value for column changed_at of table assignment_history",
+      "target": "column changed_at of table assignment_history"
+    },
+    {
+      "type": "a",
+      "source": "default value for column event_id of table audit_logs",
+      "target": "column event_id of table audit_logs"
+    },
+    {
+      "type": "a",
+      "source": "default value for column created_at of table audit_logs",
+      "target": "column created_at of table audit_logs"
+    },
+    {
+      "type": "a",
+      "source": "default value for column service_history of table deals",
+      "target": "column service_history of table deals"
+    },
+    {
+      "type": "a",
+      "source": "default value for column advisory_id of table advisory_deals",
+      "target": "column advisory_id of table advisory_deals"
+    },
+    {
+      "type": "a",
+      "source": "default value for column owner_kind of table advisory_deals",
+      "target": "column owner_kind of table advisory_deals"
+    },
+    {
+      "type": "a",
+      "source": "default value for column status of table advisory_deals",
+      "target": "column status of table advisory_deals"
+    },
+    {
+      "type": "a",
+      "source": "default value for column raw of table advisory_deals",
+      "target": "column raw of table advisory_deals"
+    },
+    {
+      "type": "a",
+      "source": "default value for column created_at of table advisory_deals",
+      "target": "column created_at of table advisory_deals"
+    },
+    {
+      "type": "a",
+      "source": "default value for column updated_at of table advisory_deals",
+      "target": "column updated_at of table advisory_deals"
+    },
+    {
+      "type": "a",
+      "source": "default value for column business_history of table deals",
+      "target": "column business_history of table deals"
+    },
+    {
+      "type": "n",
+      "source": "default value for column id of table business_history",
+      "target": "sequence business_history_id_seq"
+    },
+    {
+      "type": "a",
+      "source": "default value for column id of table business_history",
+      "target": "column id of table business_history"
+    },
+    {
+      "type": "a",
+      "source": "default value for column reason_source of table business_history",
+      "target": "column reason_source of table business_history"
+    },
+    {
+      "type": "a",
+      "source": "default value for column changed_at of table business_history",
+      "target": "column changed_at of table business_history"
+    },
+    {
+      "type": "a",
+      "source": "default value for column role of table contacts",
+      "target": "column role of table contacts"
+    },
+    {
+      "type": "a",
+      "source": "default value for column id of table contact_assignments",
+      "target": "column id of table contact_assignments"
+    },
+    {
+      "type": "a",
+      "source": "default value for column status of table contact_assignments",
+      "target": "column status of table contact_assignments"
+    },
+    {
+      "type": "a",
+      "source": "default value for column created_at of table contact_assignments",
+      "target": "column created_at of table contact_assignments"
+    },
+    {
+      "type": "a",
+      "source": "default value for column manager_role of table deals",
+      "target": "column manager_role of table deals"
+    },
+    {
+      "type": "a",
+      "source": "default value for column work_items of table deals",
+      "target": "column work_items of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column id of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column brand of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column stage_code of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column assignee_name of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column amount of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column closed_at of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column created_at of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column updated_at of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column site_id of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column owner_id of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column origin_inquiry_id of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column lifecycle_status of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column outcome of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column wake_up_at of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column amount_unknown_reason of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column stage_entered_at of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column last_activity_at of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column last_customer_contact_at of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column opened_at of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view opportunities",
+      "target": "column version of table deals"
+    },
+    {
+      "type": "i",
+      "source": "rule _RETURN on view opportunities",
+      "target": "view opportunities"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view v_assignee",
+      "target": "column stage_code of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view v_assignee",
+      "target": "column stage_group of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view v_assignee",
+      "target": "column assignee_name of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view v_assignee",
+      "target": "column amount of table deals"
+    },
+    {
+      "type": "i",
+      "source": "rule _RETURN on view v_assignee",
+      "target": "view v_assignee"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view v_dup_org",
+      "target": "column id of table organizations"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view v_dup_org",
+      "target": "column name of table organizations"
+    },
+    {
+      "type": "i",
+      "source": "rule _RETURN on view v_dup_org",
+      "target": "view v_dup_org"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view v_funnel",
+      "target": "column brand of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view v_funnel",
+      "target": "column stage_code of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view v_funnel",
+      "target": "column stage_raw of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view v_funnel",
+      "target": "column stage_group of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view v_funnel",
+      "target": "column amount of table deals"
+    },
+    {
+      "type": "i",
+      "source": "rule _RETURN on view v_funnel",
+      "target": "view v_funnel"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view v_kanban",
+      "target": "column code of table stage_catalog"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view v_kanban",
+      "target": "column display_group of table stage_catalog"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view v_kanban",
+      "target": "column brand of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view v_kanban",
+      "target": "column stage_code of table deals"
+    },
+    {
+      "type": "n",
+      "source": "rule _RETURN on view v_kanban",
+      "target": "column amount of table deals"
+    },
+    {
+      "type": "i",
+      "source": "rule _RETURN on view v_kanban",
+      "target": "view v_kanban"
+    }
+  ],
+  "body_review": [
+    {
+      "source": "_done_today(text)",
+      "target": "activities",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "apply_business_change(uuid,text,text,text,text,text,date)",
+      "target": "deals",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "apply_business_change(uuid,text,text,text,text,text,date)",
+      "target": "business_history",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "apply_business_change(uuid,text,text,text,text,text,date)",
+      "target": "next_actions",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_bundle()",
+      "target": "deals",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_bundle()",
+      "target": "stage_catalog",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_bundle()",
+      "target": "organizations",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_bundle()",
+      "target": "next_actions",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_bundle()",
+      "target": "inquiries",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_bundle()",
+      "target": "v_dup_org",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_bundle()",
+      "target": "notes",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_bundle()",
+      "target": "users",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_bundle()",
+      "target": "crm_site_contacts(uuid)",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_bundle()",
+      "target": "parse_responses(text)",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_contact_move(jsonb)",
+      "target": "contact_assignments",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_contact_move(jsonb)",
+      "target": "deals",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_contact_move(jsonb)",
+      "target": "organizations",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_contact_move(jsonb)",
+      "target": "contacts",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_contact_upsert(jsonb)",
+      "target": "deals",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_contact_upsert(jsonb)",
+      "target": "contacts",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_contact_upsert(jsonb)",
+      "target": "contact_assignments",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_opportunity_work_set(jsonb)",
+      "target": "deals",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_opportunity_work_set(jsonb)",
+      "target": "activities",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_opportunity_work_set(jsonb)",
+      "target": "audit_logs",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_site_contacts(uuid)",
+      "target": "deals",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_site_contacts(uuid)",
+      "target": "contacts",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "crm_site_contacts(uuid)",
+      "target": "contact_assignments",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "metrics_channel_flow()",
+      "target": "deals",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "metrics_lost_breakdown(text)",
+      "target": "deals",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "metrics_operations(text)",
+      "target": "deals",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "metrics_operations(text)",
+      "target": "inquiries",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "metrics_operations(text)",
+      "target": "next_actions",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "metrics_operations(text)",
+      "target": "stage_sla_days(text)",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "today_counts()",
+      "target": "today_tasks(text)",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "today_tasks(text)",
+      "target": "_done_today(text)",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "today_tasks(text)",
+      "target": "deals",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "today_tasks(text)",
+      "target": "organizations",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "today_tasks(text)",
+      "target": "contacts",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "today_tasks(text)",
+      "target": "inquiries",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "work_items_today(text)",
+      "target": "inquiries",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "work_items_today(text)",
+      "target": "next_actions",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "work_items_today(text)",
+      "target": "deals",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    },
+    {
+      "source": "work_items_today(text)",
+      "target": "organizations",
+      "evidence": "manual review of captured function body (not pg_depend guarantee)"
+    }
+  ],
+  "constraints": [
+    {
+      "table": "activities",
+      "name": "activities_deal_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES deals(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "activities",
+      "name": "activities_organization_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "activities",
+      "name": "activities_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table": "advisory_deals",
+      "name": "advisory_deals_owner_kind_check",
+      "type": "c",
+      "definition": "CHECK (owner_kind = ANY (ARRAY['내부'::text, '외부'::text, '미지정'::text]))"
+    },
+    {
+      "table": "advisory_deals",
+      "name": "advisory_deals_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (advisory_id)"
+    },
+    {
+      "table": "advisory_deals",
+      "name": "advisory_deals_site_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (site_id) REFERENCES sites(site_id) ON DELETE SET NULL"
+    },
+    {
+      "table": "assignment_history",
+      "name": "assignment_history_inquiry_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (inquiry_id) REFERENCES inquiries(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "assignment_history",
+      "name": "assignment_history_opportunity_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (opportunity_id) REFERENCES deals(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "assignment_history",
+      "name": "assignment_history_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table": "audit_logs",
+      "name": "audit_logs_actor_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (actor_id) REFERENCES users(user_id) ON DELETE SET NULL"
+    },
+    {
+      "table": "audit_logs",
+      "name": "audit_logs_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (event_id)"
+    },
+    {
+      "table": "audit_logs",
+      "name": "audit_logs_write_id_key",
+      "type": "u",
+      "definition": "UNIQUE (write_id)"
+    },
+    {
+      "table": "business_history",
+      "name": "business_history_deal_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES deals(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "business_history",
+      "name": "business_history_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table": "contact_assignments",
+      "name": "contact_assignments_person_key_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (person_key) REFERENCES contacts(person_key)"
+    },
+    {
+      "table": "contact_assignments",
+      "name": "contact_assignments_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table": "contacts",
+      "name": "contacts_organization_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "contacts",
+      "name": "contacts_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table": "contacts",
+      "name": "contacts_relate_id_key",
+      "type": "u",
+      "definition": "UNIQUE (relate_id)"
+    },
+    {
+      "table": "dashboard_state",
+      "name": "dashboard_state_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table": "deals",
+      "name": "deals_contact_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (contact_id) REFERENCES contacts(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "deals",
+      "name": "deals_lifecycle_status_check",
+      "type": "c",
+      "definition": "CHECK (lifecycle_status = ANY (ARRAY['active'::text, 'parked'::text, 'closed'::text]))"
+    },
+    {
+      "table": "deals",
+      "name": "deals_lost_kind_check",
+      "type": "c",
+      "definition": "CHECK (lost_kind IS NULL OR (lost_kind = ANY (ARRAY['뺏김'::text, '놓침'::text, '기타'::text])))"
+    },
+    {
+      "table": "deals",
+      "name": "deals_organization_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "deals",
+      "name": "deals_origin_inquiry_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (origin_inquiry_id) REFERENCES inquiries(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "deals",
+      "name": "deals_outcome_check",
+      "type": "c",
+      "definition": "CHECK (outcome IS NULL OR (outcome = ANY (ARRAY['won'::text, 'lost'::text, 'badfit'::text, 'nocontact'::text])))"
+    },
+    {
+      "table": "deals",
+      "name": "deals_owner_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (owner_id) REFERENCES users(user_id) ON DELETE SET NULL"
+    },
+    {
+      "table": "deals",
+      "name": "deals_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table": "deals",
+      "name": "deals_relate_id_key",
+      "type": "u",
+      "definition": "UNIQUE (relate_id)"
+    },
+    {
+      "table": "deals",
+      "name": "deals_site_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (site_id) REFERENCES sites(site_id) ON DELETE SET NULL"
+    },
+    {
+      "table": "deals",
+      "name": "deals_work_items_array",
+      "type": "c",
+      "definition": "CHECK (jsonb_typeof(work_items) = 'array'::text)"
+    },
+    {
+      "table": "deals",
+      "name": "deals_work_scope_consistent",
+      "type": "c",
+      "definition": "CHECK (jsonb_array_length(work_items) = 0 AND primary_work IS NULL AND work_scope_type IS NULL AND work_summary IS NULL OR jsonb_array_length(work_items) = 1 AND work_scope_type = 'single'::text AND NULLIF(primary_work, ''::text) IS NOT NULL AND work_items ? primary_work AND NULLIF(work_summary, ''::text) IS NOT NULL OR jsonb_array_length(work_items) >= 2 AND work_scope_type = 'multi'::text AND NULLIF(primary_work, ''::text) IS NOT NULL AND work_items ? primary_work AND NULLIF(work_summary, ''::text) IS NOT NULL)"
+    },
+    {
+      "table": "inquiries",
+      "name": "inquiries_assigned_to_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (assigned_to) REFERENCES users(user_id) ON DELETE SET NULL"
+    },
+    {
+      "table": "inquiries",
+      "name": "inquiries_deal_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES deals(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "inquiries",
+      "name": "inquiries_opportunity_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (opportunity_id) REFERENCES deals(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "inquiries",
+      "name": "inquiries_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table": "inquiries",
+      "name": "inquiries_site_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (site_id) REFERENCES sites(site_id) ON DELETE SET NULL"
+    },
+    {
+      "table": "next_actions",
+      "name": "next_action_one_owner",
+      "type": "c",
+      "definition": "CHECK (deal_id IS NOT NULL AND inquiry_id IS NULL OR deal_id IS NULL AND inquiry_id IS NOT NULL)"
+    },
+    {
+      "table": "next_actions",
+      "name": "next_actions_deal_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES deals(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "next_actions",
+      "name": "next_actions_inquiry_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (inquiry_id) REFERENCES inquiries(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "next_actions",
+      "name": "next_actions_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table": "next_actions",
+      "name": "next_actions_source_activity_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (source_activity_id) REFERENCES activities(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "next_actions",
+      "name": "next_actions_status_check",
+      "type": "c",
+      "definition": "CHECK (status = ANY (ARRAY['open'::text, 'completed'::text, 'cancelled'::text]))"
+    },
+    {
+      "table": "notes",
+      "name": "notes_deal_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (deal_id) REFERENCES deals(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "notes",
+      "name": "notes_organization_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "notes",
+      "name": "notes_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table": "notes",
+      "name": "notes_relate_id_key",
+      "type": "u",
+      "definition": "UNIQUE (relate_id)"
+    },
+    {
+      "table": "organizations",
+      "name": "organizations_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table": "organizations",
+      "name": "organizations_relate_id_key",
+      "type": "u",
+      "definition": "UNIQUE (relate_id)"
+    },
+    {
+      "table": "projects",
+      "name": "projects_delivery_stage_check",
+      "type": "c",
+      "definition": "CHECK (delivery_stage = ANY (ARRAY['contract_signed'::text, 'preconstruction'::text, 'construction'::text, 'completion'::text, 'closed'::text]))"
+    },
+    {
+      "table": "projects",
+      "name": "projects_opportunity_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (opportunity_id) REFERENCES deals(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "projects",
+      "name": "projects_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (project_id)"
+    },
+    {
+      "table": "projects",
+      "name": "projects_site_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (site_id) REFERENCES sites(site_id) ON DELETE SET NULL"
+    },
+    {
+      "table": "sites",
+      "name": "sites_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (site_id)"
+    },
+    {
+      "table": "stage_catalog",
+      "name": "stage_catalog_brand_code_key",
+      "type": "u",
+      "definition": "UNIQUE (brand, code)"
+    },
+    {
+      "table": "stage_catalog",
+      "name": "stage_catalog_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table": "stage_history",
+      "name": "stage_history_actor_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (actor_id) REFERENCES users(user_id) ON DELETE SET NULL"
+    },
+    {
+      "table": "stage_history",
+      "name": "stage_history_inquiry_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (inquiry_id) REFERENCES inquiries(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "stage_history",
+      "name": "stage_history_opportunity_id_fkey",
+      "type": "f",
+      "definition": "FOREIGN KEY (opportunity_id) REFERENCES deals(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "stage_history",
+      "name": "stage_history_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table": "users",
+      "name": "users_name_key",
+      "type": "u",
+      "definition": "UNIQUE (name)"
+    },
+    {
+      "table": "users",
+      "name": "users_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (user_id)"
+    },
+    {
+      "table": "users",
+      "name": "users_role_check",
+      "type": "c",
+      "definition": "CHECK (role = ANY (ARRAY['rep'::text, 'admin'::text, 'dual'::text, 'viewer'::text]))"
+    }
+  ],
+  "indexes": [
+    {
+      "table": "activities",
+      "name": "activities_pkey",
+      "definition": "CREATE UNIQUE INDEX activities_pkey ON public.activities USING btree (id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "activities",
+      "name": "idx_act_actor_time",
+      "definition": "CREATE INDEX idx_act_actor_time ON public.activities USING btree (actor_email, occurred_at)",
+      "constraint_owned": false
+    },
+    {
+      "table": "activities",
+      "name": "idx_act_deal",
+      "definition": "CREATE INDEX idx_act_deal ON public.activities USING btree (deal_id)",
+      "constraint_owned": false
+    },
+    {
+      "table": "advisory_deals",
+      "name": "advisory_deals_pkey",
+      "definition": "CREATE UNIQUE INDEX advisory_deals_pkey ON public.advisory_deals USING btree (advisory_id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "advisory_deals",
+      "name": "idx_adv_owner",
+      "definition": "CREATE INDEX idx_adv_owner ON public.advisory_deals USING btree (owner_name)",
+      "constraint_owned": false
+    },
+    {
+      "table": "advisory_deals",
+      "name": "idx_adv_site",
+      "definition": "CREATE INDEX idx_adv_site ON public.advisory_deals USING btree (site_id)",
+      "constraint_owned": false
+    },
+    {
+      "table": "advisory_deals",
+      "name": "idx_adv_status",
+      "definition": "CREATE INDEX idx_adv_status ON public.advisory_deals USING btree (status)",
+      "constraint_owned": false
+    },
+    {
+      "table": "advisory_deals",
+      "name": "uq_adv_src",
+      "definition": "CREATE UNIQUE INDEX uq_adv_src ON public.advisory_deals USING btree (source_sheet, source_row)",
+      "constraint_owned": false
+    },
+    {
+      "table": "assignment_history",
+      "name": "assignment_history_pkey",
+      "definition": "CREATE UNIQUE INDEX assignment_history_pkey ON public.assignment_history USING btree (id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "assignment_history",
+      "name": "idx_assign_hist_opp",
+      "definition": "CREATE INDEX idx_assign_hist_opp ON public.assignment_history USING btree (opportunity_id, changed_at)",
+      "constraint_owned": false
+    },
+    {
+      "table": "audit_logs",
+      "name": "audit_logs_pkey",
+      "definition": "CREATE UNIQUE INDEX audit_logs_pkey ON public.audit_logs USING btree (event_id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "audit_logs",
+      "name": "audit_logs_write_id_key",
+      "definition": "CREATE UNIQUE INDEX audit_logs_write_id_key ON public.audit_logs USING btree (write_id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "audit_logs",
+      "name": "idx_audit_entity",
+      "definition": "CREATE INDEX idx_audit_entity ON public.audit_logs USING btree (entity_type, entity_id, created_at)",
+      "constraint_owned": false
+    },
+    {
+      "table": "business_history",
+      "name": "business_history_pkey",
+      "definition": "CREATE UNIQUE INDEX business_history_pkey ON public.business_history USING btree (id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "business_history",
+      "name": "idx_bizhist_deal",
+      "definition": "CREATE INDEX idx_bizhist_deal ON public.business_history USING btree (deal_id, changed_at DESC)",
+      "constraint_owned": false
+    },
+    {
+      "table": "contact_assignments",
+      "name": "contact_assign_open",
+      "definition": "CREATE UNIQUE INDEX contact_assign_open ON public.contact_assignments USING btree (person_key, site_name) WHERE (ended_at IS NULL)",
+      "constraint_owned": false
+    },
+    {
+      "table": "contact_assignments",
+      "name": "contact_assignments_pkey",
+      "definition": "CREATE UNIQUE INDEX contact_assignments_pkey ON public.contact_assignments USING btree (id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "contacts",
+      "name": "contacts_person_key_uq",
+      "definition": "CREATE UNIQUE INDEX contacts_person_key_uq ON public.contacts USING btree (person_key)",
+      "constraint_owned": false
+    },
+    {
+      "table": "contacts",
+      "name": "contacts_pkey",
+      "definition": "CREATE UNIQUE INDEX contacts_pkey ON public.contacts USING btree (id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "contacts",
+      "name": "contacts_relate_id_key",
+      "definition": "CREATE UNIQUE INDEX contacts_relate_id_key ON public.contacts USING btree (relate_id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "contacts",
+      "name": "idx_contact_org",
+      "definition": "CREATE INDEX idx_contact_org ON public.contacts USING btree (organization_id)",
+      "constraint_owned": false
+    },
+    {
+      "table": "contacts",
+      "name": "idx_contact_phone",
+      "definition": "CREATE INDEX idx_contact_phone ON public.contacts USING btree (phone)",
+      "constraint_owned": false
+    },
+    {
+      "table": "dashboard_state",
+      "name": "dashboard_state_pkey",
+      "definition": "CREATE UNIQUE INDEX dashboard_state_pkey ON public.dashboard_state USING btree (id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "deals",
+      "name": "deals_pkey",
+      "definition": "CREATE UNIQUE INDEX deals_pkey ON public.deals USING btree (id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "deals",
+      "name": "deals_primary_work_idx",
+      "definition": "CREATE INDEX deals_primary_work_idx ON public.deals USING btree (primary_work) WHERE (primary_work IS NOT NULL)",
+      "constraint_owned": false
+    },
+    {
+      "table": "deals",
+      "name": "deals_relate_id_key",
+      "definition": "CREATE UNIQUE INDEX deals_relate_id_key ON public.deals USING btree (relate_id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "deals",
+      "name": "deals_work_items_gin",
+      "definition": "CREATE INDEX deals_work_items_gin ON public.deals USING gin (work_items)",
+      "constraint_owned": false
+    },
+    {
+      "table": "deals",
+      "name": "idx_deal_assignee",
+      "definition": "CREATE INDEX idx_deal_assignee ON public.deals USING btree (assignee_email)",
+      "constraint_owned": false
+    },
+    {
+      "table": "deals",
+      "name": "idx_deal_brand_stage",
+      "definition": "CREATE INDEX idx_deal_brand_stage ON public.deals USING btree (brand, stage_code)",
+      "constraint_owned": false
+    },
+    {
+      "table": "deals",
+      "name": "idx_deal_next",
+      "definition": "CREATE INDEX idx_deal_next ON public.deals USING btree (next_action_date)",
+      "constraint_owned": false
+    },
+    {
+      "table": "deals",
+      "name": "idx_deal_org",
+      "definition": "CREATE INDEX idx_deal_org ON public.deals USING btree (organization_id)",
+      "constraint_owned": false
+    },
+    {
+      "table": "deals",
+      "name": "idx_deals_current_biz",
+      "definition": "CREATE INDEX idx_deals_current_biz ON public.deals USING btree (current_business)",
+      "constraint_owned": false
+    },
+    {
+      "table": "deals",
+      "name": "idx_deals_lost_kind",
+      "definition": "CREATE INDEX idx_deals_lost_kind ON public.deals USING btree (lost_kind) WHERE (lost_kind IS NOT NULL)",
+      "constraint_owned": false
+    },
+    {
+      "table": "deals",
+      "name": "idx_deals_origin",
+      "definition": "CREATE INDEX idx_deals_origin ON public.deals USING btree (origin_channel)",
+      "constraint_owned": false
+    },
+    {
+      "table": "deals",
+      "name": "idx_deals_origin_biz",
+      "definition": "CREATE INDEX idx_deals_origin_biz ON public.deals USING btree (origin_business)",
+      "constraint_owned": false
+    },
+    {
+      "table": "deals",
+      "name": "idx_deals_outcome",
+      "definition": "CREATE INDEX idx_deals_outcome ON public.deals USING btree (outcome)",
+      "constraint_owned": false
+    },
+    {
+      "table": "deals",
+      "name": "idx_deals_owner",
+      "definition": "CREATE INDEX idx_deals_owner ON public.deals USING btree (owner_id)",
+      "constraint_owned": false
+    },
+    {
+      "table": "deals",
+      "name": "idx_deals_service",
+      "definition": "CREATE INDEX idx_deals_service ON public.deals USING btree (service_type)",
+      "constraint_owned": false
+    },
+    {
+      "table": "deals",
+      "name": "idx_deals_site",
+      "definition": "CREATE INDEX idx_deals_site ON public.deals USING btree (site_id)",
+      "constraint_owned": false
+    },
+    {
+      "table": "deals",
+      "name": "idx_deals_stage_entered",
+      "definition": "CREATE INDEX idx_deals_stage_entered ON public.deals USING btree (stage_entered_at)",
+      "constraint_owned": false
+    },
+    {
+      "table": "inquiries",
+      "name": "idx_inq_assigned",
+      "definition": "CREATE INDEX idx_inq_assigned ON public.inquiries USING btree (assigned_to, assigned_at)",
+      "constraint_owned": false
+    },
+    {
+      "table": "inquiries",
+      "name": "idx_inq_brand",
+      "definition": "CREATE INDEX idx_inq_brand ON public.inquiries USING btree (brand)",
+      "constraint_owned": false
+    },
+    {
+      "table": "inquiries",
+      "name": "idx_inq_phone",
+      "definition": "CREATE INDEX idx_inq_phone ON public.inquiries USING btree (phone)",
+      "constraint_owned": false
+    },
+    {
+      "table": "inquiries",
+      "name": "idx_inq_site",
+      "definition": "CREATE INDEX idx_inq_site ON public.inquiries USING btree (site_id)",
+      "constraint_owned": false
+    },
+    {
+      "table": "inquiries",
+      "name": "inquiries_pkey",
+      "definition": "CREATE UNIQUE INDEX inquiries_pkey ON public.inquiries USING btree (id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "next_actions",
+      "name": "idx_next_actions_assignee_open",
+      "definition": "CREATE INDEX idx_next_actions_assignee_open ON public.next_actions USING btree (assignee_name, status, due_at)",
+      "constraint_owned": false
+    },
+    {
+      "table": "next_actions",
+      "name": "idx_next_actions_deal_open",
+      "definition": "CREATE INDEX idx_next_actions_deal_open ON public.next_actions USING btree (deal_id, status, due_at)",
+      "constraint_owned": false
+    },
+    {
+      "table": "next_actions",
+      "name": "idx_next_actions_inquiry_open",
+      "definition": "CREATE INDEX idx_next_actions_inquiry_open ON public.next_actions USING btree (inquiry_id, status, due_at)",
+      "constraint_owned": false
+    },
+    {
+      "table": "next_actions",
+      "name": "next_actions_pkey",
+      "definition": "CREATE UNIQUE INDEX next_actions_pkey ON public.next_actions USING btree (id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "notes",
+      "name": "idx_note_deal",
+      "definition": "CREATE INDEX idx_note_deal ON public.notes USING btree (deal_id)",
+      "constraint_owned": false
+    },
+    {
+      "table": "notes",
+      "name": "idx_note_org",
+      "definition": "CREATE INDEX idx_note_org ON public.notes USING btree (organization_id)",
+      "constraint_owned": false
+    },
+    {
+      "table": "notes",
+      "name": "notes_pkey",
+      "definition": "CREATE UNIQUE INDEX notes_pkey ON public.notes USING btree (id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "notes",
+      "name": "notes_relate_id_key",
+      "definition": "CREATE UNIQUE INDEX notes_relate_id_key ON public.notes USING btree (relate_id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "organizations",
+      "name": "idx_org_name",
+      "definition": "CREATE INDEX idx_org_name ON public.organizations USING btree (name)",
+      "constraint_owned": false
+    },
+    {
+      "table": "organizations",
+      "name": "organizations_pkey",
+      "definition": "CREATE UNIQUE INDEX organizations_pkey ON public.organizations USING btree (id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "organizations",
+      "name": "organizations_relate_id_key",
+      "definition": "CREATE UNIQUE INDEX organizations_relate_id_key ON public.organizations USING btree (relate_id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "projects",
+      "name": "idx_projects_opp",
+      "definition": "CREATE INDEX idx_projects_opp ON public.projects USING btree (opportunity_id)",
+      "constraint_owned": false
+    },
+    {
+      "table": "projects",
+      "name": "projects_pkey",
+      "definition": "CREATE UNIQUE INDEX projects_pkey ON public.projects USING btree (project_id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "sites",
+      "name": "sites_pkey",
+      "definition": "CREATE UNIQUE INDEX sites_pkey ON public.sites USING btree (site_id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "sites",
+      "name": "uq_sites_norm",
+      "definition": "CREATE UNIQUE INDEX uq_sites_norm ON public.sites USING btree (norm_name)",
+      "constraint_owned": false
+    },
+    {
+      "table": "stage_catalog",
+      "name": "stage_catalog_brand_code_key",
+      "definition": "CREATE UNIQUE INDEX stage_catalog_brand_code_key ON public.stage_catalog USING btree (brand, code)",
+      "constraint_owned": true
+    },
+    {
+      "table": "stage_catalog",
+      "name": "stage_catalog_pkey",
+      "definition": "CREATE UNIQUE INDEX stage_catalog_pkey ON public.stage_catalog USING btree (id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "stage_history",
+      "name": "idx_stage_hist_opp",
+      "definition": "CREATE INDEX idx_stage_hist_opp ON public.stage_history USING btree (opportunity_id, changed_at)",
+      "constraint_owned": false
+    },
+    {
+      "table": "stage_history",
+      "name": "stage_history_pkey",
+      "definition": "CREATE UNIQUE INDEX stage_history_pkey ON public.stage_history USING btree (id)",
+      "constraint_owned": true
+    },
+    {
+      "table": "users",
+      "name": "idx_users_auth",
+      "definition": "CREATE INDEX idx_users_auth ON public.users USING btree (auth_uid)",
+      "constraint_owned": false
+    },
+    {
+      "table": "users",
+      "name": "users_name_key",
+      "definition": "CREATE UNIQUE INDEX users_name_key ON public.users USING btree (name)",
+      "constraint_owned": true
+    },
+    {
+      "table": "users",
+      "name": "users_pkey",
+      "definition": "CREATE UNIQUE INDEX users_pkey ON public.users USING btree (user_id)",
+      "constraint_owned": true
+    }
+  ],
+  "triggers": [
+    {
+      "table": "advisory_deals",
+      "name": "trg_adv_upd",
+      "definition": "CREATE TRIGGER trg_adv_upd BEFORE UPDATE ON advisory_deals FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+    },
+    {
+      "table": "contacts",
+      "name": "trg_contacts_upd",
+      "definition": "CREATE TRIGGER trg_contacts_upd BEFORE UPDATE ON contacts FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+    },
+    {
+      "table": "deals",
+      "name": "trg_deals_upd",
+      "definition": "CREATE TRIGGER trg_deals_upd BEFORE UPDATE ON deals FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+    },
+    {
+      "table": "inquiries",
+      "name": "trg_inq_upd",
+      "definition": "CREATE TRIGGER trg_inq_upd BEFORE UPDATE ON inquiries FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+    },
+    {
+      "table": "next_actions",
+      "name": "trg_next_actions_upd",
+      "definition": "CREATE TRIGGER trg_next_actions_upd BEFORE UPDATE ON next_actions FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+    },
+    {
+      "table": "organizations",
+      "name": "trg_organizations_upd",
+      "definition": "CREATE TRIGGER trg_organizations_upd BEFORE UPDATE ON organizations FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+    },
+    {
+      "table": "projects",
+      "name": "trg_projects_upd",
+      "definition": "CREATE TRIGGER trg_projects_upd BEFORE UPDATE ON projects FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+    },
+    {
+      "table": "users",
+      "name": "trg_users_upd",
+      "definition": "CREATE TRIGGER trg_users_upd BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+    }
+  ],
+  "sequence_ownership": [
+    {
+      "sequence": "business_history_id_seq",
+      "owned_by": "public.business_history.id"
+    },
+    {
+      "sequence": "stage_catalog_id_seq",
+      "owned_by": "public.stage_catalog.id"
+    }
+  ],
+  "external": [
+    {
+      "source": "users / own row read policy",
+      "target": "auth.jwt()",
+      "kind": "managed Auth function"
+    },
+    {
+      "source": "all string columns",
+      "target": "database default ICU en-US / 153.121",
+      "kind": "environment"
+    }
+  ]
+}

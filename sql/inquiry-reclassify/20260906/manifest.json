@@ -1,0 +1,33 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "LOCAL_CHAIN_CANDIDATE_AFTER_WAITING_NOT_APPLIED",
+  "prerequisites": [
+    "pipeline-waiting-context/20260906"
+  ],
+  "operation": "inquiry_reclassify",
+  "intent": "technical_inquiry_to_quote_brand_only",
+  "blocked_meanings": [
+    "technical_inquiry_promote",
+    "linked_inquiry",
+    "inquiry_status",
+    "arbitrary_brand"
+  ],
+  "staging_ddl_dml_performed": false,
+  "files_sha256": {
+    "helper.sql": "b9e13aa2a0effc10dc582a9b6d9301241e22d322bc6fb394a8b8c4e6a5f1a72f",
+    "adapter-contract.js": "28c799bf692bd22ffd7d4d294d975e930c2ab21008ff7febdb062f9fc470fd4d",
+    "contract.test.cjs": "af00ee84276b7e39267d3f283a19e50ff412b5ffb19ebadd0492d34d52b929ad",
+    "db.test.cjs": "91a58ff5812c1ec020d3706ffc872d3514236df7ecae0c9e3257f1b352e02911",
+    "ui.test.cjs": "1a714a37a2818ebecc760848e0716fea525298c66dc0a6b8957ea7d1a238a1e6",
+    "review.md": "21ccfe9d84683efbbf3fa889bb7379b1e393a118d5c3cd737f36b29df5eee7a4",
+    "staging-apply-after-waiting.sql": "23c35c2d49b0df08fc722d6504f69fc3f16e570e381bb97a430cd5c39f0ea580",
+    "rollback-after-waiting.sql": "bb9d4d5f719a8d9c6bf6d9b5aaf3961113f66326a3cbd4c05f230faeadca4324",
+    "operational-adapter.candidate.js": "71349d214732e00988f431199f9398d546ec17469e59f9c51e8f069ef087acd0",
+    "operational-overlay.candidate.js": "ebc39b9e538af812b53760966ccadfe9a3d7e5d3cd726a260a0712fd20e95b92"
+  },
+  "source_sha256": {
+    "golden_pc": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "waiting_manifest": "d208b35ded73dc91977236c8e743573de47cc0fee268a67f216fb6e98510cad2",
+    "inquiry_contracts": "e6f4e720cefb6335e78fe82cbbf7b1252820822ae6e69cdb1179636dda142784"
+  }
+}

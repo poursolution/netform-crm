@@ -1,0 +1,154 @@
+{
+  "notice": "SYNTHETIC ONLY. Local contract fixture, NOT a production schema clone. Replace localAuthId with actual staging Auth UUID via reviewed mapping; NEVER insert fake auth.users rows in Supabase.",
+  "teams": [
+    {
+      "team_id": "20000000-0000-0000-0000-000000000001",
+      "display_name": "테스트 본사"
+    },
+    {
+      "team_id": "20000000-0000-0000-0000-000000000002",
+      "display_name": "테스트 경남"
+    }
+  ],
+  "users": [
+    {
+      "fixture_role": "INTERNAL_REP",
+      "localAuthId": "10000000-0000-0000-0000-000000000001",
+      "display_name": "중복 테스트 이름",
+      "role": "rep",
+      "team_id": "20000000-0000-0000-0000-000000000001",
+      "sales_person_id": "30000000-0000-0000-0000-000000000001",
+      "email": "internal_rep@example.invalid"
+    },
+    {
+      "fixture_role": "OTHER_REP",
+      "localAuthId": "10000000-0000-0000-0000-000000000002",
+      "display_name": "중복 테스트 이름",
+      "role": "rep",
+      "team_id": "20000000-0000-0000-0000-000000000001",
+      "sales_person_id": "30000000-0000-0000-0000-000000000002",
+      "email": "other_rep@example.invalid"
+    },
+    {
+      "fixture_role": "CONSULT",
+      "localAuthId": "10000000-0000-0000-0000-000000000003",
+      "display_name": "테스트 상담",
+      "role": "consultation",
+      "team_id": "20000000-0000-0000-0000-000000000001",
+      "sales_person_id": null,
+      "email": "consult@example.invalid"
+    },
+    {
+      "fixture_role": "GYEONGNAM",
+      "localAuthId": "10000000-0000-0000-0000-000000000004",
+      "display_name": "테스트 지사",
+      "role": "branch_rep",
+      "team_id": "20000000-0000-0000-0000-000000000002",
+      "sales_person_id": "30000000-0000-0000-0000-000000000004",
+      "email": "gyeongnam@example.invalid"
+    },
+    {
+      "fixture_role": "ADMIN",
+      "localAuthId": "10000000-0000-0000-0000-000000000005",
+      "display_name": "테스트 관리자",
+      "role": "admin",
+      "team_id": "20000000-0000-0000-0000-000000000001",
+      "sales_person_id": null,
+      "email": "admin@example.invalid"
+    },
+    {
+      "fixture_role": "ADMIN_MFA",
+      "localAuthId": "10000000-0000-0000-0000-000000000006",
+      "display_name": "테스트 MFA 관리자",
+      "role": "admin",
+      "team_id": "20000000-0000-0000-0000-000000000001",
+      "sales_person_id": null,
+      "email": "admin_mfa@example.invalid"
+    }
+  ],
+  "deals": [
+    {
+      "id": "40000000-0000-0000-0000-000000000001",
+      "site": "가상 아파트 A",
+      "assignee": "중복 테스트 이름",
+      "brand": "TEST",
+      "stage": "open",
+      "created": "2026-09-01",
+      "owner_fixture_role": "INTERNAL_REP"
+    },
+    {
+      "id": "40000000-0000-0000-0000-000000000002",
+      "site": "가상 아파트 B",
+      "assignee": "중복 테스트 이름",
+      "brand": "TEST",
+      "stage": "open",
+      "created": "2026-09-01",
+      "owner_fixture_role": "OTHER_REP"
+    },
+    {
+      "id": "40000000-0000-0000-0000-000000000003",
+      "site": "가상 아파트 C",
+      "assignee": "테스트 지사",
+      "brand": "TEST",
+      "stage": "open",
+      "created": "2026-09-01",
+      "owner_fixture_role": "GYEONGNAM"
+    },
+    {
+      "id": "40000000-0000-0000-0000-000000000004",
+      "site": "가상 아파트 D",
+      "assignee": "매칭 불명",
+      "brand": "TEST",
+      "stage": "open",
+      "created": "2026-09-01",
+      "owner_fixture_role": null
+    }
+  ],
+  "inquiries": [
+    {
+      "id": "50000000-0000-0000-0000-000000000001",
+      "site": "가상 상담 현장 1",
+      "assigned_to": "중복 테스트 이름",
+      "status": "접수",
+      "created": "2026-09-01",
+      "amount": 999,
+      "owner_fixture_role": "INTERNAL_REP"
+    },
+    {
+      "id": "50000000-0000-0000-0000-000000000002",
+      "site": "가상 상담 현장 2",
+      "assigned_to": "중복 테스트 이름",
+      "status": "접수",
+      "created": "2026-09-01",
+      "amount": 999,
+      "owner_fixture_role": "OTHER_REP"
+    },
+    {
+      "id": "50000000-0000-0000-0000-000000000003",
+      "site": "가상 상담 현장 3",
+      "assigned_to": "테스트 상담",
+      "status": "접수",
+      "created": "2026-09-01",
+      "amount": 999,
+      "owner_fixture_role": "CONSULT"
+    },
+    {
+      "id": "50000000-0000-0000-0000-000000000004",
+      "site": "가상 상담 현장 4",
+      "assigned_to": "테스트 지사",
+      "status": "접수",
+      "created": "2026-09-01",
+      "amount": 999,
+      "owner_fixture_role": "GYEONGNAM"
+    },
+    {
+      "id": "50000000-0000-0000-0000-000000000005",
+      "site": "가상 상담 현장 5",
+      "assigned_to": "매칭 불명",
+      "status": "접수",
+      "created": "2026-09-01",
+      "amount": 999,
+      "owner_fixture_role": null
+    }
+  ]
+}

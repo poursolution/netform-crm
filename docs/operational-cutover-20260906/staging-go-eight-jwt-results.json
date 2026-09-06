@@ -1,0 +1,59 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "mode": "JWT_FINAL_OPERATIONAL_BLOCKERS",
+  "started_at": "2026-09-06T23:20:12.402Z",
+  "fixture_run_id": "stg-go-eight-20260907",
+  "status": "PASS",
+  "results": [
+    {
+      "name": "inquiry consultant normalizes Golden payload and persists with replay safety",
+      "status": "PASS"
+    },
+    {
+      "name": "branch handoff uses nullable pool ownership",
+      "status": "PASS"
+    },
+    {
+      "name": "branch owner assign resolves the approved branch UUID",
+      "status": "PASS"
+    },
+    {
+      "name": "branch owner can return to the nullable pool without fake user UUID",
+      "status": "PASS"
+    },
+    {
+      "name": "pipeline reassignment persists UUID owner and one version",
+      "status": "PASS"
+    },
+    {
+      "name": "contact upsert, relationship, and move form one versioned chain",
+      "status": "PASS"
+    },
+    {
+      "name": "manager comment uses the server actor CRM UUID as object id",
+      "status": "PASS"
+    },
+    {
+      "name": "same request id with a different payload returns 409",
+      "status": "PASS"
+    },
+    {
+      "name": "non-admin cannot execute manager-only pipeline assignment",
+      "status": "PASS"
+    },
+    {
+      "name": "scoped reads return the final inquiry and deal state",
+      "status": "PASS"
+    }
+  ],
+  "completed_at": "2026-09-06T23:20:13.804Z",
+  "failure_point": null,
+  "pass": 10,
+  "fail": 0,
+  "skip": 0,
+  "http_requests": 29,
+  "n8n_requests": 0,
+  "production_requests": 0,
+  "error_type": null
+}

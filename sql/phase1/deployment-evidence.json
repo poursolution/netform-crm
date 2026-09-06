@@ -1,0 +1,14 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "apply_sha256": "9d3c7c234d7f7f314192b47151d644dd3f1c50e6fabd1e80d25b68511441523d",
+  "status": "APPLIED_STAGING",
+  "diffs": {
+    "before_public": [],
+    "before_private": [],
+    "after_public": [],
+    "after_private": []
+  },
+  "production_actions": 0,
+  "first_attempt": "SQL generator dollar-quote syntax error; no execution; corrected exact-file test passed before retry",
+  "legacy_acl_rls_unchanged": true
+}

@@ -1,0 +1,44 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict'),Module=require('node:module');
+const personal=require('../../personal-state-compat/20260906/build.cjs'),cutover=require('../../operational-cutover-candidate/20260906/build.cjs'),build=require('./build.cjs'),s=require('../../../scripts/crm-phase1.cjs');
+function load(text,name){const m=new Module(name);m._compile(text,name+'.js');return m.exports;}
+const adapter=load(build.adapter(),'response-db-adapter'),inq=n=>s.uid(5,n),user=n=>s.uid(1,n),request=n=>`f6090600-0114-4000-8000-${String(n).padStart(12,'0')}`;
+async function setup(){const db=await personal.setup();await db.exec(cutover.compose('apply',{localPersonalCandidate:true,skipResponse:true,skipInquiryPipeline:true}));await db.exec(build.applySql());return db;}
+async function actor(db,index){await db.exec('RESET ROLE');await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[s.mapping.accounts[index].auth_uid]);await db.exec('SET ROLE authenticated');}
+async function rpc(db,index,requestId,objectId=inq(index+1),payload={intent:'response_progress',response:'진행됨 — 다음 잡음'}){await actor(db,index);try{return (await db.query("SELECT public.crm_write_command_v2($1,'inquiry_assign',$2,0,$3) a",[requestId,objectId,JSON.stringify(payload)])).rows[0].a;}finally{await db.exec('RESET ROLE');}}
+async function scalar(db,sql,params=[]){return (await db.query(sql,params)).rows[0];}
+
+test('response_progress is an atomic assigned-actor command with durable read-back',async()=>{const db=await setup();try{
+ const first=await rpc(db,0,request(1),inq(1));
+ assert.equal(first.intent,'response_progress');assert.equal(first.status,'전화응대 완료');assert.equal(first.actor_user_id,user(1));assert.equal(first.first_response_at,first.responded_at);
+ let row=await scalar(db,'SELECT status,first_response_at,responded_at,assigned_to FROM public.inquiries WHERE id=$1',[inq(1)]);assert.equal(row.status,'전화응대 완료');assert.equal(row.assigned_to,user(1));
+ assert.equal((await scalar(db,"SELECT count(*)::int n FROM crm_security.inquiry_audit_events WHERE inquiry_id=$1 AND action='inquiry_response_progress'",[inq(1)])).n,1);
+ assert.equal((await scalar(db,"SELECT count(*)::int n FROM crm_security.command_receipts WHERE actor_user_id=$1 AND request_id=$2",[user(1),request(1)])).n,1);
+ const replay=await rpc(db,0,request(1),inq(1));assert.equal(replay.replayed,true);assert.equal((await scalar(db,"SELECT count(*)::int n FROM crm_security.inquiry_audit_events WHERE inquiry_id=$1 AND action='inquiry_response_progress'",[inq(1)])).n,1);
+ await db.query("SELECT pg_sleep(0.01)");const again=await rpc(db,0,request(2),inq(1));assert.equal(again.first_response_at,first.first_response_at);assert.notEqual(again.responded_at,first.responded_at);
+ assert.equal((await scalar(db,"SELECT count(*)::int n FROM crm_security.inquiry_audit_events WHERE inquiry_id=$1 AND action='inquiry_response_progress'",[inq(1)])).n,2);
+ await actor(db,0);const source=(await db.query("SELECT public.crm_operational_source_v1('inquiry_core',NULL,100) a")).rows[0].a;await db.exec('RESET ROLE');const item=source.items.find(x=>x.id===inq(1));assert.equal(item.response_history.length,2);assert.equal(item.response_history[0].response,'진행됨 — 다음 잡음');assert.equal('actor_auth_uid' in item.response_history[0],false);
+ }finally{await db.close();}});
+
+test('next-week response and missed call apply distinct server timestamp and KST follow-up rules',async()=>{const db=await setup();try{
+ const next=await rpc(db,0,request(5),inq(1),{intent:'response_next_week_retry',response:'다음주 다시'}),expectedNext=(await scalar(db,"SELECT ((clock_timestamp() AT TIME ZONE 'Asia/Seoul')::date+7)::text d")).d;
+ assert.equal(next.status,'응대중');assert.equal(next.next_action_date,expectedNext);assert.equal(next.first_response_at,next.responded_at);
+ let row=await scalar(db,'SELECT status,first_response_at,responded_at,next_action_date::text FROM public.inquiries WHERE id=$1',[inq(1)]);assert.equal(row.status,'응대중');assert.equal(row.next_action_date,expectedNext);
+ await db.query("UPDATE public.inquiries SET assigned_to=$1,status='접수',first_response_at=NULL,responded_at=NULL,next_action_date=NULL WHERE id=$2",[user(1),inq(2)]);
+ const missed=await rpc(db,0,request(6),inq(2),{intent:'response_missed_retry',response:'못 받으심 (내일 재시도)'}),expectedTomorrow=(await scalar(db,"SELECT ((clock_timestamp() AT TIME ZONE 'Asia/Seoul')::date+1)::text d")).d;
+ assert.equal(missed.status,'배정완료');assert.equal(missed.next_action_date,expectedTomorrow);assert.equal(missed.first_response_at,null);assert.equal(missed.responded_at,null);
+ row=await scalar(db,'SELECT status,first_response_at,responded_at,next_action_date::text FROM public.inquiries WHERE id=$1',[inq(2)]);assert.deepEqual(row,{status:'배정완료',first_response_at:null,responded_at:null,next_action_date:expectedTomorrow});
+ assert.equal((await scalar(db,"SELECT count(*)::int n FROM crm_security.inquiry_audit_events WHERE action IN ('inquiry_response_next_week_retry','inquiry_response_missed_retry')")).n,2);
+ }finally{await db.close();}});
+
+test('consultation may respond to its own inquiry; foreign, closed, malformed intent and request reuse fail closed',async()=>{const db=await setup();try{
+ const consult=await rpc(db,2,request(10),inq(3));assert.equal(consult.actor_user_id,user(3));
+ await assert.rejects(rpc(db,1,request(11),inq(1)),e=>e.code==='42501');
+ await db.query("UPDATE public.inquiries SET status='종료' WHERE id=$1",[inq(1)]);await assert.rejects(rpc(db,0,request(12),inq(1)),e=>e.code==='PT409');
+ await db.query("UPDATE public.inquiries SET assigned_to=$1,status='접수' WHERE id=$2",[user(1),inq(2)]);await rpc(db,0,request(13),inq(2));await db.query("UPDATE public.inquiries SET status='접수' WHERE id=$1",[inq(1)]);await assert.rejects(rpc(db,0,request(13),inq(1)),e=>e.code==='PT409');
+ await assert.rejects(rpc(db,0,request(20),inq(2),{intent:'response_progress',response:'다음주 다시'}),e=>e.code==='22023');
+ }finally{await db.close();}});
+
+test('late audit failure rolls response state, follow-up and receipt back',async()=>{const db=await setup();try{const before=await scalar(db,'SELECT status,first_response_at,responded_at,next_action_date,updated_at FROM public.inquiries WHERE id=$1',[inq(1)]);await db.exec(`CREATE FUNCTION crm_security.reject_response_audit() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN IF NEW.action LIKE 'inquiry_response_%' THEN RAISE EXCEPTION 'injected response audit failure';END IF;RETURN NEW;END$$;CREATE TRIGGER reject_response_audit BEFORE INSERT ON crm_security.inquiry_audit_events FOR EACH ROW EXECUTE FUNCTION crm_security.reject_response_audit();`);await assert.rejects(rpc(db,0,request(30),inq(1),{intent:'response_next_week_retry',response:'다음주 다시'}),/injected response audit failure/);assert.deepEqual(await scalar(db,'SELECT status,first_response_at,responded_at,next_action_date,updated_at FROM public.inquiries WHERE id=$1',[inq(1)]),before);assert.equal((await scalar(db,'SELECT count(*)::int n FROM crm_security.command_receipts WHERE request_id=$1',[request(30)])).n,0);}finally{await db.close();}});
+
+test('rollback restores exact delegate/read definitions and archives every response outcome',async()=>{const db=await personal.setup();try{await db.exec(cutover.compose('apply',{localPersonalCandidate:true,skipResponse:true,skipInquiryPipeline:true}));const beforeWrite=(await scalar(db,"SELECT pg_get_functiondef('public.crm_write_command_v2(uuid,text,uuid,integer,jsonb)'::regprocedure) d")).d,beforeRead=(await scalar(db,"SELECT pg_get_functiondef('crm_security.crm_operational_source_fragment_v1(text,uuid,integer)'::regprocedure) d")).d;await db.exec(build.applySql());await rpc(db,0,request(40),inq(1));await rpc(db,0,request(41),inq(1),{intent:'response_next_week_retry',response:'다음주 다시'});await rpc(db,0,request(42),inq(1),{intent:'response_missed_retry',response:'못 받으심 (내일 재시도)'});const persisted=await scalar(db,'SELECT status,first_response_at,responded_at,next_action_date FROM public.inquiries WHERE id=$1',[inq(1)]);await db.exec(build.rollbackSql());assert.equal((await scalar(db,"SELECT pg_get_functiondef('public.crm_write_command_v2(uuid,text,uuid,integer,jsonb)'::regprocedure) d")).d,beforeWrite);assert.equal((await scalar(db,"SELECT pg_get_functiondef('crm_security.crm_operational_source_fragment_v1(text,uuid,integer)'::regprocedure) d")).d,beforeRead);assert.deepEqual(await scalar(db,'SELECT status,first_response_at,responded_at,next_action_date FROM public.inquiries WHERE id=$1',[inq(1)]),persisted);assert.equal((await scalar(db,"SELECT count(*)::int n FROM crm_inquiry_response_archive.inquiry_audit_events WHERE action LIKE 'inquiry_response_%'")).n,3);assert.equal((await scalar(db,"SELECT count(*)::int n FROM crm_inquiry_response_archive.command_receipts WHERE payload->>'intent' LIKE 'response_%'")).n,3);}finally{await db.close();}});

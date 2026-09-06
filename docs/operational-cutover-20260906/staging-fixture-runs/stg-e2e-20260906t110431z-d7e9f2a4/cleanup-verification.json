@@ -1,0 +1,16 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "run_id": "stg-e2e-20260906t110431z-d7e9f2a4",
+  "verified_at": "2026-09-06T20:09:11.8229243+09:00",
+  "status": "PASS",
+  "fixture_inquiries": 0,
+  "fixture_deals": 0,
+  "fixture_storage_objects": 0,
+  "canonical_inquiries": 5,
+  "canonical_deals": 5,
+  "transaction_mode": "READ ONLY",
+  "production_requests": 0,
+  "n8n_requests": 0,
+  "note": "The same fixture was rerun only to diagnose replay behavior; that rerun proof is invalid as a fresh gate result. Cleanup removed all run-owned rows and preserved the canonical synthetic baseline."
+}

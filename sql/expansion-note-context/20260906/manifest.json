@@ -1,0 +1,56 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+  "rpcs": [
+    "crm_expansion_note",
+    "crm_expansion_context"
+  ],
+  "ui_coverage_candidate": [
+    "X02"
+  ],
+  "prerequisite": "expansion-pool-update/20260906",
+  "surface": "pc_only",
+  "note_contract": {
+    "target": "source Closed Won Deal UUID",
+    "length": "1..8000 trimmed",
+    "idempotency": "request_id common receipt",
+    "effects": [
+      "private expansion event",
+      "Deal audit",
+      "receipt"
+    ]
+  },
+  "context_contract": {
+    "events": "actor-scoped safe event projection",
+    "dispatches": "empty until verified X03 provider ledger"
+  },
+  "blocked": [
+    "quote dispatch fabrication",
+    "Pipeline conversion",
+    "client actor/time"
+  ],
+  "rollback": "note evidence archived; X01 remains active",
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "files_sha256": {
+    "build.cjs": "b2ec97c259edcf9f7a0ecfa926a6df155ed6b798b5dcbdbe2149166bad913bd5",
+    "helper.sql": "e05be68bdc385d26052bdf8a12c547f218b09cee9e06d49de644e10a780d946f",
+    "rollback-fragment.sql": "2f32be59e751837e3f7a2c8a05144dbe03677c126ff792d8a720211cb263ec17",
+    "contract.test.cjs": "1307913fdc5a42a871bd91a5c320a9778bb872548bd645864174eb5e70621188",
+    "db.test.cjs": "c1f90f4c9953a8f183cd8398c8f8060eb19463c57c95f68d38ac973082dec0e6",
+    "ui.test.cjs": "0648d239ad738aa24fe49bbf7d8110f27fbe309b278fc332109cb97c47bf9430",
+    "review.md": "9bb8be6fd2b72d9eec46b2d4fbef8f71eb8d8afea6032ff9dcb0a1eef7848f2b",
+    "staging-apply-after-expansion-update.sql": "c9dd7d3e0961a773db5e3331a919a4a2b026f70db2a5cc8f1e2b68e276c0509a",
+    "rollback-before-expansion-update.sql": "6addefc052b75790913794605f76f07a8cd6203083d184b3846a4bebddca6342",
+    "operational-adapter.candidate.js": "bc5b7782b593f358e4f121129fe6168796cb653941ab5e2cff722e8bdd143502",
+    "operational-overlay.candidate.js": "4107133b8d0ebfe5d7956dfa56efdb1a2ada1a6562bf1dac4f701aca5e21072c",
+    "transport.candidate.js": "43abb4c6f37a9de65268f79dce45e2b154d2927854054babc9625fd131c6333a"
+  },
+  "source_sha256": {
+    "sql/expansion-pool-update/20260906/manifest.json": "3dbb143b4f6e1405f000e692e08b26b89b2d1ddac975c2423a141ce4b4767710",
+    "expansion-pool.js": "3a59c5d19ef7bb3f44c194f4dfb7e0edfe953276683c48abcc5174d03c8016e7",
+    "sql/20260905_expansion_quote_handoff.sql": "be023dc6962b496ddb1aaba760b957c23d186ee03687b2f33c57ef7a5115d06e",
+    "docs/operational-cutover-20260906/coverage-matrix.csv": "66b015765e4fa6e96d8e3b233a7a3411a50be1d4ff4054d7d757baedc22947c4"
+  }
+}

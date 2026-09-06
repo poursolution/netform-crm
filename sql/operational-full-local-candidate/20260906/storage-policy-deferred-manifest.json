@@ -1,0 +1,23 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "READY_NOT_APPLIED_STORAGE_POLICY_DASHBOARD_REQUIRED",
+  "source_apply_sha256": "81a44efa1331454059ac59c83cc9931cc3aaa5070140c2321a3bcafcdd6e469e",
+  "source_rollback_sha256": "7e58f816cce046b4aef8c3bae3db0af54de7765d471c74e69469cde0a3c8a720",
+  "apply_file": "staging-apply-storage-policy-deferred.sql",
+  "apply_sha256": "6ab7068d0bbb92db7607e84ba40dfc1252f28afb9ba1a10d0d8f30cf4437dc55",
+  "rollback_file": "rollback-storage-policy-optional.sql",
+  "rollback_sha256": "4814de2336b9ab9f02388457f9ed14bd3d3d14f56b90ac8ff714bb64a3d3b96c",
+  "deferred_statement_count": 1,
+  "deferred_policy": {
+    "schema": "storage",
+    "table": "objects",
+    "name": "crm_attachment_insert_v1",
+    "command": "INSERT",
+    "role": "authenticated",
+    "check": "bucket_id='crm-site-files' AND public.crm_attachment_object_insert_allowed(bucket_id,name)"
+  },
+  "database_behavior_changed": false,
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false
+}

@@ -1,0 +1,49 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "at": "2026-09-05T14:44:51.260Z",
+  "results": [
+    {
+      "name": "six actual JWT profile UUID/source-role/permission/mode mappings",
+      "status": "PASS"
+    },
+    {
+      "name": "anon profile/write denied",
+      "status": "PASS"
+    },
+    {
+      "name": "other rep and consultation cannot write Rep A Deal",
+      "status": "PASS"
+    },
+    {
+      "name": "client actor injection rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "concurrent duplicate requests one version and one audit id",
+      "status": "PASS"
+    },
+    {
+      "name": "retry after lost ACK returns same receipt",
+      "status": "PASS"
+    },
+    {
+      "name": "same key changed payload is HTTP409",
+      "status": "PASS"
+    },
+    {
+      "name": "new key stale version is HTTP409",
+      "status": "PASS"
+    },
+    {
+      "name": "exactly one version increment, existing classification unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "MFA account remains AAL1 (not MFA PASS)",
+      "status": "PASS"
+    }
+  ],
+  "legacy_unchanged": true,
+  "scope": "Phase1 common transport RPC, not browser UI parity",
+  "production_requests": 0
+}

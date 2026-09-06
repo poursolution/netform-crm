@@ -1,0 +1,13 @@
+--- a/mobile.html
++++ b/mobile.html
+@@ -1946,10 +1946,11 @@ function assignSheet(i){
+  var q=(ADMIN.assign||[])[i];
+  if(!q){toast('배정할 문의가 없습니다 — 문의 API 연동 후 표시됩니다');return}
+- var cur=q.rep||'미배정',reps=REP_INTERNAL.slice(),loads=repLoad(),min=Math.min.apply(null,reps.map(function(r){return loads[r]||0})),recommended=reps.filter(function(r){return (loads[r]||0)===min})[0];
++ var cur=q.rep||'미배정',reassign=cur!=='미배정',reps=REP_INTERNAL.slice(),loads=repLoad(),min=Math.min.apply(null,reps.map(function(r){return loads[r]||0})),recommended=reps.filter(function(r){return (loads[r]||0)===min})[0];
+  openSheet(intro(cur==='미배정'?'var(--danger-bg)':'var(--blue-50)',cur==='미배정'?'#c22f3c':'var(--blue-dark)',IC.user,esc(q.nm)+' 배정','현재 담당자 · '+esc(cur)+(cur==='미배정'?' 🔴':'')+' · 정해진 담당자 순서'),
++  (reassign?'<label for="inq-reassign-reason" class="hint" style="display:block;margin:2px 0 6px;font-weight:800;color:var(--ink-2)">재배정 사유 <span style="color:var(--danger)">*</span></label><textarea id="inq-reassign-reason" rows="3" maxlength="2000" placeholder="예: 지역·공종·현재 업무량 기준" style="width:100%;box-sizing:border-box;margin:0 0 12px;border:1px solid var(--line-2);border-radius:11px;padding:12px;font:inherit;resize:vertical"></textarea>':'')+
+   reps.map(function(r){var rec=r===recommended;return '<button class="cchip '+(rec?'b':'gr')+'" onclick="pickAssign('+i+',\''+r+'\')"><span class="cic">'+IC.user+'</span>'+r+' · 진행 '+loads[r]+'건'+(rec?' <span class="badge badge-blue" style="margin-left:auto">추천</span>':'')+'</button>'}).join(''));
+ }
+-function pickAssign(i,r){var q=ADMIN.assign[i];if(!q)return;var from=q.rep||'미배정',at=isoNow();q.done=true;q.rec=r;q.rep=r;q.status=q.status==='접수'?'배정완료':q.status;if(q.raw){q.raw.assignee=r;q.raw.status=q.status;q.raw.assigned_at=at}pushWrite('inquiry_assign',{inquiry_id:q.key,inquiry_row:q.raw&&q.raw.row||null,from:from,to:r,status:q.status,at:at});closeSheet();G.sub={t:'inq',i:i};toast(r+' 담당으로 배정 요청을 보냈습니다');render()}
++function pickAssign(i,r){var q=ADMIN.assign[i];if(!q)return;var from=q.rep||'미배정',reassign=from!=='미배정'&&from!==r,reason=reassign?String((document.getElementById('inq-reassign-reason')||{}).value||'').trim():'',at=isoNow();if(reassign&&!reason){toast('재배정 사유를 입력해 주세요');var el=document.getElementById('inq-reassign-reason');if(el)el.focus();return}q.done=true;q.rec=r;q.rep=r;q.status=q.status==='접수'?'배정완료':q.status;if(q.raw){q.raw.assignee=r;q.raw.status=q.status;q.raw.assigned_at=at}var payload={inquiry_id:q.key,inquiry_row:q.raw&&q.raw.row||null,from:from,to:r,status:q.status,at:at};if(reassign)payload.reason=reason;pushWrite('inquiry_assign',payload);closeSheet();G.sub={t:'inq',i:i};toast(r+' 담당으로 배정 요청을 보냈습니다');render()}

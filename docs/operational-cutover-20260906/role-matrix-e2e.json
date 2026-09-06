@@ -1,0 +1,46 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "READ_PASS_POSITIVE_MUTATION_ATTRIBUTION_PASS_NEGATIVE_ROLE_PROOF_PENDING",
+  "read_matrix": {
+    "status": "PASS",
+    "jwt_roles": ["INTERNAL_REP", "OTHER_REP", "CONSULT", "GYEONGNAM", "ADMIN"],
+    "anonymous_denied": true,
+    "jwt_checks": 6,
+    "jwt_pass": 6,
+    "jwt_fail": 0,
+    "jwt_skip": 0,
+    "pc_mobile_browser_combinations": 12,
+    "browser_pass": 12,
+    "browser_fail": 0,
+    "browser_roles": ["INTERNAL_REP", "OTHER_REP", "CONSULT", "GYEONGNAM", "ADMIN", "ADMIN_MFA"]
+  },
+  "mutation_matrix": {
+    "status": "POSITIVE_ROLE_ATTRIBUTION_PASS_NEGATIVE_ROLE_PROOF_PENDING",
+    "staging_scenarios_pass": 35,
+    "staging_steps_pass": 75,
+    "staging_steps_fail": 0,
+    "positive_actor_steps": {"ADMIN": 29, "ADMIN_MFA": 1, "INTERNAL_REP": 44},
+    "pending_negative_roles": ["OTHER_REP", "CONSULT", "GYEONGNAM"],
+    "negative_role_harness": {
+      "status": "READY_NOT_RUN",
+      "script": "scripts/run-operational-role-denial-staging.cjs",
+      "script_sha256": "5af2658de0ff097bfe0d69f988895338e4ab4355183ddff7d7cc5a6f6bed8137",
+      "runbook": "staging-role-denial-runbook.md",
+      "runbook_sha256": "e57204f9f5fbb0c567d3c06706967d98eacb41b6c2f7702c831b2ddfd606f6b3",
+      "expected_denials": 6,
+      "expected_http_status": 403,
+      "expected_sqlstate": "42501"
+    },
+    "reason": "The final assembled UI browser proof now records the executing actor for every positive mutation step. Staging-denial evidence for the three non-owning or restricted roles remains a separate required role gate."
+  },
+  "evidence": {
+    "jwt_readonly": "operational-full-jwt-readonly-results.json",
+    "jwt_readonly_sha256": "ae8635dcf7765ae259ac4f24f670280fec6549cd8a497458a0eceb47854843fb",
+    "browser_read": "operational-full-ui-browser-read.json",
+    "browser_read_sha256": "c0b6b708ce700da88afcab96ad2b5ab5d5a00384ed1f63bb9cfe57d91154ebe4",
+    "browser_mutation_proof": "staging-fixture-runs/stg-e2e-20260906t125239z-fc70f2d2/browser-mutation-proof.json",
+    "browser_mutation_proof_sha256": "65dc4594789e729585c2773a4c473fa8cf2da5d6faf94ed6dda6239d6842052c"
+  },
+  "production_accessed": false,
+  "n8n_accessed": false
+}

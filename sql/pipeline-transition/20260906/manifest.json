@@ -1,0 +1,47 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "LOCAL_CHAIN_CANDIDATE_AFTER_STAGE_CHECK_NOT_APPLIED",
+  "prerequisites": [
+    "personal-state-compat/20260906",
+    "pipeline-action-bundle/20260906",
+    "pipeline-quote-version/20260906",
+    "operational-read-source/20260906",
+    "pipeline-next-complete/20260906",
+    "pipeline-stage-check/20260906"
+  ],
+  "operation": "transition",
+  "intent": "structured_non_terminal_only",
+  "absorbed_children": [
+    "activity",
+    "next_action"
+  ],
+  "blocked_meanings": [
+    "inquiry_promote_transition",
+    "close",
+    "won",
+    "expansion",
+    "amount"
+  ],
+  "staging_ddl_dml_performed": false,
+  "files_sha256": {
+    "validator.sql": "8aa0cf64de2c8c4557009b93f28feeaa787b553c6ba152fdd3a87ff8433e2bbf",
+    "helper.sql": "670522cbee654486643ce45b1970398a99882a30c89bcd486dd0ee928cddbc84",
+    "adapter-contract.js": "5875a8fe2e6bce09876549cc6ca8a48dd885f90d844e36a82a0817b9f208f524",
+    "contract.test.cjs": "7d8fbc4ab5fa0f62308feae56745a2265cde8991fe887ab41eeffb971a16f3bf",
+    "db.test.cjs": "92c783ac6aa1b6560914ed62f669b068eef867ff2fdc5c8c5ffab62f02f6de2f",
+    "ui.test.cjs": "244f8aa0039a83ca5b8b91555d1da5f3f3ef4dac48f24ca68b4b8b029716ab79",
+    "review.md": "5eb48309f36e80ec85e99ade5000db9a1b40cdb3ce58da1d4dd5cb4a4575d64a",
+    "staging-apply-after-stage-check.sql": "07da671316148004675981a50af6c1673a6d678aa2642083295b7026c40d0641",
+    "rollback-after-stage-check.sql": "e60f9798ed7448825ac7266ab2b6635cb87184956f350bb26bcdb63d76639c06",
+    "operational-adapter.candidate.js": "d5914d893adbc9e706bccbe4b8d2239c7e91c5384eb117fa5e5f9a7450b99cba",
+    "operational-overlay.candidate.js": "adad7bd2bb4013a68597ce369901f4c65a56199058be827161ead152e7726a83"
+  },
+  "source_sha256": {
+    "golden_pc": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "golden_mobile": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "stage_transition": "469241cdab31838e1ea2e04d056daf1bda433f7497601dc8bbe8dd91e921db78",
+    "stage_ui": "c3fc39eee42159ac036776b9067e5d26de660b59f71d770f71e835d86d2010f7",
+    "golden_sql": "bdf26070eeae947a7e3e278d1ea9a48150132845c2a5bc2764c83684ffe09ee5",
+    "stage_manifest": "b536571fa2bb4bcde15636e3781f34695a7a956fc1fa56af45a67a00d2b140ea"
+  }
+}

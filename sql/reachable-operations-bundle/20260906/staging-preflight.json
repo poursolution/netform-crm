@@ -1,0 +1,74 @@
+{
+  "project_id": "rprechiaglyjaydkmxsu",
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "project_status": "ACTIVE_HEALTHY",
+  "region": "ap-northeast-2",
+  "database_version": "17.6.1.166",
+  "captured_at": "2026-09-06T04:30:00.474637+00:00",
+  "mode": "READ_ONLY_SELECT_ONLY",
+  "functions": [
+    {
+      "signature": "public.crm_write_command_v2(uuid,text,uuid,integer,jsonb)",
+      "oid": 18115,
+      "definition_md5": "04ad2b922c42ca79c6ec854f79c19583",
+      "owner": "postgres",
+      "security_definer": true,
+      "config": ["search_path=\"\""],
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}"
+    },
+    {
+      "signature": "public.crm_read_scoped_v2(uuid,integer,uuid,uuid)",
+      "oid": 18064,
+      "definition_md5": "d1cde3372f07295076fc62bf28d12a01",
+      "owner": "postgres",
+      "security_definer": true,
+      "config": ["search_path=\"\""],
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}"
+    },
+    {
+      "signature": "crm_security.crm_write_command_v2_frozen_20260906(uuid,text,uuid,integer,jsonb)",
+      "oid": 18077,
+      "definition_md5": "1ad250f71a5af65317ab3362239752e8",
+      "owner": "postgres",
+      "security_definer": true,
+      "config": ["search_path=\"\""],
+      "acl": "{postgres=X/postgres}"
+    },
+    {
+      "signature": "crm_security.crm_inquiry_unassign_command_v1(uuid,uuid,jsonb)",
+      "oid": 18112,
+      "definition_md5": "803074f7a3974777c766fe4487069fb0",
+      "owner": "postgres",
+      "security_definer": true,
+      "config": ["search_path=\"\""],
+      "acl": "{postgres=X/postgres}"
+    }
+  ],
+  "constraints": {
+    "command_receipts_operation_check": "CHECK (operation = ANY (ARRAY['opportunity_work_set'::text, 'inquiry_assign'::text, 'service_change'::text, 'inquiry_unassign'::text]))",
+    "inquiry_audit_events_action_check": "CHECK (action = ANY (ARRAY['direct_assign'::text, 'direct_reassign'::text, 'inquiry_unassign'::text]))"
+  },
+  "candidate_absent": {
+    "user_opportunity_state": true,
+    "quote_versions": true,
+    "operational_source": true,
+    "pipeline_action_helper": true,
+    "inquiry_followup_helper": true,
+    "personal_archive": true
+  },
+  "comparison": {
+    "personal_state_live_baseline_match": true,
+    "frozen_four_operation_constraint_match": true,
+    "candidate_not_partially_applied": true,
+    "decision": "LIVE_BASELINE_EXACT_MATCH_CANDIDATE_NOT_APPLIED"
+  },
+  "supabase_changelog_review": {
+    "checked_at": "2026-09-06",
+    "relevant_breaking_change": "public Data API objects require explicit grants as rollout reaches existing projects on 2026-10-30",
+    "candidate_posture": "public functions use explicit grants; private helpers and relations explicitly revoke browser roles; grants remain separate from RLS"
+  },
+  "staging_ddl_dml_performed": false,
+  "production_requests": 0,
+  "n8n_requests": 0
+}

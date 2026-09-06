@@ -1,0 +1,64 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+  "operation": "next_action",
+  "intent": "message_reminder",
+  "ui_coverage_candidate": [
+    "M04"
+  ],
+  "prerequisite": "expansion-note-context/20260906",
+  "surface": "pc_mobile",
+  "meaning": "staff execution reminder, never provider auto-send",
+  "payload": [
+    "type",
+    "text",
+    "due_at",
+    "scheduled_at",
+    "channel",
+    "template_key",
+    "draft_body"
+  ],
+  "server_rules": {
+    "scope": "crm_security.can_deal(deal_id,true)",
+    "assignee": "approved current Deal owner UUID",
+    "schedule": "future instant; due_at equals Asia/Seoul date",
+    "replacement": "cancel all current open Deal Next Actions",
+    "transaction": "Next Action + private reminder + non-meaningful Activity + Deal version + audit + receipt"
+  },
+  "read_additions": [
+    "next_action.scheduled_at",
+    "next_action.channel",
+    "next_action.template_key",
+    "next_action.draft_body"
+  ],
+  "blocked": [
+    "provider delivery claim",
+    "campaign queue",
+    "client actor/time",
+    "standalone derived Activity"
+  ],
+  "rollback": "metadata/audit/receipt archived; business Next Action and Activity retained; X02 remains active",
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "files_sha256": {
+    "build.cjs": "a4743914912443cb89368217469c95ec84e228de60d265501b9d8370cf26f00d",
+    "helper.sql": "b12de939eb27e7c8de8f3d1f648b2013c6a52b749d20492bc039d9f85eea8c9a",
+    "rollback-fragment.sql": "f892c6eaa9e8b8906ad9de4489a6d5c90b774779aa085ffc09abf3bf5d6427f6",
+    "contract.test.cjs": "5e421d4557131de49982ed2e3baf5c0cb4f3c42cf44664e6ced6c497327b06b1",
+    "db.test.cjs": "105c8d12f8e892b509facc59ce5c8125caf2ec97a6702f7647d26fd4099cf082",
+    "ui.test.cjs": "0cebb6fbee5d429ea8a5e520e5bc0595f99fc3621a2c798b977452b8457614e8",
+    "review.md": "14593fef323a25cbc737cd3bf1dead8df3ce79201a8de385d04f93b9a83bb8c5",
+    "staging-apply-after-expansion-note.sql": "d01228e761883586e34e7bee2e202bef867c430d35d8c5573df8b40093f2c032",
+    "rollback-before-expansion-note.sql": "2143ed237668891875aafd90d254e0debff2869eb0e13295e4b5357c6de5ef00",
+    "operational-adapter.candidate.js": "c07e0d4127320d834f7500a93249ffae8029c671323a681621abcadbeb03505e",
+    "operational-overlay.candidate.js": "8300314683cf26cd0d627aec91957dedf7effafe0000b478060c70954ad06cba",
+    "transport.candidate.js": "43abb4c6f37a9de65268f79dce45e2b154d2927854054babc9625fd131c6333a"
+  },
+  "source_sha256": {
+    "sql/expansion-note-context/20260906/manifest.json": "7ab32af450575831d3f4d36e1e8d4ae1f0993742aa964c496d4e8059823c96e6",
+    "crm.html": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "mobile.html": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "docs/operational-cutover-20260906/coverage-matrix.csv": "66b015765e4fa6e96d8e3b233a7a3411a50be1d4ff4054d7d757baedc22947c4"
+  }
+}

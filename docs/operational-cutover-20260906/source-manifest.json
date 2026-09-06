@@ -1,0 +1,78 @@
+{
+  "generated_at": "2026-09-06T23:32:58.633Z",
+  "basis": "current local PC/mobile entrypoints and directly loaded local scripts",
+  "files": [
+    {
+      "file": "crm-export.js",
+      "sha256": "a5e413081d0b84cf66d3e94a9969822d6c0c50cc303c866e75b2a836c7222670"
+    },
+    {
+      "file": "crm-read.js",
+      "sha256": "ebdd58450449f13f4a1331e60ef09c8be14afa7b74802b05f81e81ab62d42730"
+    },
+    {
+      "file": "crm.html",
+      "sha256": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610"
+    },
+    {
+      "file": "data-cleanup-ui.js",
+      "sha256": "a724dd6503ad8a95a29452c7311656a4a646fb9f69758fdc19a80a1da604150a"
+    },
+    {
+      "file": "data-cleanup.js",
+      "sha256": "7fc99f3d86fc05db564e9bc7c844513dc1f60fe1add0d3d4b5f5ab6bd6615a6f"
+    },
+    {
+      "file": "expansion-flow.js",
+      "sha256": "06a00c00ccb42fee9a1e9186adb7c3b56f96f3c9ae379e3ce1fc67d7e6c84663"
+    },
+    {
+      "file": "expansion-pool.js",
+      "sha256": "3a59c5d19ef7bb3f44c194f4dfb7e0edfe953276683c48abcc5174d03c8016e7"
+    },
+    {
+      "file": "index.html",
+      "sha256": "1a43d93b8b99cfb9383631877cb737b61b277b59b1ca3fe31cfe0cfa1504e5ee"
+    },
+    {
+      "file": "issue-modal.js",
+      "sha256": "7a2b2f1ee66e509b5d26ce0f3585a6e5e6ffc2f3f0b045d9f5a8b690a2e14391"
+    },
+    {
+      "file": "message-salutation.js",
+      "sha256": "70a273b77b4ec85f7c9f7ee9f3d249e11e7a5cc7f55f4bb2fb690d62d7957474"
+    },
+    {
+      "file": "mobile.html",
+      "sha256": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd"
+    },
+    {
+      "file": "money-input.js",
+      "sha256": "9bffc3ca4685e0fac2efcfc78d4d5f4f2739b4f9bf8fbf6157b462a41a9d0eb2"
+    },
+    {
+      "file": "next-action-picker.js",
+      "sha256": "be9e041da4388f3fd515e358cf99d7b04634e0b72b47eff9b59317f35cfd4d07"
+    },
+    {
+      "file": "owner-choice.js",
+      "sha256": "5c715c678a53649c315394020861dcd7bc79b85a11eb24fe192e90c62dbe0d95"
+    },
+    {
+      "file": "people-eligibility.js",
+      "sha256": "ac0acdef13597b6ff8f77c83f368a84067d4bb3da974bcfc55ae1e6ec11e6896"
+    },
+    {
+      "file": "stage-transition-ui.js",
+      "sha256": "c3fc39eee42159ac036776b9067e5d26de660b59f71d770f71e835d86d2010f7"
+    },
+    {
+      "file": "stage-transition.js",
+      "sha256": "469241cdab31838e1ea2e04d056daf1bda433f7497601dc8bbe8dd91e921db78"
+    },
+    {
+      "file": "write-ack.js",
+      "sha256": "df42acfaf242fdb2747fdc7d996fe57250b0b6a870b0b11d7b3cdea919363124"
+    }
+  ]
+}

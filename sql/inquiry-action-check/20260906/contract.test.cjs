@@ -1,0 +1,24 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict'),Module=require('node:module'),build=require('./build.cjs');
+function load(text,name){const m=new Module(name);m._compile(text,name+'.js');return m.exports;}
+const inquiry='f6090500-0005-4000-8000-000000000001',deal='f6090500-0004-4000-8000-000000000001',action='f6090600-0117-4000-8000-000000000001';
+test('three inquiry meanings normalize under existing external operations and sentinel',()=>{const a=load(build.adapter(),'inq-action-adapter');
+ assert.deepEqual(a.normalize('next_action',inquiry,0,{inquiry_id:inquiry,intent:'inquiry_next_set',type:'\uC804\uD654',text:'\uD604\uC7A5 \uD655\uC778',due_at:'2026-09-08'}).payload,{intent:'inquiry_next_set',type:'\uC804\uD654',text:'\uD604\uC7A5 \uD655\uC778',due_at:'2026-09-08'});
+ assert.deepEqual(a.normalize('next_action_complete',inquiry,0,{inquiry_id:inquiry,intent:'inquiry_next_complete',action_id:action}).payload,{intent:'inquiry_next_complete',action_id:action});
+ assert.deepEqual(a.normalize('stage_check',inquiry,0,{inquiry_id:inquiry,intent:'inquiry_check',item_index:2,item_text:'\uC758\uC0AC\uACB0\uC815\uAD8C\uC790 \uD655\uC778',checked:true}).payload,{intent:'inquiry_check',item_index:2,checked:true});
+ for(const op of ['next_action','next_action_complete','stage_check'])assert.throws(()=>a.normalize(op,inquiry,1,op==='next_action'?{inquiry_id:inquiry,intent:'inquiry_next_set',type:'\uC804\uD654',text:'x',due_at:'2026-09-08'}:op==='next_action_complete'?{inquiry_id:inquiry,intent:'inquiry_next_complete',action_id:action}:{inquiry_id:inquiry,intent:'inquiry_check',item_index:0,item_text:'\uCD5C\uCD08 \uC5F0\uB77D \uC644\uB8CC',checked:true}),/INVALID_VERSION/);
+});
+test('foreign fields, wrong labels and missing action ids fail closed',()=>{const a=load(build.adapter(),'inq-action-block');
+ assert.throws(()=>a.normalize('next_action',inquiry,0,{inquiry_id:inquiry,intent:'inquiry_next_set',type:'\uC804\uD654',text:'x',due_at:'2026-09-08',actor:'forged'}),/INQUIRY_NEXT_SET_INTENT_NOT_CONNECTED/);
+ assert.throws(()=>a.normalize('next_action_complete',inquiry,0,{inquiry_id:inquiry,intent:'inquiry_next_complete'}),/INQUIRY_NEXT_COMPLETE_INTENT_NOT_CONNECTED/);
+ assert.throws(()=>a.normalize('stage_check',inquiry,0,{inquiry_id:inquiry,intent:'inquiry_check',item_index:2,item_text:'\uC704\uC870',checked:true}),/INQUIRY_CHECK_INTENT_NOT_CONNECTED/);
+});
+test('Deal meanings and version contracts remain unchanged',()=>{const a=load(build.adapter(),'deal-action-preserve');
+ assert.equal(a.normalize('next_action',deal,7,{opportunity_id:deal,intent:'standalone',type:'\uC804\uD654',text:'\uD6C4\uC18D',due_at:'2026-09-08'}).expected_version,7);
+ assert.deepEqual(a.normalize('next_action_complete',deal,7,{opportunity_id:deal,action_id:action}).payload,{action_id:action});
+ assert.deepEqual(a.normalize('stage_check',deal,7,{opportunity_id:deal,stage_code:'first_contact',item_index:1,item_text:'\uACF5\uC0AC \uC608\uC815\uC2DC\uAE30 \uD655\uC778',checked:true}).payload,{stage_code:'first_contact',item_index:1,checked:true});
+});
+test('inquiry ACKs are strict and retain external operation names',()=>{const a=load(build.adapter(),'inq-action-ack'),auth='f6090500-0001-4000-8000-000000000001',request='f6090600-0117-4000-8000-000000000010';
+ const q={request_id:request,operation:'stage_check',object_id:inquiry,auth_uid:auth,user_id:auth,payload:{intent:'inquiry_check',item_index:0,checked:true}},ack={contract_version:1,ok:true,request_id:request,operation:'stage_check',object_id:inquiry,actor_auth_uid:auth,actor_user_id:auth,replayed:false,intent:'inquiry_check',item_index:0,item_text:'\uCD5C\uCD08 \uC5F0\uB77D \uC644\uB8CC',checked:true,checks:[true,false,false,false,false,false],inquiry_audit_event_id:'f6090600-0117-4000-8000-000000000011',server_at:'2026-09-06T00:00:00Z'};
+ assert.equal(a.validateAck(ack,q),ack);assert.throws(()=>a.validateAck({...ack,checks:[true]},q),/ACK_CONTRACT_MISMATCH/);
+});

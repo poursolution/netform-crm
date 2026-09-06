@@ -1,0 +1,58 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "operations": [
+    "next_action",
+    "next_action_complete",
+    "stage_check"
+  ],
+  "intents": [
+    "inquiry_next_set",
+    "inquiry_next_complete",
+    "inquiry_check"
+  ],
+  "ui_coverage_candidate": [
+    "I07"
+  ],
+  "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+  "surface": "pc_only",
+  "handlers": [
+    "splitSaveNext",
+    "applyInqBulkAction",
+    "splitDoneAction",
+    "splitCheck"
+  ],
+  "deal_meanings_preserved": true,
+  "roles": [
+    "assigned_rep",
+    "assigned_consultation",
+    "scoped_admin"
+  ],
+  "transaction": [
+    "inquiry next set/replace",
+    "inquiry next complete",
+    "private inquiry checklist state",
+    "private inquiry audit",
+    "command receipt"
+  ],
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "files_sha256": {
+    "build.cjs": "82b755a760200a23efdcbf64e95b1a0e41c4bf4a6b80a772588d9808cfcfa6d7",
+    "helper.sql": "695bc6237c19608708b55a857a91e9b7f9d19c31be20c786933c495767533ab7",
+    "rollback-fragment.sql": "c836f1d19d432998f3611d9a3e64a5916eb5fe731ea066356d39319bbcd9d87d",
+    "review.md": "97ca5773c65f7850819dfc08c7d313a7b44beaafb9a1af6333757c8848f7b9a0",
+    "contract.test.cjs": "df9f066de9247a735b75489d46a56dd2ee161f86abfc3fbcca69ff00222c8b9b",
+    "db.test.cjs": "282ed740ff4079064cc5ae744124726ec13a3a64ad79dce7993a6974900382f4",
+    "ui.test.cjs": "840d48f3ddcc4faa1327002a18f376dcb3b809ceed00c0b09390b598f7602b5d",
+    "staging-apply-after-inquiry-stage-progress.sql": "180d235f42c28e0b2eec50d58c8941152ad508a154ed7289fe5c76d8441fdb7e",
+    "rollback-before-inquiry-stage-progress.sql": "b575e5beaafc0a2d0293e6fb85d7f418223629b679589b8d32e0a791dce51bed",
+    "operational-adapter.candidate.js": "940f84e4abda805d08284ddce2e2a0737b7abadbe5ac688a36b9b6b557c2bacf",
+    "operational-overlay.candidate.js": "9c33ea7cae9b0f6cbf95f798b24d75a54e505efd0c962d86fd5eea9ee56d81f8"
+  },
+  "source_sha256": {
+    "sql/inquiry-stage-progress/20260906/manifest.json": "e63642c7a42e864a9ff525455a4261fa734e43b1d4f1c7c18522932cdb6376e6",
+    "crm.html": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "sql/operational-bundle/20260906/after.json": "34f289ac4709d71c03ba60cbf3b9bca28fd9189b1490ccb9c3229e2171a11ce8"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "REMOVED_VIA_STORAGE_API_VERIFIED_ZERO",
+  "run_id": "stg-e2e-20260906t225700z-90c0ffee",
+  "bucket": "crm-site-files",
+  "object_id": "9ca6bfba-f4fb-49fc-af37-b5914ca20845",
+  "owner_id": "b5295979-d6c9-48f2-971a-2dea418b75e6",
+  "object_path": "deals/b8ff1bd7-e0c7-417d-9521-937ee3ab1db0/26ae0b44-d1de-4f91-8e4c-a52234a7f03f",
+  "broad_prefix_delete": false,
+  "direct_sql_delete": false,
+  "production_accessed": false,
+  "n8n_accessed": false
+}

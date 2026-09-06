@@ -1,0 +1,23 @@
+{
+  "format": "crm-v2-first-review-v1",
+  "executionAuthorized": false,
+  "completeExecutableBundle": false,
+  "productionForbidden": true,
+  "stagingRef": "rprechiaglyjaydkmxsu",
+  "neverRunByFilenameOrder": true,
+  "steps": [
+    {"order": 1, "name": "complete reviewed schema-only baseline", "sql": null, "status": "BLOCKED_INCOMPLETE_BASELINE"},
+    {"order": 2, "name": "isolated staging reconstruction", "sql": null, "status": "NOT_AUTHORIZED"},
+    {"order": 3, "name": "synthetic Auth accounts and CRM seed", "sql": null, "status": "NEEDS_ACTUAL_UUID_MAPPING_AND_REVIEWED_BASELINE"},
+    {"order": 4, "name": "all-creator default privilege preparation", "sql": "supabase/migrations/20260905112543_crm_creator_defaults_review.sql", "requires": ["exact creator inventory", "managed creator impact approval"]},
+    {"order": 5, "name": "additive v2 RPC and UUID profile", "sql": "supabase/migrations/20260905111739_crm_observed_uuid_scoped_candidate.sql", "status": "LOCAL_DRAFT"},
+    {"order": 6, "name": "reviewed access ledger and PC/mobile compatibility", "sql": null, "status": "ADAPTER_AND_MISSING_CONTRACTS_BLOCK_CUTOVER"},
+    {"order": 7, "name": "legacy cutover preserving v2 allowlist", "sql": "supabase/migrations/20260905111432_crm_observed_p0_staging_candidate.sql", "requires": ["all feature regression evidence", "schema diff", "rollback plan", "separate cutover approval"]},
+    {"order": 8, "name": "eleven real JWT and authorization attacks", "sql": null, "status": "NOT_RUN"},
+    {"order": 9, "name": "rollback rehearsal", "sql": null, "status": "REVERSE_MIGRATION_NOT_COMPLETE"}
+  ],
+  "metadataQueries": ["sql/20260905_observed_schema_extract.sql", "sql/20260905_crm_creator_inventory.sql"],
+  "v2Allowlist": ["crm_profile_scoped_v2()", "crm_read_scoped_v2(uuid,integer)", "crm_contacts_scoped_v2(uuid)", "crm_work_set_scoped_v2(uuid,text,jsonb,text,integer)"],
+  "expectedPublicObjectsAtCutover": {"legacyFunctions": 17, "v2Functions": 4, "tables": 18, "views": 5, "columns": 242},
+  "notIncluded": ["complete production schema dump", "real Auth credentials", "customer rows", "complete UI adapter", "all business write RPCs", "full reverse migration"]
+}

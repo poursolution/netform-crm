@@ -1,0 +1,2 @@
+-- NO-OP ROLLBACK.
+-- candidate.sql changes no database object or row.

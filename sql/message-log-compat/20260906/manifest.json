@@ -1,0 +1,56 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+  "operation": "message_log",
+  "ui_coverage_candidate": [
+    "M02"
+  ],
+  "prerequisite": "queue-retry-compat/20260906 (DB prerequisite customer-support-action/20260906)",
+  "surface": "pc_mobile",
+  "meaning": "user-attested external send outcome; never provider delivery evidence",
+  "server_rules": {
+    "scope": "current can_deal(...,true) and version",
+    "contact": "unique current Deal contact and phone resolved server-side",
+    "sent": "message outcome + non-meaningful Activity + optional replacement Next Action atomically",
+    "failed_cancelled": "message outcome only plus Deal version/audit/receipt",
+    "attachments": "referenced quote version and ready Deal attachments only",
+    "authority": "server UUID actor/contact/phone/time; client sender/phone/stage/site/time stripped",
+    "idempotency": "common receipt and 409 reuse conflict"
+  },
+  "read_additions": [
+    "message_log actor-scoped operational source",
+    "messageLogs/message_logs aliases"
+  ],
+  "blocked": [
+    "provider delivery claim",
+    "automatic send",
+    "direct unwrapped message_log",
+    "unready/cross-Deal attachment"
+  ],
+  "rollback": "message outcomes/receipts archived; O02 write/read layer restored",
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "files_sha256": {
+    "build.cjs": "9b23e2ea03c1082af0e72751466cad5ebc03fa9570cdff6568edf233b19b8605",
+    "helper.sql": "1045d1cd64d03483cd806ccaecb1bf066568e342b6c74250fc3a1503253fe7bc",
+    "rollback-fragment.sql": "d0ec8919c578cf21da63c434a8a5ccb1a0381518e9782aab191aa1e413084e30",
+    "contract.test.cjs": "cb108fb9e8f155bcec6f3cb2ec406d3e870828569e2f8b6bdd8a4117a704993d",
+    "db.test.cjs": "9fd458ede325d9e1d0e758ddcb5de3d2c75180fbd3743215c49014904c8f9223",
+    "ui.test.cjs": "700351404a732ebe0208a7bdc7f69cb5297b924e98e827b229a8d16d06c1a9ea",
+    "review.md": "9275af768cadd44d672ffcc370c85d1691d11d3bea69cdde2707f1f39466708c",
+    "staging-apply-after-customer-support.sql": "2c5374dd1dc92c01a6a6050d71eb1314452ad432681a3e3ab8f2fa36fc423491",
+    "rollback-before-customer-support.sql": "f226ebd0daf2ce545231bc67567968b2d2f73de37b3cd3200ce56dec200aba8d",
+    "operational-adapter.candidate.js": "a0b22e2c8d2f7085b32df6dbf45e8841b432c84983d58c0f75b8ccbe5425fada",
+    "operational-overlay.candidate.js": "58155ac638f271b8c2d4e4da14f102979e7da0dc4b307ee3531cc45fdae80a61",
+    "transport.candidate.js": "53f50ba5362c4689cef444ce30096c23f7f7b9cecbd313140ce44303ef3b9469"
+  },
+  "source_sha256": {
+    "sql/queue-retry-compat/20260906/manifest.json": "248eb05ba89774136d7115ca64571b8f622777ae3d6bd2ad508cccf6a1157a6c",
+    "crm.html": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "mobile.html": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "sql/20260905_relationship_messaging.sql": "5b5324e830abef79d370cffe266fd57955bc7f5051dee078204afe42d0f0b5fd",
+    "sql/20260905_contextual_message_composer.sql": "a0b67d899fc78be0f360f3fa6c239fc3a8c3ebeea9b31ce5ee82e55626c2ff54",
+    "docs/operational-cutover-20260906/coverage-matrix.csv": "66b015765e4fa6e96d8e3b233a7a3411a50be1d4ff4054d7d757baedc22947c4"
+  }
+}

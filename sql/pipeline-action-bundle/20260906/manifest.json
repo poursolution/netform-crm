@@ -1,0 +1,57 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "LOCAL_CHAIN_CANDIDATE_AFTER_T03_NOT_APPLIED",
+  "prerequisite": "personal-state-compat/20260906 must be applied and live baseline recaptured",
+  "public_dispatcher_changed_in_candidate": true,
+  "connected_operations_candidate": [
+    "next_action",
+    "activity"
+  ],
+  "standalone_handlers": {
+    "pc": [
+      "addDetailActivity",
+      "spSaveAct",
+      "saveNextAction",
+      "spSaveNext",
+      "briefCall",
+      "contactActivity",
+      "todoCall"
+    ],
+    "mobile": [
+      "saveCallMemoM",
+      "startTodayCall",
+      "callContactM",
+      "smsContactM",
+      "kakaoContactM"
+    ]
+  },
+  "absorbed_legacy_operation": "contact within spSaveAct",
+  "needs_verification": [
+    "amount",
+    "next_action_complete",
+    "next_action:scheduling",
+    "next_action:postpone",
+    "mobile derived next actions"
+  ],
+  "files_sha256": {
+    "candidate.sql": "620a998e39611b880150973266b2be41fd047a27a3be14db13c217d662d6efaa",
+    "rollback.sql": "553352f233ed62085123b36db3e679c62d314d322d5a71dc042c2528d1b9a77a",
+    "adapter-contract.js": "c114cb97dfc48c5608ad98bf7d895374874c50a15bd7ffd9723665253db68412",
+    "fixtures.json": "ee1d064a8f081a16acc18d1a398a351ccc285936b9dbe53dc70c4310fa1c5ea7",
+    "review.md": "c7b2f53d4b72334f4ddd6f2ccd423690990ad9a171cd5e2b75e8f724d2dfb083",
+    "contract.test.cjs": "78af22d588ef777704353807299a6491b476d8c8dc3552159c8403f5c499f4df",
+    "db.test.cjs": "954e331b5cf06adb236b78cfead18432d053fffda4762793c7fb1ddac45af5f9",
+    "operational-adapter.candidate.js": "48a1c6dfe103afa5d8be3936dabe4a450f29f453e777fba98304da8f3a11cd7f",
+    "operational-overlay.candidate.js": "11694b7844aa90fee5203276feb6dc5954c716f1d22fe9fa78c806ab4e1cb7a0",
+    "ui.test.cjs": "567a6475ab8945881264cbad6344436a45ef5eb3bf8d4ef1e56b0cbf0c2de972",
+    "chain-db.test.cjs": "c24c8e3348a7e3ef234aa7e6f280ab16cd950864c821572a1c31dc6d47387f88",
+    "staging-apply-after-personal.sql": "0c17e1f08cc10bc427f0b48a58d5cc5050a17143b08c8ae511240aef9c74429e",
+    "rollback-after-personal.sql": "a181f3b0ac57652c5a4d9ff2d38308af5ec6523211244eda2fdad57d34956788"
+  },
+  "source_sha256": {
+    "golden_pc_sha256": "f73daf1598a2271d38fb38fba32b81cc8cc842e860b98983ce7f3c972c2274e2",
+    "golden_mobile_sha256": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "personal_state_manifest_sha256": "a25f08c475b609222059f07eec1a6a734733ce589350b77700ebf4a390c0bae5",
+    "operational_bundle_sha256": "8d4818347e4737ace3b4b1e07728c4051dadd7e4f646d873f7cc1ac88eb91e64"
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "status": "APPLIED_READ_JWT_BROWSER_MUTATION_35_OF_35_STORAGE_POLICY_CLEANUP_PASS",
+  "source_apply_sha256": "e3fba5e7cd1f6430b0d9f5f1404f8dbbed093e8e1ff704741e2b7c288303bdf9",
+  "applied_database_bundle_sha256": "38b246a739c105856854314ff26c1e6b930b25ffc9f1c8873fb0202fa909741f",
+  "applied_database_migration": "operational_full_31_op_deferred_storage_policy_20260906",
+  "storage_policy": {
+    "name": "crm_attachment_insert_v1",
+    "status": "APPLIED_STAGING_PASS",
+    "migration": "create_crm_attachment_insert_v1_policy_20260906",
+    "apply_sha256": "6ab7068d0bbb92db7607e84ba40dfc1252f28afb9ba1a10d0d8f30cf4437dc55",
+    "rollback_sha256": "4814de2336b9ab9f02388457f9ed14bd3d3d14f56b90ac8ff714bb64a3d3b96c"
+  },
+  "catalog_status": "PASS",
+  "catalog_target_relations": 32,
+  "catalog_candidate_relations": 14,
+  "catalog_canonical_relations": 9,
+  "pagination_hotfix_migration": "operational_expansion_pagination_hotfix_v2_20260906",
+  "pagination_hotfix_sha256": "20749b9366a8c418387bc7a4ab79447e88545ea02213d4fa43385effa4c9b700",
+  "jwt_readonly": {
+    "status": "PASS",
+    "pass": 8,
+    "fail": 0,
+    "skip": 0,
+    "roles": 5,
+    "domains": 5,
+    "crm_writes": 0
+  },
+  "fixture": {
+    "run_id": "stg-e2e-20260906t125239z-fc70f2d2",
+    "setup_sha256": "e0c63c04ed172cce778b9e74f65e2eef7b392fcc3658d1a9fe1d49253a737049",
+    "inquiries": 18,
+    "deals": 23,
+    "requests": 944,
+    "setup_status": "APPLIED",
+    "mutation_status": "PASS",
+    "mutation_node_tests": {
+      "pass": 37,
+      "fail": 0,
+      "skip": 0
+    },
+    "mutation_scenarios": {
+      "pass": 35,
+      "fail": 0
+    },
+    "mutation_steps": {
+      "pass": 75,
+      "fail": 0,
+      "skip": 0
+    },
+    "mutation_proof_sha256": "65dc4594789e729585c2773a4c473fa8cf2da5d6faf94ed6dda6239d6842052c",
+    "mutation_proof_file": "staging-fixture-runs/stg-e2e-20260906t125239z-fc70f2d2/browser-mutation-proof.json",
+    "cleanup_sha256": "3dfe6eebb429a9c6b7340adf6ddc38db37a8190749ce4afb5d34e45348536942",
+    "cleanup_file": "staging-fixture-runs/stg-e2e-20260906t125239z-fc70f2d2/cleanup-exact.sql",
+    "cleanup_status": "PASS",
+    "canonical_inquiries_after_cleanup": 5,
+    "canonical_deals_after_cleanup": 5,
+    "remaining_fixture_db_rows": 0,
+    "remaining_generated_residual_rows": 0,
+    "remaining_storage_objects": 0,
+    "database_rows_deleted": 448,
+    "storage_objects_deleted": 1,
+    "cleanup_verification_file": "staging-fixture-runs/stg-e2e-20260906t125239z-fc70f2d2/cleanup-verification-current.json",
+    "cleanup_verification_sha256": "efb2151256e1e05e7641326b61d8f90211e7b45adb670d8e1fa4061c8dcd68aa",
+    "cleanup_required": false
+  },
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "remaining": [
+    "finalize the 64-action Coverage verdicts and PC/mobile cutover rehearsal",
+    "verify only the approved external n8n boundary without inspecting or changing workflow bodies",
+    "finalize Production UI artifact hashes and rollback owner/window"
+  ]
+}

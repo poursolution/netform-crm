@@ -1,0 +1,379 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "query_url": "https://supabase.com/dashboard/project/rprechiaglyjaydkmxsu/sql/5f47a3cd-2e5c-41d2-87e9-a978666d5c95",
+  "captured_at": "2026-09-05T12:37:37.421Z",
+  "snapshot": {
+    "payload": {
+      "views": null,
+      "schema": {
+        "acl": [
+          "pg_database_owner=UC/pg_database_owner",
+          "=U/pg_database_owner",
+          "postgres=U/pg_database_owner",
+          "anon=U/pg_database_owner",
+          "authenticated=U/pg_database_owner",
+          "service_role=U/pg_database_owner"
+        ],
+        "owner": "pg_database_owner"
+      },
+      "columns": null,
+      "indexes": null,
+      "version": "17.6",
+      "creators": [
+        {
+          "role": "pg_database_owner",
+          "inherit": true,
+          "can_login": false,
+          "superuser": false,
+          "bypass_rls": false,
+          "executor_member": true,
+          "can_create_public": true
+        },
+        {
+          "role": "postgres",
+          "inherit": true,
+          "can_login": true,
+          "superuser": false,
+          "bypass_rls": true,
+          "executor_member": true,
+          "can_create_public": true
+        },
+        {
+          "role": "supabase_admin",
+          "inherit": true,
+          "can_login": true,
+          "superuser": true,
+          "bypass_rls": true,
+          "executor_member": false,
+          "can_create_public": true
+        }
+      ],
+      "database": {
+        "ctype": "en_US.UTF-8",
+        "locale": "en-US",
+        "collate": "en_US.UTF-8",
+        "provider": "i"
+      },
+      "encoding": "UTF8",
+      "policies": null,
+      "triggers": null,
+      "functions": null,
+      "relations": null,
+      "sequences": null,
+      "extensions": [
+        {
+          "name": "pg_stat_statements",
+          "owner": "postgres",
+          "schema": "extensions",
+          "version": "1.11"
+        },
+        {
+          "name": "pgcrypto",
+          "owner": "postgres",
+          "schema": "extensions",
+          "version": "1.3"
+        },
+        {
+          "name": "plpgsql",
+          "owner": "supabase_admin",
+          "schema": "pg_catalog",
+          "version": "1.0"
+        },
+        {
+          "name": "supabase_vault",
+          "owner": "supabase_admin",
+          "schema": "vault",
+          "version": "0.3.1"
+        },
+        {
+          "name": "uuid-ossp",
+          "owner": "postgres",
+          "schema": "extensions",
+          "version": "1.1"
+        }
+      ],
+      "constraints": null,
+      "custom_types": null,
+      "dependencies": null,
+      "custom_collations": null,
+      "default_privileges": [
+        {
+          "acl": [
+            "postgres=rwU/postgres",
+            "anon=rwU/postgres",
+            "authenticated=rwU/postgres",
+            "service_role=rwU/postgres"
+          ],
+          "type": "S",
+          "schema": "public",
+          "creator": "postgres"
+        },
+        {
+          "acl": [
+            "postgres=X/postgres",
+            "anon=X/postgres",
+            "authenticated=X/postgres",
+            "service_role=X/postgres"
+          ],
+          "type": "f",
+          "schema": "public",
+          "creator": "postgres"
+        },
+        {
+          "acl": [
+            "postgres=arwdDxtm/postgres",
+            "anon=arwdDxtm/postgres",
+            "authenticated=arwdDxtm/postgres",
+            "service_role=arwdDxtm/postgres"
+          ],
+          "type": "r",
+          "schema": "public",
+          "creator": "postgres"
+        },
+        {
+          "acl": [
+            "postgres=rwU/supabase_admin",
+            "anon=rwU/supabase_admin",
+            "authenticated=rwU/supabase_admin",
+            "service_role=rwU/supabase_admin"
+          ],
+          "type": "S",
+          "schema": "public",
+          "creator": "supabase_admin"
+        },
+        {
+          "acl": [
+            "postgres=X/supabase_admin",
+            "anon=X/supabase_admin",
+            "authenticated=X/supabase_admin",
+            "service_role=X/supabase_admin"
+          ],
+          "type": "f",
+          "schema": "public",
+          "creator": "supabase_admin"
+        },
+        {
+          "acl": [
+            "postgres=arwdDxtm/supabase_admin",
+            "anon=arwdDxtm/supabase_admin",
+            "authenticated=arwdDxtm/supabase_admin",
+            "service_role=arwdDxtm/supabase_admin"
+          ],
+          "type": "r",
+          "schema": "public",
+          "creator": "supabase_admin"
+        }
+      ]
+    },
+    "environment": {
+      "roles": [
+        {
+          "name": "anon",
+          "login": false,
+          "super": false,
+          "bypass": false,
+          "inherit": true,
+          "postgres_member": true
+        },
+        {
+          "name": "authenticated",
+          "login": false,
+          "super": false,
+          "bypass": false,
+          "inherit": true,
+          "postgres_member": true
+        },
+        {
+          "name": "pg_database_owner",
+          "login": false,
+          "super": false,
+          "bypass": false,
+          "inherit": true,
+          "postgres_member": true
+        },
+        {
+          "name": "postgres",
+          "login": true,
+          "super": false,
+          "bypass": true,
+          "inherit": true,
+          "postgres_member": true
+        },
+        {
+          "name": "service_role",
+          "login": false,
+          "super": false,
+          "bypass": true,
+          "inherit": true,
+          "postgres_member": true
+        },
+        {
+          "name": "supabase_admin",
+          "login": true,
+          "super": true,
+          "bypass": true,
+          "inherit": true,
+          "postgres_member": false
+        }
+      ],
+      "database": "postgres",
+      "executor": "postgres",
+      "namespaces": [
+        {
+          "acl": [
+            "supabase_admin=UC/supabase_admin",
+            "anon=U/supabase_admin",
+            "authenticated=U/supabase_admin",
+            "service_role=U/supabase_admin",
+            "supabase_auth_admin=UC/supabase_admin",
+            "dashboard_user=UC/supabase_admin",
+            "postgres=U/supabase_admin"
+          ],
+          "name": "auth",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": [
+            "postgres=UC/postgres",
+            "anon=U/postgres",
+            "authenticated=U/postgres",
+            "service_role=U/postgres",
+            "dashboard_user=UC/postgres"
+          ],
+          "name": "extensions",
+          "owner": "postgres"
+        },
+        {
+          "acl": [
+            "supabase_admin=UC/supabase_admin",
+            "postgres=U*/supabase_admin",
+            "anon=U/supabase_admin",
+            "authenticated=U/supabase_admin",
+            "service_role=U/supabase_admin"
+          ],
+          "name": "graphql",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": [
+            "supabase_admin=UC/supabase_admin",
+            "postgres=U*/supabase_admin",
+            "anon=U/supabase_admin",
+            "authenticated=U/supabase_admin",
+            "service_role=U/supabase_admin"
+          ],
+          "name": "graphql_public",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": [
+            "pg_database_owner=UC/pg_database_owner",
+            "=U/pg_database_owner",
+            "postgres=U/pg_database_owner",
+            "anon=U/pg_database_owner",
+            "authenticated=U/pg_database_owner",
+            "service_role=U/pg_database_owner"
+          ],
+          "name": "public",
+          "owner": "pg_database_owner"
+        },
+        {
+          "acl": [
+            "supabase_admin=UC/supabase_admin",
+            "postgres=U*/supabase_admin",
+            "anon=U/supabase_admin",
+            "service_role=U/supabase_admin",
+            "supabase_realtime_admin=U*C*/supabase_admin",
+            "authenticated=U/supabase_admin"
+          ],
+          "name": "realtime",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": [
+            "supabase_admin=UC/supabase_admin",
+            "postgres=U*/supabase_admin",
+            "anon=U/supabase_admin",
+            "authenticated=U/supabase_admin",
+            "service_role=U/supabase_admin",
+            "supabase_storage_admin=U*C*/supabase_admin",
+            "dashboard_user=UC/supabase_admin"
+          ],
+          "name": "storage",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": [
+            "supabase_admin=UC/supabase_admin",
+            "postgres=U*/supabase_admin",
+            "service_role=U/supabase_admin"
+          ],
+          "name": "vault",
+          "owner": "supabase_admin"
+        }
+      ],
+      "event_triggers": [
+        {
+          "name": "issue_graphql_placeholder",
+          "tags": [
+            "DROP EXTENSION"
+          ],
+          "event": "sql_drop",
+          "owner": "supabase_admin",
+          "enabled": "O",
+          "function": "set_graphql_placeholder()"
+        },
+        {
+          "name": "issue_pg_cron_access",
+          "tags": [
+            "CREATE EXTENSION"
+          ],
+          "event": "ddl_command_end",
+          "owner": "supabase_admin",
+          "enabled": "O",
+          "function": "grant_pg_cron_access()"
+        },
+        {
+          "name": "issue_pg_graphql_access",
+          "tags": [
+            "CREATE EXTENSION"
+          ],
+          "event": "ddl_command_end",
+          "owner": "supabase_admin",
+          "enabled": "O",
+          "function": "grant_pg_graphql_access()"
+        },
+        {
+          "name": "issue_pg_net_access",
+          "tags": [
+            "CREATE EXTENSION"
+          ],
+          "event": "ddl_command_end",
+          "owner": "supabase_admin",
+          "enabled": "O",
+          "function": "grant_pg_net_access()"
+        },
+        {
+          "name": "pgrst_ddl_watch",
+          "tags": null,
+          "event": "ddl_command_end",
+          "owner": "supabase_admin",
+          "enabled": "O",
+          "function": "pgrst_ddl_watch()"
+        },
+        {
+          "name": "pgrst_drop_watch",
+          "tags": null,
+          "event": "sql_drop",
+          "owner": "supabase_admin",
+          "enabled": "O",
+          "function": "pgrst_drop_watch()"
+        }
+      ],
+      "auth_jwt_exists": true,
+      "collation_version": "153.121",
+      "project_ref_setting": null
+    },
+    "metadata_md5": "79ac8834d044680a11becab8df6bd1d6"
+  }
+}

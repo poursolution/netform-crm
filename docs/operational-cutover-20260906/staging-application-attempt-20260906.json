@@ -1,0 +1,25 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "migration_name": "operational_full_31_op_20260906",
+  "apply_sha256": "e3fba5e7cd1f6430b0d9f5f1404f8dbbed093e8e1ff704741e2b7c288303bdf9",
+  "status": "FAILED_ROLLED_BACK",
+  "error_code": "42501",
+  "error": "must be owner of table objects",
+  "failure_scope": "storage.objects policy DDL",
+  "catalog_observation": {
+    "storage_objects_owner": "supabase_storage_admin",
+    "storage_objects_rls_enabled": true,
+    "postgres_is_storage_admin_member": false
+  },
+  "post_failure_readonly_preflight": "PASS",
+  "partial_schema_change": false,
+  "candidate_functions_absent": true,
+  "candidate_relations_absent": true,
+  "candidate_columns_absent": true,
+  "candidate_schemas_absent": true,
+  "attachment_policy_absent": true,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "next_action": "USER_DECISION_REQUIRED_FOR_ATTACHMENT_POLICY_CHANNEL_OR_TEMPORARY_ATTACHMENT_BLOCK"
+}

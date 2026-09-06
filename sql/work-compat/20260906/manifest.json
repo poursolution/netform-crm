@@ -1,0 +1,7 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "migration": "supabase/migrations/20260905220648_crm_work_compat_dispatcher.sql",
+  "apply_sha256": "acf5b23a669ed1366391ec2fc2b270e17dcfa3aa0d0e12c2ebcd6ad563fe7184",
+  "rollback_sha256": "1d63c84ffdbe7d111d600f39815f8d5838f440bb7dec56759ff26e27ac28f981",
+  "status": "LOCAL_CANDIDATE_NOT_APPLIED"
+}

@@ -1,0 +1,24 @@
+{
+  "generated_at": "2026-09-06T16:18:14.6086557+09:00",
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "mode": "READ_ONLY",
+  "status": "PASS",
+  "actual": {
+    "won_amount_column": false,
+    "completion_date_column": false,
+    "expansion_pool_relation": false,
+    "expansion_events_relation": false,
+    "projects_relation": true,
+    "stage_history_relation": true,
+    "activities_relation": true,
+    "next_actions_relation": true,
+    "won_rows": 0,
+    "completion_stage_rows": 0,
+    "outcome_check_allows_won": true
+  },
+  "conclusion": "The final PC/mobile structured UI supplies a unique completion evidence contract, while Staging has no conflicting won rows or canonical won/pool storage. A minimal private compatibility storage candidate is safe to review but is not applied.",
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false
+}

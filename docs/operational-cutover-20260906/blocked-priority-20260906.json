@@ -1,0 +1,251 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "NO_GO_FULL_64_STAGING_31_PASS_REMAINING_CONNECTIONS",
+  "denominator": "64_LOGICAL_REACHABLE_ACTIONS",
+  "pass": 38,
+  "blocked": 22,
+  "out_of_scope": 4,
+  "rule": "Blocked actions are existing Golden behavior awaiting backend/read/UUID/E2E or approved external integration evidence; they are not new feature builds.",
+  "lane_counts": {
+    "SECOND_WAVE_OPERATIONAL_REQUIRED": 21,
+    "EXTERNAL_INTEGRATION": 1
+  },
+  "reason_counts": {
+    "READ_PROJECTION_OR_SCOPE_INCOMPLETE": 6,
+    "BUSINESS_RULE_OR_UUID_SCOPE_UNRESOLVED": 8,
+    "REACHABLE_WRITE_NOT_CONNECTED": 5,
+    "REACHABLE_LOCAL_ONLY_NOT_IN_31_OP": 2,
+    "APPROVED_N8N_EXTERNAL_E2E_PENDING": 1
+  },
+  "estimates": {
+    "core_ui_cutover_rehearsal": "1-2 hours for final PC/mobile artifact and role rehearsal if no new drift appears",
+    "remaining_existing_behavior": "re-estimate after connection/read/UUID/E2E categorization; do not price as new feature development",
+    "external_integration": "existing n8n boundary; test recipient/provider evidence and CRM read-back still required"
+  },
+  "items": [
+    {
+      "id": "R09_CUSTOMER_TIMELINE",
+      "name": "Deal/Site 고객자산 Timeline 조회",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "READ_PROJECTION_OR_SCOPE_INCOMPLETE",
+      "operational_required": true,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906",
+        "READ_CONTRACT_MISSING"
+      ]
+    },
+    {
+      "id": "R12_MOBILE_OPERATIONS",
+      "name": "모바일 내 건·Today·관리·검색·질의",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "READ_PROJECTION_OR_SCOPE_INCOMPLETE",
+      "operational_required": true,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906",
+        "READ_CONTRACT_MISSING"
+      ]
+    },
+    {
+      "id": "C03",
+      "name": "업무 데이터 조회·자동동기화·진단",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "READ_PROJECTION_OR_SCOPE_INCOMPLETE",
+      "operational_required": true,
+      "source_statuses": [
+        "READ_CONTRACT_MISSING"
+      ]
+    },
+    {
+      "id": "I16",
+      "name": "상담담당 지정·해제",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "BUSINESS_RULE_OR_UUID_SCOPE_UNRESOLVED",
+      "operational_required": true,
+      "source_statuses": [
+        "NEEDS_VERIFICATION_BLOCKED"
+      ]
+    },
+    {
+      "id": "I17",
+      "name": "경남 미지정 Pool 인계",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "BUSINESS_RULE_OR_UUID_SCOPE_UNRESOLVED",
+      "operational_required": true,
+      "source_statuses": [
+        "NEEDS_VERIFICATION_BLOCKED"
+      ]
+    },
+    {
+      "id": "I18",
+      "name": "지사 실담당 지정·미지정 복귀",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "BUSINESS_RULE_OR_UUID_SCOPE_UNRESOLVED",
+      "operational_required": true,
+      "source_statuses": [
+        "NEEDS_VERIFICATION_BLOCKED"
+      ]
+    },
+    {
+      "id": "P02",
+      "name": "담당자 변경·인수인계",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "BUSINESS_RULE_OR_UUID_SCOPE_UNRESOLVED",
+      "operational_required": true,
+      "source_statuses": [
+        "NEEDS_VERIFICATION_BLOCKED"
+      ]
+    },
+    {
+      "id": "P05Q",
+      "name": "사유 없는 견적금액 직접 편집",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "REACHABLE_WRITE_NOT_CONNECTED",
+      "operational_required": true,
+      "source_statuses": [
+        "NOT_CONNECTED"
+      ]
+    },
+    {
+      "id": "P05W",
+      "name": "수주 전 수주금액 직접 편집",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "REACHABLE_WRITE_NOT_CONNECTED",
+      "operational_required": true,
+      "source_statuses": [
+        "NOT_CONNECTED"
+      ]
+    },
+    {
+      "id": "P12",
+      "name": "단계·세부·담당·장기검토·Next 일괄변경",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "REACHABLE_LOCAL_ONLY_NOT_IN_31_OP",
+      "operational_required": true,
+      "source_statuses": [
+        "LOCAL_ONLY_MIGRATION_BLOCKER"
+      ]
+    },
+    {
+      "id": "A01",
+      "name": "연락처·관리사무소·수신동의 저장",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "BUSINESS_RULE_OR_UUID_SCOPE_UNRESOLVED",
+      "operational_required": true,
+      "source_statuses": [
+        "NEEDS_VERIFICATION_BLOCKED"
+      ]
+    },
+    {
+      "id": "A02",
+      "name": "의사결정 역할·관계 톤 저장",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "BUSINESS_RULE_OR_UUID_SCOPE_UNRESOLVED",
+      "operational_required": true,
+      "source_statuses": [
+        "NEEDS_VERIFICATION_BLOCKED"
+      ]
+    },
+    {
+      "id": "A03",
+      "name": "관리소장 근무지 이동",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "BUSINESS_RULE_OR_UUID_SCOPE_UNRESOLVED",
+      "operational_required": true,
+      "source_statuses": [
+        "NEEDS_VERIFICATION_BLOCKED"
+      ]
+    },
+    {
+      "id": "A05",
+      "name": "중복 preview·확인·apply",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "REACHABLE_WRITE_NOT_CONNECTED",
+      "operational_required": true,
+      "source_statuses": [
+        "NOT_CONNECTED"
+      ]
+    },
+    {
+      "id": "X03",
+      "name": "실제 견적 후 새 Opportunity 전환",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "REACHABLE_WRITE_NOT_CONNECTED",
+      "operational_required": true,
+      "source_statuses": [
+        "NOT_CONNECTED"
+      ]
+    },
+    {
+      "id": "M06",
+      "name": "다중 대상 즉시·예약 대기열",
+      "lane": "EXTERNAL_INTEGRATION",
+      "block_reason": "APPROVED_N8N_EXTERNAL_E2E_PENDING",
+      "operational_required": true,
+      "source_statuses": [
+        "EXTERNAL_N8N_RETAINED_E2E_PENDING"
+      ]
+    },
+    {
+      "id": "O01",
+      "name": "주간 코멘트·완료 상태",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "BUSINESS_RULE_OR_UUID_SCOPE_UNRESOLVED",
+      "operational_required": true,
+      "source_statuses": [
+        "NEEDS_VERIFICATION_BLOCKED"
+      ]
+    },
+    {
+      "id": "O03",
+      "name": "연간 목표 변경",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "REACHABLE_LOCAL_ONLY_NOT_IN_31_OP",
+      "operational_required": true,
+      "source_statuses": [
+        "LOCAL_ONLY_MIGRATION_BLOCKER"
+      ]
+    },
+    {
+      "id": "O04",
+      "name": "범위 제한 JSON export",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "REACHABLE_WRITE_NOT_CONNECTED",
+      "operational_required": true,
+      "source_statuses": [
+        "NOT_CONNECTED"
+      ]
+    },
+    {
+      "id": "O07P",
+      "name": "담당자 실적 점수·상세",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "READ_PROJECTION_OR_SCOPE_INCOMPLETE",
+      "operational_required": true,
+      "source_statuses": [
+        "READ_CONTRACT_MISSING"
+      ]
+    },
+    {
+      "id": "O07R",
+      "name": "전월·전년·분기·담당자 보고",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "READ_PROJECTION_OR_SCOPE_INCOMPLETE",
+      "operational_required": true,
+      "source_statuses": [
+        "READ_CONTRACT_MISSING"
+      ]
+    },
+    {
+      "id": "O07G",
+      "name": "지사 인계·응대·영업 KPI",
+      "lane": "SECOND_WAVE_OPERATIONAL_REQUIRED",
+      "block_reason": "READ_PROJECTION_OR_SCOPE_INCOMPLETE",
+      "operational_required": true,
+      "source_statuses": [
+        "READ_CONTRACT_MISSING"
+      ]
+    }
+  ],
+  "production_accessed": false,
+  "n8n_accessed": false
+}

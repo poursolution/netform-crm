@@ -1,0 +1,1625 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "MUTATION_MATRIX_COMPLETE_FIXTURE_EXTENSION_PENDING_READONLY_PREFLIGHT",
+  "generated_at": "2026-09-06T00:00:00.000Z",
+  "execution": "SERIAL_ONLY_AFTER_EXPLICIT_STAGING_APPROVAL_AND_APPLY",
+  "staging_ddl_dml_performed": false,
+  "staging_jwt_mutation_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "sources": {
+    "coverage_matrix": "docs/operational-cutover-20260906/coverage-matrix.csv",
+    "coverage_matrix_sha256": "66b015765e4fa6e96d8e3b233a7a3411a50be1d4ff4054d7d757baedc22947c4",
+    "synthetic_fixture": "sql/baseline/20260905/synthetic/fixture.json",
+    "synthetic_fixture_sha256": "df1ba9589ff581497722cb138b48f012598ddb0b63b5fd621d833a9857821c42",
+    "candidate_manifest": "sql/operational-full-local-candidate/20260906/manifest.json",
+    "candidate_manifest_sha256": "213bb02c492dac1dc548c4a64433f79cd7fe824be3fe25355fc2872621818721",
+    "candidate_apply_sha256": "81a44efa1331454059ac59c83cc9931cc3aaa5070140c2321a3bcafcdd6e469e"
+  },
+  "scope": {
+    "included_adapter_statuses": [
+      "STAGING_COMPAT_PASS_FROZEN",
+      "STAGING_JWT_E2E_PASS_20260906",
+      "DERIVED_SAFE_LOCAL_CANDIDATE",
+      "READ_LOCAL_CANDIDATE"
+    ],
+    "included_coverage_rows": 60,
+    "scenario_count": 35,
+    "candidate_operations": [
+      "opportunity_work_set",
+      "inquiry_assign",
+      "service_change",
+      "inquiry_unassign",
+      "favorite_set",
+      "opportunity_touch",
+      "next_action",
+      "activity",
+      "quote_version",
+      "next_action_complete",
+      "stage_check",
+      "transition",
+      "close",
+      "amount",
+      "waiting_context",
+      "inquiry_reclassify",
+      "inquiry_status",
+      "inquiry_trash",
+      "inquiry_restore",
+      "inquiry_purge",
+      "inquiry_followup",
+      "opportunity_create",
+      "lineage_link",
+      "attachment_prepare",
+      "attachment_complete",
+      "expansion_pool_update",
+      "expansion_note",
+      "customer_support_action",
+      "message_log",
+      "relationship_hold",
+      "relationship_response"
+    ],
+    "excluded_coverage_rows": 24,
+    "excluded_by_status": {
+      "BROWSER_STAGING_PASS_NOT_DEPLOYED": [
+        "C02L",
+        "C02S"
+      ],
+      "EXTERNAL_APP": [
+        "M01O",
+        "M03",
+        "O09"
+      ],
+      "LOCAL_ONLY_CONFIRMED": [
+        "C01",
+        "O03"
+      ],
+      "OUT_OF_SCOPE_31_OP_BOUNDARY": [
+        "P05Q",
+        "P05W",
+        "P12",
+        "A05",
+        "X03",
+        "M06",
+        "O04"
+      ],
+      "REACHABLE_MOCK_BLOCKER": [
+        "O05",
+        "O06"
+      ],
+      "STAGING_JWT_E2E_PASS_20260906": [
+        "I16",
+        "I17",
+        "I18",
+        "P02",
+        "A01",
+        "A02",
+        "A03",
+        "O01"
+      ]
+    }
+  },
+  "standard_gates": {
+    "exact_origin_and_ref": true,
+    "publishable_key_and_real_user_jwt_only": true,
+    "server_auth_uuid_to_crm_uuid": true,
+    "positive_and_negative_role_scope": true,
+    "refresh_read_after_write": true,
+    "request_id_replay_no_duplicate": true,
+    "request_id_payload_reuse_409": true,
+    "stale_version_or_state_409_where_applicable": true,
+    "ack_shape_preserved": true,
+    "private_receipt_audit_history_exact_counts": true,
+    "production_requests": 0,
+    "n8n_requests": 0,
+    "skip_is_not_pass": true
+  },
+  "fixture": {
+    "accounts": {
+      "INTERNAL_REP": {
+        "user_id": "f6090500-0001-4000-8000-000000000001",
+        "auth_uid": "b5295979-d6c9-48f2-971a-2dea418b75e6",
+        "source_role": "rep"
+      },
+      "OTHER_REP": {
+        "user_id": "f6090500-0001-4000-8000-000000000002",
+        "auth_uid": "ebf842f3-a2ca-4408-ab67-c10d44538d5e",
+        "source_role": "rep"
+      },
+      "CONSULT": {
+        "user_id": "f6090500-0001-4000-8000-000000000003",
+        "auth_uid": "7dcd36d5-03ed-4e25-aa57-ce88512ee130",
+        "source_role": "viewer"
+      },
+      "GYEONGNAM": {
+        "user_id": "f6090500-0001-4000-8000-000000000004",
+        "auth_uid": "c55d57b1-8fdf-4263-9425-296ebb57df18",
+        "source_role": "rep"
+      },
+      "ADMIN": {
+        "user_id": "f6090500-0001-4000-8000-000000000005",
+        "auth_uid": "2ed567fb-ce77-438c-804b-0dec3abda6f8",
+        "source_role": "admin"
+      },
+      "ADMIN_MFA": {
+        "user_id": "f6090500-0001-4000-8000-000000000006",
+        "auth_uid": "171a2449-3eca-4ee2-9f33-c4a10fc8a29f",
+        "source_role": "admin"
+      }
+    },
+    "canonical_counts": {
+      "users": 6,
+      "sites": 5,
+      "organizations": 5,
+      "contacts": 5,
+      "inquiries": 5,
+      "deals": 5,
+      "contact_assignments": 4,
+      "activities": 5,
+      "next_actions": 6
+    },
+    "canonical_ids": {
+      "inquiries": [
+        "f6090500-0005-4000-8000-000000000001",
+        "f6090500-0005-4000-8000-000000000002",
+        "f6090500-0005-4000-8000-000000000003",
+        "f6090500-0005-4000-8000-000000000004",
+        "f6090500-0005-4000-8000-000000000005"
+      ],
+      "deals": [
+        "f6090500-0006-4000-8000-000000000001",
+        "f6090500-0006-4000-8000-000000000002",
+        "f6090500-0006-4000-8000-000000000003",
+        "f6090500-0006-4000-8000-000000000004",
+        "f6090500-0006-4000-8000-000000000005"
+      ],
+      "next_actions": [
+        "f6090500-0009-4000-8000-000000000001",
+        "f6090500-0009-4000-8000-000000000002",
+        "f6090500-0009-4000-8000-000000000003",
+        "f6090500-0009-4000-8000-000000000004",
+        "f6090500-0009-4000-8000-000000000005",
+        "f6090500-0009-4000-8000-000000000006"
+      ]
+    }
+  },
+  "fixture_gap": {
+    "present": true,
+    "reason": "The five canonical Inquiry/Deal rows are shared regression assets and cannot safely absorb append-only, forward-only, purge, won, or Storage scenarios.",
+    "required_modes": [
+      "DEDICATED_INQUIRY_REQUIRED",
+      "DEDICATED_INQUIRY_AND_DEAL_REQUIRED",
+      "DEDICATED_PURGE_INQUIRY_REQUIRED",
+      "DEDICATED_DEAL_REQUIRED",
+      "DEDICATED_COMPLETION_DEAL_REQUIRED",
+      "DEDICATED_DEAL_AND_INQUIRY_SET_REQUIRED",
+      "DEDICATED_WON_DEAL_AND_POOL_REQUIRED",
+      "DEDICATED_STORAGE_OBJECT_REQUIRED",
+      "DEDICATED_DEAL_OR_INQUIRY_REQUIRED"
+    ],
+    "resolution_gate": "After the approved read-only catalog preflight, create a separately reviewed synthetic setup/cleanup bundle with exact FK-aware disposable rows. Do not improvise runtime cleanup."
+  },
+  "scenarios": [
+    {
+      "id": "cross-cutting-receipt-replay",
+      "domain": "공통",
+      "coverage_ids": [
+        "C04"
+      ],
+      "disposition": "CROSS_CUTTING_ASSERTION",
+      "fixture_mode": "NO_EXTRA_FIXTURE",
+      "actors": [
+        "INTERNAL_REP",
+        "ADMIN"
+      ],
+      "operations": [
+        "opportunity_work_set",
+        "inquiry_assign",
+        "service_change",
+        "inquiry_unassign",
+        "favorite_set",
+        "opportunity_touch",
+        "next_action",
+        "activity",
+        "quote_version",
+        "next_action_complete",
+        "stage_check",
+        "transition",
+        "close",
+        "amount",
+        "waiting_context",
+        "inquiry_reclassify",
+        "inquiry_status",
+        "inquiry_trash",
+        "inquiry_restore",
+        "inquiry_purge",
+        "inquiry_followup",
+        "opportunity_create",
+        "lineage_link",
+        "attachment_prepare",
+        "attachment_complete",
+        "expansion_pool_update",
+        "expansion_note",
+        "customer_support_action",
+        "message_log",
+        "relationship_hold",
+        "relationship_response"
+      ],
+      "checks": [
+        "same request_id and payload returns the same ACK",
+        "same request_id with different payload returns 409",
+        "every mutation scenario records exact receipt count one"
+      ],
+      "cleanup": "No state cleanup; receipt evidence is append-only and is counted by run token.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "frozen-direct-assign-pc-mobile",
+      "domain": "견적문의",
+      "coverage_ids": [
+        "I01",
+        "I02"
+      ],
+      "disposition": "FROZEN_REGRESSION_BUSINESS_RESTORE",
+      "fixture_mode": "CANONICAL_SNAPSHOT",
+      "actors": [
+        "ADMIN",
+        "INTERNAL_REP",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "inquiry_assign"
+      ],
+      "checks": [
+        "PC and mobile payloads converge on target CRM UUID",
+        "first assignment and reason-required reassignment rules remain frozen",
+        "unauthorized assignment is rejected"
+      ],
+      "cleanup": "Restore assignee and status through the public command; retain append-only receipt/history/audit evidence.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "mobile-inquiry-response-outcomes",
+      "domain": "견적문의",
+      "coverage_ids": [
+        "I03P",
+        "I03N",
+        "I03M"
+      ],
+      "disposition": "APPEND_ONLY_DEDICATED_FIXTURE",
+      "fixture_mode": "DEDICATED_INQUIRY_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "CONSULT",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "inquiry_assign"
+      ],
+      "checks": [
+        "three response intents set only their confirmed status/date/timestamp effects",
+        "first response is write-once and last response is server time",
+        "other rep is rejected"
+      ],
+      "cleanup": "Use disposable inquiries because first_response_at and audit/history are not business-reversible.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "pc-inquiry-progress",
+      "domain": "견적문의",
+      "coverage_ids": [
+        "I04"
+      ],
+      "disposition": "APPEND_ONLY_DEDICATED_FIXTURE",
+      "fixture_mode": "DEDICATED_INQUIRY_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "CONSULT",
+        "OTHER_REP",
+        "ADMIN"
+      ],
+      "operations": [
+        "inquiry_status"
+      ],
+      "checks": [
+        "steps 0 through 5 preserve confirmed status transitions",
+        "replacement Next Action and activity/history counts are exact",
+        "stale from_status is rejected"
+      ],
+      "cleanup": "Dispose the isolated inquiry graph after private evidence capture; never rewind timestamps on canonical rows.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "frozen-inquiry-unassign",
+      "domain": "견적문의",
+      "coverage_ids": [
+        "I05"
+      ],
+      "disposition": "FROZEN_REGRESSION_BUSINESS_RESTORE",
+      "fixture_mode": "CANONICAL_SNAPSHOT",
+      "actors": [
+        "ADMIN",
+        "INTERNAL_REP"
+      ],
+      "operations": [
+        "inquiry_unassign",
+        "inquiry_assign"
+      ],
+      "checks": [
+        "unassign clears assignment fields and applies only the frozen status rule",
+        "non-admin is rejected",
+        "history and audit actor UUIDs are server-derived"
+      ],
+      "cleanup": "Restore the canonical inquiry with direct_assign; retain append-only evidence.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "inquiry-hold",
+      "domain": "견적문의",
+      "coverage_ids": [
+        "I06"
+      ],
+      "disposition": "APPEND_ONLY_DEDICATED_FIXTURE",
+      "fixture_mode": "DEDICATED_INQUIRY_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "CONSULT",
+        "ADMIN",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "inquiry_status"
+      ],
+      "checks": [
+        "hold requires the confirmed reason and allowed source status",
+        "arbitrary status and release meanings remain blocked",
+        "read-back shows the held projection"
+      ],
+      "cleanup": "Use an isolated inquiry; hold/audit evidence remains append-only.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "inquiry-next-complete-check",
+      "domain": "견적문의",
+      "coverage_ids": [
+        "I07"
+      ],
+      "disposition": "APPEND_ONLY_DEDICATED_FIXTURE",
+      "fixture_mode": "DEDICATED_INQUIRY_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "CONSULT",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "next_action",
+        "next_action_complete",
+        "stage_check"
+      ],
+      "checks": [
+        "Next replacement, server action UUID completion, and six checklist items work",
+        "Deal meanings for the same external operations do not regress",
+        "foreign actor is rejected"
+      ],
+      "cleanup": "Use an isolated inquiry and cancel/complete remaining open actions before fixture teardown.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "inquiry-followup",
+      "domain": "견적문의",
+      "coverage_ids": [
+        "I08"
+      ],
+      "disposition": "APPEND_ONLY_DEDICATED_FIXTURE",
+      "fixture_mode": "DEDICATED_INQUIRY_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "CONSULT",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "inquiry_followup"
+      ],
+      "checks": [
+        "server due date and inquiry next_action_date agree",
+        "stale and foreign actor requests fail",
+        "refresh returns the same value"
+      ],
+      "cleanup": "Use an isolated inquiry because action and audit evidence is append-only.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "inquiry-pipeline-promote-lineage",
+      "domain": "견적문의",
+      "coverage_ids": [
+        "I09",
+        "I10"
+      ],
+      "disposition": "FORWARD_ONLY_DISPOSABLE_FIXTURE",
+      "fixture_mode": "DEDICATED_INQUIRY_AND_DEAL_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "ADMIN",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "transition",
+        "opportunity_create",
+        "lineage_link"
+      ],
+      "checks": [
+        "existing Deal link and new Deal creation paths are both exercised",
+        "inquiry and Deal lineage agree after refresh",
+        "duplicate promotion and foreign scope fail"
+      ],
+      "cleanup": "Provision distinct disposable rows for existing-link and create paths; preserve evidence until finalizer completes.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "inquiry-trash-restore",
+      "domain": "견적문의",
+      "coverage_ids": [
+        "I11",
+        "I12"
+      ],
+      "disposition": "REVERSIBLE_PAIRED_COMMAND",
+      "fixture_mode": "DEDICATED_INQUIRY_REQUIRED",
+      "actors": [
+        "ADMIN",
+        "INTERNAL_REP"
+      ],
+      "operations": [
+        "inquiry_trash",
+        "inquiry_restore"
+      ],
+      "checks": [
+        "trash hides the inquiry from normal scope",
+        "restore returns the prior UI-visible state",
+        "non-admin and stale transitions fail"
+      ],
+      "cleanup": "Pair restore after trash; use an isolated inquiry so append-only archive/audit evidence does not contaminate canonical rows.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "inquiry-purge",
+      "domain": "견적문의",
+      "coverage_ids": [
+        "I13"
+      ],
+      "disposition": "IRREVERSIBLE_DISPOSABLE_FIXTURE",
+      "fixture_mode": "DEDICATED_PURGE_INQUIRY_REQUIRED",
+      "actors": [
+        "ADMIN",
+        "ADMIN_MFA",
+        "INTERNAL_REP"
+      ],
+      "operations": [
+        "inquiry_purge"
+      ],
+      "checks": [
+        "purge requires the confirmed admin/MFA gate",
+        "row is absent after refresh",
+        "non-MFA admin and rep are rejected"
+      ],
+      "cleanup": "No rollback exists after runtime purge; create a single-purpose inquiry that is never shared with another scenario.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "inquiry-reclassify",
+      "domain": "견적문의",
+      "coverage_ids": [
+        "I14"
+      ],
+      "disposition": "REVERSIBLE_SNAPSHOT_RESTORE",
+      "fixture_mode": "DEDICATED_INQUIRY_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "ADMIN",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "inquiry_reclassify"
+      ],
+      "checks": [
+        "only the confirmed general-inquiry classification is accepted",
+        "server actor and history are exact",
+        "foreign scope fails"
+      ],
+      "cleanup": "Restore UI-visible classification from the pre-run snapshot using approved fixture cleanup after evidence capture.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "technical-inquiry-transfer",
+      "domain": "견적문의",
+      "coverage_ids": [
+        "I15"
+      ],
+      "disposition": "FORWARD_ONLY_DISPOSABLE_FIXTURE",
+      "fixture_mode": "DEDICATED_INQUIRY_AND_DEAL_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "ADMIN",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "opportunity_create"
+      ],
+      "checks": [
+        "one Deal is created and child inquiry status effect is atomic",
+        "unassigned UUID truth is preserved",
+        "duplicate transfer and foreign scope fail"
+      ],
+      "cleanup": "Use a single-purpose technical inquiry and created Deal; do not reuse canonical rows.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "frozen-inquiry-read-refresh",
+      "domain": "견적문의",
+      "coverage_ids": [
+        "I19"
+      ],
+      "disposition": "READ_ONLY_ROLE_MATRIX",
+      "fixture_mode": "CANONICAL_READ_ONLY",
+      "actors": [
+        "INTERNAL_REP",
+        "OTHER_REP",
+        "CONSULT",
+        "GYEONGNAM",
+        "ADMIN"
+      ],
+      "operations": [],
+      "checks": [
+        "inquiry display, search, assignment history, and pagination are role-scoped",
+        "private relations remain unreachable through PostgREST"
+      ],
+      "cleanup": "No mutation.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "pipeline-opportunity-create",
+      "domain": "Pipeline",
+      "coverage_ids": [
+        "P01"
+      ],
+      "disposition": "FORWARD_ONLY_DISPOSABLE_FIXTURE",
+      "fixture_mode": "DEDICATED_DEAL_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "ADMIN",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "opportunity_create"
+      ],
+      "checks": [
+        "PC create payload yields one Deal with server owner/version",
+        "refresh finds the same Deal",
+        "replay is idempotent and foreign actor fails"
+      ],
+      "cleanup": "Use a dedicated create seed and retain the created Deal through private evidence capture.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "pipeline-stage-transition",
+      "domain": "Pipeline",
+      "coverage_ids": [
+        "P03"
+      ],
+      "disposition": "FORWARD_ONLY_DISPOSABLE_FIXTURE",
+      "fixture_mode": "DEDICATED_DEAL_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "ADMIN",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "transition"
+      ],
+      "checks": [
+        "allowed stage progression and date effects are exact",
+        "stale version and illegal edge return 409",
+        "foreign owner fails"
+      ],
+      "cleanup": "Use an isolated Deal because stage transitions are forward-only business events.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "pipeline-close-nonwon",
+      "domain": "Pipeline",
+      "coverage_ids": [
+        "P04"
+      ],
+      "disposition": "FORWARD_ONLY_DISPOSABLE_FIXTURE",
+      "fixture_mode": "DEDICATED_DEAL_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "ADMIN",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "close"
+      ],
+      "checks": [
+        "lost, bad-fit, and unreachable variants preserve their distinct fields",
+        "closed state survives refresh",
+        "invalid reason, stale version, and foreign owner fail"
+      ],
+      "cleanup": "Use one disposable Deal per close variant; closed rows are not reopened for cleanup.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "pipeline-close-won-expansion",
+      "domain": "Pipeline",
+      "coverage_ids": [
+        "P04W",
+        "P16"
+      ],
+      "disposition": "IRREVERSIBLE_DISPOSABLE_FIXTURE",
+      "fixture_mode": "DEDICATED_COMPLETION_DEAL_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "ADMIN",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "close"
+      ],
+      "checks": [
+        "completion to won creates exactly one expansion pool record",
+        "absorbed activity and pool effects are atomic",
+        "replay creates no duplicate and foreign owner fails"
+      ],
+      "cleanup": "Runtime won is outside rollback safety; use a single-purpose completion-stage Deal and retain it through final evidence.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "pipeline-expected-amount",
+      "domain": "Pipeline",
+      "coverage_ids": [
+        "P05E"
+      ],
+      "disposition": "REVERSIBLE_BUSINESS_RESTORE",
+      "fixture_mode": "CANONICAL_SNAPSHOT",
+      "actors": [
+        "INTERNAL_REP",
+        "ADMIN",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "amount"
+      ],
+      "checks": [
+        "amount save and confirmed clear semantics refresh correctly",
+        "stale version and foreign owner fail",
+        "audit and receipt counts are exact"
+      ],
+      "cleanup": "Restore amount and unknown reason through the public command; retain append-only evidence.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "frozen-opportunity-work",
+      "domain": "Pipeline",
+      "coverage_ids": [
+        "P06"
+      ],
+      "disposition": "FROZEN_REGRESSION_BUSINESS_RESTORE",
+      "fixture_mode": "CANONICAL_SNAPSHOT",
+      "actors": [
+        "INTERNAL_REP",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "opportunity_work_set"
+      ],
+      "checks": [
+        "PC and mobile payloads preserve primary_work, work_items, and work_summary",
+        "refresh, replay, conflict, and stale checks remain frozen"
+      ],
+      "cleanup": "Restore the three UI-visible work fields through the public command.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "frozen-service-change",
+      "domain": "Pipeline",
+      "coverage_ids": [
+        "P07"
+      ],
+      "disposition": "FROZEN_REGRESSION_BUSINESS_RESTORE",
+      "fixture_mode": "CANONICAL_SNAPSHOT",
+      "actors": [
+        "INTERNAL_REP",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "service_change"
+      ],
+      "checks": [
+        "service fields, version, business history, and activity retain the frozen contract",
+        "replay, conflict, stale, and foreign-owner checks remain frozen"
+      ],
+      "cleanup": "Restore UI-visible service fields through the public command; retain append-only history.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "pipeline-activity-and-contact",
+      "domain": "Pipeline + 메시징",
+      "coverage_ids": [
+        "P08",
+        "P08C",
+        "M01A"
+      ],
+      "disposition": "APPEND_ONLY_DEDICATED_FIXTURE",
+      "fixture_mode": "DEDICATED_DEAL_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "ADMIN",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "activity"
+      ],
+      "checks": [
+        "independent activity, meaningful contact, and pre-call attempt remain distinct intents",
+        "server actor/time and contact timestamp are exact",
+        "foreign owner fails"
+      ],
+      "cleanup": "Use an isolated Deal because activities are append-only.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "deal-next-action-lifecycle",
+      "domain": "Next Action",
+      "coverage_ids": [
+        "P09",
+        "P09X",
+        "P10",
+        "P11"
+      ],
+      "disposition": "APPEND_ONLY_DEDICATED_FIXTURE",
+      "fixture_mode": "DEDICATED_DEAL_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "ADMIN",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "next_action",
+        "next_action_complete"
+      ],
+      "checks": [
+        "replace, postpone, complete, and current-action complete use server action UUIDs",
+        "postpone count and refresh are exact",
+        "temporary IDs, stale state, and foreign owner fail"
+      ],
+      "cleanup": "Use an isolated Deal; complete/cancel open actions before fixture teardown.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "mobile-today-outcomes",
+      "domain": "Next Action + 조회/분석",
+      "coverage_ids": [
+        "P09M",
+        "O08T"
+      ],
+      "disposition": "APPEND_ONLY_DEDICATED_FIXTURE",
+      "fixture_mode": "DEDICATED_DEAL_AND_INQUIRY_SET_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "CONSULT",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "next_action_complete",
+        "inquiry_assign",
+        "inquiry_followup"
+      ],
+      "checks": [
+        "three Deal outcomes and supervisor inquiry response/followup actions match mobile handlers",
+        "absorbed activity/Next effects occur once",
+        "cross-owner actions fail"
+      ],
+      "cleanup": "Use one isolated Deal or Inquiry per outcome so timestamp and counter effects never need rewinding.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "pipeline-waiting-context",
+      "domain": "Pipeline",
+      "coverage_ids": [
+        "P13"
+      ],
+      "disposition": "APPEND_ONLY_DEDICATED_FIXTURE",
+      "fixture_mode": "DEDICATED_DEAL_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "ADMIN",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "waiting_context",
+        "next_action"
+      ],
+      "checks": [
+        "waiting evidence and replacement Next Action commit together",
+        "refresh shows the same context/due date",
+        "stale version and foreign owner fail"
+      ],
+      "cleanup": "Use an isolated waiting Deal; retain append-only history.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "pipeline-quote-version",
+      "domain": "Pipeline",
+      "coverage_ids": [
+        "P14"
+      ],
+      "disposition": "APPEND_ONLY_DEDICATED_FIXTURE",
+      "fixture_mode": "DEDICATED_DEAL_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "ADMIN",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "quote_version"
+      ],
+      "checks": [
+        "one quote version is appended with server actor/time",
+        "replay creates no duplicate",
+        "stale version and foreign owner fail"
+      ],
+      "cleanup": "Use an isolated Deal because quote versions are append-only.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "pipeline-stage-check",
+      "domain": "Pipeline",
+      "coverage_ids": [
+        "P15"
+      ],
+      "disposition": "REVERSIBLE_PAIRED_COMMAND",
+      "fixture_mode": "DEDICATED_DEAL_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "ADMIN",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "stage_check"
+      ],
+      "checks": [
+        "toggle and read-back preserve the confirmed checklist key/index",
+        "stale version and foreign owner fail"
+      ],
+      "cleanup": "Toggle back to the before value; retain audit/receipt evidence.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "customer-and-operational-reads",
+      "domain": "공통 + 고객자산 + 조회/분석",
+      "coverage_ids": [
+        "C03",
+        "A04D",
+        "A04S",
+        "O07S",
+        "O07D",
+        "O07P",
+        "O07R",
+        "O07G",
+        "O08M",
+        "O08C",
+        "O08S",
+        "O08A"
+      ],
+      "disposition": "READ_ONLY_ROLE_MATRIX",
+      "fixture_mode": "CANONICAL_READ_ONLY",
+      "actors": [
+        "INTERNAL_REP",
+        "OTHER_REP",
+        "CONSULT",
+        "GYEONGNAM",
+        "ADMIN"
+      ],
+      "operations": [],
+      "checks": [
+        "direct-linked contact/work history and scoped Deal/inquiry/site/contact rows are complete",
+        "Golden role dashboard renders and the visible admin KPI drills into Pipeline",
+        "pagination has no duplicates or omissions",
+        "cross-role leakage and private relation access fail"
+      ],
+      "cleanup": "No mutation.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "expansion-pool-update-note-context",
+      "domain": "확장관리",
+      "coverage_ids": [
+        "X01",
+        "X02"
+      ],
+      "disposition": "APPEND_ONLY_DEDICATED_FIXTURE",
+      "fixture_mode": "DEDICATED_WON_DEAL_AND_POOL_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "ADMIN",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "expansion_pool_update",
+        "expansion_note"
+      ],
+      "checks": [
+        "allowed status/date updates and note/context RPCs agree after refresh",
+        "quote dispatch and Pipeline conversion meanings stay blocked",
+        "stale pool version and foreign owner fail"
+      ],
+      "cleanup": "Seed through the isolated close-won scenario; retain pool events and note evidence.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "attachment-lifecycle",
+      "domain": "첨부/메모",
+      "coverage_ids": [
+        "T01",
+        "T02"
+      ],
+      "disposition": "STORAGE_DISPOSABLE_OBJECT",
+      "fixture_mode": "DEDICATED_STORAGE_OBJECT_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "ADMIN",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "attachment_prepare",
+        "attachment_complete"
+      ],
+      "checks": [
+        "prepare returns a signed path for the private bucket",
+        "PUT then complete exposes one ready attachment",
+        "foreign owner, oversize/type mismatch, and duplicate completion fail"
+      ],
+      "cleanup": "Delete the run-prefixed Storage object after metadata/evidence capture; never reuse a production-like filename.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "personalization",
+      "domain": "개인화",
+      "coverage_ids": [
+        "T03"
+      ],
+      "disposition": "APPEND_ONLY_DEDICATED_FIXTURE",
+      "fixture_mode": "DEDICATED_DEAL_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "favorite_set",
+        "opportunity_touch"
+      ],
+      "checks": [
+        "favorite state and recent-touch ordering are actor-private",
+        "one actor cannot alter another actor state",
+        "replay is idempotent"
+      ],
+      "cleanup": "Unset favorite where supported; isolate touch evidence by run token.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "message-log",
+      "domain": "메시징",
+      "coverage_ids": [
+        "M02"
+      ],
+      "disposition": "APPEND_ONLY_DEDICATED_FIXTURE",
+      "fixture_mode": "DEDICATED_DEAL_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "ADMIN",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "message_log"
+      ],
+      "checks": [
+        "sent, failed, and cancelled attestations remain distinct and never claim provider delivery",
+        "server resolves the current contact/phone",
+        "stale version and foreign owner fail"
+      ],
+      "cleanup": "Use an isolated Deal/contact because message logs are append-only.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "message-reminder",
+      "domain": "메시징",
+      "coverage_ids": [
+        "M04"
+      ],
+      "disposition": "APPEND_ONLY_DEDICATED_FIXTURE",
+      "fixture_mode": "DEDICATED_DEAL_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "ADMIN",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "next_action"
+      ],
+      "checks": [
+        "staff reminder replaces current open Deal action and stores draft body",
+        "no provider delivery claim is emitted",
+        "foreign owner fails"
+      ],
+      "cleanup": "Use an isolated Deal and complete/cancel the reminder after refresh evidence.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "relationship-cadence",
+      "domain": "메시징",
+      "coverage_ids": [
+        "M05"
+      ],
+      "disposition": "APPEND_ONLY_DEDICATED_FIXTURE",
+      "fixture_mode": "DEDICATED_DEAL_REQUIRED",
+      "actors": [
+        "INTERNAL_REP",
+        "ADMIN",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "relationship_hold",
+        "relationship_response"
+      ],
+      "checks": [
+        "hold creates no activity and response cancels only the linked open action",
+        "server cadence state refreshes identically",
+        "provider delivery inference and foreign owner fail"
+      ],
+      "cleanup": "Use an isolated Deal/action graph; retain append-only cadence evidence.",
+      "remote_status": "READY_NOT_RUN"
+    },
+    {
+      "id": "customer-support-request",
+      "domain": "관리",
+      "coverage_ids": [
+        "O02"
+      ],
+      "disposition": "APPEND_ONLY_DEDICATED_FIXTURE",
+      "fixture_mode": "DEDICATED_DEAL_OR_INQUIRY_REQUIRED",
+      "actors": [
+        "ADMIN",
+        "INTERNAL_REP",
+        "OTHER_REP"
+      ],
+      "operations": [
+        "customer_support_action"
+      ],
+      "checks": [
+        "all sixteen action keys create requested-only records",
+        "downstream completion is never inferred",
+        "non-admin and out-of-scope admin requests fail"
+      ],
+      "cleanup": "Use isolated target rows because support requests are append-only.",
+      "remote_status": "READY_NOT_RUN"
+    }
+  ],
+  "coverage_index": {
+    "C03": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "customer-and-operational-reads",
+      "domain": "공통",
+      "action": "업무 데이터 조회·자동동기화·진단",
+      "operations": ""
+    },
+    "C04": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "cross-cutting-receipt-replay",
+      "domain": "공통",
+      "action": "동일 write_id 재시도",
+      "operations": "all queued ops"
+    },
+    "I01": {
+      "adapter_status": "STAGING_COMPAT_PASS_FROZEN",
+      "scenario_id": "frozen-direct-assign-pc-mobile",
+      "domain": "견적문의",
+      "action": "본사 개인 최초·재배정",
+      "operations": "inquiry_assign/direct_assign"
+    },
+    "I02": {
+      "adapter_status": "STAGING_COMPAT_PASS_FROZEN",
+      "scenario_id": "frozen-direct-assign-pc-mobile",
+      "domain": "견적문의",
+      "action": "본사 개인 최초·재배정",
+      "operations": "inquiry_assign/direct_assign"
+    },
+    "I03P": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "mobile-inquiry-response-outcomes",
+      "domain": "견적문의",
+      "action": "통화 완료·다음 일정 협의",
+      "operations": "inquiry_assign/response_progress"
+    },
+    "I03N": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "mobile-inquiry-response-outcomes",
+      "domain": "견적문의",
+      "action": "다음주 재연락",
+      "operations": "inquiry_assign/response_next_week_retry"
+    },
+    "I03M": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "mobile-inquiry-response-outcomes",
+      "domain": "견적문의",
+      "action": "부재·내일 재시도",
+      "operations": "inquiry_assign/response_missed_retry"
+    },
+    "I04": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "pc-inquiry-progress",
+      "domain": "견적문의",
+      "action": "비종료 응대·상태·활동·다음행동",
+      "operations": "inquiry_status/progress"
+    },
+    "I05": {
+      "adapter_status": "STAGING_COMPAT_PASS_FROZEN",
+      "scenario_id": "frozen-inquiry-unassign",
+      "domain": "견적문의",
+      "action": "담당 회수",
+      "operations": "inquiry_unassign"
+    },
+    "I06": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "inquiry-hold",
+      "domain": "견적문의",
+      "action": "보류",
+      "operations": "inquiry_status"
+    },
+    "I07": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "inquiry-next-complete-check",
+      "domain": "견적문의",
+      "action": "Next·완료·체크",
+      "operations": "next_action/inquiry_next_set; next_action_complete/inquiry_next_complete; stage_check/inquiry_check"
+    },
+    "I08": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "inquiry-followup",
+      "domain": "견적문의",
+      "action": "문의 후속일 연기",
+      "operations": "inquiry_followup"
+    },
+    "I09": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "inquiry-pipeline-promote-lineage",
+      "domain": "견적문의",
+      "action": "기존 Deal 연결 또는 신규 Deal 생성",
+      "operations": "transition; opportunity_create"
+    },
+    "I10": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "inquiry-pipeline-promote-lineage",
+      "domain": "견적문의",
+      "action": "문의와 Deal 계보 연결",
+      "operations": "lineage_link"
+    },
+    "I11": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "inquiry-trash-restore",
+      "domain": "견적문의",
+      "action": "휴지통 이동",
+      "operations": "inquiry_trash"
+    },
+    "I12": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "inquiry-trash-restore",
+      "domain": "견적문의",
+      "action": "복원",
+      "operations": "inquiry_restore"
+    },
+    "I13": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "inquiry-purge",
+      "domain": "견적문의",
+      "action": "관리자 수동 완전삭제",
+      "operations": "inquiry_purge"
+    },
+    "I14": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "inquiry-reclassify",
+      "domain": "견적문의",
+      "action": "일반 견적문의로 재분류",
+      "operations": "inquiry_reclassify"
+    },
+    "I15": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "technical-inquiry-transfer",
+      "domain": "견적문의",
+      "action": "기술자문 영업기회로 이관",
+      "operations": "opportunity_create/technical_inquiry_transfer; inquiry_status child absorbed"
+    },
+    "I19": {
+      "adapter_status": "STAGING_COMPAT_PASS_FROZEN",
+      "scenario_id": "frozen-inquiry-read-refresh",
+      "domain": "견적문의",
+      "action": "문의 표시·검색·배정이력 새로고침",
+      "operations": ""
+    },
+    "P01": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "pipeline-opportunity-create",
+      "domain": "Pipeline",
+      "action": "신규 영업기회 생성",
+      "operations": "opportunity_create"
+    },
+    "P03": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "pipeline-stage-transition",
+      "domain": "Pipeline",
+      "action": "Stage 진행",
+      "operations": "transition"
+    },
+    "P04": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "pipeline-close-nonwon",
+      "domain": "Pipeline",
+      "action": "실주·배드핏·연락두절",
+      "operations": "close"
+    },
+    "P04W": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "pipeline-close-won-expansion",
+      "domain": "Pipeline",
+      "action": "수주 종료",
+      "operations": "close; expansion_pool_upsert"
+    },
+    "P05E": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "pipeline-expected-amount",
+      "domain": "Pipeline",
+      "action": "예상금액 저장·초기화",
+      "operations": "amount"
+    },
+    "P06": {
+      "adapter_status": "STAGING_COMPAT_PASS_FROZEN",
+      "scenario_id": "frozen-opportunity-work",
+      "domain": "Pipeline",
+      "action": "대표·복합 공종 저장",
+      "operations": "opportunity_work_set"
+    },
+    "P07": {
+      "adapter_status": "STAGING_COMPAT_PASS_FROZEN",
+      "scenario_id": "frozen-service-change",
+      "domain": "Pipeline",
+      "action": "사업유형 변경",
+      "operations": "service_change"
+    },
+    "P08": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "pipeline-activity-and-contact",
+      "domain": "Pipeline",
+      "action": "독립 활동 기록",
+      "operations": "activity"
+    },
+    "P08C": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "pipeline-activity-and-contact",
+      "domain": "Pipeline",
+      "action": "의미있는 접촉 체크를 Activity에 통합",
+      "operations": "activity; contact"
+    },
+    "P09": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "deal-next-action-lifecycle",
+      "domain": "Next Action",
+      "action": "Next 생성·현재 open 교체",
+      "operations": "next_action"
+    },
+    "P09M": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "mobile-today-outcomes",
+      "domain": "Next Action",
+      "action": "진행됨·다음주 다시·못 받으심",
+      "operations": "next_action_complete/today_outcome; activity child absorbed; next_action child absorbed"
+    },
+    "P09X": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "deal-next-action-lifecycle",
+      "domain": "Next Action",
+      "action": "현재 open Action 연기",
+      "operations": "next_action/postpone"
+    },
+    "P10": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "deal-next-action-lifecycle",
+      "domain": "Next Action",
+      "action": "Next 완료",
+      "operations": "next_action_complete"
+    },
+    "P11": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "deal-next-action-lifecycle",
+      "domain": "Next Action",
+      "action": "현재 행동 완료",
+      "operations": "next_action_complete"
+    },
+    "P13": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "pipeline-waiting-context",
+      "domain": "Pipeline",
+      "action": "기존 대기 Deal의 근거·재접촉 저장",
+      "operations": "waiting_context; next_action"
+    },
+    "P14": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "pipeline-quote-version",
+      "domain": "Pipeline",
+      "action": "견적 Version 추가",
+      "operations": "quote_version"
+    },
+    "P15": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "pipeline-stage-check",
+      "domain": "Pipeline",
+      "action": "수동 체크리스트 토글",
+      "operations": "stage_check"
+    },
+    "P16": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "pipeline-close-won-expansion",
+      "domain": "Pipeline",
+      "action": "확장관리 Pool 생성",
+      "operations": "expansion_pool_upsert"
+    },
+    "A04D": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "customer-and-operational-reads",
+      "domain": "고객자산",
+      "action": "Deal 직접연결 연락처·근무이력 조회",
+      "operations": ""
+    },
+    "A04S": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "customer-and-operational-reads",
+      "domain": "고객자산",
+      "action": "Site 1:N 권한범위 timeline 조회",
+      "operations": ""
+    },
+    "X01": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "expansion-pool-update-note-context",
+      "domain": "확장관리",
+      "action": "상태·다음접촉일 갱신",
+      "operations": "expansion_pool_update"
+    },
+    "X02": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "expansion-pool-update-note-context",
+      "domain": "확장관리",
+      "action": "접촉·니즈 기록/문맥 조회",
+      "operations": "crm_expansion_note/context"
+    },
+    "T01": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "attachment-lifecycle",
+      "domain": "첨부/메모",
+      "action": "prepare→signed PUT→complete",
+      "operations": "attachment_prepare; attachment_complete"
+    },
+    "T02": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "attachment-lifecycle",
+      "domain": "첨부/메모",
+      "action": "ready 첨부 목록 표시",
+      "operations": ""
+    },
+    "T03": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "personalization",
+      "domain": "개인화",
+      "action": "즐겨찾기·최근 본/작업",
+      "operations": "favorite_set; opportunity_touch"
+    },
+    "M01A": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "pipeline-activity-and-contact",
+      "domain": "메시징",
+      "action": "전화 앱 열기 전 시도 Activity",
+      "operations": "activity"
+    },
+    "M02": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "message-log",
+      "domain": "메시징",
+      "action": "발송·실패·취소 결과 기록",
+      "operations": "message_log"
+    },
+    "M04": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "message-reminder",
+      "domain": "메시징",
+      "action": "담당자 발송 알림 예약",
+      "operations": "next_action/message_reminder"
+    },
+    "M05": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "relationship-cadence",
+      "domain": "메시징",
+      "action": "접촉 보류·회신 cadence 초기화",
+      "operations": "relationship_hold; relationship_response"
+    },
+    "O02": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "customer-support-request",
+      "domain": "관리",
+      "action": "지원 요청 기록",
+      "operations": "customer_support_action"
+    },
+    "O07S": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "customer-and-operational-reads",
+      "domain": "조회/분석",
+      "action": "권한 범위 Deal·문의 원천행 조회",
+      "operations": ""
+    },
+    "O07D": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "customer-and-operational-reads",
+      "domain": "조회/분석",
+      "action": "KPI·드릴다운",
+      "operations": ""
+    },
+    "O07P": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "customer-and-operational-reads",
+      "domain": "조회/분석",
+      "action": "담당자 실적 점수·상세",
+      "operations": ""
+    },
+    "O07R": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "customer-and-operational-reads",
+      "domain": "조회/분석",
+      "action": "전월·전년·분기·담당자 보고",
+      "operations": ""
+    },
+    "O07G": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "customer-and-operational-reads",
+      "domain": "조회/분석",
+      "action": "지사 인계·응대·영업 KPI",
+      "operations": ""
+    },
+    "O08M": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "customer-and-operational-reads",
+      "domain": "조회/분석",
+      "action": "담당 Deal 목록·상세 이동",
+      "operations": ""
+    },
+    "O08T": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "mobile-today-outcomes",
+      "domain": "조회/분석",
+      "action": "권한 범위 목록·Deal Next 완료·문의 세 응대결과·문의 연기",
+      "operations": "next_action_complete; inquiry_assign/response_*; inquiry_followup"
+    },
+    "O08C": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "customer-and-operational-reads",
+      "domain": "조회/분석",
+      "action": "관리 목록·필터·상세 이동",
+      "operations": ""
+    },
+    "O08S": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "customer-and-operational-reads",
+      "domain": "조회/분석",
+      "action": "내 권한 현장·담당·대표 연락처 검색",
+      "operations": ""
+    },
+    "O08A": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "scenario_id": "customer-and-operational-reads",
+      "domain": "조회/분석",
+      "action": "Today·방문·고액·기술자문·미접촉·견적발송·과거근무지 조건검색",
+      "operations": ""
+    }
+  },
+  "excluded_index": {
+    "C01": {
+      "adapter_status": "LOCAL_ONLY_CONFIRMED",
+      "reason": "Outside the historical 31-operation mutation plan."
+    },
+    "C02L": {
+      "adapter_status": "BROWSER_STAGING_PASS_NOT_DEPLOYED",
+      "reason": "Outside the historical 31-operation mutation plan."
+    },
+    "C02S": {
+      "adapter_status": "BROWSER_STAGING_PASS_NOT_DEPLOYED",
+      "reason": "Outside the historical 31-operation mutation plan."
+    },
+    "I16": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "reason": "Proven by the separate 20260907 final-blocker Staging JWT run."
+    },
+    "I17": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "reason": "Proven by the separate 20260907 final-blocker Staging JWT run."
+    },
+    "I18": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "reason": "Proven by the separate 20260907 final-blocker Staging JWT run."
+    },
+    "P02": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "reason": "Proven by the separate 20260907 final-blocker Staging JWT run."
+    },
+    "P05Q": {
+      "adapter_status": "OUT_OF_SCOPE_31_OP_BOUNDARY",
+      "reason": "Outside the historical 31-operation mutation plan."
+    },
+    "P05W": {
+      "adapter_status": "OUT_OF_SCOPE_31_OP_BOUNDARY",
+      "reason": "Outside the historical 31-operation mutation plan."
+    },
+    "P12": {
+      "adapter_status": "OUT_OF_SCOPE_31_OP_BOUNDARY",
+      "reason": "Outside the historical 31-operation mutation plan."
+    },
+    "A01": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "reason": "Proven by the separate 20260907 final-blocker Staging JWT run."
+    },
+    "A02": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "reason": "Proven by the separate 20260907 final-blocker Staging JWT run."
+    },
+    "A03": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "reason": "Proven by the separate 20260907 final-blocker Staging JWT run."
+    },
+    "A05": {
+      "adapter_status": "OUT_OF_SCOPE_31_OP_BOUNDARY",
+      "reason": "Outside the historical 31-operation mutation plan."
+    },
+    "X03": {
+      "adapter_status": "OUT_OF_SCOPE_31_OP_BOUNDARY",
+      "reason": "Outside the historical 31-operation mutation plan."
+    },
+    "M01O": {
+      "adapter_status": "EXTERNAL_APP",
+      "reason": "Outside the historical 31-operation mutation plan."
+    },
+    "M03": {
+      "adapter_status": "EXTERNAL_APP",
+      "reason": "Outside the historical 31-operation mutation plan."
+    },
+    "M06": {
+      "adapter_status": "OUT_OF_SCOPE_31_OP_BOUNDARY",
+      "reason": "Outside the historical 31-operation mutation plan."
+    },
+    "O01": {
+      "adapter_status": "STAGING_JWT_E2E_PASS_20260906",
+      "reason": "Proven by the separate 20260907 final-blocker Staging JWT run."
+    },
+    "O03": {
+      "adapter_status": "LOCAL_ONLY_CONFIRMED",
+      "reason": "Outside the historical 31-operation mutation plan."
+    },
+    "O04": {
+      "adapter_status": "OUT_OF_SCOPE_31_OP_BOUNDARY",
+      "reason": "Outside the historical 31-operation mutation plan."
+    },
+    "O05": {
+      "adapter_status": "REACHABLE_MOCK_BLOCKER",
+      "reason": "Outside the historical 31-operation mutation plan."
+    },
+    "O06": {
+      "adapter_status": "REACHABLE_MOCK_BLOCKER",
+      "reason": "Outside the historical 31-operation mutation plan."
+    },
+    "O09": {
+      "adapter_status": "EXTERNAL_APP",
+      "reason": "Outside the historical 31-operation mutation plan."
+    }
+  }
+}

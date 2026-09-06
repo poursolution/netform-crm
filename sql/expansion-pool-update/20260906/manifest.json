@@ -1,0 +1,64 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+  "operation": "expansion_pool_update",
+  "ui_coverage_candidate": [
+    "X01"
+  ],
+  "prerequisite": "pipeline-close-won/20260906",
+  "surface": "pc_only",
+  "allowed_changes": [
+    "expansion_status",
+    "next_contact_at"
+  ],
+  "allowed_statuses": [
+    "신규 대상",
+    "접촉 예정",
+    "관계 관리중",
+    "추가 니즈 확인",
+    "보류/휴면"
+  ],
+  "blocked_changes": [
+    "Pipeline 전환",
+    "created_opportunity_id",
+    "last_contact_at",
+    "need_note",
+    "relationship_state",
+    "client actor/time"
+  ],
+  "server_rules": {
+    "scope": "crm_security.can_deal(source_deal_id,true)",
+    "concurrency": "private expansion pool version",
+    "history": "one private event + deal audit + receipt per mutation"
+  },
+  "read_additions": [
+    "expansion_pool.version",
+    "expansion_events safe projection"
+  ],
+  "rollback": "business status/date retained; evidence archived; adapter/read layer restored",
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "files_sha256": {
+    "build.cjs": "dbda4da9b1842a514c9669512e609e829542ce2251fb5f6b6db9b884f7668af9",
+    "helper.sql": "e2c39c8c0c739b384306a71cf99e09c253bedb53eec7f60d705325d6a73752bf",
+    "rollback-fragment.sql": "a8db3517df5eae380f6b55a97c2c71ee2810bc1628f70448d916e819bf6ba3b1",
+    "contract.test.cjs": "4f8c14181413b69167f189b1cf7cc0bf5ec5475ed315f61ef1e986eb9d28f0e8",
+    "ui.test.cjs": "3ebc1596c5d19c502dfaa253ff9a522de682bd0a943306baff6845536d6806dc",
+    "db.test.cjs": "85debc668fb8f59ee942f9e358e18b156aeb0229df78b379e24c1ee179868d9e",
+    "review.md": "5472f51ee273cfbcfdad92c3b0f603085bf46f8f943a5e0c6ed2d5231db56b3e",
+    "staging-apply-after-close-won.sql": "c6cc6fc21bcd494eb1c27725e9ad181bc94d869cac68a1efaee3aaea355a1f1a",
+    "rollback-before-close-won.sql": "72b5d066b1908637bb5144033e34018d04981641fc9dc31eb123eb8bc025e4db",
+    "operational-adapter.candidate.js": "bc5b7782b593f358e4f121129fe6168796cb653941ab5e2cff722e8bdd143502",
+    "operational-overlay.candidate.js": "4107133b8d0ebfe5d7956dfa56efdb1a2ada1a6562bf1dac4f701aca5e21072c",
+    "transport.candidate.js": "aef32fd84ece320a2fa8ffcba98c44d76d320c0223a697ac837335820d6c26f4"
+  },
+  "source_sha256": {
+    "sql/pipeline-close-won/20260906/manifest.json": "a858a6f2ab817b516b7bc07a0aeb34cfa45832c1be3e0564024209e8f80a3891",
+    "crm.html": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "expansion-pool.js": "3a59c5d19ef7bb3f44c194f4dfb7e0edfe953276683c48abcc5174d03c8016e7",
+    "expansion-flow.js": "06a00c00ccb42fee9a1e9186adb7c3b56f96f3c9ae379e3ce1fc67d7e6c84663",
+    "sql/20260905_expansion_management.sql": "c41d01b24a64528e6f09c76f875fcf687b24b43e51f336d2d3bc7ef73c9fc392",
+    "docs/operational-cutover-20260906/coverage-matrix.csv": "2d5bae1cd258a87046decbe0c884f396e37824a04b3cb5dcb5df4135c131d667"
+  }
+}

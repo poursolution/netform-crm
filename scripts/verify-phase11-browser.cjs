@@ -1,0 +1,55 @@
+'use strict';
+// Explicitly user-approved Node-owned browser automation. No HAR, tracing, video or screenshots.
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{createRequire}=require('node:module');
+const {chromium}=createRequire(path.resolve(__dirname,'../../crm-security-lab/package.json'))('playwright');
+const privateDir='C:/Users/Administrator/crm-staging-private',out=path.resolve(__dirname,'../sql/phase11');
+const credentials=JSON.parse(fs.readFileSync(path.join(privateDir,'auth-synthetic-20260905.json'),'utf8'));
+if(credentials.project_ref!=='rprechiaglyjaydkmxsu')throw Error('WRONG_PROJECT');
+const results=[],network=[],violations=[],errors=[];
+const allowedRPC=['crm_profile_scoped_v2','crm_read_scoped_v2','crm_contacts_scoped_v2','crm_write_command_v2'];
+let browser;
+async function context(){const ctx=await browser.newContext();ctx.setDefaultTimeout(8000);await ctx.route('**/*',async route=>{const u=new URL(route.request().url());
+ const local=u.origin==='http://127.0.0.1:4179',stage=u.origin==='https://rprechiaglyjaydkmxsu.supabase.co'&&(u.pathname.startsWith('/auth/v1/')||allowedRPC.includes(u.pathname.replace('/rest/v1/rpc/','')));
+ if(!local&&!stage){violations.push({origin:u.origin,path:u.pathname});return route.abort();}
+ network.push({origin:u.origin,path:u.pathname,method:route.request().method()});await route.continue();});
+ return ctx;}
+async function login(page,file,a,wrong=false){await page.goto('http://127.0.0.1:4179/'+file);const pc=file==='crm.html';
+ await page.locator(pc?'#au-name':'#lg-nm').fill(a.name);await page.locator(pc?'#au-pw':'#lg-pw').fill(wrong?'TEST_INTENTIONALLY_WRONG_PASSWORD':a.password);
+ await page.getByRole('button',{name:pc?'로그인':'로그인하기',exact:true}).click();
+ if(wrong){if(pc)await page.locator('#authState').filter({hasText:'이름 또는 비밀번호가 맞지 않습니다.'}).waitFor();else await page.getByText('이름 또는 비밀번호가 맞지 않습니다.',{exact:true}).waitFor();assert.equal(await page.evaluate(()=>Phase1.profile),null);}
+ else{await page.waitForFunction(()=>!!window.Phase1?.profile);assert.equal(await page.evaluate(()=>Phase1.profile.user_id),a.user_id);}
+}
+async function logout(page,file){if(file==='crm.html')await page.getByText('로그아웃',{exact:true}).click();else{page.once('dialog',d=>d.accept());await page.getByRole('button',{name:/TEST .* ⏻/}).click();}await page.locator(file==='crm.html'?'#au-name':'#lg-nm').waitFor();await page.waitForFunction(()=>window.Phase1?.profile===null);}
+async function check(name,fn){try{await fn();results.push({name,status:'PASS'});console.log('PASS '+name);}catch(e){results.push({name,status:'FAIL',reason:e.name||'ERROR'});errors.push({name,code:e.name||'ERROR'});console.log('FAIL '+name+' '+e.name);}}
+async function run(){browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
+ try{if(process.argv.includes('--unapproved'))for(const file of ['crm.html','mobile.html'])await check(file+' real unapproved Auth profile denied',async()=>{const ctx=await context(),page=await ctx.newPage(),a=credentials.accounts.find(a=>a.kind==='CONSULT'),pc=file==='crm.html';try{await page.goto('http://127.0.0.1:4179/'+file);await page.locator(pc?'#au-name':'#lg-nm').fill(a.name);await page.locator(pc?'#au-pw':'#lg-pw').fill(a.password);const denied=page.waitForResponse(r=>r.url().includes('/rpc/crm_profile_scoped_v2')&&r.status()===403);await page.getByRole('button',{name:pc?'로그인':'로그인하기',exact:true}).click();await denied;await page.waitForFunction(()=>Phase1.profile===null);await page.getByText('forbidden',{exact:false}).waitFor();assert.equal(await page.evaluate(()=>Object.keys(sessionStorage).filter(k=>k.startsWith('crm:staging:')).length),0);}finally{await ctx.close();}});
+ if(!process.argv.includes('--work-only')&&!process.argv.includes('--unapproved'))for(const file of ['crm.html','mobile.html']){
+  for(const a of credentials.accounts){await check(file+' '+a.kind+' login/profile/logout',async()=>{const ctx=await context(),page=await ctx.newPage();try{await login(page,file,a);await logout(page,file);assert.equal(await page.evaluate(()=>Object.keys(sessionStorage).filter(k=>k.startsWith('crm:staging:')).length),0);}finally{await ctx.close();}});}
+  await check(file+' wrong password',async()=>{const ctx=await context(),page=await ctx.newPage();try{await login(page,file,credentials.accounts[0],true);}finally{await ctx.close();}});
+  await check(file+' reload/session and cross-account cache/queue isolation',async()=>{const ctx=await context(),page=await ctx.newPage();try{await login(page,file,credentials.accounts[0]);await page.evaluate(()=>{Phase1.storage.setItem('TEST_CACHE','A_ONLY');Phase1.queue.enqueue('opportunity_work_set','f6090500-0006-4000-8000-000000000001',1,{primary_work:'TEST',work_items:['TEST'],reason:'TEST pending only'});localStorage.setItem('nf_pc_write_q_v1','UNTOUCHED_SENTINEL');});await page.reload();await page.waitForFunction(()=>!!Phase1.profile);assert.equal(await page.evaluate(()=>Phase1.storage.getItem('TEST_CACHE')),'A_ONLY');await logout(page,file);await login(page,file,credentials.accounts[1]);assert.equal(await page.evaluate(()=>Phase1.storage.getItem('TEST_CACHE')),null);assert.equal(await page.evaluate(()=>Phase1.queue.list().length),0);assert.equal(await page.evaluate(()=>localStorage.getItem('nf_pc_write_q_v1')),'UNTOUCHED_SENTINEL');await logout(page,file);}finally{await ctx.close();}});
+  await check(file+' two tabs logout invalidates peer',async()=>{const ctx=await context(),page=await ctx.newPage();try{await login(page,file,credentials.accounts[0]);const tab=await ctx.newPage();await tab.goto('http://127.0.0.1:4179/'+file);
+   // Separate tabs have independent sessionStorage. Clone only inside browser memory, never output token.
+   const state=await page.evaluate(()=>Object.fromEntries(Object.keys(sessionStorage).map(k=>[k,sessionStorage.getItem(k)])));await tab.evaluate(s=>{for(const [k,v]of Object.entries(s))sessionStorage.setItem(k,v);},state);await tab.reload();await tab.waitForFunction(()=>!!Phase1.profile);await logout(page,file);await tab.waitForFunction(()=>window.Phase1?.profile===null);assert.equal(await tab.evaluate(()=>Object.keys(sessionStorage).filter(k=>k.startsWith('crm:staging:')).length),0);
+  }finally{await ctx.close();}});
+ }
+ if(!process.argv.includes('--auth-only')&&!process.argv.includes('--unapproved'))for(const file of ['crm.html','mobile.html'])await check(file+' original work editor ACK/version/409/review/retry',async()=>{
+  const ctx=await context(),page=await ctx.newPage(),id='f6090500-0006-4000-8000-000000000001',pc=file==='crm.html';let before;
+  async function choose(){const opts=page.locator(pc?'#nd-work-picker button.work-option':'#p-workpicker button.m-workopt');while(await opts.filter({has:undefined}).locator(':scope.on').count())break;
+   const selected=pc?'#nd-work-picker button.work-option.on':'#p-workpicker button.m-workopt.on';while(await page.locator(selected).count())await page.locator(selected).first().click();
+   const keys=await opts.evaluateAll(a=>a.slice(0,2).map(x=>x.dataset.k));await opts.nth(0).click();await opts.nth(1).click();await page.locator(pc?'#nd-primary-work':'#pworkprimary').selectOption(keys[0]);await page.locator(pc?'#rs-work-text':'#workedit-t').fill('TEST 실제 브라우저 복합 공종 근거');
+  }
+  try{await login(page,file,credentials.accounts[0]);await page.evaluate(id=>Phase11.openWork(id),id);before=await page.evaluate(()=>({...Phase11.current}));await choose();await page.getByRole('button',{name:'공종 저장',exact:true}).click();await page.waitForFunction(()=>Phase11.last.state==='saved');assert.equal(await page.evaluate(()=>Phase11.current.version),before.version+1);
+   await page.evaluate(id=>Phase11.openWork(id),id);await choose();const stale=await page.evaluate(()=>Phase11.current.version);
+   await page.evaluate(async()=>{const d=Phase11.current;await Phase1.rpc('crm_write_command_v2',{p_request_id:crypto.randomUUID(),p_operation:'opportunity_work_set',p_object_id:d.id,p_expected_version:d.version,p_payload:{primary_work:d.primary_work,work_items:d.work_items,reason:'TEST competing saved modification'}});});
+   await page.getByRole('button',{name:'공종 저장',exact:true}).click();await page.waitForFunction(()=>Phase11.last.state==='conflict');assert.equal(await page.evaluate(()=>Phase11.current.version),stale+1);await page.getByText('다른 변경이 먼저 저장되었습니다.',{exact:false}).waitFor();assert.equal(await page.evaluate(()=>Phase11.last.reviewed),false);
+   await page.getByRole('button',{name:'현재 서버값 확인',exact:true}).click();await choose();await page.getByRole('button',{name:'공종 저장',exact:true}).click();await page.waitForFunction(()=>Phase11.last.state==='saved');assert.equal(await page.evaluate(()=>Phase11.current.version),stale+2);
+   // The actual DB commits the first request, but the browser loses its response.
+   await page.evaluate(id=>Phase11.openWork(id),id);const lostVersion=await page.evaluate(()=>Phase11.current.version);await choose();let dropped=false;
+   await page.route('**/rest/v1/rpc/crm_write_command_v2',async r=>{if(dropped)return r.continue();dropped=true;await r.fetch();await r.abort('failed');});
+   await page.getByRole('button',{name:'공종 저장',exact:true}).click();await page.waitForFunction(()=>Phase11.last.state==='uncertain');await page.getByRole('button',{name:'같은 요청 다시 확인',exact:true}).click();await page.waitForFunction(()=>Phase11.last.state==='saved');assert.equal(await page.evaluate(()=>Phase11.current.version),lostVersion+1);
+  }finally{if(before&&await page.evaluate(()=>!!window.Phase1?.profile).catch(()=>false))await page.evaluate(async d=>{const r=await Phase1.read('work_items',{opportunity_id:d.id});await Phase1.rpc('crm_write_command_v2',{p_request_id:crypto.randomUUID(),p_operation:'opportunity_work_set',p_object_id:d.id,p_expected_version:r.data.version,p_payload:{primary_work:d.primary_work,work_items:d.work_items,reason:'TEST restore work classification after browser regression'}});},before).catch(()=>{});await ctx.close();}
+ });
+ }finally{await browser.close();fs.mkdirSync(out,{recursive:true});const suffix=process.argv.includes('--unapproved')?'-unapproved':process.argv.includes('--work-only')?'-work':process.argv.includes('--auth-only')?'-auth':'';fs.writeFileSync(path.join(out,'browser-results'+suffix+'.json'),JSON.stringify({results,network,violations,errors,trace:false,video:false,screenshots:false},null,2));console.log(JSON.stringify({pass:results.filter(x=>x.status==='PASS').length,fail:results.filter(x=>x.status==='FAIL').length,violations:violations.length}));}
+ if(results.some(x=>x.status==='FAIL')||violations.length)process.exitCode=1;
+}
+run().catch(()=>{console.error('BROWSER_HARNESS_FAILED (secret-safe)');process.exitCode=1;});

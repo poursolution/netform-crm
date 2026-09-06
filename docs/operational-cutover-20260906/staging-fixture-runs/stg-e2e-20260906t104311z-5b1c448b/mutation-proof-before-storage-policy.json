@@ -1,0 +1,326 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "mode": "JWT_DISPOSABLE_MUTATION_HAPPY_REPLAY",
+  "run_id": "stg-e2e-20260906t104311z-5b1c448b",
+  "catalog_sha256": "ea9dd6932d7e57ac51c23dd7f53b8f41c889336defcd84bf0b5fc26ab5030872",
+  "candidate_apply_sha256": "e3fba5e7cd1f6430b0d9f5f1404f8dbbed093e8e1ff704741e2b7c288303bdf9",
+  "scenario_count": 35,
+  "operation_count": 31,
+  "started_at": "2026-09-06T10:50:55.650Z",
+  "status": "PASS",
+  "cleanup_required": true,
+  "results": [
+    {
+      "scenario": "cross-cutting-receipt-replay",
+      "step": "cross-cutting-receipt-replay:1",
+      "status": "PASS",
+      "kind": "policy_assertion"
+    },
+    {
+      "scenario": "frozen-direct-assign-pc-mobile",
+      "step": "frozen-direct-assign-pc-mobile:1",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "inquiry_assign",
+      "request_id": "a2c4c316-6f4b-438b-b208-38b67d43c87f",
+      "replay": true
+    },
+    {
+      "scenario": "frozen-direct-assign-pc-mobile",
+      "step": "frozen-direct-assign-pc-mobile:2",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "inquiry_assign",
+      "request_id": "98f7c70a-af00-468e-81c2-9efb1157d315",
+      "replay": true
+    },
+    {
+      "scenario": "mobile-inquiry-response-outcomes",
+      "step": "mobile-inquiry-response-outcomes:1",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "inquiry_assign",
+      "request_id": "47ac78f9-c51c-49ca-93a9-200842f8d5a6",
+      "replay": true
+    },
+    {
+      "scenario": "mobile-inquiry-response-outcomes",
+      "step": "mobile-inquiry-response-outcomes:2",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "inquiry_assign",
+      "request_id": "e7e1dc73-cddd-43cc-bc37-aeff95ad8ed6",
+      "replay": true
+    },
+    {
+      "scenario": "mobile-inquiry-response-outcomes",
+      "step": "mobile-inquiry-response-outcomes:3",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "inquiry_assign",
+      "request_id": "65ec4220-7374-4c71-bf43-a87ae84b3689",
+      "replay": true
+    },
+    {
+      "scenario": "pc-inquiry-progress",
+      "step": "pc-inquiry-progress:1",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "inquiry_status",
+      "request_id": "525d0fa9-8a56-4f99-9d2d-a73b3c9e8739",
+      "replay": true
+    },
+    {
+      "scenario": "frozen-inquiry-unassign",
+      "step": "frozen-inquiry-unassign:1",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "inquiry_assign",
+      "request_id": "dd0cdcd7-915c-4339-966e-572d4012903c",
+      "replay": true
+    },
+    {
+      "scenario": "frozen-inquiry-unassign",
+      "step": "frozen-inquiry-unassign:2",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "inquiry_unassign",
+      "request_id": "09b5abf9-eb65-44bc-abc6-df1aa1da564e",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-next-complete-check",
+      "step": "inquiry-next-complete-check:1",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "next_action",
+      "request_id": "d467072b-a611-46f0-ae2e-3ef34d682958",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-next-complete-check",
+      "step": "inquiry-next-complete-check:2",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "next_action_complete",
+      "request_id": "87662007-0185-4dc7-93b3-8014f894602e",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-next-complete-check",
+      "step": "inquiry-next-complete-check:3",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "stage_check",
+      "request_id": "b2294cf4-b357-40da-a41a-adbaa8f4f3b5",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-followup",
+      "step": "inquiry-followup:1",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "inquiry_followup",
+      "request_id": "1d083884-022e-411c-9f1e-6594aab89ab8",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-trash-restore",
+      "step": "inquiry-trash-restore:1",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "inquiry_trash",
+      "request_id": "ef9dbee2-63de-4555-9dbc-08fba23b12b4",
+      "replay": true
+    },
+    {
+      "scenario": "inquiry-trash-restore",
+      "step": "inquiry-trash-restore:2",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "inquiry_restore",
+      "request_id": "5a97b13a-1b9b-467b-9719-f136bdbd284c",
+      "replay": true
+    },
+    {
+      "scenario": "frozen-inquiry-read-refresh",
+      "step": "frozen-inquiry-read-refresh:1",
+      "status": "PASS",
+      "kind": "read",
+      "rpc": "crm_read_scoped_v2"
+    },
+    {
+      "scenario": "pipeline-expected-amount",
+      "step": "pipeline-expected-amount:1",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "amount",
+      "request_id": "159d3a29-94aa-4b02-8747-b0bb62026ab6",
+      "replay": true
+    },
+    {
+      "scenario": "frozen-opportunity-work",
+      "step": "frozen-opportunity-work:1",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "opportunity_work_set",
+      "request_id": "759f6ce2-94b1-4794-b171-9e3dbd43f9e3",
+      "replay": true
+    },
+    {
+      "scenario": "frozen-service-change",
+      "step": "frozen-service-change:1",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "service_change",
+      "request_id": "020aee0d-362e-4972-a34e-f853052c8005",
+      "replay": true
+    },
+    {
+      "scenario": "pipeline-activity-and-contact",
+      "step": "pipeline-activity-and-contact:1",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "activity",
+      "request_id": "ef9bc74c-0cd5-4641-9623-82a8e800550f",
+      "replay": true
+    },
+    {
+      "scenario": "deal-next-action-lifecycle",
+      "step": "deal-next-action-lifecycle:1",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "next_action",
+      "request_id": "dbe431b0-ddc5-4a0c-bd66-3b06356d0533",
+      "replay": true
+    },
+    {
+      "scenario": "deal-next-action-lifecycle",
+      "step": "deal-next-action-lifecycle:2",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "next_action_complete",
+      "request_id": "6d95095e-325f-4a5b-897e-ff8a954539fb",
+      "replay": true
+    },
+    {
+      "scenario": "mobile-today-outcomes",
+      "step": "mobile-today-outcomes:1",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "next_action",
+      "request_id": "ccf433b9-b641-45c7-8fb9-29a14f807b42",
+      "replay": true
+    },
+    {
+      "scenario": "mobile-today-outcomes",
+      "step": "mobile-today-outcomes:2",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "next_action_complete",
+      "request_id": "e3d34b17-0cb8-4083-80a0-9f87d918a207",
+      "replay": true
+    },
+    {
+      "scenario": "mobile-today-outcomes",
+      "step": "mobile-today-outcomes:3",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "next_action",
+      "request_id": "64c2b1a2-14ab-41b1-824d-43c7727361d7",
+      "replay": true
+    },
+    {
+      "scenario": "mobile-today-outcomes",
+      "step": "mobile-today-outcomes:4",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "next_action_complete",
+      "request_id": "b8061431-e4c0-4011-9a6b-c8896aeab557",
+      "replay": true
+    },
+    {
+      "scenario": "mobile-today-outcomes",
+      "step": "mobile-today-outcomes:5",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "next_action",
+      "request_id": "5113b860-2155-43d3-86d2-748042b32d38",
+      "replay": true
+    },
+    {
+      "scenario": "mobile-today-outcomes",
+      "step": "mobile-today-outcomes:6",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "next_action_complete",
+      "request_id": "cfb098b7-e015-4d83-8e54-f3d9b424c1bf",
+      "replay": true
+    },
+    {
+      "scenario": "pipeline-quote-version",
+      "step": "pipeline-quote-version:1",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "quote_version",
+      "request_id": "9883b85e-567a-4124-bc9b-72fc99bffe42",
+      "replay": true
+    },
+    {
+      "scenario": "pipeline-stage-check",
+      "step": "pipeline-stage-check:1",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "stage_check",
+      "request_id": "d9f5bbba-29de-423f-b6c0-2105217bc98b",
+      "replay": true
+    },
+    {
+      "scenario": "customer-and-operational-reads",
+      "step": "customer-and-operational-reads:1",
+      "status": "PASS",
+      "kind": "read",
+      "rpc": "crm_operational_source_v1"
+    },
+    {
+      "scenario": "personalization",
+      "step": "personalization:1",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "favorite_set",
+      "request_id": "1b5f9a91-e1d6-4bcb-a575-99089e2ef564",
+      "replay": true
+    },
+    {
+      "scenario": "personalization",
+      "step": "personalization:2",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "opportunity_touch",
+      "request_id": "c0760df9-292f-4bfe-aaf7-2aa5f90cb88c",
+      "replay": true
+    },
+    {
+      "scenario": "message-reminder",
+      "step": "message-reminder:1",
+      "status": "PASS",
+      "kind": "write",
+      "operation": "next_action",
+      "request_id": "2db4f975-0b70-4090-959f-b65ea3f74215",
+      "replay": true
+    }
+  ],
+  "completed_at": "2026-09-06T10:50:59.818Z",
+  "failure_point": null,
+  "pass": 34,
+  "fail": 0,
+  "skip": 0,
+  "http_requests": 91,
+  "crm_writes": 31,
+  "storage_writes": 0,
+  "staging_ddl_dml_performed": false,
+  "n8n_requests": 0,
+  "production_requests": 0,
+  "error_type": null
+}

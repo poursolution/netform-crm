@@ -1,0 +1,790 @@
+{
+  "generated_at": "2026-09-06T23:45:29.101Z",
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "STAGING_GO_PRODUCTION_NOT_APPLIED",
+  "operational_gates": {
+    "gate_1_local": true,
+    "gate_2_staging": true,
+    "gate_3_coverage": true,
+    "gate_4_cutover_readiness": true
+  },
+  "gates": {
+    "local_gate_pass": true,
+    "full_ui_candidate_assembled": true,
+    "full_ui_browser_read_pass": true,
+    "fixture_cleanup_pass": true,
+    "source_manifest_fresh": true,
+    "reachable_candidate_bundle_fresh": true,
+    "opportunity_create_candidate_fresh": true,
+    "inquiry_response_candidate_fresh": true,
+    "inquiry_pipeline_candidate_fresh": true,
+    "inquiry_stage_progress_candidate_fresh": true,
+    "inquiry_action_check_candidate_fresh": true,
+    "technical_inquiry_transfer_candidate_fresh": true,
+    "attachment_candidate_fresh": true,
+    "close_won_candidate_fresh": true,
+    "expansion_pool_update_candidate_fresh": false,
+    "expansion_note_context_candidate_fresh": true,
+    "message_reminder_candidate_fresh": true,
+    "next_action_postpone_candidate_fresh": true,
+    "mobile_today_outcome_candidate_fresh": true,
+    "customer_support_action_candidate_fresh": true,
+    "queue_retry_candidate_fresh": true,
+    "message_log_candidate_fresh": true,
+    "relationship_cadence_candidate_fresh": true,
+    "operational_full_staging_readonly_preflight_plan_fresh": true,
+    "operational_full_staging_jwt_readonly_harness_fresh": true,
+    "operational_full_staging_fixture_catalog_plan_fresh": true,
+    "operational_full_staging_disposable_fixture_compiler_fresh": true,
+    "operational_full_staging_mutation_e2e_plan_fresh": false,
+    "operational_full_staging_mutation_casebook_fresh": true,
+    "operational_full_local_candidate_fresh": false,
+    "operational_cutover_staging_readonly_preflight": true,
+    "operational_cutover_candidate_fresh": true,
+    "coverage_rows_present": true,
+    "coverage_denominator_64_fresh": true,
+    "frozen_evidence": true,
+    "unresolved_reachable_rows_zero": true,
+    "current_ui_n8n_references_zero": true,
+    "current_ui_production_references_zero": true,
+    "required_final_artifacts": true
+  },
+  "coverage": {
+    "denominator": "64_LOGICAL_REACHABLE_ACTIONS",
+    "actions": 64,
+    "pass": 53,
+    "blocked": 0,
+    "out_of_scope": 11,
+    "completion_percent": 82.8,
+    "scope_completion_percent": 100,
+    "denominator_fresh": true,
+    "evidence_rows": 84,
+    "by_status": {
+      "BROWSER_STAGING_PASS_NOT_DEPLOYED": 2,
+      "EXTERNAL_APP": 3,
+      "LOCAL_ONLY_CONFIRMED": 2,
+      "OUT_OF_SCOPE_31_OP_BOUNDARY": 7,
+      "REACHABLE_MOCK_BLOCKER": 2,
+      "STAGING_COMPAT_PASS_FROZEN": 6,
+      "STAGING_JWT_E2E_PASS_20260906": 62
+    },
+    "legacy_unresolved_evidence_rows": 2,
+    "legacy_unresolved_ids": [
+      "O05",
+      "O06"
+    ],
+    "local_candidate_ids": [],
+    "contract_only_ids": []
+  },
+  "candidate_bundle": {
+    "status": "LOCAL_CUMULATIVE_CANDIDATE_NOT_APPLIED",
+    "operations": 21,
+    "apply_sha256": "2a686192ae14cc92c9a8229f618b754d192fa1c840f58c3f6faa07430182c4ed",
+    "rollback_sha256": "bfdac9ecd6f8bbdf734a426800c1f13563619ef8c1e1947e8764dbd49ccaa691",
+    "rollback_runtime_limit": "PRE_INQUIRY_PURGE_USE_ONLY",
+    "irreversible_runtime_operation": "inquiry_purge",
+    "files_fresh": true,
+    "sources_fresh": true,
+    "staging_ddl_dml_performed": false
+  },
+  "opportunity_create_candidate": {
+    "status": "LOCAL_CHAIN_CANDIDATE_AFTER_REACHABLE_BUNDLE_NOT_APPLIED",
+    "operation": "opportunity_create",
+    "files_fresh": true,
+    "sources_fresh": true,
+    "staging_ddl_dml_performed": false,
+    "rollback": "PRE_RUNTIME_CREATE_USE_ONLY"
+  },
+  "inquiry_response_candidate": {
+    "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+    "operation": "inquiry_assign",
+    "intents": [
+      "response_progress",
+      "response_next_week_retry",
+      "response_missed_retry"
+    ],
+    "allowed_responses": [
+      "진행됨 — 다음 잡음",
+      "다음주 다시",
+      "못 받으심 (내일 재시도)"
+    ],
+    "blocked_responses": [],
+    "server_rules": {
+      "response_progress": {
+        "status": "전화응대 완료",
+        "response_timestamps": "first_once_last_now",
+        "followup_days": null
+      },
+      "response_next_week_retry": {
+        "status": "응대중",
+        "response_timestamps": "first_once_last_now",
+        "followup_days": 7
+      },
+      "response_missed_retry": {
+        "status": "배정완료",
+        "response_timestamps": "preserve",
+        "followup_days": 1
+      }
+    },
+    "files_fresh": true,
+    "sources_fresh": true,
+    "staging_ddl_dml_performed": false
+  },
+  "inquiry_pipeline_candidate": {
+    "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+    "operations": [
+      "opportunity_create",
+      "transition",
+      "lineage_link"
+    ],
+    "intents": [
+      "inquiry_promote_create",
+      "inquiry_promote_existing",
+      "lineage_link"
+    ],
+    "surface": "pc_only",
+    "blocked": [
+      "technical_inquiry_transfer",
+      "branch_handoff",
+      "branch_owner_assign"
+    ],
+    "files_fresh": true,
+    "sources_fresh": true,
+    "staging_ddl_dml_performed": false,
+    "staging_readonly_preflight": "PASS"
+  },
+  "inquiry_stage_progress_candidate": {
+    "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+    "operation": "inquiry_status",
+    "intent": "progress",
+    "allowed_targets": [
+      "step:0",
+      "step:1",
+      "step:2",
+      "step:3",
+      "step:4",
+      "step:5"
+    ],
+    "blocked_targets": [
+      "hold",
+      "lost",
+      "badfit_lead",
+      "nocontact"
+    ],
+    "files_fresh": true,
+    "sources_fresh": true,
+    "staging_ddl_dml_performed": false
+  },
+  "inquiry_action_check_candidate": {
+    "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+    "operations": [
+      "next_action",
+      "next_action_complete",
+      "stage_check"
+    ],
+    "intents": [
+      "inquiry_next_set",
+      "inquiry_next_complete",
+      "inquiry_check"
+    ],
+    "handlers": [
+      "splitSaveNext",
+      "applyInqBulkAction",
+      "splitDoneAction",
+      "splitCheck"
+    ],
+    "deal_meanings_preserved": true,
+    "files_fresh": true,
+    "sources_fresh": true,
+    "staging_ddl_dml_performed": false
+  },
+  "technical_inquiry_transfer_candidate": {
+    "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+    "operations": [
+      "opportunity_create"
+    ],
+    "intents": [
+      "technical_inquiry_transfer"
+    ],
+    "handlers": [
+      "inqTechPromote"
+    ],
+    "absorbed_child_operations": [
+      "inquiry_status"
+    ],
+    "server_helper_implemented": true,
+    "files_fresh": true,
+    "sources_fresh": true,
+    "staging_ddl_dml_performed": false
+  },
+  "close_won_candidate": {
+    "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+    "operation": "close",
+    "intent": "won",
+    "ui_coverage_candidate": [
+      "P04W",
+      "P16"
+    ],
+    "absorbed_children": [
+      "activity",
+      "expansion_pool_upsert"
+    ],
+    "server_rules": {
+      "from_stage": "completion",
+      "required_checks": [
+        "공사 완료",
+        "준공검사 완료"
+      ],
+      "won_amount": "positive bigint separate from expected amount",
+      "completion_date": "required and not after transition date",
+      "next_contact_days": 30,
+      "pool_fields": "server-derived from Deal UUID/site/owner/work"
+    },
+    "private_relations": [
+      "crm_security.deal_won_events",
+      "crm_security.expansion_pool"
+    ],
+    "read_additions": [
+      "deal_core.won_amount",
+      "deal_core.completion_date",
+      "expansion_pool actor-scoped domain"
+    ],
+    "rollback_runtime_limit": "BEFORE_ANY_DEAL_WON_EVENT",
+    "staging_readonly_preflight": "PASS",
+    "files_fresh": true,
+    "sources_fresh": true,
+    "staging_ddl_dml_performed": false
+  },
+  "expansion_pool_update_candidate": {
+    "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+    "operation": "expansion_pool_update",
+    "ui_coverage_candidate": [
+      "X01"
+    ],
+    "allowed_changes": [
+      "expansion_status",
+      "next_contact_at"
+    ],
+    "allowed_statuses": [
+      "신규 대상",
+      "접촉 예정",
+      "관계 관리중",
+      "추가 니즈 확인",
+      "보류/휴면"
+    ],
+    "blocked_changes": [
+      "Pipeline 전환",
+      "created_opportunity_id",
+      "last_contact_at",
+      "need_note",
+      "relationship_state",
+      "client actor/time"
+    ],
+    "server_rules": {
+      "scope": "crm_security.can_deal(source_deal_id,true)",
+      "concurrency": "private expansion pool version",
+      "history": "one private event + deal audit + receipt per mutation"
+    },
+    "read_additions": [
+      "expansion_pool.version",
+      "expansion_events safe projection"
+    ],
+    "files_fresh": true,
+    "sources_fresh": false,
+    "staging_ddl_dml_performed": false
+  },
+  "expansion_note_context_candidate": {
+    "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+    "rpcs": [
+      "crm_expansion_note",
+      "crm_expansion_context"
+    ],
+    "ui_coverage_candidate": [
+      "X02"
+    ],
+    "note_contract": {
+      "target": "source Closed Won Deal UUID",
+      "length": "1..8000 trimmed",
+      "idempotency": "request_id common receipt",
+      "effects": [
+        "private expansion event",
+        "Deal audit",
+        "receipt"
+      ]
+    },
+    "context_contract": {
+      "events": "actor-scoped safe event projection",
+      "dispatches": "empty until verified X03 provider ledger"
+    },
+    "blocked": [
+      "quote dispatch fabrication",
+      "Pipeline conversion",
+      "client actor/time"
+    ],
+    "files_fresh": true,
+    "sources_fresh": true,
+    "staging_ddl_dml_performed": false
+  },
+  "message_reminder_candidate": {
+    "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+    "operation": "next_action",
+    "intent": "message_reminder",
+    "ui_coverage_candidate": [
+      "M04"
+    ],
+    "meaning": "staff execution reminder, never provider auto-send",
+    "server_rules": {
+      "scope": "crm_security.can_deal(deal_id,true)",
+      "assignee": "approved current Deal owner UUID",
+      "schedule": "future instant; due_at equals Asia/Seoul date",
+      "replacement": "cancel all current open Deal Next Actions",
+      "transaction": "Next Action + private reminder + non-meaningful Activity + Deal version + audit + receipt"
+    },
+    "read_additions": [
+      "next_action.scheduled_at",
+      "next_action.channel",
+      "next_action.template_key",
+      "next_action.draft_body"
+    ],
+    "blocked": [
+      "provider delivery claim",
+      "campaign queue",
+      "client actor/time",
+      "standalone derived Activity"
+    ],
+    "files_fresh": true,
+    "sources_fresh": true,
+    "staging_ddl_dml_performed": false
+  },
+  "next_action_postpone_candidate": {
+    "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+    "operation": "next_action",
+    "intent": "postpone",
+    "ui_coverage_candidate": [
+      "P09X"
+    ],
+    "payload": [
+      "action_id",
+      "due_at"
+    ],
+    "server_rules": {
+      "scope": "crm_security.can_deal(deal_id,true)",
+      "identity": "server-projected current open Next Action UUID",
+      "date": "strictly later than current due and server KST date",
+      "counter": "append-only per-Deal server count",
+      "transaction": "same Next Action due + event + non-meaningful Activity + Deal version + audit + receipt"
+    },
+    "read_additions": [
+      "next_action.postpone_count"
+    ],
+    "blocked": [
+      "temporary client action id",
+      "earlier or same date",
+      "client postpone_count",
+      "standalone derived Activity"
+    ],
+    "files_fresh": true,
+    "sources_fresh": true,
+    "staging_ddl_dml_performed": false
+  },
+  "operational_cutover_candidate": {
+    "status": "LOCAL_CUMULATIVE_25_OP_PLUS_INQUIRY_RESPONSES_PIPELINE_LINEAGE_PC_PROGRESS_ACTION_CHECK_TECHNICAL_TRANSFER_ATTACHMENTS_AND_CONTACT_READ_NOT_APPLIED",
+    "operations": 25,
+    "internal_intents": [
+      "inquiry_assign/response_progress",
+      "inquiry_assign/response_next_week_retry",
+      "inquiry_assign/response_missed_retry",
+      "opportunity_create/inquiry_promote_create",
+      "opportunity_create/technical_inquiry_transfer",
+      "transition/inquiry_promote_existing",
+      "inquiry_status/progress",
+      "next_action/inquiry_next_set",
+      "next_action_complete/inquiry_next_complete",
+      "stage_check/inquiry_check"
+    ],
+    "read_additions": [
+      "deal_contact_timeline",
+      "inquiry_response_history",
+      "lineage_first_deal_resolution",
+      "inquiry_stage_history_activity_next_action",
+      "inquiry_checklist_and_action_history",
+      "deal_ready_attachments"
+    ],
+    "staging_readonly_preflight": true,
+    "files_fresh": true,
+    "sources_fresh": true,
+    "staging_ddl_dml_performed": false,
+    "rollback_runtime_limit": "PRE_OPPORTUNITY_CREATE_OR_INQUIRY_PURGE_USE;_INQUIRY_PROGRESS_ACTION_TECHNICAL_TRANSFER_AND_ATTACHMENT_EVIDENCE_PRESERVED;_STORAGE_BYTES_NEVER_SQL_DELETED"
+  },
+  "frozen_evidence": {
+    "opportunity_work_set": true,
+    "direct_assign": true,
+    "jwt_regression_11": true,
+    "operational_bundle": true
+  },
+  "forbidden_markers": {
+    "source_n8n_reference_count": 6,
+    "source_production_ref_count": 5,
+    "deployment_n8n_reference_count": 0,
+    "deployment_production_ref_count": 0
+  },
+  "required_artifacts": {
+    "full_staging_e2e": true,
+    "role_matrix_e2e": true,
+    "n8n_off_network_proof": true,
+    "production_cutover": true,
+    "production_rollback": true
+  },
+  "production_requests": 0,
+  "n8n_body_requests": 0,
+  "local_gate": {
+    "gate": "Gate 1 — Local",
+    "status": "PASS",
+    "project_ref": "rprechiaglyjaydkmxsu",
+    "executed_at": "2026-09-07",
+    "command": "node --test",
+    "test_files": 169,
+    "tests": 893,
+    "pass": 877,
+    "fail": 0,
+    "skip": 16,
+    "skip_policy": "REMOTE_ONLY_SKIP_IS_NOT_PASS",
+    "fixture_setup_cleanup_restore": {
+      "status": "PASS",
+      "evidence": [
+        "tests/crm-baseline-rollback.test.cjs: baseline COMMIT -> close/reopen -> rollback COMMIT -> before diff zero",
+        "tests/crm-baseline-rollback.test.cjs: captured Staging-after fixture -> COMMIT/reconnect -> canonical rollback -> exact before diff zero",
+        "tests/crm-phase1-db.test.cjs: post-COMMIT rollback works after closing and reopening the database"
+      ]
+    },
+    "staging_mutation_performed": false,
+    "production_accessed": false,
+    "n8n_accessed": false
+  },
+  "full_ui_candidate": {
+    "status": "LOCAL_31_OP_UI_ASSEMBLED_NOT_DEPLOYED",
+    "operations": 31,
+    "forbidden_references": {
+      "n8n": 0,
+      "production_ref": 0
+    },
+    "pages": {
+      "index.html": {
+        "source_sha256": "16e2d3e8ed6ed306c62d00e9e4c5817c7f5730ce1f18270a1ef7c26627ca79fc",
+        "output_sha256": "ddf470858340469bd4f514c91ed361f06d07453c06fd06a352e3d5b4fb4e3b16",
+        "config_index": 54,
+        "adapter_index": 95,
+        "transport_index": 142,
+        "overlay_index": null,
+        "body_end": 7355
+      },
+      "crm.html": {
+        "source_sha256": "90c539ec275f323786ee8ad3ef4ef545180dd3ff535ca61b9d680b20bbf53f47",
+        "output_sha256": "ef63dce69b36ff1d96383d4c22b7cd69aa85ef76ff48ecc1ba6d039f18f871f2",
+        "config_index": 54,
+        "adapter_index": 95,
+        "transport_index": 142,
+        "overlay_index": 1154486,
+        "body_end": 1155197
+      },
+      "mobile.html": {
+        "source_sha256": "87739c43aeddabbbc40e9e047a0c308abaf59ec9b64566301a71982fe0c9efe8",
+        "output_sha256": "a8135a9a235953c0729f3a68e0d8c3d01381a8dbfcf28436af927c7bb950be82",
+        "config_index": 54,
+        "adapter_index": 95,
+        "transport_index": 142,
+        "overlay_index": 311884,
+        "body_end": 312844
+      }
+    },
+    "local_browser_revalidation_required": true,
+    "staging_deployment_performed": false,
+    "production_accessed": false,
+    "n8n_accessed": false
+  },
+  "full_ui_browser_read": {
+    "status": "PASS",
+    "checks": 12,
+    "pass": 12,
+    "fail": 0,
+    "violations": 0,
+    "production_requests": 0,
+    "n8n_requests": 0,
+    "business_write_requests": 0,
+    "at": "2026-09-06T13:47:59.382Z"
+  },
+  "mobile_today_outcome_candidate": {
+    "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+    "operation": "next_action_complete",
+    "intent": "today_outcome",
+    "ui_coverage_candidate": [
+      "P09M"
+    ],
+    "allowed_outcomes": [
+      "progress",
+      "next_week",
+      "missed"
+    ],
+    "absorbed_children": [
+      "activity",
+      "next_action"
+    ],
+    "server_rules": {
+      "scope": "crm_security.can_deal(deal_id,true)",
+      "identity": "server-projected earliest open Next Action UUID",
+      "dates": "server KST +3/+7/+1",
+      "counter": "Deal-level; increment only next_week",
+      "transaction": "complete current Action + cancel other open + Activity + replacement Next + Deal version/contact + audit + receipt"
+    },
+    "read_dependency": [
+      "next_action.id",
+      "next_action.postpone_count"
+    ],
+    "blocked": [
+      "temporary action id",
+      "client Activity/Next/time/count",
+      "inquiry response meaning"
+    ],
+    "files_fresh": true,
+    "sources_fresh": true,
+    "staging_ddl_dml_performed": false,
+    "production_accessed": false,
+    "n8n_accessed": false
+  },
+  "customer_support_action_candidate": {
+    "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+    "operation": "customer_support_action",
+    "ui_coverage_candidate": [
+      "O02"
+    ],
+    "surface": "pc_admin_only",
+    "meaning": "append-only requested support record; downstream action is independent",
+    "allowed_action_keys": [
+      "response_request",
+      "inquiry_review",
+      "call",
+      "message",
+      "recontact_result",
+      "waiting_context",
+      "manager_consult",
+      "waiting_review",
+      "material_support",
+      "meeting_check",
+      "contact_check",
+      "contact_activity",
+      "reactivate_review",
+      "dormant_review",
+      "recontact_schedule",
+      "support_detail"
+    ],
+    "server_rules": {
+      "actor": "approved unexpired admin UUID",
+      "scope": "current can_deal(...,true) or can_inquiry target scope",
+      "target_owner": "approved active rep UUID from locked target",
+      "status": "requested only",
+      "idempotency": "common command receipt; client_ref preserved only for UI correlation"
+    },
+    "read_additions": [
+      "customer_support_action admin-scoped operational source"
+    ],
+    "blocked": [
+      "downstream completion inference",
+      "client actor/time/status/rep/site authority",
+      "O01 head-office rep eligibility"
+    ],
+    "files_fresh": true,
+    "sources_fresh": true,
+    "staging_ddl_dml_performed": false,
+    "production_accessed": false,
+    "n8n_accessed": false
+  },
+  "queue_retry_candidate": {
+    "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+    "capability": "queue_retry",
+    "ui_coverage_candidate": [
+      "C04"
+    ],
+    "surface": "pc_mobile",
+    "meaning": "manual retry reuses the exact uncertain queue command and request_id",
+    "retryable_statuses": [
+      "uncertain"
+    ],
+    "non_retryable_statuses": [
+      "conflict",
+      "rejected"
+    ],
+    "server_dependency": "existing common command receipt and operation-specific ACK",
+    "database_changes": false,
+    "files_fresh": true,
+    "sources_fresh": true,
+    "staging_ddl_dml_performed": false,
+    "production_accessed": false,
+    "n8n_accessed": false
+  },
+  "message_log_candidate": {
+    "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+    "operation": "message_log",
+    "ui_coverage_candidate": [
+      "M02"
+    ],
+    "surface": "pc_mobile",
+    "meaning": "user-attested external send outcome; never provider delivery evidence",
+    "server_rules": {
+      "scope": "current can_deal(...,true) and version",
+      "contact": "unique current Deal contact and phone resolved server-side",
+      "sent": "message outcome + non-meaningful Activity + optional replacement Next Action atomically",
+      "failed_cancelled": "message outcome only plus Deal version/audit/receipt",
+      "attachments": "referenced quote version and ready Deal attachments only",
+      "authority": "server UUID actor/contact/phone/time; client sender/phone/stage/site/time stripped",
+      "idempotency": "common receipt and 409 reuse conflict"
+    },
+    "read_additions": [
+      "message_log actor-scoped operational source",
+      "messageLogs/message_logs aliases"
+    ],
+    "blocked": [
+      "provider delivery claim",
+      "automatic send",
+      "direct unwrapped message_log",
+      "unready/cross-Deal attachment"
+    ],
+    "files_fresh": true,
+    "sources_fresh": true,
+    "staging_ddl_dml_performed": false,
+    "production_accessed": false,
+    "n8n_accessed": false
+  },
+  "relationship_cadence_candidate": {
+    "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+    "operations": [
+      "relationship_hold",
+      "relationship_response"
+    ],
+    "ui_coverage_candidate": [
+      "M05"
+    ],
+    "surface": "pc_mobile",
+    "contracts": {
+      "hold": {
+        "absorbed_child": "next_action",
+        "effects": [
+          "private hold event",
+          "Deal wake_up_at/version",
+          "replacement open Next Action",
+          "audit",
+          "receipt"
+        ],
+        "activity": "none; preserve current UI"
+      },
+      "response": {
+        "absorbed_child": "meaningful activity",
+        "outbound_link": "latest same Deal/person sent and unresponded user-attested message outcome at or before activity",
+        "next_cancel": "only linked outcome open next_action_id",
+        "effects": [
+          "message response marker",
+          "meaningful Activity",
+          "private response event",
+          "Deal activity/contact timestamps/version",
+          "audit",
+          "receipt"
+        ]
+      }
+    },
+    "authority": "server UUID actor/contact/time; bounded Activity business occurrence only",
+    "read_derivations": [
+      "last_outbound_at",
+      "outbound_attempts",
+      "last_customer_response_at",
+      "relationship hold aliases",
+      "message response_at/response_kind"
+    ],
+    "blocked": [
+      "direct unwrapped relationship writes",
+      "provider delivery inference",
+      "unrelated Next Action cancellation",
+      "synthetic hold Activity"
+    ],
+    "implementation_present": true,
+    "files_fresh": true,
+    "sources_fresh": true,
+    "staging_ddl_dml_performed": false,
+    "production_accessed": false,
+    "n8n_accessed": false
+  },
+  "operational_full_local_candidate": {
+    "status": "LOCAL_CUMULATIVE_31_OP_M02_M05_NOT_APPLIED",
+    "classification": "DERIVED_SAFE_COMPONENTS_REQUIRING_STAGING_PREFLIGHT_JWT_E2E",
+    "operations": 31,
+    "stage_order": [
+      "operational_cutover",
+      "close_won",
+      "expansion_pool_update",
+      "expansion_note_context",
+      "message_reminder",
+      "next_action_postpone",
+      "mobile_today_outcome",
+      "customer_support_action",
+      "message_log",
+      "relationship_cadence"
+    ],
+    "ui_source": "relationship-cadence-compat/20260906",
+    "transactionality": {
+      "apply": "single_transaction",
+      "rollback": "single_transaction_reverse_order",
+      "rollback_runtime_limit": "PRE_OPPORTUNITY_CREATE_INQUIRY_PURGE_OR_CLOSED_WON_USE_ONLY"
+    },
+    "security": {
+      "public_entrypoints": [
+        "crm_write_command_v2",
+        "crm_operational_source_v1",
+        "crm_expansion_note",
+        "crm_expansion_context"
+      ],
+      "private_helpers_no_client_execute": true,
+      "private_relations_rls_no_client_grants": true
+    },
+    "staging_preflight_required": true,
+    "staging_preflight_plan": "READY_NOT_RUN",
+    "staging_preflight_file": "staging-readonly-preflight.sql",
+    "staging_preflight_validator": "validate-staging-readonly-preflight.cjs",
+    "staging_preflight_runbook": "staging-readonly-preflight-runbook.md",
+    "staging_preflight_plan_fresh": true,
+    "staging_jwt_readonly_harness": "READY_NOT_RUN",
+    "staging_jwt_readonly_test": "tests/operational-full-jwt-readonly.test.cjs",
+    "staging_jwt_readonly_runbook": "staging-jwt-readonly-runbook.md",
+    "staging_jwt_readonly_harness_fresh": true,
+    "staging_fixture_catalog": "READY_NOT_RUN_POST_APPLY",
+    "staging_fixture_catalog_file": "staging-fixture-catalog.sql",
+    "staging_fixture_catalog_validator": "validate-staging-fixture-catalog.cjs",
+    "staging_fixture_catalog_runbook": "staging-fixture-catalog-runbook.md",
+    "staging_fixture_catalog_fresh": true,
+    "staging_disposable_fixture_compiler": "READY_CATALOG_REQUIRED_NOT_RUN",
+    "staging_disposable_fixture_builder": "build-staging-disposable-fixture.cjs",
+    "staging_disposable_fixture_runbook": "staging-disposable-fixture-runbook.md",
+    "staging_disposable_fixture_compiler_fresh": true,
+    "staging_mutation_e2e_plan": "READY_WITH_CATALOG_GATED_FIXTURE_COMPILER",
+    "staging_mutation_e2e_plan_file": "docs/operational-cutover-20260906/staging-mutation-e2e-plan.json",
+    "staging_mutation_e2e_plan_test": "tests/staging-mutation-e2e-plan.test.cjs",
+    "staging_mutation_e2e_plan_fresh": false,
+    "staging_mutation_e2e_plan_status": "MUTATION_MATRIX_COMPLETE_FIXTURE_EXTENSION_PENDING_READONLY_PREFLIGHT",
+    "staging_mutation_e2e_coverage_rows": 60,
+    "staging_mutation_e2e_scenarios": 35,
+    "staging_mutation_fixture_gap": true,
+    "staging_mutation_casebook": "READY_HAPPY_REPLAY_NOT_RUN",
+    "staging_mutation_casebook_file": "staging-mutation-casebook.cjs",
+    "staging_mutation_jwt_test": "tests/operational-full-jwt-mutation.test.cjs",
+    "staging_mutation_jwt_runbook": "staging-jwt-mutation-runbook.md",
+    "staging_mutation_casebook_fresh": true,
+    "candidate_inventory_counts": {
+      "functions": 88,
+      "relations": 14,
+      "archive_schemas": 10,
+      "candidate_columns": 4
+    },
+    "files_fresh": true,
+    "sources_fresh": true,
+    "staging_ddl_dml_performed": false,
+    "production_accessed": false,
+    "n8n_accessed": false
+  }
+}

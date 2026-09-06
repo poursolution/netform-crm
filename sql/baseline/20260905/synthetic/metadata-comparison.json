@@ -1,0 +1,247 @@
+{
+  "rule": "CRLF->LF, CR->LF; function definition only",
+  "rawDiff": [],
+  "canonicalDiff": [],
+  "functions": [
+    {
+      "signature": "_done_today(text)",
+      "source": {
+        "raw_md5": "16ba007e9cca9c81a2dffcf9d4a6b7c8",
+        "canonical_md5": "0803f5ba691246529afeb4dbf67f7c93"
+      },
+      "actual": {
+        "raw_md5": "16ba007e9cca9c81a2dffcf9d4a6b7c8",
+        "canonical_md5": "0803f5ba691246529afeb4dbf67f7c93"
+      },
+      "definition_diff": "identical",
+      "other_field_diff": [],
+      "status": "PASS"
+    },
+    {
+      "signature": "apply_business_change(uuid,text,text,text,text,text,date)",
+      "source": {
+        "raw_md5": "a0afb9be8303b2b93b9b421e06f3be7a",
+        "canonical_md5": "d0ba5d955f4357c9eb599cbce4242f3e"
+      },
+      "actual": {
+        "raw_md5": "a0afb9be8303b2b93b9b421e06f3be7a",
+        "canonical_md5": "d0ba5d955f4357c9eb599cbce4242f3e"
+      },
+      "definition_diff": "identical",
+      "other_field_diff": [],
+      "status": "PASS"
+    },
+    {
+      "signature": "crm_bundle()",
+      "source": {
+        "raw_md5": "079aea4183c8ec5ad4673391782cd3eb",
+        "canonical_md5": "b091149f61733569f2d746143373da5a"
+      },
+      "actual": {
+        "raw_md5": "079aea4183c8ec5ad4673391782cd3eb",
+        "canonical_md5": "b091149f61733569f2d746143373da5a"
+      },
+      "definition_diff": "identical",
+      "other_field_diff": [],
+      "status": "PASS"
+    },
+    {
+      "signature": "crm_contact_move(jsonb)",
+      "source": {
+        "raw_md5": "fb917a01fc685ea62a1cc77bc7fd0bce",
+        "canonical_md5": "e687961172aab2cfa4c8435f172f6ed5"
+      },
+      "actual": {
+        "raw_md5": "fb917a01fc685ea62a1cc77bc7fd0bce",
+        "canonical_md5": "e687961172aab2cfa4c8435f172f6ed5"
+      },
+      "definition_diff": "identical",
+      "other_field_diff": [],
+      "status": "PASS"
+    },
+    {
+      "signature": "crm_contact_upsert(jsonb)",
+      "source": {
+        "raw_md5": "b52594f98e56feb2d2e99e6ef7a927be",
+        "canonical_md5": "7c07f791a29bf81af2a2120caa180b72"
+      },
+      "actual": {
+        "raw_md5": "b52594f98e56feb2d2e99e6ef7a927be",
+        "canonical_md5": "7c07f791a29bf81af2a2120caa180b72"
+      },
+      "definition_diff": "identical",
+      "other_field_diff": [],
+      "status": "PASS"
+    },
+    {
+      "signature": "crm_opportunity_work_set(jsonb)",
+      "source": {
+        "raw_md5": "cd2decccf2028dd5c54532aa6b14dd85",
+        "canonical_md5": "7fbffcf1d24354df494d91ce4da67143"
+      },
+      "actual": {
+        "raw_md5": "cd2decccf2028dd5c54532aa6b14dd85",
+        "canonical_md5": "7fbffcf1d24354df494d91ce4da67143"
+      },
+      "definition_diff": "identical",
+      "other_field_diff": [],
+      "status": "PASS"
+    },
+    {
+      "signature": "crm_site_contacts(uuid)",
+      "source": {
+        "raw_md5": "11bee60c29487db19d2f6086574141e0",
+        "canonical_md5": "d35ee1893ff7f2c73d19288fc0739750"
+      },
+      "actual": {
+        "raw_md5": "11bee60c29487db19d2f6086574141e0",
+        "canonical_md5": "d35ee1893ff7f2c73d19288fc0739750"
+      },
+      "definition_diff": "identical",
+      "other_field_diff": [],
+      "status": "PASS"
+    },
+    {
+      "signature": "metrics_channel_flow()",
+      "source": {
+        "raw_md5": "835fa4b8f0b7d79169cf0ac346afbfc1",
+        "canonical_md5": "68ccd4f65ab29ff94597ccc9ea34d0b4"
+      },
+      "actual": {
+        "raw_md5": "835fa4b8f0b7d79169cf0ac346afbfc1",
+        "canonical_md5": "68ccd4f65ab29ff94597ccc9ea34d0b4"
+      },
+      "definition_diff": "identical",
+      "other_field_diff": [],
+      "status": "PASS"
+    },
+    {
+      "signature": "metrics_lost_breakdown(text)",
+      "source": {
+        "raw_md5": "26040800c459b30abf553c637fc1d0dc",
+        "canonical_md5": "56b3487f216472aebc197a9954292695"
+      },
+      "actual": {
+        "raw_md5": "26040800c459b30abf553c637fc1d0dc",
+        "canonical_md5": "56b3487f216472aebc197a9954292695"
+      },
+      "definition_diff": "identical",
+      "other_field_diff": [],
+      "status": "PASS"
+    },
+    {
+      "signature": "metrics_operations(text)",
+      "source": {
+        "raw_md5": "e8817b669c3fde471dcd98b877fe2ddf",
+        "canonical_md5": "04a152d4020734aa2497cb1881f35447"
+      },
+      "actual": {
+        "raw_md5": "e8817b669c3fde471dcd98b877fe2ddf",
+        "canonical_md5": "04a152d4020734aa2497cb1881f35447"
+      },
+      "definition_diff": "identical",
+      "other_field_diff": [],
+      "status": "PASS"
+    },
+    {
+      "signature": "parse_responses(text)",
+      "source": {
+        "raw_md5": "1bd675396edca0c5d439cd6655724457",
+        "canonical_md5": "8f47389c889eb650474fe68bc46cb0a7"
+      },
+      "actual": {
+        "raw_md5": "1bd675396edca0c5d439cd6655724457",
+        "canonical_md5": "8f47389c889eb650474fe68bc46cb0a7"
+      },
+      "definition_diff": "identical",
+      "other_field_diff": [],
+      "status": "PASS"
+    },
+    {
+      "signature": "require_reason(text,text)",
+      "source": {
+        "raw_md5": "df53691dec4a67b79df606048083217b",
+        "canonical_md5": "61012d60447059c9ea79a53b4690dbf8"
+      },
+      "actual": {
+        "raw_md5": "df53691dec4a67b79df606048083217b",
+        "canonical_md5": "61012d60447059c9ea79a53b4690dbf8"
+      },
+      "definition_diff": "identical",
+      "other_field_diff": [],
+      "status": "PASS"
+    },
+    {
+      "signature": "set_updated_at()",
+      "source": {
+        "raw_md5": "852a0252e333a48f8eae47b328000e7a",
+        "canonical_md5": "c255ed84a8d9fe37ddfed5c1bb2e890b"
+      },
+      "actual": {
+        "raw_md5": "852a0252e333a48f8eae47b328000e7a",
+        "canonical_md5": "c255ed84a8d9fe37ddfed5c1bb2e890b"
+      },
+      "definition_diff": "identical",
+      "other_field_diff": [],
+      "status": "PASS"
+    },
+    {
+      "signature": "stage_sla_days(text)",
+      "source": {
+        "raw_md5": "c717feba07e7008c79a371cbf51e5864",
+        "canonical_md5": "9bba0833e646377e9f166535acc55152"
+      },
+      "actual": {
+        "raw_md5": "c717feba07e7008c79a371cbf51e5864",
+        "canonical_md5": "9bba0833e646377e9f166535acc55152"
+      },
+      "definition_diff": "identical",
+      "other_field_diff": [],
+      "status": "PASS"
+    },
+    {
+      "signature": "today_counts()",
+      "source": {
+        "raw_md5": "fdea63f0b25118d95d11e84e0900dd1b",
+        "canonical_md5": "8581ff0b3bcf23246d4daa90668c9c2d"
+      },
+      "actual": {
+        "raw_md5": "fdea63f0b25118d95d11e84e0900dd1b",
+        "canonical_md5": "8581ff0b3bcf23246d4daa90668c9c2d"
+      },
+      "definition_diff": "identical",
+      "other_field_diff": [],
+      "status": "PASS"
+    },
+    {
+      "signature": "today_tasks(text)",
+      "source": {
+        "raw_md5": "03b9910a6453b5f2ebbcf28f688f585f",
+        "canonical_md5": "3f1284bcc77d3046ef63006258ab44be"
+      },
+      "actual": {
+        "raw_md5": "03b9910a6453b5f2ebbcf28f688f585f",
+        "canonical_md5": "3f1284bcc77d3046ef63006258ab44be"
+      },
+      "definition_diff": "identical",
+      "other_field_diff": [],
+      "status": "PASS"
+    },
+    {
+      "signature": "work_items_today(text)",
+      "source": {
+        "raw_md5": "ff23ee5953200fab18b1e6489347545a",
+        "canonical_md5": "d0234e4b08a7dfee017ae6d44052ba21"
+      },
+      "actual": {
+        "raw_md5": "ff23ee5953200fab18b1e6489347545a",
+        "canonical_md5": "d0234e4b08a7dfee017ae6d44052ba21"
+      },
+      "definition_diff": "identical",
+      "other_field_diff": [],
+      "status": "PASS"
+    }
+  ],
+  "status": "Canonical baseline reproduction PASS",
+  "byteIdenticalReproduction": "NOT CLAIMED"
+}

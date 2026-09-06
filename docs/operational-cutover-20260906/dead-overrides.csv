@@ -1,0 +1,12 @@
+﻿id,surface,operations,evidence,reason
+"D01","PC 문의 구형 단일 배정","inquiry_assign","crm.html:4251-4257","후대 Control Center 경로가 대체; 호출 UI 증거 없음"
+"D02","PC 구형 Pipeline bulk","","crm.html:4913,4919","현재 applyBulkDialog 경로로 대체"
+"D03","PC 문의 중복 op","inquiry_duplicate","crm.html:7828; docs/operational-cutover-20260906/inquiry-management-contracts.md","정의는 있으나 현재 빠른메뉴는 DataCleanupUI로 이동"
+"D04","모바일 구형 contact 저장","contact_upsert","mobile.html:1499,1506","후대 consent 포함 정의가 shadow"
+"D05","모바일 관리소장 이동","contact_move","mobile.html:1509-1515","최종 contactCardM에 진입 버튼 없음; PC op는 살아 있음"
+"D06","모바일 구형 수주","win","mobile.html:1672","StageTransitionUI가 진입 handler를 교체; 현재 수주는 close 사용"
+"D07","모바일 구형 inline 단계전환","transition","mobile.html:1693-1704","StageTransitionUI form이 대체; transition op는 살아 있음"
+"D08","메시지 기반 단계진행 wrapper","message_stage_advanced","crm.html:7697; mobile.html:2517","후대 StageTransitionUI override 뒤 호출 증거 없음"
+"D09","모바일 구형 Today quick/skip","","mobile.html:1383,2026-2034","최종 rToday가 대체"
+"D10","모바일 구형 사진 sheet","","mobile.html:2233-2246","attachment gallery가 대체"
+"D11","모바일 PIN 로그인·spawnExpansion·voice draft","","mobile.html:1292-1307,1677; crm.html:4318","호출 UI 없음 또는 첫 return으로 차단"

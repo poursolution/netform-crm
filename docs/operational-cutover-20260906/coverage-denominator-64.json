@@ -1,0 +1,1727 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "FINAL_DENOMINATOR_CLASSIFIED_GO_SCOPE_COMPLETE",
+  "denominator": "64_LOGICAL_REACHABLE_ACTIONS",
+  "evidence_rows": 84,
+  "folded_duplicate_or_child_rows": 20,
+  "logical_actions": 64,
+  "counts": {
+    "PASS": 53,
+    "BLOCKED": 0,
+    "OUT_OF_SCOPE": 11
+  },
+  "completion_percent": 82.8,
+  "in_scope_actions": 53,
+  "scope_completion_percent": 100,
+  "rule": "Only PASS counts as complete. OUT_OF_SCOPE is excluded only by the user-frozen 31-op cutover boundary and is never counted as PASS.",
+  "coverage_matrix_sha256": "66b015765e4fa6e96d8e3b233a7a3411a50be1d4ff4054d7d757baedc22947c4",
+  "groups": [
+    {
+      "id": "R01_AUTH_LIFECYCLE",
+      "name": "로그인·세션 복원·로그아웃",
+      "members": [
+        "C02L",
+        "C02S"
+      ],
+      "reduction": 1
+    },
+    {
+      "id": "R02_DIRECT_ASSIGN",
+      "name": "PC/mobile 본사 개인 배정·재배정",
+      "members": [
+        "I01",
+        "I02"
+      ],
+      "reduction": 1
+    },
+    {
+      "id": "R03_INQUIRY_RESPONSE",
+      "name": "모바일 문의 응대결과",
+      "members": [
+        "I03P",
+        "I03N",
+        "I03M"
+      ],
+      "reduction": 2
+    },
+    {
+      "id": "R04_INQUIRY_PROMOTION",
+      "name": "문의→Pipeline 전환·계보",
+      "members": [
+        "I09",
+        "I10"
+      ],
+      "reduction": 1
+    },
+    {
+      "id": "R05_INQUIRY_TRASH",
+      "name": "문의 휴지통·복원",
+      "members": [
+        "I11",
+        "I12"
+      ],
+      "reduction": 1
+    },
+    {
+      "id": "R06_PIPELINE_CLOSE",
+      "name": "Pipeline 종료·수주·확장 Pool 생성",
+      "members": [
+        "P04",
+        "P04W",
+        "P16"
+      ],
+      "reduction": 2
+    },
+    {
+      "id": "R07_ACTIVITY_CONTACT",
+      "name": "활동 기록·의미있는 접촉",
+      "members": [
+        "P08",
+        "P08C"
+      ],
+      "reduction": 1
+    },
+    {
+      "id": "R08_NEXT_LIFECYCLE",
+      "name": "Deal Next 생성·결과·연기·완료",
+      "members": [
+        "P09",
+        "P09M",
+        "P09X",
+        "P10",
+        "P11"
+      ],
+      "reduction": 4
+    },
+    {
+      "id": "R09_CUSTOMER_TIMELINE",
+      "name": "Deal/Site 고객자산 Timeline 조회",
+      "members": [
+        "A04D",
+        "A04S"
+      ],
+      "reduction": 1
+    },
+    {
+      "id": "R10_PHONE_ATTEMPT",
+      "name": "전화 앱 열기·시도 Activity",
+      "members": [
+        "M01O",
+        "M01A"
+      ],
+      "reduction": 1
+    },
+    {
+      "id": "R11_PC_DASHBOARD_SOURCE",
+      "name": "PC Dashboard 원천행·KPI drilldown",
+      "members": [
+        "O07S",
+        "O07D"
+      ],
+      "reduction": 1
+    },
+    {
+      "id": "R12_MOBILE_OPERATIONS",
+      "name": "모바일 내 건·Today·관리·검색·질의",
+      "members": [
+        "O08M",
+        "O08T",
+        "O08C",
+        "O08S",
+        "O08A"
+      ],
+      "reduction": 4
+    }
+  ],
+  "actions": [
+    {
+      "id": "R01_AUTH_LIFECYCLE",
+      "name": "로그인·세션 복원·로그아웃",
+      "members": [
+        "C02L",
+        "C02S"
+      ],
+      "domains": [
+        "공통"
+      ],
+      "surfaces": [
+        "PC·모바일 로그인",
+        "PC·모바일 세션"
+      ],
+      "operations": [],
+      "evidence_rows": 2,
+      "source_statuses": [
+        "BROWSER_STAGING_PASS_NOT_DEPLOYED"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "R02_DIRECT_ASSIGN",
+      "name": "PC/mobile 본사 개인 배정·재배정",
+      "members": [
+        "I01",
+        "I02"
+      ],
+      "domains": [
+        "견적문의"
+      ],
+      "surfaces": [
+        "PC Control Center",
+        "모바일 관리 문의"
+      ],
+      "operations": [
+        "inquiry_assign/direct_assign"
+      ],
+      "evidence_rows": 2,
+      "source_statuses": [
+        "STAGING_COMPAT_PASS_FROZEN"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "R03_INQUIRY_RESPONSE",
+      "name": "모바일 문의 응대결과",
+      "members": [
+        "I03P",
+        "I03N",
+        "I03M"
+      ],
+      "domains": [
+        "견적문의"
+      ],
+      "surfaces": [
+        "모바일 오늘·문의 상세"
+      ],
+      "operations": [
+        "inquiry_assign/response_progress",
+        "inquiry_assign/response_next_week_retry",
+        "inquiry_assign/response_missed_retry"
+      ],
+      "evidence_rows": 3,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "R04_INQUIRY_PROMOTION",
+      "name": "문의→Pipeline 전환·계보",
+      "members": [
+        "I09",
+        "I10"
+      ],
+      "domains": [
+        "견적문의"
+      ],
+      "surfaces": [
+        "PC 문의 상세·Pipeline 전환",
+        "PC 연결 확인"
+      ],
+      "operations": [
+        "transition",
+        "opportunity_create",
+        "lineage_link"
+      ],
+      "evidence_rows": 2,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "R05_INQUIRY_TRASH",
+      "name": "문의 휴지통·복원",
+      "members": [
+        "I11",
+        "I12"
+      ],
+      "domains": [
+        "견적문의"
+      ],
+      "surfaces": [
+        "PC 휴지통"
+      ],
+      "operations": [
+        "inquiry_trash",
+        "inquiry_restore"
+      ],
+      "evidence_rows": 2,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "R06_PIPELINE_CLOSE",
+      "name": "Pipeline 종료·수주·확장 Pool 생성",
+      "members": [
+        "P04",
+        "P04W",
+        "P16"
+      ],
+      "domains": [
+        "Pipeline"
+      ],
+      "surfaces": [
+        "PC 구조화 종료·모바일 종료 폼",
+        "PC·모바일 Closed Won",
+        "수주 완료"
+      ],
+      "operations": [
+        "close",
+        "expansion_pool_upsert"
+      ],
+      "evidence_rows": 3,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "R07_ACTIVITY_CONTACT",
+      "name": "활동 기록·의미있는 접촉",
+      "members": [
+        "P08",
+        "P08C"
+      ],
+      "domains": [
+        "Pipeline"
+      ],
+      "surfaces": [
+        "PC 상세·split·Today / 모바일 통화메모·연락시도",
+        "PC split 응대"
+      ],
+      "operations": [
+        "activity",
+        "contact"
+      ],
+      "evidence_rows": 2,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "R08_NEXT_LIFECYCLE",
+      "name": "Deal Next 생성·결과·연기·완료",
+      "members": [
+        "P09",
+        "P09M",
+        "P09X",
+        "P10",
+        "P11"
+      ],
+      "domains": [
+        "Next Action"
+      ],
+      "surfaces": [
+        "PC Deal 상세·split 기본 입력",
+        "모바일 Today Deal 통화결과",
+        "PC·모바일 Today",
+        "PC·모바일 Today/할 일",
+        "PC Deal 상세"
+      ],
+      "operations": [
+        "next_action",
+        "next_action_complete/today_outcome",
+        "activity child absorbed",
+        "next_action child absorbed",
+        "next_action/postpone",
+        "next_action_complete"
+      ],
+      "evidence_rows": 5,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "R09_CUSTOMER_TIMELINE",
+      "name": "Deal/Site 고객자산 Timeline 조회",
+      "members": [
+        "A04D",
+        "A04S"
+      ],
+      "domains": [
+        "고객자산"
+      ],
+      "surfaces": [
+        "Deal 고객자산·Timeline",
+        "현장·고객자산·Timeline"
+      ],
+      "operations": [],
+      "evidence_rows": 2,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "R10_PHONE_ATTEMPT",
+      "name": "전화 앱 열기·시도 Activity",
+      "members": [
+        "M01O",
+        "M01A"
+      ],
+      "domains": [
+        "메시징"
+      ],
+      "surfaces": [
+        "PC·모바일 연락처"
+      ],
+      "operations": [
+        "activity"
+      ],
+      "evidence_rows": 2,
+      "source_statuses": [
+        "EXTERNAL_APP",
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [
+        "M01O"
+      ],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "R11_PC_DASHBOARD_SOURCE",
+      "name": "PC Dashboard 원천행·KPI drilldown",
+      "members": [
+        "O07S",
+        "O07D"
+      ],
+      "domains": [
+        "조회/분석"
+      ],
+      "surfaces": [
+        "PC Dashboard"
+      ],
+      "operations": [],
+      "evidence_rows": 2,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "R12_MOBILE_OPERATIONS",
+      "name": "모바일 내 건·Today·관리·검색·질의",
+      "members": [
+        "O08M",
+        "O08T",
+        "O08C",
+        "O08S",
+        "O08A"
+      ],
+      "domains": [
+        "조회/분석"
+      ],
+      "surfaces": [
+        "모바일 내 건",
+        "모바일 Today",
+        "모바일 관리",
+        "모바일 검색",
+        "모바일 CRM에게 물어보기"
+      ],
+      "operations": [
+        "next_action_complete",
+        "inquiry_assign/response_*",
+        "inquiry_followup"
+      ],
+      "evidence_rows": 5,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "C01",
+      "name": "화면 자동·수동 선택",
+      "members": [
+        "C01"
+      ],
+      "domains": [
+        "공통"
+      ],
+      "surfaces": [
+        "index PC/모바일 전환"
+      ],
+      "operations": [],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "LOCAL_ONLY_CONFIRMED"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "C03",
+      "name": "업무 데이터 조회·자동동기화·진단",
+      "members": [
+        "C03"
+      ],
+      "domains": [
+        "공통"
+      ],
+      "surfaces": [
+        "PC·모바일 전체 화면"
+      ],
+      "operations": [],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "C04",
+      "name": "동일 write_id 재시도",
+      "members": [
+        "C04"
+      ],
+      "domains": [
+        "공통"
+      ],
+      "surfaces": [
+        "저장 실패 배지"
+      ],
+      "operations": [
+        "all queued ops"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "I04",
+      "name": "비종료 응대·상태·활동·다음행동",
+      "members": [
+        "I04"
+      ],
+      "domains": [
+        "견적문의"
+      ],
+      "surfaces": [
+        "PC 문의 상세·응대 폼"
+      ],
+      "operations": [
+        "inquiry_status/progress"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "I05",
+      "name": "담당 회수",
+      "members": [
+        "I05"
+      ],
+      "domains": [
+        "견적문의"
+      ],
+      "surfaces": [
+        "PC Control Center"
+      ],
+      "operations": [
+        "inquiry_unassign"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_COMPAT_PASS_FROZEN"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "I06",
+      "name": "보류",
+      "members": [
+        "I06"
+      ],
+      "domains": [
+        "견적문의"
+      ],
+      "surfaces": [
+        "PC Control Center"
+      ],
+      "operations": [
+        "inquiry_status"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "I07",
+      "name": "Next·완료·체크",
+      "members": [
+        "I07"
+      ],
+      "domains": [
+        "견적문의"
+      ],
+      "surfaces": [
+        "PC 문의 split/bulk"
+      ],
+      "operations": [
+        "next_action/inquiry_next_set",
+        "next_action_complete/inquiry_next_complete",
+        "stage_check/inquiry_check"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "I08",
+      "name": "문의 후속일 연기",
+      "members": [
+        "I08"
+      ],
+      "domains": [
+        "견적문의"
+      ],
+      "surfaces": [
+        "모바일 오늘"
+      ],
+      "operations": [
+        "inquiry_followup"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "I13",
+      "name": "관리자 수동 완전삭제",
+      "members": [
+        "I13"
+      ],
+      "domains": [
+        "견적문의"
+      ],
+      "surfaces": [
+        "PC 휴지통"
+      ],
+      "operations": [
+        "inquiry_purge"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "I14",
+      "name": "일반 견적문의로 재분류",
+      "members": [
+        "I14"
+      ],
+      "domains": [
+        "견적문의"
+      ],
+      "surfaces": [
+        "PC 기술자문 검토"
+      ],
+      "operations": [
+        "inquiry_reclassify"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "I15",
+      "name": "기술자문 영업기회로 이관",
+      "members": [
+        "I15"
+      ],
+      "domains": [
+        "견적문의"
+      ],
+      "surfaces": [
+        "PC 기술자문 검토"
+      ],
+      "operations": [
+        "opportunity_create/technical_inquiry_transfer",
+        "inquiry_status child absorbed"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "I16",
+      "name": "상담담당 지정·해제",
+      "members": [
+        "I16"
+      ],
+      "domains": [
+        "견적문의"
+      ],
+      "surfaces": [
+        "PC 상담담당"
+      ],
+      "operations": [
+        "inquiry_consultant"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "I17",
+      "name": "경남 미지정 Pool 인계",
+      "members": [
+        "I17"
+      ],
+      "domains": [
+        "경남지사"
+      ],
+      "surfaces": [
+        "PC 본사 문의"
+      ],
+      "operations": [
+        "inquiry_assign/branch_handoff"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "I18",
+      "name": "지사 실담당 지정·미지정 복귀",
+      "members": [
+        "I18"
+      ],
+      "domains": [
+        "경남지사"
+      ],
+      "surfaces": [
+        "PC 경남 관리"
+      ],
+      "operations": [
+        "inquiry_assign/branch_owner_assign"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "I19",
+      "name": "문의 표시·검색·배정이력 새로고침",
+      "members": [
+        "I19"
+      ],
+      "domains": [
+        "견적문의"
+      ],
+      "surfaces": [
+        "PC·모바일 문의 목록/상세"
+      ],
+      "operations": [],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_COMPAT_PASS_FROZEN"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "P01",
+      "name": "신규 영업기회 생성",
+      "members": [
+        "P01"
+      ],
+      "domains": [
+        "Pipeline"
+      ],
+      "surfaces": [
+        "PC +영업·모바일 신규영업"
+      ],
+      "operations": [
+        "opportunity_create"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "P02",
+      "name": "담당자 변경·인수인계",
+      "members": [
+        "P02"
+      ],
+      "domains": [
+        "Pipeline"
+      ],
+      "surfaces": [
+        "PC·모바일 Deal 상세"
+      ],
+      "operations": [
+        "assign",
+        "handover"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "P03",
+      "name": "Stage 진행",
+      "members": [
+        "P03"
+      ],
+      "domains": [
+        "Pipeline"
+      ],
+      "surfaces": [
+        "PC·모바일 구조화 단계전환"
+      ],
+      "operations": [
+        "transition"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "P05E",
+      "name": "예상금액 저장·초기화",
+      "members": [
+        "P05E"
+      ],
+      "domains": [
+        "Pipeline"
+      ],
+      "surfaces": [
+        "PC Deal 상세·문제함"
+      ],
+      "operations": [
+        "amount"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "P05Q",
+      "name": "사유 없는 견적금액 직접 편집",
+      "members": [
+        "P05Q"
+      ],
+      "domains": [
+        "Pipeline"
+      ],
+      "surfaces": [
+        "PC Deal 상세"
+      ],
+      "operations": [
+        "amount"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "OUT_OF_SCOPE_31_OP_BOUNDARY"
+      ],
+      "out_of_scope_members": [
+        "P05Q"
+      ],
+      "verdict": "OUT_OF_SCOPE",
+      "block_reason": "USER_FROZEN_31_OP_CUTOVER_BOUNDARY",
+      "operational_required": false
+    },
+    {
+      "id": "P05W",
+      "name": "수주 전 수주금액 직접 편집",
+      "members": [
+        "P05W"
+      ],
+      "domains": [
+        "Pipeline"
+      ],
+      "surfaces": [
+        "PC Deal 상세"
+      ],
+      "operations": [
+        "amount"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "OUT_OF_SCOPE_31_OP_BOUNDARY"
+      ],
+      "out_of_scope_members": [
+        "P05W"
+      ],
+      "verdict": "OUT_OF_SCOPE",
+      "block_reason": "USER_FROZEN_31_OP_CUTOVER_BOUNDARY",
+      "operational_required": false
+    },
+    {
+      "id": "P06",
+      "name": "대표·복합 공종 저장",
+      "members": [
+        "P06"
+      ],
+      "domains": [
+        "Pipeline"
+      ],
+      "surfaces": [
+        "PC·모바일 공종 편집"
+      ],
+      "operations": [
+        "opportunity_work_set"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_COMPAT_PASS_FROZEN"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "P07",
+      "name": "사업유형 변경",
+      "members": [
+        "P07"
+      ],
+      "domains": [
+        "Pipeline"
+      ],
+      "surfaces": [
+        "PC·모바일 사업유형 편집"
+      ],
+      "operations": [
+        "service_change"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_COMPAT_PASS_FROZEN"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "P12",
+      "name": "단계·세부·담당·장기검토·Next 일괄변경",
+      "members": [
+        "P12"
+      ],
+      "domains": [
+        "Pipeline"
+      ],
+      "surfaces": [
+        "PC 빠른관리 일괄 모달"
+      ],
+      "operations": [],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "OUT_OF_SCOPE_31_OP_BOUNDARY"
+      ],
+      "out_of_scope_members": [
+        "P12"
+      ],
+      "verdict": "OUT_OF_SCOPE",
+      "block_reason": "USER_FROZEN_31_OP_CUTOVER_BOUNDARY",
+      "operational_required": false
+    },
+    {
+      "id": "P13",
+      "name": "기존 대기 Deal의 근거·재접촉 저장",
+      "members": [
+        "P13"
+      ],
+      "domains": [
+        "Pipeline"
+      ],
+      "surfaces": [
+        "PC DCC 대기고객"
+      ],
+      "operations": [
+        "waiting_context",
+        "next_action"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "P14",
+      "name": "견적 Version 추가",
+      "members": [
+        "P14"
+      ],
+      "domains": [
+        "Pipeline"
+      ],
+      "surfaces": [
+        "PC·모바일 견적"
+      ],
+      "operations": [
+        "quote_version"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "P15",
+      "name": "수동 체크리스트 토글",
+      "members": [
+        "P15"
+      ],
+      "domains": [
+        "Pipeline"
+      ],
+      "surfaces": [
+        "PC·모바일 실행 체크"
+      ],
+      "operations": [
+        "stage_check"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "A01",
+      "name": "연락처·관리사무소·수신동의 저장",
+      "members": [
+        "A01"
+      ],
+      "domains": [
+        "고객자산"
+      ],
+      "surfaces": [
+        "PC·모바일 연락처 폼"
+      ],
+      "operations": [
+        "contact_upsert"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "A02",
+      "name": "의사결정 역할·관계 톤 저장",
+      "members": [
+        "A02"
+      ],
+      "domains": [
+        "고객자산"
+      ],
+      "surfaces": [
+        "PC·모바일 관계도"
+      ],
+      "operations": [
+        "contact_relationship"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "A03",
+      "name": "관리소장 근무지 이동",
+      "members": [
+        "A03"
+      ],
+      "domains": [
+        "고객자산"
+      ],
+      "surfaces": [
+        "PC 연락처"
+      ],
+      "operations": [
+        "contact_move"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "A05",
+      "name": "중복 preview·확인·apply",
+      "members": [
+        "A05"
+      ],
+      "domains": [
+        "고객자산"
+      ],
+      "surfaces": [
+        "PC 데이터 정리"
+      ],
+      "operations": [
+        "crm_cleanup_state/preview/apply"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "OUT_OF_SCOPE_31_OP_BOUNDARY"
+      ],
+      "out_of_scope_members": [
+        "A05"
+      ],
+      "verdict": "OUT_OF_SCOPE",
+      "block_reason": "USER_FROZEN_31_OP_CUTOVER_BOUNDARY",
+      "operational_required": false
+    },
+    {
+      "id": "X01",
+      "name": "상태·다음접촉일 갱신",
+      "members": [
+        "X01"
+      ],
+      "domains": [
+        "확장관리"
+      ],
+      "surfaces": [
+        "PC 확장 Pool"
+      ],
+      "operations": [
+        "expansion_pool_update"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "X02",
+      "name": "접촉·니즈 기록/문맥 조회",
+      "members": [
+        "X02"
+      ],
+      "domains": [
+        "확장관리"
+      ],
+      "surfaces": [
+        "PC 확장 Pool"
+      ],
+      "operations": [
+        "crm_expansion_note/context"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "X03",
+      "name": "실제 견적 후 새 Opportunity 전환",
+      "members": [
+        "X03"
+      ],
+      "domains": [
+        "확장관리"
+      ],
+      "surfaces": [
+        "PC 견적 발송 확인"
+      ],
+      "operations": [
+        "expansion_quote_convert"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "OUT_OF_SCOPE_31_OP_BOUNDARY"
+      ],
+      "out_of_scope_members": [
+        "X03"
+      ],
+      "verdict": "OUT_OF_SCOPE",
+      "block_reason": "USER_FROZEN_31_OP_CUTOVER_BOUNDARY",
+      "operational_required": false
+    },
+    {
+      "id": "T01",
+      "name": "prepare→signed PUT→complete",
+      "members": [
+        "T01"
+      ],
+      "domains": [
+        "첨부/메모"
+      ],
+      "surfaces": [
+        "PC·모바일 파일 등록"
+      ],
+      "operations": [
+        "attachment_prepare",
+        "attachment_complete"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "T02",
+      "name": "ready 첨부 목록 표시",
+      "members": [
+        "T02"
+      ],
+      "domains": [
+        "첨부/메모"
+      ],
+      "surfaces": [
+        "PC·모바일 Gallery"
+      ],
+      "operations": [],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "T03",
+      "name": "즐겨찾기·최근 본/작업",
+      "members": [
+        "T03"
+      ],
+      "domains": [
+        "개인화"
+      ],
+      "surfaces": [
+        "PC·모바일 Deal 상세"
+      ],
+      "operations": [
+        "favorite_set",
+        "opportunity_touch"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "M02",
+      "name": "발송·실패·취소 결과 기록",
+      "members": [
+        "M02"
+      ],
+      "domains": [
+        "메시징"
+      ],
+      "surfaces": [
+        "PC·모바일 발송 확인"
+      ],
+      "operations": [
+        "message_log"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "M03",
+      "name": "문구 복사",
+      "members": [
+        "M03"
+      ],
+      "domains": [
+        "메시징"
+      ],
+      "surfaces": [
+        "PC·모바일 composer"
+      ],
+      "operations": [],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "EXTERNAL_APP"
+      ],
+      "out_of_scope_members": [
+        "M03"
+      ],
+      "verdict": "OUT_OF_SCOPE",
+      "block_reason": "EXTERNAL_APP_BOUNDARY",
+      "operational_required": false
+    },
+    {
+      "id": "M04",
+      "name": "담당자 발송 알림 예약",
+      "members": [
+        "M04"
+      ],
+      "domains": [
+        "메시징"
+      ],
+      "surfaces": [
+        "PC·모바일 composer"
+      ],
+      "operations": [
+        "next_action/message_reminder"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "M05",
+      "name": "접촉 보류·회신 cadence 초기화",
+      "members": [
+        "M05"
+      ],
+      "domains": [
+        "메시징"
+      ],
+      "surfaces": [
+        "PC·모바일 관계관리"
+      ],
+      "operations": [
+        "relationship_hold",
+        "relationship_response"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "M06",
+      "name": "다중 대상 즉시·예약 대기열",
+      "members": [
+        "M06"
+      ],
+      "domains": [
+        "메시징"
+      ],
+      "surfaces": [
+        "PC 문자발송 메뉴"
+      ],
+      "operations": [
+        "campaign_create"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "OUT_OF_SCOPE_31_OP_BOUNDARY"
+      ],
+      "out_of_scope_members": [
+        "M06"
+      ],
+      "verdict": "OUT_OF_SCOPE",
+      "block_reason": "USER_FROZEN_31_OP_CUTOVER_BOUNDARY",
+      "operational_required": false
+    },
+    {
+      "id": "O01",
+      "name": "주간 코멘트·완료 상태",
+      "members": [
+        "O01"
+      ],
+      "domains": [
+        "관리"
+      ],
+      "surfaces": [
+        "PC 영업사원 관리"
+      ],
+      "operations": [
+        "rep_manager_comment"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "O02",
+      "name": "지원 요청 기록",
+      "members": [
+        "O02"
+      ],
+      "domains": [
+        "관리"
+      ],
+      "surfaces": [
+        "PC 고객지원 카드"
+      ],
+      "operations": [
+        "customer_support_action"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "O03",
+      "name": "연간 목표 변경",
+      "members": [
+        "O03"
+      ],
+      "domains": [
+        "관리"
+      ],
+      "surfaces": [
+        "PC 대시보드"
+      ],
+      "operations": [],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "LOCAL_ONLY_CONFIRMED"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "O04",
+      "name": "범위 제한 JSON export",
+      "members": [
+        "O04"
+      ],
+      "domains": [
+        "관리"
+      ],
+      "surfaces": [
+        "PC 관리자 Export"
+      ],
+      "operations": [
+        "crm_export_create"
+      ],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "OUT_OF_SCOPE_31_OP_BOUNDARY"
+      ],
+      "out_of_scope_members": [
+        "O04"
+      ],
+      "verdict": "OUT_OF_SCOPE",
+      "block_reason": "USER_FROZEN_31_OP_CUTOVER_BOUNDARY",
+      "operational_required": false
+    },
+    {
+      "id": "O05",
+      "name": "알림/휴가위임/채널발송/PDF/병합 요청",
+      "members": [
+        "O05"
+      ],
+      "domains": [
+        "관리"
+      ],
+      "surfaces": [
+        "모바일 설정·보고·채널 버튼"
+      ],
+      "operations": [],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "REACHABLE_MOCK_BLOCKER"
+      ],
+      "out_of_scope_members": [
+        "O05"
+      ],
+      "verdict": "OUT_OF_SCOPE",
+      "block_reason": "VISIBLE_MOCK_NOT_OPERATIONAL",
+      "operational_required": false
+    },
+    {
+      "id": "O06",
+      "name": "잔디 쪼기",
+      "members": [
+        "O06"
+      ],
+      "domains": [
+        "관리"
+      ],
+      "surfaces": [
+        "PC 문의 일괄"
+      ],
+      "operations": [],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "REACHABLE_MOCK_BLOCKER"
+      ],
+      "out_of_scope_members": [
+        "O06"
+      ],
+      "verdict": "OUT_OF_SCOPE",
+      "block_reason": "VISIBLE_MOCK_NOT_OPERATIONAL",
+      "operational_required": false
+    },
+    {
+      "id": "O07P",
+      "name": "담당자 실적 점수·상세",
+      "members": [
+        "O07P"
+      ],
+      "domains": [
+        "조회/분석"
+      ],
+      "surfaces": [
+        "PC Performance"
+      ],
+      "operations": [],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "O07R",
+      "name": "전월·전년·분기·담당자 보고",
+      "members": [
+        "O07R"
+      ],
+      "domains": [
+        "조회/분석"
+      ],
+      "surfaces": [
+        "PC Executive Report"
+      ],
+      "operations": [],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "O07G",
+      "name": "지사 인계·응대·영업 KPI",
+      "members": [
+        "O07G"
+      ],
+      "domains": [
+        "조회/분석"
+      ],
+      "surfaces": [
+        "PC 경남"
+      ],
+      "operations": [],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "STAGING_JWT_E2E_PASS_20260906"
+      ],
+      "out_of_scope_members": [],
+      "verdict": "PASS",
+      "block_reason": null,
+      "operational_required": true
+    },
+    {
+      "id": "O09",
+      "name": "운영 프로젝트 열기",
+      "members": [
+        "O09"
+      ],
+      "domains": [
+        "외부연동"
+      ],
+      "surfaces": [
+        "PC·모바일 ASQ 카드"
+      ],
+      "operations": [],
+      "evidence_rows": 1,
+      "source_statuses": [
+        "EXTERNAL_APP"
+      ],
+      "out_of_scope_members": [
+        "O09"
+      ],
+      "verdict": "OUT_OF_SCOPE",
+      "block_reason": "EXTERNAL_APP_BOUNDARY",
+      "operational_required": false
+    }
+  ],
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false
+}

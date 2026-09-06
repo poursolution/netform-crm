@@ -1,0 +1,63 @@
+{
+  "pc_inquiry_unassign": {
+    "write_id": "PC-UNASSIGN-20260906-1",
+    "op": "inquiry_unassign",
+    "actor_id": "FORGED DISPLAY ACTOR",
+    "version": 1,
+    "payload": {
+      "inquiry_id": "f6090500-0005-4000-8000-000000000001",
+      "from": "기존 담당자",
+      "reason": "  담당 권역 변경  ",
+      "changed_by": "FORGED DISPLAY ACTOR",
+      "at": "2026-09-06T01:02:03.000Z"
+    }
+  },
+  "pc_service_change": {
+    "write_id": "PC-SERVICE-20260906-1",
+    "op": "service_change",
+    "actor_id": "FORGED DISPLAY ACTOR",
+    "version": 1,
+    "payload": {
+      "opportunity_id": "f6090500-0006-4000-8000-000000000001",
+      "from_service": "POUR",
+      "to_service": "기술자문",
+      "origin_channel": "POUR",
+      "reason": "  계약 형태 변경 확정  ",
+      "reason_source": "text",
+      "next_action": "기술자문 계약서 작성",
+      "next_due": "2026-09-09",
+      "at": "2026-09-06T01:02:03.000Z"
+    }
+  },
+  "pc_service_without_next": {
+    "write_id": "PC-SERVICE-20260906-2",
+    "op": "service_change",
+    "payload": {
+      "opportunity_id": "f6090500-0006-4000-8000-000000000001",
+      "from_service": "POUR",
+      "to_service": "기술자문",
+      "origin_channel": "POUR",
+      "reason": "다음 행동 없이 사업유형만 변경",
+      "reason_source": "text",
+      "next_action": null,
+      "next_due": "2026-09-09",
+      "at": "2026-09-06T01:02:03.000Z"
+    }
+  },
+  "mobile_service_change": {
+    "write_id": "M-SERVICE-20260906-1",
+    "op": "service_change",
+    "actor_id": "FORGED DISPLAY ACTOR",
+    "version": 1,
+    "payload": {
+      "opportunity_id": "f6090500-0006-4000-8000-000000000001",
+      "from_service": "POUR",
+      "to_service": "기술자문",
+      "origin_channel": "POUR",
+      "reason": "  모바일 계약 형태 변경  ",
+      "reason_source": "voice",
+      "next_action": "계약 검토",
+      "at": "2026-09-06T01:02:03.000Z"
+    }
+  }
+}

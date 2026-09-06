@@ -1,0 +1,8 @@
+<!doctype html><meta charset="utf-8"><title>확장관리 격리 UI 검수</title>
+<link rel="stylesheet" href="../expansion-pool.css"><style>body{font:14px/1.55 sans-serif;background:#f2f4f7;padding:24px}.exp-kpis,.exp-toolbar,.exp-tabs{display:flex;gap:16px;flex-wrap:wrap}.exp-kpi b{display:block;font-size:26px}.exp-command{padding:24px;background:white}.exp-tabs button{padding:10px;border:0;border-radius:8px}.exp-tabs .on{background:#315dff;color:white}</style>
+<div id="expansion-root"></div><script src="../expansion-flow.js"></script><script>
+// In-memory synthetic fixture. No API, real customers, messages or database calls.
+var B={deals:[],expansion_events:[],expansion_quote_dispatches:[]},G={expansionOwner:'전체'},SB=null,TOKEN=null;
+var demo=[{id:'a',sourceOpportunityId:'old-a',site:'검수용 아파트 A',owner:'테스트 담당',sourceWorkSummary:'옥상(금속기와)',wonAmount:240000000,completionDate:'2025-06-20',nextContactAt:'2026-09-05',status:'추가 니즈 확인',candidates:['재도장','지하주차장'],needNote:'외부 재도장 견적 요청'}, {id:'b',sourceOpportunityId:'old-b',site:'검수용 아파트 B',owner:'테스트 담당',sourceWorkSummary:'재도장(외부)',wonAmount:180000000,completionDate:'2025-07-20',nextContactAt:'2026-09-05',status:'Pipeline 전환',createdOpportunityId:'new-b',candidates:[]}];
+function expansionRecords(){return demo}function expansionSourceDeal(){return {assignee:'테스트 담당',contract_date:'2025-03-15'}}function repN(x){return x}function fmtAmt(x){return x/100000000+'억'}function daysTo(){return 0}function fmtD(s){return s.slice(0,10)}function paintExpansion(){ExpansionPool.render()}
+</script><script src="../expansion-pool.js"></script><script>ExpansionPool.render()</script>

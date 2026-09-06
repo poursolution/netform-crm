@@ -1,0 +1,38 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "PUBLIC_CONNECT_BLOCKED_SELECTOR_REQUIRED",
+  "public_signature": "crm_read_scoped_v2(uuid,integer,uuid,uuid)",
+  "public_function_changed": false,
+  "connected_reads": [],
+  "proposed_discriminator": {
+    "name": "resource",
+    "values": [
+      "dashboard_source",
+      "mine_source"
+    ],
+    "applied": false
+  },
+  "markers": {
+    "scope_completeness": "actor_authorized_rows_only",
+    "pagination": [
+      "complete",
+      "partial",
+      "has_more",
+      "next_cursor"
+    ]
+  },
+  "files_sha256": {
+    "candidate.sql": "0d9cb3027cff2a2dde8a4d96f640908460de930750902c1a28bad8d1ddf6d33a",
+    "rollback.sql": "7fed417432033b225705af870e508531a072b4d708ad6dfc70d4629b1b4b27a8",
+    "adapter-contract.js": "80a5b9be4a9c5df5d0efd25311bcc02550c5ac9d12ca88f9358bf19b51efc680",
+    "fixtures.json": "d382758de5063feeb583d1a0f40d537e80099638ee08d6b49d5610f27d5bdc47",
+    "review.md": "a5b6e6a9093bdad0f907e978e1935cf0a9cec4c113a85b1544b5e749b861adc2",
+    "contract.test.cjs": "0e3510df72d0960807b8814cb7ce23a1a0ed165476f61cc32233dd0011c7f2e3",
+    "db.test.cjs": "a878290a11936f0025abdf144c77a25d0cce4f3bc4bb5022f3e11a3356ede053"
+  },
+  "source_sha256": {
+    "transport": "171c8165271dad29b530e699412783766c78b7cab472b5673dc9f89fcb43bca0",
+    "overlay": "bed36ca9745876997ded0372b098795eb8fe90ac0ab1390f9ff3e4a50c821cfa",
+    "private_fragment_candidate": "252823c67f3441c75e744cab11e217edb3dfa4dad7b622bbff74bbe97bb6cf46"
+  }
+}

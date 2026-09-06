@@ -1,0 +1,190 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "mode": "JWT_CRM_READ_ONLY",
+  "candidate_status": "LOCAL_CUMULATIVE_31_OP_M02_M05_NOT_APPLIED",
+  "operations": [
+    "opportunity_work_set",
+    "inquiry_assign",
+    "service_change",
+    "inquiry_unassign",
+    "favorite_set",
+    "opportunity_touch",
+    "next_action",
+    "activity",
+    "quote_version",
+    "next_action_complete",
+    "stage_check",
+    "transition",
+    "close",
+    "amount",
+    "waiting_context",
+    "inquiry_reclassify",
+    "inquiry_status",
+    "inquiry_trash",
+    "inquiry_restore",
+    "inquiry_purge",
+    "inquiry_followup",
+    "opportunity_create",
+    "lineage_link",
+    "attachment_prepare",
+    "attachment_complete",
+    "expansion_pool_update",
+    "expansion_note",
+    "customer_support_action",
+    "message_log",
+    "relationship_hold",
+    "relationship_response"
+  ],
+  "started_at": "2026-09-06T22:57:49.730Z",
+  "status": "PASS",
+  "results": [
+    {
+      "name": "five JWT identities map to reviewed Auth and CRM UUIDs",
+      "status": "PASS"
+    },
+    {
+      "name": "anonymous callers receive real SQL authorization denial",
+      "status": "PASS"
+    },
+    {
+      "name": "all five roles exhaust every actor-scoped operational domain without duplicates",
+      "status": "PASS"
+    },
+    {
+      "name": "legacy scoped read remains JWT-bound for every reviewed role",
+      "status": "PASS"
+    },
+    {
+      "name": "all generated private helpers remain absent from the public RPC schema cache",
+      "status": "PASS"
+    },
+    {
+      "name": "all generated private relations remain absent from the public REST surface",
+      "status": "PASS"
+    }
+  ],
+  "page_summary": {
+    "INTERNAL_REP": {
+      "deal_core": {
+        "pages": 1,
+        "rows": 1
+      },
+      "inquiry_core": {
+        "pages": 1,
+        "rows": 1
+      },
+      "expansion_pool": {
+        "pages": 1,
+        "rows": 0
+      },
+      "customer_support_action": {
+        "pages": 1,
+        "rows": 0
+      },
+      "message_log": {
+        "pages": 1,
+        "rows": 0
+      }
+    },
+    "OTHER_REP": {
+      "deal_core": {
+        "pages": 1,
+        "rows": 2
+      },
+      "inquiry_core": {
+        "pages": 1,
+        "rows": 1
+      },
+      "expansion_pool": {
+        "pages": 1,
+        "rows": 0
+      },
+      "customer_support_action": {
+        "pages": 1,
+        "rows": 0
+      },
+      "message_log": {
+        "pages": 1,
+        "rows": 0
+      }
+    },
+    "CONSULT": {
+      "deal_core": {
+        "pages": 1,
+        "rows": 0
+      },
+      "inquiry_core": {
+        "pages": 1,
+        "rows": 1
+      },
+      "expansion_pool": {
+        "pages": 1,
+        "rows": 0
+      },
+      "customer_support_action": {
+        "pages": 1,
+        "rows": 0
+      },
+      "message_log": {
+        "pages": 1,
+        "rows": 0
+      }
+    },
+    "GYEONGNAM": {
+      "deal_core": {
+        "pages": 1,
+        "rows": 1
+      },
+      "inquiry_core": {
+        "pages": 1,
+        "rows": 1
+      },
+      "expansion_pool": {
+        "pages": 1,
+        "rows": 0
+      },
+      "customer_support_action": {
+        "pages": 1,
+        "rows": 0
+      },
+      "message_log": {
+        "pages": 1,
+        "rows": 0
+      }
+    },
+    "ADMIN": {
+      "deal_core": {
+        "pages": 1,
+        "rows": 1
+      },
+      "inquiry_core": {
+        "pages": 1,
+        "rows": 1
+      },
+      "expansion_pool": {
+        "pages": 1,
+        "rows": 0
+      },
+      "customer_support_action": {
+        "pages": 1,
+        "rows": 0
+      },
+      "message_log": {
+        "pages": 1,
+        "rows": 0
+      }
+    }
+  },
+  "completed_at": "2026-09-06T22:57:54.519Z",
+  "failure_point": null,
+  "pass": 6,
+  "fail": 0,
+  "skip": 0,
+  "http_requests": 146,
+  "crm_writes": 0,
+  "staging_ddl_dml_performed": false,
+  "n8n_requests": 0,
+  "production_requests": 0,
+  "error_type": null
+}

@@ -1,0 +1,59 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "operation": "inquiry_assign",
+  "intents": [
+    "response_progress",
+    "response_next_week_retry",
+    "response_missed_retry"
+  ],
+  "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+  "allowed_responses": [
+    "진행됨 — 다음 잡음",
+    "다음주 다시",
+    "못 받으심 (내일 재시도)"
+  ],
+  "blocked_responses": [],
+  "roles": [
+    "rep",
+    "consultation"
+  ],
+  "server_rules": {
+    "response_progress": {
+      "status": "전화응대 완료",
+      "response_timestamps": "first_once_last_now",
+      "followup_days": null
+    },
+    "response_next_week_retry": {
+      "status": "응대중",
+      "response_timestamps": "first_once_last_now",
+      "followup_days": 7
+    },
+    "response_missed_retry": {
+      "status": "배정완료",
+      "response_timestamps": "preserve",
+      "followup_days": 1
+    }
+  },
+  "frozen_direct_assign_changed_semantically": false,
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "files_sha256": {
+    "build.cjs": "8685617dede26f2c40c0c284d3fddd25281fdd5f0cf7541854337b29b4c81409",
+    "helper.sql": "646ea22251cba36041e5e299d2103a135c01d683c44d267032e0346c06bc2fca",
+    "rollback-fragment.sql": "857d470439c35ff07f40cecac8e64790c6c001f07957ed3f2e07224032fe23ab",
+    "review.md": "a0401377551977b682cff77c67ede03873b57cd48d4e8c14937a3b6a03a882c6",
+    "contract.test.cjs": "827d2e9d8bd240ded8dffece14c6c3e4a66ffca8c5e6f8a1b717868bb08d16dc",
+    "db.test.cjs": "348b9dd1dfc911b149c6415ca33c7df3215b2fce750833f326756a3f8d4f1649",
+    "ui.test.cjs": "fdbe14968e8902ffe7d01ae50de0c137403c4cd7a90a57b86e0810728ba9a934",
+    "staging-apply-after-operational-cutover.sql": "84b3aa748db5f30962ab41aeed2daa4f4d2eac50ec790c93a4c6f51ae39f0ebf",
+    "rollback-before-operational-cutover.sql": "59349ae860d130e414b8c8d0434605c08df631d5d3c7d715b59f96a93c5dca58",
+    "operational-adapter.candidate.js": "ada252505178b9aadf9c291605ffd959c8fbc5ca9573cbcf38df63eec2279c36",
+    "operational-overlay.candidate.js": "9c4f95ad593ab3baae7f4a444bf2c6c37023aaaab00aac1ee56a3e9a3604280a"
+  },
+  "source_sha256": {
+    "sql/pipeline-opportunity-create/20260906/manifest.json": "1b3ee05471dae6a701926bd6f6e54f68ea9d42c1c5a6fd4c23745dd07ebc62cb",
+    "mobile.html": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "sql/business-v2/functions.sql": "5085ebfbb487684a583d6ff3eb4b0f36f22a3be058f5b7f28e4db945f3439317"
+  }
+}

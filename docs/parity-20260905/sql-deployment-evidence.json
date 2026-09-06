@@ -1,0 +1,947 @@
+[
+  {
+    "file": "golden/sql/20260904_contact_server_integration.sql",
+    "line": 189,
+    "name": "public.crm_site_contacts",
+    "arguments": "p_opportunity_id uuid",
+    "present_in_last_staging_snapshot": true,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260904_contact_server_integration.sql",
+    "line": 207,
+    "name": "public.crm_contact_upsert",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": true,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_attachments_favorites.sql",
+    "line": 60,
+    "name": "public.crm_attachment_prepare_meta",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_attachments_favorites.sql",
+    "line": 95,
+    "name": "public.crm_attachment_complete",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_attachments_favorites.sql",
+    "line": 113,
+    "name": "public.crm_attachment_mark_failed",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_attachments_favorites.sql",
+    "line": 123,
+    "name": "public.crm_deal_attachments",
+    "arguments": "p_opportunity_id uuid",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_attachments_favorites.sql",
+    "line": 134,
+    "name": "public.crm_favorite_set",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_attachments_favorites.sql",
+    "line": 148,
+    "name": "public.crm_opportunity_touch",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_attachments_favorites.sql",
+    "line": 172,
+    "name": "public.crm_user_opportunity_states",
+    "arguments": "p_user_key text",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_deal_command_center.sql",
+    "line": 42,
+    "name": "public.crm_waiting_context_set",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_gyeongnam_branch.sql",
+    "line": 83,
+    "name": "public.crm_sales_people",
+    "arguments": "",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_gyeongnam_branch.sql",
+    "line": 93,
+    "name": "public.crm_inquiry_assign",
+    "arguments": "p_inquiry_id text, p_to text, p_changed_by text, p_reason text default '업무량 확인 후 담당자 배정'",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_inquiry_control_center.sql",
+    "line": 71,
+    "name": "public.crm_inquiry_assign",
+    "arguments": "p_inquiry_id text, p_to text, p_changed_by text, p_reason text default '업무량 확인 후 담당자 배정'",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_inquiry_control_center.sql",
+    "line": 98,
+    "name": "public.crm_inquiry_unassign",
+    "arguments": "p_inquiry_id text, p_changed_by text, p_reason text",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_inquiry_control_center.sql",
+    "line": 117,
+    "name": "public.crm_inquiry_status",
+    "arguments": "p_inquiry_id text, p_status text, p_changed_by text, p_reason text",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_inquiry_control_center.sql",
+    "line": 132,
+    "name": "public.crm_inquiry_trash",
+    "arguments": "p_inquiry_id text, p_deleted_by text, p_delete_reason text, p_delete_note text default null",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_inquiry_control_center.sql",
+    "line": 152,
+    "name": "public.crm_inquiry_restore",
+    "arguments": "p_inquiry_id text, p_restored_by text",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_inquiry_control_center.sql",
+    "line": 166,
+    "name": "public.crm_inquiry_duplicate",
+    "arguments": "p_inquiry_id text, p_resolution text, p_target_inquiry_id text default null",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_inquiry_control_center.sql",
+    "line": 182,
+    "name": "public.crm_inquiry_purge",
+    "arguments": "p_inquiry_id text",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_inquiry_control_center.sql",
+    "line": 197,
+    "name": "public.crm_purge_expired_inquiries",
+    "arguments": "",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_opportunity_work_types.sql",
+    "line": 45,
+    "name": "public.crm_opportunity_work_set",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": true,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_relationship_messaging.sql",
+    "line": 66,
+    "name": "public.crm_contact_consent_upsert",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_relationship_messaging.sql",
+    "line": 91,
+    "name": "public.crm_message_log",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_relationship_messaging.sql",
+    "line": 129,
+    "name": "public.crm_relationship_response",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_relationship_messaging.sql",
+    "line": 155,
+    "name": "public.crm_message_stage_advanced",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_relationship_messaging.sql",
+    "line": 173,
+    "name": "public.crm_relationship_hold",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_relationship_messaging.sql",
+    "line": 187,
+    "name": "public.crm_contact_message_stats",
+    "arguments": "p_person_key text",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_relationship_messaging.sql",
+    "line": 197,
+    "name": "public.crm_message_logs_json",
+    "arguments": "p_opportunity_id uuid",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_relationship_messaging.sql",
+    "line": 212,
+    "name": "public.crm_site_contacts",
+    "arguments": "p_opportunity_id uuid",
+    "present_in_last_staging_snapshot": true,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_sales_execution_engine.sql",
+    "line": 62,
+    "name": "public.crm_contact_relationship_upsert",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_sales_execution_engine.sql",
+    "line": 86,
+    "name": "public.crm_quote_version_add",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_sales_execution_engine.sql",
+    "line": 111,
+    "name": "public.crm_stage_check_set",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_sales_execution_engine.sql",
+    "line": 128,
+    "name": "public.crm_handover_add",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "golden/sql/20260905_sales_execution_engine.sql",
+    "line": 146,
+    "name": "public.crm_site_contacts",
+    "arguments": "p_opportunity_id uuid",
+    "present_in_last_staging_snapshot": true,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260904_contact_server_integration.sql",
+    "line": 189,
+    "name": "public.crm_site_contacts",
+    "arguments": "p_opportunity_id uuid",
+    "present_in_last_staging_snapshot": true,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260904_contact_server_integration.sql",
+    "line": 207,
+    "name": "public.crm_contact_upsert",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": true,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_apartment_square_integration.sql",
+    "line": 44,
+    "name": "public.crm_asq_project_sync",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_apartment_square_integration.sql",
+    "line": 134,
+    "name": "public.crm_asq_projects_json",
+    "arguments": "",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_attachments_favorites.sql",
+    "line": 60,
+    "name": "public.crm_attachment_prepare_meta",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_attachments_favorites.sql",
+    "line": 95,
+    "name": "public.crm_attachment_complete",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_attachments_favorites.sql",
+    "line": 113,
+    "name": "public.crm_attachment_mark_failed",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_attachments_favorites.sql",
+    "line": 123,
+    "name": "public.crm_deal_attachments",
+    "arguments": "p_opportunity_id uuid",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_attachments_favorites.sql",
+    "line": 134,
+    "name": "public.crm_favorite_set",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_attachments_favorites.sql",
+    "line": 148,
+    "name": "public.crm_opportunity_touch",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_attachments_favorites.sql",
+    "line": 172,
+    "name": "public.crm_user_opportunity_states",
+    "arguments": "p_user_key text",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_campaign_center.sql",
+    "line": 75,
+    "name": "public.crm_campaign_create",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_campaign_center.sql",
+    "line": 140,
+    "name": "public.crm_campaign_delivery",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_campaign_center.sql",
+    "line": 220,
+    "name": "public.crm_campaigns_json",
+    "arguments": "",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_contextual_message_composer.sql",
+    "line": 41,
+    "name": "public.crm_message_log",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_crm_direct_read.sql",
+    "line": 12,
+    "name": "public.crm_read_bundle",
+    "arguments": "",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_crm_export.sql",
+    "line": 15,
+    "name": "public.crm_export_create",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_crm_uuid_identity.sql",
+    "line": 71,
+    "name": "crm_private.uuid_actor",
+    "arguments": "",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_crm_uuid_identity.sql",
+    "line": 81,
+    "name": "crm_private.uuid_can_read_deal",
+    "arguments": "owner_id uuid,team uuid",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_crm_uuid_identity.sql",
+    "line": 90,
+    "name": "crm_private.uuid_can_read_inquiry",
+    "arguments": "owner_id uuid,team uuid",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_crm_uuid_identity.sql",
+    "line": 99,
+    "name": "crm_private.uuid_identity_immutable",
+    "arguments": "",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_customer_support_actions.sql",
+    "line": 34,
+    "name": "public.crm_customer_support_action_upsert",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_customer_support_actions.sql",
+    "line": 75,
+    "name": "public.crm_customer_support_actions_json",
+    "arguments": "",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_data_cleanup.sql",
+    "line": 38,
+    "name": "public.crm_cleanup_actor",
+    "arguments": "",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_data_cleanup.sql",
+    "line": 50,
+    "name": "public.crm_cleanup_record",
+    "arguments": "r jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_data_cleanup.sql",
+    "line": 63,
+    "name": "public.crm_cleanup_name",
+    "arguments": "r jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_data_cleanup.sql",
+    "line": 73,
+    "name": "public.crm_cleanup_scope",
+    "arguments": "r jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_data_cleanup.sql",
+    "line": 107,
+    "name": "public.crm_cleanup_counts",
+    "arguments": "items jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_data_cleanup.sql",
+    "line": 114,
+    "name": "public.crm_cleanup_preview",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_data_cleanup.sql",
+    "line": 161,
+    "name": "public.crm_cleanup_apply",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_data_cleanup.sql",
+    "line": 201,
+    "name": "public.crm_cleanup_state",
+    "arguments": "",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_data_cleanup.sql",
+    "line": 216,
+    "name": "public.crm_cleanup_bundle",
+    "arguments": "p_bundle jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_deal_command_center.sql",
+    "line": 42,
+    "name": "public.crm_waiting_context_set",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_expansion_management.sql",
+    "line": 48,
+    "name": "public.crm_expansion_pool_upsert",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_expansion_management.sql",
+    "line": 82,
+    "name": "public.crm_expansion_pool_update",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_expansion_management.sql",
+    "line": 104,
+    "name": "public.crm_expansion_pool_json",
+    "arguments": "",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_expansion_management.sql",
+    "line": 118,
+    "name": "public.crm_create_expansion_after_closed_won",
+    "arguments": "",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_expansion_quote_handoff.sql",
+    "line": 36,
+    "name": "public.crm_expansion_actor",
+    "arguments": "oid uuid",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_expansion_quote_handoff.sql",
+    "line": 49,
+    "name": "public.crm_expansion_note",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_expansion_quote_handoff.sql",
+    "line": 66,
+    "name": "public.crm_expansion_context",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_expansion_quote_handoff.sql",
+    "line": 76,
+    "name": "public.crm_expansion_readonly",
+    "arguments": "",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_expansion_quote_handoff.sql",
+    "line": 93,
+    "name": "public.crm_expansion_finish",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_gyeongnam_branch.sql",
+    "line": 83,
+    "name": "public.crm_sales_people",
+    "arguments": "",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_gyeongnam_branch.sql",
+    "line": 93,
+    "name": "public.crm_inquiry_assign",
+    "arguments": "p_inquiry_id text, p_to text, p_changed_by text, p_reason text default '업무량 확인 후 담당자 배정'",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_inquiry_control_center.sql",
+    "line": 71,
+    "name": "public.crm_inquiry_assign",
+    "arguments": "p_inquiry_id text, p_to text, p_changed_by text, p_reason text default '업무량 확인 후 담당자 배정'",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_inquiry_control_center.sql",
+    "line": 98,
+    "name": "public.crm_inquiry_unassign",
+    "arguments": "p_inquiry_id text, p_changed_by text, p_reason text",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_inquiry_control_center.sql",
+    "line": 117,
+    "name": "public.crm_inquiry_status",
+    "arguments": "p_inquiry_id text, p_status text, p_changed_by text, p_reason text",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_inquiry_control_center.sql",
+    "line": 132,
+    "name": "public.crm_inquiry_trash",
+    "arguments": "p_inquiry_id text, p_deleted_by text, p_delete_reason text, p_delete_note text default null",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_inquiry_control_center.sql",
+    "line": 152,
+    "name": "public.crm_inquiry_restore",
+    "arguments": "p_inquiry_id text, p_restored_by text",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_inquiry_control_center.sql",
+    "line": 166,
+    "name": "public.crm_inquiry_duplicate",
+    "arguments": "p_inquiry_id text, p_resolution text, p_target_inquiry_id text default null",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_inquiry_control_center.sql",
+    "line": 182,
+    "name": "public.crm_inquiry_purge",
+    "arguments": "p_inquiry_id text",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_inquiry_control_center.sql",
+    "line": 197,
+    "name": "public.crm_purge_expired_inquiries",
+    "arguments": "",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_opportunity_work_types.sql",
+    "line": 45,
+    "name": "public.crm_opportunity_work_set",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": true,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_people_roles_and_consultation.sql",
+    "line": 113,
+    "name": "public.crm_inquiry_set_consultant",
+    "arguments": "p_inquiry_id text, p_consultant_name text, p_consultation_status text default 'assigned', p_changed_by text default '관리자', p_note text default null",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_people_roles_and_consultation.sql",
+    "line": 154,
+    "name": "public.crm_inquiry_assign",
+    "arguments": "p_inquiry_id text, p_to text, p_changed_by text, p_reason text default '업무량 확인 후 영업담당자 배정'",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_people_roles_and_consultation.sql",
+    "line": 207,
+    "name": "public.crm_sales_people",
+    "arguments": "",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_relationship_messaging.sql",
+    "line": 66,
+    "name": "public.crm_contact_consent_upsert",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_relationship_messaging.sql",
+    "line": 91,
+    "name": "public.crm_message_log",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_relationship_messaging.sql",
+    "line": 129,
+    "name": "public.crm_relationship_response",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_relationship_messaging.sql",
+    "line": 155,
+    "name": "public.crm_message_stage_advanced",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_relationship_messaging.sql",
+    "line": 173,
+    "name": "public.crm_relationship_hold",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_relationship_messaging.sql",
+    "line": 187,
+    "name": "public.crm_contact_message_stats",
+    "arguments": "p_person_key text",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_relationship_messaging.sql",
+    "line": 197,
+    "name": "public.crm_message_logs_json",
+    "arguments": "p_opportunity_id uuid",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_relationship_messaging.sql",
+    "line": 212,
+    "name": "public.crm_site_contacts",
+    "arguments": "p_opportunity_id uuid",
+    "present_in_last_staging_snapshot": true,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_sales_execution_engine.sql",
+    "line": 62,
+    "name": "public.crm_contact_relationship_upsert",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_sales_execution_engine.sql",
+    "line": 86,
+    "name": "public.crm_quote_version_add",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_sales_execution_engine.sql",
+    "line": 111,
+    "name": "public.crm_stage_check_set",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_sales_execution_engine.sql",
+    "line": 128,
+    "name": "public.crm_handover_add",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_sales_execution_engine.sql",
+    "line": 146,
+    "name": "public.crm_site_contacts",
+    "arguments": "p_opportunity_id uuid",
+    "present_in_last_staging_snapshot": true,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_sales_rep_management.sql",
+    "line": 23,
+    "name": "public.crm_rep_manager_comment_upsert",
+    "arguments": "p jsonb",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  },
+  {
+    "file": "local/sql/20260905_sales_rep_management.sql",
+    "line": 57,
+    "name": "public.crm_rep_manager_comments_json",
+    "arguments": "",
+    "present_in_last_staging_snapshot": false,
+    "production_current": "NOT_QUERIED",
+    "meaning": "SQL declaration is not proof of deployed workflow or grants"
+  }
+]

@@ -1,0 +1,52 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "operations": [
+    "attachment_prepare",
+    "attachment_complete"
+  ],
+  "ui_coverage_candidate": [
+    "T01",
+    "T02"
+  ],
+  "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+  "bucket": {
+    "id": "crm-site-files",
+    "public": false,
+    "file_size_limit": 20971520,
+    "allowed_mime_types": [
+      "image/*",
+      "pdf",
+      "office",
+      "application/octet-stream with filename validation"
+    ]
+  },
+  "metadata_relation": "crm_security.deal_attachments",
+  "read_projection": "deal_core.items[].attachments ready-only safe metadata",
+  "upload": "authenticated JWT createSignedUploadUrl + uploadToSignedUrl; no service role in browser",
+  "partial_batch": "completed ready files remain canonical and reappear after refresh; batch activity remains existing all-complete behavior",
+  "pending_ttl_hours": 24,
+  "storage_cleanup": "not performed by SQL; expired pending/object cleanup requires Storage API operator before cutover",
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "files_sha256": {
+    "build.cjs": "3fb61f2d7193b46b0c32046dc242ab372e0a8fca23b89112d664cb5300205ef0",
+    "helper.sql": "86bde40441887ee6257e53d8fd51cc1dd57e3bdc2b6545d19f953373d59d6e99",
+    "rollback-fragment.sql": "aa37904d040952df820ec1627c485d75f8913ce646328c5c48f8889a4c8fda18",
+    "contract.test.cjs": "6ab0015ccd6fe9bcc63679340f180a802a11a8fd1cbd57eb9212f661166f9a25",
+    "db.test.cjs": "9b7727498e3b572dc0824df2ba833a16e3020de095ecbd5c871625c264686a1c",
+    "ui.test.cjs": "3f8212ce5917b15601866c06c2078e4b3ce46c218d539cfa372040a0ba648b04",
+    "staging-apply-after-technical-transfer.sql": "3ac3c67ba5022d1c9d7389bd30a8e5fc8c33c989eb1d7a4514592f9346ffea5c",
+    "rollback-before-technical-transfer.sql": "256e491e0519b2b9fe5778c31590fae34107b6bdab17cf31534dd94c7b9d5a29",
+    "operational-adapter.candidate.js": "0508bc21d4592444ac3be0d9c0ef58190d6548f5b370b023a74a536083f6465b",
+    "operational-overlay.candidate.js": "20d0f3b25a188daed587639774f1b83ccbfb3fb75aa33f19bbb37755517b7a20",
+    "transport.candidate.js": "9af217f6a5e7c62fad20e8f651b9a23bb1b5ecfefcbf7b28d5a5d856b3a7d37e"
+  },
+  "source_sha256": {
+    "sql/technical-inquiry-transfer/20260906/manifest.json": "7836db5ec17a41f2b1011f6735ca842164bfc052c93258f5d7a50799e46590d8",
+    "sql/reachable-operations-bundle/20260906/transport.candidate.js": "03b8da53b52f39aabacc3e93471accc180ca7d5066218351628f98216827d289",
+    "crm.html": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "mobile.html": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "docs/operational-cutover-20260906/attachment-contracts.md": "19bbaa1cb85712ecc3e2f5add359101c4ec058964bcf86f42e34d28a5aa5a5e5"
+  }
+}

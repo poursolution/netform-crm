@@ -1,0 +1,40 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "migration_version": "20260905235147",
+  "migration_name": "operational_bundle_20260906",
+  "migration_source": "sql/operational-bundle/20260906/candidate.sql plus the exact Staging ref session guard",
+  "staging_apply_file_byte_executed": false,
+  "note": "The generated staging-apply.sql hash was verified locally, while the connector migration used its candidate body with the same live MD5/ACL/config/constraint guard. Full before/after metadata guard sections were replaced by separate connector preflight/postflight checks.",
+  "status": "STAGING_APPLIED_AND_VERIFIED",
+  "operations": [
+    "opportunity_work_set",
+    "inquiry_assign",
+    "inquiry_unassign",
+    "service_change"
+  ],
+  "read": "crm_read_scoped_v2 inquiry compatibility",
+  "jwt_test": {
+    "pass": 13,
+    "fail": 0,
+    "skip": 0,
+    "result": "operational-bundle-jwt-results.json"
+  },
+  "private_evidence": {
+    "status": "FINAL_PRIVATE_EVIDENCE_PASS",
+    "receipt_count": 7,
+    "deal_audit_count": 4,
+    "inquiry_audit_count": 3,
+    "result": "operational-bundle-final.json"
+  },
+  "frozen_regression": {
+    "pass": 11,
+    "fail": 0,
+    "skip": 0,
+    "result": "../../sql/inquiry-direct-assign/20260906/regression-jwt-11.json"
+  },
+  "synthetic_visible_state_restored": true,
+  "n8n_requests": 0,
+  "production_requests": 0,
+  "rollback": "../../sql/operational-bundle/20260906/rollback.sql"
+}

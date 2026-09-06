@@ -1,0 +1,55 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "project_status": "ACTIVE_HEALTHY",
+  "mode": "READ_ONLY",
+  "status": "PASS",
+  "observed_at": "2026-09-06T15:02:07.0774258+09:00",
+  "lineage": {
+    "linked_deals": 4,
+    "duplicate_inquiry_keys": 0,
+    "inquiry_deal_backlinks": 0,
+    "inquiry_opportunity_backlinks": 0,
+    "origin_inquiry_unique_constraints": 0
+  },
+  "live_baseline": {
+    "public_dispatcher_canonical_md5": "04ad2b922c42ca79c6ec854f79c19583",
+    "public_read_canonical_md5": "d1cde3372f07295076fc62bf28d12a01",
+    "frozen_delegate_canonical_md5": "1ad250f71a5af65317ab3362239752e8",
+    "definitions_match_recorded_staging_baseline": true,
+    "owners_are_postgres": true,
+    "public_dispatcher_authenticated_execute": true,
+    "public_read_authenticated_execute": true,
+    "frozen_delegate_authenticated_execute": false,
+    "receipt_constraint": "CHECK (operation = ANY (ARRAY['opportunity_work_set'::text, 'inquiry_assign'::text, 'service_change'::text, 'inquiry_unassign'::text]))",
+    "inquiry_audit_constraint": "CHECK (action = ANY (ARRAY['direct_assign'::text, 'direct_reassign'::text, 'inquiry_unassign'::text]))"
+  },
+  "required_tables_present": [
+    "public.deals",
+    "public.inquiries",
+    "public.stage_history",
+    "public.activities",
+    "crm_security.object_scope",
+    "crm_security.audit_events",
+    "crm_security.inquiry_audit_events",
+    "crm_security.command_receipts"
+  ],
+  "candidate_helpers_currently_present": {
+    "opportunity_create": false,
+    "transition": false,
+    "site_common_key": false,
+    "inquiry_response": false,
+    "inquiry_pipeline_promote": false,
+    "inquiry_lineage_link": false
+  },
+  "conclusion": {
+    "baseline_drift": false,
+    "duplicate_lineage_blocker": false,
+    "cumulative_prerequisite_chain_required": true,
+    "staging_apply_approved": false,
+    "jwt_e2e_complete": false
+  },
+  "writes_performed": 0,
+  "production_requests": 0,
+  "n8n_requests": 0
+}

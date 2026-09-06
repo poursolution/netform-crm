@@ -1,0 +1,11 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "sha256": "036e11fa2e3753a948148d8e9cebe856de90b816110254535adc5db05f0135fd",
+  "result": "Success. No rows returned",
+  "local_tests": {
+    "pass": 21,
+    "fail": 0,
+    "skip": 0
+  },
+  "production_connections": 0
+}

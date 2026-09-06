@@ -1,0 +1,38 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "LOCAL_CHAIN_CANDIDATE_AFTER_PURGE_NOT_APPLIED",
+  "prerequisites": [
+    "inquiry-purge/20260906"
+  ],
+  "operations": [
+    "inquiry_followup"
+  ],
+  "ui_coverage_candidate": [
+    "I08",
+    "O08T"
+  ],
+  "intent": "assigned_inquiry_scalar_followup_date",
+  "blocked_meanings": [
+    "generic_next_action_create",
+    "automatic_notification",
+    "response_update"
+  ],
+  "staging_ddl_dml_performed": false,
+  "files_sha256": {
+    "helper.sql": "bc6638e613e1d87f51eb7ae70a3b72fed5e882c115379e22799f548082221576",
+    "adapter-contract.js": "15f4a6256c503322fd0b26de2a0a44944dfb3ad78d1daeaf3f4b67a3f28500ac",
+    "contract.test.cjs": "c2af9d25f36aec0c47d65dbb4f0ddec13268dd890392afd6bb70ae73fc90b465",
+    "db.test.cjs": "6284ae80c47ae53f5553e18f178cd721247f5f6aa95a1839da19a87cb55ae6ca",
+    "ui.test.cjs": "7f3119945e98d107da1ffd931e2f6244b439931f9de004a3944cf21b3ce4a790",
+    "review.md": "03201d355316b156e93616c815830d66989a68b31a9bacadf5d8abfd29690895",
+    "staging-apply-after-purge.sql": "a41f75b33b5b376cf1246b9f97c686cefd237a2b0fca952c070e8ebb99c8cfc9",
+    "rollback-after-purge.sql": "aedf623a4c602d510ae1e9771ecff14683946ce0088b3b18ceb9493bd9e8684c",
+    "operational-adapter.candidate.js": "01a2208f96d964674b26e41024128437c4bb34e961638e55d3541e7944237e26",
+    "operational-overlay.candidate.js": "bec30a4cddce73da58827d54c89dafce0ae0f2e66e1850b3d4c67d87299d7fbf"
+  },
+  "source_sha256": {
+    "golden_mobile": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "purge_manifest": "9dab4792a115ce1cb64892cd3d2f6ec3fa33f79585c53d2e11649c4dbc5a503b",
+    "inquiry_contracts": "e6f4e720cefb6335e78fe82cbbf7b1252820822ae6e69cdb1179636dda142784"
+  }
+}

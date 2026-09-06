@@ -1,0 +1,50 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "operations": [
+    "opportunity_create"
+  ],
+  "intents": [
+    "technical_inquiry_transfer"
+  ],
+  "ui_coverage_candidate": [
+    "I15"
+  ],
+  "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+  "surface": "pc_only",
+  "handlers": [
+    "inqTechPromote"
+  ],
+  "absorbed_child_operations": [
+    "inquiry_status"
+  ],
+  "server_helper_implemented": true,
+  "transaction": [
+    "technical Deal create",
+    "inquiry conversion/backlink",
+    "stage history",
+    "activity",
+    "Deal/private inquiry audit",
+    "admin object scope",
+    "command receipt"
+  ],
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "files_sha256": {
+    "build.cjs": "1ecb5717c3dbb067933404f3493061f3c8413daac8d69acfecc6691b82a7903e",
+    "helper.sql": "f431a3aed9377bdc84923a5745b3118d5dd9b14a30dbfb8bceb88b45e8dd34eb",
+    "rollback-fragment.sql": "fb56e883387245c1ad4d9f2397fc9e36585f66fade36feb760e259968cff00e1",
+    "contract.test.cjs": "f6094be357f0ce3b536f3f1de3ea2ab8f9b70f79a3b947cab99bc7522e2aff4a",
+    "db.test.cjs": "13dc23591d8819f70117f4e30d36812eb99e49144af036ef6573ffe203de39a6",
+    "ui.test.cjs": "309c2dc01190e9ca37a96a4402976411804b1a734b0ad216ae5a7dc0770dbf51",
+    "staging-apply-after-inquiry-action-check.sql": "ba3702a834337b6df8021da682d323da4d6a2398947209c3cde162e9c26a4d23",
+    "rollback-before-inquiry-action-check.sql": "5325b5394bdb864169651897fdd185140b1502ab1e20ed4393dc265dadfb94f9",
+    "operational-adapter.candidate.js": "015141169326283a7cc18c0af0b75e81f5b4d52538e516567000b1cab8d47cc3",
+    "operational-overlay.candidate.js": "bc8da8329c690c89f23d3e0006cdf2b8b330105cee36a75ae02e8a5479da6d7d"
+  },
+  "source_sha256": {
+    "sql/inquiry-action-check/20260906/manifest.json": "d2df9a7a5e237cae517c73fb8b20776552437def8aa66297e9bd659efd9a4a11",
+    "crm.html": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "docs/operational-cutover-20260906/technical-inquiry-transfer-resolution.md": "4c6bb50662bdf48ef9a24b9ad952a31acc68023f0799298fe44daf4daee0c64b"
+  }
+}

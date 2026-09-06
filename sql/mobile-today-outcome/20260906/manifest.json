@@ -1,0 +1,59 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "status": "DERIVED_SAFE_LOCAL_CANDIDATE_NOT_APPLIED",
+  "operation": "next_action_complete",
+  "intent": "today_outcome",
+  "ui_coverage_candidate": [
+    "P09M"
+  ],
+  "prerequisite": "next-action-postpone/20260906",
+  "surface": "mobile_only",
+  "allowed_outcomes": [
+    "progress",
+    "next_week",
+    "missed"
+  ],
+  "absorbed_children": [
+    "activity",
+    "next_action"
+  ],
+  "server_rules": {
+    "scope": "crm_security.can_deal(deal_id,true)",
+    "identity": "server-projected earliest open Next Action UUID",
+    "dates": "server KST +3/+7/+1",
+    "counter": "Deal-level; increment only next_week",
+    "transaction": "complete current Action + cancel other open + Activity + replacement Next + Deal version/contact + audit + receipt"
+  },
+  "read_dependency": [
+    "next_action.id",
+    "next_action.postpone_count"
+  ],
+  "blocked": [
+    "temporary action id",
+    "client Activity/Next/time/count",
+    "inquiry response meaning"
+  ],
+  "rollback": "Today event/audit/receipt archived; business Action/Activity retained; P09X remains active",
+  "staging_ddl_dml_performed": false,
+  "production_accessed": false,
+  "n8n_accessed": false,
+  "files_sha256": {
+    "build.cjs": "0c851232001b569ec3dbcd0850e9459dc6ee5c67c3d5ce3cb5d21769f5be7876",
+    "helper.sql": "c53e726e9f1dc2f54e34b7e63089d6da8f3bc9a11ad0f15a0c17b05f29f57cc1",
+    "rollback-fragment.sql": "3d23628cbe94f2005f201be3f74840a92dd02dda3801e17b1d0d6c28425a9d71",
+    "contract.test.cjs": "f0ee762bb553bafe7b6f03c02a94d2529e3c581c6e78ae7d835be16a06f0c27b",
+    "db.test.cjs": "44834bf63c044c1087ef543e4974c6b844d5ffe6aef0ae0d7605c2a52f2f58df",
+    "ui.test.cjs": "d82a7149323d53f783ded2c838dc357778e0119b0022ec2bad58ee66a2bb57b0",
+    "review.md": "30257aa73fa2dcc291f931dd56fce4246e5f87a617bdb7953d61cda7bde235e2",
+    "staging-apply-after-next-postpone.sql": "1654cf50081897056ba825df5bf234994972d7f854ecf4ea15dcca65d84dab08",
+    "rollback-before-next-postpone.sql": "7aa46a3cf4ae82f19b7a94393cc99cfb238191e6fee8a3311493088ec6cd1955",
+    "operational-adapter.candidate.js": "87ad89684f5b755b1596641a1ac12aac1301b681c368b4f576534fc79031b0cd",
+    "operational-overlay.candidate.js": "45176124a289be48902085f126bf6fe3e1799861df6a40e96ea60b3d8990660c",
+    "transport.candidate.js": "43abb4c6f37a9de65268f79dce45e2b154d2927854054babc9625fd131c6333a"
+  },
+  "source_sha256": {
+    "sql/next-action-postpone/20260906/manifest.json": "4f353529b673f56be08a9990a5a560881ba71845cef7b828fe84433c232cfe69",
+    "mobile.html": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "docs/operational-cutover-20260906/coverage-matrix.csv": "66b015765e4fa6e96d8e3b233a7a3411a50be1d4ff4054d7d757baedc22947c4"
+  }
+}

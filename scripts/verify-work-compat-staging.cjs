@@ -1,0 +1,42 @@
+'use strict';
+// Real synthetic Auth/JWT against the named Staging project only. Never log credentials or response bodies.
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto');
+const bridge=require('../staging-write/compat-adapter.js');
+const REF='rprechiaglyjaydkmxsu',ORIGIN=`https://${REF}.supabase.co`,OUT=path.resolve(__dirname,'../sql/work-compat/20260906/staging-verification.json');
+const config=JSON.parse(fs.readFileSync('C:/Users/Administrator/crm-staging-private/v2-client.json','utf8'));
+const secrets=JSON.parse(fs.readFileSync('C:/Users/Administrator/crm-staging-private/auth-synthetic-20260905.json','utf8'));
+const mapping=require('../sql/baseline/20260905/synthetic/auth-mapping.json');
+assert.equal(config.project_ref,REF);assert.equal(secrets.project_ref,REF);assert.equal(config.url,ORIGIN);assert.equal(bridge.project_ref,REF);
+const sessions={},results=[],requests=[];
+let step='initialize',proof={project_ref:REF,at:new Date().toISOString(),status:'FAIL',results};
+async function raw(route,body,token){const url=new URL(route,ORIGIN);assert.equal(url.origin,ORIGIN);assert.match(url.pathname,/^\/(?:auth|rest)\/v1\//);requests.push(url.pathname);const r=await fetch(url,{method:'POST',redirect:'error',headers:{apikey:config.publishable_key,'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});let data;try{data=await r.json();}catch{data=null;}return {status:r.status,data};}
+async function login(kind){const a=secrets.accounts.find(x=>x.kind===kind);assert.ok(a&&a.email.endsWith('@example.invalid'));const r=await raw('/auth/v1/token?grant_type=password',{email:a.email,password:a.password});assert.equal(r.status,200);sessions[kind]=r.data;return r.data;}
+const rpc=(name,args,kind)=>raw('/rest/v1/rpc/'+name,args,sessions[kind]?.access_token);
+async function check(name,fn){await fn();results.push({name,status:'PASS'});}
+function envelope(kind,writeId,deal,primary,items,summary){const base={opportunity_id:deal,primaryWork:primary,workItems:items,workScopeType:items.length===1?'single':'multi',workSummary:summary,primary_work:primary,work_items:items,work_scope_type:items.length===1?'single':'multi',work_summary:summary,work_type:primary.split('>').pop(),reason:`TEST ${kind} work compatibility verification`,reason_source:'text',actor_name:'UNTRUSTED CLIENT ACTOR',at:new Date().toISOString()};return {write_id:writeId,op:'opportunity_work_set',payload:base};}
+async function main(){try{
+ step='login_internal_rep';await login('INTERNAL_REP');step='login_other_rep';await login('OTHER_REP');
+ step='profile_internal_rep';const profile=(await rpc('crm_profile_scoped_v2',{},'INTERNAL_REP'));assert.equal(profile.status,200);
+ step='profile_other_rep';const otherProfile=(await rpc('crm_profile_scoped_v2',{},'OTHER_REP'));assert.equal(otherProfile.status,200);
+ const deal='f6090500-0006-4000-8000-000000000001';
+ const read=async kind=>{const r=await rpc('crm_read_scoped_v2',{p_deal_id:deal,p_limit:1},kind);assert.equal(r.status,200);assert.equal(r.data.deals.length,1);return r.data.deals[0];};
+ step='read_initial_deal';const initial=await read('INTERNAL_REP');assert.ok(initial.primary_work&&Array.isArray(initial.work_items)&&initial.work_items.length&&initial.work_summary);
+ if(process.argv.includes('--preflight-only')){proof={...proof,status:'PREFLIGHT_PASS',initial_version:initial.version,http_requests:requests.length,n8n_requests:0,production_requests:0};return;}
+ const client=bridge.create({project_ref:REF,url:ORIGIN,publishable_key:config.publishable_key,auth:{getSession:async()=>({data:{session:sessions.INTERNAL_REP}})},fetch:async(url,init)=>{assert.equal(new URL(url).origin,ORIGIN);requests.push(new URL(url).pathname);return fetch(url,init);}});
+ async function send(kind,writeId,version,primary,items,summary){const w=envelope(kind,writeId,deal,primary,items,summary),q=await bridge.prepare(w,{project_ref:REF,auth_uid:sessions.INTERNAL_REP.user.id,user_id:profile.data.user_id,expected_version:version});return {w,q,ack:await client.send(q)};}
+ step='send_pc_payload';const pc=await send('PC','WORK-COMPAT-PC-'+crypto.randomUUID(),initial.version,'TEST>PC',['TEST>PC','TEST>COMMON'],'PC display summary / common work');
+ await check('existing PC payload stored and server actor correlated',async()=>{assert.equal(pc.ack.actor_auth_uid,sessions.INTERNAL_REP.user.id);assert.equal(pc.ack.actor_user_id,profile.data.user_id);assert.equal(pc.ack.work.work_summary,'PC display summary / common work');});
+ let current=await read('INTERNAL_REP');await check('PC refresh preserves primary/items/summary',async()=>{assert.equal(current.primary_work,'TEST>PC');assert.deepEqual(current.work_items,['TEST>PC','TEST>COMMON']);assert.equal(current.work_summary,'PC display summary / common work');});
+ await check('PC request replay has no version increment',async()=>{const replay=await client.send(pc.q);assert.equal(replay.replayed,true);assert.equal((await read('INTERNAL_REP')).version,current.version);});
+ const mobile=await send('MOBILE','WORK-COMPAT-MOBILE-'+crypto.randomUUID(),current.version,'TEST>MOBILE',['TEST>MOBILE'],'Mobile display summary');
+ await check('existing mobile payload stored',async()=>{assert.equal(mobile.ack.work.work_summary,'Mobile display summary');});
+ current=await read('INTERNAL_REP');await check('mobile refresh preserves primary/items/summary',async()=>{assert.equal(current.primary_work,'TEST>MOBILE');assert.deepEqual(current.work_items,['TEST>MOBILE']);assert.equal(current.work_summary,'Mobile display summary');});
+ await check('mobile request replay has no version increment',async()=>{const replay=await client.send(mobile.q);assert.equal(replay.replayed,true);assert.equal((await read('INTERNAL_REP')).version,current.version);});
+ await check('same request id with changed payload returns 409',async()=>{const q=JSON.parse(JSON.stringify(mobile.q));q.rpc.p_payload.reason='TEST changed request content';await assert.rejects(client.send(q),e=>e.status===409);});
+ await check('new request with stale version returns 409',async()=>{const stale=await send('STALE','WORK-COMPAT-STALE-'+crypto.randomUUID(),current.version-1,'TEST>STALE',['TEST>STALE'],'Stale display summary').then(()=>null,e=>e);assert.equal(stale.status,409);});
+ await check('other rep cannot change owner deal',async()=>{const otherClient=bridge.create({project_ref:REF,url:ORIGIN,publishable_key:config.publishable_key,auth:{getSession:async()=>({data:{session:sessions.OTHER_REP}})},fetch:async(url,init)=>{assert.equal(new URL(url).origin,ORIGIN);requests.push(new URL(url).pathname);return fetch(url,init);}});const w=envelope('OTHER','WORK-COMPAT-OTHER-'+crypto.randomUUID(),deal,'TEST>OTHER',['TEST>OTHER'],'Other display summary'),q=await bridge.prepare(w,{project_ref:REF,auth_uid:sessions.OTHER_REP.user.id,user_id:otherProfile.data.user_id,expected_version:current.version});await assert.rejects(otherClient.send(q),e=>e.status===403);});
+ const restored=await send('RESTORE','WORK-COMPAT-RESTORE-'+crypto.randomUUID(),current.version,initial.primary_work,initial.work_items,initial.work_summary);current=await read('INTERNAL_REP');
+ await check('synthetic deal classification restored through same adapter',async()=>{assert.equal(current.primary_work,initial.primary_work);assert.deepEqual(current.work_items,initial.work_items);assert.equal(current.work_summary,initial.work_summary);assert.equal(current.version,restored.ack.version);});
+ proof={...proof,status:'PASS',deal_id:deal,initial_version:initial.version,final_version:current.version,request_ids:{pc:pc.q.rpc.p_request_id,mobile:mobile.q.rpc.p_request_id,restore:restored.q.rpc.p_request_id},actor_auth_uid:pc.ack.actor_auth_uid,actor_user_id:pc.ack.actor_user_id,http_requests:requests.length,n8n_requests:0,production_requests:0};
+ }catch(e){proof={...proof,failure_point:step,error_type:e.code||e.name};throw e;}finally{for(const session of Object.values(sessions))await fetch(ORIGIN+'/auth/v1/logout?scope=local',{method:'POST',headers:{apikey:config.publishable_key,Authorization:'Bearer '+session.access_token}}).catch(()=>{});fs.writeFileSync(OUT,JSON.stringify(proof,null,2));console.log(JSON.stringify({status:proof.status,pass:results.length,n8n_requests:0,production_requests:0}));}}
+main().catch(e=>{console.error('Work compatibility Staging verification failed: '+(e.code||e.name));process.exitCode=1;});

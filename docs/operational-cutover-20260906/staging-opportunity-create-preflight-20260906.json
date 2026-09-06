@@ -1,0 +1,104 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "captured_at": "2026-09-06T03:44:15.747194Z",
+  "mode": "READ_ONLY",
+  "aggregate_counts": {
+    "sites": 5,
+    "deals": 5,
+    "contacts": 5,
+    "contact_assignments": 4,
+    "activities": 19,
+    "next_actions": 6
+  },
+  "verified_structure": {
+    "sites": {
+      "primary_key": "site_id uuid",
+      "norm_name": {
+        "type": "text",
+        "not_null": true,
+        "default": null,
+        "unique_index": "uq_sites_norm",
+        "automatic_trigger": false
+      }
+    },
+    "contacts": {
+      "primary_key": "id uuid",
+      "person_key_unique_index": "contacts_person_key_uq"
+    },
+    "contact_assignments": {
+      "person_key_fk": "contacts(person_key)",
+      "open_assignment_unique_index": "contact_assign_open(person_key, site_name) where ended_at is null"
+    },
+    "deals": {
+      "site_id_fk": "sites(site_id)",
+      "owner_id_fk": "users(user_id)",
+      "contact_id_fk": "contacts(id)",
+      "origin_inquiry_id_fk": "inquiries(id)",
+      "work_consistency_constraint": "deals_work_scope_consistent"
+    },
+    "children": {
+      "activities_deal_fk": true,
+      "next_actions_deal_fk": true
+    },
+    "existing_create_functions": []
+  },
+  "ui_contract_findings": {
+    "pc_initial_activity": true,
+    "pc_initial_next_action": false,
+    "mobile_initial_activity": true,
+    "mobile_initial_next_action": {
+      "type": "첫통화",
+      "title": "등록 후 첫 통화",
+      "due_days": 1
+    },
+    "mobile_children_are_enqueued_before_parent_create": true,
+    "required_adapter_behavior": "Capture the mobile Activity and Next Action and include them in the parent create transaction; do not create a PC Next Action that the PC UI did not request.",
+    "site_normalization_conflict": {
+      "pc": "remove bracket tags, whitespace, 아파트, 현장; lowercase",
+      "mobile": "remove bracket tags, 아파트, APT, whitespace, hyphen, underscore, dot, comma; lowercase",
+      "mobile_duplicate_gate": "remove only the leading bracket tag, then use substring matching",
+      "database": "sites.norm_name has no default or trigger",
+      "verdict": "No single canonical merge key is implied by the reachable UI or database."
+    },
+    "creator_assignee_conflict": {
+      "pc_direct_assignee": "required active head_office sales candidate",
+      "pc_expansion_assignee": "required active sales candidate in the source Deal team",
+      "mobile_assignee": "always the signed-in user; no assignee selector or sales eligibility gate",
+      "mobile_profile_reachability": "crm_profile_scoped_v2 gives rep presentation mode to approved rep, branch, and consultation actors; the new-sales tab is therefore reachable by all three permission roles",
+      "verdict": "branch and consultation actors can reach a path that makes themselves Deal owner even though the PC eligibility contract excludes non-sales owners."
+    }
+  },
+  "staging_actor_matrix": {
+    "source": "crm_security.access_review joined to public.users; aggregate read only",
+    "approved_active_unexpired": {
+      "admin": 2,
+      "rep": 2,
+      "branch": 1,
+      "consultation": 1
+    },
+    "profile_modes": {
+      "admin_with_admin_or_dual_source_role": [
+        "rep",
+        "admin"
+      ],
+      "all_other_supported_mappings": [
+        "rep"
+      ]
+    }
+  },
+  "conclusion": {
+    "atomic_storage_supported": true,
+    "contact_identity_supported": true,
+    "safe_candidate_ready": false,
+    "resolved_rule": "Preserve the surface-specific initial Next Action: mobile creates one and PC does not.",
+    "missing_rules": [
+      "Choose one canonical sites.norm_name algorithm and define whether a normalization collision reuses the Site or stops for user confirmation.",
+      "Decide whether branch and consultation actors may create a direct Pipeline Deal and, if allowed, which approved sales UUID may own it; the current mobile self-owner behavior conflicts with the PC eligibility rule."
+    ],
+    "blocker_class": "REACHABLE_UI_CONTRACT_CONFLICT"
+  },
+  "writes_performed": 0,
+  "production_requests": 0,
+  "n8n_requests": 0
+}

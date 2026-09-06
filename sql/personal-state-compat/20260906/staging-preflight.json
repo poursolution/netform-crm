@@ -1,0 +1,50 @@
+{
+  "project_id": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "project_status": "ACTIVE_HEALTHY",
+  "captured_at": "2026-09-06T00:50:50.873891+00:00",
+  "mode": "READ_ONLY",
+  "write": {
+    "oid": 18115,
+    "definition_md5": "04ad2b922c42ca79c6ec854f79c19583",
+    "owner": "postgres",
+    "security_definer": true,
+    "config": ["search_path=\"\""],
+    "acl": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  "read": {
+    "oid": 18064,
+    "definition_md5": "d1cde3372f07295076fc62bf28d12a01",
+    "owner": "postgres",
+    "security_definer": true,
+    "config": ["search_path=\"\""],
+    "acl": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  "frozen": {
+    "oid": 18077,
+    "definition_md5": "1ad250f71a5af65317ab3362239752e8",
+    "acl": "{postgres=X/postgres}"
+  },
+  "unassign": {
+    "oid": 18112,
+    "definition_md5": "803074f7a3974777c766fe4487069fb0",
+    "acl": "{postgres=X/postgres}"
+  },
+  "receipt_constraint": "CHECK (operation = ANY (ARRAY['opportunity_work_set'::text, 'inquiry_assign'::text, 'service_change'::text, 'inquiry_unassign'::text]))",
+  "personal_objects_absent": true,
+  "expected_write_definition_md5": "ced884d83489e74ee6906c01c72d1e7a",
+  "expected_read_definition_md5": "919c4abff86e37beeb62ccb15beba33e",
+  "semantic_token_compare": {
+    "write": {"local_tokens": 1556, "live_tokens": 1556, "match": true},
+    "read": {"local_tokens": 732, "live_tokens": 732, "match": true},
+    "frozen": {"local_tokens": 2064, "live_tokens": 2064, "match": true},
+    "unassign": {"local_tokens": 794, "live_tokens": 794, "match": true}
+  },
+  "canonical_evidence": "docs/operational-cutover-20260906/staging-function-canonical-compare.json",
+  "exact_live_baseline": "sql/personal-state-compat/20260906/staging-live-baseline.json",
+  "matches_expected": true,
+  "decision": "CANONICAL_TOKEN_MATCH_TARGET_GUARDS_READY_NOT_APPLIED",
+  "staging_ddl_dml_performed": false,
+  "production_requests": 0,
+  "n8n_requests": 0
+}

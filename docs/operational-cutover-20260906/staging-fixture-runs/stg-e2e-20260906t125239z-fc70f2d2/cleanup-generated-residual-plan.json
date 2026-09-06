@@ -1,0 +1,50 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "project_name": "netform-crm-staging",
+  "run_id": "stg-e2e-20260906t125239z-fc70f2d2",
+  "status": "COMPLETED_EXACT_RESIDUAL_CLEANUP_PASS",
+  "reason": "Three server-generated Deal UUIDs were not captured by the preallocated fixture manifest.",
+  "exact_rows": {
+    "public.deals": 3,
+    "public.activities": 3,
+    "crm_security.audit_events": 4,
+    "crm_security.object_scope": 2,
+    "public.contact_assignments": 1,
+    "public.contacts": 1,
+    "public.sites": 1
+  },
+  "total_rows": 15,
+  "cleanup_file": "cleanup-generated-residual-exact.sql",
+  "cleanup_sha256": "d2f6835a5368f8ec722b95dcbd60a574597a14c5d7ad033251ed3b52bbd60810",
+  "verification_file": "cleanup-generated-residual-verify.sql",
+  "verification_sha256": "bafbd13846e494bf5be65454b14d40aeb541b2afb0a92e20341c7829645f7ec3",
+  "deal_ids": [
+    "383d827a-e481-44c9-ad2e-22c50cc80181",
+    "5f4abbf5-52a8-466a-878b-f2d81a98c51f",
+    "9c2530cb-71db-4135-8ccf-664897e5ce9d"
+  ],
+  "activity_ids": [
+    "0a4d6233-d917-4ecf-ad26-b45baab3c71c",
+    "497f1a02-dcce-461a-9f17-0e43ee66463e",
+    "a9f3c4fc-0b2c-4cd5-b451-2f27602ce2ee"
+  ],
+  "audit_event_ids": [
+    "6322d867-48bd-4efa-a224-4a3dea53ed34",
+    "8ea43025-7865-43dd-b4a9-1685920a73d7",
+    "ab659eea-967c-4bf1-8155-c53c977a1cf6",
+    "b79848e4-bc55-44ad-a87b-e474cd07a53e"
+  ],
+  "scope_ids": [
+    "a38614e6-e8da-484c-a05d-ee97ccc43708",
+    "72127a30-90e0-4fd2-bc87-8abeff014bae"
+  ],
+  "contact_assignment_id": "a93eb161-9c82-4330-b873-ce98fd918628",
+  "contact_id": "79de1cc9-4934-4e96-90c3-3e0c6fbe35d2",
+  "site_id": "e2594dc8-3f78-4758-be2d-ee0f906fb910",
+  "post_cleanup_canonical_baseline": {
+    "deals": {"count": 5, "md5": "30b2067a1a74de986aa33a36b9c0942b"},
+    "inquiries": {"count": 5, "md5": "d15e22087063729eedf6e5211d4ff327"}
+  },
+  "production_accessed": false,
+  "n8n_accessed": false
+}

@@ -1,0 +1,25 @@
+{
+  "project_ref": "rprechiaglyjaydkmxsu",
+  "run_id": "13868e3d-4ad2-4326-b687-93be46989ec0",
+  "status": "SYNTHETIC_VISIBLE_STATE_RESTORED",
+  "inquiry": {
+    "id": "f6090500-0005-4000-8000-000000000005",
+    "assigned_to": "f6090500-0001-4000-8000-000000000005",
+    "assigned_at": "2026-09-05T00:00:00+00:00",
+    "assignee_name": "TEST ADMIN",
+    "status": "접수",
+    "first_response_at": null,
+    "responded_at": null
+  },
+  "deal": {
+    "id": "f6090500-0006-4000-8000-000000000001",
+    "brand": "TEST",
+    "primary_work": "TEST JWT WORK",
+    "work_items": ["TEST JWT WORK"],
+    "work_summary": "TEST JWT WORK",
+    "version": 27
+  },
+  "append_only_evidence_retained": true,
+  "n8n_requests": 0,
+  "production_requests": 0
+}
