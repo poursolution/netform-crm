@@ -1756,6 +1756,19 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
 @media(max-width:1100px){.gn-kpis{grid-template-columns:repeat(4,1fr)}.gn-kpi:nth-child(4){border-right:0}.gn-funnel{grid-template-columns:repeat(3,1fr)}.gn-funnel-step:nth-child(3):after{display:none}.gn-risk-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:980px){.dcc-vh .dcc-focus-grid,.dcc-vh .dcc-meta-grid{grid-template-columns:1fr 1fr}.ceo-command h2{font-size:24px}.rep-flow-head{align-items:flex-start;flex-direction:column}.gn-command-top,.gn-frame-head{align-items:flex-start;flex-direction:column}}
 @media(max-width:680px){.main{gap:13px}.apage{gap:16px}.card{padding:15px}.mhead h1{font-size:22px}.dcc-vh .dcc-focus-grid,.dcc-vh .dcc-meta-grid{grid-template-columns:1fr}.dcc-vh .dcc-focus-card.stage>strong,.dcc-vh .dcc-focus-card.amount>strong,.dcc-vh .dcc-focus-card.next>strong{font-size:25px}.ceo-summary b{font-size:27px}.rep-flow-head{padding:16px}.rep-flow-grid{padding-left:13px;padding-right:13px}.rep-flow-drawer-core{grid-template-columns:1fr 1fr}.gn-command-top{padding:19px}.gn-command h2{font-size:22px}.gn-kpis{grid-template-columns:1fr 1fr}.gn-kpi:nth-child(even){border-right:0}.gn-funnel{grid-template-columns:1fr 1fr}.gn-funnel-step:nth-child(2n):after{display:none}.gn-risk-grid{grid-template-columns:1fr 1fr}.gn-trend{overflow-x:auto;grid-template-columns:repeat(6,78px)}}
+
+/* 오늘 대시보드 · 찾으러 다니기 전에 지금 할 일을 먼저 보여준다. */
+.today-home{display:grid;gap:15px;--today-ink:#13213a;--today-blue:#2f64df;--today-red:#d94355;--today-amber:#c77a17;--today-teal:#147d68}
+.today-command{position:relative;overflow:hidden;border-radius:22px;background:var(--today-ink);color:#fff;box-shadow:0 18px 44px rgba(19,33,58,.17)}
+.today-command:after{content:"";position:absolute;right:-90px;top:-170px;width:430px;height:430px;border:1px solid rgba(255,255,255,.08);border-radius:50%;box-shadow:0 0 0 70px rgba(255,255,255,.026),0 0 0 140px rgba(255,255,255,.016)}
+.today-command-top{position:relative;z-index:1;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:25px 27px 20px}.today-command .eyebrow{color:#84aaff;font-size:11.5px;font-weight:900;letter-spacing:.14em}.today-command h2{margin:5px 0;color:#fff;font-size:28px;letter-spacing:-.045em}.today-command p{margin:0;color:#afbdd2;font-size:13px}.today-date{border:1px solid rgba(255,255,255,.14);border-radius:999px;background:rgba(255,255,255,.06);padding:8px 12px;color:#e5edf9;font-size:12px;font-weight:800;white-space:nowrap}
+.today-summary{position:relative;z-index:1;display:grid;grid-template-columns:1.25fr repeat(4,1fr);border-top:1px solid rgba(255,255,255,.1);background:rgba(4,12,26,.22)}.today-summary button{min-width:0;border:0;border-right:1px solid rgba(255,255,255,.1);background:transparent;padding:16px 19px;color:#fff;text-align:left;cursor:pointer}.today-summary button:last-child{border-right:0}.today-summary button:hover{background:rgba(255,255,255,.055)}.today-summary span{display:block;color:#91a4c1;font-size:11.5px;font-weight:750}.today-summary b{display:block;margin-top:4px;font-size:23px;letter-spacing:-.035em}.today-summary small{display:block;margin-top:3px;color:#aebbd0;font-size:11.5px}.today-summary .critical b{color:#ff8493}.today-summary .support b{color:#ffc36c}.today-summary .relation b{color:#6ee0c4}
+.today-view-tabs{display:flex;gap:7px;flex-wrap:wrap}.today-view-tabs button{border:1px solid var(--line2);border-radius:999px;background:#fff;padding:8px 12px;color:var(--ink2);font:inherit;font-size:12px;font-weight:850;cursor:pointer}.today-view-tabs button:hover{border-color:var(--today-blue);color:var(--today-blue)}.today-view-tabs button.on{border-color:var(--today-blue);background:#eef4ff;color:var(--today-blue)}.today-view-tabs em{margin-left:4px;font-style:normal;color:inherit;opacity:.8}
+.today-lanes{display:grid;grid-template-columns:1fr 1fr;gap:13px}.today-lane{overflow:hidden;border:1px solid var(--line);border-radius:17px;background:#fff;box-shadow:0 7px 22px rgba(32,48,78,.045)}.today-lane-head{display:flex;align-items:flex-end;justify-content:space-between;padding:16px 18px 13px;border-bottom:1px solid var(--line)}.today-lane-head span{display:block;color:#70809a;font-size:11px;font-weight:900;letter-spacing:.08em}.today-lane-head h3{margin:4px 0 0;color:var(--ink);font-size:16px}.today-lane-head>b{font-size:19px}.today-lane.inquiry .today-lane-head>b,.today-lane.sales .today-lane-head>b{color:var(--today-red)}.today-lane.support .today-lane-head>b{color:var(--today-amber)}.today-lane.relation .today-lane-head>b{color:var(--today-teal)}
+.today-signals{display:grid;gap:7px;padding:12px}.today-signal{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 12px;width:100%;border:1px solid #e2e7ef;border-radius:12px;background:#fbfcfe;padding:12px;text-align:left;font:inherit;cursor:pointer}.today-signal:hover{border-color:#b9c9ef;background:#f7f9ff;transform:translateY(-1px)}.today-signal strong{color:var(--ink);font-size:13px}.today-signal b{color:var(--ink);font-size:14px}.today-signal small{grid-column:1/-1;color:var(--sub);font-size:11.5px;line-height:1.45}.today-signal.critical b{color:var(--today-red)}.today-signal.watch b{color:var(--today-amber)}.today-signal.good b{color:var(--today-teal)}
+.today-empty{padding:26px;text-align:center;color:var(--sub);font-size:12px}
+@media(max-width:1000px){.today-summary{grid-template-columns:repeat(3,1fr)}.today-summary button:nth-child(3){border-right:0}.today-summary button:nth-child(-n+3){border-bottom:1px solid rgba(255,255,255,.1)}.today-lanes{grid-template-columns:1fr}}
+@media(max-width:680px){.today-command-top{align-items:flex-start;flex-direction:column;padding:20px}.today-command h2{font-size:24px}.today-summary{grid-template-columns:1fr 1fr}.today-summary button{border-bottom:1px solid rgba(255,255,255,.1)}.today-summary button:nth-child(even){border-right:0}.today-summary button:first-child{grid-column:1/-1}.today-lanes{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -1764,8 +1777,9 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
   <aside class="side">
     <div class="brandlogo"><div class="bx">N</div><div class="nm">영업관리 CRM<span>NETFORM R&amp;D</span></div></div>
     <nav class="menu">
+      <div class="sec">오늘</div>
+      <div class="mi on clk" data-p="today" onclick="nav(this)"><span class="ic">●</span>대시보드<span class="badge" id="todayBadge"></span></div>
       <div class="sec">영업</div>
-      <div class="mi on clk" data-p="dash" onclick="nav(this)"><span class="ic">📊</span>대시보드</div>
       <div class="mi clk" data-p="inq" onclick="nav(this)"><span class="ic">📥</span>견적문의<span class="badge" id="inqBadge"></span></div>
       <div class="mi clk" data-p="pipe" onclick="nav(this)"><span class="ic">🧭</span>파이프라인</div>
       <div class="sec">관리</div>
@@ -1776,6 +1790,7 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
       <div class="sec">분석·자산</div>
       <div class="mi clk" data-p="work" onclick="nav(this)"><span class="ic">▦</span>공종 분석</div>
       <div class="mi clk" data-p="sites" onclick="nav(this)"><span class="ic">🏢</span>고객 자산</div>
+      <div class="mi clk" data-p="dash" onclick="nav(this)"><span class="ic">📊</span>영업 대시보드</div>
       <div class="mi clk" data-p="report" onclick="nav(this)"><span class="ic">📈</span>리포트 · 대표 보고</div>
       <div class="sec">데이터 관리</div>
       <div class="mi clk" data-p="dup" onclick="nav(this)"><span class="ic">⚠️</span>중복현장<span class="badge" id="dupBadge"></span></div>
@@ -1784,7 +1799,7 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
   </aside>
   <div class="main">
     <div class="mhead">
-      <div><h1 id="ptitle">영업 대시보드</h1><div class="sub" id="psub"></div></div>
+      <div><h1 id="ptitle">대시보드</h1><div class="sub" id="psub">CRM이 먼저 가져온 오늘의 우선순위 · 클릭하면 바로 실행</div></div>
       <div class="search">🔍 <input id="q" placeholder="현장·담당자 검색" oninput="G.q=this.value.trim();paint()"></div>
       <span class="live" id="live">연결 중…</span>
       <!-- v4.2: 내가 방금 한 저장이 «서버까지» 갔는지 항상 보이게 (로컬 저장을 성공이라 착각하지 않도록) -->
@@ -1817,7 +1832,9 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
   </div>
   <div class="authnote">비밀번호는 <b style="display:inline">본인 핸드폰 번호 전체</b>입니다 (예: 01012345678).<br>하이픈은 넣어도 되고 안 넣어도 됩니다. 로그인이 안 되면 영업관리팀에 문의하세요.</div>
 </div></div>
-    <div class="apage on" id="pg-dash">
+    <div class="apage on" id="pg-today"><div id="today-home-root"></div></div>
+
+    <div class="apage" id="pg-dash">
       <div class="towerhead"><b>SALES CONTROL TOWER</b><span>유입부터 전환·파이프라인·수주·사람·위험까지 한 화면에서 확인</span>
         <div class="rolesw" id="d-roles"></div></div>
       <div class="headline" id="d-headline" data-role="lead analysis exec"></div>
@@ -2145,6 +2162,37 @@ var CLOSED_INPUT_ST=['수주','실주','배드핏','연락두절'];
    시스템이 실제로 하는 일이 달랐다. */
 var QUALIFY_ST=/견적.*발송/;
 var RESPONDED_ST=/현장\s*방문|전화|응대|방문/;   /* 응대완료 — 아직 인계 전 */
+/* 오늘 홈: 기존 CRM 사실을 재해석하지 않고, 이미 계산 가능한 실행 신호만 묶는다. */
+function todayHoursFrom(value){var t=value&&new Date(value).getTime();return Number.isFinite(t)?Math.max(0,(Date.now()-t)/36e5):null}
+function todayDaysUntil(value){if(!value)return null;var d=new Date(String(value).slice(0,10)+'T00:00:00'),n=new Date();n.setHours(0,0,0,0);return Number.isFinite(d.getTime())?Math.round((d-n)/864e5):null}
+function todayHomeData(){
+ var Q=operationalInquiries(B.inquiries||[]).filter(function(q){return !isClosedInq(q)}),D=(B.deals||[]).filter(towerActive),nearCodes=['compete','imminent','bidding','contract'];
+ var unassigned=Q.filter(function(q){return !inquiryAssigned(q)});
+ var delayed=Q.filter(function(q){var h=todayHoursFrom(inquiryAssignedAt(q)||inquiryCreatedAt(q));return inquiryAssigned(q)&&!inquiryResponded(q)&&h!==null&&h>=3});
+ var noNext=D.filter(function(d){return !actionObj(d,itemPatch(d,'deal'))});
+ var overdue=D.filter(function(d){var a=actionObj(d,itemPatch(d,'deal')),n=a&&todayDaysUntil(a.due);return n!==null&&n<0});
+ var nearIdle=D.filter(function(d){var a=activityAge(d);return nearCodes.indexOf(dealStage(d))>=0&&a!==null&&a>=7});
+ var stale=D.filter(function(d){var a=activityAge(d);return a!==null&&a>=30});
+ var recontact=D.filter(function(d){return ['rapport','silent','waiting'].indexOf(dealStage(d))>=0&&stale.indexOf(d)>=0});
+ return {unassigned:unassigned,delayed:delayed,noNext:noNext,overdue:overdue,nearIdle:nearIdle,stale:stale,recontact:recontact}
+}
+function todaySetView(v){G.todayView=v||'all';paintTodayHome()}
+function todayGo(group){if(group==='inquiry'){G.inqView='console';G.inqPhase='전체';goPage('inq')}else if(group==='support'){goPage('perf')}else{goPage('pipe')}}
+function todaySignal(label,n,desc,tone,group){return '<button class="today-signal '+tone+'" onclick="todayGo(\''+group+'\')"><strong>'+esc(label)+'</strong><b>'+n+'건</b><small>'+esc(desc)+'</small></button>'}
+function todayLane(cls,no,title,count,body){return '<section class="today-lane '+cls+'" data-today-group="'+cls+'"><header class="today-lane-head"><div><span>'+no+'</span><h3>'+title+'</h3></div><b>'+count+'건</b></header><div class="today-signals">'+body+'</div></section>'}
+function paintTodayHome(){
+ var root=$('#today-home-root');if(!root)return;var X=todayHomeData(),view=G.todayView||'all',critical=X.unassigned.length+X.delayed.length+X.overdue.length+X.nearIdle.length,support=X.stale.length,relation=X.recontact.length,day=['일','월','화','수','목','금','토'][new Date().getDay()],date=(new Date().getMonth()+1)+'월 '+new Date().getDate()+'일 '+day+'요일';
+ var lanes={
+  inquiry:todayLane('inquiry','01 · INQUIRY','견적문의',X.unassigned.length+X.delayed.length,todaySignal('미배정 문의',X.unassigned.length,'담당자를 정해야 최초응대가 시작됩니다.','critical','inquiry')+todaySignal('최초응대 지연',X.delayed.length,'배정 후 3시간 이상 응대기록이 없습니다.','critical','inquiry')),
+  sales:todayLane('sales','02 · SALES','영업',X.noNext.length+X.overdue.length+X.nearIdle.length,todaySignal('Next 없음',X.noNext.length,'담당 행동과 기한이 없어 실행목록에서 빠집니다.','critical','sales')+todaySignal('기한초과',X.overdue.length,'약속한 Next Action 날짜가 지났습니다.','critical','sales')+todaySignal('수주임박 무활동',X.nearIdle.length,'경쟁 이후 단계인데 7일 이상 유효접촉이 없습니다.','watch','sales')),
+  support:todayLane('support','03 · SUPPORT','영업지원',support,todaySignal('지원 필요',support,'오래 멈춘 현장의 문구·자료·일정을 확인합니다.','watch','support')),
+  relation:todayLane('relation','04 · RELATION','관계관리',relation,todaySignal('오늘 재접촉',relation,'약속일 또는 장기 무활동 관계를 다시 확인합니다.','good','relation'))
+ };
+ var order=['inquiry','sales','support','relation'],visible=order.filter(function(k){return view==='all'||view===k}).map(function(k){return lanes[k]}).join(''),counts={all:critical+support+relation,inquiry:X.unassigned.length+X.delayed.length,sales:X.noNext.length+X.overdue.length+X.nearIdle.length,support:support,relation:relation};
+ root.innerHTML='<div class="today-home"><section class="today-command"><div class="today-command-top"><div><span class="eyebrow">TODAY · ACTION FIRST</span><h2>오늘은 여기부터 처리하세요.</h2><p>분석 화면을 읽기 전에, 지금 멈춘 일과 지원할 사람을 먼저 가져왔습니다.</p></div><span class="today-date">'+date+' · 실시간</span></div><div class="today-summary"><button class="critical" onclick="todaySetView(\'all\')"><span>지금 우선조치</span><b>'+critical+'건</b><small>미배정·미응대·기한·수주임박</small></button><button onclick="todayGo(\'inquiry\')"><span>견적문의</span><b>'+(X.unassigned.length+X.delayed.length)+'건</b><small>배정·최초응대</small></button><button onclick="todayGo(\'sales\')"><span>영업 실행</span><b>'+(X.noNext.length+X.overdue.length)+'건</b><small>Next·기한</small></button><button class="support" onclick="todayGo(\'support\')"><span>관리자 지원</span><b>'+support+'건</b><small>문구·자료·일정</small></button><button class="relation" onclick="todayGo(\'relation\')"><span>관계관리</span><b>'+relation+'건</b><small>재접촉·문자 검토</small></button></div></section><nav class="today-view-tabs">'+[['all','전체'],['inquiry','견적문의'],['sales','영업'],['support','지원'],['relation','관계관리']].map(function(x){return '<button class="'+(view===x[0]?'on':'')+'" onclick="todaySetView(\''+x[0]+'\')">'+x[1]+' <em>'+counts[x[0]]+'</em></button>'}).join('')+'</nav><div class="today-lanes">'+(visible||'<div class="today-empty">현재 선택 구분의 즉시 조치가 없습니다.</div>')+'</div></div>';
+ var badge=$('#todayBadge');if(badge){badge.textContent=critical||'';badge.style.display=critical?'':'none'}
+}
+
 /* ══════════════════════════════════════════════════════════════
    STAGE MASTER — 단계에 관한 모든 값의 유일한 원본 (2026-09-01)
    화면 코드에 확률·이름·순서를 절대 다시 쓰지 말 것.
@@ -2328,7 +2376,8 @@ var KCOLS=[
  {key:'수주 실패',nm:'수주 실패',sw:'var(--danger)',cls:'lost'},
  {key:'기타',nm:'기타(정리 필요)',sw:'var(--sub)',cls:''}];
 var PAL=['var(--blue)','var(--blue)','var(--blue-100)','var(--warn)','var(--ok)','var(--sub2)'];
-var TITLES={dash:['영업 대시보드','전 브랜드 통합 현황 · Supabase 실데이터'],
+var TITLES={today:['대시보드','CRM이 먼저 가져온 오늘의 우선순위 · 클릭하면 바로 실행'],
+ dash:['영업 대시보드','전 브랜드 통합 현황 · Supabase 실데이터'],
  pipe:['파이프라인','견적문의부터 계약·공사·종료까지 6단계 추적 · 릴레잇은 이관 데이터만 사용'],
  inq:['견적문의 관제','신호 4개만 · 위젯을 누르면 그 자리에서 조치'],
  perf:['담당자 실적','대표 보고용 · 실적 / 미래 가능성 / 관리 리스크'],
@@ -2341,7 +2390,7 @@ var TITLES={dash:['영업 대시보드','전 브랜드 통합 현황 · Supabase
 dup:['중복현장','내역 비교 후 병합 결정 (병합 전 상태)']};
 var B=null;
 var CUR_Y=String(new Date().getFullYear());
-var G={page:'dash',q:'',year:CUR_Y,quarter:0,brand:'전체',rep:'전체',workFilter:'전체',act:false,mode:'list',stage:null,itab:'전체',isub:'assign',rep2:null,repOpen:null,sig:'assign',hideClosed:true,inqSelKey:null,inqAct:null,pipeView:'kb',stageCol:null,closedTab:'수주',sgCase:null,sgRep:null,sgBrand:null,mobView:'week',briefView:'week',lastRep:null,splitStage:null,splitAct:null,splitClosed:null,pipeDiag:null,homeRole:'lead',repBefore:null,repScope:'internal',pipeNoAmt:false,yoyKind:'wonAmt',callPend:null,todoTab:null,siteStatus:'전체',siteBrand:'전체',siteOwner:'전체',siteSort:'관계우선',workSort:'pipeline'};   /* lastRep = 마지막으로 열어 본 현장의 담당자(표시 전용) */
+var G={page:'today',q:'',year:CUR_Y,quarter:0,brand:'전체',rep:'전체',workFilter:'전체',act:false,mode:'list',stage:null,itab:'전체',isub:'assign',rep2:null,repOpen:null,sig:'assign',hideClosed:true,inqSelKey:null,inqAct:null,pipeView:'kb',stageCol:null,closedTab:'수주',sgCase:null,sgRep:null,sgBrand:null,mobView:'week',briefView:'week',lastRep:null,splitStage:null,splitAct:null,splitClosed:null,pipeDiag:null,homeRole:'lead',repBefore:null,repScope:'internal',pipeNoAmt:false,yoyKind:'wonAmt',callPend:null,todoTab:null,todayView:'all',siteStatus:'전체',siteBrand:'전체',siteOwner:'전체',siteSort:'관계우선',workSort:'pipeline'};   /* lastRep = 마지막으로 열어 본 현장의 담당자(표시 전용) */
 var showAll={};
 var LOCAL_KEY='netform_crm_prototype_v2';
 var LOCAL={deals:{},inquiries:{}};
@@ -6949,8 +6998,9 @@ function paint(){
  detachDetail();
  if(_wasDocked&&!(G.page==='pipe'&&G.pipeView==='split'))closeDocked();
  paintPeriod();paintRepTabs();      /* 공통: 기간 바 + 담당자 칩 바 */
- var customerMaster=G.page==='sites',branchPage=G.page==='gyeongnam',periodEl=$('#periodbar'),repEl=$('#reptabs');
- if(periodEl)periodEl.style.display=customerMaster?'none':'';if(repEl)repEl.style.display=(customerMaster||branchPage)?'none':'';
+ var customerMaster=G.page==='sites',branchPage=G.page==='gyeongnam',todayPage=G.page==='today',periodEl=$('#periodbar'),repEl=$('#reptabs');
+ if(periodEl)periodEl.style.display=(customerMaster||todayPage)?'none':'';if(repEl)repEl.style.display=(customerMaster||branchPage||todayPage)?'none':'';
+ if(G.page==='today')paintTodayHome();/* 역할별 오늘 우선순위 */
  if(G.page==='dash')paintDash();    /* 대시보드 */
  if(G.page==='inq')paintInq();      /* 견적문의 관제 (신호 4종) */
  if(G.page==='pipe')paintPipe();    /* 파이프라인 (칸반 7그룹) */
