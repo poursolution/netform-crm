@@ -118,6 +118,20 @@ test('operational transport supports an allowlisted domain subset for progressiv
  assert.match(source,/args\.domains===undefined\?knownDomains:args\.domains/);
  assert.match(source,/INVALID_READ_DOMAINS/);
  assert.match(source,/complete_for_requested_domains/);
+ assert.match(source,/firstPageLimit/);
+ assert.match(source,/onPage\(\{domain,items:items\.slice\(\),has_more:p\.has_more\}\)/);
+});
+
+test('fresh PC paints the first core page before full core pagination completes',async()=>{
+ let releaseCore,painted=[];
+ const coreGate=new Promise(resolve=>{releaseCore=resolve});
+ const root={TOKEN:'token',ME:{id:'user'},B:null,Phase1:{read:async(resource,args)=>{if(args.domains.includes('deal_core')){args.onPage({domain:'deal_core',items:[{id:'deal-first'}],has_more:true});args.onPage({domain:'inquiry_core',items:[{id:'inquiry-first'}],has_more:true});await coreGate;return {data:{deals:[{id:'deal-first'},{id:'deal-last'}],inquiries:[{id:'inquiry-first'}]}};}return {data:{expansion_pool:[],customer_support_actions:[],message_logs:[]}}},queue:{list:()=>[],flush:async()=>[]}},OperationalAdapter:{},addEventListener(){},document:{getElementById:()=>null},applyBundle(bundle){this.B=bundle;painted.push(bundle.deals.length)}};
+ overlay.install(root);
+ const loading=root.loadData();
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.deepEqual(painted,[1]);
+ releaseCore();await loading;
+ assert.deepEqual(painted,[1,2,2]);
 });
 
 test('mobile renders fresh deal core before secondary history completes',async()=>{
