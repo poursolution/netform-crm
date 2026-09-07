@@ -4762,7 +4762,10 @@ function normSite(s){return String(s||'').replace(/\[[^\]]*\]/g,'').replace(/\s+
    (검증 중 실제로 «이미 종료된 딜입니다»가 뜨며 재승격이 막히는 것을 확인).
    ※ 현장명 Join 자체가 임시방편이다. 서버에 SITE_ID 가 생기면 이 함수는 ID 조회로 바뀐다. */
 function linkedDeal(q){
-  var k=normSite(q.site),M=(B.deals||[]).filter(function(d){return normSite(d.site)===k});
+  var explicit=q&&(q.deal_id||q.opportunity_id),byId=explicit&&(B.deals||[]).filter(function(d){return String(d.id||d.opportunity_id)===String(explicit)})[0];
+  if(byId)return byId;
+  var k=normSite(q&&q.site);if(!k)return null;
+  var M=(B.deals||[]).filter(function(d){var dk=normSite(d.site);return !!dk&&dk===k});
   if(!M.length)return null;
   var t=function(d){return String(d.lastActivity||d.created||'')};
   var open=M.filter(isOpen).sort(function(a,b){return t(b).localeCompare(t(a))});
@@ -5280,8 +5283,8 @@ function staleResolved(d,p,type,value,due){
 function issueSet(d){var p=itemPatch(d,'deal'),na=actionObj(d,p),aa=activityAge(d),due=na&&na.due?daysTo(na.due):null,keys=[],assigned=repN(d.assignee)!=='미배정',complete=assigned&&(Number(d.amount||d.amt||p.amount||0)>0||!!amountUnknownReason(d))&&hasActivity(d)&&!!na&&!!(na&&na.due);if(!na)keys.push('nextMissing');if(due!==null&&due<0)keys.push('overdue');if(aa!==null&&aa>itemSla(d,'deal')&&!(due!==null&&due>0))keys.push('stale');if(aa!==null&&aa>365&&!(due!==null&&due>0))keys.push('longTerm');if(aa===null||aa>14)keys.push('recentless');if(!complete)keys.push('crmIncomplete');return keys}
 function issueLabels(d){var k=issueSet(d),p=itemPatch(d,'deal'),na=actionObj(d,p),aa=activityAge(d),due=na&&na.due?daysTo(na.due):null,out=[];if(k.indexOf('nextMissing')>=0)out.push('Next Action 없음');if(k.indexOf('overdue')>=0)out.push('기한초과 D+'+Math.abs(due));if(k.indexOf('longTerm')>=0)out.push((aa||0)+'일 장기 미정리');else if(k.indexOf('stale')>=0)out.push((aa||0)+'일 무활동');if(k.indexOf('crmIncomplete')>=0)out.push('영업정보 미입력');if(!out.length&&na&&due!==null&&due>0)out.push('정상 대기 · D-'+due);return out}
 function inquiryConsultant(q){var p=itemPatch(q,'inq')||{},n=repN(q.consultant_name||q.consultantName||p.consultant_name||p.consultantName||'');if(n!=='미배정')return n;var legacy=repProfile(q.assignee);return legacy.role==='consultation'?repN(q.assignee):''}
-function inquirySalesOwner(q){var n=repN(q.assigned_to||q.sales_assignee||q.salesAssignee||q.assignee),p=repProfile(n);return p.active&&p.salesRep&&p.role!=='branch_pool'?n:''}
-function inquiryRoutedOwner(q){var n=inquirySalesOwner(q);if(n)return n;var raw=repN(q.assigned_to||q.assignee),p=repProfile(raw);return p.active&&p.role==='branch_pool'?raw:''}
+function inquirySalesOwner(q){var n=repN(q.assignee_name||q.sales_assignee||q.salesAssignee||q.assignee||q.assigned_to),p=repProfile(n);return p.active&&p.salesRep&&p.role!=='branch_pool'?n:''}
+function inquiryRoutedOwner(q){var n=inquirySalesOwner(q);if(n)return n;var raw=repN(q.assignee_name||q.assignee||q.assigned_to),p=repProfile(raw);return p.active&&p.role==='branch_pool'?raw:''}
 function inquiryAssigned(q){return !!inquiryRoutedOwner(q)}
 function inquiryResponded(q){var s=String(q.status||'접수');return ['접수','신규','담당자 배정','배정완료',''].indexOf(s)<0||!!(q.firstActivity||q.first_activity||q.respondedAt||q.responded_at)}
 function inquiryIssueMatch(q,kind){if(isClosedInq(q))return false;if(kind==='unassigned')return !inquiryAssigned(q);if(kind==='noResponse')return inquiryAssigned(q)&&!inquiryResponded(q);return true}

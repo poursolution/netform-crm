@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const operationalUi = require('./build-operational-full-ui.cjs');
 
 const root = path.resolve(__dirname, '..');
 const source = path.join(root, 'staging-operational-full');
@@ -55,6 +56,7 @@ function productionText(text, file) {
 }
 
 function build() {
+  operationalUi.build();
   if (!fs.existsSync(source)) throw Error(`MISSING_ASSEMBLED_SOURCE:${source}`);
   copyTree(source, output);
   const runtimeFiles = [];

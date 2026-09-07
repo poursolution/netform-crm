@@ -29,9 +29,22 @@ function sanitizeLegacyEndpoints(html,file){
  return next;
 }
 
+function hardenCrmReadMappings(html){
+ const newLink="function linkedDeal(q){\n  var explicit=q&&(q.deal_id||q.opportunity_id),byId=explicit&&(B.deals||[]).filter(function(d){return String(d.id||d.opportunity_id)===String(explicit)})[0];\n  if(byId)return byId;\n  var k=normSite(q&&q.site);if(!k)return null;\n  var M=(B.deals||[]).filter(function(d){var dk=normSite(d.site);return !!dk&&dk===k});";
+ const beforeLink=html;
+ html=html.replace(/function linkedDeal\(q\)\{\r?\n  var k=normSite\(q\.site\),M=\(B\.deals\|\|\[\]\)\.filter\(function\(d\)\{return normSite\(d\.site\)===k\}\);/,newLink);
+ if(html===beforeLink)throw Error('CRM_LINK_MAPPING_DRIFT');
+ const oldOwner=/function inquirySalesOwner\(q\)\{var n=repN\(q\.assigned_to\|\|q\.sales_assignee\|\|q\.salesAssignee\|\|q\.assignee\),p=repProfile\(n\);return p\.active&&p\.salesRep&&p\.role!==\'branch_pool\'\?n:\'\'\}\r?\nfunction inquiryRoutedOwner\(q\)\{var n=inquirySalesOwner\(q\);if\(n\)return n;var raw=repN\(q\.assigned_to\|\|q\.assignee\),p=repProfile\(raw\);return p\.active&&p\.role===\'branch_pool\'\?raw:\'\'\}/;
+ const newOwner="function inquirySalesOwner(q){var n=repN(q.assignee_name||q.sales_assignee||q.salesAssignee||q.assignee||q.assigned_to),p=repProfile(n);return p.active&&p.salesRep&&p.role!=='branch_pool'?n:''}\nfunction inquiryRoutedOwner(q){var n=inquirySalesOwner(q);if(n)return n;var raw=repN(q.assignee_name||q.assignee||q.assigned_to),p=repProfile(raw);return p.active&&p.role==='branch_pool'?raw:''}";
+ const beforeOwner=html;html=html.replace(oldOwner,newOwner);
+ if(html===beforeOwner)throw Error('CRM_OWNER_MAPPING_DRIFT');
+ return html;
+}
+
 function injectPage(file){
  const target=path.join(out,file),before=fs.readFileSync(target,'utf8');
  let html=sanitizeLegacyEndpoints(before,file);
+ if(file==='crm.html')html=hardenCrmReadMappings(html);
  const oldHead='<script src="/phase1-config.js"></script><script src="/transport.js"></script>';
  const newHead='<script src="/phase1-config.js"></script><script src="/operational-adapter.js"></script><script src="/transport.js"></script>';
  html=html.replace(oldHead,newHead);
@@ -90,4 +103,4 @@ function build(){
 }
 
 if(require.main===module)console.log(JSON.stringify(build(),null,2));
-module.exports={root,base,candidate,out,build,sanitizeLegacyEndpoints};
+module.exports={root,base,candidate,out,build,sanitizeLegacyEndpoints,hardenCrmReadMappings};
