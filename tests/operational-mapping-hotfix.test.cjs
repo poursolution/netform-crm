@@ -25,11 +25,47 @@ test('operational shell restores legacy deal and inquiry field aliases',()=>{
  assert.equal(bundle.repManagerComments.length,1);
 });
 
+test('operational shell standardizes supported site labels without inventing a region',()=>{
+ const bundle=overlay.shell({
+  deals:[{id:'d1',site_name:'현진에버빌아파트',site_address:'서울특별시 마포구 월드컵로 1',stage_code:'sent'}],
+  inquiries:[
+   {id:'i1',message:'■ 현장 · 공장 : 도장 공장\n■ 문의내용 : 기술자문',received_at:'2026-09-07T01:00:00Z'},
+   {id:'abc12345',received_at:'2026-09-07T01:00:00Z'}
+  ]
+ });
+ assert.equal(bundle.deals[0].site,'[서울 마포] 현진에버빌아파트');
+ assert.equal(bundle.inquiries[0].site,'도장 공장');
+ assert.equal(bundle.inquiries[1].site,'견적문의 · 2026-09-07 · #c12345');
+ assert.doesNotMatch(bundle.inquiries[1].site,/현장명 미입력/);
+ assert.equal(overlay.shell({deals:[{id:'d2',site_address:'서울특별시 마포구 월드컵로 1',stage_code:'sent'}]}).deals[0].site,'영업기회 · d2');
+});
+
 test('PC inquiry linking rejects empty-site joins and prefers explicit ids',()=>{
  const html=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
  assert.match(html,/if\(byId\)return byId;/);
  assert.match(html,/if\(!k\)return null;/);
  assert.match(html,/q\.assignee_name\|\|q\.sales_assignee/);
+});
+
+test('nearby visit suggestions stay inside the current salesperson ownership',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
+ assert.match(html,/repN\(d\.assignee\)===owner/);
+ assert.match(html,/내 담당 현장만/);
+});
+
+test('journey uses the seven existing business sections with a distinct current-state card',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
+ assert.match(html,/FLOW_STEPS=\['견적문의 접수','응대·현장파악','견적서 발송','영업·관계관리','경쟁·입찰','계약·시공','수주·실주·종료'\]/);
+ assert.match(html,/journey-current/);
+ assert.match(html,/class="jstep[^\n]+jstep-no/);
+ assert.match(html,/\.jstep\.now\{[^}]+linear-gradient/);
+});
+
+test('customer asset opportunities show enough identity to distinguish similar rows',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
+ assert.match(html,/공사명 · 공종 · 등록일 · ID로 구분/);
+ assert.match(html,/class="opp-name"/);
+ assert.match(html,/String\(d\.id\|\|''\)\.slice\(-6\)/);
 });
 
 test('operational read starts without a blocking overlay and coalesces duplicate refreshes',()=>{
