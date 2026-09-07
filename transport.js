@@ -4,7 +4,8 @@
  const REF='ymfbmpnizxvqsamnczow',VERSION=2,c=root.PHASE1_CONFIG;
  if(!c||c.project_ref!==REF||c.url!==`https://${REF}.supabase.co`||!c.publishable_key||!['poursolution.github.io','127.0.0.1','localhost'].includes(location.hostname))throw Error('PHASE1_WRONG_ENVIRONMENT');
  const origin=new URL(c.url).origin,base=`crm:production:${REF}:v${VERSION}:`,nativeLocal=root.localStorage,nativeSession=root.sessionStorage;
- const fetchNative=root.fetch.bind(root),requests=[],blocked=[];let client,profile=null,epoch=0,activeUid=null,controllers=new Set();
+ const fetchNative=root.fetch.bind(root),webSocketNative=root.WebSocket,requests=[],blocked=[];let client,profile=null,epoch=0,activeUid=null,controllers=new Set(),sdkChannel=null,realtimeChannel=null,realtimeStatus='CLOSED';
+ const realtimeListeners=new Map();
  const rpcAllow=new Set(['crm_profile_scoped_v2','crm_read_scoped_v2','crm_contacts_scoped_v2','crm_write_command_v2','crm_operational_source_v1','crm_expansion_note','crm_expansion_context']);
  function allowed(input){const u=new URL(typeof input==='string'?input:input.url||String(input),location.href);
   if(u.origin===location.origin)return u;
@@ -13,11 +14,16 @@
  root.fetch=async function(input,init){const u=allowed(input);requests.push({origin:u.origin,path:u.pathname,method:init?.method||'GET'});return fetchNative(input,init);};
  const open=root.XMLHttpRequest.prototype.open;
  root.XMLHttpRequest.prototype.open=function(method,url,...args){allowed(url);return open.call(this,method,url,...args);};
- root.WebSocket=function(){blocked.push({path:'websocket'});throw Error('PHASE1_REALTIME_NOT_ENABLED');};
+ /* Realtime is signal-only. Keep arbitrary sockets blocked and allow only this
+    project's official Supabase endpoint; row payloads never leave Phase1. */
+ function GuardedWebSocket(url,protocols){const u=new URL(String(url),location.href);if(!webSocketNative||u.protocol!=='wss:'||u.hostname!==REF+'.supabase.co'||u.pathname!=='/realtime/v1/websocket'){blocked.push({origin:u.origin,path:u.pathname});throw Error('PHASE1_WEBSOCKET_DENIED');}requests.push({origin:u.origin,path:u.pathname,method:'WEBSOCKET'});return protocols===undefined?new webSocketNative(url):new webSocketNative(url,protocols);}
+ if(webSocketNative){GuardedWebSocket.prototype=webSocketNative.prototype;for(const k of ['CONNECTING','OPEN','CLOSING','CLOSED'])if(k in webSocketNative)Object.defineProperty(GuardedWebSocket,k,{value:webSocketNative[k]});}
+ root.WebSocket=GuardedWebSocket;
  navigator.sendBeacon=function(){blocked.push({path:'beacon'});return false;};
  function purgeApp(){for(let i=nativeLocal.length-1;i>=0;i--){const k=nativeLocal.key(i);if(k.startsWith(base))nativeLocal.removeItem(k);}}
  function purgeAuth(){for(let i=nativeSession.length-1;i>=0;i--){const k=nativeSession.key(i);if(k.startsWith(base))nativeSession.removeItem(k);}}
- function invalidate(){epoch++;for(const x of controllers)x.abort();controllers.clear();profile=null;activeUid=null;purgeApp();purgeAuth();root.dispatchEvent(new Event('phase1:identity-cleared'));}
+ function stopRealtime(){const ch=realtimeChannel;realtimeChannel=null;realtimeStatus='CLOSED';if(ch)Promise.resolve(ch.unsubscribe()).catch(()=>{});}
+ function invalidate(){epoch++;for(const x of controllers)x.abort();controllers.clear();stopRealtime();realtimeListeners.clear();profile=null;activeUid=null;purgeApp();purgeAuth();root.dispatchEvent(new Event('phase1:identity-cleared'));}
  const channel=typeof BroadcastChannel==='function'?new BroadcastChannel(base+'identity'):null;
  if(channel)channel.onmessage=()=>{invalidate();location.reload();};
  const authStorage={getItem(){const uid=nativeSession.getItem(base+'auth-locator');if(!uid)return null;const raw=nativeSession.getItem(base+uid+':auth');try{const s=JSON.parse(raw);if(!s||s.user?.id!==uid||typeof s.access_token!=='string'||typeof s.refresh_token!=='string')throw Error('INVALID_SESSION');return raw;}catch{invalidate();return null;}},
@@ -30,12 +36,21 @@
  const sessionCache={getItem(k){const key=sessionKey(k);if(!key)return null;const raw=nativeSession.getItem(key);if(raw===null)return null;let record;try{record=JSON.parse(raw);}catch{nativeSession.removeItem(key);return null;}if(record?.version!==VERSION||record.auth_uid!==activeUid||typeof record.value!=='string'||!Number.isFinite(record.at)||Date.now()-record.at>900000||record.at>Date.now()+60000){nativeSession.removeItem(key);return null;}return record.value;},setItem(k,v){const key=sessionKey(k);if(!key)throw Error('AUTH_REQUIRED');nativeSession.setItem(key,JSON.stringify({version:VERSION,auth_uid:activeUid,at:Date.now(),value:String(v)}));},removeItem(k){const key=sessionKey(k);if(key)nativeSession.removeItem(key);}};
  function createClient(url,key){if(url!==c.url||key!==c.publishable_key)throw Error('PHASE1_CLIENT_MISMATCH');if(client)return client;
   client=root.supabase.createClient(url,key,{auth:{storage:authStorage,storageKey:base+'sdk',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false},global:{fetch:root.fetch}});
+  sdkChannel=client.channel.bind(client);
   client.from=()=>{throw Error('PHASE1_DIRECT_TABLE_DENIED');};
   const sdkRpc=client.rpc.bind(client);client.rpc=(name,args)=>{if(!rpcAllow.has(name))throw Error('PHASE1_RPC_DENIED');return sdkRpc(name,args);};
   client.channel=()=>{const inert={on(){return inert;},subscribe(){return inert;},unsubscribe(){return Promise.resolve();}};return inert;};
   client.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT')invalidate();});
   return client;
  }
+ function publishRealtimeStatus(status){realtimeStatus=status;for(const entry of realtimeListeners.values())try{entry.onStatus(status);}catch{}}
+ function publishRealtimeSignal(table,eventType){const signal=Object.freeze({table,event_type:eventType||'*'});for(const entry of realtimeListeners.values())try{entry.onSignal(signal);}catch{}}
+ function ensureRealtime(){if(realtimeChannel||!sdkChannel||!profile)return;const generation=epoch;
+  let ch=sdkChannel('crm-operational-core-'+String(profile.auth_uid).slice(0,8));
+  for(const table of ['opportunities','inquiries','activities'])ch=ch.on('postgres_changes',{event:'*',schema:'public',table},payload=>{if(generation===epoch&&profile)publishRealtimeSignal(table,payload&&payload.eventType);});
+  realtimeChannel=ch;publishRealtimeStatus('CONNECTING');ch.subscribe(status=>{if(generation!==epoch)return;publishRealtimeStatus(status);});
+ }
+ function subscribe(resource,onSignal,onStatus){if(resource!=='operational_core')throw Error('REALTIME_RESOURCE_DENIED');if(!profile||!client)throw Error('AUTH_REQUIRED');if(typeof onSignal!=='function')throw Error('REALTIME_HANDLER_REQUIRED');const key=Symbol(resource);realtimeListeners.set(key,{onSignal,onStatus:typeof onStatus==='function'?onStatus:()=>{}});ensureRealtime();try{realtimeListeners.get(key).onStatus(realtimeStatus);}catch{}return function(){realtimeListeners.delete(key);if(!realtimeListeners.size)stopRealtime();};}
  async function rpc(name,args={}){if(!rpcAllow.has(name))throw Error('CONTRACT_UNAVAILABLE');const e=epoch;
   const session=(await client.auth.getSession()).data.session;if(!session)throw Error('AUTH_REQUIRED');
   const controller=new AbortController();controllers.add(controller);const timer=setTimeout(()=>controller.abort(),15000);
@@ -56,12 +71,12 @@
   if(resource==='operational'){
    const limit=args.limit===undefined?100:args.limit;if(!Number.isInteger(limit)||limit<1||limit>100)throw Error('INVALID_LIMIT');
    const firstPageLimit=args.firstPageLimit===undefined?limit:args.firstPageLimit;if(!Number.isInteger(firstPageLimit)||firstPageLimit<1||firstPageLimit>limit)throw Error('INVALID_FIRST_PAGE_LIMIT');
-   const onPage=typeof args.onPage==='function'?args.onPage:null;
+   const onPage=typeof args.onPage==='function'?args.onPage:null,maxItems=args.maxItems===undefined?null:args.maxItems;if(maxItems!==null&&(!Number.isInteger(maxItems)||maxItems<1||maxItems>5000))throw Error('INVALID_MAX_ITEMS');const truncated=new Set();
    const knownDomains=['deal_core','inquiry_core','expansion_pool','customer_support_action','message_log'],domains=args.domains===undefined?knownDomains:args.domains;
    if(!Array.isArray(domains)||!domains.length||domains.some((domain,index)=>!knownDomains.includes(domain)||domains.indexOf(domain)!==index))throw Error('INVALID_READ_DOMAINS');
-   async function collect(domain){const items=[],seen=new Set();let after=null;for(let pageNo=0;pageNo<500;pageNo++){const pageLimit=pageNo===0?firstPageLimit:limit,result=await rpc('crm_operational_source_v1',{p_domain:domain,p_after:after,p_limit:pageLimit}),p=result?.pagination;if(result?.contract_version!==1||result.resource!=='operational_source'||result.domain!==domain||result.scope_completeness!=='actor_authorized_rows_only'||!Array.isArray(result.items)||!p||!['complete','partial'].includes(p.completeness)||typeof p.has_more!=='boolean'||p.has_more!==(p.completeness==='partial')||p.has_more!==(typeof p.next_cursor==='string'))throw Error('READ_CONTRACT_MISMATCH');for(const item of result.items){if(!item?.id||seen.has(item.id))throw Error('READ_CONTRACT_MISMATCH');seen.add(item.id);items.push(item);}if(onPage)onPage({domain,items:items.slice(),has_more:p.has_more});if(!p.has_more)return items;if(p.next_cursor===after)throw Error('READ_CURSOR_STALLED');after=p.next_cursor;}throw Error('READ_INCOMPLETE');}
+   async function collect(domain){const items=[],seen=new Set();let after=null;for(let pageNo=0;pageNo<500;pageNo++){const pageLimit=pageNo===0?firstPageLimit:limit,result=await rpc('crm_operational_source_v1',{p_domain:domain,p_after:after,p_limit:pageLimit}),p=result?.pagination;if(result?.contract_version!==1||result.resource!=='operational_source'||result.domain!==domain||result.scope_completeness!=='actor_authorized_rows_only'||!Array.isArray(result.items)||!p||!['complete','partial'].includes(p.completeness)||typeof p.has_more!=='boolean'||p.has_more!==(p.completeness==='partial')||p.has_more!==(typeof p.next_cursor==='string'))throw Error('READ_CONTRACT_MISMATCH');for(const item of result.items){if(!item?.id||seen.has(item.id))throw Error('READ_CONTRACT_MISMATCH');seen.add(item.id);items.push(item);if(maxItems&&items.length>=maxItems)break;}const capped=!!(maxItems&&items.length>=maxItems&&p.has_more);if(onPage)onPage({domain,items:items.slice(),has_more:p.has_more&&!capped});if(capped){truncated.add(domain);return items;}if(!p.has_more)return items;if(p.next_cursor===after)throw Error('READ_CURSOR_STALLED');after=p.next_cursor;}throw Error('READ_INCOMPLETE');}
    const rows=Object.fromEntries(await Promise.all(domains.map(async domain=>[domain,await collect(domain)]))),deals=rows.deal_core||[],inquiries=rows.inquiry_core||[],expansion_pool=rows.expansion_pool||[],customer_support_actions=rows.customer_support_action||[],message_logs=rows.message_log||[];
-   return {contract_version:1,resource,coverage:domains.length===knownDomains.length?'complete_for_actor_scope':'complete_for_requested_domains',scope:'actor_authorized_rows_only',data:{contract_version:5,loaded_domains:domains.slice(),deals,inquiries,expansion_pool,customer_support_actions,customerSupportActions:customer_support_actions,message_logs,messageLogs:message_logs,expansion_events:expansion_pool.flatMap(x=>Array.isArray(x.events)?x.events:[])}};
+   return {contract_version:1,resource,coverage:truncated.size?'recent_window_for_requested_domains':domains.length===knownDomains.length?'complete_for_actor_scope':'complete_for_requested_domains',scope:'actor_authorized_rows_only',data:{contract_version:5,loaded_domains:domains.slice(),truncated_domains:[...truncated],deals,inquiries,expansion_pool,customer_support_actions,customerSupportActions:customer_support_actions,message_logs,messageLogs:message_logs,expansion_events:expansion_pool.flatMap(x=>Array.isArray(x.events)?x.events:[])}};
   }
   if(resource!=='work_items')return {contract_version:1,resource,coverage:'unavailable',scope:'authorized_only',data:null,reason:'CONTRACT_MISSING'};
   if(!args.opportunity_id)throw Error('TARGET_REQUIRED');
@@ -99,6 +114,6 @@
  async function uploadAttachment(meta,file){if(!profile||!client)throw Error('AUTH_REQUIRED');if(!meta||!file||meta.size_bytes!==file.size)throw Error('INVALID_ATTACHMENT_FILE');const prep=await attachmentCommand('attachment_prepare',meta.opportunity_id,meta),bucket=client.storage.from(prep.bucket_id),signed=await bucket.createSignedUploadUrl(prep.object_path);if(signed.error||!signed.data?.token)throw Error(signed.error?.message||'ATTACHMENT_SIGN_FAILED');const uploaded=await bucket.uploadToSignedUrl(prep.object_path,signed.data.token,file,{contentType:meta.mime_type,upsert:false});if(uploaded.error)throw Error(uploaded.error.message||'ATTACHMENT_UPLOAD_FAILED');const done=await attachmentCommand('attachment_complete',meta.opportunity_id,{opportunity_id:meta.opportunity_id,attachment_id:prep.attachment_id,object_path:prep.object_path,file_name:meta.file_name,mime_type:meta.mime_type,size_bytes:meta.size_bytes,category:meta.category,tags:meta.tags,memo:meta.memo,uploaded_by:meta.uploaded_by});return Object.assign({},meta,done.attachment||{},{id:done.attachment_id,status:'ready'});}
  function restoreQueue(){if(!activeUid)return;const rows=list();let changed=false;for(const q of rows)if(q.status==='sending'){q.status='uncertain';changed=true;}if(changed)save(rows);}
  root.addEventListener('phase1:profile',restoreQueue);
- root.Phase1=Object.freeze({config:c,createClient,admit,beginLogin,signOut,storage,sessionCache,mode,read,rpc,queue:{enqueue,flush,list,validateAck},uploadAttachment,get profile(){return profile;},requests,blocked,
+ root.Phase1=Object.freeze({config:c,createClient,admit,beginLogin,signOut,storage,sessionCache,mode,read,rpc,subscribe,queue:{enqueue,flush,list,validateAck},uploadAttachment,get profile(){return profile;},get realtimeStatus(){return realtimeStatus;},requests,blocked,
   loginEmail(name){return c.accounts.find(a=>a.name.replace(/\s/g,'')===String(name).replace(/\s/g,''))?.email||null;}});
 })(window);

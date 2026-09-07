@@ -68,6 +68,32 @@ test('customer asset opportunities show enough identity to distinguish similar r
  assert.match(html,/String\(d\.id\|\|''\)\.slice\(-6\)/);
 });
 
+test('pipeline to customer assets avoids repeated full relationship assembly',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
+ assert.match(html,/SITE_MASTER_DATA_CACHE/);
+ assert.match(html,/scheduleSiteMasterWarmup\(\)/);
+ assert.match(html,/if\(!hidePeriod\)paintPeriod\(\);if\(!hideRep\)paintRepTabs\(\)/);
+ assert.match(html,/content-visibility:auto;contain-intrinsic-size:auto 72px/);
+});
+
+test('quote inbox has a focused refresh safety net when realtime delivery is unavailable',()=>{
+ const pc=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
+ const mobile=fs.readFileSync(path.join(__dirname,'..','mobile.html'),'utf8');
+ assert.match(pc,/INQUIRY_SYNC_MS=15000/);
+ assert.match(pc,/refreshOperationalDomains\(\['inquiry_core'\],'inquiry-poll'\)/);
+ assert.match(mobile,/INQUIRY_SYNC_MS=30000/);
+ assert.match(mobile,/refreshOperationalDomains\(\['inquiry_core'\],'inquiry-poll'\)/);
+});
+
+test('message campaign history and analysis can be filtered by year',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
+ assert.match(html,/campaignYear:'전체'/);
+ assert.match(html,/function campaignYearTabs\(\)/);
+ assert.match(html,/\['전체',String\(cy\),String\(cy-1\),String\(cy-2\),'이전'\]/);
+ assert.match(html,/campaignLogs\(\)\.filter\(campaignYearMatch\)/);
+ assert.match(html,/function nav\(el\)[^\n]+loadOperationalPageData\(G\.page\)/);
+});
+
 test('operational read starts without a blocking overlay and coalesces duplicate refreshes',()=>{
  const source=fs.readFileSync(path.join(__dirname,'..','operational-overlay.js'),'utf8');
  assert.match(source,/getElementById\('load'\);if\(el\)el\.style\.display='none'/);
@@ -91,25 +117,19 @@ test('concurrent PC refreshes share one progressive load job',async()=>{
  const first=root.loadData(),second=root.loadData();
  assert.strictEqual(first,second);
  release();await Promise.all([first,second]);
- assert.equal(reads,2);assert.equal(renders,2);
+ assert.equal(reads,1);assert.equal(renders,1);
 });
 
-test('reload paints snapshot, then fresh core before secondary history completes',async()=>{
- let releaseSecondary,reads=0,stored='',painted=[];
- const secondaryGate=new Promise(resolve=>{releaseSecondary=resolve});
+test('reload paints snapshot, then fresh core without downloading all history',async()=>{
+ let reads=0,stored='',painted=[];
  const cached={contract_version:2,generated_at:'2026-09-07T00:00:00Z',deals:[{id:'cached'}],inquiries:[]};
  const elements={load:{style:{}},live:{textContent:'',classList:{toggle(){}}},err:{textContent:'',style:{}}};
- const root={TOKEN:'token',ME:{id:'user'},B:null,console,Phase1:{config:{project_ref:'rprechiaglyjaydkmxsu'},sessionCache:{getItem:()=>JSON.stringify(cached),setItem:(k,v)=>{stored=v},removeItem(){}},read:async(resource,args)=>{reads++;if(args.domains.includes('deal_core'))return {data:{deals:[{id:'fresh'}],inquiries:[]}};await secondaryGate;return {data:{expansion_pool:[],customer_support_actions:[],message_logs:[]}}},queue:{list:()=>[],flush:async()=>[]}},OperationalAdapter:{},addEventListener(){},document:{getElementById:id=>elements[id]||null},applyBundle(bundle){this.B=bundle;painted.push(bundle.deals[0].id)}};
+ const root={TOKEN:'token',ME:{id:'user'},B:null,console,Phase1:{config:{project_ref:'rprechiaglyjaydkmxsu'},sessionCache:{getItem:()=>JSON.stringify(cached),setItem:(k,v)=>{stored=v},removeItem(){}},read:async(resource,args)=>{reads++;assert.deepEqual(args.domains,['deal_core','inquiry_core']);return {data:{deals:[{id:'fresh'}],inquiries:[]}}},queue:{list:()=>[],flush:async()=>[]}},OperationalAdapter:{},addEventListener(){},document:{getElementById:id=>elements[id]||null},applyBundle(bundle){this.B=bundle;painted.push(bundle.deals[0].id)}};
  overlay.install(root);
- const loading=root.loadData();
- await new Promise(resolve=>setImmediate(resolve));
+ await root.loadData();
  assert.deepEqual(painted,['cached','fresh']);
- assert.equal(elements.live.textContent,'핵심 데이터 최신 · 이력 불러오는 중');
- assert.equal(stored,'');
- releaseSecondary();await loading;
- assert.deepEqual(painted,['cached','fresh','fresh']);
- assert.equal(elements.live.textContent,'데이터 최신');
- assert.equal(reads,2);
+ assert.equal(elements.live.textContent,'핵심 데이터 최신');
+ assert.equal(reads,1);
  assert.match(stored,/fresh/);
 });
 
@@ -119,7 +139,9 @@ test('operational transport supports an allowlisted domain subset for progressiv
  assert.match(source,/INVALID_READ_DOMAINS/);
  assert.match(source,/complete_for_requested_domains/);
  assert.match(source,/firstPageLimit/);
- assert.match(source,/onPage\(\{domain,items:items\.slice\(\),has_more:p\.has_more\}\)/);
+ assert.match(source,/onPage\(\{domain,items:items\.slice\(\),has_more:p\.has_more&&!capped\}\)/);
+ assert.match(source,/recent_window_for_requested_domains/);
+ assert.match(fs.readFileSync(path.join(__dirname,'..','operational-overlay.js'),'utf8'),/firstPageLimit:100/);
 });
 
 test('fresh PC paints the first core page before full core pagination completes',async()=>{
@@ -131,20 +153,17 @@ test('fresh PC paints the first core page before full core pagination completes'
  await new Promise(resolve=>setImmediate(resolve));
  assert.deepEqual(painted,[1]);
  releaseCore();await loading;
- assert.deepEqual(painted,[1,2,2]);
+ assert.deepEqual(painted,[1,2]);
 });
 
-test('mobile renders fresh deal core before secondary history completes',async()=>{
- let releaseSecondary,renders=0;
- const secondaryGate=new Promise(resolve=>{releaseSecondary=resolve});
- const root={TOKEN:'token',CUR:'today',Phase1:{read:async(resource,args)=>{if(args.domains.includes('deal_core'))return {data:{deals:[{id:'deal-1',site_name:'빠른 현장',stage_code:'consulting',amount:100}],inquiries:[]}};await secondaryGate;return {data:{expansion_pool:[],customer_support_actions:[],message_logs:[]}}},queue:{list:()=>[],flush:async()=>[]}},OperationalAdapter:{},normalizeDeal:d=>d,rebuildAdmin(){},render(){renders++},addEventListener(){},document:{getElementById:()=>null}};
+test('mobile renders core without downloading secondary history',async()=>{
+ let renders=0,reads=0;
+ const root={TOKEN:'token',CUR:'today',Phase1:{read:async(resource,args)=>{reads++;args.onPage({domain:'deal_core',items:[{id:'deal-1',site_name:'빠른 현장',stage_code:'consulting',amount:100}],has_more:false});args.onPage({domain:'inquiry_core',items:[],has_more:false});return {data:{deals:[{id:'deal-1',site_name:'빠른 현장',stage_code:'consulting',amount:100}],inquiries:[]}}},queue:{list:()=>[],flush:async()=>[]}},OperationalAdapter:{},normalizeDeal:d=>d,rebuildAdmin(){},render(){renders++},addEventListener(){},document:{getElementById:()=>null}};
  overlay.install(root);
- const loading=root.loadLive();
- await new Promise(resolve=>setImmediate(resolve));
- assert.equal(renders,1);
- assert.equal(root.DEALS[0].nm,'빠른 현장');
- releaseSecondary();await loading;
+ await root.loadLive();
+ assert.equal(reads,1);
  assert.equal(renders,2);
+ assert.equal(root.DEALS[0].nm,'빠른 현장');
 });
 
 test('view snapshot is session-only and identity scoped',()=>{
@@ -152,4 +171,33 @@ test('view snapshot is session-only and identity scoped',()=>{
  assert.match(source,/nativeSession\.setItem\(key,JSON\.stringify/);
  assert.match(source,/base\+activeUid\+'\:view\:'/);
  assert.doesNotMatch(source,/nativeLocal\.setItem\(key,JSON\.stringify\(\{version:VERSION,auth_uid:activeUid,at:Date\.now\(\),value:String\(v\)\}\)\);\},removeItem\(k\)\{const key=sessionKey/);
+});
+
+test('realtime is constrained to Supabase signals and refreshes only the changed domain',()=>{
+ const transport=fs.readFileSync(path.join(__dirname,'..','transport.js'),'utf8');
+ const source=fs.readFileSync(path.join(__dirname,'..','operational-overlay.js'),'utf8');
+ assert.match(transport,/u\.hostname!==REF\+'\.supabase\.co'\|\|u\.pathname!=='\/realtime\/v1\/websocket'/);
+ assert.match(transport,/client\.channel=\(\)=>\{const inert=/);
+ assert.match(transport,/subscribe\(resource,onSignal,onStatus\)/);
+ assert.match(transport,/Object\.freeze\(\{table,event_type:eventType\|\|'\*'\}\)/);
+ assert.match(source,/table==='inquiries'\?'inquiry_core':'deal_core'/);
+ assert.match(source,/root\.refreshOperationalDomains\(domains,'realtime'\)/);
+});
+
+test('domain refresh preserves unrelated cached rows and marks a partial paint',async()=>{
+ const painted=[];
+ const root={TOKEN:'token',ME:{id:'user'},B:{contract_version:2,deals:[{id:'deal-old'}],inquiries:[{id:'inquiry-old'}],message_logs:[]},Phase1:{profile:null,read:async(resource,args)=>{assert.deepEqual(args.domains,['inquiry_core']);return {data:{inquiries:[{id:'inquiry-new',site_name:'새 문의'}]}}},queue:{list:()=>[],flush:async()=>[]}},OperationalAdapter:{},addEventListener(){},document:{getElementById:()=>null},applyBundle(bundle,domains){this.B=bundle;painted.push(domains)}};
+ overlay.install(root);
+ await root.refreshOperationalDomains(['inquiry_core'],'realtime');
+ assert.deepEqual(root.B.deals.map(x=>x.id),['deal-old']);
+ assert.deepEqual(root.B.inquiries.map(x=>x.id),['inquiry-new']);
+ assert.deepEqual(painted,[['inquiry_core']]);
+});
+
+test('pipeline quick selection replaces only the detail panel',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
+ assert.match(html,/id="pipeline-quick-panel"/);
+ assert.match(html,/onclick="selectSplitDeal\(this\)"/);
+ assert.match(html,/panel\.outerHTML=quickPanelHTML\(d\)/);
+ assert.doesNotMatch(html,/onclick="G\.splitScroll=this\.parentElement\.scrollTop;G\.splitKey=this\.dataset\.k;G\.splitForm=null;paint\(\)"/);
 });
