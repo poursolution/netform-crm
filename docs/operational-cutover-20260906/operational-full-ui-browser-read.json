@@ -1,8 +1,8 @@
 {
   "project_ref": "rprechiaglyjaydkmxsu",
-  "at": "2026-09-06T13:47:59.382Z",
+  "at": "2026-09-07T01:09:06.741Z",
   "scope": "real browser + real Staging Auth/scoped complete actor read; no business DML",
-  "ui_manifest_sha256": "c08d5538b6dd4dea65e37110c45b5bb123f8e4cc6fa71a90a7c413881b248c00",
+  "ui_manifest_sha256": "b8054c74c802d0eab5f0f81dcb4bda416b3125015b45001967fe16ae262f1dcb",
   "transport_sha256": "53f50ba5362c4689cef444ce30096c23f7f7b9cecbd313140ce44303ef3b9469",
   "adapter_sha256": "88af52ed8c3e2684d1b0a89735e2ac4731a55e25946e89434a054c87dee941bc",
   "overlay_sha256": "c7200ef41b0ac9007ba4bf8b0054fb19b74d367795b8d8fb71dd8081630050c4",
