@@ -35,7 +35,7 @@ test('operational shell standardizes supported site labels without inventing a r
  });
  assert.equal(bundle.deals[0].site,'[서울 마포] 현진에버빌아파트');
  assert.equal(bundle.inquiries[0].site,'도장 공장');
- assert.equal(bundle.inquiries[1].site,'견적문의 · 2026-09-07 · #c12345');
+ assert.equal(bundle.inquiries[1].site,'문의내용 미분류 · 2026-09-07 · #c12345');
  assert.doesNotMatch(bundle.inquiries[1].site,/현장명 미입력/);
  assert.equal(overlay.shell({deals:[{id:'d2',site_address:'서울특별시 마포구 월드컵로 1',stage_code:'sent'}]}).deals[0].site,'영업기회 · d2');
 });
@@ -80,9 +80,26 @@ test('quote inbox has a focused refresh safety net when realtime delivery is una
  const pc=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
  const mobile=fs.readFileSync(path.join(__dirname,'..','mobile.html'),'utf8');
  assert.match(pc,/INQUIRY_SYNC_MS=15000/);
+ assert.doesNotMatch(pc,/syncInquiryNow\(force\)[\s\S]{0,240}\['today','dash','inq'\]/);
  assert.match(pc,/refreshOperationalDomains\(\['inquiry_core'\],'inquiry-poll'\)/);
  assert.match(mobile,/INQUIRY_SYNC_MS=30000/);
  assert.match(mobile,/refreshOperationalDomains\(\['inquiry_core'\],'inquiry-poll'\)/);
+ assert.match(fs.readFileSync(path.join(__dirname,'..','operational-overlay.js'),'utf8'),/reason==='realtime'\|\|reason==='inquiry-poll'/);
+});
+
+test('today manager intervention identifies inquiries with actionable context',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
+ assert.match(html,/function todayPriorityMeta\(x\)/);
+ assert.match(html,/문의내용 미분류/);
+ assert.match(html,/연락처 미확인/);
+ assert.match(html,/todayPriorityMeta\(x\)/);
+});
+
+test('unchanged realtime refreshes do not repaint the whole CRM',()=>{
+ const source=fs.readFileSync(path.join(__dirname,'..','operational-overlay.js'),'utf8');
+ assert.match(source,/function domainRevision\(rows\)/);
+ assert.match(source,/if\(!changed\.length\)/);
+ assert.match(source,/applyBundle\(bundle,changed\)/);
 });
 
 test('message campaign history and analysis can be filtered by year',()=>{
