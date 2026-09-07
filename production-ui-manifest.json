@@ -1,19 +1,7 @@
 {
   "project_ref": "ymfbmpnizxvqsamnczow",
-  "status": "PRODUCTION_GO",
-  "go_verified_at": "2026-09-07",
-  "production_verification": {
-    "local_regression": "PASS",
-    "production_read_scope": "PASS",
-    "production_storage_policy": "PASS",
-    "rollback_only_write_e2e": "PASS",
-    "rollback_residue_count": 0,
-    "frozen_operations": [
-      "opportunity_work_set",
-      "inquiry_assign/direct_assign"
-    ]
-  },
-  "source_commit": "9c999967d1327b4dd712c580bd53df3014af9d17",
+  "status": "PRODUCTION_BUTTON_HOTFIX_VERIFIED",
+  "source_commit": "31dca3b8b9211a6d4ec3f94e1890e95277e7523c",
   "approved_dashboard_commit": "842a5dd",
   "connected_operations": [
     "opportunity_work_set",
@@ -58,24 +46,24 @@
   "files_sha256": {
     "crm-export.js": "a5e413081d0b84cf66d3e94a9969822d6c0c50cc303c866e75b2a836c7222670",
     "crm-read.js": "ebdd58450449f13f4a1331e60ef09c8be14afa7b74802b05f81e81ab62d42730",
-    "crm.html": "bf3128362a1709e98cf473556243894a74e02ddbef48260191dd89933ca50f6d",
+    "crm.html": "8a60f8f5fb05a6c5dabd765b36f0d0c4e6f3ad0e70b5e3587294ff4bfa8d1b98",
     "data-cleanup-ui.js": "a724dd6503ad8a95a29452c7311656a4a646fb9f69758fdc19a80a1da604150a",
     "data-cleanup.css": "09b6488f827ece281de72107915c870ea31522125334f3bf43329445a5accb45",
     "data-cleanup.js": "7fc99f3d86fc05db564e9bc7c844513dc1f60fe1add0d3d4b5f5ab6bd6615a6f",
     "expansion-flow.js": "06a00c00ccb42fee9a1e9186adb7c3b56f96f3c9ae379e3ce1fc67d7e6c84663",
-    "expansion-pool.css": "450d1eb1beb0d65ce9a6170804eaadcf1f349d8f5277402879526d35f8ae2beb",
-    "expansion-pool.js": "3a59c5d19ef7bb3f44c194f4dfb7e0edfe953276683c48abcc5174d03c8016e7",
-    "index.html": "ddf470858340469bd4f514c91ed361f06d07453c06fd06a352e3d5b4fb4e3b16",
+    "expansion-pool.css": "895cafd488fce2c5cfcc64a18f8c321cf1bb4a6bfedb9f534c38ddce456413b7",
+    "expansion-pool.js": "cb4089cdb883e4e75acd8194704c48ae1937d605325d3c97217a28c507e51594",
+    "index.html": "1c166e0d30c1ad575c9aad350bf4083d08a4d4d4c1bd007fb8da56319c8eb2fe",
     "issue-modal.css": "0896af727f12a21d563e2e703028812cb2cb31ac496b2452928c9804e19201e5",
     "issue-modal.js": "7a2b2f1ee66e509b5d26ce0f3585a6e5e6ffc2f3f0b045d9f5a8b690a2e14391",
     "message-salutation.js": "70a273b77b4ec85f7c9f7ee9f3d249e11e7a5cc7f55f4bb2fb690d62d7957474",
-    "mobile.html": "e7a1864d98d11e55676017c019009c8b93e35b9a7664a1574862ca794c50436d",
+    "mobile.html": "75b1515a1aaa6ce5991a3a180f70481bfe6f9b07324d6c94a73d41e4dd5e60a1",
     "money-input.js": "9bffc3ca4685e0fac2efcfc78d4d5f4f2739b4f9bf8fbf6157b462a41a9d0eb2",
     "next-action-picker.css": "5d149225c510ee10e58c6f6ce7686715414533d8948de484c5dbd585a670d387",
     "next-action-picker.js": "be9e041da4388f3fd515e358cf99d7b04634e0b72b47eff9b59317f35cfd4d07",
-    "operational-adapter.js": "88af52ed8c3e2684d1b0a89735e2ac4731a55e25946e89434a054c87dee941bc",
+    "operational-adapter.js": "5246dfc95e2caed49c2ff819ad8fa714fa7fd6e0a7330b17f38f14f68917197c",
     "operational-go-bridge.js": "49dd1d759f44be2b55f2e7cda27e0d3182d51b541ecc57a32496d8ce11238893",
-    "operational-overlay.js": "c7200ef41b0ac9007ba4bf8b0054fb19b74d367795b8d8fb71dd8081630050c4",
+    "operational-overlay.js": "8e7783d7afb7ae45cd4e15fa26ed5a0d41a03ca60949eb81ebc1f6142158be1a",
     "owner-choice.css": "3e16fb7de16b17a828c473e6ac3610bb069b59e0f025708500fb5df2b429abac",
     "owner-choice.js": "5c715c678a53649c315394020861dcd7bc79b85a11eb24fe192e90c62dbe0d95",
     "people-eligibility.js": "ac0acdef13597b6ff8f77c83f368a84067d4bb3da974bcfc55ae1e6ec11e6896",
@@ -83,8 +71,8 @@
     "stage-transition-ui.js": "c3fc39eee42159ac036776b9067e5d26de660b59f71d770f71e835d86d2010f7",
     "stage-transition.css": "d996284132d1a0c2171249f36457ab1e6a8817b20a4ea1960350d976262cb244",
     "stage-transition.js": "469241cdab31838e1ea2e04d056daf1bda433f7497601dc8bbe8dd91e921db78",
-    "transport.js": "da0f2c3c21ec46b53a481d209d5f22f24b47e76b8c0fceb2f9e6e176822d4d33",
-    "work-editor.js": "9a038bfd41acd1dd55e118e745f2b84e7d9bb9c229ac43e5406c19186c1b0bb7",
+    "transport.js": "e17392a54d769a7507044e037bcdc15c88e0e298c9f82dfcab2d83d74629b4e7",
+    "work-editor.js": "a80543c9de157635b9f76cf931cfac068958167ea744a401914068d149dfb9a4",
     "write-ack.js": "df42acfaf242fdb2747fdc7d996fe57250b0b6a870b0b11d7b3cdea919363124"
   }
 }

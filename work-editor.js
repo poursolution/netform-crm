@@ -3,13 +3,14 @@
 (function(root){'use strict';
  let current=null,inflight=null,pending=null,last={state:'idle'},identity=null;
  const mobile=location.pathname.endsWith('/mobile.html');
- function present(row){return Object.assign({},row,{primaryWork:row.primary_work,workItems:row.work_items});}
+ function present(row){return Object.assign({},row,{primaryWork:row.primary_work,workItems:row.work_items,workScopeType:row.work_scope_type,workSummary:row.work_summary});}
  function box(){let el=document.getElementById(mobile?'phase11-work-result':'nd-err');if(!el&&mobile){el=document.createElement('div');el.id='phase11-work-result';el.setAttribute('role','alert');document.querySelector('[data-gate="workedit"]')?.insertAdjacentElement('beforebegin',el);}return el;}
  function message(text,action){const e=box();if(!e)return;e.replaceChildren();e.style.display='block';e.append(document.createTextNode(text));if(action){const b=document.createElement('button');b.type='button';b.textContent=action.label;b.dataset.phase11Action=action.id;b.onclick=action.run;e.append(b);}}
  function renderEditor(){if(mobile)workSheetM();else{CUR_DETAIL={kind:'deal',item:current};openWorkEdit();}}
- async function openWork(id){const p=Phase1.profile;if(!p)throw Error('AUTH_REQUIRED');const r=await Phase1.read('work_items',{opportunity_id:id});if(Phase1.profile?.auth_uid!==p.auth_uid)throw Error('IDENTITY_CHANGED');identity=p.auth_uid;current=present(r.data);pending=null;last={state:'loaded',version:current.version,object_id:current.id};renderEditor();}
- function success(q,payload){Object.assign(current,present({...current,primary_work:payload.primary_work,work_items:payload.work_items,version:q.ack.version}));last={state:'saved',version:q.ack.version,request_id:q.request_id};pending=null;
-  if(mobile){closeSheet();toast('공종 저장 완료');}else{closeNewDeal();const el=document.getElementById('err');if(el){el.textContent='공종 저장 완료 · 서버 version '+q.ack.version;el.style.display='block';}}
+ async function openWork(id,seed){const p=Phase1.profile;if(!p)throw Error('AUTH_REQUIRED');const r=await Phase1.read('work_items',{opportunity_id:id});if(Phase1.profile?.auth_uid!==p.auth_uid)throw Error('IDENTITY_CHANGED');identity=p.auth_uid;current=present(Object.assign({},seed||{},r.data));pending=null;last={state:'loaded',version:current.version,object_id:current.id};renderEditor();}
+ function syncLocal(){const lists=[root.DEALS,root.B&&root.B.deals];for(const rows of lists){if(!Array.isArray(rows))continue;const row=rows.find(x=>String(x.id)===String(current.id));if(row&&row!==current)Object.assign(row,current);}}
+ function success(q,payload){const scope=payload.work_items.length>1?'multi':'single';Object.assign(current,present({...current,primary_work:payload.primary_work,work_items:payload.work_items,work_scope_type:scope,work_summary:null,version:q.ack.version}));syncLocal();last={state:'saved',version:q.ack.version,request_id:q.request_id};pending=null;
+  if(mobile){closeSheet();toast('공종 저장 완료');try{if(typeof render==='function')render();}catch(_){/* the committed write must not be downgraded by a view refresh failure */}}else{closeNewDeal();try{if(typeof renderDetail==='function')renderDetail();}catch(_){/* the committed write must not be downgraded by a view refresh failure */}const el=document.getElementById('err');if(el){el.textContent='공종 저장 완료 · 서버 version '+q.ack.version;el.style.display='block';}}
  }
  async function execute(q){try{await Phase1.queue.flush();if(Phase1.profile?.auth_uid!==identity)throw Error('IDENTITY_CHANGED');const saved=Phase1.queue.list().find(x=>x.request_id===q.request_id);if(saved?.status!=='done')throw Error('ACK_NOT_COMPLETE');success(saved,q.payload);return saved.ack;
  }catch(e){if(Phase1.profile?.auth_uid!==identity)throw e;

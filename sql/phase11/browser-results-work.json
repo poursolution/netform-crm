@@ -1,0 +1,319 @@
+{
+  "results": [
+    {
+      "name": "crm.html original work editor ACK/version/409/review/retry",
+      "status": "PASS"
+    },
+    {
+      "name": "mobile.html original work editor ACK/version/409/review/retry",
+      "status": "PASS"
+    }
+  ],
+  "network": [
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/crm.html",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/phase1-config.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/transport.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/data-cleanup.css",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/next-action-picker.css",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/expansion-pool.css",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/vendor/supabase.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/message-salutation.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/money-input.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/people-eligibility.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/owner-choice.css",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/owner-choice.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/write-ack.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/crm-read.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/crm-export.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/issue-modal.css",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/issue-modal.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/data-cleanup.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/data-cleanup-ui.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/next-action-picker.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/expansion-flow.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/expansion-pool.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/stage-transition.css",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/stage-transition.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/stage-transition-ui.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/work-editor.js",
+      "method": "GET"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/auth/v1/token",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_profile_scoped_v2",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_read_scoped_v2",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_write_command_v2",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_read_scoped_v2",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_write_command_v2",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_write_command_v2",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_read_scoped_v2",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_write_command_v2",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_read_scoped_v2",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_read_scoped_v2",
+      "method": "POST"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/mobile.html",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/phase1-config.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/transport.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/vendor/supabase.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/message-salutation.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/money-input.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/write-ack.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/crm-read.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/stage-transition.css",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/stage-transition.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/stage-transition-ui.js",
+      "method": "GET"
+    },
+    {
+      "origin": "http://127.0.0.1:4179",
+      "path": "/work-editor.js",
+      "method": "GET"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/auth/v1/token",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_profile_scoped_v2",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_read_scoped_v2",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_write_command_v2",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_read_scoped_v2",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_write_command_v2",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_write_command_v2",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_read_scoped_v2",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_write_command_v2",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_read_scoped_v2",
+      "method": "POST"
+    },
+    {
+      "origin": "https://rprechiaglyjaydkmxsu.supabase.co",
+      "path": "/rest/v1/rpc/crm_read_scoped_v2",
+      "method": "POST"
+    }
+  ],
+  "violations": [],
+  "errors": [],
+  "trace": false,
+  "video": false,
+  "screenshots": false
+}
