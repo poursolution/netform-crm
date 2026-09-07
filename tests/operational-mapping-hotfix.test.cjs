@@ -83,33 +83,41 @@ test('authenticated PC boot keeps the post-auth recovery load',()=>{
  assert.match(html,/Promise\.resolve\(AUTH_READY\)[\s\S]*?if\(AUTH_ON&&!TOKEN\)return;\s*loadData\(\);/);
 });
 
-test('concurrent PC refreshes perform one operational read and one render',async()=>{
+test('concurrent PC refreshes share one progressive load job',async()=>{
  let release,reads=0,renders=0;
  const gate=new Promise(resolve=>{release=resolve});
- const root={TOKEN:'token',ME:{id:'user'},Phase1:{read:async()=>{reads++;await gate;return {data:{deals:[],inquiries:[],expansion_pool:[]}}},queue:{list:()=>[],flush:async()=>[]}},OperationalAdapter:{},addEventListener(){},document:{getElementById:()=>({style:{}})},applyBundle(){renders++;}};
+ const root={TOKEN:'token',ME:{id:'user'},Phase1:{read:async(resource,args)=>{reads++;await gate;return {data:args.domains.includes('deal_core')?{deals:[],inquiries:[]}:{expansion_pool:[],customer_support_actions:[],message_logs:[]}}},queue:{list:()=>[],flush:async()=>[]}},OperationalAdapter:{},addEventListener(){},document:{getElementById:()=>({style:{},classList:{toggle(){}}})},applyBundle(){renders++;}};
  overlay.install(root);
  const first=root.loadData(),second=root.loadData();
  assert.strictEqual(first,second);
  release();await Promise.all([first,second]);
- assert.equal(reads,1);assert.equal(renders,1);
+ assert.equal(reads,2);assert.equal(renders,2);
 });
 
-test('reload paints the actor-scoped tab snapshot before the fresh read completes',async()=>{
- let release,reads=0,stored='',painted=[];
- const gate=new Promise(resolve=>{release=resolve});
+test('reload paints snapshot, then fresh core before secondary history completes',async()=>{
+ let releaseSecondary,reads=0,stored='',painted=[];
+ const secondaryGate=new Promise(resolve=>{releaseSecondary=resolve});
  const cached={contract_version:2,generated_at:'2026-09-07T00:00:00Z',deals:[{id:'cached'}],inquiries:[]};
  const elements={load:{style:{}},live:{textContent:'',classList:{toggle(){}}},err:{textContent:'',style:{}}};
- const root={TOKEN:'token',ME:{id:'user'},B:null,console,Phase1:{config:{project_ref:'rprechiaglyjaydkmxsu'},sessionCache:{getItem:()=>JSON.stringify(cached),setItem:(k,v)=>{stored=v},removeItem(){}},read:async()=>{reads++;await gate;return {data:{deals:[{id:'fresh'}],inquiries:[],expansion_pool:[]}}},queue:{list:()=>[],flush:async()=>[]}},OperationalAdapter:{},addEventListener(){},document:{getElementById:id=>elements[id]||null},applyBundle(bundle){this.B=bundle;painted.push(bundle.deals[0].id)}};
+ const root={TOKEN:'token',ME:{id:'user'},B:null,console,Phase1:{config:{project_ref:'rprechiaglyjaydkmxsu'},sessionCache:{getItem:()=>JSON.stringify(cached),setItem:(k,v)=>{stored=v},removeItem(){}},read:async(resource,args)=>{reads++;if(args.domains.includes('deal_core'))return {data:{deals:[{id:'fresh'}],inquiries:[]}};await secondaryGate;return {data:{expansion_pool:[],customer_support_actions:[],message_logs:[]}}},queue:{list:()=>[],flush:async()=>[]}},OperationalAdapter:{},addEventListener(){},document:{getElementById:id=>elements[id]||null},applyBundle(bundle){this.B=bundle;painted.push(bundle.deals[0].id)}};
  overlay.install(root);
  const loading=root.loadData();
  await new Promise(resolve=>setImmediate(resolve));
- assert.deepEqual(painted,['cached']);
- assert.equal(elements.live.textContent,'최근 데이터 · 최신화 중');
- release();await loading;
  assert.deepEqual(painted,['cached','fresh']);
+ assert.equal(elements.live.textContent,'핵심 데이터 최신 · 이력 불러오는 중');
+ assert.equal(stored,'');
+ releaseSecondary();await loading;
+ assert.deepEqual(painted,['cached','fresh','fresh']);
  assert.equal(elements.live.textContent,'데이터 최신');
- assert.equal(reads,1);
+ assert.equal(reads,2);
  assert.match(stored,/fresh/);
+});
+
+test('operational transport supports an allowlisted domain subset for progressive paint',()=>{
+ const source=fs.readFileSync(path.join(__dirname,'..','transport.js'),'utf8');
+ assert.match(source,/args\.domains===undefined\?knownDomains:args\.domains/);
+ assert.match(source,/INVALID_READ_DOMAINS/);
+ assert.match(source,/complete_for_requested_domains/);
 });
 
 test('view snapshot is session-only and identity scoped',()=>{
