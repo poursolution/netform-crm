@@ -31,3 +31,8 @@ test('PC inquiry linking rejects empty-site joins and prefers explicit ids',()=>
  assert.match(html,/if\(!k\)return null;/);
  assert.match(html,/q\.assignee_name\|\|q\.sales_assignee/);
 });
+
+test('operational read completion dismisses the blocking load overlay',()=>{
+ const source=fs.readFileSync(path.join(__dirname,'..','operational-overlay.js'),'utf8');
+ assert.match(source,/getElementById\('load'\);if\(el\)el\.style\.display='none'/);
+});
