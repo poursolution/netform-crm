@@ -93,3 +93,28 @@ test('concurrent PC refreshes perform one operational read and one render',async
  release();await Promise.all([first,second]);
  assert.equal(reads,1);assert.equal(renders,1);
 });
+
+test('reload paints the actor-scoped tab snapshot before the fresh read completes',async()=>{
+ let release,reads=0,stored='',painted=[];
+ const gate=new Promise(resolve=>{release=resolve});
+ const cached={contract_version:2,generated_at:'2026-09-07T00:00:00Z',deals:[{id:'cached'}],inquiries:[]};
+ const elements={load:{style:{}},live:{textContent:'',classList:{toggle(){}}},err:{textContent:'',style:{}}};
+ const root={TOKEN:'token',ME:{id:'user'},B:null,console,Phase1:{config:{project_ref:'rprechiaglyjaydkmxsu'},sessionCache:{getItem:()=>JSON.stringify(cached),setItem:(k,v)=>{stored=v},removeItem(){}},read:async()=>{reads++;await gate;return {data:{deals:[{id:'fresh'}],inquiries:[],expansion_pool:[]}}},queue:{list:()=>[],flush:async()=>[]}},OperationalAdapter:{},addEventListener(){},document:{getElementById:id=>elements[id]||null},applyBundle(bundle){this.B=bundle;painted.push(bundle.deals[0].id)}};
+ overlay.install(root);
+ const loading=root.loadData();
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.deepEqual(painted,['cached']);
+ assert.equal(elements.live.textContent,'최근 데이터 · 최신화 중');
+ release();await loading;
+ assert.deepEqual(painted,['cached','fresh']);
+ assert.equal(elements.live.textContent,'데이터 최신');
+ assert.equal(reads,1);
+ assert.match(stored,/fresh/);
+});
+
+test('view snapshot is session-only and identity scoped',()=>{
+ const source=fs.readFileSync(path.join(__dirname,'..','transport.js'),'utf8');
+ assert.match(source,/nativeSession\.setItem\(key,JSON\.stringify/);
+ assert.match(source,/base\+activeUid\+'\:view\:'/);
+ assert.doesNotMatch(source,/nativeLocal\.setItem\(key,JSON\.stringify\(\{version:VERSION,auth_uid:activeUid,at:Date\.now\(\),value:String\(v\)\}\)\);\},removeItem\(k\)\{const key=sessionKey/);
+});
