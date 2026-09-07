@@ -6,6 +6,8 @@
  function status(r){return r.createdOpportunityId||r.created_opportunity_id?'Pipeline 전환':labels[r.status||r.expansion_status]||r.status||r.expansion_status||'관리대상'}
  function converted(r){return status(r)==='Pipeline 전환'}
  function legacy(s){return Object.keys(labels).find(k=>labels[k]===s)||s}
+ function recordYear(r,d){d=d||{};const v=r.completionDate||r.completion_date||d.completionDate||d.completion_date||d.closed||d.closed_at||d.created||d.created_at||'';return Number(String(v).slice(0,4))||0}
+ function yearMatch(r,d,value,current){const y=recordYear(r,d),cutoff=current-2;return value==='전체'||(!value&&y===current)||value==='이전'&&y&&y<cutoff||Number(value)===y}
  function request(source,deal,proof){
   if(converted(source))throw Error('이미 Pipeline으로 전환된 이력입니다.');
   if(!source.sourceOpportunityId)throw Error('기존 수주 영업기회 연결이 없습니다.');
@@ -20,7 +22,7 @@
   if(!res||res.ok!==true||res.operation!=='expansion_quote_convert'||!res.new_opportunity_id||res.new_opportunity_id===req.source_opportunity_id||res.source_opportunity_id!==req.source_opportunity_id||res.quote_dispatch_id!==req.quote_dispatch_id||res.stage_code!=='sent'||res.origin!=='expansion'||res.expansion_status!=='Pipeline 전환')throw Error('전환 완료를 확인하지 못했습니다. 서버 연결을 확인한 뒤 같은 건을 재시도하세요.');
   return res;
  }
- const api={statuses,status,converted,legacy,request,acknowledged};
+ const api={statuses,status,converted,legacy,recordYear,yearMatch,request,acknowledged};
  if(typeof module!=='undefined'&&module.exports)module.exports=api;
  root.ExpansionFlow=api;
 })(typeof window==='undefined'?globalThis:window);

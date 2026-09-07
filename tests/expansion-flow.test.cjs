@@ -8,6 +8,13 @@ const deal={name:'테스트 현장',amount:160000000,work_items:['재도장>외�
 const request=()=>F.request(source,deal,{dispatch_id:'receipt'});
 const ack=()=>({ok:true,operation:'expansion_quote_convert',source_opportunity_id:'old-won',new_opportunity_id:'new-deal',quote_dispatch_id:'receipt',origin:'expansion',stage_code:'sent',expansion_status:'Pipeline 전환'});
 test('확장 상태는 6개이며 과거 상태를 읽을 수 있다',()=>{assert.equal(F.statuses.length,6);assert.equal(F.status({status:'추가 니즈 확인'}),'니즈확인');assert.equal(F.legacy('접촉예정'),'접촉 예정')});
+test('연도는 준공·종료·생성일 순서이며 이전 탭은 현재 연도에 따라 이동한다',()=>{
+ assert.equal(F.recordYear({completionDate:'2025-12-20'},{updated:'2026-09-07'}),2025);
+ assert.equal(F.recordYear({}, {closed_at:'2024-03-01',updated:'2026-09-07'}),2024);
+ assert.equal(F.recordYear({}, {created_at:'2023-01-01',updated:'2026-09-07'}),2023);
+ assert.equal(F.yearMatch({completionDate:'2024-01-01'}, {}, '이전', 2027),true);
+ assert.equal(F.yearMatch({completionDate:'2025-01-01'}, {}, '이전', 2027),false);
+});
 test('견적 발송 증거 없이 새 Deal을 요청하지 못한다',()=>{assert.throws(()=>F.request(source,deal,{}));assert.throws(()=>F.request(source,deal,null))});
 test('새 Deal은 sent / expansion / 원 Deal ID를 갖고 원본을 변경하지 않는다',()=>{const before=JSON.stringify(source);const r=request();assert.equal(r.opportunity.code,'sent');assert.equal(r.opportunity.origin,'expansion');assert.equal(r.opportunity.source_opportunity_id,'old-won');assert.equal(JSON.stringify(source),before);assert.equal(deal.code,undefined)});
 test('반복 요청은 동일 idempotency key',()=>assert.equal(request().idempotency_key,request().idempotency_key));
@@ -16,4 +23,16 @@ test('금액·대표 공종 누락은 차단',()=>{assert.throws(()=>F.request(s
 test('일반 ok, 빈 응답, 다른 source 또는 receipt ACK를 완료로 처리하지 않는다',()=>{for(const a of [{},null,{ok:true},{...ack(),source_opportunity_id:'wrong'},{...ack(),quote_dispatch_id:'wrong'},{...ack(),stage_code:'first_contact'},{...ack(),new_opportunity_id:'old-won'}])assert.throws(()=>F.acknowledged(a,request()))});
 test('정확한 전환 ACK만 수락',()=>assert.equal(F.acknowledged(ack(),request()).new_opportunity_id,'new-deal'));
 test('실패 응답 때 mutation 이전에 검증하고 일반 생성 경로로 빠지지 않는다',()=>{const ui=fs.readFileSync(require.resolve('../expansion-pool.js'),'utf8');assert.ok(ui.indexOf('F.acknowledged(')<ui.indexOf('local.local.createdOpportunityId='));assert.match(ui,/pending.has/);const crm=fs.readFileSync(require.resolve('../crm.html'),'utf8');assert.match(crm,/if\(expansionSource\)\{ExpansionPool.convert[\s\S]*?return;\}/);assert.doesNotMatch(crm,/if\(expansionSource\)expansionSave/);new vm.Script(ui)});
+test('확장 목록은 독립 복합필터·전체연도 기한배지·고정 페이지를 사용한다',()=>{
+ const ui=fs.readFileSync(require.resolve('../expansion-pool.js'),'utf8');
+ assert.match(ui,/expansionStatusFilter/);
+ assert.match(ui,/expansionDueFilter/);
+ assert.match(ui,/globalDue/);
+ assert.match(ui,/전체연도 기한도래/);
+ assert.match(ui,/start=\(page-1\)\*pageSize/);
+ assert.match(ui,/← 이전 20건/);
+ assert.match(ui,/Pipeline 전환','보류'/);
+ assert.doesNotMatch(ui,/y<2024/);
+ assert.doesNotMatch(ui,/slice\(0,page\*20\)/);
+});
 test('서버 migration: 발송증명·트랜잭션 잠금·읽기전용·권한',()=>{const sql=fs.readFileSync(require.resolve('../sql/20260905_expansion_quote_handoff.sql'),'utf8');for(const s of ['for update',"q.status<>'sent'",'provider_receipt_id','crm_expansion_readonly_guard',"'origin','expansion'",'from public,anon,authenticated'])assert.ok(sql.includes(s),s)});

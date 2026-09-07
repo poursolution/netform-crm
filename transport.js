@@ -47,7 +47,7 @@
  function publishRealtimeSignal(table,eventType){const signal=Object.freeze({table,event_type:eventType||'*'});for(const entry of realtimeListeners.values())try{entry.onSignal(signal);}catch{}}
  function ensureRealtime(){if(realtimeChannel||!sdkChannel||!profile)return;const generation=epoch;
   let ch=sdkChannel('crm-operational-core-'+String(profile.auth_uid).slice(0,8));
-  for(const table of ['opportunities','inquiries','activities'])ch=ch.on('postgres_changes',{event:'*',schema:'public',table},payload=>{if(generation===epoch&&profile)publishRealtimeSignal(table,payload&&payload.eventType);});
+  for(const table of ['opportunities','inquiries','activities','crm_expansion_pool','crm_expansion_events','crm_expansion_quote_dispatches'])ch=ch.on('postgres_changes',{event:'*',schema:'public',table},payload=>{if(generation===epoch&&profile)publishRealtimeSignal(table,payload&&payload.eventType);});
   realtimeChannel=ch;publishRealtimeStatus('CONNECTING');ch.subscribe(status=>{if(generation!==epoch)return;publishRealtimeStatus(status);});
  }
  function subscribe(resource,onSignal,onStatus){if(resource!=='operational_core')throw Error('REALTIME_RESOURCE_DENIED');if(!profile||!client)throw Error('AUTH_REQUIRED');if(typeof onSignal!=='function')throw Error('REALTIME_HANDLER_REQUIRED');const key=Symbol(resource);realtimeListeners.set(key,{onSignal,onStatus:typeof onStatus==='function'?onStatus:()=>{}});ensureRealtime();try{realtimeListeners.get(key).onStatus(realtimeStatus);}catch{}return function(){realtimeListeners.delete(key);if(!realtimeListeners.size)stopRealtime();};}

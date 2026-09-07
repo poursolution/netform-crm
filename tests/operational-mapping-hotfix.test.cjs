@@ -203,7 +203,10 @@ test('realtime is constrained to Supabase signals and refreshes only the changed
  assert.match(transport,/client\.channel=\(\)=>\{const inert=/);
  assert.match(transport,/subscribe\(resource,onSignal,onStatus\)/);
  assert.match(transport,/Object\.freeze\(\{table,event_type:eventType\|\|'\*'\}\)/);
- assert.match(source,/table==='inquiries'\?'inquiry_core':'deal_core'/);
+ assert.match(source,/table==='inquiries'\?'inquiry_core':String\(table\|\|''\)\.indexOf\('crm_expansion_'\)===0\?'expansion_pool':'deal_core'/);
+ assert.match(transport,/crm_expansion_pool/);
+ assert.match(transport,/crm_expansion_events/);
+ assert.match(transport,/crm_expansion_quote_dispatches/);
  assert.match(source,/root\.refreshOperationalDomains\(domains,'realtime'\)/);
 });
 

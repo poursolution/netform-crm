@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head><script src="./phase1-config.js"></script><script src="./operational-adapter.js?v=20260907-buttons-1"></script><script src="./transport.js?v=20260907-speed-7"></script>
+<head><script src="./phase1-config.js"></script><script src="./operational-adapter.js?v=20260907-buttons-1"></script><script src="./transport.js?v=20260907-expansion-1"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>넷폼 영업관리 CRM</title>
@@ -1912,7 +1912,7 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
 </style>
 <link rel="stylesheet" href="data-cleanup.css?v=20260905-1">
 <link rel="stylesheet" href="next-action-picker.css?v=20260905-1">
-<link rel="stylesheet" href="expansion-pool.css?v=20260907-ui-1">
+<link rel="stylesheet" href="expansion-pool.css?v=20260907-expansion-1">
 </head>
 <body>
 <div id="load"><div class="spin"></div><div class="t">Supabase 실데이터 불러오는 중…</div></div>
@@ -2180,8 +2180,8 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
 <script src="data-cleanup.js?v=20260905-1"></script>
 <script src="data-cleanup-ui.js?v=20260905-1"></script>
 <script src="next-action-picker.js?v=20260905-1"></script>
-<script src="expansion-flow.js?v=20260905-1"></script>
-<script src="expansion-pool.js?v=20260907-ui-1"></script>
+<script src="expansion-flow.js?v=20260907-expansion-1"></script>
+<script src="expansion-pool.js?v=20260907-expansion-1"></script>
 <script>
 'use strict';
 /* ══════════════ 구조 한눈 지도 ══════════════
@@ -2943,8 +2943,8 @@ function clearTransientUI(){
  document.body.style.overflow='';G._detailPopup=false;G._toSplit=0;CUR_DETAIL=null;
  TRANSITION_CTX=null;QUICK_CONTACT=null;KAKAO_DRAFT=null;
 }
-function nav(el){clearTransientUI();$$('.mi').forEach(function(m){m.classList.remove('on')});el.classList.add('on');G.page=el.dataset.p;syncPage();if(typeof loadOperationalPageData==='function')loadOperationalPageData(G.page);if((G.page==='today'||G.page==='dash'||G.page==='inq')&&typeof syncInquiryNow==='function')syncInquiryNow(true)}
-function goPage(p){clearTransientUI();$$('.mi').forEach(function(m){m.classList.toggle('on',m.dataset.p===p)});G.page=p;syncPage();if(typeof loadOperationalPageData==='function')loadOperationalPageData(p);if((p==='today'||p==='dash'||p==='inq')&&typeof syncInquiryNow==='function')syncInquiryNow(true)}
+function nav(el){clearTransientUI();$$('.mi').forEach(function(m){m.classList.remove('on')});el.classList.add('on');G.page=el.dataset.p;syncPage();if(typeof loadOperationalPageData==='function')loadOperationalPageData(G.page);if((G.page==='today'||G.page==='dash'||G.page==='inq')&&typeof syncInquiryNow==='function')syncInquiryNow(true);if(G.page==='expansion'&&typeof syncExpansionNow==='function')syncExpansionNow(true)}
+function goPage(p){clearTransientUI();$$('.mi').forEach(function(m){m.classList.toggle('on',m.dataset.p===p)});G.page=p;syncPage();if(typeof loadOperationalPageData==='function')loadOperationalPageData(p);if((p==='today'||p==='dash'||p==='inq')&&typeof syncInquiryNow==='function')syncInquiryNow(true);if(p==='expansion'&&typeof syncExpansionNow==='function')syncExpansionNow(true)}
 function syncPage(){G.lastRep=null;   /* 페이지를 옮기면 «방금 본 현장» 은 이 화면의 맥락이 아니다 */
  $$('.apage').forEach(function(pg){pg.classList.remove('on')});$('#pg-'+G.page).classList.add('on');
  $('#ptitle').textContent=TITLES[G.page][0];$('#psub').textContent=TITLES[G.page][1];var q=$('#q');if(q)q.placeholder=G.page==='sites'?'아파트·관리소장·전화·주소 검색':G.page==='work'?'현장·공사명·공종 검색':'현장·담당자 검색';paint()}
@@ -7303,12 +7303,18 @@ function syncBusy(){
    그래서 주기(SYNC_MS)보다 자주 서버를 부르지 않도록 막는다.
    이게 없으면 버튼 하나 누를 때마다 다시 불러오느라 화면이 초기화된다. */
 var LAST_SYNC=0;
-var LAST_INQUIRY_SYNC=0;
+var LAST_INQUIRY_SYNC=0,LAST_EXPANSION_SYNC=0,EXPANSION_SYNC_MS=15000;
 function syncInquiryNow(force){
   if(document.hidden||syncBusy()||!TOKEN)return;
   if(!force&&Date.now()-LAST_INQUIRY_SYNC<INQUIRY_SYNC_MS)return;
   LAST_INQUIRY_SYNC=Date.now();
   if(typeof refreshOperationalDomains==='function')refreshOperationalDomains(['inquiry_core'],'inquiry-poll');
+}
+function syncExpansionNow(force){
+  if(document.hidden||syncBusy()||!TOKEN||G.page!=='expansion')return;
+  if(!force&&Date.now()-LAST_EXPANSION_SYNC<EXPANSION_SYNC_MS)return;
+  LAST_EXPANSION_SYNC=Date.now();
+  if(typeof refreshOperationalDomains==='function')refreshOperationalDomains(['expansion_pool'],'expansion-poll');
 }
 function syncNow(){
   if(document.hidden||syncBusy())return;
@@ -7323,8 +7329,10 @@ function syncNow(){
 var AUTH_READY=authInit();
 setInterval(syncNow,SYNC_MS);
 setInterval(syncInquiryNow,INQUIRY_SYNC_MS);
+setInterval(syncExpansionNow,EXPANSION_SYNC_MS);
 document.addEventListener('visibilitychange',function(){if(!document.hidden)syncNow()});
 document.addEventListener('visibilitychange',function(){if(!document.hidden)syncInquiryNow(false)});
+document.addEventListener('visibilitychange',function(){if(!document.hidden)syncExpansionNow(false)});
 window.addEventListener('focus',syncNow);
 /* iframe/앱 브라우저에서는 메뉴 클릭만으로도 focus가 다시 발생할 수 있다.
    15초 안전망을 무시한 강제 조회는 클릭마다 전체 문의 pagination을 재실행하므로 금지한다. */
@@ -7362,6 +7370,9 @@ function syncSoon(ms){
         .on('postgres_changes',{event:'*',schema:'public',table:'opportunities'},function(){syncSoon(400)})
         .on('postgres_changes',{event:'*',schema:'public',table:'inquiries'},function(){syncSoon(400)})
         .on('postgres_changes',{event:'*',schema:'public',table:'activities'},function(){syncSoon(400)})
+        .on('postgres_changes',{event:'*',schema:'public',table:'crm_expansion_pool'},function(){syncExpansionNow(true)})
+        .on('postgres_changes',{event:'*',schema:'public',table:'crm_expansion_events'},function(){syncExpansionNow(true)})
+        .on('postgres_changes',{event:'*',schema:'public',table:'crm_expansion_quote_dispatches'},function(){syncExpansionNow(true)})
         .subscribe(function(st){
           if(st==='SUBSCRIBED'){
             var l=document.getElementById('live');
@@ -8072,7 +8083,7 @@ function campaignLibraryPage(){var cats=[],old=G.campaignCategory;CAMPAIGN_CATEG
 function campaignAnalysisPage(){var L=campaignLogs().filter(campaignYearMatch),sent=L.filter(function(x){return x.status==='sent'}),sum=function(k){return sent.reduce(function(a,x){return a+Number(x[k]||0)},0)},by={};sent.forEach(function(x){var k=x.category||x.category_label||'기타';by[k]=by[k]||{sent:0,response:0,next:0,stage:0};by[k].sent+=Number(x.recipient_count||0);by[k].response+=Number(x.response_count||0);by[k].next+=Number(x.next_action_count||0);by[k].stage+=Number(x.stage_advanced_count||0)});var max=Math.max.apply(null,[1].concat(Object.keys(by).map(function(k){return by[k].sent})));return campaignYearTabs()+'<div class="cc-analysis-grid"><section class="cc-scorecard"><h4>발송 → 영업진전</h4><div class="cc-score-grid"><div><span>발송 완료</span><b>'+sent.reduce(function(a,x){return a+Number(x.recipient_count||0)},0)+'</b></div><div><span>고객 응답</span><b>'+sum('response_count')+'</b></div><div><span>Next 생성</span><b>'+sum('next_action_count')+'</b></div><div><span>Stage 전진</span><b>'+sum('stage_advanced_count')+'</b></div></div></section><section class="cc-scorecard"><h4>카테고리별 실제 발송</h4><div class="cc-bars">'+(Object.keys(by).map(function(k){return '<div class="cc-bar"><span>'+esc(k)+'</span><i style="--w:'+Math.round(by[k].sent/max*100)+'%"></i><b>'+by[k].sent+'명</b></div>'}).join('')||'<div class="cc-empty"><b>선택한 연도의 성과 데이터가 없습니다.</b>다른 연도를 선택해 주세요.</div>')+'</div></section></div>'}
 function paintCampaign(){var root=$('#campaign-root');if(!root)return;var L=campaignLogs(),scheduled=L.filter(function(x){return x.status==='scheduled'}).length,queued=L.filter(function(x){return x.status==='queued'}).length,targets=campaignAllTargets(),ready=targets.filter(function(t){return t.guard.ok}).length,tabs=[['send','고객 실행',0],['schedule','예약 실행',scheduled],['history','실행 이력',L.length],['templates','문구·자료',0],['analysis','성과분석',0]],body=G.campaignTab==='send'?campaignSendPage():G.campaignTab==='schedule'?campaignHistoryPage(true):G.campaignTab==='history'?campaignHistoryPage(false):G.campaignTab==='templates'?campaignLibraryPage():campaignAnalysisPage();root.innerHTML='<div class="cc-shell"><section class="cc-command"><div class="cc-command-main"><div><div class="eyebrow">CUSTOMER ACTION CENTER</div><h2>재접촉부터 문자·Lost 복구·확장까지 한 곳에서 실행합니다.</h2><p>대상 고객을 CRM이 먼저 모으고, 사용자는 이유와 문구를 확인한 뒤 전화·문자·다음 행동으로 연결합니다.</p></div><div class="cc-command-stats"><div><span>현재 실행 가능</span><b>'+ready+'명</b></div><div><span>예약 실행</span><b>'+scheduled+'건</b></div><div class="warn"><span>서버 처리 대기</span><b>'+queued+'건</b></div></div></div></section><nav class="cc-tabs">'+tabs.map(function(x){return '<button class="'+(G.campaignTab===x[0]?'on':'')+'" onclick="campaignSetTab(\''+x[0]+'\')">'+x[1]+(x[2]?'<em>'+x[2]+'</em>':'')+'</button>'}).join('')+'</nav>'+(CAMPAIGN_STATE.notice?'<div class="mgmtbar blue">'+esc(CAMPAIGN_STATE.notice)+'</div>':'')+body+'</div>'}
 
-</script><script src="./operational-overlay.js?v=20260907-speed-7"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
+</script><script src="./operational-overlay.js?v=20260907-expansion-1"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
   if(AUTH_ON&&!TOKEN)return;
   loadData();
 });
