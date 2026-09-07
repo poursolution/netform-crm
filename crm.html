@@ -5341,7 +5341,7 @@ function issueLabels(d){var k=issueSet(d),p=itemPatch(d,'deal'),na=actionObj(d,p
 function inquiryConsultant(q){var p=itemPatch(q,'inq')||{},n=repN(q.consultant_name||q.consultantName||p.consultant_name||p.consultantName||'');if(n!=='미배정')return n;var legacy=repProfile(q.assignee);return legacy.role==='consultation'?repN(q.assignee):''}
 /* 기존 Golden 문의의 담당자는 현재 인사 역할이 바뀌었어도 배정 사실 자체를 지우지 않는다.
    신규 배정 후보의 자격(inquiryAssignable)과 이미 저장된 배정의 표시는 서로 다른 판단이다. */
-function inquiryRecordedOwner(q){var n=repN(q.assignee_name||q.sales_assignee||q.salesAssignee||q.assignee||'');return n==='미배정'?'':n}
+function inquiryRecordedOwner(q){var n=repN(q.assignee_name||q.sales_assignee||q.salesAssignee||q.assignee||''),p=repProfile(n),stored=String(q.assigned_to||'').trim();return n==='미배정'||(!stored&&/^legacy:/.test(String(p.id||'')))?'':n}
 function inquirySalesOwner(q){var n=repN(q.assignee_name||q.sales_assignee||q.salesAssignee||q.assignee||q.assigned_to),p=repProfile(n);return p.active&&p.salesRep&&p.role!=='branch_pool'?n:''}
 function inquiryRoutedOwner(q){return inquirySalesOwner(q)||inquiryRecordedOwner(q)}
 function inquiryAssigned(q){return !!inquiryRoutedOwner(q)}
