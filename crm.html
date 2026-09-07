@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head><script src="./phase1-config.js"></script><script src="./operational-adapter.js"></script><script src="./transport.js?v=20260907-speed-6"></script>
+<head><script src="./phase1-config.js"></script><script src="./operational-adapter.js"></script><script src="./transport.js?v=20260907-speed-7"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>넷폼 영업관리 CRM</title>
@@ -7323,9 +7323,11 @@ var AUTH_READY=authInit();
 setInterval(syncNow,SYNC_MS);
 setInterval(syncInquiryNow,INQUIRY_SYNC_MS);
 document.addEventListener('visibilitychange',function(){if(!document.hidden)syncNow()});
-document.addEventListener('visibilitychange',function(){if(!document.hidden)syncInquiryNow(true)});
+document.addEventListener('visibilitychange',function(){if(!document.hidden)syncInquiryNow(false)});
 window.addEventListener('focus',syncNow);
-window.addEventListener('focus',function(){syncInquiryNow(true)});
+/* iframe/앱 브라우저에서는 메뉴 클릭만으로도 focus가 다시 발생할 수 있다.
+   15초 안전망을 무시한 강제 조회는 클릭마다 전체 문의 pagination을 재실행하므로 금지한다. */
+window.addEventListener('focus',function(){syncInquiryNow(false)});
 
 /* 현장을 열면 상단 담당자 칩에 «현재 현장» 표시가 따라붙는다.
    상세에서 담당자를 바꿔 저장해도 renderDetail 이 다시 도니 표시가 즉시 갱신된다.
@@ -8069,7 +8071,7 @@ function campaignLibraryPage(){var cats=[],old=G.campaignCategory;CAMPAIGN_CATEG
 function campaignAnalysisPage(){var L=campaignLogs().filter(campaignYearMatch),sent=L.filter(function(x){return x.status==='sent'}),sum=function(k){return sent.reduce(function(a,x){return a+Number(x[k]||0)},0)},by={};sent.forEach(function(x){var k=x.category||x.category_label||'기타';by[k]=by[k]||{sent:0,response:0,next:0,stage:0};by[k].sent+=Number(x.recipient_count||0);by[k].response+=Number(x.response_count||0);by[k].next+=Number(x.next_action_count||0);by[k].stage+=Number(x.stage_advanced_count||0)});var max=Math.max.apply(null,[1].concat(Object.keys(by).map(function(k){return by[k].sent})));return campaignYearTabs()+'<div class="cc-analysis-grid"><section class="cc-scorecard"><h4>발송 → 영업진전</h4><div class="cc-score-grid"><div><span>발송 완료</span><b>'+sent.reduce(function(a,x){return a+Number(x.recipient_count||0)},0)+'</b></div><div><span>고객 응답</span><b>'+sum('response_count')+'</b></div><div><span>Next 생성</span><b>'+sum('next_action_count')+'</b></div><div><span>Stage 전진</span><b>'+sum('stage_advanced_count')+'</b></div></div></section><section class="cc-scorecard"><h4>카테고리별 실제 발송</h4><div class="cc-bars">'+(Object.keys(by).map(function(k){return '<div class="cc-bar"><span>'+esc(k)+'</span><i style="--w:'+Math.round(by[k].sent/max*100)+'%"></i><b>'+by[k].sent+'명</b></div>'}).join('')||'<div class="cc-empty"><b>선택한 연도의 성과 데이터가 없습니다.</b>다른 연도를 선택해 주세요.</div>')+'</div></section></div>'}
 function paintCampaign(){var root=$('#campaign-root');if(!root)return;var L=campaignLogs(),scheduled=L.filter(function(x){return x.status==='scheduled'}).length,queued=L.filter(function(x){return x.status==='queued'}).length,targets=campaignAllTargets(),ready=targets.filter(function(t){return t.guard.ok}).length,tabs=[['send','고객 실행',0],['schedule','예약 실행',scheduled],['history','실행 이력',L.length],['templates','문구·자료',0],['analysis','성과분석',0]],body=G.campaignTab==='send'?campaignSendPage():G.campaignTab==='schedule'?campaignHistoryPage(true):G.campaignTab==='history'?campaignHistoryPage(false):G.campaignTab==='templates'?campaignLibraryPage():campaignAnalysisPage();root.innerHTML='<div class="cc-shell"><section class="cc-command"><div class="cc-command-main"><div><div class="eyebrow">CUSTOMER ACTION CENTER</div><h2>재접촉부터 문자·Lost 복구·확장까지 한 곳에서 실행합니다.</h2><p>대상 고객을 CRM이 먼저 모으고, 사용자는 이유와 문구를 확인한 뒤 전화·문자·다음 행동으로 연결합니다.</p></div><div class="cc-command-stats"><div><span>현재 실행 가능</span><b>'+ready+'명</b></div><div><span>예약 실행</span><b>'+scheduled+'건</b></div><div class="warn"><span>서버 처리 대기</span><b>'+queued+'건</b></div></div></div></section><nav class="cc-tabs">'+tabs.map(function(x){return '<button class="'+(G.campaignTab===x[0]?'on':'')+'" onclick="campaignSetTab(\''+x[0]+'\')">'+x[1]+(x[2]?'<em>'+x[2]+'</em>':'')+'</button>'}).join('')+'</nav>'+(CAMPAIGN_STATE.notice?'<div class="mgmtbar blue">'+esc(CAMPAIGN_STATE.notice)+'</div>':'')+body+'</div>'}
 
-</script><script src="./operational-overlay.js?v=20260907-speed-6"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
+</script><script src="./operational-overlay.js?v=20260907-speed-7"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
   if(AUTH_ON&&!TOKEN)return;
   loadData();
 });

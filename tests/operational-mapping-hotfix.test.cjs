@@ -85,6 +85,9 @@ test('quote inbox has a focused refresh safety net when realtime delivery is una
  assert.match(mobile,/INQUIRY_SYNC_MS=30000/);
  assert.match(mobile,/refreshOperationalDomains\(\['inquiry_core'\],'inquiry-poll'\)/);
  assert.match(fs.readFileSync(path.join(__dirname,'..','operational-overlay.js'),'utf8'),/reason==='realtime'\|\|reason==='inquiry-poll'/);
+ assert.match(pc,/visibilitychange[^\n]+syncInquiryNow\(false\)/);
+ assert.match(pc,/addEventListener\('focus'[^\n]+syncInquiryNow\(false\)/);
+ assert.doesNotMatch(pc,/addEventListener\('focus'[^\n]+syncInquiryNow\(true\)/);
 });
 
 test('today manager intervention identifies inquiries with actionable context',()=>{
@@ -116,6 +119,8 @@ test('operational read starts without a blocking overlay and coalesces duplicate
  assert.match(source,/getElementById\('load'\);if\(el\)el\.style\.display='none'/);
  assert.match(source,/if\(operationalLoadDataJob\)return operationalLoadDataJob/);
  assert.match(source,/if\(operationalLoadLiveJob\)return operationalLoadLiveJob/);
+ assert.match(source,/domains\.every\(x=>coreDomains\.includes\(x\)\)/);
+ assert.doesNotMatch(source,/SUBSCRIBED[^\n]+scheduleRealtime\('opportunities'\)/);
  const hide=source.indexOf("getElementById('load')",source.indexOf('root.loadData=function'));
  const read=source.indexOf('operationalLoadData.apply',hide);
  assert.ok(hide>=0&&read>hide,'blocking overlay must be dismissed before the operational read');
@@ -131,9 +136,10 @@ test('concurrent PC refreshes share one progressive load job',async()=>{
  const gate=new Promise(resolve=>{release=resolve});
  const root={TOKEN:'token',ME:{id:'user'},Phase1:{read:async(resource,args)=>{reads++;await gate;return {data:args.domains.includes('deal_core')?{deals:[],inquiries:[]}:{expansion_pool:[],customer_support_actions:[],message_logs:[]}}},queue:{list:()=>[],flush:async()=>[]}},OperationalAdapter:{},addEventListener(){},document:{getElementById:()=>({style:{},classList:{toggle(){}}})},applyBundle(){renders++;}};
  overlay.install(root);
- const first=root.loadData(),second=root.loadData();
+ const first=root.loadData(),second=root.loadData(),focusPoll=root.refreshOperationalDomains(['inquiry_core'],'inquiry-poll');
  assert.strictEqual(first,second);
- release();await Promise.all([first,second]);
+ assert.strictEqual(first,focusPoll);
+ release();await Promise.all([first,second,focusPoll]);
  assert.equal(reads,1);assert.equal(renders,1);
 });
 
