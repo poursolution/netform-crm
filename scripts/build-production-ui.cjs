@@ -12,7 +12,7 @@ const ref = 'ymfbmpnizxvqsamnczow';
 const stagingRef = 'rprechiaglyjaydkmxsu';
 const publishableKey = 'sb_publishable_Lrv2O_5Nr96a1HQF6n65zA_7OsqCz3X';
 const allowedHosts = "['poursolution.github.io','127.0.0.1','localhost'].includes(location.hostname)";
-const runtimeAssetVersion = '20260907-mapping-3';
+const runtimeAssetVersion = '20260907-perf-1';
 const accounts = {
   '황윤선': 'hwangyunseon', '이필선': 'ipilseon', '한준엽': 'hanjunyeop',
   '정정훈': 'jeongjeonghun', '김성민': 'kimseongmin', '이승우': 'iseungwoo',

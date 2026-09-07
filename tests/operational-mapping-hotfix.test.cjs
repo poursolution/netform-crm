@@ -32,7 +32,28 @@ test('PC inquiry linking rejects empty-site joins and prefers explicit ids',()=>
  assert.match(html,/q\.assignee_name\|\|q\.sales_assignee/);
 });
 
-test('operational read completion dismisses the blocking load overlay',()=>{
+test('operational read starts without a blocking overlay and coalesces duplicate refreshes',()=>{
  const source=fs.readFileSync(path.join(__dirname,'..','operational-overlay.js'),'utf8');
  assert.match(source,/getElementById\('load'\);if\(el\)el\.style\.display='none'/);
+ assert.match(source,/if\(operationalLoadDataJob\)return operationalLoadDataJob/);
+ assert.match(source,/if\(operationalLiveLoadJob\)return operationalLiveLoadJob/);
+ const hide=source.indexOf("getElementById('load')",source.indexOf('root.loadData=function'));
+ const read=source.indexOf('operationalLoadData.apply',hide);
+ assert.ok(hide>=0&&read>hide,'blocking overlay must be dismissed before the operational read');
+});
+
+test('authenticated PC boot keeps the post-auth recovery load',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
+ assert.match(html,/Promise\.resolve\(AUTH_READY\)[\s\S]*?if\(AUTH_ON&&!TOKEN\)return;\s*loadData\(\);/);
+});
+
+test('concurrent PC refreshes perform one operational read and one render',async()=>{
+ let release,reads=0,renders=0;
+ const gate=new Promise(resolve=>{release=resolve});
+ const root={TOKEN:'token',ME:{id:'user'},Phase1:{read:async()=>{reads++;await gate;return {data:{deals:[],inquiries:[],expansion_pool:[]}}},queue:{list:()=>[],flush:async()=>[]}},OperationalAdapter:{},addEventListener(){},document:{getElementById:()=>({style:{}})},applyBundle(){renders++;}};
+ overlay.install(root);
+ const first=root.loadData(),second=root.loadData();
+ assert.strictEqual(first,second);
+ release();await Promise.all([first,second]);
+ assert.equal(reads,1);assert.equal(renders,1);
 });
