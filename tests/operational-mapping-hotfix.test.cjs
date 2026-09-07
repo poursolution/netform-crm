@@ -72,7 +72,7 @@ test('operational read starts without a blocking overlay and coalesces duplicate
  const source=fs.readFileSync(path.join(__dirname,'..','operational-overlay.js'),'utf8');
  assert.match(source,/getElementById\('load'\);if\(el\)el\.style\.display='none'/);
  assert.match(source,/if\(operationalLoadDataJob\)return operationalLoadDataJob/);
- assert.match(source,/if\(operationalLiveLoadJob\)return operationalLiveLoadJob/);
+ assert.match(source,/if\(operationalLoadLiveJob\)return operationalLoadLiveJob/);
  const hide=source.indexOf("getElementById('load')",source.indexOf('root.loadData=function'));
  const read=source.indexOf('operationalLoadData.apply',hide);
  assert.ok(hide>=0&&read>hide,'blocking overlay must be dismissed before the operational read');
@@ -118,6 +118,19 @@ test('operational transport supports an allowlisted domain subset for progressiv
  assert.match(source,/args\.domains===undefined\?knownDomains:args\.domains/);
  assert.match(source,/INVALID_READ_DOMAINS/);
  assert.match(source,/complete_for_requested_domains/);
+});
+
+test('mobile renders fresh deal core before secondary history completes',async()=>{
+ let releaseSecondary,renders=0;
+ const secondaryGate=new Promise(resolve=>{releaseSecondary=resolve});
+ const root={TOKEN:'token',CUR:'today',Phase1:{read:async(resource,args)=>{if(args.domains.includes('deal_core'))return {data:{deals:[{id:'deal-1',site_name:'빠른 현장',stage_code:'consulting',amount:100}],inquiries:[]}};await secondaryGate;return {data:{expansion_pool:[],customer_support_actions:[],message_logs:[]}}},queue:{list:()=>[],flush:async()=>[]}},OperationalAdapter:{},normalizeDeal:d=>d,rebuildAdmin(){},render(){renders++},addEventListener(){},document:{getElementById:()=>null}};
+ overlay.install(root);
+ const loading=root.loadLive();
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(renders,1);
+ assert.equal(root.DEALS[0].nm,'빠른 현장');
+ releaseSecondary();await loading;
+ assert.equal(renders,2);
 });
 
 test('view snapshot is session-only and identity scoped',()=>{
