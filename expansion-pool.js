@@ -51,9 +51,12 @@ return '<article class="exp-pool-card"><header><h3>'+h(r.site)+'</h3><strong>'+F
    if(!TOKEN)throw Error('로그인 후 서버 연결이 필요합니다.');
    if(!confirm(current.site+' · '+deal.work_summary+' · '+fmtAmt(deal.amount)+' · '+deal.owner+'\n실제 발송된 견적을 기준으로 새 Pipeline을 생성할까요?'))return;
    pending.add(source.sourceOpportunityId);controls.forEach(x=>x.disabled=true);
-   const response=await fetch(WRITE_API,{method:'POST',headers:authHeaders({'Content-Type':'application/json'}),body:JSON.stringify({op:'expansion_quote_convert',write_id:req.idempotency_key,payload:req})});
-   const raw=await response.json();if(!response.ok)throw Error(raw.message||'서버 처리 실패');
-   const res=F.acknowledged(unwrapExecWrite(raw),req);
+   if(!Number.isSafeInteger(current.version)||current.version<0)throw Error('확장관리 최신 버전을 불러온 뒤 다시 시도해 주세요.');
+   const queued=Phase1.queue.enqueue('expansion_quote_convert',current.sourceOpportunityId,current.version,req);
+   await Phase1.queue.flush();
+   const saved=Phase1.queue.list().find(x=>x.request_id===queued.request_id);
+   if(!saved||saved.status!=='done'||!saved.ack)throw Error(saved&&saved.error||'서버 처리 결과를 확인하지 못했습니다.');
+   const res=F.acknowledged(saved.ack,req);
    // Only an explicit transaction ACK may close the pool or add a Deal locally.
    const local=expansionLocalRow(source.id);if(local&&local.local){local.local.createdOpportunityId=res.new_opportunity_id;local.local.status='Pipeline 전환'}
    B.expansion_pool=(B.expansion_pool||[]).filter(r=>expSourceId(r)!==source.sourceOpportunityId).concat(Object.assign({},source,{createdOpportunityId:res.new_opportunity_id,status:'Pipeline 전환'}));

@@ -3,6 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const F=require('../expansion-flow.js');
+const Adapter=require('../operational-adapter.js');
 const source={id:'pool-1',sourceOpportunityId:'old-won',siteId:'site',status:'니즈확인'};
 const deal={name:'테스트 현장',amount:160000000,work_items:['재도장>외부'],primary_work:'재도장>외부',owner:'담당자'};
 const request=()=>F.request(source,deal,{dispatch_id:'receipt'});
@@ -22,7 +23,15 @@ test('완료 상태 또는 연결된 Deal이 있으면 재전환 불가',()=>{fo
 test('금액·대표 공종 누락은 차단',()=>{assert.throws(()=>F.request(source,{...deal,amount:0},{dispatch_id:'x'}));assert.throws(()=>F.request(source,{...deal,primary_work:'옥상>싱글'},{dispatch_id:'x'}))});
 test('일반 ok, 빈 응답, 다른 source 또는 receipt ACK를 완료로 처리하지 않는다',()=>{for(const a of [{},null,{ok:true},{...ack(),source_opportunity_id:'wrong'},{...ack(),quote_dispatch_id:'wrong'},{...ack(),stage_code:'first_contact'},{...ack(),new_opportunity_id:'old-won'}])assert.throws(()=>F.acknowledged(a,request()))});
 test('정확한 전환 ACK만 수락',()=>assert.equal(F.acknowledged(ack(),request()).new_opportunity_id,'new-deal'));
+test('확장 전환은 기존 수주 UUID·발송 증거·공종·금액을 고정한다',()=>{
+ const sourceId='11111111-1111-4111-8111-111111111111',dispatchId='22222222-2222-4222-8222-222222222222';
+ const payload={source_opportunity_id:sourceId,quote_dispatch_id:dispatchId,idempotency_key:'expansion:'+sourceId,opportunity:{name:'[서울 마포] 테스트아파트',work_name:'옥상 방수',brand:'POUR솔루션',owner:'테스트',amount:1000000,reason:'실제 견적 발송 확인',primary_work:'옥상>싱글',work_items:['옥상>싱글'],work_scope_type:'single',work_summary:'옥상 싱글',office_phone:'02-1234-5678',manager_name:'김관리',manager_mobile:'010-1234-5678',person_key:'mobile:01012345678',origin:'expansion',origin_source:'expansion',source_opportunity_id:sourceId,stage_code:'sent',code:'sent',stage:'컨설팅 자료 발송완료'}};
+ const normalized=Adapter.normalize('expansion_quote_convert',sourceId,1,payload);
+ assert.equal(normalized.payload.quote_dispatch_id,dispatchId);assert.equal(normalized.payload.opportunity.office_phone,'0212345678');
+ assert.throws(()=>Adapter.normalize('expansion_quote_convert',sourceId,1,{...payload,quote_dispatch_id:'draft'}),/EXPANSION_CONVERT_INTENT_NOT_CONNECTED/);
+});
 test('실패 응답 때 mutation 이전에 검증하고 일반 생성 경로로 빠지지 않는다',()=>{const ui=fs.readFileSync(require.resolve('../expansion-pool.js'),'utf8');assert.ok(ui.indexOf('F.acknowledged(')<ui.indexOf('local.local.createdOpportunityId='));assert.match(ui,/pending.has/);const crm=fs.readFileSync(require.resolve('../crm.html'),'utf8');assert.match(crm,/if\(expansionSource\)\{ExpansionPool.convert[\s\S]*?return;\}/);assert.doesNotMatch(crm,/if\(expansionSource\)expansionSave/);new vm.Script(ui)});
+test('확장 전환은 차단된 legacy WRITE_API 대신 멱등 queue를 사용한다',()=>{const ui=fs.readFileSync(require.resolve('../expansion-pool.js'),'utf8');assert.match(ui,/queue\.enqueue\('expansion_quote_convert'/);assert.doesNotMatch(ui,/fetch\(WRITE_API/);});
 test('확장 목록은 독립 복합필터·전체연도 기한배지·고정 페이지를 사용한다',()=>{
  const ui=fs.readFileSync(require.resolve('../expansion-pool.js'),'utf8');
  assert.match(ui,/expansionStatusFilter/);
