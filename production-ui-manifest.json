@@ -58,7 +58,7 @@
   "files_sha256": {
     "crm-export.js": "a5e413081d0b84cf66d3e94a9969822d6c0c50cc303c866e75b2a836c7222670",
     "crm-read.js": "ebdd58450449f13f4a1331e60ef09c8be14afa7b74802b05f81e81ab62d42730",
-    "crm.html": "d8504ea89b74469da9b5b030d824fb50125b191821a7f21de8d24dc03e3a61f1",
+    "crm.html": "bf3128362a1709e98cf473556243894a74e02ddbef48260191dd89933ca50f6d",
     "data-cleanup-ui.js": "a724dd6503ad8a95a29452c7311656a4a646fb9f69758fdc19a80a1da604150a",
     "data-cleanup.css": "09b6488f827ece281de72107915c870ea31522125334f3bf43329445a5accb45",
     "data-cleanup.js": "7fc99f3d86fc05db564e9bc7c844513dc1f60fe1add0d3d4b5f5ab6bd6615a6f",
@@ -69,7 +69,7 @@
     "issue-modal.css": "0896af727f12a21d563e2e703028812cb2cb31ac496b2452928c9804e19201e5",
     "issue-modal.js": "7a2b2f1ee66e509b5d26ce0f3585a6e5e6ffc2f3f0b045d9f5a8b690a2e14391",
     "message-salutation.js": "70a273b77b4ec85f7c9f7ee9f3d249e11e7a5cc7f55f4bb2fb690d62d7957474",
-    "mobile.html": "26c3c94ae96fa9a706e997349a6fe9939af433d2c56eaa5b264e6d1bdd2f2e03",
+    "mobile.html": "e7a1864d98d11e55676017c019009c8b93e35b9a7664a1574862ca794c50436d",
     "money-input.js": "9bffc3ca4685e0fac2efcfc78d4d5f4f2739b4f9bf8fbf6157b462a41a9d0eb2",
     "next-action-picker.css": "5d149225c510ee10e58c6f6ce7686715414533d8948de484c5dbd585a670d387",
     "next-action-picker.js": "be9e041da4388f3fd515e358cf99d7b04634e0b72b47eff9b59317f35cfd4d07",

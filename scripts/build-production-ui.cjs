@@ -42,6 +42,11 @@ function productionText(text, file) {
     .replace("pw=(G.lgPw||'');", "pw=(G.lgPw||'').replace(/[^0-9]/g,'');")
     .replaceAll('Staging Phase 1: 로그인 연결 완료 · 업무별 read 계약은 후속 Phase에서 연결합니다. 전체 실적 데이터로 해석하지 마세요.', '운영 데이터를 불러오는 중입니다.')
     .replaceAll('Staging · 업무 데이터 unavailable', '운영 · 데이터 연결 중')
+    .replaceAll('src="/phase1-config.js"', 'src="./phase1-config.js"')
+    .replaceAll('src="/operational-adapter.js"', 'src="./operational-adapter.js"')
+    .replaceAll('src="/transport.js"', 'src="./transport.js"')
+    .replaceAll('src="/operational-overlay.js"', 'src="./operational-overlay.js"')
+    .replaceAll('src="/work-editor.js"', 'src="./work-editor.js"')
     .replace(/^ +$/gm, '');
   if (next.includes('nfrnd.app.n8n.cloud')) {
     throw Error(`LEGACY_WRITE_ENDPOINT_DRIFT:${file}`);

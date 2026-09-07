@@ -60,7 +60,7 @@ test('PC and mobile use the same Production Supabase transport with legacy n8n w
   const html=fs.readFileSync(require.resolve('../'+file),'utf8');
   assert.match(html,/<script src="crm-read\.js/);
   assert.match(html,/rest\/v1\/rpc\/crm_read_bundle/);
-  assert.match(html,/<script src="\/phase1-config\.js"><\/script><script src="\/operational-adapter\.js"><\/script><script src="\/transport\.js"><\/script>/);
+  assert.match(html,/<script src="\.\/phase1-config\.js"><\/script><script src="\.\/operational-adapter\.js"><\/script><script src="\.\/transport\.js"><\/script>/);
   assert.match(html,/var WRITE_API='urn:netform-crm:legacy-write-disabled'/);
   assert.doesNotMatch(html,/nfrnd\.app\.n8n\.cloud/);
   assert.match(html,/var SYNC_MS=120000/);
