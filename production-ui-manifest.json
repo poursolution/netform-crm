@@ -1,7 +1,7 @@
 {
   "project_ref": "ymfbmpnizxvqsamnczow",
   "status": "PRODUCTION_BUTTON_HOTFIX_VERIFIED",
-  "source_commit": "31dca3b8b9211a6d4ec3f94e1890e95277e7523c",
+  "source_commit": "0b3d9d1",
   "approved_dashboard_commit": "842a5dd",
   "connected_operations": [
     "opportunity_work_set",
