@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="ko">
-<head>
+<head><script src="/phase1-config.js"></script><script src="/operational-adapter.js"></script><script src="/transport.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-store">
 <title>넷폼 CRM</title>
-<link rel="preconnect" href="https://nfrnd.app.n8n.cloud" crossorigin>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+
 <!--
   ══════════════════════════════════════════════════════════════════════
   넷폼 CRM 진입점 — 주소 하나, 화면 둘 (2026-09-02)
@@ -35,7 +35,7 @@
 
   ── 판단 순서 ──
   ① ?view=pc / ?view=mobile          ← 주소에 적힌 것이 최우선 (테스트·링크 공유)
-  ② 이 기기에 저장된 사용자의 선택 (localStorage)
+  ② 이 기기에 저장된 사용자의 선택 (Phase1.storage)
   ③ 자동 판정 (UA + 화면폭 + 터치)
 
   주소가 1순위인 이유: 저장된 선택이 이기면 ?view=pc 를 붙여도 무시돼서
@@ -98,9 +98,9 @@ function autoView(){
 
 function decide(){
   var q = (location.search.match(/[?&]view=(pc|mobile)/) || [])[1];
-  if (q) { try{ localStorage.setItem(KEY, q) }catch(e){} return q; }
+  if (q) { try{ Phase1.storage.setItem(KEY, q) }catch(e){} return q; }
   var saved = null;
-  try { saved = localStorage.getItem(KEY) } catch(e){}
+  try { saved = Phase1.storage.getItem(KEY) } catch(e){}
   if (saved === 'pc' || saved === 'mobile') return saved;
   return autoView();
 }
@@ -109,7 +109,7 @@ var view = decide();
 
 function mount(v){
   view = v;
-  try { localStorage.setItem(KEY, v) } catch(e){}
+  try { Phase1.storage.setItem(KEY, v) } catch(e){}
   /* 서버 rewrite(deploy/README) 가 사용자의 선택을 읽을 수 있게 쿠키로도 남긴다 */
   try { document.cookie = 'nf_view=' + v + ';path=/;max-age=31536000;samesite=lax' } catch(e){}
   /* 주소도 같이 바꾼다 — 새로고침해도, 링크로 공유해도 같은 화면이 뜬다.
@@ -166,7 +166,7 @@ mount(view);
    저장된 선택이 없을 때만 자동 판정을 다시 적용한다. */
 var rz;
 window.addEventListener('resize', function(){
-  var saved = null; try { saved = localStorage.getItem(KEY) } catch(e){}
+  var saved = null; try { saved = Phase1.storage.getItem(KEY) } catch(e){}
   if (saved) return;
   clearTimeout(rz);
   rz = setTimeout(function(){ var a = autoView(); if (a !== view) mount(a) }, 400);

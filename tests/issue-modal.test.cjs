@@ -6,7 +6,7 @@ const crm=fs.readFileSync(require.resolve('../crm.html'),'utf8');
 test('실제 대시보드 카드 숫자와 popup은 같은 배열을 받는다',()=>{
  const X={noNext:[{id:1}],overdue:[{id:2},{id:3}],nearIdle:Array.from({length:37},(_,i)=>({id:i}))},bound=[],cards=[];
  const c={X,IssueModal:{bind:(slot,kind,rows)=>{bound.push({kind,rows});return kind}},todaySignal:(label,n,desc,tone,go)=>{cards.push({n,go});return ''},todayLane(){}};
- vm.runInNewContext(crm.split(/\r?\n/).find(x=>x.includes("todayLane('sales'")).trim().replace(/,$/,''),c);
+ vm.runInNewContext(crm.split(/\r?\n/).filter(x=>x.includes("todayLane('sales'")).at(-1).trim().replace(/,$/,''),c);
  assert.equal(bound[2].rows,X.nearIdle);assert.equal(cards[2].n,bound[2].rows.length);assert.equal(cards[2].go,'nearIdle');
  assert.match(crm,/IssueModal.bind\('health:noAmount','noAmount',noAmt\)/);assert.match(crm,/IssueModal.bind\('pipe:quick:'/);
 });

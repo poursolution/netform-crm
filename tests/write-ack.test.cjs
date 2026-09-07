@@ -16,18 +16,16 @@ test('HTTP 200 파싱 실패와 HTTP 오류는 미확인',async()=>{
 });
 for(const file of ['crm.html','mobile.html']){
  const code=fs.readFileSync(require.resolve('../'+file),'utf8');
- const flush=code.slice(code.indexOf('function flushWrites(){'),code.indexOf('\n}',code.indexOf('function flushWrites(){'))+2);
- test(file+' 실제 저장큐: 확인된 응답만 완료, 애매하면 자동 재전송 중단',async()=>{
-  let calls=0,result={};const item={write_id:'a',op:'assign',payload:{},status:'pending'};
-  const c={TOKEN:'fixture-token',WRITE_Q:[item],WRITE_API:'fixture',WriteAck:A,authHeaders:x=>x,fetch:async()=>{calls++;return {ok:true,json:async()=>result}},isoNow:()=>'',saveWQ(){},saveQ(){},updateSyncBadge(){},updatePendingBadge(){},adoptServerId(){},isTempId:()=>false,ID_MAP:{}};
-  vm.createContext(c);vm.runInContext(flush,c);c.flushWrites();await new Promise(setImmediate);
-  assert.equal(item.status,'failed');c.flushWrites();assert.equal(calls,1);
-  result={ok:true,write_id:'a'};item.status='pending';c.flushWrites();await new Promise(setImmediate);assert.equal(item.status,'done');
-  c.TOKEN=null;item.status='pending';c.flushWrites();assert.equal(calls,2);
+ const flush=code.match(/function flushWrites\(\)\{[^\n]+\}/)[0];
+ test(file+' 실제 저장큐는 Production Phase1 멱등 큐에만 위임',async()=>{
+  let calls=0;const c={console,Promise,Phase1:{profile:{user_id:'u'},queue:{flush:async()=>{calls++}}}};
+  vm.createContext(c);vm.runInContext(flush,c);await c.flushWrites();assert.equal(calls,1);
+  c.Phase1.profile=null;await c.flushWrites();assert.equal(calls,1);
+  assert.doesNotMatch(flush,/fetch|WRITE_API|nfrnd/);
  });
  test(file+' 새로고침 중 전송건은 완료/자동재전송으로 변하지 않음',()=>{
   const line=code.split(/\r?\n/).find(x=>x.startsWith('var WRITE_Q='));
-  const c={WQ_KEY:'fixture',localStorage:{getItem:()=>JSON.stringify([{status:'sending',write_id:'keep'}])}};
+  const c={WQ_KEY:'fixture',Phase1:{storage:{getItem:()=>JSON.stringify([{status:'sending',write_id:'keep'}])}}};
   vm.runInNewContext(line,c);assert.equal(c.WRITE_Q[0].status,'failed');assert.equal(c.WRITE_Q[0].write_id,'keep');
  });
 }

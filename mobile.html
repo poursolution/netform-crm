@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head>
+<head><script src="/phase1-config.js"></script><script src="/operational-adapter.js"></script><script src="/transport.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
@@ -572,10 +572,10 @@ body.svc .phone{width:100%;max-width:none;border:0;border-radius:0;box-shadow:no
 </div>
 
 <!-- DNS·TLS 를 미리 잡아 둔다 — 모바일 회선일수록 효과가 크다 (2026-09-04) -->
-<link rel="preconnect" href="https://nfrnd.app.n8n.cloud" crossorigin>
-<link rel="preconnect" href="https://ymfbmpnizxvqsamnczow.supabase.co" crossorigin>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+
+
+
+<script src="vendor/supabase.js"></script>
 <script src="message-salutation.js?v=20260905-1"></script>
 <script src="money-input.js?v=20260905-1"></script>
 <script src="write-ack.js?v=20260905-1"></script>
@@ -786,68 +786,25 @@ function dueDays(d){if(!d.nextAction||d.nextAction.status!=='open')return null;
    목업이라고 로컬에만 저장한 뒤 «기재 완료» 라고 말하지 않기 위함. */
 /* crm-write = PC와 같은 Supabase 로 들어가는 공통 쓰기 API (2026-09-01 개통).
    ⚠ 지금은 관리자 키를 쿼리로 붙인다 — 서버 Auth(JWT) 로 옮기면 이 줄과 헤더만 바뀐다 */
-var WRITE_API='https://nfrnd.app.n8n.cloud/webhook/crm-write',WQ_KEY='nf_write_q_v1';
-/* 새로고침으로 큐가 날아가면 «완료» 라고 말한 기록이 사라진다 → localStorage 에 보관 */
-var WRITE_Q=(function(){try{return JSON.parse(localStorage.getItem(WQ_KEY)||'[]').map(function(w){if(w.status==='sending'){w.status='failed';w.last_error='이전 전송 결과 미확인 · 서버 이력 확인 후 재시도하세요.'}return w})}catch(e){return []}})();
-function saveQ(){try{localStorage.setItem(WQ_KEY,JSON.stringify(WRITE_Q.slice(-300)))}catch(e){}}
+var WRITE_API='urn:netform-crm:legacy-write-disabled',WQ_KEY='nf_write_q_v1';
+/* 새로고침으로 큐가 날아가면 «완료» 라고 말한 기록이 사라진다 → Phase1.storage 에 보관 */
+var WRITE_Q=(function(){try{return JSON.parse(Phase1.storage.getItem(WQ_KEY)||'[]').map(function(w){if(w.status==='sending'){w.status='failed';w.last_error='이전 전송 결과 미확인 · 서버 이력 확인 후 재시도하세요.'}return w})}catch(e){return []}})();
+function saveQ(){try{Phase1.storage.setItem(WQ_KEY,JSON.stringify(WRITE_Q.slice(-300)))}catch(e){}}
 var _wseq=0;
 /* write_id = 멱등키. 같은 요청이 두 번 도착해도 서버가 한 번만 처리하게 한다 */
 function newWriteId(){var d=new Date(),p=function(x,l){return String(x).padStart(l||2,'0')};
  return 'W'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getTime()%1e6,6)+'-'+p(++_wseq,3)}
-function pushWrite(op,payload,localId){
- WRITE_Q.push({write_id:newWriteId(),op:op,payload:payload,actor_id:meId(),local_id:localId||null,
-               opportunity_id:payload&&payload.opportunity_id||null,created_at:isoNow(),version:1,status:'pending'});
- saveQ();flushWrites();updatePendingBadge();
-}
+function pushWrite(op,payload){var q;if(op==='opportunity_work_set')q=Phase1.queue.enqueue(op,payload.opportunity_id,payload.expected_version,{primary_work:payload.primary_work,work_items:payload.work_items,reason:payload.reason});else if(op==='inquiry_assign')q=Phase1.queue.enqueue(op,payload.inquiry_id,0,payload);else throw Error('CONTRACT_UNAVAILABLE');WRITE_Q=Phase1.queue.list();return q.request_id;}
 /* 임시 id(new-/tmp-) → 서버 UUID 대응표. 새로고침해도 남아야 큐가 스스로 복구된다 */
-var ID_MAP=(function(){try{return JSON.parse(localStorage.getItem('nf_idmap_v1')||'{}')}catch(e){return {}}})();
-function saveMap(){try{localStorage.setItem('nf_idmap_v1',JSON.stringify(ID_MAP))}catch(e){}}
+var ID_MAP=(function(){try{return JSON.parse(Phase1.storage.getItem('nf_idmap_v1')||'{}')}catch(e){return {}}})();
+function saveMap(){try{Phase1.storage.setItem('nf_idmap_v1',JSON.stringify(ID_MAP))}catch(e){}}
 function isTempId(v){return /^(new|tmp)-/.test(String(v||''))}
 var MAX_TRIES=5;
-function flushWrites(){
- if(!TOKEN)return;
- var busy={};   /* 같은 딜의 요청은 한 번에 하나만 — 생성보다 활동이 먼저 도착하는 것을 막는다 */
- WRITE_Q.forEach(function(w){if(w.status==='sending')busy[w.opportunity_id||w.local_id||'_']=true});
- WRITE_Q.filter(function(w){return w.status==='pending'}).forEach(function(w){
-  var oid=w.payload&&w.payload.opportunity_id;
-  /* 앞선 생성 요청이 끝나 서버 id 가 정해졌으면 지금이라도 갈아끼운다 */
-  if(isTempId(oid)&&ID_MAP[oid]){w.payload.opportunity_id=ID_MAP[oid];w.opportunity_id=ID_MAP[oid];oid=ID_MAP[oid]}
-  /* 아직 서버 id 를 모르는 건은 보내지 않는다 — 보내봐야 500 만 나고 재시도만 쌓인다 */
-  if(isTempId(oid))return;
-  var key=w.opportunity_id||w.local_id||'_';
-  if(busy[key])return;                       /* 같은 딜은 순서대로 */
-  busy[key]=true;w.status='sending';
-  fetch(WRITE_API,{method:'POST',headers:authHeaders({'Content-Type':'application/json'}),body:JSON.stringify(w)})
-   .then(function(r){return WriteAck.read(r,w)})
-   .then(function(res){
-     /* n8n이 HTTP 200으로 오류 JSON을 보내도 성공 처리하지 않는다. */
-     if(res&&res.ok===false)throw new Error(res.error||res.message||('서버가 '+w.op+' 저장을 거부했습니다'));
-     w.status='done';w.acked_at=isoNow();
-     delete w.last_error;
-     /* 서버가 새 딜을 만들면 진짜 opportunity_id 를 돌려준다 — 임시 id 를 즉시 교체 */
-     if(res&&res.new_opportunity_id&&(w.op==='opportunity_create'||w.op==='lead_create')){
-       var tmp=w.local_id,nid=res.new_opportunity_id;
-       if(tmp){ID_MAP[tmp]=nid;saveMap();
-         var d=DEALS.find(function(x){return x.id===tmp});
-         if(d){d.id=nid;if(G.deal===tmp)G.deal=nid}
-         WRITE_Q.forEach(function(q){if(q.payload&&q.payload.opportunity_id===tmp){q.payload.opportunity_id=nid;q.opportunity_id=nid}});
-       }
-     }
-     saveQ();updatePendingBadge();flushWrites();   /* 뒤에 밀려 있던 같은 딜 요청 이어서 */
-   })
-   .catch(function(err){
-     w.tries=(w.tries||0)+1;
-     w.last_error=String(err&&err.message||err||'서버 저장 실패').slice(0,240);
-     /* 무한 재시도 금지 — 상한을 넘기면 실패로 확정하고 사용자에게 보인다 */
-     w.status='failed'; // 응답 유실 후 자동 재전송하지 않고 확인 후 수동 재시도합니다.
-     saveQ();updatePendingBadge();
-   });
- });
-}
+function flushWrites(){if(!Phase1.profile)return Promise.resolve();return Phase1.queue.flush().catch(function(e){console.warn("Phase1 queue: "+e.message)});}
 function pendingCount(){return WRITE_Q.filter(function(w){return w.status==='pending'||w.status==='sending'}).length}
 function failedCount(){return WRITE_Q.filter(function(w){return w.status==='failed'}).length}
 /* 실패로 확정된 건을 다시 보낸다 (배지 탭) */
-function retryFailed(){WRITE_Q.forEach(function(w){if(w.status==='failed'){w.status='pending';w.tries=0}});saveQ();flushWrites();updatePendingBadge();toast('재전송을 시도합니다')}
+function retryFailed(){return flushWrites();}
 /* 실패 요청이 pending 으로 멈춰있지 않게 30초 자동 재시도 + 온라인 복귀 시 즉시 재전송 */
 setInterval(function(){flushWrites()},30000);
 window.addEventListener('online',function(){flushWrites()});
@@ -862,14 +819,14 @@ function updatePendingBadge(){var el=document.getElementById('pendBadge');if(!el
    성공 시 딜·파이프라인 집계가 실데이터로 교체됨. 실패 시 예시 데이터 유지. */
 var BUILD='2026-09-05-relation-intel2';   /* 화면 하단·로그인에 표시 — 이 값이 오래됐으면 캐시된 옛 파일이다 */
 var LIVE=false,LOAD_ERR=null;
-var DEMO=/[?&]demo=1/.test(location.search);   /* 예시 데이터는 명시적으로 켤 때만 */
+var DEMO=false;   /* 예시 데이터는 명시적으로 켤 때만 */
 /* 흐름도(flow)는 설계 확인용 문서다. 실제 사용자 라우트에 포함시키지 않는다.
    ?debug=1 / ?preview=1 일 때만 목업 크롬과 flow 화면이 열린다. */
 var DEVVIEW=/[?&](debug|preview)=1/.test(location.search);
 /* 로그인 기억 — 새로고침해도 «오늘»로 바로 들어가려면 기기에 남겨야 한다 */
 var LAST_KEY='nf_last_user';
-function rememberUser(u){try{localStorage.setItem(LAST_KEY,JSON.stringify({nm:u.nm,role:u.role}))}catch(e){}}
-function recallUser(){try{var j=JSON.parse(localStorage.getItem(LAST_KEY)||'null');
+function rememberUser(u){try{Phase1.storage.setItem(LAST_KEY,JSON.stringify({nm:u.nm,role:u.role}))}catch(e){}}
+function recallUser(){try{var j=JSON.parse(Phase1.storage.getItem(LAST_KEY)||'null');
  if(!j||!j.nm)return null;
  return (REPS||[]).filter(function(r){return r.nm===j.nm})[0]||null}catch(e){return null}}
 var CRM_API='https://ymfbmpnizxvqsamnczow.supabase.co/rest/v1/rpc/crm_read_bundle';
@@ -885,8 +842,8 @@ var CRM_API='https://ymfbmpnizxvqsamnczow.supabase.co/rest/v1/rpc/crm_read_bundl
    토큰은 crm-api / crm-write 호출에 함께 실어 보낸다 — 서버가 «누가 보냈는지»
    알아야 웹훅 키 하나로 열려 있는 지금 상태를 끝낼 수 있다.
    ══════════════════════════════════════════════════════════ */
-var SUPABASE_URL='https://ymfbmpnizxvqsamnczow.supabase.co';
-var SUPABASE_ANON='sb_publishable_Lrv2O_5Nr96a1HQF6n65zA_7OsqCz3X';
+var SUPABASE_URL=Phase1.config.url;
+var SUPABASE_ANON=Phase1.config.publishable_key;
 var SB=null, TOKEN=null;
 /* 화면과 서버가 같은 표를 써야 한다 — PC 의 LOGIN_ID 와 글자까지 동일 */
 var LOGIN_ID={'황윤선':'hwangyunseon','이필선':'ipilseon','한준엽':'hanjunyeop',
@@ -894,7 +851,7 @@ var LOGIN_ID={'황윤선':'hwangyunseon','이필선':'ipilseon','한준엽':'han
   '송보람':'songboram','조현식':'johyeonsik','조재연':'jojaeyeon',
   '주현진':'juhyeonjin','한인규':'haningyu','경남지사':'gyeongnam'};
 var LOGIN_DOMAIN='@crm.netform.co.kr';
-function loginEmailOf(nm){var k=String(nm||'').replace(/\s+/g,'');return LOGIN_ID[k]?LOGIN_ID[k]+LOGIN_DOMAIN:null}
+function loginEmailOf(name){return Phase1.loginEmail(name);}
 
 function canonicalRep(n){
  var raw=String(n||'').trim(), compact=raw.replace(/[\s()（）·_\-]/g,'');
@@ -902,14 +859,14 @@ function canonicalRep(n){
  for(var i=0;i<names.length;i++){var k=names[i].replace(/\s+/g,'');if(compact.indexOf(k)>=0)return names[i]}
  return raw;
 }
-function canManage(){return !!(G.user&&(G.user.role==='admin'||G.user.role==='dual'))}
+function canManage(){return !!Phase1.profile?.allowed_modes.includes('admin');}
 var MODE_KEY='nf_mobile_mode_v2';
-function savedMode(){try{var x=localStorage.getItem(MODE_KEY);return x==='admin'||x==='rep'?x:null}catch(e){return null}}
-function saveMode(x){try{localStorage.setItem(MODE_KEY,x)}catch(e){}}
+function savedMode(){try{var x=Phase1.storage.getItem(MODE_KEY);return x==='admin'||x==='rep'?x:null}catch(e){return null}}
+function saveMode(x){try{Phase1.storage.setItem(MODE_KEY,x)}catch(e){}}
 
 function authReady(){
   if(SB||!window.supabase||!SUPABASE_ANON)return SB;
-  SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,
+  SB=Phase1.createClient(SUPABASE_URL,SUPABASE_ANON,
       {auth:{persistSession:true,autoRefreshToken:true}});
   return SB;
 }
@@ -920,32 +877,18 @@ async function authRestore(){
   if(!s)return false;
   return await authAdmit(s);
 }
-async function authAdmit(session){
-  var email=((session.user&&session.user.email)||'').toLowerCase();
-  var r=await SB.from('users').select('name,role,active').eq('email',email).maybeSingle();
-  if(r.error||!r.data||!r.data.active){
-    await SB.auth.signOut();
-    G.loginErr=r.error?('확인 실패: '+r.error.message)
-      :'등록된 담당자가 아니거나 사용이 중지된 계정입니다. 영업관리팀에 문의하세요.';
-    return false;
-  }
-  TOKEN=session.access_token;
-  G.user={id:session.user&&session.user.id||null,nm:r.data.name,role:r.data.role,email:email};
-  /* 모바일은 현장 영업이 1순위. 관리자/겸직도 기본은 내 영업, 필요할 때 관리로 전환 */
-  G.mode=(r.data.role==='admin'||r.data.role==='dual')?(savedMode()||'rep'):'rep';
-  G.loginErr=null;
-  return true;
-}
+async function authAdmit(session){try{var p=await Phase1.admit(session);TOKEN=session.access_token;G.user={id:p.user_id,auth_uid:p.auth_uid,nm:p.name,email:session.user.email,role:p.allowed_modes.includes('admin')?p.source_role:'rep',source_role:p.source_role,permission_role:p.permission_role};G.mode=p.allowed_modes.includes(savedMode())?savedMode():'rep';G.loginErr=null;return true;}catch(e){await Phase1.signOut();TOKEN=null;G.user=null;G.loginErr=e.message;return false;}}
 async function doSignIn(){
   if(!authReady()){G.loginErr='로그인 모듈을 불러오지 못했습니다. 통신 상태를 확인해 주세요.';return rLogin()}
   var nm=(G.lgName||'').trim(), pw=(G.lgPw||'').replace(/[^0-9]/g,'');
-  if(!nm||!pw){G.loginErr='이름과 핸드폰 번호를 모두 입력해 주세요.';return rLogin()}
+  if(!nm||!pw){G.loginErr='이름과 비밀번호를 모두 입력해 주세요.';return rLogin()}
   var em=loginEmailOf(nm);
   if(!em){G.loginErr='등록되지 않은 이름입니다. 정확히 입력했는지 확인해 주세요.';return rLogin()}
   G.lgBusy=true;rLogin();
+  Phase1.beginLogin();
   var {data,error}=await SB.auth.signInWithPassword({email:em,password:pw});
   G.lgBusy=false;
-  if(error){G.loginErr='이름 또는 핸드폰 번호가 맞지 않습니다.';return rLogin()}
+  if(error){G.loginErr='이름 또는 비밀번호가 맞지 않습니다.';return rLogin()}
   if(await authAdmit(data.session)){
     G.lgPw='';
     loadLive();                                   /* 토큰이 생긴 지금 부른다 */
@@ -953,7 +896,7 @@ async function doSignIn(){
   } else rLogin();
 }
 function askSignOut(){if(confirm('로그아웃할까요?'))doSignOut()}
-async function doSignOut(){if(SB)await SB.auth.signOut();TOKEN=null;G.user=null;location.reload()}
+async function doSignOut(){await Phase1.signOut();location.reload();}
 /* 서버 호출에 «누가 보냈는지» 를 실어 보낸다 */
 function authHeaders(base){
   var h=base||{};
@@ -1035,55 +978,7 @@ function outcomeOfServer(d){
  if(d.code==='nocontact'||/연락두절/.test(t))return 'nocontact';
  return null;
 }
-function loadLive(){
- if(!TOKEN)return Promise.resolve(); // 로그인 전 예열·조회 금지. demo는 기존 예시를 유지.
- LAST_READ_SYNC=Date.now();
- return CrmRead.read({client:authReady(),url:CRM_API,key:SUPABASE_ANON}).then(function(b){
-  BUNDLE=b;   /* 잔디 응대 이력을 딜 상세에서 쓰려면 원본이 필요하다 (PC 와 같은 데이터) */
-  var ds=[],seq=0;
-  (b.deals||[]).forEach(function(d){
-   var code=codeOfServer(d),oc=outcomeOfServer(d);
-   /* P0 ⑦ : 종료돼도 «어느 단계에서 끝났는지» 를 덮어쓰지 않는다.
-      실주 분석("우리는 어느 단계에서 가장 많이 지는가")의 유일한 원천이다 */
-   if(oc&&!STAGE_MASTER[code])code='first_contact';
-   /* 서버가 code='lost' 처럼 결과만 준 경우 «어느 단계에서 끝났는지» 는 원본에 없다.
-      임의로 채우지 않고 미상으로 표시한다 — 단계별 실주 분석은 이 필드가 채워진 뒤부터 유효 */
-   var unk=(oc&&['won','lost','badfit','nocontact'].indexOf(code)>=0);
-   /* P0 ① : id 는 DB 가 만든다. 모바일이 새로 매기면 Write 가 엉뚱한 건에 붙는다 */
-   var oid=d.opportunity_id||d.id||d.deal_id||d.key||('tmp-'+(++seq));
-   ds.push(normalizeDeal({id:oid,server_id:d.opportunity_id||d.id||null,site_id:d.site_id||null,
-     owner_id:d.owner_id||d.assignee_id||null,
-     nm:d.site||'(무명)',rep:d.assignee||'미배정',code:code,outcome:oc,stage_unknown:unk,
-     amt:d.amt||0,quote_amount:d.quote_amount||d.quoteAmt||0,quote_versions:d.quote_versions||d.quoteVersions||[],won_amount:oc==='won'?(d.won_amount||d.amt||0):(d.won_amount||0),sub:d.brand||'',
-     /* 사업유형 3축 — PC 번들이 내려주는 값을 그대로 쓴다 (모바일이 새로 판단하지 않는다) */
-     originBusiness:d.originBusiness||d.brand||'',
-     currentBusiness:d.currentBusiness||d.brand||'',
-     businessHistory:d.businessHistory||[],
-     work:d.work||d.work_name||'',work_name:d.work_name||d.work||'',work_type:d.work_type||d.workType||'',
-     primaryWork:d.primaryWork||d.primary_work||'',workItems:d.workItems||d.work_items||[],workScopeType:d.workScopeType||d.work_scope_type||'',workSummary:d.workSummary||d.work_summary||'',gj:d.gj||null,
-     advisory:d.advisory||null,
-     contact:d.contact||null,contacts:Array.isArray(d.contacts)?d.contacts:[],office_phone:d.office_phone||d.officeTel||'',office_email:d.office_email||'',
-     manager_name:d.manager_name||d.managerName||'',manager_mobile:d.manager_mobile||d.managerMobile||'',
-     manager_role:d.manager_role||d.managerRole||'',person_key:d.person_key||'',
-     manager_current_site:d.manager_current_site||'',manager_status:d.manager_status||'',manager_left_at:d.manager_left_at||'',
-     address:d.address||d.site_address||'',latitude:d.latitude||d.lat||null,longitude:d.longitude||d.lng||d.lon||null,
-     handover_summaries:d.handover_summaries||d.handoverSummaries||[],stage_checklist:d.stage_checklist||d.stageChecklist||{},
-     lastAt:d.lastActivity||d.updated||d.modified||d.created||null,
-     stageAt:d.stage_entered_at||d.stageChangedAt||d.updated||d.created||null,
-     stage_contexts:d.stage_contexts||{},stageHistory:d.stageHistory||[],completion_date:d.completion_date||null,
-     tl:[[String(d.created||'').slice(0,10),'등록 (릴레잇 이관)']]}));
-  });
-  // 배정된 영업기회가 0건인 정상 계정도 유효한 서버 응답이다.
-  DEALS=ds;LIVE=true;LOAD_ERR=null;
-  rebuildAdmin();
-  toast('실데이터 연결됨 — 딜 '+ds.length+'건');
-  if(CUR!=='flow'&&CUR!=='login')render();
- }).catch(function(e){
-  LOAD_ERR=String(e&&e.message||e);
-  /* 실서비스에서는 예시 데이터로 조용히 넘어가지 않는다 — 잠금 화면을 띄운다 */
-  if(!DEMO){DEALS=[];LIVE=false;if(CUR!=='flow'&&CUR!=='login')render()}
- });
-}
+async function loadLive(){if(!TOKEN)return;LIVE=false;LOAD_ERR='Staging Phase 1: 업무별 read 계약 미연결 (unavailable)';render();}
 /* 관리자 화면 집계도 실데이터에서 계산 (하드코딩 제거) */
 function rebuildAdmin(){
  var open=DEALS.filter(isOpen),tA=0;open.forEach(function(d){tA+=d.amt||0});
@@ -1278,9 +1173,9 @@ function rLogin(){
  +'<h2>영업관리</h2><div class="s">이름과 <b>본인 핸드폰 번호</b>로 로그인하세요<br>주소는 하나 — 화면은 역할이 정합니다</div>'
  +'<div style="width:100%;margin-top:20px;text-align:left">'
  +'<div class="hint" style="margin-bottom:6px">이름</div>'
- +'<input id="lg-nm" value="'+escAttr(G.lgName||'')+'" oninput="G.lgName=this.value" placeholder="예: 황윤선" autocomplete="username"'
+ +'<input id="lg-nm" value="'+escAttr(G.lgName||'')+'" oninput="G.lgName=this.value" placeholder="예: TEST INTERNAL_REP" autocomplete="username"'
  +' style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:14px;font:inherit;font-size:16px;outline:none;box-sizing:border-box">'
- +'<div class="hint" style="margin:14px 0 6px">핸드폰 번호</div>'
+ +'<div class="hint" style="margin:14px 0 6px">비밀번호</div>'
  +'<input id="lg-pw" type="password" inputmode="numeric" value="'+escAttr(G.lgPw||'')+'" oninput="G.lgPw=this.value"'
  +' onkeydown="if(event.key===\'Enter\')doSignIn()" placeholder="01012345678" autocomplete="current-password"'
  +' style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:14px;font:inherit;font-size:16px;outline:none;box-sizing:border-box"></div>'
@@ -1297,7 +1192,7 @@ function pinKey(k){if(k==='⌫')G.pin=G.pin.slice(0,-1);else if(G.pin.length<4)G
 function doLogin(){
  /* PIN 목업은 폐기됐다 — 서버 인증(doSignIn)만 유효하다.
     이 함수를 남겨두면 인증을 우회하는 통로가 되므로 실제로 막는다. */
- return toast('이름과 핸드폰 번호로 로그인해 주세요');
+ return toast('이름과 비밀번호로 로그인해 주세요');
  if(G.sel==null||G.pin.length!==4)return toast('담당자와 PIN 4자리를 입력해 주세요');
  G.user=REPS[G.sel];G.last=G.user;rememberUser(G.user);G.pin='';
  /* 담당자·겸직(dual)은 항상 «오늘» 로 시작한다 — 관리 화면은 상단 토글로 전환.
@@ -1329,7 +1224,7 @@ function rLocked(){
 }
 function render(){
  if(!G.user)return rLogin();
- if(!LIVE&&!DEMO)return rLocked();
+
  var tabs=G.mode==='admin'
   ?[['ctrl',IC.siren,'관제'],['pipe',IC.chart,'파이프라인'],['perf',IC.user,'실적'],['rpt',IC.doc,'리포트']]
   :[['today',IC.sun,'오늘'],['mine',IC.folder,'내 영업'],['find',IC.plus,'+ 영업'],['my',IC.chart,'내 실적']];
@@ -1340,11 +1235,12 @@ function render(){
   +'<button class="badge badge-gray" onclick="askSignOut()">'+esc(G.user.nm)+' ⏻</button>'
   +'<span class="badge badge-danger" id="pendBadge" style="display:none"></span>'
   +(DEMO&&!LIVE?'<span class="badge badge-gray">예시 데이터</span>':'')+'</div></div>';
+ if(!LIVE&&!DEMO){rLocked();scr.insertAdjacentHTML('afterbegin',head);return;}
  if(G.deal!=null)return rDeal();
  if(G.sub)return rSub(head);
  ({today:rToday,mine:rMine,find:rProspect,my:rMy,ctrl:rCtrl,pipe:rPipe,perf:rPerf,rpt:rRpt})[G.tab](head);
 }
-function switchMode(m){if(m==='admin'&&!canManage())return;G.mode=m;saveMode(m);G.tab=m==='admin'?'ctrl':'today';G.deal=null;G.drill=null;G.stage=null;G.sub=null;render()}
+function switchMode(m){Phase1.mode(m);G.mode=m;saveMode(m);G.tab=m==='admin'?'ctrl':'today';G.deal=null;G.drill=null;G.stage=null;G.sub=null;render();}
 
 /* ── 2 오늘 ── */
 function rToday(head){
@@ -1463,7 +1359,7 @@ function tgGrp(key){G._og[key]=G._og[key]===false;render()}
 
 
 /* ═══ 관리사무소 · 관리소장 연락처 / 인물 이력 ═══ */
-function phoneN(v){return String(v||'').replace(/[^0-9]/g,'')}
+function phoneN(v){return String(v||'')}
 function phoneFmt(v){var n=phoneN(v);if(!n)return '미입력';if(n.length===11)return n.slice(0,3)+'-'+n.slice(3,7)+'-'+n.slice(7);if(n.length===10)return n.slice(0,3)+'-'+n.slice(3,6)+'-'+n.slice(6);return String(v||'')}
 function normSiteM(v){return String(v||'').replace(/\[[^\]]*\]/g,'').replace(/아파트|APT|\s|[-_.,]/gi,'').toLowerCase()}
 function contactInfoM(d){var c=(d&&d.contact)||{};var mob=c.managerMobile||d.manager_mobile||d.managerMobile||'';return {
@@ -1475,8 +1371,8 @@ var CONTACT_ROLES=['관리소장','입주자대표회장','관리과장','시설
 function siteContactsM(d){var a=(d&&Array.isArray(d.contacts)?d.contacts:[]).map(function(x){return {officeTel:x.office_phone||d.office_phone||'',officeEmail:x.office_email||'',name:x.name||'',mobile:x.mobile||x.phone||'',role:x.role||x.title||'담당자',messageRole:x.role||x.title||'',personKey:x.person_key||'',currentSite:x.current_site||x.site_name||d.nm||'',status:x.status||'current',startedAt:x.started_at||'',leftAt:x.ended_at||''}}),legacy=contactInfoM(d||{});if(legacy.name||legacy.mobile){var exists=a.some(function(x){return (x.personKey&&x.personKey===legacy.personKey)||(phoneN(x.mobile)&&phoneN(x.mobile)===phoneN(legacy.mobile))});if(!exists)a.unshift(legacy)}return a}
 function pickedContactM(d,key){return siteContactsM(d).filter(function(c){return String(c.personKey||phoneN(c.mobile))===String(key||'')})[0]||contactInfoM(d||{})}
 var PERSON_KEY='nf_mobile_people_v1';
-function peopleM(){try{return JSON.parse(localStorage.getItem(PERSON_KEY)||'{}')}catch(e){return {}}}
-function savePeopleM(P){try{localStorage.setItem(PERSON_KEY,JSON.stringify(P))}catch(e){}}
+function peopleM(){try{return JSON.parse(Phase1.storage.getItem(PERSON_KEY)||'{}')}catch(e){return {}}}
+function savePeopleM(P){try{Phase1.storage.setItem(PERSON_KEY,JSON.stringify(P))}catch(e){}}
 function upsertPersonM(c,site,office,at){if(!c.personKey)return;var P=peopleM(),p=P[c.personKey]||(P[c.personKey]={name:c.name,mobile:c.mobile,currentSite:site,history:[]});p.name=c.name||p.name;p.mobile=c.mobile||p.mobile;p.currentSite=site||p.currentSite;p.history=p.history||[];var cur=p.history.filter(function(h){return !h.to})[0];if(cur&&normSiteM(cur.site)!==normSiteM(site)){cur.to=String(at||isoNow()).slice(0,10)}var same=p.history.filter(function(h){return !h.to&&normSiteM(h.site)===normSiteM(site)})[0];if(!same)p.history.push({site:site,officeTel:office||'',from:String(at||isoNow()).slice(0,10),to:''});savePeopleM(P)}
 function contactDealsM(mobile){var n=phoneN(mobile),seen={};if(!n)return [];return DEALS.filter(function(d){return phoneN(contactInfoM(d).mobile)===n}).filter(function(d){var k=normSiteM(d.nm);if(seen[k])return false;seen[k]=1;return true})}
 function managerHintM(){var e=document.getElementById('pmobile'),h=document.getElementById('pcontacthint');if(!e||!h)return;var L=contactDealsM(e.value);h.style.display=L.length?'block':'none';h.textContent=L.length?('🔗 기존 관리소장 기록: '+L.map(function(d){return d.nm}).join(' → ')+' · 같은 휴대폰 번호는 동일 인물로 연결합니다.') : ''}
@@ -1548,11 +1444,11 @@ function rDeal(){
 }
 function knownWorkKeyM(k){return WORK_MASTER.some(function(g){return g.items.some(function(i){return workKeyM(g.group,i)===k})})}
 function workSheetM(){
- var d=DEALS.find(function(x){return String(x.id)===String(G.deal)});if(!d)return;G._prospectWorkDraft={items:(G.pWorkItems||[]).slice(),primary:G.pPrimaryWork||'',other:G.pWorkOther||''};G.pWorkItems=[];G.pPrimaryWork='';G.pWorkOther='';workItemsM(d).forEach(function(w){if(w.group==='기타'){if(G.pWorkItems.indexOf('기타>기타')<0)G.pWorkItems.push('기타>기타');G.pWorkOther=w.item}else if(knownWorkKeyM(w.key))G.pWorkItems.push(w.key)});var pk=d.primaryWork||d.primary_work||'',pp=workPartsM(pk);G.pPrimaryWork=pp&&pp.group==='기타'?'기타>기타':pk;if(G.pWorkItems.length===1)G.pPrimaryWork=G.pWorkItems[0];
+ var d=Phase11.current;if(!d)return;G._prospectWorkDraft={items:(G.pWorkItems||[]).slice(),primary:G.pPrimaryWork||'',other:G.pWorkOther||''};G.pWorkItems=[];G.pPrimaryWork='';G.pWorkOther='';workItemsM(d).forEach(function(w){if(w.group==='기타'){if(G.pWorkItems.indexOf('기타>기타')<0)G.pWorkItems.push('기타>기타');G.pWorkOther=w.item}else if(knownWorkKeyM(w.key))G.pWorkItems.push(w.key)});var pk=d.primaryWork||d.primary_work||'',pp=workPartsM(pk);G.pPrimaryWork=pp&&pp.group==='기타'?'기타>기타':pk;if(G.pWorkItems.length===1)G.pPrimaryWork=G.pWorkItems[0];
  openSheet(intro('var(--blue-50)','var(--blue-dark)',IC.folder,'공종 분류·수정','이 영업기회에만 적용됩니다. 같은 아파트의 다른 공사는 바뀌지 않습니다'),'<div id="p-workpicker" class="m-workpicker">'+prospectWorkHTML()+'</div>'+mReason('workedit','예: 공사 범위 확인 결과 옥상 금속기와와 외부 재도장 복합공종으로 확정.')+'<button class="btn btn-primary" style="margin-top:12px" data-gate="workedit" disabled onclick="saveWorkSheetM()">공종 저장</button><button class="btn btn-line" style="margin-top:8px" onclick="closeSheet()">취소</button>')
 }
-function saveWorkSheetM(){
- var d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),other=document.getElementById('pworkother');if(!d)return;if(other)G.pWorkOther=other.value;var works=prospectWorkItems(),multi=works.length>1,raw=multi?G.pPrimaryWork:((G.pWorkItems||[])[0]||''),primary=workPartsM(raw);if(primary&&raw==='기타>기타'&&String(G.pWorkOther||'').trim())primary={group:'기타',item:String(G.pWorkOther).trim(),key:workKeyM('기타',String(G.pWorkOther).trim())};if(!works.length)return toast('공종을 하나 이상 선택해 주세요');if((G.pWorkItems||[]).indexOf('기타>기타')>=0&&!String(G.pWorkOther||'').trim())return toast('기타 공종명을 직접 입력해 주세요');if(multi&&!primary)return toast('복합공종의 대표 공종을 선택해 주세요');if(!mrOk('workedit'))return toast('공종 분류 근거를 5자 이상 남겨 주세요');var keys=works.map(function(w){return w.key}),scope=multi?'multi':'single',summary=workSummaryFromM(works),at=isoNow();d.primaryWork=d.primary_work=primary.key;d.workItems=d.work_items=keys;d.workScopeType=d.work_scope_type=scope;d.workSummary=d.work_summary=summary;d.work_type=primary.item;d.gj=[primary.group,primary.item];d.tl.unshift(['오늘','공종 분류 — '+summary+' · '+mrVal('workedit')]);pushWrite('opportunity_work_set',{opportunity_id:d.id,primaryWork:primary.key,workItems:keys,workScopeType:scope,workSummary:summary,primary_work:primary.key,work_items:keys,work_scope_type:scope,work_summary:summary,work_type:primary.item,reason:mrVal('workedit'),reason_source:mrSrc('workedit'),actor_name:G.user.nm,at:at});closeSheet();toast('공종 저장 요청을 보냈습니다');render()
+async function saveWorkSheetM(){
+ var d=Phase11.current,other=document.getElementById('pworkother');if(!d)return;if(other)G.pWorkOther=other.value;var works=prospectWorkItems(),multi=works.length>1,raw=multi?G.pPrimaryWork:((G.pWorkItems||[])[0]||''),primary=workPartsM(raw);if(primary&&raw==='기타>기타'&&String(G.pWorkOther||'').trim())primary={group:'기타',item:String(G.pWorkOther).trim(),key:workKeyM('기타',String(G.pWorkOther).trim())};if(!works.length)return toast('공종을 하나 이상 선택해 주세요');if((G.pWorkItems||[]).indexOf('기타>기타')>=0&&!String(G.pWorkOther||'').trim())return toast('기타 공종명을 직접 입력해 주세요');if(multi&&!primary)return toast('복합공종의 대표 공종을 선택해 주세요');if(!mrOk('workedit'))return toast('공종 분류 근거를 5자 이상 남겨 주세요');var keys=works.map(function(w){return w.key});try{await Phase11.save(d,{primary_work:primary.key,work_items:keys,reason:mrVal('workedit')});}catch(e){/* explicit non-success/conflict state is shown by the adapter */}
 }
 /* 기술자문일 «때만» 펼친다 — 모든 딜에 보여주면 화면이 복잡해진다 */
 function advCardM(d){
@@ -2281,7 +2177,7 @@ function rRpt(head){
    웹에서 특정 전화번호의 카카오 1:1 채팅을 바로 열 수 없으므로 번호와 문구를
    복사한 뒤 카카오 앱을 연다. 실제 발송 여부는 복귀 후 반드시 사람이 확정한다.
    ══════════════════════════════════════════════════════════════ */
-var RM_M=null,REL_REP_PHONE_M={'이필선':'010-3004-7953','정정훈':'010-8003-6900','김성민':'010-2840-6375'},REL_FREE_OPTOUT_M=(function(){try{return localStorage.getItem('nf_rel_free_optout')||''}catch(e){return ''}})();
+var RM_M=null,REL_REP_PHONE_M={'이필선':'010-3004-7953','정정훈':'010-8003-6900','김성민':'010-2840-6375'},REL_FREE_OPTOUT_M=(function(){try{return Phase1.storage.getItem('nf_rel_free_optout')||''}catch(e){return ''}})();
 function rmBool(v){return v===true||v===1||v==='1'||v==='true'}
 var _rmContactInfoM=contactInfoM;
 contactInfoM=function(d){var o=_rmContactInfoM(d),box=(d&&d.contact)||{},raw=((d&&d.contacts)||[]).filter(function(x){return (o.personKey&&x.person_key===o.personKey)||phoneN(x.mobile||x.phone)===phoneN(o.mobile)})[0]||{};o.smsConsent=rmBool(box.smsConsent!=null?box.smsConsent:(raw.sms_consent!=null?raw.sms_consent:d&&d.sms_consent));o.kakaoConsent=rmBool(box.kakaoConsent!=null?box.kakaoConsent:(raw.kakao_consent!=null?raw.kakao_consent:d&&d.kakao_consent));o.consentAt=box.consentAt||raw.consent_at||d&&d.consent_at||'';o.optOutAt=box.optOutAt||raw.opt_out_at||d&&d.opt_out_at||'';o.sendBlocked=rmBool(box.sendBlocked!=null?box.sendBlocked:(raw.send_blocked!=null?raw.send_blocked:d&&d.send_blocked))||!!o.optOutAt;o.sendBlockedReason=box.sendBlockedReason||raw.send_blocked_reason||d&&d.send_blocked_reason||'';return o};
@@ -2404,7 +2300,7 @@ rDeal=function(){_execRDealM();var d=DEALS.find(function(x){return String(x.id)=
 
 /* ══════════════════════════════════════════════════════════════
    v7.0 현장 작업 도구
-   파일 원본은 localStorage/base64에 넣지 않는다. 브라우저에는 메타데이터만
+   파일 원본은 Phase1.storage/base64에 넣지 않는다. 브라우저에는 메타데이터만
    보이고, 실제 파일은 서버가 발급한 Supabase Storage signed upload URL로 보낸다.
    ══════════════════════════════════════════════════════════════ */
 var ATTACH_CATEGORIES_M=['현장사진','견적자료','도면','회의자료','계약관련','기타'];
@@ -2595,7 +2491,7 @@ reactivationHTMLM=function(){var A=reactivationM();if(!A.length)return '';return
 
    «로그인 기억» 은 Supabase 가 이미 해 준다. 이름만 로컬에 저장해 두고 바로
    들여보내면 토큰 없이 서버를 불러 «서버 연결 실패» 가 뜬다 — 실제로 그랬다. */
-if(!DEVVIEW)document.body.classList.add('svc');
+</script><script src="/operational-overlay.js"></script><script>if(!DEVVIEW)document.body.classList.add('svc');
 if(DEVVIEW){nav('flow')}
 else if(DEMO){G.user=REPS[0];G.mode='rep';nav('today')}
 else{
@@ -2609,5 +2505,5 @@ else{
 <link rel="stylesheet" href="stage-transition.css?v=20260905-1">
 <script src="stage-transition.js?v=20260905-1"></script>
 <script src="stage-transition-ui.js?v=20260905-1"></script>
-</body>
+<script src="/work-editor.js"></script><script>window.addEventListener('phase1:identity-cleared',function(){TOKEN=null;WRITE_Q=[];G.user=null;DEALS=[];BUNDLE=null;LIVE=false;});window.addEventListener('phase1:profile',function(){WRITE_Q=Phase1.queue.list();});window.addEventListener('phase1:queue',function(){WRITE_Q=Phase1.queue.list();});</script></body>
 </html>

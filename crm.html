@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="ko">
-<head>
+<head><script src="/phase1-config.js"></script><script src="/operational-adapter.js"></script><script src="/transport.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>넷폼 영업관리 CRM</title>
-<link rel="preconnect" href="https://nfrnd.app.n8n.cloud" crossorigin>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
 /* ═══════════════════════════════════════════════════════════════
@@ -1935,7 +1935,7 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
   <div class="sub">이름과 <b style="display:inline;color:var(--ink)">본인 핸드폰 번호</b>로 로그인하세요.<br>등록된 담당자만 들어올 수 있습니다.</div>
   <form onsubmit="authSignIn();return false">
     <div class="afield"><label>이름</label>
-      <input id="au-name" autocomplete="username" placeholder="예: 황윤선"></div>
+      <input id="au-name" autocomplete="username" placeholder="예: TEST INTERNAL_REP"></div>
     <div class="afield"><label>비밀번호</label>
       <input id="au-pw" type="password" inputmode="numeric" autocomplete="current-password" placeholder="본인 핸드폰 번호"></div>
     <button class="abtn" id="au-btn" type="submit">로그인</button>
@@ -1947,7 +1947,7 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
       <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
       Google 계정으로 로그인</button>
   </div>
-  <div class="authnote">비밀번호는 <b style="display:inline">본인 핸드폰 번호 전체</b>입니다 (예: 01012345678).<br>하이픈은 넣어도 되고 안 넣어도 됩니다. 로그인이 안 되면 영업관리팀에 문의하세요.</div>
+  <div class="authnote">비밀번호는 <b style="display:inline">본인 핸드폰 번호 </b>입니다.<br>하이픈은 넣어도 되고 안 넣어도 됩니다. 로그인이 안 되면 영업관리팀에 문의하세요.</div>
 </div></div>
     <div class="apage on" id="pg-today"><div id="today-home-root"></div></div>
 
@@ -2133,10 +2133,10 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
   </div>
 </div>
 <!-- DNS·TLS 를 미리 잡아 둔다 — 첫 호출에서 0.25~0.4초가 빠진다 (2026-09-04) -->
-<link rel="preconnect" href="https://nfrnd.app.n8n.cloud" crossorigin>
-<link rel="preconnect" href="https://ymfbmpnizxvqsamnczow.supabase.co" crossorigin>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+
+
+
+<script src="vendor/supabase.js"></script>
 <script src="message-salutation.js?v=20260905-1"></script>
 <script src="money-input.js?v=20260905-1"></script>
 <script src="people-eligibility.js?v=20260905-1"></script>
@@ -2182,8 +2182,8 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
    로그인에 성공했다고 들여보내지 않는다. public.users 에 그 이메일이
    등록돼 있고 active 여야 한다. 아니면 «승인 대기» 에서 멈춘다.
    ══════════════════════════════════════════════════════════ */
-var SUPABASE_URL='https://ymfbmpnizxvqsamnczow.supabase.co';
-var SUPABASE_ANON='sb_publishable_Lrv2O_5Nr96a1HQF6n65zA_7OsqCz3X';        /* ← anon public 키를 넣으면 로그인이 켜진다 */
+var SUPABASE_URL=Phase1.config.url;
+var SUPABASE_ANON=Phase1.config.publishable_key;        /* ← anon public 키를 넣으면 로그인이 켜진다 */
 var SHOW_GOOGLE=false;       /* 구글 OAuth 를 설정한 뒤에 true 로 */
 /* 이름으로 로그인한다 — Supabase 는 이메일을 식별자로 쓰므로 내부에서 바꿔 준다.
    메일을 보내지 않는 «내부 식별자» 일 뿐이다. 사람이 볼 일도, 외울 일도 없다.
@@ -2193,10 +2193,7 @@ var LOGIN_ID={'황윤선':'hwangyunseon','이필선':'ipilseon','한준엽':'han
   '송보람':'songboram','조현식':'johyeonsik','조재연':'jojaeyeon',
   '주현진':'juhyeonjin','한인규':'haningyu','경남지사':'gyeongnam'};
 var LOGIN_DOMAIN='@crm.netform.co.kr';
-function loginEmailOf(name){
-  var k=String(name||'').replace(/\s+/g,'');
-  return LOGIN_ID[k] ? LOGIN_ID[k]+LOGIN_DOMAIN : null;
-}
+function loginEmailOf(name){return Phase1.loginEmail(name);}
 var AUTH_ON=!!SUPABASE_ANON, SB=null, ME=null, TOKEN=null;
 /* 서버 호출에 «누가 보냈는지» 를 실어 보낸다.
    이게 있어야 n8n 이 웹훅 키 대신 로그인 토큰으로 판단할 수 있다. */
@@ -2224,28 +2221,13 @@ async function authInit(){
     return;
   }
   if(!window.supabase){authGate(true);authState('err','로그인 모듈을 불러오지 못했습니다','인터넷 연결을 확인하고 새로고침해 주세요.');return}
-  SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
+  SB=Phase1.createClient(SUPABASE_URL,SUPABASE_ANON);
   var s=(await SB.auth.getSession()).data.session;
   if(!s){authGate(true);return}
   await authAdmit(s);
 }
 /* 로그인은 됐다 — 이제 «우리 사람인지» 를 본다 */
-async function authAdmit(session){
-  var email=((session.user&&session.user.email)||'').toLowerCase();
-  var r=await SB.from('users').select('name,role,active').eq('email',email).maybeSingle();
-  if(r.error){authGate(true);authState('err','담당자 확인에 실패했습니다',r.error.message);return}
-  if(!r.data||!r.data.active){
-    authGate(true);
-    authState('wait','승인 대기','이 계정은 아직 담당자로 등록되어 있지 않거나 사용이 중지되었습니다. 영업관리팀에 문의해 주세요.');
-    if(SB)await SB.auth.signOut();
-    return;
-  }
-  TOKEN=session.access_token;
-  ME={email:email,name:r.data.name,role:r.data.role};
-  authGate(false);authBadge();authWatch();
-  /* 토큰이 생긴 «지금» 부른다. 안 그러면 다음 동기화(60초)까지 빈 화면이다. */
-  try{loadData()}catch(e){}
-}
+async function authAdmit(session){try{var p=await Phase1.admit(session);TOKEN=session.access_token;ME={id:p.user_id,auth_uid:p.auth_uid,email:session.user.email,name:p.name,role:p.allowed_modes.includes('admin')?p.source_role:'rep',source_role:p.source_role,permission_role:p.permission_role};authGate(false);authBadge();authWatch();G._homePicked=0;applyRoleHome();applyHomeRole();loadData();}catch(e){await Phase1.signOut();ME=null;TOKEN=null;authGate(true);authState('err','담당자 확인 실패',e.message);}}
 function authBadge(){
   if(!ME)return;
   var b=document.getElementById('syncBadge'),old=document.getElementById('meChip');
@@ -2259,13 +2241,14 @@ async function authSignIn(){
   var nm=(document.getElementById('au-name').value||'').trim(),
       pw=(document.getElementById('au-pw').value||'').replace(/[^0-9]/g,''),  /* 하이픈·공백 허용 */
       btn=document.getElementById('au-btn');
-  if(!nm||!pw){authState('err','입력을 확인해 주세요','이름과 핸드폰 번호를 모두 입력하세요.');return}
+  if(!nm||!pw){authState('err','입력을 확인해 주세요','이름과 비밀번호를 모두 입력하세요.');return}
   var em=loginEmailOf(nm);
   if(!em){authState('err','등록되지 않은 이름입니다','이름을 정확히 입력했는지 확인하세요. 계속 안 되면 영업관리팀에 문의하세요.');return}
   btn.disabled=true;authState('info','로그인 중입니다','');
+  Phase1.beginLogin();
   var {data,error}=await SB.auth.signInWithPassword({email:em,password:pw});
   btn.disabled=false;
-  if(error){authState('err','로그인하지 못했습니다','이름 또는 핸드폰 번호가 맞지 않습니다.');return}
+  if(error){authState('err','로그인하지 못했습니다','이름 또는 비밀번호가 맞지 않습니다.');return}
   await authAdmit(data.session);
 }
 async function authGoogle(){
@@ -2282,7 +2265,7 @@ function authWatch(){
     if(ev==='SIGNED_OUT'){ME=null;authGate(true)}
   });
 }
-async function authSignOut(){if(SB){await SB.auth.signOut()}location.reload()}
+async function authSignOut(){await Phase1.signOut();location.reload();}
 /* 화면 확인용 — ?login=1 로 열면 키가 없어도 로그인 화면을 볼 수 있다 */
 if(/[?&]login=1/.test(location.search))
   setTimeout(function(){authGate(true);
@@ -2694,8 +2677,8 @@ function stripForCache(v){
   return v;
 }
 function inqKey(q){return String(q.id||q.row||[q.site,q.at].join('|'))}
-function loadLocal(){try{LOCAL=JSON.parse(localStorage.getItem(LOCAL_KEY)||'{"deals":{},"inquiries":{}}')}catch(e){LOCAL={deals:{},inquiries:{}}}LOCAL.deals=LOCAL.deals||{};LOCAL.inquiries=LOCAL.inquiries||{};LOCAL.created=LOCAL.created||[];LOCAL.expansionPool=LOCAL.expansionPool||[]}
-function saveLocal(){localStorage.setItem(LOCAL_KEY,JSON.stringify(LOCAL))}
+function loadLocal(){try{LOCAL=JSON.parse(Phase1.storage.getItem(LOCAL_KEY)||'{"deals":{},"inquiries":{}}')}catch(e){LOCAL={deals:{},inquiries:{}}}LOCAL.deals=LOCAL.deals||{};LOCAL.inquiries=LOCAL.inquiries||{};LOCAL.created=LOCAL.created||[];LOCAL.expansionPool=LOCAL.expansionPool||[]}
+function saveLocal(){Phase1.storage.setItem(LOCAL_KEY,JSON.stringify(LOCAL))}
 /* Server authorizes every export and writes its audit entry before returning rows. */
 function exportFullDataJSON(){
  if(!ME||ME.role!=='admin'){alert('관리자만 내보내기를 요청할 수 있습니다.');return}
@@ -2705,40 +2688,19 @@ function exportFullDataJSON(){
    v4.2 P0(§3 §23): 서버 쓰기 — 모바일과 «같은» crm-write 를 쓴다.
    여기를 통과해야 다른 PC·모바일에서도 같은 사실이 보인다.
    · write_id = 멱등키 (같은 요청이 두 번 가도 서버가 한 번만 처리)
-   · 실패해도 큐에 남고 30초마다 재시도 · 새로고침해도 localStorage 에 보존
+   · 실패해도 큐에 남고 30초마다 재시도 · 새로고침해도 Phase1.storage 에 보존
    · 성공(ACK) 전까지는 절대 «저장 완료»라고 말하지 않는다
    ══════════════════════════════════════════════════════════════ */
-var WRITE_API='https://nfrnd.app.n8n.cloud/webhook/crm-write',WQ_KEY='nf_pc_write_q_v1'; // 쓰기 이전은 별도: 조회 URL에서 파생하지 않음
-var WRITE_Q=(function(){try{return JSON.parse(localStorage.getItem(WQ_KEY)||'[]').map(function(w){if(w.status==='sending'){w.status='failed';w.last_error='이전 전송 결과 미확인 · 서버 이력 확인 후 재시도하세요.'}return w})}catch(e){return []}})();
-function saveWQ(){try{localStorage.setItem(WQ_KEY,JSON.stringify(WRITE_Q.slice(-300)))}catch(e){}}
+var WRITE_API='urn:netform-crm:legacy-write-disabled',WQ_KEY='nf_pc_write_q_v1'; // 쓰기 이전은 별도: 조회 URL에서 파생하지 않음
+var WRITE_Q=(function(){try{return JSON.parse(Phase1.storage.getItem(WQ_KEY)||'[]').map(function(w){if(w.status==='sending'){w.status='failed';w.last_error='이전 전송 결과 미확인 · 서버 이력 확인 후 재시도하세요.'}return w})}catch(e){return []}})();
+function saveWQ(){try{Phase1.storage.setItem(WQ_KEY,JSON.stringify(WRITE_Q.slice(-300)))}catch(e){}}
 var _pcseq=0;
 function newWriteId(){var d=new Date(),z=function(x,l){return String(x).padStart(l||2,'0')};
  return 'PC'+d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())+'-'+z(d.getTime()%1e6,6)+'-'+z(++_pcseq,3)}
 function isUuid(v){return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v||''))}
-function pushWrite(op,payload){
- /* 서버 UUID 가 없는 건(로컬 생성분)은 아직 보낼 수 없다 — 큐에 담되 보류 표시 */
- var oid=payload&&payload.opportunity_id;
- WRITE_Q.push({write_id:newWriteId(),op:op,payload:payload,actor_id:'관리자',
-   opportunity_id:oid||null,created_at:isoNow(),version:1,
-   status:(oid&&!isUuid(oid))?'blocked':'pending'});
- saveWQ();flushWrites();updateSyncBadge();
-}
+function pushWrite(op,payload){var q;if(op==='opportunity_work_set')q=Phase1.queue.enqueue(op,payload.opportunity_id,payload.expected_version,{primary_work:payload.primary_work,work_items:payload.work_items,reason:payload.reason});else if(op==='inquiry_assign')q=Phase1.queue.enqueue(op,payload.inquiry_id,0,payload);else throw Error('CONTRACT_UNAVAILABLE');WRITE_Q=Phase1.queue.list();return q.request_id;}
 var MAX_TRIES=5;
-function flushWrites(){
- if(!TOKEN)return; // 로그인 전에는 보관된 요청을 전송하지 않습니다.
- var busy={};WRITE_Q.forEach(function(w){if(w.status==='sending')busy[w.opportunity_id||'_']=1});
- WRITE_Q.filter(function(w){return w.status==='pending'}).forEach(function(w){
-  var key=w.opportunity_id||'_';if(busy[key])return;busy[key]=1;w.status='sending';
-  fetch(WRITE_API,{method:'POST',headers:authHeaders({'Content-Type':'application/json'}),body:JSON.stringify(w)})
-   .then(function(r){return WriteAck.read(r,w)})
-   .then(function(res){
-     /* n8n은 분기 미구현·DB 오류도 HTTP 200으로 응답할 수 있다. 명시적 실패를 ACK로 오인하지 않는다. */
-     if(res&&res.ok===false)throw new Error(res.error||res.message||('서버가 '+w.op+' 저장을 거부했습니다'));
-     adoptServerId(w,res);w.status='done';w.acked_at=isoNow();delete w.last_error;saveWQ();updateSyncBadge();flushWrites()
-   })
-   .catch(function(err){w.tries=(w.tries||0)+1;w.last_error=String(err&&err.message||err||'서버 저장 확인 필요').slice(0,240);w.status='failed';saveWQ();updateSyncBadge()});
- });
-}
+function flushWrites(){if(!Phase1.profile)return Promise.resolve();return Phase1.queue.flush().catch(function(e){console.warn("Phase1 queue: "+e.message)});}
 /* 서버가 딜을 만들면 new_opportunity_id 를 돌려준다.
    그걸 안 받으면 «서버 딜 + 방금 만든 로컬 딜» 이 나란히 남는다 —
    화해(mergeCreatedDeals)는 서버 번들이 origin_inquiry_id 를 내려줄 때만 동작하는데
@@ -2762,7 +2724,7 @@ function adoptServerId(wq,res){
 function syncPending(){return WRITE_Q.filter(function(w){return w.status==='pending'||w.status==='sending'}).length}
 function syncFailed(){return WRITE_Q.filter(function(w){return w.status==='failed'}).length}
 function syncBlocked(){return WRITE_Q.filter(function(w){return w.status==='blocked'}).length}
-function retryFailedWrites(){WRITE_Q.forEach(function(w){if(w.status==='failed'){w.status='pending';w.tries=0}});saveWQ();flushWrites();updateSyncBadge()}
+function retryFailedWrites(){return flushWrites();}
 function updateSyncBadge(){var el=document.getElementById('syncBadge');if(!el)return;
  var p=syncPending(),f=syncFailed(),b=syncBlocked();
  if(f){el.textContent='🔴 서버 전송 실패 '+f+'건 — 다시 시도';el.className='syncbadge bad';el.onclick=retryFailedWrites}
@@ -2920,66 +2882,13 @@ function applyBundle(raw){
 }
 function hhmm(d){return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
 /* Supabase(n8n) 응답이 느려도 화면이 비어 있지 않도록:
-   1) 직전 응답을 localStorage에 저장해 두고 즉시 그린다 (캐시 표시)
+   1) 직전 응답을 Phase1.storage에 저장해 두고 즉시 그린다 (캐시 표시)
    2) 뒤에서 서버 응답을 받아 교체한다
    캐시가 있으면 체감 로딩이 0초가 된다. ↻ 를 누르면 항상 서버를 다시 부른다. */
 /* quiet=true 는 «배경 재조회» 다 (60초 주기·창 복귀).
    이때 전체화면 로딩을 띄우면 보던 화면이 통째로 사라진다 —
    iframe 안에서는 클릭할 때마다 focus 가 떠서 특히 심하게 튄다. */
-async function loadData(quiet){
-  if(!TOKEN||!ME)return; // 로그인/직원 확인이 끝난 뒤에만 조회한다.
-  var t0=Date.now(),painted=false,已=!!(B&&B.deals&&B.deals.length);
-  try{
-    var c=null; // 이전 캐시는 계정별 접근범위가 없으므로 직접 조회에서 사용하지 않는다.
-    if(c){var cj=JSON.parse(c);
-      /* v1 캐시에는 고객 연락처가 그대로 들어 있다 → 발견 즉시 폐기 */
-      if(!cj||cj.v!==2||!cj.at||(Date.now()-cj.at)>CACHE_MAX_TTL){localStorage.removeItem(CACHE_KEY);cj=null}
-      if(cj&&cj.data&&cj.data.deals){
-        var cacheAge=Date.now()-cj.at,cacheOld=cacheAge>CACHE_FRESH_TTL;
-        applyBundle(cj.data);painted=true;
-        $('#load').style.display='none';
-        $('#live').className='live';
-        $('#live').textContent=(cacheOld?'📦 최근 저장본 ':'📦 캐시 ')+hhmm(new Date(cj.at))+' · 최신 데이터 불러오는 중…';
-      }}
-  }catch(e){}
-  if(!painted&&!quiet&&!已){
-    $('#load').style.display='flex';
-    /* 6초를 말없이 기다리게 하지 않는다 — 무엇을 하는 중인지 쓴다 */
-    var lt=document.querySelector('#load .t'),step=0;
-    var STEPS=['서버에 연결하는 중…','영업 데이터를 받는 중…','거의 다 됐습니다…'];
-    if(lt){lt.textContent=STEPS[0];
-      var ti=setInterval(function(){
-        step++;if(step>=STEPS.length||$('#load').style.display==='none'){clearInterval(ti);return}
-        lt.textContent=STEPS[step]},2200);}
-  }
-  if(!quiet)$('#err').style.display='none';
-  try{
-    var r=await fetchTimeout(API,45000);
-    if(!r.ok)throw new Error('Supabase 조회 HTTP '+r.status+' · 로그인과 DB 함수 설치 상태를 확인해 주세요.');
-    var txt=await r.text();
-    if(!txt||!txt.trim())throw new Error('조회 서버가 빈 응답을 보냈습니다.');
-    var raw;try{raw=JSON.parse(txt)}catch(pe){throw new Error('응답이 JSON이 아닙니다 — 앞부분: '+txt.slice(0,80))}
-    if(!raw||!Array.isArray(raw.deals))throw new Error('응답에 deals 배열이 없습니다 — 받은 키: '+Object.keys(raw||{}).join(', '));
-    LAST_DIAG={ok:true,status:r.status,bytes:txt.length,keys:Object.keys(raw),deals:(raw.deals||[]).length,inq:(raw.inquiries||[]).length,sec:((Date.now()-t0)/1000).toFixed(1)};
-    var sec=((Date.now()-t0)/1000).toFixed(1);
-    // 고객 번들은 공유 localStorage에 남기지 않는다. 서버에서 권한 내 데이터를 재조회한다.
-    applyBundle(raw);
-    $('#live').className='live on';
-    $('#live').textContent='🟢 실데이터 · '+hhmm(new Date(B.generated_at))+' ('+sec+'초)';
-    $('#live').title='Supabase 직접 조회 '+sec+'초 · 저장 기능은 기존 n8n 경로';
-  }catch(e){
-    LAST_DIAG={ok:false,err:e.name+': '+e.message,sec:((Date.now()-t0)/1000).toFixed(1)};
-    if(painted){
-      $('#live').className='live';
-      $('#live').textContent='📦 캐시 표시 중 · 서버 미연결';
-      var el0=$('#err');el0.innerHTML='<b>직전 저장본을 보여주고 있습니다</b> — '+esc(diagHint(e))+' <button class="errbtn" onclick="runDiag()">🔍 연결 점검</button>';el0.style.display='block';
-    }else{
-      $('#live').className='live';$('#live').textContent='서버 미연결';
-      var el=$('#err');el.innerHTML='<b>데이터를 불러오지 못했습니다</b> — '+esc(diagHint(e))+' <button class="errbtn" onclick="runDiag()">🔍 연결 점검</button>';el.style.display='block';
-    }
-  }
-  $('#load').style.display='none';
-}
+async function loadData(){if(!ME||!TOKEN)return;var el=document.getElementById('load');if(el)el.style.display='none';var err=document.getElementById('err');if(err){err.textContent='운영 데이터를 불러오는 중입니다.';err.style.display='block';}var live=document.getElementById('live');if(live)live.textContent='운영 · 데이터 연결 중';}
 
 /* 메뉴를 바꿀 때 열린 상세/입력 모달의 반투명 배경과 스크롤 잠금이
    다음 화면에 남지 않도록 한 곳에서 정리한다. */
@@ -3349,13 +3258,13 @@ function paintTowerNeck2(){
    «올해 잘하고 있나» 는 전년과 목표 둘 다 봐야 답이 된다.
    전년만 보면 작년이 나빴을 때 올해가 조금만 좋아도 좋아 보인다. */
 function goalKey(){return 'nf_year_goal_'+(new Date().getFullYear())}
-function yearGoal(){try{return Number(localStorage.getItem(goalKey())||0)||0}catch(e){return 0}}
+function yearGoal(){try{return Number(Phase1.storage.getItem(goalKey())||0)||0}catch(e){return 0}}
 function setYearGoal(){
  var cur=yearGoal();
  var v=prompt('올해 연간 수주 목표를 억 단위로 입력하세요 (예: 60)', cur?(cur/1e8):'');
  if(v===null)return;
  var n=Math.round(parseFloat(v)*1e8);
- try{localStorage.setItem(goalKey(), isNaN(n)?0:n)}catch(e){}
+ try{Phase1.storage.setItem(goalKey(), isNaN(n)?0:n)}catch(e){}
  paint()}
 /* 월별 시리즈 — 지표에 따라 «어느 날짜로» 세는지가 다르다.
    수주는 계약 확정일, 견적은 생성일. 섞으면 같은 딜이 두 달에 걸쳐 잡힌다. */
@@ -3868,11 +3777,11 @@ function openRepFlowRiskDeal(i){var d=REP_FLOW_DRAWER_CACHE[i];if(!d)return;clos
 /* ── 영업사원 관리 · 본사 6명 People Control Tower ─────────── */
 var REP_MANAGER_ROWS=[],REP_MANAGER_COMMENT_KEY='netform_crm_rep_manager_comments_v1';
 function repManagerWeekKey(offset){var w=briefWeekWindow(),d=new Date(w.startKey+'T00:00:00');d.setDate(d.getDate()+(offset||0)*7);return briefDateKey(d)}
-function repManagerLocalComments(){try{var a=JSON.parse(localStorage.getItem(REP_MANAGER_COMMENT_KEY)||'[]');return Array.isArray(a)?a:[]}catch(e){return []}}
+function repManagerLocalComments(){try{var a=JSON.parse(Phase1.storage.getItem(REP_MANAGER_COMMENT_KEY)||'[]');return Array.isArray(a)?a:[]}catch(e){return []}}
 function repManagerComments(){var all=[];[B&&B.repManagerComments,B&&B.rep_manager_comments,repManagerLocalComments()].forEach(function(a){if(Array.isArray(a))all=all.concat(a)});var seen={};return all.sort(function(a,b){return String(b.updated_at||b.updatedAt||b.created_at||'').localeCompare(String(a.updated_at||a.updatedAt||a.created_at||''))}).filter(function(x){var k=(x.rep_name||x.rep||'')+'|'+String(x.week_start||x.weekStart||'').slice(0,10);if(seen[k])return false;seen[k]=1;return true})}
 function repManagerComment(rep,week){return repManagerComments().filter(function(x){return (x.rep_name||x.rep)===rep&&String(x.week_start||x.weekStart||'').slice(0,10)===week})[0]||null}
-function repManagerSaveComment(rep,source){var id=source==='drawer'?'rm-drawer-comment':'rm-comment-'+REP_INTERNAL.indexOf(rep),el=$('#'+id),text=(el&&el.value||'').trim();if(!text)return;var week=repManagerWeekKey(0),actor=(ME&&ME.name)||'관리자',at=isoNow(),local=repManagerLocalComments().filter(function(x){return !(x.rep_name===rep&&x.week_start===week)}),old=repManagerComment(rep,week),row={rep_name:rep,week_start:week,comment:text,status:old&&old.status||'open',created_by:actor,updated_at:at};local.push(row);localStorage.setItem(REP_MANAGER_COMMENT_KEY,JSON.stringify(local));pushWrite('rep_manager_comment',{rep_name:rep,week_start:week,comment:text,status:row.status,created_by:actor,updated_at:at});paintRepManagement();if(source==='drawer'){var i=REP_MANAGER_ROWS.map(function(r){return r.nm}).indexOf(rep);if(i>=0)repManagerOpenDrawer(i)}}
-function repManagerToggleComment(rep){var week=repManagerWeekKey(0),old=repManagerComment(rep,week);if(!old)return;var local=repManagerLocalComments().filter(function(x){return !(x.rep_name===rep&&x.week_start===week)}),status=old.status==='done'?'open':'done',at=isoNow(),row={rep_name:rep,week_start:week,comment:old.comment,status:status,created_by:old.created_by||((ME&&ME.name)||'관리자'),updated_at:at,completed_at:status==='done'?at:null};local.push(row);localStorage.setItem(REP_MANAGER_COMMENT_KEY,JSON.stringify(local));pushWrite('rep_manager_comment',{rep_name:rep,week_start:week,comment:row.comment,status:status,created_by:row.created_by,updated_at:at,completed_at:row.completed_at});paintRepManagement()}
+function repManagerSaveComment(rep,source){var id=source==='drawer'?'rm-drawer-comment':'rm-comment-'+REP_INTERNAL.indexOf(rep),el=$('#'+id),text=(el&&el.value||'').trim();if(!text)return;var week=repManagerWeekKey(0),actor=(ME&&ME.name)||'관리자',at=isoNow(),local=repManagerLocalComments().filter(function(x){return !(x.rep_name===rep&&x.week_start===week)}),old=repManagerComment(rep,week),row={rep_name:rep,week_start:week,comment:text,status:old&&old.status||'open',created_by:actor,updated_at:at};local.push(row);Phase1.storage.setItem(REP_MANAGER_COMMENT_KEY,JSON.stringify(local));pushWrite('rep_manager_comment',{rep_name:rep,week_start:week,comment:text,status:row.status,created_by:actor,updated_at:at});paintRepManagement();if(source==='drawer'){var i=REP_MANAGER_ROWS.map(function(r){return r.nm}).indexOf(rep);if(i>=0)repManagerOpenDrawer(i)}}
+function repManagerToggleComment(rep){var week=repManagerWeekKey(0),old=repManagerComment(rep,week);if(!old)return;var local=repManagerLocalComments().filter(function(x){return !(x.rep_name===rep&&x.week_start===week)}),status=old.status==='done'?'open':'done',at=isoNow(),row={rep_name:rep,week_start:week,comment:old.comment,status:status,created_by:old.created_by||((ME&&ME.name)||'관리자'),updated_at:at,completed_at:status==='done'?at:null};local.push(row);Phase1.storage.setItem(REP_MANAGER_COMMENT_KEY,JSON.stringify(local));pushWrite('rep_manager_comment',{rep_name:rep,week_start:week,comment:row.comment,status:status,created_by:row.created_by,updated_at:at,completed_at:row.completed_at});paintRepManagement()}
 function repManagerFlowRow(r,i){var riskCls=r.risk>=4?'critical':r.risk?'':'ok',move=r.weekTracked?(r.weekAdvanced?'<b style="color:#18a66a">+'+r.weekAdvanced+'</b>':'<b style="color:#d64255">0</b>'):'<span class="muted">수집 중</span>';return '<div class="rm-flow-grid row"><button class="rep-flow-name" data-i="'+i+'" onclick="repManagerOpenDrawer(Number(this.dataset.i))">'+esc(r.nm)+'<small>코칭 상세 →</small></button><div class="rep-flow-chain">'+repFlowStep('배정',r.assigned)+repFlowStep('응대',r.responded)+repFlowStep('기회',r.opps)+repFlowStep('경쟁',r.compete)+repFlowStep('수주',r.won,'won')+'</div><div class="rep-flow-money"><span>진행</span><b>'+eok(r.pipeline)+'</b></div><div class="rep-flow-money near"><span>경쟁 이후</span><b>'+eok(r.near)+'</b></div><div class="rep-flow-move"><span>Stage 전진</span>'+move+'</div><button class="rm-risk-num '+riskCls+'" data-i="'+i+'" onclick="repManagerGo(Number(this.dataset.i),\'risk\')">'+r.risk+'건</button><div class="rm-diag '+r.diagnosis.k+'"><strong>'+esc(r.diagnosis.title)+'</strong><small>'+esc(r.diagnosis.text)+'</small></div></div>'}
 function repManagerGo(i,kind){var r=REP_MANAGER_ROWS[i];if(!r)return;closePerfDrawer();G.rep=r.nm;if(kind==='schedule')goPage('brief');else dashboardGoSnapshot(kind==='risk'?'risk':'active')}
 function repManagerStage(i,codes,label){REP_FLOW_ROWS=REP_MANAGER_ROWS;repFlowGoStage(i,codes,label)}
@@ -3888,7 +3797,7 @@ function paintRepManagement(){var root=$('#rep-management-root');if(!root)return
 
 /* ── 고객관리 지원 · 관계관리 단계의 관리자 실행 허브 ───────── */
 var REP_SUPPORT_CACHE=[],REP_SUPPORT_FILTER='all',REP_SUPPORT_KEY='netform_crm_customer_support_actions_v1';
-function repSupportLocal(){try{var a=JSON.parse(localStorage.getItem(REP_SUPPORT_KEY)||'[]');return Array.isArray(a)?a:[]}catch(e){return []}}
+function repSupportLocal(){try{var a=JSON.parse(Phase1.storage.getItem(REP_SUPPORT_KEY)||'[]');return Array.isArray(a)?a:[]}catch(e){return []}}
 function repSupportHistory(){var all=[];[B&&B.customerSupportActions,B&&B.customer_support_actions,repSupportLocal()].forEach(function(a){if(Array.isArray(a))all=all.concat(a)});var seen={};return all.sort(function(a,b){return String(b.requested_at||b.created_at||'').localeCompare(String(a.requested_at||a.created_at||''))}).filter(function(x){var k=x.client_ref||[x.target_key,x.action_key,x.requested_at].join('|');if(seen[k])return false;seen[k]=1;return true})}
 function repSupportHours(v){var n=v?Math.floor((Date.now()-new Date(v).getTime())/36e5):null;return n==null||isNaN(n)?null:Math.max(0,n)}
 function repSupportMeeting(d,p){return p.committeeMeetingAt||p.committee_meeting_at||p.meetingAt||p.meeting_at||d.committeeMeetingAt||d.committee_meeting_at||d.meetingAt||d.meeting_at||d.meeting_date||''}
@@ -3906,7 +3815,7 @@ function repSupportRows(){var out=[],internal=function(x){return REP_INTERNAL.in
 function repSupportLatest(row){return repSupportHistory().filter(function(x){return x.target_key===row.key})[0]||null}
 function repSupportSetFilter(k){REP_SUPPORT_FILTER=k||'all';paintRepManagement()}
 function repSupportSeason(){G.campaignCategory=(new Date().getMonth()>=8&&new Date().getMonth()<=9)?'chuseok':new Date().getMonth()===0?'lunar':'yearend';G.campaignTab='send';G.campaignStep=1;G.campaignRep='전체';CAMPAIGN_STATE={selected:{},templateKey:'',body:'',scheduleAt:'',notice:'시즌 인사 대상입니다. 담당자·동의·최근 발송 조건을 확인한 뒤 발송 대상을 선택하세요.'};goPage('campaign')}
-function repSupportRecord(row,key,label){var at=isoNow(),client='support-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),actor=(ME&&ME.name)||'관리자',record={client_ref:client,target_type:row.target,target_key:row.key,opportunity_id:row.target==='deal'?row.item.id:null,inquiry_id:row.target==='inq'?String(row.item.id||row.item.key||inqKey(row.item)):null,site_name:row.item.site||'',rep_name:row.owner,action_key:key,action_label:label,reason:row.reason,status:'requested',requested_by:actor,requested_at:at,completion_rule:row.done};var all=repSupportLocal();all.push(record);localStorage.setItem(REP_SUPPORT_KEY,JSON.stringify(all.slice(-500)));pushWrite('customer_support_action',record);return record}
+function repSupportRecord(row,key,label){var at=isoNow(),client='support-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),actor=(ME&&ME.name)||'관리자',record={client_ref:client,target_type:row.target,target_key:row.key,opportunity_id:row.target==='deal'?row.item.id:null,inquiry_id:row.target==='inq'?String(row.item.id||row.item.key||inqKey(row.item)):null,site_name:row.item.site||'',rep_name:row.owner,action_key:key,action_label:label,reason:row.reason,status:'requested',requested_by:actor,requested_at:at,completion_rule:row.done};var all=repSupportLocal();all.push(record);Phase1.storage.setItem(REP_SUPPORT_KEY,JSON.stringify(all.slice(-500)));pushWrite('customer_support_action',record);return record}
 function repSupportOpen(i,key,label,focus){var row=REP_SUPPORT_CACHE[i];if(!row)return;repSupportRecord(row,key,label);if(row.target==='inq'){drwInq(JSON.stringify(row.item));return}drwDeal(JSON.stringify(row.item));setTimeout(function(){if(focus==='next'){dccGoNext();setTimeout(function(){var t=$('#dv-na-text'),ty=$('#dv-na-type');if(ty)NextActionPicker.choose('dv-na-type','전화');if(t&&!t.value)t.value=label},60)}else if(focus==='activity')dccGoActivity();else if(focus==='waiting')dccFocusWaiting();else if(focus==='contact'){detailTabFocus('개요');var c=$('#contactCard');if(c)c.scrollIntoView({behavior:'smooth',block:'center'})}},90)}
 function repSupportCall(i){var row=REP_SUPPORT_CACHE[i];if(!row||row.target!=='deal')return;repSupportRecord(row,'call','재접촉 실행');CUR_DETAIL={kind:'deal',key:dealKey(row.item),item:row.item};contactDial('mobile')}
 function repSupportMessage(i,category,label){var row=REP_SUPPORT_CACHE[i];if(!row||row.target!=='deal')return;repSupportRecord(row,'message',label);G.campaignCategory=category;G.campaignTab='send';G.campaignStep=1;G.campaignRep=row.owner;G.campaignBrand='전체';G.campaignWork='전체';G.campaignRegion='전체';G.campaignTemp='전체';G.campaignRecent='전체';CAMPAIGN_STATE={selected:{},templateKey:'',body:'',scheduleAt:'',notice:''};campaignAllTargets().filter(function(t){return dealKey(t.deal)===dealKey(row.item)&&t.guard.ok}).forEach(function(t){CAMPAIGN_STATE.selected[t.key]=1});if(Object.keys(CAMPAIGN_STATE.selected).length){G.campaignStep=2;CAMPAIGN_STATE.notice=(row.item.site||'현장')+' 고객을 선택했습니다. 문구와 발송 대상을 최종 확인하세요.'}else CAMPAIGN_STATE.notice='발송동의·연락처·발송빈도를 확인해 주세요. 해당 담당자와 카테고리로 대상을 좁혔습니다.';goPage('campaign')}
@@ -4064,24 +3973,8 @@ function applyRoleHome(){
  if(G._homePicked)return;                 /* 사용자가 직접 고른 뒤에는 건드리지 않는다 */
  if(!ME||!ME.role)return;
  G.homeRole=homeForRole(ME.role);G._homePicked=1}
-function setHomeRole(r){G._homePicked=1;
- /* 영업사원 홈은 «내 것» 만 보는 화면이라 담당자 필터를 잠시 빌린다.
-    빌린 것은 돌려준다 — 리드 홈으로 돌아왔는데 한 사람만 보이면 숫자를 오해한다. */
- if(r==='sales'){
-   if(G.repBefore==null)G.repBefore=G.rep;
-   if(ME&&ME.name)G.rep=repN(ME.name);
- }else if(G.repBefore!=null){
-   G.rep=G.repBefore;G.repBefore=null;
- }
- G.homeRole=r;paint()}
-function applyHomeRole(){
- var r=G.homeRole||'lead';
- $$('#pg-dash [data-role]').forEach(function(el){
-   el.style.display=(el.dataset.role.split(' ').indexOf(r)>=0)?'':'none'});
- var host=$('#d-roles');if(!host)return;
- host.innerHTML=HOME_ROLES.map(function(x){
-   return '<button class="'+(r===x[0]?'on':'')+'" data-r="'+x[0]+'" onclick="setHomeRole(this.dataset.r)">'+esc(x[1])+'</button>'}).join('');
-}
+function setHomeRole(r){var allowed=Phase1.profile?.allowed_modes||[];if(r!=='sales'&&!allowed.includes('admin'))return;G._homePicked=1;G.homeRole=r;Phase1.mode(r==='sales'?'rep':'admin');applyHomeRole();}
+function applyHomeRole(){var r=G.homeRole||'sales',admin=Phase1.profile?.allowed_modes.includes('admin');$$('#pg-dash [data-role]').forEach(function(el){el.style.display=el.dataset.role.split(' ').includes(r)?'':'none';});var host=$('#d-roles');if(!host)return;host.innerHTML=HOME_ROLES.filter(function(x){return admin||x[0]==='sales';}).map(function(x){return '<button class="'+(r===x[0]?'on':'')+'" data-r="'+x[0]+'" onclick="setHomeRole(this.dataset.r)">'+esc(x[1])+'</button>';}).join('');}
 
 /* 첫 줄 — 전체 영업이 어디서 어디까지 흘렀는지 한 문장으로 요약한다. */
 function paintHeadline(){
@@ -4576,7 +4469,7 @@ function nextActionHero(item,p){var a=actionObj(item,p),dd=a&&a.due?daysTo(a.due
 /* 모바일 앱의 '다음 단계 칩' 문법 이식 — 하단 바에서 바로 다음 단계로 전환창을 연다(대상 미리 선택) */
 function nextStepChip(idx){if(idx>=6)return '';var v=idx<5?'step:'+(idx+1):'won',n=idx<5?FLOW_STEPS[idx+1]:'수주 성공';return '<button class="dact next" onclick="chipTransition(\''+v+'\')">다음: '+esc(n)+' →</button>'}
 function chipTransition(v){openTransition();var t=$('#tr-target');if(t){t.value=v;transitionTargetChanged()}}
-function phoneN(v){return String(v||'').replace(/[^0-9]/g,'')}
+function phoneN(v){return String(v||'')}
 function phoneFmt(v){var n=phoneN(v);if(!n)return '미입력';if(n.length===11)return n.slice(0,3)+'-'+n.slice(3,7)+'-'+n.slice(7);if(n.length===10)return n.slice(0,3)+'-'+n.slice(3,6)+'-'+n.slice(6);return String(v||'')}
 function contactInfo(item,p){p=p||itemPatch(item,'deal')||{};var c=p.contact||item.contact||{};
  return {officeTel:c.officeTel||item.office_phone||item.officeTel||'',officeEmail:c.officeEmail||item.office_email||item.officeEmail||'',
@@ -4964,7 +4857,7 @@ function paintPipe(){if(G.pipeView==='console')G.pipeView='split';var all=B.deal
    아래 파이프라인 필터바와 정보가 겹치고 화면 밀도만 높였다. 숨기지 않고 렌더 코드를 없앤다.
    진행 구간·조치 상태·종료는 모두 스플릿 상단 필터에서 고른다. */
   var _top=$('#p-top');if(_top){_top.innerHTML='';_top.style.display='none'}
-  
+
  if(G.pipeView==='fc')paintForecast(act);else if(G.pipeView==='closed')paintClosed(won,lost,etc);else if(G.pipeView==='console'){if(G.stageCol==null)G.stageCol=-1;paintStageListV2();injectConsoleTabs()}else if(G.pipeView==='split')paintSplit();else if(G.pipeView==='stage'||G.stageCol!=null)paintStageListV2();else paintKanban()}
 
 function controlRows(){return inqs().map(function(q){var d=linkedDeal(q),item=d||q,kind=d?'deal':'inq',p=priorityInfo(item,kind);return {q:q,d:d,item:item,kind:kind,stage:flowIndex(item,kind),p:p}})}
@@ -6520,7 +6413,7 @@ function openSplitFrom(i){var q=INQ_CONSOLE_CACHE[i];if(!q)return;G.inqView='spl
 function inqAct(k){G.inqAct=(G.inqAct===k?null:k);paint()}
 function splitSel(){var q=(B.inquiries||[]).filter(function(x){return inqKey(x)===G.inqSelKey})[0];return q||SPLIT_CACHE[0]||null}
 function splitNotice(m){G.inqNotice=m;paint()}
-/* ══ v4.2 P0(§5 §23): 지금 이 화면의 저장은 전부 localStorage 다.
+/* ══ v4.2 P0(§5 §23): 지금 이 화면의 저장은 전부 Phase1.storage 다.
    서버 쓰기 API가 붙기 전까지 «✅ 저장 완료»는 사실이 아니다.
    다른 PC·모바일에는 반영되지 않는다는 사실을 알림마다 같이 말한다. ══ */
 function localPendingCount(){var c=(localCreatedDeals()||[]).length;
@@ -7182,10 +7075,10 @@ function openWorkEdit(){
  if(title)title.textContent='공종 분류·수정';h.innerHTML='<div class="detailnotice" style="margin-top:0">'+esc(item.site||'현장')+'의 이 영업기회에만 적용됩니다. 같은 아파트의 다른 공사는 바뀌지 않습니다.</div><div class="work-picker" id="nd-work-picker">'+newDealWorkHTML()+'</div>'+reasonBlock('rs-work','공종 분류 근거','예: 공사 범위 확인 결과 옥상 금속기와와 외부 재도장 복합공종으로 확정.')+'<div class="dactions" style="justify-content:flex-end"><button class="dact" onclick="closeNewDeal()">취소</button><button class="dact pri" data-gate="rs-work" disabled onclick="saveWorkEdit()">공종 저장</button></div><div class="modalerr" id="nd-err"></div>';
  m.classList.add('on');m.setAttribute('aria-hidden','false')
 }
-function saveWorkEdit(){
+async function saveWorkEdit(){
  var item=EDIT_WORK_ITEM,e=document.getElementById('nd-err'),other=document.getElementById('nd-work-other');if(!item)return;if(other)NEW_DEAL_WORK.other=other.value;var works=newDealWorkItems(),multi=works.length>1,raw=multi?NEW_DEAL_WORK.primary:(NEW_DEAL_WORK.items[0]||''),primary=workParts(raw);if(primary&&raw==='기타>기타'&&NEW_DEAL_WORK.other.trim())primary={group:'기타',item:NEW_DEAL_WORK.other.trim(),key:workKey('기타',NEW_DEAL_WORK.other.trim())};
  if(!works.length){e.style.display='block';e.textContent='공종을 하나 이상 선택해 주세요.';return}if(NEW_DEAL_WORK.items.indexOf('기타>기타')>=0&&!NEW_DEAL_WORK.other.trim()){e.style.display='block';e.textContent='기타 공종명을 직접 입력해 주세요.';return}if(multi&&!primary){e.style.display='block';e.textContent='복합공종의 대표 공종을 선택해 주세요.';return}if(!reasonOk('rs-work')){e.style.display='block';e.textContent='공종 분류 근거를 5자 이상 남겨 주세요.';return}
- var keys=works.map(function(w){return w.key}),scope=multi?'multi':'single',summary=workSummaryFrom(works),p=itemPatch(item,'deal'),at=isoNow();[['primaryWork',primary.key],['workItems',keys],['workScopeType',scope],['workSummary',summary],['primary_work',primary.key],['work_items',keys],['work_scope_type',scope],['work_summary',summary],['work_type',primary.item]].forEach(function(x){item[x[0]]=p[x[0]]=x[1]});p.activities=(p.activities||[]).concat([{type:'공종분류',note:summary,result:reasonValue('rs-work'),at:at,actor:(ME&&ME.name)||repN(item.assignee)}]);saveLocal();pushWrite('opportunity_work_set',{opportunity_id:item.id,primaryWork:primary.key,workItems:keys,workScopeType:scope,workSummary:summary,primary_work:primary.key,work_items:keys,work_scope_type:scope,work_summary:summary,work_type:primary.item,reason:reasonValue('rs-work'),reason_source:reasonSource('rs-work'),actor_name:(ME&&ME.name)||repN(item.assignee),at:at});closeNewDeal();renderDetail();showDetailErr(saveMsg('이 영업기회의 공종을 '+summary+'으로 기록했습니다.'),true)
+ var keys=works.map(function(w){return w.key});try{await Phase11.save(item,{primary_work:primary.key,work_items:keys,reason:reasonValue('rs-work')});}catch(e){/* explicit non-success/conflict state is shown by the adapter */}
 }
 function openNewDeal(){
  var m=document.getElementById('newDealModal'),h=document.getElementById('newDealBody');if(!m||!h)return;
@@ -7204,7 +7097,7 @@ function openNewDeal(){
   +'<div class="field"><label>관리사무소 이메일</label><input id="nd-office-email" type="email" placeholder="예: office@example.com"></div>'
   +'<div class="field full"><label>현장 주소</label><div class="addressmap"><input id="nd-address" placeholder="예: 경기 수원시 영통구 ..." onkeydown="if(event.key===\'Enter\'){event.preventDefault();openKakaoAddress()}"><button type="button" onclick="openKakaoAddress()">📍 카카오맵 확인</button></div></div>'
   +'<div class="contacthint" id="nd-contact-hint"></div></div>'
-  +reasonBlock('rs-new','영업 등록 근거','예: 황윤선 상무가 직접 발굴한 현장. 재도장 입찰 예정이며 기술자문으로 영업 시작.')
+  +reasonBlock('rs-new','영업 등록 근거','예: TEST INTERNAL_REP 상무가 직접 발굴한 현장. 재도장 입찰 예정이며 기술자문으로 영업 시작.')
   +'<div class="dactions" style="justify-content:flex-end"><button class="dact" onclick="closeNewDeal()">취소</button>'
   +'<button class="dact pri" onclick="saveNewDeal()">영업 등록</button></div><div class="modalerr" id="nd-err"></div>';
  m.classList.add('on');m.setAttribute('aria-hidden','false');setTimeout(function(){var x=document.getElementById('nd-site');if(x)x.focus()},30)}
@@ -7407,7 +7300,7 @@ var REL_FILTERS=[
  ['전체','전체'],['today','오늘 연락'],['rapport','유대관리'],['silent','침묵관리'],['waiting','대기'],
  ['m3','3개월'],['m6','6개월'],['y1','1년+'],['dormant','장기휴면']
 ];
-var REL_FREE_OPTOUT=(function(){try{return localStorage.getItem('nf_rel_free_optout')||''}catch(e){return ''}})();
+var REL_FREE_OPTOUT=(function(){try{return Phase1.storage.getItem('nf_rel_free_optout')||''}catch(e){return ''}})();
 var REL_MSG=null;
 if(G.relFilter==null)G.relFilter='전체';
 
@@ -7635,7 +7528,7 @@ function installExecAttachInputs(){if(document.getElementById('exec-attach-photo
 function openExecAttachPicker(kind){installExecAttachInputs();var e=document.getElementById(kind==='photo'?'exec-attach-photo':'exec-attach-file');if(e)e.click()}
 function execAttachChosen(kind,list){var files=Array.prototype.slice.call(list||[]).slice(0,10);if(!files.length)return;if(files.some(function(f){return f.size>20*1024*1024})){showDetailErr('파일당 최대 20MB까지 첨부할 수 있습니다.');return}EXEC_ATTACH_FILES=files;EXEC_ATTACH_KIND=kind;EXEC_ATTACH_TAGS=[];renderExecAttachForm()}
 function toggleExecAttachTag(tag){var i=EXEC_ATTACH_TAGS.indexOf(tag);if(i>=0)EXEC_ATTACH_TAGS.splice(i,1);else EXEC_ATTACH_TAGS.push(tag);renderExecAttachForm()}
-function renderExecAttachForm(){var h=$('#execAttachForm');if(!h)return;var cat=(($('#exec-attach-category')||{}).value)||(EXEC_ATTACH_KIND==='photo'?'현장사진':'견적자료'),memo=(($('#exec-attach-memo')||{}).value||'');h.innerHTML='<div class="exec-upload-form"><div class="field"><label>분류</label><select id="exec-attach-category">'+EXEC_ATTACH_CATEGORIES.map(function(x){return '<option '+(x===cat?'selected':'')+'>'+x+'</option>'}).join('')+'</select></div>'+(EXEC_ATTACH_KIND==='photo'?'<div class="field"><label>사진 태그</label><div class="exec-tag-row">'+EXEC_ATTACH_TAG_OPTIONS.map(function(x){return '<button class="'+(EXEC_ATTACH_TAGS.indexOf(x)>=0?'on':'')+'" data-tag="'+esc(x)+'" onclick="toggleExecAttachTag(this.dataset.tag)">'+esc(x)+'</button>'}).join('')+'</div></div>':'')+'<div class="field"><label>메모</label><textarea id="exec-attach-memo" rows="2" placeholder="예: 배수로 주변 들뜸 확인">'+esc(memo)+'</textarea></div><div class="detailnotice">'+EXEC_ATTACH_FILES.map(function(f){return esc(f.name)+' · '+Math.max(1,Math.round(f.size/1024))+'KB'}).join('<br>')+'<br><b>원본은 브라우저/localStorage가 아닌 Supabase Storage에 저장됩니다.</b></div><div class="dactions"><button class="dact" onclick="EXEC_ATTACH_FILES=[];renderDetail()">취소</button><button class="dact pri" id="exec-attach-save" onclick="saveExecAttachments()">'+EXEC_ATTACH_FILES.length+'개 파일 등록</button></div></div>'}
+function renderExecAttachForm(){var h=$('#execAttachForm');if(!h)return;var cat=(($('#exec-attach-category')||{}).value)||(EXEC_ATTACH_KIND==='photo'?'현장사진':'견적자료'),memo=(($('#exec-attach-memo')||{}).value||'');h.innerHTML='<div class="exec-upload-form"><div class="field"><label>분류</label><select id="exec-attach-category">'+EXEC_ATTACH_CATEGORIES.map(function(x){return '<option '+(x===cat?'selected':'')+'>'+x+'</option>'}).join('')+'</select></div>'+(EXEC_ATTACH_KIND==='photo'?'<div class="field"><label>사진 태그</label><div class="exec-tag-row">'+EXEC_ATTACH_TAG_OPTIONS.map(function(x){return '<button class="'+(EXEC_ATTACH_TAGS.indexOf(x)>=0?'on':'')+'" data-tag="'+esc(x)+'" onclick="toggleExecAttachTag(this.dataset.tag)">'+esc(x)+'</button>'}).join('')+'</div></div>':'')+'<div class="field"><label>메모</label><textarea id="exec-attach-memo" rows="2" placeholder="예: 배수로 주변 들뜸 확인">'+esc(memo)+'</textarea></div><div class="detailnotice">'+EXEC_ATTACH_FILES.map(function(f){return esc(f.name)+' · '+Math.max(1,Math.round(f.size/1024))+'KB'}).join('<br>')+'<br><b>원본은 브라우저/Phase1.storage가 아닌 Supabase Storage에 저장됩니다.</b></div><div class="dactions"><button class="dact" onclick="EXEC_ATTACH_FILES=[];renderDetail()">취소</button><button class="dact pri" id="exec-attach-save" onclick="saveExecAttachments()">'+EXEC_ATTACH_FILES.length+'개 파일 등록</button></div></div>'}
 function unwrapExecWrite(x){if(Array.isArray(x))x=x[0];return x&&x.data&&typeof x.data==='object'?x.data:x}
 async function postExecWrite(op,payload){var body={write_id:newWriteId(),op:op,payload:payload,actor_id:(ME&&ME.email)||(ME&&ME.name)||'관리자',opportunity_id:payload.opportunity_id||null,created_at:isoNow(),version:1},r=await fetch(WRITE_API,{method:'POST',headers:authHeaders({'Content-Type':'application/json'}),body:JSON.stringify(body)});return WriteAck.read(r,body)}
 function demoExecAttachment(d,f,cat,tags,memo){return {id:'demo-file-'+Date.now()+'-'+Math.random(),file_name:f.name,mime_type:f.type||'application/octet-stream',size_bytes:f.size||0,category:cat,tags:tags,memo:memo,uploaded_by:(ME&&ME.name)||repN(d.assignee),created_at:isoNow(),status:'ready',object_path:'demo/'+d.id+'/'+f.name}}
@@ -8026,8 +7919,8 @@ var CAMPAIGN_STORE_KEY='netform_crm_campaign_center_v1';
 var CAMPAIGN_STORE={campaigns:[]};
 var CAMPAIGN_STATE={selected:{},templateKey:'',body:'',scheduleAt:'',notice:''};
 var CAMPAIGN_TARGET_CACHE=[];
-function campaignLoadStore(){try{var x=JSON.parse(localStorage.getItem(CAMPAIGN_STORE_KEY)||'{}');if(x&&Array.isArray(x.campaigns))CAMPAIGN_STORE=x}catch(e){}CAMPAIGN_STORE.campaigns=CAMPAIGN_STORE.campaigns||[]}
-function campaignSaveStore(){try{localStorage.setItem(CAMPAIGN_STORE_KEY,JSON.stringify(CAMPAIGN_STORE))}catch(e){}}
+function campaignLoadStore(){try{var x=JSON.parse(Phase1.storage.getItem(CAMPAIGN_STORE_KEY)||'{}');if(x&&Array.isArray(x.campaigns))CAMPAIGN_STORE=x}catch(e){}CAMPAIGN_STORE.campaigns=CAMPAIGN_STORE.campaigns||[]}
+function campaignSaveStore(){try{Phase1.storage.setItem(CAMPAIGN_STORE_KEY,JSON.stringify(CAMPAIGN_STORE))}catch(e){}}
 campaignLoadStore();
 function campaignCategory(key){var found=null;CAMPAIGN_CATEGORIES.some(function(g){return g.items.some(function(x){if(x[0]===key){found={key:x[0],label:x[1],codes:x[2]||[],group:g.group};return true}return false})});return found||{key:'silent',label:'침묵',codes:['silent'],group:'영업단계별'} }
 function campaignActor(){return (ME&&ME.name)||'관리자'}
@@ -8093,7 +7986,7 @@ function campaignLibraryPage(){var cats=[],old=G.campaignCategory;CAMPAIGN_CATEG
 function campaignAnalysisPage(){var L=campaignLogs(),sent=L.filter(function(x){return x.status==='sent'}),sum=function(k){return sent.reduce(function(a,x){return a+Number(x[k]||0)},0)},by={};sent.forEach(function(x){var k=x.category||x.category_label||'기타';by[k]=by[k]||{sent:0,response:0,next:0,stage:0};by[k].sent+=Number(x.recipient_count||0);by[k].response+=Number(x.response_count||0);by[k].next+=Number(x.next_action_count||0);by[k].stage+=Number(x.stage_advanced_count||0)});var max=Math.max.apply(null,[1].concat(Object.keys(by).map(function(k){return by[k].sent})));return '<div class="cc-analysis-grid"><section class="cc-scorecard"><h4>발송 → 영업진전</h4><div class="cc-score-grid"><div><span>발송 완료</span><b>'+sent.reduce(function(a,x){return a+Number(x.recipient_count||0)},0)+'</b></div><div><span>고객 응답</span><b>'+sum('response_count')+'</b></div><div><span>Next 생성</span><b>'+sum('next_action_count')+'</b></div><div><span>Stage 전진</span><b>'+sum('stage_advanced_count')+'</b></div></div></section><section class="cc-scorecard"><h4>카테고리별 실제 발송</h4><div class="cc-bars">'+(Object.keys(by).map(function(k){return '<div class="cc-bar"><span>'+esc(k)+'</span><i style="--w:'+Math.round(by[k].sent/max*100)+'%"></i><b>'+by[k].sent+'명</b></div>'}).join('')||'<div class="cc-empty"><b>성과 데이터 수집 전입니다.</b>실제 발송 성공 콜백이 들어오면 표시됩니다.</div>')+'</div></section></div>'}
 function paintCampaign(){var root=$('#campaign-root');if(!root)return;var L=campaignLogs(),scheduled=L.filter(function(x){return x.status==='scheduled'}).length,queued=L.filter(function(x){return x.status==='queued'}).length,targets=campaignAllTargets(),ready=targets.filter(function(t){return t.guard.ok}).length,tabs=[['send','고객 실행',0],['schedule','예약 실행',scheduled],['history','실행 이력',L.length],['templates','문구·자료',0],['analysis','성과분석',0]],body=G.campaignTab==='send'?campaignSendPage():G.campaignTab==='schedule'?campaignHistoryPage(true):G.campaignTab==='history'?campaignHistoryPage(false):G.campaignTab==='templates'?campaignLibraryPage():campaignAnalysisPage();root.innerHTML='<div class="cc-shell"><section class="cc-command"><div class="cc-command-main"><div><div class="eyebrow">CUSTOMER ACTION CENTER</div><h2>재접촉부터 문자·Lost 복구·확장까지 한 곳에서 실행합니다.</h2><p>대상 고객을 CRM이 먼저 모으고, 사용자는 이유와 문구를 확인한 뒤 전화·문자·다음 행동으로 연결합니다.</p></div><div class="cc-command-stats"><div><span>현재 실행 가능</span><b>'+ready+'명</b></div><div><span>예약 실행</span><b>'+scheduled+'건</b></div><div class="warn"><span>서버 처리 대기</span><b>'+queued+'건</b></div></div></div></section><nav class="cc-tabs">'+tabs.map(function(x){return '<button class="'+(G.campaignTab===x[0]?'on':'')+'" onclick="campaignSetTab(\''+x[0]+'\')">'+x[1]+(x[2]?'<em>'+x[2]+'</em>':'')+'</button>'}).join('')+'</nav>'+(CAMPAIGN_STATE.notice?'<div class="mgmtbar blue">'+esc(CAMPAIGN_STATE.notice)+'</div>':'')+body+'</div>'}
 
-Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
+</script><script src="/operational-overlay.js"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
   if(AUTH_ON&&!TOKEN)return;
   loadData();
 });
@@ -8101,5 +7994,5 @@ Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
 <link rel="stylesheet" href="stage-transition.css?v=20260905-1">
 <script src="stage-transition.js?v=20260905-1"></script>
 <script src="stage-transition-ui.js?v=20260905-1"></script>
-</body>
+<script src="/work-editor.js"></script><script>window.addEventListener('phase1:identity-cleared',function(){TOKEN=null;WRITE_Q=[];ME=null;if(typeof B!=='undefined')B=null;authGate(true);});window.addEventListener('phase1:profile',function(){WRITE_Q=Phase1.queue.list();});window.addEventListener('phase1:queue',function(){WRITE_Q=Phase1.queue.list();});</script></body>
 </html>

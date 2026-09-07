@@ -38,7 +38,7 @@ const exporter=fs.readFileSync(path.join(root,'crm-export.js'),'utf8');
 for(const evidence of [
   "pushWrite('expansion_pool_update'", "SB.rpc('crm_expansion_note'", "op:'expansion_quote_convert'",
   "rpc('crm_cleanup_preview'", "rpc('crm_cleanup_apply'", "pushWrite('rep_manager_comment'",
-  "pushWrite('customer_support_action'", "localStorage.setItem(goalKey()", "crm_export_create",
+  "pushWrite('customer_support_action'", "Phase1.storage.setItem(goalKey()", "crm_export_create",
   "function nudgeSelected()"
 ]) assert.ok([crm,expansion,cleanup,exporter].some(x=>x.includes(evidence)),`missing reachable evidence: ${evidence}`);
 for(const evidence of ['G.set.quiet=!G.set.quiet','PDF 미리보기 생성 (목업)','병합 요청 기록 — 관리자 확인 후 처리 (목업)']) assert.ok(mobile.includes(evidence));

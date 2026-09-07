@@ -55,13 +55,14 @@ test('existing PC response consumer is compatible',async()=>{
  const response=await R.response(options({fetch:async()=>new Response(JSON.stringify(bundle()))}));
  assert.equal(response.status,200);assert.deepEqual(JSON.parse(await response.text()),bundle());
 });
-test('PC and mobile use same read module but retain independent write URL',()=>{
+test('PC and mobile use the same Production Supabase transport with legacy n8n write disabled',()=>{
  for(const file of ['crm.html','mobile.html']){
   const html=fs.readFileSync(require.resolve('../'+file),'utf8');
   assert.match(html,/<script src="crm-read\.js/);
   assert.match(html,/rest\/v1\/rpc\/crm_read_bundle/);
-  assert.match(html,/var WRITE_API='https:\/\/nfrnd\.app\.n8n\.cloud\/webhook\/crm-write'/);
-  assert.doesNotMatch(html,/https:\/\/nfrnd\.app\.n8n\.cloud\/webhook\/crm-api/);
+  assert.match(html,/<script src="\/phase1-config\.js"><\/script><script src="\/operational-adapter\.js"><\/script><script src="\/transport\.js"><\/script>/);
+  assert.match(html,/var WRITE_API='urn:netform-crm:legacy-write-disabled'/);
+  assert.doesNotMatch(html,/nfrnd\.app\.n8n\.cloud/);
   assert.match(html,/var SYNC_MS=120000/);
  }
  const mobile=fs.readFileSync(require.resolve('../mobile.html'),'utf8');
