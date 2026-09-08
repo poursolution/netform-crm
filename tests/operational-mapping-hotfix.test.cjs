@@ -88,6 +88,17 @@ test('quote inbox has a focused refresh safety net when realtime delivery is una
  assert.match(pc,/visibilitychange[^\n]+syncInquiryNow\(false\)/);
  assert.match(pc,/addEventListener\('focus'[^\n]+syncInquiryNow\(false\)/);
  assert.doesNotMatch(pc,/addEventListener\('focus'[^\n]+syncInquiryNow\(true\)/);
+ assert.match(pc,/function refreshPageAfterPaint\(p\)[\s\S]{0,420}syncInquiryNow\(false\)/);
+ assert.doesNotMatch(pc,/function (?:nav|goPage)\([^\n]+syncInquiryNow\(true\)/);
+ assert.match(fs.readFileSync(path.join(__dirname,'..','operational-overlay.js'),'utf8'),/root\.applyBundle\(bundle\);root\.LAST_INQUIRY_SYNC=Date\.now\(\);readState\('핵심 데이터 최신'/);
+});
+
+test('quote inbox reuses expensive status decisions during one paint',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
+ assert.match(html,/var INQ_CTL_BUCKET_CACHE=null;/);
+ assert.match(html,/INQ_CTL_BUCKET_CACHE=new Map\(\);/);
+ assert.match(html,/INQ_CTL_BUCKET_CACHE&&INQ_CTL_BUCKET_CACHE\.get\(key\)/);
+ assert.match(html,/INQ_CTL_BUCKET_CACHE\.set\(key,bucket\)/);
 });
 
 test('today manager intervention identifies inquiries with actionable context',()=>{
@@ -111,7 +122,7 @@ test('message campaign history and analysis can be filtered by year',()=>{
  assert.match(html,/function campaignYearTabs\(\)/);
  assert.match(html,/\['전체',String\(cy\),String\(cy-1\),String\(cy-2\),'이전'\]/);
  assert.match(html,/campaignLogs\(\)\.filter\(campaignYearMatch\)/);
- assert.match(html,/function nav\(el\)[^\n]+loadOperationalPageData\(G\.page\)/);
+ assert.match(html,/function refreshPageAfterPaint\(p\)[\s\S]{0,220}loadOperationalPageData\(p\)/);
 });
 
 test('message campaign recipient selection supports all customers and rolling year filters',()=>{
@@ -173,6 +184,7 @@ test('reload paints snapshot, then fresh core without downloading all history',a
  assert.deepEqual(painted,['cached','fresh']);
  assert.equal(elements.live.textContent,'핵심 데이터 최신');
  assert.equal(reads,1);
+ assert.ok(Number.isFinite(root.LAST_INQUIRY_SYNC));
  assert.match(stored,/fresh/);
 });
 

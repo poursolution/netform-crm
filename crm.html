@@ -2947,8 +2947,16 @@ function clearTransientUI(){
  document.body.style.overflow='';G._detailPopup=false;G._toSplit=0;CUR_DETAIL=null;
  TRANSITION_CTX=null;QUICK_CONTACT=null;KAKAO_DRAFT=null;
 }
-function nav(el){clearTransientUI();$$('.mi').forEach(function(m){m.classList.remove('on')});el.classList.add('on');G.page=el.dataset.p;syncPage();if(typeof loadOperationalPageData==='function')loadOperationalPageData(G.page);if((G.page==='today'||G.page==='dash'||G.page==='inq')&&typeof syncInquiryNow==='function')syncInquiryNow(true);if(G.page==='expansion'&&typeof syncExpansionNow==='function')syncExpansionNow(true)}
-function goPage(p){clearTransientUI();$$('.mi').forEach(function(m){m.classList.toggle('on',m.dataset.p===p)});G.page=p;syncPage();if(typeof loadOperationalPageData==='function')loadOperationalPageData(p);if((p==='today'||p==='dash'||p==='inq')&&typeof syncInquiryNow==='function')syncInquiryNow(true);if(p==='expansion'&&typeof syncExpansionNow==='function')syncExpansionNow(true)}
+/* 페이지 이동은 캐시된 최신 데이터를 즉시 그린다. 문의 전체 재조회는 15초 freshness
+   안전망이 필요하다고 판정할 때만 백그라운드에서 시작한다. 메뉴를 누를 때마다 force 하면
+   100건 단위 pagination 전체를 다시 돌아 오늘업무 → 견적문의 이동이 멈춘 것처럼 보인다. */
+function refreshPageAfterPaint(p){
+ if(typeof loadOperationalPageData==='function')loadOperationalPageData(p);
+ if((p==='today'||p==='dash'||p==='inq')&&typeof syncInquiryNow==='function')syncInquiryNow(false);
+ if(p==='expansion'&&typeof syncExpansionNow==='function')syncExpansionNow(false);
+}
+function nav(el){clearTransientUI();$$('.mi').forEach(function(m){m.classList.remove('on')});el.classList.add('on');G.page=el.dataset.p;syncPage();refreshPageAfterPaint(G.page)}
+function goPage(p){clearTransientUI();$$('.mi').forEach(function(m){m.classList.toggle('on',m.dataset.p===p)});G.page=p;syncPage();refreshPageAfterPaint(p)}
 function syncPage(){G.lastRep=null;   /* 페이지를 옮기면 «방금 본 현장» 은 이 화면의 맥락이 아니다 */
  $$('.apage').forEach(function(pg){pg.classList.remove('on')});$('#pg-'+G.page).classList.add('on');
  $('#ptitle').textContent=TITLES[G.page][0];$('#psub').textContent=TITLES[G.page][1];var q=$('#q');if(q)q.placeholder=G.page==='sites'?'아파트·관리소장·전화·주소 검색':G.page==='work'?'현장·공사명·공종 검색':'현장·담당자 검색';paint()}
@@ -7782,9 +7790,11 @@ function inqCtlWorkLabel(q){
  return '공종 미분류';
 }
 function inqCtlElapsed(at){if(!at)return '배정시각 미기록';var n=new Date(at).getTime();if(!n)return '배정시각 미기록';var m=Math.max(0,Math.floor((Date.now()-n)/60000));if(m<60)return m+'분 전';var h=Math.floor(m/60);if(h<24)return h+'시간 전';return Math.floor(h/24)+'일 전'}
+var INQ_CTL_BUCKET_CACHE=null;
 function inqCtlBucket(q){
- if(inqCtlDeleted(q))return '휴지통';if(INQ_STORE_STATUSES.includes(String(q.status||'')))return '스토어 이관';if(inqCtlConverted(q))return '영업전환';if(/보류/.test(String(q.status||'')))return '보류';
- if(!inquiryAssigned(q))return '미배정';if(!inqCtlFirstResponseAt(q))return '배정완료';return '응대중';
+ var key=inqKey(q),cached=INQ_CTL_BUCKET_CACHE&&INQ_CTL_BUCKET_CACHE.get(key);if(cached)return cached;
+ var bucket=inqCtlDeleted(q)?'휴지통':INQ_STORE_STATUSES.includes(String(q.status||''))?'스토어 이관':inqCtlConverted(q)?'영업전환':/보류/.test(String(q.status||''))?'보류':!inquiryAssigned(q)?'미배정':!inqCtlFirstResponseAt(q)?'배정완료':'응대중';
+ if(INQ_CTL_BUCKET_CACHE)INQ_CTL_BUCKET_CACHE.set(key,bucket);return bucket;
 }
 function inqCtlIsNew(q){var a=rawAgeDate(inquiryDate(q));return a!==null&&a>=0&&a<=7&&!inqCtlConverted(q)&&!INQ_STORE_STATUSES.includes(String(q.status||''))&&!/보류/.test(String(q.status||''))}
 function inqCtlScope(list,isTrash){return (list||[]).filter(function(q){
@@ -7810,6 +7820,9 @@ function inqCtlSetTab(tab){G.inqBucket=tab;G.inqPhase='전체';G.inqSelKey=null;
 function inqCtlSetView(v){G.inqView=v;G.inqSelKey=null;paint()}
 function inqCtlCounts(active,trash,tech){var c={전체:active.length,신규:0,미배정:0,배정완료:0,응대중:0,영업전환:0,'스토어 이관':0,보류:0,휴지통:trash.length};c[INQ_TECH_REVIEW_TAB]=(tech||[]).length;active.forEach(function(q){if(inqCtlIsNew(q))c.신규++;var b=inqCtlBucket(q);if(c[b]!=null)c[b]++});return c}
 paintInq=function(){
+ /* 한 번의 paint 안에서 상태 판정을 공유한다. 영업전환 판정은 연결 딜 탐색을 포함하므로
+    정렬 comparator와 요약/행 렌더가 같은 문의를 반복 계산하면 수백 건에서 긴 main-thread stall이 된다. */
+ INQ_CTL_BUCKET_CACHE=new Map();
  G.inqBucket=G.inqBucket||'전체';if(G.brand==='기술자문')G.brand='전체';var active=inqCtlScopeActive(),trash=inqCtlScopeTrash(),tech=inqTechReviewRows(),c=inqCtlCounts(active,trash,tech),un=c.미배정,wait=c.배정완료,special=G.inqBucket===INQ_TECH_REVIEW_TAB;
  $('#sg-top').innerHTML='<div class="inq-ctl-head" style="width:100%"><div><small>INQUIRY CONTROL CENTER</small><h2>견적문의 접수·배정</h2><p>신규문의 접수 → 담당자 배정 → 최초응대 확인 → 영업기회 전환 → 불필요 데이터 정리</p></div><div class="inq-ctl-pulse"><div><span>활성 문의</span><b>'+active.length+'</b></div><div class="danger"><span>미배정</span><b>'+un+'</b></div><div class="danger"><span>최초응대 대기</span><b>'+wait+'</b></div>'+(tech.length?'<div class="review"><span>기존 기술자문 확인</span><b>'+tech.length+'</b></div>':'')+'</div></div>';
  var tabs='<div class="inq-ctl-tabs">'+INQ_CTL_TABS.map(function(t){return '<button class="'+(G.inqBucket===t?'on ':'')+(t==='휴지통'?'trash ':t===INQ_TECH_REVIEW_TAB?'tech-review ':'')+'" data-t="'+t+'" onclick="inqCtlSetTab(this.dataset.t)">'+t+' <em>'+c[t]+'</em></button>'}).join('')+'</div>';
@@ -7817,6 +7830,7 @@ paintInq=function(){
  $('#sg-signals').innerHTML=tabs+views+(G.inqBucket==='휴지통'||special?'':inqBrandChips());$('#sg-signals').style.display='block';
  var Q=inqCtlRows(),bn='';if(G.briefInquiryKind)bn+='<div class="mgmtbar blue" style="margin-top:8px">주간 브리핑 근거 · <b>'+Q.length+'건</b><button class="act" onclick="clearBriefInquiry()">필터 해제</button></div>';if(G.inqIssueKind)bn+='<div class="mgmtbar blue" style="margin-top:8px">대시보드 근거 · <b>'+Q.length+'건</b><button class="act" onclick="clearInquiryIssue()">필터 해제</button></div>';if(bn)$('#sg-signals').innerHTML+=bn;
  if(G.inqBucket==='휴지통')inqCtlTrash(Q);else if(special)inqTechReview(Q);else if(v==='feed')inqFeed(Q);else if(v==='region')inqRegion(Q);else if(v==='split')inqSplit(Q);else if(v==='link')inqLink();else inqCtlConsole(Q);
+ INQ_CTL_BUCKET_CACHE=null;
 }
 function inqTechLinkedDeal(q){var id=String(q.id||inqKey(q)),explicit=q.originOpportunityId||q.opportunity_id||q.deal_id;return (B.deals||[]).filter(function(d){return (explicit&&String(d.id)===String(explicit))||String(d.origin_inquiry_id||d.originInquiryId||'')===id})[0]||null}
 function inqTechReview(Q){INQ_TECH_CACHE=Q.slice().sort(function(a,b){return String(inquiryDate(b)||'').localeCompare(String(inquiryDate(a)||''))});var pending=INQ_TECH_CACHE.filter(function(q){return !inqTechLinkedDeal(q)&&inqCtlPatch(q).legacy_review_status!=='promoted'}).length;var rows=INQ_TECH_CACHE.map(function(q,i){var d=inqTechLinkedDeal(q),p=inqCtlPatch(q),state=d?'영업기회 연결됨':p.legacy_review_status==='reclassified'?'견적문의 재분류':'기존 데이터 확인 필요';return '<div class="inq-tech-row"><span class="dim">'+esc(String(inquiryDate(q)||'').slice(0,10)||'—')+'</span><span class="inq-ctl-site"><strong>'+esc(q.site||'현장명 미입력')+'</strong><small>'+esc(inqCtlContactLabel(q))+' · 기존 분류 기술자문</small></span><span>'+esc(inqCtlWorkLabel(q))+'</span><span>'+esc(repDisplay(q.assignee))+'</span><span><i class="inq-tech-badge '+(d?'done':'')+'">'+esc(state)+'</i>'+(d?'<small>'+esc(stageLabel(dealStage(d)))+'</small>':'<small>문의 KPI·배정에서 제외</small>')+'</span><span><button class="'+(d?'':'primary')+'" data-i="'+i+'" onclick="inqTechReviewAction(Number(this.dataset.i))">'+(d?'영업기회 열기':'분류 검토')+'</button></span></div>'}).join('');$('#sg-panel').innerHTML=noticeHtml()+'<section class="inq-tech-note"><div><b>기술자문은 견적문의 유입상품이 아닙니다.</b><p>기존에 기술자문으로 저장된 문의는 삭제하지 않고 이 확인함에만 보관합니다. 정상 유입 브랜드로 고치거나 기술자문 영업기회로 이관해 주세요.</p></div><span>'+(pending?pending+'건 확인 필요':'검토 완료')+'</span></section><div class="inq-ctl-table"><div class="inq-ctl-scroll"><div class="inq-tech-row head"><span>접수일</span><span>현장·연락처</span><span>공종</span><span>기존 담당</span><span>검토상태</span><span>조치</span></div>'+(rows||'<div class="inq-ctl-empty"><b>확인할 기존 기술자문 문의가 없습니다.</b>기술자문은 파이프라인에서만 관리됩니다.</div>')+'</div></div>'}
