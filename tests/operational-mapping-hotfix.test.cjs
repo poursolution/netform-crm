@@ -124,6 +124,16 @@ test('message campaign recipient selection supports all customers and rolling ye
  assert.match(html,/필터가 변경되어 발송 대상을 다시 선택해 주세요/);
 });
 
+test('salesperson bottleneck stage clicks preserve owner and exact pipeline filters',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
+ assert.match(html,/function repFlowGoStage\(i,codes,label\)[^\n]+dashboardGoRepStages\(r\.nm,codes,label\)/);
+ assert.match(html,/function dashboardGoRepStages\(nm,codes,label\)\{G\.rep=nm;dashboardGoStages\(codes,label,true\)\}/);
+ assert.match(html,/G\.splitCol=PD_COLS\.map[^\n]+findIndex[^\n]+G\.quickStageCodes\.every/);
+ assert.match(html,/issueBase=issueBase\.filter\(function\(d\)\{return G\.quickStageCodes\.indexOf\(dealStage\(d\)\)>=0\}\)/);
+ assert.match(html,/선택 단계<\/span><button class="pfc on">[^\n]+G\.reportStageLabel/);
+ assert.match(html,/G\.quickStageCodes=null;G\.reportStageLabel=\\'\\'/);
+});
+
 test('operational read starts without a blocking overlay and coalesces duplicate refreshes',()=>{
  const source=fs.readFileSync(path.join(__dirname,'..','operational-overlay.js'),'utf8');
  assert.match(source,/getElementById\('load'\);if\(el\)el\.style\.display='none'/);
