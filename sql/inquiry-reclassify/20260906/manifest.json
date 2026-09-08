@@ -26,8 +26,8 @@
     "operational-overlay.candidate.js": "ebc39b9e538af812b53760966ccadfe9a3d7e5d3cd726a260a0712fd20e95b92"
   },
   "source_sha256": {
-    "golden_pc": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
-    "waiting_manifest": "d208b35ded73dc91977236c8e743573de47cc0fee268a67f216fb6e98510cad2",
+    "golden_pc": "d8504ea89b74469da9b5b030d824fb50125b191821a7f21de8d24dc03e3a61f1",
+    "waiting_manifest": "0d2e36338714e1ebbe6505896c2240574d8cc626cc0f4be93a428999af8e8d4d",
     "inquiry_contracts": "e6f4e720cefb6335e78fe82cbbf7b1252820822ae6e69cdb1179636dda142784"
   }
 }

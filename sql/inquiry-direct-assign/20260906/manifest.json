@@ -6,8 +6,8 @@
   "rollback_sha256": "683ddbc6c6323c4b2297b1b18acf2538fefab669e349e78aedbf7a2fbccd07f0",
   "file_sha256": {
     "adapter": "daad9c4a2a73a873ac4a25c1571da1fbc109b2e3408d3dcc21929fba73bd0af6",
-    "mobile_source": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
-    "mobile_staging": "87739c43aeddabbbc40e9e047a0c308abaf59ec9b64566301a71982fe0c9efe8",
+    "mobile_source": "c772c4e733900b37fec564fd42e81d5b171d7af6a66f73f019dc531db37933c8",
+    "mobile_staging": "cda8a10cf20677c60733ddbff432a25e0ae88ea505af3f07f3853acaf66f4e1f",
     "staging_transport": "7e8c287ff5fcc839242f168330564fae055718cdef64e9189466cb1ca25ef243"
   },
   "status": "LOCAL_CANDIDATE_NOT_APPLIED"

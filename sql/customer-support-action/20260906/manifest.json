@@ -60,8 +60,8 @@
     "transport.candidate.js": "3c0fe2d46857b7469b90859d4c02e2dd356aadf1a94f8f8548efefad2b2f95d5"
   },
   "source_sha256": {
-    "sql/mobile-today-outcome/20260906/manifest.json": "143706e0b53f910827ac7d253c136122c9ecc8d7d588315b602c2fb98eec60d2",
-    "crm.html": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
+    "sql/mobile-today-outcome/20260906/manifest.json": "e3c7a11b91198d06f34761429606e7005b6883bbbf9b1670f56f508e8defebff",
+    "crm.html": "d8504ea89b74469da9b5b030d824fb50125b191821a7f21de8d24dc03e3a61f1",
     "sql/20260905_customer_support_actions.sql": "30960f8a230c639e8e9e25402086eafc259a54c46fe74bba99bfdd6d2ad63fc1",
     "docs/operational-cutover-20260906/coverage-matrix.csv": "66b015765e4fa6e96d8e3b233a7a3411a50be1d4ff4054d7d757baedc22947c4"
   }

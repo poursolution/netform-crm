@@ -30,9 +30,9 @@
     "transport.candidate.js": "3c0fe2d46857b7469b90859d4c02e2dd356aadf1a94f8f8548efefad2b2f95d5"
   },
   "source_sha256": {
-    "sql/customer-support-action/20260906/manifest.json": "b9b3164427e8cf921f00d39934df8a06799870866b95744d4cd22a78a926e34b",
-    "crm.html": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
-    "mobile.html": "78a72897bbb1d5728b93827b8012c60d7018e05354dda8ad7499bec4598b4ecd",
+    "sql/customer-support-action/20260906/manifest.json": "71519512e6eda61f69137d707c056002922eb3d1c51572f087e62a90c8d07bed",
+    "crm.html": "d8504ea89b74469da9b5b030d824fb50125b191821a7f21de8d24dc03e3a61f1",
+    "mobile.html": "26c3c94ae96fa9a706e997349a6fe9939af433d2c56eaa5b264e6d1bdd2f2e03",
     "docs/operational-cutover-20260906/coverage-matrix.csv": "66b015765e4fa6e96d8e3b233a7a3411a50be1d4ff4054d7d757baedc22947c4"
   }
 }

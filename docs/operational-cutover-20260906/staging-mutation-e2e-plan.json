@@ -13,7 +13,7 @@
     "synthetic_fixture": "sql/baseline/20260905/synthetic/fixture.json",
     "synthetic_fixture_sha256": "df1ba9589ff581497722cb138b48f012598ddb0b63b5fd621d833a9857821c42",
     "candidate_manifest": "sql/operational-full-local-candidate/20260906/manifest.json",
-    "candidate_manifest_sha256": "213bb02c492dac1dc548c4a64433f79cd7fe824be3fe25355fc2872621818721",
+    "candidate_manifest_sha256": "197292d4ed34e40751f605a949501ddad2cdbdef6d49ad8ade9014bf5efcd86e",
     "candidate_apply_sha256": "81a44efa1331454059ac59c83cc9931cc3aaa5070140c2321a3bcafcdd6e469e"
   },
   "scope": {

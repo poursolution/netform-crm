@@ -15,8 +15,8 @@
     },
     {
       "file": "crm.html",
-      "source_sha256": "48b0b3942bc38fd6a12ba65f91d6e6e51f1a9d8556fd5d2f1d6eb82c1a0a2610",
-      "copy_sha256": "90c539ec275f323786ee8ad3ef4ef545180dd3ff535ca61b9d680b20bbf53f47"
+      "source_sha256": "f88c73d4a46dd9617d78487d631ea2e5158b089c1b21383e50dae9cbc36bdf95",
+      "copy_sha256": "dc67b1923a5897fa290d30e92b38ae4311e158897296a8a7c51cfe3c654955ac"
     },
     {
       "file": "data-cleanup-ui.js",
@@ -148,7 +148,7 @@
     {
       "file": "crm.html",
       "function": "flushWrites",
-      "before_sha256": "f262e7e862136d7c2dd7b74e8989b7ff882f551769ca326c43bc82b6f8140412"
+      "before_sha256": "618e0e8ad92424bb12f70ef8e1117136d11e2227a4fd9d067693bebd3f24b37a"
     },
     {
       "file": "crm.html",
@@ -158,7 +158,7 @@
     {
       "file": "crm.html",
       "function": "loadData",
-      "before_sha256": "7f4950ac4a3ddf57e1e503003c058dbd027f7fbe9e0b44e20e6ef47693bfca04"
+      "before_sha256": "300e5183331c59ba2fb6318d93020a35a9ec7c9fae16cb446a611144c5021e11"
     },
     {
       "file": "crm.html",
@@ -173,7 +173,7 @@
     {
       "file": "crm.html",
       "function": "saveWorkEdit",
-      "before_sha256": "098377e8dd555fee286937390297455858ae343eb51cdd33c28fc052b9d52b66"
+      "before_sha256": "6a752c36ca04a137b0bdd3ce17194728e4a2e6d98441924f6a191705ac803971"
     },
     {
       "file": "mobile.html",
