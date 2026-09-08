@@ -150,10 +150,12 @@ test('salesperson bottleneck stage clicks preserve owner and exact pipeline filt
  const html=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
  assert.match(html,/function repFlowGoStage\(i,codes,label\)[^\n]+dashboardGoRepStages\(r\.nm,codes,label\)/);
  assert.match(html,/function dashboardGoRepStages\(nm,codes,label\)\{G\.rep=nm;dashboardGoStages\(codes,label,true\)\}/);
- assert.match(html,/G\.splitCol=PD_COLS\.map[^\n]+findIndex[^\n]+G\.quickStageCodes\.every/);
- assert.match(html,/issueBase=issueBase\.filter\(function\(d\)\{return G\.quickStageCodes\.indexOf\(dealStage\(d\)\)>=0\}\)/);
- assert.match(html,/선택 단계<\/span><button class="pfc on">[^\n]+G\.reportStageLabel/);
- assert.match(html,/G\.quickStageCodes=null;G\.reportStageLabel=\\'\\'/);
+ assert.match(html,/G\.reportStageCodes=String\(codes\|\|''\)\.split\('\|'\)\.filter\(Boolean\);G\.quickStageCodes=G\.reportStageCodes\.slice\(\)/);
+ assert.match(html,/G\.splitCol=PD_COLS\.map[^\n]+findIndex[^\n]+G\.reportStageCodes\.every/);
+ assert.match(html,/stageCodes=pipelineStageDrillCodes\(\)/);
+ assert.match(html,/issueBase=issueBase\.filter\(function\(d\)\{return stageCodes\.indexOf\(dealStage\(d\)\)>=0\}\)/);
+ assert.match(html,/적용 필터<\/span><button class="pfc on">[^\n]+G\.reportStageLabel[^\n]+담당자/);
+ assert.match(html,/function clearPipelineStageDrill\(\)\{G\.quickStageCodes=null;G\.reportStageCodes=null;G\.reportStageLabel=''\}/);
 });
 
 test('operational read starts without a blocking overlay and coalesces duplicate refreshes',()=>{

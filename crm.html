@@ -2567,7 +2567,7 @@ var TITLES={today:['오늘 업무','CRM이 먼저 가져온 오늘의 우선순�
 dup:['데이터 정리','근거 확인 → 비교 → 연결·정리 · 원본 이력 보존']};
 var B=null;
 var CUR_Y=String(new Date().getFullYear());
-var G={page:'today',q:'',year:CUR_Y,quarter:0,brand:'전체',rep:'전체',workFilter:'전체',act:false,mode:'list',stage:null,itab:'전체',isub:'assign',rep2:null,repOpen:null,sig:'assign',hideClosed:true,inqSelKey:null,inqAct:null,inqPage:1,pipeView:'kb',stageCol:null,closedTab:'수주',sgCase:null,sgRep:null,sgBrand:null,mobView:'week',briefView:'week',lastRep:null,splitStage:null,splitAct:null,splitClosed:null,pipeDiag:null,homeRole:'lead',repBefore:null,repScope:'internal',pipeNoAmt:false,yoyKind:'wonAmt',callPend:null,todoTab:null,todayView:'all',siteStatus:'전체',siteBrand:'전체',siteOwner:'전체',siteSort:'관계우선',expansionFilter:'전체',expansionOwner:'전체',repManagerYear:CUR_Y,repManagerQuarter:0,workSort:'pipeline',campaignTab:'send',campaignCategory:'all',campaignStep:1,campaignRep:'전체',campaignBrand:'전체',campaignWork:'전체',campaignRegion:'전체',campaignTemp:'전체',campaignRecent:'전체',campaignTargetYear:'전체',campaignYear:'전체'};   /* lastRep = 마지막으로 열어 본 현장의 담당자(표시 전용) */
+var G={page:'today',q:'',year:CUR_Y,quarter:0,brand:'전체',rep:'전체',workFilter:'전체',act:false,mode:'list',stage:null,itab:'전체',isub:'assign',rep2:null,repOpen:null,sig:'assign',hideClosed:true,inqSelKey:null,inqAct:null,inqPage:1,pipeView:'kb',stageCol:null,closedTab:'수주',sgCase:null,sgRep:null,sgBrand:null,mobView:'week',briefView:'week',lastRep:null,splitStage:null,splitAct:null,splitClosed:null,pipeDiag:null,homeRole:'lead',repBefore:null,repScope:'internal',pipeNoAmt:false,quickStageCodes:null,reportStageCodes:null,reportStageLabel:'',yoyKind:'wonAmt',callPend:null,todoTab:null,todayView:'all',siteStatus:'전체',siteBrand:'전체',siteOwner:'전체',siteSort:'관계우선',expansionFilter:'전체',expansionOwner:'전체',repManagerYear:CUR_Y,repManagerQuarter:0,workSort:'pipeline',campaignTab:'send',campaignCategory:'all',campaignStep:1,campaignRep:'전체',campaignBrand:'전체',campaignWork:'전체',campaignRegion:'전체',campaignTemp:'전체',campaignRecent:'전체',campaignTargetYear:'전체',campaignYear:'전체'};   /* lastRep = 마지막으로 열어 본 현장의 담당자(표시 전용) */
 var showAll={};
 var LOCAL_KEY='netform_crm_prototype_v2';
 var LOCAL={deals:{},inquiries:{}};
@@ -3148,7 +3148,11 @@ function paintTowerDrill(){
   +'</div>';
 }
 /* 숫자를 누르면 «그 숫자를 만든 현장 목록» 으로 간다 — 대시보드 전체의 원칙 */
-function towerDrillReset(){G.quickClosed=false;G.pipeNoAmt=false;G.quickStageCodes=null;G.quickIssueKind='all';G.briefInquiryKind=null;G.inqIssueKind=null;G.pipePeriodMode=null;G.inqPeriodMode=null;G.pipeStatus='전체';G.pipeSub='전체';G.pipeAge='전체';G.splitStage=null;G.splitClosed=null;G.splitKey=null}
+/* 다른 화면에서 선택한 조건은 파이프라인 렌더 방식이 바뀌어도 사라지면 안 된다.
+   reportStageCodes를 화면 간 정본으로 두고 quickStageCodes는 구버전 호환값으로 유지한다. */
+function clearPipelineStageDrill(){G.quickStageCodes=null;G.reportStageCodes=null;G.reportStageLabel=''}
+function pipelineStageDrillCodes(){return Array.isArray(G.reportStageCodes)&&G.reportStageCodes.length?G.reportStageCodes:(Array.isArray(G.quickStageCodes)?G.quickStageCodes:[])}
+function towerDrillReset(){G.quickClosed=false;G.pipeNoAmt=false;clearPipelineStageDrill();G.quickIssueKind='all';G.briefInquiryKind=null;G.inqIssueKind=null;G.pipePeriodMode=null;G.inqPeriodMode=null;G.pipeStatus='전체';G.pipeSub='전체';G.pipeAge='전체';G.splitStage=null;G.splitClosed=null;G.splitKey=null}
 function towerGoStage(ci){towerDrillReset();G.pipeOrigin=null;G.pipeView='split';G.splitCol=ci;G.splitAct=null;goPage('pipe')}
 function towerGoAct(k){towerDrillReset();G.pipeOrigin=null;G.pipeView='split';G.splitCol=null;G.splitAct=k;goPage('pipe')}
 function towerGoRep(nm,ci,act,origin){towerDrillReset();G.inqMetric=null;G.rep=nm;G.pipeOrigin=origin||null;G.pipeView='split';G.splitCol=(ci==null?null:ci);G.splitAct=act||null;goPage('pipe')}
@@ -3179,8 +3183,8 @@ function pipeBox(o){
   +(o.badge?'<div class="pbb">'+esc(o.badge)+'</div>':'')
   +'</div>'}
 function dashboardGoStages(codes,label,snapshot){
- towerDrillReset();if(snapshot)G.pipePeriodMode='snapshot';G.pipeOrigin=null;G.quickIssueKind='all';G.quickStageCodes=String(codes||'').split('|').filter(Boolean);
- G.reportStageLabel=label||'선택 단계';G.pipeView='split';G.splitCol=PD_COLS.map(function(c){return c.codes}).findIndex(function(group){return G.quickStageCodes.length&&G.quickStageCodes.every(function(code){return group.indexOf(code)>=0})});if(G.splitCol<0)G.splitCol=null;G.splitStage=null;G.splitAct=null;G.splitClosed=null;G.splitKey=null;goPage('pipe')
+ towerDrillReset();if(snapshot)G.pipePeriodMode='snapshot';G.pipeOrigin=null;G.quickIssueKind='all';G.reportStageCodes=String(codes||'').split('|').filter(Boolean);G.quickStageCodes=G.reportStageCodes.slice();
+ G.reportStageLabel=label||'선택 단계';G.pipeView='split';G.splitCol=PD_COLS.map(function(c){return c.codes}).findIndex(function(group){return G.reportStageCodes.length&&G.reportStageCodes.every(function(code){return group.indexOf(code)>=0})});if(G.splitCol<0)G.splitCol=null;G.splitStage=null;G.splitAct=null;G.splitClosed=null;G.splitKey=null;goPage('pipe')
 }
 function dashboardGoSnapshot(origin){towerDrillReset();G.pipePeriodMode='snapshot';G.pipeOrigin=origin||'active';G.pipeView='split';G.splitCol=null;G.splitAct=null;goPage('pipe')}
 function dashboardGoRisk(kind){
@@ -4133,7 +4137,7 @@ function pipeDeals(){return B.deals.filter(function(d){return inPeriod(d.created
  &&(G.rep==='전체'||repN(d.assignee)===G.rep)
  &&(!G.q||((d.site||'')+' '+(d.assignee||'')+' '+(d.stage||'')).includes(G.q))})}
 function setPipeView(v){G.pipeView=v;paint()}
-function openStage(ci){G.reportStageCodes=null;G.reportStageLabel='';G.pipeView='split';G.splitCol=ci;G.splitStage=null;G.splitAct=null;G.splitKey=null;G.ssfPC=null;paint()}
+function openStage(ci){clearPipelineStageDrill();G.pipeView='split';G.splitCol=ci;G.splitStage=null;G.splitAct=null;G.splitKey=null;G.ssfPC=null;paint()}
 function setClosedTab(t){G.closedTab=t;G.pipeView='closed';paint()}
 /* [삭제됨 v3.6] 구버전 flowIndex — 마지막 정의만 사용 */
 
@@ -4906,9 +4910,9 @@ var CLOSED_FILTERS=[
 ];
 function splitActFn(k){for(var i=0;i<SPLIT_ACTS.length;i++)if(SPLIT_ACTS[i].k===k)return SPLIT_ACTS[i].f;return null}
 function closedFilter(k){for(var i=0;i<CLOSED_FILTERS.length;i++)if(CLOSED_FILTERS[i].k===k)return CLOSED_FILTERS[i];return null}
-function setSplitCol(i){G.quickStageCodes=null;G.quickIssueKind='all';G.splitCol=i;G.splitStage=null;G.splitClosed=null;G.splitKey=null;paint()}
+function setSplitCol(i){clearPipelineStageDrill();G.quickIssueKind='all';G.splitCol=i;G.splitStage=null;G.splitClosed=null;G.splitKey=null;paint()}
 
-function setSplitStage(c){G.quickStageCodes=null;G.quickIssueKind='all';G.splitStage=(G.splitStage===c?null:c);G.splitKey=null;paint()}
+function setSplitStage(c){clearPipelineStageDrill();G.quickIssueKind='all';G.splitStage=(G.splitStage===c?null:c);G.splitKey=null;paint()}
 function setSplitAct(k){G.quickIssueKind='all';G.splitAct=(G.splitAct===k?null:k);G.splitKey=null;paint()}
 function setNoAmt(){G.quickIssueKind='all';G.pipeNoAmt=!G.pipeNoAmt;G.splitKey=null;paint()}
 function setSplitClosed(k){G.splitClosed=(G.splitClosed===k?null:k);G.splitCol=null;G.splitStage=null;G.splitAct=null;G.pipeNoAmt=false;G.splitKey=null;paint()}
@@ -5835,7 +5839,7 @@ function kb5ToConsole(k){
   var map={design:0,sent:0,rel:1,comp:2,con:3};
   /* 관리 콘솔은 사용하지 않는다. 칸반 제목 클릭도 같은 화면의 빠른 관리로 연다. */
   G.consoleMacro=null;G.macroSub='전체';G.pipeSub='전체';G.quickIssueKind='all';
-  G.quickStageCodes=(MACRO_META[k]&&MACRO_META[k].subs||[]).map(function(x){return x[0]});
+  G.reportStageCodes=(MACRO_META[k]&&MACRO_META[k].subs||[]).map(function(x){return x[0]});G.quickStageCodes=G.reportStageCodes.slice();G.reportStageLabel=MACRO_META[k]&&MACRO_META[k].nm||'선택 단계';
   G.pipeView='split';G.stageCol=null;G.splitCol=map[k]!=null?map[k]:null;G.splitStage=null;G.splitAct=null;G.splitKey=null;paint();
 }
 /* ══════════════════════════════════════════════════════════════
@@ -6150,7 +6154,7 @@ function paintSplit(){
  var _l2=document.querySelector('.splitlist');
  if(_l2){_l2.scrollTop=keep;G.splitScroll=keep}}
 /* 빠른 관리 v2 — 전체 상세를 도킹하지 않고, 즉시 행동에 필요한 정보만 표시한다. */
-function quickClosedToggle(){G.quickIssueKind='all';G.quickStageCodes=null;G.quickClosed=!G.quickClosed;G.splitCol=null;G.splitAct=null;G.pipeNoAmt=false;G.splitKey=null;paint()}
+function quickClosedToggle(){G.quickIssueKind='all';clearPipelineStageDrill();G.quickClosed=!G.quickClosed;G.splitCol=null;G.splitAct=null;G.pipeNoAmt=false;G.splitKey=null;paint()}
 function quickIssueMatch(d,k){var a=briefNext(d),from=G.briefFrom||briefWeekWindow().startKey,to=G.briefTo||briefWeekWindow().endKey,map={briefNextMissing:'nextMissing',briefOverdue:'overdue',briefStale:'stale'};k=map[k]||k;if(!k||k==='all')return true;if(k==='briefRisk')return briefIsRisk(d);if(k==='briefSchedule')return !!(a&&briefInWindow(a.due,from,to));if(k==='briefRevenue')return !!(a&&briefInWindow(a.due,from,to)&&briefIsRevenueAction(d));if(k==='briefFollow')return !!(a&&briefInWindow(a.due,from,to)&&!briefIsRevenueAction(d));if(k==='briefNoAmount')return briefNoAmount(d);if(k==='briefSilentHot')return briefSilentHot(d);if(k==='crmIncomplete')return crmRequiredMissing(d)>0;if(k==='workMissing')return workItemsOf(d).length===0;if(k==='stageSla'){var sa=stageAge(d);return sa!=null&&sa>itemSla(d,'deal')}if(k==='advanced')return perfAdvanced(d);return issueSet(d).indexOf(k)>=0}
 function openFullDealFromQuick(){var d=splitDealSel(),dv=$('#detailView');if(!d||!dv)return;detachDetail();dv.classList.remove('docked');G._detailPopup=true;CUR_DETAIL={kind:'deal',key:dealKey(d),item:d};renderDealDetail()}
 function quickPanelHTML(d){
@@ -6175,16 +6179,16 @@ function quickPanelHTML(d){
  function paintSplit(){
  closeDocked();detachDetail();
  var toggle=document.querySelectorAll('.viewtg .clk');if(toggle[1])toggle[1].textContent='⚡ 빠른 관리';if(toggle[0])toggle[0].textContent='🗂️ 칸반';
- var A=pipeFiltered(),SC=pipeScoped(),ci=G.splitCol==null?-1:Number(G.splitCol),actF=splitActFn(G.splitAct),D;
+ var A=pipeFiltered(),SC=pipeScoped(),ci=G.splitCol==null?-1:Number(G.splitCol),actF=splitActFn(G.splitAct),stageCodes=pipelineStageDrillCodes(),D;
  if(['self','assigned','all','won','wonPeriod','closedLost'].indexOf(G.pipeOrigin)>=0)D=SC.slice();
  else if(G.quickClosed)D=SC.filter(function(d){return d.code==='won'||d.code==='lost'||d.grp==='기타'});
- else{D=ci>=0?A.filter(function(d){return PD_COLS[ci].codes.indexOf(d.code)>=0}):A;if(Array.isArray(G.quickStageCodes)&&G.quickStageCodes.length)D=D.filter(function(d){return G.quickStageCodes.indexOf(dealStage(d))>=0});if(G.quickIssueKind&&G.quickIssueKind!=='all')D=D.filter(function(d){return quickIssueMatch(d,G.quickIssueKind)});if(actF)D=D.filter(actF);if(G.pipeNoAmt)D=D.filter(function(d){return !oppAmt(d)&&!quoteAmt(d)})}
+ else{D=ci>=0?A.filter(function(d){return PD_COLS[ci].codes.indexOf(d.code)>=0}):A;if(stageCodes.length)D=D.filter(function(d){return stageCodes.indexOf(dealStage(d))>=0});if(G.quickIssueKind&&G.quickIssueKind!=='all')D=D.filter(function(d){return quickIssueMatch(d,G.quickIssueKind)});if(actF)D=D.filter(actF);if(G.pipeNoAmt)D=D.filter(function(d){return !oppAmt(d)&&!quoteAmt(d)})}
  D=D.slice().sort(sortByPriority);var keys=D.map(dealKey);if(keys.indexOf(G.splitKey)<0)G.splitKey=keys[0];var sel=D[keys.indexOf(G.splitKey)];
- var issueBase=ci>=0?A.filter(function(d){return PD_COLS[ci].codes.indexOf(d.code)>=0}):A;if(Array.isArray(G.quickStageCodes)&&G.quickStageCodes.length)issueBase=issueBase.filter(function(d){return G.quickStageCodes.indexOf(dealStage(d))>=0});
+ var issueBase=ci>=0?A.filter(function(d){return PD_COLS[ci].codes.indexOf(d.code)>=0}):A;if(stageCodes.length)issueBase=issueBase.filter(function(d){return stageCodes.indexOf(dealStage(d))>=0});
  var filters='<div class="quickfilters"><div class="pfrow"><span class="pfl">파이프라인</span><button class="pfc '+(!G.quickClosed&&ci<0?'on':'')+'" onclick="G.quickClosed=false;setSplitCol(null)">전체 <em>'+A.length+'</em></button>'
  +PD_COLS.map(function(c,i){return '<button class="pfc '+(!G.quickClosed&&ci===i?'on':'')+'" onclick="G.quickClosed=false;setSplitCol('+i+')">'+esc(c.nm)+' <em>'+A.filter(function(d){return c.codes.indexOf(d.code)>=0}).length+'</em></button>'}).join('')
  +'<button class="pfc e '+(G.quickClosed?'on':'')+'" onclick="quickClosedToggle()">종료 현장 보기</button></div>'
- +(Array.isArray(G.quickStageCodes)&&G.quickStageCodes.length?'<div class="pfrow sub"><span class="pfl">선택 단계</span><button class="pfc on">'+esc(G.reportStageLabel||'선택 단계')+' <em>'+D.length+'</em></button><button class="pfreset" onclick="G.quickStageCodes=null;G.reportStageLabel=\'\';G.splitKey=null;paint()">단계 필터 해제</button><span class="pfl" style="margin-left:auto">담당자 '+esc(G.rep||'전체')+'</span></div>':'')
+ +(stageCodes.length?'<div class="pfrow sub"><span class="pfl">적용 필터</span><button class="pfc on">'+esc(G.reportStageLabel||'선택 단계')+' <em>'+D.length+'건</em></button><button class="pfc on">담당자 '+esc(G.rep||'전체')+'</button><button class="pfreset" onclick="clearPipelineStageDrill();G.splitKey=null;paint()">단계 필터 해제</button></div>':'')
  +(G.pipeOrigin?'<div class="pfrow sub"><span class="pfl">근거 목록</span><button class="pfc on">'+esc(metricDealLabel(G.pipeOrigin,D.length))+'</button><button class="pfreset" onclick="G.pipeOrigin=null;G.splitKey=null;paint()">근거 필터 해제</button><span class="pfl" style="margin-left:auto">담당자 '+esc(G.rep||'전체')+'</span></div>':(!G.quickClosed?'<div class="pfrow sub"><span class="pfl">바로 찾기</span>'+SPLIT_ACTS.map(function(a){return '<button class="pfc a '+(G.splitAct===a.k?'on':'')+'" onclick="'+IssueModal.bind('pipe:quick:'+a.k,a.k,issueBase.filter(a.f),a.nm)+'">'+esc(a.nm)+' <em>'+issueBase.filter(a.f).length+'</em></button>'}).join('')+'<button class="pfc q '+(G.pipeNoAmt?'on':'')+'" onclick="'+IssueModal.bind('pipe:quick:noAmount','noAmount',issueBase.filter(function(d){return !oppAmt(d)&&!quoteAmt(d)}))+'">금액 미입력 <em>'+issueBase.filter(function(d){return !oppAmt(d)&&!quoteAmt(d)}).length+'</em></button><span class="pfl" style="margin-left:auto">담당자 '+esc(G.rep||'전체')+'</span></div>':''))+'</div>';
  if(G.quickIssueKind&&G.quickIssueKind!=='all')filters+='<div class="pfrow sub" style="margin-top:6px"><span class="pfl">근거 목록</span><button class="pfc on">'+esc(issueHuman(G.quickIssueKind))+' '+D.length+'건</button><button class="pfreset" onclick="G.quickIssueKind=\'all\';G.splitKey=null;paint()">근거 필터 해제</button></div>';
  if(!sel){$('#p-main').innerHTML=filters+'<div class="quick-empty">선택한 조건에 해당하는 현장이 없습니다.</div>';return}
