@@ -114,6 +114,16 @@ test('message campaign history and analysis can be filtered by year',()=>{
  assert.match(html,/function nav\(el\)[^\n]+loadOperationalPageData\(G\.page\)/);
 });
 
+test('message campaign recipient selection supports all customers and rolling year filters',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
+ assert.match(html,/campaignCategory:'all'/);
+ assert.match(html,/campaignTargetYear:'전체'/);
+ assert.match(html,/function campaignTargetYearMatch\(d\)/);
+ assert.match(html,/고객연도<select/);
+ assert.match(html,/campaignSetFilter[^\n]+campaignTargetYear/);
+ assert.match(html,/필터가 변경되어 발송 대상을 다시 선택해 주세요/);
+});
+
 test('operational read starts without a blocking overlay and coalesces duplicate refreshes',()=>{
  const source=fs.readFileSync(path.join(__dirname,'..','operational-overlay.js'),'utf8');
  assert.match(source,/getElementById\('load'\);if\(el\)el\.style\.display='none'/);

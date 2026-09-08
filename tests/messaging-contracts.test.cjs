@@ -89,6 +89,27 @@ test('M06 is PC-only queue intent and explicitly waits for provider callback',()
   assert.match(contract,/PC에서만 도달 가능/);
 });
 
+test('campaign all-send stays explicit, consent-scoped, and cannot record false success',()=>{
+  assert.match(pc,/group:'전체 발송',items:\[\['all','전체 고객'\]\]/);
+  assert.match(pc,/발송 가능 전체 선택 · /);
+  assert.match(pc,/function campaignGuard\(t\)[\s\S]*문자 수신동의 없음/);
+  assert.match(pc,/id="cc-final-approval" type="checkbox"/);
+  assert.match(pc,/if\(!approval\|\|!approval\.checked\)/);
+  const queue=functionBody(pc,'campaignQueue');
+  assert.ok(queue.indexOf("pushWrite('campaign_create'")<queue.indexOf('CAMPAIGN_STORE.campaigns.unshift(obj)'),'local history must only change after the operational queue accepts the request');
+  assert.match(queue,/대상이나 이력은 변경되지 않았습니다/);
+});
+
+test('campaign recipients normalize Korean international numbers and preserve consent evidence',()=>{
+  const source=functionBody(pc,'campaignPhone');
+  const normalize=new Function('phoneN',`${source};return campaignPhone;`)(v=>String(v||''));
+  assert.equal(normalize('+82 10-6225-2310'),'01062252310');
+  assert.equal(normalize('0082-10-6225-2310'),'01062252310');
+  assert.equal(normalize('010-6225-2310'),'01062252310');
+  assert.match(pc,/smsConsent:x\.smsConsent===true\|\|x\.sms_consent===true/);
+  assert.match(pc,/optOutAt:x\.optOutAt\|\|x\.opt_out_at/);
+});
+
 test('actual Staging snapshot lacks messaging and campaign persistence contracts',()=>{
   const names=(snapshot.public.relations||[]).map(x=>x.name);
   const signatures=(snapshot.public.functions||[]).map(x=>x.signature);
