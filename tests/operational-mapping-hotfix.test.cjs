@@ -99,6 +99,17 @@ test('quote inbox reuses expensive status decisions during one paint',()=>{
  assert.match(html,/INQ_CTL_BUCKET_CACHE=new Map\(\);/);
  assert.match(html,/INQ_CTL_BUCKET_CACHE&&INQ_CTL_BUCKET_CACHE\.get\(key\)/);
  assert.match(html,/INQ_CTL_BUCKET_CACHE\.set\(key,bucket\)/);
+ assert.match(html,/inqCtlRows\(active,trash,tech\)/);
+ assert.match(html,/inqCtlConsole\(Q,c\)/);
+});
+
+test('quote inbox renders only one 50-row page and defers offscreen layout',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
+ assert.match(html,/\.inq-ctl-row:not\(\.head\)\{content-visibility:auto;contain-intrinsic-size:auto 58px\}/);
+ assert.match(html,/pageSize=50/);
+ assert.match(html,/L\.slice\(\(page-1\)\*pageSize,page\*pageSize\)/);
+ assert.match(html,/class="inq-ctl-pager"/);
+ assert.match(html,/function inqCtlPage\(page\)\{G\.inqPage=page;paint\(\)\}/);
 });
 
 test('today manager intervention identifies inquiries with actionable context',()=>{
