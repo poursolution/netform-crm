@@ -150,12 +150,22 @@ test('salesperson bottleneck stage clicks preserve owner and exact pipeline filt
  const html=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
  assert.match(html,/function repFlowGoStage\(i,codes,label\)[^\n]+dashboardGoRepStages\(r\.nm,codes,label\)/);
  assert.match(html,/function dashboardGoRepStages\(nm,codes,label\)\{G\.rep=nm;dashboardGoStages\(codes,label,true\)\}/);
- assert.match(html,/G\.reportStageCodes=String\(codes\|\|''\)\.split\('\|'\)\.filter\(Boolean\);G\.quickStageCodes=G\.reportStageCodes\.slice\(\)/);
- assert.match(html,/G\.splitCol=PD_COLS\.map[^\n]+findIndex[^\n]+G\.reportStageCodes\.every/);
+ assert.match(html,/function setPipelineStageDrill\(codes,label\)/);
+ assert.match(html,/G\.reportStageCodes=list;G\.quickStageCodes=list\.slice\(\)/);
+ assert.match(html,/var stageCodes=setPipelineStageDrill\(codes,label\)/);
+ assert.match(html,/G\.splitCol=PD_COLS\.map[^\n]+findIndex[^\n]+stageCodes\.every/);
  assert.match(html,/stageCodes=pipelineStageDrillCodes\(\)/);
  assert.match(html,/issueBase=issueBase\.filter\(function\(d\)\{return stageCodes\.indexOf\(dealStage\(d\)\)>=0\}\)/);
  assert.match(html,/적용 필터<\/span><button class="pfc on">[^\n]+G\.reportStageLabel[^\n]+담당자/);
  assert.match(html,/function clearPipelineStageDrill\(\)\{G\.quickStageCodes=null;G\.reportStageCodes=null;G\.reportStageLabel=''\}/);
+});
+
+test('unrelated pipeline entry points clear stale stage drill state',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
+ assert.match(html,/function matrixFilter\(rep,ci\)\{clearPipelineStageDrill\(\)/);
+ assert.match(html,/function briefGoIssue\(kind,rep\)[^\n]+clearPipelineStageDrill\(\);G\.pipeOrigin=null;G\.pipePeriodMode='snapshot'/);
+ assert.match(html,/function openPipeSplit\(d\)\{if\(!d\)return;if\(G\.page!=='pipe'\)\{towerDrillReset\(\);G\.pipePeriodMode='snapshot';G\.pipeOrigin=null;G\.rep='전체';G\.brand='전체';G\.workFilter='전체';G\.q=''/);
+ assert.match(html,/function inqTechReviewAction\(i\)[^\n]+if\(d\)\{openPipeSplit\(d\);return\}/);
 });
 
 test('operational read starts without a blocking overlay and coalesces duplicate refreshes',()=>{
