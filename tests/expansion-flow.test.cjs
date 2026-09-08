@@ -44,4 +44,22 @@ test('확장 목록은 독립 복합필터·전체연도 기한배지·고정 �
  assert.doesNotMatch(ui,/y<2024/);
  assert.doesNotMatch(ui,/slice\(0,page\*20\)/);
 });
+test('확장관리는 상태 보드를 기본으로 하고 상세 목록을 보조 보기로 유지한다',()=>{
+ const ui=fs.readFileSync(require.resolve('../expansion-pool.js'),'utf8');
+ const css=fs.readFileSync(require.resolve('../expansion-pool.css'),'utf8');
+ assert.match(ui,/expansionView\|\|'board'/);
+ assert.match(ui,/상태 보드/);
+ assert.match(ui,/상세 목록/);
+ for(const status of F.statuses)assert.ok(ui.includes(status)||ui.includes('F.statuses'),status);
+ assert.match(ui,/cardActions\(r,done\)/);
+ assert.match(css,/\.exp-board\{/);
+ assert.match(css,/scroll-snap-type/);
+});
+test('상태 보드와 상세 목록은 같은 확장관리 데이터로 실제 렌더링된다',()=>{
+ const root={innerHTML:''},badge={textContent:'',style:{}},rows=F.statuses.map((status,index)=>({id:'pool-'+index,sourceOpportunityId:'source-'+index,site:'검수 현장 '+index,owner:'황윤선',sourceWorkSummary:'옥상 방수',wonAmount:10000000,completionDate:'2026-03-01',nextContactAt:'2026-09-08',status,candidates:['재도장']}));
+ const context={console,window:null,document:{getElementById:id=>id==='expansion-root'?root:id==='expansionBadge'?badge:null},ExpansionFlow:F,B:{expansion_events:[],expansion_quote_dispatches:[],deals:[]},G:{expansionOwner:'전체',expansionYear:'전체'},expansionRecords:()=>rows,expansionSourceDeal:()=>({assignee:'황윤선',contract_date:'2026-01-01'}),daysTo:()=>0,repN:x=>x,fmtAmt:x=>Math.round(x/10000)+'만',fmtD:x=>String(x).slice(0,10),paintExpansion:()=>{}};
+ context.window=context;vm.createContext(context);new vm.Script(fs.readFileSync(require.resolve('../expansion-pool.js'),'utf8')).runInContext(context);
+ context.ExpansionPool.render();assert.equal((root.innerHTML.match(/class="exp-board-column"/g)||[]).length,6);assert.match(root.innerHTML,/검수 현장 0/);assert.match(root.innerHTML,/오늘 접촉/);
+ context.G.expansionView='list';context.ExpansionPool.render();assert.match(root.innerHTML,/class="exp-pool-list"/);assert.doesNotMatch(root.innerHTML,/class="exp-board"/);
+});
 test('서버 migration: 발송증명·트랜잭션 잠금·읽기전용·권한',()=>{const sql=fs.readFileSync(require.resolve('../sql/20260905_expansion_quote_handoff.sql'),'utf8');for(const s of ['for update',"q.status<>'sent'",'provider_receipt_id','crm_expansion_readonly_guard',"'origin','expansion'",'from public,anon,authenticated'])assert.ok(sql.includes(s),s)});
