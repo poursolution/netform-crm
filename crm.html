@@ -2936,7 +2936,7 @@ function copyDiag(){try{navigator.clipboard.writeText(window.__DIAG_TEXT||'');al
   mergeCreatedDeals();   /* 견적문의에서 인계한 로컬 생성 딜 합치기 */
   invalidateSiteMasterData();
   $('#dupBadge').textContent=(B.dups||[]).length;
-  var un=operationalInquiries(B.inquiries).filter(function(q){return !q.assignee}).length;
+  var un=operationalInquiries(B.inquiries).filter(function(q){return !isClosedInq(q)&&!inquiryAssigned(q)}).length;
   $('#inqBadge').textContent=un||''; $('#inqBadge').style.display=un?'':'none';
   var stale=B.deals.filter(function(d){return isOpen(d)&&age(d)>90}).length;
   $('#sideFoot').innerHTML='<b>🔔 조치 필요 '+stale+'건</b>90일 경과 진행 건 — 파이프라인에서 확인';
