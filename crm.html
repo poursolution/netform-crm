@@ -7894,7 +7894,9 @@ function inqCtlScope(list,isTrash){return (list||[]).filter(function(q){
    &&(!G.inqIssueKind||inquiryIssueMatch(q,G.inqIssueKind))
    &&(G.inqMetric!=='made'||inquiryHasMadeDeal(q))
    &&(G.inqMetric!=='assigned'||inquiryAssigned(q))})}
-function inqCtlScopeActive(){return inqCtlScope(operationalInquiries(B.inquiries||[]),false)}
+/* 종결된 중복 원본은 담당자가 비어 있어도 "미배정" 업무가 아니다.
+   스토어 이관 건은 별도 운영 탭에서 계속 추적하므로 활성 범위에 남긴다. */
+function inqCtlScopeActive(){return inqCtlScope(operationalInquiries(B.inquiries||[]).filter(function(q){return !isClosedInq(q)||INQ_STORE_STATUSES.includes(String(q.status||''))}),false)}
 function inqCtlScopeTrash(){return inqCtlScope(B.inquiryTrash||[],true)}
 function inqTechReviewRows(){return legacyTechnicalInquiries(B.inquiries||[]).filter(function(q){return (G.inqPeriodMode==='snapshot'||inPeriod(inquiryDate(q)))&&(G.rep==='전체'||repN(q.assignee)===G.rep)&&workMatches(q,G.workFilter)&&(!G.q||((q.site||'')+' '+(q.assignee||'')+' '+dealWorkSummary(q)).toLowerCase().indexOf(String(G.q).toLowerCase())>=0)})}
 function inqCtlMatchesTab(q,tab){if(tab==='전체')return true;if(tab==='신규')return inqCtlIsNew(q);return inqCtlBucket(q)===tab}
