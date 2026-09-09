@@ -55,6 +55,20 @@ test('확장관리는 상태 보드를 기본으로 하고 상세 목록을 보�
  assert.match(css,/\.exp-board\{/);
  assert.match(css,/scroll-snap-type/);
 });
+test('확장 현장은 보드 아래로 펼치지 않고 독립 관리창에서 처리한다',()=>{
+ const ui=fs.readFileSync(require.resolve('../expansion-pool.js'),'utf8');
+ const css=fs.readFileSync(require.resolve('../expansion-pool.css'),'utf8');
+ assert.match(ui,/class="exp-board-launch"/);
+ assert.match(ui,/ExpansionPool\.open\(this\.dataset\.id\)/);
+ assert.doesNotMatch(ui,/class="exp-board-card [^\n]+<details><summary>/);
+ assert.match(ui,/role="dialog" aria-modal="true"/);
+ assert.match(ui,/function openManager\(id\)/);
+ assert.match(ui,/function closeManager\(restoreFocus\)/);
+ assert.match(ui,/requestAnimationFrame\(\(\)=>focus\.focus\(\)\)/);
+ assert.match(css,/\.exp-manage-modal\{/);
+ assert.match(css,/\.exp-manage-actions footer\{/);
+ assert.match(css,/@media\(max-width:760px\)\{\.exp-manage-modal/);
+});
 test('상태 보드와 상세 목록은 같은 확장관리 데이터로 실제 렌더링된다',()=>{
  const root={innerHTML:''},badge={textContent:'',style:{}},rows=F.statuses.map((status,index)=>({id:'pool-'+index,sourceOpportunityId:'source-'+index,site:'검수 현장 '+index,owner:'황윤선',sourceWorkSummary:'옥상 방수',wonAmount:10000000,completionDate:'2026-03-01',nextContactAt:'2026-09-08',status,candidates:['재도장']}));
  const context={console,window:null,document:{getElementById:id=>id==='expansion-root'?root:id==='expansionBadge'?badge:null},ExpansionFlow:F,B:{expansion_events:[],expansion_quote_dispatches:[],deals:[]},G:{expansionOwner:'전체',expansionYear:'전체'},expansionRecords:()=>rows,expansionSourceDeal:()=>({assignee:'황윤선',contract_date:'2026-01-01'}),daysTo:()=>0,repN:x=>x,fmtAmt:x=>Math.round(x/10000)+'만',fmtD:x=>String(x).slice(0,10),paintExpansion:()=>{}};
