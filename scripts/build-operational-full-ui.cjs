@@ -11,12 +11,23 @@ const out=path.join(root,'staging-operational-full');
 const hashBuffer=value=>crypto.createHash('sha256').update(value).digest('hex');
 const hashFile=file=>hashBuffer(fs.readFileSync(file));
 
+function writeFileAtomic(target,value){
+ const temp=target+'.tmp-'+process.pid+'-'+crypto.randomBytes(6).toString('hex');
+ fs.writeFileSync(temp,value);
+ fs.renameSync(temp,target);
+}
+
 function copyTree(source,target){
  fs.mkdirSync(target,{recursive:true});
  for(const entry of fs.readdirSync(source,{withFileTypes:true})){
   const from=path.join(source,entry.name),to=path.join(target,entry.name);
   if(entry.isDirectory())copyTree(from,to);
-  else if(entry.isFile())fs.copyFileSync(from,to);
+  else if(entry.isFile()){
+   const value=target===out&&(entry.name==='crm.html'||entry.name==='mobile.html')
+    ?normalizePhoneFormatter(fs.readFileSync(from,'utf8'),entry.name)
+    :fs.readFileSync(from);
+   writeFileAtomic(to,value);
+  }
   else throw Error('UNSUPPORTED_BASE_ENTRY:'+from);
  }
 }
@@ -41,9 +52,18 @@ function hardenCrmReadMappings(html){
  return html;
 }
 
+function normalizePhoneFormatter(html,file){
+ const legacy="function phoneFmt(v){var n=phoneN(v);if(!n)return '미입력';if(n.length===11)return n.slice(0,3)+'-'+n.slice(3,7)+'-'+n.slice(7);if(n.length===10)return n.slice(0,3)+'-'+n.slice(3,6)+'-'+n.slice(6);return String(v||'')}";
+ const normalized="function phoneFmt(v){var raw=phoneN(v),n=String(raw||'').replace(/\\D/g,'');if(!n)return '미입력';if(n.indexOf('0082')===0)n=n.slice(4);if(n.indexOf('82')===0&&n.length>=10)n='0'+n.slice(2);if(n.length===11)return n.slice(0,3)+'-'+n.slice(3,7)+'-'+n.slice(7);if(n.length===10)return n.slice(0,3)+'-'+n.slice(3,6)+'-'+n.slice(6);if(n.length===9&&n.indexOf('02')===0)return n.slice(0,2)+'-'+n.slice(2,5)+'-'+n.slice(5);return String(v||'')}";
+ const next=html.replace(legacy,normalized);
+ if(next===html&&!html.includes(normalized))throw Error('PHONE_FORMATTER_DRIFT:'+file);
+ return next;
+}
+
 function injectPage(file){
  const target=path.join(out,file),before=fs.readFileSync(target,'utf8');
  let html=sanitizeLegacyEndpoints(before,file);
+ if(file==='crm.html'||file==='mobile.html')html=normalizePhoneFormatter(html,file);
  if(file==='crm.html')html=hardenCrmReadMappings(html);
  const oldHead='<script src="/phase1-config.js"></script><script src="/transport.js"></script>';
  const newHead='<script src="/phase1-config.js"></script><script src="/operational-adapter.js"></script><script src="/transport.js"></script>';
@@ -55,7 +75,7 @@ function injectPage(file){
   html=html.replace(boot,split);
   if(!html.includes(split))throw Error('OVERLAY_BOOT_MARKER_DRIFT:'+file);
  }
- fs.writeFileSync(target,html);
+ writeFileAtomic(target,html);
  return {
   source_sha256:hashBuffer(Buffer.from(before)),
   output_sha256:hashBuffer(Buffer.from(html)),
@@ -98,9 +118,9 @@ function build(){
   production_accessed:false,
   n8n_accessed:false
  };
- fs.writeFileSync(path.join(out,'operational-full-ui-manifest.json'),JSON.stringify(manifest,null,2)+'\n');
+ writeFileAtomic(path.join(out,'operational-full-ui-manifest.json'),JSON.stringify(manifest,null,2)+'\n');
  return manifest;
 }
 
 if(require.main===module)console.log(JSON.stringify(build(),null,2));
-module.exports={root,base,candidate,out,build,sanitizeLegacyEndpoints,hardenCrmReadMappings};
+module.exports={root,base,candidate,out,build,sanitizeLegacyEndpoints,hardenCrmReadMappings,normalizePhoneFormatter};
