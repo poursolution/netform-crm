@@ -23,9 +23,11 @@ function copyTree(source,target){
   const from=path.join(source,entry.name),to=path.join(target,entry.name);
   if(entry.isDirectory())copyTree(from,to);
   else if(entry.isFile()){
-   const value=target===out&&(entry.name==='crm.html'||entry.name==='mobile.html')
-    ?normalizePhoneFormatter(fs.readFileSync(from,'utf8'),entry.name)
-    :fs.readFileSync(from);
+   let value=fs.readFileSync(from);
+   if(target===out&&(entry.name==='crm.html'||entry.name==='mobile.html')){
+    value=normalizePhoneFormatter(value.toString('utf8'),entry.name);
+    if(entry.name==='crm.html')value=normalizeTechnicalInquiryDetection(value,entry.name);
+   }
    writeFileAtomic(to,value);
   }
   else throw Error('UNSUPPORTED_BASE_ENTRY:'+from);
@@ -60,10 +62,19 @@ function normalizePhoneFormatter(html,file){
  return next;
 }
 
+function normalizeTechnicalInquiryDetection(html,file){
+ const legacy="function isTechnicalInquiry(q){return inquiryBrandOf(q).replace(/\\s+/g,'')==='기술자문'}";
+ const normalized="function inquiryTextOf(q){var raw=q&&q.raw,rawText=raw&&typeof raw==='object'?Object.keys(raw).map(function(k){var v=raw[k];return typeof v==='string'?k+' '+v:''}).join(' '):String(raw||'');return [q&&q.inquiry_type,q&&q.inquiryType,q&&q.category,q&&q.work,q&&q.message,q&&q.detail,rawText].filter(Boolean).join(' ').trim()}\nfunction isTechnicalInquiry(q){if(inquiryBrandOf(q).replace(/\\s+/g,'')==='기술자문')return true;var text=inquiryTextOf(q).replace(/\\s+/g,' ');return /기술\\s*자문/.test(text)&&!/(기술\\s*자문).{0,12}(아님|아니|해당\\s*없|무관)/.test(text)}";
+ const next=html.replace(legacy,normalized);
+ if(next===html&&!html.includes(normalized))throw Error('TECHNICAL_INQUIRY_CLASSIFIER_DRIFT:'+file);
+ return next;
+}
+
 function injectPage(file){
  const target=path.join(out,file),before=fs.readFileSync(target,'utf8');
  let html=sanitizeLegacyEndpoints(before,file);
  if(file==='crm.html'||file==='mobile.html')html=normalizePhoneFormatter(html,file);
+ if(file==='crm.html')html=normalizeTechnicalInquiryDetection(html,file);
  if(file==='crm.html')html=hardenCrmReadMappings(html);
  const oldHead='<script src="/phase1-config.js"></script><script src="/transport.js"></script>';
  const newHead='<script src="/phase1-config.js"></script><script src="/operational-adapter.js"></script><script src="/transport.js"></script>';
@@ -123,4 +134,4 @@ function build(){
 }
 
 if(require.main===module)console.log(JSON.stringify(build(),null,2));
-module.exports={root,base,candidate,out,build,sanitizeLegacyEndpoints,hardenCrmReadMappings,normalizePhoneFormatter};
+module.exports={root,base,candidate,out,build,sanitizeLegacyEndpoints,hardenCrmReadMappings,normalizePhoneFormatter,normalizeTechnicalInquiryDetection};

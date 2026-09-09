@@ -2545,7 +2545,8 @@ var BICON={'석민이앤씨':['🟠','var(--warn-bg)'],'POUR솔루션':['🟢','
    기술자문은 직접 영업등록/사업유형 전환으로만 생성하며 문의 KPI에는 넣지 않는다. */
 var INQUIRY_BASE_BRANDS=['석민이앤씨','POUR솔루션','POUR공법','아파트스퀘어'];
 function inquiryBrandOf(q){return String(q&&(q.brand||q.business_type||q.businessType||q.list||'')||'').trim()}
-function isTechnicalInquiry(q){return inquiryBrandOf(q).replace(/\s+/g,'')==='기술자문'}
+function inquiryTextOf(q){var raw=q&&q.raw,rawText=raw&&typeof raw==='object'?Object.keys(raw).map(function(k){var v=raw[k];return typeof v==='string'?k+' '+v:''}).join(' '):String(raw||'');return [q&&q.inquiry_type,q&&q.inquiryType,q&&q.category,q&&q.work,q&&q.message,q&&q.detail,rawText].filter(Boolean).join(' ').trim()}
+function isTechnicalInquiry(q){if(inquiryBrandOf(q).replace(/\s+/g,'')==='기술자문')return true;var text=inquiryTextOf(q).replace(/\s+/g,' ');return /기술\s*자문/.test(text)&&!/(기술\s*자문).{0,12}(아님|아니|해당\s*없|무관)/.test(text)}
 function operationalInquiries(list){return (list||[]).filter(function(q){return !isTechnicalInquiry(q)&&!['merged','activity'].includes(q.duplicate_resolution)})}
 function legacyTechnicalInquiries(list){return (list||[]).filter(isTechnicalInquiry)}
 function inquiryBrandOptions(){var seen={},out=[];INQUIRY_BASE_BRANDS.concat(operationalInquiries(B&&B.inquiries||[]).map(inquiryBrandOf)).forEach(function(b){b=String(b||'').trim();if(!b||b==='기술자문'||seen[b])return;seen[b]=1;out.push(b)});return out}

@@ -17,6 +17,7 @@ test('31-op UI assembly preserves sources and removes n8n/Production endpoints',
  assert.equal(new Set(manifest.connected_operations).size,31);
  assert.deepEqual(manifest.forbidden_references,{n8n:0,production_ref:0});
  for(const file of ['index.html','crm.html','mobile.html'])assert.equal(hash(path.join(builder.base,file)),sourceHashes[file]);
+ assert.match(fs.readFileSync(path.join(builder.out,'crm.html'),'utf8'),/function inquiryTextOf\(q\).*rawText/);
 });
 
 test('assembled pages load config, full adapter, transport and overlay in safe order',()=>{
