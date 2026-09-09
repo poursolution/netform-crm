@@ -25,3 +25,23 @@ test('external report makes the conversion denominator explicit', () => {
 test('cross-screen drilldowns clear a stale planned-year filter', () => {
   assert.match(html, /function towerDrillReset\(\)\{[^}]*G\.constructionYear='전체'/);
 });
+
+test('source attribution keeps Apartment Square value after advisory conversion', () => {
+  assert.match(html, /business-attribution\.js\?v=/);
+  assert.match(html, /최초 유입 기여 · 기술자문 전환/);
+  assert.match(html, /APARTMENT SQUARE → 기술자문/);
+  assert.match(html, /서로 다른 분석축이므로 두 표의 합계를 더하지 않습니다/);
+  assert.match(html, /won_amount만 집계/);
+});
+
+test('rep contract performance is based on close date and won_amount, with evidence drilldown', () => {
+  assert.match(html, /contract-performance\.js\?v=/);
+  assert.match(html, /function perfWonDeals\(name\)\{[^\n]*inPeriod\(wonDate\(d\)\)/);
+  assert.match(html, /wonAmount=sumBy\(W,wonAmt\)/);
+  assert.match(html, /계약완료 · 수주확정금액/);
+  assert.match(html, /계약완료 근거 현장/);
+  assert.match(html, /확정금액 미입력/);
+  assert.match(html, /function reportWonDeals\(\)\{[^\n]*inPeriod\(wonDate\(d\)\)/);
+  assert.match(html, /monthWonAmt=sumBy\(monthWon,wonAmt\)/);
+  assert.doesNotMatch(html, /sumBy\(perfMonthWon\(n\),function\(d\)\{return wonAmt\(d\)\|\|oppAmt\(d\)\}\)/);
+});
