@@ -1,7 +1,7 @@
 {
   "project_ref": "ymfbmpnizxvqsamnczow",
   "status": "PRODUCTION_REPORTING_UPDATE_APPROVED",
-  "source_commit": "74f3886",
+  "source_commit": "e692019",
   "approved_dashboard_commit": "842a5dd",
   "connected_operations": [
     "opportunity_work_set",
@@ -46,7 +46,7 @@
   "files_sha256": {
     "crm-export.js": "a5e413081d0b84cf66d3e94a9969822d6c0c50cc303c866e75b2a836c7222670",
     "crm-read.js": "ebdd58450449f13f4a1331e60ef09c8be14afa7b74802b05f81e81ab62d42730",
-    "crm.html": "f30aaf66655220ea3b9780d64da60c65627356299a823dd8c02db49baab9f320",
+    "crm.html": "6a8632bdd2d61d924667a141bcd0b5d4d27fd881acece05abb5705455fb93343",
     "business-attribution.js": "cc65634d66d88f84330ca646010de52e973a84b96f012768d729d728da29ff6b",
     "contract-performance.js": "42fa2824ecbf3ea922a9f7a6a75cc9da482b264c15572caa4b51a29fde9500ae",
     "data-cleanup-ui.js": "a724dd6503ad8a95a29452c7311656a4a646fb9f69758fdc19a80a1da604150a",
