@@ -5,15 +5,17 @@ const inventory=JSON.parse(fs.readFileSync(path.join(dir,'source-inventory.json'
 const matrix=JSON.parse(fs.readFileSync(path.join(dir,'parity-matrix.json'),'utf8'));
 const phase1=JSON.parse(fs.readFileSync(path.join(root,'staging-phase1/source-manifest.json'),'utf8'));
 const production=JSON.parse(fs.readFileSync(path.join(root,'production-ui-manifest.json'),'utf8'));
-const candidate=JSON.parse(fs.readFileSync(path.join(root,'local-release-candidate-manifest.json'),'utf8'));
+const candidatePath=path.join(root,'local-release-candidate-manifest.json');
+const candidate=fs.existsSync(candidatePath)?JSON.parse(fs.readFileSync(candidatePath,'utf8')):null;
 const sha=x=>crypto.createHash('sha256').update(x).digest('hex');
 const git=(...args)=>cp.execFileSync('git',args,{cwd:root,maxBuffer:30*1024*1024});
 test('Golden SHA remains an ancestor and every local overlay matches production or the explicit local candidate',()=>{
 assert.equal(inventory.golden.commit,matrix.golden_commit);
 assert.doesNotThrow(()=>git('merge-base','--is-ancestor',matrix.golden_commit,'HEAD'));
-for(const f of inventory.manifest){const name=f.file.startsWith('local/')&&f.file.slice(6),latest=name&&phase1.files.find(x=>x.file===name),deployed=name&&production.files_sha256[name];const data=f.file.startsWith('golden/')?git('show',matrix.golden_commit+':'+f.file.slice(7)):fs.readFileSync(path.join(root,name)),actual=sha(data),approved=deployed||latest?.source_sha256||f.sha256;if(actual!==approved){assert.equal(candidate.status,'LOCAL_RELEASE_CANDIDATE_NOT_DEPLOYED');assert.equal(candidate.production_applied,false);assert.equal(candidate.runtime_files_sha256[name],actual,`untracked local overlay drift: ${f.file}`);}}
+for(const f of inventory.manifest){const name=f.file.startsWith('local/')&&f.file.slice(6),latest=name&&phase1.files.find(x=>x.file===name),deployed=name&&production.files_sha256[name];const data=f.file.startsWith('golden/')?git('show',matrix.golden_commit+':'+f.file.slice(7)):fs.readFileSync(path.join(root,name)),actual=sha(data),approved=deployed||latest?.source_sha256||f.sha256;if(actual!==approved){assert.ok(candidate,'local overlay drift requires an explicit release-candidate manifest');assert.equal(candidate.status,'LOCAL_RELEASE_CANDIDATE_NOT_DEPLOYED');assert.equal(candidate.production_applied,false);assert.equal(candidate.runtime_files_sha256[name],actual,`untracked local overlay drift: ${f.file}`);}}
 });
 test('local release-candidate hashes are complete, current and never represented as production',()=>{
+if(!candidate)return;
 assert.equal(candidate.base_commit,git('rev-parse','HEAD').toString().trim());
 assert.equal(candidate.production_applied,false);assert.equal(candidate.production_database_applied,false);assert.equal(candidate.external_systems_changed,false);
 for(const group of ['runtime_files_sha256','database_candidates_sha256'])for(const [file,digest] of Object.entries(candidate[group])){assert.ok(fs.existsSync(path.join(root,file)),file);assert.equal(sha(fs.readFileSync(path.join(root,file))),digest,file);}

@@ -1,7 +1,7 @@
 {
   "project_ref": "ymfbmpnizxvqsamnczow",
-  "status": "PRODUCTION_REPORTING_UPDATE_APPROVED",
-  "source_commit": "e692019",
+  "status": "PRODUCTION_INQUIRY_ASSIGNMENT_AND_RELATIONSHIP_UI_DEPLOYED",
+  "source_commit": "8c3a5c0bedf9519842dd1bfb5a89b60cb7e180d9",
   "approved_dashboard_commit": "842a5dd",
   "connected_operations": [
     "opportunity_work_set",
@@ -46,7 +46,9 @@
   "files_sha256": {
     "crm-export.js": "a5e413081d0b84cf66d3e94a9969822d6c0c50cc303c866e75b2a836c7222670",
     "crm-read.js": "ebdd58450449f13f4a1331e60ef09c8be14afa7b74802b05f81e81ab62d42730",
-    "crm.html": "6a8632bdd2d61d924667a141bcd0b5d4d27fd881acece05abb5705455fb93343",
+    "crm.html": "6c178a3f4590d4ee3cbd5ff98c0feaa85172a795f4a8f638ebda9ddebcc677af",
+    "inquiry-assignment-clarity.css": "7bcfbfe40af7a758c3cf2d79eb922b0b3430403ff97a9ee36770ddac5097efee",
+    "inquiry-assignment-clarity.js": "b9bed7868afe51ad2e0a6665ea4f0fc6a3756cd6e75e7f34d2930b52ef275497",
     "business-attribution.js": "cc65634d66d88f84330ca646010de52e973a84b96f012768d729d728da29ff6b",
     "contract-performance.js": "42fa2824ecbf3ea922a9f7a6a75cc9da482b264c15572caa4b51a29fde9500ae",
     "data-cleanup-ui.js": "a724dd6503ad8a95a29452c7311656a4a646fb9f69758fdc19a80a1da604150a",
@@ -70,9 +72,11 @@
     "owner-choice.js": "5c715c678a53649c315394020861dcd7bc79b85a11eb24fe192e90c62dbe0d95",
     "people-eligibility.js": "ac0acdef13597b6ff8f77c83f368a84067d4bb3da974bcfc55ae1e6ec11e6896",
     "phase1-config.js": "398042e780f4ac33f859bdad63ba090171d5fc48deddfec4609b1d6c8d418472",
-    "stage-transition-ui.js": "c3fc39eee42159ac036776b9067e5d26de660b59f71d770f71e835d86d2010f7",
+    "relationship-management.css": "2106ead5f36b6e2cbe653fa08df016433b5b2c823c88372c902fb705a310e83f",
+    "relationship-management.js": "549b1981cd48339ac788a5147d6d832d93e1fed5797df6d796bfa9cbf6362dfc",
+    "stage-transition-ui.js": "a58e349d3731b65513400858eabcb912c94a0c0c535efb94085fba1ca9abee02",
     "stage-transition.css": "d996284132d1a0c2171249f36457ab1e6a8817b20a4ea1960350d976262cb244",
-    "stage-transition.js": "469241cdab31838e1ea2e04d056daf1bda433f7497601dc8bbe8dd91e921db78",
+    "stage-transition.js": "d0c4614e13edd5696fae0145ac1614affecd44365710e2363abadef943d96f77",
     "transport.js": "13839d7ff5165ed07d8cebe56cbb2dc743e3f2a8c95125307ba09206ea967c30",
     "work-editor.js": "a80543c9de157635b9f76cf931cfac068958167ea744a401914068d149dfb9a4",
     "write-ack.js": "df42acfaf242fdb2747fdc7d996fe57250b0b6a870b0b11d7b3cdea919363124"
