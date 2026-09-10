@@ -28,6 +28,8 @@ for (const file of ['crm.html']) {
     };
     assert.equal(inquiryBrandOf(rawTechnical), 'POUR솔루션');
     assert.equal(isTechnicalInquiry(rawTechnical), true);
+    assert.equal(isTechnicalInquiry({ brand: 'POUR솔루션', business_type: '기술자문' }), true);
+    assert.equal(isTechnicalInquiry({ brand: '기술자문', business_type: '견적문의' }), false);
     assert.equal(isTechnicalInquiry({ brand: '기술자문' }), true);
     assert.equal(isTechnicalInquiry({ brand: 'POUR솔루션', raw: { 문의내용: '옥상 방수 견적 요청' } }), false);
     assert.equal(isTechnicalInquiry({ brand: 'POUR솔루션', raw: { 문의내용: '기술자문 아님. 자재 견적 요청' } }), false);
