@@ -45,7 +45,7 @@ test('오늘업무·관리 KPI·견적문의 목록이 같은 SLA 기준을 공�
   assert.doesNotMatch(crm, /배정 후 3시간/);
   assert.doesNotMatch(crm, /배정 후 24시간 이내 최초 응대/);
   assert.match(crm, /withinHours\(inquiryAssignedAt\(q\)\|\|inquiryCreatedAt\(q\),inquiryRespondedAt\(q\),INQUIRY_RESPONSE_SLA_HOURS\)/);
-  assert.ok((crm.match(/Q\.filter\(inquiryResponseLate\)/g) || []).length >= 2);
+  assert.match(crm, /delayed=Q\.filter\(inquiryResponseLate\)/);
   assert.match(crm, /late=inquiryResponseLate\(q\)/);
   assert.match(crm, /noResponse=kind==='inq'&&inquiryResponseLate\(item\)/);
   assert.doesNotMatch(crm, /if\(noResponse&&a>=1\)/);

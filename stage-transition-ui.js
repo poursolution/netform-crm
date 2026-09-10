@@ -64,6 +64,10 @@
   if(terminal){update.outcome=to;update.closed_at=at;update.closed=input.transition_date;update.nextAction=null;update.nextActionObj=null;update.nextActionText=''}
   if(to==='won'){update.won_amount=input.fields.contract_amount;update.wonAmount=input.fields.contract_amount;update.won_at=at}
   if(to==='waiting')Object.assign(update,{waitingReason:input.fields.reason,waiting_reason:input.fields.reason,waitingCustomerSaid:input.fields.statement||'',waitingSpeaker:input.fields.speaker||'',reactivationDueAt:input.fields.contact_date,reactivation_due_at:input.fields.contact_date});
+  if(['rapport','silent','waiting'].includes(to)){
+   const relationshipReason=to==='waiting'?input.fields.reason:(input.fields.relationship_reason==='기타'?input.fields.relationship_reason_detail:input.fields.relationship_reason);
+   Object.assign(update,{relationshipReason,relationship_reason:relationshipReason,relationshipEnteredAt:at,relationship_entered_at:at});
+  }
   if(ctx.patch){applyStageTarget(d,ctx.patch,'deal',to);if(to==='badfit_lead')update.grp='기타'}
   Object.assign(d,update);if(ctx.patch)Object.assign(ctx.patch,update);
   const payload={opportunity_id:d.id,from:ctx.from,to,stage_code:ctx.from,at,transition_date:input.transition_date,note:text,reason:input.fields.close_reason||input.skip_reason||text,stage_context:snapshot,stage_contexts:context,contract_amount:update.contract_amount,completion_date:update.completion_date};

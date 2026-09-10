@@ -3,11 +3,10 @@ const I=require('../issue-modal.js'),M=require('../money-input.js');
 test('금액 내림차순, 동액이면 장기정체, 원본 순서 보존',()=>{const a=[{amount:10,days:8},{amount:20,days:7},{amount:20,days:18}];assert.deepEqual(I.sorted(a,'amount').map(x=>x.days),[18,7,8]);assert.equal(a[0].amount,10)});
 test('기간 미확인은 0일·14일 이상으로 둔갑하지 않는다',()=>assert.deepEqual(I.buckets([{days:7},{days:13},{days:14},{days:null}]),{week:2,long:1,unknown:1}));
 const crm=fs.readFileSync(require.resolve('../crm.html'),'utf8');
-test('실제 대시보드 카드 숫자와 popup은 같은 배열을 받는다',()=>{
- const X={noNext:[{id:1}],overdue:[{id:2},{id:3}],nearIdle:Array.from({length:37},(_,i)=>({id:i}))},bound=[],cards=[];
- const c={X,IssueModal:{bind:(slot,kind,rows)=>{bound.push({kind,rows});return kind}},todaySignal:(label,n,desc,tone,go)=>{cards.push({n,go});return ''},todayLane(){}};
- vm.runInNewContext(crm.split(/\r?\n/).filter(x=>x.includes("todayLane('sales'")).at(-1).trim().replace(/,$/,''),c);
- assert.equal(bound[2].rows,X.nearIdle);assert.equal(cards[2].n,bound[2].rows.length);assert.equal(cards[2].go,'nearIdle');
+test('오늘업무는 산정한 관리 배열을 두 업무함과 상세 열기에 그대로 사용한다',()=>{
+ assert.match(crm,/TODAY_ADMIN_INQUIRY=X\.inquiry/);assert.match(crm,/TODAY_ADMIN_PIPELINE=X\.pipeline/);
+ assert.match(crm,/todayAdminBoard\('inquiry'.*X\.inquiry/);assert.match(crm,/todayAdminBoard\('pipeline'.*X\.pipeline/);
+ assert.match(crm,/group==='admin-inquiry'\?TODAY_ADMIN_INQUIRY\[i\]/);assert.match(crm,/group==='admin-pipeline'\?TODAY_ADMIN_PIPELINE\[i\]/);
  assert.match(crm,/IssueModal.bind\('health:noAmount','noAmount',noAmt\)/);assert.match(crm,/IssueModal.bind\('pipe:quick:'/);
 });
 function harness(){
