@@ -100,12 +100,16 @@ test('campaign all-send stays explicit, consent-scoped, and cannot record false 
   assert.match(queue,/대상이나 이력은 변경되지 않았습니다/);
 });
 
-test('campaign landing keeps the four-step workflow but removes the oversized presentation header',()=>{
-  assert.match(pc,/var _paintCampaignActionQueue=paintCampaign/);
-  assert.match(pc,/command\.classList\.add\('cc-queue-head'\)/);
-  assert.match(pc,/대상 선택 → 문구 작성 → 미리보기 → 발송/);
+test('campaign landing is a simple customer-send inbox followed by a five-step workflow',()=>{
+  assert.match(pc,/function campaignHomePage\(\)/);
+  assert.match(pc,/＋ 새 발송 만들기/);
+  assert.match(pc,/예약 발송[\s\S]*발송 준비중[\s\S]*발송 실패/);
+  assert.doesNotMatch(pc,/\['send','고객 실행'/);
   assert.match(pc,/function campaignStepsHtml\(\)/);
-  assert.match(pc,/\.cc-command\.cc-queue-head\{/);
+  assert.match(pc,/\['발송 목적','왜 보내는지'\]/);
+  assert.match(pc,/function campaignPurposePanel\(\)/);
+  assert.match(pc,/category_label:purpose/);
+  assert.match(pc,/고객 발송/);
 });
 
 test('campaign recipients normalize Korean international numbers and preserve consent evidence',()=>{
