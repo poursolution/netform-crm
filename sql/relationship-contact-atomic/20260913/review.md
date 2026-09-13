@@ -1,15 +1,17 @@
 # 관계관리 연락 기록 + 다음 연락일 통합 저장
 
-상태: LOCAL_QUEUE_AND_DISPATCHER_VALIDATED / 운영 미적용 / UI 미연결.
+상태: UI_ADAPTER_QUEUE_CONNECTED / PRODUCTION_MIGRATION_READY / 운영 DB 미적용.
 
 ## 현재 계약 확인
 
 현재 `relationship_response`는 발송한 메시지에 대한 유효한 고객 응답을 연결하는 계약이다. 일반 전화 기록과 다음 연락일을 저장하려고 임의의 발송 이력을 만들거나 이 계약을 우회하지 않는다.
 기존 `activity`, `next_action`은 각각 별도의 버전 증가와 receipt를 가진다. 브라우저에서 두 번 호출하면 원자 저장이 아니다.
 
-## 로컬 후보
+## 구현 상태
 
 `helper.local.sql`의 비공개 함수 안에서 두 기존 private helper를 호출한다. 하나의 DB 호출/트랜잭션이므로 두 번째 쓰기 또는 마지막 연결 작업 실패 시 첫 번째 쓰기도 롤백된다. 이 helper 파일 자체는 공개 RPC, 기존 함수, 테이블 및 receipt 제약을 변경하지 않는다. 별도 `dispatcher.local.sql`은 로컬에서만 새 operation 연결을 검증한다.
+
+운영 UI는 `relationship_contact` 한 작업만 영속 큐에 넣는다. `operational-adapter.js`는 입력과 ACK를 검증하고, `operational-overlay.js`는 검증된 ACK 이후에만 화면 정본을 갱신한다. 운영 적용용 migration은 `supabase/migrations/20260913193000_relationship_contact_atomic.sql`, 역방향 복구는 `rollback.production.sql`이다. 두 파일은 아직 Production DB에 실행하지 않았다.
 
 - 입력: request UUID, Deal UUID, expected version, `{activity, next_action}`.
 - 연락 성공 여부 `meaningful_contact`는 명시적으로 받는다. 부재/전화 시도는 성공 접촉일을 갱신하지 않는다.
@@ -35,13 +37,12 @@
 검증 실행: `node --test sql/relationship-contact-atomic/20260913/*.test.cjs`.
 현재 결과: 27 PASS / 0 FAIL / 0 SKIP.
 
-## 운영 적용 전 별도 작업
+## 운영 적용 전 남은 작업
 
 1. 최신 운영 helper 정의/권한과 로컬 기반의 차이를 재대조한다. 과거 fixture 통과는 현재 Production 통과를 뜻하지 않는다.
-2. 로컬 dispatcher/rollback을 최신 운영 정의의 hash·owner·ACL에 묶은 승인용 migration으로 준비한다. 현재 `.local.sql` 파일은 배포용 migration이 아니다. transport의 RPC URL allowlist는 기존 `crm_write_command_v2`를 재사용하며 늘리지 않는다.
-3. UI의 두 입력을 한 요청으로 연결하고 ACK 전 성공표시/로컬 정본 변경을 금지한다. 통신 응답 유실은 같은 request UUID로 조회/재시도한다.
-4. 활동을 선택해 기존 Next를 완료하는 의미와, 여러 일정 중 교체 대상을 지정하는 기능은 이 후보에 포함하지 않는다.
-5. 실제 승인된 테스트 계정/대상에서 HTTP 저장, RLS, 두 세션 동시 편집을 검증한다. PGlite 직렬 테스트를 실제 동시성 E2E라고 보고하지 않는다.
+2. 운영 migration/rollback의 guard hash·owner·ACL을 적용 직전 최신 Production 정의와 재확인한다. transport는 기존 `crm_write_command_v2`만 사용하며 RPC URL allowlist를 늘리지 않는다.
+3. 실제 승인된 테스트 계정/대상에서 HTTP 저장, RLS, 두 세션 동시 편집을 검증한다. PGlite 직렬 테스트를 실제 동시성 E2E라고 보고하지 않는다.
+4. 활동을 선택해 기존 Next를 완료하는 의미와 여러 일정 중 교체 대상을 지정하는 기능은 별도 계약으로 유지한다. 현재 저장이 임의로 기존 일정을 닫지 않는다.
 
 실행: `node --test sql/relationship-contact-atomic/20260913/db.test.cjs`
 
