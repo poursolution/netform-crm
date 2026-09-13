@@ -1,7 +1,7 @@
 {
   "project_ref": "ymfbmpnizxvqsamnczow",
   "status": "PRODUCTION_CRM_WORKSPACE_RELEASE_READY",
-  "source_commit": "37a34d7bf35425984c831e7e836088075782e5d9",
+  "source_commit": "121bcf8a5abbd6063f1fdc230403b52880f96d9e",
   "approved_dashboard_commit": "842a5dd",
   "connected_operations": [
     "opportunity_work_set",
@@ -46,7 +46,7 @@
   "files_sha256": {
     "crm-export.js": "a5e413081d0b84cf66d3e94a9969822d6c0c50cc303c866e75b2a836c7222670",
     "crm-read.js": "ebdd58450449f13f4a1331e60ef09c8be14afa7b74802b05f81e81ab62d42730",
-    "crm.html": "103f40ef5e0edc49a4d7ce53ef01e7271e457ed117071e3dabacad87aa39f9ca",
+    "crm.html": "433b312a7af7039bde1586e8f3ebef11ae7f0122a2d1813cf0ecaf89baa0f97b",
     "inquiry-assignment-clarity.css": "031f3dab5aa9ff7d0c80ee0708a672fcf09157c271888da7b4015122d676f18b",
     "inquiry-assignment-clarity.js": "02d181416a8511477160341cbb13d867f6caea3eca863a4178bb61b455ce83f2",
     "business-attribution.js": "cc65634d66d88f84330ca646010de52e973a84b96f012768d729d728da29ff6b",
@@ -87,15 +87,15 @@
     "today-work-queue.js": "3515fb507998476b72b5ba7bf3b4db66c2bf0148f1e1a869f601c9deb3bfd704",
     "today-work-queue.css": "355cb3608f346c268d926b19eea1be8488335c1d31b124d3d4b35f12224f27fe"
   },
-  "ui_release": "20260913-assignment-technical-relationship-1",
+  "ui_release": "20260913-inquiry-one-screen-1",
   "ui_release_scope": {
-    "database_changed": true,
+    "database_changed": false,
     "external_systems_changed": false,
     "live_business_writes_tested": false,
     "automated_tests": {
-      "pass": 600,
+      "pass": 24,
       "fail": 0,
-      "skip": 16
+      "skip": 0
     },
     "browser_menu_navigation": 15
   },
