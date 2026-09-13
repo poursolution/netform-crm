@@ -47,23 +47,23 @@ async function run() {
       document.getElementById('pg-today').classList.add('on'); paintTodayHome();
     });
 
-    assert.equal(await page.locator('.today-inquiry-toolbar button[data-filter="unassigned"]').textContent(), '미배정 3');
-    assert.equal(await page.locator('.today-inquiry-compact').first().locator('.today-work-main strong').textContent(), '오래된 기존 미배정');
-    const allText = await page.locator('.today-board.inquiry').textContent();
+    assert.equal(await page.locator('.twq-counts button[data-filter="unassigned"]').textContent(), '미배정 3');
+    assert.equal(await page.locator('.twq-row').first().locator('.twq-site').textContent(), '오래된 기존 미배정');
+    const allText = await page.locator('.today-work-queue').textContent();
     assert.match(allText, /사유 미기록 · 기존 데이터/);
     assert.match(allText, /담당자 계정 일치 실패/);
     assert.match(allText, /수동 회수/);
-    await page.locator('.today-inquiry-toolbar button[data-filter="unassigned"]').click();
-    assert.equal(await page.locator('.today-inquiry-compact').count(), 3);
-    assert.equal(await page.locator('.today-inquiry-action').count(), 3);
+    await page.locator('.twq-counts button[data-filter="unassigned"]').click();
+    assert.equal(await page.locator('.twq-row').count(), 3);
+    assert.equal(await page.locator('.twq-action.assign').count(), 3);
     assert.equal(await page.getByText('[서울 서초] 중복 운영 문의', { exact: true }).count(), 0);
-    await page.locator('.today-inquiry-action').first().click();
+    await page.locator('.twq-action.assign').first().click();
     assert.equal(await page.locator('#inquiryControlModal.on').count(), 1);
     assert.match(await page.locator('#inquiryControlTitle').textContent(), /영업담당 배정/);
     await page.locator('.inq-ctl-rep[data-r="김성민"]').click();
     await page.locator('#inq-ctl-confirm').click();
     await page.waitForTimeout(100);
-    assert.equal(await page.locator('.today-inquiry-toolbar button[data-filter="unassigned"]').textContent(), '미배정 2');
+    assert.equal(await page.locator('.twq-counts button[data-filter="unassigned"]').textContent(), '미배정 2');
     assert.equal(await page.getByText('오래된 기존 미배정', { exact: true }).count(), 0);
     assert.equal(await page.evaluate(() => window.__testWrites.filter(row => row.operation === 'inquiry_assign').length), 1);
 

@@ -51,14 +51,34 @@ async function run() {
       document.getElementById('authGate').classList.remove('on');
       document.querySelectorAll('.apage').forEach(node => node.classList.remove('on'));
       document.getElementById('pg-inq').classList.add('on');
-      paintInq();
+      goPage('inq');
     });
 
     assert.equal(await page.locator('.inq-ctl-head h2').textContent(), '견적문의 접수·배정');
+    assert.equal(await page.locator('.inq-work-tools').getAttribute('open'), null);
+    assert.equal(await page.locator('.inq-work-row:not(.head)').first().locator(':scope > span').count(), 6);
+    await page.locator('.inq-work-tools summary').click();
     assert.equal(await page.getByRole('button', { name: '관리자 운영' }).count(), 1);
     assert.equal(await page.locator('.inq-ctl-row:not(.head)').count(), 4);
     assert.equal(await page.locator('.inq-ctl-bulk').count(), 1);
     assert.equal(await page.locator('.inq-ctl-row:not(.head) input[type="checkbox"]').count(), 4);
+    await page.locator('.inq-work-tools summary').click();
+    await page.locator('.inq-work-counts [data-key="unassigned"]').click();
+    assert.equal(await page.locator('.inq-work-row:not(.head)').count(), 1);
+    await page.locator('.inq-work-counts [data-key="delayed"]').click();
+    const delayedCount = await page.evaluate(() => inqCtlScopeActive().filter(InquiryWorkbench.delayed).length);
+    assert.equal(await page.locator('.inq-work-row:not(.head)').count(), delayedCount);
+    await page.locator('.inq-work-counts [data-key="all"]').click();
+    await page.locator('.inq-work-row[data-k="inq-1"] .inq-work-open').click();
+    assert.equal(await page.evaluate(() => G.inqSelKey), 'inq-1');
+    assert.equal(await page.locator('.sp-detail').count(), 1);
+    await page.evaluate(() => inqCtlSetView('console'));
+    for (const width of [1440, 1024, 760, 390]) {
+      await page.setViewportSize({ width, height: 1000 });
+      assert.equal(await page.evaluate(() => { const e = document.querySelector('.inq-ctl-scroll'); return e.scrollWidth <= e.clientWidth; }), true, 'inquiry overflow at '+width);
+    }
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    if (process.env.INQUIRY_WORK_SCREENSHOT) await page.screenshot({ path: process.env.INQUIRY_WORK_SCREENSHOT, fullPage: true });
 
     await page.evaluate(() => {
       ME = { name: '황윤선', role: 'rep' };

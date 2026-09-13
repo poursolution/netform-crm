@@ -1,0 +1,49 @@
+/* Compact work surfaces. Existing theme and form controls stay intact. */
+.dw-fold{border:1px solid var(--line,#e4e9f0);border-radius:10px;background:#fff;margin:10px 0}
+.dw-fold>summary{padding:12px 16px;font-size:13px;font-weight:750;cursor:pointer;color:var(--ink)}
+.dw-fold>.dcard,.dw-fold>.contactedit{margin:0;border:0;box-shadow:none}
+.dw-fold>.contactedit{padding:16px}
+.dw-tabs{position:sticky;top:0;z-index:6;display:flex;flex-wrap:wrap;gap:4px;background:#fff;border-bottom:1px solid var(--line,#e4e9f0);padding:8px 0;margin-bottom:14px}
+.dw-tabs button{border:0;border-radius:6px;padding:10px 12px;background:transparent;color:var(--sub);font-size:12px;font-weight:750;cursor:pointer}
+.dw-tabs button[aria-pressed=true]{background:var(--ink,#182943);color:white}
+[data-workspace-group][hidden]{display:none!important}
+.dw-inquiry .facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.dw-inquiry-action{display:flex;justify-content:flex-end;margin:0 0 12px}
+.dw-asset-back{margin:0 0 12px}
+#detailView.dw-quick{max-width:740px!important}
+.dw-quick #dv-body>.brief,.dw-quick #dv-body>.journey-wrap,.dw-quick #dv-body>.detailtabs,.dw-quick #dv-body>.whywait,.dw-quick #dv-body>.stickytools{display:none!important}
+.dw-quick #dv-body>.dsec:not([data-sec="영업활동"]){display:none!important}
+.dw-quick .dw-quick-grid{display:block}
+.dw-quick .dw-quick-grid>.dcard:not(#activityFormCard),.dw-quick #contactCard{display:none!important}
+.dw-quick .relm-detail-context>div{display:none}
+.dw-quick .relm-detail-context .dw-full{border:0;background:transparent;color:var(--blue);padding:4px 0;font-size:12px;cursor:pointer}
+.dw-transition-context{padding:12px 14px;background:#f6f8fc;border:1px solid #e2e7f0;border-radius:8px;font-size:12px;margin-bottom:14px}
+.dw-transition-context p{margin:5px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.dw-transition-context small{color:var(--sub)}
+.exp-manage-contact{padding:14px 16px;border:1px solid #dae4f1;border-radius:10px;margin:12px 0;background:#fff}
+.exp-manage-contact span{display:block;color:var(--sub);font-size:11px;margin-bottom:6px}
+.exp-manage-contact strong{font-size:14px}
+.site-command-top,.exp-command>.eyebrow,.exp-command>h2,.exp-command>p,.rm-command-head,.cc-command-main>div:first-child,.gn-command-top .eyebrow,.gn-command-top h2,.gn-command-top p,.gn-command-actions>.tag{display:none!important}
+.site-command,.exp-command,.rm-command,.cc-command{padding:12px!important;border-radius:10px!important;background:#fff!important;color:var(--ink)!important;box-shadow:none!important}
+.site-health-grid,.exp-kpis,.rm-summary,.cc-command-stats{margin-top:0!important;gap:8px!important}
+.site-health-card,.exp-kpi,.rm-summary>button,.cc-command-stats>div{padding:10px 12px!important;min-height:0!important;background:#f5f7fb!important;color:var(--ink)!important;border:1px solid #e4e9f0!important}
+.site-health-card b,.exp-kpi b,.rm-summary b{font-size:20px!important;color:var(--ink)!important}
+.rm-summary span,.rm-summary small,.site-health-card span{color:var(--sub)!important}
+.filter-group-label span,.filter-group-label small{display:none!important}
+.filter-group-label{min-width:70px!important;padding:0!important}
+.gn-command{padding:12px!important}.gn-command-top{margin-bottom:8px!important}
+.dw-manager-table{overflow-x:auto}.dw-manager-table table{width:100%;border-collapse:collapse;font-size:13px;text-align:left}
+.dw-manager-table th,.dw-manager-table td{padding:12px;border-bottom:1px solid #e4e9f0}.dw-manager-table thead{color:var(--sub);font-size:12px;background:#f7f9fc}
+.dw-manager-table small{display:block;color:var(--sub);margin-top:5px;font-size:12px}
+.dw-quick #activityFormCard textarea{min-height:60px;height:60px}
+.dw-quick #activityFormCard,.dw-quick #nextActionCard{padding:14px}
+.dw-quick .relm-detail-context{padding:10px 14px;margin-bottom:12px}
+.dw-quick #dv-body>.dsec[data-sec="영업활동"]{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
+.dw-quick #nextActionCard{margin-top:0}
+.dw-quick .statuschip{white-space:nowrap;flex-shrink:0}
+#detailView.dw-transition #dv-body>*:not(#inlineTransition){display:none!important}
+#detailView.dw-transition #dv-body>#inlineTransition{display:block!important}
+#detailView.dw-transition{max-width:820px!important}
+#detailView.dw-transition #inlineTransition{margin:0}
+#detailView.dw-transition .sf-form{margin-top:0}
+@media(max-width:640px){.dw-tabs button{flex:1 1 28%;padding:9px 6px}.dw-inquiry .facts{grid-template-columns:1fr}.dw-quick #dv-body{padding:12px}.dw-quick .formgrid,.dw-quick #dv-body>.dsec[data-sec="영업활동"]{grid-template-columns:1fr}}

@@ -40,10 +40,20 @@ test('operational shell standardizes supported site labels without inventing a r
  assert.equal(overlay.shell({deals:[{id:'d2',site_address:'서울특별시 마포구 월드컵로 1',stage_code:'sent'}]}).deals[0].site,'영업기회 · d2');
 });
 
-test('PC inquiry linking rejects empty-site joins and prefers explicit ids',()=>{
+test('PC inquiry linking uses explicit or unique reverse IDs, never site names',()=>{
  const html=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
- assert.match(html,/if\(byId\)return byId;/);
- assert.match(html,/if\(!k\)return null;/);
+ const vm=require('node:vm'),a={id:'d1',site:'같은 현장'},b={id:'d2',site:'같은 현장'},q={id:'q1',site:'같은 현장'};
+ const ctx={B:{deals:[a,b]},inqKey:x=>x.id};vm.createContext(ctx);
+ vm.runInContext(html.slice(html.indexOf('function inquiryDealRefs('),html.indexOf('function flowIndex(')),ctx);
+ assert.equal(ctx.linkedDeal(q),null);
+ assert.equal(ctx.linkedDeal({...q,site:''}),null);
+ assert.equal(ctx.linkedDeal({...q,opportunity_id:'d2'}),b);
+ assert.equal(ctx.linkedDeal({...q,opportunity_id:'missing'}),null);
+ assert.equal(ctx.inquiryLinkUnresolved({...q,opportunity_id:'missing'}),true);
+ a.origin_inquiry_id=q.id;assert.equal(ctx.linkedDeal(q),a);
+ b.originInquiryId=q.id;assert.equal(ctx.linkedDeal(q),null);assert.equal(ctx.inquiryLinkUnresolved(q),true);
+ assert.equal(ctx.linkedDeal({...q,opportunity_id:'d2'}),null,'forward/reverse disagreement must not select a target');
+ assert.equal(ctx.linkedDeal({...q,deal_id:'d1',opportunity_id:'d2'}),null);
  assert.match(html,/q\.assignee_name\|\|q\.sales_assignee/);
 });
 

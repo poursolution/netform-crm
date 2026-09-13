@@ -40,7 +40,7 @@ function detailAction(focus){
  if(!CUR_DETAIL||CUR_DETAIL.kind!=='deal'||!isRelationship(CUR_DETAIL.item))return;
  if(focus==='activity'||focus==='contact'){if(typeof dccGoActivity==='function')dccGoActivity();else detailTabFocus('영업활동',true)}
  else if(focus==='next'){if(typeof dccGoActivity==='function')dccGoActivity();var n=document.getElementById('nextActionCard');if(n)n.scrollIntoView({block:'center'});var date=document.getElementById('dv-na-date');if(date)date.focus()}
- else if(focus==='owner'){detailTabFocus('개요',true);var a=document.getElementById('dv-assignee');if(a){a.scrollIntoView({block:'center'});a.focus()}}
+ else if(focus==='owner'){detailTabFocus('현장·견적',true);var a=document.getElementById('dv-assignee');if(a){a.scrollIntoView({block:'center'});a.focus()}}
  else if(focus==='return'){if(root.StageTransitionUI)StageTransitionUI.open(CUR_DETAIL.item,false,'first_contact');else openTransition()}
 }
 function decorateDetail(){
@@ -53,8 +53,8 @@ function decorateDetail(){
  if(form&&next){var section=form.closest('.dsec');if(section){section.appendChild(next);next.classList.add('relm-detail-next')}var h=form.querySelector('h3'),p=form.querySelector('p');if(h)h.textContent='연락 기록';if(p)p.textContent='실제 연락 내용과 결과를 기록하고, 아래에서 다음 연락일을 지정하세요.'}
 }
 var originalRenderDetail=root.renderDetail;
-root.renderDetail=function(){var value=originalRenderDetail.apply(this,arguments);decorateDetail();return value};
-function openRow(i,focus){var d=REL_CACHE[i];if(!d)return;G._detailPopup=true;drwDeal(JSON.stringify(d));decorateDetail();if(focus)setTimeout(function(){detailAction(focus)},60)}
+root.renderDetail=function(){var value=originalRenderDetail.apply(this,arguments);decorateDetail();if(root.DetailWorkspace)DetailWorkspace.decorate();return value};
+function openRow(i,focus){var d=REL_CACHE[i];if(!d)return;G.relationshipQuickKey=/^(activity|contact|next)$/.test(focus||'')?dealKey(d):null;G._detailPopup=true;drwDeal(JSON.stringify(d));decorateDetail();if(focus)setTimeout(function(){detailAction(focus)},60)}
 function row(d,i){var m=relationshipMeta(d),recent=recentOf(d),state=rowState(d),focus=!m.due?'next':(state==='upcoming'?'':'activity'),action=!m.due?'일정 등록':(state==='upcoming'?'상세보기':'연락 기록');
  return '<tr class="relm-row '+state+'"><td data-label="상태"><span class="relm-status">'+esc(flag(d))+'</span></td><td data-label="현장"><button class="relm-site" onclick="relationshipManagementOpen('+i+')">'+esc(d.site||d.site_name||'현장명 미입력')+'</button><small>'+esc(statusLabel(d))+'</small></td><td data-label="담당자">'+esc(repDisplay(repN(d.assignee))||'미배정')+'</td><td data-label="관계관리 사유" class="relm-reason">'+esc(reasonOf(d)||'사유 미입력')+'</td><td data-label="최근 접촉">'+esc(m.meaningfulAt?fmtD(m.meaningfulAt):'기록 없음')+'</td><td data-label="다음 연락">'+esc(m.due?(m.dueDays===0?'오늘':fmtD(m.due)):'미입력')+'</td><td data-label="조치"><button class="relm-action" onclick="relationshipManagementOpen('+i+',\''+focus+'\')">'+action+'</button></td></tr>';
 }

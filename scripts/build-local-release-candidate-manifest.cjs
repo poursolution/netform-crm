@@ -8,7 +8,16 @@ const cp = require('node:child_process');
 const root = path.resolve(__dirname, '..');
 const output = path.join(root, 'local-release-candidate-manifest.json');
 const runtimeFiles = [
+  'index.html',
   'crm.html',
+  'detail-workspace.js',
+  'detail-workspace.css',
+  'expansion-pool.js',
+  'operational-overlay.js',
+  'today-work-queue.js',
+  'today-work-queue.css',
+  'inquiry-workbench.js',
+  'inquiry-workbench.css',
   'inquiry-assignment-clarity.css',
   'inquiry-assignment-clarity.js',
   'relationship-management.css',

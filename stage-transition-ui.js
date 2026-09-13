@@ -34,18 +34,19 @@
   if(ctx.mobile)openSheet('단계별 정보 입력',html);else{
    let host=document.getElementById('inlineTransition');if(!host){host=document.createElement('div');host.id='inlineTransition';document.getElementById('dv-body').appendChild(host)}host.innerHTML=html;
   }
+  if(!ctx.mobile&&root.DetailWorkspace){document.getElementById('stage-transition-form').querySelector('header').insertAdjacentHTML('afterend',DetailWorkspace.transitionContext(ctx.deal,ctx.patch));}
   document.getElementById('sf-target').onchange=e=>{ctx.drafts[ctx.to]=collect();ctx.to=e.target.value;paint()};
   document.getElementById('sf-cancel').onclick=close;
   document.getElementById('stage-transition-form').onsubmit=e=>{e.preventDefault();save()};
  }
- function close(){if(ctx?.mobile)closeSheet();else document.getElementById('inlineTransition')?.remove();ctx=null}
+ function close(){const focus=ctx?.returnFocus;if(ctx?.mobile)closeSheet();else{document.getElementById('inlineTransition')?.remove();document.getElementById('detailView')?.classList.remove('dw-transition')}ctx=null;if(focus?.isConnected&&focus.getClientRects().length)focus.focus()}
  function open(deal,mobile,to){
   const from=mobile?deal.code:dealStage(deal),choices=S.choices(from);
   if(!choices.length||S.terminal.includes(deal.outcome)){(mobile?toast:alert)('종료된 영업기회는 다시 열지 않습니다. 추가 니즈는 새 영업기회로 등록해 주세요.');return}
   const target=to||((S.normal[from]||[]).find(k=>choices.includes(k)))||choices[0];
   if(!choices.includes(target)){(mobile?toast:alert)('Closed Won은 준공 완료 확인 후에만 가능합니다.');return}
-  ctx={deal,mobile,from,to:target,patch:mobile?null:itemPatch(deal,'deal'),drafts:{},quotes:mobile?quoteVersionsM(deal):execQuoteVersions(deal)};
-  paint();document.getElementById('stage-transition-form')?.scrollIntoView({block:'start',behavior:'smooth'});
+  ctx={deal,mobile,from,to:target,patch:mobile?null:itemPatch(deal,'deal'),drafts:{},quotes:mobile?quoteVersionsM(deal):execQuoteVersions(deal),returnFocus:document.activeElement};
+  paint();if(!mobile&&root.DetailWorkspace)document.getElementById('detailView')?.classList.add('dw-transition');document.getElementById('stage-transition-form')?.scrollIntoView({block:'start'});document.getElementById('sf-target')?.focus();
  }
  function save(){
   if(!ctx||ctx.saving)return;

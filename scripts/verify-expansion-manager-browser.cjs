@@ -44,7 +44,7 @@ async function run(){
   assert.equal(await modal.locator('.exp-manage-history li').count(),1);
   assert.equal(await modal.locator('.exp-manage-actions input[type="date"]').count(),1);
   assert.equal(await page.evaluate(()=>document.activeElement.classList.contains('exp-manage-close')),true);
-  assert.equal(await page.locator('.exp-board-column').first().evaluate(node=>node.getBoundingClientRect().height),boardHeight);
+  assert.ok(Math.abs(await page.locator('.exp-board-column').first().evaluate(node=>node.getBoundingClientRect().height)-boardHeight)<1,'board height is stable within subpixel rounding');
   await modal.locator('.exp-manage-close').click();
   assert.equal(await modal.getAttribute('aria-hidden'),'true');
   await page.waitForFunction(()=>document.activeElement.classList.contains('exp-board-launch'));
