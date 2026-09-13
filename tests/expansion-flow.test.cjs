@@ -37,7 +37,7 @@ test('확장 목록은 독립 복합필터·전체연도 기한배지·고정 �
  assert.match(ui,/expansionStatusFilter/);
  assert.match(ui,/expansionDueFilter/);
  assert.match(ui,/globalDue/);
- assert.match(ui,/전체연도 기한도래/);
+ assert.match(ui,/접촉 필요/);
  assert.match(ui,/start=\(page-1\)\*pageSize/);
  assert.match(ui,/← 이전 20건/);
  assert.match(ui,/Pipeline 전환','보류'/);
@@ -49,11 +49,23 @@ test('확장관리는 관리자 목록 기본과 영업사원 보드 기본을 �
  const css=fs.readFileSync(require.resolve('../expansion-pool.css'),'utf8');
  assert.match(ui,/inqCtlIsAdmin\(\)\?'list':'board'/);
  assert.match(ui,/상태 보드/);
- assert.match(ui,/상세 목록/);
+ assert.match(ui,/관리 목록/);
  for(const status of F.statuses)assert.ok(ui.includes(status)||ui.includes('F.statuses'),status);
  assert.match(ui,/cardActions\(r,done\)/);
  assert.match(css,/\.exp-board\{/);
  assert.match(css,/scroll-snap-type/);
+});
+test('확장 목록은 큰 소개영역 없이 핵심 판단정보와 독립 관리창 진입만 제공한다',()=>{
+ const ui=fs.readFileSync(require.resolve('../expansion-pool.js'),'utf8');
+ const css=fs.readFileSync(require.resolve('../expansion-pool.css'),'utf8');
+ assert.doesNotMatch(ui,/과거 거래는 보존하고, 다음 기회를 찾습니다/);
+ assert.match(ui,/class="exp-queue-head"/);
+ assert.match(ui,/class="exp-site-link"/);
+ assert.match(ui,/\['담당자',[\s\S]*?\['다음 접촉',[\s\S]*?\['기존 수주',[\s\S]*?\['금액'/);
+ assert.match(ui,/ExpansionPool\.open\(this\.dataset\.id\)/);
+ assert.match(ui,/상세 관리와 실행은 관리창에서 진행합니다/);
+ assert.match(css,/\.exp-queue-row\.late/);
+ assert.match(css,/\.exp-site-link/);
 });
 test('확장 현장은 보드 아래로 펼치지 않고 독립 관리창에서 처리한다',()=>{
  const ui=fs.readFileSync(require.resolve('../expansion-pool.js'),'utf8');
