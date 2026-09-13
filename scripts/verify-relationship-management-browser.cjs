@@ -37,6 +37,8 @@ async function run(){
   });
 
   assert.equal(await page.locator('.relm-row').count(),5);
+  assert.deepEqual(await page.locator('.relm-pipeline span').allTextContents(),['유대고객','침묵관리','대기고객']);
+  assert.deepEqual(await page.locator('.relm-pipeline b').allTextContents(),['3건','1건','1건']);
   for(const key of ['today','overdue','stale'])assert.equal(await page.locator('.relm-counts [data-filter="'+key+'"] b').innerText(),'1');
   assert.equal(await page.locator('.relm-command,.relm-note,.relm-kpis').count(),0);
   assert.deepEqual(await page.locator('.relm-site').allTextContents(),['기한초과 관계현장','오늘 연락 관계현장','정보누락 관계현장','장기 미접촉 현장','예정 관계현장']);
@@ -46,7 +48,7 @@ async function run(){
   await page.locator('.relm-counts [data-filter="all"]').click();
   await page.getByRole('combobox',{name:'관계관리 담당자',exact:true}).selectOption('황윤선');
   assert.equal(await page.locator('.relm-row').count(),3);
-  await page.getByRole('combobox',{name:'관계유형',exact:true}).selectOption('waiting');
+  await page.locator('.relm-pipeline[data-type="waiting"]').click();
   assert.equal(await page.locator('.relm-row').count(),1);
   await page.locator('.relm-owner-issues [data-owner="황윤선"][data-kind="stale"]').click();
   assert.deepEqual(await page.locator('.relm-site').allTextContents(),['장기 미접촉 현장']);
