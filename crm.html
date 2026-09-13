@@ -6080,9 +6080,9 @@ function showSplitEdit(d,kind,body){
  setTimeout(function(){var x=b.querySelector('input:not([type=date]),select');if(x)x.focus()},30)
 }
 var QUICK_ACTIVITY_TYPES=['전화','문자','카카오','현장방문','견적','기타'];
-function splitInlinePanel(d){
+function splitInlinePanel(d,hideActions){
  var f=G.splitForm,k=dealKey(d);
- var bar='<div style="display:flex;gap:6px;flex-wrap:wrap">'
+ var bar=hideActions?'':'<div style="display:flex;gap:6px;flex-wrap:wrap">'
   +'<button class="mbadge '+(f==='act'?'blue':'gray')+'" style="padding:9px 14px;border:0;cursor:pointer;font-family:inherit" onclick="splitForm(\'act\')">＋ 한 일 기록</button>'
   +'<button class="mbadge '+(f==='next'?'blue':'gray')+'" style="padding:9px 14px;border:0;cursor:pointer;font-family:inherit" onclick="splitForm(\'next\')">🗓 다음 할 일</button>'
   +'<button class="mbadge '+(f==='stage'?'blue':'gray')+'" style="padding:9px 14px;border:0;cursor:pointer;font-family:inherit" onclick="splitForm(\'stage\')">→ 단계 바꾸기</button>'
@@ -6281,7 +6281,7 @@ function quickPanelHTML(d){
   return '<section class="quickpanel" id="pipeline-quick-panel"><div class="quickhero"><h3>'+esc(d.site||'현장명 미입력')+'</h3><p>'+esc(d.brand||'사업유형 미지정')+' · '+esc(repN(d.assignee))+' · '+esc(stageNoLabel(dealStage(d)))+' · 공사 '+esc(constructionYearOf(d)==='미입력'?'일정 미입력':constructionYearOf(d)+'년')+'</p><strong>'+fmtAmt(oppAmt(d)||quoteAmt(d)||d.amt||0)+'</strong></div>'
   +'<div class="quickbody"><div class="quicksection"><h4>다음 행동</h4><div class="quicknext '+(dd!=null&&dd<0?'over':'')+'"><b>'+esc(na&&(na.text||na.title)||'다음 행동 미입력')+'</b><span>'+(na?esc(na.due||'기한 미입력')+(dd!=null?(dd<0?' · '+Math.abs(dd)+'일 초과 🔴':dd===0?' · 오늘':' · D-'+dd):''):'지금 다음 행동을 지정해 주세요')+'</span></div></div>'
   +'<div class="quicksection"><h4>관리소장 연락</h4>'+contact+'</div><div class="quicksection"><h4>최근 활동</h4><div class="quickrecent">'+recent+'</div></div>'
-  +'<div class="quickactions"><button class="primary" onclick="splitForm(\'act\')">＋ 한 일 기록</button><button onclick="splitForm(\'next\')">📅 다음 행동 예약</button><button onclick="splitForm(\'stage\')">단계 변경</button><button class="quickfull" onclick="openFullDealFromQuick()">전체 상세 보기 →</button></div>'+splitInlinePanel(d).replace(/^<div[^>]*>[\s\S]*<\/div>$/,'')+'</div></section>'}
+  +'<div class="quickactions"><button class="primary" onclick="splitForm(\'act\')">＋ 한 일 기록</button><button onclick="splitForm(\'next\')">📅 다음 행동 예약</button><button onclick="splitForm(\'stage\')">단계 변경</button><button class="quickfull" onclick="openFullDealFromQuick()">전체 상세 보기 →</button></div>'+splitInlinePanel(d,true)+'</div></section>'}
  function selectSplitDeal(el){
   if(!el)return;var list=el.parentElement,key=el.dataset.k,d;
   G.splitScroll=list?list.scrollTop:0;G.splitKey=key;G.splitForm=null;
@@ -6801,6 +6801,7 @@ function inqSplit(Q){
    +'<div class="sp-dh"><div style="flex:1;min-width:0"><h3>'+esc(sel.site||'현장명 미입력')+'</h3>'
      +'<div class="s">견적문의 · '+esc(sel.brand||'브랜드 미지정')+' · 영업 '+esc(inquiryRoutedOwner(sel)?repDisplay(inquiryRoutedOwner(sel)):'미배정')+(inquiryConsultant(sel)?' · 상담 '+esc(inquiryConsultant(sel)):'')+' · '+esc(fmtD(sel.at)||'접수일 미상')+'</div></div>'
      +'<i class="iqc-badge" style="background:var(--danger-bg);color:var(--danger)">'+p.label+'</i></div>'
+   +inquiryOriginalSummary(sel)
    +'<div class="sp-jour">'+steps+'</div>'
    +'<div class="sp-jl">'+FLOW_STEPS.map(function(n,i){return '<span class="'+(i===idx?'now':'')+'">'+esc(n.replace('견적문의 ','').replace('·현장파악','').replace('·실주·기타',''))+'</span>'}).join('')+'</div>'
    +(why?'<div class="sp-why">⚠ '+esc(why)+'</div>':'')
@@ -6946,13 +6947,15 @@ function exportPromotions(){
   setTimeout(function(){URL.revokeObjectURL(a.href)},1000);
 }
 /* 상세 안의 인계 라인 UI */
+// Keep the customer's words ahead of workflow controls, never inferred from a Deal.
+function inquiryOriginalSummary(q){
+ var detail=q.detail&&typeof q.detail==='object'?q.detail:{},raw=q.raw&&typeof q.raw==='object'?q.raw:{};
+ var message=q.message||(typeof q.detail==='string'?q.detail:detail.inquiry)||q.content||raw['문의내용']||q.note||'';
+ return '<section class="sp-inquiry-original" style="padding:12px 0"><b>고객 문의</b><div>'+esc(q.contact||q.contact_name||'문의자 미기록')+' · '+esc(q.phone||q.mobile||detail.phone||'연락처 미기록')+'</div><div style="white-space:pre-wrap;overflow-wrap:anywhere;margin-top:8px">'+esc(message||'문의 원문 미기록')+'</div><small>공종 · '+esc(q.work||q.work_type||detail.workType||'미기록')+'</small></section>';
+}
 function promoteBlock(q){
   var info=promotedInfo(q),ph=inqPhase(q),idx=flowIndex(q,'inq');
   if(info.unresolved)return '<div class="pl-box"><b>영업기회 연결 확인 필요</b><p>기존 연결 ID 또는 연결 대상이 모호합니다. 확인 전에는 새 영업기회를 만들지 않습니다.</p></div>';
-  var steps=[['접수',idx>=0],['응대',idx>=1],['견적서 발송',idx>=2||ph==='견적 발송완료'],['파이프라인',info.linked]];
-  var line='<div class="pl-line">'+steps.map(function(s,i){
-    return '<span class="pl-step'+(s[1]?' done':'')+'"><i>'+(s[1]?'✓':i+1)+'</i>'+s[0]+'</span>'
-      +(i<steps.length-1?'<span class="pl-arrow'+(steps[i+1][1]?' done':'')+'">→</span>':'')}).join('')+'</div>';
   var body;
   if(info.linked){
     var d=info.deal;
@@ -6967,7 +6970,7 @@ function promoteBlock(q){
   }else{
     body='<div class="pl-wait">아직 Qualified 전입니다 — 위 <b>🔄 상태 변경</b>에서 «현장방문예정» 또는 «견적서 발송예정·완료»를 고르면 <b>파이프라인으로 자동 유입</b>됩니다 <small style="display:block;margin-top:4px;color:var(--sub2)">설계서 §02 기준: 견적 요청 = 파이프라인 시작</small></div>';
   }
-  return '<div class="pl-box"><div class="pl-hd">견적문의 → 파이프라인 인계</div>'+line+body+'</div>';
+  return '<div class="pl-box"><div class="pl-hd">견적문의 → 파이프라인 인계</div>'+body+'</div>';
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -8298,6 +8301,6 @@ function paintCampaign(){var root=$('#campaign-root');if(!root)return;var L=camp
 </script>
 <link rel="stylesheet" href="stage-transition.css?v=20260905-1">
 <script src="stage-transition.js?v=20260905-1"></script>
-<script src="stage-transition-ui.js?v=20260913-workspace-1"></script>
+<script src="stage-transition-ui.js?v=20260913-detail-2"></script>
 <script src="./work-editor.js?v=20260907-buttons-1"></script><script>window.addEventListener('phase1:identity-cleared',function(){TOKEN=null;WRITE_Q=[];ME=null;if(typeof B!=='undefined')B=null;authGate(true);});window.addEventListener('phase1:profile',function(){WRITE_Q=Phase1.queue.list();});window.addEventListener('phase1:queue',function(){WRITE_Q=Phase1.queue.list();});</script></body>
 </html>

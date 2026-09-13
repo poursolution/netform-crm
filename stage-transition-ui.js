@@ -88,7 +88,9 @@
   openTransition=function(){if(CUR_DETAIL?.kind==='deal')return open(CUR_DETAIL.item,false);return oldOpen.apply(this,arguments)};
   confirmTransition=function(){if(CUR_DETAIL?.kind==='deal'){if(document.getElementById('stage-transition-form'))return save();return open(CUR_DETAIL.item,false)}return oldConfirm.apply(this,arguments)};
   const oldSplit=splitForm;
-  splitForm=function(kind){if(kind!=='stage')return oldSplit.apply(this,arguments);const d=splitDealSel();if(!d)return;oldSplit(null);drwDeal(JSON.stringify(d));return open(CUR_DETAIL.item,false)};
+  // The quick panel may have no visible detail drawer. Open its existing
+  // full-detail path before placing the transition form inside that drawer.
+  splitForm=function(kind){if(kind!=='stage')return oldSplit.apply(this,arguments);const d=splitDealSel();if(!d)return;oldSplit(null);if(typeof openFullDealFromQuick==='function')openFullDealFromQuick();else drwDeal(JSON.stringify(d));return open(CUR_DETAIL.item,false)};
   spSaveStage=function(){return splitForm('stage')};
  }
  function installMobile(){

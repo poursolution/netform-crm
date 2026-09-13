@@ -72,6 +72,17 @@ async function run() {
     await page.locator('.inq-work-row[data-k="inq-1"] .inq-work-open').click();
     assert.equal(await page.evaluate(() => G.inqSelKey), 'inq-1');
     assert.equal(await page.locator('.sp-detail').count(), 1);
+    assert.equal(await page.locator('.sp-detail .pl-line').count(), 0);
+    assert.equal(await page.locator('.sp-detail .sp-jour').count(), 1);
+    assert.equal(await page.locator('.sp-inquiry-original').count(), 1);
+    assert.equal(await page.evaluate(() => {
+      const a=document.querySelector('.sp-inquiry-original'),b=document.querySelector('.sp-jour');
+      return !!(a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING);
+    }), true);
+    assert.equal(await page.evaluate(() => {
+      const el=document.createElement('div');el.innerHTML=inquiryOriginalSummary({detail:{inquiry:'<img src=x onerror=alert(1)>원문'},contact_name:'고객'});
+      return !el.querySelector('img')&&el.textContent.includes('<img src=x onerror=alert(1)>원문');
+    }), true);
     await page.evaluate(() => inqCtlSetView('console'));
     for (const width of [1440, 1024, 760, 390]) {
       await page.setViewportSize({ width, height: 1000 });

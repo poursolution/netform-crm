@@ -118,6 +118,28 @@ async function run(){
 
   await page.evaluate(()=>dccGoActivity());await page.waitForTimeout(100);assert.equal(await page.locator('#dv-act-note').evaluate(e=>e===document.activeElement),true);
   await page.evaluate(()=>dccGoNext());await page.waitForTimeout(100);assert.equal(await page.locator('#dv-na-text').evaluate(e=>e===document.activeElement),true);
+  await page.evaluate(()=>{
+   closeDetail();G.splitKey=B.deals[0].id;G.splitForm=null;
+   const host=document.createElement('div');host.id='quick-regression-host';document.body.append(host);
+   // Isolate this component's rerender while keeping real quick-action handlers/forms.
+   paint=()=>{host.innerHTML=quickPanelHTML(B.deals[0])};paint();
+  });
+  for(const [kind,input] of [['act','sp-act-note'],['next','sp-na-text']]){
+   const button=page.locator('#quick-regression-host button[onclick="splitForm(\''+kind+'\')"]');
+   assert.equal(await button.count(),1,'duplicate quick '+kind+' button');
+   await button.click();
+   await page.waitForFunction(id=>!!document.querySelector('#splitEditModal.on #'+id),input);
+   assert.equal(await page.locator('#'+input).count(),1,'duplicate '+kind+' input');
+   await page.evaluate(()=>splitForm(null));
+   assert.equal(await page.locator('#splitEditModal.on').count(),0);
+  }
+  const stageButton=page.locator('#quick-regression-host button[onclick="splitForm(\'stage\')"]');
+  assert.equal(await stageButton.count(),1);
+  await stageButton.click();
+  await page.waitForSelector('#inlineTransition');
+  assert.equal(await page.locator('#inlineTransition').count(),1);
+  assert.equal(await page.locator('#splitEditModal.on').count(),0);
+  await page.evaluate(()=>closeTransition());
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({status:'PASS',activity_filter_clicks:18,draft_preserved:true,scroll_preserved:true,timeline_accordion:true,timeline_more:true,favorite_toggle:true,detail_tabs:5,next_action_types:groups.length,shortcut_actions:4,validation_paths:2,inline_editors:2,owner_choices:ownerChoiceCount,wired_buttons:inventory.total,external_requests:externalRequests,business_writes:0}));
  }finally{await browser.close();await new Promise(resolve=>srv.close(resolve))}
