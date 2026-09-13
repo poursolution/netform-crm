@@ -2022,27 +2022,20 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
       <div class="moneyrow" id="d-money" data-role="lead analysis exec"></div>
       <div id="d-flow-summary" data-role="lead analysis exec"></div>
       <div id="d-issues" data-role="lead analysis exec"></div>
-      <section class="dh-section" data-role="lead analysis exec">
-      <div id="d-rep-summary"></div>
-      <details class="dh-details"><summary>담당자 상세 분석 펼치기</summary>
-      <div id="d-repflow"></div>
-      <!-- 담당자 표는 «견적문의 → 메이드 → 수주» 를 한 줄로 읽는 자리라 폭을 다 쓴다.
-           대표 화면도 «같은» 표를 쓴다 — 간소판을 따로 두면 두 화면의 숫자가 갈라진다. -->
-      <div class="card" id="d-repmgmt"></div>
-      </details></section>
-      <details class="dh-section dh-details" id="d-analysis" data-role="lead analysis exec">
-      <summary>추가 분석 <span>사업유형 · Stage · 추이 · 전년비 · 병목</span></summary>
+      <div id="d-rep-summary" data-role="lead analysis exec"></div>
+      <section class="dh-section dashboard-analysis" id="d-analysis" data-role="lead analysis exec">
+      <header class="dashboard-analysis-head"><div><h3>상세 분석</h3><p>필요한 관점만 선택해서 봅니다.</p></div></header>
       <div id="d-analysis-tabs" role="tablist" aria-label="추가 분석"></div>
-      <div id="dh-panel-brand" role="tabpanel"><div id="d-stagebrand"></div></div>
-      <div id="dh-panel-stage" role="tabpanel" hidden><div id="d-pipe"></div><div id="d-drill"></div></div>
-      <div id="dh-panel-trend" role="tabpanel" hidden><div class="card" id="d-trend"></div></div>
-      <div id="dh-panel-yoy" role="tabpanel" hidden><div class="card" id="d-yoy"></div></div>
-      <div id="dh-panel-neck" role="tabpanel" hidden><div class="card" id="d-neck2"></div></div>
-      <div id="dh-panel-health" role="tabpanel" hidden><div class="card" id="d-health"></div><div class="card" id="d-neck"></div></div>
-      <div id="dh-panel-reps" role="tabpanel" hidden><div id="d-charts"></div></div>
-      <div id="dh-panel-origin" role="tabpanel" hidden><div class="card" id="d-origin"></div></div>
-      <div id="dh-panel-today" role="tabpanel" hidden><div class="card" id="d-today"></div></div>
-      </details>
+      <div id="dh-panel-overview" role="tabpanel" hidden></div>
+      <div id="dh-panel-flow" role="tabpanel" hidden><div id="d-pipe"></div><div id="d-drill"></div><div id="d-stage-velocity"></div></div>
+      <div id="dh-panel-reps" role="tabpanel" hidden><div id="d-charts"></div><div class="dashboard-rep-link"><button onclick="goPage('repmanage')">영업사원 관리에서 코칭하기 →</button></div></div>
+      <div id="dh-panel-brand" role="tabpanel" hidden><div id="d-brand-situation"></div><div class="card" id="d-origin"></div></div>
+      <div id="dh-panel-neck" role="tabpanel" hidden><div class="card" id="d-health"></div><div class="card" id="d-neck"></div><div class="card" id="d-neck2"></div><div class="card" id="d-today"></div></div>
+      <div id="dh-panel-trend" role="tabpanel" hidden><div class="card" id="d-trend"></div><div class="card" id="d-yoy"></div></div>
+      <div id="dh-panel-criteria" role="tabpanel" hidden></div>
+      <div id="d-stagebrand" hidden></div>
+      <div id="d-repflow" hidden></div><div id="d-repmgmt" hidden></div>
+      </section>
       <div class="card" id="d-mine" data-role="sales"></div>
       <!-- 구버전 대시보드(브랜드칩·문의 KPI·월별추이·도넛·담당자랭킹·알림)는 2026-09-02 제거.
            Control Tower 와 정보가 겹쳐 첫 화면이 다시 복잡해졌다.
@@ -4114,6 +4107,37 @@ function paintTower(){
    예전 대시보드(문의 KPI·월별추이·도넛·담당자 랭킹·알림)는 함께 그리면
    같은 이야기를 두 번 하게 되고 화면이 다시 복잡해져서 걷어냈다. */
 function paintDash(){paintTower();if(window.DetailWorkspace)DetailWorkspace.dashboardSummary()}
+
+/* ── 영업 대시보드 · 한 화면 요약 + 분석 탭 ──────────────────
+   대시보드는 전체 상태를 판단하고, 오늘 업무/영업사원 관리는 실행과 코칭을 맡는다. */
+function dashboardOpenRepManager(name){G.repManagerView='people';goPage('repmanage');setTimeout(function(){var i=REP_MANAGER_ROWS.map(function(r){return r.nm}).indexOf(name);if(i>=0)repManagerOpenDrawer(i)},80)}
+function dashboardCompactMoney(){var host=$('#d-money');if(!host)return;var Q=dashboardInquiryScope().filter(function(q){return inPeriod(inquiryDate(q))}),current=dashboardSnapshotDeals(),near=current.filter(function(d){return ['compete','imminent','bidding','contract'].indexOf(dealStage(d))>=0}),won=wonInPeriod(),risk=current.filter(function(d){return liveActs().some(function(a){return a.f(d)})}),cards=[
+  {label:'견적문의',value:Q.length+'건',sub:periodLabel()+' 유입',tone:'blue',go:"towerDrill('inq')"},
+  {label:'Pipeline',value:eok(sumBy(current,oppAmt)),sub:current.length+'건 · 현재',tone:'indigo',go:"towerDrill('pipe')"},
+  {label:'수주임박',value:eok(sumBy(near,oppAmt)),sub:near.length+'건 · 경쟁 이후',tone:'amber',go:"towerDrill('near')"},
+  {label:'계약완료',value:eok(sumBy(won,function(d){return wonAmt(d)||oppAmt(d)})),sub:won.length+'건 · 확정일 기준',tone:'green',go:"towerDrill('won')"},
+  {label:'관리위험',value:risk.length+'건',sub:eok(sumBy(risk,oppAmt))+' · 현재',tone:'red',go:"towerDrill('risk')"}
+ ];var linked=inqMadeStats();host.className='dashboard-compact-money';host.innerHTML='<header><div><span>이번 영업 상태</span><h2>'+esc(periodLabel())+'</h2></div><button onclick="dashboardAnalysisTab(\'criteria\')">견적문의 연결률 <b>'+pctOf(linked._made,linked._n)+'%</b> <i>ⓘ</i></button></header><div>'+cards.map(function(c){return '<button class="'+c.tone+'" onclick="'+c.go+'"><span>'+c.label+'</span><b>'+c.value+'</b><small>'+c.sub+'</small></button>'}).join('')+'</div>'}
+function dashboardCompactFlow(){var host=$('#d-flow-summary');if(!host)return;var Q=dashboardInquiryScope().filter(function(q){return inPeriod(inquiryDate(q))}),responded=Q.filter(inquiryResponded),made=Q.filter(inquiryHasMadeDeal),A=towerBase(),comp=A.filter(function(d){return ['compete','imminent','bidding','contract','construction','completion','won'].indexOf(dealStage(d))>=0}),won=wonInPeriod(),steps=[
+  {label:'문의',n:Q.length,go:'towerGoInq(G.rep)'},
+  {label:'응대',n:responded.length,rate:pctOf(responded.length,Q.length),go:"dashboardGoRisk('noResponse')"},
+  {label:'연결기회',n:made.length,rate:pctOf(made.length,Q.length),go:"towerGoInq(G.rep,'made')"},
+  {label:'경쟁·입찰',n:comp.length,rate:pctOf(comp.length,A.length),go:"dashboardGoStages('compete|imminent|bidding|contract','경쟁·입찰',false)"},
+  {label:'계약',n:won.length,rate:pctOf(won.length,A.length),go:'towerGoWon(G.rep)'}
+ ];host.innerHTML='<section class="dashboard-compact-flow"><header><div><h3>영업 흐름</h3><p>유입부터 계약까지의 현재 전환 흐름</p></div><button onclick="dashboardAnalysisTab(\'flow\')">상세 흐름 →</button></header><div>'+steps.map(function(s,i){return '<button onclick="'+s.go+'"><span>'+s.label+'</span><b>'+s.n+'<small>건</small></b>'+(i?'<em>↘ '+s.rate+'%</em>':'<em>기준</em>')+'</button>'}).join('')+'</div></section>'}
+function dashboardCompactIssues(){var host=$('#d-issues');if(!host)return;var act=dashboardSnapshotDeals(),nextReady=metricReady('next'),dueReady=metricReady('due'),overdue=dueReady?act.filter(function(d){return issueSet(d).indexOf('overdue')>=0}):[],noNext=nextReady?act.filter(function(d){return issueSet(d).indexOf('nextMissing')>=0}):[],stale=act.filter(function(d){return issueSet(d).indexOf('stale')>=0}),rows=[
+  {label:'기한초과',rows:overdue,ready:dueReady,cls:'critical',go:"dashboardGoRisk('overdue')"},
+  {label:'Next 없음',rows:noNext,ready:nextReady,cls:'watch',go:"dashboardGoRisk('nextMissing')"},
+  {label:'장기정체',rows:stale,ready:true,cls:'stale',go:"dashboardGoRisk('stale')"}
+ ];host.innerHTML='<section class="dashboard-compact-issues"><header><div><h3>지금 문제</h3><p>위험 현장은 대시보드에서 참고하고 오늘 업무에서 처리합니다.</p></div><button onclick="goPage(\'today\')">오늘 업무에서 처리 →</button></header><div>'+rows.map(function(x){return '<button class="'+x.cls+'" '+(x.ready?'onclick="'+x.go+'"':'disabled')+'><i></i><span>'+x.label+'</span><b>'+(x.ready?x.rows.length+'건':'측정 불가')+'</b><small>'+(x.ready?eok(sumBy(x.rows,oppAmt)):'서버 데이터 없음')+'</small></button>'}).join('')+'</div></section>'}
+function dashboardCompactReps(){var host=$('#d-rep-summary');if(!host)return;var rows=towerRepSnapshot('internal').rows,flow={};try{repFlowData(true).forEach(function(r){flow[r.nm]=r})}catch(e){}host.innerHTML='<section class="dashboard-compact-reps"><header><div><h3>담당자 상태</h3><p>결과 비교만 보고, 코칭은 영업사원 관리에서 이어갑니다.</p></div><button onclick="goPage(\'repmanage\')">영업사원 관리 →</button></header><div class="dashboard-rep-head"><span>담당자</span><span>상태</span><span>Pipeline</span><span>수주임박</span><span>계약완료</span><span>위험</span><span>Stage 전진</span></div>'+rows.map(function(r){var f=flow[r.nm],state=r.risk>=4?{label:'개입',cls:'critical'}:r.risk?{label:'확인',cls:'watch'}:{label:'정상',cls:'ok'},move=f?(f.weekTracked?(f.weekAdvanced?'+':'')+f.weekAdvanced:'수집 중'):'—';return '<button class="dashboard-rep-row" data-name="'+escAttr(r.nm)+'" onclick="dashboardOpenRepManager(this.dataset.name)"><b>'+esc(r.nm)+'</b><em class="'+state.cls+'">'+state.label+'</em><span>'+eok(r.p)+'</span><span>'+eok(r.c)+'</span><span>'+eok(r.w)+'</span><strong>'+r.risk+'</strong><span>'+move+'</span></button>'}).join('')+'</section>'}
+function dashboardAnalysisCriteria(){var host=$('#dh-panel-criteria');if(!host)return;var im=inqMadeStats();host.innerHTML='<div class="dashboard-criteria"><section><span>DATA QUALITY</span><h3>집계 기준</h3><p>메인 화면에는 숫자와 변화만 보여주고, 데이터 해석 기준은 이곳에서 확인합니다.</p></section><div><article><b>견적문의 연결률 '+pctOf(im._made,im._n)+'%</b><p>전체 '+im._n+'건 중 '+im._made+'건이 현장명 기준으로 Pipeline과 연결됐습니다. 과거 문의는 연결정보가 부족해 실제보다 낮을 수 있습니다.</p><button onclick="G.inqView=String.fromCharCode(108,105,110,107);goPage(String.fromCharCode(105,110,113))">연결 확인 →</button></article><article><b>결과와 Process 분리</b><p>계약완료는 확정일과 실제 수주금액, Pipeline 위험은 응대·Next·기한 기록을 기준으로 봅니다. 두 값을 합쳐 개인을 평가하지 않습니다.</p></article><article><b>담당자 성과 범위</b><p>운영관리자는 개인 성과 순위에서 제외되며 회사 전체 금액에는 포함됩니다. 사업유형과 최초 유입 기여는 서로 다른 분석축이므로 합산하지 않습니다.</p></article></div></div>'}
+function dashboardArrangeAnalysis(){var source=$('#d-stagebrand'),split=source&&source.querySelector('.dashboard-split-grid'),velocity=$('#d-stage-velocity'),brand=$('#d-brand-situation');if(velocity)velocity.innerHTML='';if(brand)brand.innerHTML='';if(split){var cards=Array.prototype.slice.call(split.children);if(cards[0]&&velocity)velocity.appendChild(cards[0]);if(cards[1]&&brand)brand.appendChild(cards[1])}dashboardAnalysisCriteria()}
+function dashboardAnalysisTab(tab){var allowed=['overview','flow','reps','brand','neck','trend','criteria'];G.dashboardAnalysisTab=allowed.indexOf(tab)>=0?tab:'overview';paintDashboardAnalysisTabs();var target=G.dashboardAnalysisTab==='overview'?$('#d-money'):$('#d-analysis');if(target)setTimeout(function(){target.scrollIntoView({behavior:'smooth',block:'start'})},0)}
+function paintDashboardAnalysisTabs(){var host=$('#d-analysis-tabs');if(!host)return;var tab=G.dashboardAnalysisTab||'overview',defs=[['overview','전체현황'],['flow','영업흐름'],['reps','담당자'],['brand','사업유형'],['neck','병목'],['trend','추이'],['criteria','집계 기준 ⓘ']];host.innerHTML=defs.map(function(x){return '<button class="'+(tab===x[0]?'on':'')+'" onclick="dashboardAnalysisTab(\''+x[0]+'\')">'+x[1]+'</button>'}).join('');defs.forEach(function(x){var panel=$('#dh-panel-'+x[0]);if(panel)panel.hidden=tab!==x[0]});var section=$('#d-analysis');if(section)section.classList.toggle('overview-selected',tab==='overview')}
+function paintDashboardControlSummary(){dashboardCompactMoney();dashboardCompactFlow();dashboardCompactIssues();dashboardCompactReps();dashboardArrangeAnalysis();paintDashboardAnalysisTabs();var headline=$('#d-headline');if(headline){headline.innerHTML='';headline.hidden=true}}
+var _dashboardHierarchyPaintDash=paintDash;
+paintDash=function(){paintTower();var role=G.homeRole||'lead';if(role!=='sales'){paintTowerOrigin();paintTowerCharts();paintExecYoY();paintTowerNeck2();paintTowerAction()}if(window.DetailWorkspace)DetailWorkspace.dashboardSummary();if(role!=='sales')paintDashboardControlSummary()}
 
 /* ═══ 담당자 마스터 · 기준일 규칙 (공용) ═══ */
 var REPS=['황윤선','이필선','한준엽','정정훈','김성민','조현식','송보람','경남지사','이승우'];
@@ -8374,7 +8398,7 @@ function paintCampaign(){var root=$('#campaign-root');if(!root)return;var tab=G.
   loadData();
 });
 </script>
-<link rel="stylesheet" href="p2-operational-polish.css?v=20260914-rep-control-1">
+<link rel="stylesheet" href="p2-operational-polish.css?v=20260914-dashboard-control-1">
 <link rel="stylesheet" href="stage-transition.css?v=20260905-1">
 <script src="stage-transition.js?v=20260905-1"></script>
 <script src="stage-transition-ui.js?v=20260913-detail-2"></script>
