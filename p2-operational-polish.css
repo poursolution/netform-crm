@@ -1,0 +1,15 @@
+/* P2 operational polish: dense work queues, not presentation dashboards. */
+.site-command{padding:18px 20px!important;border-radius:18px!important}
+.site-command-top{align-items:center!important;margin-bottom:12px!important}
+.site-command .eyebrow,.site-command-meta{display:none!important}
+.site-command h2{font-size:25px!important;margin:0 0 4px!important}
+.site-command p{margin:0!important;max-width:none!important}
+.site-health-grid{grid-template-columns:repeat(6,minmax(105px,1fr))!important;gap:8px!important}
+.site-health-card{min-height:62px!important;padding:10px 12px!important}
+.site-toolbar{margin-top:10px!important}
+.rm-owner-interventions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0 0}
+.rm-owner-interventions button{display:grid;grid-template-columns:1fr auto;gap:3px 10px;text-align:left;padding:11px 13px;border:1px solid #e1e7f0;border-radius:12px;background:#fff;color:#18243a;cursor:pointer}
+.rm-owner-interventions button:hover{border-color:#3264e6;background:#f7f9ff}
+.rm-owner-interventions strong{font-size:14px}.rm-owner-interventions b{grid-row:1/3;grid-column:2;align-self:center;color:#d62d4c;font-size:17px}
+.rm-owner-interventions span{font-size:12px;color:#69758a}
+@media(max-width:900px){.site-health-grid{grid-template-columns:repeat(3,1fr)!important}.rm-owner-interventions{grid-template-columns:1fr}}

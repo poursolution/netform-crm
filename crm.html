@@ -3929,7 +3929,7 @@ repSupportRows=function(){var rows=_repSupportRowsSorted(),order=['initial','rap
 var _supportPaintRepManagement=paintRepManagement;
 paintRepManagement=function(){_supportPaintRepManagement();var root=$('#rep-management-root');if(!root)return;var sections=root.querySelectorAll('.rm-section'),support=repSupportHTML(repSupportRows());if(sections.length>1)sections[1].insertAdjacentHTML('afterend',support);else root.insertAdjacentHTML('beforeend',support);var tools=root.querySelector('.rm-support-tools');if(tools)tools.insertAdjacentHTML('beforeend','<button onclick="repSupportSeason()">명절·시즌 문자 →</button>');var ren={'03 · BOTTLENECK':'04 · BOTTLENECK','04 · MOVEMENT':'05 · MOVEMENT','05 · EXECUTION':'06 · EXECUTION','06 · CAPACITY':'07 · CAPACITY','07 · MANAGER NOTE':'08 · MANAGER NOTE'};root.querySelectorAll('.rm-section-head>div>span').forEach(function(x){if(ren[x.textContent])x.textContent=ren[x.textContent]})};
 var _managerActionFirstPaint=paintRepManagement;
-paintRepManagement=function(){_managerActionFirstPaint();var root=$('#rep-management-root'),shell=root&&root.querySelector('.rm-shell');if(!shell)return;shell.classList.add('manager-action-first');var sections=Array.prototype.slice.call(shell.children),intervention=sections.find(function(section){var h=section.querySelector&&section.querySelector('.rm-section-head h3');return h&&h.textContent==='오늘 관리자 개입'});if(intervention){var command=shell.querySelector('.rm-command');shell.insertBefore(intervention,command?command.nextSibling:shell.firstChild)}};
+paintRepManagement=function(){_managerActionFirstPaint();var root=$('#rep-management-root'),shell=root&&root.querySelector('.rm-shell');if(!shell)return;shell.classList.add('manager-action-first');var sections=Array.prototype.slice.call(shell.children),intervention=sections.find(function(section){var h=section.querySelector&&section.querySelector('.rm-section-head h3');return h&&h.textContent==='오늘 관리자 개입'});if(intervention){var command=shell.querySelector('.rm-command');shell.insertBefore(intervention,command?command.nextSibling:shell.firstChild);var owners=REP_MANAGER_ROWS.filter(function(r){return r.risk||r.noNext||r.stale}).sort(function(a,b){return (b.risk-a.risk)||(b.noNext-a.noNext)||(b.stale-a.stale)});intervention.insertAdjacentHTML('beforeend','<div class="rm-owner-interventions" aria-label="담당자별 관리자 개입 통계">'+owners.map(function(r){return '<button data-rep="'+escAttr(r.nm)+'" onclick="repManagerOpenDrawer(REP_MANAGER_ROWS.map(function(x){return x.nm}).indexOf(this.dataset.rep))"><strong>'+esc(r.nm)+'</strong><span>Next 없음 '+r.noNext+' · 장기정체 '+r.stale+'</span><b>'+r.risk+'건</b></button>'}).join('')+'</div>')}};
 
 /* ── 오늘 홈 · 찾으러 다니지 않고 여기서 바로 시작한다 ───────── */
 var TODAY_ADMIN_INQUIRY=[],TODAY_ADMIN_PIPELINE=[],TODAY_REP_PRIORITY=[],TODAY_REP_TASKS=[],TODAY_ADMIN_VISIBLE_LIMIT=8,TODAY_INQUIRY_RECENT_DAYS=14;
@@ -8347,6 +8347,7 @@ paintCampaign=function(){
   loadData();
 });
 </script>
+<link rel="stylesheet" href="p2-operational-polish.css?v=20260913-1">
 <link rel="stylesheet" href="stage-transition.css?v=20260905-1">
 <script src="stage-transition.js?v=20260905-1"></script>
 <script src="stage-transition-ui.js?v=20260913-detail-2"></script>
