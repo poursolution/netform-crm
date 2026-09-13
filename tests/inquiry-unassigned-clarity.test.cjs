@@ -151,3 +151,40 @@ test('duplicate inquiry pairs use the assigned row as the single operational rep
   assert.deepEqual(Array.from(rows[0]._canonicalDuplicateIds), ['empty', 'owned']);
   assert.equal(rows[1].id, 'later-legitimate');
 });
+
+test('UUID-resolved owner wins over a stale legacy name after reassignment', () => {
+  const api = runtime();
+  const id = '33333333-3333-4333-8333-333333333333';
+  api.B.users = [{ user_id: id, name: '정정훈' }];
+  const q = { id: 'reassigned', assigned_to: id, assignee_name: '김성민', assignee: '김성민' };
+  api.mergeInquiryAssignmentTruth(q, { assignee_name: '김성민' }, q.id);
+  assert.equal(api.inquiryRoutedOwner(q), '정정훈');
+  assert.equal(api.inquiryAssigned(q), true);
+});
+
+test('explicit server unassignment cannot be resurrected by raw payload or history', () => {
+  const api = runtime();
+  const q = { id: 'returned-server', assigned_to: null, assignee_name: '',
+    assignee: '김성민', raw: { 담당자: '김성민' },
+    assignment_history: [{ to_owner: '김성민', changed_at: '2026-09-01T00:00:00Z' }] };
+  assert.equal(api.inquiryAssigned(q), false);
+  api.mergeInquiryAssignmentTruth(q, { assignee: '김성민' }, q.id);
+  assert.equal(api.inquiryAssigned(q), false);
+  assert.equal(api.inquiryRoutedOwner(q), '');
+});
+
+test('name-only server records and alias-only legacy records remain readable', () => {
+  const api = runtime();
+  assert.equal(api.inquiryRoutedOwner({ assigned_to: null, assignee_name: '조재연' }), '조재연');
+  assert.equal(api.inquiryRoutedOwner({ raw: { 담당자: '송보람' } }), '송보람');
+});
+
+test('an operations-team label alone cannot fabricate a personal assignment', () => {
+  const api = runtime();
+  api.repN = value => value === '서비스운영팀' ? '송보람' : String(value || '').trim();
+  assert.equal(api.inquiryAssigned({ assigned_to: null, assignee_name: '서비스운영팀' }), false);
+  assert.equal(api.inquiryRoutedOwner({ assigned_to: null, assignee_name: '서비스운영팀' }), '');
+  const id = '44444444-4444-4444-8444-444444444444';
+  api.B.users = [{ user_id: id, name: '송보람' }];
+  assert.equal(api.inquiryRoutedOwner({ assigned_to: id, assignee_name: '서비스운영팀' }), '송보람');
+});

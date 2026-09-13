@@ -97,6 +97,21 @@ async function run() {
       { id: 'server-owned', owner: '김성민', assigned: true },
       { id: 'server-empty', owner: '', assigned: false }
     ]);
+    const authority = await page.evaluate(() => {
+      const userId = '44444444-4444-4444-8444-444444444444';
+      B.users = [{ user_id: userId, name: '정정훈' }];
+      const rows = [
+        { id: 'changed-owner', assigned_to: userId, assignee_name: '김성민' },
+        { id: 'returned-owner', assigned_to: null, assignee_name: '', raw: { 담당자: '김성민' }, assignment_history: [{ to_owner: '김성민' }] },
+        { id: 'department-only', assigned_to: null, assignee_name: '서비스운영팀' },
+        { id: 'recorded-consultant', assigned_to: null, assignee_name: '조재연' }
+      ];
+      return rows.map(q => ({ owner: inquiryRoutedOwner(q), assigned: inquiryAssigned(q) }));
+    });
+    assert.deepEqual(authority, [
+      { owner: '정정훈', assigned: true }, { owner: '', assigned: false },
+      { owner: '', assigned: false }, { owner: '조재연', assigned: true }
+    ]);
     console.log(JSON.stringify({ status: 'PASS', unassigned_before: 3, unassigned_after: 2, duplicate_pair: 'assigned-representative', reason_evidence: ['unrecorded', 'sync_failure', 'manual_unassign'], oldest_first: true, direct_assignment: 'saved-and-reflected', reload_server_truth: 'PASS', speculative_reasoning: false, network_scope: 'localhost-only', captured_writes: 1, external_writes: 0 }));
   } finally { await browser.close(); await new Promise(resolve => srv.close(resolve)); }
 }

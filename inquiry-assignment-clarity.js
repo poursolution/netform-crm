@@ -12,6 +12,9 @@
  function normalizedOwnerName(value){
   var name=firstText([value]);
   if(!name)return '';
+  // A department without a named person is not the approved named alias.
+  // Keep this ahead of repN, whose reporting aliases include team labels.
+  if(name.replace(/\s+/g,'')==='서비스운영팀')return '';
   if(/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(name))return '';
   name=typeof root.repN==='function'?root.repN(name):name;
   return /^(미배정|중복|중복건|없음|null|undefined|담당자 배정|배정완료)$/i.test(name)?'':name;
@@ -26,12 +29,19 @@
   return '';
  }
  function directOwnerIdentity(q){
+  // A canonical server pair can explicitly clear an owner. Inbound raw data
+  // and old display aliases must not revive that assignment after a refresh.
+  q=objectOf(q);
+  if(Object.prototype.hasOwnProperty.call(q,'assigned_to')&&Object.prototype.hasOwnProperty.call(q,'assignee_name')){
+   var canonicalId=firstText([q.assigned_to]),canonicalName=userNameForId(canonicalId)||normalizedOwnerName(q.assignee_name);
+   return {id:canonicalId,name:canonicalName,assigned:!!(canonicalId||canonicalName),source:canonicalId?'assigned_to':canonicalName?'owner_name':''};
+  }
   q=objectOf(q);var detail=objectOf(q.detail),raw=objectOf(q.raw||q.data),id=firstText([q.assigned_to,q.assignee_id,q.assigneeId,q.owner_id,q.ownerId,q.sales_rep_id,q.salesRepId]),name=firstText([
    q.assignee_name,q.sales_assignee,q.salesAssignee,q.assignee,q.owner_name,q.ownerName,q.owner,q.sales_rep_name,q.salesRepName,q.sales_rep,q.salesRep,
    detail.assignee_name,detail.sales_assignee,detail.owner_name,detail.sales_rep_name,detail['영업담당자'],detail['영업담당'],detail['배정담당자'],
    raw.assignee_name,raw.sales_assignee,raw.owner_name,raw.sales_rep_name,raw['영업담당자'],raw['영업담당'],raw['배정담당자'],raw['담당자명'],raw['담당자']
   ]);
-  name=normalizedOwnerName(name)||userNameForId(id);
+  name=userNameForId(id)||normalizedOwnerName(name);
   return {id:id,name:name,assigned:!!(id||name),source:id?'assigned_to':name?'owner_name':''};
  }
  function latestHistoryOwner(q){
@@ -76,7 +86,8 @@
    if(truth.assigned)return {id:truth.id||'',name:truth.name||userNameForId(truth.id)||'담당자 정보 확인',assigned:true,source:'server'};
    if(!queueHasLiveAssignment(typeof root.inqKey==='function'?root.inqKey(q):q.id))return {id:'',name:'',assigned:false,source:'server'};
   }
-  var direct=directOwnerIdentity(q);if(direct.assigned)return direct;
+  var direct=directOwnerIdentity(q);
+  if(direct.assigned||(Object.prototype.hasOwnProperty.call(q,'assigned_to')&&Object.prototype.hasOwnProperty.call(q,'assignee_name')))return direct;
   return latestHistoryOwner(q);
  };
  root.inquiryRecordedOwner=function(q){return root.inquiryOwnerIdentity(q).name};
