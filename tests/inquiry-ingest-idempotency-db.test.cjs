@@ -11,6 +11,10 @@ const migration = fs.readFileSync(path.join(
   __dirname,
   '../supabase/migrations/20260911090000_harden_inquiry_ingest_idempotency.sql'
 ), 'utf8');
+const mirrorMigration = fs.readFileSync(path.join(
+  __dirname,
+  '../supabase/migrations/20260913213000_harden_inquiry_mirror_race.sql'
+), 'utf8');
 
 const uuidA = '11111111-1111-4111-8111-111111111111';
 const uuidB = '22222222-2222-4222-8222-222222222222';
@@ -45,6 +49,8 @@ async function setup() {
       source text,
       work_type text,
       business_type text default '견적문의',
+      opportunity_id uuid,
+      deal_id uuid,
       raw jsonb default '{}'::jsonb,
       received_at timestamptz default clock_timestamp(),
       created_at timestamptz default clock_timestamp(),
@@ -72,6 +78,7 @@ async function setup() {
     end $fn$;
   `);
   await db.exec(migration);
+  await db.exec(mirrorMigration);
   await db.query("select set_config('request.jwt.claim.role', 'service_role', false)");
   return db;
 }
@@ -114,6 +121,26 @@ test('strict fingerprint joins sheet and webhook arrival but keeps another day s
     assert.notEqual(later.inquiry_id, direct.inquiry_id);
     assert.equal((await db.query('select count(*)::int n from public.inquiries')).rows[0].n, 2);
     assert.equal((await db.query('select sheet_row from public.inquiries where id=$1', [direct.inquiry_id])).rows[0].sheet_row, 501);
+  } finally {
+    await db.close();
+  }
+});
+
+test('different external keys and site labels still reuse one immediate opposite-path row', async () => {
+  const db = await setup();
+  try {
+    const direct = await ingest(db, {
+      event_id: 'webhook-77', phone: '010-7777-8888', brand: 'POUR솔루션',
+      site_name: '[부산] 근린생활시설', message: '직접 유입 문구', received_at: '2026-09-11T13:13:00+09:00'
+    });
+    const sheet = await ingest(db, {
+      event_id: 'sheet-415', sheet_row: 415, phone: '010-7777-8888', brand: 'POUR솔루션',
+      site_name: '근린생활시설', message: '시트 정리 문구', received_at: '2026-09-11T13:13:02+09:00'
+    });
+    assert.equal(sheet.inquiry_id, direct.inquiry_id);
+    assert.equal(sheet.matched_by, 'idempotency_alias');
+    assert.equal((await db.query('select count(*)::int n from public.inquiries')).rows[0].n, 1);
+    assert.equal((await db.query('select sheet_row from public.inquiries where id=$1', [direct.inquiry_id])).rows[0].sheet_row, 415);
   } finally {
     await db.close();
   }
