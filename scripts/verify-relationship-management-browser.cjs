@@ -36,21 +36,21 @@ async function run(){
    document.getElementById('authGate').classList.remove('on');window.__businessWrites=[];window.pushWrite=(op)=>{window.__businessWrites.push(op)};syncPage();
   });
 
-  assert.equal(await page.locator('.relm-card').count(),5);
-  assert.deepEqual(await page.locator('.relm-type-tabs button').allTextContents(),['전체 5','유대고객 3','침묵관리 1','대기고객 1']);
-  for(const key of ['today','overdue','missing'])assert.equal(await page.locator('.relm-counts [data-filter="'+key+'"] b').innerText(),'1');
-  assert.equal(await page.locator('.relm-board-group.stale .relm-card').count(),1);
+  assert.equal(await page.locator('.relm-matrix-cell').count(),12);
+  assert.equal(await page.locator('.relm-matrix-cell[data-type="rapport"][data-state="overdue"] b').innerText(),'1');
+  assert.equal(await page.locator('.relm-matrix-cell[data-type="silent"][data-state="today"] b').innerText(),'1');
+  assert.equal(await page.locator('.relm-matrix-cell[data-type="waiting"][data-state="missing"] b').innerText(),'1');
+  assert.equal(await page.locator('.relm-matrix-cell[data-type="rapport"][data-state="scheduled"] b').innerText(),'2');
   assert.equal(await page.locator('.relm-command,.relm-note,.relm-kpis').count(),0);
-  assert.deepEqual(await page.locator('.relm-card-site').allTextContents(),['기한초과 관계현장','오늘 연락 관계현장','정보누락 관계현장','장기 미접촉 현장','예정 관계현장']);
   assert.equal(await page.getByText('일반 파이프라인',{exact:true}).count(),0);
-  await page.locator('.relm-counts [data-filter="overdue"]').click();
-  assert.equal(await page.locator('.relm-card').count(),1);
-  await page.locator('.relm-counts [data-filter="all"]').click();
+  await page.locator('.relm-matrix-cell[data-type="rapport"][data-state="overdue"]').click();
+  assert.equal(await page.locator('.relm-matrix-drawer').count(),1);
+  assert.equal(await page.locator('.relm-drawer-row').count(),1);
+  await page.getByRole('button',{name:'닫기'}).click();
   await page.getByRole('combobox',{name:'관계관리 담당자',exact:true}).selectOption('황윤선');
-  assert.equal(await page.locator('.relm-card').count(),3);
-  await page.locator('.relm-type-tabs [data-type="waiting"]').click();
-  assert.equal(await page.locator('.relm-card').count(),1);
-  await page.locator('.relm-card-site').click();
+  assert.equal(await page.locator('.relm-matrix-cell[data-type="waiting"][data-state="missing"] b').innerText(),'1');
+  await page.locator('.relm-matrix-cell[data-type="waiting"][data-state="missing"]').click();
+  await page.locator('.relm-drawer-main').click();
   assert.equal(await page.locator('.relm-detail-context').count(),1);
   await page.locator('.relm-detail-context button').filter({hasText:'연락 기록'}).click();
   await page.waitForTimeout(120);
@@ -64,7 +64,8 @@ async function run(){
   await page.evaluate(()=>{closeDetail();G.relationshipType='all';G.relationshipRecent='all';G.relationshipSearch=''});
 
   await page.evaluate(()=>{AUTH_ON=true;ME={name:'이필선',role:'rep'};G.relationshipOwner='전체';G.relationshipFilter='all';paintRelationshipManagement()});
-  assert.equal(await page.locator('.relm-card').count(),2);
+  assert.equal(await page.locator('.relm-matrix-cell').count(),12);
+  assert.equal(await page.locator('.relm-matrix-cell[data-type="silent"][data-state="today"] b').innerText(),'1');
   assert.equal(await page.getByRole('combobox',{name:'관계관리 담당자',exact:true}).count(),0);
   assert.equal(await page.locator('.relm-owner-summary').count(),0);
 
@@ -77,7 +78,9 @@ async function run(){
   assert.deepEqual(await page.evaluate(()=>window.__businessWrites),[]);
 
   await page.evaluate(()=>{closeDetail();paintRelationshipManagement()});
-  const pcNoOverflow=await page.evaluate(()=>document.getElementById('relationship-root').scrollWidth<=document.getElementById('relationship-root').clientWidth);
+  const pcMetrics=await page.evaluate(()=>{const r=document.getElementById('relationship-root'),m=document.querySelector('.relm-matrix'),s=document.querySelector('.relm-shell');return {root:[r.clientWidth,r.scrollWidth],matrix:[m.clientWidth,m.scrollWidth],shell:[s.clientWidth,s.scrollWidth],children:Array.from(s.children).map(x=>[x.className,x.clientWidth,x.scrollWidth])}});
+  const pcNoOverflow=pcMetrics.root[1]<=pcMetrics.root[0];
+  if(!pcNoOverflow)console.error(JSON.stringify(pcMetrics));
   assert.equal(pcNoOverflow,true);
   if(process.env.VERIFY_SCREENSHOT)await page.screenshot({path:process.env.VERIFY_SCREENSHOT,fullPage:true});
   await page.setViewportSize({width:375,height:812});await page.evaluate(()=>paintRelationshipManagement());
@@ -93,12 +96,12 @@ async function run(){
   assert.equal(await page.evaluate(()=>B.deals[5].relationshipReason),'내년도 사업 검토');
   assert.deepEqual(await page.evaluate(()=>window.__businessWrites),['transition','activity','next_action']);
   await page.evaluate(()=>{closeDetail();const original=B.deals[3];B.deals=Array.from({length:51},(_,i)=>({...original,id:'scale-'+i,site:'대량검증 '+String(i).padStart(2,'0')}));G.relationshipFilter='all';G.relationshipOwner='전체';G.relationshipPage=1;paintRelationshipManagement()});
-  assert.equal(await page.locator('.relm-card').count(),15);
+  assert.equal(await page.locator('.relm-matrix-cell[data-type="rapport"][data-state="scheduled"] b').innerText(),'51');
   assert.equal(await page.locator('.relm-pager').count(),0);
   await page.getByRole('textbox',{name:'관계관리 현장 검색'}).fill('대량검증 50');
   await page.getByRole('button',{name:'검색',exact:true}).click();
-  assert.equal(await page.locator('.relm-card').count(),1);
-  console.log(JSON.stringify({status:'PASS',relationship_cards:5,overdue_filter:1,rep_scope:2,entry_reason_required:true,relationship_transition_success:true,return_editor_same_opportunity:true,contact_and_next_same_detail:true,type_specific_cards:true,compound_filters:true,top_15_per_status:true,search:true,pc_horizontal_scroll:false,mobile_horizontal_scroll:false,network_scope:'localhost-only',blocked_save_writes:0}));
+  assert.equal(await page.locator('.relm-matrix-cell[data-type="rapport"][data-state="scheduled"] b').innerText(),'1');
+  console.log(JSON.stringify({status:'PASS',matrix_cells:12,drawer_rows:1,rep_scope:true,entry_reason_required:true,relationship_transition_success:true,return_editor_same_opportunity:true,contact_and_next_same_detail:true,fixed_height_matrix:true,search:true,pc_horizontal_scroll:false,mobile_horizontal_scroll:false,network_scope:'localhost-only',blocked_save_writes:0}));
  }finally{await browser.close();await new Promise(resolve=>srv.close(resolve))}
 }
 

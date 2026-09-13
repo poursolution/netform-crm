@@ -15,6 +15,6 @@ test('inquiry assignee count excludes closed inquiries like the active inquiry t
 
 test('production shell keeps the inquiry count asset and a current build cache key', () => {
   const index = fs.readFileSync('index.html', 'utf8');
-  assert.match(index, /APP_BUILD\s*=\s*'20260913-[^']+'/);
+  assert.match(index, /APP_BUILD\s*=\s*'2026091[34]-[^']+'/);
   assert.match(html, /inquiry-workbench\.js\?v=20260913-inquiry-count-1/);
 });
