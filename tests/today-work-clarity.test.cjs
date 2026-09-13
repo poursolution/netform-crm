@@ -2,7 +2,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const queue=fs.readFileSync(require.resolve('../today-work-queue.js'),'utf8');
 const crm=fs.readFileSync(require.resolve('../crm.html'),'utf8');
-test('오늘업무는 단일 큐 렌더러를 사용한다',()=>assert.match(crm,/function paintTodayHome\(\).*TodayWorkQueue.render/));
+test('관리자 오늘업무는 견적문의와 파이프라인을 독립 업무함으로 렌더링한다',()=>{assert.match(crm,/function paintTodayHome\(\).*TodayWorkQueue.render/);assert.match(queue,/twq-admin-boards/);assert.match(queue,/rows\.filter\(x=>x\.kind==='inquiry'\)/);assert.match(queue,/rows\.filter\(x=>x\.kind!=='inquiry'\)/);});
 test('네 업무유형을 모으되 관계관리 Deal을 이중 집계하지 않는다',()=>{assert.match(queue,/inquiry:'견적문의',pipeline:'파이프라인',relationship:'관계관리',expansion:'확장관리'/);assert.match(queue,/base.pipeline.filter\(x=>!relationship/);assert.match(queue,/unique=new Map/)});
 test('같은 데이터로 상태 건수와 목록을 계산한다',()=>{assert.match(queue,/rows=scoped.filter\(x=>matches/);assert.match(queue,/scoped.filter\(x=>matches/)});
 test('확장 종료와 보류를 제외하고 계산일을 표시한다',()=>{assert.match(queue,/!root.ExpansionFlow.converted/);assert.match(queue,/계산 일정/);assert.match(queue,/!inferred&&n!==null&&n<0/)});

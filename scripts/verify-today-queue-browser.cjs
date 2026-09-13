@@ -24,7 +24,11 @@ async function run(){
    window.__opened=null;drwDeal=text=>window.__opened={type:'deal',id:JSON.parse(text).id};drwInq=text=>window.__opened={type:'inq',id:JSON.parse(text).id};ExpansionPool.open=id=>window.__opened={type:'expansion',id};todayAssignInquiry=id=>window.__opened={type:'assign',id};dccGoActivity=()=>window.__contact=true;
    goPage('today');
   });
-  assert.equal(await page.locator('.today-admin-boards,.today-command').count(),0);
+  assert.equal(await page.locator('.twq-admin-boards').count(),1);
+  assert.equal(await page.locator('.today-admin-inquiry').count(),1);
+  assert.equal(await page.locator('.today-admin-pipeline').count(),1);
+  assert.equal(await page.locator('.today-admin-inquiry .twq-row').count(),2);
+  assert.equal(await page.locator('.today-admin-pipeline .twq-row').count(),7);
   assert.equal(await page.locator('.twq-counts').count(),1);
   assert.equal(await page.locator('.twq-row').count(),9);
   assert.equal(await page.locator('.twq-row').first().getAttribute('data-key'),'inq:inq-unassigned');
@@ -33,13 +37,12 @@ async function run(){
   assert.match(await page.locator('[data-key="expansion:won-inferred"].twq-row').textContent(),/계산 일정/);
   assert.equal(await page.evaluate(()=>TodayWorkQueue.data().rows.filter(x=>x.key==='deal:rel-today').length),1);
   await page.getByRole('combobox',{name:'오늘 업무 담당자'}).selectOption('김성민');
-  await page.getByRole('combobox',{name:'오늘 업무 유형'}).selectOption('expansion');
-  assert.equal(await page.locator('.twq-row').count(),2);
-  await page.locator('.twq-counts [data-filter="overdue"]').click();assert.equal(await page.locator('.twq-row').count(),0);
+  assert.equal(await page.getByRole('combobox',{name:'오늘 업무 유형'}).count(),0);
+  await page.locator('.twq-counts [data-filter="overdue"]').click();assert.equal(await page.locator('.today-admin-inquiry .twq-row').count(),1);assert.equal(await page.locator('.today-admin-pipeline .twq-row').count(),1);
   await page.locator('.twq-counts [data-filter="all"]').click();
   await page.locator('.twq-row[data-key="expansion:won-a"] .twq-action').click();
   assert.deepEqual(await page.evaluate(()=>window.__opened),{type:'expansion',id:'exp-a'});
-  await page.getByRole('combobox',{name:'오늘 업무 담당자'}).selectOption('전체');await page.getByRole('combobox',{name:'오늘 업무 유형'}).selectOption('all');
+  await page.getByRole('combobox',{name:'오늘 업무 담당자'}).selectOption('전체');
   await page.locator('.twq-row[data-key="deal:rel-late"] .twq-action').click();
   assert.deepEqual(await page.evaluate(()=>window.__opened),{type:'deal',id:'rel-late'});assert.equal(await page.evaluate(()=>window.__contact),true);
   await page.locator('.twq-row[data-key="inq:inq-unassigned"] .twq-action').click();assert.deepEqual(await page.evaluate(()=>window.__opened),{type:'assign',id:'inq-unassigned'});
@@ -56,11 +59,11 @@ async function run(){
   // A previously visible admin row cannot be opened after the current role changes.
   await page.evaluate(()=>{window.__opened=null;TodayWorkQueue.open('deal:rel-late')});assert.equal(await page.evaluate(()=>window.__opened),null);
   await page.evaluate(()=>{ME={name:'송보람',role:'admin'};const at=new Date(Date.now()-36e5).toISOString();B.inquiries=Array.from({length:51},(_,i)=>({id:'page-'+i,site:'페이지 현장 '+i,created_at:at,brand:'POUR솔루션',status:'접수'}));B.deals=[];B.expansion_pool=[];paintTodayHome()});
-  assert.equal(await page.locator('.twq-row').count(),20);await page.getByRole('navigation',{name:'우선순위 페이지'}).getByRole('button',{name:'3',exact:true}).click();assert.equal(await page.locator('.twq-row').count(),11);
+  assert.equal(await page.locator('.twq-row').count(),20);await page.getByRole('navigation',{name:'견적문의 관리 페이지'}).getByRole('button',{name:'3',exact:true}).click();assert.equal(await page.locator('.twq-row').count(),11);
   await page.getByRole('textbox',{name:'오늘 업무 검색'}).fill('페이지 현장 50');await page.getByRole('button',{name:'검색',exact:true}).click();assert.equal(await page.locator('.twq-row').count(),1);
-  assert.equal(await page.evaluate(()=>G.todayQueuePage),1);
+  assert.equal(await page.evaluate(()=>G.todayInquiryPage),1);
   assert.equal(await page.evaluate(()=>window.__writes.length),0);
-  console.log(JSON.stringify({status:'PASS',types:4,independent_compound_filters:true,counter_list_agreement:true,exact_id_navigation:4,role_scope:true,stale_role_click_blocked:true,expansion_inference_label:true,converted_held_excluded:true,pagination_51_rows:true,viewports:[1440,1024,760,390],external_writes:0}));
+  console.log(JSON.stringify({status:'PASS',admin_boards:['inquiry','pipeline'],independent_pages:true,types:4,independent_compound_filters:true,counter_list_agreement:true,exact_id_navigation:4,role_scope:true,stale_role_click_blocked:true,expansion_inference_label:true,converted_held_excluded:true,pagination_51_rows:true,viewports:[1440,1024,760,390],external_writes:0}));
  }finally{await browser.close();await new Promise(resolve=>srv.close(resolve))}
 }
 run().catch(e=>{console.error(e.stack);process.exitCode=1});
