@@ -32,6 +32,9 @@ test('relationship atomic save local database contract',async t=>{
   let ack;
   await t.test('contact and next date save together with linked server IDs',async()=>{
    ack=await call(db,2,1);assert.equal(ack.version,3);assert.equal(ack.replayed,false);
+   const client=require('./client.candidate.js');
+   const command={operation:'relationship_contact',request_id:request(2),object_id:deal,expected_version:1};
+   assert.equal(client.validateAck(command,ack,{auth_uid:s.mapping.accounts[0].auth_uid,user_id:s.uid(1,1)}).version,3);
    const row=(await db.query('SELECT source_activity_id,title,due_at::date::text FROM public.next_actions WHERE id=$1',[ack.next_action_id])).rows[0];
    assert.deepEqual(row,{source_activity_id:ack.activity_id,title:'공사계획 재확인',due_at:'2026-09-20'});
   });
@@ -46,7 +49,7 @@ test('relationship atomic save local database contract',async t=>{
   });
   await t.test('invalid fields and impossible or backwards dates fail without writes',async()=>{
    const before=await snapshot(db);
-   for(const mutate of [p=>p.actor_id='forged',p=>delete p.activity.meaningful_contact,p=>p.next_action.assignee='TEST INTERNAL_REP',p=>p.next_action.due_at='2026-02-30',p=>p.next_action.due_at='2026-09-12',p=>p.activity.occurred_at='infinity']){
+   for(const mutate of [p=>p.actor_id='forged',p=>delete p.activity.meaningful_contact,p=>p.next_action.assignee='TEST INTERNAL_REP',p=>p.next_action.intent='postpone',p=>p.next_action.intent='message_reminder',p=>p.activity.intent='standalone',p=>p.next_action.due_at='2026-02-30',p=>p.next_action.due_at='2026-09-12',p=>p.activity.occurred_at='infinity']){
     const p=payload();mutate(p);await assert.rejects(call(db,5,3,p),e=>e.code==='22023');
    }assert.deepEqual(await snapshot(db),before);
   });

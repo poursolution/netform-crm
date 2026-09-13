@@ -1,6 +1,6 @@
 # 관계관리 연락 기록 + 다음 연락일 통합 저장
 
-상태: LOCAL_VALIDATION_ONLY / 운영 미적용 / UI 미연결.
+상태: LOCAL_QUEUE_AND_DISPATCHER_VALIDATED / 운영 미적용 / UI 미연결.
 
 ## 현재 계약 확인
 
@@ -9,7 +9,7 @@
 
 ## 로컬 후보
 
-`helper.local.sql`의 비공개 함수 안에서 두 기존 private helper를 호출한다. 하나의 DB 호출/트랜잭션이므로 두 번째 쓰기 또는 마지막 연결 작업 실패 시 첫 번째 쓰기도 롤백된다. 공개 RPC, 기존 함수, 테이블 및 receipt 제약은 변경하지 않는다.
+`helper.local.sql`의 비공개 함수 안에서 두 기존 private helper를 호출한다. 하나의 DB 호출/트랜잭션이므로 두 번째 쓰기 또는 마지막 연결 작업 실패 시 첫 번째 쓰기도 롤백된다. 이 helper 파일 자체는 공개 RPC, 기존 함수, 테이블 및 receipt 제약을 변경하지 않는다. 별도 `dispatcher.local.sql`은 로컬에서만 새 operation 연결을 검증한다.
 
 - 입력: request UUID, Deal UUID, expected version, `{activity, next_action}`.
 - 연락 성공 여부 `meaningful_contact`는 명시적으로 받는다. 부재/전화 시도는 성공 접촉일을 갱신하지 않는다.
@@ -22,14 +22,27 @@
 - 기존 helper 두 개를 재사용하므로 **Deal version은 2 증가하고 audit/receipt는 각각 2개**다. 한 번 저장을 버전 1 증가로 오해하면 안 된다. 클라이언트는 ACK의 version을 사용해야 한다.
 - 이메일·문자·카카오·잔디 알림이나 n8n 호출은 없다.
 
+## 저장큐 / 클라이언트 / 복구 검증 추가
+
+- `client.candidate.js`: 입력과 ACK를 엄격히 검증하는 선택적 adapter 확장. 기존 `operational-adapter.js` 객체를 수정하지 않으며 어느 운영 HTML에서도 로드하지 않는다.
+- `extendAdapter()`는 기존 `transport.js`의 영속 큐를 그대로 사용한다. 같은 UUID 재시도, 저장 중 새로고침의 uncertain 복원, 계정 종료 시 큐 제거를 검증했다.
+- `createController()`는 단독 연결 검증용이다. 운영에는 이 메모리 컨트롤러와 기존 큐를 중복 설치하지 않는다. 운영 연결 시 기존 영속 큐를 사용한다.
+- `queue.test.cjs`는 현재 transport 원본 + 합성 SDK/fetch + PGlite의 공개 dispatcher를 연결한다. DB 호출은 `SET ROLE authenticated`로 수행한다. 외부 HTTP·실제 로그인·Production 데이터 쓰기는 없다.
+- 공개 dispatcher는 authenticated만 실행 가능하며 private helper/이전 delegate는 직접 실행을 금지한다.
+- `rollback.local.sql`은 이전 dispatcher의 OID/본문/ACL을 복구하고 activity/next/audit/receipt는 삭제하지 않는다.
+- 운영 helper 대조에서 일반 action 본문은 로컬 기본 helper와 일치했으나, 앞에 postpone/message_reminder routing이 존재했다. 이 routing을 통한 의미 변경을 막도록 자식 payload 키를 delegate 호출 전에 제한했다.
+
+검증 실행: `node --test sql/relationship-contact-atomic/20260913/*.test.cjs`.
+현재 결과: 27 PASS / 0 FAIL / 0 SKIP.
+
 ## 운영 적용 전 별도 작업
 
 1. 최신 운영 helper 정의/권한과 로컬 기반의 차이를 재대조한다. 과거 fixture 통과는 현재 Production 통과를 뜻하지 않는다.
-2. 공개 dispatcher/transport allowlist에 단일 operation을 추가하는 승인된 migration·rollback을 별도로 준비한다. 이 파일 자체는 배포용 migration이 아니다.
+2. 로컬 dispatcher/rollback을 최신 운영 정의의 hash·owner·ACL에 묶은 승인용 migration으로 준비한다. 현재 `.local.sql` 파일은 배포용 migration이 아니다. transport의 RPC URL allowlist는 기존 `crm_write_command_v2`를 재사용하며 늘리지 않는다.
 3. UI의 두 입력을 한 요청으로 연결하고 ACK 전 성공표시/로컬 정본 변경을 금지한다. 통신 응답 유실은 같은 request UUID로 조회/재시도한다.
 4. 활동을 선택해 기존 Next를 완료하는 의미와, 여러 일정 중 교체 대상을 지정하는 기능은 이 후보에 포함하지 않는다.
 5. 실제 승인된 테스트 계정/대상에서 HTTP 저장, RLS, 두 세션 동시 편집을 검증한다. PGlite 직렬 테스트를 실제 동시성 E2E라고 보고하지 않는다.
 
 실행: `node --test sql/relationship-contact-atomic/20260913/db.test.cjs`
 
-롤백: 이 후보는 로컬 임시 DB에만 설치된다. 테스트 종료 시 DB를 닫으며 운영 변경은 없다. 운영용 rollback은 공개 계약 확정 후 별도 작성해야 한다.
+롤백: 로컬 체인 복구까지 검증했다. 테스트 종료 시 임시 DB를 닫으며 운영 변경은 없다. 운영용 rollback은 실제 적용 직전 정의와 배포 이력에 맞춰 별도 검증해야 한다.

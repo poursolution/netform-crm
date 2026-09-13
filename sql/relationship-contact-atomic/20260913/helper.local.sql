@@ -29,6 +29,12 @@ BEGIN
   OR jsonb_typeof(p_payload->'activity') IS DISTINCT FROM 'object'
   OR jsonb_typeof(p_payload->'next_action') IS DISTINCT FROM 'object'
  THEN RAISE EXCEPTION 'invalid relationship contact envelope' USING ERRCODE='22023'; END IF;
+ -- Validate BEFORE delegation: Production's helper also routes postpone/reminder intents.
+ IF EXISTS(SELECT 1 FROM jsonb_object_keys(p_payload->'activity') k
+            WHERE k NOT IN ('type','note','result','occurred_at','meaningful_contact'))
+  OR EXISTS(SELECT 1 FROM jsonb_object_keys(p_payload->'next_action') k
+            WHERE k NOT IN ('type','text','due_at'))
+ THEN RAISE EXCEPTION 'nested intent not allowed in contact bundle' USING ERRCODE='22023'; END IF;
  -- Contact truth must be explicit: a phone attempt must not advance last contact.
  IF jsonb_typeof(p_payload->'activity'->'meaningful_contact') IS DISTINCT FROM 'boolean'
   OR (p_payload->'next_action') ? 'assignee'
