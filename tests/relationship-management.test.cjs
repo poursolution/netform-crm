@@ -22,10 +22,10 @@ test('관계관리는 파이프라인과 분리된 실행 페이지로 연결된
 });
 
 test('관계관리 페이지는 사유·다음 연락·실행·복귀를 한 화면에서 제공한다',()=>{
- for(const label of ['관계관리 사유','다음 연락','연락 완료','일정 변경','상담 기록','담당자 변경','파이프라인 복귀'])assert.match(js,new RegExp(label));
+ for(const label of ['관계관리 사유','다음 연락','연락 기록','일정 등록','담당자 변경','파이프라인 복귀'])assert.match(js,new RegExp(label));
  assert.match(js,/relationshipManagementOpen/);
- assert.match(js,/StageTransitionUI\.open\(d,false,'first_contact'\)/);
- assert.match(js,/과거 유입 연도와 관계없이/);
+ assert.match(js,/StageTransitionUI\.open\(CUR_DETAIL.item,false,'first_contact'\)/);
+ assert.doesNotMatch(js,/RELATIONSHIP RECOVERY DESK|relm-command|relm-loop|운영 원칙|연락 완료/);
  assert.doesNotMatch(js,/inPeriod\(/);
 });
 
@@ -44,6 +44,6 @@ test('담당자는 자신의 관계업무를 보고 관리자는 7일 이상 지
  assert.match(js,/m\.dueDays<=-7/);
  assert.match(js,/m\.days>=90/);
  assert.match(html,/relationshipManagerEscalation/);
- assert.match(css,/\.relm-kpis/);
+ assert.match(css,/\.relm-counts/);
  assert.match(css,/@media\(max-width:760px\)/);
 });

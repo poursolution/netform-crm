@@ -8,6 +8,11 @@
 .today-inquiry-action:hover{background:#2455c7}
 .today-inquiry-action.secondary{border-color:#d6deea;background:#fff;color:#2c5cc5}
 .today-inquiry-row[role=button]:focus-visible{outline:3px solid rgba(53,104,223,.28);outline-offset:-3px}
+.today-inquiry-compact[role=button]:focus-visible{outline:3px solid rgba(53,104,223,.28);outline-offset:-3px}
+.today-inquiry-compact .today-work-main small{white-space:normal;line-height:1.45}
+.today-inquiry-compact .today-assignment-evidence{margin-top:5px;color:#7b6670;font-size:10.5px;line-height:1.4}
+.today-inquiry-quick{align-self:center;justify-self:end;color:#3569d9;font-size:11.5px;font-weight:900}
+.today-inquiry-quick .today-inquiry-action{min-height:34px}
 .today-inquiry-toolbar button[data-filter=unassigned]{border-color:#f0b4bc;color:#b82f42}
 .today-inquiry-toolbar button[data-filter=unassigned].on{border-color:#a82538;background:#a82538;color:#fff}
 

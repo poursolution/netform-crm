@@ -23,13 +23,15 @@ async function run() {
     await page.evaluate(() => {
       const iso = days => { const d = new Date(); d.setDate(d.getDate() + days); return d.toISOString().slice(0, 10); };
       const old = new Date(Date.now() - 5 * 36e5).toISOString();
+      const legacy = new Date(Date.now() - 90 * 864e5).toISOString();
       B = { inquiryTrash: [], deals: [
         { id: 'deal-mine', site: '황윤선 기한초과 현장', assignee: '황윤선', code: 'consulting', grp: '영업·관리', stage: '컨설팅 설계', nextActionObj: { text: '관리소장 진행상황 확인', due: iso(-3), createdAt: old, status: 'open' } },
-        { id: 'deal-other', site: '이필선 후속조치 현장', assignee: '이필선', code: 'sent', grp: '컨설팅·견적', stage: '견적 발송완료' }
+        { id: 'deal-other', site: '이필선 후속조치 현장', assignee: '이필선', code: 'sent', grp: '컨설팅·견적', stage: '견적 발송완료', nextActionObj: { text: '견적 검토 여부 확인', due: iso(0), createdAt: old, status: 'open' } }
       ], inquiries: [
         { id: 'inq-unassigned', site: '관리자 미배정 문의', brand: 'POUR솔루션', status: '접수', created_at: old },
         { id: 'inq-mine', site: '황윤선 응대지연 문의', brand: 'POUR솔루션', status: '배정완료', assignee: '황윤선', assigned_at: old, created_at: old }
-      ].concat(Array.from({ length: 15 }, (_, i) => ({ id: `inq-extra-${i}`, site: `전체표시 문의 ${i + 1}`, brand: 'POUR솔루션', status: '접수', created_at: old }))) };
+      ].concat(Array.from({ length: 12 }, (_, i) => ({ id: `inq-current-${i}`, site: `현재 개입 문의 ${i + 1}`, brand: 'POUR솔루션', status: '접수', created_at: old })))
+        .concat(Array.from({ length: 15 }, (_, i) => ({ id: `inq-legacy-${i}`, site: `과거 적체 문의 ${i + 1}`, brand: 'POUR솔루션', status: '배정완료', assignee: '황윤선', responded_at: legacy, created_at: legacy }))) };
       LOCAL = { deals: {}, inquiries: {} }; AUTH_ON = true; G.page = 'today';
       document.getElementById('authGate').classList.remove('on');
       document.querySelectorAll('.apage').forEach(node => node.classList.remove('on'));
@@ -42,14 +44,15 @@ async function run() {
     assert.equal(await page.locator('.today-board').count(), 2);
     assert.equal(await page.locator('.today-board.inquiry').getByText('관리자 미배정 문의', { exact: true }).count(), 1);
     assert.equal(await page.locator('.today-board.pipeline').getByText('이필선 후속조치 현장', { exact: true }).count(), 1);
-    assert.equal(await page.locator('.today-inquiry-head > span').count(), 7);
-    assert.equal(await page.locator('.today-inquiry-row').count(), 17);
-    assert.equal(await page.evaluate(() => { const el = document.querySelector('.today-inquiry-table'); return el.scrollWidth <= el.clientWidth; }), true);
+    assert.equal(await page.locator('.today-board.inquiry .today-work-card').count(), 8);
+    assert.equal(await page.getByText('과거 적체 문의 1', { exact: true }).count(), 0);
+    assert.equal(await page.evaluate(() => { const el = document.querySelector('.today-board.inquiry'); return el.scrollWidth <= el.clientWidth; }), true);
     await page.locator('.today-inquiry-toolbar button[data-filter="delayed"]').click();
-    assert.equal(await page.locator('.today-inquiry-row').count(), 1);
+    assert.equal(await page.locator('.today-board.inquiry .today-work-card').count(), 1);
     await page.locator('.today-inquiry-toolbar button[data-filter="all"]').click();
     assert.ok((await page.locator('.today-work-main em').allTextContents()).every(Boolean));
     assert.ok((await page.locator('.today-work-main b').allTextContents()).every(text => text.startsWith('다음 조치')));
+    if (process.env.TODAY_WORK_SCREENSHOT) await page.screenshot({ path: process.env.TODAY_WORK_SCREENSHOT, fullPage: true });
 
     await page.evaluate(() => { ME = { name: '황윤선', role: 'rep' }; paintTodayHome(); window.__todayOpened = null; });
     assert.equal(await page.locator('.today-admin').count(), 0);
@@ -71,7 +74,7 @@ async function run() {
     await page.locator('.today-admin-switch button[data-board="pipeline"]').click();
     assert.equal(await page.locator('.today-board.inquiry').isVisible(), false);
     assert.equal(await page.locator('.today-board.pipeline').isVisible(), true);
-    console.log(JSON.stringify({ status: 'PASS', admin_boards: 2, inquiry_rows_all: 17, inquiry_horizontal_scroll: false, inquiry_filters: 'PASS', rep_priority_first: true, foreign_rows_hidden: true, mobile_board_tabs: 'PASS', card_click: 'PASS', network_scope: 'localhost-only', business_writes: 0 }));
+    console.log(JSON.stringify({ status: 'PASS', admin_boards: 2, inquiry_preview_limit: 8, legacy_backlog_excluded: true, inquiry_horizontal_scroll: false, inquiry_filters: 'PASS', rep_priority_first: true, foreign_rows_hidden: true, mobile_board_tabs: 'PASS', card_click: 'PASS', network_scope: 'localhost-only', business_writes: 0 }));
   } finally { await browser.close(); await new Promise(resolve => srv.close(resolve)); }
 }
 

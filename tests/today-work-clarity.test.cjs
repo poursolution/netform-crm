@@ -27,20 +27,28 @@ test('관리자 화면은 견적문의와 파이프라인 두 업무함만 1차 
   assert.doesNotMatch(crm, /todayLane\('inquiry'/);
 });
 
-test('관리자 견적문의는 가로 스크롤이나 14건 절단 없이 한 페이지 행 목록으로 표시한다', () => {
+test('관리자 업무함은 전체 적체를 펼치지 않고 우선 8건을 두 게시판에서 비교한다', () => {
   assert.match(crm, /function todayInquiryBoard\(title,desc,rows\)/);
-  assert.match(crm, /today-inquiry-head/);
-  assert.match(crm, /현장명<\/span><span>담당자<\/span><span>문의일<\/span><span>현재 상태<\/span><span>관리 필요 사유<\/span><span>경과<\/span><span>조치/);
-  assert.match(crm, /shown\.map\(todayInquiryRow\)/);
-  assert.doesNotMatch(crm, /todayInquiryBoard[^{]*\{[^}]*slice\(0,14\)/);
-  assert.match(crm, /\.today-board\.inquiry \.today-board-list\{max-height:none;overflow:visible\}/);
-  assert.match(crm, /\.today-inquiry-table\{width:100%;overflow:hidden\}/);
+  assert.match(crm, /TODAY_ADMIN_VISIBLE_LIMIT=8/);
+  assert.match(crm, /shown\.slice\(0,TODAY_ADMIN_VISIBLE_LIMIT\)/);
+  assert.match(crm, /rows\.slice\(0,TODAY_ADMIN_VISIBLE_LIMIT\)/);
+  assert.match(crm, /지금 개입할 순서만 보여줍니다/);
+  assert.match(crm, /전체 업무 열기 →/);
+  assert.match(crm, /\.today-admin \.today-admin-boards\{grid-template-columns:minmax\(0,1\.08fr\) minmax\(340px,\.92fr\)/);
+  assert.doesNotMatch(crm, /\.today-board\.inquiry \.today-board-list\{max-height:none;overflow:visible\}/);
 });
 
 test('관리자 견적문의 필터는 전체를 기본으로 하고 실무 상태별로 좁힐 수 있다', () => {
   assert.match(crm, /function todaySetInquiryFilter\(v\)/);
-  assert.match(crm, /\['all','unanswered','quote','material','dispatch','delayed'\]/);
-  for (const label of ['전체', '미응대', '견적대기', '자료대기', '발송대기', '지연']) assert.match(crm, new RegExp(label));
+  assert.match(crm, /\['all','unassigned','unanswered','quote','material','dispatch','delayed'\]/);
+  for (const label of ['전체', '미배정', '미응대', '견적대기', '자료대기', '발송대기', '지연']) assert.match(crm, new RegExp(label));
+});
+
+test('과거 문의 전체를 오늘 업무로 오판하지 않도록 추론 신호에 시간 범위를 둔다', () => {
+  assert.match(crm, /TODAY_INQUIRY_RECENT_DAYS=14/);
+  assert.match(crm, /respHours>=48&&respHours<=720/);
+  assert.match(crm, /inqCtlNeedsAction\(q\)&&recent/);
+  assert.match(crm, /!a&&\(!admin\|\|near\|\|\(age!=null&&age<=14\)\)/);
 });
 
 test('모든 업무카드는 관리 필요 사유와 최근 행동 및 다음 조치를 표시한다', () => {

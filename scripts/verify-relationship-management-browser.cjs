@@ -37,19 +37,36 @@ async function run(){
   });
 
   assert.equal(await page.locator('.relm-row').count(),5);
-  assert.match(await page.locator('.relm-kpi.today b').innerText(),/^1건$/);
-  assert.match(await page.locator('.relm-kpi.overdue b').innerText(),/^1건$/);
-  assert.match(await page.locator('.relm-kpi.stale b').innerText(),/^1건$/);
+  for(const key of ['today','overdue','stale'])assert.equal(await page.locator('.relm-counts [data-filter="'+key+'"] b').innerText(),'1');
+  assert.equal(await page.locator('.relm-command,.relm-note,.relm-kpis').count(),0);
+  assert.deepEqual(await page.locator('.relm-site').allTextContents(),['기한초과 관계현장','오늘 연락 관계현장','정보누락 관계현장','장기 미접촉 현장','예정 관계현장']);
   assert.equal(await page.getByText('일반 파이프라인',{exact:true}).count(),0);
-  await page.locator('.relm-toolbar button').filter({hasText:'관리필요'}).click();
-  assert.equal(await page.locator('.relm-row').count(),2);
-  await page.locator('.relm-kpi').first().click();
-  await page.locator('.relm-toolbar select').selectOption('황윤선');
+  await page.locator('.relm-counts [data-filter="need"]').click();
+  assert.equal(await page.locator('.relm-row').count(),4);
+  await page.locator('.relm-counts [data-filter="all"]').click();
+  await page.getByRole('combobox',{name:'관계관리 담당자',exact:true}).selectOption('황윤선');
   assert.equal(await page.locator('.relm-row').count(),3);
+  await page.getByRole('combobox',{name:'관계유형',exact:true}).selectOption('waiting');
+  assert.equal(await page.locator('.relm-row').count(),1);
+  await page.locator('.relm-owner-issues [data-owner="황윤선"][data-kind="stale"]').click();
+  assert.deepEqual(await page.locator('.relm-site').allTextContents(),['장기 미접촉 현장']);
+  await page.locator('.relm-site').click();
+  assert.equal(await page.locator('.relm-detail-context').count(),1);
+  await page.locator('.relm-detail-context button').filter({hasText:'연락 기록'}).click();
+  await page.waitForTimeout(120);
+  assert.equal(await page.locator('#dv-act-note').isVisible(),true);
+  assert.equal(await page.locator('#dv-na-date').isVisible(),true);
+  assert.equal(await page.locator('#dv-act-note').inputValue(),'');
+  assert.deepEqual(await page.evaluate(()=>window.__businessWrites.filter(op=>op!=='opportunity_touch')),[]);
+  await page.locator('.relm-detail-context button').filter({hasText:'파이프라인 복귀'}).click();
+  assert.equal(await page.locator('#stage-transition-form').count(),1);
+  assert.equal(await page.evaluate(()=>CUR_DETAIL.item.id),'rel-stale');
+  await page.evaluate(()=>{closeDetail();G.relationshipType='all';G.relationshipRecent='all';G.relationshipSearch=''});
 
   await page.evaluate(()=>{AUTH_ON=true;ME={name:'이필선',role:'rep'};G.relationshipOwner='전체';G.relationshipFilter='all';paintRelationshipManagement()});
   assert.equal(await page.locator('.relm-row').count(),2);
-  assert.equal(await page.locator('.relm-toolbar select').count(),0);
+  assert.equal(await page.getByRole('combobox',{name:'관계관리 담당자',exact:true}).count(),0);
+  assert.equal(await page.locator('.relm-owner-summary').count(),0);
 
   await page.evaluate(()=>{AUTH_ON=false;ME={name:'송보람',role:'admin'};G.relationshipOwner='전체';G.relationshipFilter='all';paintRelationshipManagement();G._detailPopup=true;drwDeal(JSON.stringify(B.deals[5]));window.__businessWrites=[];StageTransitionUI.open(B.deals[5],false,'rapport')});
   assert.equal(await page.locator('#sf-relationship_reason').count(),1);
@@ -75,7 +92,15 @@ async function run(){
   assert.equal(await page.evaluate(()=>B.deals[5].code),'rapport');
   assert.equal(await page.evaluate(()=>B.deals[5].relationshipReason),'내년도 사업 검토');
   assert.deepEqual(await page.evaluate(()=>window.__businessWrites),['transition','activity','next_action']);
-  console.log(JSON.stringify({status:'PASS',relationship_rows:5,need_filter:2,rep_scope:2,entry_reason_required:true,relationship_transition_success:true,pipeline_return_same_opportunity:true,non_relationship_excluded:true,pc_horizontal_scroll:false,mobile_horizontal_scroll:false,network_scope:'localhost-only',blocked_save_writes:0,simulated_success_writes:['transition','activity','next_action']}));
+  await page.evaluate(()=>{closeDetail();const original=B.deals[3];B.deals=Array.from({length:51},(_,i)=>({...original,id:'scale-'+i,site:'대량검증 '+String(i).padStart(2,'0')}));G.relationshipFilter='all';G.relationshipOwner='전체';G.relationshipPage=1;paintRelationshipManagement()});
+  assert.equal(await page.locator('.relm-row').count(),20);
+  await page.locator('.relm-pager button').filter({hasText:/^3$/}).click();
+  assert.equal(await page.locator('.relm-row').count(),11);
+  await page.getByRole('textbox',{name:'관계관리 현장 검색'}).fill('대량검증 50');
+  await page.getByRole('button',{name:'검색',exact:true}).click();
+  assert.equal(await page.locator('.relm-row').count(),1);
+  assert.equal(await page.locator('.relm-pager [aria-current="page"]').innerText(),'1');
+  console.log(JSON.stringify({status:'PASS',relationship_rows:5,need_filter:4,rep_scope:2,entry_reason_required:true,relationship_transition_success:true,return_editor_same_opportunity:true,contact_and_next_same_detail:true,owner_issue_drilldown:true,compound_filters:true,pagination_51_rows:true,search_resets_page:true,pc_horizontal_scroll:false,mobile_horizontal_scroll:false,network_scope:'localhost-only',blocked_save_writes:0}));
  }finally{await browser.close();await new Promise(resolve=>srv.close(resolve))}
 }
 
