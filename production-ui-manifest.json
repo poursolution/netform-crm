@@ -1,7 +1,7 @@
 {
   "project_ref": "ymfbmpnizxvqsamnczow",
   "status": "PRODUCTION_CRM_WORKSPACE_RELEASE_READY",
-  "source_commit": "1d18dddcf0754cc8ff1484be91083ae510c311bc",
+  "source_commit": "0a17b701927d60df72bf94db2da8155f7220ac02",
   "approved_dashboard_commit": "842a5dd",
   "connected_operations": [
     "opportunity_work_set",
@@ -61,7 +61,7 @@
     "issue-modal.css": "0896af727f12a21d563e2e703028812cb2cb31ac496b2452928c9804e19201e5",
     "issue-modal.js": "7a2b2f1ee66e509b5d26ce0f3585a6e5e6ffc2f3f0b045d9f5a8b690a2e14391",
     "message-salutation.js": "70a273b77b4ec85f7c9f7ee9f3d249e11e7a5cc7f55f4bb2fb690d62d7957474",
-    "mobile.html": "049d54c676216d86233da28de1ea408905766912b14ed085aa6550dc420fc03b",
+    "mobile.html": "f1642cce25ff68f69d74cfa988ddb7a615a69373efed210f40a92e19763f8b52",
     "money-input.js": "9bffc3ca4685e0fac2efcfc78d4d5f4f2739b4f9bf8fbf6157b462a41a9d0eb2",
     "next-action-picker.css": "5d149225c510ee10e58c6f6ce7686715414533d8948de484c5dbd585a670d387",
     "next-action-picker.js": "be9e041da4388f3fd515e358cf99d7b04634e0b72b47eff9b59317f35cfd4d07",
@@ -87,7 +87,7 @@
     "today-work-queue.js": "3515fb507998476b72b5ba7bf3b4db66c2bf0148f1e1a869f601c9deb3bfd704",
     "today-work-queue.css": "355cb3608f346c268d926b19eea1be8488335c1d31b124d3d4b35f12224f27fe"
   },
-  "ui_release": "20260913-detail-3",
+  "ui_release": "20260913-mobile-today-1",
   "ui_release_scope": {
     "database_changed": false,
     "external_systems_changed": false,
