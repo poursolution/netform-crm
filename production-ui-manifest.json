@@ -1,7 +1,7 @@
 {
   "project_ref": "ymfbmpnizxvqsamnczow",
   "status": "PRODUCTION_CRM_WORKSPACE_RELEASE_READY",
-  "source_commit": "7f1d3e06cbfa5c87470263b48f2290723b64632b",
+  "source_commit": "fb8b5d21d753b08d5703231b6c10c07b439bfcfe",
   "approved_dashboard_commit": "842a5dd",
   "connected_operations": [
     "opportunity_work_set",
@@ -55,8 +55,8 @@
     "data-cleanup.css": "09b6488f827ece281de72107915c870ea31522125334f3bf43329445a5accb45",
     "data-cleanup.js": "7fc99f3d86fc05db564e9bc7c844513dc1f60fe1add0d3d4b5f5ab6bd6615a6f",
     "expansion-flow.js": "2bff3f2a7f58daf689555f841d2c58f32887744bedf9685243bbbd2fbb41d908",
-    "expansion-pool.css": "cfcbfe45c6e65ef19ee88a717c15d7ee3700adf844b8508938018fab18123529",
-    "expansion-pool.js": "5827d0ba403011b782516e17940b44592e4405f0e107066e5ce5ce5c4ae6aff4",
+    "expansion-pool.css": "b46458e8d0aa323b8fdc263e02cbc41ddec87090ed7ad71241287b2c007667bf",
+    "expansion-pool.js": "95b5a47b4231b2f00b360cad2f9dd0be8a536df0de9d5b5b6b12f692717522b9",
     "index.html": "844e20a4282a1ec4ba2f28e5c932221e16d5205b350206ed5bd0f6b68aecf329",
     "issue-modal.css": "0896af727f12a21d563e2e703028812cb2cb31ac496b2452928c9804e19201e5",
     "issue-modal.js": "7a2b2f1ee66e509b5d26ce0f3585a6e5e6ffc2f3f0b045d9f5a8b690a2e14391",
@@ -87,13 +87,13 @@
     "today-work-queue.js": "3515fb507998476b72b5ba7bf3b4db66c2bf0148f1e1a869f601c9deb3bfd704",
     "today-work-queue.css": "355cb3608f346c268d926b19eea1be8488335c1d31b124d3d4b35f12224f27fe"
   },
-  "ui_release": "20260913-manager-action-first-1",
+  "ui_release": "20260913-expansion-work-queue-1",
   "ui_release_scope": {
     "database_changed": false,
     "external_systems_changed": false,
     "live_business_writes_tested": false,
     "automated_tests": {
-      "pass": 13,
+      "pass": 24,
       "fail": 0,
       "skip": 0
     },
