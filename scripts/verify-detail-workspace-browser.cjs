@@ -19,6 +19,10 @@ async function run(){
    B={deals:[d],inquiries:[],users:[],sales_people:[],activities:[],sites:[],contacts:[],dups:[],expansion_pool:[],expansionPool:[],expansion_events:[],customerSupportActions:[],customer_support_actions:[],messageLogs:[],message_logs:[],campaigns:[],campaign_logs:[],repManagerComments:[],rep_manager_comments:[]};LOCAL={deals:{},inquiries:{}};
    G.page='relationship';G.relationshipFilter='all';G.relationshipOwner='전체';G._detailPopup=true;document.getElementById('authGate').classList.remove('on');document.getElementById('authGate').style.display='none';syncPage();drwDeal(JSON.stringify(d));
   });
+  for(let repeat=0;repeat<3;repeat++){
+   await page.evaluate(()=>renderDetail());
+   for(const selector of ['#activityFormCard','#nextActionCard','#contactCard','.relm-detail-context','#execFiles'])assert.equal(await page.locator(selector).count(),1,selector+' must not accumulate across renders');
+  }
   assert.equal(await page.locator('.dsec[data-sec="개요"] #contactCard').count(),0);
   assert.equal(await page.locator('.dsec[data-sec="영업활동"] #contactCard').count(),1);
   assert.equal(await page.locator('#ct-office').isVisible(),false);
