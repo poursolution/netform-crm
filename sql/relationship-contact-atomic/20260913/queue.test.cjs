@@ -61,7 +61,7 @@ test('current persisted queue and local database support atomic contact without 
    w.dispatchEvent(new w.Event('phase1:profile'));assert.equal(p.queue.list()[0].status,'uncertain');
    await p.signOut();assert.equal(p.queue.list().length,0);
   });
-  assert.equal(base.operations.includes('relationship_contact'),false);
+  assert.equal(base.operations.includes('relationship_contact'),true);
   await t.test('public access stays authenticated-only; private helpers cannot be called directly',async()=>{
    for(const role of ['anon','service_role'])assert.equal((await db.query("SELECT has_function_privilege($1,'public.crm_write_command_v2(uuid,text,uuid,integer,jsonb)','EXECUTE') allowed",[role])).rows[0].allowed,false);
    assert.equal((await db.query("SELECT has_function_privilege('authenticated','public.crm_write_command_v2(uuid,text,uuid,integer,jsonb)','EXECUTE') allowed")).rows[0].allowed,true);

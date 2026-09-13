@@ -48,9 +48,9 @@ function decorateDetail(){
  var body=document.getElementById('dv-body');if(!body||body.querySelector('.relm-detail-context'))return;
  var d=CUR_DETAIL.item,m=relationshipMeta(d),a=actionObj(d,itemPatch(d,'deal'));
  body.insertAdjacentHTML('afterbegin','<section class="relm-detail-context"><strong>관계관리 사유 · '+esc(reasonOf(d)||'미입력')+'</strong><p>다음 연락 '+esc(m.due?fmtD(m.due):'미입력')+' · '+esc(a&&a.text||'다음 행동 미입력')+'</p><div><button onclick="relationshipManagementDetailAction(\'activity\')">연락 기록</button><button onclick="relationshipManagementDetailAction(\'next\')">다음 연락일</button><button onclick="relationshipManagementDetailAction(\'owner\')">담당자 변경</button><button onclick="relationshipManagementDetailAction(\'return\')">파이프라인 복귀</button></div></section>');
- // Keep the existing activity and Next Action save paths together in the same detail view.
+ // One contact workflow collects both inputs; the server commits or rolls back them together.
  var form=document.getElementById('activityFormCard'),next=document.getElementById('nextActionCard');
- if(form&&next){var section=form.closest('.dsec');if(section){section.appendChild(next);next.classList.add('relm-detail-next')}var h=form.querySelector('h3'),p=form.querySelector('p');if(h)h.textContent='연락 기록';if(p)p.textContent='실제 연락 내용과 결과를 기록하고, 아래에서 다음 연락일을 지정하세요.'}
+ if(form&&next){var section=form.closest('.dsec');if(section){section.appendChild(next);next.classList.add('relm-detail-next')}var h=form.querySelector('h3'),p=form.querySelector('p'),save=form.querySelector('.dactions .dact.pri'),nextSave=next.querySelector('.dactions .dact.pri');if(h)h.textContent='연락 기록';if(p)p.textContent='연락 내용과 다음 연락일은 한 번에 저장됩니다.';if(!form.querySelector('#rel-contact-meaningful'))form.querySelector('.dactions').insertAdjacentHTML('afterbegin','<label class="relm-meaningful"><input id="rel-contact-meaningful" type="checkbox"> 고객과 실제로 연결됨</label>');if(save){save.id='rel-contact-save';save.setAttribute('onclick','saveRelationshipContactAtomic()');save.textContent='연락·다음 일정 함께 저장'}if(nextSave)nextSave.style.display='none'}
 }
 // The shared renderer calls this once after field/relationship decorations.
 root.relationshipManagementDecorateDetail=decorateDetail;
