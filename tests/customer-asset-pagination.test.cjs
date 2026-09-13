@@ -45,3 +45,12 @@ test('customer asset filters reset or re-clamp pagination safely',()=>{
  assert.match(html,/if\(G\.sitePageKey!==pageKey\)\{G\.sitePage=1;G\.sitePageKey=pageKey\}/);
  assert.match(html,/G\.sitePage=Math\.min\(totalPages,Math\.max\(1,Number\(G\.sitePage\)\|\|1\)\)/);
 });
+
+test('customer asset landing is compact while detail navigation stays connected',()=>{
+ assert.match(html,/var _paintSitesAssetQueue=paintSites/);
+ assert.match(html,/command\.classList\.add\('site-queue-head'\)/);
+ assert.match(html,/eyebrow\.remove\(\)/);
+ assert.match(html,/현장별 고객관계와 거래 이력을 확인합니다/);
+ assert.match(html,/DetailWorkspace\.assetTabs\(i\)/);
+ assert.match(html,/\.site-command\.site-queue-head\{/);
+});
