@@ -22,7 +22,7 @@ test('관계관리는 파이프라인과 분리된 실행 페이지로 연결된
 });
 
 test('관계관리 페이지는 사유·다음 연락·실행·복귀를 한 화면에서 제공한다',()=>{
- for(const label of ['관계관리 사유','다음 연락','연락 기록','일정 등록','담당자 변경','파이프라인 복귀'])assert.match(js,new RegExp(label));
+ for(const label of ['관계관리 사유','다음 연락','연락 기록','일정 변경','담당자 변경','파이프라인 복귀'])assert.match(js,new RegExp(label));
  assert.match(js,/relationshipManagementOpen/);
  assert.match(js,/StageTransitionUI\.open\(CUR_DETAIL.item,false,'first_contact'\)/);
  assert.doesNotMatch(js,/RELATIONSHIP RECOVERY DESK|relm-command|relm-loop|운영 원칙|연락 완료/);

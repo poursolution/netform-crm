@@ -10,8 +10,8 @@ test('relationship management exposes three independently selectable work pipeli
   assert.match(js, /stageNames=\{rapport:'유대고객',silent:'침묵관리',waiting:'대기고객'\}/);
   assert.match(js, /REL_CODES\.map\(function\(code\)/);
   assert.match(js, /relationshipManagementSetType/);
-  assert.match(js, /관리필요.*초과.*오늘/);
-  assert.match(css, /\.relm-pipelines\{display:grid;grid-template-columns:repeat\(3/);
+  assert.match(js, /기한 초과.*오늘 연락.*일정 없음.*예정/);
+  assert.match(css, /\.relm-type-tabs/);
 });
 
 test('pipeline counts share the scoped relationship set but ignore only the selected pipeline', () => {
@@ -21,10 +21,20 @@ test('pipeline counts share the scoped relationship set but ignore only the sele
 
 test('assignee selection is placed in the relationship header before pipeline selection', () => {
   const owner = js.indexOf('relm-owner-top');
-  const pipelines = js.indexOf('relm-pipelines');
+  const pipelines = js.indexOf('relm-type-tabs');
   assert.ok(owner >= 0 && pipelines > owner);
   assert.match(js, /relationshipManagementSetOwner\(this\.value\)/);
   assert.match(css, /\.relm-heading-actions/);
+});
+
+test('relationship work uses type-specific cards instead of the seven-column table', () => {
+  assert.doesNotMatch(js, /<table class="relm-table"/);
+  assert.doesNotMatch(js, /class="relm-pager"/);
+  assert.match(js, /function relationshipCard/);
+  assert.match(js, /관계 목적/);
+  assert.match(js, /응답 정체/);
+  assert.match(js, /고객 발언/);
+  assert.match(js, /slice\(0,15\)/);
 });
 
 test('expansion list restores the previous operational context', () => {
