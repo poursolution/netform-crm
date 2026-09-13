@@ -46,4 +46,6 @@
 #detailView.dw-transition{max-width:820px!important}
 #detailView.dw-transition #inlineTransition{margin:0}
 #detailView.dw-transition .sf-form{margin-top:0}
+.stage-transition-overlay{position:fixed;inset:0;z-index:1250;display:grid;place-items:center;padding:20px;background:rgba(14,25,43,.58)}
+.stage-transition-dialog{width:min(820px,100%);max-height:calc(100vh - 40px);overflow:auto;border-radius:14px;background:#fff;box-shadow:0 24px 80px rgba(14,25,43,.3);padding:18px}
 @media(max-width:640px){.dw-tabs button{flex:1 1 28%;padding:9px 6px}.dw-inquiry .facts{grid-template-columns:1fr}.dw-quick #dv-body{padding:12px}.dw-quick .formgrid,.dw-quick #dv-body>.dsec[data-sec="영업활동"]{grid-template-columns:1fr}}

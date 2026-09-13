@@ -4,10 +4,10 @@ const html=fs.readFileSync(path.join(__dirname,'../crm.html'),'utf8');
 test('detail decorators have one explicit sequence, without captured render chains',()=>{
  const source=html.match(/function renderDetailAddons\(\)\{[\s\S]*?\n\}/)?.[0];assert.ok(source);
  const calls=[],context={window:{DetailWorkspace:true},DetailWorkspace:{decorate:()=>calls.push('workspace')}};
- for(const [fn,label] of [['decorateExecutionDetail','execution'],['decorateFieldDetail','field'],['decorateRelationshipEngineDetail','engine'],['relationshipManagementDecorateDetail','relationship']])context[fn]=()=>calls.push(label);
+ for(const [fn,label] of [['decorateExecutionDetail','execution'],['decorateFieldDetail','field'],['decorateRelationshipEngineDetail','engine'],['relationshipManagementDecorateDetail','relationship'],['dccDecorateDetail','dcc']])context[fn]=()=>calls.push(label);
  vm.runInNewContext(source+';renderDetailAddons();',context);
- assert.deepEqual(calls,['execution','field','engine','relationship','workspace']);
- assert.doesNotMatch(html,/_execRenderDetail|_fieldRenderDetail|_relV8RenderDetail/);
+ assert.deepEqual(calls,['execution','field','engine','relationship','workspace','dcc']);
+ assert.doesNotMatch(html,/_execRenderDetail|_fieldRenderDetail|_relV8RenderDetail|_dccRenderDetail/);
  const relationship=fs.readFileSync(path.join(__dirname,'../relationship-management.js'),'utf8');
  assert.doesNotMatch(relationship,/root\.renderDetail\s*=/);
  assert.match(relationship,/root\.relationshipManagementDecorateDetail=decorateDetail/);

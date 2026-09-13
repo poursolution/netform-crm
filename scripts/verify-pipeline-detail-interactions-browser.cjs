@@ -64,7 +64,7 @@ async function run(){
   await page.locator('.exec-favorite').evaluate(e=>e.click());assert.equal(await page.locator('.exec-favorite').textContent(),'★ 즐겨찾기');
   await page.locator('.exec-favorite').evaluate(e=>e.click());assert.equal(await page.locator('.exec-favorite').textContent(),'☆ 즐겨찾기');
 
-  for(const tab of ['개요','현장·견적','영업활동','일정','이력']){
+  for(const tab of ['개요','공종·금액','연락·활동','일정·Next','변경이력']){
    await page.locator(`.detailtabs button[data-tab="${tab}"]`).evaluate(e=>e.click());
    assert.equal(await page.locator(`.detailtabs button[data-tab="${tab}"]`).evaluate(e=>e.classList.contains('on')),true);
    assert.equal(await page.locator(`#dv-body .dsec[data-sec="${tab}"]`).evaluate(e=>getComputedStyle(e).display!=='none'),true);
@@ -73,9 +73,9 @@ async function run(){
 
   // User-visible response matrix: a click must move to its editor/modal, not merely mutate hidden state.
   await page.evaluate(()=>{detailTabFocus('개요');document.getElementById('detailView').scrollTop=0});
-  await page.locator('.bact button').filter({hasText:'다음 행동'}).evaluate(e=>e.click());await page.waitForTimeout(180);
+  await page.locator('.dcc-contact-actions .quick-next').evaluate(e=>e.click());await page.waitForTimeout(180);
   assert.equal(await page.locator('#dv-na-text').evaluate(e=>e===document.activeElement),true,'brief next action did not focus its editor');
-  assert.equal(await page.locator('.dsec[data-sec="일정"]').evaluate(e=>getComputedStyle(e).display!=='none'),true);
+  assert.equal(await page.locator('.dsec[data-sec="일정·Next"]').evaluate(e=>getComputedStyle(e).display!=='none'),true);
   assert.ok(await drawer.evaluate(e=>e.scrollTop)>0,'brief next action left the user at the unchanged top of the drawer');
 
   const groups=await page.locator('#dv-na-type-picker .next-picker-buttons button').evaluateAll(rows=>rows.map(e=>e.dataset.group));
@@ -88,17 +88,18 @@ async function run(){
   assert.match(await page.locator('#dv-err').textContent(),/유형·내용·기한·담당자/,'next-action validation gave no visible explanation');
 
   await page.evaluate(()=>briefAmountEditor());await page.waitForTimeout(120);
-  const amountState=await page.evaluate(()=>({active:document.activeElement&&document.activeElement.id,exists:!!document.getElementById('dv-amt'),tab:G.detailTab,display:getComputedStyle(document.querySelector('.dsec[data-sec="현장·견적"]')).display,scroll:document.getElementById('detailView').scrollTop}));
+  const amountState=await page.evaluate(()=>({active:document.activeElement&&document.activeElement.id,exists:!!document.getElementById('dv-amt'),tab:G.detailTab,display:getComputedStyle(document.querySelector('.dsec[data-sec="공종·금액"]')).display,scroll:document.getElementById('detailView').scrollTop}));
   assert.equal(amountState.active,'dv-amt','amount shortcut did not focus the amount editor: '+JSON.stringify(amountState));
-  assert.equal(await page.locator('.dsec[data-sec="현장·견적"]').evaluate(e=>getComputedStyle(e).display!=='none'),true);
+  assert.equal(await page.locator('.dsec[data-sec="공종·금액"]').evaluate(e=>getComputedStyle(e).display!=='none'),true);
 
-  await page.locator('.stickytools button').filter({hasText:'활동 기록'}).evaluate(e=>e.click());await page.waitForTimeout(120);
+  await page.evaluate(()=>detailTabFocus('개요',true));
+  await page.locator('.dcc-contact-actions .quick-work').evaluate(e=>e.click());await page.waitForTimeout(120);
   assert.equal(await page.locator('#dv-act-note').evaluate(e=>e===document.activeElement),true,'sticky activity action did not focus the activity editor');
   await page.locator('#dv-act-note').fill('');
   await page.getByRole('button',{name:'활동 저장',exact:true}).evaluate(e=>e.click());
   assert.match(await page.locator('#dv-err').textContent(),/활동 유형·무엇을 했는지·활동 일시/,'activity validation gave no visible explanation');
 
-  await page.locator('.stickytools button').filter({hasText:'사업유형 전환'}).evaluate(e=>e.click());await page.waitForTimeout(80);
+  await page.evaluate(()=>{detailTabFocus('개요',true);openBizChange()});await page.waitForTimeout(80);
   assert.equal(await page.locator('#inlineBiz').count(),1,'business transition did not open its inline editor');
   await page.evaluate(()=>closeBiz());assert.equal(await page.locator('#inlineBiz').count(),0);
   await page.locator('.stickytools button').filter({hasText:'단계 전환'}).evaluate(e=>e.click());await page.waitForTimeout(80);
