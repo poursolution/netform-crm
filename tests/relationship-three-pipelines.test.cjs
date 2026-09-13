@@ -19,6 +19,14 @@ test('pipeline counts share the scoped relationship set but ignore only the sele
   assert.match(js, /if\(!ignoreType&&REL_CODES\.indexOf\(G\.relationshipType\)>=0/);
 });
 
+test('assignee selection is placed in the relationship header before pipeline selection', () => {
+  const owner = js.indexOf('relm-owner-top');
+  const pipelines = js.indexOf('relm-pipelines');
+  assert.ok(owner >= 0 && pipelines > owner);
+  assert.match(js, /relationshipManagementSetOwner\(this\.value\)/);
+  assert.match(css, /\.relm-heading-actions/);
+});
+
 test('expansion list restores the previous operational context', () => {
   for (const label of ['선택기간 거래', '전체연도 기한도래', '기존 수주 공종', '계약일', '준공일', '당시 영업담당']) {
     assert.ok(expansion.includes(label), label);
