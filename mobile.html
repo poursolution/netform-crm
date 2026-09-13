@@ -374,6 +374,7 @@ body.svc .phone{width:100%;max-width:none;border:0;border-radius:0;box-shadow:no
 /* 아파트스퀘어 운영정보 — 모바일도 ASQ 정본을 읽기만 한다. */
 .m-asq{border:1px solid #c8dfeb!important;background:linear-gradient(145deg,#f1faff,#fff)}.m-asq-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.m-asq-title{display:flex;align-items:center;gap:9px}.m-asq-mark{display:grid;width:36px;height:36px;place-items:center;border-radius:11px;background:#0f5375;color:#fff;font-size:11px;font-style:normal;font-weight:900}.m-asq-title h2{margin:0;font-size:14px}.m-asq-title small{display:block;margin-top:2px;color:#607787;font-size:9.5px}.m-asq-state{border-radius:999px;background:#e5f6ef;padding:5px 8px;color:#177252;font-size:9.5px;font-style:normal;font-weight:900}.m-asq-state.wait{background:#fff2d8;color:#8f620e}.m-asq-summary{margin-top:10px;border-radius:11px;background:#fff;padding:10px}.m-asq-summary strong{display:block;color:#17394a;font-size:14px}.m-asq-summary small{display:block;margin-top:3px;color:#6c7f8c;font-size:9.5px}.m-asq-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}.m-asq-grid div{min-width:0;border-radius:9px;background:#fff;padding:8px}.m-asq-grid span{display:block;color:#71838f;font-size:9px;font-weight:750}.m-asq-grid b{display:block;overflow:hidden;margin-top:3px;color:#203846;font-size:10.5px;text-overflow:ellipsis;white-space:nowrap}.m-asq-grid .next b{color:#ac601b}.m-asq-open{display:block;margin-top:9px;border-radius:10px;background:#123c52;padding:10px;color:#fff;text-align:center;text-decoration:none;font-size:11px;font-weight:900}.m-asq-note{margin:8px 0 0;color:#667c89;font-size:9.5px;line-height:1.5}.m-asq-empty{margin-top:10px;border:1px dashed #ccdde5;border-radius:11px;background:#fff;padding:11px;color:#667b89;font-size:10px;line-height:1.55}.m-asq-empty b{display:block;margin-bottom:3px;color:#283f4b;font-size:11.5px}
 
+.mt-head{margin:2px 0 12px}.mt-head h1{margin:0;font-size:20px;letter-spacing:-.7px}.mt-head p{margin:5px 0 0;color:var(--sub);font-size:11px;line-height:1.5}.mt-switch{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;padding:4px;border-radius:13px;background:#e9edf4}.mt-switch button{border-radius:10px;padding:10px 6px;color:var(--sub);font-size:11px;font-weight:900}.mt-switch button.on{background:#fff;color:var(--blue-dark);box-shadow:0 2px 8px rgba(24,40,75,.1)}.mt-section{margin-top:15px}.mt-section-head{display:flex;align-items:end;justify-content:space-between;margin-bottom:7px}.mt-section-head h2{margin:0;font-size:15px}.mt-section-head span{color:var(--sub);font-size:10px;font-weight:750}.mt-list{display:grid;gap:7px}.mt-item{width:100%;box-sizing:border-box;border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:13px;background:#fff;padding:11px 12px;text-align:left;color:var(--ink);box-shadow:0 2px 8px rgba(29,45,82,.035)}.mt-item.danger{border-left-color:var(--danger)}.mt-item.warn{border-left-color:#e99a20}.mt-item-top{display:flex;align-items:center;gap:7px}.mt-rank{display:grid;place-items:center;width:22px;height:22px;flex:0 0 auto;border-radius:7px;background:var(--blue-50);color:var(--blue);font-size:10px;font-weight:950}.mt-item-top strong{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.mt-owner{color:var(--sub);font-size:9.5px;font-weight:800}.mt-reason{display:block;margin-top:7px;color:var(--danger);font-size:11px;font-weight:900}.mt-item.warn .mt-reason{color:#a36312}.mt-meta{display:block;margin-top:5px;color:var(--sub);font-size:9.5px;line-height:1.45}.mt-next{display:block;margin-top:7px;padding-top:7px;border-top:1px solid var(--line);color:var(--blue-dark);font-size:10.5px;font-weight:850}.mt-empty{border:1px dashed var(--line-2);border-radius:13px;background:#fff;padding:18px 12px;text-align:center;color:var(--sub);font-size:11px}.mt-counts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}.mt-counts div{border:1px solid var(--line);border-radius:11px;background:#fff;padding:9px 7px}.mt-counts b{display:block;font-size:16px}.mt-counts span{display:block;margin-top:2px;color:var(--sub);font-size:9px;font-weight:750}
 </style>
 </head>
 <body>
@@ -892,7 +893,7 @@ async function doSignIn(){
   if(await authAdmit(data.session)){
     G.lgPw='';
     loadLive();                                   /* 토큰이 생긴 지금 부른다 */
-    nav(G.mode==='admin'?'ctrl':'today');
+    nav('today');
   } else rLogin();
 }
 function askSignOut(){if(confirm('로그아웃할까요?'))doSignOut()}
@@ -1164,7 +1165,7 @@ function nav(v){
  /* 목업은 아무 화면이나 바로 열어보라고 REPS[0] 으로 자동 로그인한다.
     실서비스에서 그러면 로그인을 건너뛰게 되므로 로그인으로 되돌린다. */
  if(!G.user){if(!DEVVIEW)return nav('login');G.user=REPS[0];G.mode='rep'}
- if(v==='today'){G.mode='rep';G.tab='today';G.deal=null;render()}
+ if(v==='today'){G.mode=canManage()&&G.mode==='admin'?'admin':'rep';G.tab='today';G.deal=null;render()}
  else if(v==='sheet'){G.mode='rep';G.tab='today';G.deal=null;render();var TD=G._today||[];var i=-1;for(var k=0;k<TD.length;k++){if(TD[k].call&&!isDone(TD[k])){i=k;break}}if(i<0)i=0;if(TD.length)callFlow(i)}
  else if(v==='mine'){G.mode='rep';G.tab='mine';G.deal=null;render()}
  else if(v==='deal'){G.mode='rep';G.tab='mine';var _d=pickSampleDeal();G.deal=_d?_d.id:null;render()}
@@ -1208,7 +1209,7 @@ function doLogin(){
  /* 담당자·겸직(dual)은 항상 «오늘» 로 시작한다 — 관리 화면은 상단 토글로 전환.
     관리 전담(admin) 계정만 관제로 (그 역할엔 오늘 탭 자체가 없음) */
  G.mode=G.user.role==='admin'?'admin':'rep';
- nav(G.mode==='admin'?'ctrl':'today');
+ nav('today');
 }
 /* 내 건 = 로그인한 사람의 건. 관리자가 특정 담당자를 열람할 때는 who 로 지정 */
 function myDeals(who){
@@ -1236,7 +1237,7 @@ function render(){
  if(!G.user)return rLogin();
 
  var tabs=G.mode==='admin'
-  ?[['ctrl',IC.siren,'관제'],['pipe',IC.chart,'파이프라인'],['perf',IC.user,'실적'],['rpt',IC.doc,'리포트']]
+  ?[['today',IC.sun,'오늘'],['ctrl',IC.siren,'관제'],['pipe',IC.chart,'파이프라인'],['perf',IC.user,'실적'],['rpt',IC.doc,'리포트']]
   :[['today',IC.sun,'오늘'],['mine',IC.folder,'내 영업'],['find',IC.plus,'+ 영업'],['my',IC.chart,'내 실적']];
  tabbar.innerHTML=tabs.map(function(t){return '<button class="'+(G.tab===t[0]?'on':'')+'" onclick="G.tab=\''+t[0]+'\';G.deal=null;G.drill=null;G.stage=null;G.sub=null;render()">'+t[1]+'<span class="tl2">'+t[2]+'</span></button>'}).join('');
  var head='<div class="home-bar"><div class="brand"><span class="mark">N</span>영업관리</div><div class="rgt">'
@@ -1250,32 +1251,23 @@ function render(){
  if(G.sub)return rSub(head);
  ({today:rToday,mine:rMine,find:rProspect,my:rMy,ctrl:rCtrl,pipe:rPipe,perf:rPerf,rpt:rRpt})[G.tab](head);
 }
-function switchMode(m){Phase1.mode(m);G.mode=m;saveMode(m);G.tab=m==='admin'?'ctrl':'today';G.deal=null;G.drill=null;G.stage=null;G.sub=null;render();}
+function switchMode(m){Phase1.mode(m);G.mode=m;saveMode(m);G.tab='today';G.deal=null;G.drill=null;G.stage=null;G.sub=null;render();}
 
 /* ── 2 오늘 ── */
-function rToday(head){
- var TODAY=buildToday();                       /* 고정 배열 제거 — 매번 내 딜에서 계산 */
- G._today=TODAY;
- if(!TODAY.length){scr.innerHTML=head+'<div class="body fadein"><div class="done-wrap"><div class="done-ring">'+IC.check+'</div><h2>오늘 챙길 게 없어요</h2><p>기한 지난 건·다음 행동 없는 건이 하나도 없습니다</p></div></div>';return}
- var doneN=TODAY.filter(isDone).length,left=Math.max(0,TODAY.length-doneN),pct=Math.round(doneN/TODAY.length*100);
- var rows=TODAY.map(function(t,i){
-  var done=doneLabel(t);
-  var tl=done?tile(IC.check,'var(--sub-2)','var(--bg)')
-   :t.urgent?tile(IC.siren,'var(--danger)','var(--danger-bg)')
-   :t.call?tile(IC.phone,'var(--blue)','var(--blue-50)')
-   :tile(IC.check,'var(--ok)','var(--ok-bg)');
-  var right=done?'<span class="callbtn done">'+IC.check+'</span>'
-   :t.call?'<button class="callbtn" onclick="event.stopPropagation();startTodayCall('+i+')" aria-label="전화">'+IC.phone+'</button>'
-   :'<span class="minis"><button class="mini ok" onclick="event.stopPropagation();quick('+i+',\'확인 완료\')">확인</button><button class="mini skip" onclick="event.stopPropagation();skipSheet('+i+')">넘기기</button></span>';
-  return '<div class="lrow '+(done?'dim':'')+'" onclick="openTodayItem('+i+')">'+tl
-   +'<span class="meta"><span class="w '+(t.urgent&&!done?'':'soft')+'">'+esc(done||t.why)+'</span><span class="t">'+esc(t.nm)+'</span><span class="s">'+esc(t.sub)+'</span></span>'+right+'</div>';
- }).join('');
- scr.innerHTML=head+'<div class="body fadein">'
- +'<div class="banner"><span class="glow"></span><div class="eyebrow">'+(left?new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'long'}):'수고했어요')+'</div><h3>'+(left?'오늘 몫 '+TODAY.length+'건 중\n<span style="opacity:.95">'+left+'건 남았어요</span>':'오늘 다 끝났어요 🎉')+'</h3><p>기한초과 → 오늘마감 → 미응대 순으로 정렬했어요</p><div class="bprog"><i style="width:'+pct+'%"></i></div></div>'
- +'<div class="saleshero"><button class="pri" onclick="G.tab=\'mine\';render()"><b>'+myDeals().filter(isOpen).length+'건</b><span>내 영업 전체 보기 →</span></button><button onclick="G.tab=\'find\';render()"><b>＋</b><span>새 영업 등록</span></button></div>'
-  +'<div class="card tight">'+rows+'</div>'
- +(left===0?'<div class="done-wrap" style="min-height:auto;padding:16px"><div class="done-ring" style="width:64px;height:64px">'+IC.check+'</div><h2 style="font-size:17px">기재는 자동으로 됐어요</h2><p>내일 몫은 아침 9시에 알려드릴게요</p></div>':'')
- +'</div>';
+function todayStampM(v){var t=new Date(v||'').getTime();return isNaN(t)?null:t}
+function todayHoursM(v){var t=todayStampM(v);return t==null?null:Math.max(0,Math.floor((Date.now()-t)/36e5))}
+function adminInquiryTodayM(){return (ADMIN.inquiries||[]).map(function(q){var st=inquiryStateM(q),h=todayHoursM(q.at),reason='';if(st==='unassigned')reason='담당자 미배정'+(h!=null?' · '+h+'시간 경과':'');else if(st==='assigned'&&h!=null&&h>=2)reason='최초 응대 지연 · '+h+'시간 경과';if(!reason)return null;return {kind:'inquiry',ref:q.key,p:st==='unassigned'?0:1,why:reason,nm:q.nm,owner:q.rep||'미배정',sub:(q.gj||q.inflow||'견적문의')+' · '+q.status,next:st==='unassigned'?'담당자 배정':'최초 응대 기록'}}).filter(Boolean).sort(function(a,b){return a.p-b.p})}
+function adminPipelineTodayM(){return DEALS.filter(isOpen).map(function(d){var dd=dueDays(d),a=ageOf(d),reason='',p=9;if(dd!=null&&dd<0){reason='다음 행동일 '+Math.abs(dd)+'일 초과';p=0}else if(dd===0){reason='오늘 다음 행동 예정';p=1}else if(!d.nextAction){reason='다음 행동 미지정';p=2}else if(isStale(d)){reason=staleTxt(d)+' · 단계 변화 확인';p=3}if(!reason)return null;return {kind:'deal',ref:d.id,p:p,why:reason,nm:d.nm,owner:d.rep||'미배정',sub:stageLabel(d.code)+' · 최근 활동 '+(a==null?'미기록':a+'일 전'),next:d.nextAction&&d.nextAction.text||'다음 행동 지정'}}).filter(Boolean).sort(function(a,b){return a.p-b.p})}
+function todayItemHTMLM(t,rank){var cls=t.p<=0?'danger':t.p<=2?'warn':'';return '<button class="mt-item '+cls+'" data-kind="'+escAttr(t.kind)+'" data-ref="'+escAttr(t.ref)+'" onclick="openTodayEntryM(this.dataset.kind,this.dataset.ref)"><span class="mt-item-top">'+(rank?'<i class="mt-rank">'+rank+'</i>':'')+'<strong>'+esc(t.nm)+'</strong><i class="mt-owner">'+esc(t.owner||'')+'</i></span><span class="mt-reason">'+esc(t.why)+'</span><span class="mt-meta">'+esc(t.sub||'')+'</span><span class="mt-next">→ '+esc(t.next||'상세 확인')+'</span></button>'}
+function openTodayEntryM(kind,ref){if(kind==='inquiry'){G.sub={t:'inqAssigned',key:ref};render();return}var d=DEALS.find(function(x){return String(x.id)===String(ref)});if(d){G.deal=d.id;render()}}
+function rTodayRoleM(head){
+ if(G.mode==='admin'){
+  var iq=adminInquiryTodayM(),pipe=adminPipelineTodayM(),view=G.todayAdminView||'inquiry',list=view==='inquiry'?iq:pipe;
+  scr.innerHTML=head+'<div class="body fadein"><div class="mt-head"><h1>오늘 관리자 개입</h1><p>누구의 어떤 업무가 멈췄는지 이유부터 확인합니다.</p></div><div class="mt-counts"><div><b>'+(iq.length+pipe.length)+'</b><span>전체 관리필요</span></div><div><b>'+iq.length+'</b><span>견적문의</span></div><div><b>'+pipe.length+'</b><span>파이프라인</span></div></div><div class="mt-switch"><button class="'+(view==='inquiry'?'on':'')+'" onclick="G.todayAdminView=\'inquiry\';render()">견적문의 관리 '+iq.length+'</button><button class="'+(view==='pipeline'?'on':'')+'" onclick="G.todayAdminView=\'pipeline\';render()">파이프라인 관리 '+pipe.length+'</button></div><section class="mt-list">'+(list.length?list.slice(0,30).map(function(t){return todayItemHTMLM(t,false)}).join(''):'<div class="mt-empty">현재 관리자가 개입할 항목이 없습니다.</div>')+'</section></div>';return
+ }
+ var all=buildToday();G._today=all;var priority=all.slice(0,5),routine=all.slice(5);
+ priority.forEach(function(t){t.owner=G.user.nm;t.next=t.kind==='inquiry'?'최초 응대 기록':'상세에서 다음 행동 확인'});routine.forEach(function(t){t.owner=G.user.nm;t.next='상세 확인'});
+ scr.innerHTML=head+'<div class="body fadein"><div class="mt-head"><h1>오늘 우선순위</h1><p>기한과 고객 반응을 기준으로 지금 먼저 움직일 순서입니다.</p></div><section class="mt-list">'+(priority.length?priority.map(function(t,i){return todayItemHTMLM(t,i+1)}).join(''):'<div class="mt-empty">지금 먼저 개입할 현장이 없습니다.</div>')+'</section><section class="mt-section"><div class="mt-section-head"><h2>오늘 업무</h2><span>일반 실행업무 '+routine.length+'건</span></div><div class="mt-list">'+(routine.length?routine.map(function(t){return todayItemHTMLM(t,false)}).join(''):'<div class="mt-empty">우선순위와 중복되지 않는 일반 업무가 없습니다.</div>')+'</div></section></div>';
 }
 function todayDeal(i){var t=(G._today||[])[i];return t&&t.kind!=='inquiry'?DEALS.find(function(x){return String(x.id)===String(t.ref)}):null}
 function todayInquiry(i){var t=(G._today||[])[i];return t&&t.kind==='inquiry'?(ADMIN.inquiries||[]).filter(function(q){return String(q.key)===String(t.ref)})[0]:null}
@@ -2503,13 +2495,13 @@ reactivationHTMLM=function(){var A=reactivationM();if(!A.length)return '';return
 
    «로그인 기억» 은 Supabase 가 이미 해 준다. 이름만 로컬에 저장해 두고 바로
    들여보내면 토큰 없이 서버를 불러 «서버 연결 실패» 가 뜬다 — 실제로 그랬다. */
-</script><script src="./operational-overlay.js?v=20260908-sms-1"></script><script>if(!DEVVIEW)document.body.classList.add('svc');
+</script><script src="./operational-overlay.js?v=20260908-sms-1"></script><script>rToday=rTodayRoleM;if(!DEVVIEW)document.body.classList.add('svc');
 if(DEVVIEW){nav('flow')}
 else if(DEMO){G.user=REPS[0];G.mode='rep';nav('today')}
 else{
   nav('login');                                   /* 확인되기 전까지는 로그인 화면 */
   authRestore().then(function(ok){
-    if(ok){loadLive();nav(G.mode==='admin'?'ctrl':'today')}
+    if(ok){loadLive();nav('today')}
     else nav('login');
   }).catch(function(){nav('login')});
 }
