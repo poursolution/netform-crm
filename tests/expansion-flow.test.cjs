@@ -32,36 +32,36 @@ test('확장 전환은 기존 수주 UUID·발송 증거·공종·금액을 고�
 });
 test('실패 응답 때 mutation 이전에 검증하고 일반 생성 경로로 빠지지 않는다',()=>{const ui=fs.readFileSync(require.resolve('../expansion-pool.js'),'utf8');assert.ok(ui.indexOf('F.acknowledged(')<ui.indexOf('local.local.createdOpportunityId='));assert.match(ui,/pending.has/);const crm=fs.readFileSync(require.resolve('../crm.html'),'utf8');assert.match(crm,/if\(expansionSource\)\{ExpansionPool.convert[\s\S]*?return;\}/);assert.doesNotMatch(crm,/if\(expansionSource\)expansionSave/);new vm.Script(ui)});
 test('확장 전환은 차단된 legacy WRITE_API 대신 멱등 queue를 사용한다',()=>{const ui=fs.readFileSync(require.resolve('../expansion-pool.js'),'utf8');assert.match(ui,/queue\.enqueue\('expansion_quote_convert'/);assert.doesNotMatch(ui,/fetch\(WRITE_API/);});
-test('확장 목록은 독립 복합필터·전체연도 기한배지·고정 페이지를 사용한다',()=>{
+test('확장 목록은 독립 복합필터·전체연도 기한배지·50건 더보기를 사용한다',()=>{
  const ui=fs.readFileSync(require.resolve('../expansion-pool.js'),'utf8');
  assert.match(ui,/expansionStatusFilter/);
  assert.match(ui,/expansionDueFilter/);
  assert.match(ui,/globalDue/);
  assert.match(ui,/전체연도 기한도래/);
- assert.match(ui,/start=\(page-1\)\*pageSize/);
- assert.match(ui,/← 이전 20건/);
+ assert.match(ui,/listLimit=Math\.max\(50/);
+ assert.match(ui,/50건 더보기/);
  assert.match(ui,/Pipeline 전환','보류'/);
  assert.doesNotMatch(ui,/y<2024/);
  assert.doesNotMatch(ui,/slice\(0,page\*20\)/);
 });
-test('확장관리는 관리자 목록 기본과 영업사원 보드 기본을 지원한다',()=>{
+test('확장관리는 모든 역할에서 상태보드를 기본으로 두고 전체목록을 지원한다',()=>{
  const ui=fs.readFileSync(require.resolve('../expansion-pool.js'),'utf8');
  const css=fs.readFileSync(require.resolve('../expansion-pool.css'),'utf8');
- assert.match(ui,/inqCtlIsAdmin\(\)\?'list':'board'/);
- assert.match(ui,/상태 보드/);
- assert.match(ui,/상세 목록/);
+ assert.match(ui,/view=G\.expansionView\|\|'board'/);
+ assert.match(ui,/상태보드/);
+ assert.match(ui,/전체목록/);
  for(const status of F.statuses)assert.ok(ui.includes(status)||ui.includes('F.statuses'),status);
  assert.match(ui,/cardActions\(r,done\)/);
  assert.match(css,/\.exp-board\{/);
  assert.match(css,/scroll-snap-type/);
 });
-test('확장 목록은 이전 운영정보 요약과 독립 관리창 진입을 함께 제공한다',()=>{
+test('확장 목록은 여섯 판단영역과 독립 관리창 진입을 함께 제공한다',()=>{
  const ui=fs.readFileSync(require.resolve('../expansion-pool.js'),'utf8');
  assert.match(ui,/과거 거래는 보존하고, 다음 기회를 찾습니다/);
  assert.match(ui,/class="exp-command"/);
- assert.match(ui,/\['기존 수주 공종',[\s\S]*?\['수주금액',[\s\S]*?\['계약일',[\s\S]*?\['준공일',[\s\S]*?\['당시 영업담당'/);
+ for(const label of ['현장 / 기존거래','기존 거래','확장 신호','담당자','다음 접촉','상태'])assert.match(ui,new RegExp(label));
  assert.match(ui,/ExpansionPool\.open\(this\.dataset\.id\)/);
- assert.match(ui,/현장 관리와 전체 이력은 관리창에서 확인합니다/);
+ assert.doesNotMatch(ui,/class="exp-pool-card"/);
 });
 test('확장 현장은 보드 아래로 펼치지 않고 독립 관리창에서 처리한다',()=>{
  const ui=fs.readFileSync(require.resolve('../expansion-pool.js'),'utf8');
@@ -82,7 +82,7 @@ test('상태 보드와 상세 목록은 같은 확장관리 데이터로 실제 
  const context={console,window:null,document:{getElementById:id=>id==='expansion-root'?root:id==='expansionBadge'?badge:null},ExpansionFlow:F,B:{expansion_events:[],expansion_quote_dispatches:[],deals:[]},G:{expansionOwner:'전체',expansionYear:'전체'},expansionRecords:()=>rows,expansionSourceDeal:()=>({assignee:'황윤선',contract_date:'2026-01-01'}),daysTo:()=>0,repN:x=>x,fmtAmt:x=>Math.round(x/10000)+'만',fmtD:x=>String(x).slice(0,10),paintExpansion:()=>{}};
  context.window=context;vm.createContext(context);new vm.Script(fs.readFileSync(require.resolve('../expansion-pool.js'),'utf8')).runInContext(context);
  context.ExpansionPool.render();assert.equal((root.innerHTML.match(/class="exp-board-column"/g)||[]).length,6);assert.match(root.innerHTML,/검수 현장 0/);assert.match(root.innerHTML,/오늘 접촉/);
- context.G.expansionView='list';context.ExpansionPool.render();assert.match(root.innerHTML,/class="exp-pool-list"/);assert.doesNotMatch(root.innerHTML,/class="exp-board"/);
- context.G.expansionView=null;context.inqCtlIsAdmin=()=>true;context.ExpansionPool.render();assert.match(root.innerHTML,/class="exp-pool-list"/);
+ context.G.expansionView='list';context.ExpansionPool.render();assert.match(root.innerHTML,/class="exp-compact-list"/);assert.doesNotMatch(root.innerHTML,/class="exp-board"/);
+ context.G.expansionView=null;context.inqCtlIsAdmin=()=>true;context.ExpansionPool.render();assert.match(root.innerHTML,/class="exp-board"/);
 });
 test('서버 migration: 발송증명·트랜잭션 잠금·읽기전용·권한',()=>{const sql=fs.readFileSync(require.resolve('../sql/20260905_expansion_quote_handoff.sql'),'utf8');for(const s of ['for update',"q.status<>'sent'",'provider_receipt_id','crm_expansion_readonly_guard',"'origin','expansion'",'from public,anon,authenticated'])assert.ok(sql.includes(s),s)});

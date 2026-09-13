@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const root=path.resolve(__dirname,'..'),html=fs.readFileSync(path.join(root,'crm.html'),'utf8'),exp=fs.readFileSync(path.join(root,'expansion-pool.js'),'utf8'),css=fs.readFileSync(path.join(root,'p2-operational-polish.css'),'utf8'),external=fs.readFileSync(path.join(root,'external-performance.js'),'utf8');
-test('P2 queues use compact operational surfaces',()=>{assert.match(exp,/inqCtlIsAdmin\(\)\?'list':'board'/);assert.match(exp,/pageSize=20/);assert.match(css,/\.site-command \.eyebrow/);assert.match(html,/p2-operational-polish\.css/);});
+test('P2 queues use compact operational surfaces',()=>{assert.match(exp,/view=G\.expansionView\|\|'board'/);assert.match(exp,/listLimit=Math\.max\(50/);assert.match(css,/\.site-command \.eyebrow/);assert.match(html,/p2-operational-polish\.css/);});
 test('campaign follows recipient to message to proof to send',()=>{assert.match(html,/\['대상 선택','조건·동의 검수'\]/);assert.match(html,/\['문구 선택','템플릿·변수'\]/);assert.match(html,/\['미리보기','실제 치환 확인'\]/);assert.match(html,/\['발송','즉시·예약 설정'\]/);});
 test('manager intervention exposes owner-level action counts',()=>{assert.match(html,/rm-owner-interventions/);assert.match(html,/Next 없음/);assert.match(html,/장기정체/);assert.match(html,/repManagerOpenDrawer/);});
 test('external conversion denominator and construction-year missing bucket stay explicit',()=>{assert.match(external,/decided\.length \? Math\.round\(won\.length \/ decided\.length/);assert.match(html,/전환율 = 수주 ÷ 결정 완료/);assert.match(html,/공사 예정연도/);assert.match(html,/미입력/);});

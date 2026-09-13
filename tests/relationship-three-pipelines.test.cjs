@@ -37,9 +37,10 @@ test('relationship work uses type-specific cards instead of the seven-column tab
   assert.match(js, /slice\(0,15\)/);
 });
 
-test('expansion list restores the previous operational context', () => {
+test('expansion keeps its board and uses a compact comparison list', () => {
   for (const label of ['선택기간 거래', '전체연도 기한도래', '기존 수주 공종', '계약일', '준공일', '당시 영업담당']) {
     assert.ok(expansion.includes(label), label);
   }
-  assert.match(expansion, /상세 목록/);
+  assert.match(expansion, /전체목록/);
+  assert.match(expansion, /class="exp-compact-row/);
 });

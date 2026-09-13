@@ -49,7 +49,17 @@ async function run(){
   assert.equal(await modal.getAttribute('aria-hidden'),'true');
   await page.waitForFunction(()=>document.activeElement.classList.contains('exp-board-launch'));
   assert.equal(await page.evaluate(()=>document.activeElement.classList.contains('exp-board-launch')),true);
-  console.log(JSON.stringify({status:'PASS',inline_details:0,modal_open:true,actions_in_modal:true,history_in_modal:true,board_height_stable:true,focus_restored:true,network_scope:'localhost-only',business_writes:0}));
+  await page.evaluate(()=>{const base=expansionRecords()[0];const rows=Array.from({length:51},(_,i)=>({...base,id:'bulk-'+i,sourceOpportunityId:'won-'+i,site:'대량 확장 '+String(i).padStart(2,'0')}));expansionRecords=()=>rows;G.expansionView='list';G.expansionListLimit=50;ExpansionPool.render()});
+  assert.equal(await page.locator('.exp-compact-row').count(),50);
+  assert.equal(await page.locator('.exp-pool-card').count(),0);
+  await page.locator('.exp-list-more').click();
+  assert.equal(await page.locator('.exp-compact-row').count(),51);
+  await page.locator('.exp-compact-row').first().click();
+  assert.equal(await page.locator('#expansionManager').getAttribute('aria-hidden'),'false');
+  await page.locator('.exp-manage-close').click();
+  await page.setViewportSize({width:390,height:844});
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true);
+  console.log(JSON.stringify({status:'PASS',inline_details:0,modal_open:true,actions_in_modal:true,history_in_modal:true,board_height_stable:true,focus_restored:true,compact_list:true,initial_rows:50,load_more_rows:51,mobile_horizontal_scroll:false,network_scope:'localhost-only',business_writes:0}));
  }finally{await browser.close();await new Promise(resolve=>srv.close(resolve))}
 }
 
