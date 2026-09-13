@@ -152,6 +152,29 @@ test('duplicate inquiry pairs use the assigned row as the single operational rep
   assert.equal(rows[1].id, 'later-legitimate');
 });
 
+test('sheet mirror wins even when its site label differs from the direct webhook', () => {
+  const api = runtime();
+  const rows = api.inquiryCanonicalRows([
+    { id: 'direct', site_name: '[부산] 근린생활시설', phone: '010-1111-2222', brand: 'POUR솔루션', work_type: '옥상방수', received_at: '2026-09-11T04:13:00Z', assigned_to: null, assignee_name: '' },
+    { id: 'sheet', sheet_row: 415, site_name: '근린생활시설', phone: '010-1111-2222', brand: 'POUR솔루션', work_type: '옥상방수', received_at: '2026-09-11T04:13:02Z', assigned_to: '김성민', assignee_name: '김성민' }
+  ]);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].id, 'sheet');
+  assert.equal(api.inquiryAssigned(rows[0]), true);
+  assert.deepEqual(Array.from(rows[0]._canonicalDuplicateIds).sort(), ['direct', 'sheet']);
+});
+
+test('mirror fallback never combines two sheet rows or events more than one minute apart', () => {
+  const api = runtime();
+  const common = { phone: '010-3333-4444', brand: 'POUR공법', work_type: '재도장', assigned_to: null, assignee_name: '' };
+  const rows = api.inquiryCanonicalRows([
+    { ...common, id: 'sheet-a', sheet_row: 501, site_name: 'A', received_at: '2026-09-11T00:00:00Z' },
+    { ...common, id: 'sheet-b', sheet_row: 502, site_name: 'B', received_at: '2026-09-11T00:00:01Z' },
+    { ...common, id: 'direct-later', site_name: 'C', received_at: '2026-09-11T00:02:00Z' }
+  ]);
+  assert.equal(rows.length, 3);
+});
+
 test('UUID-resolved owner wins over a stale legacy name after reassignment', () => {
   const api = runtime();
   const id = '33333333-3333-4333-8333-333333333333';

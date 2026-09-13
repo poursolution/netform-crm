@@ -110,7 +110,14 @@
   return [closed,contact,site,brand,String(work||'').replace(/\s+/g,'').toLowerCase()].join('|');
  }
  function inquiryTime(q){var value=new Date(receivedAt(q)).getTime();return Number.isFinite(value)?value:null}
- function winnerScore(q){var identity=root.inquiryOwnerIdentity(q),score=identity.assigned?100:0;score+=identity.id?20:0;score+=firstText([q.responded_at,q.first_response_at])?10:0;score+=assignmentHistory(q).length?5:0;return score}
+ function winnerScore(q){var identity=root.inquiryOwnerIdentity(q),score=identity.assigned?100:0;score+=identity.id?20:0;score+=firstText([q.responded_at,q.first_response_at])?10:0;score+=assignmentHistory(q).length?5:0;score+=q&&q.sheet_row!==null&&q.sheet_row!==undefined&&String(q.sheet_row).trim()?2:0;return score}
+ function mirroredEventBase(q){
+  var contact=contactToken(q),brand=firstText([q&&q.brand,q&&q.business_type]).replace(/\s+/g,'').toLowerCase();
+  var work=typeof root.inqCtlWorkLabel==='function'?root.inqCtlWorkLabel(q):firstText([q&&q.work_type,q&&q.work]);
+  var closed=typeof root.isClosedInq==='function'&&root.isClosedInq(q)?'closed':'active';
+  return contact&&brand?[closed,contact,brand,String(work||'').replace(/\s+/g,'').toLowerCase()].join('|'):'';
+ }
+ function sheetBacked(q){return !!(q&&q.sheet_row!==null&&q.sheet_row!==undefined&&String(q.sheet_row).trim())}
  root.inquiryCanonicalRows=function(list){
   var groups={},result=[];
  (list||[]).forEach(function(q){
@@ -122,7 +129,22 @@
    if(nextScore>currentScore||(nextScore===currentScore&&String(q.updated_at||q.updated||'')>String(current.updated_at||current.updated||''))){group.winner=q;result[group.index]=q}
   });
   Object.keys(groups).forEach(function(base){groups[base].forEach(function(group){if(group.rows.length>1)group.winner._canonicalDuplicateIds=group.rows.map(function(q){return String(q.id||q.inquiry_id||'')}).filter(Boolean)})});
-  return result;
+  // The same external event arrives through both the direct webhook and its
+  // Google Sheet mirror. Site labels can differ between those two payloads,
+  // so a strict site-name key leaves the direct copy falsely "unassigned".
+  // Collapse only a unique sheet/no-sheet pair received within one minute;
+  // two sheet rows or two direct inquiries are never combined by this rule.
+  var mirrorGroups={},mirrored=[];
+  result.forEach(function(q){
+   var base=mirroredEventBase(q),time=inquiryTime(q),group=null,isSheet=sheetBacked(q);
+   if(base)group=(mirrorGroups[base]||[]).filter(function(candidate){return time!==null&&candidate.time!==null&&Math.abs(time-candidate.time)<=60000&&candidate.sheet!==isSheet})[0];
+   if(!group){group={time:time,sheet:isSheet,winner:q,index:mirrored.length,rows:[q]};mirrored.push(q);if(base)(mirrorGroups[base]=mirrorGroups[base]||[]).push(group);return}
+   group.rows.push(q);
+   var current=group.winner,nextScore=winnerScore(q),currentScore=winnerScore(current);
+   if(nextScore>currentScore||(nextScore===currentScore&&String(q.updated_at||q.updated||'')>String(current.updated_at||current.updated||''))){group.winner=q;mirrored[group.index]=q}
+  });
+  Object.keys(mirrorGroups).forEach(function(base){mirrorGroups[base].forEach(function(group){if(group.rows.length>1)group.winner._canonicalDuplicateIds=(group.winner._canonicalDuplicateIds||[]).concat(group.rows.map(function(q){return String(q.id||q.inquiry_id||'')}).filter(Boolean)).filter(function(id,index,ids){return ids.indexOf(id)===index})})});
+  return mirrored;
  };
  var originalOperationalInquiries=root.operationalInquiries||function(list){return list||[]};
  root.operationalInquiries=function(list){return root.inquiryCanonicalRows(originalOperationalInquiries(list))};
