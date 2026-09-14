@@ -89,3 +89,9 @@
 .relpc-panel .relpc-detail-block h3{margin-top:14px}
 .relpc-inbox .relpc-tabs small{font-size:11px;margin-left:4px;color:#72839b}
 body:has(#pg-relationship.on) #execAskBtn{display:none}
+.relpc-inbox .relpc-plan{background:#f7faff;border-left:2px solid #dbe7f6}
+.relpc-inbox .relpc-plan>strong{font-size:14px;line-height:1.6;color:#153d6b}
+.relpc-plan>button{margin-top:8px;border:1px solid #b8cde7;border-radius:4px;padding:5px 8px;color:#245488;background:white;cursor:pointer}
+.relpc-plan-presets{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.relpc-plan-presets button{border:1px solid #d8e1ec;border-radius:4px;background:#f6f8fc;color:#34516f;padding:6px 8px;font-size:12px;white-space:normal;cursor:pointer}
+.relpc-inbox td>.relpc-status{display:inline-block;margin-top:5px}
