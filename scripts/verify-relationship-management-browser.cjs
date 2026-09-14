@@ -214,7 +214,18 @@ async function run(){
   assert.deepEqual(await page.evaluate(()=>G.campaignOpportunityScope),['scale-50']);
   assert.equal(await page.evaluate(()=>CAMPAIGN_STATE.purpose),'관계 유지');
   assert.equal(await page.evaluate(()=>window.__businessWrites.includes('campaign_create')),false);
-  console.log(JSON.stringify({status:'PASS',pc_customer_inbox:true,kpis:4,contact90:true,drawer:true,quick_actions:true,rep_scope:true,year_filter:true,transition_validation:true,campaign_scope:true,horizontal_scroll:false}));
+  await page.evaluate(()=>{const base=B.deals[0];B.deals=['2023','2024','2025','2028',''].map((y,i)=>({...base,id:'history-'+i,site:'과거검증 '+i,planned_construction_year:y,stage_contexts:{},activities:[{type:'방문',at:'2023-06-14',note:'2023 최초 접촉'},{type:'전화',at:'2025-08-01',note:'2025 관리소장 변경'}]}));LOCAL.deals={};G.page='relationship';relationshipInboxReset();});
+  await page.evaluate(()=>{document.querySelectorAll('.apage').forEach(n=>n.classList.remove('on'));document.getElementById('pg-relationship').classList.add('on');});
+  assert.equal(await page.locator('.relpc-table tbody tr').count(),5);
+  await page.getByRole('combobox',{name:'과거 공사예정연도'}).selectOption('과거');
+  assert.equal(await page.locator('.relpc-table tbody tr').count(),3);
+  await page.getByRole('combobox',{name:'과거 공사예정연도'}).selectOption('2024');
+  assert.equal(await page.locator('.relpc-table tbody tr').count(),1);
+  await page.locator('.relpc-years button[data-year="2028"]').click();
+  await page.locator('.relpc-table tbody tr').first().click();
+  assert.match(await page.locator('.relpc-timeline').innerText(),/2023 최초 접촉/);
+  assert.match(await page.locator('.relpc-timeline').innerText(),/2025 관리소장 변경/);
+  console.log(JSON.stringify({status:'PASS',pastYears:true,allYearsCount:5,pastCount:3,historyIndependentOfConstructionYear:true,pc_customer_inbox:true,drawer:true,quick_actions:true,horizontal_scroll:false}));
  }finally{await browser.close();await new Promise(resolve=>srv.close(resolve))}
 }
 run().catch(error=>{console.error(error.stack||error);process.exitCode=1});
