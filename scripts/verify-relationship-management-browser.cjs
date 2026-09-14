@@ -37,14 +37,24 @@ async function run(){
   });
 
 
-  assert.equal(await page.locator('.relpc-kpis button').count(),5);
+  assert.equal(await page.locator('.relpc-kpis button').count(),4);
   assert.equal(await page.locator('.relpc-table tbody tr').count(),5);
+  assert.equal(await page.locator('.relpc-years button').count(),8);
+  await page.evaluate(()=>{B.deals[0].planned_construction_year='2034';B.deals[0].work_name='외벽 재도장';B.deals[0].manager_name='장기관리소장';paintRelationshipManagement()});
+  await page.locator('.relpc-years').getByRole('button',{name:'2031 이후',exact:true}).click();
+  assert.equal(await page.locator('.relpc-table tbody tr').count(),1);
+  assert.match(await page.locator('.relpc-table tbody').innerText(),/2034년/);
+  assert.match(await page.locator('.relpc-table tbody').innerText(),/외벽 재도장/);
+  await page.getByRole('textbox',{name:'관계관리 현장 검색'}).fill('장기관리소장');
+  await page.getByRole('button',{name:'검색',exact:true}).click();
+  assert.equal(await page.locator('.relpc-table tbody tr').count(),1);
+  await page.getByRole('button',{name:'초기화',exact:true}).click();
   assert.match(await page.locator('.relpc-table tbody tr').first().innerText(),/기한초과 관계현장/);
   assert.equal(await page.locator('.relm-matrix,.relm-customer').count(),0);
-  await page.locator('.relpc-kpis button').filter({hasText:'7일 이상'}).click();
-  assert.equal(await page.locator('.relpc-table tbody tr').count(),4);
-  await page.locator('.relpc-kpis button').filter({hasText:'오늘 연락'}).click();
+  await page.locator('.relpc-kpis button').filter({hasText:'90일 이상'}).click();
   assert.equal(await page.locator('.relpc-table tbody tr').count(),1);
+  await page.locator('.relpc-kpis button').filter({hasText:'지금 연락할 고객'}).click();
+  assert.equal(await page.locator('.relpc-table tbody tr').count(),2);
   await page.getByRole('button',{name:'초기화',exact:true}).click();
   await page.locator('.relpc-table tbody tr').first().click();
   assert.equal(await page.locator('#relpc-panel').count(),1);
@@ -61,7 +71,7 @@ async function run(){
   assert.equal(await page.locator('#stage-transition-form').count(),1,'return uses the existing stage editor');
   assert.equal(await page.evaluate(()=>CUR_DETAIL.item.id),'rel-overdue','return does not create a duplicate deal');
   await page.evaluate(()=>closeDetail());
-  await page.locator('.relpc-table tbody tr').first().getByRole('button',{name:'연락완료',exact:true}).click();
+  await page.locator('.relpc-table tbody tr').first().getByRole('button',{name:'응대 기록',exact:true}).click();
   assert.equal(await page.locator('#relq-note').isVisible(),true);
   assert.equal(await page.locator('#relq-due').isVisible(),true);
   await page.locator('#relq-save').click();
@@ -165,7 +175,7 @@ async function run(){
   assert.deepEqual(await page.evaluate(()=>G.campaignOpportunityScope),['scale-50']);
   assert.equal(await page.evaluate(()=>CAMPAIGN_STATE.purpose),'관계 유지');
   assert.equal(await page.evaluate(()=>window.__businessWrites.includes('campaign_create')),false);
-  console.log(JSON.stringify({status:'PASS',pc_customer_inbox:true,kpis:5,contact7:true,drawer:true,quick_actions:true,rep_scope:true,year_filter:true,transition_validation:true,campaign_scope:true,horizontal_scroll:false}));
+  console.log(JSON.stringify({status:'PASS',pc_customer_inbox:true,kpis:4,contact90:true,drawer:true,quick_actions:true,rep_scope:true,year_filter:true,transition_validation:true,campaign_scope:true,horizontal_scroll:false}));
  }finally{await browser.close();await new Promise(resolve=>srv.close(resolve))}
 }
 run().catch(error=>{console.error(error.stack||error);process.exitCode=1});

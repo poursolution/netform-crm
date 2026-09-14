@@ -27,10 +27,14 @@ async function run(){
   assert.equal(await page.locator('.dsec[data-sec="연락·활동"] #contactCard').count(),1);
   assert.equal(await page.locator('#ct-office').isVisible(),false);
   await page.evaluate(()=>detailTabFocus('연락·활동',true));
-  await page.locator('#contactCard summary').click();
+  assert.equal(await page.locator('.pc-contact-directory').count(),1);
+  assert.equal(await page.locator('.pc-contact-directory').getByRole('button',{name:'＋ 추가',exact:true}).count(),1);
+  assert.ok(await page.locator('.pc-contact-directory a[href^="tel:"]').count()>0);
+  assert.ok(await page.locator('.pc-contact-directory').getByRole('button',{name:'수정',exact:true}).count()>0);
+  await page.locator('#contactCard summary').filter({hasText:'연락처 수정'}).click();
   assert.equal(await page.locator('#ct-office').isVisible(),true);
   await page.locator('#ct-office').fill('0212345678');
-  await page.locator('#contactCard summary').click();await page.locator('#contactCard summary').click();
+  await page.locator('#contactCard summary').filter({hasText:'연락처 수정'}).click();await page.locator('#contactCard summary').filter({hasText:'연락처 수정'}).click();
   assert.equal(await page.locator('#ct-office').inputValue(),'0212345678');
   await page.evaluate(()=>{closeDetail();paintRelationshipManagement();relationshipManagementOpen(0,'activity')});
   assert.equal(await page.locator('#relQuickModal').count(),1);

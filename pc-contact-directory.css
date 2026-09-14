@@ -1,0 +1,18 @@
+.pc-contact-directory{padding:12px!important}
+.pc-contact-directory>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}
+.pc-contact-directory h3{margin:0;font-size:14px}
+.pc-contact-directory>article{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 14px;padding:10px 0;border-top:1px solid #e3e8f0}
+.pc-contact-person{display:grid;gap:3px;min-width:0;overflow-wrap:anywhere}
+.pc-contact-person strong{font-size:14px}.pc-contact-person strong span{font-weight:500;color:#5a6b83}
+.pc-contact-phone{font-size:14px;color:#263b59}.pc-contact-person small{font-size:11px;color:#4266ac}
+.pc-contact-actions{display:flex;align-items:center;gap:5px}
+.pc-contact-actions a,.pc-contact-actions button,.pc-contact-extra button{border:1px solid #d8e0ed;border-radius:5px;padding:6px 10px;background:#fff;color:#315a99;font:inherit;font-size:12px;text-decoration:none;cursor:pointer}
+.pc-contact-actions button:disabled{opacity:.45;cursor:default}
+.pc-contact-extra{grid-column:1/-1;font-size:11px;color:#67758b}.pc-contact-extra summary{cursor:pointer}
+.pc-contact-empty{margin:12px 0 4px;color:#506077;font-size:13px}.pc-contact-empty small{font-size:12px;color:#7c899b}
+.pc-contact-editor>.formgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.pc-contact-editor #qc-mobile{font-variant-numeric:tabular-nums}
+.pc-contact-editor-extra{grid-column:1/-1;border-top:1px solid #e3e8f0;padding-top:10px;font-size:13px}
+.pc-contact-editor-extra>summary{cursor:pointer;color:#53647c;padding:5px 0}
+.pc-contact-editor-extra>.formgrid{margin-top:12px}
+.pc-contact-editor .detailnotice{font-size:12px;line-height:1.6}

@@ -1939,6 +1939,7 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
 @media(max-width:860px){.periodbar,.reptabs,#pg-pipe>#p-brands{grid-template-columns:1fr;gap:10px}.filter-group-label{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.filter-group-label>span{width:100%}.filter-group-label>small{margin:0}.filter-current{grid-column:1}.filter-business-main{align-items:flex-start;flex-direction:column}.filter-business-tools{width:100%;justify-content:space-between}.periodbar .yoybadge{width:100%;margin-left:0}.rep-filter-picker{width:100%}}
 </style>
 <link rel="stylesheet" href="data-cleanup.css?v=20260905-1">
+<link rel="stylesheet" href="pc-contact-directory.css?v=20260914-1">
 <link rel="stylesheet" href="pipeline-toolbar.css?v=20260914-pc-release-1">
 <script src="pipeline-toolbar.js?v=20260914-pc-release-1"></script>
 <link rel="stylesheet" href="next-action-picker.css?v=20260905-1">
@@ -1960,11 +1961,11 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
       <div class="sec">영업</div>
       <div class="mi clk" data-p="inq" onclick="nav(this)"><span class="ic">📥</span>견적문의<span class="badge" id="inqBadge"></span></div>
       <div class="mi clk" data-p="pipe" onclick="nav(this)"><span class="ic">🧭</span>파이프라인</div>
-      <div class="sec">고객관리</div>
-      <div class="mi clk" data-p="sites" onclick="nav(this)"><span class="ic">🏢</span>고객 자산</div>
       <div class="mi clk" data-p="relationship" onclick="nav(this)"><span class="ic">◎</span>관계관리<span class="badge" id="relationshipBadge"></span></div>
       <div class="mi clk" data-p="expansion" onclick="nav(this)"><span class="ic">↗</span>확장관리<span class="badge" id="expansionBadge"></span></div>
       <div class="mi clk" data-p="campaign" onclick="nav(this)"><span class="ic">✉</span>고객 발송</div>
+      <div class="sec">고객관리</div>
+      <div class="mi clk" data-p="sites" onclick="nav(this)"><span class="ic">🏢</span>고객 자산</div>
       <div class="sec">관리</div>
       <div class="mi clk" data-p="repmanage" onclick="nav(this)"><span class="ic">◎</span>영업사원 관리</div>
       <div class="mi clk" data-p="mgmt" onclick="nav(this)"><span class="ic">🛡️</span>관리팀 KPI</div>
@@ -7529,7 +7530,9 @@ function paint(){
  if(_wasDocked&&!(G.page==='pipe'&&G.pipeView==='split'))closeDocked();
  var customerMaster=G.page==='sites',relationshipPage=G.page==='relationship',expansionPage=G.page==='expansion',branchPage=G.page==='gyeongnam',campaignPage=G.page==='campaign',repManagerPage=G.page==='repmanage',todayPage=G.page==='today',periodEl=$('#periodbar'),repEl=$('#reptabs');
  var hidePeriod=customerMaster||relationshipPage||expansionPage||campaignPage||repManagerPage||todayPage,hideRep=customerMaster||relationshipPage||expansionPage||branchPage||campaignPage||repManagerPage||todayPage;
- if(periodEl)periodEl.style.display=hidePeriod?'none':'';if(repEl)repEl.style.display=hideRep?'none':'';
+ // Pipeline reuses these controls in its single inline bar. Keep rendering their
+ // canonical values below, but never leave the old two-row containers visible.
+ if(periodEl)periodEl.style.display=(hidePeriod||G.page==='pipe')?'none':'';if(repEl)repEl.style.display=(hideRep||G.page==='pipe')?'none':'';
  if(!hidePeriod)paintPeriod();if(!hideRep)paintRepTabs();
  if(G.page==='today')paintTodayHome();/* 역할별 오늘 우선순위 */
  if(G.page==='dash')paintDash();    /* 대시보드 */
@@ -7838,7 +7841,7 @@ function execRelationFields(c){var tone=c.relationshipTone||c.relationship_tone|
 function execRelationBadges(c){var r=execRelationFields(c),tc=r.tone==='우호적'?'good':r.tone==='부정적'?'bad':'';return '<span class="exec-person-badges"><i class="key">'+esc(r.role)+'</i><i class="'+tc+'">'+esc(r.tone)+'</i></span>'}
 var _execSiteContacts=siteContacts;
 siteContacts=function(item,p){var A=_execSiteContacts(item,p),raw=Array.isArray(item.contacts)?item.contacts:[];A.forEach(function(c){var x=raw.filter(function(r){return (c.personKey&&String(r.person_key||'')===String(c.personKey))||(phoneN(c.mobile)&&phoneN(r.mobile||r.phone)===phoneN(c.mobile))})[0]||{};c.decisionRole=x.decision_role||c.decisionRole||'';c.relationshipTone=x.relationship_tone||c.relationshipTone||'';c.influenceLevel=x.influence_level||c.influenceLevel||''});return A};
-contactDirectoryHTML=function(item,p){var list=siteContacts(item,p);return '<div class="contactedit"><div class="detailsecthead"><div><h3>현장 연락처 · 고객 관계도</h3><p>여러 고객 인물을 역할·의사결정 영향·관계 상태로 이어서 봅니다.</p></div><button class="dact pri" onclick="openQuickContact(\'new\')">＋ 연락처 추가</button></div>'+(list.length?'<div class="exec-relation-grid">'+list.map(function(c){var k=escAttr(c.personKey||phoneN(c.mobile));return '<div class="exec-person"><strong>'+esc(c.name||'이름 미입력')+' · '+esc(c.role||'담당자')+'</strong><small>'+esc(phoneFmt(c.mobile))+'</small>'+execRelationBadges(c)+consentBadges(c)+'<div class="rm-contact-actions"><button onclick="openRelationshipMessage(\'sms\',\''+k+'\')">문자</button><button onclick="openRelationshipMessage(\'kakao\',\''+k+'\')">카카오</button><button onclick="openQuickContact(\'edit\',\''+k+'\')">관계·설정</button></div></div>'}).join('')+'</div>':'<div class="detailnotice">등록된 연락처가 없습니다. 관리소장·입주자대표회장·시설과장 등 여러 인물을 등록할 수 있습니다.</div>')+'</div>'};
+contactDirectoryHTML=function(item,p){var list=siteContacts(item,p),primary=contactInfo(item,p);return '<section class="contactedit pc-contact-directory"><header><h3>현장 연락처</h3><button class="dact pri" onclick="openQuickContact(\'new\')">＋ 추가</button></header>'+(list.length?list.map(function(c){var k=escAttr(c.personKey||phoneN(c.mobile)),phone=phoneN(c.mobile||c.officeTel),isPrimary=!!((c.personKey&&c.personKey===primary.personKey)||(phoneN(c.mobile)&&phoneN(c.mobile)===phoneN(primary.mobile)));return '<article><div class="pc-contact-person"><strong>'+esc(c.name||'이름 미입력')+' <span>'+esc(c.role||'담당자')+'</span></strong><span class="pc-contact-phone">'+esc(phone?phoneFmt(phone):'전화번호 미등록')+'</span>'+(isPrimary?'<small>대표 연락처</small>':'')+'</div><div class="pc-contact-actions">'+(phone?'<a href="tel:'+escAttr(phone)+'">전화</a>':'<button disabled>전화</button>')+'<button '+(!c.mobile?'disabled':'')+' onclick="openRelationshipMessage(\'sms\',\''+k+'\')">문자</button><button onclick="openQuickContact(\'edit\',\''+k+'\')">수정</button></div><details class="pc-contact-extra"><summary>관계정보 · 수신동의</summary>'+execRelationBadges(c)+consentBadges(c)+'<button onclick="openRelationshipMessage(\'kakao\',\''+k+'\')">카카오</button></details></article>'}).join(''):'<p class="pc-contact-empty">등록된 현장 연락처가 없습니다.<br><small>관리소장·현장담당자 연락처를 등록해 주세요.</small></p>')+'</section>'};
 var _execOpenQuickContact=openQuickContact;
 openQuickContact=function(mode,key){_execOpenQuickContact(mode,key);var c=QUICK_CONTACT&&relationshipContact(QUICK_CONTACT.item,key),r=execRelationFields(c||{}),box=$('#quickContactBody .consentbox');if(!box)return;box.insertAdjacentHTML('beforebegin','<div class="field"><label>의사결정 역할</label><select id="qc-decision-role">'+['의사결정자','핵심담당자','실무자','영향자','정보제공자'].map(function(x){return '<option '+(x===r.role?'selected':'')+'>'+x+'</option>'}).join('')+'</select></div><div class="field"><label>현재 관계</label><select id="qc-relation-tone">'+['우호적','중립','부정적','미확인'].map(function(x){return '<option '+(x===r.tone?'selected':'')+'>'+x+'</option>'}).join('')+'</select></div>')};
 var _execSaveQuickContact=saveQuickContact;
@@ -8404,5 +8407,9 @@ function paintCampaign(){var root=$('#campaign-root');if(!root)return;var tab=G.
 <link rel="stylesheet" href="stage-transition.css?v=20260905-1">
 <script src="stage-transition.js?v=20260905-1"></script>
 <script src="stage-transition-ui.js?v=20260913-detail-2"></script>
+<script src="pc-contact-editor.js?v=20260914-1"></script>
+<script src="pc-primary-contact.js?v=20260914-1"></script>
+<link rel="stylesheet" href="pc-message-test.css?v=20260914-1">
+<script src="pc-message-test.js?v=20260914-1"></script>
 <script src="./work-editor.js?v=20260907-buttons-1"></script><script>window.addEventListener('phase1:identity-cleared',function(){TOKEN=null;WRITE_Q=[];ME=null;if(typeof B!=='undefined')B=null;authGate(true);});window.addEventListener('phase1:profile',function(){WRITE_Q=Phase1.queue.list();});window.addEventListener('phase1:queue',function(){WRITE_Q=Phase1.queue.list();});</script></body>
 </html>

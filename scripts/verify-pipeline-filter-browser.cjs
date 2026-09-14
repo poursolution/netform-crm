@@ -34,6 +34,7 @@ async function run(){
    window.__businessWrites=0;window.pushWrite=()=>{window.__businessWrites++};
    document.getElementById('ptitle').textContent='파이프라인';
    document.getElementById('psub').textContent='진행 중인 영업기회를 단계별로 관리합니다.';
+   window.__originalPaint=window.paint;
    window.paint=()=>{paintPeriod();paintRepTabs();paintPipe()};
    paint();
   });
@@ -67,7 +68,7 @@ async function run(){
   await page.evaluate(()=>{B.inquiries=[{id:'year-current',at:CUR_Y+'-09-01'}];paint()});
   const canonical=await page.locator('#periodbar .yoybadge').allTextContents();
   assert.deepEqual(await bar.locator('.yoybadge').allTextContents(),canonical);
-  for(const width of [1920,1440,1365]){
+  for(const width of [1920,1440,1365,1280]){
    await page.setViewportSize({width,height:900});
    const metrics=await bar.evaluate(el=>{const a=el.querySelector('.period-year-select').getBoundingClientRect(),b=el.querySelector('summary').getBoundingClientRect();return {sameRow:Math.abs((a.top+a.height/2)-(b.top+b.height/2))<2,overflow:el.scrollWidth>el.clientWidth,height:el.getBoundingClientRect().height}});
    assert.equal(metrics.sameRow,true,'period and owner same row at '+width);
@@ -97,6 +98,14 @@ async function run(){
   assert.deepEqual(await page.evaluate(()=>pipeFiltered().map(d=>d.id)),selectedIds);
   assert.equal(await page.locator('.pipe-inline-filters').count(),1,'reentry never duplicates the filter bar');
   assert.equal(page.url(),address,'layout does not rewrite URL');
+  // Exercise the actual application router, not just the isolated render fixture.
+  await page.evaluate(()=>{window.paint=window.__originalPaint;paint();paint()});
+  assert.equal(await page.locator('#periodbar').evaluate(el=>el.style.display),'none');
+  assert.equal(await page.locator('#reptabs').evaluate(el=>el.style.display),'none');
+  assert.equal(await page.locator('.pipe-inline-filters').count(),1);
+  assert.deepEqual(await page.evaluate(()=>[G.year,G.quarter,G.rep,G.brand,G.workFilter]),selection);
+  assert.deepEqual(await page.evaluate(()=>pipeFiltered().map(d=>d.id)),selectedIds);
+  await page.setViewportSize({width:1920,height:1080});
   if(process.env.VERIFY_SCREENSHOT)await page.screenshot({path:process.env.VERIFY_SCREENSHOT,fullPage:false});
   assert.equal(await page.evaluate(()=>window.__businessWrites),0);
   console.log(JSON.stringify({status:'PASS',one_row_period_owner:true,original_counts:true,period_buttons:6,filters:true,view_switches:true,business_writes:0}));
