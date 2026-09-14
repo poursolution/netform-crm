@@ -51,7 +51,8 @@ async function run(){
   await page.getByRole('button',{name:'초기화',exact:true}).click();
   assert.match(await page.locator('.relpc-table tbody tr').first().innerText(),/기한초과 관계현장/);
   assert.equal(await page.locator('.relm-matrix,.relm-customer').count(),0);
-  assert.deepEqual(await page.locator('.relpc-table th').allTextContents(),['현장 / 고객 · 담당자','왜 관리하나요','이번에 할 일','예정일','최근 접촉 · 대화','실행']);
+  assert.deepEqual(await page.locator('.relpc-table th').allTextContents(),['현장 / 고객','이번에 할 일','다음 연락','실행']);
+  assert.equal(await page.locator('.relpc-action-row').first().locator('td').count(),4);
   await page.getByRole('combobox',{name:'최근 접촉기간'}).selectOption('90');
   assert.equal(await page.locator('.relpc-table tbody tr').count(),1);
   await page.getByRole('button',{name:'초기화',exact:true}).click();
@@ -167,7 +168,10 @@ async function run(){
    paintRelationshipManagement();
   });
   const futureRow=page.locator('.relpc-table tbody tr').filter({hasText:'예정 관계현장'});
-  assert.match(await futureRow.innerText(),/옥상방수 공사 일정 확인/);
+  assert.equal(await futureRow.locator('.relpc-evidence').isVisible(),false);
+  await futureRow.click();
+  assert.match(await page.locator('.relpc-panel').innerText(),/옥상방수 공사 일정 확인/);
+  await page.getByRole('button',{name:'상세 패널 닫기'}).click();
   assert.doesNotMatch(await futureRow.innerText(),/내부 검토 전용 메모/,'internal memo is not presented as customer contact');
   assert.match(await futureRow.innerText(),/다음 일정 없음/,'date without next action is still incomplete');
   await page.locator('.relpc-kpis button').filter({hasText:'다음 일정 없음'}).click();

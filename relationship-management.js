@@ -173,6 +173,8 @@ function renderExecutionSummary(host,all,k){
  }
  function renderActionHierarchy(host){
   host.classList.add('relpc-action-hierarchy');
+  host.classList.add('relpc-compact-list');
+  host.querySelector('.relpc-table thead tr').innerHTML=['현장 / 고객','이번에 할 일','다음 연락','실행'].map(function(t){return '<th scope="col">'+t+'</th>'}).join('');
   host.querySelector('.relpc-list-title>span').textContent='기한초과 → 오늘 → 이번주 → 이후 예정 → 일정 없음';
   var body=host.querySelector('tbody'),entries=Array.from(body.querySelectorAll('[data-customer]')),names=['연락이 늦어진 고객','오늘 해야 할 관리','이번 주 예정','이후 예정','일정 없는 고객'];
   function group(row){var d=REL_CACHE[Number(row.dataset.customer)],s=inboxState(d);return s==='overdue'?0:s==='today'?1:s==='missing'?4:inboxMatch(d,'week')?2:3}
@@ -185,6 +187,7 @@ function renderExecutionSummary(host,all,k){
    var label=document.createElement('small');label.className='relpc-action-label';label.textContent='이번에 할 일';plan.prepend(label);
    var evidence=document.createElement('div'),r=inboxRecent(REL_CACHE[Number(row.dataset.customer)]);evidence.className='relpc-evidence';evidence.textContent='최근 접촉 · '+(r.at?fmtD(r.at)+' · ':'')+r.text;evidence.title=evidence.textContent;plan.appendChild(evidence);recent.hidden=true;
    context.className='relpc-background';context.title=context.textContent;
+   var background=document.createElement('div');background.className='relpc-context-line';background.textContent=inboxWork(REL_CACHE[Number(row.dataset.customer)])+' · '+yearLabel(REL_CACHE[Number(row.dataset.customer)])+' · '+(reasonOf(REL_CACHE[Number(row.dataset.customer)])||'관리목적 확인 필요');background.title=background.textContent;plan.querySelector('strong').after(background);context.remove();recent.remove();
    var dateLabel=document.createElement('small');dateLabel.textContent='다음 연락';due.prepend(dateLabel);
    actions.querySelectorAll('button').forEach(function(b){if(b.textContent==='응대 기록')b.textContent='완료 기록'});
    body.appendChild(row);
