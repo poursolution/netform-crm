@@ -75,7 +75,7 @@ async function run(){
   assert.equal(await page.locator('#stage-transition-form').count(),1,'return uses the existing stage editor');
   assert.equal(await page.evaluate(()=>CUR_DETAIL.item.id),'rel-overdue','return does not create a duplicate deal');
   await page.evaluate(()=>closeDetail());
-  await page.locator('.relpc-table tbody tr').first().getByRole('button',{name:'응대 기록',exact:true}).click();
+  await page.locator('.relpc-table tbody tr').first().getByRole('button',{name:'완료 기록',exact:true}).click();
   assert.equal(await page.locator('#relq-note').isVisible(),true);
   assert.equal(await page.locator('#relq-due').isVisible(),true);
   await page.locator('#relq-meaningful').check();
@@ -174,6 +174,10 @@ async function run(){
   assert.equal(await futureRow.count(),1,'incomplete action is included in missing-schedule filter');
   await page.getByRole('button',{name:'초기화',exact:true}).click();
   await page.evaluate(()=>{B.deals[3].nextActionObj.text='입대의 결과 확인';paintRelationshipManagement()});
+  assert.match(await page.locator('.relpc-action-row').first().getAttribute('data-group'),/연락이 늦어진 고객/);
+  assert.match(await page.locator('.relpc-action-row').last().getAttribute('data-group'),/일정 없는 고객/);
+  assert.equal(await page.locator('.relpc-evidence').count(),6);
+  assert.ok(await page.locator('.relpc-plan>strong').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=19));
   if(process.env.VERIFY_SCREENSHOT)await page.screenshot({path:process.env.VERIFY_SCREENSHOT,fullPage:true});
   await page.evaluate(()=>{const original=B.deals[3];B.deals=Array.from({length:51},(_,i)=>({...original,id:'scale-'+i,site:'대량검증 '+String(i).padStart(2,'0')}));G.relationshipPage=1;paintRelationshipManagement()});
   assert.equal(await page.locator('.relpc-table tbody tr').count(),50);

@@ -95,3 +95,29 @@ body:has(#pg-relationship.on) #execAskBtn{display:none}
 .relpc-plan-presets{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
 .relpc-plan-presets button{border:1px solid #d8e1ec;border-radius:4px;background:#f6f8fc;color:#34516f;padding:6px 8px;font-size:12px;white-space:normal;cursor:pointer}
 .relpc-inbox td>.relpc-status{display:inline-block;margin-top:5px}
+.relpc-action-hierarchy .relpc-table thead,.relpc-action-hierarchy .relpc-table colgroup{display:none}
+.relpc-action-hierarchy .relpc-table,.relpc-action-hierarchy tbody{display:block;width:100%}
+.relpc-action-hierarchy .relpc-action-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(160px,210px);padding:16px 22px;border-bottom:1px solid #dde3ea;gap:5px 24px;position:relative}
+.relpc-action-hierarchy .relpc-action-row[data-group]:before{content:attr(data-group);grid-column:1/-1;background:#f1f3f6;color:#445163;font-size:13px;font-weight:700;padding:10px 14px;margin:-16px -22px 8px;border-bottom:1px solid #dde3ea}
+.relpc-action-hierarchy .relpc-action-row td{display:block;border:0;padding:0;min-width:0}
+.relpc-action-hierarchy .relpc-action-row td[hidden]{display:none}
+.relpc-action-hierarchy .relpc-action-row td:first-child{grid-column:1/-1}
+.relpc-action-hierarchy .relpc-status{display:block;margin:0 0 3px;font-weight:700;color:#3970aa}
+.relpc-action-hierarchy .relpc-status.overdue{color:#b63838}.relpc-action-hierarchy .relpc-status.today{color:#a96816}.relpc-action-hierarchy .relpc-status.missing{color:#737e89}
+.relpc-action-hierarchy .relpc-action-row td:first-child>strong{font-size:15px}
+.relpc-action-hierarchy .relpc-action-row td:first-child>small{display:inline;margin-left:12px;font-size:12px;color:#7b8490}
+.relpc-action-hierarchy .relpc-background{grid-column:1/-1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#7b8490;font-size:12px}
+.relpc-action-hierarchy .relpc-background strong,.relpc-action-hierarchy .relpc-background small{display:inline;font-size:12px;font-weight:400;color:#7b8490;margin-right:10px}
+.relpc-action-hierarchy .relpc-plan{grid-column:1;grid-row:auto;background:none;border:0;margin-top:5px}
+.relpc-action-hierarchy .relpc-plan>strong{display:block;font-size:19px;line-height:1.45;font-weight:750;color:#172b43}
+.relpc-action-hierarchy .relpc-plan>.relpc-action-label{font-size:11px;color:#7b8490;margin:0 0 3px}
+.relpc-action-hierarchy .relpc-plan>small:not(.relpc-action-label){display:inline;margin-right:8px}
+.relpc-action-hierarchy .relpc-plan>button{margin:3px 0;padding:2px 6px;font-size:11px;border-color:#e1e5eb;color:#6d7888}
+.relpc-action-hierarchy .relpc-evidence{font-size:12px;color:#728093;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
+.relpc-action-hierarchy .relpc-action-row td:nth-child(4){grid-column:1;display:flex;align-items:center;gap:8px;font-size:12px;margin-top:3px}
+.relpc-action-hierarchy .relpc-action-row td:last-child{grid-column:2;grid-row:4/6;align-self:end}
+.relpc-action-hierarchy .relpc-actions{grid-template-columns:repeat(3,minmax(0,1fr))}
+.relpc-action-hierarchy .relpc-kpis [data-state=overdue] strong{color:#b63838}
+.relpc-action-hierarchy .relpc-kpis [data-state=today] strong{color:#a96816}
+.relpc-action-hierarchy .relpc-action-row td>.relpc-status{display:block;margin:0 0 4px}
+.relpc-action-hierarchy .relpc-background small.relpc-year{color:#7b8490;font-weight:400}

@@ -140,7 +140,7 @@ function legacyPaint(){
 function inboxMissing(d){var a=actionObj(d,itemPatch(d,'deal'));return !relationshipMeta(d).due||!String(a&&a.text||'').trim()}
 function inboxState(d){var m=relationshipMeta(d);return m.dueDays<0?'overdue':m.dueDays===0?'today':inboxMissing(d)?'missing':'scheduled'}
 function inboxMatch(d,k){var m=relationshipMeta(d);return k==='week'?m.dueDays!=null&&m.dueDays>=0&&m.dueDays<=6-((new Date().getDay()+6)%7):k==='now'?m.dueDays!=null&&m.dueDays<=0:k==='missing'?inboxMissing(d):k==='contact7'?m.days>=7:filterMatch(d,k)}
-function inboxCompare(a,b){var order=['overdue','today','missing','scheduled'],x=order.indexOf(inboxState(a)),y=order.indexOf(inboxState(b));return x-y||(relationshipMeta(a).dueDays||0)-(relationshipMeta(b).dueDays||0)||String(a.site||'').localeCompare(String(b.site||''),'ko')}
+function inboxCompare(a,b){var order=['overdue','today','scheduled','missing'],x=order.indexOf(inboxState(a)),y=order.indexOf(inboxState(b));return x-y||(relationshipMeta(a).dueDays||0)-(relationshipMeta(b).dueDays||0)||String(a.site||'').localeCompare(String(b.site||''),'ko')}
 function inboxOptions(values,current){return values.map(function(v){return '<option value="'+escAttr(v[0])+'" '+(v[0]===current?'selected':'')+'>'+esc(v[1])+'</option>'}).join('')}
 function inboxRecent(d){var a=activitiesOf(d).find(function(x){return /전화|통화|문자|카카오|이메일|방문|회의|접촉/.test(String(x.type||''))});return a?{at:relActivityAt(a),text:[a.type,a.note,a.result].filter(Boolean).join(' · ')}:{at:relationshipMeta(d).meaningfulAt||'',text:relationshipMeta(d).meaningfulAt?'접촉 내용 미기록':'최근 기록 없음'}}
 function inboxButton(i,mode,label){return '<button type="button" onclick="event.stopPropagation();relationshipInboxOpen('+i+',\''+mode+'\')">'+label+'</button>'}
@@ -165,11 +165,31 @@ function renderExecutionSummary(host,all,k){
  host.querySelector('header p').textContent='고객별로 이번에 확인할 내용과 연락일을 정하고, 실행 결과를 다음 계획으로 이어갑니다.';
  if(G.page==='relationship'&&document.getElementById('psub'))document.getElementById('psub').textContent='이번에 할 일과 연락일을 정하고, 실행 결과를 다음 계획으로 이어갑니다.';
  host.querySelector('.relpc-kpis').setAttribute('aria-label','이번 주 관계관리');
- host.querySelector('.relpc-kpis').innerHTML=[['today','오늘 연락'],['week','이번주 예정'],['missing','다음 일정 없음'],['overdue','기한초과']].map(function(x){return '<button type="button" aria-pressed="'+(k===x[0])+'" onclick="relationshipInboxFilter(\''+x[0]+'\')"><span>'+x[1]+'</span><strong>'+all.filter(function(d){return inboxMatch(d,x[0])}).length+'<small>건</small></strong></button>'}).join('');
+ host.querySelector('.relpc-kpis').innerHTML=[['overdue','기한초과'],['today','오늘 연락'],['week','이번주 예정'],['missing','다음 일정 없음']].map(function(x){return '<button type="button" data-state="'+x[0]+'" aria-pressed="'+(k===x[0])+'" onclick="relationshipInboxFilter(\''+x[0]+'\')"><span>'+x[1]+'</span><strong>'+all.filter(function(d){return inboxMatch(d,x[0])}).length+'<small>건</small></strong></button>'}).join('');
  host.querySelector('.relpc-list-title h3').firstChild.textContent='이번 관리에서 할 일 ';
  host.querySelector('.relpc-table colgroup').innerHTML=[20,20,23,10,15,12].map(function(w){return '<col style="width:'+w+'%">'}).join('');
  host.querySelector('.relpc-table thead tr').innerHTML=['현장 / 고객 · 담당자','왜 관리하나요','이번에 할 일','예정일','최근 접촉 · 대화','실행'].map(function(t){return '<th scope="col">'+t+'</th>'}).join('');
-}
+ renderActionHierarchy(host);
+ }
+ function renderActionHierarchy(host){
+  host.classList.add('relpc-action-hierarchy');
+  host.querySelector('.relpc-list-title>span').textContent='기한초과 → 오늘 → 이번주 → 이후 예정 → 일정 없음';
+  var body=host.querySelector('tbody'),entries=Array.from(body.querySelectorAll('[data-customer]')),names=['연락이 늦어진 고객','오늘 해야 할 관리','이번 주 예정','이후 예정','일정 없는 고객'];
+  function group(row){var d=REL_CACHE[Number(row.dataset.customer)],s=inboxState(d);return s==='overdue'?0:s==='today'?1:s==='missing'?4:inboxMatch(d,'week')?2:3}
+  entries.sort(function(a,b){return group(a)-group(b)});
+  var last=-1;
+  entries.forEach(function(row){var g=group(row),cells=row.cells,identity=cells[0],context=cells[1],plan=cells[2],due=cells[3],recent=cells[4],actions=cells[5];
+   row.classList.add('relpc-action-row');
+   if(g!==last){row.dataset.group=names[g]+' · 표시 '+entries.filter(function(r){return group(r)===g}).length+'건';last=g}
+   identity.prepend(identity.querySelector('.relpc-status'));
+   var label=document.createElement('small');label.className='relpc-action-label';label.textContent='이번에 할 일';plan.prepend(label);
+   var evidence=document.createElement('div'),r=inboxRecent(REL_CACHE[Number(row.dataset.customer)]);evidence.className='relpc-evidence';evidence.textContent='최근 접촉 · '+(r.at?fmtD(r.at)+' · ':'')+r.text;evidence.title=evidence.textContent;plan.appendChild(evidence);recent.hidden=true;
+   context.className='relpc-background';context.title=context.textContent;
+   var dateLabel=document.createElement('small');dateLabel.textContent='다음 연락';due.prepend(dateLabel);
+   actions.querySelectorAll('button').forEach(function(b){if(b.textContent==='응대 기록')b.textContent='완료 기록'});
+   body.appendChild(row);
+  });
+ }
 function renderLongTermControls(host,scoped){
  var tabs=host.querySelector('.relpc-tabs'),years=document.createElement('nav');years.className='relpc-years';years.setAttribute('aria-label','공사예정연도');
  years.innerHTML='<b>공사예정</b>'+['전체','2026','2027','2028','2029','2030','2031 이후','미입력'].map(function(y){return '<button type="button" data-year="'+escAttr(y)+'" aria-pressed="'+((G.relationshipYear||'전체')===y)+'">'+esc(y==='미입력'?'미정':y)+'</button>'}).join('');
