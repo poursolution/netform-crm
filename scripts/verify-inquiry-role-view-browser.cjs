@@ -51,8 +51,19 @@ async function run() {
       document.getElementById('authGate').classList.remove('on');
       document.querySelectorAll('.apage').forEach(node => node.classList.remove('on'));
       document.getElementById('pg-inq').classList.add('on');
+      B.inquiries[1].activities=[{id:'reply',type:'전화',at:'2026-09-13T10:00:00+09:00',note:'도면 요청 완료'},{id:'memo',type:'메모',at:'2026-09-14T10:00:00+09:00',note:'내부 메모'}];
+      B.inquiries[1].nextActionObj={text:'도면 수신 확인',due:'2026-09-16'};
       goPage('inq');
     });
+    assert.deepEqual(await page.locator('.inq-work-row.head>span').allTextContents(),['접수 / 경과','현장 · 문의자','담당 / 상태','최근 응대','다음 할 일','바로 조치']);
+    const dense=page.locator('.inq-work-row').filter({hasText:'황윤선 다음행동 필요'});
+    assert.match(await dense.locator('.inq-work-recent').innerText(),/도면 요청 완료/);
+    assert.doesNotMatch(await dense.locator('.inq-work-recent').innerText(),/내부 메모/);
+    assert.match(await dense.locator('.inq-work-next').innerText(),/도면 수신 확인/);
+    for(const width of [1920,1440,1024]){await page.setViewportSize({width,height:1000});await page.waitForTimeout(50);assert.ok(await page.locator('#pg-inq').evaluate(e=>e.scrollWidth<=e.clientWidth+1))}
+    await page.setViewportSize({width:1920,height:1080});
+    if(process.env.INQUIRY_SCREENSHOT)await page.screenshot({path:process.env.INQUIRY_SCREENSHOT,fullPage:true});
+    await page.evaluate(()=>{delete B.inquiries[1].activities;delete B.inquiries[1].nextActionObj;paintInq()});
 
     assert.equal(await page.locator('.inq-ctl-head h2').textContent(), '견적문의 접수·배정');
     assert.equal(await page.locator('.inq-work-tools').getAttribute('open'), null);
