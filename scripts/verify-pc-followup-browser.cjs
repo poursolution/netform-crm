@@ -23,10 +23,13 @@ const {chromium}=createRequire(path.resolve(__dirname,'../../crm-security-lab/pa
  assert.equal(await page.locator('dialog').count(),0);
  assert.deepEqual(await page.evaluate(()=>[rows[0].operation,B.deals[0].code,B.deals[0].nextAction.due]),['next_action','sent','2030-12-15']);
  await page.getByRole('button',{name:'종료',exact:true}).click();assert.equal(await page.evaluate(()=>endStage),'lost');
+ await page.evaluate(()=>{Object.assign(B.deals[0],{amt:120000000,quote_amount:115000000,quote_versions:[{version_no:3,amount:115000000,sent_at:'2026-09-10T10:00:00+09:00'}],activities:[{id:'history-before',type:'전화',note:'기존 대화 내용'}]});window.preserved=JSON.stringify({id:B.deals[0].id,amt:B.deals[0].amt,quote_amount:B.deals[0].quote_amount,quote_versions:B.deals[0].quote_versions,activities:B.deals[0].activities});});
  await page.getByRole('button',{name:'추후 다시 연락',exact:true}).click();await page.locator('[name=long]').check();
  await page.getByRole('button',{name:'계획 저장'}).click();
  assert.deepEqual(await page.evaluate(()=>[rows[1].operation,B.deals[0].code,pipeFiltered().length]),['transition','waiting',0]);
  assert.match(await page.evaluate(()=>rows[1].payload.fields.reason),/2030/);
+ assert.equal(await page.evaluate(()=>JSON.stringify({id:B.deals[0].id,amt:B.deals[0].amt,quote_amount:B.deals[0].quote_amount,quote_versions:B.deals[0].quote_versions,activities:B.deals[0].activities})),await page.evaluate(()=>preserved),'transition preserves deal identity, quote versions, amounts and existing conversation history');
+ assert.equal(await page.evaluate(()=>B.deals.length),1,'relationship connection does not clone the opportunity');
  await page.evaluate(()=>{B.deals[0].code=B.deals[0].stage_code='sent';window.fail=true;paint();});
  await page.getByRole('button',{name:'계속 진행',exact:true}).click();await page.getByRole('button',{name:'계획 저장'}).click();
  assert.match(await page.locator('.pc-followup-error').innerText(),/저장 미완료/);
