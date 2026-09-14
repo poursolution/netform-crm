@@ -191,11 +191,12 @@ async function run(){
    const probes=[document.getElementById('ptitle'),document.querySelector('.side'),today].filter(Boolean);
    if(current)current.classList.remove('on');today.classList.add('on');
    const sample=()=>probes.flatMap(root=>[root,...root.querySelectorAll('*')]).filter(e=>e.getClientRects().length).map(e=>getComputedStyle(e).fontSize);
+   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
    const enabled=sample();sheet.disabled=true;const disabled=sample();sheet.disabled=false;
    today.classList.remove('on');if(current)current.classList.add('on');
    return {enabled,disabled};
   });
-  assert.deepEqual(typography.enabled,typography.disabled,'Today and shared shell retain original type sizes');
+  assert.ok(typography.enabled.some((size,i)=>parseFloat(size)>parseFloat(typography.disabled[i])),'Today now uses shared larger type');
   assert.ok(!fs.readFileSync(path.join(root,'mobile.html'),'utf8').includes('pc-typography'),'mobile does not load PC typography');
   if(process.env.VERIFY_SCREENSHOT)await page.screenshot({path:process.env.VERIFY_SCREENSHOT,fullPage:true});
   await page.evaluate(()=>{const original=B.deals[3];B.deals=Array.from({length:51},(_,i)=>({...original,id:'scale-'+i,site:'대량검증 '+String(i).padStart(2,'0')}));G.relationshipPage=1;paintRelationshipManagement()});

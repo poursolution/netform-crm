@@ -1,10 +1,20 @@
-/* Disabled on Today, including its shared sidebar/header and dialogs. */
-body:not(:has(#pg-today.on)) [data-pc-text]{line-height:1.45!important}
-body:not(:has(#pg-today.on)) [data-pc-text="13"]{font-size:13px!important}
-body:not(:has(#pg-today.on)) [data-pc-text="14"]{font-size:14px!important}
-body:not(:has(#pg-today.on)) [data-pc-text="15"]{font-size:15px!important}
-body:not(:has(#pg-today.on)) [data-pc-text="16"]{font-size:16px!important}
-body:not(:has(#pg-today.on)) [data-pc-text="18"]{font-size:18px!important}
-body:not(:has(#pg-today.on)) [data-pc-text="20"]{font-size:20px!important}
-body:not(:has(#pg-today.on)) [data-pc-text="24"]{font-size:24px!important}
-body:not(:has(#pg-today.on)) :is(button,input,select,[role=tab])[data-pc-text]{line-height:1.2!important}
+/* Shared PC typography, including Today. Mobile never loads this asset. */
+body [data-pc-text]{line-height:1.45!important}
+body [data-pc-text="13"]{font-size:13px!important}
+body [data-pc-text="14"]{font-size:14px!important}
+body [data-pc-text="15"]{font-size:15px!important}
+body [data-pc-text="16"]{font-size:16px!important}
+body [data-pc-text="18"]{font-size:18px!important}
+body [data-pc-text="20"]{font-size:20px!important}
+body [data-pc-text="24"]{font-size:24px!important}
+body :is(button,input,select,[role=tab])[data-pc-text]{line-height:1.2!important}
+@media(min-width:761px){
+ #pg-today .twq-list col:nth-child(1){width:34px!important}
+ #pg-today .twq-list col:nth-child(2){width:60px!important}
+ #pg-today .twq-list col:nth-child(3){width:20%!important}
+ #pg-today .twq-list col:nth-child(4){width:62px!important}
+ #pg-today .twq-list col:nth-child(5){width:auto!important}
+ #pg-today .twq-list col:nth-child(6){width:68px!important}
+ #pg-today .twq-list col:nth-child(7){width:76px!important}
+ #pg-today .twq-list td button{word-break:keep-all}
+}
