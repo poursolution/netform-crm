@@ -124,9 +124,16 @@ async function run(){
    const d=B.deals[0],before=repFlowData(true).find(r=>r.nm===d.assignee),saved=JSON.stringify(d);
    d.code=d.stage_code='waiting';d.stage_contexts={waiting:{memo:'고객의 명시적인 장기 검토 의사에 따라 재접촉 계획 등록',fields:{reason:'공사예정 2030년 · 예산 편성 대기',contact_date:'2026-12-15'}}};
    const after=repFlowData(true).find(r=>r.nm===d.assignee),out={excluded:!dashboardSnapshotDeals().some(x=>x.id===d.id),stillActive:towerActive(d),before:before.pipeline,after:after.pipeline,amount:oppAmt(d),wonUnchanged:before.wonAmount===after.wonAmount,historyPresent:after.deals.some(x=>x.id===d.id)};
+   // Simulate the existing server ACK after returning to an active stage; keep historical context.
+   d.code=d.stage_code='sent';
+   out.returnedToPipeline=dashboardSnapshotDeals().some(x=>x.id===d.id);
+   out.returnedAmount=repFlowData(true).find(r=>r.nm===d.assignee).pipeline;
+   out.retainedYear=ConstructionYear.yearOf(d);
+   out.retainedReason=d.stage_contexts.waiting.fields.reason;
    Object.keys(d).forEach(k=>delete d[k]);Object.assign(d,JSON.parse(saved));return out;
   });
   assert.equal(accounting.excluded,true);assert.equal(accounting.stillActive,true);assert.equal(accounting.before-accounting.after,accounting.amount);assert.equal(accounting.wonUnchanged,true);assert.equal(accounting.historyPresent,true);
+  assert.equal(accounting.returnedToPipeline,true);assert.equal(accounting.returnedAmount,accounting.before);assert.equal(accounting.retainedYear,'2030');assert.match(accounting.retainedReason,/예산 편성 대기/);
   const later=page.locator('#p-main [data-followup-mode="later"]').first();
   await later.click();
   await page.locator('.pc-followup-dialog [name=due]').fill('2030-12-15');
