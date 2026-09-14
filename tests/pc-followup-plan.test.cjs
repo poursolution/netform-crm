@@ -16,3 +16,11 @@ test('quote creation and outbound activity are not customer responses',()=>{
  d.activities[0].meaningful_contact=true;assert.equal(api.noResponse(d),false);
 });
 test('missing next date or action is surfaced',()=>{assert.equal(api.noNext({nextAction:{text:'확인'}}),true);assert.equal(api.noNext({nextAction:{text:'확인',due:'2026-09-18'}}),false);});
+test('reloaded waiting year is consistent across label, value and options, never contact year',()=>{
+ const cy={...require('../construction-year.js')};api.installYear(cy);
+ const d=JSON.parse(JSON.stringify({stage_contexts:{waiting:{fields:{reason:'공사예정 2036년 · 예산 편성 대기',contact_date:'2026-12-15'}}}}));
+ assert.equal(cy.yearOf(d),'2036');assert.equal(cy.valueOf(d).year,'2036');assert.ok(cy.options([d],2026).includes('2036'));assert.equal(cy.matches(d,'2036'),true);assert.equal(cy.matches(d,'2026'),false);
+ const unknown={stage_contexts:{waiting:{fields:{reason:'예산 편성 대기',contact_date:'2030-12-15'}}}};
+ assert.equal(cy.yearOf(unknown),'미입력');assert.equal(cy.matches(unknown,'2030'),false);
+ assert.equal(cy.yearOf({stageContexts:d.stage_contexts}),'2036');
+});
