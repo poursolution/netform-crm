@@ -183,6 +183,20 @@ async function run(){
   assert.match(await page.locator('.relpc-action-row').last().innerText(),/일정 없음/);
   assert.equal(await page.locator('.relpc-evidence').count(),6);
   assert.ok(await page.locator('.relpc-plan>strong').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=15));
+  await page.waitForTimeout(80);
+  assert.ok(await page.locator('.relpc-background small').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=13));
+  assert.ok(await page.locator('.relpc-actions button').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=14));
+  const typography=await page.evaluate(async()=>{
+   const today=document.getElementById('pg-today'),current=document.querySelector('.apage.on'),sheet=document.querySelector('link[href^="pc-typography.css"]');
+   const probes=[document.getElementById('ptitle'),document.querySelector('.side'),today].filter(Boolean);
+   if(current)current.classList.remove('on');today.classList.add('on');
+   const sample=()=>probes.flatMap(root=>[root,...root.querySelectorAll('*')]).filter(e=>e.getClientRects().length).map(e=>getComputedStyle(e).fontSize);
+   const enabled=sample();sheet.disabled=true;const disabled=sample();sheet.disabled=false;
+   today.classList.remove('on');if(current)current.classList.add('on');
+   return {enabled,disabled};
+  });
+  assert.deepEqual(typography.enabled,typography.disabled,'Today and shared shell retain original type sizes');
+  assert.ok(!fs.readFileSync(path.join(root,'mobile.html'),'utf8').includes('pc-typography'),'mobile does not load PC typography');
   if(process.env.VERIFY_SCREENSHOT)await page.screenshot({path:process.env.VERIFY_SCREENSHOT,fullPage:true});
   await page.evaluate(()=>{const original=B.deals[3];B.deals=Array.from({length:51},(_,i)=>({...original,id:'scale-'+i,site:'대량검증 '+String(i).padStart(2,'0')}));G.relationshipPage=1;paintRelationshipManagement()});
   assert.equal(await page.locator('.relpc-table tbody tr').count(),50);
