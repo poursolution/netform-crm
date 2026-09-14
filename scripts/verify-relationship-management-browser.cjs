@@ -64,7 +64,10 @@ async function run(){
   await page.getByRole('button',{name:'초기화',exact:true}).click();
   await page.locator('.relpc-table tbody tr').first().click();
   assert.equal(await page.locator('#relpc-panel').count(),1);
-  for(const word of ['내년도 사업 검토','관리소장 공사계획 확인','공사 예정연도'])assert.match(await page.locator('#relpc-panel').innerText(),new RegExp(word));
+  for(const word of ['내년도 사업 검토','관리소장 공사계획 확인','공사예정','2034년'])assert.match(await page.locator('#relpc-panel').innerText(),new RegExp(word));
+  assert.equal(await page.locator('.relpc-summary-grid>div').count(),4);
+  assert.equal(await page.locator('.relpc-next-card').count(),1);
+  assert.equal(await page.locator('.relpc-timeline').count(),1);
   await page.getByRole('button',{name:'상세 패널 닫기'}).click();
   await page.locator('.relpc-table tbody tr').first().click();
   await page.locator('#relpc-full').click();

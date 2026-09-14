@@ -35,12 +35,15 @@ async function run(){
    await page.setViewportSize({width,height:1000});
    await page.evaluate(()=>new Promise(requestAnimationFrame));
    const typography=await page.evaluate(()=>({
-    sizes:Array.from(document.querySelectorAll('.twq-site,.twq-list td[data-label="지금 해야 할 일"]>strong')).map(n=>getComputedStyle(n).fontSize),
+    sizes:Array.from(document.querySelectorAll('.twq-admin-boards tbody td,.twq-admin-boards tbody td *')).filter(n=>!n.closest('small')).map(n=>getComputedStyle(n).fontSize),
+    secondary:Array.from(document.querySelectorAll('.twq-admin-boards tbody td small,.twq-admin-boards tbody td small *')).map(n=>getComputedStyle(n).fontSize),
     headers:Array.from(document.querySelectorAll('.twq-list th')).every(n=>getComputedStyle(n).whiteSpace==='nowrap'),
     types:Array.from(document.querySelectorAll('.twq-list td[data-label="유형"]')).every(n=>n.scrollWidth<=n.clientWidth),
     overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth
    }));
    assert.ok(typography.sizes.every(x=>x==='12px'),'core text size '+width);
+   assert.ok(typography.secondary.length>0&&typography.secondary.every(x=>x==='11px'),'secondary text size '+width);
+   console.log('PASS computed typography '+width+': both boards core=12px, secondary=11px');
    assert.equal(typography.headers,true);if(!typography.types)console.log(await page.locator('.twq-list col').evaluateAll(ns=>ns.map(n=>({width:getComputedStyle(n).width,table:n.closest('table').clientWidth}))));assert.equal(typography.types,true,'type overflow '+width);assert.equal(typography.overflow,false);
   }
   await page.setViewportSize({width:1440,height:1000});

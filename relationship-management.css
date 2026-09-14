@@ -86,7 +86,15 @@
 .relpc-actions a{display:block;text-align:center;text-decoration:none;border:1px solid #d8e0ec;border-radius:4px;padding:5px 2px;font-size:11px;color:#365a95;background:#fff}
 .relpc-actions span{font-size:11px;color:#87909d}
 .relpc-detail-block{border-bottom:1px solid #e8edf2;padding:4px 0 12px}
-.relpc-panel .relpc-detail-block h3{margin-top:14px}
+.relpc-panel .relpc-detail-block h3{margin:0 0 10px;font-size:16px;font-weight:700;color:var(--ink)}
+.relpc-panel .relpc-detail-block{border:0;padding:0;margin-top:22px}
+.relpc-panel header{background:#f8fafc;align-items:flex-start}
+.relpc-hero{min-width:0}.relpc-hero h2{font-size:21px;line-height:1.4}.relpc-hero p{color:#64748b;margin:7px 0;font-size:13px}
+.relpc-chips{display:flex;flex-wrap:wrap;gap:6px}.relpc-chips span{background:#edf2f7;border:1px solid #e2e8f0;border-radius:5px;padding:4px 7px;font-size:12px;color:#475569}
+.relpc-summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.relpc-summary-grid>div{background:#f8fafc;border:1px solid #edf0f4;border-radius:7px;padding:12px}.relpc-summary-grid small,.relpc-summary-grid strong{display:block}.relpc-summary-grid strong{margin-top:6px;font-size:14px;line-height:1.5}
+.relpc-next-card{background:#f0f5fc;border-left:3px solid #42658d;border-radius:6px;padding:14px}.relpc-next-card strong{font-size:16px;line-height:1.5}.relpc-next-card p{margin:7px 0 0;color:#526580}
+.relpc-panel .relpc-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.relpc-panel .relpc-actions>a,.relpc-panel .relpc-actions>button{padding:9px;text-align:center;border-radius:6px}.relpc-panel .relpc-actions>a,.relpc-panel .relpc-actions>button:first-of-type{background:#edf3fc;border-color:#b7cbe7;color:#244d80}
+.relpc-panel .relpc-timeline article{position:relative;border:0;border-left:1px solid #dce4ee;margin-left:5px;padding:0 0 18px 17px}.relpc-panel .relpc-timeline article:before{content:'';position:absolute;left:-4px;top:5px;width:7px;height:7px;border-radius:50%;background:#8297b0}.relpc-panel .relpc-timeline article:last-child{padding-bottom:0;border-color:transparent}.relpc-timeline article>strong{display:block;margin-top:5px}.relpc-timeline p:empty{display:none}
 .relpc-inbox .relpc-tabs small{font-size:11px;margin-left:4px;color:#72839b}
 body:has(#pg-relationship.on) #execAskBtn{display:none}
 .relpc-inbox .relpc-plan{background:#f7faff;border-left:2px solid #dbe7f6}

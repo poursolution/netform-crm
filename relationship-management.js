@@ -205,12 +205,14 @@ function longTermPanel(el,d,i){
  var p=itemPatch(d,'deal'),m=relationshipMeta(d),a=actionObj(d,p)||{},r=inboxRecent(d),c=contactInfo(d,p)||{},section=el.querySelector('section'),full=el.querySelector('#relpc-full');
  function block(title,body){return '<div class="relpc-detail-block"><h3>'+title+'</h3>'+body+'</div>'}
  function text(v){return '<p>'+esc(v)+'</p>'}
+ function tile(label,value){return '<div><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong></div>'}
+ var header=el.querySelector('header'),heading=header.querySelector('h2'),intro=document.createElement('div');intro.className='relpc-hero';heading.before(intro);intro.appendChild(heading);intro.insertAdjacentHTML('beforeend','<p>'+esc(repN(d.assignee)||'미배정')+' · '+esc(statusLabel(d))+'</p><div class="relpc-chips"><span>'+esc(statusLabel(d))+'</span><span>공사예정 '+esc(yearOf(d)==='미입력'?'미정':yearLabel(d))+'</span><span>예상금액 '+esc(d.amt?fmtAmt(d.amt):'미입력')+'</span></div>');
  section.innerHTML=block('고객 기본정보',text((c.name||c.role||'관리소장 확인 필요')+' · '+(c.mobile||'연락처 확인 필요'))+text('담당자 '+(repN(d.assignee)||'미배정')+' · '+statusLabel(d)))
- +block('관계관리 정보',text('관리목적 · '+(reasonOf(d)||'관리목적 확인 필요'))+text('예상 공사 · '+inboxWork(d))+text('공사 예정연도 · '+(yearOf(d)==='미입력'?'미정':yearLabel(d)))+(d.amt?text('예상금액 · '+fmtAmt(d.amt)):''))
+ +block('관계관리 정보','<div class="relpc-summary-grid">'+tile('관리목적',reasonOf(d)||'관리목적 확인 필요')+tile('공사예정',yearOf(d)==='미입력'?'미정':yearLabel(d))+tile('예상 공종',inboxWork(d))+tile('예상금액',d.amt?fmtAmt(d.amt):'미입력')+'</div>')
  +block('최근 접촉',text(r.at?fmtD(r.at):'최근 기록 없음')+text(r.text))
- +block('다음 관리',text(m.due?fmtD(m.due):'다음 접촉일 확인 필요')+text(a.text||'다음 행동 확인 필요'))
+ +block('다음 관리','<div class="relpc-next-card"><strong>'+esc(a.text||'다음 행동 확인 필요')+'</strong>'+text(m.due?fmtD(m.due):'다음 접촉일 확인 필요')+'</div>')
  +block('바로 실행',inboxExecute(i,d))
- +block('관계관리 이력',activitiesOf(d).map(function(x){return '<article><small>'+esc(fmtD(relActivityAt(x)))+' · '+esc(x.type||'활동')+'</small>'+text(x.note||'')+text(x.result||'')+'</article>'}).join('')||text('활동 기록 없음'))
+ +block('관계관리 이력','<div class="relpc-timeline">'+(activitiesOf(d).map(function(x){var labels={next_action_set:'다음 일정 등록',next_action:'다음 행동 등록',stage_transition:'영업 단계 변경',sms_sent:'문자 발송',contact:'연락 기록'},kind=labels[x.type]||(/[a-z_]/i.test(x.type||'')?'활동 기록':x.type||'활동');return '<article><small>'+esc(fmtD(relActivityAt(x)))+'</small><strong>'+esc(kind)+'</strong>'+text(x.note||'')+text(x.result||'')+(x.actor?text(x.actor):'')+'</article>'}).join('')||text('활동 기록 없음'))+'</div>')
  +block('관련 영업기회',text((d.site||d.site_name||'현장')+' · '+statusLabel(d)));
  section.lastElementChild.appendChild(full);
  // The detail button is unnecessary inside its own panel; all original edit routes remain.

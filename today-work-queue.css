@@ -31,6 +31,12 @@ body:has(#pg-today.on) .mhead>.search{display:none}
 #pg-today .twq-site,#pg-today .twq-list td[data-label="지금 해야 할 일"]>strong{font-size:12px!important;line-height:1.45!important;word-break:keep-all;overflow-wrap:anywhere;max-width:100%}
 #pg-today .twq-site{font-weight:700}
 @media(min-width:761px){
+ /* Two semantic sizes for both PC boards; global tag typography must not split peers. */
+ #pg-today .twq-admin-boards{--twq-core-size:12px;--twq-secondary-size:11px}
+ #pg-today .twq-admin-boards .twq-list tbody td,
+ #pg-today .twq-admin-boards .twq-list tbody td *{font-size:var(--twq-core-size)!important}
+ #pg-today .twq-admin-boards .twq-list tbody td small,
+ #pg-today .twq-admin-boards .twq-list tbody td small *{font-size:var(--twq-secondary-size)!important}
  #pg-today .twq-list td{word-break:keep-all;overflow-wrap:anywhere;line-height:1.45}
  #pg-today .twq-list th{white-space:nowrap}
  #pg-today .twq-admin-boards th,#pg-today .twq-admin-boards td{padding-left:4px;padding-right:4px}
