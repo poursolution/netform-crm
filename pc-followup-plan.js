@@ -23,9 +23,10 @@
   const sent=(d.stage_contexts||d.stageContexts||{}).sent?.fields;
   const dates=messages.concat(versions).map(x=>x.sent_at||x.occurred_at||'').filter(Boolean);
   if(sent&&Array.isArray(sent.materials)&&sent.materials.includes('견적서')&&date(sent.sent_date))dates.push(sent.sent_date);
-  return dates.sort().pop()||'';
+  return dates.filter(v=>Number.isFinite(timestamp(v))).sort((a,b)=>timestamp(a)-timestamp(b)).pop()||'';
  }
- function noResponse(d){const sent=sentAt(d);return !!sent&&!(d.activities||[]).some(a=>(a.at||a.occurred_at||'')>sent&&(a.meaningful_contact===true||a.meaningful===true||a.response_kind));}
+ function timestamp(value){let v=String(value||'');if(/^\d{4}-\d{2}-\d{2}$/.test(v))v+='T00:00:00+09:00';else if(/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/.test(v))v=v.replace(' ','T')+'+09:00';return Date.parse(v);}
+ function noResponse(d){const sent=sentAt(d);return !!sent&&!(d.activities||[]).some(a=>timestamp(a.at||a.occurred_at)>timestamp(sent)&&(a.meaningful_contact===true||a.meaningful===true||a.response_kind));}
  function noNext(d){const n=d.nextActionObj||d.nextAction||{};return n.status==='completed'||n.status==='cancelled'||!n.text||!(n.due||n.due_at);}
  function savedConstructionYear(d){return (String(d?.stage_contexts?.waiting?.fields?.reason||d?.stageContexts?.waiting?.fields?.reason||'').match(/^공사예정 (20\d{2})년 · /)||[])[1]||'';}
  function installYear(cy){if(!cy)return;const prior=cy.yearOf,priorValue=cy.valueOf,priorOptions=cy.options;
@@ -81,8 +82,9 @@
   for(const name of ['kb5Card','denseCard','kbCard']){const original=w[name];if(typeof original!=='function')continue;w[name]=function(d){const html=original.apply(this,arguments);return eligible(d)?html.replace(/<\/div>\s*$/,actions(d)+'</div>'):html;};}
   const quick=w.quickPanelHTML;if(quick)w.quickPanelHTML=function(d){const html=quick.apply(this,arguments);return eligible(d)?html.replace('<div class="quickactions">',actions(d)+'<div class="quickactions">'):html;};
   const originalFiltered=w.pipeFiltered;
-  if(originalFiltered)w.pipeFiltered=function(){return originalFiltered.apply(this,arguments).filter(d=>!(code(d)==='waiting'&&String(d.stage_contexts?.waiting?.memo||'').includes('고객의 명시적인 장기 검토 의사'))).filter(d=>filter==='all'||(filter==='response'?noResponse(d):noNext(d)));};
-  const originalPaint=w.paintPipe;if(originalPaint)w.paintPipe=function(){const result=originalPaint.apply(this,arguments),host=w.document.getElementById('p-main');if(host){const bar=w.document.createElement('div');bar.className='pc-followup-filters';bar.innerHTML=[['all','전체'],['response','견적발송 후 반응없음'],['next','다음일정 없음']].map(([v,label])=>'<button type="button" data-value="'+v+'" aria-pressed="'+(v===filter)+'">'+label+'</button>').join('');bar.onclick=e=>{if(e.target.dataset.value){filter=e.target.dataset.value;w.paintPipe();}};host.prepend(bar);}return result;};
+  function scope(){const seen=new Set();return (originalFiltered?originalFiltered.call(w):[]).filter(d=>{const key=d.id||d;if(seen.has(key))return false;seen.add(key);return !(code(d)==='waiting'&&String(d.stage_contexts?.waiting?.memo||'').includes('고객의 명시적인 장기 검토 의사'));});}
+  if(originalFiltered)w.pipeFiltered=function(){return scope().filter(d=>filter==='all'||(filter==='response'?noResponse(d):noNext(d)));};
+  const originalPaint=w.paintPipe;if(originalPaint)w.paintPipe=function(){const result=originalPaint.apply(this,arguments),host=w.document.getElementById('p-main');if(host){const rows=scope(),counts={all:rows.length,response:rows.filter(noResponse).length,next:rows.filter(noNext).length},bar=w.document.createElement('div');bar.className='pc-followup-filters';bar.innerHTML=[['all','전체'],['response','견적발송 후 반응없음'],['next','다음일정 없음']].map(([v,label])=>'<button type="button" data-value="'+v+'" aria-pressed="'+(v===filter)+'">'+label+' <span>'+counts[v]+'건</span></button>').join('');bar.onclick=e=>{const b=e.target.closest('button[data-value]');if(b){filter=b.dataset.value;w.paintPipe();}};host.prepend(bar);}return result;};
   const render=w.renderDetail;if(render)w.renderDetail=function(){const result=render.apply(this,arguments),d=w.CUR_DETAIL?.kind==='deal'&&w.CUR_DETAIL.item,host=w.document.getElementById('nextActionCard');if(host&&eligible(d)&&!host.querySelector('.pc-followup-actions'))host.insertAdjacentHTML('afterbegin',actions(d));return result;};
   // Persisted waiting purpose carries the explicitly entered year; never derive it from contact date.
   installYear(w.ConstructionYear);

@@ -110,6 +110,16 @@ async function run(){
   assert.equal(await page.evaluate(()=>window.__businessWrites),0);
   // Exercise real card and split entry points with the full PC renderer loaded.
   await page.evaluate(()=>{G.rep='전체';G.brand='전체';G.workFilter='전체';G.year='전체';G.quarter=0;G.q='';G.pipeView='kb';paint();});
+  await page.evaluate(()=>{B.deals[2].quote_versions=[{sent_at:'2026-09-01T10:00:00+09:00'}];paint();});
+  assert.equal(await page.locator('.pc-followup-filters [data-value="response"] span').innerText(),'1건');
+  await page.locator('.pc-followup-filters [data-value="response"] span').click();
+  assert.deepEqual(await page.evaluate(()=>pipeFiltered().map(d=>d.id)),['pf-3']);
+  assert.equal(await page.locator('.pc-followup-filters [data-value="all"] span').innerText(),'3건');
+  await page.evaluate(()=>{G.rep='이필선';paint();});
+  assert.equal(await page.locator('.pc-followup-filters [data-value="response"] span').innerText(),'0건');
+  assert.equal(await page.locator('.pc-followup-filters [data-value="all"] span').innerText(),'1건');
+  await page.locator('.pc-followup-filters [data-value="all"]').click();
+  await page.evaluate(()=>{G.rep='전체';paint();});
   const later=page.locator('#p-main [data-followup-mode="later"]').first();
   await later.click();
   await page.locator('.pc-followup-dialog [name=due]').fill('2030-12-15');
