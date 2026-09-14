@@ -1,0 +1,81 @@
+/* PC only: existing Pipeline cards and existing command protocol, no new inbox. */
+(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else{root.PCFollowupPlan=api;api.install(root);}})(typeof window==='undefined'?globalThis:window,function(){
+ 'use strict';
+ const terminal=new Set(['won','lost','badfit','badfit_lead','badfit_pipe','nocontact','completion']);
+ const reasons=['입대의/관리사무소 검토중','예산 편성 대기','공사시기 미도래','다른 공사 우선','고객 요청으로 추후 연락'];
+ const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const date=v=>/^\d{4}-\d{2}-\d{2}$/.test(v)&&!isNaN(Date.parse(v))&&new Date(v).toISOString().slice(0,10)===v;
+ function today(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}
+ function code(d){return d.stage_code||d.code;}
+ function eligible(d){return !!d&&!terminal.has(code(d))&&code(d)!=='waiting'&&d.lifecycle_status!=='closed';}
+ function plan(d,input){
+  if(!eligible(d))throw Error('진행 중인 영업건에서만 등록할 수 있습니다.');
+  if(!date(input.due))throw Error('다음 연락일을 확인해 주세요.');
+  if(!input.reason||input.reason.trim().length>300)throw Error('다시 연락할 이유를 입력해 주세요.');
+  if(input.year&&!/^20\d{2}$/.test(input.year))throw Error('공사예정연도는 2000~2099년으로 입력해 주세요.');
+  const long=input.mode==='later'&&input.long===true;
+  const purpose=(input.year?'공사예정 '+input.year+'년 · ':'')+input.reason.trim();
+  return {long,due:input.due,year:input.year||'',purpose,text:purpose+' · 고객 재접촉',destination:long?'관계관리 · 대기고객으로 연결':'Pipeline 유지'};
+ }
+ function sentAt(d){
+  const messages=(d.message_logs||d.messageLogs||[]).filter(x=>x.status==='sent'&&(x.quote_version_no||x.quote_attachment_id));
+  const versions=(d.quote_versions||d.quoteVersions||[]).filter(x=>x.sent_at);
+  const sent=(d.stage_contexts||d.stageContexts||{}).sent?.fields;
+  const dates=messages.concat(versions).map(x=>x.sent_at||x.occurred_at||'').filter(Boolean);
+  if(sent&&Array.isArray(sent.materials)&&sent.materials.includes('견적서')&&date(sent.sent_date))dates.push(sent.sent_date);
+  return dates.sort().pop()||'';
+ }
+ function noResponse(d){const sent=sentAt(d);return !!sent&&!(d.activities||[]).some(a=>(a.at||a.occurred_at||'')>sent&&(a.meaningful_contact===true||a.meaningful===true||a.response_kind));}
+ function noNext(d){const n=d.nextActionObj||d.nextAction||{};return n.status==='completed'||n.status==='cancelled'||!n.text||!(n.due||n.due_at);}
+ function install(w){
+  let dialog=null,focus=null,pending=null,filter='all';
+  const find=id=>(w.B&&w.B.deals||[]).find(d=>String(d.id)===String(id));
+  function actions(d){if(!eligible(d))return '';return '<div class="pc-followup-actions">'+[['continue','계속 진행'],['later','추후 다시 연락'],['end','종료']].map(([mode,label])=>'<button type="button" data-followup-id="'+esc(d.id)+'" data-followup-mode="'+mode+'">'+label+'</button>').join('')+'</div>';}
+  function close(){if(dialog)dialog.remove();dialog=null;if(focus&&focus.isConnected)focus.focus();}
+  function open(id,mode){const d=find(id);if(!eligible(d)||pending)return;if(mode==='end'){w.StageTransitionUI.open(d,false,'lost');return;}close();focus=w.document.activeElement;
+   dialog=w.document.createElement('dialog');dialog.className='pc-followup-dialog';
+   dialog.innerHTML='<form><header><div><small>'+esc(d.site||'영업기회')+'</small><h2>'+ (mode==='later'?'추후 다시 연락':'계속 진행')+'</h2></div><button type="button" data-close aria-label="닫기">×</button></header><label>이유<select name="reason">'+(mode==='continue'?'<option>고객 검토결과 확인</option>':'')+reasons.map(r=>'<option>'+r+'</option>').join('')+'</select></label><label>다음 연락일<input name="due" type="date" required></label><div class="pc-followup-presets"><button type="button" data-days="7">7일 후</button><button type="button" data-days="14">14일 후</button><button type="button" data-days="30">30일 후</button></div><label>공사예정연도 <small>미정이면 비워두세요</small><input name="year" type="number" min="2000" max="2099" placeholder="예: 2030"></label>'+(mode==='later'?'<label class="pc-followup-long"><input name="long" type="checkbox">고객이 장기 검토 의사를 밝혔습니다</label>':'')+'<p class="pc-followup-preview" aria-live="polite"></p><p class="pc-followup-error" role="status"></p><footer><button type="button" data-close>취소</button><button type="submit">계획 저장</button></footer></form>';
+   w.document.body.appendChild(dialog);const form=dialog.querySelector('form'),el=name=>form.elements.namedItem(name);
+   const n=d.nextActionObj||d.nextAction||{};el('due').value=String(n.due||n.due_at||'').slice(0,10);
+   const cy=w.ConstructionYear&&w.ConstructionYear.yearOf(d),savedYear=String(n.text||'').match(/^공사예정 (20\d{2})년 · /);if(savedYear)el('year').value=savedYear[1];else if(/^20\d{2}$/.test(cy))el('year').value=cy;
+   function input(){return {mode,reason:el('reason').value,due:el('due').value,year:el('year').value,long:!!el('long')?.checked};}
+   function preview(){dialog.querySelector('.pc-followup-preview').textContent=el('long')?.checked?'관계관리 · 대기고객으로 연결합니다. 기존 견적·금액·이력은 유지됩니다.':'Pipeline을 유지하고 다음 연락 일정만 등록합니다.';}
+   form.oninput=preview;preview();dialog.querySelectorAll('[data-close]').forEach(b=>b.onclick=close);
+   dialog.querySelectorAll('[data-days]').forEach(b=>b.onclick=()=>{const dt=new Date(today()+'T12:00:00Z');dt.setUTCDate(dt.getUTCDate()+Number(b.dataset.days));el('due').value=dt.toISOString().slice(0,10);});
+   dialog.oncancel=e=>{e.preventDefault();close();};
+   form.onsubmit=async e=>{e.preventDefault();if(pending)return;const status=dialog.querySelector('.pc-followup-error');try{
+    const p=plan(find(id),input()),queue=w.Phase1.queue,rows=queue.list();
+    if(rows.some(q=>q.object_id===id&&q.status!=='done'&&q.status!=='cancelled'))throw Error('이 현장의 저장 요청이 처리 중입니다. 동기화 상태를 먼저 확인해 주세요.');
+    let version=find(id).version;rows.filter(q=>q.object_id===id&&q.status==='done'&&Number.isSafeInteger(q.ack?.version)).forEach(q=>{version=Math.max(version??0,q.ack.version);});
+    if(!Number.isSafeInteger(version))throw Error('최신 데이터를 다시 불러온 뒤 저장해 주세요.');
+    let op='next_action',payload={opportunity_id:id,intent:'standalone',type:'전화',text:p.text,due_at:p.due,assignee:d.assignee};
+    if(p.long){op='transition';const at=today(),s={from:code(d),to:'waiting',transition_date:at,skip_reason:'',memo:'고객의 명시적인 장기 검토 의사에 따라 재접촉 계획 등록',fields:{reason:p.purpose,contact_date:p.due}};payload={opportunity_id:id,from:s.from,to:s.to,stage_code:s.from,transition_date:at,note:p.purpose,stage_context:s};}
+    const q=queue.enqueue(op,id,version,payload);pending={id:q.request_id,deal:id,plan:p,op};
+    form.querySelectorAll('button:not([data-close]),input,select').forEach(x=>x.disabled=true);status.textContent='서버 저장 확인 중…';
+    await queue.flush();settle();
+   }catch(err){status.textContent=err.message;if(pending){status.textContent='저장 미완료 · '+err.message+' · 입력 내용은 유지됩니다. 동기화 상태를 확인해 주세요.';settle();}}};
+   dialog.showModal();el('reason').focus();
+  }
+  function settle(){if(!pending)return;const q=w.Phase1.queue.list().find(x=>x.request_id===pending.id);if(!q)return;
+   if(q.status!=='done'||!q.ack){if(dialog)dialog.querySelector('.pc-followup-error').textContent='저장 미완료 · '+(q.error||'서버 응답 확인 중')+' — 입력 내용은 유지됩니다. 닫은 뒤 동기화 상태를 확인할 수 있습니다.';if(q.status==='rejected'||q.status==='conflict')pending=null;return;}
+   const {plan:p,deal:id,op}=pending;
+   for(const list of [w.B&&w.B.deals,w.DEALS].filter(Array.isArray))for(const d of list)if(String(d.id)===String(id)){
+    d.version=q.ack.version;d.nextAction=d.nextActionObj={id:q.ack.next_action_id,type:op==='transition'?'후속접촉':'전화',text:op==='transition'?'고객 재접촉':p.text,due:p.due,due_at:p.due,status:'open',assignee:d.assignee};
+    if(op==='transition'){d.code=d.stage_code='waiting';d.stageContexts=d.stage_contexts=q.ack.stage_contexts;d.waitingReason=d.waiting_reason=d.relationshipReason=p.purpose;}
+    if(typeof w.itemPatch==='function'){const patch=w.itemPatch(d,'deal');patch.nextActionObj=d.nextActionObj;patch.nextAction=d.nextActionObj;if(op==='transition'){patch.code='waiting';patch.stageContexts=q.ack.stage_contexts;patch.waitingReason=patch.relationshipReason=p.purpose;}}
+   }
+   pending=null;close();if(typeof w.paint==='function')w.paint();
+  }
+  w.document.addEventListener('click',e=>{const b=e.target.closest('[data-followup-id]');if(!b)return;e.stopPropagation();open(b.dataset.followupId,b.dataset.followupMode);},true);
+  w.addEventListener('phase1:queue',()=>w.setTimeout(settle,0));
+  for(const name of ['kb5Card','denseCard','kbCard']){const original=w[name];if(typeof original!=='function')continue;w[name]=function(d){const html=original.apply(this,arguments);return eligible(d)?html.replace(/<\/div>\s*$/,actions(d)+'</div>'):html;};}
+  const originalFiltered=w.pipeFiltered;
+  if(originalFiltered)w.pipeFiltered=function(){return originalFiltered.apply(this,arguments).filter(d=>!(code(d)==='waiting'&&String(d.stage_contexts?.waiting?.memo||'').includes('고객의 명시적인 장기 검토 의사'))).filter(d=>filter==='all'||(filter==='response'?noResponse(d):noNext(d)));};
+  const originalPaint=w.paintPipe;if(originalPaint)w.paintPipe=function(){const result=originalPaint.apply(this,arguments),host=w.document.getElementById('p-main');if(host){const bar=w.document.createElement('div');bar.className='pc-followup-filters';bar.innerHTML=[['all','전체'],['response','견적발송 후 반응없음'],['next','다음일정 없음']].map(([v,label])=>'<button type="button" data-value="'+v+'" aria-pressed="'+(v===filter)+'">'+label+'</button>').join('');bar.onclick=e=>{if(e.target.dataset.value){filter=e.target.dataset.value;w.paintPipe();}};host.prepend(bar);}return result;};
+  const render=w.renderDetail;if(render)w.renderDetail=function(){const result=render.apply(this,arguments),d=w.CUR_DETAIL?.kind==='deal'&&w.CUR_DETAIL.item,host=w.document.getElementById('nextActionCard');if(host&&eligible(d)&&!host.querySelector('.pc-followup-actions'))host.insertAdjacentHTML('afterbegin',actions(d));return result;};
+  // Persisted waiting purpose carries the explicitly entered year; never derive it from contact date.
+  const cy=w.ConstructionYear;if(cy){const prior=cy.yearOf;cy.yearOf=function(d){const m=String(d.stage_contexts?.waiting?.fields?.reason||d.stageContexts?.waiting?.fields?.reason||'').match(/^공사예정 (20\d{2})년 · /);return m?m[1]:prior(d);};cy.matches=function(d,v){return !v||v==='전체'||cy.yearOf(d)===String(v);};}
+  return {open,close,actions};
+ }
+ return {plan,eligible,sentAt,noResponse,noNext,install};
+});
