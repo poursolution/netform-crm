@@ -108,6 +108,22 @@ async function run(){
   await page.setViewportSize({width:1920,height:1080});
   if(process.env.VERIFY_SCREENSHOT)await page.screenshot({path:process.env.VERIFY_SCREENSHOT,fullPage:false});
   assert.equal(await page.evaluate(()=>window.__businessWrites),0);
+  // Exercise real card and split entry points with the full PC renderer loaded.
+  await page.evaluate(()=>{G.rep='전체';G.brand='전체';G.workFilter='전체';G.year='전체';G.quarter=0;G.q='';G.pipeView='kb';paint();});
+  const later=page.locator('#p-main [data-followup-mode="later"]').first();
+  await later.click();
+  await page.locator('.pc-followup-dialog [name=due]').fill('2030-12-15');
+  assert.match(await page.locator('.pc-followup-preview').innerText(),/Pipeline/);
+  await page.locator('.pc-followup-dialog [data-close]').first().click();
+  await page.locator('#p-main [data-followup-mode="end"]').first().click();
+  await page.locator('#stage-transition-form').waitFor({state:'visible'});
+  assert.equal(await page.locator('#sf-target').inputValue(),'lost');
+  await page.locator('#sf-cancel').click();
+  await page.evaluate(()=>{openPipeSplit(B.deals[1]);});
+  await page.locator('.quickpanel [data-followup-mode="later"],.quick-panel [data-followup-mode="later"],#p-main [data-followup-mode="later"]').first().click();
+  await page.locator('.pc-followup-dialog').waitFor({state:'visible'});
+  await page.locator('.pc-followup-dialog [data-close]').first().click();
+  assert.equal(await page.evaluate(()=>window.__businessWrites),0);
   console.log(JSON.stringify({status:'PASS',one_row_period_owner:true,original_counts:true,period_buttons:6,filters:true,view_switches:true,business_writes:0}));
  }finally{await browser.close();await new Promise(resolve=>srv.close(resolve))}
 }
