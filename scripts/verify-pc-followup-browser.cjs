@@ -32,6 +32,22 @@ const {chromium}=createRequire(path.resolve(__dirname,'../../crm-security-lab/pa
  assert.match(await page.locator('.pc-followup-error').innerText(),/저장 미완료/);
  assert.equal(await page.locator('[name=due]').inputValue(),'2030-12-15');
  assert.equal(await page.evaluate(()=>B.deals[0].code),'sent');
+ await page.locator('.pc-followup-dialog [data-close]').first().click();
+ await page.getByRole('button',{name:'계속 진행',exact:true}).click();
+ assert.equal(await page.locator('[name=due]').inputValue(),'2030-12-15');
+ assert.equal(await page.getByRole('button',{name:'계획 저장'}).isDisabled(),true);
+ assert.equal(await page.evaluate(()=>rows.length),3,'reopening pending plan never re-enqueues');
+ await page.locator('.pc-followup-dialog [data-close]').first().click();
+ await page.evaluate(()=>{B.deals.push({id:'22222222-2222-4222-8222-222222222222',site:'다른 현장',code:'sent',version:1});const b=document.createElement('button');b.textContent='다른 현장 계획';b.dataset.followupId=B.deals[1].id;b.dataset.followupMode='later';document.body.appendChild(b);});
+ await page.getByRole('button',{name:'다른 현장 계획'}).click();
+ assert.equal(await page.getByRole('button',{name:'계획 저장'}).isEnabled(),true);
+ await page.locator('[name=due]').fill('2027-04-12');
+ await page.evaluate(()=>{rows[2].status='done';rows[2].ack={version:4,next_action_id:'recovered'};dispatchEvent(new Event('phase1:queue'));});
+ await page.waitForFunction(()=>B.deals[0].version===4);
+ assert.equal(await page.locator('[name=due]').inputValue(),'2027-04-12','other customer draft stays open when ACK arrives');
+ await page.locator('.pc-followup-dialog [data-close]').first().click();
+ await page.getByRole('button',{name:'다른 현장 계획'}).click();
+ assert.equal(await page.locator('[name=due]').inputValue(),'2027-04-12','draft survives close and reopen');
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
  console.log('PASS: short/long routing, existing payload normalization, close confirmation handoff, ACK-only update, retained failed draft, no horizontal overflow');
  }finally{await browser.close();}
