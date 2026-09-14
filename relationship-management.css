@@ -134,3 +134,13 @@ body:has(#pg-relationship.on) #execAskBtn{display:none}
 .relpc-compact-list .relpc-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
 .relpc-compact-list .relpc-actions button,.relpc-compact-list .relpc-actions a{font-size:11px;padding:5px 2px}
 .relpc-compact-list .relpc-action-row td:first-child>strong{font-size:14px}
+.relpc-balanced-list .relpc-table thead tr,.relpc-balanced-list .relpc-action-row{grid-template-columns:minmax(0,23fr) minmax(0,23fr) minmax(0,32fr) minmax(0,10fr) minmax(0,12fr);align-items:start}
+.relpc-balanced-list .relpc-action-row td{grid-column:auto!important;grid-row:auto!important;display:block!important;white-space:normal;align-self:start!important}
+.relpc-balanced-list .relpc-background strong{display:block;font-size:13px;font-weight:500;color:#46566a;line-height:1.5;margin:0}
+.relpc-balanced-list .relpc-background small{display:block;font-size:12px;font-weight:400;color:#758194;line-height:1.5;margin:4px 0 0}
+.relpc-balanced-list .relpc-plan>strong{font-size:15px;line-height:1.5;font-weight:700}
+.relpc-balanced-list .relpc-plan .relpc-evidence{display:block;margin-top:4px;font-size:12px;line-height:1.5;color:#758194}
+.relpc-balanced-list .relpc-action-row td:first-child>strong{font-size:15px;font-weight:700}
+.relpc-balanced-list .relpc-action-row td:nth-child(4)>small:first-of-type{display:none}
+.relpc-balanced-list .relpc-actions{grid-template-columns:repeat(3,minmax(0,1fr))}
+.relpc-balanced-list .relpc-status{font-size:12px}

@@ -51,8 +51,9 @@ async function run(){
   await page.getByRole('button',{name:'초기화',exact:true}).click();
   assert.match(await page.locator('.relpc-table tbody tr').first().innerText(),/기한초과 관계현장/);
   assert.equal(await page.locator('.relm-matrix,.relm-customer').count(),0);
-  assert.deepEqual(await page.locator('.relpc-table th').allTextContents(),['현장 / 고객','이번에 할 일','다음 연락','실행']);
-  assert.equal(await page.locator('.relpc-action-row').first().locator('td').count(),4);
+  async function secondary(name,index=0){await page.locator('.relpc-action-row').nth(index).click();await page.locator('#relpc-panel').getByRole('button',{name,exact:true}).click()}
+  assert.deepEqual(await page.locator('.relpc-table th').allTextContents(),['현장 / 고객','관리 배경','이번에 할 일','다음 연락','실행']);
+  assert.equal(await page.locator('.relpc-action-row').first().locator('td').count(),5);
   await page.getByRole('combobox',{name:'최근 접촉기간'}).selectOption('90');
   assert.equal(await page.locator('.relpc-table tbody tr').count(),1);
   await page.getByRole('button',{name:'초기화',exact:true}).click();
@@ -76,7 +77,7 @@ async function run(){
   assert.equal(await page.locator('#stage-transition-form').count(),1,'return uses the existing stage editor');
   assert.equal(await page.evaluate(()=>CUR_DETAIL.item.id),'rel-overdue','return does not create a duplicate deal');
   await page.evaluate(()=>closeDetail());
-  await page.locator('.relpc-table tbody tr').first().getByRole('button',{name:'완료 기록',exact:true}).click();
+  await page.locator('.relpc-table tbody tr').first().getByRole('button',{name:'기록',exact:true}).click();
   assert.equal(await page.locator('#relq-note').isVisible(),true);
   assert.equal(await page.locator('#relq-due').isVisible(),true);
   await page.locator('#relq-meaningful').check();
@@ -90,11 +91,11 @@ async function run(){
   await page.locator('#relq-save').click();
   assert.match(await page.locator('#relq-error').innerText(),/입력/);
   await page.locator('.relq-close').click();
-  await page.locator('.relpc-table tbody tr').first().getByRole('button',{name:'일정등록'}).click();
+  await secondary('일정등록');
   assert.equal(await page.locator('#relq-note').isVisible(),false);
   assert.equal(await page.locator('#relq-due').isVisible(),true);
   await page.locator('.relq-close').click();
-  await page.locator('.relpc-table tbody tr').first().getByRole('button',{name:'메모',exact:true}).click();
+  await secondary('메모');
   assert.equal(await page.locator('#relq-note').isVisible(),true);
   assert.equal(await page.locator('#relq-due').isVisible(),false);
   await page.locator('.relq-close').click();
@@ -107,7 +108,7 @@ async function run(){
    window.pcRelationshipMemo=p=>submit('activity',p);window.pcRelationshipNext=p=>submit('next_action',p);
    Phase1.queue.flush=async()=>{};Phase1.queue.list=()=>__requests.map(r=>({...r,status:__confirm?'done':'pending',ack:__confirm?{operation:r.op}:null}));
   });
-  await page.locator('.relpc-table tbody tr').first().getByRole('button',{name:'메모',exact:true}).click();
+  await secondary('메모');
   await page.locator('#relq-note').fill('내부 확인 메모');
   await page.locator('#relq-save').click();
   assert.match(await page.locator('#relq-error').innerText(),/확인하지 못/);
@@ -117,7 +118,7 @@ async function run(){
   assert.equal(await page.locator('#relQuickModal').count(),0);
   assert.equal(await page.evaluate(()=>__requests.length),1,'uncertain retry reuses request');
   assert.equal(await page.evaluate(()=>__requests[0].payload.meaningful_contact),false);
-  await page.locator('.relpc-table tbody tr').first().getByRole('button',{name:'일정등록'}).click();
+  await secondary('일정등록');
   await page.locator('#relq-next').fill('다음 공사계획 확인');
   await page.locator('#relq-save').click();
   assert.equal(await page.locator('#relQuickModal').count(),0);
@@ -125,11 +126,11 @@ async function run(){
   assert.equal(await page.evaluate(()=>__requests.length),2,'schedule adds no contact activity');
   // A late response from the previous customer must not close the new draft.
   await page.evaluate(()=>{Phase1.queue.flush=()=>new Promise(resolve=>window.__releaseSave=resolve)});
-  await page.locator('.relpc-table tbody tr').first().getByRole('button',{name:'메모',exact:true}).click();
+  await secondary('메모');
   await page.locator('#relq-note').fill('첫 고객 저장');
   await page.locator('#relq-save').click();
   await page.locator('.relq-close').click();
-  await page.locator('.relpc-table tbody tr').nth(1).getByRole('button',{name:'메모',exact:true}).click();
+  await secondary('메모',1);
   await page.locator('#relq-note').fill('두 번째 고객 작성 중');
   await page.evaluate(()=>window.__releaseSave());
   assert.equal(await page.locator('#relQuickModal').count(),1,'late save keeps new form open');
@@ -168,7 +169,7 @@ async function run(){
    paintRelationshipManagement();
   });
   const futureRow=page.locator('.relpc-table tbody tr').filter({hasText:'예정 관계현장'});
-  assert.equal(await futureRow.locator('.relpc-evidence').isVisible(),false);
+  assert.equal(await futureRow.locator('.relpc-evidence').isVisible(),true);
   await futureRow.click();
   assert.match(await page.locator('.relpc-panel').innerText(),/옥상방수 공사 일정 확인/);
   await page.getByRole('button',{name:'상세 패널 닫기'}).click();
@@ -178,10 +179,10 @@ async function run(){
   assert.equal(await futureRow.count(),1,'incomplete action is included in missing-schedule filter');
   await page.getByRole('button',{name:'초기화',exact:true}).click();
   await page.evaluate(()=>{B.deals[3].nextActionObj.text='입대의 결과 확인';paintRelationshipManagement()});
-  assert.match(await page.locator('.relpc-action-row').first().getAttribute('data-group'),/연락이 늦어진 고객/);
-  assert.match(await page.locator('.relpc-action-row').last().getAttribute('data-group'),/일정 없는 고객/);
+  assert.equal(await page.locator('.relpc-action-row[data-group]').count(),0);
+  assert.match(await page.locator('.relpc-action-row').last().innerText(),/일정 없음/);
   assert.equal(await page.locator('.relpc-evidence').count(),6);
-  assert.ok(await page.locator('.relpc-plan>strong').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=19));
+  assert.ok(await page.locator('.relpc-plan>strong').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=15));
   if(process.env.VERIFY_SCREENSHOT)await page.screenshot({path:process.env.VERIFY_SCREENSHOT,fullPage:true});
   await page.evaluate(()=>{const original=B.deals[3];B.deals=Array.from({length:51},(_,i)=>({...original,id:'scale-'+i,site:'대량검증 '+String(i).padStart(2,'0')}));G.relationshipPage=1;paintRelationshipManagement()});
   assert.equal(await page.locator('.relpc-table tbody tr').count(),50);
