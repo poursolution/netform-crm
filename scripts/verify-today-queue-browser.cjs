@@ -31,6 +31,19 @@ async function run(){
   assert.equal(await page.locator('.today-admin-pipeline .twq-row').count(),7);
   assert.equal(await page.locator('.twq-counts').count(),1);
   assert.equal(await page.locator('.twq-row').count(),9);
+  for(const width of [1920,1440,1280]){
+   await page.setViewportSize({width,height:1000});
+   await page.evaluate(()=>new Promise(requestAnimationFrame));
+   const typography=await page.evaluate(()=>({
+    sizes:Array.from(document.querySelectorAll('.twq-site,.twq-list td[data-label="지금 해야 할 일"]>strong')).map(n=>getComputedStyle(n).fontSize),
+    headers:Array.from(document.querySelectorAll('.twq-list th')).every(n=>getComputedStyle(n).whiteSpace==='nowrap'),
+    types:Array.from(document.querySelectorAll('.twq-list td[data-label="유형"]')).every(n=>n.scrollWidth<=n.clientWidth),
+    overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth
+   }));
+   assert.ok(typography.sizes.every(x=>x==='12px'),'core text size '+width);
+   assert.equal(typography.headers,true);if(!typography.types)console.log(await page.locator('.twq-list col').evaluateAll(ns=>ns.map(n=>({width:getComputedStyle(n).width,table:n.closest('table').clientWidth}))));assert.equal(typography.types,true,'type overflow '+width);assert.equal(typography.overflow,false);
+  }
+  await page.setViewportSize({width:1440,height:1000});
   assert.equal(await page.locator('.twq-row').first().getAttribute('data-key'),'inq:inq-unassigned');
   assert.equal(await page.getByText('전환 완료 확장',{exact:true}).count(),0);
   assert.equal(await page.getByText('보류 확장',{exact:true}).count(),0);
