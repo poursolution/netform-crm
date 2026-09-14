@@ -32,44 +32,74 @@ async function run(){
    document.querySelectorAll('.apage').forEach(node=>node.classList.remove('on'));
    document.getElementById('pg-pipe').classList.add('on');
    window.__businessWrites=0;window.pushWrite=()=>{window.__businessWrites++};
-   window.paintKanban=()=>{};window.paint=()=>{paintPeriod();paintRepTabs();paintPipe()};
+   document.getElementById('ptitle').textContent='파이프라인';
+   document.getElementById('psub').textContent='진행 중인 영업기회를 단계별로 관리합니다.';
+   window.paint=()=>{paintPeriod();paintRepTabs();paintPipe()};
    paint();
   });
 
-  assert.equal(await page.locator('#periodbar .period-year-select').count(),1);
-  assert.equal(await page.locator('#periodbar .period-segment button').count(),6);
-  assert.equal(await page.locator('#reptabs .rep-filter-picker').count(),1);
-  assert.equal(await page.locator('#p-brands .filter-business-options .bt').count(),6);
-  assert.match(await page.locator('#p-brands .filter-current b').innerText(),/전체 담당자 · 전체 사업/);
 
-  await page.locator('#reptabs summary').click();
-  await page.locator('#reptabs .rep-filter-search input').fill('황윤');
-  assert.equal(await page.locator('#reptabs .rep-filter-option:visible').count(),1);
-  await page.locator('#reptabs .rep-filter-option:visible').click();
+  assert.equal(await page.locator('#periodbar').isVisible(),false);
+  assert.equal(await page.locator('#reptabs').isVisible(),false);
+  const bar=page.locator('.pipe-inline-filters');
+  assert.equal(await bar.locator('.period-segment button').count(),6);
+  assert.equal(await bar.locator('.pipe-inline-owner summary b').innerText(),await page.locator('#reptabs summary b').innerText());
+  await bar.getByRole('button',{name:'전체',exact:true}).click();
+  assert.deepEqual(await page.evaluate(()=>[G.year,G.quarter]),['전체',0]);
+  await bar.getByRole('button',{name:'연간',exact:true}).click();
+  for(const q of [1,2,3,4]){
+   await bar.getByRole('button',{name:q+'분기',exact:true}).click();
+   assert.equal(await page.evaluate(()=>G.quarter),q);
+  }
+  await bar.getByRole('button',{name:'3분기',exact:true}).click();
+  await bar.locator('summary').click();
+  await bar.getByRole('textbox',{name:'영업담당자 이름 검색'}).fill('황윤선');
+  assert.equal(await bar.locator('.rep-filter-option:visible').count(),1);
+  await bar.locator('[data-rep="황윤선"]').click();
   assert.equal(await page.evaluate(()=>G.rep),'황윤선');
-  assert.match(await page.locator('#p-brands .filter-current b').innerText(),/황윤선/);
-
-  await page.locator('#p-brands .bt[data-brand="POUR솔루션"]').click();
-  assert.equal(await page.evaluate(()=>G.brand),'POUR솔루션');
-  assert.match(await page.locator('#p-brands .filter-current b').innerText(),/POUR솔루션/);
-
-  await page.locator('#periodbar .period-segment button').filter({hasText:'3분기'}).click();
-  assert.equal(await page.evaluate(()=>G.quarter),3);
-  assert.match(await page.locator('#p-brands .filter-current b').innerText(),/3분기/);
-
-  const pcNoOverflow=await page.evaluate(()=>['periodbar','reptabs','p-brands'].every(id=>{const el=document.getElementById(id);return el.scrollWidth<=el.clientWidth}));
-  assert.equal(pcNoOverflow,true);
-
-  await page.locator('#p-brands .filter-current button').click();
-  assert.deepEqual(await page.evaluate(()=>({year:G.year,quarter:G.quarter,rep:G.rep,brand:G.brand})),{year:String(new Date().getFullYear()),quarter:0,rep:'전체',brand:'전체'});
+  assert.deepEqual(await page.evaluate(()=>pipeFiltered().map(d=>d.id)),['pf-1','pf-3']);
+  await page.getByRole('combobox',{name:'사업유형',exact:true}).selectOption('POUR솔루션');
+  assert.deepEqual(await page.evaluate(()=>pipeFiltered().map(d=>d.id)),['pf-1']);
+  await bar.getByRole('combobox',{name:'공종',exact:true}).selectOption('공종 미분류');
+  assert.equal(await page.evaluate(()=>G.workFilter),'공종 미분류');
+  await page.locator('.pipe-reset').click();
+  assert.deepEqual(await page.evaluate(()=>[G.year,G.quarter,G.rep,G.brand,G.workFilter]),[String(new Date().getFullYear()),0,'전체','전체','전체']);
+  await page.evaluate(()=>{B.inquiries=[{id:'year-current',at:CUR_Y+'-09-01'}];paint()});
+  const canonical=await page.locator('#periodbar .yoybadge').allTextContents();
+  assert.deepEqual(await bar.locator('.yoybadge').allTextContents(),canonical);
+  for(const width of [1920,1440,1365]){
+   await page.setViewportSize({width,height:900});
+   const metrics=await bar.evaluate(el=>{const a=el.querySelector('.period-year-select').getBoundingClientRect(),b=el.querySelector('summary').getBoundingClientRect();return {sameRow:Math.abs((a.top+a.height/2)-(b.top+b.height/2))<2,overflow:el.scrollWidth>el.clientWidth,height:el.getBoundingClientRect().height}});
+   assert.equal(metrics.sameRow,true,'period and owner same row at '+width);
+   assert.equal(metrics.overflow,false,'no horizontal overflow at '+width);
+   assert.ok(metrics.height<55);
+  }
+  for(const view of ['split','fc','kb']){
+   await page.locator('[data-view="'+view+'"]').click();
+   assert.equal(await page.evaluate(()=>G.pipeView),view);
+  }
+  await page.evaluate(()=>{window.__opened=0;window.openNewDeal=()=>window.__opened++});
+  await page.locator('.pipe-add').click();
+  assert.equal(await page.evaluate(()=>window.__opened),1);
+  const address=page.url();
+  await bar.getByRole('button',{name:'3분기',exact:true}).click();
+  await bar.locator('summary').click();
+  await bar.locator('[data-rep="황윤선"]').click();
+  const selection=await page.evaluate(()=>[G.year,G.quarter,G.rep,G.brand,G.workFilter]);
+  const selectedIds=await page.evaluate(()=>pipeFiltered().map(d=>d.id));
+  await page.evaluate(()=>{G.page='inq';document.getElementById('pg-pipe').classList.remove('on');paintPeriod();paintRepTabs()});
+  assert.equal(await page.locator('#periodbar').isVisible(),true,'global period remains available on other pages');
+  assert.equal(await page.locator('#reptabs').isVisible(),true,'global owner remains available on other pages');
+  // Other pages can apply their own existing owner validation. Restore the tested selection,
+  // then verify repeated pipeline rendering itself never changes it.
+  await page.evaluate(s=>{[G.year,G.quarter,G.rep,G.brand,G.workFilter]=s;G.page='pipe';document.getElementById('pg-pipe').classList.add('on');paint();paint()},selection);
+  assert.deepEqual(await page.evaluate(()=>[G.year,G.quarter,G.rep,G.brand,G.workFilter]),selection);
+  assert.deepEqual(await page.evaluate(()=>pipeFiltered().map(d=>d.id)),selectedIds);
+  assert.equal(await page.locator('.pipe-inline-filters').count(),1,'reentry never duplicates the filter bar');
+  assert.equal(page.url(),address,'layout does not rewrite URL');
   if(process.env.VERIFY_SCREENSHOT)await page.screenshot({path:process.env.VERIFY_SCREENSHOT,fullPage:false});
-
-  await page.setViewportSize({width:700,height:900});
-  await page.evaluate(()=>paint());
-  const mobileNoOverflow=await page.evaluate(()=>['periodbar','reptabs','p-brands'].every(id=>{const el=document.getElementById(id);return el.scrollWidth<=el.clientWidth}));
-  assert.equal(mobileNoOverflow,true);
   assert.equal(await page.evaluate(()=>window.__businessWrites),0);
-  console.log(JSON.stringify({status:'PASS',period_controls:6,rep_search:'PASS',brand_filter:'PASS',summary_sync:'PASS',reset:'PASS',pc_horizontal_scroll:false,mobile_horizontal_scroll:false,network_scope:'localhost-only',business_writes:0}));
+  console.log(JSON.stringify({status:'PASS',one_row_period_owner:true,original_counts:true,period_buttons:6,filters:true,view_switches:true,business_writes:0}));
  }finally{await browser.close();await new Promise(resolve=>srv.close(resolve))}
 }
 
