@@ -20,3 +20,14 @@ c.wonInPeriod=()=>[missing];c.dashboardCompactMoney();assert.ok(host.innerHTML.i
 c.wonInPeriod=()=>[zero];c.dashboardCompactMoney();assert.ok(!host.innerHTML.includes('미입력'));assert.ok(host.innerHTML.includes('0원'));
 assert.ok(src.includes('x.amt+=oppAmt(d)'));assert.ok(src.includes("<em>예상 '+reportAmount(lossMap[k].amt)"));
 console.log('Actual compact dashboard renderer passed mixed, missing-only and zero contract cases');
+Object.assign(c,{towerBase:()=>[],quoteAmt:()=>0,amtCover:A=>({n:0,t:A.length,pct:0}),escAttr:x=>x,paintTowerDrill:()=>{},B:{deals:[]},G:{year:'2025',brand:'전체',rep:'전체'},isWon:d=>d.code==='won'});
+const towerStart=src.indexOf('function paintTowerMoney('),towerEnd=src.indexOf('\n}',towerStart)+2;
+vm.runInContext(src.slice(towerStart,towerEnd),c);
+c.wonInPeriod=()=>[zero];c.paintTowerMoney();assert.ok(host.innerHTML.includes('금액 입력 1/1건 (100%)'));
+c.wonInPeriod=()=>[known,missing];c.paintTowerMoney();assert.ok(host.innerHTML.includes('100원 (입력분)'));assert.ok(host.innerHTML.includes('금액 미입력 · 비교 보류'));
+c.wonInPeriod=()=>[known];c.B.deals=[{code:'won',closed:'2024-01-01',won_amount:null}];c.paintTowerMoney();assert.ok(host.innerHTML.includes('금액 미입력 · 비교 보류'));
+c.B.deals[0].won_amount=50;c.paintTowerMoney();assert.ok(host.innerHTML.includes('전년 동기 ▲ +100%'));assert.ok(!host.innerHTML.includes('비교 보류'));
+Object.assign(c,{names:['담당'],w:{prevStartKey:'2025-01-01',startKey:'2025-01-08'},briefScopeDeals:(n,current)=>current?[]:[known,missing].map(d=>({...d,code:'won'})),briefInWindow:()=>true,briefScheduledThisWeek:()=>false,briefAdvancedLastWeek:()=>false,briefRepInitial:n=>n,briefAmount:n=>n+'원',briefSignal:()=>''});
+vm.runInContext(lines.find(l=>l.startsWith(' var matrix=names.map')),c);
+assert.ok(c.matrix.includes('100원 (입력분)'));assert.ok(c.matrix.includes('금액 미입력 1건'));
+console.log('Actual detailed dashboard: zero coverage, incomplete comparisons, complete comparison; weekly representative table passed');
