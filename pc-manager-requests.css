@@ -1,0 +1,9 @@
+.pc-manager-requests{font-size:15px;border-top:1px solid #dce2e8;padding:12px 0;color:#243247}
+.pc-manager-requests h3{font-size:18px;margin:0 0 6px}.pc-manager-requests p{margin:6px 0;color:#586577}
+.manager-request-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:10px 0;border-top:1px solid #e8ecf0;overflow-wrap:anywhere}
+.manager-request-row small{font-size:13px;color:#586577}.manager-request-row button{grid-column:2;grid-row:3/5;align-self:center}
+.manager-request-state{font-size:13px}.manager-request-state.overdue{color:#b42318}.manager-request-state.completed{color:#176448}
+.pc-manager-request-dialog{box-sizing:border-box;width:min(480px,calc(100vw - 32px));border:1px solid #cbd5e1;border-radius:10px;padding:22px;color:#243247}
+.pc-manager-request-dialog::backdrop{background:#10203066}.pc-manager-request-dialog h2{font-size:20px;margin:0 0 12px}
+.pc-manager-request-dialog label{display:block;margin:12px 0;font-size:14px}.pc-manager-request-dialog input,.pc-manager-request-dialog select,.pc-manager-request-dialog textarea{box-sizing:border-box;display:block;width:100%;margin-top:5px;font:inherit;padding:8px;border:1px solid #b9c4d0;border-radius:5px}
+.pc-manager-request-dialog p{font-size:14px;line-height:1.5}.pc-manager-request-dialog button,.pc-manager-requests button{font:inherit;font-size:14px;padding:6px 10px;border:1px solid #bdc9d6;border-radius:5px;background:#fff;cursor:pointer}.pc-manager-request-dialog button[type=submit]{background:#2458b8;color:white;margin-right:8px}.pc-manager-request-dialog button:disabled{opacity:.6;cursor:wait}
