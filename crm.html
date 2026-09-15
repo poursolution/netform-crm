@@ -3025,6 +3025,9 @@ function paintPeriod(){
    올해 수주에서 빠져 버린다 (실제로 17.1억이 3.9억으로 보였다).
    대표가 «올해 얼마 수주했나» 를 물으면 답은 언제나 확정 기준이다. */
 function wonPeriodMatch(d){var at=wonDate(d);return !!(isWon(d)&&at&&inPeriod(at))}
+function undatedWonDeals(){return (B.deals||[]).filter(function(d){return isWon(d)&&!wonDate(d)&&(G.brand==='전체'||d.brand===G.brand)&&(G.rep==='전체'||repN(d.assignee)===G.rep)&&workMatches(d,G.workFilter)})}
+function openUndatedWon(){openReportDrill('확정일 미입력 수주','날짜 기준 실적에서 제외 · 연도/분기 무관 · 현재 사업유형/담당자/공종 기준 · 계약금액은 입력분만 합산',undatedWonDeals(),{amountLabel:'계약금액 입력분',amountFn:wonAmt,secondLabel:'영업기회 예상금액',secondFn:oppAmt})}
+function undatedWonNoticeHTML(){var n=undatedWonDeals().length;return n?'<p class="contract-missing"><button type="button" class="btn" onclick="openUndatedWon()">확정일 미입력 수주 '+n+'건 · 확인</button> 날짜 기준 실적에서 제외 · 연도/분기 무관 · 현재 사업유형/담당자/공종 기준</p>':''}
 function wonInPeriod(){return B.deals.filter(function(d){return wonPeriodMatch(d)
  &&(G.brand==='전체'||d.brand===G.brand)
  &&(G.rep==='전체'||repN(d.assignee)===G.rep)&&workMatches(d,G.workFilter)})}
@@ -4122,7 +4125,7 @@ function dashboardCompactMoney(){var host=$('#d-money');if(!host)return;var Q=da
   {label:'수주임박',value:eok(sumBy(near,oppAmt)),sub:near.length+'건 · 경쟁 이후',tone:'amber',go:"towerDrill('near')"},
   {label:'계약완료',value:reportWonAmount(won),sub:reportWonCount(won)+' · 확정일 기준',tone:'green',go:"towerDrill('won')"},
   {label:'관리위험',value:risk.length+'건',sub:eok(sumBy(risk,oppAmt))+' · 현재',tone:'red',go:"towerDrill('risk')"}
- ];var linked=inqMadeStats();host.className='dashboard-compact-money';host.innerHTML='<header><div><span>이번 영업 상태</span><h2>'+esc(periodLabel())+'</h2></div><button onclick="dashboardAnalysisTab(\'criteria\')">견적문의 연결률 <b>'+pctOf(linked._made,linked._n)+'%</b> <i>ⓘ</i></button></header><div>'+cards.map(function(c){return '<button class="'+c.tone+'" onclick="'+c.go+'"><span>'+c.label+'</span><b>'+c.value+'</b><small>'+c.sub+'</small></button>'}).join('')+'</div>'}
+ ];var linked=inqMadeStats();host.className='dashboard-compact-money';host.innerHTML='<header><div><span>이번 영업 상태</span><h2>'+esc(periodLabel())+'</h2></div><button onclick="dashboardAnalysisTab(\'criteria\')">견적문의 연결률 <b>'+pctOf(linked._made,linked._n)+'%</b> <i>ⓘ</i></button></header><div>'+cards.map(function(c){return '<button class="'+c.tone+'" onclick="'+c.go+'"><span>'+c.label+'</span><b>'+c.value+'</b><small>'+c.sub+'</small></button>'}).join('')+'</div>'+undatedWonNoticeHTML()}
 function dashboardCompactFlow(){var host=$('#d-flow-summary');if(!host)return;var Q=dashboardInquiryScope().filter(function(q){return inPeriod(inquiryDate(q))}),responded=Q.filter(inquiryResponded),made=Q.filter(inquiryHasMadeDeal),A=towerBase(),comp=A.filter(function(d){return ['compete','imminent','bidding','contract','construction','completion','won'].indexOf(dealStage(d))>=0}),won=wonInPeriod(),steps=[
   {label:'문의',n:Q.length,go:'towerGoInq(G.rep)'},
   {label:'응대',n:responded.length,rate:pctOf(responded.length,Q.length),go:"dashboardGoRisk('noResponse')"},

@@ -1,0 +1,13 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const src=fs.readFileSync(path.join(__dirname,'../crm.html'),'utf8'),lines=src.split(/\r?\n/);
+const c={ContractPerformance:require('../contract-performance.js'),itemPatch:()=>({}),B:{deals:[]},G:{year:'2026',quarter:3,brand:'A',rep:'담당',workFilter:'roof'},isWon:d=>d.code==='won',repN:n=>n,workMatches:(d,w)=>!w||d.work===w,oppAmt:d=>d.amt||0,openReportDrill:(...args)=>c.opened=args};vm.createContext(c);
+for(const name of ['wonDate','wonAmt','undatedWonDeals','openUndatedWon','undatedWonNoticeHTML'])vm.runInContext(lines.find(l=>l.startsWith('function '+name+'(')),c);
+const base={code:'won',brand:'A',assignee:'담당',work:'roof'};
+c.B.deals=[{...base,id:'undated',created:'2023-01-01'},{...base,id:'dated',closed_at:'2024-01-01'},{...base,id:'otherRep',assignee:'다른 담당'},{...base,id:'otherBrand',brand:'B'},{...base,id:'otherWork',work:'paint'},{...base,id:'open',code:'open'}];
+const before=JSON.stringify(c.B);assert.deepEqual(Array.from(c.undatedWonDeals(),d=>d.id),['undated']);
+assert.ok(c.undatedWonNoticeHTML().includes('확정일 미입력 수주 1건'));assert.ok(c.undatedWonNoticeHTML().includes('연도/분기 무관'));
+c.G.year='2023';assert.equal(c.undatedWonDeals().length,1);c.openUndatedWon();assert.deepEqual(Array.from(c.opened[2],d=>d.id),['undated']);assert.equal(c.opened[3].amountFn,c.wonAmt);assert.equal(c.opened[3].secondFn,c.oppAmt);
+assert.equal(JSON.stringify(c.B),before,'No record mutations');c.G.rep='전체';assert.equal(c.undatedWonDeals().length,2);c.G.brand='전체';assert.equal(c.undatedWonDeals().length,3);c.G.workFilter='';assert.equal(c.undatedWonDeals().length,4);
+c.B.deals=[];assert.equal(c.undatedWonNoticeHTML(),'');
+assert.ok(lines.find(l=>l.includes("host.className='dashboard-compact-money'")).includes('undatedWonNoticeHTML()'));
+console.log('Undated won scope, year independence, drilldown, empty state and no-mutation checks passed');
