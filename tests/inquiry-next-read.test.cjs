@@ -7,6 +7,12 @@ const ctx={repN:x=>x};vm.createContext(ctx);
 vm.runInContext(html.split(/\r?\n/).find(x=>x.startsWith('function actionObj(')),ctx);
 const next={id:'action-1',type:'전화',text:'도면 수신 확인',due_at:'2026-09-18',assignee:'테스트 담당',status:'open'};
 const loaded=q=>overlay.shell({inquiries:[{id:'inquiry-1',...q}]}).inquiries[0];
+test('server instant uses KST calendar date without changing original instant',()=>{
+ for(const due of ['2026-09-22T15:00:00.000Z','2026-09-23T00:00:00+09:00']){
+  const q=loaded({next_action:{...next,due,due_at:due}}),before=JSON.stringify(q),a=ctx.actionObj(q,{});
+  assert.equal(a.due,'2026-09-23');assert.equal(a.due_at,due);assert.equal(JSON.stringify(q),before);
+ }
+});
 test('PC reads server inquiry Next after shell reload without losing ID or content',()=>{
  const q=loaded({next_action:next,next_action_date:'2026-09-20'}),before=JSON.stringify(q);
  const a=ctx.actionObj(q,{});
