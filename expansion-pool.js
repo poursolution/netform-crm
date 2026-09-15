@@ -98,6 +98,6 @@
   }catch(e){if(error){error.style.display='block';error.textContent='전환 미확인 · '+(e.message||e)+' 기존 수주 건은 변경하지 않았습니다.'}}
   finally{pending.delete(source.sourceOpportunityId);controls.forEach((x,i)=>x.disabled=disabled[i])}
  }
- function historyFor(s){const ids=new Set(s.deals.map(d=>String(d.id)));return expansionRecords().filter(r=>ids.has(r.sourceOpportunityId)).flatMap(r=>events(r).map(e=>({at:e.occurred_at||e.created_at,title:'확장관리 · '+e.kind,sub:e.note||''})))}
+ function historyFor(s){return expansionRecords().filter(r=>r.sourceOpportunityId&&siteExpansionMatches(s,r)).flatMap(r=>events(r).map(e=>({at:e.occurred_at||e.created_at,title:'확장관리 · '+e.kind,sub:e.note||''})))}
  window.ExpansionPool={render,prepare,convert,note,open:openManager,close:closeManager,refreshManager:renderManager,startNew:id=>{closeManager(false);expansionOpenNew(id)},openPipeline,historyFor,refresh:id=>refresh(id,true).catch(e=>alert('이력 조회 실패 · '+(e.message||e))),sms:id=>{const r=find(id);if(r&&!F.converted(r)){closeManager(false);expansionMessage(id,'sms')}},kakao:id=>{const r=find(id);if(r&&!F.converted(r)){closeManager(false);expansionMessage(id,'kakao')}}};
 })();
