@@ -19,3 +19,16 @@ out=c.DataCleanupUI.projectContacts(site('a'),[{...contact}])[0];assert.equal(ou
 out=c.DataCleanupUI.projectContacts(site('b'),[{...contact}])[0];assert.equal(out.from,'2024-05-01');assert.equal(out.to,'2025-01-01');assert.equal(out.current,false);
 out=c.DataCleanupUI.projectContacts(site('c'),[{...contact,to:'old'}])[0];assert.equal(out.current,true);assert.equal(out.from,'2025-01-01');assert.equal(out.to,'');
 console.log('Multi-step moves retain each site tenure and latest destination; arrival clears stale departure');
+const conflicting={...move,target:{type:'deal',id:'c'},to_site:'다른 도착지'};
+for(const rows of [[move,conflicting],[conflicting,move]]){
+ c.B.cleanup_moves=rows;const before=JSON.stringify(rows);
+ for(const id of ['a','b','c'])assert.deepEqual(c.DataCleanupUI.projectContacts(site(id),[{...contact}])[0],contact,'Same-day ambiguity must not depend on response order');
+ assert.equal(JSON.stringify(rows),before);
+}
+c.B.cleanup_moves=[move,{...move,id:'duplicate-copy'}];
+assert.equal(c.DataCleanupUI.projectContacts(site('a'),[{...contact}])[0].current,false,'Identical duplicate moves are not a conflict');
+c.B.cleanup_moves=[move,{...conflicting,person_key:'mobile:01099999999'}];
+assert.equal(c.DataCleanupUI.projectContacts(site('a'),[{...contact}])[0].current,false,'Other people do not block this contact');
+c.B.cleanup_moves=[move,conflicting,{...move,moved_on:'2025-01-01'}];
+assert.deepEqual(c.DataCleanupUI.projectContacts(site('a'),[{...contact}])[0],contact,'Later record does not silently resolve an earlier tenure conflict');
+console.log('Same-day conflicts: order-independent preservation, identical duplicate tolerance and per-person isolation passed');
