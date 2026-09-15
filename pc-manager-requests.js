@@ -27,7 +27,7 @@
    dialog=el('dialog',undefined,'pc-manager-request-dialog');const current=dialog;
    const form=el('form'),heading=el('h2','담당자에게 요청');heading.id='manager-request-title';current.setAttribute('aria-labelledby',heading.id);
    form.append(heading,el('p',`${inquiry.site} · ${inquiry.owner}`));
-   const kind=el('select');kind.name='kind';[['call','고객 전화 요청']].forEach(([v,t])=>{const o=el('option',t);o.value=v;kind.append(o);});
+   const kind=el('select');kind.name='kind';[['call','고객 전화 요청'],['next','다음 일정 등록 요청']].forEach(([v,t])=>{const o=el('option',t);o.value=v;kind.append(o);});
    const due=el('input');due.type='datetime-local';due.name='due';due.required=true;due.step='any';
    const defaults={call:'고객에게 전화 후 응대 결과를 CRM에 남겨주세요.',next:'다음 행동과 확인일을 CRM에 등록해주세요.'};
    const note=el('textarea');note.name='instruction';note.required=true;note.maxLength=2000;note.rows=3;note.value=defaults.call;
