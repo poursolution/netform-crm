@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head><script src="./phase1-config.js"></script><script src="./operational-adapter.js?v=20260913-relationship-contact-1"></script><script src="./pc-manager-transport.js?v=20260915-1"></script><script src="./construction-year.js?v=20260915-structure-1"></script><script src="./external-performance.js?v=20260909-1"></script><script src="./business-attribution.js?v=20260909-1"></script><script src="./contract-performance.js?v=20260909-1"></script>
+<head><script src="./phase1-config.js"></script><script src="./operational-adapter.js?v=20260913-relationship-contact-1"></script><script src="./pc-manager-transport.js?v=20260915-history-2"></script><script src="./construction-year.js?v=20260915-structure-1"></script><script src="./external-performance.js?v=20260909-1"></script><script src="./business-attribution.js?v=20260909-1"></script><script src="./contract-performance.js?v=20260909-1"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>넷폼 영업관리 CRM</title>
@@ -4526,6 +4526,7 @@ paintSites=function(){
  if(title){var total=(siteMasterData().filter(siteMatches)||[]).length;title.innerHTML='고객 자산 <b>'+total+'</b>'}
  if(desc)desc.textContent='현장별 고객관계와 거래 이력을 확인합니다.';
  var grid=command.querySelector('.site-health-grid');if(grid)grid.setAttribute('aria-label','고객 관계상태 필터');
+ if(window.PCOrganizationHistory)PCOrganizationHistory.mount(root,G.q);
 };
 
 function siteNoteDisplayText(value){var text=String(value||'');if(!/<\/?[a-z][^>]*>/i.test(text))return text;var box=document.createElement('template');box.innerHTML=text;box.content.querySelectorAll('script,style,iframe,object,embed').forEach(function(n){n.remove()});box.content.querySelectorAll('br').forEach(function(n){n.replaceWith(document.createTextNode('\n'))});box.content.querySelectorAll('p,div,li,h1,h2,h3,h4,tr').forEach(function(n){n.appendChild(document.createTextNode('\n'))});return (box.content.textContent||'').replace(/\n{3,}/g,'\n\n').trim()}
@@ -8426,5 +8427,8 @@ function paintCampaign(){var root=$('#campaign-root');if(!root)return;var tab=G.
 <script src="./pc-manager-request-summary.js?v=20260915-1"></script>
 <script src="./pc-manager-request-connection.js?v=20260915-1"></script>
 <script src="./pc-inquiry-deeplink.js?v=20260915-1"></script>
+<script src="./organization-history-reader.js?v=20260915-1"></script>
+<script src="./organization-history-view.js?v=20260915-1"></script>
+<script src="./pc-organization-history.js?v=20260915-1"></script>
 <script src="./work-editor.js?v=20260907-buttons-1"></script><script>window.addEventListener('phase1:identity-cleared',function(){TOKEN=null;WRITE_Q=[];ME=null;if(typeof B!=='undefined')B=null;authGate(true);});window.addEventListener('phase1:profile',function(){WRITE_Q=Phase1.queue.list();});window.addEventListener('phase1:queue',function(){WRITE_Q=Phase1.queue.list();});</script></body>
 </html>

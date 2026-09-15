@@ -1,0 +1,21 @@
+// Static contract checks only. These do not establish SQL runtime/RLS correctness.
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const root=path.join(__dirname,'..');
+const sql=fs.readFileSync(path.join(root,'sql/orphan-organization-history-api.sql'),'utf8');
+const test=fs.readFileSync(path.join(__dirname,'orphan-organization-history.sql'),'utf8');
+assert.match(sql,/a\.permission_role='admin'/);
+assert.match(sql,/raise exception 'forbidden' using errcode='42501'/);
+assert.ok(sql.indexOf("raise exception 'forbidden'")<sql.indexOf('from public.organizations'));
+assert.match(sql,/security definer set search_path=''/);
+assert.match(sql,/security invoker set search_path=''/);
+assert.match(sql,/return crm_security\.orphan_organization_history\(p_org,p_after,p_limit\);/);
+assert.doesNotMatch(sql,/grant\s+usage\s+on\s+schema/i);
+assert.match(sql,/revoke all on function public\.crm_orphan_organization_history\(uuid,uuid,integer\) from public,anon,authenticated/);
+assert.match(sql,/least\(coalesce\(p_limit,50\),100\)/);
+assert.match(sql,/n\.id>p_after/);
+assert.match(sql,/o\.id>p_after/);
+assert.match(sql,/crm_security\.can_read_legacy_note\(n\.deal_id,n\.organization_id\)/);
+assert.doesNotMatch(sql,/\b(insert into|update public\.|delete from|alter table)\b/i);
+assert.match(test,/rollback;/i);
+for(const marker of ['rep detail leak','no identity leak','anon leak','duplicate pages','original date lost'])assert.ok(test.includes(marker));
+console.log('PASS: static authorization, bounded cursors, read-only body and rollback harness checks. SQL execution NOT tested.');
