@@ -6385,7 +6385,7 @@ function quickPanelHTML(d){
  var p=itemPatch(d,'deal'),pri=priorityInfo(d,'deal'),na=actionObj(d,p),dd=na&&na.due?daysTo(na.due):null,c=contactInfo(d,p);
  var acts=(p.activities||d.activities||[]).slice().sort(function(a,b){return String(b.at||b.created_at||'').localeCompare(String(a.at||a.created_at||''))}).slice(0,3);
  CUR_DETAIL={kind:'deal',key:dealKey(d),item:d};
- var recent=acts.length?acts.map(function(a){return '<div class="quickactivity"><time>'+esc(String(a.at||a.created_at||'').slice(5,10).replace('-','/'))+'</time><div><b>'+esc(a.note||a.type||'활동')+'</b>'+(a.result?'<div>'+esc(a.result)+'</div>':'')+'</div></div>'}).join(''):'<div class="detailnotice">최근 활동이 없습니다. 첫 활동을 기록해 주세요.</div>';
+ var recent=acts.length?acts.map(function(a){return '<div class="quickactivity"><time>'+esc(String(a.at||a.created_at||'').slice(5,10).replace('-','/'))+'</time><div><b>'+esc(a.note||siteActivityTitle(a.type))+'</b>'+(a.result?'<div>'+esc(a.result)+'</div>':'')+'</div></div>'}).join(''):'<div class="detailnotice">최근 활동이 없습니다. 첫 활동을 기록해 주세요.</div>';
  var contact=(c.name||c.mobile||c.officeTel)
   ?'<div class="quickcontact"><div><b>'+esc(c.name||'관리소장')+' '+esc(c.role||'관리소장')+'</b><small>'+esc(phoneFmt(c.officeTel))+' · '+esc(phoneFmt(c.mobile))+'</small></div><div class="contactactions"><button '+(!c.mobile?'disabled':'')+' onclick="contactDial(\'mobile\')">📞 전화</button><button '+(!c.mobile?'disabled':'')+' onclick="contactSms()">✉ 문자</button><button '+(!c.mobile?'disabled':'')+' onclick="contactKakao()">💬 카카오</button></div></div>'
   :'<button class="quickfull" style="margin:0" onclick="openQuickContact()">연락처 없음 · 등록하기</button>';
