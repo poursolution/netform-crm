@@ -2784,7 +2784,7 @@ window.addEventListener('online',flushWrites);
 function saveMsg(base){var f=syncFailed(),p=syncPending()+syncBlocked();
  return base+(f?' · 🔴 서버 전송 실패 '+f+'건':(p?' · 🟡 서버 반영 중':' · 🟢 서버 반영됨'))}
 function detailPatchFor(kind,key){var box=kind==='deal'?LOCAL.deals:LOCAL.inquiries;return box[key]||(box[key]={})}
-function actionObj(item,p){p=p||{};var a=p.nextActionObj||item.nextActionObj;if(a&&a.status!=='completed')return a;var due=p.nextAction||item.nextAction||item.nextActionDate||item.due||'';var text=p.nextActionText||item.nextActionText||'';return (due||text)?{text:text||'후속 조치',due:due,type:p.nextActionType||item.nextActionType||'전화',assignee:p.nextAssignee||item.nextAssignee||repN(item.assignee),status:'open'}:null}
+function actionObj(item,p){p=p||{};var a=p.nextActionObj||item.nextActionObj;if(!a&&!Object.prototype.hasOwnProperty.call(item,'nextActionObj')&&!Object.prototype.hasOwnProperty.call(p,'nextActionObj')&&item.next_action&&typeof item.next_action==='object')a=Object.assign({},item.next_action,{due:item.next_action.due||item.next_action.due_at||''});if(a){if(a.status==='completed'||a.status==='cancelled')return null;return a}var due=p.nextAction||item.nextAction||item.nextActionDate||item.due||'';var text=p.nextActionText||item.nextActionText||'';return (due||text)?{text:text||'후속 조치',due:due,type:p.nextActionType||item.nextActionType||'전화',assignee:p.nextAssignee||item.nextAssignee||repN(item.assignee),status:'open'}:null}
 function actionDue(item,p){var a=actionObj(item,p);return a&&a.due?a.due:''}
 function actionText(item,p){var a=actionObj(item,p);return a&&a.text?a.text:''}
 /* D-day 는 «날짜 차이» 다 — 시각으로 빼면 하루가 밀린다 (2026-09-03 수정).
