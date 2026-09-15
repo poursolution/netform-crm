@@ -3024,7 +3024,8 @@ function paintPeriod(){
    섞으면 안 된다. 작년에 들어와 올해 수주한 건을 유입 기준으로 세면
    올해 수주에서 빠져 버린다 (실제로 17.1억이 3.9억으로 보였다).
    대표가 «올해 얼마 수주했나» 를 물으면 답은 언제나 확정 기준이다. */
-function wonInPeriod(){return B.deals.filter(function(d){return isWon(d)&&inPeriod(d.closed||d.created)
+function wonPeriodMatch(d){var at=wonDate(d);return !!(isWon(d)&&at&&inPeriod(at))}
+function wonInPeriod(){return B.deals.filter(function(d){return wonPeriodMatch(d)
  &&(G.brand==='전체'||d.brand===G.brand)
  &&(G.rep==='전체'||repN(d.assignee)===G.rep)&&workMatches(d,G.workFilter)})}
 function towerBase(){return B.deals.filter(function(d){return inPeriod(d.created)
@@ -3292,7 +3293,7 @@ function paintTowerTrend(){
  for(var i=5;i>=0;i--){var dt=new Date(end.getFullYear(),end.getMonth()-i,1),k=dt.getFullYear()+'-'+('0'+(dt.getMonth()+1)).slice(-2);keys.push(k);m[k]={inq:0,opp:0,wonAmt:0}}
  function scope(x){return (G.brand==='전체'||x.brand===G.brand)&&(G.rep==='전체'||repN(x.assignee)===G.rep)&&(!G.q||JSON.stringify(x).toLowerCase().indexOf(G.q.toLowerCase())>=0)}
  operationalInquiries(B.inquiries||[]).filter(scope).forEach(function(q){var k=String(inquiryDate(q)).slice(0,7);if(m[k])m[k].inq++});
- (B.deals||[]).filter(scope).forEach(function(d){var k=String(d.created||'').slice(0,7);if(m[k])m[k].opp++;if(isWon(d)){k=String(d.closed||d.created||'').slice(0,7);if(m[k])m[k].wonAmt+=wonAmt(d)}});
+ (B.deals||[]).filter(scope).forEach(function(d){var k=String(d.created||'').slice(0,7);if(m[k])m[k].opp++;if(isWon(d)){k=wonDate(d).slice(0,7);if(m[k])m[k].wonAmt+=wonAmt(d)}});
  var countMax=Math.max.apply(null,keys.reduce(function(a,k){return a.concat([m[k].inq,m[k].opp])},[1])),wonMax=Math.max.apply(null,keys.map(function(k){return m[k].wonAmt}).concat([1]));
  var total=keys.reduce(function(a,k){a.inq+=m[k].inq;a.opp+=m[k].opp;a.wonAmt+=m[k].wonAmt;return a},{inq:0,opp:0,wonAmt:0});
  host.innerHTML='<div class="ch"><div><h3>최근 6개월 Momentum</h3><div class="sub">유입·기회는 건수, 수주는 금액으로 월별 방향을 비교합니다</div></div><div class="trend-legend"><span><i style="background:#A8B7DD"></i>견적문의 건수</span><span><i style="background:#4169D8"></i>영업기회 건수</span><span><i style="background:#23AE72"></i>수주금액</span></div></div>'
@@ -3349,7 +3350,7 @@ function yoySeries(kind,year){
    if(G.rep!=='전체'&&repN(d.assignee)!==G.rep)return;
    var dt,val;
    if(kind==='quoteAmt'){dt=d.created;val=quoteAmt(d)||oppAmt(d)}
-   else{if(d.code!=='won')return;dt=d.closed;val=(kind==='wonCnt')?1:(wonAmt(d))}
+   else{if(!isWon(d))return;dt=wonDate(d);val=(kind==='wonCnt')?1:(wonAmt(d))}
    if(!dt)return;var t=new Date(dt);if(isNaN(t)||t.getFullYear()!==year)return;
    out[t.getMonth()]+=(val||0);
  });
@@ -3748,7 +3749,7 @@ function paintTowerStageBrand(){
  var shtml=stages.map(function(s){var bad=s.avg!=null&&s.sla!=null&&s.avg>s.sla;return '<button class="velocity-row '+(bad?'alert':'')+'" data-codes="'+s.codes.join('|')+'" data-label="'+escAttr(s.nm)+'" onclick="dashboardGoStages(this.dataset.codes,this.dataset.label,true)"><span>'+esc(s.nm)+'<small>'+s.n+'건 · 기준 '+(s.sla==null?'미수집':s.sla+'일')+'</small></span><i><em style="width:'+chartWidth(s.avg||0,vmax)+'%"></em></i><b>'+(s.avg==null?'—':s.avg+'일')+'</b></button>'}).join('');
  var D=dashboardDealsAllBrands(),Q=dashboardInqsAllBrands();
  var currentAllBrands=(B.deals||[]).filter(function(d){return towerActive(d)&&(G.rep==='전체'||repN(d.assignee)===G.rep)&&(!G.q||((d.site||'')+' '+(d.assignee||'')+' '+(d.stage||'')).includes(G.q))});
- var W=(B.deals||[]).filter(function(d){return isWon(d)&&inPeriod(d.closed||d.created)
+ var W=(B.deals||[]).filter(function(d){return wonPeriodMatch(d)
    &&(G.rep==='전체'||repN(d.assignee)===G.rep)
    &&(!G.q||((d.site||'')+' '+(d.assignee||'')+' '+(d.stage||'')).includes(G.q))});
  var nearCodes=['compete','imminent','bidding','contract'];
@@ -4468,7 +4469,7 @@ function paintBriefMonth(I,D){
    복합 조합만 workItems 전체를 읽어 교차 영업의 크기를 보여준다. */
 var WORK_ANALYSIS_ROWS=[],WORK_ANALYSIS_COMBOS=[];
 function workAnalysisScope(){return (B.deals||[]).filter(function(d){return (G.brand==='전체'||d.brand===G.brand)&&(G.rep==='전체'||repN(d.assignee)===G.rep)&&workMatches(d,G.workFilter)&&(!G.q||((d.site||'')+' '+(d.work||d.work_name||'')+' '+(d.assignee||'')+' '+dealWorkSummary(d)).toLowerCase().indexOf(String(G.q).toLowerCase())>=0)})}
-function workAnalysisData(){var raw=workAnalysisScope(),flow=raw.filter(function(d){return inPeriod(d.created)}),open=flow.filter(isOpen),won=raw.filter(function(d){return isWon(d)&&inPeriod(d.closed||d.updated||d.created)}),closed=raw.filter(function(d){return !isOpen(d)&&inPeriod(d.closed||d.updated||d.created)});return {raw:raw,flow:flow,open:open,won:won,closed:closed,multi:flow.filter(function(d){return workScopeOf(d)==='multi'}),unclassified:flow.filter(function(d){return workScopeOf(d)==='unclassified'})}}
+function workAnalysisData(){var raw=workAnalysisScope(),flow=raw.filter(function(d){return inPeriod(d.created)}),open=flow.filter(isOpen),won=raw.filter(function(d){return wonPeriodMatch(d)}),closed=raw.filter(function(d){return !isOpen(d)&&(isWon(d)?wonPeriodMatch(d):inPeriod(d.closed||d.updated||d.created))});return {raw:raw,flow:flow,open:open,won:won,closed:closed,multi:flow.filter(function(d){return workScopeOf(d)==='multi'}),unclassified:flow.filter(function(d){return workScopeOf(d)==='unclassified'})}}
 function workAnalysisPrimary(d){return dealPrimaryWork(d)||'__unclassified__'}
 function workAnalysisLabel(k){if(k==='__unclassified__')return '공종 미분류';var w=workParts(k);return w?w.group+' › '+w.item:k}
 function workAnalysisGroup(k){if(k==='__unclassified__')return '확인 필요';var w=workParts(k);return w?w.group:'기타'}
@@ -5015,7 +5016,7 @@ function setConstructionYear(v){G.constructionYear=v||'전체';G.stageCol=null;G
 function constructionYearFilterHTML(){var base=constructionYearBase(),opts=window.ConstructionYear?ConstructionYear.options(base,CUR_Y):['전체','미입력'],missing=base.filter(function(d){return constructionYearOf(d)==='미입력'}).length;return '<div class="plan-year-filter"><label>공사 예정연도</label><select aria-label="공사 예정연도" onchange="setConstructionYear(this.value)">'+opts.map(function(y){return '<option value="'+escAttr(y)+'" '+(String(G.constructionYear)===String(y)?'selected':'')+'>'+esc(y==='미입력'?'미입력 일정':y==='전체'?'전체':y+'년')+'</option>'}).join('')+'</select>'+(missing?'<button class="missing" onclick="setConstructionYear(\'미입력\')">일정 미입력 '+missing+'건</button>':'')+'</div>'}
 /* 기간·담당자·사업유형·검색만 건 «전체» 집합 — 종료 건도 들어 있다.
    pipeFiltered() 는 진행 건(ACT_GRP)만 남기므로 종료 필터는 이쪽을 쓴다. */
-function pipeScoped(){return B.deals.filter(function(d){return (G.pipeOrigin==='wonPeriod'?(isWon(d)&&inPeriod(d.closed)):(G.pipePeriodMode==='snapshot'||inPeriod(d.created)))
+function pipeScoped(){return B.deals.filter(function(d){return (G.pipeOrigin==='wonPeriod'?(wonPeriodMatch(d)):(G.pipePeriodMode==='snapshot'||inPeriod(d.created)))
  &&(G.brand==='전체'||d.brand===G.brand)&&(G.rep==='전체'||repN(d.assignee)===G.rep)
  &&workMatches(d,G.workFilter)
  &&constructionYearMatch(d)
