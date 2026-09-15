@@ -1,7 +1,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
 const src=fs.readFileSync(path.join(__dirname,'../crm.html'),'utf8'),lines=src.split(/\r?\n/);
 const c={ContractPerformance:require('../contract-performance.js'),itemPatch:d=>d.patch||{},sumBy:(a,f)=>a.reduce((s,d)=>s+f(d),0),fmtAmt:n=>n+'원',reportDelta:(a,b)=>a+' / '+b};vm.createContext(c);
-for(const name of ['wonAmt','hasWonAmt','reportAmount','reportWonMissing','reportWonAmount','reportWonCount','reportWonDelta'])vm.runInContext(lines.find(l=>l.startsWith('function '+name+'(')),c);
+for(const name of ['wonDate','wonAmt','hasWonAmt','reportAmount','reportWonMissing','reportWonAmount','reportWonCount','reportWonDelta'])vm.runInContext(lines.find(l=>l.startsWith('function '+name+'(')),c);
 const missing={won_amount:null,amt:900,assignee:'담당',brand:'사업'},zero={won_amount:0,assignee:'담당',brand:'사업'},known={won_amount:100,assignee:'담당',brand:'사업'};
 assert.equal(c.reportWonAmount([missing]),'계약금액 미입력');assert.equal(c.reportWonAmount([zero]),'0원');assert.equal(c.reportWonAmount([]),'0원');
 assert.equal(c.reportWonAmount([known,missing]),'100원 (입력분)');assert.equal(c.reportWonCount([known,missing]),'2건 · 금액 미입력 1건');
@@ -27,7 +27,7 @@ c.wonInPeriod=()=>[zero];c.paintTowerMoney();assert.ok(host.innerHTML.includes('
 c.wonInPeriod=()=>[known,missing];c.paintTowerMoney();assert.ok(host.innerHTML.includes('100원 (입력분)'));assert.ok(host.innerHTML.includes('금액 미입력 · 비교 보류'));
 c.wonInPeriod=()=>[known];c.B.deals=[{code:'won',closed:'2024-01-01',won_amount:null}];c.paintTowerMoney();assert.ok(host.innerHTML.includes('금액 미입력 · 비교 보류'));
 c.B.deals[0].won_amount=50;c.paintTowerMoney();assert.ok(host.innerHTML.includes('전년 동기 ▲ +100%'));assert.ok(!host.innerHTML.includes('비교 보류'));
-Object.assign(c,{names:['담당'],w:{prevStartKey:'2025-01-01',startKey:'2025-01-08'},briefScopeDeals:(n,current)=>current?[]:[known,missing].map(d=>({...d,code:'won'})),briefInWindow:()=>true,briefScheduledThisWeek:()=>false,briefAdvancedLastWeek:()=>false,briefRepInitial:n=>n,briefAmount:n=>n+'원',briefSignal:()=>''});
+Object.assign(c,{names:['담당'],w:{prevStartKey:'2025-01-01',startKey:'2025-01-08'},briefScopeDeals:(n,current)=>current?[]:[known,missing].map(d=>({...d,code:'won',closed:'2025-01-02'})),briefInWindow:()=>true,briefScheduledThisWeek:()=>false,briefAdvancedLastWeek:()=>false,briefRepInitial:n=>n,briefAmount:n=>n+'원',briefSignal:()=>''});
 vm.runInContext(lines.find(l=>l.startsWith(' var matrix=names.map')),c);
 assert.ok(c.matrix.includes('100원 (입력분)'));assert.ok(c.matrix.includes('금액 미입력 1건'));
 console.log('Actual detailed dashboard: zero coverage, incomplete comparisons, complete comparison; weekly representative table passed');

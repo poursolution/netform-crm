@@ -1,0 +1,17 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const src=fs.readFileSync(path.join(__dirname,'../crm.html'),'utf8'),lines=src.split(/\r?\n/);
+const c={ContractPerformance:require('../contract-performance.js'),itemPatch:d=>d.patch||{},isWon:d=>d.code==='won',briefInWindow:(d,a,b)=>d>=a&&d<b,w:{prevStartKey:'2026-09-07',startKey:'2026-09-14'}};vm.createContext(c);
+vm.runInContext(lines.find(l=>l.startsWith('function wonDate(')),c);
+const matrix=lines.find(l=>l.startsWith(' var matrix=names.map'));
+const predicate=matrix.match(/rw=briefScopeDeals\(n,false\).filter\((function\(d\)\{[^}]+\})\)/)[1];vm.runInContext('var included='+predicate,c);
+assert.equal(c.included({code:'won',created:'2026-09-09',updated:'2026-09-10'}),'');
+assert.equal(c.included({code:'won',closed:'2026-08-20',updated:'2026-09-10'}),false);
+assert.equal(c.included({code:'won',closed_at:'2026-09-09T12:00:00Z'}),true);
+assert.equal(c.included({code:'won',stageHistory:[{to:'won',at:'2026-09-09'}]}),true);
+assert.equal(c.included({code:'won',closed:'2026-09-14'}),false);
+assert.equal(c.included({code:'won',closed:'2026-09-07'}),true);
+assert.equal(c.included({code:'won',closed:'2026-08-01',patch:{closed:'2026-09-09'}}),true);
+const gn=lines.find(l=>l.startsWith('function gnTrend('));
+assert.ok(gn.includes('reportInMonth(wonDate(x),w)'));assert.ok(!gn.includes('wonAmt(x)||oppAmt(x)'));
+assert.ok(src.includes('pyWon=B.deals.filter(function(d){var c=wonDate(d);'));
+console.log('7 actual weekly date predicate cases, branch trend and prior-year source guards passed');
