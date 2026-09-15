@@ -1,0 +1,22 @@
+const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path'),assert=require('node:assert/strict');
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+const src=fs.readFileSync(path.join(__dirname,'../crm.html'),'utf8');
+const c={isOpen:d=>d.open,isWon:d=>d.won,sitePastDealDate:d=>d.date||'',stageLabel:()=> '종료',dealStage:()=> 'lost',dealWorkSummary:d=>d.work,dealPrimaryWork:d=>d.work,siteWonDealAmountLabel:()=> '계약금액 미입력',oppAmt:()=>0,fmtAmt:()=> '0원',esc:s=>String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))};
+vm.createContext(c);vm.runInContext(src.split(/\r?\n/).find(l=>l.startsWith('function siteWorkBookHTML(')),c);
+const deals=Array.from({length:12},(_,i)=>({work:'과거 공종 '+i,date:(2025-i)+'-01-01'}));
+deals.push({work:'<img src=x onerror="window.executed=true">',won:true});
+const before=JSON.stringify(deals),html=c.siteWorkBookHTML({deals,open:[]});
+assert.equal(JSON.stringify(deals),before);assert.equal((html.match(/class="site-event"/g)||[]).length,13);
+assert.ok(!c.siteWorkBookHTML({deals:deals.slice(0,8),open:[]}).includes('<details'));
+assert.ok(c.siteWorkBookHTML({deals:[],open:[]}).includes('과거 공종 이력이 없습니다.'));
+(async()=>{const browser=await chromium.launch({channel:'msedge',headless:true});try{
+const page=await browser.newPage({viewport:{width:1280,height:800}});
+await page.setContent(html);
+const visible=()=>page.locator('.site-event:visible').count();
+assert.equal(await visible(),8);assert.equal(await page.locator('summary').innerText(),'이전 이력 펼치기 · 5건 (전체 13건)');
+await page.locator('summary').focus();await page.keyboard.press('Enter');assert.equal(await visible(),13);
+assert.ok(await page.locator('details').innerText().then(t=>t.includes('확정일 미입력')));
+assert.equal(await page.locator('img').count(),0);assert.equal(await page.evaluate(()=>!!window.executed),false);
+await page.locator('summary').click();assert.equal(await visible(),8);
+console.log('Actual workbook HTML: all 13 records retained, 8 initially visible, keyboard expand/click collapse, unknown date and escaping passed');
+}finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});
