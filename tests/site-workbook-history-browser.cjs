@@ -12,11 +12,21 @@ assert.ok(c.siteWorkBookHTML({deals:[],open:[]}).includes('과거 공종 이력�
 (async()=>{const browser=await chromium.launch({channel:'msedge',headless:true});try{
 const page=await browser.newPage({viewport:{width:1280,height:800}});
 await page.setContent(html);
+assert.equal(await page.locator('.site-workbook>div>b').first().innerText(),'진행 없음');
+assert.equal(await page.locator('.site-workbook .work-unclassified').count(),0);
 const visible=()=>page.locator('.site-event:visible').count();
 assert.equal(await visible(),8);assert.equal(await page.locator('summary').innerText(),'이전 이력 펼치기 · 5건 (전체 13건)');
 await page.locator('summary').focus();await page.keyboard.press('Enter');assert.equal(await visible(),13);
 assert.ok(await page.locator('details').innerText().then(t=>t.includes('확정일 미입력')));
 assert.equal(await page.locator('img').count(),0);assert.equal(await page.evaluate(()=>!!window.executed),false);
 await page.locator('summary').click();assert.equal(await visible(),8);
+const missing={open:true,work:''},known={open:true,work:'옥상방수'};
+await page.setContent(c.siteWorkBookHTML({deals:[missing],open:[missing]}));
+assert.equal(await page.locator('.site-workbook .work-unclassified').innerText(),'공종 미분류');
+await page.setContent(c.siteWorkBookHTML({deals:[known,missing],open:[known,missing]}));
+assert.equal(await page.locator('.site-workbook .work-unclassified').innerText(),'옥상방수 · 공종 미분류');
+await page.setContent(c.siteWorkBookHTML({deals:[known],open:[known]}));
+assert.equal(await page.locator('.site-workbook .work-unclassified').count(),0);
+assert.equal(await page.locator('.site-workbook>div>b').first().innerText(),'옥상방수');
 console.log('Actual workbook HTML: all 13 records retained, 8 initially visible, keyboard expand/click collapse, unknown date and escaping passed');
 }finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});
