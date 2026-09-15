@@ -1,0 +1,18 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const src=fs.readFileSync(path.join(__dirname,'../crm.html'),'utf8'),lines=src.split(/\r?\n/);
+const c={esc:x=>x,fmtAmt:n=>n+'원'};vm.createContext(c);
+for(const name of ['expSourceId','siteExpansionMatches','siteExpansionPoolHTML'])vm.runInContext(lines.find(l=>l.startsWith('function '+name+'(')),c);
+const s={key:'id:site-a',norm:'동명아파트',deals:[{id:'deal-a',site_id:'site-a'}],inquiries:[]};
+assert.equal(c.siteExpansionMatches(s,{site:'동명아파트',siteId:'site-b'}),false);
+assert.equal(c.siteExpansionMatches(s,{site:'다른 이름',siteId:'site-a'}),true);
+assert.equal(c.siteExpansionMatches(s,{site:'동명아파트'}),false);
+assert.equal(c.siteExpansionMatches(s,{sourceOpportunityId:'deal-a'}),true);
+assert.equal(c.siteExpansionMatches(s,{sourceOpportunityId:'deal-a',siteId:'site-b'}),false);
+assert.equal(c.siteExpansionMatches(s,{sourceOpportunityId:'deal-b',siteId:'site-a'}),false);
+assert.equal(c.siteExpansionMatches(s,{sourceOpportunityId:'deal-a',siteId:'site-a'}),true);
+assert.equal(c.siteExpansionMatches({key:'id:site-a',deals:[{id:'d',organization_id:'site-a'}]}, {siteId:'site-a'}),false,'Organization ID must not masquerade as Site ID');
+assert.equal(c.siteExpansionMatches({deals:[{id:'deal-a'},{id:'deal-a'}]}, {sourceOpportunityId:'deal-a'}),false);
+assert.equal(c.siteExpansionMatches({deals:[],inquiries:[{site_id:'site-a'}]}, {siteId:'site-a'}),true);
+c.expansionRecords=()=>[{site:'동명아파트',siteId:'site-b',sourceWorkSummary:'다른 현장 공사',candidates:[]},{siteId:'site-a',sourceOpportunityId:'deal-a',sourceWorkSummary:'우리 현장 공사',candidates:[],wonAmount:0}];
+const html=c.siteExpansionPoolHTML(s);assert.ok(html.includes('우리 현장 공사'));assert.ok(!html.includes('다른 현장 공사'));
+console.log('10 Site/expansion linkage cases and actual panel rendering passed; no name-only or organization-ID matches');
