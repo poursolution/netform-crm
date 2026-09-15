@@ -19,6 +19,13 @@ rows=run([{id:'d1',site:'동명',site_id:'s1'},{id:'d2',site:'동명',site_id:'s
 rows=run([{id:'d1',site:'동명',site_id:'s1'}],[{id:'q1',site:'동명'}]);assert.equal(rows.length,2,'Missing ID must not inherit by name');
 rows=run([{id:'d1',site:'동명',address:'주소A'},{id:'d2',site:'동명',address:'주소B'}]);assert.equal(rows.length,2);
 console.log('4 actual Site Master grouping scenarios passed (display helpers stubbed)');
+rows=run([{id:'d1',site:'동명',site_id:'same-id'},{id:'d2',site:'동명',organization_id:'same-id'}]);
+assert.equal(rows.length,2,'Site and Organization namespaces must stay distinct');
+assert.deepEqual(Array.from(rows,x=>x.key).sort(),['id:same-id','org:same-id']);
+rows=run([{id:'d1',site:'이전 이름',organization_id:'org1'},{id:'d2',site:'변경 이름',organization_id:'org1'}]);assert.equal(rows.length,1);assert.equal(rows[0].key,'org:org1');
+rows=run([{id:'d1',site:'현장',site_id:'s1',organization_id:'o1'},{id:'d2',site:'현장',organization_id:'o1'}]);assert.equal(rows.length,2,'Organization membership must not infer a Site mapping');
+rows=run([{id:'d1',site:'현장',cleanup_site_id:'reviewed',site_id:'old'},{id:'d2',site:'현장',site_id:'reviewed'}]);assert.equal(rows.length,1,'Keep existing reviewed Site projection');
+console.log('4 Site/Organization namespace and reviewed-link cases passed');
 const won=(fields)=>Object.assign({site:'금액 검증',site_id:'money',outcome:'won',amount:99999},fields);
 rows=run([won({won_amount:null,wonAmt:700})]);
 assert.equal(rows[0].wonAmount,0);assert.equal(rows[0].wonMissingAmountCount,1);
