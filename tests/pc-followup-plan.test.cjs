@@ -16,6 +16,21 @@ test('quote creation and outbound activity are not customer responses',()=>{
  d.activities[0].meaningful_contact=true;assert.equal(api.noResponse(d),false);
 });
 test('missing next date or action is surfaced',()=>{assert.equal(api.noNext({nextAction:{text:'확인'}}),true);assert.equal(api.noNext({nextAction:{text:'확인',due:'2026-09-18'}}),false);});
+
+test('explicitly cleared Next cannot resurrect from an older alias',()=>{
+ const stale={id:'old',text:'이전 일정',due:'2026-09-18',status:'open'};
+ assert.equal(api.noNext({nextActionObj:null,nextAction:stale}),true);
+ assert.equal(api.noNext({nextActionObj:{...stale,status:'completed'},nextAction:stale}),true);
+ assert.equal(api.noNext({nextActionObj:{...stale,status:'cancelled'},nextAction:stale}),true);
+});
+
+test('server Next and legacy Next share presence rules without mutating their sources',()=>{
+ const d={next_action:{id:'server',text:'확인',due_at:'2026-09-18T01:00:00Z',status:'open'}};
+ const before=JSON.stringify(d);assert.equal(api.noNext(d),false);assert.equal(JSON.stringify(d),before);
+ assert.equal(api.noNext({...d,nextActionObj:null}),true);
+ assert.equal(api.noNext({...d,nextAction:null}),true);
+ assert.equal(api.noNext({next_action:{...d.next_action,status:'cancelled'}}),true);
+});
 test('responses compare instants, not lexicographic timezone strings',()=>{
  const d={quote_versions:[{sent_at:'2026-09-14T09:00:00+09:00'}],activities:[{at:'2026-09-14T00:30:00Z',meaningful_contact:true}]};
  assert.equal(api.noResponse(d),false);

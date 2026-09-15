@@ -52,6 +52,20 @@ const {chromium}=createRequire(path.resolve(__dirname,'../../crm-security-lab/pa
  await page.getByRole('button',{name:'다른 현장 계획'}).click();
  assert.equal(await page.locator('[name=due]').inputValue(),'2027-04-12','draft survives close and reopen');
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
- console.log('PASS: short/long routing, existing payload normalization, close confirmation handoff, ACK-only update, retained failed draft, no horizontal overflow');
+ for(const [state,expected] of [['server','2026-09-23'],['cleared',''],['completed',''],['cancelled','']]){
+  await page.evaluate(state=>{
+   dispatchEvent(new Event('phase1:identity-cleared'));
+   const next={id:'canonical',text:'공사예정 2030년 · 확인',status:'open',due_at:'2026-09-22T15:00:00Z'};
+   const d={id:'22222222-2222-4222-8222-222222222222',site:'다른 현장',code:'sent',version:1,next_action:next};
+   if(state==='cleared'){d.nextActionObj=null;d.nextAction=next;}
+   if(state==='completed'||state==='cancelled'){d.nextActionObj={...next,status:state};d.nextAction=next;}
+   B.deals[1]=d;window.beforeProjection=JSON.stringify(d);
+  },state);
+  await page.getByRole('button',{name:'다른 현장 계획'}).click();
+  assert.equal(await page.locator('[name=due]').inputValue(),expected,state+' date prefill');
+  assert.equal(await page.locator('[name=year]').inputValue(),state==='server'?'2030':'',state+' year prefill');
+  assert.equal(await page.evaluate(()=>JSON.stringify(B.deals[1])===beforeProjection),true,'opening must not mutate source');
+ }
+ console.log('PASS: routing, ACK-only update, retained drafts, server KST date, cleared/closed Next prefill, source preservation, no horizontal overflow');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

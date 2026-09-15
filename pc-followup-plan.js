@@ -27,7 +27,9 @@
  }
  function timestamp(value){let v=String(value||'');if(/^\d{4}-\d{2}-\d{2}$/.test(v))v+='T00:00:00+09:00';else if(/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/.test(v))v=v.replace(' ','T')+'+09:00';return Date.parse(v);}
  function noResponse(d){const sent=sentAt(d);return !!sent&&!(d.activities||[]).some(a=>timestamp(a.at||a.occurred_at)>timestamp(sent)&&(a.meaningful_contact===true||a.meaningful===true||a.response_kind));}
- function noNext(d){const n=d.nextActionObj||d.nextAction||{};return n.status==='completed'||n.status==='cancelled'||!n.text||!(n.due||n.due_at);}
+ function nextOf(d){for(const key of ['nextActionObj','nextAction','next_action'])if(Object.prototype.hasOwnProperty.call(d,key)){const n=d[key];return n&&typeof n==='object'?n:{};}return {};}
+ function nextDate(n){const v=String(n.due||n.due_at||'');if(date(v))return v;const at=timestamp(v);return Number.isFinite(at)?new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(at)):'';}
+ function noNext(d){const n=nextOf(d);return n.status==='completed'||n.status==='cancelled'||!n.text||!(n.due||n.due_at);}
  function savedConstructionYear(d){return (String(d?.stage_contexts?.waiting?.fields?.reason||d?.stageContexts?.waiting?.fields?.reason||'').match(/^공사예정 (20\d{2})년 · /)||[])[1]||'';}
  function longTerm(d){return code(d)==='waiting'&&String((d.stage_contexts||d.stageContexts)?.waiting?.memo||'').includes('고객의 명시적인 장기 검토 의사');}
  function install(w){
@@ -39,7 +41,7 @@
    dialog=w.document.createElement('dialog');dialog.className='pc-followup-dialog';dialog.dataset.key=id+':'+mode;dialog.dataset.deal=id;
    dialog.innerHTML='<form><header><div><small>'+esc(d.site||'영업기회')+'</small><h2>'+ (mode==='later'?'추후 다시 연락':'계속 진행')+'</h2></div><button type="button" data-close aria-label="닫기">×</button></header><label>이유<select name="reason">'+(mode==='continue'?'<option>고객 검토결과 확인</option>':'')+reasons.map(r=>'<option>'+r+'</option>').join('')+'</select></label><label>다음 연락일<input name="due" type="date" required></label><div class="pc-followup-presets"><button type="button" data-days="7">7일 후</button><button type="button" data-days="14">14일 후</button><button type="button" data-days="30">30일 후</button></div><label>공사예정연도 <small>미정이면 비워두세요</small><input name="year" type="number" min="2000" max="2099" placeholder="예: 2030"></label>'+(mode==='later'?'<label class="pc-followup-long"><input name="long" type="checkbox">고객이 장기 검토 의사를 밝혔습니다</label>':'')+'<p class="pc-followup-preview" aria-live="polite"></p><p class="pc-followup-error" role="status"></p><footer><button type="button" data-close>취소</button><button type="submit">계획 저장</button></footer></form>';
    w.document.body.appendChild(dialog);const form=dialog.querySelector('form'),el=name=>form.elements.namedItem(name);
-   const n=d.nextActionObj||d.nextAction||{};el('due').value=String(n.due||n.due_at||'').slice(0,10);
+   const n=noNext(d)?{}:nextOf(d);el('due').value=nextDate(n);
    const cy=w.ConstructionYear&&w.ConstructionYear.yearOf(d),savedYear=String(n.text||'').match(/^공사예정 (20\d{2})년 · /);if(savedYear)el('year').value=savedYear[1];else if(/^20\d{2}$/.test(cy))el('year').value=cy;
    const draft=drafts.get(dialog.dataset.key);if(draft){['reason','due','year'].forEach(k=>el(k).value=draft[k]);if(el('long'))el('long').checked=draft.long;}
    function input(){return {mode,reason:el('reason').value,due:el('due').value,year:el('year').value,long:!!el('long')?.checked};}
