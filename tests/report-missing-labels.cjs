@@ -1,0 +1,14 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const src=fs.readFileSync(path.join(__dirname,'../crm.html'),'utf8'),lines=src.split(/\r?\n/);
+const c={ContractPerformance:require('../contract-performance.js'),itemPatch:d=>d.patch||{},sumBy:(a,f)=>a.reduce((s,d)=>s+f(d),0),fmtAmt:n=>n+'원',reportDelta:(a,b)=>a+' / '+b};vm.createContext(c);
+for(const name of ['wonAmt','hasWonAmt','reportAmount','reportWonMissing','reportWonAmount','reportWonCount','reportWonDelta'])vm.runInContext(lines.find(l=>l.startsWith('function '+name+'(')),c);
+const missing={won_amount:null,amt:900,assignee:'담당',brand:'사업'},zero={won_amount:0,assignee:'담당',brand:'사업'},known={won_amount:100,assignee:'담당',brand:'사업'};
+assert.equal(c.reportWonAmount([missing]),'계약금액 미입력');assert.equal(c.reportWonAmount([zero]),'0원');assert.equal(c.reportWonAmount([]),'0원');
+assert.equal(c.reportWonAmount([known,missing]),'100원 (입력분)');assert.equal(c.reportWonCount([known,missing]),'2건 · 금액 미입력 1건');
+assert.equal(c.reportWonDelta([known],[missing]),'금액 미입력 · 비교 보류');assert.equal(c.reportWonDelta([missing],[known]),'금액 미입력 · 비교 보류');assert.equal(c.reportWonDelta([known],[zero]),'100 / 0');
+Object.assign(c,{G:{brand:'전체'},PERFORMANCE_TARGET_NAMES:['담당'],won:[known,missing],monthWon:[missing],open:[],raw:[],period:[],month:{startKey:'2026-09-01',endKey:'2026-10-01'},repN:x=>x,reportAdvancedBetween:()=>false,briefIsRisk:()=>false,reportCritical:()=>false,weightedAmount:()=>0,oppAmt:d=>d.amt||0,uniq:a=>[...new Set(a)],repsOf:()=>[],repProfile:()=>({}),BRANDS:['사업'],esc:x=>x,jsAttr:x=>x});
+// Execute actual representative and brand table builders, not copied templates.
+vm.runInContext(lines.find(l=>l.startsWith(' var reps=PERFORMANCE_TARGET_NAMES')),c);
+vm.runInContext(lines.find(l=>l.startsWith(" var brands=(G.brand")),c);
+assert.ok(c.reps.includes('100원 (입력분)'));assert.ok(c.reps.includes('계약금액 미입력'));assert.ok(c.reps.includes('1건 · 금액 미입력 1건'));assert.ok(c.portfolio.includes('2건 · 금액 미입력 1건'));
+console.log('8 report labeling cases and actual representative/brand table rendering passed');
