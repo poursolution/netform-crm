@@ -1,0 +1,11 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const src=fs.readFileSync(path.join(__dirname,'../crm.html'),'utf8'),lines=src.split(/\r?\n/);
+const c={ContractPerformance:require('../contract-performance.js'),itemPatch:()=>({}),isWon:d=>d.code==='won',isOpen:d=>d.code==='open',stageLabel:x=>x,dealStage:d=>d.code,peopleStore:()=>({}),DataCleanupUI:{historyFor:()=>[]},ExpansionPool:{historyFor:()=>[]},fmtAmt:n=>n+'원',oppAmt:d=>d.amt||0,siteNoteDisplayText:s=>s,siteActivityTitle:s=>s,esc:s=>s,dealWorkSummary:()=> '옥상방수',dealPrimaryWork:()=> '옥상방수'};vm.createContext(c);
+for(const name of ['wonDate','wonAmt','hasWonAmt','siteWonDealAmountLabel','siteStamp','siteTimeline','sitePastDealDate','siteWorkBookHTML'])vm.runInContext(lines.find(l=>l.startsWith('function '+name+'(')),c);
+const deals=[{id:'missing1',code:'won',updated:'2026-09-10'},{id:'missing2',code:'won',updated:'2026-09-10'},{id:'known',code:'won',closed_at:'2024-03-01',updated:'2026-09-10',won_amount:0},{id:'history',code:'won',stageHistory:[{to:'won',at:'2025-01-01'}]}];
+const before=JSON.stringify(deals),s={deals,inquiries:[],open:[]};const events=c.siteTimeline(s),won=events.filter(e=>e.title.startsWith('수주 확정'));
+assert.equal(won.length,4);assert.equal(won.filter(e=>e.source==='undated_won').length,2);assert.equal(won.find(e=>e.at==='2024-03-01').sub,'0원 · ');assert.ok(!won.some(e=>e.at==='2026-09-10'));assert.equal(won[won.length-1].at,'');
+const html=c.siteWorkBookHTML(s);assert.ok(html.includes('확정일 미입력'));assert.ok(html.includes('<time>2024</time>'));assert.ok(!html.includes('<time>2026</time>'));assert.equal(JSON.stringify(deals),before);
+const rep=lines.find(l=>l.includes('wonDeals=repDeals.filter'));
+assert.ok(rep.includes('isWon(d)&&wonDate(d)&&repFlowIn(wonDate(d),month)'));assert.ok(rep.includes('isWon(d)&&wonDate(d)&&repFlowIn(wonDate(d),week)'));
+console.log('Actual site timeline and workbook: undated records retained, confirmed dates used, no mutation; rep source guards passed');
