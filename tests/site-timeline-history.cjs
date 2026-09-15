@@ -1,7 +1,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
 const src=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
 const c={itemPatch:()=>({}),inquiryCreatedAt:x=>x.created,stageLabel:x=>x,dealStage:()=> 'waiting',isWon:()=>false,isOpen:()=>true,peopleStore:()=>({}),DataCleanupUI:{historyFor:()=>[]},ExpansionPool:{historyFor:()=>[]},siteStamp:x=>Date.parse(x)||0};
-vm.createContext(c);vm.runInContext(src.split(/\r?\n/).find(x=>x.startsWith('function siteTimeline(')),c);
+vm.createContext(c);c.siteNoteDisplayText=x=>x;vm.runInContext(src.split(/\r?\n/).filter(x=>x.startsWith('function siteTimeline(')||x.startsWith('function siteActivityTitle(')).join('\n'),c);
 const activities=Array.from({length:24},(_,i)=>({type:'전화',note:'기록 '+i,occurred_at:`2023-${String(i%12+1).padStart(2,'0')}-01T10:00:00Z`,created_at:'2026-09-15T10:00:00Z'}));
 const site={inquiries:[],deals:[{activities}],norm:'sample'};
 const before=JSON.stringify(site),rows=c.siteTimeline(site);
