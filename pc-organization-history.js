@@ -1,13 +1,18 @@
 /* Read-only PC customer-asset integration. Server authorization is authoritative. */
 (function(w){
  'use strict';
- let view=null,section=null;
- function clear(){if(view)view.clear();view=null;if(section)section.remove();section=null;}
+ let view=null,section=null,mountedRoot=null,mountedActor=null,mountedTransport=null,mountedSearch=null;
+ function clear(){if(view)view.clear();view=null;if(section)section.remove();section=null;mountedRoot=null;mountedActor=null;mountedTransport=null;mountedSearch=null;}
  function mount(root,query=''){
-  clear();
   const transport=w.Phase1,profile=transport?.profile;
-  if(!root||!profile?.auth_uid||profile.permission_role!=='admin')return;
+  const search=String(query||'').trim().toLocaleLowerCase();
+  if(!root||!profile?.auth_uid||profile.permission_role!=='admin'){clear();return;}
+  // A parent repaint detached our section: reattach its current selection and pending read.
+  // Identity/profile events still clear it, even when the auth UID stays the same.
+  if(view&&section&&!section.isConnected&&root===mountedRoot&&transport===mountedTransport&&profile.auth_uid===mountedActor&&search===mountedSearch){root.append(section);return;}
+  clear();
   const actor=profile.auth_uid;
+  mountedRoot=root;mountedActor=actor;mountedTransport=transport;mountedSearch=search;
   section=document.createElement('section');section.className='site-master-section';
   section.dataset.organizationHistory='true';
   const heading=document.createElement('h4');heading.textContent='영업 연결 없는 과거 고객';
@@ -23,7 +28,6 @@
    if(transport.profile?.auth_uid!==actor||transport.profile?.permission_role!=='admin')throw Error('IDENTITY_CHANGED');
    return {data};
   });
-  const search=String(query||'').trim().toLocaleLowerCase();
   const filtered={...reader,list:async()=>{
    const rows=await reader.list();return search?rows.filter(row=>String(row.name||'').toLocaleLowerCase().includes(search)):rows;
   }};
