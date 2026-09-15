@@ -7,3 +7,6 @@
 .pc-manager-request-dialog::backdrop{background:#10203066}.pc-manager-request-dialog h2{font-size:20px;margin:0 0 12px}
 .pc-manager-request-dialog label{display:block;margin:12px 0;font-size:14px}.pc-manager-request-dialog input,.pc-manager-request-dialog select,.pc-manager-request-dialog textarea{box-sizing:border-box;display:block;width:100%;margin-top:5px;font:inherit;padding:8px;border:1px solid #b9c4d0;border-radius:5px}
 .pc-manager-request-dialog p{font-size:14px;line-height:1.5}.pc-manager-request-dialog button,.pc-manager-requests button{font:inherit;font-size:14px;padding:6px 10px;border:1px solid #bdc9d6;border-radius:5px;background:#fff;cursor:pointer}.pc-manager-request-dialog button[type=submit]{background:#2458b8;color:white;margin-right:8px}.pc-manager-request-dialog button:disabled{opacity:.6;cursor:wait}
+.pc-manager-request-trigger{font:inherit;font-size:14px;line-height:1.2;padding:6px 8px;margin-top:4px;border:1px solid #bdc9d6;border-radius:5px;background:#fff;color:#2458b8;cursor:pointer;max-width:100%;white-space:normal;word-break:keep-all}
+.pc-manager-request-trigger:hover{background:#f0f5ff}
+.pc-manager-request-trigger:focus-visible{outline:2px solid #2458b8;outline-offset:2px}

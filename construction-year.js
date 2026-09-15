@@ -1,4 +1,4 @@
-/* 공사 예정연도는 별도 임시값을 만들지 않고 이미 저장된 단계 근거에서 파생한다. */
+/* 공사예정은 명시된 계획만 사용한다. 계약/착공/접촉 시점과 혼동하지 않는다. */
 (function (root, factory) {
   const api = factory();
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
@@ -21,28 +21,30 @@
   function valueOf(deal) {
     deal = deal || {};
     const contexts = deal.stageContexts || deal.stage_contexts || {};
-    const construction = fields(contexts, 'construction');
-    const contract = fields(contexts, 'contract');
-    const imminent = fields(contexts, 'imminent');
-    const firstContact = fields(contexts, 'first_contact');
     const candidates = [
       deal.planned_construction_year,
       deal.construction_planned_year,
       deal.planned_construction_date,
-      deal.construction_planned_at,
-      deal.construction_started_at,
-      deal.constructionStart,
-      deal.start_date,
-      construction.start_date,
-      deal.contract_date,
-      contract.contract_date,
-      imminent.expected_contract,
-      firstContact.expected_timing
+      deal.construction_planned_at
     ];
     for (let i = 0; i < candidates.length; i += 1) {
       const year = validYear(candidates[i]);
-      if (year) return { year, source: i < 5 ? 'direct' : i < 8 ? 'construction' : i < 10 ? 'contract' : i === 10 ? 'imminent' : 'first_contact' };
+      if (year) return { year, source: 'direct' };
     }
+    const saved = String(fields(contexts, 'waiting').reason || '').match(/^공사예정 (20\d{2})년 · /);
+    if (saved) return { year: saved[1], source: 'waiting' };
+    const projected = String(deal.relate_planned_construction_year || '').trim();
+    if (/^20[0-9]{2}$/.test(projected)) return { year: projected, source: 'relate_plan' };
+    const originalFields = deal.list_fields || {};
+    const importedYears = new Set();
+    Object.values(originalFields).forEach(function (field) {
+      if (!field || field.name !== '공사계획년도') return;
+      const values = Array.isArray(field.value) ? field.value : [field.value];
+      values.forEach(function (value) {
+        if (/^20[0-9]{2}$/.test(String(value || '').trim())) importedYears.add(String(value).trim());
+      });
+    });
+    if (importedYears.size === 1) return { year: Array.from(importedYears)[0], source: 'relate_plan' };
     return { year: '', source: 'missing' };
   }
 

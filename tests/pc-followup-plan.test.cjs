@@ -23,7 +23,7 @@ test('responses compare instants, not lexicographic timezone strings',()=>{
  d.quote_versions[0].sent_at='invalid';assert.equal(api.noResponse(d),false);
 });
 test('reloaded waiting year is consistent across label, value and options, never contact year',()=>{
- const cy={...require('../construction-year.js')};api.installYear(cy);
+ const cy=require('../construction-year.js');
  const d=JSON.parse(JSON.stringify({stage_contexts:{waiting:{fields:{reason:'공사예정 2036년 · 예산 편성 대기',contact_date:'2026-12-15'}}}}));
  assert.equal(cy.yearOf(d),'2036');assert.equal(cy.valueOf(d).year,'2036');assert.ok(cy.options([d],2026).includes('2036'));assert.equal(cy.matches(d,'2036'),true);assert.equal(cy.matches(d,'2026'),false);
  const unknown={stage_contexts:{waiting:{fields:{reason:'예산 편성 대기',contact_date:'2030-12-15'}}}};

@@ -1,6 +1,9 @@
 (function(root){
 'use strict';
 const defaults={quarter:0,rep:'전체',brand:'전체',workFilter:'전체'};
+let borrowed=[];
+function restoreControls(){borrowed.forEach(([node,marker])=>{if(marker.isConnected){node.classList?.remove('pipe-inline-owner');marker.replaceWith(node)}});borrowed=[];}
+function borrow(node){const marker=document.createComment('pipeline control');node.before(marker);borrowed.push([node,marker]);return node;}
 function resetValue(key){return key==='year'?CUR_Y:defaults[key]}
 function set(key,value){
  if(!['year','quarter','rep','brand','workFilter'].includes(key))return;
@@ -24,6 +27,7 @@ function dismissPeriod(el,focus){
 }
 if(root.document)root.document.addEventListener('click',event=>{const el=root.document.querySelector('.pipe-period[open]');if(el&&!el.contains(event.target))dismissPeriod(el,false);const owner=root.document.querySelector('.pipe-owner[open]');if(owner&&!owner.contains(event.target))owner.open=false;});
 function render(){
+ restoreControls();
  const host=document.getElementById('p-brands');if(!host)return;
  const option=(value,label,current)=>'<option value="'+escAttr(value)+'" '+(String(current)===String(value)?'selected':'')+'>'+esc(label)+'</option>';
  const years=Array.from(new Set(['전체',String(Number(CUR_Y)-2),String(Number(CUR_Y)-1),CUR_Y,G.year]));
@@ -54,25 +58,24 @@ function render(){
  const resetButton=host.querySelector('.pipe-reset');if(resetButton)resetButton.onclick=reset;
  inlineFilters(host);
 }
-// Copy the existing rendered controls, not their counting or selection logic.
-// The canonical global controls stay in place for all other CRM pages.
+// Reuse canonical controls and their handlers; never create a second filter instance.
 function inlineFilters(host){
  const period=document.querySelector('#periodbar .period-controls'),picker=document.querySelector('#reptabs .rep-filter-picker');
  if(!period||!picker)return;
  const bar=document.createElement('div');bar.className='pipe-inline-filters';bar.setAttribute('aria-label','파이프라인 조회조건');
  const label=text=>{const span=document.createElement('span');span.className='pipe-inline-label';span.textContent=text;return span};
  bar.append(label('조회기간'));
- const year=period.querySelector('select').cloneNode(true),segment=period.querySelector('.period-segment').cloneNode(true);
+ const year=borrow(period.querySelector('select')),segment=borrow(period.querySelector('.period-segment'));
  bar.append(year,segment,label('영업담당자'));
- const owner=picker.cloneNode(true);owner.classList.add('pipe-inline-owner');bar.append(owner);
+ const owner=borrow(picker);owner.classList.add('pipe-inline-owner');bar.append(owner);
  const search=owner.querySelector('input');search.removeAttribute('oninput');search.oninput=()=>{const q=search.value.trim().toLowerCase();owner.querySelectorAll('.rep-filter-option').forEach(b=>b.hidden=!b.dataset.search.toLowerCase().includes(q))};
  owner.querySelector('summary').onclick=()=>{search.value='';search.oninput()};
  owner.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();owner.open=false;owner.querySelector('summary').focus()}};
- const badge=period.querySelector('.yoybadge');if(badge)bar.append(badge.cloneNode(true));
+ const badge=period.querySelector('.yoybadge');if(badge)bar.append(borrow(badge));
  const work=host.querySelector('[data-filter="workFilter"]');bar.append(label('공종'),work);
  host.querySelector('.pipe-period').remove();host.querySelector('.pipe-owner').remove();
  host.prepend(bar);
 }
 if(root.document)root.document.addEventListener('click',e=>{const el=document.querySelector('.pipe-inline-owner[open]');if(el&&!el.contains(e.target))el.open=false});
-root.PipelineToolbar={render,set,clear,reset};
+root.PipelineToolbar={render,set,clear,reset,restoreControls};
 })(window);

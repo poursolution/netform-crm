@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head><script src="./phase1-config.js"></script><script src="./operational-adapter.js?v=20260913-relationship-contact-1"></script><script src="./pc-manager-transport.js?v=20260915-1"></script><script src="./construction-year.js?v=20260909-1"></script><script src="./external-performance.js?v=20260909-1"></script><script src="./business-attribution.js?v=20260909-1"></script><script src="./contract-performance.js?v=20260909-1"></script>
+<head><script src="./phase1-config.js"></script><script src="./operational-adapter.js?v=20260913-relationship-contact-1"></script><script src="./pc-manager-transport.js?v=20260915-1"></script><script src="./construction-year.js?v=20260915-structure-1"></script><script src="./external-performance.js?v=20260909-1"></script><script src="./business-attribution.js?v=20260909-1"></script><script src="./contract-performance.js?v=20260909-1"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>넷폼 영업관리 CRM</title>
@@ -1941,7 +1941,7 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
 <link rel="stylesheet" href="data-cleanup.css?v=20260905-1">
 <link rel="stylesheet" href="pc-contact-directory.css?v=20260914-1">
 <link rel="stylesheet" href="pipeline-toolbar.css?v=20260914-pc-release-1">
-<script src="pipeline-toolbar.js?v=20260914-pc-release-1"></script>
+<script src="pipeline-toolbar.js?v=20260915-structure-1"></script>
 <link rel="stylesheet" href="next-action-picker.css?v=20260905-1">
 <link rel="stylesheet" href="expansion-pool.css?v=20260913-compact-list-1">
 <link rel="stylesheet" href="relationship-management.css?v=20260914-panel-5">
@@ -1949,8 +1949,8 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
 <link rel="stylesheet" href="today-work-queue.css?v=20260914-today-levels-2">
 <link rel="stylesheet" href="inquiry-workbench.css?v=20260914-6cols">
 <link rel="stylesheet" href="inquiry-assignment-clarity.css?v=20260913-inbox-1">
-<link rel="stylesheet" href="pc-typography.css?v=20260914-2">
-<script defer src="pc-typography.js?v=20260914-2"></script>
+<link rel="stylesheet" href="pc-typography.css?v=20260915-structure-1">
+<script defer src="pc-typography.js?v=20260915-structure-1"></script>
 </head>
 <body>
 <div id="load"><div class="spin"></div><div class="t">Supabase 실데이터 불러오는 중…</div></div>
@@ -2841,7 +2841,7 @@ function inqBase(withRep,withClosed){
      &&(G.page!=='inq'||G.inqMetric!=='made'||inquiryHasMadeDeal(q))
      &&(G.page!=='inq'||G.inqMetric!=='assigned'||inquiryAssigned(q))})}
 function inqs(){return inqBase(true,false)}
-function inquiryHasMadeDeal(q){var k=normSite(q.site);return !!k&&(B.deals||[]).some(function(d){return normSite(d.site)===k})}
+function inquiryHasMadeDeal(q){return !!linkedDeal(q)}
 /* 담당자별 집계 — 사람 성과를 비교하는 자리이므로 정본을 따른다.
    미배정·중복 같은 시스템 값과 성과 제외 대상(송보람)은 여기서 빠진다.
    회사 전체 금액을 볼 때는 이 함수를 쓰지 않는다 (그때는 딜 전체를 그대로 센다). */
@@ -4528,7 +4528,7 @@ paintSites=function(){
  var grid=command.querySelector('.site-health-grid');if(grid)grid.setAttribute('aria-label','고객 관계상태 필터');
 };
 
-function siteTimeline(s){var E=[],seen={};function add(at,title,sub){if(!at||!title)return;var k=String(at).slice(0,16)+'|'+title+'|'+sub;if(seen[k])return;seen[k]=1;E.push({at:at,title:title,sub:sub||''})}s.inquiries.forEach(function(q){add(inquiryCreatedAt(q),'견적문의 접수',(q.brand||'사업유형 미지정')+' · '+(q.work||q.status||'접수'))});s.deals.forEach(function(d){var p=itemPatch(d,'deal');add(d.created,'영업기회 등록',(d.brand||'사업유형 미지정')+' · '+stageLabel(dealStage(d)));[p.stageHistory,d.stageHistory].forEach(function(L){if(Array.isArray(L))L.forEach(function(h){add(h.at||h.changed_at,'Stage 이동',(h.from||'—')+' → '+(h.to||'—'))})});[p.activities,d.activities].forEach(function(L){if(Array.isArray(L))L.forEach(function(a){add(a.at||a.created_at,a.type||'영업활동',(a.note||'')+(a.result?' · '+a.result:''))})});if(isWon(d))add(d.closed||d.updated,'수주 확정',fmtAmt(wonAmt(d)||oppAmt(d))+' · '+(d.brand||''));else if(!isOpen(d))add(d.closed||d.updated,'영업 종료',stageLabel(dealStage(d))+' · '+fmtAmt(oppAmt(d))) });Object.keys(peopleStore()).forEach(function(k){var p=peopleStore()[k];(p.history||[]).forEach(function(h){if(normSite(h.site)!==s.norm)return;add(h.from,(p.name||'담당자')+' 근무 시작',(p.role||'관리소장')+' · '+(h.site||s.name));if(h.to)add(h.to,(p.name||'담당자')+' 근무 종료','현재 '+(p.currentSite||'다른 현장'))})});E=E.concat(DataCleanupUI.historyFor(s),ExpansionPool.historyFor(s));return E.sort(function(a,b){return siteStamp(b.at)-siteStamp(a.at)}).slice(0,16)}
+function siteTimeline(s){var E=[],seen={},noteIds={};function add(at,title,sub){if(!at||!title)return;var k=String(at).slice(0,16)+'|'+title+'|'+sub;if(seen[k])return;seen[k]=1;E.push({at:at,title:title,sub:sub||''})}s.inquiries.forEach(function(q){add(inquiryCreatedAt(q),'견적문의 접수',(q.brand||'사업유형 미지정')+' · '+(q.work||q.status||'접수'))});s.deals.forEach(function(d){var p=itemPatch(d,'deal');(d.legacy_notes||[]).forEach(function(n){if(!n.id||noteIds[n.id])return;noteIds[n.id]=true;E.push({at:n.occurred_at||'',recordedAt:n.recorded_at||'',source:'relate_note',sourceId:n.id,title:'과거 메모'+(n.actor?' · '+n.actor:''),sub:n.body||''})});add(d.created,'영업기회 등록',(d.brand||'사업유형 미지정')+' · '+stageLabel(dealStage(d)));[p.stageHistory,d.stageHistory].forEach(function(L){if(Array.isArray(L))L.forEach(function(h){add(h.at||h.changed_at,'Stage 이동',(h.from||'—')+' → '+(h.to||'—'))})});[p.activities,d.activities].forEach(function(L){if(Array.isArray(L))L.forEach(function(a){add(a.occurred_at||a.at||a.created_at,a.type||'영업활동',(a.note||'')+(a.result?' · '+a.result:''))})});if(isWon(d))add(d.closed||d.updated,'수주 확정',fmtAmt(wonAmt(d)||oppAmt(d))+' · '+(d.brand||''));else if(!isOpen(d))add(d.closed||d.updated,'영업 종료',stageLabel(dealStage(d))+' · '+fmtAmt(oppAmt(d))) });Object.keys(peopleStore()).forEach(function(k){var p=peopleStore()[k];(p.history||[]).forEach(function(h){if(normSite(h.site)!==s.norm)return;add(h.from,(p.name||'담당자')+' 근무 시작',(p.role||'관리소장')+' · '+(h.site||s.name));if(h.to)add(h.to,(p.name||'담당자')+' 근무 종료','현재 '+(p.currentSite||'다른 현장'))})});E=E.concat(DataCleanupUI.historyFor(s),ExpansionPool.historyFor(s));return E.sort(function(a,b){return siteStamp(b.at)-siteStamp(a.at)})}
 function siteExpansion(s){var out=[],works=s.deals.map(dealWorkSummary).join(' '),hasTech=s.brands.indexOf('기술자문')>=0,hasPour=s.brands.some(function(b){return /POUR|아파트스퀘어/.test(b)});if(hasPour&&!hasTech)out.push(['기술자문 확장','기존 POUR·아파트스퀘어 관계가 있습니다. 기술자문 전환 가능성을 확인하세요.']);if(/옥상|방수/.test(works)&&!/재도장/.test(works))out.push(['재도장 니즈 확인','옥상·방수 영업 이력은 있지만 재도장 영업 기록이 없습니다.']);if(/재도장/.test(works)&&!/에폭시/.test(works))out.push(['주차장 에폭시 확인','재도장 관계를 활용해 지하주차장 에폭시 수요를 확인하세요.']);if(s.won.length&&!s.open.length)out.push(['기존 고객 재영업','과거 수주 이력은 있으나 현재 진행 영업기회가 없습니다.']);if(s.lost.length&&s.lastDays!==null&&s.lastDays>=90)out.push(['실주 고객 재접촉','과거 종료 이력이 있고 '+s.lastDays+'일간 새 접촉 기록이 없습니다.']);if(s.lastDays!==null&&s.lastDays>=365)out.push(['휴면 관계 깨우기','최근 관계 기록이 1년 이상 지났습니다. 담당자와 접촉 근거를 다시 확인하세요.']);return out.slice(0,4)}
 
 /* Closed Won 이후는 Pipeline Stage가 아니라 고객 확장관리 Pool이다. */
@@ -7526,6 +7526,7 @@ function saveOriginBusinessEdit(){
    ══════════════════════════════════════════════════════════════ */
 function paint(){
  if(!B)return;                      /* 데이터 로드 전 호출 방지 */
+ if(window.PipelineToolbar)PipelineToolbar.restoreControls();
  /* 스플릿 상세는 #p-main 안에 산다. 어느 페이지를 그리든 innerHTML 이 갈리기 전에
     노드를 body 로 빼두고, 스플릿이 아니면 도킹 자체를 해제한다. */
  var _wasDocked=isDocked();
@@ -8402,7 +8403,7 @@ function campaignHomePage(){var L=campaignLogs(),scheduled=L.filter(function(x){
 function campaignUtility(title){return '<header class="cc-utility"><button onclick="campaignSetTab(\'home\')">← 고객 발송</button><h2>'+esc(title)+'</h2><nav><button onclick="campaignSetTab(\'history\')">발송 이력</button><button onclick="campaignSetTab(\'analysis\')">성과 보기</button></nav></header>'}
 function paintCampaign(){var root=$('#campaign-root');if(!root)return;var tab=G.campaignTab||'home',body=tab==='home'?campaignHomePage():tab==='send'?campaignSendPage():tab==='schedule'?campaignHistoryPage(true):tab==='history'?campaignHistoryPage(false):tab==='templates'?campaignLibraryPage():campaignAnalysisPage(),title=tab==='send'?'새 발송':tab==='schedule'?'예약 발송':tab==='history'?'발송 이력':tab==='templates'?'문구 보관함':'성과 보기';root.innerHTML='<div class="cc-shell">'+(tab==='home'?'':campaignUtility(title))+(CAMPAIGN_STATE.notice?'<div class="mgmtbar blue">'+esc(CAMPAIGN_STATE.notice)+'</div>':'')+body+'</div>'}
 
-</script><script src="./inquiry-assignment-clarity.js?v=20260913-assignment-3"></script><script src="./detail-workspace.js?v=20260913-1"></script><script src="./relationship-management.js?v=20260914-past-years-6"></script><script src="./inquiry-workbench.js?v=20260914-6cols"></script><script src="./today-work-queue.js?v=20260913-today-split-1"></script><script src="./operational-overlay.js?v=20260914-pc-inbox-1"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
+</script><script src="./inquiry-assignment-clarity.js?v=20260913-assignment-3"></script><script src="./detail-workspace.js?v=20260915-structure-1"></script><script src="./relationship-management.js?v=20260915-structure-1"></script><script src="./inquiry-workbench.js?v=20260915-structure-1"></script><script src="./today-work-queue.js?v=20260913-today-split-1"></script><script src="./operational-overlay.js?v=20260914-pc-inbox-1"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
   if(AUTH_ON&&!TOKEN)return;
   loadData();
 });
@@ -8416,10 +8417,10 @@ function paintCampaign(){var root=$('#campaign-root');if(!root)return;var tab=G.
 <link rel="stylesheet" href="pc-message-test.css?v=20260914-1">
 <script src="pc-message-test.js?v=20260914-1"></script>
 <link rel="stylesheet" href="pc-followup-plan.css?v=20260914-1">
-<script src="pc-followup-plan.js?v=20260914-6"></script>
-<link rel="stylesheet" href="./pc-manager-requests.css?v=20260915-1">
+<script src="pc-followup-plan.js?v=20260915-structure-1"></script>
+<link rel="stylesheet" href="./pc-manager-requests.css?v=20260915-structure-1">
 <script src="./manager-request-client.js?v=20260915-1"></script>
-<script src="./pc-manager-requests.js?v=20260915-2"></script>
+<script src="./pc-manager-requests.js?v=20260915-structure-1"></script>
 <script src="./pc-manager-request-summary.js?v=20260915-1"></script>
 <script src="./pc-manager-request-connection.js?v=20260915-1"></script>
 <script src="./pc-inquiry-deeplink.js?v=20260915-1"></script>

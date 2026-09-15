@@ -50,12 +50,15 @@
   const status=document.createElement('nav');status.className='inq-work-counts';status.setAttribute('aria-label','견적문의 처리 상태');
   status.innerHTML=[['unassigned','미배정',counts.미배정],['waiting','응대대기',counts.배정완료],['delayed','처리지연',active.filter(delayed).length],['all','전체',counts.전체]].map(([key,label,n])=>'<button aria-pressed="'+(selected===key)+'" data-key="'+key+'" onclick="InquiryWorkbench.set(this.dataset.key)">'+label+' <b>'+n+'</b></button>').join('');
   const tools=document.createElement('details');tools.className='inq-work-tools';tools.open=!!root.G.inqToolsOpen;tools.addEventListener('toggle',()=>toolsState(tools.open));
-  tools.innerHTML='<summary>관리도구 · 상세보기 / 지역 / 연결·중복 / 보류 / 휴지통</summary>';
+  tools.innerHTML='<summary>예외 관리 · 연결·중복 / 보류 / 휴지통</summary>';
   const tabs=signals.querySelector('.inq-ctl-tabs'),toolbar=signals.querySelector('.inq-ctl-toolbar'),roles=signals.querySelector('.inq-role-switch');
   if(tabs){Array.from(tabs.children).forEach(b=>{if(['전체','미배정','배정완료'].includes(b.dataset.t))b.remove()});tools.append(tabs)}
-  if(toolbar)tools.append(toolbar);if(roles)tools.append(roles);
+  // Keep the original controls and handlers visible instead of cloning them.
+  if(toolbar)toolbar.classList.add('inq-work-visible-tools');
   const bulk=root.$('#sg-panel .inq-ctl-bulk');if(bulk){bulk.classList.add('inq-work-bulk');tools.append(bulk)}
   signals.prepend(status,tools);
+  if(toolbar)status.after(toolbar);
+  if(roles)(toolbar||status).after(roles);
   const old=root.$('#sg-panel .inq-ctl-summary');if(old)old.remove();
   compactRows();
   const brand=page.querySelector('.brandbar');

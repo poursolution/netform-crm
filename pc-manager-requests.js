@@ -58,9 +58,9 @@
  // Attach to the existing PC inquiry renderer only after its server adapter is admitted.
  function install(w,api){
   if(typeof w.paintInq!=='function')throw Error('PC 견적문의 화면을 찾을 수 없습니다.');
-  const original=w.paintInq,originalToday=w.paintTodayHome;let controller=null,todayController=null;const retryStore=api.retryStore||new Map();
+  const original=w.paintInq,originalToday=w.paintTodayHome;let controller=null,todayController=null,stopSignals=null,refreshTimer=null;const retryStore=api.retryStore||new Map();
   const isAdmin=()=>w.inqCtlRoleView()==='admin';
-  const openInquiry=id=>{const q=(w.INQ_CONSOLE_CACHE||[]).find(x=>String(x.id)===String(id));if(q)w.inqCtlOpenSingle(w.inqKey(q));else w.toast('문의 데이터를 확인할 수 없습니다. 견적문의에서 다시 확인해 주세요.');};
+  const openInquiry=id=>{const q=(w.B?.inquiries||[]).find(x=>String(x.id)===String(id));if(q){w.goPage('inq');w.inqCtlOpenSingle(w.inqKey(q));}else w.toast('접근 가능한 문의 데이터를 찾을 수 없습니다. 새로고침 후 다시 확인해 주세요.');};
   function paintToday(){const result=originalToday.apply(this,arguments);
    if(todayController)todayController.dispose();todayController=null;
    const panel=w.document.querySelector('#pg-today');if(!panel)return result;
@@ -73,18 +73,26 @@
    if(controller)controller.dispose();controller=null;
    const panel=w.document.querySelector('#sg-panel');if(!panel)return result;
    const host=w.document.createElement('section');panel.append(host);
-   controller=mount(w,host,api,{isAdmin,retryStore,openInquiry:id=>{const q=(w.INQ_CONSOLE_CACHE||[]).find(x=>String(x.id)===String(id));if(q)w.inqCtlOpenSingle(w.inqKey(q));else w.toast('현재 목록에서 문의를 찾을 수 없습니다. 필터를 확인해 주세요.');}});
+   controller=mount(w,host,api,{isAdmin,retryStore,openInquiry});
    const current=controller;current.refresh();
    if(isAdmin())panel.querySelectorAll('.inq-work-row[data-k]').forEach(row=>{
     const q=(w.INQ_CONSOLE_CACHE||[]).find(x=>w.inqKey(x)===row.dataset.k);if(!q||!w.inquiryRoutedOwner(q))return;
-    const button=w.document.createElement('button');button.type='button';button.textContent='담당자에게 요청';
+    const button=w.document.createElement('button');button.type='button';button.className='pc-manager-request-trigger';button.textContent='담당자에게 요청';
     button.addEventListener('click',event=>{event.stopPropagation();current.open({id:q.id,site:q.site||'문의',owner:w.repDisplay(w.inquiryRoutedOwner(q))});});
     row.lastElementChild.append(button);
    });return result;
   }
   w.paintInq=paint;
   if(typeof originalToday==='function')w.paintTodayHome=paintToday;
-  const clear=()=>{if(controller)controller.dispose();controller=null;if(todayController)todayController.dispose();todayController=null;w.document.querySelector('[data-manager-today]')?.remove();};w.addEventListener('phase1:identity-cleared',clear);
+  // Re-query authoritative completion after an inquiry change; never infer it locally.
+  if(typeof w.Phase1?.subscribe==='function')stopSignals=w.Phase1.subscribe('operational_core',signal=>{
+   if(signal.table!=='inquiries')return;
+   w.clearTimeout(refreshTimer);refreshTimer=w.setTimeout(()=>{
+    if(w.G?.page==='today')todayController?.refresh();
+    if(w.G?.page==='inq')controller?.refresh();
+   },250);
+  });
+  const clear=()=>{w.clearTimeout(refreshTimer);if(stopSignals)stopSignals();stopSignals=null;if(controller)controller.dispose();controller=null;if(todayController)todayController.dispose();todayController=null;w.document.querySelector('[data-manager-today]')?.remove();};w.addEventListener('phase1:identity-cleared',clear);
   return ()=>{clear();if(w.paintInq===paint)w.paintInq=original;if(w.paintTodayHome===paintToday)w.paintTodayHome=originalToday;w.removeEventListener('phase1:identity-cleared',clear);};
  }
  return {mount,install};

@@ -114,7 +114,7 @@ function operationPage(){
    if(list){list.className='dw-manager-table';list.innerHTML='<table><thead><tr><th>담당자</th><th>주요 확인사항</th><th>문제현장</th><th>이번 주 진전</th><th>업무량</th><th>확인</th></tr></thead><tbody>'+rows.map(function(x){var r=x.r;return '<tr><th>'+esc(r.nm)+'</th><td>'+esc(r.diagnosis.title)+'<small>'+esc(r.diagnosis.text)+'</small></td><td>'+r.risk+'건</td><td>'+(r.weekTracked?r.weekAdvanced+'건':'수집 중')+'</td><td>'+r.load.open+'건 진행</td><td><button class="dact" onclick="repManagerOpenDrawer('+x.i+')">상세</button></td></tr>'}).join('')+'</tbody></table>'}
    var command=shell.querySelector('.rm-command');if(command)command.after(intervention);else shell.prepend(intervention);
   }
-  blocks.forEach(function(n){if(n===intervention||n.classList.contains('rm-command'))return;fold(n,n.querySelector('h3')?.textContent||'상세 분석')});
+  // Keep representative summaries visible; only detailed field lists belong in drawers.
  }
  var branch=document.querySelector('#gyeongnam-root')||document.querySelector('#gyeongnam-master');
  if(!branch)branch=document.querySelector('.gn-command')?.parentElement;

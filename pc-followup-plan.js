@@ -30,12 +30,6 @@
  function noNext(d){const n=d.nextActionObj||d.nextAction||{};return n.status==='completed'||n.status==='cancelled'||!n.text||!(n.due||n.due_at);}
  function savedConstructionYear(d){return (String(d?.stage_contexts?.waiting?.fields?.reason||d?.stageContexts?.waiting?.fields?.reason||'').match(/^공사예정 (20\d{2})년 · /)||[])[1]||'';}
  function longTerm(d){return code(d)==='waiting'&&String((d.stage_contexts||d.stageContexts)?.waiting?.memo||'').includes('고객의 명시적인 장기 검토 의사');}
- function installYear(cy){if(!cy)return;const prior=cy.yearOf,priorValue=cy.valueOf,priorOptions=cy.options;
-  cy.yearOf=d=>savedConstructionYear(d)||prior(d);
-  if(priorValue)cy.valueOf=d=>savedConstructionYear(d)?{year:savedConstructionYear(d),source:'waiting'}:priorValue(d);
-  cy.matches=(d,v)=>!v||v==='전체'||cy.yearOf(d)===String(v);
-  if(priorOptions)cy.options=function(rows,year){const base=priorOptions(rows,year),years=new Set(base.filter(v=>/^20\d{2}$/.test(v)));(rows||[]).forEach(d=>{const y=cy.yearOf(d);if(/^20\d{2}$/.test(y))years.add(y);});return ['전체',...Array.from(years).sort(),...base.filter(v=>v!=='전체'&&!/^20\d{2}$/.test(v))];};
- }
  function install(w){
   let dialog=null,focus=null,filter='all';const pending=new Map(),drafts=new Map();
   const find=id=>(w.B&&w.B.deals||[]).find(d=>String(d.id)===String(id));
@@ -88,11 +82,10 @@
   const originalPaint=w.paintPipe;if(originalPaint)w.paintPipe=function(){const result=originalPaint.apply(this,arguments),host=w.document.getElementById('p-main');if(host){const rows=scope(),counts={all:rows.length,response:rows.filter(noResponse).length,next:rows.filter(noNext).length},bar=w.document.createElement('div');bar.className='pc-followup-filters';bar.innerHTML=[['all','전체'],['response','견적발송 후 반응없음'],['next','다음일정 없음']].map(([v,label])=>'<button type="button" data-value="'+v+'" aria-pressed="'+(v===filter)+'">'+label+' <span>'+counts[v]+'건</span></button>').join('');bar.onclick=e=>{const b=e.target.closest('button[data-value]');if(b){filter=b.dataset.value;w.paintPipe();}};host.prepend(bar);}return result;};
   const render=w.renderDetail;if(render)w.renderDetail=function(){const result=render.apply(this,arguments),d=w.CUR_DETAIL?.kind==='deal'&&w.CUR_DETAIL.item,host=w.document.getElementById('nextActionCard');if(host&&eligible(d)&&!host.querySelector('.pc-followup-actions'))host.insertAdjacentHTML('afterbegin',actions(d));return result;};
   // Persisted waiting purpose carries the explicitly entered year; never derive it from contact date.
-  installYear(w.ConstructionYear);
   // Do not change towerActive/isOpen: relationship customers still need today's work and coaching.
   const snapshot=w.dashboardSnapshotDeals;if(snapshot)w.dashboardSnapshotDeals=function(){return snapshot.apply(this,arguments).filter(d=>!longTerm(d));};
   const flow=w.repFlowData;if(flow)w.repFlowData=function(){let rows;const selectedSnapshot=w.dashboardSnapshotDeals;try{if(snapshot)w.dashboardSnapshotDeals=snapshot;rows=flow.apply(this,arguments);}finally{w.dashboardSnapshotDeals=selectedSnapshot;}rows.forEach(r=>{const active=(r.current||[]).filter(d=>!longTerm(d));r.pipeline=w.sumBy(active,w.oppAmt);r.forecast=w.weightedAmount(active);r.near=w.sumBy(active.filter(d=>['compete','imminent','bidding','contract'].includes(code(d))),w.oppAmt);});return rows;};
   return {open,close,actions};
  }
- return {plan,eligible,sentAt,noResponse,noNext,savedConstructionYear,longTerm,installYear,install};
+ return {plan,eligible,sentAt,noResponse,noNext,savedConstructionYear,longTerm,install};
 });

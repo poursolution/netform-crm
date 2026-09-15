@@ -5,3 +5,14 @@ function setup(){const context={window:{},CUR_Y:'2026',G:{year:'2026',quarter:0,
 test('individual filter removal preserves other selected filters',()=>{const c=setup();Object.assign(c.G,{rep:'황윤선',brand:'기술자문',quarter:3,workFilter:'방수'});c.window.PipelineToolbar.clear('brand');assert.equal(c.G.brand,'전체');assert.equal(c.G.rep,'황윤선');assert.equal(c.G.quarter,3);assert.equal(c.G.workFilter,'방수')});
 test('reset includes work and clears cross-screen Stage drill state',()=>{const c=setup();Object.assign(c.G,{year:'2025',quarter:3,rep:'황윤선',brand:'기술자문',workFilter:'방수',quickStageCodes:['sent'],reportStageCodes:['sent']});c.window.PipelineToolbar.reset();for(const [key,value] of Object.entries({year:'2026',quarter:0,rep:'전체',brand:'전체',workFilter:'전체',quickStageCodes:null,reportStageCodes:null}))assert.equal(c.G[key],value)});
 test('quarter selection resolves all-year scope and changing year clears quarter',()=>{const c=setup();c.G.year='전체';c.window.PipelineToolbar.set('quarter','3');assert.equal(c.G.year,'2026');assert.equal(c.G.quarter,3);c.window.PipelineToolbar.set('year','2025');assert.equal(c.G.quarter,0);assert.equal(c.G.year,'2025')});
+
+test('canonical controls are restored before global controls are repainted',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'../crm.html'),'utf8');
+ const paint=html.slice(html.indexOf('function paint(){'));
+ assert.ok(paint.indexOf('PipelineToolbar.restoreControls()')<paint.indexOf('paintPeriod()'));
+ assert.equal(source.includes('cloneNode('),false);
+ const c=setup(),before=JSON.stringify(c.G);
+ c.window.PipelineToolbar.restoreControls();
+ c.window.PipelineToolbar.restoreControls();
+ assert.equal(JSON.stringify(c.G),before);
+});

@@ -1,12 +1,13 @@
-/* Shared PC typography, including Today. Mobile never loads this asset. */
+/* PC role tokens. Today keeps its own typography; mobile never loads this asset. */
+:root{--pc-text-secondary:13px;--pc-text-control:14px;--pc-text-body:15px;--pc-text-key:16px;--pc-text-section:18px;--pc-text-heading:20px;--pc-text-title:24px}
 body [data-pc-text]{line-height:1.45!important}
-body [data-pc-text="13"]{font-size:13px!important}
-body [data-pc-text="14"]{font-size:14px!important}
-body [data-pc-text="15"]{font-size:15px!important}
-body [data-pc-text="16"]{font-size:16px!important}
-body [data-pc-text="18"]{font-size:18px!important}
-body [data-pc-text="20"]{font-size:20px!important}
-body [data-pc-text="24"]{font-size:24px!important}
+body [data-pc-text="13"]{font-size:var(--pc-text-secondary)!important}
+body [data-pc-text="14"]{font-size:var(--pc-text-control)!important}
+body [data-pc-text="15"]{font-size:var(--pc-text-body)!important}
+body [data-pc-text="16"]{font-size:var(--pc-text-key)!important}
+body [data-pc-text="18"]{font-size:var(--pc-text-section)!important}
+body [data-pc-text="20"]{font-size:var(--pc-text-heading)!important}
+body [data-pc-text="24"]{font-size:var(--pc-text-title)!important}
 body :is(button,input,select,[role=tab])[data-pc-text]{line-height:1.2!important}
 @media(min-width:761px){
  #pg-today .twq-list col:nth-child(1){width:34px!important}

@@ -54,7 +54,7 @@ function customerRow(d){
  +info(code==='waiting'?'고객 발언':'고객 반응',statement)
  +info('다음 행동',na&&na.text||'다음 행동 미입력')
  +(code==='waiting'?info('예상 재개',w.resume?fmtD(w.resume):'재개시점 미입력'):code==='silent'?info('실제 접촉 경과',m.days==null?'확인되지 않음':m.days+'일 · 무응답 여부는 기록 확인'):'')
- +info('관리주기 추천',root.ConstructionYear.cadence(d,CUR_Y))
+ +(root.ConstructionYear&&typeof root.ConstructionYear.cadence==='function'?info('관리주기 추천',root.ConstructionYear.cadence(d,CUR_Y)):'')
  +info('다음 연락',m.due?fmtD(m.due)+' · '+flag(d):'일정 미입력')+'</dl><footer>'
  +(phone?'<a href="tel:'+escAttr(phone)+'">전화</a>':'<span>전화번호 없음</span>')
  +'<button onclick="relationshipManagementOpen('+i+',\'activity\')">연락 기록</button><button onclick="relationshipManagementOpen('+i+',\'next\')">일정 변경</button>'
@@ -210,14 +210,17 @@ function longTermPanel(el,d,i){
  function text(v){return '<p>'+esc(v)+'</p>'}
  function tile(label,value){return '<div><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong></div>'}
  var header=el.querySelector('header'),heading=header.querySelector('h2'),intro=document.createElement('div');intro.className='relpc-hero';heading.before(intro);intro.appendChild(heading);intro.insertAdjacentHTML('beforeend','<p>'+esc(repN(d.assignee)||'미배정')+' · '+esc(statusLabel(d))+'</p><div class="relpc-chips"><span>'+esc(statusLabel(d))+'</span><span>공사예정 '+esc(yearOf(d)==='미입력'?'미정':yearLabel(d))+'</span><span>예상금액 '+esc(d.amt?fmtAmt(d.amt):'미입력')+'</span></div>');
- section.innerHTML=block('고객 기본정보',text((c.name||c.role||'관리소장 확인 필요')+' · '+(c.mobile||'연락처 확인 필요'))+text('담당자 '+(repN(d.assignee)||'미배정')+' · '+statusLabel(d)))
- +block('관계관리 정보','<div class="relpc-summary-grid">'+tile('관리목적',reasonOf(d)||'관리목적 확인 필요')+tile('공사예정',yearOf(d)==='미입력'?'미정':yearLabel(d))+tile('예상 공종',inboxWork(d))+tile('예상금액',d.amt?fmtAmt(d.amt):'미입력')+'</div>')
+ function timeline(items){return '<div class="relpc-timeline">'+(items.map(function(x){var labels={next_action_set:'다음 일정 등록',next_action:'다음 행동 등록',stage_transition:'영업 단계 변경',sms_sent:'문자 발송',contact:'연락 기록',owner_changed:'담당자 변경',quote_sent:'견적 발송',customer_replied:'고객 응답',meeting_completed:'미팅 완료'},kind=labels[x.type]||(/[a-z_]/i.test(x.type||'')?'기타 활동 · '+x.type:x.type||'활동');return '<article><small>'+esc(fmtD(relActivityAt(x)))+'</small><strong>'+esc(kind)+'</strong>'+text(x.note||'')+text(x.result||'')+(x.actor?text(x.actor):'')+'</article>'}).join('')||text('활동 기록 없음'))+'</div>'}
+ var history=activitiesOf(d).slice().sort(function(a,b){return (Date.parse(relActivityAt(b))||0)-(Date.parse(relActivityAt(a))||0)});
+ section.innerHTML=block('고객 기본정보',text((c.name||c.role||'관리소장 확인 필요')+' · '+(c.mobile||'연락처 확인 필요')))
+ +block('관계관리 정보','<div class="relpc-summary-grid">'+tile('관리목적',reasonOf(d)||'관리목적 확인 필요')+tile('예상 공종',inboxWork(d))+'</div>')
  +block('최근 접촉',text(r.at?fmtD(r.at):'최근 기록 없음')+text(r.text))
  +block('다음 관리','<div class="relpc-next-card"><strong>'+esc(a.text||'다음 행동 확인 필요')+'</strong>'+text(m.due?fmtD(m.due):'다음 접촉일 확인 필요')+'</div>')
  +block('바로 실행',inboxExecute(i,d))
- +block('관계관리 이력','<div class="relpc-timeline">'+(activitiesOf(d).map(function(x){var labels={next_action_set:'다음 일정 등록',next_action:'다음 행동 등록',stage_transition:'영업 단계 변경',sms_sent:'문자 발송',contact:'연락 기록'},kind=labels[x.type]||(/[a-z_]/i.test(x.type||'')?'활동 기록':x.type||'활동');return '<article><small>'+esc(fmtD(relActivityAt(x)))+'</small><strong>'+esc(kind)+'</strong>'+text(x.note||'')+text(x.result||'')+(x.actor?text(x.actor):'')+'</article>'}).join('')||text('활동 기록 없음'))+'</div>')
+ +block('관계관리 이력','<div id="relpc-history">'+timeline(history.slice(0,5))+'</div>'+(history.length>5?'<button id="relpc-history-toggle" aria-expanded="false" aria-controls="relpc-history">전체 이력 '+history.length+'건 보기</button>':''))
  +block('관련 영업기회',text((d.site||d.site_name||'현장')+' · '+statusLabel(d)));
  section.lastElementChild.appendChild(full);
+ var historyToggle=section.querySelector('#relpc-history-toggle');if(historyToggle)historyToggle.onclick=function(){var expanded=this.getAttribute('aria-expanded')!=='true';this.setAttribute('aria-expanded',String(expanded));this.textContent=expanded?'최근 5건만 보기':'전체 이력 '+history.length+'건 보기';section.querySelector('#relpc-history').innerHTML=timeline(expanded?history:history.slice(0,5))};
  // The detail button is unnecessary inside its own panel; all original edit routes remain.
  section.querySelectorAll('.relpc-actions button').forEach(function(b){if(b.textContent==='상세보기')b.remove()});
 }
