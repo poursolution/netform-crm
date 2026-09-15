@@ -1,0 +1,146 @@
+{
+  "counts": {
+    "deal_core": 1549,
+    "inquiry_core": 434
+  },
+  "complete": true,
+  "inquiries": [
+    {
+      "id": "record-1",
+      "deal_id": null,
+      "inquiry_id": null,
+      "opportunity_id": null,
+      "originOpportunityId": null,
+      "origin_opportunity_id": null
+    },
+    {
+      "id": "record-2",
+      "deal_id": null,
+      "inquiry_id": null,
+      "opportunity_id": null,
+      "originOpportunityId": null,
+      "origin_opportunity_id": null
+    },
+    {
+      "id": "record-3",
+      "deal_id": null,
+      "inquiry_id": null,
+      "opportunity_id": null,
+      "originOpportunityId": null,
+      "origin_opportunity_id": null
+    },
+    {
+      "id": "record-4",
+      "deal_id": null,
+      "inquiry_id": null,
+      "opportunity_id": null,
+      "originOpportunityId": null,
+      "origin_opportunity_id": null
+    },
+    {
+      "id": "record-5",
+      "deal_id": null,
+      "inquiry_id": null,
+      "opportunity_id": null,
+      "originOpportunityId": null,
+      "origin_opportunity_id": null
+    },
+    {
+      "id": "record-6",
+      "deal_id": null,
+      "inquiry_id": null,
+      "opportunity_id": null,
+      "originOpportunityId": null,
+      "origin_opportunity_id": null
+    },
+    {
+      "id": "record-7",
+      "deal_id": null,
+      "inquiry_id": null,
+      "opportunity_id": null,
+      "originOpportunityId": null,
+      "origin_opportunity_id": null
+    },
+    {
+      "id": "record-8",
+      "deal_id": null,
+      "inquiry_id": null,
+      "opportunity_id": null,
+      "originOpportunityId": null,
+      "origin_opportunity_id": null
+    },
+    {
+      "id": "record-9",
+      "deal_id": null,
+      "inquiry_id": null,
+      "opportunity_id": null,
+      "originOpportunityId": null,
+      "origin_opportunity_id": null
+    }
+  ],
+  "deals": [
+    {
+      "id": "record-10",
+      "fromInquiry": null,
+      "opportunity_id": null,
+      "originInquiryId": null,
+      "origin_inquiry_id": "record-3"
+    },
+    {
+      "id": "record-11",
+      "fromInquiry": null,
+      "opportunity_id": null,
+      "originInquiryId": null,
+      "origin_inquiry_id": "record-2"
+    },
+    {
+      "id": "record-12",
+      "fromInquiry": null,
+      "opportunity_id": null,
+      "originInquiryId": null,
+      "origin_inquiry_id": "record-1"
+    },
+    {
+      "id": "record-13",
+      "fromInquiry": null,
+      "opportunity_id": null,
+      "originInquiryId": null,
+      "origin_inquiry_id": "record-6"
+    },
+    {
+      "id": "record-14",
+      "fromInquiry": null,
+      "opportunity_id": null,
+      "originInquiryId": null,
+      "origin_inquiry_id": "record-8"
+    },
+    {
+      "id": "record-15",
+      "fromInquiry": null,
+      "opportunity_id": null,
+      "originInquiryId": null,
+      "origin_inquiry_id": "record-4"
+    },
+    {
+      "id": "record-16",
+      "fromInquiry": null,
+      "opportunity_id": null,
+      "originInquiryId": null,
+      "origin_inquiry_id": "record-5"
+    },
+    {
+      "id": "record-17",
+      "fromInquiry": null,
+      "opportunity_id": null,
+      "originInquiryId": null,
+      "origin_inquiry_id": "record-9"
+    },
+    {
+      "id": "record-18",
+      "fromInquiry": null,
+      "opportunity_id": null,
+      "originInquiryId": null,
+      "origin_inquiry_id": "record-7"
+    }
+  ]
+}

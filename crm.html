@@ -4962,28 +4962,29 @@ function newDealOwnerOptions(){var r=EXPANSION_NEW_SOURCE;return r?repOptions(''
 /* [삭제됨 v3.6] 구버전 paintRepTabs — 마지막 정의만 사용 */
 
 function normSite(s){return String(s||'').replace(/\[[^\]]*\]/g,'').replace(/\s+/g,'').replace(/아파트|현장/g,'').toLowerCase()}
-/* 2026-09-01 Core: 같은 아파트에 딜이 여러 개면 «열려 있는 최신 딜»을 잇는다.
-   이전에는 배열의 첫 번째를 집어, 이미 수주실패로 끝난 과거 건에 새 문의가 붙었다
-   (검증 중 실제로 «이미 종료된 딜입니다»가 뜨며 재승격이 막히는 것을 확인).
-   ※ 현장명 Join 자체가 임시방편이다. 서버에 SITE_ID 가 생기면 이 함수는 ID 조회로 바뀐다. */
+/* 문의 출처는 명시적 참조로만 판정한다. 현장명/현장 ID/최신 영업은 출처 증거가 아니다. */
 function inquiryDealRefs(q){return Array.from(new Set([q&&q.deal_id,q&&q.opportunity_id,q&&q.originOpportunityId,q&&q.origin_opportunity_id].filter(Boolean).map(String)))}
+function dealInquiryRefs(d){return Array.from(new Set([d.origin_inquiry_id,d.originInquiryId,d.fromInquiry].filter(Boolean).map(String)))}
 function linkedDeal(q){
   if(!q)return null;
   // A site can have several unrelated projects. Names are candidates, never linkage evidence.
   var refs=inquiryDealRefs(q),rows=B.deals||[],key=String(q.id||q.inquiry_id||inqKey(q));
-  var matches=rows.filter(function(d){return [d.origin_inquiry_id,d.originInquiryId,d.fromInquiry].filter(Boolean).some(function(id){return String(id)===key})});
+  var matches=rows.filter(function(d){return dealInquiryRefs(d).indexOf(key)>=0});
   if(refs.length){
    if(refs.length!==1||matches.some(function(d){return String(d.id||d.opportunity_id)!==refs[0]}))return null;
-   return rows.find(function(d){return String(d.id||d.opportunity_id)===refs[0]})||null;
+   var targets=rows.filter(function(d){return String(d.id||d.opportunity_id)===refs[0]});
+   if(targets.length!==1)return null;
+   var origins=dealInquiryRefs(targets[0]);
+   return origins.length===0||(origins.length===1&&origins[0]===key)?targets[0]:null;
   }
-  return matches.length===1?matches[0]:null;
+  return matches.length===1&&dealInquiryRefs(matches[0]).length===1?matches[0]:null;
 }
 function inquiryLinkUnresolved(q){
  if(!q)return false;
  if(linkedDeal(q))return false;
  if(inquiryDealRefs(q).length)return true;
  var key=String(q.id||q.inquiry_id||inqKey(q));
- return (B.deals||[]).filter(function(d){return [d.origin_inquiry_id,d.originInquiryId,d.fromInquiry].filter(Boolean).some(function(id){return String(id)===key})}).length>1;
+ return (B.deals||[]).some(function(d){return dealInquiryRefs(d).indexOf(key)>=0});
 }
 function flowIndex(d,kind){if(kind==='inq'){if(d.flowStage!=null&&!isNaN(parseInt(d.flowStage,10)))return Math.max(0,Math.min(6,parseInt(d.flowStage,10)));if(CLOSED_ST.indexOf(d.status)>=0)return 6;if(/견적.*발송\s*완료/.test(d.status||''))return 2;if(/초기|유대|침묵|보류/.test(d.status||''))return 3;if(/경쟁|임박|입찰|PT/.test(d.status||''))return 4;if(/계약|공사|시공/.test(d.status||''))return 5;if(/전화|현장|방문|응대|견적/.test(d.status||''))return 1;return 0}if(d.grp==='수주 성공'||d.grp==='수주 실패'||d.grp==='기타')return 6;if(['first_contact','consulting'].indexOf(dealStage(d))>=0)return 1;if(dealStage(d)==='sent')return 2;if(['rapport','silent','waiting'].indexOf(dealStage(d))>=0)return 3;if(['compete','imminent','bidding'].indexOf(dealStage(d))>=0)return 4;if(['contract','construction','completion'].indexOf(dealStage(d))>=0)return 5;return 1}
 function stageColIndex(d){return pdStageIndex(d)} /* 과거 i-1 환산은 7그룹 재편으로 어긋나 pdStageIndex로 위임 */
