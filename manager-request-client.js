@@ -4,9 +4,13 @@
 // This module never fetches directly or handles provider credentials.
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const timestamp=x=>typeof x==='string'&&Number.isFinite(Date.parse(x));
+function validPayload(p){return !!p&&typeof p==='object'&&!Array.isArray(p)&&
+ Object.keys(p).every(k=>['p_id','p_target','p_kind','p_due','p_instruction'].includes(k))&&
+ UUID.test(p.p_id)&&UUID.test(p.p_target)&&['call','next'].includes(p.p_kind)&&timestamp(p.p_due)&&
+ typeof p.p_instruction==='string'&&p.p_instruction.trim().length>=1&&Array.from(p.p_instruction.trim()).length<=2000;}
 function validPending(x,id){
  const p=x?.payload;
- if(!p||!UUID.test(p.p_id)||!UUID.test(id)||p.p_target!==id||!['call','next','report'].includes(p.p_kind)||!timestamp(p.p_due)||typeof p.p_instruction!=='string'||!p.p_instruction.trim())return false;
+ if(!validPayload(p)||!UUID.test(id)||p.p_target!==id)return false;
  return x.signature===JSON.stringify({p_target:p.p_target,p_kind:p.p_kind,p_due:p.p_due,p_instruction:p.p_instruction});
 }
 function validRow(x){
@@ -29,7 +33,8 @@ function createClient(transport){
  };
  return {retryStore,
   async list(){admitted();const rows=await transport.rpc('crm_manager_request_list_v1',{});admitted();if(!Array.isArray(rows)||!rows.every(validRow)||new Set(rows.map(x=>x.id)).size!==rows.length)throw Error('INVALID_REQUEST_LIST');return rows;},
-  async create(payload){admitted();if(!UUID.test(payload.p_id)||!UUID.test(payload.p_target))throw Error('INVALID_REQUEST_ID');
+  async create(payload){admitted();if(!payload||!UUID.test(payload.p_id)||!UUID.test(payload.p_target))throw Error('INVALID_REQUEST_ID');
+   if(!validPayload(payload))throw Error('INVALID_REQUEST_PAYLOAD');
    const submitted={...payload},expectedId=submitted.p_id;
    const ack=await transport.rpc('crm_manager_request_create_v1',submitted);admitted();if(ack?.ok!==true||!UUID.test(ack.id)||!UUID.test(ack.request_id)||ack.request_id.toLowerCase()!==expectedId.toLowerCase()||ack.delivery!=='not_sent')throw Error('INVALID_REQUEST_ACK');return ack;}
  };
