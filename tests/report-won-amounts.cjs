@@ -11,8 +11,8 @@ assert.ok(avg,'average must exclude unentered contract values');
 vm.runInContext('var average='+avg[1],c);
 assert.equal(c.average(data),50);assert.equal(c.average(data.slice(2)),null);assert.equal(c.average([]),null);
 const remaining=lines.filter(l=>l.includes('wonAmt(d)||oppAmt(d)'));
-assert.equal(remaining.length,1,'Only general-purpose deal amount remains');
-assert.ok(remaining.every(l=>/function dealAmt/.test(l)));
+assert.equal(remaining.length,0,'No contract-to-estimate fallback remains');
+assert.ok(!src.includes('dealAmt('),'Use explicit amount sources rather than mixed dealAmt');
 let scripts=0;
 for(const m of src.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
  if(/\bsrc=|application\/json|application\/ld\+json/.test(m[1]))continue;

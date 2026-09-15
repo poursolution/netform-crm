@@ -12,3 +12,11 @@ vm.runInContext(lines.find(l=>l.startsWith(' var reps=PERFORMANCE_TARGET_NAMES')
 vm.runInContext(lines.find(l=>l.startsWith(" var brands=(G.brand")),c);
 assert.ok(c.reps.includes('100원 (입력분)'));assert.ok(c.reps.includes('계약금액 미입력'));assert.ok(c.reps.includes('1건 · 금액 미입력 1건'));assert.ok(c.portfolio.includes('2건 · 금액 미입력 1건'));
 console.log('8 report labeling cases and actual representative/brand table rendering passed');
+const host={};Object.assign(c,{$:()=>host,dashboardInquiryScope:()=>[],dashboardSnapshotDeals:()=>[],wonInPeriod:()=>[known,missing],inPeriod:()=>true,inquiryDate:()=>'',dealStage:d=>d.code,liveActs:()=>[],periodLabel:()=> '검증기간',eok:n=>n+'원',inqMadeStats:()=>({_made:0,_n:0}),pctOf:()=>0});
+const start=src.indexOf('function dashboardCompactMoney('),end=src.indexOf('function dashboardCompactFlow(',start);
+vm.runInContext(src.slice(start,end),c);c.dashboardCompactMoney();
+assert.ok(host.innerHTML.includes('100원 (입력분)'));assert.ok(host.innerHTML.includes('2건 · 금액 미입력 1건'));
+c.wonInPeriod=()=>[missing];c.dashboardCompactMoney();assert.ok(host.innerHTML.includes('계약금액 미입력'));
+c.wonInPeriod=()=>[zero];c.dashboardCompactMoney();assert.ok(!host.innerHTML.includes('미입력'));assert.ok(host.innerHTML.includes('0원'));
+assert.ok(src.includes('x.amt+=oppAmt(d)'));assert.ok(src.includes("<em>예상 '+reportAmount(lossMap[k].amt)"));
+console.log('Actual compact dashboard renderer passed mixed, missing-only and zero contract cases');
