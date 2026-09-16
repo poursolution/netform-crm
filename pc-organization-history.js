@@ -20,7 +20,7 @@
    try{
     const data=await transport.rpc('crm_site_link_review_list_v1',{p_limit:100});
     if(ticket!==generation||transport.profile?.auth_uid!==actor)return;
-    if(data?.contract_version!==1||!Array.isArray(data.items))throw Error('CONTRACT_MISMATCH');
+    if(![1,2].includes(data?.contract_version)||!Array.isArray(data.items))throw Error('CONTRACT_MISMATCH');
     const rows=data.items.filter(x=>!search||String(x.name||'').toLocaleLowerCase().includes(search));
     if(!rows.length){message(list,search?'검색 조건에 맞는 연결 검토 건이 없습니다.':'연결 확인이 필요한 과거자료가 없습니다.');return;}
     const frag=document.createDocumentFragment();
