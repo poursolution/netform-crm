@@ -5,9 +5,28 @@ declare result jsonb;
 begin
  if not exists(select 1 from crm_security.actor() a where a.permission_role='admin') then raise exception 'forbidden' using errcode='42501'; end if;
  if not exists(select 1 from public.sites s where s.site_id=p_site) then raise exception 'site not found' using errcode='P0002'; end if;
- select jsonb_build_object('contract_version',1,'site_id',p_site,'items',coalesce(jsonb_agg(jsonb_build_object('id',n.id,'organization_id',n.organization_id,'body',n.body,'actor',n.author_name,'occurred_at',coalesce(n.posted_at,n.created_at)) order by coalesce(n.posted_at,n.created_at),n.id),'[]'::jsonb)) into result
- from crm_security.site_identity_links l join public.notes n on n.organization_id=l.organization_id
- where l.site_id=p_site and l.resolution in ('linked','separate') and crm_security.can_read_legacy_note(n.deal_id,n.organization_id);
+ select jsonb_build_object(
+  'contract_version',2,
+  'site_id',p_site,
+  'items',coalesce((
+   select jsonb_agg(jsonb_build_object('id',n.id,'organization_id',n.organization_id,'body',n.body,'actor',n.author_name,'occurred_at',coalesce(n.posted_at,n.created_at)) order by coalesce(n.posted_at,n.created_at),n.id)
+   from crm_security.site_identity_links l join public.notes n on n.organization_id=l.organization_id
+   where l.site_id=p_site and l.resolution in ('linked','separate') and crm_security.can_read_legacy_note(n.deal_id,n.organization_id)
+  ),'[]'::jsonb),
+  'contacts',coalesce((
+   select jsonb_agg(jsonb_build_object('id',c.id,'organization_id',c.organization_id,'person_key',c.person_key,'name',c.name,'role',coalesce(c.role,c.title,'담당자'),'mobile',coalesce(c.mobile,c.phone),'current_site',c.current_site) order by c.name,c.id)
+   from public.contacts c
+   where exists(
+    select 1 from crm_security.site_identity_links l
+    where l.site_id=p_site and l.organization_id=c.organization_id and l.resolution in ('linked','separate')
+   )
+   and not exists(
+    select 1 from public.contact_assignments ca join public.deals d on d.id=ca.opportunity_id
+    where ca.person_key=c.person_key and d.site_id=p_site
+   )
+   and not exists(select 1 from public.deals d where d.contact_id=c.id and d.site_id=p_site)
+  ),'[]'::jsonb)
+ ) into result;
  return result;
 end $$;
 revoke all on function crm_security.site_linked_history_v1(uuid) from public,anon,authenticated;grant execute on function crm_security.site_linked_history_v1(uuid) to authenticated;
