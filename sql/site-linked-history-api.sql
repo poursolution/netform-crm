@@ -6,7 +6,7 @@ begin
  if not exists(select 1 from crm_security.actor() a where a.permission_role='admin') then raise exception 'forbidden' using errcode='42501'; end if;
  if not exists(select 1 from public.sites s where s.site_id=p_site) then raise exception 'site not found' using errcode='P0002'; end if;
  select jsonb_build_object(
-  'contract_version',2,
+  'contract_version',3,
   'site_id',p_site,
   'items',coalesce((
    select jsonb_agg(jsonb_build_object('id',n.id,'organization_id',n.organization_id,'body',n.body,'actor',n.author_name,'occurred_at',coalesce(n.posted_at,n.created_at)) order by coalesce(n.posted_at,n.created_at),n.id)
@@ -25,6 +25,19 @@ begin
     where ca.person_key=c.person_key and d.site_id=p_site
    )
    and not exists(select 1 from public.deals d where d.contact_id=c.id and d.site_id=p_site)
+  ),'[]'::jsonb),
+  'organizations',coalesce((
+   select jsonb_agg(jsonb_build_object('organization_id',o.id,'name',o.name,'address',o.address,'resolution',l.resolution,'reviewed_at',l.reviewed_at) order by o.name,o.id)
+   from crm_security.site_identity_links l join public.organizations o on o.id=l.organization_id
+   where l.site_id=p_site and l.resolution in ('linked','separate')
+  ),'[]'::jsonb),
+  'records',coalesce((
+   select jsonb_agg(jsonb_build_object('source_type',d.source_type,'source_id',d.source_id,'name',case when d.source_type='deal' then coalesce(o.name,deal.list_name) else inquiry.site_name end,'address',case when d.source_type='deal' then o.address else inquiry.address end,'resolution',d.resolution,'reviewed_at',d.reviewed_at) order by d.reviewed_at,d.source_type,d.source_id)
+   from crm_security.site_record_link_decisions d
+   left join public.deals deal on d.source_type='deal' and deal.id=d.source_id
+   left join public.organizations o on o.id=deal.organization_id
+   left join public.inquiries inquiry on d.source_type='inquiry' and inquiry.id=d.source_id
+   where d.site_id=p_site
   ),'[]'::jsonb)
  ) into result;
  return result;
