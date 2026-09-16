@@ -6,7 +6,7 @@ begin
  if not exists(select 1 from crm_security.actor() a where a.permission_role='admin') then raise exception 'forbidden' using errcode='42501'; end if;
  if not exists(select 1 from public.sites s where s.site_id=p_site) then raise exception 'site not found' using errcode='P0002'; end if;
  select jsonb_build_object(
-  'contract_version',3,
+  'contract_version',4,
   'site_id',p_site,
   'items',coalesce((
    select jsonb_agg(jsonb_build_object('id',n.id,'organization_id',n.organization_id,'body',n.body,'actor',n.author_name,'occurred_at',coalesce(n.posted_at,n.created_at)) order by coalesce(n.posted_at,n.created_at),n.id)
@@ -38,6 +38,13 @@ begin
    left join public.organizations o on o.id=deal.organization_id
    left join public.inquiries inquiry on d.source_type='inquiry' and inquiry.id=d.source_id
    where d.site_id=p_site
+  ),'[]'::jsonb),
+  'corrections',coalesce((
+   select jsonb_agg(jsonb_build_object('event_id',e.event_id,'target_type',e.target_type,'target_id',e.target_id,'previous_site_id',e.previous_site_id,'previous_site_name',old_site.site_name,'new_site_id',e.new_site_id,'new_site_name',new_site.site_name,'reason',e.reason,'changed_at',e.changed_at) order by e.changed_at desc,e.event_id)
+   from crm_security.site_link_correction_events e
+   join public.sites old_site on old_site.site_id=e.previous_site_id
+   join public.sites new_site on new_site.site_id=e.new_site_id
+   where e.previous_site_id=p_site or e.new_site_id=p_site
   ),'[]'::jsonb)
  ) into result;
  return result;
