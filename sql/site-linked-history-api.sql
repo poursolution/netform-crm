@@ -58,8 +58,8 @@ returns jsonb language plpgsql stable security definer set search_path='' as $$
 declare result jsonb;
 begin
  if not exists(select 1 from crm_security.actor() a where a.permission_role='admin') then raise exception 'forbidden' using errcode='42501'; end if;
- select jsonb_build_object('contract_version',1,'items',coalesce(jsonb_agg(jsonb_build_object('site_id',s.site_id,'name',s.site_name,'address',s.address,'linked_organization_count',x.organization_count,'legacy_note_count',x.note_count,'last_at',x.last_at) order by s.site_name,s.site_id),'[]'::jsonb)) into result
- from public.sites s join (
+ select jsonb_build_object('contract_version',2,'items',coalesce(jsonb_agg(jsonb_build_object('site_id',s.site_id,'name',s.site_name,'address',s.address,'linked_organization_count',coalesce(x.organization_count,0),'legacy_note_count',coalesce(x.note_count,0),'last_at',coalesce(x.last_at,s.created_at)) order by s.site_name,s.site_id),'[]'::jsonb)) into result
+ from public.sites s left join (
   select l.site_id,count(distinct l.organization_id) organization_count,count(n.id) note_count,max(coalesce(n.posted_at,n.created_at)) last_at
   from crm_security.site_identity_links l
   left join public.notes n on n.organization_id=l.organization_id and crm_security.can_read_legacy_note(n.deal_id,n.organization_id)

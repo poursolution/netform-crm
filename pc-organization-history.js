@@ -11,7 +11,7 @@
   if(!root||!profile?.auth_uid||profile.permission_role!=='admin'){clear();return;}
   if(section&&!section.isConnected&&root===mountedRoot&&search===mountedSearch){root.append(section);return;}
   clear();mountedRoot=root;mountedSearch=search;const actor=profile.auth_uid,ticket=++generation;
-  if(assetActor!==actor&&!assetLoading){assetLoading=transport.rpc('crm_site_linked_assets_v1',{}).then(data=>{if(data?.contract_version!==1||!Array.isArray(data.items))throw Error('CONTRACT_MISMATCH');if(transport.profile?.auth_uid!==actor)return;w.SITE_LINKED_ASSETS=data.items;assetActor=actor;if(typeof w.invalidateSiteMasterData==='function')w.invalidateSiteMasterData();if(w.G?.page==='sites'&&typeof w.paintSites==='function')w.paintSites();}).catch(()=>{}).finally(()=>{assetLoading=null;});}
+  if(assetActor!==actor&&!assetLoading){assetLoading=transport.rpc('crm_site_linked_assets_v1',{}).then(data=>{if(![1,2].includes(data?.contract_version)||!Array.isArray(data.items))throw Error('CONTRACT_MISMATCH');if(transport.profile?.auth_uid!==actor)return;w.SITE_LINKED_ASSETS=data.items;assetActor=actor;if(typeof w.invalidateSiteMasterData==='function')w.invalidateSiteMasterData();if(w.G?.page==='sites'&&typeof w.paintSites==='function')w.paintSites();}).catch(()=>{}).finally(()=>{assetLoading=null;});}
   section=node('section',undefined,'site-master-section site-link-review');section.dataset.organizationHistory='true';
   const head=node('header'),titles=node('div'),list=node('div',undefined,'site-link-review-list');
   const summary=node('p','과거자료를 현재 Site에 연결하거나 별도 현장으로 확정합니다. 이름은 후보 검색에만 사용됩니다.');titles.append(node('h4','Site 연결 검토'),summary);
