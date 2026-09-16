@@ -4,7 +4,10 @@ const root=path.resolve(__dirname,'..'),dir=path.join(root,'docs/parity-20260905
 const inventory=JSON.parse(fs.readFileSync(path.join(dir,'source-inventory.json'),'utf8'));
 const matrix=JSON.parse(fs.readFileSync(path.join(dir,'parity-matrix.json'),'utf8'));
 const phase1=JSON.parse(fs.readFileSync(path.join(root,'staging-phase1/source-manifest.json'),'utf8'));
-const production=JSON.parse(fs.readFileSync(path.join(root,'production-ui-manifest.json'),'utf8'));
+// This is a historical parity audit. Its approved hashes belong to the reviewed
+// production snapshot, not to the live Pages revision manifest.
+const parityProductionCommit='f7c7d6f0302385edbe8992fcb86dd3084e8abb83';
+const production=JSON.parse(cp.execFileSync('git',['show',parityProductionCommit+':production-ui-manifest.json'],{cwd:root,encoding:'utf8'}));
 const candidatePath=path.join(root,'local-release-candidate-manifest.json');
 const candidate=fs.existsSync(candidatePath)?JSON.parse(fs.readFileSync(candidatePath,'utf8')):null;
 const sha=x=>crypto.createHash('sha256').update(x).digest('hex');
