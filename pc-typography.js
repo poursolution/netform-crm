@@ -5,7 +5,11 @@
   var elements=Array.from(document.querySelectorAll('body *'));
   // Read the same unadjusted cascade for every element, never a mixture of
   // old and newly corrected inherited sizes from the previous render.
-  elements.forEach(function(el){el.removeAttribute('data-pc-text')});
+  elements.forEach(function(el){
+   if(el.closest('#pg-today,svg,script,style,#load,#auth'))el.removeAttribute('data-pc-font-stable');
+   else el.setAttribute('data-pc-font-stable','');
+   el.removeAttribute('data-pc-text');
+  });
   var corrections=[];
   elements.forEach(function(el){
    // Today owns its two-level typography; never compete with its local rules.

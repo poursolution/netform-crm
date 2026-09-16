@@ -29,5 +29,28 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
   for(const frame of frames)assert.deepEqual(frame,['15px','15px']);
   assert.equal(await page.locator('#today').evaluate(el=>getComputedStyle(el).fontSize),'12px');
   console.log('PASS 16 rerender/selection snapshots: stable before paint; Today unchanged');
+  // Actual CRM menu CSS uses transition:.13s (implicitly all properties).
+  // Sample every animation frame, not just the settled end state.
+  await page.addStyleTag({content:'.mi{font-size:13px;transition:.13s}.mi.on{background:#eef}'});
+  await page.evaluate(()=>{
+   const menu=document.createElement('div');menu.className='mi';menu.id='menu';menu.textContent='파이프라인';
+   menu.onclick=()=>menu.classList.toggle('on');document.body.append(menu);
+  });
+  await page.waitForTimeout(250);
+  for(let click=0;click<3;click++){
+   const samples=await page.evaluate(async()=>{
+    const el=document.getElementById('menu'),values=[];el.click();
+    const start=performance.now();
+    while(performance.now()-start<250){await new Promise(requestAnimationFrame);values.push(getComputedStyle(el).fontSize)}
+    return values;
+   });
+   console.log('transition frame sizes', [...new Set(samples)]);
+   assert.ok(samples.every(size=>size==='15px'),'font size must remain 15px throughout each click');
+  }
+  assert.equal(await page.locator('#today').getAttribute('data-pc-font-stable'),null);
+  assert.equal(await page.locator('#today').evaluate(el=>getComputedStyle(el).fontSize),'12px');
+  const transition=await page.locator('#menu').evaluate(el=>getComputedStyle(el).transitionProperty);
+  assert.ok(transition.includes('background-color')&&transition.includes('transform'));
+  assert.ok(!transition.includes('font')&&!transition.includes('all'));
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});

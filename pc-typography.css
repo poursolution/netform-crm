@@ -1,6 +1,9 @@
 /* PC role tokens. Today keeps its own typography; mobile never loads this asset. */
 :root{--pc-text-secondary:13px;--pc-text-control:14px;--pc-text-body:15px;--pc-text-key:16px;--pc-text-section:18px;--pc-text-heading:20px;--pc-text-title:24px}
 body [data-pc-text]{line-height:1.45!important}
+/* Keep visual hover/selection effects, never animate measured typography.
+   This marker stays in place while data-pc-text is temporarily removed. */
+body [data-pc-font-stable]{transition-property:color,background-color,border-color,box-shadow,opacity,transform!important}
 body [data-pc-text="13"]{font-size:var(--pc-text-secondary)!important}
 body [data-pc-text="14"]{font-size:var(--pc-text-control)!important}
 body [data-pc-text="15"]{font-size:var(--pc-text-body)!important}
