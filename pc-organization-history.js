@@ -14,7 +14,7 @@
   if(assetActor!==actor&&!assetLoading){assetLoading=transport.rpc('crm_site_linked_assets_v1',{}).then(data=>{if(data?.contract_version!==1||!Array.isArray(data.items))throw Error('CONTRACT_MISMATCH');if(transport.profile?.auth_uid!==actor)return;w.SITE_LINKED_ASSETS=data.items;assetActor=actor;if(typeof w.invalidateSiteMasterData==='function')w.invalidateSiteMasterData();if(w.G?.page==='sites'&&typeof w.paintSites==='function')w.paintSites();}).catch(()=>{}).finally(()=>{assetLoading=null;});}
   section=node('section',undefined,'site-master-section site-link-review');section.dataset.organizationHistory='true';
   const head=node('header'),titles=node('div'),list=node('div',undefined,'site-link-review-list');
-  titles.append(node('h4','Site 연결 검토'),node('p','과거자료를 현재 Site에 연결하거나 별도 현장으로 확정합니다. 이름은 후보 검색에만 사용됩니다.'));
+  const summary=node('p','과거자료를 현재 Site에 연결하거나 별도 현장으로 확정합니다. 이름은 후보 검색에만 사용됩니다.');titles.append(node('h4','Site 연결 검토'),summary);
   const retry=node('button','다시 조회','btn');retry.type='button';head.append(titles,retry);section.append(head,list);root.append(section);
   async function searchSites(select,link,initial){const query=w.prompt('찾을 Site 이름이나 주소를 2자 이상 입력하세요.',initial||'');if(query===null)return;if(String(query).trim().length<2){w.toast('검색어를 2자 이상 입력해 주세요.');return;}try{const data=await transport.rpc('crm_site_admin_search_v1',{p_query:String(query).trim(),p_limit:20});if(data?.contract_version!==1||!Array.isArray(data.items))throw Error('CONTRACT_MISMATCH');select.replaceChildren(node('option',data.items.length?'검색 결과에서 Site 선택':'검색 결과 없음'));data.items.forEach(s=>{const o=node('option',candidateLabel(s));o.value=s.site_id;select.append(o);});link.disabled=true;if(!data.items.length)w.toast('일치하는 Site가 없습니다. 다른 검색어를 입력하거나 별도 현장으로 확정해 주세요.');}catch(e){w.toast('Site 검색 결과를 불러오지 못했습니다.');}}
   async function refresh(){
@@ -23,7 +23,8 @@
     const data=await transport.rpc('crm_site_link_review_list_v1',{p_limit:100});
     if(ticket!==generation||transport.profile?.auth_uid!==actor)return;
     if(![1,2,3].includes(data?.contract_version)||!Array.isArray(data.items))throw Error('CONTRACT_MISMATCH');
-    const rows=data.items.filter(x=>!search||String(x.name||'').toLocaleLowerCase().includes(search));
+    const totalContacts=data.items.reduce((n,x)=>n+Number(x.contact_count||0),0),totalNotes=data.items.reduce((n,x)=>n+Number(x.note_count||0),0);summary.textContent='검토 '+data.items.length+'건 · 과거 메모 '+totalNotes+'건 · 담당자 '+totalContacts+'명 · 이름은 후보 검색에만 사용됩니다.';
+    const rows=data.items.filter(x=>!search||[x.name,x.address].concat((x.contact_preview||[]).map(c=>(c.name||'')+' '+(c.role||''))).join(' ').toLocaleLowerCase().includes(search));
     if(!rows.length){message(list,search?'검색 조건에 맞는 연결 검토 건이 없습니다.':'연결 확인이 필요한 과거자료가 없습니다.');return;}
     const frag=document.createDocumentFragment();
     rows.forEach(row=>{
