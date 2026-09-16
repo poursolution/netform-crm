@@ -1,0 +1,3 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),sql=fs.readFileSync(path.join(__dirname,'../sql/site-address-backfill-v1.sql'),'utf8');
+assert.match(sql,/site_address_backfill_events/);assert.match(sql,/having count\(\*\)=1/);assert.match(sql,/recovered_address ~ '\[0-9\]'/);assert.match(sql,/시\|도\|군\|구\|읍\|면\|동\|로\|길/);assert.match(sql,/on conflict\(site_id\) do nothing/);assert.match(sql,/nullif\(pg_catalog\.btrim\(s\.address\),''\) is null/);assert.match(sql,/revoke all on table/);
+console.log('PASS Site address backfill is auditable, idempotent and excludes ambiguous evidence');
