@@ -1,3 +1,6 @@
+---
+layout: null
+---
 <!doctype html>
 <html lang="ko">
 <head>
@@ -81,8 +84,9 @@
 <script>
 var PC_APP     = 'crm.html';
 var MOBILE_APP = 'mobile.html';
-/* The production build replaces this source fallback with the Git commit. */
-var APP_BUILD  = 'source';
+/* GitHub Pages stamps the published revision; the local production builder
+   replaces the same expression with HEAD for offline release verification. */
+var APP_BUILD  = '{{ site.github.build_revision | default: "source" }}';
 var KEY = 'nf_view_pref';
 
 /* 자동 판정 — 화면폭 하나만 보면 태블릿·창 축소에서 흔들린다.

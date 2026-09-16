@@ -1,0 +1,19 @@
+plugins:
+  - jekyll-github-metadata
+
+# Jekyll excludes vendor/ by default, but the CRM loads the pinned Supabase
+# browser bundle from this directory.
+include:
+  - vendor
+
+# Deployment only needs runtime assets. Keeping engineering artifacts out also
+# makes the Pages build smaller and avoids publishing internal test evidence.
+exclude:
+  - node_modules
+  - scripts
+  - tests
+  - sql
+  - docs
+  - staging-operational-full
+  - staging-phase1
+  - deploy

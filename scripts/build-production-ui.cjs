@@ -54,6 +54,9 @@ function productionText(text, file) {
     .replaceAll('src="/work-editor.js"', 'src="./work-editor.js"')
     .replace(/^ +$/gm, '');
   if (file === 'index.html') {
+    // GitHub Pages consumes this front matter before serving the branch build.
+    // The offline production builder emits ready-to-serve static HTML instead.
+    next = next.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '');
     next = next.replace(/var APP_BUILD\s*=\s*'[^']*';/, `var APP_BUILD  = '${buildId}';`);
     if (!next.includes(`var APP_BUILD  = '${buildId}';`)) throw Error('APP_BUILD_STAMP_FAILED');
   }
