@@ -15,6 +15,9 @@ test('deal and inquiry Site review is admin-only, durable and explicit',()=>{
  assert.match(js,/PAGE_SIZE=20/);
  assert.match(js,/기존 Site 후보/);
  assert.match(js,/site-link-review-pager/);
+ assert.match(js,/refreshOperationalDomains/);
+ assert.match(js,/deal_core/);
+ assert.match(js,/inquiry_core/);
  assert.match(html,/PCSiteRecordReview\.mount/);
  assert.match(html,/pc-site-record-review\.js/);
  assert.match(transport,/crm_site_record_link_review_resolve_v1/);
