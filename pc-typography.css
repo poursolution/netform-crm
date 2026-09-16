@@ -1,18 +1,16 @@
-/* PC role tokens. Today keeps its own typography; mobile never loads this asset. */
-:root{--pc-text-secondary:13px;--pc-text-control:14px;--pc-text-body:15px;--pc-text-key:16px;--pc-text-section:18px;--pc-text-heading:20px;--pc-text-title:24px}
-body [data-pc-text]{line-height:1.45!important}
-/* Keep visual hover/selection effects, never animate measured typography.
-   This marker stays in place while data-pc-text is temporarily removed. */
-body [data-pc-font-stable]{transition-property:color,background-color,border-color,box-shadow,opacity,transform!important}
-body [data-pc-text="13"]{font-size:var(--pc-text-secondary)!important}
-body [data-pc-text="14"]{font-size:var(--pc-text-control)!important}
-body [data-pc-text="15"]{font-size:var(--pc-text-body)!important}
-body [data-pc-text="16"]{font-size:var(--pc-text-key)!important}
-body [data-pc-text="18"]{font-size:var(--pc-text-section)!important}
-body [data-pc-text="20"]{font-size:var(--pc-text-heading)!important}
-body [data-pc-text="24"]{font-size:var(--pc-text-title)!important}
-body [data-pc-reduced]{font-size:var(--pc-reduced-font)!important}
-body :is(button,input,select,[role=tab])[data-pc-text]{line-height:1.2!important}
+/* Five shared PC text roles. Existing feature CSS opts in explicitly. */
+:root{
+ --pc-type-page-title:20px;
+ --pc-type-section-title:15px;
+ --pc-type-key:16px;
+ --pc-type-body:13px;
+ --pc-type-support:11px;
+}
+.pc-type-page-title,[data-pc-type="page-title"]{font-size:var(--pc-type-page-title)!important;line-height:1.25}
+.pc-type-section-title,[data-pc-type="section-title"]{font-size:var(--pc-type-section-title)!important;line-height:1.35}
+.pc-type-key,[data-pc-type="key"]{font-size:var(--pc-type-key)!important;line-height:1.35}
+.pc-type-body,[data-pc-type="body"]{font-size:var(--pc-type-body)!important;line-height:1.45}
+.pc-type-support,[data-pc-type="support"]{font-size:var(--pc-type-support)!important;line-height:1.45}
 @media(min-width:761px){
  #pg-today .twq-list col:nth-child(1){width:34px!important}
  #pg-today .twq-list col:nth-child(2){width:60px!important}

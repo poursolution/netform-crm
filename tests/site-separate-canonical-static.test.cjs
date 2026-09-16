@@ -1,0 +1,3 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');const sql=fs.readFileSync(path.join(__dirname,'../sql/site-separate-canonical-v1.sql'),'utf8');
+assert.match(sql,/pg_advisory_xact_lock/);assert.match(sql,/insert into public\.sites/);assert.match(sql,/chosen_site:=gen_random_uuid\(\)/);assert.match(sql,/replayed',true/);assert.match(sql,/site_identity_links_site_required_check check \(site_id is not null\)/);assert.doesNotMatch(sql,/update public\.(?:notes|contacts|deals)/);
+console.log('PASS separate decision atomically creates one canonical Site and is retry-safe');

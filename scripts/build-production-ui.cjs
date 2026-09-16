@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const childProcess = require('node:child_process');
 const operationalUi = require('./build-operational-full-ui.cjs');
 
 const root = path.resolve(__dirname, '..');
@@ -12,7 +13,9 @@ const ref = 'ymfbmpnizxvqsamnczow';
 const stagingRef = 'rprechiaglyjaydkmxsu';
 const publishableKey = 'sb_publishable_Lrv2O_5Nr96a1HQF6n65zA_7OsqCz3X';
 const allowedHosts = "['poursolution.github.io','127.0.0.1','localhost'].includes(location.hostname)";
-const runtimeAssetVersion = '20260907-perf-1';
+const sourceCommit = childProcess.execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+const buildId = sourceCommit.slice(0, 12);
+const runtimeAssetVersion = buildId;
 const accounts = {
   '황윤선': 'hwangyunseon', '이필선': 'ipilseon', '한준엽': 'hanjunyeop',
   '정정훈': 'jeongjeonghun', '김성민': 'kimseongmin', '이승우': 'iseungwoo',
@@ -50,6 +53,10 @@ function productionText(text, file) {
     .replaceAll('src="/operational-overlay.js"', `src="./operational-overlay.js?v=${runtimeAssetVersion}"`)
     .replaceAll('src="/work-editor.js"', 'src="./work-editor.js"')
     .replace(/^ +$/gm, '');
+  if (file === 'index.html') {
+    next = next.replace(/var APP_BUILD\s*=\s*'[^']*';/, `var APP_BUILD  = '${buildId}';`);
+    if (!next.includes(`var APP_BUILD  = '${buildId}';`)) throw Error('APP_BUILD_STAMP_FAILED');
+  }
   if (next.includes('nfrnd.app.n8n.cloud')) {
     throw Error(`LEGACY_WRITE_ENDPOINT_DRIFT:${file}`);
   }
@@ -60,6 +67,13 @@ function build() {
   operationalUi.build();
   if (!fs.existsSync(source)) throw Error(`MISSING_ASSEMBLED_SOURCE:${source}`);
   copyTree(source, output);
+  // The operational snapshot supplies legacy compatibility assets, but the release
+  // pages and their top-level runtime modules must come from the reviewed commit.
+  // Without this overlay a build can have the right SHA while shipping stale UI.
+  for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+    if (!entry.isFile() || !/\.(?:html|js|css)$/.test(entry.name)) continue;
+    fs.copyFileSync(path.join(root, entry.name), path.join(output, entry.name));
+  }
   const runtimeFiles = [];
   for (const file of fs.readdirSync(output, { withFileTypes: true })) {
     if (!file.isFile() || !/\.(?:html|js|css)$/.test(file.name)) continue;
@@ -80,15 +94,22 @@ function build() {
   const transport = fs.readFileSync(path.join(output, 'transport.js'), 'utf8');
   if (!combined.includes(ref) || combined.includes(stagingRef) || combined.includes('nfrnd.app.n8n.cloud')) throw Error('PRODUCTION_ENDPOINT_GUARD_FAILED');
   if (!transport.includes(allowedHosts) || !transport.includes(`const REF='${ref}'`)) throw Error('PRODUCTION_HOST_GUARD_FAILED');
+  for (const required of ['pc-organization-history.js','site-linked-history.js','site-link-review.css','today-work-queue.js']) {
+    if (!runtimeFiles.includes(required)) throw Error(`CURRENT_RUNTIME_ASSET_MISSING:${required}`);
+  }
+  if (!fs.readFileSync(path.join(output, 'pc-organization-history.js'), 'utf8').includes('crm_site_linked_assets_v1')) throw Error('CURRENT_CUSTOMER_ASSET_UI_MISSING');
   const manifest = {
     project_ref: ref,
     status: 'PRODUCTION_31_OP_UI_ASSEMBLED_PENDING_E2E',
-    source_commit: require('node:child_process').execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
+    source_commit: sourceCommit,
+    build_id: buildId,
+    generated_at: new Date().toISOString(),
     approved_dashboard_commit: '842a5dd',
     connected_operations: JSON.parse(fs.readFileSync(path.join(source, 'operational-full-ui-manifest.json'), 'utf8')).connected_operations,
     operation_count: 31,
     allowed_hosts: ['poursolution.github.io', '127.0.0.1', 'localhost'],
     external_n8n_body_accessed: false,
+    ui_release: `commit-${buildId}`,
     files_sha256: Object.fromEntries(runtimeFiles.sort().map(file => [file, hash(fs.readFileSync(path.join(output, file)))]))
   };
   fs.writeFileSync(path.join(output, 'production-ui-manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
@@ -107,4 +128,4 @@ function applyToRoot() {
 }
 
 if (require.main === module) console.log(JSON.stringify(process.argv.includes('--apply-root') ? applyToRoot() : build(), null, 2));
-module.exports = { build, applyToRoot, output, ref };
+module.exports = { build, applyToRoot, productionText, output, ref, sourceCommit, buildId };

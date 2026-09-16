@@ -1,0 +1,16 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const sql=fs.readFileSync(path.join(__dirname,'../sql/site-link-review-api.sql'),'utf8');
+const rollback=fs.readFileSync(path.join(__dirname,'../sql/site-link-review-rollback.sql'),'utf8');
+assert.match(sql,/create table if not exists crm_security\.site_identity_links/);
+assert.match(sql,/primary key references public\.organizations\(id\)/);
+assert.match(sql,/resolution in \('linked','separate'\)/);
+assert.match(sql,/check \(site_id is not null\)/);
+assert.match(sql,/alter table crm_security\.site_identity_links enable row level security/);
+assert.match(sql,/not exists\(select 1 from crm_security\.site_identity_links/);
+assert.match(sql,/on conflict\(organization_id\) do update/);
+assert.match(sql,/permission_role='admin'/);
+assert.match(sql,/revoke all on function public\.crm_site_link_review_resolve_v1/);
+assert.doesNotMatch(sql,/update public\.(?:notes|contacts|deals)/);
+assert.match(rollback,/rollback blocked: site link review decisions exist/);
+assert.match(rollback,/drop table if exists crm_security\.site_identity_links/);
+console.log('PASS Site link review persists explicit admin decisions without name-based mutation');

@@ -69,7 +69,7 @@ function tabbed(body,groups,choose,initial,onChange){
 }
 function assetTabs(i){
  var s=SITE_MASTER_CACHE[i],body=document.getElementById('siteDrawerBody');if(!s||!body)return;
- asset={norm:s.norm,index:i,tab:'summary'};
+ asset={key:s.key,index:i,tab:'summary'};
  tabbed(body,[['summary','요약'],['deals','진행영업'],['trade','거래·공종'],['people','인물'],['activity','활동'],['expansion','확장']],function(n){
   var h=n.querySelector('h4'),t=h?.textContent||'';
   if(n.classList.contains('site-hero'))return 'summary';
@@ -89,7 +89,8 @@ function rememberAsset(){
 function restoreAsset(){
  G.relationshipQuickKey=null;document.getElementById('detailView')?.classList.remove('dw-quick','dw-transition');
  var old=returnAsset;returnAsset=null;if(!old)return;
- var i=SITE_MASTER_CACHE.findIndex(function(s){return s.norm===old.norm});if(i<0)return;
+ // A normalized name is not an identity: two real sites may share it.
+ var i=SITE_MASTER_CACHE.findIndex(function(s){return s.key===old.key});if(i<0)return;
  openSiteMaster(i);
  var tab=document.querySelector('#siteDrawerBody .dw-tabs [data-key="'+old.tab+'"]');if(tab)tab.click();
  var modal=document.querySelector('#siteDrawer .modalbox');if(modal)modal.scrollTop=old.scroll;

@@ -58,16 +58,13 @@
  // Attach to the existing PC inquiry renderer only after its server adapter is admitted.
  function install(w,api){
   if(typeof w.paintInq!=='function')throw Error('PC 견적문의 화면을 찾을 수 없습니다.');
-  const original=w.paintInq,originalToday=w.paintTodayHome;let controller=null,todayController=null,stopSignals=null,refreshTimer=null;const retryStore=api.retryStore||new Map();
+  const original=w.paintInq,originalToday=w.paintTodayHome;let controller=null,stopSignals=null,refreshTimer=null,todayGeneration=0;const retryStore=api.retryStore||new Map();
   const isAdmin=()=>w.inqCtlRoleView()==='admin';
   const openInquiry=id=>{const q=(w.B?.inquiries||[]).find(x=>String(x.id)===String(id));if(q){w.goPage('inq');w.inqCtlOpenSingle(w.inqKey(q));}else w.toast('접근 가능한 문의 데이터를 찾을 수 없습니다. 새로고침 후 다시 확인해 주세요.');};
-  function paintToday(){const result=originalToday.apply(this,arguments);
-   if(todayController)todayController.dispose();todayController=null;
-   const panel=w.document.querySelector('#pg-today');if(!panel)return result;
-   panel.querySelector('[data-manager-today]')?.remove();
-   const host=w.document.createElement('section');host.dataset.managerToday='true';panel.prepend(host);
-   todayController=mount(w,host,{...api,list:async()=>{const rows=await api.list();return rows.filter(r=>r.state!=='completed');}},{isAdmin,retryStore,openInquiry});
-   todayController.refresh();return result;
+  function paintToday(){const result=originalToday.apply(this,arguments),ticket=++todayGeneration;
+   // 관리자 요청은 별도 업무함이 아니라 오늘업무의 한 source로 합칩니다.
+   Promise.resolve(api.list()).then(rows=>{if(ticket!==todayGeneration)return;w.TodayWorkQueue?.setManagerRequests(rows.filter(r=>r.state!=='completed'));}).catch(()=>{if(ticket===todayGeneration)w.TodayWorkQueue?.setManagerRequests([]);});
+   return result;
   }
   function paint(){const result=original.apply(this,arguments);
    if(controller)controller.dispose();controller=null;
@@ -88,11 +85,11 @@
   if(typeof w.Phase1?.subscribe==='function')stopSignals=w.Phase1.subscribe('operational_core',signal=>{
    if(signal.table!=='inquiries')return;
    w.clearTimeout(refreshTimer);refreshTimer=w.setTimeout(()=>{
-    if(w.G?.page==='today')todayController?.refresh();
+    if(w.G?.page==='today')paintToday();
     if(w.G?.page==='inq')controller?.refresh();
    },250);
   });
-  const clear=()=>{w.clearTimeout(refreshTimer);if(stopSignals)stopSignals();stopSignals=null;if(controller)controller.dispose();controller=null;if(todayController)todayController.dispose();todayController=null;w.document.querySelector('[data-manager-today]')?.remove();};w.addEventListener('phase1:identity-cleared',clear);
+  const clear=()=>{todayGeneration++;w.TodayWorkQueue?.setManagerRequests([]);w.clearTimeout(refreshTimer);if(stopSignals)stopSignals();stopSignals=null;if(controller)controller.dispose();controller=null;w.document.querySelector('[data-manager-today]')?.remove();};w.addEventListener('phase1:identity-cleared',clear);
   return ()=>{clear();if(w.paintInq===paint)w.paintInq=original;if(w.paintTodayHome===paintToday)w.paintTodayHome=originalToday;w.removeEventListener('phase1:identity-cleared',clear);};
  }
  return {mount,install};

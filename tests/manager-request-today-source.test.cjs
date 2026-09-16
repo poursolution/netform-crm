@@ -1,0 +1,10 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const queue=fs.readFileSync(path.join(__dirname,'../today-work-queue.js'),'utf8');
+const ui=fs.readFileSync(path.join(__dirname,'../pc-manager-requests.js'),'utf8');
+assert.match(queue,/manager:'관리자 요청'/);
+assert.match(queue,/managerEntries\(\)/);
+assert.match(queue,/setManagerRequests/);
+assert.match(ui,/TodayWorkQueue\?\.setManagerRequests/);
+assert.doesNotMatch(ui,/host\.dataset\.managerToday='true'/);
+assert.doesNotMatch(ui,/todayController=mount/);
+console.log('PASS manager requests feed the shared Today task queue instead of a second inbox');

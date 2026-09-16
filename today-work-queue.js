@@ -1,12 +1,12 @@
 (function(root){
  'use strict';
- const TYPES={inquiry:'견적문의',pipeline:'파이프라인',relationship:'관계관리',expansion:'확장관리'};
+ const TYPES={inquiry:'견적문의',pipeline:'파이프라인',relationship:'관계관리',expansion:'확장관리',manager:'관리자 요청'};
  const FILTERS=[['all','전체'],['urgent','긴급'],['overdue','기한초과'],['unassigned','미배정'],['missing','Next 없음']];
  const SIZE=20;
  const h=value=>root.esc(String(value==null?'':value));
  const attr=value=>root.escAttr(String(value==null?'':value));
  const relationship=d=>['rapport','silent','waiting'].includes(root.dealStage(d));
- let currentActor='';
+ let currentActor='',managerRequests=[];
 
  function dueDays(date){if(!date||!Number.isFinite(Date.parse(date)))return null;const n=root.daysTo(date);return Number.isFinite(n)?n:null}
  function contactEntry(d){
@@ -36,7 +36,18 @@
   }).filter(Boolean);
  }
 
+ function managerEntries(){
+  return managerRequests.filter(r=>r&&r.state!=='completed').map(r=>{
+   const inquiry=(root.B?.inquiries||[]).find(q=>String(q.id)===String(r.target_id));
+   const due=dueDays(r.due_at),owner=inquiry?root.repN(root.inquiryRoutedOwner(inquiry)):(r.assignee_name||'담당자');
+   return {key:'manager:'+r.id,type:'manager',kind:'manager',item:inquiry||{id:r.target_id,site:r.site_name||'문의 현장'},request:r,owner,stage:'관리자 요청',reason:(r.requested_by||'관리자')+' 요청',next:r.instruction,recent:'요청 '+root.fmtD(r.requested_at),due:r.due_at,dueDays:due,missingNext:false,overdue:due!==null&&due<0,delay:due!==null&&due<0?-due:0};
+  });
+ }
+
  function decorate(x){
+  if(x.kind==='manager'){
+   x.unassigned=false;x.band=x.overdue?1:x.dueDays===0?3:5;x.urgent=x.band<=2;x.lag=x.overdue?x.delay*24:0;return x;
+  }
   const a=x.type==='expansion'?null:root.actionObj(x.item,root.itemPatch(x.item,x.type));
   if(x.kind!=='relationship'&&x.kind!=='expansion'){
    x.kind=x.type==='inq'?'inquiry':'pipeline';x.due=a&&a.due||'';x.dueDays=dueDays(x.due);
@@ -54,7 +65,7 @@
  }
  function data(){
   const base=root.todayHomeData(),me=root.todayOwner();
-  const rows=base.inquiry.concat(base.pipeline.filter(x=>!relationship(x.item)),base.D.filter(relationship).map(contactEntry).filter(Boolean),expansionEntries(base.admin,me)).map(decorate);
+  const rows=base.inquiry.concat(base.pipeline.filter(x=>!relationship(x.item)),base.D.filter(relationship).map(contactEntry).filter(Boolean),expansionEntries(base.admin,me),managerEntries()).map(decorate);
   const unique=new Map();rows.forEach(x=>{if(!unique.has(x.key))unique.set(x.key,x)});
   const all=Array.from(unique.values()).sort((a,b)=>a.band-b.band||b.lag-a.lag||String(a.key).localeCompare(String(b.key)));
   return {admin:base.admin,rows:all};
@@ -76,6 +87,11 @@
   // Resolve against the current role-scoped source again, not a stale row index or global filters.
   const x=data().rows.find(row=>row.key===key);if(!x){render();const note=root.$('.twq-count-note');if(note){note.textContent='처리 상태 또는 접근 범위가 변경되어 목록을 갱신했습니다.';note.setAttribute('role','status')}return}
   if(action==='assign'&&x.unassigned&&root.todayIsAdmin())return root.todayAssignInquiry(root.inqKey(x.item));
+  if(x.kind==='manager'){
+   const q=(root.B?.inquiries||[]).find(row=>String(row.id)===String(x.request.target_id));
+   if(!q){render();return root.toast('요청 대상 문의를 현재 접근 범위에서 찾지 못했습니다.');}
+   root.G._detailPopup=true;return root.drwInq(JSON.stringify(q));
+  }
   if(x.type==='expansion')return root.ExpansionPool.open(x.item.id);
   root.G._detailPopup=true;
   if(x.type==='inq')root.drwInq(JSON.stringify(x.item));else root.drwDeal(JSON.stringify(x.item));
@@ -115,5 +131,6 @@
   host.innerHTML='<div class="today-work-queue '+(X.admin?'manager':'rep')+'">'+(X.admin?'<header><div><h2>오늘 관리자 개입</h2><span>견적문의와 영업 파이프라인을 분리해 확인합니다.</span></div></header>':'<h2>오늘 우선순위</h2>')+counters+toolbar+'<p class="twq-count-note">선택 '+rows.length+'건 · 긴급/기한초과/미배정/Next 없음은 중복될 수 있습니다.</p>'+(X.admin?adminBoards:table(priority,false,'priority','오늘 우선순위','지금 먼저 개입할 현장')+table(routine,false,'routine','오늘 업무','상단 우선순위와 중복되지 않는 금일 예정 업무'))+'</div>';
   const badge=root.$('#todayBadge');if(badge){badge.textContent=X.rows.length||'';badge.style.display=X.rows.length?'':'none'}
  }
- root.TodayWorkQueue={render,data,set,page,open};
+ function setManagerRequests(rows){managerRequests=Array.isArray(rows)?rows.slice():[];if(root.G?.page==='today')render()}
+ root.TodayWorkQueue={render,data,set,page,open,setManagerRequests};
 })(window);
