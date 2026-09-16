@@ -7,11 +7,11 @@ begin
  with pending as (
   select 'deal'::text source_type,d.id source_id,coalesce(nullif(o.name,''),nullif(d.list_fields->>'name',''),nullif(d.list_name,'')) name,o.address,coalesce(d.updated_at,d.created_at) occurred_at
   from public.deals d left join public.organizations o on o.id=d.organization_id
-  where d.site_id is null and coalesce(nullif(o.name,''),nullif(d.list_fields->>'name',''),nullif(d.list_name,'')) is not null
+  where d.site_id is null
    and not exists(select 1 from crm_security.site_record_link_decisions x where x.source_type='deal' and x.source_id=d.id)
   union all
   select 'inquiry',q.id,nullif(q.site_name,''),q.address,coalesce(q.updated_at,q.created_at)
-  from public.inquiries q where q.site_id is null and nullif(q.site_name,'') is not null
+  from public.inquiries q where q.site_id is null
    and not exists(select 1 from crm_security.site_record_link_decisions x where x.source_type='inquiry' and x.source_id=q.id)
  ), limited as (
   select *,pg_catalog.lower(pg_catalog.regexp_replace(coalesce(name,''),'[^0-9a-zA-Z가-힣]','','g')) norm_name,
