@@ -5,12 +5,15 @@ declare result jsonb; page_size integer:=greatest(1,least(coalesce(p_limit,100),
 begin
  if (select auth.uid()) is null or not exists(select 1 from crm_security.actor() a where a.permission_role='admin') then raise exception 'forbidden' using errcode='42501'; end if;
  with pending as (
-  select 'deal'::text source_type,d.id source_id,coalesce(nullif(o.name,''),nullif(d.list_fields->>'name',''),nullif(d.list_name,'')) name,o.address,coalesce(d.updated_at,d.created_at) occurred_at
+  select 'deal'::text source_type,d.id source_id,coalesce(nullif(o.name,''),nullif(d.list_fields->>'name',''),nullif(d.list_name,'')) name,o.address,coalesce(d.updated_at,d.created_at) occurred_at,
+   jsonb_build_object('customer_name',o.name,'work',coalesce(d.primary_work,d.work_summary,d.list_name)) evidence
   from public.deals d left join public.organizations o on o.id=d.organization_id
   where d.site_id is null
    and not exists(select 1 from crm_security.site_record_link_decisions x where x.source_type='deal' and x.source_id=d.id)
   union all
-  select 'inquiry',q.id,nullif(q.site_name,''),q.address,coalesce(q.updated_at,q.created_at)
+  select 'inquiry',q.id,nullif(q.site_name,''),q.address,coalesce(q.updated_at,q.created_at),jsonb_build_object(
+   'customer_name',coalesce(q.contact_name,q.raw->>'고객성함'),'phone',coalesce(q.phone,q.raw->>'고객연락처'),'building_address',coalesce(q.address,q.raw->>'건물주소'),
+   'office',q.raw->>'관리사무소','complex',q.raw->>'단지개요','work',coalesce(q.work_type,q.raw->>'공사유형'),'inquiry',q.raw->>'문의내용')
   from public.inquiries q where q.site_id is null
    and not exists(select 1 from crm_security.site_record_link_decisions x where x.source_type='inquiry' and x.source_id=q.id)
  ), limited as (
@@ -29,14 +32,14 @@ begin
     nullif(pg_catalog.lower(pg_catalog.regexp_replace(coalesce(x.address,''),'[^0-9a-zA-Z가-힣]','','g')),'') norm_address from public.sites x
   ) s
  ), candidates as (
-  select p.source_type,p.source_id,p.name,p.address,p.occurred_at,coalesce((select jsonb_agg(jsonb_build_object(
+  select p.source_type,p.source_id,p.name,p.address,p.occurred_at,p.evidence,coalesce((select jsonb_agg(jsonb_build_object(
    'site_id',r.site_id,'name',r.site_name,'address',r.site_address,'exact_address',r.match_score in (90,150),'match_score',r.match_score,
    'match_reason',case r.match_score when 150 then '이름·주소 일치' when 100 then '이름 일치' when 90 then '주소 일치' else '이름 변형 후보' end)
    order by r.match_score desc,r.site_name,r.site_id) from (select z.* from ranked z where z.source_type=p.source_type and z.source_id=p.source_id and z.match_score>0 order by z.match_score desc,z.site_name,z.site_id limit 8) r),'[]'::jsonb) site_candidates
   from limited p
  )
- select jsonb_build_object('contract_version',2,'items',coalesce(jsonb_agg(jsonb_build_object(
-  'source_type',source_type,'source_id',source_id,'name',name,'address',address,'occurred_at',occurred_at,
+ select jsonb_build_object('contract_version',3,'items',coalesce(jsonb_agg(jsonb_build_object(
+  'source_type',source_type,'source_id',source_id,'name',name,'address',address,'occurred_at',occurred_at,'evidence',evidence,
   'status',case when jsonb_array_length(site_candidates)=0 then 'separate_site_candidate' when jsonb_array_length(site_candidates)=1 then 'review_single_candidate' else 'review_multiple_candidates' end,
   'site_candidates',site_candidates) order by occurred_at desc nulls last,source_type,source_id),'[]'::jsonb)) into result from candidates;
  return result;
