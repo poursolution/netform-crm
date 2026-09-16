@@ -21,8 +21,8 @@ begin
   select p.*,s.site_id,s.site_name,s.address site_address,
    case when s.norm_name=p.norm_name and s.norm_address is not distinct from p.norm_address and p.norm_address is not null then 150
     when s.norm_name=p.norm_name then 100 when s.norm_address=p.norm_address and p.norm_address is not null then 90
-    when pg_catalog.least(pg_catalog.length(p.norm_name),pg_catalog.length(s.norm_name))>=7
-     and pg_catalog.least(pg_catalog.length(p.norm_name),pg_catalog.length(s.norm_name))::numeric/pg_catalog.greatest(pg_catalog.length(p.norm_name),pg_catalog.length(s.norm_name))>=0.65
+    when least(pg_catalog.length(p.norm_name),pg_catalog.length(s.norm_name))>=7
+     and least(pg_catalog.length(p.norm_name),pg_catalog.length(s.norm_name))::numeric/greatest(pg_catalog.length(p.norm_name),pg_catalog.length(s.norm_name))>=0.65
      and (s.norm_name like '%'||p.norm_name||'%' or p.norm_name like '%'||s.norm_name||'%') then 60 else 0 end match_score
   from limited p cross join lateral (
    select x.site_id,x.site_name,x.address,pg_catalog.lower(pg_catalog.regexp_replace(coalesce(x.site_name,''),'[^0-9a-zA-Z가-힣]','','g')) norm_name,
