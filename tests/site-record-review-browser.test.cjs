@@ -8,7 +8,7 @@ test('Site record review renders counts, filters and 20-row pagination',async()=
  await page.addScriptTag({content:source});await page.evaluate(()=>PCSiteRecordReview.mount(document.getElementById('root')));await page.waitForSelector('.site-link-review-row');
  assert.equal(await page.locator('.site-link-review-row').count(),20);
  assert.match(await page.locator('select option').nth(1).textContent(),/이름·주소 일치 · 근거 150/);
- const buttons=await page.locator('.site-link-review-toolbar button').allTextContents();assert.deepEqual(buttons,['전체 45','영업 25','문의 20','기존 Site 후보 15','별도 현장 후보 30']);
+ const buttons=await page.locator('.site-link-review-toolbar button').allTextContents();assert.deepEqual(buttons,['전체 45','영업 25','문의 20','기존 Site 후보 15','별도 현장 후보 30','현장명 정리 0']);
  assert.equal(await page.locator('.site-link-review-pager span').textContent(),'1 / 3 · 45건');
  await page.getByRole('button',{name:'다음 →'}).click();assert.equal(await page.locator('.site-link-review-pager span').textContent(),'2 / 3 · 45건');
  await page.getByRole('button',{name:'문의 20'}).click();assert.equal(await page.locator('.site-link-review-row').count(),20);assert.equal(await page.locator('.site-link-review-pager span').textContent(),'1 / 1 · 20건');
@@ -21,5 +21,14 @@ test('successful resolution refreshes the changed operational domain',async()=>{
   await page.evaluate(()=>{window.domainCalls=[];window.confirm=()=>true;window.toast=()=>{};window.invalidateSiteMasterData=()=>{};window.refreshOperationalDomains=async(d,r)=>domainCalls.push({d,r});window.Phase1={profile:{auth_uid:'admin',permission_role:'admin'},rpc:async(name)=>name==='crm_site_record_link_review_list_v1'?{contract_version:1,items:[{source_type:'inquiry',source_id:'00000000-0000-4000-8000-000000000001',name:'검증 현장',address:'검증 주소',occurred_at:'2026-09-16',site_candidates:[]}]}:{ok:true,site_id:'11111111-1111-4111-8111-111111111111'}};});
   await page.addScriptTag({content:source});await page.evaluate(()=>PCSiteRecordReview.mount(document.getElementById('root')));await page.getByRole('button',{name:'별도 현장',exact:true}).click();await page.waitForFunction(()=>domainCalls.length===1,{timeout:3000});
   assert.deepEqual(await page.evaluate(()=>domainCalls[0]),{d:['inquiry_core'],r:'site-link-review'});
+ }finally{await browser.close();}
+});
+
+test('placeholder name requires corrected canonical Site details',async()=>{
+ const browser=await chromium.launch({channel:'msedge',headless:true});try{const page=await browser.newPage();
+  await page.setContent('<main id="root"></main>');
+  await page.evaluate(()=>{window.calls=[];window.answers=['광교 새빛아파트','경기 수원시 테스트로 1'];window.prompt=()=>answers.shift();window.confirm=()=>true;window.toast=()=>{};window.invalidateSiteMasterData=()=>{};window.refreshOperationalDomains=async()=>{};window.Phase1={profile:{auth_uid:'admin',permission_role:'admin'},rpc:async(name,args)=>{calls.push({name,args});if(name==='crm_site_record_link_review_list_v1')return {contract_version:2,items:[{source_type:'deal',source_id:'00000000-0000-4000-8000-000000000009',name:'황윤선 전체고객',address:null,occurred_at:'2026-09-16',site_candidates:[]}]};return {ok:true,site_id:'44444444-4444-4444-8444-444444444444'};}};});
+  await page.addScriptTag({content:source});await page.evaluate(()=>PCSiteRecordReview.mount(document.getElementById('root')));await page.getByRole('button',{name:'현장명 정리 1'}).click();await page.getByRole('button',{name:'올바른 현장명 입력'}).click();await page.waitForFunction(()=>calls.some(x=>x.name==='crm_site_record_corrected_separate_v1'));
+  assert.deepEqual(await page.evaluate(()=>calls.find(x=>x.name==='crm_site_record_corrected_separate_v1').args),{p_source_type:'deal',p_source_id:'00000000-0000-4000-8000-000000000009',p_site_name:'광교 새빛아파트',p_address:'경기 수원시 테스트로 1'});
  }finally{await browser.close();}
 });
