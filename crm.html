@@ -8208,7 +8208,7 @@ function dccRisk(d,p){var amt=oppAmt(d)||quoteAmt(d)||0,m=relationshipMeta(d),w=
  score+=Math.round((forecastProbability(code)||0)*20);if(m.days==null)score+=8;else if(m.days>=90)score+=25;else if(m.days>=30)score+=17;else if(m.days>=14)score+=8;
  if(!na)score+=18;if(!dccHasContact(d,p))score+=13;if(code==='waiting'&&!w.wake)score+=18;if(code==='waiting'&&!w.reason)score+=9;score=Math.max(0,Math.min(100,score));
  var cls=score>=65?'critical':score>=38?'watch':'stable',label=cls==='critical'?'고액 영업기회 관리 위험':cls==='watch'?'관리정보 확인 필요':'현재 관리 흐름 정상',parts=[];
- if(amt)parts.push(fmtAmt(amt));if(m.days!=null)parts.push('유효접촉 '+m.days+'일 전');else parts.push('유효접촉 없음');if(!na)parts.push('Next Action 없음');if(!dccHasContact(d,p))parts.push('연락처 없음');if(code==='waiting'&&!w.wake)parts.push('재접촉일 없음');return {score:score,cls:cls,label:label,detail:parts.join(' · ')}}
+ if(amt)parts.push((oppAmt(d)?'예상금액 기준 ':'견적금액 기준 ')+fmtAmt(amt));if(m.days!=null)parts.push('유효접촉 '+m.days+'일 전');else parts.push('유효접촉 없음');if(!na)parts.push('Next Action 없음');if(!dccHasContact(d,p))parts.push('연락처 없음');if(code==='waiting'&&!w.wake)parts.push('재접촉일 없음');return {score:score,cls:cls,label:label,detail:parts.join(' · ')}}
 function dccRecommendations(d,p){var out=[],m=relationshipMeta(d),w=dccWaitingData(d,p),na=actionObj(d,p),waiting=dealStage(d)==='waiting';
  function add(key,title,desc){if(!out.some(function(x){return x.key===key}))out.push({key:key,title:title,desc:desc})}
  if(waiting&&!w.wake)add('waiting','재접촉일 지정','대기는 언제 다시 시작할지 정해진 상태여야 합니다.');else if(!na)add('next','다음 행동 지정','담당 행동과 기한이 없어 오늘 할 일에서 누락됩니다.');
