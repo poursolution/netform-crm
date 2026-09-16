@@ -94,7 +94,7 @@ function build() {
   const transport = fs.readFileSync(path.join(output, 'transport.js'), 'utf8');
   if (!combined.includes(ref) || combined.includes(stagingRef) || combined.includes('nfrnd.app.n8n.cloud')) throw Error('PRODUCTION_ENDPOINT_GUARD_FAILED');
   if (!transport.includes(allowedHosts) || !transport.includes(`const REF='${ref}'`)) throw Error('PRODUCTION_HOST_GUARD_FAILED');
-  for (const required of ['pc-organization-history.js','site-linked-history.js','site-link-review.css','today-work-queue.js']) {
+  for (const required of ['pc-organization-history.js','pc-site-record-review.js','site-linked-history.js','site-link-review.css','today-work-queue.js']) {
     if (!runtimeFiles.includes(required)) throw Error(`CURRENT_RUNTIME_ASSET_MISSING:${required}`);
   }
   if (!fs.readFileSync(path.join(output, 'pc-organization-history.js'), 'utf8').includes('crm_site_linked_assets_v1')) throw Error('CURRENT_CUSTOMER_ASSET_UI_MISSING');

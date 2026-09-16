@@ -4533,6 +4533,7 @@ paintSites=function(){
  if(desc)desc.textContent='현장별 고객관계와 거래 이력을 확인합니다.';
  var grid=command.querySelector('.site-health-grid');if(grid)grid.setAttribute('aria-label','고객 관계상태 필터');
  if(window.PCOrganizationHistory)PCOrganizationHistory.mount(root,G.q);
+ if(window.PCSiteRecordReview)PCSiteRecordReview.mount(root,G.q);
 };
 
 function siteNoteDisplayText(value){var text=String(value||'');if(!/<\/?[a-z][^>]*>/i.test(text))return text;var box=document.createElement('template');box.innerHTML=text;box.content.querySelectorAll('script,style,iframe,object,embed').forEach(function(n){n.remove()});box.content.querySelectorAll('br').forEach(function(n){n.replaceWith(document.createTextNode('\n'))});box.content.querySelectorAll('p,div,li,h1,h2,h3,h4,tr').forEach(function(n){n.appendChild(document.createTextNode('\n'))});return (box.content.textContent||'').replace(/\n{3,}/g,'\n\n').trim()}
@@ -8447,5 +8448,6 @@ function paintCampaign(){var root=$('#campaign-root');if(!root)return;var tab=G.
 <link rel="stylesheet" href="./site-link-review.css?v=20260916-site-link-1">
 <script src="./pc-organization-history.js?v=20260916-site-link-1"></script>
 <script src="./site-linked-history.js?v=20260916-site-link-1"></script>
+<script src="./pc-site-record-review.js?v=20260916-site-record-1"></script>
 <script src="./work-editor.js?v=20260907-buttons-1"></script><script>window.addEventListener('phase1:identity-cleared',function(){TOKEN=null;WRITE_Q=[];ME=null;if(typeof B!=='undefined')B=null;authGate(true);});window.addEventListener('phase1:profile',function(){WRITE_Q=Phase1.queue.list();});window.addEventListener('phase1:queue',function(){WRITE_Q=Phase1.queue.list();});</script></body>
 </html>
