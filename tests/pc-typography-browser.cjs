@@ -9,7 +9,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
   await page.addScriptTag({path:path.join(__dirname,'../pc-typography.js')});
   await page.waitForFunction(()=>!document.querySelector('#today').hasAttribute('data-pc-text'));
   const sizes=await page.evaluate(()=>Object.fromEntries(['today','bold','plain','key'].map(id=>[id,getComputedStyle(document.getElementById(id)).fontSize])));
-  assert.deepEqual(sizes,{today:'12px',bold:'15px',plain:'15px',key:'16px'});
+  assert.deepEqual(sizes,{today:'12px',bold:'13.6667px',plain:'13.6667px',key:'14.6667px'});
   console.log('PASS computed font sizes:',JSON.stringify(sizes));
   // A click-style rerender must be corrected in the mutation microtask,
   // before the next paint, not one animation frame later.
@@ -26,7 +26,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
    }
    return results;
   });
-  for(const frame of frames)assert.deepEqual(frame,['15px','15px']);
+  for(const frame of frames)assert.deepEqual(frame,['13.6667px','13.6667px']);
   assert.equal(await page.locator('#today').evaluate(el=>getComputedStyle(el).fontSize),'12px');
   console.log('PASS 16 rerender/selection snapshots: stable before paint; Today unchanged');
   // Actual CRM menu CSS uses transition:.13s (implicitly all properties).
@@ -45,12 +45,25 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
     return values;
    });
    console.log('transition frame sizes', [...new Set(samples)]);
-   assert.ok(samples.every(size=>size==='15px'),'font size must remain 15px throughout each click');
+   assert.ok(samples.every(size=>size==='13.6667px'),'reduced font size must remain stable throughout each click');
   }
   assert.equal(await page.locator('#today').getAttribute('data-pc-font-stable'),null);
   assert.equal(await page.locator('#today').evaluate(el=>getComputedStyle(el).fontSize),'12px');
   const transition=await page.locator('#menu').evaluate(el=>getComputedStyle(el).transitionProperty);
   assert.ok(transition.includes('background-color')&&transition.includes('transform'));
   assert.ok(!transition.includes('font')&&!transition.includes('all'));
+  await page.evaluate(()=>{
+   const panel=document.createElement('section');panel.id='size-matrix';
+   panel.innerHTML='<h1>제목</h1><small>보조</small><button>버튼</button><strong style="font-size:32px">큰 값</strong><span style="font-size:20px">부모 <b>자식</b></span>';
+   document.body.append(panel);
+  });
+  const readMatrix=()=>page.locator('#size-matrix').evaluate(el=>[...el.querySelectorAll('*')].map(n=>parseFloat(getComputedStyle(n).fontSize)));
+  const expected=[24,13,14,32,20,20].map(n=>n-4/3);
+  for(let round=0;round<3;round++){
+   const values=await readMatrix();values.forEach((n,i)=>assert.ok(Math.abs(n-expected[i])<0.001,JSON.stringify(values)));
+   await page.evaluate(()=>{document.getElementById('size-matrix').classList.toggle('selected');window.dispatchEvent(new Event('resize'))});
+  }
+  assert.equal(await page.locator('#today').getAttribute('data-pc-reduced'),null);
+  console.log('PASS headings, small text, buttons, large values and inherited text: exactly -1pt, no cumulative reduction');
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});

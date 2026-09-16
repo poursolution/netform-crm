@@ -11,6 +11,7 @@ body [data-pc-text="16"]{font-size:var(--pc-text-key)!important}
 body [data-pc-text="18"]{font-size:var(--pc-text-section)!important}
 body [data-pc-text="20"]{font-size:var(--pc-text-heading)!important}
 body [data-pc-text="24"]{font-size:var(--pc-text-title)!important}
+body [data-pc-reduced]{font-size:var(--pc-reduced-font)!important}
 body :is(button,input,select,[role=tab])[data-pc-text]{line-height:1.2!important}
 @media(min-width:761px){
  #pg-today .twq-list col:nth-child(1){width:34px!important}
