@@ -69,9 +69,12 @@
   function paint(){const result=original.apply(this,arguments);
    if(controller)controller.dispose();controller=null;
    const panel=w.document.querySelector('#sg-panel');if(!panel)return result;
-   const host=w.document.createElement('section');panel.append(host);
+   // Creation stays beside the inquiry, but request tracking has one home:
+   // TodayWorkQueue. Keep the mount host detached so this page cannot grow a
+   // second request inbox while preserving the audited dialog/retry workflow.
+   const host=w.document.createElement('section');
    controller=mount(w,host,api,{isAdmin,retryStore,openInquiry});
-   const current=controller;current.refresh();
+   const current=controller;
    if(isAdmin())panel.querySelectorAll('.inq-work-row[data-k]').forEach(row=>{
     const q=(w.INQ_CONSOLE_CACHE||[]).find(x=>w.inqKey(x)===row.dataset.k);if(!q||!w.inquiryRoutedOwner(q))return;
     const button=w.document.createElement('button');button.type='button';button.className='pc-manager-request-trigger';button.textContent='담당자에게 요청';
@@ -86,10 +89,9 @@
    if(signal.table!=='inquiries')return;
    w.clearTimeout(refreshTimer);refreshTimer=w.setTimeout(()=>{
     if(w.G?.page==='today')paintToday();
-    if(w.G?.page==='inq')controller?.refresh();
    },250);
   });
-  const clear=()=>{todayGeneration++;w.TodayWorkQueue?.setManagerRequests([]);w.clearTimeout(refreshTimer);if(stopSignals)stopSignals();stopSignals=null;if(controller)controller.dispose();controller=null;w.document.querySelector('[data-manager-today]')?.remove();};w.addEventListener('phase1:identity-cleared',clear);
+  const clear=()=>{todayGeneration++;w.TodayWorkQueue?.setManagerRequests([]);w.clearTimeout(refreshTimer);if(stopSignals)stopSignals();stopSignals=null;if(controller)controller.dispose();controller=null;};w.addEventListener('phase1:identity-cleared',clear);
   return ()=>{clear();if(w.paintInq===paint)w.paintInq=original;if(w.paintTodayHome===paintToday)w.paintTodayHome=originalToday;w.removeEventListener('phase1:identity-cleared',clear);};
  }
  return {mount,install};
