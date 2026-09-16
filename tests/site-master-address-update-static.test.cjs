@@ -1,0 +1,3 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),sql=fs.readFileSync(path.join(__dirname,'../sql/site-master-address-update-v1.sql'),'utf8'),transport=fs.readFileSync(path.join(__dirname,'../pc-manager-transport.js'),'utf8');
+assert.match(sql,/site_master_change_events/);assert.match(sql,/permission_role='admin'/);assert.match(sql,/previous_value/);assert.match(sql,/reason required/);assert.match(sql,/same address/);assert.match(sql,/security invoker set search_path=''/);assert.match(sql,/revoke all on table/);assert.match(transport,/crm_site_address_update_v1/);
+console.log('PASS canonical Site address edits are explicit, audited and admin-only');
