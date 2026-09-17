@@ -63,9 +63,19 @@
   if(!towerActive(d))return error('현재 진행 중인 영업기회가 아닙니다. 다시 확인해 주세요.');
   if(['complete','due'].includes(type)&&(!a||a.text!==before?.text||String(a.due||a.due_at||'')!==String(before?.due||before?.due_at||'')))return error('다음 행동이 변경되었습니다. 창을 다시 열어 주세요.');
   if(type==='amount'){const amount=MoneyInput.parse(read('issue-amount'));if(!Number.isFinite(amount)||amount<=0)return error('0보다 큰 유효한 금액을 입력해 주세요.');d.amt=p.amt=amount;pushWrite('amount',{opportunity_id:d.id,amount,quote_amount:quoteAmt(d)||null,won_amount:wonAmt(d)||null})}
-  else if(type==='complete'){const result=read('issue-result');if(!result)return error('완료 결과를 입력해 주세요.');p.completedActions=(p.completedActions||[]).concat([{...a,status:'completed',completedAt:at,result}]);d.nextActionObj=p.nextActionObj=null;d.nextAction=p.nextAction='';d.nextActionText=p.nextActionText='';d.nextActionDate=p.nextActionDate='';d.due=p.due='';pushWrite('next_action_complete',{opportunity_id:d.id,action_id:a.id,text:a.text,due_at:a.due||a.due_at,at});pushWrite('activity',{opportunity_id:d.id,type:a.type||'기타',note:a.text,result,occurred_at:at,meaningful_contact:false});p.activities=(p.activities||d.activities||[]).concat([{id:'issue-'+Date.now(),type:a.type||'기타',note:a.text,result,at,meaningful:false}]);d.activities=p.activities}
+  else if(type==='complete'){
+   const result=read('issue-result');if(!result)return error('완료 결과를 입력해 주세요.');
+   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(a.id||'')))return error('서버에서 발급한 다음 행동 ID를 확인한 뒤 완료해 주세요.');
+   try{pushWrite('next_action_complete',{opportunity_id:d.id,action_id:a.id,text:a.text,due_at:a.due||a.due_at,at})}
+   catch(e){return error('완료 요청을 등록하지 못했습니다. 기존 일정을 유지합니다.')}
+   pushWrite('activity',{opportunity_id:d.id,type:a.type||'기타',note:a.text,result,occurred_at:at,meaningful_contact:false});
+   p.completedActions=(p.completedActions||[]).concat([{...a,status:'completed',completedAt:at,result}]);
+   d.nextActionObj=p.nextActionObj=null;d.nextAction=p.nextAction='';d.nextActionText=p.nextActionText='';d.nextActionDate=p.nextActionDate='';d.due=p.due='';
+   p.activities=(p.activities||d.activities||[]).concat([{id:'issue-'+Date.now(),type:a.type||'기타',note:a.text,result,at,meaningful:false}]);d.activities=p.activities
+  }
   else{const text=read('issue-text'),due=read('issue-due');if(!text||!/^\d{4}-\d{2}-\d{2}$/.test(due)||!Number.isFinite(Date.parse(due))||new Date(due).toISOString().slice(0,10)!==due)return error('예정 행동과 유효한 기한을 입력해 주세요.');const actionType=type==='due'?(a.type||'후속접촉'):NextActionPicker.read('issue-type'),obj={...a,id:a?.id||'na-'+Date.now(),type:actionType,text,due,assignee:a?.assignee||repN(d.assignee),status:'open',createdAt:a?.createdAt||at};d.nextActionObj=p.nextActionObj=obj;d.nextAction=p.nextAction=due;d.nextActionText=p.nextActionText=text;pushWrite('next_action',{opportunity_id:d.id,action_id:obj.id,type:actionType,text,due_at:due,assignee:obj.assignee})}
   saveLocal();state.notes.set(i,'저장 요청됨 · 서버 반영 상태 확인 필요');state.editor=null;render();
  }
- const api={bind,open,close,action,save,sorted,buckets,definitions};root.IssueModal=api;if(typeof module!=='undefined')module.exports=api;
+ function completionActionId(){return state?.editor?.type==='complete'?actionObj(state.rows[state.editor.i],itemPatch(state.rows[state.editor.i],'deal'))?.id||'':''}
+ const api={bind,open,close,action,save,completionActionId,sorted,buckets,definitions};root.IssueModal=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window==='undefined'?globalThis:window);
