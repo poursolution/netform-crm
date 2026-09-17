@@ -1,6 +1,6 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
-(async()=>{const browser=await chromium.launch({channel:'msedge',headless:true});try{
+(async()=>{const browser=await chromium.launch({headless:true,...(process.env.EDGE_PATH?{executablePath:process.env.EDGE_PATH}:{})});try{
  const page=await browser.newPage(),root=path.join(__dirname,'..'),crm=fs.readFileSync(path.join(root,'crm.html'),'utf8'),transport=fs.readFileSync(path.join(root,'pc-manager-transport.js'),'utf8');
  const allowed=transport.match(/const rpcAllow=new Set\(\[([^\]]+)\]/)[1].match(/'([^']+)'/g).map(x=>x.slice(1,-1));
  for(const rpc of ['crm_site_admin_search_v1','crm_site_linked_history_v1','crm_site_link_review_list_v1','crm_site_link_review_resolve_v1'])assert.ok(allowed.includes(rpc));

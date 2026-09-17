@@ -43,6 +43,8 @@ test('quality gate exercises critical PC screens in a real browser',()=>{
   assert.match(workflow,/run: npm run smoke:pc/);
   assert.match(packageJson.scripts['smoke:pc'],/verify-today-work-browser\.cjs/);
   assert.match(packageJson.scripts['smoke:pc'],/verify-customer-asset-pagination-browser\.cjs/);
+  assert.match(packageJson.scripts['smoke:pc'],/pc-organization-history-browser\.cjs/);
+  assert.match(packageJson.scripts['smoke:pc'],/site-record-review-browser\.test\.cjs/);
   assert.match(packageJson.scripts['smoke:pc'],/verify-rep-management-browser\.cjs/);
   assert.match(packageJson.scripts['smoke:pc'],/verify-gyeongnam-management-browser\.cjs/);
 });

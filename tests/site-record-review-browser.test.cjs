@@ -1,7 +1,8 @@
-const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),{chromium}=require('playwright');
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),{chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+const launch=()=>chromium.launch({headless:true,...(process.env.EDGE_PATH?{executablePath:process.env.EDGE_PATH}:{})});
 const source=fs.readFileSync('pc-site-record-review.js','utf8');
 test('Site record review renders counts, filters and 20-row pagination',async()=>{
- const browser=await chromium.launch({channel:'msedge',headless:true});const page=await browser.newPage();
+ const browser=await launch();const page=await browser.newPage();
  const items=Array.from({length:45},(_,i)=>({source_type:i<25?'deal':'inquiry',source_id:`00000000-0000-4000-8000-${String(i).padStart(12,'0')}`,name:`현장 ${i+1}`,address:`주소 ${i+1}`,occurred_at:'2026-09-16T00:00:00Z',site_candidates:i%3===0?[{site_id:'11111111-1111-4111-8111-111111111111',name:`현장 ${i+1}`,address:`주소 ${i+1}`,exact_address:true,match_reason:'이름·주소 일치',match_score:150}]:[]}));
  await page.setContent('<main id="root"></main>');
  await page.evaluate(rows=>{window.confirm=()=>true;window.toast=()=>{};window.G={page:'sites'};window.Phase1={profile:{auth_uid:'admin',permission_role:'admin'},rpc:async name=>name==='crm_site_record_link_review_list_v1'?{contract_version:1,items:rows}:{ok:true,site_id:'11111111-1111-4111-8111-111111111111'}};},items);
@@ -16,7 +17,7 @@ test('Site record review renders counts, filters and 20-row pagination',async()=
 });
 
 test('successful resolution refreshes the changed operational domain',async()=>{
- const browser=await chromium.launch({channel:'msedge',headless:true});try{const page=await browser.newPage();
+ const browser=await launch();try{const page=await browser.newPage();
   await page.setContent('<main id="root"></main>');
   await page.evaluate(()=>{window.domainCalls=[];window.confirm=()=>true;window.toast=()=>{};window.invalidateSiteMasterData=()=>{};window.refreshOperationalDomains=async(d,r)=>domainCalls.push({d,r});window.Phase1={profile:{auth_uid:'admin',permission_role:'admin'},rpc:async(name)=>name==='crm_site_record_link_review_list_v1'?{contract_version:1,items:[{source_type:'inquiry',source_id:'00000000-0000-4000-8000-000000000001',name:'검증 현장',address:'검증 주소',occurred_at:'2026-09-16',site_candidates:[]}]}:{ok:true,site_id:'11111111-1111-4111-8111-111111111111'}};});
   await page.addScriptTag({content:source});await page.evaluate(()=>PCSiteRecordReview.mount(document.getElementById('root')));await page.getByRole('button',{name:'별도 현장',exact:true}).click();await page.waitForFunction(()=>domainCalls.length===1,{timeout:3000});
@@ -25,7 +26,7 @@ test('successful resolution refreshes the changed operational domain',async()=>{
 });
 
 test('placeholder name requires corrected canonical Site details',async()=>{
- const browser=await chromium.launch({channel:'msedge',headless:true});try{const page=await browser.newPage();
+ const browser=await launch();try{const page=await browser.newPage();
   await page.setContent('<main id="root"></main>');
   await page.evaluate(()=>{window.calls=[];window.answers=['광교 새빛아파트','경기 수원시 테스트로 1'];window.prompt=()=>answers.shift();window.confirm=()=>true;window.toast=()=>{};window.invalidateSiteMasterData=()=>{};window.refreshOperationalDomains=async()=>{};window.Phase1={profile:{auth_uid:'admin',permission_role:'admin'},rpc:async(name,args)=>{calls.push({name,args});if(name==='crm_site_record_link_review_list_v1')return {contract_version:3,items:[{source_type:'deal',source_id:'00000000-0000-4000-8000-000000000009',name:'황윤선 전체고객',address:null,occurred_at:'2026-09-16',evidence:{customer_name:'테스트 고객',work:'옥상 방수'},site_candidates:[]}]};return {ok:true,site_id:'44444444-4444-4444-8444-444444444444'};}};});
   await page.addScriptTag({content:source});await page.evaluate(()=>PCSiteRecordReview.mount(document.getElementById('root')));assert.match(await page.locator('main').innerText(),/원본 단서 · 고객 테스트 고객 · 공사 옥상 방수/);await page.getByRole('button',{name:'현장명 정리 1'}).click();await page.getByRole('button',{name:'올바른 현장명 입력'}).click();await page.waitForFunction(()=>calls.some(x=>x.name==='crm_site_record_corrected_separate_v1'));
