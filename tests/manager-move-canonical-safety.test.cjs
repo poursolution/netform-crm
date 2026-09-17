@@ -11,7 +11,7 @@ test('manager move never copies a contact to a Deal selected by Site name', () =
   assert.notEqual(start, -1);
   assert.doesNotMatch(fn, /\(B\.deals\|\|\[\]\)\.filter/);
   assert.doesNotMatch(fn, /target\.contact|tp\.contact/);
-  assert.match(fn, /canonical Site 연결을 확인/);
+  assert.match(fn, /현장 연결을 확인/);
 });
 
 test('manager move still preserves the source history and queues the audited command', () => {
