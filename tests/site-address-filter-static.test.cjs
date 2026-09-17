@@ -9,6 +9,7 @@ assert.match(html,/G\.siteAddress==='미입력'&&!s\.canonicalAddress/);
 assert.match(html,/canonical 주소 '\+addressDone\+' \/ '\+all\.length\+' · 미입력 '\+addressMissing/);
 assert.match(html,/주소상태<select onchange="G\.siteAddress=this\.value/);
 assert.match(html,/esc\(s\.canonicalAddress\|\|'주소 미입력'\)/);
+assert.match(html,/blob=\[s\.name,s\.canonicalAddress\|\|''/);
 assert.match(html,/canonical Site 주소 입력 진행률/);
 
 console.log('PASS customer assets expose canonical Site address progress and filtering');
