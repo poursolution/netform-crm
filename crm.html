@@ -4671,6 +4671,7 @@ function upsertPerson(c,site,officeTel,at,siteId){if(!c||!c.personKey)return nul
  p.history=p.history||[];var cur=sid?null:p.history.filter(function(h){return !h.to})[0];
  if(cur&&normSite(cur.site)!==normSite(site)){cur.to=(at||isoNow()).slice(0,10);cur.status='이동'}
  var same=p.history.filter(function(h){return !h.to&&(sid?String(h.cleanup_site_id||h.site_id||h.siteId||'')===sid:normSite(h.site)===normSite(site))})[0];
+ if(!same&&sid){var legacy=p.history.filter(function(h){return !h.to&&!h.cleanup_site_id&&!h.site_id&&!h.siteId&&normSite(h.site)===normSite(site)});if(legacy.length===1)same=legacy[0]}
  if(!same)p.history.push({site:site,site_id:sid||undefined,officeTel:officeTel||'',from:(at||isoNow()).slice(0,10),to:'',status:'current'});
  else if(sid&&!same.site_id&&!same.cleanup_site_id&&!same.siteId)same.site_id=sid;
  else if(officeTel)same.officeTel=officeTel;
