@@ -1989,7 +1989,7 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
       <div class="search">🔍 <input id="q" placeholder="현장·담당자 검색" oninput="G.q=this.value.trim();if(G.page==='sites')G.sitePage=1;paint()"></div>
       <span class="live" id="live">연결 중…</span>
       <!-- v4.2: 내가 방금 한 저장이 «서버까지» 갔는지 항상 보이게 (로컬 저장을 성공이라 착각하지 않도록) -->
-      <span class="syncbadge ok" id="syncBadge" title="서버 반영 상태 — 실패 시 눌러 재전송">🟢 서버 동기화 완료</span>
+      <span class="syncbadge ok" id="syncBadge" title="내가 저장한 변경의 서버 반영 상태 — 조회 데이터 상태는 왼쪽에서 확인">🟢 저장 동기화 완료</span>
       <span class="ib" title="오늘 리마인드는 아침 9시 잔디로 자동 발송">🔔<span class="dot"></span></span>
       <span class="me"><span class="av">관</span><span class="nm2">관리자</span></span>
       <button class="rf clk" onclick="exportFullDataJSON()" title="관리자 MFA · 기간/사업유형 제한 내보내기" style="width:auto;padding:0 10px;background:#fff;border:1px solid var(--line2);color:var(--blue);font-size:12px;font-weight:900">JSON</button><button class="rf clk" onclick="runDiag()" title="연결 점검 — 데이터가 안 뜰 때 원인 확인" style="background:#fff;border:1px solid var(--line2);color:var(--ink2);margin-right:-4px">🔍</button><button class="rf clk" onclick="loadData()" title="새로고침">↻</button>
@@ -2775,7 +2775,7 @@ function updateSyncBadge(){var el=document.getElementById('syncBadge');if(!el)re
  if(f){el.textContent='🔴 서버 전송 실패 '+f+'건 — 다시 시도';el.className='syncbadge bad';el.onclick=retryFailedWrites}
  else if(p){el.textContent='🟡 서버 반영 중 '+p+'건';el.className='syncbadge wait';el.onclick=null}
  else if(b){el.textContent='🟡 이 PC에만 저장 '+b+'건 (서버 미반영)';el.className='syncbadge wait';el.onclick=null}
- else {el.textContent='🟢 서버 동기화 완료';el.className='syncbadge ok';el.onclick=null}
+ else {el.textContent='🟢 저장 동기화 완료';el.className='syncbadge ok';el.onclick=null}
 }
 // 진행 중 요청을 30초마다 재전송하면 느린 서버에서 중복 작업이 생길 수 있습니다.
 setInterval(function(){flushWrites()},30000);
@@ -4097,7 +4097,7 @@ function applyRoleHome(){
  if(G._homePicked)return;                 /* 사용자가 직접 고른 뒤에는 건드리지 않는다 */
  if(!ME||!ME.role)return;
  G.homeRole=homeForRole(ME.role);G._homePicked=1}
-function setHomeRole(r){var allowed=Phase1.profile?.allowed_modes||[];if(r!=='sales'&&!allowed.includes('admin'))return;G._homePicked=1;G.homeRole=r;Phase1.mode(r==='sales'?'rep':'admin');applyHomeRole();}
+function setHomeRole(r){var allowed=Phase1.profile?.allowed_modes||[];if(r!=='sales'&&!allowed.includes('admin'))return;G._homePicked=1;G.homeRole=r;Phase1.mode(r==='sales'?'rep':'admin');paintDash();}
 function applyHomeRole(){var r=G.homeRole||'sales',admin=Phase1.profile?.allowed_modes.includes('admin');$$('#pg-dash [data-role]').forEach(function(el){el.style.display=el.dataset.role.split(' ').includes(r)?'':'none';});var host=$('#d-roles');if(!host)return;host.innerHTML=HOME_ROLES.filter(function(x){return admin||x[0]==='sales';}).map(function(x){return '<button class="'+(r===x[0]?'on':'')+'" data-r="'+x[0]+'" onclick="setHomeRole(this.dataset.r)">'+esc(x[1])+'</button>';}).join('');}
 
 /* 첫 줄 — 전체 영업이 어디서 어디까지 흘렀는지 한 문장으로 요약한다. */
