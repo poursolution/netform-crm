@@ -68,3 +68,11 @@ test('contact card renders move state from canonical current status',()=>{
   assert.match(functionSource('contactCardHTML'),/moved=!dealContactCurrentAtSite\(item,c\)&&!!c\.currentSite/);
   assert.doesNotMatch(functionSource('contactCardHTML'),/normSite\(c\.currentSite\)!==normSite\(item\.site\)/);
 });
+
+test('PC relationship intelligence uses canonical current state without claiming a confirmed move',()=>{
+  const insight=functionSource('relV8Insight');
+  assert.match(insight,/!dealContactCurrentAtSite\(item,c\)/);
+  assert.match(insight,/현재 근무 현장 연결 확인이 필요합니다/);
+  assert.doesNotMatch(insight,/String\(c\.currentSite\)!==String\(item\.site\)/);
+  assert.doesNotMatch(insight,/근무지 이동이 확인되었습니다/);
+});
