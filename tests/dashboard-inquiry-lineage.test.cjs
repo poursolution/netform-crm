@@ -48,3 +48,13 @@ test('dashboard explains the explicit inquiry ID basis', () => {
   assert.match(source, /원본 문의 ID 기준으로 Pipeline과 연결/);
   assert.doesNotMatch(functionSource('inqMadeStats'), /normSite/);
 });
+
+test('connection diagnostics use the live operational read and write paths', () => {
+  const start = source.indexOf('async function runOperationalDiag');
+  const operational = source.slice(start, source.indexOf('\nasync function runDiag', start));
+  assert.match(functionSource('runDiag'), /return runOperationalDiag\(box\)/);
+  assert.match(operational, /crm_read_scoped_v2 · deal_core \+ inquiry_core/);
+  assert.match(operational, /LAST_OPERATIONAL_READ_ERROR/);
+  assert.match(operational, /crm_write_command_v2 · 사용자별 멱등 명령 큐/);
+  assert.doesNotMatch(operational, /crm_read_bundle|기존 n8n 유지/);
+});

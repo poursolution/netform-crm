@@ -2863,8 +2863,21 @@ function diagHint(e){
   return m;
 }
 /* 연결 점검 — 무엇이 왜 안 되는지 한 화면에 */
+async function runOperationalDiag(box){
+  box.innerHTML='<b>운영 데이터 연결 점검 중…</b>';box.style.display='block';
+  var t0=Date.now(),lines=[['조회 경로','Supabase crm_read_scoped_v2 · deal_core + inquiry_core'],['페이지 위치',location.protocol+'//'+(location.host||'(로컬 파일)')],['로그인 권한',(Phase1.profile&&Phase1.profile.permission_role)||'확인 불가']],verdict='';
+  try{await loadData()}catch(e){window.LAST_OPERATIONAL_READ_ERROR=[{domain:'core',message:String(e&&e.message||e)}]}
+  var failures=Array.isArray(window.LAST_OPERATIONAL_READ_ERROR)?window.LAST_OPERATIONAL_READ_ERROR:[],deals=B&&Array.isArray(B.deals)?B.deals:[],inquiries=B&&Array.isArray(B.inquiries)?B.inquiries:[],sec=((Date.now()-t0)/1000).toFixed(1);
+  lines.push(['응답 시간',sec+'초'],['영업기회',deals.length+'건'],['견적문의',inquiries.length+'건']);
+  if(failures.length){lines.push(['갱신 실패 영역',failures.map(function(x){return (x.domain||'core')+': '+(x.message||'조회 실패')}).join(' / ')]);verdict='일부 핵심 데이터가 갱신되지 않아 직전 정상 데이터를 표시 중입니다. 실패 영역을 확인한 뒤 다시 불러오세요.'}
+  else verdict='영업기회와 견적문의가 현재 운영 조회 경로에서 정상 갱신됐습니다.';
+  lines.push(['고객 데이터 캐시','세션 내 최근 정상 snapshot · 갱신 실패 시 화면 보존'],['저장 경로','Supabase crm_write_command_v2 · 사용자별 멱등 명령 큐']);
+  box.innerHTML='<div class="diagbox"><b>🔍 연결 점검 결과</b><table>'+lines.map(function(x){return '<tr><th>'+esc(x[0])+'</th><td>'+esc(String(x[1]))+'</td></tr>'}).join('')+'</table><p class="verdict">'+esc(verdict)+'</p><div class="diagfoot"><button onclick="loadData()">↻ 다시 불러오기</button><button onclick="copyDiag()">📋 결과 복사</button><button onclick="document.getElementById(\'err\').style.display=\'none\'">닫기</button></div></div>';
+  window.__DIAG_TEXT=lines.map(function(x){return x[0]+': '+x[1]}).join('\n')+'\n판정: '+verdict;
+}
 async function runDiag(){
   var box=$('#err');
+  if(window.Phase1&&Phase1.profile&&typeof Phase1.rpc==='function'&&typeof loadData==='function')return runOperationalDiag(box);
   box.innerHTML='<b>Supabase 조회 연결 점검 중…</b> 최대 20초 기다립니다';box.style.display='block';
   var t0=Date.now(),lines=[],verdict='';
   lines.push(['요청 주소',API.replace(/k=[^&]*/,'k=****')]);
