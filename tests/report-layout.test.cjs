@@ -16,3 +16,10 @@ test('요약 버튼이 현재 필터의 정확한 목록을 연다',()=>{
  ctx.reportJump('report-critical');assert.deepEqual(opened.map(d=>d.id),[1,3]);
  ctx.reportJump('report-due30');assert.deepEqual(opened.map(d=>d.id),[1,2]);
 });
+test('대표 리포트의 진행 Pipeline은 등록연도와 무관한 현재 snapshot을 사용한다',()=>{
+ const fn=html.match(/function reportOpenDeals\(\)\{([^\n]+)\}/);
+ assert.ok(fn,'reportOpenDeals must exist');
+ assert.match(fn[1],/reportRawDeals\(\)\.filter\(towerActive\)/);
+ assert.doesNotMatch(fn[1],/inPeriod|created/);
+ assert.match(html,/현재 SNAPSHOT · 등록일 무관/);
+});
