@@ -9,17 +9,19 @@ const css=fs.readFileSync(path.join(root,'pipeline-vertical.css'),'utf8');
 const html=fs.readFileSync(path.join(root,'crm.html'),'utf8');
 const toolbar=fs.readFileSync(path.join(root,'pipeline-toolbar.js'),'utf8');
 
-test('pipeline defaults to five vertical operating sections',()=>{
- ['1차 접촉·컨설팅','유대·침묵·대기','경쟁·임박·입찰','계약·시공','종료'].forEach(label=>assert.ok(js.includes(label),label));
+test('pipeline renders every stage master entry in canonical sequence',()=>{
+ assert.match(js,/stageSections=\(\)=>w\.STAGE_SEQ\.map/);
+ assert.match(js,/title:w\.STAGE_MASTER\[code\]\.name/);
  assert.match(js,/w\.paintKanban=render/);
  assert.match(js,/closed:true/);
- assert.match(js,/group\.closed&&/);
+ assert.match(js,/w\.dealStage\(d\)===stage\.code/);
+ assert.doesNotMatch(js,/const GROUPS=/);
  assert.match(html,/pipeline-vertical\.css/);
  assert.match(html,/pipeline-vertical\.js/);
 });
 
 test('pipeline rows preserve the three required actions and operational ordering',()=>{
- ['응대 기록','다음 행동','상세'].forEach(label=>assert.ok(js.includes(label),label));
+ ['기록','다음 행동','단계 이동'].forEach(label=>assert.ok(js.includes(label),label));
  assert.match(js,/pipelineQuick/);
  assert.match(js,/openKb5/);
  assert.match(js,/rank:0/);
