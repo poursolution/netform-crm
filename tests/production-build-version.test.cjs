@@ -13,4 +13,7 @@ const output=build.productionText(source,'index.html');
 assert.match(output,/^<!doctype html>/);
 assert.match(output,new RegExp(`var APP_BUILD\\s*=\\s*'${build.buildId}';`));
 assert.equal(build.buildId,build.sourceCommit.slice(0,12));
+const buildSource=fs.readFileSync(path.join(__dirname,'../scripts/build-production-ui.cjs'),'utf8');
+assert.match(buildSource,/\['organization-history-reader\.js', 'organization-history-view\.js'\]/);
+assert.match(buildSource,/fs\.unlinkSync\(target\)/);
 console.log(`PASS production build version derives from commit ${build.buildId}`);
