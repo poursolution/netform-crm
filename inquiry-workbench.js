@@ -14,6 +14,15 @@
   root.G.inqCompactMetric=key==='delayed'?'delayed':'';root.G.inqView='console';originalTab(tabs[key]);
  }
  function toolsState(open){root.G.inqToolsOpen=!!open}
+ function primaryAction(q){
+  const bucket=root.inqCtlBucket(q),status=String(q.status||''),key=root.inqKey(q);
+  if(bucket==='보류')return '<button class="inq-now" data-k="'+root.escAttr(key)+'" onclick="inqCtlOpenSingle(this.dataset.k)">보류 관리</button>';
+  if(bucket==='영업전환')return '<button class="inq-now" data-k="'+root.escAttr(key)+'" onclick="inqCtlOpenSingle(this.dataset.k)">파이프라인 확인</button>';
+  if(bucket==='스토어 이관')return '<button class="inq-now" data-k="'+root.escAttr(key)+'" onclick="inqCtlOpenSingle(this.dataset.k)">스토어 확인</button>';
+  if(/견적.*(필요|예정|대기|작성)/.test(status))return '<button class="inq-now primary" data-k="'+root.escAttr(key)+'" onclick="inqCtlOpenSingle(this.dataset.k)">견적 진행</button>';
+  if(/영업.*(가능|전환 대기)/.test(status))return '<button class="inq-now primary" data-k="'+root.escAttr(key)+'" onclick="inqCtlOpenSingle(this.dataset.k)">파이프라인 전환</button>';
+  return root.inqCtlPrimaryActions(q,true);
+ }
  function compactRows(){
   document.querySelectorAll('#sg-panel .inq-ctl-row:not(.mine-row)').forEach(row=>{
    const c=Array.from(row.children);if(c.length!==9)return;
@@ -33,10 +42,7 @@
     const seen=new Set(),activities=[...(q.activities||[]),...(patch.activities||[])].filter(a=>{const key=a.id||[a.at,a.type,a.note,a.result].join('|');if(seen.has(key))return false;seen.add(key);return /전화|통화|문자|SMS|카카오|이메일|메일|방문/i.test(a.type||'')&&Number.isFinite(Date.parse(a.at||a.created_at))}).sort((a,b)=>Date.parse(b.at||b.created_at)-Date.parse(a.at||a.created_at));
     const recent=document.createElement('span'),latest=activities[0];recent.className='inq-work-recent';recent.innerHTML=latest?'<strong>'+h(root.fmtD(latest.at||latest.created_at)+' · '+latest.type)+'</strong><small>'+h([latest.note,latest.result].filter(Boolean).join(' · ')||'내용 미기록')+'</small>':'<small>응대 기록 없음</small>';
     const todo=document.createElement('span');todo.className='inq-work-next';todo.innerHTML='<strong>'+h(next.text||'⚠ 다음 할 일 없음')+'</strong><small>'+h(next.due?root.fmtD(next.due):'일정 없음')+'</small>';
-    if(root.inquiryRoutedOwner(q)){
-     const open=document.createElement('button');open.className='inq-work-open';open.textContent=root.inqCtlBucket(q)==='배정완료'?'응대 기록':'다음 처리';
-     open.textContent=root.inqCtlFirstResponseAt(q)?'기록':'응대 기록';open.addEventListener('click',event=>{event.stopPropagation();root.inqCtlOpenSingle(root.inqKey(q))});c[8].prepend(open);
-    }
+    c[8].className='inq-action';c[8].innerHTML=primaryAction(q);
     // Retain the existing row, assignment and checkbox handlers while grouping secondary fields.
     row.replaceChildren(c[1],c[2],c[5],recent,todo,c[8]);
     row.querySelectorAll(':scope > span').forEach((cell,i)=>cell.dataset.label=['접수 / 경과','현장 · 문의자','담당 / 상태','최근 응대','다음 할 일','바로 조치'][i]);
@@ -71,5 +77,5 @@
   }
  }
  root.paintInq=function(){const result=originalPaint.apply(this,arguments);decorate();return result};
- root.InquiryWorkbench={set,delayed};
+ root.InquiryWorkbench={set,delayed,primaryAction};
 })(window);

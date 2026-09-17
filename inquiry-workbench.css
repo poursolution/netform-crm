@@ -8,6 +8,7 @@ body:has(#pg-inq.on.inq-workbench) .filter-group-label>span,body:has(#pg-inq.on.
 .inq-work-counts{display:flex;flex-wrap:wrap;gap:4px;background:#fff;border-bottom:1px solid #dce3ed;padding:0 8px}
 .inq-work-counts button{font:inherit;font-size:12px;padding:12px;border:0;border-bottom:3px solid transparent;background:none;color:#6d7a8e;cursor:pointer}.inq-work-counts button b{color:#263d5f;margin-left:5px}.inq-work-counts [aria-pressed=true]{border-bottom-color:#3568df;color:#2457b4;font-weight:700}
 .inq-work-open{border:1px solid #cbd8ed;border-radius:5px;background:#fff;padding:6px;font:inherit;font-size:11px;color:#2457b4;cursor:pointer}
+.inq-work-row .inq-action>.inq-now,.inq-work-row .inq-action>.inq-now-pair{width:100%}.inq-work-row .inq-action .inq-now{min-height:34px;padding:6px 8px;border-radius:6px;font-size:12px;white-space:normal}.inq-work-row .inq-action .inq-now-pair{display:grid;grid-template-columns:1fr;gap:4px}
 body:has(#pg-inq.on.inq-workbench) .reptabs,body:has(#pg-inq.on.inq-workbench) .periodbar .work-filter{display:none}
 .inq-work-filters{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:4px 0 10px}
 .inq-work-filters label{display:grid;gap:4px;font-size:13px;min-width:0}
