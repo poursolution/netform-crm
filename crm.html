@@ -6621,16 +6621,20 @@ function nudgeSelected(){
 }
 function applyInqBulkAction(){
  var keys=Object.keys(INQ_SEL),txt=((document.getElementById('inqActText')||{}).value||'').trim(),due=(document.getElementById('inqActDue')||{}).value||'';
- if(!keys.length){alert('문의를 선택해 주세요.');return}
- if(!txt){alert('다음 행동 내용을 입력해 주세요.');return}
- if(!due){alert('기한을 함께 지정해 주세요 — 기한 없는 다음 행동은 관리가 안 됩니다.');return}
- keys.forEach(function(k){
-  var q=(B.inquiries||[]).filter(function(x){return inqKey(x)===k})[0];if(!q)return;
+ if(!keys.length){alert('문의를 선택해 주세요.');return false}
+ if(!txt){alert('다음 행동 내용을 입력해 주세요.');return false}
+ if(!due){alert('기한을 함께 지정해 주세요 — 기한 없는 다음 행동은 관리가 안 됩니다.');return false}
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(due)||!Number.isFinite(Date.parse(due))||new Date(due).toISOString().slice(0,10)!==due){alert('유효한 기한을 입력해 주세요.');return false}
+ var rows=keys.map(function(k){return (B.inquiries||[]).filter(function(x){return inqKey(x)===k})[0]}).filter(Boolean),accepted=[],failed=[];
+ rows.forEach(function(q){try{pushWrite('next_action',{inquiry_id:inqKey(q),type:'전화',text:txt,due_at:due});accepted.push(q)}catch(e){failed.push(q)}});
+ if(!accepted.length){alert('다음 행동 저장 요청을 등록하지 못했습니다. 선택한 문의는 변경하지 않았습니다.');return false}
+ accepted.forEach(function(q){
+  var k=inqKey(q);
   var p=detailPatchFor('inq',k),at=isoNow();
   p.nextActionObj={text:txt,due:due,status:'open'};q.nextActionText=p.nextActionText=txt;q.nextAction=p.nextAction=due;
   p.activities=p.activities||[];p.activities.push({type:'다음행동등록',note:txt,result:due?('기한 '+due):'기한 미지정',at:at,actor:'관리자'});
  });
- saveLocal();G.inqNotice=keys.length+'건에 다음 행동을 등록했습니다.';INQ_SEL={};G.inqBulkMode=null;paint();
+ saveLocal();G.inqNotice=accepted.length+'건에 다음 행동을 등록했습니다.'+(failed.length?' · 실패 '+failed.length+'건은 선택 상태를 유지했습니다.':'');INQ_SEL={};failed.forEach(function(q){INQ_SEL[inqKey(q)]=true});if(!failed.length)G.inqBulkMode=null;paint();return failed.length===0;
 }
 /* 뷰 1 — R3 보드+콘솔 (기본): 상단 4단계 요약 카드 + 밀도 높은 표 + 하단 일괄 처리 바.
    파이프라인 '관리 콘솔'과 같은 문법 — 두 페이지가 같은 방식으로 움직이도록 (2026-09-01 R3 확정) */
