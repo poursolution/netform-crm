@@ -137,9 +137,9 @@ async function run(){
   });
   assert.equal(accounting.excluded,true);assert.equal(accounting.stillActive,true);assert.equal(accounting.before-accounting.after,accounting.amount);assert.equal(accounting.wonUnchanged,true);assert.equal(accounting.historyPresent,true);
   assert.equal(accounting.returnedToPipeline,true);assert.equal(accounting.returnedAmount,accounting.before);assert.equal(accounting.retainedYear,'2030');assert.match(accounting.retainedReason,/예산 편성 대기/);
-  assert.equal(await page.locator('#p-main .pv-section').count(),5,'default pipeline is five vertical groups');
-  assert.equal(await page.locator('#p-main .pv-section.collapsed').count(),1,'closed group starts collapsed');
-  assert.deepEqual(await page.locator('#p-main .pv-row').first().locator('.pv-actions button').allTextContents(),['응대 기록','다음 행동','상세']);
+  assert.equal(await page.locator('#p-main .pv-section').count(),13,'pipeline renders twelve actual stages plus closed');
+  assert.ok(await page.locator('#p-main .pv-section.collapsed').count()>=1,'empty and closed stages start collapsed');
+  assert.deepEqual(await page.locator('#p-main .pv-row').first().locator('.pv-actions button').allTextContents(),['기록','다음 행동','단계 이동']);
   for(const width of [1920,1440,1280]){
    await page.setViewportSize({width,height:900});
    const overflow=await page.locator('#p-main').evaluate(el=>el.scrollWidth>el.clientWidth);

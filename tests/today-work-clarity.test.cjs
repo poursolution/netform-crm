@@ -2,8 +2,8 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const queue=fs.readFileSync(require.resolve('../today-work-queue.js'),'utf8');
 const crm=fs.readFileSync(require.resolve('../crm.html'),'utf8');
-test('오늘업무는 업무유형보다 처리 시점 기준의 세 실행 구역으로 렌더링한다',()=>{assert.match(crm,/function paintTodayHome\(\).*TodayWorkQueue.render/);assert.match(queue,/executionSection\('now','지금 처리'/);assert.match(queue,/executionSection\('today','오늘 예정'/);assert.match(queue,/executionSection\('review','확인 필요'/);});
-test('관리자는 정상 예정 업무를 숨기고 개입 예외만 본다',()=>{assert.match(queue,/exceptionRows=X\.admin\?rows\.filter/);assert.match(queue,/x\.urgent\|\|x\.overdue\|\|x\.unassigned\|\|x\.missingNext\|\|x\.stale/);assert.match(queue,/정상 업무는 숨기고 개입이 필요한 예외만 표시합니다/);});
+test('오늘업무는 역할에 맞는 실행 순서로 렌더링한다',()=>{assert.match(crm,/function paintTodayHome\(\).*TodayWorkQueue.render/);assert.match(queue,/관리자 개입 우선순위/);assert.match(queue,/domainSummary\(exceptionRows\)/);assert.match(queue,/지금 먼저 처리하세요/);assert.match(queue,/오늘 예정 업무/);});
+test('관리자는 개입 예외와 업무영역별 원인을 함께 본다',()=>{assert.match(queue,/exceptionRows=rows\.filter/);assert.match(queue,/x\.urgent\|\|x\.overdue\|\|x\.unassigned\|\|x\.missingNext\|\|x\.stale/);assert.match(queue,/\['inquiry','견적문의'\]/);assert.match(queue,/\['pipeline','영업'\]/);assert.match(queue,/\['expansion','영업지원'\]/);assert.match(queue,/\['relationship','관계관리'\]/);});
 test('네 업무유형을 모으되 관계관리 Deal을 이중 집계하지 않는다',()=>{assert.match(queue,/inquiry:'견적문의',pipeline:'파이프라인',relationship:'관계관리',expansion:'확장관리'/);assert.match(queue,/base.pipeline.filter\(x=>!relationship/);assert.match(queue,/unique=new Map/)});
 test('같은 데이터로 상태 건수와 목록을 계산한다',()=>{assert.match(queue,/rows=scoped.filter\(x=>matches/);assert.match(queue,/scoped.filter\(x=>matches/)});
 test('확장 종료와 보류를 제외하고 계산일을 표시한다',()=>{assert.match(queue,/!root.ExpansionFlow.converted/);assert.match(queue,/계산 일정/);assert.match(queue,/!inferred&&n!==null&&n<0/)});
