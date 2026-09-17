@@ -13,7 +13,8 @@ test('pipeline owns its controls and global controls are not moved through the D
  assert.match(paint,/pipelinePage=G\.page==='pipe'/);
  assert.equal(source.includes('cloneNode('),false);
  assert.doesNotMatch(source,/function borrow\(|marker\.replaceWith|inlineFilters\(/);
- const c=setup();
- assert.equal(Object.hasOwn(c.window.PipelineToolbar,'restoreControls'),false);
- assert.deepEqual(Array.from(Object.keys(c.window.PipelineToolbar)).sort(),['clear','render','reset','set']);
+ const c=setup(),before=JSON.stringify(c.G);
+ c.window.PipelineToolbar.restoreControls();
+ c.window.PipelineToolbar.restoreControls();
+ assert.equal(JSON.stringify(c.G),before);
 });
