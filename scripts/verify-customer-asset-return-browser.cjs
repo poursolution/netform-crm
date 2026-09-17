@@ -27,7 +27,6 @@ async function run(){
    const make=(key,address,dealId)=>{const d=deal(dealId,address);return {key,norm:'한빛아파트',name:'한빛아파트',names:{한빛아파트:1},canonicalAddress:address,addresses:[address],deals:[d],inquiries:[],open:[d],won:[],lost:[],brands:['POUR솔루션'],owners:['황윤선'],contacts:[],primary:null,totalAmount:100000000,wonAmount:0,openAmount:100000000,lostAmount:0,started:'2026-08-01',firstInquiry:'',firstDeal:'2026-08-01',lastAt:'2026-09-01',lastDays:16,health:'active'};};
    const customers=[make('id:site-suwon','경기 수원시 팔달구 1','deal-suwon'),make('id:site-yongin','경기 용인시 기흥구 2','deal-yongin')];
    B={deals:customers.flatMap(s=>s.deals),inquiries:[],activities:[],contacts:[],sites:[],dups:[],cleanup_events:[],cleanup_moves:[],expansion_pool:[],expansionPool:[],expansion_events:[],asq_projects:[]};
-   pushWrite=()=> 'localhost-smoke-noop';
    siteMasterData=()=>customers;
    G.page='sites';G.q='';G.siteStatus='전체';G.siteBrand='전체';G.siteOwner='전체';G.siteAddress='전체';G.workFilter='전체';G.siteSort='관계우선';G.sitePage=1;G.sitePageKey=null;
    document.getElementById('authGate').classList.remove('on');
@@ -45,6 +44,7 @@ async function run(){
   await page.evaluate(()=>openSiteDeal(0));
   await page.waitForSelector('#detailView.on .dw-asset-back');
   assert.equal(await page.evaluate(()=>CUR_DETAIL.item.id),'deal-yongin');
+  assert.equal(await page.evaluate(()=>Object.prototype.hasOwnProperty.call(CUR_DETAIL.item,'last_viewed_at')),false);
   await page.locator('#detailView .dw-asset-back').click();
   await page.waitForSelector('#siteDrawer.on');
   assert.match(await page.locator('#siteDrawerBody .site-hero p').textContent(),/용인시/);
