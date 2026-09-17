@@ -21,6 +21,7 @@ test('quality gate covers the repaired customer asset and manager request paths'
     'dashboard-inquiry-lineage.test.cjs',
     'report-priority-layout.test.cjs',
     'site-asq-canonical-linkage.test.cjs',
+    'manager-move-canonical-safety.test.cjs',
     'detail-next-completion.test.cjs',
     'today-next-completion.test.cjs',
     'mobile-today-next-completion.test.cjs',
