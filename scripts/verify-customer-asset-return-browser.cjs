@@ -69,13 +69,19 @@ async function run(){
   });
   assert.equal(failedIssueCompletion.after,failedIssueCompletion.before);assert.match(failedIssueCompletion.error,/기존 일정을 유지합니다/);
   await page.evaluate(()=>IssueModal.close());
+  const failedInquiryCompletion=await page.evaluate(()=>{
+   const q={id:'33333333-3333-4333-8333-333333333333',site:'문의 완료 실패 현장',status:'배정완료',nextActionObj:{id:'44444444-4444-4444-8444-444444444444',text:'견적 확인 전화',due:'2026-09-30',status:'open'},activities:[]};
+   B.inquiries=[q];SPLIT_CACHE=[q];G.inqSelKey=inqKey(q);const p=detailPatchFor('inq',inqKey(q)),before=JSON.stringify({q,p}),transport=pushWrite,dialog=alert;let message='';pushWrite=()=>{throw Error('TEST_QUEUE_REJECTED')};alert=text=>{message=String(text)};const result=splitDoneAction();pushWrite=transport;alert=dialog;
+   return {result,before,after:JSON.stringify({q,p}),message};
+  });
+  assert.equal(failedInquiryCompletion.result,false);assert.equal(failedInquiryCompletion.after,failedInquiryCompletion.before);assert.match(failedInquiryCompletion.message,/기존 일정을 유지합니다/);
   await page.locator('#detailView .dw-asset-back').click();
   await page.waitForSelector('#siteDrawer.on');
   assert.match(await page.locator('#siteDrawerBody .site-hero p').textContent(),/용인시/);
   assert.equal(await page.locator('#siteDrawerBody .dw-tabs [data-key="deals"]').getAttribute('aria-pressed'),'true');
   assert.equal(await page.evaluate(()=>SITE_MASTER_CACHE.findIndex(s=>s.key==='id:site-yongin')),1);
   assert.equal(businessWrites,0);
-  console.log(JSON.stringify({status:'PASS',duplicate_name_sites:2,restored_site_key:'id:site-yongin',restored_tab:'deals',today_completion_failure_preserved:true,issue_completion_failure_preserved:true,blocked_external_reads:externalRequests,business_writes:businessWrites}));
+  console.log(JSON.stringify({status:'PASS',duplicate_name_sites:2,restored_site_key:'id:site-yongin',restored_tab:'deals',today_completion_failure_preserved:true,issue_completion_failure_preserved:true,inquiry_completion_failure_preserved:true,blocked_external_reads:externalRequests,business_writes:businessWrites}));
  }finally{await browser.close();await new Promise(resolve=>srv.close(resolve))}
 }
 

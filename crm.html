@@ -7140,15 +7140,18 @@ function histBlock(q){
    ① 이 행동 완료  ② 다음 단계 전진 / 단계 전환  ③ 응대 체크리스트 6종
    ══════════════════════════════════════════════════════════════ */
 function splitDoneAction(){
-  var q=splitSel();if(!q)return;
+  var q=splitSel();if(!q)return false;
   var p=detailPatchFor('inq',inqKey(q)),a=actionObj(q,p);
-  if(!a||!a.text){alert('완료 처리할 다음 행동이 없습니다. 먼저 «📅 다음 행동»으로 등록하세요.');return}
+  if(!a||!a.text){alert('완료 처리할 다음 행동이 없습니다. 먼저 «📅 다음 행동»으로 등록하세요.');return false}
+  if(!isUuid(a.id)){alert('서버에서 발급한 다음 행동 ID를 확인한 뒤 완료해 주세요.');return false}
   var at=isoNow();
+  try{pushWrite('next_action_complete',{inquiry_id:inqKey(q),action_id:a.id,at:at})}
+  catch(e){alert('완료 요청을 등록하지 못했습니다. 기존 일정을 유지합니다.');return false}
   p.nextActionObj={text:a.text,due:a.due||'',status:'completed'};
   p.nextActionText='';p.nextAction='';q.nextActionText='';q.nextAction='';q.nextActionObj=p.nextActionObj;
   p.activities=(p.activities||[]).concat([{type:'행동완료',note:a.text,result:'완료 처리'+(a.due?' (기한 '+a.due+')':''),at:at,actor:'관리자'}]);
   q.lastActivity=p.lastActivity=at;
-  saveLocal();splitNotice('«'+a.text+'» 완료 처리 — 마지막 응대일이 오늘로 갱신되었습니다');
+  saveLocal();splitNotice('«'+a.text+'» 완료 처리 — 마지막 응대일이 오늘로 갱신되었습니다');return true;
 }
 function splitNextStep(){
   var q=splitSel();if(!q)return;setCurDetail(q);
