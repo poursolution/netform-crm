@@ -50,3 +50,36 @@ test('fallback person histories retain canonical Site IDs on both surfaces', () 
   assert.match(functionSource(pc, 'contactHistoryHTML'), /site_id:d\.cleanup_site_id\|\|d\.site_id\|\|d\.siteId\|\|undefined/);
   assert.match(functionSource(mobile, 'contactHistoryM'), /site_id:x\.cleanup_site_id\|\|x\.site_id\|\|x\.siteId\|\|undefined/);
 });
+
+test('PC history marks only one canonically confirmed open row as current',()=>{
+  const context={
+    B:{deals:[{site:'동명아파트',site_id:'site-a'},{site:'동명아파트',site_id:'site-b'}],inquiries:[],inquiryCleanupArchived:[]},
+    normSite:value=>String(value||'').replace(/\s/g,''),
+    CleanupCore:{norm:value=>String(value||'')},
+    detailAddress:item=>item.address||''
+  };
+  vm.createContext(context);
+  for(const name of ['personHistoryIdentityConfirmed','personHistoryCurrentConfirmed'])vm.runInContext(functionSource(pc,name),context);
+  const exact={site:'동명아파트',site_id:'site-a',to:'',status:'current'};
+  const legacy={site:'동명아파트',to:'',status:'current'};
+  assert.equal(context.personHistoryCurrentConfirmed([exact],exact),true);
+  assert.equal(context.personHistoryCurrentConfirmed([legacy],legacy),false);
+  assert.equal(context.personHistoryCurrentConfirmed([exact,{site:'동명아파트',site_id:'site-b',to:'',status:'current'}],exact),false);
+  assert.equal(context.personHistoryIdentityConfirmed({site:'동명아파트',site_id:'site-a',site_link_status:'review_required'}),false);
+  assert.match(functionSource(pc,'contactHistoryHTML'),/연결 확인 필요/);
+});
+
+test('mobile history uses the same confirmed-current contract',()=>{
+  const context={
+    DEALS:[{nm:'동명아파트',site_id:'site-a'},{nm:'동명아파트',site_id:'site-b'}],
+    normSiteM:value=>String(value||'').replace(/\s/g,'')
+  };
+  vm.createContext(context);
+  for(const name of ['dealSiteKeyM','historyIdentityConfirmedM','historyCurrentConfirmedM'])vm.runInContext(functionSource(mobile,name),context);
+  const exact={site:'동명아파트',site_id:'site-a',to:'',status:'current'};
+  const legacy={site:'동명아파트',to:'',status:'current'};
+  assert.equal(context.historyCurrentConfirmedM([exact],exact),true);
+  assert.equal(context.historyCurrentConfirmedM([legacy],legacy),false);
+  assert.equal(context.historyIdentityConfirmedM({site:'동명아파트',site_id:'site-a',site_link_status:'review_required'}),false);
+  assert.match(functionSource(mobile,'historySheetM'),/연결 확인 필요/);
+});
