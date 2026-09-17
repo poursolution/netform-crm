@@ -10,7 +10,7 @@ test('Site record review renders counts, filters and 20-row pagination',async()=
  assert.equal(await page.locator('.site-link-review-row').count(),20);
  assert.match(await page.locator('.site-link-review-row').first().innerText(),/영업 · #00000000 · 주소 1/);
  assert.match(await page.locator('select option').nth(1).textContent(),/이름·주소 일치 · 근거 150/);
- assert.match(await page.locator('main').innerText(),/미연결 45건 · 기존 Site 후보 15건 · 별도 현장 후보 30건 · 현장명 정리 0건/);const buttons=await page.locator('.site-link-review-toolbar button').allTextContents();assert.deepEqual(buttons,['전체 45','영업 25','문의 20','기존 Site 후보 15','별도 현장 후보 30','현장명 정리 0']);
+ assert.match(await page.locator('main').innerText(),/미연결 45건 · 주소 일치 15건 · 이름 후보 0건 · 별도 현장 후보 30건 · 현장명 정리 0건/);const buttons=await page.locator('.site-link-review-toolbar button').allTextContents();assert.deepEqual(buttons,['전체 45','영업 25','문의 20','주소 일치 후보 15','이름 후보 0','별도 현장 후보 30','현장명 정리 0']);
  assert.equal(await page.locator('.site-link-review-pager span').textContent(),'1 / 3 · 45건');
  await page.getByRole('button',{name:'다음 →'}).click();assert.equal(await page.locator('.site-link-review-pager span').textContent(),'2 / 3 · 45건');
  await page.getByRole('button',{name:'문의 20'}).click();assert.equal(await page.locator('.site-link-review-row').count(),20);assert.equal(await page.locator('.site-link-review-pager span').textContent(),'1 / 1 · 20건');
