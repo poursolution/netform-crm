@@ -19,6 +19,7 @@ test('quality gate covers the repaired customer asset and manager request paths'
     'quality-gate-workflow.test.cjs',
     'customer-asset-return-key.test.cjs',
     'dashboard-inquiry-lineage.test.cjs',
+    'site-person-history-linkage.cjs',
     'report-priority-layout.test.cjs',
     'site-asq-canonical-linkage.test.cjs',
     'manager-move-canonical-safety.test.cjs',
