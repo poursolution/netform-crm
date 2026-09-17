@@ -2639,7 +2639,7 @@ function oppAmt(d){return Number(d.amt||0)||0}
 function sumBy(a,f){return (a||[]).reduce(function(t,d){return t+(f(d)||0)},0)}
 /* 금액이 실제로 «입력된» 건이 몇 개인가. 커버리지를 숨기면 전환율이 거짓말이 된다 —
    지금 진행 딜은 3분의 1만 금액이 있어서, 분모를 그대로 쓰면 전환율이 부풀려진다. */
-function amtCover(a,f){var n=0;(a||[]).forEach(function(d){if((f||dealAmt)(d)>0)n++});
+function amtCover(a,f){var amountOf=f||oppAmt,n=0;(a||[]).forEach(function(d){if(amountOf(d)>0)n++});
  return {n:n,t:(a||[]).length,pct:(a||[]).length?Math.round(n*100/a.length):0}}
 /* 2026-09-01 Core: Deal 키에서 가변값(담당자·단계)을 뺀다.
    담당자나 단계를 바꾸면 키가 통째로 달라져, 그 딜에 남긴 로컬 수정본이 사라졌다.
@@ -3326,14 +3326,14 @@ function paintTowerOrigin(){
    &&(G.rep==='전체'||repN(d.assignee)===G.rep)&&workMatches(d,G.workFilter)
    &&(!G.q||((d.site||'')+' '+(d.assignee||'')+' '+(d.stage||'')+' '+dealWorkSummary(d)).includes(G.q))});
  var self=A.filter(function(d){return /직접영업/.test(String(d.originBusiness||d.originChannel||''))});
- var rows=BusinessAttribution.summarize(A,{target:'기술자문',isWon:isWon,isOpen:isOpen,amountOf:dealAmt,wonAmountOf:wonAmt});
+ var rows=BusinessAttribution.summarize(A,{target:'기술자문',isWon:isWon,isOpen:isOpen,amountOf:function(d){return isWon(d)?wonAmt(d):oppAmt(d)},wonAmountOf:wonAmt});
  var asq=rows.filter(function(r){return r.origin==='아파트스퀘어'})[0]||{convertedCount:0,convertedAmount:0,convertedOpenAmount:0,convertedWonAmount:0,wonAmountMissingCount:0};
  var missing=rows.reduce(function(n,r){return n+r.wonAmountMissingCount},0);
  host.innerHTML='<div class="ch"><div><h3>최초 유입 기여 · 기술자문 전환</h3><div class="sub">직접영업 '+self.length+'건 · 최종 사업유형이 바뀌어도 최초 유입 브랜드의 금액 기여를 유지합니다</div></div></div>'
   +'<div class="origin-flow-banner"><div class="lead"><span>APARTMENT SQUARE → 기술자문</span><b>아파트스퀘어가 만든 기술자문 기여</b><small>딜을 복제하지 않고 최초 유입과 현재 사업을 두 축으로 봅니다.</small></div><div><span>전환</span><b>'+asq.convertedCount+'건</b><small>현재 기술자문</small></div><div><span>전환 가망금액</span><b>'+eok(asq.convertedAmount)+'</b><small>진행 '+eok(asq.convertedOpenAmount)+'</small></div><div><span>실제 수주기여</span><b>'+eok(asq.convertedWonAmount)+'</b><small>won_amount만 집계</small></div></div>'
   +'<div class="table-scroll"><table class="brand-overview"><thead><tr><th>최초 유입</th><th>전체 유입<small>건수</small></th><th>유입 금액<small>전체</small></th><th>기술자문 전환<small>건수</small></th><th>전환 가망금액<small>현재·확정</small></th><th>실제 수주기여<small>won_amount</small></th></tr></thead><tbody>'
   +rows.map(function(r){return '<tr class="'+(r.origin==='아파트스퀘어'?'origin-focus':'')+'"><td class="brand-name">'+esc(r.origin)+'</td><td>'+r.count+'</td><td>'+eok(r.amount)+'</td><td>'+r.convertedCount+'</td><td>'+eok(r.convertedAmount)+'</td><td class="won">'+eok(r.convertedWonAmount)+'</td></tr>'}).join('')
-  +'</tbody></table></div><div class="origin-axis-note"><b>중복 표시 원칙</b> · 같은 딜은 현재 사업유형의 <b>기술자문 실적</b>에도 보이고, 최초 유입의 <b>아파트스퀘어 기여</b>에도 보입니다. 서로 다른 분석축이므로 두 표의 합계를 더하지 않습니다. 유입·전환 금액은 수주금액 → 예상금액 → 견적금액 순으로 표시하고, 실제 수주기여는 won_amount만 집계합니다.'+(missing?' 실제 수주금액 미입력 '+missing+'건은 임의 추정하지 않았습니다.':'')+'</div>';
+  +'</tbody></table></div><div class="origin-axis-note"><b>중복 표시 원칙</b> · 같은 딜은 현재 사업유형의 <b>기술자문 실적</b>에도 보이고, 최초 유입의 <b>아파트스퀘어 기여</b>에도 보입니다. 서로 다른 분석축이므로 두 표의 합계를 더하지 않습니다. 유입·전환 금액은 진행 건은 예상금액, 수주 건은 실제 수주금액으로 집계하며 실제 수주기여도 won_amount만 사용합니다.'+(missing?' 실제 수주금액 미입력 '+missing+'건은 임의 추정하지 않았습니다.':'')+'</div>';
 }
 /* ── 대표용 병목 요약 — 3개만 ─────────────────────────────────── */
 function paintTowerNeck2(){
@@ -7516,7 +7516,7 @@ function saveNewDeal(){
 
 /* 기술자문으로 «전환된» 딜이 어디서 왔는지 — 파이프라인 필터 옆 내역 */
 function advOriginBreakdown(){
-  var rows=BusinessAttribution.summarize((B.deals||[]).filter(isAdvisory),{target:'기술자문',isWon:isWon,isOpen:isOpen,amountOf:dealAmt,wonAmountOf:wonAmt});
+  var rows=BusinessAttribution.summarize((B.deals||[]).filter(isAdvisory),{target:'기술자문',isWon:isWon,isOpen:isOpen,amountOf:function(d){return isWon(d)?wonAmt(d):oppAmt(d)},wonAmountOf:wonAmt});
   return rows.map(function(r){return esc(r.origin)+' '+r.convertedCount+'건·'+eok(r.convertedAmount)}).join(' · ');
 }
 
