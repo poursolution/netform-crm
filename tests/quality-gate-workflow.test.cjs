@@ -24,7 +24,9 @@ test('quality gate covers the repaired customer asset and manager request paths'
     'manager-request-today-source.test.cjs',
     'manager-request-evidence.test.cjs',
     'today-work-clarity.test.cjs',
-    'data-cleanup.test.cjs'
+    'data-cleanup.test.cjs',
+    'gyeongnam-action-first.test.cjs',
+    'rep-management-action-first.test.cjs'
   ]) assert.match(packageJson.scripts['test:contracts'],new RegExp(file.replaceAll('.','\\.')));
 });
 
@@ -41,4 +43,6 @@ test('quality gate exercises critical PC screens in a real browser',()=>{
   assert.match(workflow,/run: npm run smoke:pc/);
   assert.match(packageJson.scripts['smoke:pc'],/verify-today-work-browser\.cjs/);
   assert.match(packageJson.scripts['smoke:pc'],/verify-customer-asset-pagination-browser\.cjs/);
+  assert.match(packageJson.scripts['smoke:pc'],/verify-rep-management-browser\.cjs/);
+  assert.match(packageJson.scripts['smoke:pc'],/verify-gyeongnam-management-browser\.cjs/);
 });

@@ -5797,8 +5797,8 @@ paintGyeongnam=function(){
  var root=document.getElementById('gyeongnam-root');if(!root)return;
  var frames=Array.prototype.slice.call(root.querySelectorAll(':scope > .gn-frame'));
  function frame(title){return frames.filter(function(x){var h=x.querySelector('h3');return h&&h.textContent===title})[0]}
- var command=root.querySelector('.gn-command'),anchor=command&&command.nextSibling;
- ['즉시 확인','본사 인계 현황','경남지사 담당자별 흐름','본사 → 경남지사 영업 Funnel','최근 6개월 흐름'].forEach(function(title){var node=frame(title);if(node){root.insertBefore(node,anchor);anchor=node.nextSibling}});
+ var drill=root.querySelector(':scope > .gn-drill');
+ ['즉시 확인','본사 인계 현황','경남지사 담당자별 흐름','본사 → 경남지사 영업 Funnel','최근 6개월 흐름'].forEach(function(title){var node=frame(title);if(node)root.insertBefore(node,drill)});
  root.classList.add('gn-action-first');
 };
 function gnOpenInquiry(i){var q=GN_INQ_CACHE[i];if(q)drwInq(JSON.stringify(q))}
