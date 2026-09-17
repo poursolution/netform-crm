@@ -9,20 +9,20 @@ const css=fs.readFileSync(path.join(root,'pipeline-vertical.css'),'utf8');
 const html=fs.readFileSync(path.join(root,'crm.html'),'utf8');
 const toolbar=fs.readFileSync(path.join(root,'pipeline-toolbar.js'),'utf8');
 
-test('pipeline renders every stage master entry in canonical sequence',()=>{
- assert.match(js,/stageSections=\(\)=>w\.STAGE_SEQ\.map/);
- assert.match(js,/title:w\.STAGE_MASTER\[code\]\.name/);
+test('pipeline renders the confirmed seven operating stages vertically',()=>{
+ assert.match(js,/stageSections=\(\)=>w\.KB5\.map/);
+ assert.match(js,/title:stage\.nm/);
  assert.match(js,/w\.paintKanban=render/);
- assert.match(js,/closed:true/);
- assert.match(js,/w\.dealStage\(d\)===stage\.code/);
+ assert.match(js,/stage\.codes\.indexOf\(w\.dealStage\(d\)\)>=0/);
+ assert.match(js,/closed:stage\.closed/);
  assert.doesNotMatch(js,/const GROUPS=/);
  assert.match(html,/pipeline-vertical\.css/);
  assert.match(html,/pipeline-vertical\.js/);
 });
 
-test('pipeline rows preserve the three required actions and operational ordering',()=>{
- ['기록','다음 행동','단계 이동'].forEach(label=>assert.ok(js.includes(label),label));
- assert.match(js,/pipelineQuick/);
+test('pipeline rows open detail without inline action clutter and keep operational ordering',()=>{
+ assert.doesNotMatch(js,/class="pv-actions"/);
+ assert.doesNotMatch(js,/pipelineQuick\(/);
  assert.match(js,/openKb5/);
  assert.match(js,/rank:0/);
  assert.match(js,/rank:1/);
