@@ -5,8 +5,7 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
-const { createRequire } = require('node:module');
-const { chromium } = createRequire(path.resolve(__dirname, '../../crm-security-lab/package.json'))('playwright');
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 
 const root = path.resolve(__dirname, '..');
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json' };
@@ -57,9 +56,11 @@ async function run() {
     });
     assert.deepEqual(await page.locator('.inq-work-row.head>span').allTextContents(),['접수 / 경과','현장 · 문의자','담당 / 상태','최근 응대','다음 할 일','바로 조치']);
     const dense=page.locator('.inq-work-row').filter({hasText:'황윤선 다음행동 필요'});
-    assert.match(await dense.locator('.inq-work-recent').innerText(),/도면 요청 완료/);
-    assert.doesNotMatch(await dense.locator('.inq-work-recent').innerText(),/내부 메모/);
-    assert.match(await dense.locator('.inq-work-next').innerText(),/도면 수신 확인/);
+    assert.match(await dense.locator('.inq-work-recent').textContent(),/도면 요청 완료/);
+    assert.doesNotMatch(await dense.locator('.inq-work-recent').textContent(),/내부 메모/);
+    assert.match(await dense.locator('.inq-work-next').textContent(),/도면 수신 확인/);
+    assert.match(await page.locator('.inq-work-row[data-k="inq-4"] .inq-action').textContent(),/담당자 배정/);
+    assert.match(await page.locator('.inq-work-row[data-k="inq-1"] .inq-action').textContent(),/응대 기록/);
     for(const width of [1920,1440,1024]){await page.setViewportSize({width,height:1000});await page.waitForTimeout(50);assert.ok(await page.locator('#pg-inq').evaluate(e=>e.scrollWidth<=e.clientWidth+1))}
     await page.setViewportSize({width:1920,height:1080});
     if(process.env.INQUIRY_SCREENSHOT)await page.screenshot({path:process.env.INQUIRY_SCREENSHOT,fullPage:true});
@@ -80,7 +81,7 @@ async function run() {
     const delayedCount = await page.evaluate(() => inqCtlScopeActive().filter(InquiryWorkbench.delayed).length);
     assert.equal(await page.locator('.inq-work-row:not(.head)').count(), delayedCount);
     await page.locator('.inq-work-counts [data-key="all"]').click();
-    await page.locator('.inq-work-row[data-k="inq-1"] .inq-work-open').click();
+    await page.locator('.inq-work-row[data-k="inq-1"] .inq-action').getByRole('button',{name:'응대 기록',exact:true}).click();
     assert.equal(await page.evaluate(() => G.inqSelKey), 'inq-1');
     assert.equal(await page.locator('.sp-detail').count(), 1);
     assert.equal(await page.locator('.sp-detail .pl-line').count(), 0);
