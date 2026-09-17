@@ -938,7 +938,9 @@ function jandiTime(s){
    출처는 배지로만 구분한다. 별도 영역으로 쪼개면 «어디를 봐야 하는지» 가 다시 생긴다. */
 function respOf(d){
  var R=[],L=((BUNDLE&&BUNDLE.inquiries)||[]).filter(function(q){return !(q.deleted_at||q.deletedAt)});
- var Q=L.filter(function(q){return (d.site_id&&q.site_id===d.site_id)||(q.site&&q.site===d.nm)});
+ var oid=d.originInquiryId||d.origin_inquiry_id,Q=oid?L.filter(function(q){return String(q.id||q.inquiry_id||'')===String(oid)}):[],did=String(d.id||d.opportunity_id||'');
+ if(!Q.length&&did)Q=L.filter(function(q){return String(q.opportunity_id||q.deal_id||'')===did});
+ var sid=d.cleanup_site_id||d.site_id||d.siteId;if(!Q.length&&sid)Q=L.filter(function(q){return String(q.cleanup_site_id||q.site_id||q.siteId||'')===String(sid)});
  Q.forEach(function(q){
   (q.responses||[]).forEach(function(r){var pj=parseJandi(r.body);
    R.push({at:jandiTime(r.at)||q.at,src:'jandi',ttl:pj.title||r.kind||'응대 기록',
