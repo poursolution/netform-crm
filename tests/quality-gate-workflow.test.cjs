@@ -20,6 +20,7 @@ test('quality gate covers the repaired customer asset and manager request paths'
     'customer-asset-return-key.test.cjs',
     'detail-next-completion.test.cjs',
     'today-next-completion.test.cjs',
+    'mobile-today-next-completion.test.cjs',
     'site-address-filter-static.test.cjs',
     'site-linked-assets-static.test.cjs',
     'site-master-address-update-static.test.cjs',
@@ -45,6 +46,7 @@ test('quality gate exercises critical PC screens in a real browser',()=>{
   assert.match(workflow,/npx playwright install --with-deps chromium/);
   assert.match(workflow,/run: npm run smoke:pc/);
   assert.match(packageJson.scripts['smoke:pc'],/verify-today-work-browser\.cjs/);
+  assert.match(packageJson.scripts['smoke:pc'],/verify-mobile-today-completion-browser\.cjs/);
   assert.match(packageJson.scripts['smoke:pc'],/verify-customer-asset-pagination-browser\.cjs/);
   assert.match(packageJson.scripts['smoke:pc'],/verify-customer-asset-return-browser\.cjs/);
   assert.match(packageJson.scripts['smoke:pc'],/pc-organization-history-browser\.cjs/);
