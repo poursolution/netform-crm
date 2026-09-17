@@ -5,6 +5,8 @@ const {createRequire}=require('node:module');
 const {chromium}=createRequire(path.resolve(__dirname,'../../crm-security-lab/package.json'))('playwright');
 async function run(){
  const root=path.resolve(__dirname,'..'),server=http.createServer((req,res)=>{const file=path.resolve(root,decodeURIComponent(new URL(req.url,'http://127.0.0.1').pathname).replace(/^\/+/,''));if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',({'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8','.css':'text/css; charset=utf-8'})[path.extname(file)]||'application/octet-stream');fs.createReadStream(file).pipe(res)});
+ const artifactDir=path.join(root,'artifacts');
+ fs.mkdirSync(artifactDir,{recursive:true});
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
  try{
@@ -32,7 +34,7 @@ async function run(){
   await page.evaluate(()=>{fixture.q.opportunity_id=fixture.deal.id;drwInq(JSON.stringify(fixture.q))});
   assert.equal(await page.evaluate(()=>CUR_DETAIL.kind),'inq');
   await page.getByRole('button',{name:'영업기회 열기 →',exact:true}).waitFor({state:'visible'});
-  await page.screenshot({animations:'disabled',path:'C:/Users/Administrator/.codex/visualizations/2026/09/05/01a073a6-2a59-7320-9bc6-0eb52f2c7a2a/detail-p1-inquiry.png'});
+  await page.screenshot({animations:'disabled',path:path.join(artifactDir,'detail-p1-inquiry.png')});
   await page.getByRole('button',{name:'영업기회 열기 →',exact:true}).click();
   assert.equal(await page.evaluate(()=>CUR_DETAIL.item.id),await page.evaluate(()=>fixture.deal.id));
   assert.equal(await page.evaluate(()=>CUR_DETAIL.kind),'deal');
@@ -77,7 +79,7 @@ async function run(){
   assert.equal(await page.evaluate(()=>fixture.q.amt),undefined);
   assert.equal(await page.evaluate(()=>saveBasics()),false,'inquiry save guarded');
   await page.evaluate(()=>{G._detailPopup=true;drwDeal(JSON.stringify(fixture.deal));detailTabFocus('현장·견적',true);briefAmountEditor()});
-  await page.screenshot({path:'C:/Users/Administrator/.codex/visualizations/2026/09/05/01a073a6-2a59-7320-9bc6-0eb52f2c7a2a/detail-p1-amount.png'});
+  await page.screenshot({path:path.join(artifactDir,'detail-p1-amount.png')});
   const uncertain=await page.evaluate(async()=>{const n=requestCount;pendingRows.push({operation:'amount',object_id:fixture.deal.id,status:'uncertain'});document.getElementById('dv-amt').value='500000';const result=await saveBasics();pendingRows.pop();return {result,new_requests:requestCount-n,value:fixture.deal.amt}});
   assert.deepEqual(uncertain,{result:false,new_requests:0,value:0});
   await page.evaluate(()=>drwInq(JSON.stringify(fixture.q)));
