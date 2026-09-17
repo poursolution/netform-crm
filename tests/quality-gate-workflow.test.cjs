@@ -18,6 +18,7 @@ test('quality gate covers the repaired customer asset and manager request paths'
   for(const file of [
     'quality-gate-workflow.test.cjs',
     'customer-asset-return-key.test.cjs',
+    'detail-next-completion.test.cjs',
     'site-address-filter-static.test.cjs',
     'site-linked-assets-static.test.cjs',
     'site-master-address-update-static.test.cjs',
