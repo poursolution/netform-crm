@@ -3574,16 +3574,28 @@ function todoCall(k){
  try{window.location.href='tel:'+ph.tel}catch(e){}
  paint()}
 function todoDone(k){
- var d=(B.deals||[]).filter(function(x){return dealKey(x)===k})[0];if(!d)return;
- var p=itemPatch(d,'deal'),na=actionObj(d,p);if(!na)return;
+ var d=(B.deals||[]).filter(function(x){return dealKey(x)===k})[0];if(!d)return false;
+ var p=itemPatch(d,'deal'),na=actionObj(d,p);if(!na)return false;
+ if(!isUuid(na.id)){
+  if(typeof toast==='function')toast('서버에서 발급한 다음 행동 ID가 없어 완료할 수 없습니다.');
+  else alert('서버에서 발급한 다음 행동 ID가 없어 완료할 수 없습니다.');
+  return false;
+ }
+ var completedAt=isoNow();
+ try{
+  pushWrite('next_action_complete',{opportunity_id:d.id,action_id:na.id,text:na.text||'',due_at:na.due||'',at:completedAt});
+ }catch(e){
+  if(typeof toast==='function')toast('다음 행동 완료 요청을 등록하지 못했습니다. 기존 일정을 유지합니다.');
+  else alert('다음 행동 완료 요청을 등록하지 못했습니다. 기존 일정을 유지합니다.');
+  return false;
+ }
  todoLog(d,na.type||'전화',na.text||'다음 행동','다음 행동 완료');
  p.completedActions=(p.completedActions||[]).concat([
-   {text:na.text,due:na.due,type:na.type,status:'completed',completedAt:isoNow()}]);
+   {text:na.text,due:na.due,type:na.type,status:'completed',completedAt:completedAt}]);
  p.nextActionObj=d.nextActionObj=null;
  p.nextAction=d.nextAction='';p.nextActionText=d.nextActionText='';
  saveLocal();
- pushWrite('next_action_complete',{opportunity_id:d.id,text:na.text||'',due_at:na.due||'',at:isoNow()});
- paint()}
+ paint();return true}
 /* 연기는 «미룬 횟수» 가 남아야 의미가 있다 — bumpPostpone 이 그걸 센다 */
 function todoDelay(k){
  var d=(B.deals||[]).filter(function(x){return dealKey(x)===k})[0];if(!d)return;
