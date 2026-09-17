@@ -7544,17 +7544,15 @@ function saveOriginBusinessEdit(){
    ══════════════════════════════════════════════════════════════ */
 function paint(){
  if(!B)return;                      /* 데이터 로드 전 호출 방지 */
- if(window.PipelineToolbar)PipelineToolbar.restoreControls();
  /* 스플릿 상세는 #p-main 안에 산다. 어느 페이지를 그리든 innerHTML 이 갈리기 전에
     노드를 body 로 빼두고, 스플릿이 아니면 도킹 자체를 해제한다. */
  var _wasDocked=isDocked();
  detachDetail();
  if(_wasDocked&&!(G.page==='pipe'&&G.pipeView==='split'))closeDocked();
- var customerMaster=G.page==='sites',relationshipPage=G.page==='relationship',expansionPage=G.page==='expansion',branchPage=G.page==='gyeongnam',campaignPage=G.page==='campaign',repManagerPage=G.page==='repmanage',todayPage=G.page==='today',periodEl=$('#periodbar'),repEl=$('#reptabs');
- var hidePeriod=customerMaster||relationshipPage||expansionPage||campaignPage||repManagerPage||todayPage,hideRep=customerMaster||relationshipPage||expansionPage||branchPage||campaignPage||repManagerPage||todayPage;
- // Pipeline reuses these controls in its single inline bar. Keep rendering their
- // canonical values below, but never leave the old two-row containers visible.
- if(periodEl)periodEl.style.display=(hidePeriod||G.page==='pipe')?'none':'';if(repEl)repEl.style.display=(hideRep||G.page==='pipe')?'none':'';
+ var customerMaster=G.page==='sites',relationshipPage=G.page==='relationship',expansionPage=G.page==='expansion',branchPage=G.page==='gyeongnam',campaignPage=G.page==='campaign',repManagerPage=G.page==='repmanage',todayPage=G.page==='today',pipelinePage=G.page==='pipe',periodEl=$('#periodbar'),repEl=$('#reptabs');
+ var hidePeriod=customerMaster||relationshipPage||expansionPage||campaignPage||repManagerPage||todayPage||pipelinePage,hideRep=customerMaster||relationshipPage||expansionPage||branchPage||campaignPage||repManagerPage||todayPage||pipelinePage;
+ // PipelineToolbar owns its controls. Global controls render only on pages that use them.
+ if(periodEl)periodEl.style.display=hidePeriod?'none':'';if(repEl)repEl.style.display=hideRep?'none':'';
  if(!hidePeriod)paintPeriod();if(!hideRep)paintRepTabs();
  if(G.page==='today')paintTodayHome();/* 역할별 오늘 우선순위 */
  if(G.page==='dash')paintDash();    /* 대시보드 */
