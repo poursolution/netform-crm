@@ -8,12 +8,21 @@ test('Site record review renders counts, filters and 20-row pagination',async()=
  await page.evaluate(rows=>{window.confirm=()=>true;window.toast=()=>{};window.G={page:'sites'};window.Phase1={profile:{auth_uid:'admin',permission_role:'admin'},rpc:async name=>name==='crm_site_record_link_review_list_v1'?{contract_version:1,items:rows}:{ok:true,site_id:'11111111-1111-4111-8111-111111111111'}};},items);
  await page.addScriptTag({content:source});await page.evaluate(()=>PCSiteRecordReview.mount(document.getElementById('root')));await page.waitForSelector('.site-link-review-row');
  assert.equal(await page.locator('.site-link-review-row').count(),20);
+ assert.match(await page.locator('.site-link-review-row').first().innerText(),/영업 · #00000000 · 주소 1/);
  assert.match(await page.locator('select option').nth(1).textContent(),/이름·주소 일치 · 근거 150/);
  assert.match(await page.locator('main').innerText(),/미연결 45건 · 기존 Site 후보 15건 · 별도 현장 후보 30건 · 현장명 정리 0건/);const buttons=await page.locator('.site-link-review-toolbar button').allTextContents();assert.deepEqual(buttons,['전체 45','영업 25','문의 20','기존 Site 후보 15','별도 현장 후보 30','현장명 정리 0']);
  assert.equal(await page.locator('.site-link-review-pager span').textContent(),'1 / 3 · 45건');
  await page.getByRole('button',{name:'다음 →'}).click();assert.equal(await page.locator('.site-link-review-pager span').textContent(),'2 / 3 · 45건');
  await page.getByRole('button',{name:'문의 20'}).click();assert.equal(await page.locator('.site-link-review-row').count(),20);assert.equal(await page.locator('.site-link-review-pager span').textContent(),'1 / 1 · 20건');
  await browser.close();
+});
+
+test('lookalike Site review rows expose their distinct source IDs',async()=>{
+ const browser=await launch();try{const page=await browser.newPage(),items=['00000001','00000002'].map(suffix=>({source_type:'inquiry',source_id:`00000000-0000-4000-8000-${suffix.padStart(12,'0')}`,name:'같은 현장',address:'같은 주소',occurred_at:'2026-09-16',site_candidates:[]}));
+  await page.setContent('<main id="root"></main>');await page.evaluate(rows=>{window.toast=()=>{};window.Phase1={profile:{auth_uid:'admin',permission_role:'admin'},rpc:async()=>({contract_version:3,items:rows})};},items);
+  await page.addScriptTag({content:source});await page.evaluate(()=>PCSiteRecordReview.mount(document.getElementById('root')));await page.waitForSelector('.site-link-review-row');
+  const text=await page.locator('.site-link-review-row').allTextContents();assert.match(text[0],/문의 · #00000001/);assert.match(text[1],/문의 · #00000002/);
+ }finally{await browser.close();}
 });
 
 test('successful resolution refreshes the changed operational domain',async()=>{
