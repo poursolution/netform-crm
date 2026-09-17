@@ -1,13 +1,13 @@
 /* Admin-only queue for deal/inquiry rows that still lack canonical site_id. */
 (function(w){
- 'use strict';let section=null,generation=0;const PAGE_SIZE=20;
+ 'use strict';let section=null,mountedRoot=null,generation=0;const PAGE_SIZE=20;
  const node=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
  const sourceLabel=row=>{const id=String(row.source_id||'').trim(),short=id?id.slice(-8):'ID 없음';return (row.source_type==='deal'?'영업':'문의')+' · #'+short;};
  const candidateLabel=s=>{const reason=s.match_reason||(s.exact_address?'주소 일치':'이름 일치'),score=Number(s.match_score||0);return reason+(score?' · 근거 '+score:'')+' · '+(s.name||'현장명 미입력')+' · '+(s.address||'주소 미입력');};
- function clear(){generation++;if(section)section.remove();section=null;}
+ function clear(){generation++;const root=mountedRoot,button=root?.querySelector('[data-review-shortcut="records"]');if(button){const nav=button.parentElement;button.remove();if(nav&&!nav.children.length)nav.remove();}if(section)section.remove();section=null;mountedRoot=null;}
  function mount(root,query=''){
   const transport=w.Phase1,profile=transport?.profile,search=String(query||'').trim().toLocaleLowerCase();if(!root||!profile?.auth_uid||profile.permission_role!=='admin'){clear();return;}
-  clear();const actor=profile.auth_uid,ticket=++generation;let items=[],filter='all',page=1;
+  clear();mountedRoot=root;const actor=profile.auth_uid,ticket=++generation;let items=[],filter='all',page=1;
   section=node('section',undefined,'site-master-section site-link-review');section.dataset.siteRecordReview='true';
   const head=node('header'),titles=node('div'),toolbar=node('nav',undefined,'site-link-review-toolbar'),list=node('div',undefined,'site-link-review-list'),pager=node('nav',undefined,'site-link-review-pager'),retry=node('button','다시 조회','btn');retry.type='button';
   const summary=node('p','Site ID가 없는 영업·문의만 표시합니다. 확정 시 원본 레코드에 Site ID가 저장됩니다.');titles.append(node('h4','Site ID 연결 검토'),summary);head.append(titles,retry);section.append(head,toolbar,list,pager);root.append(section);

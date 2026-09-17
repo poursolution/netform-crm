@@ -5,7 +5,7 @@ test('Site record review renders counts, filters and 20-row pagination',async()=
  const browser=await launch();const page=await browser.newPage();
  const items=Array.from({length:45},(_,i)=>({source_type:i<25?'deal':'inquiry',source_id:`00000000-0000-4000-8000-${String(i).padStart(12,'0')}`,name:`현장 ${i+1}`,address:`주소 ${i+1}`,occurred_at:'2026-09-16T00:00:00Z',site_candidates:i%3===0?[{site_id:'11111111-1111-4111-8111-111111111111',name:`현장 ${i+1}`,address:`주소 ${i+1}`,exact_address:true,match_reason:'이름·주소 일치',match_score:150}]:[]}));
  await page.setContent('<main id="root"><section class="site-command"></section></main>');
- await page.evaluate(rows=>{window.confirm=()=>true;window.toast=()=>{};window.G={page:'sites'};window.Phase1={profile:{auth_uid:'admin',permission_role:'admin'},rpc:async name=>name==='crm_site_record_link_review_list_v1'?{contract_version:1,items:rows}:{ok:true,site_id:'11111111-1111-4111-8111-111111111111'}};},items);
+ await page.evaluate(rows=>{window.confirm=()=>true;window.toast=()=>{};window.G={page:'sites'};window.SiteReviewShortcut=(root,kind)=>{let nav=root.querySelector('.site-review-shortcuts');if(!nav){nav=document.createElement('nav');nav.className='site-review-shortcuts';root.append(nav);}const button=document.createElement('button');button.dataset.reviewShortcut=kind;nav.append(button);};window.Phase1={profile:{auth_uid:'admin',permission_role:'admin'},rpc:async name=>name==='crm_site_record_link_review_list_v1'?{contract_version:1,items:rows}:{ok:true,site_id:'11111111-1111-4111-8111-111111111111'}};},items);
  await page.addScriptTag({content:source});await page.evaluate(()=>PCSiteRecordReview.mount(document.getElementById('root')));await page.waitForSelector('.site-link-review-row');
  assert.equal(await page.locator('.site-link-review-row').count(),20);
  assert.match(await page.locator('.site-link-review-row').first().innerText(),/영업 · #00000000 · 주소 1/);
@@ -15,6 +15,7 @@ test('Site record review renders counts, filters and 20-row pagination',async()=
  assert.equal(await page.locator('.site-link-review-pager span').textContent(),'1 / 3 · 45건');
  await page.getByRole('button',{name:'다음 →'}).click();assert.equal(await page.locator('.site-link-review-pager span').textContent(),'2 / 3 · 45건');
  await page.getByRole('button',{name:'문의 20'}).click();assert.equal(await page.locator('.site-link-review-row').count(),20);assert.equal(await page.locator('.site-link-review-pager span').textContent(),'1 / 1 · 20건');
+ assert.equal(await page.locator('[data-review-shortcut="records"]').count(),1);await page.evaluate(()=>{Phase1.profile={auth_uid:'rep',permission_role:'rep'};dispatchEvent(new Event('phase1:profile'));});assert.equal(await page.locator('[data-site-record-review]').count(),0);assert.equal(await page.locator('[data-review-shortcut="records"]').count(),0);
  await browser.close();
 });
 
