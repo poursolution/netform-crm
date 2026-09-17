@@ -6,7 +6,7 @@
  const candidateLabel=s=>{const reason=s.match_reason||(s.exact_address?'주소 일치':'이름 일치'),score=Number(s.match_score||0);return reason+(score?' · 근거 '+score:'')+' · '+(s.name||'현장명 미입력')+' · '+(s.address||'주소 미입력');};
  function publishShortcut(root,kind,label,count,target){let nav=root.querySelector(':scope > .site-review-shortcuts');if(!nav){nav=node('nav',undefined,'site-review-shortcuts');nav.setAttribute('aria-label','고객자산 연결 검토 바로가기');const command=root.querySelector('.site-command');if(command)command.insertAdjacentElement('afterend',nav);else root.prepend(nav);}let button=nav.querySelector('[data-review-shortcut="'+kind+'"]');if(!button){button=node('button');button.type='button';button.dataset.reviewShortcut=kind;nav.append(button);}button.textContent=label+' '+count+'건';button.onclick=()=>target.scrollIntoView({behavior:'smooth',block:'start'});}
  w.SiteReviewShortcut=publishShortcut;
- function clear(){generation++;if(section)section.remove();section=null;mountedRoot=null;mountedSearch='';}
+ function clear(){generation++;const root=mountedRoot,button=root?.querySelector('[data-review-shortcut="history"]');if(button){const nav=button.parentElement;button.remove();if(nav&&!nav.children.length)nav.remove();}if(section)section.remove();section=null;mountedRoot=null;mountedSearch='';}
  function message(root,text,error){root.replaceChildren(node('p',text,'site-nodata'));root.firstChild.setAttribute('role',error?'alert':'status');}
  function mount(root,query=''){
   const transport=w.Phase1,profile=transport?.profile,search=String(query||'').trim().toLocaleLowerCase();
