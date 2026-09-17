@@ -19,7 +19,7 @@ function server() {
 (async () => {
   const srv = server();
   await new Promise(resolve => srv.listen(0, '127.0.0.1', resolve));
-  const browser = await chromium.launch({ executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless: true });
+  const browser = await chromium.launch({ headless: true, ...(process.env.EDGE_PATH ? { executablePath: process.env.EDGE_PATH } : {}) });
   try {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     await context.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
@@ -31,14 +31,15 @@ function server() {
       ME = { name: '송보람', role: 'admin' };
       B = { deals: [], inquiries: [] };
       const names = ['황윤선', '이필선', '한준엽', '정정훈', '김성민', '조현식'];
-      const deals = names.map((name, i) => ({ id: `d${i}`, site: `${name} 현장`, assignee: name, code: i < 2 ? 'compete' : 'consulting', grp: 'A', amount: (i + 1) * 80000000, created: '2026-09-01' }));
-      const inquiries = names.map((name, i) => ({ id: `q${i}`, site: `${name} 현장`, assignee: name, created_at: '2026-09-02', status: i % 2 ? '응대완료' : '배정완료' }));
+      const deals = names.map((name, i) => ({ id: `d${i}`, site: `${name} 현장`, assignee: name, code: i < 2 ? 'compete' : 'consulting', grp: 'A', amount: (i + 1) * 80000000, created: '2026-09-01', issues: i < 2 ? ['stale', 'overdue'] : ['nextMissing'] }));
+      const inquiries = names.map((name, i) => ({ id: `q${i}`, site: `${name} 현장`, assignee: name, assigned_at: '2026-09-02T09:00:00Z', created_at: '2026-09-02', status: i % 2 ? '응대완료' : '배정완료' }));
       dashboardInquiryScope = () => inquiries;
       dashboardSnapshotDeals = () => deals;
       towerBase = () => deals;
       wonInPeriod = () => [];
       liveActs = () => [];
       metricReady = () => true;
+      issueSet = d => d.issues || [];
       inqMadeStats = () => ({ _n: 6, _made: 3 });
       inquiryHasMadeDeal = q => Number(q.id.slice(1)) < 3;
       inquiryResponded = q => q.status === '응대완료';
@@ -51,9 +52,9 @@ function server() {
       paintDashboardControlSummary();
     });
 
-    assert.equal(await page.locator('.dashboard-compact-money>div>button').count(), 5);
-    assert.equal(await page.locator('.dashboard-compact-flow>div>button').count(), 5);
+    assert.equal(await page.locator('.dashboard-compact-money>div>button').count(), 4);
     assert.equal(await page.locator('.dashboard-compact-issues>div>button').count(), 3);
+    assert.equal(await page.locator('.dashboard-compact-bottlenecks>div>button').count(), 1);
     assert.equal(await page.locator('.dashboard-rep-row').count(), 6);
     assert.equal(await page.locator('#d-analysis-tabs button').count(), 7);
     assert.equal(await page.locator('#dh-panel-flow').isHidden(), true);
@@ -68,11 +69,15 @@ function server() {
     await page.getByRole('button', { name: '전체현황', exact: true }).click();
     assert.equal(await page.locator('#d-analysis').evaluate(el => el.classList.contains('overview-selected')), true);
 
+    for (const width of [1920, 1440, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true, `${width}px dashboard overflow`);
+    }
     await page.setViewportSize({ width: 390, height: 844 });
     await page.evaluate(() => { G.dashboardAnalysisTab = 'overview'; paintDashboardControlSummary(); });
-    assert.equal(await page.locator('.dashboard-compact-money>div>button').count(), 5);
+    assert.equal(await page.locator('.dashboard-compact-money>div>button').count(), 4);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true);
-    console.log(JSON.stringify({ status: 'PASS', kpis: 5, flow_steps: 5, issues: 3, reps: 6, analysis_tabs: 7, mobile_overflow: false, external_writes: 0 }));
+    console.log(JSON.stringify({ status: 'PASS', kpis: 4, issues: 3, bottlenecks: 1, reps: 6, analysis_tabs: 7, pc_viewports: [1920, 1440, 1280], mobile_overflow: false, external_writes: 0 }));
   } finally {
     await browser.close();
     await new Promise(resolve => srv.close(resolve));
