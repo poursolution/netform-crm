@@ -1,7 +1,7 @@
 (function(root){
  'use strict';
  const TYPES={inquiry:'견적문의',pipeline:'파이프라인',relationship:'관계관리',expansion:'확장관리',manager:'관리자 요청'};
- const FILTERS=[['all','전체'],['urgent','긴급'],['overdue','기한초과'],['unassigned','미배정'],['missing','Next 없음']];
+ const FILTERS=[['all','전체'],['urgent','긴급'],['overdue','기한초과'],['unassigned','미배정'],['missing','Next 없음'],['stale','장기정체']];
  const SIZE=20;
  const h=value=>root.esc(String(value==null?'':value));
  const attr=value=>root.escAttr(String(value==null?'':value));
@@ -55,6 +55,7 @@
    x.overdue=(x.dueDays!==null&&x.dueDays<0)||(x.type==='inq'&&root.inquiryResponseLate(x.item));
   }
   x.unassigned=x.type==='inq'&&!root.inquiryRoutedOwner(x.item);
+  x.stale=x.type==='deal'&&root.issueSet(x.item).indexOf('stale')>=0;
   if(x.unassigned)x.owner='미배정';
   const reply=x.type==='deal'&&root.todayReplyNeedsFollowup(x.item);
   x.band=x.unassigned?0:x.overdue?1:reply?2:x.dueDays===0?3:x.missingNext?4:5;
@@ -70,7 +71,7 @@
   const all=Array.from(unique.values()).sort((a,b)=>a.band-b.band||b.lag-a.lag||String(a.key).localeCompare(String(b.key)));
   return {admin:base.admin,rows:all};
  }
- function matches(x,filter){return filter==='urgent'?x.urgent:filter==='overdue'?x.overdue:filter==='unassigned'?x.unassigned:filter==='missing'?x.missingNext:true}
+ function matches(x,filter){return filter==='urgent'?x.urgent:filter==='overdue'?x.overdue:filter==='unassigned'?x.unassigned:filter==='missing'?x.missingNext:filter==='stale'?x.stale:true}
  function resetForActor(admin){
   const actor=String(root.ME&&root.ME.id||root.todayOwner())+':'+admin;
   if(actor!==currentActor){currentActor=actor;root.G.todayQueueFilter='all';root.G.todayQueueOwner='전체';root.G.todayQueueType='all';root.G.todayQueueSearch='';root.G.todayQueuePage=1;root.G.todayRoutinePage=1;root.G.todayInquiryPage=1;root.G.todayPipelinePage=1}
@@ -81,6 +82,13 @@
   if(field==='filter'&&!FILTERS.some(f=>f[0]===value))return;
   if(field==='type'&&value!=='all'&&!TYPES[value])return;
   root.G[allowed[field]]=value;root.G.todayQueuePage=1;root.G.todayRoutinePage=1;root.G.todayInquiryPage=1;root.G.todayPipelinePage=1;render();
+ }
+ function route(filter,type){
+  const X=data();resetForActor(X.admin);
+  root.G.todayQueueFilter=FILTERS.some(f=>f[0]===filter)?filter:'all';
+  root.G.todayQueueType=type==='pipeline'?'pipeline':'all';
+  root.G.todayQueueOwner='전체';root.G.todayQueueSearch='';root.G.todayQueuePage=1;root.G.todayPipelinePage=1;
+  root.goPage('today');
  }
  function page(n,key){const allowed={priority:'todayQueuePage',routine:'todayRoutinePage',inquiry:'todayInquiryPage',pipeline:'todayPipelinePage'},name=allowed[key]||allowed.priority;root.G[name]=Math.max(1,Number(n)||1);render()}
  function open(key,action){
@@ -132,5 +140,5 @@
   const badge=root.$('#todayBadge');if(badge){badge.textContent=X.rows.length||'';badge.style.display=X.rows.length?'':'none'}
  }
  function setManagerRequests(rows){managerRequests=Array.isArray(rows)?rows.slice():[];if(root.G?.page==='today')render()}
- root.TodayWorkQueue={render,data,set,page,open,setManagerRequests};
+ root.TodayWorkQueue={render,data,set,page,open,route,setManagerRequests};
 })(window);
