@@ -11,7 +11,7 @@ test('Site record review renders counts, filters and 20-row pagination',async()=
  assert.match(await page.locator('.site-link-review-row').first().innerText(),/영업 · #00000000 · 주소 1/);
  assert.match(await page.locator('select option').nth(1).textContent(),/이름·주소 일치 · 근거 150/);
  assert.equal(await page.getByRole('button',{name:'선택 Site에 연결'}).first().isDisabled(),true);await page.locator('select').first().selectOption('11111111-1111-4111-8111-111111111111');assert.equal(await page.getByRole('button',{name:'선택 Site에 연결'}).first().isEnabled(),true);
- assert.match(await page.locator('main').innerText(),/미연결 45건 · 주소 일치 15건 · 이름 후보 0건 · 별도 현장 후보 30건 · 현장명 정리 0건/);const buttons=await page.locator('.site-link-review-toolbar button').allTextContents();assert.deepEqual(buttons,['전체 45','영업 25','문의 20','주소 일치 후보 15','이름 후보 0','별도 현장 후보 30','현장명 정리 0']);
+ assert.match(await page.locator('main').innerText(),/미연결 45건 · 중복 단서 0건 · 주소 일치 15건 · 이름 후보 0건 · 별도 현장 후보 30건 · 현장명 정리 0건/);const buttons=await page.locator('.site-link-review-toolbar button').allTextContents();assert.deepEqual(buttons,['전체 45','중복 단서 0','영업 25','문의 20','주소 일치 후보 15','이름 후보 0','별도 현장 후보 30','현장명 정리 0']);
  assert.equal(await page.locator('.site-link-review-pager span').textContent(),'1 / 3 · 45건');
  await page.getByRole('button',{name:'다음 →'}).click();assert.equal(await page.locator('.site-link-review-pager span').textContent(),'2 / 3 · 45건');
  await page.getByRole('button',{name:'문의 20'}).click();assert.equal(await page.locator('.site-link-review-row').count(),20);assert.equal(await page.locator('.site-link-review-pager span').textContent(),'1 / 1 · 20건');
@@ -24,6 +24,14 @@ test('lookalike Site review rows expose their distinct source IDs',async()=>{
   await page.setContent('<main id="root"></main>');await page.evaluate(rows=>{window.toast=()=>{};window.Phase1={profile:{auth_uid:'admin',permission_role:'admin'},rpc:async()=>({contract_version:3,items:rows})};},items);
   await page.addScriptTag({content:source});await page.evaluate(()=>PCSiteRecordReview.mount(document.getElementById('root')));await page.waitForSelector('.site-link-review-row');
   const text=await page.locator('.site-link-review-row').allTextContents();assert.match(text[0],/문의 · #00000001/);assert.match(text[1],/문의 · #00000002/);
+ }finally{await browser.close();}
+});
+
+test('same-day rows with identical evidence are exposed as duplicate clues',async()=>{
+ const browser=await launch();try{const page=await browser.newPage(),items=['00000001','00000002'].map(suffix=>({source_type:'inquiry',source_id:`00000000-0000-4000-8000-${suffix.padStart(12,'0')}`,name:'같은 현장',address:'같은 주소',occurred_at:'2026-09-16',evidence:{phone:'010-0000-0000',work:'옥상방수',inquiry:'같은 문의'},site_candidates:[]}));
+  await page.setContent('<main id="root"></main>');await page.evaluate(rows=>{window.toast=()=>{};window.Phase1={profile:{auth_uid:'admin',permission_role:'admin'},rpc:async()=>({contract_version:3,items:rows})};},items);
+  await page.addScriptTag({content:source});await page.evaluate(()=>PCSiteRecordReview.mount(document.getElementById('root')));await page.waitForSelector('.site-link-review-row');
+  assert.match(await page.locator('main').innerText(),/중복 단서 2건/);await page.getByRole('button',{name:'중복 단서 2'}).click();assert.equal(await page.locator('.site-link-review-row.duplicate-clue').count(),2);assert.match(await page.locator('.site-link-duplicate').first().textContent(),/동일 단서 2건/);
  }finally{await browser.close();}
 });
 
