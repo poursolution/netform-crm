@@ -7168,10 +7168,13 @@ function splitNextStep(){
 }
 function splitTransition(){var q=splitSel();if(!q)return;setCurDetail(q);openTransition()}
 function splitCheck(i,v){
-  var q=splitSel();if(!q)return;
+  var q=splitSel();if(!q)return false;
+  if(!Number.isInteger(i)||i<0||i>=CHECKS.length){alert('확인할 체크 항목을 다시 선택해 주세요.');paint();return false}
+  try{pushWrite('stage_check',{inquiry_id:inqKey(q),item_index:i,item_text:CHECKS[i],checked:!!v})}
+  catch(e){paint();alert('체크 저장 요청을 등록하지 못했습니다. 기존 확인 상태를 유지합니다.');return false}
   var p=detailPatchFor('inq',inqKey(q));p.checks=p.checks||[];p.checks[i]=v;
   p.activities=(p.activities||[]).concat([{type:'체크',note:CHECKS[i],result:v?'확인':'해제',at:isoNow(),actor:'관리자'}]);
-  saveLocal();paint();
+  saveLocal();paint();return true;
 }
 function splitCheckBlock(q){
   var p=itemPatch(q,'inq'),ch=p.checks||[],done=CHECKS.filter(function(_,i){return ch[i]}).length;
