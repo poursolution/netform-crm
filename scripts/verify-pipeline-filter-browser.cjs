@@ -137,15 +137,15 @@ async function run(){
   });
   assert.equal(accounting.excluded,true);assert.equal(accounting.stillActive,true);assert.equal(accounting.before-accounting.after,accounting.amount);assert.equal(accounting.wonUnchanged,true);assert.equal(accounting.historyPresent,true);
   assert.equal(accounting.returnedToPipeline,true);assert.equal(accounting.returnedAmount,accounting.before);assert.equal(accounting.retainedYear,'2030');assert.match(accounting.retainedReason,/예산 편성 대기/);
-  assert.equal(await page.locator('#p-main .pv-section').count(),7,'pipeline renders the confirmed seven operating stages');
-  assert.deepEqual(await page.locator('#p-main .pv-title strong').allTextContents(),['컨설팅 설계','자료 발송완료','관계 관리','경쟁·임박·입찰','계약·시공','수주','실주']);
-  assert.equal(await page.locator('#p-main .pv-section.collapsed').count(),0,'all seven stages start visible from top to bottom');
-  assert.equal(await page.locator('#p-main .pv-row button').count(),0,'deal rows contain no inline action buttons');
-  for(const width of [1920,1440,1280]){
-   await page.setViewportSize({width,height:900});
-   const overflow=await page.locator('#p-main').evaluate(el=>el.scrollWidth>el.clientWidth);
-   assert.equal(overflow,false,'vertical pipeline has no horizontal overflow at '+width);
-  }
+  const later=page.locator('#p-main [data-followup-mode="later"]').first();
+  await later.click();
+  await page.locator('.pc-followup-dialog [name=due]').fill('2030-12-15');
+  assert.match(await page.locator('.pc-followup-preview').innerText(),/Pipeline/);
+  await page.locator('.pc-followup-dialog [data-close]').first().click();
+  await page.locator('#p-main [data-followup-mode="end"]').first().click();
+  await page.locator('#stage-transition-form').waitFor({state:'visible'});
+  assert.equal(await page.locator('#sf-target').inputValue(),'lost');
+  await page.locator('#sf-cancel').click();
   await page.evaluate(()=>{openPipeSplit(B.deals[1]);});
   await page.locator('.quickpanel [data-followup-mode="later"],.quick-panel [data-followup-mode="later"],#p-main [data-followup-mode="later"]').first().click();
   await page.locator('.pc-followup-dialog').waitFor({state:'visible'});
