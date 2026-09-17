@@ -13,6 +13,9 @@ assert.equal(c.average(data),50);assert.equal(c.average(data.slice(2)),null);ass
 const remaining=lines.filter(l=>l.includes('wonAmt(d)||oppAmt(d)'));
 assert.equal(remaining.length,0,'No contract-to-estimate fallback remains');
 assert.ok(!src.includes('dealAmt('),'Use explicit amount sources rather than mixed dealAmt');
+assert.ok(!src.includes('amountOf:dealAmt'),'Attribution must not reference the removed mixed deal amount helper');
+assert.ok(!src.includes('f||dealAmt'),'Coverage must default to a defined explicit amount source');
+assert.ok(src.includes("amountOf:function(d){return isWon(d)?wonAmt(d):oppAmt(d)}"),'Attribution must use won amount for won deals and opportunity amount otherwise');
 let scripts=0;
 for(const m of src.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
  if(/\bsrc=|application\/json|application\/ld\+json/.test(m[1]))continue;
