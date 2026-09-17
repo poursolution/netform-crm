@@ -119,11 +119,9 @@ function operationPage(){
  }
  var branch=document.querySelector('#gyeongnam-root')||document.querySelector('#gyeongnam-master');
  if(!branch)branch=document.querySelector('.gn-command')?.parentElement;
- if(branch&&!branch.querySelector(':scope > .dw-fold')){
-  var frames=Array.from(branch.querySelectorAll(':scope > .gn-frame')),handoff=frames.find(function(n){return n.querySelector('h3')?.textContent==='본사 인계 현황'}),urgent=frames.find(function(n){return n.querySelector('h3')?.textContent==='즉시 확인'}),cmd=branch.querySelector('.gn-command');
-  if(cmd&&handoff)cmd.after(handoff);if(cmd&&urgent)cmd.after(urgent);
-  frames.forEach(function(n){if(n!==handoff&&n!==urgent)fold(n,n.querySelector('h3')?.textContent||'지사 분석')});
- }
+ // Branch management is an operational control surface. Keep status, risk,
+ // handoff, owner flow, funnel and trend visible instead of folding analysis.
+ if(branch)branch.classList.add('dw-branch-visible');
 }
 function dashboardSummary(){
  var host=document.getElementById('d-today');if(!host)return;
