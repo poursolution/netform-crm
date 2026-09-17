@@ -27,5 +27,13 @@ test('담당자가 없는 영업도 담당자별 실적 표에서 빠지지 않�
   assert.match(crm, /function reportUnassignedRepRow\(/);
   assert.match(crm, /미배정 Pipeline/);
   assert.match(crm, /reps\+reportUnassignedRepRow\(won,monthWon,open,raw,month\)/);
-  assert.match(crm, /위험 · 미배정 포함/);
+  assert.match(crm, /위험 · 미배정·비교제외 포함/);
+});
+
+test('개인 실적 비교 제외 대상의 영업도 회사 Pipeline 합계에서 숨기지 않는다', () => {
+  assert.match(crm, /function reportComparedOwner\(/);
+  assert.match(crm, /function reportExcludedRepRow\(/);
+  assert.match(crm, /성과 비교 제외 Pipeline/);
+  assert.match(crm, /reportUnassignedRepRow\(won,monthWon,open,raw,month\)\+reportExcludedRepRow\(won,monthWon,open,raw,month\)/);
+  assert.match(crm, /미배정·비교제외 포함/);
 });
