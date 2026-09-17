@@ -11,6 +11,9 @@ test('deal and inquiry Site review is admin-only, durable and explicit',()=>{
  assert.match(sql,/revoke all on function public\.crm_site_record_link_review_resolve_v1/);
  assert.match(js,/crm_site_record_link_review_list_v1/);
  assert.match(js,/crm_site_record_link_review_resolve_v1/);
+ assert.match(js,/ack\.source_type===row\.source_type/);
+ assert.match(js,/String\(ack\.source_id\)===String\(row\.source_id\)/);
+ assert.match(js,/ack\.resolution===resolution/);
  assert.match(js,/별도 현장/);
  assert.match(js,/PAGE_SIZE=20/);
  assert.match(js,/주소 일치 후보/);
