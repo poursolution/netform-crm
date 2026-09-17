@@ -1,0 +1,52 @@
+name: Quality Gate
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  merge_group:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    name: quality-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out reviewed source
+        uses: actions/checkout@v6
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Verify customer asset and workflow contracts
+        run: |
+          node --test \
+            tests/quality-gate-workflow.test.cjs \
+            tests/customer-asset-return-key.test.cjs \
+            tests/site-address-filter-static.test.cjs \
+            tests/site-linked-assets-static.test.cjs \
+            tests/site-master-address-static.test.cjs \
+            tests/site-master-address-update-static.test.cjs \
+            tests/manager-request-today-source.test.cjs \
+            tests/manager-request-refresh.test.cjs \
+            tests/manager-request-evidence.test.cjs \
+            tests/today-work-clarity.test.cjs \
+            tests/data-cleanup.test.cjs \
+            tests/production-pages-manifest.test.cjs \
+            tests/production-build-version.test.cjs
+
+      - name: Assemble the production release
+        run: node scripts/build-production-ui.cjs
+
+      - name: Verify release provenance and runtime hashes
+        run: node scripts/verify-production-manifest.cjs ../deploy/netform-crm-production-pages
