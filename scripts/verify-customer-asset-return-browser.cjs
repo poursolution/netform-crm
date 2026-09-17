@@ -45,6 +45,13 @@ async function run(){
   await page.waitForSelector('#detailView.on .dw-asset-back');
   assert.equal(await page.evaluate(()=>CUR_DETAIL.item.id),'deal-yongin');
   assert.equal(await page.evaluate(()=>Object.prototype.hasOwnProperty.call(CUR_DETAIL.item,'last_viewed_at')),false);
+  const failedActivity=await page.evaluate(()=>{
+   const item=CUR_DETAIL.item,before=(item.activities||[]).length;
+   document.getElementById('dv-act-note').value='인증 없는 합성 저장';
+   const result=addDetailActivity();
+   return {result,activities:(item.activities||[]).length,before,worked:Object.prototype.hasOwnProperty.call(item,'last_worked_at'),error:document.getElementById('dv-err').textContent};
+  });
+  assert.equal(failedActivity.result,false);assert.equal(failedActivity.activities,failedActivity.before);assert.equal(failedActivity.worked,false);assert.match(failedActivity.error,/기존 이력은 변경하지 않았습니다/);
   await page.locator('#detailView .dw-asset-back').click();
   await page.waitForSelector('#siteDrawer.on');
   assert.match(await page.locator('#siteDrawerBody .site-hero p').textContent(),/용인시/);
