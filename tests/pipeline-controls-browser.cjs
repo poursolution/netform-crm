@@ -21,7 +21,6 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
    assert.equal(await page.locator('#p-brands [data-filter="brand"]').count(),1);
    assert.equal(await page.evaluate(()=>document.querySelector('#periodbar select')===originalYear),true);
    assert.equal(await page.evaluate(()=>document.querySelector('#reptabs .rep-filter-picker')===originalOwner),true);
-   await page.evaluate(()=>PipelineToolbar.restoreControls());
    assert.equal(await page.evaluate(()=>document.querySelector('#reptabs .rep-filter-picker')===originalOwner),true);
    assert.equal(await page.locator('#periodbar select').count(),1);
   }
