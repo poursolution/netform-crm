@@ -126,6 +126,18 @@
   const pagesHtml=Array.from({length:pages},(_,i)=>i+1).filter(i=>i===1||i===pages||Math.abs(i-n)<=2).map((i,j,all)=>(j&&i>all[j-1]+1?'<span>…</span>':'')+'<button '+(i===n?'aria-current="page"':'')+' onclick="TodayWorkQueue.page('+i+',\''+key+'\')">'+i+'</button>').join('');
   return '<section class="twq-list '+(key==='routine'?'today-rep-routine':admin?'today-admin today-admin-'+key:'today-rep-priority')+'" aria-label="'+h(title||'오늘 처리 순서')+'"><header class="twq-board-head"><div><h3>'+h(title||'오늘 업무')+' <b>'+rows.length+'</b></h3><p>'+h(description||'')+'</p></div></header><table><colgroup><col style="width:5%"><col style="width:10%"><col style="width:24%"><col style="width:9%"><col style="width:32%"><col style="width:10%"><col style="width:10%"></colgroup><thead><tr>'+['우선','유형','현장','담당자','지금 해야 할 일','기한/경과','처리'].map(x=>'<th scope="col">'+x+'</th>').join('')+'</tr></thead><tbody>'+shown.map((x,i)=>row(x,start+i+1,admin)).join('')+'</tbody></table>'+(!rows.length?'<p class="twq-empty">현재 조건에서 처리할 업무가 없습니다.</p>':'')+'<footer><span>'+rows.length+'건 · 페이지당 '+SIZE+'건</span><nav aria-label="'+h(title||'오늘 업무')+' 페이지"><button '+(n===1?'disabled':'')+' onclick="TodayWorkQueue.page('+(n-1)+',\''+key+'\')">이전</button>'+pagesHtml+'<button '+(n===pages?'disabled':'')+' onclick="TodayWorkQueue.page('+(n+1)+',\''+key+'\')">다음</button></nav></footer></section>';
  }
+ function actionMeta(x,admin){
+  const action=x.unassigned&&admin?'assign':x.kind==='relationship'&&!x.missingNext?'contact':x.missingNext&&x.type==='deal'?'next':'open';
+  return {action,label:action==='assign'?'담당자 배정':action==='contact'?'응대 기록':action==='next'?'다음 행동':'처리'};
+ }
+ function executionRow(x,admin){
+  const site=x.item.site||x.item.site_name||'현장명 미입력',meta=actionMeta(x,admin),due=elapsed(x);
+  return '<article class="twx-row '+(x.urgent?'urgent':'')+'" data-key="'+attr(x.key)+'"><div class="twx-site"><strong>'+h(site)+'</strong><span>'+h(TYPES[x.kind])+'</span><small>'+h(x.owner)+' · '+h(x.stage)+'</small></div><div class="twx-task"><span>해야 할 일</span><strong>'+h(x.next)+'</strong><small>'+h(x.reason)+'</small></div><div class="twx-why"><span>근거</span><b>'+h(x.recent)+'</b></div><div class="twx-due"><span>기한</span><b>'+h(due)+'</b></div><div class="twx-actions"><button data-key="'+attr(x.key)+'" data-action="'+meta.action+'" onclick="TodayWorkQueue.open(this.dataset.key,this.dataset.action)">'+meta.label+'</button><button class="quiet" data-key="'+attr(x.key)+'" onclick="TodayWorkQueue.open(this.dataset.key)">상세</button></div></article>';
+ }
+ function executionSection(key,title,description,rows,admin){
+  const visible=rows.slice(0,SIZE);
+  return '<section class="twx-section '+key+'" aria-label="'+h(title)+'"><header><div><span>'+h(key==='now'?'ACTION NOW':key==='today'?'TODAY':'CHECK')+'</span><h3>'+h(title)+'</h3><p>'+h(description)+'</p></div><b>'+rows.length+'건</b></header><div class="twx-list">'+(visible.map(x=>executionRow(x,admin)).join('')||'<p class="twx-empty">현재 이 구역에서 처리할 업무가 없습니다.</p>')+'</div>'+(rows.length>SIZE?'<footer>우선 '+SIZE+'건 표시 · 검색이나 상태 필터로 범위를 좁혀주세요.</footer>':'')+'</section>';
+ }
  function render(){
   const host=root.$('#today-home-root');if(!host)return;
   const X=data();resetForActor(X.admin);const G=root.G;
@@ -134,9 +146,12 @@
   const rows=scoped.filter(x=>matches(x,G.todayQueueFilter));
   const counters='<nav class="twq-counts" aria-label="오늘 업무 상태">'+FILTERS.map(([key,label])=>'<button data-filter="'+key+'" aria-pressed="'+(G.todayQueueFilter===key)+'" onclick="TodayWorkQueue.set(\'filter\',this.dataset.filter)">'+label+' <b>'+scoped.filter(x=>matches(x,key)).length+'</b></button>').join('')+'</nav>';
   const toolbar='<form class="twq-toolbar" onsubmit="event.preventDefault();TodayWorkQueue.set(\'search\',this.elements.search.value)">'+(X.admin?'<label>담당자 <select aria-label="오늘 업무 담당자" onchange="TodayWorkQueue.set(\'owner\',this.value)"><option>전체</option>'+owners.map(o=>'<option '+(G.todayQueueOwner===o?'selected':'')+'>'+h(o)+'</option>').join('')+'</select></label>':'<label>업무유형 <select aria-label="오늘 업무 유형" onchange="TodayWorkQueue.set(\'type\',this.value)"><option value="all">전체</option>'+Object.entries(TYPES).map(([key,label])=>'<option value="'+key+'" '+(G.todayQueueType===key?'selected':'')+'>'+label+'</option>').join('')+'</select></label>')+'<label class="twq-search"><input name="search" aria-label="오늘 업무 검색" placeholder="현장·담당자·할 일 검색" value="'+attr(G.todayQueueSearch||'')+'"><button>검색</button></label></form>';
-  const priority=X.admin?rows:rows.filter(x=>x.dueDays!==0||x.urgent||x.missingNext),routine=X.admin?[]:rows.filter(x=>!priority.includes(x));
-  const adminBoards='<div class="twq-admin-boards">'+table(rows.filter(x=>x.kind==='inquiry'),true,'inquiry','견적문의 관리','새로 들어온 문의 중 배정·최초응대·견적 진행에 조치가 필요한 건')+table(rows.filter(x=>x.kind!=='inquiry'),true,'pipeline','파이프라인 관리','영업이 시작된 현장 중 다음 행동·관계관리·확장관리에 조치가 필요한 건')+'</div>';
-  host.innerHTML='<div class="today-work-queue '+(X.admin?'manager':'rep')+'">'+(X.admin?'<header><div><h2>오늘 관리자 개입</h2><span>견적문의와 영업 파이프라인을 분리해 확인합니다.</span></div></header>':'<h2>오늘 우선순위</h2>')+counters+toolbar+'<p class="twq-count-note">선택 '+rows.length+'건 · 긴급/기한초과/미배정/Next 없음은 중복될 수 있습니다.</p>'+(X.admin?adminBoards:table(priority,false,'priority','오늘 우선순위','지금 먼저 개입할 현장')+table(routine,false,'routine','오늘 업무','상단 우선순위와 중복되지 않는 금일 예정 업무'))+'</div>';
+  const exceptionRows=X.admin?rows.filter(x=>x.urgent||x.overdue||x.unassigned||x.missingNext||x.stale||x.kind==='manager'):rows;
+  const now=exceptionRows.filter(x=>x.urgent||x.overdue||x.unassigned||x.kind==='manager');
+  const today=exceptionRows.filter(x=>!now.includes(x)&&x.dueDays===0);
+  const review=exceptionRows.filter(x=>!now.includes(x)&&!today.includes(x));
+  const sections=executionSection('now','지금 처리','기한초과 · 미응대 · 관리자 요청 · 긴급',now,X.admin)+executionSection('today','오늘 예정','오늘 연락·미팅·후속조치',today,X.admin)+executionSection('review','확인 필요','Next Action 없음 · 일정 없음 · 장기정체',review,X.admin);
+  host.innerHTML='<div class="today-work-queue execution '+(X.admin?'manager':'rep')+'"><header><div><span>'+(X.admin?'MANAGER INTERVENTION':'MY ACTION DESK')+'</span><h2>'+(X.admin?'관리자 개입 업무':'오늘 해야 할 일')+'</h2><p>'+(X.admin?'정상 업무는 숨기고 개입이 필요한 예외만 표시합니다.':'업무유형보다 처리 순서에 맞춰 정리했습니다.')+'</p></div><b>'+exceptionRows.length+'건</b></header>'+counters+toolbar+'<p class="twq-count-note">선택 '+exceptionRows.length+'건 · 업무유형은 각 행의 보조 표시입니다.</p>'+sections+'</div>';
   const badge=root.$('#todayBadge');if(badge){badge.textContent=X.rows.length||'';badge.style.display=X.rows.length?'':'none'}
  }
  function setManagerRequests(rows){managerRequests=Array.isArray(rows)?rows.slice():[];if(root.G?.page==='today')render()}
