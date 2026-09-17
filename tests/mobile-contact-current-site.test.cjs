@@ -47,6 +47,13 @@ test('mobile server contacts stay unconfirmed across duplicate Site names',()=>{
   assert.equal(context.contactCurrentAtDealM(context.DEALS[1],contact),false);
 });
 
+test('closed histories do not override an ambiguous mobile currentSite label',()=>{
+  const person={currentSite:'동명아파트',history:[{site:'동명아파트',site_id:'site-a',from:'2025-01-01',to:'2026-01-01',status:'이동'}]};
+  const context=contextFor(person),contact={personKey:'p',mobile:'01012345678',currentSite:'동명아파트'};
+  assert.equal(context.contactCurrentAtDealM(context.DEALS[0],contact),false);
+  assert.equal(context.contactCurrentAtDealM(context.DEALS[1],contact),false);
+});
+
 test('final mobile renderer labels unconfirmed contacts for review',()=>{
   const start=source.lastIndexOf('contactCardM=function(d){');
   const end=source.indexOf('\n};',start);
@@ -54,4 +61,12 @@ test('final mobile renderer labels unconfirmed contacts for review',()=>{
   assert.match(renderer,/current=contactCurrentAtDealM\(d,c\)/);
   assert.match(renderer,/과거 연락처 · 현재 현장 확인 필요/);
   assert.doesNotMatch(renderer,/<span>현재 연락처 · '\+esc\(d\.nm\)<\/span>/);
+});
+
+test('relationship intelligence uses canonical current state without claiming a confirmed move',()=>{
+  const insight=functionSource('relInsightM');
+  assert.match(insight,/!contactCurrentAtDealM\(d,c\)/);
+  assert.match(insight,/현재 근무 현장 연결 확인이 필요합니다/);
+  assert.doesNotMatch(insight,/normSiteM\(c\.currentSite\)!==normSiteM\(d\.nm\)/);
+  assert.doesNotMatch(insight,/근무지 이동이 확인되었습니다/);
 });
