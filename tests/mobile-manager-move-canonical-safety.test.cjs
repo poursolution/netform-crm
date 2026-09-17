@@ -15,7 +15,8 @@ test('mobile manager move never copies a contact to a Deal found by Site name', 
 });
 
 test('mobile manager move closes only one exact source Site history', () => {
-  assert.match(fn, /sourceSiteId=String\(d\.site_id\|\|d\.siteId\|\|''\)/);
+  assert.match(fn, /sourceSiteId=String\(d\.cleanup_site_id\|\|d\.site_id\|\|d\.siteId\|\|''\)/);
+  assert.match(fn, /h\.cleanup_site_id\|\|h\.site_id\|\|h\.siteId/);
   assert.match(fn, /sourceSiteId\?hid===sourceSiteId/);
   assert.match(fn, /sourceHistory\.length===1/);
   assert.match(fn, /site_id:sourceSiteId\|\|undefined/);
