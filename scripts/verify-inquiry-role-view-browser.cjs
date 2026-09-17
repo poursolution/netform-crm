@@ -26,7 +26,7 @@ function server() {
 async function run() {
   const srv = server();
   await new Promise(resolve => srv.listen(0, '127.0.0.1', resolve));
-  const browser = await chromium.launch({ executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless: true });
+  const browser = await chromium.launch({ headless: true, ...(process.env.EDGE_PATH ? { executablePath: process.env.EDGE_PATH } : {}) });
   try {
     const context = await browser.newContext();
     await context.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
