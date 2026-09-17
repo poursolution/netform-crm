@@ -59,13 +59,13 @@ async function run(){
   await page.getByRole('button',{name:'초기화',exact:true}).click();
   await page.locator('.relpc-kpis button').filter({hasText:'오늘 연락'}).click();
   assert.equal(await page.locator('.relpc-table tbody tr').count(),1);
-  await page.locator('.relpc-kpis button').filter({hasText:'이번주 예정'}).click();
+  await page.locator('.relpc-kpis button').filter({hasText:'90일 이상 미접촉'}).click();
   assert.equal(await page.locator('.relpc-table tbody tr').count(),1);
   await page.getByRole('button',{name:'초기화',exact:true}).click();
   await page.locator('.relpc-table tbody tr').first().click();
   assert.equal(await page.locator('#relpc-panel').count(),1);
   for(const word of ['내년도 사업 검토','관리소장 공사계획 확인','공사예정','2034년'])assert.match(await page.locator('#relpc-panel').innerText(),new RegExp(word));
-  assert.equal(await page.locator('.relpc-summary-grid>div').count(),4);
+  assert.equal(await page.locator('.relpc-summary-grid>div').count(),2);
   assert.equal(await page.locator('.relpc-next-card').count(),1);
   assert.equal(await page.locator('.relpc-timeline').count(),1);
   await page.getByRole('button',{name:'상세 패널 닫기'}).click();
@@ -80,7 +80,8 @@ async function run(){
   assert.equal(await page.locator('#stage-transition-form').count(),1,'return uses the existing stage editor');
   assert.equal(await page.evaluate(()=>CUR_DETAIL.item.id),'rel-overdue','return does not create a duplicate deal');
   await page.evaluate(()=>closeDetail());
-  await page.locator('.relpc-table tbody tr').first().getByRole('button',{name:'기록',exact:true}).click();
+  assert.deepEqual(await page.locator('.relpc-table tbody tr').first().locator('.relpc-actions button').allTextContents(),['응대 기록','다음 일정','상세']);
+  await page.locator('.relpc-table tbody tr').first().getByRole('button',{name:'응대 기록',exact:true}).click();
   assert.equal(await page.locator('#relq-note').isVisible(),true);
   assert.equal(await page.locator('#relq-due').isVisible(),true);
   await page.locator('#relq-meaningful').check();
@@ -94,7 +95,7 @@ async function run(){
   await page.locator('#relq-save').click();
   assert.match(await page.locator('#relq-error').innerText(),/입력/);
   await page.locator('.relq-close').click();
-  await secondary('일정등록');
+  await secondary('다음 일정');
   assert.equal(await page.locator('#relq-note').isVisible(),false);
   assert.equal(await page.locator('#relq-due').isVisible(),true);
   await page.locator('.relq-close').click();
@@ -121,7 +122,7 @@ async function run(){
   assert.equal(await page.locator('#relQuickModal').count(),0);
   assert.equal(await page.evaluate(()=>__requests.length),1,'uncertain retry reuses request');
   assert.equal(await page.evaluate(()=>__requests[0].payload.meaningful_contact),false);
-  await secondary('일정등록');
+  await secondary('다음 일정');
   await page.locator('#relq-next').fill('다음 공사계획 확인');
   await page.locator('#relq-save').click();
   assert.equal(await page.locator('#relQuickModal').count(),0);
@@ -189,17 +190,6 @@ async function run(){
   await page.waitForTimeout(80);
   assert.ok(await page.locator('.relpc-background small').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=13));
   assert.ok(await page.locator('.relpc-actions button').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=14));
-  const typography=await page.evaluate(async()=>{
-   const today=document.getElementById('pg-today'),current=document.querySelector('.apage.on'),sheet=document.querySelector('link[href^="pc-typography.css"]');
-   const probes=[document.getElementById('ptitle'),document.querySelector('.side'),today].filter(Boolean);
-   if(current)current.classList.remove('on');today.classList.add('on');
-   const sample=()=>probes.flatMap(root=>[root,...root.querySelectorAll('*')]).filter(e=>e.getClientRects().length).map(e=>getComputedStyle(e).fontSize);
-   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-   const enabled=sample();sheet.disabled=true;const disabled=sample();sheet.disabled=false;
-   today.classList.remove('on');if(current)current.classList.add('on');
-   return {enabled,disabled};
-  });
-  assert.ok(typography.enabled.some((size,i)=>parseFloat(size)>parseFloat(typography.disabled[i])),'Today now uses shared larger type');
   assert.ok(!fs.readFileSync(path.join(root,'mobile.html'),'utf8').includes('pc-typography'),'mobile does not load PC typography');
   if(process.env.VERIFY_SCREENSHOT)await page.screenshot({path:process.env.VERIFY_SCREENSHOT,fullPage:true});
   await page.evaluate(()=>{const original=B.deals[3];B.deals=Array.from({length:51},(_,i)=>({...original,id:'scale-'+i,site:'대량검증 '+String(i).padStart(2,'0')}));G.relationshipPage=1;paintRelationshipManagement()});

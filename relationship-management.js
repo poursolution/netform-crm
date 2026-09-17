@@ -145,7 +145,7 @@ function inboxOptions(values,current){return values.map(function(v){return '<opt
 function inboxRecent(d){var a=activitiesOf(d).find(function(x){return /전화|통화|문자|카카오|이메일|방문|회의|접촉/.test(String(x.type||''))});return a?{at:relActivityAt(a),text:[a.type,a.note,a.result].filter(Boolean).join(' · ')}:{at:relationshipMeta(d).meaningfulAt||'',text:relationshipMeta(d).meaningfulAt?'접촉 내용 미기록':'최근 기록 없음'}}
 function inboxButton(i,mode,label){return '<button type="button" onclick="event.stopPropagation();relationshipInboxOpen('+i+',\''+mode+'\')">'+label+'</button>'}
 function inboxWork(d){return [d.work_name||d.workName||d.work||'',typeof dealWorkSummary==='function'?dealWorkSummary(d):d.work_type||'공종 확인 필요'].filter(Boolean).join(' · ')}
-function inboxExecute(i,d){var c=contactInfo(d,itemPatch(d,'deal'))||{},phone=String(c.mobile||'').replace(/[^0-9+]/g,'');return '<div class="relpc-actions">'+(phone?'<a onclick="event.stopPropagation()" href="tel:'+escAttr(phone)+'">전화</a>':'<span>연락처 없음</span>')+'<button onclick="event.stopPropagation();relationshipManagementPrepareMessage('+i+')">문자 준비</button>'+inboxButton(i,'contact','응대 기록')+inboxButton(i,'schedule','일정등록')+inboxButton(i,'memo','메모')+inboxButton(i,'detail','상세보기')+'</div>'}
+function inboxExecute(i){return '<div class="relpc-actions">'+inboxButton(i,'contact','응대 기록')+inboxButton(i,'schedule','다음 일정')+inboxButton(i,'detail','상세')+'</div>'}
 function inboxRow(d){var i=REL_CACHE.indexOf(d),m=relationshipMeta(d),a=actionObj(d,itemPatch(d,'deal'))||{},r=inboxRecent(d),c=contactInfo(d,itemPatch(d,'deal'))||{},s=inboxState(d),label=s==='overdue'?Math.abs(m.dueDays)+'일 초과':s==='today'?'오늘 연락':s==='missing'?'일정 없음':'예정',vague=!String(a.text||'').trim()||/^(연락|전화|확인|재접촉|고객 재접촉|안부 연락)$/.test(String(a.text||'').trim());
  return '<tr tabindex="0" data-customer="'+i+'"><td><strong>'+esc(d.site||d.site_name||'현장명 미입력')+'</strong><small>'+esc(c.name||c.role||'관리소장 확인 필요')+'</small><small>'+esc(repN(d.assignee)||'미배정')+' · '+esc(statusLabel(d))+'</small><span class="relpc-status '+s+'">'+esc(label)+'</span></td><td><strong>'+esc(reasonOf(d)||'관리목적 확인 필요')+'</strong><small>예상 공사 · '+esc(inboxWork(d))+'</small><small class="relpc-year">공사예정 '+esc(yearOf(d)==='미입력'?'미정':yearLabel(d))+'</small></td><td class="relpc-plan"><strong>'+esc(a.text||'이번에 확인할 내용을 정해 주세요')+'</strong><small>실행 방법 · '+esc(a.type||'미지정')+'</small>'+(vague?'<small class="relpc-warning">확인할 내용을 구체적으로 적어 주세요</small>':'')+inboxButton(i,'schedule',vague?'관리계획 작성':'계획 변경')+'</td><td><strong>'+esc(m.dueDays===0?'오늘':m.due?fmtD(m.due):'미설정')+'</strong>'+(inboxMissing(d)?'<small class="relpc-warning">⚠ 다음 일정 없음</small>':'')+'</td><td>'+esc(r.at?fmtD(r.at):'최근 기록 없음')+'<small>'+esc(r.text)+'</small></td><td>'+inboxExecute(i,d)+'</td></tr>'
 }
@@ -165,7 +165,7 @@ function renderExecutionSummary(host,all,k){
  host.querySelector('header p').textContent='고객별로 이번에 확인할 내용과 연락일을 정하고, 실행 결과를 다음 계획으로 이어갑니다.';
  if(G.page==='relationship'&&document.getElementById('psub'))document.getElementById('psub').textContent='이번에 할 일과 연락일을 정하고, 실행 결과를 다음 계획으로 이어갑니다.';
  host.querySelector('.relpc-kpis').setAttribute('aria-label','이번 주 관계관리');
- host.querySelector('.relpc-kpis').innerHTML=[['overdue','기한초과'],['today','오늘 연락'],['week','이번주 예정'],['missing','다음 일정 없음']].map(function(x){return '<button type="button" data-state="'+x[0]+'" aria-pressed="'+(k===x[0])+'" onclick="relationshipInboxFilter(\''+x[0]+'\')"><span>'+x[1]+'</span><strong>'+all.filter(function(d){return inboxMatch(d,x[0])}).length+'<small>건</small></strong></button>'}).join('');
+ host.querySelector('.relpc-kpis').innerHTML=[['today','오늘 연락'],['overdue','기한초과'],['missing','다음 일정 없음'],['stale','90일 이상 미접촉']].map(function(x){return '<button type="button" data-state="'+x[0]+'" aria-pressed="'+(k===x[0])+'" onclick="relationshipInboxFilter(\''+x[0]+'\')"><span>'+x[1]+'</span><strong>'+all.filter(function(d){return inboxMatch(d,x[0])}).length+'<small>건</small></strong></button>'}).join('');
  host.querySelector('.relpc-list-title h3').firstChild.textContent='이번 관리에서 할 일 ';
  host.querySelector('.relpc-table colgroup').innerHTML=[20,20,23,10,15,12].map(function(w){return '<col style="width:'+w+'%">'}).join('');
  host.querySelector('.relpc-table thead tr').innerHTML=['현장 / 고객 · 담당자','왜 관리하나요','이번에 할 일','예정일','최근 접촉 · 대화','실행'].map(function(t){return '<th scope="col">'+t+'</th>'}).join('');
@@ -188,7 +188,7 @@ function renderExecutionSummary(host,all,k){
    context.className='relpc-background';context.title=context.textContent;
    var d=REL_CACHE[Number(row.dataset.customer)];context.innerHTML='<strong>'+esc(inboxWork(d))+' · '+esc(yearOf(d)==='미입력'?'미정':yearLabel(d))+'</strong><small>'+esc(reasonOf(d)||'관리목적 확인 필요')+'</small>';recent.remove();
    var dateLabel=document.createElement('small');dateLabel.textContent='다음 연락';due.prepend(dateLabel);
-   actions.querySelectorAll('button').forEach(function(b){if(b.textContent==='응대 기록')b.textContent='기록';else if(b.textContent==='문자 준비')b.textContent='문자';else b.remove()});
+   actions.querySelectorAll('button').forEach(function(b){if(b.textContent==='일정등록')b.textContent='다음 일정';else if(b.textContent==='상세보기')b.textContent='상세'});
    plan.querySelectorAll('button').forEach(function(b){b.remove()});
    body.appendChild(row);
   });
@@ -222,7 +222,8 @@ function longTermPanel(el,d,i){
  section.lastElementChild.appendChild(full);
  var historyToggle=section.querySelector('#relpc-history-toggle');if(historyToggle)historyToggle.onclick=function(){var expanded=this.getAttribute('aria-expanded')!=='true';this.setAttribute('aria-expanded',String(expanded));this.textContent=expanded?'최근 5건만 보기':'전체 이력 '+history.length+'건 보기';section.querySelector('#relpc-history').innerHTML=timeline(expanded?history:history.slice(0,5))};
  // The detail button is unnecessary inside its own panel; all original edit routes remain.
- section.querySelectorAll('.relpc-actions button').forEach(function(b){if(b.textContent==='상세보기')b.remove()});
+ section.querySelectorAll('.relpc-actions button').forEach(function(b){if(/^상세/.test(b.textContent))b.remove()});
+ section.querySelector('.relpc-actions').insertAdjacentHTML('beforeend',inboxButton(i,'memo','메모'));
 }
 var inboxFocus=null;
 function inboxClose(){var el=document.getElementById('relpc-panel');if(el)el.remove();if(inboxFocus&&inboxFocus.isConnected)inboxFocus.focus()}
