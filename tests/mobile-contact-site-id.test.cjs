@@ -54,6 +54,7 @@ test('mobile promotes one legacy name-only history but never ambiguous rows', ()
 
 test('mobile final contact save passes every canonical Deal Site ID variant and new Deals do not inherit by name', () => {
   assert.match(source, /upsertPersonM\(\{name:name,mobile:mobile,personKey:key\},d\.nm,office,at,d\.cleanup_site_id\|\|d\.site_id\|\|d\.siteId\|\|''\)/);
+  assert.match(source, /pushWrite\('contact_upsert',\{opportunity_id:d\.id,site_id:d\.cleanup_site_id\|\|d\.site_id\|\|d\.siteId\|\|null/);
   assert.doesNotMatch(source, /site_id:sameSite&&sameSite\.site_id\|\|null/);
   assert.match(source, /var nd=normalizeDeal\(\{id:'new-'\+Date\.now\(\),site_id:null/);
 });
