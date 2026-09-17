@@ -23,7 +23,7 @@ async function run(){
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`,{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>typeof paintSites==='function'&&typeof openSiteMaster==='function'&&window.DetailWorkspace);
   await page.evaluate(()=>{
-   const deal=(id,address)=>({id,site_id:id.replace('deal','site'),site:'한빛아파트',address,brand:'POUR솔루션',work:'옥상 방수',work_name:'옥상 방수',assignee:'황윤선',code:'review',stage:'검토',grp:'Pipeline',amt:100000000,created:'2026-08-01',activities:[],nextActionObj:{text:'현장 확인',due:'2026-09-30',status:'open'}});
+   const deal=(id,address)=>({id,site_id:id.replace('deal','site'),site:'한빛아파트',address,brand:'POUR솔루션',work:'옥상 방수',work_name:'옥상 방수',assignee:'황윤선',code:'review',stage:'검토',grp:'Pipeline',amt:100000000,created:'2026-08-01',activities:[],nextActionObj:{id:'11111111-1111-4111-8111-111111111111',text:'현장 확인',due:'2026-09-30',status:'open'}});
    const make=(key,address,dealId)=>{const d=deal(dealId,address);return {key,norm:'한빛아파트',name:'한빛아파트',names:{한빛아파트:1},canonicalAddress:address,addresses:[address],deals:[d],inquiries:[],open:[d],won:[],lost:[],brands:['POUR솔루션'],owners:['황윤선'],contacts:[],primary:null,totalAmount:100000000,wonAmount:0,openAmount:100000000,lostAmount:0,started:'2026-08-01',firstInquiry:'',firstDeal:'2026-08-01',lastAt:'2026-09-01',lastDays:16,health:'active'};};
    const customers=[make('id:site-suwon','경기 수원시 팔달구 1','deal-suwon'),make('id:site-yongin','경기 용인시 기흥구 2','deal-yongin')];
    B={deals:customers.flatMap(s=>s.deals),inquiries:[],activities:[],contacts:[],sites:[],dups:[],cleanup_events:[],cleanup_moves:[],expansion_pool:[],expansionPool:[],expansion_events:[],asq_projects:[]};
@@ -52,6 +52,11 @@ async function run(){
    return {result,activities:(item.activities||[]).length,before,worked:Object.prototype.hasOwnProperty.call(item,'last_worked_at'),error:document.getElementById('dv-err').textContent};
   });
   assert.equal(failedActivity.result,false);assert.equal(failedActivity.activities,failedActivity.before);assert.equal(failedActivity.worked,false);assert.match(failedActivity.error,/기존 이력은 변경하지 않았습니다/);
+  const failedCompletion=await page.evaluate(()=>{
+   const item=CUR_DETAIL.item,p=currentPatch(),before=JSON.stringify(actionObj(item,p)),completed=(p.completedActions||[]).length,result=completeNextAction();
+   return {result,before,after:JSON.stringify(actionObj(item,p)),completedBefore:completed,completedAfter:(p.completedActions||[]).length,worked:Object.prototype.hasOwnProperty.call(item,'last_worked_at'),error:document.getElementById('dv-err').textContent};
+  });
+  assert.equal(failedCompletion.result,false);assert.equal(failedCompletion.after,failedCompletion.before);assert.equal(failedCompletion.completedAfter,failedCompletion.completedBefore);assert.equal(failedCompletion.worked,false);assert.match(failedCompletion.error,/기존 일정을 유지합니다/);
   await page.locator('#detailView .dw-asset-back').click();
   await page.waitForSelector('#siteDrawer.on');
   assert.match(await page.locator('#siteDrawerBody .site-hero p').textContent(),/용인시/);
