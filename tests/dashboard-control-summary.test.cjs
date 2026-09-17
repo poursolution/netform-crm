@@ -7,21 +7,31 @@ const root = path.join(__dirname, '..');
 const crm = fs.readFileSync(path.join(root, 'crm.html'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'p2-operational-polish.css'), 'utf8');
 
-test('영업 대시보드 첫 화면은 숫자, 흐름, 문제, 담당자 순서로 끝난다', () => {
+test('영업 대시보드 첫 화면은 금액, 문제, 병목, 담당자 개입 순서로 끝난다', () => {
   const money = crm.indexOf('id="d-money"');
-  const flow = crm.indexOf('id="d-flow-summary"');
   const issues = crm.indexOf('id="d-issues"');
+  const bottleneck = crm.indexOf('id="d-bottleneck-summary"');
   const reps = crm.indexOf('id="d-rep-summary"');
   const analysis = crm.indexOf('id="d-analysis"');
-  assert.ok(money < flow && flow < issues && issues < reps && reps < analysis);
+  assert.ok(money < issues && issues < bottleneck && bottleneck < reps && reps < analysis);
   assert.match(crm, /function dashboardCompactMoney\(\)/);
-  assert.match(crm, /function dashboardCompactFlow\(\)/);
   assert.match(crm, /function dashboardCompactIssues\(\)/);
+  assert.match(crm, /function dashboardCompactBottlenecks\(\)/);
   assert.match(crm, /function dashboardCompactReps\(\)/);
 });
 
-test('메인 관리위험은 참고만 하고 오늘 업무 처리 화면으로 연결한다', () => {
-  assert.match(crm, /위험 현장은 대시보드에서 참고하고 오늘 업무에서 처리합니다/);
+test('대표 첫 화면은 네 개의 금액 KPI와 운영 예외만 보여준다', () => {
+  assert.match(crm, /label:'Pipeline'/);
+  assert.match(crm, /label:'수주임박'/);
+  assert.match(crm, /label:'계약·수주'/);
+  assert.match(crm, /label:'위험 금액'/);
+  assert.match(crm, /label:'최초응대 지연'/);
+  assert.match(crm, /<h3>담당자 확인 필요<\/h3>/);
+  assert.match(css, /dashboard-compact-money>div\{grid-template-columns:repeat\(4/);
+});
+
+test('메인 관리위험은 판단만 하고 오늘 업무 처리 화면으로 연결한다', () => {
+  assert.match(crm, /대표가 개입 여부를 판단하고, 실제 처리는 오늘 업무에서 이어갑니다/);
   assert.match(crm, /오늘 업무에서 처리 →/);
   assert.match(crm, /goPage\(\\'today\\'\)/);
 });

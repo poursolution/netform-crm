@@ -35,8 +35,14 @@ jobs:
       - name: Verify customer asset and workflow contracts
         run: npm run test:contracts
 
+      - name: Verify executive dashboard hierarchy
+        run: node --test tests/dashboard-control-summary.test.cjs
+
       - name: Install Chromium for the PC smoke test
         run: npx playwright install --with-deps chromium
+
+      - name: Exercise the executive dashboard in a real browser
+        run: node scripts/verify-dashboard-control-browser.cjs
 
       - name: Exercise Today and Customer Assets in a real browser
         run: npm run smoke:pc
