@@ -1,3 +1,3 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),js=fs.readFileSync(path.join(__dirname,'../site-master-address.js'),'utf8'),html=fs.readFileSync(path.join(__dirname,'../crm.html'),'utf8');
-assert.match(js,/permission_role!=='admin'/);assert.match(js,/String\(s\.key\)\.startsWith\('id:'\)/);assert.match(js,/crm_site_address_update_v1/);assert.match(js,/p_reason/);assert.match(js,/주소를 5자 이상/);assert.match(html,/site-master-address\.js/);
+assert.match(js,/permission_role!=='admin'/);assert.match(js,/String\(s\.key\)\.startsWith\('id:'\)/);assert.match(js,/crm_site_address_update_v1/);assert.match(js,/p_reason/);assert.match(js,/주소를 5자 이상/);assert.match(js,/s\.canonicalAddress=ack\.address/);assert.match(js,/w\.paintSites\(\)/);assert.match(html,/site-master-address\.js/);
 console.log('PASS canonical Site address editor is admin-only and requires audited input');
