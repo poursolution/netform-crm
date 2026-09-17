@@ -75,13 +75,18 @@ async function run(){
    return {result,before,after:JSON.stringify({q,p}),message};
   });
   assert.equal(failedInquiryCompletion.result,false);assert.equal(failedInquiryCompletion.after,failedInquiryCompletion.before);assert.match(failedInquiryCompletion.message,/기존 일정을 유지합니다/);
+  const failedInquiryNextSet=await page.evaluate(()=>{
+   const q={id:'55555555-5555-4555-8555-555555555555',site:'문의 일정 실패 현장',status:'배정완료',activities:[]};B.inquiries=[q];SPLIT_CACHE=[q];G.inqSelKey=inqKey(q);const p=detailPatchFor('inq',inqKey(q)),before=JSON.stringify({q,p}),text=document.createElement('input'),due=document.createElement('input'),transport=pushWrite,dialog=alert;let message='';text.id='spNextText';text.value='견적 결과 확인';due.id='spNextDue';due.value='2026-09-30';document.body.append(text,due);pushWrite=()=>{throw Error('TEST_QUEUE_REJECTED')};alert=value=>{message=String(value)};const result=splitSaveNext();pushWrite=transport;alert=dialog;text.remove();due.remove();
+   return {result,before,after:JSON.stringify({q,p}),message};
+  });
+  assert.equal(failedInquiryNextSet.result,false);assert.equal(failedInquiryNextSet.after,failedInquiryNextSet.before);assert.match(failedInquiryNextSet.message,/기존 일정을 유지합니다/);
   await page.locator('#detailView .dw-asset-back').click();
   await page.waitForSelector('#siteDrawer.on');
   assert.match(await page.locator('#siteDrawerBody .site-hero p').textContent(),/용인시/);
   assert.equal(await page.locator('#siteDrawerBody .dw-tabs [data-key="deals"]').getAttribute('aria-pressed'),'true');
   assert.equal(await page.evaluate(()=>SITE_MASTER_CACHE.findIndex(s=>s.key==='id:site-yongin')),1);
   assert.equal(businessWrites,0);
-  console.log(JSON.stringify({status:'PASS',duplicate_name_sites:2,restored_site_key:'id:site-yongin',restored_tab:'deals',today_completion_failure_preserved:true,issue_completion_failure_preserved:true,inquiry_completion_failure_preserved:true,blocked_external_reads:externalRequests,business_writes:businessWrites}));
+  console.log(JSON.stringify({status:'PASS',duplicate_name_sites:2,restored_site_key:'id:site-yongin',restored_tab:'deals',today_completion_failure_preserved:true,issue_completion_failure_preserved:true,inquiry_completion_failure_preserved:true,inquiry_next_set_failure_preserved:true,blocked_external_reads:externalRequests,business_writes:businessWrites}));
  }finally{await browser.close();await new Promise(resolve=>srv.close(resolve))}
 }
 
