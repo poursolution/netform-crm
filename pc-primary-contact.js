@@ -66,7 +66,7 @@
   }
   const c=root.siteContacts(item,root.itemPatch(item,'deal')).find(c=>String(c.personKey||root.phoneN(c.mobile))===String(key));
   if(!c||!/^010\d{8}$/.test(root.phoneN(c.mobile))){root.showDetailErr('등록된 휴대폰 연락처를 확인해 주세요.');return;}
-  const payload={opportunity_id:item.id,person_key:'mobile:'+root.phoneN(c.mobile),site_name:item.site,
+  const payload={opportunity_id:item.id,site_id:item.cleanup_site_id||item.site_id||item.siteId||null,person_key:'mobile:'+root.phoneN(c.mobile),site_name:item.site,
    office_phone:c.officeTel||null,office_email:c.officeEmail||null,manager_name:c.name,manager_mobile:c.mobile,
    manager_role:c.role,is_primary:true,sms_consent:c.smsConsent,kakao_consent:c.kakaoConsent,
    consent_at:c.consentAt||null,opt_out_at:c.optOutAt||null,send_blocked:c.sendBlocked,send_blocked_reason:c.sendBlockedReason||null};
@@ -99,7 +99,7 @@
   const blocked=checked('qc-block'),sms=!blocked&&checked('qc-sms'),kakao=!blocked&&checked('qc-kakao');
   if((sms||kakao)&&!consentAt){root.quickContactErr('수신 동의 확인 일시를 입력해 주세요.');return;}
   const key='mobile:'+mobile,primary=root.contactInfo(item,root.itemPatch(item,'deal'));
-  const payload={opportunity_id:item.id,person_key:key,site_name:item.site,office_phone:value('qc-office')||null,office_email:value('qc-email')||null,
+  const payload={opportunity_id:item.id,site_id:item.cleanup_site_id||item.site_id||item.siteId||null,person_key:key,site_name:item.site,office_phone:value('qc-office')||null,office_email:value('qc-email')||null,
    manager_name:name,manager_mobile:mobile,manager_role:role,is_primary:role==='관리소장'||(form.mode!=='new'&&root.phoneN(primary.mobile)===root.phoneN(old.mobile)),
    sms_consent:sms,kakao_consent:kakao,consent_at:consentAt,opt_out_at:blocked?(old.optOutAt||new Date().toISOString()):null,send_blocked:blocked,send_blocked_reason:value('qc-block-reason')||null};
   const raw={person_key:key,name,mobile,role,office_phone:payload.office_phone,office_email:payload.office_email,sms_consent:sms,kakao_consent:kakao,consent_at:consentAt,opt_out_at:payload.opt_out_at,send_blocked:blocked,send_blocked_reason:payload.send_blocked_reason};
