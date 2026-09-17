@@ -85,13 +85,18 @@ async function run(){
    return {result,firstNext:first.nextActionText||'',secondNext:second.nextActionText||'',firstActivities:(detailPatchFor('inq',first.id).activities||[]).length,secondActivities:(detailPatchFor('inq',second.id).activities||[]).length,selected:Object.keys(INQ_SEL),notice:G.inqNotice};
   });
   assert.equal(partialBulkNext.result,false);assert.equal(partialBulkNext.firstNext,'일괄 견적 확인');assert.equal(partialBulkNext.secondNext,'');assert.equal(partialBulkNext.firstActivities,1);assert.equal(partialBulkNext.secondActivities,0);assert.deepEqual(partialBulkNext.selected,['77777777-7777-4777-8777-777777777777']);assert.match(partialBulkNext.notice,/실패 1건은 선택 상태를 유지했습니다/);
+  const failedInquiryCheck=await page.evaluate(()=>{
+   const q={id:'88888888-8888-4888-8888-888888888888',site:'문의 체크 실패 현장',status:'배정완료',activities:[]};B.inquiries=[q];SPLIT_CACHE=[q];G.inqSelKey=inqKey(q);const p=detailPatchFor('inq',inqKey(q)),before=JSON.stringify({q,p}),transport=pushWrite,draw=paint,dialog=alert;let redraws=0,message='';pushWrite=()=>{throw Error('TEST_QUEUE_REJECTED')};paint=()=>{redraws++};alert=value=>{message=String(value)};const result=splitCheck(0,true);pushWrite=transport;paint=draw;alert=dialog;
+   return {result,before,after:JSON.stringify({q,p}),redraws,message};
+  });
+  assert.equal(failedInquiryCheck.result,false);assert.equal(failedInquiryCheck.after,failedInquiryCheck.before);assert.equal(failedInquiryCheck.redraws,1);assert.match(failedInquiryCheck.message,/기존 확인 상태를 유지합니다/);
   await page.locator('#detailView .dw-asset-back').click();
   await page.waitForSelector('#siteDrawer.on');
   assert.match(await page.locator('#siteDrawerBody .site-hero p').textContent(),/용인시/);
   assert.equal(await page.locator('#siteDrawerBody .dw-tabs [data-key="deals"]').getAttribute('aria-pressed'),'true');
   assert.equal(await page.evaluate(()=>SITE_MASTER_CACHE.findIndex(s=>s.key==='id:site-yongin')),1);
   assert.equal(businessWrites,0);
-  console.log(JSON.stringify({status:'PASS',duplicate_name_sites:2,restored_site_key:'id:site-yongin',restored_tab:'deals',today_completion_failure_preserved:true,issue_completion_failure_preserved:true,inquiry_completion_failure_preserved:true,inquiry_next_set_failure_preserved:true,inquiry_bulk_partial_failure_scoped:true,blocked_external_reads:externalRequests,business_writes:businessWrites}));
+  console.log(JSON.stringify({status:'PASS',duplicate_name_sites:2,restored_site_key:'id:site-yongin',restored_tab:'deals',today_completion_failure_preserved:true,issue_completion_failure_preserved:true,inquiry_completion_failure_preserved:true,inquiry_next_set_failure_preserved:true,inquiry_bulk_partial_failure_scoped:true,inquiry_check_failure_preserved:true,blocked_external_reads:externalRequests,business_writes:businessWrites}));
  }finally{await browser.close();await new Promise(resolve=>srv.close(resolve))}
 }
 
