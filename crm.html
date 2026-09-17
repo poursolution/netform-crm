@@ -1507,6 +1507,7 @@ html,body{height:100%}
 .site-portfolio{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--blue-50)}.site-portfolio>div{background:#fff;padding:11px}.site-portfolio span{display:block;color:var(--sub);font-size:11.5px}.site-portfolio b{display:block;margin-top:4px;color:var(--ink);font-size:13px}.site-brandbook{display:flex;gap:6px;flex-wrap:wrap;padding:10px 12px}.site-brandbook span{border:1px solid var(--blue-50);border-radius:999px;padding:5px 8px;color:var(--blue-d);font-size:11.5px;font-weight:850}
 .site-opp-row{width:100%;display:grid;grid-template-columns:minmax(0,1.4fr) 115px 85px 85px minmax(130px,1fr);gap:8px;align-items:center;border:0;border-bottom:1px solid var(--blue-50);background:#fff;padding:10px 12px;color:inherit;font:inherit;text-align:left;cursor:pointer}.site-opp-row:last-child{border-bottom:0}.site-opp-row:hover{background:var(--blue-50)}.site-opp-row strong{font-size:11.5px;color:var(--ink)}.site-opp-row span,.site-opp-row em{font-size:11.5px;color:var(--sub);font-style:normal}.site-opp-row b{font-size:11.5px;color:var(--blue-d);text-align:right}
 .site-people{display:grid}.site-person{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:9px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--blue-50)}.site-person:last-child{border-bottom:0}.site-person-avatar{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:var(--blue-50);color:var(--blue);font-size:11.5px;font-weight:900}.site-person strong{display:block;color:var(--ink);font-size:11.5px}.site-person small{display:block;margin-top:3px;color:var(--sub);font-size:11.5px}.site-person-actions{display:flex;gap:5px}.site-person-actions a,.site-person-actions button{border:1px solid var(--blue-50);border-radius:8px;background:#fff;padding:6px 7px;color:var(--blue-d);font:inherit;font-size:11.5px;font-weight:850;text-decoration:none;cursor:pointer}
+.site-master-address .site-person{grid-template-columns:minmax(0,1fr) auto}.site-master-address .site-person>span{min-width:0}.site-master-address .site-person small{line-height:1.55;word-break:keep-all;overflow-wrap:break-word}.site-master-address .site-person>button{white-space:nowrap}
 .site-timeline{position:relative;padding:7px 12px 11px 29px}.site-timeline:before{content:"";position:absolute;left:16px;top:10px;bottom:14px;width:1px;background:var(--blue-100)}.site-event{position:relative;padding:7px 0}.site-event:before{content:"";position:absolute;left:-17px;top:12px;width:7px;height:7px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 4px #edf3ff}.site-event time{display:block;color:var(--sub);font-size:11.5px}.site-event strong{display:block;margin-top:2px;color:var(--ink);font-size:11.5px}.site-event small{display:block;margin-top:2px;color:var(--sub);font-size:11.5px;line-height:1.4}
 .site-expansion{display:grid;gap:7px;padding:10px 12px}.site-expansion-row{display:grid;grid-template-columns:31px minmax(0,1fr);gap:9px;align-items:start;border:1px solid #ffe5b8;border-radius:10px;background:#fff9ed;padding:9px}.site-expansion-row i{display:grid;place-items:center;width:29px;height:29px;border-radius:9px;background:#fff;color:#b77500;font-style:normal}.site-expansion-row strong{display:block;color:#774d00;font-size:11.5px}.site-expansion-row small{display:block;margin-top:3px;color:#986d23;font-size:11.5px;line-height:1.45}.site-nodata{padding:15px;text-align:center;color:var(--sub);font-size:11.5px}
 .site-opp-row .opp-name{min-width:0}.site-opp-row .opp-name strong{display:block;font-size:12.5px}.site-opp-row .opp-name small{display:block;margin-top:3px;color:var(--sub);font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -4556,7 +4557,7 @@ paintSites=function(){
  command.classList.add('site-queue-head');
  var eyebrow=command.querySelector('.eyebrow'),meta=command.querySelector('.site-command-meta'),title=command.querySelector('h2'),desc=command.querySelector('p');
  if(eyebrow)eyebrow.remove();
- if(meta)meta.setAttribute('aria-label','canonical Site 주소 입력 진행률');
+ if(meta)meta.setAttribute('aria-label','현장 주소 입력 진행률');
  if(title){var total=(siteMasterData().filter(siteMatches)||[]).length;title.innerHTML='고객 자산 <b>'+total+'</b>'}
  if(desc)desc.textContent='현장별 고객관계와 거래 이력을 확인합니다.';
  var grid=command.querySelector('.site-health-grid');if(grid)grid.setAttribute('aria-label','고객 관계상태 필터');
@@ -4757,7 +4758,7 @@ function saveManagerMove(){if(!CUR_DETAIL||CUR_DETAIL.kind!=='deal')return;var i
  var sourceSiteId=item.cleanup_site_id||item.site_id||item.siteId||'',person=upsertPerson(c,item.site,c.officeTel,c.startedAt||item.created||isoNow(),sourceSiteId);person.history=person.history||[];var sourceHistory=person.history.filter(function(h){if(h.to)return false;var hid=h.cleanup_site_id||h.site_id||h.siteId||'';return sourceSiteId?String(hid)===String(sourceSiteId):!hid&&normSite(h.site)===normSite(item.site)});if(sourceHistory.length===1){sourceHistory[0].to=dt;sourceHistory[0].status='이동'}person.currentSite=to;person.history.push({site:to,site_link_status:'review_required',officeTel:office||'',from:dt,to:'',status:'current',reason:why});
  p.contact=item.contact=Object.assign({},c,{officeTel:c.officeTel,managerName:c.name,managerMobile:c.mobile,managerRole:c.role,personKey:c.personKey,currentSite:to,status:'moved',leftAt:dt});item.manager_current_site=to;item.manager_status='moved';item.manager_left_at=dt;
  /* 새 근무지는 현장명만으로 다른 Deal에 자동 연결하지 않는다. 동명 현장 오연결을 막고 canonical Site 검토에서 확정한다. */
- person.linkWarning='새 근무지는 현장명만 기록되었습니다. 고객자산에서 canonical Site 연결을 확인하세요.';
+ person.linkWarning='새 근무지는 현장명만 기록되었습니다. 고객자산에서 현장 연결을 확인하세요.';
  var actor=(ME&&ME.name)||repN(item.assignee),note=c.name+' 관리소장 근무지 이동',result=(item.site||'-')+' → '+to+' · '+why;p.activities=p.activities||[];p.activities.push({type:'업무',note:note,result:result,at:isoNow(),actor:actor});saveLocal();pushWrite('contact_move',{opportunity_id:item.id,person_key:c.personKey,manager_name:c.name,manager_mobile:c.mobile,from_site:item.site,to_site:to,to_office_phone:office||null,moved_at:dt,reason:why});renderDetail();showDetailErr(saveMsg('관리소장 근무지 이동 이력을 저장했습니다. 기존 현장 기록은 유지됩니다.'),true)}
 
 /* 견적문의 담당자 변경은 반드시 Control Center 전용 창을 거친다.
@@ -8499,9 +8500,9 @@ function paintCampaign(){var root=$('#campaign-root');if(!root)return;var tab=G.
 <script src="./pc-manager-request-connection.js?v=20260915-1"></script>
 <script src="./pc-inquiry-deeplink.js?v=20260915-1"></script>
 <link rel="stylesheet" href="./site-link-review.css?v=20260916-site-link-1">
-<script src="./pc-organization-history.js?v=20260916-all-sites-5"></script>
+<script src="./pc-organization-history.js?v=20260918-review-drawer-1"></script>
 <script src="./site-linked-history.js?v=20260916-site-correction-4"></script>
-<script src="./site-master-address.js?v=20260916-site-address-1"></script>
-<script src="./pc-site-record-review.js?v=20260916-site-evidence-3"></script>
+<script src="./site-master-address.js?v=20260918-site-address-layout-1"></script>
+<script src="./pc-site-record-review.js?v=20260918-review-drawer-1"></script>
 <script src="./work-editor.js?v=20260907-buttons-1"></script><script>window.addEventListener('phase1:identity-cleared',function(){TOKEN=null;WRITE_Q=[];ME=null;if(typeof B!=='undefined')B=null;authGate(true);});window.addEventListener('phase1:profile',function(){WRITE_Q=Phase1.queue.list();});window.addEventListener('phase1:queue',function(){WRITE_Q=Phase1.queue.list();});</script></body>
 </html>

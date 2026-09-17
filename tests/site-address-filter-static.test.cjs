@@ -15,7 +15,7 @@ assert.match(html,/canonical 주소 '\+addressDone\+' \/ '\+all\.length\+' · �
 assert.match(html,/주소상태<select onchange="G\.siteAddress=this\.value/);
 assert.match(html,/주소 확인 후보 · /);
 assert.match(html,/blob=\[s\.name,s\.canonicalAddress\|\|''/);
-assert.match(html,/canonical Site 주소 입력 진행률/);
+assert.match(html,/현장 주소 입력 진행률/);
 
 assert.equal(evidence.suggest(['경기 수원시 팔달구 1','경기  수원시 팔달구 1']), '경기 수원시 팔달구 1');
 assert.equal(evidence.suggest(['경기 수원시 팔달구 1','경기 수원시, 팔달구 1']), '경기 수원시, 팔달구 1');
