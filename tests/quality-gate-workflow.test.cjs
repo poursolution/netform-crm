@@ -18,6 +18,8 @@ test('quality gate covers the repaired customer asset and manager request paths'
   for(const file of [
     'quality-gate-workflow.test.cjs',
     'customer-asset-return-key.test.cjs',
+    'dashboard-inquiry-lineage.test.cjs',
+    'report-priority-layout.test.cjs',
     'detail-next-completion.test.cjs',
     'today-next-completion.test.cjs',
     'mobile-today-next-completion.test.cjs',
@@ -54,6 +56,7 @@ test('quality gate exercises critical PC screens in a real browser',()=>{
   assert.match(packageJson.scripts['smoke:pc'],/verify-mobile-today-completion-browser\.cjs/);
   assert.match(packageJson.scripts['smoke:pc'],/verify-customer-asset-pagination-browser\.cjs/);
   assert.match(packageJson.scripts['smoke:pc'],/verify-customer-asset-return-browser\.cjs/);
+  assert.match(packageJson.scripts['smoke:pc'],/pc-typography-browser\.cjs/);
   assert.match(packageJson.scripts['smoke:pc'],/pc-organization-history-browser\.cjs/);
   assert.match(packageJson.scripts['smoke:pc'],/site-record-review-browser\.test\.cjs/);
   assert.match(packageJson.scripts['smoke:pc'],/pipeline-controls-browser\.cjs/);
