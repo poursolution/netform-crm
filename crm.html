@@ -4668,7 +4668,7 @@ function contactDirectoryHTML(item,p){var list=siteContacts(item,p);return '<div
 function peopleStore(){LOCAL.people=LOCAL.people||{};return LOCAL.people}
 function personFromContact(c){if(!c||!c.personKey)return null;return peopleStore()[c.personKey]||null}
 function dealSiteRef(item){var id=item.cleanup_site_id||item.site_id||item.siteId,org=item.organization_id,name=item.cleanup_site_name||item.site||'',key=id?'id:'+id:org?'org:'+org:'name:'+normSite(item.site)+'|address:'+CleanupCore.norm(detailAddress(item)),names={};names[item.site||name]=1;return {key:key,name:name,norm:normSite(name),names:names}}
-function dealContactCurrentAtSite(item,c){return personCurrentAtSite(dealSiteRef(item),personFromContact(c),c.currentSite)}
+function dealContactCurrentAtSite(item,c){var target=dealSiteRef(item),person=personFromContact(c);if(person)return personCurrentAtSite(target,person,c.currentSite);var linked=contactExistingDeals(c.mobile);if(!linked.length)return personCurrentAtSite(target,null,c.currentSite);if(linked.length!==1)return false;return dealSiteRef(linked[0]).key===target.key}
 function upsertPerson(c,site,officeTel,at,siteId){if(!c||!c.personKey)return null;var P=peopleStore(),p=P[c.personKey]||(P[c.personKey]={id:c.personKey,name:c.name||c.managerName||'',mobile:c.mobile||c.managerMobile||'',role:c.role||c.managerRole||'관리소장',currentSite:site||c.currentSite||'',history:[]}),sid=String(siteId||'');
  p.name=c.name||c.managerName||p.name;p.mobile=c.mobile||c.managerMobile||p.mobile;p.role=c.role||c.managerRole||p.role;p.currentSite=site||c.currentSite||p.currentSite;
  p.history=p.history||[];var cur=sid?null:p.history.filter(function(h){return !h.to})[0];

@@ -26,7 +26,8 @@ function contextFor(person){
     detailAddress:item=>item.address||'',
     normSite:value=>String(value||'').replace(/\s/g,''),
     peopleStore:()=>people,
-    personFromContact:c=>people[c.personKey]||null
+    personFromContact:c=>people[c.personKey]||null,
+    contactExistingDeals:()=>[]
   };
   vm.createContext(context);
   for(const name of ['sitePersonHistoryMatch','personCurrentAtSite','dealSiteRef','dealContactCurrentAtSite']){
@@ -51,6 +52,16 @@ test('conflicting open histories do not mark either Deal contact current',()=>{
   const context=contextFor(person),contact={personKey:'p',currentSite:'동명아파트'};
   assert.equal(context.dealContactCurrentAtSite({site:'동명아파트',site_id:'site-a'},contact),false);
   assert.equal(context.dealContactCurrentAtSite({site:'동명아파트',site_id:'site-b'},contact),false);
+});
+
+test('server contacts without a local person never become current at multiple canonical Sites',()=>{
+  const context=contextFor(undefined),contact={personKey:'p',mobile:'01012345678',currentSite:'동명아파트'};
+  context.contactExistingDeals=()=>context.B.deals;
+  assert.equal(context.dealContactCurrentAtSite({site:'동명아파트',site_id:'site-a',address:'서울 A'},contact),false);
+  assert.equal(context.dealContactCurrentAtSite({site:'동명아파트',site_id:'site-b',address:'서울 B'},contact),false);
+  context.contactExistingDeals=()=>[context.B.deals[0]];
+  assert.equal(context.dealContactCurrentAtSite({site:'동명아파트',site_id:'site-a',address:'서울 A'},contact),true);
+  assert.equal(context.dealContactCurrentAtSite({site:'동명아파트',site_id:'site-b',address:'서울 B'},contact),false);
 });
 
 test('contact card renders move state from canonical current status',()=>{
