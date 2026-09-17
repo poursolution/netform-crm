@@ -4,6 +4,8 @@
  let section=null,generation=0,mountedRoot=null,mountedSearch='',assetActor='',assetLoading=null;const PAGE_SIZE=20;
  const node=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
  const candidateLabel=s=>{const reason=s.match_reason||(s.exact_address?'주소 일치':'이름 일치'),score=Number(s.match_score||0);return reason+(score?' · 근거 '+score:'')+' · '+(s.name||'현장명 미입력')+' · '+(s.address||'주소 미입력');};
+ function publishShortcut(root,kind,label,count,target){let nav=root.querySelector(':scope > .site-review-shortcuts');if(!nav){nav=node('nav',undefined,'site-review-shortcuts');nav.setAttribute('aria-label','고객자산 연결 검토 바로가기');const command=root.querySelector('.site-command');if(command)command.insertAdjacentElement('afterend',nav);else root.prepend(nav);}let button=nav.querySelector('[data-review-shortcut="'+kind+'"]');if(!button){button=node('button');button.type='button';button.dataset.reviewShortcut=kind;nav.append(button);}button.textContent=label+' '+count+'건';button.onclick=()=>target.scrollIntoView({behavior:'smooth',block:'start'});}
+ w.SiteReviewShortcut=publishShortcut;
  function clear(){generation++;if(section)section.remove();section=null;mountedRoot=null;mountedSearch='';}
  function message(root,text,error){root.replaceChildren(node('p',text,'site-nodata'));root.firstChild.setAttribute('role',error?'alert':'status');}
  function mount(root,query=''){
@@ -37,7 +39,7 @@
     const data=await transport.rpc('crm_site_link_review_list_v1',{p_limit:100});
     if(ticket!==generation||transport.profile?.auth_uid!==actor)return;
     if(![1,2,3].includes(data?.contract_version)||!Array.isArray(data.items))throw Error('CONTRACT_MISMATCH');
-    const totalContacts=data.items.reduce((n,x)=>n+Number(x.contact_count||0),0),totalNotes=data.items.reduce((n,x)=>n+Number(x.note_count||0),0);summary.textContent='검토 '+data.items.length+'건 · 과거 메모 '+totalNotes+'건 · 담당자 '+totalContacts+'명 · 이름은 후보 검색에만 사용됩니다.';
+    const totalContacts=data.items.reduce((n,x)=>n+Number(x.contact_count||0),0),totalNotes=data.items.reduce((n,x)=>n+Number(x.note_count||0),0);summary.textContent='검토 '+data.items.length+'건 · 과거 메모 '+totalNotes+'건 · 담당자 '+totalContacts+'명 · 이름은 후보 검색에만 사용됩니다.';publishShortcut(root,'history','과거자료 연결',data.items.length,section);
     items=data.items.filter(x=>!search||[x.name,x.address].concat((x.contact_preview||[]).map(c=>(c.name||'')+' '+(c.role||''))).join(' ').toLocaleLowerCase().includes(search));page=1;render();
    }catch(e){if(ticket===generation)message(list,'Site 연결 검토 목록을 불러오지 못했습니다.',true);}
   }
