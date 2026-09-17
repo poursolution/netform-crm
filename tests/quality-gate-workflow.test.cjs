@@ -8,10 +8,10 @@ const workflow=fs.readFileSync('.github/workflows/quality-gate.yml','utf8');
 const packageJson=JSON.parse(fs.readFileSync('package.json','utf8'));
 
 test('quality gate runs for master changes and merge queues',()=>{
-  assert.match(workflow,/push:\n\s+branches: \[master\]/);
-  assert.match(workflow,/pull_request:\n\s+branches: \[master\]/);
+  assert.match(workflow,/push:\r?\n\s+branches: \[master\]/);
+  assert.match(workflow,/pull_request:\r?\n\s+branches: \[master\]/);
   assert.match(workflow,/merge_group:/);
-  assert.match(workflow,/permissions:\n\s+contents: read/);
+  assert.match(workflow,/permissions:\r?\n\s+contents: read/);
 });
 
 test('quality gate covers the repaired customer asset and manager request paths',()=>{
@@ -44,6 +44,7 @@ test('quality gate exercises critical PC screens in a real browser',()=>{
   assert.match(workflow,/run: npm run smoke:pc/);
   assert.match(packageJson.scripts['smoke:pc'],/verify-today-work-browser\.cjs/);
   assert.match(packageJson.scripts['smoke:pc'],/verify-customer-asset-pagination-browser\.cjs/);
+  assert.match(packageJson.scripts['smoke:pc'],/verify-customer-asset-return-browser\.cjs/);
   assert.match(packageJson.scripts['smoke:pc'],/pc-organization-history-browser\.cjs/);
   assert.match(packageJson.scripts['smoke:pc'],/site-record-review-browser\.test\.cjs/);
   assert.match(packageJson.scripts['smoke:pc'],/pipeline-controls-browser\.cjs/);
