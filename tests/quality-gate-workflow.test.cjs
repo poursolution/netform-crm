@@ -5,6 +5,7 @@ const fs=require('node:fs');
 const {test}=require('node:test');
 
 const workflow=fs.readFileSync('.github/workflows/quality-gate.yml','utf8');
+const packageJson=JSON.parse(fs.readFileSync('package.json','utf8'));
 
 test('quality gate runs for master changes and merge queues',()=>{
   assert.match(workflow,/push:\n\s+branches: \[master\]/);
@@ -24,12 +25,20 @@ test('quality gate covers the repaired customer asset and manager request paths'
     'manager-request-evidence.test.cjs',
     'today-work-clarity.test.cjs',
     'data-cleanup.test.cjs'
-  ]) assert.match(workflow,new RegExp(file.replaceAll('.','\\.')));
+  ]) assert.match(packageJson.scripts['test:contracts'],new RegExp(file.replaceAll('.','\\.')));
 });
 
 test('quality gate assembles and verifies the deployable release',()=>{
   assert.match(workflow,/node scripts\/build-production-ui\.cjs/);
   assert.match(workflow,/node scripts\/verify-production-manifest\.cjs \.\.\/deploy\/netform-crm-production-pages/);
   assert.match(workflow,/name: quality-gate/);
-  assert.match(workflow,/timeout-minutes: 10/);
+  assert.match(workflow,/timeout-minutes: 15/);
+});
+
+test('quality gate exercises critical PC screens in a real browser',()=>{
+  assert.match(workflow,/run: npm ci/);
+  assert.match(workflow,/npx playwright install --with-deps chromium/);
+  assert.match(workflow,/run: npm run smoke:pc/);
+  assert.match(packageJson.scripts['smoke:pc'],/verify-today-work-browser\.cjs/);
+  assert.match(packageJson.scripts['smoke:pc'],/verify-customer-asset-pagination-browser\.cjs/);
 });

@@ -18,7 +18,7 @@ jobs:
   quality-gate:
     name: quality-gate
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Check out reviewed source
         uses: actions/checkout@v6
@@ -27,23 +27,19 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 24
+          cache: npm
+
+      - name: Install locked browser test runtime
+        run: npm ci
 
       - name: Verify customer asset and workflow contracts
-        run: |
-          node --test \
-            tests/quality-gate-workflow.test.cjs \
-            tests/customer-asset-return-key.test.cjs \
-            tests/site-address-filter-static.test.cjs \
-            tests/site-linked-assets-static.test.cjs \
-            tests/site-master-address-static.test.cjs \
-            tests/site-master-address-update-static.test.cjs \
-            tests/manager-request-today-source.test.cjs \
-            tests/manager-request-refresh.test.cjs \
-            tests/manager-request-evidence.test.cjs \
-            tests/today-work-clarity.test.cjs \
-            tests/data-cleanup.test.cjs \
-            tests/production-pages-manifest.test.cjs \
-            tests/production-build-version.test.cjs
+        run: npm run test:contracts
+
+      - name: Install Chromium for the PC smoke test
+        run: npx playwright install --with-deps chromium
+
+      - name: Exercise Today and Customer Assets in a real browser
+        run: npm run smoke:pc
 
       - name: Assemble the production release
         run: node scripts/build-production-ui.cjs
