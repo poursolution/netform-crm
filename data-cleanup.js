@@ -27,6 +27,8 @@
    type='inquiry';action='inquiry_merge';reasons.push('1일 이내 문의 접수');text='같은 요청의 중복 접수인지 비교하세요. 추가 정보라면 원본 문의를 활동으로 연결할 수 있습니다.';
   }else if(a.ref.type==='deal'&&b.ref.type==='deal'&&(sameSite||names===1)&&!conflict&&!differentWork&&!differentBiz&&workA&&workA===workB&&days!==null&&days<=30){
    type='deal';action='deal_review';reasons.push('동일 공종 · 30일 이내 등록');text='영업기회 중복 가능성입니다. 계약·수주·활동 이력을 비교한 뒤 판단하세요. 자동 병합하지 않습니다.';
+  }else if(siteId){
+   return null;
   }else if((sameSite||names===1)&&!conflict&&(differentWork||differentBiz||(days!==null&&days>365))){
    type='site';action='site_link';reasons.push(differentWork?'공종 서로 다름':differentBiz?'사업유형 서로 다름':'영업 시기 서로 다름');text='정상적인 복수 영업입니다. 하나의 현장으로 연결하고 영업기회는 각각 유지하세요.';
   }else if(!conflict&&(address||office&&names>=.72||names>=.82)){
