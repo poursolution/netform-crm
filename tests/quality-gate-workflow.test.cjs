@@ -22,6 +22,7 @@ test('quality gate covers the repaired customer asset and manager request paths'
     'today-next-completion.test.cjs',
     'mobile-today-next-completion.test.cjs',
     'issue-completion-order.test.cjs',
+    'inquiry-next-completion.test.cjs',
     'site-address-filter-static.test.cjs',
     'site-linked-assets-static.test.cjs',
     'site-master-address-update-static.test.cjs',
