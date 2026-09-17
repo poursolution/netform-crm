@@ -1,9 +1,6 @@
 (function(root){
 'use strict';
 const defaults={quarter:0,rep:'전체',brand:'전체',workFilter:'전체'};
-// Compatibility hook for older callers. Pipeline controls are now owned here
-// and no longer borrowed from the global period/representative containers.
-function restoreControls(){}
 function resetValue(key){return key==='year'?CUR_Y:defaults[key]}
 function set(key,value){
  if(!['year','quarter','rep','brand','workFilter'].includes(key))return;
@@ -61,5 +58,5 @@ function render(){
  host.querySelector('.pipe-add').onclick=()=>openNewDeal();
  const resetButton=host.querySelector('.pipe-reset');if(resetButton)resetButton.onclick=reset;
 }
-root.PipelineToolbar={render,set,clear,reset,restoreControls};
+root.PipelineToolbar={render,set,clear,reset};
 })(window);
