@@ -100,7 +100,7 @@ test('quote inbox has a focused refresh safety net when realtime delivery is una
  assert.doesNotMatch(pc,/addEventListener\('focus'[^\n]+syncInquiryNow\(true\)/);
  assert.match(pc,/function refreshPageAfterPaint\(p\)[\s\S]{0,420}syncInquiryNow\(false\)/);
  assert.doesNotMatch(pc,/function (?:nav|goPage)\([^\n]+syncInquiryNow\(true\)/);
- assert.match(fs.readFileSync(path.join(__dirname,'..','operational-overlay.js'),'utf8'),/root\.applyBundle\(bundle\);root\.LAST_INQUIRY_SYNC=Date\.now\(\);readState\('핵심 데이터 최신'/);
+ assert.match(fs.readFileSync(path.join(__dirname,'..','operational-overlay.js'),'utf8'),/if\(!result\.failures\.some\(x=>x\.domain==='inquiry_core'\)\)root\.LAST_INQUIRY_SYNC=Date\.now\(\)/);
 });
 
 test('quote inbox reuses expensive status decisions during one paint',()=>{
@@ -204,19 +204,19 @@ test('concurrent PC refreshes share one progressive load job',async()=>{
  assert.strictEqual(first,second);
  assert.strictEqual(first,focusPoll);
  release();await Promise.all([first,second,focusPoll]);
- assert.equal(reads,1);assert.equal(renders,1);
+ assert.equal(reads,2);assert.equal(renders,1);
 });
 
 test('reload paints snapshot, then fresh core without downloading all history',async()=>{
  let reads=0,stored='',painted=[];
  const cached={contract_version:2,generated_at:'2026-09-07T00:00:00Z',deals:[{id:'cached'}],inquiries:[]};
  const elements={load:{style:{}},live:{textContent:'',classList:{toggle(){}}},err:{textContent:'',style:{}}};
- const root={TOKEN:'token',ME:{id:'user'},B:null,console,Phase1:{config:{project_ref:'rprechiaglyjaydkmxsu'},sessionCache:{getItem:()=>JSON.stringify(cached),setItem:(k,v)=>{stored=v},removeItem(){}},read:async(resource,args)=>{reads++;assert.deepEqual(args.domains,['deal_core','inquiry_core']);return {data:{deals:[{id:'fresh'}],inquiries:[]}}},queue:{list:()=>[],flush:async()=>[]}},OperationalAdapter:{},addEventListener(){},document:{getElementById:id=>elements[id]||null},applyBundle(bundle){this.B=bundle;painted.push(bundle.deals[0].id)}};
+ const root={TOKEN:'token',ME:{id:'user'},B:null,console,Phase1:{config:{project_ref:'rprechiaglyjaydkmxsu'},sessionCache:{getItem:()=>JSON.stringify(cached),setItem:(k,v)=>{stored=v},removeItem(){}},read:async(resource,args)=>{reads++;assert.equal(args.domains.length,1);return {data:args.domains[0]==='deal_core'?{deals:[{id:'fresh'}]}:{inquiries:[]}}},queue:{list:()=>[],flush:async()=>[]}},OperationalAdapter:{},addEventListener(){},document:{getElementById:id=>elements[id]||null},applyBundle(bundle){this.B=bundle;painted.push(bundle.deals[0].id)}};
  overlay.install(root);
  await root.loadData();
  assert.deepEqual(painted,['cached','fresh']);
  assert.equal(elements.live.textContent,'핵심 데이터 최신');
- assert.equal(reads,1);
+ assert.equal(reads,2);
  assert.ok(Number.isFinite(root.LAST_INQUIRY_SYNC));
  assert.match(stored,/fresh/);
 });
@@ -235,13 +235,27 @@ test('operational transport supports an allowlisted domain subset for progressiv
 test('fresh PC paints the first core page before full core pagination completes',async()=>{
  let releaseCore,painted=[];
  const coreGate=new Promise(resolve=>{releaseCore=resolve});
- const root={TOKEN:'token',ME:{id:'user'},B:null,Phase1:{read:async(resource,args)=>{if(args.domains.includes('deal_core')){args.onPage({domain:'deal_core',items:[{id:'deal-first'}],has_more:true});args.onPage({domain:'inquiry_core',items:[{id:'inquiry-first'}],has_more:true});await coreGate;return {data:{deals:[{id:'deal-first'},{id:'deal-last'}],inquiries:[{id:'inquiry-first'}]}};}return {data:{expansion_pool:[],customer_support_actions:[],message_logs:[]}}},queue:{list:()=>[],flush:async()=>[]}},OperationalAdapter:{},addEventListener(){},document:{getElementById:()=>null},applyBundle(bundle){this.B=bundle;painted.push(bundle.deals.length)}};
+ const root={TOKEN:'token',ME:{id:'user'},B:null,Phase1:{read:async(resource,args)=>{const domain=args.domains[0];if(domain==='deal_core'){args.onPage({domain,items:[{id:'deal-first'}],has_more:true});await coreGate;return {data:{deals:[{id:'deal-first'},{id:'deal-last'}]}};}args.onPage({domain,items:[{id:'inquiry-first'}],has_more:false});return {data:{inquiries:[{id:'inquiry-first'}]}};},queue:{list:()=>[],flush:async()=>[]}},OperationalAdapter:{},addEventListener(){},document:{getElementById:()=>null},applyBundle(bundle){this.B=bundle;painted.push(bundle.deals.length)}};
  overlay.install(root);
  const loading=root.loadData();
  await new Promise(resolve=>setImmediate(resolve));
  assert.deepEqual(painted,[1]);
  releaseCore();await loading;
  assert.deepEqual(painted,[1,2]);
+});
+
+test('PC refresh keeps a successful core domain when the other domain fails',async()=>{
+ const elements={load:{style:{}},live:{textContent:'',title:'',classList:{toggle(){}}}};
+ const cached={contract_version:2,deals:[{id:'old-deal'}],inquiries:[{id:'old-inquiry'}]};
+ const root={TOKEN:'token',ME:{id:'user'},B:cached,console:{warn(){}},Phase1:{read:async(resource,args)=>{if(args.domains[0]==='inquiry_core')throw Error('INQUIRY_TIMEOUT');return {data:{deals:[{id:'fresh-deal'}]}};},queue:{list:()=>[],flush:async()=>[]}},OperationalAdapter:{},addEventListener(){},document:{getElementById:id=>elements[id]||null},applyBundle(bundle){this.B=bundle;}};
+ overlay.install(root);
+ const bundle=await root.loadData();
+ assert.equal(bundle.deals[0].id,'fresh-deal');
+ assert.equal(bundle.inquiries[0].id,'old-inquiry');
+ assert.equal(elements.live.textContent,'일부 데이터 최신 · 문의 갱신 필요');
+ assert.match(elements.live.title,/문의: INQUIRY_TIMEOUT/);
+ assert.deepEqual(root.LAST_OPERATIONAL_READ_ERROR,[{domain:'inquiry_core',message:'INQUIRY_TIMEOUT'}]);
+ assert.equal(root.LAST_INQUIRY_SYNC,undefined);
 });
 
 test('mobile renders core without downloading secondary history',async()=>{
