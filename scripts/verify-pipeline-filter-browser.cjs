@@ -5,15 +5,14 @@ const http=require('node:http');
 const fs=require('node:fs');
 const path=require('node:path');
 const assert=require('node:assert/strict');
-const {createRequire}=require('node:module');
-const {chromium}=createRequire(path.resolve(__dirname,'../../crm-security-lab/package.json'))('playwright');
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 
 const root=path.resolve(__dirname,'..');
 function server(){return http.createServer((req,res)=>{const rel=decodeURIComponent(new URL(req.url,'http://127.0.0.1').pathname).replace(/^\/+/, '')||'crm.html',target=path.resolve(root,rel);if(!target.startsWith(root+path.sep)||!fs.existsSync(target)||!fs.statSync(target).isFile()){res.writeHead(404);res.end();return}res.setHeader('Cache-Control','no-store');fs.createReadStream(target).pipe(res)})}
 
 async function run(){
  const srv=server();await new Promise(resolve=>srv.listen(0,'127.0.0.1',resolve));
- const browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
+ const browser=await chromium.launch({headless:true,...(process.env.EDGE_PATH?{executablePath:process.env.EDGE_PATH}:{})});
  try{
   const context=await browser.newContext({viewport:{width:1365,height:900}});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
@@ -35,28 +34,36 @@ async function run(){
    document.getElementById('ptitle').textContent='파이프라인';
    document.getElementById('psub').textContent='진행 중인 영업기회를 단계별로 관리합니다.';
    window.__originalPaint=window.paint;
-   window.paint=()=>{paintPeriod();paintRepTabs();paintPipe()};
+   window.paint=()=>paintPipe();
    paint();
   });
 
 
   assert.equal(await page.locator('#periodbar').isVisible(),false);
   assert.equal(await page.locator('#reptabs').isVisible(),false);
-  const bar=page.locator('.pipe-inline-filters');
-  assert.equal(await bar.locator('.period-segment button').count(),6);
-  assert.equal(await bar.locator('.pipe-inline-owner summary b').innerText(),await page.locator('#reptabs summary b').innerText());
-  await bar.getByRole('button',{name:'전체',exact:true}).click();
+  const bar=page.locator('.pipe-toolbar-controls');
+  assert.equal(await bar.locator('.pipe-period').count(),1);
+  assert.equal(await bar.locator('.pipe-owner').count(),1);
+  await bar.locator('.pipe-period summary').click();
+  await bar.getByRole('combobox',{name:'조회 연도'}).selectOption('전체');
+  await bar.getByRole('combobox',{name:'조회 분기'}).selectOption('0');
+  await bar.getByRole('button',{name:'적용',exact:true}).click();
   assert.deepEqual(await page.evaluate(()=>[G.year,G.quarter]),['전체',0]);
-  await bar.getByRole('button',{name:'연간',exact:true}).click();
+  await bar.locator('.pipe-period summary').click();
+  await bar.getByRole('combobox',{name:'조회 연도'}).selectOption(String(new Date().getFullYear()));
   for(const q of [1,2,3,4]){
-   await bar.getByRole('button',{name:q+'분기',exact:true}).click();
+   await bar.getByRole('combobox',{name:'조회 분기'}).selectOption(String(q));
+   await bar.getByRole('button',{name:'적용',exact:true}).click();
    assert.equal(await page.evaluate(()=>G.quarter),q);
+   if(q!==4)await bar.locator('.pipe-period summary').click();
   }
-  await bar.getByRole('button',{name:'3분기',exact:true}).click();
-  await bar.locator('summary').click();
-  await bar.getByRole('textbox',{name:'영업담당자 이름 검색'}).fill('황윤선');
-  assert.equal(await bar.locator('.rep-filter-option:visible').count(),1);
-  await bar.locator('[data-rep="황윤선"]').click();
+  await bar.locator('.pipe-period').evaluate(node=>{node.open=true;});
+  await bar.getByRole('combobox',{name:'조회 분기'}).selectOption('3');
+  await bar.getByRole('button',{name:'적용',exact:true}).click();
+  await bar.locator('.pipe-owner').evaluate(node=>{node.open=true;});
+  await bar.locator('.pipe-owner-input').fill('황윤선');
+  assert.equal(await bar.locator('[data-owner]:visible').count(),1);
+  await bar.locator('[data-owner="황윤선"]').click();
   assert.equal(await page.evaluate(()=>G.rep),'황윤선');
   assert.deepEqual(await page.evaluate(()=>pipeFiltered().map(d=>d.id)),['pf-1','pf-3']);
   await page.getByRole('combobox',{name:'사업유형',exact:true}).selectOption('POUR솔루션');
@@ -65,12 +72,10 @@ async function run(){
   assert.equal(await page.evaluate(()=>G.workFilter),'공종 미분류');
   await page.locator('.pipe-reset').click();
   assert.deepEqual(await page.evaluate(()=>[G.year,G.quarter,G.rep,G.brand,G.workFilter]),[String(new Date().getFullYear()),0,'전체','전체','전체']);
-  await page.evaluate(()=>{B.inquiries=[{id:'year-current',at:CUR_Y+'-09-01'}];paint()});
-  const canonical=await page.locator('#periodbar .yoybadge').allTextContents();
-  assert.deepEqual(await bar.locator('.yoybadge').allTextContents(),canonical);
+  assert.equal(await page.evaluate(()=>document.querySelector('#periodbar select')===null||!document.querySelector('#periodbar').offsetParent),true);
   for(const width of [1920,1440,1365,1280]){
    await page.setViewportSize({width,height:900});
-   const metrics=await bar.evaluate(el=>{const a=el.querySelector('.period-year-select').getBoundingClientRect(),b=el.querySelector('summary').getBoundingClientRect();return {sameRow:Math.abs((a.top+a.height/2)-(b.top+b.height/2))<2,overflow:el.scrollWidth>el.clientWidth,height:el.getBoundingClientRect().height}});
+   const metrics=await bar.evaluate(el=>{const a=el.querySelector('.pipe-period>summary').getBoundingClientRect(),b=el.querySelector('.pipe-owner>summary').getBoundingClientRect();return {sameRow:Math.abs((a.top+a.height/2)-(b.top+b.height/2))<2,overflow:el.scrollWidth>el.clientWidth,height:el.getBoundingClientRect().height}});
    assert.equal(metrics.sameRow,true,'period and owner same row at '+width);
    assert.equal(metrics.overflow,false,'no horizontal overflow at '+width);
    assert.ok(metrics.height<55);
@@ -83,26 +88,24 @@ async function run(){
   await page.locator('.pipe-add').click();
   assert.equal(await page.evaluate(()=>window.__opened),1);
   const address=page.url();
-  await bar.getByRole('button',{name:'3분기',exact:true}).click();
-  await bar.locator('summary').click();
-  await bar.locator('[data-rep="황윤선"]').click();
+  await bar.locator('.pipe-period').evaluate(node=>{node.open=true;});
+  await bar.getByRole('combobox',{name:'조회 분기'}).selectOption('3');
+  await bar.getByRole('button',{name:'적용',exact:true}).click();
+  await bar.locator('.pipe-owner').evaluate(node=>{node.open=true;});
+  await bar.locator('[data-owner="황윤선"]').click();
   const selection=await page.evaluate(()=>[G.year,G.quarter,G.rep,G.brand,G.workFilter]);
   const selectedIds=await page.evaluate(()=>pipeFiltered().map(d=>d.id));
-  await page.evaluate(()=>{G.page='inq';document.getElementById('pg-pipe').classList.remove('on');paintPeriod();paintRepTabs()});
-  assert.equal(await page.locator('#periodbar').isVisible(),true,'global period remains available on other pages');
-  assert.equal(await page.locator('#reptabs').isVisible(),true,'global owner remains available on other pages');
-  // Other pages can apply their own existing owner validation. Restore the tested selection,
-  // then verify repeated pipeline rendering itself never changes it.
-  await page.evaluate(s=>{[G.year,G.quarter,G.rep,G.brand,G.workFilter]=s;G.page='pipe';document.getElementById('pg-pipe').classList.add('on');paint();paint()},selection);
+  await page.evaluate(()=>{window.paint=window.__originalPaint;G.page='inq';paint()});
+  assert.equal(await page.locator('#periodbar').evaluate(el=>el.style.display),'','global period remains available on other pages');
+  assert.equal(await page.locator('#reptabs').evaluate(el=>el.style.display),'','global owner remains available on other pages');
+  await page.evaluate(s=>{[G.year,G.quarter,G.rep,G.brand,G.workFilter]=s;G.page='pipe';paint();paint()},selection);
   assert.deepEqual(await page.evaluate(()=>[G.year,G.quarter,G.rep,G.brand,G.workFilter]),selection);
   assert.deepEqual(await page.evaluate(()=>pipeFiltered().map(d=>d.id)),selectedIds);
-  assert.equal(await page.locator('.pipe-inline-filters').count(),1,'reentry never duplicates the filter bar');
+  assert.equal(await page.locator('#p-brands .pipe-toolbar-controls').count(),1,'reentry never duplicates the filter bar');
   assert.equal(page.url(),address,'layout does not rewrite URL');
-  // Exercise the actual application router, not just the isolated render fixture.
-  await page.evaluate(()=>{window.paint=window.__originalPaint;paint();paint()});
   assert.equal(await page.locator('#periodbar').evaluate(el=>el.style.display),'none');
   assert.equal(await page.locator('#reptabs').evaluate(el=>el.style.display),'none');
-  assert.equal(await page.locator('.pipe-inline-filters').count(),1);
+  assert.equal(await page.locator('#p-brands .pipe-toolbar-controls').count(),1);
   assert.deepEqual(await page.evaluate(()=>[G.year,G.quarter,G.rep,G.brand,G.workFilter]),selection);
   assert.deepEqual(await page.evaluate(()=>pipeFiltered().map(d=>d.id)),selectedIds);
   await page.setViewportSize({width:1920,height:1080});
@@ -148,7 +151,7 @@ async function run(){
   await page.locator('.pc-followup-dialog').waitFor({state:'visible'});
   await page.locator('.pc-followup-dialog [data-close]').first().click();
   assert.equal(await page.evaluate(()=>window.__businessWrites),0);
-  console.log(JSON.stringify({status:'PASS',one_row_period_owner:true,original_counts:true,period_buttons:6,filters:true,view_switches:true,business_writes:0}));
+  console.log(JSON.stringify({status:'PASS',pipeline_owned_controls:true,global_controls_untouched:true,one_row_period_owner:true,filters:true,view_switches:true,business_writes:0}));
  }finally{await browser.close();await new Promise(resolve=>srv.close(resolve))}
 }
 

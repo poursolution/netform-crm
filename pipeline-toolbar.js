@@ -1,9 +1,9 @@
 (function(root){
 'use strict';
 const defaults={quarter:0,rep:'전체',brand:'전체',workFilter:'전체'};
-let borrowed=[];
-function restoreControls(){borrowed.forEach(([node,marker])=>{if(marker.isConnected){node.classList?.remove('pipe-inline-owner');marker.replaceWith(node)}});borrowed=[];}
-function borrow(node){const marker=document.createComment('pipeline control');node.before(marker);borrowed.push([node,marker]);return node;}
+// Compatibility hook for older callers. Pipeline controls are now owned here
+// and no longer borrowed from the global period/representative containers.
+function restoreControls(){}
 function resetValue(key){return key==='year'?CUR_Y:defaults[key]}
 function set(key,value){
  if(!['year','quarter','rep','brand','workFilter'].includes(key))return;
@@ -27,10 +27,10 @@ function dismissPeriod(el,focus){
 }
 if(root.document)root.document.addEventListener('click',event=>{const el=root.document.querySelector('.pipe-period[open]');if(el&&!el.contains(event.target))dismissPeriod(el,false);const owner=root.document.querySelector('.pipe-owner[open]');if(owner&&!owner.contains(event.target))owner.open=false;});
 function render(){
- restoreControls();
  const host=document.getElementById('p-brands');if(!host)return;
  const option=(value,label,current)=>'<option value="'+escAttr(value)+'" '+(String(current)===String(value)?'selected':'')+'>'+esc(label)+'</option>';
  const years=Array.from(new Set(['전체',String(Number(CUR_Y)-2),String(Number(CUR_Y)-1),CUR_Y,G.year]));
+ let evidence='';if(G.year!=='전체'&&typeof operationalInquiries==='function'){const py=String(Number(G.year)-1),count=y=>operationalInquiries(B.inquiries||[]).filter(q=>q.at&&q.at.slice(0,4)===y&&(!G.quarter||Math.ceil(Number(q.at.slice(5,7))/3)===G.quarter)).length,current=count(G.year),previous=count(py);if(previous>=20)evidence='작년 대비 '+(current>=previous?'+':'')+Math.round((current-previous)/previous*100)+'%';else if(current>0)evidence=py+'년 '+previous+'건 · '+G.year+'년 '+current+'건'}
  const chips=[];
  ['year','quarter','rep','brand','workFilter'].forEach(key=>{if(G[key]==null||G[key]===resetValue(key))return;let label=G[key];if(key==='year')label=G.year==='전체'?'전체 연도':G.year+'년';if(key==='quarter')label=G.quarter+'분기';if(key==='rep')label=repDisplay(G.rep);chips.push('<button data-clear="'+key+'" aria-label="'+escAttr(label)+' 필터 해제">'+esc(label)+' <span aria-hidden="true">×</span></button>')});
  host.innerHTML='<div class="pipe-toolbar-controls">'
@@ -39,6 +39,7 @@ function render(){
  +'<details class="pipe-owner"><summary>'+esc(G.rep==='전체'?'전체 담당자':repDisplay(G.rep))+' <span aria-hidden="true">▾</span></summary><div class="pipe-owner-panel"><input class="pipe-owner-input" aria-label="영업담당자 검색 및 선택" placeholder="이름 검색" type="search"><div class="pipe-owner-options">'+['전체'].concat(assignableReps()).map(n=>'<button type="button" data-owner="'+escAttr(n)+'" aria-pressed="'+(G.rep===n)+'">'+esc(n==='전체'?'전체 담당자':repDisplay(n))+(G.rep===n?' ✓':'')+'</button>').join('')+'</div><p class="pipe-owner-empty" hidden>검색된 담당자가 없습니다.</p></div></details>'
  +'<select aria-label="사업유형" data-filter="brand">'+['전체'].concat(BRANDS).map(b=>option(b,b==='전체'?'전체 사업':b,G.brand)).join('')+'</select>'
  +'<select aria-label="공종" data-filter="workFilter">'+workFilterOptions(G.workFilter)+'</select>'
+ +(evidence?'<span class="pipe-evidence">'+esc(evidence)+'</span>':'')
  +'<div class="pipe-toolbar-actions"><nav aria-label="파이프라인 보기">'+[['kb','칸반'],['split','스플릿'],['fc','포캐스트']].map(([v,label])=>'<button data-view="'+v+'" aria-pressed="'+(G.pipeView===v)+'">'+label+'</button>').join('')+'</nav><button class="pipe-add" type="button">＋ 영업 추가</button></div></div>'
  +(chips.length?'<div class="pipe-applied"><span>적용 필터</span>'+chips.join('')+'<button class="pipe-reset">전체 초기화</button></div>':'');
  host.querySelectorAll('[data-filter]').forEach(el=>el.onchange=()=>set(el.dataset.filter,el.value));
@@ -56,26 +57,6 @@ function render(){
  host.querySelectorAll('[data-view]').forEach(el=>el.onclick=()=>{G.stageCol=null;G.consoleMacro=null;setPipeView(el.dataset.view)});
  host.querySelector('.pipe-add').onclick=()=>openNewDeal();
  const resetButton=host.querySelector('.pipe-reset');if(resetButton)resetButton.onclick=reset;
- inlineFilters(host);
 }
-// Reuse canonical controls and their handlers; never create a second filter instance.
-function inlineFilters(host){
- const period=document.querySelector('#periodbar .period-controls'),picker=document.querySelector('#reptabs .rep-filter-picker');
- if(!period||!picker)return;
- const bar=document.createElement('div');bar.className='pipe-inline-filters';bar.setAttribute('aria-label','파이프라인 조회조건');
- const label=text=>{const span=document.createElement('span');span.className='pipe-inline-label';span.textContent=text;return span};
- bar.append(label('조회기간'));
- const year=borrow(period.querySelector('select')),segment=borrow(period.querySelector('.period-segment'));
- bar.append(year,segment,label('영업담당자'));
- const owner=borrow(picker);owner.classList.add('pipe-inline-owner');bar.append(owner);
- const search=owner.querySelector('input');search.removeAttribute('oninput');search.oninput=()=>{const q=search.value.trim().toLowerCase();owner.querySelectorAll('.rep-filter-option').forEach(b=>b.hidden=!b.dataset.search.toLowerCase().includes(q))};
- owner.querySelector('summary').onclick=()=>{search.value='';search.oninput()};
- owner.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();owner.open=false;owner.querySelector('summary').focus()}};
- const badge=period.querySelector('.yoybadge');if(badge)bar.append(borrow(badge));
- const work=host.querySelector('[data-filter="workFilter"]');bar.append(label('공종'),work);
- host.querySelector('.pipe-period').remove();host.querySelector('.pipe-owner').remove();
- host.prepend(bar);
-}
-if(root.document)root.document.addEventListener('click',e=>{const el=document.querySelector('.pipe-inline-owner[open]');if(el&&!el.contains(e.target))el.open=false});
 root.PipelineToolbar={render,set,clear,reset,restoreControls};
 })(window);
