@@ -77,6 +77,12 @@ function build() {
     if (!entry.isFile() || !/\.(?:html|js|css)$/.test(entry.name)) continue;
     fs.copyFileSync(path.join(root, entry.name), path.join(output, entry.name));
   }
+  // The standalone orphan-customer browser was replaced by canonical Site review.
+  // Remove stale copies that may still exist in the assembled compatibility snapshot.
+  for (const legacy of ['organization-history-reader.js', 'organization-history-view.js']) {
+    const target = path.join(output, legacy);
+    if (fs.existsSync(target)) fs.unlinkSync(target);
+  }
   const runtimeFiles = [];
   for (const file of fs.readdirSync(output, { withFileTypes: true })) {
     if (!file.isFile() || !/\.(?:html|js|css)$/.test(file.name)) continue;
