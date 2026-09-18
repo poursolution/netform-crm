@@ -42,6 +42,9 @@ test('quality gate covers the repaired customer asset and manager request paths'
     'manager-request-evidence.test.cjs',
     'today-work-clarity.test.cjs',
     'data-cleanup.test.cjs',
+    'data-cleanup-write.test.cjs',
+    'relationship-contact-production-migration.test.cjs',
+    'campaign-excel-export.test.cjs',
     'gyeongnam-action-first.test.cjs',
     'rep-management-action-first.test.cjs',
     'pipeline-filter-layout.test.cjs'
