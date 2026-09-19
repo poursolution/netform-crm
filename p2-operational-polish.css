@@ -48,3 +48,12 @@
 .dashboard-compact-reps .dashboard-rep-head,.dashboard-rep-row{grid-template-columns:minmax(110px,1.2fr) 70px repeat(4,minmax(86px,1fr))}
 @media(max-width:1050px){.dashboard-compact-money>div{grid-template-columns:repeat(4,1fr)}.dashboard-compact-money>div>button:nth-child(3){border-right:1px solid #e8ebf1}.dashboard-compact-money>div>button:nth-child(n+4){border-top:0}.dashboard-compact-bottlenecks>div{grid-template-columns:1fr}.dashboard-compact-reps .dashboard-rep-head,.dashboard-rep-row{grid-template-columns:minmax(95px,1.2fr) 60px repeat(4,minmax(76px,1fr))}.dashboard-compact-reps .dashboard-rep-head span:nth-child(5),.dashboard-rep-row span:nth-child(5){display:block}}
 @media(max-width:760px){.dashboard-compact-money>div{grid-template-columns:repeat(2,1fr)}.dashboard-compact-money>div>button:nth-child(n+3){border-top:1px solid #e8ebf1}.dashboard-compact-money>div>button:last-child{grid-column:auto}.dashboard-compact-bottlenecks>header{align-items:flex-start}.dashboard-compact-bottlenecks>div{grid-template-columns:1fr}}
+
+/* Provider delivery results remain visible independently of the overall campaign. */
+.cc-delivery-counts{display:block;margin-top:4px;color:var(--sub);font-size:10.5px;font-weight:600;line-height:1.4;white-space:normal}
+.cc-home-row{grid-template-columns:70px minmax(0,1fr) 120px 110px;padding:8px 0}
+.cc-home-row em.partial,.cc-history-row em.partial{background:var(--warn-bg);color:var(--warn-t)}
+.cc-home-row em.unknown,.cc-history-row em.unknown,.cc-history-row em.failed{background:var(--danger-bg);color:var(--danger)}
+.cc-home-row em.sending,.cc-history-row em.sending,.cc-home-row em.submitted,.cc-history-row em.submitted{background:var(--blue-50);color:var(--blue-d)}
+.cc-home-row em.cancelled,.cc-history-row em.cancelled{background:var(--bg);color:var(--sub)}
+@media(max-width:760px){.cc-home-row{grid-template-columns:52px minmax(0,1fr) 100px}}
