@@ -1,0 +1,47 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {PGlite} from '@electric-sql/pglite';
+import {fixture} from './aligo-database-fixture.mjs';
+const sql=readFileSync(new URL('../supabase/migrations/20260920160000_contract_sales_ledger.sql',import.meta.url),'utf8');
+test('contract ledger: durable attribution, replay, concurrency, cancellation, ACL and immutable originals',async()=>{
+ const db=new PGlite();
+ const U='11111111-1111-4111-8111-111111111111',AU='22222222-2222-4222-8222-222222222222',D='33333333-3333-4333-8333-333333333333',V='44444444-4444-4444-8444-444444444444',AV='55555555-5555-4555-8555-555555555555';
+ try{
+  await db.exec(fixture+`alter table public.deals add column owner_id uuid;alter table public.deals add column site text;alter table public.deals add column brand text;alter table public.deals add column stage_contexts jsonb default '{}'::jsonb;`);
+  await db.exec(sql);
+  await db.query("insert into public.users values($1,$2,'황윤선','admin',true),($3,$4,'정정훈','rep',true)",[U,AU,V,AV]);
+  await db.query("insert into crm_security.access_review values($1,$2,'admin','admin',true,now()+interval '1 day'),($3,$4,'rep','rep',true,now()+interval '1 day')",[U,AU,V,AV]);
+  await db.query("insert into public.deals(id,owner_id,site,brand) values($1,$2,'합성 현장','시험')",[D,U]);
+  await db.query("select set_config('request.jwt.claim.sub',$1,false)",[AU]);await db.exec('set role authenticated');
+  const write=async p=>(await db.query('select public.crm_contract_sales_write_v1($1::jsonb) result',[JSON.stringify(p)])).rows[0].result;
+  const read=async()=>(await db.query('select public.crm_contract_sales_read_v1() result')).rows[0].result;
+  const sign={deal_id:D,request_id:crypto.randomUUID(),kind:'signed',effective_date:'2020-09-18',amount_delta:300000000,expected_version:0,reason:'합성 계약 확인'};
+  const ack=await write(sign);assert.equal(ack.version,1);assert.equal((await write(sign)).replayed,true);
+  await assert.rejects(write({...sign,amount_delta:9}),/REQUEST_ID_REUSE/);
+  await assert.rejects(write({...sign,request_id:crypto.randomUUID()}),/VERSION_CONFLICT/);
+  await assert.rejects(db.exec('delete from crm_security.contract_sales_events'),/permission denied/);
+  const D2='77777777-7777-4777-8777-777777777777';
+  await db.exec('reset role');await db.query("insert into public.deals(id,owner_id,site,brand) values($1,$2,'트리거 시험','시험')",[D2,U]);
+  const context={contract:{fields:{contract_status:'체결 완료',contract_date:'2020-09-01',contract_amount:200}}};
+  await db.exec('begin');await db.query('update public.deals set stage_contexts=$1 where id=$2',[context,D2]);
+  assert.equal((await db.query('select balance from crm_security.contract_sales where deal_id=$1',[D2])).rows[0].balance,200);
+  await db.exec('rollback');assert.equal((await db.query('select * from crm_security.contract_sales where deal_id=$1',[D2])).rows.length,0,'stage and signing roll back together');
+  await db.query('update public.deals set stage_contexts=$1 where id=$2',[context,D2]);
+  await db.query('update public.deals set stage_contexts=stage_contexts || $1::jsonb where id=$2',[{construction:{fields:{start_date:'2020-09-20'}}},D2]);
+  assert.equal((await db.query('select count(*)::int n from crm_security.contract_sales_events where deal_id=$1',[D2])).rows[0].n,1);
+  await db.exec('set role authenticated');
+  await db.exec('reset role');await db.query('update public.deals set owner_id=$1 where id=$2',[V,D]);await db.exec('set role authenticated');
+  const amended=await write({deal_id:D,request_id:crypto.randomUUID(),kind:'amended',effective_date:'2020-10-01',amount_delta:50000000,expected_version:1,reason:'증액'});
+  assert.equal(amended.version,2);
+  await assert.rejects(write({deal_id:D,request_id:crypto.randomUUID(),kind:'amended',effective_date:'2020-09-01',amount_delta:500,expected_version:2,reason:'과거 수정'}),/precedes/);
+  await write({deal_id:D,request_id:crypto.randomUUID(),kind:'cancelled',effective_date:'2020-11-01',expected_version:2,reason:'계약 해지'});
+  const row=(await read()).items[0];assert.equal(row.contract_amount,300000000);assert.equal(row.sales_owner,U);assert.equal(row.balance,0);assert.equal(row.events[2].amount_delta,-350000000);assert.equal(row.events.length,3);
+  await assert.rejects(write({deal_id:D,request_id:crypto.randomUUID(),kind:'amended',effective_date:'2020-12-01',amount_delta:1,expected_version:3,reason:'재수정'}),/cancelled/);
+  await db.exec('reset role');await db.query("update crm_security.access_review set permission_role='rep' where user_id=$1",[U]);await db.exec('set role authenticated');
+  assert.equal((await read()).items.length,2,'original owner retains sales read without current deal access');
+  await db.query("select set_config('request.jwt.claim.sub',$1,false)",[AV]);assert.equal((await read()).items.length,0,'new owner does not inherit original owner performance');
+  await db.exec('reset role;set role anon');await assert.rejects(read(),/permission denied/);
+  await db.exec('reset role');await db.query('update public.users set active=false where user_id=$1',[U]);await db.query("select set_config('request.jwt.claim.sub',$1,false)",[AU]);await db.exec('set role authenticated');await assert.rejects(read(),/forbidden/);
+ }finally{await db.close()}
+});
