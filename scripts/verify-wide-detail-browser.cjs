@@ -98,6 +98,38 @@ async function run(){
   }
   if(process.env.VERIFY_RELATIONSHIP_SCREENSHOT){await page.setViewportSize({width:1440,height:900});await page.screenshot({path:process.env.VERIFY_RELATIONSHIP_SCREENSHOT});}
   await page.locator('#detailView .backbtn').click();
+  await page.setViewportSize({width:1440,height:900});
+  await page.evaluate(()=>{
+   B.deals[0].activities=[{id:'midnight',type:'메모',at:'2026-09-19T16:27:00Z',note:'자정 이후 날짜 검증'}];
+   G.page='relationship';G.relationshipYear='전체';G.relationshipOwner='전체';G.relationshipFilter='all';G.relationshipSearch='';document.querySelectorAll('.apage').forEach(n=>n.classList.remove('on'));document.getElementById('pg-relationship').classList.add('on');paintRelationshipManagement();
+  });
+  await page.locator('[data-customer="0"]').first().click();
+  assert.match(await page.locator('#relpc-panel').innerText(),/2026-09-20/);
+  assert.doesNotMatch(await page.locator('#relpc-panel').innerText(),/2026-09-19/);
+  await page.locator('#relpc-panel').getByRole('button',{name:'상세 패널 닫기'}).click();
+  await page.evaluate(()=>{
+   window.__queueRows=[{request_id:'rejected-test',object_id:'wide-1',operation:'transition',status:'rejected',error:'<img src=x onerror=alert(1)>',payload:{note:'보존할 입력'}}];
+   window.__oldQueue={...Phase1.queue};window.__reviewCalls=0;window.__flushCalls=0;
+   Phase1.queue.list=()=>structuredClone(window.__queueRows);
+   Phase1.queue.flush=async()=>{window.__flushCalls++;return []};
+   Phase1.queue.acknowledgeFailure=id=>{window.__reviewCalls++;const q=window.__queueRows.find(x=>x.request_id===id);q.reviewed_at=new Date().toISOString();updateSyncBadge();if(typeof updatePendingBadge==='function')updatePendingBadge();};
+   updateSyncBadge();if(typeof updatePendingBadge==='function')updatePendingBadge();
+  });
+  await page.locator('#syncBadge').focus();await page.keyboard.press('Enter');
+  assert.match(await page.locator('#queueReview').innerText(),/저장되지 않았습니다/);
+  assert.equal(await page.locator('#queueReview img').count(),0);
+  assert.equal(await page.getByRole('button',{name:'확인한 알림 정리'}).isEnabled(),false);
+  await page.getByRole('checkbox').check();await page.getByRole('button',{name:'확인한 알림 정리'}).click();
+  assert.match(await page.locator('#queueReview').innerText(),/확인 완료/);
+  await page.getByRole('button',{name:'닫기',exact:true}).click();
+  assert.match(await page.locator('#syncBadge').innerText(),/확인한 실패 1건/);
+  await page.locator('#syncBadge').click();await page.locator('#queueReview summary').click();
+  assert.match(await page.locator('#queueReview pre').innerText(),/보존할 입력/);
+  await page.getByRole('button',{name:'닫기',exact:true}).click();
+  await page.evaluate(()=>{window.__queueRows.push({request_id:'unknown',status:'uncertain'});updateSyncBadge();if(typeof updatePendingBadge==='function')updatePendingBadge();});
+  assert.match(await page.locator('#syncBadge').innerText(),/처리 결과 미확인 1건/);
+  assert.deepEqual(await page.evaluate(()=>({review:window.__reviewCalls,flush:window.__flushCalls,status:window.__queueRows[0].status})),{review:1,flush:0,status:'rejected'});
+  await page.evaluate(()=>{Object.assign(Phase1.queue,window.__oldQueue);updateSyncBadge();if(typeof updatePendingBadge==='function')updatePendingBadge();});
   assert.equal(await page.evaluate(()=>window.__writes),0);assert.deepEqual(errors,[]);
   console.log('PASS: wide detail, responsive columns, inline stage, preserved drafts, server activities, local time, campaign preview; zero writes');
  }finally{await browser.close();await new Promise(r=>server.close(r))}
