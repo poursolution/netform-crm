@@ -576,6 +576,8 @@ body.svc .phone{width:100%;max-width:none;border:0;border-radius:0;box-shadow:no
 
 
 
+<link rel="stylesheet" href="account-password.css?v=20260919-1">
+<script src="account-password.js?v=20260919-1"></script>
 <script src="vendor/supabase.js"></script>
 <script src="message-salutation.js?v=20260905-1"></script>
 <script src="money-input.js?v=20260905-1"></script>
@@ -1245,6 +1247,7 @@ function render(){
  var head='<div class="home-bar"><div class="brand"><span class="mark">N</span>영업관리</div><div class="rgt">'
   +'<button class="iconbtn" style="width:34px;height:34px" aria-label="알림함" onclick="G.sub={t:\'noti\'};render()">'+IC.bell+'</button>'
   +(canManage()?'<div class="seg" style="padding:3px"><button class="'+(G.mode==='rep'?'on':'')+'" style="padding:5px 11px;font-size:11.5px" onclick="switchMode(\'rep\')">내 영업</button><button class="'+(G.mode==='admin'?'on':'')+'" style="padding:5px 11px;font-size:11.5px" onclick="switchMode(\'admin\')">관리</button></div>':'')
+  +'<button type="button" class="badge badge-gray" onclick="CRMPassword.open()">비밀번호 변경</button>'
   +'<button class="badge badge-gray" onclick="askSignOut()">'+esc(G.user.nm)+' ⏻</button>'
   +'<span class="badge badge-danger" id="pendBadge" style="display:none"></span>'
   +(DEMO&&!LIVE?'<span class="badge badge-gray">예시 데이터</span>':'')+'</div></div>';

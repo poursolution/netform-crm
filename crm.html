@@ -2201,6 +2201,8 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
 
 
 
+<link rel="stylesheet" href="account-password.css?v=20260919-1">
+<script src="account-password.js?v=20260919-1"></script>
 <script src="vendor/supabase.js"></script>
 <script src="message-salutation.js?v=20260905-1"></script>
 <script src="money-input.js?v=20260905-1"></script>
@@ -2300,7 +2302,7 @@ function authBadge(){
   if(old)old.remove();
   if(!b)return;
   b.insertAdjacentHTML('beforebegin','<span class="whome" id="meChip"><span class="av">'+esc(ME.name.slice(-2))+'</span>'
-    +esc(ME.name)+' <span class="out" onclick="authSignOut()">로그아웃</span></span>');
+    +esc(ME.name)+' <button type="button" class="account-password-trigger" onclick="CRMPassword.open()">비밀번호 변경</button> <span class="out" onclick="authSignOut()">로그아웃</span></span>');
 }
 async function authSignIn(){
   if(!SB){authState('err','설정이 필요합니다','Supabase anon public 키가 아직 입력되지 않았습니다.');return}
