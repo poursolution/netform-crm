@@ -73,6 +73,29 @@ async function run(){
   await page.locator('#detailView .backbtn').click();assert.equal(await page.locator('#detailView').isVisible(),false);assert.equal(await page.evaluate(()=>G.pipeView),'kb');
   const polling=await page.evaluate(async()=>{const oldRefresh=refreshOperationalDomains,oldToken=TOKEN;let calls=0;refreshOperationalDomains=async()=>++calls;TOKEN='synthetic';G.page='campaign';G.campaignTab='history';LAST_CAMPAIGN_SYNC=0;await syncCampaignNow(false);await syncCampaignNow(false);const dedup=calls===1;G.campaignTab='send';await syncCampaignNow(true);const draft=calls===1;const repaint=operationalPageNeedsPaint(['campaign_core']);refreshOperationalDomains=oldRefresh;TOKEN=oldToken;G.page='pipe';return {dedup,draft,repaint}});
   assert.deepEqual(polling,{dedup:true,draft:true,repaint:true});
+  // Relationship contact and next schedule must remain one visible workflow.
+  await page.evaluate(()=>{Object.assign(B.deals[0],{code:'rapport',stage_code:'rapport',stage:'유대관리'});G.page='relationship';G._detailPopup=true;drwDeal(JSON.stringify(B.deals[0]));});
+  assert.equal(await page.locator('#rel-contact-save').count(),1);
+  assert.equal(await page.evaluate(()=>document.getElementById('activityFormCard').closest('details')===document.getElementById('nextActionCard').closest('details')),true,'atomic inputs share one expanded section');
+  assert.equal(await page.locator('#dv-act-note').isVisible(),true);
+  assert.equal(await page.locator('#dv-na-date').isVisible(),true);
+  assert.equal(await page.evaluate(()=>!!(document.getElementById('nextActionCard').compareDocumentPosition(document.getElementById('rel-contact-save'))&Node.DOCUMENT_POSITION_FOLLOWING)),true,'combined save follows both input groups');
+  await page.locator('#dv-act-note').fill('연락 기록 초안');
+  await page.locator('#dv-na-text').fill('다음 통화 초안');
+  await page.locator('#dv-na-date').fill('2026-09-25');
+  await page.evaluate(()=>{DetailWorkspace.focusWide('nextActionCard');DetailWorkspace.focusWide('activityFormCard');});
+  assert.equal(await page.locator('#dv-act-note').inputValue(),'연락 기록 초안');
+  assert.equal(await page.locator('#dv-na-text').inputValue(),'다음 통화 초안');
+  assert.equal(await page.locator('#rel-contact-save').getAttribute('onclick'),'saveRelationshipContactAtomic()');
+  assert.equal(await page.locator('#nextActionCard .dactions .dact.pri').isVisible(),false);
+  for(const width of [1146,390]){
+   await page.setViewportSize({width,height:844});
+   assert.equal(await page.locator('#detailView').evaluate(n=>n.scrollWidth>n.clientWidth),false);
+   assert.equal(await page.locator('#dv-act-note').isVisible(),true);
+   assert.equal(await page.locator('#dv-na-date').isVisible(),true);
+  }
+  if(process.env.VERIFY_RELATIONSHIP_SCREENSHOT){await page.setViewportSize({width:1440,height:900});await page.screenshot({path:process.env.VERIFY_RELATIONSHIP_SCREENSHOT});}
+  await page.locator('#detailView .backbtn').click();
   assert.equal(await page.evaluate(()=>window.__writes),0);assert.deepEqual(errors,[]);
   console.log('PASS: wide detail, responsive columns, inline stage, preserved drafts, server activities, local time, campaign preview; zero writes');
  }finally{await browser.close();await new Promise(r=>server.close(r))}
