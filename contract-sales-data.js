@@ -58,5 +58,8 @@
   return ack;
  }
  root.addEventListener('phase1:identity-cleared',reset);
+ // Wait for any current read before the post-ACK refresh, so a pre-save response
+ // cannot leave a newly signed contract absent until the user reloads manually.
+ root.addEventListener('phase1:queue',()=>{const epoch=generation;Promise.resolve(pending).then(()=>{if(epoch===generation&&identity())refresh()})});
  root.ContractSalesData={state,refresh,summarize,write};
 })(window);

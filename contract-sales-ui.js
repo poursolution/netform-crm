@@ -55,7 +55,7 @@
   while((n=walker.nextNode())){if(n.parentElement.closest('.contract-sales-host,script,style'))continue;n.nodeValue=n.nodeValue.replace(/수주금액/g,'준공 처리금액').replace(/누적 수주|이번 달 수주|지난주 수주 결과/g,'준공 처리 결과');}
  }
  const oldRep=root.repManagerRenderDrawer;
- if(oldRep)root.repManagerRenderDrawer=function(){const r=oldRep.apply(this,arguments),row=root.REP_MANAGER_ROWS?.[root.REP_MANAGER_DRAWER_INDEX];if(row)mount(document.getElementById('perfDrawerBody'),filters({owner:row.name}));return r};
+ if(oldRep)root.repManagerRenderDrawer=function(){const r=oldRep.apply(this,arguments),row=root.REP_MANAGER_ROWS?.[root.REP_MANAGER_DRAWER_INDEX];if(row)mount(document.getElementById('perfDrawerBody'),filters({owner:row.nm||row.name}));return r};
  root.addEventListener('contract-sales:changed',()=>{if(root.B&&root.ME)root.paint()});
  root.addEventListener('phase1:identity-cleared',()=>{close();document.querySelectorAll('.contract-sales-host').forEach(n=>n.remove())});
  root.ContractSalesUI={html,mount,filters,editor,detail};
