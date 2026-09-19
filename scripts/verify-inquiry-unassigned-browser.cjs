@@ -71,10 +71,10 @@ async function run() {
       G.page = 'inq'; G.inqRoleView = 'admin'; G.inqBucket = '전체'; G.inqView = 'console'; G.inqPage = 1; delete G._inqRoleApplied;
       document.querySelectorAll('.apage').forEach(node => node.classList.remove('on')); document.getElementById('pg-inq').classList.add('on'); paintInq();
     });
-    assert.equal(await page.locator('.inq-ctl-assign-now').count(), 2);
-    assert.equal(await page.locator('.inq-ctl-row:not(.head)').first().locator('.inq-ctl-site strong').textContent(), '동기화 실패 문의');
-    assert.match(await page.locator('.inq-ctl-row:not(.head)').first().locator('.inq-ctl-assignee').textContent(), /담당자 계정 일치 실패/);
-    await page.locator('.inq-ctl-assign-now').first().click();
+    assert.equal(await page.locator('.inq-work-row .inq-now[onclick*=inqCtlOpenAssign]').count(), 2);
+    assert.equal(await page.locator('.inq-ctl-row:not(.head)').first().locator('.inq-site-link').textContent(), '동기화 실패 문의');
+    assert.match(await page.locator('.inq-ctl-row:not(.head)').first().locator('.inq-ctl-assignee').getAttribute('title'), /담당자 계정 일치 실패/);
+    await page.locator('.inq-work-row .inq-now[onclick*=inqCtlOpenAssign]').first().click();
     assert.equal(await page.locator('#inquiryControlModal.on').count(), 1);
     assert.equal(await page.evaluate(() => WRITE_Q.length), 0);
     const reloadTruth = await page.evaluate(() => {
