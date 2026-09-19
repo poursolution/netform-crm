@@ -1,0 +1,4 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict'),S=require('../pipeline-stages.js');
+test('eight workflow groups share a fixed order and retain detailed server codes',()=>{assert.deepEqual(S.definitions.map(x=>x.key),['consulting','sent','relationship','competition','construction','won','lost','expansion']);assert.equal(S.group('silent'),'relationship');assert.equal(S.group('completion'),'construction');assert.equal(S.group('contract','won'),'won');assert.equal(S.group('sent','lost'),'lost');assert.equal(S.group('badfit_lead'),'lost');assert.equal(S.group('unknown'),null);assert.deepEqual(S.ordered(['lost','waiting','sent','bidding','consulting']),['consulting','sent','waiting','bidding','lost']);});
+test('every persisted code has only one display group',()=>{const codes=S.definitions.flatMap(x=>x.codes);assert.equal(new Set(codes).size,codes.length);assert.ok(Object.isFrozen(S.definitions));});
