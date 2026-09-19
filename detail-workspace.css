@@ -73,3 +73,9 @@
 .dw-wide #dv-err:empty{display:none}.dw-wide .dw-columns .dcc-health,.dw-wide .dw-columns .dcc-recent-card{display:none}
 @media(max-width:1000px){#detailView.dw-wide{inset:2vh 2vw!important;width:96vw!important;height:96vh!important}.dw-columns{grid-template-columns:minmax(190px,1fr) minmax(0,2fr)}.dw-right{grid-column:1/-1;max-height:45vh}.dw-columns>aside,.dw-columns>main{padding:12px}}
 @media(max-width:700px){#detailView.dw-wide #dv-body{overflow:auto}.dw-columns{display:block;height:auto}.dw-columns>aside,.dw-columns>main{overflow:visible;max-height:none}.dw-center .formgrid{grid-template-columns:1fr}}
+
+/* Keep contact identity readable when the CRM is shown in a narrower app panel. */
+.dw-left .pc-contact-directory>article{grid-template-columns:minmax(0,1fr)}
+.dw-left .pc-contact-actions{flex-wrap:wrap;justify-content:flex-start}
+.dw-left .pc-contact-person{width:100%}
+.dw-left .pc-contact-phone{white-space:nowrap}
