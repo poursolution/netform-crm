@@ -55,7 +55,7 @@ async function run() {
       goPage('inq');
     });
 
-    await page.evaluate(()=>{B.inquiries[1].brand='POUR공법';B.inquiries[2].brand='석민이앤씨';B.inquiries[3].brand='아파트스퀘어';B.inquiries[0].phone='010-1234-5678';B.inquiries[0].contact_name='테스트 문의자';window.__writes=[];pushWrite=(...args)=>__writes.push(args);paintInq()});
+    await page.evaluate(()=>{B.inquiries[1].brand='POUR공법';B.inquiries[2].brand='석민이앤씨';B.inquiries[3].brand='아파트스퀘어';B.inquiries[0].phone='010-1234-5678';B.inquiries[0].contact_name='테스트 문의자';window.__writes=[];pushWrite=(...args)=>__writes.push(args);window.Phase1={subscribe:()=>()=>{}};window.__stopRequests=PCManagerRequests.install(window,{list:async()=>[],create:async()=>{throw Error("Unexpected request write")}});paintInq()});
     assert.deepEqual(await page.locator('.inq-work-row.head>span').allTextContents(),['접수경과','문의','담당자','최근응대','다음 행동','처리']);
     assert.equal(await page.getByRole('button',{name:'전체 문의',exact:true}).count(),1);
     assert.equal(await page.locator('.inq-work-tools').getAttribute('open'),null);
@@ -72,12 +72,12 @@ async function run() {
       await page.setViewportSize({width,height:1000});
       assert.ok(await page.locator('#pg-inq').evaluate(e=>e.scrollWidth<=e.clientWidth+1),'page overflow '+width);
       assert.ok(await page.locator('.inq-ctl-scroll').evaluate(e=>e.scrollWidth<=e.clientWidth+1),'list overflow '+width);
-      const buttons=await page.locator('.inq-work-row:not(.head) .inq-now').evaluateAll(es=>es.map(e=>({w:e.getBoundingClientRect().width,h:e.getBoundingClientRect().height,wrap:getComputedStyle(e).whiteSpace})));
+      assert.ok(await page.locator('.inq-work-row:not(.head)').evaluateAll(es=>es.every(e=>e.getBoundingClientRect().height<=81||innerWidth<=760)),'row height with manager request at '+width);const buttons=await page.locator('.inq-work-row:not(.head) .inq-now').evaluateAll(es=>es.map(e=>({w:e.getBoundingClientRect().width,h:e.getBoundingClientRect().height,wrap:getComputedStyle(e).whiteSpace})));
       assert.ok(buttons.every(b=>Math.abs(b.w-72)<0.1&&Math.abs(b.h-32)<0.1&&b.wrap==='nowrap'),'button geometry at '+width+': '+JSON.stringify(buttons));
     }
     await page.setViewportSize({width:1440,height:1000});
     if(process.env.INQUIRY_SCREENSHOT)await page.screenshot({path:process.env.INQUIRY_SCREENSHOT,fullPage:true});
-    await page.locator('.brandbar [data-b="POUR솔루션"]').click();
+    await page.locator('.inq-work-row[data-k="inq-1"] .pc-manager-request-trigger').click();assert.equal(await page.getByRole('dialog',{name:'담당자에게 요청',exact:true}).count(),1);await page.getByRole('dialog',{name:'담당자에게 요청',exact:true}).getByRole('button',{name:'닫기',exact:true}).click();await page.locator('.brandbar [data-b="POUR솔루션"]').click();
     assert.equal(await page.locator('.inq-work-row:not(.head)').count(),1);
     assert.equal(await page.locator('.brandbar [data-b="POUR공법"] em').textContent(),'1','other brand counts remain visible');
     await page.locator('.brandbar [data-b="POUR공법"]').click();
