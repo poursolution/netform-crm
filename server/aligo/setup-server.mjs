@@ -5,12 +5,14 @@ import {readFileSync,writeFileSync,existsSync,mkdirSync} from 'node:fs';
 import {createAligoClient,AligoError} from './client.mjs';
 import {AligoDispatcher} from './dispatcher.mjs';
 import {protectConfig,unprotectConfig} from './windows-credentials.mjs';
+import {connectBackend,checkBackend} from './backend-connection.mjs';
 
 const root=process.env.ALIGO_PRIVATE_DIR||join(process.env.LOCALAPPDATA||'','netform-crm','aligo');
 if(process.platform!=='win32'||!process.env.LOCALAPPDATA) throw Error('Windows user profile required');
 mkdirSync(root,{recursive:true,mode:0o700});
 const port=Number(process.env.ALIGO_SETUP_PORT||45873),origin='http://127.0.0.1:'+port;
 const csrf=randomBytes(32).toString('hex'),profile=join(root,'credentials.dpapi'),jobPath=join(root,'test-job.json');
+const backendProfile=join(root,'crm-backend.dpapi');
 let config=existsSync(profile)?unprotectConfig(profile):null;
 let notice='',result=null,busy=false;
 const h=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
@@ -20,6 +22,7 @@ function page(){
  return '<!doctype html><html lang="ko"><meta charset="utf-8"><title>영업운영 CRM · 알리고 연결</title><style>body{font:16px system-ui;max-width:760px;margin:40px auto;padding:20px;color:#14243a}label{display:block;margin:12px 0}input{display:block;width:95%;padding:10px}button{padding:12px;margin:8px 0;background:#173a70;color:white;border:0;border-radius:6px}pre{white-space:pre-wrap;background:#f1f5fa;padding:18px}</style><h1>영업운영 CRM · 알리고 연결</h1><p>이 컴퓨터 전용 설정입니다. 인증키는 Windows 사용자 암호화 저장소에 보관됩니다.</p>'
  +(config?'<p>계정: '+h(config.userId)+' · 발신번호: '+h(config.sender)+' · 테스트 수신번호: '+h(config.receiver)+'</p>':'<form method="post" action="/connect"><input type="hidden" name="csrf" value="'+csrf+'"><label>알리고 사용자 ID<input name="userId" autocomplete="off" required></label><label>알리고 API 키<input name="key" type="password" autocomplete="off" required></label><label>발신번호<input name="sender" required></label><label>테스트 수신번호<input name="receiver" required></label><button>인증 확인 및 암호화 저장</button></form>')
  +(config?form('/balance','API 연결 확인')+form('/dry-run','과금 없는 연동 시험')+form('/send','테스트 문자 1건 발송')+form('/status','실제 전송 결과 조회'):'')
+ +(config?'<h2>CRM 서버 연결</h2><p>영업운영 CRM 전용입니다. 연결 확인은 조회만 수행하며 자동발송을 시작하지 않습니다.</p>'+(existsSync(backendProfile)?form('/backend-check','저장된 서버 연결 확인'):'<form method="post" action="/backend-connect"><input type="hidden" name="csrf" value="'+csrf+'"><label>CRM 서버 키<input name="backendKey" type="password" autocomplete="off" required></label><button>서버 인증 확인 및 암호화 저장</button></form>'):'')
  +'<p role="status">'+h(notice)+'</p>'+(result?'<pre>'+h(JSON.stringify(result,null,2))+'</pre>':'')+'<p>같은 테스트 요청은 반복 클릭해도 다시 발송하지 않습니다.</p></html>';
 }
 async function body(req){
@@ -39,7 +42,7 @@ const server=http.createServer(async(req,res)=>{
  const headers={'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'"};
  const reply=(status,text)=>{res.writeHead(status,headers);res.end(text);};
  if(req.headers.host!=='127.0.0.1:'+port) return reply(403,'Forbidden host');
- if(req.method==='GET'&&req.url==='/') return reply(200,page());
+ if(req.method==='GET'&&['/','/status'].includes(req.url)) return reply(200,page());
  if(req.method!=='POST'||req.headers.origin!==origin) return reply(403,'Forbidden origin');
  try{
   const p=await body(req);
@@ -57,6 +60,12 @@ const server=http.createServer(async(req,res)=>{
    }else{
     if(!config) throw Error('Not configured');
     const client=createAligoClient(config);
+    if(req.url==='/backend-connect'){
+     const checked=await connectBackend(p.get('backendKey'),{path:backendProfile,protect:protectConfig,unprotect:unprotectConfig,exists:existsSync});
+     persistResult(checked);notice='CRM 서버 인증과 암호화 저장 완료. 자동발송은 꺼져 있습니다.';
+    }else if(req.url==='/backend-check'){
+     persistResult(await checkBackend(unprotectConfig(backendProfile)));notice='저장된 CRM 서버 인증으로 조회 성공. 자동발송은 꺼져 있습니다.';
+    }else
     if(req.url==='/balance'){persistResult({operation:'balance',ok:true,balance:await client.balance()});notice='API 연결 정상';}
     else if(['/dry-run','/send','/status'].includes(req.url)){
      const value=job(),dispatch=new AligoDispatcher(join(root,'aligo-dispatch.sqlite'),client);
@@ -72,7 +81,7 @@ const server=http.createServer(async(req,res)=>{
    }
   }finally{busy=false;}
  }catch(e){notice=e instanceof AligoError?e.code:'연결 설정을 확인해 주세요.';}
- reply(200,page());
+ res.writeHead(303,{...headers,Location:'/'});res.end();
 });
 server.requestTimeout=20000;server.headersTimeout=10000;
 server.listen(port,'127.0.0.1',()=>console.log('ALIGO_SETUP_READY '+origin));
