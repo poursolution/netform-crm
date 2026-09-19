@@ -49,3 +49,27 @@
 .stage-transition-overlay{position:fixed;inset:0;z-index:1250;display:grid;place-items:center;padding:20px;background:rgba(14,25,43,.58)}
 .stage-transition-dialog{width:min(820px,100%);max-height:calc(100vh - 40px);overflow:auto;border-radius:14px;background:#fff;box-shadow:0 24px 80px rgba(14,25,43,.3);padding:18px}
 @media(max-width:640px){.dw-tabs button{flex:1 1 28%;padding:9px 6px}.dw-inquiry .facts{grid-template-columns:1fr}.dw-quick #dv-body{padding:12px}.dw-quick .formgrid,.dw-quick #dv-body>.dsec[data-sec="영업활동"]{grid-template-columns:1fr}}
+/* The detail is one CRM dialog. Columns scroll independently without losing contact controls. */
+#detailView.dw-wide{inset:4vh 3vw!important;width:94vw!important;height:92vh!important;max-width:none!important;max-height:none!important;overflow:hidden;border-radius:16px;box-shadow:0 24px 80px #10243f55;background:#f3f5f9}
+#detailView.dw-wide.on{display:flex!important;flex-direction:column}
+#detailView.dw-wide .detailtop{flex:none;padding:14px 20px;background:#fff}
+#detailView.dw-wide .detailtopin{max-width:none}
+#detailView.dw-wide #dv-body{flex:1;min-height:0;width:100%;max-width:none;padding:0;gap:0;margin:0;overflow:hidden}
+.dw-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr) minmax(0,1fr);height:100%;min-height:0;gap:0}
+.dw-columns>aside,.dw-columns>main{min-width:0;overflow:auto;overscroll-behavior:contain;padding:18px;scrollbar-gutter:stable}
+.dw-left,.dw-right{background:#fafbfd}.dw-left{border-right:1px solid #e2e7ef}.dw-right{border-left:1px solid #e2e7ef}
+.dw-columns h2{font-size:15px;margin:0 0 16px;color:#59667b}.dw-columns .dcard{margin:0 0 14px;padding:16px;min-width:0}
+.dw-columns .dcard h3{font-size:15px}.dw-columns p,.dw-columns dd,.dw-columns h3{overflow-wrap:anywhere}
+.dw-now{border-top:3px solid #2663df!important}.dw-now h3{font-size:21px!important;margin:10px 0}.dw-eyebrow{font-size:12px;font-weight:750;color:#345bb6}
+.dw-columns .dw-fold{margin:0 0 14px}.dw-columns .dw-fold>.dcard{margin:0;border:0}.dw-columns .dw-fold summary{line-height:1.5}
+.dw-columns .dw-fold .dsec{padding:0}.dw-columns .detailgrid,.dw-columns .activitygrid{display:block}
+.dw-columns .formgrid{grid-template-columns:1fr}.dw-center .formgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.dw-columns dl{margin:14px 0 0}.dw-columns dt{font-size:11px;color:#748197;margin-top:12px}.dw-columns dd{font-size:13px;margin:4px 0;font-weight:600}
+.dw-columns .contacthead,.dw-columns .contactwho{flex-wrap:wrap}.dw-columns .contactnums,.dw-columns .contactactions{display:grid;grid-template-columns:1fr 1fr;gap:6px}.dw-columns .contactnum{min-width:0}.dw-columns .contactnum b{font-size:13px;overflow-wrap:anywhere}
+.dw-columns .contactvoice{display:none}.dw-columns .facts{grid-template-columns:1fr}.dw-columns .dactions,.dw-outcomes{display:flex;flex-wrap:wrap;gap:6px}
+.dw-outcomes{margin:10px 0}.dw-missing button{display:block;margin-top:8px}.dw-columns button{white-space:normal;max-width:100%}
+.dw-columns .exec-files-grid{grid-template-columns:1fr}.dw-columns .exec-files-actions,.dw-columns .detailsecthead{flex-wrap:wrap}
+#dw-stage-editor:not(:empty){margin-top:14px}#dw-stage-editor .sf-grid{grid-template-columns:1fr}#dw-stage-editor .sf-form{padding:0;margin:0}#dw-stage-editor .sf-form header h3{font-size:14px}#dw-stage-editor .sf-form footer{flex-wrap:wrap}
+.dw-wide #dv-err:empty{display:none}.dw-wide .dw-columns .dcc-health,.dw-wide .dw-columns .dcc-recent-card{display:none}
+@media(max-width:1000px){#detailView.dw-wide{inset:2vh 2vw!important;width:96vw!important;height:96vh!important}.dw-columns{grid-template-columns:minmax(190px,1fr) minmax(0,2fr)}.dw-right{grid-column:1/-1;max-height:45vh}.dw-columns>aside,.dw-columns>main{padding:12px}}
+@media(max-width:700px){#detailView.dw-wide #dv-body{overflow:auto}.dw-columns{display:block;height:auto}.dw-columns>aside,.dw-columns>main{overflow:visible;max-height:none}.dw-center .formgrid{grid-template-columns:1fr}}
