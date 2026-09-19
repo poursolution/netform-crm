@@ -2807,15 +2807,27 @@ function localDateTimeValue(value){var d=value===undefined?new Date():new Date(v
 function dateTimeLabel(s){if(!s)return '미기록';try{return new Date(s).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}catch(e){return String(s)}}
 function isTerminalTarget(v){return ['won','lost','badfit','badfit_lead','badfit_pipe','nocontact'].indexOf(v)>=0}
 function reconcileStagePatch(d,p,queue){
- if(!p||!Number.isSafeInteger(d.version)||!d.stage_code||!p.code||p.code===d.stage_code)return false;
+ if(!p||!Number.isSafeInteger(d.version)||!d.stage_code)return false;
  var commands=(queue||[]).filter(function(q){return String(q.object_id)===String(d.id)});
  if(commands.some(function(q){return ['pending','sending','uncertain'].indexOf(q.status)>=0||q.status==='done'&&q.ack&&q.ack.version>d.version}))return false;
  // A rejected/obsolete optimistic transition cannot replace a server snapshot.
  // Keep the draft for reference; this is local recovery, never a server write.
- p.recoveredTransitionDraft={code:p.code,stage_contexts:p.stage_contexts,stageHistory:p.stageHistory};
- ['code','stage','grp','stageAt','stageEnteredAt','stage_contexts','stageHistory','contract_amount','completion_date','outcome','closed_at','closed','won_amount','wonAmount','won_at','waitingReason','waiting_reason','waitingCustomerSaid','waitingSpeaker','reactivationDueAt','reactivation_due_at','relationshipReason','relationship_reason','relationshipEnteredAt','relationship_entered_at','nextAction','nextActionObj','nextActionText','lastActivity'].forEach(function(k){delete p[k]});
- if(Array.isArray(p.activities)){p.activities=p.activities.filter(function(a){return !(/^local-/.test(String(a.id||''))&&['단계전환','단계 전환'].indexOf(a.type)>=0)});if(!p.activities.length)delete p.activities;}
- return true;
+ var changed=false;
+ if(p.code&&p.code!==d.stage_code){
+  p.recoveredTransitionDraft={code:p.code,stage_contexts:p.stage_contexts,stageHistory:p.stageHistory};
+  ['code','stage','grp','stageAt','stageEnteredAt','stage_contexts','stageHistory','contract_amount','completion_date','outcome','closed_at','closed','won_amount','wonAmount','won_at','waitingReason','waiting_reason','waitingCustomerSaid','waitingSpeaker','reactivationDueAt','reactivation_due_at','relationshipReason','relationship_reason','relationshipEnteredAt','relationship_entered_at','lastActivity'].forEach(function(k){delete p[k]});changed=true;
+ }
+ // Atomic saves can replace Next and activities without changing the stage.
+ if(Object.prototype.hasOwnProperty.call(d,'nextActionObj')){
+  if(p.nextActionObj&&String(p.nextActionObj.id)!==String(d.nextActionObj&&d.nextActionObj.id))p.recoveredNextActionDraft=p.nextActionObj;
+  ['nextAction','nextActionObj','nextActionText','nextActionType','nextAssignee'].forEach(function(k){if(Object.prototype.hasOwnProperty.call(p,k)){delete p[k];changed=true}});
+ }
+ if(Array.isArray(d.activities)&&Array.isArray(p.activities)){
+  var drafts=p.activities.filter(function(a){return /^local-/.test(String(a.id||''))});
+  if(drafts.length)p.recoveredActivityDrafts=drafts;
+  delete p.activities;delete p.lastActivity;changed=true;
+ }
+ return changed;
 }
 function applyOverrides(){
   loadLocal();
