@@ -83,6 +83,8 @@ async function run(){
   await page.locator('#dv-act-note').fill('연락 기록 초안');
   await page.locator('#dv-na-text').fill('다음 통화 초안');
   await page.locator('#dv-na-date').fill('2026-09-25');
+  // Production openRow invokes the decorator again after the shared renderer.
+  await page.evaluate(()=>relationshipManagementDecorateDetail());
   await page.evaluate(()=>{DetailWorkspace.focusWide('nextActionCard');DetailWorkspace.focusWide('activityFormCard');});
   assert.equal(await page.locator('#dv-act-note').inputValue(),'연락 기록 초안');
   assert.equal(await page.locator('#dv-na-text').inputValue(),'다음 통화 초안');
