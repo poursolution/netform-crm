@@ -1967,22 +1967,22 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
       <div class="mi clk" data-p="pipe" onclick="nav(this)"><span class="ic">🧭</span>파이프라인</div>
       <div class="mi clk" data-p="relationship" onclick="nav(this)"><span class="ic">◎</span>관계관리<span class="badge" id="relationshipBadge"></span></div>
       <div class="mi clk" data-p="expansion" onclick="nav(this)"><span class="ic">↗</span>확장관리<span class="badge" id="expansionBadge"></span></div>
-      <div class="mi clk" data-p="campaign" onclick="nav(this)"><span class="ic">✉</span>고객 발송</div>
+      <div class="mi clk" data-p="gyeongnam" onclick="nav(this)"><span class="ic">↗</span>경남지사</div>
       <div class="sec">고객관리</div>
       <div class="mi clk" data-p="sites" onclick="nav(this)"><span class="ic">🏢</span>고객 자산</div>
-      <div class="sec">관리</div>
-      <div class="mi clk" data-p="control" onclick="nav(this)"><span class="ic">◎</span>컨트롤타워</div>
-      <div class="mi clk" data-p="repmanage" onclick="nav(this)"><span class="ic">◎</span>영업사원 관리</div>
-      <div class="mi clk" data-p="mgmt" onclick="nav(this)"><span class="ic">🛡️</span>관리팀 KPI</div>
-      <div class="mi clk" data-p="gyeongnam" onclick="nav(this)"><span class="ic">↗</span>경남지사</div>
-      <div class="mi clk" data-p="brief" onclick="nav(this)"><span class="ic">📅</span>주간 브리핑<span class="badge" style="background:var(--blue-50);color:var(--blue)">월</span></div>
+      <div class="mi clk" data-p="campaign" onclick="nav(this)"><span class="ic">✉</span>고객 발송</div>
+      <div class="sec" data-admin-nav hidden>조직운영</div>
+      <div class="mi clk" data-admin-nav hidden data-p="repmanage" onclick="nav(this)"><span class="ic">◎</span>영업사원 관리</div>
+      <div class="mi clk" data-admin-nav hidden data-p="mgmt" onclick="nav(this)"><span class="ic">🛡️</span>관리팀 KPI</div>
       <div class="sec">분석</div>
       <div class="mi clk" data-p="dash" onclick="nav(this)"><span class="ic">📊</span>영업 대시보드</div>
+      <div class="mi clk" data-p="control" onclick="nav(this)"><span class="ic">◎</span>컨트롤타워</div>
       <div class="mi clk" data-p="perf" onclick="nav(this)"><span class="ic">👥</span>성과 분석</div>
       <div class="mi clk" data-p="work" onclick="nav(this)"><span class="ic">▦</span>공종 분석</div>
+      <div class="mi clk" data-p="brief" onclick="nav(this)"><span class="ic">📅</span>주간 브리핑<span class="badge" style="background:var(--blue-50);color:var(--blue)">월</span></div>
       <div class="mi clk" data-p="report" onclick="nav(this)"><span class="ic">📈</span>리포트</div>
-      <div class="sec">데이터 관리</div>
-      <div class="mi clk" data-p="dup" onclick="nav(this)"><span class="ic">⚠️</span>데이터 정리<span class="badge" id="dupBadge"></span></div>
+      <div class="sec" data-admin-nav hidden>데이터 관리</div>
+      <div class="mi clk" data-admin-nav hidden data-p="dup" onclick="nav(this)"><span class="ic">⚠️</span>데이터 관리<span class="badge" id="dupBadge"></span></div>
     </nav>
     <div class="foot" id="sideFoot"><b>… 연결 중</b>Supabase 실서버 데이터</div>
   </aside>
@@ -8555,7 +8555,7 @@ function campaignHomePage(){var L=campaignLogs(),scheduled=L.filter(function(x){
 function campaignUtility(title){return '<header class="cc-utility"><button onclick="campaignSetTab(\'home\')">← 고객 발송</button><h2>'+esc(title)+'</h2><nav><button onclick="campaignSetTab(\'history\')">발송 이력</button><button onclick="campaignSetTab(\'analysis\')">성과 보기</button></nav></header>'}
 function paintCampaign(){var root=$('#campaign-root');if(!root)return;var tab=G.campaignTab||'home',body=tab==='home'?campaignHomePage():tab==='send'?campaignSendPage():tab==='schedule'?campaignHistoryPage(true):tab==='history'?campaignHistoryPage(false):tab==='templates'?campaignLibraryPage():campaignAnalysisPage(),title=tab==='send'?'새 발송':tab==='schedule'?'예약 발송':tab==='history'?'발송 이력':tab==='templates'?'문구 보관함':'성과 보기';root.innerHTML='<div class="cc-shell">'+(tab==='home'?'':campaignUtility(title))+(CAMPAIGN_STATE.notice?'<div class="mgmtbar blue">'+esc(CAMPAIGN_STATE.notice)+'</div>':'')+body+'</div>'}
 
-</script><script src="./inquiry-assignment-clarity.js?v=20260913-assignment-3"></script><script src="./detail-workspace.js?v=20260920-actions-1"></script><link rel="stylesheet" href="./detail-actions.css?v=20260920-1"><script src="./detail-actions.js?v=20260920-1"></script><script src="./relationship-management.js?v=20260920-actions-1"></script><script src="./inquiry-workbench.js?v=20260920-inbox-2"></script><script src="./today-work-queue.js?v=20260920-independent-1"></script><link rel="stylesheet" href="./sales-insights.css?v=20260920-actions-1"><script src="./sales-insights-model.js?v=20260920-actions-1"></script><link rel="stylesheet" href="./sales-scope.css?v=20260920-1"><script src="./sales-scope.js?v=20260920-1"></script><script src="./sales-insights.js?v=20260920-scope-1"></script><script src="./pipeline-stages.js?v=20260920-1"></script><link rel="stylesheet" href="./pipeline-workspace.css?v=20260920-1"><script src="./pipeline-workspace.js?v=20260920-scope-1"></script><script src="./operational-overlay.js?v=20260920-actions-1"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
+</script><script src="./inquiry-assignment-clarity.js?v=20260913-assignment-3"></script><script src="./detail-workspace.js?v=20260920-actions-1"></script><link rel="stylesheet" href="./detail-actions.css?v=20260920-1"><script src="./detail-actions.js?v=20260920-1"></script><script src="./relationship-management.js?v=20260920-actions-1"></script><script src="./inquiry-workbench.js?v=20260920-inbox-2"></script><script src="./today-work-queue.js?v=20260920-independent-1"></script><link rel="stylesheet" href="./sales-insights.css?v=20260920-actions-1"><script src="./sales-insights-model.js?v=20260920-actions-1"></script><link rel="stylesheet" href="./sales-scope.css?v=20260920-nav-2"><script src="./sales-scope.js?v=20260920-nav-2"></script><script src="./contract-sales-ledger.js?v=20260920-1"></script><script src="./contract-sales-data.js?v=20260920-1"></script><script src="./sales-insights.js?v=20260920-contract-1"></script><script src="./pipeline-stages.js?v=20260920-1"></script><link rel="stylesheet" href="./pipeline-workspace.css?v=20260920-1"><script src="./pipeline-workspace.js?v=20260920-scope-1"></script><script src="./operational-overlay.js?v=20260920-actions-1"></script><link rel="stylesheet" href="./contract-sales.css?v=20260920-1"><script src="./contract-sales-ui.js?v=20260920-1"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
   if(AUTH_ON&&!TOKEN)return;
   loadData();
 });
