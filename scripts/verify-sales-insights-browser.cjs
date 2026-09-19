@@ -15,6 +15,8 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
    window.__writes=[];pushWrite=(...x)=>window.__writes.push(x);drwDeal=s=>window.__opened=JSON.parse(s).id;drwInq=s=>window.__opened=JSON.parse(s).id;
    goPage('dash');G.insights.year='2026';G.insights.month=9;SalesInsights.render();
   });
+  assert.deepEqual(await page.locator('.menu>.sec:visible').allTextContents(),['오늘','영업','고객관리','조직운영','분석','데이터 관리']);
+  assert.deepEqual(await page.evaluate(()=>{const groups={};let title='';document.querySelectorAll('.menu>:is(.sec,.mi)').forEach(el=>{if(el.classList.contains('sec')){title=el.textContent;groups[title]=[];}else if(!el.hidden)groups[title].push(el.dataset.p);});return groups;}),{'오늘':['today'],'영업':['inq','pipe','gyeongnam'],'고객관리':['sites','campaign'],'조직운영':['repmanage','mgmt'],'분석':['dash','work','brief','report'],'데이터 관리':['dup']});
   assert.equal(await page.locator('#si-dash .si-kpis>button').count(),5);assert.equal(await page.locator('#d-money').isVisible(),false);
   let values=await page.evaluate(()=>{const s=SalesInsights.data();return {active:s.active.length,won:s.won.length,amount:s.wonAmount}});assert.deepEqual(values,{active:2,won:1,amount:40000000});
   await page.locator('#si-dash [data-sales-scope="owner"]').selectOption('김성민');
@@ -34,6 +36,7 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   // Current role is rechecked even if a stale admin row's button is still in the DOM.
   await page.evaluate(()=>{ME={id:'rep',name:'이필선',role:'rep'};window.__opened=null});await page.locator('#si-control [data-si-action="record"]').click();assert.equal(await page.evaluate(()=>window.__opened),null);
   await page.evaluate(()=>goPage('dash'));assert.equal(await page.evaluate(()=>SalesInsights.data().deals.every(d=>d.owner==='이필선')),true);
+  assert.equal(await page.locator('.menu [data-admin-nav]:visible').count(),0);assert.deepEqual(await page.locator('.menu>.sec:visible').allTextContents(),['오늘','영업','고객관리','분석']);
 
   // Shared employee scope affects metrics, stage inventory, drills and navigation, not just options.
   await page.evaluate(()=>{ME={id:'scope-admin',name:'송보람',role:'admin'};const rows=['조성용','전용성','고영운','송보람','조민준','미배정','경남지사'];B.deals=rows.map((name,i)=>({id:'scope-'+i,site:name+' 현장',assignee:name,brand:'POUR솔루션',code:'sent',grp:'컨설팅·견적',created:'2026-09-01',amt:10000000})).concat([{id:'internal',site:'내부 현장',assignee:'김성민',brand:'POUR솔루션',code:'sent',grp:'컨설팅·견적',created:'2026-09-01',amt:20000000}]);B.inquiries=[];goPage('dash');});
