@@ -2,6 +2,7 @@
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
+const http = require('node:http');
 const {chromium} = require(process.env.PLAYWRIGHT_PATH || 'playwright');
 (async () => {
   const root = path.join(__dirname, '..');
@@ -68,6 +69,36 @@ const {chromium} = require(process.env.PLAYWRIGHT_PATH || 'playwright');
       assert.equal(await page.locator('dialog').count(), 0);
       await page.close();
     }
-    console.log('PASS password dialog at 375/1280px: input validation, failure/success, field cleanup, focus, in-flight lock, logout cleanup');
+    const server = http.createServer((req, res) => {
+      const target = path.resolve(root, '.' + new URL(req.url, 'http://localhost').pathname);
+      if (!target.startsWith(root + path.sep) || !fs.existsSync(target) || !fs.statSync(target).isFile()) {res.writeHead(404); res.end(); return;}
+      res.setHeader('Content-Type', target.endsWith('.html') ? 'text/html; charset=utf-8' : target.endsWith('.css') ? 'text/css' : 'application/javascript');
+      fs.createReadStream(target).pipe(res);
+    });
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    try {
+      for (const width of [320, 375]) {
+        const page = await browser.newPage({viewport: {width, height: 800}});
+        await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+        await page.goto(`http://127.0.0.1:${server.address().port}/mobile.html?demo=1`);
+        for (const allowed_modes of [['rep'], ['rep', 'admin']]) {
+          await page.evaluate(modes => {
+            window.Phase1 = {profile: {auth_uid: 'test-user', allowed_modes: modes}};
+            window.SB = {auth: {}};
+            G.user = {id: 'test-user', nm: '테스트담당자'};
+            G.mode = 'rep'; G.tab = 'today'; G.sub = null; G.deal = null;
+            render();
+          }, allowed_modes);
+          const buttons = await page.locator('.home-bar button').evaluateAll(elements => elements.map(el => ({text: el.textContent, left: el.getBoundingClientRect().left, right: el.getBoundingClientRect().right})));
+          assert.ok(buttons.every(b => b.left >= 0 && b.right <= width), `mobile header fits ${width}px: ${JSON.stringify(buttons)}`);
+          await page.getByRole('button', {name: '비밀번호 변경', exact: true}).click();
+          await page.getByRole('dialog').waitFor();
+          await page.getByRole('button', {name: '취소', exact: true}).click();
+          await page.getByRole('dialog').waitFor({state: 'detached'});
+        }
+        await page.close();
+      }
+    } finally {await new Promise(resolve => server.close(resolve));}
+    console.log('PASS password dialog at 375/1280px and real mobile header at 320/375px: validation, errors, cleanup, focus, in-flight lock, logout, rep/admin entry points');
   } finally {await browser.close();}
 })().catch(error => {console.error(error); process.exitCode = 1;});
