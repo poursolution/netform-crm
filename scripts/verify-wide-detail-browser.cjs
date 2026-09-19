@@ -27,10 +27,11 @@ async function run(){
   assert.equal(await page.locator('.dw-right #dv-amt').count(),1);
   assert.equal(await page.evaluate(()=>unifiedTimeline({activities:[B.deals[0].activities[0]]},B.deals[0]).filter(x=>x.id).length),2);
   assert.match(await page.locator('#activityTimelineHost').innerText(),/서버 발송 결과/);
-  for(const width of [1920,1440,1280]){
+  for(const width of [1920,1440,1280,1146]){
    await page.setViewportSize({width,height:900});
    const m=await page.locator('#detailView').evaluate(n=>{const r=n.getBoundingClientRect(),cols=[...n.querySelector('.dw-columns').children].map(x=>x.getBoundingClientRect());return {width:r.width,overflow:n.scrollWidth>n.clientWidth,ratio:cols[1].width/cols[0].width,sameTop:cols.every(c=>Math.abs(c.top-cols[0].top)<2)}});
    assert.ok(Math.abs(m.width-width*.94)<2);assert.equal(m.overflow,false);assert.equal(m.sameTop,true);assert.ok(Math.abs(m.ratio-2)<.03);
+   assert.ok(await page.locator('.dw-left .pc-contact-person').first().evaluate(n=>n.getBoundingClientRect().width)>100,'contact identity stays readable at '+width);
   }
   await page.evaluate(()=>DetailWorkspace.focusWide('activityFormCard'));
   await page.locator('#dv-act-note').fill('저장 전 메모 보존');
