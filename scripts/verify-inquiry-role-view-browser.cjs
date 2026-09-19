@@ -73,7 +73,7 @@ async function run() {
       assert.ok(await page.locator('#pg-inq').evaluate(e=>e.scrollWidth<=e.clientWidth+1),'page overflow '+width);
       assert.ok(await page.locator('.inq-ctl-scroll').evaluate(e=>e.scrollWidth<=e.clientWidth+1),'list overflow '+width);
       const buttons=await page.locator('.inq-work-row:not(.head) .inq-now').evaluateAll(es=>es.map(e=>({w:e.getBoundingClientRect().width,h:e.getBoundingClientRect().height,wrap:getComputedStyle(e).whiteSpace})));
-      assert.ok(buttons.every(b=>b.w===72&&b.h===32&&b.wrap==='nowrap'));
+      assert.ok(buttons.every(b=>Math.abs(b.w-72)<0.1&&Math.abs(b.h-32)<0.1&&b.wrap==='nowrap'),'button geometry at '+width+': '+JSON.stringify(buttons));
     }
     await page.setViewportSize({width:1440,height:1000});
     if(process.env.INQUIRY_SCREENSHOT)await page.screenshot({path:process.env.INQUIRY_SCREENSHOT,fullPage:true});
