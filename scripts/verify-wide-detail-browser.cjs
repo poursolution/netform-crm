@@ -12,6 +12,7 @@ async function run(){
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(`http://127.0.0.1:${server.address().port}/crm.html`);await page.waitForFunction(()=>window.DetailWorkspace&&window.StageTransitionUI);
   await page.evaluate(()=>{
+   if(typeof Phase1.queue.acknowledgeFailure!=='function')throw Error('Loaded PC transport does not expose failure review');
    B={deals:[{id:'wide-1',site:'가로 상세 검증 현장',site_id:'site-1',assignee:'이필선',brand:'기술자문',created:CUR_Y+'-09-01',code:'consulting',stage:'컨설팅 설계',grp:'영업·관리',amt:8000000,address:'서울시 검증로 10',contact:{managerName:'검증 담당자',managerMobile:'01000000000',officeTel:'0200000000'},activities:[{id:'server-1',occurred_at:'2026-09-19T13:00:00Z',type:'문자',detail:'서버 발송 결과',actor_name:'검증자'},{id:'server-2',occurred_at:'2026-09-19T13:00:10Z',type:'문자',detail:'서버 발송 결과',actor_name:'검증자'}]}],inquiries:[],activities:[]};
    LOCAL={deals:{},inquiries:{}};AUTH_ON=false;G.page='pipe';G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.pipeView='kb';
    document.getElementById('authGate').classList.remove('on');document.querySelectorAll('.apage').forEach(n=>n.classList.remove('on'));document.getElementById('pg-pipe').classList.add('on');
@@ -113,7 +114,7 @@ async function run(){
    Phase1.queue.list=()=>structuredClone(window.__queueRows);
    Phase1.queue.flush=async()=>{window.__flushCalls++;return []};
    Phase1.queue.acknowledgeFailure=id=>{window.__reviewCalls++;const q=window.__queueRows.find(x=>x.request_id===id);q.reviewed_at=new Date().toISOString();updateSyncBadge();if(typeof updatePendingBadge==='function')updatePendingBadge();};
-   updateSyncBadge();if(typeof updatePendingBadge==='function')updatePendingBadge();
+   window.dispatchEvent(new Event('phase1:profile'));
   });
   await page.locator('#syncBadge').focus();await page.keyboard.press('Enter');
   assert.match(await page.locator('#queueReview').innerText(),/저장되지 않았습니다/);
