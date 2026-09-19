@@ -86,6 +86,14 @@
  }
  function list(){try{return JSON.parse(storage.getItem('command-queue')||'[]');}catch{throw Error('QUEUE_CORRUPT');}}
  function save(rows){storage.setItem('command-queue',JSON.stringify(rows));root.dispatchEvent(new Event('phase1:queue'));}
+ function acknowledgeFailure(requestId){
+  if(!profile||!activeUid)throw Error('AUTH_REQUIRED');
+  const rows=list(),q=rows.find(x=>x.request_id===requestId);
+  if(!q||q.auth_uid!==activeUid||q.user_id!==profile.user_id)throw Error('QUEUE_IDENTITY_MISMATCH');
+  if(!['rejected','conflict'].includes(q.status))throw Error('QUEUE_REVIEW_NOT_ALLOWED');
+  if(!q.reviewed_at){q.reviewed_at=new Date().toISOString();q.reviewed_by=activeUid;save(rows);}
+  return q;
+ }
  function inquiryDirectPayload(payload){const allowed=['inquiry_id','inquiry_row','from','to','status','reason','changed_by','actor_name','at','assignment_group','owner_group','branch_code','reporting_group','consultant_name','response'];
   if(!payload||Object.keys(payload).some(k=>!allowed.includes(k)))throw Error('INVALID_COMMAND');
   if(payload.response!==undefined||payload.to==='경남지사'||payload.branch_code==='gyeongnam'||payload.assignment_group==='gyeongnam'||payload.owner_group==='gyeongnam')throw Error('INQUIRY_INTENT_NOT_CONNECTED');
@@ -114,6 +122,6 @@
  async function uploadAttachment(meta,file){if(!profile||!client)throw Error('AUTH_REQUIRED');if(!meta||!file||meta.size_bytes!==file.size)throw Error('INVALID_ATTACHMENT_FILE');const prep=await attachmentCommand('attachment_prepare',meta.opportunity_id,meta),bucket=client.storage.from(prep.bucket_id),signed=await bucket.createSignedUploadUrl(prep.object_path);if(signed.error||!signed.data?.token)throw Error(signed.error?.message||'ATTACHMENT_SIGN_FAILED');const uploaded=await bucket.uploadToSignedUrl(prep.object_path,signed.data.token,file,{contentType:meta.mime_type,upsert:false});if(uploaded.error)throw Error(uploaded.error.message||'ATTACHMENT_UPLOAD_FAILED');const done=await attachmentCommand('attachment_complete',meta.opportunity_id,{opportunity_id:meta.opportunity_id,attachment_id:prep.attachment_id,object_path:prep.object_path,file_name:meta.file_name,mime_type:meta.mime_type,size_bytes:meta.size_bytes,category:meta.category,tags:meta.tags,memo:meta.memo,uploaded_by:meta.uploaded_by});return Object.assign({},meta,done.attachment||{},{id:done.attachment_id,status:'ready'});}
  function restoreQueue(){if(!activeUid)return;const rows=list();let changed=false;for(const q of rows)if(q.status==='sending'){q.status='uncertain';changed=true;}if(changed)save(rows);}
  root.addEventListener('phase1:profile',restoreQueue);
- root.Phase1=Object.freeze({config:c,createClient,admit,beginLogin,signOut,storage,sessionCache,mode,read,rpc,subscribe,queue:{enqueue,flush,list,validateAck},uploadAttachment,get profile(){return profile;},get realtimeStatus(){return realtimeStatus;},requests,blocked,
+ root.Phase1=Object.freeze({config:c,createClient,admit,beginLogin,signOut,storage,sessionCache,mode,read,rpc,subscribe,queue:{enqueue,flush,list,validateAck,acknowledgeFailure},uploadAttachment,get profile(){return profile;},get realtimeStatus(){return realtimeStatus;},requests,blocked,
   loginEmail(name){return c.accounts.find(a=>a.name.replace(/\s/g,'')===String(name).replace(/\s/g,''))?.email||null;}});
 })(window);
