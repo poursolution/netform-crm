@@ -58,6 +58,9 @@
    relationNotice.className='field full';
    relationNotice.textContent='관계정보는 현재 조회만 가능합니다. 현장별 저장 연결 전까지 기존 값을 유지하며, 연락처·수신동의는 별도로 저장할 수 있습니다.';
    fields.appendChild(relationNotice);
+   if(context.mode!=='new')mobile.value=current.mobile||'';
+   var consentAt=body.querySelector('#qc-consent-at');
+   if(current.consentAt&&typeof root.localDateTimeValue==='function')consentAt.value=root.localDateTimeValue(current.consentAt);
    context.pcOriginal=current;
    context.pcConsentInput=body.querySelector('#qc-consent-at').value;
    context.pcDecision=body.querySelector('#qc-decision-role').value;

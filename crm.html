@@ -2803,7 +2803,7 @@ function daysTo(iso){var d=ymdLocal(iso);if(!d)return null;
   var v=Math.round((d-todayLocal())/864e5);return isNaN(v)?null:v}
 function detailAddress(x){var lf=x.listFields||x.list_fields||{};return x.address||x.addr||x.roadAddress||x.location||lf.address||lf['주소']||'미입력'}
 function isoNow(){return new Date().toISOString()}
-function localDateTimeValue(){var d=new Date(),z=function(n){return String(n).padStart(2,'0')};return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+'T'+z(d.getHours())+':'+z(d.getMinutes())}
+function localDateTimeValue(value){var d=value===undefined?new Date():new Date(value);if(!Number.isFinite(d.getTime()))return '';var z=function(n){return String(n).padStart(2,'0')};return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+'T'+z(d.getHours())+':'+z(d.getMinutes())}
 function dateTimeLabel(s){if(!s)return '미기록';try{return new Date(s).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}catch(e){return String(s)}}
 function isTerminalTarget(v){return ['won','lost','badfit','badfit_lead','badfit_pipe','nocontact'].indexOf(v)>=0}
 function applyOverrides(){
@@ -2934,7 +2934,7 @@ function copyDiag(){try{navigator.clipboard.writeText(window.__DIAG_TEXT||'');al
   if(G.page==='pipe'||G.page==='work'||G.page==='perf'||G.page==='report')return deal;
   if(G.page==='inq')return inquiry;
   if(G.page==='expansion')return deal||expansion;
-  if(G.page==='campaign')return deal||domains.indexOf('message_log')>=0;
+  if(G.page==='campaign')return deal||domains.indexOf('campaign_core')>=0;
   return deal||inquiry||expansion;
  }
  function applyBundle(raw,changedDomains){
@@ -2989,6 +2989,7 @@ function refreshPageAfterPaint(p){
  if(typeof loadOperationalPageData==='function')loadOperationalPageData(p);
  if((p==='today'||p==='dash'||p==='inq')&&typeof syncInquiryNow==='function')syncInquiryNow(false);
  if(p==='expansion'&&typeof syncExpansionNow==='function')syncExpansionNow(false);
+ if(p==='campaign')syncCampaignNow(false);
 }
 function nav(el){clearTransientUI();$$('.mi').forEach(function(m){m.classList.remove('on')});el.classList.add('on');G.page=el.dataset.p;syncPage();refreshPageAfterPaint(G.page)}
 function goPage(p){clearTransientUI();$$('.mi').forEach(function(m){m.classList.toggle('on',m.dataset.p===p)});G.page=p;syncPage();refreshPageAfterPaint(p)}
@@ -4648,7 +4649,7 @@ function closeDetail(){
   closeTransition();
   $('#detailView').classList.remove('on','fullview','detailmodal');$('#detailView').setAttribute('aria-hidden','true');
   var ov=$('#ovl');if(ov){ov.style.display='none';ov.style.zIndex=''}
-  G._detailPopup=false;document.body.style.overflow='';CUR_DETAIL=null;paint();if(window.DetailWorkspace)DetailWorkspace.restoreAsset();
+  G._detailPopup=false;document.body.style.overflow='';CUR_DETAIL=null;paint();if(window.DetailWorkspace){DetailWorkspace.restoreAsset();DetailWorkspace.restoreList();}
 }
 function openDrwBase(t,s,b){openDetail(t,s,'<div class="detailgrid"><div class="dcard"><h3>상세 정보</h3>'+b+'</div><div class="dcard"><h3>관리 원칙</h3><div class="detailnotice">모든 현장은 담당자·최근 활동·다음 행동일이 연결되어야 합니다. 변경 내용은 입력 즉시 저장되고 서버로 전송됩니다.</div></div></div>')}
 function closeDrw(){$('#ovl').style.display='none';$('#drw').classList.remove('on');closeDetail()}
@@ -4968,7 +4969,8 @@ function confirmTransition(){if(!CUR_DETAIL)return;var target=$('#tr-target').va
  closeTransition();renderDetail();showDetailErr(saveMsg('「'+from+'」에서 「'+to+'」로 전환했습니다.'),true)}
 function drwDeal(s){
   var raw=JSON.parse(s),key=dealKey(raw),d=(B.deals||[]).filter(function(x){return dealKey(x)===key})[0]||raw;
-  CUR_DETAIL={kind:'deal',key:key,item:d};renderDealDetail();
+  if(window.DetailWorkspace)DetailWorkspace.rememberList();
+  detachDetail();G._detailPopup=true;CUR_DETAIL={kind:'deal',key:key,item:d};renderDealDetail();
 }
 /* [삭제됨 v3.6] 구버전 drwInq — 마지막 정의만 사용 */
 
@@ -5246,9 +5248,9 @@ function inqOfDeal(item){
 /* 통합 타임라인 원본 — 출처만 다르고 줄기는 하나 */
 function unifiedTimeline(p,item){
  var R=[];
- (p.activities||[]).forEach(function(a){
-   R.push({at:a.at,src:(a.src==='mobile'?'mobile':'crm'),ttl:a.type||'활동',
-     who:a.actor||a.assignee||'', body:a.note||'', result:a.result||'', fields:[]})});
+ [].concat(item.activities||item.activity_signals||[],p.activities||[]).forEach(function(a){
+   R.push({id:a.id,at:a.at||a.occurred_at||a.created_at,src:(a.src==='mobile'?'mobile':'crm'),ttl:a.type||'활동',
+     who:a.actor||a.actor_name||a.assignee||'', body:a.note||a.detail||'', result:a.result||'', fields:[]})});
  inqOfDeal(item).forEach(function(q){
    (q.responses||[]).forEach(function(r){
      var pj=parseJandi(r.body);
@@ -5274,7 +5276,7 @@ function unifiedTimeline(p,item){
      body:(h.from||'—')+' → '+(h.to||'—'),result:h.reason||'',fields:[]})});
  /* 같은 시각·같은 내용은 하나로 합친다 (잔디↔CRM 중복 방지) */
  var seen={},U=[];
- R.forEach(function(x){var k=String(x.at||'').slice(0,16)+'|'+(x.body||'').slice(0,40);
+ R.forEach(function(x){var k=x.id?'id:'+x.id:[x.at||'',x.ttl||'',x.who||'',x.body||'',x.result||''].join('|');
    if(seen[k])return; seen[k]=1; if(x.at||x.body)U.push(x)});
  return U.sort(function(a,b){return String(b.at||'').localeCompare(String(a.at||''))})}
 
@@ -5507,10 +5509,12 @@ function renderDetailAddons(){
  if(typeof relationshipManagementDecorateDetail==='function')relationshipManagementDecorateDetail();
  if(window.DetailWorkspace)DetailWorkspace.decorate();
  if(typeof dccDecorateDetail==='function')dccDecorateDetail();
+ if(window.DetailWorkspace)DetailWorkspace.wide();
 }
 /* 진짜 탭 전환 — 스크롤 앵커가 아니라 선택한 섹션(.dsec)만 표시. '한 페이지에 전부 나열'되던 불편 해소 */
 var DETAIL_TABS=['개요','현장·견적','영업활동','일정','이력'];
 function detailTabFocus(t,keepScroll){
+ if(window.DetailWorkspace&&DetailWorkspace.selectWide(t))return;
  /* 배포·캐시 전환 중에는 기존 탭과 Command Center 탭이 함께 존재할 수 있다.
     상수가 아니라 현재 렌더된 섹션을 기준으로 양방향 별칭을 맞춘다. */
  var sections=$$('#dv-body .dsec'),isDeal=!!(CUR_DETAIL&&CUR_DETAIL.kind==='deal'),dcc=isDeal&&sections.some(function(s){return ['공종·금액','연락·활동','일정·Next','변경이력'].indexOf(s.dataset.sec)>=0}),tabs=dcc&&typeof DCC_TABS!=='undefined'?DCC_TABS:DETAIL_TABS;
@@ -6108,7 +6112,7 @@ function openPipeSplit(d){if(!d)return;if(G.page!=='pipe'){towerDrillReset();G.p
     예전에는 pipeView 만 바꾸고 페이지는 그대로라 아무 일도 일어나지 않았다. */
  if(G.page!=='pipe'){goPage('pipe')}else{paint()}
  setTimeout(function(){var el=document.querySelector('.splitrow.sel');if(el&&el.scrollIntoView)el.scrollIntoView({block:'nearest'})},0)}
-function openKb5(i){openPipeSplit(KB5_CACHE[i])}
+function openKb5(i){if(KB5_CACHE[i])drwDeal(JSON.stringify(KB5_CACHE[i]))}
 function kb5ToConsole(k){
   if(k==='rel'){goPage('relationship');return}
   var map={design:0,sent:0,rel:1,comp:2,con:3};
@@ -7674,6 +7678,13 @@ function syncExpansionNow(force){
   LAST_EXPANSION_SYNC=Date.now();
   if(typeof refreshOperationalDomains==='function')refreshOperationalDomains(['expansion_pool'],'expansion-poll');
 }
+var LAST_CAMPAIGN_SYNC=0,CAMPAIGN_SYNC_MS=15000;
+function syncCampaignNow(force){
+ if(document.hidden||syncBusy()||!TOKEN||CUR_DETAIL||G.page!=='campaign'||G.campaignTab==='send')return;
+ if(!force&&Date.now()-LAST_CAMPAIGN_SYNC<CAMPAIGN_SYNC_MS)return;
+ LAST_CAMPAIGN_SYNC=Date.now();
+ if(typeof refreshOperationalDomains==='function')return refreshOperationalDomains(['campaign_core','message_log'],'campaign-poll');
+}
 function syncNow(){
   if(document.hidden||syncBusy())return;
   if(CUR_DETAIL||document.getElementById('inlineBiz')||(document.getElementById('newDealModal')||{}).classList&&document.getElementById('newDealModal').classList.contains('on'))return;
@@ -7688,6 +7699,8 @@ var AUTH_READY=authInit();
 setInterval(syncNow,SYNC_MS);
 setInterval(syncInquiryNow,INQUIRY_SYNC_MS);
 setInterval(syncExpansionNow,EXPANSION_SYNC_MS);
+setInterval(syncCampaignNow,CAMPAIGN_SYNC_MS);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)syncCampaignNow(false)});
 document.addEventListener('visibilitychange',function(){if(!document.hidden)syncNow()});
 document.addEventListener('visibilitychange',function(){if(!document.hidden)syncInquiryNow(false)});
 document.addEventListener('visibilitychange',function(){if(!document.hidden)syncExpansionNow(false)});
@@ -8284,7 +8297,7 @@ function dccAction(k){if(k==='waiting')return dccFocusWaiting();if(k==='next')re
 function dccGoNext(){briefNextAction()}
 function dccGoActivity(){detailTabFocus('연락·활동');setTimeout(function(){var e=$('#dv-act-note');if(e)e.focus()},60)}
 function dccGoHistory(){detailTabFocus('변경이력');setTimeout(function(){var e=$('#dv-body .dsec[data-sec="변경이력"]');if(e&&e.scrollIntoView)e.scrollIntoView({behavior:'smooth',block:'start'})},60)}
-function dccFocusWaiting(){detailTabFocus('개요');setTimeout(function(){var e=$('#dcc-wait-reason');if(e){e.scrollIntoView({behavior:'smooth',block:'center'});e.focus()}},60)}
+function dccFocusWaiting(){if(document.querySelector('#detailView.dw-wide')){DetailWorkspace.focusWide('dcc-wait-reason');return}detailTabFocus('개요');setTimeout(function(){var e=$('#dcc-wait-reason');if(e){e.scrollIntoView({behavior:'smooth',block:'center'});e.focus()}},60)}
 function dccVoiceToNext(){if(!CUR_DETAIL||CUR_DETAIL.kind!=='deal')return;var d=CUR_DETAIL.item,v=briefVoiceOfCustomer(d,'deal'),w=dccWaitingData(d,currentPatch());detailTabFocus('일정·Next');setTimeout(function(){var t=$('#dv-na-text'),dt=$('#dv-na-date'),ty=$('#dv-na-type');if(ty)NextActionPicker.choose('dv-na-type','전화');if(t&&!t.value)t.value=v.length?'고객 발언 확인 · '+String(v[0][1]).slice(0,70):'고객 상황 재확인';if(dt&&!dt.value)dt.value=String(w.wake||new Date(Date.now()+7*864e5).toISOString()).slice(0,10);if(t)t.focus()},70)}
 function dccBizSummary(d,p){var h=bizHistOf(p,d),last=h.length?h[h.length-1]:null,origin=d.originBusiness||p.originBusiness||(last&&last.from)||bizOf(d);return {current:bizOf(d),origin:origin,last:last}}
 function dccContactSummary(d,p){var c=contactInfo(d,p),has=dccHasContact(d,p);return {c:c,has:has,label:has?((c.name||c.role||'현장 연락처')+' · '+phoneFmt(c.mobile||c.officeTel)):'관리소장·대표전화 미등록'}}
@@ -8456,7 +8469,7 @@ function campaignExportExcel(){
 }
 function campaignSelectedTargets(){return campaignAllTargets().filter(function(t){return CAMPAIGN_STATE.selected[t.key]})}
 function campaignEligibleSelected(){return campaignSelectedTargets().filter(function(t){return t.guard.ok})}
-function campaignSetTab(tab){G.campaignTab=tab;G.campaignStep=1;CAMPAIGN_STATE.notice='';paint()}
+function campaignSetTab(tab){G.campaignTab=tab;G.campaignStep=1;CAMPAIGN_STATE.notice='';paint();syncCampaignNow(false)}
 function campaignSetCategory(key){G.campaignCategory=key;G.campaignStep=1;CAMPAIGN_STATE.selected={};CAMPAIGN_STATE.purpose='';CAMPAIGN_STATE.templateKey='';CAMPAIGN_STATE.body='';paint()}
 function campaignSetFilter(k,v){G[k]=v;G.campaignStep=1;CAMPAIGN_STATE.selected={};CAMPAIGN_STATE.notice='필터가 변경되어 발송 대상을 다시 선택해 주세요.';paint()}
 function campaignOpenGyeongnam(){G.campaignRegion='경남지사';G.campaignRep='전체';G.campaignTab='send';G.campaignStep=1;CAMPAIGN_STATE.notice='경남지사 고객만 보이도록 지역 필터를 적용했습니다.';goPage('campaign')}
@@ -8474,8 +8487,8 @@ function campaignTemplateSet(){var c=campaignCategory(G.campaignCategory),l=c.la
  return base.map(function(x,i){return {key:c.key+'-'+i,title:x[0],body:x[1],category:c.key,label:l}})
 }
 function campaignPickTemplate(k){var t=campaignTemplateSet().filter(function(x){return x.key===k})[0];if(!t)return;CAMPAIGN_STATE.templateKey=k;CAMPAIGN_STATE.body=t.body;CAMPAIGN_STATE.notice='';paint()}
-function campaignUpdateBody(v){CAMPAIGN_STATE.body=v}
-function campaignInsertVar(v){var e=$('#cc-body');if(!e)return;var a=e.selectionStart||0,b=e.selectionEnd||0;e.value=e.value.slice(0,a)+v+e.value.slice(b);CAMPAIGN_STATE.body=e.value;e.focus();e.selectionStart=e.selectionEnd=a+v.length}
+function campaignUpdateBody(v){CAMPAIGN_STATE.body=v;var b=document.getElementById('cc-preview-next');if(b)b.disabled=!v.trim();}
+function campaignInsertVar(v){var e=$('#cc-body');if(!e)return;var a=e.selectionStart||0,b=e.selectionEnd||0;e.value=e.value.slice(0,a)+v+e.value.slice(b);campaignUpdateBody(e.value);e.focus();e.selectionStart=e.selectionEnd=a+v.length}
 function campaignPersonalize(body,t){var c=t.contact,d=t.deal;return MessageSalutation.personalize(body,d.site,c).replace(/\[현장명\]/g,d.site||'현장').replace(/\[담당자명\]/g,t.owner==='미배정'?campaignActor():t.owner).replace(/\[공종요약\]/g,t.work||'공사').replace(/\[회사명\]/g,'넷폼알앤디')}
 function campaignFilterHtml(){var cy=Number(CUR_Y),years=['전체',String(cy),String(cy-1),String(cy-2),'이전'],reps=['전체'].concat(inquiryAssignableReps()),stages=['전체'].concat(KB5.map(function(x){return x.nm})),brands=['전체'].concat(BRANDS),work='<option value="전체">전체 공종</option>'+WORK_MASTER.map(function(x){return '<option value="'+escAttr(x.group)+'" '+(G.campaignWork===x.group?'selected':'')+'>'+esc(x.group)+'</option>'}).join('');return '<div class="cc-filters">'
  +'<label>고객연도<select onchange="campaignSetFilter(\'campaignTargetYear\',this.value)">'+years.map(function(x){return '<option '+(G.campaignTargetYear===x?'selected':'')+'>'+x+'</option>'}).join('')+'</select></label>'
@@ -8489,9 +8502,9 @@ function campaignFilterHtml(){var cy=Number(CUR_Y),years=['전체',String(cy),St
 function campaignCategoryHtml(){return '<aside class="cc-sidepanel"><div class="cc-sidehead"><span>AUDIENCE LOGIC</span><h3>누구에게 보낼까요?</h3></div>'+CAMPAIGN_CATEGORIES.map(function(g){return '<div class="cc-catgroup"><strong>'+g.group+'</strong><div class="cc-catgrid">'+g.items.map(function(x){return '<button class="'+(G.campaignCategory===x[0]?'on':'')+'" onclick="campaignSetCategory(\''+x[0]+'\')">'+x[1]+'</button>'}).join('')+'</div></div>'}).join('')+'<div class="cc-catfoot"><b>자동 추출 기준</b><br>Stage · 최근 유효접촉 · 수주/실주 · 고객온도 · 공종을 사용합니다.</div></aside>'}
 function campaignTargetPanel(){var rows=campaignFilteredTargets();CAMPAIGN_TARGET_CACHE=rows;var ready=rows.filter(function(t){return t.guard.ok}),blocked=rows.filter(function(t){return !t.guard.ok}),selected=campaignSelectedTargets(),reason={};blocked.forEach(function(t){reason[t.guard.label]=(reason[t.guard.label]||0)+1});var selectedReady=selected.filter(function(t){return t.guard.ok}),allReady=ready.length&&ready.every(function(t){return CAMPAIGN_STATE.selected[t.key]});var html=rows.slice(0,250).map(function(t){var m=t.meta.days==null?'접촉일 미확인':t.meta.days===0?'오늘 접촉':t.meta.days+'일 전',s=CAMPAIGN_STATE.selected[t.key]&&t.guard.ok;return '<div class="cc-row"><span><input type="checkbox" '+(s?'checked':'')+' '+(!t.guard.ok?'disabled':'')+' onchange="campaignToggle(\''+jsAttr(t.key)+'\',this.checked)"></span><span><strong>'+esc(t.deal.site||'현장명 미입력')+'</strong><small>'+esc(t.contact.name||'이름 미입력')+' · '+esc(t.contact.role||'담당자')+'</small></span><span class="'+(t.guard.ok?'ready':'blocked')+'"><strong>'+esc(campaignPhoneFmt(t.contact.mobile))+'</strong><small>'+esc(t.guard.label)+'</small></span><span><strong>'+esc(t.owner)+'</strong><small>'+esc(t.region)+'</small></span><span><strong>'+esc(t.stage)+'</strong><small>'+esc(t.brand)+'</small></span><span><strong>'+esc(m)+'</strong><small>'+esc(t.temperature)+'</small></span><span><i class="cc-state '+(t.guard.ok?'':'no')+'">'+esc(t.guard.label)+'</i><small>'+esc(t.work)+'</small></span></div>'}).join('');return '<div class="cc-panel"><div class="cc-panel-head"><div><span>STEP 01 · AUDIENCE</span><h3>'+esc(campaignCategory(G.campaignCategory).label)+' 대상 선택</h3><p>실데이터 조건에 맞는 연락처를 추출하고 수신동의·발송빈도를 먼저 검수합니다.</p></div><div><div class="cc-panel-badge">필터 결과 '+rows.length+'명</div>'+(ME&&ME.role==='admin'?'<button class="cc-btn" style="margin-top:8px" onclick="campaignExportExcel()">설 명절 엑셀 내보내기</button>':'')+'</div></div>'+(G.campaignCategory==='all'?'<div class="cc-all-guide"><b>전체 발송</b><span>현재 필터 결과 중 수신동의·휴대폰번호·최근 발송빈도 검수를 통과한 고객만 선택됩니다.</span></div>':'')+'<div class="cc-target-kpis"><div><span>관리 대상</span><b>'+rows.length+'명</b></div><div class="good"><span>발송 가능</span><b>'+ready.length+'명</b></div><div class="bad"><span>자동 제외</span><b>'+blocked.length+'명</b></div><div><span>현재 선택</span><b>'+selectedReady.length+'명</b></div></div>'+campaignFilterHtml()+'<div class="cc-bulkbar"><div><strong>필터 결과 전체 선택</strong><span>화면에 보이는 일부가 아니라 조건에 맞는 발송 가능 고객 '+ready.length+'명 전체를 선택합니다.</span></div><div><button class="cc-btn" onclick="campaignSelectEligible(false)">선택 해제</button><button class="cc-btn primary" '+(!ready.length?'disabled':'')+' onclick="campaignSelectEligible(true)">발송 가능 전체 선택 · '+ready.length+'명</button></div></div><div class="cc-table"><div class="cc-table-scroll"><div class="cc-row head"><span><input type="checkbox" '+(allReady?'checked':'')+' onchange="campaignSelectEligible(this.checked)"></span><span>현장 · 고객</span><span>휴대폰 · 검수</span><span>담당자 · 지역</span><span>Stage · 사업</span><span>최근접촉 · 온도</span><span>발송 가능 여부</span></div>'+(html||'<div class="cc-empty"><b>선택한 조건의 고객이 없습니다.</b>다른 카테고리나 필터를 확인해 주세요.</div>')+'</div></div><div class="cc-table-foot"><span>'+(Object.keys(reason).length?'제외 · '+Object.keys(reason).map(function(k){return k+' '+reason[k]+'명'}).join(' · '):'모든 대상이 발송 전 검수를 통과했습니다.')+'</span><button class="cc-btn primary" '+(!selectedReady.length?'disabled':'')+' onclick="campaignGoStep(2)">선택 완료 · 문구 고르기 →</button></div></div>'}
 function campaignPurposePanel(){var purposes=['재접촉','견적 검토 확인','공사계획 확인','기존고객 재영업','자료 안내','기타'];return '<div class="cc-panel cc-purpose-panel"><div class="cc-panel-head"><div><span>STEP 02 · PURPOSE</span><h3>무슨 목적으로 보내나요?</h3><p>발송 목적은 이후 고객 반응과 Pipeline 전환 성과를 구분하는 기준이 됩니다.</p></div><div class="cc-panel-badge">선택 '+campaignEligibleSelected().length+'명</div></div><div class="cc-purpose-grid">'+purposes.map(function(x){return '<button class="'+(CAMPAIGN_STATE.purpose===x?'on':'')+'" onclick="campaignSetPurpose(\''+x+'\')"><i></i><b>'+x+'</b></button>'}).join('')+'</div><div class="cc-table-foot"><button class="cc-btn" onclick="campaignGoStep(1)">← 대상 다시 보기</button><button class="cc-btn primary" '+(!CAMPAIGN_STATE.purpose?'disabled':'')+' onclick="campaignGoStep(3)">메시지 작성 →</button></div></div>'}
-function campaignTemplatePanel(){var T=campaignTemplateSet(),body=CAMPAIGN_STATE.body;return '<div class="cc-panel"><div class="cc-panel-head"><div><span>STEP 03 · MESSAGE</span><h3>'+esc(CAMPAIGN_STATE.purpose||campaignCategory(G.campaignCategory).label)+' 메시지 작성</h3><p>추천 문구를 고르거나 직접 작성합니다. 변수는 발송 대상마다 자동 치환됩니다.</p></div><div class="cc-panel-badge">선택 '+campaignEligibleSelected().length+'명</div></div><div class="cc-template-grid">'+T.map(function(t){return '<button class="cc-template '+(CAMPAIGN_STATE.templateKey===t.key?'on':'')+'" onclick="campaignPickTemplate(\''+t.key+'\')"><i>추천 문구</i><b>'+esc(t.title)+'</b><p>'+esc(t.body.slice(0,82))+'…</p><small>개인화 변수 '+(t.body.match(/\[[^\]]+\]/g)||[]).length+'개</small></button>'}).join('')+'</div><div class="cc-editor"><div class="cc-compose"><label>실제 보낼 문구 · 최종 확인 필수</label><textarea id="cc-body" oninput="campaignUpdateBody(this.value)">'+esc(body)+'</textarea></div><div class="cc-vars"><strong>개인화 변수 넣기</strong>'+['[고객호칭]','[현장명]','[담당자명]','[공종요약]','[회사명]'].map(function(x){return '<button onclick="campaignInsertVar(\''+x+'\')">'+x+'</button>'}).join('')+'<p>각 연락처의 현장·직함·담당자·공종으로 개별 치환됩니다. 다음 단계에서 실제 문구를 확인하세요.</p></div></div><div class="cc-table-foot"><button class="cc-btn" onclick="campaignGoStep(2)">← 목적 다시 선택</button><button class="cc-btn primary" '+(!body.trim()?'disabled':'')+' onclick="campaignGoStep(4)">미리보기 →</button></div></div>'}
+function campaignTemplatePanel(){var T=campaignTemplateSet(),body=CAMPAIGN_STATE.body;return '<div class="cc-panel"><div class="cc-panel-head"><div><span>STEP 03 · MESSAGE</span><h3>'+esc(CAMPAIGN_STATE.purpose||campaignCategory(G.campaignCategory).label)+' 메시지 작성</h3><p>추천 문구를 고르거나 직접 작성합니다. 변수는 발송 대상마다 자동 치환됩니다.</p></div><div class="cc-panel-badge">선택 '+campaignEligibleSelected().length+'명</div></div><div class="cc-template-grid">'+T.map(function(t){return '<button class="cc-template '+(CAMPAIGN_STATE.templateKey===t.key?'on':'')+'" onclick="campaignPickTemplate(\''+t.key+'\')"><i>추천 문구</i><b>'+esc(t.title)+'</b><p>'+esc(t.body.slice(0,82))+'…</p><small>개인화 변수 '+(t.body.match(/\[[^\]]+\]/g)||[]).length+'개</small></button>'}).join('')+'</div><div class="cc-editor"><div class="cc-compose"><label>실제 보낼 문구 · 최종 확인 필수</label><textarea id="cc-body" oninput="campaignUpdateBody(this.value)">'+esc(body)+'</textarea></div><div class="cc-vars"><strong>개인화 변수 넣기</strong>'+['[고객호칭]','[현장명]','[담당자명]','[공종요약]','[회사명]'].map(function(x){return '<button onclick="campaignInsertVar(\''+x+'\')">'+x+'</button>'}).join('')+'<p>각 연락처의 현장·직함·담당자·공종으로 개별 치환됩니다. 다음 단계에서 실제 문구를 확인하세요.</p></div></div><div class="cc-table-foot"><button class="cc-btn" onclick="campaignGoStep(2)">← 목적 다시 선택</button><button id="cc-preview-next" class="cc-btn primary" '+(!body.trim()?'disabled':'')+' onclick="campaignGoStep(4)">미리보기 →</button></div></div>'}
 function campaignPreviewPanel(){var all=campaignSelectedTargets(),ready=all.filter(function(t){return t.guard.ok}),bad=all.filter(function(t){return !t.guard.ok}),sample=ready.slice(0,3),reason={};bad.forEach(function(t){reason[t.guard.label]=(reason[t.guard.label]||0)+1});return '<div class="cc-panel"><div class="cc-panel-head"><div><span>STEP 04 · PREVIEW</span><h3>발송 전 미리보기</h3><p>실제 이름과 현장명이 치환된 결과와 자동 제외 대상을 확인합니다.</p></div><div class="cc-panel-badge">샘플 '+sample.length+'명</div></div><div class="cc-preview-summary"><div><strong>선택 '+all.length+'명 → 실제 발송 가능 <b>'+ready.length+'명</b></strong><br><span>'+(bad.length?'제외 '+bad.length+'명 · '+Object.keys(reason).map(function(k){return k+' '+reason[k]+'명'}).join(' · '):'제외 대상 없음')+'</span></div><button class="cc-btn" onclick="campaignGoStep(1)">대상 수정</button></div><div class="cc-preview-list">'+sample.map(function(t){return '<article class="cc-phone"><div class="cc-phone-head"><b>'+esc(t.contact.name||t.contact.role||'담당자')+'</b><span>'+esc(campaignPhoneFmt(t.contact.mobile))+'</span></div><div class="cc-bubble">'+esc(campaignPersonalize(CAMPAIGN_STATE.body,t))+'</div><small>'+esc(t.deal.site||'현장')+' · '+esc(t.owner)+'</small></article>'}).join('')+'</div><div class="cc-legal"><b>발송 전 안전장치</b> · 수신동의·수신거부·휴대폰번호·최근 30일 발송빈도를 다시 확인합니다. 외부 발송 시스템의 성공 응답 전에는 CRM에 ‘발송 완료’로 기록하지 않습니다.</div><div class="cc-table-foot"><button class="cc-btn" onclick="campaignGoStep(3)">← 문구 수정</button><button class="cc-btn primary" onclick="campaignGoStep(5)">최종 발송 설정 →</button></div></div>'}
-function campaignFinalPanel(){var ready=campaignEligibleSelected(),d=new Date(Date.now()+864e5),cat=campaignCategory(G.campaignCategory);d.setHours(9,0,0,0);if(!CAMPAIGN_STATE.scheduleAt)CAMPAIGN_STATE.scheduleAt=d.toISOString().slice(0,16);return '<div class="cc-panel"><div class="cc-panel-head"><div><span>STEP 05 · SEND</span><h3>발송 전 확인</h3><p>즉시 또는 예약을 선택합니다. 실제 발송 성공은 서버 콜백으로만 확정됩니다.</p></div><div class="cc-panel-badge">실제 발송 '+ready.length+'명</div></div><label class="cc-final-check"><input id="cc-final-approval" type="checkbox"><span><b>'+esc(CAMPAIGN_STATE.purpose||cat.label)+' · '+ready.length+'명</b>에게 보낼 문구와 대상을 최종 확인했습니다.</span></label><div class="cc-queuebox"><article class="cc-queue-card"><h4>지금 발송</h4><p>검수된 '+ready.length+'명을 CRM 발송 대기열에 즉시 등록합니다.</p><button class="cc-btn dark" style="margin-top:15px" onclick="campaignQueue(\'now\')">'+ready.length+'명에게 발송</button></article><article class="cc-queue-card"><h4>예약 발송</h4><p>지정한 시각에 서버 발송 작업이 시작되도록 예약합니다.</p><label>예약 시각<input id="cc-schedule" type="datetime-local" value="'+escAttr(CAMPAIGN_STATE.scheduleAt)+'" onchange="CAMPAIGN_STATE.scheduleAt=this.value"></label><button class="cc-btn primary" style="margin-top:13px" onclick="campaignQueue(\'schedule\')">예약 발송 등록</button></article></div><div class="cc-legal">발송 완료 시 Campaign 이력과 각 고객 Activity에 <b>문자 발송 · '+esc(CAMPAIGN_STATE.purpose||cat.label)+'</b>이 기록되도록 서버 요청에 포함합니다.</div><div class="cc-table-foot"><button class="cc-btn" onclick="campaignGoStep(4)">← 미리보기</button><span>담당 · '+esc(campaignActor())+'</span></div></div>'}
+function campaignFinalPanel(){var ready=campaignEligibleSelected(),d=new Date(Date.now()+864e5),cat=campaignCategory(G.campaignCategory);d.setHours(9,0,0,0);if(!CAMPAIGN_STATE.scheduleAt)CAMPAIGN_STATE.scheduleAt=localDateTimeValue(d);return '<div class="cc-panel"><div class="cc-panel-head"><div><span>STEP 05 · SEND</span><h3>발송 전 확인</h3><p>즉시 또는 예약을 선택합니다. 실제 발송 성공은 서버 콜백으로만 확정됩니다.</p></div><div class="cc-panel-badge">실제 발송 '+ready.length+'명</div></div><label class="cc-final-check"><input id="cc-final-approval" type="checkbox"><span><b>'+esc(CAMPAIGN_STATE.purpose||cat.label)+' · '+ready.length+'명</b>에게 보낼 문구와 대상을 최종 확인했습니다.</span></label><div class="cc-queuebox"><article class="cc-queue-card"><h4>지금 발송</h4><p>검수된 '+ready.length+'명을 CRM 발송 대기열에 즉시 등록합니다.</p><button class="cc-btn dark" style="margin-top:15px" onclick="campaignQueue(\'now\')">'+ready.length+'명에게 발송</button></article><article class="cc-queue-card"><h4>예약 발송</h4><p>지정한 시각에 서버 발송 작업이 시작되도록 예약합니다.</p><label>예약 시각<input id="cc-schedule" type="datetime-local" value="'+escAttr(CAMPAIGN_STATE.scheduleAt)+'" onchange="CAMPAIGN_STATE.scheduleAt=this.value"></label><button class="cc-btn primary" style="margin-top:13px" onclick="campaignQueue(\'schedule\')">예약 발송 등록</button></article></div><div class="cc-legal">발송 완료 시 Campaign 이력과 각 고객 Activity에 <b>문자 발송 · '+esc(CAMPAIGN_STATE.purpose||cat.label)+'</b>이 기록되도록 서버 요청에 포함합니다.</div><div class="cc-table-foot"><button class="cc-btn" onclick="campaignGoStep(4)">← 미리보기</button><span>담당 · '+esc(campaignActor())+'</span></div></div>'}
 function campaignQueue(mode){var ready=campaignEligibleSelected(),approval=$('#cc-final-approval');if(!ready.length)return campaignGoStep(1);if(!approval||!approval.checked){CAMPAIGN_STATE.notice='최종 발송 대상과 문구를 확인한 뒤 확인란을 선택해 주세요.';paint();return}if(mode==='schedule'&&!CAMPAIGN_STATE.scheduleAt){CAMPAIGN_STATE.notice='예약 시각을 선택해 주세요.';paint();return}var c=campaignCategory(G.campaignCategory),purpose=CAMPAIGN_STATE.purpose||c.label,id='cmp-'+Date.now(),at=isoNow(),scheduled=mode==='schedule'?new Date(CAMPAIGN_STATE.scheduleAt).toISOString():null,obj={id:id,campaign_id:id,category_key:c.key,category:purpose,category_group:c.group,purpose:purpose,template_key:CAMPAIGN_STATE.templateKey||'custom',body:CAMPAIGN_STATE.body,status:mode==='schedule'?'scheduled':'queued',recipient_count:ready.length,excluded_count:campaignSelectedTargets().length-ready.length,created_at:at,created_by:campaignActor(),scheduled_at:scheduled,channel:'sms',response_count:0,next_action_count:0,stage_advanced_count:0,won_count:0,recipients:ready.map(function(t){return {recipient_key:t.key,opportunity_id:t.deal.id,person_key:t.contact.personKey||null,phone:campaignPhone(t.contact.mobile),site_name:t.deal.site,contact_name:t.contact.name,owner:t.owner,personalized_body:campaignPersonalize(CAMPAIGN_STATE.body,t)}})};try{pushWrite('campaign_create',{campaign_id:id,category_key:c.key,category_label:purpose,category_group:c.group,template_key:obj.template_key,body:obj.body,status:obj.status,scheduled_at:scheduled,created_at:at,created_by:obj.created_by,recipient_count:obj.recipient_count,excluded_count:obj.excluded_count,recipients:obj.recipients,activity_on_success:true})}catch(e){CAMPAIGN_STATE.notice='운영 문자 발송 연결이 준비되지 않아 등록하지 못했습니다. 대상이나 이력은 변경되지 않았습니다.';paint();return}CAMPAIGN_STORE.campaigns.unshift(obj);campaignSaveStore();CAMPAIGN_STATE={selected:{},purpose:'',templateKey:'',body:'',scheduleAt:'',notice:(mode==='schedule'?'예약발송':'즉시발송')+' 요청 '+ready.length+'명을 서버 대기열에 등록했습니다.'};G.campaignTab=mode==='schedule'?'schedule':'history';G.campaignStep=1;paint()}
 function campaignStepsHtml(){var names=[['대상 선택','누구에게'],['발송 목적','왜 보내는지'],['메시지 작성','무슨 내용을'],['미리보기','제외·치환 확인'],['발송','지금·예약']];return '<div class="cc-steps">'+names.map(function(x,i){var n=i+1;return '<button class="cc-step '+(G.campaignStep===n?'on':G.campaignStep>n?'done':'')+'" onclick="campaignGoStep('+n+')"><i>'+n+'</i><span>'+x[1]+'<b>'+x[0]+'</b></span></button>'}).join('')+'</div>'}
 function campaignSendPage(){var step=G.campaignStep||1,panel=step===1?campaignTargetPanel():step===2?campaignPurposePanel():step===3?campaignTemplatePanel():step===4?campaignPreviewPanel():campaignFinalPanel();return campaignStepsHtml()+'<div class="cc-layout">'+(step===1?campaignCategoryHtml():'')+panel+'</div>'}
