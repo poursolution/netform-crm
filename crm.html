@@ -2961,7 +2961,8 @@ function copyDiag(){try{navigator.clipboard.writeText(window.__DIAG_TEXT||'');al
   var inquiry=domains.indexOf('inquiry_core')>=0;
   var expansion=domains.indexOf('expansion_pool')>=0;
   if(G.page==='perf'||G.page==='control')return deal||inquiry;
-  if(G.page==='pipe'||G.page==='work'||G.page==='report')return deal;
+  if(G.page==='pipe')return deal||expansion;
+  if(G.page==='work'||G.page==='report')return deal;
   if(G.page==='inq')return inquiry;
   if(G.page==='expansion')return deal||expansion;
   if(G.page==='campaign')return deal||domains.indexOf('campaign_core')>=0;
@@ -5160,7 +5161,7 @@ function applyBulkV2(){var keys=Object.keys(BULK_SEL),to=$('#bulkAssignee').valu
    «필터 → 현장 선택 → 우측에서 바로 처리» 로 끝낸다. 예전 링크는 스플릿으로 보낸다. */
 function pipelineTopFilterLabel(){var period=G.year==='전체'?'전체기간':(G.quarter?G.quarter+'분기':'연간');return [G.year==='전체'?'전체 연도':G.year+'년',period,G.rep==='전체'?'전체 담당자':repDisplay(G.rep),G.brand==='전체'?'전체 사업':G.brand].join(' · ')}
 function resetPipelineTopFilters(){G.year=CUR_Y;G.quarter=0;G.rep='전체';G.brand='전체';G.stageCol=null;G.splitKey=null;paint()}
-function paintPipe(){if(G.pipeView==='console')G.pipeView='split';var all=B.deals.filter(function(d){return inPeriod(d.created)&&(G.brand==='전체'||d.brand===G.brand)&&workMatches(d,G.workFilter)}),act=pipeFiltered(),won=all.filter(function(d){return d.code==='won'}),lost=all.filter(function(d){return d.code==='lost'}),etc=all.filter(function(d){return d.grp==='기타'}),rot=act.filter(function(d){return (age(d)||0)>=30});$('#p-flow').innerHTML='';/* Journey 카드는 상세 화면에만 — 파이프라인 중복 제거 (2026-08-31) */PipelineToolbar.render();/* 확정 조합(2026-08-31): 칸반 보드 + 관리 콘솔 + 스플릿 뷰 · 담당자 셀렉트는 칩 바와 중복이라 제거 *//* KPI 4카드 구조 (2026-08-31 확정) — 수주/실주 칩은 칸반 6열로 이동 *//* 구버전 상단 요약바 삭제 (2026-09-02)
+function paintPipe(){if(window.PipelineWorkspace&&PipelineWorkspace.render())return;document.getElementById('pg-pipe')?.classList.remove('ps-active');if(G.pipeView==='console')G.pipeView='split';var all=B.deals.filter(function(d){return inPeriod(d.created)&&(G.brand==='전체'||d.brand===G.brand)&&workMatches(d,G.workFilter)}),act=pipeFiltered(),won=all.filter(function(d){return d.code==='won'}),lost=all.filter(function(d){return d.code==='lost'}),etc=all.filter(function(d){return d.grp==='기타'}),rot=act.filter(function(d){return (age(d)||0)>=30});$('#p-flow').innerHTML='';/* Journey 카드는 상세 화면에만 — 파이프라인 중복 제거 (2026-08-31) */PipelineToolbar.render();/* 확정 조합(2026-08-31): 칸반 보드 + 관리 콘솔 + 스플릿 뷰 · 담당자 셀렉트는 칩 바와 중복이라 제거 *//* KPI 4카드 구조 (2026-08-31 확정) — 수주/실주 칩은 칸반 6열로 이동 *//* 구버전 상단 요약바 삭제 (2026-09-02)
    «진행 중 N건·N억 / 가중 예상 / 장기정체 / Closed Won·Lost / 배드핏 / 연락두절 / 기타» 한 줄은
    아래 파이프라인 필터바와 정보가 겹치고 화면 밀도만 높였다. 숨기지 않고 렌더 코드를 없앤다.
    진행 구간·조치 상태·종료는 모두 스플릿 상단 필터에서 고른다. */
@@ -7644,7 +7645,8 @@ function saveOriginBusinessEdit(){
    mobile 케이스 복구 — 모바일 화면이 빈 폰으로 나오던 원인)
    ══════════════════════════════════════════════════════════════ */
 function paint(){
- if(!B)return;                      /* 데이터 로드 전 호출 방지 */
+ if(!B)return;
+ if(window.PipelineWorkspace)PipelineWorkspace.sidebar();                      /* 데이터 로드 전 호출 방지 */
  /* 스플릿 상세는 #p-main 안에 산다. 어느 페이지를 그리든 innerHTML 이 갈리기 전에
     노드를 body 로 빼두고, 스플릿이 아니면 도킹 자체를 해제한다. */
  var _wasDocked=isDocked();
@@ -7655,7 +7657,7 @@ function paint(){
  // PipelineToolbar owns its controls. Global controls render only on pages that use them.
  if(periodEl)periodEl.style.display=hidePeriod?'none':'';if(repEl)repEl.style.display=hideRep?'none':'';
  if(!hidePeriod)paintPeriod();if(!hideRep)paintRepTabs();
- var searchEl=$('#q');if(searchEl){searchEl.style.display='';searchEl.parentElement.style.display=insightsPage?'none':'';}
+ var searchEl=$('#q');if(searchEl){searchEl.style.display='';searchEl.parentElement.style.display=(insightsPage||(pipelinePage&&G.pipelineWorkspace))?'none':'';}
  if(insightsPage){SalesInsights.render();return;}
  if(G.page==='today')paintTodayHome();/* 역할별 오늘 우선순위 */
  if(G.page==='dash')paintDash();    /* 대시보드 */
@@ -8553,7 +8555,7 @@ function campaignHomePage(){var L=campaignLogs(),scheduled=L.filter(function(x){
 function campaignUtility(title){return '<header class="cc-utility"><button onclick="campaignSetTab(\'home\')">← 고객 발송</button><h2>'+esc(title)+'</h2><nav><button onclick="campaignSetTab(\'history\')">발송 이력</button><button onclick="campaignSetTab(\'analysis\')">성과 보기</button></nav></header>'}
 function paintCampaign(){var root=$('#campaign-root');if(!root)return;var tab=G.campaignTab||'home',body=tab==='home'?campaignHomePage():tab==='send'?campaignSendPage():tab==='schedule'?campaignHistoryPage(true):tab==='history'?campaignHistoryPage(false):tab==='templates'?campaignLibraryPage():campaignAnalysisPage(),title=tab==='send'?'새 발송':tab==='schedule'?'예약 발송':tab==='history'?'발송 이력':tab==='templates'?'문구 보관함':'성과 보기';root.innerHTML='<div class="cc-shell">'+(tab==='home'?'':campaignUtility(title))+(CAMPAIGN_STATE.notice?'<div class="mgmtbar blue">'+esc(CAMPAIGN_STATE.notice)+'</div>':'')+body+'</div>'}
 
-</script><script src="./inquiry-assignment-clarity.js?v=20260913-assignment-3"></script><script src="./detail-workspace.js?v=20260920-actions-1"></script><link rel="stylesheet" href="./detail-actions.css?v=20260920-1"><script src="./detail-actions.js?v=20260920-1"></script><script src="./relationship-management.js?v=20260920-actions-1"></script><script src="./inquiry-workbench.js?v=20260920-inbox-2"></script><script src="./today-work-queue.js?v=20260920-independent-1"></script><link rel="stylesheet" href="./sales-insights.css?v=20260920-actions-1"><script src="./sales-insights-model.js?v=20260920-actions-1"></script><script src="./sales-insights.js?v=20260920-actions-1"></script><script src="./operational-overlay.js?v=20260920-actions-1"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
+</script><script src="./inquiry-assignment-clarity.js?v=20260913-assignment-3"></script><script src="./detail-workspace.js?v=20260920-actions-1"></script><link rel="stylesheet" href="./detail-actions.css?v=20260920-1"><script src="./detail-actions.js?v=20260920-1"></script><script src="./relationship-management.js?v=20260920-actions-1"></script><script src="./inquiry-workbench.js?v=20260920-inbox-2"></script><script src="./today-work-queue.js?v=20260920-independent-1"></script><link rel="stylesheet" href="./sales-insights.css?v=20260920-actions-1"><script src="./sales-insights-model.js?v=20260920-actions-1"></script><script src="./sales-insights.js?v=20260920-stages-1"></script><script src="./pipeline-stages.js?v=20260920-1"></script><link rel="stylesheet" href="./pipeline-workspace.css?v=20260920-1"><script src="./pipeline-workspace.js?v=20260920-1"></script><script src="./operational-overlay.js?v=20260920-actions-1"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
   if(AUTH_ON&&!TOKEN)return;
   loadData();
 });
@@ -8561,7 +8563,7 @@ function paintCampaign(){var root=$('#campaign-root');if(!root)return;var tab=G.
 <link rel="stylesheet" href="p2-operational-polish.css?v=20260914-dashboard-control-1">
 <link rel="stylesheet" href="stage-transition.css?v=20260905-1">
 <script src="stage-transition.js?v=20260905-1"></script>
-<script src="stage-transition-ui.js?v=20260920-actions-1"></script>
+<script src="stage-transition-ui.js?v=20260920-stages-1"></script>
 <script src="pc-contact-editor.js?v=20260914-1"></script>
 <script src="pc-primary-contact.js?v=20260914-1"></script>
 <link rel="stylesheet" href="pc-message-test.css?v=20260914-1">

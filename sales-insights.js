@@ -44,7 +44,8 @@
  }
  function card(title,body,note){return '<section class="si-card"><header><h3>'+h(title)+'</h3>'+(note?'<p>'+h(note)+'</p>':'')+'</header>'+body+'</section>'}
  const empty=text=>'<p class="si-empty">'+h(text||'선택한 조건의 데이터가 없습니다.')+'</p>';
- function stages(s){const max=Math.max(1,...s.stages.map(x=>x.count));return card('현재 영업 흐름',s.stages.length?s.stages.map(x=>'<button class="si-bar" data-si-action="stage" data-value="'+a(x.code)+'"><span>'+h(x.label)+'</span><i style="--size:'+x.count/max*100+'%"></i><b>'+number(x.count)+'건</b></button>').join(''):empty(),'진행 중 단계 분포 · 같은 문의의 전환율이 아닙니다.');}
+ function stages(s,owner){if(root.PipelineWorkspace&&root.PipelineStages){const f={...state(),owner:owner||state().owner},all=root.PipelineWorkspace.rows({brand:f.brand,owner:f.owner}),counts=root.PipelineStages.definitions.map(d=>({...d,count:all.filter(r=>r.group===d.key).length})),max=Math.max(1,...counts.map(x=>x.count));return card('현재 영업 흐름',counts.map(x=>'<button class="si-bar" data-si-action="stage" data-value="'+a(x.key)+'"><span>'+h(x.number+' '+x.label)+'</span><i style="--size:'+x.count/max*100+'%"></i><b>'+number(x.count)+'건</b></button>').join(''),'현재 적재 기준 · 확장은 기존 수주와 연결된 별도 기회');}return card('현재 영업 흐름',empty());}
+
  function risks(s){return card('지금 관리가 필요한 것','<div class="si-risk-links">'+Object.keys(labels).map(k=>btn(labels[k]+' '+number(s.active.filter(d=>d.issues.includes(k)).length)+'건','drill',k)).join('')+'</div>'+btn('전체 확인 →','drill','risk'),'한 영업 건에 여러 사유가 있을 수 있습니다.');}
  function people(s,limit){
   const names=[...new Set(s.deals.map(x=>x.owner))].filter(n=>root.repProfile(n).performanceIncluded&&root.repProfile(n).active).sort(root.repCompare);
@@ -82,6 +83,7 @@
   if(action==='navigate')root.goPage(v);
   if(action==='view'){f.view=v;render()}
   if(action==='page'){f.page=Number(v);render()}
+  if(action==='stage'&&root.PipelineWorkspace){close(false);root.PipelineWorkspace.open(v,f);return;}
   if(action==='drill'||action==='stage'){f.kind=action==='stage'?'active':labels[v]?'risk':v;f.issue=labels[v]?v:'all';f.stage=action==='stage'?v:'all';f.search='';f.page=1;root.goPage('control')}
   if(action==='person')openPerson(v,b);
   if(action==='close')close();
@@ -97,7 +99,7 @@
  function openPerson(name,trigger){
   close(false);if(!rows().deals.some(d=>d.owner===name))return;
   focusBefore=trigger||document.activeElement;const s=data(name),shade=document.createElement('div');
-  shade.id='si-person';shade.className='modalshade on si-person';shade.innerHTML='<section role="dialog" aria-modal="true" aria-labelledby="si-person-title" class="si-person-box"><header><div><h2 id="si-person-title">'+h(name)+' 영업 현황</h2><p>'+h(state().year)+'년 '+(state().month?state().month+'월':'연간')+' · '+h(state().brand)+'</p></div>'+btn('닫기','close','','si-close')+'</header><div class="si-person-grid">'+card('담당자 요약','<dl class="si-facts"><div><dt>진행 영업</dt><dd>'+s.active.length+'건</dd></div><div><dt>예상금액</dt><dd>'+money(s.expected)+'</dd></div><div><dt>기간 수주</dt><dd>'+money(s.wonAmount)+'</dd></div><div><dt>수주 건수</dt><dd>'+s.won.length+'건</dd></div></dl>')+'<div>'+stages(s)+execution(s)+'</div>'+card('관리 필요 · '+s.risk.length+'건',records(M.select(s,'risk',{})))+'</div></section>';
+  shade.id='si-person';shade.className='modalshade on si-person';shade.innerHTML='<section role="dialog" aria-modal="true" aria-labelledby="si-person-title" class="si-person-box"><header><div><h2 id="si-person-title">'+h(name)+' 영업 현황</h2><p>'+h(state().year)+'년 '+(state().month?state().month+'월':'연간')+' · '+h(state().brand)+'</p></div>'+btn('닫기','close','','si-close')+'</header><div class="si-person-grid">'+card('담당자 요약','<dl class="si-facts"><div><dt>진행 영업</dt><dd>'+s.active.length+'건</dd></div><div><dt>예상금액</dt><dd>'+money(s.expected)+'</dd></div><div><dt>기간 수주</dt><dd>'+money(s.wonAmount)+'</dd></div><div><dt>수주 건수</dt><dd>'+s.won.length+'건</dd></div></dl>')+'<div>'+stages(s,name)+execution(s)+'</div>'+card('관리 필요 · '+s.risk.length+'건',records(M.select(s,'risk',{})))+'</div></section>';
   document.body.appendChild(shade);document.body.style.overflow='hidden';shade.onclick=e=>{if(e.target===shade)close();else onClick(e)};
   shade.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close()}if(e.key==='Tab'){const nodes=[...shade.querySelectorAll('button,select,input,[tabindex="0"]')],first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}};shade.querySelector('button').focus();
  }
