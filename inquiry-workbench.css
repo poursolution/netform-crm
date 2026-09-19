@@ -23,3 +23,6 @@ body:has(#pg-inq.on.inq-workbench) .mhead>.search{display:none}
 #pg-inq .inq-work-row.head>span:first-child{display:flex;gap:8px;align-items:center}
 .inq-dialog-open .modalshade{z-index:900}
 #pg-inq.inq-workbench .inq-ctl-scroll{max-height:none;overflow:visible!important}
+
+#pg-inq .inq-work-row .inq-action:has(.pc-manager-request-trigger){display:grid;grid-template-columns:72px 26px;gap:4px 6px}
+#pg-inq .inq-work-row .pc-manager-request-trigger{grid-column:1/-1;height:22px;min-height:22px;line-height:20px;margin:0;padding:0 3px;font-size:11px;white-space:nowrap}
