@@ -36,8 +36,12 @@ test('ASQ domain refresh reaches the pages that can open customer or deal detail
 
 test('production migration exposes only actor-authorized ASQ rows and keeps sync service-only',()=>{
   const sql=read('supabase/migrations/20260919090000_asq_operational_read.sql');
+  const cursorFix=read('supabase/migrations/20260919093000_fix_asq_operational_cursor.sql');
   assert.match(sql,/p_domain<>'asq_project'/);
   assert.match(sql,/crm_security\.can_deal\(l\.opportunity_id,false\)/);
+  assert.match(cursorFix,/create or replace function public\.crm_operational_source_v1/);
+  assert.doesNotMatch(cursorFix,/max\(x\.id\)/i);
+  assert.match(cursorFix,/items->-1->>'id'/);
   assert.match(sql,/revoke all on table public\.crm_asq_project_links from public, anon, authenticated/);
   assert.match(sql,/revoke all on function public\.crm_asq_project_sync\(jsonb\) from public, anon, authenticated/);
   assert.match(sql,/grant execute on function public\.crm_asq_project_sync\(jsonb\) to service_role/);
