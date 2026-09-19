@@ -1,0 +1,45 @@
+/* Shared frame for judgment, exceptions and performance. Legacy panels are kept
+   for existing integrations, but are never displayed alongside this frame. */
+.apage.si-active> :not([id^="si-"]){display:none!important}
+.si-shell{display:grid;gap:18px;min-width:0;color:var(--ink,#17243b)}
+.si-shell *, .si-person *{box-sizing:border-box}
+.si-shell button,.si-person button{font:inherit;cursor:pointer;border:1px solid #dbe2ec;background:#fff;color:#254268;border-radius:8px;min-height:36px;padding:7px 12px;line-height:1.4}
+.si-shell button:hover,.si-person button:hover{background:#f1f5fc;border-color:#9cb4d5}
+.si-shell :focus-visible,.si-person :focus-visible{outline:3px solid #4b85dc;outline-offset:2px}
+.si-nav,.si-views{display:flex;gap:8px;flex-wrap:wrap}
+.si-nav .selected,.si-views .selected{background:#eaf1fd;border-color:#b0c8ef;color:#174fa5;font-weight:750}
+.si-filters,.si-control-filters{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+.si-filters label,.si-control-filters label{display:grid;gap:6px;font-size:12px;font-weight:650;flex:1;min-width:130px;max-width:260px}
+.si-shell select,.si-shell input{font:inherit;font-size:14px;border:1px solid #dbe2ec;border-radius:8px;height:40px;padding:0 12px;background:#fff;min-width:0;width:100%;color:inherit}
+.si-period{margin:0;font-size:12px;color:#617187;line-height:1.6}
+.si-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.si-kpis>button{display:flex;flex-direction:column;text-align:left;gap:10px;padding:18px;min-height:132px;border-radius:14px}
+.si-kpis span{font-size:13px;font-weight:650;color:#53657c}
+.si-kpis strong{font-size:clamp(20px,2vw,29px);font-weight:780;letter-spacing:-.04em;overflow-wrap:anywhere}
+.si-kpis small{font-size:11px;color:#697b92;line-height:1.5}
+.si-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+.si-card{background:#fff;border:1px solid #e1e7ef;border-radius:14px;padding:20px;min-width:0}
+.si-card>header{margin-bottom:18px}.si-card h3{margin:0;font-size:16px;font-weight:750}.si-card header p{font-size:12px;line-height:1.6;color:#63758b;margin:6px 0 0}
+.si-bar{display:grid!important;grid-template-columns:110px minmax(20px,1fr) 100px;align-items:center;gap:12px;width:100%;border:0!important;margin:4px 0;padding:10px 0!important;background:transparent!important;text-align:left;font-size:12px!important}
+.si-bar i{height:10px;background:linear-gradient(to right,#4679c9 var(--size),#edf1f7 var(--size));border-radius:6px}
+.si-bar b{text-align:right;font-size:13px;white-space:nowrap}
+.si-risk-links{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}.si-risk-links button{text-align:left;font-size:13px}
+.si-table-scroll{overflow:auto;max-width:100%;margin-bottom:14px}
+.si-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px;min-width:680px}
+.si-table th{font-size:12px;text-align:left;color:#63758b;background:#f7f9fc;padding:12px}
+.si-table td{padding:14px 12px;border-bottom:1px solid #e9eef4;vertical-align:middle;height:76px;overflow-wrap:anywhere}
+.si-people th:first-child{width:130px}.si-people td:not(:first-child),.si-people th:not(:first-child){text-align:right}
+.si-cases th:first-child{width:24%}.si-cases th:nth-child(2){width:95px}.si-cases th:nth-child(3){width:130px}.si-cases th:last-child{width:88px}
+.si-cases td:last-child button,.si-records button{width:60px;min-width:60px;height:32px;min-height:32px;padding:4px 8px;white-space:nowrap;font-size:13px}
+.si-badge{display:inline-block;padding:5px 8px;border-radius:6px;background:#eff3f9;color:#3e5779;font-size:12px}
+.si-pager{display:flex;justify-content:center;align-items:center;gap:14px;font-size:12px}
+.si-facts{margin:0}.si-facts>div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #edf1f7;padding:15px 0}.si-facts dt{color:#607088;font-size:13px}.si-facts dd{margin:0;font-weight:750;font-size:15px}
+.si-records>div{display:flex;justify-content:space-between;gap:14px;align-items:center;min-height:80px;padding:14px 0;border-bottom:1px solid #edf1f7}.si-records span{min-width:0}.si-records b{font-size:14px;overflow-wrap:anywhere}.si-records small{display:block;font-size:12px;color:#697b92;margin-top:6px;line-height:1.6}
+.si-activity{list-style:none;padding:0;margin:0}.si-activity li{display:flex;gap:18px;padding:14px 0;border-bottom:1px solid #edf1f7;font-size:13px}.si-activity time{color:#697b92;white-space:nowrap}.si-activity p{margin:6px 0;white-space:pre-wrap;overflow-wrap:anywhere;color:#53657c}
+.si-empty{padding:22px 0;color:#697b92;font-size:13px;line-height:1.7}
+.si-person{z-index:1900;padding:24px;align-items:center;justify-content:center}.si-person.on{display:flex}
+.si-person-box{width:92vw;max-width:none;max-height:92vh;border-radius:18px;background:#f5f7fb;box-shadow:0 24px 90px #13274940;overflow:auto}
+.si-person-box>header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;position:sticky;top:0;background:#fff;border-bottom:1px solid #e1e7ef;z-index:1}.si-person h2{margin:0;font-size:20px}.si-person header p{margin:7px 0 0;font-size:12px;color:#697b92}
+.si-person-grid{display:grid;grid-template-columns:minmax(190px,.75fr) minmax(280px,1.3fr) minmax(280px,1.2fr);gap:18px;padding:22px;align-items:start}.si-person-grid>div{display:grid;gap:18px}
+@media(max-width:1100px){.si-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.si-person-grid{grid-template-columns:1fr 1fr}.si-person-grid>:last-child{grid-column:1/-1}}
+@media(max-width:700px){.si-grid{grid-template-columns:1fr}.si-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.si-kpis>button{min-height:120px;padding:14px}.si-kpis>button:last-child{grid-column:1/-1}.si-card{padding:16px}.si-filters label,.si-control-filters label{max-width:none;min-width:120px}.si-person{padding:10px}.si-person-box{width:100%;max-height:96vh}.si-person-grid{grid-template-columns:1fr;padding:12px;gap:12px}.si-person-grid>:last-child{grid-column:auto}.si-bar{grid-template-columns:95px minmax(20px,1fr) 85px;gap:8px}.si-risk-links{grid-template-columns:1fr}.si-person-box>header{padding:16px}.si-activity li{gap:10px}}
