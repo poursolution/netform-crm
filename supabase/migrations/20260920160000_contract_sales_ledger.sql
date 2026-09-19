@@ -39,7 +39,7 @@ CREATE FUNCTION public.crm_contract_sales_write_v1(p jsonb) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE a record; d record; h crm_security.contract_sales%rowtype; receipt record;
  target uuid; req uuid; k text; at_date date; delta bigint; owner_uid uuid; owner_name text;
- seq integer; event_uid uuid; result jsonb;
+ seq integer; event_uid uuid; result jsonb; site_label text;
 BEGIN
  SELECT * INTO a FROM crm_security.actor();
  IF a.user_id IS NULL THEN RAISE EXCEPTION 'forbidden' USING ERRCODE='42501'; END IF;
@@ -80,7 +80,9 @@ BEGIN
  END IF;
  seq:=coalesce(h.version,0)+1;
  IF k='signed' THEN
-  INSERT INTO crm_security.contract_sales VALUES(target,true,at_date,delta,owner_uid,owner_name,coalesce(d.site,''),coalesce(d.brand,''),seq,delta,false);
+  SELECT coalesce(s.site_name,o.name,nullif(x.list_fields->>'site_name',''),nullif(x.list_fields->>'name',''),'') INTO site_label
+  FROM public.deals x LEFT JOIN public.sites s ON s.site_id=x.site_id LEFT JOIN public.organizations o ON o.id=x.organization_id WHERE x.id=target;
+  INSERT INTO crm_security.contract_sales VALUES(target,true,at_date,delta,owner_uid,owner_name,site_label,coalesce(d.brand,''),seq,delta,false);
  ELSE
   UPDATE crm_security.contract_sales SET version=seq,balance=balance+delta,cancelled=k='cancelled' WHERE deal_id=target;
  END IF;
