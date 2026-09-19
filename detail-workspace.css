@@ -79,3 +79,5 @@
 .dw-left .pc-contact-actions{flex-wrap:wrap;justify-content:flex-start}
 .dw-left .pc-contact-person{width:100%}
 .dw-left .pc-contact-phone{white-space:nowrap}
+.dw-left .contactnums{grid-template-columns:repeat(auto-fit,minmax(min(140px,100%),1fr))}
+.dw-left .contactnum b{white-space:nowrap;overflow-wrap:normal}

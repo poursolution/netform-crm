@@ -5249,8 +5249,10 @@ function inqOfDeal(item){
 function unifiedTimeline(p,item){
  var R=[];
  [].concat(item.activities||item.activity_signals||[],p.activities||[]).forEach(function(a){
+   var detail=a.detail&&typeof a.detail==='object'?a.detail:{},note=a.note&&typeof a.note==='object'?a.note:detail;
+   function text(value){return typeof value==='string'?value:''}
    R.push({id:a.id,at:a.at||a.occurred_at||a.created_at,src:(a.src==='mobile'?'mobile':'crm'),ttl:a.type||'활동',
-     who:a.actor||a.actor_name||a.assignee||'', body:a.note||a.detail||'', result:a.result||'', fields:[]})});
+     who:a.actor||a.actor_name||a.assignee||'', body:text(a.note)||text(note.note)||text(a.detail), result:text(a.result)||text(note.result), fields:[]})});
  inqOfDeal(item).forEach(function(q){
    (q.responses||[]).forEach(function(r){
      var pj=parseJandi(r.body);
@@ -5277,7 +5279,7 @@ function unifiedTimeline(p,item){
  /* 같은 시각·같은 내용은 하나로 합친다 (잔디↔CRM 중복 방지) */
  var seen={},U=[];
  R.forEach(function(x){var k=x.id?'id:'+x.id:[x.at||'',x.ttl||'',x.who||'',x.body||'',x.result||''].join('|');
-   if(seen[k])return; seen[k]=1; if(x.at||x.body)U.push(x)});
+   var previous=seen[k];if(previous){['body','result','who'].forEach(function(f){if(!previous[f]&&x[f])previous[f]=x[f]});return} seen[k]=x; if(x.at||x.body)U.push(x)});
  return U.sort(function(a,b){return String(b.at||'').localeCompare(String(a.at||''))})}
 
 var SRC_LABEL={jandi:'JANDI',crm:'CRM',mobile:'모바일',auto:'자동'};
@@ -5300,7 +5302,7 @@ function unifiedTimelineHTML(p,item){
       +x.fields.map(function(f){return '<div class="rfield"><span>'+esc(f[0])+'</span><div>'+esc(f[1])+'</div></div>'}).join('')
       +(x.body?'<div class="rquote">'+esc(x.body)+'</div>':'')
       +(x.result?'<div class="rfield" style="margin-top:6px"><span>결과</span><div>'+esc(x.result)+'</div></div>':'')
-      +(!x.fields.length&&!x.body&&!x.result?'<div class="nodata" style="padding:4px">기록된 내용 없음</div>':'')
+      +(!x.fields.length&&!x.body&&!x.result?'<div class="nodata" style="padding:4px">활동 종류와 시각만 표시됩니다. 상세 내용은 확인되지 않았습니다.</div>':'')
     +'</div></div>'}).join('')
   +(R.length>lim?'<button class="utlmore" onclick="utlShowAll()">이전 응대 '+(R.length-lim)+'건 더 보기</button>':'')
   +'</div>'}

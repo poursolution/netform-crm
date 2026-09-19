@@ -27,11 +27,24 @@ async function run(){
   assert.equal(await page.locator('.dw-right #dv-amt').count(),1);
   assert.equal(await page.evaluate(()=>unifiedTimeline({activities:[B.deals[0].activities[0]]},B.deals[0]).filter(x=>x.id).length),2);
   assert.match(await page.locator('#activityTimelineHost').innerText(),/서버 발송 결과/);
+  const timelineCases=await page.evaluate(()=>{
+   const signal={id:'signal-only',type:'문자',occurred_at:'2026-09-19T13:05:00Z'};
+   const item={...B.deals[0],activities:[signal]},patch={activities:[{...signal,note:'예약 문자 발송',result:'검증용 본문',actor:'담당자'}]};
+   const union=unifiedTimeline(patch,item).filter(x=>x.id==='signal-only');
+   const structured=unifiedTimeline({}, {...item,activities:[{...signal,detail:{note:'캠페인 발송',result:'<img src=x onerror=alert(1)>'}}]});
+   const escaped=unifiedTimelineHTML({}, {...item,activities:[{...signal,detail:{note:'캠페인 발송',result:'<img src=x onerror=alert(1)>'}}]});
+   return {union,structured,escaped,missing:unifiedTimelineHTML({},item),sourceUnchanged:!signal.note};
+  });
+  assert.equal(timelineCases.union.length,1);assert.equal(timelineCases.union[0].body,'예약 문자 발송');assert.equal(timelineCases.union[0].result,'검증용 본문');assert.equal(timelineCases.union[0].who,'담당자');
+  assert.equal(timelineCases.structured[0].body,'캠페인 발송');assert.ok(timelineCases.sourceUnchanged);
+  assert.match(timelineCases.escaped,/&lt;img/);assert.doesNotMatch(timelineCases.escaped,/<img/);
+  assert.match(timelineCases.missing,/상세 내용은 확인되지 않았습니다/);
   for(const width of [1920,1440,1280,1146]){
    await page.setViewportSize({width,height:900});
    const m=await page.locator('#detailView').evaluate(n=>{const r=n.getBoundingClientRect(),cols=[...n.querySelector('.dw-columns').children].map(x=>x.getBoundingClientRect());return {width:r.width,overflow:n.scrollWidth>n.clientWidth,ratio:cols[1].width/cols[0].width,sameTop:cols.every(c=>Math.abs(c.top-cols[0].top)<2)}});
    assert.ok(Math.abs(m.width-width*.94)<2);assert.equal(m.overflow,false);assert.equal(m.sameTop,true);assert.ok(Math.abs(m.ratio-2)<.03);
    assert.ok(await page.locator('.dw-left .pc-contact-person').first().evaluate(n=>n.getBoundingClientRect().width)>100,'contact identity stays readable at '+width);
+   assert.ok(await page.locator('.dw-left .contactnum b').evaluateAll(nodes=>nodes.every(n=>{const r=document.createRange();r.selectNodeContents(n);return r.getClientRects().length===1&&n.scrollWidth<=n.clientWidth})), 'phone numbers stay on one line at '+width);
   }
   await page.evaluate(()=>DetailWorkspace.focusWide('activityFormCard'));
   await page.locator('#dv-act-note').fill('저장 전 메모 보존');
