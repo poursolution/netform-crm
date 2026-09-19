@@ -1971,13 +1971,14 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
       <div class="sec">고객관리</div>
       <div class="mi clk" data-p="sites" onclick="nav(this)"><span class="ic">🏢</span>고객 자산</div>
       <div class="sec">관리</div>
+      <div class="mi clk" data-p="control" onclick="nav(this)"><span class="ic">◎</span>컨트롤타워</div>
       <div class="mi clk" data-p="repmanage" onclick="nav(this)"><span class="ic">◎</span>영업사원 관리</div>
       <div class="mi clk" data-p="mgmt" onclick="nav(this)"><span class="ic">🛡️</span>관리팀 KPI</div>
       <div class="mi clk" data-p="gyeongnam" onclick="nav(this)"><span class="ic">↗</span>경남지사</div>
       <div class="mi clk" data-p="brief" onclick="nav(this)"><span class="ic">📅</span>주간 브리핑<span class="badge" style="background:var(--blue-50);color:var(--blue)">월</span></div>
       <div class="sec">분석</div>
       <div class="mi clk" data-p="dash" onclick="nav(this)"><span class="ic">📊</span>영업 대시보드</div>
-      <div class="mi clk" data-p="perf" onclick="nav(this)"><span class="ic">👥</span>담당자 실적</div>
+      <div class="mi clk" data-p="perf" onclick="nav(this)"><span class="ic">👥</span>성과 분석</div>
       <div class="mi clk" data-p="work" onclick="nav(this)"><span class="ic">▦</span>공종 분석</div>
       <div class="mi clk" data-p="report" onclick="nav(this)"><span class="ic">📈</span>리포트</div>
       <div class="sec">데이터 관리</div>
@@ -2022,7 +2023,8 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
 </div></div>
     <div class="apage on" id="pg-today"><div id="today-home-root"></div></div>
 
-    <div class="apage" id="pg-dash">
+    <div class="apage" id="pg-control"><div id="si-control"></div></div>
+    <div class="apage" id="pg-dash"><div id="si-dash"></div>
       <div class="towerhead"><b>SALES CONTROL TOWER</b><span>유입부터 전환·파이프라인·수주·사람·위험까지 한 화면에서 확인</span>
         <div class="rolesw" id="d-roles"></div></div>
       <div class="headline" id="d-headline" data-role="lead analysis exec"></div>
@@ -2067,7 +2069,7 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
 
     <div class="apage" id="pg-mgmt"><div id="mgmt-root"></div></div>
 
-    <div class="apage" id="pg-perf">
+    <div class="apage" id="pg-perf"><div id="si-perf"></div>
       <!-- kpirow 그리드 제거 — 현행 담당자 실적 렌더러는 제목+카드 묶음을 통째로 넣으므로 일반 블록이어야 함 -->
       <div id="f-kpis"></div>
       <div class="tbl" id="f-tbl"></div>
@@ -2564,14 +2566,15 @@ var KCOLS=[
  {key:'기타',nm:'기타(정리 필요)',sw:'var(--sub)',cls:''}];
 var PAL=['var(--blue)','var(--blue)','var(--blue-100)','var(--warn)','var(--ok)','var(--sub2)'];
 var TITLES={today:['오늘 업무','오늘 관리가 필요한 현장과 그 이유 · 다음 조치를 바로 확인'],
- dash:['영업 대시보드','전 브랜드 통합 현황 · Supabase 실데이터'],
+ dash:['영업 대시보드','전체 영업 흐름과 현재 관리가 필요한 지점을 확인합니다.'],
+ control:['컨트롤타워','확인이 필요한 영업 건을 찾아 바로 조치합니다.'],
  pipe:['파이프라인','견적문의부터 계약·공사·종료까지 6단계 추적 · 릴레잇은 이관 데이터만 사용'],
  inq:['견적문의 관제','신호 4개만 · 위젯을 누르면 그 자리에서 조치'],
  campaign:['고객 발송','고객에게 보낼 메시지를 만들고 발송합니다.'],
  relationship:['관계관리','고객과 지속적인 접촉이 필요한 영업건을 관리합니다.'],
  expansion:['확장관리','Closed Won 고객의 다음 매출을 찾는 고객 Pool · 파이프라인과 분리'],
  repmanage:['영업사원 관리','본사 6명의 흐름·병목·관리개입·코칭을 한 화면에서 확인'],
- perf:['담당자 실적','실적 / 미래 가능성 / 관리 리스크'],
+ perf:['성과 분석','실적·진행상태·관리 이슈를 같은 기준으로 확인합니다.'],
  gyeongnam:['경남지사','본사 인계 → 지사 담당자 지정 → 응대 → 영업기회 → 수주'],
  mobile:['모바일','현장 전용 · 오늘 할 일과 초기 집중관리부터 처리'],
  brief:['주간 브리핑','매주 월요일 08:30 자동 생성 → 잔디 발송 · 회의 준비 0분'],
@@ -2957,7 +2960,8 @@ function copyDiag(){try{navigator.clipboard.writeText(window.__DIAG_TEXT||'');al
   var deal=domains.indexOf('deal_core')>=0||domains.indexOf('message_log')>=0||domains.indexOf('customer_support_action')>=0;
   var inquiry=domains.indexOf('inquiry_core')>=0;
   var expansion=domains.indexOf('expansion_pool')>=0;
-  if(G.page==='pipe'||G.page==='work'||G.page==='perf'||G.page==='report')return deal;
+  if(G.page==='perf'||G.page==='control')return deal||inquiry;
+  if(G.page==='pipe'||G.page==='work'||G.page==='report')return deal;
   if(G.page==='inq')return inquiry;
   if(G.page==='expansion')return deal||expansion;
   if(G.page==='campaign')return deal||domains.indexOf('campaign_core')>=0;
@@ -3000,6 +3004,7 @@ async function loadData(){if(!ME||!TOKEN)return;var el=document.getElementById('
 /* 메뉴를 바꿀 때 열린 상세/입력 모달의 반투명 배경과 스크롤 잠금이
    다음 화면에 남지 않도록 한 곳에서 정리한다. */
 function clearTransientUI(){
+ if(window.SalesInsights)SalesInsights.close(false);
  if(window.ExpansionPool&&typeof ExpansionPool.close==='function')ExpansionPool.close(false);
  $$('.modalshade.on').forEach(function(m){m.classList.remove('on');m.setAttribute('aria-hidden','true')});
  var dv=$('#detailView'),ov=$('#ovl'),dr=$('#drw');
@@ -3013,7 +3018,7 @@ function clearTransientUI(){
    100건 단위 pagination 전체를 다시 돌아 오늘업무 → 견적문의 이동이 멈춘 것처럼 보인다. */
 function refreshPageAfterPaint(p){
  if(typeof loadOperationalPageData==='function')loadOperationalPageData(p);
- if((p==='today'||p==='dash'||p==='inq')&&typeof syncInquiryNow==='function')syncInquiryNow(false);
+ if((p==='today'||p==='dash'||p==='control'||p==='perf'||p==='inq')&&typeof syncInquiryNow==='function')syncInquiryNow(false);
  if(p==='expansion'&&typeof syncExpansionNow==='function')syncExpansionNow(false);
  if(p==='campaign')syncCampaignNow(false);
 }
@@ -7643,11 +7648,13 @@ function paint(){
  var _wasDocked=isDocked();
  detachDetail();
  if(_wasDocked&&!(G.page==='pipe'&&G.pipeView==='split'))closeDocked();
- var customerMaster=G.page==='sites',relationshipPage=G.page==='relationship',expansionPage=G.page==='expansion',branchPage=G.page==='gyeongnam',campaignPage=G.page==='campaign',repManagerPage=G.page==='repmanage',todayPage=G.page==='today',pipelinePage=G.page==='pipe',periodEl=$('#periodbar'),repEl=$('#reptabs');
- var hidePeriod=customerMaster||relationshipPage||expansionPage||campaignPage||repManagerPage||todayPage||pipelinePage,hideRep=customerMaster||relationshipPage||expansionPage||branchPage||campaignPage||repManagerPage||todayPage||pipelinePage;
+ var customerMaster=G.page==='sites',relationshipPage=G.page==='relationship',expansionPage=G.page==='expansion',branchPage=G.page==='gyeongnam',campaignPage=G.page==='campaign',repManagerPage=G.page==='repmanage',todayPage=G.page==='today',pipelinePage=G.page==='pipe',insightsPage=['dash','control','perf'].includes(G.page)&&!!window.SalesInsights,periodEl=$('#periodbar'),repEl=$('#reptabs');
+ var hidePeriod=insightsPage||customerMaster||relationshipPage||expansionPage||campaignPage||repManagerPage||todayPage||pipelinePage,hideRep=insightsPage||customerMaster||relationshipPage||expansionPage||branchPage||campaignPage||repManagerPage||todayPage||pipelinePage;
  // PipelineToolbar owns its controls. Global controls render only on pages that use them.
  if(periodEl)periodEl.style.display=hidePeriod?'none':'';if(repEl)repEl.style.display=hideRep?'none':'';
  if(!hidePeriod)paintPeriod();if(!hideRep)paintRepTabs();
+ var searchEl=$('#q');if(searchEl){searchEl.style.display='';searchEl.parentElement.style.display=insightsPage?'none':'';}
+ if(insightsPage){SalesInsights.render();return;}
  if(G.page==='today')paintTodayHome();/* 역할별 오늘 우선순위 */
  if(G.page==='dash')paintDash();    /* 대시보드 */
  if(G.page==='inq')paintInq();      /* 견적문의 관제 (신호 4종) */
@@ -8544,7 +8551,7 @@ function campaignHomePage(){var L=campaignLogs(),scheduled=L.filter(function(x){
 function campaignUtility(title){return '<header class="cc-utility"><button onclick="campaignSetTab(\'home\')">← 고객 발송</button><h2>'+esc(title)+'</h2><nav><button onclick="campaignSetTab(\'history\')">발송 이력</button><button onclick="campaignSetTab(\'analysis\')">성과 보기</button></nav></header>'}
 function paintCampaign(){var root=$('#campaign-root');if(!root)return;var tab=G.campaignTab||'home',body=tab==='home'?campaignHomePage():tab==='send'?campaignSendPage():tab==='schedule'?campaignHistoryPage(true):tab==='history'?campaignHistoryPage(false):tab==='templates'?campaignLibraryPage():campaignAnalysisPage(),title=tab==='send'?'새 발송':tab==='schedule'?'예약 발송':tab==='history'?'발송 이력':tab==='templates'?'문구 보관함':'성과 보기';root.innerHTML='<div class="cc-shell">'+(tab==='home'?'':campaignUtility(title))+(CAMPAIGN_STATE.notice?'<div class="mgmtbar blue">'+esc(CAMPAIGN_STATE.notice)+'</div>':'')+body+'</div>'}
 
-</script><script src="./inquiry-assignment-clarity.js?v=20260913-assignment-3"></script><script src="./detail-workspace.js?v=20260915-structure-1"></script><script src="./relationship-management.js?v=20260915-structure-1"></script><script src="./inquiry-workbench.js?v=20260920-inbox-2"></script><script src="./today-work-queue.js?v=20260920-independent-1"></script><script src="./operational-overlay.js?v=20260919-asq-1"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
+</script><script src="./inquiry-assignment-clarity.js?v=20260913-assignment-3"></script><script src="./detail-workspace.js?v=20260915-structure-1"></script><script src="./relationship-management.js?v=20260915-structure-1"></script><script src="./inquiry-workbench.js?v=20260920-inbox-2"></script><script src="./today-work-queue.js?v=20260920-independent-1"></script><link rel="stylesheet" href="./sales-insights.css?v=20260920-1"><script src="./sales-insights-model.js?v=20260920-1"></script><script src="./sales-insights.js?v=20260920-1"></script><script src="./operational-overlay.js?v=20260919-asq-1"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
   if(AUTH_ON&&!TOKEN)return;
   loadData();
 });
