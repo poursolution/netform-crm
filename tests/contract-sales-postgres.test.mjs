@@ -8,11 +8,11 @@ test('contract ledger: durable attribution, replay, concurrency, cancellation, A
  const db=new PGlite();
  const U='11111111-1111-4111-8111-111111111111',AU='22222222-2222-4222-8222-222222222222',D='33333333-3333-4333-8333-333333333333',V='44444444-4444-4444-8444-444444444444',AV='55555555-5555-4555-8555-555555555555';
  try{
-  await db.exec(fixture+`alter table public.deals add column owner_id uuid;alter table public.deals add column site text;alter table public.deals add column brand text;alter table public.deals add column stage_contexts jsonb default '{}'::jsonb;`);
+  await db.exec(fixture+`alter table public.deals add column owner_id uuid;alter table public.deals add column site_id uuid;alter table public.deals add column list_fields jsonb default '{}'::jsonb;alter table public.deals add column brand text;alter table public.deals add column stage_contexts jsonb default '{}'::jsonb;create table public.sites(site_id uuid primary key,site_name text);create table public.organizations(id uuid primary key,name text);`);
   await db.exec(sql);
   await db.query("insert into public.users values($1,$2,'황윤선','admin',true),($3,$4,'정정훈','rep',true)",[U,AU,V,AV]);
   await db.query("insert into crm_security.access_review values($1,$2,'admin','admin',true,now()+interval '1 day'),($3,$4,'rep','rep',true,now()+interval '1 day')",[U,AU,V,AV]);
-  await db.query("insert into public.deals(id,owner_id,site,brand) values($1,$2,'합성 현장','시험')",[D,U]);
+  await db.query("insert into public.deals(id,owner_id,list_fields,brand) values($1,$2,'{\"site_name\":\"합성 현장\"}','시험')",[D,U]);
   await db.query("select set_config('request.jwt.claim.sub',$1,false)",[AU]);await db.exec('set role authenticated');
   const write=async p=>(await db.query('select public.crm_contract_sales_write_v1($1::jsonb) result',[JSON.stringify(p)])).rows[0].result;
   const read=async()=>(await db.query('select public.crm_contract_sales_read_v1() result')).rows[0].result;
@@ -22,7 +22,7 @@ test('contract ledger: durable attribution, replay, concurrency, cancellation, A
   await assert.rejects(write({...sign,request_id:crypto.randomUUID()}),/VERSION_CONFLICT/);
   await assert.rejects(db.exec('delete from crm_security.contract_sales_events'),/permission denied/);
   const D2='77777777-7777-4777-8777-777777777777';
-  await db.exec('reset role');await db.query("insert into public.deals(id,owner_id,site,brand) values($1,$2,'트리거 시험','시험')",[D2,U]);
+  await db.exec('reset role');await db.query("insert into public.deals(id,owner_id,list_fields,brand) values($1,$2,'{\"site_name\":\"트리거 시험\"}','시험')",[D2,U]);
   const context={contract:{fields:{contract_status:'체결 완료',contract_date:'2020-09-01',contract_amount:200}}};
   await db.exec('begin');await db.query('update public.deals set stage_contexts=$1 where id=$2',[context,D2]);
   assert.equal((await db.query('select balance from crm_security.contract_sales where deal_id=$1',[D2])).rows[0].balance,200);
