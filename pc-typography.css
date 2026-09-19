@@ -11,13 +11,3 @@
 .pc-type-key,[data-pc-type="key"]{font-size:var(--pc-type-key)!important;line-height:1.35}
 .pc-type-body,[data-pc-type="body"]{font-size:var(--pc-type-body)!important;line-height:1.45}
 .pc-type-support,[data-pc-type="support"]{font-size:var(--pc-type-support)!important;line-height:1.45}
-@media(min-width:761px){
- #pg-today .twq-list col:nth-child(1){width:34px!important}
- #pg-today .twq-list col:nth-child(2){width:60px!important}
- #pg-today .twq-list col:nth-child(3){width:20%!important}
- #pg-today .twq-list col:nth-child(4){width:62px!important}
- #pg-today .twq-list col:nth-child(5){width:auto!important}
- #pg-today .twq-list col:nth-child(6){width:68px!important}
- #pg-today .twq-list col:nth-child(7){width:76px!important}
- #pg-today .twq-list td button{word-break:keep-all}
-}

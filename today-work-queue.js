@@ -108,8 +108,8 @@
  }
  function elapsed(x){
   if(x.unassigned)return root.inquiryUnassignedMeta(x.item).elapsed.label;
-  if(x.inferred)return (x.due?root.fmtD(x.due)+' · ':'')+'계산 일정';
-  if(x.dueDays!==null)return x.dueDays<0?Math.abs(x.dueDays)+'일 초과':x.dueDays===0?'오늘':root.fmtD(x.due);
+  if(x.inferred)return '계산 일정';
+  if(x.dueDays!==null)return x.dueDays<0?Math.abs(x.dueDays)+'일 초과':x.dueDays===0?'오늘':'D-'+x.dueDays;
   if(x.type==='inq'&&x.overdue)return root.inqCtlElapsed(root.inqCtlAssignedAt(x.item));
   return '기한 미입력';
  }
@@ -117,14 +117,19 @@
   const site=x.item.site||x.item.site_name||'현장명 미입력';
   const evidence=x.unassigned?'<small class="twq-evidence">'+h(root.inquiryUnassignedMeta(x.item).label)+'</small>':'';
   const action=x.unassigned&&admin?'assign':x.kind==='relationship'&&!x.missingNext?'contact':x.missingNext&&x.type==='deal'?'next':'open';
-  const label=action==='assign'?'배정':action==='contact'?'연락 기록':action==='next'?'일정 등록':'열기';
-  return '<tr class="twq-row '+(x.urgent?'urgent':'')+'" data-key="'+attr(x.key)+'"><td data-label="우선"><span class="twq-rank">'+rank+'</span></td><td data-label="유형">'+h(TYPES[x.kind])+'</td><td data-label="현장"><button class="twq-site" data-key="'+attr(x.key)+'" onclick="TodayWorkQueue.open(this.dataset.key)">'+h(site)+'</button><small>'+h(x.stage)+'</small></td><td data-label="담당자">'+h(x.owner)+'</td><td data-label="지금 해야 할 일"><strong>'+h(x.next)+'</strong><small class="twq-reason">'+h(x.reason)+'</small>'+evidence+'<small>'+h(x.recent)+'</small></td><td data-label="기한/경과">'+h(elapsed(x))+'</td><td data-label="처리"><button class="twq-action '+(action==='assign'?'assign':'')+'" data-key="'+attr(x.key)+'" data-action="'+action+'" onclick="TodayWorkQueue.open(this.dataset.key,this.dataset.action)">'+label+'</button></td></tr>';
+  const label=action==='assign'?'배정':'처리';
+  const repeatedDue=!x.inferred&&((x.dueDays!==null&&x.dueDays<0&&/^다음 (연락|행동)일 \d+일 초과$/.test(x.reason))||(x.dueDays===0&&/^(오늘 연락 예정|오늘 기존 고객 접촉|오늘 실행 예정)$/.test(x.reason)));
+  const reason=x.reason&&!repeatedDue?'<small class="twq-reason">'+h(x.reason)+'</small>':'';
+  const dueLabel=elapsed(x),dueTone=x.inferred?'inferred':x.overdue?'overdue':x.dueDays===0?'today':x.missingNext?'missing':'planned';
+  const dueDescription=(x.due?root.fmtD(x.due)+' · ':'')+dueLabel;
+  const management='<td data-label="관리"><div class="twq-management"><span class="twq-due '+dueTone+'" title="'+attr(dueDescription)+'" aria-label="'+attr(dueDescription)+'">'+h(dueLabel)+'</span><button class="twq-action '+(action==='assign'?'assign':'')+'" data-key="'+attr(x.key)+'" data-action="'+action+'" aria-label="'+attr(site+' '+label)+'" onclick="TodayWorkQueue.open(this.dataset.key,this.dataset.action)">'+label+'</button></div></td>';
+  return '<tr class="twq-row '+(x.urgent?'urgent':'')+'" data-key="'+attr(x.key)+'"><td data-label="우선"><span class="twq-rank">'+rank+'</span></td><td data-label="유형">'+h(TYPES[x.kind])+'</td><td data-label="현장"><button class="twq-site" data-key="'+attr(x.key)+'" onclick="TodayWorkQueue.open(this.dataset.key)">'+h(site)+'</button><small>'+h(x.stage)+'</small></td><td data-label="담당자">'+h(x.owner)+'</td><td data-label="지금 해야 할 일"><strong>'+h(x.next)+'</strong>'+reason+evidence+'<small>'+h(x.recent)+'</small></td>'+management+'</tr>';
  }
  function table(rows,admin,key,title,description){
   const names={priority:'todayQueuePage',routine:'todayRoutinePage',inquiry:'todayInquiryPage',pipeline:'todayPipelinePage'},name=names[key]||names.priority,pages=Math.max(1,Math.ceil(rows.length/SIZE)),n=Math.min(Math.max(1,Number(root.G[name])||1),pages);root.G[name]=n;
   const start=(n-1)*SIZE,shown=rows.slice(start,start+SIZE);
   const pagesHtml=Array.from({length:pages},(_,i)=>i+1).filter(i=>i===1||i===pages||Math.abs(i-n)<=2).map((i,j,all)=>(j&&i>all[j-1]+1?'<span>…</span>':'')+'<button '+(i===n?'aria-current="page"':'')+' onclick="TodayWorkQueue.page('+i+',\''+key+'\')">'+i+'</button>').join('');
-  return '<section class="twq-list '+(key==='routine'?'today-rep-routine':admin?'today-admin today-admin-'+key:'today-rep-priority')+'" aria-label="'+h(title||'오늘 처리 순서')+'"><header class="twq-board-head"><div><h3>'+h(title||'오늘 업무')+' <b>'+rows.length+'</b></h3><p>'+h(description||'')+'</p></div></header><table><colgroup><col style="width:5%"><col style="width:10%"><col style="width:24%"><col style="width:9%"><col style="width:32%"><col style="width:10%"><col style="width:10%"></colgroup><thead><tr>'+['우선','유형','현장','담당자','지금 해야 할 일','기한/경과','처리'].map(x=>'<th scope="col">'+x+'</th>').join('')+'</tr></thead><tbody>'+shown.map((x,i)=>row(x,start+i+1,admin)).join('')+'</tbody></table>'+(!rows.length?'<p class="twq-empty">현재 조건에서 처리할 업무가 없습니다.</p>':'')+'<footer><span>'+rows.length+'건 · 페이지당 '+SIZE+'건</span><nav aria-label="'+h(title||'오늘 업무')+' 페이지"><button '+(n===1?'disabled':'')+' onclick="TodayWorkQueue.page('+(n-1)+',\''+key+'\')">이전</button>'+pagesHtml+'<button '+(n===pages?'disabled':'')+' onclick="TodayWorkQueue.page('+(n+1)+',\''+key+'\')">다음</button></nav></footer></section>';
+  return '<section class="twq-list '+(key==='routine'?'today-rep-routine':admin?'today-admin today-admin-'+key:'today-rep-priority')+'" aria-label="'+h(title||'오늘 처리 순서')+'"><header class="twq-board-head"><div><h3>'+h(title||'오늘 업무')+' <b>'+rows.length+'</b></h3><p>'+h(description||'')+'</p></div></header><div class="twq-table-scroll" role="region" aria-label="'+h(title||'오늘 업무')+' 목록" tabindex="0"><table><colgroup><col class="twq-col-rank"><col class="twq-col-kind"><col class="twq-col-site"><col class="twq-col-owner"><col class="twq-col-task"><col class="twq-col-management"></colgroup><thead><tr>'+['우선','유형','현장','담당자','지금 해야 할 일','관리'].map(x=>'<th scope="col">'+x+'</th>').join('')+'</tr></thead><tbody>'+shown.map((x,i)=>row(x,start+i+1,admin)).join('')+'</tbody></table></div>'+(!rows.length?'<p class="twq-empty">현재 조건에서 처리할 업무가 없습니다.</p>':'')+'<footer><span>'+rows.length+'건 · 페이지당 '+SIZE+'건</span><nav aria-label="'+h(title||'오늘 업무')+' 페이지"><button '+(n===1?'disabled':'')+' onclick="TodayWorkQueue.page('+(n-1)+',\''+key+'\')">이전</button>'+pagesHtml+'<button '+(n===pages?'disabled':'')+' onclick="TodayWorkQueue.page('+(n+1)+',\''+key+'\')">다음</button></nav></footer></section>';
  }
  function render(){
   const host=root.$('#today-home-root');if(!host)return;

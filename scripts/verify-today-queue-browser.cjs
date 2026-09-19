@@ -31,6 +31,10 @@ async function run(){
   assert.equal(await page.locator('.today-admin-pipeline .twq-row').count(),7);
   assert.equal(await page.locator('.twq-counts').count(),1);
   assert.equal(await page.locator('.twq-row').count(),9);
+  assert.deepEqual(await page.locator('.today-admin-pipeline th').allTextContents(),['우선','유형','현장','담당자','지금 해야 할 일','관리']);
+  assert.equal(await page.locator('.twq-action:not(.assign)').evaluateAll(nodes=>nodes.every(n=>n.textContent==='처리')),true);
+  assert.equal(await page.locator('.twq-row[data-key="deal:rel-late"] .twq-reason').count(),0);
+  assert.equal(await page.locator('.twq-row[data-key="deal:pipe-today"] .twq-reason').count(),0);
   for(const width of [1920,1440,1280]){
    await page.setViewportSize({width,height:1000});
    await page.evaluate(()=>new Promise(requestAnimationFrame));
@@ -43,6 +47,14 @@ async function run(){
    }));
    assert.ok(typography.sizes.every(x=>x==='12px'),'core text size '+width);
    assert.ok(typography.secondary.length>0&&typography.secondary.every(x=>x==='11px'),'secondary text size '+width);
+   const management=await page.locator('.today-admin-pipeline .twq-row').evaluateAll(rows=>rows.map(row=>{
+    const badge=row.querySelector('.twq-due'),button=row.querySelector('.twq-action');
+    const a=badge.getBoundingClientRect(),b=button.getBoundingClientRect(),r=row.getBoundingClientRect();
+    return {badgeX:a.x,buttonX:b.x,badgeWidth:a.width,buttonWidth:b.width,badgeHeight:a.height,buttonHeight:b.height,aligned:Math.abs(a.y-b.y)<1,centered:Math.abs((b.y+b.height/2)-(r.y+r.height/2))<1,rowHeight:r.height,wrap:getComputedStyle(button).whiteSpace,buttonOverflow:button.scrollWidth>button.clientWidth};
+   }));
+   assert.ok(management.every(x=>x.badgeWidth===80&&x.buttonWidth===60&&x.badgeHeight===32&&x.buttonHeight===32&&x.aligned&&x.centered&&x.rowHeight>=79&&x.wrap==='nowrap'&&!x.buttonOverflow),'management dimensions '+width);
+   assert.ok(management.every(x=>Math.abs(x.badgeX-management[0].badgeX)<1&&Math.abs(x.buttonX-management[0].buttonX)<1),'management column alignment '+width);
+   if(width===1920&&process.env.TODAY_WORK_SCREENSHOT)await page.screenshot({path:process.env.TODAY_WORK_SCREENSHOT.replace(/\.png$/,'-wide.png'),fullPage:true});
    console.log('PASS computed typography '+width+': both boards core=12px, secondary=11px');
    assert.equal(typography.headers,true);if(!typography.types)console.log(await page.locator('.twq-list col').evaluateAll(ns=>ns.map(n=>({width:getComputedStyle(n).width,table:n.closest('table').clientWidth}))));assert.equal(typography.types,true,'type overflow '+width);assert.equal(typography.overflow,false);
   }
@@ -78,6 +90,13 @@ async function run(){
   assert.equal(await page.locator('.twq-row').count(),20);await page.getByRole('navigation',{name:'견적문의 관리 페이지'}).getByRole('button',{name:'3',exact:true}).click();assert.equal(await page.locator('.twq-row').count(),11);
   await page.getByRole('textbox',{name:'오늘 업무 검색'}).fill('페이지 현장 50');await page.getByRole('button',{name:'검색',exact:true}).click();assert.equal(await page.locator('.twq-row').count(),1);
   assert.equal(await page.evaluate(()=>G.todayInquiryPage),1);
+  await page.evaluate(()=>{
+   TodayWorkQueue.set('search','');
+   const due=new Date();due.setDate(due.getDate()+2);
+   const date=[due.getFullYear(),String(due.getMonth()+1).padStart(2,'0'),String(due.getDate()).padStart(2,'0')].join('-');
+   TodayWorkQueue.setManagerRequests([{id:'future',state:'open',target_id:'page-0',due_at:date,instruction:'이틀 후 확인',requested_at:new Date().toISOString(),requested_by:'관리자'}]);
+  });
+  assert.equal(await page.locator('.twq-row[data-key="manager:future"] .twq-due').textContent(),'D-2');
   assert.equal(await page.evaluate(()=>window.__writes.length),0);
   console.log(JSON.stringify({status:'PASS',admin_boards:['inquiry','pipeline'],independent_pages:true,types:4,independent_compound_filters:true,counter_list_agreement:true,exact_id_navigation:4,role_scope:true,stale_role_click_blocked:true,expansion_inference_label:true,converted_held_excluded:true,pagination_51_rows:true,viewports:[1440,1024,760,390],external_writes:0}));
  }finally{await browser.close();await new Promise(resolve=>srv.close(resolve))}

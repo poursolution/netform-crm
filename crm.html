@@ -1948,10 +1948,10 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
 <link rel="stylesheet" href="expansion-pool.css?v=20260913-compact-list-1">
 <link rel="stylesheet" href="relationship-management.css?v=20260914-panel-5">
 <link rel="stylesheet" href="detail-workspace.css?v=20260913-1">
-<link rel="stylesheet" href="today-work-queue.css?v=20260914-today-levels-2">
+<link rel="stylesheet" href="today-work-queue.css?v=20260920-management-1">
 <link rel="stylesheet" href="inquiry-workbench.css?v=20260914-6cols">
 <link rel="stylesheet" href="inquiry-assignment-clarity.css?v=20260913-inbox-1">
-<link rel="stylesheet" href="pc-typography.css?v=static-role-scale-1">
+<link rel="stylesheet" href="pc-typography.css?v=20260920-management-1">
 </head>
 <body>
 <div id="load"><div class="spin"></div><div class="t">Supabase 실데이터 불러오는 중…</div></div>
@@ -8543,7 +8543,7 @@ function campaignHomePage(){var L=campaignLogs(),scheduled=L.filter(function(x){
 function campaignUtility(title){return '<header class="cc-utility"><button onclick="campaignSetTab(\'home\')">← 고객 발송</button><h2>'+esc(title)+'</h2><nav><button onclick="campaignSetTab(\'history\')">발송 이력</button><button onclick="campaignSetTab(\'analysis\')">성과 보기</button></nav></header>'}
 function paintCampaign(){var root=$('#campaign-root');if(!root)return;var tab=G.campaignTab||'home',body=tab==='home'?campaignHomePage():tab==='send'?campaignSendPage():tab==='schedule'?campaignHistoryPage(true):tab==='history'?campaignHistoryPage(false):tab==='templates'?campaignLibraryPage():campaignAnalysisPage(),title=tab==='send'?'새 발송':tab==='schedule'?'예약 발송':tab==='history'?'발송 이력':tab==='templates'?'문구 보관함':'성과 보기';root.innerHTML='<div class="cc-shell">'+(tab==='home'?'':campaignUtility(title))+(CAMPAIGN_STATE.notice?'<div class="mgmtbar blue">'+esc(CAMPAIGN_STATE.notice)+'</div>':'')+body+'</div>'}
 
-</script><script src="./inquiry-assignment-clarity.js?v=20260913-assignment-3"></script><script src="./detail-workspace.js?v=20260915-structure-1"></script><script src="./relationship-management.js?v=20260915-structure-1"></script><script src="./inquiry-workbench.js?v=20260915-structure-1"></script><script src="./today-work-queue.js?v=20260918-rollback-1"></script><script src="./operational-overlay.js?v=20260919-asq-1"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
+</script><script src="./inquiry-assignment-clarity.js?v=20260913-assignment-3"></script><script src="./detail-workspace.js?v=20260915-structure-1"></script><script src="./relationship-management.js?v=20260915-structure-1"></script><script src="./inquiry-workbench.js?v=20260915-structure-1"></script><script src="./today-work-queue.js?v=20260920-management-1"></script><script src="./operational-overlay.js?v=20260919-asq-1"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
   if(AUTH_ON&&!TOKEN)return;
   loadData();
 });
