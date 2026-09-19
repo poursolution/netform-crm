@@ -1,7 +1,7 @@
 (function(root){
  'use strict';
  const TYPES={inquiry:'견적문의',pipeline:'파이프라인',relationship:'관계관리',expansion:'확장관리',manager:'관리자 요청'};
- const FILTERS=[['all','전체'],['urgent','긴급'],['overdue','기한초과'],['unassigned','미배정'],['missing','Next 없음'],['stale','장기정체']];
+ const FILTERS={inquiry:[['all','전체'],['unassigned','미배정'],['response','응대지연'],['processing','처리지연']],pipeline:[['all','전체'],['overdue','기한초과'],['missing','Next 없음'],['stale','장기정체']]};
  const SIZE=20;
  const h=value=>root.esc(String(value==null?'':value));
  const attr=value=>root.escAttr(String(value==null?'':value));
@@ -64,29 +64,62 @@
   x.lag=x.unassigned?Math.max(0,root.todayHoursFrom(root.inquiryCreatedAt(x.item))||0):x.dueDays!==null&&x.dueDays<0?-x.dueDays*24:x.type==='inq'&&x.overdue?Math.max(0,root.todayHoursFrom(root.inqCtlAssignedAt(x.item))||0):0;
   return x;
  }
+ function panelOf(x){return x.type==='inq'||x.kind==='manager'?'inquiry':'pipeline'}
+ function prioritize(x){
+  x.panel=panelOf(x);
+  if(x.panel==='inquiry'){
+   x.responseLate=x.kind!=='manager'&&!x.unassigned&&!root.inqCtlFirstResponseAt(x.item)&&root.inquiryResponseLate(x.item);
+   x.processingLate=x.kind==='manager'?x.overdue:!x.unassigned&&!x.responseLate&&!!root.inqCtlFirstResponseAt(x.item)&&(x.overdue||/지연|정체/.test(x.reason));
+   x.band=x.unassigned?0:x.responseLate?1:x.processingLate?2:3;
+   x.status=x.unassigned?'미배정':x.responseLate?'응대지연':x.processingLate?'처리지연':x.kind==='manager'?'관리자 요청':root.inqCtlFirstResponseAt(x.item)?'처리대기':'응대대기';
+   x.lag=Math.max(0,root.todayHoursFrom(root.inquiryCreatedAt(x.item))||0);
+  }else{
+   const meta=x.type==='deal'?root.relationshipMeta(x.item):null;
+   x.longContact=!!(meta&&meta.days!==null&&meta.days>=90);
+   const age=x.type==='deal'?root.stageAge(x.item):null;
+   x.stale=!!x.stale||(age!==null&&age>root.stageSla(root.dealStage(x.item)));
+   x.band=x.overdue?0:x.missingNext?1:x.longContact?2:x.stale?3:x.dueDays===0?4:5;
+   x.lag=x.overdue?x.delay*24:x.longContact?meta.days*24:x.stale?(age||0)*24:0;
+  }
+  return x;
+ }
+ function compare(a,b){return a.band-b.band||b.lag-a.lag||String(a.key).localeCompare(String(b.key))}
  function data(){
   const base=root.todayHomeData(),me=root.todayOwner();
-  const rows=base.inquiry.concat(base.pipeline.filter(x=>!relationship(x.item)),base.D.filter(relationship).map(contactEntry).filter(Boolean),expansionEntries(base.admin,me),managerEntries()).map(decorate);
+  // Include overdue first responses even when the original recent-inquiry window has elapsed.
+  const inquiry=base.Q.map(q=>base.inquiry.find(x=>x.key==='inq:'+root.inqKey(q))||
+   (root.inquiryResponseLate(q)?{key:'inq:'+root.inqKey(q),type:'inq',item:q,owner:root.repN(root.inquiryRoutedOwner(q)),stage:'배정완료',reason:'최초 응대 지연',next:'고객에게 연락하고 최초 응대 결과 기록',recent:root.todayRecent(q,'inq'),delay:0}:null)).filter(Boolean);
+  const pipeline=base.D.filter(d=>!relationship(d)).map(d=>{
+   const entry=base.pipeline.find(x=>x.key==='deal:'+root.dealKey(d));if(entry)return entry;
+   const a=root.actionObj(d,root.itemPatch(d,'deal')),meta=root.relationshipMeta(d),missing=!a||!a.text||dueDays(a.due)===null;
+   if(!missing&&!(meta.days!==null&&meta.days>=90))return null;
+   return {key:'deal:'+root.dealKey(d),type:'deal',item:d,owner:root.repN(d.assignee),stage:root.stageLabel(root.dealStage(d)),reason:missing?'다음 행동·기한 미등록':meta.days+'일 미접촉',next:missing?'다음 행동과 기한 지정':'고객에게 연락하고 진행 상황 확인',recent:root.todayRecent(d,'deal'),delay:0};
+  }).filter(Boolean);
+  const requests=managerEntries().filter(x=>base.Q.some(q=>String(q.id)===String(x.request.target_id)));
+  const rows=inquiry.concat(pipeline,base.D.filter(relationship).map(contactEntry).filter(Boolean),expansionEntries(base.admin,me),requests).map(decorate).map(prioritize);
   const unique=new Map();rows.forEach(x=>{if(!unique.has(x.key))unique.set(x.key,x)});
-  const all=Array.from(unique.values()).sort((a,b)=>a.band-b.band||b.lag-a.lag||String(a.key).localeCompare(String(b.key)));
-  return {admin:base.admin,rows:all};
+  const all=Array.from(unique.values());
+  return {admin:base.admin,rows:all,inquiry:all.filter(x=>x.panel==='inquiry').sort(compare),pipeline:all.filter(x=>x.panel==='pipeline').sort(compare)};
  }
- function matches(x,filter){return filter==='urgent'?x.urgent:filter==='overdue'?x.overdue:filter==='unassigned'?x.unassigned:filter==='missing'?x.missingNext:filter==='stale'?x.stale:true}
+ function matches(x,filter){return filter==='response'?x.responseLate:filter==='processing'?x.processingLate:filter==='overdue'?x.overdue:filter==='unassigned'?x.unassigned:filter==='missing'?x.missingNext:filter==='stale'?x.stale:true}
  function resetForActor(admin){
   const actor=String(root.ME&&root.ME.id||root.todayOwner())+':'+admin;
-  if(actor!==currentActor){currentActor=actor;root.G.todayQueueFilter='all';root.G.todayQueueOwner='전체';root.G.todayQueueType='all';root.G.todayQueueSearch='';root.G.todayQueuePage=1;root.G.todayRoutinePage=1;root.G.todayInquiryPage=1;root.G.todayPipelinePage=1}
+  if(actor!==currentActor){currentActor=actor;root.G.todayInquiryStatus='all';root.G.todayPipelineStatus='all';root.G.todayQueueOwner='전체';root.G.todayQueueSearch='';root.G.todayQueuePage=1;root.G.todayInquiryPage=1;root.G.todayPipelinePage=1}
  }
  function set(field,value){
-  const allowed={filter:'todayQueueFilter',owner:'todayQueueOwner',type:'todayQueueType',search:'todayQueueSearch'};
+  const allowed={owner:'todayQueueOwner',search:'todayQueueSearch'};
   if(!allowed[field])return;
-  if(field==='filter'&&!FILTERS.some(f=>f[0]===value))return;
-  if(field==='type'&&value!=='all'&&!TYPES[value])return;
   root.G[allowed[field]]=value;root.G.todayQueuePage=1;root.G.todayRoutinePage=1;root.G.todayInquiryPage=1;root.G.todayPipelinePage=1;render();
+ }
+ function filter(panel,value){
+  if(!FILTERS[panel]||!FILTERS[panel].some(f=>f[0]===value))return;
+  root.G[panel==='inquiry'?'todayInquiryStatus':'todayPipelineStatus']=value;
+  root.G[panel==='inquiry'?'todayInquiryPage':'todayPipelinePage']=1;render();
  }
  function route(filter,type){
   const X=data();resetForActor(X.admin);
-  root.G.todayQueueFilter=FILTERS.some(f=>f[0]===filter)?filter:'all';
-  root.G.todayQueueType=type==='pipeline'?'pipeline':'all';
+  const panel=type==='pipeline'?'pipeline':'inquiry';
+  root.G[panel==='pipeline'?'todayPipelineStatus':'todayInquiryStatus']=FILTERS[panel].some(f=>f[0]===filter)?filter:'all';
   root.G.todayQueueOwner='전체';root.G.todayQueueSearch='';root.G.todayQueuePage=1;root.G.todayPipelinePage=1;
   root.goPage('today');
  }
@@ -114,36 +147,36 @@
   return '기한 미입력';
  }
  function row(x,rank,admin){
-  const site=x.item.site||x.item.site_name||'현장명 미입력';
-  const evidence=x.unassigned?'<small class="twq-evidence">'+h(root.inquiryUnassignedMeta(x.item).label)+'</small>':'';
-  const action=x.unassigned&&admin?'assign':x.kind==='relationship'&&!x.missingNext?'contact':x.missingNext&&x.type==='deal'?'next':'open';
-  const label=action==='assign'?'배정':'처리';
+  const site=x.item.site||x.item.site_name||'현장명 미입력',inquiry=x.panel==='inquiry';
+  const action=x.unassigned&&admin?'assign':x.kind==='relationship'&&!x.missingNext?'contact':x.missingNext&&x.type==='deal'?'next':'open',label=action==='assign'?'배정':'처리';
   const repeatedDue=!x.inferred&&((x.dueDays!==null&&x.dueDays<0&&/^다음 (연락|행동)일 \d+일 초과$/.test(x.reason))||(x.dueDays===0&&/^(오늘 연락 예정|오늘 기존 고객 접촉|오늘 실행 예정)$/.test(x.reason)));
   const reason=x.reason&&!repeatedDue?'<small class="twq-reason">'+h(x.reason)+'</small>':'';
-  const dueLabel=elapsed(x),dueTone=x.inferred?'inferred':x.overdue?'overdue':x.dueDays===0?'today':x.missingNext?'missing':'planned';
-  const dueDescription=(x.due?root.fmtD(x.due)+' · ':'')+dueLabel;
-  const management='<td data-label="관리"><div class="twq-management"><span class="twq-due '+dueTone+'" title="'+attr(dueDescription)+'" aria-label="'+attr(dueDescription)+'">'+h(dueLabel)+'</span><button class="twq-action '+(action==='assign'?'assign':'')+'" data-key="'+attr(x.key)+'" data-action="'+action+'" aria-label="'+attr(site+' '+label)+'" onclick="TodayWorkQueue.open(this.dataset.key,this.dataset.action)">'+label+'</button></div></td>';
-  return '<tr class="twq-row '+(x.urgent?'urgent':'')+'" data-key="'+attr(x.key)+'"><td data-label="우선"><span class="twq-rank">'+rank+'</span></td><td data-label="유형">'+h(TYPES[x.kind])+'</td><td data-label="현장"><button class="twq-site" data-key="'+attr(x.key)+'" onclick="TodayWorkQueue.open(this.dataset.key)">'+h(site)+'</button><small>'+h(x.stage)+'</small></td><td data-label="담당자">'+h(x.owner)+'</td><td data-label="지금 해야 할 일"><strong>'+h(x.next)+'</strong>'+reason+evidence+'<small>'+h(x.recent)+'</small></td>'+management+'</tr>';
+  const hours=inquiry?root.todayHoursFrom(root.inquiryCreatedAt(x.item)):null;
+  const dueLabel=inquiry?(hours===null?'접수일 미확인':hours<24?Math.floor(Math.max(0,hours))+'시간':'D+'+Math.floor(hours/24)):elapsed(x);
+  const tone=x.inferred?'inferred':x.overdue?'overdue':x.dueDays===0?'today':x.missingNext?'missing':'planned';
+  const dueDescription=(inquiry?'접수경과 · ':x.due?root.fmtD(x.due)+' · ':'')+dueLabel;
+  const siteSub=inquiry?(root.inqCtlContactLabel(x.item)||x.owner):TYPES[x.kind]+' · '+x.stage;
+  return '<tr class="twq-row '+(x.urgent?'urgent':'')+'" data-key="'+attr(x.key)+'"><td data-label="우선"><span class="twq-rank">'+rank+'</span></td><td data-label="'+(inquiry?'현장·문의자':'현장')+'"><button class="twq-site" data-key="'+attr(x.key)+'" onclick="TodayWorkQueue.open(this.dataset.key)">'+h(site)+'</button><small>'+h(siteSub)+'</small></td><td data-label="'+(inquiry?'상태':'담당자')+'">'+h(inquiry?x.status:x.owner)+'</td><td data-label="지금 할 일"><strong>'+h(x.next)+'</strong>'+reason+'<small>'+h(x.recent)+'</small></td><td data-label="'+(inquiry?'접수경과':'관리상태')+'"><span class="twq-due '+tone+'" title="'+attr(dueDescription)+'" aria-label="'+attr(dueDescription)+'">'+h(dueLabel)+'</span></td><td data-label="처리"><button class="twq-action '+(action==='assign'?'assign':'')+'" data-key="'+attr(x.key)+'" data-action="'+action+'" aria-label="'+attr(site+' '+label)+'" onclick="TodayWorkQueue.open(this.dataset.key,this.dataset.action)">'+label+'</button></td></tr>';
  }
- function table(rows,admin,key,title,description){
-  const names={priority:'todayQueuePage',routine:'todayRoutinePage',inquiry:'todayInquiryPage',pipeline:'todayPipelinePage'},name=names[key]||names.priority,pages=Math.max(1,Math.ceil(rows.length/SIZE)),n=Math.min(Math.max(1,Number(root.G[name])||1),pages);root.G[name]=n;
+ function table(source,admin,key,title,description){
+  const statusKey=key==='inquiry'?'todayInquiryStatus':'todayPipelineStatus',active=root.G[statusKey]||'all';
+  const rows=source.filter(x=>matches(x,active)),name=key==='inquiry'?'todayInquiryPage':'todayPipelinePage',pages=Math.max(1,Math.ceil(rows.length/SIZE)),n=Math.min(Math.max(1,Number(root.G[name])||1),pages);root.G[name]=n;
   const start=(n-1)*SIZE,shown=rows.slice(start,start+SIZE);
   const pagesHtml=Array.from({length:pages},(_,i)=>i+1).filter(i=>i===1||i===pages||Math.abs(i-n)<=2).map((i,j,all)=>(j&&i>all[j-1]+1?'<span>…</span>':'')+'<button '+(i===n?'aria-current="page"':'')+' onclick="TodayWorkQueue.page('+i+',\''+key+'\')">'+i+'</button>').join('');
-  return '<section class="twq-list '+(key==='routine'?'today-rep-routine':admin?'today-admin today-admin-'+key:'today-rep-priority')+'" aria-label="'+h(title||'오늘 처리 순서')+'"><header class="twq-board-head"><div><h3>'+h(title||'오늘 업무')+' <b>'+rows.length+'</b></h3><p>'+h(description||'')+'</p></div></header><div class="twq-table-scroll" role="region" aria-label="'+h(title||'오늘 업무')+' 목록" tabindex="0"><table><colgroup><col class="twq-col-rank"><col class="twq-col-kind"><col class="twq-col-site"><col class="twq-col-owner"><col class="twq-col-task"><col class="twq-col-management"></colgroup><thead><tr>'+['우선','유형','현장','담당자','지금 해야 할 일','관리'].map(x=>'<th scope="col">'+x+'</th>').join('')+'</tr></thead><tbody>'+shown.map((x,i)=>row(x,start+i+1,admin)).join('')+'</tbody></table></div>'+(!rows.length?'<p class="twq-empty">현재 조건에서 처리할 업무가 없습니다.</p>':'')+'<footer><span>'+rows.length+'건 · 페이지당 '+SIZE+'건</span><nav aria-label="'+h(title||'오늘 업무')+' 페이지"><button '+(n===1?'disabled':'')+' onclick="TodayWorkQueue.page('+(n-1)+',\''+key+'\')">이전</button>'+pagesHtml+'<button '+(n===pages?'disabled':'')+' onclick="TodayWorkQueue.page('+(n+1)+',\''+key+'\')">다음</button></nav></footer></section>';
+  const counters='<nav class="twq-counts" aria-label="'+title+' 상태">'+FILTERS[key].map(([value,label])=>'<button data-filter="'+value+'" aria-pressed="'+(active===value)+'" onclick="TodayWorkQueue.filter(\''+key+'\',this.dataset.filter)">'+label+' <b>'+source.filter(x=>matches(x,value)).length+'</b></button>').join('')+'</nav>';
+  const headers=key==='inquiry'?['우선','현장·문의자','상태','지금 할 일','접수경과','처리']:['우선','현장','담당자','지금 할 일','관리상태','처리'];
+  return '<section class="twq-list today-admin-'+key+'" aria-label="'+title+'"><header class="twq-board-head"><div><h3>'+title+' <b>'+source.length+'</b></h3><p>'+description+'</p></div></header>'+counters+'<div class="twq-table-scroll" role="region" aria-label="'+title+' 목록" tabindex="0"><table><colgroup>'+['rank','site','owner','task','due','action'].map(c=>'<col class="twq-col-'+c+'">').join('')+'</colgroup><thead><tr>'+headers.map(x=>'<th scope="col">'+x+'</th>').join('')+'</tr></thead><tbody>'+shown.map((x,i)=>row(x,start+i+1,admin)).join('')+'</tbody></table></div>'+(!rows.length?'<p class="twq-empty">현재 조건에서 처리할 업무가 없습니다.</p>':'')+'<footer><span>선택 '+rows.length+'건 · 페이지당 '+SIZE+'건</span><nav aria-label="'+title+' 페이지"><button '+(n===1?'disabled':'')+' onclick="TodayWorkQueue.page('+(n-1)+',\''+key+'\')">이전</button>'+pagesHtml+'<button '+(n===pages?'disabled':'')+' onclick="TodayWorkQueue.page('+(n+1)+',\''+key+'\')">다음</button></nav></footer></section>';
  }
  function render(){
   const host=root.$('#today-home-root');if(!host)return;
   const X=data();resetForActor(X.admin);const G=root.G;
   const owners=Array.from(new Set(X.rows.map(x=>x.owner))).sort(root.repCompare);
-  const scoped=X.rows.filter(x=>(!X.admin||!G.todayQueueOwner||G.todayQueueOwner==='전체'||x.owner===G.todayQueueOwner)&&(!G.todayQueueType||G.todayQueueType==='all'||x.kind===G.todayQueueType)&&(!G.todayQueueSearch||[x.item.site,x.item.site_name,x.owner,x.reason,x.next].join(' ').toLowerCase().includes(String(G.todayQueueSearch).trim().toLowerCase())));
-  const rows=scoped.filter(x=>matches(x,G.todayQueueFilter));
-  const counters='<nav class="twq-counts" aria-label="오늘 업무 상태">'+FILTERS.map(([key,label])=>'<button data-filter="'+key+'" aria-pressed="'+(G.todayQueueFilter===key)+'" onclick="TodayWorkQueue.set(\'filter\',this.dataset.filter)">'+label+' <b>'+scoped.filter(x=>matches(x,key)).length+'</b></button>').join('')+'</nav>';
-  const toolbar='<form class="twq-toolbar" onsubmit="event.preventDefault();TodayWorkQueue.set(\'search\',this.elements.search.value)">'+(X.admin?'<label>담당자 <select aria-label="오늘 업무 담당자" onchange="TodayWorkQueue.set(\'owner\',this.value)"><option>전체</option>'+owners.map(o=>'<option '+(G.todayQueueOwner===o?'selected':'')+'>'+h(o)+'</option>').join('')+'</select></label>':'<label>업무유형 <select aria-label="오늘 업무 유형" onchange="TodayWorkQueue.set(\'type\',this.value)"><option value="all">전체</option>'+Object.entries(TYPES).map(([key,label])=>'<option value="'+key+'" '+(G.todayQueueType===key?'selected':'')+'>'+label+'</option>').join('')+'</select></label>')+'<label class="twq-search"><input name="search" aria-label="오늘 업무 검색" placeholder="현장·담당자·할 일 검색" value="'+attr(G.todayQueueSearch||'')+'"><button>검색</button></label></form>';
-  const priority=X.admin?rows:rows.filter(x=>x.dueDays!==0||x.urgent||x.missingNext),routine=X.admin?[]:rows.filter(x=>!priority.includes(x));
-  const adminBoards='<div class="twq-admin-boards">'+table(rows.filter(x=>x.kind==='inquiry'),true,'inquiry','견적문의 관리','새로 들어온 문의 중 배정·최초응대·견적 진행에 조치가 필요한 건')+table(rows.filter(x=>x.kind!=='inquiry'),true,'pipeline','파이프라인 관리','영업이 시작된 현장 중 다음 행동·관계관리·확장관리에 조치가 필요한 건')+'</div>';
-  host.innerHTML='<div class="today-work-queue '+(X.admin?'manager':'rep')+'">'+(X.admin?'<header><div><h2>오늘 관리자 개입</h2><span>견적문의와 영업 파이프라인을 분리해 확인합니다.</span></div></header>':'<h2>오늘 우선순위</h2>')+counters+toolbar+'<p class="twq-count-note">선택 '+rows.length+'건 · 긴급/기한초과/미배정/Next 없음은 중복될 수 있습니다.</p>'+(X.admin?adminBoards:table(priority,false,'priority','오늘 우선순위','지금 먼저 개입할 현장')+table(routine,false,'routine','오늘 업무','상단 우선순위와 중복되지 않는 금일 예정 업무'))+'</div>';
+  const scoped=x=>(!X.admin||!G.todayQueueOwner||G.todayQueueOwner==='전체'||x.owner===G.todayQueueOwner)&&(!G.todayQueueSearch||[x.item.site,x.item.site_name,x.owner,x.reason,x.next].join(' ').toLowerCase().includes(String(G.todayQueueSearch).trim().toLowerCase()));
+  const inquiry=X.inquiry.filter(scoped),pipeline=X.pipeline.filter(scoped);
+  const toolbar='<form class="twq-toolbar" onsubmit="event.preventDefault();TodayWorkQueue.set(\'search\',this.elements.search.value)">'+(X.admin?'<label>담당자 <select aria-label="오늘 업무 담당자" onchange="TodayWorkQueue.set(\'owner\',this.value)"><option>전체</option>'+owners.map(o=>'<option '+(G.todayQueueOwner===o?'selected':'')+'>'+h(o)+'</option>').join('')+'</select></label>':'<span>내 담당 업무</span>')+'<label class="twq-search"><input name="search" aria-label="오늘 업무 검색" placeholder="현장·담당자·할 일 검색" value="'+attr(G.todayQueueSearch||'')+'"><button>검색</button></label></form>';
+  host.innerHTML='<div class="today-work-queue '+(X.admin?'manager':'rep')+'"><header><div><h2>오늘 업무</h2><span>신규 문의와 진행 중 영업을 각각의 처리 순서로 확인합니다.</span></div><b>전체 '+(inquiry.length+pipeline.length)+'건</b></header>'+toolbar+'<p class="twq-count-note">각 업무함의 순위와 상태 필터는 독립적으로 적용됩니다. 파이프라인 상태는 중복될 수 있습니다.</p><div class="twq-admin-boards">'+table(inquiry,X.admin,'inquiry','견적문의 관리','신규 문의의 배정·첫 응대·후속처리')+table(pipeline,X.admin,'pipeline','파이프라인 관리','진행 중 영업의 다음 행동·관계관리·확장관리')+'</div></div>';
   const badge=root.$('#todayBadge');if(badge){badge.textContent=X.rows.length||'';badge.style.display=X.rows.length?'':'none'}
  }
  function setManagerRequests(rows){managerRequests=Array.isArray(rows)?rows.slice():[];if(root.G?.page==='today')render()}
- root.TodayWorkQueue={render,data,set,page,open,route,setManagerRequests};
+ root.TodayWorkQueue={render,data,set,filter,page,open,route,setManagerRequests};
 })(window);
