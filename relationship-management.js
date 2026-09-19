@@ -90,7 +90,9 @@ function detailAction(focus){
 }
 function decorateDetail(){
  if(G.page!=='relationship'||!CUR_DETAIL||CUR_DETAIL.kind!=='deal'||!isRelationship(CUR_DETAIL.item))return;
- var body=document.getElementById('dv-body');if(!body||body.querySelector('.relm-detail-context'))return;
+ // The wide workspace moves the controls; the existing submit ID remains
+ // the initialization marker even when the summary context has been removed.
+ var body=document.getElementById('dv-body');if(!body||body.querySelector('.relm-detail-context')||body.querySelector('#rel-contact-save'))return;
  var d=CUR_DETAIL.item,m=relationshipMeta(d),a=actionObj(d,itemPatch(d,'deal'));
  body.insertAdjacentHTML('afterbegin','<section class="relm-detail-context"><strong>관계관리 사유 · '+esc(reasonOf(d)||'미입력')+'</strong><p>공사 예정연도 '+esc(yearLabel(d))+' · 다음 연락 '+esc(m.due?fmtD(m.due):'미입력')+' · '+esc(a&&a.text||'다음 행동 미입력')+'</p><div><button onclick="relationshipManagementDetailAction(\'activity\')">연락 기록</button><button onclick="relationshipManagementDetailAction(\'next\')">다음 연락일</button><button onclick="relationshipManagementDetailAction(\'owner\')">담당자 변경</button><button onclick="relationshipManagementDetailAction(\'return\')">파이프라인 복귀</button></div></section>');
  // One contact workflow collects both inputs; the server commits or rolls back them together.
