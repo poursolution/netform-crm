@@ -18,3 +18,8 @@ test('Korean day boundary and absent contract dates do not leak into selected mo
  assert.equal(M.date('2026-08-31T16:00:00Z'),'2026-09-01');assert.equal(M.inPeriod('2026-08-31T16:00:00Z',f),true);assert.equal(M.inPeriod('',f),false);
  const s=M.summarize([d('x',{won:true,active:false,wonAt:'',wonAmount:300})],[],f);assert.equal(s.won.length,0);assert.equal(s.missingWonDate,1);
 });
+
+test('stage display follows workflow order instead of bundle row order',()=>{
+ const s=M.summarize([d('a',{stage:'completion',stageLabel:'준공'}),d('b',{stage:'sent',stageLabel:'자료발송'}),d('c',{stage:'first_contact',stageLabel:'접촉'}),d('d',{stage:'contract',stageLabel:'계약'})],[],f);
+ assert.deepEqual(s.stages.map(x=>x.code),['first_contact','sent','contract','completion']);
+});

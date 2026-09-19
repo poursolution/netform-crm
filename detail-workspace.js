@@ -12,6 +12,7 @@ function restoreList(){
  window.scrollTo(old.x,old.y);if(old.focus?.isConnected)old.focus.focus({preventScroll:true});
 }
 function focusWide(id){
+ if(root.DetailActions?.focus(id))return;
  var n=document.getElementById(id);if(!n)return;
  for(var p=n.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;
  n.scrollIntoView({block:'nearest'});(n.matches('input,select,textarea,button')?n:n.querySelector('input,textarea,select,button'))?.focus({preventScroll:true});
@@ -50,7 +51,7 @@ function wide(){
   var contactFlow=box(center,'연락 기록 · 다음 일정');contactFlow.open=true;
   activity=move('#activityFormCard',contactFlow);
   nextCard=move('#nextActionCard',contactFlow);
-  var contactActions=activity?.querySelector('.dactions');if(contactActions)contactFlow.append(contactActions);
+  var contactActions=activity?.querySelector('.dactions');
  }else{
   nextCard=move('#nextActionCard',box(center,'다음 행동 · 일정 입력'));
   activity=move('#activityFormCard',box(center,'활동 기록 · 연락 결과'));

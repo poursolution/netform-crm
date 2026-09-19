@@ -24,8 +24,8 @@ async function run(){
   assert.equal(await page.locator('#dv-title').innerText(),'가로 상세 검증 현장');
   assert.equal(await page.locator('#detailView.dw-wide').isVisible(),true);
   assert.equal(await page.locator('.dw-left #contactCard').count(),1);
-  assert.equal(await page.locator('.dw-center #nextActionCard').count(),1);
-  assert.equal(await page.locator('.dw-right #dv-amt').count(),1);
+  assert.equal(await page.locator('.da-stash #nextActionCard').count(),1);
+  assert.equal(await page.locator('.da-stash #dv-amt').count(),1);
   assert.equal(await page.evaluate(()=>unifiedTimeline({activities:[B.deals[0].activities[0]]},B.deals[0]).filter(x=>x.id).length),2);
   assert.match(await page.locator('#activityTimelineHost').innerText(),/서버 발송 결과/);
   const timelineCases=await page.evaluate(()=>{
@@ -47,11 +47,26 @@ async function run(){
    assert.ok(await page.locator('.dw-left .pc-contact-person').first().evaluate(n=>n.getBoundingClientRect().width)>100,'contact identity stays readable at '+width);
    assert.ok(await page.locator('.dw-left .contactnum b').evaluateAll(nodes=>nodes.every(n=>{const r=document.createRange();r.selectNodeContents(n);return r.getClientRects().length===1&&n.scrollWidth<=n.clientWidth})), 'phone numbers stay on one line at '+width);
   }
+  assert.equal(await page.locator('#dv-act-note').isVisible(),false,'view surface has no expanded input');
+  const quick=page.locator('.da-toolbar').getByRole('button',{name:'활동 기록',exact:true});
+  await quick.hover();await page.waitForTimeout(120);assert.equal(await page.locator('#da-tooltip').count(),0);
+  await page.waitForTimeout(280);assert.match(await page.locator('#da-tooltip').innerText(),/고객 접촉/);
+  assert.equal(await page.locator('#da-tooltip').evaluate(n=>{const r=n.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight}),true);
+  await page.mouse.move(0,0);assert.equal(await page.locator('#da-tooltip').count(),0);
+  await quick.focus();await page.waitForTimeout(30);assert.equal(await page.locator('#da-tooltip').isVisible(),true);
+  await quick.click();await page.locator('#dv-na-text').fill('다음 행동 보존 검증');
+  await page.keyboard.press('Escape');assert.equal(await page.locator('#detailAction').count(),0);assert.equal(await page.locator('#detailView').isVisible(),true);
+  await page.locator('.da-toolbar').getByRole('button',{name:'다음 행동',exact:true}).click();
+  assert.equal(await page.locator('#detailAction.da-compact #dv-na-date').isVisible(),true);
+  assert.equal(await page.locator('#dv-act-note').isVisible(),false);
+  assert.equal(await page.locator('#dv-na-text').inputValue(),'다음 행동 보존 검증');
+  await page.locator('#detailAction').getByRole('button',{name:'작업창 닫기'}).click();
   await page.evaluate(()=>DetailWorkspace.focusWide('activityFormCard'));
   await page.locator('#dv-act-note').fill('저장 전 메모 보존');
   await page.evaluate(()=>detailTabFocus('공종·금액'));
   await page.evaluate(()=>detailTabFocus('연락·활동'));
   assert.equal(await page.locator('#dv-act-note').inputValue(),'저장 전 메모 보존');
+  await page.evaluate(()=>DetailActions.close());
   await page.locator('.dw-right').getByRole('button',{name:'단계 변경',exact:true}).click();
   assert.equal(await page.locator('#dw-stage-editor #stage-transition-form').isVisible(),true);
   assert.equal(await page.locator('#stageTransitionModal').count(),0);
@@ -71,11 +86,13 @@ async function run(){
   await page.setViewportSize({width:1440,height:900});
   await page.evaluate(()=>{document.querySelectorAll('.dw-columns details').forEach(n=>n.open=false);document.querySelectorAll('.dw-columns>aside,.dw-columns>main').forEach(n=>n.scrollTop=0)});
   if(process.env.VERIFY_SCREENSHOT)await page.screenshot({path:process.env.VERIFY_SCREENSHOT});
+  await page.evaluate(()=>DetailActions.close());
   await page.locator('#detailView .backbtn').click();assert.equal(await page.locator('#detailView').isVisible(),false);assert.equal(await page.evaluate(()=>G.pipeView),'kb');
   const polling=await page.evaluate(async()=>{const oldRefresh=refreshOperationalDomains,oldToken=TOKEN;let calls=0;refreshOperationalDomains=async()=>++calls;TOKEN='synthetic';G.page='campaign';G.campaignTab='history';LAST_CAMPAIGN_SYNC=0;await syncCampaignNow(false);await syncCampaignNow(false);const dedup=calls===1;G.campaignTab='send';await syncCampaignNow(true);const draft=calls===1;const repaint=operationalPageNeedsPaint(['campaign_core']);refreshOperationalDomains=oldRefresh;TOKEN=oldToken;G.page='pipe';return {dedup,draft,repaint}});
   assert.deepEqual(polling,{dedup:true,draft:true,repaint:true});
   // Relationship contact and next schedule must remain one visible workflow.
   await page.evaluate(()=>{Object.assign(B.deals[0],{code:'rapport',stage_code:'rapport',stage:'유대관리'});G.page='relationship';G._detailPopup=true;drwDeal(JSON.stringify(B.deals[0]));});
+  await page.locator('.da-toolbar').getByRole('button',{name:'활동 기록',exact:true}).click();
   assert.equal(await page.locator('#rel-contact-save').count(),1);
   assert.equal(await page.evaluate(()=>document.getElementById('activityFormCard').closest('details')===document.getElementById('nextActionCard').closest('details')),true,'atomic inputs share one expanded section');
   assert.equal(await page.locator('#dv-act-note').isVisible(),true);
@@ -98,6 +115,7 @@ async function run(){
    assert.equal(await page.locator('#dv-na-date').isVisible(),true);
   }
   if(process.env.VERIFY_RELATIONSHIP_SCREENSHOT){await page.setViewportSize({width:1440,height:900});await page.screenshot({path:process.env.VERIFY_RELATIONSHIP_SCREENSHOT});}
+  await page.evaluate(()=>DetailActions.close());
   await page.locator('#detailView .backbtn').click();
   await page.setViewportSize({width:1440,height:900});
   await page.evaluate(()=>{
@@ -108,6 +126,25 @@ async function run(){
   assert.match(await page.locator('#relpc-panel').innerText(),/2026-09-20/);
   assert.doesNotMatch(await page.locator('#relpc-panel').innerText(),/2026-09-19/);
   await page.locator('#relpc-panel').getByRole('button',{name:'상세 패널 닫기'}).click();
+  await page.evaluate(()=>{
+   Object.assign(B.deals[0],{code:'consulting',stage_code:'consulting',stage:'컨설팅 설계'});G.page='pipe';G._detailPopup=true;drwDeal(JSON.stringify(B.deals[0]));DetailActions.open('activity');
+   window.__contactOriginal={saveLocal:window.saveLocal,queue:{...Phase1.queue},submit:queueDetailContactOperation};window.saveLocal=()=>{};window.__contactRows=[];window.__contactOps=[];
+   Object.assign(Phase1.queue,{list:()=>window.__contactRows,flush:async()=>{}});
+   window.queueDetailContactOperation=(operation,payload)=>{const request_id='focused-'+operation;window.__contactOps.push(operation);window.__contactRows.push({request_id,object_id:B.deals[0].id,operation,status:operation==='activity'?'done':'uncertain',payload,ack:operation==='activity'?{ok:true,operation,activity_id:'synthetic-activity'}:null});return request_id;};
+  });
+  await page.locator('#dv-act-note').fill('한 작업으로 저장');await page.locator('#dv-na-text').fill('후속 확인');await page.locator('#dv-na-date').fill('2026-09-25');
+  assert.equal(await page.locator('#dv-na-assignee').inputValue(),'이필선');
+  await page.locator('.da-submit').click();await page.waitForTimeout(100);
+  assert.deepEqual(await page.evaluate(()=>window.__contactOps),['activity','next_action']);
+  assert.match(await page.locator('#dv-err').innerText(),/활동은 저장되었습니다/);
+  assert.equal(await page.locator('#dv-na-text').inputValue(),'후속 확인');
+  await page.evaluate(()=>{const q=window.__contactRows[1];q.status='done';q.ack={ok:true,operation:'next_action',next_action_id:'synthetic-next'};});
+  await page.locator('.da-submit').click();await page.waitForTimeout(100);
+  assert.deepEqual(await page.evaluate(()=>window.__contactOps),['activity','next_action'],'confirmed activity is not sent twice');
+  assert.equal(await page.locator('#detailAction').count(),0);
+  assert.match(await page.locator('#dw-now').innerText(),/후속 확인/);
+  assert.match(await page.locator('#activityTimelineHost').innerText(),/한 작업으로 저장/);
+  await page.evaluate(()=>{window.saveLocal=window.__contactOriginal.saveLocal;Object.assign(Phase1.queue,window.__contactOriginal.queue);window.queueDetailContactOperation=window.__contactOriginal.submit;closeDetail();});
   await page.evaluate(()=>{
    window.__queueRows=[{request_id:'rejected-test',object_id:'wide-1',operation:'transition',status:'rejected',error:'<img src=x onerror=alert(1)>',payload:{note:'보존할 입력'}}];
    window.__oldQueue={...Phase1.queue};window.__reviewCalls=0;window.__flushCalls=0;

@@ -24,6 +24,8 @@
   const trend=Array.from({length:12},(_,i)=>({month:i+1,amount:0,count:0,missing:0}));
   won.forEach(d=>{const x=trend[Number(date(d.wonAt).slice(5,7))-1];if(x){x.count++;x.amount+=finite(d.wonAmount);if(!d.hasWonAmount)x.missing++}});
   const stages=[];active.forEach(d=>{let x=stages.find(x=>x.code===d.stage);if(!x){x={code:d.stage,label:d.stageLabel,count:0};stages.push(x)}x.count++});
+  const order=['first_contact','rapport','silent','waiting','consulting','sent','compete','imminent','bidding','contract','construction','completion'];
+  stages.sort((a,b)=>(order.includes(a.code)?order.indexOf(a.code):999)-(order.includes(b.code)?order.indexOf(b.code):999)||a.label.localeCompare(b.label));
   return {deals:D,inquiries:Q,active,won,risk,expected:sum(active,'expected'),wonAmount:sum(won,'wonAmount'),missingWon:won.filter(d=>!d.hasWonAmount).length,missingWonDate:D.filter(d=>d.won&&!date(d.wonAt)).length,trend,stages};
  }
  function select(summary,kind,filters){

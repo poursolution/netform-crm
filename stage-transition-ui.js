@@ -39,13 +39,14 @@
   document.getElementById('sf-cancel').onclick=close;
   document.getElementById('stage-transition-form').onsubmit=e=>{e.preventDefault();save()};
  }
- function close(){const focus=ctx?.returnFocus;if(ctx?.mobile)closeSheet();else{document.getElementById('stageTransitionModal')?.remove();document.getElementById('inlineTransition')?.remove();document.getElementById('detailView')?.classList.remove('dw-transition');if(document.body&&document.body.style)document.body.style.overflow=document.querySelector('#detailView.dw-wide.on')?'hidden':''}ctx=null;if(focus?.isConnected&&focus.getClientRects().length)focus.focus()}
+ function close(){const focus=ctx?.returnFocus;if(ctx?.mobile)closeSheet();else{document.getElementById('stageTransitionModal')?.remove();document.getElementById('inlineTransition')?.remove();document.getElementById('detailView')?.classList.remove('dw-transition');if(document.body&&document.body.style)document.body.style.overflow=document.querySelector('#detailView.dw-wide.on')?'hidden':''}ctx=null;if(root.DetailActions?.active==='stage')root.DetailActions.close();if(focus?.isConnected&&focus.getClientRects().length)focus.focus()}
  function open(deal,mobile,to){
   const from=mobile?deal.code:dealStage(deal),choices=S.choices(from);
   if(!choices.length||S.terminal.includes(deal.outcome)){(mobile?toast:alert)('종료된 영업기회는 다시 열지 않습니다. 추가 니즈는 새 영업기회로 등록해 주세요.');return}
   const target=to||((S.normal[from]||[]).find(k=>choices.includes(k)))||choices[0];
   if(!choices.includes(target)){(mobile?toast:alert)('Closed Won은 준공 완료 확인 후에만 가능합니다.');return}
   ctx={deal,mobile,from,to:target,patch:mobile?null:itemPatch(deal,'deal'),drafts:{},quotes:mobile?quoteVersionsM(deal):execQuoteVersions(deal),returnFocus:document.activeElement};
+  if(!mobile&&root.DetailActions)root.DetailActions.open('stage');
   paint();document.getElementById('stage-transition-form')?.scrollIntoView({block:'start'});document.getElementById('sf-target')?.focus();
  }
  function save(){
