@@ -4677,6 +4677,7 @@ function openDetail(t,s,b){
 }
 function closeDetail(){
   if(isDocked())return;   /* 스플릿에서는 «닫기» 가 없다 — 목록이 옆에 그대로 있다 */
+  if(window.DetailActions)DetailActions.close(false);
   closeTransition();
   $('#detailView').classList.remove('on','fullview','detailmodal');$('#detailView').setAttribute('aria-hidden','true');
   var ov=$('#ovl');if(ov){ov.style.display='none';ov.style.zIndex=''}
@@ -5543,6 +5544,7 @@ function renderDetailAddons(){
  if(window.DetailWorkspace)DetailWorkspace.decorate();
  if(typeof dccDecorateDetail==='function')dccDecorateDetail();
  if(window.DetailWorkspace)DetailWorkspace.wide();
+ if(window.DetailActions)DetailActions.decorate();
 }
 /* 진짜 탭 전환 — 스크롤 앵커가 아니라 선택한 섹션(.dsec)만 표시. '한 페이지에 전부 나열'되던 불편 해소 */
 var DETAIL_TABS=['개요','현장·견적','영업활동','일정','이력'];
@@ -8551,7 +8553,7 @@ function campaignHomePage(){var L=campaignLogs(),scheduled=L.filter(function(x){
 function campaignUtility(title){return '<header class="cc-utility"><button onclick="campaignSetTab(\'home\')">← 고객 발송</button><h2>'+esc(title)+'</h2><nav><button onclick="campaignSetTab(\'history\')">발송 이력</button><button onclick="campaignSetTab(\'analysis\')">성과 보기</button></nav></header>'}
 function paintCampaign(){var root=$('#campaign-root');if(!root)return;var tab=G.campaignTab||'home',body=tab==='home'?campaignHomePage():tab==='send'?campaignSendPage():tab==='schedule'?campaignHistoryPage(true):tab==='history'?campaignHistoryPage(false):tab==='templates'?campaignLibraryPage():campaignAnalysisPage(),title=tab==='send'?'새 발송':tab==='schedule'?'예약 발송':tab==='history'?'발송 이력':tab==='templates'?'문구 보관함':'성과 보기';root.innerHTML='<div class="cc-shell">'+(tab==='home'?'':campaignUtility(title))+(CAMPAIGN_STATE.notice?'<div class="mgmtbar blue">'+esc(CAMPAIGN_STATE.notice)+'</div>':'')+body+'</div>'}
 
-</script><script src="./inquiry-assignment-clarity.js?v=20260913-assignment-3"></script><script src="./detail-workspace.js?v=20260915-structure-1"></script><script src="./relationship-management.js?v=20260915-structure-1"></script><script src="./inquiry-workbench.js?v=20260920-inbox-2"></script><script src="./today-work-queue.js?v=20260920-independent-1"></script><link rel="stylesheet" href="./sales-insights.css?v=20260920-1"><script src="./sales-insights-model.js?v=20260920-1"></script><script src="./sales-insights.js?v=20260920-1"></script><script src="./operational-overlay.js?v=20260919-asq-1"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
+</script><script src="./inquiry-assignment-clarity.js?v=20260913-assignment-3"></script><script src="./detail-workspace.js?v=20260920-actions-1"></script><link rel="stylesheet" href="./detail-actions.css?v=20260920-1"><script src="./detail-actions.js?v=20260920-1"></script><script src="./relationship-management.js?v=20260920-actions-1"></script><script src="./inquiry-workbench.js?v=20260920-inbox-2"></script><script src="./today-work-queue.js?v=20260920-independent-1"></script><link rel="stylesheet" href="./sales-insights.css?v=20260920-actions-1"><script src="./sales-insights-model.js?v=20260920-actions-1"></script><script src="./sales-insights.js?v=20260920-actions-1"></script><script src="./operational-overlay.js?v=20260920-actions-1"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
   if(AUTH_ON&&!TOKEN)return;
   loadData();
 });
@@ -8559,7 +8561,7 @@ function paintCampaign(){var root=$('#campaign-root');if(!root)return;var tab=G.
 <link rel="stylesheet" href="p2-operational-polish.css?v=20260914-dashboard-control-1">
 <link rel="stylesheet" href="stage-transition.css?v=20260905-1">
 <script src="stage-transition.js?v=20260905-1"></script>
-<script src="stage-transition-ui.js?v=20260913-detail-2"></script>
+<script src="stage-transition-ui.js?v=20260920-actions-1"></script>
 <script src="pc-contact-editor.js?v=20260914-1"></script>
 <script src="pc-primary-contact.js?v=20260914-1"></script>
 <link rel="stylesheet" href="pc-message-test.css?v=20260914-1">
