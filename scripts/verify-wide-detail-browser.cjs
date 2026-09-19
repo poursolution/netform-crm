@@ -15,8 +15,12 @@ async function run(){
    B={deals:[{id:'wide-1',site:'가로 상세 검증 현장',site_id:'site-1',assignee:'이필선',brand:'기술자문',created:CUR_Y+'-09-01',code:'consulting',stage:'컨설팅 설계',grp:'영업·관리',amt:8000000,address:'서울시 검증로 10',contact:{managerName:'검증 담당자',managerMobile:'01000000000',officeTel:'0200000000'},activities:[{id:'server-1',occurred_at:'2026-09-19T13:00:00Z',type:'문자',detail:'서버 발송 결과',actor_name:'검증자'},{id:'server-2',occurred_at:'2026-09-19T13:00:10Z',type:'문자',detail:'서버 발송 결과',actor_name:'검증자'}]}],inquiries:[],activities:[]};
    LOCAL={deals:{},inquiries:{}};AUTH_ON=false;G.page='pipe';G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.pipeView='kb';
    document.getElementById('authGate').classList.remove('on');document.querySelectorAll('.apage').forEach(n=>n.classList.remove('on'));document.getElementById('pg-pipe').classList.add('on');
-   window.__writes=0;window.pushWrite=(type)=>{if(type!=='opportunity_touch')++window.__writes};paint();drwDeal(JSON.stringify(B.deals[0]));
+   window.__writes=0;window.pushWrite=(type)=>{if(type!=='opportunity_touch')++window.__writes};paint();
+   // A background projection can reorder the cache after cards have rendered.
+   KB5_CACHE=[{id:'wrong-cached-deal',site:'잘못된 현장'}];
   });
+  await page.locator('.k5c[data-deal-key="wide-1"] .k5t').click();
+  assert.equal(await page.locator('#dv-title').innerText(),'가로 상세 검증 현장');
   assert.equal(await page.locator('#detailView.dw-wide').isVisible(),true);
   assert.equal(await page.locator('.dw-left #contactCard').count(),1);
   assert.equal(await page.locator('.dw-center #nextActionCard').count(),1);
