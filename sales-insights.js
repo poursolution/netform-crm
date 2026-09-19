@@ -35,7 +35,7 @@
  function filters(){
   const f=state(),r=rows(),all=r.deals.concat(r.inquiries),years=new Set([String(new Date().getFullYear()),f.year]);
   all.forEach(x=>[x.created,x.wonAt].forEach(v=>{const d=M.date(v);if(d)years.add(d.slice(0,4))}));
-  const names=[...new Set(all.map(x=>x.owner).filter(Boolean))].sort(root.repCompare),brands=[...new Set(all.map(x=>x.brand).filter(Boolean))].sort();
+  const brands=[...new Set(all.map(x=>x.brand).concat(f.brand==='전체'?[]:[f.brand]).filter(Boolean))].sort();
   return '<div class="si-filters">'+select('연도','year',[...years].filter(x=>x!=='전체').sort().reverse().map(x=>[x,x+'년']),f.year)+select('기간','month',[[0,'연간'],...Array.from({length:12},(_,i)=>[i+1,(i+1)+'월'])],f.month)+select('브랜드','brand',[['전체','전체 브랜드'],...brands.map(x=>[x,x])],f.brand)+'</div>'+root.SalesScope.controls();
  }
  function kpis(s,rep){
@@ -83,7 +83,7 @@
   if(action==='navigate')root.goPage(v);
   if(action==='view'){f.view=v;render()}
   if(action==='page'){f.page=Number(v);render()}
-  if(action==='stage'&&root.PipelineWorkspace){close(false);root.PipelineWorkspace.open(v,f);return;}
+  if(action==='stage'&&root.PipelineWorkspace){const filters={...f,owner:b.closest('#si-person')?.dataset.owner||f.owner};close(false);root.PipelineWorkspace.open(v,filters);return;}
   if(action==='drill'||action==='stage'){f.kind=action==='stage'?'active':labels[v]?'risk':v;f.issue=labels[v]?v:'all';f.stage=action==='stage'?v:'all';f.search='';f.page=1;root.goPage('control')}
   if(action==='person')openPerson(v,b);
   if(action==='close')close();
@@ -99,7 +99,7 @@
  function openPerson(name,trigger){
   close(false);if(!rows().deals.some(d=>d.owner===name))return;
   focusBefore=trigger||document.activeElement;const s=data(name),shade=document.createElement('div');
-  shade.id='si-person';shade.className='modalshade on si-person';shade.innerHTML='<section role="dialog" aria-modal="true" aria-labelledby="si-person-title" class="si-person-box"><header><div><h2 id="si-person-title">'+h(name)+' 영업 현황</h2><p>'+h(state().year)+'년 '+(state().month?state().month+'월':'연간')+' · '+h(state().brand)+'</p></div>'+btn('닫기','close','','si-close')+'</header><div class="si-person-grid">'+card('담당자 요약','<dl class="si-facts"><div><dt>진행 영업</dt><dd>'+s.active.length+'건</dd></div><div><dt>예상금액</dt><dd>'+money(s.expected)+'</dd></div><div><dt>기간 수주</dt><dd>'+money(s.wonAmount)+'</dd></div><div><dt>수주 건수</dt><dd>'+s.won.length+'건</dd></div></dl>')+'<div>'+stages(s,name)+execution(s)+'</div>'+card('관리 필요 · '+s.risk.length+'건',records(M.select(s,'risk',{})))+'</div></section>';
+  shade.id='si-person';shade.dataset.owner=name;shade.className='modalshade on si-person';shade.innerHTML='<section role="dialog" aria-modal="true" aria-labelledby="si-person-title" class="si-person-box"><header><div><h2 id="si-person-title">'+h(name)+' 영업 현황</h2><p>'+h(state().year)+'년 '+(state().month?state().month+'월':'연간')+' · '+h(state().brand)+'</p></div>'+btn('닫기','close','','si-close')+'</header><div class="si-person-grid">'+card('담당자 요약','<dl class="si-facts"><div><dt>진행 영업</dt><dd>'+s.active.length+'건</dd></div><div><dt>예상금액</dt><dd>'+money(s.expected)+'</dd></div><div><dt>기간 수주</dt><dd>'+money(s.wonAmount)+'</dd></div><div><dt>수주 건수</dt><dd>'+s.won.length+'건</dd></div></dl>')+'<div>'+stages(s,name)+execution(s)+'</div>'+card('관리 필요 · '+s.risk.length+'건',records(M.select(s,'risk',{})))+'</div></section>';
   document.body.appendChild(shade);document.body.style.overflow='hidden';shade.onclick=e=>{if(e.target===shade)close();else onClick(e)};
   shade.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close()}if(e.key==='Tab'){const nodes=[...shade.querySelectorAll('button,select,input,[tabindex="0"]')],first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}};shade.querySelector('button').focus();
  }
