@@ -1,5 +1,11 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const source=fs.readFileSync('relationship-management.js','utf8'),transport=fs.readFileSync('transport.js','utf8');
+test('PC and mobile expose the same authenticated review operation',()=>{
+ const pc=fs.readFileSync('pc-manager-transport.js','utf8');
+ const body=s=>s.slice(s.indexOf(' function acknowledgeFailure('),s.indexOf(' function inquiryDirectPayload('));
+ assert.equal(body(pc),body(transport));
+ for(const s of [pc,transport])assert.match(s,/queue:\{enqueue,flush,list,validateAck,acknowledgeFailure\}/);
+});
 test('relationship activity dates cross UTC midnight in Korea without changing date-only schedules',()=>{
  const c=vm.createContext({});vm.runInContext(source.slice(source.indexOf('function activityDate('),source.indexOf('function isRelationship(')),c);
  for(const [value,expected] of [['2026-09-19T16:27:00Z','2026-09-20'],['2026-09-19T14:59:59Z','2026-09-19'],['2026-12-31T15:00:00Z','2027-01-01'],['2026-09-20T01:27:00+09:00','2026-09-20'],['2026-09-21','2026-09-21'],['',''],['bad','날짜 미확인']])assert.equal(c.activityDate(value),expected);
