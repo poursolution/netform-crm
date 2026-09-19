@@ -35,6 +35,9 @@ jobs:
       - name: Verify customer asset and workflow contracts
         run: npm run test:contracts
 
+      - name: Verify manual inquiry intake and retry contracts
+        run: node --test tests/inquiry-manual-create.test.cjs
+
       - name: Verify Aligo provider and campaign queue contracts
         run: npm run test:aligo
 
@@ -49,6 +52,9 @@ jobs:
 
       - name: Exercise Today and Customer Assets in a real browser
         run: npm run smoke:pc
+
+      - name: Exercise manual inquiry intake in a real browser
+        run: node scripts/verify-inquiry-create-browser.cjs
 
       - name: Assemble the production release
         run: node scripts/build-production-ui.cjs
