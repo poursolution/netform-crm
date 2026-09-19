@@ -37,6 +37,7 @@ test('ASQ domain refresh reaches the pages that can open customer or deal detail
 test('production migration exposes only actor-authorized ASQ rows and keeps sync service-only',()=>{
   const sql=read('supabase/migrations/20260919090000_asq_operational_read.sql');
   const cursorFix=read('supabase/migrations/20260919093000_fix_asq_operational_cursor.sql');
+  const identityGuard=read('supabase/migrations/20260919100000_guard_asq_project_identity.sql');
   assert.match(sql,/p_domain<>'asq_project'/);
   assert.match(sql,/crm_security\.can_deal\(l\.opportunity_id,false\)/);
   assert.match(cursorFix,/create or replace function public\.crm_operational_source_v1/);
@@ -47,4 +48,8 @@ test('production migration exposes only actor-authorized ASQ rows and keeps sync
   assert.match(sql,/grant execute on function public\.crm_asq_project_sync\(jsonb\) to service_role/);
   assert.doesNotMatch(sql,/select l\.\*/);
   assert.doesNotMatch(sql,/raw_payload[^\n]+from public\.crm_asq_project_links/);
+  assert.match(identityGuard,/CRM opportunity already linked to another ASQ project/);
+  assert.match(identityGuard,/where public\.crm_asq_project_links\.asq_project_id=excluded\.asq_project_id/);
+  assert.match(identityGuard,/grant execute on function public\.crm_asq_project_sync\(jsonb\) to service_role/);
+  assert.doesNotMatch(identityGuard,/grant execute[^\n]+authenticated/);
 });
