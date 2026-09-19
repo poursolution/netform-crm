@@ -35,6 +35,9 @@ jobs:
       - name: Verify customer asset and workflow contracts
         run: npm run test:contracts
 
+      - name: Verify Aligo provider and campaign queue contracts
+        run: npm run test:aligo
+
       - name: Verify executive dashboard hierarchy
         run: node --test tests/dashboard-control-summary.test.cjs
 
