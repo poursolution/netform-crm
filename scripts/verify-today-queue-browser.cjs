@@ -29,9 +29,14 @@ async function run(){
   assert.equal(await page.locator('.today-admin-pipeline').count(),1);
   assert.equal(await page.locator('.today-admin-inquiry .twq-row').count(),2);
   assert.equal(await page.locator('.today-admin-pipeline .twq-row').count(),7);
-  assert.equal(await page.locator('.twq-counts').count(),1);
+  assert.equal(await page.locator('.twq-counts').count(),2);
   assert.equal(await page.locator('.twq-row').count(),9);
-  assert.deepEqual(await page.locator('.today-admin-pipeline th').allTextContents(),['우선','유형','현장','담당자','지금 해야 할 일','관리']);
+  assert.equal(await page.locator('.today-work-queue > .twq-counts').count(),0);
+  for(const panel of ['inquiry','pipeline'])assert.equal(await page.locator('.today-admin-'+panel+' .twq-rank').first().textContent(),'1');
+  assert.deepEqual(await page.locator('.today-admin-inquiry th').allTextContents(),['우선','현장·문의자','상태','지금 할 일','접수경과','처리']);
+  assert.equal(await page.locator('.today-admin-inquiry [data-filter="missing"]').count(),0);
+  assert.equal(await page.locator('.today-admin-pipeline [data-filter="unassigned"]').count(),0);
+  assert.deepEqual(await page.locator('.today-admin-pipeline th').allTextContents(),['우선','현장','담당자','지금 할 일','관리상태','처리']);
   assert.equal(await page.locator('.twq-action:not(.assign)').evaluateAll(nodes=>nodes.every(n=>n.textContent==='처리')),true);
   assert.equal(await page.locator('.twq-row[data-key="deal:rel-late"] .twq-reason').count(),0);
   assert.equal(await page.locator('.twq-row[data-key="deal:pipe-today"] .twq-reason').count(),0);
@@ -50,10 +55,12 @@ async function run(){
    const management=await page.locator('.today-admin-pipeline .twq-row').evaluateAll(rows=>rows.map(row=>{
     const badge=row.querySelector('.twq-due'),button=row.querySelector('.twq-action');
     const a=badge.getBoundingClientRect(),b=button.getBoundingClientRect(),r=row.getBoundingClientRect();
-    return {badgeX:a.x,buttonX:b.x,badgeWidth:a.width,buttonWidth:b.width,badgeHeight:a.height,buttonHeight:b.height,aligned:Math.abs(a.y-b.y)<1,centered:Math.abs((b.y+b.height/2)-(r.y+r.height/2))<1,rowHeight:r.height,wrap:getComputedStyle(button).whiteSpace,buttonOverflow:button.scrollWidth>button.clientWidth};
+    return {badgeX:a.x,buttonX:b.x,card:getComputedStyle(row).display==='grid',badgeWidth:a.width,buttonWidth:b.width,badgeHeight:a.height,buttonHeight:b.height,aligned:Math.abs(a.y-b.y)<1,centered:Math.abs((b.y+b.height/2)-(r.y+r.height/2))<1,rowHeight:r.height,wrap:getComputedStyle(button).whiteSpace,buttonOverflow:button.scrollWidth>button.clientWidth};
    }));
-   assert.ok(management.every(x=>x.badgeWidth===80&&x.buttonWidth===60&&x.badgeHeight===32&&x.buttonHeight===32&&x.aligned&&x.centered&&x.rowHeight>=79&&x.wrap==='nowrap'&&!x.buttonOverflow),'management dimensions '+width);
+   assert.ok(management.every(x=>Math.abs(x.badgeWidth-80)<0.02&&Math.abs(x.buttonWidth-60)<0.02&&Math.abs(x.badgeHeight-32)<0.02&&Math.abs(x.buttonHeight-32)<0.02&&(x.card||(x.aligned&&x.centered))&&x.rowHeight>=79&&x.wrap==='nowrap'&&!x.buttonOverflow),'management dimensions '+width+' '+JSON.stringify(management));
    assert.ok(management.every(x=>Math.abs(x.badgeX-management[0].badgeX)<1&&Math.abs(x.buttonX-management[0].buttonX)<1),'management column alignment '+width);
+   const rects=await page.locator('.twq-list').evaluateAll(ns=>ns.map(n=>{const r=n.getBoundingClientRect();return {x:r.x,y:r.y}}));
+   assert.ok(rects[1].x>rects[0].x&&Math.abs(rects[0].y-rects[1].y)<1,'side-by-side boards '+width);
    if(width===1920&&process.env.TODAY_WORK_SCREENSHOT)await page.screenshot({path:process.env.TODAY_WORK_SCREENSHOT.replace(/\.png$/,'-wide.png'),fullPage:true});
    console.log('PASS computed typography '+width+': both boards core=12px, secondary=11px');
    assert.equal(typography.headers,true);if(!typography.types)console.log(await page.locator('.twq-list col').evaluateAll(ns=>ns.map(n=>({width:getComputedStyle(n).width,table:n.closest('table').clientWidth}))));assert.equal(typography.types,true,'type overflow '+width);assert.equal(typography.overflow,false);
@@ -66,8 +73,11 @@ async function run(){
   assert.equal(await page.evaluate(()=>TodayWorkQueue.data().rows.filter(x=>x.key==='deal:rel-today').length),1);
   await page.getByRole('combobox',{name:'오늘 업무 담당자'}).selectOption('김성민');
   assert.equal(await page.getByRole('combobox',{name:'오늘 업무 유형'}).count(),0);
-  await page.locator('.twq-counts [data-filter="overdue"]').click();assert.equal(await page.locator('.today-admin-inquiry .twq-row').count(),1);assert.equal(await page.locator('.today-admin-pipeline .twq-row').count(),1);
-  await page.locator('.twq-counts [data-filter="all"]').click();
+  await page.locator('.today-admin-pipeline [data-filter="overdue"]').click();assert.equal(await page.locator('.today-admin-inquiry .twq-row').count(),1);assert.equal(await page.locator('.today-admin-pipeline .twq-row').count(),1);
+  await page.locator('.today-admin-inquiry [data-filter="unassigned"]').click();assert.equal(await page.locator('.today-admin-inquiry .twq-row').count(),0);assert.equal(await page.locator('.today-admin-pipeline .twq-row').count(),1);
+  assert.equal(await page.locator('.today-admin-pipeline [data-filter="overdue"]').getAttribute('aria-pressed'),'true');
+  await page.locator('.today-admin-inquiry [data-filter="all"]').click();
+  await page.locator('.today-admin-pipeline [data-filter="all"]').click();
   await page.locator('.twq-row[data-key="expansion:won-a"] .twq-action').click();
   assert.deepEqual(await page.evaluate(()=>window.__opened),{type:'expansion',id:'exp-a'});
   await page.getByRole('combobox',{name:'오늘 업무 담당자'}).selectOption('전체');
@@ -81,11 +91,29 @@ async function run(){
   await page.evaluate(()=>{ME={name:'김성민',role:'rep'};paintTodayHome()});
   assert.equal(await page.getByRole('combobox',{name:'오늘 업무 담당자'}).count(),0);
   assert.equal(await page.locator('.twq-row').count(),5);
-  assert.equal(await page.locator('.today-rep-priority').count(),1);assert.equal(await page.locator('.today-rep-routine').count(),1);
+  assert.equal(await page.locator('.today-admin-inquiry').count(),1);assert.equal(await page.locator('.today-admin-pipeline').count(),1);
   assert.equal(await page.locator('.twq-row[data-key="deal:rel-today"]').count(),1);
   assert.equal(await page.evaluate(()=>TodayWorkQueue.data().rows.every(x=>x.owner==='김성민')),true);
   // A previously visible admin row cannot be opened after the current role changes.
   await page.evaluate(()=>{window.__opened=null;TodayWorkQueue.open('deal:rel-late')});assert.equal(await page.evaluate(()=>window.__opened),null);
+  await page.evaluate(()=>{
+   ME={name:'송보람',role:'admin'};
+   const ago=n=>new Date(Date.now()-n*864e5).toISOString();
+   B.inquiries=[{id:'process',site:'처리 지연 문의',created_at:ago(60),assignee:'김성민',status:'응대중',responded_at:ago(59),nextActionObj:{text:'견적 발송',due:ago(5),status:'open'}},{id:'response',site:'오래된 미응대',created_at:ago(50),assigned_at:ago(49),assignee:'김성민',status:'배정완료'},{id:'unassigned',site:'최근 미배정',created_at:ago(1),status:'접수'}];
+   B.deals=[{id:'missing-old',site:'오래된 Next 없음',assignee:'김성민',code:'consulting',grp:'영업·관리',created:ago(70),lastMeaningfulContactAt:ago(1)},{id:'late',site:'기한 초과 영업',assignee:'김성민',code:'consulting',grp:'영업·관리',created:ago(5),lastMeaningfulContactAt:ago(1),nextActionObj:{text:'후속 통화',due:ago(1),status:'open'}}];B.expansion_pool=[];paintTodayHome();
+  });
+  assert.deepEqual(await page.locator('.today-admin-inquiry .twq-row').evaluateAll(ns=>ns.map(n=>n.dataset.key)),['inq:unassigned','inq:response','inq:process']);
+  assert.deepEqual(await page.locator('.today-admin-pipeline .twq-row').evaluateAll(ns=>ns.map(n=>n.dataset.key)),['deal:late','deal:missing-old']);
+  for(const [filter,key] of [['unassigned','inq:unassigned'],['response','inq:response'],['processing','inq:process']]){
+   await page.locator('.today-admin-inquiry [data-filter="'+filter+'"]').click();
+   assert.equal(await page.locator('.today-admin-inquiry .twq-row').count(),1);
+   assert.equal(await page.locator('.today-admin-inquiry .twq-row').getAttribute('data-key'),key);
+   assert.equal(await page.locator('.today-admin-pipeline .twq-row').count(),2);
+  }
+  await page.evaluate(()=>TodayWorkQueue.route('missing','pipeline'));
+  assert.equal(await page.locator('.today-admin-pipeline .twq-row').getAttribute('data-key'),'deal:missing-old');
+  assert.equal(await page.locator('.today-admin-inquiry [data-filter="processing"]').getAttribute('aria-pressed'),'true');
+  await page.evaluate(()=>{TodayWorkQueue.filter('inquiry','all');TodayWorkQueue.filter('pipeline','all')});
   await page.evaluate(()=>{ME={name:'송보람',role:'admin'};const at=new Date(Date.now()-36e5).toISOString();B.inquiries=Array.from({length:51},(_,i)=>({id:'page-'+i,site:'페이지 현장 '+i,created_at:at,brand:'POUR솔루션',status:'접수'}));B.deals=[];B.expansion_pool=[];paintTodayHome()});
   assert.equal(await page.locator('.twq-row').count(),20);await page.getByRole('navigation',{name:'견적문의 관리 페이지'}).getByRole('button',{name:'3',exact:true}).click();assert.equal(await page.locator('.twq-row').count(),11);
   await page.getByRole('textbox',{name:'오늘 업무 검색'}).fill('페이지 현장 50');await page.getByRole('button',{name:'검색',exact:true}).click();assert.equal(await page.locator('.twq-row').count(),1);
@@ -96,7 +124,8 @@ async function run(){
    const date=[due.getFullYear(),String(due.getMonth()+1).padStart(2,'0'),String(due.getDate()).padStart(2,'0')].join('-');
    TodayWorkQueue.setManagerRequests([{id:'future',state:'open',target_id:'page-0',due_at:date,instruction:'이틀 후 확인',requested_at:new Date().toISOString(),requested_by:'관리자'}]);
   });
-  assert.equal(await page.locator('.twq-row[data-key="manager:future"] .twq-due').textContent(),'D-2');
+  await page.evaluate(()=>TodayWorkQueue.set('search','페이지 현장 0'));
+  assert.equal(await page.locator('.today-admin-inquiry .twq-row[data-key="manager:future"] .twq-due').textContent(),'1시간');
   assert.equal(await page.evaluate(()=>window.__writes.length),0);
   console.log(JSON.stringify({status:'PASS',admin_boards:['inquiry','pipeline'],independent_pages:true,types:4,independent_compound_filters:true,counter_list_agreement:true,exact_id_navigation:4,role_scope:true,stale_role_click_blocked:true,expansion_inference_label:true,converted_held_excluded:true,pagination_51_rows:true,viewports:[1440,1024,760,390],external_writes:0}));
  }finally{await browser.close();await new Promise(resolve=>srv.close(resolve))}
