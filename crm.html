@@ -2806,10 +2806,23 @@ function isoNow(){return new Date().toISOString()}
 function localDateTimeValue(value){var d=value===undefined?new Date():new Date(value);if(!Number.isFinite(d.getTime()))return '';var z=function(n){return String(n).padStart(2,'0')};return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+'T'+z(d.getHours())+':'+z(d.getMinutes())}
 function dateTimeLabel(s){if(!s)return '미기록';try{return new Date(s).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}catch(e){return String(s)}}
 function isTerminalTarget(v){return ['won','lost','badfit','badfit_lead','badfit_pipe','nocontact'].indexOf(v)>=0}
+function reconcileStagePatch(d,p,queue){
+ if(!p||!Number.isSafeInteger(d.version)||!d.stage_code||!p.code||p.code===d.stage_code)return false;
+ var commands=(queue||[]).filter(function(q){return String(q.object_id)===String(d.id)});
+ if(commands.some(function(q){return ['pending','sending','uncertain'].indexOf(q.status)>=0||q.status==='done'&&q.ack&&q.ack.version>d.version}))return false;
+ // A rejected/obsolete optimistic transition cannot replace a server snapshot.
+ // Keep the draft for reference; this is local recovery, never a server write.
+ p.recoveredTransitionDraft={code:p.code,stage_contexts:p.stage_contexts,stageHistory:p.stageHistory};
+ ['code','stage','grp','stageAt','stageEnteredAt','stage_contexts','stageHistory','contract_amount','completion_date','outcome','closed_at','closed','won_amount','wonAmount','won_at','waitingReason','waiting_reason','waitingCustomerSaid','waitingSpeaker','reactivationDueAt','reactivation_due_at','relationshipReason','relationship_reason','relationshipEnteredAt','relationship_entered_at','nextAction','nextActionObj','nextActionText','lastActivity'].forEach(function(k){delete p[k]});
+ if(Array.isArray(p.activities)){p.activities=p.activities.filter(function(a){return !(/^local-/.test(String(a.id||''))&&['단계전환','단계 전환'].indexOf(a.type)>=0)});if(!p.activities.length)delete p.activities;}
+ return true;
+}
 function applyOverrides(){
   loadLocal();
   migrateDealKeys();
-  (B.deals||[]).forEach(function(d){var p=LOCAL.deals[dealKey(d)];if(p)Object.assign(d,p)});
+  var stageRecovered=false,commands=Phase1.queue.list();
+  (B.deals||[]).forEach(function(d){var p=LOCAL.deals[dealKey(d)];if(reconcileStagePatch(d,p,commands))stageRecovered=true;if(p)Object.assign(d,p)});
+  if(stageRecovered)saveLocal();
   /* 문의 담당자의 서버 정본은 localStorage의 오래된 빈 값보다 우선한다.
      단, 방금 보낸 배정 요청이 아직 진행 중일 때만 낙관적 화면값을 잠시 허용한다. */
   (B.inquiries||[]).forEach(function(q){
