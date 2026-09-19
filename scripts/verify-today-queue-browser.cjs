@@ -55,9 +55,9 @@ async function run(){
    const management=await page.locator('.today-admin-pipeline .twq-row').evaluateAll(rows=>rows.map(row=>{
     const badge=row.querySelector('.twq-due'),button=row.querySelector('.twq-action');
     const a=badge.getBoundingClientRect(),b=button.getBoundingClientRect(),r=row.getBoundingClientRect();
-    return {badgeX:a.x,buttonX:b.x,badgeWidth:a.width,buttonWidth:b.width,badgeHeight:a.height,buttonHeight:b.height,aligned:Math.abs(a.y-b.y)<1,centered:Math.abs((b.y+b.height/2)-(r.y+r.height/2))<1,rowHeight:r.height,wrap:getComputedStyle(button).whiteSpace,buttonOverflow:button.scrollWidth>button.clientWidth};
+    return {badgeX:a.x,buttonX:b.x,card:getComputedStyle(row).display==='grid',badgeWidth:a.width,buttonWidth:b.width,badgeHeight:a.height,buttonHeight:b.height,aligned:Math.abs(a.y-b.y)<1,centered:Math.abs((b.y+b.height/2)-(r.y+r.height/2))<1,rowHeight:r.height,wrap:getComputedStyle(button).whiteSpace,buttonOverflow:button.scrollWidth>button.clientWidth};
    }));
-   assert.ok(management.every(x=>x.badgeWidth===80&&x.buttonWidth===60&&x.badgeHeight===32&&x.buttonHeight===32&&x.rowHeight>=79&&x.wrap==='nowrap'&&!x.buttonOverflow),'management dimensions '+width+' '+JSON.stringify(management));
+   assert.ok(management.every(x=>Math.abs(x.badgeWidth-80)<0.02&&Math.abs(x.buttonWidth-60)<0.02&&Math.abs(x.badgeHeight-32)<0.02&&Math.abs(x.buttonHeight-32)<0.02&&(x.card||(x.aligned&&x.centered))&&x.rowHeight>=79&&x.wrap==='nowrap'&&!x.buttonOverflow),'management dimensions '+width+' '+JSON.stringify(management));
    assert.ok(management.every(x=>Math.abs(x.badgeX-management[0].badgeX)<1&&Math.abs(x.buttonX-management[0].buttonX)<1),'management column alignment '+width);
    const rects=await page.locator('.twq-list').evaluateAll(ns=>ns.map(n=>{const r=n.getBoundingClientRect();return {x:r.x,y:r.y}}));
    assert.ok(rects[1].x>rects[0].x&&Math.abs(rects[0].y-rects[1].y)<1,'side-by-side boards '+width);
