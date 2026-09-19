@@ -43,8 +43,18 @@ function wide(){
  now.insertAdjacentHTML('beforeend','<h3>'+esc(next&&next.status!=='completed'?next.text||next.type||'다음 행동':closed?'종료된 영업기회입니다.':'다음 행동이 없습니다.')+'</h3><p>'+esc(next?[next.due||next.due_at,next.assignee||repN(d.assignee)].filter(Boolean).join(' · '):closed?'추가 영업은 새 영업기회에서 관리합니다.':'다음 연락 일정과 해야 할 일을 지정해 주세요.')+'</p>');
  var actions=document.createElement('div');actions.className='dactions';actions.append(button('다음 행동 지정',()=>focusWide('nextActionCard')),button('활동 기록',()=>focusWide('activityFormCard')));now.append(actions);
  if(next&&next.status!=='completed'&&!closed)actions.append(button('다음 행동 완료',()=>completeNextAction()));
- var nextCard=move('#nextActionCard',box(center,'다음 행동 · 일정 입력'));
- var activity=move('#activityFormCard',box(center,'활동 기록 · 연락 결과'));
+ var activity,nextCard;
+ if(body.querySelector('#rel-contact-save')){
+  // The existing atomic command requires both groups. Keep them together,
+  // retaining the original nodes, values and single submit handler.
+  var contactFlow=box(center,'연락 기록 · 다음 일정');contactFlow.open=true;
+  activity=move('#activityFormCard',contactFlow);
+  nextCard=move('#nextActionCard',contactFlow);
+  var contactActions=activity?.querySelector('.dactions');if(contactActions)contactFlow.append(contactActions);
+ }else{
+  nextCard=move('#nextActionCard',box(center,'다음 행동 · 일정 입력'));
+  activity=move('#activityFormCard',box(center,'활동 기록 · 연락 결과'));
+ }
  if(activity){var types=document.createElement('div');types.className='dw-outcomes';['연결됨','부재','재연락 요청','기타'].forEach(label=>types.append(button(label,()=>{document.getElementById('dv-act-type').value='전화';document.getElementById('dv-act-result').value=label;focusWide('dv-act-note')})));activity.querySelector('.formgrid')?.before(types)}
  var timeline=body.querySelector('#activityTimelineHost')?.closest('.dcard');if(timeline){center.append(timeline);var title=timeline.querySelector('h3');if(title)title.textContent='최근 활동'}
  var stage=document.createElement('section');stage.className='dcard dw-management';stage.innerHTML='<span>현재 단계</span><h3>'+esc(stageLabel(dealStage(d)))+'</h3><div id="dw-stage-editor"></div><dl><dt>예상금액</dt><dd>'+esc(fmtAmt(d.amount??d.amt??0))+'</dd><dt>담당자</dt><dd>'+esc(repN(d.assignee))+'</dd><dt>다음 확인일</dt><dd>'+esc(next?.due||String(next?.due_at||'').slice(0,10)||'미등록')+'</dd></dl>';
