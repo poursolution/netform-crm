@@ -28,6 +28,26 @@ function prepare(key,list){
  return list.map(row=>{const values=root.StageSpecs.values(row,contracts.get(String(row.item.id)),{work:root.dealWorkSummary(row.item),stage:root.stageLabel(row.code)});return {row,values,priority:root.StageSpecs.priority(key,row,values,root.daysTo)};}).sort((a,b)=>root.StageSpecs.compare(key,a,b));
 }
 function display(key,value){return ['amount','contractAmount'].includes(key)?money(value):value;}
+function table(key,items){
+ const spec=root.StageSpecs.get(key),triage=key==='consulting';
+ const columns=triage?['선택','우선','현장','담당자','왜 확인?','다음 업무','기한','관리']:['현장','담당자',...(key==='construction'?['계약 상태',...spec.queueFields.map(k=>root.StageSpecs.labels[k])]:spec.queueFields.map(k=>root.StageSpecs.labels[k])),'관리'];
+ return '<div class="sw-table-scroll"><table class="sw-work-table"><thead><tr>'+columns.map(t=>'<th scope="col">'+(t==='선택'?'<input type="checkbox" aria-label="표시된 현장 모두 선택" data-triage-all>':h(t))+'</th>').join('')+'</tr></thead><tbody>'+items.map((x,i)=>{
+  const r=x.row,v=x.values,t=x.triage,select=triage?'<td><input type="checkbox" aria-label="'+a(r.site)+' 선택" data-triage-select="'+a(r.key)+'"></td><td>'+((root.G.pipelineQueue.page-1)*30+i+1)+'</td>':'';
+  const values=triage?[t.reason,r.next?.text||'다음 행동 등록',t.date?due({days:root.daysTo(t.date)}):'일정 미지정']:spec.queueFields.map(k=>display(k,v[k]));
+  return '<tr data-deal="'+a(r.key)+'">'+select+'<td>'+btn(r.site,'record',r.key)+'</td><td>'+h(r.owner||'미배정')+'</td>'+(key==='construction'?'<td class="sw-contract-state">'+h(v.contractState)+'</td>':'')+values.map(value=>'<td>'+h(value||'미기록')+'</td>').join('')+'<td>'+btn('처리','primary',r.key)+'</td></tr>';
+ }).join('')+'</tbody></table>'+(items.length?'':empty)+'</div>';
+}
+function triageView(items){
+ const f=root.G.pipelineQueue,tab=f.triage||'today';
+ items=items.map(x=>({...x,triage:root.StageSpecs.triage(x.row,x.values,root.daysTo)})).sort((x,y)=>x.triage.rank-y.triage.rank||(x.triage.date||'9999').localeCompare(y.triage.date||'9999')||x.row.key.localeCompare(y.row.key));
+ const filtered=items.filter(x=>x.triage[tab]),pages=Math.max(1,Math.ceil(filtered.length/30));f.page=Math.min(f.page||1,pages);
+ const shown=filtered.slice((f.page-1)*30,f.page*30);
+ return '<nav class="sw-triage-tabs" aria-label="컨설팅 업무 분류">'+[['today','오늘 처리'],['new','신규·분류'],['quote','견적 임박'],['info','정보 보완'],['backlog','대기·보류'],['all','전체']].map(([key,label])=>'<button type="button" data-ps-action="triage-tab" data-value="'+key+'" aria-pressed="'+(key===tab)+'">'+label+' <b>'+items.filter(x=>x.triage[key]).length+'</b></button>').join('')+'</nav><p class="sw-triage-help">오늘 처리: 기한 도래·초과, 3일 이내 견적, 최근 7일 신규 건. 과거 정보 누락만으로 오늘 업무에 넣지 않습니다. 대기·보류는 업무목록 분류이며 영업단계를 변경하지 않습니다.</p>'+(root.PipelineBatch?.toolbar()||'')+'<p class="ps-queue-count">'+shown.length+' / '+filtered.length+'건 표시 · 한 번에 30건</p>'+table('consulting',shown)+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
+}
+function schedule(items){
+ const spec=root.StageSpecs.get('competition');
+ return '<div class="sw-agenda">'+spec.priorityRule.map((title,i)=>'<section><h3>'+h(title)+' <span>'+items.filter(x=>x.priority===i).length+'건</span></h3>'+items.filter(x=>x.priority===i).map(x=>'<article data-deal="'+a(x.row.key)+'"><strong class="sw-deadline">'+h(due({days:x.values.decisionDate?root.daysTo(x.values.decisionDate):null}))+'</strong>'+btn(x.row.site,'record',x.row.key)+'<p>'+h(x.row.owner)+' · '+h(x.values.competitionType)+' · '+h(money(x.row.amount))+'</p><small>'+h(x.values.preparation||'준비 현황 미기록')+'</small>'+btn('처리','primary',x.row.key)+'</article>').join('')+'</section>').join('')+'</div>';
+}
 function queue(key,items){
  const spec=root.StageSpecs.get(key);
  return spec.priorityRule.map((title,i)=>group(title,items.filter(x=>x.priority===i),x=>{
@@ -40,6 +60,7 @@ function queue(key,items){
 function render(key,list){
  const spec=root.StageSpecs.get(key);if(spec.specialWorkspace==='relationship')return relationship(list);
  let items=prepare(key,list),summary='';
+ if(spec.workspaceType==='triage')return triageView(items);
  if(spec.summaryMetrics==='contract-ledger')summary=contractReport(list);
  else if(spec.summaryMetrics==='loss-reasons'){
   const month=root.G.lossResultMonth||new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
@@ -48,7 +69,7 @@ function render(key,list){
   summary='<label class="sw-period">실주 조회월 <input aria-label="실주 조회월" type="month" data-ps-filter="lossResultMonth" value="'+a(month)+'"></label>'+stats([['이번 조회월 실주',selected.length+'건'],['실주 예상금액',money(selected.reduce((s,x)=>s+(x.row.amount||0),0))],['금액 미입력',selected.filter(x=>x.row.amount==null).length],['실주일 미기록',items.length-selected.length]])+'<div class="sw-loss-reasons">'+[...reasons].map(([n,c])=>'<div><span>'+h(n)+'</span><meter min="0" max="'+Math.max(1,selected.length)+'" value="'+c+'"></meter><b>'+c+'건</b></div>').join('')+'</div>';
  }else summary=stats(spec.priorityRule.map((title,i)=>[title,items.filter(x=>x.priority===i).length]));
  const limit=root.G.pipelineQueue?.limit||60,shown=items.slice(0,limit);
- return summary+'<p class="ps-queue-count">'+shown.length+' / '+items.length+'건 표시</p>'+queue(key,shown)+(shown.length<items.length?btn('다음 60건 더 보기','queue-more',''):'');
+ return summary+'<p class="ps-queue-count">'+shown.length+' / '+items.length+'건 표시</p>'+(spec.workspaceType==='schedule'?schedule(shown):['operations','result'].includes(spec.workspaceType)?table(key,shown):queue(key,shown))+(shown.length<items.length?btn('다음 60건 더 보기','queue-more',''):'');
 }
 // Compatibility names all resolve to the same renderer; no per-stage markup implementations.
 root.StageWorkspaces={render,prepare,relationship,...Object.fromEntries(root.StageSpecs.all.filter(s=>!s.specialWorkspace).map(s=>[s.key,list=>render(s.key,list)]))};

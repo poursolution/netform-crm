@@ -20,7 +20,7 @@ assert.deepEqual(await page.evaluate(()=>{const old=Phase1.queue.list;Phase1.que
 await page.evaluate(()=>{window.__oldQueueList=Phase1.queue.list;const d=B.deals[0];d.code=d.stage_code='bidding';d.stageHistory.push({from:'rapport',to:'bidding',at:'2026-09-20'});CUR_DETAIL={kind:'deal',key:dealKey(d),item:d};Phase1.queue.list=()=>[{request_id:'stage-confirmed',object_id:d.id,operation:'transition',payload:{from:'rapport',to:'bidding'},status:'done',ack:{ok:true,to_stage:'bidding',from_stage:'rapport',stage_contexts:{},stage_history_id:'test-transition',stage_entered_at:'2026-09-20'}}];window.dispatchEvent(new Event('phase1:queue'));});await page.waitForTimeout(80);assert.equal(await page.evaluate(()=>G.pipelineStage),'competition');assert.match(await page.locator('.sw-workspace').innerText(),/발송 후속 현장/);await page.evaluate(()=>{Phase1.queue.list=window.__oldQueueList;});
 for(const width of [1920,1440,1024,390]){await page.setViewportSize({width,height:1000});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}
 await page.setViewportSize({width:1440,height:1000});if(process.env.PIPELINE_SCREENSHOT)await page.screenshot({path:process.env.PIPELINE_SCREENSHOT});
-await page.evaluate(()=>{ME={id:'rep',name:'김성민',role:'rep'};window.__selected=null;});await page.locator('.sw-card [data-ps-action="record"]').first().click();assert.equal(await page.evaluate(()=>window.__selected),null);await page.evaluate(()=>PipelineWorkspace.open('all'));assert.equal(await page.evaluate(()=>PipelineWorkspace.rows().every(x=>x.owner==='김성민')),true);assert.deepEqual(await page.evaluate(()=>__writes),[]);assert.deepEqual(errors,[]);
+await page.evaluate(()=>{ME={id:'rep',name:'김성민',role:'rep'};window.__selected=null;});await page.locator('.sw-agenda [data-ps-action="record"]').first().click();assert.equal(await page.evaluate(()=>window.__selected),null);await page.evaluate(()=>PipelineWorkspace.open('all'));assert.equal(await page.evaluate(()=>PipelineWorkspace.rows().every(x=>x.owner==='김성민')),true);assert.deepEqual(await page.evaluate(()=>__writes),[]);assert.deepEqual(errors,[]);
 // Each stage has its own work surface; expansion reuses the existing pool and manager.
 await page.evaluate(()=>{ME={id:'admin',name:'송보람',role:'admin'};SalesScope.change('owner','전체');G.q='';G.workFilter='전체';});
 await page.evaluate(()=>{
@@ -32,7 +32,7 @@ for(const key of ['consulting','sent','relationship','competition','construction
  assert.equal(await page.locator('[data-workspace="'+key+'"]').count(),1);
  assert.equal(await page.locator('#pipeline-stage-root .ps-status').count(),0);
  assert.equal(await page.locator('#pipeline-stage-root .ps-metrics').count(),0);
- assert.ok(await page.locator('[data-workspace="'+key+'"] .sw-card').count()>0);
+ assert.ok(await page.locator('[data-workspace="'+key+'"] [data-deal]').count()>0);
  for(const width of [1440,390]){await page.setViewportSize({width,height:1000});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}
  await page.setViewportSize({width:1440,height:1000});
  if(key==='sent'){assert.match(await page.locator('.sw-workspace').innerText(),/검토중/);assert.match(await page.locator('.sw-workspace').innerText(),/오늘 확인/);if(process.env.STAGE_SCREENSHOT)await page.screenshot({path:process.env.STAGE_SCREENSHOT});}

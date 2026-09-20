@@ -31,3 +31,18 @@ test('stable sorting uses business priority before dates',()=>{
  assert.deepEqual(rows.slice().sort((a,b)=>specs.compare('sent',a,b)).map(x=>x.row.key),['overdue','unset','future']);
  assert.equal(rows[0].row.key,'future');
 });
+test('workspace layout follows work type, only follow-up keeps the inspector open',()=>{
+ assert.deepEqual(['consulting','sent','competition','construction','won','lost'].map(k=>specs.get(k).workspaceType),['triage','followup','schedule','operations','result','result']);
+ assert.deepEqual(specs.all.filter(s=>s.inspector==='persistent').map(s=>s.key),['sent']);
+});
+test('old missing fields stay in backlog, real deadlines and recent intake activate triage',()=>{
+ const old={item:{created:'2025-01-01'},next:{}};
+ const backlog=specs.triage(old,{},days);assert.equal(backlog.today,false);assert.equal(backlog.info,true);assert.equal(backlog.backlog,true);
+ const overdue=specs.triage({...old,due:'2026-09-19'}, {},days);assert.equal(overdue.today,true);assert.equal(overdue.reason,'다음 업무 기한 초과');
+ assert.equal(specs.triage(old,{quoteDue:'2026-09-23'},days).today,true);
+ assert.equal(specs.triage(old,{quoteDue:'2026-09-24'},days).today,false);
+ assert.equal(specs.triage({item:{created:'2026-09-13'}},{},days).new,true);
+ assert.equal(specs.triage({item:{created:'2026-09-12'}},{},days).new,false);
+ assert.equal(specs.triage({item:{created:'2026-09-21'}},{},days).new,false);
+ assert.equal(specs.triage({...old,due:'2026-09-19',item:{relationship_hold_until:'2026-09-21'}},{},days).today,false);
+});
