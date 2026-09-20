@@ -222,6 +222,54 @@ function schedule(items){
  const scopeHead=scopedOwner!=='전체'?'<div class="sw-scope-head"><h3>'+h(scopedOwner)+' 담당 목록 <small>'+ordered.length+'건 · 먼저 볼 것 '+first.length+'</small></h3>'+btn('담당자 필터 해제','owner',scopedOwner)+'</div>':'';
  return competitionOwnerBoard(scopedOwner)+segBar+scopeHead+'<p class="ps-queue-count">'+shown.length+' / '+ordered.length+'건 표시 · 먼저 볼 것 '+first.length+'건</p>'+table+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
 }
+/* 계약·시공 v2(A안): 담당자 현황판 + 계약실적 원장 + 진행 세그먼트 + 표. */
+const CONS_STAGES={contract:'계약',construction:'시공',completion:'준공'};
+function constructionOwnerBoard(scopedOwner){
+ const src=(root.PipelineWorkspace&&root.PipelineWorkspace.rows?root.PipelineWorkspace.rows({unscoped:true}):[]).filter(r=>r.group==='construction');
+ const ledger=root.ContractSalesData?root.ContractSalesData.state():null,contracts=new Map(((ledger&&ledger.items)||[]).map(c=>[String(c.deal_id),c]));
+ const map=new Map();
+ src.forEach(r=>{
+  const o=r.owner||'미배정',row=map.get(o)||{owner:o,count:0,amount:0,pending:0,building:0,done:0};
+  row.count++;
+  const c=contracts.get(String(r.item.id)),cf=r.item.stage_contexts?.contract?.fields||{};
+  row.amount+=Number((c&&c.balance)??cf.contract_amount??r.fields.contract_amount)||0;
+  if(r.code==='completion')row.done++;else if(r.code==='construction')row.building++;else if((cf.contract_status||r.fields.contract_status)!=='체결 완료')row.pending++;
+  map.set(o,row);
+ });
+ const rows=Array.from(map.values());
+ rows.forEach(x=>{x.light=x.pending>=2?'r':x.pending>=1?'y':'g'});
+ const order={r:0,y:1,g:2};
+ rows.sort((a,b)=>order[a.light]-order[b.light]||b.pending-a.pending||b.amount-a.amount||(typeof root.repCompare==='function'?root.repCompare(a.owner,b.owner):String(a.owner).localeCompare(String(b.owner))));
+ const total=rows.reduce((s,x)=>({count:s.count+x.count,amount:s.amount+x.amount,pending:s.pending+x.pending,building:s.building+x.building,done:s.done+x.done}),{count:0,amount:0,pending:0,building:0,done:0});
+ const body=rows.map(x=>'<tr data-ps-action="owner" data-value="'+a(x.owner)+'"'+(scopedOwner===x.owner?' class="sel"':'')+'><td><span class="sw-light '+x.light+'"></span><b>'+h(x.owner)+'</b></td><td>'+x.count+'</td><td class="sw-amt">'+h(money(x.amount).replace('금액 미입력','-'))+'</td><td class="'+(x.pending?'sw-bad':'sw-zero')+'">'+x.pending+'</td><td class="'+(x.building?'sw-warn':'sw-zero')+'">'+x.building+'</td><td class="'+(x.done?'sw-warn':'sw-zero')+'">'+x.done+'</td><td class="sw-go">'+(scopedOwner===x.owner?'전체 보기':'목록 보기')+'</td></tr>').join('')
+  +'<tr class="sw-total"><td>전체</td><td>'+total.count+'</td><td class="sw-amt">'+h(money(total.amount).replace('금액 미입력','-'))+'</td><td class="'+(total.pending?'sw-bad':'sw-zero')+'">'+total.pending+'</td><td class="'+(total.building?'sw-warn':'sw-zero')+'">'+total.building+'</td><td class="'+(total.done?'sw-warn':'sw-zero')+'">'+total.done+'</td><td></td></tr>';
+ return '<section class="sw-owner-board" aria-label="담당자별 계약·시공 현황"><header><h3>담당자별 현황</h3><small>계약대기 많은 순 · 행 클릭 = 아래 목록 필터</small>'+btn('전체 보기','owner','전체')+'</header><div class="sw-table-scroll"><table><thead><tr>'+['담당자','담당','계약금액 합','계약대기','시공중','준공확인',''].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+body+'</tbody></table></div></section>';
+}
+function constructionFrame(items,list){
+ const f=root.G.pipelineQueue;
+ const scopedOwner=root.SalesScope&&root.SalesScope.state?root.SalesScope.state().owner:'전체';
+ const seg=root.G.consSeg&&CONS_STAGES[root.G.consSeg]?root.G.consSeg:'all';
+ const segFiltered=items.filter(x=>seg==='all'||x.row.code===seg);
+ const first=segFiltered.filter(x=>x.priority===0).slice().sort((p,q)=>String(p.values.contractDate||'9999').localeCompare(String(q.values.contractDate||'9999')));
+ const rest=segFiltered.filter(x=>x.priority!==0).slice().sort((p,q)=>p.priority-q.priority||String(p.values.startDate||'9999').localeCompare(String(q.values.startDate||'9999')));
+ const ordered=first.concat(rest);
+ const segBar='<nav class="sw-seg" aria-label="계약·시공 구분">'+[['all','전체',items.length],['contract','계약',items.filter(x=>x.row.code==='contract').length],['construction','시공',items.filter(x=>x.row.code==='construction').length],['completion','준공',items.filter(x=>x.row.code==='completion').length]].map(([k,label,n])=>'<button type="button" data-ps-action="consseg" data-value="'+k+'" aria-pressed="'+(seg===k)+'">'+h(label)+' <b>'+n+'</b></button>').join('')+'</nav>';
+ const pages=Math.max(1,Math.ceil(ordered.length/30));f.page=Math.min(f.page||1,pages);
+ const shown=ordered.slice((f.page-1)*30,f.page*30);
+ let markedFirst=false,markedRest=false,rowsHtml='';
+ shown.forEach(x=>{
+  const r=x.row,v=x.values,isFirst=x.priority===0;
+  if(isFirst&&!markedFirst){markedFirst=true;rowsHtml+='<tr class="sw-group-row hot"><td colspan="8">먼저 볼 것 — 계약 체결 대기 ('+first.length+')</td></tr>';}
+  if(!isFirst&&!markedRest){markedRest=true;rowsHtml+='<tr class="sw-group-row"><td colspan="8">계약 확정·시공 진행 ('+rest.length+')</td></tr>';}
+  const stgChip='<span class="sw-stg sw-stg-'+(r.code==='completion'?'rap':r.code==='construction'?'wait':'sil')+'">'+h(CONS_STAGES[r.code]||'계약')+'</span>';
+  const sd=v.startDate?root.daysTo(v.startDate):null;
+  const startChip=v.startDate?(sd!=null&&sd<0?'<span class="sw-due-chip mut">착공 '+h(String(v.startDate).slice(5,10))+'</span>':sd===0?'<span class="sw-due-chip warn">오늘 착공</span>':'<span class="sw-due-chip ok">착공 D-'+sd+'</span>'):'<span class="sw-due-chip mut">-</span>';
+  rowsHtml+='<tr data-deal="'+a(r.key)+'"'+(isFirst?' class="sw-first"':'')+'><td>'+btn(r.site,'record',r.key)+(scopedOwner==='전체'?'<small>'+h(r.owner||'미배정')+'</small>':'')+'</td><td>'+stgChip+'</td><td class="sw-contract-state">'+h(v.contractState)+'</td><td>'+h(v.contractDate||'미입력')+'</td><td>'+h(money(v.contractAmount))+'</td><td>'+startChip+'</td><td>'+h(v.salesOwner||'')+'</td><td>'+btn('처리','primary',r.key)+'</td></tr>';
+ });
+ const table='<div class="sw-table-scroll"><table class="sw-work-table sw-frame"><thead><tr>'+['현장','진행','계약 상태','계약일','계약금액','착공','실적 귀속','관리'].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>'+(shown.length?'':empty)+'</div>';
+ const scopeHead=scopedOwner!=='전체'?'<div class="sw-scope-head"><h3>'+h(scopedOwner)+' 담당 목록 <small>'+ordered.length+'건 · 먼저 볼 것 '+first.length+'</small></h3>'+btn('담당자 필터 해제','owner',scopedOwner)+'</div>':'';
+ return constructionOwnerBoard(scopedOwner)+contractReport(list)+segBar+scopeHead+'<p class="ps-queue-count">'+shown.length+' / '+ordered.length+'건 표시 · 먼저 볼 것 '+first.length+'건</p>'+table+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
+}
 function queue(key,items){
  const spec=root.StageSpecs.get(key);
  return spec.priorityRule.map((title,i)=>group(title,items.filter(x=>x.priority===i),x=>{
@@ -237,6 +285,7 @@ function render(key,list){
  if(spec.workspaceType==='triage')return consultingFrame(items);
  if(key==='sent')return sentFrame(items);
  if(spec.workspaceType==='schedule')return schedule(items);
+ if(key==='construction')return constructionFrame(items,list);
  if(spec.summaryMetrics==='contract-ledger')summary=contractReport(list);
  else if(spec.summaryMetrics==='loss-reasons'){
   const month=root.G.lossResultMonth||new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
