@@ -64,7 +64,10 @@ body:has(#pg-today.on) .mhead>.search{display:none}
 @media(max-width:760px){.twq-toolbar{gap:8px}.twq-toolbar .twq-search{width:100%;margin:0}.twq-search input{flex:1;width:auto}.today-work-queue>header{align-items:flex-start}.today-work-queue>header span{font-size:11px}.twq-counts button{font-size:11px;padding:8px 6px}}
 
 /* ── 관리자 사원별 현황판: 신호등 요약 → 행 클릭 시 담당자 필터 ── */
-.twq-rep-boards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.twq-rep-boards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:stretch}
+.twq-rep-list{display:flex;flex-direction:column}
+.twq-rep-list .twq-rep-scroll{flex:1}
+.twq-rep-list footer{margin-top:auto}
 .twq-rep-controls{grid-column:1/-1;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 14px;font-size:12px}
 .twq-rep-controls strong{font-size:12px;color:#40526b}
 .twq-rep-controls label{display:flex;align-items:center;gap:6px;color:var(--sub)}
