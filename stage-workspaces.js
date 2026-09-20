@@ -37,9 +37,32 @@ function table(key,items){
   return '<tr data-deal="'+a(r.key)+'">'+select+'<td>'+btn(r.site,'record',r.key)+'</td><td>'+h(r.owner||'미배정')+'</td>'+(key==='construction'?'<td class="sw-contract-state">'+h(v.contractState)+'</td>':'')+values.map(value=>'<td>'+h(value||'미기록')+'</td>').join('')+'<td>'+btn('처리','primary',r.key)+'</td></tr>';
  }).join('')+'</tbody></table>'+(items.length?'':empty)+'</div>';
 }
-/* 컨설팅 공통 틀: 탭·체크박스 없이 «먼저 볼 것 → 정상 진행» 한 표. 행 클릭=상세 팝업. */
+/* 컨설팅 v2: 담당자별 현황판(600건 한눈) + 행 클릭 시 아래 목록이 그 담당자로 좁혀지는 드릴다운. */
+function consultingOwnerBoard(scopedOwner){
+ const src=(root.PipelineWorkspace&&root.PipelineWorkspace.rows?root.PipelineWorkspace.rows({unscoped:true}):[]).filter(r=>r.group==='consulting');
+ const map=new Map();
+ src.forEach(r=>{
+  const o=r.owner||'미배정',row=map.get(o)||{owner:o,count:0,amount:0,over:0,noNext:0,info:0,maxOver:0};
+  row.count++;row.amount+=Number(r.amount)||0;
+  const qd=r.fields&&r.fields.quote_due?root.daysTo(r.fields.quote_due):null;
+  const overDays=Math.max(r.days!=null&&r.days<0?-r.days:0,qd!=null&&qd<0?-qd:0);
+  if(overDays>0){row.over++;row.maxOver=Math.max(row.maxOver,overDays);}
+  if(!r.next||!r.next.text)row.noNext++;
+  const needs=r.item.stage_contexts?.first_contact?.fields?.needs||(r.fields&&r.fields.quote_request),work=root.dealWorkSummary(r.item);
+  if(!needs||!work||/미분류|미기록/.test(String(work||'')))row.info++;
+  map.set(o,row);
+ });
+ const rows=Array.from(map.values());
+ rows.forEach(x=>{x.light=x.over>=10||x.maxOver>=30?'r':(x.over+x.noNext+x.info)>0?'y':'g'});
+ const order={r:0,y:1,g:2};
+ rows.sort((a,b)=>order[a.light]-order[b.light]||b.over-a.over||b.noNext-a.noNext||(typeof root.repCompare==='function'?root.repCompare(a.owner,b.owner):String(a.owner).localeCompare(String(b.owner))));
+ const body=rows.map(x=>'<tr data-ps-action="owner" data-value="'+a(x.owner)+'"'+(scopedOwner===x.owner?' class="sel"':'')+'><td><span class="sw-light '+x.light+'"></span><b>'+h(x.owner)+'</b></td><td>'+x.count+'</td><td class="sw-amt">'+h(money(x.amount).replace('금액 미입력','-'))+'</td><td class="'+(x.over?'sw-bad':'sw-zero')+'">'+x.over+'</td><td class="'+(x.noNext?'sw-warn':'sw-zero')+'">'+x.noNext+'</td><td class="'+(x.info?'sw-warn':'sw-zero')+'">'+x.info+'</td><td class="'+(x.maxOver>=30?'sw-bad':x.maxOver?'sw-warn':'sw-zero')+'">'+(x.maxOver?x.maxOver+'일':'-')+'</td><td class="sw-go">'+(scopedOwner===x.owner?'전체 보기':'목록 보기')+'</td></tr>').join('');
+ return '<section class="sw-owner-board" aria-label="담당자별 컨설팅 현황"><header><h3>담당자별 현황</h3><small>위험 높은 순 · 행 클릭 = 아래 목록 필터</small>'+btn('전체 보기','owner','전체')+'</header><div class="sw-table-scroll"><table><thead><tr>'+['담당자','담당','합계 금액','초과','Next 없음','정보 보완','최장 초과',''].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+body+'</tbody></table></div></section>';
+}
+/* 컨설팅 목록: 탭·체크박스 없이 «먼저 볼 것 → 정상 진행» 한 표. 행 클릭=상세 팝업. */
 function consultingFrame(items){
  const f=root.G.pipelineQueue;
+ const scopedOwner=root.SalesScope&&root.SalesScope.state?root.SalesScope.state().owner:'전체';
  items=items.map(x=>({...x,triage:root.StageSpecs.triage(x.row,x.values,root.daysTo)}));
  const first=items.filter(x=>x.triage.today||x.triage.info).sort((x,y)=>x.triage.rank-y.triage.rank||(x.triage.date||'9999').localeCompare(y.triage.date||'9999')||x.row.key.localeCompare(y.row.key));
  const rest=items.filter(x=>!(x.triage.today||x.triage.info)).sort((x,y)=>String(x.values.quoteDue||'9999').localeCompare(String(y.values.quoteDue||'9999'))||x.row.key.localeCompare(y.row.key));
@@ -60,7 +83,8 @@ function consultingFrame(items){
   rows+='<tr data-deal="'+a(r.key)+'"'+(urgent?' class="sw-first"':'')+'><td>'+btn(r.site,'record',r.key)+'</td><td>'+h(r.owner||'미배정')+'</td><td>'+h(v.needs||x.triage.reason)+'</td><td>'+chip+(v.quoteDue?'<small>'+h(v.quoteDue)+'</small>':'')+'</td><td>'+h(money(r.amount))+'</td><td>'+h(r.next?.text||'다음 행동 등록')+(r.due?'<small>'+h(r.due)+'</small>':'')+'</td><td>'+btn('처리','primary',r.key)+'</td></tr>';
  });
  const body='<div class="sw-table-scroll"><table class="sw-work-table sw-frame"><thead><tr>'+['현장','담당자','고객 요구','견적 예정','예상금액','다음 업무','관리'].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table>'+(shown.length?'':empty)+'</div>';
- return summary+'<p class="ps-queue-count">'+shown.length+' / '+ordered.length+'건 표시 · 먼저 볼 것 '+first.length+'건</p>'+body+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
+ const scopeHead=scopedOwner!=='전체'?'<div class="sw-scope-head"><h3>'+h(scopedOwner)+' 담당 목록 <small>'+ordered.length+'건 · 먼저 볼 것 '+first.length+'</small></h3>'+btn('담당자 필터 해제','owner',scopedOwner)+'</div>':'';
+ return consultingOwnerBoard(scopedOwner)+summary+scopeHead+'<p class="ps-queue-count">'+shown.length+' / '+ordered.length+'건 표시 · 먼저 볼 것 '+first.length+'건</p>'+body+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
 }
 function schedule(items){
  const spec=root.StageSpecs.get('competition');

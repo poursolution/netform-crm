@@ -39,6 +39,33 @@
 #pipeline-stage-root .ps-kmore:hover{background:#fff}
 @media(max-width:1100px){.ps-kanban{grid-template-columns:1fr;height:auto}.ps-kbody{max-height:420px}}
 
+/* ── 컨설팅 담당자별 현황판 ── */
+.sw-owner-board{background:#fff;border:1px solid #e0e6ef;border-radius:12px;overflow:hidden;margin:4px 0 14px}
+.sw-owner-board>header{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid #e0e6ef}
+.sw-owner-board>header h3{font-size:13.5px;margin:0}
+.sw-owner-board>header small{color:#66758d;font-size:11px}
+#pipeline-stage-root .sw-owner-board>header button{margin-left:auto;font-size:11.5px;padding:5px 11px}
+.sw-owner-board table{width:100%;border-collapse:collapse;font-size:12.5px;text-align:right;table-layout:auto;min-width:0}
+.sw-owner-board th{background:#f8fafc;color:#63748c;font-weight:600;font-size:11.5px;padding:8px 12px;border-bottom:1px solid #e0e6ef;text-align:right;white-space:nowrap}
+.sw-owner-board th:first-child,.sw-owner-board td:first-child{text-align:left}
+.sw-owner-board td{padding:9px 12px;border-top:1px solid #f0f3f8;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sw-owner-board tr[data-ps-action]{cursor:pointer}
+.sw-owner-board tr[data-ps-action]:hover td{background:#f8fafd}
+.sw-owner-board tr.sel td{background:#eff4ff}
+.sw-light{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px}
+.sw-light.r{background:#dc2626;box-shadow:0 0 0 3px #fdeef0}
+.sw-light.y{background:#e3a008;box-shadow:0 0 0 3px #fdf4dd}
+.sw-light.g{background:#22a55e;box-shadow:0 0 0 3px #e7f7ee}
+.sw-amt{color:#1e3a8a;font-weight:800}
+.sw-bad{color:#c03246;font-weight:800}
+.sw-warn{color:#8c601e;font-weight:700}
+.sw-zero{color:#9aa8bd}
+.sw-go{color:#2558bd;font-size:11px;font-weight:700}
+.sw-scope-head{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+.sw-scope-head h3{font-size:13.5px;margin:0}
+.sw-scope-head small{color:#66758d;font-weight:400;margin-left:6px}
+#pipeline-stage-root .sw-scope-head button{font-size:11.5px;padding:5px 11px}
+
 /* ── 컨설팅 공통 틀: 그룹 구분행·기한 칩 ── */
 .sw-frame th,.sw-frame td{padding:11px 12px}
 .sw-group-row td{background:#f7f9fc!important;color:#4b5c77;font-size:11px;font-weight:800;padding:7px 12px!important}
