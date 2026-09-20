@@ -7,7 +7,7 @@
 .ps-kpi{background:#fff;border:1px solid #e0e6ef;border-radius:10px;padding:6px 12px;font-size:12px;color:#5b6b82;display:flex;gap:8px;align-items:baseline}
 .ps-kpi b{font-size:15px;color:#1a2332;letter-spacing:-.3px}
 .ps-kpi.bad b{color:#dc2626}.ps-kpi.warn b{color:#b45309}
-.ps-kanban{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:stretch;height:calc(100vh - 300px);min-height:430px;margin-top:10px}
+.ps-kanban{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;align-items:stretch;height:calc(100vh - 300px);min-height:430px;margin-top:10px}
 .ps-kcol{display:flex;flex-direction:column;min-width:0;background:#e9edf4;border-radius:11px;padding:7px;overflow:hidden}
 .ps-khead{padding:2px 4px 6px;flex:none}
 .ps-kt{display:flex;align-items:center;gap:6px;justify-content:space-between}
@@ -39,6 +39,24 @@
 #pipeline-stage-root .ps-kmore:hover{background:#fff}
 @media(max-width:1100px){.ps-kanban{grid-template-columns:1fr;height:auto}.ps-kbody{max-height:420px}}
 
+/* 페이지 상단 제목 띠(건수만 남는 빈 줄) 제거 — 제목은 앱 헤더가, 건수는 현황판·목록이 보여준다 */
+#pipeline-stage-root .ps-heading{display:none!important}
+
+/* ── 단계 페이지 필터 바 슬림화: 칩 두 줄 + 공종/검색이 한 덩어리로 ── */
+#pipeline-stage-root .sales-filterbar{padding:8px 12px;margin:10px 0 0;border-radius:12px 12px 0 0}
+#pipeline-stage-root .sf-row{align-items:center;margin:0 0 6px;gap:8px}
+#pipeline-stage-root .sf-row:last-child{margin-bottom:0}
+#pipeline-stage-root .sf-label{flex:0 0 auto;padding:0;font-size:11px}
+#pipeline-stage-root .sales-filterbar button{min-height:26px;padding:3px 10px;font-size:11px;border-radius:99px;gap:4px}
+#pipeline-stage-root .sales-filterbar button em{font-size:10px;padding:0 4px}
+#pipeline-stage-root .sales-filterbar+.ps-filters{border-radius:0 0 12px 12px;padding:8px 12px;gap:12px;border-top:1px dashed #e7edf4}
+#pipeline-stage-root .ps-filters label{flex-direction:row;align-items:center;gap:7px;font-size:11px;color:#64748b}
+#pipeline-stage-root .ps-filters select,#pipeline-stage-root .ps-filters input{min-height:30px;min-width:0;padding:5px 9px}
+#pipeline-stage-root .ps-filters input{width:200px}
+#pipeline-stage-root .ps-filters>button{align-self:center;min-height:30px;padding:5px 12px}
+#pipeline-stage-root:has(.sw-workspace) .ps-note{display:none}
+#pipeline-stage-root .ps-note{margin:6px 2px 0}
+
 /* ── 컨설팅 담당자별 현황판 ── */
 .sw-owner-board{background:#fff;border:1px solid #e0e6ef;border-radius:12px;overflow:hidden;margin:4px 0 14px}
 .sw-owner-board>header{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid #e0e6ef}
@@ -62,6 +80,33 @@
 .sw-zero{color:#9aa8bd}
 .sw-go{color:#2558bd;font-size:11px;font-weight:700}
 .sw-owner-board tr.sw-total td{background:#f8fafc;border-top:2px solid #e0e6ef;font-weight:800;cursor:default}
+.sw-seg{display:flex;gap:6px;margin:0 0 12px;flex-wrap:wrap}
+#pipeline-stage-root .sw-seg button{border:1px solid #dce3ed;border-radius:9px;padding:6px 14px;font-size:12.5px;font-weight:600;color:#627189;background:#fff}
+#pipeline-stage-root .sw-seg button b{color:#293b57;margin-left:5px}
+#pipeline-stage-root .sw-seg button[aria-pressed=true]{border-color:#3b6ce4;background:#f0f5ff;color:#2458c7}
+#pipeline-stage-root .sw-seg button[aria-pressed=true] b{color:#2458c7}
+.sw-stg{font-size:10.5px;font-weight:800;border-radius:5px;padding:1px 7px;white-space:nowrap}
+.sw-stg-rap{background:#ecfdf3;color:#15803d}
+.sw-stg-sil{background:#eef2f7;color:#4b5c77}
+.sw-stg-wait{background:#fef4e6;color:#b45309}
+.rel-promo{border:1.5px solid #d9c7f2!important;background:linear-gradient(100deg,#faf7ff,#fff)!important;border-radius:12px;padding:13px 15px;margin-bottom:14px}
+.rel-promo-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px}
+.rel-promo-head b{font-size:13px;color:#6b46a8}
+.rel-promo-head small{color:#66758d;font-size:11px}
+.rel-promo-tier{font-size:11px;font-weight:800;border-radius:6px;padding:2px 9px;background:#fef1f1;color:#dc2626}
+.rel-promo-warn{font-size:11.5px;color:#6b46a8;background:#f6f1fd;border:1px solid #e4d6f7;border-radius:8px;padding:8px 11px;margin-bottom:10px;line-height:1.5}
+.rel-promo-warn.hot{color:#c03246;background:#fef1f1;border-color:#f3cdd3}
+.rel-promo-warn ul{margin:5px 0 0 16px}
+.rel-promo-acts{display:flex;gap:7px}
+.rel-promo-acts button{font:inherit;font-size:12px;font-weight:700;border-radius:8px;padding:7px 13px;cursor:pointer;border:1px solid #dce3ed;background:#fff;color:#3b4c66}
+.rel-promo-acts #rel-promo-send{background:#2563eb;border-color:#2563eb;color:#fff}
+.sw-insights{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 12px}
+.sw-dist,#pipeline-stage-root .sw-loss-reasons{background:#fff;border:1px solid #e0e6ef;border-radius:12px;padding:12px 14px;max-width:none;margin:0}
+.sw-dist h4,#pipeline-stage-root .sw-loss-reasons h4{font-size:12.5px;margin:0 0 8px;color:#293b57}
+.sw-dist>div{display:grid;grid-template-columns:minmax(90px,1fr) 2fr 64px;gap:10px;align-items:center;padding:5px 0;font-size:12px}
+.sw-dist meter{width:100%}
+.sw-dist b{text-align:right;color:#1e3a8a}
+@media(max-width:900px){.sw-insights{grid-template-columns:1fr}}
 .sw-scope-head{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
 .sw-scope-head h3{font-size:13.5px;margin:0}
 .sw-scope-head small{color:#66758d;font-weight:400;margin-left:6px}

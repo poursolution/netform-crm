@@ -36,7 +36,7 @@ async function run(){
   // 칸반 단일 뷰: 레거시 툴바·뷰 전환이 완전히 사라졌다.
   assert.equal(await page.locator('.pipe-toolbar-controls').count(),0,'legacy pipe toolbar removed');
   assert.equal(await page.locator('#pipeline-stage-root [data-view]').count(),0,'no view switcher');
-  assert.equal(await page.locator('.ps-kanban>.ps-kcol').count(),7);
+  assert.equal(await page.locator('.ps-kanban>.ps-kcol').count(),6);
   assert.equal(await page.locator('.ps-kcard').count(),3);
 
   // 공사예정 연도 필터: 연도 미입력 데이터는 «미입력»에서만 잡힌다.
