@@ -11,8 +11,10 @@ function release(){const v=document.getElementById('detailView');if(!v?.classLis
 function beforePaint(){const v=document.getElementById('detailView');if(v?.classList.contains('ps-embedded')){if(active())document.body.append(v);else release();}}
 function shell(key,content){
  const actor=String(root.ME?.id||root.ME?.name||'');if(identity!==actor||stage!==key){selected='';stage=key;identity=actor;}
- return '<div class="ps-split" style="--stage-color:'+root.PipelineStages.definition(key).color+'"><section class="ps-split-queue" aria-label="단계 현장 목록">'+content+'</section><section id="ps-split-detail" aria-label="선택 현장 상세"><p class="ps-empty">왼쪽에서 현장을 선택하면 상세와 업무를 확인할 수 있습니다.</p></section></div>';
+ const optional=root.StageSpecs.get(key).inspector==='on-demand';
+ return '<div class="ps-split'+(optional?' ps-inspector-demand':'')+(selected?' ps-inspector-open':'')+'" style="--stage-color:'+root.PipelineStages.definition(key).color+'"><section class="ps-split-queue" aria-label="단계 현장 목록">'+content+'</section><section id="ps-split-detail" aria-label="선택 현장 상세"><p class="ps-empty">현장을 선택하면 상세와 업무를 확인할 수 있습니다.</p></section></div>';
 }
+function closeInspector(){if(document.getElementById('detailAction')){root.alert('입력 중인 작업창을 저장하거나 닫은 뒤 상세를 닫아 주세요.');return;}const id=selected;release();selected='';root.PipelineWorkspace.render();document.querySelectorAll('[data-deal]').forEach(n=>{if(n.dataset.deal===id)n.querySelector('[data-ps-action="record"]')?.focus();});}
 function select(r,action){
  if(!active()||!r||r.group!==root.G.pipelineStage)return false;
  const host=document.getElementById('ps-split-detail'),v=document.getElementById('detailView');if(!host||!v)return false;
@@ -21,15 +23,17 @@ function select(r,action){
  if(String(root.CUR_DETAIL?.item?.id)!==String(r.item.id)||!v.classList.contains('ps-embedded')){
   root.DealDetailWorkspace.open(r.item.id,{source:r.group,host});
  }else host.replaceChildren(v);
+ host.closest('.ps-split').classList.add('ps-inspector-open');
+ const close=document.createElement('button');close.type='button';close.className='ps-inspector-close';close.textContent='상세 닫기';close.onclick=closeInspector;host.prepend(close);
  v.setAttribute('role','region');v.removeAttribute('aria-modal');v.setAttribute('aria-label','선택 현장 상세');document.body.style.overflow='';
- document.querySelectorAll('.ps-split-queue .sw-card').forEach(n=>{const on=n.dataset.deal===selected;n.classList.toggle('ps-selected',on);n.querySelector('[data-ps-action="record"]')?.setAttribute('aria-pressed',String(on));});
+ document.querySelectorAll('.ps-split-queue [data-deal]').forEach(n=>{const on=n.dataset.deal===selected;n.classList.toggle('ps-selected',on);n.querySelector('[data-ps-action="record"]')?.setAttribute('aria-pressed',String(on));});
  if(action)root.DealDetailWorkspace.run(action);
  return true;
 }
 function mount(list){
  if(!active())return;
  const r=list.find(r=>r.key===selected),byId=new Map(list.map(r=>[r.key,r]));
- if(r)select(r);else{release();selected='';}
+ if(r)select(r);else{release();selected='';document.querySelector('.ps-split')?.classList.remove('ps-inspector-open');}
  document.querySelectorAll('.ps-split-queue .sw-card').forEach(n=>{
   const row=byId.get(n.dataset.deal);if(!row)return;
   const actions=n.querySelector('.sw-action');if(!actions)return;
