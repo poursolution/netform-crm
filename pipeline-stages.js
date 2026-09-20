@@ -9,7 +9,7 @@ const definitions=[
  {key:'won',label:'수주',codes:['won'],description:'확정된 수주 실적과 후속 확장 기회를 확인합니다.'},
  {key:'lost',label:'실주',codes:['lost','badfit_lead','badfit','badfit_pipe','nocontact'],description:'실주 사유와 경쟁상황을 보존하고 향후 관리 가능성을 확인합니다.'},
  {key:'expansion',label:'확장관리',codes:['expansion'],description:'기존 수주 이력을 유지하며 추가 공사 기회를 관리합니다.'}
-].map((d,i)=>Object.freeze({...d,number:String(i+1).padStart(2,'0'),codes:Object.freeze(d.codes)}));
+].map((d,i)=>Object.freeze({...d,color:['#2563eb','#0284c7','#7c3aed','#ea580c','#16a34a','#0f766e','#dc2626','#64748b'][i],number:String(i+1).padStart(2,'0'),codes:Object.freeze(d.codes)}));
 function group(code,outcome){if(outcome&&outcome!=='open')code=outcome;return definitions.find(d=>d.codes.includes(code))?.key||null;}
 function definition(key){return definitions.find(d=>d.key===key);}
 function rank(code){const i=definitions.findIndex(d=>d.codes.includes(code));return i<0?99:i;}
