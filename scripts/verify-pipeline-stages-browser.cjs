@@ -53,9 +53,15 @@ for(const key of ['consulting','sent','relationship','competition','construction
 await page.evaluate(()=>PipelineWorkspace.open('expansion'));
 assert.equal(await page.evaluate(()=>G.page),'expansion');
 assert.equal(await page.locator('#expansion-root .exp-year-tabs').count(),1);
-assert.equal(await page.locator('#expansion-root .exp-view-switch').count(),1);
-await page.getByRole('button',{name:'☷ 전체목록',exact:true}).click();
-assert.equal(await page.locator('#expansion-root .exp-compact-list').count(),1);
+// 상단은 파이프라인 문법(한 줄 KPI·담당자 현황판·슬림 툴바), 하단은 상태 보드 하나 — 보기 전환 없음.
+assert.equal(await page.locator('#expansion-root .exp-view-switch').count(),0);
+assert.equal(await page.locator('#expansion-root .ps-kpis').count(),1);
+assert.equal(await page.locator('#expansion-root .sw-owner-board').count(),1);
+assert.equal(await page.locator('#expansion-root .exp-board').count(),1);
+assert.equal(await page.locator('#expansion-root .exp-board-column').count(),6);
+await page.locator('#expansion-root .exp-board-launch').first().click();
+assert.equal(await page.locator('#expansionManager.on').count(),1,'card click opens the manager window');
+await page.locator('.exp-manage-close').click();
 await page.locator('.menu [data-p="pipe"]').click();
 assert.equal(await page.evaluate(()=>G.pipelineStage),'all');
 assert.deepEqual(errors,[]);

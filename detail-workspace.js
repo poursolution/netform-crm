@@ -41,6 +41,7 @@ function wide(){
  move('.dw-asset-back',left);
  if(!contact){var empty=document.createElement('div');empty.className='dcard';empty.textContent='등록된 연락처가 없습니다.';empty.append(button('연락처 등록',()=>openQuickContact('new')));left.append(empty)}
  var site=document.createElement('div');site.className='dcard dw-site';site.innerHTML='<h3>현장 정보</h3><dl><dt>현장명</dt><dd>'+esc(d.site||'미입력')+'</dd><dt>주소</dt><dd>'+esc(detailAddress(d))+'</dd><dt>공사명</dt><dd>'+esc(d.work||d.work_name||'미입력')+'</dd><dt>공종</dt><dd>'+esc(dealWorkSummary(d))+'</dd></dl>';site.append(button('공종 수정',()=>openWorkEdit()));left.append(site);
+ move('.nearby',left); // 같은 지역 담당 현장 추천 — 3컬럼 재배치에서 유실되던 카드 복원 (외근 동선 묶기)
  now.insertAdjacentHTML('beforeend','<h3>'+esc(next&&next.status!=='completed'?next.text||next.type||'다음 행동':closed?'종료된 영업기회입니다.':'다음 행동이 없습니다.')+'</h3><p>'+esc(next?[next.due||next.due_at,next.assignee||repN(d.assignee)].filter(Boolean).join(' · '):closed?'추가 영업은 새 영업기회에서 관리합니다.':'다음 연락 일정과 해야 할 일을 지정해 주세요.')+'</p>');
  var actions=document.createElement('div');actions.className='dactions';actions.append(button('다음 행동 지정',()=>focusWide('nextActionCard')),button('활동 기록',()=>focusWide('activityFormCard')));now.append(actions);
  if(next&&next.status!=='completed'&&!closed)actions.append(button('다음 행동 완료',()=>completeNextAction()));
@@ -58,6 +59,11 @@ function wide(){
  }
  if(activity){var types=document.createElement('div');types.className='dw-outcomes';['연결됨','부재','재연락 요청','기타'].forEach(label=>types.append(button(label,()=>{document.getElementById('dv-act-type').value='전화';document.getElementById('dv-act-result').value=label;focusWide('dv-act-note')})));activity.querySelector('.formgrid')?.before(types)}
  var timeline=body.querySelector('#activityTimelineHost')?.closest('.dcard');if(timeline){center.append(timeline);var title=timeline.querySelector('h3');if(title)title.textContent='최근 활동'}
+ // 재배치 유실 복원: 단계 여정 바는 «지금 해야 할 일» 바로 아래, 응대 체크리스트는 중앙 작업 흐름 끝에.
+ var journey=body.querySelector('.dcc-journey');if(journey)now.after(journey);
+ var checks=Array.from(body.querySelectorAll('details.dw-fold,.dcard')).find(function(n){return /오늘 먼저 확인할 응대 기록/.test(n.textContent||'')});if(checks)center.append(checks);
+ // 재배치 유실 복원: 고객 핵심 발언 — 실제 기록에서 뽑아 다음 행동으로 잇는다.
+ if(typeof briefVoiceOfCustomer==='function'){var voice=briefVoiceOfCustomer(d,'deal'),voiceCard=document.createElement('div');voiceCard.className='dcard dw-voice';voiceCard.innerHTML='<h3>고객 핵심 발언</h3>'+(voice.length?'<p class="dw-voice-quote">“'+esc(String(voice[0][1]).slice(0,140))+'”</p><small>'+esc(voice[0][0])+' · 실제 기록에서 추출</small>':'<p class="dw-voice-quote">연결된 고객 발언이 없습니다.</p><small>통화·응대 기록에서 핵심 발언을 연결하세요.</small>');voiceCard.append(button('이 발언으로 다음 행동 만들기',()=>dccVoiceToNext()));left.append(voiceCard)}
  var stage=document.createElement('section');stage.className='dcard dw-management';stage.innerHTML='<span>현재 단계</span><h3>'+esc(stageLabel(dealStage(d)))+'</h3><div id="dw-stage-editor"></div><dl><dt>예상금액</dt><dd>'+esc(fmtAmt(d.amount??d.amt??0))+'</dd><dt>담당자</dt><dd>'+esc(repN(d.assignee))+'</dd><dt>다음 확인일</dt><dd>'+esc(next?.due||String(next?.due_at||'').slice(0,10)||'미등록')+'</dd></dl>';
  stage.querySelector('h3').after(button('단계 변경',()=>openTransition()));right.append(stage);
  var amount=body.querySelector('#dv-amt')?.closest('.dcard');if(amount){amount.id='dw-amount';box(right,'금액 · 공종 관리').append(amount)}

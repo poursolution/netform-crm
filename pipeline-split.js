@@ -42,7 +42,9 @@ function mount(list){
  });
 }
 function dedicated(){
- if(!['relationship','expansion'].includes(root.G.page))return;
+ // 확장관리는 사이드바 단독 메뉴 — 파이프라인처럼 상단 단계 스트립 없이 바로 내용을 보여준다.
+ document.querySelector('#pg-expansion > .ps-dedicated-stages')?.remove();
+ if(root.G.page!=='relationship')return;
  const host=document.getElementById('pg-'+root.G.page);if(!host)return;
  let bar=host.querySelector(':scope > .ps-dedicated-stages');if(!bar){bar=document.createElement('div');bar.className='ps-dedicated-stages';host.prepend(bar);}
  bar.innerHTML=selector(root.G.page);bar.onclick=e=>{const b=e.target.closest('[data-ps-action="stage"]');if(b)root.PipelineWorkspace.open(b.dataset.value);};

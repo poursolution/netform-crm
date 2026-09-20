@@ -48,13 +48,13 @@ assert.equal(await page.locator('[data-triage-all],[data-batch]').count(),0);
 assert.equal(await page.locator('#pipeline-stage-root .ps-stage-selector').count(),0,'consulting page has no split selector');
 assert.equal(await page.locator('.sw-work-table tbody tr[data-deal]').count(),30);
 assert.ok(await page.locator('.sw-group-row').count()>=1,'priority group separators');
-// 담당자별 현황판: 행 클릭 = 아래 목록 담당자 필터 토글.
-assert.equal(await page.locator('.sw-owner-board').count(),1);
-assert.match(await page.locator('.sw-owner-board tbody tr').first().innerText(),/황윤선/);
-await page.locator('.sw-owner-board tbody tr').first().click();
+// 담당자별 현황판: 행 클릭 = 아래 목록 담당자 필터 토글. (확장관리의 exp-owner-board가 숨은 DOM에 남으므로 페이지 루트로 스코프)
+assert.equal(await page.locator('#pipeline-stage-root .sw-owner-board').count(),1);
+assert.match(await page.locator('#pipeline-stage-root .sw-owner-board tbody tr').first().innerText(),/황윤선/);
+await page.locator('#pipeline-stage-root .sw-owner-board tbody tr').first().click();
 assert.equal(await page.evaluate(()=>SalesScope.state().owner),'황윤선');
 assert.equal(await page.locator('.sw-scope-head').count(),1);
-await page.locator('.sw-owner-board tbody tr').first().click();
+await page.locator('#pipeline-stage-root .sw-owner-board tbody tr').first().click();
 assert.equal(await page.evaluate(()=>SalesScope.state().owner),'전체');
 assert.equal(await page.locator('.sw-scope-head').count(),0);
 assert.match(await page.locator('.ps-queue-count').innerText(),/30 \/ 125/);

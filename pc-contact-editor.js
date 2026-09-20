@@ -3,19 +3,18 @@
  // PC presentation only: move existing controls without replacing their values,
  // IDs, listeners or the existing save/consent validation path.
  var original = root.openQuickContact;
- var activeObserver;
  if (typeof original !== 'function') return;
  root.openQuickContact = function (mode, key) {
-  if (activeObserver) activeObserver.disconnect();
   original.apply(this, arguments);
   var body = document.getElementById('quickContactBody');
   if (!body || !body.querySelector('#qc-name')) return;
   body.classList.add('pc-contact-editor');
   var form = body.querySelector('.formgrid');
   if (!form || form.querySelector('.pc-contact-editor-extra')) return;
-  var extra = document.createElement('details');
+  var extra = document.createElement('section');
   extra.className = 'pc-contact-editor-extra';
-  var summary = document.createElement('summary');
+  var summary = document.createElement('strong');
+  summary.className = 'pc-contact-editor-extra-label';
   summary.textContent = '사무소 연락처 · 관계정보 · 수신동의';
   extra.appendChild(summary);
   var fields = document.createElement('div');
@@ -66,15 +65,6 @@
    context.pcDecision=body.querySelector('#qc-decision-role').value;
    context.pcTone=body.querySelector('#qc-relation-tone').value;
   }
-  // Make hidden validation errors actionable without requiring users to hunt
-  // for the consent timestamp or office number inside the auxiliary section.
-  var error = body.querySelector('#qc-err');
-  if (error) {
-   var observer = new MutationObserver(function () {
-    if (error.textContent.trim()) extra.open = true;
-   });
-   observer.observe(error, {childList:true, subtree:true, characterData:true});
-   activeObserver = observer;
-  }
+  // 보조 섹션은 항상 펼쳐져 있어 검증 오류 시 자동 펼침 로직이 필요 없다.
  };
 })(window);

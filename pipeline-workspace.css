@@ -112,6 +112,43 @@
 .sw-scope-head small{color:#66758d;font-weight:400;margin-left:6px}
 #pipeline-stage-root .sw-scope-head button{font-size:11.5px;padding:5px 11px}
 
+/* ── 확장관리: 파이프라인과 같은 상단 문법 ── */
+#expansion-root .exp-owner-board{margin:10px 0 12px}
+#expansion-root .exp-owner-board>header{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid #e0e6ef}
+#expansion-root .exp-owner-board>header h3{font-size:13.5px;margin:0}
+#expansion-root .exp-owner-board>header small{color:#66758d;font-size:11px}
+#expansion-root .exp-owner-summary{margin:0;border:0;border-radius:0;background:#fff;padding:4px 6px}
+#expansion-root .exp-owner-row{border-radius:0;border:0;border-top:1px solid #f0f3f8}
+#expansion-root .exp-owner-row.head{border-top:0;background:#f8fafc;font-size:11.5px;color:#63748c}
+#expansion-root .exp-owner-row.on{background:#eff4ff}
+#expansion-root .exp-owner-row:hover{background:#f8fafd}
+#expansion-root .exp-year-tabs{display:flex;gap:6px;margin:0 0 12px;flex-wrap:wrap;border:0;background:none;padding:0}
+#expansion-root .exp-year-tabs button{border:1px solid #dce3ed;border-radius:9px;padding:6px 14px;font-size:12.5px;font-weight:600;color:#627189;background:#fff}
+#expansion-root .exp-year-tabs button.on{border-color:#3b6ce4;background:#f0f5ff;color:#2458c7;font-weight:700}
+#expansion-root .exp-toolbar{background:#fff;border:1px solid #e0e6ef;border-radius:12px;padding:8px 12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:0 0 12px}
+#expansion-root .exp-toolbar label{display:flex;align-items:center;gap:7px;font-size:11px;color:#64748b;margin:0}
+#expansion-root .exp-toolbar select,#expansion-root .exp-toolbar input{min-height:30px;padding:5px 9px;border:1px solid #d3dce9;border-radius:7px;font:inherit}
+#expansion-root .exp-toolbar button{min-height:30px}
+#expansion-root .exp-view-switch{margin-left:auto;display:flex;gap:4px;background:#f1f4f9;border-radius:9px;padding:3px}
+#expansion-root .exp-view-switch button{border:0;background:none;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600;color:#627189}
+#expansion-root .exp-view-switch button.on{background:#101828;color:#fff}
+/* 슬림 필터 — 파이프라인 단계 페이지와 동일한 밀도 */
+#expansion-root .sales-filterbar{padding:8px 12px;margin:10px 0 0;border-radius:12px}
+#expansion-root .sf-row{align-items:center;margin:0 0 6px;gap:8px}
+#expansion-root .sf-row:last-child{margin-bottom:0}
+#expansion-root .sf-label{flex:0 0 auto;padding:0;font-size:11px}
+#expansion-root .sales-filterbar button{min-height:26px;padding:3px 10px;font-size:11px;border-radius:99px;gap:4px}
+#expansion-root .sales-filterbar button em{font-size:10px;padding:0 4px}
+/* KPI 한 줄 — 파이프라인 ps-kpi 재사용 */
+#expansion-root .ps-kpis{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+
+/* ── 경남지사: 파이프라인과 같은 상단 문법 (KPI 한 줄 = 클릭 드릴) ── */
+#gyeongnam-root .ps-kpis{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;margin:10px 0 14px}
+#gyeongnam-root button.ps-kpi{cursor:pointer;font:inherit;text-align:left;align-items:center}
+#gyeongnam-root button.ps-kpi:hover{border-color:#3b6ce4;background:#f7faff}
+#gyeongnam-root .ps-kpi small{color:#8a97ab;font-size:10.5px}
+#gyeongnam-root .gn-campaign-btn{margin-left:auto;align-self:center}
+
 /* ── 컨설팅 공통 틀: 그룹 구분행·기한 칩 ── */
 .sw-frame th,.sw-frame td{padding:9px 12px}
 /* 현장명은 상자 버튼이 아니라 굵은 텍스트 링크로 */
