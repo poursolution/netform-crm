@@ -270,6 +270,103 @@ function constructionFrame(items,list){
  const scopeHead=scopedOwner!=='전체'?'<div class="sw-scope-head"><h3>'+h(scopedOwner)+' 담당 목록 <small>'+ordered.length+'건 · 먼저 볼 것 '+first.length+'</small></h3>'+btn('담당자 필터 해제','owner',scopedOwner)+'</div>':'';
  return constructionOwnerBoard(scopedOwner)+contractReport(list)+segBar+scopeHead+'<p class="ps-queue-count">'+shown.length+' / '+ordered.length+'건 표시 · 먼저 볼 것 '+first.length+'건</p>'+table+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
 }
+/* 수주·실주 v2: 영업 방향성 자료 — 실적·사유·공종·경쟁사 분포를 담당자 현황과 함께. */
+function distList(title,pairs,unit){
+ const rows=pairs.filter(([n])=>n).slice(0,6);
+ if(!rows.length)return '';
+ const max=Math.max(1,...rows.map(([,v])=>v));
+ return '<div class="sw-dist"><h4>'+h(title)+'</h4>'+rows.map(([n,v])=>'<div><span>'+h(n)+'</span><meter min="0" max="'+max+'" value="'+v+'"></meter><b>'+h(unit?money(v):v+'건')+'</b></div>').join('')+'</div>';
+}
+function topPairs(items,keyFn,valueFn){
+ const map=new Map();
+ items.forEach(x=>{const k=String(keyFn(x)||'').trim()||'미기록';map.set(k,(map.get(k)||0)+(valueFn?Number(valueFn(x))||0:1));});
+ return Array.from(map.entries()).sort((a,b)=>b[1]-a[1]);
+}
+function wonOwnerBoard(scopedOwner){
+ const src=(root.PipelineWorkspace&&root.PipelineWorkspace.rows?root.PipelineWorkspace.rows({unscoped:true}):[]).filter(r=>r.group==='won');
+ const map=new Map();
+ src.forEach(r=>{
+  const o=r.owner||'미배정',row=map.get(o)||{owner:o,count:0,amount:0,pending:0,done:0};
+  row.count++;row.amount+=Number(r.amount)||0;
+  if(!Number(r.amount))row.pending++;
+  if(r.item.completion_date)row.done++;
+  map.set(o,row);
+ });
+ const rows=Array.from(map.values());
+ rows.forEach(x=>{x.light=x.pending>=2?'r':x.pending?'y':'g'});
+ const order={r:0,y:1,g:2};
+ rows.sort((a,b)=>b.amount-a.amount||order[a.light]-order[b.light]||(typeof root.repCompare==='function'?root.repCompare(a.owner,b.owner):String(a.owner).localeCompare(String(b.owner))));
+ const total=rows.reduce((s,x)=>({count:s.count+x.count,amount:s.amount+x.amount,pending:s.pending+x.pending,done:s.done+x.done}),{count:0,amount:0,pending:0,done:0});
+ const body=rows.map(x=>'<tr data-ps-action="owner" data-value="'+a(x.owner)+'"'+(scopedOwner===x.owner?' class="sel"':'')+'><td><span class="sw-light '+x.light+'"></span><b>'+h(x.owner)+'</b></td><td>'+x.count+'</td><td class="sw-amt">'+h(money(x.amount).replace('금액 미입력','-'))+'</td><td class="'+(x.pending?'sw-bad':'sw-zero')+'">'+x.pending+'</td><td class="'+(x.done?'sw-warn':'sw-zero')+'">'+x.done+'</td><td class="sw-go">'+(scopedOwner===x.owner?'전체 보기':'목록 보기')+'</td></tr>').join('')
+  +'<tr class="sw-total"><td>전체</td><td>'+total.count+'</td><td class="sw-amt">'+h(money(total.amount).replace('금액 미입력','-'))+'</td><td class="'+(total.pending?'sw-bad':'sw-zero')+'">'+total.pending+'</td><td class="'+(total.done?'sw-warn':'sw-zero')+'">'+total.done+'</td><td></td></tr>';
+ return '<section class="sw-owner-board" aria-label="담당자별 수주 실적"><header><h3>담당자별 수주 실적</h3><small>수주 금액 순 · 행 클릭 = 아래 목록 필터</small>'+btn('전체 보기','owner','전체')+'</header><div class="sw-table-scroll"><table><thead><tr>'+['담당자','수주','수주 금액','금액 미확인','준공 완료',''].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+body+'</tbody></table></div></section>';
+}
+function wonFrame(items,list){
+ const f=root.G.pipelineQueue;
+ const scopedOwner=root.SalesScope&&root.SalesScope.state?root.SalesScope.state().owner:'전체';
+ const needCheck=x=>!x.values.contractDate||/확인 필요/.test(String(x.values.contractState||''));
+ const first=items.filter(needCheck),rest=items.filter(x=>!needCheck(x)).slice().sort((p,q)=>String(q.values.contractDate||'').localeCompare(String(p.values.contractDate||'')));
+ const ordered=first.concat(rest);
+ const insights='<div class="sw-insights">'+distList('공종별 수주',topPairs(items,x=>root.dealWorkSummary(x.row.item)))+distList('브랜드별 수주',topPairs(items,x=>x.row.item.brand))+'</div>';
+ const pages=Math.max(1,Math.ceil(ordered.length/30));f.page=Math.min(f.page||1,pages);
+ const shown=ordered.slice((f.page-1)*30,f.page*30);
+ let markedFirst=false,markedRest=false,rowsHtml='';
+ shown.forEach(x=>{
+  const r=x.row,v=x.values,isFirst=needCheck(x);
+  if(isFirst&&!markedFirst){markedFirst=true;rowsHtml+='<tr class="sw-group-row hot"><td colspan="7">실적 확인 필요 — 원장·계약일 미기록 ('+first.length+')</td></tr>';}
+  if(!isFirst&&!markedRest){markedRest=true;rowsHtml+='<tr class="sw-group-row"><td colspan="7">확정 실적 · 최근 계약순 ('+rest.length+')</td></tr>';}
+  rowsHtml+='<tr data-deal="'+a(r.key)+'"'+(isFirst?' class="sw-first"':'')+'><td>'+btn(r.site,'record',r.key)+(scopedOwner==='전체'?'<small>'+h(r.owner||'미배정')+'</small>':'')+'</td><td>'+h(v.contractDate||'미기록')+'</td><td>'+h(money(v.contractAmount))+'</td><td class="sw-contract-state">'+h(v.contractState)+'</td><td>'+h(v.salesOwner||'')+'</td><td>'+h(v.completionDate||'-')+'</td><td>'+btn('처리','primary',r.key)+'</td></tr>';
+ });
+ const table='<div class="sw-table-scroll"><table class="sw-work-table sw-frame"><thead><tr>'+['현장','계약일','계약금액','실적 상태','실적 귀속','준공일','관리'].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>'+(shown.length?'':empty)+'</div>';
+ const scopeHead=scopedOwner!=='전체'?'<div class="sw-scope-head"><h3>'+h(scopedOwner)+' 수주 목록 <small>'+ordered.length+'건</small></h3>'+btn('담당자 필터 해제','owner',scopedOwner)+'</div>':'';
+ return wonOwnerBoard(scopedOwner)+contractReport(list)+insights+scopeHead+'<p class="ps-queue-count">'+shown.length+' / '+ordered.length+'건 표시</p>'+table+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
+}
+function lostOwnerBoard(scopedOwner){
+ const src=(root.PipelineWorkspace&&root.PipelineWorkspace.rows?root.PipelineWorkspace.rows({unscoped:true}):[]).filter(r=>r.group==='lost');
+ const map=new Map();
+ src.forEach(r=>{
+  const o=r.owner||'미배정',row=map.get(o)||{owner:o,count:0,amount:0,noReason:0,recontact:0};
+  row.count++;row.amount+=Number(r.amount)||0;
+  if(!r.reason||r.reason==='미기록')row.noReason++;
+  const rc=r.item.recontact_possibility||(r.fields&&r.fields.recontact_possibility)||'';
+  if(rc&&!/불가|없음/.test(String(rc)))row.recontact++;
+  map.set(o,row);
+ });
+ const rows=Array.from(map.values());
+ rows.forEach(x=>{x.light=x.noReason>=2?'r':x.noReason?'y':'g'});
+ const order={r:0,y:1,g:2};
+ rows.sort((a,b)=>order[a.light]-order[b.light]||b.count-a.count||(typeof root.repCompare==='function'?root.repCompare(a.owner,b.owner):String(a.owner).localeCompare(String(b.owner))));
+ const total=rows.reduce((s,x)=>({count:s.count+x.count,amount:s.amount+x.amount,noReason:s.noReason+x.noReason,recontact:s.recontact+x.recontact}),{count:0,amount:0,noReason:0,recontact:0});
+ const body=rows.map(x=>'<tr data-ps-action="owner" data-value="'+a(x.owner)+'"'+(scopedOwner===x.owner?' class="sel"':'')+'><td><span class="sw-light '+x.light+'"></span><b>'+h(x.owner)+'</b></td><td>'+x.count+'</td><td class="sw-amt">'+h(money(x.amount).replace('금액 미입력','-'))+'</td><td class="'+(x.noReason?'sw-bad':'sw-zero')+'">'+x.noReason+'</td><td class="'+(x.recontact?'sw-warn':'sw-zero')+'">'+x.recontact+'</td><td class="sw-go">'+(scopedOwner===x.owner?'전체 보기':'목록 보기')+'</td></tr>').join('')
+  +'<tr class="sw-total"><td>전체</td><td>'+total.count+'</td><td class="sw-amt">'+h(money(total.amount).replace('금액 미입력','-'))+'</td><td class="'+(total.noReason?'sw-bad':'sw-zero')+'">'+total.noReason+'</td><td class="'+(total.recontact?'sw-warn':'sw-zero')+'">'+total.recontact+'</td><td></td></tr>';
+ return '<section class="sw-owner-board" aria-label="담당자별 실주 현황"><header><h3>담당자별 실주 현황</h3><small>사유 미기록 많은 순 · 행 클릭 = 아래 목록 필터</small>'+btn('전체 보기','owner','전체')+'</header><div class="sw-table-scroll"><table><thead><tr>'+['담당자','실주','실주 금액','사유 미기록','재접촉 검토',''].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+body+'</tbody></table></div></section>';
+}
+function lostFrame(items,list){
+ const f=root.G.pipelineQueue;
+ const scopedOwner=root.SalesScope&&root.SalesScope.state?root.SalesScope.state().owner:'전체';
+ const month=root.G.lossResultMonth||new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
+ const monthItems=items.filter(x=>!x.values.lossDate||String(x.values.lossDate).startsWith(month));
+ const monthBar='<div class="sw-scope-head"><label class="sw-period">실주 조회월 <input aria-label="실주 조회월" type="month" data-ps-filter="lossResultMonth" value="'+a(month)+'"></label><small>실주일 미기록 건은 항상 표시됩니다</small></div>';
+ const selected=monthItems.filter(x=>x.values.lossDate);
+ const reasons=new Map();selected.forEach(x=>reasons.set(x.values.lossReason,(reasons.get(x.values.lossReason)||0)+1));
+ const reasonBlock='<div class="sw-loss-reasons"><h4>실주사유 분포 · '+month+'</h4>'+([...reasons].sort((p,q)=>q[1]-p[1]).map(([n,c])=>'<div><span>'+h(n)+'</span><meter min="0" max="'+Math.max(1,selected.length)+'" value="'+c+'"></meter><b>'+c+'건</b></div>').join('')||'<p class="ps-empty">해당 월 실주 기록이 없습니다.</p>')+'</div>';
+ const insights='<div class="sw-insights">'+reasonBlock+distList('경쟁사별 실주',topPairs(selected,x=>x.values.competitor))+'</div>';
+ const needFix=x=>!x.values.lossDate||!x.values.lossReason||x.values.lossReason==='미기록';
+ const first=monthItems.filter(needFix),rest=monthItems.filter(x=>!needFix(x)).slice().sort((p,q)=>String(q.values.lossDate||'').localeCompare(String(p.values.lossDate||'')));
+ const ordered=first.concat(rest);
+ const pages=Math.max(1,Math.ceil(ordered.length/30));f.page=Math.min(f.page||1,pages);
+ const shown=ordered.slice((f.page-1)*30,f.page*30);
+ let markedFirst=false,markedRest=false,rowsHtml='';
+ shown.forEach(x=>{
+  const r=x.row,v=x.values,isFirst=needFix(x);
+  if(isFirst&&!markedFirst){markedFirst=true;rowsHtml+='<tr class="sw-group-row hot"><td colspan="7">기록 보완 필요 — 실주일·사유 미기록 ('+first.length+')</td></tr>';}
+  if(!isFirst&&!markedRest){markedRest=true;rowsHtml+='<tr class="sw-group-row"><td colspan="7">실주 기록 · 최근순 ('+rest.length+')</td></tr>';}
+  rowsHtml+='<tr data-deal="'+a(r.key)+'"'+(isFirst?' class="sw-first"':'')+'><td>'+btn(r.site,'record',r.key)+(scopedOwner==='전체'?'<small>'+h(r.owner||'미배정')+'</small>':'')+'</td><td>'+h(v.lossDate||'미기록')+'</td><td>'+h(money(x.row.amount))+'</td><td>'+h(v.lossReason||'미기록')+'</td><td>'+h(v.competitor||'-')+'</td><td>'+h(v.recontact||'-')+'</td><td>'+btn('처리','primary',r.key)+'</td></tr>';
+ });
+ const table='<div class="sw-table-scroll"><table class="sw-work-table sw-frame"><thead><tr>'+['현장','실주일','실주금액','실주사유','경쟁사','재접촉','관리'].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>'+(shown.length?'':empty)+'</div>';
+ const scopeHead=scopedOwner!=='전체'?'<div class="sw-scope-head"><h3>'+h(scopedOwner)+' 실주 목록 <small>'+ordered.length+'건</small></h3>'+btn('담당자 필터 해제','owner',scopedOwner)+'</div>':'';
+ return lostOwnerBoard(scopedOwner)+monthBar+insights+scopeHead+'<p class="ps-queue-count">'+shown.length+' / '+ordered.length+'건 표시</p>'+table+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
+}
 function queue(key,items){
  const spec=root.StageSpecs.get(key);
  return spec.priorityRule.map((title,i)=>group(title,items.filter(x=>x.priority===i),x=>{
@@ -286,6 +383,8 @@ function render(key,list){
  if(key==='sent')return sentFrame(items);
  if(spec.workspaceType==='schedule')return schedule(items);
  if(key==='construction')return constructionFrame(items,list);
+ if(key==='won')return wonFrame(items,list);
+ if(key==='lost')return lostFrame(items,list);
  if(spec.summaryMetrics==='contract-ledger')summary=contractReport(list);
  else if(spec.summaryMetrics==='loss-reasons'){
   const month=root.G.lossResultMonth||new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');

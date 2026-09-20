@@ -2,7 +2,7 @@
 'use strict';
 const S=root.PipelineStages,h=x=>root.esc(String(x??'')),attr=x=>root.escAttr(String(x??''));let actor='',expanded=true,seen=new Set(),booted=false;
 /* 상세를 팝업으로만 여는(스플릿 없는) 단계 — v2 공통 틀 적용 단계가 늘 때마다 추가한다. */
-const POPUP_STAGES=['consulting','sent','relationship','competition','construction'];
+const POPUP_STAGES=['consulting','sent','relationship','competition','construction','won','lost'];
 function state(){const id=String(root.ME?.id||root.ME?.name||'');if(id!==actor){actor=id;root.G.pipelineStage='all';root.G.pipelineQueue={status:'all',page:1};}return root.G.pipelineQueue||(root.G.pipelineQueue={status:'all',page:1});}
 function button(label,action,value,cls){return '<button type="button" class="'+(cls||'')+'" data-ps-action="'+action+'" data-value="'+attr(value||'')+'">'+h(label)+'</button>';}
 function canonicalCode(d){const q=(root.Phase1?.queue?.list?.()||[]).filter(q=>String(q.object_id)===String(d.id)&&q.operation==='transition').at(-1);return q&&q.status!=='done'?q.payload?.from||root.dealStage(d):root.dealStage(d);}
@@ -60,8 +60,8 @@ function kanbanCard(r){
  return '<button type="button" class="ps-kcard '+(b[0]==='hot'?'stall':b[0]==='warn'?'warn':'')+'" data-ps-action="record" data-value="'+attr(r.key)+'"><span class="ps-kr1"><b class="ps-ksite">'+h(r.site)+'</b><span class="ps-kbadge '+b[0]+'">'+h(b[1])+'</span></span><span class="ps-kr2"><span>'+h(r.owner||'미배정')+'</span><b>'+moneyShort(r.amount)+'</b></span><span class="ps-knext'+(none?' none':'')+'">'+h(foot)+'</span></button>';
 }
 function kanban(all){
- // 7열이 화면 안에 다 들어오고(가로 스크롤 없음), 목록은 칼럼 안에서만 스크롤된다.
- const defs=S.definitions.filter(d=>d.key!=='expansion');
+ // 6열(실주 제외)이 화면 안에 다 들어오고, 목록은 칼럼 안에서만 스크롤된다. 실주는 사이드바 페이지에서.
+ const defs=S.definitions.filter(d=>!['expansion','lost'].includes(d.key));
  return '<div class="ps-kanban">'+defs.map(d=>{
   const items=all.filter(r=>r.group===d.key);
   const amount=items.reduce((s,r)=>s+(Number(r.amount)||0),0);

@@ -5,8 +5,8 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
 await page.evaluate(()=>{AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};LOCAL={deals:{},inquiries:{},expansionPool:[]};B={deals:[{id:'sent-1',site:'발송 후속 현장',brand:'POUR솔루션',assignee:'이필선',code:'sent',stage_code:'sent',grp:'컨설팅·견적',amt:10000000,created:'2024-01-01',stageHistory:[{from:'consulting',to:'sent',at:'2026-09-01'}]},{id:'rel-1',site:'관계 유지 현장',brand:'POUR솔루션',assignee:'김성민',code:'silent',grp:'영업·관리',amt:20000000,created:'2026-09-01'},{id:'won-1',site:'기존 수주 현장',brand:'POUR솔루션',assignee:'이필선',code:'won',outcome:'won',grp:'수주 성공',won_amount:8000000,completion_date:'2026-09-01',closed_at:'2026-09-01',created:'2024-01-01'}],inquiries:[],inquiryTrash:[]};G.brand=G.rep=G.workFilter='전체';G.q='';G.year='2026';window.__writes=[];pushWrite=(...x)=>__writes.push(x);window.__open=drwDeal;drwDeal=s=>window.__selected=JSON.parse(s).id;window.__renderDetail=renderDetail;renderDetail=()=>{window.__selected=CUR_DETAIL.item.id;};document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';PipelineWorkspace.open('all');});
 // 칸반 단일 뷰: 7열(수주·실주 포함, 확장 제외)이 가로 스크롤 없이 들어오고 금액·KPI가 항상 보인다.
 assert.equal(await page.locator('#pipeline-stage-menu button').count(),7);
-assert.equal(await page.locator('.ps-kanban>.ps-kcol').count(),7);
-assert.deepEqual(await page.locator('.ps-kanban .ps-ktitle').allTextContents(),['01 컨설팅 설계단계','02 자료 발송완료','03 관계관리','04 경쟁·임박·입찰','05 계약·시공','06 수주','07 실주']);
+assert.equal(await page.locator('.ps-kanban>.ps-kcol').count(),6);
+assert.deepEqual(await page.locator('.ps-kanban .ps-ktitle').allTextContents(),['01 컨설팅 설계단계','02 자료 발송완료','03 관계관리','04 경쟁·임박·입찰','05 계약·시공','06 수주']);
 assert.equal(await page.locator('.ps-kpis .ps-kpi').count(),5);
 assert.match(await page.locator('.ps-kpis').innerText(),/진행 금액/);
 assert.equal(await page.locator('.ps-kcard').count(),3);
