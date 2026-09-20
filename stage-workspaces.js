@@ -11,9 +11,60 @@ function stats(items){return '<div class="sw-stats">'+items.map(([k,v])=>'<div><
 function facts(items){return '<dl>'+items.map(([k,v])=>'<div><dt>'+h(k)+'</dt><dd>'+h(v||'미기록')+'</dd></div>').join('')+'</dl>';}
 function card(r,body,label='처리',action='process'){return '<article class="sw-card" data-deal="'+a(r.key)+'"><header><div>'+btn(r.site,'record',r.key)+'<small>'+h(r.owner||'미배정')+' · '+h(root.dealWorkSummary(r.item)||'공종 미기록')+'</small></div></header>'+body+'<div class="sw-action">'+btn(label,action,r.key)+'</div></article>';}
 function group(title,items,draw,cls=''){if(!items.length)return '';return '<section class="sw-group '+cls+'"><h3>'+h(title)+' <span>'+items.length+'건</span></h3><div class="sw-cards">'+(items.map(draw).join('')||empty)+'</div></section>';}
+/* 관계관리 v2(A안): 담당자 현황판 + 단계 세그먼트 + «먼저 볼 것» 표.
+   유대강화는 90일까지 — 초과분은 «침묵 전환» 제안. 프로모션 승인은 상세 팝업 카드에서. */
+const REL_STAGES={rapport:'유대강화',silent:'침묵관리',waiting:'대기고객'};
+function relPromoDue(r){return root.RelationshipPromo&&root.RelationshipPromo.due?root.RelationshipPromo.due(r.item):null;}
+function relSilentNeeded(r){return r.code==='rapport'&&age(r)!=null&&age(r)>=90;}
+function relResume(r){const f=r.item.stage_contexts?.waiting?.fields||{};return f.resume_date||r.fields.resume_date||'';}
+function relationshipOwnerBoard(scopedOwner){
+ const src=(root.PipelineWorkspace&&root.PipelineWorkspace.rows?root.PipelineWorkspace.rows({unscoped:true}):[]).filter(r=>r.group==='relationship');
+ const map=new Map();
+ src.forEach(r=>{
+  const o=r.owner||'미배정',row=map.get(o)||{owner:o,rap:0,sil:0,wait:0,amount:0,over:0,silNeed:0,promo:0,maxAge:0};
+  if(r.code==='rapport')row.rap++;else if(r.code==='waiting')row.wait++;else row.sil++;
+  row.amount+=Number(r.amount)||0;
+  if(r.days!=null&&r.days<0)row.over++;
+  if(relSilentNeeded(r))row.silNeed++;
+  if(relPromoDue(r))row.promo++;
+  const contactAge=age(r);if(contactAge!=null)row.maxAge=Math.max(row.maxAge,contactAge);
+  map.set(o,row);
+ });
+ const rows=Array.from(map.values());
+ rows.forEach(x=>{x.light=x.over>=5||x.maxAge>=180||x.silNeed>=2?'r':(x.over+x.silNeed+x.promo)>0?'y':'g'});
+ const order={r:0,y:1,g:2};
+ rows.sort((a,b)=>order[a.light]-order[b.light]||b.over-a.over||b.promo-a.promo||(typeof root.repCompare==='function'?root.repCompare(a.owner,b.owner):String(a.owner).localeCompare(String(b.owner))));
+ const total=rows.reduce((s,x)=>({rap:s.rap+x.rap,sil:s.sil+x.sil,wait:s.wait+x.wait,amount:s.amount+x.amount,over:s.over+x.over,silNeed:s.silNeed+x.silNeed,promo:s.promo+x.promo,maxAge:Math.max(s.maxAge,x.maxAge)}),{rap:0,sil:0,wait:0,amount:0,over:0,silNeed:0,promo:0,maxAge:0});
+ const body=rows.map(x=>'<tr data-ps-action="owner" data-value="'+a(x.owner)+'"'+(scopedOwner===x.owner?' class="sel"':'')+'><td><span class="sw-light '+x.light+'"></span><b>'+h(x.owner)+'</b></td><td>'+x.rap+'</td><td>'+x.sil+'</td><td>'+x.wait+'</td><td class="sw-amt">'+h(money(x.amount).replace('금액 미입력','-'))+'</td><td class="'+(x.over?'sw-bad':'sw-zero')+'">'+x.over+'</td><td class="'+(x.silNeed?'sw-bad':'sw-zero')+'">'+x.silNeed+'</td><td class="'+(x.promo?'sw-warn':'sw-zero')+'">'+x.promo+'</td><td class="'+(x.maxAge>=180?'sw-bad':x.maxAge>=90?'sw-warn':'sw-zero')+'">'+(x.maxAge?x.maxAge+'일':'-')+'</td><td class="sw-go">'+(scopedOwner===x.owner?'전체 보기':'목록 보기')+'</td></tr>').join('')
+  +'<tr class="sw-total"><td>전체</td><td>'+total.rap+'</td><td>'+total.sil+'</td><td>'+total.wait+'</td><td class="sw-amt">'+h(money(total.amount).replace('금액 미입력','-'))+'</td><td class="'+(total.over?'sw-bad':'sw-zero')+'">'+total.over+'</td><td class="'+(total.silNeed?'sw-bad':'sw-zero')+'">'+total.silNeed+'</td><td class="'+(total.promo?'sw-warn':'sw-zero')+'">'+total.promo+'</td><td>'+(total.maxAge?total.maxAge+'일':'-')+'</td><td></td></tr>';
+ return '<section class="sw-owner-board" aria-label="담당자별 관계관리 현황"><header><h3>담당자별 현황</h3><small>위험 높은 순 · 행 클릭 = 아래 목록 필터</small>'+btn('전체 보기','owner','전체')+'</header><div class="sw-table-scroll"><table><thead><tr>'+['담당자','유대','침묵','대기','합계 금액','연락 초과','침묵 전환','발송 대기','최장 미접촉',''].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+body+'</tbody></table></div></section>';
+}
 function relationship(list){
- const items=list.slice().sort((a,b)=>(age(b)??99999)-(age(a)??99999));
- return stats([['17일 이상 미접촉',items.filter(r=>age(r)>=17).length],['7~16일 미접촉',items.filter(r=>age(r)>=7&&age(r)<17).length],['오늘 연락',items.filter(r=>r.days===0).length],['접촉 이력 미확인',items.filter(r=>age(r)==null).length],['연락일 미지정',items.filter(r=>r.days==null).length]])+group('접촉 필요 · 오래된 접촉부터',items,r=>card(r,'<strong class="sw-contact-age">'+h(age(r)==null?'유효접촉 미확인':age(r)+'일 미접촉')+'</strong>'+facts([['마지막 유효접촉',r.last],['관계 상태',root.stageLabel(r.code)],['고객 반응',r.fields.reaction||r.fields.statement],['다음 연락',r.due],['다음 행동',r.next?.text]]),'연락 기록','contact'));
+ const f=root.G.pipelineQueue;
+ const scopedOwner=root.SalesScope&&root.SalesScope.state?root.SalesScope.state().owner:'전체';
+ const seg=root.G.relSeg&&REL_STAGES[root.G.relSeg]?root.G.relSeg:'all';
+ const withMeta=list.map(r=>({r,promo:relPromoDue(r),silNeed:relSilentNeeded(r),contactAge:age(r),resume:r.code==='waiting'?relResume(r):''}));
+ const segFiltered=withMeta.filter(x=>seg==='all'||x.r.code===seg||(seg==='silent'&&!['rapport','waiting'].includes(x.r.code)));
+ const urgent=x=>(x.r.days!=null&&x.r.days<0)||x.silNeed||!!x.promo||(x.r.code==='waiting'&&!x.resume)||x.r.days===0;
+ const first=segFiltered.filter(urgent).sort((p,q)=>((q.r.days!=null&&q.r.days<0)?-q.r.days:0)-((p.r.days!=null&&p.r.days<0)?-p.r.days:0)||(q.contactAge||0)-(p.contactAge||0));
+ const rest=segFiltered.filter(x=>!urgent(x)).sort((p,q)=>String(p.r.due||'9999').localeCompare(String(q.r.due||'9999'))||String(p.r.key).localeCompare(String(q.r.key)));
+ const ordered=first.concat(rest);
+ const segBar='<nav class="sw-seg" aria-label="관계 단계">'+[['all','전체',withMeta.length],['rapport','유대강화',withMeta.filter(x=>x.r.code==='rapport').length],['silent','침묵관리',withMeta.filter(x=>!['rapport','waiting'].includes(x.r.code)).length],['waiting','대기고객',withMeta.filter(x=>x.r.code==='waiting').length]].map(([k,label,n])=>'<button type="button" data-ps-action="relseg" data-value="'+k+'" aria-pressed="'+(seg===k)+'">'+h(label)+' <b>'+n+'</b></button>').join('')+'</nav>';
+ const pages=Math.max(1,Math.ceil(ordered.length/30));f.page=Math.min(f.page||1,pages);
+ const shown=ordered.slice((f.page-1)*30,f.page*30);
+ let markedFirst=false,markedRest=false,rowsHtml='';
+ shown.forEach(x=>{
+  const r=x.r,isFirst=urgent(x);
+  if(isFirst&&!markedFirst){markedFirst=true;rowsHtml+='<tr class="sw-group-row hot"><td colspan="7">먼저 볼 것 — 연락 초과 · 오늘 · 침묵 전환 · 발송 대기 · 재개일 없음 ('+first.length+')</td></tr>';}
+  if(!isFirst&&!markedRest){markedRest=true;rowsHtml+='<tr class="sw-group-row"><td colspan="7">정상 진행 ('+rest.length+')</td></tr>';}
+  const stageChip='<span class="sw-stg sw-stg-'+(r.code==='rapport'?'rap':r.code==='waiting'?'wait':'sil')+'">'+h(REL_STAGES[r.code]||'침묵관리')+'</span>'+(x.silNeed?' <span class="sw-due-chip hot">3개월 초과</span>':'')+(x.promo?' <span class="sw-due-chip warn">'+h(x.promo.label)+' 발송 대기</span>':'');
+  const nextChip=r.code==='waiting'?(x.resume?'<span class="sw-due-chip mut">재개 '+h(String(x.resume).slice(0,10))+'</span>':'<span class="sw-due-chip warn">재개일 없음</span>'):(r.days==null?'<span class="sw-due-chip warn">연락일 없음</span>':r.days<0?'<span class="sw-due-chip hot">'+Math.abs(r.days)+'일 지남</span>':r.days===0?'<span class="sw-due-chip warn">오늘</span>':'<span class="sw-due-chip ok">D-'+r.days+'</span>');
+  const manage=(x.silNeed?btn('침묵 전환','stage-edit',r.key)+' ':'')+btn('처리','contact',r.key);
+  rowsHtml+='<tr data-deal="'+a(r.key)+'"'+(isFirst?' class="sw-first"':'')+'><td>'+btn(r.site,'record',r.key)+(scopedOwner==='전체'?'<small>'+h(r.owner||'미배정')+'</small>':'')+'</td><td>'+stageChip+'</td><td>'+(x.contactAge==null?'미확인':x.contactAge+'일 전')+'</td><td>'+nextChip+(r.due?'<small>'+h(String(r.due).slice(0,10))+'</small>':'')+'</td><td>'+h(money(r.amount))+'</td><td>'+h(r.next?.text||'다음 연락 등록')+'</td><td>'+manage+'</td></tr>';
+ });
+ const table='<div class="sw-table-scroll"><table class="sw-work-table sw-frame"><thead><tr>'+['현장','단계','마지막 접촉','다음 연락','예상금액','다음 행동','관리'].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>'+(shown.length?'':empty)+'</div>';
+ const scopeHead=scopedOwner!=='전체'?'<div class="sw-scope-head"><h3>'+h(scopedOwner)+' 담당 목록 <small>'+ordered.length+'건 · 먼저 볼 것 '+first.length+'</small></h3>'+btn('담당자 필터 해제','owner',scopedOwner)+'</div>':'';
+ return relationshipOwnerBoard(scopedOwner)+segBar+scopeHead+'<p class="ps-queue-count">'+shown.length+' / '+ordered.length+'건 표시 · 먼저 볼 것 '+first.length+'건</p>'+table+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
 }
 function contractReport(list){
  const now=new Date(),month=root.G.contractResultMonth||now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');

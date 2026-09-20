@@ -35,7 +35,7 @@ await page.locator('#pipeline-stage-root [data-sf-type="INTERNAL"]').click();
 assert.match(await page.locator('#pipeline-stage-root [data-sf-owner="황윤선"]').innerText(),/1/);
 await page.locator('#pipeline-stage-root [data-sf-owner="황윤선"]').click();assert.equal(await page.locator('.sw-work-table tbody tr[data-deal]').count(),1);
 await page.locator('[data-ps-filter="q"]').fill('A');await page.locator('[data-ps-filter="q"]').press('Enter');
-await page.locator('#pipeline-stage-menu [data-value="relationship"]').click();assert.equal(await page.locator('[data-ps-filter="q"]').inputValue(),'');assert.equal(await page.locator('.sw-card').count(),1);assert.match(await page.locator('.sw-card').innerText(),/C/);
+await page.locator('#pipeline-stage-menu [data-value="relationship"]').click();assert.equal(await page.locator('[data-ps-filter="q"]').inputValue(),'');assert.equal(await page.locator('.sw-work-table tbody tr[data-deal]').count(),1);assert.match(await page.locator('.sw-work-table tbody tr[data-deal]').innerText(),/C/);
 await page.evaluate(()=>goPage('dash'));assert.equal(await page.locator('#si-dash [data-sf-owner="황윤선"]').getAttribute('aria-pressed'),'true');assert.equal(await page.locator('#si-dash select[aria-label="브랜드"]').count(),0);
 await page.locator('#si-dash [data-sf-type="EXTERNAL"]').click();assert.deepEqual(await page.locator('#si-dash [data-sf-owner]').evaluateAll(ns=>ns.map(n=>n.dataset.sfOwner)),['전체','전용성','조성용','고영운']);
 await page.evaluate(()=>goPage('inq'));assert.equal(await page.locator('#pg-inq .sales-filterbar').count(),1);assert.equal(await page.locator('#pg-inq select[aria-label="문의 담당자"]').count(),0);
