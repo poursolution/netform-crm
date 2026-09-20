@@ -10,12 +10,12 @@ document.addEventListener('pointerover',e=>{const n=e.target.closest('[data-help
 document.addEventListener('pointerout',e=>{const n=e.target.closest('[data-help]');if(n&&!n.contains(e.relatedTarget))hideTip()});
 document.addEventListener('focusin',e=>{const n=e.target.closest('[data-help]');if(n)tooltip(n,0)});
 document.addEventListener('focusout',hideTip);window.addEventListener('resize',hideTip);document.addEventListener('scroll',hideTip,true);
-function close(restore=true){hideTip();if(!state)return;const old=state;state=null;old.moves.forEach(([n,mark])=>{if(mark.isConnected)mark.replaceWith(n)});old.panel.remove();old.background.forEach(n=>n.inert=false);if(restore&&old.focus?.isConnected)old.focus.focus({preventScroll:true});}
+function close(restore=true){hideTip();if(!state)return;const old=state;state=null;old.panel.querySelectorAll('[data-material-hidden]').forEach(n=>{n.hidden=false;delete n.dataset.materialHidden});old.moves.forEach(([n,mark])=>{if(mark.isConnected)mark.replaceWith(n)});old.panel.remove();old.background.forEach(n=>n.inert=false);if(restore&&old.focus?.isConnected)old.focus.focus({preventScroll:true});}
 function take(n,host){if(!n||!state)return;const mark=document.createComment('detail-action-position');n.before(mark);state.moves.push([n,mark]);host.append(n);}
 function open(key){
  const view=$('detailView');if(!view?.classList.contains('dw-wide'))return false;
  close(false);hideTip();
- const titles={activity:'활동 기록 · 다음 행동',next:'다음 행동 설정',stage:'단계 변경',owner:'담당자 변경',amount:'예상금액 수정',materials:'자료 보기 · 추가',history:'전체 이력',help:'관리 기준'};
+ const titles={activity:'활동 기록 · 다음 행동',next:'다음 행동 설정',stage:'단계 변경',owner:'담당자 변경',amount:'예상금액 수정',materials:'자료 보기 · 추가',management:'관리정보 수정',history:'전체 이력',help:'관리 기준'};
  const panel=document.createElement('div');panel.id='detailAction';panel.className='da-layer '+(['activity','stage','materials','history'].includes(key)?'da-drawer':'da-compact');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-labelledby','da-title');
  const sheet=document.createElement('section');sheet.className='da-sheet';const head=document.createElement('header');const title=document.createElement('h2');title.id='da-title';title.textContent=titles[key];const x=button('닫기',key,()=>{if(key==='stage')root.StageTransitionUI?.close();else close()});x.removeAttribute('data-help');x.setAttribute('aria-label','작업창 닫기');head.append(title,x);const content=document.createElement('div');content.className='da-content';sheet.append(head,content);panel.append(sheet);
  state={key,panel,moves:[],focus:document.activeElement,background:Array.from(view.children)};view.append(panel);state.background.forEach(n=>n.inert=true);
@@ -24,8 +24,10 @@ function open(key){
  if(key==='next'){take(next,content);const save=next?.querySelector('.dactions .pri');if(save)save.style.display='';}
  if(key==='amount')take($('dw-amount'),content);
  if(key==='owner')take($('dv-assignee')?.closest('.dcard'),content);
- if(key==='materials'){take($('execFiles'),content);take($('execQuotePanel'),content);}
- if(key==='history'){take($('activityTimelineHost')?.closest('.dcard'),content);take($('dw-history'),content);const h=$('dw-history');if(h)h.open=true;}
+ if(key==='materials'){take($('execFiles'),content);take($('execQuotePanel'),content);const nav=document.createElement('nav');nav.className='da-material-tabs';nav.setAttribute('aria-label','자료 분류');['전체','사진','견적','기타'].forEach(label=>{const b=button(label,'materials',()=>{nav.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));content.querySelectorAll('#execFiles,#execQuotePanel,.exec-file').forEach(n=>{n.dataset.materialHidden='';n.hidden=n.id==='execFiles'?label==='견적':n.id==='execQuotePanel'?!['전체','견적'].includes(label):label==='사진'?n.classList.contains('doc'):label==='기타'?!n.classList.contains('doc'):false})});b.setAttribute('aria-pressed',String(label==='전체'));nav.append(b)});content.prepend(nav);}
+ if(key==='history'){const history=document.createElement('div');history.className='da-history';history.innerHTML=flatTimeline(true);content.append(history);}
+ if(key==='management')take($('da-management-fields'),content);
+ if(key==='contact')take($('da-contact-fields'),content);
  if(key==='stage')take($('dw-stage-editor'),content);
  if(key==='help')content.textContent='활동 기록은 고객과의 접촉 내용입니다. 단계 변경은 별도 전환창에서 확인합니다. 담당자·최근 활동·다음 행동일을 함께 관리하고, 저장 후 서버 반영 결과를 확인해 주세요.';
  take($('dv-err'),content);
@@ -64,6 +66,38 @@ async function saveCombined(){
  }catch(e){root.showDetailErr((progress.activity&&root.Phase1.queue.list().find(q=>q.request_id===progress.activity)?.status==='done'?'활동은 저장되었습니다. 다음 행동은 아직 확인되지 않았습니다. ':'저장 완료를 확인하지 못했습니다. ')+String(e.message||e));}
  finally{delete form.dataset.saving;if(submit?.isConnected)submit.disabled=false;}
 }
+function flatTimeline(all=false){
+ const d=root.CUR_DETAIL?.item;if(!d)return '';
+ const rows=root.unifiedTimeline(root.currentPatch(),d),shown=all?rows:rows.slice(0,6);
+ const names={next_action_set:'다음 행동 등록',next_action_completed:'다음 행동 완료',next_action_complete:'다음 행동 완료',stage_change:'단계 변경',stage_changed:'단계 변경',owner_changed:'담당자 변경',activity_created:'활동 기록','단계전환':'단계 변경','단계 전환':'단계 변경'};
+ return shown.length?'<ol class="da-events">'+shown.map(x=>'<li><div class="da-event-meta"><time>'+root.esc(root.dateTimeLabel(x.at))+'</time><span>'+root.esc(x.who||'담당자 미기록')+'</span></div><strong>'+root.esc(names[x.ttl]||(/^[a-z]+(?:_[a-z]+)+$/.test(x.ttl)?'업무 기록':x.ttl||'활동 기록'))+'</strong>'+[x.body,x.result,...(x.fields||[]).map(f=>f.join(' · '))].filter(Boolean).map(t=>'<p>'+root.esc(t)+'</p>').join('')+(!x.body&&!x.result&&!x.fields?.length?'<p>상세 내용은 확인되지 않았습니다.</p>':'')+'</li>').join('')+'</ol>':'<p class="da-hint">아직 활동 기록이 없습니다.</p>';
+}
+function refreshRecent(){const host=$('activityTimelineHost');if(host&&$('detailView')?.classList.contains('da-ready')){host.innerHTML=flatTimeline();const intro=host.closest('.dcard')?.querySelector('.detailsecthead p');if(intro)intro.textContent='최근 활동 6건을 바로 확인합니다. 이전 기록은 전체 이력에서 확인하세요.';}}
+function flatten(scope){
+ // Replace disclosure containers, retaining every original child and handler.
+ scope.querySelectorAll('details').forEach(n=>{const card=document.createElement('section');for(const a of n.attributes)if(a.name!=='open')card.setAttribute(a.name,a.value);const summary=n.querySelector(':scope > summary');if(summary){const h=document.createElement('h3');h.textContent=summary.textContent.replace(/[▶▼]/g,'').trim();summary.replaceWith(h)}card.append(...n.childNodes);n.replaceWith(card)});
+}
+function viewingCards(body,stash){
+ const d=root.CUR_DETAIL.item,p=root.currentPatch(),contexts=d.stage_contexts||p.stage_contexts||{},right=body.querySelector('.dw-right');if(!right)return;
+ const code=root.dealStage(d),fields=Object.assign({},...Object.values(contexts).map(c=>c?.fields||{}),contexts[code]?.fields||{});
+ function card(title,pairs){const n=document.createElement('section');n.className='dcard da-info';const h=document.createElement('h3');h.textContent=title;n.append(h);const dl=document.createElement('dl');pairs.forEach(([label,value])=>{const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=value==null||value===''?'미입력':String(value);dl.append(dt,dd)});n.append(dl);right.append(n);return n;}
+ const files=root.execAttachments(d),quotes=root.execQuoteVersions(d),photos=files.filter(x=>/^image\//.test(x.mime_type||''));
+ const original=$('dw-materials');if(original)stash.append(original);
+ const material=card('자료',[['사진',photos.length+'건'],['견적서',quotes.length+'건'],['기타자료',(files.length-photos.length)+'건']]);material.id='da-material-summary';material.append(button('자료 보기','materials'),button('+ 자료 추가','materials'));
+ const extra=document.createElement('div');extra.id='da-management-fields';
+ right.querySelectorAll(':scope > .dw-fold').forEach(n=>extra.append(n));stash.append(extra);
+ const management=card('추가 관리정보',[['고객 반응',fields.customer_reaction||fields.reaction||d.customer_reaction],['의사결정자',fields.decision_maker||d.decision_maker],['경쟁사',fields.competitor||d.competitor],['입찰 예정일',fields.bid_deadline||fields.bid_date||d.bid_date]]);management.append(button('관리정보 수정','management'));
+ const ledger=root.ContractSalesData?.state(),contract=ledger?.status==='ready'?ledger.items.find(x=>String(x.deal_id)===String(d.id)):null,f=contexts.contract?.fields||{};
+ const money=v=>v==null||v===''?'—':root.fmtAmt(v);
+ const work=card('공종 · 금액',[['공종',root.dealWorkSummary(d)||'미분류'],['예상금액',money(d.amount??d.amt)],['계약금액',money(contract?.balance??f.contract_amount)],['계약일',contract?.contract_date||f.contract_date||'—'],['실적귀속 담당자',contract?.sales_owner_name||'—']]);
+ if(contract){const status=document.createElement('p');status.className='da-contract-state';status.textContent=contract.cancelled?'계약 취소 · 조정 이력 보존':'✓ 영업실적 확정';work.append(status)}
+ work.append(button('공종 수정','work',()=>root.openWorkEdit()),button('금액 수정','amount'));
+ if(root.ContractSalesUI)work.append(button('계약실적 · 변경·취소 이력','amount',()=>root.ContractSalesUI.editor(d)));
+ const oldHistory=$('dw-history');if(oldHistory)stash.append(oldHistory);
+ const schema=root.StageTransition?.definitions?.[code];if(schema){const current=contexts[code]?.fields||{},summary=card('현재 단계 · '+root.stageLabel(code),schema.fields.map(f=>[f.label,Array.isArray(current[f.key])?current[f.key].join(' · '):f.type==='money'?money(current[f.key]):current[f.key]]));summary.classList.add('da-stage-summary');$('dw-now')?.after(summary);}
+ body.querySelectorAll('.dw-left .contactedit').forEach(n=>{if(n.querySelector('input,select,textarea')){const edit=button('연락처 수정','contact',()=>open('contact'));n.before(edit);n.id='da-contact-fields';stash.append(n)}});
+ flatten(body);
+}
 function focus(id){if(!$('detailView')?.classList.contains('da-ready'))return false;const map={activityFormCard:'activity',nextActionCard:'next','dv-amt':'amount','dw-amount':'amount','dv-assignee':'owner',execFiles:'materials','dw-history':'history'};const key=map[id];if(!key)return false;if(state?.key!==key)open(key);return true;}
 function decorate(){
  const view=$('detailView'),body=$('dv-body');if(!view?.classList.contains('dw-wide')){close(false);view?.querySelector('.da-toolbar')?.remove();view?.classList.remove('da-ready');return;}
@@ -79,11 +113,13 @@ function decorate(){
  const management=body.querySelector('.dw-management');if(management){const keys=['amount','owner','next'];management.querySelectorAll('dd').forEach((dd,i)=>{const b=button(dd.textContent,keys[i]);b.classList.add('da-edit');if(keys[i]==='next')b.dataset.help='다음 확인일 변경';dd.replaceChildren(b)});const h=management.querySelector('h3');if(h){const b=button(h.textContent,'stage',()=>root.openTransition());b.classList.add('da-edit');h.replaceChildren(b)}}
  const work=body.querySelector('.dw-site dd:last-of-type');if(work){const b=button(work.textContent,'work',()=>root.openWorkEdit());b.classList.add('da-edit');work.replaceChildren(b)}
  body.querySelectorAll('.dcard h3').forEach(h=>{if(h.textContent.trim()==='관리 원칙')h.closest('.dcard').hidden=true});
- const timeline=$('activityTimelineHost')?.closest('.dcard');if(timeline){timeline.classList.add('da-recent');timeline.append(button('전체 이력 보기','history'));}
+ const timeline=$('activityTimelineHost')?.closest('.dcard');if(timeline){timeline.classList.add('da-recent');timeline.querySelectorAll('.activity-filter').forEach(n=>n.hidden=true);refreshRecent();timeline.append(button('전체 이력 보기','history'));}
+ viewingCards(body,stash);
  if(nextDraft){open('next');nextDraft.forEach(([id,value])=>{if($(id))$(id).value=value})}
  const favorite=view.querySelector('.exec-favorite');if(favorite){favorite.dataset.help=favorite.classList.contains('on')?'즐겨찾기에서 해제':'중요 현장으로 즐겨찾기';favorite.removeAttribute('title')}
  body.querySelectorAll('button').forEach(b=>{if(/연락처 등록/.test(b.textContent))b.dataset.help='고객 연락처를 등록합니다.'});
 }
-root.DetailActions={decorate,open,close,focus,get active(){return state?.key||null}};
+const oldRefresh=root.refreshActivityTimeline;if(oldRefresh)root.refreshActivityTimeline=function(){const result=oldRefresh.apply(this,arguments);refreshRecent();return result};
+root.DetailActions={decorate,open,close,focus,refreshRecent,get active(){return state?.key||null}};
 })(window);
 
