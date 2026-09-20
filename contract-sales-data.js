@@ -37,6 +37,7 @@
   const s=state();if(s.status!=='ready')return null;
   const scope=root.SalesScope?.state();
   const selected=items.filter(r=>{
+   if(root.SalesFilterState&&!root.SalesFilterState.matchesBrand(r.brand))return false;
    if(f.brand&&f.brand!=='전체'&&r.brand!==f.brand||f.owner&&f.owner!=='전체'&&r.sales_owner_name!==f.owner)return false;
    if(!scope)return true;
    if(scope.assignment==='unassigned')return false;
