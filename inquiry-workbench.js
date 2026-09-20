@@ -22,7 +22,7 @@
  function compactRows(){
   document.querySelectorAll('#sg-panel .inq-ctl-row').forEach(row=>{
    const c=Array.from(row.children),admin=!row.classList.contains('mine-row');if(c.length!==(admin?9:7))return;row.classList.add('inq-work-row');
-   const labels=['접수경과','문의','담당자','최근응대','다음 행동','처리'];
+   const labels=['접수경과','문의','담당자','응대 상태','다음 행동','처리'];
    if(row.classList.contains('head')){const cells=labels.map(text=>{const n=document.createElement('span');n.textContent=text;return n});if(admin)cells[0].prepend(c[0]);row.replaceChildren(...cells);return}
    const q=root.INQ_CONSOLE_CACHE.find(q=>root.inqKey(q)===row.dataset.k);if(!q)return;
    const patch=root.itemPatch(q,'inq'),next=root.actionObj(q,patch)||{},owner=root.inquiryRoutedOwner(q),hours=root.todayHoursFrom(root.inquiryCreatedAt(q)),late=delayed(q),key=attr(root.inqKey(q));
@@ -34,8 +34,13 @@
    const assigned=make('inq-ctl-assignee','<strong>'+h(owner?root.repDisplay(owner):'미배정')+'</strong>'+(owner?'<small>'+root.inqCtlStatusBadge(q)+'</small>':''));
    if(!owner){const evidence=root.inquiryUnassignedMeta(q);assigned.title=[evidence.label,evidence.detail,evidence.attemptLabel].filter(Boolean).join(' · ')}
    const seen=new Set(),activities=[...(q.activities||[]),...(patch.activities||[])].filter(a=>{const k=a.id||[a.at,a.type,a.note,a.result].join('|');if(seen.has(k))return false;seen.add(k);return /전화|통화|문자|SMS|카카오|이메일|메일|방문/i.test(a.type||'')&&Number.isFinite(Date.parse(a.at||a.occurred_at||a.created_at))}).sort((a,b)=>Date.parse(b.at||b.occurred_at||b.created_at)-Date.parse(a.at||a.occurred_at||a.created_at)),latest=activities[0],response=root.inqCtlFirstResponseAt(q);
-   const recent=make('inq-work-recent',latest?'<strong>'+h(root.fmtD(latest.at||latest.occurred_at||latest.created_at).slice(5)+' '+latest.type)+'</strong><small title="'+attr([latest.note,latest.result].filter(Boolean).join(' · '))+'">'+h([latest.note,latest.result].filter(Boolean).join(' · '))+'</small>':response?'<strong>'+h(root.fmtD(response).slice(5))+' 응대</strong>':'<small>미응대</small>');
-   const todo=make('inq-work-next','<button class="inq-next-link" data-k="'+key+'" onclick="event.stopPropagation();inqCtlQuickNext(this.dataset.k)">'+h(next.text||'다음 행동 없음')+'</button>'+(next.due?'<small>'+h(root.fmtD(next.due))+'</small>':''));
+   /* 응대 여부를 배지로 명시한다: 응대완료(기록 요약) / 미응대(지연 시 강조). */
+   const responded=!!(latest||response),respondedNote=latest?root.fmtD(latest.at||latest.occurred_at||latest.created_at).slice(5)+' '+(latest.type||'')+([latest.note,latest.result].filter(Boolean).length?' · '+[latest.note,latest.result].filter(Boolean).join(' · '):''):response?root.fmtD(response).slice(5)+' 응대':'';
+   const recent=make('inq-work-recent',responded?'<span class="inq-resp-badge done">응대완료</span><small title="'+attr(respondedNote)+'">'+h(respondedNote)+'</small>':'<span class="inq-resp-badge '+(late?'miss-late':'miss')+'">미응대</span>');
+   /* 다음 행동은 기한 배지로 추적한다: n일 지남 / 오늘 / D-n. 미등록은 버튼 문구 그대로 둔다. */
+   const dueDays=next.due?root.daysTo(next.due):null;
+   const dueChip=next.due?(Number.isFinite(dueDays)?'<small><span class="inq-due-chip '+(dueDays<0?'hot':dueDays===0?'warn':'ok')+'">'+(dueDays<0?Math.abs(dueDays)+'일 지남':dueDays===0?'오늘':'D-'+dueDays)+'</span> '+h(root.fmtD(next.due))+'</small>':'<small>'+h(root.fmtD(next.due))+'</small>'):'';
+   const todo=make('inq-work-next','<button class="inq-next-link" data-k="'+key+'" onclick="event.stopPropagation();inqCtlQuickNext(this.dataset.k)">'+h(next.text||'다음 행동 없음')+'</button>'+dueChip);
    const actions=make('inq-action',primaryAction(q));actions.onclick=e=>e.stopPropagation();row.replaceChildren(elapsed,site,assigned,recent,todo,actions);Array.from(row.children).forEach((cell,i)=>cell.dataset.label=labels[i]);
   });
  }
@@ -51,7 +56,7 @@
   const tools=document.createElement('details');tools.className='inq-work-tools';tools.open=!!root.G.inqToolsOpen;tools.addEventListener('toggle',()=>{root.G.inqToolsOpen=tools.open});tools.innerHTML='<summary>⋯ 기타 관리</summary><div class="inq-tools-body"></div>';const menu=tools.lastChild;
   if(tabs){Array.from(tabs.children).forEach(b=>{if(['전체','미배정','배정완료'].includes(b.dataset.t))b.remove()});menu.append(tabs)}
   if(toolbar){toolbar.querySelector(':scope > span')?.remove();toolbar.querySelectorAll('button[data-v]').forEach(b=>{b.onclick=()=>view(b.dataset.v);if(b.dataset.v==='console')b.textContent='문의 목록'});menu.append(toolbar)}
-  heading.append(tools);signals.prepend(heading,status);if(roles)status.after(roles);
+  heading.append(tools);signals.prepend(heading);if(roles)heading.prepend(roles);
   root.$('#sg-panel .inq-ctl-summary')?.remove();compactRows();
   const bulk=root.$('#sg-panel .inq-ctl-bulk');if(bulk){bulk.classList.add('inq-work-bulk');menu.append(bulk)}
   const sticky=document.createElement('div');sticky.className='inq-inbox-sticky';
@@ -59,7 +64,7 @@
   const filters=document.createElement('form');filters.className='inq-work-filters';
   const owners=Array.from(new Set(root.operationalInquiries(root.B.inquiries||[]).filter(root.inqCtlRoleMatch).map(root.inquiryRoutedOwner).filter(Boolean))).sort();if(root.G.rep&&root.G.rep!=='전체'&&!owners.includes(root.G.rep))owners.push(root.G.rep);
   filters.innerHTML='<label>상태<select name="status" aria-label="문의 상태">'+['전체','미배정','배정완료','응대중','영업전환','스토어 이관','보류'].map(n=>'<option '+(root.G.inqBucket===n?'selected':'')+'>'+h(n)+'</option>').join('')+'</select></label><label>공종<select name="work" aria-label="문의 공종">'+root.workFilterOptions(root.G.workFilter||'전체')+'</select></label><label class="inq-work-search">검색<input name="query" aria-label="문의 검색" value="'+attr(root.G.q||'')+'" placeholder="현장명·문의자·연락처 검색"></label><button>검색</button>';
-  filters.onsubmit=e=>{e.preventDefault();root.G.workFilter=filters.elements.work.value;root.G.q=filters.elements.query.value.trim();root.G.inqPage=1;root.G.inqCompactMetric='';root.G.inqBucket=filters.elements.status.value;root.INQ_SEL={};root.paint()};filters.querySelectorAll('select').forEach(el=>el.onchange=()=>filters.requestSubmit());sticky.append(filters);signals.after(sticky);
+  filters.onsubmit=e=>{e.preventDefault();root.G.workFilter=filters.elements.work.value;root.G.q=filters.elements.query.value.trim();root.G.inqPage=1;root.G.inqCompactMetric='';root.G.inqBucket=filters.elements.status.value;root.INQ_SEL={};root.paint()};filters.querySelectorAll('select').forEach(el=>el.onchange=()=>filters.requestSubmit());sticky.prepend(status);sticky.append(filters);signals.after(sticky);
  }
  function allowed(q){return q&&root.inqCtlRoleMatch(q)}
  function open(key,action){const q=root.inqCtlFind(key,false);if(!allowed(q))return;returnFocus=document.activeElement;modalKey=root.inqKey(q);root.G.inqSelKey=modalKey;root.G.inqAct=action||null;root.paint();document.querySelector('#inq-inbox-dialog .inq-dialog-close')?.focus()}

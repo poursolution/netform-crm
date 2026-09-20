@@ -56,7 +56,7 @@ async function run() {
     });
 
     await page.evaluate(()=>{B.inquiries[1].brand='POUR공법';B.inquiries[2].brand='석민이앤씨';B.inquiries[3].brand='아파트스퀘어';B.inquiries[0].phone='010-1234-5678';B.inquiries[0].contact_name='테스트 문의자';window.__writes=[];pushWrite=(...args)=>__writes.push(args);window.Phase1={subscribe:()=>()=>{}};window.__stopRequests=PCManagerRequests.install(window,{list:async()=>[],create:async()=>{throw Error("Unexpected request write")}});paintInq()});
-    assert.deepEqual(await page.locator('.inq-work-row.head>span').allTextContents(),['접수경과','문의','담당자','최근응대','다음 행동','처리']);
+    assert.deepEqual(await page.locator('.inq-work-row.head>span').allTextContents(),['접수경과','문의','담당자','응대 상태','다음 행동','처리']);
     assert.equal(await page.getByRole('button',{name:'전체 문의',exact:true}).count(),1);
     assert.equal(await page.locator('.inq-work-tools').getAttribute('open'),null);
     assert.equal(await page.locator('.inq-work-tools .inq-ctl-toolbar').isVisible(),false);

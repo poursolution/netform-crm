@@ -99,12 +99,12 @@
   const rows=inquiry.concat(pipeline,base.D.filter(relationship).map(contactEntry).filter(Boolean),expansionEntries(base.admin,me),requests).map(decorate).map(prioritize);
   const unique=new Map();rows.forEach(x=>{if(!unique.has(x.key))unique.set(x.key,x)});
   const all=Array.from(unique.values());
-  return {admin:base.admin,rows:all,inquiry:all.filter(x=>x.panel==='inquiry').sort(compare),pipeline:all.filter(x=>x.panel==='pipeline').sort(compare)};
+  return {admin:base.admin,Q:base.Q,D:base.D,rows:all,inquiry:all.filter(x=>x.panel==='inquiry').sort(compare),pipeline:all.filter(x=>x.panel==='pipeline').sort(compare)};
  }
  function matches(x,filter){return filter==='response'?x.responseLate:filter==='processing'?x.processingLate:filter==='overdue'?x.overdue:filter==='unassigned'?x.unassigned:filter==='missing'?x.missingNext:filter==='stale'?x.stale:true}
  function resetForActor(admin){
   const actor=String(root.ME&&root.ME.id||root.todayOwner())+':'+admin;
-  if(actor!==currentActor){currentActor=actor;root.G.todayInquiryStatus='all';root.G.todayPipelineStatus='all';root.G.todayQueueOwner='전체';root.G.todayQueueSearch='';root.G.todayQueuePage=1;root.G.todayInquiryPage=1;root.G.todayPipelinePage=1}
+  if(actor!==currentActor){currentActor=actor;root.G.todayInquiryStatus='all';root.G.todayPipelineStatus='all';root.G.todayQueueOwner='전체';root.G.todayQueueSearch='';root.G.todayQueuePage=1;root.G.todayInquiryPage=1;root.G.todayPipelinePage=1;root.G.todayRepYear='전체';root.G.todayRepQuarter=0}
  }
  function set(field,value){
   const allowed={owner:'todayQueueOwner',search:'todayQueueSearch'};
@@ -167,6 +167,87 @@
   const headers=key==='inquiry'?['우선','현장·문의자','상태','지금 할 일','접수경과','처리']:['우선','현장','담당자','지금 할 일','관리상태','처리'];
   return '<section class="twq-list today-admin-'+key+'" aria-label="'+title+'"><header class="twq-board-head"><div><h3>'+title+' <b>'+source.length+'</b></h3><p>'+description+'</p></div></header>'+counters+'<div class="twq-table-scroll" role="region" aria-label="'+title+' 목록" tabindex="0"><table><colgroup>'+['rank','site','owner','task','due','action'].map(c=>'<col class="twq-col-'+c+'">').join('')+'</colgroup><thead><tr>'+headers.map(x=>'<th scope="col">'+x+'</th>').join('')+'</tr></thead><tbody>'+shown.map((x,i)=>row(x,start+i+1,admin)).join('')+'</tbody></table></div>'+(!rows.length?'<p class="twq-empty">현재 조건에서 처리할 업무가 없습니다.</p>':'')+'<footer><span>선택 '+rows.length+'건 · 페이지당 '+SIZE+'건</span><nav aria-label="'+title+' 페이지"><button '+(n===1?'disabled':'')+' onclick="TodayWorkQueue.page('+(n-1)+',\''+key+'\')">이전</button>'+pagesHtml+'<button '+(n===pages?'disabled':'')+' onclick="TodayWorkQueue.page('+(n+1)+',\''+key+'\')">다음</button></nav></footer></section>';
  }
+ /* 관리자 현황판: 사원별 응대·진행 상태를 신호등으로 요약한다. 행 클릭은 기존 담당자 필터로 이어진다. */
+ // 관리자 지시(2026-09-20): 현황판 표에서만 제외한다. 업무 목록·배정에는 영향이 없다.
+ const REP_HIDE={inquiry:['주현진','송보람'],pipeline:['조민준','이승우']};
+ function repPeriod(){return {year:String(root.G.todayRepYear||'전체'),quarter:Number(root.G.todayRepQuarter)||0}}
+ function repPeriodSet(key,value){
+  if(key==='year'){root.G.todayRepYear=String(value||'전체');root.G.todayRepQuarter=0}
+  else if(key==='quarter')root.G.todayRepQuarter=Number(value)||0;
+  else return;
+  render();
+ }
+ function inqInPeriod(q,P){
+  if(P.year==='전체')return true;
+  const iso=String((typeof root.inquiryDate==='function'?root.inquiryDate(q):'')||q.created_at||q.at||'');
+  if(iso.slice(0,4)!==P.year)return false;
+  return !P.quarter||Math.ceil(parseInt(iso.slice(5,7),10)/3)===P.quarter;
+ }
+ function dealInPeriod(d,P){return P.year==='전체'||!root.ConstructionYear||root.ConstructionYear.matches(d,P.year)}
+ function repYearOptions(X){
+  const years=new Set();
+  (X.Q||[]).forEach(q=>{const iso=String((typeof root.inquiryDate==='function'?root.inquiryDate(q):'')||q.created_at||'');if(/^20\d{2}/.test(iso))years.add(iso.slice(0,4))});
+  const base=root.ConstructionYear?root.ConstructionYear.options(X.D||[]):[];
+  base.forEach(y=>{if(/^20\d{2}$/.test(y))years.add(y)});
+  const now=new Date().getFullYear();[now-2,now-1,now,now+1,now+2].forEach(y=>years.add(String(y)));
+  return ['전체'].concat(Array.from(years).sort()).concat(['미입력']);
+ }
+ function repLagLabel(hours){if(!Number.isFinite(hours)||hours<=0)return '-';return hours<24?Math.floor(hours)+'시간':'D+'+Math.floor(hours/24)}
+ function repDayLabel(hours){if(!Number.isFinite(hours)||hours<=0)return '-';return Math.max(1,Math.floor(hours/24))+'일'}
+ function repMoney(value){const n=Number(value)||0;if(!n)return '-';if(n>=1e8)return (Math.round(n/1e7)/10)+'억';if(n>=1e4)return Math.round(n/1e4).toLocaleString('ko-KR')+'만';return n.toLocaleString('ko-KR')}
+ function repSummary(X,P){
+  // 담당·진행·금액은 전체 활성 건 기준으로 모든 사원을 표에 올리고, 지연 지표는 오늘 업무 행에서 얹는다.
+  // 휴지통 문의는 inqCtlPartition이 B.inquiries에서 이미 분리하므로 X.Q에 나타나지 않는다.
+  const inquiry=new Map(),pipeline=new Map(),unassigned={count:0,maxLag:0,site:''};
+  const inqRow=owner=>{const row=inquiry.get(owner)||{owner,total:0,response:0,processing:0,maxLag:0};inquiry.set(owner,row);return row};
+  const pipeRow=owner=>{const row=pipeline.get(owner)||{owner,total:0,amount:0,overdue:0,missing:0,stale:0,maxLag:0};pipeline.set(owner,row);return row};
+  (X.Q||[]).forEach(q=>{
+   if(!inqInPeriod(q,P))return;
+   const routed=root.inquiryRoutedOwner(q);
+   if(!routed){unassigned.count++;const lag=root.todayHoursFrom(root.inquiryCreatedAt(q))||0;if(lag>=unassigned.maxLag){unassigned.maxLag=lag;unassigned.site=q.site||q.site_name||''}return}
+   inqRow(root.repN(routed)||String(routed)).total++;
+  });
+  (X.D||[]).forEach(d=>{if(!dealInPeriod(d,P))return;const row=pipeRow(root.repN(d.assignee)||'미배정');row.total++;row.amount+=typeof root.oppAmt==='function'?Number(root.oppAmt(d))||0:Number(d.amount||d.amt||0)});
+  X.inquiry.forEach(x=>{
+   if(x.unassigned||!inqInPeriod(x.item,P))return;
+   const row=inqRow(x.owner);
+   if(x.responseLate)row.response++;if(x.processingLate)row.processing++;row.maxLag=Math.max(row.maxLag,x.lag||0);
+  });
+  X.pipeline.forEach(x=>{
+   if(x.type==='deal'&&!dealInPeriod(x.item,P))return;
+   if(x.type!=='deal'&&P.year!=='전체')return;/* 확장·요청 건은 공사예정년도 축이 없어 전체 조회에서만 집계 */
+   const row=pipeRow(x.owner);
+   if(x.overdue)row.overdue++;if(x.missingNext)row.missing++;if(x.stale)row.stale++;row.maxLag=Math.max(row.maxLag,x.lag||0);
+  });
+  // 신호등 기준: 빨강=지연 5건 이상 또는 최장 7일(파이프라인 60일) 초과, 노랑=지연 1건 이상, 초록=지연 없음.
+  inquiry.forEach(row=>{const delay=row.response+row.processing;row.delay=delay;row.light=delay>=5||row.maxLag>=168?'r':delay>=1?'y':'g'});
+  pipeline.forEach(row=>{const days=row.maxLag/24;row.light=row.overdue>=5||days>=60?'r':row.overdue+row.missing+row.stale>=1?'y':'g'});
+  const order={r:0,y:1,g:2};
+  const sortRows=(rows,weight)=>rows.sort((a,b)=>order[a.light]-order[b.light]||weight(b)-weight(a)||root.repCompare(a.owner,b.owner));
+  return {unassigned,
+   inquiry:sortRows(Array.from(inquiry.values()).filter(row=>!REP_HIDE.inquiry.includes(row.owner)),row=>row.delay*1000+row.maxLag),
+   pipeline:sortRows(Array.from(pipeline.values()).filter(row=>!REP_HIDE.pipeline.includes(row.owner)),row=>row.overdue*1000+row.missing)};
+ }
+ function repRow(cells,owner,selected){return '<tr class="twq-rep-row'+(selected?' sel':'')+'" data-owner="'+attr(owner)+'" onclick="TodayWorkQueue.pickOwner(this.dataset.owner)">'+cells+'<td class="twq-rep-go">'+(selected?'전체 보기':'업무 보기 ›')+'</td></tr>'}
+ function repCell(value,tone){return '<td class="'+(value?tone:'twq-rep-zero')+'">'+value+'</td>'}
+ function repBoards(X){
+  const P=repPeriod(),S=repSummary(X,P),G=root.G,selected=G.todayQueueOwner;
+  const years=repYearOptions(X);
+  const controls='<div class="twq-rep-controls"><strong>조회기간</strong>'
+   +'<label>연도 <select aria-label="현황판 연도" onchange="TodayWorkQueue.repPeriodSet(\'year\',this.value)">'+years.map(y=>'<option value="'+attr(y)+'" '+(P.year===y?'selected':'')+'>'+h(y==='전체'?'전체 연도':y==='미입력'?'미입력':y+'년')+'</option>').join('')+'</select></label>'
+   +'<label>분기 <select aria-label="현황판 분기" onchange="TodayWorkQueue.repPeriodSet(\'quarter\',this.value)">'+[[0,'연간'],[1,'1분기'],[2,'2분기'],[3,'3분기'],[4,'4분기']].map(([v,label])=>'<option value="'+v+'" '+(P.quarter===v?'selected':'')+'>'+label+'</option>').join('')+'</select></label>'
+   +'<span class="twq-rep-period-note">문의 = 접수일 기준 · 파이프라인 = 공사예정년도 기준(연 단위)</span></div>';
+  const alert=S.unassigned.count?'<div class="twq-rep-alert"><span><b>미배정 '+S.unassigned.count+'건</b>'+(S.unassigned.site?' — 가장 오래된 '+repLagLabel(S.unassigned.maxLag)+' 경과 ('+h(S.unassigned.site)+')':'')+'</span><button type="button" onclick="TodayWorkQueue.focusUnassigned()">지금 배정</button></div>':'';
+  const inquiryRows=S.inquiry.map(row=>repRow('<td><span class="twq-light '+row.light+'"></span><b>'+h(row.owner)+'</b></td><td>'+row.total+'</td>'+repCell(row.response,'twq-rep-bad')+repCell(row.processing,'twq-rep-warn')+'<td class="'+(row.maxLag>=168?'twq-rep-bad':row.maxLag>=24?'twq-rep-warn':'twq-rep-zero')+'">'+repLagLabel(row.maxLag)+'</td>',row.owner,selected===row.owner)).join('');
+  const pipelineRows=S.pipeline.map(row=>repRow('<td><span class="twq-light '+row.light+'"></span><b>'+h(row.owner)+'</b></td><td>'+row.total+'</td><td class="twq-rep-amt">'+repMoney(row.amount)+'</td>'+repCell(row.overdue,'twq-rep-bad')+repCell(row.missing,'twq-rep-warn')+repCell(row.stale,'twq-rep-warn')+'<td class="'+(row.maxLag>=60*24?'twq-rep-bad':'twq-rep-zero')+'">'+repDayLabel(row.maxLag)+'</td>',row.owner,selected===row.owner)).join('');
+  const table=(head,rows,empty)=>'<div class="twq-rep-scroll"><table><thead><tr>'+head.map(x=>'<th scope="col">'+x+'</th>').join('')+'</tr></thead><tbody>'+(rows||'<tr class="twq-rep-empty"><td colspan="'+(head.length)+'">'+empty+'</td></tr>')+'</tbody></table></div>';
+  return '<section class="twq-rep-boards" aria-label="영업사원별 현황">'+controls
+   +'<div class="twq-rep-list inqSum"><header><h3>견적문의 · 응대 현황</h3><p>응대·후속이 밀리는 담당자를 먼저 확인하세요 · 지연 많은 순</p></header>'+alert+table(['담당자','담당','응대지연','처리지연','최장 경과',''],inquiryRows,'배정된 문의가 없습니다.')+'<footer>행을 누르면 아래 목록이 그 담당자로 좁혀집니다.</footer></div>'
+   +'<div class="twq-rep-list pipeSum"><header><h3>파이프라인 · 진행 현황</h3><p>다음 행동이 멈춘 담당자를 먼저 확인하세요 · 위험 높은 순</p></header>'+table(['담당자','진행','진행 금액','기한초과','Next 없음','장기정체','최장 정체',''],pipelineRows,'진행 중 영업이 없습니다.')+'<footer>행을 누르면 아래 목록이 그 담당자로 좁혀집니다.</footer></div>'
+   +'</section>';
+ }
+ function pickOwner(name){set('owner',root.G.todayQueueOwner===name?'전체':String(name||'전체'))}
+ function focusUnassigned(){root.G.todayQueueOwner='전체';root.G.todayQueueSearch='';filter('inquiry','unassigned')}
  function render(){
   const host=root.$('#today-home-root');if(!host)return;
   const X=data();resetForActor(X.admin);const G=root.G;
@@ -174,9 +255,9 @@
   const scoped=x=>(!X.admin||!G.todayQueueOwner||G.todayQueueOwner==='전체'||x.owner===G.todayQueueOwner)&&(!G.todayQueueSearch||[x.item.site,x.item.site_name,x.owner,x.reason,x.next].join(' ').toLowerCase().includes(String(G.todayQueueSearch).trim().toLowerCase()));
   const inquiry=X.inquiry.filter(scoped),pipeline=X.pipeline.filter(scoped);
   const toolbar='<form class="twq-toolbar" onsubmit="event.preventDefault();TodayWorkQueue.set(\'search\',this.elements.search.value)">'+(X.admin?'<label>담당자 <select aria-label="오늘 업무 담당자" onchange="TodayWorkQueue.set(\'owner\',this.value)"><option>전체</option>'+owners.map(o=>'<option '+(G.todayQueueOwner===o?'selected':'')+'>'+h(o)+'</option>').join('')+'</select></label>':'<span>내 담당 업무</span>')+'<label class="twq-search"><input name="search" aria-label="오늘 업무 검색" placeholder="현장·담당자·할 일 검색" value="'+attr(G.todayQueueSearch||'')+'"><button>검색</button></label></form>';
-  host.innerHTML='<div class="today-work-queue '+(X.admin?'manager':'rep')+'"><header><div><h2>오늘 업무</h2><span>신규 문의와 진행 중 영업을 각각의 처리 순서로 확인합니다.</span></div><b>전체 '+(inquiry.length+pipeline.length)+'건</b></header>'+toolbar+'<p class="twq-count-note">각 업무함의 순위와 상태 필터는 독립적으로 적용됩니다. 파이프라인 상태는 중복될 수 있습니다.</p><div class="twq-admin-boards">'+table(inquiry,X.admin,'inquiry','견적문의 관리','신규 문의의 배정·첫 응대·후속처리')+table(pipeline,X.admin,'pipeline','파이프라인 관리','진행 중 영업의 다음 행동·관계관리·확장관리')+'</div></div>';
+  host.innerHTML='<div class="today-work-queue '+(X.admin?'manager':'rep')+'"><header><div><h2>오늘 업무</h2><span>'+(X.admin?'사원별 현황을 먼저 확인하고, 행을 눌러 해당 담당자 업무로 파고듭니다.':'신규 문의와 진행 중 영업을 각각의 처리 순서로 확인합니다.')+'</span></div><b>전체 '+(inquiry.length+pipeline.length)+'건</b></header>'+(X.admin?repBoards(X):'')+toolbar+'<p class="twq-count-note">각 업무함의 순위와 상태 필터는 독립적으로 적용됩니다. 파이프라인 상태는 중복될 수 있습니다.</p><div class="twq-admin-boards">'+table(inquiry,X.admin,'inquiry','견적문의 관리','신규 문의의 배정·첫 응대·후속처리')+table(pipeline,X.admin,'pipeline','파이프라인 관리','진행 중 영업의 다음 행동·관계관리·확장관리')+'</div></div>';
   const badge=root.$('#todayBadge');if(badge){badge.textContent=X.rows.length||'';badge.style.display=X.rows.length?'':'none'}
  }
  function setManagerRequests(rows){managerRequests=Array.isArray(rows)?rows.slice():[];if(root.G?.page==='today')render()}
- root.TodayWorkQueue={render,data,set,filter,page,open,route,setManagerRequests};
+ root.TodayWorkQueue={render,data,set,filter,page,open,route,setManagerRequests,pickOwner,focusUnassigned,repPeriodSet};
 })(window);
