@@ -32,6 +32,14 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   await page.evaluate(()=>{G.insights.month=9;paint()});assert.equal(await page.locator('#si-dash .contract-sales-totals strong').last().innerText(),'300,000,000원');
   for(const width of [1440,390]){await page.setViewportSize({width,height:1000});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,JSON.stringify(await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,wide:[...document.querySelectorAll(".contract-sales-panel *")].filter(n=>n.getBoundingClientRect().right>innerWidth).map(n=>n.tagName+"."+n.className).slice(0,10)}))))}
   await page.evaluate(async()=>{SB.rpc=async()=>({error:{message:'offline'}});await ContractSalesData.refresh()});assert.match(await page.locator('#si-dash .contract-sales-host').innerText(),/확인하지 못했습니다/);assert.equal(await page.locator('#si-dash .contract-sales-totals').count(),0);
+  await page.evaluate(()=>ContractSalesUI.editor(B.deals[0]));
+  await page.waitForFunction(()=>document.querySelector('.contract-sales-shade [role="status"]')?.textContent.includes('확인하지 못했습니다'));
+  assert.equal(await page.locator('.contract-sales-shade button[type="submit"]').count(),0);
+  await page.evaluate(()=>{SB.rpc=async()=>({data:{ok:true,policy:ContractSalesLedger.POLICY,items:[__contract],has_more:false}})});
+  await page.getByRole('button',{name:'다시 조회',exact:true}).click();
+  await page.getByRole('heading',{name:'계약실적 기록',exact:true}).waitFor();
+  assert.match(await page.locator('.contract-sales-dialog').innerText(),/황윤선/);
+  await page.locator('.contract-sales-dialog [data-close]').click();
   assert.equal(await page.evaluate(()=>__requests.every(n=>n==='crm_contract_sales_read_v1')),true);assert.deepEqual(errors,[]);
   console.log('PASS contract sales: signed amount, frozen owner, all reporting surfaces, cancellation periods, unavailable state and responsive layout');
  }finally{await browser.close();await new Promise(r=>srv.close(r))}
