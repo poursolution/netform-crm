@@ -15,7 +15,7 @@ function take(n,host){if(!n||!state)return;const mark=document.createComment('de
 function open(key){
  const view=$('detailView');if(!view?.classList.contains('dw-wide'))return false;
  close(false);hideTip();
- const titles={activity:'활동 기록 · 다음 행동',next:'다음 행동 설정',stage:'단계 변경',owner:'담당자 변경',amount:'예상금액 수정',materials:'자료 보기 · 추가',management:'관리정보 수정',history:'전체 이력',help:'관리 기준'};
+ const titles={activity:'활동 기록 · 다음 행동',next:'다음 행동 설정',stage:'단계 변경',owner:'담당자 변경',amount:'예상금액 수정',materials:'자료 보기 · 추가',management:'관리정보 수정',contact:'연락처 수정',history:'전체 이력',help:'관리 기준'};
  const panel=document.createElement('div');panel.id='detailAction';panel.className='da-layer '+(['activity','stage','materials','history'].includes(key)?'da-drawer':'da-compact');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-labelledby','da-title');
  const sheet=document.createElement('section');sheet.className='da-sheet';const head=document.createElement('header');const title=document.createElement('h2');title.id='da-title';title.textContent=titles[key];const x=button('닫기',key,()=>{if(key==='stage')root.StageTransitionUI?.close();else close()});x.removeAttribute('data-help');x.setAttribute('aria-label','작업창 닫기');head.append(title,x);const content=document.createElement('div');content.className='da-content';sheet.append(head,content);panel.append(sheet);
  state={key,panel,moves:[],focus:document.activeElement,background:Array.from(view.children)};view.append(panel);state.background.forEach(n=>n.inert=true);
@@ -25,7 +25,7 @@ function open(key){
  if(key==='amount')take($('dw-amount'),content);
  if(key==='owner')take($('dv-assignee')?.closest('.dcard'),content);
  if(key==='materials'){take($('execFiles'),content);take($('execQuotePanel'),content);const nav=document.createElement('nav');nav.className='da-material-tabs';nav.setAttribute('aria-label','자료 분류');['전체','사진','견적','기타'].forEach(label=>{const b=button(label,'materials',()=>{nav.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));content.querySelectorAll('#execFiles,#execQuotePanel,.exec-file').forEach(n=>{n.dataset.materialHidden='';n.hidden=n.id==='execFiles'?label==='견적':n.id==='execQuotePanel'?!['전체','견적'].includes(label):label==='사진'?n.classList.contains('doc'):label==='기타'?!n.classList.contains('doc'):false})});b.setAttribute('aria-pressed',String(label==='전체'));nav.append(b)});content.prepend(nav);}
- if(key==='history'){const history=document.createElement('div');history.className='da-history';history.innerHTML=flatTimeline(true);content.append(history);}
+ if(key==='history'){const history=document.createElement('div');history.className='da-history';history.innerHTML=flatTimeline(true);content.append(history);take($('dw-history'),content);}
  if(key==='management')take($('da-management-fields'),content);
  if(key==='contact')take($('da-contact-fields'),content);
  if(key==='stage')take($('dw-stage-editor'),content);
