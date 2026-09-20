@@ -38,3 +38,16 @@
 #pipeline-stage-root .ps-kmore{font-size:10.5px;font-weight:700;color:#4b5c77;background:rgba(255,255,255,.7);border:0;border-radius:7px;padding:6px;margin-top:6px;flex:none}
 #pipeline-stage-root .ps-kmore:hover{background:#fff}
 @media(max-width:1100px){.ps-kanban{grid-template-columns:1fr;height:auto}.ps-kbody{max-height:420px}}
+
+/* ── 컨설팅 공통 틀: 그룹 구분행·기한 칩 ── */
+.sw-frame th,.sw-frame td{padding:11px 12px}
+.sw-group-row td{background:#f7f9fc!important;color:#4b5c77;font-size:11px;font-weight:800;padding:7px 12px!important}
+.sw-group-row.hot td{background:#fff6f6!important;color:#c03246}
+.sw-frame tr.sw-first td:first-child{box-shadow:inset 3px 0 0 #dc2626}
+.sw-frame tbody tr:hover td{background:#f8fafd}
+.sw-frame td small{display:block;color:#78859a;margin-top:4px}
+.sw-due-chip{display:inline-block;font-size:10.5px;font-weight:800;border-radius:5px;padding:1px 7px;white-space:nowrap}
+.sw-due-chip.hot{background:#fef1f1;color:#c03246}
+.sw-due-chip.warn{background:#fef4e6;color:#b45309}
+.sw-due-chip.ok{background:#ecfdf3;color:#15803d}
+.sw-due-chip.mut{background:#eef2f7;color:#7284a0}
