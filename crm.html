@@ -1948,8 +1948,8 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
 <link rel="stylesheet" href="expansion-pool.css?v=20260913-compact-list-1">
 <link rel="stylesheet" href="relationship-management.css?v=20260914-panel-5">
 <link rel="stylesheet" href="detail-workspace.css?v=20260913-1">
-<link rel="stylesheet" href="today-work-queue.css?v=20260920-independent-1">
-<link rel="stylesheet" href="inquiry-workbench.css?v=20260920-inbox-2">
+<link rel="stylesheet" href="today-work-queue.css?v=20260920-manager-1">
+<link rel="stylesheet" href="inquiry-workbench.css?v=20260920-inbox-4">
 <link rel="stylesheet" href="inquiry-create.css?v=20260920-manual-1">
 <link rel="stylesheet" href="inquiry-assignment-clarity.css?v=20260913-inbox-1">
 <link rel="stylesheet" href="pc-typography.css?v=20260920-independent-1">
@@ -4933,7 +4933,7 @@ function trPick(v){var t=$('#tr-target');if(!t)return;
  if(!t.querySelector('option[value="'+v+'"]')){var o=document.createElement('option');o.value=v;o.textContent=stageTargetLabel(v);o.dataset.tmp='1';t.appendChild(o)}
  t.value=v;transitionTargetChanged();
  $$('#transitionBody .trq').forEach(function(b){b.classList.toggle('on',b.getAttribute('onclick').indexOf("'"+v+"'")>=0)})}
-function transitionTargetChanged(){var t=$('#tr-target');if(!t)return;var v=t.value,terminal=isTerminalTarget(v),reason=['lost','badfit','badfit_lead','badfit_pipe','nocontact','hold'].indexOf(v)>=0;$('#tr-next-wrap').style.display=terminal?'none':'block';$('#tr-due-wrap').style.display=terminal?'none':'block';$('#tr-reason-wrap').style.display=reason?'block':'none';
+function transitionTargetChanged(){var t=$('#tr-target');if(!t)return;var hh=$('#tr-target-hint');if(hh)hh.textContent=stageMoveHint(t.value);var v=t.value,terminal=isTerminalTarget(v),reason=['lost','badfit','badfit_lead','badfit_pipe','nocontact','hold'].indexOf(v)>=0;$('#tr-next-wrap').style.display=terminal?'none':'block';$('#tr-due-wrap').style.display=terminal?'none':'block';$('#tr-reason-wrap').style.display=reason?'block':'none';
  var rs=$('#tr-reason');if(rs&&reason){var keep=rs.value;rs.innerHTML=reasonOptionsFor(v);if(keep)rs.value=keep}}
 /* ══ 종료 사유 사전 (2026-09-02) ══
    영업관리 배드핏(=수주 실패)을 «뺏김»과 «놓침»으로 갈라 기록한다.
@@ -5576,16 +5576,49 @@ function drwSite(s){var k=JSON.parse(s),D=B.deals.filter(function(d){return d.si
    문의 = 문의 흐름 그대로. 둘을 한 목록에 섞지 않는다 —
    견적문의 접수·응대·견적서 발송은 파이프라인 단계가 아니다.
    종료(수주 성공/수주 실패/배드핏/연락두절)는 여기 넣지 않고 «종료 처리» 버튼으로 뺀다. */
+/* 단계 설명 사전: «알면 보이는» 단계 이름 대신, 언제 고르는지 한 줄로 안내한다. */
+var TRANSITION_LAST_DEFAULT='';
+var STAGE_MOVE_HINTS={
+ 'step:0':'문의가 접수된 첫 상태입니다. 아직 담당 응대 전일 때 사용합니다.',
+ 'step:1':'고객과 통화·상담하며 요구사항과 현장 조건을 파악하는 중일 때.',
+ 'step:2':'견적서·자료를 보냈고 고객의 회신을 기다리고 있을 때.',
+ 'step:3':'당장 진행은 없지만 놓치지 않도록 관계를 유지하며 기다릴 때.',
+ 'step:4':'타사와 비교·경쟁 중이거나 계약 결정이 임박했을 때.',
+ 'step:5':'계약이 확정되어 시공 준비·진행으로 넘어갈 때.',
+ lost:'다른 업체로 갔거나 진행이 무산되었을 때 선택합니다. 사유를 함께 기록합니다.',
+ badfit:'지역·공종·규모가 우리와 맞지 않아 진행할 수 없을 때.',
+ badfit_lead:'지역·공종·규모가 우리와 맞지 않아 진행할 수 없는 문의일 때.',
+ badfit_pipe:'진행해 보니 우리와 맞지 않아 영업을 종료할 때.',
+ nocontact:'여러 번 연락했지만 계속 닿지 않을 때.',
+ hold:'예산·일정 등 고객 사정으로 당분간 멈춰 둘 때.',
+ first_contact:'첫 통화로 고객 요구와 공종을 파악하는 단계입니다.',
+ consulting:'견적을 만들기 위해 요구·자료·견적 일정을 준비하는 단계입니다.',
+ sent:'견적·제안을 보냈고 고객 반응을 확인하는 단계입니다.',
+ rapport:'가능성은 있지만 서두르지 않고 관계를 쌓아가는 단계입니다.',
+ silent:'응답이 뜸해져 접촉 주기를 정해 관리하는 단계입니다.',
+ waiting:'고객 사정으로 멈춰 있어 재개 시점을 기다리는 단계입니다.',
+ compete:'타사와 견적·제안 경쟁이 진행 중인 단계입니다.',
+ imminent:'조건 협의가 마무리되어 계약이 임박한 단계입니다.',
+ bidding:'공고·입찰 절차로 진행되는 단계입니다.',
+ contract:'계약 체결(예정 포함)을 기록하는 단계입니다.',
+ construction:'착공 후 시공이 진행 중인 단계입니다.',
+ completion:'공사가 끝나 준공 확인·서류를 마무리하는 단계입니다.',
+ won:'수주가 확정되어 실적으로 기록하고 확장관리로 넘길 때.'
+};
+function stageMoveHint(v){return STAGE_MOVE_HINTS[v]||'이 단계로 옮기는 이유를 아래 기록란에 남겨 주세요.'}
+function stageMoveHintP(id){return '<p class="stage-move-hint" id="'+id+'-hint">'+esc(stageMoveHint(TRANSITION_LAST_DEFAULT))+'</p>'}
+function iqTargetHint(s){var h=document.getElementById('iq-target-hint');if(h)h.textContent=stageMoveHint(s.value)}
 function transitionOptions(idx,kind){
  if(kind==='inq'){
    var opts=[];for(var i=0;i<=5;i++)opts.push({v:'step:'+i,n:FLOW_STEPS[i]});
    opts.push({v:'lost',n:'실주'},
      {v:'badfit_lead',n:'배드핏'},{v:'nocontact',n:'연락두절'},{v:'hold',n:'보류'});
-   return opts.map(function(o){var def=idx<5?'step:'+(idx+1):'step:5';
+   var inqDef=idx<5?'step:'+(idx+1):'step:5';TRANSITION_LAST_DEFAULT=inqDef;
+   return opts.map(function(o){var def=inqDef;
      return '<option value="'+o.v+'" '+(o.v===def?'selected':'')+'>'+o.n+'</option>'}).join('');
  }
  var cur=(CUR_DETAIL&&CUR_DETAIL.item)?dealStage(CUR_DETAIL.item):'first_contact';
- var def=(nextStageCandidates(cur)[0])||cur;
+ var def=(nextStageCandidates(cur)[0])||cur;TRANSITION_LAST_DEFAULT=cur==='completion'?'won':def;
  var html=PIPE_GROUPS.map(function(g){
    return '<optgroup label="'+escAttr(g.g)+'">'+g.codes.map(function(c){
      return '<option value="'+c+'" '+(c===def?'selected':'')+(c===cur?' data-cur="1"':'')+'>'
@@ -6309,7 +6342,7 @@ function splitInlinePanel(d,hideActions){
  } else {
   var idx=flowIndex(d,'deal');
   body='<div class="spform-head"><div><b>영업 단계를 바꿉니다</b><span>세 묶음만 순서대로 입력하면 됩니다.</span></div></div>'
-   +'<div class="spstep">1. 어디로 이동하나요?</div><div class="og full"><label>이동할 단계 <span class="req">*</span></label><select id="sp-tr-target" onchange="spTargetChanged()">'+transitionOptions(idx,'deal')+'</select></div>'
+   +'<div class="spstep">1. 어디로 이동하나요?</div><div class="og full"><label>이동할 단계 <span class="req">*</span></label><select id="sp-tr-target" onchange="spTargetChanged()">'+transitionOptions(idx,'deal')+'</select>'+stageMoveHintP('sp-tr-target')+'</div>'
    +'<div class="og full" id="sp-reason-wrap" style="display:none"><label>종료 사유 <span class="req">*</span></label><select id="sp-tr-reason"></select></div>'
    +'<div class="spstep">2. 이번에 무엇이 끝났나요?</div><div class="og"><label>한 일 <span class="req">*</span></label><input id="sp-tr-did" placeholder="예: PT 일정 협의 완료"></div>'
    +'<div class="og"><label>그 결과 <span class="req">*</span></label><input id="sp-tr-result" placeholder="예: 9/15 PT 확정"></div>'
@@ -6349,7 +6382,7 @@ function spSaveNext(){
  splitForm(null);paint();
 }
 /* 스플릿 인라인: 종료 대상이면 사유 목록을 그 자리에서 바꿔 준다 */
-function spTargetChanged(){var s=$('#sp-tr-target');if(!s)return;var v=s.value,
+function spTargetChanged(){var s=$('#sp-tr-target');if(!s)return;var hh=$('#sp-tr-target-hint');if(hh)hh.textContent=stageMoveHint(s.value);var v=s.value,
  need=['lost','badfit','badfit_lead','badfit_pipe','nocontact','hold'].indexOf(v)>=0,
  terminal=isTerminalTarget(v),w=$('#sp-reason-wrap'),r=$('#sp-tr-reason'),n=$('#sp-next-wrap'),d=$('#sp-due-wrap'),h=$('#sp-next-step');
  if(w)w.style.display=need?'block':'none';
@@ -7287,7 +7320,7 @@ function iqInlineForm(q,idx){
    +'<div class="og"><label>기한 <span class="req">*</span></label><input id="iq-due" type="date"></div>'
    +'<div class="spbtns"><button class="dact pri" onclick="iqSaveStep('+idx+')">저장</button><button class="dact" onclick="iqForm(null)">닫기</button></div>';
  } else {
-  body='<div class="og full"><label>이동할 단계 <span class="req">*</span></label><select id="iq-target">'+transitionOptions(idx,'inq')+'</select></div>'
+  body='<div class="og full"><label>이동할 단계 <span class="req">*</span></label><select id="iq-target" onchange="iqTargetHint(this)">'+transitionOptions(idx,'inq')+'</select>'+stageMoveHintP('iq-target')+'</div>'
    +'<div class="og full"><label>한 일 <span class="req">*</span></label><input id="iq-did" placeholder="무엇을 했는지"></div>'
    +'<div class="og full"><label>결과 <span class="req">*</span></label><input id="iq-res" placeholder="결과 · 종료면 사유"></div>'
    +'<div class="og"><label>다음 행동</label><input id="iq-next" placeholder="종료면 비워둡니다"></div>'
@@ -8558,7 +8591,7 @@ function campaignHomePage(){var L=campaignLogs(),scheduled=L.filter(function(x){
 function campaignUtility(title){return '<header class="cc-utility"><button onclick="campaignSetTab(\'home\')">← 고객 발송</button><h2>'+esc(title)+'</h2><nav><button onclick="campaignSetTab(\'history\')">발송 이력</button><button onclick="campaignSetTab(\'analysis\')">성과 보기</button></nav></header>'}
 function paintCampaign(){var root=$('#campaign-root');if(!root)return;var tab=G.campaignTab||'home',body=tab==='home'?campaignHomePage():tab==='send'?campaignSendPage():tab==='schedule'?campaignHistoryPage(true):tab==='history'?campaignHistoryPage(false):tab==='templates'?campaignLibraryPage():campaignAnalysisPage(),title=tab==='send'?'새 발송':tab==='schedule'?'예약 발송':tab==='history'?'발송 이력':tab==='templates'?'문구 보관함':'성과 보기';root.innerHTML='<div class="cc-shell">'+(tab==='home'?'':campaignUtility(title))+(CAMPAIGN_STATE.notice?'<div class="mgmtbar blue">'+esc(CAMPAIGN_STATE.notice)+'</div>':'')+body+'</div>'}
 
-</script><script src="./inquiry-assignment-clarity.js?v=20260913-assignment-3"></script><script src="./detail-workspace.js?v=20260920-actions-1"></script><link rel="stylesheet" href="./detail-actions.css?v=20260920-flat-2"><script src="./detail-actions.js?v=20260920-flat-2"></script><script src="./relationship-management.js?v=20260920-actions-1"></script><script src="./inquiry-workbench.js?v=20260920-filters-1"></script><script src="./today-work-queue.js?v=20260920-independent-1"></script><link rel="stylesheet" href="./sales-insights.css?v=20260920-actions-1"><script src="./sales-insights-model.js?v=20260920-actions-1"></script><link rel="stylesheet" href="./sales-scope.css?v=20260920-nav-2"><script src="./sales-scope.js?v=20260920-nav-2"></script><link rel="stylesheet" href="./sales-filters.css?v=20260920-1"><script src="./sales-filters.js?v=20260920-2"></script><script src="./contract-sales-ledger.js?v=20260920-1"></script><script src="./contract-sales-data.js?v=20260920-filters-1"></script><script src="./sales-insights.js?v=20260920-filters-1"></script><script src="./pipeline-stages.js?v=20260920-spec-1"></script><link rel="stylesheet" href="./pipeline-workspace.css?v=20260920-stage-2"><script src="./stage-specs.js?v=20260920-worktypes-1"></script><script src="./stage-workspaces.js?v=20260920-worktypes-1"></script><script src="./deal-detail-workspace.js?v=20260920-1"></script><script src="./pipeline-workspace.js?v=20260920-worktypes-1"></script><link rel="stylesheet" href="./pipeline-split.css?v=20260920-worktypes-1"><script src="./pipeline-split.js?v=20260920-worktypes-1"></script><script src="./pipeline-batch.js?v=20260920-1"></script><script src="./operational-overlay.js?v=20260920-actions-1"></script><link rel="stylesheet" href="./contract-sales.css?v=20260920-1"><script src="./contract-sales-ui.js?v=20260920-retry-2"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
+</script><script src="./inquiry-assignment-clarity.js?v=20260913-assignment-3"></script><script src="./detail-workspace.js?v=20260920-actions-1"></script><link rel="stylesheet" href="./detail-actions.css?v=20260920-flat-2"><script src="./detail-actions.js?v=20260920-flat-2"></script><script src="./relationship-management.js?v=20260920-actions-1"></script><script src="./inquiry-workbench.js?v=20260920-inbox-4"></script><script src="./today-work-queue.js?v=20260920-manager-1"></script><link rel="stylesheet" href="./sales-insights.css?v=20260920-actions-1"><script src="./sales-insights-model.js?v=20260920-actions-1"></script><link rel="stylesheet" href="./sales-scope.css?v=20260920-nav-2"><script src="./sales-scope.js?v=20260920-nav-2"></script><link rel="stylesheet" href="./sales-filters.css?v=20260920-1"><script src="./sales-filters.js?v=20260920-2"></script><script src="./contract-sales-ledger.js?v=20260920-1"></script><script src="./contract-sales-data.js?v=20260920-filters-1"></script><script src="./sales-insights.js?v=20260920-filters-1"></script><script src="./pipeline-stages.js?v=20260920-spec-1"></script><link rel="stylesheet" href="./pipeline-workspace.css?v=20260920-stage-2"><script src="./stage-specs.js?v=20260920-worktypes-1"></script><script src="./stage-workspaces.js?v=20260920-worktypes-1"></script><script src="./deal-detail-workspace.js?v=20260920-1"></script><script src="./pipeline-workspace.js?v=20260920-worktypes-1"></script><link rel="stylesheet" href="./pipeline-split.css?v=20260920-worktypes-1"><script src="./pipeline-split.js?v=20260920-worktypes-1"></script><script src="./pipeline-batch.js?v=20260920-1"></script><script src="./operational-overlay.js?v=20260920-snapshot-1"></script><link rel="stylesheet" href="./contract-sales.css?v=20260920-1"><script src="./contract-sales-ui.js?v=20260920-retry-2"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
   if(AUTH_ON&&!TOKEN)return;
   loadData();
 });

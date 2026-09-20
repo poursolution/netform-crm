@@ -26,3 +26,39 @@ body:has(#pg-inq.on.inq-workbench) .mhead>.search{display:none}
 
 #pg-inq .inq-work-row .inq-action:has(.pc-manager-request-trigger){display:grid;grid-template-columns:72px 26px;gap:4px 6px}
 #pg-inq .inq-work-row .pc-manager-request-trigger{grid-column:1/-1;height:22px;min-height:22px;line-height:20px;margin:0;padding:0 3px;font-size:11px;white-space:nowrap}
+
+/* ── 목록 정돈: 상태 점·응대 배지·기한 칩·긴급 띠·호버 (이모지 없음) ── */
+.inq-work-counts button span::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;background:#9aa8bd;vertical-align:1px}
+.inq-work-counts [data-key=all] span::before{display:none}
+.inq-work-counts [data-key=unassigned] span::before{background:#dc2626}
+.inq-work-counts [data-key=waiting] span::before{background:#f97316}
+.inq-work-counts [data-key=delayed] span::before{background:#b45309}
+#pg-inq .inq-work-row.inq-ctl-row:hover{background:#f8fafd}
+#pg-inq .inq-work-row.priority{border-left-color:#df4a61;background:linear-gradient(90deg,#fff8f8,rgba(255,255,255,0) 65%)}
+.inq-resp-badge{display:inline-block;font-size:11px;font-weight:800;border-radius:6px;padding:3px 8px;white-space:nowrap}
+.inq-resp-badge.done{background:#ecfdf3;color:#15803d}
+.inq-resp-badge.miss{background:#fef4e6;color:#b45309}
+.inq-resp-badge.miss-late{background:#fef1f1;color:#c03246}
+.inq-work-recent .inq-resp-badge+small{margin-top:5px}
+.inq-due-chip{display:inline-block;font-size:10.5px;font-weight:800;border-radius:5px;padding:1px 6px;margin-right:4px}
+.inq-due-chip.hot{background:#fef1f1;color:#c03246}
+.inq-due-chip.warn{background:#fef4e6;color:#b45309}
+.inq-due-chip.ok{background:#ecfdf3;color:#15803d}
+
+/* ── 상단 한 줄 정리: [전체/내 문의] ── [+ 문의 등록][기타 관리] — 빈 띠 제거 ── */
+.inq-inbox-heading{display:flex;align-items:center;gap:8px;height:auto;position:static;top:auto;justify-content:flex-start;margin:0 0 10px}
+.inq-inbox-heading .inq-work-tools{position:static;bottom:auto}
+.inq-inbox-heading .inq-role-switch{order:-1;margin:0}
+#pg-inq .inq-role-switch{margin:0}
+.inq-create-trigger{margin-left:auto}
+
+/* ── 단계 이동 안내문: 모르는 사람도 언제 고르는지 알 수 있게 ── */
+.stage-move-hint{margin:6px 2px 0;font-size:12px;color:#5b6b82;background:#f6f8fc;border:1px solid #e3e8f0;border-radius:8px;padding:8px 10px;line-height:1.5}
+
+/* ── 상태 필터: 큰 타일 대신 목록 바로 위 한 줄 칩 (유입·검색과 한 박스) ── */
+.inq-work-counts{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.inq-work-counts button{min-height:32px;padding:5px 12px;border:1px solid #dce3ed;border-radius:8px;background:#fff;font-size:12px;display:inline-flex;gap:6px;align-items:center;color:#627189}
+.inq-work-counts b{font-size:12.5px;color:#293b57;margin:0}
+.inq-work-counts [aria-pressed=true]{border-color:#3b6ce4;background:#f0f5ff;color:#2458c7;box-shadow:none}
+.inq-work-counts [aria-pressed=true] b{color:#2458c7}
+@media(max-width:760px){.inq-work-counts button{flex-direction:row;padding:5px 10px;font-size:11.5px}.inq-work-counts b{font-size:12px}}

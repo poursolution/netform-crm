@@ -40,6 +40,22 @@ async function run(){
   assert.equal(await page.locator('.twq-action:not(.assign)').evaluateAll(nodes=>nodes.every(n=>n.textContent==='처리')),true);
   assert.equal(await page.locator('.twq-row[data-key="deal:rel-late"] .twq-reason').count(),0);
   assert.equal(await page.locator('.twq-row[data-key="deal:pipe-today"] .twq-reason').count(),0);
+  // 관리자 현황판: 사원별 요약이 두 함 위에 뜨고, 행 클릭은 기존 담당자 필터로 이어진다.
+  assert.equal(await page.locator('.twq-rep-boards').count(),1);
+  assert.equal(await page.locator('.twq-rep-controls').count(),1);
+  assert.ok((await page.locator('.twq-rep-controls [aria-label="현황판 연도"] option').count())>=5,'year options generated');
+  assert.equal(await page.locator('.twq-rep-alert').count(),1);
+  assert.ok(await page.locator('.twq-rep-row').count()>=3,'rep summary rows');
+  // 휴지통 문의는 현황판·미배정 배너 집계에서 즉시 빠진다.
+  const alertBefore=await page.locator('.twq-rep-alert').textContent();
+  await page.evaluate(()=>{B.inquiries.push({id:'inq-trashed',site:'휴지통 검증 문의',brand:'POUR솔루션',created_at:new Date().toISOString(),deleted_at:new Date().toISOString(),status:'접수'});inqCtlPartition();paintTodayHome()});
+  assert.equal(await page.getByText('휴지통 검증 문의',{exact:false}).count(),0);
+  assert.equal(await page.locator('.twq-rep-alert').textContent(),alertBefore);
+  await page.locator('.twq-rep-row[data-owner="김성민"]').first().click();
+  assert.equal(await page.evaluate(()=>G.todayQueueOwner),'김성민');
+  assert.ok(await page.locator('.twq-rep-row.sel').count()>=1,'selected rep highlighted');
+  await page.locator('.twq-rep-row[data-owner="김성민"]').first().click();
+  assert.equal(await page.evaluate(()=>G.todayQueueOwner),'전체');
   for(const width of [1920,1440,1280]){
    await page.setViewportSize({width,height:1000});
    await page.evaluate(()=>new Promise(requestAnimationFrame));
@@ -90,6 +106,7 @@ async function run(){
   if(process.env.TODAY_WORK_SCREENSHOT)await page.screenshot({path:process.env.TODAY_WORK_SCREENSHOT,fullPage:true});
   await page.evaluate(()=>{ME={name:'김성민',role:'rep'};paintTodayHome()});
   assert.equal(await page.getByRole('combobox',{name:'오늘 업무 담당자'}).count(),0);
+  assert.equal(await page.locator('.twq-rep-boards').count(),0);
   assert.equal(await page.locator('.twq-row').count(),5);
   assert.equal(await page.locator('.today-admin-inquiry').count(),1);assert.equal(await page.locator('.today-admin-pipeline').count(),1);
   assert.equal(await page.locator('.twq-row[data-key="deal:rel-today"]').count(),1);

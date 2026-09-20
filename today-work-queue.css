@@ -62,3 +62,55 @@ body:has(#pg-today.on) .mhead>.search{display:none}
  .twq-list footer{flex-wrap:wrap}
 }
 @media(max-width:760px){.twq-toolbar{gap:8px}.twq-toolbar .twq-search{width:100%;margin:0}.twq-search input{flex:1;width:auto}.today-work-queue>header{align-items:flex-start}.today-work-queue>header span{font-size:11px}.twq-counts button{font-size:11px;padding:8px 6px}}
+
+/* ── 관리자 사원별 현황판: 신호등 요약 → 행 클릭 시 담당자 필터 ── */
+.twq-rep-boards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.twq-rep-controls{grid-column:1/-1;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 14px;font-size:12px}
+.twq-rep-controls strong{font-size:12px;color:#40526b}
+.twq-rep-controls label{display:flex;align-items:center;gap:6px;color:var(--sub)}
+.twq-rep-controls select{min-height:30px;border:1px solid #d3dce9;border-radius:6px;background:#fff;padding:4px 8px;font:inherit;color:var(--ink)}
+.twq-rep-period-note{margin-left:auto;font-size:11px;color:var(--sub)}
+@media(max-width:760px){.twq-rep-period-note{margin-left:0;width:100%}}
+.twq-rep-list{min-width:0;background:#fff;border:1px solid #dce3ed;border-radius:9px;overflow:hidden}
+.twq-rep-list.inqSum{border-top:3px solid #df4a61}.twq-rep-list.pipeSum{border-top:3px solid #3568df}
+.twq-rep-list header{padding:13px 16px 11px;border-bottom:1px solid #e7edf4}
+.twq-rep-list header h3{margin:0;padding:0;font-size:15px}
+.twq-rep-list header p{margin:4px 0 0;font-size:11px;color:var(--sub)}
+.twq-rep-alert{display:flex;align-items:center;gap:9px;padding:10px 16px;font-size:12px;background:linear-gradient(100deg,#fff5f5,#fff);border-bottom:1px solid #f3d6d6}
+.twq-rep-alert b{color:#ac2f42}
+.twq-rep-alert button{margin-left:auto;font:inherit;font-size:11px;font-weight:700;border:0;border-radius:6px;background:#df4a61;color:#fff;padding:7px 12px;cursor:pointer;white-space:nowrap}
+.twq-rep-scroll{overflow-x:auto;max-width:100%}
+.twq-rep-boards table{width:100%;border-collapse:collapse;font-size:12px;text-align:right;min-width:340px}
+.twq-rep-boards th{background:#f8fafc;color:#63748c;font-weight:600;font-size:11px;padding:8px 12px;border-bottom:1px solid #e7edf4;white-space:nowrap;text-align:right}
+.twq-rep-boards th:first-child,.twq-rep-boards td:first-child{text-align:left}
+.twq-rep-boards td{padding:9px 12px;border-top:1px solid #eef2f7;font-variant-numeric:tabular-nums;white-space:nowrap}
+.twq-rep-row{cursor:pointer}
+.twq-rep-row:hover td{background:#f8fafd}
+.twq-rep-row.sel td{background:#edf3ff}
+.twq-rep-row td:first-child b{font-weight:700}
+.twq-light{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:1px}
+.twq-light.r{background:#df4a61;box-shadow:0 0 0 3px #fdeef0}
+.twq-light.y{background:#e3a008;box-shadow:0 0 0 3px #fdf4dd}
+.twq-light.g{background:#22a55e;box-shadow:0 0 0 3px #e7f7ee}
+.twq-rep-bad{color:#ac2f42;font-weight:800}
+.twq-rep-warn{color:#8c601e;font-weight:700}
+.twq-rep-zero{color:#9aa8bd}
+.twq-rep-amt{color:#2c3d57;font-weight:700}
+.twq-rep-go{color:#2558bd;font-size:11px;font-weight:700}
+.twq-rep-empty td{text-align:center;color:var(--sub);padding:18px 12px}
+.twq-rep-list footer{padding:8px 16px;font-size:11px;color:var(--sub);border-top:1px solid #e7edf4;background:#fafbfd}
+@media(max-width:1100px){.twq-rep-boards{grid-template-columns:1fr}}
+
+/* ── 업무함 정돈: 상태 필터 칩·긴급 띠·행 호버 ── */
+.twq-counts{gap:6px;padding:10px 12px}
+.twq-counts button{min-height:32px;border:1px solid #dce3ed;border-radius:8px;padding:5px 11px;border-bottom:1px solid #dce3ed}
+.twq-counts button::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;background:#9aa8bd;vertical-align:1px}
+.twq-counts button[data-filter=all]::before{display:none}
+.twq-counts button[data-filter=unassigned]::before,.twq-counts button[data-filter=overdue]::before{background:#df4a61}
+.twq-counts button[data-filter=response]::before{background:#f97316}
+.twq-counts button[data-filter=processing]::before,.twq-counts button[data-filter=missing]::before{background:#e3a008}
+.twq-counts button[data-filter=stale]::before{background:#64748b}
+.twq-counts [aria-pressed=true]{border-color:var(--accent,#3568df);background:#edf3ff}
+.twq-list tbody tr:hover td{background:#f8fafd}
+.twq-list tr.urgent{background:linear-gradient(90deg,#fff8f8,rgba(255,248,248,0) 70%)}
+.twq-list tr.urgent td:first-child{box-shadow:inset 3px 0 0 #df4a61}
