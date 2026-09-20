@@ -175,9 +175,52 @@ function consultingFrame(items){
  const scopeHead=scopedOwner!=='전체'?'<div class="sw-scope-head"><h3>'+h(scopedOwner)+' 담당 목록 <small>'+ordered.length+'건 · 먼저 볼 것 '+first.length+'</small></h3>'+btn('담당자 필터 해제','owner',scopedOwner)+'</div>':'';
  return consultingOwnerBoard(scopedOwner)+scopeHead+'<p class="ps-queue-count">'+shown.length+' / '+ordered.length+'건 표시 · 먼저 볼 것 '+first.length+'건</p>'+body+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
 }
+/* 경쟁·임박·입찰 v2(A안): 담당자 현황판 + 구분 세그먼트 + 결정일 중심 표. 아젠다 6칸 제거. */
+const COMP_STAGES={compete:'경쟁',imminent:'계약 임박',bidding:'입찰'};
+function competitionOwnerBoard(scopedOwner){
+ const src=(root.PipelineWorkspace&&root.PipelineWorkspace.rows?root.PipelineWorkspace.rows({unscoped:true}):[]).filter(r=>r.group==='competition');
+ const map=new Map();
+ src.forEach(r=>{
+  const o=r.owner||'미배정',row=map.get(o)||{owner:o,count:0,amount:0,past:0,near:0,none:0,maxPast:0};
+  row.count++;row.amount+=Number(r.amount)||0;
+  const dd=r.date?root.daysTo(r.date):null;
+  if(dd==null)row.none++;else if(dd<0){row.past++;row.maxPast=Math.max(row.maxPast,-dd);}else if(dd<=3)row.near++;
+  map.set(o,row);
+ });
+ const rows=Array.from(map.values());
+ rows.forEach(x=>{x.light=x.past>=2||x.maxPast>=14?'r':(x.past+x.near+x.none)>0?'y':'g'});
+ const order={r:0,y:1,g:2};
+ rows.sort((a,b)=>order[a.light]-order[b.light]||b.past-a.past||b.near-a.near||(typeof root.repCompare==='function'?root.repCompare(a.owner,b.owner):String(a.owner).localeCompare(String(b.owner))));
+ const total=rows.reduce((s,x)=>({count:s.count+x.count,amount:s.amount+x.amount,past:s.past+x.past,near:s.near+x.near,none:s.none+x.none,maxPast:Math.max(s.maxPast,x.maxPast)}),{count:0,amount:0,past:0,near:0,none:0,maxPast:0});
+ const body=rows.map(x=>'<tr data-ps-action="owner" data-value="'+a(x.owner)+'"'+(scopedOwner===x.owner?' class="sel"':'')+'><td><span class="sw-light '+x.light+'"></span><b>'+h(x.owner)+'</b></td><td>'+x.count+'</td><td class="sw-amt">'+h(money(x.amount).replace('금액 미입력','-'))+'</td><td class="'+(x.past?'sw-bad':'sw-zero')+'">'+x.past+'</td><td class="'+(x.near?'sw-warn':'sw-zero')+'">'+x.near+'</td><td class="'+(x.none?'sw-warn':'sw-zero')+'">'+x.none+'</td><td class="'+(x.maxPast>=14?'sw-bad':x.maxPast?'sw-warn':'sw-zero')+'">'+(x.maxPast?x.maxPast+'일':'-')+'</td><td class="sw-go">'+(scopedOwner===x.owner?'전체 보기':'목록 보기')+'</td></tr>').join('')
+  +'<tr class="sw-total"><td>전체</td><td>'+total.count+'</td><td class="sw-amt">'+h(money(total.amount).replace('금액 미입력','-'))+'</td><td class="'+(total.past?'sw-bad':'sw-zero')+'">'+total.past+'</td><td class="'+(total.near?'sw-warn':'sw-zero')+'">'+total.near+'</td><td class="'+(total.none?'sw-warn':'sw-zero')+'">'+total.none+'</td><td>'+(total.maxPast?total.maxPast+'일':'-')+'</td><td></td></tr>';
+ return '<section class="sw-owner-board" aria-label="담당자별 경쟁·임박·입찰 현황"><header><h3>담당자별 현황</h3><small>위험 높은 순 · 행 클릭 = 아래 목록 필터</small>'+btn('전체 보기','owner','전체')+'</header><div class="sw-table-scroll"><table><thead><tr>'+['담당자','담당','합계 금액','지난 결정','D-3 이내','일정 미등록','최장 경과',''].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+body+'</tbody></table></div></section>';
+}
 function schedule(items){
- const spec=root.StageSpecs.get('competition');
- return '<div class="sw-agenda">'+spec.priorityRule.map((title,i)=>'<section><h3>'+h(title)+' <span>'+items.filter(x=>x.priority===i).length+'건</span></h3>'+items.filter(x=>x.priority===i).map(x=>'<article data-deal="'+a(x.row.key)+'"><strong class="sw-deadline">'+h(due({days:x.values.decisionDate?root.daysTo(x.values.decisionDate):null}))+'</strong>'+btn(x.row.site,'record',x.row.key)+'<p>'+h(x.row.owner)+' · '+h(x.values.competitionType)+' · '+h(money(x.row.amount))+'</p><small>'+h(x.values.preparation||'준비 현황 미기록')+'</small>'+btn('처리','primary',x.row.key)+'</article>').join('')+'</section>').join('')+'</div>';
+ const f=root.G.pipelineQueue;
+ const scopedOwner=root.SalesScope&&root.SalesScope.state?root.SalesScope.state().owner:'전체';
+ const seg=root.G.compSeg&&COMP_STAGES[root.G.compSeg]?root.G.compSeg:'all';
+ const segFiltered=items.filter(x=>seg==='all'||x.row.code===seg);
+ const dd=x=>x.values.decisionDate?root.daysTo(x.values.decisionDate):null;
+ const urgent=x=>{const n=dd(x);return n==null||n<=1;};
+ const first=segFiltered.filter(urgent).sort((p,q)=>{const a=dd(p),b=dd(q);return (a==null?0.5:a)-(b==null?0.5:b);});
+ const rest=segFiltered.filter(x=>!urgent(x)).sort((p,q)=>(dd(p)??9999)-(dd(q)??9999)||String(p.row.key).localeCompare(String(q.row.key)));
+ const ordered=first.concat(rest);
+ const segBar='<nav class="sw-seg" aria-label="경쟁 구분">'+[['all','전체',items.length],['compete','경쟁',items.filter(x=>x.row.code==='compete').length],['imminent','계약 임박',items.filter(x=>x.row.code==='imminent').length],['bidding','입찰',items.filter(x=>x.row.code==='bidding').length]].map(([k,label,n])=>'<button type="button" data-ps-action="compseg" data-value="'+k+'" aria-pressed="'+(seg===k)+'">'+h(label)+' <b>'+n+'</b></button>').join('')+'</nav>';
+ const pages=Math.max(1,Math.ceil(ordered.length/30));f.page=Math.min(f.page||1,pages);
+ const shown=ordered.slice((f.page-1)*30,f.page*30);
+ let markedFirst=false,markedRest=false,rowsHtml='';
+ shown.forEach(x=>{
+  const r=x.row,v=x.values,n=dd(x),isFirst=urgent(x);
+  if(isFirst&&!markedFirst){markedFirst=true;rowsHtml+='<tr class="sw-group-row hot"><td colspan="7">먼저 볼 것 — 지난 결정 · 오늘 · D-1 · 일정 미등록 ('+first.length+')</td></tr>';}
+  if(!isFirst&&!markedRest){markedRest=true;rowsHtml+='<tr class="sw-group-row"><td colspan="7">예정된 결정 ('+rest.length+')</td></tr>';}
+  const chip=n==null?'<span class="sw-due-chip warn">미등록</span>':n<0?'<span class="sw-due-chip hot">'+Math.abs(n)+'일 지남</span>':n===0?'<span class="sw-due-chip warn">오늘</span>':'<span class="sw-due-chip '+(n<=3?'warn':'ok')+'">D-'+n+'</span>';
+  const kindChip='<span class="sw-stg sw-stg-'+(r.code==='compete'?'sil':r.code==='bidding'?'wait':'rap')+'">'+h(COMP_STAGES[r.code]||'경쟁')+'</span>'+(v.competitionType&&v.competitionType!==COMP_STAGES[r.code]?'<small>'+h(v.competitionType)+'</small>':'');
+  rowsHtml+='<tr data-deal="'+a(r.key)+'"'+(isFirst?' class="sw-first"':'')+'><td>'+btn(r.site,'record',r.key)+(scopedOwner==='전체'?'<small>'+h(r.owner||'미배정')+'</small>':'')+'</td><td>'+kindChip+'</td><td>'+chip+(v.decisionDate?'<small>'+h(String(v.decisionDate).slice(0,10))+'</small>':'')+'</td><td>'+h(v.competitor||'미기록')+'</td><td>'+h(money(r.amount))+'</td><td>'+h(v.preparation||r.next?.text||'준비 현황 미기록')+'</td><td>'+btn('처리','primary',r.key)+'</td></tr>';
+ });
+ const table='<div class="sw-table-scroll"><table class="sw-work-table sw-frame"><thead><tr>'+['현장','구분','결정 예정','경쟁사','예상금액','준비 현황·다음','관리'].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>'+(shown.length?'':empty)+'</div>';
+ const scopeHead=scopedOwner!=='전체'?'<div class="sw-scope-head"><h3>'+h(scopedOwner)+' 담당 목록 <small>'+ordered.length+'건 · 먼저 볼 것 '+first.length+'</small></h3>'+btn('담당자 필터 해제','owner',scopedOwner)+'</div>':'';
+ return competitionOwnerBoard(scopedOwner)+segBar+scopeHead+'<p class="ps-queue-count">'+shown.length+' / '+ordered.length+'건 표시 · 먼저 볼 것 '+first.length+'건</p>'+table+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
 }
 function queue(key,items){
  const spec=root.StageSpecs.get(key);
@@ -193,6 +236,7 @@ function render(key,list){
  let items=prepare(key,list),summary='';
  if(spec.workspaceType==='triage')return consultingFrame(items);
  if(key==='sent')return sentFrame(items);
+ if(spec.workspaceType==='schedule')return schedule(items);
  if(spec.summaryMetrics==='contract-ledger')summary=contractReport(list);
  else if(spec.summaryMetrics==='loss-reasons'){
   const month=root.G.lossResultMonth||new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
