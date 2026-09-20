@@ -3,12 +3,12 @@
  const originalPaint=root.paintInq,originalRows=root.inqCtlRows,originalTab=root.inqCtlSetTab,originalScope=root.inqCtlScope,originalBase=root.inqBase;
  const h=v=>root.esc(String(v==null?'':v)),attr=v=>root.escAttr(String(v==null?'':v));
  let modalKey=null,returnFocus=null,ignoreBrand=false;
- function brands(){return Array.isArray(root.G.inqBrands)?root.G.inqBrands:root.G.brand&&root.G.brand!=='전체'?[root.G.brand]:[]}
+ function brands(){return root.SalesFilterState.state().brands}
  function scoped(fn,args){
-  const brand=root.G.brand,query=root.G.q,selected=brands();root.G.brand='전체';root.G.q='';
-  let rows;try{rows=fn.apply(root,args)}finally{root.G.brand=brand;root.G.q=query}
+  const brand=root.G.brand,rep=root.G.rep,query=root.G.q,selected=brands();root.G.brand='전체';root.G.rep='전체';root.G.q='';
+  let rows;try{rows=fn.apply(root,args)}finally{root.G.brand=brand;root.G.rep=rep;root.G.q=query}
   const term=String(query||'').toLowerCase(),digits=term.replace(/\D/g,'');
-  return rows.filter(q=>(ignoreBrand||!selected.length||selected.includes(root.inquiryBrandOf(q)))&&(!term||[q.site,q.contact,q.contact_name,q.phone,q.mobile,root.inqCtlContactLabel(q),root.inquirySalesOwner(q),root.inquiryConsultant(q),root.dealWorkSummary(q),q.delete_reason,q.deleteReason].join(' ').toLowerCase().includes(term)||(digits.length>=4&&[q.phone,q.mobile,root.inqCtlContactLabel(q)].join('').replace(/\D/g,'').includes(digits))));
+  return rows.filter(q=>(ignoreBrand||root.SalesScope.matches(root.inquiryRoutedOwner(q),q))&&(ignoreBrand||!selected.length||selected.includes(root.inquiryBrandOf(q)))&&(!term||[q.site,q.contact,q.contact_name,q.phone,q.mobile,root.inqCtlContactLabel(q),root.inquirySalesOwner(q),root.inquiryConsultant(q),root.dealWorkSummary(q),q.delete_reason,q.deleteReason].join(' ').toLowerCase().includes(term)||(digits.length>=4&&[q.phone,q.mobile,root.inqCtlContactLabel(q)].join('').replace(/\D/g,'').includes(digits))));
  }
  root.inqCtlScope=function(){return scoped(originalScope,arguments)};
  root.inqBase=function(){return scoped(originalBase,arguments)};
@@ -16,11 +16,8 @@
  root.inqCtlRows=function(){const rows=originalRows.apply(this,arguments);return root.G.inqCompactMetric==='delayed'&&root.G.inqBucket==='전체'?rows.filter(delayed):rows};
  root.inqCtlSetTab=function(tab){root.G.inqCompactMetric='';return originalTab(tab)};
  function set(key){const tabs={all:'전체',unassigned:'미배정',waiting:'배정완료',delayed:'전체'};if(!tabs[key])return;root.G.inqCompactMetric=key==='delayed'?'delayed':'';root.G.inqLegacyView=false;root.G.inqView='console';originalTab(tabs[key])}
- function selectBrand(value){let selected=brands();selected=value==='전체'?[]:selected.includes(value)?selected.filter(b=>b!==value):selected.concat(value);root.G.inqBrands=selected;root.G.brand=selected.length===1?selected[0]:'전체';root.G.inqPage=1;root.G.inqSelKey=null;root.INQ_SEL={};root.paint()}
- root.inqBrandChips=function(){
-  let base;ignoreBrand=true;try{base=root.inqCtlScopeActive()}finally{ignoreBrand=false}
-  const selected=brands();return '<nav class="sp-chips brandbar" aria-label="유입 브랜드"><span class="brandhint">브랜드</span>'+['전체'].concat(root.inquiryBrandOptions()).map(b=>{const on=b==='전체'?!selected.length:selected.includes(b),n=b==='전체'?base.length:base.filter(q=>root.inquiryBrandOf(q)===b).length;return '<button type="button" class="'+(on?'on':'')+'" aria-pressed="'+on+'" data-b="'+attr(b)+'" onclick="InquiryWorkbench.selectBrand(this.dataset.b)">'+(root.BICON[b]?root.BICON[b][0]+' ':'')+h(b)+' <em>'+n+'</em>'+(on?' <span aria-hidden="true">✓</span>':'')+'</button>'}).join('')+'</nav>';
- };
+ function selectBrand(value){root.SalesFilterState.selectBrand(value);root.G.inqPage=1;root.paint()}
+ root.inqBrandChips=function(){let base;ignoreBrand=true;try{base=root.inqCtlScopeActive()}finally{ignoreBrand=false}return root.SalesFilters.controls(base.map(q=>({brand:root.inquiryBrandOf(q),owner:root.inquiryRoutedOwner(q),item:q})))};
  function primaryAction(q){const assign=!root.inquiryAssigned(q)&&root.inqCtlRoleView()==='admin',key=attr(root.inqKey(q));return '<button class="inq-now" data-k="'+key+'" onclick="'+(assign?'inqCtlOpenAssign(\'assign\',this.dataset.k)':'inqCtlOpenSingle(this.dataset.k)')+'">'+(assign?'배정':'처리')+'</button><button class="inq-more" data-k="'+key+'" onclick="inqCtlOpenMenu(this.dataset.k)" aria-label="'+attr((q.site||'문의')+' 기타 처리')+'">⋯</button>'}
  function compactRows(){
   document.querySelectorAll('#sg-panel .inq-ctl-row').forEach(row=>{
@@ -46,7 +43,7 @@
  function decorate(){
   const admin=root.inqCtlRoleView()==='admin',page=document.getElementById('pg-inq');page.classList.add('inq-workbench');
   const signals=root.$('#sg-signals'),active=root.inqCtlScopeActive(),counts=root.inqCtlCounts(active,root.inqCtlScopeTrash(),root.inqTechReviewRows()),selected=root.G.inqCompactMetric==='delayed'?'delayed':root.G.inqBucket==='미배정'?'unassigned':root.G.inqBucket==='배정완료'?'waiting':root.G.inqBucket==='전체'?'all':'';
-  const tabs=signals.querySelector('.inq-ctl-tabs'),toolbar=signals.querySelector('.inq-ctl-toolbar'),roles=signals.querySelector('.inq-role-switch'),brand=signals.querySelector('.brandbar');
+  const tabs=signals.querySelector('.inq-ctl-tabs'),toolbar=signals.querySelector('.inq-ctl-toolbar'),roles=signals.querySelector('.inq-role-switch'),brand=signals.querySelector('.sales-filterbar');
   if(roles){roles.setAttribute('aria-label','문의 조회 범위');roles.children[0].textContent='전체 문의';Array.from(roles.children).forEach(b=>b.setAttribute('aria-pressed',b.classList.contains('on')))}
   const status=document.createElement('nav');status.className='inq-work-counts';status.setAttribute('aria-label','견적문의 처리 상태');status.innerHTML=[['all','전체',counts.전체],['unassigned','미배정',counts.미배정],['waiting','응대대기',counts.배정완료],['delayed','처리지연',active.filter(delayed).length]].map(([key,label,n])=>'<button aria-pressed="'+(selected===key)+'" data-key="'+key+'" onclick="InquiryWorkbench.set(this.dataset.key)"><span>'+label+'</span><b>'+n+'</b></button>').join('');
   const heading=document.createElement('div');heading.className='inq-inbox-heading';
@@ -61,8 +58,8 @@
   if(brand)sticky.append(brand);else {sticky.innerHTML=root.inqBrandChips()}
   const filters=document.createElement('form');filters.className='inq-work-filters';
   const owners=Array.from(new Set(root.operationalInquiries(root.B.inquiries||[]).filter(root.inqCtlRoleMatch).map(root.inquiryRoutedOwner).filter(Boolean))).sort();if(root.G.rep&&root.G.rep!=='전체'&&!owners.includes(root.G.rep))owners.push(root.G.rep);
-  filters.innerHTML=(admin?'<label>담당자<select name="owner" aria-label="문의 담당자">'+['전체'].concat(owners).map(n=>'<option '+(root.G.rep===n?'selected':'')+'>'+h(n)+'</option>').join('')+'</select></label>':'')+'<label>상태<select name="status" aria-label="문의 상태">'+['전체','미배정','배정완료','응대중','영업전환','스토어 이관','보류'].map(n=>'<option '+(root.G.inqBucket===n?'selected':'')+'>'+h(n)+'</option>').join('')+'</select></label><label>공종<select name="work" aria-label="문의 공종">'+root.workFilterOptions(root.G.workFilter||'전체')+'</select></label><label class="inq-work-search">검색<input name="query" aria-label="문의 검색" value="'+attr(root.G.q||'')+'" placeholder="현장명·문의자·연락처 검색"></label><button>검색</button>';
-  filters.onsubmit=e=>{e.preventDefault();root.G.rep=filters.elements.owner?.value||'전체';root.G.workFilter=filters.elements.work.value;root.G.q=filters.elements.query.value.trim();root.G.inqPage=1;root.G.inqCompactMetric='';root.G.inqBucket=filters.elements.status.value;root.INQ_SEL={};root.paint()};filters.querySelectorAll('select').forEach(el=>el.onchange=()=>filters.requestSubmit());sticky.append(filters);signals.after(sticky);
+  filters.innerHTML='<label>상태<select name="status" aria-label="문의 상태">'+['전체','미배정','배정완료','응대중','영업전환','스토어 이관','보류'].map(n=>'<option '+(root.G.inqBucket===n?'selected':'')+'>'+h(n)+'</option>').join('')+'</select></label><label>공종<select name="work" aria-label="문의 공종">'+root.workFilterOptions(root.G.workFilter||'전체')+'</select></label><label class="inq-work-search">검색<input name="query" aria-label="문의 검색" value="'+attr(root.G.q||'')+'" placeholder="현장명·문의자·연락처 검색"></label><button>검색</button>';
+  filters.onsubmit=e=>{e.preventDefault();root.G.workFilter=filters.elements.work.value;root.G.q=filters.elements.query.value.trim();root.G.inqPage=1;root.G.inqCompactMetric='';root.G.inqBucket=filters.elements.status.value;root.INQ_SEL={};root.paint()};filters.querySelectorAll('select').forEach(el=>el.onchange=()=>filters.requestSubmit());sticky.append(filters);signals.after(sticky);
  }
  function allowed(q){return q&&root.inqCtlRoleMatch(q)}
  function open(key,action){const q=root.inqCtlFind(key,false);if(!allowed(q))return;returnFocus=document.activeElement;modalKey=root.inqKey(q);root.G.inqSelKey=modalKey;root.G.inqAct=action||null;root.paint();document.querySelector('#inq-inbox-dialog .inq-dialog-close')?.focus()}

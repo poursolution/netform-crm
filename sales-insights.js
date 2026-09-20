@@ -9,9 +9,9 @@
   const id=String(root.ME?.id||root.ME?.name||'');
   if(actor!==id){actor=id;root.G.insights=null;close(false)}
   if(!root.G.insights){const now=new Date();root.G.insights={year:String(now.getFullYear()),month:now.getMonth()+1,brand:'전체',owner:'전체',view:'lead',kind:'risk',issue:'all',stage:'all',search:'',page:1}}
-  root.G.insights.owner=root.SalesScope.state().owner;return root.G.insights;
+  root.G.insights.brand=root.G.brand;root.G.insights.owner=root.SalesScope.state().owner;return root.G.insights;
  }
- function rows(){
+ function rows(unscoped=false){
   // B is ACL-filtered by the operational adapter. Apply the same per-user UI scope as Today.
   const admin=root.todayIsAdmin(),me=root.repN(root.ME?.name),base=root.B||{};
   const deals=(base.deals||[]).filter(d=>admin||root.repN(d.assignee)===me).map(d=>{
@@ -26,17 +26,17 @@
    return {key:'deal:'+root.dealKey(d),type:'deal',item:d,site:d.site||'현장명 미입력',owner:root.repN(d.assignee),brand:d.brand||'',created:d.created,active:root.towerActive(d)&&root.outcomeOf(d)==='open',won:root.isWon(d),wonAt:root.wonDate(d),wonAmount:root.hasWonAmt(d)?root.wonAmt(d):0,hasWonAmount:root.hasWonAmt(d),expected:root.oppAmt(d),stage:root.dealStage(d),stageLabel:root.stageLabel(root.dealStage(d)),issues,reason:issues.map(k=>k==='overdue'?Math.abs(due)+'일 기한초과':k==='contact'?meta.days+'일 미접촉':labels[k]).join(' · '),lastContact:meta.meaningfulAt||''};
   });
   const inquiries=root.operationalInquiries(base.inquiries||[]).filter(q=>admin||root.inquiryRoutedOwner(q)===me||root.inquiryConsultant(q)===me).map(q=>({key:'inq:'+String(q.id||root.inqKey(q)),type:'inq',item:q,site:q.site||'현장명 미입력',owner:root.inquiryRoutedOwner(q)||'미배정',brand:q.brand||'',created:root.inquiryDate(q),stage:'inquiry',stageLabel:q.status||'견적문의',issues:[],reason:root.inquiryRoutedOwner(q)?'문의 내용과 후속처리 확인':'담당자 배정 필요'}));
-  return {deals:deals.filter(d=>root.SalesScope.matches(d.owner,d.item)),inquiries:inquiries.filter(q=>root.SalesScope.matches(q.owner,q.item))};
+  return {deals:deals.filter(d=>unscoped||root.SalesScope.matches(d.owner,d.item)&&root.SalesFilterState.matchesBrand(d.brand)),inquiries:inquiries.filter(q=>unscoped||root.SalesScope.matches(q.owner,q.item)&&root.SalesFilterState.matchesBrand(q.brand))};
  }
  function data(owner){const f=Object.assign({},state());if(owner)f.owner=owner;const r=rows();const summary=M.summarize(r.deals,r.inquiries,f);summary.contractSummary=root.ContractSalesData?.summarize(f);return summary}
  function btn(text,action,value,cls){return '<button type="button" class="'+(cls||'')+'" data-si-action="'+action+'" data-value="'+a(value||'')+'">'+h(text)+'</button>'}
  function options(values,selected){return values.map(v=>'<option value="'+a(v[0])+'"'+(String(v[0])===String(selected)?' selected':'')+'>'+h(v[1])+'</option>').join('')}
  function select(label,key,values,value){return '<label>'+h(label)+'<select data-si-filter="'+key+'" aria-label="'+h(label)+'">'+options(values,value)+'</select></label>'}
  function filters(){
-  const f=state(),r=rows(),all=r.deals.concat(r.inquiries),years=new Set([String(new Date().getFullYear()),f.year]);
+  const f=state(),r=rows(true),all=r.deals.concat(r.inquiries),years=new Set([String(new Date().getFullYear()),f.year]);
   all.forEach(x=>[x.created,x.wonAt].forEach(v=>{const d=M.date(v);if(d)years.add(d.slice(0,4))}));
   const brands=[...new Set(all.map(x=>x.brand).concat(f.brand==='전체'?[]:[f.brand]).filter(Boolean))].sort();
-  return '<div class="si-filters">'+select('연도','year',[...years].filter(x=>x!=='전체').sort().reverse().map(x=>[x,x+'년']),f.year)+select('기간','month',[[0,'연간'],...Array.from({length:12},(_,i)=>[i+1,(i+1)+'월'])],f.month)+select('브랜드','brand',[['전체','전체 브랜드'],...brands.map(x=>[x,x])],f.brand)+'</div>'+root.SalesScope.controls();
+  return root.SalesFilters.controls(all)+'<div class="si-filters">'+select('연도','year',[...years].filter(x=>x!=='전체').sort().reverse().map(x=>[x,x+'년']),f.year)+select('기간','month',[[0,'연간'],...Array.from({length:12},(_,i)=>[i+1,(i+1)+'월'])],f.month)+'</div>';
  }
  function kpis(s,rep){
   const defs=rep?[['진행 영업',number(s.active.length)+'건','현재','active'],['예상금액',money(s.expected),'현재 진행 중','active'],['계약실적',s.contractSummary?money(s.contractSummary.netAmount):'확인 필요','계약 체결일 기준','contract'],['미접촉',number(s.active.filter(d=>d.issues.includes('contact')).length)+'건','최근 접촉 7일 이상','contact'],['Next 없음',number(s.active.filter(d=>d.issues.includes('missing')).length)+'건','행동 또는 기한 미입력','missing']]:[['문의',number(s.inquiries.length)+'건','선택 기간 접수','inquiries'],['진행중',number(s.active.length)+'건','현재 보유 파이프라인','active'],['예상 파이프라인 금액',money(s.expected),'현재 진행 중','active'],['계약실적',s.contractSummary?money(s.contractSummary.netAmount):'확인 필요','계약 체결일 기준','contract'],['관리필요',number(s.risk.length)+'건','영업 건 수 · 사유 중복 제외','risk']];
@@ -85,7 +85,7 @@
   if(action==='page'){f.page=Number(v);render()}
   if(action==='stage'&&root.PipelineWorkspace){const filters={...f,owner:b.closest('#si-person')?.dataset.owner||f.owner};close(false);root.PipelineWorkspace.open(v,filters);return;}
   if(action==='drill'&&v==='contract'){document.querySelector('#si-'+root.G.page+' .contract-sales-panel')?.scrollIntoView({block:'start',behavior:'smooth'});return;}
-  if(action==='drill'||action==='stage'){f.kind=action==='stage'?'active':labels[v]?'risk':v;f.issue=labels[v]?v:'all';f.stage=action==='stage'?v:'all';f.search='';f.page=1;root.goPage('control')}
+  if(action==='drill'||action==='stage'){root.SalesFilterState.enter('control');f.kind=action==='stage'?'active':labels[v]?'risk':v;f.issue=labels[v]?v:'all';f.stage=action==='stage'?v:'all';f.search='';f.page=1;root.goPage('control')}
   if(action==='person')openPerson(v,b);
   if(action==='close')close();
   if(action==='record')openRecord(v);

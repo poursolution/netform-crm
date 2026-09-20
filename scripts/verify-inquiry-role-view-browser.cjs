@@ -60,7 +60,7 @@ async function run() {
     assert.equal(await page.getByRole('button',{name:'전체 문의',exact:true}).count(),1);
     assert.equal(await page.locator('.inq-work-tools').getAttribute('open'),null);
     assert.equal(await page.locator('.inq-work-tools .inq-ctl-toolbar').isVisible(),false);
-    assert.equal(await page.locator('.brandbar button').count(),5);
+    assert.equal(await page.locator('.sales-filterbar [data-sf-brand]').count(),5);
     assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-ctl-assignee').textContent(),'미배정');
     assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-work-recent').textContent(),'미응대');
     assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-work-next').textContent(),'다음 행동 없음');
@@ -77,15 +77,15 @@ async function run() {
     }
     await page.setViewportSize({width:1440,height:1000});
     if(process.env.INQUIRY_SCREENSHOT)await page.screenshot({path:process.env.INQUIRY_SCREENSHOT,fullPage:true});
-    await page.locator('.inq-work-row[data-k="inq-1"] .pc-manager-request-trigger').click();assert.equal(await page.getByRole('dialog',{name:'담당자에게 요청',exact:true}).count(),1);await page.getByRole('dialog',{name:'담당자에게 요청',exact:true}).getByRole('button',{name:'닫기',exact:true}).click();await page.locator('.brandbar [data-b="POUR솔루션"]').click();
+    await page.locator('.inq-work-row[data-k="inq-1"] .pc-manager-request-trigger').click();assert.equal(await page.getByRole('dialog',{name:'담당자에게 요청',exact:true}).count(),1);await page.getByRole('dialog',{name:'담당자에게 요청',exact:true}).getByRole('button',{name:'닫기',exact:true}).click();await page.locator('.sales-filterbar [data-sf-brand="POUR솔루션"]').click();
     assert.equal(await page.locator('.inq-work-row:not(.head)').count(),1);
-    assert.equal(await page.locator('.brandbar [data-b="POUR공법"] em').textContent(),'1','other brand counts remain visible');
-    await page.locator('.brandbar [data-b="POUR공법"]').click();
+    assert.equal(await page.locator('.sales-filterbar [data-sf-brand="POUR공법"] em').textContent(),'1','other brand counts remain visible');
+    await page.locator('.sales-filterbar [data-sf-brand="POUR공법"]').click();
     assert.equal(await page.locator('.inq-work-row:not(.head)').count(),2);
     await page.locator('.inq-work-counts [data-key="waiting"]').click();
     assert.equal(await page.locator('.inq-work-row:not(.head)').count(),1);
     await page.locator('.inq-work-counts [data-key="all"]').click();
-    await page.locator('.brandbar [data-b="전체"]').click();
+    await page.locator('.sales-filterbar [data-sf-brand="전체"]').click();
     await page.getByRole('textbox',{name:'문의 검색',exact:true}).fill('01012345678');
     await page.locator('.inq-work-filters').getByRole('button',{name:'검색',exact:true}).click();
     assert.equal(await page.locator('.inq-work-row:not(.head)').count(),1,'phone search handles formatting');

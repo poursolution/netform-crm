@@ -1,0 +1,22 @@
+(function(root){
+'use strict';
+const h=v=>root.esc(String(v??'')),a=v=>root.escAttr(String(v??''));
+let actor='',brands=[],showPeople=false,localKey='',locals={};
+function state(){const id=String(root.ME?.id||root.ME?.name||'');if(id!==actor){actor=id;brands=[];showPeople=false;locals={};localKey='';}const s=root.SalesScope.state();return {brands:brands.slice(),employeeType:s.type,owner:s.owner};}
+function matchesBrand(brand){return !state().brands.length||brands.includes(brand);}
+function sync(){root.G.brand=brands.length===1?brands[0]:'전체';root.G.inqBrands=brands.slice();root.G.rep=root.SalesScope.state().owner;if(root.G.insights){root.G.insights.brand=root.G.brand;root.G.insights.owner=root.G.rep;}root.G.expansionOwner=root.G.rep;}
+function selectBrand(value){state();brands=value==='전체'?[]:brands.includes(value)?brands.filter(b=>b!==value):brands.concat(value);sync();}
+function people(){return root.SalesScope.people().filter(p=>p.employeeType!=='EXTERNAL'||['조성용','전용성','고영운'].includes(p.name));}
+function matchesOwner(owner,item,ignoreOwner=false){const s=state();if(!ignoreOwner)return root.SalesScope.matches(owner,item);if(s.employeeType==='all')return true;return people().some(p=>p.name===owner&&p.employeeType===s.employeeType);}
+function controls(rows=[]){
+ const s=state(),names=people().filter(p=>s.employeeType==='all'||p.employeeType===s.employeeType),brandNames=[...new Set(['석민이앤씨','POUR솔루션','POUR공법','아파트스퀘어',...rows.map(r=>r.brand).filter(Boolean),...brands])];
+ const chip=(kind,value,label,count,on)=>'<button type="button" data-sf-'+kind+'="'+a(value)+'" aria-pressed="'+on+'">'+h(label)+(count==null?'':' <em>'+count+'</em>')+(on?' <span aria-hidden="true">✓</span>':'')+'</button>';
+ const brandRows=rows.filter(r=>matchesOwner(r.owner,r.item)),ownerRows=rows.filter(r=>matchesBrand(r.brand)&&matchesOwner(r.owner,r.item,true));
+ return '<section class="sales-filterbar" aria-label="공통 영업 필터"><div class="sf-row"><span class="sf-label">브랜드</span><div role="group" aria-label="브랜드">'+chip('brand','전체','전체',brandRows.length,!brands.length)+brandNames.map(b=>chip('brand',b,(root.BICON?.[b]?.[0]||'')+' '+b,brandRows.filter(r=>r.brand===b).length,brands.includes(b))).join('')+'</div></div><div class="sf-row"><span class="sf-label">담당자 구분</span><div role="group" aria-label="담당자 구분">'+[['all','전체'],['INTERNAL','내부직원'],['EXTERNAL','외부직원']].map(([v,t])=>chip('type',v,t,null,s.employeeType===v)).join('')+'</div></div>'+((showPeople||s.employeeType!=='all'||s.owner!=='전체')?'<div class="sf-row"><span class="sf-label">담당자</span><div role="group" aria-label="담당자">'+chip('owner','전체',s.employeeType==='INTERNAL'?'전체 내부직원':s.employeeType==='EXTERNAL'?'전체 외부직원':'전체 담당자',ownerRows.length,s.owner==='전체')+names.map(p=>chip('owner',p.name,p.name,ownerRows.filter(r=>r.owner===p.name).length,s.owner===p.name)).join('')+'</div></div>':'')+'</section>';
+}
+function enter(key){state();if(key===localKey)return;if(localKey)locals[localKey]={q:root.G.q||'',work:root.G.workFilter||'전체',analysis:root.G.insights?{search:root.G.insights.search,kind:root.G.insights.kind,issue:root.G.insights.issue,stage:root.G.insights.stage}:null};const saved=locals[key]||{q:'',work:'전체'};root.G.q=saved.q;root.G.workFilter=saved.work;if(root.G.insights)Object.assign(root.G.insights,saved.analysis||{search:'',kind:'risk',issue:'all',stage:'all'},{page:1});localKey=key;sync();}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-sf-brand],[data-sf-type],[data-sf-owner]');if(!b)return;if(b.dataset.sfBrand!==undefined)selectBrand(b.dataset.sfBrand);else if(b.dataset.sfType!==undefined){showPeople=true;root.SalesScope.change('type',b.dataset.sfType);root.SalesScope.change('owner','전체');sync();}else{root.SalesScope.change('owner',b.dataset.sfOwner);sync();}root.G.inqPage=1;root.G.expansionListLimit=50;if(root.G.pipelineQueue)root.G.pipelineQueue.page=1;if(root.G.insights)root.G.insights.page=1;root.paint();});
+const go=root.goPage;root.goPage=function(page){enter(page==='pipe'?'pipe:'+(root.G.pipelineStage||'all'):page);return go.apply(this,arguments);};
+root.addEventListener('phase1:identity-cleared',()=>{actor='';brands=[];showPeople=false;locals={};localKey='';});
+root.SalesFilterState={state,matchesBrand,selectBrand,sync,enter};root.SalesFilters={controls,people};
+})(window);
