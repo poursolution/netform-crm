@@ -52,6 +52,10 @@ body:has(#pg-inq.on.inq-workbench) .mhead>.search{display:none}
 #pg-inq .inq-role-switch{margin:0}
 .inq-create-trigger{margin-left:auto}
 
+/* ── 스토어 이관 조회 전용 ── */
+#pg-inq .inq-work-row .inq-now.inq-view{color:#5b6b82;border-color:#dce3ed}
+.inq-store-note{font-size:12px;color:#5b6b82;background:#f6f8fc;border:1px solid #e3e8f0;border-radius:8px;padding:10px 12px;line-height:1.6}
+
 /* ── 단계 이동 안내문: 모르는 사람도 언제 고르는지 알 수 있게 ── */
 .stage-move-hint{margin:6px 2px 0;font-size:12px;color:#5b6b82;background:#f6f8fc;border:1px solid #e3e8f0;border-radius:8px;padding:8px 10px;line-height:1.5}
 

@@ -18,7 +18,11 @@
  function set(key){const tabs={all:'전체',unassigned:'미배정',waiting:'배정완료',delayed:'전체'};if(!tabs[key])return;root.G.inqCompactMetric=key==='delayed'?'delayed':'';root.G.inqLegacyView=false;root.G.inqView='console';originalTab(tabs[key])}
  function selectBrand(value){root.SalesFilterState.selectBrand(value);root.G.inqPage=1;root.paint()}
  root.inqBrandChips=function(){let base;ignoreBrand=true;try{base=root.inqCtlScopeActive()}finally{ignoreBrand=false}return root.SalesFilters.controls(base.map(q=>({brand:root.inquiryBrandOf(q),owner:root.inquiryRoutedOwner(q),item:q})))};
- function primaryAction(q){const assign=!root.inquiryAssigned(q)&&root.inqCtlRoleView()==='admin',key=attr(root.inqKey(q));return '<button class="inq-now" data-k="'+key+'" onclick="'+(assign?'inqCtlOpenAssign(\'assign\',this.dataset.k)':'inqCtlOpenSingle(this.dataset.k)')+'">'+(assign?'배정':'처리')+'</button><button class="inq-more" data-k="'+key+'" onclick="inqCtlOpenMenu(this.dataset.k)" aria-label="'+attr((q.site||'문의')+' 기타 처리')+'">⋯</button>'}
+ /* 스토어 이관 건은 조회 전용 — 진행은 POUR스토어에서 관리하므로 CRM에서는 확인만 지원한다. */
+ function storeOnly(q){return (root.INQ_STORE_STATUSES||[]).includes(String(q&&q.status||''))}
+ function primaryAction(q){const key=attr(root.inqKey(q));
+  if(storeOnly(q))return '<button class="inq-now inq-view" data-k="'+key+'" onclick="inqCtlOpenSingle(this.dataset.k)">확인</button>';
+  const assign=!root.inquiryAssigned(q)&&root.inqCtlRoleView()==='admin';return '<button class="inq-now" data-k="'+key+'" onclick="'+(assign?'inqCtlOpenAssign(\'assign\',this.dataset.k)':'inqCtlOpenSingle(this.dataset.k)')+'">'+(assign?'배정':'처리')+'</button><button class="inq-more" data-k="'+key+'" onclick="inqCtlOpenMenu(this.dataset.k)" aria-label="'+attr((q.site||'문의')+' 기타 처리')+'">⋯</button>'}
  function compactRows(){
   document.querySelectorAll('#sg-panel .inq-ctl-row').forEach(row=>{
    const c=Array.from(row.children),admin=!row.classList.contains('mine-row');if(c.length!==(admin?9:7))return;row.classList.add('inq-work-row');
@@ -82,7 +86,9 @@
   move('.sp-inquiry-original',center);move('.sp-why',center);const acts=move('.sp-acts',right);const log=acts?.querySelector('[onclick="inqAct(\'log\')"]');if(log)center.append(log);move('.sp-form',root.G.inqAct==='log'?center:right);move('.sp-grid',right);move('.pl-box',right);
   detail.querySelector('.sp-dh')?.remove();detail.querySelector('.sp-foot')?.remove();detail.querySelector('.sp-jour')?.remove();detail.querySelector('.sp-jl')?.remove();detail.querySelector('.sp-lb')?.remove();
   // Move original nodes and handlers, including conversion and ACK-aware saves.
-  Array.from(detail.children).forEach(n=>center.append(n));document.body.append(overlay);document.body.classList.add('inq-dialog-open');Object.entries(draft).forEach(([id,value])=>{const el=document.getElementById(id);if(el&&overlay.contains(el))el.value=value});
+  Array.from(detail.children).forEach(n=>center.append(n));
+  if(storeOnly(q)){overlay.classList.add('inq-store-view');const manage=overlay.querySelectorAll('aside')[1];if(manage)manage.innerHTML='<h3>업무 관리</h3><p class="inq-store-note">POUR스토어로 이관된 문의입니다. CRM에서는 조회만 지원하며, 견적·구매 진행은 스토어에서 관리합니다.</p>';center.querySelectorAll('button').forEach(el=>el.remove());}
+  document.body.append(overlay);document.body.classList.add('inq-dialog-open');Object.entries(draft).forEach(([id,value])=>{const el=document.getElementById(id);if(el&&overlay.contains(el))el.value=value});
   if(sameAction&&focused&&overlay.contains(document.getElementById(focused)))document.getElementById(focused).focus();else if(previous)(overlay.querySelector('.sp-form input,.sp-form select')||overlay.querySelector('.inq-dialog-close')).focus();
   overlay.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close()}if(e.key==='Tab'){const list=Array.from(overlay.querySelectorAll('button,input,select,textarea,a[href]')).filter(n=>!n.disabled&&n.getClientRects().length);if(e.shiftKey&&document.activeElement===list[0]){e.preventDefault();list.at(-1)?.focus()}else if(!e.shiftKey&&document.activeElement===list.at(-1)){e.preventDefault();list[0]?.focus()}}});
  }

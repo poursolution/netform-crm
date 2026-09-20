@@ -16,7 +16,7 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
    goPage('dash');G.insights.year='2026';G.insights.month=9;SalesInsights.render();
   });
   assert.deepEqual(await page.locator('.menu>.sec:visible').allTextContents(),['오늘','영업','고객관리','조직운영','분석','데이터 관리']);
-  assert.deepEqual(await page.evaluate(()=>{const groups={};let title='';document.querySelectorAll('.menu>:is(.sec,.mi)').forEach(el=>{if(el.classList.contains('sec')){title=el.textContent;groups[title]=[];}else if(!el.hidden)groups[title].push(el.dataset.p);});return groups;}),{'오늘':['today'],'영업':['inq','pipe','gyeongnam'],'고객관리':['sites','campaign'],'조직운영':['repmanage','mgmt'],'분석':['dash','work','brief','report'],'데이터 관리':['dup']});
+  assert.deepEqual(await page.evaluate(()=>{const groups={};let title='';document.querySelectorAll('.menu>:is(.sec,.mi)').forEach(el=>{if(el.classList.contains('sec')){title=el.textContent;groups[title]=[];}else if(!el.hidden)groups[title].push(el.dataset.p);});return groups;}),{'오늘':['today'],'영업':['inq','pipe','expansion','gyeongnam'],'고객관리':['sites','campaign'],'조직운영':['repmanage','mgmt'],'분석':['dash','work','brief','report'],'데이터 관리':['dup']});
   assert.equal(await page.locator('#si-dash .si-kpis>button').count(),5);assert.equal(await page.locator('#d-money').isVisible(),false);
   let values=await page.evaluate(()=>{const s=SalesInsights.data();return {active:s.active.length,won:s.won.length,amount:s.wonAmount}});assert.deepEqual(values,{active:2,won:1,amount:40000000});
   await page.locator('#si-dash [data-sf-type="INTERNAL"]').click();await page.locator('#si-dash [data-sf-owner="김성민"]').click();
