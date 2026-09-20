@@ -56,8 +56,50 @@ function consultingOwnerBoard(scopedOwner){
  rows.forEach(x=>{x.light=x.over>=10||x.maxOver>=30?'r':(x.over+x.noNext+x.info)>0?'y':'g'});
  const order={r:0,y:1,g:2};
  rows.sort((a,b)=>order[a.light]-order[b.light]||b.over-a.over||b.noNext-a.noNext||(typeof root.repCompare==='function'?root.repCompare(a.owner,b.owner):String(a.owner).localeCompare(String(b.owner))));
- const body=rows.map(x=>'<tr data-ps-action="owner" data-value="'+a(x.owner)+'"'+(scopedOwner===x.owner?' class="sel"':'')+'><td><span class="sw-light '+x.light+'"></span><b>'+h(x.owner)+'</b></td><td>'+x.count+'</td><td class="sw-amt">'+h(money(x.amount).replace('금액 미입력','-'))+'</td><td class="'+(x.over?'sw-bad':'sw-zero')+'">'+x.over+'</td><td class="'+(x.noNext?'sw-warn':'sw-zero')+'">'+x.noNext+'</td><td class="'+(x.info?'sw-warn':'sw-zero')+'">'+x.info+'</td><td class="'+(x.maxOver>=30?'sw-bad':x.maxOver?'sw-warn':'sw-zero')+'">'+(x.maxOver?x.maxOver+'일':'-')+'</td><td class="sw-go">'+(scopedOwner===x.owner?'전체 보기':'목록 보기')+'</td></tr>').join('');
+ const total=rows.reduce((s,x)=>({count:s.count+x.count,amount:s.amount+x.amount,over:s.over+x.over,noNext:s.noNext+x.noNext,info:s.info+x.info,maxOver:Math.max(s.maxOver,x.maxOver)}),{count:0,amount:0,over:0,noNext:0,info:0,maxOver:0});
+ const body=rows.map(x=>'<tr data-ps-action="owner" data-value="'+a(x.owner)+'"'+(scopedOwner===x.owner?' class="sel"':'')+'><td><span class="sw-light '+x.light+'"></span><b>'+h(x.owner)+'</b></td><td>'+x.count+'</td><td class="sw-amt">'+h(money(x.amount).replace('금액 미입력','-'))+'</td><td class="'+(x.over?'sw-bad':'sw-zero')+'">'+x.over+'</td><td class="'+(x.noNext?'sw-warn':'sw-zero')+'">'+x.noNext+'</td><td class="'+(x.info?'sw-warn':'sw-zero')+'">'+x.info+'</td><td class="'+(x.maxOver>=30?'sw-bad':x.maxOver?'sw-warn':'sw-zero')+'">'+(x.maxOver?x.maxOver+'일':'-')+'</td><td class="sw-go">'+(scopedOwner===x.owner?'전체 보기':'목록 보기')+'</td></tr>').join('')
+  +'<tr class="sw-total"><td>전체</td><td>'+total.count+'</td><td class="sw-amt">'+h(money(total.amount).replace('금액 미입력','-'))+'</td><td class="'+(total.over?'sw-bad':'sw-zero')+'">'+total.over+'</td><td class="'+(total.noNext?'sw-warn':'sw-zero')+'">'+total.noNext+'</td><td class="'+(total.info?'sw-warn':'sw-zero')+'">'+total.info+'</td><td>'+(total.maxOver?total.maxOver+'일':'-')+'</td><td></td></tr>';
  return '<section class="sw-owner-board" aria-label="담당자별 컨설팅 현황"><header><h3>담당자별 현황</h3><small>위험 높은 순 · 행 클릭 = 아래 목록 필터</small>'+btn('전체 보기','owner','전체')+'</header><div class="sw-table-scroll"><table><thead><tr>'+['담당자','담당','합계 금액','초과','Next 없음','정보 보완','최장 초과',''].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+body+'</tbody></table></div></section>';
+}
+/* 자료 발송완료 v2: 담당자별 현황판 + 후속 우선 단일 표. 상세는 팝업. */
+function sentOwnerBoard(scopedOwner){
+ const src=(root.PipelineWorkspace&&root.PipelineWorkspace.rows?root.PipelineWorkspace.rows({unscoped:true}):[]).filter(r=>r.group==='sent');
+ const map=new Map();
+ src.forEach(r=>{
+  const o=r.owner||'미배정',row=map.get(o)||{owner:o,count:0,amount:0,over:0,today:0,none:0,maxOver:0};
+  row.count++;row.amount+=Number(r.amount)||0;
+  const fu=r.fields&&r.fields.followup_date,days=fu?root.daysTo(fu):null;
+  if(days==null)row.none++;else if(days<0){row.over++;row.maxOver=Math.max(row.maxOver,-days);}else if(days===0)row.today++;
+  map.set(o,row);
+ });
+ const rows=Array.from(map.values());
+ rows.forEach(x=>{x.light=x.over>=5||x.maxOver>=14?'r':(x.over+x.today+x.none)>0?'y':'g'});
+ const order={r:0,y:1,g:2};
+ rows.sort((a,b)=>order[a.light]-order[b.light]||b.over-a.over||b.none-a.none||(typeof root.repCompare==='function'?root.repCompare(a.owner,b.owner):String(a.owner).localeCompare(String(b.owner))));
+ const total=rows.reduce((s,x)=>({count:s.count+x.count,amount:s.amount+x.amount,over:s.over+x.over,today:s.today+x.today,none:s.none+x.none,maxOver:Math.max(s.maxOver,x.maxOver)}),{count:0,amount:0,over:0,today:0,none:0,maxOver:0});
+ const body=rows.map(x=>'<tr data-ps-action="owner" data-value="'+a(x.owner)+'"'+(scopedOwner===x.owner?' class="sel"':'')+'><td><span class="sw-light '+x.light+'"></span><b>'+h(x.owner)+'</b></td><td>'+x.count+'</td><td class="sw-amt">'+h(money(x.amount).replace('금액 미입력','-'))+'</td><td class="'+(x.over?'sw-bad':'sw-zero')+'">'+x.over+'</td><td class="'+(x.today?'sw-warn':'sw-zero')+'">'+x.today+'</td><td class="'+(x.none?'sw-warn':'sw-zero')+'">'+x.none+'</td><td class="'+(x.maxOver>=14?'sw-bad':x.maxOver?'sw-warn':'sw-zero')+'">'+(x.maxOver?x.maxOver+'일':'-')+'</td><td class="sw-go">'+(scopedOwner===x.owner?'전체 보기':'목록 보기')+'</td></tr>').join('')
+  +'<tr class="sw-total"><td>전체</td><td>'+total.count+'</td><td class="sw-amt">'+h(money(total.amount).replace('금액 미입력','-'))+'</td><td class="'+(total.over?'sw-bad':'sw-zero')+'">'+total.over+'</td><td class="'+(total.today?'sw-warn':'sw-zero')+'">'+total.today+'</td><td class="'+(total.none?'sw-warn':'sw-zero')+'">'+total.none+'</td><td>'+(total.maxOver?total.maxOver+'일':'-')+'</td><td></td></tr>';
+ return '<section class="sw-owner-board" aria-label="담당자별 발송 후속 현황"><header><h3>담당자별 현황</h3><small>위험 높은 순 · 행 클릭 = 아래 목록 필터</small>'+btn('전체 보기','owner','전체')+'</header><div class="sw-table-scroll"><table><thead><tr>'+['담당자','담당','합계 금액','후속 초과','오늘 확인','후속일 미지정','최장 초과',''].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+body+'</tbody></table></div></section>';
+}
+function sentFrame(items){
+ const f=root.G.pipelineQueue;
+ const scopedOwner=root.SalesScope&&root.SalesScope.state?root.SalesScope.state().owner:'전체';
+ const first=items.filter(x=>x.priority<=2),rest=items.filter(x=>x.priority>2);
+ const ordered=first.concat(rest);
+ const pages=Math.max(1,Math.ceil(ordered.length/30));f.page=Math.min(f.page||1,pages);
+ const shown=ordered.slice((f.page-1)*30,f.page*30);
+ let markedFirst=false,markedRest=false,rows='';
+ shown.forEach(x=>{
+  const urgent=x.priority<=2;
+  if(urgent&&!markedFirst){markedFirst=true;rows+='<tr class="sw-group-row hot"><td colspan="8">먼저 볼 것 — 후속기한 초과 · 오늘 확인 · 후속일 미지정 ('+first.length+')</td></tr>';}
+  if(!urgent&&!markedRest){markedRest=true;rows+='<tr class="sw-group-row"><td colspan="8">예정된 후속 연락 ('+rest.length+')</td></tr>';}
+  const r=x.row,v=x.values,days=v.followup?root.daysTo(v.followup):null;
+  const chip=days==null?'<span class="sw-due-chip warn">미지정</span>':days<0?'<span class="sw-due-chip hot">'+Math.abs(days)+'일 지남</span>':days===0?'<span class="sw-due-chip warn">오늘</span>':'<span class="sw-due-chip ok">D-'+days+'</span>';
+  rows+='<tr data-deal="'+a(r.key)+'"'+(urgent?' class="sw-first"':'')+'><td>'+btn(r.site,'record',r.key)+'</td><td>'+h(r.owner||'미배정')+'</td><td>'+h(v.sentDate||'미기록')+(v.materials?'<small>'+h(v.materials)+'</small>':'')+'</td><td>'+h(v.reaction||'확인 전')+'</td><td>'+chip+(v.followup?'<small>'+h(v.followup)+'</small>':'')+'</td><td>'+h(money(r.amount))+'</td><td>'+h(r.next?.text||'후속 연락 등록')+(r.due?'<small>'+h(r.due)+'</small>':'')+'</td><td>'+btn('처리','primary',r.key)+'</td></tr>';
+ });
+ const body='<div class="sw-table-scroll"><table class="sw-work-table sw-frame"><thead><tr>'+['현장','담당자','발송일·자료','고객 반응','후속 확인','예상금액','다음 업무','관리'].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table>'+(shown.length?'':empty)+'</div>';
+ const scopeHead=scopedOwner!=='전체'?'<div class="sw-scope-head"><h3>'+h(scopedOwner)+' 담당 목록 <small>'+ordered.length+'건 · 먼저 볼 것 '+first.length+'</small></h3>'+btn('담당자 필터 해제','owner',scopedOwner)+'</div>':'';
+ return sentOwnerBoard(scopedOwner)+scopeHead+'<p class="ps-queue-count">'+shown.length+' / '+ordered.length+'건 표시 · 먼저 볼 것 '+first.length+'건</p>'+body+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
 }
 /* 컨설팅 목록: 탭·체크박스 없이 «먼저 볼 것 → 정상 진행» 한 표. 행 클릭=상세 팝업. */
 function consultingFrame(items){
@@ -67,10 +109,6 @@ function consultingFrame(items){
  const first=items.filter(x=>x.triage.today||x.triage.info).sort((x,y)=>x.triage.rank-y.triage.rank||(x.triage.date||'9999').localeCompare(y.triage.date||'9999')||x.row.key.localeCompare(y.row.key));
  const rest=items.filter(x=>!(x.triage.today||x.triage.info)).sort((x,y)=>String(x.values.quoteDue||'9999').localeCompare(String(y.values.quoteDue||'9999'))||x.row.key.localeCompare(y.row.key));
  const ordered=first.concat(rest);
- const amount=items.reduce((s,x)=>s+(Number(x.row.amount)||0),0);
- const overdue=items.filter(x=>x.triage.today&&/초과/.test(x.triage.reason)).length;
- const noNext=items.filter(x=>!x.row.next?.text).length;
- const summary=stats([['합계 예상금액',money(amount)],['기한·견적일 초과',overdue+'건'],['다음 업무 없음',noNext+'건'],['정보 보완 필요',items.filter(x=>x.triage.info).length+'건']]);
  const pages=Math.max(1,Math.ceil(ordered.length/30));f.page=Math.min(f.page||1,pages);
  const shown=ordered.slice((f.page-1)*30,f.page*30);
  let markedFirst=false,markedRest=false,rows='';
@@ -84,7 +122,7 @@ function consultingFrame(items){
  });
  const body='<div class="sw-table-scroll"><table class="sw-work-table sw-frame"><thead><tr>'+['현장','담당자','고객 요구','견적 예정','예상금액','다음 업무','관리'].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table>'+(shown.length?'':empty)+'</div>';
  const scopeHead=scopedOwner!=='전체'?'<div class="sw-scope-head"><h3>'+h(scopedOwner)+' 담당 목록 <small>'+ordered.length+'건 · 먼저 볼 것 '+first.length+'</small></h3>'+btn('담당자 필터 해제','owner',scopedOwner)+'</div>':'';
- return consultingOwnerBoard(scopedOwner)+summary+scopeHead+'<p class="ps-queue-count">'+shown.length+' / '+ordered.length+'건 표시 · 먼저 볼 것 '+first.length+'건</p>'+body+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
+ return consultingOwnerBoard(scopedOwner)+scopeHead+'<p class="ps-queue-count">'+shown.length+' / '+ordered.length+'건 표시 · 먼저 볼 것 '+first.length+'건</p>'+body+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
 }
 function schedule(items){
  const spec=root.StageSpecs.get('competition');
@@ -103,6 +141,7 @@ function render(key,list){
  const spec=root.StageSpecs.get(key);if(spec.specialWorkspace==='relationship')return relationship(list);
  let items=prepare(key,list),summary='';
  if(spec.workspaceType==='triage')return consultingFrame(items);
+ if(key==='sent')return sentFrame(items);
  if(spec.summaryMetrics==='contract-ledger')summary=contractReport(list);
  else if(spec.summaryMetrics==='loss-reasons'){
   const month=root.G.lossResultMonth||new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');

@@ -61,6 +61,7 @@
 .sw-warn{color:#8c601e;font-weight:700}
 .sw-zero{color:#9aa8bd}
 .sw-go{color:#2558bd;font-size:11px;font-weight:700}
+.sw-owner-board tr.sw-total td{background:#f8fafc;border-top:2px solid #e0e6ef;font-weight:800;cursor:default}
 .sw-scope-head{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
 .sw-scope-head h3{font-size:13.5px;margin:0}
 .sw-scope-head small{color:#66758d;font-weight:400;margin-left:6px}

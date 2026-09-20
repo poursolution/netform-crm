@@ -5,29 +5,23 @@ await page.evaluate(()=>{AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admi
 const filter=()=>page.locator('.pg.on .sales-filterbar');
 // 상단 단계 타일 스트립은 사이드바와 중복이라 전 단계에서 제거되었다.
 assert.equal(await page.locator('.ps-stage-selector').count(),0);
-await page.locator('.sw-card[data-deal="A"] [data-ps-action="record"]').click();
-assert.equal(await page.locator('#ps-split-detail #detailView.ps-embedded').count(),1);
-assert.equal(await page.locator('#ps-split-detail details,#ps-split-detail summary').count(),0);
+// 자료 발송완료 v2: 담당자 현황판 + 후속 우선 표, 카드·스플릿 없이 상세는 팝업.
+assert.equal(await page.locator('.sw-owner-board').count(),1);
+assert.equal(await page.locator('.sw-card').count(),0);
+assert.equal(await page.locator('#ps-split-detail').count(),0);
+assert.equal(await page.locator('.sw-work-table tbody tr[data-deal]').count(),3);
+await page.locator('.sw-work-table tr[data-deal="A"] [data-ps-action="record"]').click();
+assert.equal(await page.locator('#detailView').isVisible(),true);
 assert.match(await page.locator('#dv-title').innerText(),/A/);
-await page.locator('.sw-card[data-deal="A"] [data-ps-action="primary"]').click();
-assert.equal(await page.locator('#detailAction').count(),1);
-assert.equal(await page.locator('.ps-split-queue').isVisible(),true);
-await page.locator('#dv-act-note').fill('저장 전 검증 메모');
-await page.evaluate(()=>PipelineWorkspace.refresh());
-assert.equal(await page.locator('#dv-act-note').inputValue(),'저장 전 검증 메모');
-await page.getByRole('button',{name:'작업창 닫기',exact:true}).click();
-await page.locator('.sw-card[data-deal="B"] [data-ps-action="record"]').click();
-assert.match(await page.locator('#dv-title').innerText(),/B/);
-assert.equal(await page.locator('#detailView').count(),1);
 assert.equal(await page.locator('.dw-stage-badge').innerText(),'자료 발송완료');
 assert.equal(await page.locator('[data-stage-primary]').innerText(),'후속 연락');
 assert.ok(await page.locator('.dw-context-highlights').count());
-await page.locator('.sw-card[data-deal="B"] [data-ps-action="next"]').click();
-assert.equal(await page.locator('#detailAction #nextActionCard').count(),1);
-await page.getByRole('button',{name:'작업창 닫기',exact:true}).click();
-await page.locator('.sw-card[data-deal="B"] [data-ps-action="stage-edit"]').click();
-assert.equal(await page.locator('#detailAction #dw-stage-editor').count(),1);
-await page.getByRole('button',{name:'작업창 닫기',exact:true}).click();
+await page.locator('#detailView .backbtn').click();
+assert.equal(await page.locator('#detailView').isVisible(),false);
+await page.locator('.sw-work-table tr[data-deal="B"] [data-ps-action="primary"]').click();
+assert.equal(await page.locator('#detailView').isVisible(),true);
+assert.match(await page.locator('#dv-title').innerText(),/B/);
+await page.locator('#detailView .backbtn').click();
 
 for(const width of [1440,1024,390]){await page.setViewportSize({width,height:1000});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}
 await page.setViewportSize({width:1440,height:1000});
@@ -35,11 +29,11 @@ await page.screenshot({path:require('os').tmpdir()+'/pipeline-split.png'});
 
 
 assert.equal(await page.locator('#pipeline-stage-root [data-sf-owner]').count(),0);
-await page.locator('#pipeline-stage-root [data-sf-type="all"]').click();assert.match(await page.locator('#pipeline-stage-root [data-sf-owner="전체"]').innerText(),/3/);assert.equal(await page.locator('.sw-card').count(),3);
+await page.locator('#pipeline-stage-root [data-sf-type="all"]').click();assert.match(await page.locator('#pipeline-stage-root [data-sf-owner="전체"]').innerText(),/3/);assert.equal(await page.locator('.sw-work-table tbody tr[data-deal]').count(),3);
 await page.locator('#pipeline-stage-root [data-sf-brand="POUR솔루션"]').click();
 await page.locator('#pipeline-stage-root [data-sf-type="INTERNAL"]').click();
 assert.match(await page.locator('#pipeline-stage-root [data-sf-owner="황윤선"]').innerText(),/1/);
-await page.locator('#pipeline-stage-root [data-sf-owner="황윤선"]').click();assert.equal(await page.locator('.sw-card').count(),1);
+await page.locator('#pipeline-stage-root [data-sf-owner="황윤선"]').click();assert.equal(await page.locator('.sw-work-table tbody tr[data-deal]').count(),1);
 await page.locator('[data-ps-filter="q"]').fill('A');await page.locator('[data-ps-filter="q"]').press('Enter');
 await page.locator('#pipeline-stage-menu [data-value="relationship"]').click();assert.equal(await page.locator('[data-ps-filter="q"]').inputValue(),'');assert.equal(await page.locator('.sw-card').count(),1);assert.match(await page.locator('.sw-card').innerText(),/C/);
 await page.evaluate(()=>goPage('dash'));assert.equal(await page.locator('#si-dash [data-sf-owner="황윤선"]').getAttribute('aria-pressed'),'true');assert.equal(await page.locator('#si-dash select[aria-label="브랜드"]').count(),0);
