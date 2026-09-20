@@ -81,3 +81,7 @@
 .dw-left .pc-contact-phone{white-space:nowrap}
 .dw-left .contactnums{grid-template-columns:repeat(auto-fit,minmax(min(140px,100%),1fr))}
 .dw-left .contactnum b{white-space:nowrap;overflow-wrap:normal}
+
+/* 재배치 유실 복원: 고객 핵심 발언 카드 */
+.dw-voice .dw-voice-quote{margin:4px 0 6px;font-size:13px;line-height:1.6;color:#1a2332}
+.dw-voice small{display:block;margin-bottom:8px;color:#78859a}

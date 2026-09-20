@@ -39,9 +39,12 @@ const server=()=>http.createServer((req,res)=>{
       paintGyeongnam();
     });
     const titles=await page.locator('#gyeongnam-root > .gn-frame .gn-frame-head h3').allTextContents();
-    assert.deepEqual(titles,['즉시 확인','본사 인계 현황','경남지사 담당자별 흐름','본사 → 경남지사 영업 Funnel','최근 6개월 흐름']);
+    assert.deepEqual(titles,['본사 인계 현황','경남지사 담당자별 흐름','본사 → 경남지사 영업 Funnel','최근 6개월 흐름']);
     assert.equal(await page.locator('#gyeongnam-root details').count(),0);
-    assert.equal(await page.locator('#gyeongnam-root > .gn-frame').count(),5);
+    assert.equal(await page.locator('#gyeongnam-root > .gn-frame').count(),4);
+    // 상단은 클릭 드릴 KPI 한 줄 — 큰 명령부·중복 위험 타일 없음.
+    assert.equal(await page.locator('#gyeongnam-root .ps-kpis button.ps-kpi').count(),7);
+    assert.equal(await page.locator('#gyeongnam-root .gn-command,#gyeongnam-root .gn-risk-grid').count(),0);
     for(const frame of await page.locator('#gyeongnam-root > .gn-frame').all())assert.equal(await frame.isVisible(),true);
     for(const width of [1440,1024,390]){
       await page.setViewportSize({width,height:1000});

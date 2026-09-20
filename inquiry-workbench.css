@@ -52,6 +52,12 @@ body:has(#pg-inq.on.inq-workbench) .mhead>.search{display:none}
 #pg-inq .inq-role-switch{margin:0}
 .inq-create-trigger{margin-left:auto}
 
+/* ── 배정 이력: 접힘 없이 상시 노출 ── */
+.inq-assign-evidence{margin-top:14px;padding:10px 12px;background:#f6f8fc;border:1px solid #e3e8f0;border-radius:8px;font-size:12px;color:#5b6b82;line-height:1.55}
+.inq-assign-evidence strong{display:block;margin-bottom:4px;color:#3c4c66}
+.inq-assign-evidence p{margin:2px 0}
+.inq-assign-evidence small{color:#7b899b}
+
 /* ── 스토어 이관 조회 전용 ── */
 #pg-inq .inq-work-row .inq-now.inq-view{color:#5b6b82;border-color:#dce3ed}
 .inq-store-note{font-size:12px;color:#5b6b82;background:#f6f8fc;border:1px solid #e3e8f0;border-radius:8px;padding:10px 12px;line-height:1.6}
