@@ -21,7 +21,7 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   assert.equal(await page.locator('#si-dash .contract-sales-totals strong').last().innerText(),'300,000,000원');
   await page.evaluate(()=>{B.deals[0].code='won';B.deals[0].assignee='이필선';paint()});
   assert.equal(await page.locator('#si-dash .contract-sales-totals strong').last().innerText(),'300,000,000원');
-  await page.locator('#si-dash [data-sales-scope="owner"]').selectOption('황윤선');
+  await page.locator('#si-dash [data-sf-type="INTERNAL"]').click();await page.locator('#si-dash [data-sf-owner="황윤선"]').click();
   assert.equal(await page.locator('#si-dash .contract-sales-totals strong').last().innerText(),'300,000,000원');
   await page.evaluate(()=>goPage('perf'));assert.equal(await page.locator('#si-perf > .si-shell > .contract-sales-host .contract-sales-totals strong').last().innerText(),'300,000,000원');
   await page.locator('#si-perf [data-si-action="person"][data-value="황윤선"]').click();assert.match(await page.locator('#si-person .contract-sales-panel').innerText(),/300,000,000원/);await page.keyboard.press('Escape');
