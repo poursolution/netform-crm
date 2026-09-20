@@ -35,6 +35,9 @@ jobs:
       - name: Verify customer asset and workflow contracts
         run: npm run test:contracts
 
+      - name: Verify contract sales ledger transactions
+        run: npm run test:contract-db
+
       - name: Verify manual inquiry intake and retry contracts
         run: node --test tests/inquiry-manual-create.test.cjs
 
