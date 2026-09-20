@@ -2,7 +2,7 @@
 'use strict';
 const h=x=>root.esc(String(x??'')),a=x=>root.escAttr(String(x??''));
 let selected='',stage='',identity='';
-const active=()=>root.G.page==='pipe'&&root.G.pipelineWorkspace&&root.PipelineStages.definition(root.G.pipelineStage)&&!['relationship','expansion'].includes(root.G.pipelineStage);
+const active=()=>root.G.page==='pipe'&&root.G.pipelineWorkspace&&root.PipelineStages.definition(root.G.pipelineStage)&&!root.StageSpecs.get(root.G.pipelineStage)?.specialWorkspace;
 function selector(key){
  const rows=root.PipelineWorkspace.rows({work:'',search:''});
  return '<nav class="ps-stage-selector" aria-label="업무 단계 선택">'+root.PipelineStages.definitions.map(d=>'<button type="button" style="--stage-color:'+d.color+'" data-ps-action="stage" data-value="'+d.key+'" aria-current="'+(key===d.key?'page':'false')+'"><small>'+d.number+'</small><span>'+h(d.label)+'</span><b>'+rows.filter(r=>r.group===d.key).length+'</b></button>').join('')+'</nav>';
@@ -19,25 +19,22 @@ function select(r,action){
  if(document.getElementById('detailAction')&&selected!==r.key){root.alert('입력 중인 작업창을 저장하거나 닫은 뒤 다른 현장을 선택해 주세요.');return true;}
  selected=r.key;
  if(String(root.CUR_DETAIL?.item?.id)!==String(r.item.id)||!v.classList.contains('ps-embedded')){
-  root.DetailActions?.close(false);v.classList.remove('docked','fullview','detailmodal');v.classList.add('ps-embedded');root.G._detailPopup=false;
-  root.CUR_DETAIL={kind:'deal',key:root.dealKey(r.item),item:r.item};host.replaceChildren(v);root.renderDetail();
+  root.DealDetailWorkspace.open(r.item.id,{source:r.group,host});
  }else host.replaceChildren(v);
  v.setAttribute('role','region');v.removeAttribute('aria-modal');v.setAttribute('aria-label','선택 현장 상세');document.body.style.overflow='';
  document.querySelectorAll('.ps-split-queue .sw-card').forEach(n=>{const on=n.dataset.deal===selected;n.classList.toggle('ps-selected',on);n.querySelector('[data-ps-action="record"]')?.setAttribute('aria-pressed',String(on));});
- if(action==='contact')root.DetailActions.open('activity');
- if(action==='next')root.DetailActions.open('next');
- if(action==='stage-edit')root.openTransition();
- if(action==='process')root.DetailActions.open(r.flags.includes('missing')?'next':'activity');
+ if(action)root.DealDetailWorkspace.run(action);
  return true;
 }
 function mount(list){
  if(!active())return;
- const v=document.getElementById('detailView'),r=list.find(r=>r.key===selected);
+ const r=list.find(r=>r.key===selected),byId=new Map(list.map(r=>[r.key,r]));
  if(r)select(r);else{release();selected='';}
  document.querySelectorAll('.ps-split-queue .sw-card').forEach(n=>{
-  const row=list.find(r=>r.key===n.dataset.deal);if(!row)return;
+  const row=byId.get(n.dataset.deal);if(!row)return;
   const actions=n.querySelector('.sw-action');if(!actions)return;
-  actions.innerHTML=[['연락','contact'],['다음 행동','next'],['단계 변경','stage-edit']].map(([label,key])=>'<button type="button" data-ps-action="'+key+'" data-value="'+a(row.key)+'">'+label+'</button>').join('');
+  const spec=root.StageSpecs.get(row.group),buttons=[[spec.primaryAction.label,'primary']];if(spec.queueLayout!=='result')buttons.push(...[['연락','contact'],['다음 행동','next'],['단계 변경','stage-edit']].filter(x=>x[1]!==spec.primaryAction.key));
+  actions.innerHTML=buttons.map(([label,key])=>'<button type="button" data-ps-action="'+key+'" data-value="'+a(row.key)+'">'+label+'</button>').join('');
  });
 }
 function dedicated(){
