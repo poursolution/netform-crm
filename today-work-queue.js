@@ -169,7 +169,7 @@
  }
  /* 관리자 현황판: 사원별 응대·진행 상태를 신호등으로 요약한다. 행 클릭은 기존 담당자 필터로 이어진다. */
  // 관리자 지시(2026-09-20): 현황판 표에서만 제외한다. 업무 목록·배정에는 영향이 없다.
- const REP_HIDE={inquiry:['주현진','송보람'],pipeline:['조민준','이승우']};
+ const REP_HIDE={inquiry:['주현진','송보람','이승우'],pipeline:['조민준','이승우']};
  function repPeriod(){return {year:String(root.G.todayRepYear||'전체'),quarter:Number(root.G.todayRepQuarter)||0}}
  function repPeriodSet(key,value){
   if(key==='year'){root.G.todayRepYear=String(value||'전체');root.G.todayRepQuarter=0}

@@ -4,11 +4,11 @@ const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),
 await page.evaluate(()=>{AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};LOCAL={deals:{},inquiries:{},expansionPool:[]};const d=(id,owner,brand,code)=>({id,site:id,assignee:owner,brand,code,stage_code:code,amt:10000000,created:'2026-09-01'});B={deals:[d('A','황윤선','POUR솔루션','sent'),d('B','이필선','석민이앤씨','sent'),d('C','황윤선','POUR솔루션','rapport'),d('D','조성용','POUR솔루션','sent'),d('excluded','미등록 담당자','POUR솔루션','sent')],inquiries:[],inquiryTrash:[]};G.brand=G.rep=G.workFilter='전체';G.q='';window.__writes=[];pushWrite=(...x)=>__writes.push(x);document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';PipelineWorkspace.open('sent');});
 const filter=()=>page.locator('.pg.on .sales-filterbar');
 assert.equal(await page.locator('#pipeline-stage-root [data-sf-owner]').count(),0);
-await page.locator('#pipeline-stage-root [data-sf-type="all"]').click();assert.match(await page.locator('#pipeline-stage-root [data-sf-owner="전체"]').innerText(),/3/);assert.equal(await page.locator('.sw-card').count(),3);
+await page.locator('#pipeline-stage-root [data-sf-type="all"]').click();assert.match(await page.locator('#pipeline-stage-root [data-sf-owner="전체"]').innerText(),/3/);assert.equal(await page.locator('.sw-work-table tbody tr[data-deal]').count(),3);
 await page.locator('#pipeline-stage-root [data-sf-brand="POUR솔루션"]').click();
 await page.locator('#pipeline-stage-root [data-sf-type="INTERNAL"]').click();
 assert.match(await page.locator('#pipeline-stage-root [data-sf-owner="황윤선"]').innerText(),/1/);
-await page.locator('#pipeline-stage-root [data-sf-owner="황윤선"]').click();assert.equal(await page.locator('.sw-card').count(),1);
+await page.locator('#pipeline-stage-root [data-sf-owner="황윤선"]').click();assert.equal(await page.locator('.sw-work-table tbody tr[data-deal]').count(),1);
 await page.locator('[data-ps-filter="q"]').fill('A');await page.locator('[data-ps-filter="q"]').press('Enter');
 await page.locator('#pipeline-stage-menu [data-value="relationship"]').click();assert.equal(await page.locator('[data-ps-filter="q"]').inputValue(),'');assert.equal(await page.locator('.sw-card').count(),1);assert.match(await page.locator('.sw-card').innerText(),/C/);
 await page.evaluate(()=>goPage('dash'));assert.equal(await page.locator('#si-dash [data-sf-owner="황윤선"]').getAttribute('aria-pressed'),'true');assert.equal(await page.locator('#si-dash select[aria-label="브랜드"]').count(),0);
