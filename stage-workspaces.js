@@ -37,12 +37,30 @@ function table(key,items){
   return '<tr data-deal="'+a(r.key)+'">'+select+'<td>'+btn(r.site,'record',r.key)+'</td><td>'+h(r.owner||'미배정')+'</td>'+(key==='construction'?'<td class="sw-contract-state">'+h(v.contractState)+'</td>':'')+values.map(value=>'<td>'+h(value||'미기록')+'</td>').join('')+'<td>'+btn('처리','primary',r.key)+'</td></tr>';
  }).join('')+'</tbody></table>'+(items.length?'':empty)+'</div>';
 }
-function triageView(items){
- const f=root.G.pipelineQueue,tab=f.triage||'today';
- items=items.map(x=>({...x,triage:root.StageSpecs.triage(x.row,x.values,root.daysTo)})).sort((x,y)=>x.triage.rank-y.triage.rank||(x.triage.date||'9999').localeCompare(y.triage.date||'9999')||x.row.key.localeCompare(y.row.key));
- const filtered=items.filter(x=>x.triage[tab]),pages=Math.max(1,Math.ceil(filtered.length/30));f.page=Math.min(f.page||1,pages);
- const shown=filtered.slice((f.page-1)*30,f.page*30);
- return '<nav class="sw-triage-tabs" aria-label="컨설팅 업무 분류">'+[['today','오늘 처리'],['new','신규·분류'],['quote','견적 임박'],['info','정보 보완'],['backlog','대기·보류'],['all','전체']].map(([key,label])=>'<button type="button" data-ps-action="triage-tab" data-value="'+key+'" aria-pressed="'+(key===tab)+'">'+label+' <b>'+items.filter(x=>x.triage[key]).length+'</b></button>').join('')+'</nav><p class="sw-triage-help">오늘 처리: 기한 도래·초과, 3일 이내 견적, 최근 7일 신규 건. 과거 정보 누락만으로 오늘 업무에 넣지 않습니다. 대기·보류는 업무목록 분류이며 영업단계를 변경하지 않습니다.</p>'+(root.PipelineBatch?.toolbar()||'')+'<p class="ps-queue-count">'+shown.length+' / '+filtered.length+'건 표시 · 한 번에 30건</p>'+table('consulting',shown)+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
+/* 컨설팅 공통 틀: 탭·체크박스 없이 «먼저 볼 것 → 정상 진행» 한 표. 행 클릭=상세 팝업. */
+function consultingFrame(items){
+ const f=root.G.pipelineQueue;
+ items=items.map(x=>({...x,triage:root.StageSpecs.triage(x.row,x.values,root.daysTo)}));
+ const first=items.filter(x=>x.triage.today||x.triage.info).sort((x,y)=>x.triage.rank-y.triage.rank||(x.triage.date||'9999').localeCompare(y.triage.date||'9999')||x.row.key.localeCompare(y.row.key));
+ const rest=items.filter(x=>!(x.triage.today||x.triage.info)).sort((x,y)=>String(x.values.quoteDue||'9999').localeCompare(String(y.values.quoteDue||'9999'))||x.row.key.localeCompare(y.row.key));
+ const ordered=first.concat(rest);
+ const amount=items.reduce((s,x)=>s+(Number(x.row.amount)||0),0);
+ const overdue=items.filter(x=>x.triage.today&&/초과/.test(x.triage.reason)).length;
+ const noNext=items.filter(x=>!x.row.next?.text).length;
+ const summary=stats([['합계 예상금액',money(amount)],['기한·견적일 초과',overdue+'건'],['다음 업무 없음',noNext+'건'],['정보 보완 필요',items.filter(x=>x.triage.info).length+'건']]);
+ const pages=Math.max(1,Math.ceil(ordered.length/30));f.page=Math.min(f.page||1,pages);
+ const shown=ordered.slice((f.page-1)*30,f.page*30);
+ let markedFirst=false,markedRest=false,rows='';
+ shown.forEach(x=>{
+  const urgent=x.triage.today||x.triage.info;
+  if(urgent&&!markedFirst){markedFirst=true;rows+='<tr class="sw-group-row hot"><td colspan="7">먼저 볼 것 — 기한·견적 초과 · 오늘 · 신규 · 정보 보완 ('+first.length+')</td></tr>';}
+  if(!urgent&&!markedRest){markedRest=true;rows+='<tr class="sw-group-row"><td colspan="7">정상 진행 ('+rest.length+')</td></tr>';}
+  const r=x.row,v=x.values,qd=v.quoteDue?root.daysTo(v.quoteDue):null;
+  const chip=qd==null?'<span class="sw-due-chip mut">미지정</span>':qd<0?'<span class="sw-due-chip hot">'+Math.abs(qd)+'일 지남</span>':qd===0?'<span class="sw-due-chip warn">오늘</span>':'<span class="sw-due-chip ok">D-'+qd+'</span>';
+  rows+='<tr data-deal="'+a(r.key)+'"'+(urgent?' class="sw-first"':'')+'><td>'+btn(r.site,'record',r.key)+'</td><td>'+h(r.owner||'미배정')+'</td><td>'+h(v.needs||x.triage.reason)+'</td><td>'+chip+(v.quoteDue?'<small>'+h(v.quoteDue)+'</small>':'')+'</td><td>'+h(money(r.amount))+'</td><td>'+h(r.next?.text||'다음 행동 등록')+(r.due?'<small>'+h(r.due)+'</small>':'')+'</td><td>'+btn('처리','primary',r.key)+'</td></tr>';
+ });
+ const body='<div class="sw-table-scroll"><table class="sw-work-table sw-frame"><thead><tr>'+['현장','담당자','고객 요구','견적 예정','예상금액','다음 업무','관리'].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table>'+(shown.length?'':empty)+'</div>';
+ return summary+'<p class="ps-queue-count">'+shown.length+' / '+ordered.length+'건 표시 · 먼저 볼 것 '+first.length+'건</p>'+body+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
 }
 function schedule(items){
  const spec=root.StageSpecs.get('competition');
@@ -60,7 +78,7 @@ function queue(key,items){
 function render(key,list){
  const spec=root.StageSpecs.get(key);if(spec.specialWorkspace==='relationship')return relationship(list);
  let items=prepare(key,list),summary='';
- if(spec.workspaceType==='triage')return triageView(items);
+ if(spec.workspaceType==='triage')return consultingFrame(items);
  if(spec.summaryMetrics==='contract-ledger')summary=contractReport(list);
  else if(spec.summaryMetrics==='loss-reasons'){
   const month=root.G.lossResultMonth||new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
