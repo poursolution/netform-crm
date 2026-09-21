@@ -112,42 +112,110 @@
 .sw-scope-head small{color:#66758d;font-weight:400;margin-left:6px}
 #pipeline-stage-root .sw-scope-head button{font-size:11.5px;padding:5px 11px}
 
-/* ── 확장관리: 파이프라인과 같은 상단 문법 ── */
-#expansion-root .exp-owner-board{margin:10px 0 12px}
-#expansion-root .exp-owner-board>header{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid #e0e6ef}
-#expansion-root .exp-owner-board>header h3{font-size:13.5px;margin:0}
-#expansion-root .exp-owner-board>header small{color:#66758d;font-size:11px}
-#expansion-root .exp-owner-summary{margin:0;border:0;border-radius:0;background:#fff;padding:4px 6px}
-#expansion-root .exp-owner-row{border-radius:0;border:0;border-top:1px solid #f0f3f8}
-#expansion-root .exp-owner-row.head{border-top:0;background:#f8fafc;font-size:11.5px;color:#63748c}
-#expansion-root .exp-owner-row.on{background:#eff4ff}
-#expansion-root .exp-owner-row:hover{background:#f8fafd}
-#expansion-root .exp-year-tabs{display:flex;gap:6px;margin:0 0 12px;flex-wrap:wrap;border:0;background:none;padding:0}
-#expansion-root .exp-year-tabs button{border:1px solid #dce3ed;border-radius:9px;padding:6px 14px;font-size:12.5px;font-weight:600;color:#627189;background:#fff}
-#expansion-root .exp-year-tabs button.on{border-color:#3b6ce4;background:#f0f5ff;color:#2458c7;font-weight:700}
-#expansion-root .exp-toolbar{background:#fff;border:1px solid #e0e6ef;border-radius:12px;padding:8px 12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:0 0 12px}
-#expansion-root .exp-toolbar label{display:flex;align-items:center;gap:7px;font-size:11px;color:#64748b;margin:0}
-#expansion-root .exp-toolbar select,#expansion-root .exp-toolbar input{min-height:30px;padding:5px 9px;border:1px solid #d3dce9;border-radius:7px;font:inherit}
-#expansion-root .exp-toolbar button{min-height:30px}
-#expansion-root .exp-view-switch{margin-left:auto;display:flex;gap:4px;background:#f1f4f9;border-radius:9px;padding:3px}
-#expansion-root .exp-view-switch button{border:0;background:none;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600;color:#627189}
-#expansion-root .exp-view-switch button.on{background:#101828;color:#fff}
-/* 슬림 필터 — 파이프라인 단계 페이지와 동일한 밀도 */
-#expansion-root .sales-filterbar{padding:8px 12px;margin:10px 0 0;border-radius:12px}
+/* ── 확장관리 A안: 다크 커맨드 밴드 + 담당자 카드 + 4열 보드 ── */
+#expansion-root .sales-filterbar{padding:8px 12px;margin:10px 0 12px;border-radius:12px}
 #expansion-root .sf-row{align-items:center;margin:0 0 6px;gap:8px}
 #expansion-root .sf-row:last-child{margin-bottom:0}
 #expansion-root .sf-label{flex:0 0 auto;padding:0;font-size:11px}
 #expansion-root .sales-filterbar button{min-height:26px;padding:3px 10px;font-size:11px;border-radius:99px;gap:4px}
 #expansion-root .sales-filterbar button em{font-size:10px;padding:0 4px}
-/* KPI 한 줄 — 파이프라인 ps-kpi 재사용 */
-#expansion-root .ps-kpis{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+#expansion-root .exp-hero{background:linear-gradient(120deg,#0f1829,#16233c);border-radius:14px;color:#fff;padding:14px 18px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+#expansion-root .exp-hero .k{display:flex;align-items:baseline;gap:7px;border:0;background:none;padding:0;color:inherit;font:inherit}
+#expansion-root .exp-hero .k>span{font-size:11.5px;color:#8fa3c4;font-weight:700;white-space:nowrap}
+#expansion-root .exp-hero .k>b{font-size:19px;letter-spacing:-.5px;color:#fff}
+#expansion-root .exp-hero .k.bad>b{color:#ff7d7d}
+#expansion-root .exp-hero .k.warn>b{color:#ffc46b}
+#expansion-root .exp-hero .k.ok>b{color:#5ee0a0}
+#expansion-root .exp-hero .kbtn{cursor:pointer;border-radius:9px;padding:4px 9px;margin:-4px -9px}
+#expansion-root .exp-hero .kbtn:hover{background:rgba(255,255,255,.08)}
+#expansion-root .exp-hero .kbtn.onf{background:rgba(255,255,255,.14);box-shadow:inset 0 0 0 1px #7f9ce0}
+#expansion-root .exp-hero .dv{width:1px;height:26px;background:#2c3a55}
+#expansion-root .exp-hero .year{margin-left:auto;display:flex;gap:4px;background:rgba(255,255,255,.08);border-radius:9px;padding:3px}
+#expansion-root .exp-hero .year button{border:0;background:none;font:inherit;font-size:12px;font-weight:700;color:#aebdd6;border-radius:7px;padding:5px 13px;cursor:pointer}
+#expansion-root .exp-hero .year button.on{background:#fff;color:#0f1829}
+#expansion-root .exp-hero .q{border:0;border-radius:8px;padding:8px 12px;font:inherit;font-size:12.5px;width:190px;background:rgba(255,255,255,.1);color:#fff}
+#expansion-root .exp-hero .q::placeholder{color:#7d90b2}
+#expansion-root .exp-owners{display:flex;gap:8px;margin:14px 0;overflow-x:auto;padding-bottom:2px}
+#expansion-root .exp-ocard{flex:0 0 auto;display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e2e8f1;border-radius:11px;padding:8px 14px;font:inherit;color:inherit;cursor:pointer;text-align:left}
+#expansion-root .exp-ocard:hover{border-color:#7f9ce0}
+#expansion-root .exp-ocard.on{border-color:#2f5fd0;background:#eef4ff;box-shadow:inset 0 0 0 1px #2f5fd0}
+#expansion-root .exp-ocard .av{width:30px;height:30px;border-radius:50%;background:#101828;color:#fff;display:grid;place-items:center;font-size:12px;font-weight:800}
+#expansion-root .exp-ocard .meta b{font-size:13px;display:block;letter-spacing:-.2px}
+#expansion-root .exp-ocard .meta small{font-size:10.5px;display:block;color:#66758d}
+#expansion-root .exp-ocard .n{margin-left:6px;font-size:15px;font-weight:900;color:#1e3a8a}
+#expansion-root .exp-ocard .n.bad{color:#dc2626}
+#expansion-root .exp-board4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:start}
+#expansion-root .exp-bcol{background:#e9edf4;border-radius:12px;padding:8px;min-height:340px}
+#expansion-root .exp-bcol>header{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 8px}
+#expansion-root .exp-bcol>header h3{font-size:12.5px;margin:0;letter-spacing:-.2px}
+#expansion-root .exp-bcol>header b{font-size:11px;background:#fff;border-radius:99px;padding:1px 8px;color:#5b6b82}
+#expansion-root .exp-bcard{display:block;width:100%;background:#fff;border:0;border-left:3px solid #cbd5e1;border-radius:9px;padding:9px 11px;margin-bottom:7px;box-shadow:0 1px 2px rgba(16,24,40,.07);cursor:pointer;font:inherit;color:inherit;text-align:left}
+#expansion-root .exp-bcard:hover{box-shadow:0 4px 12px rgba(16,24,40,.14)}
+#expansion-root .exp-bcard.late{border-left-color:#dc2626}
+#expansion-root .exp-bcard.today{border-left-color:#e3a008}
+#expansion-root .exp-bcard.future{border-left-color:#22a55e}
+#expansion-root .exp-bcard>b{font-size:12.5px;display:block;letter-spacing:-.2px}
+#expansion-root .exp-bcard>small{display:block;font-size:11px;margin:3px 0;color:#66758d}
+#expansion-root .exp-bcard .foot{display:flex;justify-content:space-between;align-items:center;margin-top:5px}
+#expansion-root .exp-bcard .foot em{font-style:normal;font-size:11px;font-weight:800;color:#3b4c66}
+#expansion-root .chip,#gyeongnam-root .chip{display:inline-block;font-size:10.5px;font-weight:800;border-radius:5px;padding:1px 7px;white-space:nowrap}
+#expansion-root .chip.hot,#gyeongnam-root .chip.hot{background:#fef1f1;color:#dc2626}
+#expansion-root .chip.warn,#gyeongnam-root .chip.warn{background:#fef4e6;color:#b45309}
+#expansion-root .chip.ok,#gyeongnam-root .chip.ok{background:#ecfdf3;color:#15803d}
+#expansion-root .chip.mut,#gyeongnam-root .chip.mut{background:#eef2f7;color:#64748b}
+#expansion-root .chip.need,#gyeongnam-root .chip.need{background:#eef4ff;color:#2454a4}
+#expansion-root .exp-bempty{margin:0;padding:40px 10px;text-align:center;color:#8a94a5;font-size:12px}
+#expansion-root .exp-blimit{margin:0;padding:8px;color:#788497;font-size:11px;text-align:center}
+@media(max-width:1000px){#expansion-root .exp-board4{grid-template-columns:1fr 1fr}#expansion-root .exp-hero .year{margin-left:0}}
 
-/* ── 경남지사: 파이프라인과 같은 상단 문법 (KPI 한 줄 = 클릭 드릴) ── */
-#gyeongnam-root .ps-kpis{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;margin:10px 0 14px}
-#gyeongnam-root button.ps-kpi{cursor:pointer;font:inherit;text-align:left;align-items:center}
-#gyeongnam-root button.ps-kpi:hover{border-color:#3b6ce4;background:#f7faff}
-#gyeongnam-root .ps-kpi small{color:#8a97ab;font-size:10.5px}
-#gyeongnam-root .gn-campaign-btn{margin-left:auto;align-self:center}
+/* ── 경남지사 A+B: 퍼널 내비 + 미처리 듀오 + 인계 원장 ── */
+#gyeongnam-root .gn2-funnel{display:grid;grid-template-columns:repeat(5,1fr);background:#fff;border:1px solid #e2e8f1;border-radius:14px;overflow:hidden;margin:10px 0 12px}
+#gyeongnam-root .gn2-step{position:relative;padding:13px 15px 11px;border:0;border-right:1px solid #e2e8f1;background:none;font:inherit;text-align:left;cursor:pointer;color:inherit}
+#gyeongnam-root .gn2-step:last-child{border-right:0}
+#gyeongnam-root .gn2-step:hover{background:#f7faff}
+#gyeongnam-root .gn2-step>span:first-child{font-size:11px;color:#66758d;font-weight:700}
+#gyeongnam-root .gn2-step>b{display:block;font-size:21px;letter-spacing:-.5px;margin:1px 0 2px}
+#gyeongnam-root .gn2-step>small{font-size:10.5px;color:#66758d}
+#gyeongnam-root .gn2-step .loss{position:absolute;top:11px;right:11px;font-size:10px;font-weight:800;font-style:normal;color:#c03246;background:#fef1f1;border-radius:5px;padding:1px 6px}
+#gyeongnam-root .gn2-step.won>b{color:#15803d}
+#gyeongnam-root .gn2-step .track{display:block;height:5px;border-radius:99px;background:#e6ecf5;margin-top:8px;overflow:hidden}
+#gyeongnam-root .gn2-step .track i{display:block;height:100%;background:#2f5fd0}
+#gyeongnam-root .gn2-step.won .track i{background:#15803d}
+#gyeongnam-root .gn2-duo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 12px}
+#gyeongnam-root .gn2-qcard{background:#fff;border:1px solid #e2e8f1;border-radius:12px;overflow:hidden}
+#gyeongnam-root .gn2-qcard>header{display:flex;align-items:center;gap:8px;padding:10px 15px;border-bottom:1px solid #e2e8f1}
+#gyeongnam-root .gn2-qcard>header h3{font-size:13px;margin:0}
+#gyeongnam-root .gn2-qcard>header .cnt{font-size:11px;font-weight:800;border-radius:99px;padding:1px 9px}
+#gyeongnam-root .gn2-qcard.hot>header .cnt{background:#fef1f1;color:#dc2626}
+#gyeongnam-root .gn2-qcard.warn>header .cnt{background:#fef4e6;color:#b45309}
+#gyeongnam-root .gn2-qcard>header small{margin-left:auto;font-size:10.5px;color:#66758d}
+#gyeongnam-root .gn2-qrow{display:flex;align-items:center;gap:12px;padding:10px 15px;border-top:1px solid #f0f3f8}
+#gyeongnam-root .gn2-qrow:first-of-type{border-top:0}
+#gyeongnam-root .gn2-qrow:hover{background:#f8fafd}
+#gyeongnam-root .gn2-qrow .site{min-width:0;flex:1}
+#gyeongnam-root .gn2-qrow .site b{font-size:13px;display:block}
+#gyeongnam-root .gn2-qrow .site small{font-size:10.5px;color:#66758d}
+#gyeongnam-root .gn2-btn{font:inherit;font-size:11.5px;font-weight:700;border:1px solid #d7e0ef;background:#fff;border-radius:7px;padding:5px 11px;color:#2454a4;cursor:pointer;white-space:nowrap}
+#gyeongnam-root .gn2-btn:hover{border-color:#3b6ce4;background:#f7faff}
+#gyeongnam-root .gn2-btn.pri{background:#2f5fd0;border-color:#2f5fd0;color:#fff}
+#gyeongnam-root .gn2-empty{padding:22px 15px;text-align:center;color:#8a94a5;font-size:12px}
+#gyeongnam-root .gn2-split{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:12px;align-items:start}
+#gyeongnam-root .gn2-rail{display:grid;gap:10px}
+#gyeongnam-root .gn2-card{background:#fff;border:1px solid #e2e8f1;border-radius:12px;padding:12px 14px}
+#gyeongnam-root .gn2-card h4{font-size:12px;color:#293b57;margin:0 0 9px}
+#gyeongnam-root .gn2-mini{display:flex;gap:7px;align-items:flex-end}
+#gyeongnam-root .gn2-mini .m{flex:1;text-align:center}
+#gyeongnam-root .gn2-mini .bars{display:flex;gap:3px;align-items:flex-end;justify-content:center;height:54px}
+#gyeongnam-root .gn2-mini i{width:9px;background:#2f5fd0;border-radius:3px 3px 0 0;display:block}
+#gyeongnam-root .gn2-mini i.g{background:#15803d}
+#gyeongnam-root .gn2-mini small{display:block;font-size:10px;color:#66758d;margin-top:3px}
+#gyeongnam-root .gn2-dim{display:block;margin-top:7px;font-size:10.5px;color:#8a97ab}
+#gyeongnam-root .gn2-won b{font-size:20px;letter-spacing:-.5px;color:#15803d;display:block}
+#gyeongnam-root .gn2-won small{font-size:11px;color:#66758d}
+#gyeongnam-root .gn-handoff tr.g td{background:#fbfcfe;color:#4b5c77;font-size:10.5px;font-weight:800;padding:6px 13px}
+#gyeongnam-root .gn-handoff tr.g.hot td{background:#fff6f6;color:#c03246}
+#gyeongnam-root .gn-handoff tr.g.warn td{background:#fffaf1;color:#8c601e}
+@media(max-width:1000px){#gyeongnam-root .gn2-funnel{grid-template-columns:repeat(2,1fr)}#gyeongnam-root .gn2-step{border-bottom:1px solid #e2e8f1}#gyeongnam-root .gn2-duo,#gyeongnam-root .gn2-split{grid-template-columns:1fr}}
 
 /* ── 컨설팅 공통 틀: 그룹 구분행·기한 칩 ── */
 .sw-frame th,.sw-frame td{padding:9px 12px}

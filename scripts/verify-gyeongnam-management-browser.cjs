@@ -39,12 +39,14 @@ const server=()=>http.createServer((req,res)=>{
       paintGyeongnam();
     });
     const titles=await page.locator('#gyeongnam-root > .gn-frame .gn-frame-head h3').allTextContents();
-    assert.deepEqual(titles,['본사 인계 현황','경남지사 담당자별 흐름','본사 → 경남지사 영업 Funnel','최근 6개월 흐름']);
+    assert.deepEqual(titles,['본사 인계 원장','경남지사 담당자별 흐름']);
     assert.equal(await page.locator('#gyeongnam-root details').count(),0);
-    assert.equal(await page.locator('#gyeongnam-root > .gn-frame').count(),4);
-    // 상단은 클릭 드릴 KPI 한 줄 — 큰 명령부·중복 위험 타일 없음.
-    assert.equal(await page.locator('#gyeongnam-root .ps-kpis button.ps-kpi').count(),7);
-    assert.equal(await page.locator('#gyeongnam-root .gn-command,#gyeongnam-root .gn-risk-grid').count(),0);
+    // A+B: 퍼널 5칸(클릭 드릴)이 머리, 미처리 듀오, 그 아래 인계 원장 + 우측 요약 레일.
+    assert.equal(await page.locator('#gyeongnam-root .gn2-funnel').count(),1);
+    assert.equal(await page.locator('#gyeongnam-root .gn2-step').count(),5);
+    assert.equal(await page.locator('#gyeongnam-root .gn2-qcard').count(),2);
+    assert.equal(await page.locator('#gyeongnam-root .gn2-split .gn2-rail .gn2-card').count(),2);
+    assert.equal(await page.locator('#gyeongnam-root .ps-kpi,#gyeongnam-root .gn-command,#gyeongnam-root .gn-risk-grid').count(),0);
     for(const frame of await page.locator('#gyeongnam-root > .gn-frame').all())assert.equal(await frame.isVisible(),true);
     for(const width of [1440,1024,390]){
       await page.setViewportSize({width,height:1000});
