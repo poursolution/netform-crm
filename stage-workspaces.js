@@ -5,6 +5,9 @@ const btn=(text,action,id)=>'<button type="button" data-ps-action="'+action+'" d
 const money=x=>x==null||x===''?'금액 미입력':root.fmtAmt(Number(x));
 const field=(r,code)=>r.item.stage_contexts?.[code]?.fields||{};
 const empty='<p class="ps-empty">해당 업무가 없습니다.</p>';
+/* 담당자별 현황판 제외 명단 (2026-09-22 지시): 퇴사·비영업 인원은 표에서 숨긴다. 건 자체는 목록·합계 경로에 남는다. */
+const BOARD_HIDE=new Set(['이승우','조재연','김성준','한지혜']);
+const boardRows=map=>Array.from(map.values()).filter(x=>!BOARD_HIDE.has(x.owner));
 const age=r=>r.last?Math.max(0,-root.daysTo(r.last)):null;
 const due=r=>r.days==null?'일정 미지정':r.days<0?Math.abs(r.days)+'일 초과':r.days===0?'오늘':'D-'+r.days;
 function stats(items){return '<div class="sw-stats">'+items.map(([k,v])=>'<div><span>'+h(k)+'</span><b>'+h(v)+'</b></div>').join('')+'</div>';}
@@ -30,7 +33,7 @@ function relationshipOwnerBoard(scopedOwner){
   const contactAge=age(r);if(contactAge!=null)row.maxAge=Math.max(row.maxAge,contactAge);
   map.set(o,row);
  });
- const rows=Array.from(map.values());
+ const rows=boardRows(map);
  rows.forEach(x=>{x.light=x.over>=5||x.maxAge>=180||x.silNeed>=2?'r':(x.over+x.silNeed+x.promo)>0?'y':'g'});
  const order={r:0,y:1,g:2};
  rows.sort((a,b)=>order[a.light]-order[b.light]||b.over-a.over||b.promo-a.promo||(typeof root.repCompare==='function'?root.repCompare(a.owner,b.owner):String(a.owner).localeCompare(String(b.owner))));
@@ -103,7 +106,7 @@ function consultingOwnerBoard(scopedOwner){
   if(!needs||!work||/미분류|미기록/.test(String(work||'')))row.info++;
   map.set(o,row);
  });
- const rows=Array.from(map.values());
+ const rows=boardRows(map);
  rows.forEach(x=>{x.light=x.over>=10||x.maxOver>=30?'r':(x.over+x.noNext+x.info)>0?'y':'g'});
  const order={r:0,y:1,g:2};
  rows.sort((a,b)=>order[a.light]-order[b.light]||b.over-a.over||b.noNext-a.noNext||(typeof root.repCompare==='function'?root.repCompare(a.owner,b.owner):String(a.owner).localeCompare(String(b.owner))));
@@ -123,7 +126,7 @@ function sentOwnerBoard(scopedOwner){
   if(days==null)row.none++;else if(days<0){row.over++;row.maxOver=Math.max(row.maxOver,-days);}else if(days===0)row.today++;
   map.set(o,row);
  });
- const rows=Array.from(map.values());
+ const rows=boardRows(map);
  rows.forEach(x=>{x.light=x.over>=5||x.maxOver>=14?'r':(x.over+x.today+x.none)>0?'y':'g'});
  const order={r:0,y:1,g:2};
  rows.sort((a,b)=>order[a.light]-order[b.light]||b.over-a.over||b.none-a.none||(typeof root.repCompare==='function'?root.repCompare(a.owner,b.owner):String(a.owner).localeCompare(String(b.owner))));
@@ -187,7 +190,7 @@ function competitionOwnerBoard(scopedOwner){
   if(dd==null)row.none++;else if(dd<0){row.past++;row.maxPast=Math.max(row.maxPast,-dd);}else if(dd<=3)row.near++;
   map.set(o,row);
  });
- const rows=Array.from(map.values());
+ const rows=boardRows(map);
  rows.forEach(x=>{x.light=x.past>=2||x.maxPast>=14?'r':(x.past+x.near+x.none)>0?'y':'g'});
  const order={r:0,y:1,g:2};
  rows.sort((a,b)=>order[a.light]-order[b.light]||b.past-a.past||b.near-a.near||(typeof root.repCompare==='function'?root.repCompare(a.owner,b.owner):String(a.owner).localeCompare(String(b.owner))));
@@ -236,7 +239,7 @@ function constructionOwnerBoard(scopedOwner){
   if(r.code==='completion')row.done++;else if(r.code==='construction')row.building++;else if((cf.contract_status||r.fields.contract_status)!=='체결 완료')row.pending++;
   map.set(o,row);
  });
- const rows=Array.from(map.values());
+ const rows=boardRows(map);
  rows.forEach(x=>{x.light=x.pending>=2?'r':x.pending>=1?'y':'g'});
  const order={r:0,y:1,g:2};
  rows.sort((a,b)=>order[a.light]-order[b.light]||b.pending-a.pending||b.amount-a.amount||(typeof root.repCompare==='function'?root.repCompare(a.owner,b.owner):String(a.owner).localeCompare(String(b.owner))));
@@ -292,7 +295,7 @@ function wonOwnerBoard(scopedOwner){
   if(r.item.completion_date)row.done++;
   map.set(o,row);
  });
- const rows=Array.from(map.values());
+ const rows=boardRows(map);
  rows.forEach(x=>{x.light=x.pending>=2?'r':x.pending?'y':'g'});
  const order={r:0,y:1,g:2};
  rows.sort((a,b)=>b.amount-a.amount||order[a.light]-order[b.light]||(typeof root.repCompare==='function'?root.repCompare(a.owner,b.owner):String(a.owner).localeCompare(String(b.owner))));
@@ -332,7 +335,7 @@ function lostOwnerBoard(scopedOwner){
   if(rc&&!/불가|없음/.test(String(rc)))row.recontact++;
   map.set(o,row);
  });
- const rows=Array.from(map.values());
+ const rows=boardRows(map);
  rows.forEach(x=>{x.light=x.noReason>=2?'r':x.noReason?'y':'g'});
  const order={r:0,y:1,g:2};
  rows.sort((a,b)=>order[a.light]-order[b.light]||b.count-a.count||(typeof root.repCompare==='function'?root.repCompare(a.owner,b.owner):String(a.owner).localeCompare(String(b.owner))));
