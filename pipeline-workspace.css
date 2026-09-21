@@ -119,22 +119,22 @@
 #expansion-root .sf-label{flex:0 0 auto;padding:0;font-size:11px}
 #expansion-root .sales-filterbar button{min-height:26px;padding:3px 10px;font-size:11px;border-radius:99px;gap:4px}
 #expansion-root .sales-filterbar button em{font-size:10px;padding:0 4px}
-#expansion-root .exp-hero{background:linear-gradient(120deg,#0f1829,#16233c);border-radius:14px;color:#fff;padding:14px 18px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
-#expansion-root .exp-hero .k{display:flex;align-items:baseline;gap:7px;border:0;background:none;padding:0;color:inherit;font:inherit}
-#expansion-root .exp-hero .k>span{font-size:11.5px;color:#8fa3c4;font-weight:700;white-space:nowrap}
-#expansion-root .exp-hero .k>b{font-size:19px;letter-spacing:-.5px;color:#fff}
-#expansion-root .exp-hero .k.bad>b{color:#ff7d7d}
-#expansion-root .exp-hero .k.warn>b{color:#ffc46b}
-#expansion-root .exp-hero .k.ok>b{color:#5ee0a0}
-#expansion-root .exp-hero .kbtn{cursor:pointer;border-radius:9px;padding:4px 9px;margin:-4px -9px}
-#expansion-root .exp-hero .kbtn:hover{background:rgba(255,255,255,.08)}
-#expansion-root .exp-hero .kbtn.onf{background:rgba(255,255,255,.14);box-shadow:inset 0 0 0 1px #7f9ce0}
-#expansion-root .exp-hero .dv{width:1px;height:26px;background:#2c3a55}
-#expansion-root .exp-hero .year{margin-left:auto;display:flex;gap:4px;background:rgba(255,255,255,.08);border-radius:9px;padding:3px}
-#expansion-root .exp-hero .year button{border:0;background:none;font:inherit;font-size:12px;font-weight:700;color:#aebdd6;border-radius:7px;padding:5px 13px;cursor:pointer}
-#expansion-root .exp-hero .year button.on{background:#fff;color:#0f1829}
-#expansion-root .exp-hero .q{border:0;border-radius:8px;padding:8px 12px;font:inherit;font-size:12.5px;width:190px;background:rgba(255,255,255,.1);color:#fff}
-#expansion-root .exp-hero .q::placeholder{color:#7d90b2}
+#expansion-root .exp-hero,#site-master .exp-hero,#campaign-root .exp-hero{background:linear-gradient(120deg,#0f1829,#16233c);border-radius:14px;color:#fff;padding:14px 18px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+#expansion-root .exp-hero .k,#site-master .exp-hero .k,#campaign-root .exp-hero .k{display:flex;align-items:baseline;gap:7px;border:0;background:none;padding:0;color:inherit;font:inherit}
+#expansion-root .exp-hero .k>span,#site-master .exp-hero .k>span,#campaign-root .exp-hero .k>span{font-size:11.5px;color:#8fa3c4;font-weight:700;white-space:nowrap}
+#expansion-root .exp-hero .k>b,#site-master .exp-hero .k>b,#campaign-root .exp-hero .k>b{font-size:19px;letter-spacing:-.5px;color:#fff}
+#expansion-root .exp-hero .k.bad>b,#site-master .exp-hero .k.bad>b,#campaign-root .exp-hero .k.bad>b{color:#ff7d7d}
+#expansion-root .exp-hero .k.warn>b,#site-master .exp-hero .k.warn>b,#campaign-root .exp-hero .k.warn>b{color:#ffc46b}
+#expansion-root .exp-hero .k.ok>b,#site-master .exp-hero .k.ok>b,#campaign-root .exp-hero .k.ok>b{color:#5ee0a0}
+#expansion-root .exp-hero .kbtn,#site-master .exp-hero .kbtn,#campaign-root .exp-hero .kbtn{cursor:pointer;border-radius:9px;padding:4px 9px;margin:-4px -9px}
+#expansion-root .exp-hero .kbtn:hover,#site-master .exp-hero .kbtn:hover,#campaign-root .exp-hero .kbtn:hover{background:rgba(255,255,255,.08)}
+#expansion-root .exp-hero .kbtn.onf,#site-master .exp-hero .kbtn.onf,#campaign-root .exp-hero .kbtn.onf{background:rgba(255,255,255,.14);box-shadow:inset 0 0 0 1px #7f9ce0}
+#expansion-root .exp-hero .dv,#site-master .exp-hero .dv,#campaign-root .exp-hero .dv{width:1px;height:26px;background:#2c3a55}
+#expansion-root .exp-hero .year,#site-master .exp-hero .year,#campaign-root .exp-hero .year{margin-left:auto;display:flex;gap:4px;background:rgba(255,255,255,.08);border-radius:9px;padding:3px}
+#expansion-root .exp-hero .year button,#site-master .exp-hero .year button,#campaign-root .exp-hero .year button{border:0;background:none;font:inherit;font-size:12px;font-weight:700;color:#aebdd6;border-radius:7px;padding:5px 13px;cursor:pointer}
+#expansion-root .exp-hero .year button.on,#site-master .exp-hero .year button.on,#campaign-root .exp-hero .year button.on{background:#fff;color:#0f1829}
+#expansion-root .exp-hero .q,#site-master .exp-hero .q,#campaign-root .exp-hero .q{border:0;border-radius:8px;padding:8px 12px;font:inherit;font-size:12.5px;width:190px;background:rgba(255,255,255,.1);color:#fff}
+#expansion-root .exp-hero .q::placeholder,#site-master .exp-hero .q::placeholder,#campaign-root .exp-hero .q::placeholder{color:#7d90b2}
 #expansion-root .exp-owners{display:flex;gap:8px;margin:14px 0;overflow-x:auto;padding-bottom:2px}
 #expansion-root .exp-ocard{flex:0 0 auto;display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e2e8f1;border-radius:11px;padding:8px 14px;font:inherit;color:inherit;cursor:pointer;text-align:left}
 #expansion-root .exp-ocard:hover{border-color:#7f9ce0}
@@ -166,7 +166,7 @@
 #expansion-root .chip.need,#gyeongnam-root .chip.need{background:#eef4ff;color:#2454a4}
 #expansion-root .exp-bempty{margin:0;padding:40px 10px;text-align:center;color:#8a94a5;font-size:12px}
 #expansion-root .exp-blimit{margin:0;padding:8px;color:#788497;font-size:11px;text-align:center}
-@media(max-width:1000px){#expansion-root .exp-board4{grid-template-columns:1fr 1fr}#expansion-root .exp-hero .year{margin-left:0}}
+@media(max-width:1000px){#expansion-root .exp-board4{grid-template-columns:1fr 1fr}#expansion-root .exp-hero .year,#site-master .exp-hero .year,#campaign-root .exp-hero .year{margin-left:0}}
 
 /* ── 경남지사 A+B: 퍼널 내비 + 미처리 듀오 + 인계 원장 ── */
 #gyeongnam-root .gn2-funnel{display:grid;grid-template-columns:repeat(5,1fr);background:#fff;border:1px solid #e2e8f1;border-radius:14px;overflow:hidden;margin:10px 0 12px}
@@ -232,3 +232,44 @@
 .sw-due-chip.warn{background:#fef4e6;color:#b45309}
 .sw-due-chip.ok{background:#ecfdf3;color:#15803d}
 .sw-due-chip.mut{background:#eef2f7;color:#7284a0}
+
+/* ── 고객 자산 A안: 다크 밴드 + 상태 칩 필터 + 원장 표 ── */
+#site-master .exp-hero .q{width:280px;margin-left:auto}
+#site-master .site-chips{display:flex;gap:6px;margin:12px 0;flex-wrap:wrap;align-items:center}
+#site-master .site-chips>button{font:inherit;font-size:12px;font-weight:700;border:1px solid #dce3ed;background:#fff;border-radius:99px;padding:5px 13px;color:#627189;cursor:pointer}
+#site-master .site-chips>button.on{border-color:#2f5fd0;background:#eef4ff;color:#2458c7}
+#site-master .site-chips>button b{margin-left:4px}
+#site-master .site-chips .selects{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+#site-master .site-chips select{font:inherit;font-size:12px;border:1px solid #d7e0ef;border-radius:8px;padding:6px 9px;background:#fff;max-width:150px}
+.site-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px;background:#9aa8bd}
+.site-dot.g{background:#22a55e}.site-dot.b{background:#2f5fd0}.site-dot.y{background:#e3a008}.site-dot.r{background:#dc2626}.site-dot.w{background:#9aa8bd}
+@media(max-width:900px){#site-master .exp-hero .q{width:100%;margin-left:0}#site-master .site-chips .selects{margin-left:0}}
+/* ── 고객 발송 A+C: 다크 밴드 + 발송 큐 + 성과 레일 (작성 위저드는 기존 그대로) ── */
+#campaign-root .cc2-hero{margin:12px 0}
+#campaign-root .cc2-cta{margin-left:auto;background:#fff;border:0;border-radius:9px;font:inherit;font-size:13px;font-weight:800;color:#0f1829;padding:9px 18px;cursor:pointer}
+#campaign-root .cc2-cta:hover{background:#e8eefb}
+#campaign-root .cc2-split{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px;align-items:start;margin-top:12px}
+#campaign-root .cc2-queue{background:#fff;border:1px solid #e2e8f1;border-radius:12px;overflow:hidden}
+#campaign-root .cc2-ph{display:flex;align-items:center;gap:8px;padding:11px 15px;border-bottom:1px solid #e2e8f1}
+#campaign-root .cc2-ph h3{font-size:13px;margin:0}
+#campaign-root .cc2-ph small{color:#66758d;font-size:10.5px}
+#campaign-root .cc2-ph button{margin-left:auto;font:inherit;font-size:11.5px;font-weight:700;border:0;background:none;color:#2454a4;cursor:pointer}
+#campaign-root .cc2-qrow{display:grid;grid-template-columns:86px minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:11px 15px;border-top:1px solid #f0f3f8;border-left:3px solid transparent;margin:0;background:none;border-radius:0}
+#campaign-root .cc2-qrow:first-of-type{border-top:0}
+#campaign-root .cc2-qrow.sch{border-left-color:#2f5fd0}
+#campaign-root .cc2-qrow.run{border-left-color:#e3a008}
+#campaign-root .cc2-qrow.fail{border-left-color:#dc2626}
+#campaign-root .cc2-qrow time{font-size:11px;color:#66758d;font-weight:700}
+#campaign-root .cc2-main strong{font-size:13px;display:block}
+#campaign-root .cc2-main small{display:block;font-size:10.5px;color:#66758d;margin-top:2px}
+#campaign-root .cc2-qrow>b{font-size:13px;text-align:right}
+#campaign-root .cc2-qrow .cc-delivery-counts{display:block;font-weight:400}
+#campaign-root .cc2-rail{display:grid;gap:10px}
+#campaign-root .cc2-card{background:#fff;border:1px solid #e2e8f1;border-radius:12px;padding:12px 14px}
+#campaign-root .cc2-card h4{font-size:12px;color:#293b57;margin:0 0 9px}
+#campaign-root .cc2-rrow{display:grid;grid-template-columns:minmax(58px,auto) 1fr 40px;align-items:center;gap:8px;font-size:12px;padding:3px 0}
+#campaign-root .cc2-rrow .bar{height:8px;border-radius:99px;background:#e6ecf5;overflow:hidden}
+#campaign-root .cc2-rrow .bar i{display:block;height:100%;background:#2f5fd0}
+#campaign-root .cc2-rrow .bar i.g{background:#15803d}
+#campaign-root .cc2-rrow b{text-align:right}
+@media(max-width:1000px){#campaign-root .cc2-split{grid-template-columns:1fr}}
