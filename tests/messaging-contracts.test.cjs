@@ -103,7 +103,7 @@ test('campaign all-send stays explicit, consent-scoped, and cannot record false 
 test('campaign landing is a simple customer-send inbox followed by a five-step workflow',()=>{
   assert.match(pc,/function campaignHomePage\(\)/);
   assert.match(pc,/＋ 새 발송 만들기/);
-  assert.match(pc,/예약 발송[\s\S]*발송 준비중[\s\S]*발송 실패/);
+  assert.match(pc,/예약 대기[\s\S]*발송 진행중[\s\S]*실패·확인 필요/);
   assert.doesNotMatch(pc,/\['send','고객 실행'/);
   assert.match(pc,/function campaignStepsHtml\(\)/);
   assert.match(pc,/\['발송 목적','왜 보내는지'\]/);

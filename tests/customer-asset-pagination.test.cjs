@@ -48,9 +48,10 @@ test('customer asset filters reset or re-clamp pagination safely',()=>{
 
 test('customer asset landing is compact while detail navigation stays connected',()=>{
  assert.match(html,/var _paintSitesAssetQueue=paintSites/);
- assert.match(html,/command\.classList\.add\('site-queue-head'\)/);
- assert.match(html,/eyebrow\.remove\(\)/);
- assert.match(html,/현장별 고객관계와 거래 이력을 확인합니다/);
+ // A안(2026-09-21): render 자체가 다크 밴드 + 상태 칩 — 영문 배너·상태 타일 그리드 없이 컴팩트.
+ assert.match(html,/class="exp-hero site-hero2"/);
+ assert.match(html,/class="site-chips"/);
+ assert.doesNotMatch(html,/CUSTOMER ASSET MASTER/);
+ assert.doesNotMatch(html,/<div class="site-health-grid">/);
  assert.match(html,/DetailWorkspace\.assetTabs\(i\)/);
- assert.match(html,/\.site-command\.site-queue-head\{/);
 });

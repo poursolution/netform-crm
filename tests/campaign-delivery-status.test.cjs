@@ -6,7 +6,7 @@ const vm=require('node:vm');
 const html=fs.readFileSync('crm.html','utf8');
 function ui(rows){
  const context=vm.createContext({B:{campaigns:rows},CAMPAIGN_STORE:{campaigns:[]},G:{campaignYear:'전체'},CUR_Y:2026,esc:v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))});
- const names=['campaignLogs','campaignStatusView','campaignDeliveredCount','campaignNeedsReview','campaignDeliveryText','campaignLogYear','campaignYearMatch','campaignYearTabs','campaignHistoryPage','campaignAnalysisPage','campaignHomePage'];
+ const names=['campaignLogs','campaignStatusView','campaignDeliveredCount','campaignNeedsReview','campaignDeliveryText','campaignLogYear','campaignYearMatch','campaignYearTabs','campaignQueueOrder','campaignQueueRow','campaignHomeRail','campaignHistoryPage','campaignAnalysisPage','campaignHomePage'];
  for(const name of names){const start=html.indexOf('function '+name+'(');if(start<0)continue;const end=html.indexOf('\nfunction ',start+1);vm.runInContext(html.slice(start,end),context)}
  return context;
 }
@@ -15,10 +15,11 @@ test('home and history show every provider state without treating uncertainty as
  const labels={queued:'전송대기',scheduled:'예약',sending:'발송중',submitted:'결과 대기',sent:'발송완료',partial:'일부 성공',failed:'실패',cancelled:'취소',unknown:'결과 확인 필요'};
  for(const [status,label] of Object.entries(labels)){const c=ui([row(status)]);for(const rendered of [c.campaignHomePage(),c.campaignHistoryPage(false)])assert.ok(rendered.includes('>'+label+'</em>'),status)}
 });
-test('home counts in-flight and review-required campaigns independently',()=>{
+test('home hero counts scheduled, in-flight and attention-required campaigns independently',()=>{
  const c=ui(['queued','scheduled','sending','submitted','partial','unknown','failed','cancelled','sent'].map(s=>row(s)));
  const result=c.campaignHomePage();
- for(const [label,count] of [['예약 발송',1],['발송 준비중',1],['발송 진행중',2],['발송 실패',1],['결과 확인 필요',2]])assert.ok(result.includes('<span>'+label+'</span><b>'+count+'건</b>'),label);
+ // A+C(2026-09-21): 준비중·진행중은 하나의 «발송 진행중»으로, 실패와 결과확인은 «실패·확인 필요»로 합산한다.
+ for(const [label,count] of [['예약 대기',1],['발송 진행중',3],['실패·확인 필요',3]])assert.ok(result.includes('<span>'+label+'</span><b>'+count+'</b>'),label);
 });
 test('analysis counts only confirmed recipients including partially finished campaigns',()=>{
  const c=ui([row('sent',{sent_count:8,response_count:2}),row('partial',{sent_count:3,response_count:1}),row('unknown',{sent_count:2}),row('submitted',{sent_count:1,submitted_count:9}),row('sending',{sent_count:1}),row('scheduled'),row('queued'),row('failed')]);
