@@ -17,7 +17,7 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
    G.year='2026';G.quarter=0;G.rep='전체';goPage('dash');G.insights.year='2026';G.insights.month=9;await ContractSalesData.refresh();paint();
   });
   const amount=()=>page.locator('.apage.on .contract-sales-totals strong').last().innerText();
-  assert.match(await page.locator('#si-dash [data-value="contract"]').innerText(),/계약실적/);
+  assert.equal(await page.locator('#si-dash [data-value="contract"]').count(),2);assert.match(await page.locator('#si-dash [data-value="contract"]').first().innerText(),/매출[\s\S]*계약금액 기준/);
   assert.equal(await page.locator('#si-dash .contract-sales-totals strong').last().innerText(),'300,000,000원');
   await page.evaluate(()=>{B.deals[0].code='won';B.deals[0].assignee='이필선';paint()});
   assert.equal(await page.locator('#si-dash .contract-sales-totals strong').last().innerText(),'300,000,000원');

@@ -17,12 +17,14 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   });
   assert.deepEqual(await page.locator('.menu>.sec:visible').allTextContents(),['오늘','영업','고객관리','조직운영','분석','데이터 관리']);
   assert.deepEqual(await page.evaluate(()=>{const groups={};let title='';document.querySelectorAll('.menu>:is(.sec,.mi)').forEach(el=>{if(el.classList.contains('sec')){title=el.textContent;groups[title]=[];}else if(!el.hidden)groups[title].push(el.dataset.p);});return groups;}),{'오늘':['today'],'영업':['inq','pipe','expansion','gyeongnam'],'고객관리':['sites','campaign'],'조직운영':['repmanage','mgmt'],'분석':['dash','work','brief','report'],'데이터 관리':['dup']});
-  assert.equal(await page.locator('#si-dash .si-kpis>button').count(),5);assert.equal(await page.locator('#d-money').isVisible(),false);
+  assert.equal(await page.locator('#si-dash .dc-kpi').count(),6);assert.equal(await page.locator('#d-money').isVisible(),false);
   let values=await page.evaluate(()=>{const s=SalesInsights.data();return {active:s.active.length,won:s.won.length,amount:s.wonAmount}});assert.deepEqual(values,{active:2,won:1,amount:40000000});
   await page.locator('#si-dash [data-sf-type="INTERNAL"]').click();await page.locator('#si-dash [data-sf-owner="김성민"]').click();
   await page.locator('#si-dash [data-si-action="drill"][data-value="overdue"]').click();
-  assert.equal(await page.evaluate(()=>SalesScope.state().owner),'김성민');assert.equal(await page.locator('#si-control tbody tr').count(),1);
-  await page.locator('#si-control [data-si-action="record"]').click();assert.equal(await page.evaluate(()=>window.__opened),'old');
+  assert.equal(await page.evaluate(()=>SalesScope.state().owner),'김성민');assert.equal(await page.locator('#si-person.si-person .si-evidence tbody tr').count(),1);
+  await page.locator('#si-person [data-si-action="record"]').click();assert.equal(await page.evaluate(()=>window.__opened),'old');
+  assert.equal(await page.locator('#si-person').count(),0);
+  await page.locator('.menu [data-p="dash"]').click();
   await page.locator('#sales-analysis-menu [data-sales-page="perf"]').click();
   await page.locator('#si-perf [data-si-action="view"][data-value="rep"]').click();assert.equal(await page.locator('#si-perf .si-kpis>button').count(),5);assert.equal(await page.locator('#si-perf [data-si-filter="month"]').inputValue(),'9');
   await page.locator('#si-perf [data-si-action="view"][data-value="lead"]').click();await page.locator('#si-perf [data-si-action="person"]').first().click();
@@ -32,9 +34,10 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   await page.keyboard.press('Escape');assert.equal(await page.locator('#si-person').count(),0);assert.equal(await page.evaluate(()=>document.activeElement.dataset.siAction),'person');
   for(const width of [1920,1440,1024,390]){await page.setViewportSize({width,height:1000});for(const route of ['dash','control','perf']){await page.evaluate(p=>goPage(p),route);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true,route+' overflow '+width)}}
   await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>goPage('dash'));if(process.env.INSIGHTS_SCREENSHOT)await page.screenshot({path:process.env.INSIGHTS_SCREENSHOT,fullPage:true});
-  await page.locator('#si-dash [data-si-action="drill"][data-value="inquiries"]').click();assert.equal(await page.locator('#si-control tbody img').count(),0);assert.match(await page.locator('#si-control tbody').innerText(),/<img/);
+  await page.locator('#si-dash [data-si-action="drill"][data-value="inquiries"]').click();assert.equal(await page.locator('#si-person tbody img').count(),0);assert.match(await page.locator('#si-person tbody').innerText(),/<img/);
   // Current role is rechecked even if a stale admin row's button is still in the DOM.
-  await page.evaluate(()=>{ME={id:'rep',name:'이필선',role:'rep'};window.__opened=null});await page.locator('#si-control [data-si-action="record"]').click();assert.equal(await page.evaluate(()=>window.__opened),null);
+  await page.evaluate(()=>{ME={id:'rep',name:'이필선',role:'rep'};window.__opened=null});await page.locator('#si-person [data-si-action="record"]').click();assert.equal(await page.evaluate(()=>window.__opened),null);
+  await page.keyboard.press('Escape');
   await page.evaluate(()=>goPage('dash'));assert.equal(await page.evaluate(()=>SalesInsights.data().deals.every(d=>d.owner==='이필선')),true);
   assert.equal(await page.locator('.menu [data-admin-nav]:visible').count(),0);assert.deepEqual(await page.locator('.menu>.sec:visible').allTextContents(),['오늘','영업','고객관리','분석']);
 
