@@ -32,7 +32,7 @@ async function run() {
     await context.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
     const page = await context.newPage();
     await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`, { waitUntil: 'domcontentloaded' });
-    await page.waitForFunction(() => typeof paintInq === 'function' && typeof inqCtlRoleView === 'function');
+    await page.waitForFunction(() => typeof paintInq === 'function' && typeof inqCtlRoleView === 'function' && !!window.InquiryWorkbench && !!window.PCManagerRequests);
     await page.evaluate(() => {
       const base = { brand: 'POUR솔루션', created_at: '2026-09-10T00:00:00+09:00', valid_inquiry: true };
       B = {
@@ -56,6 +56,17 @@ async function run() {
     });
 
     await page.evaluate(()=>{B.inquiries[1].brand='POUR공법';B.inquiries[2].brand='석민이앤씨';B.inquiries[3].brand='아파트스퀘어';B.inquiries[0].phone='010-1234-5678';B.inquiries[0].contact_name='테스트 문의자';window.__writes=[];pushWrite=(...args)=>__writes.push(args);window.Phase1={subscribe:()=>()=>{}};window.__stopRequests=PCManagerRequests.install(window,{list:async()=>[],create:async()=>{throw Error("Unexpected request write")}});paintInq()});
+    await page.evaluate(()=>{B.inquiries[0].detail={inquiry:'옥상 방수 문의\n도면 확인 요청 <img src=x onerror=alert(1)>',note:'접수 참고',customerType:'테스트건설(주)',channel:'홈페이지',buildingType:'공장',complex:'2개동',responder:'테스트 상담자'};paintInq()});
+    assert.match(await page.locator('.inq-work-row[data-k="inq-1"] .inq-question-preview').innerText(),/옥상 방수 문의/);
+    await page.evaluate(()=>InquiryWorkbench.open('inq-1'));
+    assert.equal(await page.locator('#inq-inbox-dialog .inq-original-text').innerText(),'옥상 방수 문의\n도면 확인 요청 <img src=x onerror=alert(1)>');
+    assert.equal(await page.locator('#inq-inbox-dialog .sp-inquiry-original img').count(),0);
+    assert.match(await page.locator('#inq-inbox-dialog .inq-source-fields').innerText(),/테스트건설\(주\)/);
+    assert.match(await page.locator('#inq-inbox-dialog .inq-source-fields').innerText(),/홈페이지/);
+    assert.equal(await page.locator('#inq-inbox-dialog .inq-source-fields dt').count(),12);
+    assert.equal(await page.evaluate(()=>InquiryWorkbench.originalText({note:'상담원 기록'})), '');
+    assert.equal(await page.evaluate(()=>InquiryWorkbench.originalText({raw:{문의내용:'잔디 문의 원문'}})), '잔디 문의 원문');
+    await page.evaluate(()=>InquiryWorkbench.close());
     assert.deepEqual(await page.locator('.inq-work-row.head>span').allTextContents(),['접수경과','문의','담당자','응대 상태','다음 행동','처리']);
     assert.equal(await page.getByRole('button',{name:'전체 문의',exact:true}).count(),1);
     assert.equal(await page.locator('.inq-work-tools').getAttribute('open'),null);
@@ -72,7 +83,7 @@ async function run() {
       await page.setViewportSize({width,height:1000});
       assert.ok(await page.locator('#pg-inq').evaluate(e=>e.scrollWidth<=e.clientWidth+1),'page overflow '+width);
       assert.ok(await page.locator('.inq-ctl-scroll').evaluate(e=>e.scrollWidth<=e.clientWidth+1),'list overflow '+width);
-      assert.ok(await page.locator('.inq-work-row:not(.head)').evaluateAll(es=>es.every(e=>e.getBoundingClientRect().height<=81||innerWidth<=760)),'row height with manager request at '+width);const buttons=await page.locator('.inq-work-row:not(.head) .inq-now').evaluateAll(es=>es.map(e=>({w:e.getBoundingClientRect().width,h:e.getBoundingClientRect().height,wrap:getComputedStyle(e).whiteSpace})));
+      assert.ok(await page.locator('.inq-work-row:not(.head)').evaluateAll(es=>es.every(e=>(e.getBoundingClientRect().height>=96&&e.getBoundingClientRect().height<=160)||innerWidth<=760)),'row height with manager request at '+width);const buttons=await page.locator('.inq-work-row:not(.head) .inq-now').evaluateAll(es=>es.map(e=>({w:e.getBoundingClientRect().width,h:e.getBoundingClientRect().height,wrap:getComputedStyle(e).whiteSpace})));
       assert.ok(buttons.every(b=>Math.abs(b.w-72)<0.1&&Math.abs(b.h-32)<0.1&&b.wrap==='nowrap'),'button geometry at '+width+': '+JSON.stringify(buttons));
     }
     await page.setViewportSize({width:1440,height:1000});
