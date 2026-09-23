@@ -5,7 +5,8 @@
  let modalKey=null,returnFocus=null,ignoreBrand=false;
  // Only use the inquiry's own source text; response notes are not customer originals.
  function originalText(q){const detail=q.detail&&typeof q.detail==='object'?q.detail:{},raw=q.raw&&typeof q.raw==='object'?q.raw:{};return [q.message,typeof q.detail==='string'?q.detail:detail.inquiry,q.content,raw['문의내용']].find(v=>typeof v==='string'&&v.trim())?.trim()||''}
- root.inquiryOriginalSummary=function(q){const text=originalText(q),detail=q.detail&&typeof q.detail==='object'?q.detail:{};return '<section class="sp-inquiry-original"><h4>고객 문의 원문</h4><p class="inq-original-text">'+h(text||'저장된 문의 원문이 없습니다.')+'</p>'+(detail.note?'<div class="inq-original-note"><b>접수 특이사항</b><p>'+h(detail.note)+'</p></div>':'')+'</section>'};
+ function sourceFields(q){const d=q.detail&&typeof q.detail==='object'?q.detail:{},r=q.raw&&typeof q.raw==='object'?q.raw:{};const value=(...a)=>a.find(v=>typeof v==='string'&&v.trim()&&v.trim()!=='-')||'미입력';return [['현장',value(d.sourceSite,r['현장명'])],['업체·고객정보',value(d.customerType,r['고객유형'])],['건물유형',value(d.buildingType,r['건물유형'])],['건물주소',value(d.address,q.address,r['건물주소'])],['단지개요',value(d.complex,r['단지개요'])],['관리사무소 연락처',value(d.office,r['관리사무소'])],['문의자',value(q.contact_name,q.contact,r['고객성함'])],['문의자 연락처',value(q.phone,q.mobile,r['고객연락처'])],['상담채널',value(d.channel,q.channel,r['상담채널'])],['공사유형',value(d.workType,q.work,q.work_type,r['공사유형'])],['유입경로',value(d.inflow,q.source_channel,r['유입경로'])],['전화 응대자',value(d.responder,r['전화응대자'])]]}
+ root.inquiryOriginalSummary=function(q){const text=originalText(q),d=q.detail&&typeof q.detail==='object'?q.detail:{},r=q.raw&&typeof q.raw==='object'?q.raw:{};return '<section class="sp-inquiry-original"><h4>고객 문의 원문</h4><p class="inq-original-text">'+h(text||'저장된 문의 원문이 없습니다.')+'</p><h4 class="inq-source-title">접수 원본 정보</h4><dl class="inq-source-fields">'+sourceFields(q).map(([label,value])=>'<div><dt>'+h(label)+'</dt><dd>'+h(value)+'</dd></div>').join('')+'</dl>'+[['특이사항',d.note||r['특이사항']],['배정 코멘트',d.assignComment||r['배정 코멘트']],['응대내용',d.response||r['응대내용']]].map(([label,value])=>'<div class="inq-original-note"><b>'+h(label)+'</b><p>'+h(typeof value==='string'&&value.trim()?value:'미입력')+'</p></div>').join('')+'</section>'};
 
  function brands(){return root.SalesFilterState.state().brands}
  function scoped(fn,args){
@@ -37,7 +38,7 @@
    row.classList.toggle('priority',late||(!owner&&hours>=24));row.title=root.inqCtlProblem(q).label;
    const make=(cls,html)=>{const n=document.createElement('span');n.className=cls;n.innerHTML=html;return n};
    const elapsed=make('inq-received','<strong class="'+(late?'inq-work-late':'')+'">'+h(hours==null?'—':hours>=24?'D+'+Math.floor(hours/24):Math.max(0,Math.floor(hours))+'시간')+'</strong><small>'+h(String(root.inquiryCreatedAt(q)||'').slice(5,10).replace('-','/'))+'</small>');if(admin)elapsed.prepend(c[0]);
-   const meta=[q.contact_name||q.contact||root.inqCtlContactLabel(q),q.brand,root.inqCtlWorkLabel(q)].filter(v=>v&&v!=='연락처 미입력').join(' · ');
+   const meta=[q.detail?.customerType||q.raw?.['고객유형'],q.contact_name||q.contact||root.inqCtlContactLabel(q),q.brand,root.inqCtlWorkLabel(q)].filter(v=>v&&v!=='연락처 미입력').join(' · ');
    const site=make('inq-ctl-site','<button class="inq-site-link" data-k="'+key+'" onclick="event.stopPropagation();inqCtlOpenSingle(this.dataset.k)">'+h(q.site||'현장명 미입력')+'</button><p class="inq-question-preview">'+h(originalText(q).replace(/\s+/g,' ')||'문의 내용 확인 필요')+'</p><small title="'+attr(meta)+'">'+h(meta)+'</small>');
    const assigned=make('inq-ctl-assignee','<strong>'+h(owner?root.repDisplay(owner):'미배정')+'</strong>'+(owner?'<small>'+root.inqCtlStatusBadge(q)+'</small>':''));
    if(!owner){const evidence=root.inquiryUnassignedMeta(q);assigned.title=[evidence.label,evidence.detail,evidence.attemptLabel].filter(Boolean).join(' · ')}
@@ -103,5 +104,5 @@
   if(!root.G.inqLegacyView)root.G.inqView='console';document.querySelector('#pg-inq .inq-inbox-sticky')?.remove();const result=originalPaint.apply(this,arguments);decorate();if(modalKey)dialog();return result;
  };
  const oldRole=root.inqCtlSetRoleView;root.inqCtlSetRoleView=function(v){close();root.G.inqLegacyView=false;root.G.inqCompactMetric='';return oldRole(v)};
- root.InquiryWorkbench={originalText,set,delayed,primaryAction,selectBrand,view,open,close};
+ root.InquiryWorkbench={originalText,sourceFields,set,delayed,primaryAction,selectBrand,view,open,close};
 })(window);
