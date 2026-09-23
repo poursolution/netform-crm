@@ -8,6 +8,7 @@
  async function refresh(){
   state();if(pending)return pending;
   if(!actor||!root.SB||!root.TOKEN){status='unavailable';return}
+  const previous=JSON.stringify([status,items]);
   status='loading';const epoch=generation,who=actor;
   pending=(async()=>{
    try{
@@ -30,7 +31,7 @@
     }
     throw new Error('INCOMPLETE_CONTRACT_READ');
    }catch(e){if(epoch===generation){items=[];status='unavailable'}}
-   finally{if(epoch===generation){pending=null;root.dispatchEvent(new CustomEvent('contract-sales:changed'))}}
+   finally{if(epoch===generation){pending=null;if(previous!==JSON.stringify([status,items]))root.dispatchEvent(new CustomEvent('contract-sales:changed'))}}
   })();return pending;
  }
  function summarize(f={}){
