@@ -19,7 +19,7 @@ DECLARE
     ) AS detail$projection$;
 BEGIN
  SELECT pg_get_functiondef(oid),proacl,proowner INTO definition,old_acl,old_owner FROM pg_proc WHERE oid=target;
- IF strpos(definition,replacement)>0 THEN RETURN; END IF;
+ IF strpos(definition,'btrim(i.raw->>''문의내용'')')>0 AND strpos(definition,'AS detail')>0 THEN RETURN; END IF;
  IF (length(definition)-length(replace(definition,needle,'')))/length(needle)<>1
  OR strpos(definition,'crm_security.can_inquiry(i.id)')=0 THEN
   RAISE EXCEPTION 'Inquiry source projection drift: stop without modification';
