@@ -66,7 +66,7 @@
   return '<div class="si-control-filters">'+select('목록','kind',kinds,f.kind)+select('관리유형','issue',[['all','전체'],['urgent','긴급 · 기한초과'],...Object.entries(labels)],f.issue)+select('단계','stage',stageOptions,f.stage)+'<label>현장 검색<input data-si-search value="'+a(f.search)+'" placeholder="현장·담당자·사유" aria-label="현장 검색"></label></div>'+card('관리 대상 · '+number(list.length)+'건','<div class="si-table-scroll"><table class="si-table si-cases"><thead><tr><th>현장</th><th>담당자</th><th>현재 단계</th><th>확인할 내용</th><th>처리</th></tr></thead><tbody>'+list.slice((f.page-1)*size,f.page*size).map(d=>'<tr><td>'+h(d.site)+'</td><td>'+h(d.owner)+'</td><td><span class="si-badge">'+h(d.stageLabel)+'</span></td><td>'+h(f.kind==='won'?'준공 처리금액 '+money(d.wonAmount)+(d.hasWonAmount?'':' · 금액 미입력'):d.reason||'현재 진행 중')+'</td><td>'+btn(d.type==='inq'&&d.owner==='미배정'?'배정':'처리','record',d.key)+'</td></tr>').join('')+'</tbody></table></div>'+(list.length?'':empty())+'<div class="si-pager">'+btn('이전','page',Math.max(1,f.page-1))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',Math.min(pages,f.page+1))+'</div>','진행 중·관리필요는 현재 상태, 문의·준공 처리는 선택 기간 기준이며 계약실적과 별도입니다.');
  }
  /* ─── 대시보드 다크 콘솔 (2026-09-22) ─── */
- let lastDiags=[];
+ let lastDiags=[],lastAnimKey='';
  function repStats(s){
   const f=state(),curM=Number(f.month)||new Date().getMonth()+1,week=Date.now()-7*864e5;
   const names=[...new Set(s.deals.map(x=>x.owner).concat((root.ContractSalesData?.state().items||[]).map(x=>x.sales_owner_name)))].filter(n=>root.SalesScope.people().some(p=>p.name===n)).sort(root.repCompare);
@@ -173,16 +173,62 @@
    p('c4','이번 주 활동량 · 유형','담당자 클릭=활동 근거',actBars+'<div class="dc-legend"><span><i style="background:#5B8DEF"></i>전화·문자</span><span><i style="background:#2FC6AE"></i>방문·미팅</span><span><i style="background:#F2A93B"></i>견적·입찰</span></div>')+
    '</div>';
  }
+ /* ─── 성과 분석 다크 판정 보드 (2026-09-24) ─── */
+ function perfConsole(s){
+  const f=state(),now=new Date(),curM=Number(f.month)||now.getMonth()+1;
+  const csY=root.ContractSalesData?.summarize({...f,month:0}),csM=root.ContractSalesData?.summarize({...f,month:curM});
+  const elapsed=String(f.year)===String(now.getFullYear())?now.getMonth()+1:12;
+  const m0=x=>x===null||x===undefined?'확인 필요':money(x);
+  const paceOf=(y,m)=>{if(y==null||m==null)return null;const avg=elapsed>1?(y-m)/(elapsed-1):y;if(!(avg>0))return m>0?150:null;return Math.round(m/avg*100)};
+  const rs=repStats(s).map(x=>{
+   const cs=root.ContractSalesData?.summarize({...f,month:0,owner:x.name});
+   const csCount=cs?cs.count:null,conv=csCount!=null&&(csCount+x.act.length)>0?Math.round(csCount/(csCount+x.act.length)*100):null;
+   return {...x,csCount,conv,pace:paceOf(x.ySales,x.mSales)};
+  }).sort((a,b)=>(b.ySales||0)-(a.ySales||0));
+  lastDiags=diagnose(rs);
+  const mVals=Array.from({length:12},(_,i)=>{const x=root.ContractSalesData?.summarize({...f,month:i+1});return x?Math.max(0,x.netAmount):0});
+  const avgAll=csY&&csM&&elapsed>1?(csY.netAmount-csM.netAmount)/(elapsed-1):null;
+  const paceAll=paceOf(csY?csY.netAmount:null,csM?csM.netAmount:null);
+  const cover=avgAll&&avgAll>0?(s.expected/avgAll).toFixed(1):null;
+  const lag=rs.filter(x=>x.pace!=null&&x.pace<70).map(x=>x.name);
+  const gauge=(pct,size,color)=>{const r=size===150?58:36,C=Math.round(2*Math.PI*r),sw=size===150?14:10,len=pct==null?0:Math.min(1.35,Math.max(0.02,pct/100))/1.5*C;
+   return '<div class="pf-gauge dc-donut" style="width:'+size+'px;height:'+size+'px"><svg viewBox="0 0 '+(r*2+24)+' '+(r*2+24)+'" width="'+size+'" height="'+size+'"><g transform="rotate(-90 '+(r+12)+' '+(r+12)+')"><circle cx="'+(r+12)+'" cy="'+(r+12)+'" r="'+r+'" fill="none" stroke="#1a2745" stroke-width="'+sw+'"/><circle cx="'+(r+12)+'" cy="'+(r+12)+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="'+sw+'" stroke-dasharray="'+len.toFixed(1)+' '+(C+9)+'" stroke-linecap="round"/></g></svg><div class="pf-pct"><b>'+(pct==null?'-':pct+'%')+'</b><span>월평균 대비</span></div></div>'};
+  const paceColor=p=>p==null?'#5d6f92':p>=100?'#2FC6AE':p>=70?'#5B8DEF':'#F2A93B';
+  const why=x=>{
+   if(x.ySales==null)return {cls:'',text:'계약 원장 확인 후 판정이 표시됩니다.'};
+   if(x.overdue>0){const st={};x.act.filter(d=>d.issues.includes('overdue')).forEach(d=>{st[d.stageLabel]=(st[d.stageLabel]||0)+1});const w=Object.entries(st).sort((a,b)=>b[1]-a[1])[0];
+    return {cls:'bad',text:'기한초과 '+x.overdue+'건'+(w?' — '+w[0]+' 단계에 몰림':'')+' · 마감 관리가 병목'}}
+   if((x.mSales||0)===0&&x.act.length>=3){const st={};x.act.forEach(d=>{st[d.stageLabel]=(st[d.stageLabel]||0)+1});const w=Object.entries(st).sort((a,b)=>b[1]-a[1])[0];
+    return {cls:'bad',text:'이번 달 매출 0'+(w?' — '+w[0]+'에 '+w[1]+'건('+Math.round(w[1]/x.act.length*100)+'%) 정체':'')}}
+   if(x.weekly===0||x.contact>=3)return {cls:'warn',text:'주간 활동 '+x.weekly+'건 · 7일+ 미접촉 '+x.contact+'건 — 접촉 유지 필요'};
+   return {cls:'good',text:'페이스 정상 — 파이프라인 '+money(x.expected)+' 보유'}};
+  const cards=rs.map((x,i)=>{const w=why(x),rank=i===0?'<span class="pf-rank">1위</span>':x.pace!=null&&x.pace<70?'<span class="pf-rank low">주의</span>':'<span class="pf-rank mid">'+(i+1)+'위</span>';
+   return '<button type="button" class="dc-p pf-card c4" data-si-action="person" data-value="'+a(x.name)+'"><span class="pf-who">'+rank+'<b>'+h(x.name)+'</b><small>'+(x.last?h(M.date(new Date(x.last.at).toISOString())):'')+'</small></span>'+gauge(x.pace,96,paceColor(x.pace))+'<span class="pf-facts"><i>매출·연 <b>'+m0(x.ySales)+'</b></i><i>매출·월 <b>'+m0(x.mSales)+'</b></i><i>전환율 <b>'+(x.conv==null?'-':x.conv+'%')+'</b></i><i>진행 <b>'+x.act.length+'건</b></i><i>주간활동 <b>'+x.weekly+'건</b></i><i>문제 <b'+(x.overdue+x.missing?' class="pf-bad"':'')+'>'+(x.overdue+x.missing)+'건</b></i></span><span class="pf-why '+w.cls+'">'+h(w.text)+'</span></button>'}).join('');
+  const verdict='<div class="dc-p pf-verdict c12"><div class="dc-ph">전사 판정<small>매출=계약금액 · 페이스=본인 월평균 대비 이번 달 · 목표 금액 등록 시 목표 기준으로 전환</small></div><div class="dc-pb pf-vgrid">'
+   +gauge(paceAll,150,paceColor(paceAll))
+   +'<div class="pf-sentence">'+(csY?
+     f.year+'년 누적 매출 <b>'+m0(csY.netAmount)+'</b> · 월평균 '+(avgAll?money(avgAll):'-')+'. '+curM+'월은 <b>'+m0(csM?csM.netAmount:null)+'</b>'+(paceAll!=null?' — 월평균 대비 <b class="'+(paceAll>=100?'g':paceAll>=70?'':'w')+'">'+paceAll+'%</b>':'')+'.'
+     +(cover?' 파이프라인 '+money(s.expected)+'은 월평균의 <b>'+cover+'개월치</b>입니다.':'')
+     +(lag.length?'<br><span class="w">'+h(lag.join('·'))+' — 페이스 70% 미만</span>, 원인은 아래 카드의 문장에 있습니다.':'')
+    :'계약 원장을 확인하지 못했습니다. 과거 수주 이관을 실행하면 판정이 표시됩니다.')+'</div>'
+   +'<div class="pf-num"><b>'+m0(csY?csY.netAmount:null)+'</b><span>연 누적 매출 · 계약 '+(csY?csY.count:'-')+'건</span><em>이번 달 <b>'+m0(csM?csM.netAmount:null)+'</b> · 파이프라인 <b>'+money(s.expected)+'</b></em></div></div></div>';
+  const table='<div class="si-table-scroll"><table class="si-table dc-table"><thead><tr><th>담당자</th><th>매출·연</th><th>매출·월</th><th>페이스</th><th>전환율</th><th>진행</th><th>주간활동</th><th>문제</th></tr></thead><tbody>'
+   +rs.map(x=>'<tr><td>'+btn(x.name,'person',x.name)+'</td><td><b>'+m0(x.ySales)+'</b></td><td><b>'+m0(x.mSales)+'</b></td><td'+(x.pace!=null&&x.pace<70?' class="pf-bad"':'')+'>'+(x.pace==null?'-':x.pace+'%')+'</td><td>'+(x.conv==null?'-':x.conv+'%')+'</td><td>'+x.act.length+'</td><td>'+x.weekly+'건</td><td><span class="dc-pill'+(x.overdue+x.missing?'':' z')+'">'+(x.overdue+x.missing)+'</span></td></tr>').join('')+'</tbody></table></div>';
+  return '<div class="dc-grid">'+verdict+cards
+   +'<div class="dc-p c8"><div class="dc-ph">월별 매출 추이<small>계약 체결일 기준 · 월 클릭=근거</small></div><div class="dc-pb">'+dcLine(mVals,460,118,'#5B8DEF','pfg1',money,'cs-month')+'</div></div>'
+   +'<div class="dc-p c4"><div class="dc-ph">담당자 랭킹<small>이름 클릭=상세</small></div><div class="dc-pb" style="padding-top:4px">'+table+'</div></div>'
+   +'</div>';
+ }
  function animateConsole(host){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   host.querySelectorAll('.dc-draw').forEach((el,i)=>{try{const L=el.getTotalLength();el.style.strokeDasharray=L;el.style.strokeDashoffset=L;el.style.transition='stroke-dashoffset 1s cubic-bezier(.3,.6,.3,1) '+(0.3+i*0.15)+'s';requestAnimationFrame(()=>requestAnimationFrame(()=>{el.style.strokeDashoffset=0}))}catch(e){}});
   host.querySelectorAll('.dc-area,.dc-dot').forEach(el=>{el.style.opacity=0;el.style.transition='opacity .5s ease 1.1s';requestAnimationFrame(()=>requestAnimationFrame(()=>{el.style.opacity=1}))});
   host.querySelectorAll('.dc-donut g circle[stroke-dasharray]').forEach((c,i)=>{const d=c.getAttribute('stroke-dasharray');c.setAttribute('stroke-dasharray','0 240');c.style.transition='stroke-dasharray .9s cubic-bezier(.3,.6,.3,1) '+(0.4+i*0.12)+'s';requestAnimationFrame(()=>requestAnimationFrame(()=>{c.setAttribute('stroke-dasharray',d)}))});
-  host.querySelectorAll('.dc-kpi b').forEach(b=>{const m=b.textContent.match(/^([0-9,]+(?:\.[0-9]+)?)(.*)$/);if(!m)return;const target=parseFloat(m[1].replace(/,/g,'')),suffix=m[2],dec=(m[1].split('.')[1]||'').length,t0=performance.now(),ease=t=>1-Math.pow(1-t,3);
+  host.querySelectorAll('.dc-kpi b,.pf-num>b,.pf-pct b').forEach(b=>{const m=b.textContent.match(/^([0-9,]+(?:\.[0-9]+)?)(.*)$/);if(!m)return;const target=parseFloat(m[1].replace(/,/g,'')),suffix=m[2],dec=(m[1].split('.')[1]||'').length,t0=performance.now(),ease=t=>1-Math.pow(1-t,3);
    const step=ts=>{const t=Math.min((ts-t0)/800,1);b.textContent=(target*ease(t)).toLocaleString('ko-KR',{minimumFractionDigits:dec,maximumFractionDigits:dec})+suffix;if(t<1)requestAnimationFrame(step)};requestAnimationFrame(step)});
  }
  function render(){
-  const page=root.G.page;if(!['dash','control','perf'].includes(page)||!root.B)return;
+  const page=root.G.page;if(!['dash','control','perf'].includes(page)||!root.B){lastAnimKey='';return}
   const f=state(),s=data(),host=document.getElementById('si-'+page);
   if(!host)return;
   document.getElementById('pg-'+page).classList.add('si-active');
@@ -191,10 +237,15 @@
   if(page==='control')body=control(s);
   else if(rep&&!selected)body='<div class="si-grid">'+card('영업사원 선택',empty('상단 담당자 필터에서 확인할 영업사원을 선택해 주세요.'))+'</div>';
   else if(page==='dash')body=dashConsole(s);
+  else if(page==='perf'&&!rep)body=perfConsole(s);
   else body=kpis(s,rep)+'<div class="si-grid">'+stages(s)+(rep?execution(s):trend(s))+'</div>'+(rep?card('현재 관리가 필요한 영업 · '+s.risk.length+'건',records(M.select(s,'risk',{}),8)+btn('전체 확인 →','drill','risk'))+recent(s):people(s,0));
-  host.innerHTML='<div class="si-shell'+(page==='dash'?' si-dark':'')+'">'+filters()+(page==='perf'?'<div class="si-views" role="group" aria-label="분석 관점">'+btn('대표 보기','view','lead',f.view==='lead'?'selected':'')+btn('영업사원 보기','view','rep',rep?'selected':'')+'</div>':'')+'<p class="si-period">'+h(f.year)+'년 '+(f.month?f.month+'월':'연간')+' 접수·계약실적 / 파이프라인·관리필요는 현재 기준'+(s.missingWonDate?' · 수주 확정일 미입력 '+s.missingWonDate+'건 제외':'')+'</p>'+body+'</div>';
+  const dark=page==='dash'||(page==='perf'&&!rep);
+  host.innerHTML='<div class="si-shell'+(dark?' si-dark':'')+'">'+filters()+(page==='perf'?'<div class="si-views" role="group" aria-label="분석 관점">'+btn('대표 보기','view','lead',f.view==='lead'?'selected':'')+btn('영업사원 보기','view','rep',rep?'selected':'')+'</div>':'')+'<p class="si-period">'+h(f.year)+'년 '+(f.month?f.month+'월':'연간')+' 접수·계약실적 / 파이프라인·관리필요는 현재 기준'+(s.missingWonDate?' · 수주 확정일 미입력 '+s.missingWonDate+'건 제외':'')+'</p>'+body+'</div>';
   root.ContractSalesUI?.mount(host.querySelector('.si-shell'),f);host.onclick=onClick;host.onchange=onChange;host.onkeydown=e=>{if(e.target.matches('[data-si-search]')&&e.key==='Enter'){f.search=e.target.value;f.page=1;render()}};
-  // Keep metrics steady instead of replaying zero-to-total animations on refresh.
+  // 진입 애니메이션은 페이지 전환 시 1회만 — 백그라운드 갱신 재렌더에는 재생하지 않는다.
+  const animKey=page+'|'+actor+'|'+(rep?'rep':'lead');
+  if(dark&&lastAnimKey!==animKey)animateConsole(host);
+  lastAnimKey=animKey;
  }
  function onChange(e){const el=e.target,key=el.dataset.siFilter;if(key){const f=state();f[key]=['month','page'].includes(key)?Number(el.value):el.value;f.page=1;if(key==='kind'){f.issue='all';f.stage='all'}if(key==='owner')root.SalesScope.change('owner',el.value);render()}else if(el.matches('[data-si-search]')){state().search=el.value;state().page=1;render()}}
  function onClick(e){const b=e.target.closest('[data-si-action]');if(!b)return;const action=b.dataset.siAction,v=b.dataset.value,f=state();
@@ -203,7 +254,7 @@
   if(action==='page'){f.page=Number(v);render()}
   if(action==='stage'&&root.PipelineWorkspace){const filters={...f,owner:b.closest('#si-person')?.dataset.owner||f.owner};close(false);root.PipelineWorkspace.open(v,filters);return;}
   if(action==='drill'&&v==='contract'){document.querySelector('#si-'+root.G.page+' .contract-sales-panel')?.scrollIntoView({block:'start',behavior:'smooth'});return;}
-  if(root.G.page==='dash'){
+  if(root.G.page==='dash'||root.G.page==='perf'&&f.view==='lead'){
    const s=()=>data();
    if(action==='drill'){const d=s();let list=[],title='';
     if(v==='inquiries'){title='문의 · '+d.inquiries.length+'건';list=d.inquiries.map(evRow)}
