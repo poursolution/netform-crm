@@ -34,3 +34,14 @@ test('identity switch discards in-flight response and clears previous contract d
 test('read version and balance mismatches fail closed',async()=>{
  const root=fixture(async()=>({data:{ok:true,policy:L.POLICY,items:[{...item,balance:1}],has_more:false}}));await root.ContractSalesData.refresh();assert.equal(root.ContractSalesData.summarize({}),null);
 });
+
+test('unchanged background reads do not reset the current screen',async()=>{
+ const root=fixture(async()=>({data:{ok:true,policy:L.POLICY,items:[item],has_more:false}}));
+ let notifications=0;root.dispatchEvent=()=>notifications++;
+ await root.ContractSalesData.refresh();assert.equal(notifications,1);
+ for(let i=0;i<5;i++)await root.ContractSalesData.refresh();
+ assert.equal(notifications,1);
+ root.SB.rpc=async()=>({error:{message:'offline'}});
+ await root.ContractSalesData.refresh();assert.equal(notifications,2);
+ await root.ContractSalesData.refresh();assert.equal(notifications,2);
+});
