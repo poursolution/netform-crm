@@ -148,3 +148,47 @@
 .si-evidence .si-badge{background:#18233c;color:#9db4dd}
 .si-evidence button{background:#18233c;border:1px solid #1f2d4a;color:#e6ecf7}
 .si-evidence button:hover{background:#1c2740;border-color:#5B8DEF;color:#fff}
+/* 성과 분석 다크 판정 보드 */
+.si-dark .dc-grid .c12{grid-column:span 12}
+.si-dark .si-views button{background:#18233c;border:1px solid var(--dcl);color:var(--dcs);min-height:0;padding:6px 14px;font-size:12px;font-weight:700;border-radius:8px}
+.si-dark .si-views button.selected{background:#2a3a5f;border-color:#2a3a5f;color:#fff}
+.si-dark .pf-vgrid{display:grid;grid-template-columns:160px minmax(0,1fr) 280px;gap:20px;align-items:center}
+.pf-gauge{position:relative;flex:none;margin:0 auto}
+.pf-gauge .pf-pct{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.pf-gauge .pf-pct b{font-size:19px;letter-spacing:-.6px;color:#fff}
+.pf-gauge .pf-pct span{font-size:8.5px;color:var(--dcm)}
+.si-dark .pf-sentence{font-size:14px;line-height:1.8;color:#cdd8ec}
+.si-dark .pf-sentence b{color:#fff}
+.si-dark .pf-sentence b.g,.si-dark .pf-why.good{color:var(--dcok)}
+.si-dark .pf-sentence .w,.si-dark .pf-sentence b.w{color:var(--dc3)}
+.si-dark .pf-num b{font-size:26px;letter-spacing:-.9px;display:block;line-height:1.15;color:#fff}
+.si-dark .pf-num span{font-size:10.5px;color:var(--dcs);display:block;margin-top:3px}
+.si-dark .pf-num em{font-style:normal;font-size:11px;color:var(--dcs);display:block;margin-top:9px;padding-top:9px;border-top:1px solid #172440}
+.si-dark .pf-num em b{display:inline;font-size:12px;letter-spacing:0}
+.si-dark button.pf-card{display:grid;grid-template-columns:100px minmax(0,1fr);gap:6px 14px;align-items:center;text-align:left;padding:12px 14px;background:var(--dcp);border:1px solid var(--dcl);color:var(--dci);border-radius:10px;min-height:0}
+.si-dark button.pf-card:hover{background:var(--dcp);border-color:#2c4170}
+.si-dark .pf-who{grid-column:1/-1;display:flex;align-items:center;gap:8px}
+.si-dark .pf-who b{font-size:14px;color:#fff}
+.si-dark .pf-who small{margin-left:auto;font-size:10px;color:var(--dcm)}
+.pf-rank{font-size:9.5px;font-weight:800;color:#fff;background:var(--dc1);border-radius:6px;padding:2px 7px}
+.pf-rank.mid{background:#33415e}.pf-rank.low{background:var(--dc3)}
+.si-dark .pf-facts{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;font-size:10.5px;color:var(--dcs);align-content:center}
+.si-dark .pf-facts i{font-style:normal}
+.si-dark .pf-facts b{color:var(--dci);font-variant-numeric:tabular-nums}
+.si-dark .pf-bad,.si-dark .pf-facts b.pf-bad{color:var(--dcbad)}
+.si-dark .pf-why{grid-column:1/-1;font-size:10.5px;color:var(--dcs);border-top:1px solid #172440;padding-top:8px;line-height:1.6}
+.si-dark .pf-why.bad{color:#f3b8b8}.si-dark .pf-why.warn{color:#e8c890}.si-dark .pf-why.good{color:#9fe8c9}
+@media(max-width:1100px){.si-dark .pf-vgrid{grid-template-columns:1fr}.si-dark .dc-grid .pf-card.c4{grid-column:span 6}}
+@media(max-width:700px){.si-dark .dc-grid .pf-card.c4{grid-column:span 12}}
+/* 다크 콘솔 내 공용 필터바 스킨 */
+.si-dark .sales-filterbar{background:transparent;border:1px solid var(--dcl);margin-top:0}
+.si-dark .sf-label{color:var(--dcm)}
+.si-dark .sales-filterbar button{background:#18233c;border-color:var(--dcl);color:var(--dcs)}
+.si-dark .sales-filterbar button em{background:#0e1729;color:var(--dcm)}
+.si-dark .sales-filterbar button:hover{border-color:var(--dc1)}
+.si-dark .sales-filterbar button[aria-pressed=true]{background:#2a3a5f!important;border-color:#3d5488!important;color:#fff!important}
+.si-dark .sales-filterbar button[aria-pressed=true] em{background:#1a2745;color:#cdd8ec}
+.si-dark .sales-scope,.si-dark .sales-type button{background:transparent;color:var(--dcs)}
+.si-dark .sales-type button{background:#18233c;border:1px solid var(--dcl)}
+.si-dark .sales-type button[aria-pressed=true]{background:#2a3a5f;border-color:#3d5488;color:#fff}
+.si-dark .sales-scope-fields label{color:var(--dcs)}
