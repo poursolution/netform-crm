@@ -3,6 +3,10 @@
  const originalPaint=root.paintInq,originalRows=root.inqCtlRows,originalTab=root.inqCtlSetTab,originalScope=root.inqCtlScope,originalBase=root.inqBase;
  const h=v=>root.esc(String(v==null?'':v)),attr=v=>root.escAttr(String(v==null?'':v));
  let modalKey=null,returnFocus=null,ignoreBrand=false;
+ // Only use the inquiry's own source text; response notes are not customer originals.
+ function originalText(q){const detail=q.detail&&typeof q.detail==='object'?q.detail:{},raw=q.raw&&typeof q.raw==='object'?q.raw:{};return [q.message,typeof q.detail==='string'?q.detail:detail.inquiry,q.content,raw['문의내용']].find(v=>typeof v==='string'&&v.trim())?.trim()||''}
+ root.inquiryOriginalSummary=function(q){const text=originalText(q),detail=q.detail&&typeof q.detail==='object'?q.detail:{};return '<section class="sp-inquiry-original"><h4>고객 문의 원문</h4><p class="inq-original-text">'+h(text||'저장된 문의 원문이 없습니다.')+'</p>'+(detail.note?'<div class="inq-original-note"><b>접수 특이사항</b><p>'+h(detail.note)+'</p></div>':'')+'</section>'};
+
  function brands(){return root.SalesFilterState.state().brands}
  function scoped(fn,args){
   const brand=root.G.brand,rep=root.G.rep,query=root.G.q,selected=brands();root.G.brand='전체';root.G.rep='전체';root.G.q='';
@@ -34,7 +38,7 @@
    const make=(cls,html)=>{const n=document.createElement('span');n.className=cls;n.innerHTML=html;return n};
    const elapsed=make('inq-received','<strong class="'+(late?'inq-work-late':'')+'">'+h(hours==null?'—':hours>=24?'D+'+Math.floor(hours/24):Math.max(0,Math.floor(hours))+'시간')+'</strong><small>'+h(String(root.inquiryCreatedAt(q)||'').slice(5,10).replace('-','/'))+'</small>');if(admin)elapsed.prepend(c[0]);
    const meta=[q.contact_name||q.contact||root.inqCtlContactLabel(q),q.brand,root.inqCtlWorkLabel(q)].filter(v=>v&&v!=='연락처 미입력').join(' · ');
-   const site=make('inq-ctl-site','<button class="inq-site-link" data-k="'+key+'" onclick="event.stopPropagation();inqCtlOpenSingle(this.dataset.k)">'+h(q.site||'현장명 미입력')+'</button><small title="'+attr(meta)+'">'+h(meta)+'</small>');
+   const site=make('inq-ctl-site','<button class="inq-site-link" data-k="'+key+'" onclick="event.stopPropagation();inqCtlOpenSingle(this.dataset.k)">'+h(q.site||'현장명 미입력')+'</button><p class="inq-question-preview">'+h(originalText(q).replace(/\s+/g,' ')||'문의 내용 확인 필요')+'</p><small title="'+attr(meta)+'">'+h(meta)+'</small>');
    const assigned=make('inq-ctl-assignee','<strong>'+h(owner?root.repDisplay(owner):'미배정')+'</strong>'+(owner?'<small>'+root.inqCtlStatusBadge(q)+'</small>':''));
    if(!owner){const evidence=root.inquiryUnassignedMeta(q);assigned.title=[evidence.label,evidence.detail,evidence.attemptLabel].filter(Boolean).join(' · ')}
    const seen=new Set(),activities=[...(q.activities||[]),...(patch.activities||[])].filter(a=>{const k=a.id||[a.at,a.type,a.note,a.result].join('|');if(seen.has(k))return false;seen.add(k);return /전화|통화|문자|SMS|카카오|이메일|메일|방문/i.test(a.type||'')&&Number.isFinite(Date.parse(a.at||a.occurred_at||a.created_at))}).sort((a,b)=>Date.parse(b.at||b.occurred_at||b.created_at)-Date.parse(a.at||a.occurred_at||a.created_at)),latest=activities[0],response=root.inqCtlFirstResponseAt(q);
@@ -99,5 +103,5 @@
   if(!root.G.inqLegacyView)root.G.inqView='console';document.querySelector('#pg-inq .inq-inbox-sticky')?.remove();const result=originalPaint.apply(this,arguments);decorate();if(modalKey)dialog();return result;
  };
  const oldRole=root.inqCtlSetRoleView;root.inqCtlSetRoleView=function(v){close();root.G.inqLegacyView=false;root.G.inqCompactMetric='';return oldRole(v)};
- root.InquiryWorkbench={set,delayed,primaryAction,selectBrand,view,open,close};
+ root.InquiryWorkbench={originalText,set,delayed,primaryAction,selectBrand,view,open,close};
 })(window);
