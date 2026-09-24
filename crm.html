@@ -1999,7 +1999,7 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
       <!-- v4.2: 내가 방금 한 저장이 «서버까지» 갔는지 항상 보이게 (로컬 저장을 성공이라 착각하지 않도록) -->
       <span class="syncbadge ok" id="syncBadge" title="내가 저장한 변경의 서버 반영 상태 — 조회 데이터 상태는 왼쪽에서 확인">🟢 저장 동기화 완료</span>
       <span class="ib" title="오늘 리마인드는 아침 9시 잔디로 자동 발송">🔔<span class="dot"></span></span>
-      <span class="me"><span class="av">관</span><span class="nm2">관리자</span></span>
+      <span class="me" id="roleChip" hidden><span class="av"></span><span class="nm2"></span></span>
       <button class="rf clk" onclick="exportFullDataJSON()" title="관리자 MFA · 기간/사업유형 제한 내보내기" style="width:auto;padding:0 10px;background:#fff;border:1px solid var(--line2);color:var(--blue);font-size:12px;font-weight:900">JSON</button><button class="rf clk" onclick="runDiag()" title="연결 점검 — 데이터가 안 뜰 때 원인 확인" style="background:#fff;border:1px solid var(--line2);color:var(--ink2);margin-right:-4px">🔍</button><button class="rf clk" onclick="loadData()" title="새로고침">↻</button>
     </div>
     <div class="err" id="err"></div>
@@ -2311,6 +2311,9 @@ function authBadge(){
   if(!b)return;
   b.insertAdjacentHTML('beforebegin','<span class="whome" id="meChip"><span class="av">'+esc(ME.name.slice(-2))+'</span>'
     +esc(ME.name)+' <button type="button" class="account-password-trigger" onclick="CRMPassword.open()">비밀번호 변경</button> <span class="out" onclick="authSignOut()">로그아웃</span></span>');
+  /* 우측 역할 칩은 장식이 아니라 서버 권한(profile) 기준으로만 표시한다 (2026-09-24). */
+  var chip=document.getElementById('roleChip');
+  if(chip){var admin=todayIsAdmin();chip.hidden=false;chip.querySelector('.av').textContent=admin?'관':'영';chip.querySelector('.nm2').textContent=admin?'관리자':'영업사원';}
 }
 async function authSignIn(){
   if(!SB){authState('err','설정이 필요합니다','Supabase anon public 키가 아직 입력되지 않았습니다.');return}
