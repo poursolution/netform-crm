@@ -46,7 +46,8 @@
  }
  const oldDetail=root.dccDecorateDetail;if(oldDetail)root.dccDecorateDetail=function(){const r=oldDetail.apply(this,arguments);detail();return r};
  const oldPaint=root.paint;root.paint=function(){const r=oldPaint.apply(this,arguments);const page=root.G.page;
-  if(['dash','control','perf'].includes(page))mount(document.querySelector('#si-'+page+' .si-shell'),filters(root.G.insights||{}));
+  /* 대시보드·컨트롤타워는 콘솔 KPI·근거 팝업이 대신한다 — 상세 원장 패널은 성과 분석에만 (2026-09-24). */
+  if(page==='perf')mount(document.querySelector('#si-perf .si-shell'),filters(root.G.insights||{}));
   if(page==='report'){
    const host=document.getElementById('report-master');
    // Retain operational pipeline/risk sections, but retire their old revenue headline.
