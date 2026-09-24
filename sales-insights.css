@@ -205,3 +205,7 @@
 .si-dark button.ct-bulkbtn:hover{background:#1a459c;border:0}
 .si-dark .ct-clearchip{background:#fef2f2;border-color:#f3cbcb;color:var(--dcbad)}
 @media(max-width:760px){.si-dark .ct-reprow{grid-template-columns:minmax(0,1fr) auto}.si-dark .ct-reprow .ct-tags{grid-column:1/-1}.si-dark .ct-old{display:none}.si-dark .ct-verdict{font-size:12px}}
+/* 컨트롤타워 선택 열: 기본 input 규격(40px·100%) 무력화 */
+.si-dark table.dc-cases th:first-child{width:36px;min-width:36px}
+.si-dark .dc-cases .ct-selcol{width:36px;min-width:36px;text-align:center}
+.si-dark .dc-cases .ct-selcol input,.si-dark #ct-all{width:16px;height:16px;min-width:16px;padding:0;margin:0;accent-color:#1e50b3;vertical-align:middle}
