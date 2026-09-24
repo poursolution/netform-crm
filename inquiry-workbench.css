@@ -107,3 +107,12 @@ body:has(#pg-inq.on.inq-workbench) .mhead>.search{display:none}
 .inq-task-reason{font-size:12px;line-height:1.65;color:#64748b;overflow-wrap:anywhere}
 @media(max-width:1200px) and (min-width:761px){#pg-inq .inq-work-row.inq-ctl-row{grid-template-columns:76px minmax(110px,1fr) minmax(90px,.8fr) minmax(110px,1fr) 55px 76px 106px;gap:6px}}
 @media(max-width:760px){#pg-inq .inq-work-row.inq-ctl-row{grid-template-columns:86px minmax(0,1fr)}#pg-inq .inq-work-row .inq-work-recent{grid-column:2;grid-row:auto}#pg-inq .inq-work-row .inq-task-reason{grid-column:2}#pg-inq .inq-work-row .inq-work-next{grid-column:1;grid-row:auto}}
+
+/* Inquiry inputs belong to one work-management column. */
+.inq-dialog-columns{grid-template-columns:minmax(200px,.8fr) minmax(320px,1.3fr) minmax(340px,1.1fr)}
+.inq-dialog [aria-label="문의 업무 관리"] .spform{margin:12px 0;padding:14px;border:1px solid #dbe4f2;border-radius:10px;background:#f6f8fc}
+.inq-dialog .spform textarea{width:100%;box-sizing:border-box;border:1px solid #dce3ed;border-radius:7px;padding:10px;font:inherit;resize:vertical;line-height:1.6}
+.inq-dialog .spform [hidden]{display:none!important}.inq-dialog .spform .og{min-width:0}.inq-dialog .spform input{max-width:100%;box-sizing:border-box}
+.inq-related{margin-top:22px;border-top:1px solid #e2e8f0;padding-top:16px}.inq-related p,.inq-related small{font-size:12px;line-height:1.6;color:#64748b}.inq-related button{display:block;width:100%;text-align:left;margin:8px 0;padding:10px;border:1px solid #dce4ee;border-radius:8px;background:#fff;cursor:pointer}.inq-related button b,.inq-related button small{display:block;overflow-wrap:anywhere}.inq-related button b{font-size:13px;color:#254568}
+@media(max-width:1000px){.inq-dialog-columns{grid-template-columns:minmax(150px,.7fr) minmax(230px,1fr) minmax(290px,1.1fr)}}
+@media(max-width:760px){.inq-dialog-columns{grid-template-columns:1fr}}
