@@ -2,3 +2,10 @@ node_modules/
 playwright-report/
 test-results/
 artifacts/
+
+.work-*/
+.pnpm-store/
+.baseline-stage-system/
+wide-detail-baseline/
+deploy/
+detail-polish-baseline/
