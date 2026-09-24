@@ -91,26 +91,35 @@
   filters.innerHTML='<label>상태<select name="status" aria-label="문의 상태">'+['전체','미배정','배정완료','응대중','영업전환','스토어 이관','보류'].map(n=>'<option '+(root.G.inqBucket===n?'selected':'')+'>'+h(n)+'</option>').join('')+'</select></label><label>공종<select name="work" aria-label="문의 공종">'+root.workFilterOptions(root.G.workFilter||'전체')+'</select></label><label class="inq-work-search">검색<input name="query" aria-label="문의 검색" value="'+attr(root.G.q||'')+'" placeholder="현장명·문의자·연락처 검색"></label><button>검색</button>';
   filters.onsubmit=e=>{e.preventDefault();root.G.workFilter=filters.elements.work.value;root.G.q=filters.elements.query.value.trim();root.G.inqPage=1;root.G.inqCompactMetric=filters.elements.status.value===root.G.inqBucket?root.G.inqCompactMetric:'all';root.G.inqBucket=filters.elements.status.value;root.INQ_SEL={};root.paint()};filters.querySelectorAll('select').forEach(el=>el.onchange=()=>filters.requestSubmit());const daily=document.createElement('h2');daily.className='inq-daily-title';const remaining=active.filter(q=>task(q).needed).length;daily.textContent=remaining?(admin?'오늘 처리해야 할 문의 ':'내가 오늘 처리할 문의 ')+remaining+'건':'오늘 처리할 견적문의가 없습니다.';sticky.prepend(daily,status);sticky.append(filters,modes);signals.after(sticky);
  }
+ function related(q){
+  const owner=root.inquiryRoutedOwner(q);if(!owner)return {region:'',list:[],unassigned:true};
+  const item={...q,assignee:owner,site:root.standardSiteTitle(q.site,root.detailAddress(q))};
+  const n=root.nearbySites(item),work=root.inqCtlWorkLabel(q);
+  return {...n,list:n.list.map(x=>({...x,sameWork:!!work&&work!=='공종 미분류'&&root.dealWorkSummary(x.d)===work})).sort((a,b)=>Number(b.sameWork)-Number(a.sameWork))};
+ }
+ function nearby(q){const n=related(q);return '<section class="inq-related"><h3>같은 지역 · 공종 현장</h3><p>'+h(n.unassigned?'담당자를 배정하면 해당 담당자의 현장을 확인할 수 있습니다.':!n.region?'지역 정보가 없어 비교할 수 없습니다.':n.region+' · 같은 담당자의 진행 현장 · 공종 일치 우선')+'</p>'+n.list.slice(0,4).map(x=>'<button type="button" data-k="'+attr(root.dealKey(x.d))+'" onclick="InquiryWorkbench.openRelated(this.dataset.k)"><b>'+h(x.d.site)+'</b><small>'+h(root.stageNoLabel(root.dealStage(x.d)))+' · '+h(root.dealWorkSummary(x.d)||'공종 미입력')+(x.sameWork?' · 같은 공종':'')+'</small></button>').join('')+(n.region&&!n.list.length?'<p>같은 지역에 진행 중인 담당 현장이 없습니다.</p>':'')+'<small>지역 표기 기준이며 실제 거리나 단지 규모의 유사도를 뜻하지 않습니다.</small></section>'}
+ function openRelated(key){const q=root.inqCtlFind(modalKey,false);if(!allowed(q)||!related(q).list.some(x=>root.dealKey(x.d)===key))return;close();root.nearbyOpen(key)}
  function allowed(q){return q&&root.inqCtlRoleMatch(q)}
- function open(key,action){const q=root.inqCtlFind(key,false);if(!allowed(q))return;returnFocus=document.activeElement;modalKey=root.inqKey(q);root.G.inqSelKey=modalKey;root.G.inqAct=action||null;root.G.iqForm=action==='process'?'next':null;root.paint();document.querySelector('#inq-inbox-dialog .inq-dialog-close')?.focus()}
+ function open(key,action){action=action==='log'?'process':action;const q=root.inqCtlFind(key,false);if(!allowed(q))return;returnFocus=document.activeElement;modalKey=root.inqKey(q);root.G.inqSelKey=modalKey;root.G.inqAct=action||null;root.G.iqForm=action==='process'?'next':null;root.paint();document.querySelector('#inq-inbox-dialog .inq-dialog-close')?.focus()}
  function close(){modalKey=null;root.G.inqAct=null;root.G.iqForm=null;document.getElementById('inq-inbox-dialog')?.remove();document.body.classList.remove('inq-dialog-open');if(returnFocus?.isConnected)returnFocus.focus();else document.querySelector('.inq-work-counts button')?.focus()}
  function dialog(){
   const q=root.inqCtlFind(modalKey,false);if(root.G.page!=='inq'||!allowed(q)){close();return}
   const previous=document.getElementById('inq-inbox-dialog'),draft={},focused=document.activeElement?.id;const sameAction=previous?.dataset.action===String(root.G.inqAct||'');if(sameAction)previous.querySelectorAll('input[id],select[id],textarea[id]').forEach(e=>draft[e.id]=e.value);
   previous?.remove();const panel=root.$('#sg-panel'),nodes=Array.from(panel.childNodes),phase=root.G.inqPhase;root.G.inqPhase='전체';root.G.inqSelKey=modalKey;try{root.inqSplit([q])}finally{root.G.inqPhase=phase}
   const detail=panel.querySelector('.sp-detail');panel.replaceChildren(...nodes);if(!detail){close();return}
-  const overlay=document.createElement('div');overlay.id='inq-inbox-dialog';overlay.dataset.action=String(root.G.inqAct||'');overlay.className='inq-dialog-overlay';overlay.innerHTML='<section class="inq-dialog" role="dialog" aria-modal="true" aria-labelledby="inq-dialog-title"><header><div><h2 id="inq-dialog-title">'+h(q.site||'견적문의')+'</h2><span>'+h(q.brand||'유입 미지정')+'</span></div><button class="inq-dialog-close" onclick="InquiryWorkbench.close()">✕ 닫기</button></header><div class="inq-dialog-columns"><aside aria-label="문의자와 현장"><h3>문의자 · 현장</h3></aside><main aria-label="문의와 응대"><h3>문의내용 · 응대</h3></main><aside aria-label="문의 업무 관리"><h3>업무 관리</h3></aside></div></section>';
+  const overlay=document.createElement('div');overlay.id='inq-inbox-dialog';overlay.dataset.action=String(root.G.inqAct||'');overlay.className='inq-dialog-overlay';overlay.innerHTML='<section class="inq-dialog" role="dialog" aria-modal="true" aria-labelledby="inq-dialog-title"><header><div><h2 id="inq-dialog-title">'+h(q.site||'견적문의')+'</h2><span>'+h(q.brand||'유입 미지정')+'</span></div><button class="inq-dialog-close" onclick="InquiryWorkbench.close()">✕ 닫기</button></header><div class="inq-dialog-columns"><aside aria-label="문의자와 현장"><h3>문의자 · 현장</h3></aside><main aria-label="문의와 응대"><h3>문의 원문 · 이력</h3></main><aside aria-label="문의 업무 관리"><h3>업무 관리</h3></aside></div></section>';
   const left=overlay.querySelector('aside'),center=overlay.querySelector('main'),right=overlay.querySelectorAll('aside')[1];
   left.insertAdjacentHTML('beforeend','<dl><dt>문의자</dt><dd>'+h(q.contact_name||q.contact||'미입력')+'</dd><dt>연락처</dt><dd>'+h(q.phone||q.mobile||root.inqCtlContactLabel(q))+'</dd><dt>현장</dt><dd>'+h(q.site||'미입력')+'</dd><dt>주소</dt><dd>'+h(root.detailAddress(q))+'</dd><dt>공종</dt><dd>'+h(root.inqCtlWorkLabel(q))+'</dd></dl>');
+  left.insertAdjacentHTML('beforeend',nearby(q));
   if(!root.inquiryAssigned(q)){const evidence=root.inquiryUnassignedMeta(q);left.insertAdjacentHTML('beforeend','<div class="inq-assign-evidence"><strong>배정 이력</strong><p>'+h(evidence.label)+'</p><p>'+h(evidence.detail)+'</p><small>'+h(evidence.attemptLabel)+'</small></div>')}
   const move=(selector,target)=>{const n=detail.querySelector(selector);if(n)target.append(n);return n};
-  move('.sp-inquiry-original',center);move('.sp-why',center);const acts=move('.sp-acts',right);const log=acts?.querySelector('[onclick="inqAct(\'log\')"]');if(log)center.append(log);move('.sp-form',root.G.inqAct==='log'?center:right);move('.sp-grid',right);move('.pl-box',right);
+  move('.sp-inquiry-original',center);move('.sp-why',right);move('.sp-acts',right);move('.sp-form',right);move('.sp-grid',right);move('.pl-box',right);detail.querySelector('.sp-abar')?.remove();move('.spform',right);move('.ck-box',right);
   detail.querySelector('.sp-dh')?.remove();detail.querySelector('.sp-foot')?.remove();detail.querySelector('.sp-jour')?.remove();detail.querySelector('.sp-jl')?.remove();detail.querySelector('.sp-lb')?.remove();
   // Move original nodes and handlers, including conversion and ACK-aware saves.
   Array.from(detail.children).forEach(n=>center.append(n));
   if(root.G.inqAct==='process'){
    const form=overlay.querySelector('.spform');
-   if(form){center.prepend(form);const label=form.querySelector('label');if(label)label.textContent='이번에 한 일 *';const save=form.querySelector('.spbtns button');save.textContent='응대·다음 일정 저장';save.setAttribute('onclick',"InquiryWorkbench.saveProcess()");form.querySelector('.spbtns button:last-child').onclick=()=>open(root.inqKey(q));}
+   if(form){right.querySelector('.sp-acts')?.after(form);overlay.querySelector('.sp-form')?.remove();const did=form.querySelector('#iq-did');if(did){did.value='고객 응대 기록';did.closest('.og').hidden=true;}const result=form.querySelector('#iq-res');if(result){const field=document.createElement('textarea');field.id='iq-res';field.rows=4;field.placeholder='고객과 나눈 내용과 결과를 적어주세요';result.replaceWith(field);field.previousElementSibling.textContent='응대 내용 *';}form.querySelector('#iq-next').previousElementSibling.textContent='다음 할 일 *';form.querySelector('#iq-due').previousElementSibling.textContent='처리 예정일 *';const save=form.querySelector('.spbtns button');save.textContent='응대 저장';save.setAttribute('onclick',"InquiryWorkbench.saveProcess()");form.querySelector('.spbtns button:last-child').onclick=()=>open(root.inqKey(q));}
   }
   if(root.G.inqAct==='decision'){
    right.insertAdjacentHTML('afterbegin','<p>영업 진행을 결정하거나 사유를 남겨 보류하세요. 추가 확인이 필요하면 다음 일정을 등록하세요.</p>');
@@ -121,6 +130,7 @@
   if(sameAction&&focused&&overlay.contains(document.getElementById(focused)))document.getElementById(focused).focus();else if(previous)(overlay.querySelector('.sp-form input,.sp-form select')||overlay.querySelector('.inq-dialog-close')).focus();
   overlay.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close()}if(e.key==='Tab'){const list=Array.from(overlay.querySelectorAll('button,input,select,textarea,a[href]')).filter(n=>!n.disabled&&n.getClientRects().length);if(e.shiftKey&&document.activeElement===list[0]){e.preventDefault();list.at(-1)?.focus()}else if(!e.shiftKey&&document.activeElement===list.at(-1)){e.preventDefault();list[0]?.focus()}}});
  }
+ const oldAction=root.inqAct;root.inqAct=function(action){if(modalKey)return open(modalKey,action);return oldAction.apply(this,arguments)};
  root.inqCtlOpenSingle=key=>open(key);root.inqCtlQuickRecord=key=>open(key,'log');root.inqCtlQuickNext=key=>open(key,'next');
  const originalPromoted=root.openPromotedDeal;root.openPromotedDeal=function(){if(modalKey)close();return originalPromoted.apply(this,arguments)};
  root.paintInq=function(){
@@ -139,5 +149,5 @@
 
  // Refresh only after a write event; preserve the existing filters and draft fields.
  let queuePaint=false;root.addEventListener('phase1:queue',()=>{if(queuePaint)return;queuePaint=true;root.setTimeout(()=>{queuePaint=false;if(root.G?.page==='inq'&&root.B)root.paintInq()},0)});
- root.InquiryWorkbench={saveProcess,originalText,sourceFields,task,matches,compare,run,set,delayed,primaryAction,selectBrand,view,open,close};
+ root.InquiryWorkbench={saveProcess,related,openRelated,originalText,sourceFields,task,matches,compare,run,set,delayed,primaryAction,selectBrand,view,open,close};
 })(window);
