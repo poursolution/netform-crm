@@ -1618,6 +1618,26 @@ html,body{height:100%}
 @media(max-width:680px){.rm-support-count{text-align:left}.rm-support-guide{grid-template-columns:1fr}.rm-support-list{padding:9px}.rm-support-actions button{flex:1}.rm-support-top{flex-direction:column;gap:6px}}
 .inq-store-intro{border-color:#bce5d1;background:#f2fbf7}.inq-store-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.inq-store-check{display:flex;align-items:center;gap:8px;margin-top:10px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px 12px;color:var(--ink2);font-size:12px;font-weight:700}.inq-store-check input{width:16px;height:16px}@media(max-width:640px){.inq-store-grid{grid-template-columns:1fr}}
 @media(max-width:760px){.origin-flow-banner{grid-template-columns:1fr 1fr}.origin-flow-banner .lead{grid-column:1/-1}.origin-flow-banner>div:last-child{grid-column:1/-1}}
+
+/* ══ 상단 밴드 라이트 통일 최종 오버라이드 (2026-09-24 대표 지시 · 지침 #10) ══
+   남아있던 다크 밴드 8계열을 확정 라이트 규격(#fff · #e2e8f1 · #3B6CE4)으로. 원 규칙 수정 대신 후행 오버라이드. */
+.site-command,.inq-ctl-head,.inq-ctl-bulk,.exec-ask-head,.dcc-nba,.rep-flow-head,.rep-flow-drawer-hero,.gn-command,.rm-command,.exp-command,.ctx-message-head{background:#fff;color:#0f172a;border:1px solid #e2e8f1;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.site-command:after,.rm-command:after{display:none}
+.site-command .eyebrow,.inq-ctl-head small,.exec-ask-head small,.dcc-vh .dcc-nba-head span,.rep-flow-head .eyebrow,.gn-command .eyebrow,.rm-command .eyebrow{color:#3B6CE4}
+.site-command h2,.inq-ctl-head h2,.exec-ask-head h2,.dcc-vh .dcc-nba-head h3,.rep-flow-head h3,.rep-flow-drawer-hero h3,.gn-command h2,.rm-command h2,.exp-command h2,.ctx-message-head h2,.ctx-message-head h3{color:#0f172a}
+.site-command p,.site-command-meta,.inq-ctl-head p,.dcc-vh .dcc-nba-head p,.rep-flow-head p,.rep-flow-drawer-hero p,.gn-command p,.rm-command p,.exp-command p,.ctx-message-head p{color:#5b6b85}
+.rep-flow-head>span,.rep-flow-drawer-hero small,.inq-ctl-pulse span{color:#8a97ab}
+.inq-ctl-pulse b{color:#0f172a}.inq-ctl-pulse .danger b{color:#dc2626}
+.site-health-card,.rep-flow-drawer-core div,.gn-command .tag{background:#fbfcfe;border-color:#e2e8f1;color:#33415e}
+.site-health-card:hover,.site-health-card.on{background:#eef3ff;color:#0f172a}
+.site-health-card span{opacity:1;color:#8a97ab}
+.inq-ctl-bulk{background:#fbfcfe}
+.inq-ctl-bulk strong{color:#0f172a}
+.inq-ctl-bulk button{background:#fff;border-color:#e2e8f1;color:#33415e}
+.inq-ctl-bulk button:hover{border-color:#3B6CE4;color:#3B6CE4}
+.exec-ask-input input{background:#fff;border-color:#e2e8f1;color:#0f172a}
+.exec-ask-input button{background:#3B6CE4;color:#fff}
+.dcc-main-action{background:#3B6CE4;border-color:#3B6CE4;color:#fff}
 </style>
 <style>
 /* ══ 로그인 게이트 ══
