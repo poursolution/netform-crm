@@ -133,3 +133,11 @@ body:has(#pg-inq.on.inq-workbench) .mhead>.search{display:none}
 #pg-inq .inq-action :is(button,summary):focus-visible{outline:3px solid #87abf5;outline-offset:2px}
 #pg-inq .inq-work-row:has(.inq-action-menu[open]){position:relative;z-index:41;overflow:visible}
 #pg-inq .inq-work-row:has(.inq-action-menu[open]){content-visibility:visible}#pg-inq .inq-ctl-table:has(.inq-action-menu[open]){overflow:visible}@media(min-width:1201px){#pg-inq .inq-work-row.inq-ctl-row{grid-template-columns:94px minmax(110px,1.25fr) minmax(90px,1fr) minmax(110px,1.2fr) 55px 76px 164px}}
+
+/* E: 문의 상세 '지금 할 일' 카드 (2026-09-24) */
+.inq-now-card{display:flex;align-items:center;gap:12px;margin:12px 18px 0;border:1px solid #c9d9ff;background:#f6f9ff;border-radius:11px;padding:11px 14px}
+.inq-now-card.hot{border-color:#ffd7dc;background:#fff9fa}
+.inq-now-eyebrow{flex:none;font-size:11px;font-weight:900;letter-spacing:.04em;color:#3B6CE4}
+.inq-now-card.hot .inq-now-eyebrow{color:#dc2626}
+.inq-now-card p{flex:1;margin:0;font-size:12.5px;line-height:1.5;color:#33415e}
+.inq-now-card .inq-now{flex:none}
