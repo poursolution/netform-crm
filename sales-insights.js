@@ -29,7 +29,32 @@
   const inquiries=root.operationalInquiries(base.inquiries||[]).filter(q=>admin||root.inquiryRoutedOwner(q)===me||root.inquiryConsultant(q)===me).map(q=>({key:'inq:'+String(q.id||root.inqKey(q)),type:'inq',item:q,site:q.site||'현장명 미입력',owner:root.inquiryRoutedOwner(q)||'미배정',brand:q.brand||'',created:root.inquiryDate(q),stage:'inquiry',stageLabel:q.status||'견적문의',issues:[],reason:root.inquiryRoutedOwner(q)?'문의 내용과 후속처리 확인':'담당자 배정 필요'}));
   return {deals:deals.filter(d=>unscoped||root.SalesScope.matches(d.owner,d.item)&&root.SalesFilterState.matchesBrand(d.brand)),inquiries:inquiries.filter(q=>unscoped||root.SalesScope.matches(q.owner,q.item)&&root.SalesFilterState.matchesBrand(q.brand))};
  }
- function data(owner){const f=Object.assign({},state());if(owner)f.owner=owner;const r=rows();const summary=M.summarize(r.deals,r.inquiries,f);summary.contractSummary=root.ContractSalesData?.summarize(f);return summary}
+ /* 계약실적 취합(2026-09-24 대표 지시): 원장이 준비되면 원장, 아니면 계약·시공 단계 딜에 입력된 계약금액을 체결일 기준으로 취합. '확인 필요' 공백 금지. */
+ function csFallback(f){
+  try{
+   const deals=(root.B&&root.B.deals)||[];if(!deals.length)return null;
+   const inP=iso=>{if(!iso)return false;iso=String(iso);if(String(f.year)!=='전체'&&iso.slice(0,4)!==String(f.year))return false;const m=+iso.slice(5,7);if(Number(f.month))return m===Number(f.month);if(Number(f.quarter))return Math.ceil(m/3)===Number(f.quarter);return true};
+   let amt=0,n=0;
+   deals.forEach(d=>{
+    const r=root.perfStageRank(root.dealStage(d)),won=root.outcomeOf(d)==='won';
+    if(!(won||(r!==null&&r>=10)))return;
+    if(f.owner&&f.owner!=='전체'&&root.repN(d.assignee)!==f.owner)return;
+    if(f.brand&&f.brand!=='전체'&&d.brand!==f.brand)return;
+    const at=d.contract_date||root.wonDate(d)||d.closed||d.updated||d.created;
+    if(!inP(at))return;
+    const v=root.hasWonAmt(d)?Number(root.wonAmt(d)):Number(root.oppAmt(d))||0;
+    amt+=v;n++;
+   });
+   return {netAmount:amt,signedCount:n,count:n,fallback:true};
+  }catch(e){return null}
+ }
+ function csSum(f){
+  const cs=root.ContractSalesData;
+  const ready=!!(cs&&cs.state&&cs.state().status==='ready');
+  const s=ready&&cs.summarize?cs.summarize(f):null;
+  return s||csFallback(f);
+ }
+ function data(owner){const f=Object.assign({},state());if(owner)f.owner=owner;const r=rows();const summary=M.summarize(r.deals,r.inquiries,f);summary.contractSummary=csSum(f);return summary}
  function btn(text,action,value,cls){return '<button type="button" class="'+(cls||'')+'" data-si-action="'+action+'" data-value="'+a(value||'')+'">'+h(text)+'</button>'}
  function options(values,selected){return values.map(v=>'<option value="'+a(v[0])+'"'+(String(v[0])===String(selected)?' selected':'')+'>'+h(v[1])+'</option>').join('')}
  function select(label,key,values,value){return '<label>'+h(label)+'<select data-si-filter="'+key+'" aria-label="'+h(label)+'">'+options(values,value)+'</select></label>'}
@@ -58,10 +83,10 @@
  function risks(s){return card('지금 관리가 필요한 것','<div class="si-risk-links">'+Object.keys(labels).map(k=>btn(labels[k]+' '+number(s.active.filter(d=>d.issues.includes(k)).length)+'건','drill',k)).join('')+'</div>'+btn('전체 확인 →','drill','risk'),'한 영업 건에 여러 사유가 있을 수 있습니다.');}
  function people(s,limit){
   const names=[...new Set(s.deals.map(x=>x.owner).concat(root.ContractSalesData?.state().items.map(x=>x.sales_owner_name)||[]))].filter(n=>root.SalesScope.people().some(p=>p.name===n)).sort(root.repCompare);
-  const r=names.map(name=>({name,s:M.summarize(s.deals,s.inquiries,Object.assign({},state(),{owner:name})),cs:root.ContractSalesData?.summarize(Object.assign({},state(),{owner:name}))}));
+  const r=names.map(name=>({name,s:M.summarize(s.deals,s.inquiries,Object.assign({},state(),{owner:name})),cs:csSum(Object.assign({},state(),{owner:name}))}));
   return card('담당자 현황','<div class="si-table-scroll"><table class="si-table si-people"><thead><tr><th>담당자</th><th>진행</th><th>예상금액</th><th>계약실적</th><th>기한초과</th><th>Next 없음</th></tr></thead><tbody>'+r.slice(0,limit||r.length).map(x=>'<tr><td>'+btn(x.name,'person',x.name)+'</td><td>'+number(x.s.active.length)+'</td><td>'+money(x.s.expected)+'</td><td>'+(x.cs?money(x.cs.netAmount):'확인 필요')+'</td><td>'+number(x.s.active.filter(d=>d.issues.includes('overdue')).length)+'</td><td>'+number(x.s.active.filter(d=>d.issues.includes('missing')).length)+'</td></tr>').join('')+'</tbody></table></div>'+(r.length?'':empty())+btn('성과 분석 전체보기 →','navigate','perf'),'선택한 영업 분석 대상 담당자 기준 · 미배정은 배정상태 필터에서 확인합니다.');
  }
- function trend(s){const f=state(),months=Array.from({length:12},(_,i)=>({month:i+1,s:root.ContractSalesData?.summarize({...f,month:i+1,quarter:0})})).filter(x=>!f.month||x.month===Number(f.month));return card('월별 계약실적',months.map(x=>'<div class="si-bar"><span>'+x.month+'월</span><b>'+(x.s?money(x.s.netAmount):'확인 필요')+'</b></div>').join(''),'계약 체결일 기준 · 변경·취소는 발생일 반영');}
+ function trend(s){const f=state(),months=Array.from({length:12},(_,i)=>({month:i+1,s:csSum({...f,month:i+1,quarter:0})})).filter(x=>!f.month||x.month===Number(f.month));return card('월별 계약실적',months.map(x=>'<div class="si-bar"><span>'+x.month+'월</span><b>'+(x.s?money(x.s.netAmount):'확인 필요')+'</b></div>').join(''),'계약 체결일 기준 · 변경·취소는 발생일 반영');}
  function execution(s){const ready=s.active.filter(d=>!d.issues.includes('missing')).length;return card('실행 관리','<dl class="si-facts"><div><dt>다음 행동·기한 등록</dt><dd>'+ready+' / '+s.active.length+'건</dd></div><div><dt>다음 행동 기한초과</dt><dd>'+s.active.filter(d=>d.issues.includes('overdue')).length+'건</dd></div><div><dt>접촉 기록 없음</dt><dd>'+s.active.filter(d=>d.issues.includes('unknown')).length+'건</dd></div></dl>','현재 등록된 행동과 접촉 기록 기준');}
  function records(list,limit){return '<div class="si-records">'+(list.slice(0,limit||list.length).map(d=>'<div><span><b>'+h(d.site)+'</b><small>'+h(d.reason||d.stageLabel)+'</small></span>'+btn(d.type==='inq'&&d.owner==='미배정'?'배정':'처리','record',d.key)+'</div>').join('')||empty())+'</div>';}
  function recent(s){
@@ -122,7 +147,7 @@
    const deals=s.deals.filter(d=>d.owner===name),act=deals.filter(d=>d.active);
    let weekly=0,last=null;const types={call:0,visit:0,quote:0};
    deals.forEach(d=>{const patch=root.itemPatch(d.item,'deal');[...(d.item.activities||[]),...(patch.activities||[])].forEach(x=>{const at=Date.parse(x.at||x.created_at||x.occurred_at||'');if(!Number.isFinite(at))return;if(at>=week){weekly++;const t=String(x.type||'')+String(x.note||'');if(/방문|미팅|현장/.test(t))types.visit++;else if(/견적|입찰|제안/.test(t))types.quote++;else types.call++}if(!last||at>last.at)last={at,site:d.site}})});
-   const cs=root.ContractSalesData?.summarize({...f,month:0,owner:name}),csM=root.ContractSalesData?.summarize({...f,month:curM,quarter:0,owner:name});
+   const cs=csSum({...f,month:0,owner:name}),csM=csSum({...f,month:curM,quarter:0,owner:name});
    return {name,act,weekly,types,last,ySales:cs?cs.netAmount:null,mSales:csM?csM.netAmount:null,expected:act.reduce((a,d)=>a+(d.expected||0),0),
     overdue:act.filter(d=>d.issues.includes('overdue')).length,missing:act.filter(d=>d.issues.includes('missing')).length,contact:act.filter(d=>d.issues.includes('contact')).length};
   });
@@ -173,24 +198,31 @@
   let li=vals.length-1;while(li>0&&!vals[li])li--;
   const path='M'+pts.slice(0,li+1).map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' L');
   const hits=action?pts.map((p,i)=>'<rect data-si-action="'+action+'" data-value="'+(i+1)+'" x="'+(p[0]-step/2).toFixed(1)+'" y="0" width="'+step.toFixed(1)+'" height="'+H+'" fill="transparent" style="cursor:pointer"><title>'+(i+1)+'월 · '+h(fmt(vals[i]))+'</title></rect>').join(''):'';
-  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'" preserveAspectRatio="none" style="overflow:visible">'+
+  /* 라벨은 HTML 오버레이 — preserveAspectRatio:none 가로 늘림이 SVG 텍스트 글리프를 찌그러뜨리기 때문 */
+  const fx=x=>(x/W*100).toFixed(2)+'%';
+  const lb='position:absolute;transform:translateX(-50%);pointer-events:none;white-space:nowrap;';
+  return '<div style="position:relative">'+
+   '<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'" preserveAspectRatio="none" style="overflow:visible;display:block">'+
    '<line x1="0" y1="'+base+'" x2="'+W+'" y2="'+base+'" stroke="#e8edf4"/><line x1="0" y1="'+((base+top)/2).toFixed(1)+'" x2="'+W+'" y2="'+((base+top)/2).toFixed(1)+'" stroke="#f0f3f8"/>'+
    '<path class="dc-draw" d="'+path+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+
    '<path class="dc-area" d="'+path+' L'+pts[li][0].toFixed(1)+','+base+' L16,'+base+' Z" fill="url(#'+gid+')"/>'+
    '<circle class="dc-dot" cx="'+pts[li][0].toFixed(1)+'" cy="'+pts[li][1].toFixed(1)+'" r="4" fill="'+color+'" stroke="#ffffff" stroke-width="2"/>'+
-   '<text class="dc-dot" x="'+pts[li][0].toFixed(1)+'" y="'+(pts[li][1]-9).toFixed(1)+'" text-anchor="middle" style="font-weight:700;fill:#0f172a">'+h(fmt(vals[li]))+'</text>'+
-   '<text x="16" y="'+(H-8)+'" text-anchor="middle">1월</text><text x="'+(16+5*step).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle">6월</text><text x="'+(16+11*step).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle">12월</text>'+
-   '<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+color+'" stop-opacity=".22"/><stop offset="1" stop-color="'+color+'" stop-opacity="0"/></linearGradient></defs>'+hits+'</svg>';
+   '<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+color+'" stop-opacity=".22"/><stop offset="1" stop-color="'+color+'" stop-opacity="0"/></linearGradient></defs>'+hits+'</svg>'+
+   '<span style="'+lb+'left:'+fx(pts[li][0])+';top:'+Math.max(0,pts[li][1]-24).toFixed(0)+'px;font-size:12px;font-weight:800;color:#0f172a">'+h(fmt(vals[li]))+'</span>'+
+   '<span style="'+lb+'left:'+fx(16)+';bottom:2px;font-size:11px;color:#8a97ab">1월</span>'+
+   '<span style="'+lb+'left:'+fx(16+5*step)+';bottom:2px;font-size:11px;color:#8a97ab">6월</span>'+
+   '<span style="'+lb+'left:'+fx(16+11*step)+';bottom:2px;font-size:11px;color:#8a97ab">12월</span>'+
+   '</div>';
  }
  function dashConsole(s){
-  const f=state(),curM=new Date().getMonth()+1,csY=root.ContractSalesData?.summarize({...f,month:0}),csM=root.ContractSalesData?.summarize({...f,month:curM,quarter:0});
-  const mVals=Array.from({length:12},(_,i)=>{const x=root.ContractSalesData?.summarize({...f,month:i+1,quarter:0});return x?Math.max(0,x.netAmount):0});
+  const f=state(),curM=new Date().getMonth()+1,csY=csSum({...f,month:0}),csM=csSum({...f,month:curM,quarter:0});
+  const mVals=Array.from({length:12},(_,i)=>{const x=csSum({...f,month:i+1,quarter:0});return x?Math.max(0,x.netAmount):0});
   const inqVals=Array.from({length:12},()=>0);
   rows().inquiries.forEach(q=>{const d=M.date(q.created);if(d&&(f.year==='전체'||d.slice(0,4)===String(f.year)))inqVals[Number(d.slice(5,7))-1]++});
   const rs=repStats(s);lastDiags=diagnose(rs);
   const feed=feedRows(s,10),weekTotal=rs.reduce((a,x)=>a+x.weekly,0);
   const brands=[...new Set((root.ContractSalesData?.state().items||[]).map(r=>r.brand).filter(Boolean))];
-  const bStats=brands.map(b=>{const x=root.ContractSalesData?.summarize({...f,brand:b});return {b,amt:x?Math.max(0,x.netAmount):0}}).sort((a,b)=>b.amt-a.amt).slice(0,4);
+  const bStats=brands.map(b=>{const x=csSum({...f,brand:b});return {b,amt:x?Math.max(0,x.netAmount):0}}).sort((a,b)=>b.amt-a.amt).slice(0,4);
   const bTotal=Math.max(1,bStats.reduce((a,x)=>a+x.amt,0)),dColors=['#3B6CE4','#0E9F8A','#E08A00','#7A5AF8'];
   let off=0;const donut=bStats.map((x,i)=>{const len=x.amt/bTotal*239,seg='<circle data-si-action="brand-ev" data-value="'+a(x.b)+'" style="cursor:pointer" cx="50" cy="50" r="38" fill="none" stroke="'+dColors[i]+'" stroke-width="14" stroke-dasharray="'+Math.max(0,len-2).toFixed(1)+' 240" stroke-dashoffset="'+(-off).toFixed(1)+'"><title>'+h(x.b)+' '+money(x.amt)+'</title></circle>';off+=len;return seg}).join('');
   const stAll=root.PipelineWorkspace&&root.PipelineStages?root.PipelineWorkspace.rows({brand:f.brand,owner:f.owner}):[];
@@ -227,17 +259,17 @@
  const PERF_HIDE=new Set(['전용성','조성용']);
  function perfConsole(s){
   const f=state(),now=new Date(),curM=now.getMonth()+1;
-  const csY=root.ContractSalesData?.summarize({...f,month:0}),csM=root.ContractSalesData?.summarize({...f,month:curM,quarter:0});
+  const csY=csSum({...f,month:0}),csM=csSum({...f,month:curM,quarter:0});
   const elapsed=String(f.year)===String(now.getFullYear())?now.getMonth()+1:12;
   const m0=x=>x===null||x===undefined?'확인 필요':money(x);
   const paceOf=(y,m)=>{if(y==null||m==null)return null;const avg=elapsed>1?(y-m)/(elapsed-1):y;if(!(avg>0))return m>0?150:null;return Math.round(m/avg*100)};
   const rs=repStats(s).filter(x=>!PERF_HIDE.has(x.name)).map(x=>{
-   const cs=root.ContractSalesData?.summarize({...f,month:0,owner:x.name});
+   const cs=csSum({...f,month:0,owner:x.name});
    const csCount=cs?cs.count:null,conv=csCount!=null&&(csCount+x.act.length)>0?Math.round(csCount/(csCount+x.act.length)*100):null;
    return {...x,csCount,conv,pace:paceOf(x.ySales,x.mSales)};
   }).sort((a,b)=>(b.ySales||0)-(a.ySales||0));
   lastDiags=diagnose(rs);
-  const mVals=Array.from({length:12},(_,i)=>{const x=root.ContractSalesData?.summarize({...f,month:i+1,quarter:0});return x?Math.max(0,x.netAmount):0});
+  const mVals=Array.from({length:12},(_,i)=>{const x=csSum({...f,month:i+1,quarter:0});return x?Math.max(0,x.netAmount):0});
   const avgAll=csY&&csM&&elapsed>1?(csY.netAmount-csM.netAmount)/(elapsed-1):null;
   const paceAll=paceOf(csY?csY.netAmount:null,csM?csM.netAmount:null);
   const cover=avgAll&&avgAll>0?(s.expected/avgAll).toFixed(1):null;
