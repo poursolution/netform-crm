@@ -22,11 +22,11 @@
   const bucket=root.inqCtlBucket(q),next=root.actionObj(q,root.itemPatch(q,'inq'))||{},days=next.due?root.daysTo(next.due):null,dated=Number.isFinite(days),overdue=dated&&days<0;
   const age=at=>{const hrs=root.todayHoursFrom(at);return hrs==null?'시각 미기록':hrs>=24?Math.floor(hrs/24)+'일 경과':Math.max(0,Math.floor(hrs))+'시간 경과'};
   const due=dated?(overdue?Math.abs(days)+'일 초과':days===0?'오늘':'D-'+days):'기한 미등록';
-  let t={kind:'followup',rank:2,needed:!next.text||!dated||days<=0,text:next.text||'다음 행동 등록',reason:!next.text?'응대 후 다음 행동이 없습니다':!dated?'다음 행동의 날짜가 없습니다':overdue?'약속한 후속기한이 지났습니다':days===0?'오늘 후속 확인 예정입니다':'예정일까지 대기합니다',due,overdue,action:next.text&&dated?'process':'next',label:next.text&&dated?'처리하기':'등록하기',date:next.due||root.inquiryCreatedAt(q)||''};
+  let t={kind:'followup',rank:2,needed:!next.text||!dated||days<=0,text:next.text||'다음 행동 등록',reason:!next.text?'응대 후 다음 행동이 없습니다':!dated?'다음 행동의 날짜가 없습니다':overdue?'약속한 후속기한이 지났습니다':days===0?'오늘 후속 확인 예정입니다':'예정일까지 대기합니다',due,overdue,action:next.text&&dated?'process':'next',label:next.text&&dated?'후속 기록':'다음 할 일',date:next.due||root.inquiryCreatedAt(q)||''};
   if(['영업전환','스토어 이관','보류','휴지통'].includes(bucket)||(root.CLOSED_INPUT_ST||[]).includes(q.status))t={...t,kind:'closed',rank:4,needed:false,text:bucket==='영업전환'?'전환된 영업건에서 진행합니다':'이력 확인',reason:bucket==='응대중'?q.status:bucket,due:'—',overdue:false,action:'view',label:'확인'};
   else if(!root.inquiryAssigned(q))t={...t,kind:'unassigned',rank:0,needed:true,text:'담당자 배정',reason:'담당자 없음 · 접수 '+age(root.inquiryCreatedAt(q)),due:'배정 필요',overdue:false,action:'assign',label:root.inqCtlRoleView()==='admin'?'배정하기':'확인'};
-  else if(!root.inqCtlFirstResponseAt(q))t={...t,kind:'waiting',rank:1,needed:true,text:'고객 첫 연락',reason:'첫 응대 기록 없음 · '+(q.assigned_at?'배정 '+age(q.assigned_at):'배정 시각 미기록'),due:root.inquiryResponseLate(q)?'응대 지연':'첫 응대',overdue:root.inquiryResponseLate(q),action:'process',label:'응대하기'};
-  else if(root.isAwaitingPromotion&&root.isAwaitingPromotion(q))t={...t,kind:'decision',rank:3,text:'영업전환 판단',reason:'견적 진행 기록 있음 · 영업전환 미완료',action:'decision',label:'판단하기'};
+  else if(!root.inqCtlFirstResponseAt(q))t={...t,kind:'waiting',rank:1,needed:true,text:'고객 첫 연락',reason:'첫 응대 기록 없음 · '+(q.assigned_at?'배정 '+age(q.assigned_at):'배정 시각 미기록'),due:root.inquiryResponseLate(q)?'응대 지연':'첫 응대',overdue:root.inquiryResponseLate(q),action:'process',label:'응대 기록'};
+  else if(root.isAwaitingPromotion&&root.isAwaitingPromotion(q))t={...t,kind:'decision',rank:3,text:'영업전환 판단',reason:'견적 진행 기록 있음 · 영업전환 미완료',action:'decision',label:'전환 판단'};
   // Optimistic local changes must not produce a false daily zero before server ACK.
   const pending=root.Phase1?.queue?.list?.().find(x=>String(x.object_id)===String(q.id||root.inqKey(q))&&['inquiry_assign','inquiry_status','next_action','next_action_complete','opportunity_create','transition'].includes(x.operation)&&['pending','sending','uncertain','conflict','rejected'].includes(x.status));
   if(pending)t={...t,kind:t.kind==='closed'?'decision':t.kind,needed:true,reason:['conflict','rejected'].includes(pending.status)?'저장 실패 · 동기화 상태를 확인하세요':'서버 저장 결과를 확인하고 있습니다',action:'view',label:'확인',due:'저장 확인'};
@@ -45,7 +45,7 @@
  function storeOnly(q){return (root.INQ_STORE_STATUSES||[]).includes(String(q&&q.status||''))}
  function primaryAction(q){const key=attr(root.inqKey(q));
   if(storeOnly(q))return '<button class="inq-now inq-view" data-k="'+key+'" onclick="inqCtlOpenSingle(this.dataset.k)">확인</button>';
-  return '<button class="inq-now" data-k="'+key+'" onclick="InquiryWorkbench.run(this.dataset.k)">'+h(task(q).label)+'</button><button class="inq-more" data-k="'+key+'" onclick="inqCtlOpenMenu(this.dataset.k)" aria-label="'+attr((q.site||'문의')+' 기타 처리')+'">⋯</button>'}
+  return '<button class="inq-now" data-k="'+key+'" onclick="InquiryWorkbench.run(this.dataset.k)">'+h(task(q).label)+'</button><details class="inq-action-menu"><summary aria-label="'+attr((q.site||'문의')+' 더보기')+'">더보기</summary><span class="inq-action-options"><button type="button" data-k="'+key+'" onclick="this.closest(' + "\'details\'" + ').open=false;inqCtlOpenMenu(this.dataset.k)">기타 처리</button></span></details>'}
 
  function compactRows(){
   document.querySelectorAll('#sg-panel .inq-ctl-row').forEach(row=>{
@@ -65,7 +65,7 @@
    const latestNote=latest?[latest.note,latest.result].filter(Boolean).join(' · '):response?'첫 응대 기록 있음':'';
    const recent=make('inq-work-recent','<strong class="inq-task-title">'+h(decision.text)+'</strong>'+(latestNote?'<small title="'+attr(latestNote)+'">최근 · '+h(latestNote)+'</small>':'')+(decision.kind==='followup'&&decision.needed&&next.text?'<button class="inq-next-link" data-k="'+key+'" onclick="event.stopPropagation();inqCtlQuickNext(this.dataset.k)">일정 변경</button>':''));
    const todo=make('inq-work-next','<span class="inq-due-chip '+(late||decision.due==='응대 지연'?'hot':decision.needed?'warn':'ok')+'">'+h(decision.due)+'</span>');
-   const actions=make('inq-action',primaryAction(q));actions.onclick=e=>e.stopPropagation();row.replaceChildren(elapsed,site,make('inq-task-reason',h(decision.reason)),recent,assigned,todo,actions);Array.from(row.children).forEach((cell,i)=>cell.dataset.label=labels[i]);
+   const actions=make('inq-action',primaryAction(q));actions.onclick=e=>e.stopPropagation();actions.onkeydown=e=>{if(e.key==='Escape'){const menu=actions.querySelector('details');if(menu){menu.open=false;menu.querySelector('summary').focus()}}};actions.onfocusout=e=>{if(!actions.contains(e.relatedTarget)){const menu=actions.querySelector('details');if(menu)menu.open=false}};row.replaceChildren(elapsed,site,make('inq-task-reason',h(decision.reason)),recent,assigned,todo,actions);Array.from(row.children).forEach((cell,i)=>cell.dataset.label=labels[i]);
   });
  }
  function view(value){root.G.inqLegacyView=value!=='console';root.inqCtlSetView(value)}
