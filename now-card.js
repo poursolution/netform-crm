@@ -124,6 +124,14 @@
    busy=false;setTimeout(()=>{el.close();root.renderDetail?.();root.TodayWorkQueue?.render?.();},700);
   }catch(e){busy=false;el.querySelectorAll('button,input').forEach(n=>{n.disabled=false});status.textContent=String(e.message||e);}
  }
+ let jIO=null;
+ function journeyWatch(){
+  try{
+   if(!('IntersectionObserver' in window))return void document.querySelectorAll('.dcc-journey').forEach(x=>x.classList.add('dcc-animate'));
+   if(!jIO)jIO=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('dcc-animate');jIO.unobserve(e.target)}}),{threshold:.35});
+   document.querySelectorAll('.dcc-journey:not(.dcc-animate)').forEach(x=>jIO.observe(x));
+  }catch(e){}
+ }
  function inject(){
   try{
    if(root.CUR_DETAIL?.kind!=='deal')return;
@@ -134,6 +142,7 @@
    body.insertAdjacentHTML('afterbegin',html);
    /* 상단 지금 할 일 카드와 중앙 «지금 해야 할 일» 카드가 같은 내용 이중 표기 — 중앙 카드는 접는다 (2026-09-24 캡처 지적) */
    const dup=document.getElementById('dw-now');if(dup)dup.hidden=true;
+   journeyWatch();
   }catch(e){}
  }
  const oldDetail=root.dccDecorateDetail;
