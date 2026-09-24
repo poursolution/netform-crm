@@ -2,7 +2,7 @@
 'use strict';
 let state=null,tip=null,timer=null;
 const $=id=>document.getElementById(id);
-const descriptions={activity:'전화·방문·문자 등 고객 접촉 내용과 다음 행동을 기록합니다.',next:'다음에 해야 할 업무와 기한을 설정합니다.',stage:'현재 영업단계를 변경하고 후속 일정을 설정합니다.',owner:'담당자 변경',amount:'예상금액 입력·수정',materials:'견적서·사진·관련 자료를 등록합니다.',history:'단계·담당자·정보 변경 내역 확인',work:'공종 선택·수정',help:'영업 관리 기준 확인'};
+const descriptions={activity:'전화·방문·문자 등 고객 접촉 내용과 다음 할 일을 기록합니다.',next:'다음에 해야 할 업무와 기한을 설정합니다.',stage:'현재 영업단계를 변경하고 후속 일정을 설정합니다.',owner:'담당자 변경',amount:'예상금액 입력·수정',materials:'견적서·사진·관련 자료를 등록합니다.',history:'단계·담당자·정보 변경 내역 확인',work:'공종 선택·수정',help:'영업 관리 기준 확인'};
 function button(text,key,fn){const b=document.createElement('button');b.type='button';b.className='dact da-action';b.textContent=text;b.dataset.help=descriptions[key]||text;b.onclick=fn||(()=>open(key));return b;}
 function hideTip(){clearTimeout(timer);tip?.remove();tip=null;document.querySelectorAll('[aria-describedby="da-tooltip"]').forEach(n=>n.removeAttribute('aria-describedby'));}
 function tooltip(target,delay){hideTip();timer=setTimeout(()=>{if(!target.isConnected)return;tip=document.createElement('div');tip.id='da-tooltip';tip.role='tooltip';tip.textContent=target.dataset.help;document.body.append(tip);target.setAttribute('aria-describedby',tip.id);const r=target.getBoundingClientRect(),t=tip.getBoundingClientRect();tip.style.left=Math.max(8,Math.min(innerWidth-t.width-8,r.left))+'px';tip.style.top=(r.bottom+t.height+16<innerHeight?r.bottom+8:Math.max(8,r.top-t.height-8))+'px';},delay);}
@@ -15,12 +15,12 @@ function take(n,host){if(!n||!state)return;const mark=document.createComment('de
 function open(key){
  const view=$('detailView');if(!view?.classList.contains('dw-wide'))return false;
  close(false);hideTip();
- const titles={activity:'활동 기록 · 다음 행동',next:'다음 행동 설정',stage:'단계 변경',owner:'담당자 변경',amount:'예상금액 수정',materials:'자료 보기 · 추가',management:'관리정보 수정',contact:'연락처 수정',history:'전체 이력',help:'관리 기준'};
+ const titles={activity:'연락 결과 · 다음 할 일',next:'다음 할 일 설정',stage:'진행상태 변경',owner:'담당자 변경',amount:'예상금액 수정',materials:'자료 보기 · 추가',management:'관리정보 수정',contact:'연락처 수정',history:'전체 이력',help:'관리 기준'};
  const panel=document.createElement('div');panel.id='detailAction';panel.className='da-layer '+(['activity','stage','materials','history'].includes(key)?'da-drawer':'da-compact');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-labelledby','da-title');
  const sheet=document.createElement('section');sheet.className='da-sheet';const head=document.createElement('header');const title=document.createElement('h2');title.id='da-title';title.textContent=titles[key];const x=button('닫기',key,()=>{if(key==='stage')root.StageTransitionUI?.close();else close()});x.removeAttribute('data-help');x.setAttribute('aria-label','작업창 닫기');head.append(title,x);const content=document.createElement('div');content.className='da-content';sheet.append(head,content);panel.append(sheet);
  state={key,panel,moves:[],focus:document.activeElement,background:Array.from(view.children)};view.append(panel);state.background.forEach(n=>n.inert=true);
  const next=$('nextActionCard'),activity=$('activityFormCard'),atomic=$('rel-contact-save');
- if(key==='activity'){take(activity,content);take(next,content);if(atomic){const actions=atomic.closest('.dactions');actions.before(next);const save=next?.querySelector('.dactions .pri');if(save)save.style.display='none';}else{const save=activity?.querySelector('.dactions .pri');if(save){save.classList.add('da-submit');save.textContent='활동·다음 행동 저장';save.onclick=saveCombined;take(save.closest('.dactions'),content);}const nextSave=next?.querySelector('.dactions .pri');if(nextSave)nextSave.style.display='none';}}
+ if(key==='activity'){take(activity,content);take(next,content);if(atomic){const actions=atomic.closest('.dactions');actions.before(next);const save=next?.querySelector('.dactions .pri');if(save)save.style.display='none';}else{const save=activity?.querySelector('.dactions .pri');if(save){save.classList.add('da-submit');save.textContent='활동·다음 할 일 저장';save.onclick=saveCombined;take(save.closest('.dactions'),content);}const nextSave=next?.querySelector('.dactions .pri');if(nextSave)nextSave.style.display='none';}}
  if(key==='next'){take(next,content);const save=next?.querySelector('.dactions .pri');if(save)save.style.display='';}
  if(key==='amount')take($('dw-amount'),content);
  if(key==='owner')take($('dv-assignee')?.closest('.dcard'),content);
@@ -29,7 +29,7 @@ function open(key){
  if(key==='management')take($('da-management-fields'),content);
  if(key==='contact')take($('da-contact-fields'),content);
  if(key==='stage')take($('dw-stage-editor'),content);
- if(key==='help')content.textContent='활동 기록은 고객과의 접촉 내용입니다. 단계 변경은 별도 전환창에서 확인합니다. 담당자·최근 활동·다음 행동일을 함께 관리하고, 저장 후 서버 반영 결과를 확인해 주세요.';
+ if(key==='help')content.textContent='연락 결과는 고객과의 접촉 내용입니다. 진행상태 변경은 별도 전환창에서 확인합니다. 담당자·최근 활동·다음 할 일 날짜을 함께 관리하고, 저장 후 서버 반영 결과를 확인해 주세요.';
  take($('dv-err'),content);
  const cancel=button('취소',key,()=>{if(key==='stage')root.StageTransitionUI?.close();else close()});cancel.removeAttribute('data-help');content.append(cancel);
  panel.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();if(key==='stage')root.StageTransitionUI?.close();else close();return}if(e.key==='Tab'){const nodes=[...panel.querySelectorAll('button,input,textarea,select,a[href],[tabindex="0"]')].filter(n=>!n.disabled&&n.getClientRects().length);const first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}}},true);
@@ -41,7 +41,7 @@ async function saveCombined(){
  const get=id=>$(id)?.value?.trim()||'';
  const activity={type:get('dv-act-type'),note:get('dv-act-note'),result:get('dv-act-result'),occurred_at:get('dv-act-at')};
  const next={type:root.NextActionPicker.read('dv-na-type'),text:get('dv-na-text'),due_at:get('dv-na-date'),assignee:get('dv-na-assignee')};
- if(!activity.type||!activity.note||!activity.occurred_at||!next.type||!next.text||!next.due_at||!next.assignee){root.showDetailErr('활동 내용·일시와 다음 행동·기한·담당자를 모두 입력해 주세요.');return;}
+ if(!activity.type||!activity.note||!activity.occurred_at||!next.type||!next.text||!next.due_at||!next.assignee){root.showDetailErr('활동 내용·일시와 다음 할 일·기한·담당자를 모두 입력해 주세요.');return;}
  if(!root.PeopleEligibility.allowed(root.SALES_PEOPLE_MASTER,'sales_action',d,next.assignee)){root.showDetailErr('이 업무를 맡을 수 있는 영업담당자를 선택해 주세요.');return;}
  const date=new Date(activity.occurred_at);if(!Number.isFinite(date.getTime())){root.showDetailErr('활동 일시를 확인해 주세요.');return;}
  activity.occurred_at=date.toISOString();form.dataset.saving='true';
@@ -56,21 +56,21 @@ async function saveCombined(){
   return row;
  }
  try{
-  root.showDetailErr('활동 기록 저장 확인 중…',true);const recorded=await confirm('activity',activity);
+  root.showDetailErr('연락 결과 저장 확인 중…',true);const recorded=await confirm('activity',activity);
   const a=recorded.payload||activity;d.activities=Array.isArray(d.activities)?d.activities:[];if(!d.activities.some(x=>x.id===recorded.ack.activity_id))d.activities.unshift({id:recorded.ack.activity_id,type:a.type,note:a.note,result:a.result,at:a.occurred_at,occurred_at:a.occurred_at});
   if(root.CUR_DETAIL?.item!==d)return;
-  root.showDetailErr('활동 저장 확인 완료 · 다음 행동 저장 확인 중…',true);const scheduled=await confirm('next_action',next);
+  root.showDetailErr('활동 저장 확인 완료 · 다음 할 일 저장 확인 중…',true);const scheduled=await confirm('next_action',next);
   if(root.CUR_DETAIL?.item!==d)return;
   const n=scheduled.payload||next,p=root.currentPatch(),obj={id:scheduled.ack.next_action_id,type:n.type,text:n.text,due:n.due_at,due_at:n.due_at,assignee:n.assignee,status:'open'};d.nextActionObj=p.nextActionObj=obj;d.nextAction=p.nextAction=n.due_at;d.nextActionText=p.nextActionText=n.text;root.saveLocal();
-  close(false);root.renderDetail();root.showDetailErr('활동과 다음 행동의 서버 저장을 확인했습니다.',true);
- }catch(e){root.showDetailErr((progress.activity&&root.Phase1.queue.list().find(q=>q.request_id===progress.activity)?.status==='done'?'활동은 저장되었습니다. 다음 행동은 아직 확인되지 않았습니다. ':'저장 완료를 확인하지 못했습니다. ')+String(e.message||e));}
+  close(false);root.renderDetail();root.showDetailErr('활동과 다음 할 일의 서버 저장을 확인했습니다.',true);
+ }catch(e){root.showDetailErr((progress.activity&&root.Phase1.queue.list().find(q=>q.request_id===progress.activity)?.status==='done'?'활동은 저장되었습니다. 다음 할 일은 아직 확인되지 않았습니다. ':'저장 완료를 확인하지 못했습니다. ')+String(e.message||e));}
  finally{delete form.dataset.saving;if(submit?.isConnected)submit.disabled=false;}
 }
 function flatTimeline(all=false){
  const d=root.CUR_DETAIL?.item;if(!d)return '';
  const rows=root.unifiedTimeline(root.currentPatch(),d),shown=all?rows:rows.slice(0,6);
- const names={next_action_set:'다음 행동 등록',next_action_completed:'다음 행동 완료',next_action_complete:'다음 행동 완료',stage_change:'단계 변경',stage_changed:'단계 변경',owner_changed:'담당자 변경',activity_created:'활동 기록','단계전환':'단계 변경','단계 전환':'단계 변경'};
- return shown.length?'<ol class="da-events">'+shown.map(x=>'<li><div class="da-event-meta"><time>'+root.esc(root.dateTimeLabel(x.at))+'</time><span>'+root.esc(x.who||'담당자 미기록')+'</span></div><strong>'+root.esc(names[x.ttl]||(/^[a-z]+(?:_[a-z]+)+$/.test(x.ttl)?'업무 기록':x.ttl||'활동 기록'))+'</strong>'+[x.body,x.result,...(x.fields||[]).map(f=>f.join(' · '))].filter(Boolean).map(t=>'<p>'+root.esc(t)+'</p>').join('')+(!x.body&&!x.result&&!x.fields?.length?'<p>상세 내용은 확인되지 않았습니다.</p>':'')+'</li>').join('')+'</ol>':'<p class="da-hint">아직 활동 기록이 없습니다.</p>';
+ const names={next_action_set:'다음 할 일 등록',next_action_completed:'다음 할 일 완료',next_action_complete:'다음 할 일 완료',stage_change:'진행상태 변경',stage_changed:'진행상태 변경',owner_changed:'담당자 변경',activity_created:'연락 결과','단계전환':'진행상태 변경','단계 전환':'진행상태 변경'};
+ return shown.length?'<ol class="da-events">'+shown.map(x=>'<li><div class="da-event-meta"><time>'+root.esc(root.dateTimeLabel(x.at))+'</time><span>'+root.esc(x.who||'담당자 미기록')+'</span></div><strong>'+root.esc(names[x.ttl]||(/^[a-z]+(?:_[a-z]+)+$/.test(x.ttl)?'업무 기록':x.ttl||'연락 결과'))+'</strong>'+[x.body,x.result,...(x.fields||[]).map(f=>f.join(' · '))].filter(Boolean).map(t=>'<p>'+root.esc(t)+'</p>').join('')+(!x.body&&!x.result&&!x.fields?.length?'<p>상세 내용은 확인되지 않았습니다.</p>':'')+'</li>').join('')+'</ol>':'<p class="da-hint">아직 연락 결과가 없습니다.</p>';
 }
 function refreshRecent(){const host=$('activityTimelineHost');if(host&&$('detailView')?.classList.contains('da-ready')){host.innerHTML=flatTimeline();const intro=host.closest('.dcard')?.querySelector('.detailsecthead p');if(intro)intro.textContent='최근 활동 6건을 바로 확인합니다. 이전 기록은 전체 이력에서 확인하세요.';}}
 function flatten(scope){
@@ -106,7 +106,7 @@ function decorate(){
  if(state&&!body.contains(state.moves[0]?.[1])){if(state.key==='activity'&&!state.panel.querySelector('#rel-contact-save'))nextDraft=[...state.panel.querySelectorAll('#nextActionCard input[id],#nextActionCard select[id],#nextActionCard textarea[id]')].map(n=>[n.id,n.value]);close(false);}
  if(body.querySelector('.da-stash'))return;
  view.querySelector('.da-toolbar')?.remove();view.classList.add('da-ready');
- const toolbar=document.createElement('nav');toolbar.className='da-toolbar';toolbar.setAttribute('aria-label','빠른 작업');[['활동 기록','activity'],['다음 행동','next'],['단계 변경','stage'],['담당자 변경','owner'],['자료 추가','materials'],['ⓘ 관리 기준','help']].forEach(([text,key])=>toolbar.append(button(text,key,key==='stage'?()=>root.openTransition():null)));body.before(toolbar);
+ const toolbar=document.createElement('nav');toolbar.className='da-toolbar';toolbar.setAttribute('aria-label','빠른 작업');[['연락 결과','activity'],['다음 할 일','next'],['진행상태 변경','stage'],['담당자 변경','owner'],['자료 추가','materials'],['ⓘ 관리 기준','help']].forEach(([text,key])=>toolbar.append(button(text,key,key==='stage'?()=>root.openTransition():null)));body.before(toolbar);
  // Keep one set of original inputs and their handlers, outside the viewing surface.
  const stash=document.createElement('div');stash.className='da-stash';stash.hidden=true;const selectors=['#activityFormCard','#nextActionCard','#dw-amount'];const atomic=$('rel-contact-save')?.closest('.dactions');selectors.forEach(s=>{const n=body.querySelector(s);if(n)stash.append(n)});if(atomic&&!stash.contains(atomic))stash.append(atomic);const owner=$('dv-assignee')?.closest('.dcard');if(owner)stash.append(owner);body.append(stash);
  body.querySelectorAll('.dw-fold').forEach(n=>{if(!n.querySelector('.dcard,.dsec,#execFiles,#execQuotePanel'))n.remove()});

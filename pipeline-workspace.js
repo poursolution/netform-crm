@@ -54,7 +54,7 @@ function kpiStrip(all){
 }
 function kanbanCard(r){
  const b=cardBadge(r);
- const foot=r.group==='lost'?(r.reason||'사유 미기록'):r.group==='won'?(r.item.completion_date?'준공 '+String(r.item.completion_date).slice(0,10):'수주 확정'):(r.next?.text||'다음 행동 없음');
+ const foot=r.group==='lost'?(r.reason||'사유 미기록'):r.group==='won'?(r.item.completion_date?'준공 '+String(r.item.completion_date).slice(0,10):'수주 확정'):(r.next?.text||'다음 할 일 없음');
  const none=!['won','lost'].includes(r.group)&&!r.next?.text;
  // 카드 전체가 클릭 대상 — 누르면 해당 영업의 상세 화면이 열린다.
  return '<button type="button" class="ps-kcard '+(b[0]==='hot'?'stall':b[0]==='warn'?'warn':'')+'" data-ps-action="record" data-value="'+attr(r.key)+'"><span class="ps-kr1"><b class="ps-ksite">'+h(r.site)+'</b><span class="ps-kbadge '+b[0]+'">'+h(b[1])+'</span></span><span class="ps-kr2"><span>'+h(r.owner||'미배정')+'</span><b>'+moneyShort(r.amount)+'</b></span><span class="ps-knext'+(none?' none':'')+'">'+h(foot)+'</span></button>';

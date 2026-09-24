@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head><script src="./phase1-config.js"></script><script src="./operational-adapter.js?v=20260908-sms-1"></script><script src="./transport.js?v=20260919-asq-1"></script>
+<head><script src="./phase1-config.js"></script><script src="./operational-adapter.js?v=20260924-terms-2"></script><script src="./transport.js?v=20260919-asq-1"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
@@ -158,7 +158,7 @@ body.svc .phone{width:100%;max-width:none;border:0;border-radius:0;box-shadow:no
 .pindot.f{background:var(--blue)}
 .remember{font-size:12px;color:var(--sub);font-weight:500;text-align:center;margin-top:12px}
 
-/* ── 딜 상세: 점 스테퍼 (참고안) ── */
+/* ── 영업건 상세: 점 스테퍼 (참고안) ── */
 .dsteps{list-style:none;display:flex;gap:4px;margin:0;padding:0}
 .dsteps li{flex:1;text-align:center;font-size:9.5px;color:var(--sub);line-height:1.25;min-width:0}
 .dsteps li .d{display:block;width:19px;height:19px;margin:0 auto 4px;border-radius:50%;background:var(--bg);border:1.5px solid var(--line-2);color:var(--sub-2);font-size:9.5px;font-weight:800;line-height:16px}
@@ -388,7 +388,7 @@ body.svc .phone{width:100%;max-width:none;border:0;border-radius:0;box-shadow:no
   <button data-v="today" onclick="nav('today')">2 오늘</button>
   <button data-v="sheet" onclick="nav('sheet')">3 결과 기재</button>
   <button data-v="mine" onclick="nav('mine')">4 내 건</button>
-  <button data-v="deal" onclick="nav('deal')">5 딜 상세</button>
+  <button data-v="deal" onclick="nav('deal')">5 영업건 상세</button>
   <button data-v="won" onclick="nav('won')">6 수주 완료</button>
   <button data-v="my" onclick="nav('my')">7 내 실적</button>
   <span class="sep">|</span>
@@ -444,7 +444,7 @@ body.svc .phone{width:100%;max-width:none;border:0;border-radius:0;box-shadow:no
           <div class="m-more">5묶음(설계·발송·관계·경쟁·계약) — PC와 동일 체계</div></div>
         <div class="fnote">금액대(대형/일반/수의)는 태그로</div></div>
       <span class="farr">→</span>
-      <div class="fstep"><div class="fcap"><b>2</b>딜 상세 → [다음으로]</div>
+      <div class="fstep"><div class="fcap"><b>2</b>영업건 상세 → [다음으로]</div>
         <div class="ms"><div class="m-nm" style="font-size:14px">[하남] 미사강변풍경채</div><div class="m-sub">대형 · 1.2억 · 현재: 경쟁단계(PT)</div><span class="m-btn">다음으로 →</span></div>
         <div class="fnote">예외 이동은 단계명 길게(사유 필수·기록)</div></div>
       <span class="farr">→</span>
@@ -504,11 +504,11 @@ body.svc .phone{width:100%;max-width:none;border:0;border-radius:0;box-shadow:no
         <li>음성 메모 녹음 상태<span class="badge badge-ok">✓</span></li>
         <li>완료 화면 (영수증)<span class="badge badge-ok">✓</span></li>
       </ul></div>
-      <div class="mapbox"><h3>내 건 · 딜 <span class="ct">10화면</span></h3><div class="who">담당자</div><ul>
+      <div class="mapbox"><h3>내 건 · 영업건 <span class="ct">10화면</span></h3><div class="who">담당자</div><ul>
         <li>내 건 그룹 리스트 (5묶음 · PC 동일)<span class="badge badge-ok">✓</span></li>
         <li>검색 (내 건 연락처 포함)<span class="badge badge-ok">✓</span></li>
         <li>필터 (금액대·정체)<span class="badge badge-ok">✓</span></li>
-        <li>딜 상세 (타임라인)<span class="badge badge-ok">✓</span></li>
+        <li>영업건 상세 (타임라인)<span class="badge badge-ok">✓</span></li>
         <li>단계 이동 — 후보 칩 시트<span class="badge badge-ok">✓</span></li>
         <li>필수 입력 시트 4종 (날짜·월·금액·사유)<span class="badge badge-ok">✓</span></li>
         <li>예외 이동 (전체 단계+사유)<span class="badge badge-ok">✓</span></li>
@@ -529,9 +529,9 @@ body.svc .phone{width:100%;max-width:none;border:0;border-radius:0;box-shadow:no
       </ul></div>
       <div class="mapbox"><h3>파이프라인 <span class="ct">8화면</span></h3><div class="who">관리자</div><ul>
         <li>롤업 요약 (5묶음 · PC 동일)<span class="badge badge-ok">✓</span></li>
-        <li>단계별 딜 목록<span class="badge badge-ok">✓</span></li>
+        <li>단계별 영업건 목록<span class="badge badge-ok">✓</span></li>
         <li>담당자별 드릴다운 (내 건 재사용)<span class="badge badge-ok">✓</span></li>
-        <li>딜 상세 관리자 뷰 (+재배정)<span class="badge badge-ok">✓</span></li>
+        <li>영업건 상세 관리자 뷰 (+재배정)<span class="badge badge-ok">✓</span></li>
         <li>재배정 시트 (이력 동반)<span class="badge badge-ok">✓</span></li>
         <li>장기정체·조치 필요 필터<span class="badge badge-ok">✓</span></li>
         <li>포캐스트 (4버킷)<span class="badge badge-ok">✓</span></li>
@@ -655,8 +655,8 @@ var STAGE_MASTER={
      currentBusiness  현재 진행 사업유형 (전환되면 이것만 바뀐다)
      code(stage)      영업 단계 — 위 둘과 완전히 다른 축
 
-   POUR솔루션·아파트스퀘어에서 시작했어도 «같은 딜 ID 를 유지한 채»
-   사업유형만 기술자문으로 바꾼다. 딜을 닫고 새로 만들면 영업 흐름이 끊긴다.
+   POUR솔루션·아파트스퀘어에서 시작했어도 «같은 영업건 ID 를 유지한 채»
+   사업유형만 기술자문으로 바꾼다. 영업건을 닫고 새로 만들면 영업 흐름이 끊긴다.
    그래서 기술자문 전용 칸반을 따로 만들지 않는다 — 필터로 본다.
    ══════════════════════════════════════════════════════════ */
 var BIZ_TYPES=['POUR솔루션','아파트스퀘어','석민이앤씨','기술자문'];
@@ -740,7 +740,7 @@ var DEALS=[
  {id:17,nm:'[수원] 매탄임광아파트',rep:'황윤선',code:'rapport',gj:['재도장','재도장(외부)'],amt:62000000,latitude:37.2848,longitude:127.0436,_lag:38,sub:'최근 접촉 38일 전 · 같이 방문 추천',tl:[['7/29','견적 검토 후 일정 보류']]},
  {id:10,nm:'[속초] 청초대우아파트',rep:'황윤선',code:'won',outcome:'won',won_amount:120000000,gj:['방수','아스팔트 슁글'],amt:120000000,_lag:0,sub:'Closed Won · 확장관리 Pool',tl:[['8/8','준공 및 Closed Won']]}
 ];
-/* ── 딜 표준화: 어떤 경로로 들어와도 같은 필드를 갖게 한다 ──
+/* ── 영업건 표준화: 어떤 경로로 들어와도 같은 필드를 갖게 한다 ──
    code / outcome / stage_entered_at / last_activity_at / last_customer_contact_at / next_action */
 function isoNow(){return new Date().toISOString()}
 function daysAgoIso(n){return new Date(Date.now()-(n||0)*864e5).toISOString()}
@@ -819,7 +819,7 @@ function updatePendingBadge(){var el=document.getElementById('pendBadge');if(!el
  el.onclick=f?retryFailed:null;}
 
 /* ── 실데이터 연동: PC와 같은 crm-api 번들 (n8n→Supabase) ──
-   성공 시 딜·파이프라인 집계가 실데이터로 교체됨. 실패 시 예시 데이터 유지. */
+   성공 시 영업건·파이프라인 집계가 실데이터로 교체됨. 실패 시 예시 데이터 유지. */
 var BUILD='2026-09-05-relation-intel2';   /* 화면 하단·로그인에 표시 — 이 값이 오래됐으면 캐시된 옛 파일이다 */
 var LIVE=false,LOAD_ERR=null;
 var DEMO=false;   /* 예시 데이터는 명시적으로 켤 때만 */
@@ -906,7 +906,7 @@ function authHeaders(base){
   if(TOKEN)h['Authorization']='Bearer '+TOKEN;
   return h;
 }
-var BUNDLE=null;   /* crm-api 원본 — 딜 외에 견적문의·응대 이력이 들어 있다 */
+var BUNDLE=null;   /* crm-api 원본 — 영업건 외에 견적문의·응대 이력이 들어 있다 */
 var CLOSED_INQ=['수주','실주','배드핏','연락두절','종결','종료','POUR스토어 이관대기','POUR스토어 접수완료','자재 견적안내','자재 구매완료','미구매 종료'];
 function inquiryKeyM(q){return String(q&&q.id||q&&q.inquiry_id||q&&q.row||[q&&q.site,q&&q.at].join('|'))}
 function inquiryViewM(q){var dt=q&&q.detail||{},at=q&&q.at||q&&q.created_at||q&&q.created||'',phone=q&&q.phone||q&&q.mobile||q&&q.contact_phone||dt.phone||dt.mobile||'',rep=q.assignee||q.assignee_name||'미배정',id=String(q.id||q.inquiry_id||q.key||'').replace(/[^0-9a-z]/gi,'').slice(-6),fallback=['견적문의',String(at).slice(0,10),id&&'#'+id].filter(Boolean).join(' · ');return {raw:q,key:inquiryKeyM(q),nm:q.site||q.site_name||q.name||fallback,rep:rep,ps:(at?String(at).slice(0,10)+' · ':'')+(q.status||'접수'),phone:phone,gj:dt.workType||q.work_type||q.category||'',body:dt.inquiry||dt.note||q.message||q.content||'',inflow:dt.inflow||dt.channel||q.channel||'홈페이지 견적문의',status:q.status||'접수',dealId:q.deal_id||q.opportunity_id||null,store_handoff:q.store_handoff||null,at:at,done:rep!=='미배정'}}
@@ -936,7 +936,7 @@ function jandiTime(s){
  if(!m)return '';var h=parseInt(m[5],10),ap=m[4]||'',p2=function(x){return String(x).length<2?'0'+x:''+x};
  if(/PM|오후/.test(ap)&&h<12)h+=12; if(/(AM|오전)/.test(ap)&&h===12)h=0;
  return m[1]+'-'+p2(m[2])+'-'+p2(m[3])+'T'+p2(h)+':'+m[6]}
-/* 이 딜과 같은 현장의 응대 기록 — 잔디·CRM·모바일·자동을 한 줄기로 (PC 와 동일)
+/* 이 영업건과 같은 현장의 응대 기록 — 잔디·CRM·모바일·자동을 한 줄기로 (PC 와 동일)
    출처는 배지로만 구분한다. 별도 영역으로 쪼개면 «어디를 봐야 하는지» 가 다시 생긴다. */
 function respOf(d){
  var R=[],L=((BUNDLE&&BUNDLE.inquiries)||[]).filter(function(q){return !(q.deleted_at||q.deletedAt)});
@@ -1043,7 +1043,7 @@ function syncBusy(){
 }
 function syncNow(){
   if(document.hidden||syncBusy())return;
-  if(G.deal||G.sub)return;                       /* 딜 상세·시트를 보고 있으면 건너뛴다 */
+  if(G.deal||G.sub)return;                       /* 영업건 상세·시트를 보고 있으면 건너뛴다 */
   if(document.getElementById('sheetwrap').classList.contains('open'))return;
   if(!TOKEN||Date.now()-LAST_READ_SYNC<SYNC_MS)return;
   LAST_READ_SYNC=Date.now();
@@ -1064,8 +1064,8 @@ window.addEventListener('focus',syncNow);
 window.addEventListener('focus',function(){LAST_INQUIRY_SYNC=0;syncInquiryNow()});
 
 loadLive();
-/* ── 오늘 할 일 — 고정 배열이 아니라 내 딜 + Next Action + 기한 + 우선순위에서 계산 ──
-   순서: 1 기한초과 → 2 오늘 마감 → 3 미응대 → 4 PT/입찰/계약 임박 → 5 다음 행동 없음 → 6 장기정체
+/* ── 오늘 할 일 — 고정 배열이 아니라 내 영업건 + Next Action + 기한 + 우선순위에서 계산 ──
+   순서: 1 기한초과 → 2 오늘 마감 → 3 미응대 → 4 PT/입찰/계약 임박 → 5 다음 할 일 없음 → 6 장기정체
    (서버 /v1/mobile/today 가 생기면 이 함수를 그 응답으로 교체한다) */
 function buildToday(){
  var out=[];
@@ -1077,7 +1077,7 @@ function buildToday(){
   else if(code==='first_contact'&&!d.activities.length) r={p:3,why:'새로 배정 — 첫 응대',urgent:1};
   else if(['compete','imminent','bidding','contract'].indexOf(code)>=0&&(dd==null||dd<=7))
                               r={p:4,why:stageLabel(code)+' — 챙길 것',urgent:0};
-  else if(!d.nextAction)      r={p:5,why:'다음 행동 없음',urgent:0};
+  else if(!d.nextAction)      r={p:5,why:'다음 할 일 없음',urgent:0};
   else if(isStale(d))         r={p:6,why:staleTxt(d),urgent:0};
   if(r)out.push({ref:d.id,action_id:(d.nextAction&&d.nextAction.id)||'',p:r.p,why:r.why,urgent:r.urgent,nm:d.nm,
     sub:amtTxt(d.amt)+' · '+stageLabel(d.code),call:['construction','completion','expansion'].indexOf(code)<0});
@@ -1149,7 +1149,7 @@ function amtTxt(a){return a>=100000000?(a/1e8).toFixed(1).replace(/\.0$/,'')+'�
 
 /* ── 화면전환 ── */
 var CUR='flow';
-/* 화면전환 바(목업)용 — 실데이터에서도 항상 존재하는 딜을 하나 고른다.
+/* 화면전환 바(목업)용 — 실데이터에서도 항상 존재하는 영업건을 하나 고른다.
    예전에는 G.deal=1 처럼 예시 id 를 박아둬서 실데이터에서는 화면이 열리지 않았다 */
 function pickSampleDeal(){
  var mine=myDeals().filter(isOpen);
@@ -1262,7 +1262,7 @@ function switchMode(m){Phase1.mode(m);G.mode=m;saveMode(m);G.tab='today';G.deal=
 function todayStampM(v){var t=new Date(v||'').getTime();return isNaN(t)?null:t}
 function todayHoursM(v){var t=todayStampM(v);return t==null?null:Math.max(0,Math.floor((Date.now()-t)/36e5))}
 function adminInquiryTodayM(){return (ADMIN.inquiries||[]).map(function(q){var st=inquiryStateM(q),h=todayHoursM(q.at),reason='';if(st==='unassigned')reason='담당자 미배정'+(h!=null?' · '+h+'시간 경과':'');else if(st==='assigned'&&h!=null&&h>=2)reason='최초 응대 지연 · '+h+'시간 경과';if(!reason)return null;return {kind:'inquiry',ref:q.key,p:st==='unassigned'?0:1,why:reason,nm:q.nm,owner:q.rep||'미배정',sub:(q.gj||q.inflow||'견적문의')+' · '+q.status,next:st==='unassigned'?'담당자 배정':'최초 응대 기록'}}).filter(Boolean).sort(function(a,b){return a.p-b.p})}
-function adminPipelineTodayM(){return DEALS.filter(isOpen).map(function(d){var dd=dueDays(d),a=ageOf(d),reason='',p=9;if(dd!=null&&dd<0){reason='다음 행동일 '+Math.abs(dd)+'일 초과';p=0}else if(dd===0){reason='오늘 다음 행동 예정';p=1}else if(!d.nextAction){reason='다음 행동 미지정';p=2}else if(isStale(d)){reason=staleTxt(d)+' · 단계 변화 확인';p=3}if(!reason)return null;return {kind:'deal',ref:d.id,p:p,why:reason,nm:d.nm,owner:d.rep||'미배정',sub:stageLabel(d.code)+' · 최근 활동 '+(a==null?'미기록':a+'일 전'),next:d.nextAction&&d.nextAction.text||'다음 행동 지정'}}).filter(Boolean).sort(function(a,b){return a.p-b.p})}
+function adminPipelineTodayM(){return DEALS.filter(isOpen).map(function(d){var dd=dueDays(d),a=ageOf(d),reason='',p=9;if(dd!=null&&dd<0){reason='다음 할 일 날짜 '+Math.abs(dd)+'일 초과';p=0}else if(dd===0){reason='오늘 다음 할 일 예정';p=1}else if(!d.nextAction){reason='다음 할 일 미지정';p=2}else if(isStale(d)){reason=staleTxt(d)+' · 단계 변화 확인';p=3}if(!reason)return null;return {kind:'deal',ref:d.id,p:p,why:reason,nm:d.nm,owner:d.rep||'미배정',sub:stageLabel(d.code)+' · 최근 활동 '+(a==null?'미기록':a+'일 전'),next:d.nextAction&&d.nextAction.text||'다음 할 일 지정'}}).filter(Boolean).sort(function(a,b){return a.p-b.p})}
 function todayItemHTMLM(t,rank){var cls=t.p<=0?'danger':t.p<=2?'warn':'';return '<button class="mt-item '+cls+'" data-kind="'+escAttr(t.kind)+'" data-ref="'+escAttr(t.ref)+'" onclick="openTodayEntryM(this.dataset.kind,this.dataset.ref)"><span class="mt-item-top">'+(rank?'<i class="mt-rank">'+rank+'</i>':'')+'<strong>'+esc(t.nm)+'</strong><i class="mt-owner">'+esc(t.owner||'')+'</i></span><span class="mt-reason">'+esc(t.why)+'</span><span class="mt-meta">'+esc(t.sub||'')+'</span><span class="mt-next">→ '+esc(t.next||'상세 확인')+'</span></button>'}
 function openTodayEntryM(kind,ref){if(kind==='inquiry'){G.sub={t:'inqAssigned',key:ref};render();return}var d=DEALS.find(function(x){return String(x.id)===String(ref)});if(d){G.deal=d.id;render()}}
 function rTodayRoleM(head){
@@ -1271,7 +1271,7 @@ function rTodayRoleM(head){
   scr.innerHTML=head+'<div class="body fadein"><div class="mt-head"><h1>오늘 관리자 개입</h1><p>누구의 어떤 업무가 멈췄는지 이유부터 확인합니다.</p></div><div class="mt-counts"><div><b>'+(iq.length+pipe.length)+'</b><span>전체 관리필요</span></div><div><b>'+iq.length+'</b><span>견적문의</span></div><div><b>'+pipe.length+'</b><span>파이프라인</span></div></div><div class="mt-switch"><button class="'+(view==='inquiry'?'on':'')+'" onclick="G.todayAdminView=\'inquiry\';render()">견적문의 관리 '+iq.length+'</button><button class="'+(view==='pipeline'?'on':'')+'" onclick="G.todayAdminView=\'pipeline\';render()">파이프라인 관리 '+pipe.length+'</button></div><section class="mt-list">'+(list.length?list.slice(0,30).map(function(t){return todayItemHTMLM(t,false)}).join(''):'<div class="mt-empty">현재 관리자가 개입할 항목이 없습니다.</div>')+'</section></div>';return
  }
  var all=buildToday();G._today=all;var priority=all.slice(0,5),routine=all.slice(5);
- priority.forEach(function(t){t.owner=G.user.nm;t.next=t.kind==='inquiry'?'최초 응대 기록':'상세에서 다음 행동 확인'});routine.forEach(function(t){t.owner=G.user.nm;t.next='상세 확인'});
+ priority.forEach(function(t){t.owner=G.user.nm;t.next=t.kind==='inquiry'?'최초 응대 기록':'상세에서 다음 할 일 확인'});routine.forEach(function(t){t.owner=G.user.nm;t.next='상세 확인'});
  scr.innerHTML=head+'<div class="body fadein"><div class="mt-head"><h1>오늘 우선순위</h1><p>기한과 고객 반응을 기준으로 지금 먼저 움직일 순서입니다.</p></div><section class="mt-list">'+(priority.length?priority.map(function(t,i){return todayItemHTMLM(t,i+1)}).join(''):'<div class="mt-empty">지금 먼저 개입할 현장이 없습니다.</div>')+'</section><section class="mt-section"><div class="mt-section-head"><h2>오늘 업무</h2><span>일반 실행업무 '+routine.length+'건</span></div><div class="mt-list">'+(routine.length?routine.map(function(t){return todayItemHTMLM(t,false)}).join(''):'<div class="mt-empty">우선순위와 중복되지 않는 일반 업무가 없습니다.</div>')+'</div></section></div>';
 }
 function todayDeal(i){var t=(G._today||[])[i];return t&&t.kind!=='inquiry'?DEALS.find(function(x){return String(x.id)===String(t.ref)}):null}
@@ -1308,7 +1308,7 @@ function resumeTodayCall(){if(G.todayCallPending==null)return;var i=G.todayCallP
 document.addEventListener('visibilitychange',function(){if(!document.hidden)resumeTodayCall()});
 window.addEventListener('focus',resumeTodayCall);
 /* 결과 칩 = 화면은 한 번 터치, 뒤에서는 Activity + Next Action + 기한이 정확히 쌓인다.
-   Stage 는 여기서 바꾸지 않는다 (단계 이동은 딜 상세의 [다음으로]) */
+   Stage 는 여기서 바꾸지 않는다 (단계 이동은 영업건 상세의 [다음으로]) */
 function pickToday(i,label){
  var q=todayInquiry(i),d=todayDeal(i);
  if(q){var at=isoNow();q.status=label.indexOf('못 받')>=0?'배정완료':label.indexOf('다음주')>=0?'응대중':'전화응대 완료';q.ps=String(at).slice(0,10)+' · '+q.status;if(q.raw){q.raw.status=q.status;q.raw.responded_at=at}pushWrite('inquiry_assign',{inquiry_id:q.key,inquiry_row:q.raw&&q.raw.row||null,from:q.rep,to:q.rep,status:q.status,at:at,response:label});}
@@ -1319,14 +1319,14 @@ function pickToday(i,label){
   else{addActivity(d,'부재','전화 부재 — 못 받으심','',false);setNextAction(d,'재통화','재통화 시도',1)}
  }
  markDone(i,label);closeSheet();
- toast(label.indexOf('못 받')>=0?'부재 기록 · 내일 재통화 예약':'활동 기록 · 다음 행동 예약 완료');
+ toast(label.indexOf('못 받')>=0?'부재 기록 · 내일 재통화 예약':'연락 결과 · 다음 할 일 예약 완료');
  render();
 }
 
 /* ── 4 내 건 ── */
 function fdeal(d){return G.filt==='all'?true:G.filt==='stale'?isStale(d):tagOf(d.amt)[1]==={L:'대형',M:'일반',S:'수의'}[G.filt]}
 function rMine(head,readonlyRep){
- /* ★ 내 건 = 내 건. 로그인 사용자(또는 관리자가 지정한 담당자)의 딜만 본다.
+ /* ★ 내 건 = 내 건. 로그인 사용자(또는 관리자가 지정한 담당자)의 영업건만 본다.
     서버 필터가 준비되면 GET /v1/opportunities?owner=me 로 대체한다 */
  var all=myDeals(readonlyRep);
  /* 사업유형 필터 — 기술자문으로 전환된 뒤에도 어느 사업인지 바로 구분되게 (칸반을 따로 만들지 않는다) */
@@ -1424,7 +1424,7 @@ function saveManagerMoveM(){if(!mrOk('mm'))return toast('이동 사유를 남겨
 function historySheetM(){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),H=contactHistoryM(d||{});if(!d)return;openSheet(intro('var(--blue-50)','var(--blue-dark)',IC.user,'관리소장 근무 이력','현장이 바뀌어도 사람의 관계 이력은 이어집니다'),H.map(function(h){var current=historyCurrentConfirmedM(H,h);return '<div class="rsum" style="margin-bottom:8px"><b>'+esc(h.site||'-')+'</b><div class="hint" style="margin-top:4px">'+esc(h.from||'-')+' → '+esc(h.to||(current?'현재':'연결 확인 필요'))+'</div></div>'}).join('')||'<div class="hint">근무 이력이 없습니다.</div>')}
 
 
-/* ── 5 딜 상세 ── */
+/* ── 5 영업건 상세 ── */
 /* ── 지금 할 일 카드 + 상세 통화 결과 칩 (2026-09-25 CX): 첫 화면에서 스크롤 없이 할 일과 전화까지.
    결과 칩은 오늘 화면(pickToday)과 같은 원칙 — Activity+Next Action 자동, Stage 는 바꾸지 않는다. */
 var NOWCARD_TODO={first_contact:'고객에게 연락하고 니즈를 확인해 주세요',consulting:'견적 요청 내용을 확인하고 회신해 주세요',sent:'보낸 자료의 검토 여부를 확인해 주세요',rapport:'유대 유지 연락을 해주세요',silent:'재접촉 연락을 해주세요',waiting:'재개 시점을 확인해 주세요',compete:'경쟁 상황과 다음 일정을 확인해 주세요',imminent:'계약 조건을 확인해 주세요',bidding:'입찰 일정을 확인해 주세요',contract:'계약 체결 상태를 확인해 주세요',construction:'착공 준비 상황을 확인해 주세요',completion:'준공·수금 상태를 확인해 주세요'};
@@ -1467,7 +1467,7 @@ function pickDealCall(kind){
  if(kind==='진행'){addActivity(d,'전화','통화 — 진행됨','',true);setNextAction(d,'후속확인','통화 후속 확인',3)}
  else if(kind==='다시'){addActivity(d,'전화','통화 — 다시 연락 요청','',true);setNextAction(d,'재연락','고객 요청 재연락',7)}
  else{addActivity(d,'부재','전화 부재 — 못 받으심','',false);setNextAction(d,'재통화','재통화 시도',1)}
- closeSheet();toast('활동 기록 · 다음 할 일 예약 완료');render();
+ closeSheet();toast('연락 결과 · 다음 할 일 예약 완료');render();
 }
 function rDeal(){
  var d=DEALS.find(function(x){return String(x.id)===String(G.deal)});
@@ -1507,7 +1507,7 @@ function workSheetM(){
 async function saveWorkSheetM(){
  var d=Phase11.current,other=document.getElementById('pworkother');if(!d)return;if(other)G.pWorkOther=other.value;var works=prospectWorkItems(),multi=works.length>1,raw=multi?G.pPrimaryWork:((G.pWorkItems||[])[0]||''),primary=workPartsM(raw);if(primary&&raw==='기타>기타'&&String(G.pWorkOther||'').trim())primary={group:'기타',item:String(G.pWorkOther).trim(),key:workKeyM('기타',String(G.pWorkOther).trim())};if(!works.length)return toast('공종을 하나 이상 선택해 주세요');if((G.pWorkItems||[]).indexOf('기타>기타')>=0&&!String(G.pWorkOther||'').trim())return toast('기타 공종명을 직접 입력해 주세요');if(multi&&!primary)return toast('복합공종의 대표 공종을 선택해 주세요');if(!mrOk('workedit'))return toast('공종 분류 근거를 5자 이상 남겨 주세요');var keys=works.map(function(w){return w.key});try{await Phase11.save(d,{primary_work:primary.key,work_items:keys,reason:mrVal('workedit')});}catch(e){/* explicit non-success/conflict state is shown by the adapter */}
 }
-/* 기술자문일 «때만» 펼친다 — 모든 딜에 보여주면 화면이 복잡해진다 */
+/* 기술자문일 «때만» 펼친다 — 모든 영업건에 보여주면 화면이 복잡해진다 */
 function advCardM(d){
  if(!isAdvisory(d))return '';
  var a=d.advisory||{};
@@ -1638,11 +1638,11 @@ function renderWon(d,num){
 }
 function renderWonDemo(){
  var d=DEALS.filter(isWon)[0]||pickSampleDeal();
- if(!d){toast('표시할 딜이 없습니다');return render()}
+ if(!d){toast('표시할 영업건이 없습니다');return render()}
  renderWon(d,Math.round((d.won_amount||d.amt||120000000)/10000));
 }
 function commitMoveR(to,reason){var d=DEALS.find(function(x){return x.id===G.deal});commitMove(d,to,reason)}
-/* 진행 단계 이동만 담당 (종료는 commitClose). 이동 시 활동·다음 행동·기한이 함께 쌓인다 */
+/* 진행 단계 이동만 담당 (종료는 commitClose). 이동 시 활동·다음 할 일·기한이 함께 쌓인다 */
 function commitMove(d,to,note,src){
  if(!STAGE_MASTER[to])return;
  if(!note||String(note).trim().length<5)return toast('변경 근거가 없어 저장하지 않았습니다');
@@ -1653,7 +1653,7 @@ function commitMove(d,to,note,src){
  setNextAction(d,'후속',stageLabel(to)+' 후속 조치',nextDays(to));
  pushWrite('transition',{opportunity_id:d.id,from:from,to:to,note:note||'',reason:note||'',reason_source:src||'text',at:d.stageAt});
  closeSheet();
- if(!isWinMove(to))toast(stageLabel(to)+'로 이동 · 다음 행동 '+nextDays(to)+'일 뒤로 예약');
+ if(!isWinMove(to))toast(stageLabel(to)+'로 이동 · 다음 할 일 '+nextDays(to)+'일 뒤로 예약');
  if(CUR!=='won')render();
 }
 
@@ -1699,17 +1699,17 @@ function mrRec(id){
  try{r.start()}catch(err){hint.textContent='마이크를 시작할 수 없습니다.';return}
  MSR_ON=r;btn.classList.add('on');btn.innerHTML='■ 녹음 중지';hint.textContent='듣는 중… 끝나면 중지를 누르세요.'}
 
-/* ── 사업유형 변경 — 단계 이동과 «다른 버튼». 같은 딜 ID 유지 ── */
+/* ── 사업유형 변경 — 단계 이동과 «다른 버튼». 같은 영업건 ID 유지 ── */
 function bizSheet(){
  var d=DEALS.find(function(x){return x.id===G.deal});if(!d)return;
  var cur=bizOf(d);
- openSheet(intro('#FFF7E6','#B45309',IC.chart,'사업유형 변경','영업 단계는 그대로 — 사업유형만 바꿉니다 (같은 딜 유지)'),
+ openSheet(intro('#FFF7E6','#B45309',IC.chart,'사업유형 변경','영업 단계는 그대로 — 사업유형만 바꿉니다 (같은 영업건 유지)'),
   '<div class="hint" style="margin:0 0 6px">현재 <b>'+esc(cur)+'</b> → 변경할 사업유형 <span style="color:var(--danger)">*</span></div>'
   +'<div class="chiprow">'+BIZ_TYPES.filter(function(b){return b!==cur}).map(function(b){
      return '<button class="cchip '+(G.bzTo===b?'b':'gr')+'" data-b="'+escAttr(b)+'" onclick="G.bzTo=this.dataset.b;bizSheet()">'+esc(b)+'</button>'}).join('')+'</div>'
   +'<div class="hint" style="margin:14px 0 6px">변경 근거 <span style="color:var(--danger)">*</span></div>'
   +mReason('bz','예: 외부 시공사 낙찰 후 기술자문 계약으로 진행하기로 협의')
-  +'<div class="hint" style="margin:14px 0 6px">다음 행동</div>'
+  +'<div class="hint" style="margin:14px 0 6px">다음 할 일</div>'
   +'<input id="bz-na" value="'+escAttr(G.bzNa||'')+'" oninput="G.bzNa=this.value" placeholder="예: 기술자문 계약서 작성" style="width:100%;border:1px solid var(--line-2);border-radius:12px;padding:13px;font:inherit;font-size:15px;outline:none;box-sizing:border-box">'
   +'<button class="btn btn-primary" style="margin-top:14px" data-gate="bz" disabled onclick="commitBiz()">변경 저장</button>');
  mrGate('bz');
@@ -1753,7 +1753,7 @@ function voiceMemo(){
 }
 
 /* ── 7 내 실적 ── */
-/* 내 실적 — 하드코딩 제거. 로그인 사용자의 딜에서 계산한다 (PC 관리팀 KPI 와 같은 식)
+/* 내 실적 — 하드코딩 제거. 로그인 사용자의 영업건에서 계산한다 (PC 관리팀 KPI 와 같은 식)
    서버 준비 시 GET /v1/mobile/me/metrics 로 교체 */
 function rMy(head){
  var mine=myDeals(),open=mine.filter(isOpen);
@@ -1820,7 +1820,7 @@ function rPipe(head){
  +'<div class="card tight" style="padding:2px 16px">'+ADMIN.rank.map(function(r){return '<button class="krow" onclick="drill(\''+r[0]+'\')">'+tile(IC.user,'var(--violet)','var(--violet-bg)')+'<span class="knm">'+r[0]+'</span><span class="kct">'+r[1]+'</span><span class="chev">'+IC.chev+'</span></button>'}).join('')+'</div></div>';
 }
 
-/* ── 9b 단계별 딜 목록 (파이프라인 드릴다운) ── */
+/* ── 9b 단계별 영업건 목록 (파이프라인 드릴다운) ── */
 function rStageList(st){
  var meta=ADMIN.pipe[MACRO5.map(function(g){return g.k}).indexOf(st)]||['',0,'',''];
  var all=DEALS.filter(function(d){return isOpen(d)&&macroOf(d.code)===st});
@@ -1845,10 +1845,10 @@ function rStageList(st){
  +(list.length?list.map(function(d){var tg=tagOf(d.amt);return '<div class="lrow" data-id="'+escAttr(d.id)+'" onclick="G.deal=this.dataset.id;render()">'+tile(IC.folder,'var(--blue)','var(--blue-50)')
    +'<span class="meta"><span class="t">'+esc(d.nm)+(isStale(d)?' <span class="kwarn">'+staleTxt(d)+'</span>':'')+'</span><span class="s">'+esc(d.rep)+' · '+amtTxt(d.amt)+(d.sub?' · '+esc(d.sub):'')+'</span></span>'
    +'<span class="badge '+tg[0]+'">'+tg[1]+'</span><span class="chev">'+IC.chev+'</span></div>'}).join('')
-  :'<div class="hint" style="padding:18px 2px">이 단계의 예시 딜이 없습니다 — 실서비스에서는 전 담당자 건이 표시됩니다</div>')
+  :'<div class="hint" style="padding:18px 2px">이 단계의 예시 영업건이 없습니다 — 실서비스에서는 전 담당자 건이 표시됩니다</div>')
  +'</div>'
  +(G.alf&&list.length?'<button class="btn btn-line" onclick="nudgeSheet(\''+(function(){var r=[];list.forEach(function(d){if(r.indexOf(d.rep)<0)r.push(d.rep)});return r.join(', ')})()+'\',\''+macroNm(st)+' '+AL.label+' '+list.length+'건\')">'+IC.bell+' 이 목록 담당자 쪼기</button>':'')
- +'<div class="card" style="background:var(--blue-50);border-color:transparent"><div class="hint" style="color:var(--blue-dark)">건을 누르면 딜 상세 — 실서비스에서는 담당자·금액·정체일 정렬과 재배정 버튼이 붙습니다</div></div></div>';
+ +'<div class="card" style="background:var(--blue-50);border-color:transparent"><div class="hint" style="color:var(--blue-dark)">건을 누르면 영업건 상세 — 실서비스에서는 담당자·금액·정체일 정렬과 재배정 버튼이 붙습니다</div></div></div>';
 }
 
 /* ── 서브 화면 라우터 (V1 구현분) ── */
@@ -2021,7 +2021,7 @@ function pickReassign(r){
    + 영업 추가 — 예전 «발굴» 탭 (2026-09-02 개편)
 
    PC 파이프라인과 같은 축으로 등록한다. 현장명·공종만 받던 예전 폼으로는
-   이 딜이 어느 사업(POUR/스퀘어/석민/기술자문)인지 알 수 없어
+   이 영업건이 어느 사업(POUR/스퀘어/석민/기술자문)인지 알 수 없어
    나중에 파이프라인에서 분류가 안 됐다.
 
    등록도 «근거»를 받는다 — 처음부터 출처가 명확해야 나중에 추적된다.
@@ -2298,7 +2298,7 @@ function kakaoContactM(key){messageSheetM('kakao',key)}
    v6.0 영업 실행 엔진
    오늘 할 일 · 방문 동선 · 고객 관계 · 견적 버전 · 인수인계 · 단계 가이드 · CRM 질의
    ══════════════════════════════════════════════════════════════ */
-function execNextM(d){var a=d&&d.nextAction;if(!a||a.status==='done'||a.status==='completed')return null;return {id:a.id||'',type:a.type||'후속확인',text:a.text||a.note||'다음 행동',due:String(a.due_at||a.due||'').slice(0,10)} }
+function execNextM(d){var a=d&&d.nextAction;if(!a||a.status==='done'||a.status==='completed')return null;return {id:a.id||'',type:a.type||'후속확인',text:a.text||a.note||'다음 할 일',due:String(a.due_at||a.due||'').slice(0,10)} }
 function execIsVisitM(d){var a=execNextM(d),s=[a&&a.type,a&&a.text,d&&d.sub].join(' ');return /현장\s*방문|방문\s*예정|실측|PT/.test(s)}
 function execDueM(d){var a=execNextM(d);if(!a||!a.due)return null;var due=new Date(a.due+'T00:00:00'),today=new Date();today.setHours(0,0,0,0);return isNaN(due.getTime())?null:Math.round((due.getTime()-today.getTime())/864e5)}
 function execCallM(d){var c=contactInfoM(d||{});return !!phoneN(c.mobile||c.officeTel)}
@@ -2307,11 +2307,11 @@ function buildToday(){
  myInquiriesM().forEach(function(q){out.push({kind:'inquiry',bucket:'new',ref:q.key,p:0,why:'신규 문의 · 최초 응대 필요',urgent:1,nm:q.nm,sub:(q.gj||q.inflow)+' · '+q.status,call:!!phoneN(q.phone)})});
  myDeals().filter(isOpen).forEach(function(d){var a=execNextM(d),dd=execDueM(d),age=ageOf(d),bucket='',p=9,why='';
   if(d.code==='first_contact'&&!(d.activities||[]).length){bucket='new';p=1;why='새로 배정 · 최초 응대 필요'}
-  else if(dd!=null&&dd<0){bucket='overdue';p=0;why=(a&&a.text||'다음 행동')+' · D+'+Math.abs(dd)}
+  else if(dd!=null&&dd<0){bucket='overdue';p=0;why=(a&&a.text||'다음 할 일')+' · D+'+Math.abs(dd)}
   else if(execIsVisitM(d)&&dd!=null&&dd>=0&&dd<=7){bucket='visit';p=2;why=(a&&a.text||'현장 방문')+(dd===0?' · 오늘':dd===1?' · 내일':' · D-'+dd)}
   else if(dd===0){bucket='today';p=1;why=a&&a.text||'오늘 마감'}
   else if(['compete','imminent','bidding','contract'].indexOf(d.code)>=0&&(dd==null||dd<=7)){bucket='today';p=3;why=(a&&a.text)||stageLabel(d.code)+' 확인'}
-  else if(!a){bucket='today';p=5;why='다음 행동 지정 필요'}
+  else if(!a){bucket='today';p=5;why='다음 할 일 지정 필요'}
   else if(isStale(d)){bucket='today';p=6;why=staleTxt(d)+' · 진행 확인'}
   if(!bucket)return;out.push({kind:'deal',bucket:bucket,ref:d.id,action_id:a&&a.id||'',p:p,why:why,urgent:bucket==='overdue'||bucket==='new',nm:d.nm,sub:amtTxt(d.amt)+' · '+stageLabel(d.code),call:execCallM(d)});
  });
@@ -2325,18 +2325,18 @@ function execTaskRowM(t,i){var d=t.kind==='deal'?todayDeal(i):null,done=doneLabe
 function execGroupM(key,title,sub,A){if(!A.length)return '';return '<section class="today-group"><div class="today-group-head"><h2>'+title+' '+A.length+'건</h2><span>'+sub+'</span></div>'+A.map(function(x){return execTaskRowM(x.t,x.i)}).join('')+'</section>'}
 function reactivationM(){return myDeals().filter(isOpen).map(function(d){var a=ageOf(d),wake=d.wakeUpAt||d.wake_up_at||'',score=(['silent','waiting','rapport'].indexOf(d.code)>=0?50:0)+(a||0);return {d:d,age:a,wake:wake,score:score}}).filter(function(x){return ['silent','waiting','rapport'].indexOf(x.d.code)>=0||(x.age!=null&&x.age>=60)}).sort(function(a,b){return b.score-a.score}).slice(0,4)}
 function reactivationHTMLM(){var A=reactivationM();if(!A.length)return '';return '<section class="today-group"><div class="today-group-head"><h2>잠든 고객 깨우기</h2><span>재접촉 추천</span></div><div class="card tight" style="padding:2px 14px">'+A.map(function(x){var why=x.wake?'약속한 재접촉일 '+String(x.wake).slice(0,10):(x.age==null?'마지막 접촉 미확인':'마지막 접촉 '+x.age+'일 전');return '<button class="wake-row" data-id="'+escAttr(x.d.id)+'" onclick="G.deal=this.dataset.id;G.tab=\'mine\';render()"><span><b>'+esc(x.d.nm)+'</b><small>'+esc(stageLabel(x.d.code))+' · '+esc(why)+'</small></span><em>다시 연락 →</em></button>'}).join('')+'</div></section>'}
-function crmAskM(q){q=String(q||'').trim();var A=myDeals().filter(isOpen),title='검색 결과';if(!q)return {title:'질문을 입력해 주세요',list:[]};var n=Number((q.match(/(\d+)\s*일/)||[])[1]||30);if(/오늘.*전화|전화.*오늘/.test(q)){title='오늘 전화할 곳';var ids=buildToday().filter(function(t){return t.kind==='deal'&&t.call}).map(function(t){return String(t.ref)});A=A.filter(function(d){return ids.indexOf(String(d.id))>=0})}else if(/이번\s*주.*방문|방문.*이번\s*주/.test(q)){title='이번 주 방문 예정';A=A.filter(function(d){var dd=execDueM(d);return execIsVisitM(d)&&dd!=null&&dd>=0&&dd<=7})}else if(/1\s*억|10000\s*만/.test(q)&&/다음\s*행동.*없/.test(q)){title='1억 이상 · 다음 행동 없음';A=A.filter(function(d){return Number(d.quote_amount||d.amt||0)>=100000000&&!execNextM(d)})}else if(/기술자문/.test(q)){title='기술자문 현장';A=A.filter(function(d){return bizOf(d)==='기술자문'})}else if(/연락.*안|미접촉|넘게/.test(q)){title=n+'일 넘게 연락하지 않은 곳';A=A.filter(function(d){var a=ageOf(d);return a!=null&&a>=n})}else{title='현장·담당자·연락처 검색';A=A.filter(function(d){var c=siteContactsM(d),hay=[d.nm,d.rep,stageLabel(d.code),bizOf(d)].concat(c.map(function(x){return x.name+' '+x.role+' '+x.mobile})).join(' ');return hay.indexOf(q)>=0})}return {title:title,list:A.slice(0,12)}}
+function crmAskM(q){q=String(q||'').trim();var A=myDeals().filter(isOpen),title='검색 결과';if(!q)return {title:'질문을 입력해 주세요',list:[]};var n=Number((q.match(/(\d+)\s*일/)||[])[1]||30);if(/오늘.*전화|전화.*오늘/.test(q)){title='오늘 전화할 곳';var ids=buildToday().filter(function(t){return t.kind==='deal'&&t.call}).map(function(t){return String(t.ref)});A=A.filter(function(d){return ids.indexOf(String(d.id))>=0})}else if(/이번\s*주.*방문|방문.*이번\s*주/.test(q)){title='이번 주 방문 예정';A=A.filter(function(d){var dd=execDueM(d);return execIsVisitM(d)&&dd!=null&&dd>=0&&dd<=7})}else if(/1\s*억|10000\s*만/.test(q)&&/다음\s*행동.*없/.test(q)){title='1억 이상 · 다음 할 일 없음';A=A.filter(function(d){return Number(d.quote_amount||d.amt||0)>=100000000&&!execNextM(d)})}else if(/기술자문/.test(q)){title='기술자문 현장';A=A.filter(function(d){return bizOf(d)==='기술자문'})}else if(/연락.*안|미접촉|넘게/.test(q)){title=n+'일 넘게 연락하지 않은 곳';A=A.filter(function(d){var a=ageOf(d);return a!=null&&a>=n})}else{title='현장·담당자·연락처 검색';A=A.filter(function(d){var c=siteContactsM(d),hay=[d.nm,d.rep,stageLabel(d.code),bizOf(d)].concat(c.map(function(x){return x.name+' '+x.role+' '+x.mobile})).join(' ');return hay.indexOf(q)>=0})}return {title:title,list:A.slice(0,12)}}
 function askResultHTMLM(){if(!G.crmAsk)return '';var r=crmAskM(G.crmAsk);return '<div class="ask-result"><strong>'+esc(r.title)+' · '+r.list.length+'건</strong>'+(r.list.length?r.list.slice(0,5).map(function(d){return '<button class="lrow" data-id="'+escAttr(d.id)+'" onclick="G.deal=this.dataset.id;G.tab=\'mine\';render()"><span class="meta"><span class="t">'+esc(d.nm)+'</span><span class="s">'+esc(stageLabel(d.code))+' · '+amtTxt(d.amt)+'</span></span><span class="chev">'+IC.chev+'</span></button>'}).join(''):'<div class="hint" style="padding:7px 3px">조건에 맞는 내 영업이 없습니다.</div>')+'</div>'}
 function askSubmitM(){var e=document.getElementById('crm-ask-m');G.crmAsk=e?e.value.trim():'';render()}
 function askExampleM(q){G.crmAsk=q;render()}
 function rToday(head){var T=buildToday();G._today=T;var groups={overdue:[],today:[],visit:[],new:[]};T.forEach(function(t,i){(groups[t.bucket]||groups.today).push({t:t,i:i})});var active=T.filter(function(t){return !isDone(t)}).length;
- scr.innerHTML=head+'<div class="body fadein"><section class="card today-command"><div class="eyebrow">'+new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'long'})+'</div><h2>'+(G.user?esc(G.user.nm)+'님의 ':'')+'내 오늘 할 일</h2><div class="today-stats"><button><b>'+groups.overdue.length+'</b><span>기한초과</span></button><button><b>'+groups.today.length+'</b><span>오늘 할 일</span></button><button><b>'+groups.visit.length+'</b><span>이번 주 방문</span></button><button><b>'+groups.new.length+'</b><span>새로 배정</span></button></div><div class="today-ask"><input id="crm-ask-m" value="'+escAttr(G.crmAsk||'')+'" placeholder="CRM에게 물어보기" onkeydown="if(event.key===\'Enter\')askSubmitM()"><button onclick="askSubmitM()">찾기</button></div><div class="ask-examples"><button onclick="askExampleM(\'내가 오늘 전화해야 하는 곳\')">오늘 전화</button><button onclick="askExampleM(\'이번 주 방문 예정 현장\')">이번 주 방문</button><button onclick="askExampleM(\'30일 넘게 연락 안 한 곳\')">30일 미접촉</button><button onclick="askExampleM(\'견적 1억 이상인데 다음 행동 없는 곳\')">1억·Next 없음</button></div>'+askResultHTMLM()+'</section><div class="saleshero"><button class="pri" onclick="G.tab=\'mine\';render()"><b>'+myDeals().filter(isOpen).length+'건</b><span>내 영업 전체 보기 →</span></button><button onclick="G.tab=\'find\';render()"><b>＋</b><span>새 영업 등록</span></button></div>'+(active?execGroupM('overdue','기한초과','먼저 처리',groups.overdue)+execGroupM('today','오늘 할 일','오늘 마감·관리 필요',groups.today)+execGroupM('visit','이번 주 방문','동선 추천 포함',groups.visit)+execGroupM('new','새로 배정','최초 응대',groups.new):'<div class="done-wrap" style="min-height:auto"><div class="done-ring">'+IC.check+'</div><h2>오늘 할 일을 모두 처리했어요</h2></div>')+reactivationHTMLM()+'</div>'}
+ scr.innerHTML=head+'<div class="body fadein"><section class="card today-command"><div class="eyebrow">'+new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'long'})+'</div><h2>'+(G.user?esc(G.user.nm)+'님의 ':'')+'내 오늘 할 일</h2><div class="today-stats"><button><b>'+groups.overdue.length+'</b><span>기한초과</span></button><button><b>'+groups.today.length+'</b><span>오늘 할 일</span></button><button><b>'+groups.visit.length+'</b><span>이번 주 방문</span></button><button><b>'+groups.new.length+'</b><span>새로 배정</span></button></div><div class="today-ask"><input id="crm-ask-m" value="'+escAttr(G.crmAsk||'')+'" placeholder="CRM에게 물어보기" onkeydown="if(event.key===\'Enter\')askSubmitM()"><button onclick="askSubmitM()">찾기</button></div><div class="ask-examples"><button onclick="askExampleM(\'내가 오늘 전화해야 하는 곳\')">오늘 전화</button><button onclick="askExampleM(\'이번 주 방문 예정 현장\')">이번 주 방문</button><button onclick="askExampleM(\'30일 넘게 연락 안 한 곳\')">30일 미접촉</button><button onclick="askExampleM(\'견적 1억 이상인데 다음 할 일 없는 곳\')">1억·Next 없음</button></div>'+askResultHTMLM()+'</section><div class="saleshero"><button class="pri" onclick="G.tab=\'mine\';render()"><b>'+myDeals().filter(isOpen).length+'건</b><span>내 영업 전체 보기 →</span></button><button onclick="G.tab=\'find\';render()"><b>＋</b><span>새 영업 등록</span></button></div>'+(active?execGroupM('overdue','기한초과','먼저 처리',groups.overdue)+execGroupM('today','오늘 할 일','오늘 마감·관리 필요',groups.today)+execGroupM('visit','이번 주 방문','동선 추천 포함',groups.visit)+execGroupM('new','새로 배정','최초 응대',groups.new):'<div class="done-wrap" style="min-height:auto"><div class="done-ring">'+IC.check+'</div><h2>오늘 할 일을 모두 처리했어요</h2></div>')+reactivationHTMLM()+'</div>'}
 function todayCompleteM(i){
  var t=(G._today||[])[i],d=t&&todayDeal(i);if(!t)return false;
  if(t.kind==='inquiry'){markDone(i,'최초 응대 확인');toast('문의 상세에서 통화 결과를 남겨 주세요');openTodayItem(i);return true}
  if(!d)return false;
- var a=execNextM(d);if(!a){toast('완료할 다음 행동이 없습니다. 상세에서 다음 행동을 먼저 등록해 주세요.');return false}
- if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(a.id||''))){toast('서버에서 발급한 다음 행동 ID를 확인한 뒤 완료해 주세요.');return false}
+ var a=execNextM(d);if(!a){toast('완료할 다음 할 일이 없습니다. 상세에서 다음 할 일을 먼저 등록해 주세요.');return false}
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(a.id||''))){toast('서버에서 발급한 다음 할 일 ID를 확인한 뒤 완료해 주세요.');return false}
  var completedAt=isoNow();
  try{pushWrite('next_action_complete',{opportunity_id:d.id,action_id:a.id,at:completedAt})}
  catch(e){toast('완료 요청을 등록하지 못했습니다. 기존 일정을 유지합니다.');return false}
@@ -2347,7 +2347,7 @@ function todayCompleteM(i){
 function todayPostponeM(i){var t=(G._today||[])[i];if(!t)return;G.execTask=i;openSheet(intro('var(--warn-bg)','var(--warn)',IC.clock,esc(t.nm)+' 연기','기한과 연기 횟수가 함께 기록됩니다'),[['내일',1],['3일 뒤',3],['다음 주',7]].map(function(x){return '<button class="cchip gr" onclick="applyTodayPostponeM('+x[1]+')">'+x[0]+'</button>'}).join(''))}
 function applyTodayPostponeM(days){var i=G.execTask,t=(G._today||[])[i],d=t&&todayDeal(i),due=new Date(Date.now()+days*864e5).toISOString().slice(0,10);if(!t)return;if(d){var a=execNextM(d)||{id:'na-'+Date.now(),type:'후속확인',text:t.why};d.postpone=(Number(d.postpone)||0)+1;d.nextAction={id:a.id,opportunity_id:d.id,type:a.type,text:a.text,due_at:due,status:'open',owner_id:meId(),created_at:isoNow()};addActivity(d,'연기','오늘 할 일 연기',due+' · '+d.postpone+'회',false);pushWrite('next_action',{opportunity_id:d.id,type:a.type,text:a.text,due_at:due,postpone_count:d.postpone})}else pushWrite('inquiry_followup',{inquiry_id:t.ref,due_at:due,reason:'담당자 연기'});markDone(i,days+'일 연기');G.execTask=null;closeSheet();toast(due+'로 연기했습니다');render()}
 
-var STAGE_GUIDE_M={first_contact:['관리소장·담당자 연락','공사 예정시기 확인','예상 예산 확인','의사결정권자 확인','현장방문 필요 여부 확인','다음 연락일 설정'],consulting:['현장 조건 확인','요구 공종·범위 확인','의사결정 구조 확인','현장방문 일정 확정','자료 준비','다음 연락일 설정'],sent:['자료·견적 발송 확인','수신 여부 확인','검토 일정 확인','질문·보완사항 확인','후속 연락일 설정'],rapport:['관계 핵심인물 확인','최근 상황 업데이트','예산·회의 시점 확인','도움되는 자료 준비','다음 접촉일 설정'],silent:['최근 접촉 이력 확인','1차 진행 확인','2차 보류 확인','연락 유지 여부 판단','재접촉일 설정'],waiting:['대기 사유 기록','재개 조건 확인','재접촉 약속일 확인','담당자 변경 여부 확인'],compete:['경쟁사 확인','PT 일정 확인','핵심 요구사항 확인','예상 낙찰가 확인','의사결정자 반응 확인','다음 행동 설정'],imminent:['공사 예정일 확인','현설·회의 일정 확인','견적 유효성 확인','준비 서류 확인','리스크 확인'],bidding:['입찰일 확인','입찰 조건 확인','제출 서류 확인','예상 낙찰가 확인','결과 확인일 설정'],contract:['계약 조건 확인','최종 금액 확인','계약서 회신 일정','착수 일정 확인','다음 책임자 확인'],construction:['착공·공정 일정 확인','현장 이슈 확인','고객 요청사항 기록','다음 현장 확인일 설정'],completion:['준공 검사 확인','완료 서류 확인','미해결 사항 확인','만족도 확인','재영업 시점 설정'],expansion:['기존 공사 상태 확인','미영업 공종 확인','새 담당자·의사결정자 확인','재접촉일 설정']};
+var STAGE_GUIDE_M={first_contact:['관리소장·담당자 연락','공사 예정시기 확인','예상 예산 확인','의사결정권자 확인','현장방문 필요 여부 확인','다음 연락일 설정'],consulting:['현장 조건 확인','요구 공종·범위 확인','의사결정 구조 확인','현장방문 일정 확정','자료 준비','다음 연락일 설정'],sent:['자료·견적 발송 확인','수신 여부 확인','검토 일정 확인','질문·보완사항 확인','후속 연락일 설정'],rapport:['관계 핵심인물 확인','최근 상황 업데이트','예산·회의 시점 확인','도움되는 자료 준비','다음 접촉일 설정'],silent:['최근 접촉 이력 확인','1차 진행 확인','2차 보류 확인','연락 유지 여부 판단','재접촉일 설정'],waiting:['대기 사유 기록','재개 조건 확인','재접촉 약속일 확인','담당자 변경 여부 확인'],compete:['경쟁사 확인','PT 일정 확인','핵심 요구사항 확인','예상 낙찰가 확인','의사결정자 반응 확인','다음 할 일 설정'],imminent:['공사 예정일 확인','현설·회의 일정 확인','견적 유효성 확인','준비 서류 확인','리스크 확인'],bidding:['입찰일 확인','입찰 조건 확인','제출 서류 확인','예상 낙찰가 확인','결과 확인일 설정'],contract:['계약 조건 확인','최종 금액 확인','계약서 회신 일정','착수 일정 확인','다음 책임자 확인'],construction:['착공·공정 일정 확인','현장 이슈 확인','고객 요청사항 기록','다음 현장 확인일 설정'],completion:['준공 검사 확인','완료 서류 확인','미해결 사항 확인','만족도 확인','재영업 시점 설정'],expansion:['기존 공사 상태 확인','미영업 공종 확인','새 담당자·의사결정자 확인','재접촉일 설정']};
 function stageGuideItemsM(d){return STAGE_GUIDE_M[d.code]||STAGE_GUIDE_M.first_contact}
 function stageGuideStateM(d){d.stage_checklist=d.stage_checklist||{};d.stage_checklist[d.code]=d.stage_checklist[d.code]||{};return d.stage_checklist[d.code]}
 function stageGuideHTMLM(d){var st=stageGuideStateM(d),A=stageGuideItemsM(d),n=A.filter(function(_,i){return !!st[i]}).length;return '<div class="card stage-guide"><div class="sec-h" style="margin:0"><h2>이 단계에서 해야 할 일</h2><span>'+n+'/'+A.length+' 완료</span></div><div class="stage-guide-list">'+A.map(function(x,i){return '<button class="stage-guide-item '+(st[i]?'on':'')+'" onclick="toggleStageGuideM('+i+')"><i>'+(st[i]?'✓':'')+'</i>'+esc(x)+'</button>'}).join('')+'</div></div>'}
@@ -2363,7 +2363,7 @@ function quoteVersionsM(d){var A=d.quote_versions||d.quoteVersions||[];if(!Array
 function quoteHistoryHTMLM(d){var A=quoteVersionsM(d),contract=Number(d.won_amount||0);return '<div class="card"><div class="sec-h" style="margin:0"><h2>견적 Version</h2><button onclick="quoteSheetM()" style="color:var(--blue);font-weight:850">＋ 새 버전</button></div><div class="quote-stack">'+(A.length?A.map(function(x,i){return '<div class="quote-version"><i>V'+esc(x.version_no||i+1)+'</i><span><b>'+esc(x.reason||'견적 조정')+'</b><small>'+esc(String(x.created_at||'').slice(0,10)||'날짜 미기록')+'</small></span><strong>'+amtTxt(Number(x.amount||0))+'</strong></div>'}).join(''):'<div class="hint">견적 버전이 없습니다. 최초 견적부터 남겨주세요.</div>')+(contract?'<div class="quote-version"><i style="background:var(--ok-bg);color:var(--ok)">계약</i><span><b>최종 계약금액</b><small>견적 대비 '+(A.length&&Number(A[A.length-1].amount)?Math.round((1-contract/Number(A[A.length-1].amount))*1000)/10+'% 조정':'비교 데이터 없음')+'</small></span><strong>'+amtTxt(contract)+'</strong></div>':'')+'</div></div>'}
 function quoteSheetM(){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),A=quoteVersionsM(d||{}),last=A.length?Number(A[A.length-1].amount||0):Number(d&&d.quote_amount||d&&d.amt||0);if(!d)return;openSheet(intro('var(--blue-50)','var(--blue-dark)',IC.doc,'견적 V'+(A.length+1)+' 추가','기존 견적을 덮어쓰지 않고 조정 사유와 함께 남깁니다'),'<div class="hint">견적금액(원) *</div><input id="qv-amt-m" type="text" inputmode="decimal" data-money min="0" step="10000" value="'+(last||'')+'" style="width:100%;box-sizing:border-box;margin:6px 0 10px;border:1px solid var(--line-2);border-radius:11px;padding:12px;font:inherit"><div class="hint">조정 사유 *</div><textarea id="qv-reason-m" rows="3" placeholder="예: 공사 범위 조정" style="width:100%;box-sizing:border-box;margin:6px 0 12px;border:1px solid var(--line-2);border-radius:11px;padding:12px;font:inherit"></textarea><button class="btn btn-primary" onclick="saveQuoteVersionM()">새 견적 버전 저장</button>')}
 function saveQuoteVersionM(){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),amount=MoneyInput.parse(document.getElementById('qv-amt-m').value),reason=(document.getElementById('qv-reason-m').value||'').trim(),A=quoteVersionsM(d||{});if(!d||!Number.isFinite(amount)||amount<=0)return toast('견적금액을 입력해 주세요');if(reason.length<2)return toast('조정 사유를 입력해 주세요');var row={version_no:A.length+1,amount:amount,reason:reason,created_at:isoNow(),created_by:G.user&&G.user.nm||d.rep};d.quote_versions=A.concat([row]);d.quote_amount=amount;d.tl.unshift(['오늘','견적 V'+row.version_no+' · '+amtTxt(amount)+' · '+reason]);pushWrite('quote_version',{opportunity_id:d.id,version_no:row.version_no,amount:amount,reason:reason,created_at:row.created_at,created_by:row.created_by});closeSheet();toast('견적 V'+row.version_no+'을 저장했습니다');render()}
-function handoverSummaryM(d,from,to,reason){var a=(d.activities||[]).slice().sort(function(x,y){return String(y.occurred_at||y.at||'').localeCompare(String(x.occurred_at||x.at||''))}).slice(0,3),next=execNextM(d),c=siteContactsM(d)[0];return {at:isoNow(),from:from,to:to,reason:reason||'담당자 재배정',bullets:['현재 단계: '+stageLabel(d.code),'예상금액: '+amtTxt(d.amt),'핵심 고객: '+(c?c.name+' '+c.role:'미등록'),'최근 진행: '+(a.length?(a[0].note||a[0].type):((d.tl||[])[0]&&d.tl[0][1]||'기록 없음')),'다음 행동: '+(next?next.text+' · '+next.due:'미지정')]}}
+function handoverSummaryM(d,from,to,reason){var a=(d.activities||[]).slice().sort(function(x,y){return String(y.occurred_at||y.at||'').localeCompare(String(x.occurred_at||x.at||''))}).slice(0,3),next=execNextM(d),c=siteContactsM(d)[0];return {at:isoNow(),from:from,to:to,reason:reason||'담당자 재배정',bullets:['현재 단계: '+stageLabel(d.code),'예상금액: '+amtTxt(d.amt),'핵심 고객: '+(c?c.name+' '+c.role:'미등록'),'최근 진행: '+(a.length?(a[0].note||a[0].type):((d.tl||[])[0]&&d.tl[0][1]||'기록 없음')),'다음 할 일: '+(next?next.text+' · '+next.due:'미지정')]}}
 function handoverHTMLM(d){var A=d.handover_summaries||d.handoverSummaries||[];if(!Array.isArray(A)||!A.length)return '';var h=A[A.length-1];return '<div class="card handover-card"><div class="sec-h" style="margin:0"><h2>자동 인수인계 요약</h2><span>'+esc(String(h.at||'').slice(0,10))+'</span></div><div class="hint" style="margin-top:5px">'+esc(h.from)+' → '+esc(h.to)+' · '+esc(h.reason||'담당자 변경')+'</div><ul>'+(h.bullets||[]).map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul></div>'}
 function pickReassign(r){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)});if(!d)return;var from=d.rep,h=handoverSummaryM(d,from,r,'관리자 재배정');d.rep=r;d.handover_summaries=d.handover_summaries||[];d.handover_summaries.push(h);addActivity(d,'담당자변경',from+' → '+r,'자동 인수인계 요약 생성',false);pushWrite('assign',{opportunity_id:d.id,from:from,to:r,handover:h});pushWrite('handover',{opportunity_id:d.id,from:from,to:r,summary:h});closeSheet();toast('재배정 · 인수인계 요약 생성');render()}
 var _execRDealM=rDeal;
@@ -2430,7 +2430,7 @@ var _fieldMoveToM=moveTo;
 moveTo=function(i){var r=_fieldMoveToM.apply(this,arguments),d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),card=document.getElementById('sheetcard'),grip=card&&card.querySelector('.sheet-grip');if(d&&grip)grip.insertAdjacentHTML('afterend',stageGuideWarningM(d));return r};
 
 function crmMonthQuoteM(d){var ym=new Date().toISOString().slice(0,7),acts=d.activities||[];return acts.some(function(a){return String(a.occurred_at||a.at||'').slice(0,7)===ym&&/견적.*발송|발송.*견적/.test([a.type,a.note,a.result].join(' '))})||(d.tl||[]).some(function(t){return /견적.*발송|발송.*견적/.test(t[1]||'')})}
-function crmAskM(q){q=String(q||'').trim();var A=myDeals().filter(isOpen),title='검색 결과',criteria=[];if(!q)return {title:'질문을 입력해 주세요',criteria:[],list:[]};var n=Number((q.match(/(\d+)\s*일/)||[])[1]||30),rep=REP_INTERNAL.filter(function(x){return q.indexOf(x)>=0})[0];if(rep){A=A.filter(function(d){return d.rep===rep});criteria.push('담당자 '+rep)}if(/관리소장.*(휴대폰|전화번호).*(없|미입력)|연락처.*없/.test(q)){title='관리소장 휴대폰이 없는 현장';criteria.push('관리소장 휴대폰 없음','진행 현장만');A=A.filter(function(d){return !siteContactsM(d).some(function(c){return phoneN(c.mobile).length>=10})})}else if(/이번\s*달.*견적.*보냈|견적.*이번\s*달.*발송/.test(q)){title='이번 달 견적 발송 후 경쟁 전 현장';criteria.push('이번 달 견적 발송','경쟁 단계 전');A=A.filter(function(d){return crmMonthQuoteM(d)&&['compete','imminent','bidding','contract','construction','completion'].indexOf(d.code)<0})}else if(/관리소장/.test(q)&&/(예전|과거).*근무/.test(q)){var name=(q.match(/([가-힣]{2,4})\s*관리소장/)||[])[1]||'';title=(name||'관리소장')+' 과거 근무 현장';criteria.push('연락처 이름 '+(name||'검색'),'실제 연결 현장');A=A.filter(function(d){return siteContactsM(d).some(function(c){return !name||c.name===name})})}else if(/오늘.*전화|전화.*오늘/.test(q)){title='오늘 전화할 곳';criteria.push('다음 행동 전화','오늘까지');var ids=buildToday().filter(function(t){return t.kind==='deal'&&t.call}).map(function(t){return String(t.ref)});A=A.filter(function(d){return ids.indexOf(String(d.id))>=0})}else if(/이번\s*주.*방문|방문.*이번\s*주/.test(q)){title='이번 주 방문 예정';criteria.push('방문·실측·PT','7일 이내');A=A.filter(function(d){var dd=execDueM(d);return execIsVisitM(d)&&dd!=null&&dd>=0&&dd<=7})}else if(/1\s*억|10000\s*만/.test(q)&&/다음\s*행동.*없/.test(q)){title='1억 이상 · 다음 행동 없음';criteria.push('금액 1억 이상','다음 행동 없음');A=A.filter(function(d){return Number(d.quote_amount||d.amt||0)>=100000000&&!execNextM(d)})}else if(/기술자문/.test(q)){title='기술자문 현장';criteria.push('사업유형 기술자문');A=A.filter(function(d){return bizOf(d)==='기술자문'})}else if(/연락.*안|미접촉|넘게/.test(q)){title=n+'일 넘게 연락하지 않은 곳';criteria.push('최근 접촉 '+n+'일 이상');A=A.filter(function(d){var a=ageOf(d);return a!=null&&a>=n})}else{title='현장·담당자·연락처 검색';criteria.push('검색어 '+q);A=A.filter(function(d){var c=siteContactsM(d),hay=[d.nm,d.rep,stageLabel(d.code),bizOf(d)].concat(c.map(function(x){return x.name+' '+x.role+' '+x.mobile})).join(' ');return hay.indexOf(q)>=0})}return {title:title,criteria:criteria,list:A.slice(0,20)}}
+function crmAskM(q){q=String(q||'').trim();var A=myDeals().filter(isOpen),title='검색 결과',criteria=[];if(!q)return {title:'질문을 입력해 주세요',criteria:[],list:[]};var n=Number((q.match(/(\d+)\s*일/)||[])[1]||30),rep=REP_INTERNAL.filter(function(x){return q.indexOf(x)>=0})[0];if(rep){A=A.filter(function(d){return d.rep===rep});criteria.push('담당자 '+rep)}if(/관리소장.*(휴대폰|전화번호).*(없|미입력)|연락처.*없/.test(q)){title='관리소장 휴대폰이 없는 현장';criteria.push('관리소장 휴대폰 없음','진행 현장만');A=A.filter(function(d){return !siteContactsM(d).some(function(c){return phoneN(c.mobile).length>=10})})}else if(/이번\s*달.*견적.*보냈|견적.*이번\s*달.*발송/.test(q)){title='이번 달 견적 발송 후 경쟁 전 현장';criteria.push('이번 달 견적 발송','경쟁 단계 전');A=A.filter(function(d){return crmMonthQuoteM(d)&&['compete','imminent','bidding','contract','construction','completion'].indexOf(d.code)<0})}else if(/관리소장/.test(q)&&/(예전|과거).*근무/.test(q)){var name=(q.match(/([가-힣]{2,4})\s*관리소장/)||[])[1]||'';title=(name||'관리소장')+' 과거 근무 현장';criteria.push('연락처 이름 '+(name||'검색'),'실제 연결 현장');A=A.filter(function(d){return siteContactsM(d).some(function(c){return !name||c.name===name})})}else if(/오늘.*전화|전화.*오늘/.test(q)){title='오늘 전화할 곳';criteria.push('다음 할 일 전화','오늘까지');var ids=buildToday().filter(function(t){return t.kind==='deal'&&t.call}).map(function(t){return String(t.ref)});A=A.filter(function(d){return ids.indexOf(String(d.id))>=0})}else if(/이번\s*주.*방문|방문.*이번\s*주/.test(q)){title='이번 주 방문 예정';criteria.push('방문·실측·PT','7일 이내');A=A.filter(function(d){var dd=execDueM(d);return execIsVisitM(d)&&dd!=null&&dd>=0&&dd<=7})}else if(/1\s*억|10000\s*만/.test(q)&&/다음\s*행동.*없/.test(q)){title='1억 이상 · 다음 할 일 없음';criteria.push('금액 1억 이상','다음 할 일 없음');A=A.filter(function(d){return Number(d.quote_amount||d.amt||0)>=100000000&&!execNextM(d)})}else if(/기술자문/.test(q)){title='기술자문 현장';criteria.push('사업유형 기술자문');A=A.filter(function(d){return bizOf(d)==='기술자문'})}else if(/연락.*안|미접촉|넘게/.test(q)){title=n+'일 넘게 연락하지 않은 곳';criteria.push('최근 접촉 '+n+'일 이상');A=A.filter(function(d){var a=ageOf(d);return a!=null&&a>=n})}else{title='현장·담당자·연락처 검색';criteria.push('검색어 '+q);A=A.filter(function(d){var c=siteContactsM(d),hay=[d.nm,d.rep,stageLabel(d.code),bizOf(d)].concat(c.map(function(x){return x.name+' '+x.role+' '+x.mobile})).join(' ');return hay.indexOf(q)>=0})}return {title:title,criteria:criteria,list:A.slice(0,20)}}
 function askResultHTMLM(){if(!G.crmAsk)return '';var r=crmAskM(G.crmAsk);return '<div class="ask-result"><strong>'+esc(r.title)+' · '+r.list.length+'건</strong><div class="ask-criteria">'+(r.criteria||[]).map(function(x){return '<i>'+esc(x)+'</i>'}).join('')+'</div>'+(r.list.length?r.list.slice(0,7).map(function(d){return '<button class="lrow" data-id="'+escAttr(d.id)+'" onclick="G.deal=this.dataset.id;G.tab=\'mine\';render()"><span class="meta"><span class="t">'+esc(d.nm)+'</span><span class="s">'+esc(stageLabel(d.code))+' · '+amtTxt(d.amt)+'</span></span><span class="chev">'+IC.chev+'</span></button>'}).join(''):'<div class="hint" style="padding:7px 3px">조건에 맞는 실제 CRM 영업기회가 없습니다.</div>')+'<div class="hint" style="padding:7px 3px">읽기 전용 · 질문을 검색조건으로 바꾼 뒤 실제 데이터만 표시합니다.</div></div>'}
 var _fieldRTodayM=rToday;
 rToday=function(head){var r=_fieldRTodayM.apply(this,arguments),ex=document.querySelector('#scr .ask-examples');if(ex&&!ex.querySelector('[data-field="missing"]'))ex.insertAdjacentHTML('beforeend','<button data-field="missing" onclick="askExampleM(\'관리소장 휴대폰이 없는 현장\')">소장 번호 없음</button><button onclick="askExampleM(\'이번 달 견적 보냈는데 아직 경쟁단계로 안 간 곳\')">견적 후 정체</button>');return r};
@@ -2458,10 +2458,10 @@ function relInsightM(d,c){c=c||contactInfoM(d);var m=rmMetaM(d),s=relStatsM(d,c)
  if(m.days==null)score-=5;else if(m.days<=7)score+=30;else if(m.days<=30)score+=20;else if(m.days<=90)score+=5;else if(m.days>=365)score-=25;else if(m.days>=180)score-=15;if(late)score+=25;if(d.code==='sent')score+=10;if(responded)score+=15;score-=Math.min(25,attempts*7);score-=Math.max(0,s.recent30-1)*6;if(hold)score-=20;score=Math.max(0,Math.min(100,score));var dormant=(attempts>=3&&!responded)||(m.days!=null&&m.days>=365),heat=dormant?'dormant':score>=70?'hot':score>=45?'warm':'cool',reason='',nba='',channel='kakao',stop='',nextDate='';
  if(hold){reason='고객이 요청한 재접촉 시점까지 대기 중입니다.';stop=String(m.wake).slice(0,10)+'까지 일반 관계관리 연락을 쉬세요.';nba='지금 연락하지 않기';nextDate=String(m.wake).slice(0,10)}
  else if(attempts>=3&&!responded){reason='고객 반응 없이 3회 연락을 시도했습니다.';stop='추가 발송을 멈추고 90일 뒤 재활성 후보로 검토하세요.';nba='90일 뒤 재접촉'}
- else if(s.recent30>=3){reason='같은 연락처에 최근 30일 메시지가 '+s.recent30+'회 있습니다.';stop='여러 공종·딜의 연락을 한 번으로 통합하세요.';nba='통합 후 재검토'}
+ else if(s.recent30>=3){reason='같은 연락처에 최근 30일 메시지가 '+s.recent30+'회 있습니다.';stop='여러 공종·영업건의 연락을 한 번으로 통합하세요.';nba='통합 후 재검토'}
  else if(m.outboundDays!=null&&m.outboundDays<5&&!responded){reason=m.outboundDays+'일 전 발송 후 아직 고객 반응이 없습니다.';stop='마지막 발송 후 5일간은 추가 메시지를 쉬는 것이 좋습니다.';nba='반응 기다리기';nextDate=new Date(new Date(m.outboundAt).getTime()+5*864e5).toISOString().slice(0,10)}
- else if(m.due){var dd=Math.ceil((new Date(String(m.due).slice(0,10)+'T00:00:00').getTime()-new Date().setHours(0,0,0,0))/864e5);if(dd<=0){reason=dd<0?'약속한 다음 행동이 '+Math.abs(dd)+'일 지났습니다.':'다음 행동일이 오늘입니다.';nba=late?'전화 추천':'카카오 추천';channel=late?'call':'kakao'}}
- if(!reason&&d.code==='sent'){reason='견적·자료 발송 후 수신·검토 확인이 필요합니다.';nba='전화로 확인';channel='call'}else if(!reason&&late){reason=stageLabel(d.code)+' 단계는 문자보다 직접 확인이 우선입니다.';nba='전화 추천';channel='call'}else if(!reason&&d.outcome==='lost'){reason='실주 사유와 경과기간을 기준으로 재활성할 수 있습니다.';nba='가벼운 재접촉'}else if(!reason&&(d.outcome==='won'||d.code==='completion'||d.code==='expansion')){reason='기존 수주 관계에서 미영업 공종을 확인할 시점입니다.';nba='확장 영업'}else if(!reason&&m.days!=null&&m.days>=90){reason='최근 유효접촉 후 '+m.days+'일이 지났습니다.';nba='가벼운 카카오'}else if(!reason){reason='현재 단계와 다음 행동을 기준으로 관계 상태를 확인하세요.';nba='전화로 상황 확인';channel='call'}
+ else if(m.due){var dd=Math.ceil((new Date(String(m.due).slice(0,10)+'T00:00:00').getTime()-new Date().setHours(0,0,0,0))/864e5);if(dd<=0){reason=dd<0?'약속한 다음 할 일이 '+Math.abs(dd)+'일 지났습니다.':'다음 할 일 날짜이 오늘입니다.';nba=late?'전화 추천':'카카오 추천';channel=late?'call':'kakao'}}
+ if(!reason&&d.code==='sent'){reason='견적·자료 발송 후 수신·검토 확인이 필요합니다.';nba='전화로 확인';channel='call'}else if(!reason&&late){reason=stageLabel(d.code)+' 단계는 문자보다 직접 확인이 우선입니다.';nba='전화 추천';channel='call'}else if(!reason&&d.outcome==='lost'){reason='실주 사유와 경과기간을 기준으로 재활성할 수 있습니다.';nba='가벼운 재접촉'}else if(!reason&&(d.outcome==='won'||d.code==='completion'||d.code==='expansion')){reason='기존 수주 관계에서 미영업 공종을 확인할 시점입니다.';nba='확장 영업'}else if(!reason&&m.days!=null&&m.days>=90){reason='최근 유효접촉 후 '+m.days+'일이 지났습니다.';nba='가벼운 카카오'}else if(!reason){reason='현재 단계와 다음 할 일을 기준으로 관계 상태를 확인하세요.';nba='전화로 상황 확인';channel='call'}
  if(!stop&&c&&c.currentSite&&!contactCurrentAtDealM(d,c))reason='담당자 현재 근무 현장 연결 확인이 필요합니다. 동명 현장 또는 이동 이력을 확인한 뒤 새 관계를 연결하세요.';
  return {heat:heat,heatLabel:{hot:'HOT',warm:'WARM',cool:'COOL',dormant:'DORMANT'}[heat],score:score,reason:reason,nba:nba,channel:channel,stop:stop,nextDate:nextDate,attempts:Math.min(3,attempts),recent30:s.recent30,stats:s,content:relWorkContentM(d),season:relSeasonM(d)}}
 function relCardM(d,compact){var c=contactInfoM(d),i=relInsightM(d,c);return '<div class="card m-relintel"'+(compact?'':' id="relationIntelM"')+'><div class="m-relintel-head"><h2>관계 인텔리전스</h2><span class="m-relheat '+i.heat+'">'+i.heatLabel+' · '+i.score+'</span></div><div class="m-relstats"><div><span>무응답</span><b>'+i.attempts+'/3</b></div><div><span>30일 메시지</span><b>'+i.recent30+'회</b></div><div><span>추천 자료</span><b>'+esc(i.content)+'</b></div></div><div class="m-relreason"><span>지금 연락해야 하는 이유</span><b>'+esc(i.reason)+'</b></div><div class="m-relreason '+(i.stop?'stop':'')+'"><span>Next Best Action</span><b>'+esc(i.nba)+(i.nextDate?' · '+esc(i.nextDate):'')+'</b></div>'+(i.stop?'<div class="m-relreason stop"><span>지금 보내지 말아야 하는 이유</span><b>'+esc(i.stop)+'</b></div>':'')+'<div class="m-rmmetrics"><span>발송 <b>'+i.stats.sent+'</b></span><span>응답 <b>'+i.stats.responded+'</b> · '+i.stats.responseRate+'%</span><span>Stage 전진 <b>'+i.stats.advanced+'</b> · '+i.stats.advanceRate+'%</span><span>계절 신호 <b>'+esc(i.season)+'</b></span></div>'+(compact?'':'<div class="m-relactions"><button class="primary" onclick="relActionM(\''+(i.channel==='call'?'call':'kakao')+'\')">'+esc(i.nba)+'</button><button onclick="relHoldM(30)">30일 접촉 보류</button></div>')+'</div>'}
@@ -2562,7 +2562,7 @@ reactivationHTMLM=function(){var A=reactivationM();if(!A.length)return '';return
 
    «로그인 기억» 은 Supabase 가 이미 해 준다. 이름만 로컬에 저장해 두고 바로
    들여보내면 토큰 없이 서버를 불러 «서버 연결 실패» 가 뜬다 — 실제로 그랬다. */
-</script><script src="./operational-overlay.js?v=20260925-dealcall-1"></script><script>rToday=rTodayRoleM;if(!DEVVIEW)document.body.classList.add('svc');
+</script><script src="./operational-overlay.js?v=20260924-terms-1"></script><script>rToday=rTodayRoleM;if(!DEVVIEW)document.body.classList.add('svc');
 if(DEVVIEW){nav('flow')}
 else if(DEMO){G.user=REPS[0];G.mode='rep';nav('today')}
 else{
@@ -2575,6 +2575,6 @@ else{
 </script>
 <link rel="stylesheet" href="stage-transition.css?v=20260905-1">
 <script src="stage-transition.js?v=20260905-1"></script>
-<script src="stage-transition-ui.js?v=20260905-1"></script>
+<script src="stage-transition-ui.js?v=20260924-terms-2"></script>
 <script src="./work-editor.js?v=20260907-buttons-1"></script><script>window.addEventListener('phase1:identity-cleared',function(){TOKEN=null;WRITE_Q=[];G.user=null;DEALS=[];BUNDLE=null;LIVE=false;});window.addEventListener('phase1:profile',function(){WRITE_Q=Phase1.queue.list();});window.addEventListener('phase1:queue',function(){WRITE_Q=Phase1.queue.list();});</script></body>
 </html>

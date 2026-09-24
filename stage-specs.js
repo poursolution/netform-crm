@@ -36,7 +36,7 @@ function triage(r,v,days){
  const near=!paused&&quote!==null&&quote>=0&&quote<=3;
  const missing=!v.needs||!v.work||/미분류|미기록/.test(v.work)||!r.next?.text;
  const active=!paused&&(urgent||near||fresh);
- const reason=paused?'보류 기한 전':quote!==null&&quote<0?'견적 예정일 초과':next!==null&&next<0?'다음 업무 기한 초과':quote===0?'오늘 견적 예정':next===0?'오늘 예정 업무':near?'견적 일정 임박':!v.needs?'고객 요구 미확인':!v.work||/미분류|미기록/.test(v.work)?'공종 미분류':!r.next?.text?'다음 행동 없음':'예정 일정 확인';
+ const reason=paused?'보류 기한 전':quote!==null&&quote<0?'견적 예정일 초과':next!==null&&next<0?'다음 업무 기한 초과':quote===0?'오늘 견적 예정':next===0?'오늘 예정 업무':near?'견적 일정 임박':!v.needs?'고객 요구 미확인':!v.work||/미분류|미기록/.test(v.work)?'공종 미분류':!r.next?.text?'다음 할 일 없음':'예정 일정 확인';
  return {today:active,new:!paused&&fresh,quote:near,info:!paused&&missing,backlog:!active,all:true,reason,rank:urgent?0:near?1:fresh?2:3,date:[r.due,v.quoteDue].filter(Boolean).sort()[0]||''};
 }
 function compare(key,left,right){const spec=specs[key],bucket=left.priority-right.priority;if(bucket)return bucket;const x=left.values[spec.sortField],y=right.values[spec.sortField];if(!x||!y)return x?-1:y?1:String(left.row.key).localeCompare(String(right.row.key));const diff=String(x).localeCompare(String(y));return (spec.descending?-diff:diff)||String(left.row.key).localeCompare(String(right.row.key));}

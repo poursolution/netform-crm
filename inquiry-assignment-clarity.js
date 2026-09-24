@@ -276,7 +276,7 @@
  root.inqCtlConsole=function(Q,c){
   var admin=root.inqCtlRoleView()==='admin';
   c=c||root.inqCtlCounts(root.inqCtlScopeActive(),root.inqCtlScopeTrash(),root.inqTechReviewRows());
-  var summary=(admin?[['신규','이번 주 접수','신규 문의'],['미배정','원인 확인·즉시 배정','risk'],['배정완료','최초응대 대기','warn'],['영업전환','파이프라인 연결','ok'],['휴지통','30일 보관','risk']]:[['내 할 일','응대·다음 행동 필요','risk'],['배정완료','최초응대 시작','warn'],['응대중','다음 행동 관리',''],['영업전환','Pipeline 연결','ok'],['보류','재개 전 대기','']]).map(function(x){return '<button class="'+(x[2]||'')+'" onclick="inqCtlSetTab(\''+x[0]+'\')"><span>'+x[0]+'</span><b>'+c[x[0]]+'건</b><small>'+x[1]+'</small></button>'}).join('');
+  var summary=(admin?[['신규','이번 주 접수','신규 문의'],['미배정','원인 확인·즉시 배정','risk'],['배정완료','최초응대 대기','warn'],['영업전환','파이프라인 연결','ok'],['휴지통','30일 보관','risk']]:[['내 할 일','응대·다음 할 일 필요','risk'],['배정완료','최초응대 시작','warn'],['응대중','다음 할 일 관리',''],['영업전환','Pipeline 연결','ok'],['보류','재개 전 대기','']]).map(function(x){return '<button class="'+(x[2]||'')+'" onclick="inqCtlSetTab(\''+x[0]+'\')"><span>'+x[0]+'</span><b>'+c[x[0]]+'건</b><small>'+x[1]+'</small></button>'}).join('');
   var list=Q.slice().sort(function(a,b){
    var ar=admin?(root.inqCtlBucket(a)==='미배정'?0:root.inqCtlBucket(a)==='배정완료'?1:2):(root.inqCtlNeedsAction(a)?0:2)+(root.inquiryResponseLate(a)?-1:0),br=admin?(root.inqCtlBucket(b)==='미배정'?0:root.inqCtlBucket(b)==='배정완료'?1:2):(root.inqCtlNeedsAction(b)?0:2)+(root.inquiryResponseLate(b)?-1:0);
    return ar-br||(admin&&ar===0?root.inquiryAssignmentSort(a,b):String(root.inquiryDate(b)).localeCompare(String(root.inquiryDate(a))));

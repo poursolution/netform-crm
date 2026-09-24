@@ -65,7 +65,7 @@ function relationship(list){
   const manage=(x.silNeed?btn('침묵 전환','stage-edit',r.key)+' ':'')+btn('처리','contact',r.key);
   rowsHtml+='<tr data-deal="'+a(r.key)+'"'+(isFirst?' class="sw-first"':'')+'><td>'+btn(r.site,'record',r.key)+(scopedOwner==='전체'?'<small>'+h(r.owner||'미배정')+'</small>':'')+'</td><td>'+stageChip+'</td><td>'+(x.contactAge==null?'미확인':x.contactAge+'일 전')+'</td><td>'+nextChip+(r.due?'<small>'+h(String(r.due).slice(0,10))+'</small>':'')+'</td><td>'+h(money(r.amount))+'</td><td>'+h(r.next?.text||'다음 연락 등록')+'</td><td>'+manage+'</td></tr>';
  });
- const table='<div class="sw-table-scroll"><table class="sw-work-table sw-frame"><thead><tr>'+['현장','단계','마지막 접촉','다음 연락','예상금액','다음 행동','관리'].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>'+(shown.length?'':empty)+'</div>';
+ const table='<div class="sw-table-scroll"><table class="sw-work-table sw-frame"><thead><tr>'+['현장','단계','마지막 접촉','다음 연락','예상금액','다음 할 일','관리'].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>'+(shown.length?'':empty)+'</div>';
  const scopeHead=scopedOwner!=='전체'?'<div class="sw-scope-head"><h3>'+h(scopedOwner)+' 담당 목록 <small>'+ordered.length+'건 · 먼저 볼 것 '+first.length+'</small></h3>'+btn('담당자 필터 해제','owner',scopedOwner)+'</div>':'';
  return relationshipOwnerBoard(scopedOwner)+segBar+scopeHead+'<p class="ps-queue-count">'+shown.length+' / '+ordered.length+'건 표시 · 먼저 볼 것 '+first.length+'건</p>'+table+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
 }
@@ -87,7 +87,7 @@ function table(key,items){
  const columns=triage?['선택','우선','현장','담당자','왜 확인?','다음 업무','기한','관리']:['현장','담당자',...(key==='construction'?['계약 상태',...spec.queueFields.map(k=>root.StageSpecs.labels[k])]:spec.queueFields.map(k=>root.StageSpecs.labels[k])),'관리'];
  return '<div class="sw-table-scroll"><table class="sw-work-table"><thead><tr>'+columns.map(t=>'<th scope="col">'+(t==='선택'?'<input type="checkbox" aria-label="표시된 현장 모두 선택" data-triage-all>':h(t))+'</th>').join('')+'</tr></thead><tbody>'+items.map((x,i)=>{
   const r=x.row,v=x.values,t=x.triage,select=triage?'<td><input type="checkbox" aria-label="'+a(r.site)+' 선택" data-triage-select="'+a(r.key)+'"></td><td>'+((root.G.pipelineQueue.page-1)*30+i+1)+'</td>':'';
-  const values=triage?[t.reason,r.next?.text||'다음 행동 등록',t.date?due({days:root.daysTo(t.date)}):'일정 미지정']:spec.queueFields.map(k=>display(k,v[k]));
+  const values=triage?[t.reason,r.next?.text||'다음 할 일 등록',t.date?due({days:root.daysTo(t.date)}):'일정 미지정']:spec.queueFields.map(k=>display(k,v[k]));
   return '<tr data-deal="'+a(r.key)+'">'+select+'<td>'+btn(r.site,'record',r.key)+'</td><td>'+h(r.owner||'미배정')+'</td>'+(key==='construction'?'<td class="sw-contract-state">'+h(v.contractState)+'</td>':'')+values.map(value=>'<td>'+h(value||'미기록')+'</td>').join('')+'<td>'+btn('처리','primary',r.key)+'</td></tr>';
  }).join('')+'</tbody></table>'+(items.length?'':empty)+'</div>';
 }
@@ -172,7 +172,7 @@ function consultingFrame(items){
   if(!urgent&&!markedRest){markedRest=true;rows+='<tr class="sw-group-row"><td colspan="7">정상 진행 ('+rest.length+')</td></tr>';}
   const r=x.row,v=x.values,qd=v.quoteDue?root.daysTo(v.quoteDue):null;
   const chip=qd==null?'<span class="sw-due-chip mut">미지정</span>':qd<0?'<span class="sw-due-chip hot">'+Math.abs(qd)+'일 지남</span>':qd===0?'<span class="sw-due-chip warn">오늘</span>':'<span class="sw-due-chip ok">D-'+qd+'</span>';
-  rows+='<tr data-deal="'+a(r.key)+'"'+(urgent?' class="sw-first"':'')+'><td>'+btn(r.site,'record',r.key)+'</td><td>'+h(r.owner||'미배정')+'</td><td>'+h(v.needs||x.triage.reason)+'</td><td>'+chip+(v.quoteDue?'<small>'+h(v.quoteDue)+'</small>':'')+'</td><td>'+h(money(r.amount))+'</td><td>'+h(r.next?.text||'다음 행동 등록')+(r.due?'<small>'+h(r.due)+'</small>':'')+'</td><td>'+btn('처리','primary',r.key)+'</td></tr>';
+  rows+='<tr data-deal="'+a(r.key)+'"'+(urgent?' class="sw-first"':'')+'><td>'+btn(r.site,'record',r.key)+'</td><td>'+h(r.owner||'미배정')+'</td><td>'+h(v.needs||x.triage.reason)+'</td><td>'+chip+(v.quoteDue?'<small>'+h(v.quoteDue)+'</small>':'')+'</td><td>'+h(money(r.amount))+'</td><td>'+h(r.next?.text||'다음 할 일 등록')+(r.due?'<small>'+h(r.due)+'</small>':'')+'</td><td>'+btn('처리','primary',r.key)+'</td></tr>';
  });
  const body='<div class="sw-table-scroll"><table class="sw-work-table sw-frame"><thead><tr>'+['현장','담당자','고객 요구','견적 예정','예상금액','다음 업무','관리'].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table>'+(shown.length?'':empty)+'</div>';
  const scopeHead=scopedOwner!=='전체'?'<div class="sw-scope-head"><h3>'+h(scopedOwner)+' 담당 목록 <small>'+ordered.length+'건 · 먼저 볼 것 '+first.length+'</small></h3>'+btn('담당자 필터 해제','owner',scopedOwner)+'</div>':'';

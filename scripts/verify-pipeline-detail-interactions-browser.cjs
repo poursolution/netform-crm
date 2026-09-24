@@ -84,7 +84,7 @@ async function run(){
    assert.equal(await choice.getAttribute('aria-pressed'),'true',`${group} next-action choice gave no pressed feedback`);
   }
   await page.locator('#dv-na-text').fill('');await page.locator('#dv-na-date').fill('');
-  await page.getByRole('button',{name:'다음 행동 저장',exact:true}).evaluate(e=>e.click());
+  await page.getByRole('button',{name:'다음 할 일 저장',exact:true}).evaluate(e=>e.click());
   assert.match(await page.locator('#dv-err').textContent(),/유형·내용·기한·담당자/,'next-action validation gave no visible explanation');
 
   await page.evaluate(()=>briefAmountEditor());await page.waitForTimeout(120);

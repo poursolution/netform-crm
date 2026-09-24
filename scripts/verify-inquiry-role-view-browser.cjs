@@ -162,14 +162,14 @@ async function run() {
     assert.ok(await page.evaluate(()=>Number(getComputedStyle(document.getElementById('inquiryControlModal')).zIndex)>Number(getComputedStyle(document.getElementById('inq-inbox-dialog')).zIndex)));
     await page.evaluate(()=>closeInquiryControlModal());
     const size=await page.locator('.inq-dialog').boundingBox();assert.ok(size.width>=1440*.93&&size.height>=900);
-    await page.locator('#inq-inbox-dialog').getByRole('button',{name:/활동 기록/}).click();
+    await page.locator('#inq-inbox-dialog').getByRole('button',{name:/연락 결과/}).click();
     await page.locator('#iq-res').fill('저장 전 초안 유지');
     await page.evaluate(()=>paintInq());
     assert.equal(await page.locator('#iq-res').inputValue(),'저장 전 초안 유지');
     assert.equal(await page.locator('[aria-label="문의 업무 관리"] #iq-res').count(),1);
     assert.equal(await page.locator('#inq-inbox-dialog main input,#inq-inbox-dialog main textarea').count(),0);
     await page.locator('.spform').getByRole('button',{name:'닫기',exact:true}).click();
-    await page.locator('#inq-inbox-dialog').getByRole('button',{name:/다음 행동/}).first().click();
+    await page.locator('#inq-inbox-dialog').getByRole('button',{name:/다음 할 일/}).first().click();
     assert.equal(await page.locator('#spNextText').count(),1);
     assert.equal(await page.locator('#inq-inbox-dialog .spform').count(),0,'next schedule must not coexist with response form');
     assert.equal(await page.locator('[aria-label="문의 업무 관리"] #spNextText').count(),1);
