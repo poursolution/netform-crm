@@ -239,7 +239,7 @@
   else if(page==='dash')body=dashConsole(s);
   else if(page==='perf'&&!rep)body=perfConsole(s);
   else body=kpis(s,rep)+'<div class="si-grid">'+stages(s)+(rep?execution(s):trend(s))+'</div>'+(rep?card('현재 관리가 필요한 영업 · '+s.risk.length+'건',records(M.select(s,'risk',{}),8)+btn('전체 확인 →','drill','risk'))+recent(s):people(s,0));
-  const dark=page==='dash'||(page==='perf'&&!rep);
+  const dark=page==='dash'||page==='control'||(page==='perf'&&!rep);
   host.innerHTML='<div class="si-shell'+(dark?' si-dark':'')+'">'+filters()+(page==='perf'?'<div class="si-views" role="group" aria-label="분석 관점">'+btn('대표 보기','view','lead',f.view==='lead'?'selected':'')+btn('영업사원 보기','view','rep',rep?'selected':'')+'</div>':'')+'<p class="si-period">'+h(f.year)+'년 '+(f.month?f.month+'월':'연간')+' 접수·계약실적 / 파이프라인·관리필요는 현재 기준'+(s.missingWonDate?' · 수주 확정일 미입력 '+s.missingWonDate+'건 제외':'')+'</p>'+body+'</div>';
   root.ContractSalesUI?.mount(host.querySelector('.si-shell'),f);host.onclick=onClick;host.onchange=onChange;host.onkeydown=e=>{if(e.target.matches('[data-si-search]')&&e.key==='Enter'){f.search=e.target.value;f.page=1;render()}};
   // 진입 애니메이션은 페이지 전환 시 1회만 — 백그라운드 갱신 재렌더에는 재생하지 않는다.
