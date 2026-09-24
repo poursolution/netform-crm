@@ -1,0 +1,47 @@
+/* 지금 할 일 카드 + 결과 칩 시트 (2026-09-25) */
+.now-card{background:linear-gradient(180deg,#f8faff,#fff);border:1px solid #d7e2f6;border-radius:14px;padding:15px 17px;margin-bottom:14px}
+.now-card .nc-stage{font-size:11px;font-weight:700;color:#5b6b85}
+.now-card .nc-todo{font-size:15px;font-weight:800;line-height:1.55;margin:6px 0 2px;color:#0f172a}
+.now-card .nc-late{color:#dc2626}
+.now-card .nc-today{color:#b45309}
+.now-card .nc-ok{color:#15803d;font-size:12px}
+.now-card .nc-warn{color:#b45309;font-size:12px}
+.now-card .nc-sug{font-size:10.5px;font-weight:800;color:#1e50b3;background:#eaf1fd;border-radius:99px;padding:2px 8px;vertical-align:2px}
+.now-card .nc-promise{color:#dc2626;font-weight:800}
+.now-card .nc-meta{font-size:11.5px;color:#5b6b85;margin-bottom:11px}
+.now-card .nc-cta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.now-card .nc-cta button{font:inherit;cursor:pointer}
+.now-card .nc-call{border:0;background:#1e50b3;color:#fff;border-radius:10px;font-size:14.5px;font-weight:800;padding:12px 22px;box-shadow:0 4px 12px rgba(30,80,179,.22)}
+.now-card .nc-call:hover{background:#1a459c}
+.now-card .nc-cta button:not(.nc-call){border:1px solid #e2e8f1;background:#fff;border-radius:9px;font-size:12px;color:#5b6b85;padding:10px 14px}
+.now-card .nc-brief{margin-top:13px;border-top:1px solid #e8eefb;padding-top:10px;display:grid;gap:6px;font-size:12px}
+.now-card .nc-brief .row{display:grid;grid-template-columns:82px 1fr;gap:10px}
+.now-card .nc-brief .row span{color:#94a3b8;font-size:11px;font-weight:700}
+.now-card .nc-brief .row b{font-weight:600;color:#334155;overflow-wrap:anywhere}
+.now-card .nc-brief .row b.say{color:#0f172a;font-weight:700}
+.now-card .nc-brief .row small{color:#94a3b8;font-weight:400}
+.nc-sheet{margin:auto;border:0;border-radius:16px;padding:0;width:min(460px,94vw);box-shadow:0 24px 80px rgba(15,23,42,.3)}
+.nc-sheet::backdrop{background:rgba(15,24,41,.4)}
+.nc-sheet form{padding:18px 20px}
+.nc-sheet h4{margin:0 0 3px;font-size:15px}
+.nc-sheet>form>p{font-size:11px;color:#94a3b8;margin:0 0 12px}
+.nc-chips{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.nc-chips button{border:1px solid #e2e8f1;background:#fbfcfe;border-radius:10px;font:inherit;color:#334155;padding:10px 12px;cursor:pointer;text-align:left}
+.nc-chips button b{display:block;font-size:12.5px}
+.nc-chips button small{display:block;font-size:10.5px;color:#94a3b8;margin-top:2px}
+.nc-chips button:hover{border-color:#3B6CE4}
+.nc-chips button.on{border-color:#1e50b3;background:#eaf1fd}
+.nc-step2{margin-top:12px;border-top:1px solid #f1f4f9;padding-top:11px}
+.nc-step2 h5{margin:0 0 8px;font-size:12.5px}
+.nc-note-label{display:block;font-size:11.5px;color:#5b6b85;margin-bottom:10px}
+.nc-note{display:block;width:100%;margin-top:5px;font:inherit;font-size:13px;border:1px solid #e2e8f1;border-radius:8px;padding:9px 11px}
+.nc-dates{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.nc-dates button{border:1px solid #e2e8f1;background:#fff;border-radius:9px;font:inherit;font-size:12px;font-weight:700;color:#1e50b3;padding:9px 13px;cursor:pointer}
+.nc-dates button:hover{border-color:#3B6CE4}
+.nc-dates button small{color:#94a3b8;font-weight:400}
+.nc-pick{font-size:11.5px;color:#5b6b85}
+.nc-pick input{font:inherit;font-size:12px;border:1px solid #e2e8f1;border-radius:8px;padding:7px 9px;margin-left:5px}
+.nc-status{min-height:18px;font-size:12px;color:#1e50b3;margin:10px 0 0}
+.nc-sheet footer{display:flex;justify-content:flex-end;margin-top:8px}
+.nc-sheet footer button{font:inherit;border:1px solid #e2e8f1;background:#fff;border-radius:8px;padding:8px 16px;font-size:12px;color:#5b6b85;cursor:pointer}
+@media(max-width:700px){.nc-chips{grid-template-columns:1fr}}

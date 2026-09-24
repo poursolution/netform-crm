@@ -117,3 +117,24 @@ body:has(#pg-today.on) .mhead>.search{display:none}
 .twq-list tbody tr:hover td{background:#f8fafd}
 .twq-list tr.urgent{background:linear-gradient(90deg,#fff8f8,rgba(255,248,248,0) 70%)}
 .twq-list tr.urgent td:first-child{box-shadow:inset 3px 0 0 #df4a61}
+
+/* 영업사원 긴급 카드 스트립 (2026-09-25 CX) */
+.twq-urgent{margin:2px 0 14px}
+.twq-urgent>header{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
+.twq-urgent>header b{font-size:13.5px}
+.twq-urgent>header small{color:#94a3b8;font-size:10.5px}
+.twq-ustrip{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:thin}
+.twq-ucard{flex:0 0 252px;background:#fff;border:1px solid #e2e8f1;border-top:3px solid #dc2626;border-radius:12px;padding:12px 14px;box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.twq-ucard.w{border-top-color:#E08A00}
+.twq-ucard.b{border-top-color:#3B6CE4}
+.twq-ucard .site{font-size:13.5px;font-weight:800;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.twq-ucard .why{font-size:11.5px;margin:3px 0 2px;color:#dc2626;font-weight:700}
+.twq-ucard.w .why{color:#b45309}
+.twq-ucard.b .why{color:#1e50b3}
+.twq-ucard .who{font-size:10.5px;color:#8a97ab;margin-bottom:9px;min-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.twq-ucard .act{display:flex;gap:6px}
+.twq-ucard .act button{font:inherit;cursor:pointer}
+.twq-ucard .act .pri{flex:1;border:0;background:#1e50b3;color:#fff;border-radius:8px;font-size:12.5px;font-weight:800;padding:8px 0}
+.twq-ucard .act .pri:hover{background:#1a459c}
+.twq-ucard .act button:not(.pri){border:1px solid #e2e8f1;background:#fff;border-radius:8px;font-size:11.5px;color:#5b6b85;padding:8px 12px}
+@media(max-width:700px){.twq-ucard{flex-basis:220px}}
