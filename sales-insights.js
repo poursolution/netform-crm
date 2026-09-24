@@ -40,19 +40,29 @@
     if(!(won||(r!==null&&r>=10)))return;
     if(f.owner&&f.owner!=='전체'&&root.repN(d.assignee)!==f.owner)return;
     if(f.brand&&f.brand!=='전체'&&d.brand!==f.brand)return;
-    const at=d.contract_date||root.wonDate(d)||d.closed||d.updated||d.created;
-    if(!inP(at))return;
-    const v=root.hasWonAmt(d)?Number(root.wonAmt(d)):Number(root.oppAmt(d))||0;
-    amt+=v;n++;
+    /* 날짜·금액 증거 없는 건은 임의 추정하지 않는다(체결일 정책) — 원장이 뜨면 원장이 정본 */
+    if(!root.hasWonAmt(d))return;
+    const at=d.contract_date||root.wonDate(d)||(won?d.closed:'');
+    if(!at||!inP(at))return;
+    amt+=Number(root.wonAmt(d))||0;n++;
    });
    return {netAmount:amt,signedCount:n,count:n,fallback:true};
   }catch(e){return null}
  }
+ let csKicked=false;
  function csSum(f){
   const cs=root.ContractSalesData;
-  const ready=!!(cs&&cs.state&&cs.state().status==='ready');
-  const s=ready&&cs.summarize?cs.summarize(f):null;
-  return s||csFallback(f);
+  const st=cs&&cs.state?cs.state():null;
+  if(st&&st.status==='ready'&&cs.summarize)return cs.summarize(f)||csFallback(f);
+  /* 분석 화면에서 원장 mount가 사라져 refresh 트리거가 없음(2026-09-24) — idle이면 여기서 직접 깨우고, 준비되면 다시 그린다 */
+  if(st&&st.status==='idle'&&cs.refresh&&!csKicked){
+   csKicked=true;
+   try{cs.refresh()}catch(e){}
+   let n=0;const t=setInterval(()=>{n++;const s2=cs.state();
+    if(s2.status==='ready'||s2.status==='error'||n>24){clearInterval(t);
+     if(s2.status==='ready'&&typeof root.paint==='function'){try{root.paint()}catch(e){}}}},500);
+  }
+  return csFallback(f);
  }
  function data(owner){const f=Object.assign({},state());if(owner)f.owner=owner;const r=rows();const summary=M.summarize(r.deals,r.inquiries,f);summary.contractSummary=csSum(f);return summary}
  function btn(text,action,value,cls){return '<button type="button" class="'+(cls||'')+'" data-si-action="'+action+'" data-value="'+a(value||'')+'">'+h(text)+'</button>'}
