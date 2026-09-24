@@ -1395,7 +1395,7 @@ function contactCardM(d){var c=contactInfoM(d),moved=c.currentSite&&normSiteM(c.
  +'<div class="mcontact-act"><button '+(!c.officeTel?'disabled':'')+' onclick="callContactM(\'office\')">📞 관리사무소</button><button class="pri" '+(!c.mobile?'disabled':'')+' onclick="callContactM(\'mobile\')">📱 소장 전화</button><button '+(!c.mobile?'disabled':'')+' onclick="smsContactM()">✉ 문자</button><button '+(!c.mobile?'disabled':'')+' onclick="kakaoContactM()">💬 카카오 열기</button></div>'
  +'<button class="mcontact-voice" '+(!c.mobile?'disabled':'')+' onclick="callMemoSheetM()">🎙 통화 완료 → 내용 말하기</button>'
  +'<div class="mcontact-foot"><button onclick="contactEditSheetM()">연락처 수정</button><button onclick="managerMoveSheetM()">근무지 이동</button>'+(H.length?'<button onclick="historySheetM()">이력 '+H.length+'건</button>':'')+'</div></div>'}
-function callContactM(kind){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)});if(!d)return;var c=contactInfoM(d),num=kind==='office'?c.officeTel:c.mobile,label=kind==='office'?'관리사무소':'관리소장';if(!num)return toast(label+' 번호가 없습니다');addActivity(d,'전화',label+' 전화 시도',phoneFmt(num),false);setTimeout(function(){location.href='tel:'+phoneN(num)},80)}
+function callContactM(kind){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)});if(!d)return;var c=contactInfoM(d),num=kind==='office'?c.officeTel:c.mobile,label=kind==='office'?'관리사무소':'관리소장';if(!num)return toast(label+' 번호가 없습니다');G.dealCallPending=d.id;addActivity(d,'전화',label+' 전화 시도',phoneFmt(num),false);setTimeout(function(){location.href='tel:'+phoneN(num)},80)}
 function smsContactM(){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),c=contactInfoM(d||{});if(!c.mobile)return toast('관리소장 휴대폰 번호가 없습니다');addActivity(d,'문자','관리소장 문자 작성 시작',phoneFmt(c.mobile),false);location.href='sms:'+phoneN(c.mobile)}
 function kakaoContactM(){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),c=contactInfoM(d||{});if(!c.mobile)return toast('관리소장 휴대폰 번호가 없습니다');addActivity(d,'카카오','관리소장 카카오톡 연락 준비',phoneFmt(c.mobile),false);var t=phoneFmt(c.mobile),open=function(){var android=/Android/i.test(navigator.userAgent),url=android?'intent://launch/#Intent;scheme=kakaotalk;package=com.kakao.talk;end':'kakaotalk://launch';toast('번호 복사 완료 — 카카오톡 친구 검색에 붙여넣으세요');setTimeout(function(){location.href=url},120)};try{var p=navigator.clipboard&&navigator.clipboard.writeText(t);if(p&&p.then)p.then(open).catch(function(){toast('번호 '+t+' · 복사 후 카카오톡에서 검색하세요');open()});else open()}catch(e){toast('번호 '+t+' · 카카오톡에서 검색하세요');open()}}
 function contactEditSheetM(){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),c=contactInfoM(d||{});if(!d)return;openSheet(intro('var(--blue-50)','var(--blue-dark)',IC.user,'관리사무소 · 관리소장','현장과 사람을 분리해서 관리합니다'),
@@ -1407,7 +1407,7 @@ function contactEditSheetM(){var d=DEALS.find(function(x){return String(x.id)===
 function saveContactM(){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)});if(!d)return;var office=(document.getElementById('ce-office').value||'').trim(),name=(document.getElementById('ce-name').value||'').trim(),mobile=(document.getElementById('ce-mobile').value||'').trim(),email=(document.getElementById('ce-email').value||'').trim();if(!office||!name||!mobile)return toast('대표전화·관리소장 성명·휴대폰은 필수입니다');if(phoneN(office).length<8||phoneN(mobile).length<10)return toast('전화번호 형식을 확인해 주세요');var old=contactInfoM(d),at=isoNow(),c={officeTel:office,officeEmail:email,managerName:name,managerMobile:mobile,managerRole:'관리소장',personKey:'mobile:'+phoneN(mobile),currentSite:d.nm,status:'current',startedAt:old.startedAt||at};d.contact=c;d.office_phone=office;d.office_email=email;d.manager_name=name;d.manager_mobile=mobile;d.manager_role='관리소장';d.person_key=c.personKey;upsertPersonM({name:name,mobile:mobile,personKey:c.personKey},d.nm,office,at,d.cleanup_site_id||d.site_id||d.siteId||'');pushWrite('contact_upsert',{opportunity_id:d.id,person_key:c.personKey,site_name:d.nm,office_phone:office,office_email:email||null,manager_name:name,manager_mobile:mobile,manager_role:'관리소장',started_at:c.startedAt});addActivity(d,'업무','관리사무소/관리소장 연락처 확인',name+' · '+phoneFmt(mobile),false);closeSheet();toast('연락처를 저장했습니다');render()}
 /* 복수 현장 연락처: 기존 관리소장 필드는 대표 연락처 호환용으로 유지한다. */
 function contactCardM(d){var list=siteContactsM(d);if(!list.length)return '<div class="card mcontact"><div class="mcontact-head"><span class="mcontact-av">＋</span><span class="mcontact-main"><b>현장 연락처</b><span>관리소장·입주자대표회장·관리과장 등을 등록하세요</span></span></div><button class="btn btn-primary" onclick="contactEditSheetM(\'\')">＋ 연락처 추가</button></div>';return '<div class="sec-h" style="margin-top:12px"><h2>현장 연락처 · '+list.length+'명</h2><button onclick="contactEditSheetM(\'\')" style="color:var(--blue);font-weight:800">＋ 추가</button></div>'+list.map(function(c){var key=jsAttr(c.personKey||phoneN(c.mobile));return '<div class="card mcontact"><div class="mcontact-head"><span class="mcontact-av">'+esc((c.name||c.role||'담').slice(0,1))+'</span><span class="mcontact-main"><b>'+esc(c.name||'이름 미입력')+' · '+esc(c.role||'담당자')+'</b><span>현재 연락처 · '+esc(d.nm)+'</span></span><span class="mcontact-state">'+esc(c.role||'담당자')+'</span></div><div class="mcontact-num"><button '+(!c.officeTel?'disabled':'')+' onclick="callContactM(\'office\',\''+key+'\')"><small>관리사무소 · 눌러서 전화</small><strong>'+esc(phoneFmt(c.officeTel))+'</strong></button><button '+(!c.mobile?'disabled':'')+' onclick="callContactM(\'mobile\',\''+key+'\')"><small>'+esc(c.role||'담당자')+' 휴대폰</small><strong>'+esc(phoneFmt(c.mobile))+'</strong></button></div><div class="mcontact-act"><button '+(!c.officeTel?'disabled':'')+' onclick="callContactM(\'office\',\''+key+'\')">📞 사무소</button><button class="pri" '+(!c.mobile?'disabled':'')+' onclick="callContactM(\'mobile\',\''+key+'\')">📱 전화</button><button '+(!c.mobile?'disabled':'')+' onclick="smsContactM(\''+key+'\')">✉ 문자</button><button '+(!c.mobile?'disabled':'')+' onclick="kakaoContactM(\''+key+'\')">💬 카카오</button></div><div class="mcontact-foot"><button onclick="contactEditSheetM(\''+key+'\')">연락처 수정</button></div></div>'}).join('')}
-function callContactM(kind,key){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)});if(!d)return;var c=pickedContactM(d,key),num=kind==='office'?c.officeTel:c.mobile,label=kind==='office'?'관리사무소':(c.name||c.role||'담당자');if(!num)return toast(label+' 번호가 없습니다');addActivity(d,'전화',label+' 전화 시도',phoneFmt(num),false);setTimeout(function(){location.href='tel:'+phoneN(num)},80)}
+function callContactM(kind,key){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)});if(!d)return;var c=pickedContactM(d,key),num=kind==='office'?c.officeTel:c.mobile,label=kind==='office'?'관리사무소':(c.name||c.role||'담당자');if(!num)return toast(label+' 번호가 없습니다');G.dealCallPending=d.id;addActivity(d,'전화',label+' 전화 시도',phoneFmt(num),false);setTimeout(function(){location.href='tel:'+phoneN(num)},80)}
 function smsContactM(key){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),c=pickedContactM(d||{},key);if(!c.mobile)return toast('휴대폰 번호가 없습니다');addActivity(d,'문자',(c.name||c.role||'담당자')+' 문자 작성 시작',phoneFmt(c.mobile),false);location.href='sms:'+phoneN(c.mobile)}
 function kakaoContactM(key){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),c=pickedContactM(d||{},key);if(!c.mobile)return toast('휴대폰 번호가 없습니다');addActivity(d,'카카오',(c.name||c.role||'담당자')+' 카카오톡 연락 준비',phoneFmt(c.mobile),false);var t=phoneFmt(c.mobile),open=function(){var android=/Android/i.test(navigator.userAgent),url=android?'intent://launch/#Intent;scheme=kakaotalk;package=com.kakao.talk;end':'kakaotalk://launch';toast('번호 복사 완료 — 카카오톡 친구 검색에 붙여넣으세요');setTimeout(function(){location.href=url},120)};try{var p=navigator.clipboard&&navigator.clipboard.writeText(t);if(p&&p.then)p.then(open).catch(open);else open()}catch(e){open()}}
 function contactEditSheetM(key){var d=DEALS.find(function(x){return String(x.id)===String(G.deal)}),c=key?pickedContactM(d||{},key):{officeTel:(d&&d.office_phone)||'',officeEmail:'',name:'',mobile:'',role:'담당자',personKey:''};if(!d)return;G.contactKey=key||'';openSheet(intro('var(--blue-50)','var(--blue-dark)',IC.user,key?'연락처 수정':'연락처 추가','한 현장에 여러 담당자를 역할별로 관리합니다'),'<div class="hint">관리사무소 대표전화</div><input id="ce-office" inputmode="tel" value="'+escAttr(c.officeTel)+'" style="width:100%;margin:6px 0 10px;border:1px solid var(--line-2);border-radius:11px;padding:12px;font:inherit"><div class="hint">역할 <span style="color:var(--danger)">*</span></div><select id="ce-role" style="width:100%;margin:6px 0 10px;border:1px solid var(--line-2);border-radius:11px;padding:12px;font:inherit">'+CONTACT_ROLES.map(function(r){return '<option '+(r===c.role?'selected':'')+'>'+r+'</option>'}).join('')+'</select><div class="hint">성명 <span style="color:var(--danger)">*</span></div><input id="ce-name" value="'+escAttr(c.name)+'" style="width:100%;margin:6px 0 10px;border:1px solid var(--line-2);border-radius:11px;padding:12px;font:inherit"><div class="hint">휴대폰 <span style="color:var(--danger)">*</span></div><input id="ce-mobile" inputmode="tel" value="'+escAttr(c.mobile)+'" style="width:100%;margin:6px 0 10px;border:1px solid var(--line-2);border-radius:11px;padding:12px;font:inherit"><div class="hint">이메일</div><input id="ce-email" type="email" value="'+escAttr(c.officeEmail)+'" style="width:100%;margin:6px 0 10px;border:1px solid var(--line-2);border-radius:11px;padding:12px;font:inherit"><button class="btn btn-primary" onclick="saveContactM()">연락처 저장</button>')}
@@ -1425,6 +1425,50 @@ function historySheetM(){var d=DEALS.find(function(x){return String(x.id)===Stri
 
 
 /* ── 5 딜 상세 ── */
+/* ── 지금 할 일 카드 + 상세 통화 결과 칩 (2026-09-25 CX): 첫 화면에서 스크롤 없이 할 일과 전화까지.
+   결과 칩은 오늘 화면(pickToday)과 같은 원칙 — Activity+Next Action 자동, Stage 는 바꾸지 않는다. */
+var NOWCARD_TODO={first_contact:'고객에게 연락하고 니즈를 확인해 주세요',consulting:'견적 요청 내용을 확인하고 회신해 주세요',sent:'보낸 자료의 검토 여부를 확인해 주세요',rapport:'유대 유지 연락을 해주세요',silent:'재접촉 연락을 해주세요',waiting:'재개 시점을 확인해 주세요',compete:'경쟁 상황과 다음 일정을 확인해 주세요',imminent:'계약 조건을 확인해 주세요',bidding:'입찰 일정을 확인해 주세요',contract:'계약 체결 상태를 확인해 주세요',construction:'착공 준비 상황을 확인해 주세요',completion:'준공·수금 상태를 확인해 주세요'};
+function mNowCardM(d){
+ var na=d.nextAction&&d.nextAction.status==='open'?d.nextAction:null,dd=dueDays(d);
+ var todo=na&&na.text?na.text:(NOWCARD_TODO[d.code]||'고객에게 연락하고 진행 상황을 확인해 주세요');
+ var tag=na?(dd<0?' <b style="color:var(--danger)">· '+Math.abs(dd)+'일 지남</b>':dd===0?' <b style="color:#a36312">· 오늘</b>':' <span class="hint">· D-'+dd+'</span>'):' <span class="badge badge-blue">추천</span>';
+ var c=contactInfoM(d);
+ return '<div class="card" style="background:linear-gradient(180deg,#f8faff,#fff);border-color:#d7e2f6;margin-bottom:12px">'
+  +'<div class="hint">'+esc(stageLabel(d.code))+' · '+amtTxt(d.amt)+'</div>'
+  +'<div style="font-size:14px;font-weight:800;line-height:1.5;margin:5px 0 9px">'+esc(todo)+tag+'</div>'
+  +'<button class="btn btn-primary" onclick="dealCallM()">'+IC.phone+' '+(c.name?esc(c.name)+' ':'')+'전화하고 결과 남기기</button>'
+  +'<div style="display:flex;gap:6px;margin-top:7px"><button class="btn btn-line" style="flex:1" onclick="smsContactM()">문자</button><button class="btn btn-line" style="flex:1" onclick="callMemoSheetM()">결과 남기기</button></div></div>';
+}
+function dealCallM(){
+ var d=DEALS.find(function(x){return String(x.id)===String(G.deal)});if(!d)return;
+ var c=contactInfoM(d),num=c.mobile||c.officeTel;
+ if(!phoneN(num))return toast('등록된 전화번호가 없습니다 — 연락처를 먼저 저장해 주세요');
+ G.dealCallPending=d.id;addActivity(d,'전화','전화 시도 — '+phoneFmt(num),'',false);
+ try{location.href='tel:'+phoneN(num)}catch(e){G.dealCallPending=null;toast('전화 앱을 열지 못했습니다')}
+}
+function resumeDealCall(){
+ if(G.dealCallPending==null)return;var id=G.dealCallPending;G.dealCallPending=null;
+ if(String(G.deal)!==String(id))return;setTimeout(function(){dealCallSheetM()},350);
+}
+document.addEventListener('visibilitychange',function(){if(!document.hidden)resumeDealCall()});
+window.addEventListener('focus',resumeDealCall);
+function dealCallSheetM(){
+ var d=DEALS.find(function(x){return String(x.id)===String(G.deal)});if(!d)return;
+ var c=contactInfoM(d);
+ openSheet(intro('var(--blue-50)','var(--blue-dark)',IC.phone,'어떻게 됐나요?',esc(d.nm)+(c.name?' · '+esc(c.name):'')),
+  '<button class="btn btn-line" onclick="pickDealCall(\'진행\')">진행 중이에요 — 다음 확인 3일 후</button>'
+  +'<button class="btn btn-line" style="margin-top:7px" onclick="pickDealCall(\'다시\')">다시 연락해야 해요 — 다음 주</button>'
+  +'<button class="btn btn-line" style="margin-top:7px" onclick="pickDealCall(\'부재\')">부재 · 못 받으심 — 내일 재시도</button>'
+  +'<button class="btn btn-line" style="margin-top:7px" onclick="closeSheet();callMemoSheetM()">자세히 기록 (말하기)</button>');
+}
+function pickDealCall(kind){
+ var d=DEALS.find(function(x){return String(x.id)===String(G.deal)});if(!d)return;
+ try{completeNextAction(d)}catch(e){/* 서버 미반영 임시 ID 등 — 완료 처리 실패가 결과 기록을 막지 않는다 */}
+ if(kind==='진행'){addActivity(d,'전화','통화 — 진행됨','',true);setNextAction(d,'후속확인','통화 후속 확인',3)}
+ else if(kind==='다시'){addActivity(d,'전화','통화 — 다시 연락 요청','',true);setNextAction(d,'재연락','고객 요청 재연락',7)}
+ else{addActivity(d,'부재','전화 부재 — 못 받으심','',false);setNextAction(d,'재통화','재통화 시도',1)}
+ closeSheet();toast('활동 기록 · 다음 할 일 예약 완료');render();
+}
 function rDeal(){
  var d=DEALS.find(function(x){return String(x.id)===String(G.deal)});
  if(!d){G.deal=null;toast('해당 현장을 찾을 수 없습니다');return render()}
@@ -1434,8 +1478,9 @@ function rDeal(){
  var steps='<ul class="dsteps">'+MACRO5.map(function(g,i){return '<li class="'+(i<idx?'done':i===idx?'now':'')+'"><span class="d">'+(i<idx?'✓':(i+1))+'</span>'+g.nm+'</li>'}).join('')+'</ul>';
  var tg=tagOf(d.amt);
  tabbar.innerHTML='';
- scr.innerHTML='<div class="appbar"><button class="iconbtn" onclick="G.deal=null;render()">'+IC.back+'</button><span class="ttl">딜 상세</span>'+(G.mode==='admin'?'<button style="color:var(--violet);font-weight:700;font-size:13px;padding:0 6px" onclick="reassignSheet()">재배정</button>':'<span class="spacer"></span>')+'</div>'
+ scr.innerHTML='<div class="appbar"><button class="iconbtn" onclick="G.deal=null;render()">'+IC.back+'</button><span class="ttl">'+esc(d.nm)+'</span>'+(G.mode==='admin'?'<button style="color:var(--violet);font-weight:700;font-size:13px;padding:0 6px" onclick="reassignSheet()">재배정</button>':'<span class="spacer"></span>')+'</div>'
  +'<div class="body fadein" style="padding-bottom:0">'
+ +mNowCardM(d)
  +'<div class="card" style="margin-bottom:12px;background:'+(d.rep==='미배정'?'var(--danger-bg)':'var(--blue-50)')+';border-color:transparent"><div class="kv"><span class="k">담당자</span><span class="v" style="color:'+(d.rep==='미배정'?'var(--danger)':'var(--blue-dark)')+'">'+esc(d.rep)+(d.rep==='미배정'?' 🔴':'')+'</span></div></div>'
  +'<div><div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap"><span class="badge '+tg[0]+'">'+tg[1]+'</span><span class="badge badge-blue">'+stageLabel(d.code)+'</span>'+(d.outcome?'<span class="badge '+(d.outcome==='won'?'badge-ok':'badge-danger')+'">'+OUTCOMES[d.outcome].nm+(d.close_reason?' · '+esc(d.close_reason):'')+'</span>':'')+'<span class="badge '+(workItemsM(d).length?'badge-violet':'badge-danger')+'">'+esc(dealWorkSummaryM(d))+'</span><button class="badge badge-gray" onclick="workSheetM()">'+(workItemsM(d).length?'공종 수정':'공종 분류')+'</button>'+(isStale(d)?'<span class="badge badge-danger">'+staleTxt(d)+'</span>':'')+'</div>'
  +'<div style="font-size:19px;font-weight:800;letter-spacing:-.4px">'+esc(d.nm)+'</div><div class="hint" style="margin-top:2px">'+amtTxt(d.amt)+'</div></div>'
@@ -1451,7 +1496,7 @@ function rDeal(){
  +'<div class="card"><div class="sec-h" style="margin:0 0 6px"><h2>타임라인</h2><span style="display:flex;gap:10px"><button onclick="voiceMemo()" style="color:var(--blue);font-weight:700;font-size:12.5px;display:flex;align-items:center;gap:4px">'+IC.mic+'음성</button><button onclick="photoSheet()" style="color:var(--sub);font-weight:700;font-size:12.5px;display:flex;align-items:center;gap:4px">'+IC.camera+'사진</button><button onclick="tmplSheet()" style="color:var(--violet);font-weight:700;font-size:12.5px;display:flex;align-items:center;gap:4px">'+IC.msg+'템플릿</button></span></div>'
  +'<ul class="timeline">'+d.tl.map(function(t){return '<li class="tl done"><span class="tl-dot"></span><div class="tl-t">'+esc(t[1])+'</div><div class="tl-d">'+esc(t[0])+'</div></li>'}).join('')+'</ul></div>'
  +'</div>'
- +(canAdvance(d)?'<div class="submitbar"><button class="btn btn-primary" onclick="nextSheet()">'+(d.outcome==='won'?'시공 단계 진행 →':'다음 단계로 →')+'</button><button class="btn btn-line" style="margin-top:7px" onclick="bizSheet()">사업유형 변경</button><button class="hint" style="display:block;width:100%;text-align:center;margin-top:7px" onclick="exSheet()">예외 이동 · 종료 처리 — 전체 단계에서 선택 (사유 필수)</button></div>'
+ +(canAdvance(d)?'<div class="submitbar"><button class="btn btn-line" onclick="nextSheet()">'+(d.outcome==='won'?'시공 단계 진행 →':'다음 단계로 →')+'</button><button class="btn btn-line" style="margin-top:7px" onclick="bizSheet()">사업유형 변경</button><button class="hint" style="display:block;width:100%;text-align:center;margin-top:7px" onclick="exSheet()">예외 이동 · 종료 처리 — 전체 단계에서 선택 (사유 필수)</button></div>'
    :'<div class="submitbar"><div class="hint" style="text-align:center">'+OUTCOMES[d.outcome].nm+' 로 종료된 건입니다'+(d.closed_at?' · '+String(d.closed_at).slice(0,10):'')+'</div></div>');
 }
 function knownWorkKeyM(k){return WORK_MASTER.some(function(g){return g.items.some(function(i){return workKeyM(g.group,i)===k})})}
@@ -2517,7 +2562,7 @@ reactivationHTMLM=function(){var A=reactivationM();if(!A.length)return '';return
 
    «로그인 기억» 은 Supabase 가 이미 해 준다. 이름만 로컬에 저장해 두고 바로
    들여보내면 토큰 없이 서버를 불러 «서버 연결 실패» 가 뜬다 — 실제로 그랬다. */
-</script><script src="./operational-overlay.js?v=20260920-snapshot-1"></script><script>rToday=rTodayRoleM;if(!DEVVIEW)document.body.classList.add('svc');
+</script><script src="./operational-overlay.js?v=20260925-dealcall-1"></script><script>rToday=rTodayRoleM;if(!DEVVIEW)document.body.classList.add('svc');
 if(DEVVIEW){nav('flow')}
 else if(DEMO){G.user=REPS[0];G.mode='rep';nav('today')}
 else{

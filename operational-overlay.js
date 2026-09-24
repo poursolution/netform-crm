@@ -111,7 +111,7 @@
   if(typeof root.commitBiz==='function'){const original=root.commitBiz;root.commitBiz=function(){compound='service_change';try{return original.apply(this,arguments);}finally{compound=null;}};}
   const dealDetail=()=>root.CUR_DETAIL?.kind==='deal';
   for(const name of ['addDetailActivity','briefCall'])wrap(name,'activity',dealDetail);
-  for(const name of ['contactActivity','todoCall','saveCallMemoM','startTodayCall','callContactM','smsContactM','kakaoContactM'])wrap(name,'activity');
+  for(const name of ['contactActivity','todoCall','saveCallMemoM','startTodayCall','callContactM','smsContactM','kakaoContactM','dealCallM','pickDealCall'])wrap(name,'activity');
   wrap('spSaveAct','activity_contact');
   wrap('saveNextAction','next_action',dealDetail);
   wrap('spSaveNext','next_action');
