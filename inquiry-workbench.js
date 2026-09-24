@@ -137,5 +137,7 @@
   catch(e){Object.keys(q).forEach(k=>delete q[k]);Object.assign(q,before);Object.keys(patch).forEach(k=>delete patch[k]);Object.assign(patch,beforePatch);root.iqMsg(e.message||'저장 연결을 확인해 주세요.');return false}
  }
 
+ // Refresh only after a write event; preserve the existing filters and draft fields.
+ let queuePaint=false;root.addEventListener('phase1:queue',()=>{if(queuePaint)return;queuePaint=true;root.setTimeout(()=>{queuePaint=false;if(root.G?.page==='inq'&&root.B)root.paintInq()},0)});
  root.InquiryWorkbench={saveProcess,originalText,sourceFields,task,matches,compare,run,set,delayed,primaryAction,selectBrand,view,open,close};
 })(window);
