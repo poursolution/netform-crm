@@ -173,3 +173,35 @@
 .si-dark .dc-qseg button:hover{background:#f4f6fa}
 .si-dark .dc-qseg button.on:hover{background:#fff}
 .si-dark .dc-qseg button{white-space:nowrap}
+
+/* 컨트롤타워 v3: 막힌 곳·담당자별 지시·일괄 지시 */
+.si-dark .ct-verdicts{display:grid;gap:8px}
+.si-dark .ct-verdict{all:unset;cursor:pointer;font-size:13px;line-height:1.65;padding:9px 12px;border-radius:9px;background:#fbfcfe;border:1px solid #eef2f8;border-left:3px solid var(--dcbad);color:var(--dcs)}
+.si-dark .ct-verdict.w{border-left-color:var(--dc3)}
+.si-dark .ct-verdict:hover{border-color:var(--dc1);border-left-color:var(--dcbad)}
+.si-dark .ct-verdict.w:hover{border-left-color:var(--dc3)}
+.si-dark .ct-verdict b{color:var(--dcbad)}
+.si-dark .ct-verdict .who{color:var(--dci);font-weight:800}
+.si-dark .ct-reprow{display:grid;grid-template-columns:130px 1fr auto auto;gap:12px;align-items:center;padding:9px 4px;border-top:1px solid #f1f4f9;font-size:12px}
+.si-dark .ct-reprow:first-child{border-top:0}
+.si-dark .ct-reprow .who button{font-weight:800;font-size:13px;color:var(--dci);background:transparent;border:0;padding:0;min-height:0}
+.si-dark .ct-reprow .who button:hover{color:var(--dc1);background:transparent}
+.si-dark .ct-reprow .who small{display:block;font-weight:400;font-size:10.5px;color:var(--dcm)}
+.si-dark .ct-tags{display:flex;gap:5px;flex-wrap:wrap}
+.si-dark .ct-tag{font-size:11px;font-weight:700;border-radius:99px;padding:3px 10px;background:#f4f6fa;color:var(--dcs);border:1px solid transparent;min-height:0}
+.si-dark .ct-tag:hover{border-color:var(--dc1);background:#f4f6fa}
+.si-dark .ct-tag.hot{background:#fef2f2;color:var(--dcbad)}
+.si-dark .ct-tag.warn{background:#fef7ec;color:#b45309}
+.si-dark .ct-tag.sel{border-color:var(--dc1)}
+.si-dark .ct-old{font-size:11px;color:var(--dcm);text-align:right;white-space:nowrap}
+.si-dark .ct-old b{color:var(--dcbad)}
+.si-dark button.ct-orderbtn{font-size:12px;font-weight:700;border:1px solid var(--dcl);background:#fff;color:#1e50b3;border-radius:8px;padding:7px 13px;min-height:0;white-space:nowrap}
+.si-dark button.ct-orderbtn:hover{border-color:var(--dc1);background:#fff}
+.si-dark .ct-selcol{width:30px}
+.si-dark .ct-hot{color:var(--dcbad);font-weight:700}
+.si-dark .ct-warn{color:#b45309;font-weight:700}
+.si-dark .ct-bulk{display:flex;gap:10px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #eef2f8;font-size:12px;color:var(--dcs);flex-wrap:wrap}
+.si-dark button.ct-bulkbtn{font-size:12px;font-weight:800;border:0;background:#1e50b3;color:#fff;border-radius:8px;padding:8px 16px;min-height:0}
+.si-dark button.ct-bulkbtn:hover{background:#1a459c;border:0}
+.si-dark .ct-clearchip{background:#fef2f2;border-color:#f3cbcb;color:var(--dcbad)}
+@media(max-width:760px){.si-dark .ct-reprow{grid-template-columns:minmax(0,1fr) auto}.si-dark .ct-reprow .ct-tags{grid-column:1/-1}.si-dark .ct-old{display:none}.si-dark .ct-verdict{font-size:12px}}
