@@ -196,7 +196,15 @@ async function run() {
       InquiryWorkbench.close();
     });
     assert.equal(await page.evaluate(()=>__writes.length),0);
-    console.log(JSON.stringify({status:'PASS',admin_rows:4,rep_rows:2,brand_multiselect:true,brand_counts:true,contact_search:true,seven_columns:true,action_geometry:true,wide_dialog:true,draft_preserved:true,foreign_inquiry_blocked:true,existing_assignment:true,viewports:[1920,1440,1024,760,390],business_writes:0}));
+    const save=await page.evaluate(()=>{ Phase1.storage={setItem:()=>{}};
+      const q={...B.inquiries[0],id:'10000000-0000-4000-8000-000000000001',first_response_at:null,responded_at:null};B.inquiries=[q];LOCAL.inquiries={};
+      InquiryWorkbench.open(q.id,'process');
+      document.getElementById('iq-did').value='고객 통화';document.getElementById('iq-res').value='사진 전달 약속';document.getElementById('iq-next').value='사진 수신 확인';document.getElementById('iq-due').value='2099-01-01';
+      const result=InquiryWorkbench.saveProcess();return {result,writes:__writes,needed:InquiryWorkbench.task(q).needed,error:document.getElementById("iq-msg")?.textContent};
+    });
+    assert.equal(save.result,true,JSON.stringify(save));assert.equal(save.writes.length,1);assert.equal(save.writes[0][0],'inquiry_status');assert.equal(save.writes[0][1].intent,'progress');assert.equal(save.writes[0][1].target,'step:1');assert.equal(save.needed,false);
+
+    console.log(JSON.stringify({status:'PASS',admin_rows:4,rep_rows:2,brand_multiselect:true,brand_counts:true,contact_search:true,seven_columns:true,action_geometry:true,wide_dialog:true,draft_preserved:true,foreign_inquiry_blocked:true,existing_assignment:true,viewports:[1920,1440,1024,760,390],external_writes:0,synthetic_progress_commands:1}));
   } finally {await browser.close();await new Promise(resolve=>srv.close(resolve));}
 }
 run().catch(error=>{console.error(error.stack||error);process.exitCode=1});
