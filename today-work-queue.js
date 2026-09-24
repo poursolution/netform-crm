@@ -246,6 +246,24 @@
    +'<div class="twq-rep-list pipeSum"><header><h3>파이프라인 · 진행 현황</h3><p>다음 행동이 멈춘 담당자를 먼저 확인하세요 · 위험 높은 순</p></header>'+table(['담당자','진행','진행 금액','기한초과','Next 없음','장기정체','최장 정체',''],pipelineRows,'진행 중 영업이 없습니다.')+'<footer>행을 누르면 아래 목록이 그 담당자로 좁혀집니다.</footer></div>'
    +'</section>';
  }
+ /* 영업사원 상단 긴급 카드 (2026-09-25 CX 개편): 급한 순으로 카드가 나오고 카드에서 바로 처리한다.
+    데이터·처리 경로는 아래 목록과 동일(open) — 새 상태를 만들지 않는다. */
+ function urgentCards(rows){
+  const score=x=>x.unassigned?0:(x.overdue||x.responseLate)?1:x.dueDays===0?2:x.processingLate?3:x.missingNext?4:9;
+  const picked=rows.filter(x=>score(x)<=4).sort((a,b)=>score(a)-score(b)||b.lag-a.lag).slice(0,8);
+  if(!picked.length)return '';
+  const card=x=>{
+   const site=x.item.site||x.item.site_name||'현장명 미입력';
+   const tone=(x.overdue||x.responseLate||x.unassigned)?'r':x.dueDays===0?'b':'w';
+   const icon=tone==='r'?'🔴':tone==='b'?'🔵':'🟠';
+   const why=x.panel==='inquiry'?(x.unassigned?'미배정 · '+elapsed(x):x.responseLate?'첫 응대 지연 · '+elapsed(x):x.status+' · '+elapsed(x)):(x.reason||x.next)+(x.dueDays!==null?'':'');
+   const call=x.kind==='relationship'||/연락|전화|응대|접촉/.test(String(x.next||''));
+   const action=x.kind==='relationship'&&!x.missingNext?'contact':x.missingNext&&x.type==='deal'?'next':'open';
+   const label=call?'📞 전화':x.missingNext?'일정 잡기':'처리';
+   return '<div class="twq-ucard '+tone+'"><div class="site">'+h(site)+'</div><div class="why">'+icon+' '+h(why)+'</div><div class="who">'+h(x.next||'')+'</div><div class="act"><button class="pri" data-key="'+attr(x.key)+'" data-action="'+action+'" onclick="TodayWorkQueue.open(this.dataset.key,this.dataset.action)">'+label+'</button><button data-key="'+attr(x.key)+'" onclick="TodayWorkQueue.open(this.dataset.key)">보기</button></div></div>';
+  };
+  return '<section class="twq-urgent" aria-label="지금 바로 처리할 업무"><header><b>지금 바로 · '+picked.length+'건</b><small>기한 지남 → 첫 응대 → 오늘 예정 순</small></header><div class="twq-ustrip">'+picked.map(card).join('')+'</div></section>';
+ }
  function pickOwner(name){set('owner',root.G.todayQueueOwner===name?'전체':String(name||'전체'))}
  function focusUnassigned(){root.G.todayQueueOwner='전체';root.G.todayQueueSearch='';filter('inquiry','unassigned')}
  function render(){
@@ -255,7 +273,7 @@
   const scoped=x=>(!X.admin||!G.todayQueueOwner||G.todayQueueOwner==='전체'||x.owner===G.todayQueueOwner)&&(!G.todayQueueSearch||[x.item.site,x.item.site_name,x.owner,x.reason,x.next].join(' ').toLowerCase().includes(String(G.todayQueueSearch).trim().toLowerCase()));
   const inquiry=X.inquiry.filter(scoped),pipeline=X.pipeline.filter(scoped);
   const toolbar='<form class="twq-toolbar" onsubmit="event.preventDefault();TodayWorkQueue.set(\'search\',this.elements.search.value)">'+(X.admin?'<label>담당자 <select aria-label="오늘 업무 담당자" onchange="TodayWorkQueue.set(\'owner\',this.value)"><option>전체</option>'+owners.map(o=>'<option '+(G.todayQueueOwner===o?'selected':'')+'>'+h(o)+'</option>').join('')+'</select></label>':'<span>내 담당 업무</span>')+'<label class="twq-search"><input name="search" aria-label="오늘 업무 검색" placeholder="현장·담당자·할 일 검색" value="'+attr(G.todayQueueSearch||'')+'"><button>검색</button></label></form>';
-  host.innerHTML='<div class="today-work-queue '+(X.admin?'manager':'rep')+'"><header><div><h2>오늘 업무</h2><span>'+(X.admin?'사원별 현황을 먼저 확인하고, 행을 눌러 해당 담당자 업무로 파고듭니다.':'신규 문의와 진행 중 영업을 각각의 처리 순서로 확인합니다.')+'</span></div><b>전체 '+(inquiry.length+pipeline.length)+'건</b></header>'+(X.admin?repBoards(X):'')+toolbar+'<p class="twq-count-note">각 업무함의 순위와 상태 필터는 독립적으로 적용됩니다. 파이프라인 상태는 중복될 수 있습니다.</p><div class="twq-admin-boards">'+table(inquiry,X.admin,'inquiry','견적문의 관리','신규 문의의 배정·첫 응대·후속처리')+table(pipeline,X.admin,'pipeline','파이프라인 관리','진행 중 영업의 다음 행동·관계관리·확장관리')+'</div></div>';
+  host.innerHTML='<div class="today-work-queue '+(X.admin?'manager':'rep')+'"><header><div><h2>오늘 업무</h2><span>'+(X.admin?'사원별 현황을 먼저 확인하고, 행을 눌러 해당 담당자 업무로 파고듭니다.':'신규 문의와 진행 중 영업을 각각의 처리 순서로 확인합니다.')+'</span></div><b>전체 '+(inquiry.length+pipeline.length)+'건</b></header>'+(X.admin?repBoards(X):urgentCards(inquiry.concat(pipeline)))+toolbar+'<p class="twq-count-note">각 업무함의 순위와 상태 필터는 독립적으로 적용됩니다. 파이프라인 상태는 중복될 수 있습니다.</p><div class="twq-admin-boards">'+table(inquiry,X.admin,'inquiry','견적문의 관리','신규 문의의 배정·첫 응대·후속처리')+table(pipeline,X.admin,'pipeline','파이프라인 관리','진행 중 영업의 다음 행동·관계관리·확장관리')+'</div></div>';
   const badge=root.$('#todayBadge');if(badge){badge.textContent=X.rows.length||'';badge.style.display=X.rows.length?'':'none'}
  }
  function setManagerRequests(rows){managerRequests=Array.isArray(rows)?rows.slice():[];if(root.G?.page==='today')render()}
