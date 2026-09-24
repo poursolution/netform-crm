@@ -32,10 +32,12 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   await page.locator('#sales-analysis-menu [data-sales-page="perf"]').click();
   await page.locator('#si-perf [data-si-action="view"][data-value="rep"]').click();assert.equal(await page.locator('#si-perf .si-kpis>button').count(),5);assert.equal(await page.locator('#si-perf [data-si-filter="month"]').inputValue(),'9');
   await page.locator('#si-perf [data-si-action="view"][data-value="lead"]').click();await page.locator('#si-perf [data-si-action="person"]').first().click();
-  assert.equal(await page.getByRole('dialog',{name:'김성민 영업 현황'}).count(),1);
-  const width=await page.locator('.si-person-box').evaluate(n=>n.getBoundingClientRect().width/innerWidth);assert.ok(width>=.90&&width<=.94);
-  await page.keyboard.press('Shift+Tab');assert.equal(await page.evaluate(()=>document.activeElement===Array.from(document.querySelectorAll('#si-person button')).at(-1)),true);
-  await page.keyboard.press('Escape');assert.equal(await page.locator('#si-person').count(),0);assert.equal(await page.evaluate(()=>document.activeElement.dataset.siAction),'person');
+  // 담당자 클릭 = 해당 담당자로 스코프된 성과 분석 (팝업이 아니라 화면 이동)
+  assert.equal(await page.evaluate(()=>G.page),'perf');
+  assert.equal(await page.evaluate(()=>SalesScope.state().owner),'김성민');
+  assert.equal(await page.locator('#si-perf .pf-card').count(),1);
+  assert.equal(await page.locator('#si-person').count(),0);
+  await page.evaluate(()=>{SalesScope.change('owner','전체');paint()});
   for(const width of [1920,1440,1024,390]){await page.setViewportSize({width,height:1000});for(const route of ['dash','control','perf']){await page.evaluate(p=>goPage(p),route);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true,route+' overflow '+width)}}
   await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>goPage('dash'));if(process.env.INSIGHTS_SCREENSHOT)await page.screenshot({path:process.env.INSIGHTS_SCREENSHOT,fullPage:true});
   await page.locator('#si-dash [data-si-action="drill"][data-value="inquiries"]').click();assert.equal(await page.locator('#si-person tbody img').count(),0);assert.match(await page.locator('#si-person tbody').innerText(),/<img/);
@@ -54,8 +56,10 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   assert.equal(await page.evaluate(()=>SalesInsights.data().active.length),3);
   assert.equal(await page.evaluate(()=>SalesInsights.data().expected),30000000);
   await page.locator('#si-dash [data-si-action="person"][data-value="고영운"]').click();
-  await page.locator('#si-person [data-si-action="stage"][data-value="sent"]').click();
+  assert.equal(await page.evaluate(()=>G.page),'perf');
   assert.equal(await page.evaluate(()=>SalesScope.state().owner),'고영운');
+  await page.evaluate(()=>goPage('dash'));
+  await page.locator('#si-dash [data-si-action="stage"][data-value="sent"]').click();
   assert.equal(await page.locator('.sw-workspace .sw-work-table tbody tr[data-deal]').count(),1);
   await page.evaluate(()=>goPage('dash'));await page.locator('#si-dash [data-sf-owner="전체"]').click();
   assert.equal(await page.locator('#si-dash [data-si-action="stage"][data-value="sent"]').textContent(),'02 자료 발송완료3건');

@@ -20,7 +20,7 @@
   --ok:#15AA72;--ok-bg:#E7F7EF;--warn:#F2941B;--warn-t:#C77A10;--warn-bg:#FEF4E4;
   --danger:#F04452;--danger-bg:#FDECEE;--violet:#7A5AF8;--violet-bg:#F0EDFE;
   --th:#F8FAFF;--th-t:#75829A;
-  --ink-b:#33363D;--nav:#16181D;--nav2:#262A31;--nav-t:#CFD4DA;--nav-s:#7C8494;--nav-sec:#5C6472;
+  --ink-b:#33363D;--nav:#ffffff;--nav2:#eef2f8;--nav-t:#3b4a60;--nav-s:#8a97ab;--nav-sec:#94a3b8;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
@@ -30,23 +30,23 @@ body{background:var(--bg);font-family:"Pretendard Variable",Pretendard,-apple-sy
 
 /* ── 셸: 좌측 레일 ── */
 .dash{display:grid;grid-template-columns:228px 1fr;min-height:100vh;background:linear-gradient(to right,var(--nav) 0,var(--nav) 228px,var(--bg) 228px)}
-.side{background:var(--nav);color:var(--nav-t);display:flex;flex-direction:column;padding:20px 12px;position:sticky;top:0;height:100vh;overflow-y:auto;scrollbar-width:none}
+.side{background:var(--nav);color:var(--nav-t);border-right:1px solid #e6ebf3;display:flex;flex-direction:column;padding:20px 12px;position:sticky;top:0;height:100vh;overflow-y:auto;scrollbar-width:none}
 .side::-webkit-scrollbar{display:none}
 .brandlogo{display:flex;align-items:center;gap:10px;padding:2px 8px 18px}
 .brandlogo .bx{width:32px;height:32px;border-radius:10px;background:var(--blue);display:grid;place-items:center;color:#fff;font-weight:900;font-size:15px;flex-shrink:0}
-.brandlogo .nm{font-weight:800;font-size:15px;color:#fff;letter-spacing:-.02em}
+.brandlogo .nm{font-weight:800;font-size:15px;color:#0f172a;letter-spacing:-.02em}
 .brandlogo .nm span{display:block;font-size:11.5px;font-weight:700;color:var(--nav-sec);letter-spacing:.06em;margin-top:2px}
 .menu{display:flex;flex-direction:column;gap:1px}
 .menu .sec{font-size:12px;font-weight:800;color:var(--nav-sec);letter-spacing:.08em;margin:16px 10px 6px}
 .mi{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;font-size:13px;font-weight:600;color:var(--nav-t);transition:.13s;text-decoration:none}
 .mi .ic{width:19px;text-align:center;font-size:13.5px;opacity:.72}
-.mi:hover{background:var(--nav2);color:#fff}
+.mi:hover{background:var(--nav2);color:#0f172a}
 .mi.on{background:var(--blue);color:#fff;font-weight:800}
 .mi.on .ic{opacity:1}
 .mi .badge{margin-left:auto;background:var(--danger);color:#fff;font-size:12px;font-weight:800;padding:1px 7px;border-radius:999px;line-height:1.6}
 .mi.on .badge{background:rgba(255,255,255,.24);color:#fff}
 .side .foot{margin-top:auto;background:var(--nav2);border-radius:12px;padding:12px 13px;font-size:11.5px;color:var(--nav-s);line-height:1.55}
-.side .foot b{display:block;color:#fff;margin-bottom:3px;font-size:12px;font-weight:800}
+.side .foot b{display:block;color:#334155;margin-bottom:3px;font-size:12px;font-weight:800}
 
 /* ── 셸: 상단 헤더 ── */
 .main{padding:20px 24px 56px;display:flex;flex-direction:column;gap:14px;min-width:0}
@@ -8632,7 +8632,7 @@ function campaignHomePage(){var L=campaignLogs(),scheduled=L.filter(function(x){
 function campaignUtility(title){return '<header class="cc-utility"><button onclick="campaignSetTab(\'home\')">← 고객 발송</button><h2>'+esc(title)+'</h2><nav><button onclick="campaignSetTab(\'history\')">발송 이력</button><button onclick="campaignSetTab(\'analysis\')">성과 보기</button></nav></header>'}
 function paintCampaign(){var root=$('#campaign-root');if(!root)return;var tab=G.campaignTab||'home',body=tab==='home'?campaignHomePage():tab==='send'?campaignSendPage():tab==='schedule'?campaignHistoryPage(true):tab==='history'?campaignHistoryPage(false):tab==='templates'?campaignLibraryPage():campaignAnalysisPage(),title=tab==='send'?'새 발송':tab==='schedule'?'예약 발송':tab==='history'?'발송 이력':tab==='templates'?'문구 보관함':'성과 보기';root.innerHTML='<div class="cc-shell">'+(tab==='home'?'':campaignUtility(title))+(CAMPAIGN_STATE.notice?'<div class="mgmtbar blue">'+esc(CAMPAIGN_STATE.notice)+'</div>':'')+body+'</div>'}
 
-</script><script src="./inquiry-assignment-clarity.js?v=20260913-assignment-3"></script><script src="./detail-workspace.js?v=20260920-nearby-1"></script><link rel="stylesheet" href="./detail-actions.css?v=20260920-flat-2"><script src="./detail-actions.js?v=20260920-flat-2"></script><script src="./relationship-management.js?v=20260920-actions-1"></script><script src="./inquiry-workbench.js?v=20260924-action-1"></script><script src="./today-work-queue.js?v=20260921-hide-1"></script><link rel="stylesheet" href="./account-admin.css?v=20260924-account-1"><script src="./account-admin.js?v=20260924-account-1"></script><link rel="stylesheet" href="./sales-insights.css?v=20260924-control-1"><script src="./sales-insights-model.js?v=20260920-actions-1"></script><link rel="stylesheet" href="./sales-scope.css?v=20260920-nav-2"><script src="./sales-scope.js?v=20260922-unassigned-1"></script><link rel="stylesheet" href="./sales-filters.css?v=20260920-1"><script src="./sales-filters.js?v=20260920-2"></script><script src="./contract-sales-ledger.js?v=20260920-1"></script><script src="./contract-sales-data.js?v=20260923-stable-1"></script><script src="./sales-insights.js?v=20260924-control-1"></script><script src="./pipeline-stages.js?v=20260920-spec-1"></script><link rel="stylesheet" href="./pipeline-workspace.css?v=20260921-mgmt-1"><script src="./stage-specs.js?v=20260920-worktypes-1"></script><script src="./relationship-promo.js?v=20260920-rel-1"></script><script src="./stage-workspaces.js?v=20260922-hide-1"></script><script src="./deal-detail-workspace.js?v=20260920-nearby-1"></script><script src="./pipeline-workspace.js?v=20260923-stable-1"></script><link rel="stylesheet" href="./pipeline-split.css?v=20260920-worktypes-1"><script src="./pipeline-split.js?v=20260920-noacc-1"></script><script src="./pipeline-batch.js?v=20260920-1"></script><script src="./operational-overlay.js?v=20260923-stable-1"></script><link rel="stylesheet" href="./contract-sales.css?v=20260920-noacc-1"><script src="./contract-sales-ui.js?v=20260920-noacc-1"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
+</script><script src="./inquiry-assignment-clarity.js?v=20260913-assignment-3"></script><script src="./detail-workspace.js?v=20260920-nearby-1"></script><link rel="stylesheet" href="./detail-actions.css?v=20260920-flat-2"><script src="./detail-actions.js?v=20260920-flat-2"></script><script src="./relationship-management.js?v=20260920-actions-1"></script><script src="./inquiry-workbench.js?v=20260924-action-1"></script><script src="./today-work-queue.js?v=20260921-hide-1"></script><link rel="stylesheet" href="./account-admin.css?v=20260924-account-1"><script src="./account-admin.js?v=20260924-account-1"></script><link rel="stylesheet" href="./sales-insights.css?v=20260924-light-1"><script src="./sales-insights-model.js?v=20260920-actions-1"></script><link rel="stylesheet" href="./sales-scope.css?v=20260924-lightnav-1"><script src="./sales-scope.js?v=20260922-unassigned-1"></script><link rel="stylesheet" href="./sales-filters.css?v=20260920-1"><script src="./sales-filters.js?v=20260920-2"></script><script src="./contract-sales-ledger.js?v=20260920-1"></script><script src="./contract-sales-data.js?v=20260923-stable-1"></script><script src="./sales-insights.js?v=20260924-light-1"></script><script src="./pipeline-stages.js?v=20260920-spec-1"></script><link rel="stylesheet" href="./pipeline-workspace.css?v=20260924-lightnav-1"><script src="./stage-specs.js?v=20260920-worktypes-1"></script><script src="./relationship-promo.js?v=20260920-rel-1"></script><script src="./stage-workspaces.js?v=20260922-hide-1"></script><script src="./deal-detail-workspace.js?v=20260920-nearby-1"></script><script src="./pipeline-workspace.js?v=20260923-stable-1"></script><link rel="stylesheet" href="./pipeline-split.css?v=20260920-worktypes-1"><script src="./pipeline-split.js?v=20260920-noacc-1"></script><script src="./pipeline-batch.js?v=20260920-1"></script><script src="./operational-overlay.js?v=20260923-stable-1"></script><link rel="stylesheet" href="./contract-sales.css?v=20260920-noacc-1"><script src="./contract-sales-ui.js?v=20260920-noacc-1"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
   if(AUTH_ON&&!TOKEN)return;
   loadData();
 });
