@@ -16,11 +16,24 @@ function open(key){
  const view=$('detailView');if(!view?.classList.contains('dw-wide'))return false;
  close(false);hideTip();
  const titles={activity:'연락 결과 · 다음 할 일',next:'다음 할 일 설정',stage:'진행상태 변경',owner:'담당자 변경',amount:'예상금액 수정',materials:'자료 보기 · 추가',management:'관리정보 수정',contact:'연락처 수정',history:'전체 이력',help:'관리 기준'};
- const panel=document.createElement('div');panel.id='detailAction';panel.className='da-layer '+(['activity','stage','materials','history'].includes(key)?'da-drawer':'da-compact');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-labelledby','da-title');
+ const panel=document.createElement('div');panel.id='detailAction';/* 2026-09-24 지시: 상세 안 작업창은 전부 같은 중앙 창 — 우측 드로어·중앙 혼용 금지 */
+ panel.className='da-layer da-compact';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-labelledby','da-title');
  const sheet=document.createElement('section');sheet.className='da-sheet';const head=document.createElement('header');const title=document.createElement('h2');title.id='da-title';title.textContent=titles[key];const x=button('닫기',key,()=>{if(key==='stage')root.StageTransitionUI?.close();else close()});x.removeAttribute('data-help');x.setAttribute('aria-label','작업창 닫기');head.append(title,x);const content=document.createElement('div');content.className='da-content';sheet.append(head,content);panel.append(sheet);
  state={key,panel,moves:[],focus:document.activeElement,background:Array.from(view.children)};view.append(panel);state.background.forEach(n=>n.inert=true);
  const next=$('nextActionCard'),activity=$('activityFormCard'),atomic=$('rel-contact-save');
- if(key==='activity'){take(activity,content);take(next,content);if(atomic){const actions=atomic.closest('.dactions');actions.before(next);const save=next?.querySelector('.dactions .pri');if(save)save.style.display='none';}else{const save=activity?.querySelector('.dactions .pri');if(save){save.classList.add('da-submit');save.textContent='활동·다음 할 일 저장';save.onclick=saveCombined;take(save.closest('.dactions'),content);}const nextSave=next?.querySelector('.dactions .pri');if(nextSave)nextSave.style.display='none';}}
+ if(key==='activity'){take(activity,content);take(next,content);if(atomic){const actions=atomic.closest('.dactions');actions.before(next);const save=next?.querySelector('.dactions .pri');if(save)save.style.display='none';}else{const save=activity?.querySelector('.dactions .pri');if(save){save.classList.add('da-submit');save.textContent='활동·다음 할 일 저장';save.onclick=saveCombined;take(save.closest('.dactions'),content);}const nextSave=next?.querySelector('.dactions .pri');if(nextSave)nextSave.style.display='none';}
+  /* 2026-09-24 지시: 처음엔 연락 결과만 — 결과 칩·내용이 생기면 다음 할 일이 맞는 기본값으로 열린다 */
+  if(next){const noteEl=activity?.querySelector('#dv-act-note');
+   if(noteEl&&noteEl.value.trim())next.classList.remove('da-next-wait');else next.classList.add('da-next-wait');
+   const reveal=chip=>{if(!next.classList.contains('da-next-wait'))return;next.classList.remove('da-next-wait');
+    const map={'연결됨':['후속 확인 전화',3],'부재':['다시 전화',1],'재연락 요청':['고객 요청 시점 재연락',2]};
+    const pre=map[chip];const txt=next.querySelector('#dv-na-text'),dt=next.querySelector('#dv-na-date');
+    if(pre&&txt&&!txt.value.trim()){txt.value=pre[0];
+     if(dt&&!dt.value){const d=new Date();d.setDate(d.getDate()+pre[1]);dt.value=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(d);}}
+    next.scrollIntoView({block:'nearest',behavior:'smooth'});};
+   content.addEventListener('click',e=>{const b=e.target.closest('.dw-outcomes button');if(b)reveal(b.textContent.trim());},true);
+   content.addEventListener('input',e=>{if(e.target.id==='dv-act-note'&&e.target.value.trim())reveal('');},true);
+  }}
  if(key==='next'){take(next,content);const save=next?.querySelector('.dactions .pri');if(save)save.style.display='';}
  if(key==='amount')take($('dw-amount'),content);
  if(key==='owner')take($('dv-assignee')?.closest('.dcard'),content);
@@ -112,7 +125,10 @@ function decorate(){
  [['연락 결과','activity'],['다음 할 일','next'],['진행상태 변경','stage'],['담당자 변경','owner'],['자료 추가','materials'],['ⓘ 관리 기준','help']].forEach(([text,key])=>tools.append(button(text,key,key==='stage'?()=>root.openTransition():null)));
  const more=document.createElement('button');more.type='button';more.className='da-more';more.textContent='···  작업 더보기';
  more.onclick=()=>{tools.hidden=!tools.hidden;more.classList.toggle('on',!tools.hidden);more.textContent=tools.hidden?'···  작업 더보기':'작업 접기 ↑';};
- toolbar.append(more,tools);body.before(toolbar);
+ toolbar.append(more,tools);
+ /* 2026-09-24 지시: 빠른 작업 바(더보기·단계 primary)는 상세 헤더 오른쪽에 */
+ const top=view.querySelector('.detailtop');
+ if(top){toolbar.classList.add('da-top');top.append(toolbar)}else body.before(toolbar);
  // Keep one set of original inputs and their handlers, outside the viewing surface.
  const stash=document.createElement('div');stash.className='da-stash';stash.hidden=true;const selectors=['#activityFormCard','#nextActionCard','#dw-amount'];const atomic=$('rel-contact-save')?.closest('.dactions');selectors.forEach(s=>{const n=body.querySelector(s);if(n)stash.append(n)});if(atomic&&!stash.contains(atomic))stash.append(atomic);const owner=$('dv-assignee')?.closest('.dcard');if(owner)stash.append(owner);body.append(stash);
  body.querySelectorAll('.dw-fold').forEach(n=>{if(!n.querySelector('.dcard,.dsec,#execFiles,#execQuotePanel'))n.remove()});

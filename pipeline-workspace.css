@@ -273,3 +273,13 @@
 #campaign-root .cc2-rrow .bar i.g{background:#15803d}
 #campaign-root .cc2-rrow b{text-align:right}
 @media(max-width:1000px){#campaign-root .cc2-split{grid-template-columns:1fr}}
+
+/* 담당자별 현황 접기 (2026-09-24 지시) */
+.sw-owner-fold{margin:0 0 12px}
+.sw-owner-fold>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;border:1px solid #e2e8f1;border-radius:11px;background:#fbfcfe;padding:10px 14px;font-size:12.5px;font-weight:850;color:#33415e}
+.sw-owner-fold>summary::-webkit-details-marker{display:none}
+.sw-owner-fold>summary:before{content:'▸';color:#8a97ab;transition:.15s}
+.sw-owner-fold[open]>summary:before{transform:rotate(90deg)}
+.sw-owner-fold>summary small{font-weight:650;color:#8a97ab}
+.sw-owner-fold[open]>summary{border-radius:11px 11px 0 0}
+.sw-owner-fold[open]>.sw-owner-board{border-top:0;border-radius:0 0 11px 11px;margin-top:0}

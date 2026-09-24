@@ -6,3 +6,10 @@
 .da-tools{display:inline-flex;gap:8px}.da-tools[hidden]{display:none!important}
 .da-more{flex:none;white-space:nowrap;border:1px dashed #c8d2e2;background:#fbfcfe;color:#5b6b85;border-radius:9px;padding:8px 12px;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
 .da-more:hover{border-color:#3B6CE4;color:#3B6CE4}.da-more.on{border-style:solid;background:#eef3ff;color:#2f5fd0;border-color:#c9d9ff}
+
+/* 빠른 작업 바 헤더 배치 (2026-09-24) */
+.detailtop .da-toolbar.da-top{margin-left:auto;padding:0;border:0;background:transparent;overflow:visible;flex-wrap:wrap;justify-content:flex-end}
+
+/* 결과 먼저 → 다음 할 일 자동 열림 (2026-09-24) */
+.da-next-wait{display:none!important}
+.da-compact .da-content{overflow:auto}
