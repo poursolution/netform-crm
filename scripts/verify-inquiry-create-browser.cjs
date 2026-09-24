@@ -86,7 +86,7 @@ async function run() {
     await dialog.waitFor({state:'detached'});
     assert.equal(await page.evaluate(()=>__manualCalls.length),1,'read-back does not create a second inquiry');
     assert.equal(await page.evaluate(()=>__manualMap.size),0);
-    assert.equal(await page.locator('.inq-work-row[data-k="44444444-4444-4444-8444-444444444444"] .inq-now').textContent(),'배정');
+    assert.equal(await page.locator('.inq-work-row[data-k="44444444-4444-4444-8444-444444444444"] .inq-now').textContent(),'배정하기');
     await page.evaluate(async()=>{Phase1.rpc=async()=>({contract_version:1,can_create:false});await InquiryCreate.refresh()});
     assert.equal(await page.getByRole('button',{name:'+ 문의 등록',exact:true}).count(),0);
     console.log('Manual inquiry browser: form, responsive widths, read-back retry, unassigned list and permission gating passed');

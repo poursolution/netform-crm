@@ -31,8 +31,9 @@ async function run() {
     const context = await browser.newContext();
     await context.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
     const page = await context.newPage();
-    await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`, { waitUntil: 'load' });
     await page.waitForFunction(() => typeof paintInq === 'function' && typeof inqCtlRoleView === 'function' && !!window.InquiryWorkbench && !!window.PCManagerRequests);
+    await page.evaluate(async()=>{await Promise.resolve(window.AUTH_READY).catch(()=>{});});
     await page.evaluate(() => {
       const base = { brand: 'POUR솔루션', created_at: '2026-09-10T00:00:00+09:00', valid_inquiry: true };
       B = {
@@ -57,7 +58,8 @@ async function run() {
 
     await page.evaluate(()=>{B.inquiries[1].brand='POUR공법';B.inquiries[2].brand='석민이앤씨';B.inquiries[3].brand='아파트스퀘어';B.inquiries[0].phone='010-1234-5678';B.inquiries[0].contact_name='테스트 문의자';window.__writes=[];pushWrite=(...args)=>__writes.push(args);window.Phase1={subscribe:()=>()=>{}};window.__stopRequests=PCManagerRequests.install(window,{list:async()=>[],create:async()=>{throw Error("Unexpected request write")}});paintInq()});
     await page.evaluate(()=>{B.inquiries[0].detail={inquiry:'옥상 방수 문의\n도면 확인 요청 <img src=x onerror=alert(1)>',note:'접수 참고',customerType:'테스트건설(주)',channel:'홈페이지',buildingType:'공장',complex:'2개동',responder:'테스트 상담자'};paintInq()});
-    assert.match(await page.locator('.inq-work-row[data-k="inq-1"] .inq-question-preview').innerText(),/옥상 방수 문의/);
+    await page.locator('#pg-inq').waitFor({state:'visible'});
+    assert.match(await page.locator('.inq-work-row[data-k="inq-1"] .inq-question-preview').textContent(),/옥상 방수 문의/);
     await page.evaluate(()=>InquiryWorkbench.open('inq-1'));
     assert.equal(await page.locator('#inq-inbox-dialog .inq-original-text').innerText(),'옥상 방수 문의\n도면 확인 요청 <img src=x onerror=alert(1)>');
     assert.equal(await page.locator('#inq-inbox-dialog .sp-inquiry-original img').count(),0);
@@ -67,16 +69,30 @@ async function run() {
     assert.equal(await page.evaluate(()=>InquiryWorkbench.originalText({note:'상담원 기록'})), '');
     assert.equal(await page.evaluate(()=>InquiryWorkbench.originalText({raw:{문의내용:'잔디 문의 원문'}})), '잔디 문의 원문');
     await page.evaluate(()=>InquiryWorkbench.close());
-    assert.deepEqual(await page.locator('.inq-work-row.head>span').allTextContents(),['접수경과','문의','담당자','응대 상태','다음 행동','처리']);
-    assert.equal(await page.getByRole('button',{name:'전체 문의',exact:true}).count(),1);
+    assert.equal(await page.locator('.inq-task-modes [data-key="needs"]').getAttribute('aria-pressed'),'true');
+    assert.deepEqual(await page.locator('.inq-work-row:not(.head)').evaluateAll(es=>es.map(e=>e.dataset.k)),['inq-4','inq-1','inq-3','inq-2']);
+    const cases=await page.evaluate(()=>{
+      const base={...B.inquiries[1]},day=delta=>{const d=new Date();d.setDate(d.getDate()+delta);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+      return [
+        {...base,nextActionObj:{text:'확인 전화',due:day(0)}},
+        {...base,nextActionObj:{text:'확인 전화',due:day(2)}},
+        {...base,nextActionObj:{text:'확인 전화',due:''}},
+        {...base,status:'보류',nextActionObj:{text:'확인 전화',due:day(-2)}},
+        {...base,nextActionObj:{text:'확인 전화',due:'invalid'}}
+      ].map(q=>{const t=InquiryWorkbench.task(q);return {kind:t.kind,needed:t.needed}});
+    });
+    assert.deepEqual(cases,[{kind:'today',needed:true},{kind:'scheduled',needed:false},{kind:'missing',needed:true},{kind:'closed',needed:false},{kind:'missing',needed:true}]);
+    assert.deepEqual(await page.locator('.inq-work-row.head>span').allTextContents(),['우선순위','문의','담당자','지금 해야 할 일','기한','실행']);
+    assert.equal(await page.getByRole('button',{name:'팀 문의',exact:true}).count(),1);
     assert.equal(await page.locator('.inq-work-tools').getAttribute('open'),null);
     assert.equal(await page.locator('.inq-work-tools .inq-ctl-toolbar').isVisible(),false);
     assert.equal(await page.locator('.sales-filterbar [data-sf-brand]').count(),5);
     assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-ctl-assignee').textContent(),'미배정');
-    assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-work-recent').textContent(),'미응대');
-    assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-work-next').textContent(),'다음 행동 없음');
-    assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-now').textContent(),'배정');
-    assert.equal(await page.locator('.inq-work-row[data-k="inq-1"] .inq-now').textContent(),'처리');
+    assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-work-recent').textContent(),'담당자를 배정해주세요');
+    assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-work-next').textContent(),'배정 필요');
+    assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-now').textContent(),'배정하기');
+    assert.equal(await page.locator('.inq-work-row[data-k="inq-1"] .inq-now').textContent(),'처리하기');
+    await page.locator('#pg-inq').waitFor({state:'visible'});
     assert.match(await page.locator('.inq-work-row[data-k="inq-2"] .inq-work-recent').textContent(),/도면 요청 완료/);
     assert.doesNotMatch(await page.locator('.inq-work-row[data-k="inq-2"] .inq-work-recent').textContent(),/내부 메모/);
     for(const width of [1920,1440,1024,760,390]){
@@ -95,7 +111,7 @@ async function run() {
     assert.equal(await page.locator('.inq-work-row:not(.head)').count(),2);
     await page.locator('.inq-work-counts [data-key="waiting"]').click();
     assert.equal(await page.locator('.inq-work-row:not(.head)').count(),1);
-    await page.locator('.inq-work-counts [data-key="all"]').click();
+    await page.locator('.inq-task-modes [data-key="all"]').click();
     await page.locator('.sales-filterbar [data-sf-brand="전체"]').click();
     await page.getByRole('textbox',{name:'문의 검색',exact:true}).fill('01012345678');
     await page.locator('.inq-work-filters').getByRole('button',{name:'검색',exact:true}).click();
@@ -112,10 +128,10 @@ async function run() {
     await page.evaluate(()=>closeInquiryControlModal());
     await page.locator('.inq-work-counts [data-key="delayed"]').click();
     assert.equal(await page.locator('.inq-work-row:not(.head)').count(),await page.evaluate(()=>inqCtlScopeActive().filter(InquiryWorkbench.delayed).length));
-    await page.locator('.inq-work-counts [data-key="all"]').click();
+    await page.locator('.inq-task-modes [data-key="all"]').click();
     await page.locator('.inq-work-row[data-k="inq-1"] .inq-now').click();
     assert.equal(await page.getByRole('dialog',{name:'황윤선 최초응대 대기',exact:true}).count(),1);
-    assert.equal(await page.evaluate(()=>G.inqSelKey),'inq-1');
+    assert.equal(await page.evaluate(()=>G.inqSelKey),'inq-1');assert.equal(await page.locator('#spLogNote').count(),1,'first contact opens existing activity form');
     assert.equal(await page.locator('#inq-inbox-dialog .inq-dialog-columns>aside').count(),2);
     assert.equal(await page.locator('#inq-inbox-dialog .sp-inquiry-original').count(),1);
     await page.locator('#inq-inbox-dialog').getByRole('button',{name:/상담·영업담당/}).click();
@@ -147,7 +163,7 @@ async function run() {
     assert.ok(await page.locator('.inq-inbox-sticky').evaluate(e=>Math.abs(e.getBoundingClientRect().top)<2),'brand and filters stick while scrolling');
     await page.evaluate(()=>{B.inquiries=__originalInquiries;paintInq();window.scrollTo(0,0)});
     await page.evaluate(()=>{ME={name:'황윤선',role:'rep'};G.inqRoleView='admin';paintInq()});
-    assert.equal(await page.getByRole('button',{name:'전체 문의',exact:true}).count(),0);
+    assert.equal(await page.getByRole('button',{name:'팀 문의',exact:true}).count(),0);
     assert.equal(await page.locator('.inq-work-row:not(.head)').count(),2);
     assert.equal(await page.locator('.inq-ctl-bulk').count(),0);
     assert.equal(await page.locator('.inq-work-row input[type="checkbox"]').count(),0);
