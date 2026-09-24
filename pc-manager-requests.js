@@ -78,8 +78,8 @@
    if(isAdmin())panel.querySelectorAll('.inq-work-row[data-k]').forEach(row=>{
     const q=(w.INQ_CONSOLE_CACHE||[]).find(x=>w.inqKey(x)===row.dataset.k);if(!q||!w.inquiryRoutedOwner(q))return;
     const button=w.document.createElement('button');button.type='button';button.className='pc-manager-request-trigger';button.textContent='담당자에게 요청';
-    button.addEventListener('click',event=>{event.stopPropagation();current.open({id:q.id,site:q.site||'문의',owner:w.repDisplay(w.inquiryRoutedOwner(q))});});
-    row.lastElementChild.append(button);
+    button.addEventListener('click',event=>{event.stopPropagation();const menu=button.closest('details');if(menu)menu.open=false;current.open({id:q.id,site:q.site||'문의',owner:w.repDisplay(w.inquiryRoutedOwner(q))});});
+    (row.querySelector('.inq-action-options')||row.lastElementChild).append(button);
    });return result;
   }
   w.paintInq=paint;

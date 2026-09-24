@@ -111,7 +111,7 @@ async function run() {
     assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-work-recent').textContent(),'담당자 배정');
     assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-work-next').textContent(),'배정 필요');
     assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-now').textContent(),'배정하기');
-    assert.equal(await page.locator('.inq-work-row[data-k="inq-1"] .inq-now').textContent(),'응대하기');
+    assert.equal(await page.locator('.inq-work-row[data-k="inq-1"] .inq-now').textContent(),'응대 기록');
     await page.locator('#pg-inq').waitFor({state:'visible'});
     assert.match(await page.locator('.inq-work-row[data-k="inq-2"] .inq-work-recent').textContent(),/도면 요청 완료/);
     assert.doesNotMatch(await page.locator('.inq-work-row[data-k="inq-2"] .inq-work-recent').textContent(),/내부 메모/);
@@ -120,10 +120,12 @@ async function run() {
       assert.ok(await page.locator('#pg-inq').evaluate(e=>e.scrollWidth<=e.clientWidth+1),'page overflow '+width);
       assert.ok(await page.locator('.inq-ctl-scroll').evaluate(e=>e.scrollWidth<=e.clientWidth+1),'list overflow '+width);
       assert.ok(await page.locator('.inq-work-row:not(.head)').evaluateAll(es=>es.every(e=>(e.getBoundingClientRect().height>=96&&e.getBoundingClientRect().height<=160)||innerWidth<=760)),'row height with manager request at '+width);const buttons=await page.locator('.inq-work-row:not(.head) .inq-now').evaluateAll(es=>es.map(e=>({w:e.getBoundingClientRect().width,h:e.getBoundingClientRect().height,wrap:getComputedStyle(e).whiteSpace})));
-      assert.ok(buttons.every(b=>Math.abs(b.w-72)<0.1&&Math.abs(b.h-32)<0.1&&b.wrap==='nowrap'),'button geometry at '+width+': '+JSON.stringify(buttons));
+      assert.ok(buttons.every(b=>Math.abs(b.w-104)<0.1&&Math.abs(b.h-40)<0.1&&b.wrap==='nowrap'),'button geometry at '+width+': '+JSON.stringify(buttons));
     }
     await page.setViewportSize({width:1440,height:1000});
     if(process.env.INQUIRY_SCREENSHOT)await page.screenshot({path:process.env.INQUIRY_SCREENSHOT,fullPage:true});
+    assert.equal(await page.locator('.inq-work-row[data-k="inq-1"] .pc-manager-request-trigger').isVisible(),false);
+    await page.locator('.inq-work-row[data-k="inq-1"] .inq-action-menu summary').click();
     await page.locator('.inq-work-row[data-k="inq-1"] .pc-manager-request-trigger').click();assert.equal(await page.getByRole('dialog',{name:'담당자에게 요청',exact:true}).count(),1);await page.getByRole('dialog',{name:'담당자에게 요청',exact:true}).getByRole('button',{name:'닫기',exact:true}).click();await page.locator('.sales-filterbar [data-sf-brand="POUR솔루션"]').click();
     assert.equal(await page.locator('.inq-work-row:not(.head)').count(),1);
     assert.equal(await page.locator('.sales-filterbar [data-sf-brand="POUR공법"] em').textContent(),'1','other brand counts remain visible');
