@@ -81,17 +81,26 @@ async function run() {
         {...base,nextActionObj:{text:'확인 전화',due:'invalid'}}
       ].map(q=>{const t=InquiryWorkbench.task(q);return {kind:t.kind,needed:t.needed}});
     });
-    assert.deepEqual(cases,[{kind:'today',needed:true},{kind:'scheduled',needed:false},{kind:'missing',needed:true},{kind:'closed',needed:false},{kind:'missing',needed:true}]);
-    assert.deepEqual(await page.locator('.inq-work-row.head>span').allTextContents(),['우선순위','문의','담당자','지금 해야 할 일','기한','실행']);
+    assert.deepEqual(cases,[{kind:'followup',needed:true},{kind:'followup',needed:false},{kind:'followup',needed:true},{kind:'closed',needed:false},{kind:'followup',needed:true}]);
+    assert.equal(await page.locator('.inq-work-counts b').evaluateAll(es=>es.reduce((sum,e)=>sum+Number(e.textContent),0)),4);
+    const model=await page.evaluate(()=>{
+      const q={...B.inquiries[1],status:'견적서 발송완료',nextActionObj:null,nextAction:null,nextActionText:''};
+      const decision=InquiryWorkbench.task(q);
+      const converted=InquiryWorkbench.task({...q,deal_id:'linked'});
+      const closed=InquiryWorkbench.task({...q,status:'실주'});
+      return {decision:decision.kind,needed:decision.needed,converted:converted.needed,closed:closed.needed};
+    });
+    assert.deepEqual(model,{decision:'decision',needed:true,converted:false,closed:false});
+    assert.deepEqual(await page.locator('.inq-work-row.head>span').allTextContents(),['우선순위','문의','지금 확인하는 이유','지금 할 일','담당자','기한','실행']);
     assert.equal(await page.getByRole('button',{name:'팀 문의',exact:true}).count(),1);
     assert.equal(await page.locator('.inq-work-tools').getAttribute('open'),null);
     assert.equal(await page.locator('.inq-work-tools .inq-ctl-toolbar').isVisible(),false);
     assert.equal(await page.locator('.sales-filterbar [data-sf-brand]').count(),5);
     assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-ctl-assignee').textContent(),'미배정');
-    assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-work-recent').textContent(),'담당자를 배정해주세요');
+    assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-work-recent').textContent(),'담당자 배정');
     assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-work-next').textContent(),'배정 필요');
     assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-now').textContent(),'배정하기');
-    assert.equal(await page.locator('.inq-work-row[data-k="inq-1"] .inq-now').textContent(),'처리하기');
+    assert.equal(await page.locator('.inq-work-row[data-k="inq-1"] .inq-now').textContent(),'응대하기');
     await page.locator('#pg-inq').waitFor({state:'visible'});
     assert.match(await page.locator('.inq-work-row[data-k="inq-2"] .inq-work-recent').textContent(),/도면 요청 완료/);
     assert.doesNotMatch(await page.locator('.inq-work-row[data-k="inq-2"] .inq-work-recent').textContent(),/내부 메모/);
@@ -126,12 +135,12 @@ async function run() {
     await page.locator('.inq-work-row[data-k="inq-4"] .inq-now').click();
     assert.equal(await page.evaluate(()=>INQ_CTL_MODAL.keys[0]),'inq-4');
     await page.evaluate(()=>closeInquiryControlModal());
-    await page.locator('.inq-work-counts [data-key="delayed"]').click();
-    assert.equal(await page.locator('.inq-work-row:not(.head)').count(),await page.evaluate(()=>inqCtlScopeActive().filter(InquiryWorkbench.delayed).length));
+    await page.locator('.inq-work-counts [data-key="followup"]').click();
+    assert.equal(await page.locator('.inq-work-row:not(.head)').count(),await page.evaluate(()=>inqCtlScopeActive().filter(q=>InquiryWorkbench.matches(q,'followup')).length));
     await page.locator('.inq-task-modes [data-key="all"]').click();
     await page.locator('.inq-work-row[data-k="inq-1"] .inq-now').click();
     assert.equal(await page.getByRole('dialog',{name:'황윤선 최초응대 대기',exact:true}).count(),1);
-    assert.equal(await page.evaluate(()=>G.inqSelKey),'inq-1');assert.equal(await page.locator('#spLogNote').count(),1,'first contact opens existing activity form');
+    assert.equal(await page.evaluate(()=>G.inqSelKey),'inq-1');assert.equal(await page.locator('#iq-next').count(),1,'response requires next action in canonical progress form');await page.getByRole('button',{name:'응대·다음 일정 저장',exact:true}).click();assert.match(await page.locator('#iq-msg').textContent(),/한 일|did|필수|required|INVALID/i);
     assert.equal(await page.locator('#inq-inbox-dialog .inq-dialog-columns>aside').count(),2);
     assert.equal(await page.locator('#inq-inbox-dialog .sp-inquiry-original').count(),1);
     await page.locator('#inq-inbox-dialog').getByRole('button',{name:/상담·영업담당/}).click();
@@ -139,7 +148,7 @@ async function run() {
     assert.equal(await page.locator('#inquiryControlModal.on').count(),1);
     assert.ok(await page.evaluate(()=>Number(getComputedStyle(document.getElementById('inquiryControlModal')).zIndex)>Number(getComputedStyle(document.getElementById('inq-inbox-dialog')).zIndex)));
     await page.evaluate(()=>closeInquiryControlModal());
-    await page.locator('.sp-form').getByRole('button',{name:'취소',exact:true}).click();
+    await page.locator('.spform').getByRole('button',{name:'닫기',exact:true}).click();
     const size=await page.locator('.inq-dialog').boundingBox();assert.ok(size.width>=1440*.93&&size.height>=900);
     await page.locator('#inq-inbox-dialog').getByRole('button',{name:/활동 기록/}).click();
     await page.locator('#spLogNote').fill('저장 전 초안 유지');
@@ -172,8 +181,22 @@ async function run() {
     await page.locator('.inq-work-row[data-k="inq-1"] .inq-now').click();
     assert.equal(await page.locator('#inq-inbox-dialog').getByRole('button',{name:/상담·영업담당/}).count(),0);
     await page.getByRole('button',{name:'✕ 닫기',exact:true}).click();
+    await page.evaluate(()=>{
+      InquiryWorkbench.open('inq-1','process');
+      const saved=iqApply;let captured=null;iqApply=(q,target)=>{captured={id:q.id,target};return false};
+      InquiryWorkbench.saveProcess();iqApply=saved;
+      if(captured.id!=='inq-1'||captured.target!=='step:1')throw Error('First response must not advance to quote');
+      const q={...B.inquiries[1],nextActionObj:{text:'약속한 확인',due:'2099-01-01'}};
+      Phase1.queue={list:()=>[{object_id:q.id,operation:'inquiry_status',status:'pending'}]};
+      if(!InquiryWorkbench.task(q).needed)throw Error('Pending write cannot clear today');
+      Phase1.queue={list:()=>[{object_id:q.id,operation:'inquiry_status',status:'rejected'}]};
+      if(!InquiryWorkbench.task(q).needed)throw Error('Rejected write cannot clear today');
+      Phase1.queue={list:()=>[]};
+      if(InquiryWorkbench.task(q).needed)throw Error('Future task should leave today after confirmation');
+      InquiryWorkbench.close();
+    });
     assert.equal(await page.evaluate(()=>__writes.length),0);
-    console.log(JSON.stringify({status:'PASS',admin_rows:4,rep_rows:2,brand_multiselect:true,brand_counts:true,contact_search:true,six_columns:true,action_geometry:true,wide_dialog:true,draft_preserved:true,foreign_inquiry_blocked:true,existing_assignment:true,viewports:[1920,1440,1024,760,390],business_writes:0}));
+    console.log(JSON.stringify({status:'PASS',admin_rows:4,rep_rows:2,brand_multiselect:true,brand_counts:true,contact_search:true,seven_columns:true,action_geometry:true,wide_dialog:true,draft_preserved:true,foreign_inquiry_blocked:true,existing_assignment:true,viewports:[1920,1440,1024,760,390],business_writes:0}));
   } finally {await browser.close();await new Promise(resolve=>srv.close(resolve));}
 }
 run().catch(error=>{console.error(error.stack||error);process.exitCode=1});
