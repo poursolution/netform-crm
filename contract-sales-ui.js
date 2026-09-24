@@ -4,13 +4,15 @@
  const amount=n=>Number(n).toLocaleString('ko-KR')+'원';
  let dialog=null,focus=null;
  function filters(extra={}){return Object.assign({year:root.G.year,quarter:Object.hasOwn(extra,'month')?0:root.G.quarter||0,brand:root.G.brand,owner:root.G.rep},extra)}
- function html(f){
+ function html(f,compact){
   const s=D.summarize(f),period=(f.from?f.from+' ~ '+f.to:(f.year||'전체')+'년 '+(f.month?f.month+'월':f.quarter?f.quarter+'분기':'전체 기간'));
   const title='<header><div><h3>계약실적</h3><p>계약 체결일 기준 · 변경·취소는 발생일 반영</p><small>'+h(period)+' · '+h(f.owner||'전체')+' · CRM 영업실적</small></div><button type="button" data-contract-refresh>새로고침</button></header>';
   if(!s)return '<section class="contract-sales-panel">'+title+'<p role="status">'+(D.state().status==='loading'?'계약 이력을 불러오는 중입니다.':'계약 원장을 확인하지 못했습니다. 실적 금액은 확인 후 표시합니다.')+'</p></section>';
+  /* 브리핑·리포트는 합계 한 줄만 — 담당자별·근거 상세 표는 성과 분석에서 확인 (2026-09-24). */
+  if(compact)return '<section class="contract-sales-panel contract-sales-compact">'+title+'<div class="contract-sales-totals">'+[['신규 계약',s.newAmount],['변경 증감',s.amendmentAmount],['계약 취소',s.cancellationAmount],['순 계약실적',s.netAmount]].map(([label,n])=>'<div><span>'+label+'</span><strong>'+amount(n)+'</strong></div>').join('')+'</div><p>신규 계약 '+s.count+'건 · 계약 체결일 기준 · 담당자별·근거 상세는 성과 분석에서 확인합니다.</p></section>';
   return '<section class="contract-sales-panel">'+title+'<div class="contract-sales-totals">'+[['신규 계약',s.newAmount],['변경 증감',s.amendmentAmount],['계약 취소',s.cancellationAmount],['순 계약실적',s.netAmount]].map(([label,n])=>'<div><span>'+label+'</span><strong>'+amount(n)+'</strong></div>').join('')+'</div><p>신규 계약 '+s.count+'건 · 최초 계약과 조정 이력을 합산합니다. 과거 미확인 계약은 검토 후 반영합니다.</p><div class="contract-sales-scroll"><table><thead><tr><th>실적 귀속 담당자</th><th>계약건수</th><th>신규 계약</th><th>변경 증감</th><th>계약 취소</th><th>순 계약실적</th></tr></thead><tbody>'+s.rows.map(r=>'<tr><th>'+h(r.name||r.sales_owner)+'</th><td>'+r.count+'</td><td>'+amount(r.newAmount)+'</td><td>'+amount(r.amendmentAmount)+'</td><td>'+amount(r.cancellationAmount)+'</td><td>'+amount(r.netAmount)+'</td></tr>').join('')+'</tbody></table></div><section class="contract-sales-evidence"><strong>계약·조정 근거 '+s.events.length+'건</strong><div class="contract-sales-scroll"><table><thead><tr><th>발생일</th><th>구분</th><th>귀속 담당자</th><th>증감액</th><th>사유</th></tr></thead><tbody>'+(s.events.map(e=>'<tr><td>'+h(e.effective_date)+'</td><td>'+({signed:'계약 체결',amended:'변경 계약',cancelled:'계약 취소'}[e.kind])+'</td><td>'+h(e.sales_owner_name)+'</td><td>'+amount(e.amount_delta)+'</td><td>'+h(e.reason)+'</td></tr>').join('')||'<tr><td colspan="5">아직 기록된 계약·조정 근거가 없습니다.</td></tr>')+'</tbody></table></div></section></section>';
  }
- function mount(host,f){if(!host)return;host.querySelector(':scope > .contract-sales-host')?.remove();const box=document.createElement('div');box.className='contract-sales-host';box.innerHTML=html(f);host.prepend(box);box.querySelector('[data-contract-refresh]').onclick=()=>D.refresh();if(D.state().status==='idle')D.refresh()}
+ function mount(host,f,compact){if(!host)return;host.querySelector(':scope > .contract-sales-host')?.remove();const box=document.createElement('div');box.className='contract-sales-host';box.innerHTML=html(f,compact);host.prepend(box);box.querySelector('[data-contract-refresh]').onclick=()=>D.refresh();if(D.state().status==='idle')D.refresh()}
  function close(){dialog?.remove();dialog=null;if(focus?.isConnected)focus.focus();focus=null}
  function editor(deal){
   close();focus=document.activeElement;
@@ -53,9 +55,9 @@
    // Retain operational pipeline/risk sections, but retire their old revenue headline.
    host?.querySelectorAll('.ceo-summary .ceo-stat').forEach((n,i)=>{if(i<2)n.hidden=true});
    host?.querySelectorAll('#ceo-reps,#ceo-trend').forEach(n=>n.hidden=true);
-   distinguishCompletion(host);mount(host,filters());
+   distinguishCompletion(host);mount(host,filters(),true);
   }
-  if(page==='brief'){const host=document.getElementById('b-week'),w=root.briefWeekWindow(),end=new Date(w.start);end.setDate(end.getDate()-1);distinguishCompletion(host);mount(host,filters({year:null,quarter:0,from:w.prevStartKey,to:root.briefDateKey(end)}))}
+  if(page==='brief'){const host=document.getElementById('b-week'),w=root.briefWeekWindow(),end=new Date(w.start);end.setDate(end.getDate()-1);distinguishCompletion(host);mount(host,filters({year:null,quarter:0,from:w.prevStartKey,to:root.briefDateKey(end)}),true)}
   return r;
  };
  function distinguishCompletion(host){
