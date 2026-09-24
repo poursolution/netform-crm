@@ -33,8 +33,8 @@ function due(d){
   return null;
  }catch(e){return null;}
 }
-/* 동일 현장·다중 브랜드 가드: 같은 아파트에 다른 브랜드 딜이 있으면
-   동일 문구 발송을 막기 위해 형제 딜과 최근 발송 이력을 경고로 보여준다. */
+/* 동일 현장·다중 브랜드 가드: 같은 아파트에 다른 브랜드 영업건이 있으면
+   동일 문구 발송을 막기 위해 형제 영업건과 최근 발송 이력을 경고로 보여준다. */
 function siteKey(d){return String(d.site_id||d.siteId||'').trim()||String(d.site||d.site_name||'').replace(/\s+/g,'');}
 function siblings(d){
  const k=siteKey(d);if(!k)return [];

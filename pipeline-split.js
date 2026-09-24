@@ -37,7 +37,7 @@ function mount(list){
  document.querySelectorAll('.ps-split-queue .sw-card').forEach(n=>{
   const row=byId.get(n.dataset.deal);if(!row)return;
   const actions=n.querySelector('.sw-action');if(!actions)return;
-  const spec=root.StageSpecs.get(row.group),buttons=[[spec.primaryAction.label,'primary']];if(spec.queueLayout!=='result')buttons.push(...[['연락','contact'],['다음 행동','next'],['단계 변경','stage-edit']].filter(x=>x[1]!==spec.primaryAction.key));
+  const spec=root.StageSpecs.get(row.group),buttons=[[spec.primaryAction.label,'primary']];if(spec.queueLayout!=='result')buttons.push(...[['연락','contact'],['다음 할 일','next'],['진행상태 변경','stage-edit']].filter(x=>x[1]!==spec.primaryAction.key));
   actions.innerHTML=buttons.map(([label,key])=>'<button type="button" data-ps-action="'+key+'" data-value="'+a(row.key)+'">'+label+'</button>').join('');
  });
 }

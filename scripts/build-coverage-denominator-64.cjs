@@ -11,7 +11,7 @@ const groups=[
  ['R04_INQUIRY_PROMOTION',['I09','I10'],'문의→Pipeline 전환·계보'],
  ['R05_INQUIRY_TRASH',['I11','I12'],'문의 휴지통·복원'],
  ['R06_PIPELINE_CLOSE',['P04','P04W','P16'],'Pipeline 종료·수주·확장 Pool 생성'],
- ['R07_ACTIVITY_CONTACT',['P08','P08C'],'활동 기록·의미있는 접촉'],
+ ['R07_ACTIVITY_CONTACT',['P08','P08C'],'연락 결과·의미있는 접촉'],
  ['R08_NEXT_LIFECYCLE',['P09','P09M','P09X','P10','P11'],'Deal Next 생성·결과·연기·완료'],
  ['R09_CUSTOMER_TIMELINE',['A04D','A04S'],'Deal/Site 고객자산 Timeline 조회'],
  ['R10_PHONE_ATTEMPT',['M01O','M01A'],'전화 앱 열기·시도 Activity'],

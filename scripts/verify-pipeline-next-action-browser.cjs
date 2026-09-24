@@ -21,7 +21,7 @@ async function run(){
   await page.waitForFunction(()=>typeof dccGoNext==='function'&&typeof dccGoActivity==='function');
   await page.evaluate(()=>{
    CUR_DETAIL={kind:'deal',item:{id:'deal-next-test'}};
-   document.body.innerHTML='<div id="detailView"><button id="brief-next" onclick="briefNextAction()">📅 다음 행동</button><div class="detailtabs"><button data-tab="개요">개요</button><button data-tab="연락·활동">연락·활동</button><button data-tab="일정·Next">일정·Next</button></div><div id="dv-body"><section class="dsec" data-sec="개요">개요</section><section class="dsec" data-sec="연락·활동"><input id="dv-act-note"></section><section class="dsec" data-sec="일정·Next"><input id="dv-na-text"></section></div><button id="open-next" onclick="dccGoNext()">다음 행동 관리</button><button id="open-activity" onclick="dccGoActivity()">활동기록</button></div>';
+   document.body.innerHTML='<div id="detailView"><button id="brief-next" onclick="briefNextAction()">📅 다음 할 일</button><div class="detailtabs"><button data-tab="개요">개요</button><button data-tab="연락·활동">연락·활동</button><button data-tab="일정·Next">일정·Next</button></div><div id="dv-body"><section class="dsec" data-sec="개요">개요</section><section class="dsec" data-sec="연락·활동"><input id="dv-act-note"></section><section class="dsec" data-sec="일정·Next"><input id="dv-na-text"></section></div><button id="open-next" onclick="dccGoNext()">다음 할 일 관리</button><button id="open-activity" onclick="dccGoActivity()">활동기록</button></div>';
   });
   await page.locator('#brief-next').click();await page.waitForTimeout(100);
   assert.equal(await page.evaluate(()=>document.activeElement.id),'dv-na-text');

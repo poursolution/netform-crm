@@ -4,15 +4,15 @@
  const registry=new Map();let state=null;
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const definitions={
-  nextMissing:['Next 없음','진행 중인 영업기회인데 예정된 다음 행동이 없습니다.'],
-  noNext:['Next 없음','진행 중인 영업기회인데 예정된 다음 행동이 없습니다.'],
-  overdue:['기한초과','등록된 다음 행동의 기한이 지났지만 완료되지 않았습니다.'],
+  nextMissing:['Next 없음','진행 중인 영업기회인데 예정된 다음 할 일이 없습니다.'],
+  noNext:['Next 없음','진행 중인 영업기회인데 예정된 다음 할 일이 없습니다.'],
+  overdue:['기한초과','등록된 다음 할 일의 기한이 지났지만 완료되지 않았습니다.'],
   nearIdle:['수주임박 무활동','경쟁·PT / 공사임박 / 입찰 / 계약 단계에서 유효접촉이 7일 이상 없거나 유효접촉 기록이 없는 현장입니다.'],
   noAmount:['금액 미입력','예상금액과 견적금액이 모두 입력되지 않은 현장입니다.'],
   stageSla:['Stage SLA 초과','현재 단계 체류일이 해당 단계의 관리 기준을 초과했습니다.'],
   stale:['장기정체','현재 화면의 장기정체 기준에 포함된 현장입니다.'],
   workMissing:['공종 미분류','선택된 구조화 공종이 없는 현장입니다.'],
-  recontact:['오늘 재접촉','다음 행동 또는 재접촉 약속일이 오늘이거나 지났습니다.'],
+  recontact:['오늘 재접촉','다음 할 일 또는 재접촉 약속일이 오늘이거나 지났습니다.'],
   unassigned:['미배정 문의','현재 영업담당자가 배정되지 않은 문의입니다.'],
   noResponse:['최초응대 지연','현재 화면의 최초응대 확인 기준에 포함된 문의입니다.']
  };
@@ -25,12 +25,12 @@
   const activities=(p.activities||d.activities||[]).slice().sort((a,b)=>String(b.at||b.occurred_at||'').localeCompare(String(a.at||a.occurred_at||''))),last=activities[0],lastAt=last&&(last.at||last.occurred_at)||d.lastActivity||d.last_activity_at||'',missing=p.next_missing_since||d.next_missing_since;
   let reason=inquiry?(inquiryRoutedOwner(d)?'배정 후 최초응대 확인 필요':'영업담당자 미배정'):'카드 집계 대상';
   if(kind==='nearIdle')reason=days==null?'유효접촉 기록 없음':days+'일 유효접촉 없음';
-  if(kind==='noNext'||kind==='nextMissing')reason='다음 행동 없음 · 미등록 기간 '+(missing?relDaysSince(missing)+'일':'미확인');
+  if(kind==='noNext'||kind==='nextMissing')reason='다음 할 일 없음 · 미등록 기간 '+(missing?relDaysSince(missing)+'일':'미확인');
   if(kind==='overdue')reason=(a?.text||'예정 행동 미기록')+' · 원래 기한 '+String(due||'미기록').slice(0,10)+' · '+(days==null?'초과일 미확인':days+'일 초과');
   if(kind==='noAmount')reason='예상·견적금액 미입력';
   if(kind==='stageSla'||kind==='stale')reason='현재 단계 '+(stageAge(d)==null?'기간 미확인':stageAge(d)+'일 체류');
   if(kind==='workMissing')reason='공종 미분류';if(kind==='recontact')reason='재접촉일 '+String(due||m.due||'미기록').slice(0,10);
-  return {d,kind,inquiry,owner:inquiry?(inquiryRoutedOwner(d)||'미배정'):repN(d.assignee),stage:inquiry?(d.status||'접수'):stageLabel(dealStage(d)),code:inquiry?(d.status||'접수'):dealStage(d),amount:inquiry?0:oppAmt(d),days,reason,a,last:kind==='nearIdle'?(m.meaningfulAt?String(m.meaningfulAt).slice(0,10)+' · 유효접촉':'유효접촉 기록 없음'):(lastAt?String(lastAt).slice(0,10)+' '+(last?.type||'활동'):'활동 기록 없음')};
+  return {d,kind,inquiry,owner:inquiry?(inquiryRoutedOwner(d)||'미배정'):repN(d.assignee),stage:inquiry?(d.status||'접수'):stageLabel(dealStage(d)),code:inquiry?(d.status||'접수'):dealStage(d),amount:inquiry?0:oppAmt(d),days,reason,a,last:kind==='nearIdle'?(m.meaningfulAt?String(m.meaningfulAt).slice(0,10)+' · 유효접촉':'유효접촉 기록 없음'):(lastAt?String(lastAt).slice(0,10)+' '+(last?.type||'활동'):'연락 결과 없음')};
  }
  function open(slot){const config=registry.get(slot);if(!config)return;if(state)close();state={...config,slot,owner:'',stage:'',sort:'amount',focus:document.activeElement,overflow:document.body.style.overflow,notes:new Map(),editor:null};
   state.original=factsAll();state.originalAmount=state.original.reduce((s,r)=>s+r.amount,0);
@@ -46,7 +46,7 @@
   document.querySelectorAll('#issue-modal [data-action]').forEach(el=>el.onclick=()=>action(Number(el.dataset.index),el.dataset.action));
  }
  function rowHTML(r){const i=state.rows.indexOf(r.d),button=(k,t)=>'<button type="button" data-index="'+i+'" data-action="'+k+'">'+t+'</button>';let buttons='';
-  if(!r.inquiry){if(['noNext','nextMissing','recontact'].includes(r.kind))buttons+=button('next','다음 행동 등록');else if(r.kind==='overdue')buttons+=button('complete','완료')+button('due','기한 변경');else if(r.kind==='noAmount')buttons+=button('amount','금액 입력');else buttons+=button('call','전화')+button('sms','문자')+button('next','다음 행동')}
+  if(!r.inquiry){if(['noNext','nextMissing','recontact'].includes(r.kind))buttons+=button('next','다음 할 일 등록');else if(r.kind==='overdue')buttons+=button('complete','완료')+button('due','기한 변경');else if(r.kind==='noAmount')buttons+=button('amount','금액 입력');else buttons+=button('call','전화')+button('sms','문자')+button('next','다음 할 일')}
   return '<tr><td><strong>'+esc(r.d.site||'현장명 미입력')+'</strong><small>'+esc(r.owner)+'</small></td><td>'+esc(r.stage)+'<strong class="issue-money">'+esc(fmtAmt(r.amount))+'</strong></td><td><small>'+esc(r.last)+'</small><span>'+esc(r.reason)+'</span>'+(state.notes.has(i)?'<small class="issue-pending">'+esc(state.notes.get(i))+'</small>':'')+'</td><td><div class="issue-actions">'+buttons+button('detail','자세히 보기 →')+'</div></td></tr>';
  }
  function action(i,type){const d=state.rows[i];if(!d)return;
@@ -56,16 +56,16 @@
   if(type==='sms'){if(!phoneN(c.mobile)){state.notes.set(i,'휴대폰 번호가 없습니다.');render();return}const previous=CUR_DETAIL;state.message=true;CUR_DETAIL={kind:'deal',key:dealKey(d),item:d};const oldClose=closeKakaoModal;closeKakaoModal=function(){oldClose.apply(this,arguments);CUR_DETAIL=previous;closeKakaoModal=oldClose;if(state){state.message=false;document.getElementById('issue-modal').style.visibility='';render()}};document.getElementById('issue-modal').style.visibility='hidden';try{openRelationshipMessage('sms')}catch(e){closeKakaoModal();state.notes.set(i,'메시지 창을 열지 못했습니다.');render()}return}
   state.editor={i,type,action:a?{...a}:null};const host=document.getElementById('issue-editor');
   const dates=String(a?.due||a?.due_at||'').slice(0,10);
-  host.innerHTML='<form class="issue-edit"><h3>'+esc(d.site)+' · '+({complete:'다음 행동 완료',due:'기한 변경',next:'다음 행동 등록',amount:'예상금액 입력'}[type])+'</h3>'+(type==='complete'?'<p>'+esc(a?.text||'완료할 행동 없음')+'</p><label>완료 결과 *<textarea id="issue-result" required placeholder="실제로 처리한 결과를 남겨 주세요."></textarea></label>':type==='amount'?'<label>예상금액(원) *<input id="issue-amount" data-money inputmode="decimal" value="'+esc(oppAmt(d)||'')+'" required></label>':(type==='next'?NextActionPicker.html('issue-type',a?.type,dealStage(d),'issue-text','issue-due'):'')+'<label>예정 행동 *<input id="issue-text" value="'+esc(a?.text||'')+'" required></label><label>기한 *<input type="date" id="issue-due" value="'+esc(dates)+'" required></label>')+'<div id="issue-error" role="alert"></div><div class="issue-actions"><button type="button" id="issue-cancel-edit">취소</button><button class="primary" type="submit">저장 요청</button></div></form>';
+  host.innerHTML='<form class="issue-edit"><h3>'+esc(d.site)+' · '+({complete:'다음 할 일 완료',due:'기한 변경',next:'다음 할 일 등록',amount:'예상금액 입력'}[type])+'</h3>'+(type==='complete'?'<p>'+esc(a?.text||'완료할 행동 없음')+'</p><label>완료 결과 *<textarea id="issue-result" required placeholder="실제로 처리한 결과를 남겨 주세요."></textarea></label>':type==='amount'?'<label>예상금액(원) *<input id="issue-amount" data-money inputmode="decimal" value="'+esc(oppAmt(d)||'')+'" required></label>':(type==='next'?NextActionPicker.html('issue-type',a?.type,dealStage(d),'issue-text','issue-due'):'')+'<label>예정 행동 *<input id="issue-text" value="'+esc(a?.text||'')+'" required></label><label>기한 *<input type="date" id="issue-due" value="'+esc(dates)+'" required></label>')+'<div id="issue-error" role="alert"></div><div class="issue-actions"><button type="button" id="issue-cancel-edit">취소</button><button class="primary" type="submit">저장 요청</button></div></form>';
   host.querySelector('form').onsubmit=e=>{e.preventDefault();save()};document.getElementById('issue-cancel-edit').onclick=()=>{state.editor=null;host.innerHTML=''};host.scrollIntoView({block:'nearest'});host.querySelector('input,textarea,button')?.focus();
  }
  function save(){if(!state?.editor)return;const {i,type,action:before}=state.editor,d=state.rows[i],p=itemPatch(d,'deal'),at=isoNow(),a=actionObj(d,p),error=t=>{document.getElementById('issue-error').textContent=t},read=id=>document.getElementById(id)?.value.trim()||'';
   if(!towerActive(d))return error('현재 진행 중인 영업기회가 아닙니다. 다시 확인해 주세요.');
-  if(['complete','due'].includes(type)&&(!a||a.text!==before?.text||String(a.due||a.due_at||'')!==String(before?.due||before?.due_at||'')))return error('다음 행동이 변경되었습니다. 창을 다시 열어 주세요.');
+  if(['complete','due'].includes(type)&&(!a||a.text!==before?.text||String(a.due||a.due_at||'')!==String(before?.due||before?.due_at||'')))return error('다음 할 일이 변경되었습니다. 창을 다시 열어 주세요.');
   if(type==='amount'){const amount=MoneyInput.parse(read('issue-amount'));if(!Number.isFinite(amount)||amount<=0)return error('0보다 큰 유효한 금액을 입력해 주세요.');d.amt=p.amt=amount;pushWrite('amount',{opportunity_id:d.id,amount,quote_amount:quoteAmt(d)||null,won_amount:wonAmt(d)||null})}
   else if(type==='complete'){
    const result=read('issue-result');if(!result)return error('완료 결과를 입력해 주세요.');
-   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(a.id||'')))return error('서버에서 발급한 다음 행동 ID를 확인한 뒤 완료해 주세요.');
+   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(a.id||'')))return error('서버에서 발급한 다음 할 일 ID를 확인한 뒤 완료해 주세요.');
    try{pushWrite('next_action_complete',{opportunity_id:d.id,action_id:a.id,text:a.text,due_at:a.due||a.due_at,at})}
    catch(e){return error('완료 요청을 등록하지 못했습니다. 기존 일정을 유지합니다.')}
    pushWrite('activity',{opportunity_id:d.id,type:a.type||'기타',note:a.text,result,occurred_at:at,meaningful_contact:false});

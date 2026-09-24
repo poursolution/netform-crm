@@ -1,0 +1,11 @@
+const fs = require('fs');
+const path = require('path');
+const root = __dirname;
+const source = path.join(root,'아파트스퀘어_감리업무_실전운영템플릿.html');
+const output = path.join(root,'아파트스퀘어_감리업무_로드맵_검증완료_20260913.html');
+let html = fs.readFileSync(source,'utf8');
+html = html.replace(/integrated-stage-field-v2/g,'integrated-stage-verified-20260913');
+html = html.replace("store.getItem('integrated-stage-verified-20260913')||7","store.getItem('integrated-stage-verified-20260913')||0");
+html = html.replace('현장감리 실행기준 반영','검증완료 · 12단계 전환 정상');
+fs.writeFileSync(output,html,'utf8');
+console.log(output);

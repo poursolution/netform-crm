@@ -35,7 +35,7 @@ async function run(){
   await page.evaluate(()=>{window.__originalActivities=CUR_DETAIL.item.activities;CUR_DETAIL.item.activities=Array.from({length:9},(_,i)=>({id:'flat-'+i,occurred_at:'2026-09-20T10:00:0'+i+'Z',type:i%2?'next_action_set':'stage_change',actor_name:'검증 담당자',note:'<검증> 기록 '+i}));refreshActivityTimeline()});
   assert.equal(await page.locator('#activityTimelineHost .da-events li').count(),6);
   assert.doesNotMatch(await page.locator('#activityTimelineHost').innerText(),/next_action_set|stage_change|CRM/);
-  assert.match(await page.locator('#activityTimelineHost').innerText(),/다음 행동 등록|단계 변경/);
+  assert.match(await page.locator('#activityTimelineHost').innerText(),/다음 할 일 등록|진행상태 변경/);
   assert.equal(await page.locator('#activityTimelineHost').evaluate(n=>getComputedStyle(n).overflow),'visible');
   await page.getByRole('button',{name:'전체 이력 보기',exact:true}).click();
   assert.equal(await page.locator('#detailAction .da-events li').count(),9);
@@ -71,18 +71,18 @@ async function run(){
    assert.ok(await page.locator('.dw-left .contactnum b').evaluateAll(nodes=>nodes.every(n=>{const r=document.createRange();r.selectNodeContents(n);return r.getClientRects().length===1&&n.scrollWidth<=n.clientWidth})), 'phone numbers stay on one line at '+width);
   }
   assert.equal(await page.locator('#dv-act-note').isVisible(),false,'view surface has no expanded input');
-  const quick=page.locator('.da-toolbar').getByRole('button',{name:'활동 기록',exact:true});
+  const quick=page.locator('.da-toolbar').getByRole('button',{name:'연락 결과',exact:true});
   await quick.hover();await page.waitForTimeout(120);assert.equal(await page.locator('#da-tooltip').count(),0);
   await page.waitForTimeout(280);assert.match(await page.locator('#da-tooltip').innerText(),/고객 접촉/);
   assert.equal(await page.locator('#da-tooltip').evaluate(n=>{const r=n.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight}),true);
   await page.mouse.move(0,0);assert.equal(await page.locator('#da-tooltip').count(),0);
   await quick.focus();await page.waitForTimeout(30);assert.equal(await page.locator('#da-tooltip').isVisible(),true);
-  await quick.click();await page.locator('#dv-na-text').fill('다음 행동 보존 검증');
+  await quick.click();await page.locator('#dv-na-text').fill('다음 할 일 보존 검증');
   await page.keyboard.press('Escape');assert.equal(await page.locator('#detailAction').count(),0);assert.equal(await page.locator('#detailView').isVisible(),true);
-  await page.locator('.da-toolbar').getByRole('button',{name:'다음 행동',exact:true}).click();
+  await page.locator('.da-toolbar').getByRole('button',{name:'다음 할 일',exact:true}).click();
   assert.equal(await page.locator('#detailAction.da-compact #dv-na-date').isVisible(),true);
   assert.equal(await page.locator('#dv-act-note').isVisible(),false);
-  assert.equal(await page.locator('#dv-na-text').inputValue(),'다음 행동 보존 검증');
+  assert.equal(await page.locator('#dv-na-text').inputValue(),'다음 할 일 보존 검증');
   await page.locator('#detailAction').getByRole('button',{name:'작업창 닫기'}).click();
   await page.evaluate(()=>DetailWorkspace.focusWide('activityFormCard'));
   await page.locator('#dv-act-note').fill('저장 전 메모 보존');
@@ -90,7 +90,7 @@ async function run(){
   await page.evaluate(()=>detailTabFocus('연락·활동'));
   assert.equal(await page.locator('#dv-act-note').inputValue(),'저장 전 메모 보존');
   await page.evaluate(()=>DetailActions.close());
-  await page.locator('.dw-right').getByRole('button',{name:'단계 변경',exact:true}).click();
+  await page.locator('.dw-right').getByRole('button',{name:'진행상태 변경',exact:true}).click();
   assert.equal(await page.locator('#dw-stage-editor #stage-transition-form').isVisible(),true);
   assert.equal(await page.locator('#stageTransitionModal').count(),0);
   await page.locator('#sf-cancel').click();assert.equal(await page.evaluate(()=>document.body.style.overflow),'hidden');
@@ -115,7 +115,7 @@ async function run(){
   assert.deepEqual(polling,{dedup:true,draft:true,repaint:true});
   // Relationship contact and next schedule must remain one visible workflow.
   await page.evaluate(()=>{Object.assign(B.deals[0],{code:'rapport',stage_code:'rapport',stage:'유대관리'});G.page='relationship';G._detailPopup=true;drwDeal(JSON.stringify(B.deals[0]));});
-  await page.locator('.da-toolbar').getByRole('button',{name:'활동 기록',exact:true}).click();
+  await page.locator('.da-toolbar').getByRole('button',{name:'연락 결과',exact:true}).click();
   assert.equal(await page.locator('#rel-contact-save').count(),1);
   assert.equal(await page.evaluate(()=>document.getElementById('activityFormCard').closest('details')===document.getElementById('nextActionCard').closest('details')),true,'atomic inputs share one expanded section');
   assert.equal(await page.locator('#dv-act-note').isVisible(),true);
