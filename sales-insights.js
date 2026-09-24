@@ -68,15 +68,50 @@
   const seen=new Set(),logs=[];s.deals.forEach(d=>{const patch=root.itemPatch(d.item,'deal');[...(d.item.activities||[]),...(patch.activities||[])].forEach(x=>{const at=x.at||x.created_at||x.occurred_at,k=d.key+':'+(x.id||[at,x.type,x.note||x.result].join('|'));if(seen.has(k)||!M.inPeriod(at,state()))return;seen.add(k);logs.push({at,site:d.site,text:x.note||x.result||root.siteActivityTitle(x.type||'활동')})})});
   logs.sort((a,b)=>String(b.at).localeCompare(String(a.at)));return card('최근 활동',logs.length?'<ol class="si-activity">'+logs.slice(0,8).map(x=>'<li><time>'+h(M.date(x.at))+'</time><div><b>'+h(x.site)+'</b><p>'+h(x.text)+'</p></div></li>').join('')+'</ol>':empty('선택 기간에 기록된 활동이 없습니다.'));
  }
+ /* 컨트롤타워 v3 (2026-09-24 승인 시안): "어디가 막혔고 누구에게 무엇을 시킬 것인가".
+    ① 막힌 곳 문장 → ② 담당자별 문제·지시 → ③ 좁혀진 목록 + 일괄 지시(다음 업무 지정, PipelineBatch 재사용). */
+ const ISSUE_DAYS=/([0-9]+)일/;
+ function ctState(){if(!root.G.ct)root.G.ct={owner:'',issue:'all'};return root.G.ct}
+ function ctDays(d){const m=String(d.reason||'').match(ISSUE_DAYS);return m?Number(m[1]):0}
+ function ctVerdicts(s,f){
+  const act=s.active,out=[];
+  const conc=k=>{const list=act.filter(d=>d.issues.includes(k));if(!list.length)return null;const by={};list.forEach(d=>{by[d.owner]=(by[d.owner]||0)+1});const top=Object.entries(by).sort((a,b)=>b[1]-a[1])[0];return {k,name:top[0],n:top[1],tot:list.length,old:Math.max(0,...list.filter(d=>d.owner===top[0]).map(ctDays))}};
+  const ov=conc('overdue');if(ov)out.push({cls:'',owner:ov.name,issue:'overdue',kind:'risk',html:'<span class="who">'+h(ov.name)+'</span> — 기한초과 <b>'+ov.tot+'건 중 '+ov.n+'건</b>이 몰려 있습니다.'+(ov.old?' 최장 <b>'+ov.old+'일 초과</b>.':'')});
+  const ms=conc('missing');if(ms&&ms.name!==ov?.name)out.push({cls:'',owner:ms.name,issue:'missing',kind:'risk',html:'<span class="who">'+h(ms.name)+'</span> — Next 없음 <b>'+ms.tot+'건 중 '+ms.n+'건</b>. 다음 행동이 비어 있습니다.'});
+  const ct7=conc('contact');if(ct7&&!out.some(x=>x.owner===ct7.name))out.push({cls:'w',owner:ct7.name,issue:'contact',kind:'risk',html:'<span class="who">'+h(ct7.name)+'</span> — 7일+ 미접촉 <b>'+ct7.tot+'건 중 '+ct7.n+'건</b>.'+(ct7.old?' 최장 <b>'+ct7.old+'일</b> 접촉 없음.':'')});
+  const un=s.inquiries.filter(q=>q.owner==='미배정');
+  if(un.length){const old=Math.max(0,...un.map(q=>{const d0=M.date(q.created);return d0?Math.max(0,-root.daysTo(d0)):0}));out.push({cls:'w',owner:'미배정',issue:'all',kind:'inquiries',html:'미배정 문의 <b>'+un.length+'건</b>'+(old?' — 가장 오래된 건 <b>D+'+old+'</b>.':'.')+' 배정이 먼저입니다.'})}
+  return out.slice(0,3);
+ }
+ function ctRepRows(s){
+  const ct=ctState(),act=s.active,names=[...new Set(act.map(d=>d.owner))].filter(n=>n&&n!=='미배정');
+  const rows=names.map(name=>{const mine=act.filter(d=>d.owner===name);
+   const cnt=k=>mine.filter(d=>d.issues.includes(k)).length;
+   return {name,total:mine.length,overdue:cnt('overdue'),missing:cnt('missing'),contact:cnt('contact'),stale:cnt('stale'),old:Math.max(0,...mine.map(ctDays)),probs:cnt('overdue')*3+cnt('contact')*2+cnt('missing')};
+  }).filter(x=>x.overdue+x.missing+x.contact+x.stale>0).sort((a,b)=>b.probs-a.probs);
+  const chip=(name,k,label,n,cls)=>n?'<button type="button" class="ct-tag '+cls+(ct.owner===name&&ct.issue===k?' sel':'')+'" data-si-action="ct-focus" data-value="'+a(name+'|'+k)+'">'+label+' '+n+'</button>':'';
+  return rows.map(x=>'<div class="ct-reprow"><span class="who">'+btn(x.name,'person',x.name)+'<small>진행 '+x.total+'건</small></span><span class="ct-tags">'+chip(x.name,'overdue','기한초과',x.overdue,'hot')+chip(x.name,'contact','미접촉',x.contact,'warn')+chip(x.name,'missing','Next 없음',x.missing,'')+chip(x.name,'stale','장기정체',x.stale,'')+'</span><span class="ct-old">'+(x.old?'가장 오래된 <b>D+'+x.old+'</b>':'')+'</span>'+btn('지시 보내기','ct-order',x.name,'ct-orderbtn')+'</div>').join('')||'<p class="dc-mut">현재 문제 신호가 있는 담당자가 없습니다.</p>';
+ }
  function control(s){
-  const f=state(),list=M.select(s,f.kind,f),size=20,pages=Math.max(1,Math.ceil(list.length/size));f.page=Math.min(f.page,pages);
+  const f=state(),ct=ctState();
+  let list=M.select(s,f.kind,f);
+  if(ct.owner)list=list.filter(d=>d.owner===ct.owner);
+  if(ct.issue&&ct.issue!=='all')list=list.filter(d=>d.issues.includes(ct.issue));
+  const size=20,pages=Math.max(1,Math.ceil(list.length/size));f.page=Math.min(f.page,pages);
   const kinds=[['risk','관리필요'],['active','진행중 전체'],['inquiries','기간 문의'],['won','기간 준공 처리']];
   const stageOptions=[['all','전체 단계'],...s.stages.map(x=>[x.code,x.label])];
-  const chips=kinds.map(([k,t])=>'<button type="button" class="dc-kchip'+(f.kind===k?' on':'')+'" data-si-filterchip="kind" data-value="'+k+'">'+h(t)+' <b>'+number(M.select(s,k,f).length)+'</b></button>').join('');
-  const filtersHtml='<div class="si-control-filters dc-cfilters">'+select('관리유형','issue',[['all','전체'],['urgent','긴급 · 기한초과'],...Object.entries(labels)],f.issue)+select('단계','stage',stageOptions,f.stage)+'<label>현장 검색<input data-si-search value="'+a(f.search)+'" placeholder="현장·담당자·사유" aria-label="현장 검색"></label></div>';
-  const table='<div class="si-table-scroll"><table class="si-table si-cases dc-table dc-cases"><thead><tr><th>현장</th><th>담당자</th><th>현재 단계</th><th>확인할 내용</th><th>처리</th></tr></thead><tbody>'+list.slice((f.page-1)*size,f.page*size).map(d=>'<tr><td><b>'+h(d.site)+'</b></td><td>'+(d.owner&&d.owner!=='미배정'?btn(d.owner,'person',d.owner):h(d.owner))+'</td><td><span class="si-badge">'+h(d.stageLabel)+'</span></td><td>'+h(f.kind==='won'?'준공 처리금액 '+money(d.wonAmount)+(d.hasWonAmount?'':' · 금액 미입력'):d.reason||'현재 진행 중')+'</td><td>'+btn(d.type==='inq'&&d.owner==='미배정'?'배정':'처리','record',d.key)+'</td></tr>').join('')+'</tbody></table></div>'+(list.length?'':empty());
+  const chips=kinds.map(([k,t])=>'<button type="button" class="dc-kchip'+(f.kind===k?' on':'')+'" data-si-filterchip="kind" data-value="'+k+'">'+h(t)+' <b>'+number(M.select(s,k,f).length)+'</b></button>').join('')
+   +(ct.owner||ct.issue!=='all'?'<button type="button" class="dc-kchip ct-clearchip" data-si-action="ct-clear">'+h((ct.owner?ct.owner:'')+(ct.issue!=='all'?' · '+labels[ct.issue]:''))+' ✕</button>':'');
+  const filtersHtml='<div class="si-control-filters dc-cfilters">'+select('단계','stage',stageOptions,f.stage)+'<label>현장 검색<input data-si-search value="'+a(f.search)+'" placeholder="현장·담당자·사유" aria-label="현장 검색"></label></div>';
+  const verdicts=ctVerdicts(s,f).map(v=>'<button type="button" class="ct-verdict '+v.cls+'" data-si-action="ct-focus" data-value="'+a(v.owner+'|'+v.issue+'|'+v.kind)+'">'+v.html+'</button>').join('')||'<p class="dc-mut">막힘 신호가 없습니다.</p>';
+  const riskText=d=>{const raw=String(d.reason||'현재 진행 중');return h(raw).replace(/([0-9]+일 기한초과)/g,'<span class="ct-hot">$1</span>').replace(/([0-9]+일 미접촉)/g,'<span class="ct-warn">$1</span>').replace(/(기한초과)/g,'<span class="ct-hot">$1</span>')};
+  const table='<div class="si-table-scroll"><table class="si-table si-cases dc-table dc-cases"><thead><tr><th class="ct-selcol"><input type="checkbox" id="ct-all" aria-label="표시된 현장 모두 선택"></th><th>현장</th><th>담당자</th><th>현재 단계</th><th>왜 막혔나</th><th>처리</th></tr></thead><tbody>'+list.slice((f.page-1)*size,f.page*size).map(d=>'<tr><td class="ct-selcol">'+(d.type==='deal'?'<input type="checkbox" data-ct-sel="'+a(d.key)+'" aria-label="'+a(d.site)+' 선택">':'')+'</td><td><b>'+h(d.site)+'</b></td><td>'+(d.owner&&d.owner!=='미배정'?btn(d.owner,'person',d.owner):h(d.owner))+'</td><td><span class="si-badge">'+h(d.stageLabel)+'</span></td><td>'+(f.kind==='won'?h('준공 처리금액 '+money(d.wonAmount)+(d.hasWonAmount?'':' · 금액 미입력')):riskText(d))+'</td><td>'+btn(d.type==='inq'&&d.owner==='미배정'?'배정':'열기','record',d.key)+'</td></tr>').join('')+'</tbody></table></div>'+(list.length?'':empty());
+  const bulk='<div class="ct-bulk">선택 <b id="ct-count">0</b>건 → '+btn('지시 보내기 (다음 업무 일괄 지정)','ct-bulk','','ct-bulkbtn')+'<span class="dc-mut">지시는 각 현장의 다음 업무로 등록되어 담당자 오늘 업무에 뜹니다 · 문의 건은 배정으로 처리</span></div>';
   return '<div class="dc-topbar"><h2><i>◈</i>컨트롤타워</h2>'+periodSeg()+'<span class="dc-nav">'+btn('전체 현황 ↗','navigate','dash')+btn('성과 분석 ↗','navigate','perf')+'</span><span class="dc-live"><i></i>관리 대상 '+number(list.length)+'건</span></div>'+
-   '<div class="dc-grid"><div class="dc-p c12"><div class="dc-ph">지금 처리할 목록<small>진행 중·관리필요=현재 상태 · 문의·준공=선택 기간 · 계약실적과 별도 · 담당자 클릭=성과 분석</small></div><div class="dc-pb"><div class="dc-kchips">'+chips+'</div>'+filtersHtml+table+'<div class="si-pager">'+btn('이전','page',Math.max(1,f.page-1))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',Math.min(pages,f.page+1))+'</div></div></div></div>';
+   '<div class="dc-grid">'+
+   '<div class="dc-p c12"><div class="dc-ph">① 지금 막힌 곳<small>문장 클릭 = 아래 목록이 그 조건으로 좁혀짐</small></div><div class="dc-pb ct-verdicts">'+verdicts+'</div></div>'+
+   '<div class="dc-p c12"><div class="dc-ph">② 담당자별 문제 · 지시<small>문제 칩 클릭=목록 필터 · 이름 클릭=성과 분석 · 지시=해당 담당자 문제 건 일괄 지정</small></div><div class="dc-pb">'+ctRepRows(s)+'</div></div>'+
+   '<div class="dc-p c12"><div class="dc-ph">③ 처리 목록<small>진행 중·관리필요=현재 상태 · 문의·준공=선택 기간 · 계약실적과 별도</small></div><div class="dc-pb"><div class="dc-kchips">'+chips+'</div>'+filtersHtml+table+bulk+'<div class="si-pager">'+btn('이전','page',Math.max(1,f.page-1))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',Math.min(pages,f.page+1))+'</div></div></div></div>';
  }
  /* ─── 대시보드 다크 콘솔 (2026-09-22) ─── */
  let lastDiags=[],lastAnimKey='';
@@ -263,12 +298,26 @@
  }
  function onChange(e){const el=e.target,key=el.dataset.siFilter;if(key){const f=state();f[key]=['month','page'].includes(key)?Number(el.value):el.value;f.page=1;if(key==='kind'){f.issue='all';f.stage='all'}if(key==='owner')root.SalesScope.change('owner',el.value);render()}else if(el.matches('[data-si-search]')){state().search=el.value;state().page=1;render()}}
  function onClick(e){
+  if(e.target.matches('#ct-all'))document.querySelectorAll('#si-control [data-ct-sel]').forEach(n=>{n.checked=e.target.checked});
+  if(e.target.matches('[data-ct-sel],#ct-all')){const c=document.getElementById('ct-count');if(c)c.textContent=document.querySelectorAll('#si-control [data-ct-sel]:checked').length;return;}
   const chip=e.target.closest('[data-si-filterchip]');
   if(chip){const fc=state();fc[chip.dataset.siFilterchip]=chip.dataset.value;fc.issue='all';fc.stage='all';fc.page=1;render();return;}
   const b=e.target.closest('[data-si-action]');if(!b)return;const action=b.dataset.siAction,v=b.dataset.value,f=state();
   if(action==='navigate')root.goPage(v);
   if(action==='view'){f.view=v;render()}
   if(action==='quarter'){f.quarter=Number(v);f.month=0;f.page=1;render();return}
+  if(action==='ct-clear'){const ct=ctState();ct.owner='';ct.issue='all';f.page=1;render();return}
+  if(action==='ct-focus'){const parts=String(v).split('|'),ct=ctState();ct.owner=parts[0];ct.issue=parts[1]||'all';if(parts[2])f.kind=parts[2];f.issue='all';f.stage='all';f.search='';f.page=1;render();return}
+  if(action==='ct-order'||action==='ct-bulk'){
+   if(!root.PipelineBatch?.openRows)return;
+   const ct=ctState(),d=data();let targets;
+   if(action==='ct-order')targets=d.active.filter(x=>x.owner===v&&x.issues.length);
+   else{const keys=new Set([...document.querySelectorAll('#si-control [data-ct-sel]:checked')].map(n=>n.dataset.ctSel));targets=d.deals.filter(x=>keys.has(x.key));}
+   const ids=new Set(targets.map(x=>String(x.item.id)));
+   const rows2=(root.PipelineWorkspace?.rows({})||[]).filter(r=>r.item&&ids.has(String(r.item.id)));
+   if(!rows2.length){root.alert('지시할 파이프라인 건을 먼저 선택해 주세요.');return}
+   root.PipelineBatch.openRows(rows2,'next');return;
+  }
   if(action==='page'){f.page=Number(v);render()}
   if(action==='stage'&&root.PipelineWorkspace){const filters={...f,owner:b.closest('#si-person')?.dataset.owner||f.owner};close(false);root.PipelineWorkspace.open(v,filters);return;}
   if(action==='drill'&&v==='contract'){const panel=document.querySelector('#si-'+root.G.page+' .contract-sales-panel');if(panel){panel.scrollIntoView({block:'start',behavior:'smooth'});return;}openEvidence('계약실적 근거 · '+f.year+'년'+(f.month?' '+f.month+'월':''),'계약 체결·변경·취소 원장 기록 · 상세 표는 성과 분석에서',contractEvidence(f.month?{month:f.month}:{}));return;}

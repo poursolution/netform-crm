@@ -5,8 +5,8 @@ const h=x=>root.esc(String(x??''));let busy=false;
 function selected(){const ids=new Set([...document.querySelectorAll('[data-triage-select]:checked')].map(n=>n.dataset.triageSelect));return root.PipelineWorkspace.rows().filter(r=>r.group==='consulting'&&ids.has(r.key));}
 function toolbar(){return '<div class="sw-batch-toolbar"><strong id="sw-selected-count">0건 선택</strong><button type="button" data-batch="work">공종 지정</button><button type="button" data-batch="next">다음 확인일 지정</button><button type="button" data-batch="waiting">대기 전환</button></div><small>선택한 현장에만 적용합니다. 대기 전환은 관계관리의 대기고객 단계로 이동합니다.</small>';}
 function close(){if(!busy)document.getElementById('sw-batch-dialog')?.remove();}
-function open(kind){
- const rows=selected().map(r=>({...r,selectedVersion:r.item.version}));if(!rows.length){root.alert('먼저 처리할 현장을 선택해 주세요.');return;}
+function open(kind,rowsIn){
+ const rows=(rowsIn||selected()).filter(r=>r.item&&r.item.id&&!r.expansion).map(r=>({...r,selectedVersion:r.item.version}));if(!rows.length){root.alert('먼저 처리할 현장을 선택해 주세요.');return;}
  if(document.getElementById('detailAction')){root.alert('입력 중인 작업창을 먼저 저장하거나 닫아 주세요.');return;}
  close();const el=document.createElement('dialog');el.id='sw-batch-dialog';el.className='sw-batch-dialog';
  const label={work:'공종 일괄 지정',next:'다음 확인일 일괄 지정',waiting:'대기고객 일괄 전환'}[kind];
@@ -18,7 +18,7 @@ function open(kind){
    if(!identity)throw Error('로그인이 필요합니다.');
    for(const chosen of rows){
     if(root.Phase1.profile?.auth_uid!==identity)throw Error('로그인 계정이 변경되었습니다.');
-    const row=root.PipelineWorkspace.rows().find(r=>r.key===chosen.key&&r.group==='consulting');if(!row)throw Error('조회 범위 또는 단계가 변경되었습니다.');
+    const row=root.PipelineWorkspace.rows().find(r=>r.key===chosen.key&&r.group===chosen.group);if(!row)throw Error('조회 범위 또는 단계가 변경되었습니다.');
     if(root.Phase1.queue.list().some(q=>q.object_id===row.item.id&&q.status!=='done'))throw Error('해당 현장에 미확인 저장 요청이 있습니다.');
     const current=(await root.Phase1.read('work_items',{opportunity_id:row.item.id})).data;
     if(root.Phase1.profile?.auth_uid!==identity)throw Error('로그인 계정이 변경되었습니다.');
@@ -46,5 +46,6 @@ function open(kind){
 document.addEventListener('change',e=>{if(e.target.matches('[data-triage-all]'))document.querySelectorAll('[data-triage-select]').forEach(n=>n.checked=e.target.checked);if(e.target.matches('[data-triage-all],[data-triage-select]')){const n=document.getElementById('sw-selected-count');if(n)n.textContent=selected().length+'건 선택';}});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-batch]');if(b)open(b.dataset.batch);});
 root.addEventListener('phase1:identity-cleared',()=>document.getElementById('sw-batch-dialog')?.remove());
-root.PipelineBatch={toolbar};
+/* 컨트롤타워 일괄 지시(다음 업무 지정)에서 재사용 — 같은 버전 검증·큐 경로 (2026-09-24). */
+root.PipelineBatch={toolbar,openRows:function(rows,kind){open(kind,rows);}};
 })(window);
