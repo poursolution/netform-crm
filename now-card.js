@@ -42,7 +42,7 @@
   return '<section class="now-card" id="nowCard"><div class="nc-stage">'+h(root.stageLabel(root.dealStage(d)))+(root.oppAmt(d)>0?' · 예상 '+money(root.oppAmt(d)):'')+' · '+h(d.brand||root.bizOf?.(d)||'')+'</div>'
    +'<div class="nc-todo">'+(todo.promise?'<span class="nc-promise">🔴 고객 약속</span> ':'')+h(todo.text)+' '+dueTag+'</div>'
    +'<div class="nc-meta">'+h(root.repN(d.assignee)||'담당 미지정')+(meta.meaningfulAt?' · 마지막 연락 '+h(String(meta.meaningfulAt).slice(0,10)):' · 연락 기록 없음')+'</div>'
-   +'<div class="nc-cta"><button type="button" class="nc-call" onclick="NowCard.sheet()">📞 연락하고 결과 남기기</button><button type="button" onclick="dccGoActivity()">결과 남기기</button><button type="button" onclick="dccGoNext()">다른 날짜로</button></div>'
+   +'<div class="nc-cta"><button type="button" class="nc-call" onclick="NowCard.sheet()">📞 연락하고 결과 남기기</button><button type="button" onclick="dccGoActivity()">결과 남기기</button><button type="button" onclick="dccGoNext()">다른 날짜로</button>'+(todo&&!todo.suggested&&todo.due?'<button type="button" onclick="completeNextAction()">다음 할 일 완료</button>':'')+'</div>'
    +'<div class="nc-brief">'+brief+'</div></section>';
  }
  /* ── 결과 칩 시트 ── */
@@ -132,6 +132,8 @@
    const bar=document.getElementById('detailView')?.querySelector('.da-toolbar');
    const html=card();
    if(bar)bar.insertAdjacentHTML('beforebegin',html);else body.insertAdjacentHTML('afterbegin',html);
+   /* 상단 지금 할 일 카드와 중앙 «지금 해야 할 일» 카드가 같은 내용 이중 표기 — 중앙 카드는 접는다 (2026-09-24 캡처 지적) */
+   const dup=document.getElementById('dw-now');if(dup)dup.hidden=true;
   }catch(e){}
  }
  const oldDetail=root.dccDecorateDetail;
