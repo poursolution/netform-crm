@@ -50,14 +50,8 @@
  const oldPaint=root.paint;root.paint=function(){const r=oldPaint.apply(this,arguments);const page=root.G.page;
   /* 분석 3화면(대시보드·컨트롤타워·성과 분석)에는 상세 원장 패널을 붙이지 않는다 —
      매출 근거는 각 화면의 클릭 팝업으로, 합계는 리포트·브리핑의 컴팩트 패널로 (2026-09-24). */
-  if(page==='report'){
-   const host=document.getElementById('report-master');
-   // Retain operational pipeline/risk sections, but retire their old revenue headline.
-   host?.querySelectorAll('.ceo-summary .ceo-stat').forEach((n,i)=>{if(i<2)n.hidden=true});
-   host?.querySelectorAll('#ceo-reps,#ceo-trend').forEach(n=>n.hidden=true);
-   distinguishCompletion(host);mount(host,filters(),true);
-  }
-  if(page==='brief'){const host=document.getElementById('b-week'),w=root.briefWeekWindow(),end=new Date(w.start);end.setDate(end.getDate()-1);distinguishCompletion(host);mount(host,filters({year:null,quarter:0,from:w.prevStartKey,to:root.briefDateKey(end)}),true)}
+  /* 리포트에도 계약실적 패널·수치 숨김 오버레이를 붙이지 않는다 (2026-09-24 대표 지시) — 리포트 자체 수치는 원장 동일 계산 */
+  /* 주간 브리핑에는 계약실적 패널을 붙이지 않는다 (2026-09-24 대표 지시) — 매출 수치는 브리핑 판정 문장·성과 분석에서 */
   return r;
  };
  function distinguishCompletion(host){

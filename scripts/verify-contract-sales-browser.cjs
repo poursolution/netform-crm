@@ -32,16 +32,16 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   assert.equal(await page.evaluate(()=>G.page),'perf');assert.equal(await page.evaluate(()=>SalesScope.state().owner),'황윤선');
   // 매출 귀속은 계약 당시 담당자에게 동결: 담당자를 바꿔도 원장 합산이 변하지 않는다.
   assert.equal(await page.evaluate(()=>ContractSalesData.summarize({year:'2026',month:9,owner:'황윤선'}).netAmount),300000000);
-  await page.evaluate(()=>goPage('report'));assert.equal(await page.locator('#report-master > .contract-sales-host .contract-sales-totals strong').last().innerText(),'300,000,000원');
-  assert.equal(await page.locator('#report-master .contract-sales-compact').count(),1);
-  await page.evaluate(()=>goPage('brief'));assert.match(await page.locator('#b-week > .contract-sales-host').innerText(),/계약 체결일 기준/);
+  // 리포트·브리핑에는 계약실적 패널을 붙이지 않는다 (2026-09-24 대표 지시)
+  await page.evaluate(()=>goPage('report'));assert.equal(await page.locator('#report-master .contract-sales-host').count(),0);
+  await page.evaluate(()=>goPage('brief'));assert.equal(await page.locator('#b-week .contract-sales-host').count(),0);
   await page.evaluate(async()=>{__contract.events=ContractSalesLedger.append(__contract.events,{event_id:'event-2',expected_version:1,kind:'cancelled',effective_date:'2026-10-01',reason:'합성 취소'});__contract.version=2;__contract.balance=0;await ContractSalesData.refresh()});
   assert.equal(await page.evaluate(()=>ContractSalesData.summarize({year:'2026',month:10}).netAmount),-300000000);
   assert.equal(await page.evaluate(()=>ContractSalesData.summarize({year:'2026',month:9}).netAmount),300000000);
   assert.equal(await page.evaluate(()=>ContractSalesData.summarize({year:'2026',quarter:4}).netAmount),-300000000);
   await page.evaluate(()=>goPage('report'));
   for(const width of [1440,390]){await page.setViewportSize({width,height:1000});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,JSON.stringify(await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,wide:[...document.querySelectorAll(".contract-sales-panel *")].filter(n=>n.getBoundingClientRect().right>innerWidth).map(n=>n.tagName+"."+n.className).slice(0,10)}))))}
-  await page.evaluate(async()=>{SB.rpc=async()=>({error:{message:'offline'}});await ContractSalesData.refresh()});assert.match(await page.locator('#report-master .contract-sales-host').innerText(),/확인하지 못했습니다/);assert.equal(await page.locator('#report-master .contract-sales-totals').count(),0);
+  await page.evaluate(async()=>{SB.rpc=async()=>({error:{message:'offline'}});await ContractSalesData.refresh()});assert.equal(await page.locator('#report-master .contract-sales-host').count(),0);
   await page.evaluate(()=>ContractSalesUI.editor(B.deals[0]));
   await page.waitForFunction(()=>document.querySelector('.contract-sales-shade [role="status"]')?.textContent.includes('확인하지 못했습니다'));
   assert.equal(await page.locator('.contract-sales-shade button[type="submit"]').count(),0);
