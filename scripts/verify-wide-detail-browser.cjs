@@ -71,6 +71,7 @@ async function run(){
    assert.ok(await page.locator('.dw-left .contactnum b').evaluateAll(nodes=>nodes.every(n=>{const r=document.createRange();r.selectNodeContents(n);return r.getClientRects().length===1&&n.scrollWidth<=n.clientWidth})), 'phone numbers stay on one line at '+width);
   }
   assert.equal(await page.locator('#dv-act-note').isVisible(),false,'view surface has no expanded input');
+  if(await page.locator('.da-tools[hidden]').count())await page.locator('.da-more').click();
   const quick=page.locator('.da-toolbar').getByRole('button',{name:'연락 결과',exact:true});
   await quick.hover();await page.waitForTimeout(120);assert.equal(await page.locator('#da-tooltip').count(),0);
   await page.waitForTimeout(280);assert.match(await page.locator('#da-tooltip').innerText(),/고객 접촉/);
@@ -79,6 +80,7 @@ async function run(){
   await quick.focus();await page.waitForTimeout(30);assert.equal(await page.locator('#da-tooltip').isVisible(),true);
   await quick.click();await page.locator('#dv-na-text').fill('다음 할 일 보존 검증');
   await page.keyboard.press('Escape');assert.equal(await page.locator('#detailAction').count(),0);assert.equal(await page.locator('#detailView').isVisible(),true);
+  if(await page.locator('.da-tools[hidden]').count())await page.locator('.da-more').click();
   await page.locator('.da-toolbar').getByRole('button',{name:'다음 할 일',exact:true}).click();
   assert.equal(await page.locator('#detailAction.da-compact #dv-na-date').isVisible(),true);
   assert.equal(await page.locator('#dv-act-note').isVisible(),false);
@@ -115,6 +117,7 @@ async function run(){
   assert.deepEqual(polling,{dedup:true,draft:true,repaint:true});
   // Relationship contact and next schedule must remain one visible workflow.
   await page.evaluate(()=>{Object.assign(B.deals[0],{code:'rapport',stage_code:'rapport',stage:'유대관리'});G.page='relationship';G._detailPopup=true;drwDeal(JSON.stringify(B.deals[0]));});
+  if(await page.locator('.da-tools[hidden]').count())await page.locator('.da-more').click();
   await page.locator('.da-toolbar').getByRole('button',{name:'연락 결과',exact:true}).click();
   assert.equal(await page.locator('#rel-contact-save').count(),1);
   assert.equal(await page.evaluate(()=>document.getElementById('activityFormCard').closest('details')===document.getElementById('nextActionCard').closest('details')),true,'atomic inputs share one expanded section');
