@@ -14,7 +14,7 @@
   const stamp=Date.parse(text);if(!Number.isFinite(stamp))return '';
   return new Date(stamp+9*3600000).toISOString().slice(0,10);
  }
- function inPeriod(value,f){const d=date(value);return !!d&&(!f.year||f.year==='전체'||d.slice(0,4)===String(f.year))&&(!f.month||Number(d.slice(5,7))===Number(f.month))}
+ function inPeriod(value,f){const d=date(value);return !!d&&(!f.year||f.year==='전체'||d.slice(0,4)===String(f.year))&&(f.month?Number(d.slice(5,7))===Number(f.month):(!f.quarter||Math.ceil(Number(d.slice(5,7))/3)===Number(f.quarter)))}
  function unique(rows){const seen=new Set();return rows.filter(r=>{if(seen.has(r.key))return false;seen.add(r.key);return true})}
  function scope(rows,f){return unique(rows).filter(r=>(!f.brand||f.brand==='전체'||r.brand===f.brand)&&(!f.owner||f.owner==='전체'||r.owner===f.owner))}
  function summarize(deals,inquiries,f){
