@@ -48,8 +48,8 @@
  }
  const oldDetail=root.dccDecorateDetail;if(oldDetail)root.dccDecorateDetail=function(){const r=oldDetail.apply(this,arguments);detail();return r};
  const oldPaint=root.paint;root.paint=function(){const r=oldPaint.apply(this,arguments);const page=root.G.page;
-  /* 대시보드·컨트롤타워는 콘솔 KPI·근거 팝업이 대신한다 — 상세 원장 패널은 성과 분석에만 (2026-09-24). */
-  if(page==='perf')mount(document.querySelector('#si-perf .si-shell'),filters(root.G.insights||{}));
+  /* 분석 3화면(대시보드·컨트롤타워·성과 분석)에는 상세 원장 패널을 붙이지 않는다 —
+     매출 근거는 각 화면의 클릭 팝업으로, 합계는 리포트·브리핑의 컴팩트 패널로 (2026-09-24). */
   if(page==='report'){
    const host=document.getElementById('report-master');
    // Retain operational pipeline/risk sections, but retire their old revenue headline.
@@ -66,7 +66,7 @@
   while((n=walker.nextNode())){if(n.parentElement.closest('.contract-sales-host,script,style'))continue;n.nodeValue=n.nodeValue.replace(/수주금액/g,'준공 처리금액').replace(/누적 수주|이번 달 수주|지난주 수주 결과/g,'준공 처리 결과');}
  }
  const oldRep=root.repManagerRenderDrawer;
- if(oldRep)root.repManagerRenderDrawer=function(){const r=oldRep.apply(this,arguments),row=root.REP_MANAGER_ROWS?.[root.REP_MANAGER_DRAWER_INDEX];if(row)mount(document.getElementById('perfDrawerBody'),filters({owner:row.nm||row.name}));return r};
+ if(oldRep)root.repManagerRenderDrawer=function(){const r=oldRep.apply(this,arguments),row=root.REP_MANAGER_ROWS?.[root.REP_MANAGER_DRAWER_INDEX];if(row)mount(document.getElementById('perfDrawerBody'),filters({owner:row.nm||row.name}),true);return r};
  root.addEventListener('contract-sales:changed',()=>{if(root.B&&root.ME)root.paint()});
  root.addEventListener('phase1:identity-cleared',()=>{close();document.querySelectorAll('.contract-sales-host').forEach(n=>n.remove())});
  root.ContractSalesUI={html,mount,filters,editor,detail};
