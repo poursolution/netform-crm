@@ -45,3 +45,16 @@
 .nc-sheet footer{display:flex;justify-content:flex-end;margin-top:8px}
 .nc-sheet footer button{font:inherit;border:1px solid #e2e8f1;background:#fff;border-radius:8px;padding:8px 16px;font-size:12px;color:#5b6b85;cursor:pointer}
 @media(max-width:700px){.nc-chips{grid-template-columns:1fr}}
+
+/* nccompact: 컴팩트 (2026-09-24: 아래 본론 가림 지적) */
+.now-card{padding:10px 14px;margin-bottom:10px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 14px;align-items:center}
+.now-card .nc-stage{grid-column:1/-1;font-size:10.5px;margin:0}
+.now-card .nc-todo{font-size:13.5px;margin:0;line-height:1.4}
+.now-card .nc-meta{margin:0;grid-column:1;font-size:11px}
+.now-card .nc-cta{grid-column:2;grid-row:2/span 2;justify-self:end;flex-wrap:nowrap}
+.now-card .nc-call{font-size:12.5px;padding:9px 15px;border-radius:9px}
+.now-card .nc-cta button:not(.nc-call){font-size:11.5px;padding:8px 11px}
+.now-card .nc-brief{grid-column:1/-1;margin-top:6px;padding-top:6px;display:flex;flex-wrap:wrap;gap:4px 18px;font-size:11.5px}
+.now-card .nc-brief .row{display:inline-flex;grid-template-columns:none;gap:6px;align-items:baseline;min-width:0}
+.now-card .nc-brief .row b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px}
+@media(max-width:900px){.now-card{grid-template-columns:1fr}.now-card .nc-cta{grid-column:1;grid-row:auto;justify-self:start;flex-wrap:wrap}}

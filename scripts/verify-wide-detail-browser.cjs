@@ -78,7 +78,7 @@ async function run(){
   assert.equal(await page.locator('#da-tooltip').evaluate(n=>{const r=n.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight}),true);
   await page.mouse.move(0,0);assert.equal(await page.locator('#da-tooltip').count(),0);
   await quick.focus();await page.waitForTimeout(30);assert.equal(await page.locator('#da-tooltip').isVisible(),true);
-  await quick.click();await page.locator('#dv-na-text').fill('다음 할 일 보존 검증');
+  await quick.click();await page.locator('#dv-act-note').fill('결과 먼저 입력');await page.locator('#dv-na-text').fill('다음 할 일 보존 검증');
   await page.keyboard.press('Escape');assert.equal(await page.locator('#detailAction').count(),0);assert.equal(await page.locator('#detailView').isVisible(),true);
   if(await page.locator('.da-tools[hidden]').count())await page.locator('.da-more').click();
   await page.locator('.da-toolbar').getByRole('button',{name:'다음 할 일',exact:true}).click();
@@ -122,9 +122,11 @@ async function run(){
   assert.equal(await page.locator('#rel-contact-save').count(),1);
   assert.equal(await page.evaluate(()=>document.getElementById('activityFormCard').closest('details')===document.getElementById('nextActionCard').closest('details')),true,'atomic inputs share one expanded section');
   assert.equal(await page.locator('#dv-act-note').isVisible(),true);
-  assert.equal(await page.locator('#dv-na-date').isVisible(),true);
-  assert.equal(await page.evaluate(()=>!!(document.getElementById('nextActionCard').compareDocumentPosition(document.getElementById('rel-contact-save'))&Node.DOCUMENT_POSITION_FOLLOWING)),true,'combined save follows both input groups');
+  // 다음 할 일은 결과 입력 후 자동으로 열린다 (2026-09-24)
+  assert.equal(await page.locator('#dv-na-date').isVisible(),false,'next section waits for a result first');
   await page.locator('#dv-act-note').fill('연락 기록 초안');
+  assert.equal(await page.locator('#dv-na-date').isVisible(),true,'next section revealed after result input');
+  assert.equal(await page.evaluate(()=>!!(document.getElementById('nextActionCard').compareDocumentPosition(document.getElementById('rel-contact-save'))&Node.DOCUMENT_POSITION_FOLLOWING)),true,'combined save follows both input groups');
   await page.locator('#dv-na-text').fill('다음 통화 초안');
   await page.locator('#dv-na-date').fill('2026-09-25');
   // Production openRow invokes the decorator again after the shared renderer.

@@ -50,6 +50,8 @@ assert.equal(await page.locator('.sw-work-table tbody tr[data-deal]').count(),30
 assert.ok(await page.locator('.sw-group-row').count()>=1,'priority group separators');
 // 담당자별 현황판: 행 클릭 = 아래 목록 담당자 필터 토글. (확장관리의 exp-owner-board가 숨은 DOM에 남으므로 페이지 루트로 스코프)
 assert.equal(await page.locator('#pipeline-stage-root .sw-owner-board').count(),1);
+// 현황판은 기본 접힘(2026-09-24) — 펼친 뒤 행 상호작용 검증
+if(await page.locator('#pipeline-stage-root .sw-owner-fold:not([open])').count())await page.locator('#pipeline-stage-root .sw-owner-fold > summary').click();
 assert.match(await page.locator('#pipeline-stage-root .sw-owner-board tbody tr').first().innerText(),/황윤선/);
 await page.locator('#pipeline-stage-root .sw-owner-board tbody tr').first().click();
 assert.equal(await page.evaluate(()=>SalesScope.state().owner),'황윤선');

@@ -129,9 +129,9 @@
    if(root.CUR_DETAIL?.kind!=='deal')return;
    const body=document.getElementById('dv-body');if(!body)return;
    if(document.getElementById('nowCard'))return;
-   const bar=document.getElementById('detailView')?.querySelector('.da-toolbar');
    const html=card();
-   if(bar)bar.insertAdjacentHTML('beforebegin',html);else body.insertAdjacentHTML('afterbegin',html);
+   /* 작업 바가 헤더로 올라갔으므로(2026-09-24) 카드는 항상 본문 맨 앞 */
+   body.insertAdjacentHTML('afterbegin',html);
    /* 상단 지금 할 일 카드와 중앙 «지금 해야 할 일» 카드가 같은 내용 이중 표기 — 중앙 카드는 접는다 (2026-09-24 캡처 지적) */
    const dup=document.getElementById('dw-now');if(dup)dup.hidden=true;
   }catch(e){}
