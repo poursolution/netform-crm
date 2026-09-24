@@ -192,3 +192,18 @@
 .si-dark .sales-type button{background:#18233c;border:1px solid var(--dcl)}
 .si-dark .sales-type button[aria-pressed=true]{background:#2a3a5f;border-color:#3d5488;color:#fff}
 .si-dark .sales-scope-fields label{color:var(--dcs)}
+/* 컨트롤타워 다크 통일 */
+.si-dark button{background:#18233c;border-color:var(--dcl);color:var(--dci)}
+.si-dark button:hover{background:#1c2740;border-color:var(--dc1)}
+.si-dark .si-card{background:var(--dcp);border-color:var(--dcl)}
+.si-dark .si-card h3{color:#fff}
+.si-dark .si-card header p{color:var(--dcm)}
+.si-dark .si-table th{background:transparent;color:var(--dcm);border-bottom:1px solid var(--dcl)}
+.si-dark .si-table td{border-color:#172440;color:var(--dcs)}
+.si-dark .si-table td,.si-dark .si-table th{background:transparent}
+.si-dark .si-table tbody tr:hover td{background:#182036}
+.si-dark .si-badge{background:#18233c;color:#9db4dd}
+.si-dark .si-control-filters label{color:var(--dcs)}
+.si-dark input{background:#18233c;border-color:var(--dcl);color:var(--dci)}
+.si-dark .si-pager{color:var(--dcs)}
+.si-dark .si-empty{color:var(--dcm)}
