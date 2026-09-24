@@ -35,7 +35,7 @@ function decorate(){
  const ledger=root.ContractSalesData?.state(),contract=ledger?.items.find(c=>String(c.deal_id)===String(d.id)),r=rowFor(d),values=root.StageSpecs.values(r,contract,{work:root.dealWorkSummary(d),stage:root.stageLabel(r.code)});
  const dl=document.createElement('dl');dl.className='dw-context-highlights';dl.setAttribute('aria-label',spec.purpose);
  spec.detailHighlights.forEach(key=>{const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=root.StageSpecs.labels[key];const v=values[key];dd.textContent=v==null||v===''?'미기록':['amount','contractAmount'].includes(key)?root.fmtAmt(v):String(v);dl.append(dt,dd);});now.append(dl);
- root.TechnicalAdvisoryUI?.mount(now,d.id);
+ root.TechnicalAdvisoryUI?.mount(now.parentElement,d.id);
  if(view.classList.contains('ps-embedded')){view.setAttribute('role','region');view.removeAttribute('aria-modal');}
 }
 root.DealDetailWorkspace={open,run,decorate};
