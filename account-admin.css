@@ -1,0 +1,20 @@
+.account-admin{width:min(640px,94vw);border:0;border-radius:16px;padding:0;box-shadow:0 24px 90px #13274940}
+.account-admin::backdrop{background:#0f182966}
+.account-admin .aa-box{padding:20px 22px}
+.account-admin header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.account-admin h2{margin:0;font-size:18px}
+.account-admin header button{font:inherit;border:1px solid #dbe2ec;background:#fff;border-radius:8px;padding:6px 14px;cursor:pointer}
+.account-admin>div>p{font-size:12.5px;color:#5b6b85;line-height:1.6;margin:6px 0 14px}
+.aa-list{display:grid;gap:2px;max-height:60vh;overflow:auto}
+.aa-row{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;padding:10px 2px;border-top:1px solid #eef2f8}
+.aa-row .aa-who b{font-size:13.5px}
+.aa-row .aa-who small{display:block;color:#8a97ab;font-size:11px;margin-top:2px}
+.aa-row>button{font:inherit;font-size:12px;font-weight:700;border:1px solid #dbe2ec;background:#fff;color:#254268;border-radius:8px;padding:7px 12px;cursor:pointer}
+.aa-row>button:hover{border-color:#749ce4}
+.aa-na{font-size:11px;color:#94a3b8}
+.aa-form{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap}
+.aa-form[hidden]{display:none}
+.aa-form input{font:inherit;font-size:13px;border:1px solid #dbe2ec;border-radius:8px;padding:7px 10px;flex:1;min-width:150px}
+.aa-form button{font:inherit;font-size:12px;font-weight:700;border:1px solid #dbe2ec;border-radius:8px;padding:7px 14px;background:#1e50b3;color:#fff;cursor:pointer}
+.aa-form button[data-aa-cancel]{background:#fff;color:#254268}
+.aa-status{grid-column:1/-1;margin:0;font-size:12px;color:#1e50b3;min-height:0}
