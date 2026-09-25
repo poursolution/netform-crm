@@ -1,7 +1,7 @@
 (function(root){
  'use strict';
  const M=root.SalesInsightsModel,h=v=>root.esc(String(v??'')),a=v=>root.escAttr(String(v??''));
- const labels={promise:'고객 약속 미이행',overdue:'기한초과',missing:'Next 없음',contact:'7일 이상 미접촉',unknown:'접촉 기록 없음',stale:'장기정체',amount:'예상금액 미입력'};
+ const labels={stall:'흐름 멈춤',promise:'고객 약속 미이행',overdue:'기한초과',missing:'Next 없음',contact:'7일 이상 미접촉',unknown:'접촉 기록 없음',stale:'장기정체',amount:'예상금액 미입력'};
  let actor='',focusBefore=null;
  const number=n=>Number(n||0).toLocaleString('ko-KR');
  const money=n=>n>=100000000?(n/100000000).toLocaleString('ko-KR',{maximumFractionDigits:2})+'억':number(Math.round(n/10000))+'만원';
@@ -25,7 +25,13 @@
    if(meta.days===null)issues.push('unknown');
    if(old.includes('stale'))issues.push('stale');
    if(!(root.oppAmt(d)>0)&&!root.amountUnknownReason(d))issues.push('amount');
-   return {key:'deal:'+root.dealKey(d),type:'deal',item:d,site:d.site||'현장명 미입력',owner:root.repN(d.assignee),brand:d.brand||'',created:d.created,active:root.towerActive(d)&&root.outcomeOf(d)==='open',won:root.isWon(d),wonAt:root.wonDate(d),wonAmount:root.hasWonAmt(d)?root.wonAmt(d):0,hasWonAmount:root.hasWonAmt(d),expected:root.oppAmt(d),stage:root.dealStage(d),stageLabel:root.stageLabel(root.dealStage(d)),issues,reason:issues.map(k=>k==='overdue'?Math.abs(due)+'일 기한초과':k==='contact'?meta.days+'일 미접촉':labels[k]).join(' · '),lastContact:meta.meaningfulAt||''};
+   /* 흐름 멈춤(2026-09-25 컨설턴트 '행동의 연속성'): 단계는 그대로인데 고객 접촉과 다음 할 일이 끊긴 영업.
+      같은 '자료 발송완료'라도 꾸준히 움직인 건과 발송 후 아무 기록 없는 건을 구분한다. 기준 일수 = OPS_RULES.stallDays */
+   const stallN=Number(root.OPS_RULES?.stallDays??7),age=root.stageAge?root.stageAge(d):null;
+   const stall=age!==null&&age>=stallN&&(meta.days===null||meta.days>=stallN)&&(issues.includes('missing')||issues.includes('overdue'));
+   if(stall)issues.push('stall');
+   const stallText=stall?root.stageLabel(root.dealStage(d))+' '+age+'일 · 마지막 고객 접촉 '+(meta.days===null?'기록 없음':meta.days+'일 전')+' · '+(issues.includes('missing')?'다음 할 일 없음':Math.abs(due)+'일 기한초과'):'';
+   return {key:'deal:'+root.dealKey(d),type:'deal',item:d,site:d.site||'현장명 미입력',owner:root.repN(d.assignee),brand:d.brand||'',created:d.created,active:root.towerActive(d)&&root.outcomeOf(d)==='open',won:root.isWon(d),wonAt:root.wonDate(d),wonAmount:root.hasWonAmt(d)?root.wonAmt(d):0,hasWonAmount:root.hasWonAmt(d),expected:root.oppAmt(d),stage:root.dealStage(d),stageLabel:root.stageLabel(root.dealStage(d)),issues,stallText,reason:stall?(issues.includes('promise')?'고객 약속 미이행 · ':'')+'흐름 멈춤 — '+stallText:issues.map(k=>k==='overdue'?Math.abs(due)+'일 기한초과':k==='contact'?meta.days+'일 미접촉':labels[k]).join(' · '),lastContact:meta.meaningfulAt||''};
   });
   const inquiries=root.operationalInquiries(base.inquiries||[]).filter(q=>admin||root.inquiryRoutedOwner(q)===me||root.inquiryConsultant(q)===me).map(q=>({key:'inq:'+String(q.id||root.inqKey(q)),type:'inq',item:q,site:q.site||'현장명 미입력',owner:root.inquiryRoutedOwner(q)||'미배정',brand:q.brand||'',created:root.inquiryDate(q),stage:'inquiry',stageLabel:q.status||'견적문의',issues:[],reason:root.inquiryRoutedOwner(q)?'문의 내용과 후속처리 확인':'담당자 배정 필요'}));
   return {deals:deals.filter(d=>unscoped||root.SalesScope.matches(d.owner,d.item)&&root.SalesFilterState.matchesBrand(d.brand)),inquiries:inquiries.filter(q=>unscoped||root.SalesScope.matches(q.owner,q.item)&&root.SalesFilterState.matchesBrand(q.brand))};
@@ -131,6 +137,7 @@
   const act=s.active,out=[];
   const conc=k=>{const list=act.filter(d=>d.issues.includes(k));if(!list.length)return null;const by={};list.forEach(d=>{by[d.owner]=(by[d.owner]||0)+1});const top=Object.entries(by).sort((a,b)=>b[1]-a[1])[0];return {k,name:top[0],n:top[1],tot:list.length,old:Math.max(0,...list.filter(d=>d.owner===top[0]).map(ctDays))}};
   const pr=conc('promise');if(pr)out.push({cls:'',owner:pr.name,issue:'promise',kind:'risk',html:'<span class="who">'+h(pr.name)+'</span> — 🤝 고객 약속 미이행 <b>'+pr.tot+'건'+(pr.tot>pr.n?' 중 '+pr.n+'건':'')+'</b>. 고객과 약속한 날이 지났습니다.'+(pr.old?' 최장 <b>'+pr.old+'일</b>.':'')});
+  const stl=conc('stall');if(stl&&!out.some(x=>x.owner===stl.name))out.push({cls:'',owner:stl.name,issue:'stall',kind:'risk',html:'<span class="who">'+h(stl.name)+'</span> — 흐름 멈춤 <b>'+stl.tot+'건 중 '+stl.n+'건</b>. 단계는 그대로인데 고객 접촉과 다음 할 일이 끊겼습니다.'});
   const ov=conc('overdue');if(ov)out.push({cls:'',owner:ov.name,issue:'overdue',kind:'risk',html:'<span class="who">'+h(ov.name)+'</span> — 기한초과 <b>'+ov.tot+'건 중 '+ov.n+'건</b>이 몰려 있습니다.'+(ov.old?' 최장 <b>'+ov.old+'일 초과</b>.':'')});
   const ms=conc('missing');if(ms&&ms.name!==ov?.name)out.push({cls:'',owner:ms.name,issue:'missing',kind:'risk',html:'<span class="who">'+h(ms.name)+'</span> — Next 없음 <b>'+ms.tot+'건 중 '+ms.n+'건</b>. 다음 할 일이 비어 있습니다.'});
   const ct7=conc('contact');if(ct7&&!out.some(x=>x.owner===ct7.name))out.push({cls:'w',owner:ct7.name,issue:'contact',kind:'risk',html:'<span class="who">'+h(ct7.name)+'</span> — 7일+ 미접촉 <b>'+ct7.tot+'건 중 '+ct7.n+'건</b>.'+(ct7.old?' 최장 <b>'+ct7.old+'일</b> 접촉 없음.':'')});
@@ -213,6 +220,7 @@
    ['red','미배정 문의',inq.filter(q=>q.owner==='미배정'),liveQ,'미배정|all|inquiries'],
    ['red','첫 응대 지연',inq.filter(late),liveQ,'|all|inquiries'],
    ['red','약속 미이행',act.filter(d=>d.issues.includes('promise')),liveD,'|promise|risk'],
+   ['red','흐름 멈춤',act.filter(d=>d.issues.includes('stall')),liveD,'|stall|risk'],
    ['org','담당자 없는 영업',act.filter(d=>!d.owner||d.owner==='미배정'),liveD,'미배정|all|risk'],
    ['org','다음 할 일 없음',act.filter(d=>d.issues.includes('missing')),liveD,'|missing|risk'],
    ['yel',far+'일 접촉 없음',act.filter(noContact),liveD,'|contact|risk']];
