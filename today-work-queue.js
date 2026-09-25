@@ -169,7 +169,14 @@
  }
  /* 관리자 현황판: 사원별 응대·진행 상태를 신호등으로 요약한다. 행 클릭은 기존 담당자 필터로 이어진다. */
  // 관리자 지시(2026-09-20): 현황판 표에서만 제외한다. 업무 목록·배정에는 영향이 없다.
- const REP_HIDE={inquiry:['주현진','송보람','이승우'],pipeline:['조민준','이승우','한지혜']};
+ /* ⑯(2026-09-25): 이름 명단 → 프로필 기반. 취지(2026-09-20 관리자 지시: 현황판 표에서만 제외) 보존 —
+   문의판 = 영업담당·상담 가능·지사풀만 / 파이프라인판 = 본사 영업담당·미배정만(경남은 경남지사 화면에서). */
+ const repBoardHidden=(key,name)=>{
+  if(!name||name==='미배정')return false;
+  const p=root.repProfile(name);
+  if(key==='inquiry')return !(p.salesRep||p.inquiryConsultable||p.role==='branch_pool');
+  return p.team==='gyeongnam'||!p.salesRep;
+ };
  function repPeriod(){return {year:String(root.G.todayRepYear||'전체'),quarter:Number(root.G.todayRepQuarter)||0}}
  function repPeriodSet(key,value){
   if(key==='year'){root.G.todayRepYear=String(value||'전체');root.G.todayRepQuarter=0}
@@ -225,8 +232,8 @@
   const order={r:0,y:1,g:2};
   const sortRows=(rows,weight)=>rows.sort((a,b)=>order[a.light]-order[b.light]||weight(b)-weight(a)||root.repCompare(a.owner,b.owner));
   return {unassigned,
-   inquiry:sortRows(Array.from(inquiry.values()).filter(row=>!REP_HIDE.inquiry.includes(row.owner)),row=>row.delay*1000+row.maxLag),
-   pipeline:sortRows(Array.from(pipeline.values()).filter(row=>!REP_HIDE.pipeline.includes(row.owner)),row=>row.overdue*1000+row.missing)};
+   inquiry:sortRows(Array.from(inquiry.values()).filter(row=>!repBoardHidden('inquiry',row.owner)),row=>row.delay*1000+row.maxLag),
+   pipeline:sortRows(Array.from(pipeline.values()).filter(row=>!repBoardHidden('pipeline',row.owner)),row=>row.overdue*1000+row.missing)};
  }
  function repRow(cells,owner,selected){return '<tr class="twq-rep-row'+(selected?' sel':'')+'" data-owner="'+attr(owner)+'" onclick="TodayWorkQueue.pickOwner(this.dataset.owner)">'+cells+'<td class="twq-rep-go">'+(selected?'전체 보기':'업무 보기 ›')+'</td></tr>'}
  function repCell(value,tone){return '<td class="'+(value?tone:'twq-rep-zero')+'">'+value+'</td>'}
