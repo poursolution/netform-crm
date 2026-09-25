@@ -25,7 +25,7 @@ test('대표 첫 화면은 네 개의 금액 KPI와 운영 예외만 보여준�
   assert.match(crm, /label:'수주임박'/);
   assert.match(crm, /label:'계약·수주'/);
   assert.match(crm, /label:'위험 금액'/);
-  assert.match(crm, /label:'최초응대 지연'/);
+  assert.match(crm, /label:'첫 연락 지연'/);
   assert.match(crm, /<h3>담당자 확인 필요<\/h3>/);
   assert.match(css, /dashboard-compact-money>div\{grid-template-columns:repeat\(4/);
 });

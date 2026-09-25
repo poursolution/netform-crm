@@ -19,12 +19,15 @@
 .ml-seg .promise,.ml-legend i.promise{background:#F04452}.ml-seg .late,.ml-legend i.late{background:#F58A94}
 .ml-seg .new,.ml-legend i.new{background:#F2941B}.ml-seg .today,.ml-legend i.today{background:#7FA3FF}.ml-seg .etc,.ml-legend i.etc{background:#C9CFD8}
 .ml-legend{display:flex;flex-wrap:wrap;gap:3px 10px;font-size:11px;color:var(--ink-2)}
+.ml-legend span{white-space:nowrap}
 .ml-legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:0}
 .ml-legend b{font-variant-numeric:tabular-nums}
 /* 카드: 종류 아이콘 + 기한 배지 */
-.ml-kind{font-style:normal;flex:none;width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-size:12px;background:var(--blue-50)}
+.ml-kind{font-style:normal;flex:none;width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-size:12px;background:var(--blue-50);white-space:nowrap}
 .ml-kind.promise,.ml-kind.late{background:var(--danger-bg)}.ml-kind.new{background:var(--warn-bg)}.ml-kind.etc{background:#F2F4F6}
-.ml-dpill{font-style:normal;flex:none;margin-left:auto;font-size:10.5px;font-weight:800;border-radius:7px;padding:2px 7px;background:#F2F4F6;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.ml-dpill{font-style:normal;flex:none;margin-left:auto;font-size:10.5px;font-weight:800;border-radius:7px;padding:2px 7px;background:#F2F4F6;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+/* 현장명이 길어도 배지는 같은 줄 오른쪽에 — 이름만 말줄임 */
+.mt-item-top{min-width:0}.mt-item-top strong{min-width:0;flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ml-dpill.late{background:var(--danger-bg);color:#c0262f}.ml-dpill.today{background:var(--warn-bg);color:#a15c07}.ml-dpill.new{background:var(--warn-bg);color:#a15c07}
 .mt-item.ml-done-item{opacity:.55}
 /* 하루 마감: 도넛 + 최근 5일 */
@@ -53,12 +56,12 @@
 .ml-tl{display:block;margin-top:2px}
 .ml-tl .seg{stroke:#9DB8FF;stroke-width:2.5;stroke-linecap:round}
 .ml-tl .gap{stroke:#F2941B;stroke-width:2.5;stroke-dasharray:3 4;stroke-linecap:round}
-.ml-tl .d{stroke:#fff;stroke-width:1.5}.ml-tl .d.act{fill:var(--blue)}.ml-tl .d.abs{fill:#B0B8C1}.ml-tl .d.stage{fill:#7A5AF8}.ml-tl .d.sup{fill:#F2941B}.ml-tl .d.misc{fill:#C9CFD8}
+.ml-tl .d{stroke:#fff;stroke-width:1.5}.ml-tl .d.act{fill:var(--blue)}.ml-tl .d.abs{fill:#B0B8C1}.ml-tl .d.stage{fill:#7A5AF8}.ml-tl .d.sup{fill:#F2941B}.ml-tl .d.misc{fill:#C9CFD8}.ml-tl .d.in{fill:#0EA5A4}.ml-tl .d.won{fill:var(--ok)}.ml-tl .d.lost{fill:#9AA3AE}
 .ml-tl .today{fill:#fff;stroke:var(--ok);stroke-width:3}.ml-tl .today.late{stroke:var(--danger)}
 .ml-tl .t{font-family:inherit;font-size:9.5px;font-weight:600;fill:var(--sub)}.ml-tl .tg{font-family:inherit;font-size:9.5px;font-weight:800;fill:#a15c07}
 .ml-key{display:flex;flex-wrap:wrap;gap:2px 10px;font-size:10px;color:var(--sub)}.ml-key span{white-space:nowrap}
 .ml-key i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px}
-.ml-key i.act{background:var(--blue)}.ml-key i.abs{background:#B0B8C1}.ml-key i.stage{background:#7A5AF8}
+.ml-key i.in{background:#0EA5A4}.ml-key i.sup{background:#F2941B}.ml-key i.act{background:var(--blue)}.ml-key i.abs{background:#B0B8C1}.ml-key i.stage{background:#7A5AF8}
 .ml-key i.gap{width:12px;height:0;border-radius:0;border-top:2px dashed #F2941B;vertical-align:2px}
 .ml-sumrow{display:grid;gap:6px;margin-top:6px;padding-top:7px;border-top:1px solid var(--line)}
 .ml-last{font-size:11.5px;color:var(--ink-2)}
@@ -73,6 +76,7 @@
 .ml-chips{display:grid;gap:7px}
 .ml-chip{display:grid;gap:1px;text-align:left;border:1.5px solid var(--line-2);border-radius:14px;padding:11px 14px;background:#fff;transition:border-color .15s,background .15s,transform .12s}
 .ml-chip b{font-size:14.5px;letter-spacing:-.3px}.ml-chip small{font-size:11.5px;color:var(--sub)}
+.ml-chip b,.ml-chip small,.ml-date,.ml-lead,.ml-last,.ml-backlog-head small,.ml-support-link{word-break:keep-all;overflow-wrap:break-word;overflow-wrap:anywhere}
 .ml-chip:active{transform:scale(.985)}
 .ml-chip.on{border-color:var(--blue);background:var(--blue-50)}.ml-chip.on b{color:var(--blue-dark)}
 .ml-chips:has(.on) .ml-chip:not(.on){opacity:.55}
@@ -124,3 +128,6 @@
  @keyframes mlPop{0%{transform:scale(.96);opacity:0}60%{transform:scale(1.02);opacity:1}100%{transform:none}}
  @keyframes mlPulse{50%{box-shadow:0 0 0 4px rgba(240,68,82,.12)}}
 }
+
+/* 준비 중 화면 (2026-09-26) */
+.ml-soon{display:grid;gap:6px;padding:16px}.ml-soon b{font-size:15px}.ml-soon p{margin:0;font-size:12.5px;color:var(--sub);line-height:1.6}

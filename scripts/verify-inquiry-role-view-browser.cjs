@@ -111,7 +111,7 @@ async function run() {
     assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-work-recent').textContent(),'담당자 배정');
     assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-work-next').textContent(),'배정 필요');
     assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-now').textContent(),'배정하기');
-    assert.equal(await page.locator('.inq-work-row[data-k="inq-1"] .inq-now').textContent(),'응대 기록');
+    assert.equal(await page.locator('.inq-work-row[data-k="inq-1"] .inq-now').textContent(),'연락 결과 남기기');
     await page.locator('#pg-inq').waitFor({state:'visible'});
     assert.match(await page.locator('.inq-work-row[data-k="inq-2"] .inq-work-recent').textContent(),/도면 요청 완료/);
     assert.doesNotMatch(await page.locator('.inq-work-row[data-k="inq-2"] .inq-work-recent').textContent(),/내부 메모/);
@@ -153,7 +153,7 @@ async function run() {
     await page.locator('.inq-task-modes [data-key="all"]').click();
     await page.locator('.inq-work-row[data-k="inq-1"] .inq-now').click();
     assert.equal(await page.getByRole('dialog',{name:'황윤선 최초응대 대기',exact:true}).count(),1);
-    assert.equal(await page.evaluate(()=>G.inqSelKey),'inq-1');assert.equal(await page.locator('#iq-next').count(),1,'response requires next action in canonical progress form');await page.getByRole('button',{name:'응대 저장',exact:true}).click();assert.match(await page.locator('#iq-msg').textContent(),/한 일|did|필수|required|INVALID/i);
+    assert.equal(await page.evaluate(()=>G.inqSelKey),'inq-1');assert.equal(await page.locator('#iq-next').count(),1,'response requires next action in canonical progress form');await page.getByRole('button',{name:'연락 결과 저장',exact:true}).click();assert.match(await page.locator('#iq-msg').textContent(),/한 일|did|필수|required|INVALID/i);
     assert.equal(await page.locator('#inq-inbox-dialog .inq-dialog-columns>aside').count(),2);
     assert.equal(await page.locator('#inq-inbox-dialog .sp-inquiry-original').count(),1);
     await page.locator('#inq-inbox-dialog').getByRole('button',{name:/상담·영업담당/}).click();
@@ -162,7 +162,7 @@ async function run() {
     assert.ok(await page.evaluate(()=>Number(getComputedStyle(document.getElementById('inquiryControlModal')).zIndex)>Number(getComputedStyle(document.getElementById('inq-inbox-dialog')).zIndex)));
     await page.evaluate(()=>closeInquiryControlModal());
     const size=await page.locator('.inq-dialog').boundingBox();assert.ok(size.width>=1440*.93&&size.height>=900);
-    await page.locator('#inq-inbox-dialog').getByRole('button',{name:/연락 결과/}).click();
+    await page.locator('#inq-inbox-dialog').getByRole('button',{name:'📞 연락 결과',exact:true}).click();
     await page.locator('#iq-res').fill('저장 전 초안 유지');
     await page.evaluate(()=>paintInq());
     assert.equal(await page.locator('#iq-res').inputValue(),'저장 전 초안 유지');

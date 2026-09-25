@@ -72,7 +72,7 @@ function wide(){
  if(body.querySelector('#rel-contact-save')){
   // The existing atomic command requires both groups. Keep them together,
   // retaining the original nodes, values and single submit handler.
-  var contactFlow=box(center,'연락 기록 · 다음 일정');contactFlow.open=true;
+  var contactFlow=box(center,'연락 기록 · 다음 할 일');contactFlow.open=true;
   activity=move('#activityFormCard',contactFlow);
   nextCard=move('#nextActionCard',contactFlow);
   var contactActions=activity?.querySelector('.dactions');
@@ -80,7 +80,7 @@ function wide(){
   nextCard=move('#nextActionCard',box(center,'다음 할 일 · 일정 입력'));
   activity=move('#activityFormCard',box(center,'연락 결과 · 연락 결과'));
  }
- if(activity){var types=document.createElement('div');types.className='dw-outcomes';['연결됨','부재','재연락 요청','고객 약속','기타'].forEach(label=>types.append(button(label,()=>{document.getElementById('dv-act-type').value='전화';document.getElementById('dv-act-result').value=label;focusWide('dv-act-note')})));activity.querySelector('.formgrid')?.before(types)}
+ if(activity){var types=document.createElement('div');types.className='dw-outcomes';['통화 완료','전화 안 받음','다시 연락 요청받음','고객 약속','기타'].forEach(label=>types.append(button(label,()=>{document.getElementById('dv-act-type').value='전화';document.getElementById('dv-act-result').value=label;focusWide('dv-act-note')})));activity.querySelector('.formgrid')?.before(types)}
  var timeline=body.querySelector('#activityTimelineHost')?.closest('.dcard');if(timeline){center.append(timeline);var title=timeline.querySelector('h3');if(title)title.textContent='최근 활동'}
  // 재배치 유실 복원: 단계 여정 바는 «지금 해야 할 일» 바로 아래, 응대 체크리스트는 중앙 작업 흐름 끝에.
  var journey=body.querySelector('.dcc-journey');if(journey)now.after(journey);
@@ -220,7 +220,7 @@ function repTabs(){
 function operationPage(){
  var shell=document.querySelector('#rep-management-root .rm-shell');
  if(shell&&!shell.querySelector('.dw-manager-table')){
-  var blocks=Array.from(shell.children),intervention=blocks.find(function(n){return /오늘 관리자 개입/.test(n.querySelector('h3')?.textContent||'')});
+  var blocks=Array.from(shell.children),intervention=blocks.find(function(n){return /오늘 관리자 (개입|확인)/.test(n.querySelector('h3')?.textContent||'')});
   if(intervention){
    var rows=REP_MANAGER_ROWS.map(function(r,i){return {r:r,i:i}}).sort(function(a,b){return b.r.risk-a.r.risk||b.r.overdue-a.r.overdue});
    var list=intervention.querySelector('.rm-interventions');

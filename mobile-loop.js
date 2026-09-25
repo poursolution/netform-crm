@@ -20,6 +20,9 @@
  const lastContact=d=>d&&(d.last_meaningful_contact_at||d.lastMeaningfulContactAt||d.contactAt||d.last_customer_contact_at)||'';
  const isLegacy=d=>!(day(d.created_at||d.created)>=LIVE||day(lastContact(d))>=LIVE);
  const sinceDays=v=>{const t=Date.parse(v||'');return Number.isFinite(t)?Math.floor((Date.now()-t)/864e5):null;};
+ /* 2026-09-26 문구 정리(대표 승인): 서버가 예전 문구로 남긴 기록도 화면에서는 새 말로 읽힌다 — 저장값은 바꾸지 않는다 */
+ const OLD_PHRASES=[[/전화 부재 — 못 받으심|통화 시도 — 부재/g,'부재중 (전화 안 받음)'],[/통화 — 진행됨/g,'통화 완료 · 진행 중'],[/재통화 시도/g,'다시 전화하기'],[/고객 요청 재연락/g,'요청 시점에 다시 연락'],[/통화 후속 확인/g,'통화 후 진행 확인'],[/고객 요청으로 후속 연기/g,'고객 요청으로 다음 주 재연락']];
+ const plainWords=v=>OLD_PHRASES.reduce((s,r)=>s.replace(r[0],r[1]),String(v==null?'':v));
 
  /* ① 오늘 우선순위 */
  const baseBuild=root.buildToday;
@@ -93,13 +96,14 @@
  }
  function pillOf(t){
   if(t.kind==='inquiry'){
-   if(t.bucket==='overdue')return ['기한 지남','late'];
+   if(t.bucket==='overdue'){const n=t.due_at?Math.floor((Date.parse(kstDay()+'T00:00:00Z')-Date.parse(day(t.due_at)+'T00:00:00Z'))/864e5):NaN;return [n>0?n+'일 지남':'기한 지남','late'];}
    const q=((root.ADMIN&&root.ADMIN.inquiries)||[]).find(x=>String(x.key)===String(t.ref)),hh=q&&typeof root.todayHoursM==='function'?root.todayHoursM(q.at):null;
-   return hh==null?['새 문의','new']:[hh<1?'방금 접수':hh+'시간 경과',hh>=2?'late':'new'];
+   /* 오래된 문의가 '449시간 경과'처럼 길게 보이지 않게 — 하루가 넘으면 일 단위로 */
+   return hh==null?['새 문의','new']:[hh<1?'방금 접수':hh<24?hh+'시간 경과':Math.floor(hh/24)+'일 경과',hh>=2?'late':'new'];
   }
   const d=dealById(t.ref),dd=d&&root.execDueM?root.execDueM(d):null;
   if(dd==null)return ['할 일 없음','etc'];
-  return dd<0?[(-dd)+'일 지남','late']:dd===0?['오늘','today']:['D-'+dd,'etc'];
+  return dd<0?[(-dd)+'일 지남','late']:dd===0?['오늘','today']:[dd+'일 남음','etc'];
  }
  function backlogHTML(){
   const list=(root.G._legacyM||[]).slice();if(!list.length)return '';
@@ -132,8 +136,8 @@
     const own=top&&top.querySelector('.mt-owner'),p=pillOf(t);
     if(own)own.outerHTML='<i class="ml-dpill '+p[1]+'">'+h(p[0])+'</i>';
     if(doneOf(t))el.classList.add('ml-done-item');
-    /* 기한은 오른쪽 배지가 말한다 — 문장 끝 'D+24'·'D-3'·'오늘' 꼬리는 뺀다 */
-    const why=el.querySelector('.mt-reason');if(why&&p[0])why.textContent=why.textContent.replace(/\s*·\s*(D[+-]\d+|오늘|내일)$/,'');
+    /* 기한은 오른쪽 배지가 말한다 — 문장 끝 '3일 지남'·'2일 남음'·'오늘' 꼬리(예전 'D+24'·'D-3' 포함)는 뺀다 */
+    const why=el.querySelector('.mt-reason');if(why&&p[0])why.textContent=why.textContent.replace(/\s*·\s*(D[+-]\d+|\d+일 (?:지남|남음)|오늘|내일)$/,'');
     if(t.promise){el.classList.add('ml-promise-item');const n=el.querySelector('.mt-next');if(n)n.textContent='→ 약속 지키고 결과 남기기';}
    });
   }catch(e){}
@@ -161,8 +165,15 @@
   const ts=v=>Date.parse(v||''),ev=[];
   (d.activities||[]).forEach(x=>{const at=x.at||x.occurred_at,type=String(x.type||'');if(!Number.isFinite(ts(at))||/^[a-z0-9_]+$/.test(type))return;ev.push({at,type,body:String(x.note||''),result:String(x.result||'')});});
   (d.stageHistory||d.stage_history||[]).forEach(x=>{const at=x.at||x.changed_at;if(Number.isFinite(ts(at)))ev.push({at,type:'단계',body:String(x.to||x.to_stage||''),result:''});});
+  /* 흐름 완성(2026-09-26 컨설턴트 '유입→배정→첫 응대→…→결과'): 이 영업을 만든 견적문의의 접수·배정·첫 연락, 영업 결과(수주·실주) */
+  const oid=d.origin_inquiry_id||d.originInquiryId,q=oid&&(((root.BUNDLE&&root.BUNDLE.inquiries)||[]).find(x=>String(x.id)===String(oid)));
+  if(q)[[q.received_at||q.at,'문의 접수'],[q.assigned_at,'담당 배정'],[q.first_response_at,'첫 연락']].forEach(([at,label])=>{if(Number.isFinite(ts(at)))ev.push({at,type:label,body:'',result:'',src:'inq'});});
+  if((d.outcome==='won'||d.outcome==='lost')&&Number.isFinite(ts(d.closed_at||d.closed)))ev.push({at:d.closed_at||d.closed,type:d.outcome==='won'?'수주':'실주',body:'',result:'',src:'end'});
   ev.sort((a,b)=>ts(a.at)-ts(b.at));
   const kind=x=>{const t=x.type,b=x.body;
+   if(x.src==='inq')return [t==='문의 접수'?'📥':t==='담당 배정'?'👤':'📞',t,'in'];
+   if(x.src==='end')return [t==='수주'?'🏆':'✖',t,t==='수주'?'won':'lost'];
+   if(/^\[지원 처리\]/.test(b))return ['✅','관리자 지원 처리','sup'];
    if(/^\[지원 요청\]/.test(b))return ['🆘','지원 요청','sup'];
    if(t==='단계')return ['➜',root.stageLabel?root.stageLabel(b)||b:b,'stage'];
    if(/부재/.test(t)||/부재/.test(b))return ['📵','부재','abs'];
@@ -170,15 +181,17 @@
    if(/문자|카카오|메시지/.test(t))return ['💬','문자','act'];
    if(/전화|통화/.test(t))return ['📞','전화','act'];
    return ['•',t.length>8?t.slice(0,8)+'…':t||'기록','misc'];};
-  const short=v=>{v=String(v||'').replace(/^(통화( 시도)?|전화( 부재)?|부재)\s*—\s*/,'').trim();return v.length>14?v.slice(0,14)+'…':v;};
+  /* 예전 기록('통화 — …'·'통화 시도 — …'·'전화 부재 — 못 받으심')과 새 기록('통화 완료 · …'·'통화 시도 · …'·'부재중 (전화 안 받음)') 모두 앞머리를 떼고 읽는다 */
+  const tidy=v=>{v=plainWords(v).replace(/^(통화( 완료| 시도)?|전화( 부재)?|부재)\s*[—·]\s*/,'').trim();return /^부재중\s*\(전화 안 받음\)$/.test(v)?'전화 안 받음':v;};
+  const short=v=>{v=tidy(v);return v.length>14?v.slice(0,14)+'…':v;};
   const md=v=>day(v).slice(5).replace('-','/');
   const a=openNext(d),dd=a&&root.execDueM?root.execDueM(d):null;
   const next=a&&a.text?'<span class="ml-next'+(dd!=null&&dd<0?' late':'')+'"><i>'+(isPromise(a)?'🤝':'📅')+'</i><b>다음</b><em>'+h(short(promiseText(a)||a.text))+'</em><small>'+h(md(a.due_at||a.due))+(dd!=null&&dd<0?' · '+(-dd)+'일 지남':'')+'</small></span>':'<span class="ml-next none"><i>⚠</i><b>다음 할 일 없음</b></span>';
-  const last=ev[ev.length-1],lk=last?kind(last):null;
-  const lastTxt=last?md(last.at)+' '+lk[1]+(lk[2]==='act'||lk[2]==='abs'?(short(last.result||last.body)?' · '+short(last.result||last.body):''):''):'아직 기록 없음 — 첫 연락 결과부터 이어집니다';
+  const last=ev[ev.length-1],lk=last?kind(last):null,lastDetail=last?short(last.result||last.body):'';
+  const lastTxt=last?md(last.at)+' '+lk[1]+(lk[2]==='act'||lk[2]==='abs'?(lastDetail?' · '+lastDetail:''):''):'아직 기록 없음 — 첫 연락 결과부터 이어집니다';
   return '<div class="ml-flow" aria-label="영업 흐름">'+stepper(d)
    +'<div class="ml-sub"><b>영업 흐름</b><small>날짜 간격 그대로</small></div>'+timeline(ev,a,dd,d,kind)
-   +'<div class="ml-key"><span><i class="act"></i>연락</span><span><i class="abs"></i>부재</span><span><i class="stage"></i>단계</span><span><i class="gap"></i>'+STALL_DAYS+'일 넘게 연락 없음</span></div>'
+   +'<div class="ml-key">'+(q?'<span><i class="in"></i>문의·배정</span>':'')+'<span><i class="act"></i>연락</span><span><i class="abs"></i>부재</span><span><i class="stage"></i>단계</span><span><i class="sup"></i>지원</span><span><i class="gap"></i>'+STALL_DAYS+'일 넘게 연락 없음</span></div>'
    +'<div class="ml-sumrow"><span class="ml-last">마지막 · '+h(lastTxt)+'</span>'+next+'</div></div>';
  }
  /* 진행도: 접촉 → 설계 → 발송 → 경쟁·입찰 → 계약·시공 (관계관리는 단계 밖 트랙) */
@@ -208,16 +221,45 @@
   if(big.g>STALL_DAYS)s+='<text x="'+Math.min(250,Math.max(50,big.x)).toFixed(1)+'" y="10" text-anchor="middle" class="tg">'+Math.floor(big.g)+'일 연락 없음</text>';
   return s+'</svg>';
  }
- function scrollFlow(){try{root.document.querySelectorAll('.ml-row').forEach(r=>{r.scrollLeft=r.scrollWidth;});}catch(e){}}
+ /* 준비 중 기능은 정직하게(2026-09-26): 운영 화면에 예시 숫자·가짜 '발송/저장 완료'를 보이지 않는다. ?demo=1 에서만 예시 그대로.
+    - 영업사원 상세 [사진]·[템플릿]: 실제로 저장·발송하지 않으므로 숨김. [음성]: 실제 저장되는 통화 메모 창(음성 입력 포함)으로.
+    - 관리자 코칭·주간 브리핑·월간 보고·중복현장·3축 진단: '준비 중' 안내(실제 현황 위치 안내). 리포트의 예시 숫자 카드 제거.
+    - 확인 요청: 잔디 자동 발송 전까지 '문구 복사'로 — 보낸 척하지 않는다. */
+ if(!root.DEMO){
+  const scrEl=()=>root.document.getElementById('scr');
+  const soon=(title,where)=>{const s=scrEl();if(!s)return;s.innerHTML=(typeof root.appbarS==='function'?root.appbarS(title):'')+'<div class="body fadein"><div class="card ml-soon"><b>준비 중인 화면입니다</b><p>아직 실제 데이터와 연결되지 않아 예시 숫자는 보여 드리지 않습니다.'+(where?' 실제 현황은 '+h(where)+'에서 확인하세요.':'')+'</p></div></div>';};
+  root.rCoach=()=>soon('코칭 신호','PC 컨트롤타워 ‘담당자별 문제’');
+  root.rBrief=()=>soon('주간 브리핑','PC 컨트롤타워');
+  root.rMonthly=()=>soon('월간 보고','PC 성과 분석');
+  root.rDups=()=>soon('중복현장','PC 데이터 관리');
+  root.rAxis=(head,s)=>soon((s&&s.nm?s.nm+' · ':'')+'진단','PC 성과 분석');
+  root.coachSheet=()=>root.toast('면담 안건은 준비 중입니다.');
+  root.photoSheet=root.addPhoto=()=>root.toast('사진 첨부는 준비 중입니다 — 아직 저장되지 않습니다.');
+  root.tmplSheet=root.sendTmpl=()=>root.toast('템플릿 발송은 준비 중입니다 — 문자는 [문자] 버튼으로 보내 주세요.');
+  if(typeof root.callMemoSheetM==='function')root.voiceMemo=()=>root.callMemoSheetM();
+  root.nudgeSheet=function(nm,ctx){
+   ctx=ctx||'응대 기준일 초과 건';const msg=String(nm||'')+'님, '+ctx+' 처리 부탁드립니다. 오늘 할 일에 올라가 있어요.';
+   root.openSheet(root.intro('var(--warn-bg)','#a36312',root.IC.bell,'확인 요청 문구 — '+h(ctx),'잔디 자동 발송은 준비 중입니다 — 문구를 복사해 직접 보내 주세요'),
+    '<div class="card" style="margin-bottom:10px"><div class="hint" style="color:var(--ink-2);user-select:text">📣 '+h(msg)+'</div></div><button class="btn btn-primary" id="ml-nudge-copy">문구 복사</button>');
+   const b=root.document.getElementById('ml-nudge-copy');
+   if(b)b.onclick=()=>{const fail=()=>root.toast('복사하지 못했습니다 — 문구를 길게 눌러 복사해 주세요');try{root.navigator.clipboard.writeText(msg).then(()=>{root.closeSheet();root.toast('문구를 복사했습니다 — 잔디에 붙여 넣어 보내 주세요');},fail);}catch(e){fail();}};
+  };
+  const baseRpt=root.rRpt;
+  if(typeof baseRpt==='function')root.rRpt=function(){const r=baseRpt.apply(this,arguments);try{const body=root.document.querySelector('#scr .body');body.querySelectorAll('.card.gauge').forEach(c=>c.remove());const sp=body.querySelector('.sec-h span');if(sp)sp.textContent='준비 중 — 실제 리포트는 PC 성과 분석';body.querySelectorAll('.prow .ps').forEach(p=>{p.textContent='준비 중';});}catch(e){}return r;};
+  const basePerf=root.rPerf;
+  if(typeof basePerf==='function')root.rPerf=function(){const r=basePerf.apply(this,arguments);try{root.document.querySelectorAll('#scr .body .card').forEach(c=>{if(/코칭 신호|활동·규율/.test(c.textContent))c.remove();});root.document.querySelectorAll('#scr .body .prow').forEach(p=>{p.removeAttribute('onclick');p.style.cursor='default';const ps=p.querySelector('.ps');if(ps&&/진단/.test(ps.textContent))ps.textContent='분기 수주 누적';});}catch(e){}return r;};
+ }
+ function hideMockButtons(){if(root.DEMO)return;try{root.document.querySelectorAll('#scr button[onclick="photoSheet()"],#scr button[onclick="tmplSheet()"]').forEach(b=>b.remove());}catch(e){}}
+ function scrollFlow(){try{root.document.querySelectorAll('.ml-row').forEach(r=>{r.scrollLeft=r.scrollWidth;});}catch(e){}hideMockButtons();}
  const baseRender=root.render;
  if(typeof baseRender==='function')root.render=function(){const r=baseRender.apply(this,arguments);if(root.G&&root.G.deal!=null)root.requestAnimationFrame?root.requestAnimationFrame(scrollFlow):scrollFlow();return r;};
 
  /* ③ 통화 결과: 결과 하나 → 날짜 하나 */
  const CHIPS=[
-  ['ongoing','진행 중이에요','다음 확인일만 고르면 끝'],
-  ['recall','다시 연락해야 해요','통화 못 했거나 다시 걸기로 함'],
-  ['absent','부재 · 못 받으심','재시도 일정 자동 등록'],
-  ['promise','~하기로 약속했어요','🤝 고객 약속으로 등록'],
+  ['ongoing','통화함 · 진행 중','다음 확인일만 고르면 끝'],
+  ['recall','다시 연락하기로 함','통화가 짧았거나 나중에 다시 걸기로 함'],
+  ['absent','전화 안 받음','다시 걸 날짜만 고르면 끝'],
+  ['promise','고객과 약속함','🤝 고객 약속으로 등록'],
   ['detail','자세히 기록 (견적·일정·종료 등)','기록 창이 열립니다']];
  function dateOptions(){
   const fmt=x=>kstDay(x),now=new Date(),add=n=>{const t=new Date(now);t.setDate(t.getDate()+n);return t;};
@@ -254,8 +296,8 @@
   if(!root.Phase1||!root.Phase1.queue||typeof root.queueMobileContactOperation!=='function'){status.textContent='로그인 상태에서만 저장할 수 있습니다.';return;}
   const promise=chip==='promise';
   if(promise&&!noteText){status.textContent='어떤 약속인지 한 줄만 적어주세요.';return;}
-  const actNote=chip==='ongoing'?'통화 — 진행 중, '+due+' 다시 확인':chip==='recall'?'통화 시도 — 다시 연락하기로 함':chip==='absent'?'통화 시도 — 부재':'통화 — 고객 약속: '+noteText;
-  const nextText=promise?noteText:chip==='absent'?'재시도 전화':'진행 상황 확인 연락';
+  const actNote=chip==='ongoing'?'통화 완료 · 진행 중 ('+due.slice(5).replace('-','/')+' 다시 확인)':chip==='recall'?'통화 시도 · 다시 연락하기로 함':chip==='absent'?'부재중 (전화 안 받음)':'통화 완료 · 고객 약속: '+noteText;
+  const nextText=promise?noteText:chip==='absent'?'다시 전화하기':'진행 상황 확인 전화';
   const activity={type:'전화',note:actNote,result:'',occurred_at:new Date().toISOString()};
   const next={type:promise?'고객 약속':'전화',text:nextText,due_at:due};
   busy=true;card.querySelectorAll('button,input').forEach(x=>x.disabled=true);
@@ -318,5 +360,5 @@
    }catch(e){busy=false;send.disabled=false;status.textContent=String(e&&e.message||e);}
   };
  }
- root.MobileLoop=Object.freeze({support,resultSheet,flowStrip,daySummary,save});
+ root.MobileLoop=Object.freeze({support,resultSheet,flowStrip,daySummary,save,pill:pillOf,plainWords});
 })(window);

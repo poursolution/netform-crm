@@ -62,7 +62,7 @@ function server() {
 
     assert.equal(await page.locator('.rm-person-card').count(), 6);
     assert.equal(await page.locator('.rm-intervention-strip button').count(), 3);
-    assert.match(await page.locator('.rm-control-head').innerText(), /Pipeline[\s\S]*계약완료[\s\S]*Stage 전진[\s\S]*수주임박[\s\S]*관리필요/);
+    assert.match(await page.locator('.rm-control-head').innerText(), /Pipeline[\s\S]*계약완료[\s\S]*Stage 전진[\s\S]*수주임박[\s\S]*조치 필요/);
 
     await page.getByRole('button', { name: '팀 비교', exact: true }).click();
     assert.equal(await page.locator('.rm-team-board').count(), 1);

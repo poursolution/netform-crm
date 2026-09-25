@@ -21,13 +21,13 @@ function open(key){
  const sheet=document.createElement('section');sheet.className='da-sheet';const head=document.createElement('header');const title=document.createElement('h2');title.id='da-title';title.textContent=titles[key];const x=button('닫기',key,()=>{if(key==='stage')root.StageTransitionUI?.close();else close()});x.removeAttribute('data-help');x.setAttribute('aria-label','작업창 닫기');head.append(title,x);const content=document.createElement('div');content.className='da-content';sheet.append(head,content);panel.append(sheet);
  state={key,panel,moves:[],focus:document.activeElement,background:Array.from(view.children)};view.append(panel);state.background.forEach(n=>n.inert=true);
  const next=$('nextActionCard'),activity=$('activityFormCard'),atomic=$('rel-contact-save');
- if(key==='activity'){take(activity,content);take(next,content);if(atomic){const actions=atomic.closest('.dactions');actions.before(next);const save=next?.querySelector('.dactions .pri');if(save)save.style.display='none';}else{const save=activity?.querySelector('.dactions .pri');if(save){save.classList.add('da-submit');save.textContent='활동·다음 할 일 저장';save.onclick=saveCombined;take(save.closest('.dactions'),content);}const nextSave=next?.querySelector('.dactions .pri');if(nextSave)nextSave.style.display='none';}
+ if(key==='activity'){take(activity,content);take(next,content);if(atomic){const actions=atomic.closest('.dactions');actions.before(next);const save=next?.querySelector('.dactions .pri');if(save)save.style.display='none';}else{const save=activity?.querySelector('.dactions .pri');if(save){save.classList.add('da-submit');save.textContent='연락 결과·다음 할 일 저장';save.onclick=saveCombined;take(save.closest('.dactions'),content);}const nextSave=next?.querySelector('.dactions .pri');if(nextSave)nextSave.style.display='none';}
   /* 2026-09-24 지시: 처음엔 연락 결과만 — 결과 칩·내용이 생기면 다음 할 일이 맞는 기본값으로 열린다 */
   if(next){const noteEl=activity?.querySelector('#dv-act-note');
    if(noteEl&&noteEl.value.trim())next.classList.remove('da-next-wait');else next.classList.add('da-next-wait');
    const reveal=chip=>{if(!next.classList.contains('da-next-wait'))return;next.classList.remove('da-next-wait');
     /* 고객 약속(2026-09-25 컨설턴트 Loop ⑩): '고객 약속: 내용' + 날짜는 약속한 날을 직접 고른다(기본값 없음). 오늘 할 일 최우선·초과 시 관리자에게 미이행 표시 */
-    const map={'연결됨':['후속 확인 전화',3],'부재':['다시 전화',1],'재연락 요청':['고객 요청 시점 재연락',2],'고객 약속':['고객 약속: ',null]};
+    const map={'통화 완료':['후속 확인 전화',3],'전화 안 받음':['다시 전화',1],'다시 연락 요청받음':['요청 시점에 다시 연락',2],'고객 약속':['고객 약속: ',null]};/* 2026-09-26 문구 정리: 칩 이름이 곧 키 — detail-workspace.js 결과 칩과 같이 바꾼다 */
     const pre=map[chip];const txt=next.querySelector('#dv-na-text'),dt=next.querySelector('#dv-na-date');
     if(pre&&txt&&!txt.value.trim()){txt.value=pre[0];
      if(pre[1]!==null&&dt&&!dt.value){const d=new Date();d.setDate(d.getDate()+pre[1]);dt.value=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(d);}
@@ -84,9 +84,9 @@ async function saveCombined(){
  const get=id=>$(id)?.value?.trim()||'';
  const activity={type:get('dv-act-type'),note:get('dv-act-note'),result:get('dv-act-result'),occurred_at:get('dv-act-at')};
  const next={type:root.NextActionPicker.read('dv-na-type'),text:get('dv-na-text'),due_at:get('dv-na-date'),assignee:get('dv-na-assignee')};
- if(!activity.type||!activity.note||!activity.occurred_at||!next.type||!next.text||!next.due_at||!next.assignee){root.showDetailErr('활동 내용·일시와 다음 할 일·기한·담당자를 모두 입력해 주세요.');return;}
+ if(!activity.type||!activity.note||!activity.occurred_at||!next.type||!next.text||!next.due_at||!next.assignee){root.showDetailErr('연락 결과 내용·일시와 다음 할 일·기한·담당자를 모두 입력해 주세요.');return;}
  if(!root.PeopleEligibility.allowed(root.SALES_PEOPLE_MASTER,'sales_action',d,next.assignee)){root.showDetailErr('이 업무를 맡을 수 있는 영업담당자를 선택해 주세요.');return;}
- const date=new Date(activity.occurred_at);if(!Number.isFinite(date.getTime())){root.showDetailErr('활동 일시를 확인해 주세요.');return;}
+ const date=new Date(activity.occurred_at);if(!Number.isFinite(date.getTime())){root.showDetailErr('연락 일시를 확인해 주세요.');return;}
  activity.occurred_at=date.toISOString();form.dataset.saving='true';
  const submit=$('detailAction')?.querySelector('button.da-submit');if(submit)submit.disabled=true;
  const progress=form._contactProgress||(form._contactProgress={});
@@ -102,18 +102,18 @@ async function saveCombined(){
   root.showDetailErr('연락 결과 저장 확인 중…',true);const recorded=await confirm('activity',activity);
   const a=recorded.payload||activity;d.activities=Array.isArray(d.activities)?d.activities:[];if(!d.activities.some(x=>x.id===recorded.ack.activity_id))d.activities.unshift({id:recorded.ack.activity_id,type:a.type,note:a.note,result:a.result,at:a.occurred_at,occurred_at:a.occurred_at});
   if(root.CUR_DETAIL?.item!==d)return;
-  root.showDetailErr('활동 저장 확인 완료 · 다음 할 일 저장 확인 중…',true);const scheduled=await confirm('next_action',next);
+  root.showDetailErr('연락 결과 저장 확인 완료 · 다음 할 일 저장 확인 중…',true);const scheduled=await confirm('next_action',next);
   if(root.CUR_DETAIL?.item!==d)return;
   const n=scheduled.payload||next,p=root.currentPatch(),obj={id:scheduled.ack.next_action_id,type:n.type,text:n.text,due:n.due_at,due_at:n.due_at,assignee:n.assignee,status:'open'};d.nextActionObj=p.nextActionObj=obj;d.nextAction=p.nextAction=n.due_at;d.nextActionText=p.nextActionText=n.text;root.saveLocal();
-  close(false);root.renderDetail();root.showDetailErr('활동과 다음 할 일의 서버 저장을 확인했습니다.',true);
- }catch(e){root.showDetailErr((progress.activity&&root.Phase1.queue.list().find(q=>q.request_id===progress.activity)?.status==='done'?'활동은 저장되었습니다. 다음 할 일은 아직 확인되지 않았습니다. ':'저장 완료를 확인하지 못했습니다. ')+String(e.message||e));}
+  close(false);root.renderDetail();root.showDetailErr('연락 결과와 다음 할 일의 서버 저장을 확인했습니다.',true);
+ }catch(e){root.showDetailErr((progress.activity&&root.Phase1.queue.list().find(q=>q.request_id===progress.activity)?.status==='done'?'연락 결과는 저장되었습니다. 다음 할 일은 아직 확인되지 않았습니다. ':'저장 완료를 확인하지 못했습니다. ')+String(e.message||e));}
  finally{delete form.dataset.saving;if(submit?.isConnected)submit.disabled=false;}
 }
 function flatTimeline(all=false){
  const d=root.CUR_DETAIL?.item;if(!d)return '';
  const rows=root.unifiedTimeline(root.currentPatch(),d),shown=all?rows:rows.slice(0,6);
  const names={next_action_set:'다음 할 일 등록',next_action_completed:'다음 할 일 완료',next_action_complete:'다음 할 일 완료',stage_change:'진행상태 변경',stage_changed:'진행상태 변경',owner_changed:'담당자 변경',activity_created:'연락 결과','단계전환':'진행상태 변경','단계 전환':'진행상태 변경'};
- return shown.length?'<ol class="da-events">'+shown.map(x=>'<li><div class="da-event-meta"><time>'+root.esc(root.dateTimeLabel(x.at))+'</time><span>'+root.esc(x.who||'담당자 미기록')+'</span></div><strong>'+root.esc(names[x.ttl]||(/^[a-z]+(?:_[a-z]+)+$/.test(x.ttl)?'업무 기록':x.ttl||'연락 결과'))+'</strong>'+[x.body,x.result,...(x.fields||[]).map(f=>f.join(' · '))].filter(Boolean).map(t=>'<p>'+root.esc(t)+'</p>').join('')+(!x.body&&!x.result&&!x.fields?.length?'<p>상세 내용은 확인되지 않았습니다.</p>':'')+'</li>').join('')+'</ol>':'<p class="da-hint">아직 연락 결과가 없습니다.</p>';
+ return shown.length?'<ol class="da-events">'+shown.map(x=>'<li><div class="da-event-meta"><time>'+root.esc(root.dateTimeLabel(x.at))+'</time><span>'+root.esc(x.who||'담당자 미기록')+'</span></div><strong>'+root.esc(names[x.ttl]||(/^[a-z]+(?:_[a-z]+)+$/.test(x.ttl)?'업무 기록':x.ttl||'연락 결과'))+'</strong>'+[x.body,x.result,...(x.fields||[]).map(f=>f.join(' · '))].filter(Boolean).map(t=>'<p>'+root.esc(root.sayLegacyNote?root.sayLegacyNote(t):t)+'</p>').join('')+(!x.body&&!x.result&&!x.fields?.length?'<p>상세 내용은 확인되지 않았습니다.</p>':'')+'</li>').join('')+'</ol>':'<p class="da-hint">아직 연락 결과가 없습니다.</p>';
 }
 function refreshRecent(){const host=$('activityTimelineHost');if(host&&$('detailView')?.classList.contains('da-ready')){host.innerHTML=flatTimeline();const intro=host.closest('.dcard')?.querySelector('.detailsecthead p');if(intro)intro.textContent='최근 활동 6건을 바로 확인합니다. 이전 기록은 전체 이력에서 확인하세요.';}}
 function flatten(scope){

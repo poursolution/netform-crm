@@ -9,12 +9,12 @@ function render(activities,amounts={}){
 }
 test('quick panel maps system activity names without changing records',()=>{
  const rows=[{type:'next_action_set',at:'2026-09-16'},{type:'next_action_completed',at:'2026-09-15'},{type:'assignment_changed',at:'2026-09-14'}],before=JSON.stringify(rows);
- const html=render(rows);for(const label of ['다음 일정 등록','다음 행동 완료','담당자 변경'])assert.ok(html.includes(label));
+ const html=render(rows);for(const label of ['다음 할 일 등록','다음 할 일 완료','담당자 변경'])assert.ok(html.includes(label));
  assert.doesNotMatch(html,/next_action_set|next_action_completed|assignment_changed/);assert.equal(JSON.stringify(rows),before);
 });
 test('user note retains priority and remains escaped',()=>{
  const html=render([{type:'next_action_set',note:'<b>고객 요청</b>',result:'<img src=x>',at:'2026-09-16'}]);
- assert.ok(html.includes('&lt;b&gt;고객 요청&lt;/b&gt;'));assert.ok(html.includes('&lt;img src=x&gt;'));assert.ok(!html.includes('다음 일정 등록'));
+ assert.ok(html.includes('&lt;b&gt;고객 요청&lt;/b&gt;'));assert.ok(html.includes('&lt;img src=x&gt;'));assert.ok(!html.includes('다음 할 일 등록'));
 });
 test('empty history and existing Korean labels retain their display',()=>{
  assert.ok(render([]).includes('최근 활동이 없습니다'));

@@ -9,7 +9,7 @@ const css=fs.readFileSync(path.join(root,'p2-operational-polish.css'),'utf8');
 test('견적문의 목록은 상태 대신 문제·문제경과·즉시행동을 사용한다',()=>{
   assert.match(crm,/function inqCtlProblem\(q\)/);
   assert.match(crm,/담당자 없음/);
-  assert.match(crm,/최초 응대 없음/);
+  assert.match(crm,/첫 연락 없음/);
   assert.match(crm,/견적 발송 예정일 초과/);
   assert.match(crm,/다음 행동일 초과/);
   assert.match(crm,/지금 문제/);

@@ -85,7 +85,7 @@ async function run(){
   assert.equal(await page.locator('.twq-row').first().getAttribute('data-key'),'inq:inq-unassigned');
   assert.equal(await page.getByText('전환 완료 확장',{exact:true}).count(),0);
   assert.equal(await page.getByText('보류 확장',{exact:true}).count(),0);
-  assert.match(await page.locator('[data-key="expansion:won-inferred"].twq-row').textContent(),/계산 일정/);
+  assert.match(await page.locator('[data-key="expansion:won-inferred"].twq-row').textContent(),/자동 계산/);
   assert.equal(await page.evaluate(()=>TodayWorkQueue.data().rows.filter(x=>x.key==='deal:rel-today').length),1);
   await page.getByRole('combobox',{name:'오늘 업무 담당자'}).selectOption('김성민');
   assert.equal(await page.getByRole('combobox',{name:'오늘 업무 유형'}).count(),0);

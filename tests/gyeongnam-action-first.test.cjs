@@ -28,5 +28,5 @@ test('실담당 지정과 최초응대 근거 동선은 그대로 유지한다',
  assert.match(html,/function gnConfirmOwner\(\)/);
  assert.match(html,/function gnShow\(kind,rep\)/);
  assert.match(html,/실담당 미지정/);
- assert.match(html,/최초응대 대기/);
+ assert.match(html,/첫 연락 대기/);
 });

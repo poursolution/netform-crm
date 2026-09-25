@@ -59,7 +59,7 @@ async function run(){
   await page.getByRole('button',{name:'초기화',exact:true}).click();
   await page.locator('.relpc-kpis button').filter({hasText:'오늘 연락'}).click();
   assert.equal(await page.locator('.relpc-table tbody tr').count(),1);
-  await page.locator('.relpc-kpis button').filter({hasText:'90일 이상 미접촉'}).click();
+  await page.locator('.relpc-kpis button').filter({hasText:'마지막 연락 90일 이상 전'}).click();
   assert.equal(await page.locator('.relpc-table tbody tr').count(),1);
   await page.getByRole('button',{name:'초기화',exact:true}).click();
   await page.locator('.relpc-table tbody tr').first().click();
@@ -80,8 +80,8 @@ async function run(){
   assert.equal(await page.locator('#stage-transition-form').count(),1,'return uses the existing stage editor');
   assert.equal(await page.evaluate(()=>CUR_DETAIL.item.id),'rel-overdue','return does not create a duplicate deal');
   await page.evaluate(()=>closeDetail());
-  assert.deepEqual(await page.locator('.relpc-table tbody tr').first().locator('.relpc-actions button').allTextContents(),['응대 기록','다음 일정','상세']);
-  await page.locator('.relpc-table tbody tr').first().getByRole('button',{name:'응대 기록',exact:true}).click();
+  assert.deepEqual(await page.locator('.relpc-table tbody tr').first().locator('.relpc-actions button').allTextContents(),['연락 결과 남기기','다음 할 일','상세']);
+  await page.locator('.relpc-table tbody tr').first().getByRole('button',{name:'연락 결과 남기기',exact:true}).click();
   assert.equal(await page.locator('#relq-note').isVisible(),true);
   assert.equal(await page.locator('#relq-due').isVisible(),true);
   await page.locator('#relq-meaningful').check();
@@ -95,7 +95,7 @@ async function run(){
   await page.locator('#relq-save').click();
   assert.match(await page.locator('#relq-error').innerText(),/입력/);
   await page.locator('.relq-close').click();
-  await secondary('다음 일정');
+  await secondary('다음 할 일');
   assert.equal(await page.locator('#relq-note').isVisible(),false);
   assert.equal(await page.locator('#relq-due').isVisible(),true);
   await page.locator('.relq-close').click();
@@ -122,7 +122,7 @@ async function run(){
   assert.equal(await page.locator('#relQuickModal').count(),0);
   assert.equal(await page.evaluate(()=>__requests.length),1,'uncertain retry reuses request');
   assert.equal(await page.evaluate(()=>__requests[0].payload.meaningful_contact),false);
-  await secondary('다음 일정');
+  await secondary('다음 할 일');
   await page.locator('#relq-next').fill('다음 공사계획 확인');
   await page.locator('#relq-save').click();
   assert.equal(await page.locator('#relQuickModal').count(),0);
@@ -178,8 +178,8 @@ async function run(){
   assert.match(await page.locator('.relpc-panel').innerText(),/옥상방수 공사 일정 확인/);
   await page.getByRole('button',{name:'상세 패널 닫기'}).click();
   assert.doesNotMatch(await futureRow.innerText(),/내부 검토 전용 메모/,'internal memo is not presented as customer contact');
-  assert.match(await futureRow.innerText(),/다음 일정 없음/,'date without next action is still incomplete');
-  await page.locator('.relpc-kpis button').filter({hasText:'다음 일정 없음'}).click();
+  assert.match(await futureRow.innerText(),/다음 할 일 없음/,'date without next action is still incomplete');
+  await page.locator('.relpc-kpis button').filter({hasText:'다음 할 일 없음'}).click();
   assert.equal(await futureRow.count(),1,'incomplete action is included in missing-schedule filter');
   await page.getByRole('button',{name:'초기화',exact:true}).click();
   await page.evaluate(()=>{B.deals[3].nextActionObj.text='입대의 결과 확인';paintRelationshipManagement()});

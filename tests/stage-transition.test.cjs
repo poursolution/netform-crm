@@ -12,7 +12,7 @@ test('경쟁지원 없음 중복·잘못된 금액·공백 필수값 차단',()=
 test('이동만으로 Next나 고객 접촉을 만들지 않는다',()=>{assert.equal(S.next('compete',{}),null);assert.match(S.summary('completion',completion),/1,043,900,000/)});
 
 function harness(mobile=false,code='bidding'){
- const nodes={},checks={},writes=[],patch={},d={id:'fixture',code,site:'테스트 아파트',nm:'테스트 아파트',assignee:'테스트',rep:'테스트',activities:[],tl:[],nextAction:{text:'기존 약속'}};
+ const nodes={},checks={},writes=[],patch={},d={id:'fixture',code,site:'테스트 아파트',nm:'테스트 아파트',assignee:'테스트',rep:'테스트',activities:[],tl:[],nextAction:{text:'기존 약속',due:'2099-12-31',status:'open'}};
  let html='';
  function parse(s){html=s;for(const k of Object.keys(nodes))if(k.startsWith('sf-')||k==='stage-transition-form')delete nodes[k];for(const k of Object.keys(checks))delete checks[k];
   for(const m of s.matchAll(/<(input|select|textarea|form|button|div)\b[^>]*\bid="([^"]+)"[^>]*>/g)){let value=(m[0].match(/value="([^"]*)"/)||[])[1]||'';if(m[1]==='select'){const body=s.slice(m.index+m[0].length).split('</select>')[0];const opts=[...body.matchAll(/<option value="([^"]*)"([^>]*)>/g)];value=(opts.find(x=>x[2].includes('selected'))||opts[0]||[])[1]||''}nodes[m[2]]={value,textContent:'',scrollIntoView(){},focus(){this.focused=true},querySelector:sel=>nodes[sel.slice(1)],querySelectorAll:sel=>(checks[(sel.match(/name="([^"]+)"/)||[])[1]]||[]).filter(x=>x.checked)}}
@@ -32,6 +32,24 @@ for(const mobile of [false,true])test((mobile?'모바일':'PC')+' 실제 폼: �
 });
 test('준공 확인 후 Closed Won → 실제 준공일을 기준으로 확장 Pool',()=>{const h=harness(false,'completion');h.open('won');h.set('date',date);h.set('completion_date','2026-09-04');h.set('contract_amount','100,000');h.checks['sf-completion_checks'].forEach(x=>x.checked=true);h.c.StageTransitionUI.save();assert.equal(h.d.outcome,'won');assert.equal(h.writes.find(x=>x.op==='pool').at,'2026-09-04')});
 test('관계관리 진입은 사유·다음 연락일을 필수 저장하고 같은 영업기회를 유지한다',()=>{const h=harness(false,'sent');h.open('rapport');h.c.StageTransitionUI.save();assert.equal(h.writes.length,0);assert.match(h.nodes['sf-error'].textContent,/관계관리 사유/);h.set('date',date);h.set('relationship_reason','내년도 사업 검토');h.set('reaction','내년 예산 편성 후 재검토');h.set('contact_date','2026-10-15');h.c.StageTransitionUI.save();assert.equal(h.d.code,'rapport');assert.equal(h.d.relationshipReason,'내년도 사업 검토');assert.equal(h.d.nextActionObj.due,'2026-10-15');assert.equal(h.writes.filter(x=>['transition','activity','next_action'].includes(x.op)).length,3)});
+for(const mobile of [false,true])test((mobile?'모바일':'PC')+' 앞으로의 다음 할 일이 없으면 진행 단계 전환 때 날짜를 요구하고, 단계 저장 뒤 다음 할 일을 따로 등록한다',async()=>{
+ const h=harness(mobile,'bidding');h.d.nextAction=null;const queued=[];
+ h.c.Phase1={queue:{flush:async()=>[]}};h.c[mobile?'queueMobileContactOperation':'queueDetailContactOperation']=(op,p)=>{queued.push({op,p});return 'r'+queued.length};
+ h.open('contract');assert.match(h.html(),/id="sf-next"/);assert.match(h.html(),/단계만 바꾸면 흐름이 끊깁니다/);
+ h.set('date',date);h.set('bid_result','낙찰');h.set('contract_amount','100,000,000');h.set('contract_status','체결 예정');h.set('contract_date','2026-09-01');
+ h.c.StageTransitionUI.save();assert.equal(h.d.code,'bidding','다음 할 일 날짜 없이 저장하지 않는다');assert.match(h.nodes['sf-error'].textContent,/다음 할 일 날짜/);
+ h.set('next','2099-01-05');h.c.StageTransitionUI.save();
+ assert.equal(h.d.code,'contract');assert.ok(h.writes.some(x=>x.op==='transition'));assert.ok(!h.writes.some(x=>x.op==='next_action'),'단계 변경과 같은 순간에는 보내지 않는다(흡수 방지)');
+ await new Promise(r=>setImmediate(r));
+ assert.deepEqual(queued.map(x=>[x.op,x.p.due_at,x.p.text]),[['next_action','2099-01-05','계약 체결 확인']]);
+});
+test('컨설팅 설계의 견적 예정일은 다음 할 일이 비어 있을 때 그대로 다음 할 일이 된다(같은 날짜를 두 번 묻지 않음)',async()=>{
+ const h=harness(false,'first_contact');h.d.nextAction=null;const queued=[];
+ h.c.Phase1={queue:{flush:async()=>[]}};h.c.queueDetailContactOperation=(op,p)=>{queued.push({op,p});return 'r'};
+ h.open('consulting');h.set('date',date);h.set('quote_request','옥상 방수 견적');h.set('quote_due','2099-02-01');h.c.StageTransitionUI.save();
+ assert.equal(h.d.code,'consulting');await new Promise(r=>setImmediate(r));
+ assert.deepEqual(queued.map(x=>[x.p.due_at,x.p.text]),[['2099-02-01','견적서 작성·발송']]);
+});
 test('모바일 기존 금액확정 우회 호출로 입찰을 수주 종료할 수 없다',()=>{const h=harness(true);h.c.amtOk('won');assert.equal(h.writes.length,0);assert.equal(h.d.code,'bidding')});
 test('취소는 아무것도 저장하지 않는다',()=>{const h=harness();h.open('contract');h.c.StageTransitionUI.close();assert.equal(h.writes.length,0);assert.equal(h.d.code,'bidding')});
 test('PC·모바일 스크립트 연결 및 전체 inline JS 구문검사',()=>{for(const file of ['crm.html','mobile.html']){const html=fs.readFileSync(require.resolve('../'+file),'utf8');assert.match(html,/src="stage-transition-ui.js/);for(const m of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g))new vm.Script(m[1])}});

@@ -9,7 +9,7 @@ const css = fs.readFileSync(path.join(root, 'p2-operational-polish.css'), 'utf8'
 
 test('영업사원 관리 첫 화면은 팀 KPI, 관리자 개입, 담당자 카드로 압축한다', () => {
   assert.match(crm, /function repManagerPeopleView\(interventions\)/);
-  assert.match(crm, /오늘 관리자 개입/);
+  assert.match(crm, /오늘 관리자 확인/);
   assert.match(crm, /담당자별 관리 현황/);
   assert.match(crm, /REP_MANAGER_ROWS\.map\(repManagerCard\)/);
   assert.match(crm, /사람별 관리/);
