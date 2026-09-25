@@ -7909,7 +7909,12 @@ function paint(){
    ══════════════════════════════════════════════════════════ */
 /* 60초는 두 사람이 같은 현장을 동시에 볼 때 너무 길다.
    숨은 탭·입력 중·상세 열림에는 어차피 건너뛰므로 20초로 줄여도 서버 부담이 적다. */
-var SYNC_MS=120000,INQUIRY_SYNC_MS=15000; // 전체 영업건은 2분, 신규 견적문의 화면은 15초 안전망.
+var SYNC_MS=120000,INQUIRY_SYNC_MS=15000; // 타이머 눈금(가벼운 확인). 실제 재수신 간격은 아래 SYNC_GAP_RULES.
+/* 전송량(2026-09-25 실측): 창이 보이는 동안 15초마다 문의 전체·2분마다 영업건 전체를 다시 받아
+   Supabase 무료 전송 한도(5GB)의 134%(6.72GB) 사용 — 1시간 API 726건 중 전체 재수신 566건. 실시간 메시지 0건(실시간 미동작).
+   내 저장 직후 재조회(syncSoon)·포커스 복귀는 그대로 두고, 주기 재수신 간격만 넓힌다.
+   문의: 5분(어느 화면이든 — 사이드바 건수 최신 유지, 첫 응대 기준 2시간 대비 충분) · 영업건: 10분. */
+var SYNC_GAP_RULES={inquiryMs:300000,dealMs:600000};
 function syncBusy(){
   var a=document.activeElement;
   if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return true;   /* 입력 중 */
@@ -7924,7 +7929,7 @@ var LAST_SYNC=0;
 var LAST_INQUIRY_SYNC=0,LAST_EXPANSION_SYNC=0,EXPANSION_SYNC_MS=15000;
 function syncInquiryNow(force){
   if(document.hidden||syncBusy()||!TOKEN)return;
-  if(!force&&Date.now()-LAST_INQUIRY_SYNC<INQUIRY_SYNC_MS)return;
+  if(!force&&Date.now()-LAST_INQUIRY_SYNC<SYNC_GAP_RULES.inquiryMs)return;
   LAST_INQUIRY_SYNC=Date.now();
   if(typeof refreshOperationalDomains==='function')refreshOperationalDomains(['inquiry_core'],'inquiry-poll');
 }
@@ -7944,7 +7949,7 @@ function syncCampaignNow(force){
 function syncNow(){
   if(document.hidden||syncBusy())return;
   if(CUR_DETAIL||document.getElementById('inlineBiz')||(document.getElementById('newDealModal')||{}).classList&&document.getElementById('newDealModal').classList.contains('on'))return;
-  if(Date.now()-LAST_SYNC<SYNC_MS)return;
+  if(Date.now()-LAST_SYNC<SYNC_GAP_RULES.dealMs)return;
   LAST_SYNC=Date.now();
   if(typeof refreshOperationalDomains==='function')refreshOperationalDomains(['deal_core','inquiry_core'],'poll');
   else loadData(true);
@@ -8785,7 +8790,7 @@ function campaignHomePage(){var L=campaignLogs(),scheduled=L.filter(function(x){
 function campaignUtility(title){return '<header class="cc-utility"><button onclick="campaignSetTab(\'home\')">← 고객 발송</button><h2>'+esc(title)+'</h2><nav><button onclick="campaignSetTab(\'history\')">발송 이력</button><button onclick="campaignSetTab(\'analysis\')">성과 보기</button></nav></header>'}
 function paintCampaign(){var root=$('#campaign-root');if(!root)return;var tab=G.campaignTab||'home',body=tab==='home'?campaignHomePage():tab==='send'?campaignSendPage():tab==='schedule'?campaignHistoryPage(true):tab==='history'?campaignHistoryPage(false):tab==='templates'?campaignLibraryPage():campaignAnalysisPage(),title=tab==='send'?'새 발송':tab==='schedule'?'예약 발송':tab==='history'?'발송 이력':tab==='templates'?'문구 보관함':'성과 보기';root.innerHTML='<div class="cc-shell">'+(tab==='home'?'':campaignUtility(title))+(CAMPAIGN_STATE.notice?'<div class="mgmtbar blue">'+esc(CAMPAIGN_STATE.notice)+'</div>':'')+body+'</div>'}
 
-</script><script src="./inquiry-assignment-clarity.js?v=20260924-terms-2"></script><script src="./detail-workspace.js?v=20260925-promise-1"></script><link rel="stylesheet" href="./detail-actions.css?v=20260925-support-1"><script src="./detail-actions.js?v=20260925-promise-1"></script><link rel="stylesheet" href="./now-card.css?v=20260924-nccompact-1"><script src="./now-card.js?v=20260925-josa-1"></script><script src="./relationship-management.js?v=20260924-terms-2"></script><script src="./inquiry-workbench.js?v=20260924-inqnow-1"></script><script src="./today-work-queue.js?v=20260925-promise-type-1"></script><link rel="stylesheet" href="./account-admin.css?v=20260924-account-1"><script src="./account-admin.js?v=20260924-account-1"></script><link rel="stylesheet" href="./sales-insights.css?v=20260925-loop-1"><script src="./sales-insights-model.js?v=20260924-quarter-1"></script><link rel="stylesheet" href="./sales-scope.css?v=20260924-lightnav-1"><script src="./sales-scope.js?v=20260925-repnav-1"></script><link rel="stylesheet" href="./sales-filters.css?v=20260920-1"><script src="./sales-filters.js?v=20260925-roleflags-1"></script><script src="./contract-sales-ledger.js?v=20260920-1"></script><script src="./contract-sales-data.js?v=20260923-stable-1"></script><script src="./sales-insights.js?v=20260925-promise-type-1"></script><script src="./pipeline-stages.js?v=20260920-spec-1"></script><link rel="stylesheet" href="./pipeline-workspace.css?v=20260924-ownerfold-1"><script src="./stage-specs.js?v=20260924-terms-2"></script><script src="./relationship-promo.js?v=20260924-terms-2"></script><script src="./stage-workspaces.js?v=20260925-roleflags-1"></script><link rel="stylesheet" href="./technical-advisory-ui.css?v=20260925-advskin-2"><script src="./technical-advisory-ui.js?v=20260925-avq-1"></script><script src="./deal-detail-workspace.js?v=20260925-promise-1"></script><script src="./pipeline-workspace.js?v=20260924-terms-1"></script><link rel="stylesheet" href="./pipeline-split.css?v=20260920-worktypes-1"><script src="./pipeline-split.js?v=20260924-terms-2"></script><script src="./pipeline-batch.js?v=20260924-terms-1"></script><script src="./operational-overlay.js?v=20260924-terms-1"></script><link rel="stylesheet" href="./contract-sales.css?v=20260925-avq-2"><script src="./contract-sales-ui.js?v=20260925-avq-3"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
+</script><script src="./inquiry-assignment-clarity.js?v=20260924-terms-2"></script><script src="./detail-workspace.js?v=20260925-promise-1"></script><link rel="stylesheet" href="./detail-actions.css?v=20260925-support-1"><script src="./detail-actions.js?v=20260925-promise-1"></script><link rel="stylesheet" href="./now-card.css?v=20260925-flow-2"><script src="./now-card.js?v=20260925-flow-3"></script><script src="./relationship-management.js?v=20260924-terms-2"></script><script src="./inquiry-workbench.js?v=20260924-inqnow-1"></script><script src="./today-work-queue.js?v=20260925-promise-type-1"></script><link rel="stylesheet" href="./account-admin.css?v=20260924-account-1"><script src="./account-admin.js?v=20260924-account-1"></script><link rel="stylesheet" href="./sales-insights.css?v=20260925-loop-1"><script src="./sales-insights-model.js?v=20260924-quarter-1"></script><link rel="stylesheet" href="./sales-scope.css?v=20260924-lightnav-1"><script src="./sales-scope.js?v=20260925-repnav-1"></script><link rel="stylesheet" href="./sales-filters.css?v=20260920-1"><script src="./sales-filters.js?v=20260925-roleflags-1"></script><script src="./contract-sales-ledger.js?v=20260920-1"></script><script src="./contract-sales-data.js?v=20260923-stable-1"></script><script src="./sales-insights.js?v=20260925-promise-type-1"></script><script src="./pipeline-stages.js?v=20260920-spec-1"></script><link rel="stylesheet" href="./pipeline-workspace.css?v=20260924-ownerfold-1"><script src="./stage-specs.js?v=20260924-terms-2"></script><script src="./relationship-promo.js?v=20260924-terms-2"></script><script src="./stage-workspaces.js?v=20260925-roleflags-1"></script><link rel="stylesheet" href="./technical-advisory-ui.css?v=20260925-advskin-2"><script src="./technical-advisory-ui.js?v=20260925-avq-1"></script><script src="./deal-detail-workspace.js?v=20260925-promise-1"></script><script src="./pipeline-workspace.js?v=20260924-terms-1"></script><link rel="stylesheet" href="./pipeline-split.css?v=20260920-worktypes-1"><script src="./pipeline-split.js?v=20260924-terms-2"></script><script src="./pipeline-batch.js?v=20260924-terms-1"></script><script src="./operational-overlay.js?v=20260924-terms-1"></script><link rel="stylesheet" href="./contract-sales.css?v=20260925-avq-2"><script src="./contract-sales-ui.js?v=20260925-avq-3"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
   loadData();
 });
 </script>

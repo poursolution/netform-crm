@@ -58,3 +58,29 @@
 .now-card .nc-brief .row{display:inline-flex;grid-template-columns:none;gap:6px;align-items:baseline;min-width:0}
 .now-card .nc-brief .row b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px}
 @media(max-width:900px){.now-card{grid-template-columns:1fr}.now-card .nc-cta{grid-column:1;grid-row:auto;justify-self:start;flex-wrap:wrap}}
+
+/* 영업 흐름 한 줄 (2026-09-25) */
+.now-flow{margin:0 0 12px;border:1px solid #e2e8f1;border-radius:12px;background:#fff;padding:10px 12px}
+.now-flow header{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-bottom:8px}
+.now-flow header b{font-size:13px;color:#17233a}
+.now-flow header span{font-size:12px;color:#5b6b85}
+.now-flow header .warn{color:#c2312b;font-weight:800}
+.nf-row{display:flex;align-items:center;gap:4px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+.nf-arr{font-style:normal;color:#b7c1d1;flex:none}
+.nf-ev,.nf-next,.nf-gap,.nf-more{flex:none;display:inline-flex;align-items:baseline;gap:4px;border-radius:999px;padding:3px 10px;font-size:12px;white-space:nowrap;border:1px solid #e2e8f1;background:#f7f9fc}
+.nf-ev i,.nf-next i{font-style:normal}
+.nf-ev b,.nf-next b{font-weight:700;color:#17233a}
+.nf-ev em,.nf-next em{font-style:normal;color:#46536b}
+.nf-ev small,.nf-next small{color:#8a96a9;font-variant-numeric:tabular-nums}
+.nf-ev.in{background:#eef3fe;border-color:#d6e1fb}
+.nf-ev.stage{background:#f3f0fd;border-color:#e0d9f8}
+.nf-ev.sup{background:#fff6e8;border-color:#f3dcb6}
+.nf-gap{background:#fff;border-style:dashed;color:#a15c07;font-weight:700}
+.nf-gap.hot{color:#c2312b;border-color:#f0b9b5}
+.nf-next{background:#eaf6ef;border-color:#c6e7d3}
+.nf-next.late{background:#fdeeed;border-color:#f3c4c0}
+.nf-next.late small{color:#c2312b;font-weight:700}
+.nf-next.none{background:#fdeeed;border-color:#f3c4c0;color:#c2312b}.nf-next.none b{color:#c2312b}
+.nf-more{background:#fff;color:#8a96a9}
+.nf-x{text-decoration:none;font-size:11px;font-weight:800;color:#5b6b85}
+.nf-ev.misc{background:#fff}
