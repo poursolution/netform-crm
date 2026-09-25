@@ -48,7 +48,8 @@ for(const key of ['consulting','sent','relationship','competition','construction
  if(key==='sent'){assert.match(await page.locator('.sw-workspace').innerText(),/검토중/);assert.match(await page.locator('.sw-workspace').innerText(),/오늘 확인/);if(process.env.STAGE_SCREENSHOT)await page.screenshot({path:process.env.STAGE_SCREENSHOT});}
  if(key==='lost')assert.match(await page.locator('.sw-loss-reasons').innerText(),/가격 열세/);
  if(key==='construction')assert.doesNotMatch(await page.locator('.sw-contract-state').innerText(),/영업실적 확정/);
- if(key==='won')assert.match(await page.locator('.sw-result').innerText(),/원장을 확인하지 못했습니다/);
+ // 계약실적 패널은 운영 화면에서 제거됨 (2026-09-25 대표 지시)
+ if(key==='won')assert.equal(await page.locator('.sw-result').count(),0);
 }
 await page.evaluate(()=>PipelineWorkspace.open('expansion'));
 assert.equal(await page.evaluate(()=>G.page),'expansion');
