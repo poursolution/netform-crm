@@ -251,7 +251,8 @@
  function urgentCards(rows){
   const score=x=>x.unassigned?0:(x.overdue||x.responseLate)?1:x.dueDays===0?2:x.processingLate?3:x.missingNext?4:9;
   const picked=rows.filter(x=>score(x)<=4).sort((a,b)=>score(a)-score(b)||b.lag-a.lag).slice(0,8);
-  if(!picked.length)return '';
+  /* ⑧⑪(2026-09-25): 다 처리한 날은 축하 문구 — '0건'이 아니라 습관의 보상으로 */
+  if(!picked.length)return '<section class="twq-urgent done" aria-label="오늘 긴급 업무 없음"><div class="twq-done"><b>✓ 지금 바로 처리할 업무가 없습니다.</b><small>'+(rows.length?'예정된 일정은 아래 목록에서 확인하세요. 새 문의가 배정되면 여기에 먼저 표시됩니다.':'새 문의가 배정되거나 다음 할 일 기한이 오면 여기에 먼저 표시됩니다.')+'</small></div></section>';
   const card=x=>{
    const site=x.item.site||x.item.site_name||'현장명 미입력';
    const tone=(x.overdue||x.responseLate||x.unassigned)?'r':x.dueDays===0?'b':'w';

@@ -138,3 +138,7 @@ body:has(#pg-today.on) .mhead>.search{display:none}
 .twq-ucard .act .pri:hover{background:#1a459c}
 .twq-ucard .act button:not(.pri){border:1px solid #e2e8f1;background:#fff;border-radius:8px;font-size:11.5px;color:#5b6b85;padding:8px 12px}
 @media(max-width:700px){.twq-ucard{flex-basis:220px}}
+/* 오늘 긴급 없음 — 완료 보상 (2026-09-25) */
+.twq-urgent.done{border:1px dashed #cde7d8;background:#f4fbf7;border-radius:12px;padding:14px 16px;margin:10px 0 12px}
+.twq-done b{display:block;color:#15803d;font-size:13.5px}
+.twq-done small{display:block;margin-top:4px;color:#5b6b85;font-size:12px}
