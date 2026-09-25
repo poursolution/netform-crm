@@ -2,7 +2,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const queue=fs.readFileSync(require.resolve('../today-work-queue.js'),'utf8');
 const crm=fs.readFileSync(require.resolve('../crm.html'),'utf8');
-test('복원한 오늘업무 모듈은 기존 탭의 개편본 캐시를 우회한다',()=>{assert.match(crm,/today-work-queue\.js\?v=20260925-loop-1/)});
+test('복원한 오늘업무 모듈은 기존 탭의 개편본 캐시를 우회한다',()=>{assert.match(crm,/today-work-queue\.js\?v=20260925-backlog-1/)});
 test('관리자 오늘업무는 견적문의와 파이프라인을 독립 업무함으로 렌더링한다',()=>{assert.match(crm,/function paintTodayHome\(\).*TodayWorkQueue.render/);assert.match(queue,/twq-admin-boards/);assert.match(queue,/all\.filter\(x=>x\.panel==='inquiry'\).sort\(compare\)/);assert.match(queue,/all\.filter\(x=>x\.panel==='pipeline'\).sort\(compare\)/);});
 test('네 업무유형을 모으되 관계관리 Deal을 이중 집계하지 않는다',()=>{assert.match(queue,/inquiry:'견적문의',pipeline:'파이프라인',relationship:'관계관리',expansion:'확장관리'/);assert.match(queue,/base.D.filter\(d=>!relationship/);assert.match(queue,/unique=new Map/)});
 test('같은 데이터로 상태 건수와 목록을 계산한다',()=>{assert.match(queue,/rows=source.filter\(x=>matches/);assert.match(queue,/source.filter\(x=>matches/)});

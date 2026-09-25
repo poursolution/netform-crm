@@ -147,3 +147,14 @@ body:has(#pg-today.on) .mhead>.search{display:none}
 .twq-daysum{display:inline-block;margin-left:10px;font-size:12px;font-weight:700;color:#15803d;background:#f0faf4;border:1px solid #cdebd8;border-radius:999px;padding:2px 10px;white-space:nowrap}
 .twq-daysum b{font-variant-numeric:tabular-nums}
 .twq-done .twq-daysum{margin:6px 0 0}
+
+/* 과거 영업 정리 카드 (2026-09-25) */
+.twq-backlog{margin:12px 0;border:1px dashed #c9d3e2;border-radius:12px;background:#fbfcfe;padding:12px 14px}
+.twq-backlog header{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-bottom:8px}
+.twq-backlog header b{font-size:13.5px;color:#33415e}
+.twq-backlog header small{font-size:11.5px;color:#7c889c}
+.twq-blist{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px}
+.twq-bitem{display:grid;gap:1px;text-align:left;border:1px solid #e2e8f1;border-radius:9px;background:#fff;padding:7px 10px;font:inherit;cursor:pointer;min-width:0}
+.twq-bitem:hover{border-color:#3B6CE4}
+.twq-bitem .site{font-size:12.5px;font-weight:700;color:#17233a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.twq-bitem .meta{font-size:11px;color:#7c889c;font-variant-numeric:tabular-nums}
