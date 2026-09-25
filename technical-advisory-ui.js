@@ -10,7 +10,7 @@ function statusChip(s){const done=['completed','document_all_signed'].includes(s
 function html(items){
  const rows=items.flatMap(p=>Array.isArray(p.contracts)?p.contracts:[]);
  if(!rows.length)return '<p>연결된 기술자문 계약이 없습니다.</p>';
- return '<p class="adv-note"><span class="adv-chip n">실적 합산 안 함</span><span class="adv-chip n">체결일 별도 확인</span> 원본 계약 표시이며, 반영은 컨트롤타워 [기술자문 반영]에서 합니다.</p>'+rows.map(c=>{
+ return '<p class="adv-note"><span class="adv-chip n">실적 합산 안 함</span><span class="adv-chip n">체결일 별도 확인</span> 원본 계약 표시이며, 실적은 성과 분석·컨트롤타워 [기술자문 낙찰실적 확정]에서 낙찰금액 기준으로 확정합니다.</p>'+rows.map(c=>{
   const link=url(c.document_url),amount=Number.isSafeInteger(c.document_amount)&&c.document_amount>=0?c.document_amount.toLocaleString('ko-KR')+'원':'금액 미확인';
   const conditions=(c.current_project_payment_conditions||[]).map(p=>[p.name,p.percent==null?'':p.percent+'%',p.condition].filter(Boolean).join(' · ')).join(' / ');
   const legacy=c.source_structure==='legacy_modusign';

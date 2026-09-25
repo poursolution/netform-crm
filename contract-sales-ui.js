@@ -64,66 +64,135 @@
   const walker=document.createTreeWalker(host,NodeFilter.SHOW_TEXT);let n;
   while((n=walker.nextNode())){if(n.parentElement.closest('.contract-sales-host,script,style'))continue;n.nodeValue=n.nodeValue.replace(/수주금액/g,'준공 처리금액').replace(/누적 수주|이번 달 수주|지난주 수주 결과/g,'준공 처리 결과');}
  }
- const oldRep=root.repManagerRenderDrawer;
- if(oldRep)root.repManagerRenderDrawer=function(){const r=oldRep.apply(this,arguments),row=root.REP_MANAGER_ROWS?.[root.REP_MANAGER_DRAWER_INDEX];if(row)mount(document.getElementById('perfDrawerBody'),filters({owner:row.nm||row.name}),true);return r};
+ /* 2026-09-25 대표 지시: 영업사원 관리 상세에도 계약실적 패널 금지 — 운영 화면 어디에도 계약실적 패널을 붙이지 않는다. */
  root.addEventListener('contract-sales:changed',()=>{if(root.B&&root.ME)root.paint()});
  root.addEventListener('phase1:identity-cleared',()=>{close();document.querySelectorAll('.contract-sales-host').forEach(n=>n.remove())});
- /* 기술자문 → 계약실적 반영 (2026-09-25 대표 승인 · 레거시 문서는 금액·계약일만 채우면 반영)
-    현장·담당·문서 연결·중복 방지는 자동. 임의 추정 금지 — 금액·날짜는 계약서를 보고 확정한다. */
+ /* 기술자문 낙찰실적 확정 (2026-09-25 · 실적 정책 정본: docs/advisory-track-handoff-20260925.md)
+    실적 = 낙찰금액(VAT 별도) · 귀속일 = 낙찰확정일 · 원천 브랜드(어디서 왔나)와 현재 사업(기술자문)은 분리.
+    CRM이 아는 값은 미리 채운다 — 같은 현장의 영업 이력이 원천 브랜드 후보. 사람은 확인·선택만 한다.
+    원본(advisory_deals)은 연동 대상이라 건드리지 않고 확정값만 별도 보관(advisory_id 1:1 → 중복 실적 없음). */
+ const ADV_EXTRA=['기술자문 직접영업','기타 브랜드'];
+ let advCache=null,advAt=0,advLoading=null;
+ function advisoryRows(force){
+  if(!force&&advCache&&Date.now()-advAt<300000)return Promise.resolve(advCache);
+  if(advLoading)return advLoading;
+  advLoading=root.SB.rpc('crm_advisory_attribution_v1',{}).then(r=>{
+   if(r.error||r.data?.ok!==true)throw new Error(r.error?.message||'조회 실패');
+   advCache=r.data.rows||[];advAt=Date.now();return advCache;
+  }).finally(()=>{advLoading=null;});
+  return advLoading;
+ }
+ const ro=w=>{const k=String(w).trim().slice(-1).charCodeAt(0)-0xAC00;return w+(k>=0&&k<11172&&k%28&&k%28!==8?'으로':'로');};/* 조사: 받침 있으면 '으로'(ㄹ 제외) */
+ const advBucket=x=>({confirmed:'confirmed',hold:'hold',excluded:'excluded'})[x.attribution?.decision]||'pending';
+ const advOutcome=c=>c.outcome==='won'?'수주':c.outcome==='lost'?'실주':c.lifecycle==='closed'?'종료':'진행';
+ function advPrefill(x){
+  const at=x.attribution||{},c=x.candidates||[];
+  const origin=at.origin_business||(c.length===1?c[0].brand:'');
+  const cand=c.find(k=>k.brand===origin);
+  return {origin,src:at.source_deal_id||cand?.deal_id||'',owner:at.performance_owner||x.owner_name||cand?.owner||'',
+   award:at.award_type||'bid',evidence:at.evidence_level||'admin_judgment',
+   amount:at.bid_amount??x.bid_amount??'',date:String(at.bid_confirmed_at||x.contract_date||'').slice(0,10),
+   dateGuess:!at.bid_confirmed_at&&!!x.contract_date,site:at.site_id||'',note:at.note||''};
+ }
+ const advReady=x=>{const p=advPrefill(x);return !!(p.origin&&p.owner&&Number(p.amount)>0&&p.date);};
+ function advRow(x,i){
+  const p=advPrefill(x),c=x.candidates||[],b=advBucket(x),confirmed=b==='confirmed';
+  const people=[...new Set([...(root.SALES_PEOPLE_MASTER||[]).filter(k=>k.active!==false).map(k=>k.name),p.owner].filter(Boolean))];
+  const why=c.length===1?'같은 현장 '+h(c[0].brand)+' 영업 '+c[0].deals+'건 확인 — 최초 '+h(String(c[0].opened||'').slice(0,7))+' · '+advOutcome(c[0])
+   :c.length>1?'같은 현장에 여러 브랜드 영업 이력 — 처음 만난 브랜드를 고르세요(왼쪽이 먼저)'
+   :x.site_id?'같은 현장 CRM 영업 이력 없음'+(x.untyped_history?' (브랜드 미지정 고객 기록 '+x.untyped_history+'건)':'')+' — 직접영업·기타·보류 중 선택'
+   :'현장 미연결 — 영업 이력을 찾을 수 없습니다';
+  const dup='<em class="avq-warn"'+(c.some(k=>k.has_contract&&k.brand===p.origin)?'':' hidden')+'>⚠ 이 영업건에 계약실적 원장 기록이 있습니다 — 같은 공사면 한쪽만 실적입니다</em>';
+  const chip=(brand,src,sub)=>'<button type="button" class="avq-chip'+(p.origin===brand?' on':'')+'" data-origin="'+h(brand)+'" data-src="'+h(src||'')+'">'+h(brand)+(sub?'<small>'+sub+'</small>':'')+'</button>';
+  const site=x.site_id?'<span class="avq-ok">연결됨</span>'
+   :(x.site_candidates||[]).length?'<select data-site><option value="">연결 안 함</option>'+x.site_candidates.map(s=>'<option value="'+h(s.site_id)+'"'+(p.site===s.site_id?' selected':'')+'>'+h(s.site_name)+(s.address?' · '+h(String(s.address).slice(0,18)):'')+'</option>').join('')+'</select>'
+   :'<span class="avq-no">미연결 · 후보 없음</span>';
+  const at=x.attribution;
+  return '<article class="avq-row '+b+'" data-i="'+i+'">'
+   +'<header><b>'+h(x.site_name||'현장명 미상')+'</b><span class="avq-work">'+h(x.work_name||'')+'</span>'
+   +'<span class="avq-tags">'+(b==='pending'&&c.length>1?'<i class="red">브랜드 귀속 확인 필요</i>':'')+(b!=='excluded'&&c.some(k=>k.has_contract)?'<i class="red">실적 중복 가능성</i>':'')+'<i>'+(x.channel==='jandi'?'잔디 연동':'이관')+'</i>'+(x.status?'<i>원본 '+h(x.status)+'</i>':'')+(x.contractor?'<i>시공사 '+h(x.contractor)+'</i>':'')+'</span></header>'
+   +(at&&b!=='pending'?'<p class="avq-done">'+({confirmed:'✓ 확정',hold:'보류',excluded:'실적 제외'})[b]+(at.decided_by_name?' · '+h(at.decided_by_name):'')+(at.decided_at?' · '+h(String(at.decided_at).slice(0,10)):'')+(at.note?' — '+h(at.note):'')+'</p>':'')
+   +'<div class="avq-origin"><span class="avq-lbl">원천 브랜드</span><span class="avq-chips">'
+   +c.map(k=>chip(k.brand,k.deal_id,'영업 '+k.deals+'건 · '+h(String(k.opened||'').slice(0,4))+' '+advOutcome(k))).join('')
+   +(c.length?'<span class="avq-sep"></span>':'')+ADV_EXTRA.map(k=>chip(k,'','')).join('')+'</span><small class="avq-why">'+why+'</small>'+dup+'</div>'
+   +'<div class="avq-fields">'
+   +'<label>구분<select data-award><option value="bid"'+(p.award==='bid'?' selected':'')+'>입찰 낙찰</option><option value="private_contract"'+(p.award==='private_contract'?' selected':'')+'>수의계약</option></select></label>'
+   +'<label>귀속 담당자<select data-owner><option value="">선택</option>'+people.map(n=>'<option'+(n===p.owner?' selected':'')+'>'+h(n)+'</option>').join('')+'</select></label>'
+   +'<label><span data-amt-lbl>'+(p.award==='private_contract'?'계약 공사금액':'낙찰금액')+'</span> · VAT 별도(원)<span class="avq-amt"><input type="number" step="1" min="1" data-amt value="'+h(p.amount)+'"><button type="button" data-vat title="입력값이 VAT 포함 금액이면 공급가액으로 환산">VAT 포함→÷1.1</button></span><small data-amt-view>'+(Number(p.amount)>0?amount(p.amount):'')+'</small></label>'
+   +'<label><span data-date-lbl>'+(p.award==='private_contract'?'계약체결일':'낙찰확정일')+'</span><input type="date" data-date value="'+h(p.date)+'">'+(p.dateGuess?'<small>원본 계약일로 미리 채움 — 다르면 수정</small>':'')+'</label>'
+   +'<label>근거<select data-evidence><option value="admin_judgment"'+(p.evidence==='admin_judgment'?' selected':'')+'>정황상 관리자 확인</option><option value="document"'+(p.evidence==='document'?' selected':'')+'>증빙 확인(공고·계약서)</option></select></label>'
+   +'<label>현장 연결'+site+'</label></div>'
+   +'<footer><input type="text" data-note list="avq-reasons" maxlength="500" placeholder="'+(confirmed?'정정 사유 (확정 실적 변경 시 필수)':'메모 · 보류/제외 사유')+'" value="'+(confirmed?'':h(p.note))+'">'
+   +(b!=='hold'?'<button type="button" data-decide="hold">보류(확인 필요)</button>':'')+(b!=='excluded'?'<button type="button" data-decide="excluded">실적 제외</button>':'')
+   +'<button type="button" class="primary" data-decide="confirmed">'+(confirmed?'정정 저장':p.origin?h(ro(p.origin))+' 확정':'확정')+'</button></footer>'
+   +'<p class="avq-msg" role="status"></p></article>';
+ }
  async function advisorySync(){
   close();focus=document.activeElement;
   const shade=document.createElement('div');shade.className='contract-sales-shade';dialog=shade;
-  shade.innerHTML='<section class="contract-sales-dialog advisory-sync" role="dialog" aria-modal="true" aria-labelledby="adv-sync-title"><header><h2 id="adv-sync-title">기술자문 → 계약실적 반영</h2><button type="button" data-close aria-label="닫기">✕ 닫기</button></header><p role="status">미반영 계약을 조회하는 중…</p><div class="adv-sync-body"></div></section>';
+  shade.innerHTML='<section class="contract-sales-dialog advisory-sync avq" role="dialog" aria-modal="true" aria-labelledby="adv-sync-title"><header><h2 id="adv-sync-title">기술자문 낙찰실적 확정</h2><button type="button" data-close aria-label="닫기">✕ 닫기</button></header>'
+   +'<p class="avq-policy">실적 = <b>낙찰금액(VAT 별도)</b> · 귀속일 = <b>낙찰확정일</b> · 원천 브랜드는 처음 고객을 만난 브랜드입니다. 확정한 건만 성과 분석의 기술자문 낙찰실적에 합산됩니다.</p>'
+   +'<div class="avq-sum" role="status">기술자문 건을 불러오는 중…</div><nav class="avq-tabs" role="tablist"></nav><div class="adv-sync-body avq-list"></div><datalist id="avq-reasons"><option value="과거자료 미확인"><option value="브랜드 귀속 확인 필요"><option value="낙찰금액 확인 필요"><option value="담당자 확인 필요"><option value="실적 중복 의심"><option value="낙찰 전(입찰 진행)"><option value="실제 공사 아님(원본 메모 행)"></datalist></section>';
   document.body.append(shade);
   shade.querySelector('[data-close]').onclick=close;
   shade.onkeydown=e=>{if(e.key==='Escape')close()};
-  const status=shade.querySelector('[role="status"]'),body=shade.querySelector('.adv-sync-body');
-  /* 연동 기술자문 낙찰 현황(검증 전) — 코덱스 낙찰 구조 완성 전까지 참고 수치 */
-  (async()=>{try{
-   const r=await root.SB.rpc('crm_advisory_bid_summary_v1',{});
-   if(r.error||r.data?.ok!==true)return;
-   const s=r.data,fmt=n=>n>=1e8?(Math.round(n/1e6)/100).toLocaleString('ko-KR')+'억':Math.round(n/1e4).toLocaleString('ko-KR')+'만원';
-   const owners=(s.owners||[]).filter(o=>o.s>0).slice(0,6).map(o=>h(o.name)+' '+fmt(o.s)).join(' · ');
-   status.insertAdjacentHTML('beforebegin','<div class="adv-bid-summary"><b>연동 기술자문 '+s.total+'건</b> · 낙찰금액 입력 '+s.with_bid+'건 · 합계 <strong title="'+Number(s.bid_sum).toLocaleString('ko-KR')+'원">'+fmt(s.bid_sum)+'</strong> <span class="adv-chip n">VAT 별도 검증 전</span>'+(owners?'<small>'+owners+'</small>':'')+'</div>');
-  }catch(e){}})();
-  let items=[];
-  try{
-   const res=await root.SB.rpc('crm_advisory_ledger_pending_v1',{});
-   if(res.error||res.data?.ok!==true)throw new Error(res.error?.message||'조회 실패');
-   items=res.data.items||[];
-  }catch(e){status.textContent='조회하지 못했습니다: '+String(e.message||e);return;}
-  if(!items.length){status.textContent='미반영 기술자문 계약이 없습니다. 모두 원장에 반영되어 있습니다.';return;}
-  const ready=items.filter(x=>x.deal_id);
-  status.textContent=ready.length
-     ?('미반영 '+items.length+'건 — 낙찰금액(VAT 별도)·낙찰확정일을 확인해 건별로 반영합니다. 반영된 건은 다시 나타나지 않습니다(문서ID 기준).')
-     :('미반영 '+items.length+'건 — 모두 CRM 영업건 연결이 없어 여기서는 반영하지 않습니다. 기술자문 실적은 낙찰 기반 실적 구조(원천 브랜드·낙찰금액 VAT 별도·낙찰확정일, 구축 중)에서 집계됩니다.');
-  body.innerHTML=items.map((x,i)=>{
-   const mapped=!!x.deal_id;
-   return '<div class="adv-sync-row'+(mapped?'':' hold')+'" data-i="'+i+'">'
-    +'<b>'+h(x.site_name||'현장 미상')+'</b>'
-    +'<span>'+(x.source_manager?'원본 담당 '+h(x.source_manager)+' · ':'')+(x.document_url?'<a href="'+h(x.document_url)+'" target="_blank" rel="noopener noreferrer">계약서 보기 ↗</a>':'계약서 링크 없음')+'</span>'
-    +(mapped
-      ?'<div class="adv-sync-form"><label>낙찰금액 · VAT 별도(원)<input type="number" step="1" min="1" data-amt value="'+(x.amount??'')+'"></label><label>낙찰확정일<input type="date" data-date value="'+h(String(x.effective_date||'').slice(0,10))+'"></label><button type="button" data-apply-one>'+(x.has_row?'증감 반영':'계약 반영')+'</button></div>'
-      :'<em>'+(x.deal_count===0?'연결된 CRM 영업건 없음 — 기술자문 낙찰 실적 구조(구축 중)에서 집계됩니다.':'현장에 영업건 '+x.deal_count+'건 — 귀속 영업건을 특정할 수 없어 보류합니다.')+'</em>')
-    +'<p class="adv-sync-msg" role="status"></p></div>';
-  }).join('');
-  body.querySelectorAll('[data-apply-one]').forEach(btn=>{btn.onclick=async()=>{
-   const row=btn.closest('.adv-sync-row'),x=items[Number(row.dataset.i)];
+  const sum=shade.querySelector('.avq-sum'),tabs=shade.querySelector('.avq-tabs'),list=shade.querySelector('.avq-list');
+  let rows=[],tab='pending';
+  try{rows=await advisoryRows(true);}catch(e){sum.textContent='불러오지 못했습니다: '+String(e.message||e)+' (서버 함수 적용 전이면 관리자 SQL 적용 후 다시 열어 주세요)';return;}
+  const paint=()=>{
+   const by={pending:[],hold:[],confirmed:[],excluded:[]};rows.forEach((x,i)=>by[advBucket(x)].push(i));
+   const conf=by.confirmed.map(i=>rows[i]),confSum=conf.reduce((s,x)=>s+Number(x.attribution.bid_amount||0),0);
+   const ready=by.pending.filter(i=>advReady(rows[i])).length;
+   sum.innerHTML='<b>확정 '+conf.length+'건 · <strong title="'+amountFull(confSum)+'">'+amount(confSum)+'</strong></b> <span class="adv-chip n">VAT 별도</span>'
+    +'<span>검증 대기 <b>'+by.pending.length+'</b>건'+(ready?' — 이 중 <b>'+ready+'</b>건은 값이 모두 채워져 버튼 한 번이면 확정':'')+'</span>'
+    +(()=>{const lg=rows.filter(x=>x.channel!=='jandi'),dn=lg.filter(x=>x.attribution).length,pc=lg.length?Math.round(dn/lg.length*100):0;return '<span class="avq-prog" title="과거 이관분 공식화 진척(확정·보류·제외 모두 처리로 계산)">이관 '+lg.length+'건 처리 <b>'+dn+'/'+lg.length+'</b><i><em style="width:'+pc+'%"></em></i></span>';})()
+    +'<small>전체 '+rows.length+'건(이관 '+rows.filter(x=>x.channel!=='jandi').length+' · 잔디 '+rows.filter(x=>x.channel==='jandi').length+') · 보류 '+by.hold.length+' · 제외 '+by.excluded.length+'</small>';
+   tabs.innerHTML=[['pending','검증 대기'],['hold','보류'],['confirmed','확정'],['excluded','실적 제외']].map(([k,t])=>'<button type="button" role="tab" data-tab="'+k+'" aria-selected="'+(tab===k)+'"'+(tab===k?' class="on"':'')+'>'+t+' <b>'+by[k].length+'</b></button>').join('');
+   const idx=by[tab].slice().sort((a,b)=>tab==='pending'?Number(advReady(rows[b]))-Number(advReady(rows[a])):0);
+   list.innerHTML=idx.map(i=>advRow(rows[i],i)).join('')||'<p class="avq-empty">'+({pending:'검증 대기 건이 없습니다. 모두 확정·보류·제외되었습니다.',hold:'보류한 건이 없습니다.',confirmed:'아직 확정한 건이 없습니다.',excluded:'실적 제외한 건이 없습니다.'})[tab]+'</p>';
+  };
+  tabs.onclick=e=>{const t=e.target.closest('[data-tab]');if(!t)return;tab=t.dataset.tab;paint();list.scrollTop=0;};
+  list.onchange=e=>{if(e.target.matches('[data-award]')){const r=e.target.closest('.avq-row'),pv=e.target.value==='private_contract';r.querySelector('[data-amt-lbl]').textContent=pv?'계약 공사금액':'낙찰금액';r.querySelector('[data-date-lbl]').textContent=pv?'계약체결일':'낙찰확정일';}};
+  list.oninput=e=>{if(e.target.matches('[data-amt]')){const v=e.target.closest('label').querySelector('[data-amt-view]');v.textContent=Number(e.target.value)>0?amount(e.target.value):'';}};
+  list.onclick=async e=>{
+   const row=e.target.closest('.avq-row');if(!row)return;
+   const x=rows[Number(row.dataset.i)],msg=row.querySelector('.avq-msg');
+   const chipBtn=e.target.closest('[data-origin]');
+   if(chipBtn){row.querySelectorAll('[data-origin]').forEach(n=>n.classList.toggle('on',n===chipBtn));
+    const pb=row.querySelector('[data-decide="confirmed"]');if(advBucket(x)!=='confirmed')pb.textContent=ro(chipBtn.dataset.origin)+' 확정';
+    const own=row.querySelector('[data-owner]'),cand=(x.candidates||[]).find(k=>k.deal_id&&k.deal_id===chipBtn.dataset.src);
+    row.querySelector('.avq-warn').hidden=!cand?.has_contract;
+    if(!own.value&&cand?.owner&&[...own.options].some(o=>o.value===cand.owner))own.value=cand.owner;return;}
+   if(e.target.closest('[data-vat]')){const inp=row.querySelector('[data-amt]'),v=Number(inp.value);if(v>0){inp.value=String(Math.round(v/1.1));inp.dispatchEvent(new Event('input',{bubbles:true}));msg.textContent='VAT 포함값을 공급가액으로 환산했습니다('+amount(v)+' → '+amount(Math.round(v/1.1))+'). 확정 전 원본 금액을 한 번 더 확인해 주세요.';}return;}
+   const btn=e.target.closest('[data-decide]');if(!btn)return;
+   const decision=btn.dataset.decide,on=row.querySelector('[data-origin].on');
+   const origin=on?.dataset.origin||'',src=on?.dataset.src||'',owner=row.querySelector('[data-owner]').value;
    const amt=Number(row.querySelector('[data-amt]').value),date=row.querySelector('[data-date]').value;
-   const msg=row.querySelector('.adv-sync-msg');
-   if(!Number.isSafeInteger(amt)||amt<=0){msg.textContent='계약금액을 원 단위 정수로 입력해 주세요.';return;}
-   if(!date){msg.textContent='계약 체결일을 선택해 주세요.';return;}
-   btn.disabled=true;msg.textContent='서버 반영 확인 중…';
+   const note=row.querySelector('[data-note]').value.trim(),site=row.querySelector('[data-site]')?.value||'';
+   const award=row.querySelector('[data-award]').value,evidence=row.querySelector('[data-evidence]').value;
+   const wasConfirmed=advBucket(x)==='confirmed';
+   if(decision==='confirmed'){
+    if(!origin){msg.textContent='원천 브랜드를 골라 주세요. 모르면 [보류(확인 필요)]를 누르세요.';return;}
+    if(!owner){msg.textContent='실적을 귀속할 담당자를 골라 주세요.';return;}
+    if(!Number.isSafeInteger(amt)||amt<=0){msg.textContent='낙찰금액(VAT 별도)을 원 단위 정수로 입력해 주세요.';return;}
+    if(!date){msg.textContent=(award==='private_contract'?'계약체결일':'낙찰확정일')+'을 입력해 주세요.';return;}
+    if(wasConfirmed&&!note){msg.textContent='확정된 실적을 바꾸려면 정정 사유를 적어 주세요.';return;}
+   }else if(!note){msg.textContent=(decision==='hold'?'무엇을 확인해야 하는지':'실적에서 빼는 이유를')+' 메모에 적어 주세요.';row.querySelector('[data-note]').focus();return;}
+   row.querySelectorAll('button,input,select').forEach(n=>n.disabled=true);msg.textContent='서버 저장 확인 중…';
    try{
-    await D.write({deal_id:String(x.deal_id),request_id:crypto.randomUUID(),
-     kind:x.has_row?'amended':'signed',effective_date:date,expected_version:x.expected_version,
-     reason:'기술자문 계약 반영 · 문서 '+x.document_id+(x.source_manager?' · 원본 담당 '+x.source_manager:''),
-     amount_delta:amt});
-    row.classList.add('done');msg.textContent='✓ 원장에 반영되었습니다 ('+amount(amt)+' · '+date+').';
-    row.querySelectorAll('input,button').forEach(n=>n.disabled=true);
-    x.expected_version+=1;x.has_row=true;root.paint?.();
-   }catch(e){btn.disabled=false;msg.textContent=String(e.message||e);}
-  };});
+    const r=await root.SB.rpc('crm_advisory_attribution_decide_v1',{p:{advisory_id:x.advisory_id,expected_version:x.attribution?.version||0,decision,
+     award_type:award,evidence_level:decision==='confirmed'?evidence:null,
+     origin_business:origin||null,source_deal_id:src||null,performance_owner:owner||null,bid_amount:amt>0?amt:null,bid_confirmed_at:date||null,
+     site_id:site||null,note:note||null,reason:wasConfirmed?note:null}});
+    if(r.error)throw new Error(/VERSION_CONFLICT/.test(r.error.message||'')?'다른 곳에서 먼저 바뀌었습니다. 닫았다가 다시 열어 주세요.':r.error.message);
+    if(r.data?.ok!==true||r.data.advisory_id!==x.advisory_id)throw new Error('서버 확인 응답이 올바르지 않습니다.');
+    x.attribution={...r.data.attribution,decided_by_name:r.data.attribution?.decided_by_name||root.ME?.name};
+    if(site&&!x.site_id){x.site_id=site;x.site_linked='confirmed';}
+    advCache=rows;advAt=Date.now();paint();
+    root.dispatchEvent(new CustomEvent('advisory-attribution:changed'));
+   }catch(err){row.querySelectorAll('button,input,select').forEach(n=>n.disabled=false);msg.textContent=String(err.message||err);}
+  };
+  paint();
  }
- root.ContractSalesUI={html,mount,filters,editor,detail,advisorySync};
+ root.ContractSalesUI={html,mount,filters,editor,detail,advisorySync,advisoryRows};
 })(window);

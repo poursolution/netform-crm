@@ -33,3 +33,58 @@
 .contract-sales-dialog>header{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .contract-sales-dialog [data-close]{flex:none;border:1px solid #e2e8f1;border-radius:9px;background:#fff;color:#5b6b85;padding:8px 13px;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap}
 .contract-sales-dialog [data-close]:hover{border-color:#dc2626;color:#dc2626;background:#fff9fa}
+
+/* 낙찰실적 확정 큐 (2026-09-25) */
+.contract-sales-dialog.avq{width:min(1060px,100%);max-height:92vh;display:flex;flex-direction:column;padding:20px 22px}
+.avq h2{margin:0;font-size:18px;color:#0f172a}
+.avq-policy{margin:8px 0 0;font-size:12px;color:#5b6b85;line-height:1.55}
+.avq-policy b{color:#1e50b3}
+.avq-sum{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;border:1px solid #e2e8f1;border-radius:10px;background:#fbfcfe;padding:10px 13px;margin:10px 0 8px;font-size:12.5px;color:#33415e}
+.avq-sum strong{color:#1e50b3;font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.avq-sum small{flex-basis:100%;color:#8a97ab;font-size:11.5px}
+.avq-tabs{display:flex;gap:4px;border-bottom:1px solid #e2e8f1;margin-bottom:8px}
+.avq-tabs button{border:0;border-bottom:2px solid transparent;background:none;padding:8px 12px;font:inherit;font-size:12.5px;font-weight:800;color:#5b6b85;cursor:pointer}
+.avq-tabs button.on{color:#3B6CE4;border-bottom-color:#3B6CE4}
+.avq-tabs b{font-variant-numeric:tabular-nums}
+.avq .avq-list{max-height:none;flex:1;min-height:0;overflow:auto;margin:0;gap:8px}
+.avq-row{border:1px solid #e2e8f1;border-left:3px solid #E08A00;border-radius:10px;background:#fff;padding:11px 13px;display:grid;gap:8px;font-size:12px}
+.avq-row.confirmed{border-left-color:#15803d;background:#f7fcf9}.avq-row.excluded{border-left-color:#94a3b8;background:#fafbfc}.avq-row.hold{border-left-color:#dc2626}
+.avq-row>header{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.avq-row>header b{font-size:13.5px;color:#0f172a}
+.avq-work{color:#5b6b85;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:420px}
+.avq-tags{display:flex;gap:4px;margin-left:auto}
+.avq-tags i{font-style:normal;font-size:10.5px;font-weight:800;color:#5b6b85;background:#f1f4f9;border-radius:6px;padding:2px 7px;white-space:nowrap}
+.avq-done{margin:0;font-size:11.5px;color:#15803d;font-weight:800}
+.avq-row.hold .avq-done{color:#dc2626}.avq-row.excluded .avq-done{color:#64748b}
+.avq-origin{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:center}
+.avq-lbl{font-size:11px;font-weight:850;color:#8a97ab}
+.avq-chips{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.avq-chip{display:inline-flex;align-items:baseline;gap:5px;border:1px solid #e2e8f1;border-radius:999px;background:#fff;padding:5px 11px;font:inherit;font-size:12px;font-weight:800;color:#33415e;cursor:pointer}
+.avq-chip small{font-size:10.5px;font-weight:700;color:#8a97ab}
+.avq-chip:hover{border-color:#3B6CE4}
+.avq-chip.on{background:#3B6CE4;border-color:#3B6CE4;color:#fff}.avq-chip.on small{color:#dbe6ff}
+.avq-sep{width:1px;height:18px;background:#e2e8f1;margin:0 3px}
+.avq-why{grid-column:2;font-size:11.5px;color:#5b6b85}
+.avq-warn{grid-column:2;font-style:normal;font-size:11.5px;color:#b45309;font-weight:800}
+.avq-fields{display:grid;grid-template-columns:.9fr 1fr 1.55fr 1fr 1.15fr 1fr;gap:8px}
+.avq .avq-fields label{display:grid;gap:3px;align-content:start;margin:0;font-size:11px;font-weight:850;color:#8a97ab;min-width:0}
+.avq .avq-fields input,.avq .avq-fields select{display:block;width:100%;margin:0;border:1px solid #e2e8f1;border-radius:8px;padding:7px 9px;font:inherit;font-size:12.5px;color:#0f172a;background:#fff;box-sizing:border-box;font-variant-numeric:tabular-nums}
+.avq .avq-fields input:focus,.avq .avq-fields select:focus{outline:0;border-color:#3B6CE4}
+.avq-fields small{font-weight:700;color:#8a97ab;font-size:10.5px}
+.avq-amt{display:flex;gap:4px}
+.avq-amt input{min-width:0}
+.avq-amt button{flex:none;border:1px solid #e2e8f1;border-radius:8px;background:#f8fafd;color:#5b6b85;font:inherit;font-size:10.5px;font-weight:800;padding:0 7px;cursor:pointer;white-space:nowrap}
+.avq-ok{font-size:12.5px;color:#15803d;font-weight:850;padding:7px 0}.avq-no{font-size:12px;color:#8a97ab;font-weight:700;padding:7px 0}
+.avq-row>footer{display:flex;gap:6px;align-items:center}
+.avq .avq-row>footer input{flex:1;min-width:0;display:block;width:auto;margin:0;border:1px solid #e2e8f1;border-radius:8px;padding:7px 9px;font:inherit;font-size:12px}
+.avq-row>footer button{flex:none;border:1px solid #e2e8f1;border-radius:8px;background:#fff;color:#5b6b85;padding:8px 12px;font:inherit;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}
+.avq-row>footer button.primary{background:#3B6CE4;border-color:#3B6CE4;color:#fff;font-weight:850}
+.avq-row button[disabled],.avq-row input[disabled],.avq-row select[disabled]{opacity:.55;cursor:default}
+.avq-msg{margin:0;font-size:11.5px;color:#5b6b85}.avq-msg:empty{display:none}
+.avq-empty{padding:28px;text-align:center;color:#8a97ab;font-size:12.5px}
+@media(max-width:760px){.avq-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.avq-row>footer{flex-wrap:wrap}.avq-tags{margin-left:0}.avq-work{max-width:100%}}
+.avq-tags i.red{color:#b42318;background:#fdecec}
+.avq-prog{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#33415e}
+.avq-prog b{font-variant-numeric:tabular-nums}
+.avq-prog i{display:inline-block;width:90px;height:6px;border-radius:9px;background:#e8edf5;overflow:hidden}
+.avq-prog em{display:block;height:100%;background:#15803d;border-radius:9px}

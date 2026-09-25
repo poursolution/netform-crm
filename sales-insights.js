@@ -147,18 +147,44 @@
   const chip=(name,k,label,n,cls)=>n?'<button type="button" class="ct-tag '+cls+(ct.owner===name&&ct.issue===k?' sel':'')+'" data-si-action="ct-focus" data-value="'+a(name+'|'+k)+'">'+label+' '+n+'</button>':'';
   return rows.map(x=>'<div class="ct-reprow"><span class="who">'+btn(x.name,'person',x.name)+'<small>진행 '+x.total+'건</small></span><span class="ct-tags">'+chip(x.name,'overdue','기한초과',x.overdue,'hot')+chip(x.name,'contact','미접촉',x.contact,'warn')+chip(x.name,'missing','Next 없음',x.missing,'')+chip(x.name,'stale','장기정체',x.stale,'')+'</span><span class="ct-old">'+(x.old?'가장 오래된 <b>D+'+x.old+'</b>':'')+'</span>'+btn('지시 보내기','ct-order',x.name,'ct-orderbtn')+'</div>').join('')||'<p class="dc-mut">현재 문제 신호가 있는 담당자가 없습니다.</p>';
  }
- let advCache=null,advAt=0,advBusy=false;
+ /* 기술자문 낙찰실적(2026-09-25 승격): 확정한 건만 합산 · 낙찰확정일 기준 · VAT 별도. 상단 필터 연동 —
+    기간=낙찰확정일, 담당자=귀속 담당자, 브랜드 칩=원천 브랜드(기술자문 칩·전체=전 건). 미확정은 '검증 대기'로만 표시. */
+ let advBusy=false;
  function fillAdvisoryCard(){
-  const box=document.getElementById('pf-advisory');if(!box)return;
-  const draw=s=>{if(!document.getElementById('pf-advisory'))return;const b=document.getElementById('pf-advisory');
-   const fmt=n=>n>=1e8?(Math.round(n/1e6)/100).toLocaleString('ko-KR')+'억':Math.round(n/1e4).toLocaleString('ko-KR')+'만원';
-   const owners=(s.owners||[]).filter(o=>o.s>0).slice(0,5).map(o=>'<div class="pf-adv-row"><span>'+h(o.name)+'</span><b title="'+Number(o.s).toLocaleString('ko-KR')+'원">'+fmt(o.s)+'</b></div>').join('');
-   b.querySelector('.pf-adv-body').innerHTML='<div class="pf-adv-total"><b title="'+Number(s.bid_sum).toLocaleString('ko-KR')+'원">'+fmt(s.bid_sum)+'</b><span>연동 '+s.total+'건 · 낙찰 입력 '+s.with_bid+'건</span></div>'+owners;
-   b.hidden=false;};
-  if(advCache&&Date.now()-advAt<300000){draw(advCache);return;}
-  if(advBusy)return;advBusy=true;
-  root.SB.rpc('crm_advisory_bid_summary_v1',{}).then(r=>{if(!r.error&&r.data?.ok===true){advCache=r.data;advAt=Date.now();draw(r.data);}}).catch(()=>{}).finally(()=>{advBusy=false;});
+  if(!document.getElementById('pf-advisory')||!root.ContractSalesUI?.advisoryRows||advBusy)return;
+  advBusy=true;
+  root.ContractSalesUI.advisoryRows().then(list=>{
+   const b=document.getElementById('pf-advisory');if(!b)return;
+   const f=state(),brand=root.G.brand||'전체',allBrand=brand==='전체'||brand==='기술자문';
+   const inP=iso=>{if(!iso)return false;iso=String(iso);if(String(f.year)!=='전체'&&iso.slice(0,4)!==String(f.year))return false;const m=+iso.slice(5,7);if(Number(f.month))return m===Number(f.month);if(Number(f.quarter))return Math.ceil(m/3)===Number(f.quarter);return true};
+   const conf=list.filter(x=>{const t=x.attribution;return t?.decision==='confirmed'&&inP(t.bid_confirmed_at)&&(f.owner==='전체'||t.performance_owner===f.owner)&&(allBrand||t.origin_business===brand)});
+   const pending=list.filter(x=>!x.attribution).length,total=conf.reduce((n,x)=>n+Number(x.attribution.bid_amount||0),0);
+   const group=key=>{const m={};conf.forEach(x=>{const k=x.attribution[key]||'-';m[k]=m[k]||{n:0,s:0};m[k].n++;m[k].s+=Number(x.attribution.bid_amount||0)});return Object.entries(m).sort((p,q)=>q[1].s-p[1].s)};
+   const line=([k,v])=>'<div class="pf-adv-row"><span>'+h(k)+' <small>'+v.n+'건</small></span><b title="'+number(v.s)+'원">'+money(v.s)+'</b></div>';
+   b.querySelector('.pf-adv-body').innerHTML='<div class="pf-adv-total"><b title="'+number(total)+'원">'+money(total)+'</b><span>확정 '+conf.length+'건'+(allBrand?'':' · 원천 '+h(brand))+'</span></div>'
+    +(conf.length?'<div class="pf-adv-sub">원천 브랜드별</div>'+group('origin_business').slice(0,5).map(line).join('')+'<div class="pf-adv-sub">귀속 담당자</div>'+group('performance_owner').slice(0,4).map(line).join('')
+     :'<p class="pf-adv-empty">이 기간에 확정된 기술자문 낙찰실적이 없습니다.</p>')
+    +'<button type="button" class="pf-adv-cta" data-si-action="advisory-sync">'+(pending?'검증 대기 '+pending+'건 확정하기 →':'기술자문 낙찰실적 관리 →')+'</button>';
+   b.hidden=false;
+  }).catch(()=>{}).finally(()=>{advBusy=false;});
  }
+ /* 데이터 위험(2026-09-25 컨설턴트 ⑥): 기술자문 실적의 확인 필요 항목을 컨트롤타워가 먼저 알린다. 클릭=확정 큐. */
+ function fillDataRisk(){
+  if(!document.getElementById('ct-datarisk')||!root.ContractSalesUI?.advisoryRows)return;
+  root.ContractSalesUI.advisoryRows().then(list=>{
+   const b=document.getElementById('ct-datarisk');if(!b)return;
+   const pend=list.filter(x=>!x.attribution),hold=list.filter(x=>x.attribution?.decision==='hold');
+   const items=[['red','브랜드 귀속 확인 필요',pend.filter(x=>(x.candidates||[]).length>1).length],
+    ['red','실적 중복 의심',list.filter(x=>x.attribution?.decision!=='excluded'&&(x.candidates||[]).some(k=>k.has_contract)).length],
+    ['org','원천 브랜드 미확정',pend.length],['org','낙찰금액 미입력',pend.filter(x=>!x.bid_amount).length],
+    ['org','담당자 미확정',pend.filter(x=>!x.owner_name).length],['yel','현장 연결 필요',pend.filter(x=>!x.site_id).length],
+    ['yel','낙찰확정일 없음',pend.filter(x=>!x.contract_date).length],['gry','보류(확인 필요)',hold.length]].filter(k=>k[2]>0);
+   if(!items.length){b.hidden=true;return;}
+   b.innerHTML='<div class="ct-dr"><b>데이터 위험</b><small>기술자문 실적 · 확정 전 확인할 것</small>'+items.map(([cls,t,n])=>'<button type="button" class="ct-drchip '+cls+'" data-si-action="advisory-sync">'+t+' <b>'+n+'</b></button>').join('')+'</div>';
+   b.hidden=false;
+  }).catch(()=>{});
+ }
+ root.addEventListener('advisory-attribution:changed',()=>{if(root.G?.page==='perf')fillAdvisoryCard();if(root.G?.page==='control')fillDataRisk();});
  function control(s){
   const f=state(),ct=ctState();
   let list=M.select(s,f.kind,f);
@@ -177,9 +203,9 @@
   const riskText=d=>{const raw=String(d.reason||'현재 진행 중');return h(raw).replace(/([0-9]+일 기한초과)/g,'<span class="ct-hot">$1</span>').replace(/([0-9]+일 미접촉)/g,'<span class="ct-warn">$1</span>').replace(/(기한초과)/g,'<span class="ct-hot">$1</span>')};
   const table='<div class="si-table-scroll"><table class="si-table si-cases dc-table dc-cases"><thead><tr><th class="ct-selcol"><input type="checkbox" id="ct-all" aria-label="표시된 현장 모두 선택"></th><th>현장</th><th>담당자</th><th>현재 단계</th><th>왜 막혔나</th><th>조치</th></tr></thead><tbody>'+list.slice((f.page-1)*size,f.page*size).map(d=>'<tr><td class="ct-selcol">'+(d.type==='deal'?'<input type="checkbox" data-ct-sel="'+a(d.key)+'" aria-label="'+a(d.site)+' 선택">':'')+'</td><td class="ct-site"><b title="'+a(d.site)+'">'+h(d.site)+'</b></td><td>'+(d.owner&&d.owner!=='미배정'?btn(d.owner,'person',d.owner):h(d.owner))+'</td><td><span class="si-badge">'+h(d.stageLabel)+'</span></td><td>'+(f.kind==='won'?h('준공 처리금액 '+money(d.wonAmount)+(d.hasWonAmount?'':' · 금액 미입력')):(ctSup.map[d.key]?'<span class="ct-hot">지원 요청</span> — '+h(ctSup.map[d.key].text)+' <small>'+h(ctSup.map[d.key].at)+'</small> · ':'')+riskText(d))+'</td><td>'+btn(d.type==='inq'&&d.owner==='미배정'?'배정':'열기','record',d.key)+'</td></tr>').join('')+'</tbody></table></div>'+(list.length?'':empty());
   const bulk='<div class="ct-bulk">선택 <b id="ct-count">0</b>건 → '+btn('지시 보내기 (다음 업무 일괄 지정)','ct-bulk','','ct-bulkbtn')+'<span class="dc-mut">지시는 각 현장의 다음 업무로 등록되어 담당자 오늘 업무에 뜹니다 · 문의 건은 배정으로 처리</span></div>';
-  return '<div class="dc-topbar"><h2><i>◈</i>컨트롤타워</h2>'+'<span class="dc-nav">'+btn('전체 현황 ↗','navigate','dash')+btn('성과 분석 ↗','navigate','perf')+(root.ContractSalesUI?.advisorySync?'<button type="button" data-si-action="advisory-sync">기술자문 반영</button>':'')+'</span><span class="dc-live"><i></i>관리 대상 '+number(list.length)+'건</span></div>'+
+  return '<div class="dc-topbar"><h2><i>◈</i>컨트롤타워</h2>'+'<span class="dc-nav">'+btn('전체 현황 ↗','navigate','dash')+btn('성과 분석 ↗','navigate','perf')+(root.ContractSalesUI?.advisorySync?'<button type="button" data-si-action="advisory-sync">기술자문 낙찰실적 확정</button>':'')+'</span><span class="dc-live"><i></i>관리 대상 '+number(list.length)+'건</span></div>'+
    '<div class="dc-grid">'+
-   '<div class="dc-p c12"><div class="dc-ph">① 지금 막힌 곳<small>문장 클릭 = 아래 목록이 그 조건으로 좁혀짐</small></div><div class="dc-pb ct-verdicts">'+verdicts+'</div></div>'+
+   '<div class="dc-p c12 ct-datarisk" id="ct-datarisk" hidden></div>'+'<div class="dc-p c12"><div class="dc-ph">① 지금 막힌 곳<small>문장 클릭 = 아래 목록이 그 조건으로 좁혀짐</small></div><div class="dc-pb ct-verdicts">'+verdicts+'</div></div>'+
    '<div class="dc-p c12"><div class="dc-ph">② 담당자별 문제 · 지시<small>문제 칩 클릭=목록 필터 · 이름 클릭=성과 분석 · 지시=해당 담당자 문제 건 일괄 지정</small></div><div class="dc-pb">'+ctRepRows(s)+'</div></div>'+
    '<div class="dc-p c12"><div class="dc-ph">③ 처리 목록<small>진행 중·관리필요=현재 상태 · 문의·준공=선택 기간 · 계약실적과 별도</small></div><div class="dc-pb"><div class="dc-kchips">'+chips+'</div>'+filtersHtml+table+bulk+'<div class="si-pager">'+btn('이전','page',Math.max(1,f.page-1))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',Math.min(pages,f.page+1))+'</div></div></div></div>';
  }
@@ -342,10 +368,10 @@
    +'<div class="pf-num"><b>'+m0(csY?csY.netAmount:null)+'</b><span>연 누적 매출 · 계약 '+(csY?csY.count:'-')+'건</span><em>이번 달 <b>'+m0(csM?csM.netAmount:null)+'</b> · 파이프라인 <b>'+money(s.expected)+'</b></em></div></div></div>';
   const table='<div class="si-table-scroll"><table class="si-table dc-table"><thead><tr><th>담당자</th><th>매출·연</th><th>매출·월</th><th>페이스</th><th>전환율</th><th>진행</th><th>주간활동</th><th>문제</th></tr></thead><tbody>'
    +rs.map(x=>'<tr><td>'+btn(x.name,'person',x.name)+'</td><td><b>'+m0(x.ySales)+'</b></td><td><b>'+m0(x.mSales)+'</b></td><td'+(x.pace!=null&&x.pace<70?' class="pf-bad"':'')+'>'+(x.pace==null?'-':x.pace+'%')+'</td><td>'+(x.conv==null?'-':x.conv+'%')+'</td><td>'+x.act.length+'</td><td>'+x.weekly+'건</td><td><span class="dc-pill'+(x.overdue+x.missing?'':' z')+'">'+(x.overdue+x.missing)+'</span></td></tr>').join('')+'</tbody></table></div>';
-  return '<div class="dc-topbar">'+'<span class="dc-nav">'+btn('전체 현황 ↗','navigate','dash')+btn('컨트롤 타워 ↗','navigate','control')+(root.ContractSalesUI?.advisorySync?'<button type="button" data-si-action="advisory-sync">기술자문 반영</button>':'')+'</span></div><div class="dc-grid">'+verdict+cards
+  return '<div class="dc-topbar">'+'<span class="dc-nav">'+btn('전체 현황 ↗','navigate','dash')+btn('컨트롤 타워 ↗','navigate','control')+(root.ContractSalesUI?.advisorySync?'<button type="button" data-si-action="advisory-sync">기술자문 낙찰실적 확정</button>':'')+'</span></div><div class="dc-grid">'+verdict+cards
    +'<div class="dc-p c8"><div class="dc-ph">월별 매출 추이<small>계약 체결일 기준 · 월 클릭=근거</small></div><div class="dc-pb">'+dcLine(mVals,460,118,'#3B6CE4','pfg1',money,'cs-month')+'</div></div>'
    +'<div class="dc-p c4"><div class="dc-ph">담당자 랭킹<small>이름 클릭=상세</small></div><div class="dc-pb" style="padding-top:4px">'+table+'</div></div>'
-   +'<div class="dc-p c4" id="pf-advisory" hidden><div class="dc-ph">기술자문 낙찰<small>검증 전 참고 · 실적 합산 아님</small></div><div class="dc-pb pf-adv-body"></div></div>'
+   +'<div class="dc-p c4" id="pf-advisory" hidden><div class="dc-ph">기술자문 낙찰실적<small>확정분만 · 낙찰확정일 기준 · VAT 별도</small></div><div class="dc-pb pf-adv-body"></div></div>'
    +'</div>';
  }
  function animateConsole(host){
@@ -369,7 +395,7 @@
   else if(page==='perf'&&!rep)body=perfConsole(s);
   else body=kpis(s,rep)+'<div class="si-grid">'+stages(s)+(rep?execution(s):trend(s))+'</div>'+(rep?card('현재 관리가 필요한 영업 · '+s.risk.length+'건',records(M.select(s,'risk',{}),8)+btn('전체 확인 →','drill','risk'))+recent(s):people(s,0));
   const dark=page==='dash'||page==='control'||(page==='perf'&&!rep);
-  setTimeout(fillAdvisoryCard,0);
+  setTimeout(fillAdvisoryCard,0);setTimeout(fillDataRisk,0);
   host.innerHTML='<div class="si-shell'+(dark?' si-dark':'')+'">'+filters(dark)+(page==='perf'?'<div class="si-views" role="group" aria-label="분석 관점">'+btn('대표 보기','view','lead',f.view==='lead'?'selected':'')+btn('영업사원 보기','view','rep',rep?'selected':'')+'</div>':'')+'<p class="si-period">'+h(f.year)+'년 '+(f.month?f.month+'월':f.quarter?f.quarter+'분기':'연간')+' 접수·계약실적 / 파이프라인·관리필요는 현재 기준'+(s.missingWonDate?' · 수주 확정일 미입력 '+s.missingWonDate+'건 제외':'')+'</p>'+body+'</div>';
   host.onclick=onClick;host.onchange=onChange;host.onkeydown=e=>{if(e.target.matches('[data-si-search]')&&e.key==='Enter'){f.search=e.target.value;f.page=1;render()}};
   // 진입 애니메이션은 페이지 전환 시 1회만 — 백그라운드 갱신 재렌더에는 재생하지 않는다.
