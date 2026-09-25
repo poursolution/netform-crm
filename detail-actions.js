@@ -44,7 +44,16 @@ function open(key){
  if(key==='management')take($('da-management-fields'),content);
  if(key==='contact')take($('da-contact-fields'),content);
  if(key==='stage')take($('dw-stage-editor'),content);
- if(key==='support'){
+ if(key==='support'&&isAdminNow()&&openSupportRequest(root.CUR_DETAIL?.item)){
+  /* 관리자 개입 흐름(2026-09-26 컨설턴트 '관리자 개입의 흐름'): 요청 → 관리자 결정 → 담당자 고객 재접촉까지 기록으로 잇는다 */
+  const req=openSupportRequest(root.CUR_DETAIL.item),box=document.createElement('div');box.className='da-support da-support-resolve';
+  box.innerHTML='<p class="da-support-req"><b>지원 요청</b> '+root.esc(req.text)+' <small>'+root.esc(String(req.at).slice(5,10).replace('-','/'))+'</small></p>'
+   +'<label for="da-support-note">관리자 결정·조치 <small>한 줄</small></label><textarea id="da-support-note" maxlength="300" placeholder="예: 가격 5% 조정 승인 — 10/2 입대의 동행"></textarea>'
+   +'<label class="da-support-follow"><input type="checkbox" id="da-support-follow" checked> 담당자 내일 할 일로 ‘관리자 결정 반영 — 고객 재접촉’ 등록</label>';
+  const tt=document.getElementById('da-title');if(tt)tt.textContent='관리자 지원 처리';
+  const send=button('처리 완료로 기록','support',()=>saveSupport(box,true));send.classList.add('da-submit');
+  box.append(send);content.append(box);
+ }else if(key==='support'){
   const box=document.createElement('div');box.className='da-support';
   box.innerHTML='<p>어떤 지원이 필요한지 한 줄로 적어주세요. 컨트롤타워의 <b>지원 요청 대기</b>에 바로 표시됩니다.</p><textarea id="da-support-note" maxlength="300" placeholder="예: 광교OO 가격 협의 동행 요청 — 10/2 입대의 전"></textarea>';
   const send=button('지원 요청 보내기','support',()=>saveSupport(box));send.classList.add('da-submit');
@@ -57,14 +66,25 @@ function open(key){
  (content.querySelector('input:not([type="hidden"]),textarea,select')||x).focus({preventScroll:true});return true;
 }
 
-async function saveSupport(box){
+function isAdminNow(){try{if(typeof root.todayIsAdmin==='function')return !!root.todayIsAdmin();}catch(e){}return /admin/.test(String(root.ME?.role||root.Phase1?.profile?.source_role||''));}
+/* 이 영업의 처리 안 된 지원 요청: 가장 최근 [지원 요청] 메모 뒤에 [지원 처리] 메모가 없으면 열린 요청 */
+function openSupportRequest(d){
+ if(!d)return null;const p=root.currentPatch?root.currentPatch():{};
+ const rows=[...(d.activities||[]),...((p&&p.activities)||[])].map(x=>({note:String(x.note||''),at:String(x.at||x.occurred_at||'')})).filter(x=>x.at);
+ const reqs=rows.filter(x=>x.note.startsWith('[지원 요청]')).sort((a,b)=>b.at.localeCompare(a.at));const req=reqs[0];if(!req)return null;
+ if(rows.some(x=>x.note.startsWith('[지원 처리]')&&x.at>req.at))return null;
+ return {text:req.note.replace(/^\[지원 요청\]\s*/,''),at:req.at};
+}
+async function saveSupport(box,resolve){
  const d=root.CUR_DETAIL?.item;if(!d||box.dataset.saving)return;
  const note=box.querySelector('#da-support-note').value.trim();
- if(!note){root.showDetailErr('지원이 필요한 내용을 적어주세요.');return;}
+ if(!note){root.showDetailErr(resolve?'관리자 결정·조치를 한 줄 적어주세요.':'지원이 필요한 내용을 적어주세요.');return;}
  if(!root.Phase1?.queue||typeof root.queueDetailContactOperation!=='function'){root.showDetailErr('로그인 상태에서만 보낼 수 있습니다.');return;}
- box.dataset.saving='1';box.querySelectorAll('button,textarea').forEach(n=>n.disabled=true);
- /* 다음 할 일을 덮지 않도록 추가 전용 활동(메모)으로 기록 — 컨트롤타워가 [지원 요청] 접두어를 집계 */
- const payload={type:'메모',note:'[지원 요청] '+note+' — 요청자 '+(root.repN(root.ME?.name)||''),result:'',occurred_at:new Date().toISOString()};
+ box.dataset.saving='1';box.querySelectorAll('button,textarea,input').forEach(n=>n.disabled=true);
+ /* 다음 할 일을 덮지 않도록 추가 전용 활동(메모)으로 기록 — 컨트롤타워가 [지원 요청]/[지원 처리] 접두어로 집계·해소 */
+ const who=root.repN(root.ME?.name)||'';
+ const payload={type:'메모',note:resolve?'[지원 처리] '+note+' — 처리자 '+who:'[지원 요청] '+note+' — 요청자 '+who,result:'',occurred_at:new Date().toISOString()};
+ const follow=resolve&&box.querySelector('#da-support-follow')?.checked;
  const progress=box._progress||(box._progress={});
  try{
   let id=progress.activity;
@@ -75,9 +95,17 @@ async function saveSupport(box){
   if(row?.status!=='done'||row.ack?.ok!==true)throw Error(row?.error||'서버 확인 대기 중입니다. 다시 눌러 확인해 주세요.');
   d.activities=Array.isArray(d.activities)?d.activities:[];
   d.activities.unshift({id:row.ack.activity_id,type:payload.type,note:payload.note,at:payload.occurred_at,occurred_at:payload.occurred_at});
-  root.saveLocal?.();root.showDetailErr('지원 요청을 보냈습니다 — 컨트롤타워에 표시됩니다.',true);close();
+  if(follow&&!progress.next){
+   const t=new Date();t.setDate(t.getDate()+1);const due=[t.getFullYear(),String(t.getMonth()+1).padStart(2,'0'),String(t.getDate()).padStart(2,'0')].join('-');
+   const nid=root.queueDetailContactOperation('next_action',{opportunity_id:d.id,type:'전화',text:'관리자 결정 반영 — 고객 재접촉',due_at:due});progress.next=nid;
+   await root.Phase1.queue.flush();const nrow=root.Phase1.queue.list().find(q=>q.request_id===nid);
+   if(nrow?.status!=='done'||nrow.ack?.ok!==true)throw Error('처리 기록은 저장됐습니다. 담당자 다음 할 일은 아직 확인되지 않았습니다 — 다시 누르면 같은 요청을 확인합니다.');
+   const p=root.currentPatch?root.currentPatch():{},obj={id:nrow.ack.next_action_id,type:'전화',text:'관리자 결정 반영 — 고객 재접촉',due,due_at:due,status:'open'};
+   d.nextActionObj=obj;d.nextAction=due;d.nextActionText=obj.text;if(p){p.nextActionObj=obj;p.nextAction=due;p.nextActionText=obj.text;}
+  }
+  root.saveLocal?.();root.showDetailErr(resolve?'지원 처리를 기록했습니다 — 컨트롤타워 지원 요청 대기에서 빠집니다.':'지원 요청을 보냈습니다 — 컨트롤타워에 표시됩니다.',true);close();
  }catch(e){root.showDetailErr(String(e.message||e));}
- finally{delete box.dataset.saving;box.querySelectorAll('button,textarea').forEach(n=>n.disabled=false);}
+ finally{delete box.dataset.saving;box.querySelectorAll('button,textarea,input').forEach(n=>n.disabled=false);}
 }
 async function saveCombined(){
  const form=$('activityFormCard'),d=root.CUR_DETAIL?.item;if(!form||!d||form.dataset.saving)return;
