@@ -12,7 +12,7 @@ const age=r=>r.last?Math.max(0,-root.daysTo(r.last)):null;
 const due=r=>r.days==null?'일정 미지정':r.days<0?Math.abs(r.days)+'일 초과':r.days===0?'오늘':'D-'+r.days;
 function stats(items){return '<div class="sw-stats">'+items.map(([k,v])=>'<div><span>'+h(k)+'</span><b>'+h(v)+'</b></div>').join('')+'</div>';}
 function facts(items){return '<dl>'+items.map(([k,v])=>'<div><dt>'+h(k)+'</dt><dd>'+h(v||'미기록')+'</dd></div>').join('')+'</dl>';}
-function card(r,body,label='처리',action='process'){return '<article class="sw-card" data-deal="'+a(r.key)+'"><header><div>'+btn(r.site,'record',r.key)+'<small>'+h(r.owner||'미배정')+' · '+h(root.dealWorkSummary(r.item)||'공종 미기록')+'</small></div></header>'+body+'<div class="sw-action">'+btn(label,action,r.key)+'</div></article>';}
+function card(r,body,label='처리',action='process'){return '<article class="sw-card" data-deal="'+a(r.key)+'"><header><div>'+btn(r.site,'record',r.key)+(root.advisoryBadge?root.advisoryBadge(r.item):'')+'<small>'+h(r.owner||'미배정')+' · '+h(root.dealWorkSummary(r.item)||'공종 미기록')+'</small></div></header>'+body+'<div class="sw-action">'+btn(label,action,r.key)+'</div></article>';}
 function group(title,items,draw,cls=''){if(!items.length)return '';return '<section class="sw-group '+cls+'"><h3>'+h(title)+' <span>'+items.length+'건</span></h3><div class="sw-cards">'+(items.map(draw).join('')||empty)+'</div></section>';}
 /* 관계관리 v2(A안): 담당자 현황판 + 단계 세그먼트 + «먼저 볼 것» 표.
    유대강화는 90일까지 — 초과분은 «침묵 전환» 제안. 프로모션 승인은 상세 팝업 카드에서. */
