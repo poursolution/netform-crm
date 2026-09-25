@@ -115,6 +115,7 @@ async function run(){
   await page.evaluate(()=>{window.__opened=null;TodayWorkQueue.open('deal:rel-late')});assert.equal(await page.evaluate(()=>window.__opened),null);
   await page.evaluate(()=>{
    ME={name:'송보람',role:'admin'};
+   OPS_RULES.liveFrom='2000-01-01';/* 우선순위·필터 검증은 Live 데이터 기준 (과거 이관분 분리는 아래에서 따로 검증) */
    const ago=n=>new Date(Date.now()-n*864e5).toISOString();
    B.inquiries=[{id:'process',site:'처리 지연 문의',created_at:ago(60),assignee:'김성민',status:'응대중',responded_at:ago(59),nextActionObj:{text:'견적 발송',due:ago(5),status:'open'}},{id:'response',site:'오래된 미응대',created_at:ago(50),assigned_at:ago(49),assignee:'김성민',status:'배정완료'},{id:'unassigned',site:'최근 미배정',created_at:ago(1),status:'접수'}];
    B.deals=[{id:'missing-old',site:'오래된 Next 없음',assignee:'김성민',code:'consulting',grp:'영업·관리',created:ago(70),lastMeaningfulContactAt:ago(1)},{id:'late',site:'기한 초과 영업',assignee:'김성민',code:'consulting',grp:'영업·관리',created:ago(5),lastMeaningfulContactAt:ago(1),nextActionObj:{text:'후속 통화',due:ago(1),status:'open'}}];B.expansion_pool=[];paintTodayHome();
@@ -131,6 +132,12 @@ async function run(){
   assert.equal(await page.locator('.today-admin-pipeline .twq-row').getAttribute('data-key'),'deal:missing-old');
   assert.equal(await page.locator('.today-admin-inquiry [data-filter="processing"]').getAttribute('aria-pressed'),'true');
   await page.evaluate(()=>{TodayWorkQueue.filter('inquiry','all');TodayWorkQueue.filter('pipeline','all')});
+  // 과거 이관분(Live 기준일 이전 · 다음 할 일 없음)은 오늘 업무에서 빠지고 '과거 영업 정리' 카드로 (2026-09-25 대표 확정). 기한 지난 일은 그대로.
+  await page.evaluate(()=>{OPS_RULES.liveFrom='2999-01-01';paintTodayHome()});
+  assert.deepEqual(await page.locator('.today-admin-pipeline .twq-row').evaluateAll(ns=>ns.map(n=>n.dataset.key)),['deal:late']);
+  assert.equal(await page.locator('.twq-backlog').count(),1);
+  assert.equal(await page.evaluate(()=>TodayWorkQueue.data().backlog.map(x=>x.key).join()),'deal:missing-old');
+  await page.evaluate(()=>{OPS_RULES.liveFrom='2000-01-01';paintTodayHome()});
   await page.evaluate(()=>{ME={name:'송보람',role:'admin'};const at=new Date(Date.now()-36e5).toISOString();B.inquiries=Array.from({length:51},(_,i)=>({id:'page-'+i,site:'페이지 현장 '+i,created_at:at,brand:'POUR솔루션',status:'접수'}));B.deals=[];B.expansion_pool=[];paintTodayHome()});
   assert.equal(await page.locator('.twq-row').count(),20);await page.getByRole('navigation',{name:'견적문의 관리 페이지'}).getByRole('button',{name:'3',exact:true}).click();assert.equal(await page.locator('.twq-row').count(),11);
   await page.getByRole('textbox',{name:'오늘 업무 검색'}).fill('페이지 현장 50');await page.getByRole('button',{name:'검색',exact:true}).click();assert.equal(await page.locator('.twq-row').count(),1);

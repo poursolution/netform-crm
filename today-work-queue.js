@@ -101,8 +101,13 @@
   const requests=managerEntries().filter(x=>base.Q.some(q=>String(q.id)===String(x.request.target_id)));
   const rows=inquiry.concat(pipeline,base.D.filter(relationship).map(contactEntry).filter(Boolean),expansionEntries(base.admin,me),requests).map(decorate).map(prioritize);
   const unique=new Map();rows.forEach(x=>{if(!unique.has(x.key))unique.set(x.key,x)});
-  const all=Array.from(unique.values());
-  return {admin:base.admin,Q:base.Q,D:base.D,rows:all,inquiry:all.filter(x=>x.panel==='inquiry').sort(compare),pipeline:all.filter(x=>x.panel==='pipeline').sort(compare)};
+  const every=Array.from(unique.values());
+  /* 과거 이관분 분리(2026-09-25 대표 확정 'Live만 + 과거 정리 카드'): 이관 영업 중 다음 할 일이 없거나 장기 미접촉만 걸린 건은
+     오늘 업무에서 빼고 '과거 영업 정리' 카드로 모은다. 기한이 있는 일·고객 약속·기한 지남은 과거분이어도 그대로 오늘 업무. */
+  const LIVE=String(root.OPS_RULES?.liveFrom||'2026-10-01'),day=v=>String(v||'').slice(0,10);
+  const legacyOf=x=>x.type==='deal'&&!x.promise&&!x.overdue&&x.dueDays!==0&&(x.missingNext||x.longContact)&&!(day(x.item.created)>=LIVE||day(root.relationshipMeta(x.item).meaningfulAt)>=LIVE);
+  const all=every.filter(x=>!legacyOf(x)),backlog=every.filter(legacyOf);
+  return {admin:base.admin,Q:base.Q,D:base.D,rows:all,backlog,inquiry:all.filter(x=>x.panel==='inquiry').sort(compare),pipeline:all.filter(x=>x.panel==='pipeline').sort(compare)};
  }
  function matches(x,filter){return filter==='response'?x.responseLate:filter==='processing'?x.processingLate:filter==='overdue'?x.overdue:filter==='unassigned'?x.unassigned:filter==='missing'?x.missingNext:filter==='stale'?x.stale:true}
  function resetForActor(admin){
@@ -129,7 +134,7 @@
  function page(n,key){const allowed={priority:'todayQueuePage',routine:'todayRoutinePage',inquiry:'todayInquiryPage',pipeline:'todayPipelinePage'},name=allowed[key]||allowed.priority;root.G[name]=Math.max(1,Number(n)||1);render()}
  function open(key,action){
   // Resolve against the current role-scoped source again, not a stale row index or global filters.
-  const x=data().rows.find(row=>row.key===key);if(!x){render();const note=root.$('.twq-count-note');if(note){note.textContent='처리 상태 또는 접근 범위가 변경되어 목록을 갱신했습니다.';note.setAttribute('role','status')}return}
+  const x=data().rows.find(row=>row.key===key)||(data().backlog||[]).find(row=>row.key===key);/* 과거 정리 카드 항목도 연다 */if(!x){render();const note=root.$('.twq-count-note');if(note){note.textContent='처리 상태 또는 접근 범위가 변경되어 목록을 갱신했습니다.';note.setAttribute('role','status')}return}
   if(action==='assign'&&x.unassigned&&root.todayIsAdmin())return root.todayAssignInquiry(root.inqKey(x.item));
   if(x.kind==='manager'){
    const q=(root.B?.inquiries||[]).find(row=>String(row.id)===String(x.request.target_id));
@@ -282,6 +287,21 @@
   if(!ds||!ds.total)return '';
   return '오늘 처리 <b>'+ds.total+'건</b>'+(ds.contact?' · 고객 접촉 '+ds.contact:'')+(ds.next?' · 다음 할 일 '+ds.next:'')+(ds.promise?' · 고객 약속 '+ds.promise:'')+(ds.done?' · 완료 '+ds.done:'');
  }
+ /* 과거 영업 정리 카드: 하루 10건(단계·금액 큰 순). 열어서 다음 할 일을 잡으면(유지) 또는 보류·종료로 바꾸면 자동으로 빠진다.
+    관리자: 담당자별 남은 건수 — 담당자를 고르면 그 사람의 10건. 운영 KPI(Live)에는 넣지 않는다. */
+ function backlogCard(list,admin){
+  if(!list.length)return '';
+  const won=n=>n>=1e8?(Math.round(n/1e7)/10)+'억':n>=1e4?Math.round(n/1e4).toLocaleString('ko-KR')+'만':'';
+  if(admin&&(!root.G.todayQueueOwner||root.G.todayQueueOwner==='전체')){
+   const by={};list.forEach(x=>{by[x.owner||'미배정']=(by[x.owner||'미배정']||0)+1;});
+   return '<section class="twq-backlog" aria-label="과거 영업 정리"><header><b>과거 영업 정리 · '+list.length+'건</b><small>이관된 과거 영업 중 다음 할 일이 없는 건 — 오늘 업무·운영 KPI에서 빼고 담당자가 하루 10건씩 정리합니다. 이름을 누르면 그 사람 목록.</small></header><div class="twq-blist">'
+    +Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([n,c])=>'<button type="button" class="twq-bitem who" data-owner="'+attr(n)+'" onclick="TodayWorkQueue.set(\'owner\',this.dataset.owner)"><span class="site">'+h(n)+'</span><span class="meta">'+c+'건</span></button>').join('')+'</div></section>';
+  }
+  const rank=x=>{const r=root.perfStageRank?root.perfStageRank(root.dealStage(x.item)):0;return (r==null?0:r)*1e13+(Number(root.oppAmt?root.oppAmt(x.item):0)||0);};
+  const pick=list.slice().sort((a,b)=>rank(b)-rank(a)).slice(0,10);
+  return '<section class="twq-backlog" aria-label="과거 영업 정리"><header><b>과거 영업 정리 · 오늘 '+pick.length+'건</b><small>이관된 과거 영업 '+list.length+'건 중 — 열어서 다음 할 일을 잡거나(유지) 진행상태를 보류·종료로 바꾸면 목록에서 빠집니다.</small></header><div class="twq-blist">'
+   +pick.map(x=>{const amt=Number(root.oppAmt?root.oppAmt(x.item):0)||0;return '<button type="button" class="twq-bitem" data-key="'+attr(x.key)+'" onclick="TodayWorkQueue.open(this.dataset.key)"><span class="site">'+h(x.item.site||x.item.site_name||'현장명 미입력')+'</span><span class="meta">'+h(x.stage||'')+(amt?' · '+won(amt):'')+'</span></button>';}).join('')+'</div></section>';
+ }
  function urgentCards(rows){
   const score=x=>x.promise&&x.dueDays!==null&&x.dueDays<0?-2:x.promise&&x.dueDays===0?-1:x.unassigned?0:(x.overdue||x.responseLate)?1:x.dueDays===0?2:x.processingLate?3:x.missingNext?4:9;
   const picked=rows.filter(x=>score(x)<=4).sort((a,b)=>score(a)-score(b)||b.lag-a.lag).slice(0,8);
@@ -309,7 +329,7 @@
   const scoped=x=>(!X.admin||!G.todayQueueOwner||G.todayQueueOwner==='전체'||x.owner===G.todayQueueOwner)&&(!G.todayQueueSearch||[x.item.site,x.item.site_name,x.owner,x.reason,x.next].join(' ').toLowerCase().includes(String(G.todayQueueSearch).trim().toLowerCase()));
   const inquiry=X.inquiry.filter(scoped),pipeline=X.pipeline.filter(scoped);
   const toolbar='<form class="twq-toolbar" onsubmit="event.preventDefault();TodayWorkQueue.set(\'search\',this.elements.search.value)">'+(X.admin?'<label>담당자 <select aria-label="오늘 업무 담당자" onchange="TodayWorkQueue.set(\'owner\',this.value)"><option>전체</option>'+owners.map(o=>'<option '+(G.todayQueueOwner===o?'selected':'')+'>'+h(o)+'</option>').join('')+'</select></label>':'<span>내 담당 업무</span>')+'<label class="twq-search"><input name="search" aria-label="오늘 업무 검색" placeholder="현장·담당자·할 일 검색" value="'+attr(G.todayQueueSearch||'')+'"><button>검색</button></label></form>';
-  host.innerHTML='<div class="today-work-queue '+(X.admin?'manager':'rep')+'"><header><div><h2>오늘 업무</h2><span>'+(X.admin?'사원별 현황을 먼저 확인하고, 행을 눌러 해당 담당자 업무로 파고듭니다.':'신규 문의와 진행 중 영업을 각각의 처리 순서로 확인합니다.')+'</span></div><b>전체 '+(inquiry.length+pipeline.length)+'건</b></header>'+(X.admin?repBoards(X):urgentCards(inquiry.concat(pipeline)))+toolbar+'<p class="twq-count-note">각 업무함의 순위와 상태 필터는 독립적으로 적용됩니다. 파이프라인 상태는 중복될 수 있습니다.</p><div class="twq-admin-boards">'+table(inquiry,X.admin,'inquiry','견적문의 관리','신규 문의의 배정·첫 응대·후속처리')+table(pipeline,X.admin,'pipeline','파이프라인 관리','진행 중 영업의 다음 할 일·관계관리·확장관리')+'</div></div>';
+  host.innerHTML='<div class="today-work-queue '+(X.admin?'manager':'rep')+'"><header><div><h2>오늘 업무</h2><span>'+(X.admin?'사원별 현황을 먼저 확인하고, 행을 눌러 해당 담당자 업무로 파고듭니다.':'신규 문의와 진행 중 영업을 각각의 처리 순서로 확인합니다.')+'</span></div><b>전체 '+(inquiry.length+pipeline.length)+'건</b></header>'+(X.admin?repBoards(X):urgentCards(inquiry.concat(pipeline)))+backlogCard((X.backlog||[]).filter(scoped),X.admin)+toolbar+'<p class="twq-count-note">각 업무함의 순위와 상태 필터는 독립적으로 적용됩니다. 파이프라인 상태는 중복될 수 있습니다.</p><div class="twq-admin-boards">'+table(inquiry,X.admin,'inquiry','견적문의 관리','신규 문의의 배정·첫 응대·후속처리')+table(pipeline,X.admin,'pipeline','파이프라인 관리','진행 중 영업의 다음 할 일·관계관리·확장관리')+'</div></div>';
   const badge=root.$('#todayBadge');if(badge){badge.textContent=X.rows.length||'';badge.style.display=X.rows.length?'':'none'}
  }
  function setManagerRequests(rows){managerRequests=Array.isArray(rows)?rows.slice():[];if(root.G?.page==='today')render()}
