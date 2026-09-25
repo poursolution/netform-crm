@@ -35,6 +35,9 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   // 리포트·브리핑에는 계약실적 패널을 붙이지 않는다 (2026-09-24 대표 지시)
   await page.evaluate(()=>goPage('report'));assert.equal(await page.locator('#report-master .contract-sales-host').count(),0);
   await page.evaluate(()=>goPage('brief'));assert.equal(await page.locator('#b-week .contract-sales-host').count(),0);
+  // 영업사원 관리 상세 드로어에도 계약실적 패널 금지 (2026-09-25 대표 지시)
+  assert.doesNotMatch(fs.readFileSync(path.join(root,'contract-sales-ui.js'),'utf8'),/repManagerRenderDrawer=|getElementById\('perfDrawerBody'\)/);
+  assert.equal(await page.evaluate(()=>String(window.repManagerRenderDrawer||'').includes('contract-sales')),false);
   await page.evaluate(async()=>{__contract.events=ContractSalesLedger.append(__contract.events,{event_id:'event-2',expected_version:1,kind:'cancelled',effective_date:'2026-10-01',reason:'합성 취소'});__contract.version=2;__contract.balance=0;await ContractSalesData.refresh()});
   assert.equal(await page.evaluate(()=>ContractSalesData.summarize({year:'2026',month:10}).netAmount),-300000000);
   assert.equal(await page.evaluate(()=>ContractSalesData.summarize({year:'2026',month:9}).netAmount),300000000);
@@ -50,8 +53,8 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   await page.getByRole('heading',{name:'계약실적 기록',exact:true}).waitFor();
   assert.match(await page.locator('.contract-sales-dialog').innerText(),/황윤선/);
   await page.locator('.contract-sales-dialog [data-close]').click();
-  // 성과 콘솔의 기술자문 낙찰 요약(읽기)도 허용 (2026-09-25)
-  assert.equal(await page.evaluate(()=>__requests.every(n=>['crm_contract_sales_read_v1','crm_advisory_bid_summary_v1'].includes(n))),true);assert.deepEqual(errors,[]);
+  // 성과 콘솔의 기술자문 낙찰실적(확정분 읽기)도 허용 (2026-09-25)
+  assert.equal(await page.evaluate(()=>__requests.every(n=>['crm_contract_sales_read_v1','crm_advisory_bid_summary_v1','crm_advisory_attribution_v1'].includes(n))),true);assert.deepEqual(errors,[]);
   console.log('PASS contract sales: signed amount, frozen owner, all reporting surfaces, cancellation periods, unavailable state and responsive layout');
  }finally{await browser.close();await new Promise(r=>srv.close(r))}
 })().catch(e=>{console.error(e);process.exitCode=1});

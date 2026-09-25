@@ -222,3 +222,21 @@
 .si-dark .pf-adv-row{display:flex;justify-content:space-between;padding:5px 0;border-top:1px solid #f0f3f8;font-size:12px}
 .si-dark .pf-adv-row span{color:#5b6b85}
 .si-dark .pf-adv-row b{color:#0f172a;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* 기술자문 낙찰실적 카드 승격 (2026-09-25) */
+.si-dark .pf-adv-sub{margin:8px 0 2px;font-size:10.5px;font-weight:850;color:#8a97ab;letter-spacing:.02em}
+.si-dark .pf-adv-row small{font-size:10.5px;color:#8a97ab}
+.si-dark .pf-adv-empty{margin:4px 0 8px;font-size:12px;color:#8a97ab}
+.si-dark .pf-adv-cta{margin-top:10px;width:100%;border:1px solid #d6e0f5;border-radius:9px;background:#f5f8ff;color:#3B6CE4;padding:8px 10px;font:inherit;font-size:12px;font-weight:850;cursor:pointer;text-align:center}
+.si-dark .pf-adv-cta:hover{background:#3B6CE4;color:#fff}
+/* 컨트롤타워 데이터 위험 스트립 (2026-09-25) */
+.si-dark .ct-datarisk{padding:10px 14px}
+.si-dark .ct-dr{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.si-dark .ct-dr>b{font-size:13px;color:#0f172a}
+.si-dark .ct-dr>small{font-size:11px;color:#8a97ab;margin-right:6px}
+.si-dark .ct-drchip{border:1px solid #e2e8f1;border-radius:999px;background:#fff;padding:5px 11px;font:inherit;font-size:12px;font-weight:800;color:#33415e;cursor:pointer;white-space:nowrap}
+.si-dark .ct-drchip b{font-variant-numeric:tabular-nums}
+.si-dark .ct-drchip.red{border-color:#f5c2c2;background:#fff5f5;color:#b42318}
+.si-dark .ct-drchip.org{border-color:#f6d9b0;background:#fffaf2;color:#b45309}
+.si-dark .ct-drchip.yel{border-color:#ecdfa6;background:#fffdf0;color:#8a6d00}
+.si-dark .ct-drchip:hover{border-color:#3B6CE4}

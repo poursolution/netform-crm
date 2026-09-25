@@ -40,6 +40,16 @@
 - 계약문서 스냅샷 15건(전부 legacy fee-crosscheck): 금액·계약일·crm_deal_id 원본 부재 → 자동 반영 불가, 확정 큐 대상.
 - 딜 삭제로 site_id 단일 딜 매핑 0건 — 계약문서 실적은 코덱스의 낙찰 구조 완성 후 그 축으로 귀속.
 
+## 낙찰실적 확정 구조 v1 — Claude 착수·구현 (2026-09-25, 1~2단계 대체)
+코덱스가 1~2단계를 시작하지 않은 상태여서 Claude가 구현함. **코덱스는 이 구조를 재구현하지 말고 승계할 것.**
+- 저장소 `sql/advisory-attribution-v1.sql`. 원본 `public.advisory_deals`(연동 대상)는 수정하지 않음.
+- `crm_security.advisory_attribution` (advisory_id PK = 1건 1실적, 중복 불가): decision(confirmed|hold|excluded) · origin_business · source_deal_id · performance_owner · bid_amount(VAT 별도) · bid_confirmed_at · award_type(bid|private_contract) · evidence_level(document|admin_judgment) · source_type='technical_advisory' · site_id · note · version.
+  - confirmed = 원천·담당·금액·확정일·근거 수준 필수 / hold·excluded = 사유 필수 / 확정 실적 변경 = 정정 사유 필수 / 전 변경 `advisory_attribution_events`에 before·after 보존.
+- RPC(관리자 전용): `crm_advisory_attribution_v1()` 전 건 + 원천 브랜드 후보(같은 site_id의 CRM 딜, coalesce(origin_business, brand), 최초 접촉순, 원장 계약 여부) + 현장 후보 + 확정값 / `crm_advisory_attribution_decide_v1(p jsonb)` expected_version 낙관적 잠금.
+- 화면: 컨트롤타워·성과 분석 [기술자문 낙찰실적 확정] 큐(검증 대기·보류·확정·제외 탭, 이관 46건 진척률, 후보 1개면 원클릭 "○○로 확정", 후보 2개+ = "브랜드 귀속 확인 필요", 원장 계약 있는 후보 = "실적 중복 가능성") · 성과 분석 "기술자문 낙찰실적" 카드는 **확정분만 합산**(낙찰확정일 기준, 상단 필터: 기간·담당자·브랜드 칩=원천 브랜드) · 컨트롤타워 "데이터 위험" 스트립.
+- 정책 기본값(대표 최종 합의 대상): 브랜드 실적 = 최초 유입 브랜드(원천), 담당자 실적 = 확정 시점 귀속 담당자 동결, 둘은 섞지 않음.
+- 남은 것: ③ 신규 전환 자동 승계(잔디 수신 시 source_deal_id·원천·담당 자동 기록 — 연동 측) ④ 표준 단계 매핑(검토→견적→입찰→낙찰→계약→진행→완료)과 브랜드 퍼널 ⑤ 일반 계약실적 + 기술자문 낙찰실적 합계 대시보드.
+
 ## 코덱스 남은 단계 (컨설턴트 문서 ⑬)
 1. 필드: origin_business / origin_channel 분리 / source_deal_id / bid_confirmed_at / performance_owner / origin_confirmed_*
 2. 46건 보완 큐(부족 정보만: 원천 브랜드 46 · 현장연결 13 · 담당자 3 · 낙찰금액 2) — 자동 추천(단일 후보 8건) + 사람 확정
