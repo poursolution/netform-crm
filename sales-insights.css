@@ -240,3 +240,24 @@
 .si-dark .ct-drchip.org{border-color:#f6d9b0;background:#fffaf2;color:#b45309}
 .si-dark .ct-drchip.yel{border-color:#ecdfa6;background:#fffdf0;color:#8a6d00}
 .si-dark .ct-drchip:hover{border-color:#3B6CE4}
+/* 운영 건강 — Live KPI · 과거 데이터 정상화 (2026-09-25) */
+.si-dark .hl-grid{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(0,1fr);gap:14px}
+.si-dark .hl-live>em,.si-dark .hl-legacy>em{display:block;font-style:normal;font-size:11px;font-weight:850;color:#8a97ab;margin-bottom:6px}
+.si-dark .hl-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.si-dark .hl-tile{border:1px solid #e2e8f1;border-radius:10px;background:#fff;padding:9px 11px;display:grid;gap:2px;min-width:0}
+.si-dark .hl-tile span{font-size:11.5px;font-weight:800;color:#5b6b85}
+.si-dark .hl-tile b{font-size:19px;color:#0f172a;font-variant-numeric:tabular-nums}
+.si-dark .hl-tile small{font-size:10.5px;color:#8a97ab}
+.si-dark .hl-tile.ok{border-color:#bfe5cf;background:#f5fbf7}.si-dark .hl-tile.ok b{color:#15803d}
+.si-dark .hl-tile.bad{border-color:#f5c2c2;background:#fff7f7}.si-dark .hl-tile.bad b{color:#b42318}
+.si-dark .hl-tile.na b{color:#94a3b8}
+.si-dark .hl-wait{grid-column:1/-1;margin:0;padding:14px;border:1px dashed #d6e0f5;border-radius:10px;background:#f8faff;font-size:12.5px;color:#33415e}
+.si-dark .hl-legacy{border-left:1px solid #eef1f6;padding-left:14px;min-width:0}
+.si-dark .hl-norm{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.si-dark .hl-norm b{font-size:22px;color:#1e50b3;font-variant-numeric:tabular-nums}
+.si-dark .hl-norm span{font-size:11.5px;color:#5b6b85}
+.si-dark .hl-gaps{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.si-dark .hl-gaps span{border:1px solid #f6d9b0;background:#fffaf2;color:#b45309;border-radius:999px;padding:3px 9px;font-size:11.5px;font-weight:800;white-space:nowrap}
+@media(max-width:900px){.si-dark .hl-grid{grid-template-columns:1fr}.si-dark .hl-legacy{border-left:0;padding-left:0}.si-dark .hl-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* hidden 속성이 .dc-p의 display 규칙에 덮여 빈 칸으로 보이던 문제 (2026-09-25) */
+.si-shell .dc-p[hidden],.si-shell [hidden]{display:none!important}

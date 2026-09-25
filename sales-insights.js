@@ -185,6 +185,32 @@
   }).catch(()=>{});
  }
  root.addEventListener('advisory-attribution:changed',()=>{if(root.G?.page==='perf')fillAdvisoryCard();if(root.G?.page==='control')fillDataRisk();});
+ /* 운영 건강(2026-09-25 컨설턴트 P0-1): 운영 KPI는 Live만 평가한다 — OPS_RULES.liveFrom(대표 확정 2026-10-01) 이후
+    생성됐거나 그 이후 실제 접촉이 기록된 영업. 나머지는 Legacy(과거 이관분)로 '정상화율'만 본다.
+    과거 데이터를 운영 KPI에 섞으면 'Next Action 등록률 2%' 같은 무의미한 숫자가 나와 대시보드 신뢰를 잃는다. */
+ function healthPanel(){
+  const LIVE=String(root.OPS_RULES?.liveFrom||'2026-10-01'),started=new Date().toISOString().slice(0,10)>=LIVE;
+  const r=rows(),act=r.deals.filter(d=>d.active),day=v=>String(v||'').slice(0,10);
+  const isLive=d=>day(d.created)>=LIVE||day(d.lastContact)>=LIVE;
+  const live=act.filter(isLive),legacy=act.filter(d=>!isLive(d));
+  const hasOwner=d=>!!d.owner&&d.owner!=='미배정',hasNext=d=>!d.issues.includes('missing'),staged=d=>!!(d.item.stage_code||d.item.code);/* 단계 미분류 = 서버 stage_code 자체가 없음(과거 목록 원본 단계명 미매핑) */
+  const pct=(n,t)=>t?Math.round(n/t*100):null,sla=Number(root.OPS_RULES?.responseSlaHours??2)*3600e3;
+  const t0=q=>Date.parse(q.item.created_at||q.item.createdAt||q.created||'');
+  const inq=r.inquiries.filter(q=>day(q.item.created_at||q.item.createdAt||q.created)>=LIVE);
+  const due=inq.filter(q=>root.inquiryRespondedAt?.(q.item)||Date.now()-t0(q)>sla);
+  const ok=due.filter(q=>{const at=Date.parse(root.inquiryRespondedAt?.(q.item)||'');return at&&at-t0(q)<=sla});
+  const m={owner:pct(live.filter(hasOwner).length,live.length),next:pct(live.filter(hasNext).length,live.length),over:pct(live.filter(d=>d.issues.includes('overdue')).length,live.length),sla:pct(ok.length,due.length)};
+  const tile=(label,val,target,good)=>'<div class="hl-tile'+(val==null?' na':good?' ok':' bad')+'"><span>'+label+'</span><b>'+(val==null?'-':val+'%')+'</b><small>'+target+'</small></div>';
+  const norm=legacy.filter(d=>hasOwner(d)&&hasNext(d)&&staged(d)).length;
+  const gaps=[['담당자 없음',legacy.filter(d=>!hasOwner(d)).length],['다음 할 일 없음',legacy.filter(d=>!hasNext(d)).length],['단계 미분류',legacy.filter(d=>!staged(d)).length]].filter(x=>x[1]);
+  const liveDay=Number(LIVE.slice(5,7))+'월 '+Number(LIVE.slice(8,10))+'일';
+  return '<div class="dc-p c12 hl-panel"><div class="dc-ph">운영 건강<small>Live = '+h(liveDay)+' 이후 생성·조치된 영업만 평가 · 과거 이관분은 정상화율로 따로</small></div><div class="dc-pb hl-grid">'
+   +'<div class="hl-live"><em>Live 운영 KPI'+(live.length?' · 진행 '+number(live.length)+'건':'')+'</em><div class="hl-tiles">'
+   +(started||live.length?tile('담당자 지정',m.owner,'목표 98% 이상',m.owner>=98)+tile('다음 할 일 등록',m.next,'목표 95% 이상',m.next>=95)+tile('기한초과',m.over,'목표 5% 미만',m.over!=null&&m.over<5)+tile('최초응대 SLA',m.sla,'목표 95% 이상 · '+(sla/3600e3)+'시간',m.sla>=95)
+     :'<p class="hl-wait">'+h(liveDay)+'부터 집계합니다. 지금은 과거 데이터를 정상화하는 기간입니다.</p>')
+   +'</div></div><div class="hl-legacy"><em>과거 데이터 정상화</em><div class="hl-norm"><b>'+(legacy.length?pct(norm,legacy.length)+'%':'-')+'</b><span>'+number(norm)+' / '+number(legacy.length)+'건 — 담당자·다음 할 일·단계가 모두 있는 진행 영업</span></div>'
+   +'<div class="hl-gaps">'+gaps.map(([t,n])=>'<span>'+t+' <b>'+number(n)+'</b></span>').join('')+'</div></div></div></div>';
+ }
  function control(s){
   const f=state(),ct=ctState();
   let list=M.select(s,f.kind,f);
@@ -205,7 +231,7 @@
   const bulk='<div class="ct-bulk">선택 <b id="ct-count">0</b>건 → '+btn('지시 보내기 (다음 업무 일괄 지정)','ct-bulk','','ct-bulkbtn')+'<span class="dc-mut">지시는 각 현장의 다음 업무로 등록되어 담당자 오늘 업무에 뜹니다 · 문의 건은 배정으로 처리</span></div>';
   return '<div class="dc-topbar"><h2><i>◈</i>컨트롤타워</h2>'+'<span class="dc-nav">'+btn('전체 현황 ↗','navigate','dash')+btn('성과 분석 ↗','navigate','perf')+(root.ContractSalesUI?.advisorySync?'<button type="button" data-si-action="advisory-sync">기술자문 낙찰실적 확정</button>':'')+'</span><span class="dc-live"><i></i>관리 대상 '+number(list.length)+'건</span></div>'+
    '<div class="dc-grid">'+
-   '<div class="dc-p c12 ct-datarisk" id="ct-datarisk" hidden></div>'+'<div class="dc-p c12"><div class="dc-ph">① 지금 막힌 곳<small>문장 클릭 = 아래 목록이 그 조건으로 좁혀짐</small></div><div class="dc-pb ct-verdicts">'+verdicts+'</div></div>'+
+   healthPanel()+'<div class="dc-p c12 ct-datarisk" id="ct-datarisk" hidden></div>'+'<div class="dc-p c12"><div class="dc-ph">① 지금 막힌 곳<small>문장 클릭 = 아래 목록이 그 조건으로 좁혀짐</small></div><div class="dc-pb ct-verdicts">'+verdicts+'</div></div>'+
    '<div class="dc-p c12"><div class="dc-ph">② 담당자별 문제 · 지시<small>문제 칩 클릭=목록 필터 · 이름 클릭=성과 분석 · 지시=해당 담당자 문제 건 일괄 지정</small></div><div class="dc-pb">'+ctRepRows(s)+'</div></div>'+
    '<div class="dc-p c12"><div class="dc-ph">③ 처리 목록<small>진행 중·관리필요=현재 상태 · 문의·준공=선택 기간 · 계약실적과 별도</small></div><div class="dc-pb"><div class="dc-kchips">'+chips+'</div>'+filtersHtml+table+bulk+'<div class="si-pager">'+btn('이전','page',Math.max(1,f.page-1))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',Math.min(pages,f.page+1))+'</div></div></div></div>';
  }
