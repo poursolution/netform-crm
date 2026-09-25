@@ -209,3 +209,8 @@
 .si-dark table.dc-cases th:first-child{width:36px;min-width:36px}
 .si-dark .dc-cases .ct-selcol{width:36px;min-width:36px;text-align:center}
 .si-dark .dc-cases .ct-selcol input,.si-dark #ct-all{width:16px;height:16px;min-width:16px;padding:0;margin:0;accent-color:#1e50b3;vertical-align:middle}
+/* 컨트롤타워 처리 목록 — 현장명 줄꺾임 개선 (2026-09-25 캡처 지적) */
+.si-dark .dc-cases th:nth-child(2){width:24%;min-width:210px}
+.si-dark .dc-cases td.ct-site b{display:block;max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px}
+.si-dark .dc-cases td:nth-child(3),.si-dark .dc-cases td:nth-child(4){white-space:nowrap}
+@media(max-width:1100px){.si-dark .dc-cases td.ct-site b{max-width:220px}}
