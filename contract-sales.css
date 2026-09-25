@@ -4,3 +4,23 @@
 
 /* 근거 표 상시 노출 */
 .contract-sales-evidence>strong{display:block;margin:12px 0 6px;font-size:12.5px;color:#293b57}
+
+/* 기술자문 반영 모달 (2026-09-25) */
+.advisory-sync .adv-sync-body{display:grid;gap:6px;max-height:52vh;overflow:auto;margin:10px 0}
+.adv-sync-row{display:grid;gap:2px;border:1px solid #e2e8f1;border-left:3px solid #15803d;border-radius:9px;background:#fbfcfe;padding:9px 12px;font-size:12px}
+.adv-sync-row.hold{border-left-color:#E08A00}
+.adv-sync-row b{color:#0f172a;font-size:12.5px}
+.adv-sync-row span{color:#5b6b85}
+.adv-sync-row em{font-style:normal;color:#8a97ab;font-size:11.5px}
+.advisory-sync footer button{border:0;border-radius:9px;background:#3B6CE4;color:#fff;padding:10px 14px;font:inherit;font-weight:850;cursor:pointer}
+.advisory-sync footer button[disabled]{opacity:.6}
+
+.adv-sync-form{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-top:6px}
+.adv-sync-form label{display:grid;gap:3px;font-size:11px;color:#8a97ab;font-weight:800}
+.adv-sync-form input{border:1px solid #e2e8f1;border-radius:8px;padding:7px 9px;font:inherit;font-size:12.5px;width:150px}
+.adv-sync-form input:focus{outline:0;border-color:#3B6CE4}
+.adv-sync-form button{border:0;border-radius:8px;background:#3B6CE4;color:#fff;padding:9px 13px;font:inherit;font-size:12px;font-weight:850;cursor:pointer}
+.adv-sync-form button[disabled]{opacity:.55}
+.adv-sync-row.done{border-left-color:#15803d;background:#f4fbf7}
+.adv-sync-msg{margin:4px 0 0;font-size:11.5px;color:#5b6b85}
+.adv-sync-row a{color:#3B6CE4;font-weight:800}
