@@ -296,3 +296,26 @@
 .si-dark .pt-tile span{font-size:11.5px;font-weight:800;color:#5b6b85}
 .si-dark .pt-tile b{font-size:19px;color:#0f172a;font-variant-numeric:tabular-nums}
 .si-dark .pt-tile small{font-size:10.5px;color:#8a97ab}
+
+/* 이번 주 영업점검 (2026-09-26) */
+.si-dark .wr-panel{min-width:0}
+.si-dark .wr-panel>summary{cursor:pointer;list-style:none}
+.si-dark .wr-panel>summary::-webkit-details-marker{display:none}
+.si-dark .wr-panel>summary::before{content:'▸ ';color:#8a97ab}
+.si-dark .wr-panel[open]>summary::before{content:'▾ '}
+.si-dark .wr-body{display:grid;gap:12px;min-width:0}
+.si-dark .wr-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.si-dark .wr-tile{border:1px solid #e2e8f1;border-radius:10px;background:#fff;padding:9px 11px;display:grid;gap:2px;min-width:0}
+.si-dark .wr-tile span{font-size:11.5px;font-weight:800;color:#5b6b85}
+.si-dark .wr-tile b{font-size:18px;color:#0f172a;font-variant-numeric:tabular-nums}
+.si-dark .wr-tile small{font-size:10.5px;color:#8a97ab}
+.si-dark .wr-cols{display:flex;flex-wrap:wrap;gap:14px;min-width:0}
+.si-dark .wr-cols section{flex:1 1 260px;min-width:0;display:grid;gap:6px;align-content:start}
+.si-dark .wr-cols h4{margin:0;font-size:12.5px;color:#17233a}
+.si-dark .wr-cols button{display:block;width:100%;text-align:left;border:1px solid #e2e8f1;border-radius:9px;background:#fff;padding:6px 9px;font-size:12px;color:#17233a;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
+.si-dark .wr-rep{margin:0;font-size:12px;color:#46536b;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.si-dark .wr-rep button{display:inline-block;width:auto}
+.si-dark .wr-copy{display:grid;gap:6px;min-width:0}
+.si-dark .wr-copy textarea{width:100%;box-sizing:border-box;font:inherit;font-size:12px;border:1px solid #e2e8f1;border-radius:10px;padding:9px 11px;resize:vertical;color:#17233a;background:#fbfcfe}
+.si-dark .wr-copy button{justify-self:start;border:1.5px solid #3B6CE4;background:#ebf1fe;color:#1e50b3;border-radius:9px;padding:7px 12px;font-weight:800;font-size:12.5px;cursor:pointer}
+.si-dark .wr-copy small{font-size:11px;color:#8a97ab}
