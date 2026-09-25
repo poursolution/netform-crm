@@ -41,15 +41,15 @@ function cardBadge(r){
  if(r.group==='lost')return ['mut',r.item.closed_at?String(r.item.closed_at).slice(0,10):'실주'];
  if(r.flags.includes('overdue'))return ['hot',Math.abs(r.days)+'일 지남'];
  if(r.flags.includes('stale')&&r.stall!=null)return ['hot',r.stall+'일 정체'];
- if(r.group==='relationship'&&r.contactDays!=null&&r.contactDays>=30)return ['hot',r.contactDays+'일 미접촉'];
+ if(r.group==='relationship'&&r.contactDays!=null&&r.contactDays>=30)return ['hot','마지막 연락 '+r.contactDays+'일 전'];
  if(r.days===0)return ['warn','오늘'];
- if(r.flags.includes('missing'))return ['warn','Next 없음'];
- if(r.days!=null&&r.days>0)return ['ok','D-'+r.days];
+ if(r.flags.includes('missing'))return ['warn','다음 할 일 없음'];
+ if(r.days!=null&&r.days>0)return ['ok',r.days+'일 남음'];
  return ['mut','진행중'];
 }
 function kpiStrip(all){
  const act=all.filter(r=>!['won','lost'].includes(r.group)),amount=act.reduce((s,r)=>s+(Number(r.amount)||0),0);
- const items=[['진행',act.length+'건',''],['진행 금액',moneyShort(amount),''],['기한초과',String(act.filter(r=>r.flags.includes('overdue')).length),'bad'],['Next 없음',String(act.filter(r=>r.flags.includes('missing')).length),'warn'],['장기정체',String(act.filter(r=>r.flags.includes('stale')).length),'bad']];
+ const items=[['진행',act.length+'건',''],['진행 금액',moneyShort(amount),''],['기한초과',String(act.filter(r=>r.flags.includes('overdue')).length),'bad'],['다음 할 일 없음',String(act.filter(r=>r.flags.includes('missing')).length),'warn'],['장기정체',String(act.filter(r=>r.flags.includes('stale')).length),'bad']];
  return '<div class="ps-kpis">'+items.map(([l,v,c])=>'<div class="ps-kpi '+c+'"><span>'+h(l)+'</span><b>'+h(v)+'</b></div>').join('')+'</div>';
 }
 function kanbanCard(r){
@@ -67,13 +67,13 @@ function kanban(all){
   const amount=items.reduce((s,r)=>s+(Number(r.amount)||0),0);
   const late=items.filter(r=>r.flags.includes('overdue')||r.flags.includes('stale')).length;
   const missing=items.filter(r=>r.flags.includes('missing')).length;
-  const flags=['won','lost'].includes(d.key)?'':(late?'<span class="ps-flag hot">지연·정체 '+late+'</span>':'')+(missing?'<span class="ps-flag warn">Next없음 '+missing+'</span>':'');
+  const flags=['won','lost'].includes(d.key)?'':(late?'<span class="ps-flag hot">지연·정체 '+late+'</span>':'')+(missing?'<span class="ps-flag warn">다음 할 일 없음 '+missing+'</span>':'');
   return '<section class="ps-kcol" style="--stage-color:'+d.color+'"><div class="ps-khead"><div class="ps-kt">'+button(d.number+' '+d.label,'stage',d.key,'ps-ktitle')+'<span class="ps-kn">'+items.length+'</span></div><div class="ps-kmoney">'+moneyShort(amount)+'</div>'+(flags?'<div class="ps-kflags">'+flags+'</div>':'')+'<p class="ps-khint">'+h(d.description||'')+'</p></div><div class="ps-kbody">'
    +items.map(kanbanCard).join('')+'</div>'
    +button('단계 페이지 열기 · '+items.length+'건','stage',d.key,'ps-kmore')+'</section>';
  }).join('')+'</div>';
 }
-function metrics(list,key){const active=list.filter(r=>!['won','lost','expansion'].includes(r.group)),amount=list.reduce((s,r)=>s+(r.amount||0),0);const m=[['적재 영업',list.length+'건'],[key==='won'?'준공 처리금액':key==='expansion'?'확장 기회':'예상금액',key==='expansion'?list.length+'건':root.fmtAmt(amount)],['기한초과',active.filter(r=>r.flags.includes('overdue')).length+'건'],['Next 없음',active.filter(r=>r.flags.includes('missing')).length+'건']];if(key==='relationship')m.splice(2,2,['7일 이상·접촉 미확인',active.filter(r=>r.flags.includes('contact')).length+'건'],['장기정체',active.filter(r=>r.flags.includes('stale')).length+'건']);if(key==='competition')m.splice(2,2,['D-3 이내',list.filter(r=>r.date&&root.daysTo(r.date)>=0&&root.daysTo(r.date)<=3).length+'건'],['결정 일정 미등록',list.filter(r=>!r.date).length+'건']);return '<div class="ps-metrics">'+m.map(x=>'<div><span>'+h(x[0])+'</span><strong>'+h(x[1])+'</strong></div>').join('')+'</div>';}
+function metrics(list,key){const active=list.filter(r=>!['won','lost','expansion'].includes(r.group)),amount=list.reduce((s,r)=>s+(r.amount||0),0);const m=[['적재 영업',list.length+'건'],[key==='won'?'준공 처리금액':key==='expansion'?'확장 기회':'예상금액',key==='expansion'?list.length+'건':root.fmtAmt(amount)],['기한초과',active.filter(r=>r.flags.includes('overdue')).length+'건'],['다음 할 일 없음',active.filter(r=>r.flags.includes('missing')).length+'건']];if(key==='relationship')m.splice(2,2,['7일 이상·접촉 미확인',active.filter(r=>r.flags.includes('contact')).length+'건'],['장기정체',active.filter(r=>r.flags.includes('stale')).length+'건']);if(key==='competition')m.splice(2,2,['3일 안',list.filter(r=>r.date&&root.daysTo(r.date)>=0&&root.daysTo(r.date)<=3).length+'건'],['결정 일정 미등록',list.filter(r=>!r.date).length+'건']);return '<div class="ps-metrics">'+m.map(x=>'<div><span>'+h(x[0])+'</span><strong>'+h(x[1])+'</strong></div>').join('')+'</div>';}
 function contractOf(r){return root.ContractSalesData?.state().items.find(x=>String(x.deal_id)===String(r.item.id));}
 function detailCells(r,key){
  const f=r.fields,c=contractOf(r),cf=r.item.stage_contexts?.contract?.fields||{},empty='미입력',money=v=>v==null||v===''?empty:root.fmtAmt(v),last=r.last?String(r.last).slice(0,10):'접촉 미확인';
@@ -87,7 +87,7 @@ function detailCells(r,key){
  if(key==='sent')return [f.sent_date||empty,Array.isArray(f.materials)?f.materials.join(' · '):f.materials||empty,f.reaction||empty,f.followup_date||empty];
  return [root.dealWorkSummary(r.item),money(r.amount),f.quote_due||empty,last];
 }
-function management(r){const label=['won','lost'].includes(r.group)?'종료':r.days==null?'기한 미입력':r.days<0?Math.abs(r.days)+'일 초과':r.days===0?'오늘':'D-'+r.days;return '<div class="ps-management"><span class="ps-due '+(r.days<0?'overdue':'')+'">'+h(label)+'</span>'+button('처리','process',r.key)+'</div>';}
+function management(r){const label=['won','lost'].includes(r.group)?'종료':r.days==null?'기한 미입력':r.days<0?Math.abs(r.days)+'일 지남':r.days===0?'오늘':r.days+'일 남음';return '<div class="ps-management"><span class="ps-due '+(r.days<0?'overdue':'')+'">'+h(label)+'</span>'+button('처리','process',r.key)+'</div>';}
 function render(){
  root.G.pipelineWorkspace=true;/* 칸반 단일 뷰 — 구형 칸반·스플릿·포캐스트 전환은 사용하지 않는다 */
  const host=document.getElementById('pg-pipe');if(!host)return false;state();let el=document.getElementById('pipeline-stage-root');if(!el){el=document.createElement('div');el.id='pipeline-stage-root';host.append(el);}host.classList.add('ps-active');root.PipelineSplit?.beforePaint();

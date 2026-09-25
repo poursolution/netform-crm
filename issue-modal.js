@@ -7,14 +7,14 @@
   nextMissing:['Next 없음','진행 중인 영업기회인데 예정된 다음 할 일이 없습니다.'],
   noNext:['Next 없음','진행 중인 영업기회인데 예정된 다음 할 일이 없습니다.'],
   overdue:['기한초과','등록된 다음 할 일의 기한이 지났지만 완료되지 않았습니다.'],
-  nearIdle:['수주임박 무활동','경쟁·PT / 공사임박 / 입찰 / 계약 단계에서 유효접촉이 7일 이상 없거나 유효접촉 기록이 없는 현장입니다.'],
+  nearIdle:['수주 임박인데 연락 없음','경쟁·PT / 공사임박 / 입찰 / 계약 단계에서 마지막 연락이 7일 넘었거나 연락 기록이 없는 현장입니다.'],
   noAmount:['금액 미입력','예상금액과 견적금액이 모두 입력되지 않은 현장입니다.'],
   stageSla:['Stage SLA 초과','현재 단계 체류일이 해당 단계의 관리 기준을 초과했습니다.'],
   stale:['장기정체','현재 화면의 장기정체 기준에 포함된 현장입니다.'],
   workMissing:['공종 미분류','선택된 구조화 공종이 없는 현장입니다.'],
   recontact:['오늘 재접촉','다음 할 일 또는 재접촉 약속일이 오늘이거나 지났습니다.'],
   unassigned:['미배정 문의','현재 영업담당자가 배정되지 않은 문의입니다.'],
-  noResponse:['최초응대 지연','현재 화면의 최초응대 확인 기준에 포함된 문의입니다.']
+  noResponse:['첫 연락 지연','현재 화면의 첫 연락 확인 기준에 포함된 문의입니다.']
  };
  function bind(slot,kind,rows,title,description){registry.set(slot,{kind,rows:rows.slice(),title:title||definitions[kind]?.[0]||kind,description:description||definitions[kind]?.[1]||'카드에 집계된 동일한 대상입니다.'});return 'IssueModal.open(\''+slot+'\')'}
  function sorted(rows,sort){return rows.slice().sort((a,b)=>sort==='days'?(b.days??-1)-(a.days??-1)||b.amount-a.amount:sort==='owner'?a.owner.localeCompare(b.owner,'ko')||b.amount-a.amount:b.amount-a.amount||(b.days??-1)-(a.days??-1))}
@@ -23,7 +23,7 @@
   if(kind==='salesIssues')return facts(d,actionObj(d,itemPatch(d,'deal'))?'overdue':'nextMissing');
   const inquiry=['unassigned','noResponse'].includes(kind),p=inquiry?{}:itemPatch(d,'deal'),m=inquiry?{}:relationshipMeta(d),a=inquiry?null:actionObj(d,p),due=a&&(a.due||a.due_at),days=kind==='overdue'?(due?Math.max(0,-daysTo(String(due).slice(0,10))):null):m.days;
   const activities=(p.activities||d.activities||[]).slice().sort((a,b)=>String(b.at||b.occurred_at||'').localeCompare(String(a.at||a.occurred_at||''))),last=activities[0],lastAt=last&&(last.at||last.occurred_at)||d.lastActivity||d.last_activity_at||'',missing=p.next_missing_since||d.next_missing_since;
-  let reason=inquiry?(inquiryRoutedOwner(d)?'배정 후 최초응대 확인 필요':'영업담당자 미배정'):'카드 집계 대상';
+  let reason=inquiry?(inquiryRoutedOwner(d)?'배정 후 첫 연락 확인 필요':'영업담당자 미배정'):'카드 집계 대상';
   if(kind==='nearIdle')reason=days==null?'유효접촉 기록 없음':days+'일 유효접촉 없음';
   if(kind==='noNext'||kind==='nextMissing')reason='다음 할 일 없음 · 미등록 기간 '+(missing?relDaysSince(missing)+'일':'미확인');
   if(kind==='overdue')reason=(a?.text||'예정 행동 미기록')+' · 원래 기한 '+String(due||'미기록').slice(0,10)+' · '+(days==null?'초과일 미확인':days+'일 초과');

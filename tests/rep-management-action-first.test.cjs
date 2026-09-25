@@ -7,7 +7,7 @@ const crm = fs.readFileSync(path.join(__dirname, '..', 'crm.html'), 'utf8');
 
 test('영업사원 관리 첫 업무영역은 오늘 관리자 개입으로 재배치한다', () => {
   assert.match(crm, /_managerActionFirstPaint=paintRepManagement/);
-  assert.match(crm, /h\.textContent==='오늘 관리자 개입'/);
+  assert.match(crm, /h\.textContent==='오늘 관리자 확인'/);
   assert.match(crm, /shell\.insertBefore\(intervention,command\?command\.nextSibling:shell\.firstChild\)/);
 });
 

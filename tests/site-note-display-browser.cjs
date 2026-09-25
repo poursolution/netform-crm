@@ -13,7 +13,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   }));
   assert.equal(result.html,'첫 기록 & 확인\n다음 기록\n재통화');
   assert.equal(result.unsafe,'내용');assert.equal(result.executed,false);
-  assert.equal(result.plain,'금액 < 100 · 미정');assert.equal(result.label,'다음 일정 등록');
+  assert.equal(result.plain,'금액 < 100 · 미정');assert.equal(result.label,'다음 할 일 등록');
   console.log('PASS: inert rich-text conversion, plain text, Korean label; no source data writes');
  } finally {await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1});

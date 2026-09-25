@@ -9,13 +9,13 @@ function fixture(patch={}){
 test('rep recent activity uses shared labels and preserves both original sources',()=>{
  const patch={activities:[{type:'assignment_changed',at:'2026-09-16',note:'담당 변경'}]},r={deals:[{site:'합성 현장',activities:[{type:'next_action_set',at:'2026-09-15',note:'재통화'},{type:'next_action_completed',at:'2026-09-14'}]}]};
  const before=JSON.stringify({patch,r}),rows=fixture(patch).repManagerRecent(r);
- assert.deepEqual(Array.from(rows,x=>x.type),['담당자 변경','다음 일정 등록','다음 행동 완료']);
+ assert.deepEqual(Array.from(rows,x=>x.type),['담당자 변경','다음 할 일 등록','다음 할 일 완료']);
  assert.equal(JSON.stringify({patch,r}),before);
 });
 test('rep renderer escapes original content and uses translated activity',()=>{
  const r={deals:[{site:'<b>현장</b>',activities:[{type:'next_action_set',at:'2026-09-15',note:'<img src=x>'}]}],weekNew:1,weekTracked:false,weekCompete:0,weekBid:0,weekWon:0};
  const html=fixture().repManagerActivity(r,0);
- assert.ok(html.includes('다음 일정 등록'));assert.ok(html.includes('&lt;img src=x&gt;'));assert.ok(html.includes('&lt;b&gt;현장&lt;/b&gt;'));assert.ok(!html.includes('next_action_set'));
+ assert.ok(html.includes('다음 할 일 등록'));assert.ok(html.includes('&lt;img src=x&gt;'));assert.ok(html.includes('&lt;b&gt;현장&lt;/b&gt;'));assert.ok(!html.includes('next_action_set'));
 });
 test('empty history, sorting and five-row limit remain unchanged',()=>{
  const f=fixture();assert.equal(f.repManagerRecent({deals:[]}).length,0);

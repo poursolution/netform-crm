@@ -10,12 +10,12 @@
  function eligible(d){return !!d&&!terminal.has(code(d))&&code(d)!=='waiting'&&d.lifecycle_status!=='closed';}
  function plan(d,input){
   if(!eligible(d))throw Error('진행 중인 영업건에서만 등록할 수 있습니다.');
-  if(!date(input.due))throw Error('다음 연락일을 확인해 주세요.');
+  if(!date(input.due))throw Error('다음 할 일 날짜를 확인해 주세요.');
   if(!input.reason||!input.reason.trim()||input.reason.trim().length>300)throw Error('다시 연락할 이유를 입력해 주세요.');
   if(input.year&&!/^20\d{2}$/.test(input.year))throw Error('공사예정연도는 2000~2099년으로 입력해 주세요.');
   const long=input.mode==='later'&&input.long===true;
   const purpose=(input.year?'공사예정 '+input.year+'년 · ':'')+input.reason.trim();
-  return {long,due:input.due,year:input.year||'',purpose,text:purpose+' · 고객 재접촉',destination:long?'관계관리 · 대기고객으로 연결':'Pipeline 유지'};
+  return {long,due:input.due,year:input.year||'',purpose,text:purpose+' · 고객 재접촉',destination:long?'관계관리 · 보류 고객으로 연결':'진행 중으로 유지'};
  }
  function sentAt(d){
   const messages=(d.message_logs||d.messageLogs||[]).filter(x=>x.status==='sent'&&(x.quote_version_no||x.quote_attachment_id));
@@ -39,13 +39,13 @@
   function close(){if(dialog){const f=dialog.querySelector('form').elements;drafts.set(dialog.dataset.key,{reason:f.reason.value,due:f.due.value,year:f.year.value,long:!!f.namedItem('long')?.checked});dialog.remove();}dialog=null;if(focus&&focus.isConnected)focus.focus();}
   function open(id,mode){const d=find(id);if(!eligible(d))return;if(mode==='end'){w.StageTransitionUI.open(d,false,'lost');const host=w.document.getElementById('inlineTransition');if(host&&!host.getClientRects().length&&!w.document.getElementById('stageTransitionModal')){const modal=w.document.createElement('div');modal.id='stageTransitionModal';modal.className='stage-transition-overlay';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');const section=w.document.createElement('section');section.className='stage-transition-dialog';section.appendChild(host);modal.appendChild(section);w.document.body.appendChild(modal);w.document.body.style.overflow='hidden';host.querySelector('select')?.focus();}return;}close();focus=w.document.activeElement;
    dialog=w.document.createElement('dialog');dialog.className='pc-followup-dialog';dialog.dataset.key=id+':'+mode;dialog.dataset.deal=id;
-   dialog.innerHTML='<form><header><div><small>'+esc(d.site||'영업기회')+'</small><h2>'+ (mode==='later'?'추후 다시 연락':'계속 진행')+'</h2></div><button type="button" data-close aria-label="닫기">×</button></header><label>이유<select name="reason">'+(mode==='continue'?'<option>고객 검토결과 확인</option>':'')+reasons.map(r=>'<option>'+r+'</option>').join('')+'</select></label><label>다음 연락일<input name="due" type="date" required></label><div class="pc-followup-presets"><button type="button" data-days="7">7일 후</button><button type="button" data-days="14">14일 후</button><button type="button" data-days="30">30일 후</button></div><label>공사예정연도 <small>미정이면 비워두세요</small><input name="year" type="number" min="2000" max="2099" placeholder="예: 2030"></label>'+(mode==='later'?'<label class="pc-followup-long"><input name="long" type="checkbox">고객이 장기 검토 의사를 밝혔습니다</label>':'')+'<p class="pc-followup-preview" aria-live="polite"></p><p class="pc-followup-error" role="status"></p><footer><button type="button" data-close>취소</button><button type="submit">계획 저장</button></footer></form>';
+   dialog.innerHTML='<form><header><div><small>'+esc(d.site||'영업기회')+'</small><h2>'+ (mode==='later'?'추후 다시 연락':'계속 진행')+'</h2></div><button type="button" data-close aria-label="닫기">×</button></header><label>이유<select name="reason">'+(mode==='continue'?'<option>고객 검토결과 확인</option>':'')+reasons.map(r=>'<option>'+r+'</option>').join('')+'</select></label><label>다음 할 일 날짜<input name="due" type="date" required></label><div class="pc-followup-presets"><button type="button" data-days="7">7일 후</button><button type="button" data-days="14">14일 후</button><button type="button" data-days="30">30일 후</button></div><label>공사예정연도 <small>미정이면 비워두세요</small><input name="year" type="number" min="2000" max="2099" placeholder="예: 2030"></label>'+(mode==='later'?'<label class="pc-followup-long"><input name="long" type="checkbox">고객이 장기 검토 의사를 밝혔습니다</label>':'')+'<p class="pc-followup-preview" aria-live="polite"></p><p class="pc-followup-error" role="status"></p><footer><button type="button" data-close>취소</button><button type="submit">계획 저장</button></footer></form>';
    w.document.body.appendChild(dialog);const form=dialog.querySelector('form'),el=name=>form.elements.namedItem(name);
    const n=noNext(d)?{}:nextOf(d);el('due').value=nextDate(n);
    const cy=w.ConstructionYear&&w.ConstructionYear.yearOf(d),savedYear=String(n.text||'').match(/^공사예정 (20\d{2})년 · /);if(savedYear)el('year').value=savedYear[1];else if(/^20\d{2}$/.test(cy))el('year').value=cy;
    const draft=drafts.get(dialog.dataset.key);if(draft){['reason','due','year'].forEach(k=>el(k).value=draft[k]);if(el('long'))el('long').checked=draft.long;}
    function input(){return {mode,reason:el('reason').value,due:el('due').value,year:el('year').value,long:!!el('long')?.checked};}
-   function preview(){dialog.querySelector('.pc-followup-preview').textContent=el('long')?.checked?'관계관리 · 대기고객으로 연결합니다. 기존 견적·금액·이력은 유지됩니다.':'Pipeline을 유지하고 다음 연락 일정만 등록합니다.';}
+   function preview(){dialog.querySelector('.pc-followup-preview').textContent=el('long')?.checked?'관계관리 · 보류 고객으로 연결합니다. 기존 견적·금액·이력은 유지됩니다.':'진행 중으로 유지하고 다음 할 일 날짜만 등록합니다.';}
    form.oninput=preview;preview();dialog.querySelectorAll('[data-close]').forEach(b=>b.onclick=close);
    dialog.querySelectorAll('[data-days]').forEach(b=>b.onclick=()=>{const dt=new Date(today()+'T12:00:00Z');dt.setUTCDate(dt.getUTCDate()+Number(b.dataset.days));el('due').value=dt.toISOString().slice(0,10);});
    dialog.oncancel=e=>{e.preventDefault();close();};

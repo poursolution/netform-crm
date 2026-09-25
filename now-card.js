@@ -5,14 +5,17 @@
 (function(root){
  'use strict';
  const h=v=>root.esc(String(v??'')),attr=v=>root.escAttr(String(v??''));
- const DEFAULT_TODO={first_contact:'고객에게 연락하고 니즈를 확인해 주세요',consulting:'견적 요청 내용을 확인하고 회신해 주세요',sent:'보낸 자료의 검토 여부를 확인해 주세요',rapport:'유대 유지 연락을 해주세요',silent:'재접촉 연락을 해주세요',waiting:'재개 시점을 확인해 주세요',compete:'경쟁 상황과 다음 일정을 확인해 주세요',imminent:'계약 조건을 확인해 주세요',bidding:'입찰 일정을 확인해 주세요',contract:'계약 체결 상태를 확인해 주세요',construction:'착공 준비 상황을 확인해 주세요',completion:'준공·수금 상태를 확인해 주세요'};
+ const DEFAULT_TODO={first_contact:'고객에게 연락하고 니즈를 확인해 주세요',consulting:'견적 요청 내용을 확인하고 회신해 주세요',sent:'보낸 자료의 검토 여부를 확인해 주세요',rapport:'관계 유지 연락을 해주세요',silent:'다시 연락해 주세요',waiting:'재개 시점을 확인해 주세요',compete:'경쟁 상황과 다음 일정을 확인해 주세요',imminent:'계약 조건을 확인해 주세요',bidding:'입찰 일정을 확인해 주세요',contract:'계약 체결 상태를 확인해 주세요',construction:'착공 준비 상황을 확인해 주세요',completion:'준공·수금 상태를 확인해 주세요'};
+ /* 표시 전용(2026-09-26 문구 정리): 예전 기록 문구를 새 용어로 보여 준다 — 저장된 값은 바꾸지 않는다. crm.html sayLegacyNote와 같은 규칙 */
+ const SAY=[[/전화 부재 — 못 받으심|통화 시도 — 부재/g,'부재중 (전화 안 받음)'],[/통화 — 진행됨/g,'통화 완료 · 진행 중'],[/^통화 — 진행 중, \d{4}-(\d{2})-(\d{2}) 다시 확인/,'통화 완료 · 진행 중 ($1/$2 다시 확인)'],[/^통화 시도 — 다시 연락하기로 함/,'통화 시도 · 다시 연락하기로 함'],[/^통화 — 고객 약속: /,'통화 완료 · 고객 약속: '],[/재통화 시도/g,'다시 전화하기'],[/고객 요청 재연락/g,'요청 시점에 다시 연락'],[/통화 후속 확인/g,'통화 후 진행 확인'],[/고객 요청으로 후속 연기/g,'고객 요청으로 다음 주 재연락']];
+ function say(v){if(typeof root.sayLegacyNote==='function')return root.sayLegacyNote(v);v=String(v??'');SAY.forEach(r=>{v=v.replace(r[0],r[1])});return v}
  function money(n){n=Number(n)||0;if(!n)return '';return n>=1e8?(Math.round(n/1e7)/10)+'억':Math.round(n/1e4).toLocaleString('ko-KR')+'만'}
  function dueDays(v){if(!v||!Number.isFinite(Date.parse(v)))return null;const n=root.daysTo(v);return Number.isFinite(n)?n:null}
  function lastTalk(d,p){
   const rows=[...(d.activities||[]),...((p&&p.activities)||[])].filter(x=>x&&(x.note||x.result));
   rows.sort((a,b)=>String(b.at||b.occurred_at||'').localeCompare(String(a.at||a.occurred_at||'')));
   const x=rows[0];if(!x)return null;
-  return {text:String(x.note||x.result).slice(0,80),at:(x.at||x.occurred_at||'').slice(0,10)};
+  return {text:say(x.note||x.result).slice(0,80),at:(x.at||x.occurred_at||'').slice(0,10)};
  }
  function needsOf(d){
   const c=d.stage_contexts||{};
@@ -25,14 +28,14 @@
  }
  function todoOf(d,p){
   const a=root.actionObj(d,p),due=a?dueDays(a.due):null;
-  if(a&&a.text)return {text:a.text,due:a.due||'',days:due,suggested:false,promise:/약속/.test(String(a.type||''))};
+  if(a&&a.text)return {text:say(a.text),due:a.due||'',days:due,suggested:false,promise:/약속/.test(String(a.type||''))};
   return {text:DEFAULT_TODO[root.dealStage(d)]||'고객에게 연락하고 진행 상황을 확인해 주세요',due:'',days:null,suggested:true,promise:false};
  }
  function card(){
   const cur=root.CUR_DETAIL;if(!cur||cur.kind!=='deal')return '';
   const d=cur.item,p=root.currentPatch?root.currentPatch():{};
   const todo=todoOf(d,p),meta=root.relationshipMeta?root.relationshipMeta(d):{},talk=lastTalk(d,p),needs=needsOf(d),quote=lastQuote(d);
-  const dueTag=todo.days===null?(todo.suggested?'<span class="nc-sug">추천 할 일</span>':'<span class="nc-warn">기한 미입력</span>'):todo.days<0?'<span class="nc-late">예정일 '+h(String(todo.due).slice(5,10))+' · '+Math.abs(todo.days)+'일 지남</span>':todo.days===0?'<span class="nc-today">오늘</span>':'<span class="nc-ok">D-'+todo.days+'</span>';
+  const dueTag=todo.days===null?(todo.suggested?'<span class="nc-sug">추천 할 일</span>':'<span class="nc-warn">기한 미입력</span>'):todo.days<0?'<span class="nc-late">예정일 '+h(String(todo.due).slice(5,10))+' · '+Math.abs(todo.days)+'일 지남</span>':todo.days===0?'<span class="nc-today">오늘</span>':'<span class="nc-ok">'+todo.days+'일 남음</span>';
   const brief=[
    talk?['마지막 대화','“'+h(talk.text)+'” <small>'+h(talk.at)+'</small>',1]:null,
    needs?['고객 요구',h(needs),0]:null,
@@ -40,7 +43,7 @@
    ['오늘 확인',h(todo.text),0]
   ].filter(Boolean).map(r=>'<div class="row"><span>'+r[0]+'</span><b class="'+(r[2]?'say':'')+'">'+r[1]+'</b></div>').join('');
   return '<section class="now-card" id="nowCard"><div class="nc-stage">'+h(root.stageLabel(root.dealStage(d)))+(root.oppAmt(d)>0?' · 예상 '+money(root.oppAmt(d)):'')+' · '+h(d.brand||root.bizOf?.(d)||'')+'</div>'
-   +'<div class="nc-todo">'+(todo.promise?'<span class="nc-promise">🔴 고객 약속</span> ':'')+h(todo.text)+' '+dueTag+'</div>'
+   +'<div class="nc-todo">'+(todo.promise?'<span class="nc-promise">🤝 고객 약속</span> ':'')+h(todo.text)+' '+dueTag+'</div>'
    +'<div class="nc-meta">'+h(root.repN(d.assignee)||'담당 미지정')+(meta.meaningfulAt?' · 마지막 연락 '+h(String(meta.meaningfulAt).slice(0,10)):' · 연락 기록 없음')+'</div>'
    +'<div class="nc-cta"><button type="button" class="nc-call" onclick="NowCard.sheet()">📞 연락하고 결과 남기기</button><button type="button" onclick="dccGoActivity()">결과 남기기</button><button type="button" onclick="dccGoNext()">다른 날짜로</button>'+(todo&&!todo.suggested&&todo.due?'<button type="button" onclick="completeNextAction()">다음 할 일 완료</button>':'')+'</div>'
    +'<div class="nc-brief">'+brief+'</div></section>';
@@ -57,10 +60,10 @@
   return out;
  }
  const CHIPS=[
-  ['ongoing','진행 중이에요','다음 확인일만 고르면 끝'],
-  ['recall','다시 연락해야 해요','통화 못 했거나 다시 걸기로 함'],
-  ['absent','부재 · 못 받으심','재시도 일정 자동 등록'],
-  ['promise','~하기로 약속했어요','🔴 고객 약속으로 등록'],
+  ['ongoing','통화함 · 진행 중','다음 확인일만 고르면 끝'],
+  ['recall','다시 연락하기로 함','통화가 짧았거나 나중에 다시 걸기로 함'],
+  ['absent','전화 안 받음','다시 걸 날짜만 고르면 끝'],
+  ['promise','고객과 약속함','🤝 고객 약속으로 등록'],
   ['detail','자세히 기록 (견적·일정·종료 등)','기록 창이 열립니다']
  ];
  function sheet(){
@@ -96,8 +99,9 @@
   if(!root.Phase1?.queue||typeof root.queueDetailContactOperation!=='function'){status.textContent='로그인 상태에서만 저장할 수 있습니다.';return;}
   const promise=chip==='promise';
   if(promise&&!note){status.textContent='어떤 약속인지 한 줄만 적어주세요.';return;}
-  const noteText=chip==='ongoing'?'통화 — 진행 중, '+due+' 다시 확인':chip==='recall'?'통화 시도 — 다시 연락하기로 함':chip==='absent'?'통화 시도 — 부재':'통화 — 고객 약속: '+note;
-  const nextText=promise?note:chip==='absent'?'재시도 전화':'진행 상황 확인 연락';
+  /* 기록 문구(2026-09-26 문구 정리): 첫머리 '통화 완료 ·'=유효 접촉, '통화 시도 ·'·'부재중'=유효 접촉 아님 — isMeaningfulContact 분류와 맞춘다 */
+  const noteText=chip==='ongoing'?'통화 완료 · 진행 중 ('+String(due).slice(5,10).replace('-','/')+' 다시 확인)':chip==='recall'?'통화 시도 · 다시 연락하기로 함':chip==='absent'?'부재중 (전화 안 받음)':'통화 완료 · 고객 약속: '+note;
+  const nextText=promise?note:chip==='absent'?'다시 전화하기':'진행 상황 확인 전화';
   const assignee=root.repN(d.assignee)||root.repN(root.ME?.name)||'';
   const activity={type:'전화',note:noteText,result:'',occurred_at:new Date().toISOString()};
   const next={type:promise?'고객 약속':'전화',text:nextText,due_at:due,assignee};
@@ -142,13 +146,14 @@
    if(t==='담당자 배정')return ['👤','배정'+(x.who?' · '+x.who:''),'in'];
    if(t==='단계 전환'||t==='단계전환')return ['➜',b.replace(/^.*→\s*/,'')||'단계 변경','stage'];
    if(t==='사업유형 변경')return ['🔀','사업 전환','stage'];
-   if(/부재/.test(t)||/^부재/.test(b))return ['📵','부재','act'];
+   if(/부재/.test(t)||/^(부재|전화 부재|통화 시도 — 부재)/.test(b)||/^(부재|전화 안 받음)$/.test(String(x.result||'').trim()))return ['📵','안 받음','act'];
    if(/방문/.test(t))return ['🏠','방문','act'];
    if(/문자|메시지/.test(t))return ['💬','문자','act'];
    if(/메일/.test(t))return ['✉️','메일','act'];
    if(/전화|통화|call/i.test(t)||/^통화/.test(b))return ['📞','전화','act'];
    return ['•',t.length>10?t.slice(0,10)+'…':t||'기록','misc'];};
-  const short=v=>{v=String(v||'').replace(/^(통화( 시도)?|전화( 부재)?|부재)\s*—\s*/,'').trim();return v.length>18?v.slice(0,18)+'…':v;};
+  /* 예전 기록 문구는 표시할 때만 새 용어로(저장값은 그대로). 첫머리 '통화 —'·'통화 시도 —'·'전화 부재 —'(예전)과 '통화 완료 ·'·'통화 시도 ·'·'부재중'(새) 모두 뗀다 */
+  const short=v=>{v=say(v).replace(/^(통화( 시도)?|전화( 부재)?|부재)\s*—\s*/,'').replace(/^통화 (완료|시도)\s*·\s*/,'').replace(/^부재중\s*(\(전화 안 받음\))?\s*/,'').replace(/^(전화 안 받음|부재)$/,'').trim();return v.length>18?v.slice(0,18)+'…':v;};
   const chips=[];let prev=null,firstAct=null,start=null,lastSig='',rep=1;
   ev.forEach(x=>{
    const k=kind(x),t=ts(x.at);
@@ -159,7 +164,7 @@
    if(k[2]==='act'&&firstAct===null)firstAct=t;
    if(prev!==null){const g=Math.floor((t-prev)/864e5);if(g>gapN)chips.push('<span class="nf-gap'+(g>gapN*2?' hot':'')+'">⏸ '+g+'일 공백</span>');}
    const tail=k[2]==='act'?short(x.result||x.body):'';
-   chips.push('<span class="nf-ev '+k[2]+'" title="'+attr((x.ttl||'')+' · '+(x.body||'')+(x.result?' · '+x.result:''))+'"><i>'+k[0]+'</i><b>'+h(k[1])+'</b>'+(tail?'<em>'+h(tail)+'</em>':'')+'<small>'+h(day(x.at).slice(5).replace('-','/'))+'</small></span>');
+   chips.push('<span class="nf-ev '+k[2]+'" title="'+attr((x.ttl||'')+' · '+say(x.body||'')+(x.result?' · '+say(x.result):''))+'"><i>'+k[0]+'</i><b>'+h(k[1])+'</b>'+(tail?'<em>'+h(tail)+'</em>':'')+'<small>'+h(day(x.at).slice(5).replace('-','/'))+'</small></span>');
    prev=t;
   });
   const hidden=Math.max(0,chips.length-12),shown=chips.slice(-12);
@@ -169,9 +174,9 @@
   if(idle!==null&&idle>gapN&&!(a&&a.text&&due!==null&&due>=0))shown.push('<span class="nf-gap'+(idle>gapN*2?' hot':'')+'">⏸ 오늘까지 '+idle+'일</span>');
   const lastAct=ev.filter(x=>kind(x)[2]==='act').slice(-1)[0];
   const firstResp=start!==null&&firstAct!==null&&firstAct>=start?Math.round((firstAct-start)/36e5):null;
-  const summary='마지막 고객 행동 '+(lastAct?h(day(lastAct.at).slice(5).replace('-','/'))+' '+h(kind(lastAct)[1])+(lastAct.result||lastAct.body?' — '+h(short(lastAct.result||lastAct.body)):''):'<b class="warn">기록 없음</b>')
+  const summary='마지막 고객 행동 '+(lastAct?h(day(lastAct.at).slice(5).replace('-','/'))+' '+h(kind(lastAct)[1])+(short(lastAct.result||lastAct.body)?' — '+h(short(lastAct.result||lastAct.body)):''):'<b class="warn">기록 없음</b>')
    +' · '+(a&&a.text&&due!==null?'다음 할 일 '+h(String(a.due).slice(5,10).replace('-','/')):'<b class="warn">다음 할 일 없음</b>')
-   +(firstResp!==null?' · 첫 응대 '+(firstResp<24?firstResp+'시간':Math.round(firstResp/24)+'일'):'');
+   +(firstResp!==null?' · 첫 연락 '+(firstResp<24?firstResp+'시간':Math.round(firstResp/24)+'일'):'');
   if(!ev.length)return '<section class="now-flow" id="nowFlow"><header><b>영업 흐름</b><span>아직 기록된 흐름이 없습니다 — 첫 연락 결과부터 이어집니다</span></header><div class="nf-row">'+nextChip+'</div></section>';
   return '<section class="now-flow" id="nowFlow"><header><b>영업 흐름</b><span>'+summary+'</span></header><div class="nf-row">'+(hidden?'<span class="nf-more">이전 '+hidden+'건</span>':'')+shown.join('<i class="nf-arr">›</i>')+'<i class="nf-arr">›</i>'+nextChip+'</div></section>';
  }

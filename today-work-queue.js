@@ -1,7 +1,7 @@
 (function(root){
  'use strict';
  const TYPES={inquiry:'견적문의',pipeline:'파이프라인',relationship:'관계관리',expansion:'확장관리',manager:'관리자 요청'};
- const FILTERS={inquiry:[['all','전체'],['unassigned','미배정'],['response','응대지연'],['processing','처리지연']],pipeline:[['all','전체'],['overdue','기한초과'],['missing','Next 없음'],['stale','장기정체']]};
+ const FILTERS={inquiry:[['all','전체'],['unassigned','미배정'],['response','첫 연락 늦음'],['processing','후속 늦음']],pipeline:[['all','전체'],['overdue','기한초과'],['missing','다음 할 일 없음'],['stale','장기정체']]};
  const SIZE=20;
  const h=value=>root.esc(String(value==null?'':value));
  const attr=value=>root.escAttr(String(value==null?'':value));
@@ -11,11 +11,11 @@
  function dueDays(date){if(!date||!Number.isFinite(Date.parse(date)))return null;const n=root.daysTo(date);return Number.isFinite(n)?n:null}
  function contactEntry(d){
   const meta=root.relationshipMeta(d),a=root.actionObj(d,root.itemPatch(d,'deal')),due=dueDays(meta.due),days=meta.days;
-  let reason='',next=a&&a.text||'고객에게 연락하고 상담 내용과 다음 연락일 기록';
-  if(due!==null&&due<0)reason='다음 연락일 '+Math.abs(due)+'일 초과';
+  let reason='',next=a&&a.text||'고객에게 연락하고 상담 내용과 다음 할 일 날짜 기록';
+  if(due!==null&&due<0)reason='다음 할 일 날짜 '+Math.abs(due)+'일 지남';
   else if(due===0)reason='오늘 연락 예정';
-  else if(due===null){reason='다음 연락일 미입력';next='다음 연락일과 연락 목적 등록'}
-  else if(days!==null&&days>=(root.OPS_RULES?.longContactDays??90))reason=days+'일 미접촉';
+  else if(due===null){reason='다음 할 일 날짜 미입력';next='다음 할 일 날짜와 연락 목적 등록'}
+  else if(days!==null&&days>=(root.OPS_RULES?.longContactDays??90))reason='마지막 연락 '+days+'일 전';
   else return null;
   return {key:'deal:'+root.dealKey(d),type:'deal',kind:'relationship',item:d,owner:root.repN(d.assignee)||'미배정',stage:root.stageLabel(root.dealStage(d)),reason,next,recent:root.todayRecent(d,'deal'),delay:due<0?-due:0,due:meta.due||'',dueDays:due,missingNext:due===null,overdue:due!==null&&due<0};
  }
@@ -31,8 +31,8 @@
    const due=explicit||hasBasis?r.nextContactAt:'',n=dueDays(due);
    if(n!==null&&n>0)return null;
    const inferred=!explicit&&hasBasis;
-   const reason=n===null?'다음 연락일 미입력':inferred?'준공 후 접촉기준 도래 · 계산 일정':n<0?'다음 연락일 '+Math.abs(n)+'일 초과':'오늘 기존 고객 접촉';
-   return {key:'expansion:'+r.sourceOpportunityId,type:'expansion',kind:'expansion',item:r,owner:root.repN(r.owner)||'미배정',stage:root.ExpansionFlow.status(r)==='관계관리'?'유지접촉':root.ExpansionFlow.status(r),reason,next:n===null?'확장관리에서 다음 연락일 등록':r.needNote||'기존 고객에게 연락하고 추가 공사 니즈 확인',recent:r.lastContactAt?'최근 연락 '+root.fmtD(r.lastContactAt):'최근 연락 기록 없음',due,dueDays:n,inferred,overdue:!inferred&&n!==null&&n<0,missingNext:n===null,delay:n!==null&&n<0?-n:0};
+   const reason=n===null?'다음 할 일 날짜 미입력':inferred?'준공 후 연락 시점 (자동 계산)':n<0?'다음 할 일 날짜 '+Math.abs(n)+'일 지남':'오늘 기존 고객 접촉';
+   return {key:'expansion:'+r.sourceOpportunityId,type:'expansion',kind:'expansion',item:r,owner:root.repN(r.owner)||'미배정',stage:root.ExpansionFlow.status(r)==='관계관리'?'관계 유지 연락':root.ExpansionFlow.status(r),reason,next:n===null?'확장관리에서 다음 할 일 날짜 등록':r.needNote||'기존 고객에게 연락하고 추가 공사 니즈 확인',recent:r.lastContactAt?'최근 연락 '+root.fmtD(r.lastContactAt):'최근 연락 기록 없음',due,dueDays:n,inferred,overdue:!inferred&&n!==null&&n<0,missingNext:n===null,delay:n!==null&&n<0?-n:0};
   }).filter(Boolean);
  }
 
@@ -72,7 +72,7 @@
    x.responseLate=x.kind!=='manager'&&!x.unassigned&&!root.inqCtlFirstResponseAt(x.item)&&root.inquiryResponseLate(x.item);
    x.processingLate=x.kind==='manager'?x.overdue:!x.unassigned&&!x.responseLate&&!!root.inqCtlFirstResponseAt(x.item)&&(x.overdue||/지연|정체/.test(x.reason));
    x.band=x.unassigned?0:x.responseLate?1:x.processingLate?2:3;
-   x.status=x.unassigned?'미배정':x.responseLate?'응대지연':x.processingLate?'처리지연':x.kind==='manager'?'관리자 요청':root.inqCtlFirstResponseAt(x.item)?'처리대기':'응대대기';
+   x.status=x.unassigned?'미배정':x.responseLate?'첫 연락 늦음':x.processingLate?'후속 늦음':x.kind==='manager'?'관리자 요청':root.inqCtlFirstResponseAt(x.item)?'후속 대기':'첫 연락 대기';
    x.lag=Math.max(0,root.todayHoursFrom(root.inquiryCreatedAt(x.item))||0);
   }else{
    const meta=x.type==='deal'?root.relationshipMeta(x.item):null;
@@ -91,12 +91,12 @@
   const base=root.todayHomeData(),me=root.todayOwner();
   // Include overdue first responses even when the original recent-inquiry window has elapsed.
   const inquiry=base.Q.map(q=>base.inquiry.find(x=>x.key==='inq:'+root.inqKey(q))||
-   (root.inquiryResponseLate(q)?{key:'inq:'+root.inqKey(q),type:'inq',item:q,owner:root.repN(root.inquiryRoutedOwner(q)),stage:'배정완료',reason:'최초 응대 지연',next:'고객에게 연락하고 최초 응대 결과 기록',recent:root.todayRecent(q,'inq'),delay:0}:null)).filter(Boolean);
+   (root.inquiryResponseLate(q)?{key:'inq:'+root.inqKey(q),type:'inq',item:q,owner:root.repN(root.inquiryRoutedOwner(q)),stage:'배정완료',reason:'첫 연락 지연',next:'고객에게 연락하고 첫 연락 결과 기록',recent:root.todayRecent(q,'inq'),delay:0}:null)).filter(Boolean);
   const pipeline=base.D.filter(d=>!relationship(d)).map(d=>{
    const entry=base.pipeline.find(x=>x.key==='deal:'+root.dealKey(d));if(entry)return entry;
    const a=root.actionObj(d,root.itemPatch(d,'deal')),meta=root.relationshipMeta(d),missing=!a||!a.text||dueDays(a.due)===null;
    if(!missing&&!(meta.days!==null&&meta.days>=(root.OPS_RULES?.longContactDays??90)))return null;
-   return {key:'deal:'+root.dealKey(d),type:'deal',item:d,owner:root.repN(d.assignee),stage:root.stageLabel(root.dealStage(d)),reason:missing?'다음 할 일·기한 미등록':meta.days+'일 미접촉',next:missing?'다음 할 일과 기한 지정':'고객에게 연락하고 진행 상황 확인',recent:root.todayRecent(d,'deal'),delay:0};
+   return {key:'deal:'+root.dealKey(d),type:'deal',item:d,owner:root.repN(d.assignee),stage:root.stageLabel(root.dealStage(d)),reason:missing?'다음 할 일·기한 미등록':'마지막 연락 '+meta.days+'일 전',next:missing?'다음 할 일과 기한 지정':'고객에게 연락하고 진행 상황 확인',recent:root.todayRecent(d,'deal'),delay:0};
   }).filter(Boolean);
   const requests=managerEntries().filter(x=>base.Q.some(q=>String(q.id)===String(x.request.target_id)));
   const rows=inquiry.concat(pipeline,base.D.filter(relationship).map(contactEntry).filter(Boolean),expansionEntries(base.admin,me),requests).map(decorate).map(prioritize);
@@ -149,18 +149,18 @@
  }
  function elapsed(x){
   if(x.unassigned)return root.inquiryUnassignedMeta(x.item).elapsed.label;
-  if(x.inferred)return '계산 일정';
-  if(x.dueDays!==null)return x.dueDays<0?Math.abs(x.dueDays)+'일 초과':x.dueDays===0?'오늘':'D-'+x.dueDays;
+  if(x.inferred)return '자동 계산';
+  if(x.dueDays!==null)return x.dueDays<0?Math.abs(x.dueDays)+'일 지남':x.dueDays===0?'오늘':x.dueDays+'일 남음';
   if(x.type==='inq'&&x.overdue)return root.inqCtlElapsed(root.inqCtlAssignedAt(x.item));
   return '기한 미입력';
  }
  function row(x,rank,admin){
   const site=x.item.site||x.item.site_name||'현장명 미입력',inquiry=x.panel==='inquiry';
   const action=x.unassigned&&admin?'assign':x.kind==='relationship'&&!x.missingNext?'contact':x.missingNext&&x.type==='deal'?'next':'open',label=action==='assign'?'배정':'처리';
-  const repeatedDue=!x.inferred&&((x.dueDays!==null&&x.dueDays<0&&/^다음 (연락|행동)일 \d+일 초과$/.test(x.reason))||(x.dueDays===0&&/^(오늘 연락 예정|오늘 기존 고객 접촉|오늘 실행 예정)$/.test(x.reason)));
+  const repeatedDue=!x.inferred&&((x.dueDays!==null&&x.dueDays<0&&/^다음 (연락|행동)일 \d+일 초과$|^다음 할 일 날짜 \d+일 (초과|지남)$/.test(x.reason))||(x.dueDays===0&&/^(오늘 연락 예정|오늘 기존 고객 접촉|오늘 실행 예정)$/.test(x.reason)));
   const reason=x.reason&&!repeatedDue?'<small class="twq-reason">'+h(x.reason)+'</small>':'';
   const hours=inquiry?root.todayHoursFrom(root.inquiryCreatedAt(x.item)):null;
-  const dueLabel=inquiry?(hours===null?'접수일 미확인':hours<24?Math.floor(Math.max(0,hours))+'시간':'D+'+Math.floor(hours/24)):elapsed(x);
+  const dueLabel=inquiry?(hours===null?'접수일 미확인':hours<24?Math.floor(Math.max(0,hours))+'시간':Math.floor(hours/24)+'일 지남'):elapsed(x);
   const tone=x.inferred?'inferred':x.overdue?'overdue':x.dueDays===0?'today':x.missingNext?'missing':'planned';
   const dueDescription=(inquiry?'접수경과 · ':x.due?root.fmtD(x.due)+' · ':'')+dueLabel;
   const siteSub=inquiry?(root.inqCtlContactLabel(x.item)||x.owner):TYPES[x.kind]+' · '+x.stage;
@@ -207,7 +207,7 @@
   const now=new Date().getFullYear();[now-2,now-1,now,now+1,now+2].forEach(y=>years.add(String(y)));
   return ['전체'].concat(Array.from(years).sort()).concat(['미입력']);
  }
- function repLagLabel(hours){if(!Number.isFinite(hours)||hours<=0)return '-';return hours<24?Math.floor(hours)+'시간':'D+'+Math.floor(hours/24)}
+ function repLagLabel(hours){if(!Number.isFinite(hours)||hours<=0)return '-';return hours<24?Math.floor(hours)+'시간':Math.floor(hours/24)+'일 지남'}
  function repDayLabel(hours){if(!Number.isFinite(hours)||hours<=0)return '-';return Math.max(1,Math.floor(hours/24))+'일'}
  function repMoney(value){const n=Number(value)||0;if(!n)return '-';if(n>=1e8)return (Math.round(n/1e7)/10)+'억';if(n>=1e4)return Math.round(n/1e4).toLocaleString('ko-KR')+'만';return n.toLocaleString('ko-KR')}
  function repSummary(X,P){
@@ -257,8 +257,8 @@
   const pipelineRows=S.pipeline.map(row=>repRow('<td><span class="twq-light '+row.light+'"></span><b>'+h(row.owner)+'</b></td><td>'+row.total+'</td><td class="twq-rep-amt">'+repMoney(row.amount)+'</td>'+repCell(row.overdue,'twq-rep-bad')+repCell(row.missing,'twq-rep-warn')+repCell(row.stale,'twq-rep-warn')+'<td class="'+(row.maxLag>=60*24?'twq-rep-bad':'twq-rep-zero')+'">'+repDayLabel(row.maxLag)+'</td>',row.owner,selected===row.owner)).join('');
   const table=(head,rows,empty)=>'<div class="twq-rep-scroll"><table><thead><tr>'+head.map(x=>'<th scope="col">'+x+'</th>').join('')+'</tr></thead><tbody>'+(rows||'<tr class="twq-rep-empty"><td colspan="'+(head.length)+'">'+empty+'</td></tr>')+'</tbody></table></div>';
   return '<section class="twq-rep-boards" aria-label="영업사원별 현황">'+controls
-   +'<div class="twq-rep-list inqSum"><header><h3>견적문의 · 응대 현황</h3><p>응대·후속이 밀리는 담당자를 먼저 확인하세요 · 지연 많은 순</p></header>'+alert+table(['담당자','담당','응대지연','처리지연','최장 경과',''],inquiryRows,'배정된 문의가 없습니다.')+'<footer>행을 누르면 아래 목록이 그 담당자로 좁혀집니다.</footer></div>'
-   +'<div class="twq-rep-list pipeSum"><header><h3>파이프라인 · 진행 현황</h3><p>다음 할 일이 멈춘 담당자를 먼저 확인하세요 · 위험 높은 순</p></header>'+table(['담당자','진행','진행 금액','기한초과','Next 없음','장기정체','최장 정체',''],pipelineRows,'진행 중 영업이 없습니다.')+'<footer>행을 누르면 아래 목록이 그 담당자로 좁혀집니다.</footer></div>'
+   +'<div class="twq-rep-list inqSum"><header><h3>견적문의 · 응대 현황</h3><p>응대·후속이 밀리는 담당자를 먼저 확인하세요 · 지연 많은 순</p></header>'+alert+table(['담당자','담당','첫 연락 늦음','후속 늦음','최장 경과',''],inquiryRows,'배정된 문의가 없습니다.')+'<footer>행을 누르면 아래 목록이 그 담당자로 좁혀집니다.</footer></div>'
+   +'<div class="twq-rep-list pipeSum"><header><h3>파이프라인 · 진행 현황</h3><p>다음 할 일이 멈춘 담당자를 먼저 확인하세요 · 위험 높은 순</p></header>'+table(['담당자','진행','진행 금액','기한초과','다음 할 일 없음','장기정체','최장 정체',''],pipelineRows,'진행 중 영업이 없습니다.')+'<footer>행을 누르면 아래 목록이 그 담당자로 좁혀집니다.</footer></div>'
    +'</section>';
  }
  /* 영업사원 상단 긴급 카드 (2026-09-25 CX 개편): 급한 순으로 카드가 나오고 카드에서 바로 처리한다.
@@ -312,13 +312,13 @@
    const site=x.item.site||x.item.site_name||'현장명 미입력';
    const tone=(x.promise&&x.dueDays===0)||x.overdue||x.responseLate||x.unassigned?'r':x.dueDays===0?'b':'w';
    const icon=x.promise?'🤝':tone==='r'?'🔴':tone==='b'?'🔵':'🟠';
-   const why=x.panel==='inquiry'?(x.unassigned?'미배정 · '+elapsed(x):x.responseLate?'첫 응대 지연 · '+elapsed(x):x.status+' · '+elapsed(x)):(x.reason||x.next)+(x.dueDays!==null?'':'');
+   const why=x.panel==='inquiry'?(x.unassigned?'미배정 · '+elapsed(x):x.responseLate?'첫 연락 늦음 · '+elapsed(x):x.status+' · '+elapsed(x)):(x.reason||x.next)+(x.dueDays!==null?'':'');
    const call=x.kind==='relationship'||/연락|전화|응대|접촉/.test(String(x.next||''));
    const action=x.kind==='relationship'&&!x.missingNext?'contact':x.missingNext&&x.type==='deal'?'next':'open';
    const label=call?'📞 전화':x.missingNext?'일정 잡기':'처리';
    return '<div class="twq-ucard '+tone+'"><div class="site">'+h(site)+(root.advisoryBadge?root.advisoryBadge(x.item):'')+'</div><div class="why">'+icon+' '+h(why)+'</div><div class="who">'+h(x.next||'')+'</div><div class="act"><button class="pri" data-key="'+attr(x.key)+'" data-action="'+action+'" onclick="TodayWorkQueue.open(this.dataset.key,this.dataset.action)">'+label+'</button><button data-key="'+attr(x.key)+'" onclick="TodayWorkQueue.open(this.dataset.key)">보기</button></div></div>';
   };
-  return '<section class="twq-urgent" aria-label="지금 바로 처리할 업무"><header><b>지금 바로 · '+picked.length+'건</b>'+(sum?'<span class="twq-daysum">'+sum+'</span>':'')+'<small>고객 약속 → 기한 지남 → 첫 응대 → 오늘 예정 순</small></header><div class="twq-ustrip">'+picked.map(card).join('')+'</div></section>';
+  return '<section class="twq-urgent" aria-label="지금 바로 처리할 업무"><header><b>지금 바로 · '+picked.length+'건</b>'+(sum?'<span class="twq-daysum">'+sum+'</span>':'')+'<small>고객 약속 → 기한 지남 → 첫 연락 → 오늘 예정 순</small></header><div class="twq-ustrip">'+picked.map(card).join('')+'</div></section>';
  }
  function pickOwner(name){set('owner',root.G.todayQueueOwner===name?'전체':String(name||'전체'))}
  function focusUnassigned(){root.G.todayQueueOwner='전체';root.G.todayQueueSearch='';filter('inquiry','unassigned')}
@@ -329,7 +329,7 @@
   const scoped=x=>(!X.admin||!G.todayQueueOwner||G.todayQueueOwner==='전체'||x.owner===G.todayQueueOwner)&&(!G.todayQueueSearch||[x.item.site,x.item.site_name,x.owner,x.reason,x.next].join(' ').toLowerCase().includes(String(G.todayQueueSearch).trim().toLowerCase()));
   const inquiry=X.inquiry.filter(scoped),pipeline=X.pipeline.filter(scoped);
   const toolbar='<form class="twq-toolbar" onsubmit="event.preventDefault();TodayWorkQueue.set(\'search\',this.elements.search.value)">'+(X.admin?'<label>담당자 <select aria-label="오늘 업무 담당자" onchange="TodayWorkQueue.set(\'owner\',this.value)"><option>전체</option>'+owners.map(o=>'<option '+(G.todayQueueOwner===o?'selected':'')+'>'+h(o)+'</option>').join('')+'</select></label>':'<span>내 담당 업무</span>')+'<label class="twq-search"><input name="search" aria-label="오늘 업무 검색" placeholder="현장·담당자·할 일 검색" value="'+attr(G.todayQueueSearch||'')+'"><button>검색</button></label></form>';
-  host.innerHTML='<div class="today-work-queue '+(X.admin?'manager':'rep')+'"><header><div><h2>오늘 업무</h2><span>'+(X.admin?'사원별 현황을 먼저 확인하고, 행을 눌러 해당 담당자 업무로 파고듭니다.':'신규 문의와 진행 중 영업을 각각의 처리 순서로 확인합니다.')+'</span></div><b>전체 '+(inquiry.length+pipeline.length)+'건</b></header>'+(X.admin?repBoards(X):urgentCards(inquiry.concat(pipeline)))+backlogCard((X.backlog||[]).filter(scoped),X.admin)+toolbar+'<p class="twq-count-note">각 업무함의 순위와 상태 필터는 독립적으로 적용됩니다. 파이프라인 상태는 중복될 수 있습니다.</p><div class="twq-admin-boards">'+table(inquiry,X.admin,'inquiry','견적문의 관리','신규 문의의 배정·첫 응대·후속처리')+table(pipeline,X.admin,'pipeline','파이프라인 관리','진행 중 영업의 다음 할 일·관계관리·확장관리')+'</div></div>';
+  host.innerHTML='<div class="today-work-queue '+(X.admin?'manager':'rep')+'"><header><div><h2>오늘 업무</h2><span>'+(X.admin?'사원별 현황을 먼저 확인하고, 행을 눌러 해당 담당자 업무로 파고듭니다.':'신규 문의와 진행 중 영업을 각각의 처리 순서로 확인합니다.')+'</span></div><b>전체 '+(inquiry.length+pipeline.length)+'건</b></header>'+(X.admin?repBoards(X):urgentCards(inquiry.concat(pipeline)))+backlogCard((X.backlog||[]).filter(scoped),X.admin)+toolbar+'<p class="twq-count-note">각 업무함의 순위와 상태 필터는 독립적으로 적용됩니다. 파이프라인 상태는 중복될 수 있습니다.</p><div class="twq-admin-boards">'+table(inquiry,X.admin,'inquiry','견적문의 관리','신규 문의의 배정·첫 연락·후속처리')+table(pipeline,X.admin,'pipeline','파이프라인 관리','진행 중 영업의 다음 할 일·관계관리·확장관리')+'</div></div>';
   const badge=root.$('#todayBadge');if(badge){badge.textContent=X.rows.length||'';badge.style.display=X.rows.length?'':'none'}
  }
  function setManagerRequests(rows){managerRequests=Array.isArray(rows)?rows.slice():[];if(root.G?.page==='today')render()}

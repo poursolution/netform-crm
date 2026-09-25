@@ -14,7 +14,7 @@ test('견적문의는 관리자 운영 화면과 담당자 내 문의 화면을 
   assert.match(crm, />관리자 운영<\/button>/);
   assert.match(crm, />내 문의<\/button>/);
   assert.match(crm, /MY INQUIRY DESK/);
-  assert.match(crm, /내게 배정된 문의 중 최초응대와 오늘 할 일을 먼저 처리합니다/);
+  assert.match(crm, /내게 배정된 문의 중 첫 연락과 오늘 할 일을 먼저 처리합니다/);
   assert.match(crm, /G\._inqRoleApplied!==role/);
   assert.match(crm, /G\.inqBucket=role==='admin'\?'전체':'내 할 일'/);
   assert.match(crm, /G\.inqView=role==='admin'\?'console':'split'/);
@@ -43,6 +43,6 @@ test('관리자 전용 정리 기능은 담당자 화면에서 숨기고 실행�
 test('담당자 빠른 목록은 중복 담당자 열을 제거한 7개 판단축을 사용한다', () => {
   assert.match(crm, /inq-ctl-row mine-row/);
   assert.match(crm, /header=admin\?/);
-  assert.match(crm, /<span>최초응대<\/span><span>상태·Next<\/span><span>처리<\/span>/);
+  assert.match(crm, /<span>첫 연락<\/span><span>상태·다음 할 일<\/span><span>처리<\/span>/);
   assert.match(crm, /\.inq-ctl-row\.mine-row\{grid-template-columns:/);
 });

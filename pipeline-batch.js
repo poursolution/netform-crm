@@ -3,7 +3,7 @@
 'use strict';
 const h=x=>root.esc(String(x??''));let busy=false;
 function selected(){const ids=new Set([...document.querySelectorAll('[data-triage-select]:checked')].map(n=>n.dataset.triageSelect));return root.PipelineWorkspace.rows().filter(r=>r.group==='consulting'&&ids.has(r.key));}
-function toolbar(){return '<div class="sw-batch-toolbar"><strong id="sw-selected-count">0건 선택</strong><button type="button" data-batch="work">공종 지정</button><button type="button" data-batch="next">다음 확인일 지정</button><button type="button" data-batch="waiting">대기 전환</button></div><small>선택한 현장에만 적용합니다. 대기 전환은 관계관리의 대기고객 단계로 이동합니다.</small>';}
+function toolbar(){return '<div class="sw-batch-toolbar"><strong id="sw-selected-count">0건 선택</strong><button type="button" data-batch="work">공종 지정</button><button type="button" data-batch="next">다음 확인일 지정</button><button type="button" data-batch="waiting">대기 전환</button></div><small>선택한 현장에만 적용합니다. 대기 전환은 관계관리의 보류 고객 단계로 이동합니다.</small>';}
 function close(){if(!busy)document.getElementById('sw-batch-dialog')?.remove();}
 function open(kind,rowsIn){
  const rows=(rowsIn||selected()).filter(r=>r.item&&r.item.id&&!r.expansion).map(r=>({...r,selectedVersion:r.item.version}));if(!rows.length){root.alert('먼저 처리할 현장을 선택해 주세요.');return;}

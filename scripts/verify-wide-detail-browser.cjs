@@ -164,7 +164,7 @@ async function run(){
   assert.equal(await page.locator('#dv-na-assignee').inputValue(),'이필선');
   await page.locator('.da-submit').click();await page.waitForTimeout(100);
   assert.deepEqual(await page.evaluate(()=>window.__contactOps),['activity','next_action']);
-  assert.match(await page.locator('#dv-err').innerText(),/활동은 저장되었습니다/);
+  assert.match(await page.locator('#dv-err').innerText(),/연락 결과는 저장되었습니다/);
   assert.equal(await page.locator('#dv-na-text').inputValue(),'후속 확인');
   await page.evaluate(()=>{const q=window.__contactRows[1];q.status='done';q.ack={ok:true,operation:'next_action',next_action_id:'synthetic-next'};});
   await page.locator('.da-submit').click();await page.waitForTimeout(100);
