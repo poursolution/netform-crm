@@ -783,7 +783,8 @@ function setNextAction(d,type,text,plusDays){
 function completeNextAction(d){if(d.nextAction){d.nextAction.status='done';d.nextAction.completed_at=isoNow();
  pushWrite('next_action_complete',{opportunity_id:d.id,action_id:d.nextAction.id})}}
 function dueDays(d){if(!d.nextAction||d.nextAction.status!=='open')return null;
- var t=new Date(d.nextAction.due_at+'T23:59:59').getTime();return Math.ceil((t-Date.now())/864e5)}
+ /* 2026-09-26: 서버 due_at은 '2026-09-04T00:00:00+00:00' — 뒤에 시간을 붙이면 NaN(카드 'D-NaN'·관리자 기한초과 누락). 날짜만 달력일로 센다 */
+ var s=String(d.nextAction.due||d.nextAction.due_at||'').slice(0,10),due=new Date(s+'T00:00:00'),t=new Date();t.setHours(0,0,0,0);return isNaN(due.getTime())?null:Math.round((due.getTime()-t.getTime())/864e5)}
 /* ── 서버 쓰기 큐 — 구글시트가 아니라 PC 와 같은 CRM API 로 보낸다 ──
    엔드포인트 준비 전에는 큐에 쌓이고 화면에 «서버 반영 대기 N건» 으로 보인다.
    목업이라고 로컬에만 저장한 뒤 «기재 완료» 라고 말하지 않기 위함. */
@@ -1045,23 +1046,26 @@ function syncNow(){
   if(document.hidden||syncBusy())return;
   if(G.deal||G.sub)return;                       /* 영업건 상세·시트를 보고 있으면 건너뛴다 */
   if(document.getElementById('sheetwrap').classList.contains('open'))return;
-  if(!TOKEN||Date.now()-LAST_READ_SYNC<SYNC_MS)return;
+  if(!TOKEN||Date.now()-LAST_READ_SYNC<Math.max(SYNC_MS,MOBILE_SYNC_GAP.dealMs))return;
   LAST_READ_SYNC=Date.now();
   if(typeof refreshOperationalDomains==='function')refreshOperationalDomains(['deal_core','inquiry_core'],'poll');
   else loadLive();
 }
 var INQUIRY_SYNC_MS=30000,LAST_INQUIRY_SYNC=0;
+/* 전송량(2026-09-26): 실시간 변경 신호가 바뀐 건만 채우므로 주기 전체 재수신은 안전망 간격으로 — PC와 같게 문의 5분·영업 10분.
+   전화 앱을 오가며 포커스가 자주 바뀌어도 1분 안에는 다시 받지 않는다. */
+var MOBILE_SYNC_GAP={inquiryMs:300000,dealMs:600000,focusMs:60000};
 function syncInquiryNow(){
-  if(document.hidden||syncBusy()||G.deal||G.sub||!TOKEN||Date.now()-LAST_INQUIRY_SYNC<INQUIRY_SYNC_MS)return;
+  if(document.hidden||syncBusy()||G.deal||G.sub||!TOKEN||Date.now()-LAST_INQUIRY_SYNC<MOBILE_SYNC_GAP.inquiryMs)return;
   LAST_INQUIRY_SYNC=Date.now();
   if(typeof refreshOperationalDomains==='function')refreshOperationalDomains(['inquiry_core'],'inquiry-poll');
 }
 setInterval(syncNow,SYNC_MS);
 setInterval(syncInquiryNow,INQUIRY_SYNC_MS);
 document.addEventListener('visibilitychange',function(){if(!document.hidden)syncNow()});
-document.addEventListener('visibilitychange',function(){if(!document.hidden){LAST_INQUIRY_SYNC=0;syncInquiryNow()}});
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&Date.now()-LAST_INQUIRY_SYNC>MOBILE_SYNC_GAP.focusMs){LAST_INQUIRY_SYNC=0;syncInquiryNow()}});
 window.addEventListener('focus',syncNow);
-window.addEventListener('focus',function(){LAST_INQUIRY_SYNC=0;syncInquiryNow()});
+window.addEventListener('focus',function(){if(Date.now()-LAST_INQUIRY_SYNC>MOBILE_SYNC_GAP.focusMs){LAST_INQUIRY_SYNC=0;syncInquiryNow()}});
 
 loadLive();
 /* ── 오늘 할 일 — 고정 배열이 아니라 내 영업건 + Next Action + 기한 + 우선순위에서 계산 ──
@@ -2567,7 +2571,7 @@ reactivationHTMLM=function(){var A=reactivationM();if(!A.length)return '';return
 
    «로그인 기억» 은 Supabase 가 이미 해 준다. 이름만 로컬에 저장해 두고 바로
    들여보내면 토큰 없이 서버를 불러 «서버 연결 실패» 가 뜬다 — 실제로 그랬다. */
-</script><script src="./operational-overlay.js?v=20260926-rt-1"></script><script>rToday=rTodayRoleM;if(!DEVVIEW)document.body.classList.add('svc');
+</script><script src="./operational-overlay.js?v=20260926-rt-2"></script><script>rToday=rTodayRoleM;if(!DEVVIEW)document.body.classList.add('svc');
 if(DEVVIEW){nav('flow')}
 else if(DEMO){G.user=REPS[0];G.mode='rep';nav('today')}
 else{
@@ -2581,5 +2585,5 @@ else{
 <link rel="stylesheet" href="stage-transition.css?v=20260905-1">
 <script src="stage-transition.js?v=20260905-1"></script>
 <script src="stage-transition-ui.js?v=20260924-terms-2"></script>
-<script src="./work-editor.js?v=20260907-buttons-1"></script><script>window.addEventListener('phase1:identity-cleared',function(){TOKEN=null;WRITE_Q=[];G.user=null;DEALS=[];BUNDLE=null;LIVE=false;});window.addEventListener('phase1:profile',function(){WRITE_Q=Phase1.queue.list();});window.addEventListener('phase1:queue',function(){WRITE_Q=Phase1.queue.list();});</script></body>
+<script src="./work-editor.js?v=20260907-buttons-1"></script><link rel="stylesheet" href="./mobile-loop.css?v=20260926-loop-3"><script src="./mobile-loop.js?v=20260926-loop-3"></script><script>window.addEventListener('phase1:identity-cleared',function(){TOKEN=null;WRITE_Q=[];G.user=null;DEALS=[];BUNDLE=null;LIVE=false;});window.addEventListener('phase1:profile',function(){WRITE_Q=Phase1.queue.list();});window.addEventListener('phase1:queue',function(){WRITE_Q=Phase1.queue.list();});</script></body>
 </html>
