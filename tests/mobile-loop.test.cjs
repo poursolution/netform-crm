@@ -81,6 +81,28 @@ test('overlay mobile contact path is bound to the open deal and completes only s
  assert.equal(enq[2].payload.intent,'standalone');
 });
 
+test('after a long call reloads the page, the called site and its result sheet come back (30 min)',()=>{
+ const store=new Map([['crm:call-pending:v1',JSON.stringify({id:'D9',at:Date.now()-60000})]]),opened=[];
+ const root={G:{user:{id:'me'},done:{}},DEALS:[{id:'D9',nm:'현장',activities:[]}],esc:String,escAttr:String,render(){},intro:()=>'',IC:{phone:''},contactInfoM:()=>({}),
+  openSheet:(a,b)=>opened.push(b),document:{getElementById:()=>null},
+  sessionStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)},
+  setInterval:fn=>{fn();return 1;},clearInterval(){},setTimeout:fn=>fn()};
+ vm.runInNewContext(src,{window:root,Intl,Date,JSON,Math,Number,String,Object,Array,Set,Map,Error,setTimeout:fn=>fn()});
+ assert.equal(root.G.deal,'D9');
+ assert.equal(opened.length,1);assert.match(opened[0],/진행 중이에요/);
+ assert.equal(store.has('crm:call-pending:v1'),false,'pending is cleared once the sheet is shown');
+});
+
+test('the now card [결과 남기기] opens the same result chips (fallback when the sheet did not pop)',()=>{
+ const root=mobileRoot([],()=>[]);
+ root.mNowCardM=()=>'<div class="card"><div>x</div><button class="btn btn-primary" onclick="dealCallM()">전화하고 결과 남기기</button><div style="display:flex"><button class="btn btn-line" style="flex:1" onclick="callMemoSheetM()">결과 남기기</button></div></div>';
+ vm.runInNewContext(src,{window:root,Intl,Date,JSON,Math,Number,String,Object,Array,Set,Map,Error,setTimeout:()=>0});
+ const html=root.mNowCardM({id:'D1',activities:[],nextAction:null});
+ assert.match(html,/onclick="dealCallSheetM\(\)">결과 남기기/);
+ assert.doesNotMatch(html,/callMemoSheetM/);
+ assert.match(html,/MobileLoop\.support\(\)/);
+});
+
 test('mobile.html loads the loop after the overlay and fixes the D-NaN due date',()=>{
  const html=fs.readFileSync(path.join(__dirname,'..','mobile.html'),'utf8');
  assert.ok(html.indexOf('mobile-loop.js?v=')>html.indexOf('operational-overlay.js?v='));
