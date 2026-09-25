@@ -8,8 +8,9 @@ const overlay=require('../operational-overlay.js');
 
 const ACTION='0972a944-1bdc-4a0c-9217-73704fd3f02b';
 const src=fs.readFileSync(path.join(__dirname,'..','mobile-loop.js'),'utf8');
-const kst=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date());
-const plus=n=>{const t=new Date();t.setDate(t.getDate()+n);return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(t);};
+/* 앱의 기한 계산(execDueM)은 기기 현지 날짜 기준 — 테스트도 같은 기준(CI는 UTC) */
+const kst=()=>new Intl.DateTimeFormat('en-CA').format(new Date());
+const plus=n=>{const t=new Date();t.setDate(t.getDate()+n);return new Intl.DateTimeFormat('en-CA').format(t);};
 
 function loadLoop(root){vm.runInNewContext(src,{window:root,Intl,Date,JSON,Math,Number,String,Object,Array,Set,Map,Error,setTimeout:()=>0});return root;}
 function mobileRoot(deals,base){
