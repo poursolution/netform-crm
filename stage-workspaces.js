@@ -271,7 +271,7 @@ function constructionFrame(items,list){
  });
  const table='<div class="sw-table-scroll"><table class="sw-work-table sw-frame"><thead><tr>'+['현장','진행','계약 상태','계약일','계약금액','착공','실적 귀속','관리'].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>'+(shown.length?'':empty)+'</div>';
  const scopeHead=scopedOwner!=='전체'?'<div class="sw-scope-head"><h3>'+h(scopedOwner)+' 담당 목록 <small>'+ordered.length+'건 · 먼저 볼 것 '+first.length+'</small></h3>'+btn('담당자 필터 해제','owner',scopedOwner)+'</div>':'';
- return constructionOwnerBoard(scopedOwner)+contractReport(list)+segBar+scopeHead+'<p class="ps-queue-count">'+shown.length+' / '+ordered.length+'건 표시 · 먼저 볼 것 '+first.length+'건</p>'+table+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
+ return constructionOwnerBoard(scopedOwner)+segBar+scopeHead+'<p class="ps-queue-count">'+shown.length+' / '+ordered.length+'건 표시 · 먼저 볼 것 '+first.length+'건</p>'+table+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
 }
 /* 수주·실주 v2: 영업 방향성 자료 — 실적·사유·공종·경쟁사 분포를 담당자 현황과 함께. */
 function distList(title,pairs,unit){
@@ -322,7 +322,7 @@ function wonFrame(items,list){
  });
  const table='<div class="sw-table-scroll"><table class="sw-work-table sw-frame"><thead><tr>'+['현장','계약일','계약금액','실적 상태','실적 귀속','준공일','관리'].map(t=>'<th scope="col">'+h(t)+'</th>').join('')+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>'+(shown.length?'':empty)+'</div>';
  const scopeHead=scopedOwner!=='전체'?'<div class="sw-scope-head"><h3>'+h(scopedOwner)+' 수주 목록 <small>'+ordered.length+'건</small></h3>'+btn('담당자 필터 해제','owner',scopedOwner)+'</div>':'';
- return wonOwnerBoard(scopedOwner)+contractReport(list)+insights+scopeHead+'<p class="ps-queue-count">'+shown.length+' / '+ordered.length+'건 표시</p>'+table+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
+ return wonOwnerBoard(scopedOwner)+insights+scopeHead+'<p class="ps-queue-count">'+shown.length+' / '+ordered.length+'건 표시</p>'+table+'<footer class="sw-pager">'+btn('이전','page',String(Math.max(1,f.page-1)))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',String(Math.min(pages,f.page+1)))+'</footer>';
 }
 function lostOwnerBoard(scopedOwner){
  const src=(root.PipelineWorkspace&&root.PipelineWorkspace.rows?root.PipelineWorkspace.rows({unscoped:true}):[]).filter(r=>r.group==='lost');
@@ -388,7 +388,7 @@ function render(key,list){
  if(key==='construction')return constructionFrame(items,list);
  if(key==='won')return wonFrame(items,list);
  if(key==='lost')return lostFrame(items,list);
- if(spec.summaryMetrics==='contract-ledger')summary=contractReport(list);
+ /* 계약실적 패널은 운영 화면에 붙이지 않는다 (2026-09-25 대표 지시 — 근거는 성과 분석·팝업으로) */
  else if(spec.summaryMetrics==='loss-reasons'){
   const month=root.G.lossResultMonth||new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
   items=items.filter(x=>!x.values.lossDate||String(x.values.lossDate).startsWith(month));
