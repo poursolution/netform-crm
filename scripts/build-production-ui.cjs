@@ -20,7 +20,7 @@ const accounts = {
   '황윤선': 'hwangyunseon', '이필선': 'ipilseon', '한준엽': 'hanjunyeop',
   '정정훈': 'jeongjeonghun', '김성민': 'kimseongmin', '이승우': 'iseungwoo',
   '송보람': 'songboram', '조현식': 'johyeonsik', '조재연': 'jojaeyeon',
-  '주현진': 'juhyeonjin', '경남지사': 'gyeongnam'
+  '경남지사': 'gyeongnam'
 };
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
 

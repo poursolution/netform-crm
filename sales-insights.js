@@ -19,7 +19,7 @@
    const next=root.briefNext(d),meta=root.relationshipMeta(d),old=root.issueSet(d),issues=[];
    const due=next?.due&&Number.isFinite(Date.parse(next.due))?root.daysTo(next.due):null;
    if(due!==null&&due<0)issues.push('overdue');
-   if(due!==null&&due<0&&/^\s*고객\s*약속/.test(String(next?.text||'')))issues.unshift('promise');/* 고객 약속 미이행 — 관리자 예외 최우선 */
+   if(due!==null&&due<0&&(/약속/.test(String(next?.type||''))||/^\s*고객\s*약속/.test(String(next?.text||''))))issues.unshift('promise');/* 상세 '약속했어요' 칩=종류 '고객 약속', 결과 창 칩=문구 '고객 약속:' — 둘 다 *//* 고객 약속 미이행 — 관리자 예외 최우선 */
    if(!next?.text||due===null)issues.push('missing');
    if(meta.days!==null&&meta.days>=(root.OPS_RULES?.contactWarnDays??7))issues.push('contact');
    if(meta.days===null)issues.push('unknown');
