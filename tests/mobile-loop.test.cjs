@@ -216,3 +216,13 @@ test('outside demo, mock screens say "준비 중" and nothing pretends to send o
  root.tmplSheet();root.photoSheet();root.voiceMemo();
  assert.deepEqual(toasts,['템플릿 발송은 준비 중입니다 — 문자는 [문자] 버튼으로 보내 주세요.','사진 첨부는 준비 중입니다 — 아직 저장되지 않습니다.','memo-sheet']);
 });
+test('a call attempt without a result shows up as "결과를 안 남긴 통화" until a result is recorded',()=>{
+ const now=Date.now(),iso=ms=>new Date(ms).toISOString();
+ const d={id:'D1',nm:'현장',activities:[{type:'전화',note:'전화 시도 — 010-1234-5678',at:iso(now-30*60e3)}]};
+ const root=mobileRoot([d],()=>[]);
+ assert.equal(root.MobileLoop.pendingCalls().length,1);
+ d.activities.push({type:'전화',note:'부재중 (전화 안 받음)',at:iso(now-10*60e3)});
+ assert.equal(root.MobileLoop.pendingCalls().length,0,'결과를 남기면 사라진다');
+ d.activities.push({type:'전화',note:'전화 시도 — 010-1234-5678',at:iso(now-26*3600e3)});
+ assert.equal(root.MobileLoop.pendingCalls().length,0,'24시간 지난 시도는 알림에서 뺀다(관리자 지표에는 남음)');
+});

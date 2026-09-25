@@ -105,6 +105,24 @@
   if(dd==null)return ['할 일 없음','etc'];
   return dd<0?[(-dd)+'일 지남','late']:dd===0?['오늘','today']:[dd+'일 남음','etc'];
  }
+ /* 결과를 안 남긴 통화(2026-09-26 '고객 접촉 후 결과 기록'): 최근 24시간 '전화 시도' 뒤에 다른 기록이 없는 내 영업 — 누르면 결과 창 */
+ const ATTEMPT=/^\s*전화 시도/;
+ function pendingCalls(){
+  const mine=typeof root.myDeals==='function'?root.myDeals():[],now=Date.now(),out=[];
+  mine.forEach(d=>{const acts=d.activities||[];let last=null;
+   acts.forEach(x=>{const at=Date.parse(x.at||x.occurred_at||'');if(!Number.isFinite(at)||now-at>864e5||!ATTEMPT.test(String(x.note||'')))return;
+    const done=acts.some(y=>y!==x&&!ATTEMPT.test(String(y.note||''))&&!/^[a-z0-9_]+$/.test(String(y.type||''))&&Date.parse(y.at||y.occurred_at||'')>at);
+    if(!done&&(!last||at>last))last=at;});
+   if(last)out.push({d,at:last});});
+  return out.sort((a,b)=>b.at-a.at);
+ }
+ function pendingCallsHTML(){
+  const list=pendingCalls();if(!list.length)return '';
+  const hm=t=>{const x=new Date(t);return String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0');};
+  return '<section class="ml-pending" aria-label="결과를 안 남긴 통화"><div class="ml-pending-head"><b>📞 결과를 안 남긴 통화 '+list.length+'건</b><small>결과 하나만 고르면 다음 할 일까지 이어집니다</small></div>'
+   +list.slice(0,5).map(x=>'<button type="button" class="ml-pitem" data-ref="'+attr(x.d.id)+'" onclick="MobileLoop.resume(this.dataset.ref)"><span>'+h(x.d.nm)+'</span><em>'+hm(x.at)+' 전화</em></button>').join('')+'</section>';
+ }
+ function resume(id){const d=dealById(id);if(!d)return;root.G.deal=d.id;root.G.sub=null;root.render();root.setTimeout?root.setTimeout(()=>root.dealCallSheetM(),350):root.dealCallSheetM();}
  function backlogHTML(){
   const list=(root.G._legacyM||[]).slice();if(!list.length)return '';
   const pick=list.sort((a,b)=>(Number(b.amt)||0)-(Number(a.amt)||0)).slice(0,10);
@@ -127,6 +145,8 @@
     if(finished)hero.prepend(remain);
     else{hero.querySelector('.ml-hero-txt').append(remain);if(ds.total&&!remain.querySelector('.ml-daysum-inline'))remain.insertAdjacentHTML('beforeend',' <span class="ml-daysum-inline">· 오늘 처리 '+ds.total+'건</span>');}
    }
+   const heroEl=body.querySelector('.ml-hero'),pend=pendingCallsHTML();
+   if(pend){if(heroEl)heroEl.insertAdjacentHTML('afterend',pend);else body.insertAdjacentHTML('afterbegin',pend);}
    body.insertAdjacentHTML('beforeend',backlogHTML());
    /* 카드: 종류 아이콘 + 기한 배지(내 화면에서는 담당자 이름 대신) */
    body.querySelectorAll('.mt-item').forEach(el=>{
@@ -360,5 +380,5 @@
    }catch(e){busy=false;send.disabled=false;status.textContent=String(e&&e.message||e);}
   };
  }
- root.MobileLoop=Object.freeze({support,resultSheet,flowStrip,daySummary,save,pill:pillOf,plainWords});
+ root.MobileLoop=Object.freeze({support,resultSheet,flowStrip,daySummary,save,pill:pillOf,plainWords,resume,pendingCalls});
 })(window);

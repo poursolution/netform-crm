@@ -144,7 +144,7 @@
   const un=s.inquiries.filter(q=>q.owner==='미배정');
   if(un.length){const old=Math.max(0,...un.map(q=>{const d0=M.date(q.created);return d0?Math.max(0,-root.daysTo(d0)):0}));out.push({cls:'w',owner:'미배정',issue:'all',kind:'inquiries',html:'미배정 문의 <b>'+un.length+'건</b>'+(old?' — 가장 오래된 건 <b>'+old+'일 지남</b>.':'.')+' 배정이 먼저입니다.'})}
   const sup=ctSupport(s);
-  if(sup.n){const first=Object.values(sup.map)[0];out.unshift({cls:'w',owner:'',issue:'support',kind:'risk',html:'지원 요청 대기 <b>'+sup.n+'건</b> — '+h(first.text)+(sup.n>1?' 외':'')+' · 처리 후 상세에 «[지원 처리]» 메모를 남기면 사라집니다.'})}
+  if(sup.n){const first=Object.values(sup.map)[0];out.unshift({cls:'w',owner:'',issue:'support',kind:'risk',html:'지원 요청 대기 <b>'+sup.n+'건</b> — '+h(first.text)+(sup.n>1?' 외':'')+' · 아래 목록에서 [처리]를 누르고 결정 한 줄을 남기면 빠집니다.'})}
   return out.slice(0,4);
  }
  function ctRepRows(s){
@@ -242,7 +242,10 @@
   const LIVE=String(root.OPS_RULES?.liveFrom||'2026-10-01'),today=ld(Date.now()),started=today>=LIVE;
   const from=started?LIVE:ld(Date.now()-30*864e5),ts=v=>Date.parse(v||''),win=FLOW_Q.linkHours*3600e3,now=Date.now();
   const isPromise=x=>/약속/.test(String(x?.type||''))||/^\s*고객\s*약속/.test(String(x?.text||x?.title||''));
-  const link={n:0,t:0,by:{},miss:[]},due={n:0,t:0,by:{}},prom={n:0,t:0,miss:[]};
+  const link={n:0,t:0,by:{},miss:[]},due={n:0,t:0,by:{}},prom={n:0,t:0,miss:[]},call={n:0,t:0,by:{},miss:[]};
+  /* ④ 전화 후 결과 기록(2026-09-26 컨설턴트 '고객 접촉 후 결과가 기록된 비율'): 전화 버튼이 남긴 '전화 시도' 뒤
+     2시간 안에 결과(다른 연락 기록 또는 다음 할 일)가 이어졌나. 2시간 안 된 시도는 판정 보류. */
+  const ATTEMPT=/^\s*전화 시도/,callWin=2*3600e3;
   const add=(o,k,ok)=>{o.by[k]=o.by[k]||[0,0];o.by[k][1]++;if(ok)o.by[k][0]++;};
   deals.forEach(d=>{
    const it=d.item||{},acts=[].concat(it.activities||it.activity_signals||[]),owner=d.owner&&d.owner!=='미배정'?d.owner:'미배정';
@@ -251,6 +254,13 @@
    acts.forEach(x=>{
     const type=String(x?.type||''),at=ts(x?.at||x?.occurred_at);
     if(!Number.isFinite(at)||/^[a-z0-9_]+$/.test(type)||!FLOW_Q.contact.test(type)||ld(at)<from)return;
+    if(ATTEMPT.test(String(x.note||''))){
+     const after=t=>Number.isFinite(t)&&t>at&&t<=at+callWin;
+     const ok=sets.some(after)||acts.some(y=>y!==x&&!ATTEMPT.test(String(y.note||''))&&!/^[a-z0-9_]+$/.test(String(y.type||''))&&after(ts(y.at||y.occurred_at)));
+     if(!ok&&now-at<callWin)return;
+     call.t++;if(ok)call.n++;add(call,owner,ok);if(!ok)call.miss.push({at,key:d.key,site:d.site,type:'전화',owner});
+     return;/* 시도는 결과가 아니다 — 연결률 계산에서 뺀다 */
+    }
     const inWin=t=>Number.isFinite(t)&&t>=at-6e5&&t<=at+win;
     const ok=sets.some(inWin)||inWin(closedAt);
     if(!ok&&now-at<win)return;/* 아직 24시간이 안 지남 — 판정 보류 */
@@ -273,11 +283,12 @@
   const lowHtml=(label,o)=>{const l=low(o);return l.length?'<span class="hl-fq-low"><em>'+label+' 낮은 순</em>'+l.map(([k,p,v])=>btn(k+' '+p+'% ('+v[0]+'/'+v[1]+')','person',k)).join('')+'</span>':'';};
   const missHtml=(label,arr)=>{const m=arr.sort((x,y)=>y.at-x.at).slice(0,3);return m.length?'<span class="hl-fq-miss"><em>'+label+'</em>'+m.map(x=>btn(x.site+' · '+ld(x.at).slice(5).replace('-','/')+' '+x.type+' · '+x.owner,'record',x.key)).join('')+'</span>':'';};
   const head=started?Number(LIVE.slice(5,7))+'/'+Number(LIVE.slice(8,10))+' 이후':'참고용 집계 · 최근 30일 ('+Number(LIVE.slice(5,7))+'/'+Number(LIVE.slice(8,10))+'부터 정식)';
-  return '<div class="hl-flow"><em>흐름 품질 — 연락 후 다음 할 일이 이어졌나 · '+h(head)+'</em><div class="hl-tiles hl-tiles3">'
+  return '<div class="hl-flow"><em>흐름 품질 — 연락 후 다음 할 일이 이어졌나 · '+h(head)+'</em><div class="hl-tiles hl-tiles4">'
+   +tile('전화 후 결과 기록',call,95,call.t?'2시간 안 · 목표 95%':'아직 전화 기록 없음')
    +tile('연락 → 다음 할 일 연결',link,FLOW_Q.target.link,FLOW_Q.linkHours+'시간 안 · 목표 '+FLOW_Q.target.link+'%')
    +tile('다음 할 일 기한 내 처리',due,FLOW_Q.target.ontime,'목표 '+FLOW_Q.target.ontime+'%')
    +tile('고객 약속 기한 내 이행',prom,FLOW_Q.target.promise,prom.t?'목표 '+FLOW_Q.target.promise+'%':'아직 약속 없음')
-   +'</div><div class="hl-fq-notes">'+missHtml('다음 할 일이 끊긴 연락',link.miss)+missHtml('못 지킨 약속',prom.miss)+lowHtml('연결률',link)+lowHtml('기한 처리',due)+'</div></div>';
+   +'</div><div class="hl-fq-notes">'+missHtml('결과를 안 남긴 통화',call.miss)+missHtml('다음 할 일이 끊긴 연락',link.miss)+missHtml('못 지킨 약속',prom.miss)+lowHtml('연결률',link)+lowHtml('기한 처리',due)+'</div></div>';
  }
  function healthPanel(){
   const LIVE=String(root.OPS_RULES?.liveFrom||'2026-10-01'),started=new Date().toISOString().slice(0,10)>=LIVE;
@@ -318,7 +329,7 @@
   const filtersHtml='<div class="si-control-filters dc-cfilters">'+select('단계','stage',stageOptions,f.stage)+'<label>현장 검색<input data-si-search value="'+a(f.search)+'" placeholder="현장·담당자·사유" aria-label="현장 검색"></label></div>';
   const verdicts=ctVerdicts(s,f).map(v=>'<button type="button" class="ct-verdict '+v.cls+'" data-si-action="ct-focus" data-value="'+a(v.owner+'|'+v.issue+'|'+v.kind)+'">'+v.html+'</button>').join('')||'<p class="dc-mut">막힘 신호가 없습니다.</p>';
   const riskText=d=>{const raw=String(d.reason||'현재 진행 중');return h(raw).replace(/(기한 [0-9]+일 지남|[0-9]+일 기한초과)/g,'<span class="ct-hot">$1</span>').replace(/(마지막 연락 [0-9]+일 전|[0-9]+일 미접촉)/g,'<span class="ct-warn">$1</span>').replace(/(기한초과)/g,'<span class="ct-hot">$1</span>')};
-  const table='<div class="si-table-scroll"><table class="si-table si-cases dc-table dc-cases"><thead><tr><th class="ct-selcol"><input type="checkbox" id="ct-all" aria-label="표시된 현장 모두 선택"></th><th>현장</th><th>담당자</th><th>현재 단계</th><th>왜 막혔나</th><th>조치</th></tr></thead><tbody>'+list.slice((f.page-1)*size,f.page*size).map(d=>'<tr><td class="ct-selcol">'+(d.type==='deal'?'<input type="checkbox" data-ct-sel="'+a(d.key)+'" aria-label="'+a(d.site)+' 선택">':'')+'</td><td class="ct-site"><b title="'+a(d.site)+'">'+h(d.site)+'</b></td><td>'+(d.owner&&d.owner!=='미배정'?btn(d.owner,'person',d.owner):h(d.owner))+'</td><td><span class="si-badge">'+h(d.stageLabel)+'</span></td><td>'+(f.kind==='won'?h('준공 처리금액 '+money(d.wonAmount)+(d.hasWonAmount?'':' · 금액 미입력')):(ctSup.map[d.key]?'<span class="ct-hot">지원 요청</span> — '+h(ctSup.map[d.key].text)+' <small>'+h(ctSup.map[d.key].at)+'</small> · ':'')+riskText(d))+'</td><td>'+btn(d.type==='inq'&&d.owner==='미배정'?'배정':'열기','record',d.key)+'</td></tr>').join('')+'</tbody></table></div>'+(list.length?'':empty());
+  const table='<div class="si-table-scroll"><table class="si-table si-cases dc-table dc-cases"><thead><tr><th class="ct-selcol"><input type="checkbox" id="ct-all" aria-label="표시된 현장 모두 선택"></th><th>현장</th><th>담당자</th><th>현재 단계</th><th>왜 막혔나</th><th>조치</th></tr></thead><tbody>'+list.slice((f.page-1)*size,f.page*size).map(d=>'<tr><td class="ct-selcol">'+(d.type==='deal'?'<input type="checkbox" data-ct-sel="'+a(d.key)+'" aria-label="'+a(d.site)+' 선택">':'')+'</td><td class="ct-site"><b title="'+a(d.site)+'">'+h(d.site)+'</b></td><td>'+(d.owner&&d.owner!=='미배정'?btn(d.owner,'person',d.owner):h(d.owner))+'</td><td><span class="si-badge">'+h(d.stageLabel)+'</span></td><td>'+(f.kind==='won'?h('준공 처리금액 '+money(d.wonAmount)+(d.hasWonAmount?'':' · 금액 미입력')):(ctSup.map[d.key]?'<span class="ct-hot">지원 요청</span> — '+h(ctSup.map[d.key].text)+' <small>'+h(ctSup.map[d.key].at)+'</small> · ':'')+riskText(d))+'</td><td>'+(ctSup.map[d.key]&&d.type==='deal'?btn('처리','support-resolve',d.key,'ct-resolve'):btn(d.type==='inq'&&d.owner==='미배정'?'배정':'열기','record',d.key))+'</td></tr>').join('')+'</tbody></table></div>'+(list.length?'':empty());
   const bulk='<div class="ct-bulk">선택 <b id="ct-count">0</b>건 → '+btn('할 일 지정 (다음 할 일 일괄 등록)','ct-bulk','','ct-bulkbtn')+'<span class="dc-mut">지정한 할 일은 각 현장의 다음 할 일로 등록되어 담당자 오늘 업무에 뜹니다 · 문의 건은 배정으로 처리</span></div>';
   return '<div class="dc-topbar"><h2><i>◈</i>컨트롤타워</h2>'+'<span class="dc-nav">'+btn('전체 현황 ↗','navigate','dash')+btn('성과 분석 ↗','navigate','perf')+(root.ContractSalesUI?.advisorySync&&root.CRMRelease?.has?.('crm_advisory_attribution_v1')!==false?'<button type="button" data-si-action="advisory-sync">기술자문 낙찰실적 확정</button>':'')+'</span><span class="dc-live"><i></i>관리 대상 '+number(list.length)+'건</span></div>'+
    '<div class="dc-grid">'+
@@ -499,6 +510,43 @@
   host.querySelectorAll('.dc-kpi b,.pf-num>b,.pf-pct b').forEach(b=>{const m=b.textContent.match(/^([0-9,]+(?:\.[0-9]+)?)(.*)$/);if(!m)return;const target=parseFloat(m[1].replace(/,/g,'')),suffix=m[2],dec=(m[1].split('.')[1]||'').length,t0=performance.now(),ease=t=>1-Math.pow(1-t,3);
    const step=ts=>{const t=Math.min((ts-t0)/800,1);b.textContent=(target*ease(t)).toLocaleString('ko-KR',{minimumFractionDigits:dec,maximumFractionDigits:dec})+suffix;if(t<1)requestAnimationFrame(step)};requestAnimationFrame(step)});
  }
+ /* 영업 패턴(2026-09-26 컨설턴트 '숨어 있는 신호'): 결과만으로는 안 보이던 과정의 패턴 — 행동과 결과를 잇는다.
+    표본이 적으면 흐리게(10건 미만) · 담당자 비교는 '누가 바쁜가'가 아니라 '어느 과정에서 멈추나'를 보는 용도. */
+ function patternsPanel(){
+  const r=rows(true),deals=r.deals,ts=v=>Date.parse(v||''),MIN=10;
+  const hist=it=>(it.stageHistory||it.stage_history||[]).map(x=>({to:String(x.to||x.to_stage||''),t:ts(x.at||x.changed_at)})).filter(x=>Number.isFinite(x.t));
+  const acts=it=>(it.activities||it.activity_signals||[]).map(x=>({type:String(x.type||''),note:String(x.note||''),t:ts(x.at||x.occurred_at)})).filter(x=>Number.isFinite(x.t)&&!/^[a-z0-9_]+$/.test(x.type));
+  const isContact=x=>FLOW_Q.contact.test(x.type)&&!/^\s*전화 시도/.test(x.note);
+  const outcome=d=>typeof root.outcomeOf==='function'?root.outcomeOf(d.item):(d.won?'won':'open');
+  const median=a=>{if(!a.length)return null;const s=a.slice().sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;};
+  const pct=(n,t)=>t?Math.round(n/t*100)+'%':'-';
+  const faint=n=>n<MIN?' class="pt-faint"':'';
+  /* ① 견적 발송 후 첫 후속 연락까지(일) vs 수주율 */
+  const byRep={};
+  deals.forEach(d=>{const o=d.owner&&d.owner!=='미배정'?d.owner:'미배정',R=byRep[o]=byRep[o]||{gaps:[],won:0,lost:0};
+   const oc=outcome(d);if(oc==='won')R.won++;else if(oc==='lost')R.lost++;
+   const sent=hist(d.item).filter(x=>x.to==='sent').sort((a,b)=>a.t-b.t)[0];if(!sent)return;
+   const first=acts(d.item).filter(x=>isContact(x)&&x.t>sent.t).sort((a,b)=>a.t-b.t)[0];if(first)R.gaps.push((first.t-sent.t)/864e5);});
+  const repRows=Object.entries(byRep).filter(([k,v])=>k!=='미배정'&&(v.gaps.length||v.won+v.lost)).sort((a,b)=>(median(a[1].gaps)??99)-(median(b[1].gaps)??99));
+  const t1=repRows.length?'<div class="si-table-scroll"><table class="si-table pt-table"><thead><tr><th>담당자</th><th>견적 후 첫 후속</th><th>수주율</th></tr></thead><tbody>'+repRows.map(([k,v])=>{const m=median(v.gaps);return '<tr'+faint(v.gaps.length)+'><td>'+btn(k,'person',k)+'</td><td>'+(m==null?'-':(Math.round(m*10)/10)+'일')+' <small>'+v.gaps.length+'건</small></td><td>'+pct(v.won,v.won+v.lost)+' <small>종료 '+(v.won+v.lost)+'건</small></td></tr>';}).join('')+'</tbody></table></div>':empty('견적 발송 이력이 아직 없습니다.');
+  /* ② 현장 방문 → 견적 */
+  const SENT_OR_LATER=['sent','compete','imminent','bidding','contract','construction','completion','won'];
+  const visited=deals.filter(d=>acts(d.item).some(x=>/방문/.test(x.type)||/^방문|현장 ?방문/.test(x.note)));
+  const toQuote=visited.filter(d=>hist(d.item).some(x=>SENT_OR_LATER.includes(x.to))||SENT_OR_LATER.includes(String(d.item.stage_code||d.item.code||'')));
+  /* ③ 경쟁·PT·입찰 이후 결과 */
+  const COMP=['compete','imminent','bidding'],comp=deals.filter(d=>hist(d.item).some(x=>COMP.includes(x.to))||COMP.includes(String(d.item.stage_code||d.item.code||'')));
+  const cw=comp.filter(d=>outcome(d)==='won').length,cl=comp.filter(d=>outcome(d)==='lost').length;
+  /* ④ 브랜드별 문의 → 영업건 전환 */
+  const linked=new Set(deals.map(d=>String(d.item.origin_inquiry_id||d.item.originInquiryId||'')).filter(Boolean));
+  const byBrand={};r.inquiries.forEach(q=>{const b=q.brand||q.item.brand||'미분류',B=byBrand[b]=byBrand[b]||{n:0,c:0};B.n++;if(linked.has(String(q.item.id||''))||q.item.deal_id||q.item.opportunity_id)B.c++;});
+  const brands=Object.entries(byBrand).sort((a,b)=>b[1].n-a[1].n).slice(0,6);
+  const t4=brands.length?'<div class="si-table-scroll"><table class="si-table pt-table"><thead><tr><th>브랜드</th><th>문의</th><th>영업건 전환</th></tr></thead><tbody>'+brands.map(([b,v])=>'<tr'+faint(v.n)+'><td>'+h(b)+'</td><td>'+number(v.n)+'</td><td>'+pct(v.c,v.n)+' <small>'+v.c+'건</small></td></tr>').join('')+'</tbody></table></div>':empty('문의 데이터가 없습니다.');
+  const tile=(label,val,sub,n)=>'<div class="pt-tile'+(n<MIN?' pt-faint':'')+'"><span>'+label+'</span><b>'+val+'</b><small>'+sub+'</small></div>';
+  return '<div class="dc-p c12 pt-panel"><div class="dc-ph">영업 패턴<small>과정과 결과를 잇는 신호 · 표본 '+MIN+'건 미만은 흐리게 — 10월부터 기록이 쌓이면 의미가 생깁니다</small></div><div class="dc-pb pt-grid">'
+   +'<section><h4>견적 발송 후 첫 후속 연락 · 담당자별</h4><p class="pt-q">견적을 빨리 보내도 후속이 늦으면 수주율이 낮아지는가?</p>'+t1+'</section>'
+   +'<section><h4>과정 전환</h4><div class="pt-tiles">'+tile('현장 방문 → 견적',pct(toQuote.length,visited.length),'방문 '+visited.length+'건 중 '+toQuote.length+'건',visited.length)+tile('경쟁·PT·입찰 → 수주',pct(cw,cw+cl),'수주 '+cw+' · 실주 '+cl+' · 진행 중 '+(comp.length-cw-cl),cw+cl)+'</div>'
+   +'<h4>브랜드별 문의 → 영업건 전환</h4><p class="pt-q">문의는 많은데 영업으로 안 이어지는 브랜드가 있는가?</p>'+t4+'</section></div></div>';
+ }
  function render(){
   const page=root.G.page;if(!['dash','control','perf'].includes(page)||!root.B){lastAnimKey='';return}
   const f=state(),s=data(),host=document.getElementById('si-'+page);
@@ -509,7 +557,7 @@
   if(page==='control')body=control(s);
   else if(rep&&!selected)body='<div class="si-grid">'+card('영업사원 선택',empty('상단 담당자 필터에서 확인할 영업사원을 선택해 주세요.'))+'</div>';
   else if(page==='dash')body=dashConsole(s);
-  else if(page==='perf'&&!rep)body=perfConsole(s);
+  else if(page==='perf'&&!rep){body=perfConsole(s);try{body+='<div class="pt-wrap">'+patternsPanel()+'</div>';}catch(e){if(root.console&&root.console.warn)root.console.warn('patterns: '+e.message);}}
   else body=kpis(s,rep)+'<div class="si-grid">'+stages(s)+(rep?execution(s):trend(s))+'</div>'+(rep?card('현재 관리가 필요한 영업 · '+s.risk.length+'건',records(M.select(s,'risk',{}),8)+btn('전체 확인 →','drill','risk'))+recent(s):people(s,0));
   const dark=page==='dash'||page==='control'||(page==='perf'&&!rep);
   setTimeout(fillAdvisoryCard,0);setTimeout(fillDataRisk,0);
@@ -571,6 +619,8 @@
   if(action==='person'){close(false);root.SalesScope.change('owner',v);f.view='lead';f.page=1;if(root.G.page==='perf')root.paint();else root.goPage('perf');return;}
   if(action==='close')close();
   if(action==='record')openRecord(v);
+  /* 관리자 개입(2026-09-26): 지원 요청 [처리] = 그 영업 상세 + 관리자 지원 처리 창 */
+  if(action==='support-resolve'){openRecord(v);setTimeout(()=>{try{root.DetailActions?.open?.('support');}catch(e){}},450);}
  }
  function openRecord(key){
   // Recheck the current authorized bundle at click time; never keep stale row objects.

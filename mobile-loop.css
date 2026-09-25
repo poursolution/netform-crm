@@ -131,3 +131,9 @@
 
 /* 준비 중 화면 (2026-09-26) */
 .ml-soon{display:grid;gap:6px;padding:16px}.ml-soon b{font-size:15px}.ml-soon p{margin:0;font-size:12.5px;color:var(--sub);line-height:1.6}
+
+/* 결과를 안 남긴 통화 (2026-09-26) */
+.ml-pending{margin:0 0 12px;border:1.5px solid #f7dcb4;background:#fffaf2;border-radius:14px;padding:10px 12px;display:grid;gap:6px}
+.ml-pending-head{display:grid;gap:2px}.ml-pending-head b{font-size:13.5px;color:#7a4a06}.ml-pending-head small{font-size:11px;color:#a58a5e}
+.ml-pitem{display:flex;justify-content:space-between;align-items:baseline;gap:8px;border:1px solid #f3e2c4;border-radius:10px;padding:8px 10px;background:#fff;text-align:left}
+.ml-pitem span{font-size:13px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ml-pitem em{font-style:normal;flex:none;font-size:11px;color:#a15c07;font-weight:700}

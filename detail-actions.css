@@ -19,3 +19,9 @@
 .da-support p{margin:0;font-size:12.5px;color:#5b6b85;line-height:1.6}
 .da-support textarea{min-height:84px;border:1px solid #e2e8f1;border-radius:10px;padding:10px 12px;font:inherit;font-size:13px;resize:vertical}
 .da-support textarea:focus{outline:0;border-color:#3B6CE4}
+
+/* 관리자 지원 처리 (2026-09-26) */
+.da-support-req{margin:0;padding:9px 11px;border-radius:10px;background:#fff6e8;border:1px solid #f3dcb6;color:#7a4a06!important}
+.da-support-req b{margin-right:6px;color:#a15c07}.da-support-req small{color:#a58a5e;margin-left:4px}
+.da-support-resolve label{font-size:12.5px;font-weight:700;color:#17233a}.da-support-resolve label small{font-weight:500;color:#8a96a9}
+.da-support-follow{display:flex;align-items:center;gap:7px;font-weight:600!important;color:#46536b!important}
