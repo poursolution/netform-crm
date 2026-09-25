@@ -23,7 +23,7 @@
   close();focus=document.activeElement;
   if(D.state().status!=='ready'){
    const waiting=document.createElement('div');waiting.className='contract-sales-shade';dialog=waiting;
-   waiting.innerHTML='<section class="contract-sales-dialog" role="dialog" aria-modal="true" aria-labelledby="contract-sales-loading"><header><h2 id="contract-sales-loading">계약실적 확인</h2><button type="button" data-close>닫기</button></header><p role="status">기존 계약 이력을 확인합니다.</p><button type="button" data-retry>다시 조회</button></section>';
+   waiting.innerHTML='<section class="contract-sales-dialog" role="dialog" aria-modal="true" aria-labelledby="contract-sales-loading"><header><h2 id="contract-sales-loading">계약실적 확인</h2><button type="button" data-close aria-label="닫기">✕ 닫기</button></header><p role="status">기존 계약 이력을 확인합니다.</p><button type="button" data-retry>다시 조회</button></section>';
    document.body.append(waiting);waiting.querySelector('[data-close]').onclick=close;
    const retry=waiting.querySelector('[data-retry]');let loading=false;
    const load=async()=>{if(loading)return;loading=true;retry.disabled=true;waiting.querySelector('[role="status"]').textContent='계약 이력을 불러오는 중입니다.';try{await D.refresh();if(dialog!==waiting)return;if(D.state().status==='ready'){const original=focus;editor(deal);focus=original;}else waiting.querySelector('[role="status"]').textContent='계약 원장을 확인하지 못했습니다. 다시 조회해 주세요.';}finally{loading=false;retry.disabled=false;}};
@@ -31,7 +31,7 @@
   }
   const id=String(root.dealKey(deal)),row=D.state().items.find(r=>r.deal_id===id);
   const shade=document.createElement('div');shade.className='contract-sales-shade';dialog=shade;
-  shade.innerHTML='<form class="contract-sales-dialog" role="dialog" aria-modal="true" aria-labelledby="contract-sales-title"><header><h2 id="contract-sales-title">계약실적 기록</h2><button type="button" data-close>닫기</button></header><p>'+h(deal.site)+' · 실적 귀속 '+h(row?.sales_owner_name||deal.assignee)+'</p><p>계약 당시 담당자가 위 담당자와 일치하는지 확인하세요. 과거 담당자가 다른 계약은 검토 후 이관해야 합니다.</p><label>기록 구분<select name="kind">'+(row?'<option value="amended">변경 계약</option><option value="cancelled">계약 취소</option>':'<option value="signed">계약 체결 완료</option>')+'</select></label><label>발생일<input name="date" type="date" required></label><label data-amount>계약금액 또는 변경 증감액(원)<input name="amount" type="number" step="1" required></label><label>계약 확인 근거·변경 사유<textarea name="reason" required maxlength="8000"></textarea></label><label><input name="confirmed" type="checkbox" required> 계약 체결 또는 변경·취소 사실과 실적 귀속 담당자를 확인했습니다.</label><p role="alert"></p><button type="submit">기록 저장</button></form>';
+  shade.innerHTML='<form class="contract-sales-dialog" role="dialog" aria-modal="true" aria-labelledby="contract-sales-title"><header><h2 id="contract-sales-title">계약실적 기록</h2><button type="button" data-close aria-label="닫기">✕ 닫기</button></header><p>'+h(deal.site)+' · 실적 귀속 '+h(row?.sales_owner_name||deal.assignee)+'</p><p>계약 당시 담당자가 위 담당자와 일치하는지 확인하세요. 과거 담당자가 다른 계약은 검토 후 이관해야 합니다.</p><label>기록 구분<select name="kind">'+(row?'<option value="amended">변경 계약</option><option value="cancelled">계약 취소</option>':'<option value="signed">계약 체결 완료</option>')+'</select></label><label>발생일<input name="date" type="date" required></label><label data-amount>계약금액 또는 변경 증감액(원)<input name="amount" type="number" step="1" required></label><label>계약 확인 근거·변경 사유<textarea name="reason" required maxlength="8000"></textarea></label><label><input name="confirmed" type="checkbox" required> 계약 체결 또는 변경·취소 사실과 실적 귀속 담당자를 확인했습니다.</label><p role="alert"></p><button type="submit">기록 저장</button></form>';
   document.body.append(shade);const form=shade.querySelector('form');form.querySelector('[data-close]').onclick=close;
   form.elements.kind.onchange=()=>{const cancel=form.elements.kind.value==='cancelled';form.querySelector('[data-amount]').hidden=cancel;form.elements.amount.required=!cancel};
   let request=null,busy=false;
@@ -73,7 +73,7 @@
  async function advisorySync(){
   close();focus=document.activeElement;
   const shade=document.createElement('div');shade.className='contract-sales-shade';dialog=shade;
-  shade.innerHTML='<section class="contract-sales-dialog advisory-sync" role="dialog" aria-modal="true" aria-labelledby="adv-sync-title"><header><h2 id="adv-sync-title">기술자문 → 계약실적 반영</h2><button type="button" data-close>닫기</button></header><p role="status">미반영 계약을 조회하는 중…</p><div class="adv-sync-body"></div></section>';
+  shade.innerHTML='<section class="contract-sales-dialog advisory-sync" role="dialog" aria-modal="true" aria-labelledby="adv-sync-title"><header><h2 id="adv-sync-title">기술자문 → 계약실적 반영</h2><button type="button" data-close aria-label="닫기">✕ 닫기</button></header><p role="status">미반영 계약을 조회하는 중…</p><div class="adv-sync-body"></div></section>';
   document.body.append(shade);
   shade.querySelector('[data-close]').onclick=close;
   shade.onkeydown=e=>{if(e.key==='Escape')close()};
