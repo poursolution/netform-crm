@@ -54,7 +54,7 @@
    x.missingNext=!a||!a.text||x.dueDays===null;
    x.overdue=(x.dueDays!==null&&x.dueDays<0)||(x.type==='inq'&&root.inquiryResponseLate(x.item));
   }
-  x.promise=/^\s*고객\s*약속/.test(String(a&&a.text||''));/* 고객 약속 = 다음 할 일이 '고객 약속:'으로 시작 */
+  x.promise=/약속/.test(String(a&&a.type||''))||/^\s*고객\s*약속/.test(String(a&&a.text||''));/* 고객 약속 = 다음 할 일이 '고객 약속:'으로 시작 */
   x.unassigned=x.type==='inq'&&!root.inquiryRoutedOwner(x.item);
   x.stale=x.type==='deal'&&root.issueSet(x.item).indexOf('stale')>=0;
   if(x.unassigned)x.owner='미배정';
