@@ -5098,6 +5098,7 @@ function confirmTransition(){if(!CUR_DETAIL)return;var target=$('#tr-target').va
 function drwDeal(s){
   var raw=JSON.parse(s),key=dealKey(raw),d=(B.deals||[]).filter(function(x){return dealKey(x)===key})[0]||raw;
   if(window.DetailWorkspace)DetailWorkspace.rememberList();
+  closeSiteDrawer();/* 열림 규칙(2026-09-25 확정): Drawer 위에 겹쳐 덮지 않고 전체 상세로 전환 */
   detachDetail();document.getElementById('detailView').classList.remove('docked');G._detailPopup=true;CUR_DETAIL={kind:'deal',key:key,item:d};renderDealDetail();
 }
 /* [삭제됨 v3.6] 구버전 drwInq — 마지막 정의만 사용 */
@@ -5665,7 +5666,7 @@ function logActivity(type,note,result,at,actor){var item=CUR_DETAIL.item,p=curre
 function saveAssigneeChange(){var item=CUR_DETAIL.item,p=currentPatch(),to=$('#dv-assignee').value,from=repN(item.assignee),reason=reasonValue('rs-asg');if(!to||to===from){showDetailErr(!to?'담당자를 선택해 주세요.':'현재 담당자와 같습니다.');return}if(!reasonOk('rs-asg')){showDetailErr('담당자 변경 근거를 남겨야 저장할 수 있습니다.');return}if(!PeopleEligibility.allowed(SALES_PEOPLE_MASTER,'pipeline',item,to)){showDetailErr('이 현장의 조직에 속한 활성 영업담당자를 선택해 주세요.');return}var at=isoNow();p.assignmentHistory=p.assignmentHistory||[];p.assignmentHistory.push({at:at,from:from,to:to,actor:'관리자',reason:reason,source:reasonSource('rs-asg')});item.assignee=p.assignee=to;logActivity('담당자변경',from+' → '+to,reason,at,'관리자');
  pushWrite('assign',{opportunity_id:item.id,from:from,to:to,reason:reason,reason_source:reasonSource('rs-asg'),at:at});saveLocal();renderDetail();showDetailErr('담당자를 변경하고 사유와 배정 이력을 남겼습니다.',true)}
 function drwInq(s){var raw=JSON.parse(s),q=(B.inquiries||[]).filter(function(x){return inqKey(x)===inqKey(raw)})[0]||raw;setCurDetail(q);G._detailPopup=true;renderDetail()}
-function drwSite(s){var k=JSON.parse(s),D=B.deals.filter(function(d){return d.site===k}).sort(function(a,b){return (b.created||'').localeCompare(a.created||'')});if(D.length){CUR_DETAIL={kind:'deal',key:dealKey(D[0]),item:D[0],siteDeals:D};renderDetail()}else openDrwBase(k,'연결된 영업건 없음','<div class="detailnotice">현장 레코드에 연결할 영업 영업건이 없습니다.</div>')}
+function drwSite(s){var k=JSON.parse(s),D=B.deals.filter(function(d){return d.site===k}).sort(function(a,b){return (b.created||'').localeCompare(a.created||'')});if(D.length){closeSiteDrawer();CUR_DETAIL={kind:'deal',key:dealKey(D[0]),item:D[0],siteDeals:D};renderDetail()}else openDrwBase(k,'연결된 영업건 없음','<div class="detailnotice">현장 레코드에 연결할 영업 영업건이 없습니다.</div>')}
 /* 단계 전환 선택지 (2026-09-02)
    영업건(파이프라인) = 행동지침의 실제 진행 13단계. 대분류로 묶어서 보여준다.
    문의 = 문의 흐름 그대로. 둘을 한 목록에 섞지 않는다 —
