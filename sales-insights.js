@@ -147,6 +147,18 @@
   const chip=(name,k,label,n,cls)=>n?'<button type="button" class="ct-tag '+cls+(ct.owner===name&&ct.issue===k?' sel':'')+'" data-si-action="ct-focus" data-value="'+a(name+'|'+k)+'">'+label+' '+n+'</button>':'';
   return rows.map(x=>'<div class="ct-reprow"><span class="who">'+btn(x.name,'person',x.name)+'<small>진행 '+x.total+'건</small></span><span class="ct-tags">'+chip(x.name,'overdue','기한초과',x.overdue,'hot')+chip(x.name,'contact','미접촉',x.contact,'warn')+chip(x.name,'missing','Next 없음',x.missing,'')+chip(x.name,'stale','장기정체',x.stale,'')+'</span><span class="ct-old">'+(x.old?'가장 오래된 <b>D+'+x.old+'</b>':'')+'</span>'+btn('지시 보내기','ct-order',x.name,'ct-orderbtn')+'</div>').join('')||'<p class="dc-mut">현재 문제 신호가 있는 담당자가 없습니다.</p>';
  }
+ let advCache=null,advAt=0,advBusy=false;
+ function fillAdvisoryCard(){
+  const box=document.getElementById('pf-advisory');if(!box)return;
+  const draw=s=>{if(!document.getElementById('pf-advisory'))return;const b=document.getElementById('pf-advisory');
+   const fmt=n=>n>=1e8?(Math.round(n/1e6)/100).toLocaleString('ko-KR')+'억':Math.round(n/1e4).toLocaleString('ko-KR')+'만원';
+   const owners=(s.owners||[]).filter(o=>o.s>0).slice(0,5).map(o=>'<div class="pf-adv-row"><span>'+h(o.name)+'</span><b title="'+Number(o.s).toLocaleString('ko-KR')+'원">'+fmt(o.s)+'</b></div>').join('');
+   b.querySelector('.pf-adv-body').innerHTML='<div class="pf-adv-total"><b title="'+Number(s.bid_sum).toLocaleString('ko-KR')+'원">'+fmt(s.bid_sum)+'</b><span>연동 '+s.total+'건 · 낙찰 입력 '+s.with_bid+'건</span></div>'+owners;
+   b.hidden=false;};
+  if(advCache&&Date.now()-advAt<300000){draw(advCache);return;}
+  if(advBusy)return;advBusy=true;
+  root.SB.rpc('crm_advisory_bid_summary_v1',{}).then(r=>{if(!r.error&&r.data?.ok===true){advCache=r.data;advAt=Date.now();draw(r.data);}}).catch(()=>{}).finally(()=>{advBusy=false;});
+ }
  function control(s){
   const f=state(),ct=ctState();
   let list=M.select(s,f.kind,f);
@@ -333,6 +345,7 @@
   return '<div class="dc-topbar">'+'<span class="dc-nav">'+btn('전체 현황 ↗','navigate','dash')+btn('컨트롤 타워 ↗','navigate','control')+(root.ContractSalesUI?.advisorySync?'<button type="button" data-si-action="advisory-sync">기술자문 반영</button>':'')+'</span></div><div class="dc-grid">'+verdict+cards
    +'<div class="dc-p c8"><div class="dc-ph">월별 매출 추이<small>계약 체결일 기준 · 월 클릭=근거</small></div><div class="dc-pb">'+dcLine(mVals,460,118,'#3B6CE4','pfg1',money,'cs-month')+'</div></div>'
    +'<div class="dc-p c4"><div class="dc-ph">담당자 랭킹<small>이름 클릭=상세</small></div><div class="dc-pb" style="padding-top:4px">'+table+'</div></div>'
+   +'<div class="dc-p c4" id="pf-advisory" hidden><div class="dc-ph">기술자문 낙찰<small>검증 전 참고 · 실적 합산 아님</small></div><div class="dc-pb pf-adv-body"></div></div>'
    +'</div>';
  }
  function animateConsole(host){
@@ -356,6 +369,7 @@
   else if(page==='perf'&&!rep)body=perfConsole(s);
   else body=kpis(s,rep)+'<div class="si-grid">'+stages(s)+(rep?execution(s):trend(s))+'</div>'+(rep?card('현재 관리가 필요한 영업 · '+s.risk.length+'건',records(M.select(s,'risk',{}),8)+btn('전체 확인 →','drill','risk'))+recent(s):people(s,0));
   const dark=page==='dash'||page==='control'||(page==='perf'&&!rep);
+  setTimeout(fillAdvisoryCard,0);
   host.innerHTML='<div class="si-shell'+(dark?' si-dark':'')+'">'+filters(dark)+(page==='perf'?'<div class="si-views" role="group" aria-label="분석 관점">'+btn('대표 보기','view','lead',f.view==='lead'?'selected':'')+btn('영업사원 보기','view','rep',rep?'selected':'')+'</div>':'')+'<p class="si-period">'+h(f.year)+'년 '+(f.month?f.month+'월':f.quarter?f.quarter+'분기':'연간')+' 접수·계약실적 / 파이프라인·관리필요는 현재 기준'+(s.missingWonDate?' · 수주 확정일 미입력 '+s.missingWonDate+'건 제외':'')+'</p>'+body+'</div>';
   host.onclick=onClick;host.onchange=onChange;host.onkeydown=e=>{if(e.target.matches('[data-si-search]')&&e.key==='Enter'){f.search=e.target.value;f.page=1;render()}};
   // 진입 애니메이션은 페이지 전환 시 1회만 — 백그라운드 갱신 재렌더에는 재생하지 않는다.

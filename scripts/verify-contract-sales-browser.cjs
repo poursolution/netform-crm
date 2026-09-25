@@ -50,7 +50,8 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   await page.getByRole('heading',{name:'계약실적 기록',exact:true}).waitFor();
   assert.match(await page.locator('.contract-sales-dialog').innerText(),/황윤선/);
   await page.locator('.contract-sales-dialog [data-close]').click();
-  assert.equal(await page.evaluate(()=>__requests.every(n=>n==='crm_contract_sales_read_v1')),true);assert.deepEqual(errors,[]);
+  // 성과 콘솔의 기술자문 낙찰 요약(읽기)도 허용 (2026-09-25)
+  assert.equal(await page.evaluate(()=>__requests.every(n=>['crm_contract_sales_read_v1','crm_advisory_bid_summary_v1'].includes(n))),true);assert.deepEqual(errors,[]);
   console.log('PASS contract sales: signed amount, frozen owner, all reporting surfaces, cancellation periods, unavailable state and responsive layout');
  }finally{await browser.close();await new Promise(r=>srv.close(r))}
 })().catch(e=>{console.error(e);process.exitCode=1});
