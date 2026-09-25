@@ -20,7 +20,7 @@
    const due=next?.due&&Number.isFinite(Date.parse(next.due))?root.daysTo(next.due):null;
    if(due!==null&&due<0)issues.push('overdue');
    if(!next?.text||due===null)issues.push('missing');
-   if(meta.days!==null&&meta.days>=7)issues.push('contact');
+   if(meta.days!==null&&meta.days>=(root.OPS_RULES?.contactWarnDays??7))issues.push('contact');
    if(meta.days===null)issues.push('unknown');
    if(old.includes('stale'))issues.push('stale');
    if(!(root.oppAmt(d)>0)&&!root.amountUnknownReason(d))issues.push('amount');

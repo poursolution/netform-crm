@@ -15,7 +15,7 @@
   if(due!==null&&due<0)reason='다음 연락일 '+Math.abs(due)+'일 초과';
   else if(due===0)reason='오늘 연락 예정';
   else if(due===null){reason='다음 연락일 미입력';next='다음 연락일과 연락 목적 등록'}
-  else if(days!==null&&days>=90)reason=days+'일 미접촉';
+  else if(days!==null&&days>=(root.OPS_RULES?.longContactDays??90))reason=days+'일 미접촉';
   else return null;
   return {key:'deal:'+root.dealKey(d),type:'deal',kind:'relationship',item:d,owner:root.repN(d.assignee)||'미배정',stage:root.stageLabel(root.dealStage(d)),reason,next,recent:root.todayRecent(d,'deal'),delay:due<0?-due:0,due:meta.due||'',dueDays:due,missingNext:due===null,overdue:due!==null&&due<0};
  }
@@ -75,7 +75,7 @@
    x.lag=Math.max(0,root.todayHoursFrom(root.inquiryCreatedAt(x.item))||0);
   }else{
    const meta=x.type==='deal'?root.relationshipMeta(x.item):null;
-   x.longContact=!!(meta&&meta.days!==null&&meta.days>=90);
+   x.longContact=!!(meta&&meta.days!==null&&meta.days>=(root.OPS_RULES?.longContactDays??90));
    const age=x.type==='deal'?root.stageAge(x.item):null;
    x.stale=!!x.stale||(age!==null&&age>root.stageSla(root.dealStage(x.item)));
    x.band=x.overdue?0:x.missingNext?1:x.longContact?2:x.stale?3:x.dueDays===0?4:5;
@@ -92,7 +92,7 @@
   const pipeline=base.D.filter(d=>!relationship(d)).map(d=>{
    const entry=base.pipeline.find(x=>x.key==='deal:'+root.dealKey(d));if(entry)return entry;
    const a=root.actionObj(d,root.itemPatch(d,'deal')),meta=root.relationshipMeta(d),missing=!a||!a.text||dueDays(a.due)===null;
-   if(!missing&&!(meta.days!==null&&meta.days>=90))return null;
+   if(!missing&&!(meta.days!==null&&meta.days>=(root.OPS_RULES?.longContactDays??90)))return null;
    return {key:'deal:'+root.dealKey(d),type:'deal',item:d,owner:root.repN(d.assignee),stage:root.stageLabel(root.dealStage(d)),reason:missing?'다음 할 일·기한 미등록':meta.days+'일 미접촉',next:missing?'다음 할 일과 기한 지정':'고객에게 연락하고 진행 상황 확인',recent:root.todayRecent(d,'deal'),delay:0};
   }).filter(Boolean);
   const requests=managerEntries().filter(x=>base.Q.some(q=>String(q.id)===String(x.request.target_id)));
