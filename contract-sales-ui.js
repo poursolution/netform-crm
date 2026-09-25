@@ -85,7 +85,10 @@
    items=res.data.items||[];
   }catch(e){status.textContent='조회하지 못했습니다: '+String(e.message||e);return;}
   if(!items.length){status.textContent='미반영 기술자문 계약이 없습니다. 모두 원장에 반영되어 있습니다.';return;}
-  status.textContent='미반영 '+items.length+'건 — 낙찰금액(VAT 별도)·낙찰확정일을 확인해 건별로 반영합니다. 반영된 건은 다시 나타나지 않습니다(문서ID 기준).';
+  const ready=items.filter(x=>x.deal_id);
+  status.textContent=ready.length
+     ?('미반영 '+items.length+'건 — 낙찰금액(VAT 별도)·낙찰확정일을 확인해 건별로 반영합니다. 반영된 건은 다시 나타나지 않습니다(문서ID 기준).')
+     :('미반영 '+items.length+'건 — 모두 CRM 영업건 연결이 없어 여기서는 반영하지 않습니다. 기술자문 실적은 낙찰 기반 실적 구조(원천 브랜드·낙찰금액 VAT 별도·낙찰확정일, 구축 중)에서 집계됩니다.');
   body.innerHTML=items.map((x,i)=>{
    const mapped=!!x.deal_id;
    return '<div class="adv-sync-row'+(mapped?'':' hold')+'" data-i="'+i+'">'
@@ -93,7 +96,7 @@
     +'<span>'+(x.source_manager?'원본 담당 '+h(x.source_manager)+' · ':'')+(x.document_url?'<a href="'+h(x.document_url)+'" target="_blank" rel="noopener noreferrer">계약서 보기 ↗</a>':'계약서 링크 없음')+'</span>'
     +(mapped
       ?'<div class="adv-sync-form"><label>낙찰금액 · VAT 별도(원)<input type="number" step="1" min="1" data-amt value="'+(x.amount??'')+'"></label><label>낙찰확정일<input type="date" data-date value="'+h(String(x.effective_date||'').slice(0,10))+'"></label><button type="button" data-apply-one>'+(x.has_row?'증감 반영':'계약 반영')+'</button></div>'
-      :'<em>현장의 영업건을 특정하지 못했습니다(연결 '+x.deal_count+'건) — 현장 상세에서 계약실적 기록으로 처리해 주세요.</em>')
+      :'<em>'+(x.deal_count===0?'연결된 CRM 영업건 없음 — 기술자문 낙찰 실적 구조(구축 중)에서 집계됩니다.':'현장에 영업건 '+x.deal_count+'건 — 귀속 영업건을 특정할 수 없어 보류합니다.')+'</em>')
     +'<p class="adv-sync-msg" role="status"></p></div>';
   }).join('');
   body.querySelectorAll('[data-apply-one]').forEach(btn=>{btn.onclick=async()=>{
