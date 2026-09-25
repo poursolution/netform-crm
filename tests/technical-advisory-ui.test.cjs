@@ -29,12 +29,12 @@ test('legacy document explains missing amount without exposing internal status c
 test('contract display escapes source data, blocks unsafe links, and distinguishes performance',()=>{
  const ui=setup().TechnicalAdvisoryUI;
  const text=ui.html([{contracts:[{company_name:'<img src=x onerror=alert(1)>',document_amount:20300000,document_url:'javascript:alert(1)',contract_kind:'initial_contract',source_status:'completed'}]}]);
- assert.ok(text.includes('20,300,000원'));assert.ok(text.includes('서명 완료'));
+ assert.ok(text.includes('2,030만원'));assert.ok(text.includes('20,300,000원'));assert.ok(text.includes('서명 완료'));
  assert.ok(text.includes('&lt;img'));assert.ok(!text.includes('<img'));assert.ok(!text.includes('href='));
- assert.ok(text.includes('실적 인정일이 아니며'));assert.ok(ui.html([]).includes('연결된 기술자문 계약이 없습니다'));
+ assert.ok(text.includes('실적 합산 안 함'));assert.ok(ui.html([]).includes('연결된 기술자문 계약이 없습니다'));
 });
 test('late contract response does not populate another selected deal and RPC errors are not empty success',async()=>{
- const content={},button={},panel={dataset:{},isConnected:true,querySelector:s=>s==='button'?button:content};
+ const content={},button={},panel={dataset:{},isConnected:true,addEventListener:()=>{},querySelector:s=>s==='button.dact'?button:content};
  const win=setup({createElement:()=>panel});win.CUR_DETAIL={item:{id:'one'}};
  let resolve;win.SB={rpc:()=>new Promise(r=>resolve=r)};
  const host={querySelector:()=>null,append:()=>{}};

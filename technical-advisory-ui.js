@@ -5,28 +5,41 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const kinds={initial_contract:'최초 계약',change_contract:'변경 계약',post_settlement_recontract:'정산 후 재계약'};
 const statuses={completed:'서명 완료',document_all_signed:'서명 완료',document_started:'서명 진행 중',sent:'발송',draft:'작성 중',cancelled:'취소'};
 function url(value){try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password?u.href:null;}catch{return null;}}
+function fmtAmt(n){if(!Number.isSafeInteger(n)||n<0)return null;if(n>=1e8)return (Math.round(n/1e6)/100).toLocaleString('ko-KR')+'억';if(n>=1e4)return Math.round(n/1e4).toLocaleString('ko-KR')+'만원';return n.toLocaleString('ko-KR')+'원';}
+function statusChip(s){const done=['completed','document_all_signed'].includes(s);return '<span class="adv-chip '+(done?'g':s==='cancelled'?'x':'b')+'">'+esc(statuses[s]||s||'미확인')+'</span>';}
 function html(items){
  const rows=items.flatMap(p=>Array.isArray(p.contracts)?p.contracts:[]);
  if(!rows.length)return '<p>연결된 기술자문 계약이 없습니다.</p>';
- return '<p>기술자문 원본 계약입니다. 계약실적 반영 여부는 별도로 확인합니다.</p>'+rows.map(c=>{
+ return '<p class="adv-note"><span class="adv-chip n">실적 합산 안 함</span><span class="adv-chip n">체결일 별도 확인</span> 원본 계약 표시이며, 반영은 컨트롤타워 [기술자문 반영]에서 합니다.</p>'+rows.map(c=>{
   const link=url(c.document_url),amount=Number.isSafeInteger(c.document_amount)&&c.document_amount>=0?c.document_amount.toLocaleString('ko-KR')+'원':'금액 미확인';
   const conditions=(c.current_project_payment_conditions||[]).map(p=>[p.name,p.percent==null?'':p.percent+'%',p.condition].filter(Boolean).join(' · ')).join(' / ');
   const legacy=c.source_structure==='legacy_modusign';
-  return '<article class="advisory-contract"><h4>'+esc(kinds[c.contract_kind]||(legacy?'과거 전자계약 · 종류 확인 필요':'종류 확인 필요'))+' · '+esc(amount)+'</h4>'+(legacy?'<p>원본 문서와 서명 상태를 확인했습니다. 계약 당시 금액과 계약 종류는 추가 확인이 필요합니다.</p>':'')+'<dl>'+[
-   ['계약 업체',c.company_name],['공사명',c.work_name],['문서 상태',statuses[c.source_status]||c.source_status||'미확인'],
-   ['계약서 표시일',c.source_printed_contract_date],['서명 완료 수신시각',c.completion_observed_at],
-   ['원본 현재 담당자',c.current_source_manager],['현재 지급 조건',conditions]
-  ].map(([label,value])=>'<dt>'+esc(label)+'</dt><dd>'+esc(value||'미기록')+'</dd>').join('')+'</dl><p>표시일·수신시각은 실적 인정일이 아니며, 현재 담당자는 계약 당시 실적 귀속자와 다를 수 있습니다.</p>'+(link?'<a target="_blank" rel="noopener noreferrer" href="'+esc(link)+'">계약서 보기</a>':'')+'</article>';
- }).join('');
+  return '<article class="advisory-contract">'
+   +'<div class="adv-line"><b>'+esc(kinds[c.contract_kind]||(legacy?'과거 전자계약':'종류 확인 필요'))+'</b>'
+   +'<span class="adv-amt"'+(amount!=='금액 미확인'?' title="'+esc(amount)+'"':'')+'>'+esc(fmtAmt(Number.isSafeInteger(c.document_amount)?c.document_amount:NaN)||'금액 미확인')+'</span>'
+   +statusChip(c.source_status)
+   +(link?'<a target="_blank" rel="noopener noreferrer" href="'+esc(link)+'">계약서 ↗</a>':'')+'</div>'
+   +'<div class="adv-sub">'+esc(c.company_name||'업체 미기록')+(c.work_name?' · '+esc(c.work_name):'')+(c.source_printed_contract_date?' · '+esc(c.source_printed_contract_date):'')+'</div>'
+   +'<button type="button" class="adv-more-toggle">상세 정보 ▾</button><div class="adv-more" hidden><dl>'+[
+    ['서명 완료 수신',c.completion_observed_at],['원본 현재 담당자',c.current_source_manager],['현재 지급 조건',conditions]
+   ].map(([label,value])=>'<dt>'+esc(label)+'</dt><dd>'+esc(value||'미기록')+'</dd>').join('')
+   +'</dl>'+(legacy?'<p>계약 당시 금액·종류는 계약서 원본으로 확인이 필요합니다.</p>':'')+'</div></article>';
+  }).join('');
 }
 function mount(host,dealId){
  if(!host||!dealId)return;
  let panel=host.querySelector('.technical-advisory');
  if(panel?.dataset.dealId===String(dealId))return;
  panel?.remove();panel=document.createElement('section');panel.className='technical-advisory';panel.dataset.dealId=String(dealId);
- panel.innerHTML='<h3>현장 공통 · 기술자문 계약</h3><p>같은 현장의 별도 계약입니다. 현재 영업건의 계약금액·실적과 합산하지 않습니다.</p><div class="advisory-content" aria-live="polite">조회 중…</div><button type="button" class="dact">새로고침</button>';
+ panel.innerHTML='<div class="adv-fold"><button type="button" class="adv-fold-toggle" aria-expanded="false">▸ 현장 공통 · 기술자문 계약 <small>펼쳐서 확인 — 실적과 합산하지 않는 별도 계약</small></button><div class="adv-fold-body" hidden><div class="advisory-content" aria-live="polite">조회 중…</div><button type="button" class="dact">새로고침</button></div></div>';
  host.append(panel);let sequence=0;
- const content=panel.querySelector('.advisory-content'),button=panel.querySelector('button');
+ panel.addEventListener('click',e=>{
+  const ft=e.target.closest('.adv-fold-toggle');
+  if(ft){const b=panel.querySelector('.adv-fold-body');b.hidden=!b.hidden;ft.setAttribute('aria-expanded',String(!b.hidden));ft.firstChild.textContent=(b.hidden?'▸ ':'▾ ')+'현장 공통 · 기술자문 계약 ';return;}
+  const mt=e.target.closest('.adv-more-toggle');
+  if(mt){const m=mt.nextElementSibling;if(m){m.hidden=!m.hidden;mt.textContent=m.hidden?'상세 정보 ▾':'상세 정보 ▴';}}
+ });
+ const content=panel.querySelector('.advisory-content'),button=panel.querySelector('button.dact');
  async function read(){
   const ticket=++sequence;button.disabled=true;content.textContent='조회 중…';
   try{
