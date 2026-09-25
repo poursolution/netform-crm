@@ -229,6 +229,56 @@
   return '<div class="dc-p c12 ct-loop"><div class="ct-dr"><b>루프 끊김</b><small>매일 여기만 처리 · 큰 숫자=Live('+h(Number(LIVE.slice(5,7))+'/'+Number(LIVE.slice(8,10)))+'~) · 과거=이관분</small>'+defs.map(chip).join('')
    +'<button type="button" class="ct-drchip '+(sup?'red':'z')+'" data-si-action="ct-focus" data-value="|support|risk">지원 요청 <b>'+sup+'</b></button></div></div>';
  }
+ /* 흐름 품질(2026-09-26 컨설턴트 '행동의 연속성' 측정): 얼마나 많이 했나가 아니라 '결과 뒤에 다음이 이어졌나'.
+    ① 결과→다음 할 일 연결: 고객 연락 결과(전화·부재·방문·문자·메일 등) 뒤 24시간 안에 다음 할 일이 등록됐거나 영업이 종료된 비율.
+       방금(24시간 미만) 남긴 결과는 아직 판정하지 않는다.
+    ② 다음 할 일 기한 내 처리: 기한이 지난(또는 이미 완료된) 다음 할 일 중 기한일까지 완료한 비율. 열린 채 기한이 지나면 미처리.
+    ③ 고객 약속 기한 내 이행: ②를 고객 약속(종류에 '약속' 또는 '고객 약속:' 문구)만으로.
+    데이터 = 서버가 이미 주는 activity_signals(종류·시각)·completed_actions(기한·완료일)·next_action — 새 서버 함수 없음.
+    Live(10/1) 전에는 최근 30일 '시험 집계'로 보여 준다 — 숫자가 제대로 잡히는지 미리 보는 용도, 운영 KPI 아님. */
+ const FLOW_Q={linkHours:24,target:{link:90,ontime:90,promise:95},contact:/전화|통화|부재|방문|문자|메일|카톡|카카오|미팅|연락/};
+ function flowQuality(deals){
+  const ld=v=>{const t=new Date(v);return Number.isFinite(t.getTime())?new Date(t.getTime()-t.getTimezoneOffset()*6e4).toISOString().slice(0,10):''};
+  const LIVE=String(root.OPS_RULES?.liveFrom||'2026-10-01'),today=ld(Date.now()),started=today>=LIVE;
+  const from=started?LIVE:ld(Date.now()-30*864e5),ts=v=>Date.parse(v||''),win=FLOW_Q.linkHours*3600e3,now=Date.now();
+  const isPromise=x=>/약속/.test(String(x?.type||''))||/^\s*고객\s*약속/.test(String(x?.text||x?.title||''));
+  const link={n:0,t:0,by:{},miss:[]},due={n:0,t:0,by:{}},prom={n:0,t:0,miss:[]};
+  const add=(o,k,ok)=>{o.by[k]=o.by[k]||[0,0];o.by[k][1]++;if(ok)o.by[k][0]++;};
+  deals.forEach(d=>{
+   const it=d.item||{},acts=[].concat(it.activities||it.activity_signals||[]),owner=d.owner&&d.owner!=='미배정'?d.owner:'미배정';
+   const sets=acts.filter(x=>x&&x.type==='next_action_set').map(x=>ts(x.at||x.occurred_at)).filter(Number.isFinite);
+   const closedAt=ts(it.closed_at||it.closed);
+   acts.forEach(x=>{
+    const type=String(x?.type||''),at=ts(x?.at||x?.occurred_at);
+    if(!Number.isFinite(at)||/^[a-z0-9_]+$/.test(type)||!FLOW_Q.contact.test(type)||ld(at)<from)return;
+    const inWin=t=>Number.isFinite(t)&&t>=at-6e5&&t<=at+win;
+    const ok=sets.some(inWin)||inWin(closedAt);
+    if(!ok&&now-at<win)return;/* 아직 24시간이 안 지남 — 판정 보류 */
+    link.t++;if(ok)link.n++;add(link,owner,ok);
+    if(!ok)link.miss.push({at,key:d.key,site:d.site,type,owner});
+   });
+   const open=it.nextActionObj||it.next_action,list=[].concat(Array.isArray(it.completed_actions)?it.completed_actions:[],open&&open.status!=='completed'&&(open.due_at||open.due)?[Object.assign({},open,{status:'open'})]:[]);
+   list.forEach(x=>{
+    const dd=String(x.due_at||x.due||'').slice(0,10);if(!dd||dd<from)return;
+    const done=x.status==='completed'&&x.completed_at;
+    if(!done&&dd>=today)return;/* 아직 기한 전 */
+    const ok=!!done&&ld(x.completed_at)<=dd;
+    due.t++;if(ok)due.n++;add(due,owner,ok);
+    if(isPromise(x)){prom.t++;if(ok)prom.n++;else prom.miss.push({at:ts(dd),key:d.key,site:d.site,type:'약속 '+dd.slice(5).replace('-','/'),owner});}
+   });
+  });
+  const pct=o=>o.t?Math.round(o.n/o.t*100):null;
+  const tile=(label,o,target,sub)=>{const v=pct(o);return '<div class="hl-tile'+(v==null?' na':v>=target?' ok':' bad')+'"><span>'+label+'</span><b>'+(v==null?'-':v+'%')+'</b><small>'+(o.t?number(o.n)+' / '+number(o.t)+'건 · ':'')+sub+'</small></div>';};
+  const low=o=>Object.entries(o.by).filter(([k,v])=>v[1]>=3&&k!=='미배정').map(([k,v])=>[k,Math.round(v[0]/v[1]*100),v]).sort((x,y)=>x[1]-y[1]).slice(0,3);
+  const lowHtml=(label,o)=>{const l=low(o);return l.length?'<span class="hl-fq-low"><em>'+label+' 낮은 순</em>'+l.map(([k,p,v])=>btn(k+' '+p+'% ('+v[0]+'/'+v[1]+')','person',k)).join('')+'</span>':'';};
+  const missHtml=(label,arr)=>{const m=arr.sort((x,y)=>y.at-x.at).slice(0,3);return m.length?'<span class="hl-fq-miss"><em>'+label+'</em>'+m.map(x=>btn(x.site+' · '+ld(x.at).slice(5).replace('-','/')+' '+x.type+' · '+x.owner,'record',x.key)).join('')+'</span>':'';};
+  const head=started?'Live('+Number(LIVE.slice(5,7))+'/'+Number(LIVE.slice(8,10))+'~)':'시험 집계 · 최근 30일 ('+Number(LIVE.slice(5,7))+'/'+Number(LIVE.slice(8,10))+'부터 Live만)';
+  return '<div class="hl-flow"><em>흐름 품질 — 결과 뒤에 다음이 이어졌나 · '+h(head)+'</em><div class="hl-tiles hl-tiles3">'
+   +tile('결과 → 다음 할 일 연결',link,FLOW_Q.target.link,FLOW_Q.linkHours+'시간 안 · 목표 '+FLOW_Q.target.link+'%')
+   +tile('다음 할 일 기한 내 처리',due,FLOW_Q.target.ontime,'목표 '+FLOW_Q.target.ontime+'%')
+   +tile('고객 약속 기한 내 이행',prom,FLOW_Q.target.promise,prom.t?'목표 '+FLOW_Q.target.promise+'%':'아직 약속 없음')
+   +'</div><div class="hl-fq-notes">'+missHtml('최근 끊긴 결과',link.miss)+missHtml('못 지킨 약속',prom.miss)+lowHtml('연결률',link)+lowHtml('기한 처리',due)+'</div></div>';
+ }
  function healthPanel(){
   const LIVE=String(root.OPS_RULES?.liveFrom||'2026-10-01'),started=new Date().toISOString().slice(0,10)>=LIVE;
   const r=rows(),act=r.deals.filter(d=>d.active),day=v=>String(v||'').slice(0,10);
@@ -250,7 +300,7 @@
    +(started||live.length?tile('담당자 지정',m.owner,'목표 98% 이상',m.owner>=98)+tile('다음 할 일 등록',m.next,'목표 95% 이상',m.next>=95)+tile('기한초과',m.over,'목표 5% 미만',m.over!=null&&m.over<5)+tile('최초응대 SLA',m.sla,'목표 95% 이상 · '+(sla/3600e3)+'시간',m.sla>=95)
      :'<p class="hl-wait">'+h(liveDay)+'부터 집계합니다. 지금은 과거 데이터를 정상화하는 기간입니다.</p>')
    +'</div></div><div class="hl-legacy"><em>과거 데이터 정상화</em><div class="hl-norm"><b>'+(legacy.length?pct(norm,legacy.length)+'%':'-')+'</b><span>'+number(norm)+' / '+number(legacy.length)+'건 — 담당자·다음 할 일·단계가 모두 있는 진행 영업</span></div>'
-   +'<div class="hl-gaps">'+gaps.map(([t,n])=>'<span>'+t+' <b>'+number(n)+'</b></span>').join('')+'</div></div></div></div>';
+   +'<div class="hl-gaps">'+gaps.map(([t,n])=>'<span>'+t+' <b>'+number(n)+'</b></span>').join('')+'</div></div>'+flowQuality(r.deals)+'</div></div>';
  }
  function control(s){
   const f=state(),ct=ctState();

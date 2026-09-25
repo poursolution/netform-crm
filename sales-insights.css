@@ -266,3 +266,15 @@
 .si-dark .ct-drchip small{font-size:10.5px;font-weight:700;color:#8a97ab;margin-left:2px}
 .si-dark .ct-drchip.z{color:#94a3b8;background:#fbfcfe}
 .si-dark .ct-drchip.z b{color:#94a3b8}
+
+/* 흐름 품질 (2026-09-26) */
+.si-dark .hl-flow{grid-column:1/-1;border-top:1px solid #eef1f6;padding-top:12px;min-width:0}
+.si-dark .hl-flow>em{display:block;font-style:normal;font-size:11px;font-weight:850;color:#8a97ab;margin-bottom:6px}
+.si-dark .hl-tiles3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.si-dark .hl-fq-notes{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.si-dark .hl-fq-notes>span{display:flex;flex-wrap:wrap;align-items:center;gap:5px;min-width:0}
+.si-dark .hl-fq-notes em{font-style:normal;font-size:11.5px;font-weight:850;color:#5b6b85;margin-right:2px}
+.si-dark .hl-fq-notes button{border:1px solid #e2e8f1;background:#fff;border-radius:999px;padding:3px 10px;font-size:11.5px;color:#17233a;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.si-dark .hl-fq-miss button{border-color:#f5c2c2;background:#fff7f7;color:#b42318}
+.si-dark .hl-fq-notes button:hover{border-color:#9db5e8}
+@media(max-width:900px){.si-dark .hl-tiles3{grid-template-columns:1fr}}
