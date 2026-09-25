@@ -78,6 +78,14 @@
   shade.querySelector('[data-close]').onclick=close;
   shade.onkeydown=e=>{if(e.key==='Escape')close()};
   const status=shade.querySelector('[role="status"]'),body=shade.querySelector('.adv-sync-body');
+  /* 연동 기술자문 낙찰 현황(검증 전) — 코덱스 낙찰 구조 완성 전까지 참고 수치 */
+  (async()=>{try{
+   const r=await root.SB.rpc('crm_advisory_bid_summary_v1',{});
+   if(r.error||r.data?.ok!==true)return;
+   const s=r.data,fmt=n=>n>=1e8?(Math.round(n/1e6)/100).toLocaleString('ko-KR')+'억':Math.round(n/1e4).toLocaleString('ko-KR')+'만원';
+   const owners=(s.owners||[]).filter(o=>o.s>0).slice(0,6).map(o=>h(o.name)+' '+fmt(o.s)).join(' · ');
+   status.insertAdjacentHTML('beforebegin','<div class="adv-bid-summary"><b>연동 기술자문 '+s.total+'건</b> · 낙찰금액 입력 '+s.with_bid+'건 · 합계 <strong title="'+Number(s.bid_sum).toLocaleString('ko-KR')+'원">'+fmt(s.bid_sum)+'</strong> <span class="adv-chip n">VAT 별도 검증 전</span>'+(owners?'<small>'+owners+'</small>':'')+'</div>');
+  }catch(e){}})();
   let items=[];
   try{
    const res=await root.SB.rpc('crm_advisory_ledger_pending_v1',{});
