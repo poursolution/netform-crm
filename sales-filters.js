@@ -6,7 +6,7 @@ function state(){const id=String(root.ME?.id||root.ME?.name||'');if(id!==actor){
 function matchesBrand(brand){return !state().brands.length||brands.includes(brand);}
 function sync(){root.G.brand=brands.length===1?brands[0]:'전체';root.G.inqBrands=brands.slice();root.G.rep=root.SalesScope.state().owner;if(root.G.insights){root.G.insights.brand=root.G.brand;root.G.insights.owner=root.G.rep;}root.G.expansionOwner=root.G.rep;}
 function selectBrand(value){state();brands=value==='전체'?[]:brands.includes(value)?brands.filter(b=>b!==value):brands.concat(value);sync();}
-function people(){return root.SalesScope.people().filter(p=>p.employeeType!=='EXTERNAL'||['조성용','전용성','고영운'].includes(p.name));}
+function people(){return root.SalesScope.people().filter(p=>p.employeeType!=='EXTERNAL'||p.analysisIncluded);}/* ⑯: 이름 명단→analysisIncluded 플래그 */
 function matchesOwner(owner,item,ignoreOwner=false){state();if(!ignoreOwner)return root.SalesScope.matches(owner,item);const s=root.SalesScope.state(),p=root.repProfile(owner),unassigned=!owner||owner==='미배정'||p.role==='branch_pool';if(s.assignment==='assigned'&&unassigned||s.assignment==='unassigned'&&!unassigned)return false;if(unassigned){const team=p.role==='branch_pool'?p.team:item?.owner_group||item?.assignment_group||item?.branch_code||'';return s.type==='all'&&(s.organization==='all'||team===s.organization);}return root.SalesScope.candidates().some(p=>p.name===owner);}
 function periodSeg(rows){
  if(typeof root.uniSetYear!=='function')return '';

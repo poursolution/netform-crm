@@ -301,14 +301,14 @@
  }
  /* ─── 성과 분석 다크 판정 보드 (2026-09-24) ─── */
  /* 성과 분석 제외 명단 (2026-09-25 지시): 외부 협력 인원은 판정 대상에서 뺀다. 데이터·필터에는 영향 없음. */
- const PERF_HIDE=new Set(['전용성','조성용']);
+ /* 2026-09-25 장기원칙 ⑯: 이름 명단 대신 사람 마스터의 perfConsoleHidden 플래그 (2026-09-24 대표 지시 '성과분석에서 전용성·조성용 제외'는 시드 플래그로 이관) */
  function perfConsole(s){
   const f=state(),now=new Date(),curM=now.getMonth()+1;
   const csY=csSum({...f,month:0}),csM=csSum({...f,month:curM,quarter:0});
   const elapsed=String(f.year)===String(now.getFullYear())?now.getMonth()+1:12;
   const m0=x=>x===null||x===undefined?'확인 필요':money(x);
   const paceOf=(y,m)=>{if(y==null||m==null)return null;const avg=elapsed>1?(y-m)/(elapsed-1):y;if(!(avg>0))return m>0?150:null;return Math.round(m/avg*100)};
-  const rs=repStats(s).filter(x=>!PERF_HIDE.has(x.name)).map(x=>{
+  const rs=repStats(s).filter(x=>!root.repProfile(x.name).perfConsoleHidden).map(x=>{
    const cs=csSum({...f,month:0,owner:x.name});
    const csCount=cs?cs.count:null,conv=csCount!=null&&(csCount+x.act.length)>0?Math.round(csCount/(csCount+x.act.length)*100):null;
    return {...x,csCount,conv,pace:paceOf(x.ySales,x.mSales)};

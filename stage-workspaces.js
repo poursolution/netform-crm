@@ -6,8 +6,8 @@ const money=x=>x==null||x===''?'금액 미입력':root.fmtAmt(Number(x));
 const field=(r,code)=>r.item.stage_contexts?.[code]?.fields||{};
 const empty='<p class="ps-empty">해당 업무가 없습니다.</p>';
 /* 담당자별 현황판 제외 명단 (2026-09-22 지시): 퇴사·비영업 인원은 표에서 숨긴다. 건 자체는 목록·합계 경로에 남는다. */
-const BOARD_HIDE=new Set(['이승우','조재연','김성준','한지혜']);
-const boardRows=map=>Array.from(map.values()).filter(x=>!BOARD_HIDE.has(x.owner));
+/* ⑯(2026-09-25): 이름 명단 → 프로필 기반. 숨김=비영업/비활성(대표·회사직원·퇴사·미등록). 미배정·지사풀 유지. */
+const boardRows=map=>Array.from(map.values()).filter(x=>{const n=x.owner;if(!n||n==='미배정')return true;const p=root.repProfile(n);return (p.salesRep||p.role==='branch_pool')&&p.active!==false;});
 const age=r=>r.last?Math.max(0,-root.daysTo(r.last)):null;
 const due=r=>r.days==null?'일정 미지정':r.days<0?Math.abs(r.days)+'일 초과':r.days===0?'오늘':'D-'+r.days;
 function stats(items){return '<div class="sw-stats">'+items.map(([k,v])=>'<div><span>'+h(k)+'</span><b>'+h(v)+'</b></div>').join('')+'</div>';}
