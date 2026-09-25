@@ -333,7 +333,7 @@
   const bulk='<div class="ct-bulk">선택 <b id="ct-count">0</b>건 → '+btn('할 일 지정 (다음 할 일 일괄 등록)','ct-bulk','','ct-bulkbtn')+'<span class="dc-mut">지정한 할 일은 각 현장의 다음 할 일로 등록되어 담당자 오늘 업무에 뜹니다 · 문의 건은 배정으로 처리</span></div>';
   return '<div class="dc-topbar"><h2><i>◈</i>컨트롤타워</h2>'+'<span class="dc-nav">'+btn('전체 현황 ↗','navigate','dash')+btn('성과 분석 ↗','navigate','perf')+(root.ContractSalesUI?.advisorySync&&root.CRMRelease?.has?.('crm_advisory_attribution_v1')!==false?'<button type="button" data-si-action="advisory-sync">기술자문 낙찰실적 확정</button>':'')+'</span><span class="dc-live"><i></i>관리 대상 '+number(list.length)+'건</span></div>'+
    '<div class="dc-grid">'+
-   loopStrip(s)+healthPanel()+'<div class="dc-p c12 ct-datarisk" id="ct-datarisk" hidden></div>'+'<div class="dc-p c12"><div class="dc-ph">① 지금 막힌 곳<small>문장 클릭 = 아래 목록이 그 조건으로 좁혀짐</small></div><div class="dc-pb ct-verdicts">'+verdicts+'</div></div>'+
+   loopStrip(s)+healthPanel()+(()=>{try{return weeklyReview();}catch(e){if(root.console&&root.console.warn)root.console.warn('weekly: '+e.message);return '';}})()+'<div class="dc-p c12 ct-datarisk" id="ct-datarisk" hidden></div>'+'<div class="dc-p c12"><div class="dc-ph">① 지금 막힌 곳<small>문장 클릭 = 아래 목록이 그 조건으로 좁혀짐</small></div><div class="dc-pb ct-verdicts">'+verdicts+'</div></div>'+
    '<div class="dc-p c12"><div class="dc-ph">② 담당자별 문제 · 지시<small>문제 칩 클릭=목록 필터 · 이름 클릭=성과 분석 · 할 일 지정=해당 담당자 문제 건 일괄 등록</small></div><div class="dc-pb">'+ctRepRows(s)+'</div></div>'+
    '<div class="dc-p c12"><div class="dc-ph">③ 처리 목록<small>진행 중·조치 필요=현재 상태 · 문의·준공=선택 기간 · 계약실적과 별도</small></div><div class="dc-pb"><div class="dc-kchips">'+chips+'</div>'+filtersHtml+table+bulk+'<div class="si-pager">'+btn('이전','page',Math.max(1,f.page-1))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',Math.min(pages,f.page+1))+'</div></div></div></div>';
  }
@@ -510,6 +510,50 @@
   host.querySelectorAll('.dc-kpi b,.pf-num>b,.pf-pct b').forEach(b=>{const m=b.textContent.match(/^([0-9,]+(?:\.[0-9]+)?)(.*)$/);if(!m)return;const target=parseFloat(m[1].replace(/,/g,'')),suffix=m[2],dec=(m[1].split('.')[1]||'').length,t0=performance.now(),ease=t=>1-Math.pow(1-t,3);
    const step=ts=>{const t=Math.min((ts-t0)/800,1);b.textContent=(target*ease(t)).toLocaleString('ko-KR',{minimumFractionDigits:dec,maximumFractionDigits:dec})+suffix;if(t<1)requestAnimationFrame(step)};requestAnimationFrame(step)});
  }
+ /* 주간 영업점검(2026-09-26 컨설턴트 P1 '금요일 주간 점검'): 이번 주 월요일~오늘, '누가 바빴나'가 아니라 '어디서 흐름이 끊겼나'.
+    금요일엔 펼쳐서, 다른 날엔 접어서. 잔디 자동 발송 전까지는 '문구 복사'(보낸 척 금지). */
+ function weeklyReview(){
+  const r=rows(),now=new Date(),ts=v=>Date.parse(v||''),mon=new Date(now);mon.setHours(0,0,0,0);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
+  const w0=mon.getTime(),nextMon=w0+7*864e5,nextSun=nextMon+7*864e5,friday=now.getDay()===5;
+  const md=t=>{const x=new Date(t);return (x.getMonth()+1)+'/'+x.getDate();},pct=(n,t)=>t?Math.round(n/t*100)+'%':'-';
+  const ATT=/^\s*전화 시도/,isContact=x=>FLOW_Q.contact.test(String(x.type||''))&&!ATT.test(String(x.note||''))&&!/^[a-z0-9_]+$/.test(String(x.type||''));
+  const isPromise=x=>/약속/.test(String(x?.type||''))||/^\s*고객\s*약속/.test(String(x?.text||''));
+  /* 새 문의 · 첫 연락 */
+  const inq=r.inquiries.filter(q=>ts(q.item.received_at||q.item.created_at||q.created)>=w0);
+  const firstOk=inq.filter(q=>{const a=ts(q.item.received_at||q.item.created_at),f=ts(q.item.first_response_at);return Number.isFinite(f)&&f-a<=2*3600e3;}).length;
+  const noFirst=inq.filter(q=>!q.item.first_response_at&&q.owner!=='미배정').length,unassigned=inq.filter(q=>q.owner==='미배정').length;
+  /* 연락 결과 · 연결 · 결과 안 남긴 통화 · 약속 · 지원 */
+  let contacts=0,linked=0,judged=0,calls=0,callsOpen=0,promDue=0,promKept=0,supIn=0,supDone=0;const promMiss=[];
+  r.deals.forEach(d=>{
+   const it=d.item,acts=[].concat(it.activities||it.activity_signals||[]),sets=acts.filter(x=>x&&x.type==='next_action_set').map(x=>ts(x.at||x.occurred_at));
+   acts.forEach(x=>{const at=ts(x.at||x.occurred_at);if(!Number.isFinite(at)||at<w0)return;const note=String(x.note||'');
+    if(note.startsWith('[지원 요청]'))supIn++;if(note.startsWith('[지원 처리]'))supDone++;
+    if(ATT.test(note)){calls++;if(!acts.some(y=>y!==x&&!ATT.test(String(y.note||''))&&ts(y.at||y.occurred_at)>at&&ts(y.at||y.occurred_at)<=at+2*3600e3)&&Date.now()-at>2*3600e3)callsOpen++;return;}
+    if(!isContact(x))return;contacts++;if(Date.now()-at<864e5)return;judged++;if(sets.some(t=>t>=at-6e5&&t<=at+864e5)||ts(it.closed_at)>=at)linked++;});
+   const open=it.nextActionObj||it.next_action,list=[].concat(Array.isArray(it.completed_actions)?it.completed_actions:[],open&&open.status!=='completed'&&(open.due_at||open.due)?[Object.assign({},open,{status:'open'})]:[]);
+   list.forEach(x=>{if(!isPromise(x))return;const due=ts(String(x.due_at||x.due||'').slice(0,10)+'T23:59:59');if(!Number.isFinite(due)||due<w0||due>Date.now())return;promDue++;const done=x.status==='completed'&&ts(x.completed_at)<=due;if(done)promKept++;else promMiss.push(d);});
+  });
+  /* 흐름 멈춤 · 담당자별 문제 한 줄 · 다음 주 */
+  const act=r.deals.filter(d=>d.active),stall=act.filter(d=>d.issues.includes('stall')).sort((a,b)=>(Number(b.item.amt||b.expected||0))-(Number(a.item.amt||a.expected||0))).slice(0,5);
+  const byRep={};act.forEach(d=>{const o=d.owner&&d.owner!=='미배정'?d.owner:null;if(!o)return;const R=byRep[o]=byRep[o]||{missing:0,promise:0,stall:0,overdue:0};if(d.issues.includes('missing'))R.missing++;if(d.issues.includes('promise'))R.promise++;if(d.issues.includes('stall'))R.stall++;else if(d.issues.includes('overdue'))R.overdue++;});
+  const repLines=Object.entries(byRep).map(([k,v])=>[k,[v.promise?'약속 지남 '+v.promise:'',v.stall?'흐름 멈춤 '+v.stall:'',v.missing?'다음 할 일 없음 '+v.missing:'',v.overdue?'기한 지남 '+v.overdue:''].filter(Boolean)]).filter(x=>x[1].length).sort((a,b)=>b[1].length-a[1].length);
+  const nextWeek=act.map(d=>{const a=d.item.nextActionObj||d.item.next_action,due=ts(String(a&&(a.due||a.due_at)||'').slice(0,10)+'T12:00:00');return {d,a,due};}).filter(x=>x.a&&Number.isFinite(x.due)&&x.due>=nextMon&&x.due<nextSun&&(isPromise(x.a)||['compete','imminent','bidding','contract'].includes(root.dealStage?root.dealStage(x.d.item):''))).sort((a,b)=>a.due-b.due).slice(0,6);
+  const lines=['[주간 영업점검] '+md(w0)+'~'+md(now.getTime()),
+   '· 새 문의 '+inq.length+'건 · 첫 연락 2시간 안 '+pct(firstOk,inq.length)+(noFirst?' · 아직 첫 연락 전 '+noFirst+'건':'')+(unassigned?' · 미배정 '+unassigned+'건':''),
+   '· 연락 결과 '+contacts+'건 · 다음 할 일 연결 '+pct(linked,judged)+(callsOpen?' · 결과 안 남긴 통화 '+callsOpen+'건':''),
+   '· 고객 약속 기한 '+promDue+'건 중 지킴 '+promKept+'건'+(supIn||supDone?' · 지원 요청 '+supIn+'건 / 처리 '+supDone+'건':''),
+   stall.length?'· 흐름 멈춤: '+stall.map(d=>d.site).join(', '):'· 흐름 멈춤 없음',
+   ...repLines.map(([k,v])=>'  - '+k+': '+v.join(' · ')),
+   nextWeek.length?'· 다음 주 챙길 것: '+nextWeek.map(x=>md(x.due)+' '+x.d.site+' ('+(x.a.text||'')+')').join(' / '):''].filter(Boolean);
+  const tiles=[['새 문의',inq.length+'건','첫 연락 2시간 안 '+pct(firstOk,inq.length)],['연락 결과',contacts+'건','다음 할 일 연결 '+pct(linked,judged)],['결과 안 남긴 통화',callsOpen+'건','전화 '+calls+'건 중'],['고객 약속',promKept+' / '+promDue,'기한 내 지킴'],['지원 요청',supIn+'건','처리 '+supDone+'건']];
+  return '<details class="dc-p c12 wr-panel"'+(friday?' open':'')+'><summary class="dc-ph">이번 주 영업점검 <small>'+h(md(w0)+' ~ '+md(now.getTime()))+(friday?' · 금요일 점검':' · 금요일에 펼쳐서 확인')+' — 누가 바빴나가 아니라 어디서 흐름이 끊겼나</small></summary><div class="dc-pb wr-body">'
+   +'<div class="wr-tiles">'+tiles.map(t=>'<div class="wr-tile"><span>'+t[0]+'</span><b>'+h(t[1])+'</b><small>'+h(t[2])+'</small></div>').join('')+'</div>'
+   +'<div class="wr-cols"><section><h4>흐름 멈춤 상위 5</h4>'+(stall.length?stall.map(d=>btn(d.site+' · '+(d.owner||'미배정'),'record',d.key)).join(''):'<p class="dc-mut">흐름이 멈춘 진행 영업이 없습니다.</p>')+'</section>'
+   +'<section><h4>담당자별 챙길 것</h4>'+(repLines.length?repLines.map(([k,v])=>'<p class="wr-rep">'+btn(k,'person',k)+' '+h(v.join(' · '))+'</p>').join(''):'<p class="dc-mut">담당자별로 끊긴 흐름이 없습니다.</p>')+'</section>'
+   +'<section><h4>다음 주 챙길 약속·입찰·PT</h4>'+(nextWeek.length?nextWeek.map(x=>btn(md(x.due)+' '+x.d.site+' — '+(x.a.text||''),'record',x.d.key)).join(''):'<p class="dc-mut">다음 주 기한의 약속·입찰·PT 일정이 없습니다.</p>')+'</section></div>'
+   +'<div class="wr-copy"><textarea readonly aria-label="주간 점검 요약 문구" rows="'+Math.min(10,lines.length+1)+'">'+h(lines.join('\n'))+'</textarea><button type="button" data-si-action="wr-copy">잔디용 문구 복사</button><small>자동 발송은 준비 중 — 복사해서 잔디에 붙여 넣어 주세요</small></div>'
+   +'</div></details>';
+ }
  /* 영업 패턴(2026-09-26 컨설턴트 '숨어 있는 신호'): 결과만으로는 안 보이던 과정의 패턴 — 행동과 결과를 잇는다.
     표본이 적으면 흐리게(10건 미만) · 담당자 비교는 '누가 바쁜가'가 아니라 '어느 과정에서 멈추나'를 보는 용도. */
  function patternsPanel(){
@@ -619,6 +663,7 @@
   if(action==='person'){close(false);root.SalesScope.change('owner',v);f.view='lead';f.page=1;if(root.G.page==='perf')root.paint();else root.goPage('perf');return;}
   if(action==='close')close();
   if(action==='record')openRecord(v);
+  if(action==='wr-copy'){const ta=document.querySelector('#si-control .wr-copy textarea'),txt=ta?ta.value:'',done=m=>{const b=document.querySelector('#si-control [data-si-action="wr-copy"]');if(b)b.textContent=m;};try{navigator.clipboard.writeText(txt).then(()=>done('복사했습니다 ✓'),()=>{if(ta){ta.focus();ta.select();}done('문구를 선택했습니다 — Ctrl+C');});}catch(e){if(ta){ta.focus();ta.select();}done('문구를 선택했습니다 — Ctrl+C');}}
   /* 관리자 개입(2026-09-26): 지원 요청 [처리] = 그 영업 상세 + 관리자 지원 처리 창 */
   if(action==='support-resolve'){openRecord(v);setTimeout(()=>{try{root.DetailActions?.open?.('support');}catch(e){}},450);}
  }

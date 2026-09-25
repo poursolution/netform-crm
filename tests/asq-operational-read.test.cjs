@@ -31,7 +31,8 @@ test('ASQ domain refresh reaches the pages that can open customer or deal detail
     assert.match(source,new RegExp(page+":\\['asq_project'|"+page+":\\['expansion_pool','asq_project'"),page);
   assert.match(source,/domain==='asq_project'/);
   assert.match(source,/next\.asq_projects=next\.asqProjects=mapped\.asq_projects/);
-  assert.match(source,/coreDomains\.concat\('asq_project'\)/);
+  /* 휴대폰 첫 로딩도 연결 프로젝트를 받는다 — 2026-09-26부터 영업·문의와 따로 받아 실패해도 핵심 데이터를 막지 않는다 */
+  assert.match(source,/coreDomains\.concat\('asq_project'\)|scoped\(\['asq_project'\]/);
 });
 
 test('production migration exposes only actor-authorized ASQ rows and keeps sync service-only',()=>{

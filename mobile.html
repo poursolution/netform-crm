@@ -772,6 +772,9 @@ function normalizeDeal(d){
  fixPhase(d);
  if(d.outcome==='won'&&!d.delivery)d.delivery={stage:d.code==='contract'?'contract_signed':d.code,at:d.won_at||d.stageAt};
  if(d._lag!=null&&!d.lastAt){d.lastAt=daysAgoIso(d._lag);d.contactAt=daysAgoIso(d._lag)}
+ /* 2026-09-26: 서버의 마지막 활동일·단계 진입일을 읽는다 — 예전엔 없어서 '정체'(마지막 활동 기준 경과일)가 단계 진입일로 계산됐다 */
+ if(!d.lastAt){var la=[d.last_activity_at,d.lastActivity,d.last_customer_contact_at,d.last_meaningful_contact_at,d.lastMeaningfulContactAt,d.last_worked_at].filter(function(v){return typeof v==='string'&&v}).sort().pop();if(la)d.lastAt=la}
+ if(!d.stageAt&&typeof d.stage_entered_at==='string'&&d.stage_entered_at)d.stageAt=d.stage_entered_at;
  d.stageAt=d.stageAt||d.lastAt||isoNow();
  d.lastAt=d.lastAt||d.stageAt;
  d.activities=d.activities||[];
@@ -2613,7 +2616,7 @@ reactivationHTMLM=function(){var A=reactivationM();if(!A.length)return '';return
 
    «로그인 기억» 은 Supabase 가 이미 해 준다. 이름만 로컬에 저장해 두고 바로
    들여보내면 토큰 없이 서버를 불러 «서버 연결 실패» 가 뜬다 — 실제로 그랬다. */
-</script><script src="./operational-overlay.js?v=20260926-words-2"></script><script>rToday=rTodayRoleM;if(!DEVVIEW)document.body.classList.add('svc');
+</script><script src="./operational-overlay.js?v=20260926-live-1"></script><script>rToday=rTodayRoleM;if(!DEVVIEW)document.body.classList.add('svc');
 if(DEVVIEW){nav('flow')}
 else if(DEMO){G.user=REPS[0];G.mode='rep';nav('today')}
 else{
