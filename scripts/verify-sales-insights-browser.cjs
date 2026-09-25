@@ -45,7 +45,9 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   await page.evaluate(()=>{ME={id:'rep',name:'이필선',role:'rep'};window.__opened=null});await page.locator('#si-person [data-si-action="record"]').click();assert.equal(await page.evaluate(()=>window.__opened),null);
   await page.keyboard.press('Escape');
   await page.evaluate(()=>goPage('dash'));assert.equal(await page.evaluate(()=>SalesInsights.data().deals.every(d=>d.owner==='이필선')),true);
-  assert.equal(await page.locator('.menu [data-admin-nav]:visible').count(),0);assert.deepEqual(await page.locator('.menu>.sec:visible').allTextContents(),['오늘','영업','고객관리','분석']);
+  assert.equal(await page.locator('.menu [data-admin-nav]:visible').count(),0);// rep 메뉴 축소(2026-09-25 ⑨): 분석·대시보드·발송·지사는 관리자 전용
+  assert.deepEqual(await page.locator('.menu>.sec:visible').allTextContents(),['오늘','영업','고객관리']);
+  assert.equal(await page.locator('.menu [data-manager-nav]:visible').count(),0);
 
   // Shared employee scope affects metrics, stage inventory, drills and navigation, not just options.
   await page.evaluate(()=>{ME={id:'scope-admin',name:'송보람',role:'admin'};const rows=['조성용','전용성','고영운','송보람','조민준','미배정','경남지사'];B.deals=rows.map((name,i)=>({id:'scope-'+i,site:name+' 현장',assignee:name,brand:'POUR솔루션',code:'sent',grp:'컨설팅·견적',created:'2026-09-01',amt:10000000})).concat([{id:'internal',site:'내부 현장',assignee:'김성민',brand:'POUR솔루션',code:'sent',grp:'컨설팅·견적',created:'2026-09-01',amt:20000000}]);B.inquiries=[];goPage('dash');});
