@@ -1653,6 +1653,16 @@ html,body{height:100%}
 @media(max-width:1100px){.sf-period{position:static;margin-top:8px;flex-wrap:wrap}}
 @media(max-width:760px){.uni-period{flex-wrap:wrap}.uni-qseg{flex-wrap:wrap}.uni-qseg button{padding:6px 9px}}
 #unibar .sales-filterbar .sf-row,#unibar .sales-filterbar .sf-row>div{flex-wrap:wrap;min-width:0}
+
+/* ══ 금액 배열 안정화 (2026-09-25 대표 점검 지시) ══
+   KPI·실적 카드의 숫자는 절대 줄바꿈하지 않는다 — 쉼표·'원' 분리 금지, 고정폭 숫자로 baseline 정렬. */
+.contract-sales-totals strong,.ceo-stat b,.brief-stat b,.brief-move b,.ceo-delta b,.ceo-month b,
+.si-kpis strong,.dc-kpi b,.pf-num>b,.pf-facts b,.kpi .v,.bchip .n,
+.site-health-card b,.rep-flow-drawer-core b,.gn-command .tag,.inq-ctl-pulse b,
+.wa-kpi b,.brief-exception b,.perf-drawer-core b,.dcc-journey-meta b{
+ white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:-.02em;min-width:0}
+.contract-sales-totals>div{min-width:0}
+.contract-sales-totals strong{display:block;overflow:hidden;text-overflow:ellipsis;font-size:clamp(14px,1.4vw,19px)}
 </style>
 <style>
 /* ══ 로그인 게이트 ══
