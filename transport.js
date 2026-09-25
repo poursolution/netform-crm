@@ -22,7 +22,13 @@
  navigator.sendBeacon=function(){blocked.push({path:'beacon'});return false;};
  function purgeApp(){for(let i=nativeLocal.length-1;i>=0;i--){const k=nativeLocal.key(i);if(k.startsWith(base))nativeLocal.removeItem(k);}}
  function purgeAuth(){for(let i=nativeSession.length-1;i>=0;i--){const k=nativeSession.key(i);if(k.startsWith(base))nativeSession.removeItem(k);}}
- function stopRealtime(){const ch=realtimeChannel;realtimeChannel=null;realtimeStatus='CLOSED';if(ch)Promise.resolve(ch.unsubscribe()).catch(()=>{});}
+ /* 변경 신호(2026-09-26): 서버 트리거가 비공개 채널 'crm:changes'로 "바뀐 영업/문의 ID"만 보낸다(행 내용 없음).
+    화면은 그 ID 1건만 권한 검사 조회로 다시 읽는다 — 전체 재수신 대신. sql/realtime-change-signal-20260926.sql */
+ let changesChannel=null;
+ const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ /* 운영 조회는 'id > p_after ORDER BY id' — 바로 앞 UUID를 주면 그 1건(볼 권한이 있을 때만)이 첫 행으로 온다 */
+ function uuidBefore(id){const h=String(id).toLowerCase().replace(/-/g,'').split('').map(x=>parseInt(x,16));let i=h.length-1;while(i>=0&&h[i]===0){h[i]=15;i--;}if(i<0)return null;h[i]--;const s=h.map(x=>x.toString(16)).join('');return s.slice(0,8)+'-'+s.slice(8,12)+'-'+s.slice(12,16)+'-'+s.slice(16,20)+'-'+s.slice(20);}
+ function stopRealtime(){const ch=realtimeChannel,cx=changesChannel;realtimeChannel=null;changesChannel=null;realtimeStatus='CLOSED';for(const x of [ch,cx])if(x)Promise.resolve(x.unsubscribe()).catch(()=>{});}
  function invalidate(){epoch++;for(const x of controllers)x.abort();controllers.clear();stopRealtime();realtimeListeners.clear();profile=null;activeUid=null;purgeApp();purgeAuth();root.dispatchEvent(new Event('phase1:identity-cleared'));}
  const channel=typeof BroadcastChannel==='function'?new BroadcastChannel(base+'identity'):null;
  if(channel)channel.onmessage=()=>{invalidate();location.reload();};
@@ -49,6 +55,8 @@
   let ch=sdkChannel('crm-operational-core-'+String(profile.auth_uid).slice(0,8));
   for(const table of ['opportunities','inquiries','activities','crm_expansion_pool','crm_expansion_events','crm_expansion_quote_dispatches'])ch=ch.on('postgres_changes',{event:'*',schema:'public',table},payload=>{if(generation===epoch&&profile)publishRealtimeSignal(table,payload&&payload.eventType);});
   realtimeChannel=ch;publishRealtimeStatus('CONNECTING');ch.subscribe(status=>{if(generation!==epoch)return;publishRealtimeStatus(status);});
+  changesChannel=sdkChannel('crm:changes',{config:{private:true}}).on('broadcast',{event:'change'},msg=>{if(generation!==epoch||!profile)return;const p=msg&&msg.payload||{},id=v=>UUID_RE.test(String(v||''))?String(v).toLowerCase():null,signal=Object.freeze({table:String(p.t||''),event_type:String(p.op||'*'),deal_id:id(p.d),inquiry_id:id(p.i)});if(!signal.deal_id&&!signal.inquiry_id)return;for(const entry of realtimeListeners.values())try{entry.onSignal(signal);}catch{}});
+  changesChannel.subscribe(()=>{});
  }
  function subscribe(resource,onSignal,onStatus){if(resource!=='operational_core')throw Error('REALTIME_RESOURCE_DENIED');if(!profile||!client)throw Error('AUTH_REQUIRED');if(typeof onSignal!=='function')throw Error('REALTIME_HANDLER_REQUIRED');const key=Symbol(resource);realtimeListeners.set(key,{onSignal,onStatus:typeof onStatus==='function'?onStatus:()=>{}});ensureRealtime();try{realtimeListeners.get(key).onStatus(realtimeStatus);}catch{}return function(){realtimeListeners.delete(key);if(!realtimeListeners.size)stopRealtime();};}
  async function rpc(name,args={}){if(!rpcAllow.has(name))throw Error('CONTRACT_UNAVAILABLE');const e=epoch;
@@ -78,6 +86,7 @@
    const rows=Object.fromEntries(await Promise.all(domains.map(async domain=>[domain,await collect(domain)]))),deals=rows.deal_core||[],inquiries=rows.inquiry_core||[],expansion_pool=rows.expansion_pool||[],customer_support_actions=rows.customer_support_action||[],message_logs=rows.message_log||[],campaigns=rows.campaign_core||[],asq_projects=rows.asq_project||[];
    return {contract_version:1,resource,coverage:truncated.size?'recent_window_for_requested_domains':domains.length===knownDomains.length?'complete_for_actor_scope':'complete_for_requested_domains',scope:'actor_authorized_rows_only',data:{contract_version:7,loaded_domains:domains.slice(),truncated_domains:[...truncated],deals,inquiries,expansion_pool,customer_support_actions,customerSupportActions:customer_support_actions,message_logs,messageLogs:message_logs,campaigns,campaign_logs:campaigns,asq_projects,asqProjects:asq_projects,expansion_events:expansion_pool.flatMap(x=>Array.isArray(x.events)?x.events:[])}};
   }
+  if(resource==='operational_row'){const domain=args.domain,id=String(args.id||'').toLowerCase();if(!['deal_core','inquiry_core'].includes(domain)||!UUID_RE.test(id))throw Error('INVALID_ROW_READ');const result=await rpc('crm_operational_source_v1',{p_domain:domain,p_after:uuidBefore(id),p_limit:1});if(result?.contract_version!==1||result.resource!=='operational_source'||result.domain!==domain||!Array.isArray(result.items))throw Error('READ_CONTRACT_MISMATCH');const item=result.items.find(x=>String(x?.id||'').toLowerCase()===id)||null;return {contract_version:1,resource,coverage:'complete',scope:'single_authorized_row',data:{domain,id,item}};}
   if(resource!=='work_items')return {contract_version:1,resource,coverage:'unavailable',scope:'authorized_only',data:null,reason:'CONTRACT_MISSING'};
   if(!args.opportunity_id)throw Error('TARGET_REQUIRED');
   const result=await rpc('crm_read_scoped_v2',{p_deal_id:args.opportunity_id,p_limit:1});
