@@ -142,3 +142,8 @@ body:has(#pg-today.on) .mhead>.search{display:none}
 .twq-urgent.done{border:1px dashed #cde7d8;background:#f4fbf7;border-radius:12px;padding:14px 16px;margin:10px 0 12px}
 .twq-done b{display:block;color:#15803d;font-size:13.5px}
 .twq-done small{display:block;margin-top:4px;color:#5b6b85;font-size:12px}
+
+/* 하루 마감 요약 (2026-09-25) */
+.twq-daysum{display:inline-block;margin-left:10px;font-size:12px;font-weight:700;color:#15803d;background:#f0faf4;border:1px solid #cdebd8;border-radius:999px;padding:2px 10px;white-space:nowrap}
+.twq-daysum b{font-variant-numeric:tabular-nums}
+.twq-done .twq-daysum{margin:6px 0 0}

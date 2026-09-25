@@ -258,11 +258,36 @@
  }
  /* 영업사원 상단 긴급 카드 (2026-09-25 CX 개편): 급한 순으로 카드가 나오고 카드에서 바로 처리한다.
     데이터·처리 경로는 아래 목록과 동일(open) — 새 상태를 만들지 않는다. */
+ /* 하루 마감 요약(2026-09-25 컨설턴트 Loop ⑫): '입력 많이 했다'가 아니라 '오늘 할 일을 끝냈다'는 보상.
+    서버 저장 확인(ACK)된 내 처리만 센다 — 저장 대기열의 완료 행을 날짜별로 이 브라우저에 모은다(참고 표시). */
+ const DAY_SKIP=new Set(['opportunity_touch','favorite_set','campaign_create','campaign_update']);
+ const kstDay=v=>{try{return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(v?new Date(v):new Date());}catch(e){return '';}};
+ function daySummary(){
+  const today=kstDay(),key='crm:daysum:v1:'+String(root.ME?.id||root.ME?.name||'');
+  let led={day:today,ids:{}};
+  try{const raw=JSON.parse(root.localStorage.getItem(key)||'null');if(raw&&raw.day===today&&raw.ids)led=raw;}catch(e){}
+  let rowsQ=[];try{rowsQ=root.Phase1?.queue?.list?.()||[];}catch(e){}
+  let changed=false;
+  rowsQ.forEach(r=>{
+   if(!r||r.status!=='done'||!r.ack||led.ids[r.request_id])return;
+   const op=String(r.operation||'');if(!op||DAY_SKIP.has(op)||kstDay(r.ack.server_at||r.ack.occurred_at)!==today)return;
+   const body=JSON.stringify(r.payload||{});
+   led.ids[r.request_id]=op==='activity'?'contact':op==='next_action'?(/고객\s*약속/.test(body)?'promise':'next'):op==='next_action_complete'?'done':'other';changed=true;
+  });
+  if(changed)try{root.localStorage.setItem(key,JSON.stringify(led));}catch(e){}
+  const v=Object.values(led.ids),n=k=>v.filter(x=>x===k).length;
+  return {total:v.length,contact:n('contact'),next:n('next')+n('promise'),promise:n('promise'),done:n('done')};
+ }
+ function daySummaryText(ds){
+  if(!ds||!ds.total)return '';
+  return '오늘 처리 <b>'+ds.total+'건</b>'+(ds.contact?' · 고객 접촉 '+ds.contact:'')+(ds.next?' · 다음 할 일 '+ds.next:'')+(ds.promise?' · 고객 약속 '+ds.promise:'')+(ds.done?' · 완료 '+ds.done:'');
+ }
  function urgentCards(rows){
   const score=x=>x.promise&&x.dueDays!==null&&x.dueDays<0?-2:x.promise&&x.dueDays===0?-1:x.unassigned?0:(x.overdue||x.responseLate)?1:x.dueDays===0?2:x.processingLate?3:x.missingNext?4:9;
   const picked=rows.filter(x=>score(x)<=4).sort((a,b)=>score(a)-score(b)||b.lag-a.lag).slice(0,8);
   /* ⑧⑪(2026-09-25): 다 처리한 날은 축하 문구 — '0건'이 아니라 습관의 보상으로 */
-  if(!picked.length)return '<section class="twq-urgent done" aria-label="오늘 긴급 업무 없음"><div class="twq-done"><b>✓ 지금 바로 처리할 업무가 없습니다.</b><small>'+(rows.length?'예정된 일정은 아래 목록에서 확인하세요. 새 문의가 배정되면 여기에 먼저 표시됩니다.':'새 문의가 배정되거나 다음 할 일 기한이 오면 여기에 먼저 표시됩니다.')+'</small></div></section>';
+  const ds=daySummary(),sum=daySummaryText(ds);
+  if(!picked.length)return '<section class="twq-urgent done" aria-label="오늘 긴급 업무 없음"><div class="twq-done"><b>✓ 지금 바로 처리할 업무가 없습니다.</b>'+(sum?'<span class="twq-daysum">'+sum+'</span>':'')+'<small>'+(rows.length?'예정된 일정은 아래 목록에서 확인하세요. 새 문의가 배정되면 여기에 먼저 표시됩니다.':'새 문의가 배정되거나 다음 할 일 기한이 오면 여기에 먼저 표시됩니다.')+'</small></div></section>';
   const card=x=>{
    const site=x.item.site||x.item.site_name||'현장명 미입력';
    const tone=(x.promise&&x.dueDays===0)||x.overdue||x.responseLate||x.unassigned?'r':x.dueDays===0?'b':'w';
@@ -273,7 +298,7 @@
    const label=call?'📞 전화':x.missingNext?'일정 잡기':'처리';
    return '<div class="twq-ucard '+tone+'"><div class="site">'+h(site)+(root.advisoryBadge?root.advisoryBadge(x.item):'')+'</div><div class="why">'+icon+' '+h(why)+'</div><div class="who">'+h(x.next||'')+'</div><div class="act"><button class="pri" data-key="'+attr(x.key)+'" data-action="'+action+'" onclick="TodayWorkQueue.open(this.dataset.key,this.dataset.action)">'+label+'</button><button data-key="'+attr(x.key)+'" onclick="TodayWorkQueue.open(this.dataset.key)">보기</button></div></div>';
   };
-  return '<section class="twq-urgent" aria-label="지금 바로 처리할 업무"><header><b>지금 바로 · '+picked.length+'건</b><small>고객 약속 → 기한 지남 → 첫 응대 → 오늘 예정 순</small></header><div class="twq-ustrip">'+picked.map(card).join('')+'</div></section>';
+  return '<section class="twq-urgent" aria-label="지금 바로 처리할 업무"><header><b>지금 바로 · '+picked.length+'건</b>'+(sum?'<span class="twq-daysum">'+sum+'</span>':'')+'<small>고객 약속 → 기한 지남 → 첫 응대 → 오늘 예정 순</small></header><div class="twq-ustrip">'+picked.map(card).join('')+'</div></section>';
  }
  function pickOwner(name){set('owner',root.G.todayQueueOwner===name?'전체':String(name||'전체'))}
  function focusUnassigned(){root.G.todayQueueOwner='전체';root.G.todayQueueSearch='';filter('inquiry','unassigned')}
