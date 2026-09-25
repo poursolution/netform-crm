@@ -85,14 +85,14 @@
    items=res.data.items||[];
   }catch(e){status.textContent='조회하지 못했습니다: '+String(e.message||e);return;}
   if(!items.length){status.textContent='미반영 기술자문 계약이 없습니다. 모두 원장에 반영되어 있습니다.';return;}
-  status.textContent='미반영 '+items.length+'건 — 금액·계약일을 확인해 건별로 반영합니다. 반영된 건은 다시 나타나지 않습니다(문서ID 기준).';
+  status.textContent='미반영 '+items.length+'건 — 낙찰금액(VAT 별도)·낙찰확정일을 확인해 건별로 반영합니다. 반영된 건은 다시 나타나지 않습니다(문서ID 기준).';
   body.innerHTML=items.map((x,i)=>{
    const mapped=!!x.deal_id;
    return '<div class="adv-sync-row'+(mapped?'':' hold')+'" data-i="'+i+'">'
     +'<b>'+h(x.site_name||'현장 미상')+'</b>'
     +'<span>'+(x.source_manager?'원본 담당 '+h(x.source_manager)+' · ':'')+(x.document_url?'<a href="'+h(x.document_url)+'" target="_blank" rel="noopener noreferrer">계약서 보기 ↗</a>':'계약서 링크 없음')+'</span>'
     +(mapped
-      ?'<div class="adv-sync-form"><label>계약금액(원)<input type="number" step="1" min="1" data-amt value="'+(x.amount??'')+'"></label><label>계약 체결일<input type="date" data-date value="'+h(String(x.effective_date||'').slice(0,10))+'"></label><button type="button" data-apply-one>'+(x.has_row?'증감 반영':'계약 반영')+'</button></div>'
+      ?'<div class="adv-sync-form"><label>낙찰금액 · VAT 별도(원)<input type="number" step="1" min="1" data-amt value="'+(x.amount??'')+'"></label><label>낙찰확정일<input type="date" data-date value="'+h(String(x.effective_date||'').slice(0,10))+'"></label><button type="button" data-apply-one>'+(x.has_row?'증감 반영':'계약 반영')+'</button></div>'
       :'<em>현장의 영업건을 특정하지 못했습니다(연결 '+x.deal_count+'건) — 현장 상세에서 계약실적 기록으로 처리해 주세요.</em>')
     +'<p class="adv-sync-msg" role="status"></p></div>';
   }).join('');

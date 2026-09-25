@@ -6,3 +6,27 @@
 .advisory-contract dt{color:#64748b}.advisory-contract dd{margin:0;overflow-wrap:anywhere}
 
 .advisory-library-list{display:grid;gap:8px;margin-bottom:16px}.advisory-library-list .dact{text-align:left;white-space:normal;padding:10px;line-height:1.5}.advisory-library-detail{max-width:800px}
+
+/* 확정 규격 리스킨 (2026-09-25) — 3줄 카드 · 접기 · 상태칩 · 금액 축약 */
+.adv-fold-toggle{cursor:pointer;list-style:none;display:flex;align-items:baseline;gap:8px;font-size:13px;font-weight:850;color:#0f172a}
+.adv-fold-toggle::-webkit-details-marker{display:none}
+.adv-fold-toggle:before{content:'▸';color:#8a97ab}
+.adv-fold-toggle[aria-expanded=true]:before{transform:rotate(90deg)}
+.adv-fold-toggle small{font-weight:650;color:#8a97ab;font-size:11.5px}
+.adv-note{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:10px 0 4px}
+.adv-chip{display:inline-block;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:850}
+.adv-chip.g{background:#e7f7ef;color:#15803d}.adv-chip.b{background:#eef3ff;color:#2f5fd0}
+.adv-chip.x{background:#f0f2f5;color:#8a97ab}.adv-chip.n{background:#fffaf2;color:#b45309;border:1px solid #fde4c4}
+.advisory-contract{border:1px solid #e2e8f1;border-radius:11px;background:#fbfcfe;padding:11px 13px;margin-top:8px}
+.adv-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.adv-line b{font-size:13px;color:#0f172a}
+.adv-amt{font-size:14px;font-weight:900;color:#1e50b3;white-space:nowrap;font-variant-numeric:tabular-nums}
+.adv-line a{margin-left:auto;color:#3B6CE4;font-weight:800;font-size:12px}
+.adv-sub{margin-top:3px;font-size:12px;color:#5b6b85}
+.adv-more{margin-top:7px}
+.adv-more>summary{cursor:pointer;font-size:11.5px;color:#8a97ab;font-weight:800}
+.adv-more dl{margin-top:6px}
+
+.adv-fold-toggle{all:unset;cursor:pointer;display:flex;align-items:baseline;gap:8px;font-size:13px;font-weight:850;color:#0f172a}
+.adv-more-toggle{all:unset;cursor:pointer;font-size:11.5px;color:#8a97ab;font-weight:800;margin-top:7px;display:inline-block}
+.adv-fold-body{margin-top:8px}
