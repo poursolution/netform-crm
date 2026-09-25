@@ -4,3 +4,5 @@
 .advisory-contract{padding:12px 0;border-top:1px solid #e5eaf0}
 .advisory-contract dl{display:grid;grid-template-columns:minmax(90px,1fr) minmax(0,2fr);gap:7px 12px;font-size:13px}
 .advisory-contract dt{color:#64748b}.advisory-contract dd{margin:0;overflow-wrap:anywhere}
+
+.advisory-library-list{display:grid;gap:8px;margin-bottom:16px}.advisory-library-list .dact{text-align:left;white-space:normal;padding:10px;line-height:1.5}.advisory-library-detail{max-width:800px}
