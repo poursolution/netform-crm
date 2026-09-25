@@ -101,6 +101,8 @@ test('the now card [결과 남기기] opens the same result chips (fallback when
  assert.match(html,/onclick="dealCallSheetM\(\)">결과 남기기/);
  assert.doesNotMatch(html,/callMemoSheetM/);
  assert.match(html,/MobileLoop\.support\(\)/);
+ assert.match(html,/class="ml-steps"/,'stage progress infographic');
+ assert.match(html,/class="ml-tl"/,'date-scaled flow timeline');
 });
 
 test('mobile.html loads the loop after the overlay and fixes the D-NaN due date',()=>{
