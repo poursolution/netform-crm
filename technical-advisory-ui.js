@@ -41,5 +41,31 @@ function mount(host,dealId){
  }
  button.onclick=read;read();
 }
-root.TechnicalAdvisoryUI={mount,html};
+function installLibrary(){
+ const host=document.getElementById?.('pg-sites');
+ if(!host||host.querySelector('.advisory-library'))return;
+ const panel=document.createElement('section');panel.className='technical-advisory advisory-library';
+ panel.innerHTML='<h3>기술자문 계약</h3><p>영업건 등록 여부와 관계없이 조회 권한이 있는 원본 계약을 확인합니다.</p><button type="button" class="dact">계약 조회</button><div class="advisory-library-items" aria-live="polite"></div>';
+ host.prepend(panel);
+ const button=panel.querySelector('button'),content=panel.querySelector('.advisory-library-items');
+ let cursor=null,rows=[];
+ button.onclick=async()=>{
+  button.disabled=true;
+  try{
+   const response=await root.SB.rpc('crm_advisory_library_read_v1',{p_after:cursor});
+   if(response.error||response.data?.ok!==true||!Array.isArray(response.data.items))throw Error('READ_FAILED');
+   rows=cursor?rows.concat(response.data.items):response.data.items;
+   cursor=response.data.next_cursor||null;
+   content.innerHTML=rows.length?'<p>'+rows.length+'건 · 현장을 선택하면 원본 계약이 열립니다.</p><div class="advisory-library-list">'+rows.map((row,i)=>'<button type="button" class="dact" data-contract-index="'+i+'">'+esc(row.site_name||'현장명 미기록')+' · '+esc(row.contracts?.[0]?.work_name||'공사명 미기록')+(row.site_linked?'':' · 현장 연결 검토 필요')+'</button>').join('')+'</div><div class="advisory-library-detail"></div>':'<p>조회 권한이 있는 동기화 계약이 없습니다.</p>';
+   content.querySelectorAll('[data-contract-index]').forEach(b=>{b.onclick=()=>{
+    const row=rows[Number(b.dataset.contractIndex)];
+    content.querySelector('.advisory-library-detail').innerHTML='<h4>'+esc(row.site_name)+'</h4>'+html([row]);
+   };});
+   button.textContent=cursor?'계약 더 보기':'새로고침';
+  }catch{content.textContent='계약을 조회하지 못했습니다. 다시 시도해 주세요.';}
+  finally{button.disabled=false;}
+ };
+}
+root.TechnicalAdvisoryUI={mount,html,installLibrary};
+installLibrary();
 })(window);
