@@ -54,6 +54,7 @@
    x.missingNext=!a||!a.text||x.dueDays===null;
    x.overdue=(x.dueDays!==null&&x.dueDays<0)||(x.type==='inq'&&root.inquiryResponseLate(x.item));
   }
+  x.promise=/^\s*고객\s*약속/.test(String(a&&a.text||''));/* 고객 약속 = 다음 할 일이 '고객 약속:'으로 시작 */
   x.unassigned=x.type==='inq'&&!root.inquiryRoutedOwner(x.item);
   x.stale=x.type==='deal'&&root.issueSet(x.item).indexOf('stale')>=0;
   if(x.unassigned)x.owner='미배정';
@@ -81,6 +82,8 @@
    x.band=x.overdue?0:x.missingNext?1:x.longContact?2:x.stale?3:x.dueDays===0?4:5;
    x.lag=x.overdue?x.delay*24:x.longContact?meta.days*24:x.stale?(age||0)*24:0;
   }
+  /* 고객 약속은 내부 일정보다 우선 — 오늘이거나 지났으면 맨 위(고객 신뢰 직결) */
+  if(x.promise&&(x.overdue||x.dueDays===0)){x.band=x.dueDays!==null&&x.dueDays<0?-2:-1;x.reason=x.dueDays!==null&&x.dueDays<0?'고객 약속 미이행 · '+(-x.dueDays)+'일 지남':'고객 약속 · 오늘';}
   return x;
  }
  function compare(a,b){return a.band-b.band||b.lag-a.lag||String(a.key).localeCompare(String(b.key))}
@@ -256,21 +259,21 @@
  /* 영업사원 상단 긴급 카드 (2026-09-25 CX 개편): 급한 순으로 카드가 나오고 카드에서 바로 처리한다.
     데이터·처리 경로는 아래 목록과 동일(open) — 새 상태를 만들지 않는다. */
  function urgentCards(rows){
-  const score=x=>x.unassigned?0:(x.overdue||x.responseLate)?1:x.dueDays===0?2:x.processingLate?3:x.missingNext?4:9;
+  const score=x=>x.promise&&x.dueDays!==null&&x.dueDays<0?-2:x.promise&&x.dueDays===0?-1:x.unassigned?0:(x.overdue||x.responseLate)?1:x.dueDays===0?2:x.processingLate?3:x.missingNext?4:9;
   const picked=rows.filter(x=>score(x)<=4).sort((a,b)=>score(a)-score(b)||b.lag-a.lag).slice(0,8);
   /* ⑧⑪(2026-09-25): 다 처리한 날은 축하 문구 — '0건'이 아니라 습관의 보상으로 */
   if(!picked.length)return '<section class="twq-urgent done" aria-label="오늘 긴급 업무 없음"><div class="twq-done"><b>✓ 지금 바로 처리할 업무가 없습니다.</b><small>'+(rows.length?'예정된 일정은 아래 목록에서 확인하세요. 새 문의가 배정되면 여기에 먼저 표시됩니다.':'새 문의가 배정되거나 다음 할 일 기한이 오면 여기에 먼저 표시됩니다.')+'</small></div></section>';
   const card=x=>{
    const site=x.item.site||x.item.site_name||'현장명 미입력';
-   const tone=(x.overdue||x.responseLate||x.unassigned)?'r':x.dueDays===0?'b':'w';
-   const icon=tone==='r'?'🔴':tone==='b'?'🔵':'🟠';
+   const tone=(x.promise&&x.dueDays===0)||x.overdue||x.responseLate||x.unassigned?'r':x.dueDays===0?'b':'w';
+   const icon=x.promise?'🤝':tone==='r'?'🔴':tone==='b'?'🔵':'🟠';
    const why=x.panel==='inquiry'?(x.unassigned?'미배정 · '+elapsed(x):x.responseLate?'첫 응대 지연 · '+elapsed(x):x.status+' · '+elapsed(x)):(x.reason||x.next)+(x.dueDays!==null?'':'');
    const call=x.kind==='relationship'||/연락|전화|응대|접촉/.test(String(x.next||''));
    const action=x.kind==='relationship'&&!x.missingNext?'contact':x.missingNext&&x.type==='deal'?'next':'open';
    const label=call?'📞 전화':x.missingNext?'일정 잡기':'처리';
    return '<div class="twq-ucard '+tone+'"><div class="site">'+h(site)+(root.advisoryBadge?root.advisoryBadge(x.item):'')+'</div><div class="why">'+icon+' '+h(why)+'</div><div class="who">'+h(x.next||'')+'</div><div class="act"><button class="pri" data-key="'+attr(x.key)+'" data-action="'+action+'" onclick="TodayWorkQueue.open(this.dataset.key,this.dataset.action)">'+label+'</button><button data-key="'+attr(x.key)+'" onclick="TodayWorkQueue.open(this.dataset.key)">보기</button></div></div>';
   };
-  return '<section class="twq-urgent" aria-label="지금 바로 처리할 업무"><header><b>지금 바로 · '+picked.length+'건</b><small>기한 지남 → 첫 응대 → 오늘 예정 순</small></header><div class="twq-ustrip">'+picked.map(card).join('')+'</div></section>';
+  return '<section class="twq-urgent" aria-label="지금 바로 처리할 업무"><header><b>지금 바로 · '+picked.length+'건</b><small>고객 약속 → 기한 지남 → 첫 응대 → 오늘 예정 순</small></header><div class="twq-ustrip">'+picked.map(card).join('')+'</div></section>';
  }
  function pickOwner(name){set('owner',root.G.todayQueueOwner===name?'전체':String(name||'전체'))}
  function focusUnassigned(){root.G.todayQueueOwner='전체';root.G.todayQueueSearch='';filter('inquiry','unassigned')}

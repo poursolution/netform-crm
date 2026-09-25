@@ -1,7 +1,7 @@
 (function(root){
  'use strict';
  const M=root.SalesInsightsModel,h=v=>root.esc(String(v??'')),a=v=>root.escAttr(String(v??''));
- const labels={overdue:'기한초과',missing:'Next 없음',contact:'7일 이상 미접촉',unknown:'접촉 기록 없음',stale:'장기정체',amount:'예상금액 미입력'};
+ const labels={promise:'고객 약속 미이행',overdue:'기한초과',missing:'Next 없음',contact:'7일 이상 미접촉',unknown:'접촉 기록 없음',stale:'장기정체',amount:'예상금액 미입력'};
  let actor='',focusBefore=null;
  const number=n=>Number(n||0).toLocaleString('ko-KR');
  const money=n=>n>=100000000?(n/100000000).toLocaleString('ko-KR',{maximumFractionDigits:2})+'억':number(Math.round(n/10000))+'만원';
@@ -19,6 +19,7 @@
    const next=root.briefNext(d),meta=root.relationshipMeta(d),old=root.issueSet(d),issues=[];
    const due=next?.due&&Number.isFinite(Date.parse(next.due))?root.daysTo(next.due):null;
    if(due!==null&&due<0)issues.push('overdue');
+   if(due!==null&&due<0&&/^\s*고객\s*약속/.test(String(next?.text||'')))issues.unshift('promise');/* 고객 약속 미이행 — 관리자 예외 최우선 */
    if(!next?.text||due===null)issues.push('missing');
    if(meta.days!==null&&meta.days>=(root.OPS_RULES?.contactWarnDays??7))issues.push('contact');
    if(meta.days===null)issues.push('unknown');
@@ -129,6 +130,7 @@
  function ctVerdicts(s,f){
   const act=s.active,out=[];
   const conc=k=>{const list=act.filter(d=>d.issues.includes(k));if(!list.length)return null;const by={};list.forEach(d=>{by[d.owner]=(by[d.owner]||0)+1});const top=Object.entries(by).sort((a,b)=>b[1]-a[1])[0];return {k,name:top[0],n:top[1],tot:list.length,old:Math.max(0,...list.filter(d=>d.owner===top[0]).map(ctDays))}};
+  const pr=conc('promise');if(pr)out.push({cls:'',owner:pr.name,issue:'promise',kind:'risk',html:'<span class="who">'+h(pr.name)+'</span> — 🤝 고객 약속 미이행 <b>'+pr.tot+'건'+(pr.tot>pr.n?' 중 '+pr.n+'건':'')+'</b>. 고객과 약속한 날이 지났습니다.'+(pr.old?' 최장 <b>'+pr.old+'일</b>.':'')});
   const ov=conc('overdue');if(ov)out.push({cls:'',owner:ov.name,issue:'overdue',kind:'risk',html:'<span class="who">'+h(ov.name)+'</span> — 기한초과 <b>'+ov.tot+'건 중 '+ov.n+'건</b>이 몰려 있습니다.'+(ov.old?' 최장 <b>'+ov.old+'일 초과</b>.':'')});
   const ms=conc('missing');if(ms&&ms.name!==ov?.name)out.push({cls:'',owner:ms.name,issue:'missing',kind:'risk',html:'<span class="who">'+h(ms.name)+'</span> — Next 없음 <b>'+ms.tot+'건 중 '+ms.n+'건</b>. 다음 할 일이 비어 있습니다.'});
   const ct7=conc('contact');if(ct7&&!out.some(x=>x.owner===ct7.name))out.push({cls:'w',owner:ct7.name,issue:'contact',kind:'risk',html:'<span class="who">'+h(ct7.name)+'</span> — 7일+ 미접촉 <b>'+ct7.tot+'건 중 '+ct7.n+'건</b>.'+(ct7.old?' 최장 <b>'+ct7.old+'일</b> 접촉 없음.':'')});
@@ -142,10 +144,10 @@
   const ct=ctState(),act=s.active,names=[...new Set(act.map(d=>d.owner))].filter(n=>n&&n!=='미배정');
   const rows=names.map(name=>{const mine=act.filter(d=>d.owner===name);
    const cnt=k=>mine.filter(d=>d.issues.includes(k)).length;
-   return {name,total:mine.length,overdue:cnt('overdue'),missing:cnt('missing'),contact:cnt('contact'),stale:cnt('stale'),old:Math.max(0,...mine.map(ctDays)),probs:cnt('overdue')*3+cnt('contact')*2+cnt('missing')};
-  }).filter(x=>x.overdue+x.missing+x.contact+x.stale>0).sort((a,b)=>b.probs-a.probs);
+   return {name,total:mine.length,promise:cnt('promise'),overdue:cnt('overdue'),missing:cnt('missing'),contact:cnt('contact'),stale:cnt('stale'),old:Math.max(0,...mine.map(ctDays)),probs:cnt('promise')*5+cnt('overdue')*3+cnt('contact')*2+cnt('missing')};
+  }).filter(x=>x.promise+x.overdue+x.missing+x.contact+x.stale>0).sort((a,b)=>b.probs-a.probs);
   const chip=(name,k,label,n,cls)=>n?'<button type="button" class="ct-tag '+cls+(ct.owner===name&&ct.issue===k?' sel':'')+'" data-si-action="ct-focus" data-value="'+a(name+'|'+k)+'">'+label+' '+n+'</button>':'';
-  return rows.map(x=>'<div class="ct-reprow"><span class="who">'+btn(x.name,'person',x.name)+'<small>진행 '+x.total+'건</small></span><span class="ct-tags">'+chip(x.name,'overdue','기한초과',x.overdue,'hot')+chip(x.name,'contact','미접촉',x.contact,'warn')+chip(x.name,'missing','Next 없음',x.missing,'')+chip(x.name,'stale','장기정체',x.stale,'')+'</span><span class="ct-old">'+(x.old?'가장 오래된 <b>D+'+x.old+'</b>':'')+'</span>'+btn('지시 보내기','ct-order',x.name,'ct-orderbtn')+'</div>').join('')||'<p class="dc-mut">현재 문제 신호가 있는 담당자가 없습니다.</p>';
+  return rows.map(x=>'<div class="ct-reprow"><span class="who">'+btn(x.name,'person',x.name)+'<small>진행 '+x.total+'건</small></span><span class="ct-tags">'+chip(x.name,'promise','약속 미이행',x.promise,'hot')+chip(x.name,'overdue','기한초과',x.overdue,'hot')+chip(x.name,'contact','미접촉',x.contact,'warn')+chip(x.name,'missing','Next 없음',x.missing,'')+chip(x.name,'stale','장기정체',x.stale,'')+'</span><span class="ct-old">'+(x.old?'가장 오래된 <b>D+'+x.old+'</b>':'')+'</span>'+btn('지시 보내기','ct-order',x.name,'ct-orderbtn')+'</div>').join('')||'<p class="dc-mut">현재 문제 신호가 있는 담당자가 없습니다.</p>';
  }
  /* 기술자문 낙찰실적(2026-09-25 승격): 확정한 건만 합산 · 낙찰확정일 기준 · VAT 별도. 상단 필터 연동 —
     기간=낙찰확정일, 담당자=귀속 담당자, 브랜드 칩=원천 브랜드(기술자문 칩·전체=전 건). 미확정은 '검증 대기'로만 표시. */

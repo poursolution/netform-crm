@@ -26,10 +26,12 @@ function open(key){
   if(next){const noteEl=activity?.querySelector('#dv-act-note');
    if(noteEl&&noteEl.value.trim())next.classList.remove('da-next-wait');else next.classList.add('da-next-wait');
    const reveal=chip=>{if(!next.classList.contains('da-next-wait'))return;next.classList.remove('da-next-wait');
-    const map={'연결됨':['후속 확인 전화',3],'부재':['다시 전화',1],'재연락 요청':['고객 요청 시점 재연락',2]};
+    /* 고객 약속(2026-09-25 컨설턴트 Loop ⑩): '고객 약속: 내용' + 날짜는 약속한 날을 직접 고른다(기본값 없음). 오늘 할 일 최우선·초과 시 관리자에게 미이행 표시 */
+    const map={'연결됨':['후속 확인 전화',3],'부재':['다시 전화',1],'재연락 요청':['고객 요청 시점 재연락',2],'고객 약속':['고객 약속: ',null]};
     const pre=map[chip];const txt=next.querySelector('#dv-na-text'),dt=next.querySelector('#dv-na-date');
     if(pre&&txt&&!txt.value.trim()){txt.value=pre[0];
-     if(dt&&!dt.value){const d=new Date();d.setDate(d.getDate()+pre[1]);dt.value=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(d);}}
+     if(pre[1]!==null&&dt&&!dt.value){const d=new Date();d.setDate(d.getDate()+pre[1]);dt.value=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(d);}
+     if(pre[1]===null){txt.placeholder='약속한 내용 — 예: 금요일까지 수정 견적 전달';setTimeout(()=>{txt.focus();txt.setSelectionRange(txt.value.length,txt.value.length);},60);}}
     next.scrollIntoView({block:'nearest',behavior:'smooth'});};
    content.addEventListener('click',e=>{const b=e.target.closest('.dw-outcomes button');if(b)reveal(b.textContent.trim());},true);
    content.addEventListener('input',e=>{if(e.target.id==='dv-act-note'&&e.target.value.trim())reveal('');},true);
