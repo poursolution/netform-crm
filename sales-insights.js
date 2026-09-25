@@ -170,19 +170,28 @@
  }
  /* 데이터 위험(2026-09-25 컨설턴트 ⑥): 기술자문 실적의 확인 필요 항목을 컨트롤타워가 먼저 알린다. 클릭=확정 큐. */
  function fillDataRisk(){
-  if(!document.getElementById('ct-datarisk')||!root.ContractSalesUI?.advisoryRows)return;
-  root.ContractSalesUI.advisoryRows().then(list=>{
+  /* 데이터 위험 = CRM이 먼저 알려주는 예외(2026-09-25): 문의→영업 미전환(계보 결손) + 기술자문 실적 확인 항목. 클릭=처리 화면. */
+  if(!document.getElementById('ct-datarisk'))return;
+  const paint=list=>{
    const b=document.getElementById('ct-datarisk');if(!b)return;
-   const pend=list.filter(x=>!x.attribution),hold=list.filter(x=>x.attribution?.decision==='hold');
-   const items=[['red','브랜드 귀속 확인 필요',pend.filter(x=>(x.candidates||[]).length>1).length],
-    ['red','실적 중복 의심',list.filter(x=>x.attribution?.decision!=='excluded'&&(x.candidates||[]).some(k=>k.has_contract)).length],
-    ['org','원천 브랜드 미확정',pend.length],['org','낙찰금액 미입력',pend.filter(x=>!x.bid_amount).length],
-    ['org','담당자 미확정',pend.filter(x=>!x.owner_name).length],['yel','현장 연결 필요',pend.filter(x=>!x.site_id).length],
-    ['yel','낙찰확정일 없음',pend.filter(x=>!x.contract_date).length],['gry','보류(확인 필요)',hold.length]].filter(k=>k[2]>0);
+   const items=[];
+   const inq=root.InquiryConversion?.candidates?.()||[];
+   if(inq.length)items.push(['red','견적 발송·영업 미전환',inq.length,'inquiry-convert']);
+   if(list){
+    const pend=list.filter(x=>!x.attribution),hold=list.filter(x=>x.attribution?.decision==='hold');
+    [['red','브랜드 귀속 확인 필요',pend.filter(x=>(x.candidates||[]).length>1).length],
+     ['red','실적 중복 의심',list.filter(x=>x.attribution?.decision!=='excluded'&&(x.candidates||[]).some(k=>k.has_contract)).length],
+     ['org','기술자문 원천 브랜드 미확정',pend.length],['org','낙찰금액 미입력',pend.filter(x=>!x.bid_amount).length],
+     ['org','기술자문 담당 미확정',pend.filter(x=>!x.owner_name).length],['yel','기술자문 현장 연결 필요',pend.filter(x=>!x.site_id).length],
+     ['yel','낙찰확정일 없음',pend.filter(x=>!x.contract_date).length],['gry','기술자문 보류',hold.length]]
+     .forEach(k=>{if(k[2]>0)items.push([k[0],k[1],k[2],'advisory-sync']);});
+   }
    if(!items.length){b.hidden=true;return;}
-   b.innerHTML='<div class="ct-dr"><b>데이터 위험</b><small>기술자문 실적 · 확정 전 확인할 것</small>'+items.map(([cls,t,n])=>'<button type="button" class="ct-drchip '+cls+'" data-si-action="advisory-sync">'+t+' <b>'+n+'</b></button>').join('')+'</div>';
+   b.innerHTML='<div class="ct-dr"><b>데이터 위험</b><small>CRM이 먼저 알려주는 확인할 것 · 클릭=처리</small>'+items.map(([cls,t,n,act])=>'<button type="button" class="ct-drchip '+cls+'" data-si-action="'+act+'">'+t+' <b>'+n+'</b></button>').join('')+'</div>';
    b.hidden=false;
-  }).catch(()=>{});
+  };
+  paint(null);
+  if(root.ContractSalesUI?.advisoryRows&&root.CRMRelease?.has?.('crm_advisory_attribution_v1')!==false)root.ContractSalesUI.advisoryRows().then(paint).catch(()=>{});
  }
  root.addEventListener('crm-release:changed',()=>{if(['control','perf'].includes(root.G?.page))render();});/* 릴리스 계약: 빠진 서버 함수가 확인되면 해당 버튼을 즉시 숨김 */
  root.addEventListener('advisory-attribution:changed',()=>{if(root.G?.page==='perf')fillAdvisoryCard();if(root.G?.page==='control')fillDataRisk();});
@@ -438,6 +447,7 @@
   if(chip){const fc=state();fc[chip.dataset.siFilterchip]=chip.dataset.value;fc.issue='all';fc.stage='all';fc.page=1;render();return;}
   const b=e.target.closest('[data-si-action]');if(!b)return;const action=b.dataset.siAction,v=b.dataset.value,f=state();
   if(action==='advisory-sync'){root.ContractSalesUI?.advisorySync?.();return;}
+  if(action==='inquiry-convert'){root.InquiryConversion?.open?.();return;}
   if(action==='navigate')root.goPage(v);
   if(action==='view'){f.view=v;render()}
   if(action==='quarter'){f.quarter=Number(v);f.month=0;f.page=1;render();return}
