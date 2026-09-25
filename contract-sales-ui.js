@@ -68,5 +68,51 @@
  if(oldRep)root.repManagerRenderDrawer=function(){const r=oldRep.apply(this,arguments),row=root.REP_MANAGER_ROWS?.[root.REP_MANAGER_DRAWER_INDEX];if(row)mount(document.getElementById('perfDrawerBody'),filters({owner:row.nm||row.name}),true);return r};
  root.addEventListener('contract-sales:changed',()=>{if(root.B&&root.ME)root.paint()});
  root.addEventListener('phase1:identity-cleared',()=>{close();document.querySelectorAll('.contract-sales-host').forEach(n=>n.remove())});
- root.ContractSalesUI={html,mount,filters,editor,detail};
+ /* 기술자문 → 계약실적 반영 (2026-09-25 대표 승인 · 레거시 문서는 금액·계약일만 채우면 반영)
+    현장·담당·문서 연결·중복 방지는 자동. 임의 추정 금지 — 금액·날짜는 계약서를 보고 확정한다. */
+ async function advisorySync(){
+  close();focus=document.activeElement;
+  const shade=document.createElement('div');shade.className='contract-sales-shade';dialog=shade;
+  shade.innerHTML='<section class="contract-sales-dialog advisory-sync" role="dialog" aria-modal="true" aria-labelledby="adv-sync-title"><header><h2 id="adv-sync-title">기술자문 → 계약실적 반영</h2><button type="button" data-close>닫기</button></header><p role="status">미반영 계약을 조회하는 중…</p><div class="adv-sync-body"></div></section>';
+  document.body.append(shade);
+  shade.querySelector('[data-close]').onclick=close;
+  shade.onkeydown=e=>{if(e.key==='Escape')close()};
+  const status=shade.querySelector('[role="status"]'),body=shade.querySelector('.adv-sync-body');
+  let items=[];
+  try{
+   const res=await root.SB.rpc('crm_advisory_ledger_pending_v1',{});
+   if(res.error||res.data?.ok!==true)throw new Error(res.error?.message||'조회 실패');
+   items=res.data.items||[];
+  }catch(e){status.textContent='조회하지 못했습니다: '+String(e.message||e);return;}
+  if(!items.length){status.textContent='미반영 기술자문 계약이 없습니다. 모두 원장에 반영되어 있습니다.';return;}
+  status.textContent='미반영 '+items.length+'건 — 금액·계약일을 확인해 건별로 반영합니다. 반영된 건은 다시 나타나지 않습니다(문서ID 기준).';
+  body.innerHTML=items.map((x,i)=>{
+   const mapped=!!x.deal_id;
+   return '<div class="adv-sync-row'+(mapped?'':' hold')+'" data-i="'+i+'">'
+    +'<b>'+h(x.site_name||'현장 미상')+'</b>'
+    +'<span>'+(x.source_manager?'원본 담당 '+h(x.source_manager)+' · ':'')+(x.document_url?'<a href="'+h(x.document_url)+'" target="_blank" rel="noopener noreferrer">계약서 보기 ↗</a>':'계약서 링크 없음')+'</span>'
+    +(mapped
+      ?'<div class="adv-sync-form"><label>계약금액(원)<input type="number" step="1" min="1" data-amt value="'+(x.amount??'')+'"></label><label>계약 체결일<input type="date" data-date value="'+h(String(x.effective_date||'').slice(0,10))+'"></label><button type="button" data-apply-one>'+(x.has_row?'증감 반영':'계약 반영')+'</button></div>'
+      :'<em>현장의 영업건을 특정하지 못했습니다(연결 '+x.deal_count+'건) — 현장 상세에서 계약실적 기록으로 처리해 주세요.</em>')
+    +'<p class="adv-sync-msg" role="status"></p></div>';
+  }).join('');
+  body.querySelectorAll('[data-apply-one]').forEach(btn=>{btn.onclick=async()=>{
+   const row=btn.closest('.adv-sync-row'),x=items[Number(row.dataset.i)];
+   const amt=Number(row.querySelector('[data-amt]').value),date=row.querySelector('[data-date]').value;
+   const msg=row.querySelector('.adv-sync-msg');
+   if(!Number.isSafeInteger(amt)||amt<=0){msg.textContent='계약금액을 원 단위 정수로 입력해 주세요.';return;}
+   if(!date){msg.textContent='계약 체결일을 선택해 주세요.';return;}
+   btn.disabled=true;msg.textContent='서버 반영 확인 중…';
+   try{
+    await D.write({deal_id:String(x.deal_id),request_id:crypto.randomUUID(),
+     kind:x.has_row?'amended':'signed',effective_date:date,expected_version:x.expected_version,
+     reason:'기술자문 계약 반영 · 문서 '+x.document_id+(x.source_manager?' · 원본 담당 '+x.source_manager:''),
+     amount_delta:amt});
+    row.classList.add('done');msg.textContent='✓ 원장에 반영되었습니다 ('+amount(amt)+' · '+date+').';
+    row.querySelectorAll('input,button').forEach(n=>n.disabled=true);
+    x.expected_version+=1;x.has_row=true;root.paint?.();
+   }catch(e){btn.disabled=false;msg.textContent=String(e.message||e);}
+  };});
+ }
+ root.ContractSalesUI={html,mount,filters,editor,detail,advisorySync};
 })(window);
