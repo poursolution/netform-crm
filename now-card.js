@@ -103,16 +103,19 @@
   const next={type:promise?'고객 약속':'전화',text:nextText,due_at:due,assignee};
   busy=true;el.querySelectorAll('button,input').forEach(n=>n.disabled=true);
   const progress=el._progress||(el._progress={});
-  async function confirm(operation,payload){
+  async function confirm(operation,payload,actionId){
    let id=progress[operation];
    if(id&&root.Phase1.queue.list().find(q=>q.request_id===id)?.status==='rejected'){delete progress[operation];id=null;}
-   if(!id){id=root.queueDetailContactOperation(operation,{opportunity_id:d.id,...payload});progress[operation]=id;}
+   if(!id){id=root.queueDetailContactOperation(operation,{opportunity_id:d.id,...payload},actionId);progress[operation]=id;}
    await root.Phase1.queue.flush();const row=root.Phase1.queue.list().find(q=>q.request_id===id);
    if(row?.status!=='done'||row.ack?.ok!==true)throw Error(row?.error||'서버 확인 대기 중 — 다시 누르면 같은 요청을 확인합니다.');
    return row;
   }
   try{
    status.textContent='기록 확인 중…';
+   /* 지금 할 일(서버 UUID)이 있으면 먼저 '완료'로 닫는다 — 기한 내 처리·약속 이행 집계의 근거(2026-09-26) */
+   const cur=root.actionObj?root.actionObj(d,root.currentPatch?root.currentPatch():{}):null;
+   if(cur&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(cur.id||''))&&!progress.completedAction){await confirm('next_action_complete',{},cur.id);progress.completedAction=cur.id;d.completed_actions=(Array.isArray(d.completed_actions)?d.completed_actions:[]).concat([{id:cur.id,type:cur.type,text:cur.text,due_at:cur.due_at||cur.due,status:'completed',completed_at:new Date().toISOString()}]);}
    const recorded=await confirm('activity',activity);
    d.activities=Array.isArray(d.activities)?d.activities:[];
    if(!d.activities.some(x=>x.id===recorded.ack.activity_id))d.activities.unshift({id:recorded.ack.activity_id,type:activity.type,note:activity.note,at:activity.occurred_at,occurred_at:activity.occurred_at});
