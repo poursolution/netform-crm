@@ -4,20 +4,68 @@
 .mt-item.ml-promise-item{border-left-color:var(--danger);background:linear-gradient(90deg,#fff5f6,#fff 60%)}
 .mt-item.ml-promise-item .mt-reason{color:#c0262f;font-weight:800}
 
-/* 영업 흐름 한 줄 */
-.ml-flow{margin:-4px 0 12px;border:1px solid var(--line);border-radius:14px;background:#fff;padding:10px 11px}
-.ml-flow-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:7px}
-.ml-flow-head b{font-size:12.5px}.ml-flow-head small{font-size:10.5px;color:var(--sub)}
-.ml-row{display:flex;align-items:center;gap:4px;overflow-x:auto;padding-bottom:3px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-.ml-row::-webkit-scrollbar{display:none}
-.ml-arr{font-style:normal;color:var(--sub-2);flex:none}
-.ml-ev,.ml-next,.ml-gap{flex:none;display:inline-flex;align-items:baseline;gap:3px;border-radius:999px;padding:3px 9px;font-size:11.5px;white-space:nowrap;border:1px solid var(--line-2);background:#f7f8fa}
-.ml-ev i,.ml-next i{font-style:normal}.ml-ev b,.ml-next b{font-weight:750}.ml-ev em,.ml-next em{font-style:normal;color:var(--ink-2)}
-.ml-ev small,.ml-next small{color:var(--sub);font-variant-numeric:tabular-nums}
-.ml-ev u{text-decoration:none;font-size:10.5px;font-weight:800;color:var(--sub)}
-.ml-ev.stage{background:var(--violet-bg);border-color:#ddd5fd}.ml-ev.sup{background:var(--warn-bg);border-color:#f7dcb4}
-.ml-gap{background:#fff;border-style:dashed;color:#a15c07;font-weight:750}.ml-gap.hot{color:var(--danger);border-color:#f5b8be}
-.ml-next{background:var(--ok-bg);border-color:#bfe8d4}.ml-next.late{background:var(--danger-bg);border-color:#f5c1c6}.ml-next.late small{color:var(--danger);font-weight:800}
+/* 오늘 머리: 진행 링 + 우선순위 막대 */
+.ml-hero{margin:0 0 12px;border:1px solid #dbe6ff;background:#fff;border-radius:16px;padding:12px 14px 11px}
+.ml-hero-row{display:flex;align-items:center;gap:12px}
+.ml-hero .mt-remain{margin:0;border:0;background:none;padding:0;font-size:13px}
+.ml-hero-txt{min-width:0;flex:1}
+.ml-ring .trk,.ml-donut .trk{fill:none;stroke:#E8EEFF;stroke-width:7}
+.ml-ring .val{fill:none;stroke:var(--blue);stroke-width:7;stroke-linecap:round}
+.ml-ring .val.full{stroke:var(--ok)}.ml-ring .val.zero{stroke-opacity:0}
+.ml-ring .n,.ml-donut .n{font-family:inherit;font-size:13px;font-weight:800;fill:var(--ink);font-variant-numeric:tabular-nums}.ml-donut .n{font-size:19px}
+.ml-ring .l,.ml-donut .l{font-family:inherit;font-size:9px;font-weight:600;fill:var(--sub)}
+.ml-seg{display:flex;gap:2px;height:8px;margin:11px 0 6px;border-radius:5px;overflow:hidden}
+.ml-seg span{min-width:6px}
+.ml-seg .promise,.ml-legend i.promise{background:#F04452}.ml-seg .late,.ml-legend i.late{background:#F58A94}
+.ml-seg .new,.ml-legend i.new{background:#F2941B}.ml-seg .today,.ml-legend i.today{background:#7FA3FF}.ml-seg .etc,.ml-legend i.etc{background:#C9CFD8}
+.ml-legend{display:flex;flex-wrap:wrap;gap:3px 10px;font-size:11px;color:var(--ink-2)}
+.ml-legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:0}
+.ml-legend b{font-variant-numeric:tabular-nums}
+/* 카드: 종류 아이콘 + 기한 배지 */
+.ml-kind{font-style:normal;flex:none;width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-size:12px;background:var(--blue-50)}
+.ml-kind.promise,.ml-kind.late{background:var(--danger-bg)}.ml-kind.new{background:var(--warn-bg)}.ml-kind.etc{background:#F2F4F6}
+.ml-dpill{font-style:normal;flex:none;margin-left:auto;font-size:10.5px;font-weight:800;border-radius:7px;padding:2px 7px;background:#F2F4F6;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.ml-dpill.late{background:var(--danger-bg);color:#c0262f}.ml-dpill.today{background:var(--warn-bg);color:#a15c07}.ml-dpill.new{background:var(--warn-bg);color:#a15c07}
+.mt-item.ml-done-item{opacity:.55}
+/* 하루 마감: 도넛 + 최근 5일 */
+.ml-hero.done{border-color:#cde7d8;background:#fbfefc}
+.ml-hero.done .mt-remain{margin-bottom:8px}
+.ml-close-row{display:flex;align-items:center;gap:14px}
+.ml-donut .arc{fill:none;stroke-width:9}
+.ml-close-legend{display:grid;gap:5px;font-size:12px;color:var(--ink-2)}
+.ml-close-legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px}
+.ml-close-legend b{font-variant-numeric:tabular-nums}
+.ml-hist{margin-top:10px}.ml-hist small{font-size:10.5px;color:var(--sub);font-weight:700}
+.ml-bars{display:flex;align-items:flex-end;gap:6px;height:46px;margin-top:5px}
+.ml-bars span{flex:1;background:#C9DAFF;border-radius:4px 4px 0 0;position:relative;transform-origin:bottom}
+.ml-bars span.now{background:var(--blue)}
+.ml-bars em{position:absolute;top:-14px;left:0;right:0;text-align:center;font-style:normal;font-size:9.5px;font-weight:800;color:var(--ink-2)}
+.ml-bars-x{display:flex;gap:6px;margin-top:3px}.ml-bars-x i{flex:1;text-align:center;font-style:normal;font-size:9.5px;color:var(--sub)}
+
+/* 현장 상세: 진행도 + 흐름 타임라인 */
+.ml-flow{margin:-4px 0 12px;border:1px solid var(--line);border-radius:14px;background:#fff;padding:10px 11px;display:grid;gap:3px}
+.ml-sub{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.ml-sub b{font-size:12.5px}.ml-sub small{font-size:10.5px;color:var(--sub);text-align:right}
+.ml-steps{display:block;margin:2px 0 4px}
+.ml-steps .base{stroke:#E2E5EA;stroke-width:3;stroke-linecap:round}.ml-steps .prog{stroke:var(--blue);stroke-width:3;stroke-linecap:round}
+.ml-steps .on{fill:var(--blue)}.ml-steps .now{fill:var(--blue);stroke:#DCE6FF;stroke-width:4}.ml-steps .off{fill:#fff;stroke:#C9CFD8;stroke-width:2}
+.ml-steps .t{font-family:inherit;font-size:9.5px;font-weight:600;fill:var(--sub)}.ml-steps .tn{font-family:inherit;font-size:10px;font-weight:800;fill:var(--blue-dark)}
+.ml-tl{display:block;margin-top:2px}
+.ml-tl .seg{stroke:#9DB8FF;stroke-width:2.5;stroke-linecap:round}
+.ml-tl .gap{stroke:#F2941B;stroke-width:2.5;stroke-dasharray:3 4;stroke-linecap:round}
+.ml-tl .d{stroke:#fff;stroke-width:1.5}.ml-tl .d.act{fill:var(--blue)}.ml-tl .d.abs{fill:#B0B8C1}.ml-tl .d.stage{fill:#7A5AF8}.ml-tl .d.sup{fill:#F2941B}.ml-tl .d.misc{fill:#C9CFD8}
+.ml-tl .today{fill:#fff;stroke:var(--ok);stroke-width:3}.ml-tl .today.late{stroke:var(--danger)}
+.ml-tl .t{font-family:inherit;font-size:9.5px;font-weight:600;fill:var(--sub)}.ml-tl .tg{font-family:inherit;font-size:9.5px;font-weight:800;fill:#a15c07}
+.ml-key{display:flex;flex-wrap:wrap;gap:2px 10px;font-size:10px;color:var(--sub)}.ml-key span{white-space:nowrap}
+.ml-key i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px}
+.ml-key i.act{background:var(--blue)}.ml-key i.abs{background:#B0B8C1}.ml-key i.stage{background:#7A5AF8}
+.ml-key i.gap{width:12px;height:0;border-radius:0;border-top:2px dashed #F2941B;vertical-align:2px}
+.ml-sumrow{display:grid;gap:6px;margin-top:6px;padding-top:7px;border-top:1px solid var(--line)}
+.ml-last{font-size:11.5px;color:var(--ink-2)}
+.ml-next{justify-self:start;display:inline-flex;align-items:baseline;gap:3px;border-radius:999px;padding:3px 9px;font-size:11.5px;border:1px solid #bfe8d4;background:var(--ok-bg);max-width:100%}
+.ml-next i{font-style:normal}.ml-next b{font-weight:750}.ml-next em{font-style:normal;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ml-next small{color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ml-next.late{background:var(--danger-bg);border-color:#f5c1c6}.ml-next.late small{color:var(--danger);font-weight:800}
 .ml-next.none{background:var(--danger-bg);border-color:#f5c1c6;color:var(--danger)}
 
 /* 결과 시트 */
@@ -58,7 +106,18 @@
  .ml-chip:nth-child(2){animation-delay:.03s}.ml-chip:nth-child(3){animation-delay:.06s}.ml-chip:nth-child(4){animation-delay:.09s}.ml-chip:nth-child(5){animation-delay:.12s}
  .ml-step2:not([hidden]){animation:mlUp .24s both cubic-bezier(.2,.8,.3,1)}
  .ml-status.ok{animation:mlPop .32s both}
- .ml-ev,.ml-next,.ml-gap{animation:mlFade .3s both}
+ .ml-next{animation:mlFade .3s both}
+ .ml-ring .val{animation:mlRing .9s cubic-bezier(.2,.8,.3,1) both}
+ .ml-seg span{animation:mlGrowX .6s cubic-bezier(.2,.8,.3,1) both;transform-origin:left}
+ .ml-donut .arc{animation:mlFade .6s both}
+ .ml-bars span{animation:mlGrowY .6s cubic-bezier(.2,.8,.3,1) both}
+ .ml-bars span:nth-child(2){animation-delay:.05s}.ml-bars span:nth-child(3){animation-delay:.1s}.ml-bars span:nth-child(4){animation-delay:.15s}.ml-bars span:nth-child(5){animation-delay:.2s}
+ .ml-steps .prog{stroke-dasharray:300;animation:mlDraw .8s cubic-bezier(.2,.8,.3,1) both}
+ .ml-tl .d{animation:mlFade .4s both}
+ @keyframes mlRing{from{stroke-dashoffset:var(--c)}}
+ @keyframes mlGrowX{from{transform:scaleX(0)}}
+ @keyframes mlGrowY{from{transform:scaleY(0)}}
+ @keyframes mlDraw{from{stroke-dashoffset:300}to{stroke-dashoffset:0}}
  .ml-promise{animation:mlPulse 2.4s ease-in-out infinite}
  @keyframes mlUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
  @keyframes mlFade{from{opacity:0}to{opacity:1}}

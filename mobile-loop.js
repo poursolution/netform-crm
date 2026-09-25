@@ -58,7 +58,48 @@
   rows.forEach(r=>{if(!r||r.status!=='done'||!r.ack||led.ids[r.request_id])return;const op=String(r.operation||'');if(!op||DAY_SKIP.has(op)||kstDay(r.ack.server_at||r.ack.occurred_at||r.updated_at)!==today)return;const body=JSON.stringify(r.payload||{});led.ids[r.request_id]=op==='activity'?'contact':op==='next_action'?(/고객\s*약속/.test(body)?'promise':'next'):op==='next_action_complete'?'done':'other';changed=true;});
   if(changed)try{root.localStorage.setItem(key,JSON.stringify(led));}catch(e){}
   const v=Object.values(led.ids),n=k=>v.filter(x=>x===k).length;
-  return {total:v.length,contact:n('contact'),next:n('next')+n('promise'),promise:n('promise')};
+  const out={total:v.length,contact:n('contact'),next:n('next')+n('promise'),promise:n('promise')};
+  /* 최근 날짜별 처리 건수(하루 마감 막대그래프) — 이 기기에만, 14일 */
+  const hk='crm:dayhist:v1:'+String(root.G&&root.G.user&&(root.G.user.id||root.G.user.nm)||'');let hist={};
+  try{hist=JSON.parse(root.localStorage.getItem(hk)||'{}')||{};}catch(e){hist={};}
+  if(hist[today]!==out.total){hist[today]=out.total;const nh={};Object.keys(hist).sort().slice(-14).forEach(k=>{nh[k]=hist[k];});hist=nh;try{root.localStorage.setItem(hk,JSON.stringify(hist));}catch(e){}}
+  out.hist=hist;return out;
+ }
+ /* ── 인포그래픽(2026-09-26 대표 요청 '모바일 인포그래픽으로 세련되게') ── */
+ const SEG=[['promise','약속'],['late','기한 지남'],['new','새 문의'],['today','오늘 예정'],['etc','확인']];
+ const KIND_ICON={promise:'🤝',late:'⏰',new:'📥',today:'📅',etc:'📋'};
+ const catOf=t=>t.promise?'promise':t.bucket==='overdue'?'late':(t.kind==='inquiry'||t.bucket==='new')?'new':(t.bucket==='today'||t.bucket==='visit')?'today':'etc';
+ const doneOf=t=>typeof root.isDone==='function'&&root.isDone(t);
+ function ringSVG(done,total){
+  const r=24,c=2*Math.PI*r,p=total?done/total:1,o=c*(1-p);
+  return '<svg class="ml-ring" width="62" height="62" viewBox="0 0 62 62" aria-hidden="true"><circle cx="31" cy="31" r="'+r+'" class="trk"/><circle cx="31" cy="31" r="'+r+'" class="val'+(total&&done>=total?' full':'')+(done?'':' zero')+'" style="stroke-dasharray:'+c.toFixed(1)+';stroke-dashoffset:'+o.toFixed(1)+';--c:'+c.toFixed(1)+'" transform="rotate(-90 31 31)"/><text x="31" y="32" text-anchor="middle" class="n">'+done+'/'+total+'</text><text x="31" y="44" text-anchor="middle" class="l">처리</text></svg>';
+ }
+ function heroHTML(items){
+  const total=items.length,done=items.filter(doneOf).length,counts={};
+  items.filter(t=>!doneOf(t)).forEach(t=>{const k=catOf(t);counts[k]=(counts[k]||0)+1;});
+  const segs=SEG.filter(([k])=>counts[k]);
+  return '<div class="ml-hero-row">'+ringSVG(done,total)+'<div class="ml-hero-txt"></div></div>'
+   +(segs.length?'<div class="ml-seg">'+segs.map(([k])=>'<span class="'+k+'" style="flex:'+counts[k]+'"></span>').join('')+'</div><div class="ml-legend">'+segs.map(([k,l])=>'<span><i class="'+k+'"></i>'+l+' <b>'+counts[k]+'</b></span>').join('')+'</div>':'');
+ }
+ function closeHTML(ds){
+  const parts=[['고객 연락',ds.contact,'#3366FF'],['다음 할 일',ds.next-ds.promise,'#15AA72'],['고객 약속',ds.promise,'#F04452']].filter(x=>x[1]>0);
+  const tot=parts.reduce((s,x)=>s+x[1],0),r=34,c=2*Math.PI*r;let off=0;
+  const arcs=tot?parts.map(x=>{const len=c*x[1]/tot,gap=parts.length>1?2:0,s='<circle cx="45" cy="45" r="'+r+'" class="arc" style="stroke:'+x[2]+';stroke-dasharray:'+Math.max(0,len-gap).toFixed(1)+' '+(c-len+gap).toFixed(1)+';stroke-dashoffset:'+(-off).toFixed(1)+'" transform="rotate(-90 45 45)"/>';off+=len;return s;}).join(''):'';
+  const days=[];for(let i=4;i>=0;i--){const t=new Date();t.setDate(t.getDate()-i);days.push(kstDay(t));}
+  const vals=days.map(k=>Number((ds.hist||{})[k]||0)),mx=Math.max(1,...vals);
+  return '<div class="ml-close-row"><svg class="ml-donut" width="90" height="90" viewBox="0 0 90 90" aria-hidden="true"><circle cx="45" cy="45" r="'+r+'" class="trk"/>'+arcs+'<text x="45" y="47" text-anchor="middle" class="n">'+(ds.total||0)+'</text><text x="45" y="61" text-anchor="middle" class="l">오늘 처리</text></svg>'
+   +'<div class="ml-close-legend">'+(parts.length?parts.map(x=>'<span><i style="background:'+x[2]+'"></i>'+x[0]+' <b>'+x[1]+'</b></span>').join(''):'<span>오늘 저장한 처리 기록이 아직 없습니다</span>')+'</div></div>'
+   +'<div class="ml-hist"><small>최근 5일 처리</small><div class="ml-bars">'+vals.map((v,i)=>'<span class="'+(i===4?'now':'')+'" style="height:'+Math.max(6,Math.round(v/mx*100))+'%"><em>'+(v||'')+'</em></span>').join('')+'</div><div class="ml-bars-x">'+days.map((k,i)=>'<i>'+(i===4?'오늘':Number(k.slice(8))+'일')+'</i>').join('')+'</div></div>';
+ }
+ function pillOf(t){
+  if(t.kind==='inquiry'){
+   if(t.bucket==='overdue')return ['기한 지남','late'];
+   const q=((root.ADMIN&&root.ADMIN.inquiries)||[]).find(x=>String(x.key)===String(t.ref)),hh=q&&typeof root.todayHoursM==='function'?root.todayHoursM(q.at):null;
+   return hh==null?['새 문의','new']:[hh<1?'방금 접수':hh+'시간 경과',hh>=2?'late':'new'];
+  }
+  const d=dealById(t.ref),dd=d&&root.execDueM?root.execDueM(d):null;
+  if(dd==null)return ['할 일 없음','etc'];
+  return dd<0?[(-dd)+'일 지남','late']:dd===0?['오늘','today']:['D-'+dd,'etc'];
  }
  function backlogHTML(){
   const list=(root.G._legacyM||[]).slice();if(!list.length)return '';
@@ -72,11 +113,29 @@
   try{
    if(root.G.mode==='admin')return r;
    const body=root.document.querySelector('#scr .body');if(!body)return r;
-   const done=body.querySelector('.mt-remain.done'),ds=daySummary();
-   if(done&&ds.total)done.insertAdjacentHTML('beforeend','<div class="ml-daysum">오늘 처리 <b>'+ds.total+'건</b>'+(ds.contact?' · 고객 접촉 '+ds.contact:'')+(ds.next?' · 다음 할 일 '+ds.next:'')+(ds.promise?' · 고객 약속 '+ds.promise:'')+'</div>');
-   else if(!done&&ds.total){const bar=body.querySelector('.mt-remain');if(bar&&!bar.querySelector('.ml-daysum-inline'))bar.insertAdjacentHTML('beforeend',' <span class="ml-daysum-inline">· 오늘 처리 '+ds.total+'건</span>');}
+   const items=root.G._today||[],ds=daySummary(),remain=body.querySelector('.mt-remain');
+   /* 오늘 머리: 진행 링 + 남은 일 우선순위 막대 / 다 끝낸 날: 도넛 + 최근 5일 막대 */
+   if(remain){
+    const hero=root.document.createElement('div'),finished=remain.classList.contains('done');
+    hero.className='ml-hero'+(finished?' done':'');
+    hero.innerHTML=finished?closeHTML(ds):heroHTML(items);
+    remain.replaceWith(hero);
+    if(finished)hero.prepend(remain);
+    else{hero.querySelector('.ml-hero-txt').append(remain);if(ds.total&&!remain.querySelector('.ml-daysum-inline'))remain.insertAdjacentHTML('beforeend',' <span class="ml-daysum-inline">· 오늘 처리 '+ds.total+'건</span>');}
+   }
    body.insertAdjacentHTML('beforeend',backlogHTML());
-   body.querySelectorAll('.mt-item').forEach(el=>{const t=(root.G._today||[]).find(x=>String(x.ref)===el.dataset.ref&&x.kind===el.dataset.kind);if(t&&t.promise){el.classList.add('ml-promise-item');const n=el.querySelector('.mt-next');if(n)n.textContent='→ 약속 지키고 결과 남기기';}});
+   /* 카드: 종류 아이콘 + 기한 배지(내 화면에서는 담당자 이름 대신) */
+   body.querySelectorAll('.mt-item').forEach(el=>{
+    const t=items.find(x=>String(x.ref)===el.dataset.ref&&x.kind===el.dataset.kind);if(!t)return;
+    const k=catOf(t),top=el.querySelector('.mt-item-top'),strong=top&&top.querySelector('strong');
+    if(strong&&!top.querySelector('.ml-kind'))strong.insertAdjacentHTML('beforebegin','<i class="ml-kind '+k+'" aria-hidden="true">'+KIND_ICON[k]+'</i>');
+    const own=top&&top.querySelector('.mt-owner'),p=pillOf(t);
+    if(own)own.outerHTML='<i class="ml-dpill '+p[1]+'">'+h(p[0])+'</i>';
+    if(doneOf(t))el.classList.add('ml-done-item');
+    /* 기한은 오른쪽 배지가 말한다 — 문장 끝 'D+24'·'D-3'·'오늘' 꼬리는 뺀다 */
+    const why=el.querySelector('.mt-reason');if(why&&p[0])why.textContent=why.textContent.replace(/\s*·\s*(D[+-]\d+|오늘|내일)$/,'');
+    if(t.promise){el.classList.add('ml-promise-item');const n=el.querySelector('.mt-next');if(n)n.textContent='→ 약속 지키고 결과 남기기';}
+   });
   }catch(e){}
   return r;
  };
@@ -106,23 +165,48 @@
   const kind=x=>{const t=x.type,b=x.body;
    if(/^\[지원 요청\]/.test(b))return ['🆘','지원 요청','sup'];
    if(t==='단계')return ['➜',root.stageLabel?root.stageLabel(b)||b:b,'stage'];
-   if(/부재/.test(t)||/부재/.test(b))return ['📵','부재','act'];
+   if(/부재/.test(t)||/부재/.test(b))return ['📵','부재','abs'];
    if(/방문/.test(t))return ['🏠','방문','act'];
    if(/문자|카카오|메시지/.test(t))return ['💬','문자','act'];
    if(/전화|통화/.test(t))return ['📞','전화','act'];
    return ['•',t.length>8?t.slice(0,8)+'…':t||'기록','misc'];};
   const short=v=>{v=String(v||'').replace(/^(통화( 시도)?|전화( 부재)?|부재)\s*—\s*/,'').trim();return v.length>14?v.slice(0,14)+'…':v;};
   const md=v=>day(v).slice(5).replace('-','/');
-  const chips=[];let prev=null,sig='',n=1;
-  ev.forEach(x=>{const k=kind(x),t=ts(x.at),tail=k[2]==='act'?short(x.result||x.body):'',s=k[1]+'|'+tail+'|'+day(x.at);
-   if(s===sig&&chips.length){n++;chips[chips.length-1]=chips[chips.length-1].replace(/<u>×\d+<\/u>|(?=<\/span>$)/,'<u>×'+n+'</u>');prev=t;return;}sig=s;n=1;
-   if(prev!==null){const g=Math.floor((t-prev)/864e5);if(g>STALL_DAYS)chips.push('<span class="ml-gap'+(g>STALL_DAYS*2?' hot':'')+'">⏸ '+g+'일</span>');}
-   chips.push('<span class="ml-ev '+k[2]+'"><i>'+k[0]+'</i><b>'+h(k[1])+'</b>'+(tail?'<em>'+h(tail)+'</em>':'')+'<small>'+md(x.at)+'</small></span>');prev=t;});
   const a=openNext(d),dd=a&&root.execDueM?root.execDueM(d):null;
-  const idle=prev!==null?Math.floor((Date.now()-prev)/864e5):null,shown=chips.slice(-8);
-  if(idle!==null&&idle>STALL_DAYS&&!(a&&dd!=null&&dd>=0))shown.push('<span class="ml-gap'+(idle>STALL_DAYS*2?' hot':'')+'">⏸ 오늘까지 '+idle+'일</span>');
   const next=a&&a.text?'<span class="ml-next'+(dd!=null&&dd<0?' late':'')+'"><i>'+(isPromise(a)?'🤝':'📅')+'</i><b>다음</b><em>'+h(short(promiseText(a)||a.text))+'</em><small>'+h(md(a.due_at||a.due))+(dd!=null&&dd<0?' · '+(-dd)+'일 지남':'')+'</small></span>':'<span class="ml-next none"><i>⚠</i><b>다음 할 일 없음</b></span>';
-  return '<div class="ml-flow" aria-label="영업 흐름"><div class="ml-flow-head"><b>영업 흐름</b><small>'+(ev.length?'마지막 기록 '+md(ev[ev.length-1].at):'아직 기록 없음 — 첫 연락 결과부터 이어집니다')+'</small></div><div class="ml-row">'+shown.join('<i class="ml-arr">›</i>')+(shown.length?'<i class="ml-arr">›</i>':'')+next+'</div></div>';
+  const last=ev[ev.length-1],lk=last?kind(last):null;
+  const lastTxt=last?md(last.at)+' '+lk[1]+(lk[2]==='act'||lk[2]==='abs'?(short(last.result||last.body)?' · '+short(last.result||last.body):''):''):'아직 기록 없음 — 첫 연락 결과부터 이어집니다';
+  return '<div class="ml-flow" aria-label="영업 흐름">'+stepper(d)
+   +'<div class="ml-sub"><b>영업 흐름</b><small>날짜 간격 그대로</small></div>'+timeline(ev,a,dd,d,kind)
+   +'<div class="ml-key"><span><i class="act"></i>연락</span><span><i class="abs"></i>부재</span><span><i class="stage"></i>단계</span><span><i class="gap"></i>'+STALL_DAYS+'일 넘게 연락 없음</span></div>'
+   +'<div class="ml-sumrow"><span class="ml-last">마지막 · '+h(lastTxt)+'</span>'+next+'</div></div>';
+ }
+ /* 진행도: 접촉 → 설계 → 발송 → 경쟁·입찰 → 계약·시공 (관계관리는 단계 밖 트랙) */
+ const STEP=[['first_contact','접촉'],['consulting','설계'],['sent','발송'],['compete','경쟁·입찰'],['contract','계약·시공']];
+ const STEP_IDX={first_contact:0,consulting:1,sent:2,compete:3,imminent:3,bidding:3,contract:4,construction:4,completion:4,won:5};
+ function stepper(d){
+  const code=String(d.code||''),rel=['rapport','silent','waiting'].indexOf(code)>=0,idx=STEP_IDX[code];
+  const x0=20,x1=280,gap=(x1-x0)/4,xs=STEP.map((_,i)=>x0+i*gap),all=idx===5,cur=idx==null?-1:Math.min(idx,4);
+  let s='<svg class="ml-steps" viewBox="0 0 300 40" width="100%" aria-hidden="true"><line x1="'+x0+'" y1="12" x2="'+x1+'" y2="12" class="base"/>';
+  if(all||cur>0)s+='<line x1="'+x0+'" y1="12" x2="'+(all?x1:xs[cur])+'" y2="12" class="prog"/>';
+  STEP.forEach((st,i)=>{const now=!all&&i===cur,on=all||i<cur;s+='<circle cx="'+xs[i]+'" cy="12" r="'+(now?7:5)+'" class="'+(now?'now':on?'on':'off')+'"/><text x="'+xs[i]+'" y="33" text-anchor="middle" class="'+(now?'tn':'t')+'">'+st[1]+'</text>';});
+  const cap=rel?'관계관리 중 — 진행 단계 밖에서 관리':all?'수주':cur>=0?(root.stageLabel?root.stageLabel(code):code):'';
+  return '<div class="ml-sub"><b>진행도</b><small>'+h(cap)+'</small></div>'+s+'</svg>';
+ }
+ /* 흐름 타임라인: 첫 기록~오늘을 날짜 비율대로 — 점=기록, 점선=7일 넘는 공백, 끝 점=오늘(다음 할 일 지남·없음이면 빨강) */
+ function timeline(ev,a,dd,d,kind){
+  const ts=v=>Date.parse(v||''),now=Date.now(),pts=ev.map(x=>({t:ts(x.at),k:kind(x)[2]})).filter(p=>Number.isFinite(p.t)&&p.t<=now);
+  let t0=pts.length?pts[0].t:ts(d.created_at||d.created);if(!Number.isFinite(t0)||t0>now)t0=now-7*864e5;
+  const span=Math.max(now-t0,3*864e5),X=t=>12+(t-t0)/span*272;
+  let s='<svg class="ml-tl" viewBox="0 0 300 44" width="100%" aria-hidden="true">',px=12,pt=t0,big={g:0,x:0};
+  pts.concat([{t:now,k:'today'}]).forEach(p=>{const x=X(p.t),g=(p.t-pt)/864e5;if(x-px>0.5)s+='<line x1="'+px.toFixed(1)+'" y1="20" x2="'+x.toFixed(1)+'" y2="20" class="'+(g>STALL_DAYS?'gap':'seg')+'"/>';if(g>big.g)big={g,x:(px+x)/2};px=x;pt=p.t;});
+  pts.forEach(p=>{s+='<circle cx="'+X(p.t).toFixed(1)+'" cy="20" r="4.5" class="d '+p.k+'"/>';});
+  const late=!a||(dd!=null&&dd<0);
+  s+='<circle cx="284" cy="20" r="6.5" class="today'+(late?' late':'')+'"/>';
+  const md0=t=>{const x=new Date(t);return (x.getMonth()+1)+'/'+x.getDate();};
+  s+='<text x="12" y="40" class="t">'+md0(t0)+'</text><text x="284" y="40" text-anchor="end" class="t">오늘</text>';
+  if(big.g>STALL_DAYS)s+='<text x="'+Math.min(250,Math.max(50,big.x)).toFixed(1)+'" y="10" text-anchor="middle" class="tg">'+Math.floor(big.g)+'일 연락 없음</text>';
+  return s+'</svg>';
  }
  function scrollFlow(){try{root.document.querySelectorAll('.ml-row').forEach(r=>{r.scrollLeft=r.scrollWidth;});}catch(e){}}
  const baseRender=root.render;
