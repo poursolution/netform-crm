@@ -261,3 +261,8 @@
 @media(max-width:900px){.si-dark .hl-grid{grid-template-columns:1fr}.si-dark .hl-legacy{border-left:0;padding-left:0}.si-dark .hl-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* hidden 속성이 .dc-p의 display 규칙에 덮여 빈 칸으로 보이던 문제 (2026-09-25) */
 .si-shell .dc-p[hidden],.si-shell [hidden]{display:none!important}
+/* 루프 끊김 스트립 (2026-09-25) — 데이터 위험 칩 스타일 재사용 */
+.si-dark .ct-loop{padding:10px 14px;border-left:3px solid #dc2626}
+.si-dark .ct-drchip small{font-size:10.5px;font-weight:700;color:#8a97ab;margin-left:2px}
+.si-dark .ct-drchip.z{color:#94a3b8;background:#fbfcfe}
+.si-dark .ct-drchip.z b{color:#94a3b8}

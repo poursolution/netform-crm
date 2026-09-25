@@ -200,6 +200,27 @@
  /* 운영 건강(2026-09-25 컨설턴트 P0-1): 운영 KPI는 Live만 평가한다 — OPS_RULES.liveFrom(대표 확정 2026-10-01) 이후
     생성됐거나 그 이후 실제 접촉이 기록된 영업. 나머지는 Legacy(과거 이관분)로 '정상화율'만 본다.
     과거 데이터를 운영 KPI에 섞으면 'Next Action 등록률 2%' 같은 무의미한 숫자가 나와 대시보드 신뢰를 잃는다. */
+ /* 루프 끊김(2026-09-25 컨설턴트 Loop ⑭·⑮): 관리자는 단계별 목록이 아니라 '끊긴 루프'만 매일 처리한다.
+    Live(OPS_RULES.liveFrom 이후 생성·조치) 건수를 크게, 과거 이관분은 괄호로 분리 — 두 모수를 섞지 않는다. 칩 클릭 = 아래 처리 목록 필터. */
+ function loopStrip(s){
+  const LIVE=String(root.OPS_RULES?.liveFrom||'2026-10-01'),day=v=>String(v||'').slice(0,10),far=Number(root.OPS_RULES?.loopContactDays??30);
+  const r=rows(),act=r.deals.filter(d=>d.active),inq=r.inquiries;
+  const liveD=d=>day(d.created)>=LIVE||day(d.lastContact)>=LIVE,liveQ=q=>day(q.item.created_at||q.item.createdAt||q.created)>=LIVE;
+  const noContact=d=>{const m=root.relationshipMeta(d.item);if(m.days!==null)return m.days>=far;const c0=day(d.created);return !!c0&&root.daysTo&&-root.daysTo(c0)>=far};/* 접촉 기록이 아예 없으면 생성 후 경과일로 */
+  const late=q=>q.owner!=='미배정'&&!(root.inqCtlFirstResponseAt&&root.inqCtlFirstResponseAt(q.item))&&!!(root.inquiryResponseLate&&root.inquiryResponseLate(q.item));
+  const sup=ctSupport(s).n;
+  const defs=[
+   ['red','미배정 문의',inq.filter(q=>q.owner==='미배정'),liveQ,'미배정|all|inquiries'],
+   ['red','첫 응대 지연',inq.filter(late),liveQ,'|all|inquiries'],
+   ['red','약속 미이행',act.filter(d=>d.issues.includes('promise')),liveD,'|promise|risk'],
+   ['org','담당자 없는 영업',act.filter(d=>!d.owner||d.owner==='미배정'),liveD,'미배정|all|risk'],
+   ['org','다음 할 일 없음',act.filter(d=>d.issues.includes('missing')),liveD,'|missing|risk'],
+   ['yel',far+'일 접촉 없음',act.filter(noContact),liveD,'|contact|risk']];
+  const chip=([cls,label,list,isLive,val])=>{const n=list.filter(isLive).length,old=list.length-n;
+   return '<button type="button" class="ct-drchip '+(n?cls:'z')+'" data-si-action="ct-focus" data-value="'+a(val)+'">'+label+' <b>'+n+'</b>'+(old?' <small>과거 '+number(old)+'</small>':'')+'</button>';};
+  return '<div class="dc-p c12 ct-loop"><div class="ct-dr"><b>루프 끊김</b><small>매일 여기만 처리 · 큰 숫자=Live('+h(Number(LIVE.slice(5,7))+'/'+Number(LIVE.slice(8,10)))+'~) · 과거=이관분</small>'+defs.map(chip).join('')
+   +'<button type="button" class="ct-drchip '+(sup?'red':'z')+'" data-si-action="ct-focus" data-value="|support|risk">지원 요청 <b>'+sup+'</b></button></div></div>';
+ }
  function healthPanel(){
   const LIVE=String(root.OPS_RULES?.liveFrom||'2026-10-01'),started=new Date().toISOString().slice(0,10)>=LIVE;
   const r=rows(),act=r.deals.filter(d=>d.active),day=v=>String(v||'').slice(0,10);
@@ -243,7 +264,7 @@
   const bulk='<div class="ct-bulk">선택 <b id="ct-count">0</b>건 → '+btn('지시 보내기 (다음 업무 일괄 지정)','ct-bulk','','ct-bulkbtn')+'<span class="dc-mut">지시는 각 현장의 다음 업무로 등록되어 담당자 오늘 업무에 뜹니다 · 문의 건은 배정으로 처리</span></div>';
   return '<div class="dc-topbar"><h2><i>◈</i>컨트롤타워</h2>'+'<span class="dc-nav">'+btn('전체 현황 ↗','navigate','dash')+btn('성과 분석 ↗','navigate','perf')+(root.ContractSalesUI?.advisorySync&&root.CRMRelease?.has?.('crm_advisory_attribution_v1')!==false?'<button type="button" data-si-action="advisory-sync">기술자문 낙찰실적 확정</button>':'')+'</span><span class="dc-live"><i></i>관리 대상 '+number(list.length)+'건</span></div>'+
    '<div class="dc-grid">'+
-   healthPanel()+'<div class="dc-p c12 ct-datarisk" id="ct-datarisk" hidden></div>'+'<div class="dc-p c12"><div class="dc-ph">① 지금 막힌 곳<small>문장 클릭 = 아래 목록이 그 조건으로 좁혀짐</small></div><div class="dc-pb ct-verdicts">'+verdicts+'</div></div>'+
+   loopStrip(s)+healthPanel()+'<div class="dc-p c12 ct-datarisk" id="ct-datarisk" hidden></div>'+'<div class="dc-p c12"><div class="dc-ph">① 지금 막힌 곳<small>문장 클릭 = 아래 목록이 그 조건으로 좁혀짐</small></div><div class="dc-pb ct-verdicts">'+verdicts+'</div></div>'+
    '<div class="dc-p c12"><div class="dc-ph">② 담당자별 문제 · 지시<small>문제 칩 클릭=목록 필터 · 이름 클릭=성과 분석 · 지시=해당 담당자 문제 건 일괄 지정</small></div><div class="dc-pb">'+ctRepRows(s)+'</div></div>'+
    '<div class="dc-p c12"><div class="dc-ph">③ 처리 목록<small>진행 중·관리필요=현재 상태 · 문의·준공=선택 기간 · 계약실적과 별도</small></div><div class="dc-pb"><div class="dc-kchips">'+chips+'</div>'+filtersHtml+table+bulk+'<div class="si-pager">'+btn('이전','page',Math.max(1,f.page-1))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',Math.min(pages,f.page+1))+'</div></div></div></div>';
  }
