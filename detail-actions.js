@@ -2,7 +2,7 @@
 'use strict';
 let state=null,tip=null,timer=null;
 const $=id=>document.getElementById(id);
-const descriptions={activity:'전화·방문·문자 등 고객 접촉 내용과 다음 할 일을 기록합니다.',next:'다음에 해야 할 업무와 기한을 설정합니다.',stage:'현재 영업단계를 변경하고 후속 일정을 설정합니다.',owner:'담당자 변경',amount:'예상금액 입력·수정',materials:'견적서·사진·관련 자료를 등록합니다.',history:'단계·담당자·정보 변경 내역 확인',work:'공종 선택·수정',help:'영업 관리 기준 확인'};
+const descriptions={activity:'전화·방문·문자 등 고객 접촉 내용과 다음 할 일을 기록합니다.',next:'다음에 해야 할 업무와 기한을 설정합니다.',stage:'현재 영업단계를 변경하고 후속 일정을 설정합니다.',owner:'담당자 변경',amount:'예상금액 입력·수정',materials:'견적서·사진·관련 자료를 등록합니다.',support:'가격 협의·PT 동행·견적 검토 등 관리자의 지원이 필요할 때 요청합니다.',history:'단계·담당자·정보 변경 내역 확인',work:'공종 선택·수정',help:'영업 관리 기준 확인'};
 function button(text,key,fn){const b=document.createElement('button');b.type='button';b.className='dact da-action';b.textContent=text;b.dataset.help=descriptions[key]||text;b.onclick=fn||(()=>open(key));return b;}
 function hideTip(){clearTimeout(timer);tip?.remove();tip=null;document.querySelectorAll('[aria-describedby="da-tooltip"]').forEach(n=>n.removeAttribute('aria-describedby'));}
 function tooltip(target,delay){hideTip();timer=setTimeout(()=>{if(!target.isConnected)return;tip=document.createElement('div');tip.id='da-tooltip';tip.role='tooltip';tip.textContent=target.dataset.help;document.body.append(tip);target.setAttribute('aria-describedby',tip.id);const r=target.getBoundingClientRect(),t=tip.getBoundingClientRect();tip.style.left=Math.max(8,Math.min(innerWidth-t.width-8,r.left))+'px';tip.style.top=(r.bottom+t.height+16<innerHeight?r.bottom+8:Math.max(8,r.top-t.height-8))+'px';},delay);}
@@ -15,7 +15,7 @@ function take(n,host){if(!n||!state)return;const mark=document.createComment('de
 function open(key){
  const view=$('detailView');if(!view?.classList.contains('dw-wide'))return false;
  close(false);hideTip();
- const titles={activity:'연락 결과 · 다음 할 일',next:'다음 할 일 설정',stage:'진행상태 변경',owner:'담당자 변경',amount:'예상금액 수정',materials:'자료 보기 · 추가',management:'관리정보 수정',contact:'연락처 수정',history:'전체 이력',help:'관리 기준'};
+ const titles={activity:'연락 결과 · 다음 할 일',next:'다음 할 일 설정',stage:'진행상태 변경',owner:'담당자 변경',amount:'예상금액 수정',materials:'자료 보기 · 추가',management:'관리정보 수정',contact:'연락처 수정',history:'전체 이력',support:'관리자 지원 요청',help:'관리 기준'};
  const panel=document.createElement('div');panel.id='detailAction';/* 2026-09-24 지시: 상세 안 작업창은 전부 같은 중앙 창 — 우측 드로어·중앙 혼용 금지 */
  panel.className='da-layer da-compact';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-labelledby','da-title');
  const sheet=document.createElement('section');sheet.className='da-sheet';const head=document.createElement('header');const title=document.createElement('h2');title.id='da-title';title.textContent=titles[key];const x=button('닫기',key,()=>{if(key==='stage')root.StageTransitionUI?.close();else close()});x.removeAttribute('data-help');x.setAttribute('aria-label','작업창 닫기');head.append(title,x);const content=document.createElement('div');content.className='da-content';sheet.append(head,content);panel.append(sheet);
@@ -42,6 +42,12 @@ function open(key){
  if(key==='management')take($('da-management-fields'),content);
  if(key==='contact')take($('da-contact-fields'),content);
  if(key==='stage')take($('dw-stage-editor'),content);
+ if(key==='support'){
+  const box=document.createElement('div');box.className='da-support';
+  box.innerHTML='<p>어떤 지원이 필요한지 한 줄로 적어주세요. 컨트롤타워의 <b>지원 요청 대기</b>에 바로 표시됩니다.</p><textarea id="da-support-note" maxlength="300" placeholder="예: 광교OO 가격 협의 동행 요청 — 10/2 입대의 전"></textarea>';
+  const send=button('지원 요청 보내기','support',()=>saveSupport(box));send.classList.add('da-submit');
+  box.append(send);content.append(box);
+ }
  if(key==='help')content.textContent='연락 결과는 고객과의 접촉 내용입니다. 진행상태 변경은 별도 전환창에서 확인합니다. 담당자·최근 활동·다음 할 일 날짜를 함께 관리하고, 저장 후 서버 반영 결과를 확인해 주세요.';
  take($('dv-err'),content);
  const cancel=button('취소',key,()=>{if(key==='stage')root.StageTransitionUI?.close();else close()});cancel.removeAttribute('data-help');content.append(cancel);
@@ -49,6 +55,28 @@ function open(key){
  (content.querySelector('input:not([type="hidden"]),textarea,select')||x).focus({preventScroll:true});return true;
 }
 
+async function saveSupport(box){
+ const d=root.CUR_DETAIL?.item;if(!d||box.dataset.saving)return;
+ const note=box.querySelector('#da-support-note').value.trim();
+ if(!note){root.showDetailErr('지원이 필요한 내용을 적어주세요.');return;}
+ if(!root.Phase1?.queue||typeof root.queueDetailContactOperation!=='function'){root.showDetailErr('로그인 상태에서만 보낼 수 있습니다.');return;}
+ box.dataset.saving='1';box.querySelectorAll('button,textarea').forEach(n=>n.disabled=true);
+ /* 다음 할 일을 덮지 않도록 추가 전용 활동(메모)으로 기록 — 컨트롤타워가 [지원 요청] 접두어를 집계 */
+ const payload={type:'메모',note:'[지원 요청] '+note+' — 요청자 '+(root.repN(root.ME?.name)||''),result:'',occurred_at:new Date().toISOString()};
+ const progress=box._progress||(box._progress={});
+ try{
+  let id=progress.activity;
+  if(id&&root.Phase1.queue.list().find(q=>q.request_id===id)?.status==='rejected'){delete progress.activity;id=null;}
+  if(!id){id=root.queueDetailContactOperation('activity',{opportunity_id:d.id,...payload});progress.activity=id;}
+  await root.Phase1.queue.flush();
+  const row=root.Phase1.queue.list().find(q=>q.request_id===id);
+  if(row?.status!=='done'||row.ack?.ok!==true)throw Error(row?.error||'서버 확인 대기 중입니다. 다시 눌러 확인해 주세요.');
+  d.activities=Array.isArray(d.activities)?d.activities:[];
+  d.activities.unshift({id:row.ack.activity_id,type:payload.type,note:payload.note,at:payload.occurred_at,occurred_at:payload.occurred_at});
+  root.saveLocal?.();root.showDetailErr('지원 요청을 보냈습니다 — 컨트롤타워에 표시됩니다.',true);close();
+ }catch(e){root.showDetailErr(String(e.message||e));}
+ finally{delete box.dataset.saving;box.querySelectorAll('button,textarea').forEach(n=>n.disabled=false);}
+}
 async function saveCombined(){
  const form=$('activityFormCard'),d=root.CUR_DETAIL?.item;if(!form||!d||form.dataset.saving)return;
  const get=id=>$(id)?.value?.trim()||'';
@@ -122,7 +150,7 @@ function decorate(){
  /* 2026-09-24 CX 지시(G): 첫 화면 CTA는 '지금 할 일' 카드 하나 — 빠른 작업 6버튼은 더보기 뒤로 수납 */
  const toolbar=document.createElement('nav');toolbar.className='da-toolbar';toolbar.setAttribute('aria-label','빠른 작업');
  const tools=document.createElement('span');tools.className='da-tools';tools.hidden=true;
- [['연락 결과','activity'],['다음 할 일','next'],['진행상태 변경','stage'],['담당자 변경','owner'],['자료 추가','materials'],['ⓘ 관리 기준','help']].forEach(([text,key])=>tools.append(button(text,key,key==='stage'?()=>root.openTransition():null)));
+ [['연락 결과','activity'],['다음 할 일','next'],['진행상태 변경','stage'],['담당자 변경','owner'],['자료 추가','materials'],['지원 요청','support'],['ⓘ 관리 기준','help']].forEach(([text,key])=>tools.append(button(text,key,key==='stage'?()=>root.openTransition():null)));
  const more=document.createElement('button');more.type='button';more.className='da-more';more.textContent='···  작업 더보기';
  more.onclick=()=>{tools.hidden=!tools.hidden;more.classList.toggle('on',!tools.hidden);more.textContent=tools.hidden?'···  작업 더보기':'작업 접기 ↑';};
  toolbar.append(more,tools);
