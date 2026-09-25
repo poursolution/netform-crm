@@ -124,6 +124,54 @@
    busy=false;setTimeout(()=>{el.close();root.renderDetail?.();root.TodayWorkQueue?.render?.();},700);
   }catch(e){busy=false;el.querySelectorAll('button,input').forEach(n=>{n.disabled=false});status.textContent=String(e.message||e);}
  }
+ /* 영업 흐름 한 줄(2026-09-25 컨설턴트 '행동의 연속성'): 단계가 아니라 '어떻게 여기까지 왔고 지금 움직이고 있는가'.
+    유입→배정→첫 응대→연락 결과→단계 변경→지원 요청을 날짜순 칩으로, 7일 넘게 빈 구간은 '⏸ N일 공백'으로 끼워 넣는다.
+    끝에는 흐름이 살아 있다는 증거 = 마지막 행동 + 결과 + 다음 할 일 + 날짜. 데이터는 기존 unifiedTimeline(연락·문의·배정·단계·사업 변경) 재사용. */
+ function flowStrip(d,p){
+  if(typeof root.unifiedTimeline!=='function')return '';
+  let rows=[];try{rows=root.unifiedTimeline(p||{},d)||[];}catch(e){return '';}
+  const gapN=Number(root.OPS_RULES?.stallDays??7),day=v=>String(v||'').slice(0,10),ts=v=>Date.parse(v||'');
+  const ev=rows.filter(x=>x&&x.at&&Number.isFinite(ts(x.at))&&!/^[a-z0-9_]+$/.test(String(x.ttl||''))).slice().reverse();
+  const kind=x=>{const t=String(x.ttl||''),b=String(x.body||'');
+   if(/^\[지원 요청\]/.test(b))return ['🆘','지원 요청','sup'];
+   if(/^\[지원 처리\]/.test(b))return ['✅','지원 처리','sup'];
+   if(t==='견적문의 접수')return ['📥','문의 접수','in'];
+   if(t==='담당자 배정')return ['👤','배정'+(x.who?' · '+x.who:''),'in'];
+   if(t==='단계 전환'||t==='단계전환')return ['➜',b.replace(/^.*→\s*/,'')||'단계 변경','stage'];
+   if(t==='사업유형 변경')return ['🔀','사업 전환','stage'];
+   if(/부재/.test(t)||/^부재/.test(b))return ['📵','부재','act'];
+   if(/방문/.test(t))return ['🏠','방문','act'];
+   if(/문자|메시지/.test(t))return ['💬','문자','act'];
+   if(/메일/.test(t))return ['✉️','메일','act'];
+   if(/전화|통화|call/i.test(t)||/^통화/.test(b))return ['📞','전화','act'];
+   return ['•',t.length>10?t.slice(0,10)+'…':t||'기록','misc'];};
+  const short=v=>{v=String(v||'').replace(/^(통화( 시도)?|전화( 부재)?|부재)\s*—\s*/,'').trim();return v.length>18?v.slice(0,18)+'…':v;};
+  const chips=[];let prev=null,firstAct=null,start=null,lastSig='',rep=1;
+  ev.forEach(x=>{
+   const k=kind(x),t=ts(x.at);
+   const sig=k[1]+'|'+(k[2]==='act'?short(x.result||x.body):'')+'|'+day(x.at);
+   if(sig===lastSig&&chips.length){rep++;chips[chips.length-1]=chips[chips.length-1].replace(/<u class="nf-x">×\d+<\/u>|(?=<\/span>$)/,'<u class="nf-x">×'+rep+'</u>');prev=t;return;}
+   lastSig=sig;rep=1;
+   if(k[2]==='in'&&start===null)start=t;
+   if(k[2]==='act'&&firstAct===null)firstAct=t;
+   if(prev!==null){const g=Math.floor((t-prev)/864e5);if(g>gapN)chips.push('<span class="nf-gap'+(g>gapN*2?' hot':'')+'">⏸ '+g+'일 공백</span>');}
+   const tail=k[2]==='act'?short(x.result||x.body):'';
+   chips.push('<span class="nf-ev '+k[2]+'" title="'+attr((x.ttl||'')+' · '+(x.body||'')+(x.result?' · '+x.result:''))+'"><i>'+k[0]+'</i><b>'+h(k[1])+'</b>'+(tail?'<em>'+h(tail)+'</em>':'')+'<small>'+h(day(x.at).slice(5).replace('-','/'))+'</small></span>');
+   prev=t;
+  });
+  const hidden=Math.max(0,chips.length-12),shown=chips.slice(-12);
+  const a=root.actionObj?root.actionObj(d,p):null,due=a&&a.due?dueDays(a.due):null;
+  const nextChip=a&&a.text&&due!==null?'<span class="nf-next'+(due<0?' late':'')+'"><i>📅</i><b>다음</b><em>'+h(short(a.text))+'</em><small>'+h(String(a.due).slice(5,10).replace('-','/'))+(due<0?' · '+(-due)+'일 지남':'')+'</small></span>':'<span class="nf-next none"><i>⚠</i><b>다음 할 일 없음</b></span>';
+  const idle=prev!==null?Math.floor((Date.now()-prev)/864e5):null;
+  if(idle!==null&&idle>gapN&&!(a&&a.text&&due!==null&&due>=0))shown.push('<span class="nf-gap'+(idle>gapN*2?' hot':'')+'">⏸ 오늘까지 '+idle+'일</span>');
+  const lastAct=ev.filter(x=>kind(x)[2]==='act').slice(-1)[0];
+  const firstResp=start!==null&&firstAct!==null&&firstAct>=start?Math.round((firstAct-start)/36e5):null;
+  const summary='마지막 고객 행동 '+(lastAct?h(day(lastAct.at).slice(5).replace('-','/'))+' '+h(kind(lastAct)[1])+(lastAct.result||lastAct.body?' — '+h(short(lastAct.result||lastAct.body)):''):'<b class="warn">기록 없음</b>')
+   +' · '+(a&&a.text&&due!==null?'다음 할 일 '+h(String(a.due).slice(5,10).replace('-','/')):'<b class="warn">다음 할 일 없음</b>')
+   +(firstResp!==null?' · 첫 응대 '+(firstResp<24?firstResp+'시간':Math.round(firstResp/24)+'일'):'');
+  if(!ev.length)return '<section class="now-flow" id="nowFlow"><header><b>영업 흐름</b><span>아직 기록된 흐름이 없습니다 — 첫 연락 결과부터 이어집니다</span></header><div class="nf-row">'+nextChip+'</div></section>';
+  return '<section class="now-flow" id="nowFlow"><header><b>영업 흐름</b><span>'+summary+'</span></header><div class="nf-row">'+(hidden?'<span class="nf-more">이전 '+hidden+'건</span>':'')+shown.join('<i class="nf-arr">›</i>')+'<i class="nf-arr">›</i>'+nextChip+'</div></section>';
+ }
  let jIO=null;
  function journeyWatch(){
   try{
@@ -140,6 +188,7 @@
    const html=card();
    /* 작업 바가 헤더로 올라갔으므로(2026-09-24) 카드는 항상 본문 맨 앞 */
    body.insertAdjacentHTML('afterbegin',html);
+   try{const cur=root.CUR_DETAIL,f=flowStrip(cur.item,root.currentPatch?root.currentPatch():{});if(f&&!document.getElementById('nowFlow'))document.getElementById('nowCard')?.insertAdjacentHTML('afterend',f);const nfRow=document.querySelector('#nowFlow .nf-row');if(nfRow)nfRow.scrollLeft=nfRow.scrollWidth;}catch(e){}
    /* 상단 지금 할 일 카드와 중앙 «지금 해야 할 일» 카드가 같은 내용 이중 표기 — 중앙 카드는 접는다 (2026-09-24 캡처 지적) */
    const dup=document.getElementById('dw-now');if(dup)dup.hidden=true;
    journeyWatch();
@@ -153,5 +202,5 @@
   root.DetailActions=Object.assign({},da,{decorate:function(){const r=oldDec.apply(da,arguments);inject();return r;}});
  }
  root.addEventListener('phase1:identity-cleared',closeSheet);
- root.NowCard={sheet,card};
+ root.NowCard={sheet,card,flowStrip};
 })(window);
