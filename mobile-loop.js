@@ -88,6 +88,8 @@
   try{
    const a=openNext(d);
    if(isPromise(a))html=html.replace('<div style="font-size:14px;font-weight:800;','<div class="ml-promise">🤝 고객 약속</div><div style="font-size:14px;font-weight:800;');
+   /* [결과 남기기]도 같은 결과 창 — 전화 앱에서 돌아왔는데 창이 안 뜬 경우의 대비. 긴 메모는 창 안 '자세히 기록' */
+   html=html.replace('onclick="callMemoSheetM()">결과 남기기','onclick="dealCallSheetM()">결과 남기기');
    const i=html.lastIndexOf('</div>');
    if(i>0)html=html.slice(0,i)+'<button type="button" class="ml-support-link" onclick="MobileLoop.support()">🆘 관리자에게 지원 요청</button>'+html.slice(i);
    html+=flowStrip(d);
@@ -190,6 +192,26 @@
   }catch(e){busy=false;card.querySelectorAll('button,input').forEach(x=>x.disabled=false);status.textContent=String(e&&e.message||e);}
  }
  root.dealCallSheetM=resultSheet;
+
+ /* 통화가 길어 휴대폰이 브라우저를 정리하면, 돌아왔을 때 페이지가 새로 열려 '방금 통화한 현장'을 잃는다.
+    통화 버튼을 누를 때 현장을 이 탭에 적어 두고(30분), 다시 열리면 그 현장과 결과 창을 띄운다. */
+ const PENDING='crm:call-pending:v1';
+ const pendingStore=()=>{try{return root.sessionStorage||null;}catch(e){return null;}};
+ function clearPending(){try{const s=pendingStore();if(s)s.removeItem(PENDING);}catch(e){}}
+ const baseCall=root.dealCallM;
+ if(typeof baseCall==='function')root.dealCallM=function(){const r=baseCall.apply(this,arguments);try{const s=pendingStore();if(s&&root.G&&root.G.dealCallPending!=null)s.setItem(PENDING,JSON.stringify({id:String(root.G.dealCallPending),at:Date.now()}));}catch(e){}return r;};
+ const openResult=resultSheet;
+ root.dealCallSheetM=function(){clearPending();return openResult.apply(this,arguments);};
+ function resumeAfterReload(){
+  let p=null;try{const s=pendingStore();p=s&&JSON.parse(s.getItem(PENDING)||'null');}catch(e){}
+  if(!p||!p.id)return;if(Date.now()-Number(p.at||0)>30*60000){clearPending();return;}
+  let tries=0,iv=null;iv=root.setInterval(()=>{tries++;
+   if(root.G&&root.G.dealCallPending!=null){root.clearInterval(iv);return;}/* 같은 페이지로 돌아온 경우는 기존 경로가 띄운다 */
+   const d=dealById(p.id);
+   if(d&&root.G&&root.G.user){root.clearInterval(iv);root.G.deal=d.id;root.G.sub=null;root.render();root.setTimeout(()=>root.dealCallSheetM(),350);}
+   else if(tries>120){root.clearInterval(iv);}},500);
+ }
+ resumeAfterReload();
 
  /* 관리자 지원 요청 — 다음 할 일을 덮지 않는 추가 전용 메모(PC와 같은 '[지원 요청]' 접두어 → 컨트롤타워 집계) */
  function support(){
