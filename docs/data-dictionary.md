@@ -31,7 +31,8 @@
 | 의미 | 정본 | 구형 (사용 금지) |
 |---|---|---|
 | 이 영업건은 어느 문의에서 왔나 | **`deals.origin_inquiry_id`** (전환 명령 `crm_inquiry_pipeline_promote_command_v1`이 기록 + 이력·감사) | `inquiries.deal_id`, `inquiries.opportunity_id` — 항상 비어 있음. 이걸로 전환율을 세면 0%가 나온다 |
-| 전환 시점 | 대표 확정: 문의가 **'견적서 발송'** 상태가 되면 자동 전환 (구현 예정) | — |
+| 전환 시점 | 대표 확정: 문의가 **'견적서 발송'** 상태가 되면 자동 전환 (화면 autoPromote, `QUALIFY_ST=/견적.*발송/`). 이미 견적 발송 상태로 들어온 건은 컨트롤타워 '견적 발송·영업 미전환' 큐(inquiry-conversion.js) | — |
+| 전환 실행자 | 관리자 또는 **그 문의의 담당 영업사원 본인** (sql/inquiry-promote-rep-owner-20260925.sql) — 담당은 승인된 본사 rep, 지사·기술자문 제외 | — |
 
 ## 4. 담당자 · 실적
 
