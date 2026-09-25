@@ -13,3 +13,9 @@
 /* 결과 먼저 → 다음 할 일 자동 열림 (2026-09-24) */
 .da-next-wait{display:none!important}
 .da-compact .da-content{overflow:auto}
+
+/* 지원 요청 작업창 (2026-09-25) */
+.da-support{display:grid;gap:10px}
+.da-support p{margin:0;font-size:12.5px;color:#5b6b85;line-height:1.6}
+.da-support textarea{min-height:84px;border:1px solid #e2e8f1;border-radius:10px;padding:10px 12px;font:inherit;font-size:13px;resize:vertical}
+.da-support textarea:focus{outline:0;border-color:#3B6CE4}

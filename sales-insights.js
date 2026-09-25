@@ -108,6 +108,24 @@
  const ISSUE_DAYS=/([0-9]+)일/;
  function ctState(){if(!root.G.ct)root.G.ct={owner:'',issue:'all'};return root.G.ct}
  function ctDays(d){const m=String(d.reason||'').match(ISSUE_DAYS);return m?Number(m[1]):0}
+ /* 지원 요청 집계: [지원 요청] 메모(14일 이내), 이후 [지원 처리] 메모가 있으면 해소 */
+ function ctSupport(s){
+  const map={};let n=0;
+  s.active.forEach(d=>{
+   const patch=root.itemPatch?root.itemPatch(d.item,'deal'):{};
+   const rows=[...(d.item.activities||[]),...((patch&&patch.activities)||[])]
+    .map(x=>({at:String(x.at||x.occurred_at||''),note:String(x.note||'')}))
+    .sort((a,b)=>b.at.localeCompare(a.at));
+   const req=rows.find(x=>x.note.startsWith('[지원 요청]'));
+   if(!req)return;
+   const days=root.daysTo?root.daysTo(req.at.slice(0,10)):null;
+   if(days!==null&&days<-14)return;
+   const resolved=rows.some(x=>x.note.startsWith('[지원 처리]')&&x.at>req.at);
+   if(resolved)return;
+   map[d.key]={text:req.note.replace('[지원 요청]','').trim().slice(0,80),at:req.at.slice(0,10)};n++;
+  });
+  return {map,n};
+ }
  function ctVerdicts(s,f){
   const act=s.active,out=[];
   const conc=k=>{const list=act.filter(d=>d.issues.includes(k));if(!list.length)return null;const by={};list.forEach(d=>{by[d.owner]=(by[d.owner]||0)+1});const top=Object.entries(by).sort((a,b)=>b[1]-a[1])[0];return {k,name:top[0],n:top[1],tot:list.length,old:Math.max(0,...list.filter(d=>d.owner===top[0]).map(ctDays))}};
@@ -116,7 +134,9 @@
   const ct7=conc('contact');if(ct7&&!out.some(x=>x.owner===ct7.name))out.push({cls:'w',owner:ct7.name,issue:'contact',kind:'risk',html:'<span class="who">'+h(ct7.name)+'</span> — 7일+ 미접촉 <b>'+ct7.tot+'건 중 '+ct7.n+'건</b>.'+(ct7.old?' 최장 <b>'+ct7.old+'일</b> 접촉 없음.':'')});
   const un=s.inquiries.filter(q=>q.owner==='미배정');
   if(un.length){const old=Math.max(0,...un.map(q=>{const d0=M.date(q.created);return d0?Math.max(0,-root.daysTo(d0)):0}));out.push({cls:'w',owner:'미배정',issue:'all',kind:'inquiries',html:'미배정 문의 <b>'+un.length+'건</b>'+(old?' — 가장 오래된 건 <b>D+'+old+'</b>.':'.')+' 배정이 먼저입니다.'})}
-  return out.slice(0,3);
+  const sup=ctSupport(s);
+  if(sup.n){const first=Object.values(sup.map)[0];out.unshift({cls:'w',owner:'',issue:'support',kind:'risk',html:'지원 요청 대기 <b>'+sup.n+'건</b> — '+h(first.text)+(sup.n>1?' 외':'')+' · 처리 후 상세에 «[지원 처리]» 메모를 남기면 사라집니다.'})}
+  return out.slice(0,4);
  }
  function ctRepRows(s){
   const ct=ctState(),act=s.active,names=[...new Set(act.map(d=>d.owner))].filter(n=>n&&n!=='미배정');
@@ -131,16 +151,19 @@
   const f=state(),ct=ctState();
   let list=M.select(s,f.kind,f);
   if(ct.owner)list=list.filter(d=>d.owner===ct.owner);
-  if(ct.issue&&ct.issue!=='all')list=list.filter(d=>d.issues.includes(ct.issue));
+  const ctSup=ctSupport(s);
+  s.active.forEach(d=>{if(ctSup.map[d.key]&&!d.issues.includes('support'))d.issues.push('support')});
+  if(ct.issue==='support')list=list.filter(d=>ctSup.map[d.key]);
+  else if(ct.issue&&ct.issue!=='all')list=list.filter(d=>d.issues.includes(ct.issue));
   const size=20,pages=Math.max(1,Math.ceil(list.length/size));f.page=Math.min(f.page,pages);
   const kinds=[['risk','관리필요'],['active','진행중 전체'],['inquiries','기간 문의'],['won','기간 준공 처리']];
   const stageOptions=[['all','전체 단계'],...s.stages.map(x=>[x.code,x.label])];
   const chips=kinds.map(([k,t])=>'<button type="button" class="dc-kchip'+(f.kind===k?' on':'')+'" data-si-filterchip="kind" data-value="'+k+'">'+h(t)+' <b>'+number(M.select(s,k,f).length)+'</b></button>').join('')
-   +(ct.owner||ct.issue!=='all'?'<button type="button" class="dc-kchip ct-clearchip" data-si-action="ct-clear">'+h((ct.owner?ct.owner:'')+(ct.issue!=='all'?' · '+labels[ct.issue]:''))+' ✕</button>':'');
+   +(ct.owner||ct.issue!=='all'?'<button type="button" class="dc-kchip ct-clearchip" data-si-action="ct-clear">'+h((ct.owner?ct.owner:'')+(ct.issue!=='all'?' · '+(labels[ct.issue]||(ct.issue==='support'?'지원 요청':ct.issue)):''))+' ✕</button>':'');
   const filtersHtml='<div class="si-control-filters dc-cfilters">'+select('단계','stage',stageOptions,f.stage)+'<label>현장 검색<input data-si-search value="'+a(f.search)+'" placeholder="현장·담당자·사유" aria-label="현장 검색"></label></div>';
   const verdicts=ctVerdicts(s,f).map(v=>'<button type="button" class="ct-verdict '+v.cls+'" data-si-action="ct-focus" data-value="'+a(v.owner+'|'+v.issue+'|'+v.kind)+'">'+v.html+'</button>').join('')||'<p class="dc-mut">막힘 신호가 없습니다.</p>';
   const riskText=d=>{const raw=String(d.reason||'현재 진행 중');return h(raw).replace(/([0-9]+일 기한초과)/g,'<span class="ct-hot">$1</span>').replace(/([0-9]+일 미접촉)/g,'<span class="ct-warn">$1</span>').replace(/(기한초과)/g,'<span class="ct-hot">$1</span>')};
-  const table='<div class="si-table-scroll"><table class="si-table si-cases dc-table dc-cases"><thead><tr><th class="ct-selcol"><input type="checkbox" id="ct-all" aria-label="표시된 현장 모두 선택"></th><th>현장</th><th>담당자</th><th>현재 단계</th><th>왜 막혔나</th><th>조치</th></tr></thead><tbody>'+list.slice((f.page-1)*size,f.page*size).map(d=>'<tr><td class="ct-selcol">'+(d.type==='deal'?'<input type="checkbox" data-ct-sel="'+a(d.key)+'" aria-label="'+a(d.site)+' 선택">':'')+'</td><td class="ct-site"><b title="'+a(d.site)+'">'+h(d.site)+'</b></td><td>'+(d.owner&&d.owner!=='미배정'?btn(d.owner,'person',d.owner):h(d.owner))+'</td><td><span class="si-badge">'+h(d.stageLabel)+'</span></td><td>'+(f.kind==='won'?h('준공 처리금액 '+money(d.wonAmount)+(d.hasWonAmount?'':' · 금액 미입력')):riskText(d))+'</td><td>'+btn(d.type==='inq'&&d.owner==='미배정'?'배정':'열기','record',d.key)+'</td></tr>').join('')+'</tbody></table></div>'+(list.length?'':empty());
+  const table='<div class="si-table-scroll"><table class="si-table si-cases dc-table dc-cases"><thead><tr><th class="ct-selcol"><input type="checkbox" id="ct-all" aria-label="표시된 현장 모두 선택"></th><th>현장</th><th>담당자</th><th>현재 단계</th><th>왜 막혔나</th><th>조치</th></tr></thead><tbody>'+list.slice((f.page-1)*size,f.page*size).map(d=>'<tr><td class="ct-selcol">'+(d.type==='deal'?'<input type="checkbox" data-ct-sel="'+a(d.key)+'" aria-label="'+a(d.site)+' 선택">':'')+'</td><td class="ct-site"><b title="'+a(d.site)+'">'+h(d.site)+'</b></td><td>'+(d.owner&&d.owner!=='미배정'?btn(d.owner,'person',d.owner):h(d.owner))+'</td><td><span class="si-badge">'+h(d.stageLabel)+'</span></td><td>'+(f.kind==='won'?h('준공 처리금액 '+money(d.wonAmount)+(d.hasWonAmount?'':' · 금액 미입력')):(ctSup.map[d.key]?'<span class="ct-hot">지원 요청</span> — '+h(ctSup.map[d.key].text)+' <small>'+h(ctSup.map[d.key].at)+'</small> · ':'')+riskText(d))+'</td><td>'+btn(d.type==='inq'&&d.owner==='미배정'?'배정':'열기','record',d.key)+'</td></tr>').join('')+'</tbody></table></div>'+(list.length?'':empty());
   const bulk='<div class="ct-bulk">선택 <b id="ct-count">0</b>건 → '+btn('지시 보내기 (다음 업무 일괄 지정)','ct-bulk','','ct-bulkbtn')+'<span class="dc-mut">지시는 각 현장의 다음 업무로 등록되어 담당자 오늘 업무에 뜹니다 · 문의 건은 배정으로 처리</span></div>';
   return '<div class="dc-topbar"><h2><i>◈</i>컨트롤타워</h2>'+'<span class="dc-nav">'+btn('전체 현황 ↗','navigate','dash')+btn('성과 분석 ↗','navigate','perf')+'</span><span class="dc-live"><i></i>관리 대상 '+number(list.length)+'건</span></div>'+
    '<div class="dc-grid">'+
