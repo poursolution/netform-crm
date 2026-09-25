@@ -41,7 +41,30 @@ function wide(){
  move('.dw-asset-back',left);
  if(!contact){var empty=document.createElement('div');empty.className='dcard';empty.textContent='등록된 연락처가 없습니다.';empty.append(button('연락처 등록',()=>openQuickContact('new')));left.append(empty)}
  var site=document.createElement('div');site.className='dcard dw-site';site.innerHTML='<h3>현장 정보</h3><dl><dt>현장명</dt><dd>'+esc(d.site||'미입력')+'</dd><dt>주소</dt><dd>'+esc(detailAddress(d))+'</dd><dt>공사명</dt><dd>'+esc(d.work||d.work_name||'미입력')+'</dd><dt>공종</dt><dd>'+esc(dealWorkSummary(d))+'</dd></dl>';site.append(button('공종 수정',()=>openWorkEdit()));left.append(site);
- move('.nearby',left); // 같은 지역 담당 현장 추천 — 3컬럼 재배치에서 유실되던 카드 복원 (외근 동선 묶기)
+ move('.nearby',left);
+ /* Single Customer View 1조각(2026-09-25 장기원칙 ①): 같은 현장의 다른 영업건 — 과거 수주·실주·진행을 현장 상세 한 곳에서 */
+ (function(){
+  try{
+   var key=normSite(d.site);if(!key)return;
+   var others=(B.deals||[]).filter(function(x){return normSite(x.site)===key&&dealKey(x)!==dealKey(d)});
+   if(!others.length)return;
+   others.sort(function(a2,b2){return String(b2.created||'').localeCompare(String(a2.created||''))});
+   var badge=function(x){var o=outcomeOf(x);return o==='won'?'<i class="sh-b g">수주</i>':o==='lost'?'<i class="sh-b r">실주</i>':o==='open'?'<i class="sh-b b">진행</i>':'<i class="sh-b n">종료</i>'};
+   var card2=document.createElement('div');card2.className='dcard dw-sitehistory';
+   card2.innerHTML='<h3>이 현장의 영업 이력 <span>'+others.length+'건</span></h3>'
+    +others.slice(0,6).map(function(x){
+      var amt=Number(x.amount||x.amt||0);
+      return '<button type="button" class="sh-row" data-k="'+escAttr(dealKey(x))+'"><span>'+badge(x)+' '+esc(dealWorkSummary(x)||x.work||'공종 미기록')+'</span><small>'+esc(String(x.created||'').slice(0,7)||'')+(amt?' · '+fmtAmt(amt):'')+' · '+esc(repN(x.assignee)||'미배정')+'</small></button>'
+     }).join('')
+    +(others.length>6?'<p class="sh-more">외 '+(others.length-6)+'건</p>':'');
+   card2.addEventListener('click',function(e){
+    var b2=e.target.closest('.sh-row');if(!b2)return;
+    var x=(B.deals||[]).filter(function(y){return dealKey(y)===b2.dataset.k})[0];
+    if(x)drwDeal(JSON.stringify(x));
+   });
+   left.append(card2);
+  }catch(e){}
+ })(); // 같은 지역 담당 현장 추천 — 3컬럼 재배치에서 유실되던 카드 복원 (외근 동선 묶기)
  now.insertAdjacentHTML('beforeend','<h3>'+esc(next&&next.status!=='completed'?next.text||next.type||'다음 할 일':closed?'종료된 영업기회입니다.':'다음 할 일이 없습니다.')+'</h3><p>'+esc(next?[next.due||next.due_at,next.assignee||repN(d.assignee)].filter(Boolean).join(' · '):closed?'추가 영업은 새 영업기회에서 관리합니다.':'다음 연락 일정과 해야 할 일을 지정해 주세요.')+'</p>');
  var actions=document.createElement('div');actions.className='dactions';actions.append(button('다음 할 일 지정',()=>focusWide('nextActionCard')),button('연락 결과',()=>focusWide('activityFormCard')));now.append(actions);
  if(next&&next.status!=='completed'&&!closed)actions.append(button('다음 할 일 완료',()=>completeNextAction()));
