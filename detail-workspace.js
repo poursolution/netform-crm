@@ -110,7 +110,7 @@ function wide(){
  });
  var error=body.querySelector('#dv-err');body.replaceChildren(columns);if(error){error.setAttribute('role','status');center.prepend(error)}
  var subtitle=document.getElementById('dv-sub');if(subtitle)subtitle.textContent=stageLabel(dealStage(d))+' · 담당 '+repN(d.assignee);
- var back=view.querySelector('.backbtn');if(back)back.textContent='✕ 닫기';
+ var back=view.querySelector('.backbtn');if(back)back.textContent='← 목록으로';
  view.querySelectorAll('[onclick^="contactDial("]').forEach(b=>b.addEventListener('click',()=>setTimeout(()=>{focusWide('activityFormCard');var type=document.getElementById('dv-act-type');if(type)type.value='전화'},0)));
 }
 function timelinePatch(deal,patch){
