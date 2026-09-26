@@ -245,7 +245,7 @@
   const link={n:0,t:0,by:{},miss:[]},due={n:0,t:0,by:{}},prom={n:0,t:0,miss:[]},call={n:0,t:0,by:{},miss:[]};
   /* ④ 전화 후 결과 기록(2026-09-26 컨설턴트 '고객 접촉 후 결과가 기록된 비율'): 전화 버튼이 남긴 '전화 시도' 뒤
      2시간 안에 결과(다른 연락 기록 또는 다음 할 일)가 이어졌나. 2시간 안 된 시도는 판정 보류. */
-  const ATTEMPT=/^\s*전화 시도/,callWin=2*3600e3;
+  const ATTEMPT=/(?:^|\s)전화 시도(?:\s|$)/,callWin=2*3600e3;/* '관리소장 전화 시도'(상세 화면 버튼)도 시도 */
   const add=(o,k,ok)=>{o.by[k]=o.by[k]||[0,0];o.by[k][1]++;if(ok)o.by[k][0]++;};
   deals.forEach(d=>{
    const it=d.item||{},acts=[].concat(it.activities||it.activity_signals||[]),owner=d.owner&&d.owner!=='미배정'?d.owner:'미배정';
@@ -516,7 +516,7 @@
   const r=rows(),now=new Date(),ts=v=>Date.parse(v||''),mon=new Date(now);mon.setHours(0,0,0,0);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
   const w0=mon.getTime(),nextMon=w0+7*864e5,nextSun=nextMon+7*864e5,friday=now.getDay()===5;
   const md=t=>{const x=new Date(t);return (x.getMonth()+1)+'/'+x.getDate();},pct=(n,t)=>t?Math.round(n/t*100)+'%':'-';
-  const ATT=/^\s*전화 시도/,isContact=x=>FLOW_Q.contact.test(String(x.type||''))&&!ATT.test(String(x.note||''))&&!/^[a-z0-9_]+$/.test(String(x.type||''));
+  const ATT=/(?:^|\s)전화 시도(?:\s|$)/,isContact=x=>FLOW_Q.contact.test(String(x.type||''))&&!ATT.test(String(x.note||''))&&!/^[a-z0-9_]+$/.test(String(x.type||''));
   const isPromise=x=>/약속/.test(String(x?.type||''))||/^\s*고객\s*약속/.test(String(x?.text||''));
   /* 새 문의 · 첫 연락 */
   const inq=r.inquiries.filter(q=>ts(q.item.received_at||q.item.created_at||q.created)>=w0);
@@ -563,7 +563,7 @@
   const r=rows(true),deals=r.deals,ts=v=>Date.parse(v||''),MIN=10;
   const hist=it=>(it.stageHistory||it.stage_history||[]).map(x=>({to:String(x.to||x.to_stage||''),t:ts(x.at||x.changed_at)})).filter(x=>Number.isFinite(x.t));
   const acts=it=>(it.activities||it.activity_signals||[]).map(x=>({type:String(x.type||''),note:String(x.note||''),t:ts(x.at||x.occurred_at)})).filter(x=>Number.isFinite(x.t)&&!/^[a-z0-9_]+$/.test(x.type));
-  const isContact=x=>FLOW_Q.contact.test(x.type)&&!/^\s*전화 시도/.test(x.note);
+  const isContact=x=>FLOW_Q.contact.test(x.type)&&!/(?:^|\s)전화 시도(?:\s|$)/.test(x.note);
   const outcome=d=>typeof root.outcomeOf==='function'?root.outcomeOf(d.item):(d.won?'won':'open');
   const median=a=>{if(!a.length)return null;const s=a.slice().sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;};
   const pct=(n,t)=>t?Math.round(n/t*100)+'%':'-';

@@ -225,4 +225,40 @@ test('a call attempt without a result shows up as "결과를 안 남긴 통화" 
  assert.equal(root.MobileLoop.pendingCalls().length,0,'결과를 남기면 사라진다');
  d.activities.push({type:'전화',note:'전화 시도 — 010-1234-5678',at:iso(now-26*3600e3)});
  assert.equal(root.MobileLoop.pendingCalls().length,0,'24시간 지난 시도는 알림에서 뺀다(관리자 지표에는 남음)');
+ /* 상세 화면 연락처 버튼은 '관리소장 전화 시도'로 남긴다 — 이것도 시도다 */
+ const d2={id:'D2',nm:'현장2',activities:[{type:'전화',note:'관리소장 전화 시도',result:'010-1111-2222',at:iso(now-20*60e3)}]};
+ root.DEALS.push(d2);
+ assert.equal(root.MobileLoop.pendingCalls().map(x=>x.d.id).join(','),'D2');
+});
+
+test('"오늘 처리" counts sites from server records by me — work done on PC shows on the phone, one result save counts once',()=>{
+ const now=Date.now(),iso=ms=>new Date(ms).toISOString(),yest=new Date(now-864e5).toISOString();
+ const deals=[
+  /* PC에서 처리: 연락 결과 + 완료 + 다음 할 일 = 현장 1건(고객 연락) */
+  {id:'PC',nm:'PC 처리',activities:[{id:'a1',type:'전화',note:'통화 완료 · 진행 중',actor_name:'담당',at:iso(now-5e3)},{id:'a2',type:'next_action_complete',actor_name:'담당',at:iso(now-5e3)},{id:'a3',type:'next_action_set',note:'다음 확인',actor_name:'담당',at:iso(now-5e3)}]},
+  /* 고객 약속을 잡은 현장 */
+  {id:'PR',nm:'약속',activities:[{id:'b1',type:'부재',note:'부재중 (전화 안 받음)',actor_name:'담당',at:iso(now-9e3)},{id:'b2',type:'next_action_set',note:'고객 약속: 견적 전달',actor_name:'담당',at:iso(now-9e3)}]},
+  /* 다른 사람 기록·전화 시도만·어제 기록은 세지 않는다 */
+  {id:'OT',nm:'남의 것',activities:[{id:'c1',type:'전화',note:'통화',actor_name:'다른사람',at:iso(now-9e3)}]},
+  {id:'AT',nm:'시도만',activities:[{id:'e1',type:'전화',note:'관리소장 전화 시도',actor_name:'담당',at:iso(now-9e3)}]},
+  {id:'YD',nm:'어제',activities:[{id:'f1',type:'전화',note:'통화',actor_name:'담당',at:yest}]},
+  /* 이 기기가 방금 저장해 아직 작성자 이름이 없는 기록 — 서버 확인(ACK) 목록으로 내 것임을 안다 */
+  {id:'MB',nm:'방금',activities:[{id:'g1',type:'전화',note:'통화 완료 · 진행 중',at:iso(now-1e3)}]}];
+ const root=mobileRoot(deals,()=>[]);
+ root.Phase1={queue:{list:()=>[{request_id:'r1',status:'done',operation:'activity',object_id:'MB',payload:{type:'전화',note:'통화 완료 · 진행 중'},ack:{activity_id:'g1',server_at:iso(now-1e3)}}]}};
+ root.BUNDLE={inquiries:[{id:'Q1',assignee:'담당',first_response_at:iso(now-3e3)},{id:'Q2',assignee:'다른사람',first_response_at:iso(now-3e3)}]};
+ const ds=root.MobileLoop.daySummary();
+ assert.equal(ds.total,4,'PC·약속·방금·문의 = 현장 4곳');
+ assert.equal(ds.promise,1);assert.equal(ds.contact,3,'PC 처리·방금·문의 첫 연락');assert.equal(ds.next,1,'약속은 다음 할 일에 포함');
+ assert.deepEqual([...ds.sites].sort(),['d:MB','d:PC','d:PR','i:Q1']);
+ const k=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(yest));
+ if(k in ds.hist)assert.equal(ds.hist[k],1,'어제 막대도 서버 기록으로');
+});
+
+test('PC flow metrics treat "관리소장 전화 시도" as an attempt, not a customer contact',()=>{
+ const si=fs.readFileSync(path.join(__dirname,'..','sales-insights.js'),'utf8');
+ assert.doesNotMatch(si,/\/\^\\s\*전화 시도\//,'시작 위치만 보던 예전 판정이 남아 있지 않다');
+ const re=/(?:^|\s)전화 시도(?:\s|$)/;
+ for(const n of ['전화 시도 — 010-1234-5678','관리소장 전화 시도','관리사무소 전화 시도'])assert.ok(re.test(n),n);
+ assert.ok(!re.test('통화 완료 · 진행 중'));
 });
