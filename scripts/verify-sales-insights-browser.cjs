@@ -85,6 +85,10 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   await page.locator('#sales-analysis-menu [data-sales-page="control"]').click();
   assert.equal(await page.evaluate(()=>SalesScope.state().organization),'gyeongnam');
   assert.equal(await page.locator('#sales-analysis-menu [aria-current="page"]').innerText(),'컨트롤타워');
+  /* Live 일일 점검(2026-09-26): 날짜별 새 문의·새 영업 표 + 바로 고칠 것 */
+  assert.match(await page.locator('.ld-panel .dc-ph').innerText(),/Live 일일 점검/);
+  assert.ok(await page.locator('.ld-panel .ld-table tbody tr').count()>=1,'날짜별 행');
+  assert.match(await page.locator('.ld-panel .ld-fix').innerText(),/바로 고칠 것/);
   for(const width of [1440,390]){await page.setViewportSize({width,height:1000});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}
 
   await page.evaluate(()=>window.dispatchEvent(new Event('phase1:identity-cleared')));assert.equal(await page.locator('#si-dash button').count(),0);
