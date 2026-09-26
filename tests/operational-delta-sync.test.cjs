@@ -73,6 +73,37 @@ test('without the server function the screen keeps working exactly as before —
  assert.equal(root.operationalSyncState().off,true);
 });
 
+test('a detail window copies the opener\'s list and only asks what changed — no full download per window',async()=>{
+ const T0=iso(Date.now()-2*60e3),T1=iso(Date.now());
+ const {root,reads}=pcRoot(async(resource)=>{if(resource==='operational_changes')return changes(T1);throw Error('full read must not happen in a detail window: '+resource);});
+ root.location={href:'http://127.0.0.1/crm.html?solo=1&detail=x',origin:'http://127.0.0.1'};
+ root.opener={closed:false,location:{origin:'http://127.0.0.1'},B:{contract_version:2,deals:[{id:A,site:'여는 창 목록'}],inquiries:[],message_logs:[]},operationalSyncState:()=>({since:T0,fullAt:Date.now()-60e3,off:false})};
+ await root.loadData();
+ assert.deepEqual(reads.map(x=>x[0]),['operational_changes']);
+ assert.equal(root.B.deals[0].site,'여는 창 목록');
+ assert.notEqual(root.B.deals,root.opener.B.deals,'a copy, not the opener\'s objects');
+});
+
+test('a large list that does not fit browser storage is kept in IndexedDB, so the next open only asks what changed',async()=>{
+ const stores={},idb={open(){const req={};setTimeout(()=>{const db={createObjectStore(s){stores[s]=stores[s]||{};},transaction(s){return {objectStore(){const st=stores[s]||(stores[s]={});return {get(k){const r={};setTimeout(()=>{r.result=st[k]&&structuredClone(st[k]);r.onsuccess&&r.onsuccess();},0);return r;},put(v,k){st[k]=structuredClone(v);},delete(k){delete st[k];}};}};}};req.result=db;if(req.onupgradeneeded)req.onupgradeneeded();if(req.onsuccess)req.onsuccess();},0);return req;}};
+ const T0=iso(Date.now()-1000),T1=iso(Date.now());
+ const full=async(resource,args)=>{if(resource==='operational_changes')return args.since===null?changes(T0):changes(T1);if(resource==='operational')return page(args.domains[0],args.domains[0]==='deal_core'?[{id:A,site:'큰 목록',stage_code:'consulting'}]:[]);throw Error('unexpected '+resource);};
+ const first=pcRoot(full);first.root.indexedDB=idb;Object.defineProperty(first.root.Phase1,'profile',{value:{auth_uid:'u1'}});
+ first.root.Phase1.storage.setItem=()=>{throw Error('QuotaExceededError');};
+ await first.root.loadData();
+ await new Promise(r=>setTimeout(r,900));/* 저장은 0.8초 모아서 */
+ const second=pcRoot(async(resource,args)=>{if(resource==='operational_changes'&&args.since!==null)return changes(T1);throw Error('full read must not happen: '+resource);});
+ second.root.indexedDB=idb;Object.defineProperty(second.root.Phase1,'profile',{value:{auth_uid:'u1'}});
+ await second.root.loadData();
+ assert.deepEqual(second.reads.map(x=>x[0]),['operational_changes']);
+ assert.equal(second.root.B.deals[0].site,'큰 목록');
+ /* 다른 계정이면 쓰지 않는다 */
+ const other=pcRoot(async(resource,args)=>{if(resource==='operational_changes')return changes(T0);if(resource==='operational')return page(args.domains[0],[]);throw Error('x');});
+ other.root.indexedDB=idb;Object.defineProperty(other.root.Phase1,'profile',{value:{auth_uid:'someone-else'}});
+ await other.root.loadData();
+ assert.ok(other.reads.some(x=>x[0]==='operational'),'another account downloads its own list');
+});
+
 test('server SQL, both transports and the release gate ship together',()=>{
  const sql=fs.readFileSync(path.join(__dirname,'..','sql','operational-changes-v1-20260926.sql'),'utf8');
  assert.match(sql,/create table if not exists crm_security\.change_log/);
