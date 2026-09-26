@@ -23,7 +23,7 @@ function open(key){
  const sheet=document.createElement('section');sheet.className='da-sheet';const head=document.createElement('header');const title=document.createElement('h2');title.id='da-title';title.textContent=titles[key];const x=button('닫기',key,()=>{if(key==='stage')root.StageTransitionUI?.close();else close()});x.removeAttribute('data-help');x.setAttribute('aria-label','작업창 닫기');head.append(title,x);const content=document.createElement('div');content.className='da-content';sheet.append(head,content);panel.append(sheet);
  state={key,panel,moves:[],focus:document.activeElement,background:Array.from(view.children)};view.append(panel);state.background.forEach(n=>n.inert=true);
  const next=$('nextActionCard'),activity=$('activityFormCard'),atomic=$('rel-contact-save');
- if(key==='activity'){take(activity,content);take(next,content);if(atomic){const actions=atomic.closest('.dactions');actions.before(next);const save=next?.querySelector('.dactions .pri');if(save)save.style.display='none';}else{const save=activity?.querySelector('.dactions .pri');if(save){save.classList.add('da-submit');save.textContent='연락 결과·다음 할 일 저장';save.onclick=saveCombined;take(save.closest('.dactions'),content);}const nextSave=next?.querySelector('.dactions .pri');if(nextSave)nextSave.style.display='none';}
+ if(key==='activity'){take(activity,content);const checks=$('dw-checks');take(checks,content);if(checks)state.checksBefore=[...checks.querySelectorAll('.exec-guide-item')].map(b=>b.classList.contains('on'));take(next,content);if(atomic){const actions=atomic.closest('.dactions');actions.before(next);const save=next?.querySelector('.dactions .pri');if(save)save.style.display='none';}else{const save=activity?.querySelector('.dactions .pri');if(save){save.classList.add('da-submit');save.textContent='연락 결과·다음 할 일 저장';save.onclick=saveCombined;take(save.closest('.dactions'),content);}const nextSave=next?.querySelector('.dactions .pri');if(nextSave)nextSave.style.display='none';}
   /* 2026-09-24 지시: 처음엔 연락 결과만 — 결과 칩·내용이 생기면 다음 할 일이 맞는 기본값으로 열린다 */
   if(next){const noteEl=activity?.querySelector('#dv-act-note');
    if(noteEl&&noteEl.value.trim())next.classList.remove('da-next-wait');else next.classList.add('da-next-wait');
@@ -109,10 +109,14 @@ async function saveSupport(box,resolve){
  }catch(e){root.showDetailErr(String(e.message||e));}
  finally{delete box.dataset.saving;box.querySelectorAll('button,textarea,input').forEach(n=>n.disabled=false);}
 }
+function progress_hasActivity(form){return !!form?._contactProgress?.activity}
 async function saveCombined(){
  const form=$('activityFormCard'),d=root.CUR_DETAIL?.item;if(!form||!d||form.dataset.saving)return;
  const get=id=>$(id)?.value?.trim()||'';
  const activity={type:get('dv-act-type'),note:get('dv-act-note'),result:get('dv-act-result'),occurred_at:get('dv-act-at')};
+ /* 이번 창에서 새로 표시한 체크 항목은 연락 결과 문구에 함께 남긴다(체크 자체는 이 브라우저에만 저장되므로) */
+ const ticked=[...($('dw-checks')?.querySelectorAll('.exec-guide-item')||[])].map((b,i)=>b.classList.contains('on')&&!(state?.checksBefore||[])[i]?b.textContent.replace('✓','').trim():'').filter(Boolean);
+ if(ticked.length&&activity.note&&!progress_hasActivity(form))activity.note+=' · 확인: '+ticked.join(', ');
  const next={type:root.NextActionPicker.read('dv-na-type'),text:get('dv-na-text'),due_at:get('dv-na-date'),assignee:get('dv-na-assignee')};
  if(!activity.type||!activity.note||!activity.occurred_at||!next.type||!next.text||!next.due_at||!next.assignee){root.showDetailErr('연락 결과 내용·일시와 다음 할 일·기한·담당자를 모두 입력해 주세요.');return;}
  if(!root.PeopleEligibility.allowed(root.SALES_PEOPLE_MASTER,'sales_action',d,next.assignee)){root.showDetailErr('이 업무를 맡을 수 있는 영업담당자를 선택해 주세요.');return;}

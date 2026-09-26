@@ -74,7 +74,7 @@
   el.innerHTML='<form method="dialog"><h4>어떻게 됐나요? — '+h(d.site||'')+'</h4><p>'+(phone?'연락처 '+h(phone)+' · ':'')+'하나만 고르면 기록과 다음 할 일까지 자동으로 만듭니다</p>'
    +'<div class="nc-chips">'+CHIPS.map(c=>'<button type="button" data-chip="'+c[0]+'"><b>'+c[1]+'</b><small>'+c[2]+'</small></button>').join('')+'</div>'
    +'<div class="nc-step2" hidden><label class="nc-note-label" hidden>어떤 약속인가요? <input class="nc-note" placeholder="예: 금요일까지 견적 전달"></label>'
-   +'<h5>언제 다시 확인할까요?</h5><div class="nc-dates">'+dateOptions().map(x=>'<button type="button" data-date="'+x[1]+'">'+x[0]+' <small>'+x[1].slice(5)+'</small></button>').join('')+'<label class="nc-pick">날짜 선택 <input type="date"></label></div></div>'
+   +(Array.isArray(root.CHECKS)?'<div class="nc-checks"><h5>이번 통화에서 확인한 것 <small>(해당하면 누르세요)</small></h5><div>'+root.CHECKS.map((n,i)=>'<button type="button" data-check="'+i+'" aria-pressed="false">'+h(n)+'</button>').join('')+'</div></div>':'')+'<h5>언제 다시 확인할까요?</h5><div class="nc-dates">'+dateOptions().map(x=>'<button type="button" data-date="'+x[1]+'">'+x[0]+' <small>'+x[1].slice(5)+'</small></button>').join('')+'<label class="nc-pick">날짜 선택 <input type="date"></label></div></div>'
    +'<p class="nc-status" role="status" aria-live="polite"></p><footer><button type="button" data-close>닫기</button></footer></form>';
   document.body.append(el);
   const step2=el.querySelector('.nc-step2'),status=el.querySelector('.nc-status'),noteLabel=el.querySelector('.nc-note-label');
@@ -89,6 +89,7 @@
    noteLabel.hidden=chip!=='promise';step2.hidden=false;
    (chip==='promise'?noteLabel.querySelector('input'):step2.querySelector('[data-date]')).focus();
   };});
+  el.querySelectorAll('[data-check]').forEach(b=>{b.onclick=()=>{const on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(on));b.classList.toggle('on',on);};});
   const submit=due=>save(d,chip,due,el.querySelector('.nc-note').value.trim(),status,el);
   el.querySelectorAll('[data-date]').forEach(b=>{b.onclick=()=>submit(b.dataset.date);});
   el.querySelector('.nc-pick input').onchange=e=>{if(e.target.value)submit(e.target.value);};
@@ -103,7 +104,8 @@
   const noteText=chip==='ongoing'?'통화 완료 · 진행 중 ('+String(due).slice(5,10).replace('-','/')+' 다시 확인)':chip==='recall'?'통화 시도 · 다시 연락하기로 함':chip==='absent'?'부재중 (전화 안 받음)':'통화 완료 · 고객 약속: '+note;
   const nextText=promise?note:chip==='absent'?'다시 전화하기':'진행 상황 확인 전화';
   const assignee=root.repN(d.assignee)||root.repN(root.ME?.name)||'';
-  const activity={type:'전화',note:noteText,result:'',occurred_at:new Date().toISOString()};
+  const ticked=[...el.querySelectorAll('[data-check][aria-pressed="true"]')].map(b=>Number(b.dataset.check));
+  const activity={type:'전화',note:noteText+(ticked.length?' · 확인: '+ticked.map(i=>root.CHECKS[i]).join(', '):''),result:'',occurred_at:new Date().toISOString()};
   const next={type:promise?'고객 약속':'전화',text:nextText,due_at:due,assignee};
   busy=true;el.querySelectorAll('button,input').forEach(n=>n.disabled=true);
   const progress=el._progress||(el._progress={});
@@ -126,6 +128,7 @@
    const scheduled=await confirm('next_action',next);
    const p=root.currentPatch(),obj={id:scheduled.ack.next_action_id,type:next.type,text:next.text,due:due,due_at:due,assignee:next.assignee,status:'open'};
    d.nextActionObj=p.nextActionObj=obj;d.nextAction=p.nextAction=due;d.nextActionText=p.nextActionText=next.text;
+   if(ticked.length&&typeof root.toggleDetailCheck==='function')ticked.forEach(i=>root.toggleDetailCheck(i,true));
    root.saveLocal?.();
    status.textContent='✓ 기록 완료 · ✓ 다음 할 일 '+due+' 등록';
    busy=false;setTimeout(()=>{el.close();root.renderDetail?.();root.TodayWorkQueue?.render?.();},700);
