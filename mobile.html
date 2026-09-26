@@ -1021,7 +1021,9 @@ function outcomeOfServer(d){
  if(d.code==='nocontact'||/연락두절/.test(t))return 'nocontact';
  return null;
 }
-async function loadLive(){if(!TOKEN)return;LIVE=false;LOAD_ERR='Staging Phase 1: 업무별 read 계약 미연결 (unavailable)';render();}
+/* 자리표시일 뿐 — 실제 조회는 operational-overlay.js 가 로드되면서 root.loadLive 를 교체한다
+   (영업·문의·연결 프로젝트 조회, 일부 실패 시 30초 재시도, 저장본+바뀐 것만 받기). 이 문구가 보이면 그 모듈이 로드되지 않은 것. */
+async function loadLive(){if(!TOKEN)return;LIVE=false;LOAD_ERR='운영 데이터 연결 모듈을 불러오지 못했습니다 — 새로고침해 주세요';render();}
 /* 관리자 화면 집계도 실데이터에서 계산 (하드코딩 제거) */
 function rebuildAdmin(){
  var open=DEALS.filter(isOpen),tA=0;open.forEach(function(d){tA+=d.amt||0});

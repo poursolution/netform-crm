@@ -333,7 +333,7 @@
   const bulk='<div class="ct-bulk">선택 <b id="ct-count">0</b>건 → '+btn('할 일 지정 (다음 할 일 일괄 등록)','ct-bulk','','ct-bulkbtn')+'<span class="dc-mut">지정한 할 일은 각 현장의 다음 할 일로 등록되어 담당자 오늘 업무에 뜹니다 · 문의 건은 배정으로 처리</span></div>';
   return '<div class="dc-topbar"><h2><i>◈</i>컨트롤타워</h2>'+'<span class="dc-nav">'+btn('전체 현황 ↗','navigate','dash')+btn('성과 분석 ↗','navigate','perf')+(root.ContractSalesUI?.advisorySync&&root.CRMRelease?.has?.('crm_advisory_attribution_v1')!==false?'<button type="button" data-si-action="advisory-sync">기술자문 낙찰실적 확정</button>':'')+'</span><span class="dc-live"><i></i>관리 대상 '+number(list.length)+'건</span></div>'+
    '<div class="dc-grid">'+
-   loopStrip(s)+healthPanel()+(()=>{try{return weeklyReview();}catch(e){if(root.console&&root.console.warn)root.console.warn('weekly: '+e.message);return '';}})()+'<div class="dc-p c12 ct-datarisk" id="ct-datarisk" hidden></div>'+'<div class="dc-p c12"><div class="dc-ph">① 지금 막힌 곳<small>문장 클릭 = 아래 목록이 그 조건으로 좁혀짐</small></div><div class="dc-pb ct-verdicts">'+verdicts+'</div></div>'+
+   loopStrip(s)+healthPanel()+(()=>{try{return liveDaily();}catch(e){if(root.console&&root.console.warn)root.console.warn('live-daily: '+e.message);return '';}})()+(()=>{try{return weeklyReview();}catch(e){if(root.console&&root.console.warn)root.console.warn('weekly: '+e.message);return '';}})()+'<div class="dc-p c12 ct-datarisk" id="ct-datarisk" hidden></div>'+'<div class="dc-p c12"><div class="dc-ph">① 지금 막힌 곳<small>문장 클릭 = 아래 목록이 그 조건으로 좁혀짐</small></div><div class="dc-pb ct-verdicts">'+verdicts+'</div></div>'+
    '<div class="dc-p c12"><div class="dc-ph">② 담당자별 문제 · 지시<small>문제 칩 클릭=목록 필터 · 이름 클릭=성과 분석 · 할 일 지정=해당 담당자 문제 건 일괄 등록</small></div><div class="dc-pb">'+ctRepRows(s)+'</div></div>'+
    '<div class="dc-p c12"><div class="dc-ph">③ 처리 목록<small>진행 중·조치 필요=현재 상태 · 문의·준공=선택 기간 · 계약실적과 별도</small></div><div class="dc-pb"><div class="dc-kchips">'+chips+'</div>'+filtersHtml+table+bulk+'<div class="si-pager">'+btn('이전','page',Math.max(1,f.page-1))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',Math.min(pages,f.page+1))+'</div></div></div></div>';
  }
@@ -509,6 +509,42 @@
   host.querySelectorAll('.dc-donut g circle[stroke-dasharray]').forEach((c,i)=>{const d=c.getAttribute('stroke-dasharray');c.setAttribute('stroke-dasharray','0 240');c.style.transition='stroke-dasharray .9s cubic-bezier(.3,.6,.3,1) '+(0.4+i*0.12)+'s';requestAnimationFrame(()=>requestAnimationFrame(()=>{c.setAttribute('stroke-dasharray',d)}))});
   host.querySelectorAll('.dc-kpi b,.pf-num>b,.pf-pct b').forEach(b=>{const m=b.textContent.match(/^([0-9,]+(?:\.[0-9]+)?)(.*)$/);if(!m)return;const target=parseFloat(m[1].replace(/,/g,'')),suffix=m[2],dec=(m[1].split('.')[1]||'').length,t0=performance.now(),ease=t=>1-Math.pow(1-t,3);
    const step=ts=>{const t=Math.min((ts-t0)/800,1);b.textContent=(target*ease(t)).toLocaleString('ko-KR',{minimumFractionDigits:dec,maximumFractionDigits:dec})+suffix;if(t<1)requestAnimationFrame(step)};requestAnimationFrame(step)});
+ }
+ /* Live 일일 점검(2026-09-26 컨설턴트 "기존 데이터를 얼마나 고쳤나보다 오늘 생성된 데이터가 처음부터 제대로 만들어졌나"):
+    날짜별로 그날 새로 들어온 문의·새로 만든 영업이 처음부터 담당자·첫 연락·다음 할 일·현장을 갖췄는지. 10/1 전에는 최근 7일 시험 집계.
+    기준(컨설턴트 완료조건): 담당자 98% · 다음 할 일 95% · 첫 연락 2시간 95%. 현장·문의 연결은 참고(목표 없음). */
+ const LD_TARGET={assign:98,first:95,owner:98,next:95};
+ function liveDaily(){
+  const LIVE=String(root.OPS_RULES?.liveFrom||'2026-10-01'),r=rows(),now=Date.now(),sla=Number(root.OPS_RULES?.responseSlaHours??2)*3600e3;
+  const kst=v=>{const t=Date.parse(v||'');if(!Number.isFinite(t))return '';try{return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(t));}catch(e){return String(v).slice(0,10);}};
+  const today=kst(new Date().toISOString()),started=today>=LIVE,days=[];
+  for(let i=0;i<7;i++){const k=kst(new Date(now-i*864e5).toISOString());if(!started||k>=LIVE)days.push(k);}
+  const qAt=q=>root.inquiryDate?root.inquiryDate(q.item):(q.item.received_at||q.item.created_at||'');
+  const qAssigned=q=>q.owner&&q.owner!=='미배정';
+  const qFirst=q=>q.item.first_response_at||(root.inqCtlFirstResponseAt?root.inqCtlFirstResponseAt(q.item):'')||'';
+  const qStart=q=>Date.parse(q.item.assigned_at||q.item.assignedAt||qAt(q)||'');
+  /* 첫 연락 판정: 배정된 문의 중 이미 연락했거나 2시간이 지난 것만(아직 2시간 안이면 판정 보류) */
+  const qJudged=q=>qAssigned(q)&&(!!qFirst(q)||now-qStart(q)>sla),qOnTime=q=>{const f=Date.parse(qFirst(q)),s=qStart(q);return Number.isFinite(f)&&Number.isFinite(s)&&f-s<=sla;};
+  const dActive=d=>d.active,dOwner=d=>!!d.owner&&d.owner!=='미배정',dNext=d=>!d.issues.includes('missing'),dSite=d=>!!(d.item.site_id||d.item.siteId),dFromInq=d=>!!(d.item.origin_inquiry_id||d.item.originInquiryId);
+  const pct=(n,t)=>t?Math.round(n/t*100):null;
+  const cell=(v,target,sub)=>'<td class="'+(v==null?'na':target==null?'':v>=target?'ok':'bad')+'"><b>'+(v==null?'-':v+'%')+'</b>'+(sub?'<small>'+h(sub)+'</small>':'')+'</td>';
+  const byDay=days.map(k=>{
+   const Q=r.inquiries.filter(q=>kst(qAt(q))===k),D=r.deals.filter(d=>kst(d.created)===k),A=D.filter(dActive),J=Q.filter(qJudged);
+   return {k,Q,D,A,assign:pct(Q.filter(qAssigned).length,Q.length),first:pct(J.filter(qOnTime).length,J.length),qsite:pct(Q.filter(q=>!!q.item.site_id).length,Q.length),
+    owner:pct(D.filter(dOwner).length,D.length),next:pct(A.filter(dNext).length,A.length),dsite:pct(D.filter(dSite).length,D.length),fromInq:D.filter(dFromInq).length,waiting:Q.filter(q=>qAssigned(q)&&!qJudged(q)).length};
+  });
+  /* 오늘·어제 새로 만든 건 중 처음부터 빠진 것 — 누르면 그 건이 열린다 */
+  const recent=new Set(days.slice(0,2)),fix=[];
+  r.inquiries.filter(q=>recent.has(kst(qAt(q)))).forEach(q=>{if(!qAssigned(q))fix.push([q,'문의 미배정']);else if(qJudged(q)&&!qFirst(q))fix.push([q,'첫 연락 기록 없음']);});
+  r.deals.filter(d=>recent.has(kst(d.created))).forEach(d=>{const miss=[!dOwner(d)&&'담당자',dActive(d)&&!dNext(d)&&'다음 할 일',!dSite(d)&&'현장'].filter(Boolean);if(miss.length)fix.push([d,miss.join('·')+' 없음']);});
+  const md=k=>Number(k.slice(5,7))+'/'+Number(k.slice(8,10)),liveDay=md(LIVE);
+  const head=started?liveDay+' 이후 · 날짜별 새 데이터':'시험 집계 · 최근 7일 — '+liveDay+'부터 정식';
+  const tbody=byDay.map(x=>'<tr'+(x.k===today?' class="ld-today"':'')+'><th scope="row">'+h(md(x.k))+(x.k===today?' <small>오늘</small>':'')+'</th>'
+   +'<td class="ld-n">'+number(x.Q.length)+'</td>'+cell(x.assign,LD_TARGET.assign)+cell(x.first,LD_TARGET.first,x.waiting?'판정 전 '+x.waiting:'')+cell(x.qsite,null)
+   +'<td class="ld-n">'+number(x.D.length)+'</td>'+cell(x.owner,LD_TARGET.owner)+cell(x.next,LD_TARGET.next)+cell(x.dsite,null)+'<td class="ld-n">'+(x.D.length?number(x.fromInq):'-')+'</td></tr>').join('');
+  return '<div class="dc-p c12 ld-panel"><div class="dc-ph">Live 일일 점검<small>'+h(head)+' — 기존 데이터를 얼마나 고쳤나보다, 오늘 만든 데이터가 처음부터 제대로인가</small></div><div class="dc-pb">'
+   +'<div class="si-table-scroll"><table class="si-table ld-table"><thead><tr><th rowspan="2">날짜</th><th colspan="4">새 문의</th><th colspan="5">새 영업</th></tr><tr><th>건수</th><th>배정<small>목표 '+LD_TARGET.assign+'%</small></th><th>첫 연락 2시간 안<small>목표 '+LD_TARGET.first+'%</small></th><th>현장 연결</th><th>건수</th><th>담당자<small>목표 '+LD_TARGET.owner+'%</small></th><th>다음 할 일<small>목표 '+LD_TARGET.next+'%</small></th><th>현장</th><th>문의에서 옴</th></tr></thead><tbody>'+tbody+'</tbody></table></div>'
+   +'<div class="ld-fix"><b>오늘·어제 만든 건 중 바로 고칠 것'+(fix.length?' '+fix.length+'건':'')+'</b>'+(fix.length?fix.slice(0,10).map(([x,why])=>btn(x.site+' — '+why,'record',x.key)).join('')+(fix.length>10?'<span class="dc-mut">외 '+(fix.length-10)+'건</span>':''):'<span class="dc-mut">빠진 것 없이 만들어졌습니다.</span>')+'</div></div></div>';
  }
  /* 주간 영업점검(2026-09-26 컨설턴트 P1 '금요일 주간 점검'): 이번 주 월요일~오늘, '누가 바빴나'가 아니라 '어디서 흐름이 끊겼나'.
     금요일엔 펼쳐서, 다른 날엔 접어서. 잔디 자동 발송 전까지는 '문구 복사'(보낸 척 금지). */

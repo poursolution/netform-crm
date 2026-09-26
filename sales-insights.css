@@ -319,3 +319,16 @@
 .si-dark .wr-copy textarea{width:100%;box-sizing:border-box;font:inherit;font-size:12px;border:1px solid #e2e8f1;border-radius:10px;padding:9px 11px;resize:vertical;color:#17233a;background:#fbfcfe}
 .si-dark .wr-copy button{justify-self:start;border:1.5px solid #3B6CE4;background:#ebf1fe;color:#1e50b3;border-radius:9px;padding:7px 12px;font-weight:800;font-size:12.5px;cursor:pointer}
 .si-dark .wr-copy small{font-size:11px;color:#8a97ab}
+/* Live 일일 점검 (2026-09-26) */
+.si-dark .ld-panel{min-width:0}
+.si-dark .ld-table{min-width:760px;font-variant-numeric:tabular-nums}
+.si-dark .ld-table th small{display:block;font-size:10px;font-weight:600;color:#8a97ab}
+.si-dark .ld-table td b{font-size:13px}
+.si-dark .ld-table td small{display:block;font-size:10px;color:#8a97ab}
+.si-dark .ld-table td.ok b{color:#15803d}
+.si-dark .ld-table td.bad{background:#fff7f7}.si-dark .ld-table td.bad b{color:#b42318}
+.si-dark .ld-table td.na b{color:#94a3b8}
+.si-dark .ld-table td.ld-n{font-weight:800;color:#0f172a}
+.si-dark .ld-table tr.ld-today th{color:#1d4ed8}
+.si-dark .ld-fix{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px}
+.si-dark .ld-fix>b{font-size:12.5px;margin-right:4px}
