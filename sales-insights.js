@@ -534,21 +534,24 @@
    list.forEach(x=>{if(!isPromise(x))return;const due=ts(String(x.due_at||x.due||'').slice(0,10)+'T23:59:59');if(!Number.isFinite(due)||due<w0||due>Date.now())return;promDue++;const done=x.status==='completed'&&ts(x.completed_at)<=due;if(done)promKept++;else promMiss.push(d);});
   });
   /* 흐름 멈춤 · 담당자별 문제 한 줄 · 다음 주 */
-  const act=r.deals.filter(d=>d.active),stall=act.filter(d=>d.issues.includes('stall')).sort((a,b)=>(Number(b.item.amt||b.expected||0))-(Number(a.item.amt||a.expected||0))).slice(0,5);
-  const byRep={};act.forEach(d=>{const o=d.owner&&d.owner!=='미배정'?d.owner:null;if(!o)return;const R=byRep[o]=byRep[o]||{missing:0,promise:0,stall:0,overdue:0};if(d.issues.includes('missing'))R.missing++;if(d.issues.includes('promise'))R.promise++;if(d.issues.includes('stall'))R.stall++;else if(d.issues.includes('overdue'))R.overdue++;});
-  const repLines=Object.entries(byRep).map(([k,v])=>[k,[v.promise?'약속 지남 '+v.promise:'',v.stall?'흐름 멈춤 '+v.stall:'',v.missing?'다음 할 일 없음 '+v.missing:'',v.overdue?'기한 지남 '+v.overdue:''].filter(Boolean)]).filter(x=>x[1].length).sort((a,b)=>b[1].length-a[1].length);
+  /* 운영 지표는 Live(10/1~)만 — 과거 이관분은 '과거 정리 N건'으로 따로(오늘 업무의 과거 영업 정리와 같은 기준) */
+  const LIVE=String(root.OPS_RULES?.liveFrom||'2026-10-01'),dayOf=v=>String(v||'').slice(0,10),isLive=d=>dayOf(d.created)>=LIVE||dayOf(d.lastContact)>=LIVE;
+  const act=r.deals.filter(d=>d.active),stall=act.filter(d=>d.issues.includes('stall')&&isLive(d)).sort((a,b)=>(Number(b.item.amt||b.expected||0))-(Number(a.item.amt||a.expected||0))).slice(0,5);
+  const legacyStall=act.filter(d=>!isLive(d)&&(d.issues.includes('stall')||d.issues.includes('missing'))).length;
+  const byRep={};act.forEach(d=>{const o=d.owner&&d.owner!=='미배정'?d.owner:null;if(!o)return;const R=byRep[o]=byRep[o]||{missing:0,promise:0,stall:0,overdue:0,legacy:0};if(!isLive(d)&&!d.issues.includes('promise')){if(d.issues.includes('stall')||d.issues.includes('missing'))R.legacy++;return;}if(d.issues.includes('missing'))R.missing++;if(d.issues.includes('promise'))R.promise++;if(d.issues.includes('stall'))R.stall++;else if(d.issues.includes('overdue'))R.overdue++;});
+  const repLines=Object.entries(byRep).map(([k,v])=>[k,[v.promise?'약속 지남 '+v.promise:'',v.stall?'흐름 멈춤 '+v.stall:'',v.missing?'다음 할 일 없음 '+v.missing:'',v.overdue?'기한 지남 '+v.overdue:'',v.legacy?'과거 정리 '+v.legacy+'건':''].filter(Boolean)]).filter(x=>x[1].length).sort((a,b)=>(b[1].filter(t=>!/^과거/.test(t)).length-a[1].filter(t=>!/^과거/.test(t)).length)||b[1].length-a[1].length);
   const nextWeek=act.map(d=>{const a=d.item.nextActionObj||d.item.next_action,due=ts(String(a&&(a.due||a.due_at)||'').slice(0,10)+'T12:00:00');return {d,a,due};}).filter(x=>x.a&&Number.isFinite(x.due)&&x.due>=nextMon&&x.due<nextSun&&(isPromise(x.a)||['compete','imminent','bidding','contract'].includes(root.dealStage?root.dealStage(x.d.item):''))).sort((a,b)=>a.due-b.due).slice(0,6);
   const lines=['[주간 영업점검] '+md(w0)+'~'+md(now.getTime()),
    '· 새 문의 '+inq.length+'건 · 첫 연락 2시간 안 '+pct(firstOk,inq.length)+(noFirst?' · 아직 첫 연락 전 '+noFirst+'건':'')+(unassigned?' · 미배정 '+unassigned+'건':''),
    '· 연락 결과 '+contacts+'건 · 다음 할 일 연결 '+pct(linked,judged)+(callsOpen?' · 결과 안 남긴 통화 '+callsOpen+'건':''),
    '· 고객 약속 기한 '+promDue+'건 중 지킴 '+promKept+'건'+(supIn||supDone?' · 지원 요청 '+supIn+'건 / 처리 '+supDone+'건':''),
-   stall.length?'· 흐름 멈춤: '+stall.map(d=>d.site).join(', '):'· 흐름 멈춤 없음',
+   (stall.length?'· 흐름 멈춤(10/1 이후): '+stall.map(d=>d.site).join(', '):'· 흐름 멈춤(10/1 이후) 없음')+(legacyStall?' · 과거 정리 대상 '+legacyStall+'건':''),
    ...repLines.map(([k,v])=>'  - '+k+': '+v.join(' · ')),
    nextWeek.length?'· 다음 주 챙길 것: '+nextWeek.map(x=>md(x.due)+' '+x.d.site+' ('+(x.a.text||'')+')').join(' / '):''].filter(Boolean);
   const tiles=[['새 문의',inq.length+'건','첫 연락 2시간 안 '+pct(firstOk,inq.length)],['연락 결과',contacts+'건','다음 할 일 연결 '+pct(linked,judged)],['결과 안 남긴 통화',callsOpen+'건','전화 '+calls+'건 중'],['고객 약속',promKept+' / '+promDue,'기한 내 지킴'],['지원 요청',supIn+'건','처리 '+supDone+'건']];
   return '<details class="dc-p c12 wr-panel"'+(friday?' open':'')+'><summary class="dc-ph">이번 주 영업점검 <small>'+h(md(w0)+' ~ '+md(now.getTime()))+(friday?' · 금요일 점검':' · 금요일에 펼쳐서 확인')+' — 누가 바빴나가 아니라 어디서 흐름이 끊겼나</small></summary><div class="dc-pb wr-body">'
    +'<div class="wr-tiles">'+tiles.map(t=>'<div class="wr-tile"><span>'+t[0]+'</span><b>'+h(t[1])+'</b><small>'+h(t[2])+'</small></div>').join('')+'</div>'
-   +'<div class="wr-cols"><section><h4>흐름 멈춤 상위 5</h4>'+(stall.length?stall.map(d=>btn(d.site+' · '+(d.owner||'미배정'),'record',d.key)).join(''):'<p class="dc-mut">흐름이 멈춘 진행 영업이 없습니다.</p>')+'</section>'
+   +'<div class="wr-cols"><section><h4>흐름 멈춤 상위 5 <small>'+h(Number(LIVE.slice(5,7))+'/'+Number(LIVE.slice(8,10)))+' 이후</small></h4>'+(stall.length?stall.map(d=>btn(d.site+' · '+(d.owner||'미배정'),'record',d.key)).join(''):'<p class="dc-mut">흐름이 멈춘 진행 영업이 없습니다.</p>')+(legacyStall?'<p class="dc-mut">과거 이관 영업 '+number(legacyStall)+'건은 담당자 ‘오늘 업무 · 과거 영업 정리’에서 하루 10건씩 정리합니다.</p>':'')+'</section>'
    +'<section><h4>담당자별 챙길 것</h4>'+(repLines.length?repLines.map(([k,v])=>'<p class="wr-rep">'+btn(k,'person',k)+' '+h(v.join(' · '))+'</p>').join(''):'<p class="dc-mut">담당자별로 끊긴 흐름이 없습니다.</p>')+'</section>'
    +'<section><h4>다음 주 챙길 약속·입찰·PT</h4>'+(nextWeek.length?nextWeek.map(x=>btn(md(x.due)+' '+x.d.site+' — '+(x.a.text||''),'record',x.d.key)).join(''):'<p class="dc-mut">다음 주 기한의 약속·입찰·PT 일정이 없습니다.</p>')+'</section></div>'
    +'<div class="wr-copy"><textarea readonly aria-label="주간 점검 요약 문구" rows="'+Math.min(10,lines.length+1)+'">'+h(lines.join('\n'))+'</textarea><button type="button" data-si-action="wr-copy">잔디용 문구 복사</button><small>자동 발송은 준비 중 — 복사해서 잔디에 붙여 넣어 주세요</small></div>'
