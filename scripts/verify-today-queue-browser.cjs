@@ -107,9 +107,11 @@ async function run(){
   await page.evaluate(()=>{ME={name:'김성민',role:'rep'};paintTodayHome()});
   assert.equal(await page.getByRole('combobox',{name:'오늘 업무 담당자'}).count(),0);
   assert.equal(await page.locator('.twq-rep-boards').count(),0);
-  assert.equal(await page.locator('.twq-row').count(),5);
+  /* 영업사원: 위 카드에 올라간 건은 아래 표에서 빠진다(2026-09-26 중복 정리) — 카드+표 합계 5, 같은 건이 두 번 나오지 않음 */
+  const cardKeys=await page.locator('.twq-ucard button.pri').evaluateAll(ns=>ns.map(n=>n.dataset.key)),rowKeys=await page.locator('.twq-row').evaluateAll(ns=>ns.map(n=>n.dataset.key));
+  assert.equal(cardKeys.length+rowKeys.length,5);assert.equal(cardKeys.filter(k=>rowKeys.includes(k)).length,0);
   assert.equal(await page.locator('.today-admin-inquiry').count(),1);assert.equal(await page.locator('.today-admin-pipeline').count(),1);
-  assert.equal(await page.locator('.twq-row[data-key="deal:rel-today"]').count(),1);
+  assert.equal(cardKeys.concat(rowKeys).filter(k=>k==='deal:rel-today').length,1);
   assert.equal(await page.evaluate(()=>TodayWorkQueue.data().rows.every(x=>x.owner==='김성민')),true);
   // A previously visible admin row cannot be opened after the current role changes.
   await page.evaluate(()=>{window.__opened=null;TodayWorkQueue.open('deal:rel-late')});assert.equal(await page.evaluate(()=>window.__opened),null);

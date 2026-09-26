@@ -302,9 +302,12 @@
   return '<section class="twq-backlog" aria-label="과거 영업 정리"><header><b>과거 영업 정리 · 오늘 '+pick.length+'건</b><small>이관된 과거 영업 '+list.length+'건 중 — 열어서 다음 할 일을 잡거나(유지) 진행상태를 보류·종료로 바꾸면 목록에서 빠집니다.</small></header><div class="twq-blist">'
    +pick.map(x=>{const amt=Number(root.oppAmt?root.oppAmt(x.item):0)||0;return '<button type="button" class="twq-bitem" data-key="'+attr(x.key)+'" onclick="TodayWorkQueue.open(this.dataset.key)"><span class="site">'+h(x.item.site||x.item.site_name||'현장명 미입력')+'</span><span class="meta">'+h(x.stage||'')+(amt?' · '+won(amt):'')+'</span></button>';}).join('')+'</div></section>';
  }
- function urgentCards(rows){
+ function pickUrgent(rows){
   const score=x=>x.promise&&x.dueDays!==null&&x.dueDays<0?-2:x.promise&&x.dueDays===0?-1:x.unassigned?0:(x.overdue||x.responseLate)?1:x.dueDays===0?2:x.processingLate?3:x.missingNext?4:9;
-  const picked=rows.filter(x=>score(x)<=4).sort((a,b)=>score(a)-score(b)||b.lag-a.lag).slice(0,8);
+  return rows.filter(x=>score(x)<=4).sort((a,b)=>score(a)-score(b)||b.lag-a.lag).slice(0,8);
+ }
+ function urgentCards(rows,picked){
+  picked=picked||pickUrgent(rows);
   /* ⑧⑪(2026-09-25): 다 처리한 날은 축하 문구 — '0건'이 아니라 습관의 보상으로 */
   const ds=daySummary(),sum=daySummaryText(ds);
   if(!picked.length)return '<section class="twq-urgent done" aria-label="오늘 긴급 업무 없음"><div class="twq-done"><b>✓ 지금 바로 처리할 업무가 없습니다.</b>'+(sum?'<span class="twq-daysum">'+sum+'</span>':'')+'<small>'+(rows.length?'예정된 일정은 아래 목록에서 확인하세요. 새 문의가 배정되면 여기에 먼저 표시됩니다.':'새 문의가 배정되거나 다음 할 일 기한이 오면 여기에 먼저 표시됩니다.')+'</small></div></section>';
@@ -328,8 +331,11 @@
   const owners=Array.from(new Set(X.rows.map(x=>x.owner))).sort(root.repCompare);
   const scoped=x=>(!X.admin||!G.todayQueueOwner||G.todayQueueOwner==='전체'||x.owner===G.todayQueueOwner)&&(!G.todayQueueSearch||[x.item.site,x.item.site_name,x.owner,x.reason,x.next].join(' ').toLowerCase().includes(String(G.todayQueueSearch).trim().toLowerCase()));
   const inquiry=X.inquiry.filter(scoped),pipeline=X.pipeline.filter(scoped);
+  /* 같은 현장이 위 카드와 아래 표에 두 번 나오지 않게(2026-09-26 컨설턴트 ⑪) — 영업사원 화면에서 카드로 올린 건은 표에서 뺀다.
+     카드를 처리하면 다음 급한 건이 카드로 올라오고, 카드가 모자라면 표에 남은 건이 그대로 보인다. */
+  const urgent=X.admin?[]:pickUrgent(inquiry.concat(pipeline)),onCard=new Set(urgent.map(x=>x.key)),below=x=>!onCard.has(x.key);
   const toolbar='<form class="twq-toolbar" onsubmit="event.preventDefault();TodayWorkQueue.set(\'search\',this.elements.search.value)">'+(X.admin?'<label>담당자 <select aria-label="오늘 업무 담당자" onchange="TodayWorkQueue.set(\'owner\',this.value)"><option>전체</option>'+owners.map(o=>'<option '+(G.todayQueueOwner===o?'selected':'')+'>'+h(o)+'</option>').join('')+'</select></label>':'<span>내 담당 업무</span>')+'<label class="twq-search"><input name="search" aria-label="오늘 업무 검색" placeholder="현장·담당자·할 일 검색" value="'+attr(G.todayQueueSearch||'')+'"><button>검색</button></label></form>';
-  host.innerHTML='<div class="today-work-queue '+(X.admin?'manager':'rep')+'"><header><div><h2>오늘 업무</h2><span>'+(X.admin?'사원별 현황을 먼저 확인하고, 행을 눌러 해당 담당자 업무로 파고듭니다.':'신규 문의와 진행 중 영업을 각각의 처리 순서로 확인합니다.')+'</span></div><b>전체 '+(inquiry.length+pipeline.length)+'건</b></header>'+(X.admin?repBoards(X):urgentCards(inquiry.concat(pipeline)))+backlogCard((X.backlog||[]).filter(scoped),X.admin)+toolbar+'<p class="twq-count-note">각 업무함의 순위와 상태 필터는 독립적으로 적용됩니다. 파이프라인 상태는 중복될 수 있습니다.</p><div class="twq-admin-boards">'+table(inquiry,X.admin,'inquiry','견적문의 관리','신규 문의의 배정·첫 연락·후속처리')+table(pipeline,X.admin,'pipeline','파이프라인 관리','진행 중 영업의 다음 할 일·관계관리·확장관리')+'</div></div>';
+  host.innerHTML='<div class="today-work-queue '+(X.admin?'manager':'rep')+'"><header><div><h2>오늘 업무</h2><span>'+(X.admin?'사원별 현황을 먼저 확인하고, 행을 눌러 해당 담당자 업무로 파고듭니다.':'신규 문의와 진행 중 영업을 각각의 처리 순서로 확인합니다.')+'</span></div><b>전체 '+(inquiry.length+pipeline.length)+'건</b></header>'+(X.admin?repBoards(X):urgentCards(inquiry.concat(pipeline),urgent))+backlogCard((X.backlog||[]).filter(scoped),X.admin)+toolbar+'<p class="twq-count-note">'+(urgent.length?'위 카드 '+urgent.length+'건은 아래 목록에서 뺐습니다. ':'')+'각 업무함의 순위와 상태 필터는 독립적으로 적용됩니다.</p><div class="twq-admin-boards">'+table(inquiry.filter(below),X.admin,'inquiry','견적문의 관리','신규 문의의 배정·첫 연락·후속처리')+table(pipeline.filter(below),X.admin,'pipeline','파이프라인 관리','진행 중 영업의 다음 할 일·관계관리·확장관리')+'</div></div>';
   const badge=root.$('#todayBadge');if(badge){badge.textContent=X.rows.length||'';badge.style.display=X.rows.length?'':'none'}
  }
  function setManagerRequests(rows){managerRequests=Array.isArray(rows)?rows.slice():[];if(root.G?.page==='today')render()}
