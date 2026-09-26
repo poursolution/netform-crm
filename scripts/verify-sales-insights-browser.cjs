@@ -86,6 +86,7 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   assert.equal(await page.evaluate(()=>SalesScope.state().organization),'gyeongnam');
   assert.equal(await page.locator('#sales-analysis-menu [aria-current="page"]').innerText(),'컨트롤타워');
   /* Live 일일 점검(2026-09-26): 날짜별 새 문의·새 영업 표 + 바로 고칠 것 */
+  assert.equal(await page.locator('.ld-panel').count(),0,'처음엔 지금 처리 칸 — 점검 지표는 두 번째 칸(2026-09-26)');await page.locator('#si-control [data-si-action="ct-tab"][data-value="check"]').click();
   assert.match(await page.locator('.ld-panel .dc-ph').innerText(),/Live 일일 점검/);
   assert.ok(await page.locator('.ld-panel .ld-table tbody tr').count()>=1,'날짜별 행');
   assert.match(await page.locator('.ld-panel .ld-fix').innerText(),/바로 고칠 것/);
