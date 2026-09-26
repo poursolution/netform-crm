@@ -42,7 +42,7 @@ function open(key){
  if(key==='amount')take($('dw-amount'),content);
  if(key==='owner')take($('dv-assignee')?.closest('.dcard'),content);
  if(key==='materials'){take($('execFiles'),content);take($('execQuotePanel'),content);const nav=document.createElement('nav');nav.className='da-material-tabs';nav.setAttribute('aria-label','자료 분류');['전체','사진','견적','기타'].forEach(label=>{const b=button(label,'materials',()=>{nav.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));content.querySelectorAll('#execFiles,#execQuotePanel,.exec-file').forEach(n=>{n.dataset.materialHidden='';n.hidden=n.id==='execFiles'?label==='견적':n.id==='execQuotePanel'?!['전체','견적'].includes(label):label==='사진'?n.classList.contains('doc'):label==='기타'?!n.classList.contains('doc'):false})});b.setAttribute('aria-pressed',String(label==='전체'));nav.append(b)});content.prepend(nav);}
- if(key==='history'){const history=document.createElement('div');history.className='da-history';history.innerHTML=flatTimeline(true);content.append(history);take($('dw-history'),content);}
+ if(key==='history'){const history=document.createElement('div');history.className='da-history';history.innerHTML=flatTimeline(true)+changeRecords();content.append(history);}
  if(key==='management')take($('da-management-fields'),content);
  if(key==='contact')take($('da-contact-fields'),content);
  if(key==='stage')take($('dw-stage-editor'),content);
@@ -63,7 +63,7 @@ function open(key){
  }
  if(key==='help')content.textContent='연락 결과는 고객과의 접촉 내용입니다. 진행상태 변경은 별도 전환창에서 확인합니다. 담당자·최근 활동·다음 할 일 날짜를 함께 관리하고, 저장 후 서버 반영 결과를 확인해 주세요.';
  take($('dv-err'),content);
- const cancel=button('취소',key,()=>{if(key==='stage')root.StageTransitionUI?.close();else close()});cancel.removeAttribute('data-help');content.append(cancel);
+ if(!['history','help'].includes(key)){const cancel=button('취소',key,()=>{if(key==='stage')root.StageTransitionUI?.close();else close()});cancel.removeAttribute('data-help');content.append(cancel);}
  panel.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();if(key==='stage')root.StageTransitionUI?.close();else close();return}if(e.key==='Tab'){const nodes=[...panel.querySelectorAll('button,input,textarea,select,a[href],[tabindex="0"]')].filter(n=>!n.disabled&&n.getClientRects().length);const first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}}},true);
  (content.querySelector('input:not([type="hidden"]),textarea,select')||x).focus({preventScroll:true});return true;
 }
@@ -141,9 +141,17 @@ async function saveCombined(){
 }
 function flatTimeline(all=false){
  const d=root.CUR_DETAIL?.item;if(!d)return '';
- const rows=root.unifiedTimeline(root.currentPatch(),d),shown=all?rows:rows.slice(0,5);
+ const seen=new Set(),rows=root.unifiedTimeline(root.currentPatch(),d).filter(x=>{const k=[x.ttl,x.body,x.result,String(x.at||'').slice(0,16)].join('|');if(seen.has(k))return false;seen.add(k);return true;}),shown=all?rows:rows.slice(0,5);
  const names={next_action_set:'다음 할 일 등록',next_action_completed:'다음 할 일 완료',next_action_complete:'다음 할 일 완료',stage_change:'진행상태 변경',stage_changed:'진행상태 변경',owner_changed:'담당자 변경',activity_created:'연락 결과','단계전환':'진행상태 변경','단계 전환':'진행상태 변경'};
- return shown.length?'<ol class="da-events">'+shown.map(x=>'<li><div class="da-event-meta"><time>'+root.esc(root.dateTimeLabel(x.at))+'</time><span>'+root.esc(x.who||'담당자 미기록')+'</span></div><strong>'+root.esc(names[x.ttl]||(/^[a-z]+(?:_[a-z]+)+$/.test(x.ttl)?'업무 기록':x.ttl||'연락 결과'))+'</strong>'+[x.body,x.result,...(x.fields||[]).map(f=>f.join(' · '))].filter(Boolean).map(t=>'<p>'+root.esc(root.sayLegacyNote?root.sayLegacyNote(t):t)+'</p>').join('')+(!x.body&&!x.result&&!x.fields?.length?'<p>상세 내용은 확인되지 않았습니다.</p>':'')+'</li>').join('')+'</ol>':'<p class="da-hint">아직 연락 결과가 없습니다.</p>';
+ return shown.length?'<ol class="da-events">'+shown.map(x=>'<li><div class="da-event-meta"><time>'+root.esc(root.dateTimeLabel(x.at))+'</time><span>'+root.esc(x.who||'담당자 미기록')+'</span></div><strong>'+root.esc(names[x.ttl]||(/^[a-z]+(?:_[a-z]+)+$/.test(x.ttl)?'업무 기록':x.ttl||'연락 결과'))+'</strong>'+[x.body,x.result,...(x.fields||[]).map(f=>f.join(' · '))].filter(Boolean).map(t=>'<p>'+root.esc(root.sayLegacyNote?root.sayLegacyNote(t):t)+'</p>').join('')+'</li>').join('')+'</ol>':'<p class="da-hint">아직 연락 결과가 없습니다.</p>';
+}
+function changeRecords(){
+ const d=root.CUR_DETAIL?.item;if(!d)return '';const p=root.currentPatch?root.currentPatch():{},rows=[];
+ try{(typeof root.changeLogRows==='function'?root.changeLogRows(p,d):[]).forEach(r=>rows.push({at:r.at,who:r.who,title:r.k||'변경',body:[r.chg,r.why]}));}catch(e){}
+ (p.stageHistory||d.stageHistory||[]).forEach(h=>{if(rows.some(r=>/단계|진행/.test(r.title)&&String(r.at).slice(0,16)===String(h.at).slice(0,16)))return;rows.push({at:h.at,who:h.actor,title:'진행상태 변경',body:[(h.from&&h.from!=='—'?h.from+' → ':'')+(h.to||'')]});});
+ if(!rows.length)return '';
+ rows.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+ return '<h4 class="da-history-sub">단계·담당자 변경</h4><ol class="da-events">'+rows.slice(0,30).map(x=>'<li><div class="da-event-meta"><time>'+root.esc(root.dateTimeLabel(x.at))+'</time><span>'+root.esc(x.who||'담당자 미기록')+'</span></div><strong>'+root.esc(x.title)+'</strong>'+x.body.filter(Boolean).map(t=>'<p>'+root.esc(t)+'</p>').join('')+'</li>').join('')+'</ol>';
 }
 function refreshRecent(){const host=$('activityTimelineHost');if(host&&$('detailView')?.classList.contains('da-ready')){host.innerHTML=flatTimeline();const intro=host.closest('.dcard')?.querySelector('.detailsecthead p');if(intro)intro.textContent='최근 5건 · 이전 기록은 전체 이력에서';}}
 function flatten(scope){

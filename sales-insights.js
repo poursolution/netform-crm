@@ -56,8 +56,26 @@
    return {netAmount:amt,signedCount:n,count:n,fallback:true};
   }catch(e){return null}
  }
+ /* 기술자문 낙찰 = 매출(2026-09-26 대표 '낙찰 의미가 매출의 의미'): 확정분만 계약실적에 더한다.
+    기간=낙찰확정일 · 금액=낙찰금액(VAT 별도) · 담당=귀속 담당 · 브랜드 칩=원천 브랜드(전체·기술자문 칩=전 건). 관리자 조회 전용 */
+ let advList=null,advAt=0,advKick=false;
+ function advLoad(){
+  if(advKick||(advList&&Date.now()-advAt<300000))return;
+  if(!root.ContractSalesUI?.advisoryRows||!(root.todayIsAdmin?.())||root.CRMRelease?.has?.('crm_advisory_attribution_v1')===false)return;
+  advKick=true;
+  root.ContractSalesUI.advisoryRows().then(l=>{advList=Array.isArray(l)?l:[];advAt=Date.now();if(['dash','control','perf'].includes(root.G?.page)&&typeof root.paint==='function')root.paint();}).catch(()=>{advList=advList||[];advAt=Date.now();}).finally(()=>{advKick=false;});
+ }
+ function advMatch(t,f,inP){const brand=f.brand||'전체';return t?.decision==='confirmed'&&inP(String(t.bid_confirmed_at||'').slice(0,10))&&(!f.owner||f.owner==='전체'||t.performance_owner===f.owner)&&(brand==='전체'||brand==='기술자문'||t.origin_business===brand);}
+ function withAdvisory(s,f){
+  advLoad();if(!advList||!advList.length)return s;
+  const inP=iso=>{if(!iso)return false;if(String(f.year)!=='전체'&&f.year&&iso.slice(0,4)!==String(f.year))return false;const m=+iso.slice(5,7);if(Number(f.month))return m===Number(f.month);if(Number(f.quarter))return Math.ceil(m/3)===Number(f.quarter);return true};
+  const conf=advList.filter(x=>advMatch(x.attribution,f,inP));if(!conf.length)return s;
+  const sum=conf.reduce((n,x)=>n+(Number(x.attribution.bid_amount)||0),0),base=s||{netAmount:0,newAmount:0,count:0,signedCount:0};
+  return Object.assign({},base,{netAmount:(Number(base.netAmount)||0)+sum,newAmount:(Number(base.newAmount)||0)+sum,count:(Number(base.count)||0)+conf.length,advisoryAmount:sum,advisoryCount:conf.length});
+ }
  let csKicked=false;
- function csSum(f){
+ function csSum(f){return withAdvisory(csLedger(f),f)}
+ function csLedger(f){
   const cs=root.ContractSalesData;
   const st=cs&&cs.state?cs.state():null;
   if(st&&st.status==='ready'&&cs.summarize)return cs.summarize(f)||csFallback(f);
@@ -203,7 +221,7 @@
   if(root.ContractSalesUI?.advisoryRows&&root.CRMRelease?.has?.('crm_advisory_attribution_v1')!==false)root.ContractSalesUI.advisoryRows().then(paint).catch(()=>{});
  }
  root.addEventListener('crm-release:changed',()=>{if(['control','perf'].includes(root.G?.page))render();});/* 릴리스 계약: 빠진 서버 함수가 확인되면 해당 버튼을 즉시 숨김 */
- root.addEventListener('advisory-attribution:changed',()=>{if(root.G?.page==='perf')fillAdvisoryCard();if(root.G?.page==='control')fillDataRisk();});
+ root.addEventListener('advisory-attribution:changed',()=>{advList=null;advAt=0;if(['dash','perf'].includes(root.G?.page))render();if(root.G?.page==='perf')fillAdvisoryCard();if(root.G?.page==='control')fillDataRisk();});
  /* 운영 건강(2026-09-25 컨설턴트 P0-1): 운영 KPI는 Live만 평가한다 — OPS_RULES.liveFrom(대표 확정 2026-10-01) 이후
     생성됐거나 그 이후 실제 접촉이 기록된 영업. 나머지는 Legacy(과거 이관분)로 '정상화율'만 본다.
     과거 데이터를 운영 KPI에 섞으면 'Next Action 등록률 2%' 같은 무의미한 숫자가 나와 대시보드 신뢰를 잃는다. */
@@ -381,6 +399,10 @@
     if(!filter.month&&f.quarter&&Math.ceil(Number(d.slice(5,7))/3)!==Number(f.quarter))return;
     out.push({at:d,site:r.brand||'-',owner:e.sales_owner_name,stageLabel:kindLabel[e.kind]||e.kind,reason:d+' · '+(e.reason||''),amt:e.amount_delta});});
   });
+  /* 기술자문 낙찰(확정분)도 매출 근거에 — 합계와 근거 목록이 같게 */
+  const inP=d=>{if(f.year&&f.year!=='전체'&&!d.startsWith(String(f.year)))return false;if(filter.month)return Number(d.slice(5,7))===Number(filter.month);if(f.quarter)return Math.ceil(Number(d.slice(5,7))/3)===Number(f.quarter);return true};
+  (advList||[]).forEach(x=>{const t=x.attribution;if(!advMatch(t,{brand:filter.brand||'전체',owner:filter.owner||''},d=>!!d&&inP(d)))return;const d=String(t.bid_confirmed_at).slice(0,10);
+   out.push({at:d,site:x.site_name||'-',owner:t.performance_owner,stageLabel:'기술자문 낙찰',reason:d+' · 원천 '+(t.origin_business||'-')+' · VAT 별도',amt:Number(t.bid_amount)||0});});
   return out.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
  }
  function evRow(d){return {site:d.site,owner:d.owner,stageLabel:d.stageLabel,reason:d.reason||'',amt:d.expected||d.amt||0,key:d.key}}
@@ -439,8 +461,8 @@
   const actBars=[...rs].sort((a,b)=>b.weekly-a.weekly).slice(0,6).map(x=>{const t=Math.max(1,weekTotal);return '<button type="button" class="dc-hrow" data-si-action="rep-week" data-value="'+a(x.name)+'"><span>'+h(x.name)+'</span><span class="bar"><i style="width:'+(x.types.call/t*300)+'%"></i><i class="g" style="width:'+(x.types.visit/t*300)+'%"></i><i class="o" style="width:'+(x.types.quote/t*300)+'%"></i></span><b>'+x.weekly+'</b></button>'}).join('');
   return topbar+
    '<div class="dc-grid">'+
-   kpi('이번 달 매출',m0(csM?csM.netAmount:null),'계약금액 기준 · '+curM+'월','contract')+
-   kpi((f.month||f.quarter?'기간':'연 누적')+' 매출',m0(csY?csY.netAmount:null),'계약 '+(csY?csY.count:'-')+'건'+(f.quarter?' · '+f.quarter+'분기':''),'contract')+
+   kpi('이번 달 매출',m0(csM?csM.netAmount:null),'계약금액 기준 + 기술자문 낙찰 · '+curM+'월','contract')+
+   kpi((f.month||f.quarter?'기간':'연 누적')+' 매출',m0(csY?csY.netAmount:null),'계약·낙찰 '+(csY?csY.count:'-')+'건'+(f.quarter?' · '+f.quarter+'분기':''),'contract')+
    kpi('파이프라인',money(s.expected),'진행 '+number(s.active.length)+'건','active')+
    kpi('문의',number(s.inquiries.length)+'건','선택 기간 접수','inquiries')+
    kpi('조치 필요',number(s.risk.length)+'건','기한초과 '+s.active.filter(d=>d.issues.includes('overdue')).length+' · 다음 할 일 없음 '+s.active.filter(d=>d.issues.includes('missing')).length,'risk','bad')+
