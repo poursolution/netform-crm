@@ -39,6 +39,17 @@ async function run(){
   assert.equal(await page.locator('#detailView.detailpage').isVisible(),true,'blocked popup falls back to the detail page');
   assert.equal(await page.locator('#detailAction').count(),1,'queued action still opens in place');
   await page.evaluate(()=>{DetailActions.close();closeDetail();});
+  /* 견적문의 화면에서 문의를 열어도 새 창 — 처리 작업(연락 결과)까지 넘긴다 */
+  const inq=await page.evaluate(()=>{
+   const q={id:'11111111-2222-4333-8444-555555555555',brand:'POUR솔루션',created_at:'2026-09-10T00:00:00+09:00',valid_inquiry:true,site:'새 창 문의 현장',assignee:'황윤선',status:'배정완료',assigned_at:'2026-09-10T00:30:00+09:00'};
+   B.inquiries=[q];G.page='inq';G.inqView='console';delete G._inqRoleApplied;paintInq();
+   __opens.length=0;window.open=(url,name)=>{__opens.push(name);__fake.location.href='about:blank';return __fake;};
+   InquiryWorkbench.open(inqKey(q),'process');
+   return {opens:__opens.slice(),href:__fake.location.href,overlay:!!document.getElementById('inq-inbox-dialog')};
+  });
+  assert.deepEqual(inq.opens,['crm-inq-11111111-2222-4333-8444-555555555555']);
+  assert.match(inq.href,/crm\.html\?solo=1&inquiry=11111111-2222-4333-8444-555555555555&act=inq%3Aprocess/);
+  assert.equal(inq.overlay,false,'the inquiry list window keeps the list');
 
   /* 새 창 쪽: 주소로 요청된 상세가 열리고, 닫기 = 창 닫기(닫히지 않으면 상세만 닫힘) */
   const key=await page.evaluate(()=>dealKey(B.deals[0]));
