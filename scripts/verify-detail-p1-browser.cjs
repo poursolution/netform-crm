@@ -20,6 +20,9 @@ async function run(){
    const q={id:'69caf08e-daea-4eac-aa39-82c85f1f3d08',site:deal.site,brand:'POUR솔루션',assignee:'김성민',status:'접수',at:'2026-09-13',message:'별도 공사 <script>원문</script>',phone:'01000000000'};
    B={deals:[deal],inquiries:[q],users:[],sales_people:[],activities:[],sites:[],contacts:[],dups:[],expansion_pool:[],expansionPool:[],expansion_events:[],customerSupportActions:[],customer_support_actions:[],messageLogs:[],message_logs:[],campaigns:[],campaign_logs:[],repManagerComments:[],rep_manager_comments:[]};LOCAL={deals:{},inquiries:{}};
    G.page='inq';G._detailPopup=true;G.detailTab='개요';document.getElementById('authGate').style.display='none';
+   /* 2026-09-26 열림 규칙: drwInq는 먼저 견적문의 처리 화면(InquiryWorkbench.openFrom)으로 연다 — 이 검증은 그 화면을 열 수 없을 때의
+      대체 경로(읽기 전용 문의 상세)를 본다. 기본 경로는 verify-inquiry-role-view-browser.cjs가 검증. */
+   window.__openFrom=InquiryWorkbench.openFrom;InquiryWorkbench.openFrom=()=>false;
    window.fixture={deal,q};drwInq(JSON.stringify(q));
   });
   assert.equal(await page.evaluate(()=>linkedDeal(fixture.q)),null,'same site is not linkage');
@@ -30,7 +33,7 @@ async function run(){
   await page.getByRole('button',{name:'문의 처리 화면 열기 →',exact:true}).click();
   assert.equal(await page.evaluate(()=>G.inqSelKey),'69caf08e-daea-4eac-aa39-82c85f1f3d08');
   assert.equal(await page.evaluate(()=>G.page),'inq');
-  assert.equal(await page.locator('.sp-detail').count(),1,'same inquiry work surface is actually rendered');
+  assert.equal(await page.locator('#inq-inbox-dialog .inq-dialog').count(),1,'same inquiry work surface (견적문의 처리 화면) is actually rendered');
   await page.evaluate(()=>{fixture.q.opportunity_id=fixture.deal.id;drwInq(JSON.stringify(fixture.q))});
   assert.equal(await page.evaluate(()=>CUR_DETAIL.kind),'inq');
   await page.getByRole('button',{name:'영업기회 열기 →',exact:true}).waitFor({state:'visible'});
@@ -70,6 +73,7 @@ async function run(){
   assert.equal(await page.evaluate(()=>fixture.deal.quoteAmt),90000);
   assert.equal(await page.evaluate(()=>fixture.deal.wonAmt),70000);
   console.log('P1: ACK applied');
+  await page.evaluate(()=>{detailTabFocus('현장·견적',true);briefAmountEditor()});/* 금액 칸은 상세 안 작은 팝업(금액 편집)에 있다 */
   await page.locator('#dv-amt').fill('0');
   await page.evaluate(()=>{window.savingAmount=saveBasics()});
   await page.evaluate(()=>{drwInq(JSON.stringify(fixture.q));const row=pendingRows.at(-1);row.status='done';row.ack={amount:0,quote_amount:90000,version:3};releaseAmount()});
