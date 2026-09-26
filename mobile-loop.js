@@ -50,22 +50,63 @@
   return out.sort((x,y)=>x.p-y.p||String(x.nm).localeCompare(String(y.nm),'ko')).slice(0,12);
  };
 
- /* ④ 하루 마감 요약 — 서버 저장 확인(ACK)된 내 처리만, 날짜별로 이 기기에 모은다 */
- const DAY_SKIP=new Set(['opportunity_touch','favorite_set','campaign_create','campaign_update']);
- function daySummary(){
-  const today=kstDay(),key='crm:daysum:v1:'+String(root.G&&root.G.user&&(root.G.user.id||root.G.user.nm)||'');
-  let led={day:today,ids:{}};
-  try{const raw=JSON.parse(root.localStorage.getItem(key)||'null');if(raw&&raw.day===today&&raw.ids)led=raw;}catch(e){}
+ /* ④ 하루 마감 요약 — 서버 기록 기준(2026-09-26 대표 "모바일·PC 완벽 동기화"): PC에서 처리한 것도 같은 숫자로 보인다.
+    예전엔 이 기기에서 보낸 요청만 셌고, 결과 한 번 저장(완료·연락·다음 할 일)이 3건으로 부풀었다.
+    이제 '오늘 처리' = 오늘(한국 시간) 내가 기록을 남긴 현장 수. 한 현장은 한 번만 센다.
+    현장 분류(합계가 맞도록 하나만): 고객 약속을 잡음 > 고객과 연락함 > 다음 할 일만 정리.
+    근거: 서버가 영업마다 돌려주는 활동 기록(종류·시각·작성자 이름) + 문의 첫 연락 시각(담당자 기준).
+    방금 저장해 아직 서버 목록에 안 들어온 기록은 이 기기의 서버 확인(ACK) 목록으로 메운다. */
+ const ATTEMPT=/(?:^|\s)전화 시도(?:\s|$)/,CONTACT=/전화|통화|부재|방문|문자|메일|카톡|카카오|미팅|연락/,SYS=/^[a-z0-9_]+$/;
+ const DONE_TYPES=new Set(['next_action_complete','다음 행동 완료']);
+ const nameKey=v=>String(v||'').replace(/\s+/g,'');
+ function activityKind(type,note,extra){
+  type=String(type||'');note=String(note||'');
+  if(type==='next_action_set')return /약속/.test(note+' '+String(extra||''))?'promise':'next';
+  if(DONE_TYPES.has(type))return 'next';
+  if(!SYS.test(type)&&CONTACT.test(type)&&!ATTEMPT.test(note))return 'contact';
+  return '';
+ }
+ function dayWork(){
+  const me=nameKey(root.G&&root.G.user&&root.G.user.nm),byDay={},put=(dk,site,kind)=>{if(!dk||!kind)return;const m=byDay[dk]=byDay[dk]||new Map();const k=m.get(site)||new Set();k.add(kind);m.set(site,k);};
   let rows=[];try{rows=root.Phase1&&root.Phase1.queue&&root.Phase1.queue.list()||[];}catch(e){}
-  let changed=false;
-  rows.forEach(r=>{if(!r||r.status!=='done'||!r.ack||led.ids[r.request_id])return;const op=String(r.operation||'');if(!op||DAY_SKIP.has(op)||kstDay(r.ack.server_at||r.ack.occurred_at||r.updated_at)!==today)return;const body=JSON.stringify(r.payload||{});led.ids[r.request_id]=op==='activity'?'contact':op==='next_action'?(/고객\s*약속/.test(body)?'promise':'next'):op==='next_action_complete'?'done':'other';changed=true;});
-  if(changed)try{root.localStorage.setItem(key,JSON.stringify(led));}catch(e){}
-  const v=Object.values(led.ids),n=k=>v.filter(x=>x===k).length;
-  const out={total:v.length,contact:n('contact'),next:n('next')+n('promise'),promise:n('promise')};
-  /* 최근 날짜별 처리 건수(하루 마감 막대그래프) — 이 기기에만, 14일 */
-  const hk='crm:dayhist:v1:'+String(root.G&&root.G.user&&(root.G.user.id||root.G.user.nm)||'');let hist={};
-  try{hist=JSON.parse(root.localStorage.getItem(hk)||'{}')||{};}catch(e){hist={};}
-  if(hist[today]!==out.total){hist[today]=out.total;const nh={};Object.keys(hist).sort().slice(-14).forEach(k=>{nh[k]=hist[k];});hist=nh;try{root.localStorage.setItem(hk,JSON.stringify(hist));}catch(e){}}
+  const acked=new Set();rows.forEach(r=>{if(r&&r.status==='done'&&r.ack&&r.ack.activity_id)acked.add(String(r.ack.activity_id));});
+  /* 1) 영업 활동 기록 — 작성자가 나인 것만(이름이 아직 없으면 이 기기가 확인받은 기록인지로 판단) */
+  (root.DEALS||[]).forEach(d=>{
+   const seen=new Set();
+   [].concat(d.activities||[],d.activity_signals||[]).forEach(x=>{
+    if(!x)return;const id=x.id!=null?String(x.id):'';if(id){if(seen.has(id))return;seen.add(id);}
+    const who=x.actor_name||x.actor||'';if(who?nameKey(who)!==me:!acked.has(id))return;
+    const at=x.at||x.occurred_at;if(!at)return;put(kstDay(at),'d:'+d.id,activityKind(x.type,x.note,x.result));
+   });
+  });
+  /* 2) 문의 첫 연락 — 내가 담당인 문의 */
+  const B=root.BUNDLE||root.B||{};(B.inquiries||[]).forEach(q=>{
+   const at=q&&(q.first_response_at||q.firstResponseAt||q.responded_at||q.respondedAt);if(!at)return;
+   if(nameKey(q.assignee||q.assignee_name)!==me)return;put(kstDay(at),'i:'+String(q.id||q.inquiry_id||q.key),'contact');
+  });
+  /* 3) 이 기기에서 방금 서버 확인을 받은 저장 — 서버 목록이 따라오기 전의 빈틈만 메운다(같은 현장은 한 번만 센다) */
+  rows.forEach(r=>{
+   if(!r||r.status!=='done'||!r.ack)return;const dk=kstDay(r.ack.server_at||r.ack.occurred_at||r.updated_at),op=String(r.operation||''),p=r.payload||{};
+   const intent=String(p.intent||'');if(intent==='inquiry_check')return;
+   const inq=r.object_type==='inquiry'||/^inquiry/.test(op)||/^inquiry/.test(intent),oid=r.object_id||p.opportunity_id||p.inquiry_id;if(!oid)return;
+   const site=(inq?'i:':'d:')+String(oid);
+   if(inq){put(dk,site,'contact');return;}
+   if(op==='activity')put(dk,site,activityKind(p.type,p.note,p.result));
+   else if(op==='next_action')put(dk,site,/고객\s*약속/.test(JSON.stringify(p))?'promise':'next');
+   else if(op==='next_action_complete')put(dk,site,'next');
+   else if(p.activity)put(dk,site,activityKind(p.activity.type,p.activity.note,p.activity.result)||'next');
+  });
+  return byDay;
+ }
+ function summarize(m){
+  const out={total:0,contact:0,next:0,promise:0,sites:new Set()};
+  if(m)m.forEach((kinds,site)=>{out.total++;out.sites.add(site);if(kinds.has('promise')){out.promise++;out.next++;}else if(kinds.has('contact'))out.contact++;else out.next++;});
+  return out;
+ }
+ function daySummary(){
+  const byDay=dayWork(),today=kstDay(),out=summarize(byDay[today]),hist={};
+  /* 최근 5일 처리(하루 마감 막대) — 같은 서버 기록이라 PC·휴대폰 어디서 봐도 같다 */
+  for(let i=4;i>=0;i--){const t=new Date();t.setDate(t.getDate()-i);const k=kstDay(t);hist[k]=byDay[k]?byDay[k].size:0;}
   out.hist=hist;return out;
  }
  /* ── 인포그래픽(2026-09-26 대표 요청 '모바일 인포그래픽으로 세련되게') ── */
@@ -77,9 +118,12 @@
   const r=24,c=2*Math.PI*r,p=total?done/total:1,o=c*(1-p);
   return '<svg class="ml-ring" width="62" height="62" viewBox="0 0 62 62" aria-hidden="true"><circle cx="31" cy="31" r="'+r+'" class="trk"/><circle cx="31" cy="31" r="'+r+'" class="val'+(total&&done>=total?' full':'')+(done?'':' zero')+'" style="stroke-dasharray:'+c.toFixed(1)+';stroke-dashoffset:'+o.toFixed(1)+';--c:'+c.toFixed(1)+'" transform="rotate(-90 31 31)"/><text x="31" y="32" text-anchor="middle" class="n">'+done+'/'+total+'</text><text x="31" y="44" text-anchor="middle" class="l">처리</text></svg>';
  }
- function heroHTML(items){
-  const total=items.length,done=items.filter(doneOf).length,counts={};
-  items.filter(t=>!doneOf(t)).forEach(t=>{const k=catOf(t);counts[k]=(counts[k]||0)+1;});
+ const siteOf=t=>(t.kind==='inquiry'?'i:':'d:')+String(t.ref);
+ /* 진행 링 = 오늘 처리한 현장(PC에서 처리한 것 포함) / (처리한 현장 + 아직 남은 일) */
+ const workedOf=(t,ds)=>doneOf(t)||!!(ds&&ds.sites&&ds.sites.has(siteOf(t)));
+ function heroHTML(items,ds){
+  const left=items.filter(t=>!workedOf(t,ds)),doneN=ds&&ds.sites?Math.max(ds.total,items.length-left.length):items.length-left.length,done=doneN,total=doneN+left.length,counts={};
+  left.forEach(t=>{const k=catOf(t);counts[k]=(counts[k]||0)+1;});
   const segs=SEG.filter(([k])=>counts[k]);
   return '<div class="ml-hero-row">'+ringSVG(done,total)+'<div class="ml-hero-txt"></div></div>'
    +(segs.length?'<div class="ml-seg">'+segs.map(([k])=>'<span class="'+k+'" style="flex:'+counts[k]+'"></span>').join('')+'</div><div class="ml-legend">'+segs.map(([k,l])=>'<span><i class="'+k+'"></i>'+l+' <b>'+counts[k]+'</b></span>').join('')+'</div>':'');
@@ -105,8 +149,8 @@
   if(dd==null)return ['할 일 없음','etc'];
   return dd<0?[(-dd)+'일 지남','late']:dd===0?['오늘','today']:[dd+'일 남음','etc'];
  }
- /* 결과를 안 남긴 통화(2026-09-26 '고객 접촉 후 결과 기록'): 최근 24시간 '전화 시도' 뒤에 다른 기록이 없는 내 영업 — 누르면 결과 창 */
- const ATTEMPT=/^\s*전화 시도/;
+ /* 결과를 안 남긴 통화(2026-09-26 '고객 접촉 후 결과 기록'): 최근 24시간 '전화 시도' 뒤에 다른 기록이 없는 내 영업 — 누르면 결과 창.
+    '전화 시도'는 문장 어디에 있어도 시도다 — 상세 화면 버튼은 '관리소장 전화 시도'로 남긴다(예전엔 이걸 못 잡았다). */
  function pendingCalls(){
   const mine=typeof root.myDeals==='function'?root.myDeals():[],now=Date.now(),out=[];
   mine.forEach(d=>{const acts=d.activities||[];let last=null;
@@ -140,7 +184,7 @@
    if(remain){
     const hero=root.document.createElement('div'),finished=remain.classList.contains('done');
     hero.className='ml-hero'+(finished?' done':'');
-    hero.innerHTML=finished?closeHTML(ds):heroHTML(items);
+    hero.innerHTML=finished?closeHTML(ds):heroHTML(items,ds);
     remain.replaceWith(hero);
     if(finished)hero.prepend(remain);
     else{hero.querySelector('.ml-hero-txt').append(remain);if(ds.total&&!remain.querySelector('.ml-daysum-inline'))remain.insertAdjacentHTML('beforeend',' <span class="ml-daysum-inline">· 오늘 처리 '+ds.total+'건</span>');}
@@ -155,7 +199,7 @@
     if(strong&&!top.querySelector('.ml-kind'))strong.insertAdjacentHTML('beforebegin','<i class="ml-kind '+k+'" aria-hidden="true">'+KIND_ICON[k]+'</i>');
     const own=top&&top.querySelector('.mt-owner'),p=pillOf(t);
     if(own)own.outerHTML='<i class="ml-dpill '+p[1]+'">'+h(p[0])+'</i>';
-    if(doneOf(t))el.classList.add('ml-done-item');
+    if(workedOf(t,ds))el.classList.add('ml-done-item');
     /* 기한은 오른쪽 배지가 말한다 — 문장 끝 '3일 지남'·'2일 남음'·'오늘' 꼬리(예전 'D+24'·'D-3' 포함)는 뺀다 */
     const why=el.querySelector('.mt-reason');if(why&&p[0])why.textContent=why.textContent.replace(/\s*·\s*(D[+-]\d+|\d+일 (?:지남|남음)|오늘|내일)$/,'');
     if(t.promise){el.classList.add('ml-promise-item');const n=el.querySelector('.mt-next');if(n)n.textContent='→ 약속 지키고 결과 남기기';}
