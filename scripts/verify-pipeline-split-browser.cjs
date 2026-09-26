@@ -14,7 +14,7 @@ await page.locator('.sw-work-table tr[data-deal="A"] [data-ps-action="record"]')
 assert.equal(await page.locator('#detailView').isVisible(),true);
 assert.match(await page.locator('#dv-title').innerText(),/A/);
 assert.equal(await page.locator('.dw-stage-badge').innerText(),'자료 발송완료');
-assert.equal(await page.locator('[data-stage-primary]').innerText(),'후속 연락');
+assert.equal(await page.locator('[data-stage-primary]').count(),0,'주 버튼은 지금 할 일 카드 하나(2026-09-26 중복 정리)');
 assert.ok(await page.locator('.dw-context-highlights').count());
 await page.locator('#detailView .backbtn').click();
 assert.equal(await page.locator('#detailView').isVisible(),false);

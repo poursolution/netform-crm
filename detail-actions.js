@@ -141,11 +141,11 @@ async function saveCombined(){
 }
 function flatTimeline(all=false){
  const d=root.CUR_DETAIL?.item;if(!d)return '';
- const rows=root.unifiedTimeline(root.currentPatch(),d),shown=all?rows:rows.slice(0,6);
+ const rows=root.unifiedTimeline(root.currentPatch(),d),shown=all?rows:rows.slice(0,5);
  const names={next_action_set:'다음 할 일 등록',next_action_completed:'다음 할 일 완료',next_action_complete:'다음 할 일 완료',stage_change:'진행상태 변경',stage_changed:'진행상태 변경',owner_changed:'담당자 변경',activity_created:'연락 결과','단계전환':'진행상태 변경','단계 전환':'진행상태 변경'};
  return shown.length?'<ol class="da-events">'+shown.map(x=>'<li><div class="da-event-meta"><time>'+root.esc(root.dateTimeLabel(x.at))+'</time><span>'+root.esc(x.who||'담당자 미기록')+'</span></div><strong>'+root.esc(names[x.ttl]||(/^[a-z]+(?:_[a-z]+)+$/.test(x.ttl)?'업무 기록':x.ttl||'연락 결과'))+'</strong>'+[x.body,x.result,...(x.fields||[]).map(f=>f.join(' · '))].filter(Boolean).map(t=>'<p>'+root.esc(root.sayLegacyNote?root.sayLegacyNote(t):t)+'</p>').join('')+(!x.body&&!x.result&&!x.fields?.length?'<p>상세 내용은 확인되지 않았습니다.</p>':'')+'</li>').join('')+'</ol>':'<p class="da-hint">아직 연락 결과가 없습니다.</p>';
 }
-function refreshRecent(){const host=$('activityTimelineHost');if(host&&$('detailView')?.classList.contains('da-ready')){host.innerHTML=flatTimeline();const intro=host.closest('.dcard')?.querySelector('.detailsecthead p');if(intro)intro.textContent='최근 활동 6건을 바로 확인합니다. 이전 기록은 전체 이력에서 확인하세요.';}}
+function refreshRecent(){const host=$('activityTimelineHost');if(host&&$('detailView')?.classList.contains('da-ready')){host.innerHTML=flatTimeline();const intro=host.closest('.dcard')?.querySelector('.detailsecthead p');if(intro)intro.textContent='최근 5건 · 이전 기록은 전체 이력에서';}}
 function flatten(scope){
  // Replace disclosure containers, retaining every original child and handler.
  scope.querySelectorAll('details').forEach(n=>{const card=document.createElement('section');for(const a of n.attributes)if(a.name!=='open')card.setAttribute(a.name,a.value);const summary=n.querySelector(':scope > summary');if(summary){const h=document.createElement('h3');h.textContent=summary.textContent.replace(/[▶▼]/g,'').trim();summary.replaceWith(h)}card.append(...n.childNodes);n.replaceWith(card)});
@@ -161,12 +161,12 @@ function viewingCards(body,stash){
  right.querySelectorAll(':scope > .dw-fold').forEach(n=>extra.append(n));stash.append(extra);
  const management=card('추가 관리정보',[['고객 반응',fields.customer_reaction||fields.reaction||d.customer_reaction],['의사결정자',fields.decision_maker||d.decision_maker],['경쟁사',fields.competitor||d.competitor],['입찰 예정일',fields.bid_deadline||fields.bid_date||d.bid_date]]);management.append(button('관리정보 수정','management'));
  const ledger=root.ContractSalesData?.state(),contract=ledger?.status==='ready'?ledger.items.find(x=>String(x.deal_id)===String(d.id)):null,f=contexts.contract?.fields||{};
- const money=v=>v==null||v===''?'—':root.fmtAmt(v);
- const work=card('공종 · 금액',[['공종',root.dealWorkSummary(d)||'미분류'],['예상금액',money(d.amount??d.amt)],['계약금액',money(contract?.balance??f.contract_amount)],['계약일',contract?.contract_date||f.contract_date||'—']]);
+ const money=v=>v==null||v===''?'—':root.fmtAmt(v),exact=v=>v==null||v===''||!Number(v)?'—':Number(v).toLocaleString('ko-KR')+'원';/* 상세 정보 칸은 정확값, 요약은 헤더에서 억 단위 */
+ const work=card('공종 · 금액',[['공종',root.dealWorkSummary(d)||'미분류'],['예상금액',exact(d.amount??d.amt)],['계약금액',exact(contract?.balance??f.contract_amount)],['계약일',contract?.contract_date||f.contract_date||'—']]);
  work.append(button('공종 수정','work',()=>root.openWorkEdit()),button('금액 수정','amount'));
  /* 계약실적(체결·변경·취소)은 운영 화면에 두지 않는다(2026-09-26 대표) — 체결은 진행상태 '계약 체결 완료'가 서버에서 자동 기록, 변경·취소는 성과 분석(관리자) */
  const oldHistory=$('dw-history');if(oldHistory)stash.append(oldHistory);
- const schema=root.StageTransition?.definitions?.[code];if(schema){const current=contexts[code]?.fields||{},summary=card('현재 단계 · '+root.stageLabel(code),schema.fields.map(f=>[f.label,Array.isArray(current[f.key])?current[f.key].join(' · '):f.type==='money'?money(current[f.key]):current[f.key]]));summary.classList.add('da-stage-summary');$('dw-now')?.after(summary);}
+ const schema=root.StageTransition?.definitions?.[code];if(schema){const current=contexts[code]?.fields||{},summary=card('이 단계에서 챙길 정보',schema.fields.filter(f=>!/followup|next_/.test(f.key)).map(f=>[f.label,Array.isArray(current[f.key])?current[f.key].join(' · '):f.type==='money'?exact(current[f.key]):current[f.key]]));summary.classList.add('da-stage-summary');$('dw-now')?.after(summary);}
  body.querySelectorAll('.dw-left .contactedit').forEach(n=>{if(n.querySelector('input,select,textarea')){const edit=button('연락처 수정','contact',()=>open('contact'));n.before(edit);n.id='da-contact-fields';stash.append(n)}});
  flatten(body);
 }
@@ -191,8 +191,6 @@ function decorate(){
  // Keep one set of original inputs and their handlers, outside the viewing surface.
  const stash=document.createElement('div');stash.className='da-stash';stash.hidden=true;const selectors=['#activityFormCard','#nextActionCard','#dw-amount'];const atomic=$('rel-contact-save')?.closest('.dactions');selectors.forEach(s=>{const n=body.querySelector(s);if(n)stash.append(n)});if(atomic&&!stash.contains(atomic))stash.append(atomic);const owner=$('dv-assignee')?.closest('.dcard');if(owner)stash.append(owner);body.append(stash);
  body.querySelectorAll('.dw-fold').forEach(n=>{if(!n.querySelector('.dcard,.dsec,#execFiles,#execQuotePanel'))n.remove()});
- const management=body.querySelector('.dw-management');if(management){const keys=['amount','owner','next'];management.querySelectorAll('dd').forEach((dd,i)=>{const b=button(dd.textContent,keys[i]);b.classList.add('da-edit');if(keys[i]==='next')b.dataset.help='다음 확인일 변경';dd.replaceChildren(b)});const h=management.querySelector('h3');if(h){const b=button(h.textContent,'stage',()=>root.openTransition());b.classList.add('da-edit');h.replaceChildren(b)}}
- const work=body.querySelector('.dw-site dd:last-of-type');if(work){const b=button(work.textContent,'work',()=>root.openWorkEdit());b.classList.add('da-edit');work.replaceChildren(b)}
  body.querySelectorAll('.dcard h3').forEach(h=>{if(h.textContent.trim()==='관리 원칙')h.closest('.dcard').hidden=true});
  const timeline=$('activityTimelineHost')?.closest('.dcard');if(timeline){timeline.classList.add('da-recent');timeline.querySelectorAll('.activity-filter').forEach(n=>n.hidden=true);refreshRecent();timeline.append(button('전체 이력 보기','history'));}
  viewingCards(body,stash);

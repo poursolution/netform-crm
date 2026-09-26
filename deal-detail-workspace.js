@@ -27,8 +27,8 @@ function decorate(){
  const view=document.getElementById('detailView'),spec=currentSpec();if(!spec||!view?.classList.contains('dw-wide'))return;
  const d=root.CUR_DETAIL.item,meta=root.PipelineStages.definition(spec.key);view.style.setProperty('--stage-color',meta.color);view.dataset.stage=spec.key;
  const top=view.querySelector('.detailtop');if(top)top.style.borderTop='3px solid var(--stage-color)';
- let badge=view.querySelector('.dw-stage-badge');if(!badge){badge=document.createElement('span');badge.className='dw-stage-badge';document.getElementById('dv-sub')?.append(badge);}badge.textContent=meta.label;
- const toolbar=view.querySelector('.da-toolbar');if(toolbar&&!toolbar.querySelector('[data-stage-primary]')&&!spec.specialWorkspace){const b=document.createElement('button');b.type='button';b.className='dact da-action';b.dataset.stagePrimary='';b.textContent=spec.primaryAction.label;b.onclick=()=>run('primary');toolbar.append(b);}
+ let badge=view.querySelector('.dw-stage-badge');if(!badge){badge=document.createElement('span');badge.className='dw-stage-badge';document.getElementById('dv-sub')?.prepend(badge);}badge.textContent=root.stageLabel(root.dealStage(d));badge.title=meta.label;
+ /* 상단 단계 버튼은 두지 않는다(2026-09-26 중복 정리) — 주 버튼은 '지금 할 일' 카드의 [연락하고 결과 남기기] 하나. 파이프라인 '처리'는 run('primary')로 그대로 */
  const now=document.getElementById('dw-now');if(!now)return;
  now.querySelector('.dw-context-highlights')?.remove();
  const ledger=root.ContractSalesData?.state(),contract=ledger?.items.find(c=>String(c.deal_id)===String(d.id)),r=rowFor(d),values=root.StageSpecs.values(r,contract,{work:root.dealWorkSummary(d),stage:root.stageLabel(r.code)});

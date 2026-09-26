@@ -40,7 +40,7 @@ function wide(){
  var contact=move('#contactCard',left);
  move('.dw-asset-back',left);
  if(!contact){var empty=document.createElement('div');empty.className='dcard';empty.textContent='등록된 연락처가 없습니다.';empty.append(button('연락처 등록',()=>openQuickContact('new')));left.append(empty)}
- var site=document.createElement('div');site.className='dcard dw-site';site.innerHTML='<h3>현장 정보</h3><dl><dt>현장명</dt><dd>'+esc(d.site||'미입력')+'</dd><dt>주소</dt><dd>'+esc(detailAddress(d))+'</dd><dt>공사명</dt><dd>'+esc(d.work||d.work_name||'미입력')+'</dd><dt>공종</dt><dd>'+esc(dealWorkSummary(d))+'</dd></dl>';site.append(button('공종 수정',()=>openWorkEdit()));left.append(site);
+ var site=document.createElement('div');site.className='dcard dw-site';site.innerHTML='<h3>현장 정보</h3><dl><dt>현장명</dt><dd>'+esc(d.site||'미입력')+'</dd><dt>주소</dt><dd>'+esc(detailAddress(d))+'</dd><dt>공사명</dt><dd>'+esc(d.work||d.work_name||'미입력')+'</dd></dl>';left.append(site);/* 공종은 오른쪽 '공종 · 금액' 한 곳에서 보고 고친다(2026-09-26 중복 정리) */
  move('.nearby',left);
  /* Single Customer View 1조각(2026-09-25 장기원칙 ①): 같은 현장의 다른 영업건 — 과거 수주·실주·진행을 현장 상세 한 곳에서 */
  (function(){
@@ -89,14 +89,15 @@ function wide(){
  var checks=Array.from(body.querySelectorAll('details.dw-fold,.dcard')).find(function(n){return /오늘 먼저 확인할 응대 기록/.test(n.textContent||'')});if(checks)center.append(checks);
  // 재배치 유실 복원: 고객 핵심 발언 — 실제 기록에서 뽑아 다음 할 일으로 잇는다.
  if(typeof briefVoiceOfCustomer==='function'){var voice=briefVoiceOfCustomer(d,'deal'),voiceCard=document.createElement('div');voiceCard.className='dcard dw-voice';voiceCard.innerHTML='<h3>고객 핵심 발언</h3>'+(voice.length?'<p class="dw-voice-quote">“'+esc(String(voice[0][1]).slice(0,140))+'”</p><small>'+esc(voice[0][0])+' · 실제 기록에서 추출</small>':'<p class="dw-voice-quote">연결된 고객 발언이 없습니다.</p><small>통화·응대 기록에서 핵심 발언을 연결하세요.</small>');voiceCard.append(button('이 발언으로 다음 할 일 만들기',()=>dccVoiceToNext()));left.append(voiceCard)}
- var stage=document.createElement('section');stage.className='dcard dw-management';stage.innerHTML='<span>현재 단계</span><h3>'+esc(stageLabel(dealStage(d)))+'</h3><div id="dw-stage-editor"></div><dl><dt>예상금액</dt><dd>'+esc(fmtAmt(d.amount??d.amt??0))+'</dd><dt>담당자</dt><dd>'+esc(repN(d.assignee))+'</dd><dt>다음 확인일</dt><dd>'+esc(next?.due||String(next?.due_at||'').slice(0,10)||'미등록')+'</dd></dl>';
- stage.querySelector('h3').after(button('진행상태 변경',()=>openTransition()));right.append(stage);
+ /* 단계·금액·담당·다음 날짜 값은 헤더와 '지금 할 일'에 이미 있다(2026-09-26 중복 정리) — 여기는 바꾸는 버튼만 */
+ var stage=document.createElement('section');stage.className='dcard dw-management';stage.innerHTML='<h3>바꾸기</h3><div id="dw-stage-editor"></div>';
+ stage.append(button('진행상태 변경',()=>openTransition()),button('담당자 변경',()=>focusWide('dv-assignee')));right.append(stage);
  var amount=body.querySelector('#dv-amt')?.closest('.dcard');if(amount){amount.id='dw-amount';box(right,'금액 · 공종 관리').append(amount)}
  var owner=body.querySelector('#dv-assignee')?.closest('.dcard');if(owner)box(right,'담당자 변경').append(owner);
  var missing=document.createElement('div');missing.className='dcard dw-missing';missing.innerHTML='<h3>확인할 항목</h3>';
  if(!(d.amount??d.amt))missing.append(button('예상금액 확인',()=>focusWide('dv-amt')));
  if(!next&&!closed)missing.append(button('다음 할 일 지정',()=>focusWide('nextActionCard')));
- if(!contact)missing.append(button('연락처 등록',()=>openQuickContact('new')));
+ /* 연락처 등록은 왼쪽 고객 카드에 이미 있다(2026-09-26 중복 정리) */
  if(missing.children.length>1)right.append(missing);
  var materials=box(right,'자료 · 사진 '+execAttachments(d).filter(x=>/^image\//.test(x.mime_type||'')).length+' · 견적 '+execQuoteVersions(d).length);materials.id='dw-materials';move('#execFiles',materials);move('#execQuotePanel',materials);
  left.append(button('자료 보기 · 추가',()=>focusWide('execFiles')));
@@ -111,7 +112,8 @@ function wide(){
   }
  });
  var error=body.querySelector('#dv-err');body.replaceChildren(columns);if(error){error.setAttribute('role','status');center.prepend(error)}
- var subtitle=document.getElementById('dv-sub');if(subtitle)subtitle.textContent=stageLabel(dealStage(d))+' · 담당 '+repN(d.assignee);
+ /* 헤더 한 줄: 단계는 옆 색 배지 한 번만, 여기는 담당 · 예상금액 · 브랜드 */
+ var subtitle=document.getElementById('dv-sub');if(subtitle){var amt=Number(d.amount??d.amt??0);subtitle.textContent=['담당 '+repN(d.assignee),amt>0?'예상 '+fmtAmt(amt):'',d.brand||''].filter(Boolean).join(' · ');}
  var back=view.querySelector('.backbtn');if(back)back.textContent='✕ 닫기';
  view.querySelectorAll('[onclick^="contactDial("]').forEach(b=>b.addEventListener('click',()=>setTimeout(()=>{focusWide('activityFormCard');var type=document.getElementById('dv-act-type');if(type)type.value='전화'},0)));
 }
