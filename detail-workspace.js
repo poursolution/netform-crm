@@ -50,11 +50,13 @@ function wide(){
    if(!others.length)return;
    others.sort(function(a2,b2){return String(b2.created||'').localeCompare(String(a2.created||''))});
    var badge=function(x){var o=outcomeOf(x);return o==='won'?'<i class="sh-b g">수주</i>':o==='lost'?'<i class="sh-b r">실주</i>':o==='open'?'<i class="sh-b b">진행</i>':'<i class="sh-b n">종료</i>'};
+   /* 중복 의심(2026-09-26): 같은 현장·같은 담당·같은 금액으로 둘 다 진행 중 — 이관하면서 두 번 들어온 기록일 가능성 */
+   var amtOf=function(x){return Number(x.amount||x.amt||0)},dup=function(x){return outcomeOf(x)==='open'&&outcomeOf(d)==='open'&&repN(x.assignee)===repN(d.assignee)&&amtOf(x)>0&&amtOf(x)===amtOf(d)};
    var card2=document.createElement('div');card2.className='dcard dw-sitehistory';
-   card2.innerHTML='<h3>이 현장의 영업 이력 <span>'+others.length+'건</span></h3>'
+   card2.innerHTML='<h3>같은 현장의 다른 영업건 <span>'+others.length+'건</span></h3><p class="sh-help">이 현장에 따로 등록된 영업입니다 — 누르면 그 건이 열립니다.</p>'
     +others.slice(0,6).map(function(x){
       var amt=Number(x.amount||x.amt||0);
-      return '<button type="button" class="sh-row" data-k="'+escAttr(dealKey(x))+'"><span>'+badge(x)+' '+esc(dealWorkSummary(x)||x.work||'공종 미기록')+'</span><small>'+esc(String(x.created||'').slice(0,7)||'')+(amt?' · '+fmtAmt(amt):'')+' · '+esc(repN(x.assignee)||'미배정')+'</small></button>'
+      return '<button type="button" class="sh-row'+(dup(x)?' sh-dup':'')+'" data-k="'+escAttr(dealKey(x))+'"><span>'+badge(x)+' '+esc(stageLabel(dealStage(x)))+' · '+esc(dealWorkSummary(x)||x.work||'공종 미기록')+'</span><small>'+esc(String(x.created||'').slice(0,7)||'')+(amt?' · '+fmtAmt(amt):'')+' · '+esc(repN(x.assignee)||'미배정')+(dup(x)?' · <b>중복 의심 — 지금 보는 건과 담당·금액이 같음</b>':'')+'</small></button>'
      }).join('')
     +(others.length>6?'<p class="sh-more">외 '+(others.length-6)+'건</p>':'');
    card2.addEventListener('click',function(e){
