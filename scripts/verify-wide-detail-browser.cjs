@@ -66,7 +66,7 @@ async function run(){
   for(const width of [1920,1440,1280,1146]){
    await page.setViewportSize({width,height:900});
    const m=await page.locator('#detailView').evaluate(n=>{const r=n.getBoundingClientRect(),cols=[...n.querySelector('.dw-columns').children].map(x=>x.getBoundingClientRect());return {width:r.width,overflow:n.scrollWidth>n.clientWidth,ratio:cols[1].width/cols[0].width,sameTop:cols.every(c=>Math.abs(c.top-cols[0].top)<2)}});
-   /* 전체 상세페이지(2026-09-26): 왼쪽 메뉴 228px 옆 화면 전체 */assert.ok(Math.abs(m.width-(width>900?width-228:width))<2,'detail page fills the content area at '+width);assert.equal(m.overflow,false);assert.equal(m.sameTop,true);assert.ok(Math.abs(m.ratio-2)<.03);
+   /* 상세 = 목록 위 큰 창(2026-09-26 대표: 예전 방식) */assert.ok(Math.abs(m.width-width*.94)<2,'detail window is 94% wide at '+width);assert.equal(m.overflow,false);assert.equal(m.sameTop,true);assert.ok(Math.abs(m.ratio-2)<.03);
    assert.ok(await page.locator('.dw-left .pc-contact-person').first().evaluate(n=>n.getBoundingClientRect().width)>100,'contact identity stays readable at '+width);
    assert.ok(await page.locator('.dw-left .contactnum b').evaluateAll(nodes=>nodes.every(n=>{const r=document.createRange();r.selectNodeContents(n);return r.getClientRects().length===1&&n.scrollWidth<=n.clientWidth})), 'phone numbers stay on one line at '+width);
   }
@@ -112,10 +112,10 @@ async function run(){
   await page.evaluate(()=>{document.querySelectorAll('.dw-columns details').forEach(n=>n.open=false);document.querySelectorAll('.dw-columns>aside,.dw-columns>main').forEach(n=>n.scrollTop=0)});
   if(process.env.VERIFY_SCREENSHOT)await page.screenshot({path:process.env.VERIFY_SCREENSHOT});
   await page.evaluate(()=>DetailActions.close());
-  assert.equal(await page.locator('#detailView .backbtn').innerText(),'← 목록으로');assert.equal(await page.locator('#ovl').isVisible(),false,'no dark backdrop behind the detail page');
+  assert.equal(await page.locator('#detailView .backbtn').innerText(),'✕ 닫기');assert.equal(await page.locator('#ovl').isVisible(),true,'list stays behind a dark backdrop');
   await page.locator('#detailView .backbtn').click();assert.equal(await page.locator('#detailView').isVisible(),false);assert.equal(await page.evaluate(()=>G.pipeView),'kb');
   /* 예전 스플릿 호출처(같은 지역 현장 등)도 상세가 실제로 열린다 — 파이프라인으로만 가던 버그 */
-  await page.evaluate(()=>openPipeSplit(B.deals[0]));assert.equal(await page.locator('#detailView.detailpage').isVisible(),true);
+  await page.evaluate(()=>openPipeSplit(B.deals[0]));assert.equal(await page.locator('#detailView.detailmodal').isVisible(),true);
   await page.evaluate(()=>goPage('today'));assert.equal(await page.locator('#detailView').isVisible(),false,'menu navigation closes the detail page');await page.evaluate(()=>goPage('pipe'));
   const polling=await page.evaluate(async()=>{const oldRefresh=refreshOperationalDomains,oldToken=TOKEN;let calls=0;refreshOperationalDomains=async()=>++calls;TOKEN='synthetic';G.page='campaign';G.campaignTab='history';LAST_CAMPAIGN_SYNC=0;await syncCampaignNow(false);await syncCampaignNow(false);const dedup=calls===1;G.campaignTab='send';await syncCampaignNow(true);const draft=calls===1;const repaint=operationalPageNeedsPaint(['campaign_core']);refreshOperationalDomains=oldRefresh;TOKEN=oldToken;G.page='pipe';return {dedup,draft,repaint}});
   assert.deepEqual(polling,{dedup:true,draft:true,repaint:true});

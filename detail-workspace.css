@@ -50,9 +50,8 @@
 .stage-transition-dialog{width:min(820px,100%);max-height:calc(100vh - 40px);overflow:auto;border-radius:14px;background:#fff;box-shadow:0 24px 80px rgba(14,25,43,.3);padding:18px}
 @media(max-width:640px){.dw-tabs button{flex:1 1 28%;padding:9px 6px}.dw-inquiry .facts{grid-template-columns:1fr}.dw-quick #dv-body{padding:12px}.dw-quick .formgrid,.dw-quick #dv-body>.dsec[data-sec="영업활동"]{grid-template-columns:1fr}}
 /* The detail is one CRM dialog. Columns scroll independently without losing contact controls. */
-/* 전체 상세페이지(2026-09-26 열림 규칙): 왼쪽 메뉴(228px) 옆 화면 전체 — 떠 있는 창·어두운 배경 없음 */
-#detailView.dw-wide{inset:0 0 0 228px!important;width:auto!important;height:auto!important;max-width:none!important;max-height:none!important;overflow:hidden;border-radius:0;box-shadow:none;background:#f3f5f9}
-@media(max-width:900px){#detailView.dw-wide{inset:0!important}}
+/* 상세 = 목록 위 큰 창(2026-09-26 대표: 전체 페이지·새 탭 말고 예전 방식) */
+#detailView.dw-wide{inset:4vh 3vw!important;width:94vw!important;height:92vh!important;max-width:none!important;max-height:none!important;overflow:hidden;border-radius:16px;box-shadow:0 24px 80px #10243f55;background:#f3f5f9}
 #detailView.dw-wide.on{display:flex!important;flex-direction:column}
 #detailView.dw-wide .detailtop{flex:none;padding:14px 20px;background:#fff}
 #detailView.dw-wide .detailtopin{max-width:none}
@@ -73,7 +72,7 @@
 .dw-columns .exec-files-grid{grid-template-columns:1fr}.dw-columns .exec-files-actions,.dw-columns .detailsecthead{flex-wrap:wrap}
 #dw-stage-editor:not(:empty){margin-top:14px}#dw-stage-editor .sf-grid{grid-template-columns:1fr}#dw-stage-editor .sf-form{padding:0;margin:0}#dw-stage-editor .sf-form header h3{font-size:14px}#dw-stage-editor .sf-form footer{flex-wrap:wrap}
 .dw-wide #dv-err:empty{display:none}.dw-wide .dw-columns .dcc-health,.dw-wide .dw-columns .dcc-recent-card{display:none}
-@media(max-width:1000px){.dw-columns{grid-template-columns:minmax(190px,1fr) minmax(0,2fr)}.dw-right{grid-column:1/-1;max-height:45vh}.dw-columns>aside,.dw-columns>main{padding:12px}}
+@media(max-width:1000px){#detailView.dw-wide{inset:2vh 2vw!important;width:96vw!important;height:96vh!important}.dw-columns{grid-template-columns:minmax(190px,1fr) minmax(0,2fr)}.dw-right{grid-column:1/-1;max-height:45vh}.dw-columns>aside,.dw-columns>main{padding:12px}}
 @media(max-width:700px){#detailView.dw-wide #dv-body{overflow:auto}.dw-columns{display:block;height:auto}.dw-columns>aside,.dw-columns>main{overflow:visible;max-height:none}.dw-center .formgrid{grid-template-columns:1fr}}
 
 /* Keep contact identity readable when the CRM is shown in a narrower app panel. */

@@ -36,7 +36,7 @@ async function run(){
   /* 팝업이 막히면 지금 창에서 — 작업까지 */
   await page.evaluate(()=>{window.open=()=>null;drwDeal(JSON.stringify(B.deals[0]));DetailActions.open('activity');});
   await page.waitForTimeout(80);
-  assert.equal(await page.locator('#detailView.detailpage').isVisible(),true,'blocked popup falls back to the detail page');
+  assert.equal(await page.locator('#detailView.detailmodal').isVisible(),true,'blocked popup falls back to the in-page detail window');
   assert.equal(await page.locator('#detailAction').count(),1,'queued action still opens in place');
   await page.evaluate(()=>{DetailActions.close();closeDetail();});
   /* 견적문의 화면에서 문의를 열어도 새 창 — 처리 작업(연락 결과)까지 넘긴다 */

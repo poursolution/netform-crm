@@ -13,11 +13,12 @@
  const ACTS=/^(da:(activity|next|stage|support)|dcc|brief|inq:(process|next|decision))$/;
  w.CRM_SOLO=SOLO;
  const style=document.createElement('style');
- style.textContent='.crm-solo .detailview.detailpage,.crm-solo #detailView.dw-wide{left:0!important;inset:0!important}.crm-solo .inq-dialog-overlay{inset:0}';
+ style.textContent='.crm-solo .detailview.detailpage,.crm-solo .detailview.detailmodal,.crm-solo #detailView.dw-wide{left:0!important;inset:0!important;width:100vw!important;height:100vh!important;max-height:none!important;border-radius:0!important}.crm-solo .inq-dialog-overlay{inset:0;padding:0}.crm-solo .inq-dialog{width:100%;height:100%;border-radius:0}';
  document.head.append(style);
  if(SOLO)document.documentElement.classList.add('crm-solo');
 
- function allowed(){return !SOLO&&(w.__CRM_FORCE_DETAIL_WINDOW===true||(!w.navigator?.webdriver&&!!w.TOKEN&&!!w.ME))&&typeof w.open==='function';}
+ /* 2026-09-26 대표: '새창'은 브라우저 새 탭이 아니라 예전처럼 목록 위 큰 창 — 새 탭은 기본 꺼짐(켜려면 CRM_DETAIL_NEW_TAB=true) */
+ function allowed(){return !SOLO&&(w.__CRM_FORCE_DETAIL_WINDOW===true||(w.CRM_DETAIL_NEW_TAB===true&&!w.navigator?.webdriver&&!!w.TOKEN&&!!w.ME))&&typeof w.open==='function';}
  function windowName(kind,id){return 'crm-'+kind+'-'+String(id).replace(/[^0-9a-z-]/gi,'').slice(0,60);}
  function openWindow(kind,id,act){
   const url=new URL('crm.html',w.location.href);url.searchParams.set('solo','1');url.searchParams.set(kind==='deal'?'detail':'inquiry',id);if(act)url.searchParams.set('act',act);
