@@ -60,7 +60,7 @@
   for(const table of ['opportunities','inquiries','activities','crm_expansion_pool','crm_expansion_events','crm_expansion_quote_dispatches'])ch=ch.on('postgres_changes',{event:'*',schema:'public',table},payload=>{if(generation===epoch&&profile)publishRealtimeSignal(table,payload&&payload.eventType);});
   realtimeChannel=ch;publishRealtimeStatus('CONNECTING');ch.subscribe(status=>{if(generation!==epoch)return;publishRealtimeStatus(status);});
   changesChannel=sdkChannel('crm:changes',{config:{private:true}}).on('broadcast',{event:'change'},msg=>{if(generation!==epoch||!profile)return;const p=msg&&msg.payload||{},id=v=>UUID_RE.test(String(v||''))?String(v).toLowerCase():null,signal=Object.freeze({table:String(p.t||''),event_type:String(p.op||'*'),deal_id:id(p.d),inquiry_id:id(p.i)});if(!signal.deal_id&&!signal.inquiry_id)return;for(const entry of realtimeListeners.values())try{entry.onSignal(signal);}catch{}});
-  changesChannel.subscribe(()=>{});
+  changesChannel.subscribe(status=>{if(generation===epoch)publishRealtimeStatus(status);});
  }
  function subscribe(resource,onSignal,onStatus){if(resource!=='operational_core')throw Error('REALTIME_RESOURCE_DENIED');if(!profile||!client)throw Error('AUTH_REQUIRED');if(typeof onSignal!=='function')throw Error('REALTIME_HANDLER_REQUIRED');const key=Symbol(resource);realtimeListeners.set(key,{onSignal,onStatus:typeof onStatus==='function'?onStatus:()=>{}});ensureRealtime();try{realtimeListeners.get(key).onStatus(realtimeStatus);}catch{}return function(){realtimeListeners.delete(key);if(!realtimeListeners.size)stopRealtime();};}
  async function rpc(name,args={}){if(!rpcAllow.has(name))throw Error('CONTRACT_UNAVAILABLE');const e=epoch;

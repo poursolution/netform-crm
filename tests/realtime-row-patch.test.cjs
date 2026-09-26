@@ -33,6 +33,21 @@ test('both transports subscribe to the private change channel and read a single 
  }
 });
 
+test('after the change channel drops and reconnects, the overlay re-reads deals and inquiries once to fill signals missed while offline',()=>{
+ const calls=[];let onStatus=null;
+ const root={TOKEN:'t',ME:{id:'u'},B:{contract_version:2,deals:[],inquiries:[],message_logs:[]},
+  Phase1:{profile:{auth_uid:'u'},read:async()=>({data:{}}),subscribe:(resource,onSignal,status)=>{onStatus=status;return ()=>{};},queue:{list:()=>[],flush:async()=>[]}},
+  OperationalAdapter:{},addEventListener(){},document:{getElementById:()=>null}};
+ overlay.install(root);
+ root.refreshOperationalDomains=(domains,reason)=>{calls.push([domains,reason]);return Promise.resolve(null);};
+ onStatus('SUBSCRIBED');
+ assert.equal(calls.length,0,'첫 연결은 첫 로딩이 이미 받았다');
+ onStatus('CHANNEL_ERROR');onStatus('SUBSCRIBED');
+ assert.deepEqual(calls,[[['deal_core','inquiry_core'],'realtime']]);
+ for(const f of ['pc-manager-transport.js','transport.js'])
+  assert.match(fs.readFileSync(path.join(__dirname,'..',f),'utf8'),/changesChannel\.subscribe\(status=>\{if\(generation===epoch\)publishRealtimeStatus\(status\);\}\)/,f+' reports the change channel status');
+});
+
 test('overlay routes id-bearing signals to row refresh and keeps domain refresh as fallback',()=>{
  const s=fs.readFileSync(path.join(__dirname,'..','operational-overlay.js'),'utf8');
  assert.match(s,/signal=>scheduleRealtime\(signal\.table,signal\)/);
