@@ -64,6 +64,10 @@ begin
      'site_name',ad.site_name,'work_name',ad.work_name,'contractor',ad.contractor,
      'owner_name',nullif(ad.owner_name,''),'owner_kind',ad.owner_kind,
      'bid_amount',nullif(ad.bid_amount,0),'contract_date',ad.contract_date,'status',ad.status,
+     -- 잔디(기술자문컨설팅) 글 날짜: source_row 앞 6자리 YYMMDD (2026-09-26 — 계약일 칸이 비어 확정 창이 날짜를 못 채우던 것)
+     'posted_date',case when ad.origin_channel='jandi' and ad.source_row::text ~ '^[0-9]{2}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[0-9]{3}$' then
+       make_date(2000+substr(ad.source_row::text,1,2)::int,substr(ad.source_row::text,3,2)::int,1)
+       +(least(substr(ad.source_row::text,5,2)::int,extract(day from make_date(2000+substr(ad.source_row::text,1,2)::int,substr(ad.source_row::text,3,2)::int,1)+interval '1 month -1 day')::int)-1) end,
      'site_id',coalesce(att.site_id,ad.site_id),
      'site_linked',case when ad.site_id is not null then 'source' when att.site_id is not null then 'confirmed' else null end,
      'candidates',coalesce((

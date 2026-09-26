@@ -107,8 +107,8 @@
   const cand=c.find(k=>k.brand===origin);
   return {origin,src:at.source_deal_id||cand?.deal_id||'',owner:at.performance_owner||x.owner_name||cand?.owner||'',
    award:at.award_type||'bid',evidence:at.evidence_level||'admin_judgment',
-   amount:at.bid_amount??x.bid_amount??'',date:String(at.bid_confirmed_at||x.contract_date||'').slice(0,10),
-   dateGuess:!at.bid_confirmed_at&&!!x.contract_date,site:at.site_id||'',note:at.note||''};
+   amount:at.bid_amount??x.bid_amount??'',date:String(at.bid_confirmed_at||x.contract_date||x.posted_date||'').slice(0,10),
+   dateGuess:!at.bid_confirmed_at&&!!(x.contract_date||x.posted_date),dateFrom:x.contract_date?'원본 계약일':'잔디 글 날짜',site:at.site_id||'',note:at.note||''};
  }
  const advReady=x=>{const p=advPrefill(x);return !!(p.origin&&p.owner&&Number(p.amount)>0&&p.date);};
  function advRow(x,i){
@@ -135,7 +135,7 @@
    +'<label>구분<select data-award><option value="bid"'+(p.award==='bid'?' selected':'')+'>입찰 낙찰</option><option value="private_contract"'+(p.award==='private_contract'?' selected':'')+'>수의계약</option></select></label>'
    +'<label>귀속 담당자<select data-owner><option value="">선택</option>'+people.map(n=>'<option'+(n===p.owner?' selected':'')+'>'+h(n)+'</option>').join('')+'</select></label>'
    +'<label><span data-amt-lbl>'+(p.award==='private_contract'?'계약 공사금액':'낙찰금액')+'</span> · VAT 별도(원)<span class="avq-amt"><input type="number" step="1" min="1" data-amt value="'+h(p.amount)+'"><button type="button" data-vat title="입력값이 VAT 포함 금액이면 공급가액으로 환산">VAT 포함→÷1.1</button></span><small data-amt-view>'+(Number(p.amount)>0?amount(p.amount):'')+'</small></label>'
-   +'<label><span data-date-lbl>'+(p.award==='private_contract'?'계약체결일':'낙찰확정일')+'</span><input type="date" data-date value="'+h(p.date)+'">'+(p.dateGuess?'<small>원본 계약일로 미리 채움 — 다르면 수정</small>':'')+'</label>'
+   +'<label><span data-date-lbl>'+(p.award==='private_contract'?'계약체결일':'낙찰확정일')+'</span><input type="date" data-date value="'+h(p.date)+'">'+(p.dateGuess?'<small>'+p.dateFrom+'로 미리 채움 — 다르면 수정</small>':'')+'</label>'
    +'<label>근거<select data-evidence><option value="admin_judgment"'+(p.evidence==='admin_judgment'?' selected':'')+'>정황상 관리자 확인</option><option value="document"'+(p.evidence==='document'?' selected':'')+'>증빙 확인(공고·계약서)</option></select></label>'
    +'<label>현장 연결'+site+'</label></div>'
    +'<footer><input type="text" data-note list="avq-reasons" maxlength="500" placeholder="'+(confirmed?'정정 사유 (확정 실적 변경 시 필수)':'메모 · 보류/제외 사유')+'" value="'+(confirmed?'':h(p.note))+'">'
