@@ -141,3 +141,6 @@ body:has(#pg-inq.on.inq-workbench) .mhead>.search{display:none}
 .inq-now-card.hot .inq-now-eyebrow{color:#dc2626}
 .inq-now-card p{flex:1;margin:0;font-size:12.5px;line-height:1.5;color:#33415e}
 .inq-now-card .inq-now{flex:none}
+/* 할 일 / 보기 구분 표시(2026-09-26 용어 정리) — 같은 '상태'로 읽히지 않게 줄마다 이름표 */
+.inq-layer{align-self:center;flex:none;margin-right:4px;color:#5b6b85;font-size:12px;font-weight:700;letter-spacing:.02em}
+.inq-work-counts>.inq-layer{grid-column:1/-1;margin:0 0 -4px}
