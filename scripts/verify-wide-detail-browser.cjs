@@ -33,7 +33,7 @@ async function run(){
   assert.match(await page.locator('.da-info').filter({hasText:'추가 관리정보'}).innerText(),/의사결정자\s+미입력/);
   assert.equal(await page.locator('#dv-body input:visible,#dv-body select:visible,#dv-body textarea:visible').count(),0,'viewing surface has no edit inputs');
   await page.evaluate(()=>{window.__originalActivities=CUR_DETAIL.item.activities;CUR_DETAIL.item.activities=Array.from({length:9},(_,i)=>({id:'flat-'+i,occurred_at:'2026-09-20T10:00:0'+i+'Z',type:i%2?'next_action_set':'stage_change',actor_name:'검증 담당자',note:'<검증> 기록 '+i}));refreshActivityTimeline()});
-  assert.equal(await page.locator('#activityTimelineHost .da-events li').count(),6);
+  assert.equal(await page.locator('#activityTimelineHost .da-events li').count(),5);/* 최근 5건(2026-09-26 중복 정리) */
   assert.doesNotMatch(await page.locator('#activityTimelineHost').innerText(),/next_action_set|stage_change|CRM/);
   assert.match(await page.locator('#activityTimelineHost').innerText(),/다음 할 일 등록|진행상태 변경/);
   assert.equal(await page.locator('#activityTimelineHost').evaluate(n=>getComputedStyle(n).overflow),'visible');

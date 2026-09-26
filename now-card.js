@@ -40,11 +40,11 @@
    talk?['마지막 대화','“'+h(talk.text)+'” <small>'+h(talk.at)+'</small>',1]:null,
    needs?['고객 요구',h(needs),0]:null,
    quote?['마지막 견적',h(quote),0]:null,
-   ['오늘 확인',h(todo.text),0]
   ].filter(Boolean).map(r=>'<div class="row"><span>'+r[0]+'</span><b class="'+(r[2]?'say':'')+'">'+r[1]+'</b></div>').join('');
-  return '<section class="now-card" id="nowCard"><div class="nc-stage">'+h(root.stageLabel(root.dealStage(d)))+(root.oppAmt(d)>0?' · 예상 '+money(root.oppAmt(d)):'')+' · '+h(d.brand||root.bizOf?.(d)||'')+'</div>'
+  /* 단계·금액·브랜드·담당은 상세 헤더 한 줄에만(2026-09-26 중복 정리) — 이 카드는 '지금 할 일'만 */
+  return '<section class="now-card" id="nowCard"><div class="nc-stage">지금 할 일</div>'
    +'<div class="nc-todo">'+(todo.promise?'<span class="nc-promise">🤝 고객 약속</span> ':'')+h(todo.text)+' '+dueTag+'</div>'
-   +'<div class="nc-meta">'+h(root.repN(d.assignee)||'담당 미지정')+(meta.meaningfulAt?' · 마지막 연락 '+h(String(meta.meaningfulAt).slice(0,10)):' · 연락 기록 없음')+'</div>'
+   +'<div class="nc-meta">'+(meta.meaningfulAt?'마지막 연락 '+h(String(meta.meaningfulAt).slice(0,10)):'연락 기록 없음')+'</div>'
    +'<div class="nc-cta"><button type="button" class="nc-call" onclick="NowCard.sheet()">📞 연락하고 결과 남기기</button><button type="button" onclick="dccGoActivity()">결과 남기기</button><button type="button" onclick="dccGoNext()">다른 날짜로</button>'+(todo&&!todo.suggested&&todo.due?'<button type="button" onclick="completeNextAction()">다음 할 일 완료</button>':'')+'</div>'
    +'<div class="nc-brief">'+brief+'</div></section>';
  }
@@ -169,14 +169,14 @@
   });
   const hidden=Math.max(0,chips.length-12),shown=chips.slice(-12);
   const a=root.actionObj?root.actionObj(d,p):null,due=a&&a.due?dueDays(a.due):null;
-  const nextChip=a&&a.text&&due!==null?'<span class="nf-next'+(due<0?' late':'')+'"><i>📅</i><b>다음</b><em>'+h(short(a.text))+'</em><small>'+h(String(a.due).slice(5,10).replace('-','/'))+(due<0?' · '+(-due)+'일 지남':'')+'</small></span>':'<span class="nf-next none"><i>⚠</i><b>다음 할 일 없음</b></span>';
+  /* 다음 할 일 내용은 위 '지금 할 일' 카드에 — 흐름 끝에는 날짜만 작게 */
+  const nextChip=a&&a.text&&due!==null?'<span class="nf-next'+(due<0?' late':'')+'" title="'+attr(say(a.text))+'"><i>📅</i><b>다음</b><small>'+h(String(a.due).slice(5,10).replace('-','/'))+(due<0?' · '+(-due)+'일 지남':'')+'</small></span>':'<span class="nf-next none"><i>⚠</i><b>다음 할 일 없음</b></span>';
   const idle=prev!==null?Math.floor((Date.now()-prev)/864e5):null;
   if(idle!==null&&idle>gapN&&!(a&&a.text&&due!==null&&due>=0))shown.push('<span class="nf-gap'+(idle>gapN*2?' hot':'')+'">⏸ 오늘까지 '+idle+'일</span>');
   const lastAct=ev.filter(x=>kind(x)[2]==='act').slice(-1)[0];
   const firstResp=start!==null&&firstAct!==null&&firstAct>=start?Math.round((firstAct-start)/36e5):null;
-  const summary='마지막 고객 행동 '+(lastAct?h(day(lastAct.at).slice(5).replace('-','/'))+' '+h(kind(lastAct)[1])+(short(lastAct.result||lastAct.body)?' — '+h(short(lastAct.result||lastAct.body)):''):'<b class="warn">기록 없음</b>')
-   +' · '+(a&&a.text&&due!==null?'다음 할 일 '+h(String(a.due).slice(5,10).replace('-','/')):'<b class="warn">다음 할 일 없음</b>')
-   +(firstResp!==null?' · 첫 연락 '+(firstResp<24?firstResp+'시간':Math.round(firstResp/24)+'일'):'');
+  /* 마지막 행동·다음 날짜는 아래 칩이 그대로 보여 준다 — 머리글은 칩에 없는 '첫 연락까지 걸린 시간'만 */
+  const summary=lastAct?(firstResp!==null?'첫 연락까지 '+(firstResp<24?firstResp+'시간':Math.round(firstResp/24)+'일'):''):'<b class="warn">연락 기록 없음</b>';
   if(!ev.length)return '<section class="now-flow" id="nowFlow"><header><b>영업 흐름</b><span>아직 기록된 흐름이 없습니다 — 첫 연락 결과부터 이어집니다</span></header><div class="nf-row">'+nextChip+'</div></section>';
   return '<section class="now-flow" id="nowFlow"><header><b>영업 흐름</b><span>'+summary+'</span></header><div class="nf-row">'+(hidden?'<span class="nf-more">이전 '+hidden+'건</span>':'')+shown.join('<i class="nf-arr">›</i>')+'<i class="nf-arr">›</i>'+nextChip+'</div></section>';
  }
