@@ -16,8 +16,12 @@ test('follow-up and decision queues classify time boundaries explicitly',()=>{
  assert.deepEqual(['2026-09-19','2026-09-20',null,'2026-09-21'].map(followup=>classify('sent',{followup})),[0,1,2,3]);
  assert.deepEqual(['2026-09-19','2026-09-20','2026-09-21','2026-09-23','2026-09-27','2026-10-01',null].map(decisionDate=>classify('competition',{decisionDate})),[0,1,2,3,4,5,6]);
 });
-test('result stages use result actions rather than a contact queue',()=>{
- assert.equal(specs.get('won').queueLayout,'result');assert.equal(specs.get('won').primaryAction.key,'contract');
+test('result stages keep a result queue; no stage opens contract performance from an operational screen',()=>{
+ assert.equal(specs.get('won').queueLayout,'result');assert.equal(specs.get('won').primaryAction.key,'contact');
+ /* 2026-09-26 대표 '자꾸 계약실적이 나온다': 운영 화면(상세·파이프라인)에는 계약실적 버튼·실적 귀속 칸을 두지 않는다 */
+ assert.ok(specs.all.every(s=>s.primaryAction.key!=='contract'));
+ assert.ok(specs.all.every(s=>!s.detailHighlights.includes('salesOwner')&&!(s.queueFields||[]).includes('salesOwner')&&!s.detailHighlights.includes('contractState')));
+ assert.doesNotMatch(Object.values(specs.labels).join(' '),/계약실적/);
  assert.equal(specs.get('lost').primaryAction.key,'review');
 });
 test('contract attribution reads the ledger instead of current assignment or stage',()=>{

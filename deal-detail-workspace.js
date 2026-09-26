@@ -11,7 +11,6 @@ function run(action){
  if(action==='contact'){root.DetailActions.open('activity');return true;}
  if(action==='next'){root.DetailActions.open('next');return true;}
  if(action==='stage-edit'){root.openTransition();return true;}
- if(action==='contract'){root.ContractSalesUI?.editor(root.CUR_DETAIL.item);return true;}
  if(action==='review'){document.querySelector('#detailView .da-stage-summary')?.scrollIntoView({block:'nearest'});return true;}
  return false;
 }

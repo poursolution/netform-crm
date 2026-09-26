@@ -53,3 +53,13 @@ test('컨설팅 설계의 견적 예정일은 다음 할 일이 비어 있을 �
 test('모바일 기존 금액확정 우회 호출로 입찰을 수주 종료할 수 없다',()=>{const h=harness(true);h.c.amtOk('won');assert.equal(h.writes.length,0);assert.equal(h.d.code,'bidding')});
 test('취소는 아무것도 저장하지 않는다',()=>{const h=harness();h.open('contract');h.c.StageTransitionUI.close();assert.equal(h.writes.length,0);assert.equal(h.d.code,'bidding')});
 test('PC·모바일 스크립트 연결 및 전체 inline JS 구문검사',()=>{for(const file of ['crm.html','mobile.html']){const html=fs.readFileSync(require.resolve('../'+file),'utf8');assert.match(html,/src="stage-transition-ui.js/);for(const m of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g))new vm.Script(m[1])}});
+
+test('수주·준공 완료: 이미 아는 금액을 미리 채우고 출처를 알려 준다(다시 입력하지 않게, 2026-09-26)',()=>{
+ const h=harness(false,'completion');h.d.amt=450000000;h.open('won');
+ assert.match(h.html(),/예상금액에서 불러왔습니다/);
+ assert.equal(String(h.nodes['sf-contract_amount'].value).replace(/,/g,''),'450000000');
+ const g=harness(false,'completion');g.d.amt=450000000;g.c.ContractSalesData={state:()=>({items:[{deal_id:'fixture',balance:430000000}]})};g.open('won');
+ assert.match(g.html(),/계약 기록에서 불러왔습니다/,'계약 기록이 예상금액보다 먼저');assert.doesNotMatch(g.html(),/계약실적/,'운영 화면 문구에 계약실적 금지');
+ assert.equal(String(g.nodes['sf-contract_amount'].value).replace(/,/g,''),'430000000');
+ const k=harness(false,'completion');k.open('won');assert.doesNotMatch(k.html(),/불러왔습니다/,'모르는 금액은 지어내지 않는다');
+});

@@ -206,8 +206,10 @@
  if(typeof oldDetail==='function')root.dccDecorateDetail=function(){const r=oldDetail.apply(this,arguments);inject();return r;};
  /* 와이드 상세는 DetailActions.decorate가 마지막 변환 — 그 직후에 카드가 최상단(빠른 작업 바 위)으로 들어간다. */
  if(root.DetailActions&&typeof root.DetailActions.decorate==='function'){
+  /* 원래 객체를 그대로 쓴다(2026-09-26): 복사(Object.assign)하면 '지금 열린 작업'(active 게터)이 복사 순간 값 null로 굳어,
+     진행상태 변경의 취소·닫기가 작업 창을 닫지 못하고 빈 창이 남았다. */
   const da=root.DetailActions,oldDec=da.decorate;
-  root.DetailActions=Object.assign({},da,{decorate:function(){const r=oldDec.apply(da,arguments);inject();return r;}});
+  da.decorate=function(){const r=oldDec.apply(da,arguments);inject();return r;};
  }
  root.addEventListener('phase1:identity-cleared',closeSheet);
  root.NowCard={sheet,card,flowStrip};
