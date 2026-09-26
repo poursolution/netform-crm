@@ -894,15 +894,17 @@ html,body{height:100%}
 .drawer h5{font-size:11.5px;color:var(--sub);font-weight:800;margin:16px 0 7px}
 /* 전체 페이지 상세 — 우측 드로어 대신 화면 전체를 사용 */
 .detailview{position:fixed;inset:0;z-index:70;background:var(--bg);display:none;overflow-y:auto}
-/* ── 전체화면 상세 폐지 (2026-09-02) ─────────────────────────────
-   진입 경로마다 막았더니 계속 다른 곳에서 새어 나왔다 (칸반·현장·견적문의·중복현장…).
-   그래서 «구조적으로» 막는다 — 스플릿에 끼워진(.docked) 상태가 아니면 절대 보이지 않는다.
-   상세는 항상 목록 옆에서 본다. 목록이 사라지는 화면은 이 CRM 에 없다. */
+/* ── 상세 표시 가드 (2026-09-02 도입 · 2026-09-26 개정) ───────────────
+   진입 경로마다 막았더니 계속 새어 나왔다 — 그래서 «구조적으로» 막는다: .fullview(전체 상세페이지) 또는 .docked 가 아니면 보이지 않는다.
+   열림 규칙(2026-09-25 대표 확정): PC = 목록 → 전체 상세페이지(왼쪽 메뉴는 그대로), 상세 안의 수정 = 가운데 작은 팝업. */
 .detailview.on:not(.docked){display:none!important}
 .detailview.on.fullview:not(.docked){display:block!important}
 .detailview.detailmodal{inset:6vh max(24px,calc((100vw - 920px)/2));border-radius:18px;background:var(--bg);box-shadow:0 24px 80px rgba(15,25,50,.32);max-height:88vh;overflow-y:auto}
 .detailview.detailmodal .detailtop{border-radius:18px 18px 0 0}
 @media(max-width:760px){.detailview.detailmodal{inset:12px;border-radius:14px;max-height:calc(100vh - 24px)}.detailview.detailmodal .detailbody{padding:14px 12px 28px}}
+/* 전체 상세페이지(2026-09-26): 왼쪽 메뉴 옆 화면 전체 · 뒤를 어둡게 덮지 않음 · '← 목록으로'. 메뉴를 누르면 상세가 닫히고 그 화면으로 간다 */
+.detailview.detailpage{inset:0 0 0 228px;border-radius:0;box-shadow:none;max-height:none}
+@media(max-width:900px){.detailview.detailpage{inset:0}}
 
 .detailview.on{display:block;animation:pin .22s ease}
 .detailtop{position:sticky;top:0;z-index:3;background:rgba(244,246,251,.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--line2);padding:13px 24px}
@@ -2038,9 +2040,9 @@ button,input,select,textarea{font-family:inherit}.mhead h1{font-size:23px;font-w
 <link rel="stylesheet" href="next-action-picker.css?v=20260905-1">
 <link rel="stylesheet" href="expansion-pool.css?v=20260921-exp-a-1">
 <link rel="stylesheet" href="relationship-management.css?v=20260914-panel-5">
-<link rel="stylesheet" href="detail-workspace.css?v=20260921-inqgap-1">
+<link rel="stylesheet" href="detail-workspace.css?v=20260926-page-1">
 <link rel="stylesheet" href="today-work-queue.css?v=20260925-backlog-1">
-<link rel="stylesheet" href="inquiry-workbench.css?v=20260924-inqnow-1">
+<link rel="stylesheet" href="inquiry-workbench.css?v=20260926-page-1">
 <link rel="stylesheet" href="inquiry-create.css?v=20260920-manual-1">
 <link rel="stylesheet" href="inquiry-assignment-clarity.css?v=20260913-inbox-1">
 <link rel="stylesheet" href="pc-typography.css?v=20260920-independent-1">
@@ -3109,7 +3111,8 @@ function clearTransientUI(){
  if(window.ExpansionPool&&typeof ExpansionPool.close==='function')ExpansionPool.close(false);
  $$('.modalshade.on').forEach(function(m){m.classList.remove('on');m.setAttribute('aria-hidden','true')});
  var dv=$('#detailView'),ov=$('#ovl'),dr=$('#drw');
- if(dv){dv.classList.remove('on','fullview','detailmodal','docked');dv.setAttribute('aria-hidden','true')}
+ if(dv){dv.classList.remove('on','fullview','detailmodal','detailpage','docked');dv.setAttribute('aria-hidden','true')}
+ if(window.InquiryWorkbench&&typeof InquiryWorkbench.dismiss==='function')InquiryWorkbench.dismiss();/* 문의 상세페이지도 메뉴 이동 때 닫는다 */
  if(ov)ov.style.display='none';if(dr)dr.classList.remove('on');
  document.body.style.overflow='';G._detailPopup=false;G._toSplit=0;CUR_DETAIL=null;
  TRANSITION_CTX=null;QUICK_CONTACT=null;KAKAO_DRAFT=null;
@@ -4764,11 +4767,10 @@ function openDetail(t,s,b){
   var dv=$('#detailView');dv.classList.add('on');dv.setAttribute('aria-hidden','false');if(dv.classList.contains('ps-embedded'))return;
   /* 스플릿 우측에 끼워져 있으면 오버레이가 아니다 — 본문 스크롤을 막거나 위로 튀지 않는다 */
   if(dv.classList.contains('docked'))return;
-  /* 빠른 관리의 «전체 상세»는 페이지 이동이 아니라 작은 모달로 연다. */
+  /* 열림 규칙(2026-09-25 확정 · 09-26 적용): 어디서 열든 목록 → 전체 상세페이지. 왼쪽 메뉴는 보이고 뒤를 어둡게 덮지 않는다. */
   if(G._detailPopup){
-    dv.classList.add('fullview','detailmodal');
-    var ov=$('#ovl');if(ov){ov.style.display='block';ov.style.zIndex='69'}
-    var back=dv.querySelector('.backbtn');if(back)back.textContent='✕ 닫기';
+    dv.classList.add('fullview','detailpage');
+    var back=dv.querySelector('.backbtn');if(back)back.textContent='← 목록으로';
     document.body.style.overflow='hidden';dv.scrollTop=0;return;
   }
   /* ── 전체화면 상세는 폐지했다 (2026-09-02) ─────────────────────
@@ -4795,7 +4797,7 @@ function closeDetail(){
   if(isDocked())return;   /* 스플릿에서는 «닫기» 가 없다 — 목록이 옆에 그대로 있다 */
   if(window.DetailActions)DetailActions.close(false);
   closeTransition();
-  $('#detailView').classList.remove('on','fullview','detailmodal');$('#detailView').setAttribute('aria-hidden','true');
+  $('#detailView').classList.remove('on','fullview','detailmodal','detailpage');$('#detailView').setAttribute('aria-hidden','true');
   var ov=$('#ovl');if(ov){ov.style.display='none';ov.style.zIndex=''}
   G._detailPopup=false;document.body.style.overflow='';CUR_DETAIL=null;paint();if(window.DetailWorkspace){DetailWorkspace.restoreAsset();DetailWorkspace.restoreList();}
 }
@@ -5688,7 +5690,10 @@ function setActivityFilter(t){G.actFilter=ACTIVITY_TYPES.indexOf(t)>=0||t==='전
 function logActivity(type,note,result,at,actor){var item=CUR_DETAIL.item,p=currentPatch(),row={id:'local-'+Date.now(),type:type||'기타',note:note||'',result:result||'',at:at||isoNow(),actor:actor||repN(item.assignee),stage:currentStageLabel(item,CUR_DETAIL.kind),stageIndex:flowIndex(item,CUR_DETAIL.kind)};p.activities=p.activities||[];p.activities.push(row);item.activities=p.activities;item.lastActivity=p.lastActivity=row.at;touchCustomer(p,row.type,row.at);return row}
 function saveAssigneeChange(){var item=CUR_DETAIL.item,p=currentPatch(),to=$('#dv-assignee').value,from=repN(item.assignee),reason=reasonValue('rs-asg');if(!to||to===from){showDetailErr(!to?'담당자를 선택해 주세요.':'현재 담당자와 같습니다.');return}if(!reasonOk('rs-asg')){showDetailErr('담당자 변경 근거를 남겨야 저장할 수 있습니다.');return}if(!PeopleEligibility.allowed(SALES_PEOPLE_MASTER,'pipeline',item,to)){showDetailErr('이 현장의 조직에 속한 활성 영업담당자를 선택해 주세요.');return}var at=isoNow();p.assignmentHistory=p.assignmentHistory||[];p.assignmentHistory.push({at:at,from:from,to:to,actor:'관리자',reason:reason,source:reasonSource('rs-asg')});item.assignee=p.assignee=to;logActivity('담당자변경',from+' → '+to,reason,at,'관리자');
  pushWrite('assign',{opportunity_id:item.id,from:from,to:to,reason:reason,reason_source:reasonSource('rs-asg'),at:at});saveLocal();renderDetail();showDetailErr('담당자를 변경하고 사유와 배정 이력을 남겼습니다.',true)}
-function drwInq(s){var raw=JSON.parse(s),q=(B.inquiries||[]).filter(function(x){return inqKey(x)===inqKey(raw)})[0]||raw;setCurDetail(q);G._detailPopup=true;renderDetail()}
+function drwInq(s){var raw=JSON.parse(s),q=(B.inquiries||[]).filter(function(x){return inqKey(x)===inqKey(raw)})[0]||raw;
+  /* 열림 규칙(2026-09-26): 오늘 업무·대시보드·컨트롤타워에서 열어도 견적문의와 같은 전체 상세(처리 화면)로 — 작은 읽기 전용 창을 거치지 않는다. 닫으면 원래 화면. */
+  if(window.InquiryWorkbench&&typeof InquiryWorkbench.openFrom==='function'&&InquiryWorkbench.openFrom(inqKey(q),G.page))return;
+  setCurDetail(q);G._detailPopup=true;renderDetail()}
 function drwSite(s){var k=JSON.parse(s),D=B.deals.filter(function(d){return d.site===k}).sort(function(a,b){return (b.created||'').localeCompare(a.created||'')});if(D.length){closeSiteDrawer();CUR_DETAIL={kind:'deal',key:dealKey(D[0]),item:D[0],siteDeals:D};renderDetail()}else openDrwBase(k,'연결된 영업건 없음','<div class="detailnotice">현장 레코드에 연결할 영업 영업건이 없습니다.</div>')}
 /* 단계 전환 선택지 (2026-09-02)
    영업건(파이프라인) = 행동지침의 실제 진행 13단계. 대분류로 묶어서 보여준다.
@@ -6339,11 +6344,8 @@ function dockDetail(item){
  CUR_DETAIL={kind:'deal',key:dealKey(item),item:item};
  renderDetail();                            /* ★ 전체화면과 같은 렌더러 */
  dv.scrollTop=0}
-function openPipeSplit(d){if(!d)return;if(G.page!=='pipe'){towerDrillReset();G.pipePeriodMode='snapshot';G.pipeOrigin=null;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q=''}G.pipeView='split';G.splitCol=null;G.splitStage=null;G.splitAct=null;G.splitClosed=null;G.splitKey=dealKey(d);
- /* 현장·중복현장 등 다른 페이지에서 불러도 스플릿이 있는 곳으로 데려간다.
-    예전에는 pipeView 만 바꾸고 페이지는 그대로라 아무 일도 일어나지 않았다. */
- if(G.page!=='pipe'){goPage('pipe')}else{paint()}
- setTimeout(function(){var el=document.querySelector('.splitrow.sel');if(el&&el.scrollIntoView)el.scrollIntoView({block:'nearest'})},0)}
+/* 2026-09-26: 스플릿은 더 이상 쓰지 않는다(파이프라인은 전체 상세페이지) — 예전 호출처(같은 지역 현장·기술자문 검토·오늘 업무 옛 경로)가 파이프라인으로만 이동하고 상세를 못 열던 문제를 여기 한 곳에서 고친다. */
+function openPipeSplit(d){if(!d)return;drwDeal(JSON.stringify(d))}
 function openKb5(i,key){var d=key?(B.deals||[]).find(function(x){return dealKey(x)===key}):KB5_CACHE[i];if(d)drwDeal(JSON.stringify(d))}
 function kb5ToConsole(k){
   if(k==='rel'){goPage('relationship');return}
@@ -7974,7 +7976,7 @@ window.addEventListener('focus',syncNow);
 window.addEventListener('focus',function(){syncInquiryNow(false)});
 
 var _loadData=loadData,CRM_DEBUG=/[?&]debug=1/.test(location.search),DETAIL_REQUESTED=false;
-function openRequestedDetail(){if(DETAIL_REQUESTED||!B)return;var key=new URL(location.href).searchParams.get('detail');if(!key)return;var d=(B.deals||[]).filter(function(x){return dealKey(x)===key})[0];if(!d)return;DETAIL_REQUESTED=true;var dv=document.getElementById('detailView'),ov=document.getElementById('ovl');G._detailPopup=true;G._toSplit=1;try{drwDeal(JSON.stringify(d));if(dv){dv.classList.add('on','fullview','detailmodal');dv.setAttribute('aria-hidden','false');var back=dv.querySelector('.backbtn');if(back)back.textContent='✕ 닫기';document.body.style.overflow='hidden';dv.scrollTop=0}if(ov){ov.style.display='block';ov.style.zIndex='69'}}finally{G._toSplit=0}}
+function openRequestedDetail(){if(DETAIL_REQUESTED||!B)return;var key=new URL(location.href).searchParams.get('detail');if(!key)return;var d=(B.deals||[]).filter(function(x){return dealKey(x)===key})[0];if(!d)return;DETAIL_REQUESTED=true;var dv=document.getElementById('detailView'),ov=document.getElementById('ovl');G._detailPopup=true;G._toSplit=1;try{drwDeal(JSON.stringify(d));if(dv){dv.classList.add('on','fullview','detailpage');dv.setAttribute('aria-hidden','false');var back=dv.querySelector('.backbtn');if(back)back.textContent='← 목록으로';document.body.style.overflow='hidden';dv.scrollTop=0}}finally{G._toSplit=0}}
 loadData=async function(q){LAST_SYNC=Date.now();await _loadData(q);if(CRM_DEBUG){window.__CRM=B;window.__CRM_STATE=G}openRequestedDetail()};
 /* ── 실시간 공유 (2026-09-04) ─────────────────────────────────
    ① 내가 서버에 쓰고 나면 곧바로 다시 읽는다 (남이 보는 화면과 어긋나지 않게)
@@ -8793,7 +8795,7 @@ function campaignHomePage(){var L=campaignLogs(),scheduled=L.filter(function(x){
 function campaignUtility(title){return '<header class="cc-utility"><button onclick="campaignSetTab(\'home\')">← 고객 발송</button><h2>'+esc(title)+'</h2><nav><button onclick="campaignSetTab(\'history\')">발송 이력</button><button onclick="campaignSetTab(\'analysis\')">성과 보기</button></nav></header>'}
 function paintCampaign(){var root=$('#campaign-root');if(!root)return;var tab=G.campaignTab||'home',body=tab==='home'?campaignHomePage():tab==='send'?campaignSendPage():tab==='schedule'?campaignHistoryPage(true):tab==='history'?campaignHistoryPage(false):tab==='templates'?campaignLibraryPage():campaignAnalysisPage(),title=tab==='send'?'새 발송':tab==='schedule'?'예약 발송':tab==='history'?'발송 이력':tab==='templates'?'문구 보관함':'성과 보기';root.innerHTML='<div class="cc-shell">'+(tab==='home'?'':campaignUtility(title))+(CAMPAIGN_STATE.notice?'<div class="mgmtbar blue">'+esc(CAMPAIGN_STATE.notice)+'</div>':'')+body+'</div>'}
 
-</script><script src="./inquiry-assignment-clarity.js?v=20260926-words-1"></script><script src="./detail-workspace.js?v=20260926-words-1"></script><link rel="stylesheet" href="./detail-actions.css?v=20260926-resolve-1"><script src="./detail-actions.js?v=20260926-resolve-1"></script><link rel="stylesheet" href="./now-card.css?v=20260925-flow-2"><script src="./now-card.js?v=20260926-words-1"></script><script src="./relationship-management.js?v=20260926-words-1"></script><script src="./inquiry-workbench.js?v=20260926-words-1"></script><script src="./today-work-queue.js?v=20260926-words-1"></script><link rel="stylesheet" href="./account-admin.css?v=20260924-account-1"><script src="./account-admin.js?v=20260924-account-1"></script><link rel="stylesheet" href="./sales-insights.css?v=20260926-livedaily-1"><script src="./sales-insights-model.js?v=20260924-quarter-1"></script><link rel="stylesheet" href="./sales-scope.css?v=20260924-lightnav-1"><script src="./sales-scope.js?v=20260925-repnav-1"></script><link rel="stylesheet" href="./sales-filters.css?v=20260920-1"><script src="./sales-filters.js?v=20260925-roleflags-1"></script><script src="./contract-sales-ledger.js?v=20260920-1"></script><script src="./contract-sales-data.js?v=20260923-stable-1"></script><script src="./sales-insights.js?v=20260926-livedaily-1"></script><script src="./pipeline-stages.js?v=20260920-spec-1"></script><link rel="stylesheet" href="./pipeline-workspace.css?v=20260924-ownerfold-1"><script src="./stage-specs.js?v=20260924-terms-2"></script><script src="./relationship-promo.js?v=20260924-terms-2"></script><script src="./stage-workspaces.js?v=20260926-words-1"></script><link rel="stylesheet" href="./technical-advisory-ui.css?v=20260925-advskin-2"><script src="./technical-advisory-ui.js?v=20260925-avq-1"></script><script src="./deal-detail-workspace.js?v=20260926-words-1"></script><script src="./pipeline-workspace.js?v=20260926-words-1"></script><link rel="stylesheet" href="./pipeline-split.css?v=20260920-worktypes-1"><script src="./pipeline-split.js?v=20260924-terms-2"></script><script src="./pipeline-batch.js?v=20260926-words-1"></script><script src="./operational-overlay.js?v=20260926-delta-1"></script><link rel="stylesheet" href="./contract-sales.css?v=20260925-avq-2"><script src="./contract-sales-ui.js?v=20260925-avq-3"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
+</script><script src="./inquiry-assignment-clarity.js?v=20260926-words-1"></script><script src="./detail-workspace.js?v=20260926-page-1"></script><link rel="stylesheet" href="./detail-actions.css?v=20260926-resolve-1"><script src="./detail-actions.js?v=20260926-resolve-1"></script><link rel="stylesheet" href="./now-card.css?v=20260925-flow-2"><script src="./now-card.js?v=20260926-words-1"></script><script src="./relationship-management.js?v=20260926-words-1"></script><script src="./inquiry-workbench.js?v=20260926-page-1"></script><script src="./today-work-queue.js?v=20260926-words-1"></script><link rel="stylesheet" href="./account-admin.css?v=20260924-account-1"><script src="./account-admin.js?v=20260924-account-1"></script><link rel="stylesheet" href="./sales-insights.css?v=20260926-livedaily-1"><script src="./sales-insights-model.js?v=20260924-quarter-1"></script><link rel="stylesheet" href="./sales-scope.css?v=20260924-lightnav-1"><script src="./sales-scope.js?v=20260925-repnav-1"></script><link rel="stylesheet" href="./sales-filters.css?v=20260920-1"><script src="./sales-filters.js?v=20260925-roleflags-1"></script><script src="./contract-sales-ledger.js?v=20260920-1"></script><script src="./contract-sales-data.js?v=20260923-stable-1"></script><script src="./sales-insights.js?v=20260926-livedaily-1"></script><script src="./pipeline-stages.js?v=20260920-spec-1"></script><link rel="stylesheet" href="./pipeline-workspace.css?v=20260924-ownerfold-1"><script src="./stage-specs.js?v=20260924-terms-2"></script><script src="./relationship-promo.js?v=20260924-terms-2"></script><script src="./stage-workspaces.js?v=20260926-words-1"></script><link rel="stylesheet" href="./technical-advisory-ui.css?v=20260925-advskin-2"><script src="./technical-advisory-ui.js?v=20260925-avq-1"></script><script src="./deal-detail-workspace.js?v=20260926-page-1"></script><script src="./pipeline-workspace.js?v=20260926-words-1"></script><link rel="stylesheet" href="./pipeline-split.css?v=20260920-worktypes-1"><script src="./pipeline-split.js?v=20260924-terms-2"></script><script src="./pipeline-batch.js?v=20260926-words-1"></script><script src="./operational-overlay.js?v=20260926-delta-1"></script><link rel="stylesheet" href="./contract-sales.css?v=20260925-avq-2"><script src="./contract-sales-ui.js?v=20260925-avq-3"></script><script>Promise.resolve(AUTH_READY).catch(function(){}).then(function(){
   loadData();
 });
 </script>

@@ -161,7 +161,7 @@ async function run() {
     assert.equal(await page.locator('#inquiryControlModal.on').count(),1);
     assert.ok(await page.evaluate(()=>Number(getComputedStyle(document.getElementById('inquiryControlModal')).zIndex)>Number(getComputedStyle(document.getElementById('inq-inbox-dialog')).zIndex)));
     await page.evaluate(()=>closeInquiryControlModal());
-    const size=await page.locator('.inq-dialog').boundingBox();assert.ok(size.width>=1440*.93&&size.height>=900);
+    const size=await page.locator('.inq-dialog').boundingBox();assert.ok(size.width>=1440-228-2&&size.height>=900,'inquiry detail page fills the content area');
     await page.locator('#inq-inbox-dialog').getByRole('button',{name:'📞 연락 결과',exact:true}).click();
     await page.locator('#iq-res').fill('저장 전 초안 유지');
     await page.evaluate(()=>paintInq());
@@ -178,12 +178,12 @@ async function run() {
     assert.equal(await page.locator('#spStatus').count(),1);
     await page.locator('.sp-form').getByRole('button',{name:'취소',exact:true}).click();
     if(process.env.INQUIRY_DETAIL_SCREENSHOT)await page.screenshot({path:process.env.INQUIRY_DETAIL_SCREENSHOT});
-    await page.getByRole('button',{name:'✕ 닫기',exact:true}).click();
+    await page.getByRole('button',{name:'← 목록으로',exact:true}).click();
     assert.equal(await page.locator('#inq-inbox-dialog').count(),0);
     assert.equal(await page.locator('.inq-work-row:not(.head)').count(),4);
     await page.locator('.inq-work-row[data-k="inq-2"] .inq-next-link').click();
     assert.equal(await page.evaluate(()=>G.inqSelKey),'inq-2');assert.equal(await page.locator('#spNextText').count(),1);
-    await page.getByRole('button',{name:'✕ 닫기',exact:true}).click();
+    await page.getByRole('button',{name:'← 목록으로',exact:true}).click();
     await page.evaluate(()=>{window.__originalInquiries=B.inquiries;B.inquiries=B.inquiries.concat(Array.from({length:35},(_,i)=>({...B.inquiries[0],id:'scroll-'+i,site:'스크롤 검증 '+i})));paintInq();window.scrollTo(0,900)});
     assert.ok(await page.locator('.inq-inbox-sticky').evaluate(e=>Math.abs(e.getBoundingClientRect().top)<2),'brand and filters stick while scrolling');
     await page.evaluate(()=>{B.inquiries=__originalInquiries;paintInq();window.scrollTo(0,0)});
@@ -196,7 +196,7 @@ async function run() {
     assert.equal(await page.locator('#inq-inbox-dialog').count(),0,'foreign inquiry cannot open');
     await page.locator('.inq-work-row[data-k="inq-1"] .inq-now').click();
     assert.equal(await page.locator('#inq-inbox-dialog').getByRole('button',{name:/상담·영업담당/}).count(),0);
-    await page.getByRole('button',{name:'✕ 닫기',exact:true}).click();
+    await page.getByRole('button',{name:'← 목록으로',exact:true}).click();
     await page.evaluate(()=>{
       InquiryWorkbench.open('inq-1','process');
       const saved=iqApply;let captured=null;iqApply=(q,target)=>{captured={id:q.id,target};return false};
@@ -211,6 +211,17 @@ async function run() {
       if(InquiryWorkbench.task(q).needed)throw Error('Future task should leave today after confirmation');
       InquiryWorkbench.close();
     });
+    /* 열림 규칙(2026-09-26): 오늘 업무에서 연 문의도 견적문의와 같은 전체 상세 — 닫으면 오늘 업무로, 메뉴를 누르면 상세가 남지 않는다 */
+    await page.evaluate(()=>goPage('today'));
+    await page.evaluate(()=>drwInq(JSON.stringify(B.inquiries.find(q=>q.id==='inq-1'))));
+    assert.equal(await page.locator('#inq-inbox-dialog').count(),1,'Today opens the same inquiry detail page');
+    assert.equal(await page.locator('#detailView.on').count(),0,'no small read-only inquiry window');
+    await page.getByRole('button',{name:'← 목록으로',exact:true}).click();
+    assert.equal(await page.evaluate(()=>G.page),'today','closing returns to Today');
+    await page.evaluate(()=>drwInq(JSON.stringify(B.inquiries.find(q=>q.id==='inq-1'))));
+    await page.evaluate(()=>goPage('dash'));
+    assert.equal(await page.locator('#inq-inbox-dialog').count(),0,'menu navigation closes the inquiry detail page');
+    await page.evaluate(()=>goPage('inq'));
     assert.equal(await page.evaluate(()=>__writes.length),0);
     const save=await page.evaluate(()=>{ Phase1.storage={setItem:()=>{}};
       const q={...B.inquiries[0],id:'10000000-0000-4000-8000-000000000001',first_response_at:null,responded_at:null};B.inquiries=[q];LOCAL.inquiries={};

@@ -98,16 +98,21 @@
   return {...n,list:n.list.map(x=>({...x,sameWork:!!work&&work!=='공종 미분류'&&root.dealWorkSummary(x.d)===work})).sort((a,b)=>Number(b.sameWork)-Number(a.sameWork))};
  }
  function nearby(q){const n=related(q);return '<section class="inq-related"><h3>같은 지역 · 공종 현장</h3><p>'+h(n.unassigned?'담당자를 배정하면 해당 담당자의 현장을 확인할 수 있습니다.':!n.region?'지역 정보가 없어 비교할 수 없습니다.':n.region+' · 같은 담당자의 진행 현장 · 공종 일치 우선')+'</p>'+n.list.slice(0,4).map(x=>'<button type="button" data-k="'+attr(root.dealKey(x.d))+'" onclick="InquiryWorkbench.openRelated(this.dataset.k)"><b>'+h(x.d.site)+'</b><small>'+h(root.stageNoLabel(root.dealStage(x.d)))+' · '+h(root.dealWorkSummary(x.d)||'공종 미입력')+(x.sameWork?' · 같은 공종':'')+'</small></button>').join('')+(n.region&&!n.list.length?'<p>같은 지역에 진행 중인 담당 현장이 없습니다.</p>':'')+'<small>지역 표기 기준이며 실제 거리나 단지 규모의 유사도를 뜻하지 않습니다.</small></section>'}
- function openRelated(key){const q=root.inqCtlFind(modalKey,false);if(!allowed(q)||!related(q).list.some(x=>root.dealKey(x.d)===key))return;close();root.nearbyOpen(key)}
+ function openRelated(key){const q=root.inqCtlFind(modalKey,false);if(!allowed(q)||!related(q).list.some(x=>root.dealKey(x.d)===key))return;dismiss();root.nearbyOpen(key)}
  function allowed(q){return q&&root.inqCtlRoleMatch(q)}
+ let returnPage=null,returnScroll=0;
+ /* 다른 화면(오늘 업무 등)에서 연 문의 상세 — 견적문의의 같은 전체 상세로 열고, 닫으면 원래 화면으로 돌아간다 */
+ function openFrom(key,from){const q=root.inqCtlFind(key,false);if(!allowed(q))return false;const back=from&&from!=='inq'?from:null,y=window.scrollY||0;if(root.G.page!=='inq')root.goPage('inq');returnPage=back;returnScroll=y;open(key);return !!modalKey;}
+ /* 메뉴 이동·역할 전환 등 화면이 바뀔 때: 되돌아가지 않고 조용히 닫는다 */
+ function dismiss(){returnPage=null;if(!modalKey&&!document.getElementById('inq-inbox-dialog'))return;modalKey=null;root.G.inqAct=null;root.G.iqForm=null;document.getElementById('inq-inbox-dialog')?.remove();document.body.classList.remove('inq-dialog-open');}
  function open(key,action){action=action==='log'?'process':action;const q=root.inqCtlFind(key,false);if(!allowed(q))return;returnFocus=document.activeElement;modalKey=root.inqKey(q);root.G.inqSelKey=modalKey;root.G.inqAct=action||null;root.G.iqForm=action==='process'?'next':null;root.paint();document.querySelector('#inq-inbox-dialog .inq-dialog-close')?.focus()}
- function close(){modalKey=null;root.G.inqAct=null;root.G.iqForm=null;document.getElementById('inq-inbox-dialog')?.remove();document.body.classList.remove('inq-dialog-open');if(returnFocus?.isConnected)returnFocus.focus();else document.querySelector('.inq-work-counts button')?.focus()}
+ function close(){const back=returnPage,y=returnScroll;returnPage=null;modalKey=null;root.G.inqAct=null;root.G.iqForm=null;document.getElementById('inq-inbox-dialog')?.remove();document.body.classList.remove('inq-dialog-open');if(back){root.goPage(back);requestAnimationFrame(()=>window.scrollTo(0,y));return}if(returnFocus?.isConnected)returnFocus.focus();else document.querySelector('.inq-work-counts button')?.focus()}
  function dialog(){
-  const q=root.inqCtlFind(modalKey,false);if(root.G.page!=='inq'||!allowed(q)){close();return}
+  const q=root.inqCtlFind(modalKey,false);if(root.G.page!=='inq'||!allowed(q)){dismiss();return}
   const previous=document.getElementById('inq-inbox-dialog'),draft={},focused=document.activeElement?.id;const sameAction=previous?.dataset.action===String(root.G.inqAct||'');if(sameAction)previous.querySelectorAll('input[id],select[id],textarea[id]').forEach(e=>draft[e.id]=e.value);
   previous?.remove();const panel=root.$('#sg-panel'),nodes=Array.from(panel.childNodes),phase=root.G.inqPhase;root.G.inqPhase='전체';root.G.inqSelKey=modalKey;try{root.inqSplit([q])}finally{root.G.inqPhase=phase}
-  const detail=panel.querySelector('.sp-detail');panel.replaceChildren(...nodes);if(!detail){close();return}
-  const overlay=document.createElement('div');overlay.id='inq-inbox-dialog';overlay.dataset.action=String(root.G.inqAct||'');overlay.className='inq-dialog-overlay';overlay.innerHTML='<section class="inq-dialog" role="dialog" aria-modal="true" aria-labelledby="inq-dialog-title"><header><div><h2 id="inq-dialog-title">'+h(q.site||'견적문의')+'</h2><span>'+h(q.brand||'유입 미지정')+'</span></div><button class="inq-dialog-close" onclick="InquiryWorkbench.close()">✕ 닫기</button></header><div class="inq-dialog-columns"><aside aria-label="문의자와 현장"><h3>문의자 · 현장</h3></aside><main aria-label="문의와 응대"><h3>문의 원문 · 이력</h3></main><aside aria-label="문의 업무 관리"><h3>업무 관리</h3></aside></div></section>';
+  const detail=panel.querySelector('.sp-detail');panel.replaceChildren(...nodes);if(!detail){dismiss();return}
+  const overlay=document.createElement('div');overlay.id='inq-inbox-dialog';overlay.dataset.action=String(root.G.inqAct||'');overlay.className='inq-dialog-overlay';overlay.innerHTML='<section class="inq-dialog" role="dialog" aria-modal="true" aria-labelledby="inq-dialog-title"><header><button class="inq-dialog-close" onclick="InquiryWorkbench.close()">← 목록으로</button><div><h2 id="inq-dialog-title">'+h(q.site||'견적문의')+'</h2><span>'+h(q.brand||'유입 미지정')+'</span></div></header><div class="inq-dialog-columns"><aside aria-label="문의자와 현장"><h3>문의자 · 현장</h3></aside><main aria-label="문의와 응대"><h3>문의 원문 · 이력</h3></main><aside aria-label="문의 업무 관리"><h3>업무 관리</h3></aside></div></section>';
   /* E 공통 골격(2026-09-24): 어떤 상세든 맨 위는 '지금 할 일' — 영업건 상세의 NowCard와 같은 자리·같은 문법 */
   if(!storeOnly(q)){const nowT=task(q);overlay.querySelector('.inq-dialog-columns').insertAdjacentHTML('beforebegin','<div class="inq-now-card'+(nowT.overdue?' hot':'')+'"><span class="inq-now-eyebrow">지금 할 일</span><p>'+h(nowT.reason)+' — <b>'+h(nowT.text)+'</b> · '+h(nowT.due)+'</p><button class="inq-now" data-k="'+attr(root.inqKey(q))+'" onclick="InquiryWorkbench.run(this.dataset.k)">'+h(nowT.label)+'</button></div>')}
   const left=overlay.querySelector('aside'),center=overlay.querySelector('main'),right=overlay.querySelectorAll('aside')[1];
@@ -134,12 +139,12 @@
  }
  const oldAction=root.inqAct;root.inqAct=function(action){if(modalKey)return open(modalKey,action);return oldAction.apply(this,arguments)};
  root.inqCtlOpenSingle=key=>open(key);root.inqCtlQuickRecord=key=>open(key,'log');root.inqCtlQuickNext=key=>open(key,'next');
- const originalPromoted=root.openPromotedDeal;root.openPromotedDeal=function(){if(modalKey)close();return originalPromoted.apply(this,arguments)};
+ const originalPromoted=root.openPromotedDeal;root.openPromotedDeal=function(){if(modalKey)dismiss();return originalPromoted.apply(this,arguments)};
  root.paintInq=function(){
-  const role=root.inqCtlRoleView();if(root.G._inqRoleApplied!==role){close();root.G._inqRoleApplied=role;root.G.inqBucket='전체';root.G.inqCompactMetric='needs';root.G.inqLegacyView=false;root.G.inqSelKey=null;root.G.inqPage=1;root.INQ_SEL={}}
+  const role=root.inqCtlRoleView();if(root.G._inqRoleApplied!==role){dismiss();root.G._inqRoleApplied=role;root.G.inqBucket='전체';root.G.inqCompactMetric='needs';root.G.inqLegacyView=false;root.G.inqSelKey=null;root.G.inqPage=1;root.INQ_SEL={}}
   if(!root.G.inqLegacyView)root.G.inqView='console';document.querySelector('#pg-inq .inq-inbox-sticky')?.remove();const result=originalPaint.apply(this,arguments);decorate();if(modalKey)dialog();return result;
  };
- const oldRole=root.inqCtlSetRoleView;root.inqCtlSetRoleView=function(v){close();root.G.inqLegacyView=false;root.G.inqCompactMetric='';return oldRole(v)};
+ const oldRole=root.inqCtlSetRoleView;root.inqCtlSetRoleView=function(v){dismiss();root.G.inqLegacyView=false;root.G.inqCompactMetric='';return oldRole(v)};
  function saveProcess(){
   const q=root.inqCtlFind(modalKey,false);if(!allowed(q))return;
   const idx=root.inqCtlFirstResponseAt(q)?root.flowIndex(q,'inq'):1;
@@ -151,5 +156,5 @@
 
  // Refresh only after a write event; preserve the existing filters and draft fields.
  let queuePaint=false;root.addEventListener('phase1:queue',()=>{if(queuePaint)return;queuePaint=true;root.setTimeout(()=>{queuePaint=false;if(root.G?.page==='inq'&&root.B)root.paintInq()},0)});
- root.InquiryWorkbench={saveProcess,related,openRelated,originalText,sourceFields,task,matches,compare,run,set,delayed,primaryAction,selectBrand,view,open,close};
+ root.InquiryWorkbench={saveProcess,related,openRelated,originalText,sourceFields,task,matches,compare,run,set,delayed,primaryAction,selectBrand,view,open,close,openFrom,dismiss};
 })(window);
