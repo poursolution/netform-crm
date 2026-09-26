@@ -314,7 +314,7 @@
    +'<div class="hl-gaps">'+gaps.map(([t,n])=>'<span>'+t+' <b>'+number(n)+'</b></span>').join('')+'</div></div>'+flowQuality(r.deals)+'</div></div>';
  }
  function control(s){
-  const f=state(),ct=ctState();
+  const f=state(),ct=ctState(),ctTab=ct.tab==='check'?'check':'now';
   let list=M.select(s,f.kind,f);
   if(ct.owner)list=list.filter(d=>d.owner===ct.owner);
   const ctSup=ctSupport(s);
@@ -332,10 +332,12 @@
   const table='<div class="si-table-scroll"><table class="si-table si-cases dc-table dc-cases"><thead><tr><th class="ct-selcol"><input type="checkbox" id="ct-all" aria-label="표시된 현장 모두 선택"></th><th>현장</th><th>담당자</th><th>현재 단계</th><th>왜 막혔나</th><th>조치</th></tr></thead><tbody>'+list.slice((f.page-1)*size,f.page*size).map(d=>'<tr><td class="ct-selcol">'+(d.type==='deal'?'<input type="checkbox" data-ct-sel="'+a(d.key)+'" aria-label="'+a(d.site)+' 선택">':'')+'</td><td class="ct-site"><b title="'+a(d.site)+'">'+h(d.site)+'</b></td><td>'+(d.owner&&d.owner!=='미배정'?btn(d.owner,'person',d.owner):h(d.owner))+'</td><td><span class="si-badge">'+h(d.stageLabel)+'</span></td><td>'+(f.kind==='won'?h('준공 처리금액 '+money(d.wonAmount)+(d.hasWonAmount?'':' · 금액 미입력')):(ctSup.map[d.key]?'<span class="ct-hot">지원 요청</span> — '+h(ctSup.map[d.key].text)+' <small>'+h(ctSup.map[d.key].at)+'</small> · ':'')+riskText(d))+'</td><td>'+(ctSup.map[d.key]&&d.type==='deal'?btn('처리','support-resolve',d.key,'ct-resolve'):btn(d.type==='inq'&&d.owner==='미배정'?'배정':'열기','record',d.key))+'</td></tr>').join('')+'</tbody></table></div>'+(list.length?'':empty());
   const bulk='<div class="ct-bulk">선택 <b id="ct-count">0</b>건 → '+btn('할 일 지정 (다음 할 일 일괄 등록)','ct-bulk','','ct-bulkbtn')+'<span class="dc-mut">지정한 할 일은 각 현장의 다음 할 일로 등록되어 담당자 오늘 업무에 뜹니다 · 문의 건은 배정으로 처리</span></div>';
   return '<div class="dc-topbar"><h2><i>◈</i>컨트롤타워</h2>'+'<span class="dc-nav">'+btn('전체 현황 ↗','navigate','dash')+btn('성과 분석 ↗','navigate','perf')+(root.ContractSalesUI?.advisorySync&&root.CRMRelease?.has?.('crm_advisory_attribution_v1')!==false?'<button type="button" data-si-action="advisory-sync">기술자문 낙찰실적 확정</button>':'')+'</span><span class="dc-live"><i></i>관리 대상 '+number(list.length)+'건</span></div>'+
+   '<nav class="ct-tabs" role="tablist" aria-label="컨트롤타워 보기">'+[['now','지금 처리','끊긴 건 · 막힌 곳 · 지시 · 처리 목록'],['check','점검 지표','운영 건강 · 흐름 품질 · 일일·주간 점검']].map(([k,t,sub])=>'<button type="button" role="tab" aria-selected="'+(ctTab===k)+'" class="'+(ctTab===k?'on':'')+'" data-si-action="ct-tab" data-value="'+k+'"><b>'+t+'</b><small>'+sub+'</small></button>').join('')+'</nav>'+
+   (ctTab==='check'?'<div class="dc-grid">'+healthPanel()+(()=>{try{return liveDaily();}catch(e){if(root.console&&root.console.warn)root.console.warn('live-daily: '+e.message);return '';}})()+(()=>{try{return weeklyReview();}catch(e){if(root.console&&root.console.warn)root.console.warn('weekly: '+e.message);return '';}})()+'</div>':
    '<div class="dc-grid">'+
-   loopStrip(s)+healthPanel()+(()=>{try{return liveDaily();}catch(e){if(root.console&&root.console.warn)root.console.warn('live-daily: '+e.message);return '';}})()+(()=>{try{return weeklyReview();}catch(e){if(root.console&&root.console.warn)root.console.warn('weekly: '+e.message);return '';}})()+'<div class="dc-p c12 ct-datarisk" id="ct-datarisk" hidden></div>'+'<div class="dc-p c12"><div class="dc-ph">① 지금 막힌 곳<small>문장 클릭 = 아래 목록이 그 조건으로 좁혀짐</small></div><div class="dc-pb ct-verdicts">'+verdicts+'</div></div>'+
+   loopStrip(s)+'<div class="dc-p c12 ct-datarisk" id="ct-datarisk" hidden></div>'+'<div class="dc-p c12"><div class="dc-ph">① 지금 막힌 곳<small>문장 클릭 = 아래 목록이 그 조건으로 좁혀짐</small></div><div class="dc-pb ct-verdicts">'+verdicts+'</div></div>'+
    '<div class="dc-p c12"><div class="dc-ph">② 담당자별 문제 · 지시<small>문제 칩 클릭=목록 필터 · 이름 클릭=성과 분석 · 할 일 지정=해당 담당자 문제 건 일괄 등록</small></div><div class="dc-pb">'+ctRepRows(s)+'</div></div>'+
-   '<div class="dc-p c12"><div class="dc-ph">③ 처리 목록<small>진행 중·조치 필요=현재 상태 · 문의·준공=선택 기간 · 계약실적과 별도</small></div><div class="dc-pb"><div class="dc-kchips">'+chips+'</div>'+filtersHtml+table+bulk+'<div class="si-pager">'+btn('이전','page',Math.max(1,f.page-1))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',Math.min(pages,f.page+1))+'</div></div></div></div>';
+   '<div class="dc-p c12"><div class="dc-ph">③ 처리 목록<small>진행 중·조치 필요=현재 상태 · 문의·준공=선택 기간 · 계약실적과 별도</small></div><div class="dc-pb"><div class="dc-kchips">'+chips+'</div>'+filtersHtml+table+bulk+'<div class="si-pager">'+btn('이전','page',Math.max(1,f.page-1))+'<span>'+f.page+' / '+pages+'</span>'+btn('다음','page',Math.min(pages,f.page+1))+'</div></div></div></div>');
  }
  /* ─── 대시보드 다크 콘솔 (2026-09-22) ─── */
  let lastDiags=[],lastAnimKey='';
@@ -664,6 +666,7 @@
   if(action==='navigate')root.goPage(v);
   if(action==='view'){f.view=v;render()}
   if(action==='quarter'){f.quarter=Number(v);f.month=0;f.page=1;render();return}
+  if(action==='ct-tab'){ctState().tab=v==='check'?'check':'now';render();return}
   if(action==='ct-clear'){const ct=ctState();ct.owner='';ct.issue='all';f.page=1;render();return}
   if(action==='ct-focus'){const parts=String(v).split('|'),ct=ctState();ct.owner=parts[0];ct.issue=parts[1]||'all';if(parts[2])f.kind=parts[2];f.issue='all';f.stage='all';f.search='';f.page=1;render();return}
   if(action==='ct-order'||action==='ct-bulk'){
