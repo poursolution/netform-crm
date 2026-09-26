@@ -47,11 +47,24 @@
   };
   shade.onkeydown=e=>{if(e.key==='Escape'&&!busy)close();if(e.key==='Tab'){const nodes=[...form.querySelectorAll('input,select,textarea,button')].filter(x=>!x.disabled&&x.getClientRects().length),first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}};form.querySelector('[data-close]').focus();
  }
- function detail(){
-  if(root.CUR_DETAIL?.kind!=='deal')return;const host=document.getElementById('dv-body');if(!host)return;
-  host.querySelector('[data-contract-edit]')?.remove();const b=document.createElement('button');b.type='button';b.dataset.contractEdit='';b.className='dact';b.textContent='계약실적 · 변경·취소 이력';b.onclick=()=>editor(root.CUR_DETAIL.item);host.prepend(b);
+ /* 영업건 상세에는 계약실적 버튼을 붙이지 않는다(2026-09-26 대표 '자꾸 계약실적이 나온다'). 변경·취소 기록은 성과 분석의 desk()에서만. */
+ function detail(){}
+ /* 관리자 전용 — 계약 변경·취소(와 과거 계약 수기 체결) 기록 대상 고르기 */
+ function desk(){
+  close();focus=document.activeElement;
+  const shade=document.createElement('div');shade.className='contract-sales-shade';dialog=shade;
+  shade.innerHTML='<section class="contract-sales-dialog" role="dialog" aria-modal="true" aria-labelledby="cs-desk-title"><header><h2 id="cs-desk-title">계약 변경·취소 기록</h2><button type="button" data-close aria-label="닫기">✕ 닫기</button></header><p>계약 체결은 진행상태를 ‘계약 체결 완료’로 바꿀 때 자동으로 기록됩니다. 여기서는 금액 변경·계약 취소·과거 계약만 기록합니다.</p><label>현장 찾기<input type="search" data-q placeholder="아파트명·담당자"></label><div class="cs-desk-list" role="list"></div></section>';
+  document.body.append(shade);shade.querySelector('[data-close]').onclick=close;shade.onkeydown=e=>{if(e.key==='Escape')close()};
+  const list=shade.querySelector('.cs-desk-list'),q=shade.querySelector('[data-q]');
+  const ledger=new Map((D.state().items||[]).map(r=>[String(r.deal_id),r]));
+  const stageOf=d=>root.dealStage?root.dealStage(d):d.code;
+  const rows=(root.B?.deals||[]).filter(d=>ledger.has(String(root.dealKey(d)))||['contract','construction','completion','won'].includes(stageOf(d)));
+  const paint=()=>{const k=q.value.trim();const hit=rows.filter(d=>!k||String(d.site||'').includes(k)||String(d.assignee||'').includes(k)).slice(0,60);
+   list.innerHTML=hit.map(d=>{const r=ledger.get(String(root.dealKey(d)));return '<button type="button" role="listitem" data-k="'+h(root.dealKey(d))+'"><b>'+h(d.site||'현장명 미입력')+'</b><small>'+h(root.repN?root.repN(d.assignee):d.assignee)+' · '+(r?(r.cancelled?'계약 취소됨':h(r.contract_date)+' · '+amount(r.balance)):'계약 기록 없음')+'</small></button>';}).join('')||'<p>찾는 현장이 없습니다.</p>';};
+  q.oninput=paint;list.onclick=e=>{const b=e.target.closest('[data-k]');if(!b)return;const d=rows.find(x=>String(root.dealKey(x))===b.dataset.k);if(d)editor(d);};
+  if(D.state().status==='idle')D.refresh().then(()=>{if(dialog===shade)desk();});
+  paint();q.focus();
  }
- const oldDetail=root.dccDecorateDetail;if(oldDetail)root.dccDecorateDetail=function(){const r=oldDetail.apply(this,arguments);detail();return r};
  const oldPaint=root.paint;root.paint=function(){const r=oldPaint.apply(this,arguments);const page=root.G.page;
   /* 분석 3화면(대시보드·컨트롤타워·성과 분석)에는 상세 원장 패널을 붙이지 않는다 —
      매출 근거는 각 화면의 클릭 팝업으로, 합계는 리포트·브리핑의 컴팩트 패널로 (2026-09-24). */
@@ -194,5 +207,5 @@
   };
   paint();
  }
- root.ContractSalesUI={html,mount,filters,editor,detail,advisorySync,advisoryRows};
+ root.ContractSalesUI={html,mount,filters,editor,detail,desk,advisorySync,advisoryRows};
 })(window);

@@ -56,7 +56,7 @@ function wide(){
    card2.innerHTML='<h3>같은 현장의 다른 영업건 <span>'+others.length+'건</span></h3><p class="sh-help">이 현장에 따로 등록된 영업입니다 — 누르면 그 건이 열립니다.</p>'
     +others.slice(0,6).map(function(x){
       var amt=Number(x.amount||x.amt||0);
-      return '<button type="button" class="sh-row'+(dup(x)?' sh-dup':'')+'" data-k="'+escAttr(dealKey(x))+'"><span>'+badge(x)+' '+esc(stageLabel(dealStage(x)))+' · '+esc(dealWorkSummary(x)||x.work||'공종 미기록')+'</span><small>'+esc(String(x.created||'').slice(0,7)||'')+(amt?' · '+fmtAmt(amt):'')+' · '+esc(repN(x.assignee)||'미배정')+(dup(x)?' · <b>중복 의심 — 지금 보는 건과 담당·금액이 같음</b>':'')+'</small></button>'
+      return '<button type="button" class="sh-row'+(dup(x)?' sh-dup':'')+'" data-k="'+escAttr(dealKey(x))+'"><span>'+badge(x)+' <b class="sh-site">'+esc(x.site||'현장명 미입력')+'</b>'+(x.brand?'<em class="sh-brand">'+esc(x.brand)+'</em>':'')+'</span><small class="sh-stage">'+esc(stageLabel(dealStage(x)))+' · '+esc(dealWorkSummary(x)||x.work||'공종 미기록')+'</small><small>'+esc(String(x.created||'').slice(0,7)||'')+(amt?' · '+fmtAmt(amt):'')+' · '+esc(repN(x.assignee)||'미배정')+(dup(x)?' · <b>중복 의심 — 지금 보는 건과 담당·금액이 같음</b>':'')+'</small></button>'
      }).join('')
     +(others.length>6?'<p class="sh-more">외 '+(others.length-6)+'건</p>':'');
    card2.addEventListener('click',function(e){

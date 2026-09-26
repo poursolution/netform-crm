@@ -90,3 +90,7 @@
 .dw-sitehistory .sh-row.sh-dup{border-color:#f5c26b;background:#fffaf0}
 .dw-sitehistory .sh-row.sh-dup small b{color:#b45309;font-weight:700}
 .dw-sitehistory .sh-b{white-space:nowrap;flex:none}
+/* 같은 현장의 다른 영업건(2026-09-26 대표 '아파트명을 보여줘야지'): 아파트명·브랜드를 첫 줄에 */
+.dw-sitehistory .sh-row .sh-site{font-weight:700;color:#0f172a}
+.dw-sitehistory .sh-row .sh-brand{font-style:normal;font-size:11.5px;font-weight:600;color:#5b6b85}
+.dw-sitehistory .sh-row small.sh-stage{color:#334155;font-size:12px}

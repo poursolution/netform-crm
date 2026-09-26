@@ -9,3 +9,4 @@
 .sf-next-chips button{border:1.5px solid #d3dbe7;background:#fff;border-radius:10px;padding:7px 11px;font:inherit;font-size:13px;font-weight:700;color:#17233a;cursor:pointer;white-space:nowrap}
 .sf-next-chips button small{font-weight:600;color:#8a96a9;margin-left:3px}
 .sf-next-chips button.on{border-color:#3B6CE4;background:#ebf1fe;color:#1e50b3}
+.sf-src{display:block;margin-top:5px;font-size:12px;color:#64748b}

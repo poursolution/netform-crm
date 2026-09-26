@@ -15,6 +15,8 @@ function take(n,host){if(!n||!state)return;const mark=document.createComment('de
 function open(key){
  const view=$('detailView');if(!view?.classList.contains('dw-wide'))return false;
  close(false);hideTip();
+ const need={activity:'activityFormCard',next:'nextActionCard',amount:'dw-amount'}[key];
+ if(need&&!$(need)){if(open.retrying||typeof root.renderDetail!=='function'){root.showDetailErr?.('입력 칸을 불러오지 못했습니다. 상세를 닫았다가 다시 열어 주세요.');return false;}open.retrying=true;try{root.renderDetail();}finally{open.retrying=false;}return $(need)?open(key):(root.showDetailErr?.('입력 칸을 불러오지 못했습니다. 상세를 닫았다가 다시 열어 주세요.'),false);}
  const titles={activity:'연락 결과 · 다음 할 일',next:'다음 할 일 설정',stage:'진행상태 변경',owner:'담당자 변경',amount:'예상금액 수정',materials:'자료 보기 · 추가',management:'관리정보 수정',contact:'연락처 수정',history:'전체 이력',support:'관리자 지원 요청',help:'관리 기준'};
  const panel=document.createElement('div');panel.id='detailAction';/* 2026-09-24 지시: 상세 안 작업창은 전부 같은 중앙 창 — 우측 드로어·중앙 혼용 금지 */
  panel.className='da-layer da-compact';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-labelledby','da-title');
@@ -160,10 +162,9 @@ function viewingCards(body,stash){
  const management=card('추가 관리정보',[['고객 반응',fields.customer_reaction||fields.reaction||d.customer_reaction],['의사결정자',fields.decision_maker||d.decision_maker],['경쟁사',fields.competitor||d.competitor],['입찰 예정일',fields.bid_deadline||fields.bid_date||d.bid_date]]);management.append(button('관리정보 수정','management'));
  const ledger=root.ContractSalesData?.state(),contract=ledger?.status==='ready'?ledger.items.find(x=>String(x.deal_id)===String(d.id)):null,f=contexts.contract?.fields||{};
  const money=v=>v==null||v===''?'—':root.fmtAmt(v);
- const work=card('공종 · 금액',[['공종',root.dealWorkSummary(d)||'미분류'],['예상금액',money(d.amount??d.amt)],['계약금액',money(contract?.balance??f.contract_amount)],['계약일',contract?.contract_date||f.contract_date||'—'],['실적귀속 담당자',contract?.sales_owner_name||'—']]);
- if(contract){const status=document.createElement('p');status.className='da-contract-state';status.textContent=contract.cancelled?'계약 취소 · 조정 이력 보존':'✓ 영업실적 확정';work.append(status)}
+ const work=card('공종 · 금액',[['공종',root.dealWorkSummary(d)||'미분류'],['예상금액',money(d.amount??d.amt)],['계약금액',money(contract?.balance??f.contract_amount)],['계약일',contract?.contract_date||f.contract_date||'—']]);
  work.append(button('공종 수정','work',()=>root.openWorkEdit()),button('금액 수정','amount'));
- if(root.ContractSalesUI)work.append(button('계약실적 · 변경·취소 이력','amount',()=>root.ContractSalesUI.editor(d)));
+ /* 계약실적(체결·변경·취소)은 운영 화면에 두지 않는다(2026-09-26 대표) — 체결은 진행상태 '계약 체결 완료'가 서버에서 자동 기록, 변경·취소는 성과 분석(관리자) */
  const oldHistory=$('dw-history');if(oldHistory)stash.append(oldHistory);
  const schema=root.StageTransition?.definitions?.[code];if(schema){const current=contexts[code]?.fields||{},summary=card('현재 단계 · '+root.stageLabel(code),schema.fields.map(f=>[f.label,Array.isArray(current[f.key])?current[f.key].join(' · '):f.type==='money'?money(current[f.key]):current[f.key]]));summary.classList.add('da-stage-summary');$('dw-now')?.after(summary);}
  body.querySelectorAll('.dw-left .contactedit').forEach(n=>{if(n.querySelector('input,select,textarea')){const edit=button('연락처 수정','contact',()=>open('contact'));n.before(edit);n.id='da-contact-fields';stash.append(n)}});
