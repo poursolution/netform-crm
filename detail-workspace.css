@@ -87,3 +87,7 @@
 /* 재배치 유실 복원: 고객 핵심 발언 카드 */
 .dw-voice .dw-voice-quote{margin:4px 0 6px;font-size:13px;line-height:1.6;color:#1a2332}
 .dw-voice small{display:block;margin-bottom:8px;color:#78859a}
+.dw-sitehistory .sh-help{font-size:11.5px;color:#748197;margin:2px 0 8px}
+.dw-sitehistory .sh-row.sh-dup{border-color:#f5c26b;background:#fffaf0}
+.dw-sitehistory .sh-row.sh-dup small b{color:#b45309;font-weight:700}
+.dw-sitehistory .sh-b{white-space:nowrap;flex:none}

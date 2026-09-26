@@ -151,7 +151,7 @@ function flatten(scope){
 function viewingCards(body,stash){
  const d=root.CUR_DETAIL.item,p=root.currentPatch(),contexts=d.stage_contexts||p.stage_contexts||{},right=body.querySelector('.dw-right');if(!right)return;
  const code=root.dealStage(d),fields=Object.assign({},...Object.values(contexts).map(c=>c?.fields||{}),contexts[code]?.fields||{});
- function card(title,pairs){const n=document.createElement('section');n.className='dcard da-info';const h=document.createElement('h3');h.textContent=title;n.append(h);const dl=document.createElement('dl');pairs.forEach(([label,value])=>{const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=value==null||value===''?'미입력':String(value);dl.append(dt,dd)});n.append(dl);right.append(n);return n;}
+ function card(title,pairs){const n=document.createElement('section');n.className='dcard da-info';const h=document.createElement('h3');h.textContent=title;n.append(h);const dl=document.createElement('dl');pairs.forEach(([label,value])=>{const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;const empty=value==null||value==='';dd.textContent=empty?'미입력':String(value);if(empty)dd.className='da-empty';dl.append(dt,dd)});n.append(dl);right.append(n);return n;}
  const files=root.execAttachments(d),quotes=root.execQuoteVersions(d),photos=files.filter(x=>/^image\//.test(x.mime_type||''));
  const original=$('dw-materials');if(original)stash.append(original);
  const material=card('자료',[['사진',photos.length+'건'],['견적서',quotes.length+'건'],['기타자료',(files.length-photos.length)+'건']]);material.id='da-material-summary';material.append(button('자료 보기','materials'),button('+ 자료 추가','materials'));

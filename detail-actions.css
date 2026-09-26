@@ -25,3 +25,11 @@
 .da-support-req b{margin-right:6px;color:#a15c07}.da-support-req small{color:#a58a5e;margin-left:4px}
 .da-support-resolve label{font-size:12.5px;font-weight:700;color:#17233a}.da-support-resolve label small{font-weight:500;color:#8a96a9}
 .da-support-follow{display:flex;align-items:center;gap:7px;font-weight:600!important;color:#46536b!important}
+/* 정보 카드 줄 맞춤(2026-09-26 대표 캡처 '배열'): 항목 이름과 값을 같은 줄에 — 상세 공통 스타일의 dt 위 여백(12px)·dd 여백(4px)이 줄을 어긋나게 했다 */
+.da-info dl,.dw-columns .da-info dl{grid-template-columns:128px minmax(0,1fr);gap:0;margin:10px 0 0}
+.da-info dt,.da-info dd,.dw-columns .da-info dt,.dw-columns .da-info dd{margin:0;padding:9px 0;line-height:20px;border-top:1px solid #eef2f7}
+.da-info dt:first-of-type,.da-info dt:first-of-type+dd{border-top:0}
+.da-info dt{font-size:12.5px;color:#64748b;font-weight:600;padding-right:12px}
+.da-info dd{font-size:13.5px;font-weight:700;color:#0f172a}
+.da-info dd.da-empty{color:#a3aebf;font-weight:500}
+.da-stage-summary dl{grid-template-columns:140px minmax(0,1fr)}
