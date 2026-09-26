@@ -161,7 +161,7 @@ async function run() {
     assert.equal(await page.locator('#inquiryControlModal.on').count(),1);
     assert.ok(await page.evaluate(()=>Number(getComputedStyle(document.getElementById('inquiryControlModal')).zIndex)>Number(getComputedStyle(document.getElementById('inq-inbox-dialog')).zIndex)));
     await page.evaluate(()=>closeInquiryControlModal());
-    const size=await page.locator('.inq-dialog').boundingBox();assert.ok(size.width>=1440-228-2&&size.height>=900,'inquiry detail page fills the content area');
+    const size=await page.locator('.inq-dialog').boundingBox();assert.ok(size.width>=1440*.93&&size.height>=900,'inquiry detail window is 94% wide');
     await page.locator('#inq-inbox-dialog').getByRole('button',{name:'📞 연락 결과',exact:true}).click();
     await page.locator('#iq-res').fill('저장 전 초안 유지');
     await page.evaluate(()=>paintInq());
@@ -178,12 +178,12 @@ async function run() {
     assert.equal(await page.locator('#spStatus').count(),1);
     await page.locator('.sp-form').getByRole('button',{name:'취소',exact:true}).click();
     if(process.env.INQUIRY_DETAIL_SCREENSHOT)await page.screenshot({path:process.env.INQUIRY_DETAIL_SCREENSHOT});
-    await page.getByRole('button',{name:'← 목록으로',exact:true}).click();
+    await page.getByRole('button',{name:'✕ 닫기',exact:true}).click();
     assert.equal(await page.locator('#inq-inbox-dialog').count(),0);
     assert.equal(await page.locator('.inq-work-row:not(.head)').count(),4);
     await page.locator('.inq-work-row[data-k="inq-2"] .inq-next-link').click();
     assert.equal(await page.evaluate(()=>G.inqSelKey),'inq-2');assert.equal(await page.locator('#spNextText').count(),1);
-    await page.getByRole('button',{name:'← 목록으로',exact:true}).click();
+    await page.getByRole('button',{name:'✕ 닫기',exact:true}).click();
     await page.evaluate(()=>{window.__originalInquiries=B.inquiries;B.inquiries=B.inquiries.concat(Array.from({length:35},(_,i)=>({...B.inquiries[0],id:'scroll-'+i,site:'스크롤 검증 '+i})));paintInq();window.scrollTo(0,900)});
     assert.ok(await page.locator('.inq-inbox-sticky').evaluate(e=>Math.abs(e.getBoundingClientRect().top)<2),'brand and filters stick while scrolling');
     await page.evaluate(()=>{B.inquiries=__originalInquiries;paintInq();window.scrollTo(0,0)});
@@ -196,7 +196,7 @@ async function run() {
     assert.equal(await page.locator('#inq-inbox-dialog').count(),0,'foreign inquiry cannot open');
     await page.locator('.inq-work-row[data-k="inq-1"] .inq-now').click();
     assert.equal(await page.locator('#inq-inbox-dialog').getByRole('button',{name:/상담·영업담당/}).count(),0);
-    await page.getByRole('button',{name:'← 목록으로',exact:true}).click();
+    await page.getByRole('button',{name:'✕ 닫기',exact:true}).click();
     await page.evaluate(()=>{
       InquiryWorkbench.open('inq-1','process');
       const saved=iqApply;let captured=null;iqApply=(q,target)=>{captured={id:q.id,target};return false};
@@ -216,7 +216,7 @@ async function run() {
     await page.evaluate(()=>drwInq(JSON.stringify(B.inquiries.find(q=>q.id==='inq-1'))));
     assert.equal(await page.locator('#inq-inbox-dialog').count(),1,'Today opens the same inquiry detail page');
     assert.equal(await page.locator('#detailView.on').count(),0,'no small read-only inquiry window');
-    await page.getByRole('button',{name:'← 목록으로',exact:true}).click();
+    await page.getByRole('button',{name:'✕ 닫기',exact:true}).click();
     assert.equal(await page.evaluate(()=>G.page),'today','closing returns to Today');
     await page.evaluate(()=>drwInq(JSON.stringify(B.inquiries.find(q=>q.id==='inq-1'))));
     await page.evaluate(()=>goPage('dash'));
@@ -226,7 +226,7 @@ async function run() {
     assert.equal(await page.locator('#inq-inbox-dialog').count(),1);
     await page.evaluate(()=>{G._detailPopup=true;drwDeal(JSON.stringify({id:'overlap-deal',site:'겹침 검증 현장',assignee:'황윤선',code:'consulting',stage_code:'consulting',activities:[]}))});
     assert.equal(await page.locator('#inq-inbox-dialog').count(),0,'inquiry page closes when a deal detail opens');
-    assert.equal(await page.locator('#detailView.detailpage').isVisible(),true,'deal detail is visible, not hidden behind');
+    assert.equal(await page.locator('#detailView.detailmodal').isVisible(),true,'deal detail is visible, not hidden behind');
     await page.evaluate(()=>{closeDetail();__writes.splice(0,__writes.length,...__writes.filter(w=>w[0]!=='opportunity_touch'));});/* 영업 상세 열람 기록은 업무 쓰기가 아니다 */
     await page.evaluate(()=>goPage('inq'));
     assert.equal(await page.evaluate(()=>__writes.length),0);
