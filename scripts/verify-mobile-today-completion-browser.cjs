@@ -16,7 +16,7 @@ async function run(){
  try{
   const context=await browser.newContext({viewport:{width:390,height:844}});
   let externalRequests=0;
-  await context.route('**/*',route=>{const url=new URL(route.request().url());if(url.hostname==='127.0.0.1')return route.continue();externalRequests++;return route.abort()});
+  await context.route('**/*',route=>{const url=new URL(route.request().url());if(url.hostname==='127.0.0.1')return route.continue();if(url.hostname==='cdn.jsdelivr.net'&&url.pathname.includes('/pretendard'))return route.abort();/* 글꼴 CDN은 업무 데이터가 아님(2026-09-26 모바일 Pretendard) */externalRequests++;return route.abort()});
   const page=await context.newPage();
   await page.goto(`http://127.0.0.1:${srv.address().port}/mobile.html?demo=1`,{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>typeof todayCompleteM==='function'&&typeof execNextM==='function'&&window.OperationalUI);

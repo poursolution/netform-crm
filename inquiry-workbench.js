@@ -120,7 +120,7 @@
   left.insertAdjacentHTML('beforeend',nearby(q));
   if(!root.inquiryAssigned(q)){const evidence=root.inquiryUnassignedMeta(q);left.insertAdjacentHTML('beforeend','<div class="inq-assign-evidence"><strong>배정 이력</strong><p>'+h(evidence.label)+'</p><p>'+h(evidence.detail)+'</p><small>'+h(evidence.attemptLabel)+'</small></div>')}
   const move=(selector,target)=>{const n=detail.querySelector(selector);if(n)target.append(n);return n};
-  move('.sp-inquiry-original',center);move('.sp-why',right);move('.sp-acts',right);move('.sp-form',right);move('.sp-grid',right);move('.pl-box',right);detail.querySelector('.sp-abar')?.remove();move('.spform',right);move('.ck-box',right);
+  move('.sp-inquiry-original',center);move('.sp-why',right);move('.sp-acts',right);move('.sp-form',right);move('.sp-grid',right);move('.pl-box',right);detail.querySelector('.sp-abar')?.remove();move('.spform',right);const ck=detail.querySelector('.ck-box');ck?.remove();/* 응대 체크리스트는 '연락 결과' 입력 칸 바로 아래에서만(2026-09-26 대표 '연락할 때 뿅 · 맨 아래가 아니라') */
   detail.querySelector('.sp-dh')?.remove();detail.querySelector('.sp-foot')?.remove();detail.querySelector('.sp-jour')?.remove();detail.querySelector('.sp-jl')?.remove();detail.querySelector('.sp-lb')?.remove();
   // Move original nodes and handlers, including conversion and ACK-aware saves.
   Array.from(detail.children).forEach(n=>center.append(n));
@@ -128,6 +128,7 @@
    const form=overlay.querySelector('.spform');
    if(form){right.querySelector('.sp-acts')?.after(form);overlay.querySelector('.sp-form')?.remove();const did=form.querySelector('#iq-did');if(did){did.value='고객 응대 기록';did.closest('.og').hidden=true;}const result=form.querySelector('#iq-res');if(result){const field=document.createElement('textarea');field.id='iq-res';field.rows=4;field.placeholder='고객과 나눈 내용과 결과를 적어주세요';result.replaceWith(field);field.previousElementSibling.textContent='연락 결과 *';}form.querySelector('#iq-next').previousElementSibling.textContent='다음 할 일 *';form.querySelector('#iq-due').previousElementSibling.textContent='다음 할 일 날짜 *';const save=form.querySelector('.spbtns button');save.textContent='연락 결과 저장';save.setAttribute('onclick',"InquiryWorkbench.saveProcess()");form.querySelector('.spbtns button:last-child').onclick=()=>open(root.inqKey(q));}
   }
+  if(ck&&['process','log'].includes(root.G.inqAct)){const anchor=right.querySelector('.spform')||right.querySelector('.sp-form');if(anchor){const t=ck.querySelector('.ck-hd b');if(t)t.textContent='이번 연락에서 확인한 것';anchor.after(ck);}}
   if(root.G.inqAct==='decision'){
    right.insertAdjacentHTML('afterbegin','<p>영업 진행을 결정하거나 사유를 남겨 보류하세요. 추가 확인이 필요하면 다음 할 일을 등록하세요.</p>');
    const hold=document.createElement('button');hold.className='dact';hold.textContent='사유를 남기고 보류';hold.onclick=()=>root.inqCtlOpenReason('hold',root.inqKey(q));right.append(hold);

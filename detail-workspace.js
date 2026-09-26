@@ -86,7 +86,7 @@ function wide(){
  var timeline=body.querySelector('#activityTimelineHost')?.closest('.dcard');if(timeline){center.append(timeline);var title=timeline.querySelector('h3');if(title)title.textContent='최근 활동'}
  // 재배치 유실 복원: 단계 여정 바는 «지금 해야 할 일» 바로 아래, 응대 체크리스트는 중앙 작업 흐름 끝에.
  var journey=body.querySelector('.dcc-journey');if(journey)now.after(journey);
- var checks=Array.from(body.querySelectorAll('details.dw-fold,.dcard')).find(function(n){return /오늘 먼저 확인할 응대 기록/.test(n.textContent||'')});if(checks)center.append(checks);
+ var checks=Array.from(body.querySelectorAll('details.dw-fold,.dcard')).find(function(n){return /이번 연락에서 확인한 것|오늘 먼저 확인할 응대 기록/.test(n.textContent||'')});if(checks){checks.id='dw-checks';center.append(checks)}/* 화면에는 숨기고 '결과 남기기' 창에서만 보인다 */
  // 재배치 유실 복원: 고객 핵심 발언 — 실제 기록에서 뽑아 다음 할 일으로 잇는다.
  if(typeof briefVoiceOfCustomer==='function'){var voice=briefVoiceOfCustomer(d,'deal'),voiceCard=document.createElement('div');voiceCard.className='dcard dw-voice';voiceCard.innerHTML='<h3>고객 핵심 발언</h3>'+(voice.length?'<p class="dw-voice-quote">“'+esc(String(voice[0][1]).slice(0,140))+'”</p><small>'+esc(voice[0][0])+' · 실제 기록에서 추출</small>':'<p class="dw-voice-quote">연결된 고객 발언이 없습니다.</p><small>통화·응대 기록에서 핵심 발언을 연결하세요.</small>');voiceCard.append(button('이 발언으로 다음 할 일 만들기',()=>dccVoiceToNext()));left.append(voiceCard)}
  /* 단계·금액·담당·다음 날짜 값은 헤더와 '지금 할 일'에 이미 있다(2026-09-26 중복 정리) — 여기는 바꾸는 버튼만 */
@@ -150,7 +150,7 @@ function decorate(){
   var handover=overview.querySelector('.exec-handover');if(handover&&history)history.append(handover);
   var relation=overview.querySelector('.rel-engine-card');if(relation&&schedule)schedule.append(relation);
   fold(overview.querySelector('#execStageGuide'),'단계별 필수 확인');
-  Array.from(overview.children).forEach(function(n){if(/오늘 먼저 확인할 응대 기록/.test(n.querySelector('h3')?.textContent||''))fold(n,'응대 체크리스트')});
+  Array.from(overview.children).forEach(function(n){if(/이번 연락에서 확인한 것|오늘 먼저 확인할 응대 기록/.test(n.querySelector('h3')?.textContent||''))fold(n,'응대 체크리스트')});
   if(!overview.querySelector('.dcc-recent-card'))overview.insertAdjacentHTML('afterbegin',dccRecentHTML(CUR_DETAIL.item,timelinePatch(CUR_DETAIL.item,currentPatch())));
  }
  if(quick){

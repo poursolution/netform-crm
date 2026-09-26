@@ -84,3 +84,12 @@
 .nf-more{background:#fff;color:#8a96a9}
 .nf-x{text-decoration:none;font-size:11px;font-weight:800;color:#5b6b85}
 .nf-ev.misc{background:#fff}
+/* 이번 통화에서 확인한 것(2026-09-26 — 응대 체크리스트를 연락할 때 바로) */
+.nc-checks{margin:4px 0 12px}
+.nc-checks h5 small{font-weight:500;color:#5b6b85}
+.nc-checks>div{display:flex;gap:6px;flex-wrap:wrap}
+.nc-checks button{border:1px solid #e2e8f1;background:#fff;border-radius:999px;font:inherit;font-size:12px;font-weight:600;color:#334155;padding:7px 11px;cursor:pointer}
+.nc-checks button.on{border-color:#15803d;background:#ecfdf3;color:#15803d}
+.nc-checks button.on::before{content:'✓ '}
+/* 약속 칸은 '고객과 약속함'을 골랐을 때만(hidden 속성이 display 규칙에 덮이던 것) */
+.nc-note-label[hidden],.nc-step2[hidden]{display:none!important}
