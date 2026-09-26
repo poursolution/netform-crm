@@ -61,7 +61,7 @@
   const missing=d=>!ledger.has(String(root.dealKey(d)));
   const rows=(root.B?.deals||[]).filter(d=>!missing(d)||['contract','construction','completion','won'].includes(stageOf(d))).sort((x,y)=>Number(missing(y))-Number(missing(x)));
   const todo=rows.filter(missing).length;
-  if(todo)shade.querySelector('[data-q]').closest('label').insertAdjacentHTML('beforebegin','<p class="cs-desk-todo">계약 기록이 없는 계약·시공·준공 <b>'+todo+'건</b> — 맨 위부터 계약서의 계약일·계약금액으로 입력해 주세요. 입력하면 그 달 매출에 잡힙니다.</p>');
+  if(todo)shade.querySelector('[data-q]').closest('label').insertAdjacentHTML('beforebegin','<p class="cs-desk-todo">계약 기록이 없는 계약·시공·준공·수주 <b>'+todo+'건</b> — 맨 위부터 계약서의 계약일·계약금액으로 입력해 주세요. 입력하면 그 달 매출에 잡힙니다.</p>');
   const paint=()=>{const k=q.value.trim();const hit=rows.filter(d=>!k||String(d.site||'').includes(k)||String(d.assignee||'').includes(k)).slice(0,60);
    list.innerHTML=hit.map(d=>{const r=ledger.get(String(root.dealKey(d)));return '<button type="button" role="listitem" data-k="'+h(root.dealKey(d))+'"><b>'+h(d.site||'현장명 미입력')+'</b><small>'+h(root.repN?root.repN(d.assignee):d.assignee)+' · '+(r?(r.cancelled?'계약 취소됨':h(r.contract_date)+' · '+amount(r.balance)):'계약 기록 없음')+'</small></button>';}).join('')||'<p>찾는 현장이 없습니다.</p>';};
   q.oninput=paint;list.onclick=e=>{const b=e.target.closest('[data-k]');if(!b)return;const d=rows.find(x=>String(root.dealKey(x))===b.dataset.k);if(d)editor(d);};
