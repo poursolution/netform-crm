@@ -221,6 +221,13 @@ async function run() {
     await page.evaluate(()=>drwInq(JSON.stringify(B.inquiries.find(q=>q.id==='inq-1'))));
     await page.evaluate(()=>goPage('dash'));
     assert.equal(await page.locator('#inq-inbox-dialog').count(),0,'menu navigation closes the inquiry detail page');
+    /* 문의 처리 화면 위에서 영업을 열면 문의 화면을 닫고 영업 상세로 — 뒤에 깔려 안 보이던 문제(2026-09-26) */
+    await page.evaluate(()=>{goPage('inq');InquiryWorkbench.open('inq-1');});
+    assert.equal(await page.locator('#inq-inbox-dialog').count(),1);
+    await page.evaluate(()=>{G._detailPopup=true;drwDeal(JSON.stringify({id:'overlap-deal',site:'겹침 검증 현장',assignee:'황윤선',code:'consulting',stage_code:'consulting',activities:[]}))});
+    assert.equal(await page.locator('#inq-inbox-dialog').count(),0,'inquiry page closes when a deal detail opens');
+    assert.equal(await page.locator('#detailView.detailpage').isVisible(),true,'deal detail is visible, not hidden behind');
+    await page.evaluate(()=>{closeDetail();__writes.splice(0,__writes.length,...__writes.filter(w=>w[0]!=='opportunity_touch'));});/* 영업 상세 열람 기록은 업무 쓰기가 아니다 */
     await page.evaluate(()=>goPage('inq'));
     assert.equal(await page.evaluate(()=>__writes.length),0);
     const save=await page.evaluate(()=>{ Phase1.storage={setItem:()=>{}};

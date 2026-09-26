@@ -5120,6 +5120,7 @@ function confirmTransition(){if(!CUR_DETAIL)return;var target=$('#tr-target').va
 function drwDeal(s){
   var raw=JSON.parse(s),key=dealKey(raw),d=(B.deals||[]).filter(function(x){return dealKey(x)===key})[0]||raw;
   if(window.DetailWorkspace)DetailWorkspace.rememberList();
+  if(window.InquiryWorkbench&&typeof InquiryWorkbench.dismiss==='function')InquiryWorkbench.dismiss();/* 문의 처리 화면 위에서 영업을 열면 문의 화면을 닫고 영업 상세로 — 뒤에 깔려 안 보이던 문제(2026-09-26) */
   closeSiteDrawer();/* 열림 규칙(2026-09-25 확정): Drawer 위에 겹쳐 덮지 않고 전체 상세로 전환 */
   detachDetail();document.getElementById('detailView').classList.remove('docked');G._detailPopup=true;CUR_DETAIL={kind:'deal',key:key,item:d};renderDealDetail();
 }
@@ -5693,6 +5694,7 @@ function saveAssigneeChange(){var item=CUR_DETAIL.item,p=currentPatch(),to=$('#d
 function drwInq(s){var raw=JSON.parse(s),q=(B.inquiries||[]).filter(function(x){return inqKey(x)===inqKey(raw)})[0]||raw;
   /* 열림 규칙(2026-09-26): 오늘 업무·대시보드·컨트롤타워에서 열어도 견적문의와 같은 전체 상세(처리 화면)로 — 작은 읽기 전용 창을 거치지 않는다. 닫으면 원래 화면. */
   if(window.InquiryWorkbench&&typeof InquiryWorkbench.openFrom==='function'&&InquiryWorkbench.openFrom(inqKey(q),G.page))return;
+  if(window.InquiryWorkbench&&typeof InquiryWorkbench.dismiss==='function')InquiryWorkbench.dismiss();/* 대체 경로도 겹치지 않게 */
   setCurDetail(q);G._detailPopup=true;renderDetail()}
 function drwSite(s){var k=JSON.parse(s),D=B.deals.filter(function(d){return d.site===k}).sort(function(a,b){return (b.created||'').localeCompare(a.created||'')});if(D.length){closeSiteDrawer();CUR_DETAIL={kind:'deal',key:dealKey(D[0]),item:D[0],siteDeals:D};renderDetail()}else openDrwBase(k,'연결된 영업건 없음','<div class="detailnotice">현장 레코드에 연결할 영업 영업건이 없습니다.</div>')}
 /* 단계 전환 선택지 (2026-09-02)
