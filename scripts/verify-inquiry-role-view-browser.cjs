@@ -65,10 +65,15 @@ async function run() {
     assert.equal(await page.locator('#inq-inbox-dialog .sp-inquiry-original img').count(),0);
     assert.match(await page.locator('#inq-inbox-dialog .inq-source-fields').innerText(),/테스트건설\(주\)/);
     assert.match(await page.locator('#inq-inbox-dialog .inq-source-fields').innerText(),/홈페이지/);
-    assert.equal(await page.locator('#inq-inbox-dialog .inq-source-fields dt').count(),12);
+    /* 2026-09-27: 값이 있는 칸만 표로 · 비어 있는 칸은 한 줄 요약 · 왼쪽과 겹치는 문의자/연락처는 원본 정보에서 제외 */
+    const srcDt=await page.locator('#inq-inbox-dialog .inq-source-fields dt').allInnerTexts();
+    assert.ok(srcDt.includes('건물유형')&&srcDt.includes('전화 응대자')&&!srcDt.includes('문의자')&&!srcDt.includes('문의자 연락처'),srcDt.join(','));
+    assert.equal(await page.locator('#inq-inbox-dialog .inq-source-fields dd').evaluateAll(es=>es.filter(e=>e.textContent.trim()==='미입력').length),0);
+    assert.match(await page.locator('#inq-inbox-dialog .inq-source-empty').innerText(),/비어 있는 항목/);
     assert.equal(await page.evaluate(()=>InquiryWorkbench.originalText({note:'상담원 기록'})), '');
     assert.equal(await page.evaluate(()=>InquiryWorkbench.originalText({raw:{문의내용:'잔디 문의 원문'}})), '잔디 문의 원문');
-    assert.equal(await page.locator('.inq-related').count(),1);
+    const relN=await page.evaluate(()=>InquiryWorkbench.related(B.inquiries[0]).list.length);
+    assert.equal(await page.locator('.inq-related').count(),relN?1:0);/* 같은 지역 현장이 없으면 상자 생략(2026-09-27) */
     const related=await page.evaluate(()=>{
       const old=nearbySites,opened=nearbyOpen;let proxy=null,target=null;
       nearbySites=q=>{proxy=q;return {region:'인천 계양',list:[{d:{id:'allowed',site:'같은 지역 현장',assignee:'황윤선'},age:3}]}};
@@ -161,7 +166,8 @@ async function run() {
     assert.equal(await page.locator('#inquiryControlModal.on').count(),1);
     assert.ok(await page.evaluate(()=>Number(getComputedStyle(document.getElementById('inquiryControlModal')).zIndex)>Number(getComputedStyle(document.getElementById('inq-inbox-dialog')).zIndex)));
     await page.evaluate(()=>closeInquiryControlModal());
-    const size=await page.locator('.inq-dialog').boundingBox();assert.ok(size.width>=1440*.93&&size.height>=900,'inquiry detail window is 94% wide');
+    /* 2026-09-27 대표 '너무 큰 화면 · 필요없는 여백': 큰 창은 유지하되 내용만큼 — 너비 최대 1240px, 높이 최대 92vh */
+    const size=await page.locator('.inq-dialog').boundingBox(),vh=await page.evaluate(()=>innerHeight);assert.ok(size.width>=1100&&size.width<=1241&&size.height<=vh*.921,'inquiry detail window fits content: '+JSON.stringify(size));
     await page.locator('#inq-inbox-dialog').getByRole('button',{name:'📞 연락 결과',exact:true}).click();
     await page.locator('#iq-res').fill('저장 전 초안 유지');
     await page.evaluate(()=>paintInq());
