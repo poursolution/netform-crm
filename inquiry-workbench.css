@@ -161,3 +161,9 @@ body:has(#pg-inq.on.inq-workbench) .mhead>.search{display:none}
 .inq-dialog .inq-source-fields{gap:10px 18px}
 .inq-dialog .inq-source-empty{margin:10px 0 0;font-size:12px;line-height:1.6;color:#8391a7}
 .inq-dialog aside:first-child .sp-grid{margin-top:12px}
+/* 더보기 메뉴 = 작업 목록(2026-09-27): 구분선·위험 작업 빨강 */
+.inq-action-options .inq-menu-sep{display:block;height:1px;margin:2px 4px;background:#e2e8f1}
+#pg-inq .inq-work-row .inq-action-options button.danger{color:#dc2626}
+#pg-inq .inq-work-row .inq-action-options button:hover:not(:disabled){background:#f5f8ff;color:#1e50b3}
+#pg-inq .inq-work-row .inq-action-options button.danger:hover{background:#fef2f2;color:#b91c1c}
+#pg-inq .inq-work-row .inq-action-options button:disabled{color:#94a3b8;cursor:default}
