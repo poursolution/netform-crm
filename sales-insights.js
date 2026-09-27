@@ -65,7 +65,9 @@
   advKick=true;
   root.ContractSalesUI.advisoryRows().then(l=>{advList=Array.isArray(l)?l:[];advAt=Date.now();if(['dash','control','perf'].includes(root.G?.page)&&typeof root.paint==='function')root.paint();}).catch(()=>{advList=advList||[];advAt=Date.now();}).finally(()=>{advKick=false;});
  }
- function advMatch(t,f,inP){const brand=f.brand||'전체';return t?.decision==='confirmed'&&inP(String(t.bid_confirmed_at||'').slice(0,10))&&(!f.owner||f.owner==='전체'||t.performance_owner===f.owner)&&(brand==='전체'||brand==='기술자문'||t.origin_business===brand);}
+ /* 같은 영업건이 계약 원장에 같은 금액(5% 이내)으로 있으면 같은 공사 — 원장만 센다(2026-09-27 서남병원·마곡청구·안중신창 이중 합산) */
+ function advDup(t){const src=String(t?.source_deal_id||''),amt=Number(t?.bid_amount)||0;if(!src||!amt)return false;return (root.ContractSalesData?.state?.().items||[]).some(r=>{const b=Number(r.balance)||0;return String(r.deal_id)===src&&!r.cancelled&&b>0&&Math.abs(b-amt)/Math.max(b,amt)<=0.05;});}
+ function advMatch(t,f,inP){const brand=f.brand||'전체';return t?.decision==='confirmed'&&!advDup(t)&&inP(String(t.bid_confirmed_at||'').slice(0,10))&&(!f.owner||f.owner==='전체'||t.performance_owner===f.owner)&&(brand==='전체'||brand==='기술자문'||t.origin_business===brand);}
  function withAdvisory(s,f){
   advLoad();if(!advList||!advList.length)return s;
   const inP=iso=>{if(!iso)return false;if(String(f.year)!=='전체'&&f.year&&iso.slice(0,4)!==String(f.year))return false;const m=+iso.slice(5,7);if(Number(f.month))return m===Number(f.month);if(Number(f.quarter))return Math.ceil(m/3)===Number(f.quarter);return true};
