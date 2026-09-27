@@ -66,9 +66,9 @@
   ['promise','고객과 약속함','🤝 고객 약속으로 등록'],
   ['detail','자세히 기록 (견적·일정·종료 등)','기록 창이 열립니다']
  ];
- function sheet(){
-  const cur=root.CUR_DETAIL;if(!cur||cur.kind!=='deal')return;
-  closeSheet();const d=cur.item;
+ function sheet(dealArg){
+  const cur=root.CUR_DETAIL,d=dealArg||(cur&&cur.kind==='deal'?cur.item:null);if(!d)return;
+  closeSheet();
   const el=document.createElement('dialog');el.id='nc-sheet';el.className='nc-sheet';
   const phone=String(d.phone||d.contact_phone||d.contactPhone||'').trim();
   el.innerHTML='<form method="dialog"><h4>어떻게 됐나요? — '+h(d.site||'')+'</h4><p>'+(phone?'연락처 '+h(phone)+' · ':'')+'하나만 고르면 기록과 다음 할 일까지 자동으로 만듭니다</p>'
@@ -84,7 +84,7 @@
   el.addEventListener('cancel',e=>{if(busy)e.preventDefault();});
   el.querySelectorAll('[data-chip]').forEach(b=>{b.onclick=()=>{
    chip=b.dataset.chip;
-   if(chip==='detail'){el.close();root.dccGoActivity?.();return;}
+   if(chip==='detail'){el.close();const opened=root.CUR_DETAIL?.kind==='deal'&&String(root.CUR_DETAIL.item?.id)===String(d.id)&&document.getElementById('detailView')?.classList.contains('on');if(!opened&&typeof root.drwDeal==='function'){root.G._detailPopup=true;root.drwDeal(JSON.stringify(d));setTimeout(()=>root.dccGoActivity?.(),150);}else root.dccGoActivity?.();return;}
    el.querySelectorAll('[data-chip]').forEach(x=>x.classList.toggle('on',x===b));
    noteLabel.hidden=chip!=='promise';step2.hidden=false;
    (chip==='promise'?noteLabel.querySelector('input'):step2.querySelector('[data-date]')).focus();
@@ -97,7 +97,9 @@
  }
  async function save(d,chip,due,note,status,el){
   if(busy||!chip||!due)return;
-  if(!root.Phase1?.queue||typeof root.queueDetailContactOperation!=='function'){status.textContent='로그인 상태에서만 저장할 수 있습니다.';return;}
+  const relStage=['rapport','silent','waiting'].includes(String(root.dealStage?root.dealStage(d):d.stage_code||''));
+  if(!root.Phase1?.queue||(relStage?typeof root.pushWrite!=='function':typeof root.queueDetailContactOperation!=='function')){status.textContent='로그인 상태에서만 저장할 수 있습니다.';return;}
+  const pd=typeof root.itemPatch==='function'?root.itemPatch(d,'deal'):(root.currentPatch?root.currentPatch():{});
   const promise=chip==='promise';
   if(promise&&!note){status.textContent='어떤 약속인지 한 줄만 적어주세요.';return;}
   /* 기록 문구(2026-09-26 문구 정리): 첫머리 '통화 완료 ·'=유효 접촉, '통화 시도 ·'·'부재중'=유효 접촉 아님 — isMeaningfulContact 분류와 맞춘다 */
@@ -117,21 +119,37 @@
    if(row?.status!=='done'||row.ack?.ok!==true)throw Error(row?.error||'서버 확인 대기 중 — 다시 누르면 같은 요청을 확인합니다.');
    return row;
   }
+  const done=()=>{
+   const obj=d.nextActionObj;if(obj){pd.nextActionObj=obj;pd.nextAction=obj.due;pd.nextActionText=obj.text;}
+   if(ticked.length){pd.checks=pd.checks||[];ticked.forEach(i=>{pd.checks[i]=true});}
+   root.saveLocal?.();status.textContent='✓ 기록 완료 · ✓ 다음 할 일 '+due+' 등록';
+   busy=false;setTimeout(()=>{el.close();const opened=root.CUR_DETAIL?.kind==='deal'&&String(root.CUR_DETAIL.item?.id)===String(d.id);if(opened)root.renderDetail?.();root.TodayWorkQueue?.render?.();if(root.G?.page==='relationship'&&typeof root.paintRelationshipManagement==='function')root.paintRelationshipManagement();},700);
+  };
+  if(relStage){
+   try{
+    status.textContent='기록 확인 중…';
+    const request=progress.rel||root.pushWrite('relationship_contact',{opportunity_id:String(d.id||d.opportunity_id),activity:{type:'전화',note:activity.note,result:'',occurred_at:activity.occurred_at,meaningful_contact:chip==='ongoing'||chip==='promise'},next_action:{type:next.type,text:next.text,due_at:due}});progress.rel=request;
+    await root.Phase1.queue.flush();const row=root.Phase1.queue.list().find(x=>x.request_id===request);
+    if(row?.status==='rejected'){delete progress.rel;throw Error(row.error||'저장이 거절됐습니다.');}
+    if(!row||row.status!=='done'||!row.ack||row.ack.operation!=='relationship_contact')throw Error('서버 확인 대기 중 — 다시 누르면 같은 요청을 확인합니다.');
+    d.activities=Array.isArray(d.activities)?d.activities:[];d.activities.unshift({id:row.ack.activity_id||request,type:'전화',note:activity.note,at:activity.occurred_at,occurred_at:activity.occurred_at});
+    d.nextActionObj={id:row.ack.next_action_id||request,type:next.type,text:next.text,due:due,due_at:due,assignee:next.assignee,status:'open'};d.nextAction=due;d.nextActionText=next.text;
+    done();
+   }catch(e){busy=false;el.querySelectorAll('button,input').forEach(n=>{n.disabled=false});status.textContent=String(e.message||e);}
+   return;
+  }
   try{
    status.textContent='기록 확인 중…';
    /* 지금 할 일(서버 UUID)이 있으면 먼저 '완료'로 닫는다 — 기한 내 처리·약속 이행 집계의 근거(2026-09-26) */
-   const cur=root.actionObj?root.actionObj(d,root.currentPatch?root.currentPatch():{}):null;
+   const cur=root.actionObj?root.actionObj(d,pd):null;
    if(cur&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(cur.id||''))&&!progress.completedAction){await confirm('next_action_complete',{},cur.id);progress.completedAction=cur.id;d.completed_actions=(Array.isArray(d.completed_actions)?d.completed_actions:[]).concat([{id:cur.id,type:cur.type,text:cur.text,due_at:cur.due_at||cur.due,status:'completed',completed_at:new Date().toISOString()}]);}
    const recorded=await confirm('activity',activity);
    d.activities=Array.isArray(d.activities)?d.activities:[];
    if(!d.activities.some(x=>x.id===recorded.ack.activity_id))d.activities.unshift({id:recorded.ack.activity_id,type:activity.type,note:activity.note,at:activity.occurred_at,occurred_at:activity.occurred_at});
    const scheduled=await confirm('next_action',next);
-   const p=root.currentPatch(),obj={id:scheduled.ack.next_action_id,type:next.type,text:next.text,due:due,due_at:due,assignee:next.assignee,status:'open'};
-   d.nextActionObj=p.nextActionObj=obj;d.nextAction=p.nextAction=due;d.nextActionText=p.nextActionText=next.text;
-   if(ticked.length&&typeof root.toggleDetailCheck==='function')ticked.forEach(i=>root.toggleDetailCheck(i,true));
-   root.saveLocal?.();
-   status.textContent='✓ 기록 완료 · ✓ 다음 할 일 '+due+' 등록';
-   busy=false;setTimeout(()=>{el.close();root.renderDetail?.();root.TodayWorkQueue?.render?.();},700);
+   const obj={id:scheduled.ack.next_action_id,type:next.type,text:next.text,due:due,due_at:due,assignee:next.assignee,status:'open'};
+   d.nextActionObj=obj;d.nextAction=due;d.nextActionText=next.text;
+   done();
   }catch(e){busy=false;el.querySelectorAll('button,input').forEach(n=>{n.disabled=false});status.textContent=String(e.message||e);}
  }
  /* 영업 흐름 한 줄(2026-09-25 컨설턴트 '행동의 연속성'): 단계가 아니라 '어떻게 여기까지 왔고 지금 움직이고 있는가'.
