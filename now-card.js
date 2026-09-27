@@ -157,8 +157,11 @@
    return ['•',t.length>10?t.slice(0,10)+'…':t||'기록','misc'];};
   /* 예전 기록 문구는 표시할 때만 새 용어로(저장값은 그대로). 첫머리 '통화 —'·'통화 시도 —'·'전화 부재 —'(예전)과 '통화 완료 ·'·'통화 시도 ·'·'부재중'(새) 모두 뗀다 */
   const short=v=>{v=say(v).replace(/^(통화( 시도)?|전화( 부재)?|부재)\s*—\s*/,'').replace(/^통화 (완료|시도)\s*·\s*/,'').replace(/^부재중\s*(\(전화 안 받음\))?\s*/,'').replace(/^(전화 안 받음|부재)$/,'').trim();return v.length>18?v.slice(0,18)+'…':v;};
+  /* 흐름에는 흐름을 바꾼 일만(2026-09-27 컨설턴트 ③): '전화 안 받음'·'통화 시도'는 칩으로 늘어놓지 않고 끝에 'N회'로만 — 전체 기록은 최근 활동·전체 이력 */
+  const tried=x=>kind(x)[1]==='안 받음'||/^통화 시도/.test(String(x.body||''));
+  const attempts=ev.filter(tried).length,evMain=ev.filter(x=>!tried(x));
   const chips=[];let prev=null,firstAct=null,start=null,lastSig='',rep=1;
-  ev.forEach(x=>{
+  evMain.forEach(x=>{
    const k=kind(x),t=ts(x.at);
    const sig=k[1]+'|'+(k[2]==='act'?short(x.result||x.body):'')+'|'+day(x.at);
    if(sig===lastSig&&chips.length){rep++;chips[chips.length-1]=chips[chips.length-1].replace(/<u class="nf-x">×\d+<\/u>|(?=<\/span>$)/,'<u class="nf-x">×'+rep+'</u>');prev=t;return;}
@@ -173,6 +176,7 @@
   const hidden=Math.max(0,chips.length-12),shown=chips.slice(-12);
   const a=root.actionObj?root.actionObj(d,p):null,due=a&&a.due?dueDays(a.due):null;
   /* 다음 할 일 내용은 위 '지금 할 일' 카드에 — 흐름 끝에는 날짜만 작게 */
+  const triedChip=attempts?'<span class="nf-ev act nf-tried" title="전화 안 받음·통화 시도 기록 — 전체 이력에서 확인"><i>📵</i><b>연락 시도</b><em>'+attempts+'회</em></span>':'';
   const nextChip=a&&a.text&&due!==null?'<span class="nf-next'+(due<0?' late':'')+'" title="'+attr(say(a.text))+'"><i>📅</i><b>다음</b><small>'+h(String(a.due).slice(5,10).replace('-','/'))+(due<0?' · '+(-due)+'일 지남':'')+'</small></span>':'<span class="nf-next none"><i>⚠</i><b>다음 할 일 없음</b></span>';
   const idle=prev!==null?Math.floor((Date.now()-prev)/864e5):null;
   if(idle!==null&&idle>gapN&&!(a&&a.text&&due!==null&&due>=0))shown.push('<span class="nf-gap'+(idle>gapN*2?' hot':'')+'">⏸ 오늘까지 '+idle+'일</span>');
@@ -181,7 +185,7 @@
   /* 마지막 행동·다음 날짜는 아래 칩이 그대로 보여 준다 — 머리글은 칩에 없는 '첫 연락까지 걸린 시간'만 */
   const summary=lastAct?(firstResp!==null?'첫 연락까지 '+(firstResp<24?firstResp+'시간':Math.round(firstResp/24)+'일'):''):'<b class="warn">연락 기록 없음</b>';
   if(!ev.length)return '<section class="now-flow" id="nowFlow"><header><b>영업 흐름</b><span>아직 기록된 흐름이 없습니다 — 첫 연락 결과부터 이어집니다</span></header><div class="nf-row">'+nextChip+'</div></section>';
-  return '<section class="now-flow" id="nowFlow"><header><b>영업 흐름</b><span>'+summary+'</span></header><div class="nf-row">'+(hidden?'<span class="nf-more">이전 '+hidden+'건</span>':'')+shown.join('<i class="nf-arr">›</i>')+'<i class="nf-arr">›</i>'+nextChip+'</div></section>';
+  return '<section class="now-flow" id="nowFlow"><header><b>영업 흐름</b><span>'+summary+'</span></header><div class="nf-row">'+(hidden?'<span class="nf-more">이전 '+hidden+'건</span>':'')+shown.join('<i class="nf-arr">›</i>')+(triedChip?'<i class="nf-arr">›</i>'+triedChip:'')+'<i class="nf-arr">›</i>'+nextChip+'</div></section>';
  }
  let jIO=null;
  function journeyWatch(){
