@@ -48,7 +48,12 @@
  function storeOnly(q){return (root.INQ_STORE_STATUSES||[]).includes(String(q&&q.status||''))}
  function primaryAction(q){const key=attr(root.inqKey(q));
   if(storeOnly(q))return '<button class="inq-now inq-view" data-k="'+key+'" onclick="inqCtlOpenSingle(this.dataset.k)">확인</button>';
-  return '<button class="inq-now" data-k="'+key+'" onclick="InquiryWorkbench.run(this.dataset.k)">'+h(task(q).label)+'</button><details class="inq-action-menu"><summary aria-label="'+attr((q.site||'문의')+' 더보기')+'">더보기</summary><span class="inq-action-options"><button type="button" data-k="'+key+'" onclick="this.closest(' + "\'details\'" + ').open=false;inqCtlOpenMenu(this.dataset.k)">기타</button></span></details>'}
+  return '<button class="inq-now" data-k="'+key+'" onclick="InquiryWorkbench.run(this.dataset.k)">'+h(task(q).label)+'</button><details class="inq-action-menu"><summary aria-label="'+attr((q.site||'문의')+' 더보기')+'">더보기</summary><span class="inq-action-options">'+moreItems(q,key)+'</span></details>'}
+ /* 더보기 = 작업 목록 바로(2026-09-27 — '기타'를 눌러 창을 한 번 더 열던 것) */
+ function moreItems(q,key){const admin=typeof root.inqCtlIsAdmin==='function'&&root.inqCtlIsAdmin(),assigned=typeof root.inquiryAssigned==='function'&&root.inquiryAssigned(q),store=(typeof INQ_STORE_STATUSES!=='undefined'?INQ_STORE_STATUSES:[]).includes(String(q.status||''));
+  const item=(mode,label,cls,dis)=>'<button type="button" class="'+(cls||'')+'" data-k="'+key+'" data-m="'+mode+'"'+(dis?' disabled':'')+' onclick="this.closest(\'details\').open=false;inqCtlMenuRun(this.dataset.m,this.dataset.k)">'+label+'</button>';
+  return (admin&&assigned?item('reassign','영업담당 재배정'):'')+(admin?item('consultant','상담담당 지정'):'')+item('store',store?'스토어 이관 완료':'POUR스토어 이관','',store)+item('hold','보류')+(admin&&assigned?item('unassign','미배정 회수'):'')+(admin?'<i class="inq-menu-sep"></i>'+item('duplicate','중복 확인')+item('trash','휴지통 이동','danger'):'');
+ }
 
  function compactRows(){
   document.querySelectorAll('#sg-panel .inq-ctl-row').forEach(row=>{
