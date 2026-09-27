@@ -93,3 +93,6 @@
 .cs-desk-list button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:1px solid #e2e8f1;border-radius:10px;background:#fff;padding:9px 12px;text-align:left;cursor:pointer}
 .cs-desk-list button:hover{border-color:#3B6CE4}
 .cs-desk-list small{color:#5b6b85}
+/* 기술자문 낙찰로 집계된 건(2026-09-27) — 계약 기록 대상 아님 */
+.cs-desk-list button:disabled{cursor:default;background:#f8fafc;border-style:dashed}
+.cs-desk-list button:disabled:hover{border-color:#e2e8f1}

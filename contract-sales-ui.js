@@ -57,15 +57,18 @@
   document.body.append(shade);shade.querySelector('[data-close]').onclick=close;shade.onkeydown=e=>{if(e.key==='Escape')close()};
   const list=shade.querySelector('.cs-desk-list'),q=shade.querySelector('[data-q]');
   const ledger=new Map((D.state().items||[]).map(r=>[String(r.deal_id),r]));
+  /* 기술자문 낙찰실적으로 확정된 영업건은 계약 기록 대상이 아니다(2026-09-27 — 계약 원장에 또 넣으면 매출이 두 번 잡힘) */
+  const adv=new Map((advCache||[]).map(x=>x&&x.attribution).filter(t=>t&&t.decision==='confirmed'&&t.source_deal_id).map(t=>[String(t.source_deal_id),t]));
   const stageOf=d=>root.dealStage?root.dealStage(d):d.code;
-  const missing=d=>!ledger.has(String(root.dealKey(d)));
+  const missing=d=>!ledger.has(String(root.dealKey(d)))&&!adv.has(String(root.dealKey(d)));
   const rows=(root.B?.deals||[]).filter(d=>!missing(d)||['contract','construction','completion','won'].includes(stageOf(d))).sort((x,y)=>Number(missing(y))-Number(missing(x)));
   const todo=rows.filter(missing).length;
   if(todo)shade.querySelector('[data-q]').closest('label').insertAdjacentHTML('beforebegin','<p class="cs-desk-todo">계약 기록이 없는 계약·시공·준공·수주 <b>'+todo+'건</b> — 맨 위부터 계약서의 계약일·계약금액으로 입력해 주세요. 입력하면 그 달 매출에 잡힙니다.</p>');
   const paint=()=>{const k=q.value.trim();const hit=rows.filter(d=>!k||String(d.site||'').includes(k)||String(d.assignee||'').includes(k)).slice(0,60);
-   list.innerHTML=hit.map(d=>{const r=ledger.get(String(root.dealKey(d)));return '<button type="button" role="listitem" data-k="'+h(root.dealKey(d))+'"><b>'+h(d.site||'현장명 미입력')+'</b><small>'+h(root.repN?root.repN(d.assignee):d.assignee)+' · '+(r?(r.cancelled?'계약 취소됨':h(r.contract_date)+' · '+amount(r.balance)):'계약 기록 없음')+'</small></button>';}).join('')||'<p>찾는 현장이 없습니다.</p>';};
-  q.oninput=paint;list.onclick=e=>{const b=e.target.closest('[data-k]');if(!b)return;const d=rows.find(x=>String(root.dealKey(x))===b.dataset.k);if(d)editor(d);};
+   list.innerHTML=hit.map(d=>{const k=String(root.dealKey(d)),r=ledger.get(k),t=!r&&adv.get(k);return '<button type="button" role="listitem" data-k="'+h(k)+'"'+(t?' disabled':'')+'><b>'+h(d.site||'현장명 미입력')+'</b><small>'+h(root.repN?root.repN(d.assignee):d.assignee)+' · '+(r?(r.cancelled?'계약 취소됨':h(r.contract_date)+' · '+amount(r.balance)):t?'기술자문 낙찰로 집계 · '+h(t.bid_confirmed_at)+' · '+amount(t.bid_amount):'계약 기록 없음')+'</small></button>';}).join('')||'<p>찾는 현장이 없습니다.</p>';};
+  q.oninput=paint;list.onclick=e=>{const b=e.target.closest('[data-k]');if(!b||b.disabled)return;const d=rows.find(x=>String(root.dealKey(x))===b.dataset.k);if(d)editor(d);};
   if(D.state().status==='idle')D.refresh().then(()=>{if(dialog===shade)desk();});
+  if(!advCache&&root.CRMRelease?.has?.('crm_advisory_attribution_v1')!==false)advisoryRows().then(()=>{if(dialog===shade)desk();}).catch(()=>{});
   paint();q.focus();
  }
  const oldPaint=root.paint;root.paint=function(){const r=oldPaint.apply(this,arguments);const page=root.G.page;
