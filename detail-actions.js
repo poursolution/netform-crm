@@ -171,7 +171,9 @@ function viewingCards(body,stash){
  const material=card('자료',[['사진',photos.length+'건'],['견적서',quotes.length+'건'],['기타자료',(files.length-photos.length)+'건']]);material.id='da-material-summary';material.append(button('자료 보기','materials'),button('+ 자료 추가','materials'));
  const extra=document.createElement('div');extra.id='da-management-fields';
  right.querySelectorAll(':scope > .dw-fold').forEach(n=>extra.append(n));stash.append(extra);
- const management=card('추가 관리정보',[['고객 반응',fields.customer_reaction||fields.reaction||d.customer_reaction],['의사결정자',fields.decision_maker||d.decision_maker],['경쟁사',fields.competitor||d.competitor],['입찰 예정일',fields.bid_deadline||fields.bid_date||d.bid_date]]);management.append(button('관리정보 수정','management'));
+ /* '이 단계에서 챙길 정보'에 이미 있는 칸은 추가 관리정보에서 뺀다(2026-09-27 컨설턴트 ② — 고객 반응·경쟁사·입찰일이 두 곳에 나오던 것) */
+ const stageKeys=new Set((root.StageTransition?.definitions?.[code]?.fields||[]).map(f=>f.key));
+ const management=card('추가 관리정보',[['고객 반응',fields.customer_reaction||fields.reaction||d.customer_reaction,['customer_reaction','reaction']],['의사결정자',fields.decision_maker||d.decision_maker,['decision_maker']],['경쟁사',fields.competitor||d.competitor,['competitor']],['입찰 예정일',fields.bid_deadline||fields.bid_date||d.bid_date,['bid_deadline','bid_date']]].filter(r=>!r[2].some(k=>stageKeys.has(k))).map(r=>[r[0],r[1]]));management.append(button('관리정보 수정','management'));
  const ledger=root.ContractSalesData?.state(),contract=ledger?.status==='ready'?ledger.items.find(x=>String(x.deal_id)===String(d.id)):null,f=contexts.contract?.fields||{};
  const money=v=>v==null||v===''?'—':root.fmtAmt(v),exact=v=>v==null||v===''||!Number(v)?'—':Number(v).toLocaleString('ko-KR')+'원';/* 상세 정보 칸은 정확값, 요약은 헤더에서 억 단위 */
  const work=card('공종 · 금액',[['공종',root.dealWorkSummary(d)||'미분류'],['예상금액',exact(d.amount??d.amt)],['계약금액',exact(contract?.balance??f.contract_amount)],['계약일',contract?.contract_date||f.contract_date||'—']]);

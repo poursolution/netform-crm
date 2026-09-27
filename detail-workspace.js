@@ -66,6 +66,19 @@ function wide(){
    });
    left.append(card2);
   }catch(e){}
+ })();
+ /* 관련 정보 한 카드(2026-09-27 컨설턴트 ④): 같은 현장 영업(거래 이력)과 같은 지역 현장(외근 동선)을 탭으로 — 두 카드가 연달아 나와 둘 다 '관련 현장'처럼 보이던 것 */
+ (function(){
+  var sh=left.querySelector('.dw-sitehistory'),nb=left.querySelector('.nearby');
+  var nbRows=nb?nb.querySelectorAll('.nbrow').length:0;if(nb&&!nbRows){nb.remove();nb=null;}
+  if(!sh&&!nb)return;
+  var shRows=sh?(parseInt((sh.querySelector('h3 span')||{}).textContent,10)||sh.querySelectorAll('.sh-row').length):0;
+  var tabs=[];if(sh)tabs.push(['site','같은 현장 영업',shRows,sh]);if(nb)tabs.push(['near','같은 지역 현장',nbRows,nb]);
+  var box=document.createElement('div');box.className='dcard dw-related';
+  box.innerHTML='<h3>관련 정보</h3>'+(tabs.length>1?'<nav class="dw-rel-tabs" role="tablist">'+tabs.map(function(t,i){return '<button type="button" role="tab" data-t="'+t[0]+'" aria-selected="'+(i===0)+'">'+t[1]+' <b>'+t[2]+'</b></button>'}).join('')+'</nav>':'<p class="dw-rel-one">'+tabs[0][1]+' '+tabs[0][2]+'</p>');
+  tabs.forEach(function(t,i){t[3].classList.add('dw-rel-panel');t[3].dataset.t=t[0];t[3].hidden=i>0;box.append(t[3]);});
+  box.addEventListener('click',function(e){var b=e.target.closest('.dw-rel-tabs button');if(!b)return;box.querySelectorAll('.dw-rel-tabs button').forEach(function(x){x.setAttribute('aria-selected',String(x===b))});box.querySelectorAll('.dw-rel-panel').forEach(function(p){p.hidden=p.dataset.t!==b.dataset.t})});
+  var site=left.querySelector('.dw-site');if(site)site.after(box);else left.append(box);
  })(); // 같은 지역 담당 현장 추천 — 3컬럼 재배치에서 유실되던 카드 복원 (외근 동선 묶기)
  now.insertAdjacentHTML('beforeend','<h3>'+esc(next&&next.status!=='completed'?next.text||next.type||'다음 할 일':closed?'종료된 영업기회입니다.':'다음 할 일이 없습니다.')+'</h3><p>'+esc(next?[next.due||next.due_at,next.assignee||repN(d.assignee)].filter(Boolean).join(' · '):closed?'추가 영업은 새 영업기회에서 관리합니다.':'다음 연락 일정과 해야 할 일을 지정해 주세요.')+'</p>');
  var actions=document.createElement('div');actions.className='dactions';actions.append(button('다음 할 일 지정',()=>focusWide('nextActionCard')),button('연락 결과',()=>focusWide('activityFormCard')));now.append(actions);
@@ -100,7 +113,7 @@ function wide(){
  /* 연락처 등록은 왼쪽 고객 카드에 이미 있다(2026-09-26 중복 정리) */
  if(missing.children.length>1)right.append(missing);
  var materials=box(right,'자료 · 사진 '+execAttachments(d).filter(x=>/^image\//.test(x.mime_type||'')).length+' · 견적 '+execQuoteVersions(d).length);materials.id='dw-materials';move('#execFiles',materials);move('#execQuotePanel',materials);
- left.append(button('자료 보기 · 추가',()=>focusWide('execFiles')));
+ /* 자료는 오른쪽 '자료' 카드 한 곳에서(2026-09-27 — 왼쪽 [자료 보기 · 추가]와 중복) */
  // Keep every remaining business control available, while dropping only duplicate summaries.
  body.querySelectorAll('.dcc-recent-card,.detaillead,.dcc-health,.dcc-hero').forEach(n=>n.remove());
  original.filter(n=>n.classList.contains('dsec')).forEach(n=>{

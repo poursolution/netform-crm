@@ -94,3 +94,12 @@
 .dw-sitehistory .sh-row .sh-site{font-weight:700;color:#0f172a}
 .dw-sitehistory .sh-row .sh-brand{font-style:normal;font-size:11.5px;font-weight:600;color:#5b6b85}
 .dw-sitehistory .sh-row small.sh-stage{color:#334155;font-size:12px}
+/* 관련 정보(2026-09-27): 같은 현장 영업 / 같은 지역 현장 탭 한 카드 */
+.dw-related .dw-rel-tabs{display:flex;gap:6px;margin:6px 0 8px}
+.dw-related .dw-rel-tabs button{border:1px solid #e2e8f1;border-radius:999px;background:#fff;padding:6px 11px;font:inherit;font-size:12px;font-weight:600;color:#5b6b85;cursor:pointer}
+.dw-related .dw-rel-tabs button[aria-selected="true"]{border-color:#3B6CE4;background:#f5f8ff;color:#1e50b3}
+.dw-related .dw-rel-one{margin:2px 0 6px;font-size:12px;color:#5b6b85}
+.dw-related .dw-rel-panel{border:0!important;box-shadow:none!important;background:transparent!important;padding:0!important;margin:0!important}
+.dw-related .dw-rel-panel[hidden]{display:none!important}
+.dw-related .dw-sitehistory>h3{display:none}
+.dw-related .nearby .nh b{display:none}
