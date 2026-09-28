@@ -212,3 +212,11 @@ body:has(#pg-inq.on.inq-workbench) .mhead>.search{display:none}
 .inq-context .hot{color:#dc2626;font-weight:600}
 .inq-dialog .inq-now-card.inq-now-context{align-items:flex-start;padding:14px 16px}
 #inquiryControlBody>.inq-context{border:1px solid #e2e8f1;border-radius:12px;background:#f8faff;padding:12px 14px;margin:0 0 12px}
+
+/* 상세 작업창 규격 통일(2026-09-29): 견적문의 상세 = 파이프라인 상세(#detailView.dw-wide)와 같은 94vw × 92vh, 좁은 화면 96 × 96 */
+.inq-dialog-overlay{padding:4vh 3vw}
+.inq-dialog{width:94vw;height:92vh;max-height:none;border-radius:16px;box-shadow:0 24px 80px #10243f55}
+.inq-dialog-columns{grid-template-columns:minmax(0,1fr) minmax(0,2fr) minmax(360px,1fr)}
+.inq-dialog-columns>aside,.inq-dialog-columns>main{padding:18px}
+@media(max-width:1000px){.inq-dialog-overlay{padding:2vh 2vw}.inq-dialog{width:96vw;height:96vh}.inq-dialog-columns{grid-template-columns:minmax(190px,1fr) minmax(0,2fr)}.inq-dialog-columns>aside:last-child{grid-column:1/-1}}
+@media(max-width:760px){.inq-dialog-columns{grid-template-columns:1fr}}
