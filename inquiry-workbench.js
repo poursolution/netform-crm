@@ -21,18 +21,32 @@
  root.inqCtlScope=function(){return scoped(originalScope,arguments)};
  root.inqBase=function(){return scoped(originalBase,arguments)};
  // One decision powers counts, filtering, ordering and the row's primary action.
+ /* 처리 시점: 절대 시각(오늘 16:00 / 9/30) + 상대 상태(45분 남음 / D-2 / 3일 지남). 상태 칸과 말이 겹치지 않게 시점만 말한다 */
+ function when(deadlineMs,mode){
+  if(!Number.isFinite(deadlineMs))return {abs:'',rel:mode==='none'?'—':'날짜 없음',late:false};
+  const d=new Date(deadlineMs),now=Date.now(),diff=deadlineMs-now,day=864e5,pad=n=>String(n).padStart(2,'0');
+  const sameDay=d.toDateString()===new Date().toDateString();
+  if(mode==='time'){
+   const abs=(sameDay?'오늘 ':(d.getMonth()+1)+'/'+d.getDate()+' ')+pad(d.getHours())+':'+pad(d.getMinutes());
+   const m=Math.round(Math.abs(diff)/6e4),h=Math.floor(m/60),txt=m>=1440?Math.floor(m/1440)+'일':h>=1?h+'시간'+(m%60&&h<6?' '+(m%60)+'분':''):m+'분';
+   return {abs,rel:diff>=0?txt+' 남음':txt+' 지남',late:diff<0};
+  }
+  const days=Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()))/day);
+  return {abs:(d.getMonth()+1)+'/'+d.getDate(),rel:days===0?'오늘':days>0?'D-'+days:Math.abs(days)+'일 지남',late:days<0};
+ }
+ const SLA_MS=()=>Number(root.OPS_RULES?.responseSlaHours??2)*36e5;
  function task(q){
   const bucket=root.inqCtlBucket(q),next=root.actionObj(q,root.itemPatch(q,'inq'))||{},days=next.due?root.daysTo(next.due):null,dated=Number.isFinite(days),overdue=dated&&days<0;
   const age=at=>{const hrs=root.todayHoursFrom(at);return hrs==null?'시각 미기록':hrs>=24?Math.floor(hrs/24)+'일 경과':Math.max(0,Math.floor(hrs))+'시간 경과'};
   const due=dated?(overdue?Math.abs(days)+'일 지남':days===0?'오늘':days+'일 남음'):'기한 미등록';
-  let t={kind:'followup',rank:2,needed:!next.text||!dated||days<=0,text:next.text||'다음 할 일 등록',reason:!next.text?'응대 후 다음 할 일이 없습니다':!dated?'다음 할 일의 날짜가 없습니다':overdue?'다음 할 일 날짜가 지났습니다':days===0?'오늘 후속 확인 예정입니다':'예정일까지 대기합니다',due,overdue,action:next.text&&dated?'process':'next',label:next.text&&dated?'후속 연락 결과':'다음 할 일',date:next.due||root.inquiryCreatedAt(q)||''};
-  if(['영업전환','스토어 이관','보류','휴지통'].includes(bucket)||(root.CLOSED_INPUT_ST||[]).includes(q.status))t={...t,kind:'closed',rank:4,needed:false,text:bucket==='영업전환'?'전환된 영업건에서 진행합니다':'이력 확인',reason:bucket==='응대중'?q.status:bucket,due:'—',overdue:false,action:'view',label:'확인'};
-  else if(!root.inquiryAssigned(q))t={...t,kind:'unassigned',rank:0,needed:true,text:'담당자 배정',reason:'담당자 없음 · 접수 '+age(root.inquiryCreatedAt(q)),due:'배정 필요',overdue:false,action:'assign',label:root.inqCtlRoleView()==='admin'?'배정하기':'확인'};
-  else if(!root.inqCtlFirstResponseAt(q))t={...t,kind:'waiting',rank:1,needed:true,text:'첫 연락하기',reason:'첫 연락 기록 없음 · '+(q.assigned_at?'배정 '+age(q.assigned_at):'배정 시각 미기록'),due:root.inquiryResponseLate(q)?'첫 연락 늦음':'첫 연락',overdue:root.inquiryResponseLate(q),action:'process',label:'연락 결과 남기기'};
-  else if(root.isAwaitingPromotion&&root.isAwaitingPromotion(q))t={...t,kind:'decision',rank:3,text:'영업건 전환 결정',reason:'견적 진행 기록 있음 · 영업전환 미완료',action:'decision',label:'영업건 전환 결정'};
+  let t={kind:'followup',status:'후속',rank:2,needed:!next.text||!dated||days<=0,text:next.text||'다음 할 일 등록',reason:!next.text?'응대 후 다음 할 일이 없습니다':!dated?'다음 할 일의 날짜가 없습니다':overdue?'다음 할 일 날짜가 지났습니다':days===0?'오늘 후속 확인 예정입니다':'예정일까지 대기합니다',due,overdue,when:dated?when(Date.parse(next.due+'T00:00:00'),'date'):when(NaN,'date'),action:next.text&&dated?'process':'next',label:next.text&&dated?'연락 결과':'다음 일정 잡기',date:next.due||root.inquiryCreatedAt(q)||''};
+  if(['영업전환','스토어 이관','보류','휴지통'].includes(bucket)||(root.CLOSED_INPUT_ST||[]).includes(q.status))t={...t,kind:'closed',status:'이력',rank:4,needed:false,text:bucket==='영업전환'?'전환된 영업건에서 진행합니다':'이력 확인',reason:bucket==='응대중'?q.status:bucket,due:'—',overdue:false,when:when(NaN,'none'),action:'view',label:'이력 보기'};
+  else if(!root.inquiryAssigned(q))t={...t,kind:'unassigned',status:'배정',rank:0,needed:true,text:'담당자 배정',reason:'담당자 없음 · 접수 '+age(root.inquiryCreatedAt(q)),due:'배정 필요',overdue:false,when:when(Date.parse(root.inquiryCreatedAt(q)||'')+SLA_MS(),'time'),action:'assign',label:root.inqCtlRoleView()==='admin'?'담당자 배정':'확인'};
+  else if(!root.inqCtlFirstResponseAt(q))t={...t,kind:'waiting',status:'첫 연락',rank:1,needed:true,text:'첫 연락하기',reason:'첫 연락 기록 없음 · '+(q.assigned_at?'배정 '+age(q.assigned_at):'배정 시각 미기록'),due:root.inquiryResponseLate(q)?'첫 연락 늦음':'첫 연락',overdue:root.inquiryResponseLate(q),when:when(Date.parse(q.assigned_at||root.inquiryCreatedAt(q)||'')+SLA_MS(),'time'),action:'process',label:'결과 남기기'};
+  else if(root.isAwaitingPromotion&&root.isAwaitingPromotion(q))t={...t,kind:'decision',status:'전환 판단',rank:3,text:'영업건 전환 결정',reason:'견적 진행 기록 있음 · 영업전환 미완료',when:{abs:'',rel:'지금',late:false},action:'decision',label:'영업건 전환'};
   // Optimistic local changes must not produce a false daily zero before server ACK.
   const pending=root.Phase1?.queue?.list?.().find(x=>String(x.object_id)===String(q.id||root.inqKey(q))&&['inquiry_assign','inquiry_status','next_action','next_action_complete','opportunity_create','transition'].includes(x.operation)&&['pending','sending','uncertain','conflict','rejected'].includes(x.status));
-  if(pending)t={...t,kind:t.kind==='closed'?'decision':t.kind,needed:true,reason:['conflict','rejected'].includes(pending.status)?'저장 실패 · 동기화 상태를 확인하세요':'서버 저장 결과를 확인하고 있습니다',action:'view',label:'확인',due:'저장 확인'};
+  if(pending)t={...t,kind:t.kind==='closed'?'decision':t.kind,needed:true,reason:['conflict','rejected'].includes(pending.status)?'저장 실패 · 동기화 상태를 확인하세요':'서버 저장 결과를 확인하고 있습니다',action:'view',label:'확인',due:'저장 확인',when:{abs:'',rel:'저장 확인',late:false}};
   return t;
  }
  function matches(q,key){const t=task(q);return key==='needs'?t.needed:!key||key==='all'?true:t.needed&&t.kind===key}
@@ -77,24 +91,26 @@
  function compactRows(){
   document.querySelectorAll('#sg-panel .inq-ctl-row').forEach(row=>{
    const c=Array.from(row.children),admin=!row.classList.contains('mine-row');if(c.length!==(admin?9:7))return;row.classList.add('inq-work-row');
-   const labels=['상태','현장 / 문의 핵심','공종','담당 / 연락처','지금 할 일','기한','실행'];
+   const labels=admin?['상태','현장 / 문의 핵심','공종','담당 / 연락처','지금 할 일','처리 시점','처리']:['상태','현장 / 문의 핵심','공종','고객 / 연락처','지금 할 일','처리 시점','처리'];
    if(row.classList.contains('head')){const cells=labels.map(text=>{const n=document.createElement('span');n.textContent=text;return n});if(admin)cells[0].prepend(c[0]);row.replaceChildren(...cells);return}
    const q=root.INQ_CONSOLE_CACHE.find(q=>root.inqKey(q)===row.dataset.k);if(!q)return;
    const patch=root.itemPatch(q,'inq'),next=root.actionObj(q,patch)||{},owner=root.inquiryRoutedOwner(q),hours=root.todayHoursFrom(root.inquiryCreatedAt(q)),late=delayed(q),decision=task(q),key=attr(root.inqKey(q));
    row.classList.toggle('priority',late||(!owner&&hours>=24));row.title=decision.text;row.dataset.task=decision.kind;
    const make=(cls,html)=>{const n=document.createElement('span');n.className=cls;n.innerHTML=html;return n};
-   const elapsed=make('inq-received','<strong class="'+(late?'inq-work-late':'')+'">'+h(({unassigned:'배정 필요',waiting:'첫 연락',followup:'후속조치',decision:'영업건 전환 결정',closed:'이력'})[decision.kind])+'</strong><small>'+h(hours==null?'접수일 미기록':hours>=24?'접수 후 '+Math.floor(hours/24)+'일':Math.max(0,Math.floor(hours))+'시간 경과')+'</small>');if(admin)elapsed.prepend(c[0]);
+   const elapsed=make('inq-received','<strong class="'+(late?'inq-work-late':'')+'">'+h(decision.status||decision.kind)+'</strong><small>'+h(hours==null?'접수일 미기록':hours>=24?'접수 후 '+Math.floor(hours/24)+'일':Math.max(0,Math.floor(hours))+'시간 경과')+'</small>');if(admin)elapsed.prepend(c[0]);
    const full=originalText(q).replace(/\s+/g,' ').trim(),core=gist(q);
    const site=make('inq-ctl-site','<button class="inq-site-link" data-k="'+key+'" onclick="event.stopPropagation();inqCtlOpenSingle(this.dataset.k)">'+h(q.site||'현장명 미입력')+'</button><p class="inq-question-preview" title="'+attr(full)+'">'+h(core||'문의 내용 확인 필요')+'</p>');
    const work=root.inqCtlWorkLabel(q),brand=q.brand||root.inquiryBrandOf?.(q)||'';
    const workCell=make('inq-work-kind',(work&&work!=='공종 미분류'?'<i class="inq-chip">'+h(work)+'</i>':'<i class="inq-chip dim">공종 미분류</i>')+(brand?'<i class="inq-chip brand">'+h(brand)+'</i>':''));
    const phone=root.inqCtlContactLabel(q),phoneDigits=String(phone||'').replace(/\D/g,''),customer=[q.contact_name||q.contact,q.detail?.customerType||q.raw?.['고객유형']].filter(v=>v&&String(v).trim()).join(' ');
-   const assigned=make('inq-ctl-assignee','<strong>'+h(owner?root.repDisplay(owner):'미배정')+'</strong>'+(phoneDigits.length>=8?'<button class="inq-phone" data-k="'+key+'" title="전화 걸기" onclick="event.stopPropagation();inqCtlQuickCall(this.dataset.k)">'+h(phone)+'</button>':'<span class="inq-phone none">연락처 없음</span>')+(customer?'<small title="'+attr(customer)+'">고객 '+h(customer)+'</small>':''));
+   /* 영업사원 화면은 본인이 담당이라 이름 대신 고객을 앞에(2026-09-28) */
+   const assigned=make('inq-ctl-assignee',(admin?'<strong>'+h(owner?root.repDisplay(owner):'미배정')+'</strong>':'<strong>'+h(customer||'고객 미입력')+'</strong>')+(phoneDigits.length>=8?'<button class="inq-phone" data-k="'+key+'" title="전화 걸기" onclick="event.stopPropagation();inqCtlQuickCall(this.dataset.k)">'+h(phone)+'</button>':'<span class="inq-phone none">연락처 없음</span>')+(admin&&customer?'<small title="'+attr(customer)+'">고객 '+h(customer)+'</small>':''));
    if(!owner){const evidence=root.inquiryUnassignedMeta(q);assigned.title=[evidence.label,evidence.detail,evidence.attemptLabel].filter(Boolean).join(' · ')}
    const seen=new Set(),activities=[...(q.activities||[]),...(patch.activities||[])].filter(a=>{const k=a.id||[a.at,a.type,a.note,a.result].join('|');if(seen.has(k))return false;seen.add(k);return /전화|통화|문자|SMS|카카오|이메일|메일|방문/i.test(a.type||'')&&Number.isFinite(Date.parse(a.at||a.occurred_at||a.created_at))}).sort((a,b)=>Date.parse(b.at||b.occurred_at||b.created_at)-Date.parse(a.at||a.occurred_at||a.created_at)),latest=activities[0],response=root.inqCtlFirstResponseAt(q);
    const latestNote=latest?[latest.note,latest.result].filter(Boolean).join(' · '):response?'첫 연락 기록 있음':'';
    const recent=make('inq-work-recent','<strong class="inq-task-title">'+h(decision.text)+'</strong>'+(latestNote?'<small title="'+attr(latestNote)+'">최근 · '+h(latestNote)+'</small>':'')+(decision.kind==='followup'&&decision.needed&&next.text?'<button class="inq-next-link" data-k="'+key+'" onclick="event.stopPropagation();inqCtlQuickNext(this.dataset.k)">일정 변경</button>':''));
-   const todo=make('inq-work-next','<span class="inq-due-chip '+(late||decision.due==='첫 연락 늦음'?'hot':decision.needed?'warn':'ok')+'">'+h(decision.due)+'</span>');
+   const w=decision.when||{abs:'',rel:decision.due,late:late};
+   const todo=make('inq-work-next','<span class="inq-when '+(w.late||late?'hot':decision.needed?'warn':'ok')+'">'+(w.abs?'<strong>'+h(w.abs)+'</strong>':'')+'<em>'+h(w.rel)+'</em></span>');
    const actions=make('inq-action',primaryAction(q));actions.onclick=e=>e.stopPropagation();actions.onkeydown=e=>{if(e.key==='Escape'){const menu=actions.querySelector('details');if(menu){menu.open=false;menu.querySelector('summary').focus()}}};actions.onfocusout=e=>{if(!actions.contains(e.relatedTarget)){const menu=actions.querySelector('details');if(menu)menu.open=false}};row.title=decision.reason?decision.text+' — '+decision.reason:decision.text;row.replaceChildren(elapsed,site,workCell,assigned,recent,todo,actions);Array.from(row.children).forEach((cell,i)=>cell.dataset.label=labels[i]);
   });
  }

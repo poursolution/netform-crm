@@ -108,7 +108,7 @@ async function run() {
     });
     assert.deepEqual(model,{decision:'decision',needed:true,converted:false,closed:false});
     /* 2026-09-28 목록 정보 밀도: 상태 / 현장·문의 핵심 / 공종·브랜드 칩 / 담당·연락처 / 지금 할 일 / 기한 / 실행 — 원문은 hover·상세에서만 */
-    assert.deepEqual(await page.locator('.inq-work-row.head>span').allTextContents(),['상태','현장 / 문의 핵심','공종','담당 / 연락처','지금 할 일','기한','실행']);
+    assert.deepEqual(await page.locator('.inq-work-row.head>span').allTextContents(),['상태','현장 / 문의 핵심','공종','담당 / 연락처','지금 할 일','처리 시점','처리']);
     assert.equal(await page.locator('.inq-work-row[data-k="inq-1"] .inq-work-kind .inq-chip.brand').textContent(),'POUR솔루션');
     assert.match(await page.locator('.inq-work-row[data-k="inq-1"] .inq-ctl-assignee .inq-phone').textContent(),/010-1234-5678/);
     assert.match(await page.locator('.inq-work-row[data-k="inq-1"] .inq-ctl-assignee small').textContent(),/테스트 문의자/);
@@ -121,9 +121,13 @@ async function run() {
     assert.equal(await page.locator('.sales-filterbar [data-sf-brand]').count(),5);
     assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-ctl-assignee strong').textContent(),'미배정');
     assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-work-recent').textContent(),'담당자 배정');
-    assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-work-next').textContent(),'배정 필요');
-    assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-now').textContent(),'배정하기');
-    assert.equal(await page.locator('.inq-work-row[data-k="inq-1"] .inq-now').textContent(),'연락 결과 남기기');
+    /* 처리 시점 = 절대 시각 + 상대 상태(SLA 2시간 기준, OPS_RULES 단일 출처) · 처리 = 상태별 동사 */
+    assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-received strong').textContent(),'배정');
+    assert.match(await page.locator('.inq-work-row[data-k="inq-4"] .inq-work-next .inq-when em').textContent(),/지남$/);
+    assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-now').textContent(),'담당자 배정');
+    assert.equal(await page.locator('.inq-work-row[data-k="inq-1"] .inq-received strong').textContent(),'첫 연락');
+    assert.match(await page.locator('.inq-work-row[data-k="inq-1"] .inq-work-next .inq-when strong').textContent(),/^\d{1,2}\/\d{1,2} \d{2}:\d{2}$/);
+    assert.equal(await page.locator('.inq-work-row[data-k="inq-1"] .inq-now').textContent(),'결과 남기기');
     await page.locator('#pg-inq').waitFor({state:'visible'});
     assert.match(await page.locator('.inq-work-row[data-k="inq-2"] .inq-work-recent').textContent(),/도면 요청 완료/);
     assert.doesNotMatch(await page.locator('.inq-work-row[data-k="inq-2"] .inq-work-recent').textContent(),/내부 메모/);
