@@ -59,7 +59,7 @@ async function run() {
     await page.evaluate(()=>{B.inquiries[1].brand='POUR공법';B.inquiries[2].brand='석민이앤씨';B.inquiries[3].brand='아파트스퀘어';B.inquiries[0].phone='010-1234-5678';B.inquiries[0].contact_name='테스트 문의자';window.__writes=[];pushWrite=(...args)=>__writes.push(args);window.Phase1={subscribe:()=>()=>{}};window.__stopRequests=PCManagerRequests.install(window,{list:async()=>[],create:async()=>{throw Error("Unexpected request write")}});paintInq()});
     await page.evaluate(()=>{B.inquiries[0].detail={inquiry:'옥상 방수 문의\n도면 확인 요청 <img src=x onerror=alert(1)>',note:'접수 참고',customerType:'테스트건설(주)',channel:'홈페이지',buildingType:'공장',complex:'2개동',responder:'테스트 상담자'};paintInq()});
     await page.locator('#pg-inq').waitFor({state:'visible'});
-    assert.match(await page.locator('.inq-work-row[data-k="inq-1"] .inq-question-preview').textContent(),/옥상 방수 문의/);
+    assert.match(await page.locator('.inq-work-row[data-k="inq-1"] .inq-question-preview').textContent(),/옥상 방수/);
     await page.evaluate(()=>InquiryWorkbench.open('inq-1'));
     assert.equal(await page.locator('#inq-inbox-dialog .inq-original-text').innerText(),'옥상 방수 문의\n도면 확인 요청 <img src=x onerror=alert(1)>');
     assert.equal(await page.locator('#inq-inbox-dialog .sp-inquiry-original img').count(),0);
@@ -107,12 +107,19 @@ async function run() {
       return {decision:decision.kind,needed:decision.needed,converted:converted.needed,closed:closed.needed};
     });
     assert.deepEqual(model,{decision:'decision',needed:true,converted:false,closed:false});
-    assert.deepEqual(await page.locator('.inq-work-row.head>span').allTextContents(),['우선순위','문의','지금 확인하는 이유','지금 할 일','담당자','기한','실행']);
+    /* 2026-09-28 목록 정보 밀도: 상태 / 현장·문의 핵심 / 공종·브랜드 칩 / 담당·연락처 / 지금 할 일 / 기한 / 실행 — 원문은 hover·상세에서만 */
+    assert.deepEqual(await page.locator('.inq-work-row.head>span').allTextContents(),['상태','현장 / 문의 핵심','공종','담당 / 연락처','지금 할 일','기한','실행']);
+    assert.equal(await page.locator('.inq-work-row[data-k="inq-1"] .inq-work-kind .inq-chip.brand').textContent(),'POUR솔루션');
+    assert.match(await page.locator('.inq-work-row[data-k="inq-1"] .inq-ctl-assignee .inq-phone').textContent(),/010-1234-5678/);
+    assert.match(await page.locator('.inq-work-row[data-k="inq-1"] .inq-ctl-assignee small').textContent(),/테스트 문의자/);
+    assert.equal(await page.locator('.inq-work-row .inq-task-reason').count(),0,'지금 확인하는 이유 칸은 제거');
+    assert.match(await page.locator('.inq-work-row[data-k="inq-1"] .inq-question-preview').getAttribute('title'),/옥상 방수 문의/);
+    assert.equal(await page.evaluate(()=>InquiryWorkbench.gist({site:'[경기 수원] 광교OO아파트',message:'안녕하세요. 광교OO아파트 관리사무소입니다. 기존 옥상에서 누수가 발생하고 있어서 전체적으로 방수공사를 검토 중입니다. 현장을 한번 확인해주시고 견적을 받고 싶습니다. 입대의 일정은 다음 달 예정입니다.'})),'누수 발생 · 옥상 방수 · 견적 요청 · 현장 확인 요청');
     assert.equal(await page.getByRole('button',{name:'팀 문의',exact:true}).count(),1);
     assert.equal(await page.locator('.inq-work-tools').getAttribute('open'),null);
     assert.equal(await page.locator('.inq-work-tools .inq-ctl-toolbar').isVisible(),false);
     assert.equal(await page.locator('.sales-filterbar [data-sf-brand]').count(),5);
-    assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-ctl-assignee').textContent(),'미배정');
+    assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-ctl-assignee strong').textContent(),'미배정');
     assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-work-recent').textContent(),'담당자 배정');
     assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-work-next').textContent(),'배정 필요');
     assert.equal(await page.locator('.inq-work-row[data-k="inq-4"] .inq-now').textContent(),'배정하기');
