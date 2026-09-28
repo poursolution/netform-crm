@@ -66,7 +66,7 @@
  /* 더보기 = 작업 목록 바로(2026-09-27 — '기타'를 눌러 창을 한 번 더 열던 것) */
  function moreItems(q,key){const admin=typeof root.inqCtlIsAdmin==='function'&&root.inqCtlIsAdmin(),assigned=typeof root.inquiryAssigned==='function'&&root.inquiryAssigned(q),store=(typeof INQ_STORE_STATUSES!=='undefined'?INQ_STORE_STATUSES:[]).includes(String(q.status||''));
   const item=(mode,label,cls,dis)=>'<button type="button" class="'+(cls||'')+'" data-k="'+key+'" data-m="'+mode+'"'+(dis?' disabled':'')+' onclick="this.closest(\'details\').open=false;inqCtlMenuRun(this.dataset.m,this.dataset.k)">'+label+'</button>';
-  return (admin&&assigned?item('reassign','영업담당 재배정'):'')+(admin?item('consultant','상담담당 지정'):'')+item('store',store?'스토어 이관 완료':'POUR스토어 이관','',store)+item('hold','보류')+(admin&&assigned?item('unassign','미배정 회수'):'')+(admin?'<i class="inq-menu-sep"></i>'+item('duplicate','중복 확인')+item('trash','휴지통 이동','danger'):'');
+  return item('detail','상세 보기')+(admin&&assigned?item('reassign','영업담당 재배정'):'')+(admin?item('consultant','상담담당 지정'):'')+item('store',store?'스토어 이관 완료':'POUR스토어 이관','',store)+item('hold','보류')+(admin&&assigned?item('unassign','미배정 회수'):'')+(admin?'<i class="inq-menu-sep"></i>'+item('duplicate','중복 확인')+item('trash','휴지통 이동','danger'):'');
  }
 
   /* 문의 핵심(규칙형 요약): 인사말·상투어·현장명 반복 제거 → 문제/요청 → 일정 → 특이사항 순으로 45자 */
@@ -88,10 +88,23 @@
    return out.length>45?out.slice(0,44).replace(/\s*·?\s*[^·]*$/,'')||out.slice(0,44):out;
   }
   root.inquiryGist=gist;
+ function chips(q){const work=root.inqCtlWorkLabel(q),brand=q.brand||root.inquiryBrandOf?.(q)||'';return (work&&work!=='공종 미분류'?'<i class="inq-chip">'+h(work)+'</i>':'<i class="inq-chip dim">공종 미분류</i>')+(brand?'<i class="inq-chip brand">'+h(brand)+'</i>':'')}
+ /* 목록에서 본 그 한 줄 — 상세·배정·보류 등 어느 창이든 머리에 같은 순서로 */
+ function context(q,withSite){
+  const t=task(q),owner=root.inquiryRoutedOwner(q),phone=root.inqCtlContactLabel(q),digits=String(phone||'').replace(/\D/g,''),customer=[q.contact_name||q.contact,q.detail?.customerType||q.raw?.['고객유형']].filter(v=>v&&String(v).trim()).join(' '),w=t.when||{abs:'',rel:t.due},core=gist(q),key=attr(root.inqKey(q));
+  const cell=(k,v)=>'<div><dt>'+k+'</dt><dd>'+v+'</dd></div>';
+  return '<section class="inq-context" aria-label="문의 요약">'+(withSite?'<strong class="inq-context-site">'+h(q.site||'현장명 미입력')+'</strong>':'')
+   +'<span class="inq-work-kind">'+chips(q)+'</span>'+(core?'<p class="inq-context-gist">'+h(core)+'</p>':'')
+   +'<dl>'+cell('담당','<b>'+h(owner?root.repDisplay(owner):'미배정')+'</b>')
+   +cell('연락처',digits.length>=8?'<button type="button" class="inq-phone" data-k="'+key+'" title="전화 걸기" onclick="inqCtlQuickCall(this.dataset.k)">'+h(phone)+'</button>':'<span class="inq-phone none">연락처 없음</span>')
+   +cell('고객',h(customer||'미입력'))
+   +cell('지금 할 일','<b>'+h(t.text)+'</b>')
+   +cell('처리 시점','<span class="'+(w.late||t.overdue?'hot':'')+'">'+h([w.abs,w.rel].filter(Boolean).join(' · '))+'</span>')+'</dl></section>';
+ }
  function compactRows(){
   document.querySelectorAll('#sg-panel .inq-ctl-row').forEach(row=>{
    const c=Array.from(row.children),admin=!row.classList.contains('mine-row');if(c.length!==(admin?9:7))return;row.classList.add('inq-work-row');
-   const labels=admin?['상태','현장 / 문의 핵심','공종','담당 / 연락처','지금 할 일','처리 시점','처리']:['상태','현장 / 문의 핵심','공종','고객 / 연락처','지금 할 일','처리 시점','처리'];
+   const labels=admin?['상태','현장 / 문의 핵심','담당 / 연락처','지금 할 일','처리 시점','처리']:['상태','현장 / 문의 핵심','고객 / 연락처','지금 할 일','처리 시점','처리'];
    if(row.classList.contains('head')){const cells=labels.map(text=>{const n=document.createElement('span');n.textContent=text;return n});if(admin)cells[0].prepend(c[0]);row.replaceChildren(...cells);return}
    const q=root.INQ_CONSOLE_CACHE.find(q=>root.inqKey(q)===row.dataset.k);if(!q)return;
    const patch=root.itemPatch(q,'inq'),next=root.actionObj(q,patch)||{},owner=root.inquiryRoutedOwner(q),hours=root.todayHoursFrom(root.inquiryCreatedAt(q)),late=delayed(q),decision=task(q),key=attr(root.inqKey(q));
@@ -101,7 +114,8 @@
    const full=originalText(q).replace(/\s+/g,' ').trim(),core=gist(q);
    const site=make('inq-ctl-site','<button class="inq-site-link" data-k="'+key+'" onclick="event.stopPropagation();inqCtlOpenSingle(this.dataset.k)">'+h(q.site||'현장명 미입력')+'</button><p class="inq-question-preview" title="'+attr(full)+'">'+h(core||'문의 내용 확인 필요')+'</p>');
    const work=root.inqCtlWorkLabel(q),brand=q.brand||root.inquiryBrandOf?.(q)||'';
-   const workCell=make('inq-work-kind',(work&&work!=='공종 미분류'?'<i class="inq-chip">'+h(work)+'</i>':'<i class="inq-chip dim">공종 미분류</i>')+(brand?'<i class="inq-chip brand">'+h(brand)+'</i>':''));
+   /* 공종·브랜드는 현장을 설명하는 속성 — 현장명 바로 아래 한 덩어리로 */
+   site.querySelector('.inq-site-link').insertAdjacentHTML('afterend','<span class="inq-work-kind">'+chips(q)+'</span>');
    const phone=root.inqCtlContactLabel(q),phoneDigits=String(phone||'').replace(/\D/g,''),customer=[q.contact_name||q.contact,q.detail?.customerType||q.raw?.['고객유형']].filter(v=>v&&String(v).trim()).join(' ');
    /* 영업사원 화면은 본인이 담당이라 이름 대신 고객을 앞에(2026-09-28) */
    const assigned=make('inq-ctl-assignee',(admin?'<strong>'+h(owner?root.repDisplay(owner):'미배정')+'</strong>':'<strong>'+h(customer||'고객 미입력')+'</strong>')+(phoneDigits.length>=8?'<button class="inq-phone" data-k="'+key+'" title="전화 걸기" onclick="event.stopPropagation();inqCtlQuickCall(this.dataset.k)">'+h(phone)+'</button>':'<span class="inq-phone none">연락처 없음</span>')+(admin&&customer?'<small title="'+attr(customer)+'">고객 '+h(customer)+'</small>':''));
@@ -111,7 +125,7 @@
    const recent=make('inq-work-recent','<strong class="inq-task-title">'+h(decision.text)+'</strong>'+(latestNote?'<small title="'+attr(latestNote)+'">최근 · '+h(latestNote)+'</small>':'')+(decision.kind==='followup'&&decision.needed&&next.text?'<button class="inq-next-link" data-k="'+key+'" onclick="event.stopPropagation();inqCtlQuickNext(this.dataset.k)">일정 변경</button>':''));
    const w=decision.when||{abs:'',rel:decision.due,late:late};
    const todo=make('inq-work-next','<span class="inq-when '+(w.late||late?'hot':decision.needed?'warn':'ok')+'">'+(w.abs?'<strong>'+h(w.abs)+'</strong>':'')+'<em>'+h(w.rel)+'</em></span>');
-   const actions=make('inq-action',primaryAction(q));actions.onclick=e=>e.stopPropagation();actions.onkeydown=e=>{if(e.key==='Escape'){const menu=actions.querySelector('details');if(menu){menu.open=false;menu.querySelector('summary').focus()}}};actions.onfocusout=e=>{if(!actions.contains(e.relatedTarget)){const menu=actions.querySelector('details');if(menu)menu.open=false}};row.title=decision.reason?decision.text+' — '+decision.reason:decision.text;row.replaceChildren(elapsed,site,workCell,assigned,recent,todo,actions);Array.from(row.children).forEach((cell,i)=>cell.dataset.label=labels[i]);
+   const actions=make('inq-action',primaryAction(q));actions.onclick=e=>e.stopPropagation();actions.onkeydown=e=>{if(e.key==='Escape'){const menu=actions.querySelector('details');if(menu){menu.open=false;menu.querySelector('summary').focus()}}};actions.onfocusout=e=>{if(!actions.contains(e.relatedTarget)){const menu=actions.querySelector('details');if(menu)menu.open=false}};row.title=decision.reason?decision.text+' — '+decision.reason:decision.text;row.replaceChildren(elapsed,site,assigned,recent,todo,actions);Array.from(row.children).forEach((cell,i)=>cell.dataset.label=labels[i]);
   });
  }
  function view(value){root.G.inqLegacyView=value!=='console';root.inqCtlSetView(value)}
@@ -160,9 +174,9 @@
   const previous=document.getElementById('inq-inbox-dialog'),draft={},focused=document.activeElement?.id;const sameAction=previous?.dataset.action===String(root.G.inqAct||'');if(sameAction)previous.querySelectorAll('input[id],select[id],textarea[id]').forEach(e=>draft[e.id]=e.value);
   previous?.remove();const panel=root.$('#sg-panel'),nodes=Array.from(panel.childNodes),phase=root.G.inqPhase;root.G.inqPhase='전체';root.G.inqSelKey=modalKey;try{root.inqSplit([q])}finally{root.G.inqPhase=phase}
   const detail=panel.querySelector('.sp-detail');panel.replaceChildren(...nodes);if(!detail){dismiss();return}
-  const overlay=document.createElement('div');overlay.id='inq-inbox-dialog';overlay.dataset.action=String(root.G.inqAct||'');overlay.className='inq-dialog-overlay';overlay.innerHTML='<section class="inq-dialog" role="dialog" aria-modal="true" aria-labelledby="inq-dialog-title"><header><div><h2 id="inq-dialog-title">'+h(q.site||'견적문의')+'</h2><span>'+h(q.brand||'유입 미지정')+'</span></div><button class="inq-dialog-close" onclick="InquiryWorkbench.close()">✕ 닫기</button></header><div class="inq-dialog-columns"><aside aria-label="문의자와 현장"><h3>문의자 · 현장</h3></aside><main aria-label="문의와 응대"><h3>문의 원문 · 이력</h3></main><aside aria-label="문의 업무 관리"><h3>지금 처리</h3></aside></div></section>';
+  const overlay=document.createElement('div');overlay.id='inq-inbox-dialog';overlay.dataset.action=String(root.G.inqAct||'');overlay.className='inq-dialog-overlay';overlay.innerHTML='<section class="inq-dialog" role="dialog" aria-modal="true" aria-labelledby="inq-dialog-title"><header><div><h2 id="inq-dialog-title">'+h(q.site||'견적문의')+'</h2></div><button class="inq-dialog-close" onclick="InquiryWorkbench.close()">✕ 닫기</button></header><div class="inq-dialog-columns"><aside aria-label="문의자와 현장"><h3>문의자 · 현장</h3></aside><main aria-label="문의와 응대"><h3>문의 원문 · 이력</h3></main><aside aria-label="문의 업무 관리"><h3>지금 처리</h3></aside></div></section>';
   /* E 공통 골격(2026-09-24): 어떤 상세든 맨 위는 '지금 할 일' — 영업건 상세의 NowCard와 같은 자리·같은 문법 */
-  if(!storeOnly(q)){const nowT=task(q);overlay.querySelector('.inq-dialog-columns').insertAdjacentHTML('beforebegin','<div class="inq-now-card'+(nowT.overdue?' hot':'')+'"><span class="inq-now-eyebrow">지금 할 일</span><p>'+h(nowT.reason)+' — <b>'+h(nowT.text)+'</b> · '+h(nowT.due)+'</p>'+(root.G.inqAct&&root.G.inqAct===defaultAct(q)?'<span class="inq-now-here">오른쪽에서 바로 입력 →</span>':'<button class="inq-now" data-k="'+attr(root.inqKey(q))+'" onclick="InquiryWorkbench.run(this.dataset.k)">'+h(nowT.label)+'</button>')+'</div>')}
+  if(!storeOnly(q)){const nowT=task(q);overlay.querySelector('.inq-dialog-columns').insertAdjacentHTML('beforebegin','<div class="inq-now-card inq-now-context'+(nowT.overdue?' hot':'')+'">'+context(q,false)+(root.G.inqAct&&root.G.inqAct===defaultAct(q)?'<span class="inq-now-here">오른쪽에서 바로 입력 →</span>':'<button class="inq-now" data-k="'+attr(root.inqKey(q))+'" onclick="InquiryWorkbench.run(this.dataset.k)">'+h(nowT.label)+'</button>')+'</div>')}
   const left=overlay.querySelector('aside'),center=overlay.querySelector('main'),right=overlay.querySelectorAll('aside')[1];
   left.insertAdjacentHTML('beforeend','<dl><dt>문의자</dt><dd>'+h(q.contact_name||q.contact||'미입력')+'</dd><dt>연락처</dt><dd>'+h(q.phone||q.mobile||root.inqCtlContactLabel(q))+'</dd><dt>현장</dt><dd>'+h(q.site||'미입력')+'</dd><dt>주소</dt><dd>'+h(root.detailAddress(q))+'</dd><dt>공종</dt><dd>'+h(root.inqCtlWorkLabel(q))+'</dd></dl>');
   left.insertAdjacentHTML('beforeend',nearby(q));
@@ -207,5 +221,8 @@
 
  // Refresh only after a write event; preserve the existing filters and draft fields.
  let queuePaint=false;root.addEventListener('phase1:queue',()=>{if(queuePaint)return;queuePaint=true;root.setTimeout(()=>{queuePaint=false;if(root.G?.page==='inq'&&root.B)root.paintInq()},0)});
- root.InquiryWorkbench={saveProcess,related,openRelated,originalText,gist,sourceFields,task,matches,compare,run,set,delayed,primaryAction,selectBrand,view,open,close,openFrom,dismiss};
+ /* 배정·보류·이관 등 작은 창도 같은 문의 요약으로 시작(처리 창 '⋯'은 자체 머리말이 있어 제외) */
+ const baseModal=root.inqCtlModal;
+ if(typeof baseModal==='function')root.inqCtlModal=function(title,html){const m=root.INQ_CTL_MODAL||{},keys=m.keys||(m.key?[m.key]:[]);if(m.mode!=='menu'&&keys.length===1){const q=root.inqCtlFind(keys[0],false);if(q&&allowed(q))html=context(q,true)+html}return baseModal.call(this,title,html)};
+ root.InquiryWorkbench={saveProcess,related,openRelated,originalText,gist,context,sourceFields,task,matches,compare,run,set,delayed,primaryAction,selectBrand,view,open,close,openFrom,dismiss};
 })(window);

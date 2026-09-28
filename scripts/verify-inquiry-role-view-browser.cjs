@@ -108,8 +108,10 @@ async function run() {
     });
     assert.deepEqual(model,{decision:'decision',needed:true,converted:false,closed:false});
     /* 2026-09-28 목록 정보 밀도: 상태 / 현장·문의 핵심 / 공종·브랜드 칩 / 담당·연락처 / 지금 할 일 / 기한 / 실행 — 원문은 hover·상세에서만 */
-    assert.deepEqual(await page.locator('.inq-work-row.head>span').allTextContents(),['상태','현장 / 문의 핵심','공종','담당 / 연락처','지금 할 일','처리 시점','처리']);
-    assert.equal(await page.locator('.inq-work-row[data-k="inq-1"] .inq-work-kind .inq-chip.brand').textContent(),'POUR솔루션');
+    assert.deepEqual(await page.locator('.inq-work-row.head>span').allTextContents(),['상태','현장 / 문의 핵심','담당 / 연락처','지금 할 일','처리 시점','처리']);
+    /* 2026-09-29 맥락 잇기: 공종·브랜드 칩은 현장명 바로 아래(같은 칸) · 상세/배정 창 머리에 같은 문의 요약 */
+    assert.equal(await page.locator('.inq-work-row[data-k="inq-1"] .inq-ctl-site .inq-work-kind .inq-chip.brand').textContent(),'POUR솔루션');
+    assert.match(await page.evaluate(()=>InquiryWorkbench.context(B.inquiries[0],true)),/inq-context-site[\s\S]*inq-chip[\s\S]*담당[\s\S]*연락처[\s\S]*고객[\s\S]*지금 할 일[\s\S]*처리 시점/);
     assert.match(await page.locator('.inq-work-row[data-k="inq-1"] .inq-ctl-assignee .inq-phone').textContent(),/010-1234-5678/);
     assert.match(await page.locator('.inq-work-row[data-k="inq-1"] .inq-ctl-assignee small').textContent(),/테스트 문의자/);
     assert.equal(await page.locator('.inq-work-row .inq-task-reason').count(),0,'지금 확인하는 이유 칸은 제거');
