@@ -55,25 +55,47 @@
   return (admin&&assigned?item('reassign','영업담당 재배정'):'')+(admin?item('consultant','상담담당 지정'):'')+item('store',store?'스토어 이관 완료':'POUR스토어 이관','',store)+item('hold','보류')+(admin&&assigned?item('unassign','미배정 회수'):'')+(admin?'<i class="inq-menu-sep"></i>'+item('duplicate','중복 확인')+item('trash','휴지통 이동','danger'):'');
  }
 
+  /* 문의 핵심(규칙형 요약): 인사말·상투어·현장명 반복 제거 → 문제/요청 → 일정 → 특이사항 순으로 45자 */
+  const GIST_RULES=[
+   [/누수|물이\s*(새|샙|샘)|누출/,'누수 발생'],[/결로/,'결로'],[/균열|크랙/,'균열 보수'],[/옥상|지붕|옥탑/,'옥상 방수'],[/pvc|피브이씨/i,'PVC 방수'],[/슁글|싱글/,'슁글 방수'],[/금속기와/,'금속기와'],[/우레탄/,'우레탄 방수'],[/에폭시/,'에폭시'],[/외벽.{0,6}(도장|재도장)|재도장|도장\s*공사/,'외벽 재도장'],[/(지하)?주차장/,'주차장'],[/배수로|배수구/,'배수로'],[/도로|보도블럭|타일.{0,4}(파손|들썩)/,'도로 보수'],[/창틀|실리콘|코킹/,'코킹'],[/탈락|박리|박락/,'탈락 보수'],[/감리/,'감리'],[/설계/,'설계'],[/협약|협업|협력/,'협약 문의'],[/자재|납품|제품/,'자재 문의'],[/공법.{0,6}(문의|상담|협약|차이)|기술.{0,4}(문의|상담|지원)/,'공법 상담'],[/하자\s*(보수|접수|처리)|a\/?s/i,'하자 A/S'],
+   [/견적/,'견적 요청'],[/현장.{0,8}(확인|방문|답사|실측|와서)|방문.{0,6}(요청|희망|원함)/,'현장 확인 요청'],[/pt|프레젠테이션|설명회/i,'PT 요청'],[/자료.{0,4}(요청|부탁)/,'자료 요청'],
+   [/입찰|공고/,'입찰 예정'],[/입대의|입주자\s*대표/,'입대의 검토'],[/수의/,'수의 계약'],[/((?:다음|내)\s*달|내년\s*\d{1,2}\s*월|\d{1,2}\s*월)\s*(\d{1,2}\s*일)?/,m=>m[0].replace(/\s+/g,'')+' 일정'],
+   [/(\d+)\s*개?\s*동/,m=>m[1]+'개동'],[/(\d[\d,]*)\s*세대/,m=>m[1]+'세대'],[/(\d[\d,]*)\s*(㎡|m2|평|헤베)/,m=>m[1]+m[2]],[/부분\s*(보수|시공|방수|공사|세대)/,'부분 보수'],[/전체\s*(동|방수|도장|공사|시공)/,'전체 공사'],[/긴급|급함|빨리/,'긴급'],[/비교\s*견적|타\s*업체/,'비교 견적']];
+  const NOISE=/안녕하세요|안녕하십니까|수고\s*많으십니다|감사합니다|문의\s*(드립니다|드려요|합니다|드림)|연락\s*(부탁|주세요|바랍니다|주시면)|부탁\s*드립니다|드립니다|입니다|관리사무소\s*입니다|관리사무소\s*(직원|담당자)?\s*[이라고]+\s*합니다|[가-힣]+(소장|팀장|과장|대리|주임|대표|이사)\s*입니다/g;
+  function gist(q){
+   let t=originalText(q).replace(/\s+/g,' ').trim();if(!t)return '';
+   const site=String(q.site||'').replace(/^\[[^\]]*\]\s*/,'').replace(/아파트$/,'').trim();
+   if(site.length>=3)t=t.split(site).join(' ');
+   t=t.replace(NOISE,' ').replace(/\s+/g,' ').replace(/^[\s.,·\-]+|[\s.,·\-]+$/g,'');
+   const parts=[],seen=new Set();
+   for(const [re,label] of GIST_RULES){const m=t.match(re);if(!m)continue;const v=typeof label==='function'?label(m):label;if(!seen.has(v)){seen.add(v);parts.push(v)}if(parts.length>=4)break}
+   let out=parts.join(' · ');
+   if(!out)out=t.replace(/[.!?。]+\s*/g,' · ').replace(/(\s*·\s*)+$/,'').trim();
+   return out.length>45?out.slice(0,44).replace(/\s*·?\s*[^·]*$/,'')||out.slice(0,44):out;
+  }
+  root.inquiryGist=gist;
  function compactRows(){
   document.querySelectorAll('#sg-panel .inq-ctl-row').forEach(row=>{
    const c=Array.from(row.children),admin=!row.classList.contains('mine-row');if(c.length!==(admin?9:7))return;row.classList.add('inq-work-row');
-   const labels=['우선순위','문의','지금 확인하는 이유','지금 할 일','담당자','기한','실행'];
+   const labels=['상태','현장 / 문의 핵심','공종','담당 / 연락처','지금 할 일','기한','실행'];
    if(row.classList.contains('head')){const cells=labels.map(text=>{const n=document.createElement('span');n.textContent=text;return n});if(admin)cells[0].prepend(c[0]);row.replaceChildren(...cells);return}
    const q=root.INQ_CONSOLE_CACHE.find(q=>root.inqKey(q)===row.dataset.k);if(!q)return;
    const patch=root.itemPatch(q,'inq'),next=root.actionObj(q,patch)||{},owner=root.inquiryRoutedOwner(q),hours=root.todayHoursFrom(root.inquiryCreatedAt(q)),late=delayed(q),decision=task(q),key=attr(root.inqKey(q));
    row.classList.toggle('priority',late||(!owner&&hours>=24));row.title=decision.text;row.dataset.task=decision.kind;
    const make=(cls,html)=>{const n=document.createElement('span');n.className=cls;n.innerHTML=html;return n};
    const elapsed=make('inq-received','<strong class="'+(late?'inq-work-late':'')+'">'+h(({unassigned:'배정 필요',waiting:'첫 연락',followup:'후속조치',decision:'영업건 전환 결정',closed:'이력'})[decision.kind])+'</strong><small>'+h(hours==null?'접수일 미기록':hours>=24?'접수 후 '+Math.floor(hours/24)+'일':Math.max(0,Math.floor(hours))+'시간 경과')+'</small>');if(admin)elapsed.prepend(c[0]);
-   const meta=[q.detail?.customerType||q.raw?.['고객유형'],q.contact_name||q.contact||root.inqCtlContactLabel(q),q.brand,root.inqCtlWorkLabel(q)].filter(v=>v&&v!=='연락처 미입력').join(' · ');
-   const site=make('inq-ctl-site','<button class="inq-site-link" data-k="'+key+'" onclick="event.stopPropagation();inqCtlOpenSingle(this.dataset.k)">'+h(q.site||'현장명 미입력')+'</button><p class="inq-question-preview">'+h(originalText(q).replace(/\s+/g,' ')||'문의 내용 확인 필요')+'</p><small title="'+attr(meta)+'">'+h(meta)+'</small>');
-   const assigned=make('inq-ctl-assignee','<strong>'+h(owner?root.repDisplay(owner):'미배정')+'</strong>');
+   const full=originalText(q).replace(/\s+/g,' ').trim(),core=gist(q);
+   const site=make('inq-ctl-site','<button class="inq-site-link" data-k="'+key+'" onclick="event.stopPropagation();inqCtlOpenSingle(this.dataset.k)">'+h(q.site||'현장명 미입력')+'</button><p class="inq-question-preview" title="'+attr(full)+'">'+h(core||'문의 내용 확인 필요')+'</p>');
+   const work=root.inqCtlWorkLabel(q),brand=q.brand||root.inquiryBrandOf?.(q)||'';
+   const workCell=make('inq-work-kind',(work&&work!=='공종 미분류'?'<i class="inq-chip">'+h(work)+'</i>':'<i class="inq-chip dim">공종 미분류</i>')+(brand?'<i class="inq-chip brand">'+h(brand)+'</i>':''));
+   const phone=root.inqCtlContactLabel(q),phoneDigits=String(phone||'').replace(/\D/g,''),customer=[q.contact_name||q.contact,q.detail?.customerType||q.raw?.['고객유형']].filter(v=>v&&String(v).trim()).join(' ');
+   const assigned=make('inq-ctl-assignee','<strong>'+h(owner?root.repDisplay(owner):'미배정')+'</strong>'+(phoneDigits.length>=8?'<button class="inq-phone" data-k="'+key+'" title="전화 걸기" onclick="event.stopPropagation();inqCtlQuickCall(this.dataset.k)">'+h(phone)+'</button>':'<span class="inq-phone none">연락처 없음</span>')+(customer?'<small title="'+attr(customer)+'">고객 '+h(customer)+'</small>':''));
    if(!owner){const evidence=root.inquiryUnassignedMeta(q);assigned.title=[evidence.label,evidence.detail,evidence.attemptLabel].filter(Boolean).join(' · ')}
    const seen=new Set(),activities=[...(q.activities||[]),...(patch.activities||[])].filter(a=>{const k=a.id||[a.at,a.type,a.note,a.result].join('|');if(seen.has(k))return false;seen.add(k);return /전화|통화|문자|SMS|카카오|이메일|메일|방문/i.test(a.type||'')&&Number.isFinite(Date.parse(a.at||a.occurred_at||a.created_at))}).sort((a,b)=>Date.parse(b.at||b.occurred_at||b.created_at)-Date.parse(a.at||a.occurred_at||a.created_at)),latest=activities[0],response=root.inqCtlFirstResponseAt(q);
    const latestNote=latest?[latest.note,latest.result].filter(Boolean).join(' · '):response?'첫 연락 기록 있음':'';
    const recent=make('inq-work-recent','<strong class="inq-task-title">'+h(decision.text)+'</strong>'+(latestNote?'<small title="'+attr(latestNote)+'">최근 · '+h(latestNote)+'</small>':'')+(decision.kind==='followup'&&decision.needed&&next.text?'<button class="inq-next-link" data-k="'+key+'" onclick="event.stopPropagation();inqCtlQuickNext(this.dataset.k)">일정 변경</button>':''));
    const todo=make('inq-work-next','<span class="inq-due-chip '+(late||decision.due==='첫 연락 늦음'?'hot':decision.needed?'warn':'ok')+'">'+h(decision.due)+'</span>');
-   const actions=make('inq-action',primaryAction(q));actions.onclick=e=>e.stopPropagation();actions.onkeydown=e=>{if(e.key==='Escape'){const menu=actions.querySelector('details');if(menu){menu.open=false;menu.querySelector('summary').focus()}}};actions.onfocusout=e=>{if(!actions.contains(e.relatedTarget)){const menu=actions.querySelector('details');if(menu)menu.open=false}};row.replaceChildren(elapsed,site,make('inq-task-reason',h(decision.reason)),recent,assigned,todo,actions);Array.from(row.children).forEach((cell,i)=>cell.dataset.label=labels[i]);
+   const actions=make('inq-action',primaryAction(q));actions.onclick=e=>e.stopPropagation();actions.onkeydown=e=>{if(e.key==='Escape'){const menu=actions.querySelector('details');if(menu){menu.open=false;menu.querySelector('summary').focus()}}};actions.onfocusout=e=>{if(!actions.contains(e.relatedTarget)){const menu=actions.querySelector('details');if(menu)menu.open=false}};row.title=decision.reason?decision.text+' — '+decision.reason:decision.text;row.replaceChildren(elapsed,site,workCell,assigned,recent,todo,actions);Array.from(row.children).forEach((cell,i)=>cell.dataset.label=labels[i]);
   });
  }
  function view(value){root.G.inqLegacyView=value!=='console';root.inqCtlSetView(value)}
@@ -169,5 +191,5 @@
 
  // Refresh only after a write event; preserve the existing filters and draft fields.
  let queuePaint=false;root.addEventListener('phase1:queue',()=>{if(queuePaint)return;queuePaint=true;root.setTimeout(()=>{queuePaint=false;if(root.G?.page==='inq'&&root.B)root.paintInq()},0)});
- root.InquiryWorkbench={saveProcess,related,openRelated,originalText,sourceFields,task,matches,compare,run,set,delayed,primaryAction,selectBrand,view,open,close,openFrom,dismiss};
+ root.InquiryWorkbench={saveProcess,related,openRelated,originalText,gist,sourceFields,task,matches,compare,run,set,delayed,primaryAction,selectBrand,view,open,close,openFrom,dismiss};
 })(window);
