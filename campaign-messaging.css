@@ -1,0 +1,88 @@
+/* 문자메시지 관리 (2026-09-29): 3단계부터 실제 문자 발송 화면처럼. 밝은 규격 #fff · #e2e8f1 · #3B6CE4 */
+#campaign-root .cc-layout>.cc-panel:only-child{grid-column:1/-1}
+#campaign-root .cm-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:12px 0;border:1px solid #e2e8f1;border-radius:12px;background:#fff;overflow:hidden}
+#campaign-root .cm-summary>div{padding:11px 16px;border-left:1px solid #e2e8f1;min-width:0}
+#campaign-root .cm-summary>div:first-child{border-left:0}
+#campaign-root .cm-summary span{display:block;color:#66758d;font-size:11px;font-weight:700}
+#campaign-root .cm-summary b{display:block;margin-top:3px;color:#172033;font-size:14px;overflow-wrap:anywhere}
+#campaign-root .cm-summary b.mixed{color:#b54708}
+#campaign-root .cm-warn{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 12px;padding:11px 14px;border:1px solid #f3cf9a;border-radius:11px;background:#fff8ed;color:#7a4a0c;font-size:12.5px}
+#campaign-root .cm-warn span{color:#8a6a3a;font-size:11.5px}
+#campaign-root .cm-warn button{margin-left:auto;border:1px solid #e3b877;border-radius:8px;background:#fff;padding:6px 11px;color:#7a4a0c;font:inherit;font-size:11.5px;font-weight:800;cursor:pointer}
+
+#campaign-root .cm-editor{grid-template-columns:minmax(0,1fr) 340px;align-items:start}
+#campaign-root .cm-write{display:grid;gap:12px;min-width:0}
+#campaign-root .cm-write .cc-compose,#campaign-root .cm-write .cc-vars{background:#fff;border-color:#e2e8f1}
+#campaign-root .cm-write textarea{min-height:230px;border-color:#e2e8f1}
+#campaign-root .cm-write textarea:focus{outline:0;border-color:#3B6CE4;box-shadow:0 0 0 3px rgba(59,108,228,.13)}
+#campaign-root .cm-write .cc-vars button{border-color:#d5e0f7;color:#2c55b8}
+#campaign-root .cm-live{position:sticky;top:12px;display:grid;gap:4px;min-width:0}
+#campaign-root .cm-live>strong{font-size:12px;color:#172033}
+#campaign-root .cm-live>span{margin-bottom:6px;color:#66758d;font-size:11px}
+
+#campaign-root .cm-phone{min-height:380px;padding:0;border:1px solid #d5dce8;border-radius:26px;background:#fff;overflow:hidden;box-shadow:0 10px 26px rgba(22,36,60,.07)}
+#campaign-root .cm-phone-bar{display:flex;justify-content:center;padding:9px 0 5px;background:#f4f6fa}
+#campaign-root .cm-phone-bar i{width:54px;height:5px;border-radius:99px;background:#cfd6e2}
+#campaign-root .cm-phone .cc-phone-head{align-items:center;margin:0;padding:9px 16px 11px;border-bottom:1px solid #e2e8f1;background:#f4f6fa;font-size:11.5px}
+#campaign-root .cm-phone .cc-phone-head b{color:#172033;font-size:13.5px}
+#campaign-root .cm-thread{display:flex;flex:1;flex-direction:column;align-items:flex-end;gap:6px;padding:14px 14px 10px;background:#fff}
+#campaign-root .cm-thread time{align-self:center;border-radius:99px;background:#eef1f6;padding:3px 10px;color:#66758d;font-size:10.5px}
+#campaign-root .cm-phone .cc-bubble{max-width:88%;border-radius:16px 16px 4px 16px;background:#3B6CE4;color:#fff;box-shadow:none;font-size:12.5px;overflow-wrap:anywhere}
+#campaign-root .cm-phone .cc-bubble.empty{background:#eef1f6;color:#7a8699}
+#campaign-root .cm-thread em{color:#8a97ab;font-size:10.5px;font-style:normal}
+#campaign-root .cm-phone>small{margin:0;padding:9px 16px;border-top:1px solid #e2e8f1;background:#fbfcfe;color:#66758d}
+
+#campaign-root .cm-final{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:start;margin-bottom:14px}
+#campaign-root .cm-confirm{margin:0;border:1px solid #e2e8f1;border-radius:12px;background:#fff;overflow:hidden}
+#campaign-root .cm-confirm>div{display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px;padding:12px 16px;border-top:1px solid #eef1f6}
+#campaign-root .cm-confirm>div:first-child{border-top:0}
+#campaign-root .cm-confirm dt{color:#66758d;font-size:12px;font-weight:700}
+#campaign-root .cm-confirm dd{margin:0;color:#172033;font-size:13px;font-weight:800;overflow-wrap:anywhere}
+#campaign-root .cm-final-phone .cm-phone{min-height:300px}
+#campaign-root .cm-modes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:13px}
+#campaign-root .cm-mode{display:grid;grid-template-columns:20px minmax(0,1fr);gap:3px 10px;align-items:center;padding:14px 16px;border:1px solid #e2e8f1;border-radius:12px;background:#fff;cursor:pointer}
+#campaign-root .cm-mode.on{border-color:#3B6CE4;background:#f4f7fe;box-shadow:0 0 0 1px #3B6CE4 inset}
+#campaign-root .cm-mode input[type=radio]{width:17px;height:17px;margin:0;accent-color:#3B6CE4}
+#campaign-root .cm-mode b{font-size:13.5px;color:#172033}
+#campaign-root .cm-mode span{grid-column:2;color:#66758d;font-size:11.5px}
+#campaign-root .cm-mode input[type=datetime-local]{grid-column:2;height:36px;margin-top:6px;padding:0 10px;border:1px solid #d5dce8;border-radius:8px;background:#fff;font:600 12.5px Pretendard,"Malgun Gothic",sans-serif;max-width:240px}
+#campaign-root .cc-final-check{border-color:#e2e8f1;background:#fbfcfe;color:#33415e}
+#campaign-root .cc-final-check input{accent-color:#3B6CE4}
+#campaign-root .cm-go{min-height:42px;padding:0 22px;background:#3B6CE4;border-color:#3B6CE4;color:#fff;font-size:13.5px}
+
+#campaign-root .cm-receipt{max-width:920px;margin:0 auto}
+#campaign-root .cm-flow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;margin:4px 0 16px;padding:0;list-style:none}
+#campaign-root .cm-flow li{position:relative;display:grid;justify-items:center;gap:6px;color:#8a97ab;font-size:12px;font-weight:700;text-align:center}
+#campaign-root .cm-flow li:before{content:'';position:absolute;top:13px;left:-50%;width:100%;height:2px;background:#e2e8f1}
+#campaign-root .cm-flow li:first-child:before{display:none}
+#campaign-root .cm-flow i{position:relative;z-index:1;display:grid;place-items:center;width:28px;height:28px;border:2px solid #e2e8f1;border-radius:50%;background:#fff;font-style:normal;font-size:12px}
+#campaign-root .cm-flow li.done{color:#33415e}
+#campaign-root .cm-flow li.done i{border-color:#3B6CE4;background:#3B6CE4;color:#fff}
+#campaign-root .cm-flow li.done:before,#campaign-root .cm-flow li.on:before{background:#3B6CE4}
+#campaign-root .cm-flow li.on{color:#1e46a8}
+#campaign-root .cm-flow li.on i{border-color:#3B6CE4;color:#1e46a8;box-shadow:0 0 0 4px rgba(59,108,228,.14)}
+#campaign-root .cm-flow li.on.warn{color:#b54708}
+#campaign-root .cm-flow li.on.warn i{border-color:#e3a008;color:#b54708;box-shadow:0 0 0 4px rgba(227,160,8,.16)}
+#campaign-root .cm-counts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid #e2e8f1;border-radius:12px;overflow:hidden;background:#fff}
+#campaign-root .cm-counts>div{padding:13px 16px;border-left:1px solid #e2e8f1}
+#campaign-root .cm-counts>div:first-child{border-left:0}
+#campaign-root .cm-counts span{display:block;color:#66758d;font-size:11.5px;font-weight:700}
+#campaign-root .cm-counts b{display:block;margin-top:4px;color:#172033;font-size:17px}
+
+#campaign-root .cm-test-slot{display:inline-flex;margin-left:8px}
+#campaign-root .cm-test-slot .pc-message-test-entry{margin:0;min-height:34px;border:1px solid #e2e8f1!important;border-radius:9px;background:#fff!important;padding:0 11px;color:#66758d!important;font-size:11.5px;font-weight:800}
+#campaign-root .cc2-cta:hover{background:#2c55b8}
+
+@media(max-width:1000px){
+ #campaign-root .cm-editor,#campaign-root .cm-final{grid-template-columns:1fr}
+ #campaign-root .cm-live{position:static}
+ #campaign-root .cm-phone{max-width:380px}
+}
+@media(max-width:760px){
+ #campaign-root .cm-summary,#campaign-root .cm-counts{grid-template-columns:1fr 1fr}
+ #campaign-root .cm-summary>div:nth-child(3),#campaign-root .cm-counts>div:nth-child(3){border-left:0}
+ #campaign-root .cm-summary>div:nth-child(n+3),#campaign-root .cm-counts>div:nth-child(n+3){border-top:1px solid #e2e8f1}
+ #campaign-root .cm-modes{grid-template-columns:1fr}
+ #campaign-root .cm-flow li{font-size:10.5px}
+ #campaign-root .cm-warn button{margin-left:0}
+}

@@ -102,14 +102,17 @@ test('campaign all-send stays explicit, consent-scoped, and cannot record false 
 
 test('campaign landing is a simple customer-send inbox followed by a five-step workflow',()=>{
   assert.match(pc,/function campaignHomePage\(\)/);
-  assert.match(pc,/＋ 새 발송 만들기/);
+  assert.match(pc,/＋ 문자 보내기/);
   assert.match(pc,/예약 대기[\s\S]*발송 진행중[\s\S]*실패·확인 필요/);
   assert.doesNotMatch(pc,/\['send','고객 실행'/);
   assert.match(pc,/function campaignStepsHtml\(\)/);
   assert.match(pc,/\['발송 목적','왜 보내는지'\]/);
   assert.match(pc,/function campaignPurposePanel\(\)/);
   assert.match(pc,/category_label:purpose/);
-  assert.match(pc,/고객 발송/);
+  assert.match(pc,/문자메시지 관리/);
+  assert.match(pc,/명에게 발송 요청/);
+  assert.match(pc,/통신사 결과가 확인되기 전에는 ‘발송 완료’로 표시하지 않습니다/);
+  assert.match(functionBody(pc,'campaignSenderNumber'),/등록 발신번호/);
 });
 
 test('campaign recipients normalize Korean international numbers and preserve consent evidence',()=>{

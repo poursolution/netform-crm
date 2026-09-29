@@ -20,6 +20,6 @@
   update();dialog.showModal();
  }
  var original=root.paintCampaign;
- root.paintCampaign=function(){original.apply(this,arguments);var host=document.getElementById('campaign-root');if(!host)return;var button=document.createElement('button');button.type='button';button.className='cc-btn pc-message-test-entry';button.textContent='내부 번호 테스트 발송';button.onclick=open;host.prepend(button)};
+ root.paintCampaign=function(){original.apply(this,arguments);var host=document.getElementById('campaign-root');if(!host)return;var button=document.createElement('button');button.type='button';button.className='cc-btn pc-message-test-entry';button.textContent='테스트 발송';button.onclick=open;var slot=host.querySelector('.cm-test-slot');if(slot)slot.appendChild(button);else host.prepend(button)};
  root.addEventListener('phase1:identity-cleared',function(){var el=document.getElementById('pc-message-test');if(el)el.close()});
 })(window);
