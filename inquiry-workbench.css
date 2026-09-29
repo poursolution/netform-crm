@@ -220,3 +220,13 @@ body:has(#pg-inq.on.inq-workbench) .mhead>.search{display:none}
 .inq-dialog-columns>aside,.inq-dialog-columns>main{padding:18px}
 @media(max-width:1000px){.inq-dialog-overlay{padding:2vh 2vw}.inq-dialog{width:96vw;height:96vh}.inq-dialog-columns{grid-template-columns:minmax(190px,1fr) minmax(0,2fr)}.inq-dialog-columns>aside:last-child{grid-column:1/-1}}
 @media(max-width:760px){.inq-dialog-columns{grid-template-columns:1fr}}
+
+/* 상세창 위 요약 띠 여백 축소 (2026-09-30 대표 지시) */
+.inq-dialog .inq-now-card.inq-now-context{align-items:center;margin:8px 18px 0;padding:7px 14px}
+.inq-dialog .inq-now-context .inq-context{grid-template-columns:auto minmax(0,1fr);align-items:center;gap:3px 10px}
+.inq-dialog .inq-now-context .inq-context-gist{font-size:13px;line-height:1.35}
+.inq-dialog .inq-now-context .inq-context dl{grid-column:1/-1;margin:0;gap:2px 16px;font-size:12.5px}
+.inq-dialog .inq-now-context .inq-context dt{display:inline;margin:0 6px 0 0}
+.inq-dialog .inq-now-context .inq-context dd{display:inline}
+.inq-dialog .inq-now-context .inq-chip{padding:4px 7px}
+@media(max-width:760px){.inq-dialog .inq-now-context .inq-context{grid-template-columns:1fr}}
