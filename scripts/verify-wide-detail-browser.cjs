@@ -24,14 +24,18 @@ async function run(){
   assert.equal(await page.locator('#dv-title').innerText(),'가로 상세 검증 현장');
   assert.equal(await page.locator('#detailView.dw-wide').isVisible(),true);
   assert.equal(await page.locator('.dw-left #contactCard').count(),1);
-  assert.equal(await page.locator('.da-stash #nextActionCard').count(),1);
+  /* 2026-09-29: 연락 결과·다음 할 일 입력은 오른쪽 '지금 처리'에 항상 열려 있다(견적문의 상세와 같은 흐름) */
+  assert.equal(await page.locator('.dw-right #detailDock #nextActionCard').count(),1);
+  assert.equal(await page.locator('.dw-right>*').first().getAttribute('id'),'detailDock');
+  assert.equal(await page.locator('#detailDock #dv-act-note').isVisible(),true);
+  assert.equal(await page.locator('#detailDock .da-submit').innerText(),'연락 결과·다음 할 일 저장');
   assert.equal(await page.locator('.da-stash #dv-amt').count(),1);
   assert.equal(await page.evaluate(()=>unifiedTimeline({activities:[B.deals[0].activities[0]]},B.deals[0]).filter(x=>x.id).length),2);
   assert.match(await page.locator('#activityTimelineHost').innerText(),/서버 발송 결과/);
   assert.equal(await page.locator('#dv-body details,#dv-body summary').count(),0,'pipeline detail contains no disclosures, including retained controls');
   assert.match(await page.locator('#da-material-summary').innerText(),/사진\s+0건/);
   assert.match(await page.locator('.da-info').filter({hasText:'추가 관리정보'}).innerText(),/의사결정자\s+미입력/);
-  assert.equal(await page.locator('#dv-body input:visible,#dv-body select:visible,#dv-body textarea:visible').count(),0,'viewing surface has no edit inputs');
+  assert.equal(await page.locator('#dv-body input:visible,#dv-body select:visible,#dv-body textarea:visible').evaluateAll(es=>es.filter(e=>!e.closest('#detailDock')).length),0,'only the right-hand process panel has edit inputs');
   await page.evaluate(()=>{window.__originalActivities=CUR_DETAIL.item.activities;CUR_DETAIL.item.activities=Array.from({length:9},(_,i)=>({id:'flat-'+i,occurred_at:'2026-09-20T10:00:0'+i+'Z',type:i%2?'next_action_set':'stage_change',actor_name:'검증 담당자',note:'<검증> 기록 '+i}));refreshActivityTimeline()});
   assert.equal(await page.locator('#activityTimelineHost .da-events li').count(),5);/* 최근 5건(2026-09-26 중복 정리) */
   assert.doesNotMatch(await page.locator('#activityTimelineHost').innerText(),/next_action_set|stage_change|CRM/);
@@ -70,7 +74,7 @@ async function run(){
    assert.ok(await page.locator('.dw-left .pc-contact-person').first().evaluate(n=>n.getBoundingClientRect().width)>100,'contact identity stays readable at '+width);
    assert.ok(await page.locator('.dw-left .contactnum b').evaluateAll(nodes=>nodes.every(n=>{const r=document.createRange();r.selectNodeContents(n);return r.getClientRects().length===1&&n.scrollWidth<=n.clientWidth})), 'phone numbers stay on one line at '+width);
   }
-  assert.equal(await page.locator('#dv-act-note').isVisible(),false,'view surface has no expanded input');
+  assert.equal(await page.locator('#detailDock #dv-act-note').isVisible(),true,'process panel is open by default');
   if(await page.locator('.da-tools[hidden]').count())await page.locator('.da-more').click();
   const quick=page.locator('.da-toolbar').getByRole('button',{name:'연락 결과',exact:true});
   await quick.hover();await page.waitForTimeout(120);assert.equal(await page.locator('#da-tooltip').count(),0);
@@ -83,7 +87,7 @@ async function run(){
   if(await page.locator('.da-tools[hidden]').count())await page.locator('.da-more').click();
   await page.locator('.da-toolbar').getByRole('button',{name:'다음 할 일',exact:true}).click();
   assert.equal(await page.locator('#detailAction.da-compact #dv-na-date').isVisible(),true);
-  assert.equal(await page.locator('#dv-act-note').isVisible(),false);
+  assert.equal(await page.locator('#detailAction #dv-act-note').count(),0,'next-only window does not carry the result field');
   assert.equal(await page.locator('#dv-na-text').inputValue(),'다음 할 일 보존 검증');
   await page.locator('#detailAction').getByRole('button',{name:'작업창 닫기'}).click();
   await page.evaluate(()=>DetailWorkspace.focusWide('activityFormCard'));

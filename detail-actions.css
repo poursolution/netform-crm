@@ -41,3 +41,13 @@
 #detailView.dw-wide #detailAction #dw-checks > h3{display:none}
 /* 전체 이력 아래 '단계·담당자 변경'(2026-09-26) — 위 목록과 같은 모양, 제목만 한 줄 */
 .da-history-sub{margin:18px 0 6px;padding-top:14px;border-top:1px solid #e2e8f1;font-size:13px;font-weight:700;color:#5b6b85}
+/* 오른쪽 '지금 처리'(2026-09-29): 연락 결과 입력이 항상 열려 있다 — 견적문의 상세와 같은 흐름 */
+.dw-columns .da-dock{border:1px solid #c9d9ff;background:#fff;padding:14px 16px}
+.dw-columns .da-dock>h3{font-size:14px;margin:0 0 10px;color:#0f172a}
+.da-dock .da-dock-content{overflow:visible;padding:0}
+.da-dock .da-dock-content .dcard{border:0;box-shadow:none;background:transparent;padding:0;margin:0 0 10px}
+.da-dock .da-dock-content .dcard>h3,.da-dock .da-dock-content .detailsecthead{display:none}
+.da-dock textarea{min-height:88px}
+#detailView.dw-wide #detailDock #dw-checks{display:block;margin:10px 0}
+#detailView.dw-wide #detailDock #dw-checks>h3{display:none}
+.da-dock .da-submit{width:100%}.da-dock .da-dock-content #activityFormCard>p,.da-dock .da-dock-content #nextActionCard>p{display:none}
