@@ -10,11 +10,13 @@ document.addEventListener('pointerover',e=>{const n=e.target.closest('[data-help
 document.addEventListener('pointerout',e=>{const n=e.target.closest('[data-help]');if(n&&!n.contains(e.relatedTarget))hideTip()});
 document.addEventListener('focusin',e=>{const n=e.target.closest('[data-help]');if(n)tooltip(n,0)});
 document.addEventListener('focusout',hideTip);window.addEventListener('resize',hideTip);document.addEventListener('scroll',hideTip,true);
-function close(restore=true){hideTip();if(!state)return;const old=state;state=null;old.panel.querySelectorAll('[data-material-hidden]').forEach(n=>{n.hidden=false;delete n.dataset.materialHidden});old.moves.forEach(([n,mark])=>{if(mark.isConnected)mark.replaceWith(n)});old.panel.remove();old.background.forEach(n=>n.inert=false);if(restore&&old.focus?.isConnected)old.focus.focus({preventScroll:true});}
+function close(restore=true){hideTip();if(!state)return;const old=state;state=null;old.panel.querySelectorAll('[data-material-hidden]').forEach(n=>{n.hidden=false;delete n.dataset.materialHidden});old.moves.forEach(([n,mark])=>{if(mark.isConnected)mark.replaceWith(n)});old.panel.remove();old.background.forEach(n=>n.inert=false);{const ns=$('detailDock')?.querySelector('#nextActionCard .dactions .pri');if(ns)ns.style.display='none';}if(restore&&old.focus?.isConnected)old.focus.focus({preventScroll:true});}
 function take(n,host){if(!n||!state)return;const mark=document.createComment('detail-action-position');n.before(mark);state.moves.push([n,mark]);host.append(n);}
 function open(key){
  const view=$('detailView');if(!view?.classList.contains('dw-wide'))return false;
  close(false);hideTip();
+ /* 연락 결과는 오른쪽 '지금 처리'에 항상 열려 있다(2026-09-29) — 작업창을 띄우지 않고 그 칸으로 */
+ if(key==='activity'&&$('detailDock')){const dockEl=$('detailDock');dockEl.scrollIntoView({block:'nearest'});dockEl.querySelector('#dv-act-note')?.focus({preventScroll:true});return true;}
  const need={activity:'activityFormCard',next:'nextActionCard',amount:'dw-amount'}[key];
  if(need&&!$(need)){if(open.retrying||typeof root.renderDetail!=='function'){root.showDetailErr?.('입력 칸을 불러오지 못했습니다. 상세를 닫았다가 다시 열어 주세요.');return false;}open.retrying=true;try{root.renderDetail();}finally{open.retrying=false;}return $(need)?open(key):(root.showDetailErr?.('입력 칸을 불러오지 못했습니다. 상세를 닫았다가 다시 열어 주세요.'),false);}
  const titles={activity:'연락 결과 · 다음 할 일',next:'다음 할 일 설정',stage:'진행상태 변경',owner:'담당자 변경',amount:'예상금액 수정',materials:'자료 보기 · 추가',management:'관리정보 수정',contact:'연락처 수정',history:'전체 이력',support:'관리자 지원 요청',help:'관리 기준'};
@@ -24,7 +26,14 @@ function open(key){
  state={key,panel,moves:[],focus:document.activeElement,background:Array.from(view.children)};view.append(panel);state.background.forEach(n=>n.inert=true);
  const next=$('nextActionCard'),activity=$('activityFormCard'),atomic=$('rel-contact-save');
  if(key==='activity'){take(activity,content);const checks=$('dw-checks');take(checks,content);if(checks)state.checksBefore=[...checks.querySelectorAll('.exec-guide-item')].map(b=>b.classList.contains('on'));take(next,content);if(atomic){const actions=atomic.closest('.dactions');actions.before(next);const save=next?.querySelector('.dactions .pri');if(save)save.style.display='none';}else{const save=activity?.querySelector('.dactions .pri');if(save){save.classList.add('da-submit');save.textContent='연락 결과·다음 할 일 저장';save.onclick=saveCombined;take(save.closest('.dactions'),content);}const nextSave=next?.querySelector('.dactions .pri');if(nextSave)nextSave.style.display='none';}
-  /* 2026-09-24 지시: 처음엔 연락 결과만 — 결과 칩·내용이 생기면 다음 할 일이 맞는 기본값으로 열린다 */
+  wire(content,activity,next);}
+ if(key==='next'){next?.classList.remove('da-next-wait');take(next,content);const save=next?.querySelector('.dactions .pri');if(save)save.style.display='';}
+ if(key==='amount')take($('dw-amount'),content);
+ if(key==='owner')take($('dv-assignee')?.closest('.dcard'),content);
+ return finish(key,panel,content,x);
+}
+/* 2026-09-24 지시: 처음엔 연락 결과만 — 결과 칩·내용이 생기면 다음 할 일이 맞는 기본값으로 열린다 (작업창·오른쪽 '지금 처리' 공통) */
+function wire(content,activity,next){
   if(next){const noteEl=activity?.querySelector('#dv-act-note');
    if(noteEl&&noteEl.value.trim())next.classList.remove('da-next-wait');else next.classList.add('da-next-wait');
    const reveal=chip=>{if(!next.classList.contains('da-next-wait'))return;next.classList.remove('da-next-wait');
@@ -37,10 +46,9 @@ function open(key){
     next.scrollIntoView({block:'nearest',behavior:'smooth'});};
    content.addEventListener('click',e=>{const b=e.target.closest('.dw-outcomes button');if(b)reveal(b.textContent.trim());},true);
    content.addEventListener('input',e=>{if(e.target.id==='dv-act-note'&&e.target.value.trim())reveal('');},true);
-  }}
- if(key==='next'){take(next,content);const save=next?.querySelector('.dactions .pri');if(save)save.style.display='';}
- if(key==='amount')take($('dw-amount'),content);
- if(key==='owner')take($('dv-assignee')?.closest('.dcard'),content);
+  }
+}
+function finish(key,panel,content,x){
  if(key==='materials'){take($('execFiles'),content);take($('execQuotePanel'),content);const nav=document.createElement('nav');nav.className='da-material-tabs';nav.setAttribute('aria-label','자료 분류');['전체','사진','견적','기타'].forEach(label=>{const b=button(label,'materials',()=>{nav.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));content.querySelectorAll('#execFiles,#execQuotePanel,.exec-file').forEach(n=>{n.dataset.materialHidden='';n.hidden=n.id==='execFiles'?label==='견적':n.id==='execQuotePanel'?!['전체','견적'].includes(label):label==='사진'?n.classList.contains('doc'):label==='기타'?!n.classList.contains('doc'):false})});b.setAttribute('aria-pressed',String(label==='전체'));nav.append(b)});content.prepend(nav);}
  if(key==='history'){const history=document.createElement('div');history.className='da-history';history.innerHTML=flatTimeline(true)+changeRecords();content.append(history);}
  if(key==='management')take($('da-management-fields'),content);
@@ -115,14 +123,14 @@ async function saveCombined(){
  const get=id=>$(id)?.value?.trim()||'';
  const activity={type:get('dv-act-type'),note:get('dv-act-note'),result:get('dv-act-result'),occurred_at:get('dv-act-at')};
  /* 이번 창에서 새로 표시한 체크 항목은 연락 결과 문구에 함께 남긴다(체크 자체는 이 브라우저에만 저장되므로) */
- const ticked=[...($('dw-checks')?.querySelectorAll('.exec-guide-item')||[])].map((b,i)=>b.classList.contains('on')&&!(state?.checksBefore||[])[i]?b.textContent.replace('✓','').trim():'').filter(Boolean);
+ const ticked=[...($('dw-checks')?.querySelectorAll('.exec-guide-item')||[])].map((b,i)=>b.classList.contains('on')&&!(state?.checksBefore||dockChecks||[])[i]?b.textContent.replace('✓','').trim():'').filter(Boolean);
  if(ticked.length&&activity.note&&!progress_hasActivity(form))activity.note+=' · 확인: '+ticked.join(', ');
  const next={type:root.NextActionPicker.read('dv-na-type'),text:get('dv-na-text'),due_at:get('dv-na-date'),assignee:get('dv-na-assignee')};
  if(!activity.type||!activity.note||!activity.occurred_at||!next.type||!next.text||!next.due_at||!next.assignee){root.showDetailErr('연락 결과 내용·일시와 다음 할 일·기한·담당자를 모두 입력해 주세요.');return;}
  if(!root.PeopleEligibility.allowed(root.SALES_PEOPLE_MASTER,'sales_action',d,next.assignee)){root.showDetailErr('이 업무를 맡을 수 있는 영업담당자를 선택해 주세요.');return;}
  const date=new Date(activity.occurred_at);if(!Number.isFinite(date.getTime())){root.showDetailErr('연락 일시를 확인해 주세요.');return;}
  activity.occurred_at=date.toISOString();form.dataset.saving='true';
- const submit=$('detailAction')?.querySelector('button.da-submit');if(submit)submit.disabled=true;
+ const submit=document.querySelector('#detailAction button.da-submit,#detailDock button.da-submit');if(submit)submit.disabled=true;
  const progress=form._contactProgress||(form._contactProgress={});
  async function confirm(operation,payload){
   let id=progress[operation];
@@ -184,6 +192,25 @@ function viewingCards(body,stash){
  body.querySelectorAll('.dw-left .contactedit').forEach(n=>{if(n.querySelector('input,select,textarea')){const edit=button('연락처 수정','contact',()=>open('contact'));n.before(edit);n.id='da-contact-fields';stash.append(n)}});
  flatten(body);
 }
+/* 오른쪽 '지금 처리'(2026-09-29 컨설턴트 4차 · 대표 '진행해줘'): 견적문의 상세와 같은 흐름 — 열자마자 연락 결과·다음 할 일·날짜·저장.
+   9/24 '작업창은 가운데 하나' 규칙 중 연락 결과 입력만 이쪽으로 옮긴다(나머지 수정은 그대로 가운데 창). 종료된 영업건은 입력 없음. */
+let dockChecks=null;
+function dock(body){
+ const right=body.querySelector('.dw-right'),d=root.CUR_DETAIL?.item;dockChecks=null;
+ if(!right||$('detailDock')||!d||d.outcome||d.lifecycle_status==='closed')return;
+ const activity=$('activityFormCard'),next=$('nextActionCard');if(!activity||!next)return;
+ const box=document.createElement('section');box.id='detailDock';box.className='dcard da-dock';box.setAttribute('aria-label','지금 처리');
+ const title=document.createElement('h3');title.textContent='지금 처리 · 연락 결과';
+ const content=document.createElement('div');content.className='da-content da-dock-content';box.append(title,content);
+ const atomic=$('rel-contact-save'),checks=$('dw-checks');
+ content.append(activity);
+ if(checks){content.append(checks);dockChecks=[...checks.querySelectorAll('.exec-guide-item')].map(b=>b.classList.contains('on'));}
+ content.append(next);
+ if(atomic){const actions=atomic.closest('.dactions');if(!content.contains(actions))content.append(actions);actions.before(next);const save=next.querySelector('.dactions .pri');if(save)save.style.display='none';}
+ else{const save=activity.querySelector('.dactions .pri');if(save){save.classList.add('da-submit');save.textContent='연락 결과·다음 할 일 저장';save.onclick=saveCombined;content.append(save.closest('.dactions'));}const nextSave=next.querySelector('.dactions .pri');if(nextSave)nextSave.style.display='none';}
+ wire(content,activity,next);
+ right.prepend(box);
+}
 function focus(id){if(!$('detailView')?.classList.contains('da-ready'))return false;const map={activityFormCard:'activity',nextActionCard:'next','dv-amt':'amount','dw-amount':'amount','dv-assignee':'owner',execFiles:'materials','dw-history':'history'};const key=map[id];if(!key)return false;if(state?.key!==key)open(key);return true;}
 function decorate(){
  const view=$('detailView'),body=$('dv-body');if(!view?.classList.contains('dw-wide')){close(false);view?.querySelector('.da-toolbar')?.remove();view?.classList.remove('da-ready');return;}
@@ -208,6 +235,7 @@ function decorate(){
  body.querySelectorAll('.dcard h3').forEach(h=>{if(h.textContent.trim()==='관리 원칙')h.closest('.dcard').hidden=true});
  const timeline=$('activityTimelineHost')?.closest('.dcard');if(timeline){timeline.classList.add('da-recent');timeline.querySelectorAll('.activity-filter').forEach(n=>n.hidden=true);refreshRecent();timeline.append(button('전체 이력 보기','history'));}
  viewingCards(body,stash);
+ dock(body);
  if(nextDraft){open('next');nextDraft.forEach(([id,value])=>{if($(id))$(id).value=value})}
  const favorite=view.querySelector('.exec-favorite');if(favorite){favorite.dataset.help=favorite.classList.contains('on')?'즐겨찾기에서 해제':'중요 현장으로 즐겨찾기';favorite.removeAttribute('title')}
  body.querySelectorAll('button').forEach(b=>{if(/연락처 등록/.test(b.textContent))b.dataset.help='고객 연락처를 등록합니다.'});
