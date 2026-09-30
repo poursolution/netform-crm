@@ -70,7 +70,7 @@ async function run(){
   for(const width of [1920,1440,1280,1146]){
    await page.setViewportSize({width,height:900});
    const m=await page.locator('#detailView').evaluate(n=>{const r=n.getBoundingClientRect(),cols=[...n.querySelector('.dw-columns').children].map(x=>x.getBoundingClientRect());return {width:r.width,overflow:n.scrollWidth>n.clientWidth,ratio:cols[1].width/cols[0].width,sameTop:cols.every(c=>Math.abs(c.top-cols[0].top)<2)}});
-   /* 상세 = 목록 위 큰 창(2026-09-26 대표: 예전 방식) */assert.ok(Math.abs(m.width-width*.94)<2,'detail window is 94% wide at '+width);assert.equal(m.overflow,false);assert.equal(m.sameTop,true);assert.ok(Math.abs(m.ratio-2)<.03);
+   /* 상세 = 목록 위 큰 창(2026-09-26 대표: 예전 방식) */assert.ok(Math.abs(m.width-Math.max(Math.min(width*.94,1180),width*.78))<2,'detail window width at '+width+': '+m.width);assert.equal(m.overflow,false);assert.equal(m.sameTop,true);assert.ok(Math.abs(m.ratio-2)<.03);
    assert.ok(await page.locator('.dw-left .pc-contact-person').first().evaluate(n=>n.getBoundingClientRect().width)>100,'contact identity stays readable at '+width);
    assert.ok(await page.locator('.dw-left .contactnum b').evaluateAll(nodes=>nodes.every(n=>{const r=document.createRange();r.selectNodeContents(n);return r.getClientRects().length===1&&n.scrollWidth<=n.clientWidth})), 'phone numbers stay on one line at '+width);
   }
