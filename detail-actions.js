@@ -19,7 +19,7 @@ function open(key){
  if(key==='activity'&&$('detailDock')){const dockEl=$('detailDock');unfoldDock();const note=dockEl.querySelector('#dv-act-note');if(note){note.scrollIntoView({block:'center'});note.focus({preventScroll:true})}else dockEl.scrollIntoView({block:'nearest'});return true;}
  const need={activity:'activityFormCard',next:'nextActionCard',amount:'dw-amount'}[key];
  if(need&&!$(need)){if(open.retrying||typeof root.renderDetail!=='function'){root.showDetailErr?.('입력 칸을 불러오지 못했습니다. 상세를 닫았다가 다시 열어 주세요.');return false;}open.retrying=true;try{root.renderDetail();}finally{open.retrying=false;}return $(need)?open(key):(root.showDetailErr?.('입력 칸을 불러오지 못했습니다. 상세를 닫았다가 다시 열어 주세요.'),false);}
- const titles={activity:'연락 결과 · 다음 할 일',next:'다음 할 일 설정',stage:'진행상태 변경',owner:'담당자 변경',amount:'예상금액 수정',materials:'자료 보기 · 추가',management:'관리정보 수정',contact:'연락처 수정',history:'전체 이력',support:'관리자 지원 요청',help:'관리 기준'};
+ const titles={activity:'연락 결과 · 다음 할 일',next:'다음 할 일 설정',stage:'진행상태 변경',owner:'담당자 변경',amount:'예상금액 수정',materials:'자료 보기 · 추가',management:'관리정보 수정',stagefields:'이 단계에서 챙길 정보 입력',contact:'연락처 수정',history:'전체 이력',support:'관리자 지원 요청',help:'관리 기준'};
  const panel=document.createElement('div');panel.id='detailAction';/* 2026-09-24 지시: 상세 안 작업창은 전부 같은 중앙 창 — 우측 드로어·중앙 혼용 금지 */
  panel.className='da-layer da-compact';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-labelledby','da-title');
  const sheet=document.createElement('section');sheet.className='da-sheet';const head=document.createElement('header');const title=document.createElement('h2');title.id='da-title';title.textContent=titles[key];const x=button('닫기',key,()=>{if(key==='stage')root.StageTransitionUI?.close();else close()});x.removeAttribute('data-help');x.setAttribute('aria-label','작업창 닫기');head.append(title,x);const content=document.createElement('div');content.className='da-content';sheet.append(head,content);panel.append(sheet);
@@ -69,6 +69,7 @@ function finish(key,panel,content,x){
   const send=button('지원 요청 보내기','support',()=>saveSupport(box));send.classList.add('da-submit');
   box.append(send);content.append(box);
  }
+ if(key==='stagefields')stageFieldsPanel(content);
  if(key==='help')content.textContent='연락 결과는 고객과의 접촉 내용입니다. 진행상태 변경은 별도 전환창에서 확인합니다. 담당자·최근 활동·다음 할 일 날짜를 함께 관리하고, 저장 후 서버 반영 결과를 확인해 주세요.';
  take($('dv-err'),content);
  if(!['history','help'].includes(key)){const cancel=button('취소',key,()=>{if(key==='stage')root.StageTransitionUI?.close();else close()});cancel.removeAttribute('data-help');content.append(cancel);}
@@ -76,6 +77,41 @@ function finish(key,panel,content,x){
  (content.querySelector('input:not([type="hidden"]),textarea,select')||x).focus({preventScroll:true});return true;
 }
 
+/* 이 단계에서 챙길 정보 제자리 입력(2026-09-30 대표 "이게 맞니?" → "진행해"): 단계 항목만 있는 입력창.
+   저장은 서버 함수 crm_deal_stage_fields_update_v1(현재 단계의 fields만 갱신 · 단계·금액·다음 할 일 불변). 서버 확인 뒤에만 화면 반영. */
+const STAGE_FIELDS_RPC='crm_deal_stage_fields_update_v1';
+function stageFieldsAvailable(){return !(root.CRMRelease&&typeof root.CRMRelease.has==='function'&&root.CRMRelease.has(STAGE_FIELDS_RPC)===false);}
+function stageFieldList(schema){return (schema?.fields||[]).filter(f=>!/followup|next_/.test(f.key));}
+function stageFieldsPanel(content){
+ const d=root.CUR_DETAIL?.item,code=d?root.dealStage(d):'',schema=root.StageTransition?.definitions?.[code];
+ if(!d||!schema||typeof root.StageTransitionUI?.fieldHTML!=='function'){content.textContent='이 단계에는 입력할 항목이 없습니다.';return;}
+ const p=root.currentPatch?root.currentPatch():{},contexts=d.stage_contexts||p.stage_contexts||{},cur=contexts[code]?.fields||{},quotes=typeof root.execQuoteVersions==='function'?root.execQuoteVersions(d):[];
+ const box=document.createElement('div');box.className='da-stagefields sf-form';
+ box.innerHTML='<p class="da-hint">'+root.esc(schema.label)+' 단계에서 챙길 정보입니다. 적은 항목만 저장되고, 진행 단계·금액·다음 할 일은 바뀌지 않습니다.</p><div class="sf-grid">'+stageFieldList(schema).map(f=>root.StageTransitionUI.fieldHTML(f,cur[f.key]??'',quotes)).join('')+'</div><div id="sf-error" role="alert"></div>';
+ const save=button('단계 정보 저장','stagefields',()=>saveStageFields(box,d,code,schema,save));save.classList.add('da-submit');box.append(save);content.append(box);
+}
+async function saveStageFields(box,d,code,schema,save){
+ const err=box.querySelector('#sf-error');err.textContent='';
+ if(root.dealStage(d)!==code){err.textContent='단계가 바뀌었습니다. 상세를 다시 열어 주세요.';return;}
+ const fields={};let bad='';
+ stageFieldList(schema).forEach(f=>{
+  if(f.type==='multi'){fields[f.key]=[...box.querySelectorAll('[name="sf-'+f.key+'"]:checked')].map(x=>x.value);return;}
+  const el=box.querySelector('#sf-'+f.key);if(!el)return;const v=el.value.trim();
+  if(f.type==='money'){const n=v===''?null:root.MoneyInput.parse(v);if(n!==null&&!Number.isFinite(n))bad=bad||f.label+'은(는) 숫자로 입력해 주세요.';fields[f.key]=n;}
+  else fields[f.key]=v===''?null:v;
+ });
+ if(bad){err.textContent=bad;return;}
+ const sb=root.SB;if(!sb||typeof sb.rpc!=='function'){err.textContent='로그인 상태에서만 저장할 수 있습니다.';return;}
+ save.disabled=true;const was=save.textContent;save.textContent='서버 저장 확인 중…';
+ try{
+  const r=await sb.rpc(STAGE_FIELDS_RPC,{p:{deal_id:String(d.id),stage_code:code,fields}});
+  if(r.error){if(r.error.code==='PGRST202')root.CRMRelease?.noteMissing?.(STAGE_FIELDS_RPC);throw Error(r.error.message||'저장 실패');}
+  if(!r.data||r.data.ok!==true||!r.data.stage_context)throw Error('서버 확인 응답이 올바르지 않습니다.');
+  const ctx=r.data.stage_context,p=root.currentPatch?root.currentPatch():null;
+  d.stage_contexts=Object.assign({},d.stage_contexts||{},{[code]:ctx});d.stageContexts=d.stage_contexts;if(p)p.stage_contexts=d.stage_contexts;if(r.data.version!=null)d.version=r.data.version;
+  root.saveLocal?.();close(false);root.renderDetail?.();root.showDetailErr?.('단계 정보를 저장했습니다(서버 확인).',true);
+ }catch(e){err.textContent=String(e.message||e);save.disabled=false;save.textContent=was;}
+}
 function isAdminNow(){try{if(typeof root.todayIsAdmin==='function')return !!root.todayIsAdmin();}catch(e){}return /admin/.test(String(root.ME?.role||root.Phase1?.profile?.source_role||''));}
 /* 이 영업의 처리 안 된 지원 요청: 가장 최근 [지원 요청] 메모 뒤에 [지원 처리] 메모가 없으면 열린 요청 */
 function openSupportRequest(d){
@@ -195,20 +231,20 @@ function viewingCards(body,stash){
   const known={relationship_reason:p.relationshipReason||p.relationship_reason||d.relationshipReason||d.relationship_reason,reason:p.waitingReason||p.waiting_reason||d.waitingReason||d.waiting_reason,last_contact:String(m.meaningfulAt||'').slice(0,10),contact_date:String((na&&na.due)||m.due||'').slice(0,10)};
   const rows=schema.fields.filter(f=>!/followup|next_/.test(f.key)).filter(f=>f.key!=='relationship_reason_detail'||current.relationship_reason==='기타').map(f=>{const raw=current[f.key],own=Array.isArray(raw)?raw.join(' · '):f.type==='money'?(raw==null||raw===''||!Number(raw)?'':exact(raw)):raw;return {f,value:own==null||own===''?(known[f.key]||noted(f.label)||''):own}});
   const summary=card('이 단계에서 챙길 정보',rows.map(r=>[r.f.label,r.value]));summary.classList.add('da-stage-summary');
-  if(!d.outcome&&d.lifecycle_status!=='closed'&&rows.some(r=>!r.value)){const dds=summary.querySelectorAll('dd');rows.forEach((r,i)=>{if(r.value||!dds[i])return;const kind=r.f.key==='contact_date'?'date':r.f.key==='last_contact'?'contact':'note',b=document.createElement('button');b.type='button';b.className='da-fill';b.textContent=kind==='date'?'날짜 잡기':kind==='contact'?'연락 결과 남기기':'입력하기';b.onclick=()=>fill(kind,r.f.label);dds[i].append(' ',b)});
-   const hint=document.createElement('p');hint.className='da-fill-hint';hint.textContent="'입력하기'를 누르면 연락 결과 입력창이 열립니다. 저장하면 여기에 표시됩니다.";summary.append(hint)}
+  if(!d.outcome&&d.lifecycle_status!=='closed'&&rows.some(r=>!r.value)){const dds=summary.querySelectorAll('dd'),canEdit=stageFieldsAvailable();rows.forEach((r,i)=>{if(r.value||!dds[i])return;const kind=r.f.key==='contact_date'?'date':r.f.key==='last_contact'?'contact':'field';if(kind==='field'&&!canEdit)return;const b=document.createElement('button');b.type='button';b.className='da-fill';b.textContent=kind==='date'?'날짜 잡기':kind==='contact'?'연락 결과 남기기':'입력하기';b.onclick=()=>fill(kind,r.f.key);dds[i].append(' ',b)});
+   if(canEdit){const edit=button('단계 정보 입력','stagefields');edit.classList.add('da-stage-edit');summary.append(edit);}}
   $('dw-now')?.after(summary);}
  body.querySelectorAll('.dw-left .contactedit').forEach(n=>{if(n.querySelector('input,select,textarea')){const edit=button('연락처 수정','contact',()=>open('contact'));n.before(edit);n.id='da-contact-fields';stash.append(n)}});
  flatten(body);
 }
 /* 오른쪽 '지금 처리'(2026-09-29 컨설턴트 4차 · 대표 '진행해줘'): 견적문의 상세와 같은 흐름 — 열자마자 연락 결과·다음 할 일·날짜·저장.
    9/24 '작업창은 가운데 하나' 규칙 중 연락 결과 입력만 이쪽으로 옮긴다(나머지 수정은 그대로 가운데 창). 종료된 영업건은 입력 없음. */
-function fill(kind,label){
- const note=$('dv-act-note'),date=$('dv-na-date'),el=kind==='date'?date:note;
+function fill(kind,key){
+ if(kind==='field'){if(open('stagefields')){const el=document.getElementById('sf-'+key)||document.querySelector('#detailAction [name="sf-'+key+'"]');if(el){el.scrollIntoView({block:'center'});el.focus({preventScroll:true});}}return;}
+ const el=kind==='date'?$('dv-na-date'):$('dv-act-note');
  if(el&&!el.getClientRects().length)unfoldDock();
- const put=n=>{if(kind!=='note'||!n)return;const line=label+': ';if(!n.value.includes(line)){n.value=(n.value?n.value.replace(/\s*$/,'\n'):'')+line;n.dispatchEvent(new Event('input',{bubbles:true}))}if(n.setSelectionRange)n.setSelectionRange(n.value.length,n.value.length)};
- if(!el||!el.getClientRects().length){open(kind==='date'?'next':'activity');const n2=kind==='date'?$('dv-na-date'):$('dv-act-note');if(n2){put(n2);n2.focus()}return}
- put(el);el.scrollIntoView({block:'center'});el.focus();
+ if(!el||!el.getClientRects().length){open(kind==='date'?'next':'activity');const n2=kind==='date'?$('dv-na-date'):$('dv-act-note');if(n2)n2.focus();return}
+ el.scrollIntoView({block:'center'});el.focus();
 }
 let dockChecks=null;
 function dock(body){
