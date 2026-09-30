@@ -65,3 +65,7 @@
 .da-dock-toggle:hover{background:#eef3ff}
 .da-dock-more{margin-top:12px;padding-top:12px;border-top:1px solid #e8eefb}
 .da-dock-more[hidden]{display:none!important}
+/* 상세 머리 여백 축소(2026-09-30 대표) — 제목 줄과 '작업 더보기'를 한 줄에 */
+@media(min-width:1001px){#detailView.dw-wide .detailtop{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:10px 20px}
+#detailView.dw-wide .detailtop .detailtopin{flex:1 1 320px;min-width:0}
+#detailView.dw-wide .detailtop .da-toolbar.da-top{flex:0 1 auto}}
