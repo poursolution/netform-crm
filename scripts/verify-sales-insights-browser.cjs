@@ -75,7 +75,7 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   await page.locator('#si-perf [data-sf-type="INTERNAL"]').click();
   assert.equal(await page.evaluate(()=>SalesScope.state().owner),'전체');
   assert.equal(await page.evaluate(()=>SalesInsights.data().active.length),1);
-  assert.equal(await page.evaluate(()=>SalesScope.candidates().length+1),7);
+  assert.equal(await page.evaluate(()=>SalesScope.candidates().length+1),8);/* 2026-09-30 조재연 영업담당 추가 */
   await page.locator('#si-perf [data-sf-type="all"]').click();
   await page.evaluate(()=>{SalesScope.change('assignment','unassigned');paint()});
   assert.equal(await page.evaluate(()=>SalesInsights.data().active.length),2);
