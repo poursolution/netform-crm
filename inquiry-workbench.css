@@ -230,5 +230,20 @@ body:has(#pg-inq.on.inq-workbench) .mhead>.search{display:none}
 .inq-dialog .inq-now-context .inq-context dd{display:inline}
 .inq-dialog .inq-now-context .inq-chip{padding:4px 7px}
 @media(max-width:760px){.inq-dialog .inq-now-context .inq-context{grid-template-columns:1fr}}
+/* 오른쪽 배정 칸(2026-09-30): 좁은 폭에 맞춰 이름·상태만 */
+.inq-assign-inline{display:block}
+.inq-assign-inline .inq-ctl-group{margin-top:12px}
+.inq-assign-inline .inq-ctl-reps{gap:5px;margin-top:6px}
+.inq-assign-inline .inq-ctl-rep{grid-template-columns:30px minmax(0,1fr) auto;gap:8px;padding:7px 9px}
+.inq-assign-inline .inq-ctl-rep span{display:none}
+.inq-assign-inline .inq-ctl-rep span:last-child{display:block}
+.inq-assign-inline .inq-ctl-rep.recommended:after{grid-column:3;grid-row:1}
+.inq-assign-inline .inq-ctl-rep.recommended span:last-child{display:none}
+.inq-assign-inline .inq-branch-handoff{grid-template-columns:36px minmax(0,1fr) auto;min-height:0;gap:9px;padding:10px 12px}
+.inq-assign-inline .inq-ctl-modalactions button{min-height:36px;border:1px solid #e2e8f1;border-radius:9px;background:#fff;padding:0 13px;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer}
+.inq-assign-inline .inq-ctl-modalactions button.primary{border-color:#3B6CE4;background:#3B6CE4;color:#fff}
+.inq-assign-inline .inq-ctl-modalactions button:disabled{opacity:.45;cursor:default}
+.inq-assign-inline .modalerr{color:#dc2626;font-size:12px;margin-top:8px}
+
 /* 상세창 크기 축소(2026-09-30) — 파이프라인 상세와 같은 값 */
 @media(min-width:1001px){.inq-dialog{width:max(min(94vw,1180px),78vw);height:90vh}}

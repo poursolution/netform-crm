@@ -174,11 +174,11 @@ async function run() {
     assert.equal(await page.evaluate(()=>G.inqSelKey),'inq-1');assert.equal(await page.locator('#iq-next').count(),1,'response requires next action in canonical progress form');await page.getByRole('button',{name:'연락 결과 저장',exact:true}).click();assert.match(await page.locator('#iq-msg').textContent(),/한 일|did|필수|required|INVALID/i);
     assert.equal(await page.locator('#inq-inbox-dialog .inq-dialog-columns>aside').count(),2);
     assert.equal(await page.locator('#inq-inbox-dialog .sp-inquiry-original').count(),1);
-    await page.locator('#inq-inbox-dialog').getByRole('button',{name:/상담·영업담당/}).click();
-    await page.getByRole('button',{name:'영업담당 배정 창',exact:true}).click();
-    assert.equal(await page.locator('#inquiryControlModal.on').count(),1);
-    assert.ok(await page.evaluate(()=>Number(getComputedStyle(document.getElementById('inquiryControlModal')).zIndex)>Number(getComputedStyle(document.getElementById('inq-inbox-dialog')).zIndex)));
-    await page.evaluate(()=>closeInquiryControlModal());
+    await page.locator('#inq-inbox-dialog').getByRole('button',{name:/영업담당/}).click();
+    /* 2026-09-30: 배정은 오른쪽 칸에서 바로 — 창을 하나 더 열지 않는다 */
+    assert.ok(await page.locator('#inq-inbox-dialog .inq-assign-inline .inq-ctl-rep').count()>0,'inline assign list');
+    assert.equal(await page.locator('#inquiryControlModal.on').count(),0);
+    assert.equal(await page.locator('#inq-inbox-dialog').getByRole('button',{name:/상담담당/}).count(),0);
     /* 2026-09-27 대표 '너무 큰 화면 · 필요없는 여백': 큰 창은 유지하되 내용만큼 — 너비 최대 1240px, 높이 최대 92vh */
     /* 2026-09-29: 견적문의 상세 = 파이프라인 상세와 같은 작업창 규격(94vw × 92vh) */
     const size=await page.locator('.inq-dialog').boundingBox(),vw=await page.evaluate(()=>innerWidth),vh=await page.evaluate(()=>innerHeight);assert.ok(Math.abs(size.width-(vw>1000?Math.max(Math.min(vw*.94,1180),vw*.78):vw*.96))<2&&Math.abs(size.height-vh*(vw>1000?.9:.96))<2,'inquiry detail window matches pipeline frame: '+JSON.stringify(size));
@@ -215,7 +215,7 @@ async function run() {
     await page.evaluate(()=>inqCtlOpenSingle('inq-3'));
     assert.equal(await page.locator('#inq-inbox-dialog').count(),0,'foreign inquiry cannot open');
     await page.locator('.inq-work-row[data-k="inq-1"] .inq-now').click();
-    assert.equal(await page.locator('#inq-inbox-dialog').getByRole('button',{name:/상담·영업담당/}).count(),0);
+    assert.equal(await page.locator('#inq-inbox-dialog').getByRole('button',{name:/영업담당/}).count(),0);
     await page.getByRole('button',{name:'✕ 닫기',exact:true}).click();
     await page.evaluate(()=>{
       InquiryWorkbench.open('inq-1','process');
