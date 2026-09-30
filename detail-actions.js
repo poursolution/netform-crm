@@ -188,12 +188,27 @@ function viewingCards(body,stash){
  work.append(button('공종 수정','work',()=>root.openWorkEdit()),button('금액 수정','amount'));
  /* 계약실적(체결·변경·취소)은 운영 화면에 두지 않는다(2026-09-26 대표) — 체결은 진행상태 '계약 체결 완료'가 서버에서 자동 기록, 변경·취소는 성과 분석(관리자) */
  const oldHistory=$('dw-history');if(oldHistory)stash.append(oldHistory);
- const schema=root.StageTransition?.definitions?.[code];if(schema){const current=contexts[code]?.fields||{},summary=card('이 단계에서 챙길 정보',schema.fields.filter(f=>!/followup|next_/.test(f.key)).map(f=>[f.label,Array.isArray(current[f.key])?current[f.key].join(' · '):f.type==='money'?exact(current[f.key]):current[f.key]]));summary.classList.add('da-stage-summary');$('dw-now')?.after(summary);}
+ /* '미입력'만 보여주면 할 수 있는 게 없다(2026-09-30 대표 지적) — 이미 아는 값(관계관리 사유·최근 연락·다음 할 일 날짜·연락 기록에 적은 값)으로 먼저 채우고,
+    그래도 빈 칸에는 오른쪽 '지금 처리'로 가는 단추를 붙인다. 저장 경로는 기존 연락 결과·다음 할 일 그대로 */
+ const schema=root.StageTransition?.definitions?.[code];if(schema){const current=contexts[code]?.fields||{},m=typeof root.relationshipMeta==='function'?(root.relationshipMeta(d)||{}):{},na=typeof root.actionObj==='function'?root.actionObj(d,p):null;
+  let lines=null;const noted=label=>{if(!lines)try{lines=root.unifiedTimeline(p,d).map(x=>[x.body,x.result].filter(Boolean).join('\n'))}catch(e){lines=[]}const re=new RegExp('(?:^|\\n)\\s*'+label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*[:：]\\s*([^\\n]+)');for(const t of lines){const hit=re.exec(t);if(hit&&hit[1].trim())return hit[1].trim()}return ''};
+  const known={relationship_reason:p.relationshipReason||p.relationship_reason||d.relationshipReason||d.relationship_reason,reason:p.waitingReason||p.waiting_reason||d.waitingReason||d.waiting_reason,last_contact:String(m.meaningfulAt||'').slice(0,10),contact_date:String((na&&na.due)||m.due||'').slice(0,10)};
+  const rows=schema.fields.filter(f=>!/followup|next_/.test(f.key)).filter(f=>f.key!=='relationship_reason_detail'||current.relationship_reason==='기타').map(f=>{const raw=current[f.key],own=Array.isArray(raw)?raw.join(' · '):f.type==='money'?(raw==null||raw===''||!Number(raw)?'':exact(raw)):raw;return {f,value:own==null||own===''?(known[f.key]||noted(f.label)||''):own}});
+  const summary=card('이 단계에서 챙길 정보',rows.map(r=>[r.f.label,r.value]));summary.classList.add('da-stage-summary');
+  if(!d.outcome&&d.lifecycle_status!=='closed'&&rows.some(r=>!r.value)){const dds=summary.querySelectorAll('dd');rows.forEach((r,i)=>{if(r.value||!dds[i])return;const kind=r.f.key==='contact_date'?'date':r.f.key==='last_contact'?'contact':'note',b=document.createElement('button');b.type='button';b.className='da-fill';b.textContent=kind==='date'?'날짜 잡기':kind==='contact'?'연락 결과 남기기':'입력하기';b.onclick=()=>fill(kind,r.f.label);dds[i].append(' ',b)});
+   const hint=document.createElement('p');hint.className='da-fill-hint';hint.textContent="빈 칸은 오른쪽 '지금 처리'에 적어 저장하면 여기에 표시됩니다.";summary.append(hint)}
+  $('dw-now')?.after(summary);}
  body.querySelectorAll('.dw-left .contactedit').forEach(n=>{if(n.querySelector('input,select,textarea')){const edit=button('연락처 수정','contact',()=>open('contact'));n.before(edit);n.id='da-contact-fields';stash.append(n)}});
  flatten(body);
 }
 /* 오른쪽 '지금 처리'(2026-09-29 컨설턴트 4차 · 대표 '진행해줘'): 견적문의 상세와 같은 흐름 — 열자마자 연락 결과·다음 할 일·날짜·저장.
    9/24 '작업창은 가운데 하나' 규칙 중 연락 결과 입력만 이쪽으로 옮긴다(나머지 수정은 그대로 가운데 창). 종료된 영업건은 입력 없음. */
+function fill(kind,label){
+ const note=$('dv-act-note'),date=$('dv-na-date'),el=kind==='date'?date:note;
+ if(!el||!el.getClientRects().length){open(kind==='date'?'next':'activity');return}
+ if(kind==='note'){const line=label+': ';if(!note.value.includes(line)){note.value=(note.value?note.value.replace(/\s*$/,'\n'):'')+line;note.dispatchEvent(new Event('input',{bubbles:true}))}}
+ el.scrollIntoView({block:'center'});el.focus();if(kind==='note'&&el.setSelectionRange)el.setSelectionRange(el.value.length,el.value.length);
+}
 let dockChecks=null;
 function dock(body){
  const right=body.querySelector('.dw-right'),d=root.CUR_DETAIL?.item;dockChecks=null;
