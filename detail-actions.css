@@ -55,3 +55,13 @@
 .da-info dd .da-fill{margin-left:8px;border:1px solid #d5e0f7;border-radius:7px;background:#f4f7fe;padding:3px 9px;color:#2c55b8;font:inherit;font-size:11.5px;font-weight:700;cursor:pointer}
 .da-info dd .da-fill:hover{background:#e6edfc}
 .da-info .da-fill-hint{margin:10px 0 0;color:#66758d;font-size:11.5px}
+/* 오른쪽 '지금 처리' = 결과 고르기 + 접힌 상세 입력 (2026-09-30) */
+.da-quick .nc-lead{margin:0 0 10px;color:#66758d;font-size:11.5px}
+.da-quick .nc-chips{grid-template-columns:1fr;gap:6px}
+.da-quick .nc-chips button{padding:9px 11px}
+.da-quick .nc-step2{margin-top:10px;padding-top:10px}
+.da-quick .nc-dates button{padding:8px 11px}
+.da-dock-toggle{display:block;width:100%;margin:10px 0 0;border:1px dashed #c9d9ff;border-radius:9px;background:#f8faff;padding:9px 12px;color:#2c55b8;font:inherit;font-size:12px;font-weight:700;text-align:left;cursor:pointer}
+.da-dock-toggle:hover{background:#eef3ff}
+.da-dock-more{margin-top:12px;padding-top:12px;border-top:1px solid #e8eefb}
+.da-dock-more[hidden]{display:none!important}

@@ -16,7 +16,7 @@ function open(key){
  const view=$('detailView');if(!view?.classList.contains('dw-wide'))return false;
  close(false);hideTip();
  /* 연락 결과는 오른쪽 '지금 처리'에 항상 열려 있다(2026-09-29) — 작업창을 띄우지 않고 그 칸으로 */
- if(key==='activity'&&$('detailDock')){const dockEl=$('detailDock');dockEl.scrollIntoView({block:'nearest'});dockEl.querySelector('#dv-act-note')?.focus({preventScroll:true});return true;}
+ if(key==='activity'&&$('detailDock')){const dockEl=$('detailDock');unfoldDock();const note=dockEl.querySelector('#dv-act-note');if(note){note.scrollIntoView({block:'center'});note.focus({preventScroll:true})}else dockEl.scrollIntoView({block:'nearest'});return true;}
  const need={activity:'activityFormCard',next:'nextActionCard',amount:'dw-amount'}[key];
  if(need&&!$(need)){if(open.retrying||typeof root.renderDetail!=='function'){root.showDetailErr?.('입력 칸을 불러오지 못했습니다. 상세를 닫았다가 다시 열어 주세요.');return false;}open.retrying=true;try{root.renderDetail();}finally{open.retrying=false;}return $(need)?open(key):(root.showDetailErr?.('입력 칸을 불러오지 못했습니다. 상세를 닫았다가 다시 열어 주세요.'),false);}
  const titles={activity:'연락 결과 · 다음 할 일',next:'다음 할 일 설정',stage:'진행상태 변경',owner:'담당자 변경',amount:'예상금액 수정',materials:'자료 보기 · 추가',management:'관리정보 수정',contact:'연락처 수정',history:'전체 이력',support:'관리자 지원 요청',help:'관리 기준'};
@@ -205,12 +205,15 @@ function viewingCards(body,stash){
    9/24 '작업창은 가운데 하나' 규칙 중 연락 결과 입력만 이쪽으로 옮긴다(나머지 수정은 그대로 가운데 창). 종료된 영업건은 입력 없음. */
 function fill(kind,label){
  const note=$('dv-act-note'),date=$('dv-na-date'),el=kind==='date'?date:note;
- if(!el||!el.getClientRects().length){open(kind==='date'?'next':'activity');return}
- if(kind==='note'){const line=label+': ';if(!note.value.includes(line)){note.value=(note.value?note.value.replace(/\s*$/,'\n'):'')+line;note.dispatchEvent(new Event('input',{bubbles:true}))}}
- el.scrollIntoView({block:'center'});el.focus();if(kind==='note'&&el.setSelectionRange)el.setSelectionRange(el.value.length,el.value.length);
+ if(el&&!el.getClientRects().length)unfoldDock();
+ const put=n=>{if(kind!=='note'||!n)return;const line=label+': ';if(!n.value.includes(line)){n.value=(n.value?n.value.replace(/\s*$/,'\n'):'')+line;n.dispatchEvent(new Event('input',{bubbles:true}))}if(n.setSelectionRange)n.setSelectionRange(n.value.length,n.value.length)};
+ if(!el||!el.getClientRects().length){open(kind==='date'?'next':'activity');const n2=kind==='date'?$('dv-na-date'):$('dv-act-note');if(n2){put(n2);n2.focus()}return}
+ put(el);el.scrollIntoView({block:'center'});el.focus();
 }
 let dockChecks=null;
 function dock(body){
+ /* 2026-09-30 대표: 입력은 위 '연락하고 결과 남기기' 창 하나로 — 오른쪽 칸에는 입력을 두지 않는다('오른쪽 칸 너무 복잡해'). 아래 구성은 보류 */
+ if(!root.DETAIL_DOCK_ENABLED)return;
  const right=body.querySelector('.dw-right'),d=root.CUR_DETAIL?.item;dockChecks=null;
  if(!right||$('detailDock')||!d||d.outcome||d.lifecycle_status==='closed')return;
  const activity=$('activityFormCard'),next=$('nextActionCard');if(!activity||!next)return;
@@ -218,14 +221,24 @@ function dock(body){
  const title=document.createElement('h3');title.textContent='지금 처리 · 연락 결과';
  const content=document.createElement('div');content.className='da-content da-dock-content';box.append(title,content);
  const atomic=$('rel-contact-save'),checks=$('dw-checks');
- content.append(activity);
- if(checks){content.append(checks);dockChecks=[...checks.querySelectorAll('.exec-guide-item')].map(b=>b.classList.contains('on'));}
- content.append(next);
- if(atomic){const actions=atomic.closest('.dactions');if(!content.contains(actions))content.append(actions);actions.before(next);const save=next.querySelector('.dactions .pri');if(save)save.style.display='none';}
- else{const save=activity.querySelector('.dactions .pri');if(save){save.classList.add('da-submit');save.textContent='연락 결과·다음 할 일 저장';save.onclick=saveCombined;content.append(save.closest('.dactions'));}const nextSave=next.querySelector('.dactions .pri');if(nextSave)nextSave.style.display='none';}
- wire(content,activity,next);
+ /* 2026-09-30 대표: '연락하고 결과 남기기' 창과 이 칸이 같은 일 — 위는 결과 고르기(한 번에 끝), 아래 상세 입력은 접어 둔다 */
+ const quick=document.createElement('div');quick.className='da-quick';
+ const toggle=document.createElement('button');toggle.type='button';toggle.className='da-dock-toggle';
+ const more=document.createElement('div');more.className='da-dock-more';more.hidden=true;
+ const label=()=>{toggle.textContent=more.hidden?'자세히 기록 · 활동 유형·일시·결과를 직접 입력 ▾':'간단히 고르기로 ▴'};
+ toggle.onclick=()=>{more.hidden=!more.hidden;label();if(!more.hidden)$('dv-act-note')?.focus({preventScroll:true})};label();
+ if(root.NowCard&&typeof root.NowCard.inline==='function')root.NowCard.inline(quick,d,()=>{more.hidden=false;label();$('dv-act-note')?.focus({preventScroll:true})});
+ else{more.hidden=false;toggle.hidden=true;}
+ content.append(quick,toggle,more);
+ more.append(activity);
+ if(checks){more.append(checks);dockChecks=[...checks.querySelectorAll('.exec-guide-item')].map(b=>b.classList.contains('on'));}
+ more.append(next);
+ if(atomic){const actions=atomic.closest('.dactions');if(!more.contains(actions))more.append(actions);actions.before(next);const save=next.querySelector('.dactions .pri');if(save)save.style.display='none';}
+ else{const save=activity.querySelector('.dactions .pri');if(save){save.classList.add('da-submit');save.textContent='연락 결과·다음 할 일 저장';save.onclick=saveCombined;more.append(save.closest('.dactions'));}const nextSave=next.querySelector('.dactions .pri');if(nextSave)nextSave.style.display='none';}
+ wire(more,activity,next);
  right.prepend(box);
 }
+function unfoldDock(){const more=$('detailDock')?.querySelector('.da-dock-more');if(!more)return false;if(more.hidden){more.hidden=false;const t=$('detailDock').querySelector('.da-dock-toggle');if(t)t.textContent='간단히 고르기로 ▴';}return true}
 function focus(id){if(!$('detailView')?.classList.contains('da-ready'))return false;const map={activityFormCard:'activity',nextActionCard:'next','dv-amt':'amount','dw-amount':'amount','dv-assignee':'owner',execFiles:'materials','dw-history':'history'};const key=map[id];if(!key)return false;if(state?.key!==key)open(key);return true;}
 function decorate(){
  const view=$('detailView'),body=$('dv-body');if(!view?.classList.contains('dw-wide')){close(false);view?.querySelector('.da-toolbar')?.remove();view?.classList.remove('da-ready');return;}

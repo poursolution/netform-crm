@@ -66,25 +66,21 @@
   ['promise','고객과 약속함','🤝 고객 약속으로 등록'],
   ['detail','자세히 기록 (견적·일정·종료 등)','기록 창이 열립니다']
  ];
- function sheet(dealArg){
-  const cur=root.CUR_DETAIL,d=dealArg||(cur&&cur.kind==='deal'?cur.item:null);if(!d)return;
-  closeSheet();
-  const el=document.createElement('dialog');el.id='nc-sheet';el.className='nc-sheet';
+ /* 결과 고르기 본문 — 창(sheet)과 오른쪽 '지금 처리'(inline)가 같은 것을 쓴다(2026-09-30 대표 '이 내용이 이거 같아') */
+ function chooserHtml(d,inline){
   const phone=String(d.phone||d.contact_phone||d.contactPhone||'').trim();
-  el.innerHTML='<form method="dialog"><h4>어떻게 됐나요? — '+h(d.site||'')+'</h4><p>'+(phone?'연락처 '+h(phone)+' · ':'')+'하나만 고르면 기록과 다음 할 일까지 자동으로 만듭니다</p>'
+  return (inline?'<p class="nc-lead">':'<h4>어떻게 됐나요? — '+h(d.site||'')+'</h4><p>')+(phone?'연락처 '+h(phone)+' · ':'')+'하나만 고르면 기록과 다음 할 일까지 자동으로 만듭니다</p>'
    +'<div class="nc-chips">'+CHIPS.map(c=>'<button type="button" data-chip="'+c[0]+'"><b>'+c[1]+'</b><small>'+c[2]+'</small></button>').join('')+'</div>'
    +'<div class="nc-step2" hidden><label class="nc-note-label" hidden>어떤 약속인가요? <input class="nc-note" placeholder="예: 금요일까지 견적 전달"></label>'
    +(Array.isArray(root.CHECKS)?'<div class="nc-checks"><h5>이번 통화에서 확인한 것 <small>(해당하면 누르세요)</small></h5><div>'+root.CHECKS.map((n,i)=>'<button type="button" data-check="'+i+'" aria-pressed="false">'+h(n)+'</button>').join('')+'</div></div>':'')+'<h5>언제 다시 확인할까요?</h5><div class="nc-dates">'+dateOptions().map(x=>'<button type="button" data-date="'+x[1]+'">'+x[0]+' <small>'+x[1].slice(5)+'</small></button>').join('')+'<label class="nc-pick">날짜 선택 <input type="date"></label></div></div>'
-   +'<p class="nc-status" role="status" aria-live="polite"></p><footer><button type="button" data-close>닫기</button></footer></form>';
-  document.body.append(el);
+   +'<p class="nc-status" role="status" aria-live="polite"></p>'+(inline?'':'<footer><button type="button" data-close>닫기</button></footer>');
+ }
+ function bindChooser(el,d,onDetail){
   const step2=el.querySelector('.nc-step2'),status=el.querySelector('.nc-status'),noteLabel=el.querySelector('.nc-note-label');
   let chip='';
-  el.querySelector('[data-close]').onclick=()=>{if(!busy)el.close();};
-  el.addEventListener('close',()=>el.remove(),{once:true});
-  el.addEventListener('cancel',e=>{if(busy)e.preventDefault();});
   el.querySelectorAll('[data-chip]').forEach(b=>{b.onclick=()=>{
    chip=b.dataset.chip;
-   if(chip==='detail'){el.close();const opened=root.CUR_DETAIL?.kind==='deal'&&String(root.CUR_DETAIL.item?.id)===String(d.id)&&document.getElementById('detailView')?.classList.contains('on');if(!opened&&typeof root.drwDeal==='function'){root.G._detailPopup=true;root.drwDeal(JSON.stringify(d));setTimeout(()=>root.dccGoActivity?.(),150);}else root.dccGoActivity?.();return;}
+   if(chip==='detail'){if(onDetail){onDetail();return}el.close();const opened=root.CUR_DETAIL?.kind==='deal'&&String(root.CUR_DETAIL.item?.id)===String(d.id)&&document.getElementById('detailView')?.classList.contains('on');if(!opened&&typeof root.drwDeal==='function'){root.G._detailPopup=true;root.drwDeal(JSON.stringify(d));setTimeout(()=>root.dccGoActivity?.(),150);}else root.dccGoActivity?.();return;}
    el.querySelectorAll('[data-chip]').forEach(x=>x.classList.toggle('on',x===b));
    noteLabel.hidden=chip!=='promise';step2.hidden=false;
    (chip==='promise'?noteLabel.querySelector('input'):step2.querySelector('[data-date]')).focus();
@@ -93,8 +89,21 @@
   const submit=due=>save(d,chip,due,el.querySelector('.nc-note').value.trim(),status,el);
   el.querySelectorAll('[data-date]').forEach(b=>{b.onclick=()=>submit(b.dataset.date);});
   el.querySelector('.nc-pick input').onchange=e=>{if(e.target.value)submit(e.target.value);};
+ }
+ function sheet(dealArg){
+  const cur=root.CUR_DETAIL,d=dealArg||(cur&&cur.kind==='deal'?cur.item:null);if(!d)return;
+  closeSheet();
+  const el=document.createElement('dialog');el.id='nc-sheet';el.className='nc-sheet';
+  el.innerHTML='<form method="dialog">'+chooserHtml(d,false)+'</form>';
+  document.body.append(el);
+  el.querySelector('[data-close]').onclick=()=>{if(!busy)el.close();};
+  el.addEventListener('close',()=>el.remove(),{once:true});
+  el.addEventListener('cancel',e=>{if(busy)e.preventDefault();});
+  bindChooser(el,d,null);
   el.showModal();
  }
+ /* 오른쪽 '지금 처리'에 같은 고르기를 그린다. onDetail = '자세히 기록'을 골랐을 때 아래 상세 입력을 펼치는 함수 */
+ function inline(host,d,onDetail){host.innerHTML=chooserHtml(d,true);bindChooser(host,d,onDetail);return host}
  async function save(d,chip,due,note,status,el){
   if(busy||!chip||!due)return;
   const relStage=['rapport','silent','waiting'].includes(String(root.dealStage?root.dealStage(d):d.stage_code||''));
@@ -123,7 +132,7 @@
    const obj=d.nextActionObj;if(obj){pd.nextActionObj=obj;pd.nextAction=obj.due;pd.nextActionText=obj.text;}
    if(ticked.length){pd.checks=pd.checks||[];ticked.forEach(i=>{pd.checks[i]=true});}
    root.saveLocal?.();status.textContent='✓ 기록 완료 · ✓ 다음 할 일 '+due+' 등록';
-   busy=false;setTimeout(()=>{el.close();const opened=root.CUR_DETAIL?.kind==='deal'&&String(root.CUR_DETAIL.item?.id)===String(d.id);if(opened)root.renderDetail?.();root.TodayWorkQueue?.render?.();if(root.G?.page==='relationship'&&typeof root.paintRelationshipManagement==='function')root.paintRelationshipManagement();},700);
+   busy=false;setTimeout(()=>{if(typeof el.close==='function')el.close();const opened=root.CUR_DETAIL?.kind==='deal'&&String(root.CUR_DETAIL.item?.id)===String(d.id);if(opened)root.renderDetail?.();root.TodayWorkQueue?.render?.();if(root.G?.page==='relationship'&&typeof root.paintRelationshipManagement==='function')root.paintRelationshipManagement();},700);
   };
   if(relStage){
    try{
@@ -237,5 +246,5 @@
   da.decorate=function(){const r=oldDec.apply(da,arguments);inject();return r;};
  }
  root.addEventListener('phase1:identity-cleared',closeSheet);
- root.NowCard={sheet,card,flowStrip};
+ root.NowCard={sheet,inline,card,flowStrip};
 })(window);
