@@ -37,8 +37,8 @@ async function run(){
   await page.evaluate(()=>{window.open=()=>null;drwDeal(JSON.stringify(B.deals[0]));DetailActions.open('activity');});
   await page.waitForTimeout(80);
   assert.equal(await page.locator('#detailView.detailmodal').isVisible(),true,'blocked popup falls back to the in-page detail window');
-  /* 2026-09-29: 연락 결과는 작업창 대신 오른쪽 '지금 처리' 입력 칸으로 간다 */
-  assert.equal(await page.locator('#detailDock #dv-act-note').isVisible(),true,'queued action still lands on the result input in place');
+  /* 2026-09-30: 입력은 가운데 작업창(연락하고 결과 남기기 → 자세히 기록) 하나 */
+  assert.equal(await page.locator('#detailAction #dv-act-note').isVisible(),true,'queued action still opens the result input in place');
   await page.evaluate(()=>{DetailActions.close();closeDetail();});
   /* 견적문의 화면에서 문의를 열어도 새 창 — 처리 작업(연락 결과)까지 넘긴다 */
   const inq=await page.evaluate(()=>{
@@ -61,7 +61,7 @@ async function run(){
   assert.equal(await solo.locator('#detailView .backbtn').innerText(),'✕ 창 닫기');
   assert.equal(await solo.evaluate(()=>document.documentElement.classList.contains('crm-solo')),true);
   const box=await solo.locator('#detailView').boundingBox();assert.ok(box.x<2&&box.width>=1438,'detail window uses the whole window');
-  await solo.waitForFunction(()=>!!document.querySelector('#detailDock #dv-act-note'),null,{timeout:3000});
+  await solo.waitForFunction(()=>!!document.querySelector('#detailAction #dv-act-note'),null,{timeout:3000});
   assert.match(await solo.title(),/새 창 검증 현장/);
   await solo.evaluate(()=>DetailActions.close());
   await solo.locator('#detailView .backbtn').click();await solo.waitForTimeout(300);

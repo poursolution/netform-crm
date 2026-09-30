@@ -25,10 +25,9 @@ async function run(){
   assert.equal(await page.locator('#detailView.dw-wide').isVisible(),true);
   assert.equal(await page.locator('.dw-left #contactCard').count(),1);
   /* 2026-09-29: 연락 결과·다음 할 일 입력은 오른쪽 '지금 처리'에 항상 열려 있다(견적문의 상세와 같은 흐름) */
-  assert.equal(await page.locator('.dw-right #detailDock #nextActionCard').count(),1);
-  assert.equal(await page.locator('.dw-right>*').first().getAttribute('id'),'detailDock');
-  assert.equal(await page.locator('#detailDock #dv-act-note').isVisible(),true);
-  assert.equal(await page.locator('#detailDock .da-submit').innerText(),'연락 결과·다음 할 일 저장');
+  /* 2026-09-30 대표: 입력은 '연락하고 결과 남기기' 창 하나 — 오른쪽 칸에 입력 없음 */
+  assert.equal(await page.locator('#detailDock').count(),0);
+  assert.equal(await page.locator('#dv-act-note').isVisible(),false,'view surface has no expanded input');
   assert.equal(await page.locator('.da-stash #dv-amt').count(),1);
   assert.equal(await page.evaluate(()=>unifiedTimeline({activities:[B.deals[0].activities[0]]},B.deals[0]).filter(x=>x.id).length),2);
   assert.match(await page.locator('#activityTimelineHost').innerText(),/서버 발송 결과/);
@@ -74,7 +73,7 @@ async function run(){
    assert.ok(await page.locator('.dw-left .pc-contact-person').first().evaluate(n=>n.getBoundingClientRect().width)>100,'contact identity stays readable at '+width);
    assert.ok(await page.locator('.dw-left .contactnum b').evaluateAll(nodes=>nodes.every(n=>{const r=document.createRange();r.selectNodeContents(n);return r.getClientRects().length===1&&n.scrollWidth<=n.clientWidth})), 'phone numbers stay on one line at '+width);
   }
-  assert.equal(await page.locator('#detailDock #dv-act-note').isVisible(),true,'process panel is open by default');
+  assert.equal(await page.locator('#nowCard .nc-call').isVisible(),true,'contact entry is the now-card button');
   if(await page.locator('.da-tools[hidden]').count())await page.locator('.da-more').click();
   const quick=page.locator('.da-toolbar').getByRole('button',{name:'연락 결과',exact:true});
   await quick.hover();await page.waitForTimeout(120);assert.equal(await page.locator('#da-tooltip').count(),0);
