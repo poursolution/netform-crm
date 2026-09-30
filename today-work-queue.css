@@ -1,4 +1,4 @@
-.today-work-queue{display:grid;gap:10px;color:var(--ink);padding-bottom:24px}
+.today-work-queue{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;color:var(--ink);padding-bottom:24px}
 /* This queue has its own scoped search; a second global search would look active but do nothing. */
 body:has(#pg-today.on) .mhead>.search{display:none}
 .today-work-queue>header{display:flex;align-items:center;justify-content:space-between;gap:12px}
