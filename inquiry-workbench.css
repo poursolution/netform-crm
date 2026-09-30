@@ -230,3 +230,5 @@ body:has(#pg-inq.on.inq-workbench) .mhead>.search{display:none}
 .inq-dialog .inq-now-context .inq-context dd{display:inline}
 .inq-dialog .inq-now-context .inq-chip{padding:4px 7px}
 @media(max-width:760px){.inq-dialog .inq-now-context .inq-context{grid-template-columns:1fr}}
+/* 상세창 크기 축소(2026-09-30) — 파이프라인 상세와 같은 값 */
+@media(min-width:1001px){.inq-dialog{width:max(min(94vw,1180px),78vw);height:90vh}}

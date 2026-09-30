@@ -181,7 +181,7 @@ async function run() {
     await page.evaluate(()=>closeInquiryControlModal());
     /* 2026-09-27 대표 '너무 큰 화면 · 필요없는 여백': 큰 창은 유지하되 내용만큼 — 너비 최대 1240px, 높이 최대 92vh */
     /* 2026-09-29: 견적문의 상세 = 파이프라인 상세와 같은 작업창 규격(94vw × 92vh) */
-    const size=await page.locator('.inq-dialog').boundingBox(),vw=await page.evaluate(()=>innerWidth),vh=await page.evaluate(()=>innerHeight);assert.ok(Math.abs(size.width-vw*.94)<2&&Math.abs(size.height-vh*.92)<2,'inquiry detail window matches pipeline frame: '+JSON.stringify(size));
+    const size=await page.locator('.inq-dialog').boundingBox(),vw=await page.evaluate(()=>innerWidth),vh=await page.evaluate(()=>innerHeight);assert.ok(Math.abs(size.width-(vw>1000?Math.max(Math.min(vw*.94,1180),vw*.78):vw*.96))<2&&Math.abs(size.height-vh*(vw>1000?.9:.96))<2,'inquiry detail window matches pipeline frame: '+JSON.stringify(size));
     await page.locator('#inq-inbox-dialog').getByRole('button',{name:'📞 연락 결과',exact:true}).click();
     await page.locator('#iq-res').fill('저장 전 초안 유지');
     await page.evaluate(()=>paintInq());
