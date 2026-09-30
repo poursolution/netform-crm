@@ -22,7 +22,9 @@ function sidebar(){
  const parent=document.querySelector('.menu [data-p="pipe"]');if(!parent||!root.B)return;state();if(!booted){booted=true;seen=new Set((root.Phase1?.queue?.list?.()||[]).filter(q=>q.status==='done').map(q=>q.request_id));parent.setAttribute('role','button');parent.tabIndex=0;parent.onclick=()=>{if(root.G.page==='pipe'&&root.G.pipelineWorkspace&&root.G.pipelineStage==='all'){expanded=!expanded;sidebar();}else open('all');};parent.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();parent.click();}};}
  let nav=document.getElementById('pipeline-stage-menu');if(!nav){nav=document.createElement('nav');nav.id='pipeline-stage-menu';nav.setAttribute('aria-label','파이프라인 단계');parent.after(nav);}
  const data=rows(),key=root.G.page==='pipe'&&root.G.pipelineWorkspace?root.G.pipelineStage:['relationship','expansion'].includes(root.G.page)?root.G.page:null;
- let badge=parent.querySelector('.badge');if(!badge){badge=document.createElement('span');badge.className='badge';parent.append(badge);}badge.textContent=data.length;
+ /* 메뉴 숫자는 진행 중인 영업건만(2026-09-30 대표: 수주·실주는 결과라 파이프라인 숫자에서 뺀다) — 단계별 숫자는 그대로 */
+ const live=data.filter(r=>!['won','lost','expansion'].includes(r.group)).length;
+ let badge=parent.querySelector('.badge');if(!badge){badge=document.createElement('span');badge.className='badge';parent.append(badge);}badge.textContent=live;
  if(key&&key!=='all')expanded=true;
  parent.setAttribute('aria-expanded',String(expanded));parent.setAttribute('aria-controls',nav.id);nav.hidden=!expanded;
  nav.innerHTML=S.definitions.filter(d=>d.key!=='expansion').map(d=>button(d.label+' '+data.filter(r=>r.group===d.key).length,'stage',d.key,key===d.key?'selected':'')).join('');nav.querySelector('.selected')?.setAttribute('aria-current','page');nav.onclick=click;
