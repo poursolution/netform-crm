@@ -196,7 +196,7 @@ function viewingCards(body,stash){
   const rows=schema.fields.filter(f=>!/followup|next_/.test(f.key)).filter(f=>f.key!=='relationship_reason_detail'||current.relationship_reason==='기타').map(f=>{const raw=current[f.key],own=Array.isArray(raw)?raw.join(' · '):f.type==='money'?(raw==null||raw===''||!Number(raw)?'':exact(raw)):raw;return {f,value:own==null||own===''?(known[f.key]||noted(f.label)||''):own}});
   const summary=card('이 단계에서 챙길 정보',rows.map(r=>[r.f.label,r.value]));summary.classList.add('da-stage-summary');
   if(!d.outcome&&d.lifecycle_status!=='closed'&&rows.some(r=>!r.value)){const dds=summary.querySelectorAll('dd');rows.forEach((r,i)=>{if(r.value||!dds[i])return;const kind=r.f.key==='contact_date'?'date':r.f.key==='last_contact'?'contact':'note',b=document.createElement('button');b.type='button';b.className='da-fill';b.textContent=kind==='date'?'날짜 잡기':kind==='contact'?'연락 결과 남기기':'입력하기';b.onclick=()=>fill(kind,r.f.label);dds[i].append(' ',b)});
-   const hint=document.createElement('p');hint.className='da-fill-hint';hint.textContent="빈 칸은 오른쪽 '지금 처리'에 적어 저장하면 여기에 표시됩니다.";summary.append(hint)}
+   const hint=document.createElement('p');hint.className='da-fill-hint';hint.textContent="'입력하기'를 누르면 연락 결과 입력창이 열립니다. 저장하면 여기에 표시됩니다.";summary.append(hint)}
   $('dw-now')?.after(summary);}
  body.querySelectorAll('.dw-left .contactedit').forEach(n=>{if(n.querySelector('input,select,textarea')){const edit=button('연락처 수정','contact',()=>open('contact'));n.before(edit);n.id='da-contact-fields';stash.append(n)}});
  flatten(body);
