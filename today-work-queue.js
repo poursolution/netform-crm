@@ -323,8 +323,10 @@
   };
   return '<section class="twq-urgent" aria-label="지금 바로 처리할 업무"><header><b>지금 바로 · '+picked.length+'건</b>'+(sum?'<span class="twq-daysum">'+sum+'</span>':'')+'<small>고객 약속 → 기한 지남 → 첫 연락 → 오늘 예정 순</small></header><div class="twq-ustrip">'+picked.map(card).join('')+'</div></section>';
  }
- function pickOwner(name){set('owner',root.G.todayQueueOwner===name?'전체':String(name||'전체'))}
- function focusUnassigned(){root.G.todayQueueOwner='전체';root.G.todayQueueSearch='';filter('inquiry','unassigned')}
+ /* 위쪽 현황에서 누르면 아래 표만 바뀌어 아무 일도 없는 것처럼 보였다(2026-09-30 대표 지적) — 바뀐 표로 내려간다 */
+ function reveal(sel){setTimeout(()=>{const n=document.querySelector('#today-home-root '+sel);if(n&&n.scrollIntoView)n.scrollIntoView({behavior:'smooth',block:'start'})},60)}
+ function pickOwner(name){const on=root.G.todayQueueOwner!==name;set('owner',on?String(name||'전체'):'전체');if(on)reveal('.twq-toolbar')}
+ function focusUnassigned(){root.G.todayQueueOwner='전체';root.G.todayQueueSearch='';filter('inquiry','unassigned');reveal('.today-admin-inquiry')}
  function render(){
   const host=root.$('#today-home-root');if(!host)return;
   const X=data();resetForActor(X.admin);const G=root.G;
