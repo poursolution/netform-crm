@@ -50,9 +50,10 @@ export function handler(env){
    const hit=(old.suggestions||[]).find(x=>x.input_hash===hash);if(hit)return json(200,{ok:true,cached:true,suggestion:hit},allow);
    /* 3) Claude API */
    const r=await fetchFn('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'x-api-key':env.anthropicKey,'anthropic-version':'2023-06-01','content-type':'application/json'},
-    body:JSON.stringify({model,max_tokens:800,system:'너는 한국 아파트 보수 공사 영업 CRM의 보조자다. 입력에 없는 사실 · 숫자 · 이름을 만들지 않는다. 반드시 JSON 하나만 출력한다(설명 · 코드블록 없이).\n'+RULES[kind],messages:[{role:'user',content:JSON.stringify(input)}]})});
+    body:JSON.stringify({model,max_tokens:4000,output_config:{effort:'low'},/* 생각 토큰이 답을 잘라 먹지 않게 여유를 두고, 짧은 제안이라 노력은 낮게 */system:'너는 한국 아파트 보수 공사 영업 CRM의 보조자다. 입력에 없는 사실 · 숫자 · 이름을 만들지 않는다. 반드시 JSON 하나만 출력한다(설명 · 코드블록 없이).\n'+RULES[kind],messages:[{role:'user',content:JSON.stringify(input)}]})});
    if(!r.ok)return json(502,{ok:false,error:'AI_UPSTREAM',status:r.status},allow);
-   const out=await r.json(),text=(out.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+   const out=await r.json();if(out.stop_reason==='refusal'||out.stop_reason==='max_tokens')return json(502,{ok:false,error:'AI_BAD_OUTPUT',stop:out.stop_reason},allow);
+   const text=(out.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
    const suggestion=sanitize(kind,extractJson(text));
    /* 4) 제안으로만 저장 (사용자 토큰 · 서버 함수가 다시 검사) */
    const saved=await rpc('crm_ai_suggestion_save_v1',{kind,subject_type:type,subject_id:id,input_hash:hash,suggestion,model});
