@@ -41,7 +41,7 @@
   return D.render({accent:'blue',
    kpis:[K('고객 자산',rows.length.toLocaleString('ko-KR')+'곳','아파트 · 상가 · 공장'),K('누적 수주',wonSum?root.fmtAmt(wonSum):'0원',won.length+'곳'+(won.length?' · 평균 '+root.fmtAmt(wonSum/won.length):''),'good'),K('진행 기회',openCnt+'건 · '+(openSum?root.fmtAmt(openSum):'0원'),'진행 중 영업 전체'),K('관계위험',risk.length+'곳',riskAmt?'진행 금액 '+root.fmtAmt(riskAmt)+'이 걸려 있음':'걸린 진행 금액 없음',risk.length?'bad':'')],
    cards:[{title:'돈이 어디에 쌓였나',desc:'누적 수주 상위 단지',bars:top,empty:'수주 금액이 기록된 단지가 없습니다'},{title:'어디서 새고 있나',desc:'관계 상태별 진행 금액',bars:leak,empty:'진행 중인 영업이 없습니다'},{title:'누가 관계를 쥐고 있나',desc:'담당 · 핵심 인물 확보',rows:[...owners].sort((a,b)=>b[1].n-a[1].n).slice(0,5).map(([o,v])=>[o,v.n,v.noKey?'핵심 인물 미확인 '+v.noKey:'핵심 인물 확보'])}],
-   action:{title:'그래서 뭘 해야 하나',desc:'고객 자산에서 나온 과제',tasks}},{open:root.G.plvDiagShut!==true,scope:'asset'});
+   action:{title:'그래서 뭘 해야 하나',desc:'고객 자산에서 나온 과제',tasks}},{open:true,noToggle:true,scope:'asset'});
  }
  function rowHtml(s){
   const p=s.primary,t=TAG[s.health]||TAG.dormant,owner=s.owners.join(', ')||'미배정';

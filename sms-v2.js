@@ -61,7 +61,7 @@
   return D.render({accent:'blue',
    kpis:[K('보낼 대상',all.length.toLocaleString('ko-KR')+'명','관리 대상 연락처'),K('발송 가능',ready.toLocaleString('ko-KR')+'명',blocked?blocked.toLocaleString('ko-KR')+'명 자동 제외':'자동 제외 없음',all.length&&!ready?'bad':''),K('이번 달 발송',sent+'건','예약 대기 '+scheduled+' · 실패·확인 '+failed),K('발송 → 응답',sum('response_count')+'건','다음 할 일 생성 '+sum('next_action_count')+' · 단계 진전 '+sum('stage_advanced_count'),sent&&!sum('response_count')?'warn':'')],
    cards:[{title:'어디에 보낼까',desc:'묶음별 대상 수',bars:m.rows.filter(r=>r.total).sort((a,b)=>b.total-a.total).slice(0,5).map(r=>[r.name.split(' — ')[0],r.total,'가능 '+r.ready])},{title:'언제 보낼까',desc:'다가오는 시즌 · 정기',rows:m.rows.filter(r=>r.group==='soon'||r.group==='keep').map(r=>[r.name.split(' — ')[0],r.total,r.group==='soon'?(r.sub||r.when):'매월'])},{title:'왜 못 보내나',desc:'자동 제외 사유',rows:[...why].sort((a,b)=>b[1]-a[1]).map(([k,n])=>[k,n,hint[k]||'확인 필요']),empty:'자동 제외된 대상이 없습니다'}],
-   action:{title:'그래서 뭘 해야 하나',desc:'발송 병목에서 나온 과제',tasks}},{open:root.G.plvDiagShut!==true,scope:'sms'});
+   action:{title:'그래서 뭘 해야 하나',desc:'발송 병목에서 나온 과제',tasks}},{open:true,noToggle:true,scope:'sms'});
  }
  function rowHtml(r){
   const k=KIND[r.group];

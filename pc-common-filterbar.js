@@ -7,7 +7,7 @@
  'use strict';
  const PAGES=['today','inq'];
  /* 공통 셸 v2(2026-10-02): 예전 두 줄 필터(#unibar)를 쓰던 화면도 같은 한 줄로. 연도·분기는 기간이 필요한 화면의 줄 오른쪽에 작은 선택으로 둔다 */
- const SHELL=['brief','report','work','mgmt','repmanage'],PERIOD=['brief','report','work','mgmt'],NO_OWNER=['repmanage'];
+ const SHELL=['brief','report','work','mgmt','repmanage'],PERIOD=['brief','work','mgmt']/* 리포트는 화면 안에 월간·분기·연간 전환이 있다 */,NO_OWNER=['repmanage'];
  const shellOn=page=>SHELL.includes(page)&&!!root.ShellV2?.enabled?.();
  const BRANDS=['석민이앤씨','POUR솔루션','POUR공법','아파트스퀘어'];
  const DOT={'전체':'#9ca3af','석민이앤씨':'#f08c2e','POUR솔루션':'#30a46c','POUR공법':'#8b5cf6','아파트스퀘어':'#3b6ce4'};
