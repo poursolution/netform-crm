@@ -28,6 +28,7 @@ function server() {
     await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => typeof paintRepManagement === 'function' && typeof repManagerRenderDrawer === 'function');
     await page.evaluate(() => {
+      G.repsV2Off = true; /* 예전 화면 검사 — 새 화면은 verify-reps-v2 */
       AUTH_ON = false;
       ME = { name: '송보람', role: 'admin' };
       B = { deals: [], inquiries: [] };
