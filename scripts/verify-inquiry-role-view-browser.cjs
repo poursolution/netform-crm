@@ -53,7 +53,7 @@ async function run() {
       document.getElementById('pg-inq').classList.add('on');
       B.inquiries[1].activities=[{id:'reply',type:'전화',at:'2026-09-13T10:00:00+09:00',note:'도면 요청 완료'},{id:'memo',type:'메모',at:'2026-09-14T10:00:00+09:00',note:'내부 메모'}];
       B.inquiries[1].nextActionObj={text:'도면 수신 확인',due:'2026-09-16'};
-      goPage('inq');
+      /* 이 검사는 예전 목록(일괄 선택·배정용, 더보기에서 전환)과 상세 창을 본다 — 새 목록은 verify-inquiry-list-v2 */G.inqV2Off=true;goPage('inq');
     });
 
     await page.evaluate(()=>{B.inquiries[1].brand='POUR공법';B.inquiries[2].brand='석민이앤씨';B.inquiries[3].brand='아파트스퀘어';B.inquiries[0].phone='010-1234-5678';B.inquiries[0].contact_name='테스트 문의자';window.__writes=[];pushWrite=(...args)=>__writes.push(args);window.Phase1={subscribe:()=>()=>{}};window.__stopRequests=PCManagerRequests.install(window,{list:async()=>[],create:async()=>{throw Error("Unexpected request write")}});paintInq()});
