@@ -94,3 +94,5 @@
  body.rp-printing .rp-page{width:100%;border:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
  body.rp-printing .rp-t[contenteditable]{outline:0}
 }
+.rp-answers button:not(:disabled){cursor:pointer}.rp-answers button:not(:disabled):hover{background:rgba(255,255,255,.18)}.rp-answers button[aria-pressed="true"]{background:#3b6ce4;border-color:#3b6ce4;opacity:1}
+.rp-promise.old{border-color:#e7e9ee;background:#f7f8fa}.rp-promise.old span{color:#4b5563}

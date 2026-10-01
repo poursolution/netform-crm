@@ -43,10 +43,28 @@
   let GN=[];try{GN=root.gnData().Q.map(q=>({q,f:root.GyeongnamV2.facts(q)}));}catch(e){GN=[];}
   const gnStall=GN.filter(x=>x.f.group!=='ok'),asked=x=>{const p=root.itemPatch(x.q,'inq')||{};return [...(x.q.activities||[]),...(p.activities||[])].some(a=>String(a.note||'').startsWith('[지사 확인 요청]')&&Date.now()-Date.parse(a.at||a.created_at||0)<7*864e5);};
   P('고객 관리','경남지사 넘긴 건 7일마다 확인','확인 ÷ 멈춘 넘긴 건',100,'본사 회수 검토',gnStall.filter(asked).length,gnStall.length,gnStall.filter(x=>!asked(x)).slice(0,6).map(x=>({label:x.q.site||'현장명 미입력',why:'넘긴 지 '+(x.f.days??'?')+'일 · '+(x.f.rep?'지사 응대 없음':'지사 미착수'),act:['지사에 확인 요청','gn',root.inqKey(x.q)]})));
-  out.forEach((p,i)=>{p.id='kp'+i;p.rate=pct(p.hit,p.total);p.kept=p.total>0&&p.rate>=p.target;p.pending=!p.total;});
+  out.forEach((p,i)=>{p.key=(p.bucket+' · '+p.text).slice(0,80);p.id='kp'+i;p.rate=pct(p.hit,p.total);p.kept=p.total>0&&p.rate>=p.target;p.pending=!p.total;});
   return out;
  }
+ /* 주간 결과 저장소(운영 저장소 v1): 지난 3주는 저장된 값, 이번 주는 지금 값 */
+ const W={state:'idle',rows:[],msg:''};
+ function loadWeeks(force){const O=root.OpsStore;if(!O||!O.has('crm_kpi_weekly_list_v1')||W.state==='loading'||(W.state==='ready'&&!force))return;W.state='loading';O.rpc('crm_kpi_weekly_list_v1',{weeks:4}).then(r=>{W.rows=r.rows||[];W.state='ready';if(root.G.page==='mgmt')root.paintMgmt();}).catch(e=>{W.state=e.unavailable?'off':'failed';});}
+ function weekDots(p){
+  const O=root.OpsStore,cur='<i class="'+(p.pending?'':p.kept?'ok':'no')+'" title="이번 주 · 지금"></i>';
+  if(W.state!=='ready'||!O)return '<i title="3주 전 — 기록 없음"></i><i title="2주 전 — 기록 없음"></i><i title="지난주 — 기록 없음"></i>'+cur+'<span>이번 주부터 측정 · 지난 주 결과는 주간 저장이 켜지면 쌓입니다</span>';
+  let saved=0,miss=0,counting=true;const dots=[-3,-2,-1].map(o=>{const wk=O.monday(o),r=W.rows.find(x=>String(x.week_start).slice(0,10)===wk&&x.promise_key===p.key);if(!r)return '<i title="'+wk+' 주 — 저장 없음"></i>';saved++;const rate=r.denominator?Math.round(r.numerator*1000/r.denominator)/10:null,ok=rate!=null&&rate>=p.target;return '<i class="'+(rate==null?'':ok?'ok':'no')+'" title="'+wk+' 주 — '+r.numerator+' / '+r.denominator+(rate==null?'':' · '+rate+'%')+'"></i>';}).join('');
+  [-1,-2,-3].forEach(o=>{if(!counting)return;const r=W.rows.find(x=>String(x.week_start).slice(0,10)===O.monday(o)&&x.promise_key===p.key);if(r&&r.denominator&&r.numerator*100/r.denominator<p.target)miss++;else counting=false;});
+  const thisWeek=W.rows.some(x=>String(x.week_start).slice(0,10)===O.monday(0)&&x.promise_key===p.key);
+  return dots+cur+'<span>'+(saved?'최근 4주 · 저장된 주 '+saved+(miss?' · 연속 미달 '+miss+'주':''):'지난 주 저장 없음')+(thisWeek?' · 이번 주 저장됨':'')+'</span>';
+ }
+ function saveWeek(btn){
+  const O=root.OpsStore,S=root.managementStats(root.targetNameFilter()),rows=promises(S).filter(p=>!p.pending).map(p=>({promise_key:p.key,numerator:Math.max(0,Math.min(p.hit,p.total)),denominator:p.total}));
+  if(!rows.length)return;btn.disabled=true;btn.textContent='저장 중…';
+  O.rpc('crm_kpi_weekly_save_v1',{week_start:O.monday(0),rows}).then(r=>{W.msg='이번 주 결과 '+r.saved+'개를 저장했습니다';if(typeof root.toast==='function')root.toast(W.msg);W.state='idle';loadWeeks(true);}).catch(e=>{btn.disabled=false;btn.textContent='이번 주 결과 저장';if(typeof root.toast==='function')root.toast(String(e.message||e),'warn');});
+ }
+ function logAction(promiseEl,label,kind,value,name){const O=root.OpsStore;if(!O||!O.has('crm_kpi_action_log_v1'))return;const list=promises(root.managementStats(root.targetNameFilter())),p=list.find(x=>x.id===(promiseEl&&promiseEl.dataset.promise));if(!p)return;O.rpc('crm_kpi_action_log_v1',{promise_key:p.key,action:label,target_type:kind==='deal'?'deal':kind==='rep'||kind==='promise'?'person':'inquiry',target_id:String(value||'').slice(0,80),target_name:String(name||'').slice(0,200)}).catch(()=>{});}
  function promiseHtml(list){
+  loadWeeks();
   const f=root.G.kpiBucket||'all',shown=list.filter(p=>f==='all'||p.bucket===f),todo=list.reduce((a,p)=>a+p.items.length,0),kept=list.filter(p=>p.kept).length;
   const pills='<div class="plv-pills" role="group" aria-label="약속 묶음">'+[['all','전체']].concat(BUCKETS.map(b=>[b,b])).map(([v,t])=>'<button type="button" data-kv="bucket" data-value="'+attr(v)+'" aria-pressed="'+(f===v)+'">'+h(t)+'</button>').join('')+'</div>';
   const cards=shown.map(p=>{
@@ -54,11 +72,11 @@
    const items=p.items.map(it=>'<li><span>'+h(it.label)+'</span><em>'+h(it.why)+'</em><button type="button" data-kv="act" data-kind="'+attr(it.act[1])+'" data-value="'+attr(it.act[2])+'">'+h(it.act[0])+'</button></li>').join('');
    return '<article class="kv-card'+(p.kept?' kept':'')+'" data-promise="'+p.id+'"><header><small>'+h(p.bucket)+'</small><em class="plv-tag '+state[1]+'">'+state[0]+'</em></header><h4>“'+h(p.text)+'”</h4>'
     +'<div class="kv-result"><b>'+(p.pending?'–':p.hit.toLocaleString('ko-KR')+' / '+p.total.toLocaleString('ko-KR'))+'</b><span>'+h(p.unit)+(p.rate==null?'':' · '+p.rate+'%')+' · 목표 '+p.target+'%</span><small>'+h(p.note||'재는 법: '+p.how)+'</small></div>'
-    +'<div class="kv-weeks" aria-label="최근 4주"><i title="3주 전 — 기록 없음"></i><i title="2주 전 — 기록 없음"></i><i title="지난주 — 기록 없음"></i><i class="'+(p.pending?'':p.kept?'ok':'no')+'" title="이번 주"></i><span>이번 주부터 측정 · 지난 주 결과는 주간 저장이 켜지면 쌓입니다</span></div>'
+    +'<div class="kv-weeks" aria-label="최근 4주">'+weekDots(p)+'</div>'
     +(p.items.length?'<div class="kv-todo"><b>지금 내가 할 것 <u>'+p.items.length+'</u></b><ul>'+items+'</ul></div>':p.kept?'<div class="kv-todo done">이번 주 할 일 끝</div>':'')
     +'<p class="kv-rule">안 하면 → 1주 팀장 알림 · 2주 팀장 회의 안건 · 3주 '+h(p.force)+' <i>(강제 적용은 꺼져 있습니다)</i></p></article>';
   }).join('');
-  return '<section class="kv-promises" id="kv-promises"><header><div><b>이번 주 관리팀 약속 '+list.length+'가지</b><span>아래 할 일을 처리하면 숫자가 바로 올라갑니다</span></div><em class="kv-left">오늘 내가 할 것 '+todo+'개 남음</em><span class="kv-kept">지킨 약속 '+kept+' / '+list.length+'</span><button type="button" class="sv-ghost" data-kv="settings">✦ KPI 설정</button></header>'+pills+'<div class="kv-grid">'+cards+'</div></section>';
+  return '<section class="kv-promises" id="kv-promises"><header><div><b>이번 주 관리팀 약속 '+list.length+'가지</b><span>아래 할 일을 처리하면 숫자가 바로 올라갑니다</span></div><em class="kv-left">오늘 내가 할 것 '+todo+'개 남음</em><span class="kv-kept">지킨 약속 '+kept+' / '+list.length+'</span>'+(W.state==='ready'&&root.OpsStore.admin()?'<button type="button" class="sv-ghost" data-kv="saveweek">이번 주 결과 저장</button>':'')+'<button type="button" class="sv-ghost" data-kv="settings">✦ KPI 설정</button></header>'+pills+'<div class="kv-grid">'+cards+'</div></section>';
  }
  function topHtml(S){
   const D=root.PipelineDiagnosis;if(!D)return '';
@@ -90,10 +108,30 @@
  }
  function openRep(name,focus){if(root.RepsV2&&root.RepsV2.enabled()){root.RepsV2.open(name);if(document.getElementById('repsDialog')?.classList.contains('on')){if(focus)setTimeout(()=>document.querySelector('#repsDialog textarea')?.focus(),50);return;}}root.goPerfRep?.(name);}
  function settings(){
+  const O=root.OpsStore;if(O&&O.has('crm_ops_settings_v1')&&W.state==='ready')return settingsLive();
   document.getElementById('kvSettings')?.remove();const m=document.createElement('div');m.id='kvSettings';m.className='it-layer';
   m.innerHTML='<section class="it-box" role="dialog" aria-modal="true" aria-labelledby="kvSetTitle"><header><small>관리팀 KPI</small><h2 id="kvSetTitle">KPI 설정 — 저장소 확인 뒤에 열립니다</h2></header><div class="it-body"><p class="kv-setnote">약속을 직접 만들거나 AI 추천을 추가하려면 새 저장소(약속 정의 · 주간 결과 · 처리 기록)가 필요합니다. 스키마를 확인받은 뒤에 켭니다.</p><ul class="kv-setlist"><li><b>AI 추천 KPI</b> — 진단 숫자 · 병목 · 실주 사유 · 정체 목록으로 주 1회 생성(서버 함수에서 Claude API 호출)</li><li><b>직접 만들기</b> — 약속 문장 · 재는 법 · 목표 · 주기 · 책임 · 안 되면</li><li><b>최근 4주 · 연속 미달 주 수</b> — 주간 결과 저장이 켜지면 쌓입니다</li><li><b>강제 적용</b> — 플래그만 두고 기본은 꺼 둡니다</li></ul></div><footer><button type="button" class="it-btn ghost" data-close>닫기</button></footer></section>';
   m.addEventListener('mousedown',e=>{if(e.target===m)m.remove();});m.addEventListener('click',e=>{if(e.target.closest('[data-close]'))m.remove();});m.addEventListener('keydown',e=>{if(e.key==='Escape')m.remove();});
   document.body.append(m);m.querySelector('button').focus();
+ }
+ /* 저장소 설치 뒤의 설정 창: 플래그(기본 꺼짐) + 최근 처리 기록. 강제 적용 · 병합 · 잔디는 아직 화면이 따르지 않아 보기만 한다 */
+ async function settingsLive(){
+  const O=root.OpsStore;document.getElementById('kvSettings')?.remove();const m=document.createElement('div');m.id='kvSettings';m.className='it-layer';
+  m.innerHTML='<section class="it-box" role="dialog" aria-modal="true" aria-labelledby="kvSetTitle"><header><small>관리팀 KPI</small><h2 id="kvSetTitle">KPI 설정</h2></header><div class="it-body" id="kvSetBody"><p class="kv-setnote">불러오는 중…</p></div><footer><button type="button" class="it-btn ghost" data-close>닫기</button></footer></section>';
+  m.addEventListener('mousedown',e=>{if(e.target===m)m.remove();});m.addEventListener('keydown',e=>{if(e.key==='Escape')m.remove();});
+  document.body.append(m);m.querySelector('[data-close]').focus();
+  const FL=[['ai_enabled','AI 제안 사용','Claude API 제안을 받습니다(제안으로만 저장 · 사람이 확정). 서버에 API 키가 등록돼 있어야 합니다',true],['enforce_auto_assign','미배정 자동 배정 강제','아직 화면이 따르지 않습니다 — 준비 중',false],['enforce_stage_block','다음 할 일 없으면 단계 이동 차단','아직 화면이 따르지 않습니다 — 준비 중',false],['merge_enabled','데이터 정리 합치기 승인','운영 확인 뒤에 엽니다',false],['jandi_enabled','잔디 발송','자동화 연결 뒤에 엽니다',false]];
+  const draw=async()=>{
+   const f=await O.settings(true);let acts=[];try{acts=(await O.rpc('crm_kpi_action_list_v1',{limit:10})).actions||[];}catch(e){}
+   const body=document.getElementById('kvSetBody');if(!body)return;
+   body.innerHTML='<ul class="kv-flags">'+FL.map(([key,t,d,live])=>'<li><label><input type="checkbox" data-flag="'+key+'"'+(f[key]===true?' checked':'')+(live&&O.admin()?'':' disabled')+'> <b>'+h(t)+'</b></label><small>'+h(d)+'</small></li>').join('')+'</ul>'
+    +'<p class="kv-setnote">주간 결과는 약속 머리줄의 [이번 주 결과 저장]으로 남깁니다 — 저장된 주가 쌓이면 약속마다 최근 4주와 연속 미달 주 수가 보입니다.</p>'
+    +'<b class="kv-acthead">최근 처리 기록</b>'+(acts.length?'<ul class="kv-acts">'+acts.map(a=>'<li><span>'+h(String(a.created_at||'').slice(5,16).replace('T',' '))+'</span><b>'+h(a.actor_name)+'</b> '+h(a.action)+(a.target_name?' · '+h(a.target_name):'')+'</li>').join('')+'</ul>':'<p class="kv-setnote">아직 기록이 없습니다 — 약속 카드의 할 일 버튼을 누르면 여기에 남습니다.</p>')
+    +'<div class="idv-err" id="kvSetErr" role="alert"></div>';
+  };
+  m.addEventListener('click',e=>{if(e.target.closest('[data-close]'))m.remove();});
+  m.addEventListener('change',async e=>{const c=e.target.closest('[data-flag]');if(!c)return;c.disabled=true;try{await O.setFlag(c.dataset.flag,c.checked);if(typeof root.toast==='function')root.toast('설정을 저장했습니다');}catch(err){const x=document.getElementById('kvSetErr');if(x)x.textContent=String(err.message||err);c.checked=!c.checked;}finally{draw();}});
+  draw();
  }
  function onClick(e){
   const pd=e.target.closest('[data-pd="toggle"]');if(pd&&pd.closest('#kpi-v2')){root.G.plvDiagShut=root.G.plvDiagShut!==true;root.paintMgmt();return;}
@@ -101,9 +139,11 @@
   if(a==='bucket'){root.G.kpiBucket=v;root.paintMgmt();}
   if(a==='group'){root.G.kpiGroup=v;root.paintMgmt();}
   if(a==='settings')settings();
+  if(a==='saveweek')saveWeek(b);
   if(a==='rep')openRep(v);
   if(a==='act'){
    const k=b.dataset.kind;
+   logAction(b.closest('[data-promise]'),b.textContent.trim(),k,v,b.closest('li')?.querySelector('span')?.textContent||'');
    if(k==='inq'||k==='gn')root.InquiryWorkbench.openFrom(v,'mgmt');
    if(k==='deal'){const d=(root.B.deals||[]).find(x=>root.dealKey(x)===v);if(d){root.G._detailPopup=true;root.drwDeal(JSON.stringify(d));}}
    if(k==='rep')openRep(v);
