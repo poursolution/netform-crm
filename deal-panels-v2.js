@@ -85,31 +85,41 @@
 
  /* ───────── 2. 공종 분류 ───────── */
  function combos(){const map=new Map();(root.B?.deals||[]).forEach(d=>{const a=root.workItemsOf(d).map(w=>w.key).filter(root.knownWorkKey);if(a.length<2)return;const k=a.slice().sort().join('|');map.set(k,(map.get(k)||0)+1);});return [...map].sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,n])=>({keys:k.split('|'),n}));}
- function workPanel(){
-  const item=root.CUR_DETAIL.item,W=root.NEW_DEAL_WORK;
+ /* 공종 선택 부품 — 상세의 공종 분류 패널과 공종 분석의 분류 창이 같이 쓴다. host 안의 #dp-work 에 그린다 */
+ function workMount(p,item,onDraw){
+  const W=root.NEW_DEAL_WORK;
   root.EDIT_WORK_ITEM=item;W.items=[];W.primary='';W.other='';
   root.workItemsOf(item).forEach(w=>{if(w.group==='기타'){if(!W.items.includes('기타>기타'))W.items.push('기타>기타');W.other=w.item;}else if(root.knownWorkKey(w.key))W.items.push(w.key);});
   const pr=root.dealPrimaryWork(item);if(pr){const x=root.workParts(pr);W.primary=x&&x.group==='기타'?'기타>기타':pr;}if(W.items.length&&!W.items.includes(W.primary))W.primary=W.items[0];
-  const g=root.WorkV2?root.WorkV2.guess(item):null,cb=combos(),label=k=>{const w=root.workParts(k);return w?(w.group==='기타'&&W.other?W.other:w.group+' '+w.item):k;};
-  const legacy=$('newDealBody');if(legacy)legacy.innerHTML='';
-  const p=side('work','공종 분류',item.site||'현장명 미입력','<div id="dp-work"></div><label class="dp-line">메모 <input id="rs-work-text" placeholder="남겨 둘 내용이 있을 때만 (선택)"></label><div class="modalerr" id="nd-err"></div>','<button type="button" class="dp-ghost" data-dp="close">취소</button><button type="button" class="dp-primary" data-dp="save">공종 저장</button>');if(!p)return;
+  const g=root.WorkV2?root.WorkV2.guess(item):null,gk=g&&g.keys?g.keys.filter(root.knownWorkKey):[],cb=combos(),label=k=>{const w=root.workParts(k);return w?(w.group==='기타'&&W.other?W.other:w.group+' '+w.item):k;};
   const draw=()=>{
    const n=W.items.length,badge=!n?['미분류','m']:n===1?['단일','b']:['복합 '+n+'개','p'];
-   p.querySelector('#dp-work').innerHTML=
-    '<section class="dp-ai"><b>추정 공종 · '+h(g?g.label:'근거 부족')+'</b><span>'+(g?'근거: 현장명 · 공사명 · 메모에서 찾은 단어 '+h(g.basis):'현장명 · 공사명 · 메모에서 공종을 가리키는 단어를 찾지 못했습니다.')+'</span><small>키워드 추정입니다 — 아래 표에서 세부 공종을 골라 주세요. 저장은 사람이 확정할 때만 됩니다.</small></section>'
+   const ai=!g?'<p class="dp-ai none">추정 공종 · 근거 부족 — 단서를 찾지 못했어요. 아래 표에서 직접 골라 주세요.</p>'
+    :gk.length?'<button type="button" class="dp-ai on" data-guess="1"><b>✦ 추정 공종 · '+h(g.label)+'</b><span>근거: 현장명 · 공사명 · 메모에서 찾은 단어 '+h(g.basis)+'</span><small>키워드 추정입니다 — 누르면 바로 채웁니다. 저장은 사람이 확정할 때만 됩니다.</small></button>'
+    :'<section class="dp-ai"><b>추정 공종 · '+h(g.label)+'</b><span>근거: 현장명 · 공사명 · 메모에서 찾은 단어 '+h(g.basis)+'</span><small>키워드 추정입니다 — 아래 표에서 세부 공종을 골라 주세요. 저장은 사람이 확정할 때만 됩니다.</small></section>';
+   p.querySelector('#dp-work').innerHTML=ai
     +(cb.length?'<section class="dp-sec"><b>자주 쓰는 조합</b><div class="dp-chips">'+cb.map((c,i)=>'<button type="button" data-combo="'+i+'">'+h(c.keys.map(label).join(' + '))+' <em>'+c.n+'</em></button>').join('')+'</div></section>':'')
     +'<section class="dp-sec"><b>공종 표</b><div class="dp-wtable">'+root.WORK_MASTER.map(G=>'<div><span>'+h(G.group)+'</span><div class="dp-chips">'+G.items.map(i=>{const k=root.workKey(G.group,i);return '<button type="button" data-work="'+attr(k)+'" aria-pressed="'+W.items.includes(k)+'">'+h(i)+'</button>';}).join('')+'</div></div>').join('')+'</div>'+(W.items.includes('기타>기타')?'<input id="nd-work-other" value="'+attr(W.other)+'" placeholder="기타 공종을 직접 입력해 주세요">':'')+'</section>'
     +'<section class="dp-sec"><b>저장될 공종 <em class="dp-badge '+badge[1]+'">'+badge[0]+'</em></b>'+(n?'<div class="dp-chips dp-picked">'+W.items.map(k=>'<button type="button" data-primary="'+attr(k)+'" aria-pressed="'+(W.primary===k)+'">'+(W.primary===k?'★ ':'')+h(label(k))+'</button>').join('')+'</div><small class="dp-hint">'+(n>1?'고른 공종 중 하나를 누르면 ★ 대표 공종이 됩니다 — 분석은 대표 공종 기준입니다.':'대표 공종 1개')+'</small>':'<p class="dp-empty">아직 고른 공종이 없습니다</p>')+'</section>';
+   if(onDraw)onDraw(W);
   };
   draw();
   p.addEventListener('input',e=>{if(e.target.id==='nd-work-other')W.other=e.target.value;});
   p.addEventListener('click',e=>{
    const w=e.target.closest('[data-work]'),pm=e.target.closest('[data-primary]'),c=e.target.closest('[data-combo]');
+   if(e.target.closest('[data-guess]')){W.items=gk.slice();W.primary=W.items[0]||'';draw();return;}
    if(w){const k=w.dataset.work,i=W.items.indexOf(k);if(i>=0)W.items.splice(i,1);else W.items.push(k);if(!W.items.includes(W.primary))W.primary=W.items[0]||'';draw();return;}
    if(pm){W.primary=pm.dataset.primary;draw();return;}
    if(c){const x=cb[Number(c.dataset.combo)];W.items=x.keys.slice();W.primary=W.items[0];draw();return;}
-   if(e.target.closest('[data-dp="save"]')){const o=p.querySelector('#nd-work-other');if(o)W.other=o.value;root.saveWorkEdit();}
   });
+  return W;
+ }
+ function workPanel(){
+  const item=root.CUR_DETAIL.item;
+  const legacy=$('newDealBody');if(legacy)legacy.innerHTML='';
+  const p=side('work','공종 분류',item.site||'현장명 미입력','<div id="dp-work"></div><label class="dp-line">메모 <input id="rs-work-text" placeholder="남겨 둘 내용이 있을 때만 (선택)"></label><div class="modalerr" id="nd-err"></div>','<button type="button" class="dp-ghost" data-dp="close">취소</button><button type="button" class="dp-primary" data-dp="save">공종 저장</button>');if(!p)return;
+  const W=workMount(p,item);
+  p.addEventListener('click',e=>{if(e.target.closest('[data-dp="save"]')){const o=p.querySelector('#nd-work-other');if(o)W.other=o.value;root.saveWorkEdit();}});
  }
  function workLoading(){side('work','공종 분류','서버의 최신 공종과 버전을 불러오고 있습니다','<p class="dp-empty">잠시만 기다려 주세요…</p><div class="modalerr" id="nd-err"></div>','<button type="button" class="dp-ghost" data-dp="close">닫기</button>');}
 
@@ -258,5 +268,5 @@
   const ck=root.closeKakaoModal;if(typeof ck==='function')root.closeKakaoModal=function(){const p=$('ddvPanel');if(p&&p.classList.contains('dp-sms')){const b=$('kakaoBody');if(msgHome&&b&&b.parentElement!==msgHome)msgHome.append(b);onClose=null;p.remove();right()?.classList.remove('ddv-covered');}return ck.apply(this,arguments);};
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- root.DealPanelsV2={open,close,active};
+ root.DealPanelsV2={open,close,active,workMount};
 })(window);
