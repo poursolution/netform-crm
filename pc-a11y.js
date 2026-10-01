@@ -30,6 +30,9 @@
   const m=document.getElementById('inquiryControlModal');if(m&&m.classList.contains('on')&&typeof root.closeInquiryControlModal==='function'){root.closeInquiryControlModal();return;}
   const dv=document.getElementById('detailView');if(dv&&dv.classList.contains('on')&&typeof root.closeDetail==='function'&&!document.getElementById('detailAction')){root.closeDetail();}
  }
- function boot(){style();if(typeof root.toast!=='function')root.toast=toast;enhance(document.body);observe();document.addEventListener('keydown',onKey);root.PCA11y={enhance,announce,toast};}
+ /* alert()는 화면을 멈추는 브라우저 창 — 안내 띠로 바꾼다(2026-10-01 컨설턴트 P2-17, PC 62곳). confirm/prompt는 답을 기다려야 해서 그대로 둔다 */
+ const nativeAlert=root.alert;
+ function softAlert(msg){try{toast(msg,'warn');}catch(e){if(typeof nativeAlert==='function')nativeAlert.call(root,msg);}}
+ function boot(){style();if(typeof root.toast!=='function')root.toast=toast;root.alert=softAlert;enhance(document.body);observe();document.addEventListener('keydown',onKey);root.PCA11y={enhance,announce,toast,nativeAlert};}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })(window);

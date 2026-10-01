@@ -29,6 +29,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(t,{text:'저장했습니다',live:true},'toast 표시');
   await page.waitForTimeout(100);
   assert.equal(await page.evaluate(()=>document.getElementById('a11y-live').textContent),'저장했습니다','aria-live 갱신');
+  let dialogs=0;page.on('dialog',d=>{dialogs++;d.dismiss();});
+  const a=await page.evaluate(()=>{alert('상태를 선택해 주세요.');const el=[].slice.call(document.querySelectorAll('#pc-toast>div')).pop();return el&&el.className+'|'+el.textContent});
+  assert.equal(a,'warn|상태를 선택해 주세요.','alert가 안내 띠로');assert.equal(dialogs,0,'브라우저 경고창 없음');
   const outline=await page.evaluate(()=>{const b=document.querySelector('.menu [data-p="inq"]');b.focus();return getComputedStyle(b).outlineStyle});
   assert.ok(outline!=='none'||true);
   assert.deepEqual(errs,[]);
