@@ -93,7 +93,8 @@
   const fresh=ctx&&ctx.chain;
   const box=frame(d,'<div id="dp-work"></div><label class="dp-line">메모 <input id="rs-work-text" placeholder="남겨 둘 내용이 있을 때만 (선택)"></label><div class="modalerr" id="nd-err"></div>',
    fresh?'<button type="button" class="dp-ghost" data-wd="later">나중에</button><button type="button" class="dp-primary" data-wd="save" disabled>확정 · 다음 건</button>':'<button type="button" class="dp-ghost" data-wd="close">취소</button><button type="button" class="dp-primary" data-wd="save">저장</button>');
-  const W=root.DealPanelsV2.workMount(box,d,w=>{const b=box.querySelector('[data-wd="save"]');if(b&&fresh)b.disabled=!w.items.length;});
+  /* 창 틀(box)은 다시 쓰이므로, 매번 새로 만들어지는 본문에 붙인다 — 클릭이 겹쳐 처리되지 않게 */
+  const W=root.DealPanelsV2.workMount(box.querySelector('.wd-body'),d,w=>{const b=box.querySelector('[data-wd="save"]');if(b&&fresh)b.disabled=!w.items.length;});
   box.onclick=e=>{
    const b=e.target.closest('[data-wd]');if(!b)return;const a=b.dataset.wd;
    if(a==='close'){chain=null;hide();}

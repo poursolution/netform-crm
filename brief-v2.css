@@ -33,3 +33,5 @@
 #brief-v2 .bv-view button{border:0;background:transparent;color:#6b7280;border-radius:7px;padding:5px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
 #brief-v2 .bv-view button[aria-pressed="true"]{background:#fff;color:#15171c;box-shadow:0 1px 2px rgba(0,0,0,.06)}
 #brief-v2 .bv-foot{display:flex;justify-content:space-between;gap:8px;width:100%;margin-top:10px;padding:9px 11px;border:1px solid #f3d9a4;background:#fffaf0;border-radius:9px;font:inherit;font-size:12.5px;color:#8a5a00;text-align:left;cursor:pointer}#brief-v2 .bv-foot em{font-style:normal;font-weight:700;white-space:nowrap}
+.bv-stored{display:flex;flex-direction:column;gap:12px}.bv-storednote{margin:0;background:#fff8ec;border:1px solid #f6e7c1;border-radius:9px;padding:8px 11px;font-size:12.5px;color:#8a5a00}
+#brief-v2 .bv-week select:not(:disabled){cursor:pointer}

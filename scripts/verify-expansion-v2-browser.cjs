@@ -81,7 +81,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   if(shot)await page.screenshot({path:shot+'-detail.png'});
   /* 기록 = 기존 서버 함수, 서버 확인 뒤 대화에 쌓임 */
   await d.locator('.idv-input textarea').fill('지하주차장 누수 문의 — 11월 견적 요청');await d.locator('.idv-save').click();await page.waitForTimeout(300);
-  assert.deepEqual(await page.evaluate(()=>__rpc),[['crm_expansion_note','w2','지하주차장 누수 문의 — 11월 견적 요청']]);
+  assert.deepEqual(await page.evaluate(()=>__rpc.filter(r=>r[0]!=='crm_ops_settings_v1'/* 로그인 뒤 설정 읽기(2026-10-02) */)),[['crm_expansion_note','w2','지하주차장 누수 문의 — 11월 견적 요청']]);
   assert.equal(await page.locator('#expansionV2 .xdv-c2 .idv-bubble').last().innerText(),'지하주차장 누수 문의 — 11월 견적 요청');
   /* 관리 상태 · 다음 접촉일 = 기존 저장 함수 */
   await page.locator('#expansionV2 .ddv-stages [data-value="니즈확인"]').click();await page.waitForTimeout(250);
