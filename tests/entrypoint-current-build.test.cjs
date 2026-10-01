@@ -10,7 +10,7 @@ test('entrypoint resolves the current Pages commit before mounting the iframe', 
   assert.match(index, /production-ui-manifest\.json\?ts=/);
   assert.match(index, /cache:'no-store'/);
   assert.match(index, /APP_BUILD = commit/);
-  assert.match(index, /loaded !== APP_BUILD\) mount\(view\)/);
+  assert.match(index, /loaded !== APP_BUILD\) newBuildBanner\(\)/);
   assert.doesNotMatch(index, /\nmount\(view\);/);
 });
 

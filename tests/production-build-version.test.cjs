@@ -4,7 +4,7 @@ const source=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
 assert.match(source,/^---\r?\nlayout: null\r?\n---/);
 assert.match(source,/var APP_BUILD\s*=\s*'\{\{ site\.github\.build_revision \| default: "source" \}\}';/);
 assert.doesNotMatch(source,/var APP_BUILD\s*=\s*'20\d{6}/);
-assert.match(source,/loaded !== APP_BUILD\) mount\(view\)/);
+assert.match(source,/loaded !== APP_BUILD\) newBuildBanner\(\)/);
 assert.match(source,/addEventListener\('focus', mountCurrentBuild\)/);
 assert.match(source,/addEventListener\('pageshow', mountCurrentBuild\)/);
 assert.match(source,/visibilityState === 'visible'/);
