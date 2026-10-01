@@ -66,11 +66,12 @@
   else{const all=rows.inquiry.concat(rows.pipeline),urgent=T().pickUrgent(all);top=T().urgentCards(all,urgent);}
   page.classList.add('today-v2');
   if(!host){host=document.createElement('div');host.id='today-v2';const old=document.getElementById('today-home-root');(old?.parentElement||page).insertBefore(host,old||null);host.addEventListener('click',click);host.addEventListener('change',change);host.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('.tv-row,.tv-brow')){e.preventDefault();e.target.click();}});}
-  host.innerHTML=top+list(X,rows,admin)+T().backlogCard((X.backlog||[]).filter(scoped),admin);
+  /* 영업사원으로 열었을 때: 급한 곳 카드 + 묶음 표(today-rep-v2.js). 관리자 화면은 그대로 */
+  host.innerHTML=(!admin&&root.TodayRepV2&&root.TodayRepV2.enabled()?root.TodayRepV2.html(rows.inquiry.concat(rows.pipeline),(X.D||[]).filter(d=>scoped({item:d,owner:root.repN(d.assignee)}))):top+list(X,rows,admin))+T().backlogCard((X.backlog||[]).filter(scoped),admin);
  }
  function setOwner(v){if(root.CommonFilterBar)root.CommonFilterBar.setOwner(v);else root.G.todayQueueOwner=v;st().limits={};root.paint();}
  function click(e){
-  if(e.target.closest('.twq-backlog,.twq-urgent'))return;/* 과거 영업 정리·긴급 카드는 기존 단추 그대로 */
+  if(e.target.closest('.twq-backlog,.twq-urgent,.trv'))return;/* 과거 영업 정리·긴급 카드는 기존 단추 그대로 */
   const cta=e.target.closest('.tv-cta');if(cta){e.stopPropagation();return T().open(cta.dataset.key);}
   const b=e.target.closest('[data-tv]');
   if(b&&b.tagName!=='SELECT'){const k=b.dataset.tv,v=b.dataset.v,s=st();
