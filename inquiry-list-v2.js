@@ -14,7 +14,7 @@
   ['today','오늘 들어온 문의','#3b6ce4','첫 연락을 오늘 안에'],
   ['active','진행 중','#c4c8d0','다음 연락 일정이 잡힌 건']];
  const BRAND_DOT={'석민이앤씨':'#f08c2e','POUR솔루션':'#30a46c','POUR공법':'#7a5af8','아파트스퀘어':'#3b6ce4','전체':'#9ca3af'};
- const W=()=>root.InquiryWorkbench;
+ const W=()=>root.InquiryWorkbench;let lastBrands=[];
  function st(){const g=root.G;if(!g.inqV2)g.inqV2={group:'all',limits:{},more:false};return g.inqV2;}
  function enabled(){const g=root.G;return g.page==='inq'&&!g.inqLegacyView&&(g.inqBucket||'전체')==='전체'&&(g.inqView||'console')==='console'&&!g.inqV2Off&&!!W();}
  const startOfDay=t=>{const d=new Date(t);d.setHours(0,0,0,0);return d.getTime();};
@@ -57,11 +57,9 @@
   page.classList.add('inq-v2');
   if(!host){host=document.createElement('div');host.id='inq-v2';page.prepend(host);host.addEventListener('click',click);host.addEventListener('keydown',key);host.addEventListener('change',change);}
   const s=st(),all=rows(),by={};GROUPS.forEach(g=>by[g[0]]=all.filter(x=>x.group===g[0]).sort((a,b)=>(b.ageDays??-1)-(a.ageDays??-1)||String(a.key).localeCompare(String(b.key))));
-  const admin=root.inqCtlIsAdmin?.(),view=root.inqCtlRoleView();
-  /* 브랜드 알약: 기존 공통 필터 줄의 건수·선택 상태를 그대로 읽는다(누르면 기존 처리기가 동작) */
-  const chips=[...document.querySelectorAll('#pg-inq .inq-inbox-sticky [data-sf-brand], #pg-inq #sg-signals [data-sf-brand]')];
-  const seen=new Set(),brandHtml=chips.filter(b=>{const v=b.dataset.sfBrand;if(seen.has(v))return false;seen.add(v);return true;}).map(b=>{const name=b.dataset.sfBrand,n=b.querySelector('em')?.textContent||'',on=b.getAttribute('aria-pressed')==='true';return '<button type="button" class="iv-pill'+(on?' on':'')+'" data-sf-brand="'+attr(name)+'" aria-pressed="'+on+'"><i style="background:'+(BRAND_DOT[name]||'#9ca3af')+'"></i>'+h(name)+' <em>'+h(n)+'</em></button>';}).join('');
-  const seg=admin?'<div class="iv-seg" role="group" aria-label="문의 조회 범위"><button type="button" data-iv="scope" data-v="admin" aria-pressed="'+(view==='admin')+'">팀 문의</button><button type="button" data-iv="scope" data-v="mine" aria-pressed="'+(view==='mine')+'">내 담당</button></div>':'';
+  /* 브랜드 건수·선택 상태는 기존 공통 필터 줄에서 읽어 공통 고정 필터줄(pc-common-filterbar)에 넘긴다 */
+  const chips=[...document.querySelectorAll('#pg-inq .inq-inbox-sticky [data-sf-brand], #pg-inq #sg-signals [data-sf-brand]')],seen=new Set();
+  lastBrands=chips.filter(b=>{const v=b.dataset.sfBrand;if(seen.has(v))return false;seen.add(v);return true;}).map(b=>({name:b.dataset.sfBrand,n:b.querySelector('em')?.textContent||'',on:b.getAttribute('aria-pressed')==='true'}));
   const tabs=[['all','전체',all.length,'#15171c','']].concat(GROUPS.map(g=>[g[0],g[1],by[g[0]].length,g[2],g[0]==='assign'?'red':g[0]==='stale'?'amber':'']));
   const tabHtml=tabs.map(t=>'<button type="button" class="iv-tab'+(s.group===t[0]?' on':'')+'" data-iv="group" data-v="'+t[0]+'" aria-pressed="'+(s.group===t[0])+'"><i style="background:'+t[3]+'"></i>'+h(t[1])+'<b class="'+t[4]+'">'+t[2]+'</b></button>').join('');
   const shown=GROUPS.filter(g=>s.group==='all'||s.group===g[0]);
@@ -69,9 +67,8 @@
    return '<div class="iv-ghead" role="button" tabindex="0" data-iv="group" data-v="'+(s.group===g[0]?'all':g[0])+'"><i style="background:'+g[2]+'"></i><b>'+h(g[1])+'</b><span>'+list.length+'건</span><small>· '+h(g[3])+'</small><em>'+(s.group===g[0]?'전체 보기':'이것만 보기')+'</em></div>'
     +(list.length?part.map(rowHtml).join(''):'<div class="iv-empty">해당하는 문의가 없습니다</div>')
     +(more>0?'<button type="button" class="iv-more" data-iv="more" data-v="'+g[0]+'">+ '+more+'건 더보기</button>':'');}).join('');
-  host.innerHTML='<div class="iv-head"><div class="iv-title"><h2>견적문의</h2><p>위에서부터 처리하세요 · 배정 → 첫 연락 → 후속 연락 → 영업건 전환</p></div>'+seg+'<div class="iv-spacer"></div><div class="iv-brands" role="group" aria-label="브랜드">'+brandHtml+'</div>'
-   +'<input class="iv-search" aria-label="문의 검색" placeholder="현장 · 고객 · 연락처" value="'+attr(root.G.q||'')+'"><span class="iv-create-slot"></span><span class="iv-more-slot"></span></div>'
-   +'<div class="iv-tabs" role="group" aria-label="우선순위 묶음">'+tabHtml+'</div>'
+  /* 제목·브랜드·담당자·검색은 공통 제목줄과 공통 고정 필터줄에 있다(핸드오프 ②) — 여기는 묶음 알약 + 문의 등록 + 더보기 */
+  host.innerHTML='<div class="iv-tabs" role="group" aria-label="우선순위 묶음">'+tabHtml+'<span class="iv-spacer"></span><span class="iv-create-slot"></span><span class="iv-more-slot"></span></div>'
    +'<div class="iv-table"><div class="iv-thead"><span>현장 · 문의</span><span>고객 · 연락처</span><span>브랜드 · 공종 · 채널</span><span>담당</span><span>마지막 연락</span><span>경과</span><span></span></div>'+body+'</div>';
   adopt(host);
  }
@@ -103,5 +100,5 @@
  function change(e){if(e.target.classList?.contains('iv-search')&&e.target.value.trim()!==String(root.G.q||'')){root.G.q=e.target.value.trim();root.G.inqPage=1;st().limits={};root.paint();}}
  const base=root.paintInq;
  if(typeof base==='function')root.paintInq=function(){const r=base.apply(this,arguments);try{render();}catch(err){document.getElementById('pg-inq')?.classList.remove('inq-v2');document.getElementById('inq-v2')?.remove();if(root.console)root.console.warn('inquiry list v2: '+err.message);}return r;};
- root.InquiryListV2={render,rows,enabled,groups:()=>GROUPS.map(g=>g[0])};
+ root.InquiryListV2={render,rows,enabled,brandStats:()=>lastBrands.slice(),groups:()=>GROUPS.map(g=>g[0])};
 })(window);

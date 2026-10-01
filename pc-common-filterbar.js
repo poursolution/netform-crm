@@ -1,0 +1,80 @@
+/* 공통 고정 필터줄 + 화면 제목 (2026-10-01 디자인 핸드오프 'design_handoff_today_inquiry' ①)
+   오늘 업무·견적문의 두 화면 위에만 붙는다(대시보드·파이프라인·다른 메뉴는 적용하지 않는다).
+   한 줄: 브랜드 알약(색 점·이름·건수) | 담당자 선택(+해제) | 검색(Ctrl K). 선택값은 화면을 옮겨도 유지된다.
+   기존 상태를 그대로 쓴다 — 브랜드=SalesFilterState(data-sf-brand 처리기), 담당자=SalesScope, 검색=G.q.
+   오늘 업무는 자체 상태(todayQueueOwner·todayQueueSearch)를 같은 값으로 맞춘다. 저장·권한은 건드리지 않는다. */
+(function(root){
+ 'use strict';
+ const PAGES=['today','inq'];
+ const BRANDS=['석민이앤씨','POUR솔루션','POUR공법','아파트스퀘어'];
+ const DOT={'전체':'#9ca3af','석민이앤씨':'#f08c2e','POUR솔루션':'#30a46c','POUR공법':'#8b5cf6','아파트스퀘어':'#3b6ce4'};
+ const h=v=>root.esc(String(v==null?'':v)),attr=v=>root.escAttr(String(v==null?'':v));
+ const admin=()=>{try{return !!root.todayIsAdmin?.();}catch(e){return false;}};
+ const scope=()=>root.SalesScope.state();
+ function owner(){const s=scope();return s.owner&&s.owner!=='전체'?s.owner:'전체';}
+ function setOwner(v){
+  root.SalesScope.change('owner',v||'전체');
+  if(!v||v==='전체'||v==='경남지사')scope().assignment='all';/* 전체·지사 풀은 배정 여부로 거르지 않는다 */
+  root.G.todayQueueOwner=v||'전체';lastT=root.G.todayQueueOwner;root.G.todayQueuePage=1;root.G.todayInquiryPage=1;root.G.todayPipelinePage=1;root.G.inqPage=1;
+ }
+ function setSearch(v){v=String(v||'').trim();root.G.q=v;root.G.todayQueueSearch=v;lastQ=v;root.G.inqPage=1;root.G.todayQueuePage=1;}
+ function brandOf(x){return x.brand||root.inquiryBrandOf?.(x)||'';}
+ /* 건수: 견적문의=새 목록이 읽어 둔 기존 브랜드 건수, 오늘 업무=오늘 목록의 브랜드별 건수 */
+ function brandStats(page){
+  const sel=root.SalesFilterState.state().brands||[];
+  if(page==='inq'){const s=root.InquiryListV2?.brandStats?.();if(s&&s.length)return s;}
+  let rows=[];try{rows=page==='today'?(root.TodayWorkQueue?.data?.().rows||[]).map(x=>x.item):root.inqCtlScopeActive();}catch(e){rows=[];}
+  const names=[...new Set(BRANDS.concat(rows.map(brandOf).filter(Boolean)))];
+  return [{name:'전체',n:rows.length,on:!sel.length}].concat(names.map(b=>({name:b,n:rows.filter(r=>brandOf(r)===b).length,on:sel.includes(b)})));
+ }
+ function ownerOptions(){const names=[...new Set((root.SalesScope.people()||[]).map(p=>p.name))].sort(root.repCompare||undefined);return ['전체',...names,'미배정','경남지사'];}
+ function html(page){
+  const cur=owner(),q=root.G.q||'';
+  const pills=brandStats(page).map(b=>'<button type="button" class="cf-pill'+(b.on?' on':'')+'" data-sf-brand="'+attr(b.name)+'" aria-pressed="'+b.on+'"><i style="background:'+(DOT[b.name]||'#9ca3af')+'"></i>'+h(b.name)+' <em>'+h(b.n)+'</em></button>').join('');
+  const own=admin()?'<i class="cf-div"></i><label class="cf-owner'+(cur!=='전체'?' on':'')+'"><span>담당자</span><select aria-label="담당자 선택" data-cf="owner">'+ownerOptions().map(o=>'<option value="'+attr(o)+'"'+(o===cur?' selected':'')+'>'+h(o)+'</option>').join('')+'</select></label>'+(cur!=='전체'?'<button type="button" class="cf-clear" data-cf="clear">✕ 해제</button>':''):'';
+  return '<div class="cf-brands" role="group" aria-label="브랜드">'+pills+'</div>'+own+'<input class="cf-search" data-cf="search" aria-label="현장·고객·연락처 검색" placeholder="현장 · 고객 · 연락처 (Ctrl K)" value="'+attr(q)+'">';
+ }
+ function mount(page){
+  const pg=document.getElementById('pg-'+page);if(!pg||!root.B)return;
+  let bar=pg.querySelector(':scope>.cf-bar');
+  if(!bar){bar=document.createElement('div');bar.className='cf-bar';bar.setAttribute('role','toolbar');bar.setAttribute('aria-label','공통 필터');pg.prepend(bar);bar.addEventListener('change',onChange);bar.addEventListener('click',onClick);bar.addEventListener('keydown',onKey);}
+  const next=html(page);
+  if(bar.__html!==next){const focused=document.activeElement===bar.querySelector('.cf-search');bar.__html=next;bar.innerHTML=next;if(focused){const s=bar.querySelector('.cf-search');s.focus();s.setSelectionRange(s.value.length,s.value.length);}}
+  title(page);
+ }
+ /* 화면 제목: 상단 제목줄에 제목 + 설명 한 줄. 본문 안의 큰 제목은 지운다(오늘 업무·견적문의만) */
+ function title(page){
+  const t=document.getElementById('ptitle'),s=document.getElementById('psub');if(!t||!s)return;
+  document.querySelector('.mhead')?.classList.add('cf-title');
+  if(page==='today'){const d=new Date();t.textContent='오늘 업무';s.textContent=(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+'일월화수목금토'[d.getDay()]+') · '+(admin()?'사원별 현황을 먼저 보고, 행을 눌러 그 담당자 업무로 좁혀 보세요':'신규 문의와 진행 중 영업을 처리 순서대로 확인하세요');}
+  if(page==='inq'&&(root.G.inqBucket||'전체')==='전체'&&!root.G.inqLegacyView&&!root.G.inqV2Off){t.textContent='견적문의';s.textContent='위에서부터 처리하세요 · 배정 → 첫 연락 → 후속 연락 → 영업건 전환';}
+ }
+ function repaint(){root.paint();}
+ function onChange(e){const k=e.target.dataset.cf;if(k==='owner'){setOwner(e.target.value);repaint();}else if(k==='search'){setSearch(e.target.value);repaint();}}
+ function onClick(e){if(e.target.closest('[data-cf="clear"]')){setOwner('전체');repaint();}}
+ function onKey(e){if(e.target.dataset.cf==='search'){if(e.key==='Enter'){e.preventDefault();setSearch(e.target.value);repaint();}else if(e.key==='Escape'&&e.target.value){e.target.value='';setSearch('');repaint();}}}
+ /* 화면에 들어올 때 오늘 업무 자체 상태를 공통 값으로 맞춘다. 오늘 업무 표에서 담당자 행을 누른 것도 공통 값으로 되돌려 적는다 */
+ /* 오늘 업무는 자체 상태(todayQueueOwner·todayQueueSearch)가 있다. 마지막으로 맞춘 값(last)을 기억해
+    오늘 업무 쪽에서 바뀐 것(담당자 행 클릭 등)은 공통 값으로 받아 적고, 아니면 공통 값을 오늘 업무에 넣는다 */
+ let lastT=null,lastQ=null;
+ function adoptOwner(t){root.SalesScope.change('owner',t);if(t==='전체'||t==='경남지사')scope().assignment='all';}
+ function syncToday(){
+  if(!admin())return;
+  const t=root.G.todayQueueOwner||'전체',q=String(root.G.todayQueueSearch||'');
+  if(lastT!==null&&t!==lastT)adoptOwner(t);else if(t!==owner())root.G.todayQueueOwner=owner();
+  if(lastQ!==null&&q!==lastQ)root.G.q=q;else if(q!==String(root.G.q||''))root.G.todayQueueSearch=root.G.q||'';
+  lastT=root.G.todayQueueOwner||'전체';lastQ=String(root.G.todayQueueSearch||'');
+ }
+ function adoptToday(){syncToday();}
+ function boot(){
+  const baseToday=root.paintTodayHome;if(typeof baseToday==='function')root.paintTodayHome=function(){syncToday();const want=admin()?owner():null,wantQ=String(root.G.q||'');let r=baseToday.apply(this,arguments);/* 오늘 업무가 계정 전환 감지로 자체 상태를 초기화했으면 공통 값으로 다시 맞춰 한 번 더 그린다 */if(want!==null&&((root.G.todayQueueOwner||'전체')!==want||String(root.G.todayQueueSearch||'')!==wantQ)){root.G.todayQueueOwner=want;root.G.todayQueueSearch=wantQ;lastT=want;lastQ=wantQ;r=baseToday.apply(this,arguments);}mount('today');return r;};
+  const baseInq=root.paintInq;if(typeof baseInq==='function')root.paintInq=function(){const r=baseInq.apply(this,arguments);mount('inq');return r;};
+  const th=document.getElementById('today-home-root');
+  if(th){let t=null;new MutationObserver(()=>{if(t)return;t=setTimeout(()=>{t=null;if(root.G?.page==='today'){adoptToday();mount('today');}},80);}).observe(th,{childList:true,subtree:true});}
+  const baseSync=root.syncPage;if(typeof baseSync==='function')root.syncPage=function(){const r=baseSync.apply(this,arguments);if(!PAGES.includes(root.G?.page))document.querySelector('.mhead')?.classList.remove('cf-title');return r;};
+  /* Ctrl/⌘+K: 이 두 화면에서는 필터줄 검색으로 */
+  document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&!e.altKey&&String(e.key).toLowerCase()==='k'&&PAGES.includes(root.G?.page)){const s=document.querySelector('#pg-'+root.G.page+'>.cf-bar .cf-search');if(s){e.preventDefault();e.stopImmediatePropagation();s.focus();s.select();}}},true);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+ root.CommonFilterBar={mount,setOwner,setSearch,owner};
+})(window);

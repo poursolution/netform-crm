@@ -1,0 +1,21 @@
+/* 공통 고정 필터줄 + 제목 (2026-10-01 디자인 핸드오프 ①) — 오늘 업무·견적문의에만 */
+.cf-bar{position:sticky;top:0;z-index:40;display:flex;flex-wrap:nowrap;align-items:center;gap:8px;overflow-x:auto;background:#f5f6f8;border-bottom:1px solid #ebedf1;margin:-6px 0 0;padding:10px 14px;border:1px solid #ebedf1;border-radius:12px;scrollbar-width:thin;min-width:0;max-width:100%;box-sizing:border-box}
+.cf-bar>*{flex-shrink:0;white-space:nowrap}
+.cf-brands{display:flex;gap:8px}
+.cf-pill{display:flex;align-items:center;gap:6px;font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;background:#fff;border:1px solid #e1e4ea;color:#374151;cursor:pointer}
+.cf-pill i{width:7px;height:7px;border-radius:4px;display:block;flex:none}
+.cf-pill em{font-style:normal;color:#9ca3af}
+.cf-pill.on{background:#15171c;border-color:#15171c;color:#fff;font-weight:700}.cf-pill.on em{color:#d1d5db}
+.cf-div{width:1px;height:22px;background:#dfe2e7;display:block}
+.cf-owner{display:flex;align-items:center;gap:6px;font-size:13px;padding:3px 6px 3px 12px;border-radius:999px;background:#fff;border:1px solid #e1e4ea;color:#6b7280}
+.cf-owner select{appearance:none;-webkit-appearance:none;border:0;background:transparent;font:inherit;font-size:13px;color:#15171c;font-weight:600;padding:3px 8px;cursor:pointer;outline-offset:1px}
+.cf-owner.on{background:#15171c;border-color:#15171c;color:#d1d5db}.cf-owner.on select{color:#fff}.cf-owner.on select option{color:#15171c}
+.cf-clear{border:0;background:none;color:#6b7280;font:inherit;font-size:12.5px;cursor:pointer;padding:4px 2px}.cf-clear:hover{color:#15171c}
+.cf-search{flex:1 0 180px!important;max-width:280px;padding:7px 12px;border-radius:999px;border:1px solid #e1e4ea;font:inherit;font-size:13px;outline:none;background:#fff;color:#15171c}
+.cf-search:focus{border-color:#3b6ce4}
+/* 제목줄: 제목 18/700 + 설명 한 줄(말줄임) */
+.mhead.cf-title h1{font-size:18px;font-weight:700}
+.mhead.cf-title .sub{font-size:12.5px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(60vw,640px)}
+/* 이 줄 하나로 통일 — 견적문의 화면 안의 브랜드·담당자 구분 필터는 감춘다(더보기 안의 것 포함) */
+#pg-inq.inq-v2 #inq-v2 .sales-filterbar .sf-row{display:none!important}/* 연도·분기(sf-period)는 더보기에 남긴다 */
+@media(max-width:760px){.cf-bar{padding:8px 10px}}
