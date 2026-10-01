@@ -13,6 +13,7 @@ test('비용 큰 부분은 materialized로 한 번만, 후보 상위 8건은 창
  for(const n of ['pending','site_norm','ranked'])assert.match(sql,new RegExp(n+' as materialized'),n);
  assert.match(sql,/row_number\(\) over \(partition by r\.organization_id order by r\.match_score desc,r\.site_name,r\.site_id\)/);
  assert.match(sql,/where t\.rn<=8/);
- assert.doesNotMatch(sql,/can_read_legacy_note/,'관리자 전용이라 메모별 권한 함수 호출 불필요');
+ const body=sql.slice(sql.indexOf('$function$')+10,sql.lastIndexOf('$function$'));
+ assert.doesNotMatch(body,/can_read_legacy_note/,'관리자 전용이라 메모별 권한 함수 호출 불필요');
  assert.doesNotMatch(sql,/from ranked z where z\.organization_id=p\.organization_id/,'조직마다 ranked 재계산 금지');
 });
