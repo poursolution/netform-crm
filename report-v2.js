@@ -15,9 +15,10 @@
  const won=v=>root.reportAmount(v);
  function windows(mode){
   const R=root,n=new Date(),y=n.getFullYear(),m=n.getMonth(),K=d=>R.briefDateKey(d),W=(a,b,label,long)=>({startKey:K(a),endKey:K(b),label,long});
-  if(mode==='year')return {cur:W(new Date(y,0,1),new Date(y+1,0,1),y+'년',y+'년'),prev:W(new Date(y-1,0,1),new Date(y,0,1),'작년',(y-1)+'년'),unit:'올해',prevUnit:'작년'};
-  if(mode==='quarter'){const q=Math.floor(m/3);return {cur:W(new Date(y,q*3,1),new Date(y,q*3+3,1),(q+1)+'분기',y+'년 '+(q+1)+'분기'),prev:W(new Date(y,q*3-3,1),new Date(y,q*3,1),'지난 분기','지난 분기'),unit:'이번 분기',prevUnit:'지난 분기'};}
-  return {cur:W(new Date(y,m,1),new Date(y,m+1,1),(m+1)+'월',y+'년 '+(m+1)+'월'),prev:W(new Date(y,m-1,1),new Date(y,m,1),'지난달','지난달'),unit:'이번 달',prevUnit:'지난달'};
+  if(mode==='year')return {kind:'yearly',key:String(y),prevKey:String(y-1),cur:W(new Date(y,0,1),new Date(y+1,0,1),y+'년',y+'년'),prev:W(new Date(y-1,0,1),new Date(y,0,1),'작년',(y-1)+'년'),unit:'올해',prevUnit:'작년'};
+  if(mode==='quarter'){const q=Math.floor(m/3),pq=new Date(y,q*3-3,1);return {kind:'quarterly',key:y+'-Q'+(q+1),prevKey:pq.getFullYear()+'-Q'+(Math.floor(pq.getMonth()/3)+1),cur:W(new Date(y,q*3,1),new Date(y,q*3+3,1),(q+1)+'분기',y+'년 '+(q+1)+'분기'),prev:W(new Date(y,q*3-3,1),new Date(y,q*3,1),'지난 분기','지난 분기'),unit:'이번 분기',prevUnit:'지난 분기'};}
+  const pm=new Date(y,m-1,1),ym=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  return {kind:'monthly',key:ym(new Date(y,m,1)),prevKey:ym(pm),cur:W(new Date(y,m,1),new Date(y,m+1,1),(m+1)+'월',y+'년 '+(m+1)+'월'),prev:W(new Date(y,m-1,1),new Date(y,m,1),'지난달','지난달'),unit:'이번 달',prevUnit:'지난달'};
  }
  function data(){
   const R=root,S=st(),P=windows(S.mode),raw=R.reportRawDeals(),open=R.reportOpenDeals(),inW=(v,w)=>R.briefInWindow(v,w.startKey,w.endKey);
@@ -75,9 +76,34 @@
   const a=best?best.n+' — '+won(best.made)+'을 만들었습니다':'',b=miss&&miss.lost?miss.n+' — 실주 '+miss.lost+'건'+(miss.missed?'('+won(miss.missed)+')':'')+', 놓친 이유를 확인할 차례입니다':'';
   return [a,b].filter(Boolean).join(' · ')||'이 기간에 결정된 건이 없어 성공률은 아직 산정 전입니다';
  }
+ /* 운영 저장소: 보고 저장 · 대표 응답 · 지난 기간 약속 (설치돼 있을 때만) */
+ const STORE={state:'idle',kind:'',snaps:[],busy:false};
+ const RESP={yes:'좋습니다',partial:'1곳만',no:'이번 달은 어려움'};
+ function loadStore(kind,force){const O=root.OpsStore;if(!O||!O.has('crm_report_snapshot_get_v1')){STORE.state='off';return;}if(STORE.state==='loading'||(STORE.state==='ready'&&STORE.kind===kind&&!force))return;STORE.state='loading';STORE.kind=kind;O.rpc('crm_report_snapshot_get_v1',{kind,limit:6}).then(r=>{STORE.snaps=r.snapshots||[];STORE.state='ready';if(root.G.page==='report')render();}).catch(e=>{STORE.state=e.unavailable?'off':'failed';});}
+ const snapOf=key=>STORE.state==='ready'?STORE.snaps.find(s=>s.period_key===key)||null:null;
+ const edited=(key,text)=>{const S=st();return Object.prototype.hasOwnProperty.call(S.edits,key)?S.edits[key]:text;};
+ function saveSnapshot(btn){
+  const O=root.OpsStore,x=data(),c=cover(x),a=ask(x),pr=promises(x);btn.disabled=true;btn.textContent='저장 중…';
+  const payload={saved_label:x.P.cur.long,won_amount:x.wonAmt,won_count:x.curWon.length,pipeline_amount:x.pipeAmt,forecast:x.forecast,near_count:x.near.length,near_amount:x.nearAmt,critical_count:x.critical.length,cover:edited('cover',c.lead),risk:edited('coverRisk',c.risk),ask:a?{title:edited('ask',a.title),why:edited('askWhy',a.why),deal_id:String(a.d.id||'')}:null,people:x.people.map(p=>({n:p.n,did:p.did,won:p.won,lost:p.lost,open:p.open,made:p.made,missed:p.missed,rate:p.rate}))};
+  O.rpc('crm_report_snapshot_save_v1',{kind:x.P.kind,period_key:x.P.key,payload,promises:pr.map((p,i)=>({what:edited('promise'+i,p.what),who:p.who,where:p.where,basis:p.basis}))}).then(()=>{if(typeof root.toast==='function')root.toast(x.P.cur.long+' 보고를 저장했습니다');loadStore(x.P.kind,true);}).catch(e=>{btn.disabled=false;btn.textContent='이 보고 저장';if(typeof root.toast==='function')root.toast(String(e.message||e),'warn');});
+ }
+ function saveResponse(v){const O=root.OpsStore,x=data();if(STORE.busy)return;STORE.busy=true;O.rpc('crm_report_response_save_v1',{kind:x.P.kind,period_key:x.P.key,response:v}).then(()=>{if(typeof root.toast==='function')root.toast('대표님 답을 저장했습니다 · '+RESP[v]);loadStore(x.P.kind,true);}).catch(e=>{if(typeof root.toast==='function')root.toast(String(e.message||e),'warn');}).finally(()=>{STORE.busy=false;});}
+ function answersHtml(x){
+  const O=root.OpsStore,snap=snapOf(x.P.key),can=!!snap&&O&&O.admin();
+  const btns='<div class="rp-answers">'+Object.keys(RESP).map(k=>'<button type="button" data-rp="answer" data-value="'+k+'"'+(can?'':' disabled')+(snap&&snap.boss_response===k?' aria-pressed="true"':'')+'>'+RESP[k]+'</button>').join('')+'</div>';
+  const note=STORE.state!=='ready'?'대표님 답을 저장하는 곳이 아직 없어 버튼은 잠겨 있습니다(저장소 설치 뒤 켜집니다)':!snap?'먼저 위의 [이 보고 저장]을 누르면 답을 남길 수 있습니다':snap.boss_response?'답을 저장했습니다 · '+RESP[snap.boss_response]+' · '+String(snap.boss_response_at||'').slice(0,10):'대표님 답을 눌러 남기면 다음 보고의 약속 장에 그대로 나옵니다';
+  return btns+'<small class="rp-lock">'+note+'</small>';
+ }
+ function prevHtml(x){
+  const snap=snapOf(x.P.prevKey);
+  if(!snap)return '<p class="rp-none">'+h(x.P.prevUnit)+' 약속 기록이 없습니다 — 이번 보고부터 저장되면 다음 보고에 지킴 · 못 지킴과 이유가 그대로 나옵니다</p>';
+  const pr=Array.isArray(snap.promises)?snap.promises:[],a=snap.payload&&snap.payload.ask;
+  return (pr.length?pr.map(p=>'<div class="rp-promise old"><b>'+h(p.what)+'</b><span>'+h(p.who||'')+'</span><small>확인하는 곳: '+h(p.where||'')+(p.basis?' · 그때 '+h(p.basis):'')+'</small></div>').join(''):'<p class="rp-none">'+h(x.P.prevUnit)+'에 저장된 약속이 없습니다</p>')
+   +(a?'<div class="rp-promise old"><b>부탁: '+h(a.title)+'</b><span>대표님 답 — '+h(snap.boss_response?RESP[snap.boss_response]:'아직 없음')+'</span></div>':'');
+ }
  const peopleHtml=(x,compact)=>x.people.length?'<div class="rp-people'+(compact?' compact':'')+'"><div class="rp-ph"><span>담당</span><span>한 일</span><span>결과</span><span>만든 돈</span><span>놓친 돈</span><span>성공률</span></div>'+x.people.slice(0,compact?7:9).map(p=>{const t=Math.max(1,p.did),bar=(n,c)=>n?'<i class="'+c+'" style="flex:'+n+'">'+n+'</i>':'';return '<div class="rp-pr"><b>'+h(p.n)+(p.tag?' <em>'+p.tag+'</em>':'')+'</b><span>'+p.did+'건</span><span class="rp-bar" title="수주 '+p.won+' · 실주 '+p.lost+' · 진행 '+p.open+'">'+bar(p.won,'g')+bar(p.lost,'r')+bar(p.open,'m')+'</span><span class="'+(p.made?'g':'m')+'">'+won(p.made)+'</span><span class="'+(p.missed?'r':'m')+'">'+won(p.missed)+'</span><span>'+(p.rate==null?'<u>산정 전</u>':p.rate+'% <small>'+p.won+'/'+p.decided+'</small>')+'</span></div>';}).join('')+'</div>':'<p class="rp-none">이 기간에 다룬 영업기회가 없습니다</p>';
  const cmpHtml=x=>'<div class="rp-cmp">'+x.compare.map(c=>{if(c.na)return '<div><b>'+c.name+'</b><span>단계 변경 기록이 없어 비교할 수 없습니다</span><em class="m">–</em></div>';const d=c.cur-c.prev,cls=!d?'m':(d>0)===(c.good>0)?'g':'r';return '<div><b>'+c.name+'</b><span>'+h(c.fmt(c.prev))+(c.sub?' <small>'+c.sub[0]+'</small>':'')+' → <strong>'+h(c.fmt(c.cur))+'</strong>'+(c.sub?' <small>'+c.sub[1]+'</small>':'')+'</span><em class="'+cls+'">'+(!d?'변화 없음':(d>0?'▲ ':'▼ ')+h(c.fmt(Math.abs(d))))+'</em></div>';}).join('')+'</div>';
- const askHtml=(x,a)=>a?'<div class="rp-ask"><small>이번에는 한 가지만</small>'+T('ask',a.title,'h3')+'<p>'+T('askWhy',a.why)+'</p><div class="rp-answers"><button type="button" disabled>좋습니다</button><button type="button" disabled>1곳만</button><button type="button" disabled>이번 달은 어려움</button></div><small class="rp-lock">대표님 답을 저장하는 곳이 아직 없어 버튼은 잠겨 있습니다(저장소 설치 뒤 켜집니다)</small></div>':'<div class="rp-ask"><small>이번에는</small><h3>부탁드릴 일이 없습니다</h3><p>지금 대표님 결정이 필요한 현장이 없습니다.</p></div>';
+ const askHtml=(x,a)=>a?'<div class="rp-ask"><small>이번에는 한 가지만</small>'+T('ask',a.title,'h3')+'<p>'+T('askWhy',a.why)+'</p>'+answersHtml(x)+'</div>':'<div class="rp-ask"><small>이번에는</small><h3>부탁드릴 일이 없습니다</h3><p>지금 대표님 결정이 필요한 현장이 없습니다.</p></div>';
  const promiseHtml=l=>l.length?l.map((p,i)=>'<div class="rp-promise"><b>'+T('promise'+i,p.what)+'</b><span>'+h(p.who)+'</span><small>확인하는 곳: '+h(p.where)+' · '+h(p.basis)+'</small></div>').join(''):'<p class="rp-none">지금 숫자에서는 따로 약속할 행동이 없습니다</p>';
  function slides(x){
   const R=root,c=cover(x),g=goods(x),a=ask(x),pr=promises(x),mx=Math.max(1,...x.months.map(m=>m.amt)),gx=Math.max(1,...x.groups.map(v=>v.amt)),today=new Date(),date=today.getFullYear()+'. '+(today.getMonth()+1)+'. '+today.getDate()+'.';
@@ -91,7 +117,7 @@
    '<section class="rp-slide">'+head(4,x.P.prev.label+'과 비교')+cmpHtml(x)+'</section>',
    '<section class="rp-slide">'+head(5,'숫자 뒤의 진짜 모습')+'<div class="rp-real"><div class="rp-groups">'+x.groups.map(v=>'<div><span>'+h(v.name)+'</span><i><em style="width:'+Math.max(v.amt?3:0,Math.round(v.amt/gx*100))+'%"></em></i><b>'+h(won(v.amt))+'</b><small>'+v.n+'건</small></div>').join('')+'</div><aside><small>진행 금액</small><b>'+h(won(x.pipeAmt))+'</b><small>실제 기대 (가중)</small><b class="b">'+h(won(x.forecast))+'</b></aside></div><p class="rp-note">'+T('real','진행 '+won(x.pipeAmt)+' 중 계약에 가까운 단계(경쟁 · 입찰 ~ 계약)는 '+won(late)+'입니다. '+(top&&top.amt?'가장 많이 쌓인 곳은 «'+top.name+'» '+won(top.amt)+'이고, ':'')+'단계별 확률을 곱한 실제 기대는 '+won(x.forecast)+'입니다.')+'</p></section>',
    '<section class="rp-slide dark">'+head(6,'대표님께 부탁드릴 것')+'<div class="rp-askwrap">'+askHtml(x,a)+'<aside class="rp-later"><small>아직 부탁드리지 않는 것</small>'+(a&&a.rest.length?a.rest.map(d=>'<div><b>'+h(d.site||'현장명 미입력')+'</b><span>'+h(R.reportDecisionText(d))+' · 다음 보고 때 다시 말씀드립니다</span></div>').join(''):'<div><span>없습니다</span></div>')+'</aside></div></section>',
-   '<section class="rp-slide">'+head(7,'약속은 작게, 결과는 그대로')+'<div class="rp-two"><div><small>'+h(x.P.prevUnit)+' 약속 결과</small><p class="rp-none">'+h(x.P.prevUnit)+' 약속 기록이 없습니다 — 이번 보고부터 저장되면 다음 보고에 지킴 · 못 지킴과 이유가 그대로 나옵니다</p></div><div><small>'+h(x.P.unit)+' 행동 약속 · 초안</small>'+promiseHtml(pr)+'</div></div><p class="rp-note">결과(금액 · 수주)는 약속하지 않습니다. 우리가 할 수 있는 행동만 약속하고, 못 지키면 이유와 함께 그대로 보고합니다.</p></section>'
+   '<section class="rp-slide">'+head(7,'약속은 작게, 결과는 그대로')+'<div class="rp-two"><div><small>'+h(x.P.prevUnit)+' 약속 결과</small>'+prevHtml(x)+'</div><div><small>'+h(x.P.unit)+' 행동 약속 · 초안</small>'+promiseHtml(pr)+'</div></div><p class="rp-note">결과(금액 · 수주)는 약속하지 않습니다. 우리가 할 수 있는 행동만 약속하고, 못 지키면 이유와 함께 그대로 보고합니다.</p></section>'
   ];
  }
  function onePage(x){
@@ -105,7 +131,7 @@
  function html(x){
   const S=st(),seg=(k,list,cur)=>'<div class="rp-seg" role="group">'+list.map(([v,t])=>'<button type="button" data-rp="'+k+'" data-value="'+v+'" aria-pressed="'+(cur===v)+'">'+t+'</button>').join('')+'</div>',d=new Date();
   const bar='<div class="rp-toolbar">'+seg('mode',[['month','월간'],['quarter','분기'],['year','연간']],S.mode)+'<span class="rp-auto">자동 취합 · '+(d.getMonth()+1)+'월 '+d.getDate()+'일</span><div class="plv-spacer"></div>'+seg('view',[['slides','슬라이드'],['page','한 페이지']],S.view)
-   +'<button type="button" class="rp-btn'+(S.edit?' on':'')+'" data-rp="edit" aria-pressed="'+S.edit+'">'+(S.edit?'편집 끝내기':'편집')+'</button><button type="button" class="rp-btn" data-rp="detail" aria-pressed="'+S.detail+'">'+(S.detail?'상세 표 접기':'상세 표 보기')+'</button><button type="button" class="rp-btn" data-rp="pdf">PDF로 저장</button><button type="button" class="rp-btn pri" disabled title="잔디 발송 연결 뒤에 켜집니다">대표님께 보내기</button></div>'
+   +'<button type="button" class="rp-btn'+(S.edit?' on':'')+'" data-rp="edit" aria-pressed="'+S.edit+'">'+(S.edit?'편집 끝내기':'편집')+'</button><button type="button" class="rp-btn" data-rp="detail" aria-pressed="'+S.detail+'">'+(S.detail?'상세 표 접기':'상세 표 보기')+'</button>'+(STORE.state==='ready'&&root.OpsStore.admin()?'<button type="button" class="rp-btn" data-rp="snapshot">'+(snapOf(x.P.key)?'이 보고 다시 저장':'이 보고 저장')+'</button>':'')+'<button type="button" class="rp-btn" data-rp="pdf">PDF로 저장</button><button type="button" class="rp-btn pri" disabled title="잔디 발송 연결 뒤에 켜집니다">대표님께 보내기</button></div>'
    +(S.edit?'<p class="rp-editnote">문장을 눌러 바로 고칠 수 있습니다. 고친 문장은 PDF에 그대로 들어가지만 저장되지는 않습니다 — 이 화면을 새로 열면 처음 문장으로 돌아갑니다.</p>':'');
   if(S.view==='page')return bar+onePage(x);
   const L=slides(x);
@@ -117,7 +143,7 @@
   let el=document.getElementById('report-v2');if(!el){el=document.createElement('div');el.id='report-v2';el.className='rp';master.before(el);el.addEventListener('click',onClick);el.addEventListener('input',e=>{const t=e.target.closest('.rp-t');if(t)st().edits[t.dataset.key]=t.textContent;});}
   return el;
  }
- function render(){const el=host();if(!el)return;el.hidden=false;el.innerHTML=html(data());const m=document.getElementById('report-master');if(m)m.hidden=!st().detail;}
+ function render(){const el=host();if(!el)return;el.hidden=false;const x=data();loadStore(x.P.kind);el.innerHTML=html(x);const m=document.getElementById('report-master');if(m)m.hidden=!st().detail;}
  function go(i){const S=st();S.i=Math.max(0,Math.min(N-1,i));render();}
  function pdf(){
   const S=st();document.getElementById('rpPrint')?.remove();const s=document.createElement('style');s.id='rpPrint';s.textContent='@page{size:'+(S.view==='page'?'A4 portrait':'A4 landscape')+';margin:'+(S.view==='page'?'10mm':'0')+'}';document.head.append(s);
@@ -131,6 +157,8 @@
   if(a==='edit'){S.edit=!S.edit;return render();}
   if(a==='detail'){S.detail=!S.detail;render();if(S.detail)document.getElementById('report-master')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
   if(a==='pdf')return pdf();
+  if(a==='snapshot')return saveSnapshot(b);
+  if(a==='answer')return saveResponse(v);
   if(a==='prev')return go(S.i-1);if(a==='next')return go(S.i+1);if(a==='go')return go(Number(v));
  }
  function boot(){
