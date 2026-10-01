@@ -66,16 +66,23 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.evaluate(()=>G.tab),'mine');assert.match(await page.locator('#scr .sec-h h2').first().innerText(),/^내 현장 \d+곳$/);assert.equal(await css('#scr .sec-h h2','fontSize'),'25px');assert.equal(await css('#scr .card','borderTopWidth'),'0px');assert.equal(await css('#scr .card','borderRadius'),'20px');
   if(shot)await page.screenshot({path:shot+'-mine.png'});
   await page.locator('#tabbar button',{hasText:'이번 주'}).click();await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>G.tab),'my');assert.match(await page.locator('#scr .mv-title h1').innerText(),/님, 오늘 \d+곳 중 \d+곳을 처리했습니다$/);assert.match(await page.locator('#scr .mv-title p').innerText(),/^이번 주/);if(shot)await page.screenshot({path:shot+'-week.png'});
-  await page.locator('#tabbar button',{hasText:'등록'}).click();await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>G.tab),'find');if(shot)await page.screenshot({path:shot+'-new.png'});
+  await page.locator('#tabbar button',{hasText:'등록'}).click();await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>G.tab),'find');assert.equal(await page.locator('#scr .mv-title h1').innerText(),'새 현장을 등록합니다');assert.match(await page.locator('#scr button[onclick="scanCard()"]').innerText(),/명함 · 현수막 찍기/);if(shot)await page.screenshot({path:shot+'-new.png'});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'가로 넘침 없음');
   assert.deepEqual(await page.evaluate(()=>__writes.filter(x=>x!=='opportunity_touch')),[],'틀만 바꾼다 — 쓰기 없음');
   /* ④ 관리: 탭 4칸(오늘 / 파이프라인 / 사람 / 보고) · 문의 관리는 오늘 안에서 */
   await page.evaluate(()=>{G.mode='admin';G.tab='today';G.deal=null;G.sub=null;render();});await page.waitForTimeout(300);
   assert.deepEqual(await page.locator('#tabbar button:not([hidden]) .tl2').allInnerTexts(),['오늘','파이프라인','사람','보고']);
+  assert.match(await page.locator('#scr .mt-head h1').first().innerText(),/님, 지금 챙길 곳이 (\d+건입니다|없습니다)$/);
   assert.match(await page.locator('#scr .mv-ctrl').innerText(),/문의 관리[\s\S]*열기/);await page.locator('#scr .mv-ctrl').click();await page.waitForTimeout(300);
   assert.equal(await page.evaluate(()=>G.tab),'ctrl');assert.equal(await page.locator('#tabbar button.on:not([hidden]) .tl2').innerText(),'오늘','문의 관리에서도 오늘 탭이 선택된 것으로');
   if(shot)await page.screenshot({path:shot+'-admin.png'});
+  await page.evaluate(()=>{const n=new Date(),today=n.toLocaleDateString('en-CA');DEALS.push({id:901,nm:'시험 수주',rep:'이필선',code:'won',outcome:'won',won_amount:3e8,amt:3e8,won_at:today},{id:902,nm:'시험 실주',rep:'이필선',code:'lost',outcome:'lost',amt:1e8,closed_at:today},{id:903,nm:'날짜 없는 실주',rep:'이필선',code:'lost',outcome:'lost',amt:9e8});});
   await page.locator('#tabbar button',{hasText:'사람'}).click();await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>G.tab),'perf');
+  assert.deepEqual(await page.locator('#scr .mv-ph span').allInnerTexts(),['담당','만든 돈','놓친 돈','성공률']);
+  assert.match(await page.locator('#scr .mv-pr',{hasText:'이필선'}).innerText(),/이필선[\s\S]*3억\s*1억\s*50%\s*1\/2/,'만든 돈 · 놓친 돈 · 성공률(날짜 없는 건은 세지 않는다)');
+  assert.match(await page.locator('#scr .mv-people h1').innerText(),/이번 달 1명이 돈을 만들었습니다/);
+  if(shot)await page.screenshot({path:shot+'-people.png'});
+  await page.locator('#tabbar button',{hasText:'보고'}).click();await page.waitForTimeout(250);assert.match(await page.locator('#scr .mv-pcnote').innerText(),/대표님 보고 · 주간 브리핑[\s\S]*PC 화면/);
   await page.evaluate(()=>{G.mode='rep';});
   /* 끄기 */
   await page.evaluate(()=>{G.mobileV2Off=true;nav('today');});await page.waitForTimeout(250);
