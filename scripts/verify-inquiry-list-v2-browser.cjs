@@ -51,7 +51,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#inq-inbox-dialog').count(),1,'행 클릭 → 상세');
   await page.evaluate(()=>InquiryWorkbench.close());
   await page.locator('.iv-row[data-group="assign"] .iv-cta').first().click();
-  assert.equal(await page.locator('#inq-inbox-dialog .inq-assign-inline .inq-ctl-rep').count()>0,true,'[배정] → 배정 칸');
+  assert.equal(await page.locator('#inq-inbox-dialog.idv .idv-rep').count()>0,true,'[배정] → 새 상세의 배정 칸');
   await page.evaluate(()=>InquiryWorkbench.close());
   /* 더보기: 공종·상태·담당자 구분 필터와 예전 목록 전환 */
   await page.click('#inq-v2 .inq-work-tools>summary');
