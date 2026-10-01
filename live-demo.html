@@ -137,6 +137,7 @@ kbd{font:inherit;font-size:12px;font-weight:700;border:1px solid var(--line);bor
   <button class="hb on" id="bPhone" type="button">모바일 화면</button>
   <button class="hb" id="bFull" type="button">전체화면 (F)</button>
   <button class="hb" id="bReload" type="button">↻ 새로고침</button>
+  <button class="hb" id="bAll" type="button">대본 전체 보기</button>
   <button class="hb" id="bHelp" type="button">안내</button>
 </header>
 <main>
@@ -1219,6 +1220,149 @@ async function peek(spec){
   await focusStep(s,t,token);
   let b=$('backDetail');if(!b){b=document.createElement('button');b.id='backDetail';b.type='button';b.textContent='← 상세보기로 돌아가기';b.onclick=()=>{b.remove();go(pos,false,true)};document.body.appendChild(b)}
 }
+/* ═════════ 영업팀 실사용 설명회 구성 (이 블록이 최종 순서와 대본이다) ═════════
+   순서: 오늘 설명할 내용 → PART 1 관리자 화면 → PART 2 영업담당자 화면 → 마무리
+   원칙: 지금 실제로 쓰는 화면만. 문자 발송 · 예정 기능은 넣지 않는다. 대본은 "왜 보는지 / 무엇을 보는지 / 어떻게 처리하는지"만.
+   details: 그 화면의 상세보기 목록. 누르면 같은 화면 안에서 해당 위치를 보여 주고, '원래 화면으로'로 돌아온다. */
+(()=>{
+ const card=(id,title,c,km,say,transition)=>({id,title,view:'card',status:'completed',keyMessage:km,card:c,transition,steps:[T(title,say)]});
+ const scr=(id,title,page,km,steps,details,transition)=>({id,title,view:'pc',page,status:'completed',keyMessage:km,steps,details:details||[],transition});
+ const D={modal:'deal'},I={modal:'inq'},R={modal:'rep'};
+ const ROW='#sg-panel .inq-ctl-scroll > .inq-ctl-row',rows=[1,2,3,4,5],ROWS=rows.map(i=>ROW+':nth-child('+i+')');
+ const LEFT=rows.flatMap(i=>[ROW+':nth-child('+i+') > :nth-child(1)',ROW+':nth-child('+i+') > :nth-child(2)']);
+ const RIGHT=rows.flatMap(i=>[ROW+':nth-child('+i+') > :nth-child(n+3)',ROW+':nth-child('+i+') > :last-child']);
+ const sub=(page,key)=>({page,modal:'deal',sub:key,targets:['#detailAction .da-sheet']});
+ const repTab=n=>({page:'repmanage',modal:'rep',click:'#perfDrawer .rm-drawer-tabs button:nth-child('+n+')',targets:['#perfDrawer .rm-drawer-panel']});
+
+ const all=[
+ card('intro','오늘 설명할 내용',{eb:'오늘 설명할 내용',h:'CRM을 실제로 어떻게 쓰는지 보여드립니다',
+   flow:['관리자 화면','영업담당자 화면','실제 업무 처리 방법']},
+  '먼저 관리자 화면, 그다음 영업담당자 화면 순서입니다.',
+  `오늘은 CRM을 왜 만들었는지보다 실제로 어떻게 사용하는지를 중심으로 설명드리겠습니다.
+먼저 제가 관리자로 보는 화면부터 설명드리고, 이후 각 영업담당자분들이 로그인했을 때 보는 화면과 실제 업무 처리 방법 순서로 보여드리겠습니다.`),
+
+ card('p1','PART 1 · 관리자 화면',{eb:'PART 1',h:'관리자 화면',
+   flow:['오늘 확인할 업무','견적문의','파이프라인','영업건 상세','담당자별 관리']},
+  '관리자가 무엇을 확인하고 무엇을 처리하는지 보여드립니다.',
+  `지금부터 제가 관리자로 로그인했을 때 보는 화면입니다. 오늘 확인할 업무, 견적문의, 파이프라인, 영업건 상세, 담당자별 관리 순서로 보겠습니다.`),
+
+ scr('a1','관리자 · 오늘 확인할 업무','today','전체를 보는 것이 아니라, 오늘 확인이 필요한 건을 먼저 찾습니다.',[
+  T('담당자별 현황',`관리자 화면에서는 전체 영업건을 하나씩 보지 않습니다. 확인이 필요한 건을 먼저 봅니다.
+여기는 담당자별 현황입니다. 담당자마다 첫 연락 늦음, 후속 늦음, 기한초과, 다음 할 일 없음, 장기정체가 몇 건인지 나옵니다. 행을 누르면 아래 목록이 그 담당자 건으로 좁혀집니다.`,'#pg-today .twq-rep-boards'),
+  T("'견적문의 관리' 표",`'견적문의 관리' 표입니다. 미배정, 첫 연락 늦음, 후속 늦음인 문의가 위로 올라옵니다. 접수 후 얼마나 지났는지 보고, '처리'를 누르면 바로 그 문의 상세로 들어갑니다.`,'#pg-today .today-admin-inquiry',{motion:'pan'}),
+  T("'파이프라인 관리' 표",`'파이프라인 관리' 표입니다. 기한초과, 다음 할 일 없음, 장기정체인 영업건이 올라옵니다. 여기서도 '처리'를 누르면 해당 영업건 상세로 들어갑니다.`,'#pg-today .today-admin-pipeline',{motion:'pan'})],
+  [['담당자별 현황',{page:'today',targets:['#pg-today .twq-rep-boards']}],
+   ['검색 줄',{page:'today',targets:['#pg-today .twq-toolbar']}],
+   ["'견적문의 관리' 구분 칩",{page:'today',targets:['#pg-today .today-admin-inquiry .twq-counts']}],
+   ["'파이프라인 관리' 구분 칩",{page:'today',targets:['#pg-today .today-admin-pipeline .twq-counts']}]],
+  '새로 들어온 문의는 견적문의 화면에서 관리합니다.'),
+
+ scr('a2','관리자 · 견적문의','inq','문의가 배정되고, 연락되고, 영업건이 되는지 확인합니다.',[
+  T("'할 일' 네 칸",`여기는 새로 들어온 견적문의를 확인하는 화면입니다.
+맨 위 '할 일' 네 칸이 배정, 첫 연락, 후속 연락, 영업건 전환 판단입니다. 문의는 이 순서로 처리됩니다. '배정'에 숫자가 있으면 제가 담당자를 배정합니다.`,'#pg-inq .inq-work-counts'),
+  T("'상태' · '현장 / 문의 핵심' 열",`목록 왼쪽에서는 지금 상태와 접수 후 며칠 지났는지, 그리고 현장명, 공종, 브랜드, 문의 핵심을 봅니다. 원문을 열지 않아도 어떤 문의인지 알 수 있습니다.`,LEFT,{zoomTo:ROWS}),
+  T("'담당 / 연락처' ~ '처리' 열",`목록 오른쪽에서는 담당자와 연락처, 지금 할 일, 처리 시점을 봅니다. 배정이 필요한 건은 '담당자 배정'으로 배정하고, 처리 시점이 지난 건은 담당자에게 확인합니다.`,RIGHT,{motion:'pan',zoomTo:ROWS}),
+  T('문의 상세',`문의를 누르면 상세가 열립니다. 왼쪽에 문의자와 현장, 가운데에 고객 문의 원문과 응대 이력, 오른쪽에 지금 처리가 있습니다. 담당자가 어떻게 응대했는지 여기서 확인합니다.`,'#inq-inbox-dialog .inq-dialog',I)],
+  [['브랜드 · 진행 상태 · 검색',{page:'inq',targets:['#pg-inq .inq-inbox-sticky','#pg-inq .inq-work-search']}],
+   ["상세 · 왼쪽 '문의자 · 현장'",{page:'inq',modal:'inq',targets:['#inq-inbox-dialog .inq-dialog-columns > :first-child']}],
+   ["상세 · 가운데 '문의 원문 · 이력'",{page:'inq',modal:'inq',targets:['#inq-inbox-dialog .inq-dialog-columns > main']}],
+   ["상세 · 오른쪽 '지금 처리'",{page:'inq',modal:'inq',targets:['#inq-inbox-dialog .inq-dialog-columns > aside:last-of-type']}],
+   ["상세 · 위쪽 '지금 할 일'",{page:'inq',modal:'inq',targets:['#inq-inbox-dialog .inq-now-card']}]],
+  '영업으로 전환된 건은 파이프라인에서 관리합니다.'),
+
+ scr('a3','관리자 · 파이프라인','pipe','전체 영업이 어디에 있고, 멈춰 있는 건이 무엇인지 봅니다.',[
+  T('맨 위 다섯 칸',`견적문의에서 영업으로 전환된 건은 파이프라인에서 관리합니다.
+맨 위 다섯 칸은 진행, 진행 금액, 기한초과, 다음 할 일 없음, 장기정체입니다. 저는 뒤의 세 칸을 먼저 봅니다.`,'#pipeline-stage-root .ps-kpis'),
+  T('단계별 건수',`단계 이름 아래에 건수와 금액, '지연·정체', '다음 할 일 없음' 건수가 나옵니다. 어느 단계에 영업이 몰려 있는지 여기서 봅니다.`,'#pipeline-stage-root .ps-kanban',{motion:'pan',part:[0,1,0,.11]}),
+  T('영업건 카드',`카드 한 장이 영업 한 건입니다. 현장명, 정체 일수, 담당자, 금액이 있고, 다음 할 일이 없으면 카드에 표시됩니다. 카드를 누르면 상세가 열립니다.`,'#pipeline-stage-root .ps-kcard',{motion:'spotlight'})],
+  [['브랜드 · 담당자 구분 · 기간',{page:'pipe',targets:['#pipeline-stage-root .sales-filterbar']}],
+   ['연도 · 공종 · 현장 검색',{page:'pipe',targets:['#pipeline-stage-root .ps-filters']}],
+   ['단계 전체',{page:'pipe',targets:['#pipeline-stage-root .ps-kanban']}]],
+  '카드 한 장을 열어 영업건 상세를 보겠습니다.'),
+
+ scr('a4','관리자 · 영업건 상세','pipe','한 영업건의 고객, 진행 내용, 지금 할 일, 관리정보를 한 화면에서 봅니다.',[
+  T('상세 화면',`한 영업건을 열면 고객과 현장정보, 현재까지 진행한 내용, 지금 해야 할 일, 이후 관리정보를 한 화면에서 같이 확인할 수 있습니다.
+창 위쪽에 현장명, 현재 단계, 담당자가 있습니다.`,'#detailView',D),
+  T("왼쪽 '고객 / 현장'",`왼쪽은 고객과 현장입니다. 담당자 연락처, 현장 연락처, 현장 정보가 있고, 같은 현장에 다른 영업건이 있으면 여기에 같이 나옵니다.`,'#detailView .dw-left',Object.assign({motion:'pan'},D)),
+  T("'지금 할 일' · '영업 흐름'",`위쪽 '지금 할 일'에 이 영업에서 지금 해야 할 일이 있고, '영업 흐름'에 지금까지 연락한 순서가 남아 있습니다. 다음 할 일이 비어 있으면 여기에 표시됩니다.`,['#nowCard','#nowFlow'],Object.assign({motion:'pan'},D)),
+  T('최근 활동',`가운데 '최근 활동'입니다. 언제, 누가, 무엇을 했는지 순서대로 남습니다. 담당자에게 따로 묻지 않아도 진행 내용을 여기서 확인합니다.`,'#detailView .da-recent',Object.assign({motion:'pan'},D)),
+  T("오른쪽 '영업 관리'",`오른쪽은 관리 항목입니다. '영업 관리'에서 진행상태와 담당자를 바꾸고, '확인할 항목'에 빠진 것이 나옵니다. 그 아래에 자료, 추가 관리정보, 공종과 금액이 있습니다.`,'#detailView .dw-right',Object.assign({motion:'pan'},D))],
+  [["'다음 할 일 설정' 창",sub('pipe','next')],["'진행상태 변경' 창",sub('pipe','stage')],["'담당자 변경' 창",sub('pipe','owner')],
+   ["'자료 보기 · 추가' 창",sub('pipe','materials')],["'관리정보 수정' 창",sub('pipe','management')],["'전체 이력' 창",sub('pipe','history')],
+   ["'이 단계에서 챙길 정보'",{page:'pipe',modal:'deal',targets:['#detailView .da-stage-summary']}],
+   ["'영업 진행도'",{page:'pipe',modal:'deal',targets:['#detailView .dcc-journey']}],
+   ["'공종 · 금액'",{page:'pipe',modal:'deal',targets:['#detailView .dw-right section.da-info:last-of-type']}]],
+  '마지막으로 담당자별로 확인하는 화면입니다.'),
+
+ scr('a5','관리자 · 담당자별 관리','repmanage','어느 담당자의 어떤 영업건에 관리가 필요한지 봅니다.',[
+  T("'오늘 관리자 확인'",`담당자별로 확인하는 화면입니다. 실적을 평가하려는 화면이 아니라, 어느 담당자의 어떤 건에 제가 도와야 하는지 보는 화면입니다.
+'오늘 관리자 확인'에 먼저 확인할 담당자와 이유가 순서대로 나옵니다.`,'#rep-management-root .rm-intervention-strip'),
+  T("'담당자별 관리 현황'",`'담당자별 관리 현황'입니다. 담당자 카드마다 진행 금액, 계약완료, 확인이 필요한 사항이 있습니다. 카드를 누르면 그 담당자의 상세가 열립니다.`,'#rep-management-root .rm-people-board',{motion:'pan'}),
+  T('담당자 상세',`담당자 카드를 눌렀습니다. 현황, 문제현장, 활동·진전, 업무량, 코칭·약속 탭으로 나뉘어 있습니다. 문제현장에서 해당 영업건으로 바로 들어갑니다.`,['#perfDrawer .rm-drawer-tabs','#perfDrawer .rm-drawer-panel'],R)],
+  [['담당자 상세 · 현황',repTab(1)],['담당자 상세 · 문제현장',repTab(2)],['담당자 상세 · 활동·진전',repTab(3)],['담당자 상세 · 업무량',repTab(4)],['담당자 상세 · 코칭·약속',repTab(5)]]),
+
+ card('p1end','관리자 화면 정리',{eb:'PART 1 정리',h:'관리자 화면에서 확인하는 것',
+   bl:[['문의 누락','배정 · 첫 연락이 안 된 문의'],['담당자 배정','미배정 문의를 담당자에게'],['영업 진행상태','어느 단계에 얼마나 있는지'],['지연 / 정체','기한초과 · 다음 할 일 없음 · 장기정체'],['담당자별 관리','먼저 확인할 담당자와 이유'],['개별 영업건 상세','고객 · 진행 내용 · 지금 할 일']]},
+  '여기까지가 관리자 화면입니다.',
+  `여기까지가 제가 관리자로 확인하는 화면입니다. 다음부터는 영업담당자분들이 로그인했을 때 실제로 보게 되는 화면을 기준으로 설명드리겠습니다.`),
+
+ card('p2','PART 2 · 영업담당자 화면',{eb:'PART 2',h:'영업담당자 화면',
+   flow:['첫 화면','배정받은 견적문의 처리','진행 중 영업건','오늘 업무','관계관리']},
+  '담당자는 오늘 내가 무엇을 해야 하는지만 보면 됩니다.',
+  `지금부터는 영업담당자 화면입니다. 화면 구성은 같고, 로그인하면 본인 담당 건만 보입니다. 지금은 제 계정으로 열어서 전체 건이 보이는 점만 감안해 주세요.`),
+
+ {id:'b1',title:'담당자 · 첫 화면',view:'card',status:'completed',keyMessage:'CRM에 들어오면 오늘 처리할 업무부터 확인합니다.',
+  card:{eb:'담당자 · 첫 화면 (영업담당자 계정 캡처)',h:'로그인하면 오늘 업무가 먼저 나옵니다',img:REP_TODAY_PNG,alt:'영업담당자 계정의 오늘 업무 화면'},
+  steps:[T('첫 화면',`영업담당자 화면은 관리자 화면과 다르게 본인 업무가 먼저 나옵니다. 이 화면은 영업담당자 계정으로 로그인했을 때의 캡처입니다.
+CRM에 들어오면 전체 영업현황을 볼 필요 없이, 오늘 처리해야 하는 업무부터 확인하면 됩니다.`)],
+  transition:'새로 배정받은 문의부터 처리해 보겠습니다.'},
+
+ scr('b2','담당자 · 배정받은 견적문의 처리','inq','문의 확인 → 연락 → 결과 기록 → 다음 일정.',[
+  T('내 문의 목록',`견적문의 화면입니다. 새로 배정된 문의가 있으면 목록에서 현장과 문의 핵심, 지금 할 일을 먼저 확인합니다.`,ROWS),
+  T('문의 내용 확인',`문의를 열어서 가운데 '문의 원문 · 이력'을 봅니다. 고객이 쓴 문의 원문과, 앞에서 응대한 내용이 있으면 여기에 같이 나옵니다. 왼쪽에서 연락처를 확인하고 연락합니다.`,'#inq-inbox-dialog .inq-dialog-columns > main',I),
+  T('결과 기록과 다음 일정',`연락한 뒤에는 오른쪽 '지금 처리'에 연락 결과를 적고, 다음 할 일과 날짜를 정해서 '연락 결과 저장'을 누릅니다. 견적으로 진행되는 문의는 여기서 영업건으로 넘깁니다.`,'#inq-inbox-dialog .inq-dialog-columns > aside:last-of-type',Object.assign({motion:'pan'},I))],
+  [["상세 · 왼쪽 '문의자 · 현장'",{page:'inq',modal:'inq',targets:['#inq-inbox-dialog .inq-dialog-columns > :first-child']}],
+   ["상세 · 위쪽 '지금 할 일'",{page:'inq',modal:'inq',targets:['#inq-inbox-dialog .inq-now-card']}],
+   ["'할 일' 네 칸",{page:'inq',targets:['#pg-inq .inq-work-counts']}]],
+  '영업건이 되면 파이프라인에서 진행합니다.'),
+
+ scr('b3','담당자 · 진행 중 영업건','pipe','현재 단계와 다음 할 일을 보고, 결과를 남기고, 다음 날짜를 잡습니다.',[
+  T('내 영업건 열기',`진행 중인 현장은 파이프라인에서 카드를 눌러 엽니다. 창 위쪽에서 현장명과 현재 단계를 먼저 봅니다.`,'#detailView .detailtop',D),
+  T("'지금 할 일'",`가장 먼저 '지금 할 일'을 봅니다. 고객과 통화했으면 '연락하고 결과 남기기'를 누르고, 통화함, 전화 안 받음, 고객과 약속함 중에서 고르면 됩니다.`,'#nowCard',Object.assign({motion:'pan'},D)),
+  T('최근 활동',`지금까지 진행한 내용은 '최근 활동'에 남아 있습니다. 오랜만에 여는 현장도 어디까지 했는지 여기서 확인합니다.`,'#detailView .da-recent',Object.assign({motion:'pan'},D)),
+  T("'다음 할 일 설정' 창",`다시 확인해야 할 날짜는 '다음 할 일 설정'에서 잡습니다. 무엇을 할지와 기한을 정해 두면, 그 날짜에 오늘 업무에 다시 올라옵니다.`,'#detailAction .da-sheet',Object.assign({sub:'next'},D))],
+  [["'진행상태 변경' 창",sub('pipe','stage')],["'자료 보기 · 추가' 창",sub('pipe','materials')],
+   ["왼쪽 '고객 / 현장'",{page:'pipe',modal:'deal',targets:['#detailView .dw-left']}],
+   ["'공종 · 금액'",{page:'pipe',modal:'deal',targets:['#detailView .dw-right section.da-info:last-of-type']}],
+   ["'이 단계에서 챙길 정보'",{page:'pipe',modal:'deal',targets:['#detailView .da-stage-summary']}]]),
+
+ {id:'b4',title:'담당자 · 오늘 업무',view:'card',status:'completed',keyMessage:'현황을 보는 화면이 아니라, 오늘 처리할 일을 보는 화면입니다.',
+  card:{eb:'담당자 · 오늘 업무 (영업담당자 계정 캡처)',h:"'지금 바로' 카드부터 위에서 아래로 처리합니다",img:REP_TODAY_PNG,alt:'영업담당자 계정의 오늘 업무 화면'},
+  steps:[Object.assign(T("'지금 바로' 카드 줄",`이 화면은 현황을 보는 화면이라기보다 실제로 오늘 처리할 일을 보는 화면입니다.
+맨 위 '지금 바로' 카드 줄에 오늘 연락할 고객이 사유와 함께 나옵니다. '전화'를 눌러 연락하고 결과를 남기면 목록에서 빠집니다. 일정이 바뀌면 다시 날짜를 잡으면 됩니다.`),{shot:[0,30,1.5]})],
+  transition:'당장 진행되지 않는 고객은 관계관리에서 봅니다.'},
+
+ scr('b5','담당자 · 관계관리','relationship','최근 언제 연락했는지, 이번에 무엇을 확인할지, 다음 연락일이 언제인지 봅니다.',[
+  T('현황 네 칸',`당장 견적이나 입찰 단계가 아니더라도 계속 관리해야 하는 고객은 여기서 봅니다.
+위쪽 네 칸이 오늘 연락, 기한초과, 다음 할 일 없음, 마지막 연락 90일 이상 전입니다.`,'#relationship-root .relpc-kpis'),
+  T("'이번 관리에서 할 일' 표",`표에서는 현장과 고객, 관리 배경, 이번에 할 일, 다음 연락을 봅니다. 최근 언제 연락했는지, 이번에 무엇을 확인해야 하는지, 다음 연락일이 언제인지만 확인하면 됩니다.`,['#relationship-root .relpc-list-title','#relationship-root .relpc-table-wrap'],{motion:'pan'}),
+  T('한 줄 처리',`연락한 뒤에는 '실행' 열에서 연락 결과와 다음 연락일을 같이 남깁니다.`,'#relationship-root .relpc-table tr[data-customer]',{motion:'spotlight'})],
+  [['고객 구분 탭',{page:'relationship',targets:['#relationship-root .relpc-tabs']}],
+   ['공사예정 연도 · 검색',{page:'relationship',targets:['#relationship-root .relpc-years','#relationship-root .relpc-filters']}]]),
+
+ card('p2end','영업담당자 화면 정리',{eb:'PART 2 정리',h:'영업담당자가 하는 일',
+   flow:['오늘 업무 확인','연락','결과 기록','다음 일정 등록']},
+  '오늘 할 일을 보고, 연락하고, 결과와 다음 일정을 남깁니다.',
+  `담당자분들이 하실 일은 네 가지입니다. 오늘 업무를 확인하고, 연락하고, 결과를 기록하고, 다음 일정을 잡습니다.`),
+ card('end','마무리',{eb:'마무리',h:'오늘 보여드린 화면은 지금 바로 쓰실 수 있습니다',
+   bl:[['관리자','전체 진행상황과 관리가 필요한 건 확인'],['영업담당자','오늘 해야 할 업무와 진행 중인 영업 처리'],['의견','쓰면서 불편하거나 빠진 부분은 알려 주세요']]},
+  '쓰면서 불편한 점은 담당자별로 의견을 받아 보완합니다.',
+  `오늘 보여드린 내용은 현재 실제로 사용할 수 있는 기능을 기준으로 설명드렸습니다.
+관리자 화면에서는 전체 진행상황과 관리가 필요한 건을 확인하고, 담당자분들은 본인 화면에서 오늘 해야 할 업무와 진행 중인 영업을 처리하는 방식으로 사용하시면 됩니다.
+실제 사용하면서 불편하거나 빠진 부분은 담당자별 피드백을 받아 계속 보완하겠습니다.`)
+ ];
+ PRESENTATION_SCRIPT.length=0;all.forEach(s=>PRESENTATION_SCRIPT.push(s));
+})();
 const STATUS={completed:'운영 중',in_progress:'검증 · 보완 중',planned:'2차 반영'};
 const FLAT=[];PRESENTATION_SCRIPT.forEach((s,si)=>s.steps.forEach((t,ti)=>FLAT.push({si,ti})));
 PRESENTATION_SCRIPT.forEach((s,si)=>{const b=document.createElement('button');b.type='button';b.append(s.title);const m=document.createElement('small');m.textContent=s.steps.length;b.appendChild(m);
@@ -1257,13 +1401,13 @@ function applyCam(v){
   const zmax=Math.max(1.3,1/L.s0);
   let z=c.scale?Math.min(Math.max(c.scale,zmax),Math.max(1,fit)):clamp(fit,1,zmax);
   if(c.motion==='spotlight'&&!c.scale)z=clamp(fit,1,Math.max(1.15,.85/L.s0));
-  z=1; // 확대(클로즈업) 없이 화면 그대로 보여준다. 해당 위치까지 스크롤하고 테두리로만 표시
+  if(!window.ZOOM_ON)z=1; // '설명 영역 확대' 버튼으로 끌 수 있다
   const s=L.s0*z,cx=r.x+r.w/2,cy=r.y+r.h/2;
   const tx=clamp(availW/2-cx*s,L.fw-L.W*s,0),ty=clamp(L.fh/2-cy*s,L.fh-L.H*s,0);
   ifr.style.transform='translate('+tx+'px,'+ty+'px) scale('+s+')';
   const b=c.r,x0=clamp(b.x*s+tx,0,L.fw),y0=clamp(b.y*s+ty,0,L.fh),x1=clamp((b.x+b.w)*s+tx,0,L.fw),y1=clamp((b.y+b.h)*s+ty,0,L.fh);
   hl.style.left=x0+'px';hl.style.top=y0+'px';hl.style.width=(x1-x0)+'px';hl.style.height=(y1-y0)+'px';
-  hl.className='hl on'; // 주변을 어둡게 하지 않는다
+  hl.className='hl on'+(window.ZOOM_ON?(c.motion==='spotlight'?' spot':' dim'):'');
 }
 function fitAll(){applyCam('pc');applyCam('mo')}
 function union(rs){const x=Math.min(...rs.map(r=>r.left)),y=Math.min(...rs.map(r=>r.top)),x2=Math.max(...rs.map(r=>r.right)),y2=Math.max(...rs.map(r=>r.bottom));return {x,y,w:x2-x,h:y2-y}}
@@ -1472,6 +1616,10 @@ $('cPrev').onclick=$('pPrev').onclick=prev;$('cNext').onclick=$('pNext').onclick
 $('bWin').onclick=togglePP;$('bPhone').onclick=togglePhone;$('bFull').onclick=fullscreen;
 $('bReload').onclick=()=>{['pc','mo'].forEach(v=>{const f=F[v].ifr;try{f.contentWindow.location.reload()}catch(e){f.src=f.src}})};
 $('bHelp').onclick=()=>{coverage();$('help').showModal()};
+// 대본 전체를 한 장으로(발표 전 미리 읽고 고칠 곳을 찾는 용도). 새 창에 글로만 띄운다
+$('bAll').onclick=()=>{const w=window.open('','crmScriptAll');if(!w)return;const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));let n=0,h='<title>발표 대본 전체</title><body style="font-family:Malgun Gothic,sans-serif;max-width:860px;margin:32px auto;padding:0 20px;line-height:1.7;color:#1f2733"><h1>영업운영 CRM 발표 대본</h1>';
+  PRESENTATION_SCRIPT.forEach(s=>{if(/^상세보기/.test(s.title))return;h+='<h2 style="margin-top:34px;border-bottom:2px solid #c9ced6;padding-bottom:4px">'+esc(s.title)+'</h2>';s.steps.forEach((t,ti)=>{n++;h+='<p style="margin:14px 0 2px;font-weight:700;color:#2f6fe0">'+n+'. '+esc(t.label)+'</p><p style="margin:0;white-space:pre-line;font-size:17px">'+esc(scriptOf(s,ti))+'</p>'});if(s.transition)h+='<p style="color:#2f6656;background:#e8f2ed;border-radius:8px;padding:6px 12px">넘어가는 말: '+esc(s.transition)+'</p>'});
+  w.document.open();w.document.write(h+'</body>');w.document.close()};
 addEventListener('message',e=>{const m=e.data||{};
   if(m.crmTour==='go'&&!PRES)go(m.pos,true,true);
   if(m.crmTour==='state'&&PRES){if(m.pos!==pos){pos=m.pos;renderUI()}if(m.st){cur().t._state=m.st;showState()}}
@@ -1523,6 +1671,33 @@ function sync(){
   $('link').textContent=both?'● LIVE 같은 계정으로 연결됨':'● 로그인 대기';$('link').classList.toggle('off',!both);
 }
 if(!PRES&&!FILE)setInterval(sync,1500);
+
+/* ───────── 설명회용 화면 보강: 확대 켜고 끄기 · 화면별 상세보기 · 한 줄 설명 · 담당자 상세 창 ───────── */
+window.ZOOM_ON=true;
+MODAL.rep={is:d=>!!d.querySelector('#perfDrawer.on'),open:d=>click(d,'#rep-management-root .rm-person-open'),close:d=>click(d,'#perfDrawer .modalclose')};
+if(!PRES){
+  const st=document.createElement('style');st.textContent=
+   '#oneLine{text-align:center;font-size:15px;font-weight:600;color:var(--fg);padding:2px 24px 0;min-height:22px}'+
+   '#dvPanel{position:fixed;left:50%;bottom:58px;transform:translateX(-50%);z-index:8;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 14px 44px #0f172a44;padding:14px 16px;max-width:min(760px,92vw)}'+
+   '#dvPanel b{display:block;font-size:14px;margin-bottom:8px}#dvPanel div{display:flex;flex-wrap:wrap;gap:6px}'+
+   '#dvPanel button{font:inherit;font-size:14px;font-weight:600;background:#eaf1f9;color:#365577;border:1px solid transparent;border-radius:999px;padding:6px 14px;cursor:pointer}#dvPanel button:hover{border-color:var(--blue);background:#fff}';
+  document.head.appendChild(st);
+  const one=document.createElement('div');one.id='oneLine';$('ctl').before(one);
+  const bD=document.createElement('button');bD.className='hb on';bD.id='cDetail';bD.type='button';bD.textContent='상세보기';$('cNext').after(bD);
+  const bZ=document.createElement('button');bZ.className='hb on';bZ.id='bZoom';bZ.type='button';bZ.textContent='설명 영역 확대';$('bPhone').before(bZ);
+  bZ.onclick=()=>{window.ZOOM_ON=!window.ZOOM_ON;bZ.classList.toggle('on',window.ZOOM_ON);fitAll()};
+  const closeDv=()=>{const p=$('dvPanel');if(p)p.remove()};
+  bD.onclick=()=>{if($('dvPanel')){closeDv();return}const s=cur().s;const p=document.createElement('div');p.id='dvPanel';
+    const h=document.createElement('b');h.textContent=s.title+' 상세보기';const box=document.createElement('div');
+    (s.details||[]).forEach(([label,spec])=>{const b=document.createElement('button');b.type='button';b.textContent=label;
+      b.onclick=async()=>{closeDv();await peek(spec);const k=$('backDetail');if(k)k.textContent='← 원래 화면으로'};box.appendChild(b)});
+    p.append(h,box);document.body.appendChild(p)};
+  const upd=()=>{const s=cur().s;$('oneLine').textContent=s.keyMessage||'';bD.hidden=!(s.details&&s.details.length);closeDv()};
+  const _render=renderUI;renderUI=function(){_render();upd()};
+  // 설명회는 PC 화면 중심으로 크게 본다(모바일 화면은 버튼으로 켠다)
+  document.body.classList.add('nophone');$('bPhone').classList.remove('on');
+  upd();setTimeout(fitAll,50);
+}
 </script>
 </body>
 </html>
