@@ -60,6 +60,9 @@ layout: null
       box-shadow:0 26px 70px rgba(20,30,55,.26),0 0 0 9px #14161b}
   }
   /* 화면 전환 스위치 — 자동 판정이 틀렸을 때를 위한 작은 탈출구 */
+  #newbuild{position:fixed;z-index:9999;left:50%;bottom:16px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:calc(100vw - 32px);background:#fff;border:1px solid #e2e8f1;border-left:4px solid #3B6CE4;border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.14);padding:10px 14px;font:13px/1.4 "Pretendard Variable",Pretendard,system-ui,sans-serif;color:#33415e}
+  #newbuild button{border:1px solid #e2e8f1;border-radius:8px;background:#3B6CE4;color:#fff;padding:6px 12px;font:inherit;font-weight:700;cursor:pointer}
+  #newbuild button#newbuild-later{background:#fff;color:#5b6b85;padding:6px 9px}
   #vtog{position:fixed;z-index:9999;right:10px;bottom:10px;display:flex;gap:6px;
         background:rgba(255,255,255,.93);backdrop-filter:blur(8px);
         border:1px solid #E3E7EF;border-radius:999px;padding:5px;
@@ -181,8 +184,23 @@ function mountCurrentBuild(){
     .then(function(){
       var frame = document.getElementById('app'), loaded = '';
       try { loaded = frame ? new URL(frame.src, location.href).searchParams.get('v') || '' : ''; } catch(e){}
-      if (!frame || loaded !== APP_BUILD) mount(view);
+      if (!frame) return mount(view);
+      /* 새 빌드는 강제로 바꿔 끼우지 않는다(2026-10-01 컨설턴트 P0-7 — 입력 중 화면이 통째로 사라짐).
+         띠로 알리고 사용자가 누를 때만 교체한다. */
+      if (loaded !== APP_BUILD) newBuildBanner(); else removeBuildBanner();
     });
+}
+function removeBuildBanner(){ var b = document.getElementById('newbuild'); if (b) b.remove(); }
+function newBuildBanner(){
+  if (document.getElementById('newbuild')) return;
+  var b = document.createElement('div');
+  b.id = 'newbuild';
+  b.setAttribute('role', 'status');
+  b.innerHTML = '<span>새 버전이 배포됐습니다. 입력 중인 내용을 저장한 뒤 바꿔 주세요.</span>' +
+    '<button type="button" id="newbuild-go">지금 새 버전으로</button><button type="button" id="newbuild-later" aria-label="나중에">✕</button>';
+  document.body.appendChild(b);
+  document.getElementById('newbuild-go').onclick = function(){ removeBuildBanner(); mount(view); };
+  document.getElementById('newbuild-later').onclick = removeBuildBanner;
 }
 mountCurrentBuild();
 /* 장시간 열어 둔 로그인 탭도 다시 활성화될 때 현재 배포를 확인한다.
