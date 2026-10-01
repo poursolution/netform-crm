@@ -399,7 +399,9 @@
     if(f.year&&f.year!=='전체'&&!d.startsWith(String(f.year)))return;
     if(filter.month&&Number(d.slice(5,7))!==Number(filter.month))return;
     if(!filter.month&&f.quarter&&Math.ceil(Number(d.slice(5,7))/3)!==Number(f.quarter))return;
-    out.push({at:d,site:r.brand||'-',owner:e.sales_owner_name,stageLabel:kindLabel[e.kind]||e.kind,reason:d+' · '+(e.reason||''),amt:e.amount_delta});});
+    /* 현장명 자리에 사업자명, 사유 자리에 이관 메모('과거 수주 초기 이관…')가 나오던 것(2026-10-01 대표) — 현장명과 계약일만 보인다. 변경·취소 사유는 그대로 */
+    const deal=(root.B?.deals||[]).find(x=>String(x.id)===String(r.deal_id)),site=deal&&(deal.site||deal.site_name||deal.name)||r.site_name||r.site||'';
+    out.push({at:d,site:site||(r.brand||'-')+' · 현장명 미확인',owner:e.sales_owner_name,stageLabel:kindLabel[e.kind]||e.kind,reason:(e.kind==='signed'?'계약일 ':'적용일 ')+d+(site&&r.brand?' · '+r.brand:'')+(e.kind!=='signed'&&e.reason?' · '+e.reason:''),amt:e.amount_delta});});
   });
   /* 기술자문 낙찰(확정분)도 매출 근거에 — 합계와 근거 목록이 같게 */
   const inP=d=>{if(f.year&&f.year!=='전체'&&!d.startsWith(String(f.year)))return false;if(filter.month)return Number(d.slice(5,7))===Number(filter.month);if(f.quarter)return Math.ceil(Number(d.slice(5,7))/3)===Number(f.quarter);return true};
