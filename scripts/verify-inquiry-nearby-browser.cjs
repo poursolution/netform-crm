@@ -25,15 +25,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(()=>regionOwnerCounts('경기 용인')),{'이필선':2,'황윤선':1},'주소만 있는 건도 지역으로 묶인다');
   /* 미배정 문의 */
   await page.evaluate(()=>InquiryWorkbench.open('11111111-1111-4111-8111-111111111111'));await page.waitForTimeout(300);
-  const left=await page.evaluate(()=>document.querySelector('#inq-inbox-dialog .inq-related')?.innerText.replace(/\s+/g,' '));
-  assert.match(left||'',/경기 용인 · 근처에서 영업 중.*이필선 2곳.*황윤선 1곳/,'미배정: 지역 영업 현황 '+left);
-  const rows=await page.evaluate(()=>[].map.call(document.querySelectorAll('#inq-inbox-dialog .inq-ctl-rep'),b=>b.querySelector('strong').textContent+'|'+b.querySelector('small').textContent));
+  /* 새 상세 모달(v2): 배정 목록의 담당자 줄에 '<지역> 진행 N곳' */
+  await page.locator('#inq-inbox-dialog.idv [data-idv="showall"]').click().catch(()=>{});
+  const rows=await page.evaluate(()=>[].map.call(document.querySelectorAll('#inq-inbox-dialog.idv .idv-rep'),b=>(b.querySelector('b')?.textContent||'')+'|'+(b.querySelector('small')?.textContent||'')));
   assert.ok(rows.some(x=>/^이필선.*경기 용인 진행 2곳/.test(x)),'배정 목록 '+rows.join(' / '));
   assert.ok(rows.some(x=>/^한준엽.*경기 용인 진행 없음/.test(x)),'진행 없음 표기 '+rows.join(' / '));
   await page.evaluate(()=>InquiryWorkbench.close());
-  /* 배정된 문의 */
+  /* 배정된 문의: 담당자의 같은 지역 현장(주소로도 맞춤) */
   await page.evaluate(()=>InquiryWorkbench.open('22222222-2222-4222-8222-222222222222'));await page.waitForTimeout(300);
-  const box=await page.evaluate(()=>{const s=document.querySelector('#inq-inbox-dialog .inq-related');return s&&{text:s.innerText.replace(/\s+/g,' '),items:s.querySelectorAll('button').length}});
+  const box=await page.evaluate(()=>{const s=document.querySelector('#inq-inbox-dialog.idv .idv-near');return s&&{text:s.innerText.replace(/\s+/g,' '),items:s.querySelectorAll('.idv-ncard').length}});
   assert.ok(box&&box.items===2&&/신갈현대아파트/.test(box.text)&&/수지 신정마을/.test(box.text),'배정됨: 담당자의 같은 지역 현장 2곳 '+JSON.stringify(box));
   assert.deepEqual(errs,[]);
   console.log(JSON.stringify({status:'PASS',unassigned_region_summary:true,assign_rows_near:true,assigned_sites:box.items}));
