@@ -73,7 +73,7 @@
   const session=(await client.auth.getSession()).data.session;if(!session)throw Error('AUTH_REQUIRED');
   const controller=new AbortController();controllers.add(controller);const timer=setTimeout(()=>controller.abort(),15000);
   try{const response=await root.fetch(c.url+'/rest/v1/rpc/'+name,{method:'POST',headers:{apikey:c.publishable_key,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:JSON.stringify(args),signal:controller.signal});
-   const result=await response.json();if(e!==epoch)throw Error('IDENTITY_CHANGED');if(!response.ok){const error=Error(result.message||'RPC_FAILED');error.code=result.code;error.status=response.status;throw error;}return result;
+   const result=await response.json();if(e!==epoch)throw Error('IDENTITY_CHANGED');if(!response.ok){const error=Error(result.message||'RPC_FAILED');error.code=result.code;error.status=response.status;/* 5xx는 화면에 알린다(2026-10-01 컨설턴트 P0-5 — 500이 빈 화면처럼 보였다) */if(response.status>=500){try{root.dispatchEvent(new CustomEvent('crm:rpc-error',{detail:{name,status:response.status,message:String(result.message||'')}}));}catch(x){}}throw error;}return result;
   }finally{clearTimeout(timer);controllers.delete(controller);}
  }
  async function admit(session){if(!session?.user?.id)throw Error('AUTH_REQUIRED');const p=await rpc('crm_profile_scoped_v2');
