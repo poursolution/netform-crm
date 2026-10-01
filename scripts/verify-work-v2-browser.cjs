@@ -25,8 +25,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
-   /* 분류 창은 기존 창을 그대로 쓴다 — 시험에서는 열렸는지만 기록하고, 저장은 자료를 직접 바꿔 흉내 낸다 */
-   window.__edits=[];openWorkEdit=()=>{__edits.push(CUR_DETAIL.item.id);const m=document.getElementById('newDealModal'),b=document.getElementById('newDealBody');b.innerHTML='<div class="work-picker" id="nd-work-picker">공종 선택</div>';m.classList.add('on');};
+   /* 저장 경로(Phase11): 시험에는 로그인이 없어 같은 약속(최신값 읽기 → 창 열기 → 저장)만 흉내 낸다 */
+   window.__edits=[];window.__work=[];const fake={current:null,openWork:async(id,item)=>{__edits.push(id);fake.current=item;CUR_DETAIL={kind:'deal',key:dealKey(item),item};openWorkEdit();},save:async(item,payload)=>{if(item!==fake.current)throw Error('EDITOR_IDENTITY_MISMATCH');__work.push([item.id,payload.primary_work,payload.work_items]);item.workItems=payload.work_items;item.primaryWork=payload.primary_work;closeNewDeal();paint();}};window.Phase11=fake;
    goPage('work');
   });
   await page.waitForTimeout(300);
@@ -44,20 +44,32 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await v.locator('.plv-row[data-deal="d3"]').innerText(),/근거 부족[\s\S]*분류하기/);
   assert.match(await v.locator('.plv-row[data-deal="d4"]').innerText(),/옥상\(우레탄\)[\s\S]*확정[\s\S]*수정/);
   if(shot)await page.screenshot({path:shot+'-list.png',fullPage:true});
-  /* 분류하기 → 기존 분류 창 + 추정 안내 */
-  await v.locator('.plv-row').first().locator('.plv-cta').click();await page.waitForTimeout(300);
-  assert.deepEqual(await page.evaluate(()=>__edits),['d1']);
-  assert.match(await page.locator('#wv-hint').innerText(),/추정 공종 · 옥상[\s\S]*근거:[\s\S]*«옥상»[\s\S]*저장하면 다음 미분류 건이 이어서 열립니다/);
-  /* 저장(흉내) → 행이 단일 공종으로 옮겨지고, 다음 미분류 건(금액 큰 순)이 이어서 열린다 */
-  await page.evaluate(()=>{const d=B.deals[0];d.workItems=['옥상>우레탄'];d.primaryWork='옥상>우레탄';document.getElementById('newDealModal').classList.remove('on');paint();});await page.waitForTimeout(500);
-  assert.deepEqual(await page.locator('#work-v2 .plv-pills button').allInnerTexts(),['전체 5','분류 필요 2','단일 공종 2','복합 공종 1'],'묶음 건수 = 알약 건수');
+  /* 분류하기 → 새 분류 창(560px · 파이프라인 공종 분류 패널과 같은 부품). 예전 '공종 분류·수정' 창은 뜨지 않는다 */
+  await v.locator('.plv-row').first().locator('.plv-cta').click();await page.waitForTimeout(400);
+  const w=page.locator('#workDialog.on .wd-box');assert.equal(await w.count(),1);assert.deepEqual(await page.evaluate(()=>__edits),['d1']);
+  assert.equal(await page.evaluate(()=>document.getElementById('newDealModal').classList.contains('on')),false,'예전 창은 뜨지 않음');
+  assert.equal(await page.evaluate(()=>Math.round(document.querySelector('#workDialog .wd-box').getBoundingClientRect().width)),560);
+  assert.match(await w.innerText(),/공종 분류 · 남은 3건[\s\S]*강동 롯데캐슬퍼스트[\s\S]*추정 공종 · 옥상[\s\S]*공종 표[\s\S]*옥상[\s\S]*싱글[\s\S]*금속기와[\s\S]*듀얼[\s\S]*우레탄[\s\S]*PVC[\s\S]*재도장[\s\S]*외\+내부[\s\S]*외부[\s\S]*내부[\s\S]*지하주차장[\s\S]*에폭시[\s\S]*배면차수[\s\S]*지하주차장 재도장[\s\S]*기타[\s\S]*저장될 공종\s*미분류[\s\S]*메모[\s\S]*나중에[\s\S]*확정 · 다음 건/);
+  assert.equal(await w.locator('.wd-bar').count(),1,'진행 막대');assert.equal(await w.locator('[data-wd="save"]').isDisabled(),true,'고르기 전에는 막음');
+  await w.locator('[data-work="옥상>우레탄"]').click();await w.locator('[data-work="재도장>외부"]').click();
+  assert.match(await w.innerText(),/저장될 공종\s*복합 2개/);assert.equal(await w.locator('.dp-picked [aria-pressed="true"]').innerText(),'★ 옥상 우레탄');assert.equal(await w.locator('[data-wd="save"]').isDisabled(),false);
+  if(shot)await page.screenshot({path:shot+'-dialog.png'});
+  /* 확정 · 다음 건 → 기존 저장 경로 → 행이 복합 묶음으로 옮겨지고 다음 미분류 건(금액 큰 순)이 이어서 열린다 */
+  await w.locator('[data-wd="save"]').click();await page.waitForTimeout(700);
+  assert.deepEqual(await page.evaluate(()=>__work),[['d1','옥상>우레탄',['옥상>우레탄','재도장>외부']]],'기존 공종 저장(Phase11)');
+  assert.deepEqual(await page.locator('#work-v2 .plv-pills button').allInnerTexts(),['전체 5','분류 필요 2','단일 공종 1','복합 공종 2'],'묶음 건수 = 알약 건수');
   assert.deepEqual(await page.evaluate(()=>__edits),['d1','d2'],'다음 미분류 건이 이어서 열림');
-  assert.match(await page.locator('#wv-hint').innerText(),/추정 공종 · 지하주차장/);
-  /* 나중에(닫기) → 이어 열지 않는다 */
-  await page.evaluate(()=>{document.getElementById('newDealModal').classList.remove('on');paint();});await page.waitForTimeout(400);
-  assert.deepEqual(await page.evaluate(()=>__edits),['d1','d2']);
+  assert.match(await w.innerText(),/공종 분류 · 남은 2건[\s\S]*추정 공종 · 지하주차장/);
+  /* 나중에 → 건너뛰고 다음 건. 근거 부족이면 회색 한 줄 */
+  await w.locator('[data-wd="later"]').click();await page.waitForTimeout(500);
+  assert.deepEqual(await page.evaluate(()=>__edits),['d1','d2','d3'],'나중에 = 건너뛰고 다음 건');assert.equal(await page.evaluate(()=>__work.length),1,'건너뛴 건은 저장하지 않음');
+  assert.match(await w.locator('.dp-ai.none').innerText(),/근거 부족[\s\S]*단서를 찾지 못했어요/);
+  await w.locator('[data-wd="later"]').click();await page.waitForTimeout(400);assert.equal(await page.locator('#workDialog.on').count(),0,'더 없으면 닫힘');
+  /* 수정(이미 분류된 건)은 [취소][저장] */
+  await page.locator('#work-v2 .plv-row[data-deal="d4"] .plv-cta').click();await page.waitForTimeout(400);
+  assert.match(await w.innerText(),/공종 수정[\s\S]*저장될 공종\s*단일[\s\S]*취소[\s\S]*저장/);await w.locator('.dp-foot [data-wd="close"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#workDialog.on').count(),0);
   /* 알약 · 좁은 화면 · 끄기 */
-  await page.locator('#work-v2 .plv-pills [data-value="multi"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#work-v2 .plv-row').count(),1);
+  await page.locator('#work-v2 .plv-pills [data-value="multi"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#work-v2 .plv-row').count(),2);assert.equal(await page.locator('#work-v2 .pd-toggle').count(),0);
   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(200);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'좁은 화면 넘침 없음');
   await page.setViewportSize({width:1600,height:1000});
