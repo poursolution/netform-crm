@@ -1,0 +1,104 @@
+/* 파이프라인 상세창 v2 (2026-10-01 디자인 핸드오프 pipeline ③④) — #detailView.ddv 에만 적용. 끄면(G.dealDetailV2Off) 예전 모양 */
+#detailView.ddv{inset:4vh max(2vw,calc((100vw - 1280px)/2))!important;width:auto!important;max-width:1280px!important;height:92vh!important;border-radius:16px;background:#fff;box-shadow:0 24px 64px rgba(17,24,39,.24);color:#15171c}
+#detailView.ddv .detailtop{display:flex;flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:6px 12px;padding:18px 24px 16px;background:#fff;border-top:0!important;border-bottom:1px solid #f0f1f4;backdrop-filter:none}
+#detailView.ddv .detailtopin{flex:1 1 320px;min-width:0;align-items:flex-start;gap:10px;margin:0}
+#detailView.ddv .detailtopin>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+#detailView.ddv .backbtn{order:9;width:32px;height:32px;border:0;border-radius:8px;background:#f3f4f7;color:#6b7280;font-size:0;padding:0;flex:none;cursor:pointer}
+#detailView.ddv .backbtn::before{content:'✕';font-size:14px}
+#detailView.ddv .exec-favorite{order:7;flex:none;border:1px solid #e1e4ea;background:#fff;border-radius:8px;padding:6px 10px;font-size:12.5px;color:#374151}
+.ddv-chips{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap}
+.ddv-chips:empty{display:none}
+.ddv-tag{font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:6px;background:#f1ecfe;color:#6d3fd1}
+#detailView.ddv .detailttl{font-size:20px;font-weight:700;letter-spacing:-.02em;line-height:1.3}
+#detailView.ddv .detailsub{font-size:13px;color:#6b7280}
+#detailView.ddv .da-toolbar.da-top{order:8;flex:0 1 auto;position:relative;margin-left:0}
+#detailView.ddv .da-toolbar .da-more{border:1px solid #e1e4ea;background:#fff;border-radius:8px;padding:6px 10px;font-size:12.5px;color:#374151}
+#detailView.ddv .da-toolbar .da-tools:not([hidden]){position:absolute;right:0;top:calc(100% + 6px);z-index:30;display:flex;flex-direction:column;gap:2px;min-width:180px;background:#fff;border:1px solid #e7e9ee;border-radius:12px;box-shadow:0 14px 36px rgba(17,24,39,.14);padding:6px}
+#detailView.ddv .da-toolbar .da-tools .dact{border:0;background:transparent;text-align:left;border-radius:8px;padding:8px 10px;font-size:13px;color:#374151;box-shadow:none}
+#detailView.ddv .da-toolbar .da-tools .dact:hover{background:#f5f6f8}
+#detailView.ddv .ddv-steps{flex:1 0 100%;margin-top:6px;order:20}
+/* 본문 3열 */
+#detailView.ddv .dw-columns.ddv-cols{grid-template-columns:260px minmax(420px,1fr) 300px;background:#fff}
+#detailView.ddv .ddv-cols>aside,#detailView.ddv .ddv-cols>main{padding:18px 16px;scrollbar-gutter:auto}
+#detailView.ddv .ddv-cols>.dw-left{border-right:1px solid #f0f1f4;display:flex;flex-direction:column;gap:10px}
+#detailView.ddv .ddv-cols>.dw-right{background:#fafbfc;border-left:1px solid #f0f1f4;display:flex;flex-direction:column;gap:10px;position:relative}
+#detailView.ddv .ddv-cols>.dw-center{background:#fcfcfd;padding:0;display:flex;flex-direction:column;overflow:hidden}
+#detailView.ddv .ddv-cols .dcard{margin:0;padding:14px;border:1px solid #ebedf1;border-radius:12px;box-shadow:none;background:#fff}
+#detailView.ddv .ddv-cols .dcard h3{font-size:13px;font-weight:700;margin:0}
+#detailView.ddv .ddv-cols [hidden]{display:none!important}
+#detailView.ddv .dw-center>#dv-err{margin:10px 18px 0}
+#detailView.ddv .dw-center>.technical-advisory{margin:0 18px 14px;flex:none;max-height:40%;overflow:auto}
+#detailView.ddv .ddv-cols>.dw-left>*,#detailView.ddv .ddv-cols>.dw-right>*{flex:none}
+#detailView.ddv .dw-center>.technical-advisory{display:none!important}
+#detailView.ddv.ddv-adv-on .dw-center>.technical-advisory{display:block!important}
+#detailView.ddv .dw-right>.now-card{align-items:stretch;justify-items:stretch}
+#detailView.ddv .dw-right>.now-card>*{text-align:left!important;justify-self:stretch;width:auto;margin:0}
+#detailView.ddv .now-card .nc-cta button{text-align:center}
+/* ① 왼쪽 */
+.ddv-manage header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ddv-manage header span{display:flex;gap:8px}
+#detailView.ddv .ddv-link{border:0;background:none;color:#3b6ce4;font:inherit;font-size:12px;cursor:pointer;padding:0;min-height:0;box-shadow:none}
+#detailView.ddv .ddv-manage dl{margin:10px 0 0;display:block;height:auto;min-height:0}
+#detailView.ddv .ddv-manage dl>div{margin-top:7px;height:auto;min-height:0}
+#detailView.ddv .ddv-manage dt,#detailView.ddv .ddv-manage dd{padding:0;border:0;line-height:1.5}
+.ddv-manage dl>div{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;align-items:baseline}
+#detailView.ddv .ddv-manage dt{font-size:12px;color:#9ca3af;margin:0}
+#detailView.ddv .ddv-manage dd{font-size:13px;font-weight:500;margin:0;word-break:break-word}
+#detailView.ddv .ddv-manage dd.ddv-empty{color:#b26a00;font-weight:400}
+#detailView.ddv .ddv-files dl{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0}
+#detailView.ddv .ddv-files dt{grid-row:1;border:0;padding:8px 6px 0;margin:0;text-align:center;font-size:11.5px;color:#9ca3af;background:#f7f8fa;border-radius:8px 8px 0 0}
+#detailView.ddv .ddv-files dd{grid-row:2;border:0;padding:0 6px 8px;margin:-6px 0 0;text-align:center;font-size:14px;font-weight:700;background:#f7f8fa;border-radius:0 0 8px 8px;line-height:1.6}
+#detailView.ddv .ddv-files .dact{border:1px solid #e1e4ea;background:#fff;border-radius:8px;padding:6px 10px;font-size:12px;color:#374151;box-shadow:none;margin-right:6px}
+/* ② 가운데 */
+.ddv-talk{flex:1;min-height:0;display:flex;flex-direction:column}
+.ddv-talk .idv-msg.sys{align-self:center;align-items:center;max-width:92%}
+.ddv-talk .idv-msg.sys .idv-bubble{background:#f3f4f7;color:#6b7280;font-size:12.5px;padding:6px 12px;border-radius:999px;white-space:normal;text-align:center}
+.ddv-nothing{margin:auto;font-size:13px;color:#9ca3af;text-align:center;padding:24px}
+#detailView.ddv .idv-ctabs [role=tab],#detailView.ddv .idv-toggle,#detailView.ddv .idv-save{min-height:0;box-shadow:none}
+/* ③ 오른쪽 */
+#detailView.ddv .dw-right>.now-card{display:flex;flex-direction:column;gap:8px;margin:0;padding:14px;background:#fff;border:1px solid #dbe5fd;border-radius:12px}
+#detailView.ddv .dw-right>.now-card.late{border-color:#f3d3d1}
+#detailView.ddv .now-card .nc-stage{font-size:12px;font-weight:700;color:#3b6ce4}#detailView.ddv .now-card.late .nc-stage{color:#e5484d}
+#detailView.ddv .now-card .nc-todo{font-size:16px;font-weight:700;line-height:1.4}
+#detailView.ddv .now-card .nc-todo span{display:block;font-size:12.5px;font-weight:600;margin-top:3px;background:none;padding:0}
+#detailView.ddv .now-card .nc-meta{font-size:12px;color:#6b7280}
+#detailView.ddv .now-card .nc-cta{display:flex;flex-direction:column;align-items:stretch;gap:6px;grid-column:auto;grid-row:auto;justify-self:stretch}
+#detailView.ddv .now-card .nc-cta button{border:1px solid #e1e4ea;background:#fff;color:#374151;border-radius:9px;padding:10px 12px;font-size:13px;font-weight:600;box-shadow:none;width:100%}
+#detailView.ddv .now-card .nc-cta .nc-call{border-color:#3b6ce4;background:#3b6ce4;color:#fff}
+#detailView.ddv .now-card .nc-cta .ddv-done{border:0;background:none;color:#3b6ce4;font-size:12px;font-weight:500;padding:2px 0;text-align:left;width:auto;align-self:flex-start}
+#detailView.ddv .now-card .nc-brief{order:3;font-size:12px;color:#6b7280;border:0;padding:0;margin:0}
+#detailView.ddv .now-card .nc-brief .row{display:flex;flex-direction:column;gap:2px}
+#detailView.ddv .da-stage-summary dl{grid-template-columns:96px minmax(0,1fr)}
+#detailView.ddv .da-stage-summary .da-empty{color:#b26a00}
+.ddv-pace{margin:4px 0 0;font-size:11.5px;color:#9ca3af}
+.ddv-switch p{margin:4px 0 0;font-size:12px;color:#6b7280;line-height:1.5}
+.ddv-stages{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0}
+#detailView.ddv .ddv-stages button{border:1px solid #e1e4ea;background:#fff;border-radius:8px;padding:8px 6px;font:inherit;font-size:12.5px;font-weight:600;color:#374151;cursor:pointer;min-height:0;box-shadow:none}
+#detailView.ddv .ddv-stages button.cur{background:#eef3fe;color:#2a52b8;border-color:#3b6ce4}
+#detailView.ddv .ddv-owner{border:0;background:none;color:#3b6ce4;font:inherit;font-size:12.5px;cursor:pointer;padding:2px 0;min-height:0;box-shadow:none}
+/* ④ 작업 패널: 오른쪽 열 자리에서 열린다(모달 위 모달 없음) */
+.ddv-side{position:absolute;inset:0;z-index:5;background:#fafbfc;display:flex;flex-direction:column;min-height:0}
+#detailView.ddv .dw-right.ddv-covered{overflow:hidden}
+.ddv-side>header,#detailView.ddv #detailAction.ddv-panel .da-sheet>header{display:flex;align-items:center;justify-content:flex-start;gap:10px;padding:14px 16px;border-bottom:1px solid #f0f1f4;flex:none;background:#fafbfc}
+.ddv-side>header b,#detailView.ddv #detailAction.ddv-panel .da-sheet h2{font-size:15px;font-weight:700;margin:0;display:block}
+.ddv-side>header small,.ddv-ptitle small{font-size:11.5px;color:#9ca3af;display:block;margin-top:2px}
+#detailView.ddv .ddv-back{width:28px;height:28px;border:0;border-radius:8px;background:#f0f1f4;color:#374151;font-size:18px;line-height:1;cursor:pointer;padding:0;flex:none;min-height:0;box-shadow:none}
+.ddv-side-body{flex:1;overflow:auto;padding:14px 16px}
+.ddv-side-body .nc-chips{display:flex;flex-direction:column;gap:6px}
+.ddv-side-body .nc-chips button{width:100%;text-align:left}
+#detailView.ddv #detailAction.ddv-panel{top:var(--ddv-top,0px);background:transparent;justify-content:flex-end;align-items:stretch;padding:0}
+#detailView.ddv #detailAction.ddv-panel .da-sheet{width:300px;max-width:100%;height:100%;max-height:none;border-radius:0;box-shadow:-8px 0 24px rgba(17,24,39,.08);border-left:1px solid #f0f1f4;background:#fafbfc}
+#detailView.ddv #detailAction.ddv-panel .da-content{padding:14px 16px;flex:1}
+#detailView.ddv #detailAction.ddv-panel .da-content .dcard{padding:0;border:0;background:transparent;box-shadow:none}
+@media(max-width:1000px){
+ #detailView.ddv{inset:2vh 2vw!important;height:96vh!important}
+ #detailView.ddv #dv-body{overflow:auto}
+ #detailView.ddv .dw-columns.ddv-cols{grid-template-columns:1fr;height:auto}
+ #detailView.ddv .ddv-cols>aside,#detailView.ddv .ddv-cols>main{overflow:visible;border:0;max-height:none;grid-column:auto}
+ #detailView.ddv .ddv-cols>.dw-right{order:1}#detailView.ddv .ddv-cols>.dw-center{order:2;min-height:420px}#detailView.ddv .ddv-cols>.dw-left{order:3}
+ #detailView.ddv #detailAction.ddv-panel{top:0}
+ #detailView.ddv #detailAction.ddv-panel .da-sheet{width:100%}
+ .ddv-side{position:fixed;inset:2vh 2vw;z-index:1600;border-radius:16px}
+}
+/* 별도 창(상세만 띄운 창)에서는 창 전체를 쓴다 */
+.crm-solo #detailView.ddv{left:0!important;inset:0!important;width:100vw!important;max-width:none!important;height:100vh!important;border-radius:0!important}
