@@ -1,0 +1,68 @@
+/* 파이프라인 상세 · 오른쪽 작업 패널 4종 (2026-10-02 핸드오프 pipeline 추가) — #detailView.ddv 안의 .dp 패널 */
+#detailView.ddv .dp{font-size:13px;color:#15171c}
+#detailView.ddv .dp .dp-body{display:flex;flex-direction:column;gap:14px}
+.dp-sec{display:flex;flex-direction:column;gap:7px}
+.dp-sec>b{font-size:12.5px;font-weight:700;color:#374151;display:flex;align-items:center;gap:6px}
+#detailView.ddv .dp input:not([type=checkbox]):not([type=hidden]),#detailView.ddv .dp textarea{border:1px solid #e1e4ea;border-radius:9px;padding:8px 11px;font:inherit;font-size:13px;background:#fff;color:#15171c;outline:none;width:100%;box-sizing:border-box;resize:vertical}
+#detailView.ddv .dp input:focus,#detailView.ddv .dp textarea:focus{border-color:#3b6ce4}
+.dp-two{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex-direction:row}
+.dp-two label,.dp-more label,.dp-line{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:#374151}
+.dp-two label i{font-style:normal;color:#e5484d}
+.dp-chips{display:flex;flex-wrap:wrap;gap:6px}
+#detailView.ddv .dp .dp-chips button{border:1px solid #e1e4ea;background:#fff;color:#374151;border-radius:999px;padding:6px 11px;font:inherit;font-size:12.5px;cursor:pointer;min-height:0;box-shadow:none}
+#detailView.ddv .dp .dp-chips button[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff;font-weight:600}
+.dp-chips button em{font-style:normal;color:#9ca3af;font-size:11.5px}
+.dp-person{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fff;border:1px solid #e7e9ee;border-radius:10px;padding:10px 12px}
+.dp-person strong{display:block;font-size:13px}.dp-person span{font-size:12px;color:#6b7280}
+.dp-note{margin:0;background:#fff8ec;border-radius:9px;padding:8px 10px;font-size:12px;color:#8a5a00;line-height:1.5}
+.dp-empty{margin:0;font-size:12.5px;color:#9ca3af}
+.dp-hint{font-size:11.5px;color:#9ca3af;line-height:1.5}
+.dp-check{display:flex;align-items:center;gap:7px;font-size:12.5px}
+.dp-more>summary{cursor:pointer;font-size:12.5px;color:#3b6ce4}.dp-more[open]{display:flex;flex-direction:column;gap:8px}
+#detailView.ddv .dp .dp-ghost{border:1px solid #e1e4ea;background:#fff;color:#374151;border-radius:8px;padding:7px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;min-height:0;box-shadow:none;align-self:flex-start}
+#detailView.ddv .dp .dp-ghost[aria-pressed="true"]{background:#fff8ec;border-color:#f5a524;color:#8a5a00}
+#detailView.ddv .dp .dp-primary{border:0;background:#3b6ce4;color:#fff;border-radius:8px;padding:8px 14px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;min-height:0;box-shadow:none}
+.dp-foot{display:flex;justify-content:flex-end;gap:8px;padding:10px 16px 14px;border-top:1px solid #f0f1f4;flex:none;background:#fafbfc}
+.dp .modalerr:empty{display:none}
+.dp-ai{background:#fff8ec;border:1px solid #f6e7c1;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.dp-ai b{font-size:13px;color:#8a5a00}.dp-ai span{font-size:12px}.dp-ai small{font-size:11.5px;color:#6b7280;line-height:1.5}
+.dp-wtable{border:1px solid #e7e9ee;border-radius:10px;background:#fff;overflow:hidden}
+.dp-wtable>div{display:grid;grid-template-columns:70px minmax(0,1fr);gap:8px;align-items:center;padding:8px 10px;border-top:1px solid #f5f6f8}
+.dp-wtable>div:first-child{border-top:0}.dp-wtable span{font-size:12px;font-weight:600;color:#6b7280}
+.dp-badge{font-style:normal;font-size:11px;font-weight:600;border-radius:6px;padding:1px 7px;background:#f0f1f4;color:#6b7280}.dp-badge.b{background:#eef3fe;color:#2a52b8}.dp-badge.p{background:#f1ecfe;color:#6d3fd1}
+#detailView.ddv .dp .dp-picked button[aria-pressed="true"]{background:#eef3fe;border-color:#3b6ce4;color:#2a52b8}
+.dp-line{flex-direction:row;align-items:center;gap:8px}.dp-line input{flex:1}
+.dp-to{display:flex;flex-direction:column;gap:3px;background:#fff;border:1px solid #e7e9ee;border-radius:10px;padding:10px 12px}
+.dp-to>div{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.dp-to strong{font-size:13px;line-height:1.45}.dp-to span{font-size:12px;color:#6b7280;line-height:1.5}
+.dp-heat{font-style:normal;font-size:11px;font-weight:700;border-radius:6px;padding:2px 7px;background:#eef3fe;color:#2a52b8;white-space:nowrap}
+.dp-heat.hot{background:#fdecec;color:#c93a3f}.dp-heat.warm{background:#fff8ec;color:#b26a00}.dp-heat.dormant{background:#f0f1f4;color:#6b7280}
+.dp-ok,.dp-warn{margin:8px 0 0;border-radius:9px;padding:8px 10px;font-size:12px;font-weight:600}
+.dp-ok{background:#ecf8f1;color:#1f7a4d}.dp-warn{background:#fdecec;color:#c93a3f}
+.dp-four{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.dp-four>div{background:#fff;border:1px solid #ebedf1;border-radius:9px;padding:7px 8px;display:flex;flex-direction:column;gap:1px}
+.dp-four span{font-size:10.5px;color:#9ca3af}.dp-four b{font-size:13.5px}
+.dp-now{background:#f5f8ff;border:1px solid #dbe5fd;border-radius:10px;padding:11px 12px;display:flex;flex-direction:column;gap:4px}
+.dp-now>b{font-size:13.5px;color:#2a52b8}.dp-now span{font-size:12px;color:#374151;line-height:1.5}.dp-now small{font-size:11.5px;color:#6b7280}
+.dp-btns{display:flex;gap:6px;margin:4px 0}
+.dp-list{display:flex;flex-direction:column;border:1px solid #e7e9ee;border-radius:10px;background:#fff;overflow:hidden}
+#detailView.ddv .dp .dp-list button{display:flex;align-items:center;gap:8px;border:0;border-top:1px solid #f5f6f8;background:#fff;padding:8px 10px;font:inherit;font-size:12.5px;color:#374151;text-align:left;cursor:pointer;border-radius:0;min-height:0;box-shadow:none}
+.dp-list button:first-child{border-top:0!important}
+.dp-list i{width:16px;height:16px;border-radius:4px;border:1.5px solid #c5cbd6;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;flex:none}
+.dp-list button.on i{background:#30a46c;border-color:#30a46c;color:#fff}.dp-list button.on{color:#1f7a4d}
+.dp-list em{margin-left:auto;font-style:normal;font-size:11px;color:#9ca3af}
+/* 메시지 보내기: 기존 창 본문을 패널 폭에 맞춘다 */
+.dp-sms #kakaoBody{padding:0}
+.dp-sms .rm-shell{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.dp-sms .rm-context,.dp-sms .rel-intel,.dp-sms .ctx-deal-context{display:none}
+.dp-sms .ctx-message-head{background:none!important;color:inherit;padding:0;margin:0;border-radius:0;box-shadow:none}
+.dp-sms .ctx-message-head>*:not(.ctx-message-route){display:none}
+.dp-sms .ctx-message-route{display:flex;gap:2px;background:#e6e8ec;padding:3px;border-radius:9px;align-self:flex-start}
+#detailView.ddv .dp-sms .ctx-message-route button{border:0;background:transparent;color:#6b7280;border-radius:7px;padding:6px 14px;font:inherit;font-size:12.5px;cursor:pointer;min-height:0;box-shadow:none}
+#detailView.ddv .dp-sms .ctx-message-route button.on{background:#fff;color:#15171c;font-weight:600}
+.dp-sms .rm-recommend{display:flex;flex-direction:column;gap:6px}
+.dp-sms .rm-template{width:100%;text-align:left}
+.dp-sms .rm-sendopts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.dp-sms #rm-body{width:100%;min-height:130px;box-sizing:border-box;border-radius:14px 14px 14px 4px;background:#f7f8fa;border:1px solid #e7e9ee;padding:10px 12px;font:inherit;font-size:13px;line-height:1.5}
+.dp-sms .rm-check:has(#rm-info-confirm){display:none}
+.dp-sms .dactions{display:flex;flex-wrap:wrap;gap:6px}
+.dp-sms .formgrid{grid-template-columns:1fr!important}
