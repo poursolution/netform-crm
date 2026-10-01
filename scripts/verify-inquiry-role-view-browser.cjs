@@ -97,7 +97,8 @@ async function run() {
         {...base,nextActionObj:{text:'확인 전화',due:'invalid'}}
       ].map(q=>{const t=InquiryWorkbench.task(q);return {kind:t.kind,needed:t.needed}});
     });
-    assert.deepEqual(cases,[{kind:'followup',needed:true},{kind:'followup',needed:false},{kind:'followup',needed:true},{kind:'closed',needed:false},{kind:'followup',needed:true}]);
+    /* 2026-10-01: 날짜 없는 다음 할 일은 '오늘'이 아니라 '정리 대상' */
+    assert.deepEqual(cases,[{kind:'followup',needed:true},{kind:'followup',needed:false},{kind:'tidy',needed:false},{kind:'closed',needed:false},{kind:'tidy',needed:false}]);
     assert.equal(await page.locator('.inq-work-counts b').evaluateAll(es=>es.reduce((sum,e)=>sum+Number(e.textContent),0)),4);
     const model=await page.evaluate(()=>{
       const q={...B.inquiries[1],status:'견적서 발송완료',nextActionObj:null,nextAction:null,nextActionText:''};
