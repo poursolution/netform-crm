@@ -1,6 +1,5 @@
 .today-work-queue{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;color:var(--ink);padding-bottom:24px}
-/* This queue has its own scoped search; a second global search would look active but do nothing. */
-body:has(#pg-today.on) .mhead>.search{display:none}
+/* 전역 검색(2026-10-01)이 현장·문의·담당자 결과를 바로 열므로 오늘 업무에서도 보인다 */
 .today-work-queue>header{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .today-work-queue h2{font-size:20px;margin:0}.today-work-queue>header>span{font-size:12px;color:var(--sub)}
 .twq-counts{display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line);background:#fff;padding:0 10px}
