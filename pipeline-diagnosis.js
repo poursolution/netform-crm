@@ -117,13 +117,13 @@
  }
  function rowsHtml(card){const list=card.rows||[];if(!list.length)return '<p class="pd-none">'+h(card.empty||'해당하는 건이 없습니다')+'</p>';return list.map(r=>'<div class="pd-who"><span title="'+attr(r[0])+'">'+h(r[0])+'</span><em>'+h(r[2])+'</em><b>'+r[1]+'</b></div>').join('');}
  function render(m,opts){
-  const o=opts||{},open=o.open!==false;
+  const o=opts||{},open=o.open!==false,IT=o.scope?root.ImprovementTasks:null,taskButton=o.taskButton||(IT?x=>IT.buttonHtml(o.scope,x):null);
   const kpis='<div class="pd-kpis">'+m.kpis.map(k=>'<div class="pd-kpi"><span>'+h(k.label)+'</span><b class="'+k.tone+'">'+h(k.value)+'</b><small>'+h(k.sub)+'</small></div>').join('')+'</div>';
   const cards='<div class="pd-cards">'+m.cards.map(c=>'<section class="pd-card"><header><b>'+h(c.title)+'</b><span>'+h(c.desc)+'</span></header>'+(c.rows||(!c.bars&&c.empty)?rowsHtml(c):bars(c))+'</section>').join('')+'</div>';
   const t=m.action.tasks||[];
-  const action='<section class="pd-action"><header><b>'+h(m.action.title)+'</b><span>'+h(m.action.desc)+'</span></header>'+(t.length?'<div class="pd-tasks">'+t.map((x,i)=>'<article class="pd-task" data-pd-task="'+i+'"><em>'+h(x.basis)+'</em><b>'+h(x.todo)+'</b><span>'+h(x.who)+'</span>'+(o.taskButton?o.taskButton(x,i):'')+'</article>').join('')+'</div>':'<p class="pd-none">지금 조건에서는 따로 챙길 병목이 없습니다</p>')+'</section>';
+  const action='<section class="pd-action"><header><b>'+h(m.action.title)+'</b><span>'+h(m.action.desc)+'</span>'+(IT?IT.countHtml(o.scope):'')+'</header>'+(t.length?'<div class="pd-tasks">'+t.map((x,i)=>'<article class="pd-task" data-pd-task="'+i+'"><em>'+h(x.basis)+'</em><b>'+h(x.todo)+'</b><span>'+h(x.who)+'</span>'+(taskButton?taskButton(x,i):'')+'</article>').join('')+'</div>':'<p class="pd-none">지금 조건에서는 따로 챙길 병목이 없습니다</p>')+'</section>';
   return '<div class="pd pd-'+(m.accent||'blue')+(open?'':' shut')+'"><button type="button" class="pd-toggle" data-pd="toggle" aria-expanded="'+open+'">단계 진단 '+(open?'접기':'펼치기')+'</button>'+kpis+(open?cards+action:'')+'</div>';
  }
- function stage(key,items,opts){try{return render(model(key,items),opts);}catch(e){console.warn('[진단]',e);return '';}}
+ function stage(key,items,opts){try{return render(model(key,items),Object.assign({scope:'pipeline:'+key},opts||{}));}catch(e){console.warn('[진단]',e);return '';}}
  root.PipelineDiagnosis={model,render,stage,tally,reasons,money};
 })(window);
