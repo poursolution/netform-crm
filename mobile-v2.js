@@ -24,10 +24,27 @@
   pill.className='mv-status '+cls;pill.innerHTML='<i></i>'+root.esc(text);
  }
  function tabs(){
-  document.querySelectorAll('#tabbar button').forEach(b=>{const m=/G\.tab='(\w+)'/.exec(b.getAttribute('onclick')||''),t=b.querySelector('.tl2');if(!m||!t)return;if(!t.dataset.old)t.dataset.old=t.textContent;t.textContent=enabled()?(TAB[m[1]]||t.dataset.old):t.dataset.old;});
+  const on=enabled(),admin=root.G&&root.G.mode==='admin';
+  document.querySelectorAll('#tabbar button').forEach(b=>{const m=/G\.tab='(\w+)'/.exec(b.getAttribute('onclick')||''),t=b.querySelector('.tl2');if(!m||!t)return;if(!t.dataset.old)t.dataset.old=t.textContent;t.textContent=on?(TAB[m[1]]||t.dataset.old):t.dataset.old;
+   /* 관리: 4칸(오늘 / 파이프라인 / 사람 / 보고). 문의 관리는 '오늘' 안에서 연다 */
+   if(m[1]==='ctrl')b.hidden=on&&admin;
+   if(on&&admin&&m[1]==='today'&&root.G.tab==='ctrl')b.classList.add('on');});
+ }
+ /* ③④ 내 현장 · 이번 주 · 관리 오늘: 제목 문장과 빠진 것 표시 */
+ function screens(){
+  const G=root.G,scr=document.getElementById('scr'),body=scr&&scr.querySelector('.body');if(!body||!G.user||G.deal||G.sub)return;
+  const h2=body.querySelector(':scope>.sec-h h2');
+  if(G.mode==='rep'&&G.tab==='mine'&&h2){const m=/^내 영업 · (\d+)건$/.exec(h2.textContent.trim());if(m)h2.textContent='내 현장 '+m[1]+'곳';
+   body.querySelectorAll('.lrow .s').forEach(s=>{if(/금액 미정|다음 할 일 없음|할 일 없음/.test(s.textContent))s.classList.add('mv-miss');});}
+  if(G.mode==='rep'&&G.tab==='my'&&!body.querySelector('.mv-title')){
+   const st=[...body.querySelectorAll('.mystat button')].map(b=>[(b.querySelector('.n')||{}).textContent||'',(b.querySelector('.l')||{}).textContent||'']),today=st.find(x=>/오늘 처리/.test(x[1])),won=st.find(x=>/수주/.test(x[1])),tm=today&&/^(\d+)\/(\d+)$/.exec(today[0].trim());
+   const el=document.createElement('div');el.className='mt-head mv-title';el.innerHTML='<h1>'+root.esc(given(G.user.nm)+'님, '+(tm?'오늘 '+tm[2]+'곳 중 '+tm[1]+'곳을 처리했습니다':'이번 주 현황입니다'))+'</h1><p>이번 주'+(won?' · '+root.esc(won[1].trim()+' '+won[0].trim()):'')+'</p>';body.prepend(el);}
+  if(G.mode==='admin'&&G.tab==='today'&&!body.querySelector('.mv-ctrl')){
+   const b=document.createElement('button');b.type='button';b.className='mv-ctrl';b.innerHTML='<b>문의 관리</b><span>미배정 · 배정완료 · 응대중 문의를 보고 바로 배정합니다</span><em>열기</em>';
+   b.onclick=()=>{G.tab='ctrl';G.deal=null;G.sub=null;root.render();};(body.querySelector('.mt-head')||body.firstElementChild).after(b);}
  }
  function title(){
-  const G=root.G,head=document.querySelector('#scr .mt-head');if(!head||!G.user||head.dataset.mv)return;
+  const G=root.G,head=document.querySelector('#scr .mt-head:not(.mv-title)');if(!head||!G.user||head.dataset.mv||G.mode!=='rep')return;
   const h1=head.querySelector('h1'),p=head.querySelector('p'),b=document.querySelector('#scr .mt-remain b');if(!h1)return;
   const n=b?Number(b.textContent.replace(/\D/g,''))||0:0,d=new Date(),name=given(G.user.nm);
   head.dataset.mv='1';
@@ -65,7 +82,7 @@
  }
  function apply(){
   const on=enabled();document.body.classList.toggle('mv2',on);tabs();if(!on)return;
-  statusPill();title();try{today();detail();strip(document.getElementById('scr'));}catch(e){console.warn('[모바일 v2 ②]',e);}
+  statusPill();title();try{today();detail();screens();strip(document.getElementById('scr'));}catch(e){console.warn('[모바일 v2 ②]',e);}
  }
  function boot(){
   const base=root.render;if(typeof base!=='function')return;
