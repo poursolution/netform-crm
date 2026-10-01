@@ -23,8 +23,8 @@ function sidebar(){
  let nav=document.getElementById('pipeline-stage-menu');if(!nav){nav=document.createElement('nav');nav.id='pipeline-stage-menu';nav.setAttribute('aria-label','파이프라인 단계');parent.after(nav);}
  const data=rows(),key=root.G.page==='pipe'&&root.G.pipelineWorkspace?root.G.pipelineStage:['relationship','expansion'].includes(root.G.page)?root.G.page:null;
  /* 메뉴 숫자는 진행 중인 영업건만(2026-09-30 대표: 수주·실주는 결과라 파이프라인 숫자에서 뺀다) — 단계별 숫자는 그대로 */
- const live=data.filter(r=>!['won','lost','expansion'].includes(r.group)).length;
- let badge=parent.querySelector('.badge');if(!badge){badge=document.createElement('span');badge.className='badge';parent.append(badge);}badge.textContent=live;
+ const live=data.filter(liveRow).length;
+ let badge=parent.querySelector('.badge');if(!badge){badge=document.createElement('span');badge.className='badge';parent.append(badge);}badge.textContent=live;badge.title='기준: 진행 중 영업건 · 수주·실주·확장 제외 · 모든 연도';
  if(key&&key!=='all')expanded=true;
  parent.setAttribute('aria-expanded',String(expanded));parent.setAttribute('aria-controls',nav.id);nav.hidden=!expanded;
  nav.innerHTML=S.definitions.filter(d=>d.key!=='expansion').map(d=>button(d.label+' '+data.filter(r=>r.group===d.key).length,'stage',d.key,key===d.key?'selected':'')).join('');nav.querySelector('.selected')?.setAttribute('aria-current','page');nav.onclick=click;
@@ -49,10 +49,14 @@ function cardBadge(r){
  if(r.days!=null&&r.days>0)return ['ok',r.days+'일 남음'];
  return ['mut','진행중'];
 }
+/* 공용 '진행' 판정 — 메뉴 숫자·상단 띠·단계 지표가 모두 이것만 쓴다 */
+function liveRow(r){return !['won','lost','expansion'].includes(r.group);}
+function liveBasis(){const y=kanbanYear();return '기준: 진행 중 영업건 · 수주·실주·확장 제외 · '+(y==='전체'?'모든 연도':'공사예정년도 '+y);}
 function kpiStrip(all){
- const act=all.filter(r=>!['won','lost'].includes(r.group)),amount=act.reduce((s,r)=>s+(Number(r.amount)||0),0);
- const items=[['진행',act.length+'건',''],['진행 금액',moneyShort(amount),''],['기한초과',String(act.filter(r=>r.flags.includes('overdue')).length),'bad'],['다음 할 일 없음',String(act.filter(r=>r.flags.includes('missing')).length),'warn'],['장기정체',String(act.filter(r=>r.flags.includes('stale')).length),'bad']];
- return '<div class="ps-kpis">'+items.map(([l,v,c])=>'<div class="ps-kpi '+c+'"><span>'+h(l)+'</span><b>'+h(v)+'</b></div>').join('')+'</div>';
+ /* '진행'은 메뉴 숫자와 같은 기준(2026-10-01 컨설턴트 4항 — 536 vs 667: 여기만 확장 기회 131건을 더하고 있었다) */
+ const act=all.filter(liveRow),amount=act.reduce((s,r)=>s+(Number(r.amount)||0),0),basis=liveBasis();
+ const items=[['진행',act.length+'건','',basis],['진행 금액',moneyShort(amount),'',basis+' · 예상금액 합'],['기한초과',String(act.filter(r=>r.flags.includes('overdue')).length),'bad',basis+' · 다음 할 일 날짜가 지남'],['다음 할 일 없음',String(act.filter(r=>r.flags.includes('missing')).length),'warn',basis+' · 다음 할 일 또는 날짜 없음'],['장기정체',String(act.filter(r=>r.flags.includes('stale')).length),'bad',basis+' · 단계 체류 기준 초과']];
+ return '<div class="ps-kpis">'+items.map(([l,v,c,t])=>'<div class="ps-kpi '+c+'" title="'+attr(t)+'"><span>'+h(l)+'</span><b>'+h(v)+'</b></div>').join('')+'</div>';
 }
 function kanbanCard(r){
  const b=cardBadge(r);
@@ -75,7 +79,7 @@ function kanban(all){
    +button('단계 페이지 열기 · '+items.length+'건','stage',d.key,'ps-kmore')+'</section>';
  }).join('')+'</div>';
 }
-function metrics(list,key){const active=list.filter(r=>!['won','lost','expansion'].includes(r.group)),amount=list.reduce((s,r)=>s+(r.amount||0),0);const m=[['적재 영업',list.length+'건'],[key==='won'?'준공 처리금액':key==='expansion'?'확장 기회':'예상금액',key==='expansion'?list.length+'건':root.fmtAmt(amount)],['기한초과',active.filter(r=>r.flags.includes('overdue')).length+'건'],['다음 할 일 없음',active.filter(r=>r.flags.includes('missing')).length+'건']];if(key==='relationship')m.splice(2,2,['7일 이상·접촉 미확인',active.filter(r=>r.flags.includes('contact')).length+'건'],['장기정체',active.filter(r=>r.flags.includes('stale')).length+'건']);if(key==='competition')m.splice(2,2,['3일 안',list.filter(r=>r.date&&root.daysTo(r.date)>=0&&root.daysTo(r.date)<=3).length+'건'],['결정 일정 미등록',list.filter(r=>!r.date).length+'건']);return '<div class="ps-metrics">'+m.map(x=>'<div><span>'+h(x[0])+'</span><strong>'+h(x[1])+'</strong></div>').join('')+'</div>';}
+function metrics(list,key){const active=list.filter(liveRow),amount=list.reduce((s,r)=>s+(r.amount||0),0);const m=[['적재 영업',list.length+'건'],[key==='won'?'준공 처리금액':key==='expansion'?'확장 기회':'예상금액',key==='expansion'?list.length+'건':root.fmtAmt(amount)],['기한초과',active.filter(r=>r.flags.includes('overdue')).length+'건'],['다음 할 일 없음',active.filter(r=>r.flags.includes('missing')).length+'건']];if(key==='relationship')m.splice(2,2,['7일 이상·접촉 미확인',active.filter(r=>r.flags.includes('contact')).length+'건'],['장기정체',active.filter(r=>r.flags.includes('stale')).length+'건']);if(key==='competition')m.splice(2,2,['3일 안',list.filter(r=>r.date&&root.daysTo(r.date)>=0&&root.daysTo(r.date)<=3).length+'건'],['결정 일정 미등록',list.filter(r=>!r.date).length+'건']);return '<div class="ps-metrics">'+m.map(x=>'<div><span>'+h(x[0])+'</span><strong>'+h(x[1])+'</strong></div>').join('')+'</div>';}
 function contractOf(r){return root.ContractSalesData?.state().items.find(x=>String(x.deal_id)===String(r.item.id));}
 function detailCells(r,key){
  const f=r.fields,c=contractOf(r),cf=r.item.stage_contexts?.contract?.fields||{},empty='미입력',money=v=>v==null||v===''?empty:root.fmtAmt(v),last=r.last?String(r.last).slice(0,10):'접촉 미확인';
