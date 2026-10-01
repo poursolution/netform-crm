@@ -8,7 +8,7 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   const context=await browser.newContext({viewport:{width:1440,height:1000}});await context.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:'+srv.address().port+'/crm.html',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>!!window.SalesInsights);
   await page.evaluate(()=>{
-   AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};LOCAL={deals:{},inquiries:{},expansionPool:[]};
+   G.pipeListV2Off=true;/* 예전 단계 화면 검사 — 새 목록은 verify-pipeline-list-v2 */AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};LOCAL={deals:{},inquiries:{},expansionPool:[]};
    const yesterday=new Date(Date.now()-864e5).toISOString().slice(0,10),recent=new Date(Date.now()-864e5).toISOString();
    B={deals:[{id:'old',site:'오래된 진행 현장',assignee:'김성민',brand:'POUR솔루션',code:'consulting',grp:'컨설팅·견적',amt:120000000,created:'2024-01-01',lastMeaningfulContactAt:recent,nextActionObj:{text:'후속 통화',due:yesterday,status:'open'}},{id:'other',site:'다른 담당 현장',assignee:'이필선',brand:'POUR솔루션',code:'sent',grp:'컨설팅·견적',amt:30000000,created:'2026-09-01'},{id:'won',site:'기간 수주 현장',assignee:'김성민',brand:'POUR솔루션',code:'won',grp:'수주 성공',amt:900000000,won_amount:40000000,closed_at:'2026-09-05',created:'2024-02-01'}],inquiries:[{id:'inq',site:'<img src=x onerror=alert(1)> 문의',assignee:'김성민',brand:'POUR솔루션',created_at:'2026-09-03',status:'배정완료'}],inquiryTrash:[]};
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';

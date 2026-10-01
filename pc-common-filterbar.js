@@ -23,6 +23,7 @@
  function brandStats(page){
   const sel=root.SalesFilterState.state().brands||[];
   if(page==='inq'){const s=root.InquiryListV2?.brandStats?.();if(s&&s.length)return s;}
+  if(page==='pipe'){const s=root.PipelineListV2?.brandStats?.();if(s&&s.length)return s;}
   let rows=[];try{rows=page==='today'?(root.TodayWorkQueue?.data?.().rows||[]).map(x=>x.item):root.inqCtlScopeActive();}catch(e){rows=[];}
   const names=[...new Set(BRANDS.concat(rows.map(brandOf).filter(Boolean)))];
   return [{name:'전체',n:rows.length,on:!sel.length}].concat(names.map(b=>({name:b,n:rows.filter(r=>brandOf(r)===b).length,on:sel.includes(b)})));
@@ -71,9 +72,9 @@
   const baseInq=root.paintInq;if(typeof baseInq==='function')root.paintInq=function(){const r=baseInq.apply(this,arguments);mount('inq');return r;};
   const th=document.getElementById('today-home-root');
   if(th){let t=null;new MutationObserver(()=>{if(t)return;t=setTimeout(()=>{t=null;if(root.G?.page==='today'){adoptToday();mount('today');}},80);}).observe(th,{childList:true,subtree:true});}
-  const baseSync=root.syncPage;if(typeof baseSync==='function')root.syncPage=function(){const r=baseSync.apply(this,arguments);if(!PAGES.includes(root.G?.page))document.querySelector('.mhead')?.classList.remove('cf-title');return r;};
+  const baseSync=root.syncPage;if(typeof baseSync==='function')root.syncPage=function(){const r=baseSync.apply(this,arguments);if(!PAGES.includes(root.G?.page)&&!(root.G?.page==='pipe'&&root.PipelineListV2?.enabled()))document.querySelector('.mhead')?.classList.remove('cf-title');return r;};
   /* Ctrl/⌘+K: 이 두 화면에서는 필터줄 검색으로 */
-  document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&!e.altKey&&String(e.key).toLowerCase()==='k'&&PAGES.includes(root.G?.page)){const s=document.querySelector('#pg-'+root.G.page+'>.cf-bar .cf-search');if(s){e.preventDefault();e.stopImmediatePropagation();s.focus();s.select();}}},true);
+  document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&!e.altKey&&String(e.key).toLowerCase()==='k'&&(PAGES.includes(root.G?.page)||root.G?.page==='pipe')){const s=document.querySelector('#pg-'+root.G.page+'>.cf-bar:not([hidden]) .cf-search');if(s){e.preventDefault();e.stopImmediatePropagation();s.focus();s.select();}}},true);
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
  root.CommonFilterBar={mount,setOwner,setSearch,owner};
