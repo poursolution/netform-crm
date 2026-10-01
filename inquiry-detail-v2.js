@@ -47,15 +47,15 @@
   const tag={sys:'sys',in:'in',out:'out',memo:'memo'};
   const body=list.map(b=>'<div class="idv-msg '+tag[b.kind]+'"><div class="idv-meta"><em>'+h(b.tag)+'</em>'+(b.who?'<span>'+h(b.who)+'</span>':'')+'<span>'+h(fmt(b.at))+'</span></div><div class="idv-bubble">'+h(b.text)+'</div>'+(b===lastOut&&na&&na.text?'<div class="idv-next">→ 다음 할 일: '+h(na.text)+(na.due?' ('+h(na.due)+')':'')+'</div>':'')+'</div>').join('')
    +(!lastOut&&na&&na.text?'<div class="idv-msg sys"><div class="idv-next">→ 다음 할 일: '+h(na.text)+(na.due?' ('+h(na.due)+')':'')+'</div></div>':'');
-  const tabs=[['call','통화 기록'],['sms','문자 기록'],['memo','내부 메모']],canWrite=root.inquiryAssigned(q)&&!root.inqCtlConverted(q)||root.inquiryAssigned(q);
-  const ph={call:'고객과 통화한 내용과 결과를 적어 주세요',sms:'보낸 문자 내용을 적어 주세요 (발송은 문자메시지 관리에서)',memo:'내부에서만 보는 메모'}[s.tab];
+  const assignedNow=root.inquiryAssigned(q),tabs=[['call','통화 기록'],['sms','문자 보내기'],['memo','내부 메모']],canWrite=true/* 2026-10-02 대표: 배정 전에도 통화·문자·메모 기록을 남긴다 */,phone=String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'').trim();
+  const ph={call:'고객과 통화한 내용과 결과를 적어 주세요',sms:'고객에게 보낼 문자를 적어 주세요',memo:'내부에서만 보는 메모'}[s.tab];
   const grow=s.open||s.text;
   const composer=canWrite?'<div class="idv-composer" data-tab="'+s.tab+'"><div class="idv-ctabs"><div role="tablist">'+tabs.map(t=>'<button type="button" role="tab" data-idv="tab" data-v="'+t[0]+'" aria-selected="'+(s.tab===t[0])+'">'+t[1]+'</button>').join('')+'</div><button type="button" class="idv-toggle" data-idv="toggle">'+(s.open?'접기':'확인 항목 '+doneN+'/6 · 다음 할 일')+'</button></div>'
     +'<div class="idv-input"><textarea id="'+(s.tab==='call'?'iq-res':'spLogNote')+'" rows="'+(grow?3:1)+'" data-idv="text" placeholder="'+attr(ph)+'">'+h(s.text)+'</textarea><button type="button" class="idv-save'+(s.text.trim()?' on':'')+'" data-idv="save">저장</button></div>'
     +(s.tab==='call'?'<input type="hidden" id="iq-did" value="고객 응대 기록">':'<select id="spLogType" hidden><option'+(s.tab==='sms'?' selected':'')+'>메일·메시지</option><option'+(s.tab==='memo'?' selected':'')+'>기타</option></select>')
     +'<div class="idv-more"'+(s.open?'':' hidden')+'><div class="idv-checks">'+CHECKS.map((c,i)=>'<button type="button" class="'+(checks[i]?'on':'')+'" data-idv="check" data-v="'+i+'" aria-pressed="'+!!checks[i]+'">'+(checks[i]?'✓ ':'+ ')+h(c)+'</button>').join('')+'</div>'
-    +(s.tab==='call'?'<div class="idv-nextrow"><input id="iq-next" data-idv="next" placeholder="다음 할 일 (예: 견적 확인 전화)" value="'+attr(s.next)+'"><input id="iq-due" data-idv="due" type="date" value="'+attr(s.due)+'"></div>':'')+'</div>'
-    +'<div class="spmsg idv-err" id="iq-msg"></div></div>':'<div class="idv-composer idv-locked">담당자를 배정하면 여기에 통화·문자·메모를 남길 수 있습니다.</div>';
+    +(s.tab==='call'&&assignedNow?'<div class="idv-nextrow"><input id="iq-next" data-idv="next" placeholder="다음 할 일 (예: 견적 확인 전화)" value="'+attr(s.next)+'"><input id="iq-due" data-idv="due" type="date" value="'+attr(s.due)+'"></div>':'')+'</div>'
+    +(s.tab==='sms'?'<div class="idv-smsrow"><span>받는 번호 <b>'+h(phone||'연락처 없음')+'</b></span><button type="button" data-idv="sms-copy">문구 복사</button><button type="button" class="go" data-idv="sms-open"'+(phone?'':' disabled')+'>문자 앱으로 열기</button><small>문자 앱에서 보낸 뒤 [저장]을 누르면 대화에 «문자»로 남습니다 · 견적문의 회신은 정보성 안내입니다</small></div>':'')+(s.tab==='call'&&!assignedNow?'<small class="idv-hintline">배정 전 기록입니다 — 다음 할 일은 담당자를 배정한 뒤 정할 수 있습니다</small>':'')+'<div class="spmsg idv-err" id="iq-msg"></div></div>':'<div class="idv-composer idv-locked">담당자를 배정하면 여기에 통화·문자·메모를 남길 수 있습니다.</div>';
   return '<div class="idv-chead"><b>고객과 주고받은 내용</b><span>'+list.length+'건</span><em>'+(last?'마지막 연락 '+h(fmt(last.at))+' · '+h(last.tag):'연락 기록 없음')+'</em></div><div class="idv-thread">'+body+'</div>'+composer;
  }
  /* 배정 목록: 기존 배정 칸(inqCtlAssignInline)이 만든 추천·업무량·근거를 읽어 라디오 행으로 보여 준다 */
@@ -133,19 +133,24 @@
   if(k==='quoteMode'){s.quoteMode=v;return reskinFrom();}
   if(k==='near')return W().openRelated(v);
   if(k==='goto-deal')return root.openPromotedDeal();
+  if(k==='sms-copy'||k==='sms-open'){const text=s.text.trim(),num=String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'').replace(/\D/g,'');if(!text){root.iqMsg('보낼 문구를 먼저 적어 주세요.');return;}const done=()=>toast(k==='sms-copy'?'문구를 복사했습니다':'문자 앱을 엽니다 — 보낸 뒤 [저장]으로 기록을 남겨 주세요');try{const p=navigator.clipboard&&navigator.clipboard.writeText(text);if(p&&p.then)p.then(done).catch(done);else done();}catch(err){done();}if(k==='sms-open'&&num)setTimeout(()=>{location.href='sms:'+num+'?body='+encodeURIComponent(text);},120);return;}
   if(k==='save')return save(q,s);
   if(k==='assign')return assign(q,s);
   if(k==='handoff')return handoff(q,s,b);
  }
  function save(q,s){
   const text=s.text.trim();if(!text)return;
+  /* 배정 전 통화 기록: 단계 처리(다음 할 일 필수) 대신 기록만 남긴다 */
+  if(s.tab==='call'&&!root.inquiryAssigned(q)){tempField('select','spLogType','전화');tempField('textarea','spLogNote',text);root.splitSaveLog();stampActor(q);s.text='';s.open=false;reskinFrom();toast('통화 기록을 저장했습니다');return;}
   if(s.tab==='call'){
    if(!s.next.trim()||!s.due){s.open=true;reskinFrom();root.iqMsg('다음 할 일과 날짜를 함께 적어 주세요 — 날짜가 없으면 다시 챙길 수 없습니다.');return;}
    const ok=W().saveProcess();if(ok===true){s.text='';s.next='';s.due='';s.open=false;reskinFrom();toast('통화 기록을 저장했습니다');}
    return;
   }
-  root.splitSaveLog();const kind=s.tab==='sms'?'문자 기록':'내부 메모';s.text='';s.open=false;reskinFrom();toast(kind+'을 저장했습니다');
+  root.splitSaveLog();stampActor(q);const kind=s.tab==='sms'?'문자 기록':'내부 메모';s.text='';s.open=false;reskinFrom();toast(kind+'을 저장했습니다');
  }
+ /* 기록자는 지금 로그인한 사람으로(배정 전에는 담당자가 없다) */
+ function stampActor(q){try{const a=(root.itemPatch(q,'inq')||{}).activities,last=a&&a[a.length-1],me=root.repN(root.ME?.name);if(last&&me&&me!=='미배정'&&(!last.actor||last.actor==='미배정'))last.actor=me;root.saveLocal?.();}catch(e){}}
  function assign(q,s){
   if(!s.rep)return;const wasReassign=s.reassign||root.inquiryAssigned(q),key=curKey,site=q.site||'문의';
   if(s.rep==='__branch__'){const M=root.INQ_CTL_MODAL;if(!M)return;M.mode='branch_handoff';M.rep='경남지사';M.team='gyeongnam';M.reportingGroup='external';s.reassign=false;const name=s.rep;s.rep='';root.inqCtlConfirmBranchHandoff();if(root.itemOwnerTeam?.(root.inqCtlFind(key,false))==='gyeongnam'){W().open(key,'none');toast(site+' → 경남지사 인계');}else{s.rep=name;}return;}

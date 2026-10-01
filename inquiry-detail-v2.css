@@ -100,3 +100,10 @@
 #idv-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:18000;background:#15171c;color:#fff;border-radius:10px;padding:10px 14px 10px 16px;display:flex;align-items:center;gap:14px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
 #idv-toast button{border:0;background:transparent;color:#8fb0ff;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
 @media(max-width:1000px){#inq-inbox-dialog.idv .inq-dialog{width:96vw!important;height:96vh!important;max-height:96vh!important}.idv-body{grid-template-columns:1fr;overflow:auto}.idv-c1,.idv-c3{border:0;overflow:visible}.idv-c2{min-height:420px}.idv-foot{position:static}}
+/* 문자 보내기(2026-10-02): 받는 번호 · 문구 복사 · 문자 앱으로 열기 */
+.idv-smsrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:12.5px;color:#6b7280}
+.idv-smsrow span{flex:1;min-width:140px}.idv-smsrow b{color:#15171c}
+#inq-inbox-dialog .idv-smsrow button{border:1px solid #e1e4ea;background:#fff;color:#374151;border-radius:8px;padding:6px 11px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+#inq-inbox-dialog .idv-smsrow button.go{border-color:#3b6ce4;background:#3b6ce4;color:#fff}
+#inq-inbox-dialog .idv-smsrow button:disabled{opacity:.5;cursor:default}
+.idv-smsrow small,.idv-hintline{flex-basis:100%;font-size:11.5px;color:#9ca3af}
