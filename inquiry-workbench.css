@@ -247,3 +247,6 @@ body:has(#pg-inq.on.inq-workbench) .reptabs,body:has(#pg-inq.on.inq-workbench) .
 
 /* 상세창 크기 축소(2026-09-30) — 파이프라인 상세와 같은 값 */
 @media(min-width:1001px){.inq-dialog{width:max(min(94vw,1180px),78vw);height:90vh}}
+/* 근처 영업 현황(2026-10-01) */
+.inq-near-list{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:4px}.inq-near-list li{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:5px 8px;border:1px solid #e2e8f1;border-radius:8px;background:#fff}.inq-near-list li span{color:#3B6CE4;font-weight:700;font-variant-numeric:tabular-nums}
+.inq-ctl-rep small .inq-near{color:#3B6CE4;font-weight:800}
