@@ -21,7 +21,7 @@
   return {target,w,D,Q,wins,newQ,schedule,revenue,follow,newResponse,risk,noResponse,newNoResponse,pm,reps,
    newOpp:all.filter(d=>inPrev(d.created)),advanced:all.filter(d=>R.briefAdvancedLastWeek(d,w)),pt:all.filter(d=>R.briefEnteredRank(d,w,7)),bid:all.filter(d=>R.briefEnteredRank(d,w,9)),contract:all.filter(d=>R.briefEnteredRank(d,w,10)),
    closed:all.filter(d=>d.code!=='won'&&!R.isOpen(d)&&inPrev(d.closed||d.updated||d.created)),
-   unassigned:Q.filter(q=>!R.inquiryAssigned(q)),nextMissing:D.filter(d=>R.issueSet(d).includes('nextMissing')),overdue:D.filter(d=>R.issueSet(d).includes('overdue')),stale:D.filter(d=>R.issueSet(d).includes('stale')),noAmount:D.filter(R.briefNoAmount),silentHot:D.filter(R.briefSilentHot)};
+   unassigned:Q.filter(q=>!R.inquiryAssigned(q)),/* 다음 할 일 없음 = 관리팀 KPI와 같은 계산(managementStats) */nextMissing:R.managementStats(target).nextMissing,overdue:D.filter(d=>R.issueSet(d).includes('overdue')),stale:D.filter(d=>R.issueSet(d).includes('stale')),noAmount:D.filter(R.briefNoAmount),silentHot:D.filter(R.briefSilentHot)};
  }
  /* 판정 문장: 기존 판정 순서 그대로 + 이동할 화면 */
  function verdicts(x){
@@ -51,14 +51,17 @@
   const R=root,D=R.PipelineDiagnosis,K=(label,value,sub,tone)=>({label,value,sub,tone:tone||''}),amount=v=>R.briefAmount(v);
   const pmCount=x.pm?x.pm.count:x.D.length,pmTotal=x.pm?x.pm.total:sum(x.D,R.oppAmt),pmW=x.pm?x.pm.weighted:R.weightedAmount(x.D);
   const V=verdicts(x),A=agenda(x),range=R.briefRange(x.w.start,x.w.end);
+   const moves=[['신규 영업기회',x.newOpp.length],['단계 진전',x.advanced.length],['경쟁 · PT 진입',x.pt.length],['입찰 진입',x.bid.length],['계약협의 진입',x.contract.length],['수주',x.wins.length],['실주 · 종료',x.closed.length]].filter(b=>b[1]>0);
+   /* 움직임이 0건이면 빈 카드 대신 0을 나열하고 관리팀 KPI로 잇는다 */
+   const moveCard=moves.length?{title:'지난주 무엇이 움직였나',desc:'단계 변경 기록 기준',bars:moves}:{title:'지난주 무엇이 움직였나',desc:'단계 변경 기록 기준',rows:[['신규 영업기회',0,''],['단계 진전',0,''],['경쟁 · 입찰 진입',0,''],['수주',0,'']],foot:'<button type="button" class="bv-foot" onclick="goPage(\'mgmt\')">단계 변경 기록이 없어 판단 불가 <em>→ 관리팀 KPI</em></button>'};
   R.BRIEF_CACHE=[];R.G.briefFrom=x.w.startKey;R.G.briefTo=x.w.endKey;
-  const intro='<div class="plv-intro"><i style="background:#64748b"></i><b>주간 브리핑</b><span>'+h(range)+' · 매주 월요일 08:30 자동 생성 → 잔디 발송</span><div class="plv-spacer"></div><label class="bv-week">주차 <select aria-label="주차 선택" disabled title="지난 주차 보기는 주간 스냅샷 저장이 켜지면 열립니다"><option>이번 주 · '+h(range)+'</option></select></label><button type="button" class="sv-ghost" onclick="goPage(\'control\')">컨트롤타워에서 지시 →</button></div>';
+  const intro='<div class="plv-intro"><i style="background:#64748b"></i><b>주간 브리핑</b><span>'+h(range)+' · 매주 월요일 08:30 자동 생성 → 잔디 발송</span><div class="plv-spacer"></div><div class="bv-view" role="group" aria-label="보기 전환"><button type="button" aria-pressed="true">주간 의사결정판</button><button type="button" aria-pressed="false" onclick="setBriefView(\'month\')">월간 일정</button></div><label class="bv-week">주차 <select aria-label="주차 선택" disabled title="지난 주차 보기는 주간 스냅샷 저장이 켜지면 열립니다"><option>이번 주 · '+h(range)+'</option></select></label><button type="button" class="sv-ghost" onclick="goPage(\'control\')">컨트롤타워에서 지시 →</button></div>';
   const top=D.render({accent:'blue',
    kpis:[K('지난주 수주',x.wins.length+'건 · '+R.reportWonAmount(x.wins),'계약금액 기준',x.wins.length?'good':'bad'),K('신규 유입',x.newQ.length+'건',x.newNoResponse.length?'이 중 미응대 '+x.newNoResponse.length+'건':'신규 응대 정상',x.newNoResponse.length?'warn':''),K('진행 Pipeline',pmCount+'건 · '+amount(pmTotal),'가중 예상 '+amount(pmW)),K('위험 현장',x.risk.length+'건','대표 · 관리자 확인 필요',x.risk.length?'bad':'')],
-   cards:[{title:'지난주 무엇이 움직였나',desc:'단계 변경 기록 기준',bars:[['신규 영업기회',x.newOpp.length],['단계 진전',x.advanced.length],['경쟁 · PT 진입',x.pt.length],['입찰 진입',x.bid.length],['계약협의 진입',x.contract.length],['수주',x.wins.length],['실주 · 종료',x.closed.length]].filter(b=>b[1]>0),empty:'지난주에 기록된 움직임이 없습니다'},
+   cards:[moveCard,
     {title:'이번 주 꼭 할 일',desc:'일정 · 후속 · 신규응대 — 아래에서 펼쳐 보기',bars:[['매출 임박',x.revenue.length],['후속관리',x.follow.length],['신규응대 (첫 연락)',x.newResponse.length]].filter(b=>b[1]>0),empty:'이번 주에 잡힌 일정이 없습니다'},
     {title:'어디가 위험한가',desc:'회의에서 볼 숫자',rows:[['미배정',x.unassigned.length,'오늘 배정'],['최초 미응대',x.noResponse.length,x.newNoResponse.length?x.newNoResponse.length+'건이 지난주 신규':'누적'],['다음 할 일 없음',x.nextMissing.length,'지정 필요'],['기한초과',x.overdue.length,'오늘 처리'],['장기정체',x.stale.length,'진행·보류 정리'],['예상금액 미입력',x.noAmount.length,'금액 확인'],['입찰·계약 활동 없음',x.silentHot.length,'상태 확인']].filter(r=>r[1]>0),empty:'위험 항목이 없습니다'}],
-   action:{title:'이번 주 회의 안건',desc:'결정하고 담당 · 기한을 정하세요',tasks:A}},{open:R.G.plvDiagShut!==true,scope:'brief'});
+   action:{title:'이번 주 회의 안건',desc:'결정하고 담당 · 기한을 정하세요',tasks:A}},{open:true,noToggle:true,scope:'brief'});
   /* 판정 + 잔디 카드를 안건(행동 카드) 앞에 끼운다 */
   const lists='<div class="bv-lists">'+[['매출 임박',x.revenue,'deal'],['후속관리',x.follow,'deal'],['신규응대',x.newResponse,'inq']].map(([t,l,k])=>'<details class="bv-list"><summary>'+t+' <b>'+l.length+'건</b></summary><div class="brief-action-list">'+R.briefActionRows(l,k)+'</div></details>').join('')+'</div>';
   const verd='<section class="bv-verdict"><div class="bv-v"><header><b>지난주 판정</b><span>문장을 누르면 해당 화면으로 이동합니다</span></header>'+V.map(v=>'<button type="button" class="bv-line '+v.tone+'" onclick="'+attr(v.act)+'"><span>'+h(v.text)+'</span><em>→ '+h(v.go)+'</em></button>').join('')+'</div>'
@@ -85,15 +88,16 @@
   document.body.append(m);m.querySelector('button').focus();
  }
  function onClick(e){
-  const pd=e.target.closest('[data-pd="toggle"]');if(pd&&pd.closest('#brief-v2')){root.G.plvDiagShut=root.G.plvDiagShut!==true;root.paintBrief();return;}
-  const b=e.target.closest('#brief-v2 [data-bv]');if(!b)return;
+    const b=e.target.closest('#brief-v2 [data-bv]');if(!b)return;
   if(b.dataset.bv==='meeting')meeting();
   if(b.dataset.bv==='rep'){const n=b.dataset.value;if(root.RepsV2&&root.RepsV2.enabled()){root.RepsV2.open(n);if(document.getElementById('repsDialog')?.classList.contains('on'))return;}root.briefFocusRep?.(n,'brief-reps');}
  }
  function boot(){
   const base=root.paintBrief;if(typeof base!=='function')return;
   root.paintBrief=function(){
-   const week=document.getElementById('b-week'),month=document.getElementById('b-month');
+   const week=document.getElementById('b-week'),month=document.getElementById('b-month'),pg=document.getElementById('pg-brief');
+    /* 새 화면에서는 예전 파란 안내 띠를 감추고, 주간 보기에서는 전환 줄도 안내 줄 안으로 옮긴다 */
+    if(pg){pg.classList.toggle('bv-on',enabled());pg.classList.toggle('bv-weekview',enabled()&&root.G.briefView!=='month');}
    if(!enabled()||!week||root.G.briefView==='month'||!root.PipelineDiagnosis)return base.apply(this,arguments);
    try{root.briefViewButtons?.();if(month)month.style.display='none';week.style.display='block';week.innerHTML=html(data());
     if(!week.__bv){week.__bv=true;week.addEventListener('click',onClick);week.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList?.contains('plv-row')){e.preventDefault();e.target.click();}});}

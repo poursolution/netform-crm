@@ -26,7 +26,7 @@
    cards:[{title:'어디서 막혔나',desc:'팀 전체 병목',bars:[['첫 연락 전',un],['다음 할 일 없음',sum(r=>r.noNext)],['정체',stale],['기한 초과',sum(r=>r.overdue)],['금액 미입력',noAmt]].filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]),empty:'막힌 곳이 없습니다'},
     {title:'누가 일이 몰렸나',desc:'담당별 Pipeline · 단위 억',bars:R.filter(r=>r.pipeline>0).sort((a,b)=>b.pipeline-a.pipeline).slice(0,5).map(r=>[r.nm,Math.round(r.pipeline/1e7)/10,r.current.length+'건']),empty:'진행 금액이 없습니다'},
     {title:'이번 주 진전',desc:'지난 7일 실제 기록',rows:[['신규 기회',sum(r=>r.weekNew),'+'+sum(r=>r.weekNew)],['단계 진전',sum(r=>r.weekAdvanced),tracked?'+'+sum(r=>r.weekAdvanced):'수집 중'],['수주',sum(r=>r.weekWon),'+'+sum(r=>r.weekWon)]]}],
-   action:{title:'관리자가 할 일',desc:'코칭 · 약속',tasks}},{open:root.G.plvDiagShut!==true,taskButton:x=>{const c=root.repManagerComment(x.rep,root.repManagerWeekKey(0));return '<button type="button" class="it-btn'+(c?' ghost':'')+'" data-rv="promise" data-value="'+attr(x.rep)+'">'+(c?'약속 수정':'약속 등록')+'</button>'+(c?'<small class="it-done">이번 주 약속 · '+h(String(c.comment).slice(0,24))+'</small>':'');}});
+   action:{title:'관리자가 할 일',desc:'코칭 · 약속',tasks}},{open:true,noToggle:true,taskButton:x=>{const c=root.repManagerComment(x.rep,root.repManagerWeekKey(0));return '<button type="button" class="it-btn'+(c?' ghost':'')+'" data-rv="promise" data-value="'+attr(x.rep)+'">'+(c?'약속 수정':'약속 등록')+'</button>'+(c?'<small class="it-done">이번 주 약속 · '+h(String(c.comment).slice(0,24))+'</small>':'');}});
  }
  function rowHtml(r){
   const t=TAG[r.diagnosis.k]||TAG.watch,load=root.repManagerLoadLevel(r);
@@ -41,15 +41,14 @@
  }
  function listHtml(R){
   const f=root.G.repsStatus||'all',period=root.repManagerPeriodWindow(),cy=Number(root.CUR_Y);
-  const pills='<div class="plv-pills" role="group" aria-label="상태">'+[['all','전체',R.length]].concat(GROUPS.map(g=>[g[0],g[1],R.filter(r=>r.diagnosis.k===g[0]).length])).map(([v,t,n])=>'<button type="button" data-rv="status" data-value="'+v+'" aria-pressed="'+(f===v)+'">'+h(t)+' <b>'+n+'</b></button>').join('')+'</div>';
+  const pills='<div class="plv-pills" role="group" aria-label="상태">'+[['all','전체',R.length]].concat(GROUPS.map(g=>[g[0],g[1],R.filter(r=>r.diagnosis.k===g[0]).length])).map(([v,t,n])=>'<button type="button" data-rv="status" data-value="'+v+'" aria-pressed="'+(f===v)+'"'+(n?'':' class="zero"')+'>'+h(t)+' <b>'+n+'</b></button>').join('')+'</div>';
   const menu='<details class="av-more"><summary>··· 더보기</summary><div class="av-menu"><button type="button" data-rv="team">팀 비교</button><button type="button" data-rv="account">계정 관리</button><label>조회 연도 <select data-rv-year aria-label="조회 연도">'+[String(cy),String(cy-1),String(cy-2),'전체'].map(y=>'<option'+(String(root.G.repManagerYear||cy)===y?' selected':'')+'>'+y+'</option>').join('')+'</select></label></div></details>';
-  const intro='<div class="plv-intro"><i style="background:#64748b"></i><b>영업사원</b><span>'+R.length+'명 · '+h(period.label)+' 기준</span><div class="plv-spacer"></div>'+pills+menu+'</div>';
+  const intro='<div class="plv-intro"><i style="background:#64748b"></i><b>영업사원</b><div class="plv-spacer"></div>'+pills+menu+'</div><p class="rv-basis">영업사원 '+R.length+'명 · '+h(period.label)+' 기준 <span>아래 숫자 · 카드 · 표는 모두 이 기준입니다</span></p>';
   const head='<div class="plv-thead" role="row" style="grid-template-columns:'+GRID+'"><span>이름 · 소속</span>'+COLS.map(c=>'<span>'+h(c)+'</span>').join('')+'<span></span></div>';
   const groups=GROUPS.filter(g=>f==='all'||g[0]===f).map(([id,title,color,desc])=>{const list=R.filter(r=>r.diagnosis.k===id).sort((a,b)=>b.risk-a.risk||b.unresponded-a.unresponded||b.pipeline-a.pipeline);return '<div class="plv-ghead" data-plv-group="'+id+'"><i style="background:'+color+'"></i><b>'+h(title)+'</b><span>'+list.length+'명</span><small>· '+h(desc)+'</small></div>'+(list.length?list.map(rowHtml).join(''):'<div class="plv-empty">해당하는 사람이 없습니다</div>');}).join('');
   return '<div id="reps-v2" class="plv" data-workspace="reps">'+intro+diagnosis(R)+'<div class="plv-table" role="table" aria-label="영업사원 목록">'+head+groups+'</div></div>';
  }
  function onClick(e){
-  const pd=e.target.closest('[data-pd="toggle"]');if(pd&&pd.closest('#reps-v2')){root.G.plvDiagShut=root.G.plvDiagShut!==true;root.paintRepManagement();return;}
   const b=e.target.closest('#reps-v2 [data-rv]');if(!b)return;const a=b.dataset.rv,v=b.dataset.value;
   if(a==='status'){root.G.repsStatus=v;root.paintRepManagement();}
   if(a==='team')root.repManagerView('team');

@@ -27,3 +27,9 @@
 .bv-meeting ol{margin:0;padding-left:28px;display:flex;flex-direction:column;gap:14px;font-size:clamp(17px,2vw,24px)}
 .bv-meeting li b{display:block;color:#ffd08a}.bv-meeting li span{display:block;font-weight:600;line-height:1.45}.bv-meeting li em{font-style:normal;font-size:.75em;color:#9fb4e8}
 @media(max-width:1000px){.bv-lists{grid-template-columns:1fr}.bv-verdict{grid-template-columns:1fr}#brief-v2 .bv-line{flex-direction:column;align-items:flex-start;gap:4px}}
+/* 정리(2026-10-02): 예전 안내 띠·전환 줄 감춤, 전환은 안내 줄 안으로 */
+#pg-brief.bv-on>.mgmtbar.blue{display:none!important}#pg-brief.bv-weekview>.briefbar{display:none!important}
+#brief-v2 .bv-view{display:inline-flex;gap:2px;background:#eceef2;padding:3px;border-radius:9px}
+#brief-v2 .bv-view button{border:0;background:transparent;color:#6b7280;border-radius:7px;padding:5px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+#brief-v2 .bv-view button[aria-pressed="true"]{background:#fff;color:#15171c;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+#brief-v2 .bv-foot{display:flex;justify-content:space-between;gap:8px;width:100%;margin-top:10px;padding:9px 11px;border:1px solid #f3d9a4;background:#fffaf0;border-radius:9px;font:inherit;font-size:12.5px;color:#8a5a00;text-align:left;cursor:pointer}#brief-v2 .bv-foot em{font-style:normal;font-weight:700;white-space:nowrap}

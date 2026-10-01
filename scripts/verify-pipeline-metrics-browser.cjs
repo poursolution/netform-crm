@@ -22,6 +22,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(s.s.count,4,'수주·실주 제외 4건');assert.equal(String(s.s.count),s.badge,'메뉴 숫자와 같은 건수');
   assert.equal(s.s.total,10e8);assert.equal(s.s.nearCount,2,'입찰·계약 2건');assert.equal(s.s.near,7e8);
   assert.ok(s.s.weighted>0&&s.s.weighted<s.s.total,'가중 예상은 전체보다 작다');
+  /* 영업사원 관리 새 화면은 자체 숫자 4개가 이 띠를 대신한다(띠 없음). 예전 화면에서는 세 화면 모두 같은 띠 */
+  await page.evaluate(()=>goPage('repmanage'));await page.waitForTimeout(450);assert.equal(await page.evaluate(()=>document.querySelectorAll('#pg-repmanage>.pm-strip').length),0,'영업사원 관리 새 화면에는 공통 기준 띠가 없다');
+  assert.equal(await page.evaluate(()=>{goPage('brief');return 0;}),0);await page.waitForTimeout(450);assert.equal(await page.evaluate(()=>document.querySelectorAll('#pg-brief>.pm-strip').length),0,'주간 브리핑 새 화면에도 공통 기준 띠가 없다');
+  await page.evaluate(()=>{G.repsV2Off=true;G.briefV2Off=true;});
   const texts=[];
   for(const p of ['brief','perf','repmanage']){await page.evaluate(p=>goPage(p),p);await page.waitForTimeout(450);texts.push(await page.evaluate(p=>{const el=document.querySelector('#pg-'+p+'>.pm-strip');return el?el.textContent.replace(/\s+/g,' ').trim():null},p));}
   assert.ok(texts.every(Boolean),'세 화면 모두 띠 표시 '+JSON.stringify(texts));

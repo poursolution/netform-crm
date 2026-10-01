@@ -36,3 +36,5 @@
 .rd-none{margin:0;padding:24px 0;text-align:center;font-size:13px;color:#9ca3af}
 .rd-box .rd-all{align-self:flex-start;border:0;background:none;color:#3b6ce4;font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:6px 0}
 @media(max-width:860px){.rd-body{grid-template-columns:1fr;overflow:auto}.rd-left,.rd-right{overflow:visible}.rd-box .rd-row{grid-template-columns:minmax(0,1fr) 70px}.rd-row em{grid-column:1}.rd-row u{display:none}}
+#reps-v2 .rv-basis{margin:2px 0 8px;font-size:12.5px;font-weight:700;color:#374151}#reps-v2 .rv-basis span{font-weight:500;color:#9ca3af;margin-left:6px}
+#reps-v2 .plv-pills button.zero:not([aria-pressed="true"]){background:#f4f5f7;border-color:#eceef2;color:#a3a9b3}#reps-v2 .plv-pills button.zero:not([aria-pressed="true"]) b{color:#b6bbc4}

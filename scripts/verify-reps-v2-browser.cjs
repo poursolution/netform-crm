@@ -35,6 +35,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await v.locator('.plv-owners').count(),0,'담당자별 칩 줄 없음');
   const n=await page.evaluate(()=>REP_MANAGER_ROWS.length);assert.ok(n>=3,'본사 영업사원 '+n+'명');
   assert.match((await v.locator('.plv-pills button').allInnerTexts()).join('|'),new RegExp('^전체 '+n+'\\|관리자 확인 필요 \\d+\\|확인 필요 \\d+\\|여유 \\d+$'));
+  /* 기준 한 가지: 공통 기준 띠·접기 글자 없음, 기준 문구 한 번, 0건 알약은 회색 */
+  assert.equal(await page.locator('#pg-repmanage .pm-strip').count(),0,'파이프라인 공통 기준 띠 없음');
+  assert.equal(await v.locator('.pd-toggle').count(),0,'단계 진단 접기 글자 없음');
+  assert.match(await v.locator('.rv-basis').innerText(),new RegExp('^영업사원 '+n+'명 · .+ 기준'));assert.equal(await v.locator('.rv-basis').count(),1);
+  assert.equal(await v.locator('.plv-pills button').evaluateAll(a=>a.every(b=>(/ 0$/.test(b.innerText.trim()))===b.classList.contains('zero'))),true,'0건 알약만 회색');
   /* 진단 */
   assert.deepEqual(await v.locator('.pd-kpi span').allInnerTexts(),['전체 진행','가중 예상','확정 임박','조치 필요']);
   assert.match(await v.locator('.pd-kpis').innerText(),/전체 진행\s*17억\s*3건/);
