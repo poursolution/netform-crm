@@ -63,12 +63,20 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   if(shot)await page.screenshot({path:shot+'-today.png'});
   /* 다른 탭도 같은 규칙 · 탭 이동은 기존 그대로 */
   await page.locator('#tabbar button',{hasText:'내 현장'}).click();await page.waitForTimeout(250);
-  assert.equal(await page.evaluate(()=>G.tab),'mine');assert.equal(await css('#scr .sec-h h2','fontSize'),'25px');assert.equal(await css('#scr .card','borderTopWidth'),'0px');assert.equal(await css('#scr .card','borderRadius'),'20px');
+  assert.equal(await page.evaluate(()=>G.tab),'mine');assert.match(await page.locator('#scr .sec-h h2').first().innerText(),/^내 현장 \d+곳$/);assert.equal(await css('#scr .sec-h h2','fontSize'),'25px');assert.equal(await css('#scr .card','borderTopWidth'),'0px');assert.equal(await css('#scr .card','borderRadius'),'20px');
   if(shot)await page.screenshot({path:shot+'-mine.png'});
-  await page.locator('#tabbar button',{hasText:'이번 주'}).click();await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>G.tab),'my');if(shot)await page.screenshot({path:shot+'-week.png'});
+  await page.locator('#tabbar button',{hasText:'이번 주'}).click();await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>G.tab),'my');assert.match(await page.locator('#scr .mv-title h1').innerText(),/님, 오늘 \d+곳 중 \d+곳을 처리했습니다$/);assert.match(await page.locator('#scr .mv-title p').innerText(),/^이번 주/);if(shot)await page.screenshot({path:shot+'-week.png'});
   await page.locator('#tabbar button',{hasText:'등록'}).click();await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>G.tab),'find');if(shot)await page.screenshot({path:shot+'-new.png'});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'가로 넘침 없음');
   assert.deepEqual(await page.evaluate(()=>__writes.filter(x=>x!=='opportunity_touch')),[],'틀만 바꾼다 — 쓰기 없음');
+  /* ④ 관리: 탭 4칸(오늘 / 파이프라인 / 사람 / 보고) · 문의 관리는 오늘 안에서 */
+  await page.evaluate(()=>{G.mode='admin';G.tab='today';G.deal=null;G.sub=null;render();});await page.waitForTimeout(300);
+  assert.deepEqual(await page.locator('#tabbar button:not([hidden]) .tl2').allInnerTexts(),['오늘','파이프라인','사람','보고']);
+  assert.match(await page.locator('#scr .mv-ctrl').innerText(),/문의 관리[\s\S]*열기/);await page.locator('#scr .mv-ctrl').click();await page.waitForTimeout(300);
+  assert.equal(await page.evaluate(()=>G.tab),'ctrl');assert.equal(await page.locator('#tabbar button.on:not([hidden]) .tl2').innerText(),'오늘','문의 관리에서도 오늘 탭이 선택된 것으로');
+  if(shot)await page.screenshot({path:shot+'-admin.png'});
+  await page.locator('#tabbar button',{hasText:'사람'}).click();await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>G.tab),'perf');
+  await page.evaluate(()=>{G.mode='rep';});
   /* 끄기 */
   await page.evaluate(()=>{G.mobileV2Off=true;nav('today');});await page.waitForTimeout(250);
   assert.equal(await page.evaluate(()=>document.body.classList.contains('mv2')),false);assert.deepEqual(await page.locator('#tabbar button .tl2').allInnerTexts(),['오늘','내 영업','영업 등록','내 실적'],'끄면 예전 탭 이름');
