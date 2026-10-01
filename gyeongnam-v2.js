@@ -44,7 +44,7 @@
   return D.render({accent:'blue',
    kpis:[K('넘긴 건',n+'건',(root.perfPeriodLabel?root.perfPeriodLabel():'')+' · 본사 → 경남지사'),K('지사 미착수',none.length+'건',none.length?'실담당 미지정 · 평균 '+avg+'일':'모두 실담당 지정됨',none.length?'bad':''),K('지사 첫 연락',first.length+'건',first.length?'지사 실담당의 응대 기록':'지사 기록 없음(본사 연락은 세지 않음)',n&&!first.length?'bad':''),K('영업기회 · 수주',opp.length+'건 · '+won.length+'건',won.length?root.fmtAmt(wonAmt):'수주 0원')],
    cards:[{title:'어디서 멈췄나',desc:'넘긴 건의 흐름',bars:[['넘김',n],['지사 실담당 지정',named.length],['지사 첫 연락',first.length],['영업기회',opp.length],['수주',won.length]]},{title:'언제 넘겼나',desc:'월별 넘긴 건',bars:months},{title:'지사 담당은 움직이나',desc:'지사 담당 · 진전',rows:reps,empty:'등록된 지사 담당이 없습니다'}],
-   action:{title:'본사가 할 일',desc:'확인 · 조치',tasks}},{open:root.G.plvDiagShut!==true});
+   action:{title:'본사가 할 일',desc:'확인 · 조치',tasks}},{open:root.G.plvDiagShut!==true,scope:'gyeongnam'});
  }
  function rowHtml(x){
   const q=x.q,f=x.f,key=root.inqKey(q),stage=f.deal?root.stageLabel(root.dealStage(f.deal)):'문의',firstAt=f.resp?(q.firstActivity||q.first_activity||q.respondedAt||q.responded_at||''):'';

@@ -110,6 +110,22 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await page.evaluate(()=>{PipelineWorkspace.open('consulting');return document.querySelector('#pipeline-list-v2 .pd').innerText;}),/이 단계\s*4건[\s\S]*다음 할 일 없음\s*1건[\s\S]*고객 요구 미확인\s*3[\s\S]*경로 미기록\s*4[\s\S]*이필선[\s\S]*2/);
   assert.match(await page.evaluate(()=>{PipelineWorkspace.open('competition');return document.querySelector('#pipeline-list-v2 .pd').innerText;}),/타사 A[\s\S]*1[\s\S]*미기록[\s\S]*모름/);
   await page.evaluate(()=>PipelineWorkspace.open('lost'));await page.waitForTimeout(120);
+  /* 과제 등록: 저장소가 있으면 버튼 → 등록 창 → 서버 저장 → [수정] + 등록됨 표시 (쓰기는 가로챈다) */
+  assert.equal(await v.locator('.pd-task .it-btn').count(),0,'로그인·저장소 없으면 버튼 없음');
+  await page.evaluate(()=>{window.__tasks=[];SB={rpc:async(name,args)=>{if(name==='crm_improvement_task_list_v1')return {data:{ok:true,tasks:__tasks}};if(name==='crm_improvement_task_save_v1'){const t=Object.assign({id:'t-'+(__tasks.length+1),status:'open'},args.p);__tasks.push(t);return {data:{ok:true,task:t}};}return {error:{code:'PGRST202'}};}};PipelineWorkspace.open('lost');return ImprovementTasks.load(true);});await page.waitForTimeout(400);
+  assert.equal(await v.locator('.pd-task .it-btn[data-it="new"]').count(),2);
+  assert.match(await v.locator('.pd-action .it-count').innerText(),/등록된 과제\s*0/);
+  await v.locator('.pd-task .it-btn[data-it="new"]').first().click();
+  const dlg=page.locator('#itDialog .it-box');assert.equal(await dlg.count(),1);
+  assert.match(await dlg.locator('header').innerText(),/개선 과제 등록 · 실주/);assert.match(await dlg.locator('.it-basis').innerText(),/(가격 열세|사유 미기록) 1건/);
+  assert.equal((await dlg.locator('#it-title').inputValue()).length>5,true,'과제 미리 채움');assert.match(await dlg.locator('#it-due').inputValue(),/^\d{4}-\d{2}-\d{2}$/);
+  await dlg.locator('#it-owner').fill('영업팀');await dlg.locator('[data-itd="save"]').click();await page.waitForTimeout(300);
+  assert.equal(await page.locator('#itDialog').count(),0);
+  assert.deepEqual(await page.evaluate(()=>__tasks.map(t=>[t.scope,t.owner,t.status,Array.isArray(t.notify)])),[['pipeline:lost','영업팀','open',true]]);
+  assert.equal(await v.locator('.pd-task .it-btn[data-it="edit"]').count(),1);assert.match(await v.locator('.pd-task .it-done').innerText(),/등록됨 · 영업팀 · \d{2}\/\d{2}까지/);
+  assert.match(await v.locator('.pd-action .it-count').innerText(),/등록된 과제\s*1/);
+  await v.locator('.pd-action .it-count').click();assert.match(await page.locator('#itDialog').innerText(),/1건 진행 중[\s\S]*영업팀/);await page.locator('#itDialog [data-itd]').click();
+  await page.evaluate(()=>{SB=null;PipelineWorkspace.open('lost');});await page.waitForTimeout(150);
   /* 실주: 직전 단계 배지·사유, 사유 없는 건은 '사유 미기록' 묶음 */
   assert.match(await v.locator('.plv-row[data-deal="l-none"]').innerText(),/경쟁·입찰[\s\S]*미기록/);
   assert.match(await v.locator('.plv-row[data-deal="l-done"]').innerText(),/자료 발송완료[\s\S]*가격 열세/);
@@ -134,6 +150,6 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(150);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'좁은 화면 넘침 없음');
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',frame:true,groups:true,owner_chips_shared:true,brand_shared:true,row_opens_detail:true,seven_stages:true,sub_filter:true,sidebar:true,board_switch:true,diagnosis:true,legacy_switch:true,narrow:true}));
+  console.log(JSON.stringify({status:'PASS',frame:true,groups:true,owner_chips_shared:true,brand_shared:true,row_opens_detail:true,seven_stages:true,sub_filter:true,sidebar:true,board_switch:true,diagnosis:true,task_register:true,legacy_switch:true,narrow:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

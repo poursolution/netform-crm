@@ -50,7 +50,7 @@
   return D.render({accent:'blue',
    kpis:[K('관리 고객',rows.length+'곳',(year==='전체'?'전체 준공연도':year==='이전'?'이전 준공':year+' 준공')+' 기준'),K('이번 주 연락',week.length+'곳',first?first+'곳은 첫 접촉 전':'기한 지남 · 7일 안 · 미지정'),K('니즈 확인',need.length+'곳',need.length?'추가 공사 니즈가 확인된 고객':'아직 확인된 추가 공사 없음',need.length?'':'warn'),K('파이프라인 전환',made.length+'건','확장 → 새 영업으로 넘긴 건',made.length?'':'warn')],
    cards:[{title:'어디서 다음 매출이 나오나',desc:'추천 유형',bars:types},{title:'언제 연락하나',desc:'준공 후 경과',bars:D.tally(wrap(act),x=>since(x.r),'',6).sort((a,b)=>order.indexOf(a[0])-order.indexOf(b[0]))},{title:'누가 챙기나',desc:'담당자 · 주된 추천',rows:[...owners].sort((a,b)=>b[1].n-a[1].n).slice(0,5).map(([o,v])=>[o,v.n,[...v.c].sort((a,b)=>b[1]-a[1])[0]?.[0]||'추천 없음'])}],
-   action:{title:'그래서 뭘 해야 하나',desc:'확장 패턴에서 나온 과제',tasks}},{open:root.G.plvDiagShut!==true});
+   action:{title:'그래서 뭘 해야 하나',desc:'확장 패턴에서 나온 과제',tasks}},{open:root.G.plvDiagShut!==true,scope:'expansion'});
  }
  /* ── 목록 ── */
  function rowHtml(r){
