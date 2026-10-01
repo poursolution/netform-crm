@@ -27,6 +27,25 @@ test('v2가 없으면(PGRST202) v1 100건씩으로 이어 받고 결과는 같�
  assert.equal(calls.filter(c=>c[0]==='crm_operational_source_v1').length,3);
  assert.equal(root.missing,'crm_operational_source_v2');
 });
+test('bigFirst: 첫 호출부터 v2 — 1000건 이하는 1회로 끝(부분 표시 없음)',async()=>{
+ const ids=UUIDS(750);const {root,calls,ready}=boot((name,a)=>page(a.p_domain,ids,a.p_after,a.p_limit));
+ let pages=0;await ready;const r=await root.Phase1.read('operational',{domains:['deal_core'],firstPageLimit:100,bigFirst:true,onPage:()=>{pages++}});
+ assert.equal(r.data.deals.length,750);
+ assert.deepEqual(calls.map(c=>c[0]+':'+c[1]),['crm_operational_source_v2:1000']);
+ assert.equal(pages,1);
+});
+test('bigFirst인데 v2가 없으면 v1 첫 100건부터 다시',async()=>{
+ const ids=UUIDS(150);const {root,calls,ready}=boot((name,a)=>name==='crm_operational_source_v2'?{error:{code:'PGRST202',message:'Could not find the function'}}:page(a.p_domain,ids,a.p_after,a.p_limit));
+ await ready;const r=await root.Phase1.read('operational',{domains:['deal_core'],firstPageLimit:100,bigFirst:true});
+ assert.equal(r.data.deals.length,150);
+ assert.deepEqual(calls.map(c=>c[0]+':'+c[1]),['crm_operational_source_v2:1000','crm_operational_source_v1:100','crm_operational_source_v1:100']);
+});
+test('화면: v2가 있으면 부분 표시를 건너뛴다',()=>{
+ const src=fs.readFileSync(require.resolve('../operational-overlay.js'),'utf8');
+ assert.match(src,/const bigFirst=root\.CRMRelease\?\.has\?\.\('crm_operational_source_v2'\)!==false/);
+ assert.match(src,/showFirst=\(\)=>\{if\(bigFirst\|\|cached\|\|root\.B/);
+ assert.match(src,/\}\.onPage,bigFirst\),bundle=shell/);
+});
 test('설치 SQL: v1을 서버 안에서 이어 부르고 같은 응답 모양',()=>{
  const sql=fs.readFileSync(require.resolve('../sql/operational-source-v2-20261001.sql'),'utf8');
  assert.match(sql,/create or replace function public\.crm_operational_source_v2\(p_domain text, p_after uuid default null, p_limit integer default 1000\)/);
