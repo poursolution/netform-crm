@@ -17,7 +17,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    const mk=(id,owner,extra)=>Object.assign({id,site:'현장 '+id,assignee:owner,brand:'POUR솔루션',created:CUR_Y+'-09-01',code:'consulting',stage_code:'consulting',grp:'영업·관리',amt:1e8,activities:[]},extra||{});
    B={deals:[mk('a','이필선',{activities:[{type:'전화',note:'통화',at:iso(1)}],next_action:{id:'na-1',text:'견적 확인',due:iso(2).slice(0,10),status:'open'}}),mk('b','이필선',{activities:[{type:'전화',note:'통화',at:iso(10)}]}),mk('c','황윤선',{activities:[]})],
     inquiries:[{id:'q1',site:'문의1',assignee:'이필선',assigned_to:'이필선',status:'배정완료',at:iso(3),assigned_at:iso(3),first_response_at:iso(2)},{id:'q2',site:'문의2',assignee:'이필선',assigned_to:'이필선',status:'배정완료',at:iso(4),assigned_at:iso(4)}],activities:[]};
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
+   LOCAL={deals:{},inquiries:{}};G.kpiV2Off=true;/* 예전 화면 검사 — 새 화면은 verify-kpi-v2 */AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');window.pushWrite=()=>{};goPage('mgmt');
    const s=RecordingKPI.stats('이필선',0);const panel=document.querySelector('#mgmt-root .rk-panel');
    return {s,has:!!panel,rows:panel?[].map.call(panel.querySelectorAll('tbody tr'),tr=>tr.textContent.replace(/\s+/g,' ').trim()):[]};
