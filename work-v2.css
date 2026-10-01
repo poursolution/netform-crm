@@ -1,0 +1,8 @@
+/* 공종 분석 v2 (2026-10-01 디자인 핸드오프 work) — .plv/.pd 모양을 그대로 쓴다 */
+#work-v2{margin-top:4px}
+#work-v2 .plv-pills button{border:1px solid #e1e4ea;background:#fff;color:#374151;border-radius:999px;padding:6px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+#work-v2 .plv-pills button b{color:#6b7280;font-weight:700}
+#work-v2 .plv-pills button[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}#work-v2 .plv-pills button[aria-pressed="true"] b{color:#fff}
+#work-v2 .plv-cta{border:1px solid #c9d6fa;background:#fff;color:#3b6ce4;border-radius:8px;padding:7px 0;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.wv-hint{background:#fff8ec;border:1px solid #f6e7c1;border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;flex-direction:column;gap:3px}
+.wv-hint b{font-size:13.5px;color:#8a5a00}.wv-hint span{font-size:12.5px;color:#374151}.wv-hint small{font-size:11.5px;color:#6b7280;line-height:1.5}
