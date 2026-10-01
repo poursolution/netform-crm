@@ -5,19 +5,25 @@
  const name=v=>norm(v).replace(/아파트/g,'');
  const phone=v=>String(v||'').replace(/\D/g,'');
  const same=(a,b)=>!!a&&!!b&&a===b;
- function similarity(a,b){a=name(a);b=name(b);if(!a||!b)return 0;if(a===b)return 1;if(Math.min(a.length,b.length)<4)return 0;const grams=s=>new Set(Array.from({length:s.length-1},(_,i)=>s.slice(i,i+2))),x=grams(a),y=grams(b);return 2*[...x].filter(v=>y.has(v)).length/(x.size+y.size)}
+ const grams=s=>new Set(Array.from({length:s.length-1},(_,i)=>s.slice(i,i+2)));
+ /* 행마다 정규화·2-gram을 한 번만 계산해 둔다(2026-10-01 — 1,700행이면 쌍 140만 개마다 다시 계산해 데이터 정리 진입에 4.5초 걸렸다) */
+ const prepared=new WeakMap();
+ function prep(r){let p=prepared.get(r);if(p)return p;const n=name(r.name);p={n,g:n.length>=4?grams(n):null,addr:norm(r.address),mobile:phone(r.mobile),office:phone(r.office),work:[...new Set(r.works||[])].sort().join('|'),at:Date.parse(r.at)};prepared.set(r,p);return p}
+ function simPrepared(pa,pb){const a=pa.n,b=pb.n;if(!a||!b)return 0;if(a===b)return 1;if(!pa.g||!pb.g)return 0;let hit=0;for(const v of pa.g)if(pb.g.has(v))hit++;return 2*hit/(pa.g.size+pb.g.size)}
+ function similarity(a,b){return simPrepared(prep({name:a}),prep({name:b}))}
  function pairKey(a,b){return [a.ref.type+':'+a.ref.id,b.ref.type+':'+b.ref.id].sort().join('|')}
  function classify(a,b){
   if(a.ref.type===b.ref.type&&String(a.ref.id)===String(b.ref.id))return null;
   if(a.ref.type==='organization'&&String(a.ref.id)===b.siteId||b.ref.type==='organization'&&String(b.ref.id)===a.siteId)return null;
   if(a.ref.type==='inquiry'&&b.ref.type==='deal'&&(a.linkedDealId===b.ref.id||b.originInquiryId===a.ref.id)||b.ref.type==='inquiry'&&a.ref.type==='deal'&&(b.linkedDealId===a.ref.id||a.originInquiryId===b.ref.id))return null;
-  const address=same(norm(a.address),norm(b.address)),conflict=!!norm(a.address)&&!!norm(b.address)&&!address;
-  const mobile=same(phone(a.mobile),phone(b.mobile))&&/^01\d{8,9}$/.test(phone(a.mobile));
-  const office=same(phone(a.office),phone(b.office))&&phone(a.office).length>=9;
-  const siteId=same(a.siteId,b.siteId),names=similarity(a.name,b.name),sameSite=siteId||address;
-  const workA=[...new Set(a.works||[])].sort().join('|'),workB=[...new Set(b.works||[])].sort().join('|');
+  const pa=prep(a),pb=prep(b);
+  const address=same(pa.addr,pb.addr),conflict=!!pa.addr&&!!pb.addr&&!address;
+  const mobile=same(pa.mobile,pb.mobile)&&/^01\d{8,9}$/.test(pa.mobile);
+  const office=same(pa.office,pb.office)&&pa.office.length>=9;
+  const siteId=same(a.siteId,b.siteId),names=simPrepared(pa,pb),sameSite=siteId||address;
+  const workA=pa.work,workB=pb.work;
   const differentWork=!!workA&&!!workB&&workA!==workB,differentBiz=!!a.brand&&!!b.brand&&a.brand!==b.brand;
-  const da=Date.parse(a.at),db=Date.parse(b.at),days=Number.isFinite(da)&&Number.isFinite(db)?Math.abs(da-db)/864e5:null;
+  const da=pa.at,db=pb.at,days=Number.isFinite(da)&&Number.isFinite(db)?Math.abs(da-db)/864e5:null;
   const reasons=[];if(address)reasons.push('주소 동일');if(office)reasons.push('관리사무소 전화 동일');if(siteId)reasons.push('현장 ID 동일');if(names===1)reasons.push('현장명 표기 일치');else if(names>=.72)reasons.push('현장명 유사 — 확인 필요');if(conflict)reasons.push('등록 주소 서로 다름');
   let type,action,text;
   if(mobile&&!siteId&&(conflict||names<.72)){
