@@ -1,0 +1,62 @@
+﻿/* 모바일 v2 — ① 디자인 규칙 (2026-10-02 핸드오프 mobile 1). body.mv2 일 때만 */
+body.mv2{--mv-bg:#f5f6f8;--mv-line:#f1f2f4;--mv-blue:#3b6ce4;--mv-navy:#1b2340}
+body.mv2 .phone-body,body.mv2 .statusbar,body.mv2 .home-bar{background:var(--mv-bg)}
+/* 스크롤 영역 안에 바로 들어가는 요소는 눌려서 잘리지 않게 */
+body.mv2 .phone-body .body>*{flex:none}
+/* 카드: 흰 바탕 · 둥근 20 · 테두리 없음 */
+body.mv2 .card,body.mv2 .ml-hero,body.mv2 .ml-backlog{border:0;border-radius:20px;box-shadow:none;background:#fff}
+body.mv2 .card.tight{padding:4px 18px}
+/* 목록: 한 카드 안에서 얇은 선으로만 나눈다 — 왼쪽 색띠 · 테두리 · 이모지 없음 */
+body.mv2 .mt-list{display:flex;flex-direction:column;gap:0;background:#fff;border-radius:20px;overflow:hidden}
+body.mv2 .mt-item{border:0!important;border-radius:0!important;box-shadow:none!important;background:#fff!important;margin:0;padding:15px 18px;border-top:1px solid var(--mv-line)!important}
+body.mv2 .mt-list>.mt-item:first-child{border-top:0!important}
+body.mv2 .ml-kind,body.mv2 .mt-rank{display:none}
+body.mv2 .mt-item-top strong{font-size:16px;font-weight:700}
+body.mv2 .mt-reason{color:#4b5563;font-weight:500}
+body.mv2 .mt-item.danger .mt-reason{color:#e5484d;font-weight:600}
+body.mv2 .mt-next{border-top:0;padding-top:0;color:var(--mv-blue);font-weight:600}
+body.mv2 .mt-empty{background:#fff;border:0;border-radius:20px;padding:18px}
+body.mv2 .ml-dpill{background:transparent;padding:0;font-size:12.5px;font-weight:600;color:#9ca3af}
+body.mv2 .ml-dpill.late{background:transparent;color:#e5484d}body.mv2 .ml-dpill.today,body.mv2 .ml-dpill.new{background:transparent;color:var(--mv-blue)}
+body.mv2 .lrow+.lrow{border-top:1px solid var(--mv-line)}
+body.mv2 .lrow .ic{display:none}
+/* 화면 제목: 작은 회색 맥락 한 줄 + 25px 문장 */
+body.mv2 .mt-head{display:flex;flex-direction:column-reverse;gap:4px;margin:6px 2px 14px}
+body.mv2 .mt-head h1{margin:0;font-size:25px;font-weight:700;line-height:1.32;letter-spacing:-.02em;color:#15171c;text-wrap:balance}
+body.mv2 .mt-head p{margin:0;font-size:13px;color:#9ca3af;font-weight:500}
+body.mv2 .sec-h{margin:6px 2px 2px}
+body.mv2 .sec-h h2{font-size:25px;font-weight:700;letter-spacing:-.02em;line-height:1.32}
+body.mv2 .mt-section-head h2,body.mv2 .today-group-head h2{font-size:15px;font-weight:700}
+/* 색: 강조는 파랑 · 남색 두 가지 */
+body.mv2 .btn-primary{background:var(--mv-blue)}
+body.mv2 .btn{min-height:50px;border-radius:14px}
+body.mv2 .seg{background:#e9ebef;border-radius:12px}
+/* 헤더: 로고 · 연결 상태 알약 · 영업/관리 전환 · 알림 */
+body.mv2 .home-bar{padding:10px 18px 8px;flex-wrap:nowrap}
+body.mv2 .home-bar .mark{background:var(--mv-navy)}
+body.mv2 .home-bar .hb-status{display:none}
+body.mv2 .home-bar .rgt{gap:6px}
+body.mv2 .home-bar .hb-pw .hb-txt,body.mv2 .home-bar .hb-out .hb-nm{display:none}
+body.mv2 .home-bar .hb-pw .hb-ico{display:inline}
+body.mv2 .home-bar .hb-pw,body.mv2 .home-bar .hb-out{background:transparent;color:#9ca3af;min-width:32px;min-height:32px;padding:0 6px}
+body.mv2 .home-bar .iconbtn{order:9}
+.mv-status{display:none}
+body.mv2 .mv-status{display:inline-flex;align-items:center;gap:5px;height:26px;border-radius:999px;background:#fff;color:#4b5563;padding:0 10px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.mv-status i{width:6px;height:6px;border-radius:50%;background:#c5cbd6}
+.mv-status.ok i{background:#30a46c}.mv-status.wait{color:#8a5a00}.mv-status.wait i{background:#f5a524}.mv-status.bad{color:#e5484d}.mv-status.bad i{background:#e5484d}
+/* 아래 탭바: 글자만 · 선택 = 검정 굵게 + 파란 점 */
+body.mv2 .tabbar{background:#fff;border-top:1px solid var(--mv-line);padding:6px 6px 12px;backdrop-filter:none}
+body.mv2 .tabbar button{min-height:44px;justify-content:center;gap:5px;color:#9ca3af}
+body.mv2 .tabbar button svg{display:none}
+body.mv2 .tabbar button .tl2{font-size:14px;font-weight:500}
+body.mv2 .tabbar button.on{color:#15171c}
+body.mv2 .tabbar button.on .tl2{font-weight:700}
+body.mv2 .tabbar button::after{content:'';width:5px;height:5px;border-radius:50%;background:transparent}
+body.mv2 .tabbar button.on::after{background:var(--mv-blue)}
+/* 창은 아래에서 올라오는 시트 · 누르는 영역 최소 44 */
+body.mv2 .sheet-card{border-radius:24px 24px 0 0}
+body.mv2 .cchip,body.mv2 .seg button{min-height:44px}
+body.mv2 .card.quick-sites,body.mv2 .phone-body .card{border:0!important}
+/* 좁은 폰: 헤더가 한 줄에 들어가게 — 로고 글자를 줄이고, 연결 상태는 점만 */
+@media(max-width:420px){body.mv2 .home-bar{padding:10px 12px 8px}body.mv2 .home-bar .rgt{gap:4px}body.mv2 .home-bar .hb-pw,body.mv2 .home-bar .hb-out{min-width:28px;padding:0 3px}}
+@media(max-width:374px){body.mv2 .mv-status{font-size:0;gap:0;padding:0 9px}body.mv2 .home-bar .hb-seg button{padding:5px 7px}}
