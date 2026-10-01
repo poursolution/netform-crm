@@ -101,6 +101,8 @@
   const dlg=overlay.querySelector('.inq-dialog');if(!dlg)return;
   overlay.classList.add('idv');
   dlg.innerHTML=header(q)+'<div class="idv-body"><aside class="idv-c1" aria-label="문의자와 현장">'+col1(q)+'</aside><main class="idv-c2" aria-label="문의와 응대">'+col2(q,s)+'</main><aside class="idv-c3" aria-label="문의 업무 관리">'+col3(q,s)+'</aside></div>';
+  /* 경남지사로 넘긴 문의(본사 관리자): 머리 막대·오른쪽 칸을 '지사 진행 확인'으로 — 담당 변경을 고르는 중에는 기존 배정 칸 그대로 */
+  if(!s.reassign){try{root.GyeongnamV2?.decorate?.(dlg,q);}catch(e){}}
   /* 배정 칸을 다시 만들면 기존 배정 상태가 초기화되므로 고른 담당자를 다시 알려 준다 */
   if(s.rep&&s.rep!=='__branch__'&&dlg.querySelector('.idv-assign')){try{root.inqCtlChooseRep(s.rep);}catch(e){}}
   const th=dlg.querySelector('.idv-thread');if(th)th.scrollTop=scroll==null?th.scrollHeight:scroll;

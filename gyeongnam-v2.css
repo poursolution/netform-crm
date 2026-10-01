@@ -1,0 +1,24 @@
+/* 경남지사 v2 (2026-10-01 디자인 핸드오프 gyeongnam) — 목록은 파이프라인 목록(.plv)·진단(.pd) 모양을 그대로 쓴다 */
+#gyeongnam-v2{margin-top:12px}
+#pg-gyeongnam.gnv-on>.cf-bar[hidden]{display:none}
+/* 이 화면의 담당 구분은 지사 담당 칩으로 한다 — 공통 필터줄의 본사 담당자 선택은 감춘다 */
+#pg-gyeongnam.gnv-on>.cf-bar .cf-owner,#pg-gyeongnam.gnv-on>.cf-bar .cf-div,#pg-gyeongnam.gnv-on>.cf-bar .cf-clear{display:none}
+#gyeongnam-v2 .plv-chip{border:1px solid #e1e4ea;background:#fff;color:#374151;border-radius:999px;padding:5px 11px;font:inherit;font-size:12.5px;cursor:pointer}
+#gyeongnam-v2 .plv-chip.on{background:#15171c;border-color:#15171c;color:#fff}
+#gyeongnam-v2 .plv-cta{border:1px solid #c9d6fa;background:#fff;color:#3b6ce4;border-radius:8px;padding:7px 0;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+#gyeongnam-v2 .gnv-link{border:1px solid #e1e4ea;background:#fff;color:#374151;border-radius:8px;padding:6px 11px;font:inherit;font-size:12.5px;cursor:pointer}
+/* 확인 창 오른쪽 칸 */
+.gnv-state{background:#fff;border:1px solid #e7e9ee;border-radius:12px;padding:12px 14px;margin-top:6px;display:flex;flex-direction:column;gap:8px}
+.gnv-state.stalled{border-color:#f3d3d1}
+.gnv-state dl{margin:0;display:flex;flex-direction:column;gap:6px}
+.gnv-state dl>div{display:flex;justify-content:space-between;gap:10px;font-size:13px}
+.gnv-state dt{color:#9ca3af;font-size:12px}.gnv-state dd{margin:0;font-weight:600}.gnv-state dd.r{color:#e5484d}
+.gnv-state p{margin:0;font-size:12px;color:#c93a3f;line-height:1.5}
+.gnv-done{background:#ecf8f1;color:#1f7a4d;border-radius:9px;padding:10px 12px;font-size:12.5px;font-weight:600}
+.gnv-done.amber{background:#fff8ec;color:#8a5a00}
+#inq-inbox-dialog .gnv-ghost{border:1px solid #e1e4ea;background:#fff;color:#374151;border-radius:9px;padding:10px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.gnv-note{margin:0;font-size:11.5px;color:#9ca3af;line-height:1.5}
+.gnv-team{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.gnv-team>b{font-size:13px}
+.gnv-team>div{display:flex;justify-content:space-between;gap:8px;background:#fff;border:1px solid #e7e9ee;border-radius:10px;padding:8px 11px;font-size:13px}
+.gnv-team em{font-style:normal;font-size:11.5px;color:#6b7280}

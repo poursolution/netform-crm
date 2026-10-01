@@ -28,7 +28,7 @@ const server=()=>http.createServer((req,res)=>{
     await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`,{waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>typeof paintGyeongnam==='function');
     await page.evaluate(()=>{
-      AUTH_ON=false;ME={name:'송보람',role:'admin'};B={deals:[],inquiries:[]};
+      G.gyeongnamV2Off=true;/* 예전 화면 검사 — 새 화면은 verify-gyeongnam-v2 */AUTH_ON=false;ME={name:'송보람',role:'admin'};B={deals:[],inquiries:[]};
       gnData=()=>({
         Q:[],unnamed:[],unresp:[],D:[],comp:[],won:[],open:[],riskDeals:[],noNext:[],stale:[],hot:[],
         rows:[{name:'조민준',label:'조민준',pool:false,assigned:0,responded:0,opps:0,compete:0,won:0,pipeline:0,tracked:false,advanced:0,risk:0}]
