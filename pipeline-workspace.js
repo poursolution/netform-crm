@@ -52,32 +52,61 @@ function cardBadge(r){
 /* 공용 '진행' 판정 — 메뉴 숫자·상단 띠·단계 지표가 모두 이것만 쓴다 */
 function liveRow(r){return !['won','lost','expansion'].includes(r.group);}
 function liveBasis(){const y=kanbanYear();return '기준: 진행 중 영업건 · 수주·실주·확장 제외 · '+(y==='전체'?'모든 연도':'공사예정년도 '+y);}
-function kpiStrip(all){
- /* '진행'은 메뉴 숫자와 같은 기준(2026-10-01 컨설턴트 4항 — 536 vs 667: 여기만 확장 기회 131건을 더하고 있었다) */
- const act=all.filter(liveRow),amount=act.reduce((s,r)=>s+(Number(r.amount)||0),0),basis=liveBasis();
- const items=[['진행',act.length+'건','',basis],['진행 금액',moneyShort(amount),'',basis+' · 예상금액 합'],['기한초과',String(act.filter(r=>r.flags.includes('overdue')).length),'bad',basis+' · 다음 할 일 날짜가 지남'],['다음 할 일 없음',String(act.filter(r=>r.flags.includes('missing')).length),'warn',basis+' · 다음 할 일 또는 날짜 없음'],['장기정체',String(act.filter(r=>r.flags.includes('stale')).length),'bad',basis+' · 단계 체류 기준 초과']];
- return '<div class="ps-kpis">'+items.map(([l,v,c,t])=>'<div class="ps-kpi '+c+'" title="'+attr(t)+'"><span>'+h(l)+'</span><b>'+h(v)+'</b></div>').join('')+'</div>';
-}
+/* ── 전체 파이프라인 칸반 v2 (2026-10-01 디자인 핸드오프 'Pipeline Kanban v2') ──
+   7열이 한 화면에(실주는 96px 좁은 열), 카드는 현장명 + 한 줄(상태점·담당자·금액), 열마다 12장 + '더보기'(단계 페이지로).
+   카드를 끌어 다른 열에 놓으면 그 단계의 기존 전환창(stage-transition, 한 일·결과·다음 할 일·사유 필수)이 열린다 —
+   근거 없이 단계만 옮기지 않는 규칙은 그대로라 '놓자마자 이동·되돌리기'는 넣지 않았다. 저장되면 보드가 다시 그려진다. */
+const PK_PER=12,PK_LOST=3;
+const PK_COLS=[['consulting','컨설팅 설계','#8b8fa3'],['sent','자료 발송완료','#6f8fd6'],['relationship','관계관리','#4f74d9'],['competition','경쟁·입찰','#9a6bd6'],['construction','계약·시공','#d68a3a'],['won','수주','#3f9e64'],['lost','실주','#b8b8b2']];
+function cardState(r){if(r.group==='won')return ['done','수주'];if(r.group==='lost')return ['ok',r.reason&&r.reason!=='미기록'?'실주 · '+r.reason:'실주'];if(r.flags.includes('overdue'))return ['over','기한 지남 · '+Math.abs(r.days)+'일'];if(r.flags.includes('missing'))return ['none','다음 할 일 없음'];return ['ok',r.days===0?'오늘 할 일':r.days>0?'진행 중 · '+r.days+'일 남음':'진행 중'];}
+const PK_ORDER={over:0,none:1,ok:2,done:2};
+function kanbanSort(items,key){if(key==='lost'||key==='won')return items.slice().sort((p,q)=>String(q.item.closed_at||'').localeCompare(String(p.item.closed_at||'')));return items.slice().sort((p,q)=>PK_ORDER[cardState(p)[0]]-PK_ORDER[cardState(q)[0]]||(Number(q.amount)||0)-(Number(p.amount)||0));}
 function kanbanCard(r){
- const b=cardBadge(r);
- const foot=r.group==='lost'?(r.reason||'사유 미기록'):r.group==='won'?(r.item.completion_date?'준공 '+String(r.item.completion_date).slice(0,10):'수주 확정'):(r.next?.text||'다음 할 일 없음');
- const none=!['won','lost'].includes(r.group)&&!r.next?.text;
- // 카드 전체가 클릭 대상 — 누르면 해당 영업의 상세 화면이 열린다.
- return '<button type="button" class="ps-kcard '+(b[0]==='hot'?'stall':b[0]==='warn'?'warn':'')+'" data-ps-action="record" data-value="'+attr(r.key)+'"><span class="ps-kr1"><b class="ps-ksite">'+h(r.site)+'</b><span class="ps-kbadge '+b[0]+'">'+h(b[1])+'</span></span><span class="ps-kr2"><span>'+h(r.owner||'미배정')+'</span><b>'+moneyShort(r.amount)+'</b></span><span class="ps-knext'+(none?' none':'')+'">'+h(foot)+'</span></button>';
+ const st=cardState(r),owner=r.owner||'미배정',amt=Number(r.amount)||0;
+ // 카드 전체가 클릭 대상 — 누르면 해당 영업의 상세 화면이 열린다. 종료 건은 끌 수 없다.
+ return '<button type="button" class="ps-kcard" draggable="'+(['won','lost'].includes(r.group)?'false':'true')+'" data-ps-action="record" data-value="'+attr(r.key)+'" data-group="'+attr(r.group)+'" title="'+attr(st[1])+'"><span class="ps-ksite">'+h(r.site)+'</span><span class="ps-kr2"><i class="ps-kdot '+st[0]+'"></i><span class="ps-kowner'+(owner==='미배정'?' none':'')+'">'+h(owner)+'</span><b>'+(amt?moneyShort(amt):'–')+'</b></span></button>';
 }
 function kanban(all){
- // 6열(실주 제외)이 화면 안에 다 들어오고, 목록은 칼럼 안에서만 스크롤된다. 실주는 사이드바 페이지에서.
- const defs=S.definitions.filter(d=>!['expansion','lost'].includes(d.key));
- return '<div class="ps-kanban">'+defs.map(d=>{
-  const items=all.filter(r=>r.group===d.key);
+ return '<div class="ps-kanban pk">'+PK_COLS.map(([key,name,color])=>{
+  const items=kanbanSort(all.filter(r=>r.group===key),key),lost=key==='lost',shown=items.slice(0,lost?PK_LOST:PK_PER),more=items.length-shown.length;
   const amount=items.reduce((s,r)=>s+(Number(r.amount)||0),0);
-  const late=items.filter(r=>r.flags.includes('overdue')||r.flags.includes('stale')).length;
-  const missing=items.filter(r=>r.flags.includes('missing')).length;
-  const flags=['won','lost'].includes(d.key)?'':(late?'<span class="ps-flag hot">지연·정체 '+late+'</span>':'')+(missing?'<span class="ps-flag warn">다음 할 일 없음 '+missing+'</span>':'');
-  return '<section class="ps-kcol" style="--stage-color:'+d.color+'"><div class="ps-khead"><div class="ps-kt">'+button(d.number+' '+d.label,'stage',d.key,'ps-ktitle')+'<span class="ps-kn">'+items.length+'</span></div><div class="ps-kmoney">'+moneyShort(amount)+'</div>'+(flags?'<div class="ps-kflags">'+flags+'</div>':'')+'<p class="ps-khint">'+h(d.description||'')+'</p></div><div class="ps-kbody">'
-   +items.map(kanbanCard).join('')+'</div>'
-   +button('단계 페이지 열기 · '+items.length+'건','stage',d.key,'ps-kmore')+'</section>';
- }).join('')+'</div>';
+  return '<section class="ps-kcol'+(lost?' lost':'')+'" data-pk-col="'+key+'" style="--stage-color:'+color+'"><div class="ps-khead"><div class="ps-kt"><i class="ps-kstage"></i>'+button(name,'stage',key,'ps-ktitle')+'<span class="ps-kn">'+items.length+'</span></div><div class="ps-kmoney">'+(lost?'종료':moneyShort(amount))+'</div></div>'
+   +(lost?'<div class="ps-kdrop">여기로 끌어<br>실주 처리</div>':'')
+   +'<div class="ps-kbody">'+shown.map(kanbanCard).join('')+'</div>'
+   +(more>0?button('+ '+more+'건 더보기','stage',key,'ps-kmore'):'')+'</section>';
+ }).join('')+'</div><div class="pk-legend"><span><i class="ps-kdot over"></i>기한 지남</span><span><i class="ps-kdot none"></i>할 일 없음</span><span><i class="ps-kdot ok"></i>진행 중</span><span>· 카드를 끌어 놓으면 단계 전환창이 열립니다 · 마우스를 올리면 상태 표시</span></div>';
+}
+/* 끌어 놓기 → 기존 단계 전환창. 그 단계로 바로 갈 수 없으면(전환 규칙) 이유를 알린다 */
+let pkDrag=null;
+function pkTargetCode(r,colKey){const def=S.definition(colKey),T=root.StageTransition,from=root.dealStage(r.item),choices=T&&typeof T.choices==='function'?T.choices(from):null;if(!def)return null;if(!choices)return def.codes[0];return def.codes.find(code=>choices.includes(code))||null;}
+function pkDrop(colKey){
+ const d=pkDrag;pkDrag=null;if(!d||d.group===colKey)return;const r=rows().find(x=>x.key===d.key);if(!r||r.expansion)return;
+ const name=(PK_COLS.find(x=>x[0]===colKey)||[])[1]||colKey,code=pkTargetCode(r,colKey);
+ if(!code){root.toast?.(r.site+' — 지금 단계에서는 «'+name+'»(으)로 바로 옮길 수 없습니다. 상세에서 가능한 단계를 확인해 주세요.','warn');return;}
+ root.G._detailPopup=true;root.drwDeal(JSON.stringify(r.item));
+ setTimeout(()=>{if(root.StageTransitionUI?.open)root.StageTransitionUI.open(r.item,false,code);else root.DetailActions?.open('stage');},60);
+}
+function pkBind(el){
+ const board=el.querySelector('.ps-kanban.pk');if(!board)return;
+ const clear=()=>board.querySelectorAll('.ps-kcol.over').forEach(n=>n.classList.remove('over'));
+ board.addEventListener('dragstart',e=>{const card=e.target.closest('.ps-kcard');if(!card||card.getAttribute('draggable')!=='true')return;pkDrag={key:card.dataset.value,group:card.dataset.group};card.classList.add('dragging');try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',card.dataset.value);}catch(x){}});
+ board.addEventListener('dragend',e=>{e.target.closest?.('.ps-kcard')?.classList.remove('dragging');clear();pkDrag=null;});
+ board.addEventListener('dragover',e=>{const col=e.target.closest('.ps-kcol');if(!col||!pkDrag)return;e.preventDefault();if(col.dataset.pkCol!==pkDrag.group&&!col.classList.contains('over')){clear();col.classList.add('over');}});
+ board.addEventListener('dragleave',e=>{const col=e.target.closest('.ps-kcol');if(col&&!col.contains(e.relatedTarget))col.classList.remove('over');});
+ board.addEventListener('drop',e=>{const col=e.target.closest('.ps-kcol');if(!col)return;e.preventDefault();clear();board.querySelector('.ps-kcard.dragging')?.classList.remove('dragging');pkDrop(col.dataset.pkCol);});
+}
+/* 한 줄 머리: 제목 · 진행 N건 · 금액 · [연도|브랜드|담당자|공종] · 검색 — 브랜드 칩 줄·담당자 구분 줄·공종 줄을 여기로 접는다 */
+function pkHead(all,source){
+ const live=all.filter(liveRow),amount=live.reduce((s,r)=>s+(Number(r.amount)||0),0),basis=liveBasis();
+ const seg=(html,on)=>'<label class="pk-segitem'+(on?' on':'')+'">'+html+'</label>';
+ const sel=(aria,attrs,opts,value,first)=>'<select aria-label="'+attr(aria)+'" '+attrs+'>'+opts.map(v=>'<option value="'+attr(v)+'"'+(String(v)===String(value)?' selected':'')+'>'+h(v==='전체'?first:v)+'</option>').join('')+'</select>';
+ const years=root.ConstructionYear?root.ConstructionYear.options(root.B?.deals||[]):['전체'],y=kanbanYear();
+ const year='<select aria-label="공사예정 연도" data-ps-filter="pipeRepYear">'+years.map(v=>'<option value="'+attr(v)+'"'+(String(v)===y?' selected':'')+'>'+h(v==='전체'?'전체 연도':v==='미입력'?'연도 미입력':v+'년')+'</option>').join('')+'</select>';
+ const brands=['전체',...new Set(source.map(r=>r.item.brand).filter(Boolean))],owners=['전체',...new Set(source.map(r=>r.owner).filter(Boolean))].sort((a,b)=>a==='전체'?-1:b==='전체'?1:a.localeCompare(b,'ko'));
+ const brand=root.G.brand||'전체',owner=root.SalesScope.state().owner||'전체',work=root.G.workFilter||'전체';
+ return '<header class="pk-head"><h2>파이프라인</h2><div class="pk-sum" title="'+attr(basis)+'"><span>진행 <b>'+live.length+'건</b></span><span>금액 <b>'+moneyShort(amount)+'</b></span></div><div class="pk-spacer"></div>'
+  +'<div class="pk-seg">'+seg(year,y!=='전체')+seg(sel('브랜드','data-pk-filter="brand"',brands,brand,'전체 브랜드'),brand!=='전체')+seg(sel('담당자','data-pk-filter="owner"',owners,owner,'전체 담당자'),owner!=='전체')+seg('<select aria-label="단계 공종" data-ps-filter="workFilter">'+root.workFilterOptions(root.G.workFilter).replace(/>전체</,'>전체 공종<')+'</select>',work!=='전체')+'</div>'
+  +'<input class="pk-search" aria-label="단계 현장 검색" data-ps-filter="q" value="'+attr(root.G.q||'')+'" placeholder="현장 검색"></header>';
 }
 function metrics(list,key){const active=list.filter(liveRow),amount=list.reduce((s,r)=>s+(r.amount||0),0);const m=[['적재 영업',list.length+'건'],[key==='won'?'준공 처리금액':key==='expansion'?'확장 기회':'예상금액',key==='expansion'?list.length+'건':root.fmtAmt(amount)],['기한초과',active.filter(r=>r.flags.includes('overdue')).length+'건'],['다음 할 일 없음',active.filter(r=>r.flags.includes('missing')).length+'건']];if(key==='relationship')m.splice(2,2,['7일 이상·접촉 미확인',active.filter(r=>r.flags.includes('contact')).length+'건'],['장기정체',active.filter(r=>r.flags.includes('stale')).length+'건']);if(key==='competition')m.splice(2,2,['3일 안',list.filter(r=>r.date&&root.daysTo(r.date)>=0&&root.daysTo(r.date)<=3).length+'건'],['결정 일정 미등록',list.filter(r=>!r.date).length+'건']);return '<div class="ps-metrics">'+m.map(x=>'<div><span>'+h(x[0])+'</span><strong>'+h(x[1])+'</strong></div>').join('')+'</div>';}
 function contractOf(r){return root.ContractSalesData?.state().items.find(x=>String(x.deal_id)===String(r.item.id));}
@@ -104,8 +133,8 @@ function render(){
  const title=def?def.label:'전체 파이프라인';document.getElementById('ptitle').textContent=title;document.getElementById('psub').textContent=def?.description||'8개 단계의 현재 적재 현황과 업무를 확인합니다.';
  const yearSelect=!def&&root.ConstructionYear?'<label>연도<select aria-label="공사예정 연도" data-ps-filter="pipeRepYear">'+root.ConstructionYear.options(root.B?.deals||[]).map(y=>'<option value="'+attr(y)+'"'+(String(y)===kanbanYear()?' selected':'')+'>'+h(y==='전체'?'전체 연도':y==='미입력'?'미입력':y+'년')+'</option>').join('')+'</select></label>':'';
  /* 상단 단계 타일 스트립은 사이드바와 중복이라 전 단계에서 제거했다. */
- el.innerHTML='<header class="ps-heading"><div><small>파이프라인 / '+h(title)+'</small><h2>'+h(title)+'</h2><p>'+h(def?.description||'단계별 적재·금액·정체를 한 화면에서 확인하고, 카드를 누르면 상세로 이동합니다.')+'</p></div><b>'+list.length+'건</b></header>'+(!def?kpiStrip(all.filter(kanbanYearMatch)):'')+root.SalesFilters.controls(source.filter(r=>!def||r.group===key).map(r=>({brand:r.item.brand,owner:r.owner,item:r.item})))+'<div class="ps-filters">'+yearSelect+work+'<label>현장 검색<input aria-label="단계 현장 검색" data-ps-filter="q" value="'+attr(root.G.q||'')+'" placeholder="현장·담당자·공종"></label>'+button('검색','search')+'</div>'+'<p class="ps-note">'+(def?'현재 적재 기준 · 생성 연도와 무관하게 진행 영업 표시'+(root.G.pipelinePeriod?' · 이전 분석 기간 '+h(root.G.pipelinePeriod):''):'공사예정년도 기준 조회 · 칼럼 제목=단계 페이지 · 카드=상세 화면')+'</p>'+body;
- el.onclick=click;el.onchange=e=>{const k=e.target.dataset.psFilter;if(k){root.G[k]=e.target.value;f.page=1;root.paint();}};el.onkeydown=e=>{if(e.key==='Enter'&&e.target.matches('[data-ps-filter="q"]')){root.G.q=e.target.value;f.page=1;root.paint();}};root.PipelineSplit.mount(list);sidebar();return true;
+ if(!def){el.classList.add('pk-mode');el.innerHTML=pkHead(all.filter(kanbanYearMatch),source)+body;}else{el.classList.remove('pk-mode');el.innerHTML='<header class="ps-heading"><div><small>파이프라인 / '+h(title)+'</small><h2>'+h(title)+'</h2><p>'+h(def?.description||'단계별 적재·금액·정체를 한 화면에서 확인하고, 카드를 누르면 상세로 이동합니다.')+'</p></div><b>'+list.length+'건</b></header>'+(!def?kpiStrip(all.filter(kanbanYearMatch)):'')+root.SalesFilters.controls(source.filter(r=>!def||r.group===key).map(r=>({brand:r.item.brand,owner:r.owner,item:r.item})))+'<div class="ps-filters">'+yearSelect+work+'<label>현장 검색<input aria-label="단계 현장 검색" data-ps-filter="q" value="'+attr(root.G.q||'')+'" placeholder="현장·담당자·공종"></label>'+button('검색','search')+'</div>'+'<p class="ps-note">'+(def?'현재 적재 기준 · 생성 연도와 무관하게 진행 영업 표시'+(root.G.pipelinePeriod?' · 이전 분석 기간 '+h(root.G.pipelinePeriod):''):'공사예정년도 기준 조회 · 칼럼 제목=단계 페이지 · 카드=상세 화면')+'</p>'+body;}
+ el.onclick=click;el.onchange=e=>{const k=e.target.dataset.psFilter,pk=e.target.dataset.pkFilter;if(pk==='brand'){root.G.brand=e.target.value;f.page=1;root.paint();return;}if(pk==='owner'){root.SalesScope.change('owner',e.target.value);root.G.rep=e.target.value;f.page=1;root.paint();return;}if(k){root.G[k]=e.target.value;f.page=1;root.paint();}};if(!def)pkBind(el);el.onkeydown=e=>{if(e.key==='Enter'&&e.target.matches('[data-ps-filter="q"]')){root.G.q=e.target.value;f.page=1;root.paint();}};root.PipelineSplit.mount(list);sidebar();return true;
 }
 function click(e){const b=e.target.closest('[data-ps-action]');if(!b)return;const a=b.dataset.psAction,v=b.dataset.value;if(a==='stage')open(v);if(a==='triage-tab'){state().triage=v;state().page=1;root.paint();}if(a==='queue-more'){state().limit=(state().limit||60)+60;root.paint();}if(a==='view'){state().view=v;state().page=1;root.paint();}if(a==='status'){state().status=v;state().page=1;root.paint();}if(a==='owner'){const current=root.SalesScope.state().owner;root.SalesScope.change('owner',current===v?'전체':v);state().page=1;root.paint();}if(a==='relseg'){root.G.relSeg=v;state().page=1;root.paint();}if(a==='compseg'){root.G.compSeg=v;state().page=1;root.paint();}if(a==='consseg'){root.G.consSeg=v;state().page=1;root.paint();}if(a==='page'){state().page=Number(v);root.paint();}if(a==='search'){root.G.q=document.querySelector('[data-ps-filter="q"]')?.value||'';state().page=1;root.paint();}if(a==='contract-refresh'){Promise.resolve(root.ContractSalesData?.refresh()).then(refresh);return;}if(['record','process','contact','next','stage-edit','primary'].includes(a)){const r=rows().find(r=>r.key===v);if(!r)return;if(!POPUP_STAGES.includes(root.G.pipelineStage)&&root.PipelineSplit?.select(r,a))return;if(r.expansion){root.ExpansionPool.open(r.expansion.id);return;}root.G._detailPopup=true;root.drwDeal(JSON.stringify(r.item));if(a==='contact')root.DetailActions?.open('activity');if(a==='process')root.DetailActions?.open(r.flags.includes('missing')?'next':'activity');if(a==='stage-edit')root.DetailActions?.open('stage');}}
 function refresh(){sidebar();if(root.G.page==='today')root.paintTodayHome();if(root.G.page==='pipe'&&root.G.pipelineWorkspace)render();if(['dash','perf','control'].includes(root.G.page))root.SalesInsights?.render();}
