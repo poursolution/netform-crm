@@ -1,0 +1,57 @@
+/* 견적문의 목록 v2 (2026-10-01 디자인 핸드오프) — 이 화면 전용. 사이드바·상단 툴바·다른 메뉴는 건드리지 않는다 */
+#pg-inq.inq-v2>#sg-top,#pg-inq.inq-v2>#sg-signals,#pg-inq.inq-v2>.inq-inbox-sticky,#pg-inq.inq-v2>#sg-panel{display:none!important}
+#inq-v2{display:flex;flex-direction:column;gap:14px;color:#15171c}
+.iv-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.iv-title{display:flex;flex-direction:column;gap:2px}
+.iv-title h2{font-size:22px;font-weight:700;letter-spacing:-.025em;margin:0}
+.iv-title p{font-size:12.5px;color:#6b7280;margin:0}
+.iv-seg{display:flex;gap:2px;background:#e6e8ec;padding:3px;border-radius:9px}
+.iv-seg button{border:0;padding:5px 12px;border-radius:7px;cursor:pointer;font:inherit;font-size:12.5px;background:transparent;color:#6b7280}
+.iv-seg button[aria-pressed="true"]{background:#fff;color:#15171c;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.iv-spacer{flex:1}
+.iv-brands{display:flex;gap:6px;flex-wrap:wrap}
+.iv-pill{display:flex;align-items:center;gap:5px;font:inherit;font-size:12.5px;padding:5px 10px;border-radius:999px;background:#fff;border:1px solid #e1e4ea;color:#374151;cursor:pointer}
+.iv-pill i,.iv-tab i,.iv-ghead i{width:7px;height:7px;border-radius:4px;display:block;flex:none}
+.iv-pill em{font-style:normal;color:#9ca3af}
+.iv-pill.on{background:#15171c;border-color:#15171c;color:#fff}.iv-pill.on em{color:#d1d5db}
+.iv-search{width:200px;padding:7px 11px;border-radius:8px;border:1px solid #e1e4ea;font:inherit;font-size:12.5px;outline:none;background:#fff;color:#15171c}
+.iv-search:focus{border-color:#3b6ce4}
+.iv-create-slot:empty,.iv-more-slot:empty{display:none}
+#inq-v2 .inq-create-trigger{border:0;background:#3b6ce4;color:#fff;font:inherit;font-size:12.5px;font-weight:600;padding:8px 12px;border-radius:8px;cursor:pointer;position:static;margin:0}
+#inq-v2 .inq-create-trigger:hover{background:#2a52b8}
+#inq-v2 .inq-work-tools{position:relative;bottom:auto}
+#inq-v2 .inq-work-tools>summary{list-style:none;border:1px solid #e1e4ea;background:#fff;border-radius:8px;padding:7px 12px;font-size:12.5px;color:#374151;cursor:pointer}
+#inq-v2 .inq-work-tools>summary::-webkit-details-marker{display:none}
+#inq-v2 .inq-work-tools .inq-tools-body{position:absolute;right:0;top:calc(100% + 6px);z-index:30;width:min(440px,88vw);max-height:70vh;overflow:auto;background:#fff;border:1px solid #e7e9ee;border-radius:12px;box-shadow:0 14px 36px rgba(17,24,39,.14);padding:12px;display:flex;flex-direction:column;gap:10px}
+#inq-v2 .iv-in-more .sf-row:first-child{display:none}/* 브랜드는 머리 줄 알약으로 */
+#inq-v2 .inq-work-filters.iv-in-more{display:flex;flex-wrap:wrap;gap:8px;align-items:end}
+#inq-v2 .inq-work-filters.iv-in-more .inq-work-search{display:none}
+.iv-legacy{align-self:flex-start;border:0;background:none;color:#3b6ce4;font:inherit;font-size:12px;cursor:pointer;padding:2px 0}
+.iv-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.iv-tab{display:flex;align-items:center;gap:7px;border:1px solid #e1e4ea;background:#fff;color:#374151;border-radius:999px;padding:7px 13px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.iv-tab b{font-weight:700;color:#6b7280}.iv-tab b.red{color:#e5484d}.iv-tab b.amber{color:#b26a00}
+.iv-tab.on{background:#15171c;border-color:#15171c;color:#fff}.iv-tab.on b{color:#fff}
+.iv-table{background:#fff;border:1px solid #ebedf1;border-radius:12px;overflow:hidden}
+.iv-thead,.iv-row{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 150px 80px minmax(0,1.3fr) 64px 84px;gap:16px;align-items:center}
+.iv-thead{padding:10px 20px;font-size:11.5px;color:#9ca3af;border-bottom:1px solid #f0f1f4}
+.iv-ghead{display:flex;align-items:center;gap:8px;padding:12px 20px 8px;background:#fafbfc;border-bottom:1px solid #f0f1f4;cursor:pointer}
+.iv-ghead i{width:8px;height:8px}
+.iv-ghead b{font-size:13px;font-weight:700}.iv-ghead span{font-size:12.5px;color:#6b7280}.iv-ghead small{font-size:12px;color:#9ca3af}
+.iv-ghead em{margin-left:auto;font-style:normal;font-size:12px;color:#3b6ce4}
+.iv-empty{padding:28px 20px;text-align:center;font-size:13px;color:#9ca3af;border-bottom:1px solid #f5f6f8}
+.iv-row{padding:12px 20px;border-bottom:1px solid #f5f6f8;cursor:pointer}
+.iv-row:hover{background:#fafbfc}
+.iv-c{display:flex;flex-direction:column;gap:3px;min-width:0}
+.iv-c>*{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.iv-site b{font-size:14px;font-weight:600}.iv-site span{font-size:12.5px;color:#4b5563}
+.iv-cust{font-size:13px}.iv-cust .warn,.iv-brand .warn{color:#b26a00}
+.iv-brand{font-size:12px;gap:4px}.iv-brand b{color:#2a52b8;font-weight:600}.iv-brand span{color:#6b7280}
+.iv-owner{font-size:13px;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.iv-owner.none{color:#e5484d;font-weight:600}
+.iv-last span{font-size:12.5px;color:#374151;line-height:1.4}.iv-last small{font-size:11.5px;color:#9ca3af}
+.iv-age{font-size:13px;font-weight:600;color:#6b7280}.iv-age.hot{color:#e5484d}.iv-age.new{color:#3b6ce4}
+.iv-cta{border-radius:8px;padding:7px 0;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;border:1px solid #c9d6fa;background:#fff;color:#3b6ce4}
+.iv-cta.fill{border-color:#3b6ce4;background:#3b6ce4;color:#fff}.iv-cta:hover{border-color:#2a52b8}
+.iv-more{display:block;width:100%;border:0;border-bottom:1px solid #f0f1f4;background:#fff;padding:9px 20px;font:inherit;font-size:12.5px;color:#6b7280;text-align:left;cursor:pointer}
+.iv-more:hover{color:#15171c}
+@media(max-width:1100px){.iv-thead{display:none}.iv-row{grid-template-columns:minmax(0,1fr) 84px;gap:6px 12px}.iv-row .iv-site{grid-column:1}.iv-row .iv-cta{grid-column:2;grid-row:1}.iv-row .iv-cust,.iv-row .iv-brand,.iv-row .iv-last{grid-column:1/-1}.iv-row .iv-owner,.iv-row .iv-age{grid-column:auto}.iv-spacer{display:none}.iv-search{width:100%}.iv-ghead small{display:none}}
+.iv-back{border:1px solid #c9d6fa;background:#fff;color:#3b6ce4;border-radius:8px;padding:6px 10px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;margin-right:8px}
