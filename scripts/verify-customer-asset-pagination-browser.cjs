@@ -26,7 +26,7 @@ async function run(){
     key:'customer-'+(index+1),norm:'customer '+(index+1),name:'테스트 고객 '+String(index+1).padStart(2,'0'),names:{},addresses:['테스트 주소'],deals:[],inquiries:[],open:[],won:[],lost:[],brands:['POUR솔루션'],owners:['황윤선'],contacts:[],primary:null,totalAmount:0,wonAmount:0,openAmount:0,lostAmount:0,started:'2026-01-01',firstInquiry:'',firstDeal:'2026-01-01',lastAt:'2026-09-01',lastDays:8,health:'active'
    }));
    siteMasterData=()=>customers;
-   G.page='sites';G.q='';G.siteStatus='전체';G.siteBrand='전체';G.siteOwner='전체';G.workFilter='전체';G.siteSort='관계우선';G.sitePage=1;G.sitePageKey=null;
+   G.assetV2Off=true;/* 예전 화면 검사 — 새 화면은 verify-asset-v2 */G.page='sites';G.q='';G.siteStatus='전체';G.siteBrand='전체';G.siteOwner='전체';G.workFilter='전체';G.siteSort='관계우선';G.sitePage=1;G.sitePageKey=null;
    document.getElementById('authGate').classList.remove('on');
    document.querySelectorAll('.apage').forEach(node=>node.classList.remove('on'));
    document.getElementById('pg-sites').classList.add('on');

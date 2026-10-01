@@ -28,7 +28,7 @@ async function run(){
    const customers=[make('id:site-suwon','경기 수원시 팔달구 1','deal-suwon'),make('id:site-yongin','경기 용인시 기흥구 2','deal-yongin')];
    B={deals:customers.flatMap(s=>s.deals),inquiries:[],activities:[],contacts:[],sites:[],dups:[],cleanup_events:[],cleanup_moves:[],expansion_pool:[],expansionPool:[],expansion_events:[],asq_projects:[]};
    siteMasterData=()=>customers;
-   G.page='sites';G.q='';G.siteStatus='전체';G.siteBrand='전체';G.siteOwner='전체';G.siteAddress='전체';G.workFilter='전체';G.siteSort='관계우선';G.sitePage=1;G.sitePageKey=null;
+   G.assetV2Off=true;/* 예전 화면 검사 — 새 화면은 verify-asset-v2 */G.page='sites';G.q='';G.siteStatus='전체';G.siteBrand='전체';G.siteOwner='전체';G.siteAddress='전체';G.workFilter='전체';G.siteSort='관계우선';G.sitePage=1;G.sitePageKey=null;
    document.getElementById('authGate').classList.remove('on');
    document.querySelectorAll('.apage').forEach(node=>node.classList.remove('on'));
    document.getElementById('pg-sites').classList.add('on');
