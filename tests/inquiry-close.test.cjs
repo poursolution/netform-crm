@@ -7,12 +7,12 @@ const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const read=f=>fs.readFileSync(path.join(root,f),'utf8');
 
-test('서버 함수: 담당자·관리자만, 사유 필수, 휴지통·종결·전환 건 거부, 이전 상태 보존, 감사 기록',()=>{
+test('서버 함수: 담당자·관리자만, 사유 필수, 종결·전환 건 거부, 이전 상태 보존, 감사 기록',()=>{
  const sql=read('sql/inquiry-close-v1-20261001.sql');
  assert.match(sql,/create or replace function public\.crm_inquiry_close_v1\(p jsonb\)/);
  assert.match(sql,/a\.permission_role<>'admin' and \(oldq\.assigned_to is null or oldq\.assigned_to<>a\.user_id\)/);
  assert.match(sql,/v_id is null or v_reason is null/);
- assert.match(sql,/oldq\.deleted_at is not null/);
+ assert.doesNotMatch(sql,/deleted_at/,'운영 inquiries에 없는 열');
  assert.match(sql,/in \('종결','종료','수주','실주'\)/);
  assert.match(sql,/oldq\.deal_id is not null or oldq\.opportunity_id is not null/);
  assert.match(sql,/set status='종결'/);
