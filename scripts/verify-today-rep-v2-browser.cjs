@@ -19,7 +19,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    const deal=(id,site,extra)=>Object.assign({id,site,assignee:'이필선',brand:'POUR솔루션',created:day(0),code:'consulting',stage_code:'consulting',grp:'영업·관리',amt:2e8,manager_name:'김소장',manager_mobile:'01077778888'},extra||{});
    B={deals:[
      deal('late1','기한 지난 현장 A',{next_action:{id:'n1',type:'전화',text:'견적 확인 전화',due:day(-5),status:'open'}}),deal('late2','기한 지난 현장 B',{amt:5e8,code:'bidding',stage_code:'bidding',next_action:{id:'n2',type:'전화',text:'입찰 조건 확인',due:day(-2),status:'open'}}),
-     deal('today1','오늘 약속 현장',{next_action:{id:'n3',type:'방문',text:'현장 실사',due:day(0),status:'open'}}),deal('soon1','입찰 임박 현장',{code:'bidding',stage_code:'bidding',next_action:{id:'n4',type:'전화',text:'입찰 서류 확인',due:day(2),status:'open'},stage_contexts:{bidding:{fields:{bid_deadline:day(3)}}}}),
+     deal('today1','오늘 약속 현장',{next_action:{id:'n3',type:'방문',text:'현장 실사',due:day(0)+'T14:00',status:'open'}}),deal('soon1','입찰 임박 현장',{code:'bidding',stage_code:'bidding',next_action:{id:'n4',type:'전화',text:'입찰 서류 확인',due:day(2),status:'open'},stage_contexts:{bidding:{fields:{bid_deadline:day(3)}}}}),
      deal('later1','다음 주 현장',{next_action:{id:'n5',type:'전화',text:'안부 전화',due:day(6),status:'open'}}),deal('other','남의 현장',{assignee:'황윤선',next_action:{id:'n6',text:'x',due:day(-9),status:'open'}})],
     inquiries:[inq(3,'첫 연락 늦은 현장',3),inq(5,'첫 연락 늦은 현장 2',2)],activities:[],inquiryTrash:[],expansion_pool:[]};
    LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'rep1',name:'이필선',role:'rep'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
@@ -30,30 +30,34 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const v=page.locator('#today-v2 .trv');assert.equal(await v.count(),1,'영업사원 새 화면');
   assert.equal(await page.locator('#today-v2 .twq-urgent, #today-v2 .tv-seg, #today-v2 .tv-list').count(),0,'가로 카드 줄 · 견적문의/파이프라인 탭 없음');
   const model=await page.evaluate(()=>{const X=TodayWorkQueue.data(),rows=X.rows.concat(TodayRepV2.upcoming(X.rows,X.D)),sp=TodayRepV2.split(rows);return {urgent:sp.urgent.map(u=>u.tone+':'+u.x.item.site),rest:sp.rest.map(x=>x.item.site)};});
-  assert.equal(model.urgent.filter(u=>u.startsWith('r:')).length,4,JSON.stringify(model));assert.deepEqual(model.urgent.slice(4),['b:오늘 약속 현장','a:입찰 임박 현장']);assert.deepEqual(model.rest,['다음 주 현장']);
+  assert.deepEqual(model.urgent,['r:첫 연락 늦은 현장','r:첫 연락 늦은 현장 2','b:오늘 약속 현장','a:입찰 임박 현장','r:기한 지난 현장 A','r:기한 지난 현장 B'],'급한 순서: 첫 연락 늦음 → 오늘 약속 → 입찰 임박 → 기한 지남 '+JSON.stringify(model));assert.deepEqual(model.rest,['다음 주 현장']);
   /* ① 머리줄 */
-  assert.match(await v.locator('.trv-head').innerText(),/급한 곳 6[\s\S]*늦음 4[\s\S]*오늘 약속 1[\s\S]*마감 임박 1[\s\S]*급한 순서대로[\s\S]*\+ 2곳 더보기/);
+  assert.match(await v.locator('.trv-head').innerText(),/급한 곳 6[\s\S]*늦음 4[\s\S]*오늘 약속 1[\s\S]*마감 임박 1[\s\S]*\+ 2곳 더보기/);
+  assert.equal(await page.evaluate(()=>document.getElementById('psub').textContent),'필선님 · 오늘 7곳 · 급한 6곳부터');
   /* ② 카드: 처음 4장 · 급한 순서 · 색 */
   const cards=v.locator('.trv-card');assert.equal(await cards.count(),4,'처음에는 4장');
-  assert.deepEqual(await cards.evaluateAll(a=>a.map(c=>c.dataset.tone)),['r','r','r','r']);
+  assert.deepEqual(await cards.evaluateAll(a=>a.map(c=>c.dataset.tone)),['r','r','b','a']);
+  assert.deepEqual(await cards.locator('.trv-why').allInnerTexts(),['첫 연락 3일 늦음','첫 연락 2일 늦음','오늘 14:00 약속','입찰 마감 D-3'],'급한 이유는 며칠 · 몇 시까지');
   assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.trv-grid')).gridTemplateColumns.split(' ').length),4,'4열');
   assert.equal(await cards.first().evaluate(n=>{const s=getComputedStyle(n);return s.borderTopWidth+'|'+s.borderTopColor+'|'+s.animationName;}),'4px|rgb(229, 72, 77)|trv-pop');
-  const c0=cards.filter({hasText:'기한 지난 현장 B'});
-  assert.match(await c0.innerText(),/후속 기한 2일 지남\s*파이프라인[\s\S]*기한 지난 현장 B[\s\S]*김소장[\s\S]*010-7777-8888[\s\S]*5억[\s\S]*원한 것[\s\S]*지난 기록[\s\S]*목표\s*입찰 조건 확인[\s\S]*“안녕하세요, 넷폼 이필선입니다\.[\s\S]*놓치면[\s\S]*전화\s*문자\s*결과/);
+  await v.locator('[data-trv="more"]').click();await page.waitForTimeout(200);const c0=page.locator('#today-v2 .trv-card').filter({hasText:'기한 지난 현장 B'});
+  assert.match(await c0.innerText(),/후속 기한 2일 지남\s*파이프라인[\s\S]*기한 지난 현장 B[\s\S]*김소장[\s\S]*010-7777-8888[\s\S]*입찰\s*5억[\s\S]*원한 것[\s\S]*지난 기록[\s\S]*목표\s*입찰 조건 확인[\s\S]*“안녕하세요, 넷폼 이필선입니다\.[\s\S]*놓치면[\s\S]*전화\s*문자\s*결과/);
   assert.deepEqual(await c0.locator('.trv-steps i').evaluateAll(a=>a.map(i=>i.style.background)),['rgb(157, 180, 238)','rgb(157, 180, 238)','rgb(157, 180, 238)','rgb(229, 72, 77)','rgb(230, 233, 238)'],'단계 막대: 지난 단계 · 현재(카드 색) · 남은 단계');
-  assert.match(await cards.filter({hasText:'첫 연락 늦은 현장 2'}).innerText(),/첫 연락 늦음\s*견적문의[\s\S]*고객5[\s\S]*옥상 방수 견적 문의/);
+  assert.match(await page.locator('#today-v2 .trv-card').filter({hasText:'기한 지난 현장 A'}).locator('.trv-why').innerText(),/^견적 회신 5일 지남$/);await page.locator('#today-v2 [data-trv="more"]').click();await page.waitForTimeout(200);
+  assert.match(await cards.filter({hasText:'첫 연락 늦은 현장 2'}).innerText(),/첫 연락 2일 늦음\s*견적문의[\s\S]*고객5[\s\S]*옥상 방수 견적 문의/);
   assert.equal(await page.evaluate(()=>[...document.querySelectorAll('.trv-why,.trv-chip,.trv-miss')].every(n=>getComputedStyle(n).whiteSpace==='nowrap')),true,'급한 이유 · 경로 칩 · 놓치면은 한 줄');
   if(shot)await page.screenshot({path:shot+'-cards.png',fullPage:true});
   /* ③ 나머지 묶음 표: 카드에 안 들어간 곳 · 빈 묶음 숨김 */
   assert.deepEqual(await v.locator('.trv-thead span').allInnerTexts(),['현장 · 고객','고객이 원한 것','단계','금액','경과','']);
-  assert.deepEqual(await v.locator('.trv-ghead').allInnerTexts().then(a=>a.map(t=>t.replace(/\s+/g,' '))),['오늘 약속 1곳','내일 · 이번 주 2곳'],'늦음 묶음은 비어서 숨김');
-  assert.deepEqual(await v.locator('.trv-row .c b').allInnerTexts(),['오늘 약속 현장','입찰 임박 현장','다음 주 현장']);
+  assert.deepEqual(await v.locator('.trv-ghead').allInnerTexts().then(a=>a.map(t=>t.replace(/\s+/g,' '))),['기한 지남 2 · 늦은 순서대로','내일 · 이번 주 1 · 미리 준비'],'빈 묶음은 숨김');
+  assert.deepEqual(await v.locator('.trv-row .c b').allInnerTexts(),['기한 지난 현장 A','기한 지난 현장 B','다음 주 현장']);assert.match(await v.locator('.trv-row').first().innerText(),/김소장 관리소장[\s\S]*설계[\s\S]*2억[\s\S]*5일/);
   /* 더보기 → 나머지 급한 곳이 카드로 */
   await v.locator('[data-trv="more"]').click();await page.waitForTimeout(200);
   assert.equal(await page.locator('#today-v2 .trv-card').count(),6);assert.equal(await page.locator('#today-v2 [data-trv="more"]').innerText(),'접기 ↑');
-  assert.deepEqual(await page.locator('#today-v2 .trv-card').evaluateAll(a=>a.slice(4).map(c=>c.dataset.tone)),['b','a']);assert.deepEqual(await page.locator('#today-v2 .trv-row .c b').allInnerTexts(),['다음 주 현장']);
+  assert.deepEqual(await page.locator('#today-v2 .trv-card').evaluateAll(a=>a.slice(4).map(c=>c.dataset.tone)),['r','r']);assert.deepEqual(await page.locator('#today-v2 .trv-row .c b').allInnerTexts(),['다음 주 현장']);
   await page.locator('#today-v2 [data-trv="more"]').click();await page.waitForTimeout(200);assert.equal(await page.locator('#today-v2 .trv-card').count(),4);
   /* [결과] → 결과 6개(2열) → 고르면 그 건 상세가 결과가 채워진 채 열린다(직접 저장하지 않음) */
+  await page.locator('#today-v2 [data-trv="more"]').click();await page.waitForTimeout(200);
   const cB=page.locator('#today-v2 .trv-card',{hasText:'기한 지난 현장 B'});
   await cB.locator('[data-trv="result"]').click();await page.waitForTimeout(200);
   assert.deepEqual(await page.locator('#today-v2 .trv-results button').allInnerTexts(),['실사 잡음','견적 요청','나중에 다시','안 받음','번호 틀림','관심 없음']);
@@ -71,8 +75,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#today-v2 .trv-row',{hasText:'다음 주 현장'}).locator('.c').click();await page.waitForTimeout(600);assert.equal(await page.evaluate(()=>CUR_DETAIL&&CUR_DETAIL.item.id),'later1','행 = 상세');
   await page.evaluate(()=>closeDetail());await page.waitForTimeout(300);
   /* 좁은 화면: 카드는 240px 아래로 줄지 않고, 넘치지 않는다 */
-  await page.setViewportSize({width:1100,height:900});await page.waitForTimeout(250);
-  assert.equal(await page.evaluate(()=>[...document.querySelectorAll('.trv-card')].every(c=>c.getBoundingClientRect().width>=239)),true,'카드 최소 폭 240');
+  await page.setViewportSize({width:1100,height:900});await page.waitForTimeout(1500);/* 등장 애니메이션이 끝난 뒤에 잰다 */
+  assert.equal(await page.evaluate(()=>[...document.querySelectorAll('.trv-card')].every(c=>c.getBoundingClientRect().width>=239)),true,'카드 최소 폭 240 '+await page.evaluate(()=>JSON.stringify([innerWidth,getComputedStyle(document.querySelector('.trv-grid')).gridTemplateColumns,[...document.querySelectorAll('.trv-card')].map(c=>Math.round(c.getBoundingClientRect().width))])));
   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(250);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'좁은 화면 넘침 없음');
   await page.setViewportSize({width:1600,height:1000});

@@ -19,13 +19,15 @@
  const cut=(v,n)=>{v=String(v||'').replace(/\s+/g,' ').trim();return v.length>n?v.slice(0,n-1)+'…':v;};
  function bidDays(x){if(x.type!=='deal')return null;const c=x.item.stage_contexts||{};let d=null;Object.values(c).forEach(v=>{const b=v&&v.fields&&v.fields.bid_deadline;if(b){const n=root.daysTo(String(b).slice(0,10));if(Number.isFinite(n)&&(d===null||n<d))d=n;}});return d;}
  /* 급한 이유(색) — 빨강: 늦음 · 파랑: 오늘 약속 · 주황: 마감 임박. 급하지 않으면 null */
+ function timeOf(x){try{const act=x.type==='deal'?root.actionObj(x.item,root.itemPatch(x.item,'deal')):null,v=String(act&&(act.scheduled_at||act.scheduledAt||act.due_at||act.due)||''),m=/T(\d{2}):(\d{2})/.exec(v);if(!m||(m[1]==='00'&&m[2]==='00'))return '';if(/Z|[+-]\d{2}:\d{2}$/.test(v)){const d=new Date(v);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}return m[1]+':'+m[2];}catch(e){return '';}}
  function urgency(x){
   if(x.unassigned)return null;
-  if(x.responseLate)return {tone:'r',why:'첫 연락 늦음',miss:'첫 연락 기준을 넘긴 채로 '+(dayN(x.lag)?dayN(x.lag)+'일째입니다':'있습니다')};
-  if(x.dueDays===0)return {tone:'b',why:x.promise?'오늘 약속':'오늘 예정',miss:'오늘 잡은 일정이 내일로 밀립니다'};
-  if(x.overdue||(x.promise&&x.dueDays!==null&&x.dueDays<0)){const n=x.dueDays!==null&&x.dueDays<0?Math.abs(x.dueDays):dayN(x.lag);return {tone:'r',why:(x.promise?'약속 ':'후속 기한 ')+(n?n+'일 지남':'지남'),miss:(x.promise?'고객과 한 약속':'정해 둔 기한')+'을 넘긴 날이 하루 더 늘어납니다'};}
-  if(x.processingLate)return {tone:'r',why:'후속 연락 늦음',miss:'다음 연락이 밀린 채로 '+(dayN(x.lag)?dayN(x.lag)+'일째입니다':'있습니다')};
-  const b=bidDays(x);if(b!==null&&b>=0&&b<=7)return {tone:'a',why:'입찰 D-'+b,miss:'입찰 마감까지 '+b+'일 남았습니다'};
+  const n=dayN(x.lag);
+  if(x.responseLate)return {tone:'r',rank:0,why:'첫 연락 '+(n?n+'일 ':'')+'늦음',miss:'첫 연락 기준을 넘긴 채로 '+(n?n+'일째입니다':'있습니다')};
+  if(x.dueDays===0){const tm=timeOf(x);return {tone:'b',rank:x.promise||tm?1:5,time:tm,why:'오늘 '+(tm?tm+' ':'')+(x.promise||tm?'약속':'예정'),miss:'오늘 잡은 일정이 내일로 밀립니다'};}
+  const bd=bidDays(x);if(bd!==null&&bd>=0&&bd<=7)return {tone:'a',rank:2,why:'입찰 마감 D-'+bd,miss:'입찰 마감까지 '+bd+'일 남았습니다'};
+  if(x.overdue||(x.promise&&x.dueDays!==null&&x.dueDays<0)){const d=x.dueDays!==null&&x.dueDays<0?Math.abs(x.dueDays):n,what=/견적/.test(String(x.next||''))?'견적 회신':x.promise?'약속':'후속 기한';return {tone:'r',rank:x.promise?1:3,why:what+' '+(d?d+'일 ':'')+'지남',miss:(x.promise?'고객과 한 약속':'정해 둔 기한')+'을 넘긴 날이 하루 더 늘어납니다'};}
+  if(x.processingLate)return {tone:'r',rank:4,why:'후속 연락 '+(n?n+'일 ':'')+'늦음',miss:'다음 연락이 밀린 채로 '+(n?n+'일째입니다':'있습니다')};
   return null;
  }
  const order={r:0,b:1,a:2};
@@ -39,7 +41,7 @@
  const openKey=(key,action)=>{const u=UPCOMING.get(key);if(u){root.G._detailPopup=true;root.drwDeal(JSON.stringify(u.item));if(action==='contact'&&typeof root.dccGoActivity==='function')root.dccGoActivity();return;}return T().open(key,action);};
  function split(rows){
   const urgent=[],rest=[];rows.forEach(x=>{const u=urgency(x);if(u)urgent.push(Object.assign({x},u));else if(!x.unassigned)rest.push(x);});
-  urgent.sort((p,q)=>order[p.tone]-order[q.tone]||(q.x.promise?1:0)-(p.x.promise?1:0)||(q.x.lag||0)-(p.x.lag||0)||String(p.x.key).localeCompare(String(q.x.key)));
+  urgent.sort((p,q)=>p.rank-q.rank||String(p.time||'99').localeCompare(String(q.time||'99'))||(q.x.lag||0)-(p.x.lag||0)||String(p.x.key).localeCompare(String(q.x.key)));
   return {urgent,rest};
  }
  function info(x){
@@ -54,7 +56,8 @@
   if(/미분류|미기록|미입력/.test(want))want='';
   let amt=0;try{amt=inq?0:Number(root.oppAmt(it))||0;}catch(e){}
   const digits=String(phone||'').replace(/\D/g,'');
-  return {site:it.site||it.site_name||'현장명 미입력',name,role,phone:digits?root.phoneFmt(digits):'',digits,chip,step,stage:x.stage||STEPS[step],want:cut(want,60),recent:cut(x.recent||'',60),goal:cut(x.next||'',60),amt};
+  const short=inq?'문의':code==='bidding'?'입찰':['compete','imminent'].includes(code)?'경쟁':code==='sent'?'자료':['rapport','silent','waiting'].includes(code)?'관계':['contract','construction','completion'].includes(code)?'계약':'설계';
+  return {site:it.site||it.site_name||'현장명 미입력',name,role,phone:digits?root.phoneFmt(digits):'',digits,chip,step,stage:short,want:cut(want,60),recent:cut(x.recent||'',60),goal:cut(x.next||'',60),amt};
  }
  function opener(x,i){const me=root.ME&&root.ME.name||'';const topic=cut(x.type==='inq'?(i.want||'견적'):(i.goal||i.want||''),26);return '안녕하세요, 넷폼 '+me+'입니다. '+(x.type==='inq'?'문의 주신 '+topic+' 건으로 연락드렸습니다.':(topic?topic+' 건으로 ':'')+'연락드렸습니다.')+' 지금 통화 괜찮으실까요?';}
  function cardHtml(u,n,open){
@@ -72,19 +75,20 @@
    +'</article>';
  }
  function rowHtml(x,tone){
-  const i=info(x),age=x.dueDays!==null&&x.dueDays!==undefined&&x.dueDays>=0?(x.dueDays===0?'오늘':x.dueDays===1?'내일':x.dueDays+'일 뒤'):(dayN(x.lag)?dayN(x.lag)+'일':'–'),k=attr(x.key);
-  return '<div class="trv-row" role="button" tabindex="0" data-trv="open" data-key="'+k+'"><div class="c"><b title="'+attr(i.site)+'">'+h(i.site)+'</b><span>'+h([i.name,i.phone].filter(Boolean).join(' · ')||'연락처 미입력')+'</span></div><span class="want">'+h(i.want||i.goal||'–')+'</span><span>'+h(i.stage)+'</span><span class="amt">'+h(i.amt?money(i.amt):'–')+'</span><span class="age '+tone+'">'+h(age)+'</span>'
+  const i=info(x),tm=tone==='b'?timeOf(x):'',age=tm?tm:x.dueDays!==null&&x.dueDays!==undefined&&x.dueDays>=0?(x.dueDays===0?'오늘':x.dueDays===1?'내일':x.dueDays+'일 뒤'):(dayN(x.lag)?dayN(x.lag)+'일':'–'),k=attr(x.key);
+  return '<div class="trv-row" role="button" tabindex="0" data-trv="open" data-key="'+k+'"><div class="c"><b title="'+attr(i.site)+'">'+h(i.site)+'</b><span>'+h([i.name,i.role].filter(Boolean).join(' ')||i.phone||'연락처 미입력')+'</span></div><span class="want">'+h(i.want||i.goal||'–')+'</span><span>'+h(i.stage)+'</span><span class="amt">'+h(i.amt?money(i.amt):'–')+'</span><span class="age '+tone+'">'+h(age)+'</span>'
    +'<button type="button" class="trv-call" data-trv="rowcall" data-key="'+k+'"'+(i.digits?' data-tel="'+attr(i.digits)+'"':'')+'>전화</button></div>';
  }
  function html(rows,deals){
   rows=rows.concat(upcoming(rows,deals));
   const S=st(),sp=split(rows),U=sp.urgent,n=t=>U.filter(u=>u.tone===t).length,shown=S.more?U:U.slice(0,4),hidden=U.slice(shown.length);
-  const head='<div class="trv-head"><b>급한 곳 '+U.length+'</b>'+['r','b','a'].map(t=>'<span style="color:'+TONE[t][2]+'"><i style="background:'+TONE[t][0]+'"></i>'+TONE[t][3]+' '+n(t)+'</span>').join('')+'<em>급한 순서대로</em><span class="trv-sp"></span>'+(U.length>4?'<button type="button" class="trv-more" data-trv="more">'+(S.more?'접기 ↑':'+ '+(U.length-4)+'곳 더보기')+'</button>':'')+'</div>';
+  const head='<div class="trv-head"><b>급한 곳 '+U.length+'</b>'+['r','b','a'].map(t=>'<span style="color:'+TONE[t][2]+'"><i style="background:'+TONE[t][0]+'"></i>'+TONE[t][3]+' '+n(t)+'</span>').join('')+'<span class="trv-sp"></span>'+(U.length>4?'<button type="button" class="trv-more" data-trv="more">'+(S.more?'접기 ↑':'+ '+(U.length-4)+'곳 더보기')+'</button>':'')+'</div>';
   const cards=U.length?'<div class="trv-grid">'+shown.map((u,i)=>cardHtml(u,i,S.open===u.x.key)).join('')+'</div>':'<div class="trv-calm"><b>지금 급한 곳이 없습니다</b><span>'+(sp.rest.length?'아래 예정된 곳을 순서대로 챙기면 됩니다.':'새 문의가 배정되거나 기한이 다가오면 여기에 먼저 나옵니다.')+'</span></div>';
   /* 나머지: 카드에 안 들어간 곳 — 늦음 → 오늘 약속 → 내일 · 이번 주. 빈 묶음은 숨긴다 */
-  const late=hidden.filter(u=>u.tone==='r').map(u=>u.x),today=hidden.filter(u=>u.tone==='b').map(u=>u.x),later=hidden.filter(u=>u.tone==='a').map(u=>u.x).concat(sp.rest);
-  const groups=[['r','늦음','#fbf3f3','#c93a3f',late],['b','오늘 약속','#f3f6fd','#2a52b8',today],['m','내일 · 이번 주','#f6f7f9','#6b7280',later]].filter(g=>g[4].length);
-  const table=groups.length?'<section class="trv-table" aria-label="나머지 할 곳"><div class="trv-thead"><span>현장 · 고객</span><span>고객이 원한 것</span><span>단계</span><span>금액</span><span>경과</span><span></span></div>'+groups.map(g=>'<div class="trv-ghead" style="background:'+g[2]+'"><b style="color:'+g[3]+'">'+g[1]+'</b><span>'+g[4].length+'곳</span></div>'+g[4].slice(0,S.limit||30).map(x=>rowHtml(x,g[0])).join('')).join('')+'</section>':'';
+  const first=hidden.filter(u=>u.tone==='r'&&u.rank===0).map(u=>u.x),late=hidden.filter(u=>u.tone==='r'&&u.rank!==0).map(u=>u.x),today=hidden.filter(u=>u.tone==='b').map(u=>u.x),later=hidden.filter(u=>u.tone==='a').map(u=>u.x).concat(sp.rest);
+  const groups=[['r','첫 연락 늦음','#fbf3f3','#c93a3f',first,'위 카드 다음 순서'],['r','기한 지남','#fbf3f3','#c93a3f',late,'늦은 순서대로'],['b','오늘 약속','#f3f6fd','#2a52b8',today,'약속한 시간에 다시 연락'],['m','내일 · 이번 주','#f6f7f9','#6b7280',later,'미리 준비']].filter(g=>g[4].length);
+  try{if(root.G.page==='today'&&!root.todayIsAdmin()){const p=document.getElementById('psub'),nm=String(root.ME&&root.ME.name||'');root.G.todayRepSub=(/^[가-힣]{3}$/.test(nm)?nm.slice(1):nm)+'님 · 오늘 '+rows.filter(x=>!x.unassigned).length+'곳'+(U.length?' · 급한 '+U.length+'곳부터':'');if(p)p.textContent=root.G.todayRepSub;}}catch(e){}
+  const table=groups.length?'<section class="trv-table" aria-label="나머지 할 곳"><div class="trv-thead"><span>현장 · 고객</span><span>고객이 원한 것</span><span>단계</span><span>금액</span><span>경과</span><span></span></div>'+groups.map(g=>'<div class="trv-ghead" style="background:'+g[2]+'"><b style="color:'+g[3]+'">'+g[1]+' '+g[4].length+'</b><span>· '+g[5]+'</span></div>'+g[4].slice(0,S.limit||30).map(x=>rowHtml(x,g[0])).join('')).join('')+'</section>':'';
   return '<div class="trv" data-urgent="'+U.length+'">'+head+cards+table+'</div>';
  }
  function prefill(text){
