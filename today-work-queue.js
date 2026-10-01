@@ -351,5 +351,6 @@
   const badge=root.$('#todayBadge');if(badge){badge.textContent=X.rows.length||'';badge.style.display=X.rows.length?'':'none';badge.title='기준: 오늘 조치가 필요한 문의·영업건·관계·확장·관리자 요청 · 종결 제외'}
  }
  function setManagerRequests(rows){managerRequests=Array.isArray(rows)?rows.slice():[];if(root.G?.page==='today')render()}
- root.TodayWorkQueue={render,data,set,filter,page,open,route,setManagerRequests,pickOwner,focusUnassigned,repPeriodSet,triage};
+ /* 새 오늘 업무 화면(today-v2)이 같은 집계를 쓰도록 내보낸다 */
+ root.TodayWorkQueue={render,data,set,filter,page,open,route,setManagerRequests,pickOwner,focusUnassigned,repPeriodSet,triage,repSummary,repPeriod,repYearOptions,matches,backlogCard,urgentCards,pickUrgent};
 })(window);

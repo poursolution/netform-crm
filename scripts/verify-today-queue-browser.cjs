@@ -21,7 +21,7 @@ async function run(){
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={name:'송보람',role:'admin'};G.page='today';G.q='무관한 검색';G.rep='없는 담당자';G.expansionYear='2024';G.expansionOwner='없는 담당자';
    document.getElementById('authGate').classList.remove('on');document.querySelectorAll('.apage').forEach(n=>n.classList.remove('on'));document.getElementById('pg-today').classList.add('on');
    window.__writes=[];pushWrite=(op,p)=>{window.__writes.push({op,p});return 'test'};
-   window.__opened=null;drwDeal=text=>window.__opened={type:'deal',id:JSON.parse(text).id};drwInq=text=>window.__opened={type:'inq',id:JSON.parse(text).id};ExpansionPool.open=id=>window.__opened={type:'expansion',id};todayAssignInquiry=id=>window.__opened={type:'assign',id};dccGoActivity=()=>window.__contact=true;
+   /* 이 검사는 예전 오늘 업무 화면(끄기 스위치로 남아 있음)의 집계·필터·열기를 본다 — 새 화면은 verify-today-v2 */G.todayV2Off=true;window.__opened=null;drwDeal=text=>window.__opened={type:'deal',id:JSON.parse(text).id};drwInq=text=>window.__opened={type:'inq',id:JSON.parse(text).id};ExpansionPool.open=id=>window.__opened={type:'expansion',id};todayAssignInquiry=id=>window.__opened={type:'assign',id};dccGoActivity=()=>window.__contact=true;
    goPage('today');
   });
   assert.equal(await page.locator('.twq-admin-boards').count(),1);
