@@ -278,6 +278,15 @@ function topPairs(items,keyFn,valueFn){
  items.forEach(x=>{const k=String(keyFn(x)||'').trim()||'미기록';map.set(k,(map.get(k)||0)+(valueFn?Number(valueFn(x))||0:1));});
  return Array.from(map.entries()).sort((a,b)=>b[1]-a[1]);
 }
+/* 수주율(2026-10-01 컨설턴트 영업 관점 4항 — 실주 301 vs 수주 131인데 어디서 지는지 볼 화면이 없었다)
+   결과가 난 건(수주+실주)만 분모로, 현재 브랜드·담당자 필터 그대로, 전체 기간 누적. 3건 미만은 표본이 작아 흐리게 */
+function winRateList(title,keyFn){
+ let all=[];try{all=(root.PipelineWorkspace?.rows?.()||[]).filter(r=>r.group==='won'||r.group==='lost');}catch(e){all=[];}
+ const map=new Map();all.forEach(r=>{const k=String(keyFn(r)||'').trim()||'미분류',v=map.get(k)||{won:0,lost:0};v[r.group]++;map.set(k,v);});
+ const rows=[...map].map(([n,v])=>({n,won:v.won,lost:v.lost,total:v.won+v.lost,rate:Math.round(v.won*100/(v.won+v.lost))})).sort((p,q)=>q.total-p.total).slice(0,6);
+ if(!rows.length)return '';
+ return '<div class="sw-dist sw-winrate"><h4>'+h(title)+'</h4>'+rows.map(x=>'<div'+(x.total<3?' class="thin" title="결과 3건 미만 — 참고만"':'')+'><span>'+h(x.n)+'</span><meter min="0" max="100" value="'+x.rate+'"></meter><b>'+x.rate+'% <small>수주 '+x.won+' · 실주 '+x.lost+'</small></b></div>').join('')+'<p class="sw-winrate-note">수주율 = 수주 ÷ (수주+실주) · 전체 기간 누적 · 현재 브랜드·담당자 필터 기준</p></div>';
+}
 function wonOwnerBoard(scopedOwner){
  const src=(root.PipelineWorkspace&&root.PipelineWorkspace.rows?root.PipelineWorkspace.rows({unscoped:true}):[]).filter(r=>r.group==='won');
  const map=new Map();
@@ -346,7 +355,8 @@ function lostFrame(items,list){
  const selected=monthItems.filter(x=>x.values.lossDate);
  const reasons=new Map();selected.forEach(x=>reasons.set(x.values.lossReason,(reasons.get(x.values.lossReason)||0)+1));
  const reasonBlock='<div class="sw-loss-reasons"><h4>실주사유 분포 · '+month+'</h4>'+([...reasons].sort((p,q)=>q[1]-p[1]).map(([n,c])=>'<div><span>'+h(n)+'</span><meter min="0" max="'+Math.max(1,selected.length)+'" value="'+c+'"></meter><b>'+c+'건</b></div>').join('')||'<p class="ps-empty">해당 월 실주 기록이 없습니다.</p>')+'</div>';
- const insights='<div class="sw-insights">'+reasonBlock+distList('경쟁사별 실주',topPairs(selected,x=>x.values.competitor))+'</div>';
+ const workOf=r=>{try{const w=root.workItemsOf?root.workItemsOf(r.item):[];return w[0]?w[0].group:'';}catch(e){return '';}};
+ const insights='<div class="sw-insights">'+reasonBlock+distList('경쟁사별 실주',topPairs(selected,x=>x.values.competitor))+winRateList('브랜드별 수주율',r=>r.item.brand)+winRateList('공종별 수주율',workOf)+winRateList('담당자별 수주율',r=>r.owner)+'</div>';
  const needFix=x=>!x.values.lossDate||!x.values.lossReason||x.values.lossReason==='미기록';
  const first=monthItems.filter(needFix),rest=monthItems.filter(x=>!needFix(x)).slice().sort((p,q)=>String(q.values.lossDate||'').localeCompare(String(p.values.lossDate||'')));
  const ordered=first.concat(rest);
