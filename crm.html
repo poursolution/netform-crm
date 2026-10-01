@@ -4351,7 +4351,7 @@ function repN(n){if(!n||!String(n).trim())return '미배정';n=String(n).trim();
 function repInit(n){n=repN(n);if(n==='송보람')return '송';if(n==='경남지사')return '경';return (n||'?').slice(-2,-1)||n[0]}
 var DUE_RULE={'배정완료':1,'전화응대 완료':7,'현장방문예정':5,'견적서 발송예정':3,'보류':14,'접수':0};
 function overdueInfo(q){
-  if(CLOSED_ST.indexOf(q.status)>=0)return null;
+  if(CLOSED_ST.indexOf(q.status)>=0||inqNoTrack(q))return null;
   var today=new Date();today.setHours(0,0,0,0);
   if(q.due){var d=new Date(q.due);
     if(d<today)return {days:Math.floor((today-d)/864e5),why:'다음액션일 '+q.due.slice(5)+' 경과'}}
@@ -4365,14 +4365,14 @@ function repStat(I){
   I.forEach(function(q){var r=repN(q.assignee);
     if(!m[r])m[r]={t:0,open:0,ov:0,closed:0,won:0,items:[],legacy:true};
     var p=m[r];p.t++;p.items.push(q);
-    if(CLOSED_ST.indexOf(q.status)>=0){p.closed++;if(q.status==='수주')p.won++}
+    if(isClosedInq(q)){p.closed++;if(q.status==='수주')p.won++}
     else{p.open++;if(overdueInfo(q))p.ov++}});
   return m}
 function responseStat(I){
   var m={};
   I.forEach(function(q){var r=repN(q.assignee);if(r==='미배정')return;
     if(!m[r])m[r]={total:0,responded:0,open:0,slaGood:0,overdue:0};
-    var p=m[r],st=q.status||'접수',closed=CLOSED_ST.indexOf(st)>=0,ov=overdueInfo(q);
+    var p=m[r],st=q.status||'접수',closed=isClosedInq(q),ov=overdueInfo(q);
     p.total++;
     if(closed||(st!=='접수'&&st!=='배정완료'))p.responded++;
     if(!closed){p.open++;if(ov)p.overdue++;else p.slaGood++;}
@@ -4650,7 +4650,7 @@ function paintBriefMonth(I,D){
   var now=new Date(),y=now.getFullYear(),m=now.getMonth(),first=new Date(y,m,1),last=new Date(y,m+1,0).getDate();
   var lead=(first.getDay()+6)%7,total=Math.ceil((lead+last)/7)*7,pad=function(n){return String(n).padStart(2,'0')},items={};
   function add(dt,it){if(!dt)return;var k=String(dt).slice(0,10);if(!/^\d{4}-\d{2}-\d{2}$/.test(k)||k.slice(0,7)!==y+'-'+pad(m+1))return;(items[k]=items[k]||[]).push(it)}
-  I.forEach(function(q){if(CLOSED_ST.indexOf(q.status)<0)add(q.due,{t:q.site||'현장명 미입력',s:(q.assignee||'미배정')+' · '+(q.status||'견적문의'),c:''})});
+  I.forEach(function(q){if(!isClosedInq(q))add(q.due,{t:q.site||'현장명 미입력',s:(q.assignee||'미배정')+' · '+(q.status||'견적문의'),c:''})});
   D.filter(isOpen).forEach(function(d){var na=actionObj(d,detailPatchFor('deal',dealKey(d)));if(na)add(na.due,{t:d.site||'현장명 미입력',s:(d.assignee||'미배정')+' · '+(na.text||na.title||FLOW_STEPS[flowIndex(d,'deal')]),c:'deal'})});
   var cells=[];for(var i=0;i<total;i++){var day=i-lead+1;if(day<1||day>last){cells.push('<div class="briefday blank"></div>');continue}
     var k=y+'-'+pad(m+1)+'-'+pad(day),arr=items[k]||[],today=now.getFullYear()===y&&now.getMonth()===m&&now.getDate()===day;
@@ -6917,6 +6917,7 @@ var IQ_PH={'미배정':['var(--danger-bg)','var(--danger)'],'응대 대기':['va
 function inqStateBadge(q){
  var s=q.status||'접수';
  if(CLOSED_ST.indexOf(s)>=0)return '<i class="iqc-badge" style="background:var(--bg);color:#6B7684">'+esc(s)+'</i>';
+ if(inqNoTrack(q))return '<i class="iqc-badge" style="background:var(--bg);color:#6B7684">협약 · 추적 제외</i>';
  var ph=inqPhase(q),c=IQ_PH[ph]||['var(--bg)','#6B7684'];
  return '<i class="iqc-badge" title="'+escAttr(s)+'" style="background:'+c[0]+';color:'+c[1]+'">'+ph+'</i>';
 }
@@ -7016,9 +7017,9 @@ function inqRepView(Q){
  if(G.rep==='전체'){
  $('#sg-panel').innerHTML='<div class="mcard" style="padding:26px;text-align:center"><div style="font-size:26px;margin-bottom:8px">👆</div><b style="font-size:14px">위 담당자 칩에서 사람을 선택하세요</b><div style="font-size:11.5px;color:var(--sub);margin-top:6px">선택한 담당자의 문의만 ⚠ 응대 필요 → 📞 진행 → ✓ 종료 순으로 정리해 보여줍니다.<br>담당자 개인 링크(오늘페이지 토큰)와 같은 데이터입니다.</div></div>';return}
  var sel=G.rep,L=Q;
- var need=L.filter(function(q){return CLOSED_ST.indexOf(q.status)<0&&priorityInfo(q,'inq').rank<=5});
- var prog=L.filter(function(q){return CLOSED_ST.indexOf(q.status)<0&&priorityInfo(q,'inq').rank>5});
- var done=L.filter(function(q){return CLOSED_ST.indexOf(q.status)>=0});
+ var need=L.filter(function(q){return !isClosedInq(q)&&priorityInfo(q,'inq').rank<=5});
+ var prog=L.filter(function(q){return !isClosedInq(q)&&priorityInfo(q,'inq').rank>5});
+ var done=L.filter(isClosedInq);
  var sec=function(t,arr,hint,empty){return '<div class="msech" style="margin-top:14px"><h2 style="font-size:14.5px">'+t+' · '+arr.length+'건</h2><span class="mhint">'+hint+'</span></div><div class="mcard">'+(arr.slice(0,15).map(function(q){return inqRowHTML(q)}).join('')||'<div style="padding:16px;text-align:center;font-size:11.5px;color:var(--sub)">'+empty+'</div>')+'</div>'};
  $('#sg-panel').innerHTML='<div class="mcard" style="padding:14px 18px;display:flex;gap:14px;align-items:center"><span style="width:40px;height:40px;border-radius:50%;background:var(--violet-bg);color:var(--violet);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;flex-shrink:0">'+esc(repInit(sel))+'</span><div><b style="font-size:15px">'+esc(sel)+'</b><div style="font-size:11.5px;color:var(--sub);margin-top:2px">담당 문의 '+L.length+'건 · 응대 필요 '+need.length+' · 진행 '+prog.length+' · 종료 '+done.length+'</div></div><span class="mbadge blue" style="margin-left:auto" title="담당자 개인 링크(오늘페이지 토큰)와 같은 데이터를 봅니다">🔗 담당자 공유용 화면</span></div>'
  +sec('⚠ 응대 필요',need,'기한초과·미응대·무행동 우선','응대 필요 건 없음 🎉')
@@ -7039,7 +7040,9 @@ var INQ_PHASES=['전체','미배정','응대 대기','응대 완료','견적 준
 function inqPhaseMatch(q,k){return k==='인계 대기'?isAwaitingPromotion(q):inqPhase(q)===k}
 function inqPhaseSetAt(i){var k=INQ_PHASES[i];G.inqPhase=(k==='전체'||G.inqPhase===k)?'전체':k;G.inqSelKey=null;G.inqAct=null;paint()}
 var SPLIT_CACHE=[],INQ_STATUS_LIST=['접수','배정완료','전화응대 완료','현장방문예정','견적서 발송예정','견적서 발송완료','보류'];
-function isClosedInq(q){return CLOSED_ST.indexOf(q.status||'')>=0}
+/* 협약 문의는 공사 견적이 아니라 추적하지 않는다(2026-10-01 대표) — 공종이 '협약문의'·'협약서 요청'인 건은 상태와 무관하게 종결로 본다. 글 내용만으로는 판정하지 않는다(실제 공사 문의에 '협약'이 섞인 사례가 있음) */
+function inqNoTrack(q){if(!q)return false;var d=q.detail&&typeof q.detail==='object'?q.detail:{},raw=q.raw&&typeof q.raw==='object'?q.raw:{};return /협약/.test(String(q.work||q.work_type||q.workType||d.workType||d.work_type||raw['공사유형']||''))}
+function isClosedInq(q){return CLOSED_ST.indexOf(q.status||'')>=0||inqNoTrack(q)}
 function toggleHideClosed(){G.hideClosed=!G.hideClosed;paint()}
 function splitPick(i){var q=SPLIT_CACHE[i];if(!q)return;G.inqSelKey=inqKey(q);G.inqAct=null;setCurDetail(q);paint();
   setTimeout(function(){var el=document.querySelector('.sp-row.on');if(el&&el.scrollIntoView)el.scrollIntoView({block:'nearest'})},0)}
