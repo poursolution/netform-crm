@@ -19,3 +19,5 @@
 /* 이 줄 하나로 통일 — 견적문의 화면 안의 브랜드·담당자 구분 필터는 감춘다(더보기 안의 것 포함) */
 #pg-inq.inq-v2 #inq-v2 .sales-filterbar .sf-row{display:none!important}/* 연도·분기(sf-period)는 더보기에 남긴다 */
 @media(max-width:760px){.cf-bar{padding:8px 10px}}
+/* 새 화면(확장관리·경남지사·고객 자산·문자)은 공통 필터줄 하나로 — 예전 상단 필터 박스(브랜드·담당자 구분·기간)는 감춘다 */
+body:has(#pg-expansion.on.xv-on,#pg-gyeongnam.on.gnv-on,#pg-sites.on.av-on,#pg-campaign.on.sv-on) #unibar{display:none!important}

@@ -1,0 +1,62 @@
+/* 문자 · 캠페인 v2 (2026-10-01 디자인 핸드오프 sms) — 목록은 .plv/.pd 모양, 여기는 이 화면 전용 규칙과 보내기 창 */
+#sms-v2{margin-top:12px}
+#pg-campaign.sv-on>.cf-bar[hidden],#pg-campaign:not(.sv-on)>.cf-bar{display:none}
+#sms-v2 .plv-pills button,.sd-box .plv-pills button{border:1px solid #e1e4ea;background:#fff;color:#374151;border-radius:999px;padding:6px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+#sms-v2 .plv-pills button b{color:#6b7280;font-weight:700}
+#sms-v2 .plv-pills button[aria-pressed="true"],.sd-box .plv-pills button[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}#sms-v2 .plv-pills button[aria-pressed="true"] b{color:#fff}
+#sms-v2 .plv-cta{border:1px solid #c9d6fa;background:#fff;color:#3b6ce4;border-radius:8px;padding:7px 0;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+#sms-v2 .plv-tag.b{background:#eef3fe;color:#2a52b8}
+.sv-ghost{border:1px solid #e1e4ea!important;background:#fff!important;color:#374151!important;border-radius:8px!important;padding:7px 12px!important;font:inherit;font-size:12.5px!important;font-weight:600;cursor:pointer;box-shadow:none!important;min-height:0}
+.sv-primary{border:0;background:#3b6ce4;color:#fff;border-radius:8px;padding:8px 14px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;min-height:0}
+.sv-primary.off{background:#c5cbd6;cursor:default}
+.sv-test:empty{display:none}
+/* 보내기 창 */
+.sd-layer{position:fixed;inset:0;z-index:1400;display:none;justify-content:center;align-items:flex-start;padding-top:4vh;background:rgba(17,24,39,.32)}
+.sd-layer.on{display:flex}
+.sd-box{width:min(760px,96vw);max-height:92vh;background:#fff;border-radius:16px;box-shadow:0 24px 64px rgba(17,24,39,.24);display:flex;flex-direction:column;overflow:hidden;color:#15171c}
+.sd-head{display:flex;align-items:center;gap:8px;padding:18px 22px 12px;flex:none}
+.sd-head>div{flex:1;min-width:0}.sd-head small{font-size:12px;color:#6b7280}.sd-head h2{margin:2px 0 0;font-size:17px;font-weight:700;line-height:1.4}
+.sd-box .xdv-close{width:32px;height:32px;border:0;border-radius:8px;background:#f3f4f7;color:#6b7280;font-size:14px;cursor:pointer;padding:0;flex:none}
+.sd-steps{padding:0 22px 12px;margin:0;border-bottom:1px solid #f0f1f4;flex:none}
+.sd-body{padding:14px 22px;overflow:auto;display:flex;flex-direction:column;gap:12px;flex:1;min-height:0}
+.sd-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sd-sum>div{background:#f7f8fa;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.sd-sum span{font-size:11.5px;color:#9ca3af}.sd-sum b{font-size:18px;font-variant-numeric:tabular-nums}
+.sd-sum .bad b{color:#c93a3f}.sd-sum .warn b{color:#b26a00}
+.sd-why{margin:0;font-size:12px;color:#c93a3f}
+.sd-two{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:16px;align-items:start}
+.sd-left{display:flex;flex-direction:column;gap:8px;min-width:0}
+.sd-left textarea{border:1px solid #e1e4ea;border-radius:10px;padding:10px 12px;font:inherit;font-size:13.5px;line-height:1.55;resize:vertical;outline:none;color:#15171c}
+.sd-left textarea:focus{border-color:#3b6ce4}
+.sd-vars{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:#6b7280}
+.sd-box .sd-vars button{border:1px solid #e1e4ea;background:#fff;border-radius:999px;padding:3px 9px;font:inherit;font-size:12px;color:#374151;cursor:pointer;min-height:0}
+.sd-vars em{margin-left:auto;font-style:normal;font-weight:600;font-size:12px}.sd-vars em.sms{color:#1f7a4d}.sd-vars em.lms{color:#b26a00}
+.sd-recs{display:flex;flex-direction:column;gap:6px}
+.sd-box .sd-rec{display:flex;flex-direction:column;gap:3px;text-align:left;border:1px solid #e7e9ee;background:#fff;border-radius:10px;padding:9px 11px;font:inherit;color:inherit;cursor:pointer}
+.sd-rec b{font-size:12.5px}.sd-rec b u{text-decoration:none;font-size:11px;color:#1f7a4d;background:#ecf8f1;border-radius:5px;padding:1px 6px;margin-left:4px}
+.sd-rec span{font-size:12px;color:#6b7280;line-height:1.5}
+.sd-box .sd-rec.on{border-color:#3b6ce4;background:#f5f8ff}
+.sd-check{display:flex;align-items:flex-start;gap:7px;font-size:12.5px;color:#374151;line-height:1.5}
+.sd-check b{font-weight:600}.sd-check:not(.sd-confirm) b{color:#b26a00}
+.sd-phone{width:250px;height:470px;border-radius:38px;background:#15171c;padding:10px;box-sizing:border-box;display:flex;flex-direction:column;position:relative;flex:none}
+.sd-phone>*{background:#fff}
+.sd-status{display:flex;align-items:center;justify-content:space-between;padding:10px 18px 6px;border-radius:28px 28px 0 0;font-size:11px;font-weight:600}
+.sd-status i{width:54px;height:16px;border-radius:9px;background:#15171c;display:block}
+.sd-from{display:flex;align-items:center;gap:8px;padding:6px 14px 8px;border-bottom:1px solid #f0f1f4}
+.sd-from em{width:28px;height:28px;border-radius:14px;background:#c9d6fa;color:#2a52b8;font-style:normal;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.sd-from b{font-size:12.5px;display:block}.sd-from small{font-size:10.5px;color:#9ca3af}
+.sd-day{text-align:center;font-size:10.5px;color:#9ca3af;padding:8px 0 4px}
+.sd-thread{flex:1;overflow:auto;padding:4px 12px}
+.sd-bubble{display:inline-block;max-width:92%;margin:0;padding:8px 11px;font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;background:#e9e9eb;border-radius:16px 16px 16px 4px;color:#15171c}
+.sd-bubble.empty{color:#9ca3af}
+.sd-meta{font-size:10.5px;color:#9ca3af;padding:4px 14px}
+.sd-input{margin:0;padding:8px 14px 6px;font-size:11.5px;color:#c5cbd6;border-top:1px solid #f0f1f4}
+.sd-home{height:16px;border-radius:0 0 28px 28px;position:relative}
+.sd-home::after{content:'';position:absolute;left:50%;top:5px;width:80px;height:4px;border-radius:2px;background:#15171c;transform:translateX(-50%)}
+.sd-send{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sd-modes{display:flex;gap:2px;background:#e6e8ec;padding:3px;border-radius:9px}
+.sd-box .sd-modes button{border:0;background:transparent;color:#6b7280;border-radius:7px;padding:6px 14px;font:inherit;font-size:12.5px;cursor:pointer;min-height:0}
+.sd-box .sd-modes button[aria-pressed="true"]{background:#fff;color:#15171c;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.sd-send input{border:1px solid #e1e4ea;border-radius:8px;padding:7px 10px;font:inherit;font-size:13px}
+.sd-foot{display:flex;align-items:center;gap:8px;padding:12px 22px 16px;border-top:1px solid #f0f1f4;flex:none}
+@media(max-width:760px){.sd-two{grid-template-columns:1fr}.sd-phone{margin:0 auto}}
