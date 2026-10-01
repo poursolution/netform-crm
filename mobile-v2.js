@@ -39,6 +39,22 @@
   if(G.mode==='rep'&&G.tab==='my'&&!body.querySelector('.mv-title')){
    const st=[...body.querySelectorAll('.mystat button')].map(b=>[(b.querySelector('.n')||{}).textContent||'',(b.querySelector('.l')||{}).textContent||'']),today=st.find(x=>/오늘 처리/.test(x[1])),won=st.find(x=>/수주/.test(x[1])),tm=today&&/^(\d+)\/(\d+)$/.exec(today[0].trim());
    const el=document.createElement('div');el.className='mt-head mv-title';el.innerHTML='<h1>'+root.esc(given(G.user.nm)+'님, '+(tm?'오늘 '+tm[2]+'곳 중 '+tm[1]+'곳을 처리했습니다':'이번 주 현황입니다'))+'</h1><p>이번 주'+(won?' · '+root.esc(won[1].trim()+' '+won[0].trim()):'')+'</p>';body.prepend(el);}
+  /* ④ 관리 오늘: 숫자가 든 문장 제목 */
+  if(G.mode==='admin'&&G.tab==='today'){const h1=body.querySelector('.mt-head h1'),n=body.querySelector('.mt-counts b');if(h1&&n&&!h1.dataset.mv){h1.dataset.mv='1';const k=Number(n.textContent.replace(/\D/g,''))||0,p=body.querySelector('.mt-head p'),d=new Date();h1.textContent=k?given(G.user.nm)+'님, 지금 챙길 곳이 '+k+'건입니다':given(G.user.nm)+'님, 지금 챙길 곳이 없습니다';if(p)p.textContent=(d.getMonth()+1)+'월 '+d.getDate()+'일 '+'일월화수목금토'[d.getDay()]+'요일 · 누구의 어떤 업무가 멈췄는지';}}
+  /* ④ 사람: 만든 돈 / 놓친 돈 / 성공률 — PC 리포트 담당자별 장과 같은 계산(이번 달 · 계약 체결일 / 종료일이 있는 건만) */
+  if(G.mode==='admin'&&G.tab==='perf'&&!body.querySelector('.mv-people')){
+   const d=new Date(),ym=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'),inMonth=v=>String(v||'').slice(0,7)===ym,money=n=>n?root.fmtEok(n):'0원';
+   const rows=(root.REPS||[]).filter(r=>r.role!=='admin').map(r=>{const mine=(root.DEALS||[]).filter(x=>x.rep===r.nm),won=mine.filter(x=>x.outcome==='won'&&inMonth(x.won_at||x.closed_at)),lost=mine.filter(x=>x.outcome==='lost'&&inMonth(x.closed_at||x.lost_at)),open=mine.filter(x=>!x.outcome),dec=won.length+lost.length;
+    return {n:r.nm,did:won.length+lost.length+open.length,made:won.reduce((a,x)=>a+(Number(x.won_amount)||Number(x.amt)||0),0),missed:lost.reduce((a,x)=>a+(Number(x.amt)||0),0),rate:dec?Math.round(won.length*100/dec):null,w:won.length,dec};}).filter(r=>r.did>0).sort((a,b)=>b.made-a.made||b.did-a.did);
+   const el=document.createElement('section');el.className='mv-people';
+   el.innerHTML='<div class="mt-head mv-title"><h1>'+root.esc(rows.some(r=>r.made)?'이번 달 '+rows.filter(r=>r.made).length+'명이 돈을 만들었습니다':'이번 달 체결된 계약이 아직 없습니다')+'</h1><p>사람 · '+(d.getMonth()+1)+'월 · 만든 돈 / 놓친 돈 / 성공률</p></div>'
+    +'<div class="mv-ptable"><div class="mv-ph"><span>담당</span><span>만든 돈</span><span>놓친 돈</span><span>성공률</span></div>'+(rows.length?rows.map(r=>'<div class="mv-pr"><b>'+root.esc(r.n)+'<small>'+r.did+'곳</small></b><span class="'+(r.made?'g':'m')+'">'+money(r.made)+'</span><span class="'+(r.missed?'r':'m')+'">'+money(r.missed)+'</span><span>'+(r.rate==null?'<i>산정 전</i>':r.rate+'% <small>'+r.w+'/'+r.dec+'</small>')+'</span></div>').join(''):'<div class="mv-pr"><b>이번 달 다룬 현장이 없습니다</b></div>')+'</div><p class="mv-pnote">성공률 = 수주 ÷ 결정 완료(수주 + 실주). 날짜가 없는 건은 세지 않습니다.</p>';
+   body.prepend(el);}
+  /* ④ 보고: PC에서 여는 것 안내 */
+  if(G.mode==='admin'&&G.tab==='rpt'&&!body.querySelector('.mv-pcnote')){const el=document.createElement('div');el.className='mv-pcnote';el.innerHTML='<b>대표님 보고 · 주간 브리핑</b><span>슬라이드 8장과 한 페이지 보고, 주간 브리핑 저장본은 PC 화면의 리포트 · 주간 브리핑 메뉴에서 엽니다. KPI · 공종 분석 · 데이터 정리도 PC에서 봅니다.</span>';const sec=body.querySelector('.sec-h');(sec||body.firstElementChild).after(el);}
+  /* ③ 등록: 제목 문장 · 버튼 이름 */
+  if(G.mode==='rep'&&G.tab==='find'&&!body.querySelector('.mv-title')){const intro=body.querySelector(':scope>.intro');if(intro){const el=document.createElement('div');el.className='mt-head mv-title';el.innerHTML='<h1>새 현장을 등록합니다</h1><p>등록 · 연락처까지 함께 저장</p>';intro.replaceWith(el);}
+   const scan=body.querySelector('button[onclick="scanCard()"]');if(scan){[...scan.childNodes].forEach(n=>{if(n.nodeType===3)n.nodeValue=' 명함 · 현수막 찍기';});}}
   if(G.mode==='admin'&&G.tab==='today'&&!body.querySelector('.mv-ctrl')){
    const b=document.createElement('button');b.type='button';b.className='mv-ctrl';b.innerHTML='<b>문의 관리</b><span>미배정 · 배정완료 · 응대중 문의를 보고 바로 배정합니다</span><em>열기</em>';
    b.onclick=()=>{G.tab='ctrl';G.deal=null;G.sub=null;root.render();};(body.querySelector('.mt-head')||body.firstElementChild).after(b);}
