@@ -1,0 +1,55 @@
+/* 오늘 업무 v2 (2026-10-01 디자인 핸드오프 ④) */
+#pg-today.today-v2 #today-home-root{display:none!important}
+#today-v2{display:flex;flex-direction:column;gap:14px;color:#15171c}
+.tv-spacer{flex:1}
+.tv-alert{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid #f3d3d1;border-radius:12px;padding:12px 16px;font-size:13.5px}
+.tv-alert.calm{border-color:#e7e9ee}
+.tv-dot{width:8px;height:8px;border-radius:4px;background:#e5484d;display:block;flex:none}.tv-alert.calm .tv-dot{background:#30a46c}
+.tv-period{display:flex;align-items:center;gap:2px;border:1px solid #e1e4ea;border-radius:999px;padding:3px 10px;font-size:12.5px;color:#374151;background:#fff}
+.tv-period select{appearance:none;-webkit-appearance:none;border:0;background:transparent;font:inherit;font-size:12.5px;color:#374151;cursor:pointer;padding:2px 2px}
+.tv-period i{font-style:normal;color:#c5cbd6}
+.tv-red{border:0;background:#e5484d;color:#fff;border-radius:8px;padding:7px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.tv-board,.tv-table{background:#fff;border:1px solid #ebedf1;border-radius:12px;overflow:hidden}
+.tv-board>header{display:flex;align-items:baseline;gap:10px;padding:14px 20px 8px;flex-wrap:wrap}
+.tv-board>header b{font-size:14px;font-weight:700}.tv-board>header span{font-size:12px;color:#9ca3af}
+.tv-clear{margin-left:auto;border:1px solid #c9d6fa;background:#f5f8ff;color:#2a52b8;border-radius:999px;padding:4px 10px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.tv-bgroups,.tv-bhead,.tv-brow{display:grid;grid-template-columns:120px repeat(4,1fr) 1px repeat(5,1fr) 72px;gap:0 10px;align-items:center;padding:0 20px}
+.tv-bgroups{font-size:11.5px;font-weight:700;padding-top:4px}
+.tv-bgroups .inq{grid-column:2/6;color:#c93a3f;border-bottom:2px solid #f3d3d1;padding-bottom:4px}
+.tv-bgroups .pipe{grid-column:7/12;color:#2a52b8;border-bottom:2px solid #dbe5fd;padding-bottom:4px}
+.tv-bhead{font-size:11.5px;color:#9ca3af;height:32px;border-bottom:1px solid #f0f1f4}
+.tv-bhead span:not(:first-child),.tv-brow>span:not(.tv-name):not(.tv-go){text-align:right}
+.tv-brow{height:40px;font-size:13px;border-bottom:1px solid #f5f6f8;cursor:pointer;font-variant-numeric:tabular-nums}
+.tv-brow:hover{background:#fafbfc}.tv-brow.sel{background:#f5f8ff}
+.tv-name{display:flex;align-items:center;gap:7px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tv-name i{width:7px;height:7px;border-radius:4px;display:block;flex:none;background:#30a46c}.tv-name i.r{background:#e5484d}.tv-name i.y{background:#f08c2e}
+.tv-brow .z{color:#c5cbd6}.tv-brow .bad{color:#c93a3f;font-weight:700}.tv-brow .warn{color:#c27c0e;font-weight:700}
+.tv-vline{width:1px;height:100%;background:#f0f1f4;display:block}
+.tv-go{font-size:12px;color:#3b6ce4;text-align:right;white-space:nowrap}
+.tv-lhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tv-seg{display:flex;gap:2px;background:#e6e8ec;padding:3px;border-radius:9px}
+.tv-seg button{border:0;background:transparent;color:#6b7280;border-radius:7px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.tv-seg button b{color:#3b6ce4;font-weight:700}
+.tv-seg button[aria-pressed="true"]{background:#fff;color:#15171c;font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.tv-pills{display:flex;gap:6px;flex-wrap:wrap}
+.tv-pills button{border:1px solid #e1e4ea;background:#fff;color:#374151;border-radius:999px;padding:6px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.tv-pills button b{color:#6b7280}.tv-pills button[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}.tv-pills button[aria-pressed="true"] b{color:#fff}
+.tv-list{display:flex;flex-direction:column;gap:10px}
+.tv-thead,.tv-row{display:grid;grid-template-columns:minmax(0,1.4fr) 120px 76px minmax(0,1.5fr) 72px 76px;gap:16px;align-items:center}
+.tv-thead{padding:10px 20px;font-size:11.5px;color:#9ca3af;border-bottom:1px solid #f0f1f4}
+.tv-ghead{display:flex;align-items:center;gap:8px;padding:12px 20px 8px;background:#fafbfc;border-bottom:1px solid #f0f1f4}
+.tv-ghead i{width:8px;height:8px;border-radius:4px;display:block}.tv-ghead b{font-size:13px;font-weight:700}.tv-ghead span{font-size:12.5px;color:#6b7280}.tv-ghead small{font-size:12px;color:#9ca3af}
+.tv-row{padding:11px 20px;border-bottom:1px solid #f5f6f8;cursor:pointer}.tv-row:hover{background:#fafbfc}
+.tv-c{display:flex;flex-direction:column;gap:3px;min-width:0}.tv-c>*{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tv-c b{font-size:14px;font-weight:600}.tv-c span{font-size:12.5px;color:#6b7280}
+.tv-task b{font-size:13px}.tv-task span{font-size:12px;color:#9ca3af}
+.tv-kind{font-size:12px;color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tv-owner{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tv-owner.none{color:#e5484d;font-weight:600}
+.tv-age{font-size:13px;font-weight:600;color:#6b7280}.tv-age.hot{color:#e5484d}
+.tv-cta{border:1px solid #c9d6fa;background:#fff;color:#3b6ce4;border-radius:8px;padding:7px 0;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.tv-cta.fill{background:#3b6ce4;border-color:#3b6ce4;color:#fff}
+.tv-empty{padding:24px 20px;text-align:center;font-size:13px;color:#9ca3af;border-bottom:1px solid #f5f6f8}
+.tv-more{display:block;width:100%;border:0;border-bottom:1px solid #f0f1f4;background:#fff;padding:9px 20px;font:inherit;font-size:12.5px;color:#6b7280;text-align:left;cursor:pointer}
+@media(max-width:1100px){.tv-board{overflow-x:auto}.tv-bgroups,.tv-bhead,.tv-brow{min-width:900px}.tv-thead{display:none}.tv-row{grid-template-columns:minmax(0,1fr) 76px;gap:6px 12px}.tv-row .tv-c:first-child{grid-column:1}.tv-row .tv-cta{grid-column:2;grid-row:1}.tv-row .tv-task{grid-column:1/-1}.tv-ghead small{display:none}}
+/* 예전 공통 상단 필터(브랜드·담당자 구분·기간)는 공통 고정 필터줄과 미배정 알림의 기간 칩으로 대신한다 — 오늘 업무 새 화면에서만 감춘다 */
+body:has(#pg-today.on.today-v2) #unibar{display:none!important}
