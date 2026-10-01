@@ -77,7 +77,7 @@
   return {group:g,sort:String(v.lossDate||''),desc:true,cells:[v.lossDate?cell(ymd(v.lossDate)):cell('미기록','a'),where?{tag:where,tc:'m',sub:''}:cell('미기록','m'),reason?cell(reason,'',v.competitor||''):cell('미기록','a'),lesson?cell(lesson):cell('미기록','m'),re?cell(rc,'b'):cell('–','m')]};
  }
  function compare(p,q){const a=p.shape.sort,b=q.shape.sort,d=typeof a==='number'&&typeof b==='number'?a-b:String(a).localeCompare(String(b));return (p.shape.desc?-d:d)||String(p.row.key).localeCompare(String(q.row.key));}
- function build(key,list){return root.StageWorkspaces.prepare(key,list).map(x=>({row:x.row,shape:shape(key,x)}));}
+ function build(key,list){return root.StageWorkspaces.prepare(key,list).map(x=>({row:x.row,values:x.values,priority:x.priority,shape:shape(key,x)}));}
  function cellHtml(c){
   if(c.tag)return '<span class="plv-c"><em class="plv-tag '+c.tc+'">'+h(c.tag)+'</em>'+(c.sub?'<small>'+h(c.sub)+'</small>':'')+'</span>';
   return '<span class="plv-c"><span class="'+c.c+'" title="'+attr(c.t)+'">'+h(c.t)+'</span>'+(c.sub?'<small class="'+c.sc+'">'+h(c.sub)+'</small>':'')+'</span>';
@@ -106,7 +106,7 @@
    const rows=items.filter(x=>x.shape.group===id).sort(compare),limit=PER+(shownMore[id]||0),shown=rows.slice(0,limit),rest=rows.length-shown.length;
    return '<div class="plv-ghead" data-plv-group="'+id+'"><i style="background:'+color+'"></i><b>'+h(title)+'</b><span>'+rows.length+'건</span><small>· '+h(desc)+'</small></div>'+(shown.length?shown.map(x=>rowHtml(key,x)).join(''):'<div class="plv-empty">해당하는 건이 없습니다</div>')+(rest>0?'<button type="button" class="plv-more" data-plv="more" data-value="'+id+'">+ '+rest+'건 더보기</button>':'');
   }).join('');
-  return '<div id="pipeline-list-v2" class="plv" data-workspace="'+key+'">'+intro+ownerChips(key,cur)+'<div class="plv-table" role="table" aria-label="'+attr(NAME[key])+' 목록">'+head+groups+'</div></div>';
+  return '<div id="pipeline-list-v2" class="plv" data-workspace="'+key+'">'+intro+ownerChips(key,cur)+(root.PipelineDiagnosis?root.PipelineDiagnosis.stage(key,all,{open:root.G.plvDiagShut!==true}):'')+'<div class="plv-table" role="table" aria-label="'+attr(NAME[key])+' 목록">'+head+groups+'</div></div>';
  }
  function brandStats(){
   const key=root.G.pipelineStage,sel=root.SalesFilterState.state().brands||[];let list=[];
@@ -115,6 +115,7 @@
   return [{name:'전체',n:list.length,on:!sel.length}].concat(names.map(b=>({name:b,n:list.filter(r=>r.item.brand===b).length,on:sel.includes(b)})));
  }
  function onClick(e){
+  const pd=e.target.closest('[data-pd="toggle"]');if(pd&&pd.closest('#pipeline-list-v2')){root.G.plvDiagShut=root.G.plvDiagShut!==true;root.paint();return;}
   const b=e.target.closest('[data-plv]');if(!b||!b.closest('#pipeline-list-v2'))return;
   const a=b.dataset.plv,v=b.dataset.value,key=root.G.pipelineStage;
   if(a==='owner'){const cur=root.SalesScope.state().owner||'전체';root.CommonFilterBar.setOwner(cur===v?'전체':v);root.paint();}
