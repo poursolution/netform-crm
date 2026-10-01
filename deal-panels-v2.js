@@ -91,13 +91,14 @@
   root.EDIT_WORK_ITEM=item;W.items=[];W.primary='';W.other='';
   root.workItemsOf(item).forEach(w=>{if(w.group==='기타'){if(!W.items.includes('기타>기타'))W.items.push('기타>기타');W.other=w.item;}else if(root.knownWorkKey(w.key))W.items.push(w.key);});
   const pr=root.dealPrimaryWork(item);if(pr){const x=root.workParts(pr);W.primary=x&&x.group==='기타'?'기타>기타':pr;}if(W.items.length&&!W.items.includes(W.primary))W.primary=W.items[0];
-  const g=root.WorkV2?root.WorkV2.guess(item):null,gk=g&&g.keys?g.keys.filter(root.knownWorkKey):[],cb=combos(),label=k=>{const w=root.workParts(k);return w?(w.group==='기타'&&W.other?W.other:w.group+' '+w.item):k;};
+  let g=root.WorkV2?root.WorkV2.guess(item):null,gk=g&&g.keys?g.keys.filter(root.knownWorkKey):[],aiId='',aiBusy=false,aiErr='';const cb=combos(),label=k=>{const w=root.workParts(k);return w?(w.group==='기타'&&W.other?W.other:w.group+' '+w.item):k;};
   const draw=()=>{
    const n=W.items.length,badge=!n?['미분류','m']:n===1?['단일','b']:['복합 '+n+'개','p'];
    const ai=!g?'<p class="dp-ai none">추정 공종 · 근거 부족 — 단서를 찾지 못했어요. 아래 표에서 직접 골라 주세요.</p>'
     :gk.length?'<button type="button" class="dp-ai on" data-guess="1"><b>✦ 추정 공종 · '+h(g.label)+'</b><span>근거: 현장명 · 공사명 · 메모에서 찾은 단어 '+h(g.basis)+'</span><small>키워드 추정입니다 — 누르면 바로 채웁니다. 저장은 사람이 확정할 때만 됩니다.</small></button>'
     :'<section class="dp-ai"><b>추정 공종 · '+h(g.label)+'</b><span>근거: 현장명 · 공사명 · 메모에서 찾은 단어 '+h(g.basis)+'</span><small>키워드 추정입니다 — 아래 표에서 세부 공종을 골라 주세요. 저장은 사람이 확정할 때만 됩니다.</small></section>';
-   p.querySelector('#dp-work').innerHTML=ai
+   const aiBtn=root.OpsStore&&root.OpsStore.aiOn()?'<button type="button" class="dp-aibtn" data-aiguess="1"'+(aiBusy?' disabled':'')+'>'+(aiBusy?'AI가 읽는 중…':aiId?'✦ AI 추정 다시 받기':'✦ AI 추정 받기')+'</button>'+(aiErr?'<small class="dp-aierr">'+h(aiErr)+'</small>':''):'';
+   p.querySelector('#dp-work').innerHTML=ai+aiBtn
     +(cb.length?'<section class="dp-sec"><b>자주 쓰는 조합</b><div class="dp-chips">'+cb.map((c,i)=>'<button type="button" data-combo="'+i+'">'+h(c.keys.map(label).join(' + '))+' <em>'+c.n+'</em></button>').join('')+'</div></section>':'')
     +'<section class="dp-sec"><b>공종 표</b><div class="dp-wtable">'+root.WORK_MASTER.map(G=>'<div><span>'+h(G.group)+'</span><div class="dp-chips">'+G.items.map(i=>{const k=root.workKey(G.group,i);return '<button type="button" data-work="'+attr(k)+'" aria-pressed="'+W.items.includes(k)+'">'+h(i)+'</button>';}).join('')+'</div></div>').join('')+'</div>'+(W.items.includes('기타>기타')?'<input id="nd-work-other" value="'+attr(W.other)+'" placeholder="기타 공종을 직접 입력해 주세요">':'')+'</section>'
     +'<section class="dp-sec"><b>저장될 공종 <em class="dp-badge '+badge[1]+'">'+badge[0]+'</em></b>'+(n?'<div class="dp-chips dp-picked">'+W.items.map(k=>'<button type="button" data-primary="'+attr(k)+'" aria-pressed="'+(W.primary===k)+'">'+(W.primary===k?'★ ':'')+h(label(k))+'</button>').join('')+'</div><small class="dp-hint">'+(n>1?'고른 공종 중 하나를 누르면 ★ 대표 공종이 됩니다 — 분석은 대표 공종 기준입니다.':'대표 공종 1개')+'</small>':'<p class="dp-empty">아직 고른 공종이 없습니다</p>')+'</section>';
@@ -107,7 +108,10 @@
   p.addEventListener('input',e=>{if(e.target.id==='nd-work-other')W.other=e.target.value;});
   p.addEventListener('click',e=>{
    const w=e.target.closest('[data-work]'),pm=e.target.closest('[data-primary]'),c=e.target.closest('[data-combo]');
-   if(e.target.closest('[data-guess]')){W.items=gk.slice();W.primary=W.items[0]||'';draw();return;}
+   if(e.target.closest('[data-aiguess]')){if(aiBusy)return;aiBusy=true;aiErr='';draw();
+    const notes=[].concat((item.legacy_notes||[]).slice(0,3).map(n=>n.body),(item.activities||[]).slice(0,5).map(a=>a.note)).filter(Boolean).map(v=>String(v).slice(0,200));
+    root.OpsStore.ai('work_guess','deal',item.id,{site:item.site||'',work_name:item.work_name||item.work||'',notes}).then(s=>{const r=s.suggestion||{},keys=(r.keys||[]).filter(root.knownWorkKey);aiId=s.id||'';g={label:keys.length?keys.map(k=>k.replace('>',' ')).join(' + '):'근거 부족',basis:(r.basis||'')+' · AI 추정'+(r.confidence?' ('+({high:'확신 높음',medium:'보통',low:'낮음'}[r.confidence]||r.confidence)+')':''),keys};gk=keys.slice();if(r.primary&&keys.includes(r.primary))gk=[r.primary].concat(keys.filter(k=>k!==r.primary));}).catch(err=>{aiErr=String(err.message||err);}).finally(()=>{aiBusy=false;draw();});return;}
+   if(e.target.closest('[data-guess]')){W.items=gk.slice();W.primary=W.items[0]||'';if(aiId)root.OpsStore.decide(aiId,'accepted');draw();return;}
    if(w){const k=w.dataset.work,i=W.items.indexOf(k);if(i>=0)W.items.splice(i,1);else W.items.push(k);if(!W.items.includes(W.primary))W.primary=W.items[0]||'';draw();return;}
    if(pm){W.primary=pm.dataset.primary;draw();return;}
    if(c){const x=cb[Number(c.dataset.combo)];W.items=x.keys.slice();W.primary=W.items[0];draw();return;}
@@ -207,7 +211,7 @@
   return {how:'전화',what:'견적서 검토 여부 확인',due:dayStr(3),why:'요구 확인 뒤 견적 준비 단계'+(m.days!=null?' · 마지막 연락 '+m.days+'일 전':'')};
  }
  function nextPanel(){
-  const d=root.CUR_DETAIL.item,sel=$('dv-na-assignee'),owner=root.repN(d.assignee),people=sel?[...sel.options].map(o=>o.value).filter(Boolean):[owner],rec=recommendNext(d);
+  const d=root.CUR_DETAIL.item,sel=$('dv-na-assignee'),owner=root.repN(d.assignee),people=sel?[...sel.options].map(o=>o.value).filter(Boolean):[owner];let rec=recommendNext(d),recAi='',recBusy=false,recErr='';
   if(!$('nextActionCard')){toast('다음 할 일 입력 칸을 불러오지 못했습니다. 상세를 닫았다가 다시 열어 주세요','warn');return;}
   const S={mode:'go',how:'',when:'',due:'',what:'',who:people.includes(owner)?owner:(people[0]||owner),end:''};
   const p=side('next','다음 할 일 설정',d.site||'현장명 미입력','<div id="dp-next"></div><div class="modalerr" id="dp-err" role="alert"></div>','<button type="button" class="dp-ghost" data-dp="close">취소</button><button type="button" class="dp-primary" data-dp="save">저장</button>');if(!p)return;
@@ -216,7 +220,7 @@
    const seg='<div class="dp-seg" role="group" aria-label="진행 방식">'+[['go','계속 진행'],['later','나중에 다시'],['end','종료']].map(([v,t])=>'<button type="button" data-mode="'+v+'" aria-pressed="'+(S.mode===v)+'">'+t+'</button>').join('')+'</div>';
    let body;
    if(S.mode==='end')body='<section class="dp-sec"><b>왜 끝나나요</b><div class="dp-chips">'+END.map(e=>'<button type="button" data-end="'+attr(e[0])+'" aria-pressed="'+(S.end===e[0])+'">'+h(e[0])+'</button>').join('')+'</div><small class="dp-hint">[종료하기]를 누르면 진행상태 변경 창이 이 사유로 열립니다 — 확인한 내용을 적고 저장하면 종료됩니다. 사유는 실주 분석 · 리포트에 쓰입니다.</small></section>';
-   else body='<button type="button" class="dp-rec" data-rec="1"><b>✦ 추천 · '+h(rec.how)+' · '+h(rec.what)+' · '+h(dateLabel(rec.due))+'</b><span>'+h(rec.why)+'</span></button>'
+   else body='<button type="button" class="dp-rec" data-rec="1"><b>✦ '+(recAi?'AI 추천':'추천')+' · '+h(rec.how)+' · '+h(rec.what)+' · '+h(dateLabel(rec.due))+'</b><span>'+h(rec.why)+'</span></button>'+(root.OpsStore&&root.OpsStore.aiOn()?'<button type="button" class="dp-aibtn" data-airec="1"'+(recBusy?' disabled':'')+'>'+(recBusy?'AI가 읽는 중…':'✦ AI 추천 받기')+'</button>'+(recErr?'<small class="dp-aierr">'+h(recErr)+'</small>':''):'')
     +'<section class="dp-sec"><b>어떻게</b><div class="dp-chips">'+HOW.map(x=>'<button type="button" data-how="'+attr(x[0])+'" aria-pressed="'+(S.how===x[0])+'">'+h(x[0])+'</button>').join('')+'</div></section>'
     +'<section class="dp-sec"><b>언제</b><div class="dp-chips">'+whenList.map(w=>'<button type="button" data-when="'+w[0]+'" aria-pressed="'+(S.when===w[0])+'">'+w[1]+'</button>').join('')+'</div>'+(S.when==='pick'?'<input type="date" id="dp-date" value="'+attr(S.due)+'" min="'+dayStr(0)+'">':'')+'</section>'
     +'<section class="dp-sec"><b>무엇을</b><input id="dp-what" value="'+attr(S.what)+'" placeholder="예: 견적서 검토 여부 확인">'+((WHAT[S.how]||[]).length?'<div class="dp-chips">'+WHAT[S.how].map(t=>'<button type="button" data-what="'+attr(t)+'">'+h(t)+'</button>').join('')+'</div>':'')+'</section>'
@@ -230,7 +234,9 @@
   p.addEventListener('click',e=>{
    const t=e.target.closest('button');if(!t||t.dataset.dp==='close')return;const ds=t.dataset;
    if(ds.mode){S.mode=ds.mode;if(S.mode==='later'&&!S.when){setWhen('week');if(!S.how)S.how='전화';if(!S.what)S.what='고객 요청 시점에 다시 연락';}return draw();}
-   if(ds.rec){S.how=rec.how;S.what=rec.what;S.due=rec.due;S.when=(whenList.find(w=>w[2]===rec.due)||['pick'])[0];return draw();}
+   if(ds.airec){if(recBusy)return;recBusy=true;recErr='';draw();const m=root.relationshipMeta(d),acts=((root.itemPatch(d,'deal')||{}).activities||d.activities||[]).slice(-5).map(a=>String([a.type,a.note,a.result].filter(Boolean).join(' · ')).slice(0,200));
+    root.OpsStore.ai('next_action','deal',d.id,{site:d.site||'',stage:root.stageLabel(root.dealStage(d)),last_contact_days:m.days,recent:acts,today:dayStr(0)}).then(s=>{const r=s.suggestion||{};recAi=s.id||'x';rec={how:HOW.some(x=>x[0]===r.how)?r.how:'전화',what:r.what||rec.what,due:dayStr(Number(r.days)||0),why:(r.why||'')+' · AI 추천'};}).catch(err=>{recErr=String(err.message||err);}).finally(()=>{recBusy=false;draw();});return;}
+   if(ds.rec){S.how=rec.how;S.what=rec.what;S.due=rec.due;S.when=(whenList.find(w=>w[2]===rec.due)||['pick'])[0];if(recAi&&recAi!=='x')root.OpsStore.decide(recAi,'accepted');return draw();}
    if(ds.how){S.how=ds.how;return draw();}
    if(ds.when){setWhen(ds.when);return draw();}
    if(ds.what){S.what=ds.what;return draw();}

@@ -31,3 +31,4 @@
 #dup-v2 .plv-cta{border:1px solid #dbe5fd;background:#fff;color:#2a52b8;border-radius:8px;padding:7px 0;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}#dup-v2 .plv-cta:hover{background:#eef3fe}
 /* 이 화면은 기간 · 담당자 필터와 무관하다 — 예전 조회기간 · 담당자 줄을 감춘다 */
 body:has(#pg-dup.on #dups.dv-on) #periodbar,body:has(#pg-dup.on #dups.dv-on) #reptabs{display:none!important}
+.dv-ai{align-self:flex-start;margin-top:4px;border:1px dashed #b9c8f3;background:#f5f8ff;color:#2a52b8;border-radius:8px;padding:5px 10px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}.dv-ai:disabled{opacity:.6;cursor:wait}.dv-aiout{font-size:12.5px;color:#2a52b8;font-weight:600;line-height:1.5}

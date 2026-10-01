@@ -60,6 +60,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.locator('#work-v2 .plv-pills button').allInnerTexts(),['전체 5','분류 필요 2','단일 공종 1','복합 공종 2'],'묶음 건수 = 알약 건수');
   assert.deepEqual(await page.evaluate(()=>__edits),['d1','d2'],'다음 미분류 건이 이어서 열림');
   assert.match(await w.innerText(),/공종 분류 · 남은 2건[\s\S]*추정 공종 · 지하주차장/);
+  /* 두 번째로 연 창에서도 칩이 한 번에 눌린다(창 틀을 다시 써도 클릭이 겹치지 않는다) */
+  await w.locator('[data-work="지하주차장>에폭시"]').click();assert.match(await w.innerText(),/저장될 공종\s*단일/);await w.locator('[data-work="지하주차장>에폭시"]').click();assert.match(await w.innerText(),/저장될 공종\s*미분류/);
   /* 나중에 → 건너뛰고 다음 건. 근거 부족이면 회색 한 줄 */
   await w.locator('[data-wd="later"]').click();await page.waitForTimeout(500);
   assert.deepEqual(await page.evaluate(()=>__edits),['d1','d2','d3'],'나중에 = 건너뛰고 다음 건');assert.equal(await page.evaluate(()=>__work.length),1,'건너뛴 건은 저장하지 않음');

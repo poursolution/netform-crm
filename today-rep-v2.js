@@ -59,7 +59,8 @@
   const short=inq?'문의':code==='bidding'?'입찰':['compete','imminent'].includes(code)?'경쟁':code==='sent'?'자료':['rapport','silent','waiting'].includes(code)?'관계':['contract','construction','completion'].includes(code)?'계약':'설계';
   return {site:it.site||it.site_name||'현장명 미입력',name,role,phone:digits?root.phoneFmt(digits):'',digits,chip,step,stage:short,want:cut(want,60),recent:cut(x.recent||'',60),goal:cut(x.next||'',60),amt};
  }
- function opener(x,i){const me=root.ME&&root.ME.name||'';const topic=cut(x.type==='inq'?(i.want||'견적'):(i.goal||i.want||''),26);return '안녕하세요, 넷폼 '+me+'입니다. '+(x.type==='inq'?'문의 주신 '+topic+' 건으로 연락드렸습니다.':(topic?topic+' 건으로 ':'')+'연락드렸습니다.')+' 지금 통화 괜찮으실까요?';}
+ const AIO=new Map(),AIB=new Set();/* key → {opener,goal,summary} */
+ function opener(x,i){const a=AIO.get(x.key);if(a&&a.opener)return a.opener;const me=root.ME&&root.ME.name||'';const topic=cut(x.type==='inq'?(i.want||'견적'):(i.goal||i.want||''),26);return '안녕하세요, 넷폼 '+me+'입니다. '+(x.type==='inq'?'문의 주신 '+topic+' 건으로 연락드렸습니다.':(topic?topic+' 건으로 ':'')+'연락드렸습니다.')+' 지금 통화 괜찮으실까요?';}
  function cardHtml(u,n,open){
   const x=u.x,i=info(x),c=TONE[u.tone],k=attr(x.key);
   const bar='<div class="trv-steps" aria-label="단계 '+h(i.stage)+'">'+STEPS.map((s,j)=>'<i style="background:'+(j<i.step?'#9db4ee':j===i.step?c[0]:'#e6e9ee')+'" title="'+s+'"></i>').join('')+'</div>';
@@ -67,8 +68,8 @@
    +'<header><i class="trv-no">'+(n+1)+'</i><b class="trv-why">'+h(u.why)+'</b><span class="trv-chip">'+h(i.chip)+'</span></header>'
    +'<div class="trv-who"><strong title="'+attr(i.site)+'">'+h(i.site)+'</strong><span>'+h([i.name,i.role,i.phone].filter(Boolean).join(' · ')||'연락처 미입력')+'</span></div>'
    +'<div class="trv-stage">'+bar+'<span>'+h(i.stage)+'</span>'+(i.amt?'<b>'+h(money(i.amt))+'</b>':'')+'</div>'
-   +'<dl class="trv-facts"><dt>원한 것</dt><dd>'+h(i.want||'기록 없음')+'</dd><dt>지난 기록</dt><dd>'+h(i.recent||'기록 없음')+'</dd><dt>목표</dt><dd class="goal">'+h(i.goal||'다음 할 일 정하기')+'</dd></dl>'
-   +'<p class="trv-opener">“'+h(opener(x,i))+'”</p>'
+   +'<dl class="trv-facts"><dt>원한 것</dt><dd>'+h(i.want||'기록 없음')+'</dd><dt>지난 기록</dt><dd>'+h((AIO.get(x.key)||{}).summary||i.recent||'기록 없음')+'</dd><dt>목표</dt><dd class="goal">'+h((AIO.get(x.key)||{}).goal||i.goal||'다음 할 일 정하기')+'</dd></dl>'
+   +'<p class="trv-opener">“'+h(opener(x,i))+'”'+(root.OpsStore&&root.OpsStore.aiOn()&&!AIO.has(x.key)?' <button type="button" class="trv-ai" data-trv="ai" data-key="'+k+'"'+(AIB.has(x.key)?' disabled':'')+'>'+(AIB.has(x.key)?'AI…':'✦ AI 첫마디')+'</button>':AIO.has(x.key)?' <em class="trv-aitag">AI</em>':'')+'</p>'
    +'<p class="trv-miss"><b>놓치면</b> '+h(u.miss)+'</p>'
    +'<div class="trv-btns"><button type="button" class="call" data-trv="call" data-key="'+k+'"'+(i.digits?' data-tel="'+attr(i.digits)+'"':'')+'>전화</button><button type="button" data-trv="sms" data-key="'+k+'">문자</button><button type="button" data-trv="result" data-key="'+k+'" aria-expanded="'+open+'">결과</button></div>'
    +(open?'<div class="trv-results" role="group" aria-label="연락 결과">'+RESULTS.map((r,j)=>'<button type="button" data-trv="pick" data-key="'+k+'" data-value="'+j+'">'+r[0]+'</button>').join('')+'<small>고르면 이 건의 상세가 결과가 채워진 채 열립니다 — 확인하고 [저장]</small></div>':'')
@@ -102,6 +103,8 @@
  function onClick(e){
   const b=e.target.closest('#today-v2 .trv [data-trv]');if(!b)return;e.stopPropagation();const S=st(),a=b.dataset.trv,key=b.dataset.key;
   if(a==='more'){S.more=!S.more;return root.TodayV2.render();}
+  if(a==='ai'){if(AIB.has(key))return;const X=T().data(),x=X.rows.find(r=>r.key===key)||UPCOMING.get(key);if(!x)return;const i=info(x);AIB.add(key);root.TodayV2.render();
+   root.OpsStore.ai('call_opener',x.type==='inq'?'inquiry':'deal',x.item.id||key,{caller:root.ME&&root.ME.name||'',company:'넷폼',site:i.site,contact:[i.name,i.role].filter(Boolean).join(' '),stage:i.stage,want:i.want,recent:x.recent||'',goal:x.next||''}).then(s=>{AIO.set(key,s.suggestion||{});}).catch(e=>{if(typeof root.toast==='function')root.toast(String(e.message||e),'warn');}).finally(()=>{AIB.delete(key);root.TodayV2.render();});return;}
   if(a==='result'){S.open=S.open===key?'':key;return root.TodayV2.render();}
   if(a==='call'){dial(b.dataset.tel);S.open=key;return root.TodayV2.render();}
   if(a==='rowcall'){dial(b.dataset.tel);return openKey(key,'contact');}

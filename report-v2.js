@@ -88,6 +88,12 @@
   O.rpc('crm_report_snapshot_save_v1',{kind:x.P.kind,period_key:x.P.key,payload,promises:pr.map((p,i)=>({what:edited('promise'+i,p.what),who:p.who,where:p.where,basis:p.basis}))}).then(()=>{if(typeof root.toast==='function')root.toast(x.P.cur.long+' 보고를 저장했습니다');loadStore(x.P.kind,true);}).catch(e=>{btn.disabled=false;btn.textContent='이 보고 저장';if(typeof root.toast==='function')root.toast(String(e.message||e),'warn');});
  }
  function saveResponse(v){const O=root.OpsStore,x=data();if(STORE.busy)return;STORE.busy=true;O.rpc('crm_report_response_save_v1',{kind:x.P.kind,period_key:x.P.key,response:v}).then(()=>{if(typeof root.toast==='function')root.toast('대표님 답을 저장했습니다 · '+RESP[v]);loadStore(x.P.kind,true);}).catch(e=>{if(typeof root.toast==='function')root.toast(String(e.message||e),'warn');}).finally(()=>{STORE.busy=false;});}
+ /* AI 문장: 지금 화면의 숫자만 넘기고, 받은 문장은 [편집]한 것처럼 채운다 — 저장은 [이 보고 저장]을 눌러야 된다 */
+ function aiText(){
+  const x=data(),a=ask(x),pr=promises(x),S=st();if(STORE.aiBusy)return;STORE.aiBusy=true;render();
+  const input={period:x.P.cur.long,unit:x.P.unit,won_amount:x.wonAmt,won_count:x.curWon.length,prev_won_amount:x.compare[0].prev,pipeline_amount:x.pipeAmt,pipeline_count:x.open.length,forecast:x.forecast,near_count:x.near.length,near_amount:x.nearAmt,critical_count:x.critical.length,lost_count:x.curLost.length,stage_groups:x.groups.map(g=>({name:g.name,count:g.n,amount:g.amt})),people:x.people.slice(0,9).map(p=>({name:p.n,opportunities:p.did,won:p.won,lost:p.lost,made:p.made,missed:p.missed})),ask_candidate:a?{site:a.d.site||'',decision:root.reportDecisionText(a.d),reason:root.reportRiskReason(a.d)}:null,promise_candidates:pr.map(p=>({what:p.what,who:p.who,where:p.where}))};
+  root.OpsStore.ai('report_text','report',x.P.kind+':'+x.P.key,input).then(s=>{const r=s.suggestion||{},set=(k,v)=>{if(v&&String(v).trim())S.edits[k]=String(v).trim();};set('cover',r.cover);set('coverRisk',r.risk);set('now',r.now);set('people',r.people);set('real',r.real);if(a){set('ask',r.ask);set('askWhy',r.askWhy);}(r.promises||[]).slice(0,pr.length).forEach((p,i)=>set('promise'+i,p.what));if(typeof root.toast==='function')root.toast('AI 문장을 채웠습니다 — 읽어 보고 [편집]으로 고친 뒤 저장해 주세요');}).catch(e=>{if(typeof root.toast==='function')root.toast(String(e.message||e),'warn');}).finally(()=>{STORE.aiBusy=false;render();});
+ }
  function answersHtml(x){
   const O=root.OpsStore,snap=snapOf(x.P.key),can=!!snap&&O&&O.admin();
   const btns='<div class="rp-answers">'+Object.keys(RESP).map(k=>'<button type="button" data-rp="answer" data-value="'+k+'"'+(can?'':' disabled')+(snap&&snap.boss_response===k?' aria-pressed="true"':'')+'>'+RESP[k]+'</button>').join('')+'</div>';
@@ -131,7 +137,7 @@
  function html(x){
   const S=st(),seg=(k,list,cur)=>'<div class="rp-seg" role="group">'+list.map(([v,t])=>'<button type="button" data-rp="'+k+'" data-value="'+v+'" aria-pressed="'+(cur===v)+'">'+t+'</button>').join('')+'</div>',d=new Date();
   const bar='<div class="rp-toolbar">'+seg('mode',[['month','월간'],['quarter','분기'],['year','연간']],S.mode)+'<span class="rp-auto">자동 취합 · '+(d.getMonth()+1)+'월 '+d.getDate()+'일</span><div class="plv-spacer"></div>'+seg('view',[['slides','슬라이드'],['page','한 페이지']],S.view)
-   +'<button type="button" class="rp-btn'+(S.edit?' on':'')+'" data-rp="edit" aria-pressed="'+S.edit+'">'+(S.edit?'편집 끝내기':'편집')+'</button><button type="button" class="rp-btn" data-rp="detail" aria-pressed="'+S.detail+'">'+(S.detail?'상세 표 접기':'상세 표 보기')+'</button>'+(STORE.state==='ready'&&root.OpsStore.admin()?'<button type="button" class="rp-btn" data-rp="snapshot">'+(snapOf(x.P.key)?'이 보고 다시 저장':'이 보고 저장')+'</button>':'')+'<button type="button" class="rp-btn" data-rp="pdf">PDF로 저장</button><button type="button" class="rp-btn pri" disabled title="잔디 발송 연결 뒤에 켜집니다">대표님께 보내기</button></div>'
+   +'<button type="button" class="rp-btn'+(S.edit?' on':'')+'" data-rp="edit" aria-pressed="'+S.edit+'">'+(S.edit?'편집 끝내기':'편집')+'</button><button type="button" class="rp-btn" data-rp="detail" aria-pressed="'+S.detail+'">'+(S.detail?'상세 표 접기':'상세 표 보기')+'</button>'+(root.OpsStore&&root.OpsStore.aiOn()&&root.OpsStore.admin()?'<button type="button" class="rp-btn" data-rp="ai"'+(STORE.aiBusy?' disabled':'')+'>'+(STORE.aiBusy?'AI가 쓰는 중…':'✦ AI 문장 받기')+'</button>':'')+(STORE.state==='ready'&&root.OpsStore.admin()?'<button type="button" class="rp-btn" data-rp="snapshot">'+(snapOf(x.P.key)?'이 보고 다시 저장':'이 보고 저장')+'</button>':'')+'<button type="button" class="rp-btn" data-rp="pdf">PDF로 저장</button><button type="button" class="rp-btn pri" disabled title="잔디 발송 연결 뒤에 켜집니다">대표님께 보내기</button></div>'
    +(S.edit?'<p class="rp-editnote">문장을 눌러 바로 고칠 수 있습니다. 고친 문장은 PDF에 그대로 들어가지만 저장되지는 않습니다 — 이 화면을 새로 열면 처음 문장으로 돌아갑니다.</p>':'');
   if(S.view==='page')return bar+onePage(x);
   const L=slides(x);
@@ -158,6 +164,7 @@
   if(a==='detail'){S.detail=!S.detail;render();if(S.detail)document.getElementById('report-master')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
   if(a==='pdf')return pdf();
   if(a==='snapshot')return saveSnapshot(b);
+  if(a==='ai')return aiText();
   if(a==='answer')return saveResponse(v);
   if(a==='prev')return go(S.i-1);if(a==='next')return go(S.i+1);if(a==='go')return go(Number(v));
  }

@@ -71,16 +71,23 @@
  function render(){
   const body=document.getElementById('akBody');if(!body)return;
   if(!S){body.innerHTML=faqHtml();return;}
-  if(!S.conds){body.innerHTML=faqHtml('<p class="ak-miss">이 질문은 아직 조건으로 못 바꿨어요 · 이렇게 물어보세요</p>');return;}
+  if(!S.conds&&S.ai==='busy'){body.innerHTML='<p class="ak-miss">✦ AI가 질문을 검색 조건으로 바꾸는 중…</p>';return;}
+  if(!S.conds){body.innerHTML=faqHtml('<p class="ak-miss">이 질문은 아직 조건으로 못 바꿨어요 · 이렇게 물어보세요'+(S.aiErr?' <small>('+h(S.aiErr)+')</small>':'')+'</p>');return;}
   const list=S.list,total=list.reduce((a,d)=>a+money(d),0),stale=S.conds.some(c=>c.k==='noContact'),shown=S.all?list:list.slice(0,TOP);
-  const chips='<div class="ak-sec">이렇게 찾았어요</div><div class="ak-chips">'+S.conds.map((c,i)=>'<span class="ak-chip">'+h(KIND[c.k].label(c))+'<button type="button" data-ak="drop" data-value="'+i+'" aria-label="'+attr(KIND[c.k].label(c))+' 조건 빼기">✕</button></span>').join('')+(S.conds.length?'':'<span class="ak-none">조건 없음 — 전체 영업건</span>')+'</div>';
+  const chips='<div class="ak-sec">이렇게 찾았어요'+(S.ai==='done'?' · ✦ AI 해석 — 틀리면 ✕로 빼 주세요':'')+'</div><div class="ak-chips">'+S.conds.map((c,i)=>'<span class="ak-chip">'+h(KIND[c.k].label(c))+'<button type="button" data-ak="drop" data-value="'+i+'" aria-label="'+attr(KIND[c.k].label(c))+' 조건 빼기">✕</button></span>').join('')+(S.conds.length?'':'<span class="ak-none">조건 없음 — 전체 영업건</span>')+'</div>';
   const sum='<p class="ak-sum"><b>'+list.length.toLocaleString('ko-KR')+'곳</b>'+(list.length?' · '+(stale?'진행 금액 '+h(root.fmtAmt(total))+'이 멈춰 있어요':'금액 합계 '+h(root.fmtAmt(total))):' · 조건에 맞는 영업건이 없어요')+'</p>';
   let admin=false;try{admin=!!root.todayIsAdmin();}catch(e){}
   const canSms=!!(root.SmsV2&&root.SmsV2.enabled()&&root.SmsV2.openCustom)&&admin,canTask=!!(root.ImprovementTasks&&root.ImprovementTasks.enabled()&&admin);
   const foot=list.length?'<div class="ak-foot"><span>'+(S.all||list.length<=TOP?'전체 '+list.length+'곳':'상위 '+TOP+'곳 · 나머지 '+(list.length-TOP)+'곳')+'</span><div>'+(!S.all&&list.length>TOP?'<button type="button" data-ak="all">모두 보기</button>':'')+(canSms?'<button type="button" data-ak="sms">이 묶음에 문자</button>':'')+(canTask?'<button type="button" data-ak="task">과제로 등록</button>':'')+'</div></div>':'';
   body.innerHTML=chips+sum+'<div class="ak-list">'+shown.map(rowHtml).join('')+'</div>'+foot+'<p class="ak-note">읽기 전용 · 화면에 없는 사실은 만들지 않아요</p>';
  }
- function ask(q){q=String(q||'').trim();if(!q){S=null;return render();}const conds=parse(q);S={q,conds,list:conds?run(conds):[],all:false};if(conds&&conds.length===2&&conds[0].k==='text'&&!S.list.length)S.conds=null;render();}
+ function ask(q){q=String(q||'').trim();if(!q){S=null;return render();}const conds=parse(q);S={q,conds,list:conds?run(conds):[],all:false};if(conds&&conds.length===2&&conds[0].k==='text'&&!S.list.length)S.conds=null;render();
+  /* 규칙으로 조건을 못 만들었으면 AI에게 해석을 맡긴다(켜져 있을 때만). 결과도 같은 조건 칩으로 보여 준다 */
+  if(!S.conds&&root.OpsStore&&root.OpsStore.aiOn()){const mine=S;S.ai='busy';render();
+   const names=[...new Set((root.PERFORMANCE_TARGET_NAMES||[]).concat((root.SalesScope?.people?.()||[]).map(p=>p.name)))],stages=Object.keys(root.STAGE_MASTER||{});
+   root.OpsStore.ai('ask_parse','question',q,{question:q,owners:names,stages:stages.map(c=>({code:c,label:root.stageLabel(c)}))}).then(s=>{if(S!==mine)return;const C=((s.suggestion||{}).conditions||[]).map(c=>{if(!KIND[c.k])return null;if(c.k==='owner'&&!names.includes(c.v))return null;if(c.k==='stage'){const code=stages.includes(c.v)?c.v:stages.find(x=>root.stageLabel(x)===c.v);if(!code)return null;return {k:'stage',v:code};}if(c.k==='noContact'||c.k==='amount'){const n=Number(c.v);if(!Number.isFinite(n)||n<=0)return null;return {k:c.k,v:n};}if(c.k==='text'&&!String(c.v||'').trim())return null;return c.v==null?{k:c.k}:{k:c.k,v:c.v};}).filter(Boolean);
+    if(!C.length){S.ai='';return render();}if(!C.some(c=>c.k==='open'))C.push({k:'open'});S.conds=C;S.list=run(C);S.ai='done';S.aiId=s.id||'';render();}).catch(e=>{if(S!==mine)return;S.ai='';S.aiErr=String(e.message||e);render();});}
+ }
  function open(){
   const m=node();S=null;m.classList.add('on');const i=document.getElementById('akInput');i.value='';render();setTimeout(()=>i.focus(),30);
  }

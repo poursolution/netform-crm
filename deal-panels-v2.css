@@ -79,3 +79,6 @@
 #detailView.ddv .dp button.dp-ai.on,.wd-box button.dp-ai.on{text-align:left;font:inherit;color:inherit;cursor:pointer;min-height:0;box-shadow:none;width:100%;border:1px solid #f1c97a;background:#fff8ec}
 button.dp-ai.on:hover{background:#fff1d6}
 .dp-ai.none{margin:0;background:#f4f5f7;border-color:#eceef2;color:#6b7280;font-size:12.5px;display:block}
+/* AI 제안 버튼(설정이 켜져 있을 때만 보인다) */
+.dp-aibtn{align-self:flex-start;border:1px dashed #b9c8f3;background:#f5f8ff;color:#2a52b8;border-radius:8px;padding:6px 11px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;min-height:0;box-shadow:none}.dp-aibtn:disabled{opacity:.6;cursor:wait}
+.dp-aierr{font-size:11.5px;color:#c93a3f}

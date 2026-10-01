@@ -26,6 +26,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    const mon=o=>OpsStore.monday(o),DB={settings:{enforce_auto_assign:false,enforce_stage_block:false,ai_enabled:false,merge_enabled:false,jandi_enabled:false},weekly:[],actions:[],snaps:[]};window.__db=DB;window.__rpc=[];
    const pm=new Date(n.getFullYear(),n.getMonth()-1,1),prevKey=pm.getFullYear()+'-'+String(pm.getMonth()+1).padStart(2,'0');
    DB.snaps.push({kind:'monthly',period_key:prevKey,payload:{ask:{title:'지난달 부탁한 현장 — 계약조건 승인'}},promises:[{what:'배정된 문의는 그날 첫 연락을 한다',who:'영업팀 · 매일',where:'관리팀 KPI · 첫 연락',basis:'지금 첫 연락 전 4건'}],boss_response:'partial',boss_response_at:at(20)});
+   DB.snaps.push({kind:'weekly',period_key:mon(-1),payload:{range:'지난주',kpis:[['지난주 수주','1건 · 2억'],['위험 현장','3건']],verdicts:[{tone:'r',text:'위험 현장 3건 — TOP 3부터 조치',go:'위험 현장'}],agenda:[{basis:'미배정 2건',todo:'오늘 안에 담당 정하기',who:'관리팀 · 오늘'}],reps:[{n:'이필선',won:1,open:2,weighted:1,sched:1,adv:0,risk:3}]},promises:[]});
    SB={rpc:async(name,args)=>{const p=(args&&args.p)||{};__rpc.push(name);
     if(name==='crm_improvement_task_list_v1')return {data:{ok:true,tasks:[]}};
     if(name==='crm_ops_settings_v1'){if(p.set)Object.assign(DB.settings,p.set);return {data:{ok:true,settings:Object.assign({},DB.settings)}};}
@@ -66,13 +67,26 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await set.locator('[data-flag="ai_enabled"]').check();await page.waitForTimeout(400);assert.equal(await page.evaluate(()=>__db.settings.ai_enabled),true);assert.equal(await page.evaluate(()=>__db.settings.enforce_stage_block),false,'강제 적용은 꺼진 채');
   await page.locator('#kvSettings [data-close]').click();
   if(shot)await page.screenshot({path:shot+'-kpi.png'});
+  /* ── 주간 브리핑: 이번 주 저장 · 지난 저장본 보기 ── */
+  await page.evaluate(()=>goPage('brief'));await page.waitForTimeout(600);
+  const bw=page.locator('#brief-v2');assert.equal(await bw.locator('.bv-week select').isDisabled(),false,'저장소가 있으면 주차 선택이 열린다');
+  assert.match((await bw.locator('.bv-week option').allInnerTexts()).join('|'),/^이번 주 · .+\|\d+월 \d+일 주 · 저장본$/);
+  await bw.locator('[data-bv="saveweek"]').click();await page.waitForTimeout(500);
+  const wk=await page.evaluate(()=>__db.snaps.find(s=>s.kind==='weekly'&&s.period_key===OpsStore.monday(0)));
+  assert.ok(wk&&wk.payload.kpis.length===4&&Array.isArray(wk.payload.verdicts)&&Array.isArray(wk.payload.reps),'이번 주 숫자 · 판정 · 담당 현황 저장');
+  assert.equal(await page.locator('#brief-v2 [data-bv="saveweek"]').innerText(),'이번 주 다시 저장');
+  await page.locator('#brief-v2 .bv-week select').selectOption({index:1});await page.waitForTimeout(400);
+  assert.match(await page.locator('#brief-v2 .bv-stored').innerText(),/주에 저장한 브리핑입니다 — 그때 숫자 그대로[\s\S]*지난주 수주\s*1건 · 2억[\s\S]*위험 현장 3건 — TOP 3부터 조치[\s\S]*오늘 안에 담당 정하기[\s\S]*이필선/);
+  assert.equal(await page.locator('#brief-v2 [data-bv="saveweek"]').count(),0,'지난 저장본은 읽기 전용');
+  if(shot)await page.screenshot({path:shot+'-brief-stored.png'});
+  await page.locator('#brief-v2 .bv-week select').selectOption({index:0});await page.waitForTimeout(300);assert.equal(await page.locator('#brief-v2 .bv-stored').count(),0);
   /* ── 리포트 ── */
   await page.evaluate(()=>goPage('report'));await page.waitForTimeout(600);
   const v=page.locator('#report-v2');assert.equal(await v.locator('[data-rp="snapshot"]').innerText(),'이 보고 저장');
   await v.locator('.rp-dot').nth(6).click();await page.waitForTimeout(150);
   assert.equal(await v.locator('.rp-slide.on .rp-answers button:disabled').count(),3,'보고를 저장하기 전에는 답을 남길 수 없다');assert.match(await v.locator('.rp-slide.on .rp-lock').innerText(),/먼저 위의 \[이 보고 저장\]/);
   await v.locator('[data-rp="snapshot"]').click();await page.waitForTimeout(600);
-  const snap=await page.evaluate(()=>__db.snaps.find(s=>s.boss_response===null));
+  const snap=await page.evaluate(()=>__db.snaps.find(s=>s.kind==='monthly'&&s.boss_response===null));
   assert.equal(snap.kind,'monthly');assert.match(snap.period_key,/^\d{4}-\d{2}$/);assert.equal(snap.payload.won_amount,2e8);assert.equal(snap.payload.won_count,1);assert.ok(snap.payload.ask&&snap.payload.ask.title.length>0);assert.ok(snap.promises.length>=1&&snap.promises.length<=2);
   assert.equal(await v.locator('[data-rp="snapshot"]').innerText(),'이 보고 다시 저장');
   assert.equal(await v.locator('.rp-slide.on .rp-answers button:disabled').count(),0);
