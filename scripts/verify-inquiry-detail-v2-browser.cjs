@@ -34,7 +34,22 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await d.locator('.idv-missing').innerText(),/보완 필요 \d+개/);
   assert.equal(await d.locator('.idv-primary').innerText(),'담당자를 선택하세요');assert.equal(await d.locator('.idv-primary').isDisabled(),true);
   const reps=await d.locator('.idv-rep').evaluateAll(ns=>ns.map(n=>n.dataset.v));assert.ok(reps.includes('__branch__')&&reps.length>=2,'추천 담당자 + 지사 '+reps.join(','));
-  assert.equal(await d.locator('.idv-composer.idv-locked').count(),1,'배정 전에는 입력칸 잠금');
+  /* 2026-10-02 대표: 배정 전에도 통화·문자·메모 기록을 남긴다 + 견적문의에서 문자 바로 보내기 */
+  assert.equal(await d.locator('.idv-composer.idv-locked').count(),0,'배정 전에도 입력칸 열림');
+  assert.deepEqual(await d.locator('.idv-ctabs [role=tab]').allInnerTexts(),['통화 기록','문자 보내기','내부 메모']);
+  await d.locator('.idv-input textarea').fill('담당 정해지면 다시 연락드린다고 안내');
+  assert.equal(await d.locator('#iq-next').count(),0,'배정 전 통화 기록은 다음 할 일 없이');
+  await d.locator('[data-idv="save"]').click();await page.waitForTimeout(250);
+  assert.deepEqual(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return (p.activities||[]).map(a=>[a.type,a.note,a.actor]);}),[['전화','담당 정해지면 다시 연락드린다고 안내','송보람']],'배정 전 통화 기록 저장 · 기록자 = 로그인한 사람');
+  assert.match(await d.locator('.idv-thread').innerText(),/담당 정해지면 다시 연락드린다고 안내/);
+  await d.locator('.idv-ctabs [data-v="sms"]').click();await page.waitForTimeout(150);
+  assert.match(await d.locator('.idv-smsrow').innerText(),/받는 번호\s*010-1111-2222[\s\S]*문구 복사[\s\S]*문자 앱으로 열기/);
+  await d.locator('.idv-input textarea').fill('안녕하세요, 문의 주신 옥상 방수 건으로 연락드립니다.');
+  const nav=await page.evaluate(()=>{const b=document.querySelector('[data-idv="sms-open"]');return b&&!b.disabled;});assert.equal(nav,true,'번호가 있으면 문자 앱으로 열기 가능');
+  await d.locator('[data-idv="sms-copy"]').click();
+  await d.locator('[data-idv="save"]').click();await page.waitForTimeout(250);
+  assert.equal(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return (p.activities||[]).length;}),2,'보낸 문자도 대화에 기록');
+  await d.locator('.idv-ctabs [data-v="call"]').click();await page.waitForTimeout(150);
   if(shot)await page.screenshot({path:shot+'-unassigned.png'});
   await d.locator('.idv-link[data-idv="showall"]').click();
   await d.locator('.idv-rep[data-v="이필선"]').click();
