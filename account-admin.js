@@ -8,10 +8,13 @@
   function validate(password, confirmation) {
     if (typeof password !== 'string' || Array.from(password).length < 8) throw Error('PASSWORD_SHORT');
     if (Array.from(password).length > 72) throw Error('PASSWORD_LONG');
+    /* 휴대폰 번호 모양(숫자만)은 임시 비밀번호로도 막는다(2026-10-01 컨설턴트 P0-6 — 직원 다수가 임시 번호를 그대로 쓰고 있었다) */
+    if (/^[+\d\s()-]+$/.test(password)) throw Error('PASSWORD_PHONE');
     if (password !== confirmation) throw Error('PASSWORD_MISMATCH');
   }
   const messages = {
     PASSWORD_SHORT: '임시 비밀번호를 8자 이상으로 입력해 주세요.',
+    PASSWORD_PHONE: '전화번호처럼 숫자만으로 된 비밀번호는 쓸 수 없습니다. 글자를 섞어 주세요.',
     PASSWORD_LONG: '비밀번호는 72자 이하여야 합니다.',
     PASSWORD_MISMATCH: '확인 입력이 일치하지 않습니다.',
     forbidden: '관리자 권한이 확인되지 않습니다.',
