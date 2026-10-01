@@ -467,7 +467,8 @@
    '<div class="dc-grid">'+
    kpi('이번 달 매출',m0(csM?csM.netAmount:null),'계약금액 기준 + 기술자문 낙찰 · '+curM+'월','contract')+
    kpi((f.month||f.quarter?'기간':'연 누적')+' 매출',m0(csY?csY.netAmount:null),'계약·낙찰 '+(csY?csY.count:'-')+'건'+(f.quarter?' · '+f.quarter+'분기':''),'contract')+
-   kpi('파이프라인',money(s.expected),'진행 '+number(s.active.length)+'건','active')+
+   /* 공통 지표(2026-10-01 대표 승인): 대시보드 260억/148건이 파이프라인 메뉴 536건과 달랐다 — 기간 필터와 무관하게 '지금 진행 중' 전체를 같은 정의로 보여 주고, 누르면 파이프라인으로 간다 */
+   (()=>{const pm=root.PipelineMetrics?.summary?.({brand:f.brand,owner:f.owner});return pm?'<button type="button" class="dc-p dc-kpi c2" data-si-action="navigate" data-value="pipe" title="'+a('기준: 진행 중 영업건 · 수주·실주·확장 제외 · 모든 연도 · 파이프라인 메뉴와 같은 숫자')+'"><span class="dc-ph">파이프라인</span><b>'+h(money(pm.total))+'</b><small>'+h('진행 '+number(pm.count)+'건 · 가중 '+money(pm.weighted))+'</small></button>':kpi('파이프라인',money(s.expected),'진행 '+number(s.active.length)+'건','active');})()+
    kpi('문의',number(s.inquiries.length)+'건','선택 기간 접수','inquiries')+
    kpi('조치 필요',number(s.risk.length)+'건','기한초과 '+s.active.filter(d=>d.issues.includes('overdue')).length+' · 다음 할 일 없음 '+s.active.filter(d=>d.issues.includes('missing')).length,'risk','bad')+
    kpi('주간 활동',number(weekTotal)+'건','최근 7일 전체','activity')+
