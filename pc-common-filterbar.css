@@ -21,3 +21,6 @@
 @media(max-width:760px){.cf-bar{padding:8px 10px}}
 /* 새 화면(확장관리·경남지사·고객 자산·문자)은 공통 필터줄 하나로 — 예전 상단 필터 박스(브랜드·담당자 구분·기간)는 감춘다 */
 body:has(#pg-expansion.on.xv-on,#pg-gyeongnam.on.gnv-on,#pg-sites.on.av-on,#pg-campaign.on.sv-on) #unibar{display:none!important}
+.cf-period{display:inline-flex;align-items:center;gap:6px;margin-left:auto;flex:none;font-size:12px;color:#6b7280}
+.cf-period select{border:1px solid #e1e4ea;border-radius:8px;background:#fff;padding:6px 8px;font:inherit;font-size:12.5px;color:#15171c}
+.cf-bar[hidden]{display:none!important}

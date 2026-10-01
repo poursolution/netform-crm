@@ -1,0 +1,60 @@
+﻿/* 공통 셸 v2 (2026-10-02 핸드오프 shell) — body.shell-v2 일 때만. 끄면(G.shellV2Off) 예전 틀 그대로 */
+/* ① 사이드바 */
+body.shell-v2 .dash{background:linear-gradient(to right,#fff 0,#fff 228px,var(--bg) 228px)}
+body.shell-v2 .side{background:#fff;border-right:1px solid #eceef2}
+body.shell-v2 .brandlogo{padding:2px 10px 16px}
+body.shell-v2 .brandlogo .bx,body.shell-v2 .brandlogo .nm{display:none}
+.sh-logo{display:none}
+body.shell-v2 .sh-logo{display:flex;flex-direction:column;gap:5px;align-items:flex-start}
+body.shell-v2 .sh-logo img{height:24px;width:auto;display:block}
+body.shell-v2 .sh-logo small{font-size:11px;color:#9ca3af;font-weight:600}
+body.shell-v2 .menu .sec{font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:.02em;margin:16px 10px 5px}
+body.shell-v2 .menu .sec[data-sh]{font-size:0}
+body.shell-v2 .menu .sec[data-sh]::after{content:attr(data-sh);font-size:11px}
+body.shell-v2 .mi{font-size:13.5px;font-weight:500;color:#374151;padding:8px 10px;border-radius:8px;gap:8px}
+body.shell-v2 .mi .ic{display:none}
+body.shell-v2 .mi:hover{background:#f5f6f8;color:#15171c}
+body.shell-v2 .mi.on{background:#eef3fe;color:#2a52b8;font-weight:700;box-shadow:none}
+body.shell-v2 .mi .badge{background:none!important;color:#9ca3af!important;font-size:12px;font-weight:600;padding:0;border-radius:0;min-width:0;line-height:1.4}
+body.shell-v2 .mi #todayBadge,body.shell-v2 .mi #inqBadge{color:#e5484d!important;font-weight:700}
+body.shell-v2 .side .foot{display:none}
+/* ② 상단 툴바 */
+.sh-tools{display:none}
+body.shell-v2 .sh-tools{display:flex;align-items:center;gap:8px;margin-left:auto;flex:none}
+@media(min-width:941px){
+ body.shell-v2 .mhead{position:sticky;top:0;z-index:60;background:#fff;border-bottom:1px solid #eceef2;height:60px;margin:-20px -24px 0;padding:0 24px;flex-wrap:nowrap;box-sizing:border-box}
+ body.shell-v2 .cf-bar{top:66px}
+}
+body.shell-v2 .mhead>div:first-child{display:flex;align-items:baseline;gap:10px;min-width:0;flex:1 1 auto}
+body.shell-v2 .mhead h1{font-size:18px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+body.shell-v2 .mhead .sub{font-size:12.5px;font-weight:500;color:#6b7280;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+body.shell-v2 .mhead>#live,body.shell-v2 .mhead>#syncBadge,body.shell-v2 .mhead>.rf,body.shell-v2 .mhead>#meChip{display:none!important}
+body.shell-v2 .mhead>.search{margin-left:0;width:200px;flex:none}
+body.shell-v2.sh-cf .mhead>.search{display:none}
+body.shell-v2 .exec-ask-btn{height:34px;min-height:34px;border:1px solid #dbe5fd;border-radius:9px;background:#eef3fe;color:#2a52b8;padding:0 12px;font-size:12.5px;font-weight:700}
+body.shell-v2 .exec-ask-btn::after{content:'Ctrl K';margin-left:8px;font-size:11px;font-weight:600;color:#7f95c9}
+body.shell-v2 .exec-ask-btn:hover{background:#e0e9fd;color:#2a52b8}
+.sh-new{height:34px;border:0;border-radius:9px;background:#3b6ce4;color:#fff;padding:0 13px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+.sh-new:hover{background:#2f5bd0}
+.sh-div{width:1px;height:20px;background:#e1e4ea;margin:0 2px}
+.sh-status{display:inline-flex;align-items:center;gap:6px;height:30px;border:1px solid #e7e9ee;border-radius:999px;background:#f7f8fa;color:#4b5563;padding:0 11px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.sh-status i{width:7px;height:7px;border-radius:50%;background:#c5cbd6;flex:none}
+.sh-status.ok i{background:#30a46c}
+.sh-status.wait{background:#fff8ec;border-color:#f3ddb4;color:#8a5a00}.sh-status.wait i{background:#f5a524}
+.sh-status.bad{background:#fdecec;border-color:#f6cbd1;color:#c93a3f;font-weight:700}.sh-status.bad i{background:#e5484d}
+body.shell-v2 .mhead .ib{width:32px;height:32px;border-radius:9px;border:1px solid #e7e9ee;flex:none}
+.sh-userwrap{position:relative}
+.sh-user{display:inline-flex;align-items:center;gap:8px;height:36px;border:0;background:transparent;border-radius:9px;padding:0 6px;font:inherit;cursor:pointer;color:#15171c}
+.sh-user:hover{background:#f5f6f8}
+.sh-av{width:28px;height:28px;border-radius:50%;background:#eef3fe;color:#2a52b8;font-size:11px;font-weight:700;display:grid;place-items:center;flex:none}
+.sh-name{display:flex;flex-direction:column;align-items:flex-start;font-size:12.5px;font-weight:700;line-height:1.25}
+.sh-name small{font-size:11px;font-weight:500;color:#9ca3af}
+.sh-user em{font-style:normal;font-size:10px;color:#9ca3af}
+.sh-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:80;width:200px;background:#fff;border:1px solid #e7e9ee;border-radius:12px;box-shadow:0 12px 32px rgba(17,24,39,.14);padding:6px;display:flex;flex-direction:column}
+.sh-menu[hidden]{display:none}
+.sh-menu button{border:0;background:transparent;text-align:left;padding:9px 10px;border-radius:8px;font:inherit;font-size:13px;color:#374151;cursor:pointer}
+.sh-menu button:hover,.sh-menu button:focus-visible{background:#f5f6f8;outline:none}
+.sh-menu button.danger{color:#e5484d;border-top:1px solid #f0f1f4;border-radius:0 0 8px 8px;margin-top:4px;padding-top:11px}
+@media(max-width:940px){body.shell-v2 .mhead>div:first-child{flex-basis:100%}body.shell-v2 .mhead .sub{white-space:normal}.sh-name,.sh-div{display:none}body.shell-v2 .exec-ask-btn::after{content:none}body.shell-v2 .sh-tools{flex-wrap:wrap;margin-left:0;flex:1 1 100%;min-width:0}body.shell-v2 .mhead h1{white-space:normal}body.shell-v2 .mhead>div:first-child{flex-wrap:wrap}.sh-status{max-width:100%;overflow:hidden;text-overflow:ellipsis}}
+/* ④ 새 화면 본문 위 파란 안내 띠 — 영업 대시보드 묶음(전체 현황 · 컨트롤타워 · 성과 분석)만 남긴다 */
+body.shell-v2 .apage:not(#pg-dash):not(#pg-control):not(#pg-perf)>.mgmtbar.blue{display:none!important}

@@ -188,7 +188,11 @@ async function run(){
    Phase1.queue.acknowledgeFailure=id=>{window.__reviewCalls++;const q=window.__queueRows.find(x=>x.request_id===id);q.reviewed_at=new Date().toISOString();updateSyncBadge();if(typeof updatePendingBadge==='function')updatePendingBadge();};
    window.dispatchEvent(new Event('phase1:profile'));
   });
-  await page.locator('#syncBadge').focus();await page.keyboard.press('Enter');
+  /* 새 틀: 상태 알약 하나가 저장 실패를 빨강으로 보여 주고, 누르면 같은 내역 창이 열린다 */
+assert.match(await page.locator('#shStatus.bad').innerText(),/저장 실패 \d+건/);await page.locator('#shStatus').click();assert.equal(await page.locator('#queueReview').count(),1);await page.keyboard.press('Escape');
+/* 예전 배지 동작은 틀을 끄고 그대로 확인 */
+await page.evaluate(()=>{G.shellV2Off=true;ShellV2.apply();});
+await page.locator('#syncBadge').focus();await page.keyboard.press('Enter');
   assert.match(await page.locator('#queueReview').innerText(),/저장되지 않았습니다/);
   assert.equal(await page.locator('#queueReview img').count(),0);
   assert.equal(await page.getByRole('button',{name:'확인한 알림 정리'}).isEnabled(),false);

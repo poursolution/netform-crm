@@ -119,7 +119,7 @@
   const steps=['대상','목적','문구','미리보기','발송'].map((n,i)=>'<div class="'+(i<step?'done':i===step?'cur':'')+'"><i></i><span>'+(i===step?'지금 · ':'')+n+'</span></div>').join('');
   const T=templates();
   const now=new Date(),clock=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-  return '<header class="sd-head"><div><small>문자 보내기</small><h2 id="sdTitle">'+h(bundle?bundle[2]:'문자 보내기')+'</h2></div><button type="button" class="sv-ghost" data-sd="history">발송 이력</button><button type="button" class="xdv-close" data-sd="close" aria-label="닫기">✕</button></header>'
+  return '<header class="sd-head"><div><small>문자 보내기</small><h2 id="sdTitle">'+h(S.title||(bundle?bundle[2]:'문자 보내기'))+'</h2></div><button type="button" class="sv-ghost" data-sd="history">발송 이력</button><button type="button" class="xdv-close" data-sd="close" aria-label="닫기">✕</button></header>'
    +'<div class="idv-steps sd-steps">'+steps+'</div>'
    +'<div class="sd-body"><div class="sd-sum"><div><span>대상</span><b>'+total.toLocaleString('ko-KR')+'명</b></div><div class="'+(ready?'':'bad')+'"><span>발송 가능</span><b>'+ready.toLocaleString('ko-KR')+'명</b></div><div class="warn"><span>자동 제외</span><b>'+blocked.toLocaleString('ko-KR')+'명</b></div></div>'
    +(blocked?'<p class="sd-why">자동 제외 — '+[...why].sort((a,b)=>b[1]-a[1]).map(([k,n])=>h(k)+' '+n+'명').join(' · ')+'</p>':'')
@@ -145,9 +145,10 @@
  }
  function live(){const m=node(),text=sample(),bytes=root.campaignBytes(text),b=m.querySelector('#sd-bubble'),n=m.querySelector('#sd-bytes');if(b){b.textContent=text.trim()?text:'문구를 입력하면 고객이 받는 모습 그대로 보입니다.';b.classList.toggle('empty',!text.trim());}if(n){n.textContent=bytes>90?'LMS · '+bytes+' byte':'SMS · '+bytes+'/90 byte';n.className=bytes>90?'lms':'sms';}}
  function render(){const box=node().querySelector('.sd-box'),y=box.querySelector('.sd-body')?.scrollTop||0;box.innerHTML=dialogHtml();const b=box.querySelector('.sd-body');if(b)b.scrollTop=y;}
- function open(key){
-  const targets=targetsOf(key),d=new Date(Date.now()+864e5);d.setHours(9,0,0,0);
-  S={key,targets,ready:targets.filter(t=>t.guard.ok),purpose:DEFAULT_PURPOSE[key]||PURPOSES[0],templateKey:'',body:'',ad:false,mode:'now',at:root.localDateTimeValue?root.localDateTimeValue(d):'',confirmed:false,focus:document.activeElement};
+ /* custom={title,keys:Set<dealKey>} — 'CRM에게 묻기' 결과 묶음처럼 화면 밖에서 고른 대상에게 보낼 때. 검수 · 발송 경로는 같다 */
+ function open(key,custom){
+  const targets=custom?targetsOf('all').filter(t=>custom.keys.has(root.dealKey(t.deal))):targetsOf(key),d=new Date(Date.now()+864e5);d.setHours(9,0,0,0);
+  S={key,title:custom?custom.title:'',targets,ready:targets.filter(t=>t.guard.ok),purpose:DEFAULT_PURPOSE[key]||PURPOSES[0],templateKey:'',body:'',ad:false,mode:'now',at:root.localDateTimeValue?root.localDateTimeValue(d):'',confirmed:false,focus:document.activeElement};
   const m=node();render();m.classList.add('on');m.querySelector('#sd-body')?.focus();
  }
  function close(){const m=document.getElementById('smsDialog');if(m)m.classList.remove('on');const f=S&&S.focus;S=null;if(f&&f.isConnected)f.focus?.({preventScroll:true});}
@@ -190,5 +191,5 @@
   };
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- root.SmsV2={enabled,open,close,brandStats,model,season};
+ root.SmsV2={enabled,open,openCustom:(title,keys)=>open('all',{title,keys}),close,brandStats,model,season};
 })(window);

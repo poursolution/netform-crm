@@ -6,7 +6,7 @@
  'use strict';
  const SAVE='crm_improvement_task_save_v1',LIST='crm_improvement_task_list_v1';
  const h=v=>root.esc(String(v==null?'':v)),attr=v=>root.escAttr(String(v==null?'':v));
- const SCOPE={'pipeline:consulting':'컨설팅 설계','pipeline:sent':'자료 발송완료','pipeline:relationship':'관계관리','pipeline:competition':'경쟁·입찰','pipeline:construction':'계약·시공','pipeline:won':'수주','pipeline:lost':'실주',expansion:'확장관리',gyeongnam:'경남지사',asset:'고객 자산',sms:'문자메시지',reps:'영업사원 관리',kpi:'관리팀 KPI',work:'공종 분석',brief:'주간 브리핑'};
+ const SCOPE={'pipeline:consulting':'컨설팅 설계','pipeline:sent':'자료 발송완료','pipeline:relationship':'관계관리','pipeline:competition':'경쟁·입찰','pipeline:construction':'계약·시공','pipeline:won':'수주','pipeline:lost':'실주',expansion:'확장관리',gyeongnam:'경남지사',asset:'고객 자산',sms:'문자메시지',reps:'영업사원 관리',kpi:'관리팀 KPI',work:'공종 분석',brief:'주간 브리핑',ask:'CRM에게 묻기'};
  const NOTIFY=[['today','오늘 업무'],['brief','주간 브리핑'],['kpi','관리팀 KPI']];
  let tasks=[],state='idle',unavailable=false;
  const admin=()=>{try{return !!root.todayIsAdmin?.();}catch(e){return false;}};
