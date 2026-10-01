@@ -77,11 +77,11 @@
  /* ── 왼쪽: 관리 정보 6줄 ── */
  function manageCard(d){
   const p=root.currentPatch?root.currentPatch():{},contexts=d.stage_contexts||p.stage_contexts||{},code=root.dealStage(d),f=Object.assign({},...Object.values(contexts).map(c=>c?.fields||{}),contexts[code]?.fields||{});
-  const work=root.dealWorkSummary(d),amt=Number(d.amount??d.amt??0),plan=d.construction_year||d.constructionYear||f.expected_contract||f.start_date||'';
+  const work=root.dealWorkSummary(d),amt=Number(d.amount??d.amt??0),plan=f.construction_plan||d.construction_year||d.constructionYear||f.expected_contract||f.start_date||'';
   const rows=[['고객 반응',f.customer_reaction||f.reaction||d.customer_reaction],['의사결정자',f.decision_maker||d.decision_maker],['경쟁사',f.competitor||d.competitor],['공종',work&&!/미분류|미기록/.test(work)?work:''],['예상 금액',amt>0?root.fmtAmt(amt):''],['공사 예정',plan]];
   const card=el('section','dcard ddv-manage','<header><h3>관리 정보</h3><span></span></header><dl>'+rows.map(([k,v])=>'<div><dt>'+h(k)+'</dt><dd'+(v?'':' class="ddv-empty"')+'>'+h(v||'미입력')+'</dd></div>').join('')+'</dl>');
   const links=card.querySelector('header span');
-  links.append(btn('공종','ddv-link',()=>root.openWorkEdit?.()),btn('금액','ddv-link',()=>root.DetailActions.open('amount')),btn('수정','ddv-link',()=>root.DetailActions.open('management')));
+  links.append(btn('공종','ddv-link',()=>root.openWorkEdit?.()),btn('금액','ddv-link',()=>root.DetailActions.open('amount')),btn('수정','ddv-link',()=>{if(!root.DealPanelsV2?.open('info'))root.DetailActions.open('management');}));
   return card;
  }
  /* ── 오른쪽: 연락 결과 패널(고르는 즉시 저장 — 기존 결과 고르기) ── */
