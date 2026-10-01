@@ -60,3 +60,33 @@ body.mv2 .card.quick-sites,body.mv2 .phone-body .card{border:0!important}
 /* 좁은 폰: 헤더가 한 줄에 들어가게 — 로고 글자를 줄이고, 연결 상태는 점만 */
 @media(max-width:420px){body.mv2 .home-bar{padding:10px 12px 8px}body.mv2 .home-bar .rgt{gap:4px}body.mv2 .home-bar .hb-pw,body.mv2 .home-bar .hb-out{min-width:28px;padding:0 3px}}
 @media(max-width:374px){body.mv2 .mv-status{font-size:0;gap:0;padding:0 9px}body.mv2 .home-bar .hb-seg button{padding:5px 7px}}
+/* ── ② 오늘 · 상세 · 결과 시트 ── */
+body.mv2 .ml-hero{display:none}
+.mv-now{display:none}
+body.mv2 .mv-now{display:flex;flex-direction:column;gap:5px;background:var(--mv-navy);color:#fff;border-radius:20px;padding:18px 18px 16px}
+.mv-now small{font-size:12.5px;color:#aab4d6;font-weight:600}.mv-now b{font-size:19px;font-weight:700;line-height:1.35;letter-spacing:-.02em}.mv-now span{font-size:14px;color:#dfe5f7;line-height:1.45}.mv-now em{font-style:normal;font-size:12.5px;color:#8f9bc0}
+.mv-now>div{display:grid;grid-template-columns:1.4fr 1fr;gap:8px;margin-top:10px}
+.mv-now button{min-height:50px;border-radius:14px;border:0;font:inherit;font-size:15px;font-weight:700;background:rgba(255,255,255,.12);color:#fff}.mv-now button.call{background:var(--mv-blue)}
+body.mv2 .mt-item.mv-first{display:none}
+body.mv2 .mt-list>.mt-item.mv-first+.mt-item{border-top:0!important}
+body.mv2 .body>.mt-list .mt-item{position:relative;padding-left:84px;min-height:64px}
+body.mv2 .body>.mt-list .mt-item .ml-dpill{position:absolute;left:18px;top:17px;width:56px;margin:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px;font-size:13.5px;font-weight:700;white-space:normal;text-align:left}
+body.mv2 .ml-dpill small{font-size:11px;font-weight:500;color:#9ca3af}
+body.mv2 .body>.mt-list .mt-next{display:none}
+body.mv2 .mt-remain{display:none}
+/* 상세: 아래 고정 [전화] [결과 남기기] */
+.mv-dock{display:none}
+body.mv2 .mv-dock{position:sticky;bottom:0;z-index:15;display:grid;grid-template-columns:1.4fr 1fr;gap:8px;margin:0;padding:10px 18px 14px;background:linear-gradient(180deg,rgba(245,246,248,0),var(--mv-bg) 28%)}
+body.mv2 .mv-dock button{min-height:52px;border-radius:14px;border:1px solid #e1e4ea;background:#fff;color:#15171c;font:inherit;font-size:15.5px;font-weight:700}
+body.mv2 .mv-dock button.call{background:var(--mv-blue);border-color:var(--mv-blue);color:#fff}
+body.mv2 .mv-hasdock button[onclick="dealCallM()"],body.mv2 .mv-hasdock button[onclick="dealCallSheetM()"]{display:none}
+body.mv2 .ml-support-link{border-top:0;color:#6b7280;font-weight:600}
+/* 결과 시트: 흰 줄 + 얇은 선(색 바탕 없음) */
+body.mv2 .sheet-card .intro{background:transparent!important;color:#15171c!important;padding:6px 2px 2px}
+body.mv2 .sheet-card .intro .iic{display:none}
+body.mv2 .sheet-card .intro .t{font-size:19px;font-weight:700;color:#15171c}
+body.mv2 .sheet-card .intro .d{font-size:13px;color:#6b7280}
+body.mv2 .sheet-card .cchip{background:#fff!important;color:#15171c!important;border:1px solid #e7e9ee;border-radius:14px;min-height:52px;font-size:15.5px;font-weight:600;justify-content:flex-start;padding:0 16px}
+body.mv2 .sheet-card .cchip .cic{display:none}
+body.mv2 .sheet-card .cchip.g{border-color:#3b6ce4;color:#2a52b8!important}
+body.mv2 .mv-hasdock .submitbar,body.mv2 .mv-hasdock~.submitbar{position:static!important;background:transparent!important;box-shadow:none!important;border:0!important;padding:0 18px 8px!important}
