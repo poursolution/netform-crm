@@ -53,7 +53,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   if(shot)await page.screenshot({path:shot+'-2-toolbar.png'});
   for(const [t,k] of [['비밀번호 변경','password'],['데이터 내보내기 (JSON)','export'],['로그아웃','logout']]){if(await page.locator('#shMenu').isHidden())await page.locator('#shUser').click();await page.locator('#shMenu button',{hasText:t}).click();assert.equal(await page.evaluate(()=>__calls.at(-1)),k,t+' = 기존 함수');assert.equal(await page.locator('#shMenu').isHidden(),true);}
   /* ③ 한 줄 필터: 예전 두 줄(#unibar)은 감추고, 기간은 필요한 화면에만 */
-  for(const [p,period,owner] of [['brief',true,true],['mgmt',true,true],['work',true,true],['report',true,true],['repmanage',false,false]]){
+  for(const [p,period,owner] of [['brief',true,true],['mgmt',true,true],['work',true,true],['report',false,true],['repmanage',false,false]]){
    await page.evaluate(p=>goPage(p),p);await page.waitForTimeout(350);
    assert.equal(await page.locator('#pg-'+p+'>.cf-bar:not([hidden])').count(),1,p+' 한 줄 필터');assert.equal(await vis('#unibar'),false,p+' 예전 두 줄 필터 감춤');
    assert.equal(await page.locator('#pg-'+p+'>.cf-bar [data-cf="period"]').count(),period?1:0,p+' 기간 선택');assert.equal(await page.locator('#pg-'+p+'>.cf-bar [data-cf="owner"]').count(),owner?1:0,p+' 담당자 선택');

@@ -70,7 +70,7 @@
   return D.render({accent:'blue',
    kpis:[K('당일 배정률',v(S.assignRate),'목표 95% · 문제 '+(S.Q.length-(S.sameDayAssigned||[]).length)+'건',S.assignRate!=null&&S.assignRate<95?'bad':''),K('첫 연락 '+(root.INQUIRY_RESPONSE_SLA_HOURS||2)+'시간 내',v(S.responseRate),'목표 90% · 문제 '+S.noResponse.length+'건',S.responseRate!=null&&S.responseRate<90?'bad':''),K('다음 할 일 지정률',collecting?'수집 중':S.nextRate+'%','목표 95% · 문제 '+S.nextMissing.length+'건',!collecting&&S.nextRate<95?'bad':''),K('장기정체 비율',collecting?'수집 중':S.staleRate+'%','목표 10% 이하 · 문제 '+S.stale.length+'건',!collecting&&S.staleRate>10?'bad':'')],
    cards:[{title:'어디서 멈췄나',desc:'즉시 조치 필요',bars:[['미배정',S.unassigned.length],['미응대',S.noResponse.length],['다음 할 일 없음',S.nextMissing.length],['장기정체',S.stale.length],['CRM 필수정보 미입력',S.incomplete.length]].filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]),empty:'멈춘 곳이 없습니다'},{title:'병목 구간',desc:'단계별 진행 건수',bars:stages.sort((a,b)=>b[1]-a[1]),empty:'진행 중인 현장이 없습니다'},{title:'기록이 되고 있나',desc:'첫 2주 핵심 · 목표 70% · 단위 %',rows:rec.map(r=>[r[0],r[1]+'%',r[2]])}],
-   action:{title:'',desc:'',tasks:[]}},{open:root.G.plvDiagShut!==true}).replace(/<section class="pd-action">[\s\S]*?<\/section>/,'');
+   action:{title:'',desc:'',tasks:[]}},{open:true,noToggle:true}).replace(/<section class="pd-action">[\s\S]*?<\/section>/,'');
  }
  function tableHtml(){
   const f=root.G.kpiGroup||'all';
