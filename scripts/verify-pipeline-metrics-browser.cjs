@@ -27,6 +27,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.ok(texts.every(Boolean),'세 화면 모두 띠 표시 '+JSON.stringify(texts));
   assert.equal(new Set(texts).size,1,'세 화면의 값이 같다');
   assert.match(texts[0],/전체 진행.*4건.*가중 예상.*확정 임박.*2건/);
+  /* 본문 숫자도 같은 지표(2026-10-01): 주간 브리핑 '진행 파이프라인', 대시보드 '파이프라인' KPI */
+  await page.evaluate(()=>goPage('brief'));await page.waitForTimeout(450);
+  const briefStat=await page.evaluate(()=>{const b=[...document.querySelectorAll('.brief-stat')].find(x=>/진행 파이프라인/.test(x.textContent));return b?b.textContent.replace(/\s+/g,' '):null});
+  if(briefStat!==null)assert.match(briefStat,/진행 파이프라인\s*4건/,'브리핑 본문 '+briefStat);
+  await page.evaluate(()=>goPage('dash'));await page.waitForTimeout(900);
+  const dashKpi=await page.evaluate(()=>{const b=[...document.querySelectorAll('.dc-kpi')].find(x=>x.querySelector('.dc-ph')?.textContent==='파이프라인');return b?{text:b.textContent.replace(/\s+/g,' '),action:b.dataset.siAction,value:b.dataset.value}:null});
+  assert.ok(dashKpi&&/진행 4건/.test(dashKpi.text)&&dashKpi.action==='navigate'&&dashKpi.value==='pipe','대시보드 KPI '+JSON.stringify(dashKpi));
   /* 다시 들어와도 한 개만 */
   await page.evaluate(()=>{goPage('today');goPage('brief');});await page.waitForTimeout(450);
   assert.equal(await page.evaluate(()=>document.querySelectorAll('#pg-brief .pm-strip').length),1);

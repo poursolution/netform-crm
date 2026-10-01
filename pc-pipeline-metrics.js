@@ -9,9 +9,10 @@
  'use strict';
  const PAGES=['brief','perf','repmanage'],NEAR=['competition','construction'];
  const h=v=>root.esc?root.esc(String(v??'')):String(v??'');
- function rows(){try{return (root.PipelineWorkspace?.rows?.()||[]).filter(r=>!['won','lost','expansion'].includes(r.group));}catch(e){return [];}}
- function summary(){
-  const live=rows(),amt=r=>Number(r.amount)||0,code=r=>r.code||root.dealStage?.(r.item)||'';
+ /* filters({brand,owner})를 주면 그 화면의 필터로, 없으면 현재 전역 필터로 — 정의(진행 판정·금액·확률)는 하나 */
+ function rows(filters){try{return (root.PipelineWorkspace?.rows?.(filters)||[]).filter(r=>!['won','lost','expansion'].includes(r.group));}catch(e){return [];}}
+ function summary(filters){
+  const live=rows(filters),amt=r=>Number(r.amount)||0,code=r=>r.code||root.dealStage?.(r.item)||'';
   const total=live.reduce((s,r)=>s+amt(r),0);
   const weighted=live.reduce((s,r)=>s+amt(r)*(Number(root.forecastProbability?.(code(r)))||0),0);
   const near=live.filter(r=>NEAR.includes(r.group));
