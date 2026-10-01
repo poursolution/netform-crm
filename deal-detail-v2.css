@@ -1,5 +1,5 @@
 /* 파이프라인 상세창 v2 (2026-10-01 디자인 핸드오프 pipeline ③④) — #detailView.ddv 에만 적용. 끄면(G.dealDetailV2Off) 예전 모양 */
-#detailView.ddv{inset:4vh max(2vw,calc((100vw - 1280px)/2))!important;width:auto!important;max-width:1280px!important;height:92vh!important;border-radius:16px;background:#fff;box-shadow:0 24px 64px rgba(17,24,39,.24);color:#15171c}
+#detailView.ddv{inset:4vh max(2vw,calc((100vw - 1440px)/2))!important;width:auto!important;max-width:1440px!important;height:92vh!important;border-radius:16px;background:#fff;box-shadow:0 24px 64px rgba(17,24,39,.24);color:#15171c}
 #detailView.ddv .detailtop{display:flex;flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:6px 12px;padding:18px 24px 16px;background:#fff;border-top:0!important;border-bottom:1px solid #f0f1f4;backdrop-filter:none}
 #detailView.ddv .detailtopin{flex:1 1 320px;min-width:0;align-items:flex-start;gap:10px;margin:0}
 #detailView.ddv .detailtopin>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
@@ -18,7 +18,7 @@
 #detailView.ddv .da-toolbar .da-tools .dact:hover{background:#f5f6f8}
 #detailView.ddv .ddv-steps{flex:1 0 100%;margin-top:6px;order:20}
 /* 본문 3열 */
-#detailView.ddv .dw-columns.ddv-cols{grid-template-columns:260px minmax(420px,1fr) 300px;background:#fff}
+#detailView.ddv .dw-columns.ddv-cols{grid-template-columns:340px minmax(420px,1fr) 300px;background:#fff}
 #detailView.ddv .ddv-cols>aside,#detailView.ddv .ddv-cols>main{padding:18px 16px;scrollbar-gutter:auto}
 #detailView.ddv .ddv-cols>.dw-left{border-right:1px solid #f0f1f4;display:flex;flex-direction:column;gap:10px}
 #detailView.ddv .ddv-cols>.dw-right{background:#fafbfc;border-left:1px solid #f0f1f4;display:flex;flex-direction:column;gap:10px;position:relative}
