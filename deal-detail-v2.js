@@ -146,7 +146,7 @@
   if(now){
    right.prepend(now);now.classList.toggle('late',!!now.querySelector('.nc-late'));
    const cta=now.querySelector('.nc-cta');
-   if(cta&&!closed){const call=cta.querySelector('.nc-call'),done=[...cta.querySelectorAll('button')].find(b=>/완료/.test(b.textContent));cta.replaceChildren();if(call){call.textContent='연락하고 결과 남기기';call.removeAttribute('onclick');call.onclick=contactPanel;cta.append(call);}cta.append(btn('다음 할 일 · 날짜','',()=>root.DetailActions.open('next')));if(done){done.classList.add('ddv-done');cta.append(done);}}
+   if(cta&&!closed){const call=cta.querySelector('.nc-call'),done=[...cta.querySelectorAll('button')].find(b=>/완료/.test(b.textContent));cta.replaceChildren();if(call){call.textContent='연락하고 결과 남기기';call.removeAttribute('onclick');call.onclick=contactPanel;cta.append(call);}cta.append(btn('다음 할 일 · 날짜','',()=>{if(!root.DealPanelsV2?.open('next'))root.DetailActions.open('next');}));if(done){done.classList.add('ddv-done');cta.append(done);}}
    else if(cta&&closed)cta.hidden=true;
   }
   view.style.setProperty('--ddv-top',(body.offsetTop||0)+'px');
@@ -154,6 +154,8 @@
  /* 작업창이 열리면(#detailAction) 오른쪽 열 자리 패널 모양으로: [‹] 뒤로 + 제목 + 설명 */
  function panelize(panel){
   const view=$('detailView');if(!view?.classList.contains('ddv')||panel.classList.contains('ddv-panel'))return;
+  /* 다음 할 일 · 관리정보는 새 패널로 연다(예전 작업창 연결 끊기) */
+  {const k=root.DetailActions.active,map={next:'next',management:'info'};if(map[k]&&root.DealPanelsV2?.active()){root.DetailActions.close(false);root.DealPanelsV2.open(map[k]);return;}}
   panel.classList.add('ddv-panel');view.style.setProperty('--ddv-top',($('dv-body')?.offsetTop||0)+'px');
   const head=panel.querySelector('.da-sheet>header'),title=head?.querySelector('h2'),x=head?.querySelector('button'),key=root.DetailActions.active;
   if(x){x.textContent='‹';x.classList.add('ddv-back');head.prepend(x);}

@@ -101,7 +101,16 @@
  const DEFAULT_PURPOSE={sent:'점검 안내',silent:'안부 · 관계',consult:'점검 안내',aftercare:'점검 안내',yearend:'시즌 인사',lunar:'시즌 인사',chuseok:'시즌 인사',y1:'안부 · 관계',y2:'안부 · 관계',y3:'안부 · 관계',lost:'재제안',dormant:'재제안',noresponse:'재제안'};
  const VARS=[['이름','[고객호칭]'],['현장','[현장명]'],['담당자','[담당자명]'],['공종','[공종요약]']];
  let S=null;
- function templates(){const G=root.G,old=G.campaignCategory;try{G.campaignCategory=S.key;return root.campaignTemplateSet();}finally{G.campaignCategory=old;}}
+ /* 목적별 추천 문구 — 목적 칩을 누르면 추천 문구와 본문이 그 목적으로 바뀐다. 시즌 묶음의 시즌 인사는 기존 문구(명절 이름 포함)를 그대로 쓴다 */
+ const N='[고객호칭]',ST='[현장명]',RP='[담당자명]',WK='[공종요약]',CO='[회사명]';
+ const PURPOSE_SET={'안부 · 관계':[['안부형',N+' 안녕하세요. '+CO+' '+RP+'입니다. '+ST+' 관련해 안부드리며, 검토 중인 내용에 변동이 있으신지 편하실 때 알려주세요.'],['계획 변화 확인',N+', '+ST+'의 올해 공사계획이나 예산 일정에 변동이 있으신지 확인드립니다. '+WK+' 관련해서 필요하신 자료가 있으면 준비하겠습니다.'],['기존 공종 재확인',N+' 안녕하세요. 이전에 말씀 나눈 '+WK+' 건은 현재 어떻게 검토되고 있으신가요? 일정에 맞춰 다시 도와드리겠습니다.']],
+  '점검 안내':[['현장 점검 제안',N+' 안녕하세요. '+CO+' '+RP+'입니다. '+ST+' '+WK+' 관련해 현장 상태를 한 번 점검해 드리고자 합니다. 편하신 일정을 알려주시면 맞춰 방문하겠습니다.'],['자료 확인',N+' 안녕하세요. '+ST+' 관련 자료를 전달드렸습니다. 받아 보셨는지, 추가로 필요한 내용이 있으신지 확인 부탁드립니다.'],['장기수선 점검 안내',N+', '+ST+'의 장기수선계획 검토 시기에 맞춰 '+WK+' 점검 내용을 정리해 드릴 수 있습니다. 필요하시면 회신 부탁드립니다.']],
+  '시즌 인사':[['정중한 인사',N+', 늘 건강과 평안을 기원드립니다. 항상 감사드립니다. '+CO+' '+RP+' 드림'],['고객 안부',N+' 안녕하세요. 계절이 바뀌는 때에 '+ST+' 모든 분께 좋은 일만 가득하시길 바랍니다.'],['짧은 인사',N+', 건강 유의하시고 좋은 하루 보내세요. 늘 감사드립니다. '+CO+' '+RP+' 드림']],
+  '재제안':[['가벼운 재접촉',N+' 안녕하세요. '+CO+' '+RP+'입니다. '+ST+' '+WK+' 건의 최근 계획을 여쭙고자 연락드렸습니다.'],['변화 확인',N+', 이전에 논의한 '+ST+' 건이 현재도 검토 중인지 확인드립니다. 보류 또는 변경 사항만 알려주셔도 됩니다.'],['확장 제안',N+' 안녕하세요. '+ST+'의 기존 이력을 살펴보다 '+WK+' 외에 함께 점검할 수 있는 항목이 있어 안내드립니다. 필요하시면 간단히 정리해 드리겠습니다.']]};
+ function templates(){
+  if(S.purpose==='시즌 인사'&&DEFAULT_PURPOSE[S.key]==='시즌 인사'){const G=root.G,old=G.campaignCategory;try{G.campaignCategory=S.key;return root.campaignTemplateSet();}finally{G.campaignCategory=old;}}
+  const i=PURPOSES.indexOf(S.purpose);return (PURPOSE_SET[S.purpose]||[]).map((x,n)=>({key:S.key+'-p'+i+'-'+n,title:x[0],body:x[1],category:S.key,label:S.purpose}));
+ }
  function finalBody(){const o=optOut();return S.body+(S.ad&&o&&S.body.trim()?'\n무료수신거부 '+o:'');}
  function sample(){const t=S.ready[0]||S.targets[0],b=finalBody();return t&&b.trim()?root.campaignPersonalize(b,t):b;}
  function dialogHtml(){
@@ -146,7 +155,12 @@
   const b=e.target.closest('[data-sd]');if(!b||!S)return;const a=b.dataset.sd,v=b.dataset.value,err=document.getElementById('sd-err');
   if(a==='close')return close();
   if(a==='history'){close();return root.campaignSetTab('history');}
-  if(a==='purpose'){S.purpose=v;return render();}
+  if(a==='purpose'){
+   /* 직접 쓴 문구는 지키고, 비었거나 추천 문구 그대로면 새 목적의 첫 문구로 바꾼다 */
+   const keep=S.body.trim()&&!templates().some(t=>t.body===S.body);S.purpose=v;S.confirmed=false;
+   if(!keep){const t=templates()[0];S.templateKey=t?t.key:'';S.body=t?t.body:'';}else S.templateKey='';
+   return render();
+  }
   if(a==='mode'){S.mode=v;return render();}
   if(a==='rec'){const t=templates().find(x=>x.key===v);if(t){S.templateKey=t.key;S.body=t.body;render();}return;}
   if(a==='var'){const ta=document.getElementById('sd-body');S.body=(S.body||'')+v;if(ta){ta.value=S.body;ta.focus();}return live();}

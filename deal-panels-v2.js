@@ -182,7 +182,70 @@
   });
  }
 
- function open(key,a,b){if(!active())return false;if(key==='contact')contactPanel(a,b);else if(key==='work')root.openWorkEdit();else if(key==='info')infoPanel();else return false;return true;}
+ /* ───────── 5. 다음 할 일 설정 ───────── */
+ const HOW=[['전화','전화','전화'],['문자 · 카카오','메시지','문자'],['방문','방문·미팅','현장방문'],['자료 준비','견적·자료 준비',''],['입찰 · 계약','입찰·계약 업무',''],['기타','기타','']];
+ const WHAT={'전화':['견적서 검토 여부 확인','입대의 일정 확인','방문 일정 잡기'],'문자 · 카카오':['자료 수신 확인 문자','안부 · 일정 확인 문자'],'방문':['현장 실사','관리소장 미팅','PT · 현장설명'],'자료 준비':['견적서 작성','비교 자료 준비','시공 사례 정리'],'입찰 · 계약':['입찰 서류 제출','계약 조건 확인'],'기타':[]};
+ const END=[['다른 업체 선택','lost','타사 선정 (경쟁 패배)'],['예산 없음','lost','고객 예산 무산'],['공사 안 함','lost','공사 시기 연기·취소'],['연락 끊김','nocontact','3회 이상 시도 무응답'],['기타','lost','기타']];
+ const dayStr=n=>{const d=new Date();d.setDate(d.getDate()+n);const p=x=>String(x).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());};
+ const nextMon=()=>{const d=new Date(),n=((8-d.getDay())%7)||7;return dayStr(n);};
+ const dateLabel=v=>{if(!v)return '날짜 미정';const d=new Date(v+'T00:00:00');return (d.getMonth()+1)+'월 '+d.getDate()+'일 ('+'일월화수목금토'[d.getDay()]+')';};
+ function recommendNext(d){
+  const code=root.dealStage(d),m=root.relationshipMeta(d),r=root.NextActionPicker?.recommendation?.(code);
+  if(r)return {how:'전화',what:r.text,due:dayStr(r.days),why:(code==='sent'?'자료를 보낸 뒤 후속 확인이 필요한 단계':'PT · 입찰 일정이 가까운 단계')+(m.days!=null?' · 마지막 연락 '+m.days+'일 전':'')};
+  if(['rapport','silent','waiting'].includes(code))return {how:m.days!=null&&m.days>=30?'문자 · 카카오':'전화',what:m.days!=null&&m.days>=30?'안부 · 일정 확인 문자':'입대의 일정 확인',due:nextMon(),why:'관계관리 단계'+(m.days!=null?' · 마지막 연락 '+m.days+'일 전':' · 연락 기록 없음')};
+  if(['contract','construction','completion'].includes(code))return {how:'입찰 · 계약',what:'계약 조건 확인',due:dayStr(3),why:'계약 · 시공 단계 — 일정과 조건 확인'};
+  return {how:'전화',what:'견적서 검토 여부 확인',due:dayStr(3),why:'요구 확인 뒤 견적 준비 단계'+(m.days!=null?' · 마지막 연락 '+m.days+'일 전':'')};
+ }
+ function nextPanel(){
+  const d=root.CUR_DETAIL.item,sel=$('dv-na-assignee'),owner=root.repN(d.assignee),people=sel?[...sel.options].map(o=>o.value).filter(Boolean):[owner],rec=recommendNext(d);
+  if(!$('nextActionCard')){toast('다음 할 일 입력 칸을 불러오지 못했습니다. 상세를 닫았다가 다시 열어 주세요','warn');return;}
+  const S={mode:'go',how:'',when:'',due:'',what:'',who:people.includes(owner)?owner:(people[0]||owner),end:''};
+  const p=side('next','다음 할 일 설정',d.site||'현장명 미입력','<div id="dp-next"></div><div class="modalerr" id="dp-err" role="alert"></div>','<button type="button" class="dp-ghost" data-dp="close">취소</button><button type="button" class="dp-primary" data-dp="save">저장</button>');if(!p)return;
+  const whenList=[['today','오늘',dayStr(0)],['tomorrow','내일',dayStr(1)],['d3','3일 뒤',dayStr(3)],['week','다음 주',nextMon()],['pick','날짜 고르기','']];
+  const draw=()=>{
+   const seg='<div class="dp-seg" role="group" aria-label="진행 방식">'+[['go','계속 진행'],['later','나중에 다시'],['end','종료']].map(([v,t])=>'<button type="button" data-mode="'+v+'" aria-pressed="'+(S.mode===v)+'">'+t+'</button>').join('')+'</div>';
+   let body;
+   if(S.mode==='end')body='<section class="dp-sec"><b>왜 끝나나요</b><div class="dp-chips">'+END.map(e=>'<button type="button" data-end="'+attr(e[0])+'" aria-pressed="'+(S.end===e[0])+'">'+h(e[0])+'</button>').join('')+'</div><small class="dp-hint">[종료하기]를 누르면 진행상태 변경 창이 이 사유로 열립니다 — 확인한 내용을 적고 저장하면 종료됩니다. 사유는 실주 분석 · 리포트에 쓰입니다.</small></section>';
+   else body='<button type="button" class="dp-rec" data-rec="1"><b>✦ 추천 · '+h(rec.how)+' · '+h(rec.what)+' · '+h(dateLabel(rec.due))+'</b><span>'+h(rec.why)+'</span></button>'
+    +'<section class="dp-sec"><b>어떻게</b><div class="dp-chips">'+HOW.map(x=>'<button type="button" data-how="'+attr(x[0])+'" aria-pressed="'+(S.how===x[0])+'">'+h(x[0])+'</button>').join('')+'</div></section>'
+    +'<section class="dp-sec"><b>언제</b><div class="dp-chips">'+whenList.map(w=>'<button type="button" data-when="'+w[0]+'" aria-pressed="'+(S.when===w[0])+'">'+w[1]+'</button>').join('')+'</div>'+(S.when==='pick'?'<input type="date" id="dp-date" value="'+attr(S.due)+'" min="'+dayStr(0)+'">':'')+'</section>'
+    +'<section class="dp-sec"><b>무엇을</b><input id="dp-what" value="'+attr(S.what)+'" placeholder="예: 견적서 검토 여부 확인">'+((WHAT[S.how]||[]).length?'<div class="dp-chips">'+WHAT[S.how].map(t=>'<button type="button" data-what="'+attr(t)+'">'+h(t)+'</button>').join('')+'</div>':'')+'</section>'
+    +'<section class="dp-sec"><b>누가</b><div class="dp-chips">'+people.map(n=>'<button type="button" data-who="'+attr(n)+'" aria-pressed="'+(S.who===n)+'">'+h(n)+(n===owner?' <em>현재 담당</em>':'')+'</button>').join('')+'</div></section>'
+    +'<section class="dp-preview"><small>이렇게 올라가요 · 오늘 업무 · 주간 브리핑</small><b>'+h(dateLabel(S.due))+' · '+h(S.how||'방법 미정')+' · '+h(S.what||'할 일 미정')+'</b></section>';
+   p.querySelector('#dp-next').innerHTML=seg+body;p.querySelector('.dp-foot [data-dp="save"]').textContent=S.mode==='end'?'종료하기':'저장';
+  };
+  const setWhen=k=>{S.when=k;const w=whenList.find(x=>x[0]===k);if(k!=='pick')S.due=w[2];};
+  draw();
+  p.addEventListener('input',e=>{if(e.target.id==='dp-what'){S.what=e.target.value;const b=p.querySelector('.dp-preview b');if(b)b.textContent=dateLabel(S.due)+' · '+(S.how||'방법 미정')+' · '+(S.what||'할 일 미정');}if(e.target.id==='dp-date'){S.due=e.target.value;draw();}});
+  p.addEventListener('click',e=>{
+   const t=e.target.closest('button');if(!t||t.dataset.dp==='close')return;const ds=t.dataset;
+   if(ds.mode){S.mode=ds.mode;if(S.mode==='later'&&!S.when){setWhen('week');if(!S.how)S.how='전화';if(!S.what)S.what='고객 요청 시점에 다시 연락';}return draw();}
+   if(ds.rec){S.how=rec.how;S.what=rec.what;S.due=rec.due;S.when=(whenList.find(w=>w[2]===rec.due)||['pick'])[0];return draw();}
+   if(ds.how){S.how=ds.how;return draw();}
+   if(ds.when){setWhen(ds.when);return draw();}
+   if(ds.what){S.what=ds.what;return draw();}
+   if(ds.who){S.who=ds.who;return draw();}
+   if(ds.end){S.end=ds.end;return draw();}
+   if(ds.dp==='save'){
+    const err=p.querySelector('#dp-err'),say=m=>{err.style.display='block';err.textContent=m;};
+    if(S.mode==='end'){
+     const e2=END.find(x=>x[0]===S.end);if(!e2)return say('왜 끝나는지 골라 주세요.');
+     close();root.StageTransitionUI.open(d,false,e2[1]);
+     setTimeout(()=>{const s=document.querySelector('#detailAction #sf-close_reason, #inlineTransition #sf-close_reason');if(s&&[...s.options].some(o=>o.value===e2[2])){s.value=e2[2];s.dispatchEvent(new Event('change',{bubbles:true}));}},150);return;
+    }
+    if(!S.how)return say('어떻게 할지 골라 주세요.');if(!S.due)return say('언제 할지 골라 주세요.');if(!S.what.trim())return say('무엇을 할지 적어 주세요.');
+    /* 기존 다음 할 일 저장 함수가 읽는 칸을 채우고 그대로 부른다 */
+    const how=HOW.find(x=>x[0]===S.how);root.NextActionPicker.choose('dv-na-type',how[1]);const sub=$('dv-na-type-sub');if(sub&&how[2])sub.value=how[2];
+    $('dv-na-text').value=S.what.trim();$('dv-na-date').value=S.due;if(sel){sel.value=S.who;sel.dispatchEvent(new Event('change',{bubbles:true}));}
+    const before=JSON.stringify(root.actionObj(d,root.currentPatch())||null);
+    const ok=root.saveNextAction();
+    if(ok===false||(JSON.stringify(root.actionObj(d,root.currentPatch())||null)===before&&$('ddvPanel')))return say($('dv-err')?.textContent||'저장하지 못했습니다. 입력을 확인해 주세요.');
+    if($('ddvPanel'))close();toast('다음 할 일 · '+dateLabel(S.due)+' · '+S.how+' · '+S.what.trim());
+   }
+  });
+ }
+
+ function open(key,a,b){if(!active())return false;if(key==='contact')contactPanel(a,b);else if(key==='work')root.openWorkEdit();else if(key==='info')infoPanel();else if(key==='next')nextPanel();else return false;return true;}
  function boot(){
   const oc=root.openQuickContact;if(typeof oc==='function')root.openQuickContact=function(mode,key){if(active()){contactPanel(mode,key);return;}return oc.apply(this,arguments);};
   const ow=root.openWorkEdit;if(typeof ow==='function')root.openWorkEdit=function(){

@@ -64,7 +64,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await v.locator('#ddvPanel [data-chip="detail"]').click();await page.waitForTimeout(150);
   assert.equal(await v.locator('#ddvPanel').count(),0);assert.equal(await page.evaluate(()=>document.activeElement===document.querySelector('#ddvComposer textarea')),true,'자세히 기록 → 가운데 입력칸');
   /* ④ 작업창: 오른쪽 열 자리 패널(뒤로 + 제목 + 설명), 가운데 중앙 창이 아님 */
-  for(const [open,title] of [["DetailActions.open('next')",'다음 할 일 설정'],["DetailActions.open('amount')",'예상금액 수정'],["DetailActions.open('management')",'관리정보 수정'],["DetailActions.open('materials')",'자료 보기 · 추가'],["DetailActions.open('stagefields')",'이 단계에서 챙길 정보 입력'],["openTransition()",'진행상태 변경']]){
+  for(const [open,title] of [["DetailActions.open('amount')",'예상금액 수정'],["DetailActions.open('materials')",'자료 보기 · 추가'],["DetailActions.open('stagefields')",'이 단계에서 챙길 정보 입력'],["openTransition()",'진행상태 변경']]){
    await page.evaluate(code=>{(0,eval)(code)},open);await page.waitForTimeout(250);
    const p=page.locator('#detailAction.ddv-panel');assert.equal(await p.count(),1,title);
    assert.equal(await p.locator('#da-title').innerText(),title);assert.equal(await p.locator('.ddv-back').count(),1,title+' 뒤로');
@@ -73,6 +73,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    if(shot&&/next|Transition/.test(open))await page.screenshot({path:shot+'-panel-'+(/next/.test(open)?'next':'stage')+'.png'});
    await p.locator('.ddv-back').click();await page.waitForTimeout(150);assert.equal(await page.locator('#detailAction').count(),0,title+' 닫힘');
   }
+  /* 다음 할 일 · 관리정보는 예전 작업창 대신 새 패널(DealPanelsV2)로 열린다 */
+  for(const [key,cls] of [['next','dp-next'],['management','dp-info']]){await page.evaluate(k=>DetailActions.open(k),key);await page.waitForTimeout(250);assert.equal(await page.locator('#ddvPanel.'+cls).count(),1,key);assert.equal(await page.locator('#detailAction').count(),0,key+' 예전 작업창 없음');await page.locator('#ddvPanel [data-dp="close"]').first().click();await page.waitForTimeout(150);}
   /* 단계 버튼 → 그 단계를 고른 전환창 */
   await v.locator('.ddv-stages [data-stage="competition"]').click();await page.waitForTimeout(300);
   assert.equal(await page.locator('#detailAction.ddv-panel #da-title').innerText(),'진행상태 변경');

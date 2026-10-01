@@ -62,6 +62,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await d.locator('.sd-rec').count(),3,'추천 문구');
   assert.equal(await d.locator('#sd-ad').isDisabled(),true,'수신거부 번호 미등록이면 자동 표기 잠금(예시 번호를 넣지 않음)');
   assert.equal(await d.locator('[data-sd="go"]').innerText(),'1명에게 보내기');
+  /* 목적 칩을 누르면 추천 문구와 본문이 그 목적으로 바뀐다. 직접 쓴 문구는 지킨다 */
+  {const before=await d.locator('.sd-rec b').allInnerTexts();const other=d.locator('.sd-purpose button[aria-pressed="false"]').first(),name=await other.innerText();await other.click();await page.waitForTimeout(150);
+   assert.equal(await d.locator('.sd-purpose [aria-pressed="true"]').innerText(),name);assert.notDeepEqual(await d.locator('.sd-rec b').allInnerTexts(),before,'추천 문구가 목적에 맞게 바뀜');
+   const body=await d.locator('#sd-body').inputValue();assert.ok(body.length>10,'본문도 새 목적의 첫 문구로');assert.equal(await d.locator('.sd-rec.on').count(),1);
+   await d.locator('.sd-purpose button',{hasText:'시즌 인사'}).click();await page.waitForTimeout(150);assert.notEqual(await d.locator('#sd-body').inputValue(),body,'다른 목적 → 본문 변경');assert.match(await d.locator('#sd-body').inputValue(),/감사드립니다|기원/);
+   await d.locator('#sd-body').fill('직접 쓴 문구입니다');await d.locator('.sd-purpose button',{hasText:'재제안'}).click();await page.waitForTimeout(150);assert.equal(await d.locator('#sd-body').inputValue(),'직접 쓴 문구입니다','직접 쓴 문구는 지킨다');assert.match((await d.locator('.sd-rec b').allInnerTexts()).join('|'),/가벼운 재접촉/);await d.locator('#sd-body').fill('');}
   /* 추천 문구 → 입력칸·미리보기(첫 대상 값으로 치환) */
   await d.locator('.sd-rec').first().click();await page.waitForTimeout(150);
   assert.ok((await d.locator('#sd-body').inputValue()).includes('[현장명]')||(await d.locator('#sd-body').inputValue()).length>10);

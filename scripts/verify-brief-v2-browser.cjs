@@ -31,6 +31,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#b-week .brief-command,#b-week .brief-frame').count(),0,'예전 01~05 섹션 없음');
   assert.match(await v.locator('.plv-intro').innerText(),/주간 브리핑[\s\S]*\d+월 \d+일[\s\S]*매주 월요일 08:30 자동 생성 → 잔디 발송/);
   assert.equal(await v.locator('.bv-week select').isDisabled(),true,'지난 주차 보기는 스냅샷 저장 뒤');
+  /* 정리: 공통 기준 띠·파란 안내 띠·따로 떨어진 전환 줄·접기 글자 없음, 전환은 주차 선택 왼쪽 */
+  assert.equal(await page.locator('#pg-brief .pm-strip').count(),0,'파이프라인 공통 기준 띠 없음');
+  assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#pg-brief>.mgmtbar.blue,#pg-brief>.briefbar')].every(n=>getComputedStyle(n).display==='none')),true,'파란 안내 띠·전환 줄 감춤');
+  assert.equal(await v.locator('.pd-toggle').count(),0,'단계 진단 접기 없음');
+  assert.deepEqual(await v.locator('.bv-view button').allInnerTexts(),['주간 의사결정판','월간 일정']);assert.equal(await page.evaluate(()=>{const a=document.querySelector('#brief-v2 .bv-view').getBoundingClientRect(),b=document.querySelector('#brief-v2 .bv-week').getBoundingClientRect();return a.right<=b.left+1;}),true,'전환은 주차 선택 왼쪽');
+  /* 움직임 0건 카드: 0 나열 + 관리팀 KPI 연결 */
+  assert.match(await v.locator('.pd-card').nth(0).innerText(),/신규 영업기회\s*1/);await page.evaluate(()=>{B.deals[2].created=new Date(Date.now()-90*864e5).toLocaleDateString('en-CA');paint();});await page.waitForTimeout(250);
+  assert.match(await v.locator('.pd-card').nth(0).innerText(),/신규 영업기회\s*0[\s\S]*단계 진전\s*0[\s\S]*경쟁 · 입찰 진입\s*0[\s\S]*수주\s*0[\s\S]*단계 변경 기록이 없어 판단 불가[\s\S]*→ 관리팀 KPI/);
+  assert.equal(await page.evaluate(()=>BriefV2.data().nextMissing.length===managementStats(targetNameFilter()).nextMissing.length),true,'다음 할 일 없음 = 관리팀 KPI와 같은 계산');
   /* 숫자 4 · 카드 3 */
   assert.deepEqual(await v.locator('.pd-kpi span').allInnerTexts(),['지난주 수주','신규 유입','진행 Pipeline','위험 현장']);
   assert.match(await v.locator('.pd-kpis').innerText(),/지난주 수주\s*0건[\s\S]*진행 Pipeline\s*3건 · 17억[\s\S]*가중 예상[\s\S]*위험 현장\s*2건/);
@@ -62,7 +71,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 판정 문장 → 해당 화면 */
   await v.locator('.bv-line').first().click();await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>G.page),'mgmt','근거 없음 → 관리팀 KPI');
   /* 월간 일정 탭은 기존 그대로 */
-  await page.evaluate(()=>{goPage('brief');setBriefView('month');});await page.waitForTimeout(250);
+  await page.evaluate(()=>{goPage('brief');});await page.waitForTimeout(250);await page.locator('#brief-v2 .bv-view button',{hasText:'월간 일정'}).click();await page.waitForTimeout(250);
+  assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('#pg-brief>.briefbar')).display!=='none'),true,'월간 보기에서는 전환 줄이 남아 돌아올 수 있다');
   assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('b-week')).display+'|'+getComputedStyle(document.getElementById('b-month')).display),'none|block');
   await page.evaluate(()=>setBriefView('week'));await page.waitForTimeout(250);assert.equal(await page.locator('#brief-v2').isVisible(),true);
   assert.deepEqual(await page.evaluate(()=>__writes),[],'이 화면은 저장하지 않는다');
