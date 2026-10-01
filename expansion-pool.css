@@ -6,4 +6,25 @@
 
 @media(max-width:760px){.exp-manage-modal{align-items:stretch;padding:0}.exp-manage-window{width:100vw;max-height:100vh;height:100vh;border:0;border-radius:0}.exp-manage-head{padding:18px 17px 15px}.exp-manage-body{padding:14px 13px 22px}.exp-manage-hero{padding:14px}.exp-manage-hero h3{font-size:17px}.exp-manage-facts{grid-template-columns:1fr 1fr}.exp-manage-facts div:nth-child(2){border-right:0}.exp-manage-facts div:nth-child(-n+2){border-bottom:1px solid #e7ebf1}.exp-manage-signal{grid-template-columns:1fr;gap:4px}.exp-manage-actions footer{grid-template-columns:1fr 1fr}.exp-manage-actions footer label,.exp-manage-actions footer select{grid-column:1/-1}.exp-manage-actions footer button.primary{grid-column:1/-1}.exp-manage-history li{grid-template-columns:72px minmax(0,1fr)}}
 @media(prefers-reduced-motion:reduce){.exp-manage-window{animation:none}}
-
+/* 확장관리 창을 다른 상세창과 같은 밝은 규격으로 (2026-10-01 대표 '핏이 왜 이래'): 흰 머리·같은 테두리·두 칸(왼쪽 정보, 오른쪽 처리) */
+@media(min-width:761px){
+.exp-manage-modal{background:rgba(15,24,41,.4);backdrop-filter:none}
+.exp-manage-window{width:max(min(94vw,1080px),62vw);max-height:90vh;border:0;border-radius:16px;background:#f3f5f9;box-shadow:0 24px 80px #10243f55}
+.exp-manage-head{align-items:center;padding:14px 20px;border-top:3px solid #3B6CE4;border-bottom:1px solid #e2e8f1;background:#fff;color:#0f172a}
+.exp-manage-head span{color:#3B6CE4}
+.exp-manage-head h2{margin:3px 0 2px;color:#0f172a;font-size:18px}
+.exp-manage-head p{color:#5b6b85}
+.exp-manage-close{width:auto;height:36px;border:1px solid #e2e8f1;border-radius:9px;background:#fff;padding:0 12px;color:#1e50b3;font-size:13px;font-weight:700}
+.exp-manage-close::after{content:' 닫기'}
+.exp-manage-close:hover,.exp-manage-close:focus-visible{border-color:#3B6CE4;background:#f4f7fe;color:#1e50b3}
+.exp-manage-body{grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);align-items:start;padding:16px 18px 18px}
+.exp-manage-body>*{grid-column:1;min-width:0}
+.exp-manage-body>.exp-manage-actions{grid-column:2;grid-row:1/span 5;position:sticky;top:0}
+.exp-manage-hero{align-items:center;border-color:#e2e8f1;border-radius:12px;padding:12px 16px}
+.exp-manage-hero h3{display:none}
+.exp-manage-facts,.exp-manage-history,.exp-manage-actions{border-color:#e2e8f1;border-radius:12px}
+.exp-manage-body>.exp-manage-contact{margin:0;border-color:#e2e8f1;border-radius:12px}
+.exp-manage-actions footer{grid-template-columns:1fr 1fr}
+.exp-manage-actions footer label,.exp-manage-actions footer select,.exp-manage-actions footer button.primary{grid-column:1/-1}
+.exp-manage-actions footer button.primary{border-color:#3B6CE4;background:#3B6CE4}
+}
