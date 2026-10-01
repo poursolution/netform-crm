@@ -300,7 +300,17 @@
   const rank=x=>{const r=root.perfStageRank?root.perfStageRank(root.dealStage(x.item)):0;return (r==null?0:r)*1e13+(Number(root.oppAmt?root.oppAmt(x.item):0)||0);};
   const pick=list.slice().sort((a,b)=>rank(b)-rank(a)).slice(0,10);
   return '<section class="twq-backlog" aria-label="과거 영업 정리"><header><b>과거 영업 정리 · 오늘 '+pick.length+'건</b><small>이관된 과거 영업 '+list.length+'건 중 — 열어서 다음 할 일을 잡거나(유지) 진행상태를 보류·종료로 바꾸면 목록에서 빠집니다.</small></header><div class="twq-blist">'
-   +pick.map(x=>{const amt=Number(root.oppAmt?root.oppAmt(x.item):0)||0;return '<button type="button" class="twq-bitem" data-key="'+attr(x.key)+'" onclick="TodayWorkQueue.open(this.dataset.key)"><span class="site">'+h(x.item.site||x.item.site_name||'현장명 미입력')+'</span><span class="meta">'+h(x.stage||'')+(amt?' · '+won(amt):'')+'</span></button>';}).join('')+'</div></section>';
+   +pick.map(x=>{const amt=Number(root.oppAmt?root.oppAmt(x.item):0)||0,k=attr(x.key);return '<div class="twq-bitem twq-triage" data-key="'+k+'"><button type="button" class="twq-bopen" data-key="'+k+'" onclick="TodayWorkQueue.open(this.dataset.key)"><span class="site">'+h(x.item.site||x.item.site_name||'현장명 미입력')+'</span><span class="meta">'+h(x.stage||'')+(amt?' · '+won(amt):'')+'</span></button><span class="twq-bacts"><button type="button" data-key="'+k+'" data-act="keep" onclick="TodayWorkQueue.triage(this.dataset.key,this.dataset.act)" title="다음 할 일을 잡고 계속 진행">유지</button><button type="button" data-key="'+k+'" data-act="hold" onclick="TodayWorkQueue.triage(this.dataset.key,this.dataset.act)" title="보류 사유를 적고 대기로">보류</button><button type="button" class="lost" data-key="'+k+'" data-act="lost" onclick="TodayWorkQueue.triage(this.dataset.key,this.dataset.act)" title="실주 사유를 적고 종료">실주</button></span></div>';}).join('')+'</div></section>';
+ }
+ /* 과거 영업 정리 3버튼(2026-10-01 컨설턴트 영업 관점 11항): 유지=다음 할 일 입력칸, 보류/실주=그 단계 전환창(사유 필수). 저장은 기존 전환·다음 할 일 경로 그대로 */
+ function triage(key,act){
+  const x=(data().backlog||[]).find(row=>row.key===key)||data().rows.find(row=>row.key===key);if(!x||x.type!=='deal')return;
+  root.G._detailPopup=true;root.drwDeal(JSON.stringify(x.item));
+  setTimeout(()=>{
+   if(act==='keep'){if(root.DetailActions?.fill)root.DetailActions.fill('date');else if(typeof root.dccGoActivity==='function')root.dccGoActivity();return;}
+   const target=act==='hold'?'waiting':'lost';
+   if(root.StageTransitionUI?.open)root.StageTransitionUI.open(x.item,false,target);else if(typeof root.openTransition==='function'){root.openTransition();const sel=document.getElementById('tr-target');if(sel){sel.value=target;sel.dispatchEvent(new Event('change'));}}
+  },60);
  }
  function pickUrgent(rows){
   const score=x=>x.promise&&x.dueDays!==null&&x.dueDays<0?-2:x.promise&&x.dueDays===0?-1:x.unassigned?0:(x.overdue||x.responseLate)?1:x.dueDays===0?2:x.processingLate?3:x.missingNext?4:9;
@@ -341,5 +351,5 @@
   const badge=root.$('#todayBadge');if(badge){badge.textContent=X.rows.length||'';badge.style.display=X.rows.length?'':'none';badge.title='기준: 오늘 조치가 필요한 문의·영업건·관계·확장·관리자 요청 · 종결 제외'}
  }
  function setManagerRequests(rows){managerRequests=Array.isArray(rows)?rows.slice():[];if(root.G?.page==='today')render()}
- root.TodayWorkQueue={render,data,set,filter,page,open,route,setManagerRequests,pickOwner,focusUnassigned,repPeriodSet};
+ root.TodayWorkQueue={render,data,set,filter,page,open,route,setManagerRequests,pickOwner,focusUnassigned,repPeriodSet,triage};
 })(window);

@@ -157,3 +157,9 @@
 .twq-bitem:hover{border-color:#3B6CE4}
 .twq-bitem .site{font-size:12.5px;font-weight:700;color:#17233a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .twq-bitem .meta{font-size:11px;color:#7c889c;font-variant-numeric:tabular-nums}
+/* 3버튼 정리(2026-10-01): 현장명 누르면 상세, 유지·보류·실주는 바로 그 입력으로 */
+.twq-triage{cursor:default;padding:0;overflow:hidden}
+.twq-triage .twq-bopen{display:grid;gap:1px;width:100%;text-align:left;border:0;background:none;padding:7px 10px 4px;font:inherit;cursor:pointer;min-width:0}
+.twq-triage .twq-bacts{display:flex;gap:4px;padding:0 8px 7px}
+.twq-triage .twq-bacts button{flex:1;border:1px solid #e2e8f1;border-radius:7px;background:#f7f9fc;color:#33415e;font:inherit;font-size:11px;font-weight:700;padding:4px 0;cursor:pointer}
+.twq-triage .twq-bacts button:hover{border-color:#3B6CE4;color:#3B6CE4}.twq-triage .twq-bacts button.lost:hover{border-color:#F04452;color:#F04452}

@@ -139,6 +139,15 @@ async function run(){
   assert.deepEqual(await page.locator('.today-admin-pipeline .twq-row').evaluateAll(ns=>ns.map(n=>n.dataset.key)),['deal:late']);
   assert.equal(await page.locator('.twq-backlog').count(),1);
   assert.equal(await page.evaluate(()=>TodayWorkQueue.data().backlog.map(x=>x.key).join()),'deal:missing-old');
+  /* 3버튼 정리(2026-10-01): 담당자 목록에서 유지/보류/실주 — 실주는 전환창(사유 필수)이 열린다 */
+  await page.evaluate(()=>{TodayWorkQueue.set('owner',TodayWorkQueue.data().backlog[0].owner)});
+  assert.deepEqual(await page.locator('.twq-triage .twq-bacts button').evaluateAll(ns=>ns.map(n=>n.textContent)),['유지','보류','실주']);
+  await page.evaluate(()=>{window.__transition=null;window.StageTransitionUI=Object.assign(window.StageTransitionUI||{},{open:(item,a,target)=>{window.__transition={id:item.id,target};return true}});});
+  await page.locator('.twq-triage .twq-bacts button[data-act="lost"]').first().click();await page.waitForTimeout(300);
+  assert.deepEqual(await page.evaluate(()=>({opened:window.__opened,tr:window.__transition})),{opened:{type:'deal',id:'missing-old'},tr:{id:'missing-old',target:'lost'}},'실주: 상세 열고 실주 전환창');
+  await page.locator('.twq-triage .twq-bacts button[data-act="hold"]').first().click();await page.waitForTimeout(300);
+  assert.equal(await page.evaluate(()=>window.__transition&&window.__transition.target),'waiting','보류: 대기 전환창');
+  await page.evaluate(()=>{TodayWorkQueue.set('owner','전체');});
   await page.evaluate(()=>{OPS_RULES.liveFrom='2000-01-01';paintTodayHome()});
   await page.evaluate(()=>{ME={name:'송보람',role:'admin'};const at=new Date(Date.now()-36e5).toISOString();B.inquiries=Array.from({length:51},(_,i)=>({id:'page-'+i,site:'페이지 현장 '+i,created_at:at,brand:'POUR솔루션',status:'접수'}));B.deals=[];B.expansion_pool=[];paintTodayHome()});
   assert.equal(await page.locator('.twq-row').count(),20);await page.getByRole('navigation',{name:'견적문의 관리 페이지'}).getByRole('button',{name:'3',exact:true}).click();assert.equal(await page.locator('.twq-row').count(),11);
