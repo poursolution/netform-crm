@@ -1,0 +1,29 @@
+/* 주간 브리핑 v2 (2026-10-01 디자인 핸드오프 brief) — .plv/.pd 모양 + 판정·잔디 카드·회의 모드 */
+#brief-v2{margin-top:4px}
+#brief-v2 .plv-cta{border:1px solid #c9d6fa;background:#fff;color:#3b6ce4;border-radius:8px;padding:7px 0;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.bv-week{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#6b7280}
+.bv-week select{border:1px solid #e1e4ea;border-radius:8px;padding:6px 10px;font:inherit;font-size:12.5px;background:#fff;color:#374151}
+.bv-lists{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.bv-list{background:#fff;border:1px solid #ebedf1;border-radius:12px;padding:10px 14px;min-width:0}
+.bv-list>summary{cursor:pointer;font-size:12.5px;color:#374151;font-weight:600}.bv-list>summary b{color:#3b6ce4}
+.bv-list[open]>summary{margin-bottom:8px}
+.bv-verdict{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:10px;align-items:start}
+.bv-v,.bv-jandi{background:#fff;border:1px solid #ebedf1;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.bv-v>header,.bv-jandi>header{display:flex;align-items:baseline;gap:8px}.bv-v>header b,.bv-jandi>header b{font-size:13px;font-weight:700}.bv-v>header span,.bv-jandi>header span{font-size:11.5px;color:#9ca3af}
+#brief-v2 .bv-line{display:flex;align-items:center;gap:10px;text-align:left;border:0;border-left:3px solid #c4c8d0;background:#fafbfc;border-radius:0 8px 8px 0;padding:10px 12px;font:inherit;font-size:13.5px;color:#15171c;cursor:pointer;line-height:1.5}
+#brief-v2 .bv-line.r{border-left-color:#e5484d}#brief-v2 .bv-line.a{border-left-color:#f5a524}#brief-v2 .bv-line.g{border-left-color:#30a46c}
+.bv-line span{flex:1;min-width:0}.bv-line em{font-style:normal;font-size:12px;color:#3b6ce4;white-space:nowrap}
+.bv-msg{background:#f7f8fa;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;font-size:12px;color:#374151;line-height:1.5}
+.bv-msg b{font-size:12.5px;color:#15171c}.bv-msg em{font-style:normal;color:#3b6ce4;margin-top:2px}
+.bv-jandi dl{margin:0;display:flex;flex-direction:column;gap:5px}.bv-jandi dl>div{display:flex;justify-content:space-between;gap:8px;font-size:12.5px}
+.bv-jandi dt{color:#9ca3af;font-size:12px}.bv-jandi dd{margin:0;font-weight:600}.bv-jandi dd.bv-off{color:#b26a00}
+.bv-btns{display:flex;gap:6px}.bv-btns button{flex:1}.bv-btns button:disabled{opacity:.55;cursor:default}
+.bv-meeting{position:fixed;inset:0;z-index:20000;background:#111a2e;color:#fff;overflow:auto;padding:5vh 8vw;display:flex;flex-direction:column;gap:28px}
+.bv-meeting>header{display:flex;align-items:center;justify-content:space-between;gap:16px}.bv-meeting>header b{font-size:20px;color:#9fb4e8}
+.bv-meeting>header button{border:1px solid #3a4a72;background:transparent;color:#cdd8f5;border-radius:8px;padding:8px 14px;font:inherit;font-size:13px;cursor:pointer}
+.bv-meeting h2{margin:0 0 14px;font-size:18px;color:#9fb4e8;font-weight:600}
+.bv-meeting p{margin:0 0 12px;font-size:clamp(20px,2.6vw,32px);font-weight:700;line-height:1.4;border-left:5px solid #5b6b8f;padding-left:16px}
+.bv-meeting p.r{border-left-color:#e5484d}.bv-meeting p.a{border-left-color:#f5a524}.bv-meeting p.g{border-left-color:#30a46c}
+.bv-meeting ol{margin:0;padding-left:28px;display:flex;flex-direction:column;gap:14px;font-size:clamp(17px,2vw,24px)}
+.bv-meeting li b{display:block;color:#ffd08a}.bv-meeting li span{display:block;font-weight:600;line-height:1.45}.bv-meeting li em{font-style:normal;font-size:.75em;color:#9fb4e8}
+@media(max-width:1000px){.bv-lists{grid-template-columns:1fr}.bv-verdict{grid-template-columns:1fr}#brief-v2 .bv-line{flex-direction:column;align-items:flex-start;gap:4px}}
