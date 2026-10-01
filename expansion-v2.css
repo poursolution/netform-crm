@@ -1,0 +1,52 @@
+/* 확장관리 v2 (2026-10-01 디자인 핸드오프 expansion) — 목록은 파이프라인 목록(.plv)·진단(.pd) 모양을 그대로 쓰고, 여기는 상세창과 이 화면 전용 규칙만 */
+#expansion-v2{margin-top:12px}
+#pg-expansion.xv-on>.cf-bar[hidden]{display:none}
+#expansion-v2 .plv-pills button,#expansion-v2 .plv-chip,#expansion-v2 .plv-cta{font:inherit;cursor:pointer}
+#expansion-v2 .plv-pills button{border:1px solid #e1e4ea;background:#fff;color:#374151;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:600}
+#expansion-v2 .plv-pills button b{color:#6b7280;font-weight:700}
+#expansion-v2 .plv-pills button[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}#expansion-v2 .plv-pills button[aria-pressed="true"] b{color:#fff}
+#expansion-v2 .plv-chip{border:1px solid #e1e4ea;background:#fff;color:#374151;border-radius:999px;padding:5px 11px;font-size:12.5px}
+#expansion-v2 .plv-chip.on{background:#15171c;border-color:#15171c;color:#fff}
+#expansion-v2 .plv-cta{border:1px solid #c9d6fa;background:#fff;color:#3b6ce4;border-radius:8px;padding:7px 0;font-size:12.5px;font-weight:600}
+/* 상세창 — 파이프라인 상세와 같은 3단 틀 */
+.xdv-layer{position:fixed;inset:0;z-index:1400;display:none;align-items:center;justify-content:center;background:rgba(17,24,39,.32)}
+.xdv-layer.on{display:flex}
+.xdv{width:min(1280px,96vw);height:92vh;background:#fff;border-radius:16px;box-shadow:0 24px 64px rgba(17,24,39,.24);display:flex;flex-direction:column;overflow:hidden;color:#15171c}
+.xdv-top{padding:18px 24px 16px;border-bottom:1px solid #f0f1f4;display:flex;flex-direction:column;gap:6px;flex:none}
+.xdv-top1{display:flex;align-items:center;gap:8px}.xdv-chips{display:flex;gap:8px;flex:1;min-width:0;flex-wrap:wrap}
+.xdv-tag{font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:6px;background:#ecf8f1;color:#1f7a4d}
+.xdv .xdv-close{width:32px;height:32px;border:0;border-radius:8px;background:#f3f4f7;color:#6b7280;font-size:14px;cursor:pointer;padding:0;flex:none}
+.xdv-top h2{font-size:20px;font-weight:700;letter-spacing:-.02em;line-height:1.3;margin:0}
+.xdv-top p{font-size:13px;color:#6b7280;margin:0}
+.xdv-steps.idv-steps .done i{background:#30a46c}.xdv-steps.idv-steps .cur i{background:#bfe5cd}
+.xdv-body{display:grid;grid-template-columns:260px minmax(420px,1fr) 300px;flex:1;min-height:0}
+.xdv-c1,.xdv-c3{padding:18px 16px;overflow:auto;display:flex;flex-direction:column;gap:10px}
+.xdv-c1{border-right:1px solid #f0f1f4}.xdv-c3{border-left:1px solid #f0f1f4;background:#fafbfc}
+.xdv-c2{background:#fcfcfd;display:flex;flex-direction:column;min-height:0;min-width:0}
+.xdv-c2 .idv-msg.sys{align-self:center;align-items:center;max-width:92%}
+.xdv-c2 .idv-msg.sys .idv-bubble{background:#f3f4f7;color:#6b7280;font-size:12.5px;padding:6px 12px;border-radius:999px;white-space:normal;text-align:center}
+.xdv-card{background:#fff;border:1px solid #ebedf1;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:7px;font-size:13px;min-width:0;flex:none}
+.xdv-card>b{font-size:13px;font-weight:700}.xdv-card p{margin:0;font-size:12px;color:#6b7280;line-height:1.5}
+.xdv-label,.xdv-eyebrow{font-size:12px;font-weight:700;color:#6b7280}
+.xdv-warn{color:#b26a00}.xdv-red{color:#e5484d;font-weight:600}
+.xdv-three{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:2px}
+.xdv .xdv-three button,.xdv .xdv-wide{border:1px solid #e1e4ea;background:#fff;color:#374151;border-radius:8px;padding:8px 6px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.xdv .xdv-three button.fill{background:#3b6ce4;border-color:#3b6ce4;color:#fff}
+.xdv-facts{margin:2px 0 0;display:block}.xdv-facts>div{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;margin-top:7px}
+.xdv-facts dt{font-size:12px;color:#9ca3af}.xdv-facts dd{margin:0;font-weight:500;word-break:break-word}.xdv-facts dd.xdv-warn{font-weight:400}
+.xdv-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.xdv-tiles>div{background:#f7f8fa;border-radius:8px;padding:8px 6px;text-align:center;display:flex;flex-direction:column;gap:2px}
+.xdv-tiles span{font-size:11.5px;color:#9ca3af}.xdv-tiles b{font-size:14px}
+.xdv .xdv-link{border:0;background:none;color:#3b6ce4;font:inherit;font-size:12.5px;cursor:pointer;text-align:left;padding:2px 0;align-self:flex-start}
+.xdv-now{border-color:#dbe5fd}.xdv-now.late{border-color:#f3d3d1}.xdv-now>b{font-size:16px}.xdv-now .xdv-eyebrow{color:#3b6ce4}.xdv-now.late .xdv-eyebrow{color:#e5484d}
+.xdv-signal{background:#ecf8f1;border-color:#d5eede}.xdv-signal .xdv-eyebrow{color:#1f7a4d}.xdv-signal>b{font-size:14px;line-height:1.45}
+.xdv .ddv-stages{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:2px 0}
+.xdv .ddv-stages button{border:1px solid #e1e4ea;background:#fff;border-radius:8px;padding:8px 6px;font:inherit;font-size:12.5px;font-weight:600;color:#374151;cursor:pointer}
+.xdv .ddv-stages button.cur{background:#eef3fe;color:#2a52b8;border-color:#3b6ce4}
+.xdv-date{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:#6b7280}
+.xdv-date input{border:1px solid #e1e4ea;border-radius:8px;padding:7px 10px;font:inherit;font-size:13px;background:#fff;color:#15171c}
+.xdv .xdv-convert,.xdv .xdv-primary{border:0;border-radius:9px;background:#30a46c;color:#fff;font:inherit;font-size:13.5px;font-weight:600;padding:11px 12px;cursor:pointer;flex:none}
+.xdv .xdv-convert:hover,.xdv .xdv-primary:hover{background:#1f7a4d}
+.xdv-hint{margin:0;font-size:11.5px;color:#9ca3af;line-height:1.5}
+.xdv-done{background:#ecf8f1;border-color:#d5eede}.xdv-done>b{color:#1f7a4d}
+@media(max-width:1000px){.xdv{width:96vw;height:96vh}.xdv-body{grid-template-columns:1fr;overflow:auto}.xdv-c1,.xdv-c3{border:0;overflow:visible}.xdv-c3{order:1}.xdv-c2{order:2;min-height:420px}.xdv-c1{order:3}}

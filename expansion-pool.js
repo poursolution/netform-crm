@@ -55,6 +55,8 @@
   const sourceRows=expansionRecords(),all=sourceRows.filter(r=>SalesFilterState.matchesBrand((expansionSourceDeal(r)||{}).brand)&&SalesScope.matches(r.owner,expansionSourceDeal(r))),current=new Date().getFullYear(),year=G.expansionYear||String(current),yearRows=all.filter(r=>F.yearMatch(r,expansionSourceDeal(r)||{},year,current)),globalActive=all.filter(r=>!F.converted(r)&&F.status(r)!=='보류'),globalDue=globalActive.filter(r=>daysTo(r.nextContactAt)!=null&&daysTo(r.nextContactAt)<=0),active=yearRows.filter(r=>!F.converted(r)&&F.status(r)!=='보류'),made=yearRows.filter(F.converted),dueFilter=G.expansionDueFilter||'전체',query=String(G.expansionQuery||'').trim().toLowerCase();
   const rows=yearRows.filter(r=>(!G.expansionOwner||G.expansionOwner==='전체'||G.expansionOwner===(r.owner||'미배정'))&&(!query||[r.site,r.owner,r.sourceWorkSummary,r.needNote,(r.candidates||[]).join(' ')].join(' ').toLowerCase().includes(query))&&(dueFilter==='전체'||!F.converted(r)&&daysTo(r.nextContactAt)!=null&&daysTo(r.nextContactAt)<=0));
   const badge=document.getElementById('expansionBadge');if(badge){badge.textContent=globalDue.length||'';badge.style.display=globalDue.length?'':'none'}
+  /* 확장관리 v2(2026-10-01 핸드오프): 새 모듈이 목록을 그린다. 끄면(G.expansionV2Off) 아래 예전 화면 */
+  if(window.ExpansionV2&&ExpansionV2.paint(root))return;
   const yearTabs=['전체',String(current),String(current-1),String(current-2),'이전'];
   const dueNow=active.filter(r=>daysTo(r.nextContactAt)!=null&&daysTo(r.nextContactAt)<=0).length,noNext=active.filter(r=>!r.nextContactAt).length,needCount=active.filter(r=>F.status(r)==='니즈확인').length;
   const hero='<div class="exp-hero">'
