@@ -145,7 +145,8 @@ function mount(v){
      이걸 안 넘기면 주소창에 붙여도 iframe 안에서는 아무 일도 일어나지 않는다. */
   /* 매 접속마다 Date.now()를 붙이면 브라우저가 같은 HTML도 다시 받는다.
      빌드 번호는 배포 때만 바꿔 반복 접속에서는 캐시를 재사용한다. */
-  f.src = encodeURI(src) + '?v=' + APP_BUILD + extra;
+  /* 안쪽 앱의 화면·상세 해시(#p=…)를 넘겨 공유 링크·새로고침에서 같은 화면이 뜬다 (2026-10-01) */
+  f.src = encodeURI(src) + '?v=' + APP_BUILD + extra + (/^#p=/.test(location.hash) ? location.hash : '');
   f.onload = function(){ var b = document.getElementById('boot'); if (b) b.remove(); };
   document.body.classList.toggle('mob', v === 'mobile');
   paintToggle();
@@ -190,6 +191,13 @@ function mountCurrentBuild(){
       if (loaded !== APP_BUILD) newBuildBanner(); else removeBuildBanner();
     });
 }
+/* 안쪽 앱이 알려 주는 화면 해시를 주소창에 반영한다 — 뒤로가기 기록은 iframe 쪽이 쌓으므로 여기서는 replace만 */
+window.addEventListener('message', function(e){
+  if (e.origin !== location.origin || !e.data || e.data.type !== 'nf:hash') return;
+  var h = String(e.data.hash || '');
+  if (!/^#p=[\w%.\-|:&=가-힣]*$/.test(h)) return;
+  try { history.replaceState(null, '', location.pathname + location.search + h) } catch(err){}
+});
 function removeBuildBanner(){ var b = document.getElementById('newbuild'); if (b) b.remove(); }
 function newBuildBanner(){
   if (document.getElementById('newbuild')) return;
