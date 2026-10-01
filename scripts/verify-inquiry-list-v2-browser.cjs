@@ -22,7 +22,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    B={deals:[],inquiries:inq,activities:[],inquiryTrash:[]};LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.pushWrite=()=>{};goPage('inq');
    const v=document.getElementById('inq-v2');
-   return {on:document.getElementById('pg-inq').classList.contains('inq-v2'),tabs:v?[].map.call(v.querySelectorAll('.iv-tab'),b=>b.textContent.trim()):[],heads:v?[].map.call(v.querySelectorAll('.iv-ghead'),b=>b.textContent.replace(/\s+/g,' ').trim()):[],rows:v?[].map.call(v.querySelectorAll('.iv-row'),r=>r.dataset.group+':'+r.querySelector('.iv-site b').textContent+'|'+r.querySelector('.iv-cta').textContent):[],pills:v?[].map.call(v.querySelectorAll('.iv-pill'),b=>b.textContent.trim()):[],more:!!v?.querySelector('.inq-work-tools'),fits:document.documentElement.scrollWidth<=innerWidth};
+   return {on:document.getElementById('pg-inq').classList.contains('inq-v2'),tabs:v?[].map.call(v.querySelectorAll('.iv-tab'),b=>b.textContent.trim()):[],heads:v?[].map.call(v.querySelectorAll('.iv-ghead'),b=>b.textContent.replace(/\s+/g,' ').trim()):[],rows:v?[].map.call(v.querySelectorAll('.iv-row'),r=>r.dataset.group+':'+r.querySelector('.iv-site b').textContent+'|'+r.querySelector('.iv-cta').textContent):[],pills:[].map.call(document.querySelectorAll('#pg-inq>.cf-bar .cf-pill'),b=>b.textContent.trim()),title:document.getElementById('ptitle').textContent+'|'+document.getElementById('psub').textContent,inpage:!!v?.querySelector('h2'),owner:!!document.querySelector('#pg-inq>.cf-bar [data-cf=owner]'),more:!!v?.querySelector('.inq-work-tools'),fits:document.documentElement.scrollWidth<=innerWidth};
   });
   assert.equal(info.on,true,'v2 켜짐');
   assert.deepEqual(info.tabs,['전체9','지금 배정 필요3','7일 넘게 연락 없음2','오늘 들어온 문의2','진행 중2']);
@@ -30,6 +30,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(info.rows[0],/신갈현대아파트\|배정$/,'묶음 안은 경과일 큰 순 · 미배정은 [배정]');
   assert.match(info.rows[5],/\|첫 연락$/);assert.match(info.rows[7],/\|후속 연락$/);
   assert.deepEqual(info.pills,['전체 9','석민이앤씨 3','POUR솔루션 3','POUR공법 3','아파트스퀘어 0']);
+  assert.equal(info.title,'견적문의|위에서부터 처리하세요 · 배정 → 첫 연락 → 후속 연락 → 영업건 전환','제목은 상단 제목줄에만');assert.equal(info.inpage,false,'본문 큰 제목 없음');assert.equal(info.owner,true,'담당자 선택');
   assert.equal(info.more,true,'더보기 옮겨짐');assert.equal(info.fits,true);
   assert.equal(await page.evaluate(()=>['#sg-signals','#sg-panel'].every(s=>getComputedStyle(document.querySelector(s)).display==='none')),true,'예전 목록 숨김');
   /* 묶음 알약·제목줄 */
@@ -38,13 +39,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('.iv-ghead em').innerText(),'전체 보기');
   await page.click('.iv-ghead');assert.equal(await page.locator('.iv-row').count(),9,'제목줄로 전체 복귀');
   /* 브랜드 알약(기존 공통 필터 처리기) */
-  await page.click('.iv-pill[data-sf-brand="석민이앤씨"]');
-  assert.equal(await page.locator('.iv-row').count(),3);assert.equal(await page.locator('.iv-pill.on').innerText().then(t=>t.replace(/\s+/g,' ').trim()),'석민이앤씨 3');
-  await page.click('.iv-pill[data-sf-brand="전체"]');assert.equal(await page.locator('.iv-row').count(),9);
+  await page.click('.cf-pill[data-sf-brand="석민이앤씨"]');
+  assert.equal(await page.locator('.iv-row').count(),3);assert.equal(await page.locator('#pg-inq>.cf-bar .cf-pill.on').innerText().then(t=>t.replace(/\s+/g,' ').trim()),'석민이앤씨 3');
+  await page.click('.cf-pill[data-sf-brand="전체"]');assert.equal(await page.locator('.iv-row').count(),9);
   /* 검색 */
-  await page.fill('.iv-search','오뚜기');await page.press('.iv-search','Enter');
+  await page.fill('#pg-inq>.cf-bar .cf-search','오뚜기');await page.press('#pg-inq>.cf-bar .cf-search','Enter');
   assert.equal(await page.locator('.iv-row').count(),1);assert.equal(await page.evaluate(()=>G.q),'오뚜기');
-  await page.fill('.iv-search','');await page.press('.iv-search','Enter');assert.equal(await page.locator('.iv-row').count(),9);
+  await page.fill('#pg-inq>.cf-bar .cf-search','');await page.press('#pg-inq>.cf-bar .cf-search','Enter');assert.equal(await page.locator('.iv-row').count(),9);
   /* 행 클릭 → 기존 상세, [배정] → 상세의 배정 칸 */
   await page.click('.iv-row[data-group="active"] .iv-site');
   assert.equal(await page.locator('#inq-inbox-dialog').count(),1,'행 클릭 → 상세');
@@ -55,14 +56,18 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 더보기: 공종·상태·담당자 구분 필터와 예전 목록 전환 */
   await page.click('#inq-v2 .inq-work-tools>summary');
   assert.equal(await page.locator('#inq-v2 .inq-tools-body .inq-work-filters select[name="work"]').count(),1);
-  assert.equal(await page.locator('#inq-v2 .inq-tools-body [data-sf-type]').count()>0,true,'담당자 구분');
+  assert.equal(await page.locator('#inq-v2 .inq-tools-body .sf-period').count(),1,'연도·분기는 더보기에');
   await page.click('#inq-v2 .iv-legacy');
   assert.equal(await page.evaluate(()=>!document.getElementById('inq-v2')&&getComputedStyle(document.querySelector('#sg-panel')).display!=='none'),true,'예전 목록으로 전환');
   await page.evaluate(()=>{G.inqV2Off=false;paint();});
-  /* 내 담당 */
-  await page.click('.iv-seg [data-v="mine"]');
-  assert.equal(await page.evaluate(()=>inqCtlRoleView()),'mine');assert.equal(await page.locator('#inq-v2').count(),1);
-  await page.click('.iv-seg [data-v="admin"]');
+  /* 담당자 선택(공통 필터줄) — '내 담당'을 대신한다. 선택하면 해제 단추, 화면을 옮겨도 유지 */
+  await page.selectOption('#pg-inq>.cf-bar [data-cf="owner"]','이필선');
+  assert.equal(await page.locator('.iv-row').count(),3,'이필선 담당 3건');assert.equal(await page.locator('#pg-inq>.cf-bar .cf-clear').count(),1);
+  await page.selectOption('#pg-inq>.cf-bar [data-cf="owner"]','미배정');assert.deepEqual(await page.locator('.iv-row').evaluateAll(ns=>[...new Set(ns.map(n=>n.dataset.group))]),['assign']);
+  await page.evaluate(()=>goPage('today'));await page.waitForTimeout(250);
+  assert.equal(await page.evaluate(()=>document.querySelector('#pg-today>.cf-bar [data-cf="owner"]')?.value+'|'+G.todayQueueOwner),'미배정|미배정','오늘 업무에서도 같은 담당자');
+  assert.match(await page.evaluate(()=>document.getElementById('psub').textContent),/^\d+월 \d+일 \(.\) · 사원별 현황/);
+  await page.evaluate(()=>goPage('inq'));await page.click('#pg-inq>.cf-bar .cf-clear');assert.equal(await page.locator('.iv-row').count(),9);
   /* 좁은 화면 */
   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(200);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'좁은 화면 넘침 없음');
