@@ -21,7 +21,7 @@ begin
  if a.permission_role<>'admin' and (oldq.assigned_to is null or oldq.assigned_to<>a.user_id) then
   raise exception '담당자 또는 관리자만 종결할 수 있습니다' using errcode='42501';
  end if;
- if oldq.deleted_at is not null then raise exception '휴지통 문의는 종결할 수 없습니다' using errcode='22023'; end if;
+ -- 운영 inquiries에는 휴지통 열이 없다(2026-10-01 실행 오류 42703으로 확인) — 휴지통 판정은 화면 패치에서만 한다
  if coalesce(oldq.status,'') in ('종결','종료','수주','실주') then raise exception '이미 종결된 문의입니다' using errcode='22023'; end if;
  if oldq.deal_id is not null or oldq.opportunity_id is not null then raise exception '영업건으로 전환된 문의는 영업건에서 처리합니다' using errcode='22023'; end if;
  update public.inquiries i set status='종결',
