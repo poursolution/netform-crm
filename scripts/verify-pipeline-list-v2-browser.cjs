@@ -90,6 +90,26 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,key+' 넘침 없음');
    if(shot)await page.screenshot({path:shot+'-'+key+'.png'});
   }
+  /* ② 단계 진단: 숫자 4개 · 분석 카드 3개 · 행동 카드 — 지금 목록에서 계산, 기록 없는 항목은 그대로 '미기록' */
+  assert.equal(await v.locator('.pd.pd-red .pd-kpi').count(),4);
+  assert.deepEqual(await v.locator('.pd-card header b').allInnerTexts(),['왜 졌나','어디서 졌나','누구에게 졌나']);
+  assert.match(await v.locator('.pd-kpis').innerText(),/사유 미기록\s*50%\s*1건/);
+  assert.match(await v.locator('.pd-card').nth(0).innerText(),/가격 열세\s*1/);
+  assert.match(await v.locator('.pd-card').nth(1).innerText(),/경쟁·입찰\s*1[\s\S]*자료 발송완료\s*1/);
+  assert.match(await v.locator('.pd-card').nth(2).innerText(),/경쟁사가 기록된 실주 건이 없습니다/);
+  assert.match(await v.locator('.pd-action').innerText(),/그래서 뭘 해야 하나[\s\S]*가격 열세 1건[\s\S]*사유 미기록 1건/);
+  await v.locator('.pd-toggle').click();await page.waitForTimeout(120);
+  assert.equal(await v.locator('.pd-card').count(),0,'접으면 숫자만');assert.equal(await v.locator('.pd-kpi').count(),4);
+  await v.locator('.pd-toggle').click();await page.waitForTimeout(120);
+  for(const [k,titles,accent] of [['consulting',['왜 멈춰 있나','어디서 들어왔나','누구에게 쌓였나'],'blue'],['competition',['무엇이 준비 안 됐나','어떤 방식인가','누구와 붙었나'],'blue'],['won',['왜 이겼나','어디서 왔나','누구를 이겼나'],'green']]){
+   await page.evaluate(x=>PipelineWorkspace.open(x),k);await page.waitForTimeout(120);
+   assert.deepEqual(await v.locator('.pd-card header b').allInnerTexts(),titles,k);assert.equal(await v.locator('.pd.pd-'+accent).count(),1,k);
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,k+' 진단 넘침 없음');
+   if(shot)await page.screenshot({path:shot+'-diag-'+k+'.png',fullPage:true});
+  }
+  assert.match(await page.evaluate(()=>{PipelineWorkspace.open('consulting');return document.querySelector('#pipeline-list-v2 .pd').innerText;}),/이 단계\s*4건[\s\S]*다음 할 일 없음\s*1건[\s\S]*고객 요구 미확인\s*3[\s\S]*경로 미기록\s*4[\s\S]*이필선[\s\S]*2/);
+  assert.match(await page.evaluate(()=>{PipelineWorkspace.open('competition');return document.querySelector('#pipeline-list-v2 .pd').innerText;}),/타사 A[\s\S]*1[\s\S]*미기록[\s\S]*모름/);
+  await page.evaluate(()=>PipelineWorkspace.open('lost'));await page.waitForTimeout(120);
   /* 실주: 직전 단계 배지·사유, 사유 없는 건은 '사유 미기록' 묶음 */
   assert.match(await v.locator('.plv-row[data-deal="l-none"]').innerText(),/경쟁·입찰[\s\S]*미기록/);
   assert.match(await v.locator('.plv-row[data-deal="l-done"]').innerText(),/자료 발송완료[\s\S]*가격 열세/);
@@ -114,6 +134,6 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(150);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'좁은 화면 넘침 없음');
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',frame:true,groups:true,owner_chips_shared:true,brand_shared:true,row_opens_detail:true,seven_stages:true,sub_filter:true,sidebar:true,board_switch:true,legacy_switch:true,narrow:true}));
+  console.log(JSON.stringify({status:'PASS',frame:true,groups:true,owner_chips_shared:true,brand_shared:true,row_opens_detail:true,seven_stages:true,sub_filter:true,sidebar:true,board_switch:true,diagnosis:true,legacy_switch:true,narrow:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

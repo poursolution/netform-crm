@@ -1,0 +1,31 @@
+/* 단계 진단 영역 (2026-10-01 디자인 핸드오프 pipeline ②) — 숫자 4개 · 분석 카드 3개 · 행동 카드. 다른 화면도 같은 모양으로 쓴다 */
+.pd{display:flex;flex-direction:column;gap:10px;position:relative;color:#15171c;--pd-accent:#3b6ce4;--pd-tag-bg:#fff8ec;--pd-tag:#b26a00}
+.pd-green{--pd-accent:#30a46c;--pd-tag-bg:#ecf8f1;--pd-tag:#1f7a4d}.pd-red{--pd-accent:#e5484d;--pd-tag-bg:#fdecec;--pd-tag:#c93a3f}
+.pd button.pd-toggle{position:static;align-self:flex-end;order:-1;margin:-6px 0 -4px;border:0!important;background:none!important;color:#6b7280;font:inherit;font-size:12px;cursor:pointer;padding:2px;min-height:0;height:auto;box-shadow:none!important}
+.pd button.pd-toggle:hover{color:#15171c}
+.pd-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.pd-kpi{background:#fff;border:1px solid #ebedf1;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.pd-kpi span{font-size:12px;color:#6b7280}.pd-kpi b{font-size:20px;font-weight:700;color:#374151;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pd-kpi b.bad{color:#c93a3f}.pd-kpi b.warn{color:#b26a00}.pd-kpi b.good{color:#1f7a4d}
+.pd-kpi small{font-size:11.5px;color:#9ca3af;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pd-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.pd-card,.pd-action{background:#fff;border:1px solid #ebedf1;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:9px;min-width:0}
+.pd-card header,.pd-action header{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.pd-card header b,.pd-action header b{font-size:13px;font-weight:700}.pd-card header span,.pd-action header span{font-size:11.5px;color:#9ca3af}
+.pd-bar{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(40px,1fr) 30px 54px;gap:8px;align-items:center;font-size:12.5px;color:#374151}
+.pd-bar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pd-bar i{display:block;height:6px;border-radius:3px;background:#f0f1f4;overflow:hidden}.pd-bar i em{display:block;height:100%;border-radius:3px;background:#c4c8d0}
+.pd-bar.top i em{background:var(--pd-accent)}.pd-bar.top span{font-weight:600;color:#15171c}
+.pd-bar b{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}.pd-bar small{text-align:right;font-size:11.5px;color:#9ca3af;white-space:nowrap}
+.pd-who{display:grid;grid-template-columns:minmax(0,1fr) auto 30px;gap:8px;align-items:center;font-size:12.5px;color:#374151}
+.pd-who span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.pd-who em{font-style:normal;font-size:11.5px;font-weight:600;border-radius:6px;padding:2px 7px;background:var(--pd-tag-bg);color:var(--pd-tag);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pd-who b{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.pd-none{margin:0;font-size:12.5px;color:#9ca3af;padding:6px 0}
+.pd-action{border-color:#dbe5fd}
+.pd-tasks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.pd-task{background:#f5f8ff;border-radius:10px;padding:11px 12px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.pd-task em{font-style:normal;font-size:11.5px;font-weight:600;color:var(--pd-accent)}
+.pd-task b{font-size:13px;font-weight:600;line-height:1.4}
+.pd-task span{font-size:11.5px;color:#6b7280}
+@media(max-width:1100px){.pd-kpis,.pd-tasks{grid-template-columns:repeat(2,minmax(0,1fr))}.pd-cards{grid-template-columns:1fr}}
