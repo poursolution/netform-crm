@@ -52,12 +52,18 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.ok(await page.evaluate(()=>!!G.deal),'상세로 이동');
   const dock=page.locator('#scr .mv-dock');assert.deepEqual(await dock.locator('button').allInnerTexts(),['전화','결과 남기기']);assert.equal(await css('#scr .mv-dock','position'),'sticky');
   assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#scr button,#scr .ml-support-link')].some(b=>/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test([...b.childNodes].filter(n=>n.nodeType===3).map(n=>n.nodeValue).join('')))),false,'버튼에 이모지 없음');
+  /* 캘린더: 다음 할 일을 .ics 로 */
+  assert.equal(await page.locator('#scr .mv-ics').innerText(),'휴대폰 캘린더에 넣기');
+  await page.evaluate(()=>{HTMLAnchorElement.prototype.click=function(){window.__dl=(window.__dl||[]).concat([this.download]);};});await page.locator('#scr .mv-ics').click();
+  const ics=await page.evaluate(()=>window.__mvIcs);assert.match(ics,/^BEGIN:VCALENDAR\r\nVERSION:2\.0[\s\S]*BEGIN:VEVENT[\s\S]*DTSTART;VALUE=DATE:\d{8}\r\nDTEND;VALUE=DATE:\d{8}\r\nSUMMARY:[\s\S]*END:VEVENT\r\nEND:VCALENDAR$/);
+  assert.match((await page.evaluate(()=>window.__dl))[0],/^netform-\d{4}-\d{2}-\d{2}\.ics$/);
   if(shot)await page.screenshot({path:shot+'-detail.png'});
   await page.evaluate(()=>{window.__dc=0;const o=dealCallSheetM;dealCallSheetM=function(){__dc++;return o.apply(this,arguments)};});await dock.locator('[data-mv="result"]').click();await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>__dc),1,'결과 남기기 = 기존 함수');
   await page.evaluate(()=>{closeSheet();nav('today');});await page.waitForTimeout(300);
   /* 헤더: 로고 · 연결 상태 알약 · 알림 */
   assert.equal(await page.locator('#scr .home-bar .mv-status').innerText(),'예시 데이터');
   await page.evaluate(()=>{LIVE=true;render();});assert.equal(await page.locator('#scr .home-bar .mv-status.ok').innerText(),'연결됨');
+  await ctx.setOffline(true);await page.evaluate(()=>MobileV2.apply());assert.match(await page.locator('#scr .home-bar .mv-status.bad').innerText(),/^오프라인/);await ctx.setOffline(false);await page.evaluate(()=>MobileV2.apply());
   await page.evaluate(()=>{LOAD_ERR='x';MobileV2.apply();});assert.equal(await page.locator('#scr .home-bar .mv-status.bad').innerText(),'연결 안 됨');await page.evaluate(()=>{LOAD_ERR=null;LIVE=false;render();});
   assert.equal(await css('#scr .home-bar .hb-status','display'),'none');assert.equal(await page.locator('#scr .home-bar [aria-label="알림함"]').count(),1);
   if(shot)await page.screenshot({path:shot+'-today.png'});
@@ -73,6 +79,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{G.mode='admin';G.tab='today';G.deal=null;G.sub=null;render();});await page.waitForTimeout(300);
   assert.deepEqual(await page.locator('#tabbar button:not([hidden]) .tl2').allInnerTexts(),['오늘','파이프라인','사람','보고']);
   assert.match(await page.locator('#scr .mt-head h1').first().innerText(),/님, 지금 챙길 곳이 (\d+건입니다|없습니다)$/);
+  /* 팀 연락 기록: 오늘 저장된 결과 수(0건은 빨강) */
+  assert.match(await page.locator('#scr .mv-team').innerText(),/오늘 팀 연락 기록[\s\S]*오늘 기록이 저장된 현장 수/);
+  assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#scr .mv-tr')].every(r=>(/0곳/.test(r.textContent))===!!r.querySelector('span.r'))),true);
+  await page.evaluate(()=>{DEALS.filter(x=>x.rep==='이필선').forEach(x=>{x.activities=[];x.last_activity_at=x.lastActivity=x.last_customer_contact_at=x.last_meaningful_contact_at=x.lastMeaningfulContactAt=x.last_worked_at=null;});const d=DEALS.find(x=>x.rep==='이필선');d.activities=(d.activities||[]).concat([{type:'전화',note:'통화',at:new Date().toISOString()}]);render();});await page.waitForTimeout(200);
+  assert.match(await page.locator('#scr .mv-tr',{hasText:'이필선'}).innerText(),/오늘 1곳/);
   assert.match(await page.locator('#scr .mv-ctrl').innerText(),/문의 관리[\s\S]*열기/);await page.locator('#scr .mv-ctrl').click();await page.waitForTimeout(300);
   assert.equal(await page.evaluate(()=>G.tab),'ctrl');assert.equal(await page.locator('#tabbar button.on:not([hidden]) .tl2').innerText(),'오늘','문의 관리에서도 오늘 탭이 선택된 것으로');
   if(shot)await page.screenshot({path:shot+'-admin.png'});

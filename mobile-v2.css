@@ -108,3 +108,9 @@ body.mv2 .mv-ptable{background:#fff;border-radius:20px;overflow:hidden}
 .mv-pnote{margin:0 4px;font-size:12px;color:#9ca3af;line-height:1.5}
 body.mv2 .mv-pcnote{display:flex;flex-direction:column;gap:4px;background:#fff;border-radius:20px;padding:16px 18px}
 .mv-pcnote b{font-size:15px}.mv-pcnote span{font-size:13px;color:#6b7280;line-height:1.55}
+/* 캘린더 · 팀 연락 기록 */
+.mv-ics,.mv-team{display:none}
+body.mv2 .mv-ics{display:block;width:100%;margin-top:10px;min-height:46px;border:1px solid #dbe5fd;background:#f5f8ff;color:#2a52b8;border-radius:12px;font:inherit;font-size:14px;font-weight:700}
+body.mv2 .mv-team{display:flex;flex-direction:column;gap:8px}
+.mv-teamhead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:4px 4px 0}.mv-teamhead b{font-size:15px;font-weight:700}.mv-teamhead span{font-size:12.5px;color:#6b7280}
+.mv-tr{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 18px;border-top:1px solid var(--mv-line);font-size:14px}.mv-tr:first-child{border-top:0}.mv-tr b{font-size:15px;font-weight:700}.mv-tr span{color:#374151}.mv-tr span.r{color:#e5484d;font-weight:700}
