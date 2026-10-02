@@ -16,7 +16,7 @@
   let pill=bar.querySelector('.mv-status');if(!pill){pill=document.createElement('span');pill.className='mv-status';const rgt=bar.querySelector('.rgt');if(rgt)rgt.prepend(pill);else return;}
   const pend=document.getElementById('pendBadge'),pendOn=!!pend&&pend.style.display!=='none'&&pend.textContent.trim();
   let cls='ok',text='연결됨';
-  if(typeof navigator!=='undefined'&&navigator.onLine===false){cls='bad';text='연결 안 됨';}
+  if(typeof navigator!=='undefined'&&navigator.onLine===false){cls='bad';text='오프라인'+(pendOn?' · '+pend.textContent.trim():' · 기록은 폰에 쌓입니다');}
   else if(root.LOAD_ERR){cls='bad';text='연결 안 됨';}
   else if(pendOn){cls='wait';text=pend.textContent.trim();}
   else if(root.DEMO&&!root.LIVE){cls='idle';text='예시 데이터';}
@@ -96,9 +96,38 @@
   dock.addEventListener('click',e=>{const b=e.target.closest('[data-mv]');if(!b)return;if(b.dataset.mv==='call')root.dealCallM();else root.dealCallSheetM();});
   scr.append(dock);body.classList.add('mv-hasdock');/* 화면 맨 아래 고정 — 기존 단계 버튼 줄은 본문 끝으로 내려 둔다 */
  }
+ /* ── 새 기능(2026-10-02 대표 승인 순서: 캘린더 → 오프라인 → 팀 연락 기록) ──
+    캘린더: 다음 할 일(날짜 · 시각)을 휴대폰 캘린더에 넣는 .ics 파일을 만든다. 저장소 · 서버는 쓰지 않는다. */
+ const pad=n=>String(n).padStart(2,'0');
+ function icsText(d,a){
+  const due=String(a.due_at||a.due||''),m=/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(due);if(!m)return '';
+  const esc=s=>String(s||'').replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/([,;])/g,'\\$1'),now=new Date(),stamp=now.getUTCFullYear()+pad(now.getUTCMonth()+1)+pad(now.getUTCDate())+'T'+pad(now.getUTCHours())+pad(now.getUTCMinutes())+pad(now.getUTCSeconds())+'Z';
+  let start,end;
+  if(m[4]&&!(m[4]==='00'&&m[5]==='00')){const s=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]),Number(m[4]),Number(m[5])),e=new Date(s.getTime()+3600e3),f=x=>x.getFullYear()+pad(x.getMonth()+1)+pad(x.getDate())+'T'+pad(x.getHours())+pad(x.getMinutes())+'00';start='DTSTART:'+f(s);end='DTEND:'+f(e);}
+  else{const s=new Date(Number(m[1]),Number(m[2])-1,Number(m[3])),e=new Date(s.getTime()+864e5),f=x=>x.getFullYear()+pad(x.getMonth()+1)+pad(x.getDate());start='DTSTART;VALUE=DATE:'+f(s);end='DTEND;VALUE=DATE:'+f(e);}
+  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//NETFORM//CRM//KO','CALSCALE:GREGORIAN','BEGIN:VEVENT','UID:'+esc(d.id)+'-'+m[1]+m[2]+m[3]+'@netform-crm','DTSTAMP:'+stamp,start,end,'SUMMARY:'+esc((a.type?'['+a.type+'] ':'')+(a.text||'다음 할 일')+' — '+(d.nm||'')),'DESCRIPTION:'+esc('넷폼 영업관리 · 담당 '+(d.rep||'')+(d.manager_name?' · '+d.manager_name+(d.manager_mobile?' '+d.manager_mobile:''):'')),'END:VEVENT','END:VCALENDAR'].join('\r\n');
+ }
+ function calendar(){
+  const G=root.G,scr=document.getElementById('scr');if(!scr||!G.deal||scr.querySelector('.mv-ics'))return;
+  const d=(root.DEALS||[]).find(x=>String(x.id)===String(G.deal)),a=d&&d.nextAction,row=scr.querySelector('.ml-sumrow');if(!d||!a||!row||!icsText(d,a))return;
+  const b=document.createElement('button');b.type='button';b.className='mv-ics';b.textContent='휴대폰 캘린더에 넣기';
+  b.onclick=()=>{const text=icsText(d,a);root.__mvIcs=text;try{const url=URL.createObjectURL(new Blob([text],{type:'text/calendar;charset=utf-8'})),l=document.createElement('a');l.href=url;l.download='netform-'+String(a.due_at||a.due).slice(0,10)+'.ics';document.body.append(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);if(typeof root.toast==='function')root.toast('캘린더 파일을 만들었습니다 — 열면 일정이 추가됩니다');}catch(e){if(typeof root.toast==='function')root.toast('캘린더 파일을 만들지 못했습니다');}};
+  row.after(b);
+ }
+ /* 팀 연락 기록: 오늘 저장된 연락 결과 수를 사람별로(실시간 '통화 중'은 알 수 없다 — 저장된 기록만 센다) */
+ function team(){
+  const G=root.G,scr=document.getElementById('scr'),body=scr&&scr.querySelector('.body');if(!body||G.mode!=='admin'||G.tab!=='today'||G.deal||G.sub||body.querySelector('.mv-team'))return;
+  const today=new Date(),key=today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate()),isToday=v=>{if(!v)return false;const x=new Date(v);return !isNaN(x)&&x.getFullYear()+'-'+pad(x.getMonth()+1)+'-'+pad(x.getDate())===key;};
+  const rows=(root.REPS||[]).filter(r=>r.role!=='admin').map(r=>{/* 서버 목록에는 현장별 기록 전체가 오지 않는다 — 서버의 마지막 활동일(또는 이 폰에서 방금 저장한 기록)이 오늘인 현장 수만 센다 */
+   let sites=0;(root.DEALS||[]).filter(x=>x.rep===r.nm).forEach(x=>{if([x.last_activity_at,x.lastActivity,x.last_customer_contact_at,x.last_meaningful_contact_at,x.lastMeaningfulContactAt,x.last_worked_at].some(isToday)||(x.activities||[]).some(a=>isToday(a.occurred_at||a.at||a.created_at)))sites++;});return {n:r.nm,c:sites,sites};}).sort((a,b)=>a.c-b.c||a.n.localeCompare(b.n));
+  if(!rows.length)return;
+  const zero=rows.filter(r=>!r.c).length,el=document.createElement('section');el.className='mv-team';
+  el.innerHTML='<div class="mv-teamhead"><b>오늘 팀 연락 기록</b><span>오늘 기록이 저장된 현장 수'+(zero?' · 0곳 '+zero+'명':'')+'</span></div><div class="mv-ptable">'+rows.map(r=>'<div class="mv-tr"><b>'+root.esc(r.n)+'</b><span class="'+(r.c?'':'r')+'">'+(r.c?'오늘 '+r.c+'곳':'오늘 기록 0곳')+'</span></div>').join('')+'</div>';
+  (body.querySelector('.mv-ctrl')||body.querySelector('.mt-head')||body.firstElementChild).after(el);
+ }
  function apply(){
   const on=enabled();document.body.classList.toggle('mv2',on);tabs();if(!on)return;
-  statusPill();title();try{today();detail();screens();strip(document.getElementById('scr'));}catch(e){console.warn('[모바일 v2 ②]',e);}
+  statusPill();title();try{today();detail();screens();calendar();team();strip(document.getElementById('scr'));}catch(e){console.warn('[모바일 v2 ②]',e);}
  }
  function boot(){
   const base=root.render;if(typeof base!=='function')return;
