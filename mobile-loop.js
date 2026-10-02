@@ -335,7 +335,7 @@
   const d=current();if(!d)return;const c=root.contactInfoM?root.contactInfoM(d):{};
   root.openSheet(root.intro('var(--blue-50)','var(--blue-dark)',root.IC.phone,'어떻게 됐나요?',h(d.nm)+(c.name?' · '+h(c.name):'')),
    '<p class="ml-lead">하나만 고르면 기록과 다음 할 일까지 자동으로 만듭니다</p><div class="ml-chips">'+CHIPS.map(x=>'<button type="button" class="ml-chip" data-chip="'+x[0]+'"><b>'+x[1]+'</b><small>'+x[2]+'</small></button>').join('')+'</div>'
-   +'<div class="ml-step2" hidden><label class="ml-note" hidden>어떤 약속인가요?<input type="text" maxlength="80" placeholder="예: 금요일까지 수정 견적 전달"></label><b class="ml-q">언제 다시 확인할까요?</b><div class="ml-dates">'+dateOptions().map(x=>'<button type="button" class="ml-date" data-date="'+x[1]+'">'+x[0]+'<small>'+x[1].slice(5).replace('-','/')+'</small></button>').join('')+'<label class="ml-date ml-pick">날짜 선택<input type="date"></label></div></div>'
+   +'<div class="ml-step2" hidden><label class="ml-note" hidden>어떤 약속인가요?<input type="text" maxlength="80" placeholder="예: 금요일까지 수정 견적 전달"></label><div class="ml-say"><textarea maxlength="300" rows="2" placeholder="남길 말이 있으면 적거나 말하세요 (선택)"></textarea><button type="button" class="ml-mic" aria-pressed="false">말하기</button><small class="ml-sayhint" hidden></small></div><b class="ml-q">언제 다시 확인할까요?</b><div class="ml-dates">'+dateOptions().map(x=>'<button type="button" class="ml-date" data-date="'+x[1]+'">'+x[0]+'<small>'+x[1].slice(5).replace('-','/')+'</small></button>').join('')+'<label class="ml-date ml-pick">날짜 선택<input type="date"></label></div></div>'
    +'<p class="ml-status" role="status" aria-live="polite"></p>');
   const card=root.document.getElementById('sheetcard');if(!card)return;
   const step2=card.querySelector('.ml-step2'),note=card.querySelector('.ml-note'),status=card.querySelector('.ml-status');let chip='';
@@ -343,7 +343,21 @@
    if(chip==='detail'){root.closeSheet();if(typeof root.callMemoSheetM==='function')root.callMemoSheetM();return;}
    card.querySelectorAll('.ml-chip').forEach(x=>x.classList.toggle('on',x===b));note.hidden=chip!=='promise';step2.hidden=false;
    (chip==='promise'?note.querySelector('input'):step2).scrollIntoView({block:'nearest',behavior:'smooth'});if(chip==='promise')note.querySelector('input').focus();});
-  const submit=due=>save(d,chip,due,note.querySelector('input').value.trim(),status,card);
+  /* 남길 말: 적거나 말하면(휴대폰 음성 인식) 통화 기록 뒤에 그대로 붙는다. 녹음 파일은 만들지 않는다 — 글자만 */
+  const say=card.querySelector('.ml-say textarea'),mic=card.querySelector('.ml-mic'),sayHint=card.querySelector('.ml-sayhint');let rec=null;
+  const SR=root.SpeechRecognition||root.webkitSpeechRecognition;
+  if(!SR)mic.hidden=true;
+  else mic.onclick=()=>{
+   if(rec){rec.stop();return;}
+   const r=new SR();r.lang='ko-KR';r.continuous=true;r.interimResults=true;
+   const base=say.value?say.value.replace(/\s+$/,'')+' ':'';let fin='';
+   r.onresult=e=>{let itv='';for(let i=e.resultIndex;i<e.results.length;i++){const s=e.results[i][0].transcript;if(e.results[i].isFinal)fin+=s;else itv+=s;}say.value=(base+fin+itv).slice(0,300);};
+   r.onerror=e=>{sayHint.hidden=false;sayHint.textContent='음성 인식이 안 됩니다('+(e&&e.error||'')+') — 직접 적어 주세요.';};
+   r.onend=()=>{rec=null;mic.textContent='말하기';mic.classList.remove('on');mic.setAttribute('aria-pressed','false');if(say.value){sayHint.hidden=false;sayHint.textContent='글자로 바꿨습니다 — 고칠 수 있습니다.';}};
+   try{r.start();}catch(err){sayHint.hidden=false;sayHint.textContent='마이크를 시작할 수 없습니다 — 직접 적어 주세요.';return;}
+   rec=r;mic.textContent='그만';mic.classList.add('on');mic.setAttribute('aria-pressed','true');sayHint.hidden=false;sayHint.textContent='듣는 중… 끝나면 [그만]을 누르세요.';
+  };
+  const submit=due=>{if(rec){try{rec.stop();}catch(e){}}return save(d,chip,due,note.querySelector('input').value.trim(),status,card,say.value.replace(/\s+/g,' ').trim());};
   card.querySelectorAll('.ml-date[data-date]').forEach(b=>b.onclick=()=>submit(b.dataset.date));
   card.querySelector('.ml-pick input').onchange=e=>{if(e.target.value)submit(e.target.value);};
  }
@@ -355,16 +369,17 @@
   if(!row||row.status!=='done'||!row.ack||row.ack.ok!==true)throw Error(row&&row.error||'서버 확인 대기 중 — 다시 누르면 같은 요청을 확인합니다.');
   return row;
  }
- async function save(d,chip,due,noteText,status,card){
+ async function save(d,chip,due,noteText,status,card,memo){
   if(busy||!chip||!due)return;
   if(!root.Phase1||!root.Phase1.queue||typeof root.queueMobileContactOperation!=='function'){status.textContent='로그인 상태에서만 저장할 수 있습니다.';return;}
   const promise=chip==='promise';
   if(promise&&!noteText){status.textContent='어떤 약속인지 한 줄만 적어주세요.';return;}
   const actNote=chip==='ongoing'?'통화 완료 · 진행 중 ('+due.slice(5).replace('-','/')+' 다시 확인)':chip==='recall'?'통화 시도 · 다시 연락하기로 함':chip==='absent'?'부재중 (전화 안 받음)':'통화 완료 · 고객 약속: '+noteText;
   const nextText=promise?noteText:chip==='absent'?'다시 전화하기':'진행 상황 확인 전화';
-  const activity={type:'전화',note:actNote,result:'',occurred_at:new Date().toISOString()};
+  const actMemo=memo?actNote+' — '+memo:actNote;
+  const activity={type:'전화',note:actMemo,result:'',occurred_at:new Date().toISOString()};
   const next={type:promise?'고객 약속':'전화',text:nextText,due_at:due};
-  busy=true;card.querySelectorAll('button,input').forEach(x=>x.disabled=true);
+  busy=true;card.querySelectorAll('button,input,textarea').forEach(x=>x.disabled=true);
   const progress=card._mlProgress||(card._mlProgress={});
   try{
    status.textContent='기록 확인 중…';
@@ -379,7 +394,7 @@
    try{root.G.done[root.doneKey({ref:d.id})]=1;}catch(e){}
    status.textContent='✓ 기록 완료 · ✓ 다음 할 일 '+due.slice(5).replace('-','/')+' 등록';status.classList.add('ok');
    busy=false;setTimeout(()=>{root.closeSheet();root.render();},700);
-  }catch(e){busy=false;card.querySelectorAll('button,input').forEach(x=>x.disabled=false);status.textContent=String(e&&e.message||e);}
+  }catch(e){busy=false;card.querySelectorAll('button,input,textarea').forEach(x=>x.disabled=false);status.textContent=String(e&&e.message||e);}
  }
  root.dealCallSheetM=resultSheet;
 
