@@ -58,3 +58,15 @@ body.shell-v2 .mhead .ib{width:32px;height:32px;border-radius:9px;border:1px sol
 @media(max-width:940px){body.shell-v2 .mhead>div:first-child{flex-basis:100%}body.shell-v2 .mhead .sub{white-space:normal}.sh-name,.sh-div{display:none}body.shell-v2 .exec-ask-btn::after{content:none}body.shell-v2 .sh-tools{flex-wrap:wrap;margin-left:0;flex:1 1 100%;min-width:0}body.shell-v2 .mhead h1{white-space:normal}body.shell-v2 .mhead>div:first-child{flex-wrap:wrap}.sh-status{max-width:100%;overflow:hidden;text-overflow:ellipsis}}
 /* ④ 새 화면 본문 위 파란 안내 띠 — 영업 대시보드 묶음(전체 현황 · 컨트롤타워 · 성과 분석)만 남긴다 */
 body.shell-v2 .apage:not(#pg-dash):not(#pg-control):not(#pg-perf)>.mgmtbar.blue{display:none!important}
+/* 노트북 폭(약 1280~1500px): 사이드바와 여백을 줄이고, 필터줄은 넘치면 다음 줄로 내린다(오른쪽이 잘리지 않게) */
+@media(min-width:941px) and (max-width:1500px){
+ body.shell-v2 .dash{grid-template-columns:200px 1fr;background:linear-gradient(to right,#fff 0,#fff 200px,var(--bg) 200px)}
+ body.shell-v2 .side{padding:18px 8px}
+ body.shell-v2 .main{padding:20px 18px 48px}
+ body.shell-v2 .mhead{margin:-20px -18px 0;padding:0 18px}
+ body.shell-v2 .cf-bar{flex-wrap:wrap;overflow:visible;row-gap:8px;padding:8px 12px}
+ body.shell-v2 .cf-bar .cf-search{flex:1 1 180px;min-width:150px}
+ body.shell-v2 .cf-bar .cf-pill{padding-left:10px;padding-right:10px}
+ body.shell-v2 .exec-ask-btn::after{content:none}
+}
+@media(min-width:941px) and (max-width:1300px){body.shell-v2 .mhead .sub{display:none}body.shell-v2 .sh-name small{display:none}}
