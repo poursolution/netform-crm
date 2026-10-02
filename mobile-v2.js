@@ -125,9 +125,20 @@
   el.innerHTML='<div class="mv-teamhead"><b>오늘 팀 연락 기록</b><span>오늘 기록이 저장된 현장 수'+(zero?' · 0곳 '+zero+'명':'')+'</span></div><div class="mv-ptable">'+rows.map(r=>'<div class="mv-tr"><b>'+root.esc(r.n)+'</b><span class="'+(r.c?'':'r')+'">'+(r.c?'오늘 '+r.c+'곳':'오늘 기록 0곳')+'</span></div>').join('')+'</div>';
   (body.querySelector('.mv-ctrl')||body.querySelector('.mt-head')||body.firstElementChild).after(el);
  }
+ /* 관리자 한마디: PC 영업사원 관리에서 남긴 관리자 코멘트(rep_manager_comments)를 그 영업사원의 '오늘' 위에 보여 준다. 읽기만 — 쓰기 · 완료 처리는 PC */
+ function word(){
+  const G=root.G,scr=document.getElementById('scr'),body=scr&&scr.querySelector('.body');if(!body||!G.user||G.mode!=='rep'||G.tab!=='today'||G.deal||G.sub||body.querySelector('.mv-word'))return;
+  const B=root.BUNDLE||{},all=[].concat(Array.isArray(B.rep_manager_comments)?B.rep_manager_comments:[],Array.isArray(B.repManagerComments)?B.repManagerComments:[]),stamp=x=>String(x.updated_at||x.updatedAt||x.created_at||'');
+  const mine=all.filter(x=>(x.rep_name||x.rep)===G.user.nm&&String(x.comment||'').trim()).sort((a,b)=>stamp(b).localeCompare(stamp(a)))[0];
+  if(!mine||mine.status==='done')return;
+  const at=new Date(stamp(mine));if(isNaN(at)||Date.now()-at.getTime()>7*864e5)return;
+  const el=document.createElement('section');el.className='mv-word';
+  el.innerHTML='<span>관리자 한마디 · '+root.esc(String(mine.created_by||'관리자'))+' · '+(at.getMonth()+1)+'/'+at.getDate()+'</span><p>'+root.esc(String(mine.comment).trim())+'</p>';
+  (body.querySelector('.mt-head')||body.firstElementChild).after(el);
+ }
  function apply(){
   const on=enabled();document.body.classList.toggle('mv2',on);tabs();if(!on)return;
-  statusPill();title();try{today();detail();screens();calendar();team();strip(document.getElementById('scr'));}catch(e){console.warn('[모바일 v2 ②]',e);}
+  statusPill();title();try{today();detail();screens();calendar();team();word();strip(document.getElementById('scr'));}catch(e){console.warn('[모바일 v2 ②]',e);}
  }
  function boot(){
   const base=root.render;if(typeof base!=='function')return;

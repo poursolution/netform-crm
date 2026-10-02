@@ -75,6 +75,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#tabbar button',{hasText:'등록'}).click();await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>G.tab),'find');assert.equal(await page.locator('#scr .mv-title h1').innerText(),'새 현장을 등록합니다');assert.match(await page.locator('#scr button[onclick="scanCard()"]').innerText(),/명함 · 현수막 찍기/);if(shot)await page.screenshot({path:shot+'-new.png'});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'가로 넘침 없음');
   assert.deepEqual(await page.evaluate(()=>__writes.filter(x=>x!=='opportunity_touch')),[],'틀만 바꾼다 — 쓰기 없음');
+  /* 관리자 한마디: PC에서 남긴 코멘트가 그 영업사원의 오늘에만(완료 · 7일 지난 것 · 남의 것은 안 보임) */
+  const word=async rows=>{await page.evaluate(r=>{G.mode='rep';G.tab='today';G.deal=null;G.sub=null;BUNDLE=Object.assign({},BUNDLE||{},{rep_manager_comments:r.map(x=>Object.assign({rep_name:x.other?'다른사람':G.user.nm,created_by:'송보람',updated_at:new Date(Date.now()-(x.days||0)*864e5).toISOString()},x))});render();},rows);await page.waitForTimeout(250);return page.locator('#scr .mv-word').count();};
+  assert.equal(await word([{comment:'이번 주 조원주공 견적 먼저 챙겨 주세요',status:'open'}]),1);
+  assert.match(await page.locator('#scr .mv-word').innerText(),/관리자 한마디 · 송보람 · \d+\/\d+\s+이번 주 조원주공 견적 먼저 챙겨 주세요/);
+  if(shot)await page.screenshot({path:shot+'-word.png'});
+  assert.equal(await word([{comment:'끝난 것',status:'done'}]),0);assert.equal(await word([{comment:'오래된 것',status:'open',days:9}]),0);assert.equal(await word([{comment:'남의 것',status:'open',other:true}]),0);
   /* ④ 관리: 탭 4칸(오늘 / 파이프라인 / 사람 / 보고) · 문의 관리는 오늘 안에서 */
   await page.evaluate(()=>{G.mode='admin';G.tab='today';G.deal=null;G.sub=null;render();});await page.waitForTimeout(300);
   assert.deepEqual(await page.locator('#tabbar button:not([hidden]) .tl2').allInnerTexts(),['오늘','파이프라인','사람','보고']);

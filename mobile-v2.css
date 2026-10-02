@@ -114,3 +114,7 @@ body.mv2 .mv-ics{display:block;width:100%;margin-top:10px;min-height:46px;border
 body.mv2 .mv-team{display:flex;flex-direction:column;gap:8px}
 .mv-teamhead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:4px 4px 0}.mv-teamhead b{font-size:15px;font-weight:700}.mv-teamhead span{font-size:12.5px;color:#6b7280}
 .mv-tr{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 18px;border-top:1px solid var(--mv-line);font-size:14px}.mv-tr:first-child{border-top:0}.mv-tr b{font-size:15px;font-weight:700}.mv-tr span{color:#374151}.mv-tr span.r{color:#e5484d;font-weight:700}
+/* 관리자 한마디 */
+.mv-word{display:none}
+body.mv2 .mv-word{display:flex;flex-direction:column;gap:6px;background:#fff8ec;border-radius:20px;padding:15px 18px}
+.mv-word span{font-size:12.5px;font-weight:700;color:#8a5a00}.mv-word p{margin:0;font-size:15px;line-height:1.55;color:#15171c;white-space:pre-wrap;overflow-wrap:anywhere}
