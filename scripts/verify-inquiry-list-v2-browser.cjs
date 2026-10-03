@@ -66,7 +66,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.selectOption('#pg-inq>.cf-bar [data-cf="owner"]','미배정');assert.deepEqual(await page.locator('.iv-row').evaluateAll(ns=>[...new Set(ns.map(n=>n.dataset.group))]),['assign']);
   await page.evaluate(()=>goPage('today'));await page.waitForTimeout(250);
   assert.equal(await page.evaluate(()=>document.querySelector('#pg-today>.cf-bar [data-cf="owner"]')?.value+'|'+G.todayQueueOwner),'미배정|미배정','오늘 업무에서도 같은 담당자');
-  assert.match(await page.evaluate(()=>document.getElementById('psub').textContent),/^\d+월 \d+일 \(.\) · 사원별 현황/);
+  assert.match(await page.evaluate(()=>document.getElementById('psub').textContent),/^\d+월 \d+일 \(.\) · 영업관리 · 팀 전체/);
   await page.evaluate(()=>goPage('inq'));await page.click('#pg-inq>.cf-bar .cf-clear');assert.equal(await page.locator('.iv-row').count(),9);
   /* 좁은 화면 */
   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(200);

@@ -236,5 +236,5 @@
  document.addEventListener('click',onClick,true);
  document.addEventListener('change',onChange,true);
  document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('#today-v2 .tt [data-tt="open"]')){e.preventDefault();openKey(e.target.dataset.key);}});
- root.TodayTower={enabled,html,classify,roleOf,model,COLS,R};
+ root.TodayTower={enabled,html,classify,roleOf,model,COLS,R,_sched:sched,_dues:dues,_week:weekMetrics,_line:line,_acts:{rep:ACT_REP,team:ACT_TEAM,done:DONE},_big:BIG};/* 밑줄 항목은 오늘 업무 v3(today-v3.js)가 쓴다 */
 })(window);
