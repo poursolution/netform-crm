@@ -36,7 +36,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const reps=await d.locator('.idv-rep').evaluateAll(ns=>ns.map(n=>n.dataset.v));assert.ok(reps.includes('__branch__')&&reps.length>=2,'추천 담당자 + 지사 '+reps.join(','));
   /* 2026-10-03 inquiry_v2 상세보기: 응대 기록은 내용 한 칸 — 배정 전에도 남긴다(수단 · 결과를 자동으로 읽어 머리에 적음) */
   assert.equal(await d.locator('.idv-composer.idv-locked').count(),0,'배정 전에도 입력칸 열림');
-  assert.deepEqual(await d.locator('.idv-ctabs [role=tab]').allInnerTexts(),['응대 기록','문자 보내기','내부 메모']);
+  assert.deepEqual(await d.locator('.idv-ctabs [role=tab]').allInnerTexts(),['응대 기록','문자','내부 메모']);
   assert.match(await d.locator('.idv-chead').innerText(),/응대 이력\s*\d+건\s*연락 시도 0 · 실제 연결 0\s*최초 응대 아직 없음/);
   assert.deepEqual(await d.locator('.idv-ev .idv-evmeta em.k').allInnerTexts(),['시스템'],'접수 = 시스템');assert.match(await d.locator('.idv-ev.sy').innerText(),/구글시트[\s\S]*전화 견적문의 접수/);
   await d.locator('#iq-res').fill('카톡으로 담당 정해지면 다시 연락드린다고 안내');await page.waitForTimeout(150);
@@ -44,13 +44,16 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await d.locator('[data-idv="save"]').click();await page.waitForTimeout(250);
   assert.deepEqual(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return (p.activities||[]).map(a=>[a.type,a.note,a.actor]);}),[['카카오','[카카오 · 연결됨] 카톡으로 담당 정해지면 다시 연락드린다고 안내','송보람']],'배정 전 기록 저장 · 기록자 = 로그인한 사람');
   assert.match(await d.locator('.idv-ev.ct').innerText(),/고객 접점[\s\S]*카카오\s*연결됨\s*카톡으로 담당 정해지면/);assert.match(await d.locator('.idv-chead').innerText(),/연락 시도 1 · 실제 연결 1/);
-  /* 문자 보내기: 상황별 문구 → 이름 · 담당 · 공종 삽입, byte, [보내고 기록] → 이력에 «문자 · 회신대기» */
+  /* 문자(2026-10-03): 탭 열면 '첫 인사' 문구가 이미 채워져 있고 버튼 하나 — PC는 복사, 휴대폰은 문자 앱 + 이력에 «문자 · 회신대기». CRM 직접 발송은 아직 연결 전이라고 맨 위에 적음 */
   await d.locator('.idv-ctabs [data-v="sms"]').click();await page.waitForTimeout(150);
+  assert.match(await d.locator('.idv-smsnote').innerText(),/문구는 자동으로 만들어 둡니다[\s\S]*직접 보내는 발송은 아직 연결 전/);
+  assert.match(await d.locator('#spLogNote').inputValue(),/^안녕하세요 김소장님/,'탭 열자마자 첫 인사 문구 채워짐');
+  assert.equal(await d.locator('[data-idv="sms-open"]').count(),0,'문자 앱 열기 별도 버튼 없음');
+  assert.match(await d.locator('[data-idv="sms-send"]').innerText(),/^(문구 복사하고 기록|문자 앱으로 보내고 기록)$/);
   assert.deepEqual(await d.locator('.idv-tpls .idv-chip').allInnerTexts(),['첫 인사','부재 후','자료 요청','견적 발송 안내'],'대표회의 없는 건은 4개');
   await d.locator('.idv-tpls .idv-chip',{hasText:'첫 인사'}).click();await page.waitForTimeout(150);
   assert.match(await d.locator('#spLogNote').inputValue(),/^안녕하세요 김소장님, 넷폼 .*입니다\. .* 문의 주셔서 연락드렸습니다\./);
   assert.match(await d.locator('.idv-smsto').innerText(),/받는 사람\s*김소장 · 010-1111-2222\s*\d+byte · (SMS|LMS)/);
-  const nav=await page.evaluate(()=>{const b=document.querySelector('[data-idv="sms-open"]');return b&&!b.disabled;});assert.equal(nav,true,'번호 · 문구가 있으면 문자 앱 열기 가능');
   await d.locator('[data-idv="sms-copy"]').click();
   await d.locator('[data-idv="sms-send"]').click();await page.waitForTimeout(250);
   assert.equal(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return (p.activities||[]).length;}),2,'보낸 문자도 이력에');
