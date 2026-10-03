@@ -43,10 +43,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const v=page.locator('#brief-b');assert.equal(await v.count(),1,'새 주간 브리핑');assert.equal(await page.locator('#brief-v2').count(),0);
   assert.match(await v.locator('.bb-head').innerText(),new RegExp('^'+w.a.replace(/-/g,'\\.')+' – \\d{2}\\.\\d{2}\\s*지난주 대비 무엇이 움직였나\\s*월간 일정 보기$'));
   /* 1. 이번 주 성과 */
-  assert.deepEqual(await v.locator('.bb-fn>span').allInnerTexts(),['신규 견적문의','적합 문의','견적 발송','신규 계약']);
+  assert.deepEqual(await v.locator('.bb-fn>span').allInnerTexts(),['신규 견적문의','적합 문의','견적 발송','수주실적']);
   assert.deepEqual(await v.locator('.bb-fn>b').allInnerTexts(),['3건','1건','1건','1건 · 2억']);
   assert.match(await v.locator('.bb-fn').nth(0).innerText(),/▲2 \(전주 1\)/);assert.match(await v.locator('.bb-fn').nth(1).innerText(),/배드핏 2 제외/);
-  assert.equal(await v.locator('.bb-fn.last').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(21, 23, 28)','신규 계약 = 검은 바탕');
+  assert.equal(await v.locator('.bb-fn.last').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(21, 23, 28)','수주실적 = 검은 바탕');
   assert.deepEqual(await v.locator('.bb-rates>div>span').allInnerTexts().then(a=>a.slice(0,3)),['문의 적합률','영업 메이드율','문의 → 계약 전환율']);
   assert.deepEqual(await v.locator('.bb-rates p b').allInnerTexts().then(a=>a.slice(0,3)),['33.3%','50.0%','33.3%'],'메이드율 = 수주 1 ÷ (수주 1 + 실주 1) — 배드핏 2건은 분모에 없음');
   assert.match(await v.locator('.bb-rates>div').nth(1).innerText(),/수주 1 ÷ \(수주 1 \+ 파이프라인 실주 1\) · 배드핏 제외/);

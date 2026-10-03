@@ -46,7 +46,7 @@
 .rb-near>i{align-self:stretch;border-radius:2px}.rb-near>div{display:flex;flex-direction:column;gap:2px;min-width:0}
 .rb-near>div b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rb-near>div span{font-size:11.5px;color:#6b7280}
 .rb-near .r{align-items:flex-end}.rb-near .r span{font-size:11px;font-weight:700}.rb-near .r span.hot{color:#b42318}
-.rb-table{display:grid;grid-template-columns:minmax(64px,1fr) repeat(3,minmax(44px,.7fr)) minmax(84px,1.1fr) minmax(44px,.7fr) minmax(60px,.9fr);font-size:12.5px;border-top:1px solid #15171c}
+.rb-table{display:grid;grid-template-columns:minmax(60px,1fr) repeat(3,minmax(40px,.7fr)) minmax(78px,1.1fr) minmax(66px,1fr) minmax(40px,.7fr) minmax(58px,.9fr);font-size:12.5px;border-top:1px solid #15171c}
 .rb-table>span{padding:8px 6px;border-bottom:1px solid #f0f1f4;text-align:right;white-space:nowrap}.rb-table>span.l{text-align:left}.rb-table>span.b{font-weight:700}.rb-table>span.t{font-weight:800}.rb-table>span.r{color:#b42318}
 .rb-table>span.th{padding:7px 6px;font-size:11px;color:#6b7280;border-bottom:1px solid #e3e6ec}
 .rb-ask{border:1px solid #e3e6ec;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:7px}

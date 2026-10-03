@@ -80,7 +80,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#nowCard [data-dv3="line"]').click();await page.waitForTimeout(350);
   assert.match(await page.locator('#nowCard .dv3-reco .line').innerText(),/^안녕하세요 소장님$/,'통화 첫마디 보기 = 상자 안에서');assert.equal(await page.locator('#nowCard [data-dv3="line"]').innerText(),'접기');assert.deepEqual(await page.evaluate(()=>__ai),['next_action','call_opener']);
   /* 머리글: [단계 바꾸기 ▾] [담당자 변경] — 오른쪽에는 단계 바꾸기 카드 없음 */
-  assert.deepEqual(await v.locator('.dv3-headact button').allInnerTexts(),['단계 바꾸기 ▾','담당자 변경']);assert.equal(await R.locator('.ddv-switch:visible').count(),0,'단계 바꾸기 카드는 오른쪽에 없음');assert.equal(await v.locator('.detailtop>.dv3-move:visible').count(),0,'띠는 접혀 있음');
+  assert.deepEqual(await v.locator('.dv3-headact button:visible').allInnerTexts(),['단계 바꾸기 ▾','··· 기타 처리'],'담당자 변경은 [··· 기타 처리] 메뉴 안으로');assert.equal(await R.locator('.ddv-switch:visible').count(),0,'단계 바꾸기 카드는 오른쪽에 없음');assert.equal(await v.locator('.detailtop>.dv3-move:visible').count(),0,'띠는 접혀 있음');
   const sumText=await R.locator('.da-stage-summary').innerText();assert.match(sumText,/^이 단계 필수 정보/);
   assert.deepEqual(await R.locator('.dv3-stage .dv3-row>span').allInnerTexts(),['무엇을 발송했나요?','견적 Version','수신자','발송일'],'왼쪽과 같은 항목(고객 반응)은 오른쪽에 없음');
   assert.match(sumText,/미입력 3/);assert.equal(await R.locator('.da-stage-summary .da-fill:visible,.da-stage-summary .da-stage-edit:visible').count(),0,'[입력하기] · [단계 정보 입력] 버튼 없음');
@@ -190,9 +190,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const cs=await page.evaluate(()=>{const w=__writes.filter(w=>w[0]==='contact_upsert').at(-1)[1];return [w.manager_name,w.sms_consent,w.kakao_consent,!!w.consent_at,w.send_blocked];});
   assert.deepEqual(cs,['이정민',true,false,true,false],'문자 동의 = 기존 연락처 저장');assert.equal(await page.locator('.dv3-left [data-dv3="cons"][data-k="sms"]').innerText(),'문자 동의');assert.equal(await page.locator('.dv3-left [data-dv3="cons"][data-k="kakao"]').innerText(),'카카오 미동의');
   /* 담당자 변경 · 단계 바꾸기: 머리글에서 — 오른쪽은 그대로 */
-  await page.locator('#detailView .dv3-headact [data-dv3="owner"]').click();await page.waitForTimeout(350);
+  await page.locator('#detailView .dv3-headact .tf-more').click();await page.locator('#detailView .tf-menu [data-tf="m-owner"]').click();await page.waitForTimeout(350);
   assert.equal(await page.locator('#detailView .detailtop>.dv3-slot[data-slot="owner"]>#detailAction').count(),1,'담당자 변경 = 머리글 아래');await rightIntact('담당자 변경');
-  await page.locator('#detailView .dv3-headact [data-dv3="owner"]').click();await page.waitForTimeout(250);assert.equal(await page.locator('#detailAction').count(),0);
+  await page.locator('#detailView .dv3-headact .tf-more').click();await page.locator('#detailView .tf-menu [data-tf="m-owner"]').click();await page.waitForTimeout(250);assert.equal(await page.locator('#detailAction').count(),0);
   await page.locator('#detailView .dv3-headact [data-dv3="mv"]').click();await page.waitForTimeout(200);
   const band=page.locator('#detailView .detailtop>.dv3-move');assert.equal(await band.isVisible(),true,'진행 막대 아래 띠');
   assert.match(await band.locator('.hd').innerText(),/^어느 단계로 옮길까요\?/);

@@ -151,3 +151,4 @@
 .db-pending{background:#fff;border:1px dashed #d9dde4;border-radius:12px;padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;font-size:12px;color:#6b7280}
 .db-pending>b{color:#374151}.db-pending span{display:flex;align-items:center;gap:6px}.db-pending span b{color:#374151}.db-pending i{width:60px;height:5px;background:#eef0f3;border-radius:3px;position:relative;display:block}.db-pending i u{position:absolute;left:0;top:0;bottom:0;background:#9aa0ab;border-radius:3px}
 @media(max-width:1000px){.db-pcs{grid-template-columns:1fr}.db-sel{position:static}.db-phead{display:none}.db-prow .g{grid-template-columns:1fr 1fr;gap:10px 12px}.db-verdict .rt{flex:1 1 100%;border-left:0;padding-left:0}}
+.db-tf{font-size:11px;font-weight:500;color:#1d3f99}

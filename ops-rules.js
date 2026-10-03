@@ -95,11 +95,16 @@
  const pct=(a,b)=>b>0?Math.round(a/b*1000)/10:null;
  /* 메이드율: wonOwn = 자사 수주, wonTransfer = 승인된 타사 이관 수주, lost = 파이프라인 실주 (건수) */
  function madeRate(wonOwn,wonTransfer,lost){const w=(Number(wonOwn)||0)+(Number(wonTransfer)||0);return pct(w,w+(Number(lost)||0));}
- /* 타사 이관 상태(영업단계가 아니라 상태값): none | reported(등록 · 낙찰결과 대기) | awarded(낙찰금액 등록 · 승인 대기) | approved(관리자 승인 · 실적 반영) | rejected | closed(낙찰 실패 · 종료) */
- function transferOf(d){const p=root.itemPatch&&d?(root.itemPatch(d,'deal')||{}):{},t=(d&&(d.transfer||p.transfer))||null;if(!t||typeof t!=='object')return {status:'none'};return {status:String(t.status||'reported'),amount:Number(t.award_amount)||0,reason:String(t.reason||''),partner:String(t.partner||''),reported_at:t.reported_at||'',approved_at:t.approved_at||'',pre_reported:t.pre_reported===true};}
- /* 영업건 결과 구분 */
+ /* 타사 이관 상태(영업단계가 아니라 상태값 — 서버 crm_deal_transfers 의 한 줄이 영업건의 transfer 로 붙는다):
+    none | pending(등록 · 낙찰결과 대기) | awarded(타사 이관 수주 · 실적 인정 대기) | approved(관리자 인정 · 실적 반영) | rejected(관리자 제외) | lost(실주) | cancelled(입찰 취소 · 보류) */
+ function transferOf(d){
+  const t=d&&d.transfer;if(!t||typeof t!=='object'||t.transfer_status!=='transferred')return {status:'none'};
+  const r=String(t.award_result||'pending'),status=r==='transferred_won'?(t.incentive_eligible===true?'approved':t.rejected_reason?'rejected':'awarded'):r==='lost'?'lost':r==='cancelled'?'cancelled':'pending';
+  return {status,amount:Number(t.award_amount)||0,company:String(t.transfer_company||''),reason:String(t.transfer_reason||''),date:String(t.transfer_date||'').slice(0,10),reported:t.transfer_reported===true,owner:String(t.performance_owner||''),award_date:String(t.award_date||'').slice(0,10)};
+ }
+ /* 영업건 결과 구분. 타사 이관: 인정된 것만 수주 · 대기(등록 · 인정 전 · 취소 보류) = 계산 제외 · 실주 = 실패 · 관리자 제외 = 실적 · 메이드율 모두 제외 */
  function dealResult(d){
-  const t=transferOf(d);if(t.status==='approved')return 'won_transfer';if(t.status==='reported'||t.status==='awarded')return 'transfer_pending';
+  const t=transferOf(d);if(t.status==='approved')return 'won_transfer';if(t.status==='pending'||t.status==='awarded'||t.status==='cancelled'||t.status==='rejected')return 'transfer_pending';if(t.status==='lost')return 'lost';
   let o='open';try{o=root.outcomeOf(d);}catch(e){}
   if(o==='won')return 'won_own';if(o==='badfit')return 'bad_fit';if(o==='lost'||o==='nocontact'||o==='closed')return 'lost';return 'in_progress';
  }
