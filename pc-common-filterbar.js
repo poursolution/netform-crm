@@ -64,7 +64,7 @@
  function title(page){
   const t=document.getElementById('ptitle'),s=document.getElementById('psub');if(!t||!s)return;
   document.querySelector('.mhead')?.classList.add('cf-title');
-  if(page==='today'){const d=new Date();t.textContent='오늘 업무';s.textContent=!admin()&&root.G.todayRepSub&&root.TodayRepV2?.enabled?.()&&!root.G.todayV2Off?root.G.todayRepSub:(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+'일월화수목금토'[d.getDay()]+') · '+(admin()?'사원별 현황을 먼저 보고, 행을 눌러 그 담당자 업무로 좁혀 보세요':'신규 문의와 진행 중 영업을 처리 순서대로 확인하세요');}
+  if(page==='today'){const d=new Date();t.textContent='오늘 업무';s.textContent=root.G.todayV3Sub&&root.TodayV3?.enabled?.()&&root.TodayTower?.enabled?.()&&!root.G.todayV2Off?root.G.todayV3Sub:!admin()&&root.G.todayRepSub&&root.TodayRepV2?.enabled?.()&&!root.G.todayV2Off?root.G.todayRepSub:(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+'일월화수목금토'[d.getDay()]+') · '+(admin()?'사원별 현황을 먼저 보고, 행을 눌러 그 담당자 업무로 좁혀 보세요':'신규 문의와 진행 중 영업을 처리 순서대로 확인하세요');}
   if(page==='inq'&&(root.G.inqBucket||'전체')==='전체'&&!root.G.inqLegacyView&&!root.G.inqV2Off){t.textContent='견적문의';/* 목록 v3(시안 inquiry_v2): 제목 옆에 구글시트 연결 상태 · 고정 문구 */const L3=root.InquiryListV3;if(L3&&L3.headHtml&&L3.enabled&&L3.enabled()){const hh=L3.headHtml();if(s.__il!==hh||!s.querySelector('.il-sheet')){s.__il=hh;s.innerHTML=hh;}}else{s.__il='';s.textContent='위에서부터 처리하세요 · 배정 → 첫 연락 → 후속 연락 → 영업건 전환';}}
  }
  function repaint(){root.paint();}

@@ -19,7 +19,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    const deal=(id,site,owner,extra)=>Object.assign({id,site,assignee:owner,brand:'POUR솔루션',created:at(40).slice(0,10),code:'consulting',stage_code:'consulting',grp:'영업·관리',amt:2e8},extra||{});
    B={deals:[deal('late','기한 지난 현장','이필선',{next_action:{id:'n1',text:'견적 확인 전화',due:day(-5),status:'open'}}),deal('none','할 일 없는 현장','황윤선',{created:at(0).slice(0,10)})/* Live 이후 생성 — 이전 건은 '과거 영업 정리'로 간다 */,deal('ok','예정 현장','이필선',{next_action:{id:'n2',text:'방문',due:day(4),status:'open'}})],
     inquiries:[inq(1,'미배정 오래된 현장',9,''),inq(2,'미배정 새 현장',1,''),inq(3,'첫 연락 늦은 현장',3,'이필선'),inq(4,'황윤선 문의',2,'황윤선')],activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{}};G.todayTowerOff=true;/* 관제탑(2026-10-03) 뒤에 남는 예전 화면 검사 */AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
+   LOCAL={deals:{},inquiries:{}};G.todayV3Off=true;G.todayTowerOff=true;/* 관제탑(2026-10-03) 뒤에 남는 예전 화면 검사 */AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';goPage('today');
   });
   await page.waitForTimeout(300);

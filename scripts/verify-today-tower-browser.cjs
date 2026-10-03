@@ -33,7 +33,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      deal('stall1','byc하이시티',{amt:9e7,code:'rapport',stage_code:'rapport',last_activity_at:at(21)}),
      deal('other1','남의 현장',{assignee:'이서준',next_action:{id:'n9',text:'x',due:day(-9),status:'open'}})],
     inquiries:[inq(3,'인천SK스카이뷰',3),inq(7,'길음뉴타운9단지',3,{assignee:'',assigned_to:'',assigned_at:'',status:'미배정'})],activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME=me;G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.tower=null;G.towerRole=null;G.todayQueueOwner='전체';
+   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME=me;G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.todayV3Off=true;G.tower=null;G.towerRole=null;G.todayQueueOwner='전체';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op)=>{__writes.push(op);return 'req';};goPage('today');
   },me);
   const sites=sel=>page.locator(sel).evaluateAll(a=>a.map(n=>n.textContent.trim()));

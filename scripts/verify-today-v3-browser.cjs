@@ -1,0 +1,136 @@
+'use strict';
+/* 오늘 업무 v3 검사(2026-10-04 핸드오프 today_v3): 역할별 5화면 — 구조는 같고 묶음만 다르다.
+   큰 숫자 = 묶음 합계 = 목록 줄 수(카드 + 줄) · 띠(단계 · 담당자) 숫자도 같은 목록에서 · 첫 묶음 = 카드 한 줄 4장 · 빨강은 첫 묶음에만
+   · 90일 넘게 기록 없는 건은 '밀린 건 정리'로 분리(접힘) · 오른쪽 일정 / 마감 / 기준 · 열기는 기존 경로 · 끄면(G.todayV3Off) 관제탑 */
+const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+const root=path.resolve(__dirname,'..'),shot=process.argv[2]||'',dump=process.env.T3_DUMP==='1';
+const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':t.endsWith('.png')?'image/png':'text/html');fs.createReadStream(t).pipe(res)});
+(async()=>{
+ await new Promise(r=>srv.listen(0,'127.0.0.1',r));
+ const browser=await chromium.launch({headless:true});
+ try{
+  const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
+  await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});
+  const page=await ctx.newPage(),errs=[];page.on('pageerror',e=>errs.push(e.message));
+  await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.TodayV2&&window.TodayV3&&window.TodayTower&&window.TodayWorkQueue&&window.CommonFilterBar);
+  const seed=async(me)=>page.evaluate((me)=>{
+   const at=d=>new Date(Date.now()-d*864e5).toISOString(),day=d=>new Date(Date.now()+d*864e5).toLocaleDateString('en-CA');
+   const inq=(i,site,days,extra)=>Object.assign({id:'0000000'+i+'-0000-4000-8000-00000000000'+i,site,status:'배정완료',at:at(days),created_at:at(days),brand:'POUR솔루션',phone:'010-1234-56'+(10+i),contact_name:'고객'+i,assignee:'이필선',assigned_to:'이필선',assigned_at:at(days-0.1),memo:'옥상 방수 견적 문의',raw:{'문의내용':'견적 문의'}},extra||{});
+   const deal=(id,site,extra)=>Object.assign({id,site,assignee:'이필선',brand:'POUR솔루션',created:day(0),code:'consulting',stage_code:'consulting',grp:'영업·관리',amt:2e8,manager_name:'김소장',manager_mobile:'01077778888',last_activity_at:at(1)},extra||{});
+   B={deals:[
+     deal('bid1','[경기 고양] 햇빛마을23단지',{amt:4.2e8,code:'bidding',stage_code:'bidding',brand:'석민이앤씨',next_action:{id:'n1',type:'전화',text:'입찰 서류 확인',due:day(2),status:'open'},stage_contexts:{bidding:{fields:{bid_deadline:day(3)}}}}),
+     deal('big1','성산시영아파트',{amt:3.8e8,code:'sent',stage_code:'sent',brand:'POUR공법',assignee:'김성민',last_activity_at:at(20),stage_contexts:{sent:{fields:{sent_date:day(-20)}}},next_action:{id:'n2',type:'전화',text:'견적 검토 확인',due:day(-5),status:'open'}}),
+     deal('silent1','서울체육고등학교',{amt:1.1e8,code:'sent',stage_code:'sent',last_activity_at:at(9),stage_contexts:{sent:{fields:{sent_date:day(-9)}}},next_action:{id:'n3',type:'전화',text:'견적 검토 확인',due:day(-2),status:'open'}}),
+     deal('con1','고덕아이파크',{amt:2.1e8,code:'contract',stage_code:'contract',assignee:'정정훈',brand:'아파트스퀘어',next_action:{id:'n4',type:'방문',text:'계약 미팅',due:day(1),status:'open'}}),
+     deal('sup1','분당시범우성',{amt:4e7,code:'construction',stage_code:'construction',assignee:'정정훈',last_activity_at:at(1),stage_contexts:{contract:{fields:{contract_date:day(-20),contract_amount:3.4e8}}},activities:[{id:'a1',type:'메모',note:'[지원 요청] 추가 균열 보수 승인 요청 — 요청자 정정훈',at:at(1),occurred_at:at(1)}],next_action:{id:'n5',type:'방문',text:'현장 확인',due:day(2),status:'open'}}),
+     deal('prom1','풍림1차아파트',{amt:2.4e8,code:'rapport',stage_code:'rapport',next_action:{id:'n6',type:'고객 약속',text:'고객 약속: 장기수선 회의 결과 확인',due:day(-3),status:'open'}}),
+     deal('today1','상계주공7단지',{amt:2.6e8,next_action:{id:'n7',type:'방문',text:'현장 실측',due:day(0)+'T11:00',status:'open'}}),
+     deal('quote1','동탄푸른마을',{amt:1.8e8,last_activity_at:at(5),stage_entered_at:at(5),next_action:{id:'n8',type:'전화',text:'견적 범위 확인',due:day(2),status:'open'}}),
+     deal('stall1','byc하이시티',{amt:9e7,code:'rapport',stage_code:'rapport',last_activity_at:at(21)}),
+     /* 팀장 · 상무 · 대표 본인 담당 */
+     deal('lead1','이천신한아파트',{amt:4.4e8,code:'contract',stage_code:'contract',assignee:'한준엽',brand:'석민이앤씨',next_action:{id:'n10',type:'전화',text:'계약서 확인',due:day(3),status:'open'}}),
+     deal('vp1','평동동남아파트',{amt:1.7e8,code:'rapport',stage_code:'rapport',assignee:'황윤선',brand:'석민이앤씨',next_action:{id:'n11',type:'전화',text:'회의 결과 확인',due:day(-12),status:'open'},last_activity_at:at(12)}),
+     deal('ceo1','율량동아아파트',{amt:2.1e8,code:'rapport',stage_code:'rapport',assignee:'이승우',next_action:{id:'n12',type:'전화',text:'관계 연락',due:day(-4),status:'open'},last_activity_at:at(10)}),
+     /* 밀린 건: 90일 넘게 기록 없음(마지막 의미 있는 연락 · 없으면 등록일부터 센다) — 오늘 할 일에서 빠진다 */
+     deal('old1','오래된 현장 A',{amt:1.5e8,code:'rapport',stage_code:'rapport',last_activity_at:at(120),created:day(-300)}),
+     deal('old2','오래된 현장 B',{amt:5e7,code:'rapport',stage_code:'rapport',assignee:'김성민',last_activity_at:at(200),created:day(-400)}),
+     deal('old3','오래된 현장 C',{amt:8e7,code:'rapport',stage_code:'rapport',assignee:'이승우',last_activity_at:at(400),created:day(-500)})],
+    inquiries:[inq(3,'인천SK스카이뷰',3),inq(7,'길음뉴타운9단지',3,{assignee:'',assigned_to:'',assigned_at:'',status:'미배정'})],activities:[],inquiryTrash:[],expansion_pool:[]};
+   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME=me;G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.today3=null;G.tower=null;G.towerRole=null;G.todayQueueOwner='전체';G.todayV3Off=false;
+   document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op)=>{__writes.push(op);return 'req';};
+   window.__open=[];TodayWorkQueue.open=(k,a)=>{__open.push([k,a||'']);};window.__assign=[];window.todayAssignInquiry=k=>{__assign.push(k);};
+   goPage('today');
+  },me);
+  const snap=()=>page.evaluate(()=>{const v=document.querySelector('#today-v2 .tv3');if(!v)return null;const tx=n=>n?n.textContent.trim():'';
+   return {role:v.dataset.role,total:Number(v.dataset.total),back:Number(v.dataset.back),hero:tx(v.querySelector('.tv3-hero .n')),leg:[...v.querySelectorAll('.tv3-hero .leg span')].map(tx),
+    stage:[...v.querySelectorAll('.tv3-strip .ln')[0].querySelectorAll('button')].map(b=>tx(b.querySelector('span'))+' '+tx(b.querySelector('b'))),people:v.querySelectorAll('.tv3-strip .ln').length>1?[...v.querySelectorAll('.tv3-strip .ln')[1].querySelectorAll('button')].map(b=>tx(b.querySelector('span'))+' '+tx(b.querySelector('b'))):null,
+    groups:[...v.querySelectorAll('.tv3-group')].map(g=>({t:[...g.querySelectorAll(':scope>header b')].map(tx).join(' '),why:tx(g.querySelector(':scope>header span')),bulk:tx(g.querySelector(':scope>header button')),cards:[...g.querySelectorAll('.tv3-card')].map(c=>tx(c.querySelector('header b'))+' | '+tx(c.querySelector('header em'))+' | '+tx(c.querySelector('.who b'))+' | '+tx(c.querySelector('.who small'))+' | '+[...c.querySelectorAll('.btns button')].map(tx).join('/')),hidden:Number((/나머지 (\d+)건/.exec(tx(g.querySelector('.tv3-more')))||[0,0])[1]),rows:[...g.querySelectorAll('.tv3-row')].map(r=>tx(r.querySelector('.c b'))+' | '+tx(r.querySelector('.c small'))+' | '+tx(r.querySelector('.d b'))+' '+tx(r.querySelector('.d small'))+' | '+tx(r.querySelector(':scope>button')))})),
+    backT:tx(v.querySelector('.tv3-back .hd')),side:[...v.querySelectorAll('.tv3-side section')].map(s=>tx(s.querySelector('header b'))+' :: '+[...s.querySelectorAll('.tv3-ev,.tv3-due,.tv3-wk,.none')].map(tx).join(' ; ')),sub:tx(document.getElementById('psub')),badge:tx(document.getElementById('todayBadge'))};});
+  const ROLES=[['rep',{id:'rep1',name:'이필선',role:'rep'}],['mgr',{id:'admin',name:'송보람',role:'admin'}],['lead',{id:'l1',name:'한준엽',role:'admin'}],['vp',{id:'v1',name:'황윤선',role:'admin'}],['ceo',{id:'c1',name:'이승우',role:'admin'}]];
+  const S={};
+  for(const [k,me] of ROLES){await seed(me);await page.waitForTimeout(700);S[k]=await snap();if(dump&&(k==='vp'||k==='ceo'))console.log('=====',k,'\n'+JSON.stringify(S[k],null,1));if(shot)await page.screenshot({path:shot+'-'+k+'.png',fullPage:true});
+   const s=S[k];assert.ok(s,k+': v3 화면');assert.equal(s.role,k);assert.equal(await page.locator('#today-v2 .tt').count(),0,k+': 관제탑 대신 v3');
+   /* 공통: 큰 숫자 = 묶음 합계 = 목록 줄 수 = 띠 합계 */
+   const lines=s.groups.reduce((n,g)=>n+g.cards.length+g.rows.length+g.hidden,0),gsum=s.groups.reduce((n,g)=>n+Number((/(\d+)건$/.exec(g.t)||[0,0])[1]),0),ssum=s.stage.reduce((n,x)=>n+Number(x.split(' ').pop()),0);
+   assert.equal(lines,s.total,k+': 목록 줄 수(카드 + 줄 + 더 보기로 접힌 줄) = 큰 숫자');assert.equal(gsum,s.total,k+': 묶음 합계 = 큰 숫자');assert.equal(ssum,s.total,k+': 단계 띠 합계 = 큰 숫자');
+   assert.match(s.hero,new RegExp('^'+({mgr:'오늘 손댈 것',ceo:'오늘 결정 · 확인할 것'}[k]||'오늘 할 일')+s.total+'건 · '+s.groups.length+'묶음$'),k+': 큰 숫자 하나');
+   assert.equal(s.leg[s.leg.length-1],'· 위 '+s.total+'건 = 앞 묶음 합계');assert.match(s.leg[s.leg.length-2],new RegExp('^밀린 건 '+s.back+'$'));
+   assert.equal(s.badge,String(s.total||''),k+': 메뉴 숫자도 같은 값');
+   assert.deepEqual(s.stage.map(x=>x.replace(/ \d+$/,'')),['견적문의','컨설팅 설계','자료 발송','관계관리','경쟁·입찰','계약·시공','수주·확장']);
+   assert.equal(!!s.people,k==='mgr'||k==='lead',k+': 담당자 띠는 영업관리 · 팀장만');if(s.people)assert.equal(s.people.reduce((n,x)=>n+Number(x.split(' ').pop()),0),s.total,k+': 담당자 띠 합계 = 큰 숫자');
+   /* 첫 묶음만 카드(한 줄 4장까지) · 빨강은 첫 묶음에만 */
+   s.groups.forEach((g,i)=>{if(i===0)assert.ok(g.cards.length>=1&&g.cards.length<=4,k+': 첫 묶음 카드 1~4장');else assert.equal(g.cards.length,0,k+': 둘째 묶음부터는 목록');});
+   assert.equal(await page.locator('#today-v2 .tv3-group:not(.first) .r').count(),0,k+': 빨강은 첫 묶음에만');
+   assert.equal(await page.locator('#today-v2 .tv3-cards').evaluate(n=>getComputedStyle(n).gridTemplateColumns.split(' ').length),4,k+': 카드 한 줄 4칸(빈칸 유지)');
+   /* 밀린 건: 오늘 할 일과 분리 · 접혀 있음 */
+   assert.equal([...s.groups.flatMap(g=>g.cards.concat(g.rows))].some(t=>/오래된 현장/.test(t)),false,k+': 90일 넘은 건은 묶음에 없음');
+   assert.equal(await page.locator('#today-v2 .tv3-back .bd').count(),0,k+': 밀린 건은 접혀 있음');
+  }
+  if(dump){process.exit(0);}
+  /* ── 역할별 묶음(README 표) ── */
+  const titles=k=>S[k].groups.map(g=>g.t.replace(/ \d+건$/,''));
+  assert.deepEqual(titles('mgr'),['오늘 안 넘기면 놓침','이번 주 새로 멈춘 건','계약 정보 빠짐']);assert.deepEqual(S.mgr.groups.map(g=>g.bulk),['모두 담당에게 알림','담당별 코멘트','입력 요청 보내기']);
+  assert.equal(S.mgr.groups[0].why,'배정 30분 · 첫 연락 2시간 · 오늘 마감','시간 기준 = 운영 기준 값');
+  assert.deepEqual(titles('rep'),['오늘 연락할 곳','이번 주 안에','정보 채우기'].filter((t,i)=>S.rep.groups.some(g=>g.t.startsWith(t))));
+  assert.deepEqual(titles('lead'),['본인 영업 · 오늘','팀원 코칭 · 입찰 준비']);assert.equal(S.lead.groups[1].bulk,'팀원에게 코멘트');
+  assert.equal(titles('vp')[0],'오늘 연락할 곳');assert.ok(titles('vp').includes('상무님 결정 요청'));
+  assert.equal(titles('ceo')[0],'대표님 결정 요청');assert.ok(titles('ceo').includes('큰 금액인데 멈춘 건'));assert.ok(titles('ceo').includes('본인 영업'));
+  /* 영업관리: 배정 · 첫 연락 · 오늘 마감이 카드, 입찰 마감 · 지원 요청은 다루지 않음, 계약 정보 빠짐은 셋째 묶음 */
+  const all=k=>S[k].groups.flatMap(g=>g.cards.concat(g.rows)).join('\n');
+  assert.match(S.mgr.groups[0].cards.join('\n'),/담당 배정 안 됨[^\n]*\| 견적문의 \| 길음뉴타운9단지 \| 담당 미배정[^\n]*\| 배정\/재배정\/담당 화면/);
+  assert.doesNotMatch(all('mgr'),/마감 전 준비 안 됨|지원 요청/,'영업관리는 개입 범위만');
+  assert.match(S.mgr.groups[2].rows.join('\n'),/고덕아이파크 \| 정정훈 · 2\.1억 · 계약정보 입력 안 함 \| -\s+\| 입력 요청/);assert.match(S.mgr.groups[2].rows.join('\n'),/이천신한아파트/);
+  assert.match(S.mgr.backT,/^밀린 건 정리 3건90일 넘게 기록 없음 · 오늘 할 일과 따로 · 담당자에게 정리\(진행 \/ 보류 \/ 실주 \/ 배드핏\) 요청보기 ▼$/);
+  /* 영업사원: 내 담당만 · 담당 칸 = 고객명 · 본인 밀린 건만 */
+  assert.doesNotMatch(all('rep'),/성산시영|고덕아이파크|분당시범우성|이천신한|평동동남|율량동아/,'남의 현장 없음');
+  assert.match(S.rep.groups[0].cards.join('\n'),/\| 담당 김소장 관리소장 · 010-7777-8888 \| [^\n]*\/문자\/결과 기록/);
+  assert.match(S.rep.backT,/^내 밀린 건 1건/);assert.equal(S.rep.sub.replace(/^\d+월 \d+일 \(.\) · /,''),'내 영업만');
+  /* 팀장: 본인 것이 카드, 팀원 것은 둘째 묶음(입찰 마감 · 지원 요청 · 미배정 포함) */
+  assert.match(S.lead.groups[0].cards.join('\n'),/이천신한아파트/);assert.doesNotMatch(S.lead.groups[0].cards.concat(S.lead.groups[0].rows).join('\n'),/햇빛마을|길음뉴타운/);
+  assert.match(S.lead.groups[1].rows.join('\n'),/햇빛마을23단지 \| 이필선 · 4\.2억 · 마감 전 준비 안 됨 \| D-3 입찰 마감 \| 독촉/);assert.match(S.lead.groups[1].rows.join('\n'),/분당시범우성[^\n]*지원 요청/);assert.match(S.lead.backT,/^팀 밀린 건 3건/);
+  /* 상무: 본인 영업이 카드 · 결정 요청은 둘째 · 본인 밀린 건(없음) */
+  assert.match(S.vp.groups[0].cards.join('\n'),/평동동남아파트/);assert.match(S.vp.groups.find(g=>g.t.startsWith('상무님 결정 요청')).rows.join('\n'),/분당시범우성/);assert.equal(S.vp.back,0);assert.equal(S.vp.backT,'');
+  /* 대표: 결정 요청이 카드 · 3억 이상 14일 넘게 멈춘 건 · 본인 영업 · 본인 밀린 건 */
+  assert.match(S.ceo.groups[0].cards.join('\n'),/분당시범우성/);assert.match(S.ceo.groups.find(g=>g.t.startsWith('큰 금액인데 멈춘 건')).rows.join('\n'),/성산시영아파트 \| 김성민 · 3\.8억/);
+  assert.equal(S.ceo.groups.find(g=>g.t.startsWith('큰 금액인데 멈춘 건')).why,'3억 이상 · 14일 넘게 진전 없음');assert.match(S.ceo.groups.find(g=>g.t.startsWith('본인 영업')).rows.join('\n'),/율량동아아파트/);assert.match(S.ceo.backT,/^본인 밀린 건 1건/);
+  /* 오른쪽: 일정 · 마감 · 기준(역할별 제목) */
+  assert.deepEqual(S.mgr.side.map(x=>x.split(' :: ')[0]),['오늘 팀 일정','이번 주 팀 마감','팀 이번 주 기준']);assert.deepEqual(S.rep.side.map(x=>x.split(' :: ')[0]),['오늘 일정','이번 주 마감','내 이번 주']);
+  assert.deepEqual(S.ceo.side.map(x=>x.split(' :: ')[0]),['오늘 일정','이번 주 결정 마감','회사 이번 주']);assert.deepEqual(S.vp.side.map(x=>x.split(' :: ')[0]),['오늘 일정','이번 주 마감','본인 이번 주']);
+  assert.match(S.rep.side[0],/11:00현장 방문상계주공7단지/);assert.match(S.lead.side[1],/D-3햇빛마을23단지 입찰 마감/);assert.match(S.ceo.side[2],/이번 달 수주실적[\s\S]*영업 메이드율[\s\S]*계약 임박/);
+  assert.equal(S.mgr.sub.replace(/^\d+월 \d+일 \(.\) · /,''),'영업관리 · 팀 전체');assert.equal(S.ceo.sub.replace(/^\d+월 \d+일 \(.\) · /,''),'대표 · 결정과 큰 흐름만');
+  /* ── 동작(영업관리 화면) ── */
+  await seed(ROLES[1][1]);await page.waitForTimeout(700);
+  const v=page.locator('#today-v2 .tv3'),total=Number(await v.getAttribute('data-total'));
+  /* 띠를 누르면 목록이 좁혀지고, 큰 숫자는 그대로. [해제] */
+  await v.locator('.tv3-strip .ln').nth(0).locator('button',{hasText:'견적문의'}).click();await page.waitForTimeout(200);
+  assert.equal(await v.locator('.tv3-card, .tv3-row').count(),Number((await v.locator('.tv3-strip .ln').nth(0).locator('button[aria-pressed="true"] b').innerText())));assert.equal(Number(await v.getAttribute('data-total')),total);
+  assert.equal(await v.locator('.tv3-strip .ft button').innerText(),'견적문의 · 해제');await v.locator('.tv3-strip .ft button').click();await page.waitForTimeout(200);
+  await v.locator('.tv3-strip .ln').nth(1).locator('button',{hasText:'정정훈'}).click();await page.waitForTimeout(200);
+  assert.equal((await v.locator('.tv3-card .who small, .tv3-row .c small').allInnerTexts()).every(t=>/정정훈/.test(t)),true,'담당자 띠 = 그 사람 것만');await v.locator('.tv3-strip .ft button').click();await page.waitForTimeout(200);
+  /* 카드: 펼치기 = 담당에게 보낼 말 · 놓치면 / 완료 기준 / 버튼 3개 */
+  const c1=v.locator('.tv3-card').first();assert.equal(await c1.locator('.open').count(),0);await c1.locator('[data-t3="fold"]').click();await page.waitForTimeout(200);
+  assert.match(await v.locator('.tv3-card').first().locator('.fold').innerText(),/담당에게 보낼 말 · 놓치면\s*접기 ▴[\s\S]*놓치면 [\s\S]*완료 기준 /);
+  /* 배정 = 문의 배정 창, 줄 누르기 = 상세, 독촉 = 결과 남기기 */
+  await v.locator('.tv3-card',{hasText:'길음뉴타운9단지'}).locator('.btns .main').click();assert.equal((await page.evaluate(()=>__assign)).length,1,'배정 = 문의 배정 창');
+  await v.locator('.tv3-group[data-g="3"] .tv3-row').first().click();assert.equal((await page.evaluate(()=>__open)).length,1,'줄 = 상세 열기');
+  await v.locator('.tv3-group[data-g="3"] .tv3-row').first().locator('button').click();assert.equal((await page.evaluate(()=>__open)).length,2,'버튼도 기존 경로');
+  /* 밀린 건 정리: 펼치면 담당자별 건수 · 최장 일수 · [정리 요청], 목록 → 진행 / 보류 / 실주 / 배드핏 */
+  await v.locator('.tv3-back .hd').click();await page.waitForTimeout(200);
+  const bl=await v.locator('.tv3-bl').evaluateAll(l=>l.map(n=>[...n.children].filter(c=>!c.classList.contains('bar')).map(c=>c.textContent.trim()).join('|')));
+  assert.deepEqual(bl.sort(),['김성민|1건|최장 399일|정리 요청|목록','이승우|1건|최장 499일|정리 요청|목록','이필선|1건|최장 299일|정리 요청|목록']);
+  await v.locator('.tv3-bl',{hasText:'이필선'}).locator('[data-t3="backdo"]').click();await page.waitForTimeout(200);
+  assert.match(await v.locator('.tv3-brow').first().innerText(),/오래된 현장 A\s*관계관리 · 1\.5억 · 299일째\s*진행\s*보류\s*실주\s*배드핏/);
+  await page.evaluate(()=>{window.__st=[];window.__drw=[];window.drwDeal=j=>{__drw.push(JSON.parse(j).id);};StageTransitionUI.open=(d,m,code)=>{__st.push([d.id,code]);};});
+  await v.locator('.tv3-brow').first().locator('[data-v="hold"]').click();await page.waitForTimeout(600);
+  assert.deepEqual(await page.evaluate(()=>[__drw,__st]),[['old1'],[['old1','waiting']]],'보류 = 상세 + 대기 전환 창(사유 입력은 기존 창)');
+  assert.equal((await page.evaluate(()=>__writes)).length,0,'화면을 그리는 것만으로는 아무것도 저장하지 않음');
+  if(shot)await page.screenshot({path:shot+'-mgr-back.png',fullPage:true});
+  /* 좁은 화면 · 끄기 */
+  await page.setViewportSize({width:1100,height:900});await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true,'옆으로 넘치지 않음');await page.setViewportSize({width:1600,height:1000});
+  await page.evaluate(()=>{G.todayV3Off=true;paint();});await page.waitForTimeout(500);
+  assert.equal(await page.locator('#today-v2 .tv3').count(),0);assert.equal(await page.locator('#today-v2 .tt').count(),1,'끄면 관제탑');
+  assert.deepEqual(errs,[]);
+  console.log(JSON.stringify({status:'PASS',five_roles:true,hero_equals_groups_equals_rows:true,strips_same_source:true,first_group_cards4:true,red_only_first:true,backlog_split_over_90:true,role_groups_readme:true,side_panels:true,existing_open_paths:true,no_write_on_render:true,legacy_switch:true}));
+ }finally{await browser.close();srv.close();}
+})().catch(e=>{console.error(e);process.exit(1)});
