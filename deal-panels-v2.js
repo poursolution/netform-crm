@@ -71,7 +71,7 @@
    item.contacts=Array.isArray(item.contacts)?item.contacts:[];let raw=item.contacts.find(x=>String(x.person_key||'')===String(oldKey));
    if(!raw){raw={person_key:oldKey,name:cur.name,mobile:cur.mobile,office_phone:cur.officeTel||item.office_phone||'',site_name:item.site,started_at:cur.startedAt||null,sms_consent:!!cur.smsConsent,kakao_consent:!!cur.kakaoConsent,consent_at:cur.consentAt||null};item.contacts.push(raw);}
    raw.role='이전 소장';raw.status='previous';raw.ended_at=day;
-   const pt=root.itemPatch(item,'deal'),actor=(root.ME&&root.ME.name)||root.repN(item.assignee),note='관리소장 변경 — 이전 소장 기록',result=(cur.name||'이전 소장')+' · '+root.phoneFmt(cur.mobile)+' · '+day+'까지 → 새 소장 '+name;
+   const pt=root.itemPatch(item,'deal'),actor=(root.ME&&root.ME.name)||root.repN(item.assignee),note='관리소장 변경 — 이전 소장 기록',result=(cur.name||'이전 소장')+' · '+root.phoneFmt(cur.mobile)+' · '+day+'까지 → 새 소장 '+name+(S.prevWhere?' · 이전 소장 '+S.prevWhere:'');
    pt.activities=pt.activities||[];pt.activities.push({type:'업무',note,result,at,actor,meaningful:false});
    root.pushWrite('activity',{opportunity_id:item.id,type:'업무',note,result,occurred_at:at,meaningful_contact:false});
   }
@@ -274,5 +274,5 @@
   const ck=root.closeKakaoModal;if(typeof ck==='function')root.closeKakaoModal=function(){const p=$('ddvPanel');if(p&&p.classList.contains('dp-sms')){const b=$('kakaoBody');if(msgHome&&b&&b.parentElement!==msgHome)msgHome.append(b);onClose=null;p.remove();right()?.classList.remove('ddv-covered');}return ck.apply(this,arguments);};
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- root.DealPanelsV2={open,close,active,workMount};
+ root.DealPanelsV2={open,close,active,workMount,saveContact};
 })(window);
