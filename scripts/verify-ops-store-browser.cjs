@@ -40,7 +40,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     return {error:{message:'not in test: '+name}};}};
    /* 지난주 · 2주 전에 저장된 결과(첫 약속: 2주 연속 미달) */
    const key='배정 · 응대 · 견적문의는 그날 담당을 정한다';DB.weekly.push({week_start:mon(-1),promise_key:key,numerator:1,denominator:4},{week_start:mon(-2),promise_key:key,numerator:2,denominator:4},{week_start:mon(-3),promise_key:key,numerator:4,denominator:4});
-   goPage('mgmt');
+   G.kpiBOff=true;/* 운영 저장소 흐름은 v2 KPI 화면 기준 — 새 KPI 화면(2026-10-03)은 verify-kpi-b 에서 */goPage('mgmt');
   });
   await page.waitForTimeout(600);
   /* ── 관리팀 KPI ── */
