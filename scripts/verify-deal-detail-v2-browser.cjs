@@ -26,7 +26,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    /* 쓰기 가로채기: 기존 연락 기록 경로로 무엇이 나가는지만 본다 */
    window.__ops=[];window.queueDetailContactOperation=(op,payload)=>{const id='req-'+(__ops.length+1);__ops.push({id,op,payload});return id;};
    Phase1.queue.flush=async()=>{};Phase1.queue.list=()=>__ops.map(o=>({request_id:o.id,object_id:o.payload.opportunity_id,operation:o.op,status:'done',payload:o.payload,ack:{ok:true,operation:o.op,activity_id:'srv-'+o.id,next_action_id:'srv-'+o.id}}));
-   PipelineWorkspace.open('relationship');
+   G.pipeStageBOff=true;/* 상세 검사는 v2 목록 줄로 연다(단계별 B안은 verify-pipeline-stage-b) */PipelineWorkspace.open('relationship');
   });
   await page.waitForTimeout(200);
   await page.locator('#pipeline-list-v2 .plv-row .plv-site').first().click();await page.waitForTimeout(500);
