@@ -23,7 +23,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      deal('33333333-3333-4333-8333-333333333333','번호 없는 현장','이필선','sent',{personKey:'p3',name:'최과장',role:'과장',mobile:''}),
      deal('44444444-4444-4444-8444-444444444444','침묵 현장','이필선','silent',ok(4,'이소장'),{brand:'석민이앤씨'})],
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],campaigns:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
+   G.smsBOff=true;/* B안(2026-10-03)은 verify-sms-b 에서 */LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    /* 연락처는 시험 자료의 contacts 를 그대로 쓴다 */
    siteContacts=d=>d.contacts||[];contactInfo=d=>(d.contacts||[])[0]||{};
