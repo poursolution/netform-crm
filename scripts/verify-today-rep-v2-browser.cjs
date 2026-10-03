@@ -22,7 +22,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      deal('today1','오늘 약속 현장',{next_action:{id:'n3',type:'방문',text:'현장 실사',due:day(0)+'T14:00',status:'open'}}),deal('soon1','입찰 임박 현장',{code:'bidding',stage_code:'bidding',next_action:{id:'n4',type:'전화',text:'입찰 서류 확인',due:day(2),status:'open'},stage_contexts:{bidding:{fields:{bid_deadline:day(3)}}}}),
      deal('later1','다음 주 현장',{next_action:{id:'n5',type:'전화',text:'안부 전화',due:day(6),status:'open'}}),deal('other','남의 현장',{assignee:'황윤선',next_action:{id:'n6',text:'x',due:day(-9),status:'open'}})],
     inquiries:[inq(3,'첫 연락 늦은 현장',3),inq(5,'첫 연락 늦은 현장 2',2)],activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'rep1',name:'이필선',role:'rep'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
+   G.todayTowerOff=true;/* 관제탑(2026-10-03) 뒤에 남는 예전 영업사원 화면 검사 */LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'rep1',name:'이필선',role:'rep'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op)=>{__writes.push(op);return 'req';};goPage('today');
   });
   await page.waitForTimeout(500);
