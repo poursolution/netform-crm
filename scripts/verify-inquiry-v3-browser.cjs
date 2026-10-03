@@ -82,13 +82,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await d.locator('.idv-info').innerText(),/업체\s*관리사무소/,'서버 확인 뒤 화면 반영');
   await d.locator('.idv-edit[data-v="inflow"]').click();await page.waitForTimeout(150);await page.keyboard.type('네이버 검색');await d.locator('.idv-quote').click();await page.waitForTimeout(300);
   assert.equal(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_field_update_v1').length),2,'바깥 클릭 = 저장');
-  /* 상세: 결과 칩 + 다음 행동일 칩 — 둘 다 있어야 저장(메모는 선택) */
-  assert.deepEqual(await d.locator('.idv-resrow .idv-chip.on').allInnerTexts(),['연락 완료','7일 후']);
-  await d.locator('.idv-chip[data-idv="res"][data-v="보류"]').click();await page.waitForTimeout(150);await d.locator('.idv-chip[data-idv="nday"][data-v="내일"]').click();await page.waitForTimeout(150);
-  assert.match(await d.locator('.idv-reshint').innerText(),/저장하면 「통화 결과: 보류 → 다음 연락 \d{4}\.\d+\.\d+\([일월화수목금토]\)」로 기록되고/);
+  /* 상세: 응대 기록 한 칸 — 자료 요청 문구 → 자료요청 · 자료 확인 · 3일 후 */
+  await d.locator('#iq-res').fill('과장님 통화, 도면하고 현장 사진 보내주기로');await page.waitForTimeout(150);
+  assert.match(await d.locator('.idv-sug').innerText(),/전화 · 자료요청\s*→ 다음 행동: 자료 확인 · \d{4}\.\d+\.\d+/);
   if(shot)await page.screenshot({path:shot+'-detail.png'});
   await d.locator('[data-idv="save"]').click();await page.waitForTimeout(500);
-  const w2=await page.evaluate(()=>__writes.filter(x=>x[0]==='inquiry_status').map(x=>x[1]));assert.equal(w2.length,2,'상세 저장도 같은 경로');assert.match(JSON.stringify(w2[1]),/통화 결과: 보류/);
+  const w2=await page.evaluate(()=>__writes.filter(x=>x[0]==='inquiry_status').map(x=>x[1]));assert.equal(w2.length,2,'상세 저장도 같은 경로');assert.match(String(w2[1].result),/^\[전화 · 자료요청\] 과장님 통화/);assert.equal(w2[1].next,'자료 확인');
   await page.evaluate(()=>InquiryWorkbench.close());await page.waitForTimeout(200);
   /* 서버 함수가 없으면 입력 칸을 열지 않는다 */
   await page.evaluate(()=>{window.CRMRelease=Object.assign(window.CRMRelease||{},{has:n=>n!=='crm_inquiry_field_update_v1'});InquiryWorkbench.open(U);});await page.waitForTimeout(400);

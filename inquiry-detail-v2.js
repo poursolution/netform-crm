@@ -14,7 +14,7 @@
  const W=()=>root.InquiryWorkbench,DAY=864e5;
  const CHECKS=['최초 연락 완료','현장 조건 확인','의사결정권자 확인','견적서 발송 확인','다음 할 일 날짜 확정','후속 통화 기록'];
  const ui={};/* 문의별 입력 상태(다시 그려져도 유지) */
- function st(key){return ui[key]||(ui[key]={tab:'call',text:'',next:'',due:'',open:false,rep:'',reason:'',showAll:false,reassign:false,step:'',visitDate:'',visitTime:'',quoteMode:'예정',quoteAmt:'',quoteDate:''});}
+ function st(key){return ui[key]||(ui[key]={tab:'call',text:'',next:'',due:'',ch:'',res:'',act:'',nday:'',edit:false,aiRead:false,aiBusy:false,smsText:'',smsTpl:'',open:false,rep:'',reason:'',showAll:false,reassign:false,step:'',visitDate:'',visitTime:'',quoteMode:'예정',quoteAmt:'',quoteDate:''});}
  const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
  const fmt=t=>{const d=new Date(t);if(!Number.isFinite(d.getTime()))return '';const p=n=>String(n).padStart(2,'0');return (d.getMonth()+1)+'/'+d.getDate()+' '+p(d.getHours())+':'+p(d.getMinutes());};
  function acts(q){const p=root.itemPatch(q,'inq')||{},seen=new Set();return [...(q.activities||[]),...(p.activities||[])].filter(a=>{const at=a.at||a.occurred_at||a.created_at,k=a.id||[at,a.type,a.note,a.result].join('|');if(seen.has(k)||!Number.isFinite(Date.parse(at)))return false;seen.add(k);return true;}).sort((a,b)=>Date.parse(a.at||a.occurred_at||a.created_at)-Date.parse(b.at||b.occurred_at||b.created_at));}
@@ -62,27 +62,72 @@
    s.editField='';s.editDraft='';reskinFrom();toast((FIELDS.find(x=>x[2]===field)||[])[1]+' 저장됨');
   }catch(e){if(inp)inp.disabled=false;toast('저장하지 못했습니다: '+(e.message||e));}
  }
+ /* ── 응대 이력(2026-10-03 핸드오프 inquiry_v2 상세보기) ──
+    종류 4가지: 고객 접점(전화 · 카카오 · 문자 · 이메일 · 방문) / 업무 이력(자료 요청 · 수신 · 견적 · 제안서 발송 · 현장방문 확정) / 내부 메모 / 시스템(접수 · 배정 · 담당 변경 · 상태 변경).
+    한 건 = 시각 · 담당 · 수단 · 결과 · 내용 · → 다음 행동. 출처 배지는 아는 것만(접수 = 구글시트 · 모바일 표시가 있는 기록 = 모바일 · 나머지 CRM). 수단 · 결과는 기록 머리 "[전화 · 연결됨]" 또는 기록 종류에서 읽는다 */
+ const CH=['전화','카카오','문자','이메일','방문','기타'],RS=['연결됨','부재','검토중','자료요청','견적요청','회신대기','보류','거절'],AC=['다시 연락','자료 확인','견적 준비','현장방문'],DY=['내일','3일 후','7일 후'];
+ const CONNECTED=['연결됨','검토중','자료요청','견적요청','보류','거절'];
+ const NEXT={'부재':['다시 연락','내일'],'검토중':['다시 연락','7일 후'],'자료요청':['자료 확인','3일 후'],'견적요청':['견적 준비','3일 후'],'회신대기':['다시 연락','3일 후'],'보류':['다시 연락','7일 후'],'연결됨':['다시 연락','3일 후'],'거절':['실주 처리 검토','7일 후']};
+ const inferCh=t=>/카톡|카카오/.test(t)?'카카오':/문자/.test(t)?'문자':/메일/.test(t)?'이메일':/방문했|현장에서|만나|실측/.test(t)?'방문':'전화';
+ const inferRes=t=>/부재|안 ?받|연결 ?안|통화 ?불가/.test(t)?'부재':/거절|안 하기로|타 ?업체 ?계약|필요 ?없/.test(t)?'거절':/보류/.test(t)?'보류':/검토/.test(t)?'검토중':/자료|도면|사진/.test(t)?'자료요청':/견적/.test(t)?'견적요청':/회신|답 ?주/.test(t)?'회신대기':'연결됨';
+ const HEAD=/^\[(전화|카카오|문자|이메일|방문|기타) · (연결됨|부재|검토중|자료요청|견적요청|회신대기|보류|거절)\]\s*/;
+ function parseEntry(a){
+  const type=String(a.type||''),note=String(a.note||''),result=String(a.result||'');
+  const isCall=/^고객 응대 기록/.test(note)&&result;const body=isCall?result:[note,result].filter(v=>v&&String(v).trim()).join(' · ');
+  const m=HEAD.exec(body);
+  let kind,ch='',res='',text=body;
+  if(m){kind='contact';ch=m[1];res=m[2];text=body.replace(HEAD,'');}
+  else if(isCall){kind='contact';ch='전화';res=/보류/.test(body)?'보류':/부재|안 받/.test(body)?'부재':/재견적|견적/.test(body)?'견적요청':/대표회의|검토/.test(body)?'검토중':'연결됨';}
+  else if(/전화|통화/.test(type)){kind='contact';ch='전화';res=/부재|안 받|받지 않/.test(body)?'부재':'연결됨';}
+  else if(/문자|SMS|카카오|메일|메시지/i.test(type)){kind='contact';ch=/카카오/.test(type)?'카카오':/메일/.test(type)?'이메일':'문자';res='회신대기';}
+  else if(/방문/.test(type)){kind='contact';ch='방문';res='연결됨';}
+  else if(/자료|견적|제안|발송|수신|확정/.test(type)||/자료 ?(요청|수신)|견적서 ?발송|제안서|현장방문 ?확정/.test(body)){kind='work';ch=/메일/.test(body)?'이메일':'';res=/발송/.test(type+body)?'회신대기':'';}
+  else if(/배정|담당|상태|단계|데이터정리|다음 ?할 ?일|일정|기한|후속확인/.test(type)||/^(다음 할 일|현장방문 · 기한|견적서 (발송|발송 후))/.test(body)){kind='system';}
+  else kind='memo';
+  if(a.type==='체크')return null;
+  return {kind,ch,res,text:text||type,who:a.actor||a.actor_name||'',at:a.at||a.occurred_at||a.created_at,src:a.source==='mobile'||/모바일/.test(String(a.source||''))?'모바일':'CRM',next:a.next||''};
+ }
+ function timeline(q){
+  const created=root.inquiryCreatedAt(q),d=q.detail&&typeof q.detail==='object'?q.detail:{},r=q.raw&&typeof q.raw==='object'?q.raw:{},channel=d.channel||q.channel||r['상담채널']||'';
+  const list=[{kind:'system',at:created,who:'자동',src:'구글시트',text:(channel?channel+' ':'')+'견적문의 접수'}];
+  const asgAt=root.inquiryAssignedAt?.(q)||q.assigned_at,owner=root.inquiryRoutedOwner(q);
+  if(asgAt&&owner)list.push({kind:'system',at:asgAt,who:'영업관리',src:'CRM',text:'담당 '+root.repDisplay(owner)+' 배정'});
+  const p=root.itemPatch(q,'inq')||{};(p.stageHistory||[]).forEach(x=>{if(x.from&&x.to&&x.from!==x.to)list.push({kind:'system',at:x.at,who:x.actor||'',src:'CRM',text:'상태 '+x.from+' → '+x.to});});
+  acts(q).forEach(a=>{const e=parseEntry(a);if(e)list.push(e);});
+  const na=root.actionObj(q,p);list.sort((x,y)=>Date.parse(x.at||0)-Date.parse(y.at||0));
+  const lastContact=[...list].reverse().find(e=>e.kind==='contact'||e.kind==='work');if(lastContact&&na&&na.text&&!lastContact.next)lastContact.next=na.text+(na.due?' · '+na.due:'');
+  return list;
+ }
+ const KIND={contact:['고객 접점','ct'],work:['업무 이력','wk'],memo:['내부 메모','mm'],system:['시스템','sy']};
+ const smsBytes=t=>[...String(t||'')].reduce((n,c)=>n+(c.charCodeAt(0)>127?2:1),0);
+ function smsTemplates(q){
+  const nm=(q.contact_name||q.contact||'고객').toString().split(' · ').pop().trim(),own=root.repDisplay(root.inquiryRoutedOwner(q)||root.ME?.name||''),work=root.inqCtlWorkLabel(q),meet=meetOf(q);
+  const T={'첫 인사':'안녕하세요 '+nm+'님, 넷폼 '+own+'입니다. '+work+' 문의 주셔서 연락드렸습니다. 편하실 때 통화 가능 시간 알려주시면 연락드리겠습니다.','부재 후':nm+'님, 넷폼 '+own+'입니다. 전화드렸는데 연결이 안 되어 문자 남깁니다. 편하신 시간에 회신 부탁드립니다.','자료 요청':nm+'님, 정확한 견적을 위해 도면이나 현장 사진을 보내주실 수 있을까요? 이 번호로 보내주시면 됩니다.','견적 발송 안내':nm+'님, 요청하신 견적서를 메일로 보내드렸습니다. 검토 후 궁금하신 점 편하게 연락 주세요.'};
+  if(meet&&meet.dd>=0)T['대표회의 전']=nm+'님, '+ymdDot(meet.date)+' 대표회의 전에 보실 수 있도록 비교 자료와 개략 금액을 먼저 보내드리겠습니다.';
+  return T;
+ }
+ /* 내용 한 칸에서 수단 · 결과를 읽고 다음 행동 + 날짜를 제안한다(규칙). s.ch/s.res/s.act/s.nday 는 사용자가 [바꾸기]로 고른 값 */
+ function sugOf(q,s){const T=String(s.text||'').trim(),ch=s.ch||inferCh(T),res=s.res||inferRes(T),nx=NEXT[res]||NEXT['연결됨'],act=s.act||((/방문/.test(T)&&res==='연결됨')?'현장방문':nx[0]),nday=s.nday||nx[1],due=s.due||nextDay(q,nday);return {T,ch,res,act,nday,due,none:res==='거절'};}
  function col2(q,s){
-  const list=bubbles(q),na=root.actionObj(q,root.itemPatch(q,'inq')),contacts=list.filter(b=>b.kind==='out'||b.kind==='in'),last=contacts[contacts.length-1];
-  const checks=(root.itemPatch(q,'inq')||{}).checks||[],doneN=CHECKS.filter((_,i)=>checks[i]).length,lastOut=[...list].reverse().find(b=>b.kind==='out');
-  const tag={sys:'sys',in:'in',out:'out',memo:'memo'};
-  const body=list.map(b=>'<div class="idv-msg '+tag[b.kind]+'"><div class="idv-meta"><em>'+h(b.tag)+'</em>'+(b.who?'<span>'+h(b.who)+'</span>':'')+'<span>'+h(fmt(b.at))+'</span></div><div class="idv-bubble">'+h(b.text)+'</div>'+(b===lastOut&&na&&na.text?'<div class="idv-next">→ 다음 할 일: '+h(na.text)+(na.due?' ('+h(na.due)+')':'')+'</div>':'')+'</div>').join('')
-   +(!lastOut&&na&&na.text?'<div class="idv-msg sys"><div class="idv-next">→ 다음 할 일: '+h(na.text)+(na.due?' ('+h(na.due)+')':'')+'</div></div>':'');
-  const assignedNow=root.inquiryAssigned(q),tabs=[['call','통화 기록'],['sms','문자 보내기'],['memo','내부 메모']],canWrite=true/* 2026-10-02 대표: 배정 전에도 통화·문자·메모 기록을 남긴다 */,phone=String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'').trim();
-  const ph={call:'고객과 통화한 내용과 결과를 적어 주세요',sms:'고객에게 보낼 문자를 적어 주세요',memo:'내부에서만 보는 메모'}[s.tab];
-  const grow=s.open||s.text;
-  /* 통화 결과(배정된 건): 결과 칩 + 다음 행동일 칩 — 둘 다 골라야 저장(완료만 선택 불가). 기본값은 규칙 제안(대표회의가 있으면 '대표회의 예정 · 다음날') */
-  let resRow='';
-  if(s.tab==='call'&&assignedNow){const p=picksOf(q,s),meet=meetOf(q),nd=p.due?new Date(p.due+'T00:00:00'):null;
-   resRow='<div class="idv-resrow"><small>결과</small><div>'+RES.map(l=>'<button type="button" class="idv-chip'+(p.res===l?' on':'')+'" data-idv="res" data-v="'+attr(l)+'">'+h(l)+'</button>').join('')+'</div><small>다음 행동일</small><div>'+['내일','3일 후','7일 후'].concat(meet&&meet.dd>=0?['대표회의 다음날']:[]).map(l=>'<button type="button" class="idv-chip'+(p.nday===l?' on':'')+'" data-idv="nday" data-v="'+attr(l)+'">'+h(l)+'</button>').join('')+'</div>'
-    +(meet&&meet.dd>=0&&meet.dd<=3?'<em class="idv-meet">대표회의 '+h(ymdDot(meet.date))+' D-'+meet.dd+' · 정확한 견적이 늦으면 개략 금액 먼저</em>':'')+'<span class="idv-reshint">'+(nd?'저장하면 「'+h(recLine(p.res,nd))+'」로 기록되고 다음 연락이 '+h(kday(nd))+'에 잡힙니다':'결과와 다음 행동일을 함께 저장해야 닫힙니다')+' · 메모는 선택</span></div>';}
-  const composer=canWrite?'<div class="idv-composer" data-tab="'+s.tab+'">'+resRow+'<div class="idv-ctabs"><div role="tablist">'+tabs.map(t=>'<button type="button" role="tab" data-idv="tab" data-v="'+t[0]+'" aria-selected="'+(s.tab===t[0])+'">'+t[1]+'</button>').join('')+'</div><button type="button" class="idv-toggle" data-idv="toggle">'+(s.open?'접기':'확인 항목 '+doneN+'/6 · 다음 할 일')+'</button></div>'
-    +'<div class="idv-input"><textarea id="'+(s.tab==='call'?'iq-res':'spLogNote')+'" rows="'+(grow?3:1)+'" data-idv="text" placeholder="'+attr(s.tab==='call'&&assignedNow?'통화 메모 (선택)':ph)+'">'+h(s.text)+'</textarea><button type="button" class="idv-save'+((s.text.trim()||(s.tab==='call'&&assignedNow&&picksOf(q,s).due))?' on':'')+'" data-idv="save">'+(s.tab==='call'&&assignedNow?'저장':'저장')+'</button></div>'
-    +(s.tab==='call'?'<input type="hidden" id="iq-did" value="고객 응대 기록">':'<select id="spLogType" hidden><option'+(s.tab==='sms'?' selected':'')+'>메일·메시지</option><option'+(s.tab==='memo'?' selected':'')+'>기타</option></select>')
-    +'<div class="idv-more"'+(s.open?'':' hidden')+'><div class="idv-checks">'+CHECKS.map((c,i)=>'<button type="button" class="'+(checks[i]?'on':'')+'" data-idv="check" data-v="'+i+'" aria-pressed="'+!!checks[i]+'">'+(checks[i]?'✓ ':'+ ')+h(c)+'</button>').join('')+'</div>'
-    +(s.tab==='call'&&assignedNow?'<div class="idv-nextrow"><input id="iq-next" data-idv="next" placeholder="다음 할 일 (예: 견적 확인 전화)" value="'+attr(s.next)+'"><input id="iq-due" data-idv="due" type="date" value="'+attr(s.due)+'"></div>':'')+'</div>'
-    +(s.tab==='sms'?'<div class="idv-smsrow"><span>받는 번호 <b>'+h(phone||'연락처 없음')+'</b></span><button type="button" data-idv="sms-copy">문구 복사</button><button type="button" class="go" data-idv="sms-open"'+(phone?'':' disabled')+'>문자 앱으로 열기</button><small>문자 앱에서 보낸 뒤 [저장]을 누르면 대화에 «문자»로 남습니다 · 견적문의 회신은 정보성 안내입니다</small></div>':'')+(s.tab==='call'&&!assignedNow?'<small class="idv-hintline">배정 전 기록입니다 — 다음 할 일은 담당자를 배정한 뒤 정할 수 있습니다</small>':'')+'<div class="spmsg idv-err" id="iq-msg"></div></div>':'<div class="idv-composer idv-locked">담당자를 배정하면 여기에 통화·문자·메모를 남길 수 있습니다.</div>';
-  return '<div class="idv-chead"><b>고객과 주고받은 내용</b><span>'+list.length+'건</span><em>'+(last?'마지막 연락 '+h(fmt(last.at))+' · '+h(last.tag):'연락 기록 없음')+'</em></div><div class="idv-thread">'+body+'</div>'+composer;
+  const L=timeline(q),contacts=L.filter(e=>e.kind==='contact'||(e.kind==='work'&&e.ch)),conN=contacts.filter(e=>CONNECTED.includes(e.res)).length,firstAt=root.inqCtlFirstResponseAt(q);
+  const checks=(root.itemPatch(q,'inq')||{}).checks||[],doneN=CHECKS.filter((_,i)=>checks[i]).length;
+  const body=L.map(e=>{const K=KIND[e.kind];return '<div class="idv-ev '+K[1]+'"><i></i><div><div class="idv-evmeta"><span>'+h(fmt(e.at))+(e.who?' · '+h(e.who):'')+'</span><em class="k">'+K[0]+'</em>'+(e.src?'<em class="s">'+h(e.src)+'</em>':'')+(e.ch?'<b>'+h(e.ch)+'</b>':'')+(e.res?'<b class="'+(e.res==='연결됨'?'ok':/부재|거절/.test(e.res)?'bad':'')+'">'+h(e.res)+'</b>':'')+'</div>'+(e.text?'<div class="idv-evtext">'+h(e.text)+'</div>':'')+(e.next?'<span class="idv-evnext">→ 다음 행동: <b>'+h(e.next)+'</b></span>':'')+'</div></div>';}).join('');
+  const assignedNow=root.inquiryAssigned(q),tabs=[['call','응대 기록'],['sms','문자 보내기'],['memo','내부 메모']],phone=String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'').trim(),digits=phone.replace(/\D/g,'');
+  let form='';
+  if(s.tab==='call'){const g=sugOf(q,s),has=!!g.T;
+   form='<textarea id="iq-res" rows="2" data-idv="text" placeholder="무슨 일이 있었는지 한 줄로 (예: 관리소장 통화. 10월 입대의 후 결정 예정)">'+h(s.text)+'</textarea>'
+    +'<div class="idv-sug'+(has?'':' off')+'"><span class="tag">'+(s.aiRead?'AI':'자동')+'</span><span class="read">'+h(has?g.ch+' · '+g.res:'내용을 적으면 수단 · 결과를 읽고 다음 행동을 추천합니다')+'</span>'+(has?'<b>→ 다음 행동: '+h(g.none?'없음 · 실주 처리 검토 ('+kday(new Date(g.due+'T00:00:00'))+' 확인)':g.act+' · '+kday(new Date(g.due+'T00:00:00')))+'</b><i></i><button type="button" class="lnk" data-idv="edit-sug">'+(s.edit?'닫기':'바꾸기')+'</button>'+(root.OpsStore&&root.OpsStore.aiOn()&&!s.aiRead?'<button type="button" class="lnk" data-idv="ai-read"'+(s.aiBusy?' disabled':'')+'>'+(s.aiBusy?'AI 읽는 중…':'✦ AI로 읽기')+'</button>':''):'')+'</div>'
+    +(has&&s.edit?'<div class="idv-sugedit"><small>수단</small><div>'+CH.map(l=>'<button type="button" class="idv-chip'+(g.ch===l?' on':'')+'" data-idv="ch" data-v="'+l+'">'+l+'</button>').join('')+'</div><small>결과</small><div>'+RS.map(l=>'<button type="button" class="idv-chip'+(g.res===l?' on':'')+'" data-idv="res" data-v="'+l+'">'+l+'</button>').join('')+'</div><small>다음 행동</small><div>'+AC.map(l=>'<button type="button" class="idv-chip'+(g.act===l?' on':'')+'" data-idv="act" data-v="'+l+'">'+l+'</button>').join('')+'</div><small>날짜</small><div>'+DY.map(l=>'<button type="button" class="idv-chip'+(g.nday===l&&!s.due?' on':'')+'" data-idv="nday" data-v="'+l+'">'+l+'</button>').join('')+'<input type="date" id="iq-due" data-idv="due" value="'+attr(g.due)+'" aria-label="다음 행동 날짜"></div><input id="iq-next" data-idv="next" placeholder="다음 행동을 직접 적기" value="'+attr(s.next||'')+'"></div>':'<input type="hidden" id="iq-next" value="'+attr(s.next||(has?(g.none?'실주 처리 검토':g.act):''))+'"><input type="hidden" id="iq-due" value="'+attr(has?g.due:'')+'">')
+    +'<div class="idv-formfoot"><span>'+(has?(assignedNow?'저장하면 이력에 남고 다음 행동이 오늘 업무에 생깁니다':'배정 전 기록 — 이력에만 남고 다음 행동은 배정 뒤 정합니다'):'통화 · 카카오 · 문자 · 이메일 · 방문 모두 여기에')+'</span><button type="button" class="idv-save'+(has?' on':'')+'" data-idv="save">저장</button></div><input type="hidden" id="iq-did" value="고객 응대 기록">';}
+  else if(s.tab==='sms'){const T=smsTemplates(q),bytes=smsBytes(s.smsText||'');
+   form='<div class="idv-tpls"><span class="tag">AI</span><small>상황에 맞는 문구</small>'+Object.keys(T).map(k=>'<button type="button" class="idv-chip'+(s.smsTpl===k?' on':'')+'" data-idv="tpl" data-v="'+attr(k)+'">'+h(k)+'</button>').join('')+'</div>'
+    +'<div class="idv-smsto"><span>받는 사람</span><b class="'+(digits?'':'bad')+'">'+h((q.contact_name||q.contact||'고객')+' · '+(digits?root.phoneFmt(digits):'연락처 없음'))+'</b><i></i><span>'+bytes+'byte · '+(bytes>90?'LMS':'SMS')+'</span></div>'
+    +'<textarea id="spLogNote" rows="3" data-idv="smstext" placeholder="보낼 문자">'+h(s.smsText||'')+'</textarea>'
+    +'<div class="idv-formfoot"><span>문자 앱으로 보낸 뒤 [보내고 기록]을 누르면 응대 이력에 «문자 · 회신대기»로 남고 3일 뒤 확인이 오늘 업무에 생깁니다 · 발신번호는 문자 발송 서비스 연동 뒤</span><button type="button" data-idv="sms-copy">문구 복사</button><button type="button" data-idv="sms-open"'+(digits&&(s.smsText||'').trim()?'':' disabled')+'>문자 앱 열기</button><button type="button" class="idv-save'+((s.smsText||'').trim()&&digits?' on':'')+'" data-idv="sms-send"'+(digits?'':' disabled')+'>'+(digits?'보내고 기록':'연락처 없음')+'</button></div><select id="spLogType" hidden><option selected>메일·메시지</option></select>';}
+  else form='<textarea id="spLogNote" rows="2" data-idv="text" placeholder="내부에서만 보는 메모 (예: 관리소장보다 회장 의견 영향이 큰 현장)">'+h(s.text)+'</textarea><div class="idv-formfoot"><span>고객에게 보이지 않습니다</span><button type="button" class="idv-save'+(s.text.trim()?' on':'')+'" data-idv="save">저장</button></div><select id="spLogType" hidden><option selected>기타</option></select>';
+  const composer='<div class="idv-composer" data-tab="'+s.tab+'"><div class="idv-ctabs"><div role="tablist">'+tabs.map(t=>'<button type="button" role="tab" data-idv="tab" data-v="'+t[0]+'" aria-selected="'+(s.tab===t[0])+'">'+t[1]+'</button>').join('')+'</div><button type="button" class="idv-toggle" data-idv="toggle">'+(s.open?'접기':'확인 항목 '+doneN+'/6')+'</button></div>'
+   +form+'<div class="idv-more"'+(s.open?'':' hidden')+'><div class="idv-checks">'+CHECKS.map((c,i)=>'<button type="button" class="'+(checks[i]?'on':'')+'" data-idv="check" data-v="'+i+'" aria-pressed="'+!!checks[i]+'">'+(checks[i]?'✓ ':'+ ')+h(c)+'</button>').join('')+'</div></div><div class="spmsg idv-err" id="iq-msg"></div></div>';
+  return '<div class="idv-chead"><b>응대 이력</b><span>'+L.length+'건</span><em>연락 시도 <b>'+contacts.length+'</b> · 실제 연결 <b>'+conN+'</b></em><small>최초 응대 '+(firstAt?h(fmt(firstAt))+' (변경 불가)':'아직 없음')+'</small></div><div class="idv-thread">'+body+'</div>'+composer;
  }
  /* 배정 목록: 기존 배정 칸(inqCtlAssignInline)이 만든 추천·업무량·근거를 읽어 라디오 행으로 보여 준다 */
  function assignModel(q){
@@ -104,6 +149,8 @@
     +'<div class="idv-foot"><input id="inq-ctl-reason" data-idv="reason" placeholder="배정 사유 '+(s.reassign?'(필수)':'(선택)')+'" value="'+attr(s.reason)+'"><div class="modalerr" id="inq-ctl-error"></div><button type="button" class="idv-primary'+(s.rep?' on':'')+'" data-idv="assign"'+(s.rep?'':' disabled')+'>'+h(btn)+'</button>'+(s.reassign?'<button type="button" class="idv-link" data-idv="cancel-reassign">취소</button>':'')+'</div>';
   }
   if(!assigned)return '<div class="idv-now red">지금 할 일</div><h3>담당자 배정 대기</h3><p class="idv-hint">관리자가 담당자를 배정하면 연락을 시작할 수 있습니다.</p>';
+  const naNow=root.actionObj(q,root.itemPatch(q,'inq')),meetNow=meetOf(q),firstLine=(()=>{try{const i=root.InquiryListV3&&root.InquiryListV3.model?null:null;return '';}catch(e){return '';}})();
+  const nowBox=!gn&&!handed?'<div class="idv-nowbox"><b>AI 첫마디</b><p>'+h('안녕하세요, 넷폼 '+root.repDisplay(owner)+'입니다. 문의 주신 '+(W().gist(q)||root.inqCtlWorkLabel(q)||'견적')+' 건으로 연락드렸습니다. 지금 통화 괜찮으실까요?')+'</p>'+(meetNow&&meetNow.dd>=0&&meetNow.dd<=3?'<em class="idv-meet">대표회의 '+h(ymdDot(meetNow.date))+' D-'+meetNow.dd+' · 정확한 견적이 늦으면 개략 금액 먼저</em>':'')+'<dl><dt>지금 다음 행동</dt><dd>'+h(naNow&&naNow.text?naNow.text+(naNow.due?' · '+naNow.due:''):'없음 · 응대 기록에서 정하기')+'</dd><dt>담당</dt><dd>'+h(root.repDisplay(owner))+'</dd></dl><small>통화 · 카카오 · 문자 · 이메일 · 방문 모두 가운데 「응대 기록」에 남깁니다. 결과와 다음 행동 · 날짜가 있어야 저장됩니다.</small></div>':'';
   const head=gn?'<div class="idv-now ok">인계 완료</div><h3>경남지사</h3><p class="idv-hint">경남지사에서 실담당자를 지정합니다.</p>':'<div class="idv-now ok">배정 완료</div><h3>'+h(root.repDisplay(owner))+' 담당</h3><p class="idv-hint">담당자가 연락하면 왼쪽 기록에 쌓입니다</p>';
   let next='';
   if(handed){const d=root.linkedDeal?.(q);next='<div class="idv-card done"><b>파이프라인 인계 완료</b><p>'+h(d?root.stageNoLabel(root.dealStage(d))+' 단계에 등록됨':'영업건으로 전환되었습니다')+(d&&root.oppAmt(d)?' · '+h(root.fmtAmt(root.oppAmt(d))):'')+'</p>'+(d?'<button type="button" class="idv-link" data-idv="goto-deal">파이프라인에서 보기 →</button>':'')+'</div>';}
@@ -117,7 +164,7 @@
   /* 근처 현장: 이미 있는 같은 지역 현장 로직(지역 표기·주소 기준). 거리·지도 자료는 없어 '같은 지역'으로 적는다 */
   let near='';
   if(!gn){const n=W().related(q),list=(n.list||[]).slice(0,5);if(n.region){near='<div class="idv-near"><div class="idv-nhead"><b>근처 현장 '+list.length+'곳</b><span>'+h(n.region)+' · 같은 지역</span></div>'+(list.length?list.map(x=>{const d=x.d,issue=root.issueSet?root.issueSet(d):[],hint=issue.includes('overdue')?'같이 방문 권장':issue.includes('nextMissing')?'방문 시 같이 챙기기':'',amt=root.oppAmt(d);return '<button type="button" class="idv-ncard mine" data-idv="near" data-v="'+attr(root.dealKey(d))+'"><span class="n1"><b>'+h(String(d.site||'').replace(/^\s*\[[^\]]*\]\s*/,''))+'</b><em>(본인)</em></span><span class="n2"><i></i>'+h(root.stageNoLabel(root.dealStage(d)))+' · '+h(root.repN(d.assignee))+(amt?' · '+h(root.fmtAmt(amt)):'')+'</span>'+(hint?'<span class="n3">'+hint+'</span>':'')+'</button>';}).join(''):'<p class="idv-hint">이 지역에 진행 중인 담당 현장이 없습니다.</p>')+'</div>';}}
-  return head+next+near+(admin&&!handed?'<button type="button" class="idv-link idv-change" data-idv="reassign">담당 변경</button>':'');
+  return head+nowBox+next+near+(admin&&!handed?'<button type="button" class="idv-link idv-change" data-idv="reassign">담당 변경</button>':'');
  }
  let curKey=null;
  function reskin(){
@@ -145,16 +192,25 @@
   if(undo)t.querySelector('button').onclick=()=>{t.remove();undo();};setTimeout(()=>t.remove(),4000);
  }
  function fail(msg){toast(msg);}
- function onInput(e){const k=e.target.dataset?.idv,s=st(curKey);if(!k)return;if(k==='editinput'){s.editDraft=e.target.value;return;}if(k==='text'){const was=!!s.text.trim();s.text=e.target.value;if(was!==!!s.text.trim())e.target.closest('.idv-input').querySelector('.idv-save').classList.toggle('on',!!s.text.trim());if(e.target.rows<3)e.target.rows=3;}
-  else if(['next','due','reason','visitDate','visitTime','quoteDate'].includes(k)){s[k]=e.target.value;if(['visitDate','quoteDate'].includes(k))reskinFrom();}
+ const q0=()=>root.inqCtlFind(curKey,false);
+ /* 입력 중에는 제안 줄만 바꾼다(전체를 다시 그리면 커서가 튄다) */
+ function refreshSug(q,s){const box=document.querySelector('#inq-inbox-dialog .idv-sug');if(!box||!q)return;const g=sugOf(q,s),has=!!g.T;box.classList.toggle('off',!has);box.querySelector('.tag').textContent=s.aiRead?'AI':'자동';box.querySelector('.read').textContent=has?g.ch+' · '+g.res:'내용을 적으면 수단 · 결과를 읽고 다음 행동을 추천합니다';let b=box.querySelector('b');if(has){if(!b){b=document.createElement('b');box.querySelector('.read').after(b);}b.textContent='→ 다음 행동: '+(g.none?'없음 · 실주 처리 검토 ('+kday(new Date(g.due+'T00:00:00'))+' 확인)':g.act+' · '+kday(new Date(g.due+'T00:00:00')));if(!box.querySelector('[data-idv="edit-sug"]')){const e=document.createElement('button');e.type='button';e.className='lnk';e.dataset.idv='edit-sug';e.textContent='바꾸기';box.append(e);}}else if(b){b.remove();box.querySelectorAll('button').forEach(x=>x.remove());}const nx=document.getElementById('iq-next'),du=document.getElementById('iq-due');if(nx&&nx.type==='hidden')nx.value=has?(g.none?'실주 처리 검토':g.act):'';if(du&&du.type==='hidden')du.value=has?g.due:'';const sv=document.querySelector('#inq-inbox-dialog .idv-composer .idv-save');if(sv)sv.classList.toggle('on',has);}
+ function onInput(e){const k=e.target.dataset?.idv,s=st(curKey);if(!k)return;if(k==='editinput'){s.editDraft=e.target.value;return;}if(k==='smstext'){s.smsText=e.target.value;const b=e.target.closest('.idv-composer').querySelector('[data-idv="sms-send"]'),o=e.target.closest('.idv-composer').querySelector('[data-idv="sms-open"]'),bt=e.target.closest('.idv-composer').querySelector('.idv-smsto span:last-child');if(b&&!b.disabled)b.classList.toggle('on',!!s.smsText.trim());if(o)o.disabled=!s.smsText.trim();if(bt){const n=smsBytes(s.smsText);bt.textContent=n+'byte · '+(n>90?'LMS':'SMS');}return;}if(k==='text'&&s.tab==='call'){s.text=e.target.value;s.aiRead=false;if(!s.edit){s.ch='';s.res='';s.act='';s.nday='';}refreshSug(q0(),s);return;}if(k==='text'){const was=!!s.text.trim();s.text=e.target.value;if(was!==!!s.text.trim()){const sv=(e.target.closest('.idv-composer')||document).querySelector('.idv-save');if(sv)sv.classList.toggle('on',!!s.text.trim());}}
+  else if(['next','due','reason','visitDate','visitTime','quoteDate'].includes(k)){s[k]=e.target.value;if(k==='due')s.nday='';if(['visitDate','quoteDate'].includes(k))reskinFrom();}
   else if(k==='quoteAmt'){s.quoteAmt=e.target.value.replace(/[^\d]/g,'');if(e.target.value!==s.quoteAmt)e.target.value=s.quoteAmt;const b=document.querySelector('#inq-inbox-dialog [data-idv="handoff"]');if(b){const ok=!!(s.quoteAmt||s.quoteDate);b.disabled=!ok;b.classList.toggle('on',ok);}}}
  function tempField(tag,id,value){document.getElementById(id)?.remove();const el=document.createElement(tag);el.id=id;el.hidden=true;if(tag==='select'){const o=document.createElement('option');o.value=o.textContent=value;el.append(o);}el.value=value;document.getElementById('inq-inbox-dialog').append(el);return el;}
  function onClick(e){
   const b=e.target.closest('[data-idv]');if(!b||!curKey)return;const k=b.dataset.idv,v=b.dataset.v,s=st(curKey),q=root.inqCtlFind(curKey,false);if(!q)return;
   if(k==='edit'){s.editField=v;s.editDraft='';return reskinFrom();}
   if(k==='editinput')return;
-  if(k==='res'){s.res=v;if(!s.next||/^다음 연락 · /.test(s.next))s.next='다음 연락 · '+v;return reskinFrom();}
-  if(k==='nday'){s.nday=v;s.due=nextDay(q,v);return reskinFrom();}
+  if(k==='ch'){s.ch=v;return reskinFrom();}
+  if(k==='res'){s.res=v;s.act='';s.nday='';s.due='';return reskinFrom();}
+  if(k==='act'){s.act=v;return reskinFrom();}
+  if(k==='nday'){s.nday=v;s.due='';return reskinFrom();}
+  if(k==='edit-sug'){s.edit=!s.edit;return reskinFrom();}
+  if(k==='tpl'){const T=smsTemplates(q);s.smsTpl=v;s.smsText=T[v]||'';return reskinFrom();}
+  if(k==='sms-send')return smsSend(q,s);
+  if(k==='ai-read'){if(s.aiBusy||!s.text.trim())return;s.aiBusy=true;reskinFrom();const raw=s.text.trim();root.OpsStore.ai('memo_tidy','inquiry',q.id||curKey,{site:q.site||'',stage:'inquiry',today:today(),raw}).then(r=>{const g=r.suggestion||{},map={absent:'부재',promise:'연결됨',ongoing:'연결됨',recall:'회신대기'};if(map[g.result])s.res=map[g.result];if(g.next&&g.next.date){s.due=g.next.date;if(g.next.text)s.next=g.next.text;}if(g.memo)s.text=g.memo;s.aiRead=true;}).catch(err=>{if(typeof root.toast==='function')root.toast(String(err.message||err),'warn');}).finally(()=>{s.aiBusy=false;reskinFrom();});return;}
   if(k==='tab'){s.tab=v;return reskinFrom();}
   if(k==='toggle'){s.open=!s.open;return reskinFrom();}
   if(k==='text'){if(e.target.rows<3)e.target.rows=3;return;}
@@ -167,32 +223,37 @@
   if(k==='quoteMode'){s.quoteMode=v;return reskinFrom();}
   if(k==='near')return W().openRelated(v);
   if(k==='goto-deal')return root.openPromotedDeal();
-  if(k==='sms-copy'||k==='sms-open'){const text=s.text.trim(),num=String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'').replace(/\D/g,'');if(!text){root.iqMsg('보낼 문구를 먼저 적어 주세요.');return;}const done=()=>toast(k==='sms-copy'?'문구를 복사했습니다':'문자 앱을 엽니다 — 보낸 뒤 [저장]으로 기록을 남겨 주세요');try{const p=navigator.clipboard&&navigator.clipboard.writeText(text);if(p&&p.then)p.then(done).catch(done);else done();}catch(err){done();}if(k==='sms-open'&&num)setTimeout(()=>{location.href='sms:'+num+'?body='+encodeURIComponent(text);},120);return;}
+  if(k==='sms-copy'||k==='sms-open'){const text=(s.smsText||'').trim(),num=String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'').replace(/\D/g,'');if(!text){root.iqMsg('보낼 문구를 먼저 적어 주세요.');return;}const done=()=>toast(k==='sms-copy'?'문구를 복사했습니다':'문자 앱을 엽니다 — 보낸 뒤 [보내고 기록]을 눌러 주세요');try{const p=navigator.clipboard&&navigator.clipboard.writeText(text);if(p&&p.then)p.then(done).catch(done);else done();}catch(err){done();}if(k==='sms-open'&&num)setTimeout(()=>{location.href='sms:'+num+'?body='+encodeURIComponent(text);},120);return;}
   if(k==='save')return save(q,s);
   if(k==='assign')return assign(q,s);
   if(k==='handoff')return handoff(q,s,b);
  }
- const RES=['연락 완료','보류','대표회의 예정','재견적 요청','경쟁사 비교','계약 검토'];
  const meetOf=q=>{try{return root.InquiryListV3&&root.InquiryListV3.meetOf?root.InquiryListV3.meetOf(q):null;}catch(e){return null;}};
  const pad2=n=>String(n).padStart(2,'0'),ymdDash=d=>d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()),ymdDot=d=>d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate(),kday=d=>ymdDot(d)+'('+'일월화수목금토'[d.getDay()]+')';
  const recLine=(res,d)=>'통화 결과: '+res+' → 다음 연락 '+kday(d);
  function nextDay(q,label){if(label==='대표회의 다음날'){const m=meetOf(q);if(m){const d=new Date(m.date);d.setDate(d.getDate()+1);return ymdDash(d);}}const d=new Date();d.setDate(d.getDate()+({'내일':1,'3일 후':3,'7일 후':7}[label]||7));return ymdDash(d);}
- /* 고른 값 또는 규칙 기본값(대표회의가 있으면 '대표회의 예정 · 다음날', 없으면 '연락 완료 · 7일 후'). 직접 적은 날짜(s.due)가 있으면 그것을 쓴다 */
- function picksOf(q,s){const m=meetOf(q),hasMeet=!!(m&&m.dd>=0);const res=s.res||(hasMeet?'대표회의 예정':'연락 완료'),nday=s.nday||(hasMeet?'대표회의 다음날':'7일 후');return {res,nday,due:s.due||nextDay(q,nday)};}
  function save(q,s){
-  const text=s.text.trim();if(!text&&!(s.tab==='call'&&root.inquiryAssigned(q)))return;
-  /* 배정 전 통화 기록: 단계 처리(다음 할 일 필수) 대신 기록만 남긴다 */
-  if(s.tab==='call'&&!root.inquiryAssigned(q)){tempField('select','spLogType','전화');tempField('textarea','spLogNote',text);root.splitSaveLog();stampActor(q);s.text='';s.open=false;reskinFrom();toast('통화 기록을 저장했습니다');return;}
+  const text=s.text.trim();if(!text)return;
   if(s.tab==='call'){
-   /* 결과 칩 + 다음 행동일(규칙 기본값) → 기록 문장. 둘 중 하나라도 없으면 저장하지 않는다 */
-   const p=picksOf(q,s);if(!p.res||!p.due){s.open=true;reskinFrom();root.iqMsg('결과와 다음 행동일을 함께 골라 주세요 — 날짜가 없으면 다시 챙길 수 없습니다.');return;}
-   if(!s.next.trim())s.next='다음 연락 · '+p.res;if(!s.due)s.due=p.due;
-   const nextEl=document.getElementById('iq-next'),dueEl=document.getElementById('iq-due'),resEl=document.getElementById('iq-res');if(nextEl)nextEl.value=s.next;if(dueEl)dueEl.value=s.due;
-   const line=recLine(p.res,new Date(p.due+'T00:00:00'));if(resEl)resEl.value=text&&text!==line?line+' · '+text:line;
-   const ok=W().saveProcess();if(ok===true){s.text='';s.next='';s.due='';s.res='';s.nday='';s.open=false;reskinFrom();toast(line);}
+   const g=sugOf(q,s),line='['+g.ch+' · '+g.res+'] '+text;
+   /* 배정 전: 기록만(다음 할 일은 배정 뒤) */
+   if(!root.inquiryAssigned(q)){tempField('select','spLogType',g.ch);tempField('textarea','spLogNote',line);root.splitSaveLog();stampActor(q);Object.assign(s,{text:'',ch:'',res:'',act:'',nday:'',due:'',next:'',edit:false,aiRead:false});reskinFrom();toast('응대 기록을 저장했습니다');return;}
+   const nextText=(s.next||'').trim()||(g.none?'실주 처리 검토':g.act),due=(document.getElementById('iq-due')||{}).value||g.due;
+   if(!nextText||!due){root.iqMsg('다음 행동과 날짜가 있어야 저장됩니다.');return;}
+   const resEl=document.getElementById('iq-res'),nextEl=document.getElementById('iq-next'),dueEl=document.getElementById('iq-due');if(resEl)resEl.value=line;if(nextEl)nextEl.value=nextText;if(dueEl)dueEl.value=due;
+   const ok=W().saveProcess();if(ok===true){Object.assign(s,{text:'',ch:'',res:'',act:'',nday:'',due:'',next:'',edit:false,aiRead:false});reskinFrom();toast(g.ch+' · '+g.res+(g.none?'':' → '+nextText+' '+kday(new Date(due+'T00:00:00'))));}
    return;
   }
-  root.splitSaveLog();stampActor(q);const kind=s.tab==='sms'?'문자 기록':'내부 메모';s.text='';s.open=false;reskinFrom();toast(kind+'을 저장했습니다');
+  root.splitSaveLog();stampActor(q);s.text='';reskinFrom();toast('내부 메모를 저장했습니다');
+ }
+ /* 문자: 문자 앱으로 보낸 뒤 [보내고 기록] — 응대 이력에 «문자 · 회신대기», 배정된 건은 3일 뒤 '회신 확인'이 오늘 업무에(같은 저장 경로) */
+ function smsSend(q,s){
+  const text=(s.smsText||'').trim(),digits=String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'').replace(/\D/g,'');if(!text||!digits)return;
+  const line='[문자 · 회신대기] '+text;
+  if(!root.inquiryAssigned(q)){tempField('select','spLogType','문자');tempField('textarea','spLogNote',line);root.splitSaveLog();stampActor(q);s.smsText='';s.smsTpl='';reskinFrom();toast('문자를 이력에 남겼습니다');return;}
+  const due=nextDay(q,'3일 후');tempField('input','iq-did','고객 응대 기록');tempField('textarea','iq-res',line);tempField('input','iq-next','회신 확인');tempField('input','iq-due',due);
+  const ok=W().saveProcess();['iq-did','iq-res','iq-next','iq-due'].forEach(id=>{const el=document.getElementById(id);if(el&&el.hidden&&el.parentElement===document.getElementById('inq-inbox-dialog'))el.remove();});
+  if(ok===true){s.smsText='';s.smsTpl='';reskinFrom();toast('문자 · 회신대기로 기록 → 회신 확인 '+kday(new Date(due+'T00:00:00')));}
  }
  /* 기록자는 지금 로그인한 사람으로(배정 전에는 담당자가 없다) */
  function stampActor(q){try{const a=(root.itemPatch(q,'inq')||{}).activities,last=a&&a[a.length-1],me=root.repN(root.ME?.name);if(last&&me&&me!=='미배정'&&(!last.actor||last.actor==='미배정'))last.actor=me;root.saveLocal?.();}catch(e){}}
