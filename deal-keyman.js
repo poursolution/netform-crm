@@ -107,7 +107,8 @@
   const key=String(d.id),slot=kind==='next_action'?'next':'call',bk=key+':'+slot;if(AIB.has(bk))return;AIB.add(bk);rerender();
   root.OpsStore.ai(kind,'deal',d.id,aiInput(d,kind)).then(s=>{const cur=AIR.get(key)||{};cur[slot]=s.suggestion||{};cur.err='';AIR.set(key,cur);}).catch(err=>{const cur=AIR.get(key)||{};cur.err=String(err.message||err);AIR.set(key,cur);}).finally(()=>{AIB.delete(bk);rerender();});
  }
- function rerender(){try{apply();}catch(e){}}
+ const v3=()=>{try{root.DealDetailV3&&root.DealDetailV3.apply();}catch(e){console.warn('[상세 v3]',e);}};
+ function rerender(){try{apply();}catch(e){}v3();}
  function onClick(e){
   const b=e.target.closest('#detailView [data-dk]');if(!b)return;const d=root.CUR_DETAIL?.item;if(!d)return;const a=b.dataset.dk,c=changeOf(d);
   if(a==='call'){try{root.contactDial('mobile');}catch(err){}return;}
@@ -148,7 +149,7 @@
  }
  function boot(){
   const da=root.DetailActions;if(!da||typeof da.decorate!=='function'||da.decorate.__dk)return;
-  const old=da.decorate;const wrapped=function(){const r=old.apply(da,arguments);try{apply();}catch(e){console.warn('[담당자 관계 이력]',e);}return r;};wrapped.__dk=true;da.decorate=wrapped;
+  const old=da.decorate;const wrapped=function(){const r=old.apply(da,arguments);try{apply();}catch(e){console.warn('[담당자 관계 이력]',e);}v3();return r;};wrapped.__dk=true;da.decorate=wrapped;
   document.addEventListener('click',onClick,true);document.addEventListener('input',onInput);
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();

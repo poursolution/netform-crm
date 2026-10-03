@@ -80,7 +80,7 @@ const server=http.createServer(async(req,res)=>{
     }else return reply(404,'Unknown action');
    }
   }finally{busy=false;}
- }catch(e){notice=e instanceof AligoError?e.code:'연결 설정을 확인해 주세요.';}
+ }catch(e){notice=e instanceof AligoError?e.code:'연결 설정을 확인해 주세요.'+(typeof e?.code==='string'&&/^[A-Z0-9_]{3,60}$/.test(e.code)?' ('+e.code+')':'');/* 실패 이유 코드만 — 키 · 원문 오류는 보이지 않는다 */}
  res.writeHead(303,{...headers,Location:'/'});res.end();
 });
 server.requestTimeout=20000;server.headersTimeout=10000;

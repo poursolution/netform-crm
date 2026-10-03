@@ -31,7 +31,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    SB={rpc:async()=>({data:{ok:true,tasks:[]}})};TOKEN='test';
    /* AI 는 흉내: 켜져 있고, 호출 입력을 기록한다(제안만) */
    window.__ai=[];OpsStore.aiOn=()=>true;OpsStore.ai=async(kind,type,id,input)=>{__ai.push([kind,type,id,input]);return kind==='next_action'?{suggestion:{how:'전화',what:'새 소장에게 기존 견적 조건 설명',days:1,why:'관리소장 변경 뒤 첫 응대가 없음'}}:{suggestion:{opener:'안녕하세요 소장님, 넷폼 송보람입니다. 전임 박영호 소장님과 진행하던 옥상 방수 건으로 연락드렸습니다.',goal:'기존 견적 조건 유지 여부 확인',summary:'3일 전 관리소장 변경'}};};
-   G.pipeStageBOff=true;PipelineWorkspace.open('sent');
+   G.dealDetailV3Off=true;/* 상세 정리(2026-10-03 detail_panel)는 verify-deal-detail-v3 에서 */G.pipeStageBOff=true;PipelineWorkspace.open('sent');
   });
   await page.waitForTimeout(200);
   await page.locator('#pipeline-list-v2 .plv-row',{hasText:'창동동아그린'}).locator('.plv-site').click();await page.waitForTimeout(500);
