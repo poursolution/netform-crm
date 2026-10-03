@@ -117,6 +117,8 @@
    titleBox.prepend(el('div','ddv-chips',(d.brand?'<span class="idv-brand">'+h(d.brand)+'</span>':'')+(badge&&badge!==groupName?'<span class="ddv-tag">'+h(badge)+'</span>':'')+(work&&!/미분류|미기록/.test(work)?'<span class="idv-type">'+h(work)+'</span>':'')));
    const sub=$('dv-sub');if(sub)sub.textContent=['담당 '+(root.repN(d.assignee)||'미배정'),amt>0?'예상 '+root.fmtAmt(amt):'예상 금액 미입력',groupName+(age!=null&&!closed?' '+age+'일째':'')].join(' · ');
   }
+  /* 2026-10-03 대표: ✕ 는 머리줄 맨 끝(즐겨찾기 · 작업 더보기 뒤) */
+  if(top){const back=top.querySelector('.backbtn');if(back&&back.parentElement!==top)top.append(back);}
   const stops=[...(journey?.querySelectorAll('.dcc-stop')||[])];
   if(top&&stops.length)top.append(el('div','idv-steps ddv-steps',stops.map(s=>{const now=s.classList.contains('now'),done=s.classList.contains('done');return '<div class="'+(now?'cur':done?'done':'')+'"><i></i><span>'+(now?'지금 · ':'')+h(s.textContent.trim())+'</span></div>';}).join('')));
   const how=journey?.querySelector('.dcc-journey-do b')?.textContent||'',pace=(journey?.querySelector('.dcc-journey-do small')?.textContent||'').split(' · ').slice(0,2).join(' · ');
