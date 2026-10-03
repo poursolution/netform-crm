@@ -19,7 +19,9 @@
  const toast=(m,t)=>{if(typeof root.toast==='function')root.toast(m,t);};
  /* 기존 보드의 4칸 규칙 그대로(expansion-pool.js laneOf) */
  function lane(r){if(F.converted(r)||F.status(r)==='보류')return 'hold';const d=days(r.nextContactAt);if(F.status(r)==='니즈확인')return d!=null&&d<=0?'week':'need';if(d==null||d<=7)return 'week';return 'keep';}
- const unclassified=r=>!r.sourceWorkSummary||/미분류|미기록/.test(r.sourceWorkSummary);
+ /* 공종: 확장 기록에 없으면 원 수주 건의 분류를 본다(상세에서 공종을 넣으면 바로 반영) */
+ const workOf=r=>{const s=r.sourceWorkSummary||'';if(s&&!/미분류|미기록/.test(s))return s;try{const w=root.dealWorkSummary(dealOf(r));return w&&!/미분류|미기록/.test(w)?w:'';}catch(e){return '';}};
+ const unclassified=r=>!workOf(r);
  const recommend=r=>r.needNote?'니즈 · '+r.needNote:(r.candidates||[]).join(' · ');
  function scoped(){
   const current=new Date().getFullYear(),year=root.G.expansionYear||String(current),q=String(root.G.q||'').trim().toLowerCase();
@@ -59,7 +61,7 @@
   const amt=money(r.wonAmount);
   return '<div class="plv-row" role="row" tabindex="0" data-xv="open" data-value="'+attr(r.id)+'" data-exp="'+attr(r.id)+'" style="grid-template-columns:'+GRID+'"><span class="plv-c plv-site"><b title="'+attr(r.site)+'">'+h(r.site||'현장명 확인 필요')+'</b><small class="'+(owner==='미배정'?'none':'')+'">'+h(owner)+'</small></span>'
    +'<span class="plv-c"><em class="plv-tag m">'+h(y||'미기록')+'</em></span>'
-   +'<span class="plv-c"><span class="'+(unclassified(r)?'a':'')+'">'+h(unclassified(r)?'공종 미분류':r.sourceWorkSummary)+'</span><small class="'+(amt?'':'a')+'">'+h(amt||'계약금액 미입력')+'</small></span>'
+   +'<span class="plv-c"><span class="'+(unclassified(r)?'a':'')+'">'+h(unclassified(r)?'공종 미분류':workOf(r))+'</span><small class="'+(amt?'':'a')+'">'+h(amt||'계약금액 미입력')+'</small></span>'
    +'<span class="plv-c"><span title="'+attr(recommend(r))+'">'+h(recommend(r)||'확장 후보 미확인')+'</span></span>'
    +'<span class="plv-c">'+(r.lastContactAt?'<span>'+h(ymd(r.lastContactAt))+'</span>':'<span class="m">기록 없음</span>')+'</span>'
    +'<span class="plv-c">'+next+'</span><button type="button" class="plv-cta" data-xv="open" data-value="'+attr(r.id)+'">처리</button></div>';
@@ -143,7 +145,7 @@
   const contract=d.contract_date||d.contractDate||d.advisory&&d.advisory.contract_date||'';
   /* 관리 정보 빈 칸 바로 입력(2026-10-03 대표 "견적문의처럼"): 준공일 · 현재 담당 = crm_expansion_info_update_v1(관리자 또는 담당 범위, 현재 담당은 관리자만) · 공종 = 기존 공종 편집기 · 계약일 · 수주 금액 = 계약실적 원장(여기서 안 바꿈) */
   const can=infoEditable(),admin=!!root.todayIsAdmin?.(),ES=editSt(r);
-  const facts=[['현재 담당',owner==='미배정'?'':owner,can&&admin?'owner_name':''],['당시 영업',root.repN(d.assignee)==='미배정'?'':root.repN(d.assignee)||'',''],['계약일',ymd(contract),'ledger'],['준공일',ymd(r.completionDate),can?'completion_date':''],['공종',unclassified(r)?'':r.sourceWorkSummary,d.id?'work':''],['수주 금액',money(r.wonAmount),'ledger']];
+  const facts=[['현재 담당',owner==='미배정'?'':owner,can&&admin?'owner_name':''],['당시 영업',root.repN(d.assignee)==='미배정'?'':root.repN(d.assignee)||'',''],['계약일',ymd(contract),'ledger'],['준공일',ymd(r.completionDate),can?'completion_date':''],['공종',workOf(r),d.id?'work':''],['수주 금액',money(r.wonAmount),'ledger']];
   let files=[],quotes=[];try{files=d.id?root.execAttachments(d):[];quotes=d.id?root.execQuoteVersions(d):[];}catch(e){}
   const photos=files.filter(x=>/^image\//.test(x.mime_type||'')).length;
   const left='<div class="xdv-card"><span class="xdv-label">연락할 고객</span><b>'+h(c.name?c.name+(c.role?' · '+c.role:''):'고객 이름 미등록')+'</b><span class="'+(phone?'':'xdv-warn')+'">'+h(phone||'연락처 미입력')+'</span>'+(done?'':'<div class="xdv-three"><button type="button" class="fill" data-xd="call">전화</button><button type="button" data-xd="sms">문자</button><button type="button" data-xd="kakao">카카오</button></div>')+'</div>'
@@ -209,7 +211,8 @@
   if(a==='pipeline'){close(false);root.ExpansionPool.openPipeline(id);}
   if(a==='source'){const d=dealOf(r);if(d.id){close(false);root.G._detailPopup=true;root.drwDeal(JSON.stringify(d));}}
   if(a==='edit'){const ES=editSt(r);ES.field=b.dataset.value;ES.draft='';renderDetail();setTimeout(()=>{const el=node().querySelector('[data-xd="editinput"],[data-xd="editsel"]');if(el)el.focus();},30);}
-  if(a==='editwork'){const d=dealOf(r);if(!d.id)return;root.CUR_DETAIL={kind:'deal',key:root.dealKey(d),item:d};root.openWorkEdit?.();}
+  if(a==='editwork'){const d=dealOf(r);if(!d.id)return;/* 새 공종 창(공종 분석과 같은 부품)을 이 상세 위에 — 저장되면 상세 · 목록 갱신 */
+   if(root.WorkV2&&root.WorkV2.classify){root.WorkV2.classify(root.dealKey(d),{single:true,done:()=>{try{root.paintExpansion();renderDetail();}catch(err){}}});}else{root.CUR_DETAIL={kind:'deal',key:root.dealKey(d),item:d};root.openWorkEdit?.();}}
  }
  let legacyOpen=null;
  function boot(){

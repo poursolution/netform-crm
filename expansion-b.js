@@ -8,20 +8,25 @@
  const h=v=>root.esc(String(v==null?'':v)),attr=v=>root.escAttr(String(v==null?'':v));
  const F=()=>root.ExpansionFlow,SB=()=>root.StageBoard;
  const RED='#d93a3a',INK='#374151';
+ /* 기준일은 회의 지침 기본값(준공 D+30 · 관계 연락 60일) — 화면에서 바꿀 수 있고 이 PC에 저장된다(팀 공통 설정 저장소가 생기면 그쪽으로) */
+ const RKEY='nf_expansion_rules';
+ (function(){try{const s=JSON.parse(root.Phase1?.storage?.getItem(RKEY)||'null');if(s&&typeof s==='object'){root.OPS_RULES=Object.assign(root.OPS_RULES||{},s);}}catch(e){}})();
+ function setRule(k,v){const n=Number(v);if(!n)return;root.OPS_RULES=Object.assign(root.OPS_RULES||{},{[k]:n});try{const s=JSON.parse(root.Phase1?.storage?.getItem(RKEY)||'{}')||{};s[k]=n;root.Phase1.storage.setItem(RKEY,JSON.stringify(s));}catch(e){}}
  const R=()=>root.OPS_RULES||{};const N=(k,d)=>Number(R()[k])||d;const rules=()=>({after:N('afterCompletionDays',30),wait:N('waitContactDays',60)});
  const enabled=()=>!root.G.expansionBOff&&!root.G.expansionV2Off&&!!root.StageBoard&&!!root.ExpansionV2;
  const dealOf=r=>root.expansionSourceDeal(r)||{};
  const days=v=>{if(!v)return null;const n=root.daysTo(String(v).slice(0,10));return Number.isFinite(n)?n:null;};
  const since=v=>{const n=days(v);return n===null?null:-n;};
  const ymd=v=>{const s=String(v||'').slice(0,10),m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s);return m?Number(m[2])+'/'+Number(m[3]):'';};
- const unclassified=r=>!r.sourceWorkSummary||/미분류|미기록/.test(r.sourceWorkSummary);
+ const workOf=r=>{const s=r.sourceWorkSummary||'';if(s&&!/미분류|미기록/.test(s))return s;try{const w=root.dealWorkSummary(dealOf(r));return w&&!/미분류|미기록/.test(w)?w:'';}catch(e){return '';}};
+ const unclassified=r=>!workOf(r);
  const CFG={id:'expansion-b',name:'확장관리',unit:'곳',stallUnit:'D+',stallName:'준공 후',stallDesc:'준공 뒤 지난 일수',listTitle:'확인할 현장',openLabel:'열기',diagTitle:'사후관리 진단',
   desc:()=>'준공 고객의 다음 매출 · 준공은 끝이 아니라 사후관리 → 재영업 — D+'+rules().after+' 사후 연락(만족도 · 하자 · 내년 공사 · 추가 공종 · 주변 단지) → 니즈 확인 → 견적 확인 후 새 영업건 전환 · 관계는 '+Math.round(rules().wait/30)+'개월 1회',
   axis:'사후관리 진행',
-  S:[['after','사후 연락 · 관계 유지','#15171c','D+30 사후 연락 · 2개월 1회 관계 연락'],['need','니즈 확인','#8a909c','견적 확인 후 새 영업건 전환'],['hold','보류 · 전환 완료','#d5d9e0','새 영업건에서 진행 · 보류는 연도 지정']],
+  S:[['after','사후 연락 · 관계 유지','#15171c','준공 후 사후 연락 · 주기마다 관계 연락'],['need','니즈 확인','#8a909c','견적 확인 후 새 영업건 전환'],['hold','보류 · 전환 완료','#d5d9e0','새 영업건에서 진행 · 보류는 연도 지정']],
   RS:{late:['다음 접촉일 지남',RED,'연락','다음 접촉일이 지난 고객 — 오늘 통화 후 접촉 · 니즈 기록 + 다음 접촉일','note'],
-      after30:['준공 D+30 사후 연락 안 함',RED,'사후 연락','만족도 · 하자 · 내년 공사 · 추가 공종 · 주변 단지 소개를 확인하는 사후 통화','note'],
-      wait60:['2개월 넘게 연락 없음',RED,'관계 연락','모든 수주 고객은 2개월 1회 관계 연락 · 입대의 · 관리소장 교체 여부 확인','note'],
+      after30:['준공 후 사후 연락 안 함',RED,'사후 연락','만족도 · 하자 · 내년 공사 · 추가 공종 · 주변 단지 소개를 확인하는 사후 통화','note'],
+      wait60:['관계 연락 주기 넘김',RED,'관계 연락','모든 수주 고객은 2개월 1회 관계 연락 · 입대의 · 관리소장 교체 여부 확인','note'],
       needwait:['니즈 확인 → 전환 대기',INK,'전환','확인한 니즈는 메모가 아니라 새 영업건 — 견적 발송 확인 후 전환','convert'],
       nocontact:['접촉 기록 없음',INK,'첫 접촉','하자 점검 통화 체크리스트(누수 · 균열 · 주차장)로 첫 접촉','note'],
       work:['공종 미분류',INK,'공종 기록','준공 공종을 기록해야 추천 타공종이 정확해짐','source'],
@@ -51,11 +56,13 @@
    if(r.wonAmount==null)rs.push('amt');
    if(!r.nextContactAt)rs.push('nonext');
   }
-  return {key:r.id,site:r.site||'현장명 확인 필요',brand:d.brand||'',owner:r.owner||'미배정',amount:r.wonAmount,amountText:r.wonAmount==null?'계약금액 미입력':undefined,bucket,sub,rs,stall:cd===null?0:Math.max(0,cd),extra:{need,r}};
+  const reasonText={after30:'사후 연락 없음 · 기준 D+'+q.after+' 넘김',wait60:'연락 없음 '+(ld===null?'':ld+'일')+' · 기준 '+q.wait+'일',late:nd!==null&&nd<0?'다음 접촉일 '+Math.abs(nd)+'일 지남':''};
+  return {key:r.id,site:r.site||'현장명 확인 필요',brand:d.brand||'',owner:r.owner||'미배정',amount:r.wonAmount,amountText:r.wonAmount==null?'계약금액 미입력':undefined,bucket,sub,rs,reasonText,stall:cd===null?0:Math.max(0,cd),extra:{need,r}};
  }
  function topHtml(s){
   const years=['전체',String(s.current),String(s.current-1),String(s.current-2),'이전'];
-  return '<div class="plv-intro xb-years"><i style="background:#64748b"></i><b>준공연도</b><span>'+s.rows.length+'곳</span><div class="plv-spacer"></div><div class="plv-pills" role="group" aria-label="준공연도">'+years.map(y=>'<button type="button" data-xb="year" data-value="'+attr(y)+'" aria-pressed="'+(String(s.year)===y)+'">'+h(y)+' <b>'+s.mine.filter(r=>s.inYear(r,y)).length+'</b></button>').join('')+'</div></div>';
+  const q=rules(),opt=(cur,list)=>list.map(n=>'<option value="'+n+'"'+(n===cur?' selected':'')+'>'+n+'일</option>').join('');
+  return '<div class="plv-intro xb-years"><i style="background:#64748b"></i><b>준공연도</b><span>'+s.rows.length+'곳</span><label class="sb-rule">사후 연락 기준 준공 후 <select data-xb-rule="afterCompletionDays" aria-label="사후 연락 기준">'+opt(q.after,[...new Set([14,30,60,90,q.after])].sort((a,b)=>a-b))+'</select></label><label class="sb-rule">관계 연락 주기 <select data-xb-rule="waitContactDays" aria-label="관계 연락 주기">'+opt(q.wait,[...new Set([30,60,90,180,q.wait])].sort((a,b)=>a-b))+'</select></label><div class="plv-spacer"></div><div class="plv-pills" role="group" aria-label="준공연도">'+years.map(y=>'<button type="button" data-xb="year" data-value="'+attr(y)+'" aria-pressed="'+(String(s.year)===y)+'">'+h(y)+' <b>'+s.mine.filter(r=>s.inYear(r,y)).length+'</b></button>').join('')+'</div></div>';
  }
  function open(key,act){
   const r=root.expansionRecords().find(x=>x.id===String(key)||x.sourceOpportunityId===String(key));if(!r)return;
@@ -73,6 +80,7 @@
   CFG.topHtml=topHtml(s);
   host.innerHTML=SB().html(CFG,items,S);
   SB().bind(host,{state:()=>SB().state('expansion'),cfg:()=>CFG,paint:()=>root.paintExpansion(),open});
+  if(!host.__xbr){host.__xbr=true;host.addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.xbRule;if(!k)return;setRule(k,e.target.value);root.paintExpansion();if(typeof root.toast==='function')root.toast((k==='afterCompletionDays'?'사후 연락 기준':'관계 연락 주기')+'을 '+e.target.value+'일로 바꿨습니다 (이 PC에 저장)');});}
   if(!host.__xb){host.__xb=true;host.addEventListener('click',e=>{const b=e.target.closest('[data-xb="year"]');if(!b)return;root.G.expansionYear=b.dataset.value;const st=SB().state('expansion');st.bucket='all';st.reason=null;st.limit=30;root.paintExpansion();});}
   const ps=document.getElementById('psub');if(ps&&root.G.page==='expansion')ps.textContent='왼쪽 사후관리 진단 → 오른쪽 확인할 현장 · 빨강 사유부터';
   return true;
