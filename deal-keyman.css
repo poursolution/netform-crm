@@ -1,0 +1,20 @@
+/* 파이프라인 상세 · 담당자 관계 이력 + AI 판단 (2026-10-03). 빨강 #d93a3a 는 변경 뒤 첫 응대 전에만 */
+.dk-change{margin-top:10px;border:1px solid #f3c6c6;background:#fff6f6;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.dk-change.ok{border-color:#e6e8ee;background:#f7f8fa}
+.dk-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.dk-head b{font-size:12.5px;color:#d93a3a}.dk-change.ok .dk-head b{color:#374151}.dk-head span{font-size:11.5px;color:#6b7280;flex:1 1 160px}
+.dk-head button{border:1px solid #e3e6ec;background:#fff;border-radius:7px;font:inherit;font-size:11.5px;font-weight:700;padding:4px 9px;cursor:pointer;color:#15171c}
+.dk-body{display:flex;flex-direction:column;gap:8px}.dk-body dl{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;margin:0}.dk-body dl div{display:flex;flex-direction:column;gap:1px}.dk-body dt{font-size:10.5px;color:#9ca3af}.dk-body dd{margin:0;font-size:12.5px;font-weight:700;color:#15171c}
+.dk-sub{font-size:12px;color:#15171c;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}.dk-sub small{font-weight:500;color:#9ca3af;font-size:10.5px}
+.dk-checks{display:flex;flex-direction:column;gap:4px}.dk-checks button{text-align:left;border:1px solid #e6e8ee;background:#fff;border-radius:7px;font:inherit;font-size:12px;padding:6px 9px;cursor:pointer;color:#374151}.dk-checks button[aria-pressed="true"]{border-color:#15171c;color:#15171c;font-weight:700}
+.dk-primary{border:0;background:#15171c;color:#fff;border-radius:8px;font:inherit;font-size:12.5px;font-weight:800;padding:9px 12px;cursor:pointer}
+.dk-note{margin:0;font-size:11px;color:#6b7280;line-height:1.5}
+.idv-msg.dk-key .idv-bubble{border:1px solid #f3c6c6;background:#fff6f6;font-weight:700}.idv-msg.dk-key .idv-meta em{color:#d93a3a}
+.dk-now{border:1px solid #f3c6c6!important;background:#fff6f6!important;display:flex;flex-direction:column;gap:6px}.dk-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.04em;color:#d93a3a}.dk-now b{font-size:14px;color:#15171c}.dk-now p{margin:0;font-size:12px;color:#6b7280;line-height:1.5}
+.dk-now button{align-self:flex-start;border:0;background:#15171c;color:#fff;border-radius:8px;font:inherit;font-size:12.5px;font-weight:800;padding:8px 12px;cursor:pointer}
+.dk-ai header{display:flex;align-items:baseline;gap:8px}.dk-ai header h3{margin:0;font-size:13.5px}.dk-ai header small{font-size:11px;color:#9ca3af}
+.dk-aibtns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.dk-aibtns button{border:1px solid #d7d0f5;background:#f6f3ff;color:#4b2fb3;border-radius:8px;font:inherit;font-size:12px;font-weight:700;padding:6px 10px;cursor:pointer}.dk-aibtns button:disabled{opacity:.6;cursor:default}
+.dk-airow{margin-top:10px;padding:9px 11px;border-radius:9px;background:#f7f8fa;border:1px solid #e6e8ee;display:flex;flex-direction:column;gap:3px}.dk-airow span{font-size:10.5px;color:#9ca3af;font-weight:700}.dk-airow b{font-size:13px;color:#15171c;line-height:1.45}.dk-airow p{margin:0;font-size:11.5px;color:#6b7280;line-height:1.5}
+.dk-airow .lnk{align-self:flex-start;border:0;background:none;padding:0;color:#4b2fb3;font:inherit;font-size:11.5px;font-weight:700;text-decoration:underline;cursor:pointer}
+.dk-aierr{margin:8px 0 0;font-size:11.5px;color:#d93a3a}
+.dk-known{margin-top:8px;border:1px solid #cfe3ff;background:#f3f8ff;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:5px}.dk-known>b{font-size:12.5px;color:#1d4ed8}.dk-known div{display:flex;flex-direction:column}.dk-known strong{font-size:13px;color:#15171c}.dk-known span{font-size:11.5px;color:#6b7280}.dk-known p{margin:0;font-size:12px;color:#374151}.dk-known small{font-size:10.5px;color:#9ca3af;line-height:1.5}
+.dk-known button{align-self:flex-start;border:1px solid #1d4ed8;background:#fff;color:#1d4ed8;border-radius:7px;font:inherit;font-size:12px;font-weight:700;padding:5px 10px;cursor:pointer}
