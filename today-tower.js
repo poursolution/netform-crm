@@ -70,7 +70,8 @@
   else if(deal&&col!=='won'&&relDays!==null&&relDays>=30&&code!=='waiting'){rk='month';urg='today';}
   else if(code==='waiting'&&relDays!==null&&relDays>=60){rk='long';urg='week';}
   else if(col==='bid'&&!(f['compete.decision_date']||f['imminent.decision_date']||f['bidding.decision_date']||f['bidding.bid_deadline'])){rk='data';urg='week';}
-  else if(exp||code==='completion'){rk='after';urg='week';}
+  else if(exp){rk=x.missingNext?'stall':'after';urg='week';}/* 확장관리: 연락일이 지났거나 준공 후 계산된 건만 '사후 연락', 날짜 자체가 없으면 '다음 행동 · 날짜 없음' */
+  else if(code==='completion'){const cd=since(d.completion_date)??stAge;if(!(cd!==null&&cd>=30&&(lastDays===null||lastDays>=30)))return null;rk='after';urg='week';}
   else if(x.missingNext){rk='stall';urg='week';}
   else if(x.dueDays===0){rk='promise';urg='today';}
   else return null;
