@@ -3,7 +3,7 @@
 #detailView.ddv .detailtop{display:flex;flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:6px 12px;padding:18px 24px 16px;background:#fff;border-top:0!important;border-bottom:1px solid #f0f1f4;backdrop-filter:none}
 #detailView.ddv .detailtopin{flex:1 1 320px;min-width:0;align-items:flex-start;gap:10px;margin:0}
 #detailView.ddv .detailtopin>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
-#detailView.ddv .backbtn{order:9;width:32px;height:32px;border:0;border-radius:8px;background:#f3f4f7;color:#6b7280;font-size:0;padding:0;flex:none;cursor:pointer}
+#detailView.ddv .backbtn{order:10;align-self:flex-start;width:32px;height:32px;border:0;border-radius:8px;background:#f3f4f7;color:#6b7280;font-size:0;padding:0;flex:none;cursor:pointer}
 #detailView.ddv .backbtn::before{content:'✕';font-size:14px}
 #detailView.ddv .exec-favorite{order:7;flex:none;border:1px solid #e1e4ea;background:#fff;border-radius:8px;padding:6px 10px;font-size:12.5px;color:#374151}
 .ddv-chips{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap}

@@ -14,8 +14,10 @@
  const RULES=()=>root.OPS_RULES||{};
  /* 설정값(하드 규칙 아님): 고액 기준 · 주간 연락 목표 · 첫 응답 기준 시간 · 역할 지정 */
  const BIG=()=>Number(RULES().towerBigAmount)||3e8,WEEK_GOAL=()=>Number(RULES().towerWeeklyContactGoal)||40,FIRST_HOURS=()=>Number(RULES().towerFirstResponseHours)||2;
- const ROLE_BY_NAME=()=>Object.assign({'이승우':'ceo','황윤선':'vp','한준엽':'lead'},RULES().towerRoles||{});
+ /* 역할은 로그인 계정으로 자동(2026-10-03 대표 확정): 송보람 = 영업관리 · 이승우 = 대표 · 황윤선 = 상무 · 한준엽 = 팀장 · 영업사원 = 정정훈 · 김성민 · 이필선. OPS_RULES.towerRoles 로 바꿀 수 있다 */
+ const ROLE_BY_NAME=()=>Object.assign({'이승우':'ceo','황윤선':'vp','한준엽':'lead','송보람':'mgr'},RULES().towerRoles||{});
  const ROLE_LABEL={rep:'영업사원',mgr:'영업관리',lead:'팀장',vp:'상무',ceo:'대표'};
+ const SWITCH_ROLES=['rep','mgr','lead','vp','ceo'];/* 역할 비교(관리자 미리보기) */
  const COLS=[['inq','견적문의',FIRST_HOURS()+'시간 안 첫 연락'],['cons','컨설팅 설계','방문 후 3일 안 견적'],['sent','자료 발송완료','견적 발송 후 7일 안 후속 연락'],['rel','관계관리','월 1회 이상 · 장기 2개월 1회'],['bid','경쟁·입찰','마감 D-7부터 준비'],['con','계약·시공','계약일 · 금액 입력 · 착공 후 주 1회 현장 확인'],['won','수주·확장','준공 D+30 사후 연락']];
  const COL_OF={first_contact:'cons',consulting:'cons',sent:'sent',rapport:'rel',silent:'rel',waiting:'rel',compete:'bid',imminent:'bid',bidding:'bid',contract:'con',construction:'con',completion:'won',won:'won'};
  /* 이유(칩 드롭다운) · 색: 빨강 = 기준 초과 · 손실 위험만 */
@@ -36,7 +38,7 @@
  /* ── 역할 ── */
  function roleOf(X){
   const G=root.G,me=root.repN(root.ME&&root.ME.name),byName=ROLE_BY_NAME()[me]||'';
-  let r=byName||(X.admin?'mgr':'rep');
+  let r=byName||'rep';if(!byName&&X.admin&&!(root.repProfile&&root.repProfile(me).salesRep))r='mgr';/* 이름 매핑이 없는 관리자(영업담당이 아닌 운영 계정)는 영업관리 */
   if(X.admin&&G.towerRole&&ROLE_LABEL[G.towerRole])r=G.towerRole;/* 관리자 미리보기(역할 비교) */
   if(!X.admin&&r!=='rep')r='rep';/* 팀 자료가 안 오는 계정은 내 담당 화면만 */
   return r;
@@ -168,7 +170,7 @@
   const title=role==='rep'?'오늘 <span class="tt-b">일정 '+sched(rows,all,false).length+'건</span> · <span class="tt-r">긴급 '+nowN+'건</span>':h(({mgr:'매출이 막힌 곳',lead:'팀장 판단 + 팀 전체',vp:'결정 + 내 영업',ceo:'최고 결정'})[role])+' · <span class="tt-r">긴급 '+nowN+'건</span>';
   const subTail={rep:'. 그다음 중요 → 관리 순 · 12시까지 결과와 다음 행동을 업데이트하세요.',mgr:'. 진행이 멈춘 곳을 담당자에게 요청해 움직입니다. 입찰 마감 · 사고 · 승인은 팀장 영역이라 여기서 다루지 않습니다.',lead:'. 팀 전체 놓침 + 팀장 판단(마감 · 재배정 · 지원 요청) + 내 담당 영업입니다.',vp:'. 지원 · 결정 요청과 내 담당 영업입니다. 팀 진행은 위 칸에서 봅니다.',ceo:'. 결정 요청만 올립니다. 팀 진행은 위 칸 · 담당자 줄에서 봅니다.'}[role];
   const sub='긴급 '+nowN+'건 = 위 카드 '+cards.length+' + 아래 「긴급 · 나머지」 '+Math.max(0,list.filter(i=>i.urg==='now').length-cards.length)+subTail;
-  const roles=X.admin?'<div class="tt-roles" role="group" aria-label="역할 비교(관리자 미리보기)"><span>역할 비교</span>'+Object.keys(ROLE_LABEL).map(k=>'<button type="button" data-tt="role" data-v="'+k+'" aria-pressed="'+(role===k)+'">'+ROLE_LABEL[k]+'</button>').join('')+'</div>':'';
+  const roles=X.admin?'<div class="tt-roles" role="group" aria-label="역할 비교(관리자 미리보기)"><span>역할 비교</span>'+SWITCH_ROLES.map(k=>'<button type="button" data-tt="role" data-v="'+k+'" aria-pressed="'+(role===k)+'">'+ROLE_LABEL[k]+'</button>').join('')+'</div>':'';
   const stages='<section class="tt-stages"><header><b>'+(role==='mgr'?'매출 흐름 · 막힌 구간':team?'팀 파이프라인 상태':'내 파이프라인 상태')+'</b><span>'+(team?'팀 전체 · 놓침이 몰린 단계가 매출이 멈춘 곳 · 누르면 그 단계만 봅니다':'내 담당 건만 집계 · 누르면 그 단계에서 확인할 것만 봅니다')+'</span><i></i><button type="button" data-tt="stage" data-v="" aria-pressed="'+(!S.stage)+'">전체 단계</button></header><div class="tt-cells">'
    +COLS.map(c=>{const total=colTotal(c[0]),miss=missSrc.filter(i=>i.st===c[0]).length;return '<button type="button" class="tt-cell'+(miss?' miss':'')+'" data-tt="stage" data-v="'+c[0]+'" aria-pressed="'+(S.stage===c[0])+'"><span class="n">'+h(c[1])+'</span><span class="t"><b>'+total+'</b><small>'+(team?'건':'건 담당')+'</small></span><span class="m">'+(miss?missLabel+miss:'정상')+'</span><span class="r">'+h(c[2])+'</span></button>';}).join('')+'</div></section>';
   let strip='';
