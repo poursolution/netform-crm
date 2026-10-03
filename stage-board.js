@@ -17,7 +17,7 @@
   out.sort((a,b)=>a.pri-b.pri||b.rs.length-a.rs.length||b.stall-a.stall||String(a.site||'').localeCompare(String(b.site||''),'ko'));
   return out;
  }
- const dayLabel=(C,n)=>(C.stallUnit||'')+n+'일';
+ const dayLabel=(C,n)=>C.stallFmt?C.stallFmt(n):(C.stallUnit||'')+n+'일';
  function rowHtml(C,it,reason){
   const k=reason||it.first,rs=k?C.RS[k]:null,bc=BRAND[it.brand]||'#9ca3af',S=C.S.find(s=>s[0]===it.bucket)||C.S[0],hot=C.stallRed!=null&&it.stall>C.stallRed;
   return '<div class="psb-row" role="row" tabindex="0" data-sb="open" data-key="'+attr(it.key)+'" style="border-left-color:'+bc+'"><div class="l"><b title="'+attr(it.site)+'">'+h(it.site)+(it.badge||'')+'</b><span><em style="color:'+bc+'">'+h(it.brandText||it.brand||'브랜드 미지정')+'</em> · '+h(it.owner||'미배정')+' · '+h(it.amountText||money(it.amount))+'</span></div><div class="r"><div class="s"><b style="color:'+(S[2]==='#15171c'?'#15171c':'#6b7280')+'">'+h(S[1].split(' · ')[0])+'</b><span>'+h(it.sub)+'</span></div><span class="i" style="color:'+(rs?rs[1]:'#6b7280')+'">'+h(rs?rs[0]:'정상')+'</span><b class="d'+(hot?' r':'')+'">'+h(dayLabel(C,it.stall))+'</b><button type="button" data-sb="act" data-key="'+attr(it.key)+'" data-v="'+attr(k||'')+'">'+h(rs?rs[2]:(C.openLabel||'열기'))+'</button></div></div>';
@@ -36,7 +36,7 @@
   const acts=(S.reason?[S.reason]:reasons.slice(0,3).map(x=>x.k)).map(k=>({tag:C.RS[k][0]+' '+byS.filter(i=>i.rs.includes(k)).length+unit,t:C.RS[k][3]}));
   const filters=[S.bucket!=='all'?(C.S.find(s=>s[0]===S.bucket)||[])[1]:null,S.reason?C.RS[S.reason][0]:null].filter(Boolean);
   const k2=C.kpi2?C.kpi2(inB,cnt):[C.S[0][1],cnt(C.S[0][0])+unit,C.S[0][3]];
-  const k3=C.kpi3?C.kpi3(inB,avg):['평균 '+(C.stallName||'체류'),avg+'일',C.stallDesc||'이 단계에 머문 일수'];
+  const k3=C.kpi3?C.kpi3(inB,avg):['평균 '+(C.stallName||'체류'),C.stallFmt?C.stallFmt(avg):avg+'일',C.stallDesc||'이 단계에 머문 일수'];
   const diag='<section class="psb-diag"><div class="psb-box"><header><b>'+h(C.diagTitle||'진단')+'</b><span>'+inB.length+unit+(C.noAmount?'':' · '+h(money(sumAmt)))+'</span><i></i>'+(filters.length?'<button type="button" class="lnk" data-sb="clear">필터 해제</button>':'')+'</header>'
    +'<div class="psb-axis"><span>'+h(C.axis)+'</span><div class="bar">'+C.S.map((s,i)=>'<div style="width:'+W[i]+'%;background:'+s[2]+'"></div>').join('')+'</div><div class="leg">'+C.S.map(s=>'<button type="button" data-sb="bucket" data-v="'+s[0]+'" aria-pressed="'+(S.bucket===s[0])+'"><i style="background:'+s[2]+'"></i>'+h(s[1])+' <b>'+cnt(s[0])+'</b></button>').join('')+'</div></div>'
    +'<div class="psb-kpis"><div><span>기준 넘김 (빨강)</span><b style="color:'+(redN?RED:'#15171c')+'">'+redN+unit+'</b><small>오늘 처리할 것</small></div><div><span>'+h(k2[0])+'</span><b>'+h(k2[1])+'</b><small>'+h(k2[2])+'</small></div><div><span>'+h(k3[0])+'</span><b>'+h(k3[1])+'</b><small>'+h(k3[2])+'</small></div></div></div>'
