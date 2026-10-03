@@ -81,7 +81,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   if(shot)await page.screenshot({path:shot+'-brief-stored.png'});
   await page.locator('#brief-v2 .bv-week select').selectOption({index:0});await page.waitForTimeout(300);assert.equal(await page.locator('#brief-v2 .bv-stored').count(),0);
   /* ── 리포트 ── */
-  await page.evaluate(()=>goPage('report'));await page.waitForTimeout(600);
+  await page.evaluate(()=>(G.reportBOff=true,goPage('report')));await page.waitForTimeout(600);
   const v=page.locator('#report-v2');assert.equal(await v.locator('[data-rp="snapshot"]').innerText(),'이 보고 저장');
   await v.locator('.rp-dot').nth(6).click();await page.waitForTimeout(150);
   assert.equal(await v.locator('.rp-slide.on .rp-answers button:disabled').count(),3,'보고를 저장하기 전에는 답을 남길 수 없다');assert.match(await v.locator('.rp-slide.on .rp-lock').innerText(),/먼저 위의 \[이 보고 저장\]/);

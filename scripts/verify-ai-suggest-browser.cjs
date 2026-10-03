@@ -63,7 +63,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await ask.locator('.ak-row').innerText(),/강동롯데캐슬 퍼스트 아파트/);assert.equal(await ask.locator('.ak-row').count(),1);
   assert.equal(await page.evaluate(()=>__ai.at(-1).auth),'Bearer user-jwt','사용자 토큰으로 부른다');await page.keyboard.press('Escape');
   /* 3. 리포트 문장: 채우기만 하고 저장하지 않는다 */
-  await page.evaluate(()=>goPage('report'));await page.waitForTimeout(500);
+  await page.evaluate(()=>(G.reportBOff=true,goPage('report')));await page.waitForTimeout(500);
   await page.locator('#report-v2 [data-rp="ai"]').click();await page.waitForTimeout(500);
   assert.match(await page.locator('#report-v2 .rp-slide.on').innerText(),/롯데캐슬 입찰을 잡으면 9억이 들어옵니다[\s\S]*이번 달 수주는 아직 없습니다/);
   assert.equal(await page.evaluate(()=>__rpc.includes('crm_report_snapshot_save_v1')),false,'AI 문장은 저장하지 않는다');

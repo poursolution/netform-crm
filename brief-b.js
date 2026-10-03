@@ -281,5 +281,7 @@
   root.addEventListener('contract-sales:changed',()=>{try{if(root.G.page==='brief'&&enabled())root.paintBrief();}catch(e){}});
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- root.BriefB={enabled,win,data,badfit,badfitReason,evalPromise,jandi:x=>jandi(x,promisesOf(x.w.p).map(p=>evalPromise(x,p)),promisesOf(x.w.a))};
+ /* 리포트(월간)도 같은 정의로 센다 — 배드핏 · 실주 · 견적 발송 · 계약실적 원장 · 단계 진입 */
+ const lib={K,key,addDays,between,amt,pct,pctText,tally,tallyText,BRAND,STALE,badfit,badfitReason,isLoss,lossReason,closedKey,quoteIn,entered,groupOf,ledger,contractsIn,lastActKey};
+ root.BriefB={lib,enabled,win,data,badfit,badfitReason,evalPromise,jandi:x=>jandi(x,promisesOf(x.w.p).map(p=>evalPromise(x,p)),promisesOf(x.w.a))};
 })(window);
