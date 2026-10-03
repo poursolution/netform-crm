@@ -46,9 +46,22 @@
   const card=view.querySelector('#contactCard');if(!card)return;
   card.querySelectorAll('.malb').forEach(n=>{if(/근무 이력/.test(n.textContent)){n.hidden=true;const t=n.nextElementSibling;if(t&&(t.classList.contains('contacthist')||t.classList.contains('detailnotice')))t.hidden=true;}});
   card.querySelectorAll('button[onclick*="openManagerMove"]').forEach(b=>b.hidden=true);
-  /* 인사정보 느낌('현재 근무지 · 현재 연락처') 대신 사람 중심 한 줄: 역할 · 핵심 담당자. 평상시엔 조용하게 */
-  {const who=card.querySelector('.contactwho small'),st=card.querySelector('.contactstate');const ci=root.contactInfo(d,root.itemPatch(d,'deal'))||{};if(who&&ci.name)who.textContent=(ci.role||'관리소장')+' · 이 현장의 핵심 담당자';if(st&&!st.classList.contains('moved'))st.hidden=true;}
-  card.querySelector('.dk-change')?.remove();
+  /* 왼쪽 연락처 = 사람 한 덩어리(2026-10-03 대표 "왜 자꾸 안 변하는지"): 역할 / 이름 / 번호 / [전화][문자][수정] + 관리사무소 한 줄 + 수신 동의 한 줄. 예전 조각(머리줄 · 번호 박스 2개 · 버튼 4개)은 숨기고, 같은 사람이 반복되던 '현장 연락처' 목록은 [다른 연락처 n명]으로 접는다 */
+  card.classList.add('dk-card');
+  card.querySelectorAll(':scope>.contacthead,:scope>.contactnums,:scope>.contactactions,:scope>.contactvoice').forEach(n=>n.hidden=true);
+  card.querySelector('.dk-person')?.remove();card.querySelector('.dk-change')?.remove();
+  const ci=root.contactInfo(d,root.itemPatch(d,'deal'))||{},list=(()=>{try{return root.siteContacts(d,root.itemPatch(d,'deal'))||[];}catch(e){return [];}})(),key=ci.personKey||(root.phoneN(ci.mobile)?'mobile:'+root.phoneN(ci.mobile):''),full=list.find(x=>String(x.personKey||'')===String(key))||ci;
+  const others=list.filter(x=>String(x.personKey||root.phoneN(x.mobile))!==String(key||root.phoneN(ci.mobile))),has=!!(ci.name||ci.mobile);
+  const consent=full.sendBlocked?'수신 거부':full.smsConsent?'문자 수신 동의':'수신 동의 미확인';
+  const person=el('div','dk-person',has
+   ?'<span class="dk-role">'+h(ci.role||'관리소장')+'</span><b class="dk-name">'+h(ci.name||'이름 미입력')+'</b><span class="dk-phone'+(ci.mobile?'':' none')+'">'+h(ci.mobile?root.phoneFmt(ci.mobile):'휴대폰 미입력')+'</span>'
+    +'<div class="dk-acts"><button type="button" class="fill" data-dk="call"'+(ci.mobile?'':' disabled')+'>전화</button><button type="button" data-dk="sms"'+(ci.mobile?'':' disabled')+'>문자</button><button type="button" data-dk="editc">수정</button></div>'
+    +'<div class="dk-lines"><span>관리사무소 <b class="'+(ci.officeTel?'':'none')+'">'+h(ci.officeTel?root.phoneFmt(ci.officeTel):'미입력')+'</b>'+(ci.officeTel?' <button type="button" class="lnk" data-dk="office">전화</button>':'')+'</span><span class="'+(full.sendBlocked?'bad':full.smsConsent?'ok':'')+'">'+h(consent)+'</span></div>'
+    +'<div class="dk-foot"><button type="button" class="lnk" data-dk="replace">소장이 바뀌었어요</button><i></i><button type="button" class="lnk" data-dk="addc">+ 연락처 추가</button></div>'
+   :'<span class="dk-role">관리소장</span><b class="dk-name none">아직 등록된 담당자가 없습니다</b><div class="dk-acts"><button type="button" class="fill" data-dk="addc">연락처 등록</button></div>');
+  person.dataset.key=key;card.prepend(person);
+  const dir=card.querySelector(':scope>.contactedit.pc-contact-directory')||[...card.querySelectorAll(':scope>.contactedit')].find(n=>n.querySelector('.detailsecthead'));
+  if(dir&&!dir.closest('.dk-others')){const det=document.createElement('details');det.className='dk-others';det.innerHTML='<summary>다른 연락처 '+others.length+'명 · 수신 동의 설정</summary>';dir.before(det);det.append(dir);if(!others.length)det.querySelector('summary').textContent='연락처별 수신 동의 설정';}
   const c=changeOf(d);if(!c)return;
   const open=!!(root.G.dkOpen&&root.G.dkOpen[d.id]),done=checksOf(d,c),n=done.filter(Boolean).length;
   const box=el('div','dk-change'+(c.after?' ok':''),
@@ -56,7 +69,7 @@
    +(open?'<div class="dk-body"><dl><div><dt>기존 관리소장</dt><dd>'+h(c.prevName||'미기록')+'</dd></div><div><dt>현재 관리소장</dt><dd>'+h(c.curName||'미등록')+'</dd></div><div><dt>현재 영업단계</dt><dd>'+h(root.stageLabel(root.dealStage(d)))+'</dd></div><div><dt>기존 견적</dt><dd>'+h(Number(d.amount??d.amt??0)>0?root.fmtAmt(Number(d.amount??d.amt)):'금액 미입력')+'</dd></div></dl>'
     +'<b class="dk-sub">확인 필요 <small>'+n+'/'+CHECKS.length+' · 표시는 이 PC에만 · 서버에는 첫 응대 기록으로</small></b><div class="dk-checks">'+CHECKS.map((t,i)=>'<button type="button" data-dk="check" data-i="'+i+'" aria-pressed="'+!!done[i]+'">'+(done[i]?'☑':'☐')+' '+h(t)+'</button>').join('')+'</div>'
     +'<button type="button" class="dk-primary" data-dk="first">변경 후 첫 응대 기록</button><p class="dk-note">관리소장이 바뀌면 견적 금액 · 공법 선호 · 제안 자체가 다시 검토될 수 있고 실주로 가는 경우가 있어, 변경을 영업 이벤트로 남깁니다.</p></div>':''));
-  card.querySelector('.contactactions')?.after(box)||card.append(box);
+  person.after(box);
  }
  /* ② 가운데: 변경 기록 말풍선을 중요 이벤트로 */
  function center(view){
@@ -97,6 +110,12 @@
  function rerender(){try{apply();}catch(e){}}
  function onClick(e){
   const b=e.target.closest('#detailView [data-dk]');if(!b)return;const d=root.CUR_DETAIL?.item;if(!d)return;const a=b.dataset.dk,c=changeOf(d);
+  if(a==='call'){try{root.contactDial('mobile');}catch(err){}return;}
+  if(a==='office'){try{root.contactDial('office');}catch(err){}return;}
+  if(a==='sms'){try{root.contactSms();}catch(err){}return;}
+  if(a==='editc'){const k=b.closest('.dk-person')?.dataset.key||'';try{root.openQuickContact(k?'edit':'new',k||undefined);}catch(err){}return;}
+  if(a==='addc'){try{root.openQuickContact('new');}catch(err){}return;}
+  if(a==='replace'){try{root.openQuickContact('new');setTimeout(()=>{const r=document.querySelector('#ddvPanel.dp-contact [data-dp="replace"]');if(r&&r.getAttribute('aria-pressed')!=='true')r.click();},120);}catch(err){}return;}
   if(a==='toggle'){root.G.dkOpen=root.G.dkOpen||{};root.G.dkOpen[d.id]=!root.G.dkOpen[d.id];return rerender();}
   if(a==='check'&&c){toggleCheck(d,c,Number(b.dataset.i));return rerender();}
   if(a==='first'&&c){prefill(firstResponseText(d,c));return;}
