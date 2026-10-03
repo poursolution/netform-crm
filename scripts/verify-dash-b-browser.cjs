@@ -1,0 +1,159 @@
+'use strict';
+/* 영업 대시보드 v2 검사(2026-10-04 핸드오프 dashboard): 전체 현황 · 컨트롤타워 · 성과 분석
+   지표 = 주간 브리핑 · 월간 리포트와 같은 정의(계약실적 = 원장, 메이드율 = 수주 ÷ (수주 + 실주) · 배드핏 제외, 적합률, 문의 → 계약, 확정 전환율)
+   실적이 없는 기간 = '아직 없음' · 문장 속 숫자는 자료에서 · 컨트롤타워 표는 안쪽 스크롤 없이 · 할 일 지정 · 알림은 관리자 · 팀장만 · 끄면(G.dashBOff) 예전 화면 */
+const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+const root=path.resolve(__dirname,'..'),shot=process.argv[2]||'';
+const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':t.endsWith('.png')?'image/png':'text/html');fs.createReadStream(t).pipe(res)});
+(async()=>{
+ await new Promise(r=>srv.listen(0,'127.0.0.1',r));
+ const browser=await chromium.launch({headless:true});
+ try{
+  const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
+  await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});
+  const page=await ctx.newPage(),errs=[];page.on('pageerror',e=>errs.push(e.message));
+  /* 오늘 = 2026-10-07(수) 10:00 — 10월 계약 없음 · 이번 주 = 10/5(월) ~ 10/11(일) */
+  await page.clock.setFixedTime(new Date('2026-10-07T10:00:00+09:00'));
+  await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.DashB&&window.SalesInsights&&window.BriefB&&window.ContractSalesData&&window.CommonFilterBar);
+  await page.evaluate(()=>{
+   const U=n=>'0000000'+n+'-0000-4000-8000-00000000000'+n,T=k=>k+'T10:00:00+09:00';
+   const deal=(id,site,owner,code,extra)=>Object.assign({id,site,assignee:owner,brand:'POUR솔루션',created:'2026-02-01',code,stage_code:code,grp:'영업·관리',amt:1e8},extra||{});
+   const lost=(id,site,owner,k,reason,brand)=>deal(id,site,owner,'lost',{outcome:'lost',grp:'수주 실패',brand,closed_at:T(k),closed:k,stage_contexts:{lost:{fields:{close_reason:reason,close_detail:'확인'}}}});
+   const inq=(n,site,owner,at,extra)=>Object.assign({id:U(n),site,status:owner?'배정완료':'접수',at,created_at:at,received_at:at,brand:'POUR솔루션',assignee:owner||'',assigned_to:owner||'',assigned_at:owner?at:null},extra||{});
+   B={deals:[
+     deal('w1','[서울 마포] 계약 A','이필선','won',{outcome:'won',grp:'수주 성공',brand:'석민이앤씨',won_amount:5e8,closed_at:T('2026-03-10')}),
+     deal('w2','[경기 고양] 계약 B','황윤선','won',{outcome:'won',grp:'수주 성공',won_amount:3e8,closed_at:T('2026-09-20')}),
+     lost('l1','[인천] 실주 가격','이필선','2026-08-08','가격 열세','석민이앤씨'),lost('l2','[수원] 실주 소장','황윤선','2026-09-18','담당자 부재·인수인계 누락','POUR솔루션'),lost('l3','[수원] 실주 가격2','황윤선','2026-05-19','가격 열세','POUR솔루션'),
+     ...[1,2,3,4,5].map(i=>deal('o'+i,'[경기] 기한 지난 현장 '+i,'황윤선','sent',{nextActionObj:{text:'후속 통화',due:'2026-09-20',status:'open'},lastMeaningfulContactAt:T('2026-09-01'),activities:[{id:'ao'+i,type:'전화',note:'통화',at:T('2026-09-01')}]})),
+     deal('n1','[수원] 매탄 임박','이필선','bidding',{amt:4e8,brand:'석민이앤씨',stage_contexts:{bidding:{fields:{bid_deadline:'2026-10-09',bid_terms:'일반'}}},nextActionObj:{text:'입찰 준비',due:'2026-10-09',status:'open'},lastMeaningfulContactAt:T('2026-10-06'),activities:[{id:'an1',type:'전화',note:'관리소장 통화',at:T('2026-10-06')}]}),
+     deal('n2','[서울 송파] 계약 검토','이필선','contract',{amt:3e8,stage_contexts:{contract:{fields:{contract_status:'체결 예정',contract_amount:35e7,contract_date:'2026-10-27'}}},nextActionObj:{text:'계약서 검토',due:'2026-10-20',status:'open'},lastMeaningfulContactAt:T('2026-10-05'),activities:[{id:'an2',type:'방문',note:'현장 방문',at:T('2026-10-05')}]})],
+    inquiries:[inq(1,'[경기 고양] 계약 B','황윤선','2026-08-02T10:00:00+09:00',{responded_at:'2026-08-02T11:00:00+09:00'}),inq(2,'[서울] 미배정 문의','','2026-10-07T08:00:00+09:00'),inq(3,'[부산] 범위 밖','','2026-08-06T10:00:00+09:00',{status:'종결',close_reason:'기타 종결 — 배드핏(부적합) · 공사 범위 밖 · 이전 상태: 접수'}),inq(4,'[경기] 첫 연락 지연','이필선','2026-10-06T09:00:00+09:00')],
+    activities:[],inquiryTrash:[],expansion_pool:[]};
+   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
+   document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op)=>{__writes.push(op);return 'req';};
+   const ev=(id,k,n,o,b)=>({deal_id:id,brand:b,sales_owner_name:o,events:[{kind:'signed',effective_date:k,amount_delta:n}]});
+   ContractSalesData.state=()=>({status:'ready',items:[ev('w1','2026-03-10',5e8,'이필선','석민이앤씨'),ev('w2','2026-09-20',3e8,'황윤선','POUR솔루션')]});
+   window.__opened=[];drwDeal=s=>__opened.push(JSON.parse(s).id);drwInq=s=>__opened.push(JSON.parse(s).id);
+   window.__batch=null;if(window.PipelineBatch)PipelineBatch.openRows=(rows,mode)=>{window.__batch=[rows.map(r=>r.item.id).sort(),mode];};
+   goPage('dash');
+  });
+  await page.waitForTimeout(500);
+  /* ── 1. 전체 현황 ── */
+  const d=page.locator('#si-dash .db-shell');assert.equal(await d.count(),1,'새 대시보드');assert.equal(await page.locator('#si-dash .si-shell').count(),0,'예전 화면 대신');
+  assert.equal(await page.locator('#ptitle').innerText(),'영업 대시보드');assert.match(await page.locator('#psub').innerText(),/전 직원 공개$/);
+  assert.equal(await page.locator('#pg-dash>.cf-bar .cf-pill').count()>=5,true,'공통 필터줄(전체 + 브랜드 4)');assert.equal(await page.locator('#pg-dash>.cf-bar').isVisible(),true);assert.equal(await page.locator('#pg-dash>.cf-bar').evaluate(n=>getComputedStyle(n).position),'sticky');
+  assert.equal(await d.locator('.db-month').evaluate(n=>n.getBoundingClientRect().height<420),true,'월별 카드 높이');
+  assert.match(await d.locator('.db-tool').innerText(),/컨트롤타워 ↗\s*성과 분석 ↗\s*2026년 연간 접수 · 계약실적 \/ 파이프라인 · 조치 필요는 현재 기준[\s\S]*연간\s*1분기\s*2분기\s*3분기\s*4분기\s*LIVE 10\.07 10:00/);
+  const kpi=await d.locator('.db-kpi').evaluateAll(a=>a.map(n=>[n.querySelector('span').textContent,n.querySelector('b').textContent,n.querySelector('small').textContent]));
+  assert.deepEqual(kpi.map(k=>k[0]),['이번 달 계약 (10월)','올해 누적 계약','진행 중 파이프라인','견적문의','조치 필요','주간 활동']);
+  assert.deepEqual(kpi[0].slice(1),['아직 없음','10월 7일째 · 9월 3억'],'실적 없는 달 = 아직 없음 + 직전 달');assert.equal(await d.locator('.db-kpi').first().locator('b').evaluate(n=>getComputedStyle(n).color),'rgb(156, 163, 175)','아직 없음은 회색');
+  assert.deepEqual(kpi[1].slice(1),['8억','계약 2건']);assert.match(kpi[2][2],/^진행 7건$/);assert.deepEqual(kpi[3].slice(1),['4건','적합 3 · 배드핏 1']);
+  const core=await page.evaluate(()=>{const C=DashB.core();return {risk:C.risk.length,od:C.cnt('overdue'),miss:C.cnt('missing'),made:C.made,active:C.active.length};});
+  assert.equal(core.od,5);assert.equal(core.made,40,'메이드율 = 수주 2 ÷ (수주 2 + 실주 3) · 배드핏 제외');
+  assert.deepEqual(kpi[4].slice(1),[core.risk+'건','기한 지남 5 · 다음 할 일 없음 '+core.miss]);
+  assert.match(kpi[5][1],/^2건$/);assert.match(kpi[5][2],/^최근 7일 · \d+명 중 \d+명 0건$/);
+  assert.match(await d.locator('.db-band').innerText(),/오늘 먼저 볼 것\s*이번 주 기한 1건 · 4억 — 매탄 임박 입찰 마감 10\/9\s*올해 계약 8억 · 메이드율 40\.0% · 손봐야 할 \d+건 중 기한 지남 5건\s*컨트롤타워에서 처리 →/);
+  assert.deepEqual(await d.locator('.db-secs button').evaluateAll(a=>a.map(n=>n.childNodes[0].textContent)),['성과','사람','파이프라인','활동']);
+  /* 성과: 흐름 5칸 · 비율 4개 · 배드핏/실주 두 상자 */
+  assert.deepEqual(await d.locator('.db-fun>div').evaluateAll(a=>a.map(n=>[...n.children].map(c=>c.textContent))),[['견적문의','4건','전체 접수'],['적합 문의','3건','배드핏 1 제외'],['견적 발송','5건','기간 안 견적 발송'],['영업건 전환','12건','파이프라인 진입'],['수주','2건 · 8억','실주 3건']]);
+  assert.deepEqual(await d.locator('.db-rates>div').evaluateAll(a=>a.map(n=>[...n.children].map(c=>c.textContent))),[['영업 메이드율','40.0%','수주 2 ÷ (수주 2 + 실주 3) · 배드핏 제외'],['문의 적합률','75.0%','적합 3 ÷ 문의 4'],['문의 → 계약 전환율','50.0%','수주 2 ÷ 문의 4'],['확정 전환율 (8월 문의)','50.0%','8월 문의 2건 중 지금까지 1건 계약']]);
+  assert.match(await d.locator('.db-two .g').innerText(),/견적문의 배드핏 1건 · 영업 실패 아님 · 메이드율 제외\s*공사 범위 밖 1/);assert.match(await d.locator('.db-two .r').innerText(),/파이프라인 실주 3건 · 영업기회 상실 · 메이드율 포함\s*가격 열세 2 · 담당자 부재·인수인계 누락 1/);
+  /* 월별: 3월 5억 · 9월 3억 · 10월 진행 중(점선) · 11~12월 빈칸 · 월평균 = 8억 ÷ 9 */
+  const cols=await d.locator('.db-col').evaluateAll(a=>a.map(n=>[n.querySelector('span').textContent,n.className.replace('db-col','').trim(),n.disabled]));
+  assert.equal(cols.length,12);assert.deepEqual(cols[2],['5억','',false]);assert.deepEqual(cols[8],['3억','',false]);assert.deepEqual(cols[9],['진행 중','cur',false]);assert.deepEqual(cols[10],['','fut',true]);assert.deepEqual(cols[0],['없음','zero',false]);
+  assert.match(await d.locator('.db-month').innerText(),/월평균 8,889만[\s\S]*최고 3월 5억 · 최저 \d+월 없음 · 10월은 7일째라 진행 중 \(점선 막대\)/);
+  assert.deepEqual(await d.locator('.db-qcol span').evaluateAll(a=>a.map(n=>n.textContent).slice(7,10)),['2건','0건','2건'],'견적문의 월별');
+  await d.locator('.db-col').nth(2).click();await page.waitForTimeout(200);assert.match(await page.locator('#si-person h2').innerText(),/^2026년 3월 계약 근거$/);assert.equal(await page.locator('#si-person tbody tr').count(),1);await page.keyboard.press('Escape');
+  /* 브랜드별: 석민 5억(63%) 메이드율 50% · POUR솔루션 3억 33.3%(빨강) · 0이면 수주 없음 */
+  const br=await d.locator('.db-brow').evaluateAll(a=>a.map(n=>n.innerText.replace(/\s+/g,' ').trim()));
+  assert.match(br[0],/^석민이앤씨 5억 63% 문의 0 · 수주 1 · 메이드율 50\.0%$/);assert.match(br[1],/^POUR솔루션 3억 38% 문의 4 · 수주 1 · 메이드율 33\.3%$/);assert.match(br[2],/^POUR공법 수주 없음 문의 0 · 수주 0 · 메이드율 —$/);
+  if(shot)await page.screenshot({path:shot+'-dash-perf.png',fullPage:true});
+  /* 사람: 막힌 사람이 위 · 왜 막혔나 · 이번 주 영업 기록 */
+  await d.locator('.db-secs [data-v="people"]').click();await page.waitForTimeout(200);
+  const pr=page.locator('#si-dash .db-prow');assert.equal(await pr.count(),2);
+  assert.match(await pr.nth(0).innerText(),/^황윤선\s*막힘\s*3억\s*33\.3%\s*수주 1 · 실주 2\s*5건\s*예상 5억\s*36일 전\s*기한 지난 현장 \d · 이번 주 0건\s*왜 막혔나\s*기한 지난 건 5건 · 최장 17일 — .+ 단계에 5건 몰림\s*손볼 건 5$/);
+  assert.match(await pr.nth(1).innerText(),/^이필선\s*정상\s*5억\s*50\.0%\s*수주 1 · 실주 1\s*2건\s*예상 7억\s*어제\s*매탄 임박 · 이번 주 2건$/);
+  assert.match(await page.locator('#si-dash .db-heats').locator('xpath=..').innerText(),/이번 주 영업 기록\s*10\/5\(월\) – 10\/11\(일\)\s*팀 전체 2건 · \d+명 중 \d+명이 이번 주 기록 0건/);
+  assert.deepEqual(await page.locator('#si-dash .db-heat',{hasText:'이필선'}).locator('.cells span').allInnerTexts(),['1','1','','','','',''],'요일 7칸(월 방문 · 화 전화)');
+  assert.match(await page.locator('#si-dash .db-heat',{hasText:'황윤선'}).innerText(),/이번 주 0건[\s\S]*마지막 기록\s*36일 전 \(9\/1\)/);
+  if(shot)await page.screenshot({path:shot+'-dash-people.png',fullPage:true});
+  /* 파이프라인: 단계 01~05 · 끝난 영업 · 계약 임박(D-day, 7일 이내 빨강) */
+  await page.locator('#si-dash .db-secs [data-v="pipe"]').click();await page.waitForTimeout(200);
+  const stg=await page.locator('#si-dash .db-stage').evaluateAll(a=>a.map(n=>[n.querySelector(':scope>span').textContent,n.querySelector(':scope>div b').textContent,n.querySelector(':scope>em').textContent]));
+  assert.equal(stg.length,5);assert.deepEqual(stg.map(s=>s[0].slice(0,2)),['01','02','03','04','05']);assert.deepEqual(stg[1].slice(1),['5건','조치 필요 5']);assert.equal(stg[3][1],'1건');assert.equal(stg[4][1],'1건');
+  assert.match(await page.locator('#si-dash .db-ended').innerText(),/끝난 영업 · 전체 기간 누적\s*수주 2\s*실주 3[\s\S]*조치 필요 합계 \d+/);
+  const near=await page.locator('#si-dash .db-near').evaluateAll(a=>a.map(n=>[n.querySelector('em').textContent,n.querySelector('em').className,n.querySelector(':scope>div span').textContent,n.querySelector(':scope>div b').textContent]));
+  assert.deepEqual(near,[['D-2','hot','입찰 마감 10/9','4억'],['D-20','','계약 예정 10/27','3.5억']],'기한 가까운 순 · 7일 이내 빨강');
+  assert.match(await page.locator('#si-dash .db-note').innerText(),/^위 2건 7\.5억 · 이번 주 기한 1건 4억$/);
+  if(shot)await page.screenshot({path:shot+'-dash-pipe.png',fullPage:true});
+  /* 활동: 날짜별 묶음 · 종류 꼬리표 */
+  await page.locator('#si-dash .db-secs [data-v="act"]').click();await page.waitForTimeout(200);
+  assert.deepEqual(await page.locator('#si-dash .db-fg>span').allInnerTexts(),['2026.10.6 (화)','2026.10.5 (월)','2026.9.1 (화)']);
+  assert.match(await page.locator('#si-dash .db-fg').first().innerText(),/전화\s*이필선\s*매탄 임박 · 관리소장 통화\s*4억/);
+  await page.locator('#si-dash .db-fg button').first().click();assert.deepEqual(await page.evaluate(()=>__opened),['n1'],'행 클릭 = 현장 상세');
+  /* ── 2. 컨트롤타워 ── */
+  await page.locator('#si-dash [data-db="go"][data-v="control"]').first().click();await page.waitForTimeout(400);
+  const c=page.locator('#si-control .db-shell');assert.equal(await c.count(),1);assert.equal(await page.locator('#ptitle').innerText(),'컨트롤타워');
+  const hero=await c.locator('.db-hk').evaluateAll(a=>a.map(n=>[...n.children].map(x=>x.textContent)));
+  assert.deepEqual(hero,[['오늘 새로 끊긴 건','1','10/1 이후 · 첫 연락 지연'],['기한 지남','5','최장 17일 · 황윤선 5'],['미배정 문의','1','최장 0일 대기']]);
+  assert.match(await c.locator('.db-first').innerText(),/가장 먼저\s*황윤선 기한 지남 5건 — .+ 단계에 몰려 있습니다 \(최장 17일\)/);
+  assert.deepEqual(await c.locator('.db-mx .hc span').allInnerTexts(),['미배정','첫 연락 지연','기한 지남','마지막 연락 7일+','다음 할 일 없음','장기 정체']);
+  assert.deepEqual(await c.locator('.db-mx .hc small').evaluateAll(a=>a.map(n=>n.textContent).slice(0,4)),['1건','1건','5건','5건']);
+  assert.deepEqual(await c.locator('.db-mx .rn b').allInnerTexts(),['황윤선','이필선','미배정'],'문제 많은 순 · 미배정은 맨 아래');
+  assert.equal(await c.locator('.db-mx').evaluate(n=>getComputedStyle(n).gridTemplateColumns.split(' ').length),8,'이름 + 6열 + 지시');
+  assert.equal(await c.locator('.db-table').evaluate(n=>n.scrollWidth<=n.clientWidth&&getComputedStyle(n.querySelector('.db-mx')).overflowX==='visible'),true,'표는 안쪽 스크롤 없이');
+  assert.equal(await c.locator('.db-mx .cl[data-v="황윤선|due"] span').evaluate(n=>getComputedStyle(n).backgroundColor.startsWith('rgba(209, 74, 63')),true,'오늘 손댈 열 = 빨강 농도');
+  assert.equal(await c.locator('.db-mx .cl[data-v="황윤선|seven"] span').evaluate(n=>getComputedStyle(n).backgroundColor.startsWith('rgba(224, 164, 58')),true,'7일+ = 주황');
+  /* 기본 선택 = 기한 지남 열 → 오른쪽 목록(오래된 순) */
+  assert.match(await c.locator('.db-sel .hd').innerText(),/^전체 · 기한 지남\s*5건\s*선택 해제\s*다음 할 일 날짜가 지났는데 기록이 없습니다\.\s*이 5건 할 일 지정\s*담당자에게 알림$/);
+  assert.equal(await c.locator('.db-sel .it').count(),5);assert.match(await c.locator('.db-sel .it').first().innerText(),/기한 지난 현장 \d\s*황윤선 · .+ · 기한 지남\s*17일\s*열기/);
+  await c.locator('.db-mx .cl[data-v="이필선|first"]').click();await page.waitForTimeout(200);
+  assert.match(await page.locator('#si-control .db-sel .hd').innerText(),/^이필선 · 첫 연락 지연\s*1건[\s\S]*배정 후 2시간 안에 첫 연락을 못 했습니다\./);assert.match(await page.locator('#si-control .db-sel .it').innerText(),/첫 연락 지연\s*이필선 · 견적문의 · 배정 후 첫 연락 없음\s*1일/);
+  await page.locator('#si-control .db-sel .it button').click();assert.equal(await page.evaluate(()=>__opened.at(-1)),'00000004-0000-4000-8000-000000000004','[열기] = 기존 상세');
+  await page.locator('#si-control .db-mx .rn',{hasText:'황윤선'}).click();await page.waitForTimeout(200);
+  assert.match(await page.locator('#si-control .db-sel .hd').innerText(),/^황윤선 · 모든 문제\s*5건[\s\S]*황윤선님 담당 건 중 문제가 있는 전체입니다\./,'이름 클릭 = 그 사람의 모든 문제(같은 건은 한 번)');
+  await page.locator('#si-control .db-sel [data-db="assign"]').click();await page.waitForTimeout(200);
+  assert.deepEqual(await page.evaluate(()=>__batch),[['o1','o2','o3','o4','o5'],'next'],'할 일 지정 = 기존 일괄 등록 창');
+  await page.locator('#si-control .db-sel [data-db="clear"]').click();await page.waitForTimeout(200);assert.match(await page.locator('#si-control .db-sel .mr').innerText(),/표에서 칸 · 이름 · 열을 누르세요/);
+  assert.match(await page.locator('#si-control .db-risk').innerText(),/^데이터 위험/);
+  const hl=await page.locator('#si-control .db-health span').evaluateAll(a=>a.map(n=>n.innerText.replace(/\s+/g,' ').trim()));
+  assert.equal(hl.length,6);assert.match(hl[0],/^다음 할 일 등록률 \d+\.\d%$/);assert.equal(hl[1],'기록 당일 입력 아직 없음');assert.equal(hl[2],'배드핏 사유 입력률 100.0%');assert.equal(hl[3],'실주 사유 입력률 100.0%');assert.equal(hl[4],'첫 연락 2시간 안 0.0%');assert.equal(hl[5],'견적 3일 안 발송 아직 없음');
+  if(shot)await page.screenshot({path:shot+'-control.png',fullPage:true});
+  /* 권한: 영업사원은 보기만 — 할 일 지정 · 알림 · 줄 끝 [지정] 없음 */
+  await page.evaluate(()=>{window.__me=ME;ME={id:'rep1',name:'이필선',role:'rep'};paint();});await page.waitForTimeout(300);
+  assert.equal(await page.locator('#si-control .db-shell').count(),1,'전 직원이 본다');assert.equal(await page.locator('#si-control .db-mx .rn b').count(),3,'화면 쪽에서 담당자로 가리지 않음');
+  assert.equal(await page.locator('#si-control .db-sel .db-btns').count(),0);assert.equal(await page.locator('#si-control .db-mx .as button').count(),0);assert.match(await page.locator('#si-control .db-perm').innerText(),/관리자 · 팀장만/);
+  await page.evaluate(()=>{ME=window.__me;paint();});await page.waitForTimeout(300);
+  /* ── 3. 성과 분석 ── */
+  await page.evaluate(()=>{OPS_RULES.dashMinClosed=3;});/* 종료 3건부터 메이드율 판단(기본 5건 — 설정값) */
+  await page.locator('#si-control [data-db="go"][data-v="perf"]').click();await page.waitForTimeout(400);
+  const p=page.locator('#si-perf .db-shell');assert.equal(await p.count(),1);
+  assert.match(await p.locator('.db-verdict').innerText(),/^0%\s*월평균 대비\s*2026년 연간 계약 8억 · 월평균 8,889만\. 10월은 7일째 · 아직 없음\. 파이프라인 .+은 월평균의 [\d.]+개월치입니다\.\s*영업 메이드율 40\.0% · 황윤선 33\.3% — 기준 50% 아래입니다\.\s*8억\s*연 누적 · 계약 2건\s*메이드율 40\.0% · 문의→계약 50\.0%$/);
+  assert.equal(await p.locator('.db-pcs').evaluate(n=>getComputedStyle(n).gridTemplateColumns.split(' ').length),3,'담당자 카드 3열 고정');
+  const pc=await p.locator('.db-pc').evaluateAll(a=>a.map(n=>n.innerText.replace(/\s+/g,' ').trim()));
+  assert.equal(pc.length,2);assert.match(pc[0],/^1위 이필선 2026-10-06 50\.0% 메이드율 올해 계약 5억 10월 아직 없음 수주 · 실주 1 · 1 진행 2건 주간 활동 2건 손볼 건 \d+건/);
+  assert.match(pc[1],/^주의 황윤선 2026-09-01 33\.3% 메이드율 올해 계약 3억 10월 아직 없음 수주 · 실주 1 · 2 진행 5건 주간 활동 0건 손볼 건 5건 기한 지난 건 5건 · 최장 17일/);
+  assert.match(await p.locator('.db-quiet').innerText(),/^진행 · 수주 기록 없음: /,'기록 없는 사람은 이름 한 줄');
+  const c3=p.locator('.db-c3');assert.equal(await c3.count(),3);
+  assert.match(await c3.nth(0).innerText(),/^기술자문 낙찰실적\s*영업 계약과 별도 집계\s*아직 없음/);
+  assert.match(await c3.nth(1).innerText(),/누가 따낸 영업을 계약으로 잘 마무리하나\?\s*담당자별 메이드율\s*배드핏 제외 · 점선 = 팀 평균 40\.0%\s*이필선\s*50\.0%\s*황윤선\s*33\.3%/);
+  assert.match(await c3.nth(2).innerText(),/브랜드별 문의 → 수주[\s\S]*POUR솔루션\s*문의 4 → 적합 3 → 수주 1\s*33\.3%[\s\S]*POUR공법\s*문의 0 → 적합 0 → 수주 0\s*수주 없음[\s\S]*적합 문의가 있는 브랜드는 모두 수주가 나왔습니다\./);
+  assert.match(await p.locator('.db-pending').innerText(),/^아직 판단 못 하는 것\s*기록이 10건 쌓이면 자동으로 보입니다\s*견적 후 첫 후속 → 수주\s*\d+\/10\s*현장 방문 → 견적\s*1\/10\s*경쟁 · PT · 입찰 → 수주\s*0\/10$/);
+  const h3=await c3.evaluateAll(a=>a.map(n=>Math.round(n.getBoundingClientRect().height)));assert.equal(new Set(h3).size,1,'카드 3장 높이 맞춤 '+h3.join(','));
+  if(shot)await page.screenshot({path:shot+'-perf.png',fullPage:true});
+  /* 분기 전환: 3분기 = 9월 계약 3억 · 실주 2 · 문의 2 */
+  await p.locator('.db-seg [data-v="3"]').click();await page.waitForTimeout(300);
+  assert.match(await page.locator('#si-perf .db-verdict .rt').innerText(),/^3억\s*2026년 3분기 · 계약 1건\s*메이드율 33\.3% · 문의→계약 50\.0%$/);
+  await page.locator('#si-perf .db-seg [data-v="0"]').click();await page.waitForTimeout(200);
+  /* 좁은 화면 · 끄기 */
+  await page.setViewportSize({width:1180,height:900});await page.evaluate(()=>goPage('control'));await page.waitForTimeout(300);
+  assert.equal(await page.locator('#si-control .db-mx').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true,'좁아져도 표 안쪽 스크롤 없음');
+  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'좁은 화면 넘침 없음');
+  await page.setViewportSize({width:1600,height:1000});
+  await page.evaluate(()=>{G.dashBOff=true;goPage('dash');});await page.waitForTimeout(400);
+  assert.equal(await page.locator('#si-dash .db-shell').count(),0);assert.equal(await page.locator('#si-dash .si-shell').count(),1,'끄면 예전 화면');assert.equal(await page.locator('#pg-dash>.cf-bar').count(),0);
+  assert.deepEqual(errs,[]);
+  console.log(JSON.stringify({status:'PASS',overview_kpi_none_label:true,funnel_rates_same_definition:true,monthly_chart:true,brand_rows:true,people_blocked_why:true,week_heat:true,pipeline_near:true,activity_feed:true,control_matrix_no_inner_scroll:true,control_select_assign_open:true,control_permission:true,perf_verdict_cards3:true,quarter_switch:true,legacy_switch:true}));
+ }finally{await browser.close();srv.close();}
+})().catch(e=>{console.error(e);process.exit(1)});

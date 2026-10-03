@@ -33,8 +33,8 @@ async function run() {
     const page = await context.newPage();
     await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`, { waitUntil: 'load' });
     await page.waitForFunction(() => typeof paintInq === 'function' && typeof inqCtlRoleView === 'function' && !!window.InquiryWorkbench && !!window.PCManagerRequests);
-    await page.evaluate(async()=>{await Promise.resolve(window.AUTH_READY).catch(()=>{});});
-    await page.evaluate(() => {
+    await page.evaluate(async()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */await Promise.resolve(window.AUTH_READY).catch(()=>{});});
+    await page.evaluate(() => {G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */
       const base = { brand: 'POUR솔루션', created_at: '2026-09-10T00:00:00+09:00', valid_inquiry: true };
       B = {
         deals: [], inquiryTrash: [], inquiryCleanupArchived: [],
@@ -56,8 +56,8 @@ async function run() {
       /* 이 검사는 예전 목록(일괄 선택·배정용, 더보기에서 전환)과 상세 창을 본다 — 새 목록은 verify-inquiry-list-v2 */G.inqV2Off=true;G.inqDetailV2Off=true;/* 새 상세 모달은 verify-inquiry-detail-v2 — 여기는 같은 저장 함수를 예전 창으로 확인 */goPage('inq');
     });
 
-    await page.evaluate(()=>{B.inquiries[1].brand='POUR공법';B.inquiries[2].brand='석민이앤씨';B.inquiries[3].brand='아파트스퀘어';B.inquiries[0].phone='010-1234-5678';B.inquiries[0].contact_name='테스트 문의자';window.__writes=[];pushWrite=(...args)=>__writes.push(args);window.Phase1={subscribe:()=>()=>{}};window.__stopRequests=PCManagerRequests.install(window,{list:async()=>[],create:async()=>{throw Error("Unexpected request write")}});paintInq()});
-    await page.evaluate(()=>{B.inquiries[0].detail={inquiry:'옥상 방수 문의\n도면 확인 요청 <img src=x onerror=alert(1)>',note:'접수 참고',customerType:'테스트건설(주)',channel:'홈페이지',buildingType:'공장',complex:'2개동',responder:'테스트 상담자'};paintInq()});
+    await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */B.inquiries[1].brand='POUR공법';B.inquiries[2].brand='석민이앤씨';B.inquiries[3].brand='아파트스퀘어';B.inquiries[0].phone='010-1234-5678';B.inquiries[0].contact_name='테스트 문의자';window.__writes=[];pushWrite=(...args)=>__writes.push(args);window.Phase1={subscribe:()=>()=>{}};window.__stopRequests=PCManagerRequests.install(window,{list:async()=>[],create:async()=>{throw Error("Unexpected request write")}});paintInq()});
+    await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */B.inquiries[0].detail={inquiry:'옥상 방수 문의\n도면 확인 요청 <img src=x onerror=alert(1)>',note:'접수 참고',customerType:'테스트건설(주)',channel:'홈페이지',buildingType:'공장',complex:'2개동',responder:'테스트 상담자'};paintInq()});
     await page.locator('#pg-inq').waitFor({state:'visible'});
     assert.match(await page.locator('.inq-work-row[data-k="inq-1"] .inq-question-preview').textContent(),/옥상 방수/);
     await page.evaluate(()=>InquiryWorkbench.open('inq-1'));
@@ -74,7 +74,7 @@ async function run() {
     assert.equal(await page.evaluate(()=>InquiryWorkbench.originalText({raw:{문의내용:'잔디 문의 원문'}})), '잔디 문의 원문');
     const relN=await page.evaluate(()=>InquiryWorkbench.related(B.inquiries[0]).list.length);
     assert.equal(await page.locator('.inq-related').count(),relN?1:0);/* 같은 지역 현장이 없으면 상자 생략(2026-09-27) */
-    const related=await page.evaluate(()=>{
+    const related=await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */
       const old=nearbySites,opened=nearbyOpen;let proxy=null,target=null;
       nearbySites=q=>{proxy=q;return {region:'인천 계양',list:[{d:{id:'allowed',site:'같은 지역 현장',assignee:'황윤선'},age:3}]}};
       nearbyOpen=k=>target=k;
@@ -87,7 +87,7 @@ async function run() {
     await page.evaluate(()=>InquiryWorkbench.close());
     assert.equal(await page.locator('.inq-task-modes [data-key="needs"]').getAttribute('aria-pressed'),'true');
     assert.deepEqual(await page.locator('.inq-work-row:not(.head)').evaluateAll(es=>es.map(e=>e.dataset.k)),['inq-4','inq-1','inq-3','inq-2']);
-    const cases=await page.evaluate(()=>{
+    const cases=await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */
       const base={...B.inquiries[1]},day=delta=>{const d=new Date();d.setDate(d.getDate()+delta);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
       return [
         {...base,nextActionObj:{text:'확인 전화',due:day(0)}},
@@ -100,7 +100,7 @@ async function run() {
     /* 2026-10-01: 날짜 없는 다음 할 일은 '오늘'이 아니라 '정리 대상' */
     assert.deepEqual(cases,[{kind:'followup',needed:true},{kind:'followup',needed:false},{kind:'tidy',needed:false},{kind:'closed',needed:false},{kind:'tidy',needed:false}]);
     assert.equal(await page.locator('.inq-work-counts b').evaluateAll(es=>es.reduce((sum,e)=>sum+Number(e.textContent),0)),4);
-    const model=await page.evaluate(()=>{
+    const model=await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */
       const q={...B.inquiries[1],status:'견적서 발송완료',nextActionObj:null,nextAction:null,nextActionText:''};
       const decision=InquiryWorkbench.task(q);
       const converted=InquiryWorkbench.task({...q,deal_id:'linked'});
@@ -205,10 +205,10 @@ async function run() {
     await page.locator('.inq-work-row[data-k="inq-2"] .inq-next-link').click();
     assert.equal(await page.evaluate(()=>G.inqSelKey),'inq-2');assert.equal(await page.locator('#spNextText').count(),1);
     await page.getByRole('button',{name:'✕ 닫기',exact:true}).click();
-    await page.evaluate(()=>{window.__originalInquiries=B.inquiries;B.inquiries=B.inquiries.concat(Array.from({length:35},(_,i)=>({...B.inquiries[0],id:'scroll-'+i,site:'스크롤 검증 '+i})));paintInq();window.scrollTo(0,900)});
+    await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */window.__originalInquiries=B.inquiries;B.inquiries=B.inquiries.concat(Array.from({length:35},(_,i)=>({...B.inquiries[0],id:'scroll-'+i,site:'스크롤 검증 '+i})));paintInq();window.scrollTo(0,900)});
     assert.ok(await page.locator('.inq-inbox-sticky').evaluate(e=>Math.abs(e.getBoundingClientRect().top)<2),'brand and filters stick while scrolling');
-    await page.evaluate(()=>{B.inquiries=__originalInquiries;paintInq();window.scrollTo(0,0)});
-    await page.evaluate(()=>{ME={name:'황윤선',role:'rep'};G.inqRoleView='admin';paintInq()});
+    await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */B.inquiries=__originalInquiries;paintInq();window.scrollTo(0,0)});
+    await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */ME={name:'황윤선',role:'rep'};G.inqRoleView='admin';paintInq()});
     assert.equal(await page.getByRole('button',{name:'팀 문의',exact:true}).count(),0);
     assert.equal(await page.locator('.inq-work-row:not(.head)').count(),2);
     assert.equal(await page.locator('.inq-ctl-bulk').count(),0);
@@ -218,7 +218,7 @@ async function run() {
     await page.locator('.inq-work-row[data-k="inq-1"] .inq-now').click();
     assert.equal(await page.locator('#inq-inbox-dialog').getByRole('button',{name:/영업담당/}).count(),0);
     await page.getByRole('button',{name:'✕ 닫기',exact:true}).click();
-    await page.evaluate(()=>{
+    await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */
       InquiryWorkbench.open('inq-1','process');
       const saved=iqApply;let captured=null;iqApply=(q,target)=>{captured={id:q.id,target};return false};
       InquiryWorkbench.saveProcess();iqApply=saved;
@@ -243,15 +243,15 @@ async function run() {
     await page.evaluate(()=>goPage('dash'));
     assert.equal(await page.locator('#inq-inbox-dialog').count(),0,'menu navigation closes the inquiry detail page');
     /* 문의 처리 화면 위에서 영업을 열면 문의 화면을 닫고 영업 상세로 — 뒤에 깔려 안 보이던 문제(2026-09-26) */
-    await page.evaluate(()=>{goPage('inq');InquiryWorkbench.open('inq-1');});
+    await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */goPage('inq');InquiryWorkbench.open('inq-1');});
     assert.equal(await page.locator('#inq-inbox-dialog').count(),1);
-    await page.evaluate(()=>{G._detailPopup=true;drwDeal(JSON.stringify({id:'overlap-deal',site:'겹침 검증 현장',assignee:'황윤선',code:'consulting',stage_code:'consulting',activities:[]}))});
+    await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */G._detailPopup=true;drwDeal(JSON.stringify({id:'overlap-deal',site:'겹침 검증 현장',assignee:'황윤선',code:'consulting',stage_code:'consulting',activities:[]}))});
     assert.equal(await page.locator('#inq-inbox-dialog').count(),0,'inquiry page closes when a deal detail opens');
     assert.equal(await page.locator('#detailView.detailmodal').isVisible(),true,'deal detail is visible, not hidden behind');
-    await page.evaluate(()=>{closeDetail();__writes.splice(0,__writes.length,...__writes.filter(w=>w[0]!=='opportunity_touch'));});/* 영업 상세 열람 기록은 업무 쓰기가 아니다 */
+    await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */closeDetail();__writes.splice(0,__writes.length,...__writes.filter(w=>w[0]!=='opportunity_touch'));});/* 영업 상세 열람 기록은 업무 쓰기가 아니다 */
     await page.evaluate(()=>goPage('inq'));
     assert.equal(await page.evaluate(()=>__writes.length),0);
-    const save=await page.evaluate(()=>{ Phase1.storage={setItem:()=>{}};
+    const save=await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */ Phase1.storage={setItem:()=>{}};
       const q={...B.inquiries[0],id:'10000000-0000-4000-8000-000000000001',first_response_at:null,responded_at:null};B.inquiries=[q];LOCAL.inquiries={};
       InquiryWorkbench.open(q.id,'process');
       document.getElementById('iq-did').value='고객 통화';document.getElementById('iq-res').value='사진 전달 약속';document.getElementById('iq-next').value='사진 수신 확인';document.getElementById('iq-due').value='2099-01-01';

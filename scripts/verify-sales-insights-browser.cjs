@@ -7,7 +7,7 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
  try{
   const context=await browser.newContext({viewport:{width:1440,height:1000}});await context.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:'+srv.address().port+'/crm.html',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>!!window.SalesInsights);
-  await page.evaluate(()=>{
+  await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */
    G.pipeListV2Off=true;/* 예전 단계 화면 검사 — 새 목록은 verify-pipeline-list-v2 */AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};LOCAL={deals:{},inquiries:{},expansionPool:[]};
    const yesterday=new Date(Date.now()-864e5).toISOString().slice(0,10),recent=new Date(Date.now()-864e5).toISOString();
    B={deals:[{id:'old',site:'오래된 진행 현장',assignee:'김성민',brand:'POUR솔루션',code:'consulting',grp:'컨설팅·견적',amt:120000000,created:'2024-01-01',lastMeaningfulContactAt:recent,nextActionObj:{text:'후속 통화',due:yesterday,status:'open'}},{id:'other',site:'다른 담당 현장',assignee:'이필선',brand:'POUR솔루션',code:'sent',grp:'컨설팅·견적',amt:30000000,created:'2026-09-01'},{id:'won',site:'기간 수주 현장',assignee:'김성민',brand:'POUR솔루션',code:'won',grp:'수주 성공',amt:900000000,won_amount:40000000,closed_at:'2026-09-05',created:'2024-02-01'}],inquiries:[{id:'inq',site:'<img src=x onerror=alert(1)> 문의',assignee:'김성민',brand:'POUR솔루션',created_at:'2026-09-03',status:'배정완료'}],inquiryTrash:[]};
@@ -16,13 +16,13 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
    goPage('dash');G.insights.year='2026';G.insights.month=9;SalesInsights.render();
   });
   assert.deepEqual(await page.locator('.menu>.sec:visible').allTextContents(),['오늘','영업','고객관리','조직운영','분석','데이터 관리']);
-  assert.deepEqual(await page.evaluate(()=>{const groups={'상단':[]};let title='상단';document.querySelectorAll('.menu>:is(.sec,.mi)').forEach(el=>{if(el.classList.contains('sec')){title=el.textContent;groups[title]=[];}else if(!el.hidden)groups[title].push(el.dataset.p);});return groups;}),{'상단':['dash'],'오늘':['today'],'영업':['inq','pipe','expansion','gyeongnam'],'고객관리':['sites','campaign'],'조직운영':['repmanage','mgmt'],'분석':['work','brief','report'],'데이터 관리':['dup']});
+  assert.deepEqual(await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */const groups={'상단':[]};let title='상단';document.querySelectorAll('.menu>:is(.sec,.mi)').forEach(el=>{if(el.classList.contains('sec')){title=el.textContent;groups[title]=[];}else if(!el.hidden)groups[title].push(el.dataset.p);});return groups;}),{'상단':['dash'],'오늘':['today'],'영업':['inq','pipe','expansion','gyeongnam'],'고객관리':['sites','campaign'],'조직운영':['repmanage','mgmt'],'분석':['work','brief','report'],'데이터 관리':['dup']});
   assert.equal(await page.locator('.menu > .mi').first().getAttribute('data-p'),'dash');
-  await page.evaluate(()=>{window.__stableShell=document.querySelector('#si-dash .si-shell');for(let i=0;i<6;i++)window.dispatchEvent(new Event('phase1:queue'));});
+  await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */window.__stableShell=document.querySelector('#si-dash .si-shell');for(let i=0;i<6;i++)window.dispatchEvent(new Event('phase1:queue'));});
   await page.waitForTimeout(100);
   assert.equal(await page.evaluate(()=>window.__stableShell===document.querySelector('#si-dash .si-shell')),true,'queue notifications must preserve dashboard DOM');
   assert.equal(await page.locator('#si-dash .dc-kpi').count(),6);assert.equal(await page.locator('#d-money').isVisible(),false);
-  let values=await page.evaluate(()=>{const s=SalesInsights.data();return {active:s.active.length,won:s.won.length,amount:s.wonAmount}});assert.deepEqual(values,{active:2,won:1,amount:40000000});
+  let values=await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */const s=SalesInsights.data();return {active:s.active.length,won:s.won.length,amount:s.wonAmount}});assert.deepEqual(values,{active:2,won:1,amount:40000000});
   await page.locator('#si-dash [data-sf-type="INTERNAL"]').click();await page.locator('#si-dash [data-sf-owner="김성민"]').click();
   await page.locator('#si-dash [data-si-action="drill"][data-value="overdue"]').click();
   assert.equal(await page.evaluate(()=>SalesScope.state().owner),'김성민');assert.equal(await page.locator('#si-person.si-person .si-evidence tbody tr').count(),1);
@@ -37,12 +37,12 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   assert.equal(await page.evaluate(()=>SalesScope.state().owner),'김성민');
   assert.equal(await page.locator('#si-perf .pf-card').count(),1);
   assert.equal(await page.locator('#si-person').count(),0);
-  await page.evaluate(()=>{SalesScope.change('owner','전체');paint()});
+  await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */SalesScope.change('owner','전체');paint()});
   for(const width of [1920,1440,1024,390]){await page.setViewportSize({width,height:1000});for(const route of ['dash','control','perf']){await page.evaluate(p=>goPage(p),route);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true,route+' overflow '+width)}}
   await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>goPage('dash'));if(process.env.INSIGHTS_SCREENSHOT)await page.screenshot({path:process.env.INSIGHTS_SCREENSHOT,fullPage:true});
   await page.locator('#si-dash [data-si-action="drill"][data-value="inquiries"]').click();assert.equal(await page.locator('#si-person tbody img').count(),0);assert.match(await page.locator('#si-person tbody').innerText(),/<img/);
   // Current role is rechecked even if a stale admin row's button is still in the DOM.
-  await page.evaluate(()=>{ME={id:'rep',name:'이필선',role:'rep'};window.__opened=null});await page.locator('#si-person [data-si-action="record"]').click();assert.equal(await page.evaluate(()=>window.__opened),null);
+  await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */ME={id:'rep',name:'이필선',role:'rep'};window.__opened=null});await page.locator('#si-person [data-si-action="record"]').click();assert.equal(await page.evaluate(()=>window.__opened),null);
   await page.keyboard.press('Escape');
   await page.evaluate(()=>goPage('dash'));assert.equal(await page.evaluate(()=>SalesInsights.data().deals.every(d=>d.owner==='이필선')),true);
   assert.equal(await page.locator('.menu [data-admin-nav]:visible').count(),0);// rep 메뉴 축소(2026-09-25 ⑨): 분석·대시보드·발송·지사는 관리자 전용
@@ -50,7 +50,7 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   assert.equal(await page.locator('.menu [data-manager-nav]:visible').count(),0);
 
   // Shared employee scope affects metrics, stage inventory, drills and navigation, not just options.
-  await page.evaluate(()=>{ME={id:'scope-admin',name:'송보람',role:'admin'};const rows=['조성용','전용성','고영운','송보람','조민준','미배정','경남지사'];B.deals=rows.map((name,i)=>({id:'scope-'+i,site:name+' 현장',assignee:name,brand:'POUR솔루션',code:'sent',grp:'컨설팅·견적',created:'2026-09-01',amt:10000000})).concat([{id:'internal',site:'내부 현장',assignee:'김성민',brand:'POUR솔루션',code:'sent',grp:'컨설팅·견적',created:'2026-09-01',amt:20000000}]);B.inquiries=[];goPage('dash');});
+  await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */ME={id:'scope-admin',name:'송보람',role:'admin'};const rows=['조성용','전용성','고영운','송보람','조민준','미배정','경남지사'];B.deals=rows.map((name,i)=>({id:'scope-'+i,site:name+' 현장',assignee:name,brand:'POUR솔루션',code:'sent',grp:'컨설팅·견적',created:'2026-09-01',amt:10000000})).concat([{id:'internal',site:'내부 현장',assignee:'김성민',brand:'POUR솔루션',code:'sent',grp:'컨설팅·견적',created:'2026-09-01',amt:20000000}]);B.inquiries=[];goPage('dash');});
   assert.equal(await page.locator('.si-nav').count(),0);
   assert.deepEqual(await page.locator('#sales-analysis-menu button').allTextContents(),['전체 현황','컨트롤타워','성과 분석']);
   await page.locator('#si-dash [data-sf-type="EXTERNAL"]').click();
@@ -77,9 +77,9 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   assert.equal(await page.evaluate(()=>SalesInsights.data().active.length),1);
   assert.equal(await page.evaluate(()=>SalesScope.candidates().length+1),8);/* 2026-09-30 조재연 영업담당 추가 */
   await page.locator('#si-perf [data-sf-type="all"]').click();
-  await page.evaluate(()=>{SalesScope.change('assignment','unassigned');paint()});
+  await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */SalesScope.change('assignment','unassigned');paint()});
   assert.equal(await page.evaluate(()=>SalesInsights.data().active.length),2);
-  await page.evaluate(()=>{SalesScope.change('organization','gyeongnam');paint()});
+  await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */SalesScope.change('organization','gyeongnam');paint()});
   assert.equal(await page.evaluate(()=>SalesInsights.data().active.length),1);
   assert.equal(await page.evaluate(()=>SalesScope.candidates().length+1),1);
   await page.locator('#sales-analysis-menu [data-sales-page="control"]').click();
