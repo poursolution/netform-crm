@@ -88,7 +88,7 @@ begin
   where r.status='queued' and r.available_at<=clock_timestamp()
   and u.active and u.auth_uid=r.requested_by_auth and ar.approved and ar.permission_role in ('admin','rep','branch')
   and ar.source_role=u.role and ar.reviewed_auth_uid=u.auth_uid and ar.expires_at>now()
-  and q.deleted_at is null
+  and (to_jsonb(q)->>'deleted_at') is null
   order by r.available_at,r.id for update of r skip locked limit p_limit
  ), updated as (
   update crm_security.inquiry_sms_requests r set status='sending',worker_id=p_worker_id,claim_token=gen_random_uuid(),claimed_at=clock_timestamp(),attempt_count=attempt_count+1,updated_at=clock_timestamp()
@@ -150,3 +150,4 @@ grant execute on function crm_security.crm_sms_worker_result_inquiry_v1(uuid,uui
 grant execute on function public.crm_sms_worker_claim_inquiry_v1(uuid,integer) to service_role;
 grant execute on function public.crm_sms_worker_pending_inquiry_v1(uuid) to service_role;
 grant execute on function public.crm_sms_worker_result_inquiry_v1(uuid,uuid,uuid,text,text,text) to service_role;
+

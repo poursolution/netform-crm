@@ -26,3 +26,10 @@
 ## 검사
 - `npm run test:aligo` — 실행기 단위 + pglite SQL(요청 · claim · 결과 전이) 포함.
 - `scripts/verify-inquiry-detail-v2-browser.cjs` — 화면(두 번 확인 · 요청 · 이력 · 상태 표시).
+
+## 2026-10-03 PC 실행 재개
+
+- 기존 9월 19일 DPAPI 서버 인증 파일이 남아 있었으며 서버 인증 및 캠페인/문의 pending 조회 성공. 키 재발급·덮어쓰기 없음.
+- 문의 claim RPC의 `q.deleted_at` 직접 참조가 운영 inquiries 스키마에 없는 컬럼이라 42703 오류를 발생시킴. 사용자 승인 후 `(to_jsonb(q)->>'deleted_at') is null`로 교체. 문의 존재 여부를 검사하는 inner join과 기존 권한 조건은 유지. 운영 스키마에는 삭제 컬럼이 없으며, 컬럼이 있는 스키마에서는 삭제 표식을 계속 검사함.
+- 롤백 검증 후 운영 함수 반영 확인. `ALIGO_CAMPAIGN_ENABLED=true`, `ALIGO_INQUIRY_REPLIES=true`의 단일 실행이 종료 코드 0으로 성공. 캠페인 pending/claimed 및 문의 pending/claimed 모두 0.
+- 동일 환경 변수로 숨김 백그라운드 실행을 시작. 캠페인은 기존 수신번호 허용목록 유지, 문의 응대는 CRM에서 요청된 고객 문자 큐 처리. 자동 시작 등록 없음. PC 종료·절전 또는 실행기 오류로 프로세스가 종료되면 별도 재시작이 필요함.

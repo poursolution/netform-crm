@@ -24,7 +24,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    /* 공종 저장 경로(Phase11): 서버 읽기·저장을 흉내 낸다 */
    /* 공종 저장 경로(Phase11): 시험에는 로그인이 없어 같은 약속(최신값 읽기 → 창 열기 → 저장)만 흉내 낸다 */
    window.__work=[];const fake={current:null,openWork:async(id,item)=>{fake.current=item;CUR_DETAIL={kind:'deal',key:dealKey(item),item};openWorkEdit();},save:async(item,payload)=>{if(item!==fake.current)throw Error('EDITOR_IDENTITY_MISMATCH');__work.push({operation:'opportunity_work_set',payload});item.workItems=payload.work_items;item.primaryWork=payload.primary_work;closeNewDeal();renderDetail();}};window.Phase11=fake;
-   G.pipeStageBOff=true;/* 상세 검사는 v2 목록 줄로 연다(단계별 B안은 verify-pipeline-stage-b) */PipelineWorkspace.open('competition');
+   G.dealDetailV3Off=true;/* 상세 정리(2026-10-03 detail_panel)는 verify-deal-detail-v3 에서 */G.pipeStageBOff=true;/* 상세 검사는 v2 목록 줄로 연다(단계별 B안은 verify-pipeline-stage-b) */PipelineWorkspace.open('competition');
   });
   await page.waitForTimeout(200);
   await page.locator('#pipeline-list-v2 .plv-row .plv-site').first().click();await page.waitForTimeout(500);
