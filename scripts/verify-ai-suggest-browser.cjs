@@ -13,6 +13,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});
   const page=await ctx.newPage(),errs=[];page.on('pageerror',e=>errs.push(e.message));
+  /* 서버 함수 흉내 — 화면의 fetch 는 그대로(통신 보호 장치를 지나야 한다). 보호 장치가 막으면 요청이 여기 오지 않아 검사가 실패한다 */
+  const AI_OUT={work_guess:{keys:['옥상>우레탄','재도장>외부'],primary:'옥상>우레탄',basis:'현장명 · 메모의 «옥상 우레탄»',confidence:'high'},ask_parse:{conditions:[{k:'owner',v:'이필선'},{k:'stage',v:'bidding'},{k:'drop',v:1}],note:'이필선 담당의 입찰 단계'},report_text:{cover:'롯데캐슬 입찰을 잡으면 9억이 들어옵니다',risk:'이번 달 수주는 아직 없습니다',now:'',people:'',real:'',ask:'',askWhy:'',promises:[{what:'진행 건마다 다음 연락일을 적는다',who:'영업팀',where:'주간 브리핑'}]},dup_judge:{probability:93,basis:'주소와 관리사무소 전화가 같음',action:'merge'},call_opener:{opener:'소장님, 넷폼 송보람입니다. 지난번 견적 보셨는지 여쭤보려고요.',goal:'검토 여부와 결정 일정 듣기',summary:'견적 발송 뒤 회신 없음'},next_action:{how:'전화',what:'견적 검토 확인',days:1,why:'기한이 지남'}};
+  await page.route('**/functions/v1/crm-ai',async r=>{const req=r.request();if(req.method()!=='POST')return r.fulfill({status:405,body:'{}'});const b=req.postDataJSON(),hd=req.headers();
+   await page.evaluate(x=>{window.__ai=(window.__ai||[]);__ai.push(x);},{kind:b.kind,auth:hd.authorization,input:b.input,id:b.subject_id});
+   return r.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,cached:false,suggestion:{id:'s-'+b.kind,status:'proposed',suggestion:AI_OUT[b.kind]}})});});
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.OpsStore&&window.AskV2&&window.WorkV2&&window.DupV2&&window.TodayRepV2&&window.ReportV2&&typeof paint==='function');
   await page.evaluate(()=>{
    const ymd=d=>d.toLocaleDateString('en-CA'),day=n=>ymd(new Date(Date.now()+n*864e5)),at=d=>new Date(Date.now()-d*864e5).toISOString();
@@ -22,17 +27,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};TOKEN='user-jwt';G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op)=>{__writes.push(op);return 'req';};
    if(!window.SUPABASE_URL)SUPABASE_URL='https://example.supabase.co';const fake={current:null,openWork:async(id,item)=>{fake.current=item;CUR_DETAIL={kind:'deal',key:dealKey(item),item};openWorkEdit();},save:async()=>{}};window.Phase11=fake;
-   window.__flags={ai_enabled:false};window.__rpc=[];window.__ai=[];
+   window.__flags={ai_enabled:false};window.__rpc=[];window.__ai=window.__ai||[];
    SB={rpc:async(name,args)=>{const p=(args&&args.p)||{};__rpc.push(name);
     if(name==='crm_ops_settings_v1'){if(p.set)Object.assign(__flags,p.set);return {data:{ok:true,settings:Object.assign({},__flags)}};}
     if(name==='crm_improvement_task_list_v1')return {data:{ok:true,tasks:[]}};
     if(name==='crm_ai_suggestion_decide_v1')return {data:{ok:true,suggestion:{id:p.id,status:p.status}}};
     if(/_list_v1$|_get_v1$/.test(name))return {data:{ok:true,rows:[],snapshots:[],actions:[]}};
     return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
-   /* 서버 함수 흉내 */
-   const real=window.fetch;window.fetch=async(url,init)=>{if(!String(url).includes('/functions/v1/crm-ai'))return real(url,init);const b=JSON.parse(init.body);__ai.push({kind:b.kind,auth:init.headers.Authorization,input:b.input,id:b.subject_id});
-    const out={work_guess:{keys:['옥상>우레탄','재도장>외부'],primary:'옥상>우레탄',basis:'현장명 · 메모의 «옥상 우레탄»',confidence:'high'},ask_parse:{conditions:[{k:'owner',v:'이필선'},{k:'stage',v:'bidding'},{k:'drop',v:1}],note:'이필선 담당의 입찰 단계'},report_text:{cover:'롯데캐슬 입찰을 잡으면 9억이 들어옵니다',risk:'이번 달 수주는 아직 없습니다',now:'',people:'',real:'',ask:'',askWhy:'',promises:[{what:'진행 건마다 다음 연락일을 적는다',who:'영업팀',where:'주간 브리핑'}]},dup_judge:{probability:93,basis:'주소와 관리사무소 전화가 같음',action:'merge'},call_opener:{opener:'소장님, 넷폼 송보람입니다. 지난번 견적 보셨는지 여쭤보려고요.',goal:'검토 여부와 결정 일정 듣기',summary:'견적 발송 뒤 회신 없음'},next_action:{how:'전화',what:'견적 검토 확인',days:1,why:'기한이 지남'}}[b.kind];
-    return new Response(JSON.stringify({ok:true,cached:false,suggestion:{id:'s-'+b.kind,status:'proposed',suggestion:out}}),{status:200,headers:{'content-type':'application/json'}});};
+   /* 서버 함수 흉내는 page.route(위) — 보호 장치를 지나는지까지 본다 */
+   /* (이전 fetch 바꿔치기 제거) */
    goPage('work');
   });
   await page.waitForTimeout(600);
@@ -70,7 +73,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#dup-v2 .plv-row .plv-cta').first().click();await page.waitForTimeout(300);
   await page.locator('#dupDialog [data-dd-ai]').click();await page.waitForTimeout(400);
   assert.match(await page.locator('#dvAiOut').innerText(),/AI 판단 · 같은 건일 가능성 93% · 주소와 관리사무소 전화가 같음 · 제안: 합치기 \(참고용/);
-  await page.keyboard.press('Escape');
+  await page.locator('#dupDialog [data-dd="close"]').click();await page.waitForTimeout(200);assert.equal(await page.locator('#dupDialog.on').count(),0,'중복 판단 창 닫힘');
   /* 5. 영업사원 카드 첫마디 */
   await page.evaluate(()=>{ME={id:'rep1',name:'이필선',role:'rep'};goPage('today');});await page.waitForTimeout(600);
   const card=page.locator('#today-v2 .trv-card').first();await card.locator('[data-trv="ai"]').click();await page.waitForTimeout(500);
