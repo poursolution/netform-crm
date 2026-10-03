@@ -3,6 +3,7 @@
    상태: 확정(fix) = 회의 확정 · 잠금 / 조건부(cond) = 관리자 설정(운영 기준 설정 화면)에서 바꿈 / 보류(hold) = 구현하지 않음(자리만).
    저장: 조건부 값만 서버(crm_ops_rules_v1 → crm_settings 'ops_rules')에 두고, 바꿀 때마다 변경 이력(누가 · 언제 · 전 → 후)이 남는다.
    서버 함수가 아직 없으면 기본값(rules.json)으로 동작한다. 값이 바뀌면 예전 화면들이 읽는 OPS_RULES 에도 같은 값을 넣어 준다(sync).
+   실주 원인 = 4분류(관계 / 공법 / 가격 / 사업) · 금액 5개(예상 / 낙찰 / 자사계약 / 기술자문 / 인센티브 실적)는 절대 더하지 않는다 · 영업 경로 5칸(유입 → 최초 영업업체 → 담당 → 낙찰업체 → 기술자문업체).
    결과 구분: 직접 수주(won_own) · 협약시공사 수주 · 기술자문(won_partner_tech) · 타사 이관 수주 = 승인된 것만(won_transfer) · 파이프라인 실주(lost) · Bad Fit(bad_fit) · 진행 중(in_progress) · 낙찰결과 대기(transfer_pending)
    메이드율 = (직접 수주 + 협약시공사 수주 + 승인 타사 이관 수주) ÷ (… + 파이프라인 실주) — Bad Fit · 진행 중 · 낙찰결과 대기는 계산에서 뺀다.
    수주실적 = 최종 낙찰금액(VAT 별도). 수주 유형 3가지는 화면에서 나눠 보여 주고 총 영업실적에서는 합산한다.
@@ -16,7 +17,8 @@
   care_focus_months:1,care_general_months:3,long_wait_contact_days:60,transfer_result_check_days:14,
   split_own_transfer:true,
   reasons_bad_fit:Object.freeze(['수행 불가 공종','규모 부적합','시공 불가 지역','기타']),
-  reasons_lost:Object.freeze(['가격','관리소장 변경','타 공법 선호','경쟁사 관계','예산','공사 취소','기타']),
+  /* 실주 원인 4분류(2차 기능 3): '분류 · 세부 사유' — 관계 / 공법 / 가격 / 사업 */
+  reasons_lost:Object.freeze(['관계 · 관리소장 변경','관계 · 입대의 · 회장 영향','관계 · 경쟁업체 기존 관계','공법 · 타 공법 선호','공법 · 특허 조건 불리','공법 · 설계 변경','가격 · 가격 경쟁','가격 · 예산 부족','가격 · 실행가 문제','사업 · 공사 취소','사업 · 연기','사업 · 예산 미확정']),
   reasons_transfer:Object.freeze(['영업권 조율','영업권 중복','안전 · 시공조건','파트너사 협업','시공역량 문제','기타']),
   contact_channels:Object.freeze(['전화','카카오','문자','이메일','방문','기타']),
   owner_change_log:true,manager_change_is_event:true,relationship_follows_person:true,duplicate_lead_warning:true,
@@ -110,7 +112,7 @@
  function transferOf(d){
   const t=d&&d.transfer;if(!t||typeof t!=='object'||t.transfer_status!=='transferred')return {status:'none'};
   const r=String(t.award_result||'pending'),status=r==='transferred_won'?(t.incentive_eligible===true?'approved':t.rejected_reason?'rejected':'awarded'):r==='lost'?'lost':r==='cancelled'?'cancelled':'pending';
-  return {status,amount:Number(t.award_amount)||0,company:String(t.transfer_company||''),reason:String(t.transfer_reason||''),date:String(t.transfer_date||'').slice(0,10),reported:t.transfer_reported===true,owner:String(t.performance_owner||''),award_date:String(t.award_date||'').slice(0,10)};
+  return {status,amount:Number(t.award_amount)||0,company:String(t.transfer_company||''),reason:String(t.transfer_reason||''),date:String(t.transfer_date||'').slice(0,10),reported:t.transfer_reported===true,owner:String(t.performance_owner||''),award_date:String(t.award_date||'').slice(0,10),award_company:String(t.award_company||'')};
  }
  /* 영업건 결과 구분. 타사 이관: 인정된 것만 수주 · 대기(등록 · 인정 전 · 취소 보류) = 계산 제외 · 실주 = 실패 · 관리자 제외 = 실적 · 메이드율 모두 제외 */
  function dealResult(d){
@@ -126,8 +128,38 @@
  /* 사유 목록: bad_fit | lost | transfer */
  function reasons(kind){const v=get('reasons_'+kind);return Array.isArray(v)?v.slice():[];}
  /* 예전에 쓰던 실주 사유 → 지금 원인(뜻이 같은 것만). 나머지는 적힌 그대로 둔다 */
- const LOST_ALIAS={'가격 열세':'가격','고객 예산 무산':'예산','공사 시기 연기·취소':'공사 취소','타사 선정 (경쟁 패배)':'경쟁사 관계','기술·공법 열세':'타 공법 선호'};
- function lostReason(text){const s=String(text||'').trim();if(!s)return '사유 미기록';const list=reasons('lost');if(list.includes(s))return s;return LOST_ALIAS[s]||s;}
+ const LOST_ALIAS={'가격':'가격 · 가격 경쟁','가격 열세':'가격 · 가격 경쟁','예산':'가격 · 예산 부족','고객 예산 무산':'가격 · 예산 부족','관리소장 변경':'관계 · 관리소장 변경','경쟁사 관계':'관계 · 경쟁업체 기존 관계','타사 선정 (경쟁 패배)':'관계 · 경쟁업체 기존 관계','타 공법 선호':'공법 · 타 공법 선호','기술·공법 열세':'공법 · 타 공법 선호','공사 취소':'사업 · 공사 취소','공사 시기 연기·취소':'사업 · 연기'};
+ function lostReason(text){const s=String(text||'').trim();if(!s)return '사유 미기록';const list=reasons('lost');if(list.includes(s))return s;const a=LOST_ALIAS[s];return a&&list.includes(a)?a:s;}
+ /* 실주 원인 분류: '관계 · 관리소장 변경' → 분류 '관계', 세부 '관리소장 변경'. 분류가 없는 사유(직접 추가한 것 · 예전 기록)는 '기타' */
+ const lostSplit=text=>{const s=lostReason(text),i=s.indexOf(' · ');return i>0?[s.slice(0,i),s.slice(i+3)]:['기타',s];};
+ const lostCategory=text=>lostSplit(text)[0];
+ function lostGroups(){const m=new Map();reasons('lost').forEach(v=>{const p=lostSplit(v),g=m.get(p[0])||[];g.push({v,l:p[1]});m.set(p[0],g);});return [...m];}
+ /* ── 2차 · 3차 기준값(rules.json phase2 · phase3) — 화면이 따로 정하지 않고 여기 값을 본다 ── */
+ const PHASE2=Object.freeze({change_events:Object.freeze({types:Object.freeze(['관리소장 변경','입대의 회장 변경','예산 변경','공사시기 변경','공법 변경','경쟁업체 등장','입찰방식 변경','재견적 요청']),auto_next_action_days:3,suggest_as_lost_reason:true}),
+  stage_gates:Object.freeze({consulting:Object.freeze(['1차 현장미팅 일정 또는 완료']),sent:Object.freeze(['발송일','발송 자료','다음 확인일']),relationship:Object.freeze(['자료 발송일','고객 반응','다음 행동','다음 확인일']),competition:Object.freeze(['입찰/결정 일정','경쟁 상황']),construction:Object.freeze(['계약일','계약금액']),closed:Object.freeze(['수주 유형 · 낙찰금액 / 실주 원인'])}),
+  approval_types:Object.freeze(['타사 이관 실적','귀속 변경','중복 리드 정산','전략수주','특별 인센티브','결과 수정']),cohort_compare_after_months:3,owner_fields:Object.freeze(['current_owner','first_owner','performance_owner','owner_history']),
+  urgent_quote:Object.freeze({deadline_required:true,float_to_top:true}),promise_keeping:Object.freeze({window_days:30,warn_below:0.8})});
+ const PHASE3=Object.freeze({sales_path:Object.freeze(['inflow_brand','first_sales_company','sales_owner','award_company','tech_advisory_company']),
+  amounts:Object.freeze({estimated:'예상금액',award:'낙찰금액',own_contract:'자사계약금액',tech_advisory:'기술자문금액',incentive:'인센티브 실적금액'}),
+  health_score:Object.freeze({base:100,red_below:40,penalties:Object.freeze({no_contract_info:30,quote_no_contact_7d:25,no_next_action:20,inactive_7d:15,manager_changed:15,bid_or_meeting_d3:15})}),
+  bid_alert_days:Object.freeze([7,3,1]),stage_dwell_days:Object.freeze({inq:2,cons:7,sent:14,rel:60,bid:30,con:14}),reactivation_reasons:Object.freeze(['사업 · 연기','사업 · 예산 미확정'])});
+ /* 금액 5개(3차 기능 2) — 같은 현장, 다른 의미. 절대 더하지 않는다. 영업 성과 = 인센티브 실적금액(= 낙찰금액), 회사 매출 = 자사계약 + 기술자문.
+    ledgerBalance = 계약실적 원장의 남은 계약금액(직접 수주의 자사계약금액) */
+ function amounts(d,ledgerBalance){
+  const w=winOf(d),t=transferOf(d),est=Number(d&&(d.amount!=null?d.amount:d.amt))||0,led=Number(ledgerBalance)||0,raw=d&&d.win||{};let award=0,own=0,tech=0,counted=true;
+  if(t.status==='approved'||t.status==='awarded'){award=t.amount;counted=t.status==='approved';}
+  else if(w.type==='partner_tech'){award=w.amount;own=w.pourAmount;tech=w.techAmount;}
+  else if(w.type==='own'){award=w.amount;own=led||Number(raw.own_contract_amount)||w.amount;}
+  else if(led>0){award=led;own=led;}
+  return {estimated:est,award,own_contract:own,tech_advisory:tech,incentive:counted?award:0,revenue:own+tech};
+ }
+ /* 영업 경로 5칸(3차 기능 1): 유입 → 최초 영업업체 → 영업 담당 → 낙찰업체 → 기술자문업체 */
+ function salesPath(d){
+  const w=winOf(d),t=transferOf(d),raw=d&&d.win&&d.win.win_status==='confirmed'?d.win:{},won=t.status==='approved'||t.status==='awarded';
+  return {inflow_brand:String(raw.inflow_brand||raw.sales_channel_brand||d&&(d.origin_business||d.brand)||''),first_sales_company:String(raw.first_sales_company||d&&d.brand||''),sales_owner:String(w.owner||t.owner||d&&d.assignee||''),award_company:String(won?(t.award_company||t.company):w.company||''),tech_advisory_company:String(w.techCompany||'')};
+ }
+ /* Health Score(3차 기능 4): 100점에서 감점, red_below 미만 빨강. flags = 감점표 열쇠별 true/false */
+ function healthScore(flags){const P=PHASE3.health_score;let s=P.base;Object.keys(P.penalties).forEach(k=>{if(flags&&flags[k])s-=P.penalties[k];});s=Math.max(0,s);return {score:s,red:s<P.red_below};}
  /* 놓침 판정(시간 기준) — 모두 "지금" 기준, 시각은 ISO 문자열 또는 ms */
  const ms=v=>typeof v==='number'?v:Date.parse(v||'');
  const miss={
@@ -154,5 +186,5 @@
  function warm(){const me=root.ME&&String(root.ME.id||root.ME.name||'');if(!me||warmed===me||!available())return;warmed=me;const before=JSON.stringify(all());load(true).then(()=>{if(JSON.stringify(all())!==before&&typeof root.paint==='function'){try{root.paint();}catch(e){}}});}
  if(typeof root.paint==='function'){const base=root.paint;root.paint=function(){try{sync();}catch(e){}const r=base.apply(this,arguments);try{warm();}catch(e){}return r;};}
  try{sync();}catch(e){}
- return {VERSION,RPC,DEFAULTS,SECTIONS,ROWS,SPEC,get,all,apply,clean,sync,load,save,available,meta:()=>meta,loaded:()=>loaded,pct,madeRate,dealResult,transferOf,winOf,performance,revenue,WON_TYPES,DEAL_FIELDS,reasons,lostReason,LOST_ALIAS,miss,carePhase};
+ return {VERSION,RPC,DEFAULTS,SECTIONS,ROWS,SPEC,get,all,apply,clean,sync,load,save,available,meta:()=>meta,loaded:()=>loaded,pct,madeRate,dealResult,transferOf,winOf,performance,revenue,WON_TYPES,DEAL_FIELDS,reasons,lostReason,lostCategory,lostGroups,LOST_ALIAS,PHASE2,PHASE3,amounts,salesPath,healthScore,miss,carePhase};
 });

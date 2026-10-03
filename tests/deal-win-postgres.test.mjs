@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {PGlite} from '@electric-sql/pglite';
 import {fixture} from './aligo-database-fixture.mjs';
 const sql=readFileSync(new URL('../sql/deal-win-type-v1-20261004.sql',import.meta.url),'utf8');
+const sql2=readFileSync(new URL('../sql/deal-win-path-v2-20261004.sql',import.meta.url),'utf8');
 /* 수주 유형 v1: 다시 실행해도 안전 · 표 직접 접근 차단 · 수주 확정 = 담당자 또는 관리자 · 협약시공사 수주에서 기술자문 발생 = 예 → 기술자문 관리 건 한 번만 자동 생성 · 실적 금액 = 낙찰금액(연결 계약은 더하지 않음) */
 test('deal win type: own / partner_tech, advisory case auto-created once, audit trail',async()=>{
  const db=new PGlite();
@@ -18,6 +19,7 @@ test('deal win type: own / partner_tech, advisory case auto-created once, audit 
    create unique index if not exists uq_adv_src on public.advisory_deals(source_sheet,source_row);
    create table if not exists crm_security.advisory_attribution(advisory_id uuid primary key,decision text not null,origin_business text,source_deal_id uuid,performance_owner text,bid_amount bigint,bid_confirmed_at date);`);
   await db.exec(sql);await db.exec(sql);/* 두 번 실행해도 안전 */
+  await db.exec(sql2);await db.exec(sql2);/* 영업 경로 · 금액 5개 열 + 채움 트리거 */
   await db.query("insert into public.users values($1,$2,'송보람','admin',true),($3,$4,'황윤선','rep',true),($5,$6,'정정훈','rep',true)",[U,AU,V,AV,W,AW]);
   await db.query("insert into crm_security.access_review values($1,$2,'admin','admin',true,now()+interval '1 day'),($3,$4,'rep','rep',true,now()+interval '1 day'),($5,$6,'rep','rep',true,now()+interval '1 day')",[U,AU,V,AV,W,AW]);
   await db.query("insert into public.sites values($1,'평택비전지웰푸르지오')",[S1]);
@@ -48,6 +50,8 @@ test('deal win type: own / partner_tech, advisory case auto-created once, audit 
   const r1=await call('crm_deal_win_register_v1',pt),w1=r1.win;
   assert.equal(r1.advisory_created,true);assert.equal(w1.won_type,'partner_tech');assert.equal(Number(w1.award_amount),1043900000,'실적 금액 = 낙찰금액(자문료 · POUR 계약을 더하지 않는다)');
   assert.equal(w1.sales_channel_brand,'석민이앤씨');assert.equal(w1.performance_owner,'황윤선');assert.equal(w1.performance_owner_id,V);assert.equal(w1.tech_advisory,true);assert.equal(Number(w1.tech_advisory_amount),433650000);assert.equal(Number(w1.pour_contract_amount),136690000);assert.ok(w1.advisory_id);
+  /* 영업 경로 5칸 · 금액 5개(더하지 않는다): 인센티브 실적 = 낙찰금액, 자사계약 = POUR 계약 */
+  assert.equal(w1.inflow_brand,'석민이앤씨');assert.equal(w1.first_sales_company,'석민이앤씨');assert.equal(Number(w1.incentive_amount),1043900000);assert.equal(Number(w1.own_contract_amount),136690000);
   await db.exec('reset role');
   const ad=(await db.query('select * from public.advisory_deals where advisory_id=$1',[w1.advisory_id])).rows[0];
   assert.equal(ad.site_name,'평택비전지웰푸르지오');assert.equal(ad.site_id,S1);assert.equal(ad.contractor,'코지건설');assert.equal(Number(ad.bid_amount),1043900000);assert.equal(Number(ad.advisory_fee),433650000);assert.equal(Number(ad.pour_amount),136690000);
@@ -69,7 +73,7 @@ test('deal win type: own / partner_tech, advisory case auto-created once, audit 
   assert.equal(r4.advisory_created,true);
   /* 직접 수주: 유형 · 계약 업체만 남긴다(실적은 계약실적 원장) */
   const r5=await call('crm_deal_win_register_v1',{deal_id:D3,type:'own',company:'석민이앤씨',amount:500000000,date:'2026-10-02'});
-  assert.equal(r5.win.won_type,'own');assert.equal(r5.win.tech_advisory,false);assert.equal(r5.win.advisory_id,null);
+  assert.equal(r5.win.won_type,'own');assert.equal(r5.win.tech_advisory,false);assert.equal(r5.win.advisory_id,null);assert.equal(Number(r5.win.own_contract_amount),500000000,'직접 수주의 자사계약 = 낙찰금액');assert.equal(Number(r5.win.incentive_amount),500000000);
   /* 목록 · 거두기 */
   const l1=await call('crm_deal_win_list_v1');assert.equal(l1.rows.length,3);
   await as(AW);await assert.rejects(call('crm_deal_win_register_v1',{deal_id:D3,cancel:true}),/담당자 또는 관리자만/);

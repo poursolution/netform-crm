@@ -50,20 +50,20 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await row('담당 배정').locator('[data-ra="dec"]').click();await page.waitForTimeout(80);
   await row('주변 현장 지도').locator('.ra-tg').click();await page.waitForTimeout(80);
   await row('실주 원인').locator('[data-ra="add"]').click();await page.waitForTimeout(80);await page.keyboard.type('단가 인상');await page.keyboard.press('Enter');await page.waitForTimeout(120);
-  assert.match(await page.locator('#rules-admin .ra-bar').innerText(),/^변경 3건\s*담당 배정 30 → 20 · 주변 현장 지도 켜짐 → 꺼짐 · 실주 원인 7개 → 8개 \(\+단가 인상\) · 저장하면/);
+  assert.match(await page.locator('#rules-admin .ra-bar').innerText(),/^변경 3건\s*담당 배정 30 → 20 · 주변 현장 지도 켜짐 → 꺼짐 · 실주 원인 12개 → 13개 \(\+단가 인상\) · 저장하면/);
   assert.equal(await page.locator('#periodbar:visible, #reptabs:visible, #unibar:visible').count(),0,'설정 화면에는 조회기간 · 담당자 막대 없음');
   if(shot)await page.screenshot({path:shot+'-edit.png',fullPage:true});
   await page.locator('#rules-admin [data-ra="save"]').click();await page.waitForTimeout(500);
-  assert.deepEqual(await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_ops_rules_v1'&&c[1].set).map(c=>c[1].set)),[{assign_minutes:20,nearby_map:false,reasons_lost:['가격','관리소장 변경','타 공법 선호','경쟁사 관계','예산','공사 취소','기타','단가 인상']}],'바뀐 조건부 값만 서버로');
+  assert.deepEqual(await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_ops_rules_v1'&&c[1].set).map(c=>c[1].set)),[{assign_minutes:20,nearby_map:false,reasons_lost:['관계 · 관리소장 변경','관계 · 입대의 · 회장 영향','관계 · 경쟁업체 기존 관계','공법 · 타 공법 선호','공법 · 특허 조건 불리','공법 · 설계 변경','가격 · 가격 경쟁','가격 · 예산 부족','가격 · 실행가 문제','사업 · 공사 취소','사업 · 연기','사업 · 예산 미확정','단가 인상']}],'바뀐 조건부 값만 서버로');
   assert.equal(await page.locator('#rules-admin .ra-bar').count(),0,'저장 뒤 띠 사라짐');
   assert.deepEqual(await page.evaluate(()=>[CRMRules.get('assign_minutes'),CRMRules.get('nearby_map'),CRMRules.reasons('lost').at(-1),OPS_RULES.inquiryAssignMinutes,OPS_RULES.towerFirstResponseHours]),[20,false,'단가 인상',20,2],'서버가 확인한 값이 공통 기준으로');
   assert.match(await page.locator('#rules-admin .ra-hist').innerText(),/마지막 변경\s*\d{4}\.\d+\.\d+ · 송보람[\s\S]*담당 배정 30 → 20/,'변경 이력(누가 · 언제 · 전 → 후)');
   /* 모든 화면이 같은 기준: 견적문의 배정 기준 · 실주 원인 · 배드핏 사유 */
   await page.evaluate(()=>goPage('inq'));await page.waitForTimeout(400);
   assert.match(await page.locator('#inq-v3 .il-tab[data-v="unassigned"] small').innerText(),/^20분 안에 담당 지정$/);
-  assert.deepEqual(await page.evaluate(()=>{const d=document.createElement('select');d.innerHTML=reasonOptionsFor('lost');return [...d.options].map(o=>o.textContent).slice(1);}),['가격','관리소장 변경','타 공법 선호','경쟁사 관계','예산','공사 취소','기타','단가 인상']);
+  assert.deepEqual(await page.evaluate(()=>{const d=document.createElement('select');d.innerHTML=reasonOptionsFor('lost');return [...d.options].map(o=>o.textContent).slice(1);}),['관계 · 관리소장 변경','관계 · 입대의 · 회장 영향','관계 · 경쟁업체 기존 관계','공법 · 타 공법 선호','공법 · 특허 조건 불리','공법 · 설계 변경','가격 · 가격 경쟁','가격 · 예산 부족','가격 · 실행가 문제','사업 · 공사 취소','사업 · 연기','사업 · 예산 미확정','단가 인상']);
   assert.deepEqual(await page.evaluate(()=>inqBadFitReasons()),['수행 불가 공종','규모 부적합','시공 불가 지역','기타']);
-  assert.deepEqual(await page.evaluate(()=>StageTransition.definitions.lost.fields.find(f=>f.key==='close_reason').options),['가격','관리소장 변경','타 공법 선호','경쟁사 관계','예산','공사 취소','기타','단가 인상'],'단계 바꾸기(실주)의 사유 선택도 같은 목록');
+  assert.deepEqual(await page.evaluate(()=>StageTransition.definitions.lost.fields.find(f=>f.key==='close_reason').options),['관계 · 관리소장 변경','관계 · 입대의 · 회장 영향','관계 · 경쟁업체 기존 관계','공법 · 타 공법 선호','공법 · 특허 조건 불리','공법 · 설계 변경','가격 · 가격 경쟁','가격 · 예산 부족','가격 · 실행가 문제','사업 · 공사 취소','사업 · 연기','사업 · 예산 미확정','단가 인상'],'단계 바꾸기(실주)의 사유 선택도 같은 목록');
   assert.equal(await page.evaluate(()=>BriefB.lib.made(62,58)),51.7,'메이드율 = 공통 계산 함수');
   /* 서버 함수가 없으면: 기본값으로 동작 · 값은 잠금 · 안내 */
   await page.evaluate(()=>{window.CRMRelease=Object.assign(window.CRMRelease||{},{has:n=>n!=='crm_ops_rules_v1'});goPage('rules');});await page.waitForTimeout(300);

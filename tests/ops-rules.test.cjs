@@ -7,7 +7,7 @@ test('기본값 = 회의 기준서',()=>{
  assert.equal(R.get('assign_minutes'),30);assert.equal(R.get('first_contact_hours'),2);assert.equal(R.get('inactive_days'),7);assert.equal(R.get('quote_followup_days'),7);
  assert.equal(R.get('unreachable_attempts'),3);assert.equal(R.get('unreachable_interval_days'),1);assert.equal(R.get('long_wait_contact_days'),60);assert.equal(R.get('transfer_result_check_days'),14);
  assert.deepEqual(R.reasons('bad_fit'),['수행 불가 공종','규모 부적합','시공 불가 지역','기타']);
- assert.deepEqual(R.reasons('lost'),['가격','관리소장 변경','타 공법 선호','경쟁사 관계','예산','공사 취소','기타']);
+ assert.deepEqual(R.reasons('lost'),['관계 · 관리소장 변경','관계 · 입대의 · 회장 영향','관계 · 경쟁업체 기존 관계','공법 · 타 공법 선호','공법 · 특허 조건 불리','공법 · 설계 변경','가격 · 가격 경쟁','가격 · 예산 부족','가격 · 실행가 문제','사업 · 공사 취소','사업 · 연기','사업 · 예산 미확정']);
  assert.deepEqual(R.reasons('transfer'),['영업권 조율','영업권 중복','안전 · 시공조건','파트너사 협업','시공역량 문제','기타']);
  assert.deepEqual(R.get('contact_channels'),['전화','카카오','문자','이메일','방문','기타']);
  assert.equal(R.get('content_followup'),false,'보류 항목은 꺼짐');
@@ -57,7 +57,10 @@ test('예전 화면이 읽는 기준(OPS_RULES)에도 같은 값',()=>{
  finally{R.apply({});delete g.OPS_RULES;}
 });
 test('예전 실주 사유는 뜻이 같은 것만 지금 원인으로',()=>{
- assert.equal(R.lostReason('가격 열세'),'가격');assert.equal(R.lostReason('고객 예산 무산'),'예산');assert.equal(R.lostReason('관리소장 변경'),'관리소장 변경');assert.equal(R.lostReason('견적 후 후속 지연'),'견적 후 후속 지연','뜻이 다른 것은 적힌 그대로');assert.equal(R.lostReason(''),'사유 미기록');
+ assert.equal(R.lostReason('가격 열세'),'가격 · 가격 경쟁');assert.equal(R.lostReason('고객 예산 무산'),'가격 · 예산 부족');assert.equal(R.lostReason('관리소장 변경'),'관계 · 관리소장 변경');assert.equal(R.lostReason('경쟁사 관계'),'관계 · 경쟁업체 기존 관계');
+ /* 실주 원인 4분류 */
+ assert.deepEqual(R.lostGroups().map(g=>[g[0],g[1].map(s=>s.l)]),[['관계',['관리소장 변경','입대의 · 회장 영향','경쟁업체 기존 관계']],['공법',['타 공법 선호','특허 조건 불리','설계 변경']],['가격',['가격 경쟁','예산 부족','실행가 문제']],['사업',['공사 취소','연기','예산 미확정']]]);
+ assert.equal(R.lostCategory('가격 열세'),'가격');assert.equal(R.lostCategory('사업 · 연기'),'사업');assert.equal(R.lostCategory('견적 후 후속 지연'),'기타','분류가 없는 예전 사유는 기타');assert.equal(R.lostReason('견적 후 후속 지연'),'견적 후 후속 지연','뜻이 다른 것은 적힌 그대로');assert.equal(R.lostReason(''),'사유 미기록');
 });
 test('서버 함수의 허용 목록 · 범위 = 화면 항목표',()=>{
  const sql=read('sql/ops-rules-v1-20261004.sql'),lim=JSON.parse(sql.match(/lim constant jsonb:='(\{[^']+\})'/)[1]);
@@ -87,4 +90,17 @@ test('수주 유형 3가지: 직접 / 협약시공사 · 기술자문 / 타사 �
  assert.equal(R.dealResult({win,transfer:{transfer_status:'transferred',award_result:'transferred_won',incentive_eligible:true}}),'won_transfer','인정된 타사 이관이 먼저');
  const sql=read('sql/deal-win-type-v1-20261004.sql');assert.match(sql,/won_type in \('own','partner_tech'\)/);assert.match(sql,/insert into public\.advisory_deals/);assert.match(sql,/'crm:deal:'\|\|v_deal/);
  ['crm_deal_win_list_v1','crm_deal_win_register_v1'].forEach(n=>{assert.match(read('pc-manager-transport.js'),new RegExp("'"+n+"'"));assert.match(sql,new RegExp('function public\\.'+n));});
+});
+test('금액 5개는 더하지 않는다 · 영업 경로 5칸 · Health Score (3차 기준값도 한곳)',()=>{
+ const win={win_status:'confirmed',won_type:'partner_tech',award_company:'코지건설',award_amount:1043900000,award_date:'2026-09-12',sales_channel_brand:'석민이앤씨',performance_owner:'황윤선',tech_advisory:true,tech_advisory_company:'코지건설',tech_advisory_amount:433650000,pour_contract_amount:136690000};
+ const d={amount:1120000000,brand:'석민이앤씨',assignee:'정정훈',win};
+ assert.deepEqual(R.amounts(d),{estimated:1120000000,award:1043900000,own_contract:136690000,tech_advisory:433650000,incentive:1043900000,revenue:570340000},'인센티브 실적 = 낙찰금액 고정 · 회사 매출 = 자사계약 + 기술자문');
+ assert.deepEqual(R.amounts({amount:5e8,win:{...win,won_type:'own',award_amount:5e8,tech_advisory:false}},4.8e8),{estimated:5e8,award:5e8,own_contract:4.8e8,tech_advisory:0,incentive:5e8,revenue:4.8e8},'직접 수주의 자사계약 = 계약실적 원장');
+ assert.equal(R.amounts({amount:3e8}).award,0);assert.equal(R.amounts({amount:3e8},3e8).incentive,3e8,'원장만 있는 예전 계약 = 직접 수주');
+ assert.equal(R.amounts({transfer:{transfer_status:'transferred',award_result:'transferred_won',award_amount:3.8e8,incentive_eligible:false}}).incentive,0,'타사 이관은 인정 전에는 실적 아님');
+ assert.deepEqual(R.salesPath(d),{inflow_brand:'석민이앤씨',first_sales_company:'석민이앤씨',sales_owner:'황윤선',award_company:'코지건설',tech_advisory_company:'코지건설'});
+ assert.deepEqual(R.PHASE3.sales_path,['inflow_brand','first_sales_company','sales_owner','award_company','tech_advisory_company']);assert.deepEqual(Object.keys(R.PHASE3.amounts),['estimated','award','own_contract','tech_advisory','incentive']);
+ assert.deepEqual(R.healthScore({}),{score:100,red:false});assert.deepEqual(R.healthScore({no_contract_info:true,quote_no_contact_7d:true,no_next_action:true}),{score:25,red:true});
+ assert.equal(R.PHASE2.change_events.types.length,8);assert.equal(R.PHASE2.approval_types.length,6);assert.equal(R.PHASE2.promise_keeping.warn_below,0.8);assert.equal(R.PHASE3.stage_dwell_days.rel,60);
+ const sql=read('sql/deal-win-path-v2-20261004.sql');['inflow_brand','first_sales_company','own_contract_amount','incentive_amount'].forEach(c=>assert.match(sql,new RegExp('add column if not exists '+c)));
 });
