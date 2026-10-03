@@ -93,6 +93,8 @@
   const pill=dlg.querySelector('.idv-top1 .idv-pill');if(pill){const label=f.group==='none'?'지사 미착수':f.group==='first'?'지사 응대 없음':'영업 진행 확인됨';pill.className='idv-pill '+(f.group==='ok'?'ok':'red');pill.textContent=label+(f.days!=null?' · '+f.days+'일':'');}
   /* 가운데: 접수 다음에 '본사 → 경남지사 인계' 기록 */
   const firstMsg=dlg.querySelector('.idv-thread .idv-msg');if(firstMsg&&!dlg.querySelector('.gnv-handoff')){firstMsg.insertAdjacentHTML('afterend','<div class="idv-msg sys gnv-handoff"><div class="idv-meta"><em>인계</em><span>'+h(String(handedAt(q)||'').slice(0,10))+'</span></div><div class="idv-bubble">본사 → 경남지사 인계</div></div>');}
+  /* 응대 이력 타임라인(2026-10-03 inquiry_v2 상세보기) 형식에서는 시스템 줄로 */
+  const firstEv=dlg.querySelector('.idv-thread .idv-ev');if(firstEv&&!dlg.querySelector('.gnv-handoff')){firstEv.insertAdjacentHTML('afterend','<div class="idv-ev sy gnv-handoff"><i></i><div><div class="idv-evmeta"><span>'+h(String(handedAt(q)||'').slice(0,10))+' · 영업관리</span><em class="k">시스템</em><em class="s">CRM</em></div><div class="idv-evtext">본사 → 경남지사 인계</div></div></div>');}
   const logs=notes(q).filter(n=>n&&!n.startsWith(REQ)&&!n.startsWith(RECALL)).length,stage=f.deal?root.stageLabel(root.dealStage(f.deal)):'문의',stalled=f.group!=='ok',asked=requested(q),recall=recallMarked(q);
   const team=root.gnData().rows.filter(r=>!r.pool).map(r=>'<div><span>'+h(r.label)+'</span><em>넘겨받음 '+r.assigned+' · 연락 '+r.responded+' · 수주 '+r.won+'</em></div>').join('')||'<p class="idv-hint">등록된 지사 담당이 없습니다.</p>';
   const c3=dlg.querySelector('.idv-c3');if(!c3)return false;

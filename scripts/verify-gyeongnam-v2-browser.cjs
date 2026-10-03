@@ -53,7 +53,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await d.locator('.idv-pill').innerText(),/^지사 미착수 · 18일$/);
   assert.deepEqual(await d.locator('.idv-steps span').allInnerTexts(),['본사 → 지사','지금 · 지사 실담당','지사 첫 연락','영업기회','수주']);
   assert.match(await d.locator('.idv-quote').innerText(),/견적 문의 1/);
-  assert.deepEqual((await d.locator('.idv-thread .idv-bubble').allInnerTexts()).slice(0,2),['견적문의가 접수되었습니다.','본사 → 경남지사 인계']);
+  {const ev=(await d.locator('.idv-thread .idv-evtext').allInnerTexts()).slice(0,2);assert.match(ev[0]||'',/견적문의 접수$/);assert.equal(ev[1],'본사 → 경남지사 인계');}
   const c3=d.locator('.idv-c3');
   assert.match(await c3.innerText(),/지사 진행 확인[\s\S]*본사 확인용 · 처리는 지사에서[\s\S]*넘긴 후\s*18일[\s\S]*지사 실담당\s*미지정[\s\S]*지사 연락 기록\s*없음[\s\S]*현재 단계\s*문의[\s\S]*넘긴 지 18일 동안 지사에서 움직임이 없어요[\s\S]*지사에 확인 요청[\s\S]*본사 회수 검토[\s\S]*경남지사 담당 현황/);
   assert.equal(await c3.locator('.idv-assign,.idv-rep').count(),0,'배정 칸 없음');
