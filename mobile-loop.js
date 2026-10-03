@@ -335,7 +335,7 @@
   const d=current();if(!d)return;const c=root.contactInfoM?root.contactInfoM(d):{};
   root.openSheet(root.intro('var(--blue-50)','var(--blue-dark)',root.IC.phone,'어떻게 됐나요?',h(d.nm)+(c.name?' · '+h(c.name):'')),
    '<p class="ml-lead">하나만 고르면 기록과 다음 할 일까지 자동으로 만듭니다</p><div class="ml-chips">'+CHIPS.map(x=>'<button type="button" class="ml-chip" data-chip="'+x[0]+'"><b>'+x[1]+'</b><small>'+x[2]+'</small></button>').join('')+'</div>'
-   +'<div class="ml-step2" hidden><label class="ml-note" hidden>어떤 약속인가요?<input type="text" maxlength="80" placeholder="예: 금요일까지 수정 견적 전달"></label><div class="ml-say"><textarea maxlength="300" rows="2" placeholder="남길 말이 있으면 적거나 말하세요 (선택)"></textarea><button type="button" class="ml-mic" aria-pressed="false">말하기</button><small class="ml-sayhint" hidden></small></div><b class="ml-q">언제 다시 확인할까요?</b><div class="ml-dates">'+dateOptions().map(x=>'<button type="button" class="ml-date" data-date="'+x[1]+'">'+x[0]+'<small>'+x[1].slice(5).replace('-','/')+'</small></button>').join('')+'<label class="ml-date ml-pick">날짜 선택<input type="date"></label></div></div>'
+   +'<div class="ml-step2" hidden><label class="ml-note" hidden>어떤 약속인가요?<input type="text" maxlength="80" placeholder="예: 금요일까지 수정 견적 전달"></label><div class="ml-say"><textarea maxlength="300" rows="2" placeholder="남길 말이 있으면 적거나 말하세요 (선택)"></textarea><button type="button" class="ml-mic" aria-pressed="false">말하기</button><button type="button" class="ml-tidy" hidden>AI로 정리</button><small class="ml-sayhint" hidden></small></div><b class="ml-q">언제 다시 확인할까요?</b><div class="ml-dates">'+dateOptions().map(x=>'<button type="button" class="ml-date" data-date="'+x[1]+'">'+x[0]+'<small>'+x[1].slice(5).replace('-','/')+'</small></button>').join('')+'<label class="ml-date ml-pick">날짜 선택<input type="date"></label></div></div>'
    +'<p class="ml-status" role="status" aria-live="polite"></p>');
   const card=root.document.getElementById('sheetcard');if(!card)return;
   const step2=card.querySelector('.ml-step2'),note=card.querySelector('.ml-note'),status=card.querySelector('.ml-status');let chip='';
@@ -357,6 +357,25 @@
    try{r.start();}catch(err){sayHint.hidden=false;sayHint.textContent='마이크를 시작할 수 없습니다 — 직접 적어 주세요.';return;}
    rec=r;mic.textContent='그만';mic.classList.add('on');mic.setAttribute('aria-pressed','true');sayHint.hidden=false;sayHint.textContent='듣는 중… 끝나면 [그만]을 누르세요.';
   };
+  /* AI로 정리(2026-10-03): 로그인 상태에서만 보인다. 원문 → 정리문(메모 칸 교체, 원문은 되돌리기 가능) + 결과 분류 · 날짜는 추천 표시만. 저장은 사람이 날짜를 누를 때 기존 경로로 */
+  const tidy=card.querySelector('.ml-tidy');let rawBefore='';
+  if(tidy&&root.TOKEN&&root.SUPABASE_URL){tidy.hidden=false;
+   tidy.onclick=async()=>{const raw=say.value.replace(/\s+/g,' ').trim();if(!raw){sayHint.hidden=false;sayHint.textContent='먼저 말하거나 적어 주세요.';return;}
+    if(rec){try{rec.stop();}catch(e){}}
+    tidy.disabled=true;tidy.textContent='정리 중…';sayHint.hidden=false;sayHint.textContent='AI가 읽는 중…';
+    try{
+     const today=kstDay(new Date()),r=await root.fetch(root.SUPABASE_URL+'/functions/v1/crm-ai',{method:'POST',headers:{apikey:root.SUPABASE_ANON,Authorization:'Bearer '+root.TOKEN,'Content-Type':'application/json'},body:JSON.stringify({kind:'memo_tidy',subject_type:'deal',subject_id:String(d.id),input:{site:d.nm||'',stage:String(d.code||''),today,raw}})});
+     const j=await r.json().catch(()=>null);
+     if(!r.ok||!j||j.ok!==true||!j.suggestion)throw new Error({AI_DISABLED:'AI 제안이 꺼져 있습니다',AI_NOT_CONFIGURED:'AI 키가 서버에 없습니다',FORBIDDEN:'AI 제안을 쓸 권한이 없습니다',AI_UPSTREAM:'AI 서버가 응답하지 않았습니다',AI_BAD_OUTPUT:'AI 답을 읽지 못했습니다'}[j&&j.error]||'AI 정리를 받지 못했습니다');
+     const s=j.suggestion.suggestion||{};if(!s.memo)throw new Error('AI가 정리할 내용을 찾지 못했습니다');
+     rawBefore=raw;say.value=s.memo;
+     const names={ongoing:'통화함 · 진행 중',recall:'다시 연락하기로 함',absent:'전화 안 받음',promise:'고객과 약속함'},rc=names[s.result]?'결과는 「'+names[s.result]+'」'+(s.result==='promise'&&s.what?'('+s.what+')':''):'',nx=s.next&&s.next.date?'다음 확인 '+s.next.date.slice(5).replace('-','/')+(s.next.text?' · '+s.next.text:''):'';
+     card.querySelectorAll('.ml-chip').forEach(x=>x.classList.toggle('ai',x.dataset.chip===s.result));card.querySelectorAll('.ml-date[data-date]').forEach(x=>x.classList.toggle('ai',!!(s.next&&x.dataset.date===s.next.date)));
+     if(s.result==='promise'&&s.what&&chip==='promise'&&!note.querySelector('input').value)note.querySelector('input').value=s.what;
+     sayHint.textContent='AI 정리(제안) — '+[rc,nx].filter(Boolean).join(' · ')+(rc||nx?' 로 추천합니다. ':'')+'메모는 고칠 수 있고, 저장은 날짜를 누를 때 됩니다. ';
+     const undo=document.createElement('button');undo.type='button';undo.className='ml-undo';undo.textContent='원문으로';undo.onclick=()=>{say.value=rawBefore;undo.remove();sayHint.textContent='원문으로 되돌렸습니다.';};sayHint.append(undo);
+    }catch(e){sayHint.textContent=String(e&&e.message||e);}
+    tidy.disabled=false;tidy.textContent='AI로 정리';};}
   const submit=due=>{if(rec){try{rec.stop();}catch(e){}}return save(d,chip,due,note.querySelector('input').value.trim(),status,card,say.value.replace(/\s+/g,' ').trim());};
   card.querySelectorAll('.ml-date[data-date]').forEach(b=>b.onclick=()=>submit(b.dataset.date));
   card.querySelector('.ml-pick input').onchange=e=>{if(e.target.value)submit(e.target.value);};
