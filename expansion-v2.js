@@ -102,6 +102,24 @@
  }
  /* ── 상세창 ── */
  let openId=null,returnFocus=null,draft='';
+ const INFO_RPC='crm_expansion_info_update_v1';
+ const infoEditable=()=>!!(root.SB&&root.SB.rpc&&root.TOKEN&&!(root.CRMRelease&&root.CRMRelease.has(INFO_RPC)===false));
+ const EDITS={};const editSt=r=>EDITS[r.sourceOpportunityId]||(EDITS[r.sourceOpportunityId]={field:'',draft:'',busy:false});
+ async function saveInfo(r,field,value){
+  const ES=editSt(r);if(!value||ES.busy){ES.field='';renderDetail();return;}
+  ES.busy=true;renderDetail();
+  try{
+   const res=await root.SB.rpc(INFO_RPC,{p:{source_opportunity_id:r.sourceOpportunityId,field,value}});
+   if(res.error){if(res.error.code==='PGRST202')root.CRMRelease?.noteMissing?.(INFO_RPC);throw Error(res.error.message||'저장 실패');}
+   if(!res.data||res.data.ok!==true)throw Error('서버 확인 응답이 올바르지 않습니다.');
+   /* 화면 반영: 서버 행 · 이 PC 행 같은 키로 */
+   const key=field==='completion_date'?'completion_date':'owner_name',rows=(root.expServerRows?.()||[]).concat((root.LOCAL&&root.LOCAL.expansionPool)||[]);
+   rows.filter(x=>String(root.expSourceId?root.expSourceId(x):(x.source_opportunity_id||x.sourceOpportunityId))===r.sourceOpportunityId).forEach(x=>{x[key]=value;if(key==='completion_date')x.completionDate=value;if(key==='owner_name')x.owner=value;});
+   if(!rows.length&&root.B){root.B.expansion_pool=(root.B.expansion_pool||[]).concat({id:res.data.expansion_record_id,source_opportunity_id:r.sourceOpportunityId,site_name:r.site,[key]:value,expansion_status:'신규 대상'});}
+   ES.field='';ES.draft='';toast((field==='completion_date'?'준공일':'현재 담당')+' 저장됨');root.paintExpansion();if(root.G.page!=='expansion')renderDetail();
+  }catch(err){toast(String(err.message||err),'warn');}
+  finally{ES.busy=false;renderDetail();}
+ }
  /* 저장하면 서버 행과 이 PC 행이 합쳐지며 id가 바뀔 수 있다 — 열린 창은 원 수주 건(sourceOpportunityId)으로 다시 찾는다 */
  const find=id=>{const list=root.expansionRecords();return list.find(r=>r.id===String(id))||list.find(r=>r.sourceOpportunityId===String(id));};
  const eventsOf=r=>(root.B.expansion_events||[]).filter(e=>String(e.source_opportunity_id)===r.sourceOpportunityId);
@@ -110,7 +128,9 @@
   m=document.createElement('div');m.id='expansionV2';m.className='xdv-layer';m.setAttribute('aria-hidden','true');
   m.innerHTML='<section class="xdv" role="dialog" aria-modal="true" aria-labelledby="xdvTitle"></section>';
   m.addEventListener('click',e=>{if(e.target===m)close();else onDetailClick(e);});
-  m.addEventListener('change',e=>{if(e.target.dataset.xd==='next'&&e.target.value&&find(openId)){root.expansionSetNext(find(openId).id,e.target.value);toast('다음 접촉일을 '+e.target.value+'로 정했습니다');}});
+  m.addEventListener('change',e=>{if(e.target.dataset.xd==='next'&&e.target.value&&find(openId)){root.expansionSetNext(find(openId).id,e.target.value);toast('다음 접촉일을 '+e.target.value+'로 정했습니다');}
+   const r0=find(openId);if(!r0)return;if(e.target.dataset.xd==='editinput'&&e.target.value)saveInfo(r0,'completion_date',e.target.value);if(e.target.dataset.xd==='editsel'&&e.target.value)saveInfo(r0,'owner_name',e.target.value);});
+  m.addEventListener('keydown',e=>{if(e.key==='Escape'&&(e.target.dataset.xd==='editinput'||e.target.dataset.xd==='editsel')){e.preventDefault();e.stopImmediatePropagation();const r0=find(openId);if(r0){editSt(r0).field='';renderDetail();}}},true);
   m.addEventListener('input',e=>{if(e.target.matches('.idv-input textarea')){draft=e.target.value;m.querySelector('.idv-save')?.classList.toggle('on',!!draft.trim());}});
   m.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close();}else if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)&&e.target.matches('.idv-input textarea')){e.preventDefault();saveNote();}});
   document.body.append(m);return m;
@@ -121,11 +141,20 @@
   const steps=['이번 주 연락','유지접촉','니즈 확인','견적문의 전환'].map((t,i)=>'<div class="'+(i<step?'done':i===step?'cur':'')+'"><i></i><span>'+(i===step?'지금 · ':'')+t+'</span></div>').join('');
   const c=(()=>{try{return root.contactInfo(d,root.itemPatch(d,'deal'))||{};}catch(e){return {};}})(),phone=root.phoneFmt?root.phoneFmt(c.mobile||c.officeTel||''):(c.mobile||c.officeTel||'');
   const contract=d.contract_date||d.contractDate||d.advisory&&d.advisory.contract_date||'';
-  const facts=[['현재 담당',owner==='미배정'?'':owner],['당시 영업',root.repN(d.assignee)==='미배정'?'':root.repN(d.assignee)||''],['계약일',ymd(contract)],['준공일',ymd(r.completionDate)],['공종',unclassified(r)?'':r.sourceWorkSummary],['수주 금액',money(r.wonAmount)]];
+  /* 관리 정보 빈 칸 바로 입력(2026-10-03 대표 "견적문의처럼"): 준공일 · 현재 담당 = crm_expansion_info_update_v1(관리자 또는 담당 범위, 현재 담당은 관리자만) · 공종 = 기존 공종 편집기 · 계약일 · 수주 금액 = 계약실적 원장(여기서 안 바꿈) */
+  const can=infoEditable(),admin=!!root.todayIsAdmin?.(),ES=editSt(r);
+  const facts=[['현재 담당',owner==='미배정'?'':owner,can&&admin?'owner_name':''],['당시 영업',root.repN(d.assignee)==='미배정'?'':root.repN(d.assignee)||'',''],['계약일',ymd(contract),'ledger'],['준공일',ymd(r.completionDate),can?'completion_date':''],['공종',unclassified(r)?'':r.sourceWorkSummary,d.id?'work':''],['수주 금액',money(r.wonAmount),'ledger']];
   let files=[],quotes=[];try{files=d.id?root.execAttachments(d):[];quotes=d.id?root.execQuoteVersions(d):[];}catch(e){}
   const photos=files.filter(x=>/^image\//.test(x.mime_type||'')).length;
   const left='<div class="xdv-card"><span class="xdv-label">연락할 고객</span><b>'+h(c.name?c.name+(c.role?' · '+c.role:''):'고객 이름 미등록')+'</b><span class="'+(phone?'':'xdv-warn')+'">'+h(phone||'연락처 미입력')+'</span>'+(done?'':'<div class="xdv-three"><button type="button" class="fill" data-xd="call">전화</button><button type="button" data-xd="sms">문자</button><button type="button" data-xd="kakao">카카오</button></div>')+'</div>'
-   +'<div class="xdv-card"><b>관리 정보</b><dl class="xdv-facts">'+facts.map(([k,v])=>'<div><dt>'+h(k)+'</dt><dd'+(v?'':' class="xdv-warn"')+'>'+h(v||'미입력')+'</dd></div>').join('')+'</dl></div>'
+   +'<div class="xdv-card"><b>관리 정보</b><dl class="xdv-facts">'+facts.map(([k,v,ed])=>{
+     if(ed&&ES.field===ed){if(ed==='owner_name'){const reps=(root.REP_INTERNAL||[]).slice();return '<div><dt>'+h(k)+'</dt><dd><select class="xdv-editin" data-xd="editsel" aria-label="현재 담당"><option value="">담당 선택</option>'+reps.map(n=>'<option'+(n===(ES.draft||v)?' selected':'')+'>'+h(n)+'</option>').join('')+'</select></dd></div>';}
+      return '<div><dt>'+h(k)+'</dt><dd><input class="xdv-editin" type="date" data-xd="editinput" value="'+attr(ES.draft||v||'')+'" aria-label="'+attr(k)+'"'+(ES.busy?' disabled':'')+'></dd></div>';}
+     if(ed==='ledger')return '<div><dt>'+h(k)+'</dt><dd'+(v?'':' class="xdv-warn"')+'>'+h(v||'미입력')+(v?'':' <small class="xdv-ledger">· 계약실적(성과 분석)에서 기록</small>')+'</dd></div>';
+     if(ed==='work')return '<div><dt>'+h(k)+'</dt><dd>'+(v?h(v)+' ':'')+'<button type="button" class="xdv-edit" data-xd="editwork">'+(v?'수정':'미입력 · 눌러서 입력')+'</button></dd></div>';
+     if(ed&&!v)return '<div><dt>'+h(k)+'</dt><dd><button type="button" class="xdv-edit" data-xd="edit" data-value="'+ed+'">미입력 · 눌러서 입력</button></dd></div>';
+     if(ed)return '<div><dt>'+h(k)+'</dt><dd>'+h(v)+' <button type="button" class="xdv-edit xdv-editsm" data-xd="edit" data-value="'+ed+'">수정</button></dd></div>';
+     return '<div><dt>'+h(k)+'</dt><dd'+(v?'':' class="xdv-warn"')+'>'+h(v||'미입력')+'</dd></div>';}).join('')+'</dl></div>'
    +'<div class="xdv-card"><b>자료</b><div class="xdv-tiles">'+[['사진',photos],['견적서',quotes.length],['기타',files.length-photos]].map(t=>'<div><span>'+t[0]+'</span><b>'+t[1]+'건</b></div>').join('')+'</div>'+(d.id?'<button type="button" class="xdv-link" data-xd="source">수주 영업건 열기 →</button>':'')+'</div>';
   const list=eventsOf(r).slice().sort((a,b)=>String(a.occurred_at||a.created_at||'').localeCompare(String(b.occurred_at||b.created_at||'')));
   const sys='<div class="idv-msg sys"><div class="idv-meta"><em>시스템</em><span>'+h(ymd(r.completionDate)||'준공일 미기록')+'</span></div><div class="idv-bubble">준공 완료 → 확장관리 대상으로 등록'+((r.candidates||[]).length?' / 추천: '+h((r.candidates||[]).join(' · ')):'')+'</div></div>';
@@ -179,6 +208,8 @@
   if(a==='convert'){close(false);root.expansionOpenNew(id);}
   if(a==='pipeline'){close(false);root.ExpansionPool.openPipeline(id);}
   if(a==='source'){const d=dealOf(r);if(d.id){close(false);root.G._detailPopup=true;root.drwDeal(JSON.stringify(d));}}
+  if(a==='edit'){const ES=editSt(r);ES.field=b.dataset.value;ES.draft='';renderDetail();setTimeout(()=>{const el=node().querySelector('[data-xd="editinput"],[data-xd="editsel"]');if(el)el.focus();},30);}
+  if(a==='editwork'){const d=dealOf(r);if(!d.id)return;root.CUR_DETAIL={kind:'deal',key:root.dealKey(d),item:d};root.openWorkEdit?.();}
  }
  let legacyOpen=null;
  function boot(){

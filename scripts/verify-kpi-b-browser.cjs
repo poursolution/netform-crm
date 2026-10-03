@@ -16,7 +16,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{
    const day=n=>new Date(Date.now()+n*864e5).toLocaleDateString('en-CA'),at=n=>new Date(Date.now()+n*864e5).toISOString();
    const deal=(id,site,owner,code,extra)=>Object.assign({id,site,assignee:owner,brand:'POUR솔루션',created:day(-90),updated:day(-60),code,stage_code:code,grp:'영업·관리',amt:1e8},extra||{});
-   const inq=(n,owner,days)=>({id:'0000000'+n+'-0000-4000-8000-00000000000'+n,site:'신규 문의 '+n,status:owner?'배정완료':'접수',at:at(-days),created_at:at(-days),brand:'POUR솔루션',assignee:owner||'',assigned_to:owner||'',assigned_at:owner?at(-days+0.5):null});
+   const inq=(n,owner,days)=>({id:'0000000'+n+'-0000-4000-8000-00000000000'+n,site:'신규 문의 '+n,status:owner?'배정완료':'접수',at:at(-days),created_at:at(-days),brand:'POUR솔루션',assignee:owner||'',assigned_to:owner||'',assigned_at:owner?at(-days+0.0007)/* 접수 1분 뒤 배정 — 시각과 상관없이 같은 날 */:null});
    B={deals:[
      deal('d1','할 일 없는 큰 현장','이필선','consulting',{amt:9e8}),
      deal('d2','기한 지난 현장','이필선','sent',{amt:3e8,next_action:{id:'n1',text:'견적 확인',due:day(-12),status:'open'}}),
