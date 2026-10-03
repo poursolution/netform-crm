@@ -87,13 +87,20 @@
   if(a.type==='체크')return null;
   return {kind,ch,res,text:text||type,who:a.actor||a.actor_name||'',at:a.at||a.occurred_at||a.created_at,src:a.source==='mobile'||/모바일/.test(String(a.source||''))?'모바일':'CRM',next:a.next||''};
  }
+  /* CRM 직접 발송(2026-10-03 대표 "진행해"): 문의 응대 문자 큐 — 함수가 운영에 있고 로그인 상태이며 번호가 010 이면 [CRM에서 보내기]. 전송은 대표 PC 실행기(ALIGO_INQUIRY_REPLIES)가 한다 */
+  const SMS_RPC='crm_inquiry_sms_request_v1',SMS_LIST='crm_inquiry_sms_list_v1';
+  const crmSendable=digits=>!!(root.SB&&root.SB.rpc&&root.TOKEN&&/^010\d{8}$/.test(digits||'')&&!(root.CRMRelease&&root.CRMRelease.has(SMS_RPC)===false));
+  const SMSQ={};/* inquiry id → {rows,at,busy} */
+  const SMS_ST={queued:['대기 중 · 실행기가 보내면 갱신','wait'],sending:['보내는 중','wait'],submitted:['접수됨 · 결과 확인 중','wait'],sent:['전송됨','ok'],failed:['실패','bad'],unknown:['결과 미확인','bad'],cancelled:['취소됨(24시간 지남)','bad']};
+  function loadSms(q){const id=String(q.id||'');if(!id||!root.SB||!root.SB.rpc||!root.TOKEN||(root.CRMRelease&&root.CRMRelease.has(SMS_LIST)===false))return;const c=SMSQ[id];if(c&&(c.busy||Date.now()-c.at<15000))return;SMSQ[id]={rows:c?c.rows:[],at:Date.now(),busy:true};root.SB.rpc(SMS_LIST,{p:{inquiry_id:id}}).then(r=>{if(r.error){if(r.error.code==='PGRST202')root.CRMRelease?.noteMissing?.(SMS_LIST);return;}const rows=(r.data&&r.data.rows)||[];const was=JSON.stringify((c&&c.rows||[]).map(x=>x.id+x.status));SMSQ[id]={rows,at:Date.now(),busy:false};if(was!==JSON.stringify(rows.map(x=>x.id+x.status)))reskinFrom();}).catch(()=>{SMSQ[id].busy=false;});}
  function timeline(q){
   const created=root.inquiryCreatedAt(q),d=q.detail&&typeof q.detail==='object'?q.detail:{},r=q.raw&&typeof q.raw==='object'?q.raw:{},channel=d.channel||q.channel||r['상담채널']||'';
   const list=[{kind:'system',at:created,who:'자동',src:'구글시트',text:(channel?channel+' ':'')+'견적문의 접수'}];
   const asgAt=root.inquiryAssignedAt?.(q)||q.assigned_at,owner=root.inquiryRoutedOwner(q);
   if(asgAt&&owner)list.push({kind:'system',at:asgAt,who:'영업관리',src:'CRM',text:'담당 '+root.repDisplay(owner)+' 배정'});
   const p=root.itemPatch(q,'inq')||{};(p.stageHistory||[]).forEach(x=>{if(x.from&&x.to&&x.from!==x.to)list.push({kind:'system',at:x.at,who:x.actor||'',src:'CRM',text:'상태 '+x.from+' → '+x.to});});
-  acts(q).forEach(a=>{const e=parseEntry(a);if(e)list.push(e);});
+   acts(q).forEach(a=>{const e=parseEntry(a);if(e)list.push(e);});
+   ((SMSQ[String(q.id||'')]||{}).rows||[]).forEach(x=>{const st=SMS_ST[x.status]||[x.status,''];list.push({kind:'system',at:x.delivered_at||x.failed_at||x.submitted_at||x.created_at,who:x.requested_by_name||'',src:'CRM 문자',text:'CRM 문자 '+st[0]+(x.last_error&&x.status!=='cancelled'?' · '+x.last_error:'')+' — '+String(x.body||'').slice(0,60),smsState:st[1]});});
   const na=root.actionObj(q,p);list.sort((x,y)=>Date.parse(x.at||0)-Date.parse(y.at||0));
   const lastContact=[...list].reverse().find(e=>e.kind==='contact'||e.kind==='work');if(lastContact&&na&&na.text&&!lastContact.next)lastContact.next=na.text+(na.due?' · '+na.due:'');
   return list;
@@ -120,11 +127,12 @@
     +(has&&s.edit?'<div class="idv-sugedit"><small>수단</small><div>'+CH.map(l=>'<button type="button" class="idv-chip'+(g.ch===l?' on':'')+'" data-idv="ch" data-v="'+l+'">'+l+'</button>').join('')+'</div><small>결과</small><div>'+RS.map(l=>'<button type="button" class="idv-chip'+(g.res===l?' on':'')+'" data-idv="res" data-v="'+l+'">'+l+'</button>').join('')+'</div><small>다음 행동</small><div>'+AC.map(l=>'<button type="button" class="idv-chip'+(g.act===l?' on':'')+'" data-idv="act" data-v="'+l+'">'+l+'</button>').join('')+'</div><small>날짜</small><div>'+DY.map(l=>'<button type="button" class="idv-chip'+(g.nday===l&&!s.due?' on':'')+'" data-idv="nday" data-v="'+l+'">'+l+'</button>').join('')+'<input type="date" id="iq-due" data-idv="due" value="'+attr(g.due)+'" aria-label="다음 행동 날짜"></div><input id="iq-next" data-idv="next" placeholder="다음 행동을 직접 적기" value="'+attr(s.next||'')+'"></div>':'<input type="hidden" id="iq-next" value="'+attr(s.next||(has?(g.none?'실주 처리 검토':g.act):''))+'"><input type="hidden" id="iq-due" value="'+attr(has?g.due:'')+'">')
     +'<div class="idv-formfoot"><span>'+(has?(assignedNow?'저장하면 이력에 남고 다음 행동이 오늘 업무에 생깁니다':'배정 전 기록 — 이력에만 남고 다음 행동은 배정 뒤 정합니다'):'통화 · 카카오 · 문자 · 이메일 · 방문 모두 여기에')+'</span><button type="button" class="idv-save'+(has?' on':'')+'" data-idv="save">저장</button></div><input type="hidden" id="iq-did" value="고객 응대 기록">';}
   else if(s.tab==='sms'){const T=smsTemplates(q);if(!s.smsTpl&&!(s.smsText||'').trim()){s.smsTpl='첫 인사';s.smsText=T['첫 인사']||'';}const bytes=smsBytes(s.smsText||''),mobile=/Android|iPhone|iPad/i.test(navigator.userAgent);
-   form='<div class="idv-smsnote"><b>문구는 자동으로 만들어 둡니다 — 고칠 것만 고치고 아래 버튼 하나만 누르세요.</b><span>CRM에서 고객에게 직접 보내는 발송은 아직 연결 전입니다(문자 발송 서비스 실행기 · 발신번호 설정 뒤 열림). 지금은 '+(mobile?'휴대폰 문자 앱이 열리고':'문구가 복사되고')+' 응대 이력에 «문자 · 회신대기»로 바로 기록됩니다.</span></div>'
+   const crm=crmSendable(digits);if(crm)loadSms(q);
+  form='<div class="idv-smsnote"><b>문구는 자동으로 만들어 둡니다 — 고칠 것만 고치고 아래 버튼 하나만 누르세요.</b><span>'+(crm?'[CRM에서 보내기]를 누르면 넷폼 발신번호로 고객 휴대폰에 바로 발송됩니다(대표 PC의 문자 실행기가 보냄 · 24시간 안 3건까지). 응대 이력에 «문자 · 회신대기»로 기록되고 전송 결과가 이력에 뜹니다.':'CRM 직접 발송은 '+(digits?'서버 적용 뒤에 열립니다.':'010 휴대폰 번호가 있어야 합니다.')+' 지금은 '+(mobile?'휴대폰 문자 앱이 열리고':'문구가 복사되고')+' 응대 이력에 «문자 · 회신대기»로 바로 기록됩니다.')+'</span></div>'
     +'<div class="idv-tpls"><span class="tag">AI</span><small>상황에 맞는 문구</small>'+Object.keys(T).map(k=>'<button type="button" class="idv-chip'+(s.smsTpl===k?' on':'')+'" data-idv="tpl" data-v="'+attr(k)+'">'+h(k)+'</button>').join('')+'</div>'
     +'<div class="idv-smsto"><span>받는 사람</span><b class="'+(digits?'':'bad')+'">'+h((q.contact_name||q.contact||'고객')+' · '+(digits?root.phoneFmt(digits):'연락처 없음'))+'</b><i></i><span>'+bytes+'byte · '+(bytes>90?'LMS':'SMS')+'</span></div>'
     +'<textarea id="spLogNote" rows="3" data-idv="smstext" placeholder="보낼 문자">'+h(s.smsText||'')+'</textarea>'
-    +'<div class="idv-formfoot"><span>'+(root.inquiryAssigned(q)?'기록되면 3일 뒤 「회신 확인」이 오늘 업무에 생깁니다':'배정 전 — 이력에만 남습니다')+'</span><button type="button" class="lnk" data-idv="sms-copy">문구만 복사</button><button type="button" class="idv-save'+((s.smsText||'').trim()&&digits?' on':'')+'" data-idv="sms-send"'+(digits?'':' disabled')+'>'+(digits?(mobile?'문자 앱으로 보내고 기록':'문구 복사하고 기록'):'연락처 없음')+'</button></div><select id="spLogType" hidden><option selected>메일·메시지</option></select>';}
+    +'<div class="idv-formfoot"><span>'+(root.inquiryAssigned(q)?'기록되면 3일 뒤 「회신 확인」이 오늘 업무에 생깁니다':'배정 전 — 이력에만 남습니다')+'</span><button type="button" class="lnk" data-idv="sms-copy">문구만 복사</button>'+(crm?'<button type="button" class="lnk" data-idv="sms-send">'+(mobile?'문자 앱으로':'복사해서')+' 직접 보내기</button><button type="button" class="idv-save'+((s.smsText||'').trim()&&!s.smsBusy?' on':'')+(s.smsConfirm?' idv-confirm':'')+'" data-idv="sms-crm"'+(s.smsBusy?' disabled':'')+'>'+(s.smsBusy?'요청 중…':s.smsConfirm?'정말 보내기 · '+h(root.phoneFmt(digits)):'CRM에서 보내기')+'</button>':'<button type="button" class="idv-save'+((s.smsText||'').trim()&&digits?' on':'')+'" data-idv="sms-send"'+(digits?'':' disabled')+'>'+(digits?(mobile?'문자 앱으로 보내고 기록':'문구 복사하고 기록'):'연락처 없음')+'</button>')+'</div><select id="spLogType" hidden><option selected>메일·메시지</option></select>';}
   else form='<textarea id="spLogNote" rows="2" data-idv="text" placeholder="내부에서만 보는 메모 (예: 관리소장보다 회장 의견 영향이 큰 현장)">'+h(s.text)+'</textarea><div class="idv-formfoot"><span>고객에게 보이지 않습니다</span><button type="button" class="idv-save'+(s.text.trim()?' on':'')+'" data-idv="save">저장</button></div><select id="spLogType" hidden><option selected>기타</option></select>';
   const composer='<div class="idv-composer" data-tab="'+s.tab+'"><div class="idv-ctabs"><div role="tablist">'+tabs.map(t=>'<button type="button" role="tab" data-idv="tab" data-v="'+t[0]+'" aria-selected="'+(s.tab===t[0])+'">'+t[1]+'</button>').join('')+'</div><button type="button" class="idv-toggle" data-idv="toggle">'+(s.open?'접기':'확인 항목 '+doneN+'/6')+'</button></div>'
    +form+'<div class="idv-more"'+(s.open?'':' hidden')+'><div class="idv-checks">'+CHECKS.map((c,i)=>'<button type="button" class="'+(checks[i]?'on':'')+'" data-idv="check" data-v="'+i+'" aria-pressed="'+!!checks[i]+'">'+(checks[i]?'✓ ':'+ ')+h(c)+'</button>').join('')+'</div></div><div class="spmsg idv-err" id="iq-msg"></div></div>';
@@ -212,8 +220,9 @@
   if(k==='edit-sug'){s.edit=!s.edit;return reskinFrom();}
   if(k==='tpl'){const T=smsTemplates(q);s.smsTpl=v;s.smsText=T[v]||'';return reskinFrom();}
   if(k==='sms-send')return smsSend(q,s);
+  if(k==='sms-crm')return smsCrm(q,s);
   if(k==='ai-read'){if(s.aiBusy||!s.text.trim())return;s.aiBusy=true;reskinFrom();const raw=s.text.trim();root.OpsStore.ai('memo_tidy','inquiry',q.id||curKey,{site:q.site||'',stage:'inquiry',today:today(),raw}).then(r=>{const g=r.suggestion||{},map={absent:'부재',promise:'연결됨',ongoing:'연결됨',recall:'회신대기'};if(map[g.result])s.res=map[g.result];if(g.next&&g.next.date){s.due=g.next.date;if(g.next.text)s.next=g.next.text;}if(g.memo)s.text=g.memo;s.aiRead=true;}).catch(err=>{if(typeof root.toast==='function')root.toast(String(err.message||err),'warn');}).finally(()=>{s.aiBusy=false;reskinFrom();});return;}
-  if(k==='tab'){s.tab=v;return reskinFrom();}
+  if(k==='tab'){s.tab=v;s.smsConfirm=false;return reskinFrom();}
   if(k==='toggle'){s.open=!s.open;return reskinFrom();}
   if(k==='text'){if(e.target.rows<3)e.target.rows=3;return;}
   if(k==='check'){const i=Number(v),cur=((root.itemPatch(q,'inq')||{}).checks||[])[i];root.splitCheck(i,!cur);return;}
@@ -248,6 +257,22 @@
   }
   root.splitSaveLog();stampActor(q);s.text='';reskinFrom();toast('내부 메모를 저장했습니다');
  }
+  /* CRM 직접 발송: 두 번 눌러 확인 → 서버 큐에 요청 → 이력에 «문자 · 회신대기»(기존 경로) → 결과는 목록 함수로 갱신 */
+  async function smsCrm(q,s){
+   const text=(s.smsText||'').trim(),digits=String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'').replace(/\D/g,'');if(!text||!crmSendable(digits)||s.smsBusy)return;
+   if(!s.smsConfirm){s.smsConfirm=true;reskinFrom();toast('받는 사람과 문구를 확인하고 한 번 더 누르세요');return;}
+   s.smsConfirm=false;s.smsBusy=true;reskinFrom();
+   try{
+    const r=await root.SB.rpc(SMS_RPC,{p:{inquiry_id:String(q.id),request_id:crypto.randomUUID(),text}});
+    if(r.error){if(r.error.code==='PGRST202')root.CRMRelease?.noteMissing?.(SMS_RPC);throw Error(r.error.message||'발송 요청 실패');}
+    if(!r.data||r.data.ok!==true)throw Error('서버 확인 응답이 올바르지 않습니다.');
+    const line='[문자 · 회신대기] '+text+' (CRM 발송)';
+    if(!root.inquiryAssigned(q)){tempField('select','spLogType','문자');tempField('textarea','spLogNote',line);root.splitSaveLog();stampActor(q);}
+    else{const due=nextDay(q,'3일 후');tempField('input','iq-did','고객 응대 기록');tempField('textarea','iq-res',line);tempField('input','iq-next','회신 확인');tempField('input','iq-due',due);W().saveProcess();['iq-did','iq-res','iq-next','iq-due'].forEach(id=>{const el=document.getElementById(id);if(el&&el.hidden&&el.parentElement===document.getElementById('inq-inbox-dialog'))el.remove();});}
+    s.smsText='';s.smsTpl='';delete SMSQ[String(q.id)];toast('발송을 요청했습니다 · 실행기가 보내면 이력에 «전송됨»으로 뜹니다');
+   }catch(err){root.iqMsg?.(String(err.message||err));toast(String(err.message||err),'warn');}
+   finally{s.smsBusy=false;reskinFrom();}
+  }
  function copyText(text,done){try{const p=navigator.clipboard&&navigator.clipboard.writeText(text);if(p&&p.then)p.then(done).catch(done);else done();}catch(err){done();}}
  /* 문자(2026-10-03 대표: "문자를 내가 직접 쓰라는 거냐" → 버튼 하나로): 문구는 자동, 누르면 PC는 복사 · 휴대폰은 문자 앱 열기 + 응대 이력에 «문자 · 회신대기» 기록, 배정된 건은 3일 뒤 '회신 확인'이 오늘 업무에(같은 저장 경로).
     CRM 직접 발송(알리고 큐)은 영업건 · 수신동의 연락처가 있어야 하고 실행기가 켜져 있어야 해서 문의 단계에는 아직 연결 전 */

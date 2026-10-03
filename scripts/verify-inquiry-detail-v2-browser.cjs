@@ -46,7 +46,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await d.locator('.idv-ev.ct').innerText(),/고객 접점[\s\S]*카카오\s*연결됨\s*카톡으로 담당 정해지면/);assert.match(await d.locator('.idv-chead').innerText(),/연락 시도 1 · 실제 연결 1/);
   /* 문자(2026-10-03): 탭 열면 '첫 인사' 문구가 이미 채워져 있고 버튼 하나 — PC는 복사, 휴대폰은 문자 앱 + 이력에 «문자 · 회신대기». CRM 직접 발송은 아직 연결 전이라고 맨 위에 적음 */
   await d.locator('.idv-ctabs [data-v="sms"]').click();await page.waitForTimeout(150);
-  assert.match(await d.locator('.idv-smsnote').innerText(),/문구는 자동으로 만들어 둡니다[\s\S]*직접 보내는 발송은 아직 연결 전/);
+  assert.match(await d.locator('.idv-smsnote').innerText(),/문구는 자동으로 만들어 둡니다[\s\S]*CRM 직접 발송은 서버 적용 뒤에 열립니다/,'로그인 없는 시험 환경 = 직접 발송 버튼 없음');
   assert.match(await d.locator('#spLogNote').inputValue(),/^안녕하세요 김소장님/,'탭 열자마자 첫 인사 문구 채워짐');
   assert.equal(await d.locator('[data-idv="sms-open"]').count(),0,'문자 앱 열기 별도 버튼 없음');
   assert.match(await d.locator('[data-idv="sms-send"]').innerText(),/^(문구 복사하고 기록|문자 앱으로 보내고 기록)$/);
@@ -58,6 +58,23 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await d.locator('[data-idv="sms-send"]').click();await page.waitForTimeout(250);
   assert.equal(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return (p.activities||[]).length;}),2,'보낸 문자도 이력에');
   assert.match(await d.locator('.idv-ev.ct').last().innerText(),/문자\s*회신대기/);
+  /* CRM 직접 발송(2026-10-03 "진행해"): 서버 함수 + 로그인 + 010 번호면 [CRM에서 보내기] — 두 번 눌러 확인 → crm_inquiry_sms_request_v1 → 이력 «문자 · 회신대기 (CRM 발송)» → 목록 함수의 상태가 타임라인에 */
+  await page.evaluate(()=>{window.__sms=[];window.__smsRows=[];SB={rpc:async(name,args)=>{if(name==='crm_inquiry_sms_request_v1'){__sms.push(args.p);const row={id:'cccccccc-0000-4000-8000-00000000000'+__sms.length,status:'queued',body:args.p.text,phone:'01011112222',requested_by_name:'송보람',created_at:new Date().toISOString()};__smsRows.unshift(row);return {data:{ok:true,id:row.id,status:'queued',phone:row.phone}};}if(name==='crm_inquiry_sms_list_v1')return {data:{ok:true,rows:__smsRows}};return {data:{ok:true,tasks:[]}};}};TOKEN='test';});
+  await d.locator('.idv-ctabs [data-v="sms"]').click();await page.waitForTimeout(250);
+  assert.match(await d.locator('.idv-smsnote').innerText(),/\[CRM에서 보내기\]를 누르면 넷폼 발신번호로 고객 휴대폰에 바로 발송/);
+  const crmBtn=d.locator('[data-idv="sms-crm"]');assert.equal(await crmBtn.innerText(),'CRM에서 보내기');assert.match(await d.locator('[data-idv="sms-send"]').innerText(),/직접 보내기$/,'직접 보내기는 보조 버튼으로');
+  await d.locator('.idv-tpls .idv-chip',{hasText:'부재 후'}).click();await page.waitForTimeout(150);
+  await crmBtn.click();await page.waitForTimeout(200);
+  assert.match(await d.locator('[data-idv="sms-crm"]').innerText(),/^정말 보내기 · 010-1111-2222$/,'한 번 누르면 확인 단계');assert.deepEqual(await page.evaluate(()=>__sms),[],'확인 전에는 요청 없음');
+  await d.locator('[data-idv="sms-crm"]').click();await page.waitForTimeout(400);
+  const req=await page.evaluate(()=>__sms);assert.equal(req.length,1);assert.equal(req[0].inquiry_id,'11111111-1111-4111-8111-111111111111');assert.match(req[0].text,/^김소장님, 넷폼 .*입니다\. 전화드렸는데 연결이 안 되어/);assert.match(req[0].request_id,/^[0-9a-f-]{36}$/);
+  assert.equal(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return (p.activities||[]).length;}),3,'요청 뒤 이력 기록');
+  assert.match(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return p.activities.at(-1).note;}),/^\[문자 · 회신대기\] .*\(CRM 발송\)$/);
+  assert.match(await d.locator('.idv-thread').innerText(),/CRM 문자 대기 중 · 실행기가 보내면 갱신/,'전송 상태가 타임라인에');
+  await page.evaluate(()=>{__smsRows[0].status='sent';__smsRows[0].delivered_at=new Date().toISOString();});
+  await d.locator('.idv-ctabs [data-v="call"]').click();await d.locator('.idv-ctabs [data-v="sms"]').click();await page.waitForTimeout(16500);
+  assert.match(await d.locator('.idv-thread').innerText(),/CRM 문자 전송됨/,'결과 갱신');
+  await page.evaluate(()=>{delete window.SB;delete window.TOKEN;});
   await d.locator('.idv-ctabs [data-v="call"]').click();await page.waitForTimeout(150);
   if(shot)await page.screenshot({path:shot+'-unassigned.png'});
   await d.locator('.idv-link[data-idv="showall"]').click();
