@@ -5,7 +5,8 @@
    · 영업 데이터는 바꾸지 않는다. 사람이 화면에서 확정해야 기존 저장 경로로 반영된다.
    · 같은 입력(input_hash)은 다시 만들지 않는다 — 저장된 제안을 그대로 돌려준다.
    순수 로직(이 파일)은 node 로 검사한다(tests/crm-ai-handler.test.mjs). Deno 진입점은 index.ts. */
-export const KINDS=['work_guess','ask_parse','report_text','dup_judge','next_action','call_opener','memo_tidy'];/* memo_tidy: 2026-10-03 · sql/ai-memo-tidy-v1-20261003.sql 적용 뒤 저장됨 */
+import {readBody,cardImage,recognizeCard} from './contact-card.mjs';
+export const KINDS=['work_guess','ask_parse','report_text','dup_judge','next_action','call_opener','memo_tidy'];/* contact_card는 저장하지 않는 별도 인식 요청 */
 const WORK=['옥상>싱글','옥상>금속기와','옥상>듀얼','옥상>우레탄','옥상>PVC','재도장>외+내부','재도장>외부','재도장>내부','지하주차장>에폭시','지하주차장>배면차수','지하주차장>지하주차장 재도장','기타>기타'];
 const ASK_KEYS=['open','owner','noContact','callToday','amount','noNext','stage','noPhone','text'];
 const RULES={
@@ -40,14 +41,18 @@ export function handler(env){
   if(req.method!=='POST')return json(405,{ok:false,error:'METHOD'},allow);
   const auth=req.headers.get('authorization')||'';if(!/^Bearer\s+\S+/.test(auth))return json(401,{ok:false,error:'AUTH_REQUIRED'},allow);
   if(!env.anthropicKey)return json(503,{ok:false,error:'AI_NOT_CONFIGURED'},allow);
-  let body;try{body=await req.json();}catch(e){return json(400,{ok:false,error:'BAD_JSON'},allow);}
+  let body;try{body=await readBody(req);}catch(e){return json(e.message==='TOO_LARGE'?413:400,{ok:false,error:e.message==='TOO_LARGE'?'TOO_LARGE':'BAD_JSON'},allow);}
   const kind=String(body&&body.kind||''),type=String(body&&body.subject_type||'').slice(0,40),id=String(body&&body.subject_id||'').slice(0,200),input=body&&body.input;
-  if(!KINDS.includes(kind)||!type||!id||!input||typeof input!=='object'||JSON.stringify(input).length>12000)return json(400,{ok:false,error:'BAD_REQUEST'},allow);
+  const card=kind==='contact_card';let image;
+  if(card){try{if(type!=='deal'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))throw Error();image=cardImage(input);}catch{return json(400,{ok:false,error:'BAD_IMAGE'},allow);}}
+  else if(!KINDS.includes(kind)||!type||!id||!input||typeof input!=='object'||JSON.stringify(input).length>12000)return json(400,{ok:false,error:'BAD_REQUEST'},allow);
   const rpc=async(name,p)=>{const r=await fetchFn(env.supabaseUrl+'/rest/v1/rpc/'+name,{method:'POST',headers:{apikey:env.anonKey,Authorization:auth,'content-type':'application/json'},body:JSON.stringify({p})});const j=await r.json().catch(()=>null);if(!r.ok)throw Object.assign(new Error(j&&j.message||'RPC_FAILED'),{status:r.status});return j;};
   try{
    /* 1) 로그인한 CRM 사용자인지 + AI 가 켜져 있는지 (사용자 토큰으로 확인) */
    const s=await rpc('crm_ops_settings_v1',{});if(!s||s.ok!==true)return json(403,{ok:false,error:'FORBIDDEN'},allow);
    if(s.settings.ai_enabled!==true)return json(409,{ok:false,error:'AI_DISABLED'},allow);
+   // 올린 명함만 읽는다. 기존 고객 데이터를 조회하거나 변경하지 않는다.
+   if(card){const suggestion=await recognizeCard({image,model,key:env.anthropicKey,fetchFn});return json(200,{ok:true,suggestion:{suggestion,status:'proposed'}},allow);}
    /* 2) 같은 입력이면 저장된 제안을 돌려준다 */
    const hash=await inputHash(kind,input),old=await rpc('crm_ai_suggestion_list_v1',{kind,subject_type:type,subject_ids:[id],limit:20});
    const hit=(old.suggestions||[]).find(x=>x.input_hash===hash);if(hit)return json(200,{ok:true,cached:true,suggestion:hit},allow);
@@ -62,8 +67,9 @@ export function handler(env){
    const saved=await rpc('crm_ai_suggestion_save_v1',{kind,subject_type:type,subject_id:id,input_hash:hash,suggestion,model});
    return json(200,{ok:true,cached:false,suggestion:saved.suggestion},allow);
   }catch(e){
-   const st=e&&e.status===401||e&&e.status===403?403:e&&e.message==='AI_BAD_OUTPUT'?502:500;
-   return json(st,{ok:false,error:st===403?'FORBIDDEN':e&&e.message==='AI_BAD_OUTPUT'?'AI_BAD_OUTPUT':'FAILED'},allow);
+   const aiError=['AI_BAD_OUTPUT','AI_UPSTREAM'].includes(e&&e.message)?e.message:'';
+   const st=e&&e.status===401||e&&e.status===403?403:aiError?502:500;
+   return json(st,{ok:false,error:st===403?'FORBIDDEN':aiError||'FAILED'},allow);
   }
  };
 }
