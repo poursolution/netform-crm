@@ -263,7 +263,7 @@
   const band=v.querySelector('.detailtop>.dv3-move'),d=root.CUR_DETAIL?.item;if(!band||!d)return;const S=st(d);
   const form=band.querySelector('#stage-transition-form'),t=form&&form.querySelector('#sf-target'),pend=t?root.PipelineStages.group(t.value):'';
   if(band.hidden===!!S.mvOpen)band.hidden=!S.mvOpen;
-  band.querySelectorAll('[data-stage]').forEach(b=>{const on=String(b.dataset.stage===pend);if(b.getAttribute('aria-pressed')!==on)b.setAttribute('aria-pressed',on);});
+  band.querySelectorAll('[data-stage]').forEach(b=>{const on=String(b.dataset.code?(!!t&&t.value===b.dataset.code):(b.dataset.stage===pend&&!b.classList.contains('cur')));if(b.getAttribute('aria-pressed')!==on)b.setAttribute('aria-pressed',on);});
   const mv=v.querySelector('.dv3-headact .mv');if(mv){const tx='단계 바꾸기 '+(S.mvOpen?'▴':'▾');if(mv.textContent!==tx)mv.textContent=tx;if(mv.getAttribute('aria-expanded')!==String(!!S.mvOpen))mv.setAttribute('aria-expanded',String(!!S.mvOpen));}
   if(form&&!form.classList.contains('dv3-enh'))enhanceMove(form,d);
  }
@@ -286,7 +286,11 @@
   if(!band){band=el('div','dv3-move','<div class="hd"><b>어느 단계로 옮길까요?</b><span></span></div><div class="dv3-moves"></div><div class="dv3-slot" data-slot="move"></div>');band.hidden=true;top.append(band);}
   if(!top.querySelector(':scope>.dv3-slot[data-slot="owner"]')){const os=el('div','dv3-slot');os.dataset.slot='owner';top.append(os);}
   const how=v.querySelector('.ddv-switch p')?.textContent||'',hs=band.querySelector('.hd span');if(hs.textContent!==how)hs.textContent=how;
-  const mh=STAGES.map(([k,n])=>{const def=P.definition(k),ok=(def?def.codes:[]).some(c=>choices.includes(c)),cur=k===group;return '<button type="button" data-dv3="mvpick" data-stage="'+k+'"'+(cur?' class="cur"':'')+(ok?'':' aria-disabled="true"')+'>'+h(n)+(cur?' (지금)':'')+'</button>';}).join(''),mb=band.querySelector('.dv3-moves');
+  /* 지금 묶음 안에서 옮길 수 있는 단계: 계약·시공 · 컨설팅 설계는 순서가 있으므로 다음 단계만(계약 → 시공 → 준공), 관계관리 · 경쟁·입찰은 나란한 상태라 나머지 전부 */
+  const inGroup=k=>{const def=P.definition(k),codes=def?def.codes:[],i=codes.indexOf(from),linear=k==='construction'||k==='consulting';return codes.filter((c,j)=>c!==from&&choices.includes(c)&&(!linear||i<0||j>i));};
+  const mh=STAGES.map(([k,n])=>{const def=P.definition(k),ok=(def?def.codes:[]).some(c=>choices.includes(c)),cur=k===group;
+   if(cur){const sub=inGroup(k);return '<button type="button" data-dv3="mvpick" data-stage="'+k+'" class="cur" aria-disabled="true">'+h(n)+' (지금'+(sname&&sname!==n?' · '+h(sname):'')+')</button>'+sub.map(c=>'<button type="button" class="sub" data-dv3="mvpick" data-stage="'+k+'" data-code="'+c+'">→ '+h(root.stageLabel(c))+'</button>').join('');}
+   return '<button type="button" data-dv3="mvpick" data-stage="'+k+'"'+(ok?'':' aria-disabled="true"')+'>'+h(n)+'</button>';}).join(''),mb=band.querySelector('.dv3-moves');
   if(mb.dataset.h!==mh){mb.innerHTML=mh;mb.dataset.h=mh;}
   syncMove(v);
  }
@@ -355,9 +359,9 @@
   }
   syncComposer(box);
  }
- function pickStage(d,key){
+ function pickStage(d,key,want){
   const def=root.PipelineStages.definition(key),T=root.StageTransition,UI=root.StageTransitionUI;let choices=[];try{choices=T.choices(root.dealStage(d));}catch(e){}
-  const code=(def?def.codes:[]).find(c=>choices.includes(c));if(!code||!UI||typeof UI.open!=='function')return false;
+  const code=want&&choices.includes(want)?want:(def?def.codes:[]).find(c=>choices.includes(c));if(!code||!UI||typeof UI.open!=='function')return false;
   if(document.getElementById('stage-transition-form'))UI.close();
   UI.open(d,false,code);return true;
  }
@@ -584,7 +588,7 @@
   if(a==='nextmore'){st(d).nextOpen=false;apply();want('now');if(!root.DealPanelsV2?.open('next'))root.DetailActions.open('next');return;}
   /* 단계 바꾸기(머리글 띠) · 담당자 변경 */
   if(a==='mv'){const S=st(d);S.mvOpen=!S.mvOpen;if(!S.mvOpen&&document.getElementById('stage-transition-form'))root.StageTransitionUI?.close();syncMove(view());return;}
-  if(a==='mvpick'){if(b.getAttribute('aria-disabled')==='true'){if(!b.classList.contains('cur'))toast(b.dataset.stage==='won'?'수주는 준공 단계에서만 옮길 수 있습니다 — 먼저 계약·시공으로 옮겨 주세요':'지금 단계에서는 바로 옮길 수 없는 단계입니다','warn');return;}if(b.getAttribute('aria-pressed')==='true')return;pickStage(d,b.dataset.stage);return;}
+  if(a==='mvpick'){if(b.getAttribute('aria-disabled')==='true'){if(!b.classList.contains('cur'))toast(b.dataset.stage==='won'?(root.PipelineStages.group(root.dealStage(d))==='construction'?'수주는 준공 처리 뒤에 옮길 수 있습니다 — 「계약·시공」 옆의 [→ 준공]을 먼저 눌러 주세요':'수주는 준공 단계에서만 옮길 수 있습니다 — 먼저 계약·시공으로 옮겨 주세요'):'지금 단계에서는 바로 옮길 수 없는 단계입니다','warn');return;}if(b.getAttribute('aria-pressed')==='true')return;pickStage(d,b.dataset.stage,b.dataset.code);return;}
   if(a==='owner'){if(closeIn('owner'))return;want('owner');root.DetailActions.open('owner');return;}
  }
  function cleanup(v){v.classList.remove('dv3');v.querySelectorAll('.dv3-left').forEach(n=>n.remove());v.querySelectorAll('.dv3-old').forEach(n=>n.classList.remove('dv3-old'));v.querySelectorAll('.dv3-chg,.dv3-hint,.dv3-title,.dv3-reco,.dv3-form,.dv3-nextonly,.dv3-move,.dv3-subrow,.dv3-kind').forEach(n=>n.remove());{const bc=v.querySelector('.ddv-chips .idv-brand');if(bc){bc.style.background='';bc.style.color='';delete bc.dataset.c;}}v.querySelectorAll('.dv3-slot').forEach(n=>{if(!n.children.length)n.remove();});}
