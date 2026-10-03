@@ -16,8 +16,9 @@
  'use strict';
  const h=v=>root.esc(String(v==null?'':v)),attr=v=>root.escAttr(String(v==null?'':v));
  const enabled=()=>!root.G.briefBOff;
- const K=v=>root.briefDateKey(v);
  const pad=n=>String(n).padStart(2,'0'),key=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+ /* 날짜만 있는 값은 그대로, 시각이 있는 기록은 이 PC(서울) 날짜로 — UTC 날짜로 자르면 월요일 새벽 건이 지난주로 넘어간다 */
+ const K=v=>{if(!v)return '';const s=String(v);if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;const d=new Date(s);return isNaN(d)?root.briefDateKey(v):key(d);};
  const addDays=(k,n)=>{const d=new Date(k+'T00:00:00');d.setDate(d.getDate()+n);return key(d);};
  const between=(a,b)=>Math.round((Date.parse(b+'T00:00:00')-Date.parse(a+'T00:00:00'))/864e5);
  const amt=n=>Number(n)>0?root.fmtAmt(Number(n)):'0원';
