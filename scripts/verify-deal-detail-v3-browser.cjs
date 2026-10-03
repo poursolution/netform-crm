@@ -30,7 +30,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    window.__writes=[];window.pushWrite=(op,p)=>{__writes.push([op,p]);return 'req-'+__writes.length;};
    window.__ops=[];window.queueDetailContactOperation=(op,payload,actionId)=>{const id='op-'+(__ops.length+1);__ops.push({id,op,payload,actionId});return id;};
-   Phase1.queue.flush=async()=>{};Phase1.queue.list=()=>__ops.map(o=>({request_id:o.id,object_id:o.payload.opportunity_id,operation:o.op,status:'done',payload:o.payload,ack:{ok:true,operation:o.op,activity_id:'srv-'+o.id,next_action_id:'srv-'+o.id}}));
+   Phase1.queue.flush=async()=>{};Phase1.queue.list=()=>__ops.map(o=>({request_id:o.id,object_id:o.payload.opportunity_id,operation:o.op,status:'done',payload:o.payload,ack:{ok:true,operation:o.op,activity_id:'srv-'+o.id,next_action_id:'srv-'+o.id}})).concat(__writes.map((w,i)=>w[0]==='contact_upsert'?{request_id:'req-'+(i+1),object_id:w[1].opportunity_id,operation:'contact_upsert',status:'done',payload:w[1],ack:{ok:true,operation:'contact_upsert',person_key:w[1].person_key,contact_id:'c-'+i}}:null).filter(Boolean));
    window.__sf=[];SB={rpc:async(name,args)=>{if(name==='crm_deal_stage_fields_update_v1'){__sf.push(args.p);const d=B.deals.find(x=>x.id===args.p.deal_id),cur=((d.stage_contexts||{})[args.p.stage_code]||{}).fields||{},fields=Object.assign({},cur);Object.entries(args.p.fields).forEach(([k,v])=>{if(v==null)delete fields[k];else fields[k]=v;});return {data:{ok:true,version:(d.version||1)+1,stage_context:{fields}}};}return {data:{ok:true,tasks:[]}};}};TOKEN='test';
    window.__ai=[];OpsStore.aiOn=()=>true;OpsStore.ai=async(kind)=>{__ai.push(kind);return {suggestion:kind==='next_action'?{how:'전화',what:'새 소장에게 기존 견적 조건 설명',days:1,why:'관리소장 변경 뒤 첫 응대가 없음'}:{opener:'안녕하세요 소장님',goal:'조건 확인',summary:''}};};
    window.__work=[];const fake={current:null,openWork:async(id,item)=>{fake.current=item;CUR_DETAIL={kind:'deal',key:dealKey(item),item};openWorkEdit();},save:async(item,payload)=>{if(item!==fake.current)throw Error('EDITOR_IDENTITY_MISMATCH');__work.push(payload);item.workItems=payload.work_items;item.primaryWork=payload.primary_work;closeNewDeal();renderDetail();}};window.Phase11=fake;
@@ -44,14 +44,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 왼쪽 5구역 · 예전 카드 숨김 */
   const L=v.locator('.dv3-left');
   assert.deepEqual(await L.locator('.dv3-sec>header b').allInnerTexts(),['같은 현장 다른 영업','현장 정보','자료','다른 연락처']);
-  assert.match(await L.locator('.dv3-mgr').innerText(),/관리소장\s*김영수\s*010-1234-5678[\s\S]*⚠ \d+\/\d+ 관리소장 변경\s*이전: 박영호 · 변경 후 첫 응대 전[\s\S]*전화\s*문자\s*수정[\s\S]*문자 동의 미확인/);
+  assert.match(await L.locator('.dv3-mgr').innerText(),/관리소장\s*김영수\s*010-1234-5678[\s\S]*⚠ \d+\/\d+ 관리소장 변경\s*이전: 박영호 · 변경 후 첫 응대 전[\s\S]*전화\s*문자\s*수정\s*핵심 담당자 미확인\s*문자 미동의\s*카카오 미동의\s*소장이 바뀌었어요/);
   assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#detailView .dw-left>*')].filter(n=>!n.classList.contains('dv3-left')&&getComputedStyle(n).display!=='none').length),0,'예전 카드(연락처 · 관리 정보 · 자료)는 보이지 않음');
   /* 같은 사람 한 번 · 전화 버튼 하나 */
   const leftText=await v.locator('.dw-left').innerText();
   assert.equal((leftText.match(/김영수/g)||[]).length,1,'관리소장 이름 한 번');
   assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#detailView .dw-left button')].filter(b=>getComputedStyle(b).display!=='none'&&b.getClientRects().length&&/^(📞|📱)?\s*(전화|소장 전화|관리사무소)$/.test(b.innerText.trim())).length),1,'전화 버튼은 관리소장 카드 하나');
   /* 같은 현장 다른 영업: 항상 펼침 · 누르면 그 건 */
-  assert.match(await L.locator('.dv3-rel').first().innerText(),/수주\s*옥상[\s\S]*이필선 · 2억/);
+  assert.match(await L.locator('.dv3-rel').first().innerText(),/수주\s*옥상[\s\S]*\d{4}-\d{2} · 2억 · 이필선/);
   /* 현장 정보 · 자료 · 다른 연락처 */
   assert.deepEqual(await L.locator('.dv3-row>span').allInnerTexts(),['공종','고객 반응','의사결정자','경쟁사','예상 금액','공사 예정']);
   assert.match(await L.locator('.dv3-row').nth(1).innerText(),/고객 반응\s*가격 부담/);assert.equal(await L.locator('.dv3-val.empty').count(),4,'미입력 = 주황');assert.deepEqual(await L.locator('.dv3-val.empty').allInnerTexts(),['미분류 · 분류하기','미입력 · 입력하기','미입력 · 입력하기','미입력 · 입력하기']);
@@ -61,15 +61,24 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const R=v.locator('.dw-right'),now=R.locator('#nowCard');
   assert.equal(await R.locator('.dk-ai:visible').count(),0,'AI 판단 카드 없음');assert.equal(await now.locator('.dv3-reco').count(),1,'추천 다음 행동은 지금 할 일 안 · 상자 하나');
   assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#detailView .dw-right>.dk-now')].filter(n=>getComputedStyle(n).display!=='none').length),0,'변경 감지 카드도 따로 없음');
-  assert.match(await now.innerText(),/지금 할 일[\s\S]*관리소장 변경 후 기존 견적 · 공법 조건 재확인[\s\S]*기존 견적 조건 유지 여부[\s\S]*공사 추진일정 변경 여부[\s\S]*추천 다음 행동[\s\S]*새 소장 인사 통화 → 기존 조건 재확인 · 오늘[\s\S]*연락하고 결과 남기기[\s\S]*연락 없이 다음 할 일만 정하기/);
-  assert.equal(await now.locator('.dv3-reco .dv3-aitag').count(),0,'규칙 추천에는 AI 표식 없음');
+  assert.match(await now.innerText(),/지금 할 일[\s\S]*관리소장 변경 후 기존 견적 · 공법 조건 재확인[\s\S]*기존 견적 조건 유지 여부[\s\S]*공사 추진일정 변경 여부[\s\S]*AI\s*추천 다음 행동\s*통화 첫마디 보기\s*전화 · 새 소장에게 기존 견적 조건 설명 · 1일 뒤\s*연락하고 결과 남기기\s*연락 없이 다음 할 일만 정하기$/);
+  assert.equal(await now.locator('.dv3-reco .dv3-aitag').count(),1,'AI 가 켜져 있으면 열 때 추천을 받아 온다');assert.equal(await now.locator('.nc-todo:visible,.nc-meta:visible,.nc-brief:visible,.ddv-done:visible,[data-dk="first"]').count(),0,'시안에 없는 줄은 보이지 않음');
+  assert.equal(await now.locator('.dv3-sub').evaluate(n=>getComputedStyle(n).alignSelf),'center','아래 링크는 가운데');
+  /* 머리글 줄: 단계 표식 · 담당 · 예상 금액 · 일수 · 빨간 사유 — 한 줄 전체 */
+  assert.match(await v.locator('.detailtop>.dv3-subrow').innerText(),/^자료 발송완료\s*담당 황윤선 · 예상 금액 3\.8억 · 자료 발송완료 \d+일째/);
+  assert.equal(await v.locator('.ddv-chips .idv-brand').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(31, 157, 85)','브랜드 칩 색 채움');assert.equal(await v.locator('.ddv-chips .idv-type:visible,.ddv-chips .ddv-tag:visible').count(),0);
+  {const hb=await v.locator('.dv3-headact').boundingBox(),tb=await v.locator('.detailtop').boundingBox();assert.ok(tb.x+tb.width-(hb.x+hb.width)<40,'단계 바꾸기 · 담당자 변경은 오른쪽 끝');}
+  /* 가운데: 응대 이력 */
+  assert.match(await v.locator('.ddv-talk .idv-chead').innerText(),/^응대 이력\s*2건\s*연락 시도 1 · 실제 연결 0$/);
+  assert.deepEqual(await v.locator('.ddv-talk .dv3-kind').allInnerTexts(),['고객 접점','변경']);
+  assert.deepEqual(await v.locator('#ddvComposer [role=tab]').allInnerTexts(),['응대 기록','문자 기록','내부 메모']);assert.equal(await v.locator('#ddvComposer .idv-save').innerText(),'기록 저장');assert.match(await v.locator('#ddvComposer textarea').getAttribute('placeholder'),/^무슨 일이 있었는지 한 줄로/);
+  assert.equal(await v.locator('#ddvComposer .dv3-chint').innerText(),'전화 · 카카오 · 문자 · 이메일 · 방문 모두 여기');
   assert.equal(await now.evaluate(n=>getComputedStyle(n).borderTopColor),'rgb(21, 23, 28)','검은 테두리');
   await now.locator('[data-dk="check"]').first().click();await page.waitForTimeout(250);
   assert.equal(await page.locator('#nowCard [data-dk="check"]').first().getAttribute('aria-pressed'),'true','확인 표시(이 PC)');assert.equal(await page.locator('#detailView .dv3-left').count(),1,'다시 그려도 왼쪽 하나');
-  await page.locator('#nowCard [data-dk="ai-next"]').click();await page.waitForTimeout(350);
   assert.match(await page.locator('#nowCard .dv3-reco').innerText(),/AI\s*추천 다음 행동[\s\S]*전화 · 새 소장에게 기존 견적 조건 설명 · 1일 뒤/);assert.equal(await page.locator('#detailView .dw-right .dk-ai:visible').count(),0);
   await page.locator('#nowCard [data-dv3="line"]').click();await page.waitForTimeout(350);
-  assert.match(await page.locator('#nowCard .dv3-reco .line').innerText(),/“안녕하세요 소장님”/,'통화 첫마디 보기 = 상자 안에서');assert.equal(await page.locator('#nowCard [data-dv3="line"]').innerText(),'접기');assert.deepEqual(await page.evaluate(()=>__ai),['next_action','call_opener']);
+  assert.match(await page.locator('#nowCard .dv3-reco .line').innerText(),/^안녕하세요 소장님$/,'통화 첫마디 보기 = 상자 안에서');assert.equal(await page.locator('#nowCard [data-dv3="line"]').innerText(),'접기');assert.deepEqual(await page.evaluate(()=>__ai),['next_action','call_opener']);
   /* 머리글: [단계 바꾸기 ▾] [담당자 변경] — 오른쪽에는 단계 바꾸기 카드 없음 */
   assert.deepEqual(await v.locator('.dv3-headact button').allInnerTexts(),['단계 바꾸기 ▾','담당자 변경']);assert.equal(await R.locator('.ddv-switch:visible').count(),0,'단계 바꾸기 카드는 오른쪽에 없음');assert.equal(await v.locator('.detailtop>.dv3-move:visible').count(),0,'띠는 접혀 있음');
   const sumText=await R.locator('.da-stage-summary').innerText();assert.match(sumText,/^이 단계 필수 정보/);
@@ -110,10 +119,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(()=>__sf.at(-1).fields),{materials:['견적서']});await rightIntact('필수 정보 입력');
   assert.equal(await page.evaluate(()=>!!document.getElementById('detailAction')),false,'입력 창이 따로 뜨지 않음');
   await page.locator('.dv3-left [data-dv3="files"]').click();await page.waitForTimeout(350);
-  assert.equal(await page.locator('.dv3-slot[data-slot="files"]>#detailAction').count(),1,'자료 보기 = 자료 아래에서 펼침');await rightIntact('자료 보기');
+  const FL=page.locator('.dv3-left .dv3-files');assert.equal(await FL.count(),1,'자료 보기 = 자료 아래에서 펼침');assert.equal(await page.locator('#detailAction,#ddvPanel').count(),0,'예전 창 없음');await rightIntact('자료 보기');
+  assert.deepEqual(await FL.locator('.dv3-pills button').allInnerTexts(),['전체','사진','견적서','기타자료']);assert.match(await FL.innerText(),/아직 등록된 자료가 없습니다/);assert.deepEqual(await FL.locator('.dv3-fadd button').allInnerTexts(),['+ 사진','+ 견적 버전','+ 자료']);
+  await FL.locator('.dv3-fadd button',{hasText:'견적 버전'}).click();await page.waitForTimeout(250);
+  assert.equal(await page.locator('.dv3-left .dv3-slot[data-slot="fform"] #exec-qv-amt').isVisible(),true,'견적 버전 입력도 그 자리에서');await rightIntact('견적 버전 입력');
   assert.equal(await page.locator('.dv3-left [data-dv3="files"]').innerText(),'접기');
   if(shot)await page.screenshot({path:shot+'-files.png'});
-  await page.locator('.dv3-left [data-dv3="files"]').click();await page.waitForTimeout(250);assert.equal(await page.locator('#detailAction').count(),0);assert.equal(await page.locator('.dv3-left [data-dv3="files"]').innerText(),'자료 보기');
+  await page.locator('.dv3-left [data-dv3="files"]').click();await page.waitForTimeout(450);assert.equal(await page.locator('.dv3-left .dv3-files').count(),0);assert.equal(await page.locator('.dv3-left [data-dv3="files"]').innerText(),'자료 보기');
   await page.locator('.dv3-left [data-dv3="addc"]').click();await page.waitForTimeout(300);
   assert.equal(await page.locator('.dv3-slot[data-slot="others"]>#ddvPanel.dp-contact').count(),1,'+ 추가 = 다른 연락처 아래');await rightIntact('연락처 추가');
   await page.locator('#ddvPanel [data-dp="close"]').first().click();await page.waitForTimeout(200);
@@ -142,8 +154,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(()=>__ops.map(o=>[o.op,o.payload.type,o.payload.note||o.payload.text,o.payload.due_at||''])),[['activity','전화','통화 완료 · 검토중 — 12월 입대의 후 결정',''],['next_action','전화','결과 확인',await day(3)]],'저장 = 연락 기록 + 다음 할 일(기존 경로)');
   assert.equal(await page.locator('#nowCard .dv3-form').count(),0,'저장 뒤 접힘');assert.equal(await page.locator('#nowCard .nc-call').innerText(),'연락하고 결과 남기기');
   assert.match(await page.locator('#detailView .dw-center').innerText(),/통화 완료 · 검토중 — 12월 입대의 후 결정/,'가운데 응대 이력에 쌓임');
-  assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#detailView .idv-thread .idv-meta')].every(n=>/\d{4}\. \d{2}\. \d{2}\./.test(n.innerText))),true,'기록마다 연도 표시');
-  assert.match(await page.locator('#nowCard').innerText(),/결과 확인/,'다음 할 일 반영');
+  assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#detailView .idv-thread .idv-meta')].every(n=>/\d{4}\.\d{1,2}\.\d{1,2} \d{2}:\d{2}/.test(n.innerText))),true,'기록마다 연도 표시');
+  assert.equal(await page.evaluate(()=>CUR_DETAIL.item.nextActionObj.text),'결과 확인','다음 할 일 반영');
   /* 거절 = 다음 행동 없이 저장 */
   await page.locator('#nowCard .nc-call').click();await page.waitForTimeout(200);
   await page.locator('#nowCard [data-dv3="rch"]',{hasText:'문자'}).click();await page.waitForTimeout(100);await page.locator('#nowCard [data-dv3="rres"]',{hasText:'거절'}).click();await page.waitForTimeout(120);
@@ -169,9 +181,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const cw=await page.evaluate(()=>__writes.filter(w=>w[0]!=='opportunity_touch').map(w=>[w[0],w[1].note||w[1].manager_name,w[1].result||w[1].manager_mobile,w[1].manager_role||'',w[1].is_primary===true]));
   assert.equal(cw.length,2);assert.equal(cw[0][0],'activity');assert.equal(cw[0][1],'관리소장 변경 — 이전 소장 기록');assert.match(cw[0][2],/^김영수 · 010-1234-5678 · .*새 소장 이정민 · 이전 소장 퇴직$/);
   assert.deepEqual(cw[1],['contact_upsert','이정민','01055556666','관리소장',true],'기존 연락처 저장 경로');
-  await page.locator('.dv3-repl [data-dv3="replsave"]').click();await page.waitForTimeout(300);
-  assert.equal(await page.evaluate(()=>__writes.filter(w=>w[0]==='activity').length),1,'다시 눌러도 변경 기록은 한 번');
-  await page.locator('.dv3-repl [data-dv3="replcancel"]').click();await page.waitForTimeout(200);assert.equal(await page.locator('.dv3-repl').count(),0);
+  assert.equal(await page.locator('.dv3-repl').count(),0,'서버 확인 뒤 닫힘');assert.match(await page.locator('.dv3-left .dv3-mgr').innerText(),/이정민\s*010-5555-6666/,'새 소장으로 바뀜');
+  assert.match(await page.locator('#nowCard').innerText(),/관리소장 변경 후 기존 견적 · 공법 조건 재확인/,'지금 할 일 = 재확인');
+  /* 확인 · 동의 칩: 누르면 바로 */
+  await page.locator('.dv3-left [data-dv3="cons"][data-k="key"]').click();await page.waitForTimeout(200);
+  assert.equal(await page.locator('.dv3-left [data-dv3="cons"][data-k="key"]').innerText(),'핵심 담당자 확인');assert.equal(await page.evaluate(()=>__writes.filter(w=>w[0]==='contact_upsert').length),1,'핵심 담당자 확인은 이 PC 표시');
+  await page.locator('.dv3-left [data-dv3="cons"][data-k="sms"]').click();await page.waitForTimeout(400);
+  const cs=await page.evaluate(()=>{const w=__writes.filter(w=>w[0]==='contact_upsert').at(-1)[1];return [w.manager_name,w.sms_consent,w.kakao_consent,!!w.consent_at,w.send_blocked];});
+  assert.deepEqual(cs,['이정민',true,false,true,false],'문자 동의 = 기존 연락처 저장');assert.equal(await page.locator('.dv3-left [data-dv3="cons"][data-k="sms"]').innerText(),'문자 동의');assert.equal(await page.locator('.dv3-left [data-dv3="cons"][data-k="kakao"]').innerText(),'카카오 미동의');
   /* 담당자 변경 · 단계 바꾸기: 머리글에서 — 오른쪽은 그대로 */
   await page.locator('#detailView .dv3-headact [data-dv3="owner"]').click();await page.waitForTimeout(350);
   assert.equal(await page.locator('#detailView .detailtop>.dv3-slot[data-slot="owner"]>#detailAction').count(),1,'담당자 변경 = 머리글 아래');await rightIntact('담당자 변경');
@@ -185,9 +202,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await band.locator('.dv3-moves button',{hasText:'관계관리'}).click();await page.waitForTimeout(450);
   const SF=band.locator('#stage-transition-form');assert.equal(await SF.count(),1,'띠 안에서 입력');await rightIntact('단계 입력');
   assert.equal(await band.locator('.dv3-moves button[aria-pressed="true"]').innerText(),'관계관리');
-  assert.match(await SF.locator(':scope>header').innerText(),/자료 발송완료 → 관계 유지\s*기존 기록 · 최근 활동 [\s\S]* · 다음 할 일 /);
+  assert.match(await SF.locator(':scope>header').innerText(),/자료 발송완료 → 관계관리\s*기존 기록 · 최근 활동 [\s\S]* · 다음 할 일 /);
   assert.equal(await band.locator('select:visible').count(),0,'선택 상자 대신 칩');
-  assert.deepEqual(await SF.locator('.sf-field',{hasText:'세부 단계'}).locator('.dv3-pills button').allInnerTexts(),['관계 유지','침묵관리','대기고객']);
+  assert.deepEqual(await SF.locator('.sf-field',{hasText:'관리 구분'}).locator('.dv3-pills button').allInnerTexts(),['관계 유지','침묵관리','대기고객']);
+  assert.deepEqual(await SF.locator('.sf-field:visible>label,.sf-field:visible>legend').allInnerTexts().then(a=>a.map(x=>x.replace(/\s+/g,' ').trim())),['관리 구분 *','전환일 *','관계관리 사유 *','고객 반응 *','다음 접촉일 *'],'필수만 먼저');assert.match(await SF.locator('.dv3-more').innerText(),/^\+ 선택 항목 \d+개$/);
   assert.equal(await SF.locator('footer .sf-primary').innerText(),'옮기기');assert.equal(await SF.locator('footer .sf-primary.off').count(),1);
   assert.match(await SF.locator('.dv3-mvhint').innerText(),/^필수 입력: 관계관리 사유 · 고객 반응 · 다음 접촉일$/);
   if(shot)await page.screenshot({path:shot+'-move.png'});
@@ -206,6 +224,6 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{G.dealDetailV3Off=true;G._detailPopup=true;drwDeal(JSON.stringify(B.deals[0]));});await page.waitForTimeout(600);
   assert.equal(await page.locator('#detailView.dv3').count(),0);assert.equal(await page.locator('#detailView .dv3-left').count(),0);assert.equal(await page.locator('#detailView .dw-right>.dk-ai').count(),1,'끄면 예전 모양');
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',record_inline:true,next_only_chips:true,manager_replace_box:true,stage_move_header_band:true,window_size:true,left_five_sections:true,one_person_one_call:true,related_deals:true,inline_expand_right_intact:true,now_card_merged_ai:true,stage_info_deduped:true,no_save_on_expand:true,legacy_switch:true}));
+  console.log(JSON.stringify({status:'PASS',record_inline:true,next_only_chips:true,manager_replace_box:true,stage_move_header_band:true,center_timeline:true,files_inline:true,consent_chips:true,window_size:true,left_five_sections:true,one_person_one_call:true,related_deals:true,inline_expand_right_intact:true,now_card_merged_ai:true,stage_info_deduped:true,no_save_on_expand:true,legacy_switch:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
