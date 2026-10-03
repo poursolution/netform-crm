@@ -48,7 +48,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const kpi=await d.locator('.db-kpi').evaluateAll(a=>a.map(n=>[n.querySelector('span').textContent,n.querySelector('b').textContent,n.querySelector('small').textContent]));
   assert.deepEqual(kpi.map(k=>k[0]),['이번 달 계약 (10월)','올해 수주실적','진행 중 파이프라인','견적문의','조치 필요','주간 활동']);
   assert.deepEqual(kpi[0].slice(1),['아직 없음','10월 7일째 · 9월 3억'],'실적 없는 달 = 아직 없음 + 직전 달');assert.equal(await d.locator('.db-kpi').first().locator('b').evaluate(n=>getComputedStyle(n).color),'rgb(156, 163, 175)','아직 없음은 회색');
-  assert.deepEqual(kpi[1].slice(1),['8억','자사 계약실적 8억(2건) · 타사 이관 없음'],'수주실적 = 자사 + 타사 이관, 화면에서는 나눠 적는다');assert.match(kpi[2][2],/^진행 7건$/);assert.deepEqual(kpi[3].slice(1),['4건','적합 3 · 배드핏 1']);
+  assert.deepEqual(kpi[1].slice(1),['8억','직접 수주 8억(2건) · 협약 · 기술자문 없음 · 타사 이관 없음'],'수주실적 = 직접 + 협약 · 기술자문 + 타사 이관, 화면에서는 나눠 적는다');assert.match(kpi[2][2],/^진행 7건$/);assert.deepEqual(kpi[3].slice(1),['4건','적합 3 · 배드핏 1']);
   const core=await page.evaluate(()=>{const C=DashB.core();return {risk:C.risk.length,od:C.cnt('overdue'),miss:C.cnt('missing'),made:C.made,active:C.active.length};});
   assert.equal(core.od,5);assert.equal(core.made,40,'메이드율 = 수주 2 ÷ (수주 2 + 실주 3) · 배드핏 제외');
   assert.deepEqual(kpi[4].slice(1),[core.risk+'건','기한 지남 5 · 다음 할 일 없음 '+core.miss]);
@@ -136,7 +136,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(pc[1],/^주의 황윤선 2026-09-01 33\.3% 메이드율 올해 수주실적 3억 10월 아직 없음 수주 · 실주 1 · 2 진행 5건 주간 활동 0건 손볼 건 5건 기한 지난 건 5건 · 최장 17일/);
   assert.match(await p.locator('.db-quiet').innerText(),/^진행 · 수주 기록 없음: /,'기록 없는 사람은 이름 한 줄');
   const c3=p.locator('.db-c3');assert.equal(await c3.count(),3);
-  assert.match(await c3.nth(0).innerText(),/^기술자문 낙찰실적\s*영업 계약과 별도 집계\s*아직 없음/);
+  assert.match(await c3.nth(0).innerText(),/^기술자문 낙찰실적\s*협약시공사 수주 · 수주실적에 합산\s*아직 없음/);
   assert.match(await c3.nth(1).innerText(),/누가 따낸 영업을 계약으로 잘 마무리하나\?\s*담당자별 메이드율\s*배드핏 제외 · 점선 = 팀 평균 40\.0%\s*이필선\s*50\.0%\s*황윤선\s*33\.3%/);
   assert.match(await c3.nth(2).innerText(),/브랜드별 문의 → 수주[\s\S]*POUR솔루션\s*문의 4 → 적합 3 → 수주 1\s*33\.3%[\s\S]*POUR공법\s*문의 0 → 적합 0 → 수주 0\s*수주 없음[\s\S]*적합 문의가 있는 브랜드는 모두 수주가 나왔습니다\./);
   assert.match(await p.locator('.db-pending').innerText(),/^아직 판단 못 하는 것\s*기록이 10건 쌓이면 자동으로 보입니다\s*견적 후 첫 후속 → 수주\s*\d+\/10\s*현장 방문 → 견적\s*1\/10\s*경쟁 · PT · 입찰 → 수주\s*0\/10$/);

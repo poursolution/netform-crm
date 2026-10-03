@@ -83,12 +83,14 @@
  }
  /* ── 창(등록 · 낙찰결과 · 실적 인정) ── */
  const chipB=(k,v,l,on)=>'<button type="button" class="tf-chip'+(on?' on':'')+'" data-tf="pick" data-k="'+k+'" data-v="'+attr(v)+'" aria-pressed="'+!!on+'">'+h(l)+'</button>';
- function openDlg(mode){
+ function openDlg(mode,pre){
   const d=cur();if(!d||!available())return;const t=of(d),S=st();S.menu=false;
   if(mode==='reg')S.dlg={mode,deal:String(d.id),f:{company:t?t.transfer_company:'',reason:t?t.transfer_reason:'',date:t?String(t.transfer_date).slice(0,10):todayKey(),reported:t?!!t.transfer_reported:null,reported_at:t&&t.transfer_reported_at?String(t.transfer_reported_at).slice(0,10):'',memo:t&&t.transfer_memo||'',expected:t&&t.expected_amount?String(Math.round(Number(t.expected_amount))):''},err:'',busy:false};
   else if(mode==='award')S.dlg={mode,deal:String(d.id),f:{result:t&&t.award_result!=='pending'?t.award_result:'transferred_won',company:t&&t.award_company||t.transfer_company,date:t&&t.award_date?String(t.award_date).slice(0,10):todayKey(),amount:t&&t.award_amount?String(Math.round(Number(t.award_amount))):'',evidence:t&&t.award_evidence||'',note:t&&t.award_note||''},err:'',busy:false};
   else if(mode==='approve')S.dlg={mode,deal:String(d.id),f:{c:[false,false,false],rej:false,reason:''},err:'',busy:false};
   else S.dlg={mode:'info',deal:String(d.id),f:{},err:'',busy:false};
+  /* 수주 처리 창에서 넘어올 때: 적어 둔 낙찰 업체 · 금액 · 낙찰일을 미리 채운다 */
+  if(mode==='award'&&pre&&typeof pre==='object')Object.keys(pre).forEach(k=>{if(pre[k]!==undefined&&pre[k]!==null&&pre[k]!=='')S.dlg.f[k]=pre[k];});
   renderDlg();decorate();
  }
  function closeDlg(){st().dlg=null;document.getElementById('tf-dialog')?.remove();}

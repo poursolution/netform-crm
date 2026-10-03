@@ -1,0 +1,45 @@
+/* 수주 유형 (2026-10-04 핸드오프 rules 2-1 · 수주 처리 · 수주유형). 접두사 wn- */
+/* 상세 머리: 영업 경로 / 영업 담당 / 결과 / 낙찰 시공사 · 낙찰금액 + 연결 계약 */
+#detailView .detailtop>.wn-head{order:16;flex:1 0 100%;box-sizing:border-box}
+.wn-head{display:flex;flex-direction:column;gap:8px;margin-top:8px;color:#15171c}
+.wn-boxes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.wn-boxes>div{background:#f5f6f8;border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.wn-boxes>div>span{font-size:11px;color:#9ca3af}.wn-boxes b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wn-boxes b small{font-size:11px;font-weight:500;color:#9ca3af}
+.wn-boxes .wn-br{display:flex;align-items:center;gap:6px}.wn-boxes .wn-br i{flex:none;width:4px;height:13px;border-radius:2px}
+.wn-boxes .wn-ok{background:#e8f6ee}.wn-boxes .wn-ok b{color:#1f7a4d}.wn-boxes .wn-wait{background:#eef3fe}.wn-boxes .wn-wait b{color:#1d3f99}
+.wn-links{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:12.5px;color:#374151}
+.wn-links .wn-lt{font-size:11.5px;font-weight:700;color:#6b7280}.wn-links i{font-style:normal;color:#d9dde4}
+#detailView .wn-links button{border:0;background:none;padding:0;font:inherit;font-size:12px;font-weight:700;color:#2a52b8;cursor:pointer;min-height:0;box-shadow:none}
+#detailView .wn-links button.wn-ed{color:#6b7280;font-weight:600}
+/* 창 */
+.wn-shade{position:fixed;inset:0;z-index:1200;background:rgba(20,26,46,.45);display:flex;align-items:flex-start;justify-content:center;padding:60px 20px;overflow:auto}
+.wn-dlg{width:100%;max-width:620px;background:#fff;border-radius:14px;box-shadow:0 10px 40px rgba(17,24,39,.14);overflow:hidden;color:#15171c;font-size:13px}
+.wn-dlg button,.wn-dlg input{font:inherit}.wn-dlg button{cursor:pointer}.wn-dlg button:disabled{cursor:default}
+.wn-dlg>header{padding:14px 20px;border-bottom:1px solid #eef0f3;display:flex;align-items:baseline;gap:8px}.wn-dlg>header b{font-size:15px}.wn-dlg>header span{font-size:12px;color:#9ca3af}.wn-dlg>header i{flex:1}
+.wn-dlg>header .wn-x{border:0;background:none;color:#6b7280;font-size:14px;padding:0 2px}
+.wn-types{padding:16px 20px 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.wn-types button{text-align:left;background:#fff;border:1px solid #e3e6ec;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;min-width:0;color:#15171c}
+.wn-types button[aria-pressed="true"]{background:#f8faff;border:2px solid #15171c;padding:9px 11px}
+.wn-types button>span{display:flex;align-items:center;gap:6px}.wn-types b{font-size:13px}
+.wn-types i{flex:none;width:14px;height:14px;border-radius:50%;border:2px solid #c9cdd5;box-sizing:border-box;display:flex;align-items:center;justify-content:center}
+.wn-types u{width:6px;height:6px;border-radius:50%;background:transparent;text-decoration:none}
+.wn-types button[aria-pressed="true"] i{border-color:#15171c}.wn-types button[aria-pressed="true"] u{background:#15171c}
+.wn-types small{font-size:11.5px;color:#6b7280;line-height:1.45}
+.wn-form{padding:14px 20px;display:grid;grid-template-columns:110px minmax(0,1fr);gap:11px 14px;align-items:center}
+.wn-form label{font-weight:700}.wn-form small{font-size:11.5px;color:#9ca3af}
+.wn-form input{border:1px solid #d9dde4;border-radius:8px;padding:8px 10px;font-size:13px;min-width:0;width:100%;box-sizing:border-box;background:#fff;color:#15171c}
+.wn-amt{display:flex;gap:8px;align-items:center}.wn-amt input{flex:1;text-align:right}.wn-amt span,.wn-two span{font-size:12px;color:#6b7280;white-space:nowrap}
+.wn-amt.wn-big input{border:1.5px solid #15171c;font-size:14px;font-weight:700}
+.wn-two{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.wn-two input{flex:1;min-width:120px;width:auto;text-align:right}.wn-two input.wn-co{flex:0 0 120px;min-width:0;text-align:left}
+.wn-yn{display:flex;gap:6px}.wn-yn button{border:1px solid #d9dde4;background:#fff;color:#374151;font-size:12.5px;font-weight:700;border-radius:8px;padding:6px 14px}
+.wn-yn button[aria-pressed="true"]{background:#15171c;color:#fff;border-color:#15171c}
+.wn-note{margin:0 20px 12px;background:#f5f8ff;border-radius:8px;padding:10px 12px;font-size:12.5px;line-height:1.6;color:#1d3f99}
+.wn-err{margin:0 20px 10px;color:#b42318;font-size:12.5px;font-weight:600}
+.wn-dlg>footer{padding:0 20px 18px;display:flex;justify-content:flex-end;gap:8px}
+.wn-dlg>footer button{border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:13px;font-weight:600;border-radius:8px;padding:9px 14px;white-space:nowrap}
+.wn-dlg>footer button.wn-dark{border:0;background:#15171c;color:#fff;font-weight:700;padding:10px 18px}.wn-dlg>footer button.wn-dark:disabled{background:#c9cdd5}
+.wn-done{margin:16px 20px 12px;border:2px solid #3fb37f;border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.wn-done>span{font-size:11.5px;font-weight:700;color:#1f7a4d}.wn-done>b{font-size:14px}.wn-done small{font-size:11.5px;color:#6b7280}
+.wn-done .wn-kv{display:grid;grid-template-columns:76px minmax(0,1fr);gap:4px 10px;font-size:12.5px}.wn-done .wn-kv>span:nth-child(odd){color:#9ca3af}
+@media(max-width:560px){.wn-types{grid-template-columns:1fr}.wn-form{grid-template-columns:1fr;gap:6px 0}.wn-shade{padding:20px 10px}}
