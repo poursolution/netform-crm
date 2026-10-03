@@ -469,6 +469,8 @@
      +(K&&S.line?'<span class="line">'+(co&&co.opener?h(co.opener):K.busyCall?'읽는 중…':'첫마디를 불러오지 못했습니다 — 다시 눌러 주세요')+'</span>':'')
      +(K&&K.err?'<p class="dv3-recerr">'+h(K.err)+'</p>':'')),anchor);
     /* AI 가 켜져 있으면 이 건을 처음 열 때 한 번 추천을 받아 온다(받기 전에는 단계 사유 기준 추천) */
+    /* 화면을 막 열었을 때는 AI 설정을 아직 읽는 중일 수 있다 — 잠시 뒤 한 번 더 그린다 */
+    if(!K&&root.OpsStore&&(S.aiWait||0)<3){S.aiWait=(S.aiWait||0)+1;setTimeout(()=>{try{if(root.CUR_DETAIL?.item===d&&aiOn())apply();}catch(e){}},1500*S.aiWait);}
     if(K&&!nx&&!K.busyNext&&!S.aiAsked){S.aiAsked=true;setTimeout(()=>{try{if(root.CUR_DETAIL?.item===d)root.DealKeyman.ask(d,'next_action');}catch(e){}},0);}
    }
    const cta=now.querySelector('.nc-cta');
