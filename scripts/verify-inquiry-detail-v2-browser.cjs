@@ -62,15 +62,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await page.locator('#idv-toast').innerText(),/이필선 배정[\s\S]*되돌리기/);
   /* 근처 현장(기존 같은 지역 로직) */
   assert.match(await d.locator('.idv-near').innerText(),/근처 현장 1곳[\s\S]*신갈현대아파트/);
-  /* 입력칸: 통화 기록은 다음 할 일·날짜가 있어야 저장(기존 규칙) */
+  /* 입력칸(2026-10-03 inquiry_v2): 결과 칩 + 다음 행동일 칩이 규칙 기본값으로 골라져 있고, 직접 적은 다음 할 일 · 날짜가 있으면 그것을 쓴다. 둘 다 있어야 저장 */
+  assert.deepEqual(await d.locator('.idv-resrow .idv-chip.on').allInnerTexts(),['연락 완료','7일 후'],'규칙 기본값');
   await d.locator('.idv-input textarea').fill('소장님과 통화, 다음 주 방문 요청');
-  await d.locator('.idv-save').click();
-  assert.match(await d.locator('#iq-msg').innerText(),/다음 할 일과 날짜/);
+  await d.locator('.idv-toggle').click();
   const due=await page.evaluate(()=>{const x=new Date(Date.now()+3*864e5);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')});
   await d.locator('#iq-next').fill('방문 일정 확정 전화');await d.locator('#iq-due').fill(due);
   await d.locator('.idv-save').click();await page.waitForTimeout(300);
   assert.equal(await page.evaluate(()=>__writes.filter(w=>w[0]==='inquiry_status'&&w[1].intent==='progress').length),1,'연락 결과 = 기존 progress 명령');
-  assert.match(await d.locator('.idv-thread').innerText(),/소장님과 통화, 다음 주 방문 요청/);
+  assert.match(await d.locator('.idv-thread').innerText(),/통화 결과: 연락 완료 → 다음 연락 \d{4}\.\d+\.\d+\([일월화수목금토]\) · 소장님과 통화, 다음 주 방문 요청/);
   assert.match(await d.locator('.idv-thread .idv-next').last().innerText(),/다음 할 일: 방문 일정 확정 전화/);
   assert.equal(await d.locator('.idv-input textarea').inputValue(),'','저장 후 입력 초기화');
   /* 확인 항목 → 기존 체크 명령 */

@@ -34,12 +34,33 @@
    +'<h2 id="inq-dialog-title">'+h(q.site||'현장명 미입력')+'</h2><p class="idv-sub">'+h(customer)+' · '+h(root.dateTimeLabel?root.dateTimeLabel(root.inquiryCreatedAt(q)):fmt(created))+' 접수</p>'
    +'<div class="idv-steps">'+stepsOf(q).map(s=>'<div class="'+(s.done?'done':s.cur?'cur':'')+'"><i></i><span>'+(s.cur?'지금 · ':'')+h(s.name)+'</span></div>').join('')+'</div></div>';
  }
- function col1(q){
-  const map={'문의자':'문의자','문의자 연락처':'연락처','업체·고객정보':'업체','건물주소':'현장 주소','공사유형':'공종','상담채널':'상담 채널','유입경로':'유입 경로','전화 응대자':'전화 응대'},order=['문의자','문의자 연락처','업체·고객정보','건물주소','공사유형','상담채널','유입경로','전화 응대자'];
-  const f=new Map(W().sourceFields(q)),rows=order.map(k=>[map[k],f.get(k)||'미입력']),missing=rows.filter(r=>r[1]==='미입력').map(r=>r[0]);
+ /* 문의 정보 빈 칸 바로 입력(2026-10-03 핸드오프 inquiry_v2): 서버 함수 crm_inquiry_field_update_v1 이 설치돼 있을 때만 — 없으면 '미입력'만 보인다 */
+ const FIELD_RPC='crm_inquiry_field_update_v1';
+ const FIELDS=[['문의자','문의자','contact_name','예: 관리소장 · 홍길동'],['문의자 연락처','연락처','phone','예: 010-0000-0000'],['업체·고객정보','업체','customer_type','예: 관리사무소'],['건물주소','현장 주소','address','예: 수원시 영통구 …'],['공사유형','공종','work_type','예: 옥상 방수'],['상담채널','상담 채널','channel','예: 전화 · 홈페이지'],['유입경로','유입 경로','inflow','예: 네이버 검색 · 지인 소개'],['전화 응대자','응대','responder','응대한 사람']];
+ function fieldEditable(){return !!(root.SB&&typeof root.SB.rpc==='function')&&!(root.CRMRelease&&root.CRMRelease.has('crm_inquiry_field_update_v1')===false);}
+ function col1(q,s){
+  const f=new Map(W().sourceFields(q)),can=fieldEditable(),rows=FIELDS.map(([k,l,field,ph])=>({l,field,ph,v:(f.get(k)&&f.get(k)!=='미입력')?f.get(k):''})),missing=rows.filter(r=>!r.v).map(r=>r.l);
+  const cell=r=>{if(r.v)return '<dd>'+h(r.v)+'</dd>';if(s&&s.editField===r.field)return '<dd><input class="idv-editin" data-idv="editinput" data-v="'+r.field+'" value="'+attr(s.editDraft||'')+'" placeholder="'+attr(r.ph)+'" aria-label="'+attr(r.l)+' 입력"></dd>';return '<dd class="warn">'+(can?'<button type="button" class="idv-edit" data-idv="edit" data-v="'+r.field+'" title="눌러서 바로 입력">미입력 · 눌러서 입력</button>':'미입력')+'</dd>';};
   return '<div class="idv-label">고객 문의 원문</div><blockquote class="idv-quote">'+h(W().originalText(q)||'저장된 문의 원문이 없습니다.')+'</blockquote>'
-   +'<div class="idv-label">문의 정보</div><dl class="idv-info">'+rows.map(r=>'<div><dt>'+h(r[0])+'</dt><dd class="'+(r[1]==='미입력'?'warn':'')+'">'+h(r[1])+'</dd></div>').join('')+'</dl>'
-   +(missing.length?'<div class="idv-missing">보완 필요 '+missing.length+'개 · '+h(missing.join(' · '))+'</div>':'');
+   +'<div class="idv-label">문의 정보'+(can?'':'<small class="idv-fieldnote">빈 칸 입력은 서버 적용 뒤에 열립니다</small>')+'</div><dl class="idv-info">'+rows.map(r=>'<div><dt>'+h(r.l)+'</dt>'+cell(r)+'</div>').join('')+'</dl>'
+   +(missing.length?'<div class="idv-missing">보완 필요 '+missing.length+'개 · '+h(missing.join(' · '))+(can?' · 빈 칸을 눌러 바로 입력':'')+'</div>':'');
+ }
+ function applyField(q,field,value,rawKey){
+  if(field==='contact_name'){q.contact_name=value;}else if(field==='phone'){q.phone=value;}else if(field==='address'){q.address=value;if(q.detail&&typeof q.detail==='object')q.detail.address=value;}else if(field==='site_name'){q.site_name=value;q.site=value;}
+  else{q.raw=q.raw&&typeof q.raw==='object'?q.raw:{};q.raw[rawKey||field]=value;if(q.detail&&typeof q.detail==='object'){if(field==='channel')q.detail.channel=value;if(field==='customer_type')q.detail.customerType=value;if(field==='work_type')q.detail.workType=value;}if(field==='work_type')q.work_type=value;}
+  try{root.saveLocal?.();}catch(e){}
+ }
+ async function saveField(q,s,field,value){
+  value=String(value||'').trim();if(!value){s.editField='';s.editDraft='';return reskinFrom();}
+  if(!fieldEditable()){toast('빈 칸 입력은 서버 적용 뒤에 열립니다');return;}
+  const inp=document.querySelector('#inq-inbox-dialog [data-idv="editinput"]');if(inp)inp.disabled=true;
+  try{
+   const r=await root.SB.rpc(FIELD_RPC,{p:{inquiry_id:String(q.id),field,value}});
+   if(r.error){if(r.error.code==='PGRST202')root.CRMRelease?.noteMissing?.(FIELD_RPC);throw Error(r.error.message||'저장 실패');}
+   if(!r.data||r.data.ok!==true)throw Error('서버 확인 응답이 올바르지 않습니다.');
+   applyField(q,field,r.data.value||value,r.data.raw_key);
+   s.editField='';s.editDraft='';reskinFrom();toast((FIELDS.find(x=>x[2]===field)||[])[1]+' 저장됨');
+  }catch(e){if(inp)inp.disabled=false;toast('저장하지 못했습니다: '+(e.message||e));}
  }
  function col2(q,s){
   const list=bubbles(q),na=root.actionObj(q,root.itemPatch(q,'inq')),contacts=list.filter(b=>b.kind==='out'||b.kind==='in'),last=contacts[contacts.length-1];
@@ -50,8 +71,13 @@
   const assignedNow=root.inquiryAssigned(q),tabs=[['call','통화 기록'],['sms','문자 보내기'],['memo','내부 메모']],canWrite=true/* 2026-10-02 대표: 배정 전에도 통화·문자·메모 기록을 남긴다 */,phone=String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'').trim();
   const ph={call:'고객과 통화한 내용과 결과를 적어 주세요',sms:'고객에게 보낼 문자를 적어 주세요',memo:'내부에서만 보는 메모'}[s.tab];
   const grow=s.open||s.text;
-  const composer=canWrite?'<div class="idv-composer" data-tab="'+s.tab+'"><div class="idv-ctabs"><div role="tablist">'+tabs.map(t=>'<button type="button" role="tab" data-idv="tab" data-v="'+t[0]+'" aria-selected="'+(s.tab===t[0])+'">'+t[1]+'</button>').join('')+'</div><button type="button" class="idv-toggle" data-idv="toggle">'+(s.open?'접기':'확인 항목 '+doneN+'/6 · 다음 할 일')+'</button></div>'
-    +'<div class="idv-input"><textarea id="'+(s.tab==='call'?'iq-res':'spLogNote')+'" rows="'+(grow?3:1)+'" data-idv="text" placeholder="'+attr(ph)+'">'+h(s.text)+'</textarea><button type="button" class="idv-save'+(s.text.trim()?' on':'')+'" data-idv="save">저장</button></div>'
+  /* 통화 결과(배정된 건): 결과 칩 + 다음 행동일 칩 — 둘 다 골라야 저장(완료만 선택 불가). 기본값은 규칙 제안(대표회의가 있으면 '대표회의 예정 · 다음날') */
+  let resRow='';
+  if(s.tab==='call'&&assignedNow){const p=picksOf(q,s),meet=meetOf(q),nd=p.due?new Date(p.due+'T00:00:00'):null;
+   resRow='<div class="idv-resrow"><small>결과</small><div>'+RES.map(l=>'<button type="button" class="idv-chip'+(p.res===l?' on':'')+'" data-idv="res" data-v="'+attr(l)+'">'+h(l)+'</button>').join('')+'</div><small>다음 행동일</small><div>'+['내일','3일 후','7일 후'].concat(meet&&meet.dd>=0?['대표회의 다음날']:[]).map(l=>'<button type="button" class="idv-chip'+(p.nday===l?' on':'')+'" data-idv="nday" data-v="'+attr(l)+'">'+h(l)+'</button>').join('')+'</div>'
+    +(meet&&meet.dd>=0&&meet.dd<=3?'<em class="idv-meet">대표회의 '+h(ymdDot(meet.date))+' D-'+meet.dd+' · 정확한 견적이 늦으면 개략 금액 먼저</em>':'')+'<span class="idv-reshint">'+(nd?'저장하면 「'+h(recLine(p.res,nd))+'」로 기록되고 다음 연락이 '+h(kday(nd))+'에 잡힙니다':'결과와 다음 행동일을 함께 저장해야 닫힙니다')+' · 메모는 선택</span></div>';}
+  const composer=canWrite?'<div class="idv-composer" data-tab="'+s.tab+'">'+resRow+'<div class="idv-ctabs"><div role="tablist">'+tabs.map(t=>'<button type="button" role="tab" data-idv="tab" data-v="'+t[0]+'" aria-selected="'+(s.tab===t[0])+'">'+t[1]+'</button>').join('')+'</div><button type="button" class="idv-toggle" data-idv="toggle">'+(s.open?'접기':'확인 항목 '+doneN+'/6 · 다음 할 일')+'</button></div>'
+    +'<div class="idv-input"><textarea id="'+(s.tab==='call'?'iq-res':'spLogNote')+'" rows="'+(grow?3:1)+'" data-idv="text" placeholder="'+attr(s.tab==='call'&&assignedNow?'통화 메모 (선택)':ph)+'">'+h(s.text)+'</textarea><button type="button" class="idv-save'+((s.text.trim()||(s.tab==='call'&&assignedNow&&picksOf(q,s).due))?' on':'')+'" data-idv="save">'+(s.tab==='call'&&assignedNow?'저장':'저장')+'</button></div>'
     +(s.tab==='call'?'<input type="hidden" id="iq-did" value="고객 응대 기록">':'<select id="spLogType" hidden><option'+(s.tab==='sms'?' selected':'')+'>메일·메시지</option><option'+(s.tab==='memo'?' selected':'')+'>기타</option></select>')
     +'<div class="idv-more"'+(s.open?'':' hidden')+'><div class="idv-checks">'+CHECKS.map((c,i)=>'<button type="button" class="'+(checks[i]?'on':'')+'" data-idv="check" data-v="'+i+'" aria-pressed="'+!!checks[i]+'">'+(checks[i]?'✓ ':'+ ')+h(c)+'</button>').join('')+'</div>'
     +(s.tab==='call'&&assignedNow?'<div class="idv-nextrow"><input id="iq-next" data-idv="next" placeholder="다음 할 일 (예: 견적 확인 전화)" value="'+attr(s.next)+'"><input id="iq-due" data-idv="due" type="date" value="'+attr(s.due)+'"></div>':'')+'</div>'
@@ -100,13 +126,17 @@
   const scroll=overlay.querySelector('.idv-thread')?.scrollTop;
   const dlg=overlay.querySelector('.inq-dialog');if(!dlg)return;
   overlay.classList.add('idv');
-  dlg.innerHTML=header(q)+'<div class="idv-body"><aside class="idv-c1" aria-label="문의자와 현장">'+col1(q)+'</aside><main class="idv-c2" aria-label="문의와 응대">'+col2(q,s)+'</main><aside class="idv-c3" aria-label="문의 업무 관리">'+col3(q,s)+'</aside></div>';
+  dlg.innerHTML=header(q)+'<div class="idv-body"><aside class="idv-c1" aria-label="문의자와 현장">'+col1(q,s)+'</aside><main class="idv-c2" aria-label="문의와 응대">'+col2(q,s)+'</main><aside class="idv-c3" aria-label="문의 업무 관리">'+col3(q,s)+'</aside></div>';
   /* 경남지사로 넘긴 문의(본사 관리자): 머리 막대·오른쪽 칸을 '지사 진행 확인'으로 — 담당 변경을 고르는 중에는 기존 배정 칸 그대로 */
   if(!s.reassign){try{root.GyeongnamV2?.decorate?.(dlg,q);}catch(e){}}
   /* 배정 칸을 다시 만들면 기존 배정 상태가 초기화되므로 고른 담당자를 다시 알려 준다 */
   if(s.rep&&s.rep!=='__branch__'&&dlg.querySelector('.idv-assign')){try{root.inqCtlChooseRep(s.rep);}catch(e){}}
   const th=dlg.querySelector('.idv-thread');if(th)th.scrollTop=scroll==null?th.scrollHeight:scroll;
-  if(!overlay.__idv){overlay.__idv=true;overlay.addEventListener('click',onClick);overlay.addEventListener('input',onInput);overlay.addEventListener('mousedown',e=>{if(e.target===overlay)W().close();});}
+  const ed=dlg.querySelector('[data-idv="editinput"]');if(ed&&document.activeElement!==ed){ed.focus();try{ed.setSelectionRange(ed.value.length,ed.value.length);}catch(e){}}
+  if(!overlay.__idv){overlay.__idv=true;overlay.addEventListener('click',onClick);overlay.addEventListener('input',onInput);overlay.addEventListener('mousedown',e=>{if(e.target===overlay)W().close();});
+   /* 입력 중 Esc 는 입력만 취소(창을 닫는 기존 Esc 보다 먼저 잡는다) */
+   overlay.addEventListener('keydown',e=>{const t=e.target;if(!t.matches||!t.matches('[data-idv="editinput"]'))return;const s2=st(curKey),q2=root.inqCtlFind(curKey,false);if(e.key==='Enter'){e.preventDefault();e.stopImmediatePropagation();saveField(q2,s2,t.dataset.v,t.value);}if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();s2.editField='';s2.editDraft='';reskinFrom();}},true);
+   overlay.addEventListener('focusout',e=>{const t=e.target;if(!t.matches||!t.matches('[data-idv="editinput"]')||t.disabled)return;const s2=st(curKey),q2=root.inqCtlFind(curKey,false);if(s2.editField!==t.dataset.v)return;setTimeout(()=>{if(s2.editField===t.dataset.v&&!t.disabled)saveField(q2,s2,t.dataset.v,t.value);},0);});}
  }
  function repaintLocal(){reskinFrom();}
  function reskinFrom(){const overlay=document.getElementById('inq-inbox-dialog');if(overlay)reskin();}
@@ -115,12 +145,16 @@
   if(undo)t.querySelector('button').onclick=()=>{t.remove();undo();};setTimeout(()=>t.remove(),4000);
  }
  function fail(msg){toast(msg);}
- function onInput(e){const k=e.target.dataset?.idv,s=st(curKey);if(!k)return;if(k==='text'){const was=!!s.text.trim();s.text=e.target.value;if(was!==!!s.text.trim())e.target.closest('.idv-input').querySelector('.idv-save').classList.toggle('on',!!s.text.trim());if(e.target.rows<3)e.target.rows=3;}
+ function onInput(e){const k=e.target.dataset?.idv,s=st(curKey);if(!k)return;if(k==='editinput'){s.editDraft=e.target.value;return;}if(k==='text'){const was=!!s.text.trim();s.text=e.target.value;if(was!==!!s.text.trim())e.target.closest('.idv-input').querySelector('.idv-save').classList.toggle('on',!!s.text.trim());if(e.target.rows<3)e.target.rows=3;}
   else if(['next','due','reason','visitDate','visitTime','quoteDate'].includes(k)){s[k]=e.target.value;if(['visitDate','quoteDate'].includes(k))reskinFrom();}
   else if(k==='quoteAmt'){s.quoteAmt=e.target.value.replace(/[^\d]/g,'');if(e.target.value!==s.quoteAmt)e.target.value=s.quoteAmt;const b=document.querySelector('#inq-inbox-dialog [data-idv="handoff"]');if(b){const ok=!!(s.quoteAmt||s.quoteDate);b.disabled=!ok;b.classList.toggle('on',ok);}}}
  function tempField(tag,id,value){document.getElementById(id)?.remove();const el=document.createElement(tag);el.id=id;el.hidden=true;if(tag==='select'){const o=document.createElement('option');o.value=o.textContent=value;el.append(o);}el.value=value;document.getElementById('inq-inbox-dialog').append(el);return el;}
  function onClick(e){
   const b=e.target.closest('[data-idv]');if(!b||!curKey)return;const k=b.dataset.idv,v=b.dataset.v,s=st(curKey),q=root.inqCtlFind(curKey,false);if(!q)return;
+  if(k==='edit'){s.editField=v;s.editDraft='';return reskinFrom();}
+  if(k==='editinput')return;
+  if(k==='res'){s.res=v;if(!s.next||/^다음 연락 · /.test(s.next))s.next='다음 연락 · '+v;return reskinFrom();}
+  if(k==='nday'){s.nday=v;s.due=nextDay(q,v);return reskinFrom();}
   if(k==='tab'){s.tab=v;return reskinFrom();}
   if(k==='toggle'){s.open=!s.open;return reskinFrom();}
   if(k==='text'){if(e.target.rows<3)e.target.rows=3;return;}
@@ -138,13 +172,24 @@
   if(k==='assign')return assign(q,s);
   if(k==='handoff')return handoff(q,s,b);
  }
+ const RES=['연락 완료','보류','대표회의 예정','재견적 요청','경쟁사 비교','계약 검토'];
+ const meetOf=q=>{try{return root.InquiryListV3&&root.InquiryListV3.meetOf?root.InquiryListV3.meetOf(q):null;}catch(e){return null;}};
+ const pad2=n=>String(n).padStart(2,'0'),ymdDash=d=>d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()),ymdDot=d=>d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate(),kday=d=>ymdDot(d)+'('+'일월화수목금토'[d.getDay()]+')';
+ const recLine=(res,d)=>'통화 결과: '+res+' → 다음 연락 '+kday(d);
+ function nextDay(q,label){if(label==='대표회의 다음날'){const m=meetOf(q);if(m){const d=new Date(m.date);d.setDate(d.getDate()+1);return ymdDash(d);}}const d=new Date();d.setDate(d.getDate()+({'내일':1,'3일 후':3,'7일 후':7}[label]||7));return ymdDash(d);}
+ /* 고른 값 또는 규칙 기본값(대표회의가 있으면 '대표회의 예정 · 다음날', 없으면 '연락 완료 · 7일 후'). 직접 적은 날짜(s.due)가 있으면 그것을 쓴다 */
+ function picksOf(q,s){const m=meetOf(q),hasMeet=!!(m&&m.dd>=0);const res=s.res||(hasMeet?'대표회의 예정':'연락 완료'),nday=s.nday||(hasMeet?'대표회의 다음날':'7일 후');return {res,nday,due:s.due||nextDay(q,nday)};}
  function save(q,s){
-  const text=s.text.trim();if(!text)return;
+  const text=s.text.trim();if(!text&&!(s.tab==='call'&&root.inquiryAssigned(q)))return;
   /* 배정 전 통화 기록: 단계 처리(다음 할 일 필수) 대신 기록만 남긴다 */
   if(s.tab==='call'&&!root.inquiryAssigned(q)){tempField('select','spLogType','전화');tempField('textarea','spLogNote',text);root.splitSaveLog();stampActor(q);s.text='';s.open=false;reskinFrom();toast('통화 기록을 저장했습니다');return;}
   if(s.tab==='call'){
-   if(!s.next.trim()||!s.due){s.open=true;reskinFrom();root.iqMsg('다음 할 일과 날짜를 함께 적어 주세요 — 날짜가 없으면 다시 챙길 수 없습니다.');return;}
-   const ok=W().saveProcess();if(ok===true){s.text='';s.next='';s.due='';s.open=false;reskinFrom();toast('통화 기록을 저장했습니다');}
+   /* 결과 칩 + 다음 행동일(규칙 기본값) → 기록 문장. 둘 중 하나라도 없으면 저장하지 않는다 */
+   const p=picksOf(q,s);if(!p.res||!p.due){s.open=true;reskinFrom();root.iqMsg('결과와 다음 행동일을 함께 골라 주세요 — 날짜가 없으면 다시 챙길 수 없습니다.');return;}
+   if(!s.next.trim())s.next='다음 연락 · '+p.res;if(!s.due)s.due=p.due;
+   const nextEl=document.getElementById('iq-next'),dueEl=document.getElementById('iq-due'),resEl=document.getElementById('iq-res');if(nextEl)nextEl.value=s.next;if(dueEl)dueEl.value=s.due;
+   const line=recLine(p.res,new Date(p.due+'T00:00:00'));if(resEl)resEl.value=text&&text!==line?line+' · '+text:line;
+   const ok=W().saveProcess();if(ok===true){s.text='';s.next='';s.due='';s.res='';s.nday='';s.open=false;reskinFrom();toast(line);}
    return;
   }
   root.splitSaveLog();stampActor(q);const kind=s.tab==='sms'?'문자 기록':'내부 메모';s.text='';s.open=false;reskinFrom();toast(kind+'을 저장했습니다');
