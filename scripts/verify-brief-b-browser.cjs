@@ -12,8 +12,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
  const browser=await chromium.launch({headless:true});
  try{
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
-  await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});
-  const page=await ctx.newPage(),errs=[];page.on('pageerror',e=>errs.push(e.message));
+  await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});/* 뒤에 등록한 crm-jandi 흉내가 먼저 잡는다 */
+  const page=await ctx.newPage(),errs=[],jandi=[];page.on('pageerror',e=>errs.push(e.message));
+  /* 잔디 발송 서버 함수 흉내: 받은 요청을 기록하고 보낸 시각을 돌려준다 */
+  await ctx.route('**/functions/v1/crm-jandi',async r=>{const b=r.request().postDataJSON();jandi.push(b);const at=new Date().toISOString(),jd=b.auto?{auto_sent_at:at}:{auto_sent_at:jandi.some(x=>x.auto)?at:undefined,resent_at:at};return r.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,skipped:false,jandi:jd,snapshot:{kind:b.kind,period_key:b.period_key,payload:Object.assign({},b.payload||{},{jandi:jd}),promises:b.promises||[]}})});});
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.BriefB&&window.BriefV2&&window.OpsStore&&window.ContractSalesData&&typeof paintBrief==='function');
   const w=await page.evaluate(()=>{
    const w=BriefB.win(),day=n=>new Date(Date.now()+n*864e5).toLocaleDateString('en-CA'),at=k=>k+'T10:00:00+09:00';
@@ -34,7 +36,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    const ev=(id,k,n,o)=>({deal_id:id,brand:P,sales_owner_name:o,events:[{kind:'signed',effective_date:k,amount_delta:n}]});
    ContractSalesData.state=()=>({status:'ready',items:[ev('d3',w.a,2e8,'황윤선'),ev('d4',w.p,1e8,'이필선')]});
    window.__snaps=[{kind:'weekly',period_key:w.p,payload:{},promises:[{kind:'no_next',t:'다음 행동 미등록 2건 등록',act:'담당자별 코칭 · 다음 행동 등록 요청',n:2,ids:['d1','d5'],owner:'이필선',due:'수요일',at:w.p+'T09:00:00+09:00'}]}];window.__saves=[];
-   OpsStore.has=()=>true;OpsStore.admin=()=>true;OpsStore.rpc=async(name,p)=>{if(name==='crm_report_snapshot_get_v1')return {ok:true,snapshots:__snaps.slice()};if(name==='crm_report_snapshot_save_v1'){__saves.push(p);const i=__snaps.findIndex(s=>s.period_key===p.period_key);const row={kind:'weekly',period_key:p.period_key,payload:p.payload,promises:p.promises};if(i>=0)__snaps[i]=row;else __snaps.push(row);return {ok:true};}return {ok:true};};
+   TOKEN='test';window.__flags={};OpsStore.flags=()=>__flags;OpsStore.setFlag=async(k,v)=>{__flags[k]=!!v;return __flags;};OpsStore.has=()=>true;OpsStore.admin=()=>true;OpsStore.rpc=async(name,p)=>{if(name==='crm_report_snapshot_get_v1')return {ok:true,snapshots:__snaps.slice()};if(name==='crm_report_snapshot_save_v1'){__saves.push(p);const i=__snaps.findIndex(s=>s.period_key===p.period_key);const row={kind:'weekly',period_key:p.period_key,payload:p.payload,promises:p.promises};if(i>=0)__snaps[i]=row;else __snaps.push(row);return {ok:true};}return {ok:true};};
    goPage('brief');return w;
   });
   await page.waitForTimeout(500);
@@ -77,9 +79,19 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const J=await page.locator('#bbJandi').innerText();
   assert.match(J,/^\[주간 영업 브리핑\][\s\S]*1\. 이번 주 성과\s*견적문의 3건 → 적합 1 → 견적 발송 1 → 계약 1건 · 2억[\s\S]*영업 메이드율 50\.0%[\s\S]*배드핏 2건 \(메이드율 제외\) · 파이프라인 실주 1건 \(가격 열세 1\)[\s\S]*\[전주 문제 → 결과\]\s*· 다음 행동 미등록 2건 → 1건 등록 \/ 1건 미완료[\s\S]*계약실적 1건 · 2억[\s\S]*다음 주 반드시 끝낼 것\s*· 계약 예상 1건 진행 확인 · 3억 — 황윤선 · 수요일/);
   assert.equal(/\p{Extended_Pictographic}/u.test((await v.innerText()).replace(/[✓▲▼]/g,'')),false,'이모지 없음');
-  assert.match(await v.locator('.bb-side dl').innerText(),/자동 발송\s*매주 월요일 08:30\s*상태\s*자동 발송 연결 전/);
-  await v.locator('.bb-side .send').click();await page.waitForTimeout(400);
-  assert.match(await page.locator('#brief-b .bb-side dl').innerText(),/정한 내용 저장 · 글 복사됨 ✓/);assert.equal(await page.evaluate(()=>typeof __saves.at(-1).payload.jandi),'string');
+  /* 잔디: 꺼져 있으면 켜기 → 아직 발송 전 → [다시 보내기] = 서버 함수로 실제 발송(약속 포함) → 회의 후 다시 보냄 */
+  assert.match(await v.locator('.bb-side dl').innerText(),/자동 발송\s*매주 월요일 08:30\s*상태\s*잔디 발송 꺼짐/);
+  await v.locator('.bb-side [data-bb="jandion"]').click();await page.waitForTimeout(300);
+  assert.match(await page.locator('#brief-b .bb-side dl').innerText(),/상태\s*아직 발송 전 — 월요일 08:30 이후 자동 발송/);assert.equal(await page.locator('#brief-b .bb-side [data-bb="jandion"]').count(),0);
+  await page.locator('#brief-b .bb-side .send').click();await page.waitForTimeout(600);
+  assert.equal(jandi.length,1);assert.equal(jandi[0].kind,'weekly');assert.equal(jandi[0].period_key,w.a);assert.equal(jandi[0].auto,false);assert.match(jandi[0].text,/^\[주간 영업 브리핑\][\s\S]*다음 주 반드시 끝낼 것\s*· 계약 예상 1건 진행 확인 · 3억 — 황윤선 · 수요일/);
+  assert.deepEqual(jandi[0].promises.map(p=>[p.kind,p.owner,p.due]),[['contract_expected','황윤선','수요일']],'회의에서 정한 약속을 넣어 보냄');assert.equal(typeof jandi[0].payload.jandi,'string');
+  assert.match(await page.locator('#brief-b .bb-side dl').innerText(),/상태\s*회의 후 다시 보냄 ✓ · \d+\/\d+ \d{2}:\d{2}/);
+  /* 자동 발송: 월요일 08:30 이후 관리자 화면이 열려 있으면 그 주 한 번 */
+  await page.evaluate(k=>{G.briefBNow=k+'T08:10:00';BriefB.autoSend();},w.b);await page.waitForTimeout(300);assert.equal(jandi.length,1,'08:30 전에는 보내지 않음');
+  await page.evaluate(k=>{G.briefBNow=k+'T09:00:00';BriefB.autoSend();},w.b);await page.waitForTimeout(500);
+  assert.equal(jandi.length,2);assert.equal(jandi[1].auto,true);assert.equal(jandi[1].period_key,w.a);assert.match(jandi[1].text,/^\[주간 영업 브리핑\]/);
+  await page.evaluate(()=>BriefB.autoSend());await page.waitForTimeout(300);assert.equal(jandi.length,2,'같은 주는 한 번만');await page.evaluate(()=>{G.briefBNow=null;});
   /* 7. 전체 현황(참고) */
   assert.match(await page.locator('#brief-b .bb-ref').innerText(),/^전체 현황 \(참고\)\s*진행 3건 · 올해 수주 \d+건 · 승률 [\d.]+% · 180일\+ 방치 \d+건[\s\S]*이필선 진행 \d+ · 방치 \d+ · 수주 \d+/);
   if(shot){await page.locator('#brief-b .bb-head').scrollIntoViewIfNeeded();await page.waitForTimeout(200);await page.screenshot({path:shot+'-1.png'});await page.locator('#brief-b .bb-prow').first().scrollIntoViewIfNeeded();await page.waitForTimeout(200);await page.screenshot({path:shot+'-2.png'});}
@@ -97,6 +109,6 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{G.briefBOff=true;goPage('brief');});await page.waitForTimeout(400);
   assert.equal(await page.locator('#brief-b').count(),0);assert.equal(await page.locator('#brief-v2').count(),1,'끄면 이전 화면');
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',week_result:true,made_rate_excludes_badfit:true,prev_promises_reevaluated:true,stage_moves:true,contract_ledger:true,people_moves:true,next_promises_saved:true,jandi_preview:true,no_emoji:true,inquiry_badfit_close:true,legacy_switch:true}));
+  console.log(JSON.stringify({status:'PASS',week_result:true,made_rate_excludes_badfit:true,prev_promises_reevaluated:true,stage_moves:true,contract_ledger:true,people_moves:true,next_promises_saved:true,jandi_preview:true,jandi_send:true,jandi_auto_once:true,no_emoji:true,inquiry_badfit_close:true,legacy_switch:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

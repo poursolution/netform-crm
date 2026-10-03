@@ -6,7 +6,7 @@
     · 배드핏 = 견적문의 단계에서 영업건이 되지 않고 종결된 문의
     · 계약 임박 = 진행 건 중 경쟁 · 입찰 / 공사임박 / 계약(체결 예정) 단계, '이번 주에 갈리는 건' = 기한이 오늘부터 7일 안인 건
    대표님 결정 요청: 규칙으로 뽑은 안건(근거 숫자 포함)에 선택 2개 — 고르면 월간 스냅샷(report_snapshots · kind=monthly · 열쇠=YYYY-MM)에 저장한다.
-   분기 · 연간, 지난달 결정 → 결과는 후속. 잔디 보내기는 연결 전이라 정한 내용을 저장하고 요약 글을 복사한다.
+   분기 · 연간, 지난달 결정 → 결과는 후속. [대표님께 보내기] = 서버 함수 crm-jandi 로 요약을 잔디에 발송하고 보낸 시각을 스냅샷에 남긴다.
    끄기: G.reportBOff=true → 이전 리포트(report-v2). */
 (function(root){
  'use strict';
@@ -40,7 +40,7 @@
    return {q,bad,fit:q.length-bad.length,quotes:AD.filter(d=>B.quoteIn(d,a,b)),conv:AD.filter(d=>inR(K(d.created),a,b)),con:B.contractsIn(L,a,b),loss,lossAmt:loss.reduce((s,d)=>s+dealAmt(d),0)};};
   const cur=stat(P.a,P.b),prev=stat(P.p,P.a),made=s=>L.ready?B.pct(s.con.count,s.con.count+s.loss.length):null;
   /* 확정 전환율(코호트): 보고 달의 2달 전 달 문의 */
-  const cy=P.k(P.y,P.m-2).slice(0,7),cohort=AQ.filter(q=>K(R.inquiryCreatedAt(q)).slice(0,7)===cy);let linked=0,cwon=0;cohort.forEach(q=>{let d=null;try{d=R.linkedDeal(q);}catch(e){}if(d){linked++;if(R.isWon(d))cwon++;}});
+  const cy=P.k(P.y,P.m-2).slice(0,7),cohort=AQ.filter(q=>K(R.inquiryCreatedAt(q)).slice(0,7)===cy),cwon=cohort.filter(q=>B.inquiryContract(q,L,AD)).length,linked=cohort.length;
   /* 6개월 */
   const trend=[];for(let i=5;i>=0;i--){const a=P.k(P.y,P.m-i),b=P.k(P.y,P.m-i+1),c=B.contractsIn(L,a,b),l=AD.filter(d=>B.isLoss(d)&&inR(B.closedKey(d),a,b)).length;trend.push({m:Number(a.slice(5,7)),net:c.net,count:c.count,made:L.ready?B.pct(c.count,c.count+l):null,cur:i===0});}
   /* 다음 달 전망: 계약 임박 */
@@ -85,7 +85,7 @@
  /* ── 그리기 ── */
  let CUR=null;
  function html(x){
-  const R=root,B=R.BriefB.lib,P=x.P,L=x.L,con=L.ready,c=x.cur,p=x.prev,H=headline(x),dec=decisionsOf(P.ym),admin=!!(R.OpsStore&&R.OpsStore.admin());
+  const R=root,B=R.BriefB.lib,P=x.P,L=x.L,con=L.ready,c=x.cur,p=x.prev,H=headline(x),dec=decisionsOf(P.ym),admin=!!(R.OpsStore&&R.OpsStore.admin()),jd=(SN.map[P.ym]&&SN.map[P.ym].payload&&SN.map[P.ym].payload.jandi)||{},sentAt=jd.resent_at||jd.auto_sent_at||'';
   const ed=k=>UI.edit?' contenteditable="true" data-rbk="'+k+'"':'',tx=(k,v)=>h(UI.edits[P.ym+k]!=null?UI.edits[P.ym+k]:v);
   const dl=(a,b)=>a===b?'전월과 같음 ('+b+')':(a>b?'▲'+(a-b):'▼'+(b-a))+' ('+b+')',dc=(a,b)=>a>b?'up':a<b?'down':'';
   const fn=[['신규 견적문의',c.q.length+'건',dl(c.q.length,p.q.length),dc(c.q.length,p.q.length)],['적합 문의',c.fit+'건','배드핏 '+c.bad.length+' 제외',''],['견적 발송',c.quotes.length+'건',dl(c.quotes.length,p.quotes.length),dc(c.quotes.length,p.quotes.length)],['파이프라인 전환',c.conv.length+'건',dl(c.conv.length,p.conv.length),dc(c.conv.length,p.conv.length)],
@@ -95,7 +95,7 @@
   const rates=[['영업 메이드율',B.pctText(x.made),pp(x.made,x.madeP),con?'수주 '+c.con.count+' ÷ (수주 '+c.con.count+' + 실주 '+c.loss.length+') · 배드핏 제외':'계약실적 원장을 읽은 뒤 계산합니다',1],
    ['문의 적합률',B.pctText(fitR),pp(fitR,fitP),'적합 '+c.fit+' ÷ 문의 '+c.q.length+' · 문의 품질',0],
    ['문의 → 계약 전환율',B.pctText(conv),pp(conv,convP),con?'계약 '+c.con.count+' ÷ 문의 '+c.q.length+' · 이번 달 활동 비율':'계약실적 원장을 읽은 뒤 계산합니다',0],
-   ['확정 전환율 ('+cm+'월 문의)',B.pctText(coh),'',x.cohort.length?(x.linked?cm+'월 문의 '+x.cohort.length+'건 중 지금까지 계약 '+x.cwon+'건':cm+'월 문의 '+x.cohort.length+'건 — 문의와 영업건의 연결 기록이 없어 계산할 수 없습니다'):cm+'월에 접수된 문의가 없습니다',0]];
+   ['확정 전환율 ('+cm+'월 문의)',B.pctText(coh),'',x.cohort.length?cm+'월 문의 '+x.cohort.length+'건 중 지금까지 계약 '+x.cwon+'건':cm+'월에 접수된 문의가 없습니다',0]];
   const bars=(t,cls)=>{const mx=Math.max(1,...t.map(r=>r[1]));return t.length?t.slice(0,6).map(r=>'<div class="rb-bar '+cls+'"><span'+(/소장/.test(r[0])?' class="b"':'')+'>'+h(r[0])+'</span><span class="tr"><i style="width:'+Math.round(r[1]/mx*100)+'%"></i></span><b>'+r[1]+'</b></div>').join(''):'<span class="rb-none">해당 없음</span>';};
   const tmx=Math.max(1,...x.trend.map(t=>t.net));
   const rowsP=x.people.map(q=>'<span class="l b">'+h(q.n)+'</span><span>'+q.q+'</span><span>'+q.e+'</span><span class="b">'+(con?q.w:'—')+'</span><span class="b">'+(con?(q.net?eok(q.net):'-'):'—')+'</span><span>'+q.l+'</span><span class="b'+(q.made!=null&&q.made<50?' r':'')+'">'+(q.made==null?'-':q.made.toFixed(1)+'%')+'</span>').join('');
@@ -105,9 +105,9 @@
   const total=unassigned+'<span class="l t">합계</span><span class="t">'+c.q.length+'</span><span class="t">'+sum('e')+'</span><span class="t">'+(con?sum('w'):'—')+'</span><span class="t">'+(con?eok(sum('net')):'—')+'</span><span class="t">'+sum('l')+'</span><span class="t">'+B.pctText(con?B.pct(sum('w'),sum('w')+sum('l')):null)+'</span>';
   const rest=x.near.length-x.top.length;
   return '<div class="rb-bar0"><b>리포트</b><div class="rb-seg"><span class="on">월간</span><span title="분기 보기는 후속 작업입니다">분기</span><span title="연간 보기는 후속 작업입니다">연간</span></div><span class="g">자동 취합 · '+dot(P.today)+'</span><i></i>'
-    +'<button type="button" data-rb="edit" aria-pressed="'+UI.edit+'">'+(UI.edit?'편집 끝':'편집')+'</button><button type="button" data-rb="pdf">PDF로 저장</button><button type="button" class="pri" data-rb="send"'+(admin?'':' disabled title="관리자만 보낼 수 있습니다"')+'>대표님께 보내기</button></div>'
+    +'<button type="button" data-rb="edit" aria-pressed="'+UI.edit+'">'+(UI.edit?'편집 끝':'편집')+'</button><button type="button" data-rb="pdf">PDF로 저장</button><button type="button" class="pri" data-rb="send"'+(admin&&!UI.busy?'':' disabled'+(admin?'':' title="관리자만 보낼 수 있습니다"'))+'>'+(UI.busy?'보내는 중…':'대표님께 보내기')+'</button></div>'+(UI.err?'<p class="rb-err">'+h(UI.err)+'</p>':'')
    +'<article class="rb-page" data-screen-label="월간 리포트">'
-   +'<div class="rb-head"><div><span>넷폼 영업 보고 · 월간</span><h1>'+P.y+'년 '+P.m+'월 영업 보고</h1></div><p>'+dot(P.a)+' – '+P.m+'.'+P.last+' · '+dot(P.today)+' 자동 취합<br>보고 '+h((R.ME&&R.ME.name)||'')+' · 수신 대표님'+(UI.sent===P.ym?' · 저장 · 글 복사됨':'')+'</p></div>'
+   +'<div class="rb-head"><div><span>넷폼 영업 보고 · 월간</span><h1>'+P.y+'년 '+P.m+'월 영업 보고</h1></div><p>'+dot(P.a)+' – '+P.m+'.'+P.last+' · '+dot(P.today)+' 자동 취합<br>보고 '+h((R.ME&&R.ME.name)||'')+' · 수신 대표님'+(sentAt?' · '+h(B.stamp(sentAt))+' 잔디 발송':'')+'</p></div>'
    +'<div class="rb-band"><div><b'+ed('t')+'>'+tx('t',H.t)+'</b><span'+ed('s')+'>'+tx('s',H.s)+'</span></div><div class="ask"><span>결정 요청</span><b>'+x.asks.length+'건</b></div></div>'
    +'<section class="rb-sec"><div class="rb-h"><b>1. 견적문의가 계약까지</b><span>괄호는 '+P.pm+'월</span></div><div class="rb-funnel">'+fn.map((u,i)=>'<div class="'+(i===fn.length-1?'last':'')+'"><span>'+h(u[0])+'</span><b>'+h(u[1])+'</b><em class="'+u[3]+'">'+h(u[2])+'</em></div>').join('')+'</div>'
     +'<div class="rb-rates">'+rates.map(t=>'<div class="'+(t[4]?'k':'')+'"><span>'+h(t[0])+'</span><p><b>'+h(t[1])+'</b><em class="'+(/^▼/.test(t[2])?'down':'up')+'">'+h(t[2])+'</em></p><small>'+h(t[3])+'</small></div>').join('')+'</div></section>'
@@ -148,7 +148,13 @@
   if(a==='detail'){UI.detail=!UI.detail;render();if(UI.detail)document.getElementById('report-master')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
   if(a==='pdf')return pdf();
   if(a==='pick'){const dec=decisionsOf(x.P.ym),k=b.dataset.k,v=Number(b.dataset.v);if(dec[k]===v)delete dec[k];else dec[k]=v;UI.sent='';save(x,dec,ok=>{if(ok&&canStore())toast('결정을 저장했습니다');});return;}
-  if(a==='send'){const text=summaryText(x);save(x,decisionsOf(x.P.ym),ok=>{if(!ok)return;const fin=()=>{UI.sent=x.P.ym;toast('보고를 저장하고 요약 글을 복사했습니다 — 잔디에 붙여 넣어 주세요');render();};try{const p=navigator.clipboard&&navigator.clipboard.writeText(text);if(p&&p.then)p.then(fin).catch(fin);else fin();}catch(err){fin();}});return;}
+  if(a==='send'){
+   if(UI.busy)return;const B=root.BriefB.lib,text=summaryText(x),ym=x.P.ym,H=headline(x),dec=decisionsOf(ym),prev=SN.map[ym];UI.busy=true;UI.err='';render();
+   B.jandiSend('monthly',ym,text,false,{payload:Object.assign({},prev&&prev.payload||{},{basis:'monthly-b',headline:H.t,sub:H.s,decisions:dec,asks:x.asks.map(q=>({k:q.k,t:q.t,why:q.why,opts:q.opts})),summary:text})})
+    .then(j=>{if(j.snapshot)SN.map[ym]=Object.assign({},SN.map[ym]||{},j.snapshot);delete MEM[ym];toast('대표님께 잔디로 보냈습니다');})
+    .catch(e=>{UI.err=String(e.message||e)+' — 요약 글은 복사해 두었습니다';try{navigator.clipboard&&navigator.clipboard.writeText(text).catch(()=>{});}catch(err){}toast(String(e.message||e),'warn');})
+    .finally(()=>{UI.busy=false;if(root.G.page==='report')render();});
+   return;}
  }
  function boot(){
   const base=root.paintReport;if(typeof base!=='function')return;

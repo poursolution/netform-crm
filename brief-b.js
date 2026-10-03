@@ -10,7 +10,8 @@
     · 영업 이동 = 단계 변경 이력 기준 그 주에 그 단계로 들어온 건
     · 담당자별 진행 · 장기정체의 '전주 값'은 생성일 · 종료일 · 연락 기록으로 그 시점을 다시 계산한 것
    다음 주 반드시 끝낼 것: 규칙으로 뽑은 후보에 담당 · 기한을 정해 [등록] → 주간 스냅샷(report_snapshots.promises · 열쇠 = 보고 주 월요일)에 저장 → 다음 주 '전주 문제 → 결과' 표의 행이 되고, 결과는 그때 자료로 다시 센다.
-   잔디 자동 발송은 아직 연결 전(jandi_enabled) — [다시 보내기]는 정한 내용을 저장하고 글을 복사한다.
+   잔디: 서버 함수 crm-jandi(웹훅 주소는 서버 비밀값)로 실제 발송한다. 자동 발송 = 월요일 08:30 이후 관리자 화면이 열려 있으면 그 주 한 번(서버가 중복을 막는다), [다시 보내기] = 회의에서 정한 약속을 넣어 다시 발송. 보낸 시각은 스냅샷 payload.jandi 에 남는다.
+   확정 전환율 = 그 달 접수 문의 중 지금까지 계약된 비율 — 문의에 연결된 영업건의 계약, 연결 기록이 없으면 같은 현장에서 문의 접수 뒤에 체결된 계약으로 센다.
    끄기: G.briefBOff=true → 이전 주간 브리핑(brief-v2). */
 (function(root){
  'use strict';
@@ -86,7 +87,27 @@
  const staleAt=(d,T)=>{if(!openAt(d,T))return false;const l=lastActKey(d,T);return !!l&&between(l,T)>STALE();};
  const actedIn=(d,a,b)=>{const l=lastActKey(d,b);return !!l&&l>=a&&l!==K(d.created);};
  /* ── 주간 스냅샷(약속 저장) ── */
- const SN={state:'idle',map:{}},MEM={},SEL={own:{},due:{}};let SENT='';
+ const SN={state:'idle',map:{}},MEM={},SEL={own:{},due:{}};let JERR='',JBUSY=false;const AUTO={};
+ /* 그 문의가 계약까지 갔나: ① 연결된 영업건이 수주 · 계약 ② 연결 기록이 없으면 같은 현장(현장 ID, 없으면 현장명)에서 문의 접수 뒤에 체결된 계약 */
+ function inquiryContract(q,L,AD){
+  let d=null;try{d=root.linkedDeal(q);}catch(e){}
+  const signedAt=id=>{if(!L.ready)return '';const r=L.rows.find(z=>String(z.deal_id)===String(id)),ev=r&&(r.events||[]).find(e=>e.kind==='signed');return ev?ev.effective_date:'';};
+  if(d)return root.isWon(d)||!!signedAt(d.id);
+  const qk=K(root.inquiryCreatedAt(q)),sid=String(q.cleanup_site_id||q.site_id||q.siteId||''),ns=root.normSite?root.normSite(q.site||''):'';if(!sid&&!ns)return false;
+  return AD.some(x=>{const same=sid?String(x.cleanup_site_id||x.site_id||x.siteId||'')===sid:(!!ns&&root.normSite(x.site||'')===ns);if(!same)return false;
+   const s=signedAt(x.id);if(s)return s>=qk;if(!L.ready&&root.isWon(x)){let w='';try{w=K(root.wonDate(x));}catch(e){}return !!w&&w>=qk;}return false;});
+ }
+ /* ── 잔디 발송(서버 함수 crm-jandi) ── */
+ const JMSG={JANDI_NOT_CONFIGURED:'잔디 웹훅 주소가 서버에 등록되지 않았습니다',JANDI_DISABLED:'잔디 발송이 꺼져 있습니다',FORBIDDEN:'관리자만 보낼 수 있습니다',JANDI_UPSTREAM:'잔디가 응답하지 않았습니다 — 잠시 뒤 다시 시도해 주세요',NOT_DEPLOYED:'잔디 발송 서버 함수(crm-jandi)가 아직 설치되지 않았습니다'};
+ async function jandiSend(kind,period_key,text,auto,extra){
+  if(!root.TOKEN||!root.SUPABASE_URL)throw new Error('로그인 상태에서만 보낼 수 있습니다');
+  let r,j=null;try{r=await root.fetch(root.SUPABASE_URL+'/functions/v1/crm-jandi',{method:'POST',headers:{apikey:root.SUPABASE_ANON,Authorization:'Bearer '+root.TOKEN,'Content-Type':'application/json'},body:JSON.stringify(Object.assign({kind,period_key,text,auto:!!auto},extra||{}))});j=await r.json().catch(()=>null);}catch(e){throw Object.assign(new Error('잔디 발송 서버에 연결하지 못했습니다'),{code:'NETWORK'});}
+  if(r.status===404)throw Object.assign(new Error(JMSG.NOT_DEPLOYED),{code:'NOT_DEPLOYED'});
+  if(!r.ok||!j||j.ok!==true)throw Object.assign(new Error(JMSG[j&&j.error]||'잔디로 보내지 못했습니다'),{code:j&&j.error||'FAILED'});
+  return j;
+ }
+ const jandiOn=()=>{try{return root.OpsStore.flags().jandi_enabled===true;}catch(e){return false;}};
+ const stamp=iso=>{const d=new Date(iso);return isNaN(d)?'':(d.getMonth()+1)+'/'+d.getDate()+' '+pad(d.getHours())+':'+pad(d.getMinutes());};
  const canStore=()=>{const O=root.OpsStore;return !!(O&&O.has('crm_report_snapshot_get_v1')&&O.has('crm_report_snapshot_save_v1'));};
  function loadSnaps(force){
   const O=root.OpsStore;if(!canStore()){SN.state='off';return;}
@@ -107,8 +128,7 @@
   const loss=AD.filter(d=>isLoss(d)&&inW(closedKey(d))),lossP=AD.filter(d=>isLoss(d)&&inP(closedKey(d)));
   /* 확정 전환율(코호트): 보고 주가 속한 달의 2달 전 달에 접수된 문의 중 지금까지 계약(수주)된 비율 */
   const cm=new Date(w.a+'T00:00:00');cm.setDate(1);cm.setMonth(cm.getMonth()-2);const ym=cm.getFullYear()+'-'+pad(cm.getMonth()+1);
-  const cohort=AQ.filter(q=>K(R.inquiryCreatedAt(q)).slice(0,7)===ym);let linked=0,cwon=0;
-  cohort.forEach(q=>{let d=null;try{d=R.linkedDeal(q);}catch(e){}if(d){linked++;if(R.isWon(d))cwon++;}});
+  const cohort=AQ.filter(q=>K(R.inquiryCreatedAt(q)).slice(0,7)===ym),cwon=cohort.filter(q=>inquiryContract(q,L,AD)).length,linked=cohort.length;
   /* 영업 이동 */
   const assignedIn=(a,b)=>AQ.filter(q=>{const k=K(R.inquiryAssignedAt(q));return !!k&&k>=a&&k<b;}).length;
   const flow=[['신규 문의',newQ.length,newQp.length],['담당 배정',assignedIn(w.a,w.b),assignedIn(w.p,w.a)]]
@@ -204,7 +224,7 @@
   const rates=[['문의 적합률',pctText(fitR),pp(fitR,fitRp),'적합 '+x.fit+' ÷ 문의 '+x.newQ.length+' · 문의 품질'],
    ['영업 메이드율',pctText(made),pp(made,madeP),con?'수주 '+x.con.count+' ÷ (수주 '+x.con.count+' + 파이프라인 실주 '+x.loss.length+') · 배드핏 제외':'계약실적 원장을 읽은 뒤 계산합니다'],
    ['문의 → 계약 전환율',pctText(conv),pp(conv,convP),con?'계약 '+x.con.count+' ÷ 문의 '+x.newQ.length+' · 이번 주 활동 비율':'계약실적 원장을 읽은 뒤 계산합니다'],
-   ['확정 전환율 ('+Number(x.ym.slice(5))+'월 문의)',pctText(coh),'',x.cohort.length?(x.linked?Number(x.ym.slice(5))+'월 문의 '+x.cohort.length+'건 중 지금까지 계약 '+x.cwon+'건 · 진짜 전환 성과':Number(x.ym.slice(5))+'월 문의 '+x.cohort.length+'건 — 문의와 영업건의 연결 기록이 없어 계산할 수 없습니다'):Number(x.ym.slice(5))+'월에 접수된 문의가 없습니다']];
+   ['확정 전환율 ('+Number(x.ym.slice(5))+'월 문의)',pctText(coh),'',x.cohort.length?Number(x.ym.slice(5))+'월 문의 '+x.cohort.length+'건 중 지금까지 계약 '+x.cwon+'건 · 진짜 전환 성과':Number(x.ym.slice(5))+'월에 접수된 문의가 없습니다']];
   const lossT=tally(x.loss,lossReason),chg=x.loss.filter(d=>{try{return !!(R.DealKeyman&&R.DealKeyman.changeOf(d));}catch(e){return false;}}).length;
   const s1='<section class="bb-card bb-main"><div class="bb-cap"><span>이번 주 성과</span><small>견적문의가 계약까지 얼마나 이어졌나</small></div>'
    +'<div class="bb-funnel">'+fn.map(u=>'<div class="bb-fn'+u[4]+'"><span>'+h(u[0])+'</span><b>'+h(u[1])+'</b><em class="'+u[3]+'">'+h(u[2])+'</em></div>').join('')+'</div>'
@@ -239,8 +259,10 @@
   /* 7. 전체 현황(참고) */
   const s7='<section class="bb-ref"><div><b>전체 현황 (참고)</b><span>진행 '+x.OPEN.length+'건'+(con?' · 올해 수주 '+x.yCon.count+'건 · 승률 '+pctText(pct(x.yCon.count,x.yCon.count+x.yLoss)):'')+' · 180일+ 방치 '+x.stale180+'건</span></div><div class="row">'+x.people.map(p=>'<span><b>'+h(p.n)+'</b> 진행 '+p.o1+' · 방치 '+p.stale180+(con?' · 수주 '+contractsIn(x.L,w.a.slice(0,4)+'-01-01',w.b,p.n).count:'')+'</span>').join('')+'</div></section>';
   /* 오른쪽: 잔디 미리보기 */
-  const J=jandi(x,fixes,regd),store=canStore();
-  const aside='<aside class="bb-side"><section class="bb-card"><div class="bb-h in"><b>잔디 미리보기</b><span>관리자 · 팀장 · 대표</span></div><div class="bb-jandi" id="bbJandi">'+h(J)+'</div><dl><dt>자동 발송</dt><dd>매주 월요일 08:30</dd><dt>상태</dt><dd class="'+(SENT===w.a?'ok':'')+'">'+(SENT===w.a?'정한 내용 저장 · 글 복사됨 ✓':'자동 발송 연결 전 — 지금은 글을 복사해 잔디에 붙여 넣습니다')+'</dd></dl><button type="button" class="send" data-bb="send"'+(admin?'':' disabled title="관리자만 보낼 수 있습니다"')+'>회의 끝 · 정한 내용 넣어 다시 보내기</button>'+(store?'':'<small class="bb-off">저장소 연결 전 — 등록한 항목은 이 화면에서만 유지됩니다</small>')+'</section></aside>';
+  const J=jandi(x,fixes,regd),store=canStore(),jd=(SN.map[w.a]&&SN.map[w.a].payload&&SN.map[w.a].payload.jandi)||{};
+  /* 상태: 회의 후 다시 보냄 > 자동 발송됨 > 아직 */
+  const JS=jd.resent_at?['회의 후 다시 보냄 ✓ · '+stamp(jd.resent_at),'ok']:jd.auto_sent_at?[stamp(jd.auto_sent_at)+' 자동 발송됨','']:!store?['저장소 연결 전',''] :!jandiOn()?['잔디 발송 꺼짐','']:['아직 발송 전 — 월요일 08:30 이후 자동 발송',''];
+  const aside='<aside class="bb-side"><section class="bb-card"><div class="bb-h in"><b>잔디 미리보기</b><span>관리자 · 팀장 · 대표</span></div><div class="bb-jandi" id="bbJandi">'+h(J)+'</div><dl><dt>자동 발송</dt><dd>매주 월요일 08:30</dd><dt>상태</dt><dd class="'+JS[1]+'">'+h(JS[0])+'</dd></dl>'+(JERR?'<small class="bb-off">'+h(JERR)+'</small>':'')+(admin&&store&&!jandiOn()?'<button type="button" class="bb-lnk" data-bb="jandion">잔디 발송 켜기</button>':'')+'<button type="button" class="send" data-bb="send"'+(admin&&!JBUSY?'':' disabled'+(admin?'':' title="관리자만 보낼 수 있습니다"'))+'>'+(JBUSY?'보내는 중…':'회의 끝 · 정한 내용 넣어 다시 보내기')+'</button>'+(store?'':'<small class="bb-off">저장소 연결 전 — 등록한 항목은 이 화면에서만 유지됩니다</small>')+'</section></aside>';
   return '<div id="brief-b" class="bb" data-workspace="brief"><div class="bb-head"><b>'+h(rangeText(w))+'</b><span>지난주 대비 무엇이 움직였나</span><i></i><button type="button" class="bb-lnk" onclick="setBriefView(\'month\')">월간 일정 보기</button></div>'
    +'<div class="bb-body"><div class="bb-col">'+s1+s2+'<div class="bb-grid2">'+s3+s4+'</div>'+s5+s6+s7+'</div>'+aside+'</div></div>';
  }
@@ -259,12 +281,15 @@
   if(a==='reg'){
    const c=x.cands.find(z=>z.kind===k);if(!c)return;const list=promisesOf(x.w.a).slice(),i=list.findIndex(p=>p.kind===k);
    if(i>=0)list.splice(i,1);else list.push({kind:k,t:c.t,why:c.why,act:c.act,n:c.n,ids:c.ids.slice(0,300),owner:SEL.own[k]||c.owners[0]||'',due:SEL.due[k]||c.due,at:new Date().toISOString(),by:(root.ME&&root.ME.name)||''});
-   SENT='';savePromises(x,list,ok=>{if(ok&&canStore())toast(i>=0?'등록을 취소했습니다':'등록했습니다 — 다음 주 ‘전주 문제 → 결과’에서 확인합니다');});return;
+   savePromises(x,list,ok=>{if(ok&&canStore())toast(i>=0?'등록을 취소했습니다':'등록했습니다 — 다음 주 ‘전주 문제 → 결과’에서 확인합니다');});return;
   }
+  if(a==='jandion'){root.OpsStore.setFlag('jandi_enabled',true).then(()=>{toast('잔디 발송을 켰습니다');root.paintBrief();}).catch(e=>toast(String(e.message||e),'warn'));return;}
   if(a==='send'){
-   const text=document.getElementById('bbJandi')?.textContent||'';
-   const copy=()=>{const fin=()=>{SENT=x.w.a;toast('정한 내용을 저장하고 글을 복사했습니다 — 잔디에 붙여 넣어 주세요');root.paintBrief();};try{const p=navigator.clipboard&&navigator.clipboard.writeText(text);if(p&&p.then)p.then(fin).catch(fin);else fin();}catch(err){fin();}};
-   savePromises(x,promisesOf(x.w.a).slice(),ok=>{if(ok)copy();});return;
+   if(JBUSY)return;const text=document.getElementById('bbJandi')?.textContent||'',k=x.w.a;JBUSY=true;JERR='';root.paintBrief();
+   jandiSend('weekly',k,text,false,{payload:payloadOf(x),promises:promisesOf(k)}).then(j=>{if(j.snapshot)SN.map[k]=Object.assign({},SN.map[k]||{},j.snapshot);delete MEM[k];toast('잔디로 다시 보냈습니다');})
+    .catch(e=>{JERR=String(e.message||e)+' — 글은 복사해 두었습니다(잔디에 붙여 넣을 수 있습니다)';try{navigator.clipboard&&navigator.clipboard.writeText(text).catch(()=>{});}catch(err){}toast(String(e.message||e),'warn');})
+    .finally(()=>{JBUSY=false;if(root.G.page==='brief')root.paintBrief();});
+   return;
   }
  }
  function boot(){
@@ -280,9 +305,24 @@
    }catch(e){console.warn('[주간 브리핑 B]',e);return base.apply(this,arguments);}
   };
   root.addEventListener('contract-sales:changed',()=>{try{if(root.G.page==='brief'&&enabled())root.paintBrief();}catch(e){}});
+  /* 자동 발송: 월요일 08:30 이후 관리자 화면이 열려 있으면 그 주(막 끝난 지난주) 브리핑을 한 번 보낸다 — 서버가 기간당 한 번만 통과시킨다 */
+  setTimeout(autoSend,25000);setInterval(autoSend,5*60*1000);
+ }
+ function autoSend(){
+  try{
+   if(!enabled()||!root.ME||!root.OpsStore||!root.OpsStore.admin()||!canStore()||!jandiOn())return;
+   const n=root.G.briefBNow?new Date(root.G.briefBNow):new Date();if(n.getDay()!==1||n.getHours()*60+n.getMinutes()<8*60+30)return;
+   loadSnaps();if(SN.state!=='ready')return;const w=win();if(AUTO[w.a])return;const jd=(SN.map[w.a]&&SN.map[w.a].payload&&SN.map[w.a].payload.jandi)||{};if(jd.auto_sent_at){AUTO[w.a]=true;return;}
+   /* 필터(담당 · 브랜드 · 공종 · 검색)와 무관하게 전체 기준으로 만든다 */
+   const G=root.G,keep=[G.rep,G.brand,G.workFilter,G.q];let x,text;
+   try{G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';x=data();if(!x.L.ready)return;text=jandi(x,promisesOf(w.p).map(p=>evalPromise(x,p)),promisesOf(w.a));}finally{G.rep=keep[0];G.brand=keep[1];G.workFilter=keep[2];G.q=keep[3];}
+   AUTO[w.a]=true;
+   jandiSend('weekly',w.a,text,true,{payload:payloadOf(x)}).then(j=>{if(j.snapshot)SN.map[w.a]=Object.assign({},SN.map[w.a]||{},j.snapshot);else if(j.jandi)SN.map[w.a]=Object.assign({},SN.map[w.a]||{kind:'weekly',period_key:w.a},{payload:Object.assign({},(SN.map[w.a]||{}).payload||{},{jandi:j.jandi})});if(root.G.page==='brief')root.paintBrief();})
+    .catch(e=>{if(e&&e.code==='NETWORK')delete AUTO[w.a];JERR='자동 발송 실패: '+String(e.message||e);if(root.G.page==='brief')root.paintBrief();});
+  }catch(e){console.warn('[주간 브리핑 자동 발송]',e);}
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
  /* 리포트(월간)도 같은 정의로 센다 — 배드핏 · 실주 · 견적 발송 · 계약실적 원장 · 단계 진입 */
- const lib={K,key,addDays,between,amt,pct,pctText,tally,tallyText,BRAND,STALE,badfit,badfitReason,isLoss,lossReason,closedKey,quoteIn,entered,groupOf,ledger,contractsIn,lastActKey};
- root.BriefB={lib,enabled,win,data,badfit,badfitReason,evalPromise,jandi:x=>jandi(x,promisesOf(x.w.p).map(p=>evalPromise(x,p)),promisesOf(x.w.a))};
+ const lib={inquiryContract,jandiSend,jandiOn,stamp,K,key,addDays,between,amt,pct,pctText,tally,tallyText,BRAND,STALE,badfit,badfitReason,isLoss,lossReason,closedKey,quoteIn,entered,groupOf,ledger,contractsIn,lastActKey};
+ root.BriefB={lib,autoSend,enabled,win,data,badfit,badfitReason,evalPromise,jandi:x=>jandi(x,promisesOf(x.w.p).map(p=>evalPromise(x,p)),promisesOf(x.w.a))};
 })(window);

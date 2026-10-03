@@ -12,7 +12,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
  try{
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});
-  const page=await ctx.newPage(),errs=[];page.on('pageerror',e=>errs.push(e.message));
+  const page=await ctx.newPage(),errs=[],jandi=[];page.on('pageerror',e=>errs.push(e.message));
+  await ctx.route('**/functions/v1/crm-jandi',async r=>{const b=r.request().postDataJSON();jandi.push(b);const at=new Date().toISOString();return r.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({ok:true,skipped:false,jandi:{resent_at:at},snapshot:{kind:b.kind,period_key:b.period_key,payload:Object.assign({},b.payload||{},{jandi:{resent_at:at}}),promises:[]}})});});
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.ReportB&&window.BriefB&&window.ReportV2&&window.OpsStore&&window.ContractSalesData&&typeof paintReport==='function');
   const P=await page.evaluate(()=>{
    const P=ReportB.period(),day=n=>new Date(Date.now()+n*864e5).toLocaleDateString('en-CA'),at=k=>k+'T10:00:00+09:00',inM=d=>P.ym+'-'+String(d).padStart(2,'0'),inP=d=>P.p.slice(0,8)+String(d).padStart(2,'0');
@@ -33,7 +34,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op)=>{__writes.push(op);return 'req';};
    const ev=(id,k,n,o)=>({deal_id:id,brand:BR,sales_owner_name:o,events:[{kind:'signed',effective_date:k,amount_delta:n}]});
    ContractSalesData.state=()=>({status:'ready',items:[ev('w1',inM(10),5e8,'이필선'),ev('w2',inM(20),3e8,'황윤선'),ev('w0',inP(12),2e8,'이필선')]});
-   window.__saves=[];OpsStore.has=()=>true;OpsStore.admin=()=>true;OpsStore.rpc=async(name,p)=>{if(name==='crm_report_snapshot_get_v1')return {ok:true,snapshots:[]};if(name==='crm_report_snapshot_save_v1'){__saves.push(p);return {ok:true};}return {ok:true};};
+   TOKEN='test';OpsStore.flags=()=>({jandi_enabled:true});window.__saves=[];OpsStore.has=()=>true;OpsStore.admin=()=>true;OpsStore.rpc=async(name,p)=>{if(name==='crm_report_snapshot_get_v1')return {ok:true,snapshots:[]};if(name==='crm_report_snapshot_save_v1'){__saves.push(p);return {ok:true};}return {ok:true};};
    goPage('report');return P;
   });
   await page.waitForTimeout(500);
@@ -78,8 +79,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 편집 · 보내기 · 상세 표 */
   await page.locator('#report-b [data-rb="edit"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#report-b .rb-band [contenteditable="true"]').count(),2,'결론 두 문장만 고칠 수 있음');
   await page.locator('#report-b [data-rb="edit"]').click();await page.waitForTimeout(150);
-  await page.locator('#report-b [data-rb="send"]').click();await page.waitForTimeout(400);
-  assert.match(await page.evaluate(()=>__saves.at(-1).payload.summary),new RegExp('^\\['+P.y+'년 '+P.m+'월 영업 보고\\][\\s\\S]*영업 메이드율 40\\.0%[\\s\\S]*대표님 결정 요청 3건\\s*1\\. 관리소장 변경 현장 — 재견적 정책을 정해 주세요 → 기존 조건 유지'));
+  await page.locator('#report-b [data-rb="send"]').click();await page.waitForTimeout(600);
+  assert.equal(jandi.length,1,'대표님께 보내기 = 잔디 발송');assert.equal(jandi[0].kind,'monthly');assert.equal(jandi[0].period_key,P.ym);assert.deepEqual(jandi[0].payload.decisions,{mgrchg:1});
+  assert.match(await page.locator('#report-b .rb-head p').innerText(),/\d+\/\d+ \d{2}:\d{2} 잔디 발송/);
+  assert.match(jandi[0].text,new RegExp('^\\['+P.y+'년 '+P.m+'월 영업 보고\\][\\s\\S]*영업 메이드율 40\\.0%[\\s\\S]*대표님 결정 요청 3건\\s*1\\. 관리소장 변경 현장 — 재견적 정책을 정해 주세요 → 기존 조건 유지'));
   await page.locator('#report-b [data-rb="detail"]').click();await page.waitForTimeout(300);assert.equal(await page.locator('#report-master:visible').count(),1,'상세 표는 그대로 열 수 있음');
   /* 끄기 */
   await page.evaluate(()=>{G.reportBOff=true;goPage('today');goPage('report');});await page.waitForTimeout(400);
