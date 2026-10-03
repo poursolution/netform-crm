@@ -11,7 +11,7 @@ export function createQueueClient({url,key,fetchImpl=fetch}) {
  const headers={'Content-Type':'application/json',apikey:key};
  if(!key.startsWith('sb_secret_'))headers.Authorization='Bearer '+key;
  return Object.freeze({async call(name,payload){
-  if(!['crm_sms_worker_claim_v1','crm_sms_worker_pending_v1','crm_sms_worker_result_v1'].includes(name))
+  if(!['crm_sms_worker_claim_v1','crm_sms_worker_pending_v1','crm_sms_worker_result_v1','crm_sms_worker_claim_inquiry_v1','crm_sms_worker_pending_inquiry_v1','crm_sms_worker_result_inquiry_v1'/* 견적문의 응대 문자(2026-10-03) */].includes(name))
    throw new QueueError('INVALID_QUEUE_OPERATION');
   try {
    const r=await fetchImpl(target.origin+'/rest/v1/rpc/'+name,{method:'POST',headers,body:JSON.stringify(payload),redirect:'error',signal:AbortSignal.timeout(15000)});
