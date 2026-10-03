@@ -34,7 +34,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await v.locator('.il-sheet').innerText(),/^구글시트 연결됨 · .*5건$/);assert.equal(await v.locator('.il-fixed').innerText(),'12시까지 결과 · 다음 행동 업데이트');
   /* 탭 7개 + 건수 */
   const tabs=await v.locator('.il-tab').evaluateAll(a=>a.map(n=>n.querySelector('span').textContent.trim()+'|'+n.querySelector('small').textContent.trim()));
-  assert.deepEqual(tabs.map(t=>t.split('|')[0]),['5전체','1배정 필요','1첫 연락 전','1후속 연락 필요','1오늘 들어온 문의','1대표회의 · 기한 D-3','3필수정보 미입력'],JSON.stringify(tabs));
+  assert.deepEqual(tabs.map(t=>t.split('|')[0]),['5전체','1배정 필요','1첫 연락 전','1후속 연락 필요',(new Date(Date.now()-3*36e5).toDateString()===new Date().toDateString()?1:0)+'오늘 들어온 문의','1대표회의 · 기한 D-3','3필수정보 미입력'],JSON.stringify(tabs));
   assert.match(tabs[1],/30분 안에 담당 지정/);assert.match(tabs[2],/2시간 안 첫 연락/);assert.match(tabs[3],/7일 넘게 연락 없음/);
   /* 정렬: 접수일 오름차순(가장 오래된 것 먼저) · 상태와 무관 */
   const sites=async()=>v.locator('.il-row .il-site b').allInnerTexts();
@@ -43,7 +43,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await v.locator('.il-sorts [data-v="new"]').click();await page.waitForTimeout(300);assert.deepEqual((await sites())[0],'[서울 성북] 길음뉴타운9단지');await page.locator('#inq-v3 .il-sorts [data-v="old"]').click();await page.waitForTimeout(300);
   /* 경과 · 날짜(연도 포함) · 버튼 */
   const row=site=>page.locator('#inq-v3 .il-row',{hasText:site});
-  assert.match(await row('길음뉴타운9단지').locator('.il-el').innerText(),/^3시간 \d+분\s*오늘 \d{2}:\d{2} 접수$/);assert.equal(await row('길음뉴타운9단지').locator('.il-act').innerText(),'담당 배정');assert.match(await row('길음뉴타운9단지').locator('.il-owner').innerText(),/미배정/);
+  assert.match(await row('길음뉴타운9단지').locator('.il-el').innerText(),/^3시간 \d+분\s*(오늘 \d{2}:\d{2}|\d{4}\.\d+\.\d+) 접수$/);assert.equal(await row('길음뉴타운9단지').locator('.il-act').innerText(),'담당 배정');assert.match(await row('길음뉴타운9단지').locator('.il-owner').innerText(),/미배정/);
   assert.match(await row('한강신도시반도유보라').locator('.il-el').innerText(),/^1일\s*\d{4}\.\d{1,2}\.\d{1,2} 접수$/);assert.equal(await row('한강신도시반도유보라').locator('.il-act').innerText(),'첫 연락');
   assert.match(await row('혁신LH5단지').locator('.il-el').innerText(),/^30일째\s*\d{4}\.\d{1,2}\.\d{1,2} 연락 후$/,'첫 연락 후 = 마지막 연락부터');assert.equal(await row('혁신LH5단지').locator('.il-act').innerText(),'후속 연락');
   assert.equal(await row('매탄임광아파트').locator('.il-act').innerText(),'자료 제출');assert.match(await row('매탄임광아파트').locator('.il-site em').innerText(),/대표회의 \d{4}\.\d{1,2}\.\d{1,2} D-2/);

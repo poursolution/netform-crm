@@ -42,10 +42,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 정렬: 관계위험(빨강 2개) → 나머지는 사유 수 → 일수 */
   const order=await v.locator('.psb-row').evaluateAll(a=>a.map(n=>n.querySelector('.l b').textContent));
   assert.equal(order[0],'예현마을현대홈타운아파트',JSON.stringify(order));
-  assert.match(await v.locator('.psb-row').first().innerText(),/예현마을현대홈타운아파트[\s\S]*POUR솔루션 · 황윤선 · 누적 0원[\s\S]*관계위험[\s\S]*관계위험 · 진행 1건 3\.7억 · 실주 2건[\s\S]*관계위험 · 진행 금액 걸림[\s\S]*120일[\s\S]*연락/);
-  assert.match(await v.locator('.psb-row',{hasText:'수주 뒤 조용한 단지'}).innerText(),/기존고객[\s\S]*박소장 관리소장[\s\S]*수주 고객 2개월 넘게 연락 없음[\s\S]*80일[\s\S]*관계 연락/);
-  assert.match(await v.locator('.psb-row',{hasText:'시범현대아파트'}).innerText(),/활성[\s\S]*진행 1건 2,000만[\s\S]*핵심 인물 미확인[\s\S]*9일[\s\S]*연락처/);
-  assert.match(await v.locator('.psb-row',{hasText:'오산 원동'}).innerText(),/석민이앤씨[\s\S]*휴면[\s\S]*1년 이상 움직임 없음[\s\S]*412일[\s\S]*캠페인/);
+  assert.match(await v.locator('.psb-row').first().innerText(),/예현마을현대홈타운아파트[\s\S]*POUR솔루션 · 황윤선 · 누적 0원[\s\S]*관계위험[\s\S]*관계위험 · 진행 1건 3\.7억 · 실주 2건[\s\S]*관계위험 · 진행 금액 걸림[\s\S]*(119|120)일[\s\S]*연락/);
+  assert.match(await v.locator('.psb-row',{hasText:'수주 뒤 조용한 단지'}).innerText(),/기존고객[\s\S]*박소장 관리소장[\s\S]*수주 고객 2개월 넘게 연락 없음[\s\S]*(79|80)일[\s\S]*관계 연락/);
+  assert.match(await v.locator('.psb-row',{hasText:'시범현대아파트'}).innerText(),/활성[\s\S]*진행 1건 2,000만[\s\S]*핵심 인물 미확인[\s\S]*(8|9)일[\s\S]*연락처/);
+  assert.match(await v.locator('.psb-row',{hasText:'오산 원동'}).innerText(),/석민이앤씨[\s\S]*휴면[\s\S]*1년 이상 움직임 없음[\s\S]*(411|412)일[\s\S]*캠페인/);
   if(shot)await page.screenshot({path:shot+'-list.png',fullPage:true});
   /* 알약 · 공통 필터 · 막대 칸 · 보드 · 더보기 */
   await v.locator('.plv-pills [data-value="dormant"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#asset-b .psb-row').count(),1);
