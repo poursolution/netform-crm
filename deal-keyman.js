@@ -46,6 +46,8 @@
   const card=view.querySelector('#contactCard');if(!card)return;
   card.querySelectorAll('.malb').forEach(n=>{if(/근무 이력/.test(n.textContent)){n.hidden=true;const t=n.nextElementSibling;if(t&&(t.classList.contains('contacthist')||t.classList.contains('detailnotice')))t.hidden=true;}});
   card.querySelectorAll('button[onclick*="openManagerMove"]').forEach(b=>b.hidden=true);
+  /* 인사정보 느낌('현재 근무지 · 현재 연락처') 대신 사람 중심 한 줄: 역할 · 핵심 담당자. 평상시엔 조용하게 */
+  {const who=card.querySelector('.contactwho small'),st=card.querySelector('.contactstate');const ci=root.contactInfo(d,root.itemPatch(d,'deal'))||{};if(who&&ci.name)who.textContent=(ci.role||'관리소장')+' · 이 현장의 핵심 담당자';if(st&&!st.classList.contains('moved'))st.hidden=true;}
   card.querySelector('.dk-change')?.remove();
   const c=changeOf(d);if(!c)return;
   const open=!!(root.G.dkOpen&&root.G.dkOpen[d.id]),done=checksOf(d,c),n=done.filter(Boolean).length;

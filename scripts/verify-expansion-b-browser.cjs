@@ -29,7 +29,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.sb=null;G.expansionYear=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    window.__writes=[];window.pushWrite=(op,p)=>{__writes.push([op,p.expansion_status,p.next_contact_at]);return 'req';};
-   SB={rpc:async(name,args)=>{if(name==='crm_improvement_task_list_v1')return {data:{ok:true,tasks:[]}};return {data:{ok:true,event:{source_opportunity_id:args.p.source_opportunity_id,occurred_at:new Date().toISOString(),kind:'접촉·니즈',note:args.p.note,actor:'송보람'}}};}};TOKEN='test';
+   window.__info=[];SB={rpc:async(name,args)=>{if(name==='crm_improvement_task_list_v1')return {data:{ok:true,tasks:[]}};if(name==='crm_expansion_info_update_v1'){__info.push(args.p);return {data:{ok:true,source_opportunity_id:args.p.source_opportunity_id,expansion_record_id:'x1',field:args.p.field,value:args.p.value}};}return {data:{ok:true,event:{source_opportunity_id:args.p.source_opportunity_id,occurred_at:new Date().toISOString(),kind:'접촉·니즈',note:args.p.note,actor:'송보람'}}};}};TOKEN='test';
    window.__new=null;expansionOpenNew=id=>{window.__new=id;};
    goPage('expansion');
   });
@@ -66,6 +66,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 열기 = 기존 v2 상세창 · 사유 버튼은 그 액션으로(연락 → 입력칸 포커스, 전환 → 기존 전환창) */
   await page.locator('#expansion-b .psb-row[data-key="e2"] .l').click();await page.waitForTimeout(250);
   assert.equal(await page.locator('#expansionV2.on .xdv').count(),1,'v2 상세창');assert.match(await page.locator('#expansionV2 .xdv-top').innerText(),/마곡청구아파트/);
+  /* 관리 정보 빈 칸 입력(2026-10-03): 현재 담당(관리자) · 준공일 = 서버 함수, 공종 = 기존 편집기 버튼, 계약일 · 수주 금액 = 계약실적 안내 */
+  const facts=page.locator('#expansionV2 .xdv-facts');
+  assert.match(await facts.innerText(),/현재 담당\s*황윤선\s*수정[\s\S]*당시 영업\s*황윤선[\s\S]*계약일\s*미입력 · 계약실적\(성과 분석\)에서 기록[\s\S]*준공일\s*\d{4}-\d{2}-\d{2}\s*수정[\s\S]*공종\s*옥상 방수 수정[\s\S]*수주 금액\s*8,200만/);
+  await facts.locator('[data-xd="edit"][data-value="owner_name"]').click();await page.waitForTimeout(150);
+  await page.locator('#expansionV2 [data-xd="editsel"]').selectOption('이필선');await page.waitForTimeout(400);
+  assert.deepEqual(await page.evaluate(()=>__info),[{source_opportunity_id:'w2',field:'owner_name',value:'이필선'}],'현재 담당 저장 = 서버 함수');
+  assert.match(await page.locator('#expansionV2 .xdv-top').innerText(),/담당 이필선/,'저장 뒤 머리줄 갱신');
+  await page.locator('#expansionV2 .xdv-facts [data-xd="edit"][data-value="completion_date"]').click();await page.waitForTimeout(150);
+  await page.keyboard.press('Escape');await page.waitForTimeout(150);assert.equal(await page.locator('#expansionV2 [data-xd="editinput"]').count(),0,'Esc = 취소');assert.equal(await page.locator('#expansionV2.on').count(),1,'창은 그대로');
   await page.locator('#expansionV2 .xdv-close').click();await page.waitForTimeout(150);
   await page.locator('#expansion-b .psb-row[data-key="e1"] [data-sb="act"]').click();await page.waitForTimeout(300);
   assert.equal(await page.evaluate(()=>document.activeElement&&document.activeElement.matches('#expansionV2 .idv-input textarea')),true,'연락 → 기록 입력칸');
