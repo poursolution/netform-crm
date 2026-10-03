@@ -36,18 +36,18 @@
  }
  /* 문의 정보 빈 칸 바로 입력(2026-10-03 핸드오프 inquiry_v2): 서버 함수 crm_inquiry_field_update_v1 이 설치돼 있을 때만 — 없으면 '미입력'만 보인다 */
  const FIELD_RPC='crm_inquiry_field_update_v1';
- const FIELDS=[['문의자','문의자','contact_name','예: 관리소장 · 홍길동'],['문의자 연락처','연락처','phone','예: 010-0000-0000'],['업체·고객정보','업체','customer_type','예: 관리사무소'],['건물주소','현장 주소','address','예: 수원시 영통구 …'],['공사유형','공종','work_type','예: 옥상 방수'],['상담채널','상담 채널','channel','예: 전화 · 홈페이지'],['유입경로','유입 경로','inflow','예: 네이버 검색 · 지인 소개'],['전화 응대자','응대','responder','응대한 사람']];
+ const FIELDS=[['문의자','문의자','contact_name','예: 관리소장 · 홍길동'],['문의자 연락처','연락처','phone','예: 010-0000-0000'],['업체·고객정보','업체','customer_type','예: 관리사무소'],['건물주소','현장 주소','address','예: 수원시 영통구 …'],['공사유형','공종','work_type','예: 옥상 방수'],['상담채널','상담 채널','channel','예: 전화 · 홈페이지'],['유입경로','유입 경로','inflow','예: 네이버 검색 · 지인 소개'],['전화 응대자','응대','responder','응대한 사람'],['대표회의','대표회의','meeting_date','YYYY-MM-DD'],['자료 회신 기한','회신 기한','reply_due','YYYY-MM-DD']];/* 뒤 둘은 2026-10-02 회의 지침 핵심 확인 사항 — 목록의 대표회의 D-3 탭 · 문자 문구 · 결과 제안에 쓰인다 */
  function fieldEditable(){return !!(root.SB&&typeof root.SB.rpc==='function')&&!(root.CRMRelease&&root.CRMRelease.has('crm_inquiry_field_update_v1')===false);}
  function col1(q,s){
-  const f=new Map(W().sourceFields(q)),can=fieldEditable(),rows=FIELDS.map(([k,l,field,ph])=>({l,field,ph,v:(f.get(k)&&f.get(k)!=='미입력')?f.get(k):''})),missing=rows.filter(r=>!r.v).map(r=>r.l);
-  const cell=r=>{if(r.v)return '<dd>'+h(r.v)+'</dd>';if(s&&s.editField===r.field)return '<dd><input class="idv-editin" data-idv="editinput" data-v="'+r.field+'" value="'+attr(s.editDraft||'')+'" placeholder="'+attr(r.ph)+'" aria-label="'+attr(r.l)+' 입력"></dd>';return '<dd class="warn">'+(can?'<button type="button" class="idv-edit" data-idv="edit" data-v="'+r.field+'" title="눌러서 바로 입력">미입력 · 눌러서 입력</button>':'미입력')+'</dd>';};
+  const f=new Map(W().sourceFields(q)),r0=q.raw&&typeof q.raw==='object'?q.raw:{},can=fieldEditable(),rows=FIELDS.map(([k,l,field,ph])=>({l,field,ph,date:/_date$|_due$/.test(field),v:(f.get(k)&&f.get(k)!=='미입력')?f.get(k):(r0[k]&&String(r0[k]).trim()&&String(r0[k]).trim()!=='-'?String(r0[k]).trim():'')})),missing=rows.filter(r=>!r.v).map(r=>r.l);
+  const cell=r=>{if(r.v)return '<dd>'+h(r.v)+'</dd>';if(s&&s.editField===r.field)return '<dd><input class="idv-editin" data-idv="editinput" data-v="'+r.field+'"'+(r.date?' type="date"':'')+' value="'+attr(s.editDraft||'')+'" placeholder="'+attr(r.ph)+'" aria-label="'+attr(r.l)+' 입력"></dd>';return '<dd class="warn">'+(can?'<button type="button" class="idv-edit" data-idv="edit" data-v="'+r.field+'" title="눌러서 바로 입력">미입력 · 눌러서 입력</button>':'미입력')+'</dd>';};
   return '<div class="idv-label">고객 문의 원문</div><blockquote class="idv-quote">'+h(W().originalText(q)||'저장된 문의 원문이 없습니다.')+'</blockquote>'
    +'<div class="idv-label">문의 정보'+(can?'':'<small class="idv-fieldnote">빈 칸 입력은 서버 적용 뒤에 열립니다</small>')+'</div><dl class="idv-info">'+rows.map(r=>'<div><dt>'+h(r.l)+'</dt>'+cell(r)+'</div>').join('')+'</dl>'
    +(missing.length?'<div class="idv-missing">보완 필요 '+missing.length+'개 · '+h(missing.join(' · '))+(can?' · 빈 칸을 눌러 바로 입력':'')+'</div>':'');
  }
  function applyField(q,field,value,rawKey){
   if(field==='contact_name'){q.contact_name=value;}else if(field==='phone'){q.phone=value;}else if(field==='address'){q.address=value;if(q.detail&&typeof q.detail==='object')q.detail.address=value;}else if(field==='site_name'){q.site_name=value;q.site=value;}
-  else{q.raw=q.raw&&typeof q.raw==='object'?q.raw:{};q.raw[rawKey||field]=value;if(q.detail&&typeof q.detail==='object'){if(field==='channel')q.detail.channel=value;if(field==='customer_type')q.detail.customerType=value;if(field==='work_type')q.detail.workType=value;}if(field==='work_type')q.work_type=value;}
+  else{const RAWKEY={customer_type:'고객유형',work_type:'공사유형',channel:'상담채널',inflow:'유입경로',responder:'전화 응대자',meeting_date:'대표회의',reply_due:'자료 회신 기한'};q.raw=q.raw&&typeof q.raw==='object'?q.raw:{};q.raw[rawKey||RAWKEY[field]||field]=value;if(field==='meeting_date'&&q.detail&&typeof q.detail==='object')q.detail.meetingDate=value;if(q.detail&&typeof q.detail==='object'){if(field==='channel')q.detail.channel=value;if(field==='customer_type')q.detail.customerType=value;if(field==='work_type')q.detail.workType=value;}if(field==='work_type')q.work_type=value;}
   try{root.saveLocal?.();}catch(e){}
  }
  async function saveField(q,s,field,value){
@@ -112,18 +112,19 @@
   const L=timeline(q),contacts=L.filter(e=>e.kind==='contact'||(e.kind==='work'&&e.ch)),conN=contacts.filter(e=>CONNECTED.includes(e.res)).length,firstAt=root.inqCtlFirstResponseAt(q);
   const checks=(root.itemPatch(q,'inq')||{}).checks||[],doneN=CHECKS.filter((_,i)=>checks[i]).length;
   const body=L.map(e=>{const K=KIND[e.kind];return '<div class="idv-ev '+K[1]+'"><i></i><div><div class="idv-evmeta"><span>'+h(fmt(e.at))+(e.who?' · '+h(e.who):'')+'</span><em class="k">'+K[0]+'</em>'+(e.src?'<em class="s">'+h(e.src)+'</em>':'')+(e.ch?'<b>'+h(e.ch)+'</b>':'')+(e.res?'<b class="'+(e.res==='연결됨'?'ok':/부재|거절/.test(e.res)?'bad':'')+'">'+h(e.res)+'</b>':'')+'</div>'+(e.text?'<div class="idv-evtext">'+h(e.text)+'</div>':'')+(e.next?'<span class="idv-evnext">→ 다음 행동: <b>'+h(e.next)+'</b></span>':'')+'</div></div>';}).join('');
-  const assignedNow=root.inquiryAssigned(q),tabs=[['call','응대 기록'],['sms','문자 보내기'],['memo','내부 메모']],phone=String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'').trim(),digits=phone.replace(/\D/g,'');
+  const assignedNow=root.inquiryAssigned(q),tabs=[['call','응대 기록'],['sms','문자'],['memo','내부 메모']],phone=String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'').trim(),digits=phone.replace(/\D/g,'');
   let form='';
   if(s.tab==='call'){const g=sugOf(q,s),has=!!g.T;
    form='<textarea id="iq-res" rows="2" data-idv="text" placeholder="무슨 일이 있었는지 한 줄로 (예: 관리소장 통화. 10월 입대의 후 결정 예정)">'+h(s.text)+'</textarea>'
     +'<div class="idv-sug'+(has?'':' off')+'"><span class="tag">'+(s.aiRead?'AI':'자동')+'</span><span class="read">'+h(has?g.ch+' · '+g.res:'내용을 적으면 수단 · 결과를 읽고 다음 행동을 추천합니다')+'</span>'+(has?'<b>→ 다음 행동: '+h(g.none?'없음 · 실주 처리 검토 ('+kday(new Date(g.due+'T00:00:00'))+' 확인)':g.act+' · '+kday(new Date(g.due+'T00:00:00')))+'</b><i></i><button type="button" class="lnk" data-idv="edit-sug">'+(s.edit?'닫기':'바꾸기')+'</button>'+(root.OpsStore&&root.OpsStore.aiOn()&&!s.aiRead?'<button type="button" class="lnk" data-idv="ai-read"'+(s.aiBusy?' disabled':'')+'>'+(s.aiBusy?'AI 읽는 중…':'✦ AI로 읽기')+'</button>':''):'')+'</div>'
     +(has&&s.edit?'<div class="idv-sugedit"><small>수단</small><div>'+CH.map(l=>'<button type="button" class="idv-chip'+(g.ch===l?' on':'')+'" data-idv="ch" data-v="'+l+'">'+l+'</button>').join('')+'</div><small>결과</small><div>'+RS.map(l=>'<button type="button" class="idv-chip'+(g.res===l?' on':'')+'" data-idv="res" data-v="'+l+'">'+l+'</button>').join('')+'</div><small>다음 행동</small><div>'+AC.map(l=>'<button type="button" class="idv-chip'+(g.act===l?' on':'')+'" data-idv="act" data-v="'+l+'">'+l+'</button>').join('')+'</div><small>날짜</small><div>'+DY.map(l=>'<button type="button" class="idv-chip'+(g.nday===l&&!s.due?' on':'')+'" data-idv="nday" data-v="'+l+'">'+l+'</button>').join('')+'<input type="date" id="iq-due" data-idv="due" value="'+attr(g.due)+'" aria-label="다음 행동 날짜"></div><input id="iq-next" data-idv="next" placeholder="다음 행동을 직접 적기" value="'+attr(s.next||'')+'"></div>':'<input type="hidden" id="iq-next" value="'+attr(s.next||(has?(g.none?'실주 처리 검토':g.act):''))+'"><input type="hidden" id="iq-due" value="'+attr(has?g.due:'')+'">')
     +'<div class="idv-formfoot"><span>'+(has?(assignedNow?'저장하면 이력에 남고 다음 행동이 오늘 업무에 생깁니다':'배정 전 기록 — 이력에만 남고 다음 행동은 배정 뒤 정합니다'):'통화 · 카카오 · 문자 · 이메일 · 방문 모두 여기에')+'</span><button type="button" class="idv-save'+(has?' on':'')+'" data-idv="save">저장</button></div><input type="hidden" id="iq-did" value="고객 응대 기록">';}
-  else if(s.tab==='sms'){const T=smsTemplates(q),bytes=smsBytes(s.smsText||'');
-   form='<div class="idv-tpls"><span class="tag">AI</span><small>상황에 맞는 문구</small>'+Object.keys(T).map(k=>'<button type="button" class="idv-chip'+(s.smsTpl===k?' on':'')+'" data-idv="tpl" data-v="'+attr(k)+'">'+h(k)+'</button>').join('')+'</div>'
+  else if(s.tab==='sms'){const T=smsTemplates(q);if(!s.smsTpl&&!(s.smsText||'').trim()){s.smsTpl='첫 인사';s.smsText=T['첫 인사']||'';}const bytes=smsBytes(s.smsText||''),mobile=/Android|iPhone|iPad/i.test(navigator.userAgent);
+   form='<div class="idv-smsnote"><b>문구는 자동으로 만들어 둡니다 — 고칠 것만 고치고 아래 버튼 하나만 누르세요.</b><span>CRM에서 고객에게 직접 보내는 발송은 아직 연결 전입니다(문자 발송 서비스 실행기 · 발신번호 설정 뒤 열림). 지금은 '+(mobile?'휴대폰 문자 앱이 열리고':'문구가 복사되고')+' 응대 이력에 «문자 · 회신대기»로 바로 기록됩니다.</span></div>'
+    +'<div class="idv-tpls"><span class="tag">AI</span><small>상황에 맞는 문구</small>'+Object.keys(T).map(k=>'<button type="button" class="idv-chip'+(s.smsTpl===k?' on':'')+'" data-idv="tpl" data-v="'+attr(k)+'">'+h(k)+'</button>').join('')+'</div>'
     +'<div class="idv-smsto"><span>받는 사람</span><b class="'+(digits?'':'bad')+'">'+h((q.contact_name||q.contact||'고객')+' · '+(digits?root.phoneFmt(digits):'연락처 없음'))+'</b><i></i><span>'+bytes+'byte · '+(bytes>90?'LMS':'SMS')+'</span></div>'
     +'<textarea id="spLogNote" rows="3" data-idv="smstext" placeholder="보낼 문자">'+h(s.smsText||'')+'</textarea>'
-    +'<div class="idv-formfoot"><span>문자 앱으로 보낸 뒤 [보내고 기록]을 누르면 응대 이력에 «문자 · 회신대기»로 남고 3일 뒤 확인이 오늘 업무에 생깁니다 · 발신번호는 문자 발송 서비스 연동 뒤</span><button type="button" data-idv="sms-copy">문구 복사</button><button type="button" data-idv="sms-open"'+(digits&&(s.smsText||'').trim()?'':' disabled')+'>문자 앱 열기</button><button type="button" class="idv-save'+((s.smsText||'').trim()&&digits?' on':'')+'" data-idv="sms-send"'+(digits?'':' disabled')+'>'+(digits?'보내고 기록':'연락처 없음')+'</button></div><select id="spLogType" hidden><option selected>메일·메시지</option></select>';}
+    +'<div class="idv-formfoot"><span>'+(root.inquiryAssigned(q)?'기록되면 3일 뒤 「회신 확인」이 오늘 업무에 생깁니다':'배정 전 — 이력에만 남습니다')+'</span><button type="button" class="lnk" data-idv="sms-copy">문구만 복사</button><button type="button" class="idv-save'+((s.smsText||'').trim()&&digits?' on':'')+'" data-idv="sms-send"'+(digits?'':' disabled')+'>'+(digits?(mobile?'문자 앱으로 보내고 기록':'문구 복사하고 기록'):'연락처 없음')+'</button></div><select id="spLogType" hidden><option selected>메일·메시지</option></select>';}
   else form='<textarea id="spLogNote" rows="2" data-idv="text" placeholder="내부에서만 보는 메모 (예: 관리소장보다 회장 의견 영향이 큰 현장)">'+h(s.text)+'</textarea><div class="idv-formfoot"><span>고객에게 보이지 않습니다</span><button type="button" class="idv-save'+(s.text.trim()?' on':'')+'" data-idv="save">저장</button></div><select id="spLogType" hidden><option selected>기타</option></select>';
   const composer='<div class="idv-composer" data-tab="'+s.tab+'"><div class="idv-ctabs"><div role="tablist">'+tabs.map(t=>'<button type="button" role="tab" data-idv="tab" data-v="'+t[0]+'" aria-selected="'+(s.tab===t[0])+'">'+t[1]+'</button>').join('')+'</div><button type="button" class="idv-toggle" data-idv="toggle">'+(s.open?'접기':'확인 항목 '+doneN+'/6')+'</button></div>'
    +form+'<div class="idv-more"'+(s.open?'':' hidden')+'><div class="idv-checks">'+CHECKS.map((c,i)=>'<button type="button" class="'+(checks[i]?'on':'')+'" data-idv="check" data-v="'+i+'" aria-pressed="'+!!checks[i]+'">'+(checks[i]?'✓ ':'+ ')+h(c)+'</button>').join('')+'</div></div><div class="spmsg idv-err" id="iq-msg"></div></div>';
@@ -183,6 +184,7 @@
   if(!overlay.__idv){overlay.__idv=true;overlay.addEventListener('click',onClick);overlay.addEventListener('input',onInput);overlay.addEventListener('mousedown',e=>{if(e.target===overlay)W().close();});
    /* 입력 중 Esc 는 입력만 취소(창을 닫는 기존 Esc 보다 먼저 잡는다) */
    overlay.addEventListener('keydown',e=>{const t=e.target;if(!t.matches||!t.matches('[data-idv="editinput"]'))return;const s2=st(curKey),q2=root.inqCtlFind(curKey,false);if(e.key==='Enter'){e.preventDefault();e.stopImmediatePropagation();saveField(q2,s2,t.dataset.v,t.value);}if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();s2.editField='';s2.editDraft='';reskinFrom();}},true);
+   overlay.addEventListener('change',e=>{const t=e.target;if(!t.matches||!t.matches('[data-idv="editinput"][type="date"]')||t.disabled)return;const s2=st(curKey),q2=root.inqCtlFind(curKey,false);if(s2.editField===t.dataset.v&&t.value)saveField(q2,s2,t.dataset.v,t.value);});
    overlay.addEventListener('focusout',e=>{const t=e.target;if(!t.matches||!t.matches('[data-idv="editinput"]')||t.disabled)return;const s2=st(curKey),q2=root.inqCtlFind(curKey,false);if(s2.editField!==t.dataset.v)return;setTimeout(()=>{if(s2.editField===t.dataset.v&&!t.disabled)saveField(q2,s2,t.dataset.v,t.value);},0);});}
  }
  function repaintLocal(){reskinFrom();}
@@ -223,7 +225,7 @@
   if(k==='quoteMode'){s.quoteMode=v;return reskinFrom();}
   if(k==='near')return W().openRelated(v);
   if(k==='goto-deal')return root.openPromotedDeal();
-  if(k==='sms-copy'||k==='sms-open'){const text=(s.smsText||'').trim(),num=String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'').replace(/\D/g,'');if(!text){root.iqMsg('보낼 문구를 먼저 적어 주세요.');return;}const done=()=>toast(k==='sms-copy'?'문구를 복사했습니다':'문자 앱을 엽니다 — 보낸 뒤 [보내고 기록]을 눌러 주세요');try{const p=navigator.clipboard&&navigator.clipboard.writeText(text);if(p&&p.then)p.then(done).catch(done);else done();}catch(err){done();}if(k==='sms-open'&&num)setTimeout(()=>{location.href='sms:'+num+'?body='+encodeURIComponent(text);},120);return;}
+  if(k==='sms-copy'){const text=(s.smsText||'').trim();if(!text){root.iqMsg('보낼 문구를 먼저 적어 주세요.');return;}copyText(text,()=>toast('문구를 복사했습니다'));return;}
   if(k==='save')return save(q,s);
   if(k==='assign')return assign(q,s);
   if(k==='handoff')return handoff(q,s,b);
@@ -246,14 +248,18 @@
   }
   root.splitSaveLog();stampActor(q);s.text='';reskinFrom();toast('내부 메모를 저장했습니다');
  }
- /* 문자: 문자 앱으로 보낸 뒤 [보내고 기록] — 응대 이력에 «문자 · 회신대기», 배정된 건은 3일 뒤 '회신 확인'이 오늘 업무에(같은 저장 경로) */
+ function copyText(text,done){try{const p=navigator.clipboard&&navigator.clipboard.writeText(text);if(p&&p.then)p.then(done).catch(done);else done();}catch(err){done();}}
+ /* 문자(2026-10-03 대표: "문자를 내가 직접 쓰라는 거냐" → 버튼 하나로): 문구는 자동, 누르면 PC는 복사 · 휴대폰은 문자 앱 열기 + 응대 이력에 «문자 · 회신대기» 기록, 배정된 건은 3일 뒤 '회신 확인'이 오늘 업무에(같은 저장 경로).
+    CRM 직접 발송(알리고 큐)은 영업건 · 수신동의 연락처가 있어야 하고 실행기가 켜져 있어야 해서 문의 단계에는 아직 연결 전 */
  function smsSend(q,s){
   const text=(s.smsText||'').trim(),digits=String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'').replace(/\D/g,'');if(!text||!digits)return;
-  const line='[문자 · 회신대기] '+text;
-  if(!root.inquiryAssigned(q)){tempField('select','spLogType','문자');tempField('textarea','spLogNote',line);root.splitSaveLog();stampActor(q);s.smsText='';s.smsTpl='';reskinFrom();toast('문자를 이력에 남겼습니다');return;}
+  const line='[문자 · 회신대기] '+text,mobile=/Android|iPhone|iPad/i.test(navigator.userAgent);
+  copyText(text,()=>{});if(mobile)setTimeout(()=>{location.href='sms:'+digits+'?body='+encodeURIComponent(text);},120);
+  const sent=mobile?'문자 앱으로 보냅니다':'문구를 복사했습니다 — 휴대폰 문자에 붙여 넣어 보내세요';
+  if(!root.inquiryAssigned(q)){tempField('select','spLogType','문자');tempField('textarea','spLogNote',line);root.splitSaveLog();stampActor(q);s.smsText='';s.smsTpl='';reskinFrom();toast(sent+' · 이력에 기록');return;}
   const due=nextDay(q,'3일 후');tempField('input','iq-did','고객 응대 기록');tempField('textarea','iq-res',line);tempField('input','iq-next','회신 확인');tempField('input','iq-due',due);
   const ok=W().saveProcess();['iq-did','iq-res','iq-next','iq-due'].forEach(id=>{const el=document.getElementById(id);if(el&&el.hidden&&el.parentElement===document.getElementById('inq-inbox-dialog'))el.remove();});
-  if(ok===true){s.smsText='';s.smsTpl='';reskinFrom();toast('문자 · 회신대기로 기록 → 회신 확인 '+kday(new Date(due+'T00:00:00')));}
+  if(ok===true){s.smsText='';s.smsTpl='';reskinFrom();toast(sent+' · 회신 확인 '+kday(new Date(due+'T00:00:00')));}
  }
  /* 기록자는 지금 로그인한 사람으로(배정 전에는 담당자가 없다) */
  function stampActor(q){try{const a=(root.itemPatch(q,'inq')||{}).activities,last=a&&a[a.length-1],me=root.repN(root.ME?.name);if(last&&me&&me!=='미배정'&&(!last.actor||last.actor==='미배정'))last.actor=me;root.saveLocal?.();}catch(e){}}

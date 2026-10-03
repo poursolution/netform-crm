@@ -86,7 +86,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await seed({id:'admin',name:'송보람',role:'admin'});await page.waitForTimeout(600);
   assert.equal(await page.locator('#today-v2 .tt').getAttribute('data-role'),'mgr');
   assert.match(await page.locator('#today-v2 .tt-head h1').innerText(),/^매출이 막힌 곳 · 긴급 \d+건$/);
-  assert.deepEqual(await page.locator('#today-v2 .tt-roles button').allInnerTexts(),['영업사원','영업관리','팀장','상무','대표'],'관리자는 역할 비교 전환');
+  assert.equal(await page.locator('#today-v2 .tt-roles').count(),0,'역할 전환 버튼 없음 — 로그인한 사람으로 정해짐');
   const mgrModel=await page.evaluate(()=>{const X=TodayWorkQueue.data();return TodayTower.model(X,X.rows,'mgr').mine.map(i=>i.rk+':'+i.urg+':'+i.x.item.site).sort();});
   assert.ok(mgrModel.includes('assign:now:길음뉴타운9단지')&&mgrModel.includes('contract:now:고덕아이파크')&&mgrModel.includes('stallbig:now:성산시영아파트'),'영업관리: 미배정 · 계약정보 누락 · 고액 정체 '+JSON.stringify(mgrModel));
   assert.ok(!mgrModel.some(s=>/^deadline|^decide/.test(s)),'영업관리에는 마감 · 지원 요청(팀장 영역) 없음 '+JSON.stringify(mgrModel));
@@ -97,17 +97,17 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.ok(reps[0].startsWith('이필선:'),'담당자 줄: 놓침 많은 순 '+JSON.stringify(reps));
   assert.match(await page.locator('#today-v2 .tt-row',{hasText:'인천SK스카이뷰'}).innerText(),/이필선 · /,'영업관리 목록 줄에는 담당 포함');
   if(shot)await page.screenshot({path:shot+'-mgr.png',fullPage:true});
-  /* ③ 팀장 · ④ 상무 · ⑤ 대표 (관리자 미리보기 전환 = 로그인 이름 매핑과 같은 규칙) */
-  await page.locator('#today-v2 .tt-roles button',{hasText:'팀장'}).click();await page.waitForTimeout(400);
+  /* ③ 팀장 · ④ 상무 · ⑤ 대표 — 로그인 이름으로 자동 */
+  await seed({id:'lead',name:'한준엽',role:'admin'});await page.waitForTimeout(500);assert.equal(await page.locator('#today-v2 .tt').getAttribute('data-role'),'lead');
   const leadModel=await page.evaluate(()=>{const X=TodayWorkQueue.data();return TodayTower.model(X,X.rows,'lead').mine.map(i=>i.rk+':'+i.x.item.site).sort();});
   assert.ok(leadModel.includes('decide:분당시범우성')&&leadModel.includes('deadline:햇빛마을23단지')&&leadModel.includes('assign:길음뉴타운9단지'),'팀장: 지원 요청 · 마감 · 배정 '+JSON.stringify(leadModel));
   assert.deepEqual(await sites('#today-v2 .tt-card .who strong'),['분당시범우성','길음뉴타운9단지','햇빛마을23단지'],'팀장 카드: 결정(지원 요청) 최상단 → 배정 → 마감');
   assert.match(await page.locator('#today-v2 .tt-card').first().innerText(),/지원 요청 1일째[\s\S]*\[지원 요청\] 추가 균열 보수 승인 요청[\s\S]*결정 기록/);
-  await page.locator('#today-v2 .tt-roles button',{hasText:'상무'}).click();await page.waitForTimeout(400);
+  await seed({id:'vp',name:'황윤선',role:'admin'});await page.waitForTimeout(500);assert.equal(await page.locator('#today-v2 .tt').getAttribute('data-role'),'vp');
   assert.match(await page.locator('#today-v2 .tt-head h1').innerText(),/^결정 \+ 내 영업/);
   assert.deepEqual(await sites('#today-v2 .tt-card .who strong'),['분당시범우성'],'상무: 결정 요청 + 내 담당(없음)');
   assert.ok((await page.locator('#today-v2 .tt-cell .m').allInnerTexts()).some(t=>/^팀 놓침 \d+$/.test(t)),'상무 칸 숫자 = 팀 놓침');
-  await page.locator('#today-v2 .tt-roles button',{hasText:'대표'}).click();await page.waitForTimeout(400);
+  await seed({id:'ceo',name:'이승우',role:'admin'});await page.waitForTimeout(500);assert.equal(await page.locator('#today-v2 .tt').getAttribute('data-role'),'ceo');
   assert.match(await page.locator('#today-v2 .tt-head h1').innerText(),/^최고 결정/);assert.deepEqual(await sites('#today-v2 .tt-card .who strong'),['분당시범우성']);
   if(shot)await page.screenshot({path:shot+'-ceo.png',fullPage:true});
   /* 이름 매핑: 황윤선(상무) · 한준엽(팀장) · 이승우(대표)로 로그인하면 전환 없이 그 역할 — 팀 자료가 오는 계정(관리자 권한)만 */

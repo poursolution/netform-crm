@@ -74,6 +74,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{window.CRMRelease=Object.assign(window.CRMRelease||{},{has:n=>true,noteMissing:()=>{}});InquiryWorkbench.open(A);});await page.waitForTimeout(400);
   const d=page.locator('#inq-inbox-dialog.idv');assert.equal(await d.count(),1);
   const edits=await d.locator('.idv-edit').count();assert.ok(edits>=4,'빈 칸은 눌러서 입력 '+edits);
+  assert.deepEqual(await d.locator('.idv-info dt').allInnerTexts(),['문의자','연락처','업체','현장 주소','공종','상담 채널','유입 경로','응대','대표회의','회신 기한'],'핵심 확인 사항 두 칸');
+  await d.locator('.idv-edit[data-v="meeting_date"]').click();await page.waitForTimeout(150);const md=day=>new Date(Date.now()+day*864e5).toLocaleDateString('en-CA');await d.locator('.idv-editin[data-v="meeting_date"]').fill(md(2));await page.waitForTimeout(400);
+  assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_field_update_v1').map(x=>x[1].p.field)),['meeting_date'],'날짜는 고르면 바로 저장');assert.match(await d.locator('.idv-info').innerText(),new RegExp('대표회의\\s*'+md(2)));
+  assert.match(await d.locator('.idv-nowbox').innerText(),/대표회의 \d{4}\.\d+\.\d+ D-2 · 정확한 견적이 늦으면 개략 금액 먼저/,'입력하자마자 D-3 경고');await page.evaluate(()=>{__rpc.length=0;});
   await d.locator('.idv-edit[data-v="customer_type"]').click();await page.waitForTimeout(150);
   assert.equal(await d.locator('.idv-editin[data-v="customer_type"]').count(),1);await page.keyboard.type('관리사무소');await page.keyboard.press('Escape');await page.waitForTimeout(150);
   assert.equal(await d.locator('.idv-editin').count(),0,'Esc = 취소');assert.equal(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_field_update_v1').length),0,'취소하면 서버에 안 보냄');
