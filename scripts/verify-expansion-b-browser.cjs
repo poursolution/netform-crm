@@ -43,15 +43,23 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual((await v.locator('.psb-axis .leg button').allInnerTexts()).map(t=>t.replace(/\s+/g,' ')),['사후 연락 · 관계 유지 4','니즈 확인 1','보류 · 전환 완료 1']);
   assert.match(await v.locator('.psb-kpis').innerText(),/기준 넘김 \(빨강\)\s*2곳[\s\S]*니즈 확인\s*1곳[\s\S]*평균 준공 후\s*\d+일/);
   const reasons=await v.locator('.psb-reason span').allInnerTexts();
-  assert.deepEqual(reasons,['다음 접촉일 지남','준공 D+30 사후 연락 안 함','2개월 넘게 연락 없음','니즈 확인 → 전환 대기','공종 미분류'],'사유 순서 = 표 순서 '+JSON.stringify(reasons));
-  assert.match(await v.locator('.psb-two .psb-box').nth(1).innerText(),/그래서 뭘 해야 하나[\s\S]*다음 접촉일 지남 1곳[\s\S]*준공 D\+30 사후 연락 안 함 1곳[\s\S]*2개월 넘게 연락 없음 1곳/);
+  assert.deepEqual(reasons,['다음 접촉일 지남','준공 후 사후 연락 안 함','관계 연락 주기 넘김','니즈 확인 → 전환 대기','공종 미분류'],'사유 순서 = 표 순서 '+JSON.stringify(reasons));
+  assert.match(await v.locator('.psb-two .psb-box').nth(1).innerText(),/그래서 뭘 해야 하나[\s\S]*다음 접촉일 지남 1곳[\s\S]*준공 후 사후 연락 안 함 1곳[\s\S]*관계 연락 주기 넘김 1곳/);
   /* 현장: 빨강 사유 순(접촉일 지남 e1 → 2개월 연락 없음 e7) → 사유 수 */
   const order=await v.locator('.psb-row').evaluateAll(a=>a.map(n=>n.dataset.key));
   assert.deepEqual(order.slice(0,2),['e1','e7'],'빨강 먼저 '+JSON.stringify(order));
-  assert.match(await v.locator('.psb-row[data-key="e1"]').innerText(),/이천신둔코아루[\s\S]*POUR솔루션 · 한준엽 · 500만[\s\S]*사후 연락[\s\S]*접촉 기록 없음[\s\S]*다음 접촉일 지남[\s\S]*D\+60일[\s\S]*연락/);
-  assert.match(await v.locator('.psb-row[data-key="e7"]').innerText(),/2개월 넘게 연락 없음[\s\S]*D\+120일[\s\S]*관계 연락/);
+  assert.match(await v.locator('.psb-row[data-key="e1"]').innerText(),/이천신둔코아루[\s\S]*POUR솔루션 · 한준엽 · 500만[\s\S]*사후 연락[\s\S]*접촉 기록 없음[\s\S]*다음 접촉일 2일 지남[\s\S]*D\+60일[\s\S]*연락/);
+  assert.match(await v.locator('.psb-row[data-key="e7"]').innerText(),/연락 없음 75일 · 기준 60일[\s\S]*D\+120일[\s\S]*관계 연락/);
   assert.match(await v.locator('.psb-row[data-key="e4"]').innerText(),/니즈 확인[\s\S]*니즈 지하주차장 에폭시 견적 요청[\s\S]*니즈 확인 → 전환 대기[\s\S]*전환/);
   assert.match(await v.locator('.psb-row[data-key="e5"]').innerText(),/보류 현장[\s\S]*보류[\s\S]*정상/);
+  /* 줄 배치: 일수는 한 줄(줄바꿈 없음) · 이름과 상태 칸 사이 빈 공간 없음(격자) */
+  const geo=await v.locator('.psb-row[data-key="e1"]').evaluate(n=>{const d=n.querySelector('.d').getBoundingClientRect(),l=n.querySelector('.l').getBoundingClientRect(),s=n.querySelector('.s').getBoundingClientRect();return {dH:d.height,gap:s.left-l.right,cols:getComputedStyle(n).display};});
+  assert.equal(geo.cols,'grid');assert.ok(geo.dH<24,'D+60일 한 줄 '+geo.dH);assert.ok(geo.gap<=20,'이름 칸과 상태 칸 사이 간격 '+geo.gap);
+  /* 사후 연락 기준을 화면에서 바꾼다(이 PC 저장) — 90일로 올리면 D+60 은 빨강에서 빠진다 */
+  assert.equal(await v.locator('[data-xb-rule="afterCompletionDays"]').inputValue(),'30');
+  await v.locator('[data-xb-rule="afterCompletionDays"]').selectOption('90');await page.waitForTimeout(200);
+  assert.equal(await page.evaluate(()=>OPS_RULES.afterCompletionDays),90);assert.doesNotMatch(await page.locator('#expansion-b .psb-row[data-key="e1"]').innerText(),/사후 연락 없음 · 기준/);
+  await page.locator('#expansion-b [data-xb-rule="afterCompletionDays"]').selectOption('30');await page.waitForTimeout(200);
   if(shot)await page.screenshot({path:shot+'-list.png',fullPage:true});
   /* 필터: 막대 칸 · 사유 · 해제 · 보드 */
   await v.locator('.psb-axis .leg button').nth(1).click();await page.waitForTimeout(150);assert.equal(await page.locator('#expansion-b .psb-row').count(),1);
@@ -73,6 +81,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#expansionV2 [data-xd="editsel"]').selectOption('이필선');await page.waitForTimeout(400);
   assert.deepEqual(await page.evaluate(()=>__info),[{source_opportunity_id:'w2',field:'owner_name',value:'이필선'}],'현재 담당 저장 = 서버 함수');
   assert.match(await page.locator('#expansionV2 .xdv-top').innerText(),/담당 이필선/,'저장 뒤 머리줄 갱신');
+  /* 공종 입력 = 새 공종 창이 상세 위에(예전 창 아님) */
+  await page.evaluate(()=>{window.Phase11={current:null,openWork:async(id,item)=>{Phase11.current=item;CUR_DETAIL={kind:'deal',key:dealKey(item),item};openWorkEdit();},save:async()=>{}};});
+  await page.locator('#expansionV2 .xdv-facts [data-xd="editwork"]').click();await page.waitForTimeout(400);
+  assert.equal(await page.locator('#workDialog.on .wd-box').count(),1,'새 공종 창');assert.equal(await page.evaluate(()=>document.getElementById('newDealModal').classList.contains('on')),false,'예전 창은 뜨지 않음');
+  assert.ok(await page.evaluate(()=>Number(getComputedStyle(document.getElementById('workDialog')).zIndex)>Number(getComputedStyle(document.getElementById('expansionV2')).zIndex)),'상세 위에 뜸');
+  assert.match(await page.locator('#workDialog .wd-head').innerText(),/공종 수정[\s\S]*마곡청구아파트/);
+  await page.locator('#workDialog [data-wd="close"]').first().click();await page.waitForTimeout(200);assert.equal(await page.locator('#expansionV2.on').count(),1,'닫으면 상세로');
   await page.locator('#expansionV2 .xdv-facts [data-xd="edit"][data-value="completion_date"]').click();await page.waitForTimeout(150);
   await page.keyboard.press('Escape');await page.waitForTimeout(150);assert.equal(await page.locator('#expansionV2 [data-xd="editinput"]').count(),0,'Esc = 취소');assert.equal(await page.locator('#expansionV2.on').count(),1,'창은 그대로');
   await page.locator('#expansionV2 .xdv-close').click();await page.waitForTimeout(150);

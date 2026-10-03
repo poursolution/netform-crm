@@ -78,7 +78,7 @@
   document.body.append(m);return m;
  }
  const isOpen=()=>!!document.getElementById('workDialog')?.classList.contains('on');
- function hide(){const m=document.getElementById('workDialog');if(m){m.classList.remove('on');m.querySelector('.wd-box').innerHTML='';}ctx=null;try{baseClose&&baseClose();}catch(e){}}
+ function hide(){const m=document.getElementById('workDialog');if(m){m.classList.remove('on');m.querySelector('.wd-box').innerHTML='';}const done=ctx&&ctx.done;ctx=null;try{baseClose&&baseClose();}catch(e){}if(done)try{done();}catch(e){}}
  function frame(d,body,foot){
   const all=root.workAnalysisData().flow,left=unclassified().length,done=all.length-left,fresh=ctx&&ctx.chain;
   const m=node(),box=m.querySelector('.wd-box');
@@ -103,9 +103,10 @@
   };
   box.querySelector('[data-work],[data-guess]')?.focus();return true;
  }
- function classify(key){
+ function classify(key,opt){
   const d=(root.B.deals||[]).find(x=>root.dealKey(x)===key);if(!d)return;
-  const fresh=root.workScopeOf(d)==='unclassified';chain=fresh?key:null;ctx={key,id:String(d.id),chain:fresh};
+  /* single: 다른 화면(확장관리 상세 등)에서 한 건만 — 다음 건으로 잇지 않는다 */
+  const single=!!(opt&&opt.single),fresh=!single&&root.workScopeOf(d)==='unclassified';chain=fresh?key:null;ctx={key,id:String(d.id),chain:fresh,any:single,done:opt&&opt.done};
   root.CUR_DETAIL={kind:'deal',key,item:d};
   const P=root.Phase11;
   if(P&&P.current!==d){/* 서버의 최신 공종·버전을 먼저 읽는다 → 읽히면 openWorkEdit 가 다시 불려 창을 그린다 */
@@ -133,8 +134,8 @@
  function boot(){
   const base=root.paintWorkAnalysis;if(typeof base!=='function')return;
    /* 이 화면에서 연 분류는 예전 '공종 분류·수정' 창 대신 새 창으로 */
-   const ow=root.openWorkEdit;if(typeof ow==='function')root.openWorkEdit=function(){const it=root.CUR_DETAIL&&root.CUR_DETAIL.item;if(ctx&&enabled()&&root.G.page==='work'&&it&&String(it.id)===ctx.id&&show(it))return;return ow.apply(this,arguments);};
-   baseClose=root.closeNewDeal;if(typeof baseClose==='function')root.closeNewDeal=function(){const r=baseClose.apply(this,arguments);const m=document.getElementById('workDialog');if(m&&m.classList.contains('on')){m.classList.remove('on');m.querySelector('.wd-box').innerHTML='';ctx=null;}return r;};
+   const ow=root.openWorkEdit;if(typeof ow==='function')root.openWorkEdit=function(){const it=root.CUR_DETAIL&&root.CUR_DETAIL.item;if(ctx&&enabled()&&(root.G.page==='work'||ctx.any)&&it&&String(it.id)===ctx.id&&show(it))return;return ow.apply(this,arguments);};
+   baseClose=root.closeNewDeal;if(typeof baseClose==='function')root.closeNewDeal=function(){const r=baseClose.apply(this,arguments);const m=document.getElementById('workDialog');if(m&&m.classList.contains('on')){m.classList.remove('on');m.querySelector('.wd-box').innerHTML='';const done=ctx&&ctx.done;ctx=null;if(done)try{done();}catch(e){}}return r;};
   root.paintWorkAnalysis=function(){
    const host=document.getElementById('work-analysis');
    if(!enabled()||!host)return base.apply(this,arguments);
