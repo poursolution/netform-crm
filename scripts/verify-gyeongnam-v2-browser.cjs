@@ -18,7 +18,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    const branch=(SALES_PEOPLE_MASTER||[]).filter(p=>p.team==='gyeongnam'&&p.role!=='branch_pool'&&p.active!==false).map(p=>p.name);
    const inq=(n,site,days,owner,extra)=>Object.assign({id:'0000000'+n+'-0000-4000-8000-00000000000'+n,site,status:'배정완료',at:at(days+1),created_at:at(days+1),brand:n%2?'POUR솔루션':'석민이앤씨',phone:'010-1234-56'+(10+n),contact_name:'고객'+n,assignee:owner,assigned_to:owner,assigned_at:at(days),assignment_group:'gyeongnam',raw:{'문의내용':'견적 문의 '+n,'상담채널':'전화'}},extra||{});
    B={deals:[],inquiries:[inq(1,'[부산] 이편한세상광안비치아파트',18,'경남지사'),inq(2,'[경남 거제] 한국전력공사',17,'경남지사'),inq(3,'[경남 창원] 응대 없는 현장',6,branch[0]),inq(4,'[경남 김해] 진행 중 현장',9,branch[0],{status:'상담중',firstActivity:at(5),activities:[{type:'전화',note:'소장 통화 — 방문 일정 협의',at:at(5),actor:branch[0]}]}),inq(5,'[서울] 본사 문의',3,'이필선',{assignment_group:''})],activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
+   G.gyeongnamBOff=true;/* B안(2026-10-03)은 verify-gyeongnam-b 에서 */LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op,p)=>{window.__writes.push([op,p]);return 'req-'+window.__writes.length};
    goPage('gyeongnam');return {branch};
   });
