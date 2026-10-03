@@ -24,6 +24,8 @@
  const between=(a,b)=>Math.round((Date.parse(b+'T00:00:00')-Date.parse(a+'T00:00:00'))/864e5);
  const amt=n=>Number(n)>0?root.fmtAmt(Number(n)):'0원';
  const md=k=>Number(k.slice(5,7))+'/'+Number(k.slice(8,10));
+ /* 메이드율: 운영 기준(ops-rules.js)의 한 함수 — w 자사 수주, l 파이프라인 실주, t 승인 타사 이관 수주 */
+ const madeOf=(w,l,t)=>root.CRMRules?root.CRMRules.madeRate(w,t||0,l):(w+(t||0)+l>0?Math.round((w+(t||0))/(w+(t||0)+l)*1000)/10:null);
  const pct=(a,b)=>b>0?Math.round(a/b*1000)/10:null,pctText=v=>v==null?'—':v.toFixed(1)+'%';
  const toast=(m,k)=>{if(typeof root.toast==='function')root.toast(m,k);};
  const BRAND={'석민이앤씨':'#e8590c','POUR솔루션':'#1f9d55','POUR공법':'#7048e8','아파트스퀘어':'#3b6ce4'};
@@ -190,7 +192,7 @@
  /* ── 잔디 글 ── */
  function jandi(x,fixes,regd){
   const line='━━━━━━━━━━━━━━',w=x.w,up=(a,b)=>a===b?'':(a>b?' ▲'+(a-b):' ▼'+(b-a)),con=x.L.ready;
-  const fitR=pct(x.fit,x.newQ.length),made=con?pct(x.con.count,x.con.count+x.loss.length):null,conv=con?pct(x.con.count,x.newQ.length):null;
+  const fitR=pct(x.fit,x.newQ.length),made=con?madeOf(x.con.count,x.loss.length):null,conv=con?pct(x.con.count,x.newQ.length):null;
   const out=['[주간 영업 브리핑]',w.a.replace(/-/g,'.')+' ~ '+w.fri.slice(5).replace('-','.'),line,'1. 이번 주 성과',
    '견적문의 '+x.newQ.length+'건 → 적합 '+x.fit+' → 견적 발송 '+x.quotes.length+(con?' → 계약 '+x.con.count+'건 · '+amt(x.con.net):''),
    '· 견적문의 '+x.newQ.length+'건'+up(x.newQ.length,x.newQp.length),'· 견적 발송 '+x.quotes.length+'건'+up(x.quotes.length,x.quotesP.length)];
@@ -207,7 +209,7 @@
   out.push(line,'다음 주 반드시 끝낼 것');
   if(regd.length)regd.forEach(p=>out.push('· '+p.t+' — '+(p.owner||'담당 미정')+' · '+(p.due||'기한 미정')));else out.push('· (회의에서 등록하면 담당 · 기한과 함께 들어갑니다)');
   if(x.ce.length)out.push('계약 예상 '+x.ce.length+'건 · '+amt(x.ceAmt));
-  out.push(line,'전체: 진행 '+x.OPEN.length+(con?' · 수주 '+x.yCon.count+' · 승률 '+pctText(pct(x.yCon.count,x.yCon.count+x.yLoss)):'')+' · 180일+ 방치 '+x.stale180);
+  out.push(line,'전체: 진행 '+x.OPEN.length+(con?' · 수주 '+x.yCon.count+' · 승률 '+pctText(madeOf(x.yCon.count,x.yLoss)):'')+' · 180일+ 방치 '+x.stale180);
   return out.join('\n');
  }
  /* ── 그리기 ── */
@@ -219,7 +221,7 @@
   /* 1. 이번 주 성과 */
   const fn=[['신규 견적문의',x.newQ.length+'건',dl(x.newQ.length,x.newQp.length),dc(x.newQ.length,x.newQp.length),''],['적합 문의',x.fit+'건','배드핏 '+x.bad.length+' 제외','',''],['견적 발송',x.quotes.length+'건',dl(x.quotes.length,x.quotesP.length),dc(x.quotes.length,x.quotesP.length),''],
    ['신규 계약',con?x.con.count+'건 · '+amt(x.con.net):'원장 확인 중',con?(x.con.count>=x.conP.count?'▲':'▼')+Math.abs(x.con.count-x.conP.count)+'건 · '+(x.con.net>=x.conP.net?'+':'-')+amt(Math.abs(x.con.net-x.conP.net)):'계약실적 원장을 읽는 중입니다','up',' last']];
-  const fitR=pct(x.fit,x.newQ.length),fitRp=pct(x.fitP,x.newQp.length),made=con?pct(x.con.count,x.con.count+x.loss.length):null,madeP=con?pct(x.conP.count,x.conP.count+x.lossP.length):null,conv=con?pct(x.con.count,x.newQ.length):null,convP=con?pct(x.conP.count,x.newQp.length):null,coh=x.linked?pct(x.cwon,x.cohort.length):null;
+  const fitR=pct(x.fit,x.newQ.length),fitRp=pct(x.fitP,x.newQp.length),made=con?madeOf(x.con.count,x.loss.length):null,madeP=con?madeOf(x.conP.count,x.lossP.length):null,conv=con?pct(x.con.count,x.newQ.length):null,convP=con?pct(x.conP.count,x.newQp.length):null,coh=x.linked?pct(x.cwon,x.cohort.length):null;
   const pp=(a,b)=>a==null||b==null?'':(a>=b?'▲':'▼')+Math.abs(Math.round((a-b)*10)/10).toFixed(1)+'%p';
   const rates=[['문의 적합률',pctText(fitR),pp(fitR,fitRp),'적합 '+x.fit+' ÷ 문의 '+x.newQ.length+' · 문의 품질'],
    ['영업 메이드율',pctText(made),pp(made,madeP),con?'수주 '+x.con.count+' ÷ (수주 '+x.con.count+' + 파이프라인 실주 '+x.loss.length+') · 배드핏 제외':'계약실적 원장을 읽은 뒤 계산합니다'],
@@ -257,7 +259,7 @@
      return '<div class="bb-next'+(r?' done':'')+'"><span class="no">'+(i+1)+'</span><div class="tx"><b>'+h(c.t)+'</b><span>'+h(c.why)+'</span></div><div class="ctl"><div class="own">'+(c.owners.length?c.owners.map(o=>'<button type="button" data-bb="own" data-k="'+c.kind+'" data-v="'+attr(o)+'" aria-pressed="'+(own===o)+'"'+(r?' disabled':'')+'>'+h(o)+'</button>').join(''):'<small>담당 미정</small>')+'</div><div class="due">'+DUES.map(o=>'<button type="button" data-bb="due" data-k="'+c.kind+'" data-v="'+o+'" aria-pressed="'+(due===o)+'"'+(r?' disabled':'')+'>'+o+'</button>').join('')+'</div><button type="button" class="reg" data-bb="reg" data-k="'+c.kind+'"'+(admin?'':' disabled title="관리자만 등록할 수 있습니다"')+'>'+(r?'등록됨 ✓':'등록')+'</button></div></div>';}).join('')
     :'<p class="bb-empty">규칙에 걸린 항목이 없습니다 — 입찰 임박 · 견적 지연 · 미응대 · 장기 미접촉 · 다음 행동 미등록 · 계약 예상이 생기면 여기에 뜹니다.</p>')+'</section>';
   /* 7. 전체 현황(참고) */
-  const s7='<section class="bb-ref"><div><b>전체 현황 (참고)</b><span>진행 '+x.OPEN.length+'건'+(con?' · 올해 수주 '+x.yCon.count+'건 · 승률 '+pctText(pct(x.yCon.count,x.yCon.count+x.yLoss)):'')+' · 180일+ 방치 '+x.stale180+'건</span></div><div class="row">'+x.people.map(p=>'<span><b>'+h(p.n)+'</b> 진행 '+p.o1+' · 방치 '+p.stale180+(con?' · 수주 '+contractsIn(x.L,w.a.slice(0,4)+'-01-01',w.b,p.n).count:'')+'</span>').join('')+'</div></section>';
+  const s7='<section class="bb-ref"><div><b>전체 현황 (참고)</b><span>진행 '+x.OPEN.length+'건'+(con?' · 올해 수주 '+x.yCon.count+'건 · 승률 '+pctText(madeOf(x.yCon.count,x.yLoss)):'')+' · 180일+ 방치 '+x.stale180+'건</span></div><div class="row">'+x.people.map(p=>'<span><b>'+h(p.n)+'</b> 진행 '+p.o1+' · 방치 '+p.stale180+(con?' · 수주 '+contractsIn(x.L,w.a.slice(0,4)+'-01-01',w.b,p.n).count:'')+'</span>').join('')+'</div></section>';
   /* 오른쪽: 잔디 미리보기 */
   const J=jandi(x,fixes,regd),store=canStore(),jd=(SN.map[w.a]&&SN.map[w.a].payload&&SN.map[w.a].payload.jandi)||{};
   /* 상태: 회의 후 다시 보냄 > 자동 발송됨 > 아직 */
@@ -323,6 +325,6 @@
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
  /* 리포트(월간)도 같은 정의로 센다 — 배드핏 · 실주 · 견적 발송 · 계약실적 원장 · 단계 진입 */
- const lib={inquiryContract,jandiSend,jandiOn,stamp,K,key,addDays,between,amt,pct,pctText,tally,tallyText,BRAND,STALE,badfit,badfitReason,isLoss,lossReason,closedKey,quoteIn,entered,groupOf,ledger,contractsIn,lastActKey};
+ const lib={made:madeOf,inquiryContract,jandiSend,jandiOn,stamp,K,key,addDays,between,amt,pct,pctText,tally,tallyText,BRAND,STALE,badfit,badfitReason,isLoss,lossReason,closedKey,quoteIn,entered,groupOf,ledger,contractsIn,lastActKey};
  root.BriefB={lib,autoSend,enabled,win,data,badfit,badfitReason,evalPromise,jandi:x=>jandi(x,promisesOf(x.w.p).map(p=>evalPromise(x,p)),promisesOf(x.w.a))};
 })(window);

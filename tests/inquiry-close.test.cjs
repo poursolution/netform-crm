@@ -31,7 +31,7 @@ test('화면: 더보기에 배드핏(부적합 종결) · 사유 필수 · 서�
  const fn=html.slice(html.indexOf('function inqCtlConfirmClose('),html.indexOf('function inqCtlOpenTrash('));
  assert.ok(fn.indexOf('r.data.ok!==true')<fn.indexOf("q.status=p.status='종결'"),'서버 확인 전에 화면을 바꾸면 안 됨');
  assert.match(fn,/배드핏 사유를 골라 주세요/);assert.match(fn,/기타 사유는 메모에 적어 주세요/);assert.match(fn,/reason='배드핏\(부적합\) · '\+cat/);assert.match(fn,/kind='기타'/);
- assert.match(html,/<option value="공사 범위 밖">[\s\S]*<option value="소규모 \(최소 금액 미만\)">[\s\S]*<option value="시공 불가 지역">[\s\S]*<option value="기타">/);
+ assert.match(html,/<select id="inq-close-kind">[^\n]*inqBadFitReasons\(\)\.map/);assert.match(html,/function inqBadFitReasons\(\)\{var l=window\.CRMRules&&CRMRules\.reasons\('bad_fit'\)/,'배드핏 사유 = 운영 기준 목록');assert.deepEqual(require('../ops-rules.js').reasons('bad_fit'),['수행 불가 공종','규모 부적합','시공 불가 지역','기타']);
  assert.match(html,/mode==='close'\)inqCtlOpenClose\(k\)/);
  assert.match(read('pc-manager-transport.js'),/'crm_inquiry_close_v1'/);
 });

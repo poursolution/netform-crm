@@ -38,11 +38,11 @@
   const names=target?[target]:(R.PERFORMANCE_TARGET_NAMES||[]),inR=(k,a,b)=>!!k&&k>=a&&k<b,dealAmt=d=>Number(d.amount||d.amt||0);
   const stat=(a,b)=>{const q=AQ.filter(x=>inR(K(R.inquiryCreatedAt(x)),a,b)),bad=q.filter(B.badfit),loss=AD.filter(d=>B.isLoss(d)&&inR(B.closedKey(d),a,b));
    return {q,bad,fit:q.length-bad.length,quotes:AD.filter(d=>B.quoteIn(d,a,b)),conv:AD.filter(d=>inR(K(d.created),a,b)),con:B.contractsIn(L,a,b),loss,lossAmt:loss.reduce((s,d)=>s+dealAmt(d),0)};};
-  const cur=stat(P.a,P.b),prev=stat(P.p,P.a),made=s=>L.ready?B.pct(s.con.count,s.con.count+s.loss.length):null;
+  const cur=stat(P.a,P.b),prev=stat(P.p,P.a),made=s=>L.ready?B.made(s.con.count,s.loss.length):null;
   /* 확정 전환율(코호트): 보고 달의 2달 전 달 문의 */
   const cy=P.k(P.y,P.m-2).slice(0,7),cohort=AQ.filter(q=>K(R.inquiryCreatedAt(q)).slice(0,7)===cy),cwon=cohort.filter(q=>B.inquiryContract(q,L,AD)).length,linked=cohort.length;
   /* 6개월 */
-  const trend=[];for(let i=5;i>=0;i--){const a=P.k(P.y,P.m-i),b=P.k(P.y,P.m-i+1),c=B.contractsIn(L,a,b),l=AD.filter(d=>B.isLoss(d)&&inR(B.closedKey(d),a,b)).length;trend.push({m:Number(a.slice(5,7)),net:c.net,count:c.count,made:L.ready?B.pct(c.count,c.count+l):null,cur:i===0});}
+  const trend=[];for(let i=5;i>=0;i--){const a=P.k(P.y,P.m-i),b=P.k(P.y,P.m-i+1),c=B.contractsIn(L,a,b),l=AD.filter(d=>B.isLoss(d)&&inR(B.closedKey(d),a,b)).length;trend.push({m:Number(a.slice(5,7)),net:c.net,count:c.count,made:L.ready?B.made(c.count,l):null,cur:i===0});}
   /* 다음 달 전망: 계약 임박 */
   const fld=(d,c,k)=>{const p=R.itemPatch(d,'deal')||{},x=(d.stage_contexts||p.stage_contexts||{})[c];return x&&x.fields?x.fields[k]:'';};
   const near=OPEN.filter(d=>{const c=R.dealStage(d);return ['compete','imminent','bidding'].includes(c)||(c==='contract'&&fld(d,'contract','contract_status')!=='체결 완료');}).map(d=>{
@@ -52,7 +52,7 @@
   }).sort((a,b)=>b.amount-a.amount);
   const nearAmt=near.reduce((s,n)=>s+n.amount,0),hot=near.filter(n=>n.hot),hotAmt=hot.reduce((s,n)=>s+n.amount,0),top=near.slice(0,4),topAmt=top.reduce((s,n)=>s+n.amount,0);
   /* 담당자별 */
-  const people=names.map(n=>{const q=cur.q.filter(x=>R.inquirySalesOwner(x)===n).length,e=cur.quotes.filter(d=>R.repN(d.assignee)===n).length,c=B.contractsIn(L,P.a,P.b,n),l=cur.loss.filter(d=>R.repN(d.assignee)===n);return {n,q,e,w:c.count,net:c.net,l:l.length,loss:l,made:L.ready?B.pct(c.count,c.count+l.length):null};});
+  const people=names.map(n=>{const q=cur.q.filter(x=>R.inquirySalesOwner(x)===n).length,e=cur.quotes.filter(d=>R.repN(d.assignee)===n).length,c=B.contractsIn(L,P.a,P.b,n),l=cur.loss.filter(d=>R.repN(d.assignee)===n);return {n,q,e,w:c.count,net:c.net,l:l.length,loss:l,made:L.ready?B.made(c.count,l.length):null};});
   /* 결정 요청(규칙 · 근거 숫자는 위 자료에서) */
   const chgOf=d=>{try{return R.DealKeyman?R.DealKeyman.changeOf(d):null;}catch(e){return null;}};
   const lossChg=cur.loss.filter(d=>/소장/.test(B.lossReason(d))||!!chgOf(d)),openChg=OPEN.filter(d=>{const c=chgOf(d);return !!c&&!c.after;}),lossPrice=cur.loss.filter(d=>/가격/.test(B.lossReason(d)));

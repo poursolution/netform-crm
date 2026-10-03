@@ -103,7 +103,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    document.getElementById('inq-close-kind').value='시공 불가 지역';inqCtlConfirmClose();await new Promise(z=>setTimeout(z,150));
    return {title,opts,err,rpc:__rpc,status:q.status,bad:BriefB.badfit(q),reason:BriefB.badfitReason(q)};
   });
-  assert.equal(r.title,true);assert.deepEqual(r.opts,['사유를 골라 주세요','공사 범위 밖','소규모 (최소 금액 미만)','시공 불가 지역','기타']);assert.match(r.err,/배드핏 사유를 골라 주세요/,'사유 필수');
+  assert.equal(r.title,true);assert.deepEqual(r.opts,['사유를 골라 주세요','수행 불가 공종','규모 부적합','시공 불가 지역','기타']/* 운영 기준(ops-rules.js)의 Bad Fit 사유 */);assert.match(r.err,/배드핏 사유를 골라 주세요/,'사유 필수');
   assert.deepEqual(r.rpc,[['crm_inquiry_close_v1',{inquiry_id:'00000001-0000-4000-8000-000000000001',reason:'배드핏(부적합) · 시공 불가 지역',kind:'기타'}]]);assert.equal(r.status,'종결');assert.equal(r.bad,true);assert.equal(r.reason,'시공 불가 지역');
   /* 끄기 */
   await page.evaluate(()=>{G.briefBOff=true;goPage('brief');});await page.waitForTimeout(400);
