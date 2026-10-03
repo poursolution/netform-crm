@@ -68,7 +68,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#kvSettings [data-close]').click();
   if(shot)await page.screenshot({path:shot+'-kpi.png'});
   /* ── 주간 브리핑: 이번 주 저장 · 지난 저장본 보기 ── */
-  await page.evaluate(()=>goPage('brief'));await page.waitForTimeout(600);
+  await page.evaluate(()=>(G.briefBOff=true,goPage('brief')));await page.waitForTimeout(600);
   const bw=page.locator('#brief-v2');assert.equal(await bw.locator('.bv-week select').isDisabled(),false,'저장소가 있으면 주차 선택이 열린다');
   assert.match((await bw.locator('.bv-week option').allInnerTexts()).join('|'),/^이번 주 · .+\|\d+월 \d+일 주 · 저장본$/);
   await bw.locator('[data-bv="saveweek"]').click();await page.waitForTimeout(500);

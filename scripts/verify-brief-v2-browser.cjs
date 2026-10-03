@@ -24,7 +24,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     inquiries:[inq(1,'',1),inq(2,'이필선',9),inq(3,'이필선',10)],activities:[],inquiryTrash:[],expansion_pool:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.briefView='week';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op)=>{__writes.push(op);return 'req';};
-   goPage('brief');
+   (G.briefBOff=true,goPage('brief'));
   });
   await page.waitForTimeout(300);
   const v=page.locator('#brief-v2');assert.equal(await v.count(),1,'새 화면');
@@ -71,7 +71,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 판정 문장 → 해당 화면 */
   await v.locator('.bv-line').first().click();await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>G.page),'mgmt','근거 없음 → 관리팀 KPI');
   /* 월간 일정 탭은 기존 그대로 */
-  await page.evaluate(()=>{goPage('brief');});await page.waitForTimeout(250);await page.locator('#brief-v2 .bv-view button',{hasText:'월간 일정'}).click();await page.waitForTimeout(250);
+  await page.evaluate(()=>{(G.briefBOff=true,goPage('brief'));});await page.waitForTimeout(250);await page.locator('#brief-v2 .bv-view button',{hasText:'월간 일정'}).click();await page.waitForTimeout(250);
   assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('#pg-brief>.briefbar')).display!=='none'),true,'월간 보기에서는 전환 줄이 남아 돌아올 수 있다');
   assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('b-week')).display+'|'+getComputedStyle(document.getElementById('b-month')).display),'none|block');
   await page.evaluate(()=>setBriefView('week'));await page.waitForTimeout(250);assert.equal(await page.locator('#brief-v2').isVisible(),true);
