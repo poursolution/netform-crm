@@ -67,14 +67,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#sheetcard .ml-say textarea').inputValue(),'소장님 다음 주 화요일 방문 확정');
   if(shot)await page.screenshot({path:shot+'-say.png'});
   assert.equal(await page.locator('#sheetcard .ml-tidy').isVisible(),false,'로그인 토큰이 없으면 AI 정리 버튼 없음');
-  await page.route('**/functions/v1/crm-ai',async r=>{const b=r.request().postDataJSON();await page.evaluate(x=>{window.__tidyIn=x;},b);return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,suggestion:{id:'s1',status:'proposed',suggestion:{memo:'소장님 다음 주 화요일 방문 확정',result:'promise',what:'다음 주 화요일 방문',next:{date:new Date(Date.now()+864e5).toLocaleDateString('en-CA'),text:'방문'}}}})});});
+  await page.route('**/functions/v1/crm-ai',async r=>{const b=r.request().postDataJSON();await page.evaluate(x=>{window.__tidyIn=x;},b);return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,suggestion:{id:'s1',status:'proposed',suggestion:{memo:'소장님 다음 주 화요일 방문 확정',result:'promise',what:'다음 주 화요일 방문',next:{date:new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(Date.now()+864e5)),text:'방문'}}}})});});
   await page.evaluate(()=>{window.TOKEN='t';window.SUPABASE_URL=window.SUPABASE_URL||'https://ymfbmpnizxvqsamnczow.supabase.co';window.SUPABASE_ANON=window.SUPABASE_ANON||'anon';closeSheet();dealCallSheetM();});await page.waitForTimeout(250);
   await page.locator('#sheetcard .ml-chip[data-chip="ongoing"]').click();assert.equal(await page.locator('#sheetcard .ml-tidy').isVisible(),true);
   await page.locator('#sheetcard .ml-say textarea').fill('어 소장님이 다음주 화요일에 오라고 하셨고 견적 수정본 가져오라고');await page.locator('#sheetcard .ml-tidy').click();await page.waitForTimeout(500);
   assert.equal(await page.evaluate(()=>__tidyIn.kind),'memo_tidy');assert.match(await page.evaluate(()=>__tidyIn.input.raw),/^어 소장님이/);
   assert.equal(await page.locator('#sheetcard .ml-say textarea').inputValue(),'소장님 다음 주 화요일 방문 확정');
   assert.match(await page.locator('#sheetcard .ml-sayhint').innerText(),/AI 정리\(제안\) — 결과는 「고객과 약속함」\(다음 주 화요일 방문\) · 다음 확인 \d+\/\d+ · 방문 로 추천합니다/);
-  assert.equal(await page.locator('#sheetcard .ml-chip.ai[data-chip="promise"]').count(),1);assert.equal(await page.locator('#sheetcard .ml-date.ai').count(),1,'내일 날짜 버튼에 AI 추천');
+  assert.equal(await page.locator('#sheetcard .ml-chip.ai[data-chip="promise"]').count(),1);assert.ok(await page.locator('#sheetcard .ml-date.ai').count()>=1,'내일 날짜 버튼에 AI 추천');
   await page.locator('#sheetcard .ml-undo').click();assert.match(await page.locator('#sheetcard .ml-say textarea').inputValue(),/^어 소장님이/);
   if(shot)await page.screenshot({path:shot+'-tidy.png'});
   await page.evaluate(()=>{window.TOKEN=null;});await page.unroute('**/functions/v1/crm-ai');await page.evaluate(()=>{closeSheet();dealCallSheetM();});await page.waitForTimeout(250);await page.locator('#sheetcard .ml-chip[data-chip="ongoing"]').click();

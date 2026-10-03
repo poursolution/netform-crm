@@ -34,7 +34,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await v.locator('.il-sheet').innerText(),/^구글시트 연결됨 · .*5건$/);assert.equal(await v.locator('.il-fixed').innerText(),'12시까지 결과 · 다음 행동 업데이트');
   /* 탭 7개 + 건수 */
   const tabs=await v.locator('.il-tab').evaluateAll(a=>a.map(n=>n.querySelector('span').textContent.trim()+'|'+n.querySelector('small').textContent.trim()));
-  assert.deepEqual(tabs.map(t=>t.split('|')[0]),['5전체','1배정 필요','1첫 연락 전','1후속 연락 필요',(new Date(Date.now()-3*36e5).toDateString()===new Date().toDateString()?1:0)+'오늘 들어온 문의','1대표회의 · 기한 D-3','3필수정보 미입력'],JSON.stringify(tabs));
+  assert.deepEqual(tabs.map(t=>t.split('|')[0]),['5전체','1배정 필요','1첫 연락 전','1후속 연락 필요',((d=>d(Date.now()-3*36e5)===d(Date.now()))(t=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(t)))?1:0)+'오늘 들어온 문의','1대표회의 · 기한 D-3','3필수정보 미입력'],JSON.stringify(tabs));
   assert.match(tabs[1],/30분 안에 담당 지정/);assert.match(tabs[2],/2시간 안 첫 연락/);assert.match(tabs[3],/7일 넘게 연락 없음/);
   /* 정렬: 접수일 오름차순(가장 오래된 것 먼저) · 상태와 무관 */
   const sites=async()=>v.locator('.il-row .il-site b').allInnerTexts();
@@ -75,7 +75,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const d=page.locator('#inq-inbox-dialog.idv');assert.equal(await d.count(),1);
   const edits=await d.locator('.idv-edit').count();assert.ok(edits>=4,'빈 칸은 눌러서 입력 '+edits);
   assert.deepEqual(await d.locator('.idv-info dt').allInnerTexts(),['문의자','연락처','업체','현장 주소','공종','상담 채널','유입 경로','응대','대표회의','회신 기한'],'핵심 확인 사항 두 칸');
-  await d.locator('.idv-edit[data-v="meeting_date"]').click();await page.waitForTimeout(150);const md=day=>new Date(Date.now()+day*864e5).toLocaleDateString('en-CA');await d.locator('.idv-editin[data-v="meeting_date"]').fill(md(2));await page.waitForTimeout(400);
+  await d.locator('.idv-edit[data-v="meeting_date"]').click();await page.waitForTimeout(150);const md=day=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(Date.now()+day*864e5));/* 화면은 서울 시각 — 검사 기계가 UTC 여도 같은 날짜 */await d.locator('.idv-editin[data-v="meeting_date"]').fill(md(2));await page.waitForTimeout(400);
   assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_field_update_v1').map(x=>x[1].p.field)),['meeting_date'],'날짜는 고르면 바로 저장');assert.match(await d.locator('.idv-info').innerText(),new RegExp('대표회의\\s*'+md(2)));
   assert.match(await d.locator('.idv-nowbox').innerText(),/대표회의 \d{4}\.\d+\.\d+ D-2 · 정확한 견적이 늦으면 개략 금액 먼저/,'입력하자마자 D-3 경고');await page.evaluate(()=>{__rpc.length=0;});
   await d.locator('.idv-edit[data-v="customer_type"]').click();await page.waitForTimeout(150);
