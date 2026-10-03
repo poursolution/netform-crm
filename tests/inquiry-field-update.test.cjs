@@ -11,7 +11,7 @@ test('서버 함수: 담당자·관리자만, 허용 항목만, 200자, 종결 �
  const sql=read('sql/inquiry-field-update-v1-20261003.sql');
  assert.match(sql,/create or replace function public\.crm_inquiry_field_update_v1\(p jsonb\)/);
  assert.match(sql,/a\.permission_role<>'admin' and \(oldq\.assigned_to is null or oldq\.assigned_to<>a\.user_id\)/);
- assert.match(sql,/v_field not in \('contact_name','phone','address','site_name','customer_type','work_type','channel','inflow','responder'\)/);
+ assert.match(sql,/v_field not in \('contact_name','phone','address','site_name','customer_type','work_type','channel','inflow','responder','meeting_date','reply_due'\)/);assert.match(sql,/when 'meeting_date' then '대표회의' when 'reply_due' then '자료 회신 기한'/);assert.match(sql,/YYYY-MM-DD 형식/);
  assert.match(sql,/length\(v_value\)>200/);
  assert.match(sql,/in \('종결','종료','수주','실주'\)/);
  assert.match(sql,/when 'work_type' then '공사유형' when 'channel' then '상담채널' when 'inflow' then '유입경로'/);

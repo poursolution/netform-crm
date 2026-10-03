@@ -36,18 +36,18 @@
  }
  /* 문의 정보 빈 칸 바로 입력(2026-10-03 핸드오프 inquiry_v2): 서버 함수 crm_inquiry_field_update_v1 이 설치돼 있을 때만 — 없으면 '미입력'만 보인다 */
  const FIELD_RPC='crm_inquiry_field_update_v1';
- const FIELDS=[['문의자','문의자','contact_name','예: 관리소장 · 홍길동'],['문의자 연락처','연락처','phone','예: 010-0000-0000'],['업체·고객정보','업체','customer_type','예: 관리사무소'],['건물주소','현장 주소','address','예: 수원시 영통구 …'],['공사유형','공종','work_type','예: 옥상 방수'],['상담채널','상담 채널','channel','예: 전화 · 홈페이지'],['유입경로','유입 경로','inflow','예: 네이버 검색 · 지인 소개'],['전화 응대자','응대','responder','응대한 사람']];
+ const FIELDS=[['문의자','문의자','contact_name','예: 관리소장 · 홍길동'],['문의자 연락처','연락처','phone','예: 010-0000-0000'],['업체·고객정보','업체','customer_type','예: 관리사무소'],['건물주소','현장 주소','address','예: 수원시 영통구 …'],['공사유형','공종','work_type','예: 옥상 방수'],['상담채널','상담 채널','channel','예: 전화 · 홈페이지'],['유입경로','유입 경로','inflow','예: 네이버 검색 · 지인 소개'],['전화 응대자','응대','responder','응대한 사람'],['대표회의','대표회의','meeting_date','YYYY-MM-DD'],['자료 회신 기한','회신 기한','reply_due','YYYY-MM-DD']];/* 뒤 둘은 2026-10-02 회의 지침 핵심 확인 사항 — 목록의 대표회의 D-3 탭 · 문자 문구 · 결과 제안에 쓰인다 */
  function fieldEditable(){return !!(root.SB&&typeof root.SB.rpc==='function')&&!(root.CRMRelease&&root.CRMRelease.has('crm_inquiry_field_update_v1')===false);}
  function col1(q,s){
-  const f=new Map(W().sourceFields(q)),can=fieldEditable(),rows=FIELDS.map(([k,l,field,ph])=>({l,field,ph,v:(f.get(k)&&f.get(k)!=='미입력')?f.get(k):''})),missing=rows.filter(r=>!r.v).map(r=>r.l);
-  const cell=r=>{if(r.v)return '<dd>'+h(r.v)+'</dd>';if(s&&s.editField===r.field)return '<dd><input class="idv-editin" data-idv="editinput" data-v="'+r.field+'" value="'+attr(s.editDraft||'')+'" placeholder="'+attr(r.ph)+'" aria-label="'+attr(r.l)+' 입력"></dd>';return '<dd class="warn">'+(can?'<button type="button" class="idv-edit" data-idv="edit" data-v="'+r.field+'" title="눌러서 바로 입력">미입력 · 눌러서 입력</button>':'미입력')+'</dd>';};
+  const f=new Map(W().sourceFields(q)),r0=q.raw&&typeof q.raw==='object'?q.raw:{},can=fieldEditable(),rows=FIELDS.map(([k,l,field,ph])=>({l,field,ph,date:/_date$|_due$/.test(field),v:(f.get(k)&&f.get(k)!=='미입력')?f.get(k):(r0[k]&&String(r0[k]).trim()&&String(r0[k]).trim()!=='-'?String(r0[k]).trim():'')})),missing=rows.filter(r=>!r.v).map(r=>r.l);
+  const cell=r=>{if(r.v)return '<dd>'+h(r.v)+'</dd>';if(s&&s.editField===r.field)return '<dd><input class="idv-editin" data-idv="editinput" data-v="'+r.field+'"'+(r.date?' type="date"':'')+' value="'+attr(s.editDraft||'')+'" placeholder="'+attr(r.ph)+'" aria-label="'+attr(r.l)+' 입력"></dd>';return '<dd class="warn">'+(can?'<button type="button" class="idv-edit" data-idv="edit" data-v="'+r.field+'" title="눌러서 바로 입력">미입력 · 눌러서 입력</button>':'미입력')+'</dd>';};
   return '<div class="idv-label">고객 문의 원문</div><blockquote class="idv-quote">'+h(W().originalText(q)||'저장된 문의 원문이 없습니다.')+'</blockquote>'
    +'<div class="idv-label">문의 정보'+(can?'':'<small class="idv-fieldnote">빈 칸 입력은 서버 적용 뒤에 열립니다</small>')+'</div><dl class="idv-info">'+rows.map(r=>'<div><dt>'+h(r.l)+'</dt>'+cell(r)+'</div>').join('')+'</dl>'
    +(missing.length?'<div class="idv-missing">보완 필요 '+missing.length+'개 · '+h(missing.join(' · '))+(can?' · 빈 칸을 눌러 바로 입력':'')+'</div>':'');
  }
  function applyField(q,field,value,rawKey){
   if(field==='contact_name'){q.contact_name=value;}else if(field==='phone'){q.phone=value;}else if(field==='address'){q.address=value;if(q.detail&&typeof q.detail==='object')q.detail.address=value;}else if(field==='site_name'){q.site_name=value;q.site=value;}
-  else{q.raw=q.raw&&typeof q.raw==='object'?q.raw:{};q.raw[rawKey||field]=value;if(q.detail&&typeof q.detail==='object'){if(field==='channel')q.detail.channel=value;if(field==='customer_type')q.detail.customerType=value;if(field==='work_type')q.detail.workType=value;}if(field==='work_type')q.work_type=value;}
+  else{const RAWKEY={customer_type:'고객유형',work_type:'공사유형',channel:'상담채널',inflow:'유입경로',responder:'전화 응대자',meeting_date:'대표회의',reply_due:'자료 회신 기한'};q.raw=q.raw&&typeof q.raw==='object'?q.raw:{};q.raw[rawKey||RAWKEY[field]||field]=value;if(field==='meeting_date'&&q.detail&&typeof q.detail==='object')q.detail.meetingDate=value;if(q.detail&&typeof q.detail==='object'){if(field==='channel')q.detail.channel=value;if(field==='customer_type')q.detail.customerType=value;if(field==='work_type')q.detail.workType=value;}if(field==='work_type')q.work_type=value;}
   try{root.saveLocal?.();}catch(e){}
  }
  async function saveField(q,s,field,value){
@@ -183,6 +183,7 @@
   if(!overlay.__idv){overlay.__idv=true;overlay.addEventListener('click',onClick);overlay.addEventListener('input',onInput);overlay.addEventListener('mousedown',e=>{if(e.target===overlay)W().close();});
    /* 입력 중 Esc 는 입력만 취소(창을 닫는 기존 Esc 보다 먼저 잡는다) */
    overlay.addEventListener('keydown',e=>{const t=e.target;if(!t.matches||!t.matches('[data-idv="editinput"]'))return;const s2=st(curKey),q2=root.inqCtlFind(curKey,false);if(e.key==='Enter'){e.preventDefault();e.stopImmediatePropagation();saveField(q2,s2,t.dataset.v,t.value);}if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();s2.editField='';s2.editDraft='';reskinFrom();}},true);
+   overlay.addEventListener('change',e=>{const t=e.target;if(!t.matches||!t.matches('[data-idv="editinput"][type="date"]')||t.disabled)return;const s2=st(curKey),q2=root.inqCtlFind(curKey,false);if(s2.editField===t.dataset.v&&t.value)saveField(q2,s2,t.dataset.v,t.value);});
    overlay.addEventListener('focusout',e=>{const t=e.target;if(!t.matches||!t.matches('[data-idv="editinput"]')||t.disabled)return;const s2=st(curKey),q2=root.inqCtlFind(curKey,false);if(s2.editField!==t.dataset.v)return;setTimeout(()=>{if(s2.editField===t.dataset.v&&!t.disabled)saveField(q2,s2,t.dataset.v,t.value);},0);});}
  }
  function repaintLocal(){reskinFrom();}
