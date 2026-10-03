@@ -59,7 +59,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    assert.equal(await page.locator('#pg-'+p+'>.cf-bar [data-cf="period"]').count(),period?1:0,p+' 기간 선택');assert.equal(await page.locator('#pg-'+p+'>.cf-bar [data-cf="owner"]').count(),owner?1:0,p+' 담당자 선택');
    assert.equal(await vis('.mhead>.search'),false,p+' 상단 검색칸 없음');
   }
-  await page.evaluate(()=>goPage('brief'));await page.waitForTimeout(300);
+  await page.evaluate(()=>(G.briefBOff=true,goPage('brief')));await page.waitForTimeout(300);
   const bar=page.locator('#pg-brief>.cf-bar');
   assert.deepEqual(await bar.locator('[data-cf="owner"] optgroup').evaluateAll(a=>a.map(o=>o.label)).then(a=>a.filter(x=>x==='내부직원').length),1,'담당자 구분은 선택 안의 묶음 머리');
   await bar.locator('[data-cf="owner"]').selectOption('이필선');await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>G.rep),'이필선','담당자 = 기존 공통 상태');
@@ -106,7 +106,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(250);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'좁은 화면 넘침 없음');
   await page.setViewportSize({width:1600,height:1000});
-  await page.evaluate(()=>{G.shellV2Off=true;G.askV2Off=true;goPage('brief');});await page.waitForTimeout(350);
+  await page.evaluate(()=>{G.shellV2Off=true;G.askV2Off=true;(G.briefBOff=true,goPage('brief'));});await page.waitForTimeout(350);
   assert.equal(await page.evaluate(()=>document.body.classList.contains('shell-v2')),false);assert.equal(await vis('#syncBadge'),true);assert.equal(await vis('#unibar'),true,'끄면 예전 두 줄 필터');assert.equal(await page.locator('#pg-brief>.cf-bar:not([hidden])').count(),0);
   await page.evaluate(()=>openExecAsk());await page.waitForTimeout(150);assert.equal(await page.locator('#execAskModal.on').count(),1,'끄면 예전 묻기 창');
   assert.deepEqual(errs,[]);

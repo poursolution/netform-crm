@@ -25,7 +25,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op)=>{__writes.push(op);return 'req';};window.__printed=0;window.print=()=>{__printed++;};
-   goPage('report');
+   (G.reportBOff=true,goPage('report'));
   });
   await page.waitForTimeout(400);
   const v=page.locator('#report-v2');assert.equal(await v.count(),1,'새 화면');

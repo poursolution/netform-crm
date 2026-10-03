@@ -70,7 +70,7 @@
  function moreItems(q,key){const admin=typeof root.inqCtlIsAdmin==='function'&&root.inqCtlIsAdmin(),assigned=typeof root.inquiryAssigned==='function'&&root.inquiryAssigned(q),store=(typeof INQ_STORE_STATUSES!=='undefined'?INQ_STORE_STATUSES:[]).includes(String(q.status||''));
   const item=(mode,label,cls,dis)=>'<button type="button" class="'+(cls||'')+'" data-k="'+key+'" data-m="'+mode+'"'+(dis?' disabled':'')+' onclick="this.closest(\'details\').open=false;inqCtlMenuRun(this.dataset.m,this.dataset.k)">'+label+'</button>';
   const closeOk=typeof root.inqCtlCloseAvailable==='function'&&root.inqCtlCloseAvailable()&&(admin||assigned)&&!(typeof root.inqCtlConverted==='function'&&root.inqCtlConverted(q));
-  return item('detail','상세 보기')+(admin&&assigned?item('reassign','영업담당 재배정'):'')+item('store',store?'스토어 이관 완료':'POUR스토어 이관','',store)+item('hold','보류')+(closeOk?item('close','상담 종결'):'')+(admin&&assigned?item('unassign','미배정 회수'):'')+(admin?'<i class="inq-menu-sep"></i>'+item('duplicate','중복 확인')+item('trash','휴지통 이동','danger'):'');
+  return item('detail','상세 보기')+(admin&&assigned?item('reassign','영업담당 재배정'):'')+item('store',store?'스토어 이관 완료':'POUR스토어 이관','',store)+item('hold','보류')+(closeOk?item('close','배드핏(부적합 종결)'):'')+(admin&&assigned?item('unassign','미배정 회수'):'')+(admin?'<i class="inq-menu-sep"></i>'+item('duplicate','중복 확인')+item('trash','휴지통 이동','danger'):'');
  }
 
   /* 문의 핵심(규칙형 요약): 인사말·상투어·현장명 반복 제거 → 문제/요청 → 일정 → 특이사항 순으로 45자 */

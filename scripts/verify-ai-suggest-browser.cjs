@@ -41,7 +41,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.waitForTimeout(600);
   /* 꺼져 있을 때: 버튼이 없고 서버 함수를 부르지 않는다 */
   assert.equal(await page.evaluate(()=>OpsStore.aiOn()),false);
-  await page.locator('#work-v2 .plv-row .plv-cta').first().click();await page.waitForTimeout(400);
+  await page.evaluate(()=>WorkV2.classify(dealKey(B.deals.find(d=>isOpen(d)))));await page.waitForTimeout(400);
   assert.equal(await page.locator('#workDialog.on').count(),1);assert.equal(await page.locator('#workDialog [data-aiguess]').count(),0,'꺼져 있으면 AI 버튼 없음');
   await page.locator('#workDialog [data-wd="close"]').first().click();
   await page.keyboard.press('Control+k');await page.waitForTimeout(200);await page.locator('#akInput').fill('우주에서 제일 좋은 현장');await page.keyboard.press('Enter');await page.waitForTimeout(300);
@@ -49,7 +49,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 켜기(관리자 설정) */
   await page.evaluate(async()=>{await OpsStore.setFlag('ai_enabled',true);paint();});await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>OpsStore.aiOn()),true);
   /* 1. 공종 추정 */
-  await page.locator('#work-v2 .plv-row',{hasText:'강동 롯데캐슬퍼스트'}).locator('.plv-cta').click();await page.waitForTimeout(400);
+  await page.evaluate(()=>WorkV2.classify(dealKey(B.deals.find(d=>/강동 롯데캐슬퍼스트/.test(d.site)))));await page.waitForTimeout(400);
   const w=page.locator('#workDialog.on .wd-box');await w.locator('[data-aiguess]').click();await page.waitForTimeout(400);
   assert.match(await w.locator('.dp-ai').innerText(),/추정 공종 · 옥상 우레탄 \+ 재도장 외부[\s\S]*AI 추정 \(확신 높음\)/);
   assert.match(await w.innerText(),/저장될 공종\s*미분류/,'AI 결과만으로는 고르지 않는다');
@@ -63,7 +63,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await ask.locator('.ak-row').innerText(),/강동롯데캐슬 퍼스트 아파트/);assert.equal(await ask.locator('.ak-row').count(),1);
   assert.equal(await page.evaluate(()=>__ai.at(-1).auth),'Bearer user-jwt','사용자 토큰으로 부른다');await page.keyboard.press('Escape');
   /* 3. 리포트 문장: 채우기만 하고 저장하지 않는다 */
-  await page.evaluate(()=>goPage('report'));await page.waitForTimeout(500);
+  await page.evaluate(()=>(G.reportBOff=true,goPage('report')));await page.waitForTimeout(500);
   await page.locator('#report-v2 [data-rp="ai"]').click();await page.waitForTimeout(500);
   assert.match(await page.locator('#report-v2 .rp-slide.on').innerText(),/롯데캐슬 입찰을 잡으면 9억이 들어옵니다[\s\S]*이번 달 수주는 아직 없습니다/);
   assert.equal(await page.evaluate(()=>__rpc.includes('crm_report_snapshot_save_v1')),false,'AI 문장은 저장하지 않는다');
