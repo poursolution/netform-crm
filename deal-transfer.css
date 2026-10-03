@@ -1,0 +1,53 @@
+/* 타사 이관 (2026-10-04 핸드오프 transfer). 꼬리표: 대기 노랑 · 인정 대기 파랑 · 반영 초록 · 실주 빨강 */
+.tf-tag,.tf-badge{display:inline-block;font-size:11px;font-weight:700;border-radius:5px;padding:2px 7px;margin-left:6px;vertical-align:1px;white-space:nowrap}
+.tf-badge{font-size:11.5px;padding:3px 8px;margin-left:0}
+/* 상세 머리글: [··· 기타 처리] — 담당자 변경은 이 메뉴 안으로 */
+.dv3-headact.tf-on>[data-dv3="owner"]{display:none}
+.tf-morewrap{position:relative;display:inline-block}
+#detailView .tf-more{font:inherit;font-size:13px;font-weight:700;border:1px solid #d9dde4;background:#fff;color:#15171c;border-radius:8px;padding:9px 12px;cursor:pointer;min-height:0;box-shadow:none}
+.tf-menu{position:absolute;right:0;top:42px;z-index:30;width:190px;background:#fff;border:1px solid #e3e6ec;border-radius:10px;box-shadow:0 8px 24px rgba(17,24,39,.12);padding:6px;display:flex;flex-direction:column}
+#detailView .tf-menu button{border:0;background:transparent;text-align:left;font:inherit;font-size:13px;font-weight:500;color:#15171c;border-radius:6px;padding:8px 10px;cursor:pointer;min-height:0;box-shadow:none}
+#detailView .tf-menu button:hover{background:#f5f6f8}#detailView .tf-menu button.hot{background:#f5f6f8;font-weight:700}#detailView .tf-menu button:disabled{color:#9ca3af;cursor:default}
+.tf-menu small{font-size:10.5px;color:#9ca3af;font-weight:500}
+/* 이관 정보 상자: 오른쪽 '지금 할 일' 위 */
+.tf-card{background:#fff;border:1px solid #e3e6ec;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;margin-bottom:12px;color:#15171c}
+.tf-box{border:1px solid #e3e6ec;border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:74px minmax(0,1fr);gap:5px 10px;font-size:12.5px}
+.tf-box>span:nth-child(odd){color:#9ca3af}.tf-box .red{color:#b42318;font-weight:600}
+.tf-now{background:#f5f6f8;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}.tf-now b{font-size:14px}.tf-now span{font-size:12.5px;color:#4b5563;line-height:1.5}
+#detailView .tf-now button{align-self:stretch;border:0;background:#15171c;color:#fff;font:inherit;font-size:13px;font-weight:700;border-radius:8px;padding:10px 0;cursor:pointer;margin-top:4px;min-height:0;box-shadow:none}
+.tf-due{border:1px solid #f5dfa8;background:#fffaf0;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}.tf-due span{font-size:11px;font-weight:700;color:#8a5a00}.tf-due b{font-size:13px}.tf-due small{font-size:12px;color:#6b7280}
+.tf-note{margin:0;font-size:11.5px;color:#9ca3af;line-height:1.5}
+/* 창 */
+.tf-shade{position:fixed;inset:0;z-index:1200;background:rgba(20,26,46,.45);display:flex;align-items:flex-start;justify-content:center;padding:60px 20px;overflow:auto}
+.tf-dlg{width:100%;max-width:520px;background:#fff;border-radius:14px;box-shadow:0 10px 40px rgba(17,24,39,.14);overflow:hidden;color:#15171c;font-size:13px}
+.tf-dlg button,.tf-dlg input{font:inherit}.tf-dlg button{cursor:pointer}.tf-dlg button:disabled{cursor:default}
+.tf-dlg>header{padding:14px 20px;border-bottom:1px solid #eef0f3;display:flex;align-items:baseline;gap:8px}.tf-dlg>header b{font-size:16px}.tf-dlg>header span{font-size:12px;color:#9ca3af}.tf-dlg>header i{flex:1}
+.tf-dlg>header .x{border:0;background:none;color:#6b7280;font-size:14px;padding:0 2px}
+.tf-form{padding:16px 20px;display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px 14px;align-items:center}
+.tf-form label{font-weight:700}.tf-form label.opt{color:#6b7280}.tf-form small{font-size:11.5px;color:#9ca3af}
+.tf-form input{border:1px solid #d9dde4;border-radius:8px;padding:8px 10px;font-size:13px;min-width:0;width:100%;box-sizing:border-box;background:#fff;color:#15171c}.tf-form input.dash{border-style:dashed;border-color:#c9cdd5}
+.tf-chips{display:flex;flex-wrap:wrap;gap:5px}.tf-two{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.tf-two input{width:auto;flex:1 1 130px}
+.tf-chip{border:1px solid #d9dde4;background:#fff;color:#374151;font-size:12px;font-weight:600;border-radius:999px;padding:4px 10px}.tf-chip.on{background:#15171c;color:#fff;border-color:#15171c}
+.tf-two .tf-chip,.tf-chips.sq .tf-chip{font-size:12.5px;font-weight:700;border-radius:8px;padding:6px 12px}
+.tf-amt{display:flex;gap:8px;align-items:center}.tf-amt input{flex:1;text-align:right}.tf-amt span{font-size:12px;color:#6b7280;white-space:nowrap}.tf-amt.big input{border:1.5px solid #15171c;font-size:14px;font-weight:700}
+.tf-warn{margin:0 20px 10px;background:#fdecec;color:#b42318;border-radius:8px;padding:9px 12px;font-size:12.5px;font-weight:600;line-height:1.5}
+.tf-info{margin:0 20px 10px;background:#f5f8ff;border-radius:8px;padding:10px 12px;font-size:12.5px;line-height:1.55;color:#1d3f99}
+.tf-err{margin:0 20px 10px;color:#b42318;font-size:12.5px;font-weight:600}
+.tf-dlg>footer{padding:12px 20px 18px;display:flex;gap:8px;align-items:center;border-top:1px solid #eef0f3}.tf-dlg>footer span{flex:1;font-size:11.5px;color:#6b7280}
+.tf-dlg>footer button{border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:13px;font-weight:600;border-radius:8px;padding:9px 14px;white-space:nowrap}
+.tf-dlg>footer button.dark{border:0;background:#15171c;color:#fff;font-weight:700;padding:10px 18px}.tf-dlg>footer button.dark:disabled{background:#c9cdd5}
+.tf-wait{padding:18px 20px;display:flex;flex-direction:column;gap:12px}.tf-wait>div:first-child{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tf-wait em{font-style:normal;font-size:12px;font-weight:700;border-radius:6px;padding:4px 10px}.tf-wait>div:first-child span{font-size:12.5px;color:#6b7280}.tf-wait p{margin:0;font-size:13px;line-height:1.65;color:#374151}
+.tf-wait .three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;font-size:12px}.tf-wait .three>div{background:#f5f6f8;border-radius:8px;padding:9px 10px;display:flex;flex-direction:column;gap:2px}.tf-wait .three span{color:#9ca3af}.tf-wait .three b{font-size:15px}
+.tf-approve{padding:18px 20px;display:flex;flex-direction:column;gap:12px}.tf-approve .amt{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.tf-approve .amt b{font-size:26px}.tf-approve .amt span{font-size:12.5px;color:#6b7280}
+.tf-approve .cks{display:flex;flex-direction:column;gap:6px}
+.tf-approve .cks button{border:1px solid #e3e6ec;background:#fff;border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:10px;text-align:left;font-size:13px;color:#15171c}
+.tf-approve .cks button.on{background:#fafbfc;border-color:#c9cdd5}.tf-approve .cks button:disabled{opacity:.55}
+.tf-approve .cks i{width:18px;height:18px;border-radius:4px;border:1.5px solid #c9cdd5;background:#fff;color:#fff;font-style:normal;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+.tf-approve .cks button.on i{border-color:#15171c;background:#15171c}.tf-approve .cks b{flex:1;font-weight:600}.tf-approve .cks span{font-size:11.5px;color:#6b7280;max-width:55%;text-align:right}
+.tf-approve input{border:1px solid #d9dde4;border-radius:8px;padding:8px 10px;font-size:13px}.tf-approve small{font-size:11.5px;color:#6b7280}
+/* 수주실적 나눠 보기(주간 브리핑 · 대시보드 · 리포트) */
+.tf-perf{border:1px solid #e3e6ec;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;font-size:13px;color:#15171c}
+.tf-perf>div{display:flex;justify-content:space-between;gap:12px}.tf-perf .in{padding-left:12px;color:#374151}.tf-perf .mu{color:#6b7280}.tf-perf .ln{border-top:1px solid #f0f1f4;padding-top:6px}
+.tf-perf small{font-weight:500;font-size:11.5px;color:#6b7280}.tf-perf .who{font-size:11.5px;color:#6b7280;padding-left:12px;justify-content:flex-start}
+@media(max-width:560px){.tf-form{grid-template-columns:1fr;gap:6px 0}.tf-shade{padding:20px 10px}}

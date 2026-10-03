@@ -46,9 +46,11 @@
   const B=BL(),K=B.K,P=period(),target=R.targetNameFilter(),AD=R.briefScopeDeals(target,false),AQ=R.briefScopeInquiries(target,false),L=B.ledger(target);
   const inR=(k,a,b)=>!!k&&k>=a&&k<b,rows=SI().rows(false,true),deals=rows.deals,active=deals.filter(d=>d.active),risk=active.filter(d=>d.issues.length),cnt=k=>active.filter(d=>d.issues.includes(k)).length;
   const q=AQ.filter(x=>inR(K(R.inquiryCreatedAt(x)),P.a,P.b)),bad=q.filter(B.badfit),fit=q.length-bad.length;
-  const loss=AD.filter(d=>B.isLoss(d)&&inR(B.closedKey(d),P.a,P.b)),con=B.contractsIn(L,P.a,P.b),made=L.ready?B.made(con.count,loss.length):null;
+  const loss=AD.filter(d=>B.isLoss(d)&&inR(B.closedKey(d),P.a,P.b)),con=B.contractsIn(L,P.a,P.b);
+  /* 타사 이관 수주(관리자 인정분 · 낙찰일 기준): 수주실적에 합산하고 화면에서는 자사와 나눠 적는다 */
+  const DT=R.DealTransfer&&R.DealTransfer.enabled()?R.DealTransfer:null,tf=DT?DT.wonIn(P.a,P.b,target):{count:0,amount:0,list:[]},tfLost=DT?DT.lostIn(P.a,P.b,target):0,made=L.ready?B.made(con.count,loss.length+tfLost,tf.count):null;
   const names=(target?[target]:(R.PERFORMANCE_TARGET_NAMES||[])).slice(),A=acts(deals,K);
-  return {B,K,P,target,AD,AQ,L,inR,rows,deals,active,risk,cnt,q,bad,fit,loss,con,made,names,A};
+  return {B,K,P,target,AD,AQ,L,inR,rows,deals,active,risk,cnt,q,bad,fit,loss,con,made,names,A,DT,tf,tfLost,won:con.count+tf.count,perf:con.net+tf.amount};
  }
  /* 기술자문 낙찰(확정분 · 낙찰확정일 기준 · VAT 별도) — 계약 원장과 겹치는 건은 기존 규칙대로 뺀다. 관리자 화면에서만 읽힌다 */
  function advisory(C){
@@ -68,10 +70,10 @@
  }
  /* 담당자별: 계약 · 메이드율 · 진행 · 손볼 건 · 마지막 기록 + 꼬리표(막힘 / 접촉 끊김 / 메이드율 낮음 / 정상)와 그 이유 */
  function people(C){
-  const {B,P,L,active,loss,A,names}=C,W=week(P),ms=mk(P.ty,P.tm),me=mk(P.ty,P.tm+1);
+  const {B,P,L,active,loss,A,names}=C,W=week(P),ms=mk(P.ty,P.tm),me=mk(P.ty,P.tm+1);/* 계약 = 자사 계약실적 + 인정된 타사 이관 수주 */
   return names.map(n=>{
-   const mine=active.filter(d=>d.owner===n),c=B.contractsIn(L,P.a,P.b,n),cm=B.contractsIn(L,ms,me,n),l=loss.filter(d=>R.repN(d.assignee)===n),w=c.count;
-   const made=L.ready&&(w+l.length)?B.made(w,l.length):null;
+   const mine=active.filter(d=>d.owner===n),c=B.contractsIn(L,P.a,P.b,n),cm=B.contractsIn(L,ms,me,n),l=loss.filter(d=>R.repN(d.assignee)===n),tfp=C.DT?C.DT.wonIn(P.a,P.b,n):{count:0,amount:0},tfm=C.DT?C.DT.wonIn(ms,me,n):{count:0,amount:0},w=c.count+tfp.count;
+   const made=L.ready&&(w+l.length)?B.made(c.count,l.length,tfp.count):null;
    const fix=mine.filter(d=>d.issues.length),od=mine.filter(d=>d.issues.includes('overdue')),stall=mine.filter(d=>d.issues.includes('stall')),odMax=Math.max(0,...od.map(overdueDays));
    const my=A.filter(x=>x.owner===n),last=my[0]||null,lastK=last?last.k:'',lastDays=lastK?Math.max(0,B.between(lastK,P.today)):null,wk=my.filter(x=>x.k>=W[0]&&x.k<=W[6]).length;
    const top=list=>{const t=B.tally(list,d=>d.stageLabel)[0];return t?{l:t[0],n:t[1]}:null;};
@@ -80,7 +82,7 @@
    else if(mine.length>=5&&stall.length/mine.length>=0.5){const t=top(stall);tag='막힘';sev=3;why=(t?t.l+' 단계에 '+t.n+'건('+Math.round(t.n/mine.length*100)+'%) 정체':'진행 멈춤 '+stall.length+'건')+' — 연락과 다음 할 일이 끊김';}
    else if(mine.length&&(lastDays===null||lastDays>LOSTCUT())){tag='접촉 끊김';sev=2;why=(lastK?md(lastK)+' 이후 기록 없음':'영업 기록 없음')+' · 이번 주 활동 '+wk+'건 — 접촉이 끊김';}
    else if(made!==null&&made<LOWMADE()&&w+l.length>=MINCLOSED()){const tr=B.tally(l,B.lossReason)[0];tag='메이드율 낮음';sev=1;why='실주 '+l.length+'건 · 수주 '+w+'건'+(tr?' — 가장 많은 실주 사유: '+tr[0]+' '+tr[1]+'건':'');}
-   return {n,prog:mine.length,exp:mine.reduce((s,d)=>s+(Number(d.expected)||0),0),yr:c.net,w,l:l.length,made,mo:cm.net,fix:fix.length,od:od.length,odMax,last,lastK,lastDays,wk,tag,sev,why,my};
+   return {n,prog:mine.length,exp:mine.reduce((s,d)=>s+(Number(d.expected)||0),0),yr:c.net+tfp.amount,tf:tfp.amount,w,l:l.length,made,mo:cm.net+tfm.amount,fix:fix.length,od:od.length,odMax,last,lastK,lastDays,wk,tag,sev,why,my};
   });
  }
  const agoText=p=>p.lastDays===null?'기록 없음':p.lastDays===0?'오늘':p.lastDays===1?'어제':p.lastDays+'일 전';
@@ -100,10 +102,10 @@
   const ms=mk(P.ty,P.tm),cm=B.contractsIn(L,ms,mk(P.ty,P.tm+1)),pmD=new Date(P.ty,P.tm-2,1),pm=B.contractsIn(L,mk(P.ty,P.tm-1),ms),exp=active.reduce((s,d)=>s+(Number(d.expected)||0),0);
   const since=B.addDays(P.today,-6),wkA=A.filter(x=>x.k>=since),zero=names.filter(n=>!wkA.some(x=>x.owner===n)).length,adv=advisory(C);
   const val=(ready,n,text)=>!ready?['불러오는 중','mut']:n>0?[text,'']:['아직 없음','mut'];
-  const k1=val(L.ready,cm.net,won(cm.net)),k2=val(L.ready,con.net,won(con.net)),k3=val(true,exp,won(exp));
+  const tfm=C.DT?C.DT.wonIn(ms,mk(P.ty,P.tm+1),C.target):{count:0,amount:0},k1=val(L.ready,cm.net+tfm.amount,won(cm.net+tfm.amount)),k2=val(L.ready,C.perf,won(C.perf)),k3=val(true,exp,won(exp));
   const cards=[
    ['이번 달 계약 ('+P.tm+'월)',k1[0],k1[1],P.tm+'월 '+P.td+'일째'+(cm.net>0?' · 계약 '+cm.count+'건':'')+' · '+(pmD.getMonth()+1)+'월 '+(pm.net>0?won(pm.net):'없음'),P.y===P.ty?'cs-month':'',P.tm],
-   [P.thisYear?'올해 누적 계약':P.label+' 계약',k2[0],k2[1],'계약 '+con.count+'건'+(adv&&adv.n?' · 기술자문 낙찰 '+won(adv.sum)+' 별도':''),'ev','contract'],
+   [P.thisYear?'올해 수주실적':P.label+' 수주실적',k2[0],k2[1],'자사 계약실적 '+(con.net>0?won(con.net):'없음')+'('+con.count+'건) · 타사 이관 '+(C.tf.amount>0?won(C.tf.amount)+'('+C.tf.count+'건)':'없음')+(adv&&adv.n?' · 기술자문 낙찰 '+won(adv.sum)+' 별도':''),'ev','contract'],
    ['진행 중 파이프라인',k3[0],k3[1],'진행 '+active.length+'건','ev','active'],
    ['견적문의',q.length+'건','','적합 '+fit+' · 배드핏 '+bad.length,'ev','inquiries'],
    ['조치 필요',risk.length+'건',risk.length?'red':'','기한 지남 '+cnt('overdue')+' · 다음 할 일 없음 '+cnt('missing'),'go','control'],
@@ -111,7 +113,7 @@
   const kpis='<div class="db-kpis">'+cards.map(c=>'<button type="button" class="db-kpi"'+(c[4]?' data-db="'+c[4]+'" data-v="'+attr(c[5])+'"':' disabled')+'><span>'+h(c[0])+'</span><div><b class="'+c[2]+'">'+h(c[1])+'</b><small>'+h(c[3])+'</small></div></button>').join('')+'</div>';
   const hot=N.filter(n=>n.hot),hotSum=hot.reduce((s,n)=>s+n.amount,0);
   const head=hot.length?'이번 주 기한 '+hot.length+'건'+(hotSum?' · '+won(hotSum):'')+' — '+hot.slice(0,2).map(n=>siteShort(n.d.site)+' '+n.due).join(', ')+(hot.length>2?' 외 '+(hot.length-2)+'건':''):'이번 주 기한이 걸린 계약 임박 건이 없습니다';
-  const sub=[(P.thisYear?'올해':P.label)+' 계약 '+(L.ready?(con.net>0?won(con.net):'아직 없음'):'불러오는 중'),'메이드율 '+pt(made),'손봐야 할 '+risk.length+'건 중 기한 지남 '+cnt('overdue')+'건'].join(' · ');
+  const sub=[(P.thisYear?'올해':P.label)+' 수주실적 '+(L.ready?(C.perf>0?won(C.perf):'아직 없음'):'불러오는 중'),'메이드율 '+pt(made),'손봐야 할 '+risk.length+'건 중 기한 지남 '+cnt('overdue')+'건'].join(' · ');
   const band='<div class="db-band"><div><span>오늘 먼저 볼 것</span><b>'+h(head)+'</b><small>'+h(sub)+'</small></div><button type="button" data-db="go" data-v="control">컨트롤타워에서 처리 →</button></div>';
   const secs=[['perf','성과','문의 → 계약 · 추이 · 브랜드'],['people','사람','담당자별 · 이번 주 기록'],['pipe','파이프라인','단계 · 계약 임박'],['act','활동','최근 기록']];
   const tabs='<div class="db-secs" role="tablist">'+secs.map(t=>'<button type="button" role="tab" aria-selected="'+(S.sec===t[0])+'" data-db="sec" data-v="'+t[0]+'">'+t[1]+'<span>'+t[2]+'</span></button>').join('')+'</div>';
@@ -126,9 +128,9 @@
  function secPerf(C){
   const {B,K,P,AD,AQ,L,inR,q,bad,fit,loss,con,made}=C;
   const quotes=AD.filter(d=>B.quoteIn(d,P.a,P.b)).length,conv=AD.filter(d=>inR(K(d.created),P.a,P.b)).length;
-  const fun=[['견적문의',q.length+'건','전체 접수'],['적합 문의',fit+'건','배드핏 '+bad.length+' 제외'],['견적 발송',quotes+'건',fit&&quotes<=fit?'적합의 '+pt(B.pct(quotes,fit)):'기간 안 견적 발송'],['영업건 전환',conv+'건','파이프라인 진입'],['수주',L.ready?con.count+'건'+(con.net>0?' · '+won(con.net):''):'불러오는 중','실주 '+loss.length+'건']];
+  const fun=[['견적문의',q.length+'건','전체 접수'],['적합 문의',fit+'건','배드핏 '+bad.length+' 제외'],['견적 발송',quotes+'건',fit&&quotes<=fit?'적합의 '+pt(B.pct(quotes,fit)):'기간 안 견적 발송'],['영업건 전환',conv+'건','파이프라인 진입'],['수주',L.ready?C.won+'건'+(C.perf>0?' · '+won(C.perf):''):'불러오는 중','실주 '+(loss.length+C.tfLost)+'건'+(C.tf.count?' · 타사 이관 '+C.tf.count+'건 포함':'')]];
   const cd=new Date(P.ty,P.tm-3,1),cym=cd.getFullYear()+'-'+pad(cd.getMonth()+1),coM=cd.getMonth()+1,cohort=AQ.filter(x=>K(R.inquiryCreatedAt(x)).slice(0,7)===cym),cw=L.ready?cohort.filter(x=>B.inquiryContract(x,L,AD)).length:0;
-  const rates=[['영업 메이드율',pt(made),L.ready?'수주 '+con.count+' ÷ (수주 '+con.count+' + 실주 '+loss.length+') · 배드핏 제외':'계약 원장을 불러오는 중','#15171c'],['문의 적합률',pt(B.pct(fit,q.length)),'적합 '+fit+' ÷ 문의 '+q.length,'#c9cdd5'],['문의 → 계약 전환율',L.ready?pt(B.pct(con.count,q.length)):'불러오는 중','수주 '+con.count+' ÷ 문의 '+q.length,'#c9cdd5'],['확정 전환율 ('+coM+'월 문의)',L.ready&&cohort.length?pt(B.pct(cw,cohort.length)):'아직 없음',coM+'월 문의 '+cohort.length+'건 중 지금까지 '+cw+'건 계약','#c9cdd5']];
+  const rates=[['영업 메이드율',pt(made),L.ready?(C.tf.count||C.tfLost?'(자사 '+con.count+' + 타사 이관 '+C.tf.count+') ÷ (자사 '+con.count+' + 타사 이관 '+C.tf.count+' + 실주 '+(loss.length+C.tfLost)+') · 배드핏 제외':'수주 '+con.count+' ÷ (수주 '+con.count+' + 실주 '+loss.length+') · 배드핏 제외'):'계약 원장을 불러오는 중','#15171c'],['문의 적합률',pt(B.pct(fit,q.length)),'적합 '+fit+' ÷ 문의 '+q.length,'#c9cdd5'],['문의 → 계약 전환율',L.ready?pt(B.pct(C.won,q.length)):'불러오는 중','수주 '+C.won+' ÷ 문의 '+q.length,'#c9cdd5'],['확정 전환율 ('+coM+'월 문의)',L.ready&&cohort.length?pt(B.pct(cw,cohort.length)):'아직 없음',coM+'월 문의 '+cohort.length+'건 중 지금까지 '+cw+'건 계약','#c9cdd5']];
   const top=(list,fn)=>{const t=B.tally(list,fn),a=t.slice(0,3),rest=t.slice(3).reduce((s,x)=>s+x[1],0);return a.map(x=>x[0]+' '+x[1]).concat(rest?['그 외 '+rest]:[]).join(' · ')||'해당 없음';};
   const funnel='<section class="db-card"><div class="db-ch"><b>견적문의가 계약까지</b><em>새 지표</em><span>'+h(P.label+' · 문의 접수 기준')+'</span></div>'
    +'<div class="db-fun">'+fun.map((u,i)=>'<div class="'+(i===fun.length-1?'last':'')+'"><span>'+u[0]+'</span><b>'+h(u[1])+'</b><small>'+h(u[2])+'</small></div>').join('')+'</div>'
@@ -152,7 +154,7 @@
   const {P,cnt,names,A}=C,rows=PP.filter(p=>p.prog||p.w||p.l||p.yr>0).sort((a,b)=>b.sev-a.sev||b.fix-a.fix),ymax=Math.max(1,...rows.map(p=>p.yr));
   const chips=[['진행 멈춤',cnt('stall')],['기한 지남',cnt('overdue')],['다음 할 일 없음',cnt('missing')],['장기 정체',cnt('stale')]];
   const row=p=>{const c=TAGC[p.tag],tot=p.w+p.l;return '<div class="db-prow" style="border-left-color:'+(c||'transparent')+'"><div class="g"><div class="nm"><button type="button" data-db="person" data-v="'+attr(p.n)+'">'+h(p.n)+'</button><em style="'+(c?'color:#fff;background:'+c:'')+'">'+p.tag+'</em></div>'
-   +'<div class="bar"><b class="'+(p.yr>0?'':'mut')+'">'+(p.yr>0?h(won(p.yr)):'아직 없음')+'</b><span><i style="width:'+(p.yr>0?Math.max(1,Math.round(p.yr/ymax*100)):0)+'%"></i></span></div>'
+   +'<div class="bar"><b class="'+(p.yr>0?'':'mut')+'">'+(p.yr>0?h(won(p.yr)):'아직 없음')+(p.tf>0?' <small class="db-tf">타사 이관 '+h(won(p.tf))+' 포함</small>':'')+'</b><span><i style="width:'+(p.yr>0?Math.max(1,Math.round(p.yr/ymax*100)):0)+'%"></i></span></div>'
    +'<div class="bar"><div><b class="'+(p.made!==null&&p.made<LOWMADE()?'red':'')+'">'+(p.made===null?'—':p.made.toFixed(1)+'%')+'</b><small>수주 '+p.w+' · 실주 '+p.l+'</small></div><span class="wl"><i style="width:'+(tot?p.w/tot*100:0)+'%"></i><u style="width:'+(tot?p.l/tot*100:0)+'%"></u></span></div>'
    +'<div class="two"><b>'+p.prog+'건</b><small>예상 '+(p.exp>0?h(won(p.exp)):'아직 없음')+'</small></div>'
    +'<div class="two"><b style="color:'+agoColor(p)+'">'+agoText(p)+'</b><small>'+h((p.last?siteShort(p.last.site):'-')+' · 이번 주 '+p.wk+'건')+'</small></div></div>'
@@ -162,9 +164,9 @@
   const total=heat.reduce((s,r)=>s+r.t,0),zero=heat.filter(r=>!r.t).length;
   const hrow=r=>'<div class="db-heat'+(r.t?'':' zero')+'"><div class="who"><b>'+h(r.n)+'</b><span>이번 주 '+r.t+'건</span></div><div class="cells">'+r.cells.map((v,i)=>'<div><span class="'+(v?'on':i>=5?'we':'')+'">'+(v||'')+'</span><small>'+DL[i]+'</small></div>').join('')+'</div><div class="last"><span>마지막 기록</span><b style="color:'+(r.p.lastDays===null||r.p.lastDays>LOSTCUT()?'#b42318':'#15171c')+'">'+(r.p.lastDays===null?'기록 없음':agoText(r.p)+' ('+md(r.p.lastK)+')')+'</b></div></div>';
   return '<section class="db-card flush"><div class="db-ch pad"><b>담당자별</b><span>막힌 사람이 위 · 이름 클릭 = 성과 분석</span><i class="db-sp"></i>'+chips.map(c=>'<span class="db-chip">'+c[0]+' <b>'+c[1]+'</b></span>').join('')+'</div>'
-   +'<div class="db-phead"><span>담당자</span><span>'+(P.thisYear?'올해 계약':P.label+' 계약')+'</span><span>수주 · 실주 · 메이드율</span><span>진행 · 예상금액</span><span>최근 활동</span></div>'
+   +'<div class="db-phead"><span>담당자</span><span>'+(P.thisYear?'올해 수주실적':P.label+' 수주실적')+'</span><span>수주 · 실주 · 메이드율</span><span>진행 · 예상금액</span><span>최근 활동</span></div>'
    +(rows.length?rows.map(row).join(''):'<p class="db-empty">진행 · 수주 기록이 있는 담당자가 없습니다.</p>')
-   +'<div class="db-foot">계약 = 계약 체결일 기준 계약금액(기술자문 낙찰은 별도) · 메이드율 = 수주 ÷ (수주 + 실주) · '+LOWMADE()+'% 미만 빨강</div></section>'
+   +'<div class="db-foot">수주실적 = 자사 계약실적(계약 체결일 기준) + 인정된 타사 이관 수주(낙찰금액 · VAT 별도) · 기술자문 낙찰은 별도 · 메이드율 = (자사 수주 + 타사 이관 수주) ÷ (… + 실주) · '+LOWMADE()+'% 미만 빨강</div></section>'
    +'<section class="db-card"><div class="db-ch"><b>이번 주 영업 기록</b><span>'+md(W[0])+'(월) – '+md(W[6])+'(일)</span><i class="db-sp"></i><b class="'+(zero?'red':'')+'" style="font-size:13px">팀 전체 '+total+'건 · '+heat.length+'명 중 '+zero+'명이 이번 주 기록 0건</b></div><div class="db-heats">'+heat.map(hrow).join('')+'</div></section>';
  }
  const FLOW=['consulting','sent','relationship','competition','construction'];
@@ -260,14 +262,15 @@
   let sum=0,n=0;for(let m=1;m<=12;m++){if(P.y>P.ty||(P.y===P.ty&&m>=P.tm))continue;sum+=B.contractsIn(L,mk(P.y,m),mk(P.y,m+1)).net;n++;}
   const avg=n?sum/n:0,gauge=L.ready&&avg>0&&P.y===P.ty?Math.round(cm.net/avg*100):null,exp=active.reduce((s,d)=>s+(Number(d.expected)||0),0);
   const low=PP.filter(p=>p.made!==null&&p.made<LOWMADE()&&p.w+p.l>=MINCLOSED());
-  const s1=!L.ready?'계약 원장을 불러오는 중입니다.':h(P.label)+' 계약 <b>'+(con.net>0?h(won(con.net)):'아직 없음')+'</b>'+(avg>0?' · 월평균 '+h(won(avg)):'')+'. '+(P.y===P.ty?P.tm+'월은 <b>'+P.td+'일째 · '+(cm.net>0?h(won(cm.net)):'아직 없음')+'</b>. ':'')+(exp>0?'파이프라인 '+h(won(exp))+(avg>0?'은 월평균의 <b>'+(exp/avg).toFixed(1)+'개월치</b>입니다.':'이 진행 중입니다.'):'진행 중인 파이프라인 금액이 없습니다.');
+  const tfm=C.DT?C.DT.wonIn(ms,mk(P.ty,P.tm+1),C.target):{count:0,amount:0};cm.net+=tfm.amount;
+  const s1=!L.ready?'계약 원장을 불러오는 중입니다.':h(P.label)+' 수주실적 <b>'+(C.perf>0?h(won(C.perf)):'아직 없음')+'</b>'+(avg>0?' · 월평균 '+h(won(avg)):'')+'. '+(P.y===P.ty?P.tm+'월은 <b>'+P.td+'일째 · '+(cm.net>0?h(won(cm.net)):'아직 없음')+'</b>. ':'')+(exp>0?'파이프라인 '+h(won(exp))+(avg>0?'은 월평균의 <b>'+(exp/avg).toFixed(1)+'개월치</b>입니다.':'이 진행 중입니다.'):'진행 중인 파이프라인 금액이 없습니다.');
   const s2=made===null?'':'영업 메이드율 '+made.toFixed(1)+'%'+(low.length?' · '+low.map(p=>p.n+' '+p.made.toFixed(1)+'%').join(' · ')+' — 기준 '+LOWMADE()+'% 아래입니다.':' · 종료 '+MINCLOSED()+'건 이상인 담당자 중 '+LOWMADE()+'% 아래는 없습니다.');
   const g=gauge===null?0:Math.min(100,gauge);
-  const verdict='<section class="db-card db-verdict"><div class="ring" style="background:conic-gradient(#3b6ce4 0 '+g+'%,#eef0f3 '+g+'% 100%)"><div><b>'+(gauge===null?'—':gauge+'%')+'</b><span>월평균 대비</span></div></div><div class="tx"><span>'+s1+'</span>'+(s2?'<span class="'+(low.length?'amb':'mut')+'">'+h(s2)+'</span>':'')+'</div><div class="rt"><b class="'+(L.ready&&con.net>0?'':'mut')+'">'+(L.ready?(con.net>0?h(won(con.net)):'아직 없음'):'불러오는 중')+'</b><span>'+(P.thisYear?'연 누적':h(P.label))+' · 계약 '+con.count+'건</span><small>메이드율 <b>'+pt(made)+'</b> · 문의→계약 <b>'+(L.ready?pt(B.pct(con.count,q.length)):'—')+'</b></small></div></section>';
+  const verdict='<section class="db-card db-verdict"><div class="ring" style="background:conic-gradient(#3b6ce4 0 '+g+'%,#eef0f3 '+g+'% 100%)"><div><b>'+(gauge===null?'—':gauge+'%')+'</b><span>월평균 대비</span></div></div><div class="tx"><span>'+s1+'</span>'+(s2?'<span class="'+(low.length?'amb':'mut')+'">'+h(s2)+'</span>':'')+'</div><div class="rt"><b class="'+(L.ready&&C.perf>0?'':'mut')+'">'+(L.ready?(C.perf>0?h(won(C.perf)):'아직 없음'):'불러오는 중')+'</b><span>'+(P.thisYear?'연 누적':h(P.label))+' · 수주 '+C.won+'건'+(C.tf.count?' (타사 이관 '+C.tf.count+'건 · '+h(won(C.tf.amount))+')':'')+'</span><small>메이드율 <b>'+pt(made)+'</b> · 문의→계약 <b>'+(L.ready?pt(B.pct(C.won,q.length)):'—')+'</b></small></div></section>';
   const ranked=PP.slice().sort((a,b)=>b.yr-a.yr||b.w-a.w);
   const card=(p,i)=>{const first=i===0&&p.yr>0,badge=first?'1위':p.sev?'주의':(i+1)+'위',bc=first?'#3b6ce4':p.sev?'#e0a43a':'#9aa0ab',lowM=p.made!==null&&p.made<LOWMADE(),deg=p.made===null?0:p.made;
    return '<div class="db-pc"><div class="hd"><em style="background:'+bc+'">'+badge+'</em><button type="button" data-db="person" data-v="'+attr(p.n)+'">'+h(p.n)+'</button><i class="db-sp"></i><span>'+(p.lastK||'-')+'</span></div><div class="bd"><div class="ring" style="background:conic-gradient('+(lowM?'#d14a3f':'#3b6ce4')+' 0 '+deg+'%,#eef0f3 '+deg+'% 100%)"><div><b class="'+(lowM?'red':'')+'">'+(p.made===null?'-':p.made.toFixed(1)+'%')+'</b><span>메이드율</span></div></div>'
-    +'<div class="kv"><span>'+(P.thisYear?'올해 계약':'기간 계약')+' <b>'+(p.yr>0?h(won(p.yr)):'아직 없음')+'</b></span><span>'+P.tm+'월 <b>'+(p.mo>0?h(won(p.mo)):'아직 없음')+'</b></span><span>수주 · 실주 <b>'+p.w+' · '+p.l+'</b></span><span>진행 <b>'+p.prog+'건</b></span><span>주간 활동 <b>'+p.wk+'건</b></span><span>손볼 건 <b class="red">'+p.fix+'건</b></span></div></div><p class="'+(lowM||p.fix>10?'red':'')+'">'+h(p.why||(p.fix?'손볼 건 '+p.fix+'건':'막힌 곳 없음'))+'</p></div>';};
+    +'<div class="kv"><span>'+(P.thisYear?'올해 수주실적':'기간 수주실적')+' <b>'+(p.yr>0?h(won(p.yr)):'아직 없음')+'</b></span><span>'+P.tm+'월 <b>'+(p.mo>0?h(won(p.mo)):'아직 없음')+'</b></span><span>수주 · 실주 <b>'+p.w+' · '+p.l+'</b></span><span>진행 <b>'+p.prog+'건</b></span><span>주간 활동 <b>'+p.wk+'건</b></span><span>손볼 건 <b class="red">'+p.fix+'건</b></span></div></div><p class="'+(lowM||p.fix>10?'red':'')+'">'+h(p.why||(p.fix?'손볼 건 '+p.fix+'건':'막힌 곳 없음'))+'</p></div>';};
   const quiet=ALL.filter(p=>!PP.includes(p)).map(p=>p.n);
   /* 기술자문 낙찰실적 */
   const adv=advisory(C),PAL=['#111a2e','#3b6ce4','#7c9be8','#9aa0ab','#c9cdd5','#e3e6ec'];

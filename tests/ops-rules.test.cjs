@@ -19,10 +19,15 @@ test('결과 구분: 타사 이관은 단계가 아니라 상태값 · 승인된
  const g=globalThis;g.outcomeOf=d=>d.o||'open';g.itemPatch=()=>({});
  try{
   assert.equal(R.dealResult({o:'won'}),'won_own');assert.equal(R.dealResult({o:'lost'}),'lost');assert.equal(R.dealResult({o:'nocontact'}),'lost');assert.equal(R.dealResult({o:'badfit'}),'bad_fit');assert.equal(R.dealResult({o:'open'}),'in_progress');
-  assert.equal(R.dealResult({o:'open',transfer:{status:'reported'}}),'transfer_pending','낙찰결과 대기 = 계산 제외');
-  assert.equal(R.dealResult({o:'open',transfer:{status:'awarded',award_amount:3e8}}),'transfer_pending','승인 전에는 실적 아님');
-  assert.equal(R.dealResult({o:'open',transfer:{status:'approved',award_amount:3e8}}),'won_transfer');
-  assert.equal(R.dealResult({o:'lost',transfer:{status:'closed'}}),'lost');
+  const T=x=>Object.assign({transfer_status:'transferred',award_result:'pending',incentive_eligible:false},x);
+  assert.equal(R.dealResult({o:'open',transfer:T({})}),'transfer_pending','낙찰결과 대기 = 계산 제외');
+  assert.equal(R.dealResult({o:'open',transfer:T({award_result:'transferred_won',award_amount:3e8})}),'transfer_pending','인정 전에는 실적 아님');
+  assert.equal(R.dealResult({o:'open',transfer:T({award_result:'transferred_won',award_amount:3e8,incentive_eligible:true})}),'won_transfer');
+  assert.equal(R.dealResult({o:'open',transfer:T({award_result:'transferred_won',rejected_reason:'사전 보고 없음'})}),'transfer_pending','관리자 제외 = 실적 · 메이드율 제외');
+  assert.equal(R.dealResult({o:'open',transfer:T({award_result:'lost'})}),'lost');
+  assert.equal(R.dealResult({o:'open',transfer:T({award_result:'cancelled'})}),'transfer_pending');
+  assert.equal(R.dealResult({o:'won',transfer:{transfer_status:'cancelled'}}),'won_own','거둔 이관은 없는 것으로');
+  assert.deepEqual(R.transferOf({transfer:T({award_result:'transferred_won',incentive_eligible:true,award_amount:'380000000',transfer_company:'코지건설',performance_owner:'이필선'})}).status,'approved');
  }finally{delete g.outcomeOf;delete g.itemPatch;}
  assert.deepEqual(R.performance(5e8,3e8),{own:5e8,transfer:3e8,total:8e8,label:'수주실적'},'자사 · 타사 이관은 나눠 보여 주고 합산');
 });

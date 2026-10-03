@@ -46,14 +46,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await d.locator('.db-month').evaluate(n=>n.getBoundingClientRect().height<420),true,'월별 카드 높이');
   assert.match(await d.locator('.db-tool').innerText(),/컨트롤타워 ↗\s*성과 분석 ↗\s*2026년 연간 접수 · 계약실적 \/ 파이프라인 · 조치 필요는 현재 기준[\s\S]*연간\s*1분기\s*2분기\s*3분기\s*4분기\s*LIVE 10\.07 10:00/);
   const kpi=await d.locator('.db-kpi').evaluateAll(a=>a.map(n=>[n.querySelector('span').textContent,n.querySelector('b').textContent,n.querySelector('small').textContent]));
-  assert.deepEqual(kpi.map(k=>k[0]),['이번 달 계약 (10월)','올해 누적 계약','진행 중 파이프라인','견적문의','조치 필요','주간 활동']);
+  assert.deepEqual(kpi.map(k=>k[0]),['이번 달 계약 (10월)','올해 수주실적','진행 중 파이프라인','견적문의','조치 필요','주간 활동']);
   assert.deepEqual(kpi[0].slice(1),['아직 없음','10월 7일째 · 9월 3억'],'실적 없는 달 = 아직 없음 + 직전 달');assert.equal(await d.locator('.db-kpi').first().locator('b').evaluate(n=>getComputedStyle(n).color),'rgb(156, 163, 175)','아직 없음은 회색');
-  assert.deepEqual(kpi[1].slice(1),['8억','계약 2건']);assert.match(kpi[2][2],/^진행 7건$/);assert.deepEqual(kpi[3].slice(1),['4건','적합 3 · 배드핏 1']);
+  assert.deepEqual(kpi[1].slice(1),['8억','자사 계약실적 8억(2건) · 타사 이관 없음'],'수주실적 = 자사 + 타사 이관, 화면에서는 나눠 적는다');assert.match(kpi[2][2],/^진행 7건$/);assert.deepEqual(kpi[3].slice(1),['4건','적합 3 · 배드핏 1']);
   const core=await page.evaluate(()=>{const C=DashB.core();return {risk:C.risk.length,od:C.cnt('overdue'),miss:C.cnt('missing'),made:C.made,active:C.active.length};});
   assert.equal(core.od,5);assert.equal(core.made,40,'메이드율 = 수주 2 ÷ (수주 2 + 실주 3) · 배드핏 제외');
   assert.deepEqual(kpi[4].slice(1),[core.risk+'건','기한 지남 5 · 다음 할 일 없음 '+core.miss]);
   assert.match(kpi[5][1],/^2건$/);assert.match(kpi[5][2],/^최근 7일 · \d+명 중 \d+명 0건$/);
-  assert.match(await d.locator('.db-band').innerText(),/오늘 먼저 볼 것\s*이번 주 기한 1건 · 4억 — 매탄 임박 입찰 마감 10\/9\s*올해 계약 8억 · 메이드율 40\.0% · 손봐야 할 \d+건 중 기한 지남 5건\s*컨트롤타워에서 처리 →/);
+  assert.match(await d.locator('.db-band').innerText(),/오늘 먼저 볼 것\s*이번 주 기한 1건 · 4억 — 매탄 임박 입찰 마감 10\/9\s*올해 수주실적 8억 · 메이드율 40\.0% · 손봐야 할 \d+건 중 기한 지남 5건\s*컨트롤타워에서 처리 →/);
   assert.deepEqual(await d.locator('.db-secs button').evaluateAll(a=>a.map(n=>n.childNodes[0].textContent)),['성과','사람','파이프라인','활동']);
   /* 성과: 흐름 5칸 · 비율 4개 · 배드핏/실주 두 상자 */
   assert.deepEqual(await d.locator('.db-fun>div').evaluateAll(a=>a.map(n=>[...n.children].map(c=>c.textContent))),[['견적문의','4건','전체 접수'],['적합 문의','3건','배드핏 1 제외'],['견적 발송','5건','기간 안 견적 발송'],['영업건 전환','12건','파이프라인 진입'],['수주','2건 · 8억','실주 3건']]);
@@ -129,11 +129,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{OPS_RULES.dashMinClosed=3;});/* 종료 3건부터 메이드율 판단(기본 5건 — 설정값) */
   await page.locator('#si-control [data-db="go"][data-v="perf"]').click();await page.waitForTimeout(400);
   const p=page.locator('#si-perf .db-shell');assert.equal(await p.count(),1);
-  assert.match(await p.locator('.db-verdict').innerText(),/^0%\s*월평균 대비\s*2026년 연간 계약 8억 · 월평균 8,889만\. 10월은 7일째 · 아직 없음\. 파이프라인 .+은 월평균의 [\d.]+개월치입니다\.\s*영업 메이드율 40\.0% · 황윤선 33\.3% — 기준 50% 아래입니다\.\s*8억\s*연 누적 · 계약 2건\s*메이드율 40\.0% · 문의→계약 50\.0%$/);
+  assert.match(await p.locator('.db-verdict').innerText(),/^0%\s*월평균 대비\s*2026년 연간 수주실적 8억 · 월평균 8,889만\. 10월은 7일째 · 아직 없음\. 파이프라인 .+은 월평균의 [\d.]+개월치입니다\.\s*영업 메이드율 40\.0% · 황윤선 33\.3% — 기준 50% 아래입니다\.\s*8억\s*연 누적 · 수주 2건\s*메이드율 40\.0% · 문의→계약 50\.0%$/);
   assert.equal(await p.locator('.db-pcs').evaluate(n=>getComputedStyle(n).gridTemplateColumns.split(' ').length),3,'담당자 카드 3열 고정');
   const pc=await p.locator('.db-pc').evaluateAll(a=>a.map(n=>n.innerText.replace(/\s+/g,' ').trim()));
-  assert.equal(pc.length,2);assert.match(pc[0],/^1위 이필선 2026-10-06 50\.0% 메이드율 올해 계약 5억 10월 아직 없음 수주 · 실주 1 · 1 진행 2건 주간 활동 2건 손볼 건 \d+건/);
-  assert.match(pc[1],/^주의 황윤선 2026-09-01 33\.3% 메이드율 올해 계약 3억 10월 아직 없음 수주 · 실주 1 · 2 진행 5건 주간 활동 0건 손볼 건 5건 기한 지난 건 5건 · 최장 17일/);
+  assert.equal(pc.length,2);assert.match(pc[0],/^1위 이필선 2026-10-06 50\.0% 메이드율 올해 수주실적 5억 10월 아직 없음 수주 · 실주 1 · 1 진행 2건 주간 활동 2건 손볼 건 \d+건/);
+  assert.match(pc[1],/^주의 황윤선 2026-09-01 33\.3% 메이드율 올해 수주실적 3억 10월 아직 없음 수주 · 실주 1 · 2 진행 5건 주간 활동 0건 손볼 건 5건 기한 지난 건 5건 · 최장 17일/);
   assert.match(await p.locator('.db-quiet').innerText(),/^진행 · 수주 기록 없음: /,'기록 없는 사람은 이름 한 줄');
   const c3=p.locator('.db-c3');assert.equal(await c3.count(),3);
   assert.match(await c3.nth(0).innerText(),/^기술자문 낙찰실적\s*영업 계약과 별도 집계\s*아직 없음/);
@@ -144,7 +144,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   if(shot)await page.screenshot({path:shot+'-perf.png',fullPage:true});
   /* 분기 전환: 3분기 = 9월 계약 3억 · 실주 2 · 문의 2 */
   await p.locator('.db-seg [data-v="3"]').click();await page.waitForTimeout(300);
-  assert.match(await page.locator('#si-perf .db-verdict .rt').innerText(),/^3억\s*2026년 3분기 · 계약 1건\s*메이드율 33\.3% · 문의→계약 50\.0%$/);
+  assert.match(await page.locator('#si-perf .db-verdict .rt').innerText(),/^3억\s*2026년 3분기 · 수주 1건\s*메이드율 33\.3% · 문의→계약 50\.0%$/);
   await page.locator('#si-perf .db-seg [data-v="0"]').click();await page.waitForTimeout(200);
   /* 좁은 화면 · 끄기 */
   await page.setViewportSize({width:1180,height:900});await page.evaluate(()=>goPage('control'));await page.waitForTimeout(300);

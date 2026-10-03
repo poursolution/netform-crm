@@ -48,7 +48,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(band,new RegExp('^'+P.m+'월 계약 2건 · 8억 — 6개월 중 최고, 메이드율은 40\\.0%로 내렸습니다\\s*'+P.nm+'월은 계약 임박 2건 · 7\\.5억 중 1건\\(4억\\)이 이번 주에 갈립니다\\. 실주 3건 중 1건이 관리소장 변경과 겹쳐 대응 정책 결정이 필요합니다\\.\\s*결정 요청\\s*3건$'),band);
   assert.equal(await v.locator('.rb-band').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(17, 26, 46)','남색 띠');
   /* 2. 흐름 5칸 + 비율 4개(메이드율은 배드핏 제외) */
-  assert.deepEqual(await v.locator('.rb-funnel>div>span').allInnerTexts(),['신규 견적문의','적합 문의','견적 발송','파이프라인 전환','신규 계약']);
+  assert.deepEqual(await v.locator('.rb-funnel>div>span').allInnerTexts(),['신규 견적문의','적합 문의','견적 발송','파이프라인 전환','수주실적']);
   assert.deepEqual(await v.locator('.rb-funnel>div>b').allInnerTexts(),['4건','2건','1건','1건','2건 · 8억']);
   assert.match(await v.locator('.rb-funnel>div').nth(0).innerText(),/▲3 \(1\)/);assert.match(await v.locator('.rb-funnel>div').nth(1).innerText(),/배드핏 2 제외/);assert.match(await v.locator('.rb-funnel>div.last').innerText(),/▲1건 · \+6억/);
   assert.deepEqual(await v.locator('.rb-rates>div>span').allInnerTexts().then(a=>a.slice(0,3)),['영업 메이드율','문의 적합률','문의 → 계약 전환율']);
@@ -62,9 +62,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await v.locator('.rb-g3 .rb-sec').nth(2).innerText(),new RegExp('^4\\. '+P.nm+'월 전망\\s*계약 임박 2건 · 7\\.5억\\s*\\[수원\\] 매탄 임박\\s*[\\s\\S]*황윤선\\s*4억\\s*입찰 마감 \\d+\\/\\d+\\s*\\[서울 송파\\] 계약 검토\\s*이필선\\s*3\\.5억\\s*계약 예정 \\d+\\/\\d+\\s*위 2건 7\\.5억 = 7\\.5억 · 이번 주\\(7일 안\\) 기한 1건 4억$'));
   assert.equal(await v.locator('.rb-near').first().locator('.r span').evaluate(n=>getComputedStyle(n).color),'rgb(180, 35, 24)','7일 안 기한 = 빨강');assert.equal(await v.locator('.rb-near').first().locator('i').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(232, 89, 12)','브랜드 띠');
   /* 6. 담당자별 + 합계(위 숫자와 일치) */
-  const cells=await v.locator('.rb-table>span').allInnerTexts(),row=n=>{const i=cells.indexOf(n);return cells.slice(i,i+7);};
-  assert.deepEqual(cells.slice(0,7),['담당','문의','견적','수주','계약실적','실주','메이드율']);
-  assert.deepEqual(row('이필선'),['이필선','2','1','1','5억','1','50.0%']);assert.deepEqual(row('황윤선'),['황윤선','0','0','1','3억','2','33.3%']);assert.deepEqual(row('미배정'),['미배정','2','0','-','-','0','-']);assert.deepEqual(row('합계'),['합계','4','1','2','8억','3','40.0%'],'합계 = 위 흐름 숫자와 일치');
+  const cells=await v.locator('.rb-table>span').allInnerTexts(),row=n=>{const i=cells.indexOf(n);return cells.slice(i,i+8);};
+  assert.deepEqual(cells.slice(0,8),['담당','문의','견적','수주','계약실적','타사 이관','실주','메이드율']);
+  assert.deepEqual(row('이필선'),['이필선','2','1','1','5억','-','1','50.0%']);assert.deepEqual(row('황윤선'),['황윤선','0','0','1','3억','-','2','33.3%']);assert.deepEqual(row('미배정'),['미배정','2','0','-','-','-','0','-']);assert.deepEqual(row('합계'),['합계','4','1','2','8억','-','3','40.0%'],'합계 = 위 흐름 숫자와 일치');
   assert.equal(await v.locator('.rb-table>span.r').first().innerText(),'33.3%','50% 미만 = 빨강');
   /* 7. 결정 요청: 근거 숫자 + 선택 저장 */
   const asks=await v.locator('.rb-ask').allInnerTexts();assert.equal(asks.length,3);

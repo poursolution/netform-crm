@@ -7,7 +7,7 @@
  const R=root,h=v=>R.esc(String(v==null?'':v)),attr=v=>R.escAttr(String(v==null?'':v)),CR=()=>R.CRMRules;
  const TAG={fix:['확정','#374151','#eef0f3'],cond:['조건부','#1d3f99','#eef3fe'],hold:['보류','#8a5a00','#fff4d6']};
  /* 지금 화면 계산에 실제로 쓰이는 조건부 항목(나머지는 값만 저장 — 연결 예정) */
- const WIRED=new Set(['assign_minutes','long_wait_contact_days','reasons_bad_fit','reasons_lost','contact_channels']);
+ const WIRED=new Set(['assign_minutes','long_wait_contact_days','reasons_bad_fit','reasons_lost','contact_channels','transfer_result_check_days','reasons_transfer']);
  function st(){const g=R.G;if(!g.rulesAdmin)g.rulesAdmin={draft:{},adding:'',busy:false,err:''};return g.rulesAdmin;}
  const admin=()=>{try{return !!R.todayIsAdmin();}catch(e){return false;}};
  const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
