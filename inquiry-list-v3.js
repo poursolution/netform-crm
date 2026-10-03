@@ -73,7 +73,7 @@
  function rowHtml(m){
   const S=st(),on=S.open===m.key,k=attr(m.key),prim=m.step<2,amber=m.follow&&m.late;
   return '<div class="il-item'+(on?' open':'')+'"><div class="il-row" role="button" tabindex="0" data-il="toggle" data-key="'+k+'" style="border-left-color:'+m.bc+'">'
-   +'<div class="il-l"><div class="il-brand"><b style="color:'+m.bc+'">'+h(m.brand||'브랜드 미지정')+'</b><span>'+h(m.channel)+'</span></div><div class="il-site"><b>'+h(m.site)+'</b><span><i>AI</i>'+h(m.work)+(m.sum?' · '+h(m.sum):'')+(m.meet&&m.step<4?'<em> · 대표회의 '+h(ymd(m.meet.date))+' D'+(m.meet.dd<0?'+'+(-m.meet.dd):'-'+m.meet.dd)+'</em>':'')+'</span></div></div>'
+   +'<div class="il-l"><div class="il-brand"><b style="color:'+m.bc+'">'+h(m.brand||'브랜드 미지정')+'</b><span>'+h(m.channel)+'</span></div><div class="il-site"><b>'+h(m.site)+'</b><span>'+h(m.work)+(m.sum?' · '+h(m.sum):'')+(m.meet&&m.step<4?'<em> · 대표회의 '+h(ymd(m.meet.date))+' D'+(m.meet.dd<0?'+'+(-m.meet.dd):'-'+m.meet.dd)+'</em>':'')+'</span></div></div>'
    +'<div class="il-r"><div class="il-who"><span>'+h(m.who)+'</span><b class="'+(m.phone?'':'none')+'">'+h(m.phone||'연락처 없음')+'</b></div><span class="il-owner'+(m.owner?'':' none')+'">'+h(m.owner?root.repDisplay(m.owner):'미배정')+'</span><div class="il-el"><b style="color:'+m.ec+'">'+h(m.elapsed)+'</b><span>'+h(m.recv)+'</span></div><button type="button" class="il-act'+(prim?' prim':amber?' amber':'')+'" data-il="act" data-key="'+k+'">'+h(m.act)+'</button></div></div>'
    +(on?panel(m):'')+'</div>';
  }
