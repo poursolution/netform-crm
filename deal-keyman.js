@@ -153,5 +153,5 @@
   document.addEventListener('click',onClick,true);document.addEventListener('input',onInput);
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- root.DealKeyman={enabled,changeOf,apply,knownPerson,CHECKS};
+ root.DealKeyman={enabled,changeOf,apply,knownPerson,CHECKS,ask:askAi,ai:d=>{const k=String(d.id),r=AIR.get(k)||{};return {next:r.next,call:r.call,err:r.err,busyNext:AIB.has(k+':next'),busyCall:AIB.has(k+':call')};}};
 })(window);
