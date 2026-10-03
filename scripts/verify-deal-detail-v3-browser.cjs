@@ -142,6 +142,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(()=>__ops.map(o=>[o.op,o.payload.type,o.payload.note||o.payload.text,o.payload.due_at||''])),[['activity','전화','통화 완료 · 검토중 — 12월 입대의 후 결정',''],['next_action','전화','결과 확인',await day(3)]],'저장 = 연락 기록 + 다음 할 일(기존 경로)');
   assert.equal(await page.locator('#nowCard .dv3-form').count(),0,'저장 뒤 접힘');assert.equal(await page.locator('#nowCard .nc-call').innerText(),'연락하고 결과 남기기');
   assert.match(await page.locator('#detailView .dw-center').innerText(),/통화 완료 · 검토중 — 12월 입대의 후 결정/,'가운데 응대 이력에 쌓임');
+  assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#detailView .idv-thread .idv-meta')].every(n=>/\d{4}\. \d{2}\. \d{2}\./.test(n.innerText))),true,'기록마다 연도 표시');
   assert.match(await page.locator('#nowCard').innerText(),/결과 확인/,'다음 할 일 반영');
   /* 거절 = 다음 행동 없이 저장 */
   await page.locator('#nowCard .nc-call').click();await page.waitForTimeout(200);
