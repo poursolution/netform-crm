@@ -156,3 +156,23 @@
 .idv-nowbox dl{margin:0;display:grid;grid-template-columns:84px minmax(0,1fr);gap:4px 8px;border-top:1px solid #eef0f3;padding-top:8px}.idv-nowbox dt{color:#9ca3af;margin:0}.idv-nowbox dd{margin:0}
 .idv-nowbox small{font-size:11.5px;color:#9ca3af;line-height:1.5}
 .idv-chead{flex-wrap:wrap}.idv-chead em{white-space:normal;overflow:visible;text-overflow:clip;flex:none}
+
+/* 2026-10-04 시안 대조 2차(inquiry_v2) */
+.idv-pill.red{background:#fdecec;color:#d93a3a}.idv-pill.ok{background:#e6f6ec;color:#1f7a4d}.idv-pill{font-weight:700}
+.idv-brand{font-size:12px;font-weight:700;padding:4px 9px}
+.idv-recv{margin:-4px 0 0;font-size:11.5px;line-height:1.55;color:#9ca3af}
+.idv-chead .c{font-size:12px;color:#374151}.idv-chead .c b{font-size:12px}
+.idv-chead em{font-size:12px;color:#6b7280}.idv-chead em b{font-size:12px;font-weight:700;color:#15171c}
+.idv-evmeta i.sp{flex:1}
+.idv-evmeta em.s{font-size:10px;font-weight:400;color:#9ca3af;background:none;border:1px solid #e3e6ec;border-radius:3px;padding:0 4px}
+.idv-evmeta b{font-size:11px;font-weight:700;color:#15171c}
+.idv-thint{margin-left:auto;font-size:11.5px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.idv-ctabs .idv-toggle{margin-left:8px;color:#9ca3af}
+.idv-ctabs [role=tab]{font-weight:700;color:#374151;padding:6px 12px}
+.idv-sug.off{display:none}
+.idv-need{display:flex;flex-wrap:wrap;gap:5px}
+.idv-needchip{border:1px solid #e3e6ec;background:#fff;color:#6b7280;font:inherit;font-size:11.5px;border-radius:999px;padding:3px 9px;cursor:default}
+.idv-needchip.no{background:#fff8e6;border-color:#f5dfa8;color:#a35c00;font-weight:600}.idv-needchip.no[data-idv]{cursor:pointer}
+.idv-needin{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:#6b7280}.idv-needin input{width:100%;box-sizing:border-box}
+.idv-nowbox small+small{margin-top:4px}
+.idv-needn{margin-left:6px;font-size:11px;font-weight:400;color:#9ca3af}

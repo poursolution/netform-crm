@@ -36,14 +36,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const reps=await d.locator('.idv-rep').evaluateAll(ns=>ns.map(n=>n.dataset.v));assert.ok(reps.includes('__branch__')&&reps.length>=2,'추천 담당자 + 지사 '+reps.join(','));
   /* 2026-10-03 inquiry_v2 상세보기: 응대 기록은 내용 한 칸 — 배정 전에도 남긴다(수단 · 결과를 자동으로 읽어 머리에 적음) */
   assert.equal(await d.locator('.idv-composer.idv-locked').count(),0,'배정 전에도 입력칸 열림');
-  assert.deepEqual(await d.locator('.idv-ctabs [role=tab]').allInnerTexts(),['응대 기록','문자','내부 메모']);
+  assert.deepEqual(await d.locator('.idv-ctabs [role=tab]').allInnerTexts(),['응대 기록','문자 보내기','내부 메모']);
   assert.match(await d.locator('.idv-chead').innerText(),/응대 이력\s*\d+건\s*연락 시도 0 · 실제 연결 0\s*최초 응대 아직 없음/);
   assert.deepEqual(await d.locator('.idv-ev .idv-evmeta em.k').allInnerTexts(),['시스템'],'접수 = 시스템');assert.match(await d.locator('.idv-ev.sy').innerText(),/구글시트[\s\S]*전화 견적문의 접수/);
   await d.locator('#iq-res').fill('카톡으로 담당 정해지면 다시 연락드린다고 안내');await page.waitForTimeout(150);
   assert.match(await d.locator('.idv-sug').innerText(),/자동\s*카카오 · 연결됨\s*→ 다음 행동: 다시 연락 · \d{4}\.\d+\.\d+\([일월화수목금토]\)\s*바꾸기/,'내용에서 수단 · 결과를 읽고 다음 행동 제안');
   await d.locator('[data-idv="save"]').click();await page.waitForTimeout(250);
   assert.deepEqual(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return (p.activities||[]).map(a=>[a.type,a.note,a.actor]);}),[['카카오','[카카오 · 연결됨] 카톡으로 담당 정해지면 다시 연락드린다고 안내','송보람']],'배정 전 기록 저장 · 기록자 = 로그인한 사람');
-  assert.match(await d.locator('.idv-ev.ct').innerText(),/고객 접점[\s\S]*카카오\s*연결됨\s*카톡으로 담당 정해지면/);assert.match(await d.locator('.idv-chead').innerText(),/연락 시도 1 · 실제 연결 1/);
+  assert.match(await d.locator('.idv-ev.ct').innerText(),/고객 접점[\s\S]*카카오\s*· 연결됨[\s\S]*카톡으로 담당 정해지면/);assert.match(await d.locator('.idv-chead').innerText(),/연락 시도 1 · 실제 연결 1/);
   /* 문자(2026-10-03): 탭 열면 '첫 인사' 문구가 이미 채워져 있고 버튼 하나 — PC는 복사, 휴대폰은 문자 앱 + 이력에 «문자 · 회신대기». CRM 직접 발송은 아직 연결 전이라고 맨 위에 적음 */
   await d.locator('.idv-ctabs [data-v="sms"]').click();await page.waitForTimeout(150);
   assert.match(await d.locator('.idv-smsnote').innerText(),/문구는 자동으로 만들어 둡니다[\s\S]*CRM 직접 발송은 서버 적용 뒤에 열립니다/,'로그인 없는 시험 환경 = 직접 발송 버튼 없음');
@@ -57,7 +57,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await d.locator('[data-idv="sms-copy"]').click();
   await d.locator('[data-idv="sms-send"]').click();await page.waitForTimeout(250);
   assert.equal(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return (p.activities||[]).length;}),2,'보낸 문자도 이력에');
-  assert.match(await d.locator('.idv-ev.ct').last().innerText(),/문자\s*회신대기/);
+  assert.match(await d.locator('.idv-ev.ct').last().innerText(),/문자\s*· 회신대기/);
   /* CRM 직접 발송(2026-10-03 "진행해"): 서버 함수 + 로그인 + 010 번호면 [CRM에서 보내기] — 두 번 눌러 확인 → crm_inquiry_sms_request_v1 → 이력 «문자 · 회신대기 (CRM 발송)» → 목록 함수의 상태가 타임라인에 */
   await page.evaluate(()=>{window.__sms=[];window.__smsRows=[];SB={rpc:async(name,args)=>{if(name==='crm_inquiry_sms_request_v1'){__sms.push(args.p);const row={id:'cccccccc-0000-4000-8000-00000000000'+__sms.length,status:'queued',body:args.p.text,phone:'01011112222',requested_by_name:'송보람',created_at:new Date().toISOString()};__smsRows.unshift(row);return {data:{ok:true,id:row.id,status:'queued',phone:row.phone}};}if(name==='crm_inquiry_sms_list_v1')return {data:{ok:true,rows:__smsRows}};return {data:{ok:true,tasks:[]}};}};TOKEN='test';});
   await d.locator('.idv-ctabs [data-v="sms"]').click();await page.waitForTimeout(250);
@@ -84,12 +84,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.evaluate(()=>inquiryRoutedOwner(inqCtlFind(U,false))),'이필선','기존 배정 경로로 저장');
   assert.equal(await page.evaluate(()=>__writes.filter(w=>w[0]==='inquiry_assign').length),1,'배정 쓰기 1건');
   assert.equal(await page.locator('#inq-inbox-dialog.idv').count(),1,'모달은 닫히지 않는다');
-  assert.match(await d.locator('.idv-c3 h3').innerText(),/이필선 담당/);
+  assert.match(await d.locator('.idv-c3 h3').innerText(),/^(첫 연락|후속 연락)$/,'배정 뒤 오른쪽 = 지금 할 일');assert.equal(await d.locator('.idv-c3 .idv-now').first().innerText(),'지금 할 일');assert.match(await d.locator('.idv-pill').innerText(),/^(첫 연락 전 · |마지막 연락 후 )/);
   assert.match(await page.locator('#idv-toast').innerText(),/이필선 배정[\s\S]*되돌리기/);
   /* 근처 현장(기존 같은 지역 로직) */
   assert.match(await d.locator('.idv-near').innerText(),/근처 현장 1곳[\s\S]*신갈현대아파트/);
   /* 배정된 건의 응대 기록: 내용 → 자동 읽기(부재 → 내일 재연락) → 저장 = 기존 progress 명령 + 다음 행동 */
-  assert.match(await d.locator('.idv-nowbox').innerText(),/AI 첫마디[\s\S]*지금 다음 행동[\s\S]*담당\s*이필선/,'오른쪽: 첫마디 · 지금 다음 행동 · 담당');
+  assert.match(await d.locator('.idv-nowbox').innerText(),/^첫마디[\s\S]*지금 다음 행동[\s\S]*담당\s*이필선[\s\S]*견적 요청은 에이전트 · 잔디로 접수합니다 · 물량 산출 3일\(최대 5일\)/,'오른쪽: 첫마디 · 지금 다음 행동 · 담당');
   await d.locator('#iq-res').fill('소장님 전화 안 받음');await page.waitForTimeout(150);
   assert.match(await d.locator('.idv-sug').innerText(),/전화 · 부재\s*→ 다음 행동: 다시 연락 · /);
   await d.locator('[data-idv="edit-sug"]').click();await page.waitForTimeout(150);
@@ -101,7 +101,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await d.locator('.idv-save').click();await page.waitForTimeout(300);
   const w=await page.evaluate(()=>__writes.filter(w=>w[0]==='inquiry_status'&&w[1].intent==='progress').map(w=>w[1]));
   assert.equal(w.length,1,'연락 결과 = 기존 progress 명령');assert.match(String(w[0].result),/^\[전화 · 검토중\] 소장님 전화 안 받음$/);assert.equal(w[0].next,'방문 일정 확정 전화');assert.equal(w[0].due,due);
-  assert.match(await d.locator('.idv-thread').innerText(),/전화\s*검토중\s*소장님 전화 안 받음[\s\S]*→ 다음 행동: 방문 일정 확정 전화/);
+  assert.match(await d.locator('.idv-thread').innerText(),/전화\s*· 검토중[\s\S]*소장님 전화 안 받음[\s\S]*→ 다음 행동: 방문 일정 확정 전화/);
   assert.equal(await d.locator('#iq-res').inputValue(),'','저장 후 입력 초기화');
   /* 확인 항목 → 기존 체크 명령 */
   await d.locator('.idv-toggle').click();await d.locator('.idv-checks button').first().click();await page.waitForTimeout(200);
