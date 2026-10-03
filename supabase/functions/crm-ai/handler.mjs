@@ -5,7 +5,7 @@
    · 영업 데이터는 바꾸지 않는다. 사람이 화면에서 확정해야 기존 저장 경로로 반영된다.
    · 같은 입력(input_hash)은 다시 만들지 않는다 — 저장된 제안을 그대로 돌려준다.
    순수 로직(이 파일)은 node 로 검사한다(tests/crm-ai-handler.test.mjs). Deno 진입점은 index.ts. */
-export const KINDS=['work_guess','ask_parse','report_text','dup_judge','next_action','call_opener'];
+export const KINDS=['work_guess','ask_parse','report_text','dup_judge','next_action','call_opener','memo_tidy'];/* memo_tidy: 2026-10-03 · sql/ai-memo-tidy-v1-20261003.sql 적용 뒤 저장됨 */
 const WORK=['옥상>싱글','옥상>금속기와','옥상>듀얼','옥상>우레탄','옥상>PVC','재도장>외+내부','재도장>외부','재도장>내부','지하주차장>에폭시','지하주차장>배면차수','지하주차장>지하주차장 재도장','기타>기타'];
 const ASK_KEYS=['open','owner','noContact','callToday','amount','noNext','stage','noPhone','text'];
 const RULES={
@@ -14,9 +14,11 @@ const RULES={
  report_text:'대표 보고 문장을 쓴다. 입력의 숫자만 쓰고 새 숫자 · 사실을 만들지 않는다. 표지 문장은 기회부터 쓴다. 부탁은 한 가지만, 구체적 대상과 시간을 넣고 거절할 수 있게 쓴다. 약속은 행동만(금액 · 결과 약속 금지), 2개 이하, 확인하는 곳(관리팀 KPI 또는 주간 브리핑)을 적는다. JSON: {"cover":"","risk":"","now":"","people":"","real":"","ask":"","askWhy":"","promises":[{"what":"","who":"","where":""}]}',
  dup_judge:'두 기록(A, B)이 같은 건인지 판단한다. 입력에 있는 값만 근거로 쓴다. JSON: {"probability":0~100 정수,"basis":"근거 한 줄","action":"merge|link|keep"}',
  next_action:'영업건의 다음 할 일을 하나 제안한다. 입력에 있는 사실만 쓴다. JSON: {"how":"전화|문자 · 카카오|방문|자료 준비|입찰 · 계약|기타","what":"무엇을(20자 이내)","days":며칠 뒤(0~30 정수),"why":"이유 한 줄"}',
- call_opener:'영업 담당이 고객에게 전화할 때 첫마디와 이번 통화 목표를 제안한다. 입력에 있는 사실만 쓴다. 과장 · 약속 금지. JSON: {"opener":"첫마디 한두 문장","goal":"이번 통화 목표 한 줄","summary":"지난 대화 요약 두 줄 이내"}'
+ call_opener:'영업 담당이 고객에게 전화할 때 첫마디와 이번 통화 목표를 제안한다. 입력에 있는 사실만 쓴다. 과장 · 약속 금지. JSON: {"opener":"첫마디 한두 문장","goal":"이번 통화 목표 한 줄","summary":"지난 대화 요약 두 줄 이내"}',
+ memo_tidy:'영업 담당이 통화 직후 말로 남긴 메모(받아쓰기 원문)를 정리한다. 원문에 있는 사실만 쓰고 추측 · 금액 · 날짜를 지어내지 않는다. memo 는 기록에 남길 정리문(존댓말 없이 간결하게, 80자 이내). result 는 통화 결과 분류: ongoing(통화함 · 진행 중) | recall(다시 연락하기로 함) | absent(전화 안 받음) | promise(고객과 약속함) | unknown. promise 면 what 에 약속 내용. next 는 원문에 날짜 · 요일 · 기간이 있을 때만 그 날짜(YYYY-MM-DD, 입력의 today 기준)와 할 일, 없으면 생략. JSON: {"memo":"","result":"ongoing|recall|absent|promise|unknown","what":"","next":{"date":"YYYY-MM-DD","text":""}}'
 };
-const json=(status,body,origin)=>new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json; charset=utf-8','access-control-allow-origin':origin||'*','access-control-allow-headers':'authorization, content-type, apikey','access-control-allow-methods':'POST, OPTIONS','vary':'origin'}});
+/* 204(사전 확인 OPTIONS)는 본문이 있으면 Response 생성 자체가 예외 → 500 이 되어 브라우저 요청이 전부 막힌다(2026-10-03 운영에서 확인) */
+const json=(status,body,origin)=>new Response(status===204?null:JSON.stringify(body),{status,headers:{'content-type':'application/json; charset=utf-8','access-control-allow-origin':origin||'*','access-control-allow-headers':'authorization, content-type, apikey','access-control-allow-methods':'POST, OPTIONS','vary':'origin'}});
 export async function inputHash(kind,input){const data=new TextEncoder().encode(kind+'\n'+JSON.stringify(input));const d=await crypto.subtle.digest('SHA-256',data);return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,'0')).join('');}
 export function extractJson(text){const s=String(text||''),a=s.indexOf('{'),b=s.lastIndexOf('}');if(a<0||b<=a)throw new Error('AI_BAD_OUTPUT');return JSON.parse(s.slice(a,b+1));}
 /* 모델이 돌려준 값을 화면이 믿어도 되는 모양으로 좁힌다 */
@@ -26,6 +28,7 @@ export function sanitize(kind,o){
  if(kind==='ask_parse')return {conditions:(Array.isArray(o.conditions)?o.conditions:[]).filter(c=>c&&ASK_KEYS.includes(c.k)).slice(0,8).map(c=>c.v==null?{k:c.k}:{k:c.k,v:typeof c.v==='number'?c.v:str(c.v,60)}),note:str(o.note,200)};
  if(kind==='report_text')return {cover:str(o.cover,120),risk:str(o.risk,160),now:str(o.now,200),people:str(o.people,240),real:str(o.real,300),ask:str(o.ask,120),askWhy:str(o.askWhy,240),promises:(Array.isArray(o.promises)?o.promises:[]).slice(0,2).map(p=>({what:str(p&&p.what,80),who:str(p&&p.who,60),where:str(p&&p.where,60)}))};
  if(kind==='dup_judge'){const p=Math.round(Number(o.probability));return {probability:Number.isFinite(p)?Math.max(0,Math.min(100,p)):0,basis:str(o.basis,200),action:['merge','link','keep'].includes(o.action)?o.action:'keep'};}
+ if(kind==='memo_tidy'){const nx=o.next&&typeof o.next==='object'&&/^\d{4}-\d{2}-\d{2}$/.test(String(o.next.date||''))?{date:String(o.next.date),text:str(o.next.text,60)}:null;return {memo:str(o.memo,160),result:['ongoing','recall','absent','promise','unknown'].includes(o.result)?o.result:'unknown',what:str(o.what,80),next:nx};}
  if(kind==='next_action'){const d=Math.round(Number(o.days));return {how:['전화','문자 · 카카오','방문','자료 준비','입찰 · 계약','기타'].includes(o.how)?o.how:'전화',what:str(o.what,40),days:Number.isFinite(d)?Math.max(0,Math.min(30,d)):3,why:str(o.why,160)};}
  return {opener:str(o.opener,240),goal:str(o.goal,120),summary:str(o.summary,240)};
 }

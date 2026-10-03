@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {PGlite} from '@electric-sql/pglite';
 import {fixture} from './aligo-database-fixture.mjs';
 const sql=readFileSync(new URL('../sql/ops-store-v1-20261002.sql',import.meta.url),'utf8');
+const sql2=readFileSync(new URL('../sql/ai-memo-tidy-v1-20261003.sql',import.meta.url),'utf8');/* AI 종류 memo_tidy 추가(2026-10-03) */
 /* 운영 저장소 v1: 다시 실행해도 안전 · 테이블 직접 접근 차단 · 쓰기는 관리자 · 플래그 기본 꺼짐 · AI 제안은 저장만 */
 test('ops store: idempotent install, RLS-only access, admin writes, flags default off, AI suggestions are proposals',async()=>{
  const db=new PGlite();
@@ -11,6 +12,7 @@ test('ops store: idempotent install, RLS-only access, admin writes, flags defaul
  try{
   await db.exec(fixture);
   await db.exec(sql);await db.exec(sql);/* 두 번 실행해도 안전 */
+  await db.exec(sql2);await db.exec(sql2);
   await db.query("insert into public.users values($1,$2,'송보람','admin',true),($3,$4,'이필선','rep',true)",[U,AU,V,AV]);
   await db.query("insert into crm_security.access_review values($1,$2,'admin','admin',true,now()+interval '1 day'),($3,$4,'rep','rep',true,now()+interval '1 day')",[U,AU,V,AV]);
   const as=async uid=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[uid]);await db.exec('set role authenticated');};
@@ -30,6 +32,7 @@ test('ops store: idempotent install, RLS-only access, admin writes, flags defaul
   const saved=await call('crm_ai_suggestion_save_v1',sug);assert.equal(saved.suggestion.status,'proposed');
   assert.equal((await call('crm_ai_suggestion_save_v1',{...sug,suggestion:{keys:['다른 값']}})).suggestion.id,saved.suggestion.id,'같은 입력이면 다시 만들지 않는다');
   await assert.rejects(call('crm_ai_suggestion_save_v1',{...sug,kind:'unknown'}),/invalid payload/);
+  assert.equal((await call('crm_ai_suggestion_save_v1',{...sug,kind:'memo_tidy',subject_id:'d9',suggestion:{memo:'소장님 화요일 방문 확정'}})).suggestion.kind,'memo_tidy','memo_tidy 저장(2026-10-03 SQL)');
   await as(AV);
   assert.equal((await call('crm_ai_suggestion_list_v1',{kind:'work_guess',subject_ids:['d1','d2']})).suggestions.length,1);
   assert.equal((await call('crm_ai_suggestion_list_v1',{kind:'work_guess',subject_ids:['zz']})).suggestions.length,0);

@@ -9,7 +9,7 @@
  const rpcAllow=new Set(['crm_profile_scoped_v2','crm_read_scoped_v2','crm_contacts_scoped_v2','crm_write_command_v2','crm_operational_source_v1','crm_operational_changes_v1','crm_expansion_note','crm_expansion_context']);
  function allowed(input){const u=new URL(typeof input==='string'?input:input.url||String(input),location.href);
   if(u.origin===location.origin)return u;
-  if(u.origin===origin&&(u.pathname.startsWith('/auth/v1/')||u.pathname.startsWith('/storage/v1/object/upload/sign/crm-site-files/deals/')||rpcAllow.has(u.pathname.replace('/rest/v1/rpc/',''))&&u.pathname.startsWith('/rest/v1/rpc/')))return u;
+  if(u.origin===origin&&(u.pathname.startsWith('/auth/v1/')||u.pathname.startsWith('/storage/v1/object/upload/sign/crm-site-files/deals/')||u.pathname==='/functions/v1/crm-ai'/* AI 제안 서버 함수(2026-10-03) — 사용자 토큰으로만, 결과는 제안 저장 */||rpcAllow.has(u.pathname.replace('/rest/v1/rpc/',''))&&u.pathname.startsWith('/rest/v1/rpc/')))return u;
   blocked.push({origin:u.origin,path:u.pathname});throw Error('PHASE1_TRANSPORT_DENIED');}
  root.fetch=async function(input,init){const u=allowed(input);requests.push({origin:u.origin,path:u.pathname,method:init?.method||'GET'});return fetchNative(input,init);};
  const open=root.XMLHttpRequest.prototype.open;
