@@ -111,7 +111,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await panel.locator('[data-dp="save"]').click();assert.match(await panel.locator('#dp-err').innerText(),/왜 끝나는지/);
   await panel.locator('[data-end="예산 없음"]').click();if(shot)await page.screenshot({path:shot+'-next-end.png'});
   {const n0=await page.evaluate(()=>__writes.length);await panel.locator('[data-dp="save"]').click();await page.waitForTimeout(500);
-   assert.equal(await page.locator('#sf-close_reason').inputValue(),'고객 예산 무산','기존 종료(진행상태 변경) 창이 고른 사유로 열림');assert.equal(await page.evaluate(n=>__writes.length-n,n0),0,'종료는 기존 창에서 확인 후 저장');
+   assert.equal(await page.locator('#sf-close_reason').inputValue(),'예산','기존 종료(진행상태 변경) 창이 고른 사유(운영 기준의 실주 원인)로 열림');assert.equal(await page.evaluate(n=>__writes.length-n,n0),0,'종료는 기존 창에서 확인 후 저장');
    await page.evaluate(()=>StageTransitionUI.close());await page.waitForTimeout(200);}
   /* 끄면 기존 창 */
   await page.evaluate(()=>{G.dealPanelsV2Off=true;openQuickContact('new');});await page.waitForTimeout(150);

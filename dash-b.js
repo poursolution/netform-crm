@@ -46,7 +46,7 @@
   const B=BL(),K=B.K,P=period(),target=R.targetNameFilter(),AD=R.briefScopeDeals(target,false),AQ=R.briefScopeInquiries(target,false),L=B.ledger(target);
   const inR=(k,a,b)=>!!k&&k>=a&&k<b,rows=SI().rows(false,true),deals=rows.deals,active=deals.filter(d=>d.active),risk=active.filter(d=>d.issues.length),cnt=k=>active.filter(d=>d.issues.includes(k)).length;
   const q=AQ.filter(x=>inR(K(R.inquiryCreatedAt(x)),P.a,P.b)),bad=q.filter(B.badfit),fit=q.length-bad.length;
-  const loss=AD.filter(d=>B.isLoss(d)&&inR(B.closedKey(d),P.a,P.b)),con=B.contractsIn(L,P.a,P.b),made=L.ready?B.pct(con.count,con.count+loss.length):null;
+  const loss=AD.filter(d=>B.isLoss(d)&&inR(B.closedKey(d),P.a,P.b)),con=B.contractsIn(L,P.a,P.b),made=L.ready?B.made(con.count,loss.length):null;
   const names=(target?[target]:(R.PERFORMANCE_TARGET_NAMES||[])).slice(),A=acts(deals,K);
   return {B,K,P,target,AD,AQ,L,inR,rows,deals,active,risk,cnt,q,bad,fit,loss,con,made,names,A};
  }
@@ -71,7 +71,7 @@
   const {B,P,L,active,loss,A,names}=C,W=week(P),ms=mk(P.ty,P.tm),me=mk(P.ty,P.tm+1);
   return names.map(n=>{
    const mine=active.filter(d=>d.owner===n),c=B.contractsIn(L,P.a,P.b,n),cm=B.contractsIn(L,ms,me,n),l=loss.filter(d=>R.repN(d.assignee)===n),w=c.count;
-   const made=L.ready&&(w+l.length)?B.pct(w,w+l.length):null;
+   const made=L.ready&&(w+l.length)?B.made(w,l.length):null;
    const fix=mine.filter(d=>d.issues.length),od=mine.filter(d=>d.issues.includes('overdue')),stall=mine.filter(d=>d.issues.includes('stall')),odMax=Math.max(0,...od.map(overdueDays));
    const my=A.filter(x=>x.owner===n),last=my[0]||null,lastK=last?last.k:'',lastDays=lastK?Math.max(0,B.between(lastK,P.today)):null,wk=my.filter(x=>x.k>=W[0]&&x.k<=W[6]).length;
    const top=list=>{const t=B.tally(list,d=>d.stageLabel)[0];return t?{l:t[0],n:t[1]}:null;};
@@ -121,7 +121,7 @@
   const {B,P,L,q,loss}=C;
   return BR.map(([name,c])=>{let net=0,w=0;(L.rows||[]).forEach(r=>{if(r.brand!==name)return;(r.events||[]).forEach(e=>{const k=e.effective_date;if(!(k>=P.a&&k<P.b))return;net+=e.amount_delta;if(e.kind==='signed')w++;});});
    const bq=q.filter(x=>String(x.brand||(R.inquiryBrandOf?R.inquiryBrandOf(x):'')||'')===name),fit=bq.length-bq.filter(B.badfit).length,lo=loss.filter(d=>d.brand===name).length;
-   return {name,c,net,w,q:bq.length,fit,lo,made:w+lo?B.pct(w,w+lo):null};});
+   return {name,c,net,w,q:bq.length,fit,lo,made:w+lo?B.made(w,lo):null};});
  }
  function secPerf(C){
   const {B,K,P,AD,AQ,L,inR,q,bad,fit,loss,con,made}=C;
