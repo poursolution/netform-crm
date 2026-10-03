@@ -24,7 +24,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    const deal=(id,site,owner,code,extra)=>Object.assign({id,site,assignee:owner,brand:'POUR솔루션',created:day(0),code,stage_code:code,grp:'영업·관리',amt:1e8},extra||{});
    B={deals:[deal('d1','강동 롯데캐슬퍼스트','이필선','consulting',{amt:9e8,address:'서울 강동구 양재대로 1340',office_phone:'0212345678',next_action:{id:'n1',type:'전화',text:'견적 확인 전화',due:day(-3),status:'open'}}),deal('d2','강동롯데캐슬 퍼스트 아파트','이필선','bidding',{amt:3e8,address:'서울 강동구 양재대로 1340',office_phone:'0212345678',created:day(-400)})],
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};TOKEN='user-jwt';G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
+   G.todayTowerOff=true;/* 영업사원 카드 첫마디 검사는 예전 화면(관제탑 카드의 AI 첫마디는 verify-today-tower) */LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};TOKEN='user-jwt';G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op)=>{__writes.push(op);return 'req';};
    if(!window.SUPABASE_URL)SUPABASE_URL='https://example.supabase.co';const fake={current:null,openWork:async(id,item)=>{fake.current=item;CUR_DETAIL={kind:'deal',key:dealKey(item),item};openWorkEdit();},save:async()=>{}};window.Phase11=fake;
    window.__flags={ai_enabled:false};window.__rpc=[];window.__ai=window.__ai||[];
