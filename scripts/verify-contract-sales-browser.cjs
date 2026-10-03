@@ -7,7 +7,7 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
  try{
   const context=await browser.newContext({viewport:{width:1440,height:1000}});await context.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:'+srv.address().port+'/crm.html',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>!!window.ContractSalesUI);
-  await page.evaluate(async()=>{
+  await page.evaluate(async()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */
    ME={id:'contract-admin',name:'송보람',role:'admin'};TOKEN='synthetic';LOCAL={deals:{},inquiries:{},expansionPool:[]};
    B={deals:[{id:'33333333-3333-4333-8333-333333333333',site:'계약실적 합성 현장',assignee:'정정훈',brand:'POUR솔루션',code:'construction',grp:'계약·시공',amt:900000000,created:'2024-01-01'}],inquiries:[],inquiryTrash:[]};
    const event=ContractSalesLedger.initial({deal_id:B.deals[0].id,event_id:'event-1',contract_signed:true,contract_date:'2026-09-18',contract_amount:300000000,sales_owner:'owner-hwang',sales_owner_name:'황윤선'});
@@ -24,7 +24,7 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   assert.match(await page.locator('#si-person .si-evidence').innerText(),/계약 체결/);
   await page.keyboard.press('Escape');
   // 분석 3화면 어디에도 상세 원장 패널이 붙지 않는다 (근거는 팝업, 합계는 리포트·브리핑 컴팩트).
-  await page.evaluate(()=>{B.deals[0].code='won';B.deals[0].assignee='이필선';goPage('perf');paint()});
+  await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */B.deals[0].code='won';B.deals[0].assignee='이필선';goPage('perf');paint()});
   assert.equal(await page.locator('#si-perf .contract-sales-panel').count(),0);
   await page.evaluate(()=>goPage('control'));assert.equal(await page.locator('#si-control .contract-sales-panel').count(),0);
   await page.locator('#sales-analysis-menu [data-sales-page="perf"]').click();
@@ -38,17 +38,17 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   // 영업사원 관리 상세 드로어에도 계약실적 패널 금지 (2026-09-25 대표 지시)
   assert.doesNotMatch(fs.readFileSync(path.join(root,'contract-sales-ui.js'),'utf8'),/repManagerRenderDrawer=|getElementById\('perfDrawerBody'\)/);
   assert.equal(await page.evaluate(()=>String(window.repManagerRenderDrawer||'').includes('contract-sales')),false);
-  await page.evaluate(async()=>{__contract.events=ContractSalesLedger.append(__contract.events,{event_id:'event-2',expected_version:1,kind:'cancelled',effective_date:'2026-10-01',reason:'합성 취소'});__contract.version=2;__contract.balance=0;await ContractSalesData.refresh()});
+  await page.evaluate(async()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */__contract.events=ContractSalesLedger.append(__contract.events,{event_id:'event-2',expected_version:1,kind:'cancelled',effective_date:'2026-10-01',reason:'합성 취소'});__contract.version=2;__contract.balance=0;await ContractSalesData.refresh()});
   assert.equal(await page.evaluate(()=>ContractSalesData.summarize({year:'2026',month:10}).netAmount),-300000000);
   assert.equal(await page.evaluate(()=>ContractSalesData.summarize({year:'2026',month:9}).netAmount),300000000);
   assert.equal(await page.evaluate(()=>ContractSalesData.summarize({year:'2026',quarter:4}).netAmount),-300000000);
   await page.evaluate(()=>(G.reportBOff=true,goPage('report')));
   for(const width of [1440,390]){await page.setViewportSize({width,height:1000});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,JSON.stringify(await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,wide:[...document.querySelectorAll(".contract-sales-panel *")].filter(n=>n.getBoundingClientRect().right>innerWidth).map(n=>n.tagName+"."+n.className).slice(0,10)}))))}
-  await page.evaluate(async()=>{SB.rpc=async()=>({error:{message:'offline'}});await ContractSalesData.refresh()});assert.equal(await page.locator('#report-master .contract-sales-host').count(),0);
+  await page.evaluate(async()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */SB.rpc=async()=>({error:{message:'offline'}});await ContractSalesData.refresh()});assert.equal(await page.locator('#report-master .contract-sales-host').count(),0);
   await page.evaluate(()=>ContractSalesUI.editor(B.deals[0]));
   await page.waitForFunction(()=>document.querySelector('.contract-sales-shade [role="status"]')?.textContent.includes('확인하지 못했습니다'));
   assert.equal(await page.locator('.contract-sales-shade button[type="submit"]').count(),0);
-  await page.evaluate(()=>{SB.rpc=async()=>({data:{ok:true,policy:ContractSalesLedger.POLICY,items:[__contract],has_more:false}})});
+  await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */SB.rpc=async()=>({data:{ok:true,policy:ContractSalesLedger.POLICY,items:[__contract],has_more:false}})});
   await page.getByRole('button',{name:'다시 조회',exact:true}).click();
   await page.getByRole('heading',{name:'계약실적 기록',exact:true}).waitFor();
   assert.match(await page.locator('.contract-sales-dialog').innerText(),/황윤선/);

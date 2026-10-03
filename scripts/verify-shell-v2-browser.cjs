@@ -14,7 +14,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'||(shot&&u.hostname==='cdn.jsdelivr.net')?r.continue():r.abort()});
   const page=await ctx.newPage(),errs=[];page.on('pageerror',e=>errs.push(e.message));
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.ShellV2&&window.AskV2&&window.BriefV2&&window.CommonFilterBar&&typeof paint==='function');
-  await page.evaluate(()=>{
+  await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */
    const day=n=>new Date(Date.now()+n*864e5).toLocaleDateString('en-CA'),at=n=>new Date(Date.now()+n*864e5).toISOString();
    const deal=(id,site,owner,code,extra)=>Object.assign({id,site,assignee:owner,brand:'POUR솔루션',created:day(-90),updated:day(-60),code,stage_code:code,grp:'영업·관리',amt:1e8},extra||{});
    B={deals:[
@@ -31,23 +31,23 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const vis=sel=>page.evaluate(s=>{const n=document.querySelector(s);return !!n&&getComputedStyle(n).display!=='none';},sel);
   /* ① 사이드바 */
   assert.equal(await page.evaluate(()=>document.body.classList.contains('shell-v2')),true);
-  assert.equal(await page.locator('aside.side .sh-logo img').count(),1,'넷폼 로고');assert.equal(await page.evaluate(()=>{const i=document.querySelector('.sh-logo img');return i.complete&&i.naturalWidth>0;}),true,'로고 파일이 실제로 뜬다');
+  assert.equal(await page.locator('aside.side .sh-logo img').count(),1,'넷폼 로고');assert.equal(await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */const i=document.querySelector('.sh-logo img');return i.complete&&i.naturalWidth>0;}),true,'로고 파일이 실제로 뜬다');
   assert.equal(await vis('aside.side .brandlogo .bx'),false,'파란 N 없음');assert.equal(await vis('aside.side .mi .ic'),false,'아이콘 없음');assert.equal(await vis('#sideFoot'),false,'아래 조치 필요 카드 없음');
-  assert.equal(await page.evaluate(()=>{const b=getComputedStyle(document.getElementById('todayBadge'));return b.backgroundColor+'|'+b.color;}),'rgba(0, 0, 0, 0)|rgb(229, 72, 77)','처리할 수 = 빨간 글자(둥근 배지 아님)');
+  assert.equal(await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */const b=getComputedStyle(document.getElementById('todayBadge'));return b.backgroundColor+'|'+b.color;}),'rgba(0, 0, 0, 0)|rgb(229, 72, 77)','처리할 수 = 빨간 글자(둥근 배지 아님)');
   assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.mi[data-p="pipe"] .badge')).color),'rgb(156, 163, 175)','그 밖의 숫자는 회색');
-  assert.equal(await page.evaluate(()=>{const s=getComputedStyle(document.querySelector('.mi.on'));return s.backgroundColor+'|'+s.color;}),'rgb(238, 243, 254)|rgb(42, 82, 184)','선택 = 연파랑 + 파랑 글자');
+  assert.equal(await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */const s=getComputedStyle(document.querySelector('.mi.on'));return s.backgroundColor+'|'+s.color;}),'rgb(238, 243, 254)|rgb(42, 82, 184)','선택 = 연파랑 + 파랑 글자');
   assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('.menu .sec[data-sh]')].map(s=>s.dataset.sh)),['고객','조직','데이터']);
   assert.equal(await page.locator('#pipeline-stage-menu .plv-mi').count(),7,'단계 7개');
   if(shot)await page.screenshot({path:shot+'-1-sidebar.png'});
   /* ② 툴바 */
-  assert.equal(await page.evaluate(()=>{const h=document.querySelector('.mhead').getBoundingClientRect(),a=document.getElementById('ptitle').getBoundingClientRect(),b=document.getElementById('psub').getBoundingClientRect();return Math.round(h.height)===60&&b.left>a.right&&Math.abs(a.bottom-b.bottom)<8;}),true,'60px · 제목과 설명이 같은 줄');
+  assert.equal(await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */const h=document.querySelector('.mhead').getBoundingClientRect(),a=document.getElementById('ptitle').getBoundingClientRect(),b=document.getElementById('psub').getBoundingClientRect();return Math.round(h.height)===60&&b.left>a.right&&Math.abs(a.bottom-b.bottom)<8;}),true,'60px · 제목과 설명이 같은 줄');
   assert.deepEqual(await page.evaluate(()=>['#live','#syncBadge','.mhead>.rf','#meChip'].map(s=>{const n=document.querySelector(s);return !n||getComputedStyle(n).display==='none';})),[true,true,true,true],'예전 상태·새로고침·JSON·사용자 줄은 감춤');
   assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#shTools>*')].map(n=>n.id||n.className.split(' ')[0]).join(',')),'execAskBtn,shNew,sh-div,shStatus,ib,sh-userwrap','오른쪽 순서');
-  await page.evaluate(()=>{const l=document.getElementById('live');l.textContent='데이터 최신';l.classList.add('on');});await page.waitForTimeout(100);
+  await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */const l=document.getElementById('live');l.textContent='데이터 최신';l.classList.add('on');});await page.waitForTimeout(100);
   assert.match(await page.locator('#shStatus.ok').innerText(),/^최신 · 방금$/);await page.locator('#shStatus').click();assert.deepEqual(await page.evaluate(()=>__calls),['reload'],'정상 = 누르면 새로고침');
-  await page.evaluate(()=>{const b=document.getElementById('syncBadge');b.textContent='🔴 저장 실패 2건 · 내역 확인';b.className='syncbadge bad';b.onclick=()=>__calls.push('review');});await page.waitForTimeout(100);
+  await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */const b=document.getElementById('syncBadge');b.textContent='🔴 저장 실패 2건 · 내역 확인';b.className='syncbadge bad';b.onclick=()=>__calls.push('review');});await page.waitForTimeout(100);
   assert.equal(await page.locator('#shStatus.bad').innerText(),'저장 실패 2건');await page.locator('#shStatus').click();assert.equal(await page.evaluate(()=>__calls.at(-1)),'review','실패 = 누르면 기존 내역 · 다시 저장');
-  await page.evaluate(()=>{const b=document.getElementById('syncBadge');b.textContent='🟢 서버 동기화 완료';b.className='syncbadge ok';b.onclick=null;});
+  await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */const b=document.getElementById('syncBadge');b.textContent='🟢 서버 동기화 완료';b.className='syncbadge ok';b.onclick=null;});
   assert.match(await page.locator('#shUser').innerText(),/송보람\s*관리자/);await page.locator('#shUser').click();
   assert.deepEqual(await page.locator('#shMenu button').allInnerTexts(),['비밀번호 변경','데이터 내보내기 (JSON)','연결 점검','로그아웃']);
   if(shot)await page.screenshot({path:shot+'-2-toolbar.png'});
@@ -106,7 +106,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(250);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'좁은 화면 넘침 없음');
   await page.setViewportSize({width:1600,height:1000});
-  await page.evaluate(()=>{G.shellV2Off=true;G.askV2Off=true;(G.briefBOff=true,goPage('brief'));});await page.waitForTimeout(350);
+  await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */G.shellV2Off=true;G.askV2Off=true;(G.briefBOff=true,goPage('brief'));});await page.waitForTimeout(350);
   assert.equal(await page.evaluate(()=>document.body.classList.contains('shell-v2')),false);assert.equal(await vis('#syncBadge'),true);assert.equal(await vis('#unibar'),true,'끄면 예전 두 줄 필터');assert.equal(await page.locator('#pg-brief>.cf-bar:not([hidden])').count(),0);
   await page.evaluate(()=>openExecAsk());await page.waitForTimeout(150);assert.equal(await page.locator('#execAskModal.on').count(),1,'끄면 예전 묻기 창');
   assert.deepEqual(errs,[]);

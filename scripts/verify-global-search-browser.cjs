@@ -42,7 +42,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const r5=await page.evaluate(()=>[].map.call(document.querySelectorAll('.gs-item b'),b=>b.textContent));
   assert.ok(r5.includes('래미안 용인 수지'),'담당자 본인 건은 보임');
   await page.setViewportSize({width:390,height:844});await type('수지');
-  const fits=await page.evaluate(()=>{const r=document.querySelector('.gs-pop').getBoundingClientRect();return r.left>=0&&r.right<=390});
+  const fits=await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */const r=document.querySelector('.gs-pop').getBoundingClientRect();return r.left>=0&&r.right<=390});
   assert.equal(fits,true,'좁은 화면에서 넘치지 않음');
   assert.deepEqual(errs,[]);
   console.log(JSON.stringify({status:'PASS',site:true,phone:true,rep:true,enter_opens:true,role_scope:true,narrow:true}));

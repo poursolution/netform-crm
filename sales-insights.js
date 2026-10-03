@@ -12,10 +12,10 @@
   if(root.G.insights.quarter===undefined)root.G.insights.quarter=0;
   root.G.insights.brand=root.G.brand;root.G.insights.owner=root.SalesScope.state().owner;return root.G.insights;
  }
- function rows(unscoped=false){
+ function rows(unscoped=false,everyone=false){
   // B is ACL-filtered by the operational adapter. Apply the same per-user UI scope as Today.
   const admin=root.todayIsAdmin(),me=root.repN(root.ME?.name),base=root.B||{};
-  const deals=(base.deals||[]).filter(d=>admin||root.repN(d.assignee)===me).map(d=>{
+  const deals=(base.deals||[]).filter(d=>everyone||admin||root.repN(d.assignee)===me).map(d=>{
    const next=root.briefNext(d),meta=root.relationshipMeta(d),old=root.issueSet(d),issues=[];
    const due=next?.due&&Number.isFinite(Date.parse(next.due))?root.daysTo(next.due):null;
    if(due!==null&&due<0)issues.push('overdue');
@@ -33,7 +33,7 @@
    const stallText=stall?root.stageLabel(root.dealStage(d))+' '+age+'일째 · 마지막 연락 '+(meta.days===null?'기록 없음':meta.days+'일 전')+' · '+(issues.includes('missing')?'다음 할 일 없음':'기한 '+Math.abs(due)+'일 지남'):'';
    return {key:'deal:'+root.dealKey(d),type:'deal',item:d,site:d.site||'현장명 미입력',owner:root.repN(d.assignee),brand:d.brand||'',created:d.created,active:root.towerActive(d)&&root.outcomeOf(d)==='open',won:root.isWon(d),wonAt:root.wonDate(d),wonAmount:root.hasWonAmt(d)?root.wonAmt(d):0,hasWonAmount:root.hasWonAmt(d),expected:root.oppAmt(d),stage:root.dealStage(d),stageLabel:root.stageLabel(root.dealStage(d)),issues,stallText,reason:stall?(issues.includes('promise')?'고객 약속 미이행 · ':'')+'진행 멈춤 — '+stallText:issues.map(k=>k==='overdue'?'기한 '+Math.abs(due)+'일 지남':k==='contact'?'마지막 연락 '+meta.days+'일 전':labels[k]).join(' · '),lastContact:meta.meaningfulAt||''};
   });
-  const inquiries=root.operationalInquiries(base.inquiries||[]).filter(q=>admin||root.inquiryRoutedOwner(q)===me||root.inquiryConsultant(q)===me).map(q=>({key:'inq:'+String(q.id||root.inqKey(q)),type:'inq',item:q,site:q.site||'현장명 미입력',owner:root.inquiryRoutedOwner(q)||'미배정',brand:q.brand||'',created:root.inquiryDate(q),stage:'inquiry',stageLabel:q.status||'견적문의',issues:[],reason:root.inquiryRoutedOwner(q)?'문의 내용과 후속처리 확인':'담당자 배정 필요'}));
+  const inquiries=root.operationalInquiries(base.inquiries||[]).filter(q=>everyone||admin||root.inquiryRoutedOwner(q)===me||root.inquiryConsultant(q)===me).map(q=>({key:'inq:'+String(q.id||root.inqKey(q)),type:'inq',item:q,site:q.site||'현장명 미입력',owner:root.inquiryRoutedOwner(q)||'미배정',brand:q.brand||'',created:root.inquiryDate(q),stage:'inquiry',stageLabel:q.status||'견적문의',issues:[],reason:root.inquiryRoutedOwner(q)?'문의 내용과 후속처리 확인':'담당자 배정 필요'}));
   return {deals:deals.filter(d=>unscoped||root.SalesScope.matches(d.owner,d.item)&&root.SalesFilterState.matchesBrand(d.brand)),inquiries:inquiries.filter(q=>unscoped||root.SalesScope.matches(q.owner,q.item)&&root.SalesFilterState.matchesBrand(q.brand))};
  }
  /* 계약실적 취합(2026-09-24 대표 지시): 원장이 준비되면 원장, 아니면 계약·시공 단계 영업건에 입력된 계약금액을 체결일 기준으로 취합. '확인 필요' 공백 금지. */
@@ -746,5 +746,5 @@
  function close(restore=true){const node=document.getElementById('si-person');if(node){node.remove();document.body.style.overflow=''}if(restore&&focusBefore?.isConnected)focusBefore.focus();focusBefore=null}
  /* 담당자 클릭은 어느 화면에서든 해당 담당자로 스코프된 성과 분석으로 이동한다 (2026-09-24). */
  root.addEventListener('phase1:identity-cleared',()=>{close(false);root.G.insights=null;['dash','control','perf'].forEach(p=>{const el=document.getElementById('si-'+p);if(el)el.innerHTML=''})});
- root.SalesInsights={render,close,data,rows};
+ root.SalesInsights={render,close,data,rows,state,openRecord,openEvidence,contractEvidence,evRow,advMatch,advisory:()=>advList,advisoryLoad:advLoad};/* 뒤 항목들은 영업 대시보드 v2(dash-b.js)가 쓴다 */
 })(window);

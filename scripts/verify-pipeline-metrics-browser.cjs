@@ -12,7 +12,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await ctx.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
   const page=await ctx.newPage(),errs=[];page.on('pageerror',e=>errs.push(e.message));
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.PipelineMetrics&&window.PipelineWorkspace);
-  await page.evaluate(()=>{
+  await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */
    const mk=(id,code,amt,extra)=>Object.assign({id,site:'현장 '+id,assignee:'이필선',brand:'POUR솔루션',created:CUR_Y+'-09-01',code,stage_code:code,grp:'영업·관리',amt},extra||{});
    B={deals:[mk('a','consulting',1e8),mk('b','sent',2e8),mk('c','bidding',3e8),mk('d','contract',4e8),mk('w','won',5e8,{outcome:'won',lifecycle_status:'closed',won_amount:5e8}),mk('l','lost',6e8,{outcome:'lost',lifecycle_status:'closed'})],inquiries:[],activities:[]};
    LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
@@ -24,8 +24,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.ok(s.s.weighted>0&&s.s.weighted<s.s.total,'가중 예상은 전체보다 작다');
   /* 영업사원 관리 새 화면은 자체 숫자 4개가 이 띠를 대신한다(띠 없음). 예전 화면에서는 세 화면 모두 같은 띠 */
   await page.evaluate(()=>goPage('repmanage'));await page.waitForTimeout(450);assert.equal(await page.evaluate(()=>document.querySelectorAll('#pg-repmanage>.pm-strip').length),0,'영업사원 관리 새 화면에는 공통 기준 띠가 없다');
-  assert.equal(await page.evaluate(()=>{(G.briefBOff=true,goPage('brief'));return 0;}),0);await page.waitForTimeout(450);assert.equal(await page.evaluate(()=>document.querySelectorAll('#pg-brief>.pm-strip').length),0,'주간 브리핑 새 화면에도 공통 기준 띠가 없다');
-  await page.evaluate(()=>{G.repsV2Off=true;G.briefV2Off=true;});
+  assert.equal(await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */(G.briefBOff=true,goPage('brief'));return 0;}),0);await page.waitForTimeout(450);assert.equal(await page.evaluate(()=>document.querySelectorAll('#pg-brief>.pm-strip').length),0,'주간 브리핑 새 화면에도 공통 기준 띠가 없다');
+  await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */G.repsV2Off=true;G.briefV2Off=true;});
   const texts=[];
   for(const p of ['brief','perf','repmanage']){await page.evaluate(p=>goPage(p),p);await page.waitForTimeout(450);texts.push(await page.evaluate(p=>{const el=document.querySelector('#pg-'+p+'>.pm-strip');return el?el.textContent.replace(/\s+/g,' ').trim():null},p));}
   assert.ok(texts.every(Boolean),'세 화면 모두 띠 표시 '+JSON.stringify(texts));
@@ -33,13 +33,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(texts[0],/전체 진행.*4건.*가중 예상.*확정 임박.*2건/);
   /* 본문 숫자도 같은 지표(2026-10-01): 주간 브리핑 '진행 파이프라인', 대시보드 '파이프라인' KPI */
   await page.evaluate(()=>(G.briefBOff=true,goPage('brief')));await page.waitForTimeout(450);
-  const briefStat=await page.evaluate(()=>{const b=[...document.querySelectorAll('.brief-stat')].find(x=>/진행 파이프라인/.test(x.textContent));return b?b.textContent.replace(/\s+/g,' '):null});
+  const briefStat=await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */const b=[...document.querySelectorAll('.brief-stat')].find(x=>/진행 파이프라인/.test(x.textContent));return b?b.textContent.replace(/\s+/g,' '):null});
   if(briefStat!==null)assert.match(briefStat,/진행 파이프라인\s*4건/,'브리핑 본문 '+briefStat);
   await page.evaluate(()=>goPage('dash'));await page.waitForTimeout(900);
-  const dashKpi=await page.evaluate(()=>{const b=[...document.querySelectorAll('.dc-kpi')].find(x=>x.querySelector('.dc-ph')?.textContent==='파이프라인');return b?{text:b.textContent.replace(/\s+/g,' '),action:b.dataset.siAction,value:b.dataset.value}:null});
+  const dashKpi=await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */const b=[...document.querySelectorAll('.dc-kpi')].find(x=>x.querySelector('.dc-ph')?.textContent==='파이프라인');return b?{text:b.textContent.replace(/\s+/g,' '),action:b.dataset.siAction,value:b.dataset.value}:null});
   assert.ok(dashKpi&&/진행 4건/.test(dashKpi.text)&&dashKpi.action==='navigate'&&dashKpi.value==='pipe','대시보드 KPI '+JSON.stringify(dashKpi));
   /* 다시 들어와도 한 개만 */
-  await page.evaluate(()=>{goPage('today');(G.briefBOff=true,goPage('brief'));});await page.waitForTimeout(450);
+  await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */goPage('today');(G.briefBOff=true,goPage('brief'));});await page.waitForTimeout(450);
   assert.equal(await page.evaluate(()=>document.querySelectorAll('#pg-brief .pm-strip').length),1);
   assert.deepEqual(errs,[]);
   console.log(JSON.stringify({status:'PASS',count:s.s.count,same_on_pages:3,matches_badge:true}));
