@@ -26,7 +26,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      {id:'e5',source_opportunity_id:'w5',site_name:'보류 현장',owner_name:'이필선',source_work_summary:'옥상 방수',source_won_amount:1e7,completion_date:day(-60),next_contact_at:day(90),expansion_status:'보류/휴면',version:1},
      {id:'e6',source_opportunity_id:'w6',site_name:'작년 준공 현장',owner_name:'이필선',source_work_summary:'옥상 방수',source_won_amount:1e7,completion_date:(Y-1)+'-05-10',next_contact_at:day(3),expansion_status:'신규 대상',version:1}],
     expansion_events:[{source_opportunity_id:'w2',occurred_at:day(-7),kind:'접촉',note:'관리소장 통화 — 하자 없음',actor:'황윤선'}],expansion_quote_dispatches:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
+   G.expansionBOff=true;/* B안(2026-10-03)은 verify-expansion-b 에서 */LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    window.__writes=[];window.pushWrite=(op,p)=>{__writes.push([op,p.expansion_status,p.next_contact_at]);return 'req';};
    window.__rpc=[];SB={rpc:async(name,args)=>{if(name==='crm_improvement_task_list_v1')return {data:{ok:true,tasks:[]}};__rpc.push([name,args.p.source_opportunity_id,args.p.note]);return {data:{ok:true,event:{source_opportunity_id:args.p.source_opportunity_id,occurred_at:new Date().toISOString(),kind:'접촉·니즈',note:args.p.note,actor:'송보람'}}};}};TOKEN='test';
