@@ -30,13 +30,48 @@
  const localNow=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes());};
 
  /* ───────── 1. 연락처 등록 ───────── */
+ async function cardPhoto(file){
+  if(!file||!/^image\/(jpeg|png|webp)$/.test(file.type))throw Error('JPG·PNG·WebP 사진을 선택해 주세요. HEIC 사진은 JPG로 변환해 주세요.');
+  if(file.size>15*1024*1024)throw Error('사진은 15MB 이하로 올려 주세요.');
+  const url=URL.createObjectURL(file),img=new Image();
+  try{await new Promise((ok,no)=>{img.onload=ok;img.onerror=()=>no(Error('사진을 열지 못했습니다. 다른 사진을 선택해 주세요.'));img.src=url;});
+   const scale=Math.min(1,1568/Math.max(img.naturalWidth,img.naturalHeight));
+   const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));
+   const c=canvas.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,canvas.width,canvas.height);c.drawImage(img,0,0,canvas.width,canvas.height);
+   const data=canvas.toDataURL('image/jpeg',0.88).split(',')[1];if(data.length>2800000)throw Error('사진 용량이 큽니다. 명함 부분만 잘라 다시 올려 주세요.');
+   return {media_type:'image/jpeg',data};
+  }finally{img.src='';URL.revokeObjectURL(url);}
+ }
+ function bindCardScan(p,S,item){
+  let busy=false;const status=p.querySelector('#dp-card-status'),fields=['qc-name','qc-mobile','qc-office','qc-email'],touched=new Set();
+  p.addEventListener('input',e=>{if(busy&&fields.includes(e.target.id))touched.add(e.target.id);});
+  p.addEventListener('dp:chip',e=>{if(busy&&e.detail==='role')touched.add('role');});
+  p.querySelectorAll('[data-card-pick]').forEach(b=>b.addEventListener('click',()=>p.querySelector('#'+b.dataset.cardPick).click()));
+  p.querySelectorAll('[data-card-file]').forEach(f=>f.addEventListener('change',async()=>{
+   const file=f.files[0];f.value='';if(!file||busy)return;
+   if(!root.OpsStore?.aiOn()){status.textContent='AI 인식 연결이 꺼져 있습니다. 관리팀 KPI의 AI 설정을 확인해 주세요.';return;}
+   const before=Object.fromEntries(fields.map(id=>[id,p.querySelector('#'+id).value])),roleBefore=S.role;
+   busy=true;touched.clear();p.querySelectorAll('[data-card-pick],[data-dp="save"],[data-dp="replace"],[data-dp="fill"]').forEach(b=>b.disabled=true);status.textContent='명함을 읽고 있습니다…';
+   const me=root.ME,token=root.TOKEN;
+   try{const image=await cardPhoto(file);if(!p.isConnected)return;
+    const result=await root.OpsStore.ai('contact_card','deal',item.id,{image});
+    if(!p.isConnected||root.CUR_DETAIL?.item!==item||root.ME!==me||root.TOKEN!==token)return;
+    const v=result.suggestion||{},map={'qc-name':v.name,'qc-mobile':v.mobile,'qc-office':v.office,'qc-email':v.email};let n=0,kept=0;
+    Object.entries(map).forEach(([id,value])=>{if(!value)return;const el=p.querySelector('#'+id);if(touched.has(id)||el.value!==before[id]||el.value.trim()){kept++;return;}el.value=String(value);el.dispatchEvent(new Event('input',{bubbles:true}));n++;});
+    if(v.role&&!touched.has('role')&&S.role===roleBefore&&p.querySelectorAll('[data-chips="role"] button').length){const b=[...p.querySelectorAll('[data-chips="role"] button')].find(b=>b.dataset.v===v.role);if(b)b.click();}
+    if(v.office||v.email)p.querySelector('.dp-more').open=true;
+    status.textContent=(n?'명함에서 '+n+'개 항목을 채웠습니다. 저장 전에 확인해 주세요.':'자동으로 채울 항목이 없습니다. 사진과 입력값을 확인해 주세요.')+(kept?' 기존 입력값 '+kept+'개는 유지했습니다.':'')+(v.note?' '+v.note:'');
+   }catch(e){if(p.isConnected)status.textContent=e.message||'명함을 읽지 못했습니다. 다시 시도해 주세요.';}
+   finally{busy=false;if(p.isConnected)p.querySelectorAll('[data-card-pick],[data-dp="save"],[data-dp="replace"],[data-dp="fill"]').forEach(b=>b.disabled=false);}
+  }));
+ }
  function contactPanel(mode,key){
   const item=root.CUR_DETAIL.item,cur=root.relationshipContact(item),editing=mode!=='new'&&key?root.relationshipContact(item,key):null;
   const roles=(typeof CONTACT_ROLES!=='undefined'?CONTACT_ROLES:['관리소장','입주자대표회장','관리과장','시설과장','담당자','기타']);
   const S={role:editing?editing.role:(cur.mobile?'담당자':'관리소장'),consent:editing?(editing.sendBlocked?'no':editing.smsConsent?'yes':'ask'):'ask',primary:editing?true:!cur.mobile,replace:false};
   const consentText=c=>c.sendBlocked?'수신 거부':c.smsConsent?'수신 동의':'동의 미확인';
   const body='<section class="dp-sec"><b>지금 등록된 사람</b>'+(cur.mobile||cur.name?'<div class="dp-person"><div><strong>'+h(cur.name||'이름 미입력')+' · '+h(cur.role||'담당자')+'</strong><span>'+h(root.phoneFmt(cur.mobile)||'번호 없음')+' · '+h(consentText(cur))+'</span></div><button type="button" class="dp-ghost" data-dp="replace">소장 바뀜</button></div><p class="dp-note" id="dp-replace-note" hidden>기존 '+h(cur.name||'소장')+'님은 지우지 않고 <b>이전 소장</b>으로 기록합니다(오늘 날짜). 아래에 새 소장을 입력해 주세요.</p>':'<p class="dp-empty">아직 등록된 사람이 없어요</p>')+'</section>'
-   +'<section class="dp-sec"><b>자동 채우기</b><textarea id="dp-paste" rows="2" placeholder="문자 · 명함 글자 · 메모를 붙여 넣으세요"></textarea><button type="button" class="dp-ghost" data-dp="fill">✦ 자동 채우기</button><small class="dp-hint">붙여 넣은 글에서 이름 · 휴대폰 · 직책을 찾아 아래 칸에 채웁니다(저장 전 확인).</small></section>'
+   +'<section class="dp-sec"><b>자동 채우기</b><div><button type="button" class="dp-ghost" data-card-pick="dp-card-camera">명함 촬영</button> <button type="button" class="dp-ghost" data-card-pick="dp-card-file">명함 사진 선택</button></div><input id="dp-card-camera" data-card-file type="file" accept="image/jpeg,image/png,image/webp" capture="environment" hidden><input id="dp-card-file" data-card-file type="file" accept="image/jpeg,image/png,image/webp" hidden><small class="dp-hint">선택한 사진을 Claude로 보내 인식합니다. CRM에는 사진을 보관하지 않으며, 연락처는 확인 후 저장합니다.</small><small id="dp-card-status" role="status" aria-live="polite"></small><textarea id="dp-paste" rows="2" placeholder="문자 · 명함 글자 · 메모를 붙여 넣으세요"></textarea><button type="button" class="dp-ghost" data-dp="fill">✦ 자동 채우기</button><small class="dp-hint">붙여 넣은 글에서 이름 · 휴대폰 · 직책을 찾아 아래 칸에 채웁니다(저장 전 확인).</small></section>'
    +'<section class="dp-sec"><b>역할</b>'+chips('role',roles,S.role)+'<select id="qc-role" hidden>'+roles.map(r=>'<option'+(r===S.role?' selected':'')+'>'+h(r)+'</option>').join('')+'</select></section>'
    +'<section class="dp-sec dp-two"><label>이름 <i>*</i><input id="qc-name" value="'+attr(editing?editing.name:'')+'" placeholder="예: 홍길동"></label><label>휴대폰 <i>*</i><input id="qc-mobile" inputmode="tel" value="'+attr(editing?editing.mobile:'')+'" placeholder="010-0000-0000"></label></section>'
    +'<label class="dp-check"><input type="checkbox" id="dp-primary"'+(S.primary?' checked':'')+'> 대표 연락처로 지정</label>'
@@ -47,6 +82,7 @@
   const p=side('contact',editing?'연락처 수정':'연락처 등록',item.site||'현장명 미입력',body,'<button type="button" class="dp-ghost" data-dp="close">취소</button><button type="button" class="dp-primary" data-dp="save">저장</button>');if(!p)return;
   const hint=()=>{p.querySelector('#dp-consent-hint').textContent=S.consent==='yes'?'지금 시각과 «통화 중 구두 동의»로 기록하고, 문자 · 카카오 모두 동의로 저장합니다.':S.consent==='no'?'광고성 발송에서 자동으로 빠집니다(수신거부 · 발송 차단).':'다음 통화 때 수신 동의를 물어봐 주세요.';};hint();
   bindChips(p,S);
+  bindCardScan(p,S,item);
   p.addEventListener('dp:chip',e=>{if(e.detail==='role'){p.querySelector('#qc-role').value=S.role;if(!editing)p.querySelector('#dp-primary').checked=S.role==='관리소장'||!cur.mobile;}if(e.detail==='consent')hint();});
   p.addEventListener('click',e=>{
    const b=e.target.closest('[data-dp]');if(!b)return;const a=b.dataset.dp;
