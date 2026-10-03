@@ -29,7 +29,7 @@ test('결과 구분: 타사 이관은 단계가 아니라 상태값 · 승인된
   assert.equal(R.dealResult({o:'won',transfer:{transfer_status:'cancelled'}}),'won_own','거둔 이관은 없는 것으로');
   assert.deepEqual(R.transferOf({transfer:T({award_result:'transferred_won',incentive_eligible:true,award_amount:'380000000',transfer_company:'코지건설',performance_owner:'이필선'})}).status,'approved');
  }finally{delete g.outcomeOf;delete g.itemPatch;}
- assert.deepEqual(R.performance(5e8,3e8),{own:5e8,transfer:3e8,total:8e8,label:'수주실적'},'자사 · 타사 이관은 나눠 보여 주고 합산');
+ assert.deepEqual(R.performance(5e8,3e8),{own:5e8,partner:0,transfer:3e8,total:8e8,label:'수주실적'},'직접 · 협약 · 타사 이관은 나눠 보여 주고 합산');
 });
 test('놓침 판정은 이 기준만',()=>{
  const now=Date.parse('2026-10-07T10:00:00+09:00'),ago=m=>now-m*6e4;
@@ -69,6 +69,22 @@ test('서버 함수의 허용 목록 · 범위 = 화면 항목표',()=>{
  assert.match(read('pc-manager-transport.js'),/'crm_ops_rules_v1'/);
 });
 test('메이드율은 한 함수로: 주간 브리핑 · 리포트 · 대시보드',()=>{
- assert.match(read('brief-b.js'),/const madeOf=\(w,l,t\)=>root\.CRMRules\?root\.CRMRules\.madeRate\(w,t\|\|0,l\)/);
+ assert.match(read('brief-b.js'),/const madeOf=\(w,l,t,p\)=>root\.CRMRules\?root\.CRMRules\.madeRate\(w,t\|\|0,l,p\|\|0\)/);
  ['brief-b.js','report-b.js','dash-b.js'].forEach(f=>assert.doesNotMatch(read(f),/pct\([^()]*\.count,[^()]*\.count\+[^()]*(loss|\.l\b)/,f+' — 메이드율을 따로 계산하지 않음'));
+});
+test('수주 유형 3가지: 직접 / 협약시공사 · 기술자문 / 타사 이관 — 실적 = 낙찰금액, 연결 계약은 더하지 않는다',()=>{
+ assert.deepEqual(Object.keys(R.WON_TYPES),['won_own','won_partner_tech','won_transfer']);assert.equal(R.WON_TYPES.won_partner_tech.label,'협약시공사 수주 · 기술자문');
+ assert.deepEqual(Object.keys(R.DEAL_FIELDS),['sales_channel_brand','award_company','award_amount','tech_advisory_company','tech_advisory_amount','pour_contract_amount']);
+ /* 메이드율: 협약시공사 수주도 성공 */
+ assert.equal(R.madeRate(1,1,2,2),66.7);assert.equal(R.madeRate(1,0,1),50,'넷째 값이 없어도 예전 그대로');assert.equal(R.madeRate(0,0,0,0),null);
+ /* 수주실적: 3가지를 나눠 합산. 기술자문 계약금액 · POUR 계약금액은 매출 쪽 숫자 */
+ assert.deepEqual(R.performance(5,3,10),{own:5,partner:10,transfer:3,total:18,label:'수주실적'});assert.equal(R.performance(5,3).total,8);
+ assert.equal(R.revenue('own',500),500);assert.equal(R.revenue('partner_tech',1043900000,433650000,136690000),570340000);assert.equal(R.revenue('transfer',380000000),0);
+ const win={win_status:'confirmed',won_type:'partner_tech',award_company:'코지건설',award_amount:1043900000,award_date:'2026-10-01',sales_channel_brand:'석민이앤씨',performance_owner:'황윤선',tech_advisory:true,tech_advisory_company:'코지건설',tech_advisory_amount:433650000,pour_contract_amount:136690000,advisory_id:'a1'};
+ const w=R.winOf({win});assert.deepEqual([w.type,w.company,w.amount,w.tech,w.techAmount,w.pourAmount,w.owner,w.brand],['partner_tech','코지건설',1043900000,true,433650000,136690000,'황윤선','석민이앤씨']);
+ assert.equal(R.winOf({win:{...win,win_status:'cancelled'}}).type,'');assert.equal(R.winOf({}).type,'');assert.equal(R.winOf({win:{...win,tech_advisory:false}}).techAmount,0,'기술자문 발생 = 아니오면 연결 계약 없음');
+ assert.equal(R.dealResult({win}),'won_partner_tech');assert.equal(R.dealResult({win:{...win,won_type:'own'}}),'won_own');
+ assert.equal(R.dealResult({win,transfer:{transfer_status:'transferred',award_result:'transferred_won',incentive_eligible:true}}),'won_transfer','인정된 타사 이관이 먼저');
+ const sql=read('sql/deal-win-type-v1-20261004.sql');assert.match(sql,/won_type in \('own','partner_tech'\)/);assert.match(sql,/insert into public\.advisory_deals/);assert.match(sql,/'crm:deal:'\|\|v_deal/);
+ ['crm_deal_win_list_v1','crm_deal_win_register_v1'].forEach(n=>{assert.match(read('pc-manager-transport.js'),new RegExp("'"+n+"'"));assert.match(sql,new RegExp('function public\\.'+n));});
 });

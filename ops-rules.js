@@ -3,9 +3,10 @@
    상태: 확정(fix) = 회의 확정 · 잠금 / 조건부(cond) = 관리자 설정(운영 기준 설정 화면)에서 바꿈 / 보류(hold) = 구현하지 않음(자리만).
    저장: 조건부 값만 서버(crm_ops_rules_v1 → crm_settings 'ops_rules')에 두고, 바꿀 때마다 변경 이력(누가 · 언제 · 전 → 후)이 남는다.
    서버 함수가 아직 없으면 기본값(rules.json)으로 동작한다. 값이 바뀌면 예전 화면들이 읽는 OPS_RULES 에도 같은 값을 넣어 준다(sync).
-   결과 구분: 자사 수주(won_own) · 타사 이관 수주 = 승인된 것만(won_transfer) · 파이프라인 실주(lost) · Bad Fit(bad_fit) · 진행 중(in_progress) · 낙찰결과 대기(transfer_pending)
-   메이드율 = (자사 수주 + 승인 타사 이관 수주) ÷ (자사 수주 + 승인 타사 이관 수주 + 파이프라인 실주) — Bad Fit · 진행 중 · 낙찰결과 대기는 계산에서 뺀다.
-   수주실적 = 최종 낙찰금액(VAT 별도). 자사 · 타사 이관은 화면에서 나눠 보여 주고 총 영업실적에서는 합산한다. */
+   결과 구분: 직접 수주(won_own) · 협약시공사 수주 · 기술자문(won_partner_tech) · 타사 이관 수주 = 승인된 것만(won_transfer) · 파이프라인 실주(lost) · Bad Fit(bad_fit) · 진행 중(in_progress) · 낙찰결과 대기(transfer_pending)
+   메이드율 = (직접 수주 + 협약시공사 수주 + 승인 타사 이관 수주) ÷ (… + 파이프라인 실주) — Bad Fit · 진행 중 · 낙찰결과 대기는 계산에서 뺀다.
+   수주실적 = 최종 낙찰금액(VAT 별도). 수주 유형 3가지는 화면에서 나눠 보여 주고 총 영업실적에서는 합산한다.
+   협약시공사 수주의 기술자문 계약금액 · POUR 계약금액은 낙찰금액에 더하지 않는다(연결 계약 — 회사 매출 쪽 숫자). */
 (function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;else root.CRMRules=api;})(typeof window!=='undefined'?window:globalThis,function(root){
  'use strict';
  const VERSION='2026-10-04',RPC='crm_ops_rules_v1';
@@ -91,10 +92,19 @@
   try{const ST=root.StageTransition,f=ST&&ST.definitions&&ST.definitions.lost&&ST.definitions.lost.fields.find(x=>x.key==='close_reason');if(f){f.label='실주 원인';f.options=reasons('lost');}}catch(e){}
   O.unreachableAttempts=get('unreachable_attempts');O.unreachableIntervalDays=get('unreachable_interval_days');O.transferResultCheckDays=get('transfer_result_check_days');
  }
+ /* 수주 유형 3가지(rules.json won_types) · 영업건에 붙는 수주 필드 이름(deal_fields) */
+ const WON_TYPES=Object.freeze({won_own:Object.freeze({key:'own',label:'직접 수주',short:'직접 수주',hint:'자사가 직접 계약 · 시공'}),won_partner_tech:Object.freeze({key:'partner_tech',label:'협약시공사 수주 · 기술자문',short:'협약 · 기술자문',hint:'우리 영업 → 협약시공사 낙찰 → 기술자문 계약'}),won_transfer:Object.freeze({key:'transfer',label:'타사 이관 수주',short:'타사 이관',hint:'공식 이관 → 그 업체 낙찰 · 사전 보고 승인'})});
+ const DEAL_FIELDS=Object.freeze({sales_channel_brand:'영업 경로(브랜드)',award_company:'낙찰 시공사',award_amount:'낙찰금액(VAT 별도)',tech_advisory_company:'기술자문 계약 상대',tech_advisory_amount:'기술자문 계약금액',pour_contract_amount:'POUR 계약금액'});
  /* ── 계산 함수 ── */
  const pct=(a,b)=>b>0?Math.round(a/b*1000)/10:null;
- /* 메이드율: wonOwn = 자사 수주, wonTransfer = 승인된 타사 이관 수주, lost = 파이프라인 실주 (건수) */
- function madeRate(wonOwn,wonTransfer,lost){const w=(Number(wonOwn)||0)+(Number(wonTransfer)||0);return pct(w,w+(Number(lost)||0));}
+ /* 메이드율: wonOwn = 직접 수주, wonTransfer = 승인된 타사 이관 수주, lost = 파이프라인 실주, wonPartner = 협약시공사 수주 · 기술자문 (건수) */
+ function madeRate(wonOwn,wonTransfer,lost,wonPartner){const w=(Number(wonOwn)||0)+(Number(wonTransfer)||0)+(Number(wonPartner)||0);return pct(w,w+(Number(lost)||0));}
+ /* 수주 확정 정보(서버 crm_deal_wins 의 한 줄이 영업건의 win 으로 붙는다): type own | partner_tech */
+ function winOf(d){
+  const w=d&&d.win;if(!w||typeof w!=='object'||w.win_status!=='confirmed'||!['own','partner_tech'].includes(w.won_type))return {type:''};
+  const tech=w.won_type==='partner_tech'&&w.tech_advisory===true;
+  return {type:w.won_type,company:String(w.award_company||''),amount:Number(w.award_amount)||0,date:String(w.award_date||'').slice(0,10),brand:String(w.sales_channel_brand||''),owner:String(w.performance_owner||''),tech,techCompany:tech?String(w.tech_advisory_company||''):'',techAmount:tech?Number(w.tech_advisory_amount)||0:0,pourAmount:tech?Number(w.pour_contract_amount)||0:0,advisoryId:w.advisory_id||''};
+ }
  /* 타사 이관 상태(영업단계가 아니라 상태값 — 서버 crm_deal_transfers 의 한 줄이 영업건의 transfer 로 붙는다):
     none | pending(등록 · 낙찰결과 대기) | awarded(타사 이관 수주 · 실적 인정 대기) | approved(관리자 인정 · 실적 반영) | rejected(관리자 제외) | lost(실주) | cancelled(입찰 취소 · 보류) */
  function transferOf(d){
@@ -105,11 +115,14 @@
  /* 영업건 결과 구분. 타사 이관: 인정된 것만 수주 · 대기(등록 · 인정 전 · 취소 보류) = 계산 제외 · 실주 = 실패 · 관리자 제외 = 실적 · 메이드율 모두 제외 */
  function dealResult(d){
   const t=transferOf(d);if(t.status==='approved')return 'won_transfer';if(t.status==='pending'||t.status==='awarded'||t.status==='cancelled'||t.status==='rejected')return 'transfer_pending';if(t.status==='lost')return 'lost';
+  const w=winOf(d);if(w.type==='partner_tech')return 'won_partner_tech';if(w.type==='own')return 'won_own';
   let o='open';try{o=root.outcomeOf(d);}catch(e){}
   if(o==='won')return 'won_own';if(o==='badfit')return 'bad_fit';if(o==='lost'||o==='nocontact'||o==='closed')return 'lost';return 'in_progress';
  }
- /* 실적 금액(낙찰금액 · VAT 별도)을 자사 / 타사 이관으로 나눠 합산 */
- function performance(ownAmount,transferAmount){const own=Number(ownAmount)||0,tr=Number(transferAmount)||0;return {own,transfer:tr,total:own+tr,label:'수주실적'};}
+ /* 실적 금액(낙찰금액 · VAT 별도)을 직접 / 협약시공사 · 기술자문 / 타사 이관으로 나눠 합산 */
+ function performance(ownAmount,transferAmount,partnerAmount){const own=Number(ownAmount)||0,tr=Number(transferAmount)||0,partner=Number(partnerAmount)||0;return {own,partner,transfer:tr,total:own+partner+tr,label:'수주실적'};}
+ /* 회사 매출(영업실적과 다른 숫자): 직접 수주 = 계약금액 그대로, 협약시공사 수주 = 기술자문 계약금액 + POUR 계약금액, 타사 이관 = 0 */
+ function revenue(type,amount,techAmount,pourAmount){return type==='own'?Number(amount)||0:type==='partner_tech'?(Number(techAmount)||0)+(Number(pourAmount)||0):0;}
  /* 사유 목록: bad_fit | lost | transfer */
  function reasons(kind){const v=get('reasons_'+kind);return Array.isArray(v)?v.slice():[];}
  /* 예전에 쓰던 실주 사유 → 지금 원인(뜻이 같은 것만). 나머지는 적힌 그대로 둔다 */
@@ -141,5 +154,5 @@
  function warm(){const me=root.ME&&String(root.ME.id||root.ME.name||'');if(!me||warmed===me||!available())return;warmed=me;const before=JSON.stringify(all());load(true).then(()=>{if(JSON.stringify(all())!==before&&typeof root.paint==='function'){try{root.paint();}catch(e){}}});}
  if(typeof root.paint==='function'){const base=root.paint;root.paint=function(){try{sync();}catch(e){}const r=base.apply(this,arguments);try{warm();}catch(e){}return r;};}
  try{sync();}catch(e){}
- return {VERSION,RPC,DEFAULTS,SECTIONS,ROWS,SPEC,get,all,apply,clean,sync,load,save,available,meta:()=>meta,loaded:()=>loaded,pct,madeRate,dealResult,transferOf,performance,reasons,lostReason,LOST_ALIAS,miss,carePhase};
+ return {VERSION,RPC,DEFAULTS,SECTIONS,ROWS,SPEC,get,all,apply,clean,sync,load,save,available,meta:()=>meta,loaded:()=>loaded,pct,madeRate,dealResult,transferOf,winOf,performance,revenue,WON_TYPES,DEAL_FIELDS,reasons,lostReason,LOST_ALIAS,miss,carePhase};
 });

@@ -198,7 +198,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await band.locator('.hd').innerText(),/^어느 단계로 옮길까요\?/);
   assert.deepEqual(await band.locator('.dv3-moves button').allInnerTexts(),['컨설팅 설계','자료 발송완료 (지금)','관계관리','경쟁·입찰','계약·시공','수주','실주']);
   assert.equal(await page.locator('#detailView .dv3-headact .mv').innerText(),'단계 바꾸기 ▴');await rightIntact('단계 바꾸기 띠');
-  await band.locator('.dv3-moves button',{hasText:'수주'}).click({force:true});await page.waitForTimeout(200);assert.equal(await page.locator('#stage-transition-form').count(),0,'수주는 준공 뒤에만');
+  await band.locator('.dv3-moves button',{hasText:'수주'}).click({force:true});await page.waitForTimeout(200);assert.equal(await page.locator('#stage-transition-form').count(),0,'수주는 준공 뒤에만');assert.equal(await page.locator('#wn-dialog .wn-dlg').count(),1,'준공 전의 [수주] = 수주 처리 창(유형 먼저 고르기)');await page.locator('#wn-dialog header [data-wn="close"]').click();await page.waitForTimeout(100);
   await band.locator('.dv3-moves button',{hasText:'관계관리'}).click();await page.waitForTimeout(450);
   const SF=band.locator('#stage-transition-form');assert.equal(await SF.count(),1,'띠 안에서 입력');await rightIntact('단계 입력');
   assert.equal(await band.locator('.dv3-moves button[aria-pressed="true"]').innerText(),'관계관리');

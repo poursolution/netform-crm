@@ -290,7 +290,9 @@
   const inGroup=k=>{const def=P.definition(k),codes=def?def.codes:[],i=codes.indexOf(from),linear=k==='construction'||k==='consulting';return codes.filter((c,j)=>c!==from&&choices.includes(c)&&(!linear||i<0||j>i));};
   const mh=STAGES.map(([k,n])=>{const def=P.definition(k),ok=(def?def.codes:[]).some(c=>choices.includes(c)),cur=k===group;
    if(cur){const sub=inGroup(k);return '<button type="button" data-dv3="mvpick" data-stage="'+k+'" class="cur" aria-disabled="true">'+h(n)+' (지금'+(sname&&sname!==n?' · '+h(sname):'')+')</button>'+sub.map(c=>'<button type="button" class="sub" data-dv3="mvpick" data-stage="'+k+'" data-code="'+c+'">→ '+h(root.stageLabel(c))+'</button>').join('');}
-   return '<button type="button" data-dv3="mvpick" data-stage="'+k+'"'+(ok?'':' aria-disabled="true"')+'>'+h(n)+'</button>';}).join(''),mb=band.querySelector('.dv3-moves');
+   /* 수주 = 수주 처리 창(유형 먼저 고르기)이 있으면 어느 단계에서나 누를 수 있다 */
+   const winOpen=k==='won'&&!closed&&!!(root.DealWin&&root.DealWin.available());
+   return '<button type="button" data-dv3="mvpick" data-stage="'+k+'"'+(ok||winOpen?'':' aria-disabled="true"')+'>'+h(n)+'</button>';}).join(''),mb=band.querySelector('.dv3-moves');
   if(mb.dataset.h!==mh){mb.innerHTML=mh;mb.dataset.h=mh;}
   syncMove(v);
  }
@@ -588,11 +590,12 @@
   if(a==='nextmore'){st(d).nextOpen=false;apply();want('now');if(!root.DealPanelsV2?.open('next'))root.DetailActions.open('next');return;}
   /* 단계 바꾸기(머리글 띠) · 담당자 변경 */
   if(a==='mv'){const S=st(d);S.mvOpen=!S.mvOpen;if(!S.mvOpen&&document.getElementById('stage-transition-form'))root.StageTransitionUI?.close();syncMove(view());return;}
+  if(a==='mvpick'&&b.dataset.stage==='won'&&root.DealWin&&root.DealWin.enabled()&&root.DealWin.intercept(d))return;
   if(a==='mvpick'){if(b.getAttribute('aria-disabled')==='true'){if(!b.classList.contains('cur'))toast(b.dataset.stage==='won'?(root.PipelineStages.group(root.dealStage(d))==='construction'?'수주는 준공 처리 뒤에 옮길 수 있습니다 — 「계약·시공」 옆의 [→ 준공]을 먼저 눌러 주세요':'수주는 준공 단계에서만 옮길 수 있습니다 — 먼저 계약·시공으로 옮겨 주세요'):'지금 단계에서는 바로 옮길 수 없는 단계입니다','warn');return;}if(b.getAttribute('aria-pressed')==='true')return;pickStage(d,b.dataset.stage,b.dataset.code);return;}
   if(a==='owner'){if(closeIn('owner'))return;want('owner');root.DetailActions.open('owner');return;}
  }
  function cleanup(v){v.classList.remove('dv3');v.querySelectorAll('.dv3-left').forEach(n=>n.remove());v.querySelectorAll('.dv3-old').forEach(n=>n.classList.remove('dv3-old'));v.querySelectorAll('.dv3-chg,.dv3-hint,.dv3-title,.dv3-reco,.dv3-form,.dv3-nextonly,.dv3-move,.dv3-subrow,.dv3-kind').forEach(n=>n.remove());{const bc=v.querySelector('.ddv-chips .idv-brand');if(bc){bc.style.background='';bc.style.color='';delete bc.dataset.c;}}v.querySelectorAll('.dv3-slot').forEach(n=>{if(!n.children.length)n.remove();});}
- function apply(){const r=applyBase();try{root.DealTransfer&&root.DealTransfer.decorate();}catch(e){if(root.console)root.console.warn('[타사 이관]',e);}return r;}
+ function apply(){const r=applyBase();try{root.DealTransfer&&root.DealTransfer.decorate();}catch(e){if(root.console)root.console.warn('[타사 이관]',e);}try{root.DealWin&&root.DealWin.decorate();}catch(e){if(root.console)root.console.warn('[수주 유형]',e);}return r;}
  function applyBase(){
   const v=view(),cur=root.CUR_DETAIL;if(!v)return;
   if(!enabled()||!v.classList.contains('ddv')||!cur||cur.kind!=='deal'){if(v.classList.contains('dv3'))cleanup(v);return;}

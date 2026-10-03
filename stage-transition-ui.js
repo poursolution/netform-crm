@@ -68,7 +68,7 @@
   ctx.amountSource=null;
   if(['contract','construction','completion','won'].includes(to)&&!v.contract_amount){
    const key=String(root.dealKey?root.dealKey(d):d.id),ledger=(root.ContractSalesData?.state?.().items||[]).find(r=>String(r.deal_id)===key);
-   const pick=[[d.won_amount||p.won_amount,'준공 처리금액'],[saved.contract?.fields?.contract_amount,'계약 단계에서 입력한 계약금액'],[ledger&&ledger.balance,'계약 기록'],[d.quoteAmt||d.quote_amount||p.quote_amount,'최종 견적금액'],[d.amt||d.amount||p.amount,'예상금액']].find(([x])=>Number(x)>0);
+   const pick=[[d.won_amount||p.won_amount,'준공 처리금액'],[saved.contract?.fields?.contract_amount,'계약 단계에서 입력한 계약금액'],[root.DealWin?.amountOf?.(d),'수주 처리에서 입력한 낙찰금액'],[ledger&&ledger.balance,'계약 기록'],[d.quoteAmt||d.quote_amount||p.quote_amount,'최종 견적금액'],[d.amt||d.amount||p.amount,'예상금액']].find(([x])=>Number(x)>0);
    if(pick){v.contract_amount=Number(pick[0]);ctx.amountSource=pick[1];(ctx.amountPrefill=ctx.amountPrefill||{})[to]={value:v.contract_amount,source:pick[1]};}
   }
   return {transition_date:today(),skip_reason:'',memo:'',next_due:'',fields:v};
