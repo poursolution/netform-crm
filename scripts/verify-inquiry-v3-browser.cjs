@@ -17,7 +17,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{
    const at=(d,h)=>new Date(Date.now()-d*864e5-(h||0)*36e5).toISOString(),day=d=>new Date(Date.now()+d*864e5).toLocaleDateString('en-CA');
    const U='11111111-1111-4111-8111-111111111111',A='22222222-2222-4222-8222-222222222222',F='33333333-3333-4333-8333-333333333333',M='44444444-4444-4444-8444-444444444444',N='55555555-5555-4555-8555-555555555555';
-   B={deals:[],inquiries:[
+   B={deals:[{id:'d-ex1',site:'[경기 김포] 한강신도시반도유보라',code:'lost',grp:'수주 실패',assignee:'이필선',created:at(400),brand:'석민이앤씨'}],inquiries:[
     {id:U,site:'[서울 성북] 길음뉴타운9단지',status:'접수',at:at(0,3),created_at:at(0,3),brand:'POUR솔루션',phone:'010-2281-4402',contact_name:'정미경',raw:{'문의내용':'옥상 방수 견적 요청드립니다. 최상층 3세대 누수.','고객유형':'관리소장','상담채널':'홈페이지'}},
     {id:A,site:'[경기 김포] 한강신도시반도유보라',status:'배정완료',at:at(1),created_at:at(1),brand:'석민이앤씨',phone:'031-987-1150',contact_name:'이준호',assignee:'이필선',assigned_to:'이필선',assigned_at:at(0.9),raw:{'문의내용':'지하주차장 바닥 에폭시 들뜸 보수 문의.','상담채널':'전화'}},
     {id:F,site:'[경남] 혁신LH5단지',status:'배정완료',at:at(40),created_at:at(40),brand:'석민이앤씨',phone:'055-757-7977',contact_name:'관리소장',assignee:'이필선',assigned_to:'이필선',assigned_at:at(39),responded_at:at(30),raw:{'문의내용':'외벽 재도장 · 주차장 · 현장 확인 요청','상담채널':'전화'},activities:[{type:'전화',note:'첫 연락 — 현장 확인 요청',at:at(30),actor:'이필선'}]},
@@ -26,19 +26,20 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     activities:[],inquiryTrash:[],expansion_pool:[]};
    LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';G.inqV3=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op,p)=>{window.__writes.push([op,p]);return 'req-'+window.__writes.length};
-   window.__rpc=[];SB={rpc:async(name,args)=>{__rpc.push([name,args]);if(name==='crm_inquiry_field_update_v1'){const p=args.p;return {data:{ok:true,inquiry_id:p.inquiry_id,field:p.field,value:p.value,raw_key:{customer_type:'고객유형',work_type:'공사유형',channel:'상담채널',inflow:'유입경로',responder:'전화 응대자'}[p.field]||null}};}return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
+   window.__rpc=[];SB={rpc:async(name,args)=>{__rpc.push([name,args]);if(name==='crm_inquiry_field_update_v1'){const p=args.p;return {data:{ok:true,inquiry_id:p.inquiry_id,field:p.field,value:p.value,raw_key:{customer_type:'고객유형',work_type:'공사유형',channel:'상담채널',inflow:'유입경로',responder:'전화 응대자',timing:'공사 시기',competitor:'경쟁사',requested_material:'요청 자료',keyman:'결정권자'}[p.field]||null}};}if(name==='crm_inquiry_site_link_v1'){const p=args.p;return {data:{ok:true,inquiry_id:p.inquiry_id,decision:p.decision,deal_id:p.decision==='same'?p.deal_id:null}};}return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
    goPage('inq');window.U=U;window.A=A;window.F=F;window.M=M;window.N=N;
   });
   await page.waitForTimeout(600);
   const v=page.locator('#inq-v3');assert.equal(await v.count(),1,'목록 v3');assert.equal(await page.locator('#pg-inq.inq-v3 #inq-v2').isVisible(),false,'v2 목록은 숨김');
-  assert.match(await v.locator('.il-sheet').innerText(),/^구글시트 연결됨 · .*5건$/);assert.equal(await v.locator('.il-fixed').innerText(),'12시까지 결과 · 다음 행동 업데이트');
+  /* 구글시트 상태 · 고정 문구는 상단 제목 옆 */
+  assert.equal(await page.locator('#ptitle').innerText(),'견적문의');assert.match(await page.locator('#psub .il-sheet').innerText(),/^구글시트 연결됨 · .*5건$/);assert.equal(await page.locator('#psub .il-fixed').innerText(),'12시까지 결과 · 다음 행동 업데이트');assert.equal(await v.locator('.il-sheet').count(),0,'목록 안에는 다시 그리지 않음');
   /* 탭 7개 + 건수 */
   const tabs=await v.locator('.il-tab').evaluateAll(a=>a.map(n=>n.querySelector('span').textContent.trim()+'|'+n.querySelector('small').textContent.trim()));
   assert.deepEqual(tabs.map(t=>t.split('|')[0]),['5전체','1배정 필요','1첫 연락 전','1후속 연락 필요',((d=>d(Date.now()-3*36e5)===d(Date.now()))(t=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(t)))?1:0)+'오늘 들어온 문의','1대표회의 · 기한 D-3','3필수정보 미입력'],JSON.stringify(tabs));
   assert.match(tabs[1],/30분 안에 담당 지정/);assert.match(tabs[2],/2시간 안 첫 연락/);assert.match(tabs[3],/7일 넘게 연락 없음/);
   /* 정렬: 접수일 오름차순(가장 오래된 것 먼저) · 상태와 무관 */
   const sites=async()=>v.locator('.il-row .il-site b').allInnerTexts();
-  assert.deepEqual(await sites(),['[경남] 혁신LH5단지','[경기 수원] 매탄임광아파트','[서울 노원] 중계청구3차','[경기 김포] 한강신도시반도유보라','[서울 성북] 길음뉴타운9단지']);
+  assert.deepEqual((await sites()).map(t=>t.replace(/기존 현장 · \d+건$/,'').trim()),['[경남] 혁신LH5단지','[경기 수원] 매탄임광아파트','[서울 노원] 중계청구3차','[경기 김포] 한강신도시반도유보라','[서울 성북] 길음뉴타운9단지']);
   assert.match(await v.locator('.il-sortrow').innerText(),/5건 · 접수일 오름차순/);
   await v.locator('.il-sorts [data-v="new"]').click();await page.waitForTimeout(300);assert.deepEqual((await sites())[0],'[서울 성북] 길음뉴타운9단지');await page.locator('#inq-v3 .il-sorts [data-v="old"]').click();await page.waitForTimeout(300);
   /* 경과 · 날짜(연도 포함) · 버튼 */
@@ -49,6 +50,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await row('매탄임광아파트').locator('.il-act').innerText(),'자료 제출');assert.match(await row('매탄임광아파트').locator('.il-site em').innerText(),/대표회의 \d{4}\.\d{1,2}\.\d{1,2} D-2/);
   assert.equal(await row('중계청구3차').locator('.il-act').innerText(),'정보 보완');
   assert.equal(await row('혁신LH5단지').evaluate(n=>getComputedStyle(n).borderLeftColor),'rgb(232, 89, 12)','브랜드 띠 = 석민 색');
+  /* 줄 끝 버튼 색 = 급한 정도: 배정 빨강 채움 · 첫 연락 검정 채움 · 기준 넘긴 후속 주황 테두리 · 나머지 흰 버튼 */
+  const btn=site=>row(site).locator('.il-act').evaluate(n=>{const c=getComputedStyle(n);return [c.backgroundColor,c.color,c.borderTopColor,Math.round(n.getBoundingClientRect().width)];});
+  assert.deepEqual(await btn('길음뉴타운9단지'),['rgb(217, 58, 58)','rgb(255, 255, 255)','rgb(217, 58, 58)',92],'담당 배정 = 빨강 채움');
+  assert.deepEqual(await btn('한강신도시반도유보라'),['rgb(21, 23, 28)','rgb(255, 255, 255)','rgb(21, 23, 28)',92],'첫 연락 = 검정 채움');
+  assert.deepEqual(await btn('혁신LH5단지'),['rgb(255, 255, 255)','rgb(180, 83, 9)','rgb(240, 197, 138)',92],'후속 연락 = 주황 테두리');
+  assert.deepEqual(await btn('중계청구3차'),['rgb(255, 255, 255)','rgb(42, 82, 184)','rgb(213, 224, 251)',92],'나머지 = 흰 버튼');
+  assert.deepEqual(await row('혁신LH5단지').evaluate(n=>[n.querySelector('.il-who'),n.querySelector('.il-owner'),n.querySelector('.il-el')].map(e=>Math.round(e.getBoundingClientRect().width)).concat(getComputedStyle(n.querySelector('.il-r')).columnGap)),[150,64,108,'28px'],'오른쪽 덩어리 폭 · 간격');
+  assert.equal(await row('한강신도시반도유보라').locator('.il-site b u').innerText(),'기존 현장 · 1건');assert.equal(await row('혁신LH5단지').locator('.il-site b u').count(),0);
   /* 탭 필터 */
   await v.locator('.il-tab[data-v="stale"]').click();await page.waitForTimeout(300);assert.deepEqual(await sites(),['[경남] 혁신LH5단지']);
   await page.locator('#inq-v3 .il-tab[data-v="all"]').click();await page.waitForTimeout(300);
@@ -61,7 +70,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const rec=page.locator('#inq-v3 .il-rec');assert.equal(await rec.count(),1);
   assert.deepEqual(await rec.locator('.il-chip.on').allInnerTexts(),['연락 완료','7일 후'],'규칙 기본값이 미리 골라짐');
   await rec.locator('.il-chip[data-il="res"][data-v="재견적 요청"]').click();await page.waitForTimeout(150);await page.locator('#inq-v3 .il-rec .il-chip[data-il="next"][data-v="3일 후"]').click();await page.waitForTimeout(150);
-  assert.match(await page.locator('#inq-v3 .il-save button').innerText(),/^저장 · 다음 연락 \d{4}\.\d+\.\d+\([일월화수목금토]\)$/);
+  assert.equal(await page.locator('#inq-v3 .il-save button').innerText(),'저장');assert.match(await page.locator('#inq-v3 .il-save span').innerText(),/결과와 다음 행동일을 모두 골라야 저장됩니다[\s\S]*다음 연락 \d{4}\.\d+\.\d+\([일월화수목금토]\)$/);
   if(shot)await page.screenshot({path:shot+'-list.png',fullPage:true});
   await page.locator('#inq-v3 .il-save button').click();await page.waitForTimeout(500);
   const w=await page.evaluate(()=>__writes.filter(x=>x[0]==='inquiry_status').map(x=>x[1]));
@@ -73,6 +82,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 상세: 빈 칸 바로 입력(서버 함수 있음) · Esc 취소 · Enter 저장(서버 확인 뒤 반영 · 감사용 RPC) */
   await page.evaluate(()=>{window.CRMRelease=Object.assign(window.CRMRelease||{},{has:n=>true,noteMissing:()=>{}});InquiryWorkbench.open(A);});await page.waitForTimeout(400);
   const d=page.locator('#inq-inbox-dialog.idv');assert.equal(await d.count(),1);
+  /* 상세 머리글: 브랜드 색 칩 · 상태 알약(첫 연락 전 · 경과) · 접수 시각(연도 포함) · 오른쪽 지금 할 일 · 필수 확인 9개 */
+  assert.equal(await d.locator('.idv-brand').evaluate(n=>getComputedStyle(n).color),'rgb(232, 89, 12)');assert.match(await d.locator('.idv-pill').innerText(),/^첫 연락 전 · 1일$/);assert.match(await d.locator('.idv-sub').innerText(),/이준호 · \d{4}\.\d{1,2}\.\d{1,2} \d{2}:\d{2} 접수$/);
+  assert.match(await d.locator('.idv-c3').innerText(),/^지금 할 일\s*첫 연락\s*배정 후 2시간 안 첫 연락/);assert.match(await d.locator('.idv-recv').innerText(),/^\d{4}년 \d{1,2}월 \d{1,2}일 \d{2}:\d{2} 접수 \(경과 1일\)\s*배정 후 2시간 안 첫 연락$/);
+  assert.deepEqual(await d.locator('.idv-need .idv-needchip').allInnerTexts(),['✓ 현재 문제','· 공사 범위','· 공사 시기','· 경쟁사','· 요청 자료','· 대표회의 일정','· 자료 회신 기한','· 결정권자','· 다음 행동 · 날짜'],'필수 확인 9개');
+  assert.match(await d.locator('.idv-chead').innerText(),/응대 이력\s*2건\s*연락 시도 0 · 실제 연결 0\s*최초 응대 아직 없음/);assert.match(await d.locator('.idv-ev .idv-evmeta').first().innerText(),/^\d{4}\.\d{1,2}\.\d{1,2} \d{2}:\d{2} · 자동\s*시스템\s*구글시트$/,'이력 시각 = 연도 포함 · 출처 배지는 끝');
+  assert.equal(await d.locator('.idv-thint').innerText(),'적기만 하면 수단 · 결과 · 다음 행동을 채웁니다');assert.equal(await d.locator('.idv-sug').isVisible(),false,'내용이 없으면 제안 줄 없음');assert.equal(await d.locator('.idv-composer .idv-save').innerText(),'기록 저장');
+  await d.locator('.idv-needchip[data-v="competitor"]').click();await page.waitForTimeout(150);await page.keyboard.type('타 업체 2곳 비교 중');await page.keyboard.press('Enter');await page.waitForTimeout(300);
+  assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_field_update_v1').map(x=>[x[1].p.field,x[1].p.value])),[['competitor','타 업체 2곳 비교 중']],'필수 확인 칩 = 눌러서 바로 입력');assert.equal(await d.locator('.idv-needchip.ok').count(),2);await page.evaluate(()=>{__rpc.length=0;});
   const edits=await d.locator('.idv-edit').count();assert.ok(edits>=4,'빈 칸은 눌러서 입력 '+edits);
   assert.deepEqual(await d.locator('.idv-info dt').allInnerTexts(),['문의자','연락처','업체','현장 주소','공종','상담 채널','유입 경로','응대','대표회의','회신 기한'],'핵심 확인 사항 두 칸');
   await d.locator('.idv-edit[data-v="meeting_date"]').click();await page.waitForTimeout(150);const md=day=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(Date.now()+day*864e5));/* 화면은 서울 시각 — 검사 기계가 UTC 여도 같은 날짜 */await d.locator('.idv-editin[data-v="meeting_date"]').fill(md(2));await page.waitForTimeout(400);
@@ -97,12 +114,32 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{window.CRMRelease=Object.assign(window.CRMRelease||{},{has:n=>n!=='crm_inquiry_field_update_v1'});InquiryWorkbench.open(U);});await page.waitForTimeout(400);
   assert.equal(await page.locator('#inq-inbox-dialog .idv-edit').count(),0);assert.match(await page.locator('#inq-inbox-dialog .idv-fieldnote').innerText(),/서버 적용 뒤에 열립니다/);
   await page.evaluate(()=>InquiryWorkbench.close());
+  /* 기존 현장 판단: 같은 현장에 영업건이 있으면 배지 + 펼침에 질문 — 새 공사 / 같은 공사(붙이기) — 서버 확인 뒤에만 ✓ */
+  await page.evaluate(()=>{TOKEN='test';__rpc.length=0;paint();});await page.waitForTimeout(300);
+  if(!await page.locator('#inq-v3 .il-item.open',{hasText:'한강신도시반도유보라'}).count()){await row('한강신도시반도유보라').locator('.il-brand').click();await page.waitForTimeout(200);}
+  const ex=page.locator('#inq-v3 .il-item.open .il-ex');assert.equal(await ex.count(),1);
+  assert.match(await ex.innerText(),/^이 현장에 영업건 1개가 있어요 — 같은 공사인가요, 새 공사인가요\?\s*실주\s*공종 미분류\s*이필선\s*같은 공사 · 여기에 붙이기\s*같은 공사면 기존 건의 견적 버전 · 이력에 이어집니다\s*새 공사로 등록$/);
+  assert.equal(await ex.evaluate(n=>getComputedStyle(n).borderTopColor),'rgb(21, 23, 28)','고르기 전 = 검은 테두리');
+  await ex.locator('.il-exnew').click();await page.waitForTimeout(400);
+  assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_site_link_v1').map(x=>[x[1].p.inquiry_id,x[1].p.decision,x[1].p.deal_id])),[['22222222-2222-4222-8222-222222222222','new',null]]);
+  assert.match(await page.locator('#inq-v3 .il-ex').innerText(),/^새 공사로 등록 · 같은 현장에 영업건 하나 추가[\s\S]*관리소장 · 연락처 · 이력은 현장 기준으로 함께 씁니다\s*새 공사 ✓$/);assert.equal(await page.evaluate(()=>inqCtlFind(A,false).raw['기존 현장 판단']),'새 공사');
+  await page.locator('#inq-v3 .il-exbtn').click();await page.waitForTimeout(400);
+  assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_site_link_v1').map(x=>[x[1].p.decision,x[1].p.deal_id]).at(-1)),['same','d-ex1']);
+  assert.match(await page.locator('#inq-v3 .il-ex').innerText(),/^같은 공사 · 공종 미분류 건에 붙임[\s\S]*붙임 ✓/);
+  assert.equal(await row('한강신도시반도유보라').locator('.il-act').innerText(),'영업건 보기');assert.match(await row('한강신도시반도유보라').locator('.il-el').innerText(),/기존 영업건에 붙임$/);
+  assert.match(String(await page.evaluate(()=>autoPromote(inqCtlFind(A,false)))),/기존 영업건에 붙인 문의입니다/,'붙인 문의는 새 영업건을 만들지 않음');
+  await page.locator('#inq-v3 .il-exbtn').click();await page.waitForTimeout(400);
+  assert.equal(await page.evaluate(()=>inqCtlFind(A,false).raw['기존 영업건']),undefined,'다시 누르면 되돌림');assert.notEqual(await row('한강신도시반도유보라').locator('.il-act').innerText(),'영업건 보기','되돌리면 원래 할 일로');
+  /* 서버 함수가 없으면 판단 버튼을 막는다 */
+  await page.evaluate(()=>{window.CRMRelease=Object.assign(window.CRMRelease||{},{has:n=>n!=='crm_inquiry_site_link_v1'});paint();});await page.waitForTimeout(300);
+  assert.equal(await page.locator('#inq-v3 .il-exbtn').isDisabled(),true);assert.match(await page.locator('#inq-v3 .il-exfoot').innerText(),/서버 적용 뒤에 고를 수 있습니다/);
+  await page.evaluate(()=>{window.CRMRelease=Object.assign(window.CRMRelease||{},{has:n=>true});delete window.TOKEN;});
   /* 좁은 화면 · 끄기 */
   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'좁은 화면 넘침 없음');
   await page.setViewportSize({width:1600,height:1000});
   await page.evaluate(()=>{G.inqV3Off=true;paint();});await page.waitForTimeout(400);
   assert.equal(await page.locator('#inq-v3').count(),0);assert.equal(await page.locator('#inq-v2 .iv-row').count()>0,true,'끄면 v2 목록');
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',tabs7:true,sort_by_received:true,elapsed_rule_year:true,row_buttons:true,row_expand:true,inline_result_requires_both:true,detail_inline_edit_gated:true,detail_result_chips:true,legacy_switch:true}));
+  console.log(JSON.stringify({status:'PASS',tabs7:true,sort_by_received:true,elapsed_rule_year:true,row_buttons:true,row_expand:true,inline_result_requires_both:true,detail_inline_edit_gated:true,detail_result_chips:true,button_colors:true,existing_site_decision:true,need9:true,head_chips:true,legacy_switch:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
