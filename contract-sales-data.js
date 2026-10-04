@@ -34,7 +34,7 @@
    finally{if(epoch===generation){pending=null;if(previous!==JSON.stringify([status,items]))root.dispatchEvent(new CustomEvent('contract-sales:changed'))}}
   })();return pending;
  }
- function summarize(f={}){
+ function entries(f={}){
   const s=state();if(s.status!=='ready')return null;
   const scope=root.SalesScope?.state();
   const selected=items.filter(r=>{
@@ -45,7 +45,11 @@
    const person=root.repProfile(r.sales_owner_name);
    return (scope.type==='all'||person.employeeType===scope.type)&&(scope.organization==='all'||person.team===scope.organization);
   });
-  return L.summarize(selected.map(r=>r.events),f);
+  return selected;
+ }
+ function summarize(f={}){
+  const selected=entries(f);
+  return selected===null?null:L.summarize(selected.map(r=>r.events),f);
  }
  async function write(p){
   const before=identity(),epoch=generation;
@@ -63,5 +67,5 @@
  // Wait for any current read before the post-ACK refresh, so a pre-save response
  // cannot leave a newly signed contract absent until the user reloads manually.
  root.addEventListener('phase1:queue',()=>{const epoch=generation;Promise.resolve(pending).then(()=>{if(epoch===generation&&identity())refresh()})});
- root.ContractSalesData={state,refresh,summarize,write};
+ root.ContractSalesData={state,refresh,entries,summarize,write};
 })(window);

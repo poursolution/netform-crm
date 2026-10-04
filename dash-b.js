@@ -46,7 +46,7 @@
   const B=BL(),K=B.K,P=period(),target=R.targetNameFilter(),AD=R.briefScopeDeals(target,false),AQ=R.briefScopeInquiries(target,false),L=B.ledger(target);
   const inR=(k,a,b)=>!!k&&k>=a&&k<b,rows=SI().rows(false,true),deals=rows.deals,active=deals.filter(d=>d.active),risk=active.filter(d=>d.issues.length),cnt=k=>active.filter(d=>d.issues.includes(k)).length;
   const q=AQ.filter(x=>inR(K(R.inquiryCreatedAt(x)),P.a,P.b)),bad=q.filter(B.badfit),fit=q.length-bad.length;
-  const loss=AD.filter(d=>B.isLoss(d)&&inR(B.closedKey(d),P.a,P.b)),con=B.contractsIn(L,P.a,P.b);
+  const loss=AD.filter(d=>B.isLoss(d)&&inR(B.closedKey(d),P.a,P.b)),con=B.contractsIn(L,P.a,P.b,null,'direct');
   /* 타사 이관 수주(관리자 인정분 · 낙찰일 기준): 수주실적에 합산하고 화면에서는 자사와 나눠 적는다 */
   const DT=R.DealTransfer&&R.DealTransfer.enabled()?R.DealTransfer:null,tf=DT?DT.wonIn(P.a,P.b,target):{count:0,amount:0,list:[]},tfLost=DT?DT.lostIn(P.a,P.b,target):0;
   /* 협약시공사 수주 · 기술자문(낙찰일 기준 · 낙찰금액): 이 화면에서 확정한 건 + 확정된 기술자문 낙찰실적. 수주실적 = 직접 + 협약 · 기술자문 + 타사 이관 */
@@ -58,7 +58,7 @@
  function advisory(C){
   if(C.DW){const l=C.pt.list;return {rows:l.map(x=>({attribution:{origin_business:x.brand,performance_owner:x.owner,bid_amount:x.amount}})),n:l.length,sum:C.pt.amount,merged:true};}
   const S=SI();if(!S.advisory||!S.advMatch)return null;const list=S.advisory();if(!Array.isArray(list))return null;const P=C.P;
-  const rows=list.filter(x=>x&&x.attribution&&S.advMatch(x.attribution,{brand:R.G.brand||'전체',owner:C.target||'전체'},k=>!!k&&k>=P.a&&k<P.b));
+  const rows=S.advisoryPerformance?.(list,{brand:R.G.brand||'전체',owner:C.target||'전체'},k=>!!k&&k>=P.a&&k<P.b);if(!rows)return null;
   return {rows,n:rows.length,sum:rows.reduce((s,x)=>s+(Number(x.attribution.bid_amount)||0),0)};
  }
  /* 계약 임박: 경쟁 · 임박 · 입찰 + 계약 체결 전 — 기한 가까운 순 */
@@ -75,7 +75,7 @@
  function people(C){
   const {B,P,L,active,loss,A,names}=C,W=week(P),ms=mk(P.ty,P.tm),me=mk(P.ty,P.tm+1);/* 계약 = 자사 계약실적 + 인정된 타사 이관 수주 */
   return names.map(n=>{
-   const mine=active.filter(d=>d.owner===n),c=B.contractsIn(L,P.a,P.b,n),cm=B.contractsIn(L,ms,me,n),l=loss.filter(d=>R.repN(d.assignee)===n),tfp=C.DT?C.DT.wonIn(P.a,P.b,n):{count:0,amount:0},tfm=C.DT?C.DT.wonIn(ms,me,n):{count:0,amount:0},ptp=C.DW?C.DW.partnerIn(P.a,P.b,n):{count:0,amount:0},ptm=C.DW?C.DW.partnerIn(ms,me,n):{count:0,amount:0},w=c.count+ptp.count+tfp.count;
+   const mine=active.filter(d=>d.owner===n),c=B.contractsIn(L,P.a,P.b,n,'direct'),cm=B.contractsIn(L,ms,me,n,'direct'),l=loss.filter(d=>R.repN(d.assignee)===n),tfp=C.DT?C.DT.wonIn(P.a,P.b,n):{count:0,amount:0},tfm=C.DT?C.DT.wonIn(ms,me,n):{count:0,amount:0},ptp=C.DW?C.DW.partnerIn(P.a,P.b,n):{count:0,amount:0},ptm=C.DW?C.DW.partnerIn(ms,me,n):{count:0,amount:0},w=c.count+ptp.count+tfp.count;
    const made=L.ready&&(w+l.length)?B.made(c.count,l.length,tfp.count,ptp.count):null;
    const fix=mine.filter(d=>d.issues.length),od=mine.filter(d=>d.issues.includes('overdue')),stall=mine.filter(d=>d.issues.includes('stall')),odMax=Math.max(0,...od.map(overdueDays));
    const my=A.filter(x=>x.owner===n),last=my[0]||null,lastK=last?last.k:'',lastDays=lastK?Math.max(0,B.between(lastK,P.today)):null,wk=my.filter(x=>x.k>=W[0]&&x.k<=W[6]).length;
@@ -102,12 +102,12 @@
  /* ── 1. 전체 현황 ── */
  function dash(C){
   const S=st(),N=nearList(C),PP=people(C),{B,P,L,active,risk,cnt,q,bad,fit,con,made,A,names}=C;
-  const ms=mk(P.ty,P.tm),cm=B.contractsIn(L,ms,mk(P.ty,P.tm+1)),pmD=new Date(P.ty,P.tm-2,1),pm=B.contractsIn(L,mk(P.ty,P.tm-1),ms),exp=active.reduce((s,d)=>s+(Number(d.expected)||0),0);
+  const ms=mk(P.ty,P.tm),cm=B.contractsIn(L,ms,mk(P.ty,P.tm+1),null,'direct'),pmD=new Date(P.ty,P.tm-2,1),pm=B.contractsIn(L,mk(P.ty,P.tm-1),ms),exp=active.reduce((s,d)=>s+(Number(d.expected)||0),0);
   const since=B.addDays(P.today,-6),wkA=A.filter(x=>x.k>=since),zero=names.filter(n=>!wkA.some(x=>x.owner===n)).length,adv=advisory(C);
   const val=(ready,n,text)=>!ready?['불러오는 중','mut']:n>0?[text,'']:['아직 없음','mut'];
   const tfm=C.DT?C.DT.wonIn(ms,mk(P.ty,P.tm+1),C.target):{count:0,amount:0},ptm=C.DW?C.DW.partnerIn(ms,mk(P.ty,P.tm+1),C.target):{count:0,amount:0},k1=val(L.ready,cm.net+ptm.amount+tfm.amount,won(cm.net+ptm.amount+tfm.amount)),k2=val(L.ready,C.perf,won(C.perf)),k3=val(true,exp,won(exp));
   const cards=[
-   ['이번 달 계약 ('+P.tm+'월)',k1[0],k1[1],P.tm+'월 '+P.td+'일째'+(cm.net>0?' · 계약 '+cm.count+'건':'')+' · '+(pmD.getMonth()+1)+'월 '+(pm.net>0?won(pm.net):'없음'),P.y===P.ty?'cs-month':'',P.tm],
+   ['이번 달 계약 ('+P.tm+'월)',k1[0],k1[1],P.tm+'월 '+P.td+'일째'+(cm.count+ptm.count>0?' · 계약 '+(cm.count+ptm.count)+'건':'')+' · '+(pmD.getMonth()+1)+'월 '+(pm.net>0?won(pm.net):'없음'),P.y===P.ty?'cs-month':'',P.tm],
    [P.thisYear?'올해 수주실적':P.label+' 수주실적',k2[0],k2[1],'직접 수주 '+(con.net>0?won(con.net):'없음')+'('+con.count+'건) · 협약 · 기술자문 '+(C.pt.amount>0?won(C.pt.amount)+'('+C.pt.count+'건)':'없음')+' · 타사 이관 '+(C.tf.amount>0?won(C.tf.amount)+'('+C.tf.count+'건)':'없음')+(adv&&adv.n&&!adv.merged?' · 기술자문 낙찰 '+won(adv.sum)+' 별도':''),'ev','contract'],
    ['진행 중 파이프라인',k3[0],k3[1],'진행 '+active.length+'건','ev','active'],
    ['견적문의',q.length+'건','','적합 '+fit+' · 배드핏 '+bad.length,'ev','inquiries'],
@@ -263,8 +263,8 @@
  /* 유입 브랜드 → 낙찰 시공사 → 수주실적 · 매출: 수주실적 = 낙찰금액, 매출 = 회사에 실제 들어오는 금액(직접 계약 · 기술자문 · POUR 계약). 타사 이관은 매출 없음 */
  function matrixRows(C){
   const {P,L}=C,m=new Map(),add=(brand,company,type,n,amt,rev,unknown)=>{const k=brand+'\u0001'+company+'\u0001'+type,v=m.get(k)||{brand,company,type,n:0,amt:0,rev:0,unknown:0};v.n+=n;v.amt+=amt;v.rev+=rev;v.unknown+=unknown||0;m.set(k,v);};
-  (L.rows||[]).forEach(r=>{const brand=String(r.brand||'').trim()||'브랜드 미기록';let w=null;try{w=C.DW&&C.DW.of({id:r.deal_id});}catch(e){}const company=w&&w.win_status==='confirmed'&&w.won_type==='own'&&w.award_company?String(w.award_company):brand;(r.events||[]).forEach(e=>{const k=e.effective_date;if(!(k>=P.a&&k<P.b))return;add(brand,company,'직접 수주',e.kind==='signed'?1:0,Number(e.amount_delta)||0,Number(e.amount_delta)||0);});});
-  C.pt.list.forEach(x=>add(x.brand,x.company,'협약 · 기술자문',1,x.amount,x.revenue,x.revKnown?0:1));
+  (L.rows||[]).forEach(r=>{if(C.DW?.isPartnerDeal?.(r.deal_id))return;const brand=String(r.brand||'').trim()||'브랜드 미기록';let w=null;try{w=C.DW&&C.DW.of({id:r.deal_id});}catch(e){}const company=w&&w.win_status==='confirmed'&&w.won_type==='own'&&w.award_company?String(w.award_company):brand;(r.events||[]).forEach(e=>{const k=e.effective_date;if(!(k>=P.a&&k<P.b))return;add(brand,company,'직접 수주',e.kind==='signed'?1:0,Number(e.amount_delta)||0,Number(e.amount_delta)||0);});});
+  C.pt.list.forEach(x=>add(x.brand,x.company,'협약 · 기술자문',x.signedCount,x.amount,x.revenue,x.revKnown?0:1));
   C.tf.list.forEach(x=>add(String(x.brand||'').trim()||'브랜드 미기록',String(x.t&&(x.t.award_company||x.t.transfer_company)||'').trim()||'업체 미기록','타사 이관',1,x.amount,0));
   const BO=BR.map(b=>b[0]),TO=['직접 수주','협약 · 기술자문','타사 이관'],bi=b=>{const i=BO.indexOf(b);return i<0?99:i;};
   return [...m.values()].filter(v=>v.n>0||v.amt!==0).sort((a,b)=>bi(a.brand)-bi(b.brand)||a.brand.localeCompare(b.brand)||TO.indexOf(a.type)-TO.indexOf(b.type)||b.amt-a.amt);
@@ -305,10 +305,10 @@
   return '<section class="db-card db-cos">'+head+'<div class="db-chn">'+['유입경로','문의','적합','수주'].map((l,i)=>'<span class="coh'+(i?' cor':'')+'">'+l+'</span>').join('')+'<span class="coh">문의 → 수주</span>'+body+'</div><p class="db-con">'+h(note)+'</p></section>';
  }
  function perf(C){
-  const {B,P,L,active,con,made,q}=C,ALL=people(C),PP=ALL.filter(p=>p.prog||p.w||p.l||p.yr>0),ms=mk(P.ty,P.tm),cm=B.contractsIn(L,ms,mk(P.ty,P.tm+1));
+  const {B,P,L,active,con,made,q}=C,ALL=people(C),PP=ALL.filter(p=>p.prog||p.w||p.l||p.yr>0),ms=mk(P.ty,P.tm),cm=B.contractsIn(L,ms,mk(P.ty,P.tm+1),null,'direct');
   const extra=(a,b)=>(C.DW?C.DW.partnerIn(a,b,C.target).amount:0)+(C.DT?C.DT.wonIn(a,b,C.target).amount:0);/* 협약 · 기술자문 + 타사 이관 */
-  let sum=0,n=0;for(let m=1;m<=12;m++){if(P.y>P.ty||(P.y===P.ty&&m>=P.tm))continue;sum+=B.contractsIn(L,mk(P.y,m),mk(P.y,m+1)).net+extra(mk(P.y,m),mk(P.y,m+1));n++;}
-  const avg=n?sum/n:0,gauge=L.ready&&avg>0&&P.y===P.ty?Math.round(cm.net/avg*100):null,exp=active.reduce((s,d)=>s+(Number(d.expected)||0),0);
+  let sum=0,n=0;for(let m=1;m<=12;m++){if(P.y>P.ty||(P.y===P.ty&&m>=P.tm))continue;sum+=B.contractsIn(L,mk(P.y,m),mk(P.y,m+1),null,'direct').net+extra(mk(P.y,m),mk(P.y,m+1));n++;}
+  const avg=n?sum/n:0,gauge=L.ready&&avg>0&&P.y===P.ty?Math.round((cm.net+extra(ms,mk(P.ty,P.tm+1)))/avg*100):null,exp=active.reduce((s,d)=>s+(Number(d.expected)||0),0);
   const low=PP.filter(p=>p.made!==null&&p.made<LOWMADE()&&p.w+p.l>=MINCLOSED());
   cm.net+=extra(ms,mk(P.ty,P.tm+1));
   const s1=!L.ready?'계약 원장을 불러오는 중입니다.':h(P.label)+' 수주실적 <b>'+(C.perf>0?h(won(C.perf)):'아직 없음')+'</b>'+(avg>0?' · 월평균 '+h(won(avg)):'')+'. '+(P.y===P.ty?P.tm+'월은 <b>'+P.td+'일째 · '+(cm.net>0?h(won(cm.net)):'아직 없음')+'</b>. ':'')+(exp>0?'파이프라인 '+h(won(exp))+(avg>0?'은 월평균의 <b>'+(exp/avg).toFixed(1)+'개월치</b>입니다.':'이 진행 중입니다.'):'진행 중인 파이프라인 금액이 없습니다.');
