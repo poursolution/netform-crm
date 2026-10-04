@@ -52,7 +52,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.doesNotMatch(await dialog.locator('main').innerText(),/우레탄 방수/);
   /* 기록 속 태그(<p> · <li> · <strong> · &amp;)는 줄바꿈 · 글자로 정리해 보여 준다(2026-10-04 대표 "<P> 이런 거 보기 힘드니까 정리") — AI 에 넘기는 기록은 원문 그대로 */
   {const t=await dialog.locator('main .gj-record p').allInnerTexts();assert.ok(t.includes('감리선정 확정\n· [일정 & 조정]\n4월 초 임시회의'),'기록 속 태그 정리: '+JSON.stringify(t));assert.doesNotMatch(await dialog.locator('main').innerText(),/<\/?(p|ol|li|strong)>|&amp;/);
-   assert.deepEqual(await page.evaluate(()=>[tidyNoteHtml('면적 3 < 5 > 2 그대로'),tidyNoteHtml('줄1\n\n줄2'),sayLegacyNote('<p>통화 — 진행됨</p>')]),['면적 3 < 5 > 2 그대로','줄1\n\n줄2','통화 완료 · 진행 중'],'태그가 없는 글은 그대로 · 상세 응대 이력도 같은 정리');}
+   assert.deepEqual(await page.evaluate(()=>[tidyNoteHtml('면적 3 < 5 > 2 그대로'),tidyNoteHtml('줄1\n\n줄2'),sayLegacyNote('<p>통화 — 진행됨</p>'),tidyNoteHtml('<p>확인</p><img src=x onerror=alert(1)><script>x</script>')]),['면적 3 < 5 > 2 그대로','줄1\n\n줄2','통화 완료 · 진행 중','확인\n<img src=x onerror=alert(1)><script>x</script>'],'태그가 없는 글은 그대로 · 상세 응대 이력도 같은 정리 · 서식이 아닌 태그는 숨기지 않고 글자 그대로');}
   await dialog.locator('[data-gj="ai"]').click();await page.waitForTimeout(100);
   assert.match(await dialog.locator('.gj-action').innerText(),/AI 추정 맞음/);
   assert.deepEqual(await page.evaluate(()=>__ai.filter(x=>x.id==='d3').map(x=>[x.kind,x.id,x.input.records])),[['work_guess','d3',['별도 지역 문의','<p>감리선정 확정</p><ol><li><p><strong>[일정 &amp; 조정]</strong></p><p>4월 초 임시회의</p></li></ol><p></p>']]]);
