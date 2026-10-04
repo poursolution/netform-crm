@@ -114,7 +114,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 10. 목록의 [코칭 약속] = 창 + 약속 칸 포커스 · Esc 닫기 · 손볼 건이 없는 사람 */
   await page.locator('#reps-b .psb-row[data-key="황윤선"] .l').click();await page.waitForTimeout(250);
   assert.match(await page.locator('#repWindow.on .rw-who').innerText().then(s=>s.replace(/\s+/g,' ')),/^황윤선 본사 영업 · 상무 /,'소속 · 직함(대표 지정)');
-  assert.deepEqual(await page.evaluate(()=>['이필선','한준엽','김성민','정정훈','황윤선','이승우','송보람','조현식'].map(n=>repProfile(n).title||'')),['본사영업','본사영업','본사영업','본사영업','상무','대표','영업관리','']);
+  assert.deepEqual(await page.evaluate(()=>['이필선','김성민','정정훈','한준엽','조재연','조현식','황윤선','이승우','송보람','전용성'].map(n=>repProfile(n).title||'')),['본사영업','본사영업','본사영업','팀장','팀장','이사','상무','대표','영업관리','']);
+  await page.evaluate(()=>RepsV2.open('한준엽'));await page.waitForTimeout(150);assert.match(await page.locator('#repWindow.on .rw-who').innerText().then(s=>s.replace(/\s+/g,' ')),/^한준엽 본사 영업 · 팀장 /);
+  await page.evaluate(()=>RepsV2.open('황윤선'));await page.waitForTimeout(150);
   assert.deepEqual(await page.locator('#repWindow.on .rw-neck').evaluate(n=>[[...n.children].map(c=>c.textContent)[1],n.classList.contains('ok'),getComputedStyle(n).backgroundColor]),['지금 막힌 곳이 없습니다',true,'rgb(232, 246, 238)']);
   assert.equal(await page.locator('#repWindow.on .rw-none').innerText(),'지금 손볼 건이 없습니다.');assert.equal(await page.locator('#repWindow.on .rw-rh b').innerText(),'지금 처리할 현장 0건');
   assert.equal(await page.locator('#repWindow.on .rw-past .none').innerText(),'아직 없습니다 · 저장하면 다음 주 월요일부터 결과가 보입니다');

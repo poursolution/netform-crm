@@ -2655,7 +2655,7 @@ function normalizeSalesPerson(x){var name=repN(x.name||x.display_name||x.full_na
 function syncSalesPeopleMaster(rows){var pos={},out=[];SALES_PEOPLE_SEED.concat(Array.isArray(rows)?rows:[]).map(normalizeSalesPerson).forEach(function(x){if(!x.name)return;if(pos[x.name]!=null)out[pos[x.name]]=x;else{pos[x.name]=out.length;out.push(x)}});/* ⑯(2026-09-25): 화면 정책 플래그는 서버 행 유무와 무관하게 유지 — 이름 명단의 프로필화 */
 var PROFILE_OVERRIDES={'전용성':{perfConsoleHidden:true},'조성용':{perfConsoleHidden:true}};
 /* 직함(2026-10-04 대표 지정): 영업사원 관리 사람 창 머리 '소속 · 직함'에 쓴다 */
-var PROFILE_TITLES={'이필선':'본사영업','한준엽':'본사영업','김성민':'본사영업','정정훈':'본사영업','황윤선':'상무','이승우':'대표','송보람':'영업관리'};
+var PROFILE_TITLES={'이필선':'본사영업','김성민':'본사영업','정정훈':'본사영업','한준엽':'팀장','조재연':'팀장','조현식':'이사','황윤선':'상무','이승우':'대표','송보람':'영업관리'};
 out.forEach(function(x){var o=PROFILE_OVERRIDES[x.name];if(o)Object.keys(o).forEach(function(k){x[k]=o[k]});if(PROFILE_TITLES[x.name])x.title=PROFILE_TITLES[x.name]});
 SALES_PEOPLE_MASTER=out;REP_INTERNAL=out.filter(function(x){return x.active&&x.team==='head_office'&&x.reportingGroup==='internal'&&x.salesRep&&x.performanceIncluded}).map(function(x){return x.name})}
 syncSalesPeopleMaster([]);
