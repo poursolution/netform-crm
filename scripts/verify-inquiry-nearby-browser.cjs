@@ -19,7 +19,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    B={deals:[mk('d1','[경기 용인] 신갈현대아파트','이필선'),mk('d2','수지 신정마을','이필선',{address:'경기도 용인시 수지구 풍덕천동 1'}),mk('d3','[경기 용인] 역북금강','황윤선'),mk('d4','[서울 강북] 번동한진','이필선')],
     inquiries:[{id:'11111111-1111-4111-8111-111111111111',site:'용인 동백 호수마을',address:'경기도 용인시 기흥구 동백동 1',status:'접수',at,created_at:at,brand:'POUR솔루션',phone:'010-1111-2222',raw:{'문의내용':'옥상 방수 문의'}},
      {id:'22222222-2222-4222-8222-222222222222',site:'[경기 용인] 구갈 한양',assignee:'이필선',assigned_to:'이필선',assigned_at:at,status:'배정완료',at,created_at:at,brand:'POUR솔루션',phone:'010-3333-4444',raw:{'문의내용':'재도장 문의'}}],activities:[],inquiryTrash:[]};
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';
+   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;G.inqDetailV3Off=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.pushWrite=()=>{};goPage('inq');
   });
   assert.deepEqual(await page.evaluate(()=>regionOwnerCounts('경기 용인')),{'이필선':2,'황윤선':1},'주소만 있는 건도 지역으로 묶인다');
