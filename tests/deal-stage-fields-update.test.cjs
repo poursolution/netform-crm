@@ -36,3 +36,12 @@ test('화면: 단계 항목만 있는 입력창 · 서버 확인 뒤에만 반�
  assert.doesNotMatch(js,/연락 결과 입력창이 열립니다/);
  assert.match(read('pc-manager-transport.js'),/'crm_deal_stage_fields_update_v1'/);
 });
+
+test('화면은 사유를 함께 보낸다 — 서버 감사 기록(audit_events.reason)은 빈 값을 받지 않는다(2026-10-04 운영: 사유 없이 보내 매번 거절됨)',()=>{
+ for(const f of ['deal-detail-v3.js','detail-actions.js','deal-panels-v2.js']){
+  const js=read(f),calls=js.match(/\.rpc\((?:SF_RPC|STAGE_FIELDS_RPC|RPC),\{p:\{[^}]*\}\}\)/g)||[];
+  assert.equal(calls.length>=1,true,f+' 호출부');
+  calls.forEach(c=>assert.match(c,/deal_id:String\(d\.id\),stage_code:code,fields,reason:'상세에서 바로 입력'/,f));
+ }
+ assert.match(read('sql/deal-stage-fields-update-v1-20260930.sql'),/nullif\(btrim\(coalesce\(p->>'reason',''\)\),''\),v_at\)/,'서버는 받은 사유를 그대로 감사 기록에 넣는다');
+});

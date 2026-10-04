@@ -406,13 +406,18 @@
  /* 기록자는 지금 로그인한 사람으로(배정 전에는 담당자가 없다) */
  function stampActor(q){try{const a=(root.itemPatch(q,'inq')||{}).activities,last=a&&a[a.length-1],me=root.repN(root.ME?.name);if(last&&me&&me!=='미배정'&&(!last.actor||last.actor==='미배정'))last.actor=me;root.saveLocal?.();}catch(e){}}
  function assign(q,s){
-  if(!s.rep)return;const wasReassign=s.reassign||root.inquiryAssigned(q),key=curKey,site=q.site||'문의';
+  if(!s.rep||s.busy)return;const wasReassign=s.reassign||root.inquiryAssigned(q),key=curKey,site=q.site||'문의';
+  /* 배정 · 인계 대상은 지금 이 창의 문의로 못박는다(2026-10-04 대표 "이것도 안 돼"): 공용 상태 INQ_CTL_MODAL 은 목록의 다른 줄이 다시 그려질 때 그 줄로 바뀐다 —
+     같은 문의가 두 줄일 때 열어 둔 줄이 아니라 다른 줄에 배정이 저장되고(서버에는 성공), 이 창은 미배정으로 남았다 */
+  {const re=!!root.inquiryAssigned(q);root.INQ_CTL_MODAL={mode:re?'reassign':'assign',originalMode:re?'reassign':'assign',keys:[root.inqKey(q)],rep:'',team:'',reportingGroup:'',reassign:re,inline:true};}
   if(s.rep==='__branch__'){const M=root.INQ_CTL_MODAL;if(!M)return;M.mode='branch_handoff';M.rep='경남지사';M.team='gyeongnam';M.reportingGroup='external';s.reassign=false;const name=s.rep;s.rep='';root.inqCtlConfirmBranchHandoff();if(root.itemOwnerTeam?.(root.inqCtlFind(key,false))==='gyeongnam'){W().open(key,'none');toast(site+' → 경남지사 인계');}else{s.rep=name;}return;}
   const rep=s.rep,director=!!root.repProfile(rep).directorAssignable;
   try{root.inqCtlChooseRep(rep);root.inqCtlConfirmAssign();}catch(err){fail('배정을 저장하지 못했습니다: '+(err.message||err));return;}
   /* 영업이사는 서버 확인 뒤 반영(기존 규칙) — 그 외는 바로 반영된다 */
-  const after=()=>{const now=root.inqCtlFind(key,false);if(now&&root.repN(root.inquiryRoutedOwner(now))===root.repN(rep)){s.reassign=false;s.rep='';s.reason='';if(document.getElementById('inq-inbox-dialog'))reskinFrom();toast(site+' → '+root.repDisplay(rep)+' 배정',wasReassign||director?null:()=>undoAssign(key));return true;}return false;};
-  if(!after()&&director){let n=0;const t=setInterval(()=>{if(after()||++n>20)clearInterval(t);},300);}
+  const after=()=>{const now=root.inqCtlFind(key,false);if(now&&root.repN(root.inquiryRoutedOwner(now))===root.repN(rep)){s.busy=false;s.reassign=false;s.rep='';s.reason='';if(document.getElementById('inq-inbox-dialog'))reskinFrom();toast(site+' → '+root.repDisplay(rep)+' 배정',wasReassign||director?null:()=>undoAssign(key));return true;}return false;};
+  if(!after()&&director){
+   const lock=on=>{const b=document.querySelector('#inq-inbox-dialog [data-idv="assign"]');if(b&&curKey===key){b.disabled=on;if(on)b.textContent='서버 저장 확인 중…';else b.textContent=root.repDisplay(rep)+'에게 배정';}};
+   s.busy=true;lock(true);let n=0;const t=setInterval(()=>{const failed=!!(document.getElementById('inq-ctl-error')||{}).textContent;if(after()){clearInterval(t);return;}if(failed||++n>50){clearInterval(t);s.busy=false;lock(false);if(!failed)fail('서버 응답을 확인하지 못했습니다. 잠시 뒤 새로 고쳐 배정됐는지 확인해 주세요.');}},300);}
  }
  function undoAssign(key){
   try{root.INQ_CTL_MODAL={mode:'unassign',keys:[key]};tempField('textarea','inq-ctl-reason','배정 되돌리기');root.inqCtlConfirmReason();toast('배정을 되돌렸습니다');if(root.inqCtlFind(key,false))W().open(key);}
