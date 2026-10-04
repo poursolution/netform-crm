@@ -97,6 +97,16 @@ test('예외 승인함: 종류 6개 · 새 서버 함수는 허용 목록과 SQL
  assert.match(js,/CODES=\['transfer','owner_change','dup_lead','strategic_win','special_incentive','result_fix'\]/);assert.match(sql,/type in \('owner_change','dup_lead','strategic_win','special_incentive','result_fix'\)/);
  ['crm_approval_list_v1','crm_approval_request_v1','crm_approval_decide_v1'].forEach(n=>{assert.match(read('pc-manager-transport.js'),new RegExp("'"+n+"'"));assert.match(read('pc-error-state.js'),new RegExp(n+':'));assert.match(sql,new RegExp('function public\\.'+n));});
  assert.doesNotMatch(sql,/update public\.(deals|contracts|crm_deal_wins|crm_deal_transfers)|insert into public\.(deals|contracts)/,'승인함은 다른 자료를 바꾸지 않는다');
+ /* 승인자 = 예외 승인자(기본 이승우 · 황윤선) 중 한 사람 — 관리자 아님 · 본인 건은 다른 승인자가 · 화면 · 서버가 같은 규칙 */
+ assert.deepEqual(R.approvers(),['이승우','황윤선']);assert.equal(R.isApprover('황윤선'),true);assert.equal(R.isApprover('송보람'),false);assert.equal(R.isApprover(''),false);
+ R.apply({approvers:['이승우']});assert.equal(R.isApprover('황윤선'),false);R.apply({});
+ const rules=read('sql/ops-rules-v1-20261004.sql'),tf=read('sql/deal-transfer-v1-20261004.sql');
+ assert.match(rules,/function crm_security\.approval_approver\(p_user uuid\)/);assert.match(rules,/'\["이승우","황윤선"\]'::jsonb/);assert.match(rules,/'contact_channels','approvers'\]/);
+ [sql,tf].forEach(s=>{assert.match(s,/if not crm_security\.approval_approver\(a\.user_id\) then raise exception/);assert.match(s,/다른 승인자가 처리해야 합니다/);});
+ assert.doesNotMatch(tf,/실적 인정은 관리자만/);assert.doesNotMatch(sql,/승인 · 반려는 관리자만/);
+ /* 승인 요청 창: 종류 6개 순서 · 종류마다 필수칸 2개 · 증빙 필수 여부 */
+ const AR=R.PHASE2.approval_request;assert.deepEqual([...AR.order],['dup_lead','strategic_win','special_incentive','result_fix','owner_change','transfer']);
+ assert.deepEqual(AR.order.map(c=>[AR.types[c].fields.length,AR.types[c].evidence]),[[2,false],[2,false],[2,true],[2,true],[2,false],[2,true]]);
 });
 test('금액 5개는 더하지 않는다 · 영업 경로 5칸 · Health Score (3차 기준값도 한곳)',()=>{
  const win={win_status:'confirmed',won_type:'partner_tech',award_company:'코지건설',award_amount:1043900000,award_date:'2026-09-12',sales_channel_brand:'석민이앤씨',performance_owner:'황윤선',tech_advisory:true,tech_advisory_company:'코지건설',tech_advisory_amount:433650000,pour_contract_amount:136690000};

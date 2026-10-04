@@ -23,3 +23,32 @@
 .apv-none,.apv-empty{margin:0;padding:22px 18px;font-size:13px;color:#6b7280}
 .apv-err{margin:0;padding:10px 18px;font-size:12.5px;font-weight:600;color:#b42318;background:#fdecec;border-bottom:1px solid #f2f3f6}
 @media(max-width:760px){.apv-row{grid-template-columns:minmax(0,1fr)}.apv-type{justify-self:start}.apv-side{align-items:flex-start}}
+.apv-wait{font-size:12px;font-weight:600;color:#9ca3af;white-space:nowrap}
+/* 승인 요청 창(승인 요청 창.dc.html) aq- */
+.aq-shade{position:fixed;inset:0;z-index:1200;background:rgba(20,26,46,.45);display:flex;align-items:flex-start;justify-content:center;padding:60px 20px;overflow:auto}
+.aq-dlg{width:100%;max-width:540px;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(17,24,39,.2);overflow:hidden;color:#15171c;font-size:13px}
+.aq-dlg button,.aq-dlg input{font:inherit}.aq-dlg button{cursor:pointer;min-height:0;box-shadow:none}.aq-dlg button:disabled{cursor:default;opacity:.6}
+.aq-hd{padding:14px 20px;border-bottom:1px solid #eef0f3;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.aq-hd b{font-size:16px}.aq-hd span{font-size:12px;color:#9ca3af}
+.aq-body{padding:16px 20px;display:flex;flex-direction:column;gap:14px}
+.aq-kind{display:flex;flex-direction:column;gap:6px}.aq-kind>b{font-size:13px}
+.aq-types{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.aq-types button{border:1px solid #e3e6ec;background:#fff;color:#15171c;font-size:12.5px;font-weight:700;border-radius:8px;padding:8px 6px}
+.aq-types button[aria-pressed="true"]{border:2px solid #15171c;background:#f8faff;padding:7px 5px}
+.aq-form{display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px 12px;align-items:center;font-size:13px}.aq-form>span{font-weight:700}
+.aq-form input:not([type=file]){border:1px solid #d9dde4;background:#fff;color:#15171c;border-radius:8px;padding:8px 10px;font-size:13px;min-width:0;width:100%;box-sizing:border-box}
+.aq-form input.auto{border-color:#e3e6ec;background:#f8f9fb}
+.aq-ev{display:flex;align-items:center;gap:8px;min-width:0}
+.aq-dlg .aq-file{border:1px dashed #c9cdd5;background:#fff;color:#15171c;font-size:12.5px;border-radius:8px;padding:7px 12px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aq-dlg .aq-unfile{border:0;background:none;color:#6b7280;font-size:12px;padding:0;text-decoration:underline}
+.aq-effect{font-size:12px;color:#1d3f99;background:#f5f8ff;border-radius:8px;padding:9px 12px;line-height:1.55}
+.aq-pick{margin:0;font-size:12.5px;color:#6b7280}
+.aq-err{margin:0;color:#b42318;font-size:12.5px;font-weight:600}
+.aq-ft{padding:12px 20px 18px;border-top:1px solid #eef0f3;display:flex;justify-content:flex-end;gap:8px}
+.aq-dlg .aq-cancel{border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:13px;border-radius:8px;padding:9px 14px}
+.aq-dlg .aq-send{border:0;background:#15171c;color:#fff;font-size:13px;font-weight:700;border-radius:8px;padding:10px 18px}
+.aq-sent{padding:22px 20px;display:flex;flex-direction:column;gap:10px}.aq-sent>b{font-size:16px;color:#1f7a4d}.aq-sent>span{font-size:13px;color:#374151;line-height:1.6}
+.aq-sent button{align-self:flex-start;border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:12.5px;border-radius:8px;padding:7px 12px}
+/* 상세 머리 꼬리표 · 응대 이력의 시스템 기록 */
+#detailView .aq-tag{font-size:11px;font-weight:700;border-radius:4px;padding:1px 7px;white-space:nowrap}
+#detailView .aq-tag.wait{color:#8a5a00;background:#fff4d6}#detailView .aq-tag.ok{color:#1f7a4d;background:#e8f6ee}
+#detailView .idv-msg.aq-ev .idv-bubble,#detailView.ddv.dv3 .ddv-talk .idv-msg.aq-ev[data-dv3k] .idv-bubble{background:#f5f6f8;color:#374151;font-weight:400}

@@ -24,7 +24,7 @@ declare
  -- 조건부 숫자 항목과 범위(ops-rules.js 의 SPEC 과 같아야 한다)
  lim constant jsonb:='{"assign_minutes":[10,240],"unreachable_attempts":[1,10],"unreachable_interval_days":[1,7],"long_wait_contact_days":[30,180],"transfer_result_check_days":[3,60],"nearby_radius_km":[1,20]}'::jsonb;
  bools constant text[]:=array['stage_gates','year_management','year_required_on_convert','year_future_skip_focus','auto_owner_attribution','owner_keep_on_reassign','nearby_map'];
- lists constant text[]:=array['reasons_bad_fit','reasons_lost','reasons_transfer','contact_channels'];
+ lists constant text[]:=array['reasons_bad_fit','reasons_lost','reasons_transfer','contact_channels','approvers'];
 begin
  select * into a from crm_security.actor();
  if not found then raise exception 'forbidden' using errcode='42501'; end if;
@@ -45,6 +45,10 @@ begin
     if jsonb_typeof(v)<>'array' or jsonb_array_length(v)<1 or jsonb_array_length(v)>20
        or exists(select 1 from jsonb_array_elements(v) e where jsonb_typeof(e)<>'string' or length(btrim(e#>>'{}'))<1 or length(e#>>'{}')>30) then
      raise exception '목록은 1~20개, 한 항목 30자 이내여야 합니다: %', k using errcode='22023';
+    end if;
+    -- 예외 승인자는 사용 중인 계정 이름이어야 한다(오타로 승인할 사람이 없어지는 일을 막는다)
+    if k='approvers' and exists(select 1 from jsonb_array_elements_text(v) x where not exists(select 1 from public.users u where u.active is true and btrim(u.name)=btrim(x))) then
+     raise exception '예외 승인자는 사용 중인 계정 이름이어야 합니다' using errcode='22023';
     end if;
    else
     raise exception '바꿀 수 없는 항목입니다: %', k using errcode='22023';
@@ -68,3 +72,15 @@ begin
 end $fn$;
 revoke all on function public.crm_ops_rules_v1(jsonb) from public, anon;
 grant execute on function public.crm_ops_rules_v1(jsonb) to authenticated;
+
+-- 예외 승인자(2026-10-04 대표 지정): 승인 요청은 운영 기준의 '예외 승인자' 목록(기본 이승우 · 황윤선)에게 가고, 그중 한 사람만 승인해도 된다.
+-- 승인 함수들(crm_approval_decide_v1 · crm_deal_transfer_approve_v1)이 이 함수로 권한을 본다. 목록의 이름과 같은, 사용 중인 계정만 승인자다.
+create or replace function crm_security.approval_approver(p_user uuid)
+returns boolean language plpgsql stable security definer set search_path='' as $fn$
+declare l jsonb;
+begin
+ select s.value->'approvers' into l from public.crm_settings s where s.key='ops_rules';
+ if l is null or jsonb_typeof(l)<>'array' or jsonb_array_length(l)<1 then l:='["이승우","황윤선"]'::jsonb; end if;
+ return exists(select 1 from public.users u where u.user_id=p_user and u.active is true and btrim(u.name) in (select btrim(x) from jsonb_array_elements_text(l) x));
+end $fn$;
+revoke all on function crm_security.approval_approver(uuid) from public, anon, authenticated;

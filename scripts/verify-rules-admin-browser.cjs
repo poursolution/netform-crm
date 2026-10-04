@@ -31,12 +31,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#ptitle').innerText(),'운영 기준 설정');assert.match(await page.locator('#psub').innerText(),/모든 화면이 이 값으로 놓침 · 메이드율 · 수주실적을 계산합니다 · 관리자 전용/);
   assert.equal(await page.locator('.menu [data-p="rules"]').isVisible(),true,'사이드바 설정 → 운영 기준 설정');
   /* 목차 7묶음 + 꼬리표 설명 */
-  assert.deepEqual(await v.locator('.ra-nav>button').evaluateAll(a=>a.map(n=>n.querySelector('span').textContent+' '+n.querySelector('i').textContent)),['시간 기준 11','결과 · 실적 7','사유 목록 3','응대 기록 3','사람 · 관계 9','공개 · 권한 2','보류 · 추후 1']);
+  assert.deepEqual(await v.locator('.ra-nav>button').evaluateAll(a=>a.map(n=>n.querySelector('span').textContent+' '+n.querySelector('i').textContent)),['시간 기준 11','결과 · 실적 7','사유 목록 3','응대 기록 3','사람 · 관계 9','공개 · 권한 3','보류 · 추후 1']);
   assert.deepEqual((await v.locator('.ra-legend span').allInnerTexts()).map(s=>s.replace(/\s+/g,' ')),['확정 회의 확정 · 잠금','조건부 관리자가 값 변경','보류 구현 안 함']);
   assert.equal(await v.locator('.ra-sec').count(),7);
   const row=l=>page.locator('#rules-admin .ra-row',{has:page.locator('.ra-l b',{hasText:new RegExp('^'+l+'$')})});
   /* 단계 이동 필수조건(2차 기능 2) = 조건부 · 관리자가 켜고 끈다 */
   assert.match(await row('단계 이동 필수조건').innerText(),/단계 이동 필수조건\s*조건부[\s\S]*단계별 필수값이 비면 \[옮기기\]를 잠급니다/);
+  /* 예외 승인자(2026-10-04 대표 지정) = 조건부 목록 · 기본 이승우 · 황윤선 */
+  assert.match(await row('예외 승인자').innerText(),/예외 승인자\s*조건부[\s\S]*한 사람만 승인해도 됩니다[\s\S]*이승우[\s\S]*황윤선/);
   /* 확정 = 잠금 */
   assert.match(await row('첫 연락').innerText(),/첫 연락\s*확정[\s\S]*2\s*\+?\s*시간\s*회의 확정 · 변경 불가/);assert.equal(await row('첫 연락').locator('.ra-num button').first().isDisabled(),true);
   assert.match(await row('영업 메이드율').innerText(),/\(자사 수주 \+ 승인 타사 이관\) ÷ \(자사 수주 \+ 승인 타사 이관 \+ 파이프라인 실주\)\s*회의 확정 · 변경 불가/);
