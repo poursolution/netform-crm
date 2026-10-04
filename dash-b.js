@@ -121,7 +121,8 @@
  }
  function brandRows(C){
   const {B,P,L,q,loss}=C;
-  return BR.map(([name,c])=>{let net=0,w=0;(L.rows||[]).forEach(r=>{if(r.brand!==name)return;(r.events||[]).forEach(e=>{const k=e.effective_date;if(!(k>=P.a&&k<P.b))return;net+=e.amount_delta;if(e.kind==='signed')w++;});});
+  const brands=BR.concat([...new Set((L.rows||[]).filter(r=>(r.events||[]).some(e=>e.effective_date>=P.a&&e.effective_date<P.b)).map(r=>String(r.brand||'').trim()||'브랜드 미기록'))].filter(name=>!BRC[name]).map(name=>[name,'#9ca3af']));
+  return brands.map(([name,c])=>{let net=0,w=0;(L.rows||[]).forEach(r=>{if((String(r.brand||'').trim()||'브랜드 미기록')!==name)return;(r.events||[]).forEach(e=>{const k=e.effective_date;if(!(k>=P.a&&k<P.b))return;net+=e.amount_delta;if(e.kind==='signed')w++;});});
    const bq=q.filter(x=>String(x.brand||(R.inquiryBrandOf?R.inquiryBrandOf(x):'')||'')===name),fit=bq.length-bq.filter(B.badfit).length,lo=loss.filter(d=>d.brand===name).length;
    return {name,c,net,w,q:bq.length,fit,lo,made:w+lo?B.made(w,lo):null};});
  }
@@ -260,7 +261,7 @@
  /* 유입 브랜드 → 낙찰 시공사 → 수주실적 · 매출: 수주실적 = 낙찰금액, 매출 = 회사에 실제 들어오는 금액(직접 계약 · 기술자문 · POUR 계약). 타사 이관은 매출 없음 */
  function matrixRows(C){
   const {P,L}=C,m=new Map(),add=(brand,company,type,n,amt,rev,unknown)=>{const k=brand+'\u0001'+company+'\u0001'+type,v=m.get(k)||{brand,company,type,n:0,amt:0,rev:0,unknown:0};v.n+=n;v.amt+=amt;v.rev+=rev;v.unknown+=unknown||0;m.set(k,v);};
-  (L.rows||[]).forEach(r=>{if(C.DW?.isPartnerDeal?.(r.deal_id))return;const brand=String(r.brand||'').trim()||'브랜드 미기록';let w=null;try{w=C.DW&&C.DW.of({id:r.deal_id});}catch(e){}const company=w&&w.win_status==='confirmed'&&w.won_type==='own'&&w.award_company?String(w.award_company):brand;(r.events||[]).forEach(e=>{const k=e.effective_date;if(!(k>=P.a&&k<P.b))return;add(brand,company,'직접 수주',e.kind==='signed'?1:0,Number(e.amount_delta)||0,Number(e.amount_delta)||0);});});
+  (L.rows||[]).forEach(r=>{if(r.advisory_id||C.DW?.isPartnerDeal?.(r.deal_id))return;const brand=String(r.brand||'').trim()||'브랜드 미기록';let w=null;try{w=C.DW&&C.DW.of({id:r.deal_id});}catch(e){}const company=w&&w.win_status==='confirmed'&&w.won_type==='own'&&w.award_company?String(w.award_company):brand;(r.events||[]).forEach(e=>{const k=e.effective_date;if(!(k>=P.a&&k<P.b))return;add(brand,company,'직접 수주',e.kind==='signed'?1:0,Number(e.amount_delta)||0,Number(e.amount_delta)||0);});});
   C.pt.list.forEach(x=>add(x.brand,x.company,'협약 · 기술자문',x.signedCount,x.amount,x.revenue,x.revKnown?0:1));
   C.tf.list.forEach(x=>add(String(x.brand||'').trim()||'브랜드 미기록',String(x.t&&(x.t.award_company||x.t.transfer_company)||'').trim()||'업체 미기록','타사 이관',1,x.amount,0));
   const BO=BR.map(b=>b[0]),TO=['직접 수주','협약 · 기술자문','타사 이관'],bi=b=>{const i=BO.indexOf(b);return i<0?99:i;};
