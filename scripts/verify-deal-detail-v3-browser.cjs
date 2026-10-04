@@ -88,7 +88,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 그 자리에서 펼침: 오른쪽은 바뀌지 않는다 */
   const rightIntact=async(msg)=>{assert.equal(await page.evaluate(()=>{const r=document.querySelector('#detailView .dw-right'),n=document.getElementById('nowCard');return !r.classList.contains('ddv-covered')&&!r.querySelector(':scope>#ddvPanel')&&n.getClientRects().length>0&&!document.getElementById('dv-body').inert;}),true,msg+' — 오른쪽 그대로');};
   await L.locator('[data-dv3="editc"]').first().click();await page.waitForTimeout(300);
-  assert.equal(await page.locator('.dv3-slot[data-slot="mgr"]>#ddvPanel.dp-contact').count(),1,'수정 = 관리소장 아래에서 펼침');await rightIntact('연락처 수정');
+  assert.equal(await page.locator('#detailView .dw-center>.dv3-cpanel:not([hidden])>.dv3-slot[data-slot="center"]>#ddvPanel.dp-contact').count(),1,'수정 = 가운데 패널(2026-10-04 대표)');await rightIntact('연락처 수정');
   assert.equal(await page.locator('#ddvPanel #qc-name').inputValue(),'김영수');
   await page.locator('.dv3-left [data-dv3="editc"]').first().click();await page.waitForTimeout(200);assert.equal(await page.locator('#ddvPanel').count(),0,'다시 누르면 접힘');
   /* 공종: 공종 줄 바로 아래 작은 상자(공종 표 + [완료]) — 패널 · 예전 창 아님 */
@@ -127,7 +127,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   if(shot)await page.screenshot({path:shot+'-files.png'});
   await page.locator('.dv3-left [data-dv3="files"]').click();await page.waitForTimeout(450);assert.equal(await page.locator('.dv3-left .dv3-files').count(),0);assert.equal(await page.locator('.dv3-left [data-dv3="files"]').innerText(),'자료 보기');
   await page.locator('.dv3-left [data-dv3="addc"]').click();await page.waitForTimeout(300);
-  assert.equal(await page.locator('.dv3-slot[data-slot="others"]>#ddvPanel.dp-contact').count(),1,'+ 추가 = 다른 연락처 아래');await rightIntact('연락처 추가');
+  assert.equal(await page.locator('#detailView .dw-center>.dv3-cpanel:not([hidden])>.dv3-slot[data-slot="center"]>#ddvPanel.dp-contact').count(),1,'+ 추가 = 가운데 패널');await rightIntact('연락처 추가');
   await page.locator('#ddvPanel [data-dp="close"]').first().click();await page.waitForTimeout(200);
   /* 연락하고 결과 남기기: 지금 할 일 카드 안에서 펼침(패널 없음) */
   const day=n=>page.evaluate(n=>new Date(Date.now()+n*864e5).toLocaleDateString('en-CA'),n);
@@ -191,7 +191,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(cs,['이정민',true,false,true,false],'문자 동의 = 기존 연락처 저장');assert.equal(await page.locator('.dv3-left [data-dv3="cons"][data-k="sms"]').innerText(),'문자 동의');assert.equal(await page.locator('.dv3-left [data-dv3="cons"][data-k="kakao"]').innerText(),'카카오 미동의');
   /* 담당자 변경 · 단계 바꾸기: 머리글에서 — 오른쪽은 그대로 */
   await page.locator('#detailView .dv3-headact .tf-more').click();await page.locator('#detailView .tf-menu [data-tf="m-owner"]').click();await page.waitForTimeout(350);
-  assert.equal(await page.locator('#detailView .detailtop>.dv3-slot[data-slot="owner"]>#detailAction').count(),1,'담당자 변경 = 머리글 아래');await rightIntact('담당자 변경');
+  assert.equal(await page.locator('#detailView .dw-center>.dv3-cpanel:not([hidden])>.dv3-slot[data-slot="center"]>#detailAction').count(),1,'담당자 변경 = 가운데 패널');await rightIntact('담당자 변경');
   await page.locator('#detailView .dv3-headact .tf-more').click();await page.locator('#detailView .tf-menu [data-tf="m-owner"]').click();await page.waitForTimeout(250);assert.equal(await page.locator('#detailAction').count(),0);
   await page.locator('#detailView .dv3-headact [data-dv3="mv"]').click();await page.waitForTimeout(200);
   const band=page.locator('#detailView .dw-center>.dv3-move');assert.equal(await band.isVisible(),true,'가운데 칸 위에 뜸');

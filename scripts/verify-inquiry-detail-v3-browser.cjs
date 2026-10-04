@@ -47,7 +47,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(Number(await d.locator('.idv3-need .hd .n').innerText()),missN-1,'저장하면 칩이 사라짐');assert.equal((await tx('.idv3-need .idv3-chip')).includes('경쟁사'),false);assert.match((await tx('.idv3-need small'))[0],/경쟁사/);
   /* 가운데: 탭 2개 · 결과 칩 → 다음 행동 → 저장(한 줄은 선택) */
   assert.match((await tx('.idv3-chead'))[0],/^응대 이력 ?\d+건 · 시도 0 · 연결 0$/);
-  assert.deepEqual(await tx('.idv3-tabs [role=tab]'),['응대 기록','내부 메모'],'문자 보내기 탭 없음');
+  assert.deepEqual(await tx('.idv3-tabs [role=tab]'),['응대 기록','문자','내부 메모'],'문자 탭(2026-10-04 대표 "문자 할 수 있는 게 없어" — 목록 · 오늘 업무의 [문자]가 이 탭을 연다)');
+  await page.locator('#inq-inbox-dialog .idv3-tabs [role=tab]',{hasText:/^문자$/}).click();await page.waitForTimeout(200);assert.equal(await page.locator('#inq-inbox-dialog [data-idv="smstext"]').count(),1,'문자 탭 = 문구 고르고 보내기');assert.ok((await page.locator('#inq-inbox-dialog [data-idv="tpl"]').count())>=3,'상황에 맞는 문구');
+  await page.locator('#inq-inbox-dialog .idv3-tabs [role=tab]',{hasText:'응대 기록'}).click();await page.waitForTimeout(200);
   assert.deepEqual(await tx('.idv3-res .idv3-rc'),['연결됨','부재','검토중','자료요청','회신대기','배드핏']);
   assert.equal(await d.locator('#iq-res').getAttribute('placeholder'),'무슨 일이 있었는지 한 줄 (선택)');
   assert.match((await tx('.idv3-sug'))[0],/^AI ?다음 행동 ?결과를 고르면 제안$/);assert.equal(await d.locator('.idv3-sug em').innerText(),'AI','다음 행동 제안 앞 AI 표식(시안 그대로)');assert.equal(await d.locator('.idv3-foot .idv-save.on').count(),0);
