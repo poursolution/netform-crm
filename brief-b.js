@@ -176,18 +176,20 @@
  }
  /* 지난주에 등록한 약속을 지금 자료로 다시 센다 */
  function evalPromise(x,pr){
-  const R=root,ids=Array.isArray(pr.ids)?pr.ids:[],since=K(pr.at)||x.w.a,far='9999-12-31';let r1=0,r2=0,left=0,L=['처리','종료 · 다른 처리','미완료'];
+  const R=root,ids=Array.isArray(pr.ids)?pr.ids:[],since=K(pr.at)||x.w.a,far='9999-12-31';let r1=0,r2=0,left=0,L=['처리','종료 · 다른 처리','미완료'],fc=null;
   const each=(get,ok,gone)=>ids.forEach(id=>{const o=get(String(id));if(!o){r2++;return;}if(ok(o))r1++;else if(gone(o))r2++;else left++;});
   const deal=id=>x.byId.get(id),closed=d=>!R.isOpen(d);
   if(pr.kind==='quote_delay'){L=['발송 완료','종료 · 다른 처리','자료 대기'];each(deal,d=>quoteIn(d,since,far)||['sent','relationship','competition','construction'].includes(groupOf(R.dealStage(d))),closed);}
   else if(pr.kind==='no_next'){L=['등록','종료','미완료'];each(deal,d=>R.isOpen(d)&&!!R.actionObj(d,R.itemPatch(d,'deal')||{}),closed);}
   else if(pr.kind==='stale60'){L=['재접촉','관계관리 · 종료','미접촉'];each(deal,d=>R.isOpen(d)&&lastActKey(d,far)>=since&&groupOf(R.dealStage(d))!=='relationship',d=>closed(d)||(groupOf(R.dealStage(d))==='relationship'&&entered(d,'relationship',since,far)));}
   else if(pr.kind==='bid_soon'){L=['정상 진행','종료','보완 필요'];each(deal,d=>R.isOpen(d)&&lastActKey(d,far)>=since,closed);}
-  else if(pr.kind==='contract_expected'){L=['계약','종료','진행 중'];const signed=new Set();x.L.rows.forEach(r=>(r.events||[]).forEach(e=>{if(e.kind==='signed'&&e.effective_date>=since)signed.add(String(r.deal_id));}));each(deal,d=>signed.has(String(d.id))||R.isWon(d),d=>closed(d)&&!R.isWon(d));}
+  else if(pr.kind==='contract_expected'){L=['계약','종료','진행 중'];const signed=new Map();x.L.rows.forEach(r=>(r.events||[]).forEach(e=>{if(e.kind==='signed'&&e.effective_date>=since)signed.set(String(r.deal_id),(signed.get(String(r.deal_id))||0)+(Number(e.amount_delta)||0));}));each(deal,d=>signed.has(String(d.id))||R.isWon(d),d=>closed(d)&&!R.isWon(d));
+   /* 2차 기능 5: 지난주 계약 예상 → 이번 주 실제 계약(적중률) */
+   const amtOf=d=>{try{return Number(R.oppAmt(d))||0;}catch(e){return 0;}};let ea=0,aa=0,an=0;ids.forEach(id=>{const d=deal(String(id));if(!d)return;ea+=amtOf(d);if(signed.has(String(d.id))||R.isWon(d)){an++;aa+=signed.get(String(d.id))||amtOf(d);}});fc={n:ids.length,amount:ea,won:an,wonAmount:aa};}
   else if(pr.kind==='no_response'){L=['첫 연락','종결','미응대'];each(id=>x.qById.get(id),q=>R.inquiryResponded(q)&&!badfit(q),q=>R.isClosedInq(q));}
   else left=ids.length;
   const n=ids.length||Number(pr.n)||0;
-  return {issue:String(pr.t||'').replace(/\s*\d+건.*$/,'')||pr.t,n,act:(pr.act||pr.why||'')+(pr.owner?' — '+pr.owner+(pr.due?' · '+pr.due:''):''),r1,r2,left,L};
+  return {issue:String(pr.t||'').replace(/\s*\d+건.*$/,'')||pr.t,n,act:(pr.act||pr.why||'')+(pr.owner?' — '+pr.owner+(pr.due?' · '+pr.due:''):''),r1,r2,left,L,forecast:fc};
  }
  /* ── 잔디 글 ── */
  function jandi(x,fixes,regd){
@@ -241,7 +243,10 @@
    +'<div class="bb-loss"><p><b>파이프라인 실주 '+x.loss.length+'건</b><span>영업기회 상실 · 메이드율에 포함</span></p><span>'+h(x.loss.length?tallyText(lossT):'이번 주 실주 없음')+(chg?' · <b>관리소장 변경 이력 '+chg+'건</b>':'')+'</span></div></div></section>';
   /* 2. 전주 문제 → 조치 → 결과 */
   const fixed=fixes.reduce((a,f)=>a+f.r1+f.r2,0),total=fixes.reduce((a,f)=>a+f.n,0);
-  const s2='<section class="bb-card bb-flat"><div class="bb-h"><b>전주 문제 → 이번 주 조치 → 결과</b><span>지난주 회의에서 정한 것'+(fixes.length?' · 해결 '+fixed+' / '+total+'건':'')+'</span></div><div class="bb-thead bb-fixcols"><span>전주 이슈</span><span>이번 주 조치</span><span>결과</span></div>'
+  const pDone=fixes.reduce((a,f)=>a+f.r1,0),pOther=fixes.reduce((a,f)=>a+f.r2,0),pLeft=fixes.reduce((a,f)=>a+f.left,0),pAll=pDone+pOther+pLeft,fcs=fixes.map(f=>f.forecast).filter(Boolean),fcN=fcs.reduce((a,f)=>a+f.n,0),fcW=fcs.reduce((a,f)=>a+f.won,0),fcA=fcs.reduce((a,f)=>a+f.amount,0),fcWA=fcs.reduce((a,f)=>a+f.wonAmount,0),hit=fcA>0?Math.round(fcWA/fcA*100):fcN?Math.round(fcW/fcN*100):null;
+  const promSum=pAll?'<div class="bb-prom"><div class="n"><b>'+pAll+'건</b><span>지난주에 ‘다음 주 반드시 끝낼 것’으로 등록</span></div><div class="bar"><i style="width:'+(pDone/pAll*100)+'%;background:#15171c"></i><i style="width:'+(pOther/pAll*100)+'%;background:#e0a43a"></i><i style="width:'+(pLeft/pAll*100)+'%;background:#d14a3f"></i></div><div class="lg"><b>완료 '+pDone+'</b><b class="a">종료 · 다른 처리 '+pOther+'</b><b class="r">미완료 '+pLeft+'</b></div>'
+   +(fcN?'<div class="fc"><div><span>지난주 계약 예상</span><b>'+fcN+'건'+(fcA>0?' · '+h(amt(fcA)):'')+'</b></div><em>→</em><div><span>이번 주 실제 계약</span><b>'+(con?fcW+'건'+(fcWA>0?' · '+h(amt(fcWA)):''):'원장 확인 중')+'</b>'+(con&&hit!==null?'<small class="'+(hit<80?'r':'')+'">적중 '+hit+'%</small>':'')+'</div></div>':'')+'</div>':'';
+  const s2='<section class="bb-card bb-flat"><div class="bb-h"><b>전주 문제 → 이번 주 조치 → 결과</b><span>지난주 회의에서 정한 것'+(fixes.length?' · 해결 '+fixed+' / '+total+'건':'')+'</span></div>'+promSum+'<div class="bb-thead bb-fixcols"><span>전주 이슈</span><span>이번 주 조치</span><span>결과</span></div>'
    +(fixes.length?fixes.map(f=>{const n=f.n||1;return '<div class="bb-fix bb-fixcols"><div><b>'+h(f.issue)+'</b><span>'+f.n+'건</span></div><span class="act">'+h(f.act)+'</span><div class="res"><div class="bar"><i style="width:'+(f.r1/n*100)+'%;background:#15171c"></i><i style="width:'+(f.r2/n*100)+'%;background:#9aa0ab"></i><i style="width:'+(f.left/n*100)+'%;background:#f0b4b4"></i></div><span><b>'+f.r1+'건 '+h(f.L[0])+'</b>'+(f.r2?' <span class="g">· '+f.r2+'건 '+h(f.L[1])+'</span>':'')+(f.left?' <b class="r">· '+f.left+'건 '+h(f.L[2])+'</b>':'')+'</span></div></div>';}).join('')
     :'<p class="bb-empty">지난주에 등록한 항목이 없습니다 — 아래 ‘다음 주 반드시 끝낼 것’에서 [등록]하면 다음 주 이 표에서 결과를 확인합니다.</p>')+'</section>';
   /* 3. 영업 이동 · 4. 계약실적 */

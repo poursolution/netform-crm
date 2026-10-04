@@ -165,3 +165,14 @@
 .db-bx>span.bxz{font-weight:800;background:#f8f9fb;border-bottom-color:#e3e6ec}
 .db-bxn{margin:0;padding:10px 18px;font-size:12px;color:#374151;line-height:1.6}
 @media(max-width:900px){.db-bx{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr) 36px minmax(56px,.8fr) minmax(56px,.8fr)}.db-bx>span:nth-child(7n){display:none}}
+
+/* 문의 코호트 전환율 · 유입경로 → 계약 (2026-10-04 운영 기준 2차 기능 6 · 7) */
+.db-cos{gap:10px}
+.db-co{display:grid;grid-template-columns:70px repeat(5,minmax(0,1fr)) minmax(0,1.6fr);font-size:12.5px}
+.db-chn{display:grid;grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,.7fr)) minmax(0,1.6fr);font-size:12.5px}
+.db-co>span,.db-chn>span{padding:9px 8px;border-bottom:1px solid #f2f3f6;display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.db-co>span.coh,.db-chn>span.coh{padding:7px 8px;font-size:11px;color:#9ca3af;border-bottom:1px solid #e3e6ec}
+.db-co>span.cor,.db-chn>span.cor{justify-content:flex-end}.db-co>span.cow,.db-chn>span.cow{font-weight:700}.db-co>span.com{color:#9ca3af}
+.db-co>span.cob u,.db-chn>span.cob u{flex:1;min-width:16px;height:6px;background:#eef0f3;border-radius:3px;position:relative;text-decoration:none}.db-co>span.cob u i,.db-chn>span.cob u i{position:absolute;left:0;top:0;bottom:0;background:#3b6ce4;border-radius:3px}
+.db-chn>span.cog u i{background:#1f9d55}.db-chn>span.cog.hi{color:#1f7a4d}
+.db-con{margin:0;font-size:12px;color:#6b7280;line-height:1.55}

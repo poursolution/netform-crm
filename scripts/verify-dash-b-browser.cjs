@@ -137,6 +137,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await p.locator('.db-quiet').innerText(),/^진행 · 수주 기록 없음: /,'기록 없는 사람은 이름 한 줄');
   const c3=p.locator('.db-c3');assert.equal(await c3.count(),3);
   assert.match(await c3.nth(0).innerText(),/^기술자문 낙찰실적\s*협약시공사 수주 · 수주실적에 합산\s*아직 없음/);
+  /* 2차 기능 6 · 7: 문의 코호트 전환율(접수 월 기준 최근 6개월) · 유입경로 → 계약 — 같은 문의 목록 · 같은 수주 판정 */
+  {const co=(await page.locator('#si-perf .db-co>span').allInnerTexts()).map(s=>s.trim());assert.equal(co.length,49,'머리 7칸 + 6개월 × 7칸');assert.deepEqual(co.slice(0,7),['접수 월','문의','적합','수주','진행 중','실주','확정 전환율']);
+   const rows=[];for(let i=7;i<co.length;i+=7)rows.push(co.slice(i,i+7));assert.equal(rows[5][0],(await page.evaluate(()=>DashB.core().P.tm))+'월','마지막 줄 = 이번 달');
+   rows.forEach(r=>{const [m,q,fit,won,open,lost]=r;assert.equal(Number(fit),Number(won)+Number(open)+Number(lost),m+': 적합 = 수주 + 진행 중 + 실주');assert.ok(Number(q)>=Number(fit));});
+   assert.match(await page.locator('#si-perf .db-cos').first().locator('.db-con').innerText(),/^최근 달은 아직 진행 중이 많아 전환율이 낮게 보입니다\. 3개월 지난 달끼리 비교하세요\.$/);
+   const ch=(await page.locator('#si-perf .db-chn>span').allInnerTexts()).map(s=>s.trim());assert.deepEqual(ch.slice(0,5),['유입경로','문의','적합','수주','문의 → 수주']);assert.equal((ch.length-5)%5,0);
+   let sumQ=0,sumW=0;for(let i=5;i<ch.length;i+=5){sumQ+=Number(ch[i+1]);sumW+=Number(ch[i+3]);}
+   const core=await page.evaluate(()=>{const C=DashB.core();return [C.q.length,C.q.filter(x=>C.L.ready&&C.B.inquiryContract(x,C.L,C.AD)&&!C.B.badfit(x)).length];});assert.deepEqual([sumQ,sumW],core,'유입경로 표의 문의 · 수주 합 = 위 흐름의 문의 · 문의에서 온 수주');
+   assert.ok((await page.locator('#si-perf .db-cos').nth(1).locator('.db-con').innerText()).length>10,'해석 한 줄은 자료에서');}
   assert.match(await c3.nth(1).innerText(),/누가 따낸 영업을 계약으로 잘 마무리하나\?\s*담당자별 메이드율\s*배드핏 제외 · 점선 = 팀 평균 40\.0%\s*이필선\s*50\.0%\s*황윤선\s*33\.3%/);
   assert.match(await c3.nth(2).innerText(),/브랜드별 문의 → 수주[\s\S]*POUR솔루션\s*문의 4 → 적합 3 → 수주 1\s*33\.3%[\s\S]*POUR공법\s*문의 0 → 적합 0 → 수주 0\s*수주 없음[\s\S]*적합 문의가 있는 브랜드는 모두 수주가 나왔습니다\./);
   assert.match(await p.locator('.db-pending').innerText(),/^아직 판단 못 하는 것\s*기록이 10건 쌓이면 자동으로 보입니다\s*견적 후 첫 후속 → 수주\s*\d+\/10\s*현장 방문 → 견적\s*1\/10\s*경쟁 · PT · 입찰 → 수주\s*0\/10$/);

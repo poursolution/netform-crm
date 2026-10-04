@@ -285,6 +285,25 @@
   const note=(topB?topB[0]+'로 들어온 수주실적 '+money(topB[1].all)+' 중 '+money(topB[1].pt)+'('+Math.round(topB[1].pt/topB[1].all*100)+'%)'+(topB[1].co.size===1&&topC?'가 '+topC[0]+' 낙찰':'가 협약시공사 낙찰')+' · 기술자문 구조라 회사 매출은 수주실적보다 작게 잡힙니다.':'협약시공사 · 기술자문 수주가 없어 수주실적과 회사 매출이 같습니다.')+' 매출 비율 = 매출 ÷ 수주실적.'+(tot.unknown?' 기술자문 · POUR 계약금액이 아직 입력되지 않은 '+tot.unknown+'건은 매출에 들어가지 않았습니다.':'');
   return '<section class="db-card flush db-bxs">'+head+'<div class="db-bxt">'+tops.map(t=>'<div><span>'+t[0]+'</span><b>'+h(t[1])+'</b><small>'+h(t[2])+'</small></div>').join('')+'</div><div class="db-bx">'+['유입 브랜드','낙찰 시공사','수주 유형'].map(l=>'<span class="bxh">'+l+'</span>').join('')+'<span class="bxh bxr">건수</span><span class="bxh bxr">수주실적</span><span class="bxh bxr">매출</span><span class="bxh">매출 비율</span>'+body+total+'</div><p class="db-bxn">'+h(note)+'</p></section>';
  }
+ /* 문의 코호트 전환율(2차 기능 6): 같은 달에 들어온 문의가 결국 몇 건 계약됐나 — 접수 월 기준 최근 6개월. 수주 판정은 주간 브리핑의 '확정 전환율'과 같은 함수 */
+ function inquiryFate(C,x){const B=C.B;if(B.badfit(x))return 'badfit';if(C.L.ready&&B.inquiryContract(x,C.L,C.AD))return 'won';let d=null;try{d=R.linkedDeal(x);}catch(e){}if(d&&B.isLoss(d))return 'lost';return 'open';}
+ function cohort(C){
+  const {K,P,AQ,L}=C,rows=[];for(let i=5;i>=0;i--){const d=new Date(P.ty,P.tm-1-i,1),ym=d.getFullYear()+'-'+pad(d.getMonth()+1),q=AQ.filter(x=>K(R.inquiryCreatedAt(x)).slice(0,7)===ym),f=q.map(x=>inquiryFate(C,x));rows.push({m:(d.getMonth()+1)+'월',q:q.length,fit:f.filter(v=>v!=='badfit').length,won:f.filter(v=>v==='won').length,open:f.filter(v=>v==='open').length,lost:f.filter(v=>v==='lost').length,old:i>=(R.CRMRules?R.CRMRules.PHASE2.cohort_compare_after_months:3)});}
+  const head='<div class="db-ch"><b>접수 월별 · 같은 달에 들어온 문의가 결국 몇 건 계약됐나</b><span>최근 6개월 · 확정 전환율 = 수주 ÷ 문의</span></div>',max=Math.max(30,...rows.map(r=>r.q?r.won/r.q*100:0));
+  const body=rows.map(r=>{const rate=r.q?Math.round(r.won/r.q*1000)/10:null;return '<span class="cow">'+r.m+'</span><span class="cor">'+r.q+'</span><span class="cor">'+r.fit+'</span><span class="cor cow">'+(L.ready?r.won:'—')+'</span><span class="cor com">'+(L.ready?r.open:'—')+'</span><span class="cor">'+r.lost+'</span><span class="cow cob">'+(!L.ready?'불러오는 중':rate===null?'문의 없음':rate.toFixed(1)+'%<u><i style="width:'+Math.round(rate/max*100)+'%"></i></u>')+'</span>';}).join('');
+  return '<section class="db-card db-cos">'+head+'<div class="db-co">'+['접수 월','문의','적합','수주','진행 중','실주'].map((l,i)=>'<span class="coh'+(i?' cor':'')+'">'+l+'</span>').join('')+'<span class="coh">확정 전환율</span>'+body+'</div><p class="db-con">최근 달은 아직 진행 중이 많아 전환율이 낮게 보입니다. '+(R.CRMRules?R.CRMRules.PHASE2.cohort_compare_after_months:3)+'개월 지난 달끼리 비교하세요.</p></section>';
+ }
+ /* 유입경로 → 계약(2차 기능 7): 견적문의의 '유입경로' 값 기준 — 어디서 계약되는 문의가 들어오나 */
+ const channelOf=q=>{const r=q&&q.raw&&typeof q.raw==='object'?q.raw:{};return String(r['유입경로']||q.source_channel||q.channel||r['상담채널']||'').trim()||'유입경로 미기록';};
+ function channel(C){
+  const {P,q,L}=C,m=new Map();q.forEach(x=>{const k=channelOf(x),v=m.get(k)||{l:k,q:0,fit:0,won:0},f=inquiryFate(C,x);v.q++;if(f!=='badfit')v.fit++;if(f==='won')v.won++;m.set(k,v);});
+  const rows=[...m.values()].sort((a,b)=>b.q-a.q||a.l.localeCompare(b.l)),head='<div class="db-ch"><b>어디서 계약되는 문의가 들어오나</b><span>'+h(P.label)+' 접수 · 견적문의 유입경로 값 기준</span></div>';
+  if(!rows.length)return '<section class="db-card db-cos">'+head+'<p class="db-empty">'+h(P.label)+' 접수된 견적문의가 없습니다.</p></section>';
+  const rate=r=>r.q?Math.round(r.won/r.q*100):0,body=rows.map(r=>{const p=rate(r);return '<span class="cow" title="'+attr(r.l)+'">'+h(r.l)+'</span><span class="cor">'+r.q+'</span><span class="cor">'+r.fit+'</span><span class="cor cow">'+(L.ready?r.won:'—')+'</span><span class="cow cob cog'+(p>=40?' hi':'')+'">'+(L.ready?p+'%<u><i style="width:'+Math.max(2,Math.min(100,Math.round(p/60*100)))+'%"></i></u>':'불러오는 중')+'</span>';}).join('');
+  const top=rows[0],best=rows.filter(r=>r.q>=3&&r.won>0).sort((a,b)=>rate(b)-rate(a))[0],known=rows.filter(r=>r.l!=='유입경로 미기록').length;
+  const note=!L.ready?'계약 원장을 불러오는 중입니다.':!known?'견적문의에 유입경로가 아직 기록되지 않았습니다 — 문의 상세의 유입경로를 채우면 경로별로 나뉩니다.':!best?'문의는 '+top.l+'가 가장 많습니다('+top.q+'건). 아직 3건 이상 들어온 경로 중 수주로 이어진 곳이 없습니다.':'문의는 '+top.l+'가 가장 많고('+top.q+'건), 계약으로 이어지는 비율은 '+best.l+'가 가장 높습니다('+rate(best)+'% · '+best.q+'건 중 '+best.won+'건).';
+  return '<section class="db-card db-cos">'+head+'<div class="db-chn">'+['유입경로','문의','적합','수주'].map((l,i)=>'<span class="coh'+(i?' cor':'')+'">'+l+'</span>').join('')+'<span class="coh">문의 → 수주</span>'+body+'</div><p class="db-con">'+h(note)+'</p></section>';
+ }
  function perf(C){
   const {B,P,L,active,con,made,q}=C,ALL=people(C),PP=ALL.filter(p=>p.prog||p.w||p.l||p.yr>0),ms=mk(P.ty,P.tm),cm=B.contractsIn(L,ms,mk(P.ty,P.tm+1));
   const extra=(a,b)=>(C.DW?C.DW.partnerIn(a,b,C.target).amount:0)+(C.DT?C.DT.wonIn(a,b,C.target).amount:0);/* 협약 · 기술자문 + 타사 이관 */
@@ -313,7 +332,7 @@
   const brandCard='<section class="db-c3 db-card"><div class="db-q"><span>문의는 많은데 계약으로 안 이어지는 브랜드는?</span><b>브랜드별 문의 → 수주</b></div><div class="bfun">'+BRW.map(b=>'<div><div><i style="background:'+b.c+'"></i><b>'+h(b.name)+'</b><span class="db-sp"></span><small>문의 '+b.q+' → 적합 '+b.fit+' → 수주 '+b.w+'</small><b class="m '+(!b.w||(b.made!==null&&b.made<LOWMADE())?'red':'')+'">'+(b.w?(b.made===null?'—':b.made.toFixed(1)+'%'):'수주 없음')+'</b></div><span class="bar"><i style="width:'+(b.w/qmax*100).toFixed(1)+'%;background:'+b.c+'"></i><i style="width:'+(Math.max(0,b.fit-b.w)/qmax*100).toFixed(1)+'%;background:'+b.c+';opacity:.35"></i></span></div>').join('')+'</div><p class="note '+(zero.length?'red':'')+'">'+h(zero.length?zero.map(b=>b.name).join(' · ')+' — 적합 문의 '+zero.reduce((s,b)=>s+b.fit,0)+'건, 수주 0건. 문의는 들어오는데 계약까지 이어지지 않습니다.':'적합 문의가 있는 브랜드는 모두 수주가 나왔습니다.')+'</p></section>';
   const pend=pendingStats();
   const pending='<div class="db-pending"><b>아직 판단 못 하는 것</b><span class="mut">기록이 '+MINREC+'건 쌓이면 자동으로 보입니다</span>'+pend.map(p=>p[1]>=MINREC?'<span>'+p[0]+' <b>'+p[2]+'</b> <small>'+p[1]+'건 기준</small></span>':'<span>'+p[0]+' <i><u style="width:'+Math.min(100,p[1]*10)+'%"></u></i><b>'+p[1]+'/'+MINREC+'</b></span>').join('')+'</div>';
-  return verdict+(ranked.length?'<div class="db-pcs">'+ranked.map(card).join('')+'</div>':'<p class="db-empty">진행 · 수주 기록이 있는 담당자가 없습니다.</p>')+(quiet.length?'<span class="db-quiet">진행 · 수주 기록 없음: '+h(quiet.join(' · '))+'</span>':'')+'<div class="db-row3">'+tech+madeCard+brandCard+'</div>'+matrix(C)+pending;
+  return verdict+(ranked.length?'<div class="db-pcs">'+ranked.map(card).join('')+'</div>':'<p class="db-empty">진행 · 수주 기록이 있는 담당자가 없습니다.</p>')+(quiet.length?'<span class="db-quiet">진행 · 수주 기록 없음: '+h(quiet.join(' · '))+'</span>':'')+'<div class="db-row3">'+tech+madeCard+brandCard+'</div>'+matrix(C)+cohort(C)+channel(C)+pending;
  }
 
  function render(){
@@ -376,5 +395,5 @@
   const again=()=>{if(enabled()&&PAGES.includes(R.G.page)&&R.B){try{render();}catch(e){}}};
   root.addEventListener('contract-sales:changed',again);document.addEventListener('contract-sales:changed',again);
  }
- root.DashB={enabled,render,core,people,ctlModel,period,nearList};
+ root.DashB={enabled,render,core,people,ctlModel,period,nearList,channelOf};
 })(window);
