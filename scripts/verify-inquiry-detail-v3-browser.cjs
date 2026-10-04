@@ -35,7 +35,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match((await tx('.idv3-top .r2'))[0],/^\[충남 천안\] 천안두정E편한세상2차 ?신수진 시설팀장 · 010-5436-0662 ?2026\.10\.1 접수 · 담당 정정훈$/);assert.equal(await d.locator('.idv3-top').evaluate(n=>Math.round(n.getBoundingClientRect().width)===Math.round(n.parentElement.getBoundingClientRect().width)),true,'머리는 창 폭 전체(왼쪽 정렬)');
   assert.deepEqual(await tx('.idv3-steps span'),['접수','담당 배정','지금 · 현장방문 / 견적','파이프라인 전환']);
   assert.equal(await d.locator('.idv-top, .idv-missing, .idv-info, .idv-need, .idv-ctabs, .idv-nowbox').count(),0,'v2 머리 · 미입력 칸 · 보완 필요 상자 · 필수 확인 칩 · 회색 안내 문단 없음');
-  assert.deepEqual(await d.locator('.idv3-body').evaluate(n=>getComputedStyle(n).gridTemplateColumns.split(' ').map(x=>Math.round(parseFloat(x))).filter((x,i)=>i!==1)),[270,300],'270 · 가운데 · 300');
+  assert.deepEqual(await d.locator('.idv3-body').evaluate(n=>getComputedStyle(n).gridTemplateColumns.split(' ').map(x=>Math.round(parseFloat(x))).filter((x,i)=>i!==1)),[320,380],'창 크기를 파이프라인 상세와 같게(2026-10-04 대표) — 옆 칸 320 · 가운데 · 380');
+  assert.deepEqual(await d.locator('.inq-dialog').evaluate(n=>{const r=n.getBoundingClientRect();return [Math.round(r.width)===Math.min(1640,innerWidth-32),Math.round(r.height)===innerHeight-32];}),[true,true],'가로 최대 1640px · 세로 화면 가득(위아래 16px) = 파이프라인 상세와 같은 크기');
   /* 왼쪽: 고객이 남긴 말 · 핵심 정보 4줄 · 채울 정보 n / 9 */
   assert.equal(await d.locator('.idv3-quote').innerText(),'"지하주차장 에폭시 일부 들뜸, 부분 보수 견적 받을 수 있는지 문의"');
   assert.deepEqual(await tx('.idv3-info .k'),['주소','공종','유입','연락처']);assert.match((await tx('.idv3-info'))[0],/주소 ?충남 천안시 서북구 노태산로 145 ?공종 ?에폭시 ?유입 ?전화 ?연락처 ?시설팀장 · 010-5436-0662/);
