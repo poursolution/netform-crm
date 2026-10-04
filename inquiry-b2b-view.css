@@ -1,0 +1,54 @@
+/* Dimensions and colors from design_handoff_b2b/협약문의 B2B.dc.html. Scoped to this tab. */
+#pg-inq.inq-b2b-open > :not(#inquiry-b2b-view):not(.cf-bar){display:none!important}
+#inquiry-b2b-view{box-sizing:border-box;display:flex;flex-direction:column;gap:14px;max-width:1240px;margin:0 auto;padding:20px 24px 40px;color:#15171c}
+#inquiry-b2b-view button,#inquiry-b2b-view input{font-family:inherit;box-sizing:border-box}
+#inquiry-b2b-view button{cursor:pointer}
+#inquiry-b2b-view button:disabled{cursor:default}
+#inquiry-b2b-view .ib-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#inquiry-b2b-view .ib-kinds{display:flex;gap:2px;border-bottom:1px solid #e3e6ec}
+#inquiry-b2b-view .ib-kinds button{border:0;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;padding:7px 12px;font-size:13.5px;font-weight:500;color:#6b7280}
+#inquiry-b2b-view .ib-kinds button[aria-pressed=true]{border-bottom-color:#15171c;font-weight:700;color:#15171c}
+#inquiry-b2b-view .ib-kinds span{color:#9ca3af;font-weight:700}
+#inquiry-b2b-view .ib-kinds button[data-ib=b2b] span{color:#2a52b8}
+#inquiry-b2b-view .ib-owner{margin-left:auto;font-size:12px;color:#6b7280;background:#fff;border:1px solid #e3e6ec;border-radius:999px;padding:5px 11px}
+#inquiry-b2b-view .ib-owner b{color:#15171c}
+#inquiry-b2b-view .ib-body{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+#inquiry-b2b-view .ib-list{flex:999 1 560px;min-width:0;background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden}
+#inquiry-b2b-view .ib-tabs{padding:12px 16px;border-bottom:1px solid #eef0f3;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#inquiry-b2b-view .ib-tabs button{border:1px solid #d9dde4;background:#fff;color:#374151;font-size:12.5px;font-weight:600;border-radius:999px;padding:5px 12px}
+#inquiry-b2b-view .ib-tabs button[aria-pressed=true]{background:#15171c;border-color:#15171c;color:white}
+#inquiry-b2b-view .ib-tabs>span{margin-left:auto;font-size:11.5px;color:#9ca3af}
+#inquiry-b2b-view .ib-row{width:100%;border:0;border-left:3px solid transparent;background:#fff;text-align:left;display:grid;grid-template-columns:minmax(0,1fr) 120px 84px;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid #f2f3f6;color:#15171c}
+#inquiry-b2b-view .ib-row[aria-pressed=true]{border-left-color:#3b6ce4;background:#f5f8ff}
+#inquiry-b2b-view .ib-row>span{display:flex;flex-direction:column;gap:3px;min-width:0}
+#inquiry-b2b-view .ib-row>span:first-child b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#inquiry-b2b-view .ib-row small{font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#inquiry-b2b-view .ib-contact{font-size:12px;color:#6b7280}
+#inquiry-b2b-view .ib-row-state{text-align:right}
+#inquiry-b2b-view .ib-row-state b{font-size:12.5px}
+#inquiry-b2b-view .ib-row-state small{font-size:11px;color:#9ca3af}
+#inquiry-b2b-view .ib-detail{flex:1 1 360px;min-width:0;background:white;border:1px solid #e8eaef;border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;position:sticky;top:20px;box-sizing:border-box}
+#inquiry-b2b-view .ib-detail-head{display:flex;flex-direction:column;gap:3px}
+#inquiry-b2b-view .ib-detail-head>span{font-size:11px;font-weight:700;color:#6b7280}
+#inquiry-b2b-view .ib-detail-head>b{font-size:17px}
+#inquiry-b2b-view .ib-detail-head>div{font-size:12.5px;color:#374151}
+#inquiry-b2b-view .ib-original{background:#f8f9fb;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+#inquiry-b2b-view .ib-result{display:flex;flex-direction:column;gap:8px;border-top:1px solid #f0f1f4;padding-top:12px}
+#inquiry-b2b-view .ib-result>b{font-size:13px}
+#inquiry-b2b-view .ib-results{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+#inquiry-b2b-view .ib-results button{border:1px solid #d9dde4;background:white;color:#15171c;border-radius:9px;padding:9px 6px;display:flex;flex-direction:column;gap:2px;align-items:center}
+#inquiry-b2b-view .ib-results button[aria-pressed=true]{background:#15171c;border-color:#15171c;color:white}
+#inquiry-b2b-view .ib-results b{font-size:13px}
+#inquiry-b2b-view .ib-results span{font-size:10.5px;opacity:.75}
+#inquiry-b2b-view input{border:1px solid #e3e6ec;border-radius:8px;padding:8px 10px;font-size:13px;min-width:0;width:100%}
+#inquiry-b2b-view input:required:invalid{border-color:#f3c9c7}
+#inquiry-b2b-view .ib-save-row{display:flex;align-items:center;gap:10px}
+#inquiry-b2b-view .ib-save-row>span{flex:1;font-size:11.5px;color:#9ca3af}
+#inquiry-b2b-view .ib-save{border:0;background:#15171c;color:white;font-size:13px;font-weight:700;border-radius:8px;padding:9px 16px}
+#inquiry-b2b-view .ib-save:disabled{background:#c9cdd5}
+#inquiry-b2b-view .ib-closed{background:#f3f4f6;border-radius:8px;padding:10px 12px;font-size:12.5px;display:flex;flex-direction:column;gap:2px;overflow-wrap:anywhere}
+#inquiry-b2b-view .ib-closed>span{color:#6b7280}
+#inquiry-b2b-view .ib-footer{border-top:1px solid #f0f1f4;padding-top:10px;display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:#6b7280;line-height:1.5}
+#inquiry-b2b-view .ib-empty{padding:36px;text-align:center;font-size:13px;color:#6b7280}
+#inquiry-b2b-view .ib-message,#inquiry-b2b-view [role=alert]{font-size:12px;color:#6b7280}
+#inquiry-b2b-view .ib-message:empty,#inquiry-b2b-view [role=alert]:empty{display:none}
