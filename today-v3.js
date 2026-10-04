@@ -45,7 +45,7 @@
    groups=[G('오늘 안 넘기면 놓침','배정 '+(root.CRMRules?root.CRMRules.get('assign_minutes'):30)+'분 · 첫 연락 '+(root.CRMRules?root.CRMRules.get('first_contact_hours'):2)+'시간 · 오늘 마감','모두 담당에게 알림',g1.sort(byUrgent)),G('이번 주 새로 멈춘 건','7~30일 사이 기록 없음 · 지금 잡으면 살아남','담당별 코멘트',g2),G('계약 정보 빠짐','계약 · 시공 단계인데 계약일 · 금액 없음 — 실적에 안 잡힘','입력 요청 보내기',g3.sort((a,b)=>(b.amt||0)-(a.amt||0)))];
    /* 영업관리 표(today-assist · 2026-10-04 대표 시안): 담당 배정 안 된 견적문의를 따로 떼어 표로, 멈춘 건 · 계약 정보 빠짐도 같은 표로. 끄면(G.todayAssistOff) 위 묶음 3개 그대로 */
    if(root.TodayAssist&&root.TodayAssist.enabled()){const ga=groups[0].items.filter(i=>i.rk==='assign'&&i.x.type==='inq'),sa=new Set(ga.map(i=>i.key));
-    groups=[Object.assign(G('담당 배정 안 된 견적문의','AI 추천 담당을 그대로 쓰면 [추천대로 배정] 한 번','',ga),{kind:'assign'}),Object.assign(G('오늘 안 넘기면 놓침','첫 연락 '+(root.CRMRules?root.CRMRules.get('first_contact_hours'):2)+'시간 · 오늘 마감','모두 담당에게 알림',groups[0].items.filter(i=>!sa.has(i.key))),{kind:'cards'}),Object.assign(groups[1],{kind:'stall'}),Object.assign(groups[2],{kind:'contract'})];}
+    groups=[Object.assign(G('담당 배정 안 된 견적문의','AI 추천 담당을 그대로 쓰면 [추천대로 배정] 한 번','',ga),{kind:'assign'}),Object.assign(G('오늘 안 넘기면 놓침','첫 연락 '+(root.CRMRules?root.CRMRules.get('first_contact_hours'):2)+'시간 · 오늘 마감','모두 담당에게 알림',groups[0].items.filter(i=>!sa.has(i.key))),{kind:'urgent'}),Object.assign(groups[1],{kind:'stall'}),Object.assign(groups[2],{kind:'contract'})];}
   }else if(role==='ceo'){
    const g1=teamAll.filter(i=>i.rk==='decide'||i.rk==='tfapprove'),s1=new Set(g1.map(i=>i.key));
    const g2=teamAll.filter(i=>!s1.has(i.key)&&(i.amt||0)>=W._big()&&(i.days>=STALL_BIG()||i.rk==='contract'||i.rk==='stallbig')),s2=new Set(g2.map(i=>i.key));

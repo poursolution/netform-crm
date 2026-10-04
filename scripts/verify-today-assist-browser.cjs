@@ -38,7 +38,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const v=page.locator('#today-v2 .tv3');assert.equal(await v.getAttribute('data-role'),'mgr');
   /* 1. 묶음 4개: 표 · 카드 · 표 · 표 — 번호는 보이는 순서, 큰 숫자 = 묶음 합계 = 줄 수 */
   const G4=await v.locator('.tv3-group').evaluateAll(l=>l.map(g=>[g.querySelector(':scope>header i').textContent,g.querySelector(':scope>header b').textContent,g.dataset.kind||'cards',g.querySelector(':scope>header .n').textContent,g.querySelectorAll('.ta-row:not(.hd),.tv3-card,.tv3-row').length]));
-  assert.deepEqual(G4.map(g=>g.slice(0,3)),[['1','담당 배정 안 된 견적문의','assign'],['2','오늘 안 넘기면 놓침','cards'],['3','이번 주 새로 멈춘 건','stall'],['4','계약 정보 빠짐','contract']]);
+  assert.deepEqual(G4.map(g=>g.slice(0,3)),[['1','담당 배정 안 된 견적문의','assign'],['2','오늘 안 넘기면 놓침','urgent'],['3','이번 주 새로 멈춘 건','stall'],['4','계약 정보 빠짐','contract']]);
+  assert.equal(await v.locator('.tv3-card').count(),0,'영업관리 화면은 카드 없이 묶음 4개 모두 같은 표 틀(2026-10-04 대표 "카드가 이상한 것 같다")');
+  {const U=v.locator('.ta-group[data-kind="urgent"]');assert.deepEqual(await U.locator('.ta-row.hd span').allInnerTexts(),['브랜드','현장','지난 기록 · AI 요약','AI 추천 행동 · 이유','경과','']);
+   const u=await U.locator('.ta-row:not(.hd)').evaluateAll(l=>l.map(n=>({site:n.querySelector('.ta-st b').textContent,rec:n.querySelector('.ta-rc b').textContent,why:n.querySelector('.ta-rc small').textContent,red:getComputedStyle(n.querySelector('.ta-d b')).color,btn:[...n.querySelectorAll('.ta-bt button')].map(b=>b.textContent)})));
+   assert.ok(u.length>=1);const f=u.find(x=>/첫 연락 늦은 현장/.test(x.site));assert.ok(f,'첫 연락이 늦은 건');assert.match(f.rec,/^이필선 · 독촉$/);assert.match(f.why,/^놓치면 /);assert.deepEqual(f.btn,['추천대로 독촉','담당 화면']);assert.equal(f.red,'rgb(180, 35, 24)','급한 묶음은 경과 빨강');
+   assert.equal(await U.locator(':scope>header button').innerText(),'모두 담당에게 알림','묶음 버튼은 그대로');}
   const total=Number(await v.getAttribute('data-total'));assert.equal(G4.reduce((s,g)=>s+g[4],0),total,'줄 수 = 큰 숫자');assert.equal(G4.reduce((s,g)=>s+Number(g[3].replace('건','')),0),total,'묶음 합계 = 큰 숫자');
   assert.match(await v.locator('.tv3-hero .n').innerText(),new RegExp('^오늘 손댈 것\\s*'+total+'건\\s*· 4묶음$'));
   /* 2. ① 담당 배정 안 된 견적문의: 머리 · 칸 · 줄 */
@@ -54,7 +59,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const s=by['[서울 서초] 서초래미안아파트'];assert.equal(s.rec,'이필선');assert.match(s.why,/^같은 현장 기존 담당 \(\d{4} 수주\)$/);assert.ok(s.tags.includes('같은 현장 기존 건:y'));
   /* 협약문의가 목록에 들어오는 경우의 추천 = B2B 담당(규칙 함수로 확인) */
   assert.deepEqual(await page.evaluate(()=>{const r=TodayAssist.recFor(B.inquiries[3]);return [r.label,r.why];}),['조재연 (B2B)','협약 · 제휴 문의 → B2B 자동 추천']);
-  assert.equal(await A.locator('.ta-note').innerText(),'추천 기준: 같은 현장 기존 담당 > 같은 지역 진행 현장 > 업무량 · 협약문의는 조재연 자동 추천 · 연락처 없으면 먼저 확인 표시');
+  assert.equal(await A.locator('.ta-note').innerText(),'추천 기준: 같은 현장 기존 담당 > 같은 지역 진행 현장 > 업무량 · 협약문의는 조재연 자동 추천 · 연락처 없으면 먼저 확인 표시 · 같은 문의가 두 줄이면 함께 배정');
   assert.equal(await A.locator('.ta-row:not(.hd) .ta-bt .go').first().evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(21, 23, 28)','추천대로 배정 = 검정 채움');
   assert.equal(await A.locator('.ta-row:not(.hd)').first().evaluate(n=>{const d=n.querySelector('.ta-d').getBoundingClientRect(),b=n.querySelector('.ta-bt').getBoundingClientRect();return d.right<=b.left+1&&getComputedStyle(n.querySelector('.ta-bt')).borderTopWidth==='0px';}),true,'버튼 칸이 경과 칸을 덮지 않는다 · 버튼 묶음에 테두리 없음');
   if(shot)await page.screenshot({path:shot+'-assist.png',fullPage:true});
@@ -92,6 +97,20 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await page.evaluate(()=>__clip.slice(-1)[0]),/^정정훈님, 고덕아이파크 계약 정보\(.+\)가 비어 있어 수주실적에 안 잡힙니다\. 오늘 안에 계약일 · 계약금액 입력 부탁드립니다\.$/);assert.match(await page.evaluate(()=>__toasts.slice(-1)[0]),/입력 요청 문구를 복사했습니다/);
   {const n=await page.evaluate(()=>__open.length);await Ct.locator('.ta-bt button',{hasText:'바로 입력'}).first().click();await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>__open.length),n+1,'바로 입력 = 그 건의 상세');}
   if(shot)await page.screenshot({path:shot+'-assist-after.png',fullPage:true});
+  /* 같은 문의가 두 줄로 들어온 것(홈페이지 접수 + 구글시트): 목록은 한 줄로 묶어 보여 준다(기존 규칙) — 표는 "같은 문의 2줄"로 알려 주고, 배정하면 숨은 줄도 같은 담당으로 맞춘다(자료는 합치지 않는다) */
+  await seed({id:'admin',name:'송보람',role:'admin'});await page.waitForTimeout(500);
+  await page.evaluate(()=>{const base=B.inquiries[0],mk=(id,site,extra)=>Object.assign({},base,{id,site,raw:Object.assign({},base.raw)},extra||{});const t=Date.now()-6*864e5,iso=n=>new Date(t+n*1000).toISOString();
+   B.inquiries.push(mk('0000000a-0000-4000-8000-00000000000a','[인천] 동산휴먼시아2단지',{phone:'010-4314-4855',contact_name:'',at:iso(0),created_at:iso(0)}),mk('0000000b-0000-4000-8000-00000000000b','[인천 제물포] 동산휴먼시아2단지아파트',{phone:'01043144855',contact_name:'김철환',sheet_row:731,at:iso(20),created_at:iso(20)}));paint();});await page.waitForTimeout(600);
+  {const T=page.locator('#today-v2 .ta-group[data-kind="assign"] .ta-row:not(.hd)'),twin=T.filter({hasText:'동산휴먼시아2단지'});
+   assert.equal(await twin.count(),1,'같은 문의 두 줄은 표에 한 줄로');
+   assert.ok((await twin.first().evaluate(n=>[...n.querySelectorAll('.ta-tg em')].map(e=>e.textContent))).includes('같은 문의 2줄'),'같은 문의 2줄 꼬리표');
+   const before=await page.evaluate(()=>__writes.filter(x=>x[0]==='inquiry_assign').length);
+   await twin.first().locator('[data-ta="assign"]').click();await page.waitForTimeout(500);
+   const w2=await page.evaluate(n=>__writes.filter(x=>x[0]==='inquiry_assign').slice(n).map(x=>[x[1].inquiry_id,x[1].to,x[1].reason]),before);
+   assert.equal(w2.length,2,'숨은 줄도 함께 배정');assert.deepEqual(w2.map(x=>x[0]).sort(),['0000000a-0000-4000-8000-00000000000a','0000000b-0000-4000-8000-00000000000b']);assert.equal(w2[0][1],w2[1][1],'두 줄 모두 같은 담당');assert.ok(w2.some(x=>/같은 문의의 다른 줄과 같은 담당으로 배정/.test(x[2])));
+   assert.match(await page.evaluate(()=>__toasts.slice(-1)[0]),/같은 문의의 다른 줄 1건도 함께$/);
+   assert.equal(await page.locator('#today-v2 .ta-group[data-kind="assign"] .ta-row',{hasText:'동산휴먼시아'}).count(),0,'배정 뒤 표에서 빠진다');
+   assert.equal(await page.evaluate(()=>B.inquiries.filter(q=>/동산휴먼시아/.test(q.site)).every(q=>inquiryAssigned(q))),true,'두 줄 모두 배정됨(한 줄만 배정돼 다른 줄이 미배정으로 남지 않는다)');}
   /* 6. 다른 역할은 그대로 · 끄면 예전 묶음 3개 */
   await seed({id:'rep1',name:'이필선',role:'rep'});await page.waitForTimeout(700);assert.equal(await page.locator('#today-v2 .ta-group').count(),0,'영업사원 화면은 그대로');
   await seed({id:'admin',name:'송보람',role:'admin'});await page.evaluate(()=>{G.todayAssistOff=true;paint();});await page.waitForTimeout(700);
