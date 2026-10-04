@@ -7,13 +7,13 @@ test('production PC transport admits contract RPCs while rejecting tables and un
  root.supabase={createClient:()=>({channel(){},auth:{onAuthStateChange(){}},rpc:name=>root.fetch(url+'/rest/v1/rpc/'+name)})};
  vm.runInNewContext(fs.readFileSync(require.resolve('../pc-manager-transport.js'),'utf8'),{window:root,URL,location:{origin:'http://localhost',hostname:'localhost',href:'http://localhost/'},navigator:{},setTimeout,clearTimeout,AbortController});
  const client=root.Phase1.createClient(url,'synthetic');
- await client.rpc('crm_contract_sales_read_v1',{});await client.rpc('crm_contract_sales_write_v1',{});
- assert.equal(calls.length,2);
+ await client.rpc('crm_contract_sales_read_v1',{});await client.rpc('crm_contract_sales_write_v1',{});await client.rpc('crm_contract_sales_read_v2',{});
+ assert.equal(calls.length,3);
  assert.throws(()=>client.rpc('arbitrary_admin_rpc',{}),/PHASE1_RPC_DENIED/);
  assert.throws(()=>client.from('contract_sales'),/PHASE1_DIRECT_TABLE_DENIED/);
  await assert.rejects(root.fetch(url+'/rest/v1/contract_sales'),/PHASE1_TRANSPORT_DENIED/);
  await assert.rejects(root.fetch('https://example.com/rest/v1/rpc/crm_contract_sales_read_v1'),/PHASE1_TRANSPORT_DENIED/);
- assert.equal(calls.length,2);
+ assert.equal(calls.length,3);
 });
 const event=L.initial({event_id:'event-a',deal_id:'deal-a',contract_signed:true,contract_date:'2026-09-18',contract_amount:300000000,sales_owner:'owner-a',sales_owner_name:'황윤선'});
 const item={deal_id:'deal-a',sales_owner:'owner-a',sales_owner_name:'황윤선',brand:'시험',version:1,balance:300000000,events:[event]};
@@ -44,4 +44,20 @@ test('unchanged background reads do not reset the current screen',async()=>{
  root.SB.rpc=async()=>({error:{message:'offline'}});
  await root.ContractSalesData.refresh();assert.equal(notifications,2);
  await root.ContractSalesData.refresh();assert.equal(notifications,2);
+});
+
+test('independent contracts have distinct stream identities and share owner/date filters with Deal contracts',async()=>{
+ const independent=n=>({...item,contract_id:'contract-'+n,deal_id:null,advisory_id:'advisory-'+n,
+  events:[{...event,contract_id:'contract-'+n,deal_id:null,event_id:'event-'+n,effective_date:'2026-08-20'}]});
+ const rows=[item,independent(1),independent(2)];
+ const root=fixture(async(name)=>{assert.equal(name,'crm_contract_sales_read_v2');return {data:{ok:true,policy:L.POLICY,items:rows,has_more:false}}});
+ await root.ContractSalesData.refresh();
+ assert.equal(root.ContractSalesData.summarize({year:2026}).netAmount,900000000);
+ assert.equal(root.ContractSalesData.summarize({year:2026,month:8}).count,2);
+ assert.equal(root.ContractSalesData.summarize({year:2026,month:9}).count,1);
+ const stream=L.append(rows[1].events,{expected_version:1,kind:'cancelled',effective_date:'2026-10-01',event_id:'cancel',reason:'취소'});
+ assert.equal(L.summarize([stream],{month:8}).netAmount,300000000);
+ assert.equal(L.summarize([stream],{month:10}).netAmount,-300000000);
+ rows.push(independent(1));await root.ContractSalesData.refresh();
+ assert.equal(root.ContractSalesData.state().status,'unavailable','duplicate contract fails closed');
 });
