@@ -91,6 +91,13 @@ test('수주 유형 3가지: 직접 / 협약시공사 · 기술자문 / 타사 �
  const sql=read('sql/deal-win-type-v1-20261004.sql');assert.match(sql,/won_type in \('own','partner_tech'\)/);assert.match(sql,/insert into public\.advisory_deals/);assert.match(sql,/'crm:deal:'\|\|v_deal/);
  ['crm_deal_win_list_v1','crm_deal_win_register_v1'].forEach(n=>{assert.match(read('pc-manager-transport.js'),new RegExp("'"+n+"'"));assert.match(sql,new RegExp('function public\\.'+n));});
 });
+test('예외 승인함: 종류 6개 · 새 서버 함수는 허용 목록과 SQL 에 함께 · 결정만 기록한다',()=>{
+ const sql=read('sql/approval-inbox-v1-20261004.sql'),js=read('approval-inbox.js');
+ assert.deepEqual([...R.PHASE2.approval_types],['타사 이관 실적','귀속 변경','중복 리드 정산','전략수주','특별 인센티브','결과 수정']);
+ assert.match(js,/CODES=\['transfer','owner_change','dup_lead','strategic_win','special_incentive','result_fix'\]/);assert.match(sql,/type in \('owner_change','dup_lead','strategic_win','special_incentive','result_fix'\)/);
+ ['crm_approval_list_v1','crm_approval_request_v1','crm_approval_decide_v1'].forEach(n=>{assert.match(read('pc-manager-transport.js'),new RegExp("'"+n+"'"));assert.match(read('pc-error-state.js'),new RegExp(n+':'));assert.match(sql,new RegExp('function public\\.'+n));});
+ assert.doesNotMatch(sql,/update public\.(deals|contracts|crm_deal_wins|crm_deal_transfers)|insert into public\.(deals|contracts)/,'승인함은 다른 자료를 바꾸지 않는다');
+});
 test('금액 5개는 더하지 않는다 · 영업 경로 5칸 · Health Score (3차 기준값도 한곳)',()=>{
  const win={win_status:'confirmed',won_type:'partner_tech',award_company:'코지건설',award_amount:1043900000,award_date:'2026-09-12',sales_channel_brand:'석민이앤씨',performance_owner:'황윤선',tech_advisory:true,tech_advisory_company:'코지건설',tech_advisory_amount:433650000,pour_contract_amount:136690000};
  const d={amount:1120000000,brand:'석민이앤씨',assignee:'정정훈',win};
