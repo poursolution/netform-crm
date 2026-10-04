@@ -39,7 +39,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     inquiries:[inq(3,'인천SK스카이뷰',3),inq(7,'길음뉴타운9단지',3,{assignee:'',assigned_to:'',assigned_at:'',status:'미배정'})],activities:[],inquiryTrash:[],expansion_pool:[]};
    LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME=me;G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.today3=null;G.tower=null;G.towerRole=null;G.todayQueueOwner='전체';G.todayV3Off=false;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op)=>{__writes.push(op);return 'req';};
-   window.__open=[];TodayWorkQueue.open=(k,a)=>{__open.push([k,a||'']);};window.__assign=[];window.todayAssignInquiry=k=>{__assign.push(k);};
+   window.__open=[];TodayWorkQueue.open=(k,a)=>{__open.push([k,a||'']);};/* 배정 창이 실제로 그 문의를 찾는지까지 본다(문의 번호 형식) — todayAssignInquiry 는 진짜 것을 그대로 */window.__assign=[];window.__alerts=[];window.alert=m=>{__alerts.push(String(m));};window.inqCtlOpenAssign=(m,k)=>{__assign.push([m,k,!!inqCtlFind(k)]);};
    goPage('today');
   },me);
   const snap=()=>page.evaluate(()=>{const v=document.querySelector('#today-v2 .tv3');if(!v)return null;const tx=n=>n?n.textContent.trim():'';
@@ -112,7 +112,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const c1=v.locator('.tv3-card').first();assert.equal(await c1.locator('.open').count(),0);await c1.locator('[data-t3="fold"]').click();await page.waitForTimeout(200);
   assert.match(await v.locator('.tv3-card').first().locator('.fold').innerText(),/담당에게 보낼 말 · 놓치면\s*접기 ▴[\s\S]*놓치면 [\s\S]*완료 기준 /);
   /* 배정 = 문의 배정 창, 줄 누르기 = 상세, 독촉 = 결과 남기기 */
-  await v.locator('.tv3-card',{hasText:'길음뉴타운9단지'}).locator('.btns .main').click();assert.equal((await page.evaluate(()=>__assign)).length,1,'배정 = 문의 배정 창');
+  await v.locator('.tv3-card',{hasText:'길음뉴타운9단지'}).locator('.btns .main').click();assert.deepEqual(await page.evaluate(()=>__assign.map(x=>[x[0],x[2]])),[['assign',true]],'배정 = 문의 배정 창 · 그 문의를 찾는다');assert.deepEqual(await page.evaluate(()=>__alerts),[],'선택 안내가 뜨지 않는다');
   await v.locator('.tv3-group[data-g="3"] .tv3-row').first().click();assert.equal((await page.evaluate(()=>__open)).length,1,'줄 = 상세 열기');
   await v.locator('.tv3-group[data-g="3"] .tv3-row').first().locator('button').click();assert.equal((await page.evaluate(()=>__open)).length,2,'버튼도 기존 경로');
   /* 밀린 건 정리: 펼치면 담당자별 건수 · 최장 일수 · [정리 요청], 목록 → 진행 / 보류 / 실주 / 배드핏 */

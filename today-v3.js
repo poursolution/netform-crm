@@ -259,7 +259,8 @@
   if(a==='act'){const act=b.dataset.act;
    if(act==='전화'){dial(b.dataset.tel);return openKey(key,'contact');}
    if(act==='다음 할 일')return openKey(key,'next');
-   if(act==='배정'&&/^inq:/.test(key)&&typeof root.todayAssignInquiry==='function')return root.todayAssignInquiry(key);
+   /* 배정 창은 문의 번호만 받는다('inq:' 머리 없이) — 머리를 붙인 채 넘기면 "먼저 처리할 견적문의를 선택해 주세요"만 뜬다 */
+   if(act==='배정'&&/^inq:/.test(key)&&typeof root.todayAssignInquiry==='function')return root.todayAssignInquiry(key.replace(/^inq:/,''));
    if(['독촉','코멘트','결과 기록','정기 연락','관계 연락','현장 확인'].includes(act))return openKey(key,'contact');
    return openKey(key);}
   if(a==='open'&&(!e.target.closest('button')||b.tagName==='BUTTON'))return openKey(key);
