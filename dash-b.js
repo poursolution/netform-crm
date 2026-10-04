@@ -114,13 +114,10 @@
    ['조치 필요',risk.length+'건',risk.length?'red':'','기한 지남 '+cnt('overdue')+' · 다음 할 일 없음 '+cnt('missing'),'go','control'],
    ['주간 활동',wkA.length+'건',zero?'red':'','최근 7일 · '+names.length+'명 중 '+zero+'명 0건','ev','activity']];
   const kpis='<div class="db-kpis">'+cards.map(c=>'<button type="button" class="db-kpi"'+(c[4]?' data-db="'+c[4]+'" data-v="'+attr(c[5])+'"':' disabled')+'><span>'+h(c[0])+'</span><div><b class="'+c[2]+'">'+h(c[1])+'</b><small>'+h(c[3])+'</small></div></button>').join('')+'</div>';
-  const hot=N.filter(n=>n.hot),hotSum=hot.reduce((s,n)=>s+n.amount,0);
-  const head=hot.length?'이번 주 기한 '+hot.length+'건'+(hotSum?' · '+won(hotSum):'')+' — '+hot.slice(0,2).map(n=>siteShort(n.d.site)+' '+n.due).join(', ')+(hot.length>2?' 외 '+(hot.length-2)+'건':''):'이번 주 기한이 걸린 계약 임박 건이 없습니다';
-  const sub=[(P.thisYear?'올해':P.label)+' 수주실적 '+(L.ready?(C.perf>0?won(C.perf):'아직 없음'):'불러오는 중'),'메이드율 '+pt(made),'손봐야 할 '+risk.length+'건 중 기한 지남 '+cnt('overdue')+'건'].join(' · ');
-  const band='<div class="db-band"><div><span>오늘 먼저 볼 것</span><b>'+h(head)+'</b><small>'+h(sub)+'</small></div><button type="button" data-db="go" data-v="control">컨트롤타워에서 처리 →</button></div>';
+  /* '오늘 먼저 볼 것' 검은 띠는 뺐다(2026-10-04 대표) — 같은 숫자가 위 카드에 있고, 계약 임박은 파이프라인 탭에서 본다 */
   const secs=[['perf','성과','문의 → 계약 · 추이 · 브랜드'],['people','사람','담당자별 · 이번 주 기록'],['pipe','파이프라인','단계 · 계약 임박'],['act','활동','최근 기록']];
   const tabs='<div class="db-secs" role="tablist">'+secs.map(t=>'<button type="button" role="tab" aria-selected="'+(S.sec===t[0])+'" data-db="sec" data-v="'+t[0]+'">'+t[1]+'<span>'+t[2]+'</span></button>').join('')+'</div>';
-  return kpis+band+tabs+(S.sec==='people'?secPeople(C,PP):S.sec==='pipe'?secPipe(C,N):S.sec==='act'?secAct(C):secPerf(C));
+  return kpis+tabs+(S.sec==='people'?secPeople(C,PP):S.sec==='pipe'?secPipe(C,N):S.sec==='act'?secAct(C):secPerf(C));
  }
  function brandRows(C){
   const {B,P,L,q,loss}=C;

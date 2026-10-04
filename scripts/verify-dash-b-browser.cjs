@@ -53,7 +53,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(core.od,5);assert.equal(core.made,40,'메이드율 = 수주 2 ÷ (수주 2 + 실주 3) · 배드핏 제외');
   assert.deepEqual(kpi[4].slice(1),[core.risk+'건','기한 지남 5 · 다음 할 일 없음 '+core.miss]);
   assert.match(kpi[5][1],/^2건$/);assert.match(kpi[5][2],/^최근 7일 · \d+명 중 \d+명 0건$/);
-  assert.match(await d.locator('.db-band').innerText(),/오늘 먼저 볼 것\s*이번 주 기한 1건 · 4억 — 매탄 임박 입찰 마감 10\/9\s*올해 수주실적 8억 · 메이드율 40\.0% · 손봐야 할 \d+건 중 기한 지남 5건\s*컨트롤타워에서 처리 →/);
+  assert.equal(await d.locator('.db-band').count(),0,'오늘 먼저 볼 것 검은 띠는 없다(2026-10-04 대표)');assert.ok(!/오늘 먼저 볼 것/.test(await d.innerText()));
   assert.deepEqual(await d.locator('.db-secs button').evaluateAll(a=>a.map(n=>n.childNodes[0].textContent)),['성과','사람','파이프라인','활동']);
   /* 성과: 흐름 5칸 · 비율 4개 · 배드핏/실주 두 상자 */
   assert.deepEqual(await d.locator('.db-fun>div').evaluateAll(a=>a.map(n=>[...n.children].map(c=>c.textContent))),[['견적문의','4건','전체 접수'],['적합 문의','3건','배드핏 1 제외'],['견적 발송','5건','기간 안 견적 발송'],['영업건 전환','12건','파이프라인 진입'],['수주','2건 · 8억','실주 3건']]);
