@@ -100,7 +100,7 @@
  async function decide(x,decision,reason){
   const S=st();if(S.sending)return;S.sending=x.key;S.err='';render();
   let row=null;
-  try{const r=await R.OpsStore.rpc(RPC.decide,{id:x.id,decision,reason:reason||undefined});row=r.request;take(row);S.rej='';S.reason='';}
+  try{const r=await R.OpsStore.rpc(RPC.decide,{id:x.id,decision,reason:reason||undefined});row=r.request;take(row);S.rej='';S.reason='';try{if(r.owner&&R.DealOwner)R.DealOwner.take(r.owner);}catch(e){}}
   catch(e){S.err='저장하지 못했습니다: '+String(e&&e.message||e);}
   if(row){
    /* 누가 승인 · 반려했는지 그 영업건 응대 이력에 시스템 기록으로 남긴다(결정은 이미 저장됨 — 기록이 실패해도 결정은 그대로) */

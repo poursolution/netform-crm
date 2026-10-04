@@ -69,7 +69,7 @@ create or replace function public.crm_deal_transfer_register_v1(p jsonb)
 returns jsonb language plpgsql volatile security definer set search_path='' as $fn$
 declare
  a record; dj jsonb; old public.crm_deal_transfers%rowtype; cur public.crm_deal_transfers%rowtype; has_old boolean;
- v_deal text; v_company text; v_reason text; v_memo text; v_date date; v_rep boolean; v_rep_at date; v_exp numeric; v_name text; v_owner text; v_owner_id uuid; v_at timestamptz:=clock_timestamp();
+ v_deal text; v_company text; v_reason text; v_memo text; v_date date; v_rep boolean; v_rep_at date; v_exp numeric; v_name text; v_owner text; v_owner_id uuid; v_po text; v_po_id uuid; v_at timestamptz:=clock_timestamp();
 begin
  select * into a from crm_security.actor();
  if not found then raise exception 'forbidden' using errcode='42501'; end if;
@@ -108,6 +108,11 @@ begin
  else
   begin v_owner_id:=nullif(dj->>'owner_id','')::uuid; exception when others then v_owner_id:=null; end;
   v_owner:=coalesce(nullif(btrim(coalesce(dj->>'assignee_name','')),''),(select u.name from public.users u where u.user_id=v_owner_id));
+  -- 담당 · 귀속 분리(2차 기능 8): 그 영업건에 고정된 실적 귀속(주담당)이 있으면 그 사람에게(sql/deal-owner-v1)
+  if to_regclass('public.crm_deal_owners') is not null then
+   execute 'select o.performance_owner,o.performance_owner_id from public.crm_deal_owners o where o.deal_id=$1' into v_po,v_po_id using v_deal;
+   if v_po is not null then v_owner:=v_po; v_owner_id:=v_po_id; end if;
+  end if;
  end if;
  insert into public.crm_deal_transfers(deal_id,transfer_status,transfer_company,transfer_reason,transfer_date,transfer_reported,transfer_reported_at,transfer_memo,expected_amount,award_result,performance_owner,performance_owner_id,created_by,created_by_name,created_at,updated_at)
   values(v_deal,'transferred',v_company,v_reason,v_date,v_rep,v_rep_at,v_memo,v_exp,'pending',v_owner,v_owner_id,a.user_id,v_name,v_at,v_at)

@@ -43,7 +43,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const box=await v.boundingBox();assert.ok(Math.abs(box.x-16)<=1&&Math.abs(box.width-(1600-32))<=2,'좌우 16px '+JSON.stringify(box));assert.ok(Math.abs(box.height-(1000-32))<=2,'높이 = 화면 - 32');
   /* 왼쪽 5구역 · 예전 카드 숨김 */
   const L=v.locator('.dv3-left');
-  assert.deepEqual(await L.locator('.dv3-sec>header b').allInnerTexts(),['같은 현장 다른 영업','현장 정보','자료','다른 연락처']);
+  assert.deepEqual(await L.locator('.dv3-sec>header b').allInnerTexts(),['같은 현장 다른 영업','현장 정보','담당 정보'/* 담당 · 귀속 분리(2026-10-04) */,'자료','다른 연락처']);
   assert.match(await L.locator('.dv3-mgr').innerText(),/관리소장\s*김영수\s*010-1234-5678[\s\S]*⚠ \d+\/\d+ 관리소장 변경\s*이전: 박영호 · 변경 후 첫 응대 전[\s\S]*전화\s*문자\s*수정\s*핵심 담당자 미확인\s*문자 미동의\s*카카오 미동의\s*소장이 바뀌었어요/);
   assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#detailView .dw-left>*')].filter(n=>!n.classList.contains('dv3-left')&&getComputedStyle(n).display!=='none').length),0,'예전 카드(연락처 · 관리 정보 · 자료)는 보이지 않음');
   /* 같은 사람 한 번 · 전화 버튼 하나 */
@@ -55,8 +55,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 현장 정보 · 자료 · 다른 연락처 */
   assert.deepEqual(await L.locator('.dv3-row>span').allInnerTexts(),['공종','고객 반응','의사결정자','경쟁사','예상 금액','공사 예정']);
   assert.match(await L.locator('.dv3-row').nth(1).innerText(),/고객 반응\s*가격 부담/);assert.equal(await L.locator('.dv3-val.empty').count(),4,'미입력 = 주황');assert.deepEqual(await L.locator('.dv3-val.empty').allInnerTexts(),['미분류 · 분류하기','미입력 · 입력하기','미입력 · 입력하기','미입력 · 입력하기']);
-  assert.match(await L.locator('.dv3-sec').nth(3).innerText(),/자료\s*사진 0 · 견적서 0 · 기타 0\s*자료 보기/);
-  assert.match(await L.locator('.dv3-sec').nth(4).innerText(),/다른 연락처\s*1명\s*\+ 추가\s*이회장\s*입주자대표회장\s*010-7777-8888/);assert.equal(await L.locator('.dv3-other button:not(.nm)').count(),0,'다른 연락처에는 버튼 없음');
+  assert.match(await L.locator('.dv3-sec').nth(4).innerText(),/자료\s*사진 0 · 견적서 0 · 기타 0\s*자료 보기/);
+  assert.match(await L.locator('.dv3-sec').nth(5).innerText(),/다른 연락처\s*1명\s*\+ 추가\s*이회장\s*입주자대표회장\s*010-7777-8888/);assert.equal(await L.locator('.dv3-other button:not(.nm)').count(),0,'다른 연락처에는 버튼 없음');
   /* 오른쪽: 지금 할 일(변경 재확인 + AI 안) · AI 판단 카드 없음 · 필수 정보 중복 없음 */
   const R=v.locator('.dw-right'),now=R.locator('#nowCard');
   assert.equal(await R.locator('.dk-ai:visible').count(),0,'AI 판단 카드 없음');assert.equal(await now.locator('.dv3-reco').count(),1,'추천 다음 행동은 지금 할 일 안 · 상자 하나');

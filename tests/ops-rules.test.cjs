@@ -104,6 +104,11 @@ test('예외 승인함: 종류 6개 · 새 서버 함수는 허용 목록과 SQL
  assert.match(rules,/function crm_security\.approval_approver\(p_user uuid\)/);assert.match(rules,/'\["이승우","황윤선"\]'::jsonb/);assert.match(rules,/'contact_channels','approvers'\]/);
  [sql,tf].forEach(s=>{assert.match(s,/if not crm_security\.approval_approver\(a\.user_id\) then raise exception/);assert.match(s,/다른 승인자가 처리해야 합니다/);});
  assert.doesNotMatch(tf,/실적 인정은 관리자만/);assert.doesNotMatch(sql,/승인 · 반려는 관리자만/);
+ /* 담당 · 귀속 분리: 새 서버 함수는 허용 목록 · SQL 에 함께, 귀속 변경은 승인될 때만(내부 함수) · 계약실적 원장은 건드리지 않는다 */
+ const own=read('sql/deal-owner-v1-20261004.sql');
+ ['crm_deal_owner_list_v1','crm_deal_owner_reassign_v1'].forEach(n=>{assert.match(read('pc-manager-transport.js'),new RegExp("'"+n+"'"));assert.match(read('pc-error-state.js'),new RegExp(n+':'));assert.match(own,new RegExp('function public\\.'+n));});
+ assert.match(own,/function crm_security\.deal_owner_apply\(/);assert.match(own,/revoke all on function crm_security\.deal_owner_apply\(text,text,text,text,uuid,text\) from public, anon, authenticated/);
+ assert.match(sql,/to_regprocedure\('crm_security\.deal_owner_apply\(text,text,text,text,uuid,text\)'\) is not null/);assert.doesNotMatch(own,/contract|update public\.deals|insert into public\.deals/);
  /* 승인 요청 창: 종류 6개 순서 · 종류마다 필수칸 2개 · 증빙 필수 여부 */
  const AR=R.PHASE2.approval_request;assert.deepEqual([...AR.order],['dup_lead','strategic_win','special_incentive','result_fix','owner_change','transfer']);
  assert.deepEqual(AR.order.map(c=>[AR.types[c].fields.length,AR.types[c].evidence]),[[2,false],[2,false],[2,true],[2,true],[2,false],[2,true]]);

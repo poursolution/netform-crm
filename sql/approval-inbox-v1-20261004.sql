@@ -4,6 +4,7 @@
 -- 승인 · 반려는 예외 승인자(운영 기준 '예외 승인자' 목록 · 기본 이승우 · 황윤선) 중 한 사람이 한다 — crm_security.approval_approver (sql/ops-rules-v1 에 있다 · 먼저 적용).
 -- 본인이 올린 요청은 다른 승인자가 처리한다. 누가 언제 승인 · 반려했는지는 요청(decided_by_name · decided_at)과 이력에 남는다.
 -- 이 함수들은 요청 · 결정(승인 / 반려 · 사유) · 이력만 기록한다. 영업건 · 담당 · 계약실적 원장 · 수주 유형은 건드리지 않는다.
+-- 하나만 예외: '귀속 변경'이 승인되면 그 영업건의 실적 귀속(담당 · 귀속 분리 표 crm_deal_owners — sql/deal-owner-v1)이 바뀌고 이전 귀속이 이력에 남는다.
 -- 표는 RLS 를 켜고 정책을 두지 않는다 — 읽기 · 쓰기는 아래 함수로만. 바꿀 때마다 crm_approval_events 에 전 → 후가 남는다.
 -- 다시 실행해도 안전. 운영 적용: Supabase SQL 편집기에서 대표가 Run. 화면은 함수가 있을 때만 이 요청들을 보여 준다.
 
@@ -89,6 +90,10 @@ begin
  if v_reason is null or length(v_reason)>300 then raise exception '요청 사유를 300자 이내로 적어 주세요' using errcode='22023'; end if;
  v_payload:=coalesce(p->'payload','{}'::jsonb);
  if jsonb_typeof(v_payload)<>'object' or length(v_payload::text)>2000 then raise exception 'invalid payload' using errcode='22023'; end if;
+ -- 귀속 변경: 어느 영업건의 귀속을 누구로 바꿀지 분명해야 한다(승인되면 그대로 반영된다)
+ if v_type='owner_change' and (v_deal is null or not exists(select 1 from public.users u where u.active is true and btrim(u.name)=nullif(btrim(coalesce(v_payload->>'to_owner','')),''))) then
+  raise exception '바꿀 귀속은 사용 중인 계정 이름으로 적어 주세요' using errcode='22023';
+ end if;
  -- 같은 영업건 · 같은 종류로 이미 대기 중이면 새로 만들지 않는다
  if v_deal is not null and exists(select 1 from public.crm_approval_requests q where q.deal_id=v_deal and q.type=v_type and q.status='pending') then
   raise exception '같은 요청이 이미 승인 대기 중입니다' using errcode='22023';
@@ -106,7 +111,7 @@ create or replace function public.crm_approval_decide_v1(p jsonb)
 returns jsonb language plpgsql volatile security definer set search_path='' as $fn$
 declare
  a record; old public.crm_approval_requests%rowtype; cur public.crm_approval_requests%rowtype;
- v_id bigint; v_dec text; v_reason text; v_name text; v_at timestamptz:=clock_timestamp();
+ v_id bigint; v_dec text; v_reason text; v_name text; v_owner jsonb; v_at timestamptz:=clock_timestamp();
 begin
  select * into a from crm_security.actor();
  if not found then raise exception 'forbidden' using errcode='42501'; end if;
@@ -126,7 +131,11 @@ begin
  update public.crm_approval_requests q set status=case when v_dec='approve' then 'approved' else 'rejected' end,decided_by=a.user_id,decided_by_name=v_name,decided_at=v_at,decision_reason=v_reason
   where q.id=v_id returning * into cur;
  insert into public.crm_approval_events(request_id,action,before,after,actor,actor_name,at) values(v_id,v_dec,to_jsonb(old),to_jsonb(cur),a.user_id,v_name,v_at);
- return jsonb_build_object('ok',true,'request',to_jsonb(cur));
+ -- 귀속 변경 승인 = 그 영업건의 실적 귀속을 바꾼다(담당 · 귀속 분리가 설치돼 있을 때). 반영에 실패하면 승인도 되돌린다.
+ if v_dec='approve' and old.type='owner_change' and old.deal_id is not null and to_regprocedure('crm_security.deal_owner_apply(text,text,text,text,uuid,text)') is not null then
+  execute 'select crm_security.deal_owner_apply($1,$2,$3,$4,$5,$6)' into v_owner using old.deal_id,old.payload->>'from_owner',old.payload->>'to_owner',old.reason,a.user_id,v_name;
+ end if;
+ return jsonb_build_object('ok',true,'request',to_jsonb(cur),'owner',v_owner);
 end $fn$;
 revoke all on function public.crm_approval_decide_v1(jsonb) from public, anon;
 grant execute on function public.crm_approval_decide_v1(jsonb) to authenticated;

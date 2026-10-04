@@ -1,0 +1,21 @@
+/* 담당 · 귀속 분리 (2026-10-04 design_handoff_rules 2차 기능 8) do- */
+#detailView .do-card .do-grid{display:grid;grid-template-columns:96px minmax(0,1fr);gap:9px 12px;font-size:13px;align-items:baseline}
+#detailView .do-card .do-grid>span:nth-child(odd){color:#9ca3af}
+#detailView .do-card .do-grid b{font-weight:700;color:#15171c}
+#detailView .do-card .do-grid b.perf{color:#1d3f99}
+#detailView .do-card .do-grid small{font-size:11.5px;color:#9ca3af;font-weight:400}
+#detailView .do-card .do-grid b.perf small{font-weight:500;color:#6b7280}
+#detailView .do-card .do-hist{border-top:1px solid #f0f1f4;margin-top:10px;padding-top:10px;display:flex;flex-direction:column;gap:6px}
+#detailView .do-card .do-hist>span{font-size:12px;font-weight:700;color:#6b7280}
+#detailView .do-card .do-hist>div{display:grid;grid-template-columns:86px minmax(0,1fr);gap:8px;font-size:12px;line-height:1.45}
+#detailView .do-card .do-hist>div>span:first-child{color:#9ca3af}
+#detailView .do-card .do-hist>p{margin:0;font-size:12px;color:#9ca3af}
+/* 담당자 변경 창: 실적 귀속 선택 */
+.do-attr{display:flex;flex-direction:column;gap:8px;margin:12px 0 4px;font-size:13px;color:#15171c}
+.do-attr>b{font-weight:700}
+.do-attr .do-chips{display:flex;gap:6px;flex-wrap:wrap}
+.do-attr .do-chips button{border:1px solid #d9dde4;background:#fff;color:#374151;font:inherit;font-size:12px;font-weight:700;border-radius:8px;padding:6px 10px;cursor:pointer;min-height:0;box-shadow:none}
+.do-attr .do-chips button[aria-pressed="true"]{border-color:#15171c;background:#15171c;color:#fff}
+.do-attr .do-chips button:disabled{opacity:.5;cursor:default}
+.do-attr .do-note{margin:0;font-size:12px;border-radius:7px;padding:8px 10px;line-height:1.5;color:#374151;background:#f5f6f8}
+.do-attr .do-note.req{color:#8a5a00;background:#fffaf0}
