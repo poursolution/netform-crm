@@ -6,15 +6,20 @@ import {fixture} from './aligo-database-fixture.mjs';
 const sql=readFileSync(new URL('../sql/deal-transfer-v1-20261004.sql',import.meta.url),'utf8');
 const rules=readFileSync(new URL('../sql/ops-rules-v1-20261004.sql',import.meta.url),'utf8');
 const store=readFileSync(new URL('../sql/ops-store-v1-20261002.sql',import.meta.url),'utf8');
-/* 타사 이관 v1: 다시 실행해도 안전 · 표 직접 접근 차단 · 등록/낙찰결과 = 담당자 또는 관리자 · 실적 인정 = 관리자만(사전 보고 + 확인 3개) · 바꿀 때마다 기록 */
-test('deal transfer: register → award → admin approval, pre-report required, audit trail',async()=>{
+/* 타사 이관 v1: 다시 실행해도 안전 · 표 직접 접근 차단 · 등록/낙찰결과 = 담당자 또는 관리자 · 실적 인정 = 예외 승인자 중 한 사람(사전 보고 + 확인 3개 · 본인 건은 다른 승인자가) · 바꿀 때마다 기록 */
+test('deal transfer: register → award → approver approval (not admin, not self), pre-report required, audit trail',async()=>{
  const db=new PGlite();
  const U='11111111-1111-4111-8111-111111111111',AU='22222222-2222-4222-8222-222222222222',V='44444444-4444-4444-8444-444444444444',AV='55555555-5555-4555-8555-555555555555',W='66666666-6666-4666-8666-666666666666',AW='77777777-7777-4777-8777-777777777777';
- const D1='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',D2='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2';
+ const D1='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',D2='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2',D3='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3';
+ const X='88888888-8888-4888-8888-888888888881',AX='88888888-8888-4888-8888-888888888882',Y='99999999-9999-4999-8999-999999999991',AY='99999999-9999-4999-8999-999999999992';
  try{
   await db.exec(fixture);
   await db.exec('alter table public.deals add column owner_id uuid, add column assignee_name text');
+  await db.exec(store);await db.exec(rules);/* 승인자 판정 함수 · 설정 표 */
   await db.exec(sql);await db.exec(sql);/* 두 번 실행해도 안전 */
+  await db.query("insert into public.users values($1,$2,'이승우','dual',true),($3,$4,'황윤선','dual',true)",[X,AX,Y,AY]);
+  await db.query("insert into crm_security.access_review values($1,$2,'manager','dual',true,now()+interval '1 day'),($3,$4,'manager','dual',true,now()+interval '1 day')",[X,AX,Y,AY]);
+  await db.query("insert into public.deals(id,owner_id,assignee_name) values($1,$2,'황윤선')",[D3,Y]);
   await db.query("insert into public.users values($1,$2,'송보람','admin',true),($3,$4,'이필선','rep',true),($5,$6,'정정훈','rep',true)",[U,AU,V,AV,W,AW]);
   await db.query("insert into crm_security.access_review values($1,$2,'admin','admin',true,now()+interval '1 day'),($3,$4,'rep','rep',true,now()+interval '1 day'),($5,$6,'rep','rep',true,now()+interval '1 day')",[U,AU,V,AV,W,AW]);
   await db.query("insert into public.deals(id,owner_id,assignee_name) values($1,$2,'이필선'),($3,$2,'이필선')",[D1,V,D2]);
@@ -46,22 +51,27 @@ test('deal transfer: register → award → admin approval, pre-report required,
   const r2=(await call('crm_deal_transfer_award_v1',aw)).transfer;
   assert.equal(r2.award_result,'transferred_won');assert.equal(Number(r2.award_amount),380000000);assert.equal(Number(r2.performance_amount),380000000,'실적 금액 = 낙찰금액 그대로');assert.equal(r2.incentive_eligible,false,'승인 전에는 실적 아님');
   await assert.rejects(call('crm_deal_transfer_register_v1',reg),/낙찰결과가 등록된 건은/);
-  /* 실적 인정: 관리자만 · 확인 3개 모두 */
-  await assert.rejects(call('crm_deal_transfer_approve_v1',{deal_id:D1,decision:'approve',checks:{reported:true,result:true,amount:true}}),/관리자만/);
-  await as(AU);
+  /* 실적 인정: 예외 승인자만(영업사원도 관리자도 아님) · 확인 3개 모두 */
+  await assert.rejects(call('crm_deal_transfer_approve_v1',{deal_id:D1,decision:'approve',checks:{reported:true,result:true,amount:true}}),/예외 승인자만/);
+  await as(AU);await assert.rejects(call('crm_deal_transfer_approve_v1',{deal_id:D1,decision:'approve',checks:{reported:true,result:true,amount:true}}),/예외 승인자만/,'승인 요청은 관리자에게 가지 않는다');
+  await as(AX);
   await assert.rejects(call('crm_deal_transfer_approve_v1',{deal_id:D1,decision:'approve',checks:{reported:true,result:true,amount:false}}),/모두 확인/);
   await assert.rejects(call('crm_deal_transfer_approve_v1',{deal_id:D1,decision:'reject'}),/제외 사유/);
   const r3=(await call('crm_deal_transfer_approve_v1',{deal_id:D1,decision:'approve',checks:{reported:true,result:true,amount:true}})).transfer;
-  assert.equal(r3.incentive_eligible,true);assert.equal(r3.approved_by,U);assert.equal(r3.approved_by_name,'송보람');assert.ok(r3.approved_at);
+  assert.equal(r3.incentive_eligible,true);assert.equal(r3.approved_by,X);assert.equal(r3.approved_by_name,'이승우','누가 승인했는지 남는다');assert.ok(r3.approved_at);
   await as(AV);await assert.rejects(call('crm_deal_transfer_award_v1',aw),/실적이 인정된 건은/);
   /* 미보고 이관: 등록은 되지만 실적 인정 불가 · 제외는 사유와 함께 */
   const r4=(await call('crm_deal_transfer_register_v1',{...reg,deal_id:D2,reported:false,reported_at:'2026-10-02'})).transfer;
   assert.equal(r4.transfer_reported,false);assert.equal(r4.transfer_reported_at,null);
   await call('crm_deal_transfer_award_v1',{...aw,deal_id:D2});
-  await as(AU);
+  await as(AY);
   await assert.rejects(call('crm_deal_transfer_approve_v1',{deal_id:D2,decision:'approve',checks:{reported:true,result:true,amount:true}}),/사전 보고되지 않은/);
   const r5=(await call('crm_deal_transfer_approve_v1',{deal_id:D2,decision:'reject',reason:'사전 보고 없음'})).transfer;
-  assert.equal(r5.incentive_eligible,false);assert.equal(r5.rejected_reason,'사전 보고 없음');
+  assert.equal(r5.incentive_eligible,false);assert.equal(r5.rejected_reason,'사전 보고 없음');assert.equal(r5.approved_by_name,'황윤선');
+  /* 본인 건(승인자가 담당인 영업건)은 다른 승인자가 처리한다 */
+  await call('crm_deal_transfer_register_v1',{...reg,deal_id:D3});await call('crm_deal_transfer_award_v1',{...aw,deal_id:D3});
+  await assert.rejects(call('crm_deal_transfer_approve_v1',{deal_id:D3,decision:'approve',checks:{reported:true,result:true,amount:true}}),/본인 건은 다른 승인자가/);
+  await as(AX);assert.equal((await call('crm_deal_transfer_approve_v1',{deal_id:D3,decision:'approve',checks:{reported:true,result:true,amount:true}})).transfer.approved_by_name,'이승우');
   /* 실주 · 취소 결과 + 등록 거두기 */
   await as(AV);
   const r6=(await call('crm_deal_transfer_award_v1',{deal_id:D2,result:'lost',note:'타사도 낙찰 실패'})).transfer;
@@ -71,9 +81,9 @@ test('deal transfer: register → award → admin approval, pre-report required,
   /* 기록 */
   await db.exec('reset role');
   const ev=(await db.query('select deal_id,action,actor_name from public.crm_deal_transfer_events order by id')).rows;
-  assert.deepEqual(ev.map(e=>e.action),['register','award','approve','register','award','reject','award','award']);assert.equal(ev[2].actor_name,'송보람');
-  /* 운영 기준 SQL 도 함께 설치돼야 한다(같은 저장소 표를 쓴다) */
-  await db.exec(store);await db.exec(rules);await db.exec(rules);
+  assert.deepEqual(ev.map(e=>e.action),['register','award','approve','register','award','reject','register','award','approve','award','award']);assert.equal(ev[2].actor_name,'이승우');
+  /* 운영 기준 SQL 도 함께 설치돼야 한다(같은 저장소 표를 쓴다) · 다시 실행해도 안전 */
+  await db.exec(rules);
   await as(AU);const rr=await call('crm_ops_rules_v1',{set:{assign_minutes:20,reasons_transfer:['영업권 조율','기타']}});
   assert.equal(rr.rules.assign_minutes,20);assert.equal(rr.changed,2);assert.equal(rr.history.length,2);assert.equal(rr.updated_by_name,'송보람');
   await assert.rejects(call('crm_ops_rules_v1',{set:{assign_minutes:5}}),/범위를 벗어난/);await assert.rejects(call('crm_ops_rules_v1',{set:{first_contact_hours:5}}),/바꿀 수 없는 항목/);

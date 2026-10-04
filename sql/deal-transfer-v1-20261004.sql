@@ -1,7 +1,7 @@
 -- 타사 이관 v1 (2026-10-04 · design_handoff_transfer · 운영 기준 4단계)
 -- 타사 이관은 영업단계가 아니라 처리 방식(상태값)이다 — 영업건의 단계 · 담당 · 계약실적 원장은 건드리지 않고, 이관 정보만 이 표에 둔다.
 -- 흐름: 이관 등록(담당자) → 낙찰결과 대기 → 낙찰결과 등록(담당자) → 실적 인정(관리자) → 수주실적 · 메이드율에 반영.
--- 실적 금액 = 최종 낙찰금액(VAT 별도) 전액. 사전 정식 보고된 건만, 관리자가 인정한 건만 incentive_eligible = true.
+-- 실적 금액 = 최종 낙찰금액(VAT 별도) 전액. 사전 정식 보고된 건만, 예외 승인자가 인정한 건만 incentive_eligible = true.
 -- 표는 RLS 를 켜고 정책을 두지 않는다 — 읽기 · 쓰기는 아래 함수로만. 바꿀 때마다 crm_deal_transfer_events 에 전 → 후가 남는다.
 -- 다시 실행해도 안전. 운영 적용: Supabase SQL 편집기에서 대표가 Run. 화면은 CRMRelease 게이트로 함수가 있을 때만 기능을 연다.
 
@@ -169,7 +169,7 @@ end $fn$;
 revoke all on function public.crm_deal_transfer_award_v1(jsonb) from public, anon;
 grant execute on function public.crm_deal_transfer_award_v1(jsonb) to authenticated;
 
--- 실적 인정(관리자 전용): approve = 사전 보고 · 낙찰결과 · 낙찰금액 세 가지를 모두 확인해야 한다 / reject = 사유 필수(실적 제외)
+-- 실적 인정(예외 승인자 중 한 사람 · 2026-10-04 대표 지정 — crm_security.approval_approver 는 sql/ops-rules-v1 에 있다 · 본인 건은 다른 승인자가): approve = 사전 보고 · 낙찰결과 · 낙찰금액 세 가지를 모두 확인해야 한다 / reject = 사유 필수(실적 제외)
 create or replace function public.crm_deal_transfer_approve_v1(p jsonb)
 returns jsonb language plpgsql volatile security definer set search_path='' as $fn$
 declare
@@ -178,12 +178,13 @@ declare
 begin
  select * into a from crm_security.actor();
  if not found then raise exception 'forbidden' using errcode='42501'; end if;
- if a.permission_role<>'admin' then raise exception '실적 인정은 관리자만 할 수 있습니다' using errcode='42501'; end if;
+ if not crm_security.approval_approver(a.user_id) then raise exception '실적 인정은 예외 승인자만 할 수 있습니다' using errcode='42501'; end if;
  if jsonb_typeof(p) is distinct from 'object' then raise exception 'invalid payload' using errcode='22023'; end if;
  v_deal:=nullif(btrim(coalesce(p->>'deal_id','')),''); v_dec:=coalesce(p->>'decision','');
  if v_deal is null or v_dec not in ('approve','reject') then raise exception 'invalid payload' using errcode='22023'; end if;
  select * into old from public.crm_deal_transfers t where t.deal_id=v_deal for update;
  if not found or old.transfer_status<>'transferred' or old.award_result<>'transferred_won' then raise exception '낙찰결과(타사 이관 수주)가 등록된 건만 처리할 수 있습니다' using errcode='22023'; end if;
+ if old.performance_owner_id is not distinct from a.user_id or old.created_by is not distinct from a.user_id then raise exception '본인 건은 다른 승인자가 처리해야 합니다' using errcode='42501'; end if;
  select u.name into v_name from public.users u where u.user_id=a.user_id;
  if v_dec='approve' then
   if not old.transfer_reported then raise exception '사전 보고되지 않은 이관은 실적으로 인정할 수 없습니다' using errcode='22023'; end if;

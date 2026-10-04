@@ -21,6 +21,8 @@
   reasons_lost:Object.freeze(['관계 · 관리소장 변경','관계 · 입대의 · 회장 영향','관계 · 경쟁업체 기존 관계','공법 · 타 공법 선호','공법 · 특허 조건 불리','공법 · 설계 변경','가격 · 가격 경쟁','가격 · 예산 부족','가격 · 실행가 문제','사업 · 공사 취소','사업 · 연기','사업 · 예산 미확정']),
   reasons_transfer:Object.freeze(['영업권 조율','영업권 중복','안전 · 시공조건','파트너사 협업','시공역량 문제','기타']),
   contact_channels:Object.freeze(['전화','카카오','문자','이메일','방문','기타']),
+  /* 예외 승인자(2026-10-04 대표 지정): 승인 요청 · 타사 이관 실적 인정은 이 사람들에게 간다 — 한 사람만 승인해도 된다 */
+  approvers:Object.freeze(['이승우','황윤선']),
   owner_change_log:true,manager_change_is_event:true,relationship_follows_person:true,duplicate_lead_warning:true,
   auto_owner_attribution:true,owner_keep_on_reassign:true,dashboard_public:true,
   nearby_map:true,nearby_radius_km:3,year_management:true,year_required_on_convert:true,year_future_skip_focus:true,
@@ -44,7 +46,7 @@
    X('수주실적 금액','자사 · 타사 이관 모두 같은 기준. 실행가 · 정산액 · 기술자문료와 분리','fix','최종 낙찰금액 (VAT 별도)'),
    X('영업 메이드율','배드핏 · 진행 중 · 낙찰결과 대기는 계산에서 제외','fix','(자사 수주 + 승인 타사 이관) ÷ (자사 수주 + 승인 타사 이관 + 파이프라인 실주)'),
    T('split_own_transfer','자사 / 타사 이관 분리 표시','화면에서는 나눠 보여 주고 총 영업실적에서는 합산','fix'),
-   X('타사 이관 실적 인정 조건','사전 정식 보고 + 관리자 승인 건만. 단순 중복 · 종료 건 제외','fix','사전 보고 · 낙찰결과 · 낙찰금액 확인 후 관리자 승인'),
+   X('타사 이관 실적 인정 조건','사전 정식 보고 + 예외 승인자 승인 건만. 단순 중복 · 종료 건 제외','fix','사전 보고 · 낙찰결과 · 낙찰금액 확인 후 예외 승인자 승인'),
    T('year_management','연도별 관리','영업건에 \'공사 예정 연도\'를 받아 올해 진행 건과 향후 연도 건을 나눠 봅니다. 파이프라인 단계는 그대로이고, 목록 · 대시보드에 연도 필터가 생깁니다.','cond'),
    T('year_required_on_convert','공사 예정 연도 필수','파이프라인 전환 시 연도를 꼭 받습니다. 모르면 \'미정\'.','cond'),
    T('year_future_skip_focus','향후 연도 건 집중관리 제외','내년 이후 공사 건은 7일 활동 없음 · 견적 후속 놓침에서 빼고 장기 대기 주기로 관리','cond')]],
@@ -63,12 +65,13 @@
    T('auto_owner_attribution','주담당 자동 귀속','수주실적 · 인센티브를 누구에게 귀속할지 자동으로 정합니다.','cond'),
    X('귀속 기준','최초로 고객과 실제 연결된 담당자를 주담당으로 봅니다. 연락 시도(부재)는 제외.','cond','최초 연락(실제 연결) 담당자 우선'),
    T('owner_keep_on_reassign','재배정돼도 귀속 유지','중간에 담당이 바뀌어도 실적은 주담당에게. 바뀐 담당은 \'보조\'로 함께 표시','cond'),
-   X('귀속 변경','예외가 있으면 관리자가 사유를 남기고 바꿉니다. 변경 이력에 남음','fix','관리자만 · 사유 필수'),
+   X('귀속 변경','예외가 있으면 승인 요청을 올리고 예외 승인자가 승인합니다. 변경 이력에 남음','fix','승인 요청 · 사유 필수'),
    T('nearby_map','주변 현장 지도','담당이 배정되면 상세 창에 주변 진행 · 수주 현장을 지도로 보여 줍니다. 방문 동선 · 레퍼런스 소개에 사용','cond'),
    N('nearby_radius_km','주변 현장 반경','지도에 보여 줄 거리','cond','km',1,1,20)]],
   ['open','공개 · 권한','',[
    T('dashboard_public','영업 대시보드 공개','전체 · 개인 성과를 전 직원에게 공개','fix'),
-   X('할 일 지정 · 실적 인정 권한','컨트롤타워 지정, 타사 이관 실적 인정','fix','관리자 · 팀장')]],
+   X('할 일 지정 권한','컨트롤타워 지정','fix','관리자 · 팀장'),
+   C('approvers','예외 승인자','승인 요청 · 타사 이관 실적 인정은 이 사람들에게 갑니다 — 한 사람만 승인해도 됩니다. 본인이 올린 요청은 다른 승인자가 처리합니다. (계정 이름과 같아야 합니다)','cond')]],
   ['later','보류 · 추후','회의에서 잠정 · 추후로 정한 것',[
    T('content_followup','콘텐츠 후속관리','카드뉴스 · 영상 — 발송 대신 접촉 기록만','hold')]]];
  const ROWS=SECTIONS.flatMap(s=>s[3]),EDIT=ROWS.filter(r=>r.st==='cond'&&r.k),SPEC=Object.fromEntries(EDIT.map(r=>[r.k,r]));
@@ -127,6 +130,10 @@
  /* 회사 매출(영업실적과 다른 숫자): 직접 수주 = 계약금액 그대로, 협약시공사 수주 = 기술자문 계약금액 + POUR 계약금액, 타사 이관 = 0 */
  function revenue(type,amount,techAmount,pourAmount){return type==='own'?Number(amount)||0:type==='partner_tech'?(Number(techAmount)||0)+(Number(pourAmount)||0):0;}
  /* 사유 목록: bad_fit | lost | transfer */
+ /* 예외 승인자: 이름 목록 · 그 사람인지 */
+ const normName=v=>{let s=String(v==null?'':v).trim();try{if(typeof root.repN==='function')s=String(root.repN(s)||s).trim();}catch(e){}return s;};
+ function approvers(){const v=get('approvers');return Array.isArray(v)?v.map(x=>String(x).trim()).filter(Boolean):[];}
+ function isApprover(name){const n=normName(name);return !!n&&approvers().some(x=>normName(x)===n);}
  function reasons(kind){const v=get('reasons_'+kind);return Array.isArray(v)?v.slice():[];}
  /* 예전에 쓰던 실주 사유 → 지금 원인(뜻이 같은 것만). 나머지는 적힌 그대로 둔다 */
  const LOST_ALIAS={'가격':'가격 · 가격 경쟁','가격 열세':'가격 · 가격 경쟁','예산':'가격 · 예산 부족','고객 예산 무산':'가격 · 예산 부족','관리소장 변경':'관계 · 관리소장 변경','경쟁사 관계':'관계 · 경쟁업체 기존 관계','타사 선정 (경쟁 패배)':'관계 · 경쟁업체 기존 관계','타 공법 선호':'공법 · 타 공법 선호','기술·공법 열세':'공법 · 타 공법 선호','공사 취소':'사업 · 공사 취소','공사 시기 연기·취소':'사업 · 연기'};
@@ -140,7 +147,15 @@
    actions:Object.freeze({'관리소장 변경':'기존 견적 · 공법 조건 재확인 (새 소장 첫 미팅)','입대의 회장 변경':'새 회장 의견 확인 · 선정 방식 재확인','예산 변경':'범위 축소안 · 단계 시공안 다시 제안','공사시기 변경':'공사 예정 연도 변경 · 장기 대기로 관리','공법 변경':'공법 비교자료 재발송 · 결정권자 미팅','경쟁업체 등장':'경쟁사 견적 · 조건 파악','입찰방식 변경':'입찰 참여 여부 결정 · 서류 준비','재견적 요청':'견적 요청 등록 (3일)'}),
    lost_map:Object.freeze({'관리소장 변경':'관계 · 관리소장 변경','입대의 회장 변경':'관계 · 입대의 · 회장 영향','예산 변경':'가격 · 예산 부족','공사시기 변경':'사업 · 연기','공법 변경':'공법 · 타 공법 선호','경쟁업체 등장':'관계 · 경쟁업체 기존 관계','재견적 요청':'가격 · 가격 경쟁'})}),
   stage_gates:Object.freeze({consulting:Object.freeze(['1차 현장미팅 일정 또는 완료']),sent:Object.freeze(['발송일','발송 자료','다음 확인일']),relationship:Object.freeze(['자료 발송일','고객 반응','다음 행동','다음 확인일']),competition:Object.freeze(['입찰/결정 일정','경쟁 상황']),construction:Object.freeze(['계약일','계약금액']),closed:Object.freeze(['수주 유형 · 낙찰금액 / 실주 원인'])}),
-  approval_types:Object.freeze(['타사 이관 실적','귀속 변경','중복 리드 정산','전략수주','특별 인센티브','결과 수정']),cohort_compare_after_months:3,owner_fields:Object.freeze(['current_owner','first_owner','performance_owner','owner_history']),
+  approval_types:Object.freeze(['타사 이관 실적','귀속 변경','중복 리드 정산','전략수주','특별 인센티브','결과 수정']),
+  /* 승인 요청 창(승인 요청 창.dc.html): 종류 순서 · 종류마다 필수칸 2개 · 증빙 필수 여부 · 승인되면 생기는 일 */
+  approval_request:Object.freeze({order:Object.freeze(['dup_lead','strategic_win','special_incentive','result_fix','owner_change','transfer']),types:Object.freeze({
+   dup_lead:Object.freeze({fields:Object.freeze(['함께 접촉','첫 연결일']),evidence:false,effect:'승인되면 실적 귀속 · 정산 비율이 정해진 대로 바뀝니다'}),
+   strategic_win:Object.freeze({fields:Object.freeze(['할인 · 조건','목적']),evidence:false,effect:'승인되면 이 조건으로 견적 · 계약 진행 가능, 승인선 예외로 기록'}),
+   special_incentive:Object.freeze({fields:Object.freeze(['대상자','금액 · 비율']),evidence:true,effect:'승인되면 인센티브 정산에 별도 항목으로 반영'}),
+   result_fix:Object.freeze({fields:Object.freeze(['현재 결과','바꿀 결과 · 금액']),evidence:true,effect:'승인되면 결과 · 낙찰금액이 바뀌고 메이드율 · 수주실적에 반영'}),
+   owner_change:Object.freeze({fields:Object.freeze(['현재 귀속','바꿀 귀속']),evidence:false,effect:'승인되면 실적 귀속이 바뀌고, 이전 귀속은 이력에 남음'}),
+   transfer:Object.freeze({fields:Object.freeze(['이관 업체','낙찰금액']),evidence:true,effect:'승인되면 타사 이관 수주로 실적 반영'})})}),cohort_compare_after_months:3,owner_fields:Object.freeze(['current_owner','first_owner','performance_owner','owner_history']),
   urgent_quote:Object.freeze({deadline_required:true,float_to_top:true}),promise_keeping:Object.freeze({window_days:30,warn_below:0.8})});
  const PHASE3=Object.freeze({sales_path:Object.freeze(['inflow_brand','first_sales_company','sales_owner','award_company','tech_advisory_company']),
   amounts:Object.freeze({estimated:'예상금액',award:'낙찰금액',own_contract:'자사계약금액',tech_advisory:'기술자문금액',incentive:'인센티브 실적금액'}),
@@ -192,5 +207,5 @@
  function warm(){const me=root.ME&&String(root.ME.id||root.ME.name||'');if(!me||warmed===me||!available())return;warmed=me;const before=JSON.stringify(all());load(true).then(()=>{if(JSON.stringify(all())!==before&&typeof root.paint==='function'){try{root.paint();}catch(e){}}});}
  if(typeof root.paint==='function'){const base=root.paint;root.paint=function(){try{sync();}catch(e){}const r=base.apply(this,arguments);try{warm();}catch(e){}return r;};}
  try{sync();}catch(e){}
- return {VERSION,RPC,DEFAULTS,SECTIONS,ROWS,SPEC,get,all,apply,clean,sync,load,save,available,meta:()=>meta,loaded:()=>loaded,pct,madeRate,dealResult,transferOf,winOf,performance,revenue,WON_TYPES,DEAL_FIELDS,reasons,lostReason,lostCategory,lostGroups,LOST_ALIAS,PHASE2,PHASE3,PHASE4,amounts,salesPath,healthScore,miss,carePhase};
+ return {VERSION,RPC,DEFAULTS,SECTIONS,ROWS,SPEC,get,all,apply,clean,sync,load,save,available,meta:()=>meta,loaded:()=>loaded,pct,madeRate,dealResult,transferOf,winOf,performance,revenue,WON_TYPES,DEAL_FIELDS,approvers,isApprover,reasons,lostReason,lostCategory,lostGroups,LOST_ALIAS,PHASE2,PHASE3,PHASE4,amounts,salesPath,healthScore,miss,carePhase};
 });
