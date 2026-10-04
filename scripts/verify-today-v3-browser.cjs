@@ -127,11 +127,59 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(()=>[__drw,__st]),[['old1'],[['old1','waiting']]],'보류 = 상세 + 대기 전환 창(사유 입력은 기존 창)');
   assert.equal((await page.evaluate(()=>__writes)).length,0,'화면을 그리는 것만으로는 아무것도 저장하지 않음');
   if(shot)await page.screenshot({path:shot+'-mgr-back.png',fullPage:true});
+  /* ── 실행 모드(시안 갱신 · 4차 1): 보기 모드와 같은 목록 · 같은 순서를 한 건씩, 저장은 상세와 같은 함수 ── */
+  await seed(ROLES[0][1]);await page.waitForTimeout(700);
+  await page.evaluate(()=>{window.__rec=[];window.__memo=[];window.__iq=[];DealDetailV3.record=async(d,o)=>{__rec.push([d.id,o.res,o.memo||'']);return {};};DealDetailV3.memo=async(d,note)=>{__memo.push([d.id,note]);};window.iqApply=(q,target)=>{__iq.push([q.site,target,document.getElementById('iq-res').value,document.getElementById('iq-next').value,document.getElementById('iq-due').value.length]);return true;};});
+  const v3=page.locator('#today-v2 .tv3'),viewKeys=await v3.locator('.tv3-card, .tv3-row').evaluateAll(l=>l.map(n=>n.dataset.key));
+  assert.match(await v3.locator('.tv3-go').innerText(),/^실행 모드로 처리 →\s*한 건씩 · 저장하면 다음 건$/);
+  await v3.locator('.tv3-go').click();await page.waitForTimeout(250);
+  const ex=page.locator('#today-v2 .tv3.tv3-ex');assert.equal(await ex.getAttribute('data-exec'),'on');
+  assert.match(await ex.locator('.tv3-exbar').innerText(),/^실행 모드\s*오늘 할 일을 급한 순서대로 한 건씩 · 다 끝나면 목록으로 돌아옵니다\s*← 목록으로$/);
+  assert.deepEqual(await ex.locator('.tv3-exlist button').evaluateAll(l=>l.map(n=>n.dataset.key)),viewKeys,'왼쪽 순서 = 보기 모드 목록 그대로');assert.deepEqual(await page.evaluate(()=>TodayV3.execQueue()),viewKeys);
+  assert.match(await ex.locator('.tv3-exlist .hd').innerText(),/^오늘 순서 · 위 묶음 그대로\s*0 \/ 7$/);
+  assert.match(await ex.locator('.tv3-excard').innerText(),/^1 \/ 7\s*석민이앤씨\s*경쟁·입찰\s*오늘 연락할 곳\s*김소장 관리소장 · 4\.2억\s*\[경기 고양\] 햇빛마을23단지\s*마감 전 준비 안 됨 · D-3$/);
+  assert.deepEqual(await ex.locator('.tv3-brief .ln>span:first-child').allInnerTexts(),['마지막 연락','고객 요구','미해결','담당 · 연락처','다음 일정'],'통화 전 5줄');
+  assert.match(await ex.locator('.tv3-brief .hd').innerText(),/^전화 걸기 전 5줄\s*전화$/);assert.match(await ex.locator('.tv3-brief .say').innerText(),/^첫마디\s*안녕하세요, 넷폼 이필선입니다\./);
+  assert.equal(await ex.locator('.tv3-brief .ln').nth(4).locator('.hot').innerText(),'D-3 입찰 마감','급한 줄은 빨강');if(shot)await page.screenshot({path:shot+'-exec.png'});
+  assert.deepEqual(await ex.locator('.tv3-exrec .chips button').allInnerTexts(),['연결됨','부재','검토중','자료요청','회신대기','실주']);
+  assert.match(await ex.locator('.tv3-exrec .nx').innerText(),/^다음 행동\s*통화 결과를 고르면 제안$/);assert.equal(await ex.locator('.tv3-exrec .save.on').count(),0);
+  assert.equal(await ex.evaluate(n=>/(^|\s)AI(\s|$)/.test(n.innerText)),false,'기록에서 읽은 5줄 · 규칙 제안에는 AI 표식 없음');
+  assert.match(await ex.locator('.tv3-exside section').first().innerText(),/^이 단계에서 확인할 것\s*경쟁·입찰\s*✓?\s*입찰 · 결정 일정\s*경쟁 상황\s*경쟁사\s*입찰 조건\s*✓?\s*다음 행동 · 날짜$/);assert.equal(await ex.locator('.tv3-exside .ck.ok').count(),2,'값이 있는 것만 체크(입찰 마감 · 다음 행동)');
+  assert.match(await ex.locator('.tv3-exside section').nth(1).innerText(),/^이 건은 여기서도 같이 바뀝니다/);
+  /* 결과 칩 → 다음 행동 → [저장하고 다음 건 →]: 상세와 같은 저장 함수, 다음 미처리 건으로 */
+  await ex.locator('.tv3-exrec .save').click();await page.waitForTimeout(150);assert.deepEqual(await page.evaluate(()=>__rec),[],'결과를 고르기 전에는 저장하지 않음');
+  await ex.locator('.tv3-exrec .chips button',{hasText:'회신대기'}).click();await page.waitForTimeout(150);
+  assert.match(await ex.locator('.tv3-exrec .nx').innerText(),/^다음 행동\s*회신 확인 · 3일 후$/);
+  await ex.locator('.tv3-exrec .memo').fill('입찰 서류 메일로 보냄');await ex.locator('.tv3-exrec .save').click();await page.waitForTimeout(400);
+  assert.deepEqual(await page.evaluate(()=>__rec),[['bid1','회신대기','입찰 서류 메일로 보냄']],'영업건 = 상세의 응대 기록 저장과 같은 함수');
+  assert.match(await ex.locator('.tv3-exlist .hd').innerText(),/1 \/ 7$/);assert.equal(await ex.locator('.tv3-exlist button').first().evaluate(n=>n.classList.contains('dn')&&n.querySelector('i').textContent),'✓');
+  assert.match(await ex.locator('.tv3-excard').innerText(),/^2 \/ 7[\s\S]*서울체육고등학교/,'저장하면 다음 건');assert.equal(await ex.locator('.tv3-exrec .memo').inputValue(),'');
+  /* 왼쪽에서 골라 가기 · 문의는 목록의 줄 안 저장과 같은 함수 */
+  await ex.locator('.tv3-exlist button',{hasText:'인천SK스카이뷰'}).click();await page.waitForTimeout(200);assert.match(await ex.locator('.tv3-excard').innerText(),/^6 \/ 7[\s\S]*견적문의[\s\S]*인천SK스카이뷰/);
+  await ex.locator('.tv3-exrec .chips button',{hasText:'부재'}).click();await ex.locator('.tv3-exrec .save').click();await page.waitForTimeout(400);
+  assert.deepEqual(await page.evaluate(()=>__iq),[['인천SK스카이뷰','step:1','[전화 · 부재]','다시 전화',10]],'문의 = iqApply(결과 + 다음 행동 · 날짜)');
+  /* 나머지를 끝내면 완료 화면 → 목록으로 */
+  for(let n=0;n<5;n++){await ex.locator('.tv3-exrec .chips button',{hasText:'연결됨'}).click();await ex.locator('.tv3-exrec .save').click();await page.waitForTimeout(300);}
+  assert.equal(await ex.getAttribute('data-exec'),'done');assert.match(await ex.locator('.tv3-exdone').innerText(),/^오늘 할 일 끝 · 7 \/ 7\s*같은 기록이 상세 · 대시보드 · 브리핑에 그대로 반영됩니다\s*← 목록으로$/);
+  assert.equal((await page.evaluate(()=>__rec)).length,6,'영업건 6건 저장');
+  await ex.locator('.tv3-exdone button').click();await page.waitForTimeout(400);assert.equal(await page.locator('#today-v2 .tv3.tv3-ex').count(),0,'목록으로 돌아옴');assert.equal(await page.locator('#today-v2 .tv3 .tv3-hero').count(),1);
+  /* 영업관리: 남의 건은 결과 칩이 처리 칩으로, 영업건이면 내부 메모 한 줄(담당의 다음 행동은 건드리지 않음) */
+  await seed(ROLES[1][1]);await page.waitForTimeout(700);
+  await page.evaluate(()=>{window.__rec=[];window.__memo=[];DealDetailV3.record=async(d,o)=>{__rec.push([d.id,o.res]);return {};};DealDetailV3.memo=async(d,note)=>{__memo.push([d.id,note]);};});
+  await page.locator('#today-v2 .tv3 .tv3-go').click();await page.waitForTimeout(250);
+  const mx=page.locator('#today-v2 .tv3.tv3-ex');assert.match(await mx.locator('.tv3-brief .hd').innerText(),/^처리 전 5줄\s*배정$/);assert.match(await mx.locator('.tv3-brief .say').innerText(),/^보낼 말/);
+  assert.deepEqual(await mx.locator('.tv3-exrec .chips button').allInnerTexts(),['처리함','담당에게 보냄','담당 확인함','보류','해당 없음']);
+  await mx.locator('.tv3-brief .hd button').click();assert.equal((await page.evaluate(()=>__assign)).length,1,'[배정] = 문의 배정 창');
+  await mx.locator('.tv3-exlist button',{hasText:'상계주공7단지'}).click();await page.waitForTimeout(200);
+  await mx.locator('.tv3-exrec .chips button',{hasText:'담당에게 보냄'}).click();await page.waitForTimeout(100);assert.match(await mx.locator('.tv3-exrec .nx').innerText(),/담당 처리 확인 · 내일$/);
+  await mx.locator('.tv3-exrec .save').click();await page.waitForTimeout(400);
+  assert.deepEqual(await page.evaluate(()=>[__rec,__memo]),[[],[['today1','[영업관리 · 담당에게 보냄] 다음 연락일 도래(오늘)']]],'남의 건 = 내부 메모만');
+  await mx.locator('.tv3-exbar button').click();await page.waitForTimeout(400);assert.equal(await page.locator('#today-v2 .tv3.tv3-ex').count(),0);
   /* 좁은 화면 · 끄기 */
   await page.setViewportSize({width:1100,height:900});await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true,'옆으로 넘치지 않음');await page.setViewportSize({width:1600,height:1000});
   await page.evaluate(()=>{G.todayV3Off=true;paint();});await page.waitForTimeout(500);
   assert.equal(await page.locator('#today-v2 .tv3').count(),0);assert.equal(await page.locator('#today-v2 .tt').count(),1,'끄면 관제탑');
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',five_roles:true,hero_equals_groups_equals_rows:true,strips_same_source:true,first_group_cards4:true,red_only_first:true,backlog_split_over_90:true,role_groups_readme:true,side_panels:true,existing_open_paths:true,no_write_on_render:true,legacy_switch:true}));
+  console.log(JSON.stringify({status:'PASS',five_roles:true,hero_equals_groups_equals_rows:true,strips_same_source:true,first_group_cards4:true,red_only_first:true,backlog_split_over_90:true,role_groups_readme:true,side_panels:true,existing_open_paths:true,no_write_on_render:true,exec_same_list_same_order:true,exec_saves_existing_paths:true,exec_manage_chips:true,legacy_switch:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

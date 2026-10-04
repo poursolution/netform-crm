@@ -69,6 +69,82 @@
   const inGroup=new Set();groups.forEach(g=>{g.items=g.items.filter(i=>{if(inGroup.has(i.key))return false;inGroup.add(i.key);return true;});});
   return {role,team,me,groups,back:back.filter(b=>!inGroup.has(b.key)),teamBack,mine,teamAll};
  }
+
+ /* ── 실행 모드(2026-10-04 시안 갱신 · 운영 기준 4차 1 '영업 실행 큐') ──
+    보기 모드와 같은 목록 · 같은 순서를 한 건씩. 저장은 상세와 같은 함수(영업건 = DealDetailV3.record, 문의 = iqApply) → 같은 응대 이력 1줄 + 같은 다음 행동.
+    관리자 · 대표가 남의 건을 볼 때는 결과 칩이 '처리함 · 담당에게 보냄 · 담당 확인함 · 보류 · 해당 없음'으로 바뀌고, 영업건이면 내부 메모 한 줄로 남는다(담당의 다음 행동은 건드리지 않음).
+    5줄 브리핑 · 확인할 것은 기록에서 그대로 읽은 것이라 AI 표식을 붙이지 않는다. '선배 팁'은 실주 복기 자료가 생기면 붙인다(지금은 비움) */
+ let EXQ=[];const EPROG={};
+ const ORES=[['연결됨','연결됨'],['부재','부재'],['검토중','검토중'],['자료요청','자료요청'],['회신대기','회신대기'],['실주','실주']],MRES=['처리함','담당에게 보냄','담당 확인함','보류','해당 없음'];
+ const MNEXT={'처리함':'완료 · 다음 건','담당에게 보냄':'담당 처리 확인 · 내일','담당 확인함':'완료 기준 충족 확인 · 2일 후','보류':'재확인 · 7일 후','해당 없음':'목록에서 제외 (사유 기록)'};
+ const ROLE_L={mgr:'영업관리',lead:'팀장',vp:'상무',ceo:'대표',rep:'영업사원'};
+ const LINKED=['오늘 업무 카드 · 목록 (보기 모드)','파이프라인 / 견적문의 상세 응대 이력','컨트롤타워 담당자 × 문제 표','영업 대시보드 숫자 · 주간 브리핑','모바일 오늘'];
+ const NXT=()=>(root.DealDetailV3&&root.DealDetailV3.NXT)||{'연결됨':['다시 연락',3],'부재':['다시 전화',1],'검토중':['결과 확인',7],'자료요청':['자료 보내기',1],'회신대기':['회신 확인',3]};
+ const dayL=n=>n===0?'오늘':n===1?'내일':n+'일 후';
+ const hot=v=>/없음|오늘|D-|지남|미입력|미발송|미공유|안 함|안 됨/.test(v||'');
+ const startExec=V=>{EXQ=V.groups.flatMap((g,gi)=>g.items.map(i=>({i,g:g.t,first:gi===0})));const S=st();S.exec=true;S.ed={};S.er='';S.em='';S.eerr='';S.ek=EXQ.length?EXQ[0].i.key:'';};
+ /* 이 단계에서 확인할 것(최대 5개): 그 건의 기록에 값이 있는지 그대로 본다 */
+ function playOf(i){
+  const x=i.x,d=x.item,sc=k=>{const c=d&&d.stage_contexts&&d.stage_contexts[k];return c&&c.fields||{};},has=v=>v!=null&&String(v).trim()!==''&&!(Array.isArray(v)&&!v.length),nextOk=!!(x.next&&x.due),tel=!!(i.i&&i.i.digits);
+  if(x.type==='inq'){let N=[];try{N=root.InquiryListV3&&root.InquiryListV3.need9?root.InquiryListV3.need9(d):[];}catch(e){}const ok=l=>{const r=N.find(n=>n.l===l);return r?!!r.ok:false;};return [['연락자 · 연락처',tel&&!!i.i.name],['현재 문제',ok('현재 문제')],['공사 범위',ok('공사 범위')],['공사 시기',ok('공사 시기')],['다음 행동 · 날짜',ok('다음 행동 · 날짜')||nextOk]];}
+  if(i.st==='cons')return [['견적 요청 내용',has(sc('consulting').quote_request)],['견적 예정일',has(sc('consulting').quote_due)],['공종 · 범위',!!(i.i&&i.i.want)],['연락처',tel],['다음 행동 · 날짜',nextOk]];
+  if(i.st==='sent')return [['발송일',has(sc('sent').sent_date)],['수신자',has(sc('sent').recipient)],['고객 반응',has(sc('sent').reaction)],['다음 확인일',has(sc('sent').followup_date)||nextOk],['연락처',tel]];
+  if(i.st==='rel')return [['다음 연락일',nextOk],['관계관리 사유',has(sc('rapport').relationship_reason)||has(sc('silent').relationship_reason)||has(sc('waiting').reason)],['고객 반응',has(sc('rapport').reaction)],['예상 금액',(i.amt||0)>0],['연락처',tel]];
+  if(i.st==='bid')return [['입찰 · 결정 일정',!!i.deadline],['경쟁 상황',has(sc('compete').competition_type)],['경쟁사',has(sc('compete').competitor)],['입찰 조건',has(sc('bidding').bid_terms)],['다음 행동 · 날짜',nextOk]];
+  if(i.st==='con')return [['계약일',has(sc('contract').contract_date)||has(d&&d.contract_date)],['계약금액',has(sc('contract').contract_amount)||has(d&&d.contract_amount)],['착공일',has(sc('construction').start_date)],['특이조건',has(sc('contract').special_terms)],['다음 행동 · 날짜',nextOk]];
+  return [['준공일',has(sc('completion').completion_date)||has(d&&d.completion_date)],['사후 연락 일정',nextOk],['대금 상태',has(sc('completion').payment)],['하자보증',has(sc('completion').warranty)],['고객 인도',has(sc('completion').customer_handover)]];
+ }
+ function execHtml(V){
+  const S=st(),W=TT(),role=V.role,me=V.me,total=EXQ.length,done=EXQ.filter(x=>S.ed[x.i.key]).length,allDone=total>0&&done>=total;
+  let idx=EXQ.findIndex(x=>x.i.key===S.ek);if(idx<0){idx=Math.max(0,EXQ.findIndex(x=>!S.ed[x.i.key]));S.ek=EXQ[idx]?EXQ[idx].i.key:'';}
+  const bar='<div class="tv3-exbar"><b>실행 모드</b><span>오늘 할 일을 급한 순서대로 한 건씩 · 다 끝나면 목록으로 돌아옵니다</span><u></u><button type="button" data-t3="exit">← 목록으로</button></div>';
+  const side='<aside class="tv3-exlist"><div class="hd"><b>오늘 순서 · 위 묶음 그대로</b><b>'+done+' / '+total+'</b></div>'+EXQ.map((x,n)=>{const on=n===idx&&!allDone,dn=!!S.ed[x.i.key];return '<button type="button" class="'+(on?'on':'')+(dn?' dn':'')+'" data-t3="epick" data-key="'+attr(x.i.key)+'"><i>'+(dn?'✓':n+1)+'</i><span><b>'+h(x.i.i.site)+'</b><small'+(x.first?' class="r"':'')+'>'+h(x.i.missTxt)+'</small></span></button>';}).join('')+'</aside>';
+  if(allDone)return '<div class="tv3 tv3-ex" data-role="'+role+'" data-exec="done">'+bar+'<div class="tv3-exbody">'+side+'<section class="tv3-exmain"><div class="tv3-exdone"><b>오늘 할 일 끝 · '+total+' / '+total+'</b><span>같은 기록이 상세 · 대시보드 · 브리핑에 그대로 반영됩니다</span><button type="button" data-t3="exit">← 목록으로</button></div></section></div></div>';
+  const cur=EXQ[idx],i=cur.i,own=i.x.owner===me,manage=V.team&&!own,k=attr(i.key),contact=[[i.i.name,i.i.role].filter(Boolean).join(' '),i.i.phone].filter(Boolean).join(' · ')||'연락처 확인 필요';
+  const nextV=i.rk==='deadline'&&i.deadline?'D-'+i.deadline.n+' '+i.deadline.what:i.x.due?String(i.x.due).slice(5,10).replace('-','.').replace(/^0/,'')+' · '+(i.x.next||'다음 행동'):'없음 · 오늘 잡아야 함';
+  const brief=[['마지막 연락',i.support?'[지원 요청] '+i.support.note:i.i.recent||'최근 연락 기록 없음'],['고객 요구',i.i.want||'기록 없음'],['미해결',i.missTxt+(i.short&&!/^(0일|오늘)$/.test(i.short)&&i.rk!=='contract'?' · '+i.short:'')],['담당 · 연락처',(i.x.owner||'미배정')+' · '+contact],['다음 일정',nextV]];
+  const res=manage?MRES.map(l=>[l,l]):ORES,nx=!manage&&S.er&&S.er!=='실주'?NXT()[S.er]:null,nextTxt=!S.er?(manage?'담당 처리 확인 · 내일':'통화 결과를 고르면 제안'):manage?MNEXT[S.er]:S.er==='실주'?'실주 처리 · 원인 4분류(관계 / 공법 / 가격 / 사업)':nx?nx[0]+' · '+dayL(nx[1]):'';
+  const play=playOf(i);
+  const main='<section class="tv3-exmain">'
+   +'<div class="tv3-excard" style="border-left-color:'+i.bc+'"><div class="r"><em class="no">'+(idx+1)+' / '+total+'</em><span style="color:'+i.bc+'">'+h(i.brand||'브랜드 미입력')+'</span><em class="st">'+h(SNAME[i.st]||i.sName)+'</em><small>'+h(cur.g)+'</small><u></u><small>'+h((manage?(i.x.owner||'미배정'):([i.i.name,i.i.role].filter(Boolean).join(' ')||'고객 미등록'))+' · '+(i.amt?money(i.amt):'금액 미정'))+'</small></div><b class="site">'+h(i.i.site)+'</b><span class="why">'+h(i.missTxt+(i.short&&!/^(0일|오늘)$/.test(i.short)&&i.rk!=='contract'&&i.rk!=='decide'?' · '+i.short:''))+'</span></div>'
+   +'<div class="tv3-brief"><div class="hd"><b>'+(manage?'처리 전 5줄':'전화 걸기 전 5줄')+'</b><u></u>'+(manage?'<button type="button" data-t3="act" data-key="'+k+'" data-act="'+attr(i.act)+'"'+(i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>'+h(i.act)+'</button>':'<button type="button" data-t3="edial" data-tel="'+attr(i.i.digits||'')+'"'+(i.i.digits?'':' disabled')+'>'+(i.i.digits?'전화':'전화번호 없음')+'</button>')+'</div>'
+   +brief.map(([l,v])=>{const hh=hot(v)&&l!=='담당 · 연락처';return '<div class="ln"><span>'+l+'</span><span'+(hh?' class="hot"':'')+'>'+h(v)+'</span></div>';}).join('')
+   +'<div class="say"><b>'+(manage?'보낼 말':'첫마디')+'</b>'+h(W._line(i,role,me))+'</div></div>'
+   +'<div class="tv3-exrec"><div class="tabs"><span class="on">응대 기록</span><button type="button" data-t3="enext" data-key="'+k+'">다음 행동</button><u></u><button type="button" class="more" data-t3="open" data-key="'+k+'">+ 작업</button></div>'
+   +'<div class="chips">'+res.map(([l,v])=>'<button type="button" data-t3="eres" data-v="'+attr(v)+'" aria-pressed="'+(S.er===v)+'"'+(S.ebusy?' disabled':'')+'>'+l+'</button>').join('')+'</div>'
+   +'<input class="memo" data-t3in="em" value="'+attr(S.em||'')+'" placeholder="무슨 일이 있었는지 한 줄 (선택)" aria-label="한 줄 메모"'+(S.ebusy?' disabled':'')+'>'
+   +'<div class="nx"><b>다음 행동</b> '+h(nextTxt)+'</div>'+(S.eerr?'<p class="err" role="alert">'+h(S.eerr)+'</p>':'')
+   +'<div class="ft"><button type="button" class="save'+(S.er?' on':'')+'" data-t3="esave"'+(S.ebusy?' disabled':'')+'>'+(S.ebusy?'저장 확인 중…':'저장하고 다음 건 →')+'</button></div></div></section>';
+  const right='<aside class="tv3-exside"><section><b>이 단계에서 확인할 것 <small>'+h(SNAME[i.st]||i.sName)+'</small></b>'+play.map(([l,ok])=>'<div class="ck'+(ok?' ok':'')+'"><i>'+(ok?'✓':'')+'</i><span>'+h(l)+'</span></div>').join('')+'</section><section><b>이 건은 여기서도 같이 바뀝니다</b>'+LINKED.map(l=>'<span class="lk">· '+l+'</span>').join('')+'</section></aside>';
+  return '<div class="tv3 tv3-ex" data-role="'+role+'" data-exec="on" data-total="'+total+'">'+bar+'<div class="tv3-exbody">'+side+main+right+'</div></div>';
+ }
+ /* 문의 저장 = 목록의 줄 안 결과 기록과 같은 함수(iqApply) */
+ function saveInquiry(q,res,memo){
+  const nx=NXT()[res];if(!nx)throw Error('결과를 골라 주세요.');
+  const d=new Date();d.setDate(d.getDate()+nx[1]);const due=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const idx=root.inqCtlFirstResponseAt(q)?root.flowIndex(q,'inq'):1;if(!Number.isInteger(idx)||idx<0||idx>5)throw Error('현재 단계는 상세 창에서 처리해 주세요.');
+  const tmp=(tag,id,value)=>{document.getElementById(id)?.remove();const el=document.createElement(tag);el.id=id;el.hidden=true;el.value=value;document.body.append(el);return el;};
+  const made=[tmp('input','iq-did','고객 응대 기록'),tmp('textarea','iq-res',('[전화 · '+res+'] '+String(memo||'').trim()).trim()),tmp('input','iq-next',nx[0]),tmp('input','iq-due',due)];
+  let ok=false;try{ok=root.iqApply(q,'step:'+idx)===true;}finally{made.forEach(el=>el.remove());}
+  if(!ok)throw Error((document.getElementById('iq-msg')||{}).textContent||'저장하지 못했습니다.');
+ }
+ async function execSave(){
+  const S=st(),idx=EXQ.findIndex(x=>x.i.key===S.ek);if(idx<0||!S.er||S.ebusy)return;
+  const cur=EXQ[idx],i=cur.i,me=root.repN(root.ME&&root.ME.name),role=root.G._towerRole||'rep',manage=role!=='rep'&&i.x.owner!==me,D=root.DealDetailV3,rerender=()=>root.TodayV2.render();
+  S.ebusy=true;S.eerr='';rerender();
+  try{
+   const P=EPROG[i.key]||(EPROG[i.key]={});
+   if(manage){if(i.x.type==='deal'&&D&&D.memo)await D.memo(i.x.item,'['+ROLE_L[role]+' · '+S.er+'] '+i.missTxt+(String(S.em||'').trim()?' — '+String(S.em).trim():''),P);}
+   else if(S.er==='실주'){if(i.x.type==='deal'){root.G._detailPopup=true;root.drwDeal(JSON.stringify(i.x.item));setTimeout(()=>{try{root.StageTransitionUI.open(i.x.item,false,'lost');}catch(e){}},350);}else openKey(i.key);}
+   else if(i.x.type==='deal'){if(!D||!D.record)throw Error('상세 저장 기능을 불러오지 못했습니다.');await D.record(i.x.item,{ch:'전화',res:S.er,memo:S.em,P});}
+   else if(i.x.type==='inq')saveInquiry(i.x.item,S.er,S.em);
+   else{openKey(i.key,'contact');}
+   S.ed[i.key]=true;delete EPROG[i.key];
+   let nx=idx;for(let n=1;n<=EXQ.length;n++){const j=(idx+n)%EXQ.length;if(!S.ed[EXQ[j].i.key]){nx=j;break;}}
+   S.ek=EXQ[nx].i.key;S.er='';S.em='';
+  }catch(e){S.eerr='저장하지 못했습니다: '+String(e.message||e);}
+  S.ebusy=false;rerender();
+ }
  /* ── 오른쪽 '회사 이번 주'(대표): 이번 달 수주실적 · 메이드율 · 계약 임박 — 대시보드 · 주간 브리핑과 같은 함수 ── */
  function companyWeek(){
   try{
@@ -86,10 +162,11 @@
  function html(X,rows,legacy){
   const S=st(),W=TT(),V=build(X,rows,legacy),role=V.role,team=V.team,me=V.me;
   const all=V.groups.flatMap(g=>g.items),total=all.length,gN=V.groups.filter(g=>g.items.length).length,backN=V.back.length;
+  if(S.exec){if(!EXQ.length)S.exec=false;else{const d0=new Date();root.G.todayV3Sub=(d0.getMonth()+1)+'월 '+d0.getDate()+'일 ('+'일월화수목금토'[d0.getDay()]+') · '+SUB[role]+' · 실행 모드';return execHtml(V);}}
   const d=new Date();root.G.todayV3Sub=(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+'일월화수목금토'[d.getDay()]+') · '+SUB[role];
   /* 큰 숫자 + 막대 */
   const SEG=['#15171c','#6b7280','#9aa0ab'],segs=V.groups.map((g,i)=>[g.t,g.items.length,SEG[i]||'#9aa0ab',true]).concat([['밀린 건',backN,'#e3e6ec',false]]),sum=segs.reduce((s,x)=>s+x[1],0);
-  const hero='<div class="tv3-hero"><div class="n"><span>'+HERO[role]+'</span><b>'+total+'건 <small>· '+gN+'묶음</small></b></div><div class="bar"><div class="track">'+segs.map(s=>'<span style="width:'+(sum?(s[1]/sum*100).toFixed(1):0)+'%;background:'+s[2]+'"></span>').join('')+'</div><div class="leg">'+segs.map(s=>'<span class="'+(s[3]?'on':'')+'">'+h(s[0])+' '+s[1]+'</span>').join('')+'<span class="mut">· 위 '+total+'건 = 앞 묶음 합계</span></div></div></div>';
+  const hero='<div class="tv3-hero"><div class="n"><span>'+HERO[role]+'</span><b>'+total+'건 <small>· '+gN+'묶음</small></b></div><div class="bar"><div class="track">'+segs.map(s=>'<span style="width:'+(sum?(s[1]/sum*100).toFixed(1):0)+'%;background:'+s[2]+'"></span>').join('')+'</div><div class="leg">'+segs.map(s=>'<span class="'+(s[3]?'on':'')+'">'+h(s[0])+' '+s[1]+'</span>').join('')+'<span class="mut">· 위 '+total+'건 = 앞 묶음 합계</span></div></div>'+(total?'<button type="button" class="tv3-go" data-t3="exec"><span>실행 모드로 처리 →</span><small>한 건씩 · 저장하면 다음 건</small></button>':'')+'</div>';
   /* 띠 2줄: 단계 · 담당자 — 목록에서 센다 */
   const showPeople=role==='mgr'||role==='lead',owners=[...new Set(all.map(i=>i.x.owner||'미배정'))].map(o=>[o,all.filter(i=>(i.x.owner||'미배정')===o).length]).sort((a,b)=>(a[0]==='미배정'?-1:0)-(b[0]==='미배정'?-1:0)||b[1]-a[1]);
   if(S.fStage&&!all.some(i=>i.st===S.fStage))S.fStage=null;if(S.fWho&&(!showPeople||!owners.some(o=>o[0]===S.fWho)))S.fWho=null;
@@ -153,6 +230,13 @@
  function onClick(e){
   const b=e.target.closest('#today-v2 .tv3 [data-t3]');if(!b)return;e.stopPropagation();
   const S=st(),a=b.dataset.t3,v=b.dataset.v,key=b.dataset.key,rerender=()=>root.TodayV2.render();
+  if(a==='exec'){startExec(current());return rerender();}
+  if(a==='exit'){S.exec=false;EXQ=[];return root.paint();}
+  if(a==='epick'){S.ek=key;S.er='';S.em='';S.eerr='';return rerender();}
+  if(a==='eres'){S.er=S.er===v?'':v;S.eerr='';return rerender();}
+  if(a==='esave')return execSave();
+  if(a==='edial')return dial(b.dataset.tel);
+  if(a==='enext')return openKey(key,'next');
   if(a==='fstage'){S.fStage=S.fStage===v?null:v;S.fWho=null;return rerender();}
   if(a==='fwho'){S.fWho=S.fWho===v?null:v;S.fStage=null;return rerender();}
   if(a==='clear'){S.fStage=null;S.fWho=null;return rerender();}
@@ -177,6 +261,7 @@
   if(a==='open'&&(!e.target.closest('button')||b.tagName==='BUTTON'))return openKey(key);
  }
  document.addEventListener('click',onClick,true);
+ document.addEventListener('input',e=>{const t=e.target;if(t&&t.matches&&t.matches('#today-v2 .tv3 [data-t3in="em"]'))st().em=t.value;},true);
  document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('#today-v2 .tv3 [data-t3="open"]')){e.preventDefault();openKey(e.target.dataset.key);}});
- root.TodayV3={enabled,html,build,isBack,STG};
+ root.TodayV3={enabled,html,build,isBack,STG,execQueue:()=>EXQ.map(x=>x.i.key)};
 })(window);
