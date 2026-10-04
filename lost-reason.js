@@ -15,12 +15,15 @@
  function decorate(){
   const form=document.getElementById('stage-transition-form'),sel=form&&form.querySelector('#sf-close_reason');
   if(!sel||sel.tagName!=='SELECT')return;const old=form.querySelector('.lr-pick');
-  if(!enabled()){old?.remove();sel.classList.remove('lr-hidden');return;}
+  if(!enabled()){old?.remove();form.querySelector('.lr-ai')?.remove();sel.classList.remove('lr-hidden');return;}
   const groups=root.CRMRules.lostGroups(),opts=[...sel.options].map(o=>o.value).filter(Boolean);
   /* 실주 원인 목록일 때만(배드핏 · 연락두절 사유는 그대로) */
   if(!groups.some(g=>g[0]!=='기타')||!groups.every(g=>g[1].every(s=>opts.includes(s.v)))||opts.length!==groups.reduce((n,g)=>n+g[1].length,0)){old?.remove();sel.classList.remove('lr-hidden');return;}
   if(old){const c=sel.value?root.CRMRules.lostCategory(sel.value):old.dataset.cat;draw(old,sel,c);return;}
   const box=document.createElement('div');box.className='lr-pick';sel.classList.add('lr-hidden');sel.after(box);
+  /* 변화 이벤트(2차 기능 1)가 있으면 그 원인을 미리 골라 둔다 — 사람이 바꿀 수 있다 */
+  let sug=null;try{const c=root.CUR_DETAIL;sug=root.ChangeEvent&&root.ChangeEvent.enabled()&&c&&c.kind==='deal'?root.ChangeEvent.lostSuggestion(c.item):null;}catch(e){}
+  if(sug&&opts.includes(sug.reason)){if(!sel.value){sel.value=sug.reason;sel.dispatchEvent(new Event('change',{bubbles:true}));}const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(sug.date),p=document.createElement('p');p.className='lr-ai';p.innerHTML='AI 제안: '+esc(m?Number(m[2])+'.'+Number(m[3]):'')+' \''+esc(sug.type)+'\' 이벤트가 있습니다 → <b>'+esc(sug.reason)+'</b>';box.after(p);}
   draw(box,sel,sel.value?root.CRMRules.lostCategory(sel.value):'');
   box.addEventListener('click',e=>{const b=e.target.closest('[data-lr]');if(!b)return;e.preventDefault();
    if(b.dataset.lr==='cat'){if(box.dataset.cat!==b.dataset.v){sel.value='';sel.dispatchEvent(new Event('change',{bubbles:true}));}return draw(box,sel,b.dataset.v);}

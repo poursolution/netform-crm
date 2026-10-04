@@ -15,7 +15,7 @@
  const DEFAULTS=Object.freeze({
   assign_minutes:30,first_contact_hours:2,unreachable_attempts:3,unreachable_interval_days:1,inactive_days:7,quote_followup_days:7,next_action_required:true,
   care_focus_months:1,care_general_months:3,long_wait_contact_days:60,transfer_result_check_days:14,
-  split_own_transfer:true,
+  split_own_transfer:true,stage_gates:true,
   reasons_bad_fit:Object.freeze(['수행 불가 공종','규모 부적합','시공 불가 지역','기타']),
   /* 실주 원인 4분류(2차 기능 3): '분류 · 세부 사유' — 관계 / 공법 / 가격 / 사업 */
   reasons_lost:Object.freeze(['관계 · 관리소장 변경','관계 · 입대의 · 회장 영향','관계 · 경쟁업체 기존 관계','공법 · 타 공법 선호','공법 · 특허 조건 불리','공법 · 설계 변경','가격 · 가격 경쟁','가격 · 예산 부족','가격 · 실행가 문제','사업 · 공사 취소','사업 · 연기','사업 · 예산 미확정']),
@@ -36,6 +36,7 @@
    N('inactive_days','활동 없음','진행 중 영업건에 기록이 이 기간 없으면 알림 · 놓침','fix','일'),
    N('quote_followup_days','견적 발송 후 후속','견적 발송 후 이 기간 안에 후속 확인이 없으면 지연','fix','일'),
    T('next_action_required','다음 행동 필수','진행 중 영업건은 다음 행동 + 날짜가 있어야 합니다. 없으면 놓침.','fix'),
+   T('stage_gates','단계 이동 필수조건','단계별 필수값이 비면 [옮기기]를 잠급니다 — → 컨설팅 설계: 1차 현장미팅 / → 자료 발송완료: 발송일 · 발송 자료 · 다음 확인일 / → 관계관리: 자료 발송일 · 고객 반응 · 다음 행동 · 다음 확인일 / → 경쟁 · 입찰: 입찰 · 결정 일정 · 경쟁 상황 / → 계약 · 시공: 계약일 · 계약금액 / → 수주 · 실주: 수주 유형 · 낙찰금액 / 실주 원인','cond'),
    X('고객관리 기간','견적 후 집중관리 → 일반관리 → 장기 대기','fix','집중 1개월 → 일반 3개월 → 장기 대기'),
    N('long_wait_contact_days','장기 대기 연락 주기','장기 대기 고객에게 후속 확인 할 일을 만드는 간격','cond','일',10,30,180),
    N('transfer_result_check_days','타사 이관 결과 확인','이관 후 이 기간이 지나면 담당자 오늘 업무에 결과 확인 생성','cond','일',1,3,60)]],
@@ -135,7 +136,9 @@
  const lostCategory=text=>lostSplit(text)[0];
  function lostGroups(){const m=new Map();reasons('lost').forEach(v=>{const p=lostSplit(v),g=m.get(p[0])||[];g.push({v,l:p[1]});m.set(p[0],g);});return [...m];}
  /* ── 2차 · 3차 기준값(rules.json phase2 · phase3) — 화면이 따로 정하지 않고 여기 값을 본다 ── */
- const PHASE2=Object.freeze({change_events:Object.freeze({types:Object.freeze(['관리소장 변경','입대의 회장 변경','예산 변경','공사시기 변경','공법 변경','경쟁업체 등장','입찰방식 변경','재견적 요청']),auto_next_action_days:3,suggest_as_lost_reason:true}),
+ const PHASE2=Object.freeze({change_events:Object.freeze({types:Object.freeze(['관리소장 변경','입대의 회장 변경','예산 변경','공사시기 변경','공법 변경','경쟁업체 등장','입찰방식 변경','재견적 요청']),auto_next_action_days:3,suggest_as_lost_reason:true,
+   actions:Object.freeze({'관리소장 변경':'기존 견적 · 공법 조건 재확인 (새 소장 첫 미팅)','입대의 회장 변경':'새 회장 의견 확인 · 선정 방식 재확인','예산 변경':'범위 축소안 · 단계 시공안 다시 제안','공사시기 변경':'공사 예정 연도 변경 · 장기 대기로 관리','공법 변경':'공법 비교자료 재발송 · 결정권자 미팅','경쟁업체 등장':'경쟁사 견적 · 조건 파악','입찰방식 변경':'입찰 참여 여부 결정 · 서류 준비','재견적 요청':'견적 요청 등록 (3일)'}),
+   lost_map:Object.freeze({'관리소장 변경':'관계 · 관리소장 변경','입대의 회장 변경':'관계 · 입대의 · 회장 영향','예산 변경':'가격 · 예산 부족','공사시기 변경':'사업 · 연기','공법 변경':'공법 · 타 공법 선호','경쟁업체 등장':'관계 · 경쟁업체 기존 관계','재견적 요청':'가격 · 가격 경쟁'})}),
   stage_gates:Object.freeze({consulting:Object.freeze(['1차 현장미팅 일정 또는 완료']),sent:Object.freeze(['발송일','발송 자료','다음 확인일']),relationship:Object.freeze(['자료 발송일','고객 반응','다음 행동','다음 확인일']),competition:Object.freeze(['입찰/결정 일정','경쟁 상황']),construction:Object.freeze(['계약일','계약금액']),closed:Object.freeze(['수주 유형 · 낙찰금액 / 실주 원인'])}),
   approval_types:Object.freeze(['타사 이관 실적','귀속 변경','중복 리드 정산','전략수주','특별 인센티브','결과 수정']),cohort_compare_after_months:3,owner_fields:Object.freeze(['current_owner','first_owner','performance_owner','owner_history']),
   urgent_quote:Object.freeze({deadline_required:true,float_to_top:true}),promise_keeping:Object.freeze({window_days:30,warn_below:0.8})});

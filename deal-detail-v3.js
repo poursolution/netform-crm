@@ -195,6 +195,12 @@
   const at=new Date().toISOString(),rec=await confirmOp(d,P||{},'memo','activity',{type:'메모',note,result:'',occurred_at:at});
   d.activities=Array.isArray(d.activities)?d.activities:[];if(!d.activities.some(x=>x.id===rec.ack.activity_id))d.activities.unshift({id:rec.ack.activity_id,type:'메모',note,at,occurred_at:at,actor:root.repN(root.ME?.name)});try{root.saveLocal?.();}catch(e){}
  }
+ /* 다음 행동만 등록(지금 할 일을 닫지 않는다) — 변화 이벤트의 '확인할 일'이 쓴다 */
+ async function nextOutside(d,o){
+  if(!root.Phase1?.queue||typeof root.queueDetailContactOperation!=='function')throw Error('로그인 상태에서만 저장할 수 있습니다.');
+  const next={type:o.type||'전화',text:o.text,due_at:o.due,assignee:root.repN(d.assignee)||root.repN(root.ME?.name)||''},row=await confirmOp(d,o.P||{},'nx','next_action',next);
+  setNext(d,row.ack.next_action_id,next,o.due);try{root.saveLocal?.();}catch(e){}
+ }
  async function saveNextOnly(d,n){
   const S=st(d);if(S.nbusy)return;
   if(!root.Phase1?.queue||typeof root.queueDetailContactOperation!=='function'){toast('로그인 상태에서만 저장할 수 있습니다','warn');return;}
@@ -611,7 +617,7 @@
   if(a==='owner'){if(closeIn('owner'))return;want('owner');root.DetailActions.open('owner');return;}
  }
  function cleanup(v){v.classList.remove('dv3');v.querySelectorAll('.dv3-left').forEach(n=>n.remove());v.querySelectorAll('.dv3-old').forEach(n=>n.classList.remove('dv3-old'));v.querySelectorAll('.dv3-chg,.dv3-hint,.dv3-title,.dv3-reco,.dv3-form,.dv3-nextonly,.dv3-move,.dv3-subrow,.dv3-kind').forEach(n=>n.remove());{const bc=v.querySelector('.ddv-chips .idv-brand');if(bc){bc.style.background='';bc.style.color='';delete bc.dataset.c;}}v.querySelectorAll('.dv3-slot').forEach(n=>{if(!n.children.length)n.remove();});}
- function apply(){const r=applyBase();try{root.DealTransfer&&root.DealTransfer.decorate();}catch(e){if(root.console)root.console.warn('[타사 이관]',e);}try{root.DealWin&&root.DealWin.decorate();}catch(e){if(root.console)root.console.warn('[수주 유형]',e);}return r;}
+ function apply(){const r=applyBase();try{root.DealTransfer&&root.DealTransfer.decorate();}catch(e){if(root.console)root.console.warn('[타사 이관]',e);}try{root.DealWin&&root.DealWin.decorate();}catch(e){if(root.console)root.console.warn('[수주 유형]',e);}try{root.ChangeEvent&&root.ChangeEvent.decorate();}catch(e){if(root.console)root.console.warn('[변화 이벤트]',e);}return r;}
  function applyBase(){
   const v=view(),cur=root.CUR_DETAIL;if(!v)return;
   if(!enabled()||!v.classList.contains('ddv')||!cur||cur.kind!=='deal'){if(v.classList.contains('dv3'))cleanup(v);return;}
@@ -649,5 +655,5 @@
   if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();const S=st(d);if(S.rec&&!S.rec.busy){S.rec=null;apply();}}
  },true);
  document.addEventListener('click',onClick);
- root.DealDetailV3={enabled,apply,related,siteFields,stageSchema,record:recordOutside,memo:memoOutside,NXT};/* record · memo · NXT 는 오늘 업무 실행 모드가 쓴다 */
+ root.DealDetailV3={enabled,apply,related,siteFields,stageSchema,record:recordOutside,memo:memoOutside,next:nextOutside,NXT};/* record · memo · NXT 는 오늘 업무 실행 모드가 쓴다 */
 })(window);
