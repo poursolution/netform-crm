@@ -78,7 +78,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(titles('ceo')[0],'대표님 결정 요청');assert.ok(titles('ceo').includes('큰 금액인데 멈춘 건'));assert.ok(titles('ceo').includes('본인 영업'));
   /* 영업관리: 배정 · 첫 연락 · 오늘 마감이 카드, 입찰 마감 · 지원 요청은 다루지 않음, 계약 정보 빠짐은 셋째 묶음 */
   const all=k=>S[k].groups.flatMap(g=>g.cards.concat(g.rows)).join('\n');
-  assert.match(S.mgr.groups[0].cards.join('\n'),/담당 배정 안 됨[^\n]*\| 견적문의 \| 길음뉴타운9단지 \| 담당 미배정[^\n]*\| 배정\/재배정\/담당 화면/);
+  assert.match(S.mgr.groups[0].cards.join('\n'),/담당 배정 안 됨[^\n]*\| 견적문의 \| 길음뉴타운9단지 \| 담당 미배정[^\n]*\| 배정\/재배정\/상세 보기/,'담당이 없는 건에는 [담당 화면] 대신 [상세 보기]');
   assert.doesNotMatch(all('mgr'),/마감 전 준비 안 됨|지원 요청/,'영업관리는 개입 범위만');
   assert.match(S.mgr.groups[2].rows.join('\n'),/고덕아이파크 \| 정정훈 · 2\.1억 · 계약정보 입력 안 함 \| -\s+\| 입력 요청/);assert.match(S.mgr.groups[2].rows.join('\n'),/이천신한아파트/);
   assert.match(S.mgr.backT,/^밀린 건 정리 3건90일 넘게 기록 없음 · 오늘 할 일과 따로 · 담당자에게 정리\(진행 \/ 보류 \/ 실주 \/ 배드핏\) 요청보기 ▼$/);
@@ -113,6 +113,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await v.locator('.tv3-card').first().locator('.fold').innerText(),/담당에게 보낼 말 · 놓치면\s*접기 ▴[\s\S]*놓치면 [\s\S]*완료 기준 /);
   /* 배정 = 문의 배정 창, 줄 누르기 = 상세, 독촉 = 결과 남기기 */
   await v.locator('.tv3-card',{hasText:'길음뉴타운9단지'}).locator('.btns .main').click();assert.deepEqual(await page.evaluate(()=>__assign.map(x=>[x[0],x[2]])),[['assign',true]],'배정 = 문의 배정 창 · 그 문의를 찾는다');assert.deepEqual(await page.evaluate(()=>__alerts),[],'선택 안내가 뜨지 않는다');
+  /* [담당 화면]: 눌렀을 때 아무 변화가 없으면 안 된다(2026-10-04 대표) — 담당이 없는 건 = [상세 보기](그 건의 상세), 담당이 있는 건 = 그 담당자로 좁히고 알려 준다 · 이미 그 화면이면 그렇다고 알려 준다 */
+  {const before=(await page.evaluate(()=>__open)).length;await v.locator('.tv3-card',{hasText:'길음뉴타운9단지'}).locator('.btns button').nth(2).click();await page.waitForTimeout(150);
+   assert.deepEqual(await page.evaluate(()=>__open.slice(-1)[0][0]),await page.evaluate(()=>'inq:'+inqKey(B.inquiries.find(q=>/길음뉴타운9단지/.test(q.site)))),'담당 없는 건의 [상세 보기] = 그 문의 상세');assert.equal((await page.evaluate(()=>__open)).length,before+1);await page.evaluate(()=>{__open.length=0;});
+   const far=v.locator('.tv3-card .btns [data-t3="owner"]').first();if(await far.count()){const who=await far.getAttribute('data-v');await page.evaluate(()=>{window.__toasts=[];window.toast=m=>__toasts.push(String(m));});
+    await far.click();await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>CommonFilterBar.owner()),who,'담당 화면 = 그 담당자로 좁힘');assert.match(await page.evaluate(()=>__toasts.join('|')),new RegExp(who+' 담당 화면으로 좁혔습니다'),'무엇이 바뀌었는지 알려 준다');
+    const again=page.locator('#today-v2 .tv3-card .btns [data-t3="owner"]').first();if(await again.count()){await again.click();await page.waitForTimeout(200);assert.match(await page.evaluate(()=>__toasts.slice(-1)[0]),/^지금 .+ 담당 화면을 보고 있습니다/,'이미 그 화면이면 그렇다고 알려 준다');}
+    await page.evaluate(()=>{CommonFilterBar.setOwner('전체');paint();});await page.waitForTimeout(300);}}
   await v.locator('.tv3-group[data-g="3"] .tv3-row').first().click();assert.equal((await page.evaluate(()=>__open)).length,1,'줄 = 상세 열기');
   await v.locator('.tv3-group[data-g="3"] .tv3-row').first().locator('button').click();assert.equal((await page.evaluate(()=>__open)).length,2,'버튼도 기존 경로');
   /* 밀린 건 정리: 펼치면 담당자별 건수 · 최장 일수 · [정리 요청], 목록 → 진행 / 보류 / 실주 / 배드핏 */
