@@ -10,7 +10,9 @@
  'use strict';
  const h=v=>root.esc(String(v==null?'':v)),attr=v=>root.escAttr(String(v==null?'':v));
  const enabled=()=>!root.G.dealSmsV2Off&&!!root.DealPanelsV2&&typeof root.relationshipGuard==='function';
- const panel=()=>{const p=document.getElementById('ddvPanel');return p&&p.classList.contains('dp-sms')?p:null;};
+ /* 그릴 자리: 영업건 상세 안이면 가운데 패널, 그 밖(확장관리 · 고객 자산 등에서 연 문자)이면 메시지 창의 상자 — 어디서 열어도 같은 화면 */
+ const modalBox=()=>{const m=document.getElementById('kakaoModal');return m&&m.classList.contains('on')&&root.REL_MSG?m.querySelector('.modalbox'):null;};
+ const panel=()=>{const p=document.getElementById('ddvPanel');return p&&p.classList.contains('dp-sms')?p:modalBox();};
  const old=id=>document.getElementById(id);
  const DAYS=[1,2,3,7];
  const bytes=s=>[...String(s||'')].reduce((n,ch)=>n+(ch.charCodeAt(0)>127?2:1),0);
@@ -90,6 +92,8 @@
   const om=root.openRelationshipMessage;if(typeof om!=='function'||om.__ds2)return;
   const w=function(){const r=om.apply(this,arguments);try{const p=panel();if(p){if(enabled()&&root.REL_MSG)render();else{p.classList.remove('ds2-on');p.querySelector(':scope>.ds2')?.remove();}}}catch(e){if(root.console)root.console.warn('[문자 보내기 v2]',e);const p=panel();if(p){p.classList.remove('ds2-on');p.querySelector(':scope>.ds2')?.remove();}}return r;};
   w.__ds2=true;root.openRelationshipMessage=w;
+  /* 창을 닫으면 상자를 원래대로(같은 창을 다른 용도로 쓸 때 예전 내용이 가려지지 않게) */
+  const ck=root.closeKakaoModal;if(typeof ck==='function'&&!ck.__ds2){const c=function(){const r=ck.apply(this,arguments);try{const b=document.querySelector('#kakaoModal .modalbox');if(b){b.classList.remove('ds2-on');b.querySelector(':scope>.ds2')?.remove();}}catch(e){}return r;};c.__ds2=true;root.closeKakaoModal=c;}
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
  root.DealSmsV2={enabled,render,bytes};
