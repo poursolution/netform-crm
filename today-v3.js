@@ -43,9 +43,10 @@
    const g3=live.filter(i=>!s1.has(i.key)&&i.rk==='contract'),s3=new Set(g3.map(i=>i.key));
    const g2=live.filter(i=>!s1.has(i.key)&&!s3.has(i.key)).sort((a,b)=>((a.days>=7&&a.days<=30)?0:1)-((b.days>=7&&b.days<=30)?0:1)||a.days-b.days);
    groups=[G('오늘 안 넘기면 놓침','배정 '+(root.CRMRules?root.CRMRules.get('assign_minutes'):30)+'분 · 첫 연락 '+(root.CRMRules?root.CRMRules.get('first_contact_hours'):2)+'시간 · 오늘 마감','모두 담당에게 알림',g1.sort(byUrgent)),G('이번 주 새로 멈춘 건','7~30일 사이 기록 없음 · 지금 잡으면 살아남','담당별 코멘트',g2),G('계약 정보 빠짐','계약 · 시공 단계인데 계약일 · 금액 없음 — 실적에 안 잡힘','입력 요청 보내기',g3.sort((a,b)=>(b.amt||0)-(a.amt||0)))];
-   /* 영업관리 표(today-assist · 2026-10-04 대표 시안): 담당 배정 안 된 견적문의를 따로 떼어 표로, 멈춘 건 · 계약 정보 빠짐도 같은 표로. 끄면(G.todayAssistOff) 위 묶음 3개 그대로 */
-   if(root.TodayAssist&&root.TodayAssist.enabled()){const ga=groups[0].items.filter(i=>i.rk==='assign'&&i.x.type==='inq'),sa=new Set(ga.map(i=>i.key));
-    groups=[Object.assign(G('담당 배정 안 된 견적문의','AI 추천 담당을 그대로 쓰면 [추천대로 배정] 한 번','',ga),{kind:'assign'}),Object.assign(G('오늘 안 넘기면 놓침','첫 연락 '+(root.CRMRules?root.CRMRules.get('first_contact_hours'):2)+'시간 · 오늘 마감','모두 담당에게 알림',groups[0].items.filter(i=>!sa.has(i.key))),{kind:'cards'}),Object.assign(groups[1],{kind:'stall'}),Object.assign(groups[2],{kind:'contract'})];}
+   /* 영업관리 표(today-assist · 2026-10-04 대표 시안): 기존 카드 묶음(① 오늘 안 넘기면 놓침)은 맨 위에 그대로(대표 "기존 카드 상단으로 올려") — 건수 · 카드 · 버튼을 바꾸지 않는다.
+       그 아래에 담당 배정 안 된 견적문의 표(위 카드 묶음에 든 건을 추천 담당과 함께 다시 보여 주는 표 — aux: 큰 숫자 · 띠 · 실행 순서에 두 번 세지 않는다), 멈춘 건 · 계약 정보 빠짐 표. 끄면(G.todayAssistOff) 위 묶음 3개 그대로 */
+    if(root.TodayAssist&&root.TodayAssist.enabled()){const ga=groups[0].items.filter(i=>i.rk==='assign'&&i.x.type==='inq');
+     groups=[Object.assign(groups[0],{kind:'cards'}),Object.assign(G('담당 배정 안 된 견적문의','AI 추천 담당을 그대로 쓰면 [추천대로 배정] 한 번','',ga),{kind:'assign',aux:true}),Object.assign(groups[1],{kind:'stall'}),Object.assign(groups[2],{kind:'contract'})];}
   }else if(role==='ceo'){
    const g1=teamAll.filter(i=>i.rk==='decide'||i.rk==='tfapprove'),s1=new Set(g1.map(i=>i.key));
    const g2=teamAll.filter(i=>!s1.has(i.key)&&(i.amt||0)>=W._big()&&(i.days>=STALL_BIG()||i.rk==='contract'||i.rk==='stallbig')),s2=new Set(g2.map(i=>i.key));
@@ -69,7 +70,7 @@
   const back=backSrc.map(i=>({key:i.key,owner:i.x.owner||'미배정',days:i.days,site:i.i.site,stage:i.sName,amt:i.amt||0,x:i.x}))
    .concat((legacy||[]).filter(x=>teamBack||root.repN(x.owner)===me||!team).map(x=>{let amt=0;try{amt=Number(root.oppAmt(x.item))||0;}catch(e){}return {key:x.key,owner:x.owner||'미배정',days:legacyDays(x),site:x.item.site||x.item.site_name||'현장명 미입력',stage:x.stage||'',amt,x};}))
    .filter(b=>{if(seen.has(b.key))return false;seen.add(b.key);return true;});
-  const inGroup=new Set();groups.forEach(g=>{g.items=g.items.filter(i=>{if(inGroup.has(i.key))return false;inGroup.add(i.key);return true;});});
+  const inGroup=new Set();groups.forEach(g=>{if(g.aux)return;/* 다시 보여 주는 표는 중복 정리에서 뺀다 */g.items=g.items.filter(i=>{if(inGroup.has(i.key))return false;inGroup.add(i.key);return true;});});
   return {role,team,me,groups,back:back.filter(b=>!inGroup.has(b.key)),teamBack,mine,teamAll};
  }
 
@@ -85,7 +86,7 @@
  const NXT=()=>(root.DealDetailV3&&root.DealDetailV3.NXT)||{'연결됨':['다시 연락',3],'부재':['다시 전화',1],'검토중':['결과 확인',7],'자료요청':['자료 보내기',1],'회신대기':['회신 확인',3]};
  const dayL=n=>n===0?'오늘':n===1?'내일':n+'일 후';
  const hot=v=>/없음|오늘|D-|지남|미입력|미발송|미공유|안 함|안 됨/.test(v||'');
- const startExec=V=>{EXQ=V.groups.flatMap((g,gi)=>g.items.map(i=>({i,g:g.t,first:gi===0})));const S=st();S.exec=true;S.ed={};S.er='';S.em='';S.eerr='';S.ek=EXQ.length?EXQ[0].i.key:'';};
+ const startExec=V=>{EXQ=V.groups.filter(g=>!g.aux).flatMap((g,gi)=>g.items.map(i=>({i,g:g.t,first:gi===0})));const S=st();S.exec=true;S.ed={};S.er='';S.em='';S.eerr='';S.ek=EXQ.length?EXQ[0].i.key:'';};
  /* 이 단계에서 확인할 것(최대 5개): 그 건의 기록에 값이 있는지 그대로 본다 */
  function playOf(i){
   const x=i.x,d=x.item,sc=k=>{const c=d&&d.stage_contexts&&d.stage_contexts[k];return c&&c.fields||{};},has=v=>v!=null&&String(v).trim()!==''&&!(Array.isArray(v)&&!v.length),nextOk=!!(x.next&&x.due),tel=!!(i.i&&i.i.digits);
@@ -168,11 +169,11 @@
  /* ── 그리기 ── */
  function html(X,rows,legacy){
   const S=st(),W=TT(),V=build(X,rows,legacy),role=V.role,team=V.team,me=V.me;
-  const all=V.groups.flatMap(g=>g.items),total=all.length,gN=V.groups.filter(g=>g.items.length).length,backN=V.back.length;
+  const all=V.groups.filter(g=>!g.aux).flatMap(g=>g.items),total=all.length,gN=V.groups.filter(g=>g.items.length).length,backN=V.back.length;
   if(S.exec){if(!EXQ.length)S.exec=false;else{const d0=new Date();root.G.todayV3Sub=(d0.getMonth()+1)+'월 '+d0.getDate()+'일 ('+'일월화수목금토'[d0.getDay()]+') · '+SUB[role]+' · 실행 모드';return execHtml(V);}}
   const d=new Date();root.G.todayV3Sub=(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+'일월화수목금토'[d.getDay()]+') · '+SUB[role];
   /* 큰 숫자 + 막대 */
-  const SEG=['#15171c','#6b7280','#9aa0ab'],segs=V.groups.map((g,i)=>[g.t,g.items.length,SEG[i]||'#9aa0ab',true]).concat([['밀린 건',backN,'#e3e6ec',false]]),sum=segs.reduce((s,x)=>s+x[1],0);
+  const SEG=['#15171c','#6b7280','#9aa0ab'],segs=V.groups.filter(g=>!g.aux).map((g,i)=>[g.t,g.items.length,SEG[i]||'#9aa0ab',true]).concat([['밀린 건',backN,'#e3e6ec',false]]),sum=segs.reduce((s,x)=>s+x[1],0);
   const hero='<div class="tv3-hero"><div class="n"><span>'+HERO[role]+'</span><b>'+total+'건 <small>· '+gN+'묶음</small></b></div><div class="bar"><div class="track">'+segs.map(s=>'<span style="width:'+(sum?(s[1]/sum*100).toFixed(1):0)+'%;background:'+s[2]+'"></span>').join('')+'</div><div class="leg">'+segs.map(s=>'<span class="'+(s[3]?'on':'')+'">'+h(s[0])+' '+s[1]+'</span>').join('')+'<span class="mut">· 위 '+total+'건 = 앞 묶음 합계</span></div></div>'+(total?'<button type="button" class="tv3-go" data-t3="exec"><span>실행 모드로 처리 →</span><small>한 건씩 · 저장하면 다음 건</small></button>':'')+'</div>';
   /* 띠 2줄: 단계 · 담당자 — 목록에서 센다 */
   const showPeople=role==='mgr'||role==='lead',owners=[...new Set(all.map(i=>i.x.owner||'미배정'))].map(o=>[o,all.filter(i=>(i.x.owner||'미배정')===o).length]).sort((a,b)=>(a[0]==='미배정'?-1:0)-(b[0]==='미배정'?-1:0)||b[1]-a[1]);
