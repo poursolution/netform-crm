@@ -27,7 +27,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.sb=null;G.siteStatus='전체';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
-   goPage('sites');
+   G.assetCOff=true;/* 고객 자산 v2 목록(2026-10-04)은 따로 검사 — 여기는 이전 목록 */goPage('sites');
   });
   await page.waitForTimeout(300);
   const v=page.locator('#asset-b');assert.equal(await v.count(),1,'B안 보드');assert.equal(await page.locator('#asset-v2').count(),0,'v2 묶음 표 없음');

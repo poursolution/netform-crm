@@ -28,7 +28,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    G.assetBOff=true;/* B안(2026-10-03)은 verify-asset-b 에서 */LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
    window.__open=null;drwDeal=s=>{window.__open=JSON.parse(s).id;};
-   goPage('sites');
+   G.assetCOff=true;/* 고객 자산 v2 목록(2026-10-04)은 따로 검사 — 여기는 이전 목록 */goPage('sites');
   });
   await page.waitForTimeout(300);
   const v=page.locator('#asset-v2');assert.equal(await v.count(),1,'새 목록');
