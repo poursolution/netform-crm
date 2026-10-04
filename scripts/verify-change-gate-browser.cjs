@@ -69,10 +69,16 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.locator('#stage-transition-form .sg-row').evaluateAll(l=>l.map(n=>[n.querySelector('b').textContent,n.classList.contains('ok')])),[['실주 원인',true]]);
   await page.locator('#stage-transition-form .lr-cats button',{hasText:'가격'}).click();await page.waitForTimeout(200);
   assert.deepEqual(await page.locator('#stage-transition-form .sg-row').evaluateAll(l=>l.map(n=>n.classList.contains('ok'))),[false],'분류만 고르면 아직 비어 있음');assert.equal(await page.locator('#stage-transition-form button[type="submit"]').getAttribute('aria-disabled'),'true');
-  /* 5. 기록에서만 확인하는 조건(1차 현장미팅): 비어 있으면 저장을 막고, 건너뛰기 사유로 대신할 수 있다 */
+  /* 5. 기록에서만 확인하는 조건(1차 현장미팅): 비어 있으면 저장을 막고, 그 줄을 눌러 직접 체크할 수 있다(체크한 사실은 단계 변경 메모에 남는다) · 건너뛰기 사유로도 대신한다 */
   const gate=await page.evaluate(()=>{StageTransitionUI.close();const d=CUR_DETAIL.item;d.code=d.stage_code='first_contact';StageTransitionUI.open(d,false,'consulting');return new Promise(r=>setTimeout(()=>r(StageGate.model()),500));});
   assert.deepEqual([gate.to,gate.list.map(x=>[x.l,x.ok]),gate.ok],['consulting',[['1차 현장미팅 일정 또는 완료',false]],false]);
-  await page.evaluate(()=>document.querySelector('#stage-transition-form button[type="submit"]').click());await page.waitForTimeout(150);assert.match(await page.locator('#sf-error').innerText(),/필수조건이 비어 있습니다: 1차 현장미팅 일정 또는 완료/);
+  await page.evaluate(()=>document.querySelector('#stage-transition-form button[type="submit"]').click());await page.waitForTimeout(150);assert.match(await page.locator('#sf-error').innerText(),/필수조건이 비어 있습니다: 1차 현장미팅 일정 또는 완료 — 확인했으면 그 줄을 눌러 체크해 주세요/);
+  const hrow=page.locator('#stage-transition-form .sg-row'),hstate=()=>hrow.evaluate(n=>[n.classList.contains('ok'),n.getAttribute('aria-pressed'),n.querySelector('i').textContent,n.querySelector('span').textContent]);
+  assert.deepEqual(await hstate(),[false,'false','','필수 · 비어 있음']);assert.match(await page.locator('#stage-transition-form .sg-msg').innerText(),/^빠진 항목: 1차 현장미팅 일정 또는 완료 — 확인했으면 그 줄을 눌러 체크해 주세요$/);
+  await hrow.click();await page.waitForTimeout(150);assert.deepEqual(await hstate(),[true,'true','✓','직접 확인 · 기록에 남김'],'줄을 누르면 체크된다(2026-10-04 대표 "저거 안 눌려")');
+  assert.equal(await page.evaluate(()=>StageGate.model().ok),true);assert.equal(await page.locator('#stage-transition-form button[type="submit"]').evaluate(n=>n.classList.contains('sg-locked')),false,'체크하면 잠금이 풀린다');
+  await hrow.click();await page.waitForTimeout(150);assert.deepEqual((await hstate()).slice(0,2),[false,'false'],'다시 누르면 풀린다');await hrow.click();await page.waitForTimeout(150);
+  assert.equal(await page.evaluate(()=>{const f=document.getElementById('stage-transition-form'),m=f.querySelector('#sf-memo');f.querySelector('button[type="submit"]').dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));return m.value;}),'[필수조건 직접 확인] 1차 현장미팅 일정 또는 완료','직접 체크한 사실은 단계 변경 메모에 남는다');
   /* 6. 설정 · 스위치로 끄기 */
   assert.equal(await page.evaluate(()=>{CRMRules.apply({stage_gates:false});StageGate.decorate();return [StageGate.enabled(),!!document.querySelector('#stage-transition-form .sg-box')];}).then(r=>r.join('|')),'false|false','운영 기준 설정에서 끄면 잠금 없음');
   await page.evaluate(()=>{CRMRules.apply({});StageTransitionUI.close();G.changeEventOff=true;DealDetailV3.apply();});await page.waitForTimeout(200);
