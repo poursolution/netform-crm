@@ -14,7 +14,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.Gongjong);
   await page.evaluate(()=>{
    const deal=(id,site,amount,extra={})=>({id,site,amt:amount,assignee:'담당자',brand:'POUR솔루션',created:'2026-09-01',updated:'2026-09-02',code:'consulting',stage_code:'consulting',grp:'영업·관리',version:1,...extra});
-   B={deals:[deal('d1','같은 현장',23e8,{site_id:'s1',work:'지하주차장 에폭시 견적 요청',created:'2026-09-20'}),deal('d2','같은 현장',10e8,{site_id:'s1',work:'과거 견적',workItems:['지하주차장>에폭시'],primaryWork:'지하주차장>에폭시'}),deal('d3','같은 현장',5e8,{site_id:'s2',work:'별도 지역 문의',activities:[{opportunity_id:'d2',note:'우레탄 방수'}]}),deal('d4','분류된 현장',3e8,{workItems:['옥상>우레탄'],primaryWork:'옥상>우레탄'}),deal('d5','미확인 현장',2e8,{work:'옥상 방수 상담'})],inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
+   B={deals:[deal('d1','같은 현장',23e8,{site_id:'s1',work:'지하주차장 에폭시 견적 요청',created:'2026-09-20'}),deal('d2','같은 현장',10e8,{site_id:'s1',work:'과거 견적',workItems:['지하주차장>에폭시'],primaryWork:'지하주차장>에폭시'}),deal('d3','같은 현장',5e8,{site_id:'s2',work:'별도 지역 문의',activities:[{opportunity_id:'d2',note:'우레탄 방수'},{opportunity_id:'d3',note:'<p>감리선정 확정</p><ol><li><p><strong>[일정 &amp; 조정]</strong></p><p>4월 초 임시회의</p></li></ol><p></p>'}]}),deal('d4','분류된 현장',3e8,{workItems:['옥상>우레탄'],primaryWork:'옥상>우레탄'}),deal('d5','미확인 현장',2e8,{work:'옥상 방수 상담'})],inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'검증관리자',role:'admin'};
    Object.assign(G,{year:'전체',quarter:0,rep:'전체',brand:'전체',workFilter:'전체',q:''});
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
@@ -50,9 +50,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const dialog=page.locator('#gongjongDialog');assert.equal(await dialog.locator('.gj-columns').count(),1);
   assert.equal(await dialog.locator('details,summary').count(),0);
   assert.doesNotMatch(await dialog.locator('main').innerText(),/우레탄 방수/);
+  /* 기록 속 태그(<p> · <li> · <strong> · &amp;)는 줄바꿈 · 글자로 정리해 보여 준다(2026-10-04 대표 "<P> 이런 거 보기 힘드니까 정리") — AI 에 넘기는 기록은 원문 그대로 */
+  {const t=await dialog.locator('main .gj-record p').allInnerTexts();assert.ok(t.includes('감리선정 확정\n· [일정 & 조정]\n4월 초 임시회의'),'기록 속 태그 정리: '+JSON.stringify(t));assert.doesNotMatch(await dialog.locator('main').innerText(),/<\/?(p|ol|li|strong)>|&amp;/);
+   assert.deepEqual(await page.evaluate(()=>[tidyNoteHtml('면적 3 < 5 > 2 그대로'),tidyNoteHtml('줄1\n\n줄2'),sayLegacyNote('<p>통화 — 진행됨</p>'),tidyNoteHtml('<p>확인</p><img src=x onerror=alert(1)><script>x</script>')]),['면적 3 < 5 > 2 그대로','줄1\n\n줄2','통화 완료 · 진행 중','확인\n<img src=x onerror=alert(1)><script>x</script>'],'태그가 없는 글은 그대로 · 상세 응대 이력도 같은 정리 · 서식이 아닌 태그는 숨기지 않고 글자 그대로');}
   await dialog.locator('[data-gj="ai"]').click();await page.waitForTimeout(100);
   assert.match(await dialog.locator('.gj-action').innerText(),/AI 추정 맞음/);
-  assert.deepEqual(await page.evaluate(()=>__ai.filter(x=>x.id==='d3').map(x=>[x.kind,x.id,x.input.records])),[['work_guess','d3',['별도 지역 문의']]]);
+  assert.deepEqual(await page.evaluate(()=>__ai.filter(x=>x.id==='d3').map(x=>[x.kind,x.id,x.input.records])),[['work_guess','d3',['별도 지역 문의','<p>감리선정 확정</p><ol><li><p><strong>[일정 &amp; 조정]</strong></p><p>4월 초 임시회의</p></li></ol><p></p>']]]);
   assert.equal(await page.evaluate(()=>__writes.length),1,'AI remains a suggestion');
   if(shot)await page.screenshot({path:shot+'-detail.png'});
   await dialog.locator('[data-gj="confirm-ai"]').click();await page.waitForTimeout(100);
