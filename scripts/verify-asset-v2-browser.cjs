@@ -70,7 +70,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await d.locator('.av-opp').click();await page.waitForTimeout(150);assert.equal(await page.evaluate(()=>window.__open),'d1','현장 줄 → 파이프라인 상세');
   /* 주소 수정 = 기존 창 */
   await page.evaluate(()=>AssetV2.open(siteMasterData()[0].key));await page.waitForTimeout(150);
-  await page.locator('#assetV2 [data-ad="address"]').click();await page.waitForTimeout(200);
+  /* 기본 정보 = 파이프라인 현장 정보와 같은 줄 틀(2026-10-04 대표): 라벨 84px · 빈 주소는 주황 점선 "미입력 · 입력하기"(같은 주소 창을 연다) */
+  assert.deepEqual(await page.locator('#assetV2 .xdv-facts>div').first().evaluate(n=>{const s=getComputedStyle(n),k=getComputedStyle(n.querySelector('dt')),v=getComputedStyle(n.querySelector('dd'));return [s.gridTemplateColumns.split(' ')[0],k.fontSize,k.color,v.fontSize];}),['84px','12.5px','rgb(107, 114, 128)','13.5px']);
+  {const e=page.locator('#assetV2 .xdv-facts .xdv-edit[data-ad="address"]');if(await e.count())assert.deepEqual(await e.evaluate(n=>[n.textContent,getComputedStyle(n).color,getComputedStyle(n).borderBottomStyle]),['미입력 · 입력하기','rgb(217, 119, 6)','dashed']);}
+  await page.locator('#assetV2 .xdv-link[data-ad="address"]').click();await page.waitForTimeout(200);
   assert.equal(await page.evaluate(()=>document.getElementById('siteDrawer').classList.contains('on')),true,'주소 입력·수정은 기존 창');
   await page.evaluate(()=>{document.getElementById('siteDrawer').classList.remove('on');document.body.style.overflow='';});
   /* 연결 검토는 데이터 정리 · 검토 화면으로 */

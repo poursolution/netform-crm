@@ -40,12 +40,19 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 왼쪽: 고객이 남긴 말 · 핵심 정보 4줄 · 채울 정보 n / 9 */
   assert.equal(await d.locator('.idv3-quote').innerText(),'"지하주차장 에폭시 일부 들뜸, 부분 보수 견적 받을 수 있는지 문의"');
   assert.deepEqual(await tx('.idv3-info .k'),['주소','공종','유입','연락처']);assert.match((await tx('.idv3-info'))[0],/주소 ?충남 천안시 서북구 노태산로 145 ?공종 ?에폭시 ?유입 ?전화 ?연락처 ?시설팀장 · 010-5436-0662/);
-  const missN=Number(await d.locator('.idv3-need .hd .n').innerText()),chips=await tx('.idv3-need .idv3-chip');assert.equal(chips.length,missN,'칩 수 = 채울 정보 수');assert.ok(chips.includes('경쟁사')&&chips.includes('결정권자'));
-  assert.match((await tx('.idv3-need .hd'))[0],new RegExp('^채울 정보 ?'+missN+' ?/ 9 · 누르면 바로 입력$'));assert.equal(missN,7);assert.match((await tx('.idv3-need small'))[0],new RegExp('^채운 정보 '+(9-missN)+'개 · 현재 문제 · 공사 범위$'));
-  await d.locator('.idv3-chip',{hasText:'경쟁사'}).click();await page.waitForTimeout(150);
+  /* 정보 칸 = 파이프라인 상세의 현장 정보와 같은 줄 틀(2026-10-04 대표 "견적문의 저 현장정보 적는 칸 다르고 파이프라인 다르고"): 제목 + '누르면 바로 수정' / 라벨 84px + 값 / 빈 칸 = 주황 점선 "미입력 · 입력하기" — 노란 상자 · 칩 없음 */
+  assert.deepEqual(await d.locator('.idv3-fs').first().locator('header').evaluate(n=>[n.querySelector('b').textContent,n.querySelector('small').textContent,getComputedStyle(n.querySelector('b')).fontSize,getComputedStyle(n.querySelector('small')).fontSize]),['문의 정보','누르면 바로 수정','13.5px','11.5px']);
+  assert.deepEqual(await d.locator('.idv3-info .idv3-row').first().evaluate(n=>{const s=getComputedStyle(n),k=getComputedStyle(n.querySelector('.k')),v=getComputedStyle(n.querySelector('b'));return [s.gridTemplateColumns.split(' ')[0],k.fontSize,k.color,v.fontSize];}),['84px','12.5px','rgb(107, 114, 128)','13.5px'],'줄 치수 = 파이프라인 현장 정보');
+  assert.equal(await d.locator('.idv3-chip').count(),0,'칩 대신 줄');assert.equal(await d.locator('.idv3-need').evaluate(n=>getComputedStyle(n).backgroundColor),'rgba(0, 0, 0, 0)','노란 상자 없음');
+  const need=()=>d.locator('.idv3-need .idv3-row').evaluateAll(l=>l.map(n=>[n.querySelector('.k').textContent,n.querySelector('.idv3-val.empty')?'':(n.querySelector(':scope>b')?n.querySelector(':scope>b').textContent:'')]));
+  const missN=Number(await d.locator('.idv3-need .hd .n').innerText()),N0=await need(),miss0=N0.filter(x=>!x[1]).map(x=>x[0]);assert.equal(N0.length,9,'필수 확인 9줄');assert.equal(miss0.length,missN,'빈 줄 수 = 채울 정보 수');assert.ok(miss0.includes('경쟁사')&&miss0.includes('결정권자'));
+  assert.match((await tx('.idv3-need .hd'))[0],new RegExp('^채울 정보 ?'+missN+' ?/ 9 ?누르면 바로 입력$'));assert.equal(missN,7);
+  assert.deepEqual(N0.filter(x=>x[1]),[['현재 문제','문의 원문에 있음'],['공사 범위','지하주차장(에폭시)']],'채워진 줄은 값이 보인다(공사 범위 = 목록과 같은 공종 표기)');
+  assert.deepEqual(await d.locator('.idv3-need .idv3-val.empty').first().evaluate(n=>{const s=getComputedStyle(n);return [n.textContent,s.color,s.borderBottomStyle,s.fontWeight];}),['미입력 · 입력하기','rgb(217, 119, 6)','dashed','700'],'빈 칸 = 주황 점선');
+  await d.locator('.idv3-need .idv3-row',{hasText:'경쟁사'}).locator('.idv3-val').click();await page.waitForTimeout(150);
   assert.equal(await d.locator('.idv3-fill input').getAttribute('placeholder'),'경쟁사 입력');await d.locator('.idv3-fill input').fill('타 업체 2곳 비교 중');await d.locator('.idv3-fill [data-idv="editsave"]').click();await page.waitForTimeout(400);
-  assert.deepEqual(await page.evaluate(()=>__rpc.filter(c=>c[0]==='crm_inquiry_field_update_v1').map(c=>c[1])),[{inquiry_id:'22222222-2222-4222-8222-222222222222',field:'competitor',value:'타 업체 2곳 비교 중'}],'칩 → 그 자리 입력 → 서버 저장 한 번');
-  assert.equal(Number(await d.locator('.idv3-need .hd .n').innerText()),missN-1,'저장하면 칩이 사라짐');assert.equal((await tx('.idv3-need .idv3-chip')).includes('경쟁사'),false);assert.match((await tx('.idv3-need small'))[0],/경쟁사/);
+  assert.deepEqual(await page.evaluate(()=>__rpc.filter(c=>c[0]==='crm_inquiry_field_update_v1').map(c=>c[1])),[{inquiry_id:'22222222-2222-4222-8222-222222222222',field:'competitor',value:'타 업체 2곳 비교 중'}],'빈 칸 → 그 자리 입력 → 서버 저장 한 번');
+  assert.equal(Number(await d.locator('.idv3-need .hd .n').innerText()),missN-1,'저장하면 채울 정보가 줄어든다');assert.deepEqual((await need()).find(x=>x[0]==='경쟁사'),['경쟁사','타 업체 2곳 비교 중'],'저장한 값이 그 줄에 보인다');
   /* 가운데: 탭 2개 · 결과 칩 → 다음 행동 → 저장(한 줄은 선택) */
   assert.match((await tx('.idv3-chead'))[0],/^응대 이력 ?\d+건 · 시도 0 · 연결 0$/);
   assert.deepEqual(await tx('.idv3-tabs [role=tab]'),['응대 기록','문자','내부 메모'],'문자 탭(2026-10-04 대표 "문자 할 수 있는 게 없어" — 목록 · 오늘 업무의 [문자]가 이 탭을 연다)');
@@ -93,7 +100,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await d.locator('.idv3-bottom [data-idv="reassign"]').click();await page.waitForTimeout(200);assert.match(await d.locator('.idv3-c3 h3').innerText(),/담당 변경/);await d.locator('[data-idv="cancel-reassign"]').click();await page.waitForTimeout(150);
   await page.evaluate(()=>InquiryWorkbench.open(U));await page.waitForTimeout(400);
   assert.equal((await tx('.idv3-pill'))[0].startsWith('미배정'),true);assert.match(await d.locator('.idv3-c3 h3').innerText(),/담당자 배정/);assert.deepEqual(await tx('.idv3-steps span'),['접수','지금 · 담당 배정','현장방문 / 견적','파이프라인 전환']);
-  assert.match((await tx('.idv3-info'))[0],/연락처 ?입력$/,'빈 핵심 정보는 그 자리에서 입력');
+  assert.match((await tx('.idv3-info'))[0],/연락처 ?미입력 · 입력하기$/,'빈 핵심 정보는 그 자리에서 입력(파이프라인과 같은 "미입력 · 입력하기")');
+  await d.locator('.idv3-info .idv3-row',{hasText:'주소'}).locator('.idv3-val.empty').click();await page.waitForTimeout(150);assert.equal(await d.locator('.idv3-info input[data-idv="editinput"][data-v="address"]').count(),1,'누르면 그 자리에 입력칸');await page.keyboard.press('Escape');
   /* 좁은 화면 · 끄기 */
   await page.setViewportSize({width:900,height:900});await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);await page.setViewportSize({width:1600,height:1000});
   await page.evaluate(()=>{G.inqDetailV3Off=true;InquiryWorkbench.open(A);});await page.waitForTimeout(400);

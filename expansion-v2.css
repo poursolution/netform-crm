@@ -37,6 +37,15 @@
 .xdv .xdv-three button.fill{background:#3b6ce4;border-color:#3b6ce4;color:#fff}
 .xdv-facts{margin:2px 0 0;display:block}.xdv-facts>div{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;margin-top:7px}
 .xdv-facts dt{font-size:12px;color:#9ca3af}.xdv-facts dd{margin:0;font-weight:500;word-break:break-word}.xdv-facts dd.xdv-warn{font-weight:400}
+/* 정보 칸 = 파이프라인 상세의 현장 정보와 같은 줄 틀(2026-10-04 대표) — 확장관리 '관리 정보' · 고객 자산 '기본 정보' 공용 */
+.xdv-card>.xdv-fh{display:flex;align-items:baseline;gap:8px}
+.xdv-card>.xdv-fh b{font-size:13.5px;font-weight:700}.xdv-card>.xdv-fh i{flex:1}
+.xdv-card>.xdv-fh small{font-size:11.5px;font-weight:500;color:#9ca3af}
+.xdv-facts{margin:0}.xdv-facts>div{grid-template-columns:84px minmax(0,1fr);gap:10px;margin-top:0;padding:6px 0;align-items:center}
+.xdv-facts dt{font-size:12.5px;font-weight:500;color:#6b7280}
+.xdv-facts dd{font-size:13.5px;font-weight:500;color:#15171c}.xdv-facts dd.xdv-warn{color:#9ca3af;font-weight:500}
+.xdv-facts .xdv-edit{font-size:13.5px;font-weight:700;color:#d97706;border-bottom:1px dashed #f0b860;min-height:0;box-shadow:none;border-radius:0}
+.xdv-facts .xdv-edit.xdv-editsm{font-size:11.5px;font-weight:600;color:#6b7280;border-bottom-color:#d5d9e0}
 .xdv-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .xdv-tiles>div{background:#f7f8fa;border-radius:8px;padding:8px 6px;text-align:center;display:flex;flex-direction:column;gap:2px}
 .xdv-tiles span{font-size:11.5px;color:#9ca3af}.xdv-tiles b{font-size:14px}

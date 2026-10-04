@@ -35,6 +35,21 @@
 #inq-inbox-dialog.idv3 .idv3-fill .idv-editin{flex:1;min-width:0;border:1px solid #e3e6ec;border-radius:7px;padding:6px 9px;font:inherit;font-size:12.5px;background:#fff}
 #inq-inbox-dialog.idv3 .idv3-fill button{flex:none;border:0;background:#15171c;color:#fff;font:inherit;font-size:12px;font-weight:700;border-radius:7px;padding:6px 11px;cursor:pointer;min-height:0;box-shadow:none}
 .idv3-need small{font-size:11px;color:#9ca3af;line-height:1.5}
+/* 정보 칸 = 파이프라인 상세의 현장 정보와 같은 줄 틀(2026-10-04 대표): 제목 + '누르면 바로 수정' / 라벨 84px + 값 / 빈 칸 = 주황 점선 "미입력 · 입력하기" */
+.idv3-fs{display:flex;flex-direction:column;gap:8px;border-top:1px solid #e8eaef;padding-top:16px}
+.idv3-fs.idv3-need{border:0;border-top:1px solid #e8eaef;background:none;border-radius:0;padding:16px 0 0}
+.idv3-fs>header{display:flex;align-items:baseline;gap:8px}
+.idv3-fs>header b{font-size:13.5px;font-weight:700;color:#15171c}.idv3-fs>header b.n{color:#d97706}
+.idv3-fs>header span{font-size:11.5px;color:#9ca3af}.idv3-fs>header i{flex:1}
+.idv3-fs>header small{font-size:11.5px;font-weight:500;color:#9ca3af;line-height:1.35}
+.idv3-fs .idv3-info{display:block}
+.idv3-row{display:grid;grid-template-columns:84px minmax(0,1fr);gap:10px;align-items:center;padding:6px 0}
+.idv3-row>.k{font-size:12.5px;font-weight:500;color:#6b7280}
+.idv3-row>b{font-size:13.5px;font-weight:500;color:#15171c;overflow-wrap:anywhere}.idv3-row>b.no{color:#9ca3af}
+.idv3-val{justify-self:start;border:0;border-bottom:1px dashed #f0b860;background:none;color:#15171c;font:inherit;font-size:13.5px;font-weight:500;padding:0;cursor:pointer;min-height:0;box-shadow:none;text-align:left;border-radius:0}
+.idv3-val.empty{color:#d97706;font-weight:700}.idv3-val:disabled{opacity:.6;cursor:default}
+.idv3-row .idv-editin{width:100%;box-sizing:border-box;border:1px solid #15171c;border-radius:7px;padding:5px 8px;font:inherit;font-size:13px}
+.idv3-row .idv3-fill{min-width:0}.idv3-row .idv3-fill .idv-editin{border-color:#15171c}
 /* 가운데 */
 .idv3-chead{padding:14px 20px;display:flex;align-items:baseline;gap:8px;border-bottom:1px solid #f2f3f6;flex:none}.idv3-chead b{font-size:14px}.idv3-chead span{font-size:12px;color:#9ca3af}
 #inq-inbox-dialog.idv3 .idv3-thread{flex:1;min-height:0;overflow:auto;padding:14px 20px;display:flex;flex-direction:column;gap:14px;background:#fff}

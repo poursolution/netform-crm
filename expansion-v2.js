@@ -149,12 +149,12 @@
   let files=[],quotes=[];try{files=d.id?root.execAttachments(d):[];quotes=d.id?root.execQuoteVersions(d):[];}catch(e){}
   const photos=files.filter(x=>/^image\//.test(x.mime_type||'')).length;
   const left='<div class="xdv-card"><span class="xdv-label">연락할 고객</span><b>'+h(c.name?c.name+(c.role?' · '+c.role:''):'고객 이름 미등록')+'</b><span class="'+(phone?'':'xdv-warn')+'">'+h(phone||'연락처 미입력')+'</span>'+(done?'':'<div class="xdv-three"><button type="button" class="fill" data-xd="call">전화</button><button type="button" data-xd="sms">문자</button><button type="button" data-xd="kakao">카카오</button></div>')+'</div>'
-   +'<div class="xdv-card"><b>관리 정보</b><dl class="xdv-facts">'+facts.map(([k,v,ed])=>{
+   +'<div class="xdv-card"><div class="xdv-fh"><b>관리 정보</b><i></i>'+((can||d.id)&&!done?'<small>누르면 바로 수정</small>':'')+'</div><dl class="xdv-facts">'+facts.map(([k,v,ed])=>{
      if(ed&&ES.field===ed){if(ed==='owner_name'){const reps=(root.REP_INTERNAL||[]).slice();return '<div><dt>'+h(k)+'</dt><dd><select class="xdv-editin" data-xd="editsel" aria-label="현재 담당"><option value="">담당 선택</option>'+reps.map(n=>'<option'+(n===(ES.draft||v)?' selected':'')+'>'+h(n)+'</option>').join('')+'</select></dd></div>';}
       return '<div><dt>'+h(k)+'</dt><dd><input class="xdv-editin" type="date" data-xd="editinput" value="'+attr(ES.draft||v||'')+'" aria-label="'+attr(k)+'"'+(ES.busy?' disabled':'')+'></dd></div>';}
      if(ed==='ledger')return '<div><dt>'+h(k)+'</dt><dd'+(v?'':' class="xdv-warn"')+'>'+h(v||'미입력')+(v?'':' <small class="xdv-ledger">· 계약실적(성과 분석)에서 기록</small>')+'</dd></div>';
-     if(ed==='work')return '<div><dt>'+h(k)+'</dt><dd>'+(v?h(v)+' ':'')+'<button type="button" class="xdv-edit" data-xd="editwork">'+(v?'수정':'미입력 · 눌러서 입력')+'</button></dd></div>';
-     if(ed&&!v)return '<div><dt>'+h(k)+'</dt><dd><button type="button" class="xdv-edit" data-xd="edit" data-value="'+ed+'">미입력 · 눌러서 입력</button></dd></div>';
+     if(ed==='work')return '<div><dt>'+h(k)+'</dt><dd>'+(v?h(v)+' ':'')+'<button type="button" class="xdv-edit" data-xd="editwork">'+(v?'수정':'미입력 · 입력하기')+'</button></dd></div>';
+     if(ed&&!v)return '<div><dt>'+h(k)+'</dt><dd><button type="button" class="xdv-edit" data-xd="edit" data-value="'+ed+'">미입력 · 입력하기</button></dd></div>';
      if(ed)return '<div><dt>'+h(k)+'</dt><dd>'+h(v)+' <button type="button" class="xdv-edit xdv-editsm" data-xd="edit" data-value="'+ed+'">수정</button></dd></div>';
      return '<div><dt>'+h(k)+'</dt><dd'+(v?'':' class="xdv-warn"')+'>'+h(v||'미입력')+'</dd></div>';}).join('')+'</dl></div>'
    +'<div class="xdv-card"><b>자료</b><div class="xdv-tiles">'+[['사진',photos],['견적서',quotes.length],['기타',files.length-photos]].map(t=>'<div><span>'+t[0]+'</span><b>'+t[1]+'건</b></div>').join('')+'</div>'+(d.id?'<button type="button" class="xdv-link" data-xd="source">수주 영업건 열기 →</button>':'')+'</div>';
