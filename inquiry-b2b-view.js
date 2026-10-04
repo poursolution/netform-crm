@@ -16,6 +16,7 @@
    .map(q=>{const ack=confirmed.get(q.id);if(api().state(q)==='done'){confirmed.delete(q.id);return q;}return ack?{...q,status:ack.result,raw:{...q.raw,b2b_completion:ack}}:q;})
    .sort((a,b)=>date(a).localeCompare(date(b))||String(a.id).localeCompare(String(b.id)));
  }
+ function completedDate(v){return v&&Number.isFinite(Date.parse(v))?new Date(v).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}):'처리일 미기록';}
  function fields(q){const r=q.raw||{};return {
   org:q.company_name||q.organization_name||r['업체명']||r['고객유형']||q.site||'업체명 미기록',
   kind:q.work_type||q.work||r['공사유형']||'협약문의',
@@ -31,7 +32,7 @@
  function detail(q){if(!q)return '<div class="ib-empty">'+(tab==='done'?'처리 완료된 협약문의가 없습니다.':'처리할 협약문의가 없습니다.')+'</div>';
   const f=fields(q),d=draft(q),done=api().state(q)==='done',c=q.raw?.b2b_completion||{},sub=['협약 체결','안내 · 해결','진행 안 함'];
   return '<div class="ib-detail-head"><span>'+h(f.kind)+' · '+h(f.date)+' 접수 · '+h(f.channel)+'</span><b>'+h(f.org)+'</b><div>'+h(f.contact)+' · '+h(f.phone)+'</div></div><div class="ib-original">'+h(f.content)+'</div>'+
-   (done?'<div class="ib-closed"><b>'+h(q.status)+' · '+h(String(c.at||c.completed_at||'처리일 미기록').slice(0,19).replace('T',' '))+'</b><span>'+h(c.actor||'처리자 미기록')+'</span><span>'+h(c.note||q.close_reason||'')+'</span></div>':
+   (done?'<div class="ib-closed"><b>'+h(q.status)+' · '+h(completedDate(c.at||c.completed_at))+'</b><span>'+h(c.actor||'처리자 미기록')+'</span><span>'+h(c.note||q.close_reason||'')+'</span></div>':
     '<div class="ib-result"><b>처리 결과 · 고르면 바로 종료</b><div class="ib-results">'+api().results.map((v,i)=>'<button type="button" data-ib="result" data-value="'+h(v)+'" aria-pressed="'+(d.result===v)+'"'+(busy||!writable(q)?' disabled':'')+'><b>'+v+'</b><span>'+sub[i]+'</span></button>').join('')+'</div><input data-ib-note aria-label="처리 내용" maxlength="4000" value="'+h(d.note)+'" placeholder="'+(d.result==='종결'?'종결 사유 (필수)':'처리 내용 한 줄 (선택)')+'"'+(d.result==='종결'?' required':'')+(busy||!writable(q)?' disabled':'')+'><div class="ib-save-row"><span data-ib-hint>'+h(!writable(q)?'현재 담당자 또는 관리자만 처리할 수 있습니다.':d.result==='종결'&&!d.note.trim()?'종결 사유를 입력해 주세요.':!d.result?'결과 하나를 고르세요.':'처리 완료를 누르면 저장됩니다.')+'</span><button type="button" class="ib-save" data-ib="save"'+(!canSave(q,d)?' disabled':'')+'>'+(busy===q.id?'저장 중…':'처리 완료')+'</button></div><div role="alert">'+h(d.error)+'</div></div>')+
    '<div class="ib-footer"><span>· 수주 · 계약실적 · 메이드율 · 인센티브에 들어가지 않습니다</span><span>· 다음 행동 · 놓침 · 후속 순서 대상이 아닙니다</span><span>· 결과는 잔디와 같은 이름으로 동기화됩니다</span></div>';
  }
