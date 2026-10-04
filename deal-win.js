@@ -51,7 +51,8 @@
  function partnerIn(a,b,owner){
   const selected=R.ContractSalesData?.entries?.({owner:owner||'전체',brand:R.G.brand||'전체'}),out=[],meta=partnerMeta();
   if(selected)(selected||[]).forEach(r=>{
-   const m=meta.get(String(r.deal_id));if(!m)return;
+   const advisory=r.advisory_id&&advRows().find(t=>String(t.advisory_id)===String(r.advisory_id));
+   const m=r.advisory_id?{company:advisory?.contractor,tech:true,site:r.site,revenue:(Number(advisory?.advisory_fee)||0)+(Number(advisory?.pour_amount)||0),revKnown:advisory?.advisory_fee!=null||advisory?.pour_amount!=null}:meta.get(String(r.deal_id));if(!m)return;
    const events=(r.events||[]).filter(e=>e.effective_date>=a&&e.effective_date<b);if(!events.length)return;
    const d=dealOf(r.deal_id);
    out.push({src:'contract',key:events[0].effective_date,owner:r.sales_owner_name,brand:r.brand,company:m.company||'시공사 미기록',amount:events.reduce((s,e)=>s+e.amount_delta,0),signedCount:events.filter(e=>e.kind==='signed').length,site:d?siteOf(d):m.site||r.site_name||'현장명 미확인',tech:m.tech,revenue:events.some(e=>e.kind==='signed')?m.revenue:0,revKnown:m.revKnown&&events.every(e=>e.kind==='signed'),deal:d,dealId:String(r.deal_id),events});
