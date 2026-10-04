@@ -1,0 +1,48 @@
+/* 견적문의 · 협약문의 B2B 탭 (2026-10-04 design_handoff_b2b) — 치수 · 색은 시안(협약문의 B2B.dc.html) 그대로 */
+#pg-inq>.b2b-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}
+#pg-inq>.b2b-bar>i{flex:1}
+.b2b-kinds{display:flex;gap:2px;border-bottom:1px solid #e3e6ec}
+.b2b-kinds a{text-decoration:none;display:inline-block;border-bottom:2px solid transparent;margin-bottom:-1px;padding:7px 12px;font-size:13.5px;font-weight:500;color:#6b7280}
+.b2b-kinds a[aria-selected="true"]{border-bottom-color:#15171c;font-weight:700;color:#15171c}
+.b2b-kinds a span{color:#9ca3af;font-weight:700}.b2b-kinds a span.n{color:#2a52b8}
+.b2b-pill{font-size:12px;color:#6b7280;background:#fff;border:1px solid #e3e6ec;border-radius:999px;padding:5px 11px}
+.b2b-pill b{color:#15171c}
+/* 협약문의 탭일 때 공사 견적문의 목록은 가린다(목록 자체는 건드리지 않는다) */
+#pg-inq.b2b-on>:not(.b2b-bar):not(.b2b-view){display:none!important}
+#pg-inq>.b2b-view{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;color:#15171c}
+.b2b-view button{font-family:inherit;cursor:pointer;min-height:0;box-shadow:none;line-height:1.35}
+.b2b-list{flex:999 1 560px;min-width:0;background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden}
+.b2b-tabs{padding:12px 16px;border-bottom:1px solid #eef0f3;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.b2b-tabs>i{flex:1}.b2b-tabs>span{font-size:11.5px;color:#9ca3af}
+.b2b-view .b2b-tabs button{border:1px solid #d9dde4;background:#fff;color:#374151;font-size:12.5px;font-weight:600;border-radius:999px;padding:5px 12px}
+.b2b-view .b2b-tabs button[aria-pressed="true"]{border-color:#15171c;background:#15171c;color:#fff}
+.b2b-empty{padding:36px;text-align:center;font-size:13px;color:#6b7280}
+.b2b-view .b2b-row{width:100%;border:0;border-left:3px solid transparent;border-bottom:1px solid #f2f3f6;border-radius:0;background:#fff;text-align:left;display:grid;grid-template-columns:minmax(0,1fr) 120px 84px;gap:12px;align-items:center;padding:12px 16px;color:#15171c}
+.b2b-view .b2b-row.on{border-left-color:#3b6ce4;background:#f5f8ff}
+.b2b-row .m{display:flex;flex-direction:column;gap:3px;min-width:0}
+.b2b-row .m b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b2b-row .m span{font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b2b-row .w{font-size:12px;color:#6b7280}
+.b2b-row .s{text-align:right;display:flex;flex-direction:column;gap:2px}
+.b2b-row .s b{font-size:12.5px;color:#15171c}.b2b-row .s b.d{color:#6b7280}.b2b-row .s span{font-size:11px;color:#9ca3af}
+.b2b-side{flex:1 1 360px;min-width:0;background:#fff;border:1px solid #e8eaef;border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;position:sticky;top:20px;box-sizing:border-box}
+.b2b-none{margin:0;font-size:13px;color:#9ca3af}
+.b2b-who{display:flex;flex-direction:column;gap:3px}
+.b2b-who>span{font-size:11px;font-weight:700;color:#6b7280}.b2b-who>b{font-size:17px}.b2b-who>span.p{font-size:12.5px;font-weight:400;color:#374151}
+.b2b-msg{background:#f8f9fb;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.b2b-proc{display:flex;flex-direction:column;gap:8px;border-top:1px solid #f0f1f4;padding-top:12px}
+.b2b-proc>b{font-size:13px}
+.b2b-res{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.b2b-view .b2b-res button{border:1px solid #d9dde4;background:#fff;color:#15171c;border-radius:9px;padding:9px 6px;display:flex;flex-direction:column;gap:2px;align-items:center}
+.b2b-view .b2b-res button[aria-pressed="true"]{border-color:#15171c;background:#15171c;color:#fff}
+.b2b-res b{font-size:13px}.b2b-res span{font-size:10.5px;opacity:.75}
+.b2b-proc>input{border:1px solid #e3e6ec;border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;color:#15171c;background:#fff;outline:none}
+.b2b-proc>input.need{border-color:#f3c9c7}
+.b2b-go{display:flex;align-items:center;gap:10px}
+.b2b-go>span{flex:1;font-size:11.5px;color:#9ca3af}.b2b-go>span.bad{color:#b42318;font-weight:600}
+.b2b-view .b2b-go button{border:0;background:#15171c;color:#fff;font-size:13px;font-weight:700;border-radius:8px;padding:9px 16px}
+.b2b-view .b2b-go button.off{background:#c9cdd5;cursor:default}
+.b2b-done{background:#f3f4f6;border-radius:8px;padding:10px 12px;font-size:12.5px;display:flex;flex-direction:column;gap:2px}
+.b2b-done span{color:#6b7280}
+.b2b-foot{border-top:1px solid #f0f1f4;padding-top:10px;display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:#6b7280;line-height:1.5}
+@media(max-width:760px){.b2b-view .b2b-row{grid-template-columns:minmax(0,1fr) 84px}.b2b-row .w{display:none}.b2b-side{position:static}}
