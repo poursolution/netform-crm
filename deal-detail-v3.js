@@ -282,7 +282,7 @@
   form.addEventListener('input',refresh);form.addEventListener('change',refresh);form.addEventListener('click',()=>setTimeout(refresh,0));refresh();
  }
  function syncMove(v){
-  const band=v.querySelector('.detailtop>.dv3-move'),d=root.CUR_DETAIL?.item;if(!band||!d)return;const S=st(d);
+  const band=v.querySelector('.dv3-move'),d=root.CUR_DETAIL?.item;if(!band||!d)return;const S=st(d);
   const form=band.querySelector('#stage-transition-form'),t=form&&form.querySelector('#sf-target'),pend=t?root.PipelineStages.group(t.value):'';
   if(band.hidden===!!S.mvOpen)band.hidden=!S.mvOpen;
   band.querySelectorAll('[data-stage]').forEach(b=>{const on=String(b.dataset.code?(!!t&&t.value===b.dataset.code):(b.dataset.stage===pend&&!b.classList.contains('cur')));if(b.getAttribute('aria-pressed')!==on)b.setAttribute('aria-pressed',on);});
@@ -304,8 +304,10 @@
   const amt=Number(d.amount??d.amt??0),hint=closed?null:ruleHint(d);
   const html='<span class="dv3-stagebadge">'+h(gname)+'</span><span class="tx">'+h(['담당 '+(root.repN(d.assignee)||'미배정'),amt>0?'예상 금액 '+root.fmtAmt(amt):'예상 금액 미입력',(sname&&sname!==gname?sname:gname)+(age!=null&&!closed?' '+age+'일째':'')].join(' · '))+'</span>'+(hint&&hint.red?'<b class="over">· '+h(hint.why)+'</b>':'')+'<i></i><div class="dv3-headact">'+(choices.length?'<button type="button" class="mv" data-dv3="mv" aria-expanded="'+!!S.mvOpen+'">단계 바꾸기 '+(S.mvOpen?'▴':'▾')+'</button>':'')+'<button type="button" data-dv3="owner">담당자 변경</button></div>';
   if(row.dataset.h!==html){row.innerHTML=html;row.dataset.h=html;}
-  let band=top.querySelector(':scope>.dv3-move');
-  if(!band){band=el('div','dv3-move','<div class="hd"><b>어느 단계로 옮길까요?</b><span></span></div><div class="dv3-moves"></div><div class="dv3-slot" data-slot="move"></div>');band.hidden=true;top.append(band);}
+  /* 단계 바꾸기 창은 가운데 칸 위에 띄운다(2026-10-04 대표: 위에 끼우면 아래가 밀려 내려가 이상함). 가운데 칸이 없으면 예전처럼 머리 아래 */
+  let band=v.querySelector('.dv3-move');const mvHost=v.querySelector('.dw-center')||top;
+  if(!band){band=el('div','dv3-move','<div class="hd"><b>어느 단계로 옮길까요?</b><span></span></div><div class="dv3-moves"></div><div class="dv3-slot" data-slot="move"></div>');band.hidden=true;}
+  if(band.parentElement!==mvHost)mvHost.prepend(band);
   if(!top.querySelector(':scope>.dv3-slot[data-slot="owner"]')){const os=el('div','dv3-slot');os.dataset.slot='owner';top.append(os);}
   const how=v.querySelector('.ddv-switch p')?.textContent||'',hs=band.querySelector('.hd span');if(hs.textContent!==how)hs.textContent=how;
   /* 지금 묶음 안에서 옮길 수 있는 단계: 계약·시공 · 컨설팅 설계는 순서가 있으므로 다음 단계만(계약 → 시공 → 준공), 관계관리 · 경쟁·입찰은 나란한 상태라 나머지 전부 */

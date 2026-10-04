@@ -80,7 +80,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#nowCard [data-dv3="line"]').click();await page.waitForTimeout(350);
   assert.match(await page.locator('#nowCard .dv3-reco .line').innerText(),/^안녕하세요 소장님$/,'통화 첫마디 보기 = 상자 안에서');assert.equal(await page.locator('#nowCard [data-dv3="line"]').innerText(),'접기');assert.deepEqual(await page.evaluate(()=>__ai),['next_action','call_opener']);
   /* 머리글: [단계 바꾸기 ▾] [담당자 변경] — 오른쪽에는 단계 바꾸기 카드 없음 */
-  assert.deepEqual(await v.locator('.dv3-headact button:visible').allInnerTexts(),['단계 바꾸기 ▾','··· 기타 처리'],'담당자 변경은 [··· 기타 처리] 메뉴 안으로');assert.equal(await R.locator('.ddv-switch:visible').count(),0,'단계 바꾸기 카드는 오른쪽에 없음');assert.equal(await v.locator('.detailtop>.dv3-move:visible').count(),0,'띠는 접혀 있음');
+  assert.deepEqual(await v.locator('.dv3-headact button:visible').allInnerTexts(),['단계 바꾸기 ▾','··· 기타 처리'],'담당자 변경은 [··· 기타 처리] 메뉴 안으로');assert.equal(await R.locator('.ddv-switch:visible').count(),0,'단계 바꾸기 카드는 오른쪽에 없음');assert.equal(await v.locator('.dw-center>.dv3-move:visible').count(),0,'띠는 접혀 있음');
   const sumText=await R.locator('.da-stage-summary').innerText();assert.match(sumText,/^이 단계 필수 정보/);
   assert.deepEqual(await R.locator('.dv3-stage .dv3-row>span').allInnerTexts(),['무엇을 발송했나요?','견적 Version','수신자','발송일'],'왼쪽과 같은 항목(고객 반응)은 오른쪽에 없음');
   assert.match(sumText,/미입력 3/);assert.equal(await R.locator('.da-stage-summary .da-fill:visible,.da-stage-summary .da-stage-edit:visible').count(),0,'[입력하기] · [단계 정보 입력] 버튼 없음');
@@ -194,7 +194,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#detailView .detailtop>.dv3-slot[data-slot="owner"]>#detailAction').count(),1,'담당자 변경 = 머리글 아래');await rightIntact('담당자 변경');
   await page.locator('#detailView .dv3-headact .tf-more').click();await page.locator('#detailView .tf-menu [data-tf="m-owner"]').click();await page.waitForTimeout(250);assert.equal(await page.locator('#detailAction').count(),0);
   await page.locator('#detailView .dv3-headact [data-dv3="mv"]').click();await page.waitForTimeout(200);
-  const band=page.locator('#detailView .detailtop>.dv3-move');assert.equal(await band.isVisible(),true,'진행 막대 아래 띠');
+  const band=page.locator('#detailView .dw-center>.dv3-move');assert.equal(await band.isVisible(),true,'가운데 칸 위에 뜸');
+  assert.deepEqual(await page.evaluate(()=>{const r=n=>{const b=n.getBoundingClientRect();return [Math.round(b.left),Math.round(b.top),Math.round(b.width),Math.round(b.height)];},v=document.getElementById('detailView'),c=v.querySelector('.dw-center');return [r(v.querySelector('.dv3-move')).join(',')===r(c).join(','),getComputedStyle(v.querySelector('.dv3-move')).position,v.querySelector('.detailtop').contains(v.querySelector('.dv3-move')),r(c)[3]>300];}),[true,'absolute',false,true],'단계 바꾸기 창은 가운데 칸을 덮고, 머리에 끼지 않아 아래가 밀려 내려가지 않는다');
   assert.match(await band.locator('.hd').innerText(),/^어느 단계로 옮길까요\?/);
   assert.deepEqual(await band.locator('.dv3-moves button').allInnerTexts(),['컨설팅 설계','자료 발송완료 (지금)','관계관리','경쟁·입찰','계약·시공','수주','실주']);
   assert.equal(await page.locator('#detailView .dv3-headact .mv').innerText(),'단계 바꾸기 ▴');await rightIntact('단계 바꾸기 띠');
@@ -215,7 +216,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await SF.locator('footer .sf-primary').click();await page.waitForTimeout(600);
   const mv=await page.evaluate(()=>__writes.filter(w=>w[0]==='transition').map(w=>[w[1].from,w[1].to,w[1].stage_context.fields.relationship_reason]));
   assert.deepEqual(mv,[['sent','rapport','예산 미확보']],'옮기기 = 기존 단계 전환 저장');assert.equal(await page.evaluate(()=>dealStage(CUR_DETAIL.item)),'rapport');
-  assert.equal(await page.locator('#detailView .detailtop>.dv3-move:visible').count(),0,'옮긴 뒤 띠 접힘');assert.match(await page.locator('#detailView .dw-center').innerText(),/관계 유지/,'응대 이력에 단계 변경');
+  assert.equal(await page.locator('#detailView .dw-center>.dv3-move:visible').count(),0,'옮긴 뒤 띠 접힘');assert.match(await page.locator('#detailView .dw-center').innerText(),/관계 유지/,'응대 이력에 단계 변경');
   /* 같은 현장 다른 영업 → 그 건 상세 */
   await page.locator('.dv3-left .dv3-rel').first().click();await page.waitForTimeout(600);
   assert.equal(await page.evaluate(()=>CUR_DETAIL.item.id),'22222222-2222-4222-8222-222222222222');assert.equal(await page.locator('#detailView.dv3 .dv3-left').count(),1);
