@@ -57,7 +57,9 @@
  }
  function render(){
   const page=document.getElementById('pg-today');if(!page)return;let host=document.getElementById('today-v2');
-  if(!enabled()||!root.B){page.classList.remove('today-v2');host?.remove();return;}
+  /* 예전 화면은 끄기 스위치(G.todayV2Off)이거나 새 화면을 그릴 수 없을 때만 보인다 — 자료를 받는 동안에는 예전 화면을 보여 주지 않는다(깜빡임) */
+  const legacy=!!root.G.todayV2Off||!T()||typeof T().repSummary!=='function';page.classList.toggle('today-legacy',legacy);
+  if(!enabled()||!root.B){if(legacy){page.classList.remove('today-v2');host?.remove();}return;}
   const X=T().data(),G=root.G,admin=X.admin,owner=admin?(G.todayQueueOwner||'전체'):'전체',q=String(G.todayQueueSearch||'').trim().toLowerCase();
   const scoped=x=>(owner==='전체'||x.owner===owner)&&brandOk(x)&&(!q||[x.item.site,x.item.site_name,x.owner,x.reason,x.next,x.item.contact_name,x.item.phone].join(' ').toLowerCase().includes(q));
   const rows={inquiry:X.inquiry.filter(scoped),pipeline:X.pipeline.filter(scoped)};
@@ -91,8 +93,8 @@
  /* 기존 화면이 다시 그려질 때마다 새 화면도 그린다(기존 render는 내부에서 직접 불리므로 결과 DOM 변화를 본다) */
  function boot(){
   const old=document.getElementById('today-home-root');if(!old)return;let t=null;
-  new MutationObserver(()=>{if(t)return;t=setTimeout(()=>{t=null;try{render();}catch(err){document.getElementById('pg-today')?.classList.remove('today-v2');document.getElementById('today-v2')?.remove();if(root.console)root.console.warn('today v2: '+err.message);}},0);}).observe(old,{childList:true});
-  const base=root.paintTodayHome;if(typeof base==='function')root.paintTodayHome=function(){const r=base.apply(this,arguments);try{render();}catch(err){document.getElementById('pg-today')?.classList.remove('today-v2');document.getElementById('today-v2')?.remove();}return r;};
+  new MutationObserver(()=>{if(t)return;t=setTimeout(()=>{t=null;try{render();}catch(err){document.getElementById('pg-today')?.classList.remove('today-v2');document.getElementById('pg-today')?.classList.add('today-legacy');document.getElementById('today-v2')?.remove();if(root.console)root.console.warn('today v2: '+err.message);}},0);}).observe(old,{childList:true});
+  const base=root.paintTodayHome;if(typeof base==='function')root.paintTodayHome=function(){const r=base.apply(this,arguments);try{render();}catch(err){document.getElementById('pg-today')?.classList.remove('today-v2');document.getElementById('pg-today')?.classList.add('today-legacy');document.getElementById('today-v2')?.remove();}return r;};
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
  root.TodayV2={render,enabled};
