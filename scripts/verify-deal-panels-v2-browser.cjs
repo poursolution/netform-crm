@@ -17,7 +17,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    const day=n=>new Date(Date.now()+n*864e5).toLocaleDateString('en-CA'),at=n=>new Date(Date.now()+n*864e5).toISOString();
    B={deals:[{id:'11111111-1111-4111-8111-111111111111',site:'[서울 도봉] 창동동아그린아파트 옥상 방수',assignee:'황윤선',brand:'POUR솔루션',created:day(-60),code:'compete',stage_code:'compete',grp:'영업·관리',amt:2e8,manager_name:'김소장',manager_mobile:'01012345678',office_phone:'0212345678',
      next_action:{id:'n1',text:'PT 준비',due:day(2),status:'open'},activities:[{id:'a1',type:'전화',note:'통화 완료 · 진행 중',at:at(-3)}],stage_contexts:{compete:{fields:{competition_type:'PT'}}}}],inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],messageLogs:[],message_logs:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
+   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.dealSmsV2Off=true;/* 이 검사는 예전 메시지 본문을 본다 — 새 문자 보내기 v2 는 verify-deal-sms-v2 */ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    window.__writes=[];window.pushWrite=(op,p)=>{__writes.push([op,p]);return 'req-'+__writes.length;};
    window.__rpc=[];SB={rpc:async(name,args)=>{__rpc.push([name,args]);if(name==='crm_deal_stage_fields_update_v1')return {data:{ok:true,version:2,stage_context:{fields:Object.assign({competition_type:'PT'},args.p.fields)}}};return {data:{ok:true,tasks:[]}};}};
