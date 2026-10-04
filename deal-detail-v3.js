@@ -51,7 +51,7 @@
  async function saveSF(d,fields,done){
   const S=st(d),code=root.dealStage(d);if(S.busy)return;S.busy=true;
   try{
-   const r=await root.SB.rpc(SF_RPC,{p:{deal_id:String(d.id),stage_code:code,fields}});
+   const r=await root.SB.rpc(SF_RPC,{p:{deal_id:String(d.id),stage_code:code,fields,reason:'상세에서 바로 입력'}});
    if(r.error){if(r.error.code==='PGRST202')root.CRMRelease?.noteMissing?.(SF_RPC);throw Error(r.error.message||'저장 실패');}
    if(!r.data||r.data.ok!==true||!r.data.stage_context)throw Error('서버 확인 응답이 올바르지 않습니다.');
    const ctx=r.data.stage_context,p=root.currentPatch?root.currentPatch():null;

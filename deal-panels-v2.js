@@ -222,7 +222,7 @@
     if(!root.SB||typeof root.SB.rpc!=='function'){err.style.display='block';err.textContent='로그인 상태에서만 저장할 수 있습니다.';return;}
     b.disabled=true;b.textContent='서버 저장 확인 중…';
     try{
-     const r=await root.SB.rpc(RPC,{p:{deal_id:String(d.id),stage_code:code,fields}});
+     const r=await root.SB.rpc(RPC,{p:{deal_id:String(d.id),stage_code:code,fields,reason:'상세에서 바로 입력'}});
      if(r.error){if(r.error.code==='PGRST202')root.CRMRelease?.noteMissing?.(RPC);throw Error(r.error.message||'저장 실패');}
      if(!r.data||r.data.ok!==true||!r.data.stage_context)throw Error('서버 확인 응답이 올바르지 않습니다.');
      d.stage_contexts=Object.assign({},d.stage_contexts||{},{[code]:r.data.stage_context});d.stageContexts=d.stage_contexts;const p2=root.currentPatch?root.currentPatch():null;if(p2)p2.stage_contexts=d.stage_contexts;if(r.data.version!=null)d.version=r.data.version;

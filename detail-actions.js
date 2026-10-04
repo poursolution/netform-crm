@@ -104,7 +104,7 @@ async function saveStageFields(box,d,code,schema,save){
  const sb=root.SB;if(!sb||typeof sb.rpc!=='function'){err.textContent='로그인 상태에서만 저장할 수 있습니다.';return;}
  save.disabled=true;const was=save.textContent;save.textContent='서버 저장 확인 중…';
  try{
-  const r=await sb.rpc(STAGE_FIELDS_RPC,{p:{deal_id:String(d.id),stage_code:code,fields}});
+  const r=await sb.rpc(STAGE_FIELDS_RPC,{p:{deal_id:String(d.id),stage_code:code,fields,reason:'상세에서 바로 입력'}});
   if(r.error){if(r.error.code==='PGRST202')root.CRMRelease?.noteMissing?.(STAGE_FIELDS_RPC);throw Error(r.error.message||'저장 실패');}
   if(!r.data||r.data.ok!==true||!r.data.stage_context)throw Error('서버 확인 응답이 올바르지 않습니다.');
   const ctx=r.data.stage_context,p=root.currentPatch?root.currentPatch():null;
