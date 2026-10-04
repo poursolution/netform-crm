@@ -44,7 +44,7 @@ test('선택 메모로 완료, 원문·담당·첫응대 보존, 후속업무 �
  assert.equal((await d.query('select count(*)::int n from private.inquiry_b2b_sync_outbox')).rows[0].n,1);
 }finally{await d.close();}});
 test('협약/해결/종결만 허용하고 공사/미확정/낡은 화면/완료/삭제/전환 상태를 거절',async()=>{const d=await setup();try{
- for(const result of ['해결완료','종결']){await d.exec("update inquiries set status='접수',updated_at='2026-01-01T00:00:00Z'");assert.equal((await call(d,payload({result}),result==='종결'?42:41)).status,result);}
+ for(const result of ['해결완료','종결']){await d.exec("update inquiries set status='접수',updated_at='2026-01-01T00:00:00Z'");assert.equal((await call(d,payload({result,note:result==='종결'?'진행 안 함':''}),result==='종결'?42:41)).status,result);}
  await assert.rejects(call(d,payload(),43),/B2B_STATE_CONFLICT/);
  await assert.rejects(call(d,payload({result:'수주'}),44),/INVALID_B2B_COMPLETION/);
  await d.exec("update inquiries set status='접수',updated_at='2026-01-01T00:00:00Z',work_type='옥상방수',raw='{}'");await assert.rejects(call(d,payload(),45),/AGREEMENT_INQUIRY_REQUIRED/);
@@ -58,3 +58,5 @@ test('인증·기존 권한·담당자 일치 강제, 비담당 읽기 권한으
  await d.exec('update crm_security.access_review set approved=true');assert.equal((await call(d,payload(),53,12)).ok,true);
  const acl=(await d.query("select has_function_privilege('anon','public.crm_write_command_v2(uuid,text,uuid,integer,jsonb)','execute') a,has_function_privilege('authenticated','crm_security.crm_inquiry_b2b_complete_command_v1(uuid,uuid,jsonb)','execute') b,has_table_privilege('authenticated','private.inquiry_b2b_sync_outbox','select') c")).rows[0];assert.deepEqual(acl,{a:false,b:false,c:false});
 }finally{await d.close();}});
+
+test('종결 사유 누락 거절은 이력과 상태를 바꾸지 않는다',async()=>{const d=await setup();try{await assert.rejects(call(d,payload({result:'종결',note:'   '}),60),/B2B_CLOSE_REASON_REQUIRED/);assert.equal((await d.query('select status from inquiries')).rows[0].status,'접수');assert.equal((await d.query('select count(*)::int n from crm_security.command_receipts')).rows[0].n,0);assert.equal((await call(d,payload({result:'종결',note:'진행 안 함'}),61)).ok,true);}finally{await d.close();}});

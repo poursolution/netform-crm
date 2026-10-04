@@ -18,6 +18,8 @@ test('기존 어댑터가 B2B 입력/ACK를 검증하고 일반 응대 규칙은
 });
 test('저장 ACK 전에는 완료를 표시하지 않고 중복 클릭·미확정 재요청은 같은 명령을 사용한다',async()=>{
  let items=[],calls=0,release;const q={list:()=>items,enqueue:(op,object_id,version,payload)=>{calls++;const x={operation:op,object_id,payload,request_id:rid,status:'pending'};items.push(x);return x;},flush:()=>new Promise(r=>{release=r;})};
- const b=load(q),i=inquiry(),first=b.complete(i,'협약완료');assert.equal(b.complete(i,'협약완료'),first);assert.equal(calls,1);assert.throws(()=>b.complete(i,'종결'),/PENDING_RESULT/);release();const uncertain=await first;assert.equal(uncertain.saved,false);assert.equal(i.status,'접수');
+ const b=load(q),i=inquiry(),first=b.complete(i,'협약완료');assert.equal(b.complete(i,'협약완료'),first);assert.equal(calls,1);assert.throws(()=>b.complete(i,'종결','진행 안 함'),/PENDING_RESULT/);release();const uncertain=await first;assert.equal(uncertain.saved,false);assert.equal(i.status,'접수');
  const retry=b.complete(i,'협약완료');assert.equal(calls,1);items[0].status='done';items[0].ack={ok:true,object_id:id,request_id:rid,intent:'b2b_complete',status:'협약완료',note:'',completed_at:'2026-10-04',sync_status:'pending'};release();assert.equal((await retry).saved,true);assert.equal(i.status,'접수');
 });
+
+test('종결 사유만 필수이며 다른 결과는 메모 선택',()=>{const b=load();for(const note of ['', '   ']){assert.throws(()=>b.request(inquiry(),'종결',note),/B2B_CLOSE_REASON_REQUIRED/);assert.throws(()=>adapter.normalize('inquiry_status',id,0,{inquiry_id:id,intent:'b2b_complete',result:'종결',note,expected_updated_at:inquiry().updated_at}),/B2B_CLOSE_REASON_REQUIRED/);}assert.equal(b.request(inquiry(),'종결',' 진행 안 함 ').note,'진행 안 함');assert.equal(b.request(inquiry(),'해결완료').note,'');});

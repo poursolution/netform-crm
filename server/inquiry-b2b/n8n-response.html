@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>응대내용 기재</title>
+  <style>
+    :root { --primary: #2563eb; --primary-dark: #1d4ed8; --primary-light: #dbeafe; --primary-bg: #eff6ff; --success: #10b981; --success-light: #d1fae5; --danger: #ef4444; --warning: #f59e0b; --warning-light: #fef3c7; --gray-100: #f3f4f6; --gray-200: #e5e7eb; --gray-300: #d1d5db; --gray-500: #6b7280; --gray-700: #374151; --gray-800: #1f2937; --radius: 12px; --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif; background: var(--gray-100); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .card { background: white; border-radius: var(--radius); padding: 28px 32px; max-width: 560px; width: 100%; box-shadow: var(--shadow-lg); }
+    .header { text-align: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--gray-200); }
+    h1 { font-size: 1.5rem; font-weight: 700; color: var(--gray-800); margin-bottom: 6px; }
+    .subtitle { color: var(--gray-500); font-size: 0.9rem; }
+    .info { background: var(--primary-bg); border-radius: 10px; padding: 18px; margin-bottom: 16px; border: 1px solid var(--primary-light); }
+    .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(37, 99, 235, 0.15); }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: var(--primary-dark); font-size: 0.85rem; font-weight: 600; min-width: 80px; }
+    .info-value { color: var(--gray-800); font-weight: 600; font-size: 0.9rem; max-width: 320px; text-align: right; word-break: keep-all; }
+    .inquiry-box { background: var(--warning-light); border: 1px solid #fcd34d; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .inquiry-box .label { color: #92400e; font-size: 0.85rem; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .inquiry-box .content { color: var(--gray-700); font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; background: white; padding: 12px; border-radius: 8px; }
+    .folder-link { display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--success-light); border: 1px solid #86efac; border-radius: 10px; padding: 14px; margin-bottom: 20px; text-decoration: none; color: #166534; font-weight: 600; font-size: 0.9rem; transition: all 0.2s; }
+    .folder-link:hover { background: #bbf7d0; transform: translateY(-1px); }
+    label { display: block; font-size: 0.9rem; color: var(--gray-700); margin-bottom: 8px; font-weight: 600; }
+    .required { color: var(--danger); }
+    select, textarea { width: 100%; padding: 12px 14px; border: 1px solid var(--gray-300); border-radius: 8px; font-size: 0.95rem; font-family: inherit; transition: all 0.15s; margin-bottom: 16px; }
+    select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+    textarea { resize: none; height: 120px; font-weight: 700; }
+    .submit-btn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .submit-btn:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35); }
+    .submit-btn:disabled { background: var(--gray-300); cursor: not-allowed; transform: none; box-shadow: none; }
+    .error { text-align: center; color: var(--danger); padding: 40px 20px; }
+    .file-link { display: block; text-align: center; margin-top: 16px; padding: 12px; background: var(--gray-100); border-radius: 8px; color: var(--primary); text-decoration: none; font-weight: 600; transition: all 0.2s; }
+    .file-link:hover { background: var(--primary-light); }
+    .desc-box { background: var(--primary-bg); border:1px solid var(--primary-light); border-radius:8px; padding:12px 14px; margin:-6px 0 16px; font-size:0.85rem; color:var(--primary-dark); line-height:1.55; }
+    .cond { animation: fadein 0.2s ease; }
+    @keyframes fadein { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
+    .hint { font-size:0.8rem; color:var(--gray-500); margin:-10px 0 16px; }
+    optgroup { font-weight:700; color:var(--gray-500); }
+    .tplbtn{padding:6px 12px;border:1px solid var(--gray-300);border-radius:999px;background:var(--gray-100);font-size:0.8rem;font-weight:600;color:var(--gray-700);cursor:pointer;font-family:inherit}
+    .tplbtn:hover{background:var(--primary-light);border-color:var(--primary);color:var(--primary-dark)}
+  </style>
+</head>
+<body>
+  <div class="card">
+    {{ $json.error ? '<div class="error"><h2>⚠️ 조회 실패</h2><p>해당 건을 찾을 수 없습니다.</p></div>' : '' }}
+    {{ $json.error ? '' : '<div class="header"><h1>📝 응대내용 기재</h1><p class="subtitle">고객 응대 후 내용을 기재해 주세요</p></div>' }}
+    {{ $json.error ? '' : '<div class="info"><div class="info-row"><span class="info-label">현장</span><span class="info-value">' + $json.site + '</span></div><div class="info-row"><span class="info-label">고객정보</span><span class="info-value">' + ($json.customerName ? $json.customerName + ' / ' : '') + $json.phone + '</span></div><div class="info-row"><span class="info-label">브랜드</span><span class="info-value">' + $json.brand + '</span></div><div class="info-row"><span class="info-label">담당자</span><span class="info-value">' + $json.assignee + '</span></div>' + ($json.constructionType ? '<div class="info-row"><span class="info-label">공사유형</span><span class="info-value">' + $json.constructionType + '</span></div>' : '') + '</div>' }}
+    {{ $json.error ? '' : ($json.inquiry ? '<div class="inquiry-box"><div class="label">📞 문의내용</div><div class="content">' + $json.inquiry + '</div></div>' : '') }}
+    {{ $json.error ? '' : ($json.folderLink ? '<a href="' + $json.folderLink + '" target="_blank" class="folder-link">📂 첨부파일 폴더 열기</a>' : '') }}
+    {{ $json.error ? '' : '<form method="POST" action="https://nfrnd.app.n8n.cloud/webhook/assign-select?mode=response" id="responseForm"><input type="hidden" name="site" value="' + encodeURIComponent($json.site) + '"><input type="hidden" name="phone" value="' + encodeURIComponent($json.phone) + '"><input type="hidden" name="brand" value="' + encodeURIComponent($json.brand) + '"><input type="hidden" name="assignee" value="' + encodeURIComponent($json.assignee) + '"><label>진행상태 <span class="required">*</span></label><select name="status" id="statusSel" required><option value="">선택해주세요</option>' + ((/협약/.test($json.constructionType || '') || (!/협약(?:서)?\s*(?:관련\s*)?(?:문의|상담|요청)?\s*(?:아님|아니|없음)/.test($json.inquiry || '') && /협약(?:서)?\s*(?:관련\s*)?(?:문의|상담|요청|진행|체결)/.test($json.inquiry || ''))) ? '<optgroup label="─ 협약문의 · 처리 결과 ─"><option value="협약완료">협약완료</option><option value="해결완료">해결완료</option><option value="종결">종결</option></optgroup>' : '<optgroup label="─ 진행 중 ─"><option value="전화응대 완료">전화응대 완료</option><option value="현장방문예정">현장방문예정</option><option value="견적서 발송예정">견적서 발송예정</option><option value="보류">보류</option></optgroup><optgroup label="─ 종료 ─"><option value="수주">수주</option><option value="실주">실주</option><option value="배드핏">배드핏</option><option value="연락두절">연락두절</option></optgroup>') + '</select><div id="statusDesc" class="desc-box" style="display:none"></div><div id="grp-progress" class="cond" style="display:none"><label>다음 챙길 날 <span style="font-weight:400;color:#9ca3af">(모르면 비워두세요)</span></label><input type="date" name="nextActionDate"><p class="hint">비워두면 상태별 기본 주기로 자동 추적합니다</p></div><div id="grp-deal" class="cond" style="display:none"><label>계약금액 <span style="font-weight:400;color:#9ca3af">(선택)</span></label><input type="text" name="dealAmount" placeholder="예: 3,500만원"></div><div id="grp-lost" class="cond" style="display:none"><label>실주 사유</label><select name="lostReason" id="lostSel"><option value="">선택</option><option value="타업체 선정">타업체 선정</option><option value="가격">가격</option><option value="일정">일정</option><option value="고객 자체진행">고객 자체진행</option><option value="기타">기타</option></select><input type="text" name="lostReasonEtc" id="lostEtc" placeholder="사유 직접 입력" style="display:none;margin-top:8px"></div><div id="grp-badfit" class="cond" style="display:none"><label>배드핏 유형</label><select name="badfitReason" id="badfitSel"><option value="">선택</option><option value="스팸·장난">스팸·장난</option><option value="지역 미달">지역 미달</option><option value="공사범위 밖">공사범위 밖</option><option value="제3자·권한없음">제3자·권한없음</option><option value="자격 미달">자격 미달</option><option value="중복">중복</option><option value="기타">기타</option></select><input type="text" name="badfitReasonEtc" id="badfitEtc" placeholder="유형 직접 입력" style="display:none;margin-top:8px"></div><div id="grp-disc" class="cond" style="display:none"><label>시도 횟수</label><input type="number" name="attemptCount" placeholder="예: 3" min="1"><label>재시도 예정일 <span style="font-weight:400;color:#9ca3af">(선택 · 넣으면 그날 다시 알림)</span></label><input type="date" name="retryDate"></div><label id="responseLabel">응대내용 <span class="required">*</span></label><div style="display:flex;gap:6px;flex-wrap:wrap;margin:-2px 0 8px;align-items:center"><span style="font-size:0.8rem;color:#6b7280">📋 템플릿:</span><button type="button" class="tplbtn" data-t="inq">1차 문의 파악</button><button type="button" class="tplbtn" data-t="mtg">영업·미팅 노트</button><button type="button" class="tplbtn" data-t="call">통화메모</button></div><textarea name="responseContent" id="respTa" placeholder="고객 응대 내용을 상세히 기재해 주세요... (위 템플릿 버튼을 누르면 양식이 채워집니다)" required></textarea><button type="submit" class="submit-btn" id="submitBtn">응대내용 저장</button></form>' }}
+    {{ $json.error ? '' : '<a href="https://nfrnd.app.n8n.cloud/webhook/quote-addfile?phone=' + encodeURIComponent($json.phone) + '" class="file-link">📁 파일 추가하기</a>' }}
+  </div>
+  <script>
+    var S=document.getElementById('statusSel');var D=document.getElementById('statusDesc');var DESC={'협약완료':'협약 체결이 완료된 문의입니다. 공사 수주·계약실적과 구분합니다.','해결완료':'요청한 안내·자료 제공 등 문의 해결을 완료했습니다.','종결':'더 이상 진행하지 않는 문의입니다. 종결 사유를 입력해 주세요.','전화응대 완료':'고객과 통화를 마친 건입니다.','현장방문예정':'현장 방문 일정이 잡힌 건입니다.','견적서 발송예정':'견적서를 보낼 예정인 건입니다.','보류':'지금은 정하기 어렵지만 살아있는 건입니다. 다음에 다시 챙깁니다.','수주':'✅ 계약 성사 — 우리가 공사를 맡게 된 건입니다.','실주':'경쟁에서 놓친 건입니다 (될 수도 있었는데 타업체·가격·일정 등). → 영업 개선용 데이터','배드핏':'애초에 우리 대상이 아닌 문의입니다 (스팸·지역밖·공사범위 밖 등). → 유입 개선용 데이터','연락두절':'응답이 없는 건입니다. 재연결되면 이어서 진행할 수 있습니다.'};var GRP={'전화응대 완료':'grp-progress','현장방문예정':'grp-progress','견적서 발송예정':'grp-progress','보류':'grp-progress','수주':'grp-deal','실주':'grp-lost','배드핏':'grp-badfit','연락두절':'grp-disc'};function hideConds(){var c=document.getElementsByClassName('cond');for(var i=0;i<c.length;i++)c[i].style.display='none';}if(S){S.addEventListener('change',function(){hideConds();var v=this.value;if(DESC[v]){D.innerHTML=DESC[v];D.style.display='block';}else{D.style.display='none';}if(GRP[v]){document.getElementById(GRP[v]).style.display='block';}});}var LS=document.getElementById('lostSel');if(LS){LS.addEventListener('change',function(){document.getElementById('lostEtc').style.display=this.value==='기타'?'block':'none';});}var BS=document.getElementById('badfitSel');if(BS){BS.addEventListener('change',function(){document.getElementById('badfitEtc').style.display=this.value==='기타'?'block':'none';});}
+    var agreementForm=!!(S&&S.querySelector('option[value="협약완료"]'));
+    if(agreementForm){var ta=document.getElementById('respTa');function b2bNoteRule(){var required=S.value==='종결';ta.required=required;ta.placeholder=required?'종결 사유 (필수)':'처리 내용 한 줄 (선택)';document.getElementById('responseLabel').textContent=required?'종결 사유 (필수)':'처리 내용 (선택)';}S.addEventListener('change',b2bNoteRule);b2bNoteRule();document.getElementById('submitBtn').textContent='처리 완료';}
+    var TPL={inq:'[1차 문의 파악]\n누구·유입경로 : \n어떤 공사·규모 : \n왜 공사? (누수/장기수선계획/긴급도) : \n요구사항 (견적/진단/PT/수의계약/기술설명) : \n미팅 일자·장소 : ',mtg:'[영업·미팅 노트]\n영업 대상자(소장/회장) : \n원하는 것 : \n발주처 이슈 : \n공사 계획 일정 : \n진행 상황·계획 (장충/조정/동의/PT) : \n경쟁사 동향 : \n자료 기일(대표회의 일정) : ',call:'[통화메모]\n통화 상대 : \n내용 : \n다음 액션 : '};
+    document.querySelectorAll('.tplbtn').forEach(function(b){b.addEventListener('click',function(){var ta=document.getElementById('respTa');if(!ta)return;var t=TPL[this.getAttribute('data-t')]||'';ta.value=ta.value.trim()?ta.value.replace(/\s*$/,'')+'\n\n'+t:t;ta.focus();});});
+    const form = document.getElementById('responseForm');
+    const submitBtn = document.getElementById('submitBtn');
+    if (form && submitBtn) {
+      form.addEventListener('submit', function(e) {
+        if (submitBtn.disabled) { e.preventDefault(); return false; }
+        submitBtn.disabled = true;
+        submitBtn.textContent = '저장 중...';
+      });
+    }
+  </script>
+</body>
+</html>

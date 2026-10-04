@@ -8,6 +8,7 @@
  function request(q,result,note=''){
   if(state(q)!=='pending')throw Error('B2B_STATE_CONFLICT');
   if(!uuid.test(String(q.id||''))||!results.includes(result)||typeof note!=='string'||note.length>4000)throw Error('INVALID_B2B_COMPLETION');
+  if(result==='종결'&&!note.trim())throw Error('B2B_CLOSE_REASON_REQUIRED');
   if(typeof q.updated_at!=='string'||!Number.isFinite(Date.parse(q.updated_at)))throw Error('B2B_READ_VERSION_REQUIRED');
   return {inquiry_id:q.id,intent:'b2b_complete',result,note:note.trim(),expected_updated_at:q.updated_at};
  }
