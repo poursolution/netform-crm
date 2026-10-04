@@ -160,14 +160,15 @@ end $fn$;
 revoke all on function public.crm_deal_win_register_v1(jsonb) from public, anon;
 grant execute on function public.crm_deal_win_register_v1(jsonb) to authenticated;
 
--- '결과 수정'이 승인될 때(내부용 · crm_approval_decide_v1 이 부른다 · 직접 부를 수 없다): 수주 결과 · 낙찰금액을 바꾼다.
--- won_own = 직접 수주 / won_partner_tech = 협약시공사 수주 → 이 영업건의 수주 확정(낙찰금액 = 승인된 금액). 이미 수주 확정이 있으면 유형 · 금액만 고친다(낙찰일 · 업체 · 연결 계약은 그대로).
--- 새로 확정하는 건은 승인 요청 창에 낙찰일 · 업체 칸이 없어 승인한 날(서울 날짜)과 영업건의 브랜드를 적는다. lost = 확정돼 있던 수주를 취소한다.
--- 계약실적 원장(직접 수주의 계약 체결일 · 계약금액)은 건드리지 않는다 — 직접 수주의 계약실적은 계약 전환에서 따로 기록한다.
-create or replace function crm_security.deal_win_apply(p_deal text,p_result text,p_amount numeric,p_actor uuid,p_actor_name text)
+-- '결과 수정'이 승인될 때(내부용 · crm_approval_decide_v1 이 부른다 · 직접 부를 수 없다): 수주 결과 · 낙찰일 · 낙찰금액을 바꾼다.
+-- won_own = 직접 수주 / won_partner_tech = 협약시공사 수주 → 이 영업건의 수주 확정(낙찰일 · 낙찰금액 = 요청에 적힌 실제 값 · 승인한 날로 대신하지 않는다).
+-- 직접 수주는 계약일 · 계약금액도 함께 받아 계약실적 원장에 '계약 체결'을 기록한다(기존 기록 함수 crm_contract_sales_write_v1 그대로 — 실적 귀속을 정하는 방식은 바꾸지 않는다).
+--   이미 계약이 체결된 영업건이면 원장은 건드리지 않는다(변경 · 취소는 계약실적 기록에서 따로 한다). lost = 확정돼 있던 수주를 취소한다(원장은 그대로).
+drop function if exists crm_security.deal_win_apply(text,text,numeric,uuid,text);
+create or replace function crm_security.deal_win_apply(p_deal text,p_result text,p_amount numeric,p_award_date date,p_contract_date date,p_contract_amount numeric,p_reason text,p_actor uuid,p_actor_name text)
 returns jsonb language plpgsql volatile security definer set search_path='' as $fn$
 declare dj jsonb; old public.crm_deal_wins%rowtype; cur public.crm_deal_wins%rowtype; has_old boolean; v_type text; v_owner text; v_owner_id uuid; v_po text; v_po_id uuid; v_brand text; v_company text;
- v_at timestamptz:=clock_timestamp(); v_day date:=(clock_timestamp() at time zone 'Asia/Seoul')::date;
+ v_at timestamptz:=clock_timestamp(); v_today date:=(clock_timestamp() at time zone 'Asia/Seoul')::date; v_signed boolean:=false; v_contract jsonb;
 begin
  if p_result not in ('won_own','won_partner_tech','lost') then raise exception '바꿀 결과를 확인해 주세요' using errcode='22023'; end if;
  select to_jsonb(d) into dj from public.deals d where d.id::text=p_deal;
@@ -178,10 +179,11 @@ begin
   if not has_old or old.win_status<>'confirmed' then return null; end if;
   update public.crm_deal_wins w set win_status='cancelled',updated_at=v_at where w.deal_id=p_deal returning * into cur;
  else
-  if p_amount is null or p_amount<=0 or p_amount<>trunc(p_amount) then raise exception '바꿀 결과의 금액을 확인해 주세요' using errcode='22023'; end if;
+  if p_amount is null or p_amount<=0 or p_amount<>trunc(p_amount) then raise exception '낙찰금액을 확인해 주세요' using errcode='22023'; end if;
+  if p_award_date is null or p_award_date>v_today then raise exception '낙찰일은 실제 일어난 날(오늘까지)로 적어 주세요' using errcode='22023'; end if;
   v_type:=case when p_result='won_own' then 'own' else 'partner_tech' end;
   if has_old then
-   update public.crm_deal_wins w set win_status='confirmed',won_type=v_type,award_amount=p_amount,updated_at=v_at where w.deal_id=p_deal returning * into cur;
+   update public.crm_deal_wins w set win_status='confirmed',won_type=v_type,award_amount=p_amount,award_date=p_award_date,updated_at=v_at where w.deal_id=p_deal returning * into cur;
   else
    begin v_owner_id:=nullif(dj->>'owner_id','')::uuid; exception when others then v_owner_id:=null; end;
    v_owner:=coalesce(nullif(btrim(coalesce(dj->>'assignee_name','')),''),(select u.name from public.users u where u.user_id=v_owner_id));
@@ -192,10 +194,23 @@ begin
    v_brand:=coalesce(nullif(btrim(coalesce(dj->>'origin_business','')),''),nullif(btrim(coalesce(dj->>'brand','')),''));
    v_company:=coalesce(v_brand,'미입력');
    insert into public.crm_deal_wins(deal_id,win_status,won_type,sales_channel_brand,award_company,award_amount,award_date,tech_advisory,performance_owner,performance_owner_id,created_by,created_by_name,created_at,updated_at)
-    values(p_deal,'confirmed',v_type,v_brand,v_company,p_amount,v_day,false,v_owner,v_owner_id,p_actor,p_actor_name,v_at,v_at) returning * into cur;
+    values(p_deal,'confirmed',v_type,v_brand,v_company,p_amount,p_award_date,false,v_owner,v_owner_id,p_actor,p_actor_name,v_at,v_at) returning * into cur;
+  end if;
+  /* 직접 수주: 계약 전환까지 한 번에 — 계약실적 원장의 기존 기록 함수로 '계약 체결'을 남긴다 */
+  if p_result='won_own' then
+   if p_contract_date is null or p_contract_date>v_today or p_contract_amount is null or p_contract_amount<=0 or p_contract_amount<>trunc(p_contract_amount) then
+    raise exception '계약일(오늘까지) · 계약금액을 확인해 주세요' using errcode='22023';
+   end if;
+   if to_regprocedure('public.crm_contract_sales_write_v1(jsonb)') is not null and to_regclass('crm_security.contract_sales') is not null then
+    execute 'select exists(select 1 from crm_security.contract_sales c where c.deal_id::text=$1)' into v_signed using p_deal;
+    if not v_signed then
+     execute 'select public.crm_contract_sales_write_v1($1)' into v_contract using jsonb_build_object('deal_id',p_deal,'request_id',gen_random_uuid(),'kind','signed','effective_date',to_char(p_contract_date,'YYYY-MM-DD'),
+      'amount_delta',p_contract_amount::bigint,'expected_version',0,'reason',left('예외 승인(결과 수정) · '||coalesce(nullif(btrim(coalesce(p_reason,'')),''),'근거 확인')||' · 승인 '||coalesce(p_actor_name,''),8000));
+    end if;
+   end if;
   end if;
  end if;
  insert into public.crm_deal_win_events(deal_id,action,before,after,actor,actor_name,at) values(p_deal,'approval_result_fix',case when has_old then to_jsonb(old) end,to_jsonb(cur),p_actor,p_actor_name,v_at);
- return to_jsonb(cur);
+ return to_jsonb(cur)||jsonb_build_object('contract',case when v_contract is not null then 'signed' when v_signed then 'already_signed' else null end);
 end $fn$;
-revoke all on function crm_security.deal_win_apply(text,text,numeric,uuid,text) from public, anon, authenticated;
+revoke all on function crm_security.deal_win_apply(text,text,numeric,date,date,numeric,text,uuid,text) from public, anon, authenticated;

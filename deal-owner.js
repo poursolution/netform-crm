@@ -45,14 +45,16 @@
  function first(d){const r=rowOf(d);if(r&&r.first_owner)return {name:rep(r.first_owner),at:dayKey(r.first_connected_at),stored:true};return firstConnect(d);}
  /* 실적 귀속(주담당): 저장된 귀속 → 최초 연결 담당자 → 지금 담당 */
  function perf(d){if(!d)return '';const r=rowOf(d);if(r&&r.performance_owner)return rep(r.performance_owner);const f=autoRule()?firstConnect(d):null;return (f&&f.name)||rep(d.assignee)||'';}
- function info(d){const now=rep(d.assignee)||'',p=perf(d),f=first(d);return {current:now,first:f,perf:p,sub:p&&now&&p!==now?'주담당 · '+now+' 보조':'주담당',stored:!!rowOf(d)};}
+ /* 실적 나눔(중복 리드 정산이 승인된 영업건): [{name,ratio}] 합 100 */
+ function shares(d){const r=rowOf(d),s=r&&Array.isArray(r.shares)?r.shares.filter(x=>x&&x.name&&Number(x.ratio)>0):[];return s.length>=2?s.map(x=>({name:rep(x.name),ratio:Number(x.ratio)})):[];}
+ function info(d){const now=rep(d.assignee)||'',p=perf(d),f=first(d),sh=shares(d);return {current:now,first:f,perf:sh.length?sh.map(x=>x.name+' '+x.ratio+'%').join(' · '):p,sub:sh.length?'실적 나눔 · 정산 내역에 기록':p&&now&&p!==now?'주담당 · '+now+' 보조':'주담당',stored:!!rowOf(d),shares:sh};}
  /* 변경 이력: 최초 연결 → 담당 변경(서버 기록 · 예전 것은 기존 담당 이력) → 귀속 변경 요청 · 승인 */
  function history(d){
   const out=[],f=first(d),ev=events.get(String(d.id))||[];
   if(f&&f.name)out.push({k:f.at||'',t:'최초 담당 '+f.name+' · 첫 연결 (주담당 확정)'});
   const seen=new Set();
   ev.forEach(e=>{const k=dayKey(e.at);if(e.action==='reassign'){seen.add(rep(e.from_owner)+'>'+rep(e.to_owner)+'@'+k);out.push({k,t:'담당 변경 '+rep(e.from_owner)+' → '+rep(e.to_owner)+' · 사유: '+String(e.reason||'')+' · '+(e.attribution==='request'?'귀속 변경 요청':'귀속 유지')});}
-   else if(e.action==='attribution_change')out.push({k,t:'귀속 변경 '+(e.from_owner?rep(e.from_owner)+' → ':'')+rep(e.to_owner)+' · '+(rep(e.actor_name)||'승인자')+' 승인 완료'});});
+   else if(e.action==='attribution_change')out.push({k,t:(e.attribution==='split'?'실적 나눔 '+String(e.to_owner||''):'귀속 변경 '+(e.from_owner?rep(e.from_owner)+' → ':'')+rep(e.to_owner))+' · '+(rep(e.actor_name)||'승인자')+' 승인 완료'});});
   let p={};try{p=R.itemPatch(d,'deal')||{};}catch(e){}
   (p.assignmentHistory||d.assignmentHistory||[]).forEach(x=>{const k=dayKey(x.at),id=rep(x.from)+'>'+rep(x.to)+'@'+k;if(!x.to||!x.from||x.from==='—'||seen.has(id))return;seen.add(id);out.push({k,t:'담당 변경 '+rep(x.from)+' → '+rep(x.to)+(x.reason?' · 사유: '+x.reason:'')});});
   try{const AI=R.ApprovalInbox;if(AI&&AI.enabled())AI.forDeal(d.id).filter(x=>x.code==='owner_change').forEach(x=>{if(x.state==='pending')out.push({k:dayKey(x.at),t:'귀속 변경 요청 → 승인함 대기'});else if(x.state==='rejected')out.push({k:dayKey(x.decidedAt||x.at),t:'귀속 변경 요청 반려'+(x.by?' · '+x.by:'')+(x.note?' — '+x.note:'')});else if(x.state==='approved'&&!ev.some(e=>e.action==='attribution_change'))out.push({k:dayKey(x.decidedAt||x.at),t:'귀속 변경 승인'+(x.by?' · '+x.by+' 승인 완료':'')});});}catch(e){}
@@ -119,5 +121,5 @@
   fn.__do=true;R.saveAssigneeChange=fn;
  }
  wrap();document.addEventListener('DOMContentLoaded',wrap);
- root.DealOwner={enabled,available,perf,first,info,history,load,ensure,take,decorate,after,RPC,state:st};
+ root.DealOwner={enabled,available,perf,first,info,shares,history,load,ensure,take,decorate,after,RPC,state:st};
 })(window);

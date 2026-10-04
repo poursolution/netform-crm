@@ -97,9 +97,9 @@ test('예외 승인함: 종류 6개 · 새 서버 함수는 허용 목록과 SQL
  assert.match(js,/CODES=\['transfer','owner_change','dup_lead','strategic_win','special_incentive','result_fix'\]/);assert.match(sql,/type in \('owner_change','dup_lead','strategic_win','special_incentive','result_fix','transfer'\)/);
  /* 승인되면 시안의 안내대로 반영 — 내부 함수로만(직접 부를 수 없음) · 계약실적 원장은 건드리지 않는다 */
  const tfSql=read('sql/deal-transfer-v1-20261004.sql'),winSql=read('sql/deal-win-type-v1-20261004.sql');
- assert.match(sql,/crm_security\.deal_transfer_apply\(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8\)/);assert.match(sql,/crm_security\.deal_win_apply\(\$1,\$2,\$3,\$4,\$5\)/);
- assert.match(tfSql,/revoke all on function crm_security\.deal_transfer_apply\(text,text,numeric,text,uuid,text,uuid,text\) from public, anon, authenticated/);assert.match(winSql,/revoke all on function crm_security\.deal_win_apply\(text,text,numeric,uuid,text\) from public, anon, authenticated/);
- [sql,tfSql.slice(tfSql.indexOf('crm_security.deal_transfer_apply')),winSql.slice(winSql.indexOf('crm_security.deal_win_apply'))].forEach(s=>assert.doesNotMatch(s,/contract_sales|update public\.deals|insert into public\.deals/));
+ assert.match(sql,/crm_security\.deal_transfer_apply\(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,\$9,\$10\)/);assert.match(sql,/crm_security\.deal_win_apply\(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,\$9\)/);
+ assert.match(tfSql,/revoke all on function crm_security\.deal_transfer_apply\(text,text,numeric,text,date,date,uuid,text,uuid,text\) from public, anon, authenticated/);assert.match(winSql,/revoke all on function crm_security\.deal_win_apply\(text,text,numeric,date,date,numeric,text,uuid,text\) from public, anon, authenticated/);
+ [sql,tfSql.slice(tfSql.indexOf('crm_security.deal_transfer_apply')),winSql.slice(winSql.indexOf('crm_security.deal_win_apply'))].forEach(s=>assert.doesNotMatch(s,/update public\.deals|insert into public\.deals|update crm_security\.contract_sales|insert into crm_security\.contract_sales/,'영업건 · 계약실적 원장 표를 직접 고치지 않는다'));
  ['crm_approval_list_v1','crm_approval_request_v1','crm_approval_decide_v1'].forEach(n=>{assert.match(read('pc-manager-transport.js'),new RegExp("'"+n+"'"));assert.match(read('pc-error-state.js'),new RegExp(n+':'));assert.match(sql,new RegExp('function public\\.'+n));});
  assert.doesNotMatch(sql,/update public\.(deals|contracts|crm_deal_wins|crm_deal_transfers)|insert into public\.(deals|contracts)/,'승인함은 다른 자료를 바꾸지 않는다');
  /* 승인자 = 예외 승인자(기본 이승우 · 황윤선) 중 한 사람 — 관리자 아님 · 본인 건은 다른 승인자가 · 화면 · 서버가 같은 규칙 */
@@ -116,7 +116,13 @@ test('예외 승인함: 종류 6개 · 새 서버 함수는 허용 목록과 SQL
  assert.match(sql,/to_regprocedure\('crm_security\.deal_owner_apply\(text,text,text,text,uuid,text\)'\) is not null/);assert.doesNotMatch(own,/contract|update public\.deals|insert into public\.deals/);
  /* 승인 요청 창: 종류 6개 순서 · 종류마다 필수칸 2개 · 증빙 필수 여부 */
  const AR=R.PHASE2.approval_request;assert.deepEqual([...AR.order],['dup_lead','strategic_win','special_incentive','result_fix','owner_change','transfer']);
- assert.deepEqual(AR.order.map(c=>[AR.types[c].fields.length,AR.types[c].evidence]),[[2,false],[2,false],[2,true],[2,true],[2,false],[2,true]]);
+ assert.deepEqual(AR.order.map(c=>[AR.types[c].fields.length,AR.types[c].evidence]),[[4,false],[2,false],[4,true],[5,true],[2,false],[4,true]]);
+ /* 2026-10-04 보완: 날짜는 실제 일어난 날(승인일로 대신하지 않음) · 직접 수주는 계약 전환까지 · 실적 나눔 · 정산 내역 */
+ assert.equal(AR.hint,'날짜는 실제 일어난 날로 적습니다 · 승인한 날로 대신하지 않음');assert.deepEqual([...AR.types.transfer.fields],['이관 업체','이관일','낙찰일','낙찰금액']);assert.deepEqual([...AR.types.result_fix.fields],['현재 결과','바꿀 결과','낙찰일','낙찰금액','계약일 · 계약금액']);
+ const settle=read('sql/settlement-v1-20261004.sql'),ownSql=read('sql/deal-owner-v1-20261004.sql');
+ assert.match(settle,/revoke all on function crm_security\.settlement_add\(text,text,bigint,text,numeric,numeric,text,jsonb,uuid,text\) from public, anon, authenticated/);assert.match(ownSql,/revoke all on function crm_security\.deal_split_apply\(text,jsonb,text,bigint,uuid,text\) from public, anon, authenticated/);
+ assert.doesNotMatch(winSql,/v_day/,'승인한 날을 낙찰일로 쓰지 않는다');assert.doesNotMatch(tfSql.slice(tfSql.indexOf('crm_security.deal_transfer_apply')),/v_day/);
+ assert.match(winSql,/public\.crm_contract_sales_write_v1\(\$1\)/,'계약 전환 = 계약실적 원장의 기존 기록 함수');
 });
 test('금액 5개는 더하지 않는다 · 영업 경로 5칸 · Health Score (3차 기준값도 한곳)',()=>{
  const win={win_status:'confirmed',won_type:'partner_tech',award_company:'코지건설',award_amount:1043900000,award_date:'2026-09-12',sales_channel_brand:'석민이앤씨',performance_owner:'황윤선',tech_advisory:true,tech_advisory_company:'코지건설',tech_advisory_amount:433650000,pour_contract_amount:136690000};
