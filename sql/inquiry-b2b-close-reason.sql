@@ -1,17 +1,4 @@
--- B2B completion uses the existing authenticated CRM command, scope and receipt contract.
-create table if not exists private.inquiry_b2b_sync_outbox (
- event_id uuid primary key,
- inquiry_id uuid not null references public.inquiries(id),
- payload jsonb not null,
- status text not null default 'pending' check(status in ('pending','synced','review')),
- created_at timestamptz not null default now(),
- synced_at timestamptz,
- reason text
-);
-alter table private.inquiry_b2b_sync_outbox enable row level security;
-revoke all on private.inquiry_b2b_sync_outbox from public,anon,authenticated;
-grant select,update on private.inquiry_b2b_sync_outbox to service_role;
-
+-- Require a reason for NEW closures. Existing receipts remain replayable.
 create or replace function crm_security.crm_inquiry_b2b_complete_command_v1(
  p_request_id uuid,p_inquiry_id uuid,p_payload jsonb
 ) returns jsonb language plpgsql security definer set search_path='' as $$
@@ -97,23 +84,3 @@ end;
 $$;
 revoke all on function crm_security.crm_inquiry_b2b_complete_command_v1(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
 
--- Existing entry point and grants stay unchanged. Delegate every other operation unchanged.
-do $guard$
-begin
- if position('crm_write_command_v2_pre_aligo_20260919' in pg_get_functiondef('public.crm_write_command_v2(uuid,text,uuid,integer,jsonb)'::regprocedure))=0 then
-  raise exception 'CRM_COMMAND_DISPATCHER_DRIFT';
- end if;
-end $guard$;
-create or replace function public.crm_write_command_v2(p_request_id uuid,p_operation text,p_object_id uuid,p_expected_version integer,p_payload jsonb)
-returns jsonb language plpgsql security definer set search_path='' as $$
-begin
- if p_operation='inquiry_status' and p_payload->>'intent'='b2b_complete' then
-  if p_expected_version is distinct from 0 then raise exception 'invalid inquiry version' using errcode='22023'; end if;
-  return crm_security.crm_inquiry_b2b_complete_command_v1(p_request_id,p_object_id,p_payload);
- end if;
- if p_operation='campaign_create' then
-  if p_expected_version is distinct from 0 then raise exception 'invalid campaign version' using errcode='22023'; end if;
-  return crm_security.crm_sms_campaign_create_command_v1(p_request_id,p_object_id,p_payload);
- end if;
- return crm_security.crm_write_command_v2_pre_aligo_20260919(p_request_id,p_operation,p_object_id,p_expected_version,p_payload);
-end $$;
