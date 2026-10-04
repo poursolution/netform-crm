@@ -40,25 +40,23 @@
   let l=null;try{l=R.SalesInsights&&R.SalesInsights.advisory?R.SalesInsights.advisory():null;}catch(e){}
   return Array.isArray(l)?l.filter(x=>x&&x.attribution&&x.attribution.decision==='confirmed').map(x=>Object.assign({advisory_id:x.advisory_id,site_name:x.site_name,contractor:x.contractor,advisory_fee:null,pour_amount:null},x.attribution)):[];
  }
- /* 계약실적 원장에 같은 영업건 · 같은 금액으로 이미 있으면 원장 쪽에서만 센다(기존 기술자문 규칙과 같다) */
- const notDup=(dealId,amount,key)=>{const S=R.SalesInsights;if(!S||!S.advMatch)return true;try{return !!S.advMatch({decision:'confirmed',source_deal_id:dealId,bid_amount:amount,bid_confirmed_at:key,performance_owner:'',origin_business:''},{brand:'전체',owner:'전체'},()=>true);}catch(e){return true;}};
- /* 협약시공사 수주 · 기술자문 — [a,b) 낙찰일 기준. owner = 실적 귀속 담당자, 브랜드 = 유입 브랜드(공통 필터) */
+ function partnerMeta(){
+  const meta=new Map();
+  (rows||[]).forEach(w=>{if(w.won_type==='partner_tech')meta.set(String(w.deal_id),{company:w.award_company,tech:w.tech_advisory===true,site:dealOf(w.deal_id)?.site,revenue:(Number(w.tech_advisory_amount)||0)+(Number(w.pour_contract_amount)||0),revKnown:true})});
+  advRows().forEach(t=>{if(t.decision==='confirmed'&&t.source_deal_id&&!meta.has(String(t.source_deal_id)))meta.set(String(t.source_deal_id),{company:t.contractor,tech:true,site:t.site_name,revenue:(Number(t.advisory_fee)||0)+(Number(t.pour_amount)||0),revKnown:t.advisory_fee!=null||t.pour_amount!=null})});
+  return meta;
+ }
+ function isPartnerDeal(id){return enabled()&&partnerMeta().has(String(id))}
+ /* [a,b) contract event dates. Fees stay separate; no award-date fallback. */
  function partnerIn(a,b,owner){
-  attach();const brand=R.G.brand||'전체',inP=k=>!!k&&k>=a&&k<b,S=R.SalesInsights,out=[],winAdv=new Set(),winDeal=new Set();
-  (rows||[]).forEach(w=>{
-   if(w.win_status!=='confirmed'||w.won_type!=='partner_tech')return;if(w.advisory_id)winAdv.add(String(w.advisory_id));winDeal.add(String(w.deal_id));
-   const k=String(w.award_date||'').slice(0,10),own=R.repN(w.performance_owner)||'',d=dealOf(w.deal_id),br=String(w.sales_channel_brand||d&&d.brand||'');
-   if(!inP(k)||(owner&&own!==owner)||(brand!=='전체'&&brand!=='기술자문'&&br!==brand)||!notDup(w.deal_id,Number(w.award_amount)||0,k))return;
-   const tech=w.tech_advisory===true;
-   out.push({src:'win',key:k,owner:own,brand:br||'브랜드 미기록',company:String(w.award_company||''),amount:Number(w.award_amount)||0,site:d?siteOf(d):'현장명 미확인',tech,revenue:tech?(Number(w.tech_advisory_amount)||0)+(Number(w.pour_contract_amount)||0):0,revKnown:true,deal:d,dealId:String(w.deal_id)});
+  const selected=R.ContractSalesData?.entries?.({owner:owner||'전체',brand:R.G.brand||'전체'}),out=[],meta=partnerMeta();
+  if(selected)(selected||[]).forEach(r=>{
+   const m=meta.get(String(r.deal_id));if(!m)return;
+   const events=(r.events||[]).filter(e=>e.effective_date>=a&&e.effective_date<b);if(!events.length)return;
+   const d=dealOf(r.deal_id);
+   out.push({src:'contract',key:events[0].effective_date,owner:r.sales_owner_name,brand:r.brand,company:m.company||'시공사 미기록',amount:events.reduce((s,e)=>s+e.amount_delta,0),signedCount:events.filter(e=>e.kind==='signed').length,site:d?siteOf(d):m.site||r.site_name||'현장명 미확인',tech:m.tech,revenue:events.some(e=>e.kind==='signed')?m.revenue:0,revKnown:m.revKnown&&events.every(e=>e.kind==='signed'),deal:d,dealId:String(r.deal_id),events});
   });
-  advRows().forEach(t=>{
-   if(winAdv.has(String(t.advisory_id))||(t.source_deal_id&&winDeal.has(String(t.source_deal_id))))return;
-   const k=String(t.bid_confirmed_at||'').slice(0,10),ok=S&&S.advMatch?S.advMatch(t,{brand,owner:owner||'전체'},inP):(t.decision==='confirmed'&&inP(k)&&(!owner||t.performance_owner===owner)&&(brand==='전체'||brand==='기술자문'||t.origin_business===brand));
-   if(!ok)return;const known=t.advisory_fee!=null||t.pour_amount!=null;
-   out.push({src:'advisory',key:k,owner:String(t.performance_owner||''),brand:String(t.origin_business||'기술자문 직접영업'),company:String(t.contractor||'').trim()||'낙찰 시공사 미기록',amount:Number(t.bid_amount)||0,site:String(t.site_name||'현장명 미확인'),tech:true,revenue:(Number(t.advisory_fee)||0)+(Number(t.pour_amount)||0),revKnown:known,deal:t.source_deal_id?dealOf(t.source_deal_id):null,dealId:String(t.source_deal_id||'')});
-  });
-  return {count:out.length,amount:out.reduce((s,x)=>s+x.amount,0),revenue:out.reduce((s,x)=>s+x.revenue,0),unknown:out.filter(x=>!x.revKnown).length,list:out};
+  return {ready:!!selected,count:out.reduce((s,x)=>s+x.signedCount,0),amount:out.reduce((s,x)=>s+x.amount,0),revenue:out.reduce((s,x)=>s+x.revenue,0),unknown:out.filter(x=>!x.revKnown).length,list:out};
  }
  /* ── 상세 머리: 영업 경로 / 영업 담당 / 결과 / 낙찰 시공사 · 낙찰금액 + 연결 계약 ── */
  function cur(){const c=R.CUR_DETAIL;return c&&c.kind==='deal'&&c.item?c.item:null;}
@@ -126,8 +124,8 @@
   let body='',foot='';
   if(D.done){
    const x=D.done;
-   body='<div class="wn-done"><span>수주 확정 후 자동 생성</span><b>기술자문 관리 건 · '+h(siteOf(d))+'</b><div class="wn-kv"><span>계약 상대</span><span>'+h(x.tech_advisory_company)+'</span><span>기술자문</span><b>'+h(comma(x.tech_advisory_amount))+'원</b>'+(Number(x.pour_contract_amount)>0?'<span>POUR 계약</span><span>'+h(comma(x.pour_contract_amount))+'원</span>':'')+'<span>이어서</span><span>계약 → 현장 → 대금 → 완료 (기술자문 관리)</span></div><small>영업 CRM은 수주에서 성과를 확정하고 끝. 시공 · 대금은 기술자문 관리가 이어받습니다.</small></div>'
-    +'<div class="wn-note">수주실적 '+h(comma(x.award_amount))+'원(낙찰금액 · VAT 별도)이 '+h(R.repN(x.performance_owner)||own)+' 실적으로 반영되었습니다. 기술자문 · POUR 계약금액은 더하지 않았습니다.</div>';
+   body='<div class="wn-done"><span>수주 확정 후 자동 생성</span><b>기술자문 관리 건 · '+h(siteOf(d))+'</b><div class="wn-kv"><span>계약 상대</span><span>'+h(x.tech_advisory_company)+'</span><span>기술자문</span><b>'+h(comma(x.tech_advisory_amount))+'원</b>'+(Number(x.pour_contract_amount)>0?'<span>POUR 계약</span><span>'+h(comma(x.pour_contract_amount))+'원</span>':'')+'<span>이어서</span><span>계약 → 현장 → 대금 → 완료 (기술자문 관리)</span></div><small>영업실적은 공사 계약 체결 확인 후 반영합니다. 시공 · 대금은 기술자문 관리에서 이어갑니다.</small></div>'
+    +'<div class="wn-note">낙찰금액 '+h(comma(x.award_amount))+'원(VAT 별도)을 저장했습니다. 공사 계약일·공사금액·당시 실적 귀속자 확인 후 계약 원장에서 실적을 반영합니다. 기술자문 · POUR 계약금액은 별도 관리합니다.</div>';
    foot='<button type="button" class="wn-dark" data-wn="close">닫기</button>';
   }else{
    const tp=f.type,isT=tp==='transfer',step=isT?transferStep(d):null;
@@ -196,5 +194,5 @@
  /* 계약 단계 창의 계약금액 미리 채움에 쓰는 낙찰금액 */
  const amountOf=d=>{const w=of(d);return w&&w.win_status==='confirmed'?Number(w.award_amount)||0:0;};
  const basePaint=R.paint;if(typeof basePaint==='function')R.paint=function(){try{attach();}catch(e){}const r=basePaint.apply(this,arguments);try{warm();}catch(e){}return r;};
- root.DealWin={enabled,available,load,of,resultOf,partnerIn,headHtml,decorate,intercept,open:openDlg,close:closeDlg,amountOf,TYPES,SHORT,RPC,_take:take};
+ root.DealWin={enabled,available,load,of,resultOf,partnerIn,isPartnerDeal,headHtml,decorate,intercept,open:openDlg,close:closeDlg,amountOf,TYPES,SHORT,RPC,_take:take};
 })(window);

@@ -36,28 +36,10 @@
   const inquiries=root.operationalInquiries(base.inquiries||[]).filter(q=>everyone||admin||root.inquiryRoutedOwner(q)===me||root.inquiryConsultant(q)===me).map(q=>({key:'inq:'+String(q.id||root.inqKey(q)),type:'inq',item:q,site:q.site||'현장명 미입력',owner:root.inquiryRoutedOwner(q)||'미배정',brand:q.brand||'',created:root.inquiryDate(q),stage:'inquiry',stageLabel:q.status||'견적문의',issues:[],reason:root.inquiryRoutedOwner(q)?'문의 내용과 후속처리 확인':'담당자 배정 필요'}));
   return {deals:deals.filter(d=>unscoped||root.SalesScope.matches(d.owner,d.item)&&root.SalesFilterState.matchesBrand(d.brand)),inquiries:inquiries.filter(q=>unscoped||root.SalesScope.matches(q.owner,q.item)&&root.SalesFilterState.matchesBrand(q.brand))};
  }
- /* 계약실적 취합(2026-09-24 대표 지시): 원장이 준비되면 원장, 아니면 계약·시공 단계 영업건에 입력된 계약금액을 체결일 기준으로 취합. '확인 필요' 공백 금지. */
- function csFallback(f){
-  try{
-   const deals=(root.B&&root.B.deals)||[];if(!deals.length)return null;
-   const inP=iso=>{if(!iso)return false;iso=String(iso);if(String(f.year)!=='전체'&&iso.slice(0,4)!==String(f.year))return false;const m=+iso.slice(5,7);if(Number(f.month))return m===Number(f.month);if(Number(f.quarter))return Math.ceil(m/3)===Number(f.quarter);return true};
-   let amt=0,n=0;
-   deals.forEach(d=>{
-    const r=root.perfStageRank(root.dealStage(d)),won=root.outcomeOf(d)==='won';
-    if(!(won||(r!==null&&r>=10)))return;
-    if(f.owner&&f.owner!=='전체'&&root.repN(d.assignee)!==f.owner)return;
-    if(f.brand&&f.brand!=='전체'&&d.brand!==f.brand)return;
-    /* 날짜·금액 증거 없는 건은 임의 추정하지 않는다(체결일 정책) — 원장이 뜨면 원장이 정본 */
-    if(!root.hasWonAmt(d))return;
-    const at=d.contract_date||root.wonDate(d)||(won?d.closed:'');
-    if(!at||!inP(at))return;
-    amt+=Number(root.wonAmt(d))||0;n++;
-   });
-   return {netAmount:amt,signedCount:n,count:n,fallback:true};
-  }catch(e){return null}
- }
- /* 기술자문 낙찰 = 매출(2026-09-26 대표 '낙찰 의미가 매출의 의미'): 확정분만 계약실적에 더한다.
-    기간=낙찰확정일 · 금액=낙찰금액(VAT 별도) · 담당=귀속 담당 · 브랜드 칩=원천 브랜드(전체·기술자문 칩=전 건). 관리자 조회 전용 */
+ /* 계약실적은 검증된 공사 계약 원장만 취합한다. 원장을 읽지 못하면 임의 금액을 표시하지 않는다. */
+ // Missing contract evidence is not a zero or a completion-date estimate.
+ function csFallback(){return null}
+ // Advisory attribution is a classification/review source; performance stays in the contract ledger.
  let advList=null,advAt=0,advKick=false;
  function advLoad(){
   if(advKick||(advList&&Date.now()-advAt<300000))return;
@@ -65,18 +47,21 @@
   advKick=true;
   root.ContractSalesUI.advisoryRows().then(l=>{advList=Array.isArray(l)?l:[];advAt=Date.now();if(['dash','control','perf'].includes(root.G?.page)&&typeof root.paint==='function')root.paint();}).catch(()=>{advList=advList||[];advAt=Date.now();}).finally(()=>{advKick=false;});
  }
- /* 같은 영업건이 계약 원장에 같은 금액(5% 이내)으로 있으면 같은 공사 — 원장만 센다(2026-09-27 서남병원·마곡청구·안중신창 이중 합산) */
- function advDup(t){const src=String(t?.source_deal_id||''),amt=Number(t?.bid_amount)||0;if(!src||!amt)return false;return (root.ContractSalesData?.state?.().items||[]).some(r=>{const b=Number(r.balance)||0;return String(r.deal_id)===src&&!r.cancelled&&b>0&&Math.abs(b-amt)/Math.max(b,amt)<=0.05;});}
- function advMatch(t,f,inP){const brand=f.brand||'전체';return t?.decision==='confirmed'&&!advDup(t)&&inP(String(t.bid_confirmed_at||'').slice(0,10))&&(!f.owner||f.owner==='전체'||t.performance_owner===f.owner)&&(brand==='전체'||brand==='기술자문'||t.origin_business===brand);}
- function withAdvisory(s,f){
-  advLoad();if(!advList||!advList.length)return s;
-  const inP=iso=>{if(!iso)return false;if(String(f.year)!=='전체'&&f.year&&iso.slice(0,4)!==String(f.year))return false;const m=+iso.slice(5,7);if(Number(f.month))return m===Number(f.month);if(Number(f.quarter))return Math.ceil(m/3)===Number(f.quarter);return true};
-  const conf=advList.filter(x=>advMatch(x.attribution,f,inP));if(!conf.length)return s;
-  const sum=conf.reduce((n,x)=>n+(Number(x.attribution.bid_amount)||0),0),base=s||{netAmount:0,newAmount:0,count:0,signedCount:0};
-  return Object.assign({},base,{netAmount:(Number(base.netAmount)||0)+sum,newAmount:(Number(base.newAmount)||0)+sum,count:(Number(base.count)||0)+conf.length,advisoryAmount:sum,advisoryCount:conf.length});
+ // Kept for older consumers: unposted award records must not add performance.
+ function advMatch(){return false}
+ function advisoryPerformance(list,f={},inPeriod=()=>true){
+  const selected=root.ContractSalesData?.entries?.(f);
+  if(!selected)return null;
+  const links=new Map();
+  (list||[]).forEach(x=>{const t=x?.attribution;if(t?.decision==='confirmed'&&t.source_deal_id&&!links.has(String(t.source_deal_id)))links.set(String(t.source_deal_id),x)});
+  return selected.flatMap(r=>{
+   const x=links.get(String(r.deal_id));if(!x)return [];
+   const events=(r.events||[]).filter(e=>inPeriod(e.effective_date));if(!events.length)return [];
+   return [{...x,events,attribution:{...x.attribution,bid_amount:events.reduce((s,e)=>s+e.amount_delta,0),performance_owner:r.sales_owner_name,origin_business:r.brand,contract_date:r.contract_date}}];
+  });
  }
  let csKicked=false;
- function csSum(f){return withAdvisory(csLedger(f),f)}
+ function csSum(f){return csLedger(f)}
  function csLedger(f){
   const cs=root.ContractSalesData;
   const st=cs&&cs.state?cs.state():null;
@@ -186,7 +171,7 @@
    const b=document.getElementById('pf-advisory');if(!b)return;
    const f=state(),brand=root.G.brand||'전체',allBrand=brand==='전체'||brand==='기술자문';
    const inP=iso=>{if(!iso)return false;iso=String(iso);if(String(f.year)!=='전체'&&iso.slice(0,4)!==String(f.year))return false;const m=+iso.slice(5,7);if(Number(f.month))return m===Number(f.month);if(Number(f.quarter))return Math.ceil(m/3)===Number(f.quarter);return true};
-   const conf=list.filter(x=>{const t=x.attribution;return t?.decision==='confirmed'&&inP(t.bid_confirmed_at)&&(f.owner==='전체'||t.performance_owner===f.owner)&&(allBrand||t.origin_business===brand)});
+   const conf=advisoryPerformance(list,{...f,brand},inP);if(conf===null)return;
    const pending=list.filter(x=>!x.attribution).length,total=conf.reduce((n,x)=>n+Number(x.attribution.bid_amount||0),0);
    const group=key=>{const m={};conf.forEach(x=>{const k=x.attribution[key]||'-';m[k]=m[k]||{n:0,s:0};m[k].n++;m[k].s+=Number(x.attribution.bid_amount||0)});return Object.entries(m).sort((p,q)=>q[1].s-p[1].s)};
    const line=([k,v])=>'<div class="pf-adv-row"><span>'+h(k)+' <small>'+v.n+'건</small></span><b title="'+number(v.s)+'원">'+money(v.s)+'</b></div>';
@@ -403,10 +388,6 @@
     const deal=(root.B?.deals||[]).find(x=>String(x.id)===String(r.deal_id)),site=deal&&(deal.site||deal.site_name||deal.name)||r.site_name||r.site||'';
     out.push({at:d,site:site||(r.brand||'-')+' · 현장명 미확인',owner:e.sales_owner_name,stageLabel:kindLabel[e.kind]||e.kind,reason:(e.kind==='signed'?'계약일 ':'적용일 ')+d+(site&&r.brand?' · '+r.brand:'')+(e.kind!=='signed'&&e.reason?' · '+e.reason:''),amt:e.amount_delta});});
   });
-  /* 기술자문 낙찰(확정분)도 매출 근거에 — 합계와 근거 목록이 같게 */
-  const inP=d=>{if(f.year&&f.year!=='전체'&&!d.startsWith(String(f.year)))return false;if(filter.month)return Number(d.slice(5,7))===Number(filter.month);if(f.quarter)return Math.ceil(Number(d.slice(5,7))/3)===Number(f.quarter);return true};
-  (advList||[]).forEach(x=>{const t=x.attribution;if(!advMatch(t,{brand:filter.brand||'전체',owner:filter.owner||''},d=>!!d&&inP(d)))return;const d=String(t.bid_confirmed_at).slice(0,10);
-   out.push({at:d,site:x.site_name||'-',owner:t.performance_owner,stageLabel:'기술자문 낙찰',reason:d+' · 원천 '+(t.origin_business||'-')+' · VAT 별도',amt:Number(t.bid_amount)||0});});
   return out.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
  }
  function evRow(d){return {site:d.site,owner:d.owner,stageLabel:d.stageLabel,reason:d.reason||'',amt:d.expected||d.amt||0,key:d.key}}
@@ -528,7 +509,7 @@
   return '<div class="dc-topbar">'+'<span class="dc-nav">'+btn('전체 현황 ↗','navigate','dash')+btn('컨트롤타워 ↗','navigate','control')+(root.ContractSalesUI?.desk&&root.todayIsAdmin?.()?'<button type="button" data-si-action="contract-desk">계약 변경·취소 기록</button>':'')+(root.ContractSalesUI?.advisorySync&&root.CRMRelease?.has?.('crm_advisory_attribution_v1')!==false?'<button type="button" data-si-action="advisory-sync">기술자문 낙찰실적 확정</button>':'')+'</span></div><div class="dc-grid">'+verdict+cards
    +'<div class="dc-p c8"><div class="dc-ph">월별 매출 추이<small>계약 체결일 기준 · 월 클릭=근거</small></div><div class="dc-pb">'+dcLine(mVals,460,118,'#3B6CE4','pfg1',money,'cs-month')+'</div></div>'
    +'<div class="dc-p c4"><div class="dc-ph">담당자 랭킹<small>이름 클릭=상세</small></div><div class="dc-pb" style="padding-top:4px">'+table+'</div></div>'
-   +'<div class="dc-p c4" id="pf-advisory" hidden><div class="dc-ph">기술자문 낙찰실적<small>확정분만 · 낙찰확정일 기준 · VAT 별도</small></div><div class="dc-pb pf-adv-body"></div></div>'
+   +'<div class="dc-p c4" id="pf-advisory" hidden><div class="dc-ph">기술자문 낙찰실적<small>계약 원장 반영분 · 계약 체결일 기준 · VAT 별도</small></div><div class="dc-pb pf-adv-body"></div></div>'
    +'</div>';
  }
  function animateConsole(host){
@@ -746,5 +727,5 @@
  function close(restore=true){const node=document.getElementById('si-person');if(node){node.remove();document.body.style.overflow=''}if(restore&&focusBefore?.isConnected)focusBefore.focus();focusBefore=null}
  /* 담당자 클릭은 어느 화면에서든 해당 담당자로 스코프된 성과 분석으로 이동한다 (2026-09-24). */
  root.addEventListener('phase1:identity-cleared',()=>{close(false);root.G.insights=null;['dash','control','perf'].forEach(p=>{const el=document.getElementById('si-'+p);if(el)el.innerHTML=''})});
- root.SalesInsights={render,close,data,rows,state,openRecord,openEvidence,contractEvidence,evRow,advMatch,advisory:()=>advList,advisoryLoad:advLoad};/* 뒤 항목들은 영업 대시보드 v2(dash-b.js)가 쓴다 */
+ root.SalesInsights={render,close,data,rows,state,openRecord,openEvidence,contractEvidence,evRow,advMatch,advisoryPerformance,advisory:()=>advList,advisoryLoad:advLoad};/* 뒤 항목들은 영업 대시보드 v2(dash-b.js)가 쓴다 */
 })(window);
