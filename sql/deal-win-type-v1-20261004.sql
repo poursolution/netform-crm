@@ -72,7 +72,7 @@ returns jsonb language plpgsql volatile security definer set search_path='' as $
 declare
  a record; dj jsonb; old public.crm_deal_wins%rowtype; cur public.crm_deal_wins%rowtype; has_old boolean;
  v_deal text; v_type text; v_company text; v_amt numeric; v_date date; v_tech boolean; v_tco text; v_tamt numeric; v_pour numeric;
- v_name text; v_owner text; v_owner_id uuid; v_brand text; v_site uuid; v_site_name text; v_work text; v_adv uuid; v_created boolean:=false; v_at timestamptz:=clock_timestamp();
+ v_name text; v_owner text; v_owner_id uuid; v_po text; v_po_id uuid; v_brand text; v_site uuid; v_site_name text; v_work text; v_adv uuid; v_created boolean:=false; v_at timestamptz:=clock_timestamp();
 begin
  select * into a from crm_security.actor();
  if not found then raise exception 'forbidden' using errcode='42501'; end if;
@@ -121,6 +121,11 @@ begin
   begin v_owner_id:=nullif(dj->>'owner_id','')::uuid; exception when others then v_owner_id:=null; end;
   v_owner:=coalesce(nullif(btrim(coalesce(dj->>'assignee_name','')),''),(select u.name from public.users u where u.user_id=v_owner_id));
   v_brand:=coalesce(nullif(btrim(coalesce(dj->>'origin_business','')),''),nullif(btrim(coalesce(dj->>'brand','')),''));
+  -- 담당 · 귀속 분리(2차 기능 8): 그 영업건에 고정된 실적 귀속(주담당)이 있으면 그 사람에게(sql/deal-owner-v1)
+  if to_regclass('public.crm_deal_owners') is not null then
+   execute 'select o.performance_owner,o.performance_owner_id from public.crm_deal_owners o where o.deal_id=$1' into v_po,v_po_id using v_deal;
+   if v_po is not null then v_owner:=v_po; v_owner_id:=v_po_id; end if;
+  end if;
  end if;
  v_adv:=case when has_old then old.advisory_id else null end;
  -- 기술자문 관리 건: 처음이면 만들고, 이미 이 영업건으로 만든 건이 있으면 값을 맞춘다. 발생 = 아니오로 바꿔도 만든 건은 지우지 않는다(기술자문 관리에서 정리)

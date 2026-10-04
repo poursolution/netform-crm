@@ -30,14 +30,15 @@ test('approval inbox: request → one of the approvers decides (not the requeste
   await assert.rejects(db.query('select crm_security.approval_approver($1)',[X]),/permission denied/);
   const l0=await call('crm_approval_list_v1');assert.deepEqual(l0.rows,[]);assert.equal(l0.admin,false);assert.equal(l0.approver,false);
   /* 요청: 종류 · 내용 · 사유 필수, 영업건은 있는 것만 */
-  const rq={type:'owner_change',deal_id:D1,title:'[경기 용인] 수지삼성래미안 이필선 → 김성민',reason:'지역 재배치 · 계약은 김성민이 진행',payload:{fields:[{l:'현재 귀속',v:'이필선 (주담당)'},{l:'바꿀 귀속',v:'김성민'}]}};
+  const rq={type:'owner_change',deal_id:D1,title:'[경기 용인] 수지삼성래미안 이필선 → 김성민',reason:'지역 재배치 · 계약은 김성민이 진행',payload:{fields:[{l:'현재 귀속',v:'이필선 (주담당)'},{l:'바꿀 귀속',v:'정정훈'}],from_owner:'이필선',to_owner:'정정훈'}};
   await assert.rejects(call('crm_approval_request_v1',{...rq,type:'transfer'}),/요청 종류/);
   await assert.rejects(call('crm_approval_request_v1',{...rq,title:' '}),/요청 내용/);
   await assert.rejects(call('crm_approval_request_v1',{...rq,reason:''}),/요청 사유/);
   await assert.rejects(call('crm_approval_request_v1',{...rq,payload:[1]}),/invalid payload/);
+  await assert.rejects(call('crm_approval_request_v1',{...rq,payload:{to_owner:'없는사람'}}),/바꿀 귀속은 사용 중인 계정 이름/,'귀속 변경은 바꿀 귀속(계정 이름)이 있어야 한다');
   await assert.rejects(call('crm_approval_request_v1',{...rq,deal_id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'}),/영업건을 찾을 수 없습니다/);
   const r1=(await call('crm_approval_request_v1',rq)).request;
-  assert.equal(r1.status,'pending');assert.equal(r1.requested_by,V);assert.equal(r1.requested_by_name,'이필선');assert.equal(r1.payload.fields[1].v,'김성민');assert.equal(r1.decided_at,null);
+  assert.equal(r1.status,'pending');assert.equal(r1.requested_by,V);assert.equal(r1.requested_by_name,'이필선');assert.equal(r1.payload.fields[1].v,'정정훈');assert.equal(r1.decided_at,null);
   await assert.rejects(call('crm_approval_request_v1',rq),/같은 요청이 이미 승인 대기 중/);
   /* 남의 영업건에도 올릴 수 있다(중복 리드 정산 등) → 그 영업건 담당자도 볼 수 있다 */
   const r2=(await call('crm_approval_request_v1',{type:'result_fix',deal_id:D2,title:'[경기 화성] 동탄 실주 → 수주',reason:'재입찰로 낙찰 · 낙찰공고 첨부'})).request;

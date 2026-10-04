@@ -99,6 +99,10 @@
   const miss=T.fields.filter((l,i)=>!f[i]);if(miss.length){D.err=miss.join(' · ')+'을(를) 적어 주세요.';return render();}
   if(!why){D.err='근거를 적어 주세요.';return render();}
   if(T.evidence&&!D.file&&!D.uploaded){D.err='증빙 파일을 첨부해 주세요.';return render();}
+  /* 귀속 변경: 바꿀 귀속 = 영업담당자 이름(승인되면 그 사람으로 실적 귀속이 바뀐다) */
+  let owner=null;
+  if(D.code==='owner_change'){const from=R.repN(f[0].replace(/\s*\(주담당\)\s*$/,''))||f[0],to=R.repN(f[1])||f[1];let known=[];try{known=(R.SALES_PEOPLE_MASTER||[]).filter(x=>x&&x.active!==false).map(x=>R.repN(x.name)).concat((R.B&&R.B.users||[]).map(x=>R.repN(x.name||x.displayName||x.full_name))).filter(Boolean);}catch(e){}
+   if(known.length&&!known.includes(to)){D.err='바꿀 귀속은 영업담당자 이름으로 적어 주세요.';return render();}if(to===from){D.err='바꿀 귀속이 현재 귀속과 같습니다.';return render();}owner={from_owner:from,to_owner:to};}
   /* 타사 이관 실적 = 기존 타사 이관 창으로 잇는다(등록 → 낙찰결과 → 승인자 실적 인정). 승인함에는 낙찰결과가 저장되면 올라간다 */
   if(D.code==='transfer'){
    const s=transferState(d),T2=R.DealTransfer,num=String(f[1]).replace(/[^\d]/g,'');
@@ -115,7 +119,7 @@
     const up=await R.uploadExecAttachment(d,D.file,'기타',['승인 요청 증빙'],AI().labelOf(D.code)+' 승인 요청 증빙');
     D.uploaded={attachment_id:String(up&&(up.id||up.attachment_id)||''),file_name:D.file.name};D.file=null;
    }
-   const payload={fields:T.fields.map((l,i)=>({l,v:f[i],auto:!!D.auto[i]})),evidence:D.uploaded||null};
+   const payload=Object.assign({fields:T.fields.map((l,i)=>({l,v:f[i],auto:!!D.auto[i]})),evidence:D.uploaded||null},owner||{});
    const r=await R.OpsStore.rpc(AI().RPC.request,{type:D.code,deal_id:String(d.id),title:titleOf(D.code,d,f),reason:why,payload});
    AI().take(r.request);D.busy=false;D.sent={label:AI().labelOf(D.code)};render();
   }catch(e){D.busy=false;D.err='보내지 못했습니다: '+String(e&&e.message||e);render();return;}
