@@ -19,7 +19,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    B={deals:[{id:'d1',site:'[경기 용인] 신갈현대아파트',assignee:'이필선',brand:'POUR솔루션',created:CUR_Y+'-06-01',code:'consulting',stage_code:'consulting',grp:'영업·관리',amt:12e7}],
     inquiries:[{id:U,site:'[경기 용인] 동백 호수마을',address:'경기도 용인시 기흥구',status:'접수',at:at(3),created_at:at(3),brand:'POUR솔루션',phone:'010-1111-2222',contact_name:'김소장',work_type:'옥상',raw:{'문의내용':'옥상 누수가 심해 방수 견적을 요청드립니다.','고객유형':'관리사무소','상담채널':'전화'}},
      {id:A,site:'[경기 용인] 구갈 한양',status:'배정완료',at:at(2),created_at:at(2),brand:'석민이앤씨',phone:'010-3333-4444',contact_name:'박과장',assignee:'이필선',assigned_to:'이필선',assigned_at:at(1.5),raw:{'문의내용':'외벽 재도장 견적 문의합니다.','상담채널':'홈페이지'},activities:[{type:'전화',note:'소장님 통화 — 범위 확인',at:at(1),actor:'이필선'}]}],activities:[],inquiryTrash:[]};
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';
+   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;G.inqDetailV3Off=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};/* 시험 환경엔 로그인 저장소가 없다 */window.__writes=[];window.pushWrite=(op,p)=>{window.__writes.push([op,p]);return 'req-'+window.__writes.length};goPage('inq');
    window.U=U;window.A=A;
   });

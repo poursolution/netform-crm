@@ -109,7 +109,7 @@
   else if(/배정|담당|상태|단계|데이터정리|다음 ?할 ?일|일정|기한|후속확인/.test(type)||/^(다음 할 일|현장방문 · 기한|견적서 (발송|발송 후))/.test(body)){kind='system';}
   else kind='memo';
   if(a.type==='체크')return null;
-  return {kind,ch,res,text:text||type,who:a.actor||a.actor_name||'',at:a.at||a.occurred_at||a.created_at,src:a.source==='mobile'||/모바일/.test(String(a.source||''))?'모바일':'CRM',next:a.next||''};
+  return {kind,ch,res,text:m?text:(text||type),who:a.actor||a.actor_name||'',at:a.at||a.occurred_at||a.created_at,src:a.source==='mobile'||/모바일/.test(String(a.source||''))?'모바일':'CRM',next:a.next||''};
  }
   /* CRM 직접 발송(2026-10-03 대표 "진행해"): 문의 응대 문자 큐 — 함수가 운영에 있고 로그인 상태이며 번호가 010 이면 [CRM에서 보내기]. 전송은 대표 PC 실행기(ALIGO_INQUIRY_REPLIES)가 한다 */
   const SMS_RPC='crm_inquiry_sms_request_v1',SMS_LIST='crm_inquiry_sms_list_v1';
@@ -201,6 +201,89 @@
   if(!gn){const n=W().related(q),list=(n.list||[]).slice(0,5);if(n.region){near='<div class="idv-near"><div class="idv-nhead"><b>근처 현장 '+list.length+'곳</b><span>'+h(n.region)+' · 같은 지역</span></div>'+(list.length?list.map(x=>{const d=x.d,issue=root.issueSet?root.issueSet(d):[],hint=issue.includes('overdue')?'같이 방문 권장':issue.includes('nextMissing')?'방문 시 같이 챙기기':'',amt=root.oppAmt(d);return '<button type="button" class="idv-ncard mine" data-idv="near" data-v="'+attr(root.dealKey(d))+'"><span class="n1"><b>'+h(String(d.site||'').replace(/^\s*\[[^\]]*\]\s*/,''))+'</b><em>(본인)</em></span><span class="n2"><i></i>'+h(root.stageNoLabel(root.dealStage(d)))+' · '+h(root.repN(d.assignee))+(amt?' · '+h(root.fmtAmt(amt)):'')+'</span>'+(hint?'<span class="n3">'+hint+'</span>':'')+'</button>';}).join(''):'<p class="idv-hint">이 지역에 진행 중인 담당 현장이 없습니다.</p>')+'</div>';}}
   return head+nowBox+next+near+(admin&&!handed?'<button type="button" class="idv-link idv-change" data-idv="reassign">담당 변경</button>':'');
  }
+
+ /* ── 상세 v3 (2026-10-04 핸드오프 inquiry_v2 '견적문의 상세 v3' — 상세의 최종본) ──
+    원칙: 같은 정보는 한 번만 · 설명 문장 대신 할 일 하나. 머리(브랜드 띠 · 공종 · 유입 / 현장명 + 고객 · 전화 / 접수일 · 담당 / 진행 4칸 / 상태 꼬리표 1개)
+    왼쪽(고객이 남긴 말 · 핵심 정보 4줄 · 채울 정보 n / 9) · 가운데(응대 이력 + 기록: 응대 기록 · 내부 메모 2개, 결과 칩 → 다음 행동 → 저장) · 오른쪽(지금 할 일 1개 · 다음 단계 · 근처 현장 / 담당 변경).
+    저장 경로 · 자동 전환 규칙은 v2 그대로. 규칙으로 만든 다음 행동 제안에는 AI 표식을 붙이지 않는다(실제 AI 로 읽었을 때만). 끄기: G.inqDetailV3Off=true → v2 배치 */
+ const V3=()=>!root.G.inqDetailV3Off;
+ const md2=v=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(v||''));return m?Number(m[2])+'.'+Number(m[3]):'';};
+ const dateOnly=t=>{const d=new Date(t);return Number.isFinite(d.getTime())?d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate():'';};
+ const phoneOf=q=>{const p=String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'').trim(),dg=p.replace(/\D/g,'');return {digits:dg,text:dg?root.phoneFmt(dg):''};};
+ const RES3=[['연결됨','연결됨'],['부재','부재'],['검토중','검토중'],['자료요청','자료요청'],['회신대기','회신대기'],['배드핏','거절']];
+ const resShow=r=>r==='거절'?'배드핏':r;
+ const NEED_DATE=['meeting_date','reply_due'];
+ function header3(q){
+  const S0=stateOf(q),brand=String(q.brand||root.inquiryBrandOf?.(q)||'').trim(),bc=(BRC[brand]||['#6b7280'])[0],work=String(root.inqCtlWorkLabel(q)||''),sum=W().gist(q)||'',r=q.raw&&typeof q.raw==='object'?q.raw:{},d=q.detail&&typeof q.detail==='object'?q.detail:{},inflow=String(d.channel||q.channel||r['상담채널']||r['유입경로']||'').trim();
+  const na=root.actionObj(q,root.itemPatch(q,'inq')),lc=[...timeline(q)].reverse().find(e=>e.kind==='contact'||(e.kind==='work'&&e.res));
+  /* 상태 꼬리표는 하나만: 배정 · 첫 연락이 늦으면 빨강(위험신호), 그 뒤에는 마지막 결과 + 다음 확인일 */
+  let pill;
+  if(S0.step===4)pill=['ok',S0.att&&!S0.handed?'기존 영업건에 붙임':'파이프라인 전환'];
+  else if(S0.step===0)pill=['red','미배정'+(S0.elapsed?' · '+S0.elapsed+' 지남':'')];
+  else if(S0.step===1)pill=['red','첫 연락 전'+(S0.elapsed?' · '+S0.elapsed:'')];
+  else if(na&&na.due)pill=[String(na.due).slice(0,10)<today()?'red':'amb',(lc&&lc.res?(lc.res==='회신대기'?'회신 대기':resShow(lc.res)):'후속 연락')+' · '+md2(na.due)+' 확인'];
+  else pill=[S0.since!=null&&S0.since>FOLLOW_D()?'red':'amb','마지막 연락 후 '+(S0.since==null?'—':S0.since+'일')];
+  const ph=phoneOf(q),customer=String(q.contact_name||q.contact||'').trim()||'고객 미입력',owner=root.inquiryAssigned(q)?root.repDisplay(root.inquiryRoutedOwner(q)):'미배정';
+  const names=['접수','담당 배정','현장방문 / 견적','파이프라인 전환'];
+  return '<div class="idv3-top"><div class="r1"><i class="bar" style="background:'+bc+'"></i><b style="color:'+bc+'">'+h(brand||'브랜드 미지정')+'</b><span>'+h([work].concat(String(sum).split(' · ').map(x=>x.trim()).filter(x=>x&&!work.includes(x)&&x!=='견적 요청'),[inflow?(/문의$/.test(inflow)?inflow:inflow+' 문의'):'']).filter(v=>v&&String(v).trim()).join(' · '))+'</span><i class="sp"></i><span class="idv3-pill '+pill[0]+'">'+h(pill[1])+'</span><button type="button" class="inq-dialog-close idv-close idv3-x" aria-label="닫기" onclick="InquiryWorkbench.close()">×</button></div>'
+   +'<div class="r2"><h2 id="inq-dialog-title">'+h(q.site||'현장명 미입력')+'</h2><span>'+h(customer)+(ph.text?' · <b>'+h(ph.text)+'</b>':'')+'</span><small>'+h(dateOnly(S0.created)+' 접수 · 담당 '+owner)+'</small></div>'
+   +'<div class="idv3-steps">'+stepsOf(q).map((x,i)=>'<div class="'+(x.done?'done':x.cur?'cur':'')+'"><i></i><span>'+(x.cur?'지금 · ':'')+names[i]+'</span></div>').join('')+'</div></div>';
+ }
+ function col13(q,s){
+  const f=new Map(W().sourceFields(q)),r0=q.raw&&typeof q.raw==='object'?q.raw:{},can=fieldEditable(),can2=need2Editable();
+  const val=k=>(f.get(k)&&f.get(k)!=='미입력')?f.get(k):(r0[k]&&String(r0[k]).trim()&&String(r0[k]).trim()!=='-'?String(r0[k]).trim():'');
+  const ph=phoneOf(q),who=String(q.contact_name||q.contact||'').trim(),role=who.split(/\s*·\s*|\s+/).find(x=>/(소장|과장|팀장|대리|주임|회장|총무|대표|이사|실장|부장|차장|사원|담당|계장|주무관)$/.test(x))||'';
+  const INFO=[['주소','address',val('건물주소'),'예: 수원시 영통구 …'],['공종','work_type',val('공사유형'),'예: 옥상 방수'],['유입','inflow',val('유입경로')||val('상담채널'),'예: 네이버 검색 · 전화'],['연락처','phone',ph.text?[role||who,ph.text].filter(Boolean).join(' · '):'','예: 010-0000-0000']];
+  const rows=INFO.map(([l,field,v,p])=>'<span class="k">'+l+'</span>'+(v?'<span>'+h(v)+'</span>':s&&s.editField===field?'<input class="idv-editin" data-idv="editinput" data-v="'+field+'" value="'+attr(s.editDraft||'')+'" placeholder="'+attr(p)+'" aria-label="'+attr(l)+' 입력">':can?'<button type="button" class="idv3-add" data-idv="edit" data-v="'+field+'">입력</button>':'<span class="no">—</span>')).join('');
+  const N9=L3().need9?L3().need9(q):[],miss=N9.filter(x=>!x.ok),oks=N9.filter(x=>x.ok);
+  const fieldOf=x=>{const f2=NEEDF[x.l];return f2?f2[0]:'next';},openOf=x=>{const f2=NEEDF[x.l];return !f2||(NEED_DATE.includes(f2[0])?can:can2);};
+  const chips=miss.map(x=>{const fd=fieldOf(x),on=fd!=='next'&&s&&s.editField===fd;return '<button type="button" class="idv3-chip'+(on?' on':'')+'"'+(openOf(x)?' data-idv="need" data-v="'+attr(fd)+'"':' disabled title="서버 적용 뒤에 열립니다"')+'>'+h(x.l)+'</button>';}).join('');
+  const ek=s&&s.editField,elab=NEEDKEY[ek]||(ek==='meeting_date'?'대표회의 일정':ek==='reply_due'?'자료 회신 기한':''),fill=elab?'<div class="idv3-fill"><input class="idv-editin" data-idv="editinput" data-v="'+ek+'"'+(NEED_DATE.includes(ek)?' type="date"':'')+' value="'+attr(s.editDraft||'')+'" placeholder="'+attr(elab+' 입력')+'" aria-label="'+attr(elab+' 입력')+'"><button type="button" data-idv="editsave">저장</button></div>':'';
+  const orig=W().originalText(q)||'';
+  return '<div class="idv3-sec"><b class="lb">고객이 남긴 말</b><span class="idv3-quote">'+h(orig?'"'+orig+'"':'저장된 문의 원문이 없습니다.')+'</span></div><div class="idv3-info">'+rows+'</div>'
+   +(N9.length?'<div class="idv3-need"><div class="hd"><b>채울 정보</b><b class="n">'+miss.length+'</b><span>/ 9'+(miss.length?' · 누르면 바로 입력':' · 모두 채움')+'</span></div>'+(miss.length?'<div class="chips">'+chips+'</div>':'')+fill+'<small>채운 정보 '+oks.length+'개'+(oks.length?' · '+h(oks.map(x=>x.l).join(' · ')):'')+'</small></div>':'');
+ }
+ function sugText(q,s){const g=sugOf(q,s),has=!!s.res||!!g.T;return {g,has,txt:has?(g.none?'— 배드핏 종결 검토 · '+kday(new Date(g.due+'T00:00:00'))+' 확인':g.act+' · '+kday(new Date(g.due+'T00:00:00'))):'결과를 고르면 제안'};}
+ function col23(q,s){
+  if(s.tab==='sms')s.tab='call';
+  const L=timeline(q),contacts=L.filter(e=>e.kind==='contact'||(e.kind==='work'&&e.ch)),conN=contacts.filter(e=>CONNECTED.includes(e.res)).length;
+  const body=L.map(e=>{const con=e.kind==='contact'||e.kind==='work',tag=e.kind==='memo'?'내부 메모':[e.ch,e.res?resShow(e.res):''].filter(Boolean).join(' · '),by=e.kind==='system'?(e.src&&e.src!=='CRM'?e.src:e.who):e.who;
+   return '<div class="idv3-ev'+(con?' ct':e.kind==='memo'?' mm':'')+'"><i></i><div><span class="m">'+h(fmt(e.at))+(by?' · '+h(by):'')+(tag?' · <b>'+h(tag)+'</b>':'')+'</span>'+(e.text?'<span class="t'+(e.kind==='system'?'':' box')+'">'+h(e.text)+'</span>':'')+(e.next?'<span class="n">→ 다음 행동: '+h(String(e.next).replace(/(\d{4})-(\d{2})-(\d{2})/,(x,y,mo,dd)=>Number(mo)+'.'+Number(dd)))+'</span>':'')+'</div></div>';}).join('');
+  let form;
+  if(s.tab==='memo')form='<input id="spLogNote" class="idv3-in" data-idv="text" placeholder="내부에서만 보는 메모 (고객에게 보이지 않음)" value="'+attr(s.text)+'"><div class="idv3-foot"><span class="idv3-sug">팀 내부용 · 고객에게 보이지 않습니다</span><button type="button" class="idv-save'+(s.text.trim()?' on':'')+'" data-idv="save">저장</button></div><select id="spLogType" hidden><option selected>기타</option></select>';
+  else{const u=sugText(q,s),g=u.g;
+   form='<div class="idv3-res">'+RES3.map(([l,v])=>'<button type="button" class="idv3-rc'+(s.res===v?' on':'')+'" data-idv="res" data-v="'+v+'" aria-pressed="'+(s.res===v)+'">'+l+'</button>').join('')+'</div>'
+    +'<input id="iq-res" class="idv3-in" data-idv="text" placeholder="무슨 일이 있었는지 한 줄 (선택)" value="'+attr(s.text)+'">'
+    +(u.has&&s.edit?'<div class="idv-sugedit"><small>수단</small><div>'+((root.CRMRules&&root.CRMRules.get('contact_channels'))||CH).map(l=>'<button type="button" class="idv-chip'+(g.ch===l?' on':'')+'" data-idv="ch" data-v="'+l+'">'+l+'</button>').join('')+'</div><small>다음 행동</small><div>'+AC.map(l=>'<button type="button" class="idv-chip'+(g.act===l?' on':'')+'" data-idv="act" data-v="'+l+'">'+l+'</button>').join('')+'</div><small>날짜</small><div>'+DY.map(l=>'<button type="button" class="idv-chip'+(g.nday===l&&!s.due?' on':'')+'" data-idv="nday" data-v="'+l+'">'+l+'</button>').join('')+'<input type="date" id="iq-due" data-idv="due" value="'+attr(g.due)+'" aria-label="다음 행동 날짜"></div><input id="iq-next" data-idv="next" placeholder="다음 행동을 직접 적기" value="'+attr(s.next||'')+'"></div>':'<input type="hidden" id="iq-next" value="'+attr(s.next||(u.has?(g.none?'배드핏 종결 검토':g.act):''))+'"><input type="hidden" id="iq-due" value="'+attr(u.has?g.due:'')+'">')
+    +'<div class="idv3-foot"><span class="idv3-sug">'+(s.aiRead?'<em>AI</em>':'')+'다음 행동 <b>'+h(u.txt)+'</b>'+(u.has?'<button type="button" class="lnk" data-idv="edit-sug">'+(s.edit?'닫기':'바꾸기')+'</button>':'')+'</span><button type="button" class="idv-save'+(u.has?' on':'')+'" data-idv="save">저장</button></div><input type="hidden" id="iq-did" value="고객 응대 기록">';}
+  return '<div class="idv3-chead"><b>응대 이력</b><span>'+L.length+'건 · 시도 '+contacts.length+' · 연결 '+conN+'</span></div><div class="idv-thread idv3-thread">'+body+'</div>'
+   +'<div class="idv-composer idv3-composer" data-tab="'+s.tab+'"><div class="idv3-tabs" role="tablist">'+[['call','응대 기록'],['memo','내부 메모']].map(t=>'<button type="button" role="tab" data-idv="tab" data-v="'+t[0]+'" aria-selected="'+(s.tab===t[0])+'">'+t[1]+'</button>').join('')+'</div>'+form+'<div class="spmsg idv-err" id="iq-msg"></div></div>';
+ }
+ /* 입력 중에는 제안 줄과 저장 버튼만 바꾼다 */
+ function refreshSug3(q,s){const root2=document.querySelector('#inq-inbox-dialog .idv3-composer');if(!root2||!q)return;const u=sugText(q,s),b=root2.querySelector('.idv3-sug b');if(b)b.textContent=u.txt;const sv=root2.querySelector('.idv-save');if(sv)sv.classList.toggle('on',u.has);const nx=document.getElementById('iq-next'),du=document.getElementById('iq-due');if(nx&&nx.type==='hidden')nx.value=u.has?(u.g.none?'배드핏 종결 검토':u.g.act):'';if(du&&du.type==='hidden')du.value=u.has?u.g.due:'';if(u.has!==!!root2.querySelector('[data-idv="edit-sug"]'))reskinKeepFocus();}
+ function reskinKeepFocus(){const el=document.activeElement,id=el&&el.id,pos=el&&el.selectionStart;reskinFrom();if(id){const n=document.getElementById(id);if(n){n.focus();try{n.setSelectionRange(pos,pos);}catch(e){}}}}
+ function col33(q,s){
+  const admin=root.inqCtlIsAdmin?.(),assigned=root.inquiryAssigned(q),owner=root.inquiryRoutedOwner(q),handed=root.inqCtlConverted(q);
+  if(!assigned||(s.reassign&&admin&&!handed))return col3(q,s);/* 배정 · 담당 변경은 기존 배정 칸 그대로 */
+  const S0=stateOf(q),na=root.actionObj(q,root.itemPatch(q,'inq')),meet=meetOf(q),meetHot=meet&&meet.dd>=0&&meet.dd<=3,ph=phoneOf(q),attD=attachedOf(q);
+  const title=S0.step===4?(S0.att&&!S0.handed?'기존 영업건에 붙임':'파이프라인 전환 완료'):S0.step===1?'첫 연락 전화':na&&na.text?na.text+(na.due?' · '+md2(na.due):''):meetHot?'자료 제출 · 대표회의 대비':'후속 연락';
+  const opener='안녕하세요, 넷폼 '+root.repDisplay(owner)+'입니다. 문의 주신 '+(root.inqCtlWorkLabel(q)||W().gist(q)||'견적')+' 건으로 연락드렸습니다. 지금 통화 괜찮으실까요?';
+  const now='<div class="idv3-now"><span class="lb'+(S0.step===4?' ok':'')+'">'+(S0.step===4?'완료':'지금 할 일')+'</span><b class="tt">'+h(title)+'</b>'+(S0.step===4?'':'<div class="idv3-opener"><b>첫마디</b>"'+h(opener)+'"'+(meetHot?'<em>대표회의 '+h(ymdDot(meet.date))+' D-'+meet.dd+' · 정확한 견적이 늦으면 개략 금액 먼저</em>':'')+'</div><button type="button" class="idv3-call" data-idv="dial"'+(ph.digits?'':' disabled')+'>'+(ph.digits?'전화 '+h(ph.text):'전화번호 없음')+'</button>')+'</div>';
+  let next='';
+  if(attD&&!handed)next='<div class="idv3-next"><span class="lb">기존 영업건에 붙임</span><p>'+h([L3().dealTag?L3().dealTag(attD):'',L3().dealWork?L3().dealWork(attD):'',root.repN(attD.assignee)].filter(Boolean).join(' · '))+'</p><button type="button" class="idv-link" data-idv="goto-att">영업건 보기 →</button></div>';
+  else if(handed){const d=root.linkedDeal?.(q);next='<div class="idv3-next"><span class="lb">파이프라인 전환 완료</span><p>'+h(d?root.stageNoLabel(root.dealStage(d))+' 단계에 등록됨':'영업건으로 전환되었습니다')+(d&&root.oppAmt(d)?' · '+h(root.fmtAmt(root.oppAmt(d))):'')+'</p>'+(d?'<button type="button" class="idv-link" data-idv="goto-deal">파이프라인에서 보기 →</button>':'')+'</div>';}
+  else{const ok=s.step==='visit'?!!s.visitDate:s.step==='quote'?!!(s.quoteAmt||s.quoteDate):false;
+   next='<div class="idv3-next"><span class="lb">다음 단계 · 현장방문 / 견적</span><div class="two"><button type="button" data-idv="step" data-v="visit" aria-pressed="'+(s.step==='visit')+'">현장방문 일정</button><button type="button" data-idv="step" data-v="quote" aria-pressed="'+(s.step==='quote')+'">견적서 발송</button></div>'
+    +(s.step==='visit'?'<div class="idv-fields"><input type="date" data-idv="visitDate" aria-label="방문 날짜" value="'+attr(s.visitDate)+'"><input type="time" data-idv="visitTime" aria-label="방문 시간" value="'+attr(s.visitTime)+'"></div>':'')
+    +(s.step==='quote'?'<div class="idv-two small"><button type="button" data-idv="quoteMode" data-v="예정" aria-pressed="'+(s.quoteMode==='예정')+'">발송 예정</button><button type="button" data-idv="quoteMode" data-v="완료" aria-pressed="'+(s.quoteMode==='완료')+'">발송 완료</button></div><div class="idv-fields"><input inputmode="numeric" data-idv="quoteAmt" aria-label="예상 금액(만원)" placeholder="예상 금액 (만원)" value="'+attr(s.quoteAmt)+'"><input type="date" data-idv="quoteDate" aria-label="견적 날짜" value="'+attr(s.quoteDate)+'"></div>':'')
+    +(s.step?'<button type="button" class="idv-primary'+(ok?' on':'')+'" data-idv="handoff"'+(ok?'':' disabled')+'>저장하고 파이프라인으로</button><div class="idv-err" data-idv-err></div>':'')
+    +'<small>둘 중 하나 저장 → 파이프라인 ‘컨설팅 설계’로 자동 전환</small></div>';}
+  const n=W().related(q),list=(n.list||[]).slice(0,5);
+  const bottom='<div class="idv3-bottom"><button type="button" class="nr" data-idv="near-toggle"'+(list.length?'':' disabled')+'>근처 현장 <b>'+list.length+'곳</b>'+(n.region?' · '+h(n.region):'')+'</button>'+(admin&&!handed?'<button type="button" class="idv-link" data-idv="reassign">담당 변경</button>':'')+'</div>'
+   +(s.nearOpen&&list.length?'<div class="idv-near idv3-near">'+list.map(x=>{const d=x.d,amt=root.oppAmt(d);return '<button type="button" class="idv-ncard mine" data-idv="near" data-v="'+attr(root.dealKey(d))+'"><span class="n1"><b>'+h(String(d.site||'').replace(/^\s*\[[^\]]*\]\s*/,''))+'</b></span><span class="n2"><i></i>'+h(root.stageNoLabel(root.dealStage(d)))+' · '+h(root.repN(d.assignee))+(amt?' · '+h(root.fmtAmt(amt)):'')+'</span></button>';}).join('')+'</div>':'');
+  return now+next+bottom;
+ }
+ function dial(digits){if(!digits)return;const a=document.createElement('a');a.href='tel:'+digits;a.style.display='none';document.body.append(a);a.click();a.remove();}
  let curKey=null;
  function reskin(){
   const overlay=document.getElementById('inq-inbox-dialog');if(!overlay||root.G.inqDetailV2Off||overlay.classList.contains('inq-store-view'))return;
@@ -208,7 +291,10 @@
   const scroll=overlay.querySelector('.idv-thread')?.scrollTop;
   const dlg=overlay.querySelector('.inq-dialog');if(!dlg)return;
   overlay.classList.add('idv');
-  dlg.innerHTML=header(q)+'<div class="idv-body"><aside class="idv-c1" aria-label="문의자와 현장">'+col1(q,s)+'</aside><main class="idv-c2" aria-label="문의와 응대">'+col2(q,s)+'</main><aside class="idv-c3" aria-label="문의 업무 관리">'+col3(q,s)+'</aside></div>';
+  /* v3: 경남지사로 넘긴 문의는 '지사 진행 확인' 화면(v2 틀)을 그대로 쓴다 */
+  const v3=V3()&&root.itemOwnerTeam?.(q)!=='gyeongnam';overlay.classList.toggle('idv3',v3);
+  dlg.innerHTML=v3?header3(q)+'<div class="idv-body idv3-body"><aside class="idv-c1 idv3-c1" aria-label="문의자와 현장">'+col13(q,s)+'</aside><main class="idv-c2 idv3-c2" aria-label="문의와 응대">'+col23(q,s)+'</main><aside class="idv-c3 idv3-c3" aria-label="문의 업무 관리">'+col33(q,s)+'</aside></div>'
+   :header(q)+'<div class="idv-body"><aside class="idv-c1" aria-label="문의자와 현장">'+col1(q,s)+'</aside><main class="idv-c2" aria-label="문의와 응대">'+col2(q,s)+'</main><aside class="idv-c3" aria-label="문의 업무 관리">'+col3(q,s)+'</aside></div>';
   /* 경남지사로 넘긴 문의(본사 관리자): 머리 막대·오른쪽 칸을 '지사 진행 확인'으로 — 담당 변경을 고르는 중에는 기존 배정 칸 그대로 */
   if(!s.reassign){try{root.GyeongnamV2?.decorate?.(dlg,q);}catch(e){}}
   /* 배정 칸을 다시 만들면 기존 배정 상태가 초기화되므로 고른 담당자를 다시 알려 준다 */
@@ -231,7 +317,7 @@
  const q0=()=>root.inqCtlFind(curKey,false);
  /* 입력 중에는 제안 줄만 바꾼다(전체를 다시 그리면 커서가 튄다) */
  function refreshSug(q,s){const box=document.querySelector('#inq-inbox-dialog .idv-sug');if(!box||!q)return;const g=sugOf(q,s),has=!!g.T;box.classList.toggle('off',!has);box.querySelector('.tag').textContent=s.aiRead?'AI':'자동';box.querySelector('.read').textContent=has?g.ch+' · '+g.res:'내용을 적으면 수단 · 결과를 읽고 다음 행동을 추천합니다';let b=box.querySelector('b');if(has){if(!b){b=document.createElement('b');box.querySelector('.read').after(b);}b.textContent='→ 다음 행동: '+(g.none?'없음 · 배드핏 종결 검토 ('+kday(new Date(g.due+'T00:00:00'))+' 확인)':g.act+' · '+kday(new Date(g.due+'T00:00:00')));if(!box.querySelector('[data-idv="edit-sug"]')){const e=document.createElement('button');e.type='button';e.className='lnk';e.dataset.idv='edit-sug';e.textContent='바꾸기';box.append(e);}}else if(b){b.remove();box.querySelectorAll('button').forEach(x=>x.remove());}const nx=document.getElementById('iq-next'),du=document.getElementById('iq-due');if(nx&&nx.type==='hidden')nx.value=has?(g.none?'배드핏 종결 검토':g.act):'';if(du&&du.type==='hidden')du.value=has?g.due:'';const sv=document.querySelector('#inq-inbox-dialog .idv-composer .idv-save');if(sv)sv.classList.toggle('on',has);const ft=document.querySelector('#inq-inbox-dialog .idv-composer .idv-formfoot span');if(ft)ft.textContent=has?(root.inquiryAssigned(q)?'저장하면 이력에 남고 다음 행동이 오늘 업무에 생깁니다':'배정 전 기록 — 이력에만 남고 다음 행동은 배정 뒤 정합니다'):'내용을 적으면 다음 행동을 추천합니다';}
- function onInput(e){const k=e.target.dataset?.idv,s=st(curKey);if(!k)return;if(k==='editinput'){s.editDraft=e.target.value;return;}if(k==='smstext'){s.smsText=e.target.value;const b=e.target.closest('.idv-composer').querySelector('[data-idv="sms-send"]'),o=e.target.closest('.idv-composer').querySelector('[data-idv="sms-open"]'),bt=e.target.closest('.idv-composer').querySelector('.idv-smsto span:last-child');if(b&&!b.disabled)b.classList.toggle('on',!!s.smsText.trim());if(o)o.disabled=!s.smsText.trim();if(bt){const n=smsBytes(s.smsText);bt.textContent=n+'byte · '+(n>90?'LMS':'SMS');}return;}if(k==='text'&&s.tab==='call'){s.text=e.target.value;s.aiRead=false;if(!s.edit){s.ch='';s.res='';s.act='';s.nday='';}refreshSug(q0(),s);return;}if(k==='text'){const was=!!s.text.trim();s.text=e.target.value;if(was!==!!s.text.trim()){const sv=(e.target.closest('.idv-composer')||document).querySelector('.idv-save');if(sv)sv.classList.toggle('on',!!s.text.trim());}}
+ function onInput(e){const k=e.target.dataset?.idv,s=st(curKey);if(!k)return;if(k==='editinput'){s.editDraft=e.target.value;return;}if(k==='smstext'){s.smsText=e.target.value;const b=e.target.closest('.idv-composer').querySelector('[data-idv="sms-send"]'),o=e.target.closest('.idv-composer').querySelector('[data-idv="sms-open"]'),bt=e.target.closest('.idv-composer').querySelector('.idv-smsto span:last-child');if(b&&!b.disabled)b.classList.toggle('on',!!s.smsText.trim());if(o)o.disabled=!s.smsText.trim();if(bt){const n=smsBytes(s.smsText);bt.textContent=n+'byte · '+(n>90?'LMS':'SMS');}return;}if(k==='text'&&s.tab==='call'){s.text=e.target.value;s.aiRead=false;const v3=document.getElementById('inq-inbox-dialog')?.classList.contains('idv3');if(!s.edit&&!v3){s.ch='';s.res='';s.act='';s.nday='';}if(v3)refreshSug3(q0(),s);else refreshSug(q0(),s);return;}if(k==='text'){const was=!!s.text.trim();s.text=e.target.value;if(was!==!!s.text.trim()){const sv=(e.target.closest('.idv-composer')||document).querySelector('.idv-save');if(sv)sv.classList.toggle('on',!!s.text.trim());}}
   else if(['next','due','reason','visitDate','visitTime','quoteDate'].includes(k)){s[k]=e.target.value;if(k==='due')s.nday='';if(['visitDate','quoteDate'].includes(k))reskinFrom();}
   else if(k==='quoteAmt'){s.quoteAmt=e.target.value.replace(/[^\d]/g,'');if(e.target.value!==s.quoteAmt)e.target.value=s.quoteAmt;const b=document.querySelector('#inq-inbox-dialog [data-idv="handoff"]');if(b){const ok=!!(s.quoteAmt||s.quoteDate);b.disabled=!ok;b.classList.toggle('on',ok);}}}
  function tempField(tag,id,value){document.getElementById(id)?.remove();const el=document.createElement(tag);el.id=id;el.hidden=true;if(tag==='select'){const o=document.createElement('option');o.value=o.textContent=value;el.append(o);}el.value=value;document.getElementById('inq-inbox-dialog').append(el);return el;}
@@ -240,7 +326,10 @@
   if(k==='edit'){s.editField=v;s.editDraft='';return reskinFrom();}
   if(k==='editinput')return;
   if(k==='ch'){s.ch=v;return reskinFrom();}
-  if(k==='res'){s.res=v;s.act='';s.nday='';s.due='';return reskinFrom();}
+  if(k==='res'){s.res=(s.res===v&&document.getElementById('inq-inbox-dialog')?.classList.contains('idv3'))?'':v;s.act='';s.nday='';s.due='';return reskinFrom();}
+  if(k==='editsave'){const inp=document.querySelector('#inq-inbox-dialog [data-idv="editinput"]');if(inp&&!inp.disabled)saveField(q,s,inp.dataset.v,inp.value);return;}
+  if(k==='dial')return dial(phoneOf(q).digits);
+  if(k==='near-toggle'){s.nearOpen=!s.nearOpen;return reskinFrom();}
   if(k==='act'){s.act=v;return reskinFrom();}
   if(k==='nday'){s.nday=v;s.due='';return reskinFrom();}
   if(k==='edit-sug'){s.edit=!s.edit;return reskinFrom();}
@@ -272,9 +361,9 @@
  const recLine=(res,d)=>'통화 결과: '+res+' → 다음 연락 '+kday(d);
  function nextDay(q,label){if(label==='대표회의 다음날'){const m=meetOf(q);if(m){const d=new Date(m.date);d.setDate(d.getDate()+1);return ymdDash(d);}}const d=new Date();d.setDate(d.getDate()+({'내일':1,'3일 후':3,'7일 후':7}[label]||7));return ymdDash(d);}
  function save(q,s){
-  const text=s.text.trim();if(!text)return;
+  const text=s.text.trim(),v3=!!document.getElementById('inq-inbox-dialog')?.classList.contains('idv3');if(!text&&!(v3&&s.tab==='call'&&s.res))return;
   if(s.tab==='call'){
-   const g=sugOf(q,s),line='['+g.ch+' · '+g.res+'] '+text;
+   const g=sugOf(q,s),line=('['+g.ch+' · '+g.res+'] '+text).trim();
    /* 배정 전: 기록만(다음 할 일은 배정 뒤) */
    if(!root.inquiryAssigned(q)){tempField('select','spLogType',g.ch);tempField('textarea','spLogNote',line);root.splitSaveLog();stampActor(q);Object.assign(s,{text:'',ch:'',res:'',act:'',nday:'',due:'',next:'',edit:false,aiRead:false});reskinFrom();toast('응대 기록을 저장했습니다');return;}
    const nextText=(s.next||'').trim()||(g.none?'배드핏 종결 검토':g.act),due=(document.getElementById('iq-due')||{}).value||g.due;
@@ -345,5 +434,5 @@
  }
  const base=root.paintInq;
  if(typeof base==='function')root.paintInq=function(){const r=base.apply(this,arguments);try{reskin();}catch(err){document.getElementById('inq-inbox-dialog')?.classList.remove('idv');if(root.console)root.console.warn('inquiry detail v2: '+err.message);}return r;};
- root.InquiryDetailV2={reskin,state:st,bubbles};
+ root.InquiryDetailV2={reskin,state:st,bubbles,v3:V3};
 })(window);
