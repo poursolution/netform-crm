@@ -54,7 +54,7 @@
   if(a==='team')root.repManagerView('team');
   if(a==='account'){b.closest('details')?.removeAttribute('open');root.AccountAdmin?.open?.();}
   if(a==='open')open(v);
-  if(a==='promise'){open(v);setTimeout(()=>document.querySelector('#repsDialog textarea')?.focus(),50);}
+  if(a==='promise'){open(v);setTimeout(()=>(document.querySelector('#repWindow.on [data-rw-f="promise"]')||document.querySelector('#repsDialog textarea'))?.focus(),50);}
  }
  function paint(host){
   host.innerHTML=listHtml(rows());
@@ -84,8 +84,8 @@
   return '<header class="rd-head"><h2 id="rdTitle">'+h(r.nm)+'</h2><em class="plv-tag '+t[1]+'">'+t[0]+'</em><span>'+h(team(r.nm))+'</span><button type="button" class="xdv-close" data-rd="close" aria-label="닫기">✕</button></header><div class="rd-body"><aside class="rd-left">'+left+'</aside><main class="rd-right">'+right+'</main></div>';
  }
  function render(){const r=(root.REP_MANAGER_ROWS||[]).find(x=>x.nm===openRep);if(!r){close();return;}node().querySelector('.rd-box').innerHTML=dialogHtml(r);}
- function open(name){if(!(root.REP_MANAGER_ROWS||[]).some(x=>x.nm===name))rows();openRep=name;returnFocus=document.activeElement;const m=node();render();if(!openRep)return;m.classList.add('on');m.querySelector('.xdv-close')?.focus();}
- function close(restore){const m=document.getElementById('repsDialog');if(m)m.classList.remove('on');const f=returnFocus;openRep=null;returnFocus=null;if(restore!==false&&f&&f.isConnected)f.focus?.({preventScroll:true});}
+ function open(name){if(root.RepWindow&&root.RepWindow.enabled()){root.RepWindow.open(name);return;}if(!(root.REP_MANAGER_ROWS||[]).some(x=>x.nm===name))rows();openRep=name;returnFocus=document.activeElement;const m=node();render();if(!openRep)return;m.classList.add('on');m.querySelector('.xdv-close')?.focus();}
+ function close(restore){if(root.RepWindow&&root.RepWindow.isOpen())root.RepWindow.close(restore);const m=document.getElementById('repsDialog');if(m)m.classList.remove('on');const f=returnFocus;openRep=null;returnFocus=null;if(restore!==false&&f&&f.isConnected)f.focus?.({preventScroll:true});}
  function onDialogClick(e){
   const b=e.target.closest('[data-rd]');if(!b||!openRep)return;const a=b.dataset.rd,r=(root.REP_MANAGER_ROWS||[]).find(x=>x.nm===openRep);if(!r)return;
   if(a==='close')close();

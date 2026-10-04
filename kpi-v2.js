@@ -106,7 +106,7 @@
   const intro='<div class="plv-intro"><i style="background:#64748b"></i><b>관리팀 KPI</b><span>영업이 멈추지 않게 — 배정 → 첫 연락 → 다음 할 일 → 정체 해소 → 데이터 완성</span></div>';
   return '<div id="kpi-v2" class="plv" data-workspace="kpi">'+intro+topHtml(S)+promiseHtml(list)+tableHtml()+'</div>';
  }
- function openRep(name,focus){if(root.RepsV2&&root.RepsV2.enabled()){root.RepsV2.open(name);if(document.getElementById('repsDialog')?.classList.contains('on')){if(focus)setTimeout(()=>document.querySelector('#repsDialog textarea')?.focus(),50);return;}}root.goPerfRep?.(name);}
+ function openRep(name,focus){if(root.RepsV2&&root.RepsV2.enabled()){root.RepsV2.open(name);if(document.querySelector('#repWindow.on,#repsDialog.on')){if(focus)setTimeout(()=>(document.querySelector('#repWindow.on [data-rw-f="promise"]')||document.querySelector('#repsDialog textarea'))?.focus(),50);return;}}root.goPerfRep?.(name);}
  function settings(){
   const O=root.OpsStore;if(O&&O.has('crm_ops_settings_v1')&&W.state==='ready')return settingsLive();
   document.getElementById('kvSettings')?.remove();const m=document.createElement('div');m.id='kvSettings';m.className='it-layer';
