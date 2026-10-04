@@ -35,23 +35,29 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>openQuickContact('new'));await page.waitForTimeout(150);
   assert.equal(await panel.count(),1);assert.equal(await inColumn(),true,'오른쪽 열 자리');
   assert.equal(await page.evaluate(()=>document.getElementById('quickContactModal').classList.contains('on')),false,'화면 위 창은 뜨지 않음');
-  assert.match(await panel.innerText(),/연락처 등록[\s\S]*지금 등록된 사람[\s\S]*김소장[\s\S]*동의 미확인[\s\S]*소장 바뀜[\s\S]*자동 채우기[\s\S]*역할[\s\S]*이름[\s\S]*휴대폰[\s\S]*대표 연락처로 지정[\s\S]*수신 동의[\s\S]*동의 받음[\s\S]*아직 안 물어봄[\s\S]*거부/);
-  assert.equal(await panel.locator('[data-chips="consent"] [aria-pressed="true"]').innerText(),'아직 안 물어봄','기본값');
+  /* 연락처 수정 · 등록 v2(2026-10-04 design_handoff_contact_edit): 흰 상자 없이 칸만 · 자동 채우기는 제목 줄 버튼 하나 · 수신 동의는 문자 · 카카오 각각 · 소장 변경은 아래 링크 */
+  assert.match(await panel.innerText(),/연락처 등록[\s\S]*AI[\s\S]*명함 · 문자로 채우기[\s\S]*역할[\s\S]*관리소장[\s\S]*입대의 회장[\s\S]*관리과장[\s\S]*시설과장[\s\S]*총무[\s\S]*기타[\s\S]*이름 \*[\s\S]*휴대폰 \*[\s\S]*수신 동의[\s\S]*문자[\s\S]*동의[\s\S]*모름[\s\S]*거부[\s\S]*카카오[\s\S]*이 현장 대표 연락처 \(전화 · 문자 기본\)[\s\S]*관리소장이 바뀌었나요\? →[\s\S]*취소[\s\S]*저장/);
+  assert.doesNotMatch(await panel.innerText(),/지금 등록된 사람|자동 채우기|소장 바뀜|더 적기|대표 연락처로 지정/,'예전 구성은 없다');
+  assert.deepEqual(await panel.locator('.dp2-cons [aria-pressed="true"]').allInnerTexts(),['모름','모름'],'기본값 = 모름');
+  assert.deepEqual(await panel.evaluate(p=>[p.querySelector('#dp2-fill').hidden,getComputedStyle(p.querySelector('[data-dp="save"]')).backgroundColor,p.querySelector('#dp2-ph').textContent]),[true,'rgb(201, 205, 213)','휴대폰 번호 형식을 확인하세요'],'자동 채우기는 접혀 있고, 이름 · 휴대폰이 비면 저장 잠금');
   assert.equal(await panel.locator('#qc-name').inputValue(),'','열 때마다 비움');
   if(shot)await page.screenshot({path:shot+'-contact.png'});
-  /* 자동 채우기 + 소장 바뀜 + 동의 받음 → 기존 저장 경로 */
-  await panel.locator('#dp-paste').fill('새로 오신 박새롬 소장님 010-9876-5432 입니다');await panel.locator('[data-dp="fill"]').click();
+  /* [AI 명함 · 문자로 채우기] → 펼침 → 채우기 + 문자 동의 → 기존 저장 경로. +82 · 하이픈 없는 번호는 010-0000-0000 으로 바꿔 저장(미리 안내) */
+  await panel.locator('[data-dp="fillopen"]').click();assert.equal(await panel.locator('#dp2-fill').isVisible(),true);
+  await panel.locator('#dp-paste').fill('새로 오신 박새롬 소장님 +82 10-9876-5432 입니다');await panel.locator('[data-dp="fill"]').click();
   assert.equal(await panel.locator('#qc-name').inputValue(),'박새롬');assert.equal(await panel.locator('#qc-mobile').inputValue(),'010-9876-5432');
-  await panel.locator('[data-dp="replace"]').click();assert.equal(await panel.locator('#dp-replace-note').isVisible(),true);
-  await panel.locator('[data-chips="consent"] [data-v="yes"]').click();
+  await panel.locator('#qc-mobile').fill('+821098765432');assert.equal(await panel.locator('#dp2-ph').innerText(),'저장할 때 010-9876-5432 로 바꿉니다');
+  await panel.locator('#qc-mobile').fill('010-9876');assert.deepEqual(await panel.evaluate(p=>[p.querySelector('#dp2-ph').textContent,getComputedStyle(p.querySelector('#qc-mobile')).borderTopColor,p.querySelector('[data-dp="save"]').classList.contains('off')]),['휴대폰 번호 형식을 확인하세요','rgb(243, 201, 199)',true],'형식 오류 = 빨간 테두리 + 저장 잠금');
+  await panel.locator('#qc-mobile').fill('+821098765432');
+  await panel.locator('[data-chips="sms"] [data-v="yes"]').click();
   await panel.locator('[data-dp="save"]').click();await page.waitForTimeout(400);
   const w=await page.evaluate(()=>__writes.filter(x=>['activity','contact_upsert'].includes(x[0])).map(x=>[x[0],x[1].manager_name||x[1].note,x[1].manager_role||x[1].result,x[1].sms_consent,x[1].kakao_consent,!!x[1].consent_at,x[1].is_primary]));
-  assert.deepEqual(w[0].slice(0,2),['activity','관리소장 변경 — 이전 소장 기록']);assert.match(w[0][2],/김소장[\s\S]*까지 → 새 소장 박새롬/);
-  assert.deepEqual(w[1],['contact_upsert','박새롬','관리소장',true,true,true,true],'기존 연락처·수신동의 저장 경로로 요청');
-  assert.equal(await page.evaluate(()=>(B.deals[0].contacts||[]).filter(c=>c.status==='previous').map(c=>c.name+':'+c.role+':'+(c.ended_at?'날짜':'')).join(',')),'김소장:이전 소장:날짜','기존 소장은 지우지 않고 이전 소장으로');
+  assert.deepEqual(w[0],['contact_upsert','박새롬','관리소장',true,false,true,true],'기존 연락처 · 수신동의 저장 경로로 요청 — 문자만 동의, 카카오는 모름');
+  assert.deepEqual(w.slice(1).map(x=>x.slice(0,3)),[['activity','연락처 등록 — 박새롬 · 관리소장','010-9876-5432']],'저장하면 응대 이력에 시스템 기록 한 줄');
+  assert.equal(await page.evaluate(()=>__writes.filter(x=>x[0]==='contact_upsert')[0][1].manager_mobile),'01098765432','번호는 010 숫자 11자리로 저장');
   assert.match(await page.locator('#qc-err').innerText(),/서버 저장을 확인 중/);
   /* 시험에는 서버 응답이 없다 — 응답을 흉내 내 화면 반영까지 확인 */
-  await page.evaluate(()=>{const id=__writes.filter(x=>x[0]==='contact_upsert').length&&'req-'+__writes.length,p=__writes.at(-1)[1];Phase1.queue.list=()=>[{request_id:id,operation:'contact_upsert',object_id:B.deals[0].id,status:'done',ack:{person_key:p.person_key,contact_id:'c0000000-0000-4000-8000-000000000001'}}];dispatchEvent(new Event('phase1:queue'));});await page.waitForTimeout(400);
+  await page.evaluate(()=>{const i=__writes.findIndex(x=>x[0]==='contact_upsert'),id='req-'+(i+1),p=__writes[i][1];/* 연락처 저장 요청(그 뒤의 시스템 기록이 아니라) */Phase1.queue.list=()=>[{request_id:id,operation:'contact_upsert',object_id:B.deals[0].id,status:'done',ack:{person_key:p.person_key,contact_id:'c0000000-0000-4000-8000-000000000001'}}];dispatchEvent(new Event('phase1:queue'));});await page.waitForTimeout(400);
   assert.equal(await page.evaluate(()=>B.deals[0].manager_name),'박새롬','서버 확인 뒤 새 소장이 대표');
   assert.equal(await page.locator('#ddvPanel').count(),0,'저장되면 패널 닫힘');
   /* ── 2. 공종 분류 ── */

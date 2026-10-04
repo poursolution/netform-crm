@@ -82,3 +82,42 @@ button.dp-ai.on:hover{background:#fff1d6}
 /* AI 제안 버튼(설정이 켜져 있을 때만 보인다) */
 .dp-aibtn{align-self:flex-start;border:1px dashed #b9c8f3;background:#f5f8ff;color:#2a52b8;border-radius:8px;padding:6px 11px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;min-height:0;box-shadow:none}.dp-aibtn:disabled{opacity:.6;cursor:wait}
 .dp-aierr{font-size:11.5px;color:#c93a3f}
+/* 연락처 수정 · 등록 v2 (2026-10-04 design_handoff_contact_edit): 흰 상자 없이 칸만 — 제목 아래 · 저장 위 얇은 선 2줄. 치수 · 색은 시안 그대로 */
+#detailView.ddv.dv3 .dv3-cpanel>.dv3-slot>#ddvPanel.dp2{background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:visible}
+#ddvPanel.dp2>header{padding:4px 0 12px!important;border-bottom:1px solid #e3e6ec;display:flex;align-items:center;gap:10px;background:none!important}
+#ddvPanel.dp2>header small{display:none}#ddvPanel.dp2>header b{font-size:15px}#ddvPanel.dp2>header>i{flex:1}
+#ddvPanel.dp2 .ddv-back{border:1px solid #e3e6ec;background:#fff;border-radius:7px;width:28px;height:28px;padding:0}
+#ddvPanel.dp2 .dp2-ai{display:inline-flex;align-items:center;white-space:nowrap;border:1px dashed #c9cdd5;background:#fff;font:inherit;font-size:12px;font-weight:700;border-radius:8px;padding:5px 11px;color:#15171c;cursor:pointer;min-height:0;box-shadow:none}
+#ddvPanel.dp2 .dp2-ai b{display:inline!important;font-size:10px!important;color:#fff;background:#3b6ce4;border-radius:3px;padding:1px 4px;margin-right:4px}
+#ddvPanel.dp2>.dp-body{padding:16px 0;display:flex;flex-direction:column;gap:14px;background:none;overflow:visible}
+#ddvPanel.dp2 .dp2-fill{padding:12px 14px;border-radius:10px;background:#f0f4ff;display:flex;flex-direction:column;gap:8px}
+#ddvPanel.dp2 .dp2-fill[hidden]{display:none}
+#ddvPanel.dp2 .dp2-fill>div{display:flex;gap:6px}
+#ddvPanel.dp2 .dp2-fill input:not([type=file]){flex:1;border:1px solid #d9dde4;border-radius:8px;padding:7px 10px;font:inherit;font-size:12.5px;min-width:0;background:#fff}
+#ddvPanel.dp2 .dp2-fill .dp-ghost{border:1px solid #d9dde4;background:#fff;font-size:12px;font-weight:600;border-radius:8px;padding:6px 11px}
+#ddvPanel.dp2 .dp2-fill .dp-primary{border:0;background:#15171c;color:#fff;font-size:12px;font-weight:700;border-radius:8px;padding:0 12px}
+#ddvPanel.dp2 .dp2-fill small{font-size:11px;color:#6b7280}
+#ddvPanel.dp2 .dp-sec{display:flex;flex-direction:column;gap:6px;border:0;padding:0;margin:0;background:none}
+#ddvPanel.dp2 .dp-sec>b,#ddvPanel.dp2 label>b{font-size:12.5px;font-weight:700;color:#15171c}
+#ddvPanel.dp2 label>b i{color:#d14a3f;font-style:normal}
+#ddvPanel.dp2 .dp-two{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+#ddvPanel.dp2 .dp-two label{display:flex;flex-direction:column;gap:5px}
+#ddvPanel.dp2 .dp-two input{border:1px solid #d9dde4;border-radius:8px;padding:9px 11px;font:inherit;font-size:13.5px;background:#fff;letter-spacing:.02em}
+#ddvPanel.dp2 .dp-two input.bad{border-color:#f3c9c7!important}
+#ddvPanel.dp2 .dp2-ph{font-size:11px;color:#6b7280;min-height:14px}#ddvPanel.dp2 .dp2-ph.bad{color:#b42318}
+#ddvPanel.dp2 .dp-chips[data-chips="role"]{display:flex;flex-wrap:wrap;gap:5px}
+#ddvPanel.dp2 .dp-chips[data-chips="role"] button{border:1px solid #d9dde4;background:#fff;color:#374151;font:inherit;font-size:12px;font-weight:600;border-radius:999px;padding:5px 11px;min-height:0;box-shadow:none}
+#ddvPanel.dp2 .dp-chips[data-chips="role"] button[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}
+#ddvPanel.dp2 .dp2-cons{display:flex;align-items:center;gap:10px}
+#ddvPanel.dp2 .dp2-cons>span{width:48px;font-size:12.5px}
+#ddvPanel.dp2 .dp2-cons .dp-chips{display:flex;border:1px solid #e3e6ec;border-radius:8px;overflow:hidden;gap:0}
+#ddvPanel.dp2 .dp2-cons .dp-chips button{border:0;border-radius:0;background:#fff;color:#374151;font:inherit;font-size:12px;font-weight:600;padding:5px 11px;min-height:0;box-shadow:none}
+#ddvPanel.dp2 .dp2-cons .dp-chips button[aria-pressed="true"]{background:#15171c;color:#fff}
+#ddvPanel.dp2 .dp-check{display:flex;align-items:center;gap:8px;font-size:12.5px}
+#ddvPanel.dp2 .dp-check input{width:15px;height:15px}
+#ddvPanel.dp2>.dp-foot{padding:12px 0 0;border-top:1px solid #e3e6ec;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:none}
+#ddvPanel.dp2>.dp-foot>i{flex:1}
+#ddvPanel.dp2 .dp2-lnk{border:0;background:none;color:#2a52b8;font:inherit;font-size:12.5px;font-weight:700;padding:0;cursor:pointer;min-height:0;box-shadow:none}
+#ddvPanel.dp2 .dp-foot .dp-ghost{border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:13px;border-radius:8px;padding:9px 14px}
+#ddvPanel.dp2 .dp-foot .dp-primary{border:0;background:#15171c;color:#fff;font-size:13px;font-weight:700;border-radius:8px;padding:10px 18px}
+#ddvPanel.dp2 .dp-foot .dp-primary.off{background:#c9cdd5;cursor:default}
