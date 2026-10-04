@@ -39,6 +39,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   });
   await page.waitForTimeout(900);
   const v=page.locator('#detailView.dv3');assert.equal(await v.count(),1);
+  /* 종료된 영업건(실주): 빈 값 줄이 벌어지지 않는다(공통 빈칸 상자 규칙이 걸리던 것 · 2026-10-04 대표 캡처) */
+  assert.deepEqual(await v.locator('.dv3-row').evaluateAll(l=>[l.length>5,Math.max(...l.map(n=>Math.round(n.getBoundingClientRect().height)))<60,[...new Set(l.map(n=>n.querySelector('.empty')).filter(Boolean).map(n=>getComputedStyle(n).display+'|'+getComputedStyle(n).minHeight+'|'+getComputedStyle(n).paddingTop))].join(',')]),[true,true,'block|0px|0px']);
   const before=await page.evaluate(()=>JSON.stringify(B.deals[0]));
   const writes0=await page.evaluate(()=>JSON.stringify(__writes));
   const sentReq=()=>page.evaluate(()=>__calls.filter(c=>c[0]==='crm_approval_request_v1').map(c=>c[1]));
