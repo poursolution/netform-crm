@@ -43,6 +43,9 @@
    const g3=live.filter(i=>!s1.has(i.key)&&i.rk==='contract'),s3=new Set(g3.map(i=>i.key));
    const g2=live.filter(i=>!s1.has(i.key)&&!s3.has(i.key)).sort((a,b)=>((a.days>=7&&a.days<=30)?0:1)-((b.days>=7&&b.days<=30)?0:1)||a.days-b.days);
    groups=[G('오늘 안 넘기면 놓침','배정 '+(root.CRMRules?root.CRMRules.get('assign_minutes'):30)+'분 · 첫 연락 '+(root.CRMRules?root.CRMRules.get('first_contact_hours'):2)+'시간 · 오늘 마감','모두 담당에게 알림',g1.sort(byUrgent)),G('이번 주 새로 멈춘 건','7~30일 사이 기록 없음 · 지금 잡으면 살아남','담당별 코멘트',g2),G('계약 정보 빠짐','계약 · 시공 단계인데 계약일 · 금액 없음 — 실적에 안 잡힘','입력 요청 보내기',g3.sort((a,b)=>(b.amt||0)-(a.amt||0)))];
+   /* 영업관리 표(today-assist · 2026-10-04 대표 시안): 담당 배정 안 된 견적문의를 따로 떼어 표로, 멈춘 건 · 계약 정보 빠짐도 같은 표로. 끄면(G.todayAssistOff) 위 묶음 3개 그대로 */
+   if(root.TodayAssist&&root.TodayAssist.enabled()){const ga=groups[0].items.filter(i=>i.rk==='assign'&&i.x.type==='inq'),sa=new Set(ga.map(i=>i.key));
+    groups=[Object.assign(G('담당 배정 안 된 견적문의','AI 추천 담당을 그대로 쓰면 [추천대로 배정] 한 번','',ga),{kind:'assign'}),Object.assign(G('오늘 안 넘기면 놓침','첫 연락 '+(root.CRMRules?root.CRMRules.get('first_contact_hours'):2)+'시간 · 오늘 마감','모두 담당에게 알림',groups[0].items.filter(i=>!sa.has(i.key))),{kind:'cards'}),Object.assign(groups[1],{kind:'stall'}),Object.assign(groups[2],{kind:'contract'})];}
   }else if(role==='ceo'){
    const g1=teamAll.filter(i=>i.rk==='decide'||i.rk==='tfapprove'),s1=new Set(g1.map(i=>i.key));
    const g2=teamAll.filter(i=>!s1.has(i.key)&&(i.amt||0)>=W._big()&&(i.days>=STALL_BIG()||i.rk==='contract'||i.rk==='stallbig')),s2=new Set(g2.map(i=>i.key));
@@ -190,8 +193,11 @@
   /* 목록 줄(② ③ · 첫 묶음의 5번째부터) */
   const row=(i,hot)=>{const k=attr(i.key),own=i.x.owner===me,far=team&&!own,who=far?(i.x.owner||'미배정'):([i.i.name,i.i.role].filter(Boolean).join(' ')||(team?i.x.owner:'고객 미등록')),noDay=i.rk==='contract'||i.rk==='data';
    return '<div class="tv3-row" role="button" tabindex="0" data-t3="open" data-key="'+k+'"><span class="bd" style="color:'+i.bc+'">'+h(i.brand||'미입력')+'</span><span class="c"><b>'+h(i.i.site)+'</b><small>'+h([who,i.amt?money(i.amt):'금액 미정',i.missTxt].filter(Boolean).join(' · '))+'</small></span><span class="d"><b'+(hot?' class="r"':'')+'>'+h(noDay?'-':i.short)+'</b><small>'+h(noDay?'':i.rk==='deadline'?(i.deadline?i.deadline.what:'마감'):i.dLabel)+'</small></span><button type="button" data-t3="act" data-key="'+k+'" data-act="'+attr(i.act)+'"'+(i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>'+h(i.act)+'</button></div>';};
-  const groupsHtml=V.groups.map((g,gi)=>{const items=g.items.filter(pass);if(!items.length)return '';const first=gi===0,cards=first?items.slice(0,CARDS):[],rest=first?items.slice(CARDS):items,open=!!S.more[gi],shown=open?rest:rest.slice(0,PER);
-   return '<section class="tv3-group'+(first?' first':'')+'" data-g="'+(gi+1)+'"><header><i>'+(gi+1)+'</i><b>'+h(g.t)+'</b><b class="n">'+items.length+'건</b><span>'+h(g.why)+'</span><u></u>'+(g.bulk&&team?'<button type="button" data-t3="bulk" data-v="'+gi+'">'+h(g.bulk)+'</button>':'')+'</header>'
+  let shownNo=0;const kinded=V.groups.some(g=>g.kind);/* 표 묶음이 있으면 번호는 보이는 묶음 순서대로 */
+  const groupsHtml=V.groups.map((g,gi)=>{const items=g.items.filter(pass);if(!items.length)return '';shownNo++;
+   if(g.kind&&g.kind!=='cards'&&root.TodayAssist)return root.TodayAssist.groupHtml(g,items,gi,shownNo,!!S.more[gi]);
+   const first=g.kind?g.kind==='cards':gi===0,cards=first?items.slice(0,CARDS):[],rest=first?items.slice(CARDS):items,open=!!S.more[gi],shown=open?rest:rest.slice(0,PER);
+   return '<section class="tv3-group'+(first?' first':'')+'" data-g="'+(gi+1)+'"><header><i>'+(kinded?shownNo:gi+1)+'</i><b>'+h(g.t)+'</b><b class="n">'+items.length+'건</b><span>'+h(g.why)+'</span><u></u>'+(g.bulk&&team?'<button type="button" data-t3="bulk" data-v="'+gi+'">'+h(g.bulk)+'</button>':'')+'</header>'
     +(first?'<div class="tv3-cards">'+cards.map(card).join('')+'</div>':'')+shown.map(i=>row(i,first)).join('')
     +(rest.length>PER?'<button type="button" class="tv3-more" data-t3="more" data-v="'+gi+'">'+(open?'접기 ▴':'나머지 '+(rest.length-PER)+'건 더 보기 ▾')+'</button>':'')+'</section>';}).join('');
   const empty=!total?'<div class="tv3-empty">'+(backN?'오늘 손댈 건은 없습니다. 아래 밀린 건만 정리하면 됩니다.':'오늘 처리할 건이 없습니다.')+'</div>':(!groupsHtml?'<div class="tv3-empty">이 조건에 해당하는 건이 없습니다.</div>':'');
@@ -272,5 +278,5 @@
  document.addEventListener('click',onClick,true);
  document.addEventListener('input',e=>{const t=e.target;if(t&&t.matches&&t.matches('#today-v2 .tv3 [data-t3in="em"]'))st().em=t.value;},true);
  document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('#today-v2 .tv3 [data-t3="open"]')){e.preventDefault();openKey(e.target.dataset.key);}});
- root.TodayV3={enabled,html,build,isBack,STG,execQueue:()=>EXQ.map(x=>x.i.key)};
+ root.TodayV3={enabled,html,build,isBack,STG,current,execQueue:()=>EXQ.map(x=>x.i.key)};
 })(window);
