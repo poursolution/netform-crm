@@ -338,7 +338,7 @@
   try{if(R.CommonFilterBar)R.CommonFilterBar.mount(page);}catch(e){}
   const t=document.getElementById('ptitle'),s=document.getElementById('psub');if(t)t.textContent=HEAD[page][0];if(s)s.textContent=HEAD[page][1];document.querySelector('.mhead')?.classList.add('cf-title');
   const C=core();try{if(SI().advisoryLoad)SI().advisoryLoad();}catch(e){}
-  host.innerHTML='<div class="db-shell" data-page="'+page+'">'+toolbar(page,C)+(page==='dash'?dash(C):page==='control'?ctl(C):perf(C))+'</div>';
+  host.innerHTML='<div class="db-shell" data-page="'+page+'">'+toolbar(page,C)+(page==='dash'?dash(C):page==='control'?ctl(C):R.PerfV3&&R.PerfV3.enabled()?R.PerfV3.html(C):perf(C))/* 성과 분석 v3(perf-v3.js) · 끄면 예전 화면 */+'</div>';
   host.onclick=onClick;host.onchange=onChange;host.onkeydown=null;
  }
  function evRows(list){return list.map(SI().evRow);}
@@ -392,5 +392,5 @@
   const again=()=>{if(enabled()&&PAGES.includes(R.G.page)&&R.B){try{render();}catch(e){}}};
   root.addEventListener('contract-sales:changed',again);document.addEventListener('contract-sales:changed',again);
  }
- root.DashB={enabled,render,core,people,ctlModel,period,nearList,channelOf};
+ root.DashB={enabled,render,core,people,ctlModel,period,nearList,channelOf,lib:{brandRows,matrixRows,inquiryFate,pendingStats,eok,won,mk,BRC,MINREC,LOWMADE,MINCLOSED}};
 })(window);

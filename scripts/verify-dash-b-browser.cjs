@@ -126,7 +126,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#si-control .db-sel .db-btns').count(),0);assert.equal(await page.locator('#si-control .db-mx .as button').count(),0);assert.match(await page.locator('#si-control .db-perm').innerText(),/관리자 · 팀장만/);
   await page.evaluate(()=>{ME=window.__me;paint();});await page.waitForTimeout(300);
   /* ── 3. 성과 분석 ── */
-  await page.evaluate(()=>{OPS_RULES.dashMinClosed=3;});/* 종료 3건부터 메이드율 판단(기본 5건 — 설정값) */
+  await page.evaluate(()=>{OPS_RULES.dashMinClosed=3;G.perfV3Off=true;/* 여기서는 예전 성과 분석(끄기 스위치 뒤 화면)을 본다 — 새 화면은 verify-perf-v3 */});/* 종료 3건부터 메이드율 판단(기본 5건 — 설정값) */
   await page.locator('#si-control [data-db="go"][data-v="perf"]').click();await page.waitForTimeout(400);
   const p=page.locator('#si-perf .db-shell');assert.equal(await p.count(),1);
   assert.match(await p.locator('.db-verdict').innerText(),/^0%\s*월평균 대비\s*2026년 연간 수주실적 8억 · 월평균 8,889만\. 10월은 7일째 · 아직 없음\. 파이프라인 .+은 월평균의 [\d.]+개월치입니다\.\s*영업 메이드율 40\.0% · 황윤선 33\.3% — 기준 50% 아래입니다\.\s*8억\s*연 누적 · 수주 2건\s*메이드율 40\.0% · 문의→계약 50\.0%$/);

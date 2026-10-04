@@ -194,5 +194,5 @@
  /* 계약 단계 창의 계약금액 미리 채움에 쓰는 낙찰금액 */
  const amountOf=d=>{const w=of(d);return w&&w.win_status==='confirmed'?Number(w.award_amount)||0:0;};
  const basePaint=R.paint;if(typeof basePaint==='function')R.paint=function(){try{attach();}catch(e){}const r=basePaint.apply(this,arguments);try{warm();}catch(e){}return r;};
- root.DealWin={enabled,available,load,of,resultOf,partnerIn,isPartnerDeal,headHtml,decorate,intercept,open:openDlg,close:closeDlg,amountOf,TYPES,SHORT,RPC,_take:take};
+ root.DealWin={enabled,available,load,of,resultOf,partnerIn,isPartnerDeal,advisoryOf:id=>advRows().find(t=>t&&t.decision==='confirmed'&&String(t.source_deal_id)===String(id))||null,/* 그 영업건에 연결된 확정 기술자문 줄(성과 분석 기술자문 탭) */headHtml,decorate,intercept,open:openDlg,close:closeDlg,amountOf,TYPES,SHORT,RPC,_take:take};
 })(window);

@@ -95,7 +95,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#si-dash .db-secs [data-v="people"]').click();await page.waitForTimeout(200);
   assert.match(await page.locator('#si-dash .db-prow',{hasText:'이필선'}).innerText(),/24\.3억\s*협약 · 기술자문 19\.3억 포함\s*75\.0%\s*수주 3 · 실주 1/);
   /* 5. 성과 분석: 유입 브랜드 → 낙찰 시공사 → 수주실적 · 매출 */
-  await page.evaluate(()=>goPage('perf'));await page.waitForTimeout(500);
+  await page.evaluate(()=>{G.perfV3Off=true;/* 여기서는 예전 성과 분석의 표(끄기 스위치 뒤 화면)로 같은 계산을 본다 — 새 화면은 verify-perf-v3 */goPage('perf');});await page.waitForTimeout(500);
   const bx=page.locator('#si-perf .db-bxs');assert.equal(await bx.count(),1);
   assert.match(await bx.locator('.db-ch').innerText(),/^유입 브랜드 → 낙찰 시공사 → 수주실적 · 매출\s*2026년 연간 · 수주실적 = 낙찰금액 · 매출 = 회사에 실제 들어오는 금액\(직접 계약 · 기술자문 · POUR 계약\)$/);
   assert.deepEqual(await bx.locator('.db-bxt>div').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent))),[['수주실적 (낙찰금액)','24.3억','3건 · 영업 성과 · 인센티브 기준'],['회사 매출','13.7억','직접 계약 5억 + 기술자문 · POUR 8.7억'],['협약 · 기술자문 비중','79%','수주실적 중 협약시공사 낙찰 19.3억']]);
