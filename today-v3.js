@@ -73,7 +73,7 @@
  /* ── 실행 모드(2026-10-04 시안 갱신 · 운영 기준 4차 1 '영업 실행 큐') ──
     보기 모드와 같은 목록 · 같은 순서를 한 건씩. 저장은 상세와 같은 함수(영업건 = DealDetailV3.record, 문의 = iqApply) → 같은 응대 이력 1줄 + 같은 다음 행동.
     관리자 · 대표가 남의 건을 볼 때는 결과 칩이 '처리함 · 담당에게 보냄 · 담당 확인함 · 보류 · 해당 없음'으로 바뀌고, 영업건이면 내부 메모 한 줄로 남는다(담당의 다음 행동은 건드리지 않음).
-    5줄 브리핑 · 확인할 것은 기록에서 그대로 읽은 것이라 AI 표식을 붙이지 않는다. '선배 팁'은 실주 복기 자료가 생기면 붙인다(지금은 비움) */
+    5줄 브리핑 · 다음 행동 제안의 AI 표식, 단계별 확인할 것 5개와 선배 팁은 시안 그대로(문구 = 운영 기준 CRMRules.PHASE4 · 운영하며 조정). 체크는 그 건의 기록에 값이 있을 때만 */
  let EXQ=[];const EPROG={};
  const ORES=[['연결됨','연결됨'],['부재','부재'],['검토중','검토중'],['자료요청','자료요청'],['회신대기','회신대기'],['실주','실주']],MRES=['처리함','담당에게 보냄','담당 확인함','보류','해당 없음'];
  const MNEXT={'처리함':'완료 · 다음 건','담당에게 보냄':'담당 처리 확인 · 내일','담당 확인함':'완료 기준 충족 확인 · 2일 후','보류':'재확인 · 7일 후','해당 없음':'목록에서 제외 (사유 기록)'};
@@ -86,13 +86,18 @@
  /* 이 단계에서 확인할 것(최대 5개): 그 건의 기록에 값이 있는지 그대로 본다 */
  function playOf(i){
   const x=i.x,d=x.item,sc=k=>{const c=d&&d.stage_contexts&&d.stage_contexts[k];return c&&c.fields||{};},has=v=>v!=null&&String(v).trim()!==''&&!(Array.isArray(v)&&!v.length),nextOk=!!(x.next&&x.due),tel=!!(i.i&&i.i.digits);
-  if(x.type==='inq'){let N=[];try{N=root.InquiryListV3&&root.InquiryListV3.need9?root.InquiryListV3.need9(d):[];}catch(e){}const ok=l=>{const r=N.find(n=>n.l===l);return r?!!r.ok:false;};return [['연락자 · 연락처',tel&&!!i.i.name],['현재 문제',ok('현재 문제')],['공사 범위',ok('공사 범위')],['공사 시기',ok('공사 시기')],['다음 행동 · 날짜',ok('다음 행동 · 날짜')||nextOk]];}
-  if(i.st==='cons')return [['견적 요청 내용',has(sc('consulting').quote_request)],['견적 예정일',has(sc('consulting').quote_due)],['공종 · 범위',!!(i.i&&i.i.want)],['연락처',tel],['다음 행동 · 날짜',nextOk]];
-  if(i.st==='sent')return [['발송일',has(sc('sent').sent_date)],['수신자',has(sc('sent').recipient)],['고객 반응',has(sc('sent').reaction)],['다음 확인일',has(sc('sent').followup_date)||nextOk],['연락처',tel]];
-  if(i.st==='rel')return [['다음 연락일',nextOk],['관계관리 사유',has(sc('rapport').relationship_reason)||has(sc('silent').relationship_reason)||has(sc('waiting').reason)],['고객 반응',has(sc('rapport').reaction)],['예상 금액',(i.amt||0)>0],['연락처',tel]];
-  if(i.st==='bid')return [['입찰 · 결정 일정',!!i.deadline],['경쟁 상황',has(sc('compete').competition_type)],['경쟁사',has(sc('compete').competitor)],['입찰 조건',has(sc('bidding').bid_terms)],['다음 행동 · 날짜',nextOk]];
-  if(i.st==='con')return [['계약일',has(sc('contract').contract_date)||has(d&&d.contract_date)],['계약금액',has(sc('contract').contract_amount)||has(d&&d.contract_amount)],['착공일',has(sc('construction').start_date)],['특이조건',has(sc('contract').special_terms)],['다음 행동 · 날짜',nextOk]];
-  return [['준공일',has(sc('completion').completion_date)||has(d&&d.completion_date)],['사후 연락 일정',nextOk],['대금 상태',has(sc('completion').payment)],['하자보증',has(sc('completion').warranty)],['고객 인도',has(sc('completion').customer_handover)]];
+  const raw=d&&d.raw&&typeof d.raw==='object'?d.raw:{},acts=(d&&Array.isArray(d.activities)?d.activities:[]),met=acts.some(a=>/방문|미팅|실측|실사/.test(String(a.type||'')+' '+String(a.note||''))),year=has(sc('first_contact').expected_timing)||has(d&&d.construction_year)||has(raw['공사 시기']),keyman=has(raw['결정권자'])||has(d&&d.keyman);
+  let files=0;try{files=x.type==='deal'&&root.execAttachments?(root.execAttachments(d)||[]).length:0;}catch(e){}
+  let ok;
+  if(x.type==='inq'){let N=[];try{N=root.InquiryListV3&&root.InquiryListV3.need9?root.InquiryListV3.need9(d):[];}catch(e){}const n9=l=>{const r=N.find(n=>n.l===l);return r?!!r.ok:false;};ok=[tel&&!!i.i.name,n9('현재 문제'),n9('공사 범위'),n9('공사 시기'),/방문/.test(String(d.status||'')+' '+String(x.next||''))];}
+  else if(i.st==='cons')ok=[met,has(sc('consulting').quote_request)||has(sc('first_contact').work_scope),files>0,year,has(sc('consulting').quote_due)||has(sc('consulting').quote_request)];
+  else if(i.st==='sent')ok=[has(sc('sent').sent_date)&&has(sc('sent').recipient),has(sc('sent').reaction)&&sc('sent').reaction!=='확인 전',keyman,has(sc('compete').competitor),has(sc('sent').followup_date)||nextOk];
+  else if(i.st==='rel')ok=[nextOk,year,keyman,false,false];
+  else if(i.st==='bid')ok=[has(sc('bidding').briefing_date),has(sc('compete').meeting_date),has(sc('compete').competitor)||sc('compete').competition_type==='타공법 비교',keyman,has(sc('bidding').bid_plan)];
+  else if(i.st==='con')ok=[has(sc('contract').contract_date)||has(d&&d.contract_date),has(sc('contract').contract_amount)||has(d&&d.contract_amount),has(sc('contract').special_terms),sc('construction').handover==='완료',has(sc('construction').start_date)];
+  else ok=[has(sc('completion').completion_date)||has(d&&d.completion_date),nextOk,false,false,has(sc('completion').warranty)];
+  const P4=(root.CRMRules&&root.CRMRules.PHASE4)||{playbook:{},playbook_tips:{}},key=x.type==='inq'?'inq':(i.st==='inq'?'cons':i.st),labels=P4.playbook[key]||[];
+  return {rows:labels.map((l,n)=>[l,!!ok[n]]),tip:P4.playbook_tips[key]||''};
  }
  function execHtml(V){
   const S=st(),W=TT(),role=V.role,me=V.me,total=EXQ.length,done=EXQ.filter(x=>S.ed[x.i.key]).length,allDone=total>0&&done>=total;
@@ -107,15 +112,15 @@
   const play=playOf(i);
   const main='<section class="tv3-exmain">'
    +'<div class="tv3-excard" style="border-left-color:'+i.bc+'"><div class="r"><em class="no">'+(idx+1)+' / '+total+'</em><span style="color:'+i.bc+'">'+h(i.brand||'브랜드 미입력')+'</span><em class="st">'+h(SNAME[i.st]||i.sName)+'</em><small>'+h(cur.g)+'</small><u></u><small>'+h((manage?(i.x.owner||'미배정'):([i.i.name,i.i.role].filter(Boolean).join(' ')||'고객 미등록'))+' · '+(i.amt?money(i.amt):'금액 미정'))+'</small></div><b class="site">'+h(i.i.site)+'</b><span class="why">'+h(i.missTxt+(i.short&&!/^(0일|오늘)$/.test(i.short)&&i.rk!=='contract'&&i.rk!=='decide'?' · '+i.short:''))+'</span></div>'
-   +'<div class="tv3-brief"><div class="hd"><b>'+(manage?'처리 전 5줄':'전화 걸기 전 5줄')+'</b><u></u>'+(manage?'<button type="button" data-t3="act" data-key="'+k+'" data-act="'+attr(i.act)+'"'+(i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>'+h(i.act)+'</button>':'<button type="button" data-t3="edial" data-tel="'+attr(i.i.digits||'')+'"'+(i.i.digits?'':' disabled')+'>'+(i.i.digits?'전화':'전화번호 없음')+'</button>')+'</div>'
+   +'<div class="tv3-brief"><div class="hd"><em class="ai">AI</em><b>'+(manage?'처리 전 5줄':'전화 걸기 전 5줄')+'</b><u></u>'+(manage?'<button type="button" data-t3="act" data-key="'+k+'" data-act="'+attr(i.act)+'"'+(i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>'+h(i.act)+'</button>':'<button type="button" data-t3="edial" data-tel="'+attr(i.i.digits||'')+'"'+(i.i.digits?'':' disabled')+'>'+(i.i.digits?'전화':'전화번호 없음')+'</button>')+'</div>'
    +brief.map(([l,v])=>{const hh=hot(v)&&l!=='담당 · 연락처';return '<div class="ln"><span>'+l+'</span><span'+(hh?' class="hot"':'')+'>'+h(v)+'</span></div>';}).join('')
    +'<div class="say"><b>'+(manage?'보낼 말':'첫마디')+'</b>'+h(W._line(i,role,me))+'</div></div>'
    +'<div class="tv3-exrec"><div class="tabs"><span class="on">응대 기록</span><button type="button" data-t3="enext" data-key="'+k+'">다음 행동</button><u></u><button type="button" class="more" data-t3="open" data-key="'+k+'">+ 작업</button></div>'
    +'<div class="chips">'+res.map(([l,v])=>'<button type="button" data-t3="eres" data-v="'+attr(v)+'" aria-pressed="'+(S.er===v)+'"'+(S.ebusy?' disabled':'')+'>'+l+'</button>').join('')+'</div>'
    +'<input class="memo" data-t3in="em" value="'+attr(S.em||'')+'" placeholder="무슨 일이 있었는지 한 줄 (선택)" aria-label="한 줄 메모"'+(S.ebusy?' disabled':'')+'>'
-   +'<div class="nx"><b>다음 행동</b> '+h(nextTxt)+'</div>'+(S.eerr?'<p class="err" role="alert">'+h(S.eerr)+'</p>':'')
+   +'<div class="nx"><em class="ai">AI</em><b>다음 행동</b> '+h(nextTxt)+'</div>'+(S.eerr?'<p class="err" role="alert">'+h(S.eerr)+'</p>':'')
    +'<div class="ft"><button type="button" class="save'+(S.er?' on':'')+'" data-t3="esave"'+(S.ebusy?' disabled':'')+'>'+(S.ebusy?'저장 확인 중…':'저장하고 다음 건 →')+'</button></div></div></section>';
-  const right='<aside class="tv3-exside"><section><b>이 단계에서 확인할 것 <small>'+h(SNAME[i.st]||i.sName)+'</small></b>'+play.map(([l,ok])=>'<div class="ck'+(ok?' ok':'')+'"><i>'+(ok?'✓':'')+'</i><span>'+h(l)+'</span></div>').join('')+'</section><section><b>이 건은 여기서도 같이 바뀝니다</b>'+LINKED.map(l=>'<span class="lk">· '+l+'</span>').join('')+'</section></aside>';
+  const right='<aside class="tv3-exside"><section><b>이 단계에서 확인할 것 <small>'+h(SNAME[i.st]||i.sName)+'</small></b>'+play.rows.map(([l,ok])=>'<div class="ck'+(ok?' ok':'')+'"><i>'+(ok?'✓':'')+'</i><span>'+h(l)+'</span></div>').join('')+(play.tip?'<span class="tip"><b>선배 팁</b> '+h(play.tip)+'</span>':'')+'</section><section><b>이 건은 여기서도 같이 바뀝니다</b>'+LINKED.map(l=>'<span class="lk">· '+l+'</span>').join('')+'</section></aside>';
   return '<div class="tv3 tv3-ex" data-role="'+role+'" data-exec="on" data-total="'+total+'">'+bar+'<div class="tv3-exbody">'+side+main+right+'</div></div>';
  }
  /* 문의 저장 = 목록의 줄 안 결과 기록과 같은 함수(iqApply) */

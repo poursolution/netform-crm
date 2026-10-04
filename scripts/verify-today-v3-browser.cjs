@@ -139,17 +139,17 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await ex.locator('.tv3-exlist .hd').innerText(),/^오늘 순서 · 위 묶음 그대로\s*0 \/ 7$/);
   assert.match(await ex.locator('.tv3-excard').innerText(),/^1 \/ 7\s*석민이앤씨\s*경쟁·입찰\s*오늘 연락할 곳\s*김소장 관리소장 · 4\.2억\s*\[경기 고양\] 햇빛마을23단지\s*마감 전 준비 안 됨 · D-3$/);
   assert.deepEqual(await ex.locator('.tv3-brief .ln>span:first-child').allInnerTexts(),['마지막 연락','고객 요구','미해결','담당 · 연락처','다음 일정'],'통화 전 5줄');
-  assert.match(await ex.locator('.tv3-brief .hd').innerText(),/^전화 걸기 전 5줄\s*전화$/);assert.match(await ex.locator('.tv3-brief .say').innerText(),/^첫마디\s*안녕하세요, 넷폼 이필선입니다\./);
+  assert.match(await ex.locator('.tv3-brief .hd').innerText(),/^AI\s*전화 걸기 전 5줄\s*전화$/);assert.match(await ex.locator('.tv3-brief .say').innerText(),/^첫마디\s*안녕하세요, 넷폼 이필선입니다\./);
   assert.equal(await ex.locator('.tv3-brief .ln').nth(4).locator('.hot').innerText(),'D-3 입찰 마감','급한 줄은 빨강');if(shot)await page.screenshot({path:shot+'-exec.png'});
   assert.deepEqual(await ex.locator('.tv3-exrec .chips button').allInnerTexts(),['연결됨','부재','검토중','자료요청','회신대기','실주']);
-  assert.match(await ex.locator('.tv3-exrec .nx').innerText(),/^다음 행동\s*통화 결과를 고르면 제안$/);assert.equal(await ex.locator('.tv3-exrec .save.on').count(),0);
-  assert.equal(await ex.evaluate(n=>/(^|\s)AI(\s|$)/.test(n.innerText)),false,'기록에서 읽은 5줄 · 규칙 제안에는 AI 표식 없음');
-  assert.match(await ex.locator('.tv3-exside section').first().innerText(),/^이 단계에서 확인할 것\s*경쟁·입찰\s*✓?\s*입찰 · 결정 일정\s*경쟁 상황\s*경쟁사\s*입찰 조건\s*✓?\s*다음 행동 · 날짜$/);assert.equal(await ex.locator('.tv3-exside .ck.ok').count(),2,'값이 있는 것만 체크(입찰 마감 · 다음 행동)');
+  assert.match(await ex.locator('.tv3-exrec .nx').innerText(),/^AI\s*다음 행동\s*통화 결과를 고르면 제안$/);assert.equal(await ex.locator('.tv3-exrec .save.on').count(),0);
+  assert.equal(await ex.locator('em.ai').count(),2,'AI 표식 = 5줄 제목 · 다음 행동(시안 그대로)');
+  assert.match(await ex.locator('.tv3-exside section').first().innerText(),/^이 단계에서 확인할 것\s*경쟁·입찰\s*현설일\s*PT\s*경쟁 공법\s*의사결정자\s*예상 가격대\s*선배 팁\s*D-3 전에 경쟁 공법을 확인한 건의 낙찰률이 2배$/);assert.equal(await ex.locator('.tv3-exside .ck.ok').count(),0,'체크는 그 건의 기록에 값이 있을 때만');
   assert.match(await ex.locator('.tv3-exside section').nth(1).innerText(),/^이 건은 여기서도 같이 바뀝니다/);
   /* 결과 칩 → 다음 행동 → [저장하고 다음 건 →]: 상세와 같은 저장 함수, 다음 미처리 건으로 */
   await ex.locator('.tv3-exrec .save').click();await page.waitForTimeout(150);assert.deepEqual(await page.evaluate(()=>__rec),[],'결과를 고르기 전에는 저장하지 않음');
   await ex.locator('.tv3-exrec .chips button',{hasText:'회신대기'}).click();await page.waitForTimeout(150);
-  assert.match(await ex.locator('.tv3-exrec .nx').innerText(),/^다음 행동\s*회신 확인 · 3일 후$/);
+  assert.match(await ex.locator('.tv3-exrec .nx').innerText(),/^AI\s*다음 행동\s*회신 확인 · 3일 후$/);
   await ex.locator('.tv3-exrec .memo').fill('입찰 서류 메일로 보냄');await ex.locator('.tv3-exrec .save').click();await page.waitForTimeout(400);
   assert.deepEqual(await page.evaluate(()=>__rec),[['bid1','회신대기','입찰 서류 메일로 보냄']],'영업건 = 상세의 응대 기록 저장과 같은 함수');
   assert.match(await ex.locator('.tv3-exlist .hd').innerText(),/1 \/ 7$/);assert.equal(await ex.locator('.tv3-exlist button').first().evaluate(n=>n.classList.contains('dn')&&n.querySelector('i').textContent),'✓');
@@ -167,7 +167,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await seed(ROLES[1][1]);await page.waitForTimeout(700);
   await page.evaluate(()=>{window.__rec=[];window.__memo=[];DealDetailV3.record=async(d,o)=>{__rec.push([d.id,o.res]);return {};};DealDetailV3.memo=async(d,note)=>{__memo.push([d.id,note]);};});
   await page.locator('#today-v2 .tv3 .tv3-go').click();await page.waitForTimeout(250);
-  const mx=page.locator('#today-v2 .tv3.tv3-ex');assert.match(await mx.locator('.tv3-brief .hd').innerText(),/^처리 전 5줄\s*배정$/);assert.match(await mx.locator('.tv3-brief .say').innerText(),/^보낼 말/);
+  const mx=page.locator('#today-v2 .tv3.tv3-ex');assert.match(await mx.locator('.tv3-brief .hd').innerText(),/^AI\s*처리 전 5줄\s*배정$/);assert.match(await mx.locator('.tv3-brief .say').innerText(),/^보낼 말/);
   assert.deepEqual(await mx.locator('.tv3-exrec .chips button').allInnerTexts(),['처리함','담당에게 보냄','담당 확인함','보류','해당 없음']);
   await mx.locator('.tv3-brief .hd button').click();assert.equal((await page.evaluate(()=>__assign)).length,1,'[배정] = 문의 배정 창');
   await mx.locator('.tv3-exlist button',{hasText:'상계주공7단지'}).click();await page.waitForTimeout(200);

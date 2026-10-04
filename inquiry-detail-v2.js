@@ -205,7 +205,7 @@
  /* ── 상세 v3 (2026-10-04 핸드오프 inquiry_v2 '견적문의 상세 v3' — 상세의 최종본) ──
     원칙: 같은 정보는 한 번만 · 설명 문장 대신 할 일 하나. 머리(브랜드 띠 · 공종 · 유입 / 현장명 + 고객 · 전화 / 접수일 · 담당 / 진행 4칸 / 상태 꼬리표 1개)
     왼쪽(고객이 남긴 말 · 핵심 정보 4줄 · 채울 정보 n / 9) · 가운데(응대 이력 + 기록: 응대 기록 · 내부 메모 2개, 결과 칩 → 다음 행동 → 저장) · 오른쪽(지금 할 일 1개 · 다음 단계 · 근처 현장 / 담당 변경).
-    저장 경로 · 자동 전환 규칙은 v2 그대로. 규칙으로 만든 다음 행동 제안에는 AI 표식을 붙이지 않는다(실제 AI 로 읽었을 때만). 끄기: G.inqDetailV3Off=true → v2 배치 */
+    저장 경로 · 자동 전환 규칙은 v2 그대로. 다음 행동 제안의 AI 표식은 시안 그대로. 끄기: G.inqDetailV3Off=true → v2 배치 */
  const V3=()=>!root.G.inqDetailV3Off;
  const md2=v=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(v||''));return m?Number(m[2])+'.'+Number(m[3]):'';};
  const dateOnly=t=>{const d=new Date(t);return Number.isFinite(d.getTime())?d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate():'';};
@@ -255,7 +255,7 @@
    form='<div class="idv3-res">'+RES3.map(([l,v])=>'<button type="button" class="idv3-rc'+(s.res===v?' on':'')+'" data-idv="res" data-v="'+v+'" aria-pressed="'+(s.res===v)+'">'+l+'</button>').join('')+'</div>'
     +'<input id="iq-res" class="idv3-in" data-idv="text" placeholder="무슨 일이 있었는지 한 줄 (선택)" value="'+attr(s.text)+'">'
     +(u.has&&s.edit?'<div class="idv-sugedit"><small>수단</small><div>'+((root.CRMRules&&root.CRMRules.get('contact_channels'))||CH).map(l=>'<button type="button" class="idv-chip'+(g.ch===l?' on':'')+'" data-idv="ch" data-v="'+l+'">'+l+'</button>').join('')+'</div><small>다음 행동</small><div>'+AC.map(l=>'<button type="button" class="idv-chip'+(g.act===l?' on':'')+'" data-idv="act" data-v="'+l+'">'+l+'</button>').join('')+'</div><small>날짜</small><div>'+DY.map(l=>'<button type="button" class="idv-chip'+(g.nday===l&&!s.due?' on':'')+'" data-idv="nday" data-v="'+l+'">'+l+'</button>').join('')+'<input type="date" id="iq-due" data-idv="due" value="'+attr(g.due)+'" aria-label="다음 행동 날짜"></div><input id="iq-next" data-idv="next" placeholder="다음 행동을 직접 적기" value="'+attr(s.next||'')+'"></div>':'<input type="hidden" id="iq-next" value="'+attr(s.next||(u.has?(g.none?'배드핏 종결 검토':g.act):''))+'"><input type="hidden" id="iq-due" value="'+attr(u.has?g.due:'')+'">')
-    +'<div class="idv3-foot"><span class="idv3-sug">'+(s.aiRead?'<em>AI</em>':'')+'다음 행동 <b>'+h(u.txt)+'</b>'+(u.has?'<button type="button" class="lnk" data-idv="edit-sug">'+(s.edit?'닫기':'바꾸기')+'</button>':'')+'</span><button type="button" class="idv-save'+(u.has?' on':'')+'" data-idv="save">저장</button></div><input type="hidden" id="iq-did" value="고객 응대 기록">';}
+    +'<div class="idv3-foot"><span class="idv3-sug"><em>AI</em>다음 행동 <b>'+h(u.txt)+'</b>'+(u.has?'<button type="button" class="lnk" data-idv="edit-sug">'+(s.edit?'닫기':'바꾸기')+'</button>':'')+'</span><button type="button" class="idv-save'+(u.has?' on':'')+'" data-idv="save">저장</button></div><input type="hidden" id="iq-did" value="고객 응대 기록">';}
   return '<div class="idv3-chead"><b>응대 이력</b><span>'+L.length+'건 · 시도 '+contacts.length+' · 연결 '+conN+'</span></div><div class="idv-thread idv3-thread">'+body+'</div>'
    +'<div class="idv-composer idv3-composer" data-tab="'+s.tab+'"><div class="idv3-tabs" role="tablist">'+[['call','응대 기록'],['memo','내부 메모']].map(t=>'<button type="button" role="tab" data-idv="tab" data-v="'+t[0]+'" aria-selected="'+(s.tab===t[0])+'">'+t[1]+'</button>').join('')+'</div>'+form+'<div class="spmsg idv-err" id="iq-msg"></div></div>';
  }
