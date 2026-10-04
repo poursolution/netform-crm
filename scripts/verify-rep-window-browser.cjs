@@ -43,7 +43,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 1. 목록에서 사람을 누르면 새 창(예전 창은 뜨지 않음) */
   await page.locator('#reps-b .psb-row[data-key="이필선"] .l').click();await page.waitForTimeout(250);
   const w=page.locator('#repWindow.on .rw-box');assert.equal(await w.count(),1,'새 사람 창');assert.equal(await page.locator('#repsDialog.on').count(),0,'예전 창은 열리지 않음');
-  assert.deepEqual(await w.evaluate(n=>{const s=getComputedStyle(n),b=getComputedStyle(n.querySelector('.rw-body'));return [s.maxWidth,s.borderTopLeftRadius,b.gridTemplateColumns.split(' ')[0]];}),['1100px','16px','320px']);
+  assert.deepEqual(await w.evaluate(n=>{const s=getComputedStyle(n),b=getComputedStyle(n.querySelector('.rw-body'));return [s.maxWidth,s.borderTopLeftRadius,b.gridTemplateColumns.split(' ')[0]];}),['1640px','16px','320px']);
+  /* 창 크기 = 상세 창과 같은 기준(가로 1640 한도 · 세로 화면 − 32) · 머리 고정 · 좌우 칸 각자 스크롤 */
+  assert.deepEqual(await w.evaluate(n=>{const r=n.getBoundingClientRect(),l=n.querySelector('.rw-left'),g=n.querySelector('.rw-right');return [Math.round(r.width),Math.round(r.height),Math.round(r.top),getComputedStyle(l).overflowY,getComputedStyle(g).overflowY,n.querySelector('.rw-body').getBoundingClientRect().bottom<=r.bottom+1];}),[1568,968,16,'auto','auto',true],'창 크기');
   /* 2. 머리: 이름 · 소속 · 상태 꼬리표 + 숫자 4개 */
   assert.equal(await w.locator('.rw-who').innerText().then(s=>s.replace(/\s+/g,' ')),'이필선 본사 영업 관리자 확인 필요');
   assert.deepEqual(await w.locator('.rw-who em').evaluate(n=>[getComputedStyle(n).color,getComputedStyle(n).backgroundColor]),['rgb(180, 35, 24)','rgb(253, 236, 236)']);
