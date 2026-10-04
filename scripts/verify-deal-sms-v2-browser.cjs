@@ -83,6 +83,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{G.dealSmsV2Off=true;});
   await page.locator('#detailView .dv3-acts button',{hasText:'문자'}).first().click();await page.waitForTimeout(600);
   assert.equal(await page.locator('#ddvPanel.dp-sms.ds2-on').count(),0);assert.equal(await page.locator('#ddvPanel.dp-sms .rm-shell').count(),1);
+  /* 8. 상세 밖에서 연 문자(확장관리 · 고객 자산)도 같은 화면(2026-10-04 대표 "확장관리 문자 누르면 옛날 거 뜬다 · 통일화"): 예전 '메시지 보내기' 창 내용 대신 같은 .ds2 */
+  await page.evaluate(()=>{G.dealSmsV2Off=false;try{closeKakaoModal();}catch(e){}try{closeDetail();}catch(e){}});await page.waitForTimeout(300);
+  await page.evaluate(()=>{const d=B.deals.find(x=>x.manager_mobile||((x.contacts||[]).some(c=>c.mobile)));CUR_DETAIL={kind:'deal',key:dealKey(d),item:d};openRelationshipMessage('sms');});await page.waitForTimeout(500);
+  {const box=page.locator('#kakaoModal.on>.modalbox.ds2-on');assert.equal(await box.count(),1,'상세 밖에서도 새 문자 창');assert.equal(await page.locator('#ddvPanel').count(),0);
+   assert.equal(await box.locator(':scope>.ds2 .ds2-hd>b').innerText(),'문자 보내기');assert.equal(await box.locator('.ds2-tpls button').count()>=1,true);assert.equal(await box.locator('.ds2-phone .ds2-bubble').count(),1);
+   assert.equal(await page.locator('#kakaoModal .rm-shell').evaluate(n=>!!n.offsetParent),false,'예전 메시지 보내기 내용(CONTEXTUAL MESSAGE · 발송 목적 · 관계 점수)은 보이지 않는다');assert.equal(await page.locator('#kakaoModal .modalhead').evaluate(n=>getComputedStyle(n).display),'none');
+   const r=await box.evaluate(n=>{const b=n.getBoundingClientRect();return [Math.round(b.width),Math.abs((b.left+b.right)/2-innerWidth/2)<3];});assert.deepEqual(r,[900,true],'가운데 900px(오른쪽 서랍 아님)');
+   if(shot)await page.screenshot({path:shot+'-sms-modal.png'});
+   await box.locator('[data-ds="cancel"]').first().click();await page.waitForTimeout(250);assert.equal(await page.locator('#kakaoModal.on').count(),0,'취소 = 닫기');assert.equal(await page.locator('#kakaoModal .modalbox.ds2-on, #kakaoModal .modalbox>.ds2').count(),0,'닫으면 상자를 원래대로');}
   /* 이 검사는 저장 통로(pushWrite)를 가짜로 바꿔 요청만 본다 — 운영 통로의 발송 기록 묶음 확인(operational-overlay)은 가짜 통로에서는 '부모 기록 없음'으로 끝나므로 그 한 가지만 뺀다 */
   assert.deepEqual(errs.filter(e=>!/MESSAGE_LOG_PARENT_REQUIRED/.test(e)),[]);
   console.log(JSON.stringify({status:'PASS',center_one_screen:true,head_consent_channel:true,ai_three:true,edit_live_preview:true,after_send_change_days:true,kakao_yellow:true,send_logs_activity_next:true,blocked_contact:blocked,legacy_switch:true}));
