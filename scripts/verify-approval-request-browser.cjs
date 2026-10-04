@@ -1,6 +1,7 @@
 'use strict';
 /* 승인 요청 창 검사(2026-10-04 design_handoff_rules/승인 요청 창.dc.html + 대표 지정: 승인자 = 이승우 · 황윤선 중 한 사람 · 누가 승인했는지 기록)
    상세 [··· 기타 처리] → '승인 요청' → 종류 6개마다 필수칸 2개 · 근거 · 증빙 → 보내면 예외 승인함 대기 + 머리 '승인 대기 · 종류' 꼬리표. 승인 전에는 영업건을 바꾸지 않는다.
+   6종 모두 이 창에서 올린다(타사 이관 실적 포함) · 보낸 뒤 [다시 보기] · 결과는 요청자에게 알림.
    승인자(이승우 · 황윤선)만 승인 · 반려 — 관리자 · 본인 건은 버튼 없음. 승인하면 '승인됨 · 이름' + 응대 이력 시스템 기록 + 머리 '승인 완료 · 종류 · 이름'. */
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
@@ -64,11 +65,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   if(shot)await page.screenshot({path:shot+'-form.png'});
   await dlg.locator('[data-aq="send"]').click();await page.waitForTimeout(400);
   assert.deepEqual(await page.evaluate(()=>__up),[['11111111-1111-4111-8111-111111111111','낙찰공고.pdf',13,'기타',['승인 요청 증빙'],'결과 수정 승인 요청 증빙']],'증빙 = 그 영업건 자료에 올린다');
-  assert.deepEqual(await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_approval_request_v1').map(c=>c[1])),[{type:'result_fix',deal_id:'11111111-1111-4111-8111-111111111111',title:'[경기 화성] 동탄푸른마을 실주 → 수주 · 직접 · 1.8억',reason:'재입찰로 낙찰 · 낙찰공고 첨부',payload:{fields:[{l:'현재 결과',v:'실주 · 가격 · 가격 경쟁',auto:false},{l:'바꿀 결과 · 금액',v:'수주 · 직접 · 1.8억',auto:false}],evidence:{attachment_id:'att-1',file_name:'낙찰공고.pdf'}}}]);
+  assert.deepEqual(await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_approval_request_v1').map(c=>c[1])),[{type:'result_fix',deal_id:'11111111-1111-4111-8111-111111111111',title:'[경기 화성] 동탄푸른마을 실주 → 수주 · 직접 · 1.8억',reason:'재입찰로 낙찰 · 낙찰공고 첨부',payload:{fields:[{l:'현재 결과',v:'실주 · 가격 · 가격 경쟁',auto:false},{l:'바꿀 결과 · 금액',v:'수주 · 직접 · 1.8억',auto:false}],evidence:{attachment_id:'att-1',file_name:'낙찰공고.pdf'},to_result:'won_own',amount:'180000000'}}],'바꿀 결과 · 금액을 읽어 둔다(승인되면 그대로 반영)');
   /* 3. 보낸 뒤: 안내 · 머리 '승인 대기 · 종류' 꼬리표 · 영업건은 그대로 */
   assert.equal(await dlg.locator('.aq-sent>b').innerText(),'예외 승인함에 올라갔습니다');assert.equal(await dlg.locator('.aq-sent>b').evaluate(n=>getComputedStyle(n).color),'rgb(31, 122, 77)');
-  assert.match(await dlg.locator('.aq-sent>span').innerText(),/^결과 수정 · 정정훈 · 오늘\s*영업건 머리에 "승인 대기" 꼬리표 · 승인 · 반려 결과는 응대 이력에 시스템 기록으로 남습니다$/);
+  assert.match(await dlg.locator('.aq-sent>span').innerText(),/^결과 수정 · 정정훈 · 오늘\s*영업건 머리에 "승인 대기" 꼬리표 · 승인 · 반려 결과는 응대 이력에 시스템 기록으로 남고 요청자에게 알림$/);
   if(shot)await page.screenshot({path:shot+'-sent.png'});
+  /* [다시 보기] = 보낸 내용을 그대로 다시 본다(고칠 수 없음) → [취소]로 닫는다 */
+  assert.equal(await dlg.locator('.aq-sent button').innerText(),'다시 보기');await dlg.locator('[data-aq="review"]').click();
+  assert.deepEqual(await dlg.locator('.aq-form input:not([type=file])').evaluateAll(l=>l.map(n=>[n.value,n.disabled])),[['실주 · 가격 · 가격 경쟁',true],['수주 · 직접 · 1.8억',true],['재입찰로 낙찰 · 낙찰공고 첨부',true]]);
+  assert.deepEqual(await dlg.locator('.aq-ft button').evaluateAll(l=>l.map(n=>[n.textContent,n.disabled])),[['취소',false],['승인 대기 중',true]]);assert.equal(await dlg.locator('.aq-unfile').count(),0,'시안에 없는 지우기 버튼 없음');
   await dlg.locator('[data-aq="close"]').click();assert.equal(await page.locator('#aq-dialog').count(),0);
   const tag=v.locator('.ddv-chips .aq-tag');assert.deepEqual(await tag.evaluateAll(l=>l.map(n=>[n.textContent,n.className,getComputedStyle(n).color,getComputedStyle(n).backgroundColor,n.previousElementSibling&&n.previousElementSibling.className])),[['승인 대기 · 결과 수정','aq-tag wait','rgb(138, 90, 0)','rgb(255, 244, 214)','idv-brand']]);
   assert.equal(await page.evaluate(()=>JSON.stringify(B.deals[0])),before,'승인 전에는 영업건(결과 · 금액 · 담당)을 바꾸지 않는다');assert.deepEqual(await page.evaluate(()=>[JSON.stringify(__writes),__memo.length]),[writes0,0],'요청을 보내는 동안 영업건 쓰기는 없다');
@@ -77,15 +82,18 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await dlg.locator('.aq-form>span').allInnerTexts(),['함께 접촉 *','첫 연결일 *','근거 *','증빙 (선택)']);
   assert.deepEqual(await dlg.locator('.aq-form input:not([type=file])').evaluateAll(l=>l.slice(0,2).map(n=>[n.value,n.readOnly,n.classList.contains('auto')])),[['정정훈 · 황윤선',false,false],['황윤선 9.11 · 정정훈 9.14 (자동)',true,true]],'부재(전화 시도)는 연결로 치지 않는다');
   assert.equal(await dlg.locator('[data-aq-f="1"]').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(248, 249, 251)');
-  /* 5. 타사 이관 실적: 기존 타사 이관 창으로 잇는다(자료 한 곳) */
+  /* 5. 타사 이관 실적: 이 창에서 바로 예외 승인함으로(이관 업체 · 낙찰금액 · 근거 · 증빙) — 승인되면 서버가 타사 이관 수주로 실적 반영 */
   await dlg.locator('.aq-types button',{hasText:'타사 이관 실적'}).click();
-  assert.match(await dlg.locator('.aq-effect').innerText(),/^승인되면 타사 이관 수주로 실적 반영\s*이 영업건은 아직 타사 이관이 등록되지 않았습니다 — 보내면 타사 이관 등록 창이 먼저 열립니다\.$/);
+  assert.equal(await dlg.locator('.aq-effect').innerText(),'승인되면 타사 이관 수주로 실적 반영');assert.deepEqual(await dlg.locator('.aq-form>span').allInnerTexts(),['이관 업체 *','낙찰금액 *','근거 *','증빙 *']);
   await dlg.locator('[data-aq-f="0"]').fill('코지건설');await dlg.locator('[data-aq-f="1"]').fill('380,000,000원 (VAT 별도)');await dlg.locator('[data-aq-f="why"]').fill('사전 보고 10.2 · 낙찰공고 첨부');
   await page.locator('#aq-file').setInputFiles({name:'공고.png',mimeType:'image/png',buffer:Buffer.from('x')});await page.waitForTimeout(100);
-  await dlg.locator('[data-aq="send"]').click();await page.waitForTimeout(300);
-  assert.equal(await page.locator('#aq-dialog').count(),0);assert.equal(await page.locator('#tf-dialog').count(),1);assert.equal(await page.locator('#tf-dialog [data-tf-f="company"]').inputValue(),'코지건설','적어 둔 이관 업체를 등록 창에 넘긴다');
-  assert.equal(await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_approval_request_v1').length),1,'타사 이관 실적은 승인 요청 저장소에 따로 쌓지 않는다');
-  await page.evaluate(()=>{DealTransfer.close();closeDetail();});await page.waitForTimeout(200);
+  await dlg.locator('[data-aq="send"]').click();await page.waitForTimeout(400);
+  assert.equal(await page.locator('#tf-dialog').count(),0,'다른 창으로 넘기지 않는다');assert.equal(await dlg.locator('.aq-sent>b').innerText(),'예외 승인함에 올라갔습니다');
+  assert.deepEqual(await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_approval_request_v1').map(c=>[c[1].type,c[1].title,c[1].reason,c[1].payload.company,c[1].payload.amount,c[1].payload.evidence.file_name]).slice(1)),[['transfer','[경기 화성] 동탄푸른마을 코지건설 380,000,000원 (VAT 별도)','사전 보고 10.2 · 낙찰공고 첨부','코지건설','380000000','공고.png']]);
+  await dlg.locator('[data-aq="review"]').click();await dlg.locator('[data-aq="close"]').click();
+  assert.deepEqual(await v.locator('.ddv-chips .aq-tag').allInnerTexts(),['승인 대기 · 타사 이관 실적','승인 대기 · 결과 수정']);
+  assert.equal(await page.evaluate(()=>JSON.stringify(B.deals[0])),before,'승인 전에는 실적 · 귀속 · 결과를 바꾸지 않는다');
+  await page.evaluate(()=>{__ap.splice(__ap.findIndex(r=>r.type==='transfer'),1);closeDetail();});await page.waitForTimeout(200);
   /* 6. 승인자(이승우 · 영업사원 권한)도 설정 → 예외 승인함을 보고 승인한다 · 누가 승인했는지 남는다 */
   await page.evaluate(()=>{ME={id:'lead1',name:'이승우',role:'rep'};paint();goPage('approvals');});await page.waitForTimeout(700);
   assert.equal(await page.locator('.menu [data-p="approvals"]').isVisible(),true);assert.equal(await page.locator('.menu [data-p="rules"]').isVisible(),false,'운영 기준 설정은 관리자만');
@@ -97,7 +105,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_approval_decide_v1')),[['crm_approval_decide_v1',{id:1,decision:'approve'}]]);
   assert.equal(await inbox.locator('.apv-res').innerText(),'승인됨 · 이승우');
   assert.deepEqual(await page.evaluate(()=>__memo),[['11111111-1111-4111-8111-111111111111','[승인 요청 · 결과 수정] 이승우 승인 완료 — [경기 화성] 동탄푸른마을 실주 → 수주 · 직접 · 1.8억']],'응대 이력에 누가 승인했는지 남긴다');
-  assert.equal(await page.evaluate(()=>{const d=B.deals[0];return [d.code,d.outcome,d.assignee].join('|');}),'lost|lost|정정훈','승인해도 결과 · 귀속은 자동으로 바뀌지 않는다(기록만)');
+  assert.equal(await page.evaluate(()=>{const d=B.deals[0];return [d.code,d.outcome,d.assignee].join('|');}),'lost|lost|정정훈','영업건의 단계 · 담당은 그대로 — 수주 결과 · 낙찰금액은 서버가 승인과 함께 수주 유형 자료에 반영한다');
   /* 상세: '승인 완료 · 종류 · 승인자' 꼬리표 + 시스템 기록 */
   await inbox.locator('[data-apv="open"]').click();await page.waitForTimeout(800);
   assert.deepEqual(await page.locator('#detailView .ddv-chips .aq-tag').evaluateAll(l=>l.map(n=>[n.textContent,getComputedStyle(n).color,getComputedStyle(n).backgroundColor])),[['승인 완료 · 결과 수정 · 이승우','rgb(31, 122, 77)','rgb(232, 246, 238)']]);
@@ -119,7 +127,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const r9=inbox.locator('.apv-row',{has:page.locator('.apv-t',{hasText:'옥련현대'})});
   assert.equal(await r9.locator('.apv-wait').innerText(),'승인자 처리 대기');assert.equal(await r9.locator('.apv-act').count(),0,'승인 요청은 관리자에게 가지 않는다');
   assert.equal(await page.locator('.menu [data-p="approvals"]').isVisible(),true);
-  await page.evaluate(()=>{ME={id:'rep2',name:'정정훈',role:'rep'};paint();});await page.waitForTimeout(200);
+  await page.evaluate(()=>{window.__toasts=[];const t0=window.toast;window.toast=(m,k)=>{__toasts.push(String(m));return t0&&t0(m,k);};try{localStorage.clear();}catch(e){}ME={id:'rep2',name:'정정훈',role:'rep'};paint();});await page.waitForTimeout(500);
+  assert.deepEqual(await page.evaluate(()=>__toasts.filter(m=>/^승인 요청 결과/.test(m))),['승인 요청 결과 — 결과 수정 · 이승우 승인 완료 · [경기 화성] 동탄푸른마을 실주 → 수주 · 직접 · 1.8억'],'요청자에게 알림');
+  await page.evaluate(()=>{__toasts.length=0;paint();});await page.waitForTimeout(300);assert.deepEqual(await page.evaluate(()=>__toasts.filter(m=>/^승인 요청 결과/.test(m))),[],'같은 결과는 한 번만 알린다');
   assert.equal(await page.locator('.menu [data-p="approvals"]').isVisible(),false);assert.equal(await page.locator('#approval-inbox').innerText().then(s=>s.trim()),'예외 승인함은 승인자 · 관리자 전용 화면입니다.');
   /* 9. 끄기 */
   await page.evaluate(()=>{goPage('pipe');G._detailPopup=true;drwDeal(JSON.stringify(B.deals[1]));});await page.waitForTimeout(700);

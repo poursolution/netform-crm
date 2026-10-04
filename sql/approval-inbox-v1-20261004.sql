@@ -1,16 +1,19 @@
 -- 예외 승인함 v1 (2026-10-04 · design_handoff_rules 2차 기능 4)
 -- 현장에서 바로 고치지 않고 승인함으로 모으는 요청: 귀속 변경 · 중복 리드 정산 · 전략수주 · 특별 인센티브 · 결과 수정.
--- 타사 이관 실적은 기존 crm_deal_transfer_approve_v1 경로 그대로다 — 승인함 화면이 같이 보여 줄 뿐, 이 표에 넣지 않는다.
+-- 타사 이관 실적은 두 길로 온다: 기존 타사 이관 흐름(등록 → 낙찰결과 → crm_deal_transfer_approve_v1)과, 승인 요청 창에서 바로 올린 요청(이 표 · type = transfer).
 -- 승인 · 반려는 예외 승인자(운영 기준 '예외 승인자' 목록 · 기본 이승우 · 황윤선) 중 한 사람이 한다 — crm_security.approval_approver (sql/ops-rules-v1 에 있다 · 먼저 적용).
 -- 본인이 올린 요청은 다른 승인자가 처리한다. 누가 언제 승인 · 반려했는지는 요청(decided_by_name · decided_at)과 이력에 남는다.
 -- 이 함수들은 요청 · 결정(승인 / 반려 · 사유) · 이력만 기록한다. 영업건 · 담당 · 계약실적 원장 · 수주 유형은 건드리지 않는다.
--- 하나만 예외: '귀속 변경'이 승인되면 그 영업건의 실적 귀속(담당 · 귀속 분리 표 crm_deal_owners — sql/deal-owner-v1)이 바뀌고 이전 귀속이 이력에 남는다.
+-- 승인되면 시안(승인 요청 창)의 안내대로 반영한다 — 승인 전에는 아무것도 바꾸지 않는다:
+--   귀속 변경 · 중복 리드 정산 = 그 영업건의 실적 귀속(crm_deal_owners — sql/deal-owner-v1) / 타사 이관 실적 = 타사 이관 수주로 실적 인정(crm_deal_transfers — sql/deal-transfer-v1)
+--   결과 수정 = 수주 결과 · 낙찰금액(crm_deal_wins — sql/deal-win-type-v1) / 전략수주 · 특별 인센티브 = 승인 기록 자체가 반영(승인선 예외 · 별도 항목).
+--   계약실적 원장(계약 체결일 기준)과 영업건의 단계 · 담당은 건드리지 않는다. 반영에 실패하면 승인도 되돌린다.
 -- 표는 RLS 를 켜고 정책을 두지 않는다 — 읽기 · 쓰기는 아래 함수로만. 바꿀 때마다 crm_approval_events 에 전 → 후가 남는다.
 -- 다시 실행해도 안전. 운영 적용: Supabase SQL 편집기에서 대표가 Run. 화면은 함수가 있을 때만 이 요청들을 보여 준다.
 
 create table if not exists public.crm_approval_requests(
  id bigserial primary key,
- type text not null check (type in ('owner_change','dup_lead','strategic_win','special_incentive','result_fix')),
+ type text not null check (type in ('owner_change','dup_lead','strategic_win','special_incentive','result_fix','transfer')),
  deal_id text,
  title text not null,
  reason text not null,
@@ -27,6 +30,9 @@ create table if not exists public.crm_approval_requests(
 alter table public.crm_approval_requests enable row level security;
 revoke all on table public.crm_approval_requests from public, anon, authenticated;
 create index if not exists crm_approval_requests_status on public.crm_approval_requests(status,requested_at desc);
+-- 이미 만들어진 표에도 종류 6개를 받게 한다(승인 요청 창의 타사 이관 실적)
+alter table public.crm_approval_requests drop constraint if exists crm_approval_requests_type_check;
+alter table public.crm_approval_requests add constraint crm_approval_requests_type_check check (type in ('owner_change','dup_lead','strategic_win','special_incentive','result_fix','transfer'));
 
 create table if not exists public.crm_approval_events(
  id bigserial primary key,
@@ -79,7 +85,7 @@ begin
   return jsonb_build_object('ok',true,'request',to_jsonb(cur));
  end if;
  v_type:=coalesce(p->>'type','');
- if v_type not in ('owner_change','dup_lead','strategic_win','special_incentive','result_fix') then raise exception '요청 종류를 골라 주세요' using errcode='22023'; end if;
+ if v_type not in ('owner_change','dup_lead','strategic_win','special_incentive','result_fix','transfer') then raise exception '요청 종류를 골라 주세요' using errcode='22023'; end if;
  v_deal:=nullif(btrim(coalesce(p->>'deal_id','')),'');
  if v_deal is not null then
   if length(v_deal)>80 then raise exception 'invalid payload' using errcode='22023'; end if;
@@ -90,6 +96,17 @@ begin
  if v_reason is null or length(v_reason)>300 then raise exception '요청 사유를 300자 이내로 적어 주세요' using errcode='22023'; end if;
  v_payload:=coalesce(p->'payload','{}'::jsonb);
  if jsonb_typeof(v_payload)<>'object' or length(v_payload::text)>2000 then raise exception 'invalid payload' using errcode='22023'; end if;
+ -- 승인되면 그대로 반영되는 값은 올릴 때 확인한다
+ if v_type='dup_lead' and v_payload ? 'to_owner' and (v_deal is null or not exists(select 1 from public.users u where u.active is true and btrim(u.name)=nullif(btrim(coalesce(v_payload->>'to_owner','')),''))) then
+  raise exception '최초 연결 담당자는 사용 중인 계정 이름이어야 합니다' using errcode='22023';
+ end if;
+ if v_type='transfer' and (v_deal is null or nullif(btrim(coalesce(v_payload->>'company','')),'') is null or length(v_payload->>'company')>80 or coalesce(v_payload->>'amount','') !~ '^[1-9][0-9]{0,14}$') then
+  raise exception '이관 업체와 낙찰금액(원 단위 숫자)을 적어 주세요' using errcode='22023';
+ end if;
+ if v_type='result_fix' and v_payload ? 'to_result' and (v_deal is null or v_payload->>'to_result' not in ('won_own','won_partner_tech','lost')
+   or (v_payload->>'to_result'<>'lost' and coalesce(v_payload->>'amount','') !~ '^[1-9][0-9]{0,14}$')) then
+  raise exception '바꿀 결과와 금액을 확인해 주세요' using errcode='22023';
+ end if;
  -- 귀속 변경: 어느 영업건의 귀속을 누구로 바꿀지 분명해야 한다(승인되면 그대로 반영된다)
  if v_type='owner_change' and (v_deal is null or not exists(select 1 from public.users u where u.active is true and btrim(u.name)=nullif(btrim(coalesce(v_payload->>'to_owner','')),''))) then
   raise exception '바꿀 귀속은 사용 중인 계정 이름으로 적어 주세요' using errcode='22023';
@@ -111,7 +128,7 @@ create or replace function public.crm_approval_decide_v1(p jsonb)
 returns jsonb language plpgsql volatile security definer set search_path='' as $fn$
 declare
  a record; old public.crm_approval_requests%rowtype; cur public.crm_approval_requests%rowtype;
- v_id bigint; v_dec text; v_reason text; v_name text; v_owner jsonb; v_at timestamptz:=clock_timestamp();
+ v_id bigint; v_dec text; v_reason text; v_name text; v_owner jsonb; v_applied jsonb; v_at timestamptz:=clock_timestamp();
 begin
  select * into a from crm_security.actor();
  if not found then raise exception 'forbidden' using errcode='42501'; end if;
@@ -131,11 +148,17 @@ begin
  update public.crm_approval_requests q set status=case when v_dec='approve' then 'approved' else 'rejected' end,decided_by=a.user_id,decided_by_name=v_name,decided_at=v_at,decision_reason=v_reason
   where q.id=v_id returning * into cur;
  insert into public.crm_approval_events(request_id,action,before,after,actor,actor_name,at) values(v_id,v_dec,to_jsonb(old),to_jsonb(cur),a.user_id,v_name,v_at);
- -- 귀속 변경 승인 = 그 영업건의 실적 귀속을 바꾼다(담당 · 귀속 분리가 설치돼 있을 때). 반영에 실패하면 승인도 되돌린다.
- if v_dec='approve' and old.type='owner_change' and old.deal_id is not null and to_regprocedure('crm_security.deal_owner_apply(text,text,text,text,uuid,text)') is not null then
-  execute 'select crm_security.deal_owner_apply($1,$2,$3,$4,$5,$6)' into v_owner using old.deal_id,old.payload->>'from_owner',old.payload->>'to_owner',old.reason,a.user_id,v_name;
+ -- 승인 = 시안의 안내대로 반영한다(해당 기능이 설치돼 있을 때). 반영에 실패하면 승인도 되돌린다.
+ if v_dec='approve' and old.deal_id is not null then
+  if old.type in ('owner_change','dup_lead') and nullif(btrim(coalesce(old.payload->>'to_owner','')),'') is not null and to_regprocedure('crm_security.deal_owner_apply(text,text,text,text,uuid,text)') is not null then
+   execute 'select crm_security.deal_owner_apply($1,$2,$3,$4,$5,$6)' into v_owner using old.deal_id,old.payload->>'from_owner',old.payload->>'to_owner',old.reason,a.user_id,v_name;
+  elsif old.type='transfer' and to_regprocedure('crm_security.deal_transfer_apply(text,text,numeric,text,uuid,text,uuid,text)') is not null then
+   execute 'select crm_security.deal_transfer_apply($1,$2,$3,$4,$5,$6,$7,$8)' into v_applied using old.deal_id,old.payload->>'company',(old.payload->>'amount')::numeric,left(old.reason||coalesce(' · '||nullif(old.payload#>>'{evidence,file_name}',''),''),300),old.requested_by,old.requested_by_name,a.user_id,v_name;
+  elsif old.type='result_fix' and old.payload ? 'to_result' and to_regprocedure('crm_security.deal_win_apply(text,text,numeric,uuid,text)') is not null then
+   execute 'select crm_security.deal_win_apply($1,$2,$3,$4,$5)' into v_applied using old.deal_id,old.payload->>'to_result',nullif(old.payload->>'amount','')::numeric,a.user_id,v_name;
+  end if;
  end if;
- return jsonb_build_object('ok',true,'request',to_jsonb(cur),'owner',v_owner);
+ return jsonb_build_object('ok',true,'request',to_jsonb(cur),'owner',v_owner,'applied',v_applied);
 end $fn$;
 revoke all on function public.crm_approval_decide_v1(jsonb) from public, anon;
 grant execute on function public.crm_approval_decide_v1(jsonb) to authenticated;

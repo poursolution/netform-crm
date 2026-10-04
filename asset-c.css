@@ -12,9 +12,10 @@
 .ac-tabs>button[role=tab][aria-selected="true"] b{color:#15171c}
 .ac-tabs>button[role=tab] b.hot,.ac-tabs>button[role=tab][aria-selected="true"] b.hot{color:#b42318}
 .ac-tabs>button[role=tab] b.zero{color:#c9cdd5}
-.ac-tabs>i{flex:1}
-.ac .ac-rulebtn{flex:none;border:1px solid #e3e6ec;background:#fff;color:#374151;font-size:12px;font-weight:600;border-radius:999px;padding:5px 11px;margin:0 6px 4px 0}
-.ac-tabs .av-more{flex:none;margin-bottom:4px}
+/* 제목 줄: 제목 + 한 줄 설명 + [관계 기준 ▾] */
+.ac-title{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.ac-title>b{font-size:20px;letter-spacing:-.02em}.ac-title>span{font-size:13px;color:#4b5563}.ac-title>i{flex:1}
+.ac .ac-rulebtn{flex:none;border:1px solid #e3e6ec;background:#fff;color:#374151;font-size:12px;font-weight:600;border-radius:999px;padding:5px 11px}
 .ac-rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
 .ac-rules>div{background:#f8f9fb;border-radius:8px;padding:8px 11px;font-size:12px;line-height:1.5}.ac-rules span{color:#4b5563}
 /* 담당자별 위험 = 알약 */

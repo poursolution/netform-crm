@@ -210,3 +210,44 @@ begin
 end $fn$;
 revoke all on function public.crm_deal_transfer_approve_v1(jsonb) from public, anon;
 grant execute on function public.crm_deal_transfer_approve_v1(jsonb) to authenticated;
+
+-- 승인 요청 창에서 올린 '타사 이관 실적'이 승인될 때(내부용 · crm_approval_decide_v1 이 부른다 · 직접 부를 수 없다):
+-- 이관 업체 · 낙찰금액 · 근거를 예외 승인자가 확인하고 승인한 것이므로 타사 이관 수주로 실적을 인정한다. 승인 요청 창에는 낙찰일 칸이 없어 승인한 날(서울 날짜)을 이관일 · 낙찰일로 적는다.
+-- 이미 등록된 타사 이관이 있으면 그 건에 낙찰결과와 인정을 채우고(귀속 · 이관 정보는 그대로), 없으면 새로 만든다. 이미 인정된 건은 다시 인정하지 않는다.
+create or replace function crm_security.deal_transfer_apply(p_deal text,p_company text,p_amount numeric,p_evidence text,p_requester uuid,p_requester_name text,p_actor uuid,p_actor_name text)
+returns jsonb language plpgsql volatile security definer set search_path='' as $fn$
+declare dj jsonb; old public.crm_deal_transfers%rowtype; cur public.crm_deal_transfers%rowtype; has_old boolean; v_owner text; v_owner_id uuid; v_po text; v_po_id uuid;
+ v_company text:=nullif(btrim(coalesce(p_company,'')),''); v_at timestamptz:=clock_timestamp(); v_day date:=(clock_timestamp() at time zone 'Asia/Seoul')::date;
+ c jsonb:='{"reported":true,"result":true,"amount":true,"via":"approval_request"}'::jsonb;
+begin
+ if v_company is null or p_amount is null or p_amount<=0 or p_amount<>trunc(p_amount) then raise exception '이관 업체와 낙찰금액을 확인해 주세요' using errcode='22023'; end if;
+ select to_jsonb(d) into dj from public.deals d where d.id::text=p_deal;
+ if dj is null then raise exception '영업건을 찾을 수 없습니다' using errcode='22023'; end if;
+ select * into old from public.crm_deal_transfers t where t.deal_id=p_deal for update;
+ has_old:=found;
+ if has_old and old.transfer_status='transferred' and old.incentive_eligible then raise exception '이미 실적이 인정된 타사 이관입니다' using errcode='22023'; end if;
+ if has_old and old.transfer_status='transferred' then
+  update public.crm_deal_transfers t set award_result='transferred_won',award_company=v_company,award_date=coalesce(t.award_date,v_day),award_amount=p_amount,award_evidence=coalesce(nullif(btrim(coalesce(p_evidence,'')),''),t.award_evidence),award_note=null,
+   performance_amount=p_amount,incentive_eligible=true,approval_checks=c,approved_by=p_actor,approved_by_name=p_actor_name,approved_at=v_at,rejected_reason=null,updated_at=v_at
+   where t.deal_id=p_deal returning * into cur;
+ else
+  begin v_owner_id:=nullif(dj->>'owner_id','')::uuid; exception when others then v_owner_id:=null; end;
+  v_owner:=coalesce(nullif(btrim(coalesce(dj->>'assignee_name','')),''),(select u.name from public.users u where u.user_id=v_owner_id));
+  if to_regclass('public.crm_deal_owners') is not null then
+   execute 'select o.performance_owner,o.performance_owner_id from public.crm_deal_owners o where o.deal_id=$1' into v_po,v_po_id using p_deal;
+   if v_po is not null then v_owner:=v_po; v_owner_id:=v_po_id; end if;
+  end if;
+  insert into public.crm_deal_transfers(deal_id,transfer_status,transfer_company,transfer_reason,transfer_date,transfer_reported,transfer_reported_at,transfer_memo,expected_amount,award_result,award_company,award_date,award_amount,award_evidence,
+    performance_amount,performance_owner,performance_owner_id,incentive_eligible,approval_checks,approved_by,approved_by_name,approved_at,created_by,created_by_name,created_at,updated_at)
+   values(p_deal,'transferred',v_company,'승인 요청',v_day,true,null,left(coalesce(p_evidence,''),300),null,'transferred_won',v_company,v_day,p_amount,left(coalesce(p_evidence,''),300),
+    p_amount,v_owner,v_owner_id,true,c,p_actor,p_actor_name,v_at,p_requester,p_requester_name,v_at,v_at)
+   on conflict (deal_id) do update set transfer_status='transferred',transfer_company=excluded.transfer_company,transfer_reason=excluded.transfer_reason,transfer_date=excluded.transfer_date,transfer_reported=true,transfer_memo=excluded.transfer_memo,
+    award_result='transferred_won',award_company=excluded.award_company,award_date=excluded.award_date,award_amount=excluded.award_amount,award_evidence=excluded.award_evidence,award_note=null,performance_amount=excluded.performance_amount,
+    performance_owner=coalesce(public.crm_deal_transfers.performance_owner,excluded.performance_owner),performance_owner_id=coalesce(public.crm_deal_transfers.performance_owner_id,excluded.performance_owner_id),
+    incentive_eligible=true,approval_checks=excluded.approval_checks,approved_by=excluded.approved_by,approved_by_name=excluded.approved_by_name,approved_at=excluded.approved_at,rejected_reason=null,updated_at=excluded.updated_at
+   returning * into cur;
+ end if;
+ insert into public.crm_deal_transfer_events(deal_id,action,before,after,actor,actor_name,at) values(p_deal,'approve',case when has_old then to_jsonb(old) end,to_jsonb(cur),p_actor,p_actor_name,v_at);
+ return to_jsonb(cur);
+end $fn$;
+revoke all on function crm_security.deal_transfer_apply(text,text,numeric,text,uuid,text,uuid,text) from public, anon, authenticated;

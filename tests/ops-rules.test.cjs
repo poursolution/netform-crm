@@ -94,7 +94,12 @@ test('수주 유형 3가지: 직접 / 협약시공사 · 기술자문 / 타사 �
 test('예외 승인함: 종류 6개 · 새 서버 함수는 허용 목록과 SQL 에 함께 · 결정만 기록한다',()=>{
  const sql=read('sql/approval-inbox-v1-20261004.sql'),js=read('approval-inbox.js');
  assert.deepEqual([...R.PHASE2.approval_types],['타사 이관 실적','귀속 변경','중복 리드 정산','전략수주','특별 인센티브','결과 수정']);
- assert.match(js,/CODES=\['transfer','owner_change','dup_lead','strategic_win','special_incentive','result_fix'\]/);assert.match(sql,/type in \('owner_change','dup_lead','strategic_win','special_incentive','result_fix'\)/);
+ assert.match(js,/CODES=\['transfer','owner_change','dup_lead','strategic_win','special_incentive','result_fix'\]/);assert.match(sql,/type in \('owner_change','dup_lead','strategic_win','special_incentive','result_fix','transfer'\)/);
+ /* 승인되면 시안의 안내대로 반영 — 내부 함수로만(직접 부를 수 없음) · 계약실적 원장은 건드리지 않는다 */
+ const tfSql=read('sql/deal-transfer-v1-20261004.sql'),winSql=read('sql/deal-win-type-v1-20261004.sql');
+ assert.match(sql,/crm_security\.deal_transfer_apply\(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8\)/);assert.match(sql,/crm_security\.deal_win_apply\(\$1,\$2,\$3,\$4,\$5\)/);
+ assert.match(tfSql,/revoke all on function crm_security\.deal_transfer_apply\(text,text,numeric,text,uuid,text,uuid,text\) from public, anon, authenticated/);assert.match(winSql,/revoke all on function crm_security\.deal_win_apply\(text,text,numeric,uuid,text\) from public, anon, authenticated/);
+ [sql,tfSql.slice(tfSql.indexOf('crm_security.deal_transfer_apply')),winSql.slice(winSql.indexOf('crm_security.deal_win_apply'))].forEach(s=>assert.doesNotMatch(s,/contract_sales|update public\.deals|insert into public\.deals/));
  ['crm_approval_list_v1','crm_approval_request_v1','crm_approval_decide_v1'].forEach(n=>{assert.match(read('pc-manager-transport.js'),new RegExp("'"+n+"'"));assert.match(read('pc-error-state.js'),new RegExp(n+':'));assert.match(sql,new RegExp('function public\\.'+n));});
  assert.doesNotMatch(sql,/update public\.(deals|contracts|crm_deal_wins|crm_deal_transfers)|insert into public\.(deals|contracts)/,'승인함은 다른 자료를 바꾸지 않는다');
  /* 승인자 = 예외 승인자(기본 이승우 · 황윤선) 중 한 사람 — 관리자 아님 · 본인 건은 다른 승인자가 · 화면 · 서버가 같은 규칙 */

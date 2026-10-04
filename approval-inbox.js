@@ -31,11 +31,13 @@
  /* ── 자료: 타사 이관(낙찰결과 등록된 건) + 승인 요청 → 한 목록. 대기 먼저, 그 안에서 최근 순 ── */
  function transferItems(){
   const T=R.DealTransfer;if(!T||!T.enabled()||typeof T.rows!=='function')return [];
-  return T.rows().filter(t=>t.transfer_status==='transferred'&&t.award_result==='transferred_won').map(t=>{
+  /* 승인 요청 창에서 올린 타사 이관 실적이 있는 영업건은 그 요청 한 줄로만 보여 준다(같은 건을 두 번 세지 않는다) */
+  const viaRequest=new Set((st().rows||[]).filter(r=>r.type==='transfer'&&r.deal_id).map(r=>String(r.deal_id)));
+  return T.rows().filter(t=>t.transfer_status==='transferred'&&t.award_result==='transferred_won'&&!viaRequest.has(String(t.deal_id))).map(t=>{
    const d=dealOf(t.deal_id),done=!!t.approved_at,ok=done&&!!t.incentive_eligible;
    return {key:'t:'+t.deal_id,code:'transfer',deal:d,title:[siteOf(d)||'영업건 '+t.deal_id,[t.award_company,Number(t.award_amount)>0?R.fmtAmt(Number(t.award_amount)):''].filter(Boolean).join(' ')].filter(Boolean).join(' · '),
     why:[t.transfer_reported?'사전 보고'+(t.transfer_reported_at?' '+md(t.transfer_reported_at):''):'사전 보고 없음',t.award_evidence].filter(Boolean).join(' · '),
-    who:R.repN(t.created_by_name||t.performance_owner)||'',owners:[R.repN(t.created_by_name),R.repN(t.performance_owner)].filter(Boolean),at:done?t.approved_at:t.updated_at,state:done?(ok?'approved':'rejected'):'pending',by:R.repN(t.approved_by_name)||'',note:t.rejected_reason||''};
+    who:R.repN(t.created_by_name||t.performance_owner)||'',owners:[R.repN(t.created_by_name),R.repN(t.performance_owner)].filter(Boolean),at:done?t.approved_at:t.updated_at,decidedAt:done?t.approved_at:'',state:done?(ok?'approved':'rejected'):'pending',by:R.repN(t.approved_by_name)||'',note:t.rejected_reason||''};
   });
  }
  const rowItem=r=>({key:'r:'+r.id,id:r.id,code:r.type,dealId:r.deal_id||'',deal:dealOf(r.deal_id),title:r.title,why:r.reason,who:R.repN(r.requested_by_name)||'',owners:[R.repN(r.requested_by_name)].filter(Boolean),at:r.requested_at,decidedAt:r.decided_at||'',state:r.status,by:R.repN(r.decided_by_name)||'',note:r.decision_reason||'',payload:r.payload||{}});
@@ -100,7 +102,9 @@
  async function decide(x,decision,reason){
   const S=st();if(S.sending)return;S.sending=x.key;S.err='';render();
   let row=null;
-  try{const r=await R.OpsStore.rpc(RPC.decide,{id:x.id,decision,reason:reason||undefined});row=r.request;take(row);S.rej='';S.reason='';try{if(r.owner&&R.DealOwner)R.DealOwner.take(r.owner);}catch(e){}}
+  try{const r=await R.OpsStore.rpc(RPC.decide,{id:x.id,decision,reason:reason||undefined});row=r.request;take(row);S.rej='';S.reason='';try{if(r.owner&&R.DealOwner)R.DealOwner.take(r.owner);}catch(e){}
+   /* 승인으로 반영된 자료(타사 이관 실적 · 수주 결과)를 다시 읽는다 — 대시보드 · 상세가 같은 자료를 본다 */
+   if(r.applied){try{if(x.code==='transfer'&&R.DealTransfer&&R.DealTransfer.available())await R.DealTransfer.load();}catch(e){}try{if(x.code==='result_fix'&&R.DealWin&&R.DealWin.available())await R.DealWin.load();}catch(e){}}}
   catch(e){S.err='저장하지 못했습니다: '+String(e&&e.message||e);}
   if(row){
    /* 누가 승인 · 반려했는지 그 영업건 응대 이력에 시스템 기록으로 남긴다(결정은 이미 저장됨 — 기록이 실패해도 결정은 그대로) */
@@ -119,8 +123,8 @@
   if(S.err&&a!=='rej-ok'){S.err='';render();}
   if(a==='open'){if(x.deal){R.G._detailPopup=true;R.drwDeal(JSON.stringify(x.deal));}return;}
   if(x.state!=='pending'||!canDecide(x))return;
-  /* 타사 이관 실적: 기존 실적 인정 창(사전 보고 · 낙찰결과 · 낙찰금액 확인 3개 / 제외 사유) 그대로 */
-  if(x.code==='transfer'){if(x.deal&&R.DealTransfer)R.DealTransfer.open('approve',{dealId:String(x.deal.id),reject:a==='no'});else{S.err='영업건을 찾을 수 없어 처리할 수 없습니다.';render();}return;}
+  /* 기존 타사 이관 흐름으로 올라온 건: 기존 실적 인정 창(사전 보고 · 낙찰결과 · 낙찰금액 확인 3개 / 제외 사유) 그대로 */
+  if(x.code==='transfer'&&String(x.key).startsWith('t:')){if(x.deal&&R.DealTransfer)R.DealTransfer.open('approve',{dealId:String(x.deal.id),reject:a==='no'});else{S.err='영업건을 찾을 수 없어 처리할 수 없습니다.';render();}return;}
   if(a==='yes')return decide(x,'approve');
   if(a==='no'){S.rej=x.key;S.reason='';S.err='';render();const el=host.querySelector('[data-apv-f="reason"]');if(el)el.focus();return;}
   if(a==='rej-ok'){const v=String(S.reason||'').trim();if(!v){S.err='반려 사유를 적어 주세요.';return render();}return decide(x,'reject',v);}
@@ -128,7 +132,17 @@
  document.addEventListener('click',onClick);
  document.addEventListener('input',e=>{const t=e.target;if(!t||!t.dataset||t.dataset.apvF!=='reason')return;const S=st();S.reason=t.value;if(S.err){S.err='';document.querySelector('#approval-inbox .apv-err')?.remove();}});
  document.addEventListener('keydown',e=>{const t=e.target;if(!t||!t.dataset||t.dataset.apvF!=='reason')return;if(e.key==='Enter'){e.preventDefault();t.closest('.apv-rej')?.querySelector('[data-apv="rej-ok"]')?.click();}if(e.key==='Escape'){e.preventDefault();e.stopPropagation();const S=st();S.rej='';S.reason='';render();}});
- if(typeof root.paint==='function'){const base=root.paint;root.paint=function(){const r=base.apply(this,arguments);try{syncNav();}catch(e){}return r;};}
+ /* ── 요청자에게 알림: 내가 올린 요청이 승인 · 반려되면 다음에 화면을 볼 때 한 번 알려 준다(본 것은 이 PC 에 기억) ── */
+ function notifyMine(){
+  if(!enabled()||!R.ME)return;const who=me();if(!who)return;const key='crm.approvalSeen.'+String(R.ME.id||who);
+  let seen={};try{seen=JSON.parse(R.localStorage.getItem(key)||'{}')||{};}catch(e){}
+  const fresh=v=>{const t=Date.parse(v);return isFinite(t)&&Date.now()-t<14*864e5;};
+  const mine=items().filter(x=>(x.state==='approved'||x.state==='rejected')&&(x.owners||[]).includes(who)&&fresh(x.decidedAt||x.at)&&!seen[x.key+'@'+(x.decidedAt||x.at)]);
+  if(!mine.length)return;
+  const x=mine[0];toast('승인 요청 결과 — '+labelOf(x.code)+' · '+(x.by||'승인자')+(x.state==='approved'?' 승인 완료':' 반려'+(x.note?' (사유: '+x.note+')':''))+(mine.length>1?' 외 '+(mine.length-1)+'건':'')+' · '+x.title,x.state==='approved'?undefined:'warn');
+  mine.forEach(m=>{seen[m.key+'@'+(m.decidedAt||m.at)]=1;});try{R.localStorage.setItem(key,JSON.stringify(seen));}catch(e){}
+ }
+ if(typeof root.paint==='function'){const base=root.paint;root.paint=function(){const r=base.apply(this,arguments);try{syncNav();}catch(e){}try{if(R.ME&&stored())ensure().then(changed=>{try{notifyMine();}catch(e){}try{if(changed&&R.G.page==='approvals'&&!st().sending)render();}catch(e){}}).catch(()=>{});}catch(e){}return r;};}
  root.addEventListener('crm-rules:changed',()=>{try{syncNav();if(R.G&&R.G.page==='approvals'&&!st().sending)render();}catch(e){}});
- root.ApprovalInbox={enabled,render:paint,load,ensure,take,items,forDeal,pendingCount,labelOf,toneOf,canDecide,canSee,approver,syncNav,noteOf,RPC,CODES,state:st};
+ root.ApprovalInbox={enabled,render:paint,load,ensure,take,notifyMine,items,forDeal,pendingCount,labelOf,toneOf,canDecide,canSee,approver,syncNav,noteOf,RPC,CODES,state:st};
 })(window);

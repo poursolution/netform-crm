@@ -54,7 +54,7 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   assert.match(await page.locator('.contract-sales-dialog').innerText(),/황윤선/);
   await page.locator('.contract-sales-dialog [data-close]').click();
   // 성과 콘솔의 기술자문 낙찰실적(확정분 읽기)도 허용 (2026-09-25)
-  assert.equal(await page.evaluate(()=>__requests.every(n=>['crm_contract_sales_read_v1','crm_advisory_bid_summary_v1','crm_advisory_attribution_v1','crm_improvement_task_list_v1'/* 주간 브리핑 안건의 등록된 과제 읽기(2026-10-02) */,'crm_report_snapshot_get_v1','crm_kpi_weekly_list_v1','crm_ops_settings_v1'/* 리포트 · KPI 저장소 읽기(2026-10-02) */,'crm_ops_rules_v1'/* 운영 기준 읽기(2026-10-04) */,'crm_deal_transfer_list_v1'/* 타사 이관 읽기(2026-10-04) */,'crm_deal_win_list_v1'/* 수주 유형 읽기(2026-10-04) */].includes(n))),true);assert.deepEqual(errors,[]);
+  assert.equal(await page.evaluate(()=>__requests.every(n=>['crm_contract_sales_read_v1','crm_advisory_bid_summary_v1','crm_advisory_attribution_v1','crm_improvement_task_list_v1'/* 주간 브리핑 안건의 등록된 과제 읽기(2026-10-02) */,'crm_report_snapshot_get_v1','crm_kpi_weekly_list_v1','crm_ops_settings_v1'/* 리포트 · KPI 저장소 읽기(2026-10-02) */,'crm_ops_rules_v1'/* 운영 기준 읽기(2026-10-04) */,'crm_deal_transfer_list_v1'/* 타사 이관 읽기(2026-10-04) */,'crm_deal_win_list_v1'/* 수주 유형 읽기(2026-10-04) */,'crm_approval_list_v1'/* 승인 요청 결과 알림(2026-10-04) */].includes(n))),true);assert.deepEqual(errors,[]);
   console.log('PASS contract sales: signed amount, frozen owner, all reporting surfaces, cancellation periods, unavailable state and responsive layout');
  }finally{await browser.close();await new Promise(r=>srv.close(r))}
 })().catch(e=>{console.error(e);process.exitCode=1});
