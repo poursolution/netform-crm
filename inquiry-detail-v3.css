@@ -45,6 +45,11 @@
 .idv3-ev .n{font-size:12px;color:#374151}
 #inq-inbox-dialog.idv3 .idv3-composer{border-top:1px solid #eef0f3;padding:12px 20px 16px;display:flex;flex-direction:column;gap:9px;background:#fcfcfd;flex:none;margin:0;border-radius:0;box-shadow:none;border-left:0;border-right:0;border-bottom:0}
 .idv3-tabs{display:flex;gap:6px;align-items:center}
+/* 문자 탭 = 파이프라인 문자 창과 같은 틀(.ds2). 문자를 쓰는 동안에는 가운데 칸 전체를 쓴다(응대 이력은 탭을 바꾸면 다시 보인다) */
+.idv3-chead:has(~.idv3-composer[data-tab="sms"]),.idv3-thread:has(~.idv3-composer[data-tab="sms"]){display:none!important}
+.idv3-composer[data-tab="sms"]{flex:1 1 auto;min-height:0;overflow:auto;border-top:0;background:#fafbfc;padding-top:16px}
+.idv3-composer .iq-ds2{border:1px solid #e3e6ec;border-radius:14px;overflow:hidden;max-width:900px;width:100%;box-sizing:border-box;flex:none}
+.idv3-composer .iq-ds2 .ds2-ft button.idv-confirm{background:#b42318}
 #inq-inbox-dialog.idv3 .idv3-tabs button{font:inherit;font-size:12.5px;font-weight:700;color:#374151;border:1px solid #e3e6ec;background:#fff;border-radius:7px;padding:6px 12px;cursor:pointer;min-height:0;box-shadow:none}
 #inq-inbox-dialog.idv3 .idv3-tabs button[aria-selected="true"]{background:#15171c;border-color:#15171c;color:#fff}
 .idv3-res{display:flex;flex-wrap:wrap;gap:5px}
