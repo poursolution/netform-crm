@@ -65,7 +65,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await row('혁신LH5단지').click();await page.waitForTimeout(200);
   const pn=page.locator('#inq-v3 .il-item.open .il-panel');assert.equal(await pn.count(),1);
   assert.match(await pn.innerText(),/문의 원문\s*외벽 재도장 · 주차장 · 현장 확인 요청[\s\S]*마지막 연락\s*\d{4}\.\d+\.\d+ 전화 · 첫 연락 — 현장 확인 요청[\s\S]*빠진 정보[\s\S]*첫마디\s*안녕하세요, 넷폼 송보람입니다\.[\s\S]*상세 열기\s*전화\s*문자/);
-  /* 줄 안 결과 기록: [후속 연락] → 칩(기본값 연락 완료 · 7일 후) → 저장 = 기존 iqApply 경로(inquiry_status progress) */
+  /* 줄 안 결과 기록: [후속 연락] → 칩(기본값 연락 완료 · 7일 후) → 저장. 이미 응대한 문의의 후속 연락 = 다음 할 일 등록(next_action) — 단계 진행(inquiry_status)으로 보내면 서버가 같은 상태 충돌(PT409)로 거절한다 */
   await row('혁신LH5단지').locator('.il-act').click();await page.waitForTimeout(200);
   const rec=page.locator('#inq-v3 .il-rec');assert.equal(await rec.count(),1);
   assert.deepEqual(await rec.locator('.il-chip.on').allInnerTexts(),['연락 완료','7일 후'],'규칙 기본값이 미리 골라짐');
@@ -73,8 +73,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#inq-v3 .il-save button').innerText(),'저장');assert.match(await page.locator('#inq-v3 .il-save span').innerText(),/결과와 다음 행동일을 모두 골라야 저장됩니다[\s\S]*다음 연락 \d{4}\.\d+\.\d+\([일월화수목금토]\)$/);
   if(shot)await page.screenshot({path:shot+'-list.png',fullPage:true});
   await page.locator('#inq-v3 .il-save button').click();await page.waitForTimeout(500);
-  const w=await page.evaluate(()=>__writes.filter(x=>x[0]==='inquiry_status').map(x=>x[1]));
-  assert.equal(w.length,1,'inquiry_status 1건 '+JSON.stringify(w));assert.match(String(w[0].result||w[0].did||JSON.stringify(w[0])),/통화 결과: 재견적 요청 → 다음 연락 \d{4}\.\d+\.\d+/);assert.ok(w[0].due&&w[0].next,'다음 할 일 · 날짜 함께 '+JSON.stringify(w[0]));
+  const w=await page.evaluate(()=>__writes.filter(x=>x[0]==='inquiry_status'||x[0]==='next_action').map(x=>[x[0],x[1]]));
+  assert.equal(w.length,1,'저장 요청 1건 '+JSON.stringify(w));assert.equal(w[0][0],'next_action','후속 연락은 상태를 바꾸지 않는다(단계 진행 아님)');
+  assert.match(String(w[0][1].text),/^다음 연락 · 재견적 요청 — 통화 결과: 재견적 요청 → 다음 연락 \d{4}\.\d+\.\d+/);assert.match(String(w[0][1].due_at),/^\d{4}-\d{2}-\d{2}$/,'다음 할 일 · 날짜 함께 '+JSON.stringify(w[0]));assert.equal(w[0][1].type,'전화');
+  assert.equal(await page.evaluate(()=>!!document.querySelector('#inqActText,#inqActDue')),false,'임시 입력칸은 지운다');
   assert.equal(await page.evaluate(()=>!!document.querySelector('#iq-did')),false,'임시 입력칸은 지운다');
   /* 대표회의 건: 기본값 = 대표회의 예정 · 대표회의 다음날 */
   await row('매탄임광아파트').locator('.il-act').click();await page.waitForTimeout(200);
@@ -108,7 +110,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await d.locator('.idv-sug').innerText(),/전화 · 자료요청\s*→ 다음 행동: 자료 확인 · \d{4}\.\d+\.\d+/);
   if(shot)await page.screenshot({path:shot+'-detail.png'});
   await d.locator('[data-idv="save"]').click();await page.waitForTimeout(500);
-  const w2=await page.evaluate(()=>__writes.filter(x=>x[0]==='inquiry_status').map(x=>x[1]));assert.equal(w2.length,2,'상세 저장도 같은 경로');assert.match(String(w2[1].result),/^\[전화 · 자료요청\] 과장님 통화/);assert.equal(w2[1].next,'자료 확인');
+  const w2=await page.evaluate(()=>__writes.filter(x=>x[0]==='inquiry_status').map(x=>x[1]));assert.equal(w2.length,1,'첫 응대(상세 저장) = 단계 진행 1건 — 앞의 후속 연락은 여기에 없다');assert.match(String(w2[0].result),/^\[전화 · 자료요청\] 과장님 통화/);assert.equal(w2[0].next,'자료 확인');
   await page.evaluate(()=>InquiryWorkbench.close());await page.waitForTimeout(200);
   /* 서버 함수가 없으면 입력 칸을 열지 않는다 */
   await page.evaluate(()=>{window.CRMRelease=Object.assign(window.CRMRelease||{},{has:n=>n!=='crm_inquiry_field_update_v1'});InquiryWorkbench.open(U);});await page.waitForTimeout(400);

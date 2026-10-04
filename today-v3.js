@@ -123,14 +123,13 @@
   const right='<aside class="tv3-exside"><section><b>이 단계에서 확인할 것 <small>'+h(SNAME[i.st]||i.sName)+'</small></b>'+play.rows.map(([l,ok])=>'<div class="ck'+(ok?' ok':'')+'"><i>'+(ok?'✓':'')+'</i><span>'+h(l)+'</span></div>').join('')+(play.tip?'<span class="tip"><b>선배 팁</b> '+h(play.tip)+'</span>':'')+'</section><section><b>이 건은 여기서도 같이 바뀝니다</b>'+LINKED.map(l=>'<span class="lk">· '+l+'</span>').join('')+'</section></aside>';
   return '<div class="tv3 tv3-ex" data-role="'+role+'" data-exec="on" data-total="'+total+'">'+bar+'<div class="tv3-exbody">'+side+main+right+'</div></div>';
  }
- /* 문의 저장 = 목록의 줄 안 결과 기록과 같은 함수(iqApply) */
+ /* 문의 저장 = 목록의 줄 안 결과 기록과 같은 함수(InquiryListV3.record) */
  function saveInquiry(q,res,memo){
   const nx=NXT()[res];if(!nx)throw Error('결과를 골라 주세요.');
   const d=new Date();d.setDate(d.getDate()+nx[1]);const due=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-  const idx=root.inqCtlFirstResponseAt(q)?root.flowIndex(q,'inq'):1;if(!Number.isInteger(idx)||idx<0||idx>5)throw Error('현재 단계는 상세 창에서 처리해 주세요.');
-  const tmp=(tag,id,value)=>{document.getElementById(id)?.remove();const el=document.createElement(tag);el.id=id;el.hidden=true;el.value=value;document.body.append(el);return el;};
-  const made=[tmp('input','iq-did','고객 응대 기록'),tmp('textarea','iq-res',('[전화 · '+res+'] '+String(memo||'').trim()).trim()),tmp('input','iq-next',nx[0]),tmp('input','iq-due',due)];
-  let ok=false;try{ok=root.iqApply(q,'step:'+idx)===true;}finally{made.forEach(el=>el.remove());}
+  /* 첫 응대 = 단계 진행, 이미 응대한 문의 = 다음 할 일 등록(상태는 그대로) — InquiryListV3.record 한 길 */
+  if(!root.InquiryListV3||typeof root.InquiryListV3.record!=='function')throw Error('현재 단계는 상세 창에서 처리해 주세요.');
+  const ok=root.InquiryListV3.record(q,{res:('[전화 · '+res+'] '+String(memo||'').trim()).trim(),next:nx[0],due})===true;
   if(!ok)throw Error((document.getElementById('iq-msg')||{}).textContent||'저장하지 못했습니다.');
  }
  async function execSave(){

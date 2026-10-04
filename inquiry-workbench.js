@@ -223,8 +223,16 @@
  const oldRole=root.inqCtlSetRoleView;root.inqCtlSetRoleView=function(v){dismiss();root.G.inqLegacyView=false;root.G.inqCompactMetric='';return oldRole(v)};
  function saveProcess(){
   const q=root.inqCtlFind(modalKey,false);if(!allowed(q))return;
-  const idx=root.inqCtlFirstResponseAt(q)?root.flowIndex(q,'inq'):1;
-  if(!Number.isInteger(idx)||idx<0||idx>5){root.iqMsg('현재 단계는 상세의 단계 전환에서 확인해 주세요.');return false}
+  /* 이미 응대한 문의의 후속 연락은 단계 진행이 아니다 — 상태는 그대로 두고 다음 할 일만 다시 잡는다(서버가 같은 상태로의 진행을 충돌로 거절한다) */
+  const L3=root.InquiryListV3;
+  if(L3&&typeof L3.record==='function'&&!L3.isFirst(q)){
+   const g=id=>String((document.getElementById(id)||{}).value||'').trim(),o={did:g('iq-did'),res:g('iq-res'),next:g('iq-next'),due:g('iq-due')};
+   if(!o.did||!o.res){root.iqMsg('한 일과 결과를 모두 입력해 주세요.');return false}
+   if(!o.next||!o.due){root.iqMsg('다음 할 일과 기한도 입력해 주세요.');return false}
+   try{const ok=L3.record(q,o);if(ok===true){root.G.inqAct=null;root.G.iqForm=null;root.paint();}else root.iqMsg('저장하지 못했습니다.');return ok}
+   catch(e){root.iqMsg(e.message||'저장 연결을 확인해 주세요.');return false}
+  }
+  const idx=1;
   const patch=root.itemPatch(q,'inq'),before=JSON.parse(JSON.stringify(q)),beforePatch=JSON.parse(JSON.stringify(patch));
   try{const result=root.iqApply(q,'step:'+idx);if(result===true){root.G.inqAct=null;root.paint();}return result}
   catch(e){Object.keys(q).forEach(k=>delete q[k]);Object.assign(q,before);Object.keys(patch).forEach(k=>delete patch[k]);Object.assign(patch,beforePatch);root.iqMsg(e.message||'저장 연결을 확인해 주세요.');return false}
