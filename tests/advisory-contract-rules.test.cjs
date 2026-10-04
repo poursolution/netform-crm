@@ -6,13 +6,13 @@ function fixture(){
  let events=[signed('partner',1e9)];events=L.append(events,{expected_version:1,kind:'amended',effective_date:'2026-10-01',amount_delta:2e8,event_id:'p-amended',reason:'signed increase'});events=L.append(events,{expected_version:2,kind:'cancelled',effective_date:'2026-11-01',event_id:'p-cancelled',reason:'cancelled'});
  const items=[{deal_id:'partner',brand:'A',sales_owner_name:'original',contract_date:'2026-09-18',balance:0,cancelled:true,events},{deal_id:'direct',brand:'A',sales_owner_name:'original',events:[signed('direct',5e8)]}];
  const R={G:{brand:'전체'},ME:{id:'a'},B:{deals:[{id:'partner',site:'synthetic',assignee:'new owner',brand:'A'}]},ContractSalesLedger:L,
-  OpsStore:{has:()=>true},CRMRules:{},repN:x=>x,PERFORMANCE_TARGET_NAMES:['original'],TOKEN:true,
+  OpsStore:{has:()=>true},CRMRules:{madeRate:()=>null},repN:x=>x,PERFORMANCE_TARGET_NAMES:['original'],TOKEN:true,
   esc:String,escAttr:String,paint(){},paintBrief(){},phase1RpcAvailable:()=>false,
   SalesScope:{state:()=>({type:'all',organization:'all',assignment:'all'})},repProfile:()=>({}),
   addEventListener:(k,f)=>{handlers[k]=f},dispatchEvent(){}};
  const document={addEventListener(){},getElementById(){return null},querySelector(){return null}};
  const ctx=vm.createContext({window:R,document,console,setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},MutationObserver:class{observe(){}},CustomEvent:class{}});
- for(const f of ['contract-sales-data.js','sales-insights.js','deal-win.js','brief-b.js'])vm.runInContext(code(f),ctx,{filename:f});
+ for(const f of ['contract-sales-data.js','sales-insights.js','deal-win.js','brief-b.js','dash-b.js'])vm.runInContext(code(f),ctx,{filename:f});
  // Adapter entries applies actual scope; feed via the same authenticated read path.
  R.SB={rpc:async()=>({data:{ok:true,policy:L.POLICY,items:items.map(r=>({...r,version:r.events.length,balance:L.validate(r.events).balance,sales_owner:r.events[0].sales_owner})),has_more:false}})};
  return {R,items,handlers};
@@ -65,4 +65,19 @@ test('source files preserve layout while eliminating award and completion fallba
  assert.doesNotMatch(code('sales-insights.js'),/withAdvisory|Math\.abs\(b-amt\)|d\.contract_date\|\|root\.wonDate/);
  assert.doesNotMatch(code('contract-sales-ui.js'),/t\?' disabled'/);
  assert.equal(code('server/technical-advisory/lifecycle.mjs'),code('supabase/functions/technical-advisory-ingest/lifecycle.mjs'));
+});
+
+test('dashboard brand totals retain advisory origin and company matrix counts independent contracts once',async()=>{
+ const {R,items}=fixture(),event={...items[1].events[0],deal_id:null,contract_id:'independent',event_id:'independent-sign',effective_date:'2026-08-20',amount_delta:885000000};
+ items.push({contract_id:'independent',deal_id:null,advisory_id:'advisory-independent',brand:'기술자문 직접영업',site:'검증된 현장',sales_owner_name:'original',contract_date:'2026-08-20',events:[event]});
+ await R.ContractSalesData.refresh();R.DealWin._take({rows:[],advisory:[]});
+ const C={B:R.BriefB.lib,P:{a:'2026-08-01',b:'2026-09-01'},L:R.BriefB.lib.ledger(),q:[],loss:[],DW:R.DealWin,pt:R.DealWin.partnerIn('2026-08-01','2026-09-01'),tf:{list:[]}};
+ const brands=R.DashB.lib.brandRows(C),origin=brands.find(x=>x.name==='기술자문 직접영업');
+ assert.equal(origin.net,885000000);assert.equal(origin.w,1);
+ assert.equal(brands.reduce((s,r)=>s+r.net,0),R.ContractSalesData.summarize({year:2026,month:8}).netAmount);
+ const matrix=R.DashB.lib.matrixRows(C);
+ assert.equal(matrix.length,1);assert.equal(matrix[0].type,'협약 · 기술자문');assert.equal(matrix[0].amt,885000000);
+ assert.equal(matrix[0].n,1);assert.equal(matrix[0].rev,0);assert.equal(matrix[0].unknown,1);
+ C.P={a:'2026-09-01',b:'2026-10-01'};
+ assert.equal(R.DashB.lib.brandRows(C).some(x=>x.name==='기술자문 직접영업'),false,'origin absent outside its contract period');
 });
