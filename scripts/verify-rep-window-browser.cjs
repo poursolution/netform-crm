@@ -86,7 +86,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await co.locator('[data-rw="save"]').click();await page.waitForTimeout(250);
   assert.deepEqual(await page.evaluate(()=>__writes.map(x=>[x[0],x[1].rep_name,x[1].week_start,x[1].comment,x[1].status,x[1].created_by])),[['rep_manager_comment','이필선','2026-10-19','[코칭 · 다음 행동] 이번 주 금액 큰 7건부터 다음 할 일 · 날짜 등록 (다음 할 일 등록률 36% → 100%)','open','송보람']]);
   assert.deepEqual(await page.evaluate(()=>__toasts.slice(-1)),['이필선 · 이번 주 코칭을 저장했습니다 · 다음 주 월요일에 결과가 보입니다']);
-  assert.equal(await page.locator('#repWindow.on .rw-cof>span').innerText(),'저장됨 10.21 · 다음 주 월요일 결과 자동 확인');
+  assert.equal(await page.locator('#repWindow.on .rw-cof>span').innerText(),'저장됨 10.21 · 월요일 자동 확인');assert.equal(await page.locator('#repWindow.on .rw-cof>span').evaluate(n=>n.getClientRects().length),1,'한 줄');
   assert.doesNotMatch(await page.locator('#reps-b .psb-row[data-key="이필선"]').innerText(),/이번 주 코칭 약속 없음/,'목록의 사유도 같이 사라진다');
   /* 주제를 바꿔 다시 저장하면 한 사람에 한 가지 — 앞의 코칭 줄을 바꾼다. 약속 문장은 고쳐 쓸 수 있다 */
   await co.locator('.rw-chips button',{hasText:'첫 응대'}).click();await co.locator('[data-rw-f="promise"]').fill('목요일까지 신규 배정 3건 첫 연락 완료');await co.locator('[data-rw="save"]').click();await page.waitForTimeout(250);
@@ -113,6 +113,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await page.evaluate(()=>window.__openInq),/^신규 문의 \d$/);assert.equal(await page.locator('#repWindow.on').count(),0);
   /* 10. 목록의 [코칭 약속] = 창 + 약속 칸 포커스 · Esc 닫기 · 손볼 건이 없는 사람 */
   await page.locator('#reps-b .psb-row[data-key="황윤선"] .l').click();await page.waitForTimeout(250);
+  assert.match(await page.locator('#repWindow.on .rw-who').innerText().then(s=>s.replace(/\s+/g,' ')),/^황윤선 본사 영업 · 상무 /,'소속 · 직함(대표 지정)');
+  assert.deepEqual(await page.evaluate(()=>['이필선','한준엽','김성민','정정훈','황윤선','이승우','송보람','조현식'].map(n=>repProfile(n).title||'')),['본사영업','본사영업','본사영업','본사영업','상무','대표','영업관리','']);
   assert.deepEqual(await page.locator('#repWindow.on .rw-neck').evaluate(n=>[[...n.children].map(c=>c.textContent)[1],n.classList.contains('ok'),getComputedStyle(n).backgroundColor]),['지금 막힌 곳이 없습니다',true,'rgb(232, 246, 238)']);
   assert.equal(await page.locator('#repWindow.on .rw-none').innerText(),'지금 손볼 건이 없습니다.');assert.equal(await page.locator('#repWindow.on .rw-rh b').innerText(),'지금 처리할 현장 0건');
   assert.equal(await page.locator('#repWindow.on .rw-past .none').innerText(),'아직 없습니다 · 저장하면 다음 주 월요일부터 결과가 보입니다');
