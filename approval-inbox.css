@@ -1,0 +1,25 @@
+/* 예외 승인함 (2026-10-04 design_handoff_rules 2차 기능 4) apv- */
+#pg-approvals{background:#f5f6f8}
+.apv-shell{color:#15171c;font-size:13px;padding:4px 4px 120px}
+.apv-shell button,.apv-shell input{font:inherit}.apv-shell button{cursor:pointer;min-height:0;box-shadow:none}.apv-shell button:disabled{cursor:default}
+.apv-box{background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden}
+.apv-hd{padding:13px 18px;border-bottom:1px solid #eef0f3;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.apv-hd b{font-size:14px}.apv-hd b em{color:#b42318;font-style:normal}.apv-hd span{font-size:12px;color:#6b7280}
+.apv-row{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:6px 16px;align-items:center;padding:12px 18px;border-bottom:1px solid #f2f3f6}
+.apv-row.done{opacity:.55}
+.apv-type{font-size:11.5px;font-weight:700;border-radius:5px;padding:3px 8px;text-align:center;white-space:nowrap}
+.apv-main{min-width:0;display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+.apv-main .apv-t{max-width:100%;font-size:13.5px;font-weight:700;color:#15171c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.apv-main button.apv-t{border:0;background:none;padding:0;text-align:left}.apv-main button.apv-t:hover{text-decoration:underline}
+.apv-main span{max-width:100%;font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.apv-side{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.apv-who{font-size:11.5px;color:#9ca3af;white-space:nowrap}
+.apv-act,.apv-rej{display:flex;gap:6px;align-items:center}
+.apv-shell .apv-no{border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:12px;font-weight:600;border-radius:7px;padding:5px 11px}
+.apv-shell .apv-yes{border:0;background:#15171c;color:#fff;font-size:12px;font-weight:700;border-radius:7px;padding:5px 13px}
+.apv-shell .apv-yes:disabled,.apv-shell .apv-no:disabled{opacity:.5}
+.apv-rej input{width:220px;max-width:42vw;border:1px solid #d9dde4;border-radius:7px;padding:5px 9px;font-size:12px;background:#fff;color:#15171c;box-sizing:border-box}
+.apv-res{font-size:12px;font-weight:700;white-space:nowrap;max-width:320px;overflow:hidden;text-overflow:ellipsis}.apv-res.ok{color:#1f7a4d}.apv-res.no{color:#b42318}
+.apv-none,.apv-empty{margin:0;padding:22px 18px;font-size:13px;color:#6b7280}
+.apv-err{margin:0;padding:10px 18px;font-size:12.5px;font-weight:600;color:#b42318;background:#fdecec;border-bottom:1px solid #f2f3f6}
+@media(max-width:760px){.apv-row{grid-template-columns:minmax(0,1fr)}.apv-type{justify-self:start}.apv-side{align-items:flex-start}}

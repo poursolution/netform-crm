@@ -16,7 +16,7 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
    goPage('dash');G.insights.year='2026';G.insights.month=9;SalesInsights.render();
   });
   assert.deepEqual(await page.locator('.menu>.sec:visible').allTextContents(),['오늘','영업','고객관리','조직운영','분석','데이터 관리','설정']);
-  assert.deepEqual(await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */const groups={'상단':[]};let title='상단';document.querySelectorAll('.menu>:is(.sec,.mi)').forEach(el=>{if(el.classList.contains('sec')){title=el.textContent;groups[title]=[];}else if(!el.hidden)groups[title].push(el.dataset.p);});return groups;}),{'상단':['dash'],'오늘':['today'],'영업':['inq','pipe','expansion','gyeongnam'],'고객관리':['sites','campaign'],'조직운영':['repmanage','mgmt'],'분석':['work','brief','report'],'데이터 관리':['dup'],'설정':['rules']});
+  assert.deepEqual(await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */const groups={'상단':[]};let title='상단';document.querySelectorAll('.menu>:is(.sec,.mi)').forEach(el=>{if(el.classList.contains('sec')){title=el.textContent;groups[title]=[];}else if(!el.hidden)groups[title].push(el.dataset.p);});return groups;}),{'상단':['dash'],'오늘':['today'],'영업':['inq','pipe','expansion','gyeongnam'],'고객관리':['sites','campaign'],'조직운영':['repmanage','mgmt'],'분석':['work','brief','report'],'데이터 관리':['dup'],'설정':['rules','approvals'/* 예외 승인함(2026-10-04) */]});
   assert.equal(await page.locator('.menu > .mi').first().getAttribute('data-p'),'dash');
   await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */window.__stableShell=document.querySelector('#si-dash .si-shell');for(let i=0;i<6;i++)window.dispatchEvent(new Event('phase1:queue'));});
   await page.waitForTimeout(100);
