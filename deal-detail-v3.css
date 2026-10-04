@@ -123,6 +123,11 @@ html:not(.crm-solo) #detailView.ddv.dv3{inset:16px max(16px,calc((100vw - 1640px
 #detailView.ddv.dv3 .dv3-headact button.mv{border-color:#15171c;color:#15171c;font-weight:700;padding:7px 14px}#detailView.ddv.dv3 .dv3-headact button.mv[aria-expanded="true"]{background:#15171c;color:#fff}
 #detailView.ddv.dv3 .detailtop>.dv3-move{order:21;flex:1 0 100%;box-sizing:border-box;background:#f8f9fb;border:1px solid #e3e6ec;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;max-height:56vh;overflow:auto;margin-top:6px}
 #detailView.ddv.dv3 .detailtop>.dv3-move[hidden]{display:none}
+/* 가운데 칸 위에 띄움: 왼쪽 연락처 · 오른쪽 지금 할 일 · 머리는 그대로, 아래가 밀려 내려가지 않는다 */
+#detailView.ddv.dv3 .dw-center{position:relative}
+#detailView.ddv.dv3 .dw-center>.dv3-move{position:absolute;inset:0;z-index:6;box-sizing:border-box;background:#f8f9fb;border:1px solid #e3e6ec;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;overflow:auto;margin:0}
+#detailView.ddv.dv3 .dw-center>.dv3-move[hidden]{display:none}
+@media(max-width:700px){#detailView.ddv.dv3 .dw-center>.dv3-move{position:static;inset:auto;margin-bottom:10px}}
 .dv3-move .hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.dv3-move .hd b{font-size:13px;color:#15171c}.dv3-move .hd span{font-size:12.5px;color:#6b7280}
 .dv3-moves{display:flex;flex-wrap:wrap;gap:6px}
 #detailView.ddv.dv3 .dv3-moves button{font:inherit;font-size:13px;font-weight:600;border-radius:8px;padding:8px 14px;border:1px solid #d9dde4;background:#fff;color:#15171c;cursor:pointer;min-height:0;box-shadow:none}
