@@ -38,7 +38,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   });
   await page.waitForTimeout(900);
   const v=page.locator('#site-master .ac');assert.equal(await v.count(),1);
-  assert.equal(await page.locator('#ptitle').innerText(),'고객 자산');assert.equal(await page.locator('#psub').innerText(),'단지별로 쌓인 금액 · 진행 중 금액 · 관계 상태');
+  assert.equal(await page.locator('#ptitle').innerText(),'고객 자산');assert.equal(await page.locator('#psub').innerText(),'');
+  /* 시안의 제목 줄: 제목 + 한 줄 설명 + [관계 기준 ▾] — 시안에 없는 더보기 메뉴는 없다 */
+  assert.equal(await v.locator('.ac-title').innerText().then(s=>s.replace(/\s+/g,' ')),'고객 자산 단지별로 쌓인 금액 · 진행 중 금액 · 관계 상태 관계 기준 ▾');
+  assert.deepEqual(await v.locator('.ac-title').evaluate(n=>[getComputedStyle(n.querySelector('b')).fontSize,getComputedStyle(n.querySelector('span')).color]),['20px','rgb(75, 85, 99)']);
+  assert.equal(await v.locator('.av-more,[data-ac="advisory"],[data-ac-address]').count(),0);assert.deepEqual(await v.locator('.ac-top>*').evaluateAll(l=>l.map(n=>n.className)),['ac-title','ac-tabs','ac-people','ac-listhd']);
   /* 1. 관계 상태 = 밑줄 탭 · 숫자 색 */
   assert.deepEqual(await v.locator('.ac-tabs [role=tab]').evaluateAll(l=>l.map(n=>[n.querySelector('span').textContent,n.querySelector('b').textContent,n.querySelector('b').className,n.getAttribute('aria-selected')])),[['전체','4','','true'],['활성','1','','false'],['재접촉 필요','0','zero','false'],['관계위험','1','hot','false'],['기존고객','1','','false'],['휴면','1','','false']]);
   assert.deepEqual(await v.locator('.ac-tabs [role=tab]').evaluateAll(l=>[getComputedStyle(l[0]).borderBottomColor,getComputedStyle(l[1]).borderBottomColor,getComputedStyle(l[3].querySelector('b')).color,getComputedStyle(l[2].querySelector('b')).color]),['rgb(21, 23, 28)','rgba(0, 0, 0, 0)','rgb(180, 35, 24)','rgb(201, 205, 213)']);

@@ -31,7 +31,7 @@ test('approval inbox: request → one of the approvers decides (not the requeste
   const l0=await call('crm_approval_list_v1');assert.deepEqual(l0.rows,[]);assert.equal(l0.admin,false);assert.equal(l0.approver,false);
   /* 요청: 종류 · 내용 · 사유 필수, 영업건은 있는 것만 */
   const rq={type:'owner_change',deal_id:D1,title:'[경기 용인] 수지삼성래미안 이필선 → 김성민',reason:'지역 재배치 · 계약은 김성민이 진행',payload:{fields:[{l:'현재 귀속',v:'이필선 (주담당)'},{l:'바꿀 귀속',v:'정정훈'}],from_owner:'이필선',to_owner:'정정훈'}};
-  await assert.rejects(call('crm_approval_request_v1',{...rq,type:'transfer'}),/요청 종류/);
+  await assert.rejects(call('crm_approval_request_v1',{...rq,type:'xx'}),/요청 종류/);
   await assert.rejects(call('crm_approval_request_v1',{...rq,title:' '}),/요청 내용/);
   await assert.rejects(call('crm_approval_request_v1',{...rq,reason:''}),/요청 사유/);
   await assert.rejects(call('crm_approval_request_v1',{...rq,payload:[1]}),/invalid payload/);

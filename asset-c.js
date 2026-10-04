@@ -1,6 +1,6 @@
 /* 고객 자산 v2 목록 (2026-10-04 design_handoff_asset_v2 · 고객 자산 v2.dc.html) — 목록 화면만. 상세 모달 · 공통 필터줄 · 보드 보기는 그대로.
    목적: "한 아파트에 얼마가 쌓였고 지금 얼마가 진행 중인지" — 줄마다 누적 수주 · 진행 중 금액을 크게, 관계 상태는 꼬리표 한 번만(이유 줄은 금액 · 사유만).
-   위: 관계 상태 = 밑줄 탭(재접촉 · 위험 숫자 빨강 · 0은 흐리게) · 담당자별 위험 = 알약(위험 많은 순 6명 + n명 · 누르면 목록 + 위 담당자 칸) · [관계 기준 ▾] · 확인할 단지 n곳 + 정렬 기준 + [필터 · 해제]
+   위: 제목 + 한 줄 설명 + [관계 기준 ▾] · 관계 상태 = 밑줄 탭(재접촉 · 위험 숫자 빨강 · 0은 흐리게) · 담당자별 위험 = 알약(위험 많은 순 6명 + n명 · 누르면 목록 + 위 담당자 칸) · [관계 기준 ▾] · 확인할 단지 n곳 + 정렬 기준 + [필터 · 해제]
    아래: 왼쪽 '단지에 쌓인 금액'(누적 수주 · 지금 진행 중 · 위험한 진행 금액) · '왜 멈춰 있나'(누르면 목록이 좁혀짐) / 오른쪽 목록.
    금액(design_handoff_rules): 누적 수주 = 그 단지에서 확정된 수주의 낙찰금액 합(직접 수주 = 계약실적 원장, 협약시공사 · 기술자문 / 인정된 타사 이관 = 낙찰금액 — DealWin.resultOf 한곳) · 진행 중 = 열려 있는 영업건 예상금액 합.
    단지 자료 · 관계 상태(siteHealth) · 사유 분류는 기존(asset-b / asset-v2) 그대로 쓴다. 끄기: G.assetCOff=true → 이전 목록(B안). */
@@ -66,14 +66,15 @@
  function topHtml(x){
   const S=st(),count=k=>k==='전체'?x.scope.length:x.scope.filter(s=>s.health===k).length;
   const tabs='<div class="ac-tabs" role="tablist" aria-label="관계 상태">'+TABS.map(k=>{const n=count(k),on=x.status===k,hot=(k==='recontact'||k==='risk')&&n>0;return '<button type="button" role="tab" data-ac="status" data-v="'+k+'" aria-selected="'+on+'"><span>'+h(label(k))+'</span><b class="'+(hot?'hot':!n?'zero':'')+'">'+n.toLocaleString('ko-KR')+'</b></button>';}).join('')
-   +'<i></i><button type="button" class="ac-rulebtn" data-ac="rule" aria-expanded="'+!!S.rule+'">관계 기준 '+(S.rule?'▴':'▾')+'</button><details class="av-more"><summary>··· 더보기</summary><div class="av-menu"><button type="button" data-ac="advisory">기술자문 계약</button><button type="button" data-ac="review">연결 검토 · 과거자료 연결 → 데이터 정리 · 검토</button><label>주소 상태 <select data-ac-address aria-label="주소 상태">'+['전체','완료','후보','미입력'].map(v=>'<option'+(R.G.siteAddress===v?' selected':'')+'>'+v+'</option>').join('')+'</select></label></div></details></div>';
+   +'</div>';
+  const title='<div class="ac-title"><b>고객 자산</b><span>단지별로 쌓인 금액 · 진행 중 금액 · 관계 상태</span><i></i><button type="button" class="ac-rulebtn" data-ac="rule" aria-expanded="'+!!S.rule+'">관계 기준 '+(S.rule?'▴':'▾')+'</button></div>';
   const rules=S.rule?'<div class="ac-rules">'+[['진행 중 단지','30일 안에 한 번 연락'],['수주 고객',Math.round(wait()/30)+'개월에 한 번 관계 연락'],['실주 단지','사유 확인 후 재제안 시기 등록']].map(r=>'<div><b>'+r[0]+'</b> <span>'+r[1]+'</span></div>').join('')+'</div>':'';
   const map=new Map();x.ownerFree.forEach(s=>s.owners.forEach(o=>{const v=map.get(o)||{owner:o,n:0,risk:0};v.n++;if(s.health==='risk')v.risk++;map.set(o,v);}));
   const P=[...map.values()].sort((a,b)=>b.risk-a.risk||b.n-a.n||String(a.owner).localeCompare(String(b.owner),'ko')),shown=S.more?P:P.slice(0,6);
   const people=P.length?'<div class="ac-people" role="group" aria-label="담당자별 위험"><span>담당자별 위험</span>'+shown.map(p=>'<button type="button" class="'+(p.risk?'':'none')+'" data-ac="owner" data-v="'+attr(p.owner)+'" aria-pressed="'+(x.owner===p.owner)+'"><b>'+h(p.owner)+'</b><span>'+p.n.toLocaleString('ko-KR')+'곳</span>'+(p.risk?'<em>위험 '+p.risk+'</em>':'')+'</button>').join('')+(P.length>6?'<button type="button" class="ac-moreppl" data-ac="more">'+(S.more?'접기':'+ '+(P.length-6)+'명')+'</button>':'')+'</div>':'';
   const filters=[x.status!=='전체'?label(x.status):'',x.owner!=='전체'?x.owner:'',S.why?(AB().CFG.RS[S.why]||[S.why])[0]:''].filter(Boolean);
   const head='<div class="ac-listhd"><b>확인할 단지 <span>'+x.rows.length.toLocaleString('ko-KR')+'곳</span></b><span>'+(x.status==='risk'?'진행 금액이 걸린 곳 먼저':'오래 연락 안 한 순')+'</span>'+(filters.length?'<button type="button" class="ac-clear" data-ac="clear">'+h(filters.join(' · '))+' · 해제</button>':'')+'<i></i><div class="ac-views"><span class="on">리스트</span><button type="button" data-ac="board">보드</button></div></div>';
-  return '<section class="ac-top">'+tabs+rules+people+head+'</section>';
+  return '<section class="ac-top">'+title+rules+tabs+people+head+'</section>';
  }
  function sideHtml(x){
   const S=st(),M=x.scope.map(s=>[s,money(s)]);
@@ -106,8 +107,8 @@
   const host=document.getElementById('site-master'),pg=document.getElementById('pg-sites');if(!host)return;
   const x=scoped();
   host.innerHTML='<div class="ac">'+topHtml(x)+'<div class="ac-body">'+sideHtml(x)+listHtml(x)+'</div></div>';
-  if(!host.__ac){host.__ac=true;host.addEventListener('click',onClick);host.addEventListener('change',e=>{if(e.target.matches('[data-ac-address]')){R.G.siteAddress=e.target.value;R.paintSites();}});host.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('.ac-row')){e.preventDefault();V().open(e.target.dataset.key);}});}
-  if(R.G.page==='sites'){const t=document.getElementById('ptitle'),p=document.getElementById('psub');if(t)t.textContent='고객 자산';if(p)p.textContent='단지별로 쌓인 금액 · 진행 중 금액 · 관계 상태';}
+  if(!host.__ac){host.__ac=true;host.addEventListener('click',onClick);host.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('.ac-row')){e.preventDefault();V().open(e.target.dataset.key);}});}
+  if(R.G.page==='sites'){const t=document.getElementById('ptitle'),p=document.getElementById('psub');if(t)t.textContent='고객 자산';if(p)p.textContent='';}
   pg&&pg.classList.add('ac-on');
  }
  function onClick(e){
@@ -122,8 +123,6 @@
   if(a==='more'){S.more=!S.more;return R.paintSites();}
   if(a==='rows'){S.limit+=40;return R.paintSites();}
   if(a==='board'){SB().state('asset').view='board';return R.paintSites();}
-  if(a==='advisory'){const pg=document.getElementById('pg-sites'),on=pg.classList.toggle('av-adv-on');if(on)pg.querySelector('.advisory-library')?.scrollIntoView({block:'nearest'});b.closest('details')?.removeAttribute('open');return;}
-  if(a==='review')return R.goPage('dup');
  }
  function boot(){
   const base=R.paintSites;if(typeof base!=='function'||base.__ac)return;
