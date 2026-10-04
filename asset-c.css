@@ -1,0 +1,65 @@
+/* 고객 자산 v2 목록 (2026-10-04 design_handoff_asset_v2) ac- */
+.ac{display:flex;flex-direction:column;gap:14px;color:#15171c;font-size:13px}
+.ac button,.ac select{font:inherit}.ac button{cursor:pointer;min-height:0;box-shadow:none}
+.ac-top{background:#fff;border:1px solid #e8eaef;border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+/* 관계 상태 = 밑줄 탭 */
+.ac-tabs{display:flex;align-items:center;gap:0;border-bottom:1px solid #e3e6ec;overflow-x:auto}
+.ac-tabs>button[role=tab]{flex:none;border:0;background:transparent;border-bottom:3px solid transparent;margin-bottom:-1px;padding:8px 14px;display:flex;align-items:baseline;gap:6px;white-space:nowrap;border-radius:0}
+.ac-tabs>button[role=tab] span{font-size:13.5px;font-weight:500;color:#6b7280}
+.ac-tabs>button[role=tab] b{font-size:13.5px;color:#6b7280}
+.ac-tabs>button[role=tab][aria-selected="true"]{border-bottom-color:#15171c}
+.ac-tabs>button[role=tab][aria-selected="true"] span{font-weight:700;color:#15171c}
+.ac-tabs>button[role=tab][aria-selected="true"] b{color:#15171c}
+.ac-tabs>button[role=tab] b.hot,.ac-tabs>button[role=tab][aria-selected="true"] b.hot{color:#b42318}
+.ac-tabs>button[role=tab] b.zero{color:#c9cdd5}
+.ac-tabs>i{flex:1}
+.ac .ac-rulebtn{flex:none;border:1px solid #e3e6ec;background:#fff;color:#374151;font-size:12px;font-weight:600;border-radius:999px;padding:5px 11px;margin:0 6px 4px 0}
+.ac-tabs .av-more{flex:none;margin-bottom:4px}
+.ac-rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.ac-rules>div{background:#f8f9fb;border-radius:8px;padding:8px 11px;font-size:12px;line-height:1.5}.ac-rules span{color:#4b5563}
+/* 담당자별 위험 = 알약 */
+.ac-people{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ac-people>span{font-size:12px;font-weight:700;color:#6b7280;margin-right:2px}
+.ac-people>button:not(.ac-moreppl){border:1px solid #f3c9c7;background:#fff;border-radius:999px;padding:5px 12px;display:flex;align-items:baseline;gap:6px;font-size:12.5px;color:#15171c}
+.ac-people>button.none{border-color:#eef0f3;background:#fafbfc}
+.ac-people>button b{font-weight:600}.ac-people>button span{color:#9ca3af}.ac-people>button em{font-style:normal;font-weight:700;color:#b42318}
+.ac-people>button[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}
+.ac .ac-moreppl{border:0;background:none;color:#2a52b8;font-size:12px;font-weight:700;padding:0 4px}
+/* 목록 제목 */
+.ac-listhd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid #f0f1f4;padding-top:10px}
+.ac-listhd>b{font-size:14.5px}.ac-listhd>b span{color:#3b6ce4}.ac-listhd>span{font-size:12.5px;color:#6b7280}.ac-listhd>i{flex:1}
+.ac .ac-clear{border:0;background:#eef3fe;color:#1d3f99;font-size:12px;font-weight:700;border-radius:999px;padding:4px 10px}
+.ac-views{display:flex;border:1px solid #e3e6ec;border-radius:8px;overflow:hidden}
+.ac-views .on{background:#15171c;color:#fff;font-size:12.5px;font-weight:700;padding:6px 14px}
+.ac-views button{border:0;background:#fff;color:#374151;font-size:12.5px;padding:6px 14px;border-radius:0}
+/* 아래: 왼쪽 금액 · 사유 / 오른쪽 목록 */
+.ac-body{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.ac-side{flex:0 1 300px;min-width:260px;display:flex;flex-direction:column;gap:12px}
+.ac-side>section{background:#fff;border:1px solid #e8eaef;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.ac-side>section>b{font-size:13.5px}.ac-side>section>b small{font-weight:500;font-size:11px;color:#9ca3af}
+.ac-num{display:flex;flex-direction:column;gap:2px}.ac-num span{font-size:12px;color:#6b7280}.ac-num b{font-size:24px;letter-spacing:-.02em}.ac-num small{font-size:11.5px;color:#9ca3af}
+.ac-side>section.ac-why{gap:7px}
+.ac-why button{border:1px solid #eef0f3;background:#fff;border-radius:8px;padding:8px 11px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 8px;text-align:left;color:#15171c}
+.ac-why button b{font-size:12.5px;font-weight:600}.ac-why button b.n{font-size:13px;font-weight:700}.ac-why button span{font-size:11px;color:#6b7280;grid-column:1/3}
+.ac-why button[aria-pressed="true"]{border-color:#15171c}
+.ac-why p{margin:0;font-size:12px;color:#9ca3af}
+.ac-list{flex:999 1 520px;min-width:0;background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden}
+.ac-head,.ac-row{display:grid;grid-template-columns:minmax(0,1.6fr) 110px 110px minmax(0,1.2fr) 64px 70px;gap:12px}
+.ac-head{padding:8px 16px 8px 19px;font-size:11px;color:#9ca3af;border-bottom:1px solid #eef0f3}.ac-head .r{text-align:right}
+.ac-row{align-items:center;padding:11px 16px;border-bottom:1px solid #f2f3f6;border-left:3px solid #9ca3af;cursor:pointer}
+.ac-row:hover{background:#fafbfc}.ac-row:focus-visible{outline:2px solid #3b6ce4;outline-offset:-2px}
+.ac-site{min-width:0;display:flex;flex-direction:column;gap:2px}
+.ac-site>b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ac-site>span{font-size:11.5px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ac-site>span b{font-weight:600}
+.ac-amt{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.ac-amt b{font-size:14px;color:#15171c}.ac-amt span{font-size:10.5px;color:#9ca3af}
+.ac-amt.prog b{color:#1d3f99}.ac-amt.zero b,.ac-amt.prog.zero b{color:#c9cdd5}
+.ac-state{min-width:0;display:flex;flex-direction:column;gap:3px}
+.ac-state>span{align-self:flex-start;font-size:11px;font-weight:700;border-radius:4px;padding:1px 7px;white-space:nowrap}
+.ac-state>small{font-size:11.5px;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ac-days{font-size:13px;text-align:right;color:#15171c;white-space:nowrap}.ac-days.late{color:#b42318}
+.ac .ac-act{border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:12px;font-weight:700;border-radius:7px;padding:6px 0}
+.ac .ac-morerows{display:block;width:100%;border:0;border-bottom:1px solid #f2f3f6;background:#fff;color:#2a52b8;font-size:12.5px;font-weight:700;padding:11px 16px;text-align:center;border-radius:0}
+.ac-empty{margin:0;padding:22px 16px;font-size:13px;color:#6b7280}
+.ac-foot{padding:10px 16px;font-size:11.5px;color:#9ca3af}
+@media(max-width:900px){.ac-head{display:none}.ac-row{grid-template-columns:minmax(0,1fr) auto auto}.ac-state,.ac-days{grid-column:1/-1;text-align:left}.ac-side{flex:1 1 100%}}
