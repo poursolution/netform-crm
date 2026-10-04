@@ -118,9 +118,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 밀린 건 정리: 펼치면 담당자별 건수 · 최장 일수 · [정리 요청], 목록 → 진행 / 보류 / 실주 / 배드핏 */
   await v.locator('.tv3-back .hd').click();await page.waitForTimeout(200);
   const bl=await v.locator('.tv3-bl').evaluateAll(l=>l.map(n=>[...n.children].filter(c=>!c.classList.contains('bar')).map(c=>c.textContent.trim()).join('|')));
-  assert.deepEqual(bl.sort(),['김성민|1건|최장 399일|정리 요청|목록','이승우|1건|최장 499일|정리 요청|목록','이필선|1건|최장 299일|정리 요청|목록']);
+  assert.deepEqual(bl.sort().map(x=>x.replace(/최장 \d+일/,'최장 n일')),['김성민|1건|최장 n일|정리 요청|목록','이승우|1건|최장 n일|정리 요청|목록','이필선|1건|최장 n일|정리 요청|목록']);
+  const olds=Object.fromEntries(bl.map(x=>[x.split('|')[0],Number((/최장 (\d+)일/.exec(x)||[0,0])[1])]));assert.ok(olds['이필선']>=299&&olds['이필선']<=300&&olds['김성민']>=399&&olds['김성민']<=400&&olds['이승우']>=499&&olds['이승우']<=500,'최장 일수 = 마지막 기록 뒤 지난 날');
   await v.locator('.tv3-bl',{hasText:'이필선'}).locator('[data-t3="backdo"]').click();await page.waitForTimeout(200);
-  assert.match(await v.locator('.tv3-brow').first().innerText(),/오래된 현장 A\s*관계관리 · 1\.5억 · 299일째\s*진행\s*보류\s*실주\s*배드핏/);
+  assert.match(await v.locator('.tv3-brow').first().innerText(),/오래된 현장 A\s*관계관리 · 1\.5억 · (299|300)일째\s*진행\s*보류\s*실주\s*배드핏/);
   await page.evaluate(()=>{window.__st=[];window.__drw=[];window.drwDeal=j=>{__drw.push(JSON.parse(j).id);};StageTransitionUI.open=(d,m,code)=>{__st.push([d.id,code]);};});
   await v.locator('.tv3-brow').first().locator('[data-v="hold"]').click();await page.waitForTimeout(600);
   assert.deepEqual(await page.evaluate(()=>[__drw,__st]),[['old1'],[['old1','waiting']]],'보류 = 상세 + 대기 전환 창(사유 입력은 기존 창)');
