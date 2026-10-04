@@ -37,7 +37,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      deal('old2','오래된 현장 B',{amt:5e7,code:'rapport',stage_code:'rapport',assignee:'김성민',last_activity_at:at(200),created:day(-400)}),
      deal('old3','오래된 현장 C',{amt:8e7,code:'rapport',stage_code:'rapport',assignee:'이승우',last_activity_at:at(400),created:day(-500)})],
     inquiries:[inq(3,'인천SK스카이뷰',3),inq(7,'길음뉴타운9단지',3,{assignee:'',assigned_to:'',assigned_at:'',status:'미배정'})],activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME=me;G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.today3=null;G.tower=null;G.towerRole=null;G.todayQueueOwner='전체';G.todayV3Off=false;
+   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME=me;G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.today3=null;G.tower=null;G.towerRole=null;G.todayQueueOwner='전체';G.todayV3Off=false;G.todayAssistOff=true;/* 여기서는 묶음 3개(카드 + 목록) 구조를 본다 — 영업관리 표는 verify-today-assist */
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op)=>{__writes.push(op);return 'req';};
    window.__open=[];TodayWorkQueue.open=(k,a)=>{__open.push([k,a||'']);};/* 배정 창이 실제로 그 문의를 찾는지까지 본다(문의 번호 형식) — todayAssignInquiry 는 진짜 것을 그대로 */window.__assign=[];window.__alerts=[];window.alert=m=>{__alerts.push(String(m));};window.inqCtlOpenAssign=(m,k)=>{__assign.push([m,k,!!inqCtlFind(k)]);};
    goPage('today');

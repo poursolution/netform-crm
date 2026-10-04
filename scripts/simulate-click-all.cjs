@@ -58,11 +58,14 @@ async function clickOne(args){
  const shot=()=>document.body.innerText+'|'+document.querySelectorAll('[aria-pressed="true"],[aria-selected="true"],[aria-expanded="true"],[aria-checked="true"],[open],.on,.sel,.active,.open').length+'|'+[...document.querySelectorAll('input,textarea,select')].map(n=>n.type==='checkbox'||n.type==='radio'?n.checked:n.value).join('\u0001')+'|'+Math.round(scrollY)+'|'+[...document.querySelectorAll('.main,.mbody,[class*="scroll"]')].map(n=>Math.round(n.scrollTop)).join(',');
  const s0=shot();
  if(el.tagName==='A'&&/^https?:/.test(el.getAttribute('href')||'')){mo.disconnect();return {muts:1,alerts:[],toasts:[],calls:1,focus:false,nav:true,ext:true};}
+ /* 화면이 안 바뀌는 게 정상인 것: 이미 골라진 탭 · 알약 · 보기 전환, 전화 · 문자 · 메일 연결, 인쇄 */
+ const picked=el.getAttribute('aria-pressed')==='true'||el.getAttribute('aria-selected')==='true'||el.getAttribute('aria-checked')==='true'||el.getAttribute('aria-current')==='page'||/(^|\s)(on|sel|active|cur|selected)(\s|$)/.test(String(el.className||''));
+ const link=/^(tel|sms|mailto):/.test(el.getAttribute('href')||'')||/^(call|dial|tel|pdf|print)$/.test(String(el.dataset.xd||el.dataset.idv||el.dataset.dv3||el.dataset.rb||el.dataset.t3||''))||/^전화( |$)/.test((el.innerText||'').trim());
  try{el.click();}catch(e){mo.disconnect();return {threw:String(e&&e.message||e)};}
  await new Promise(r=>setTimeout(r,220));mo.disconnect();
  /* 창 · 겹침 화면이 열렸나(다음 누르기 전에 새로 불러와야 하나) */
  const overlay=[...document.querySelectorAll('#detailView.on,dialog[open],.modal.on,[role="dialog"],.xdv,#inq-inbox-dialog,#siteDrawer.on,#drawer.on,#repWindow,.dv3-cpanel:not([hidden])')].some(n=>{const r=n.getBoundingClientRect();return r.width>100&&r.height>100&&getComputedStyle(n).display!=='none'&&!document.querySelector(rootSel)?.contains(n)&&n!==document.querySelector(rootSel);});
- return {same:shot()===s0,overlay,muts,alerts:S.alerts.slice(),toasts:S.toasts.slice(),calls:S.calls.length,callNames:S.calls.slice(0,3),focus:document.activeElement!==f0,nav:G.page!==p0||location.hash!==h0||document.title!==t0};
+ return {picked,link,same:shot()===s0,overlay,muts,alerts:S.alerts.slice(),toasts:S.toasts.slice(),calls:S.calls.length,callNames:S.calls.slice(0,3),focus:document.activeElement!==f0,nav:G.page!==p0||location.hash!==h0||document.title!==t0};
 }
 (async()=>{
  await new Promise(r=>srv.listen(0,'127.0.0.1',r));
@@ -100,7 +103,7 @@ async function clickOne(args){
     await page.waitForTimeout(60);
     const e2=errs.slice();total++;needReload=!!(r.nav||r.threw||e2.length||r.overlay||!c.root.startsWith('#pg-'));
     const warnAlert=(r.alerts||[]).concat(r.toasts||[]).filter(m=>/선택해 주세요|찾을 수 없|찾지 못|오류|실패|undefined|null|NaN|준비되지|연결되지/.test(m));
-    const dead=!r.missing&&!r.threw&&(r.same||!r.muts)&&!r.calls&&!(r.alerts||[]).length&&!(r.toasts||[]).length&&!r.focus&&!r.nav&&!r.overlay&&!r.ext;
+    const dead=!r.missing&&!r.threw&&!r.picked&&!r.link&&(r.same||!r.muts)&&!r.calls&&!(r.alerts||[]).length&&!(r.toasts||[]).length&&!r.focus&&!r.nav&&!r.overlay&&!r.ext;
     const kind=e2.length||r.threw?'오류':warnAlert.length?'안내만':dead?'반응 없음':r.missing?'못 찾음':'';
     if(kind)rows.push({kind,target:t,detail:e2.length?e2[0]:r.threw||warnAlert[0]||''});
    }
