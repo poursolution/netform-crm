@@ -104,3 +104,7 @@ test('금액 5개는 더하지 않는다 · 영업 경로 5칸 · Health Score (
  assert.equal(R.PHASE2.change_events.types.length,8);assert.equal(R.PHASE2.approval_types.length,6);assert.equal(R.PHASE2.promise_keeping.warn_below,0.8);assert.equal(R.PHASE3.stage_dwell_days.rel,60);
  const sql=read('sql/deal-win-path-v2-20261004.sql');['inflow_brand','first_sales_company','own_contract_amount','incentive_amount'].forEach(c=>assert.match(sql,new RegExp('add column if not exists '+c)));
 });
+test('4차 플레이북: 단계별 확인할 것 5개 · 선배 팁 문구도 한곳(운영하며 조정)',()=>{
+ const P=R.PHASE4;assert.deepEqual(Object.keys(P.playbook),['inq','cons','sent','rel','bid','con','won']);Object.values(P.playbook).forEach(l=>assert.equal(l.length,5));
+ assert.deepEqual(P.playbook.bid,['현설일','PT','경쟁 공법','의사결정자','예상 가격대']);assert.deepEqual(Object.keys(P.playbook_tips),['inq','cons','sent','rel','bid','con','won']);assert.deepEqual(P.followup_sequence_days,[3,7,14,30]);
+});

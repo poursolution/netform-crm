@@ -143,6 +143,9 @@
   amounts:Object.freeze({estimated:'예상금액',award:'낙찰금액',own_contract:'자사계약금액',tech_advisory:'기술자문금액',incentive:'인센티브 실적금액'}),
   health_score:Object.freeze({base:100,red_below:40,penalties:Object.freeze({no_contract_info:30,quote_no_contact_7d:25,no_next_action:20,inactive_7d:15,manager_changed:15,bid_or_meeting_d3:15})}),
   bid_alert_days:Object.freeze([7,3,1]),stage_dwell_days:Object.freeze({inq:2,cons:7,sent:14,rel:60,bid:30,con:14}),reactivation_reasons:Object.freeze(['사업 · 연기','사업 · 예산 미확정'])});
+ const PHASE4=Object.freeze({playbook:Object.freeze({inq:Object.freeze(['연락자 · 연락처','현재 문제','공사 범위','공사 시기','현장 방문일']),cons:Object.freeze(['1차 현장미팅','부위별 범위','도면 · 사진','공사 예정 연도','견적 요청 등록']),sent:Object.freeze(['발송일 · 수신자','수신 확인','결정권자','경쟁사 견적','다음 확인일']),rel:Object.freeze(['다음 연락일','공사 예정 연도','결정권자','예산 반영','콘텐츠 발송']),bid:Object.freeze(['현설일','PT','경쟁 공법','의사결정자','예상 가격대']),con:Object.freeze(['계약일','계약금액','특약 · 구두 약속','시공팀 인계서','착공일']),won:Object.freeze(['준공 확인','사후 연락','추가 공사 니즈','소개 가능성','하자 접수 경로'])}),
+  playbook_tips:Object.freeze({inq:'첫 통화에서 방문일까지 잡으면 견적이 4일 빨랐습니다',cons:'범위를 부위별로 받으면 수량 변경이 줄었습니다',sent:'견적 후 7일 안에 결정권자 일정을 물으면 실주가 줄었습니다',rel:'장기 대기는 2개월마다 짧은 안부 + 사례 자료',bid:'D-3 전에 경쟁 공법을 확인한 건의 낙찰률이 2배',con:'구두 약속은 계약서 특약에 남겨야 분쟁이 없습니다',won:'준공 30일 안 사후 연락이 재계약 · 소개로 이어졌습니다'}),
+  followup_sequence_days:Object.freeze([3,7,14,30])});
  /* 금액 5개(3차 기능 2) — 같은 현장, 다른 의미. 절대 더하지 않는다. 영업 성과 = 인센티브 실적금액(= 낙찰금액), 회사 매출 = 자사계약 + 기술자문.
     ledgerBalance = 계약실적 원장의 남은 계약금액(직접 수주의 자사계약금액) */
  function amounts(d,ledgerBalance){
@@ -186,5 +189,5 @@
  function warm(){const me=root.ME&&String(root.ME.id||root.ME.name||'');if(!me||warmed===me||!available())return;warmed=me;const before=JSON.stringify(all());load(true).then(()=>{if(JSON.stringify(all())!==before&&typeof root.paint==='function'){try{root.paint();}catch(e){}}});}
  if(typeof root.paint==='function'){const base=root.paint;root.paint=function(){try{sync();}catch(e){}const r=base.apply(this,arguments);try{warm();}catch(e){}return r;};}
  try{sync();}catch(e){}
- return {VERSION,RPC,DEFAULTS,SECTIONS,ROWS,SPEC,get,all,apply,clean,sync,load,save,available,meta:()=>meta,loaded:()=>loaded,pct,madeRate,dealResult,transferOf,winOf,performance,revenue,WON_TYPES,DEAL_FIELDS,reasons,lostReason,lostCategory,lostGroups,LOST_ALIAS,PHASE2,PHASE3,amounts,salesPath,healthScore,miss,carePhase};
+ return {VERSION,RPC,DEFAULTS,SECTIONS,ROWS,SPEC,get,all,apply,clean,sync,load,save,available,meta:()=>meta,loaded:()=>loaded,pct,madeRate,dealResult,transferOf,winOf,performance,revenue,WON_TYPES,DEAL_FIELDS,reasons,lostReason,lostCategory,lostGroups,LOST_ALIAS,PHASE2,PHASE3,PHASE4,amounts,salesPath,healthScore,miss,carePhase};
 });

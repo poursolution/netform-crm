@@ -2,7 +2,7 @@
 /* 견적문의 상세 v3 검사(2026-10-04 핸드오프 inquiry_v2 '견적문의 상세 v3' — 최종본)
    머리(브랜드 띠 · 공종 · 유입 / 현장명 + 고객 · 전화 / 접수일 · 담당 / 진행 4칸 / 상태 꼬리표 1개) · 왼쪽(고객이 남긴 말 · 핵심 정보 4줄 · 채울 정보 n / 9: 칩 → 그 자리 입력 → 저장하면 칩이 사라짐)
    · 가운데(응대 이력 + 탭 2개(응대 기록 · 내부 메모, 문자 보내기 없음) · 결과 칩 → 다음 행동 → 저장) · 오른쪽(지금 할 일 1개 · 첫마디 · 전화 / 다음 단계 / 근처 현장 · 담당 변경)
-   저장은 기존 경로 그대로. 규칙 제안에는 AI 표식 없음. 끄면(G.inqDetailV3Off) v2 배치 */
+   저장은 기존 경로 그대로. AI 표식은 시안 그대로. 끄면(G.inqDetailV3Off) v2 배치 */
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=path.resolve(__dirname,'..'),shot=process.argv[2]||'',dump=process.env.IQ3_DUMP==='1';
@@ -50,9 +50,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await tx('.idv3-tabs [role=tab]'),['응대 기록','내부 메모'],'문자 보내기 탭 없음');
   assert.deepEqual(await tx('.idv3-res .idv3-rc'),['연결됨','부재','검토중','자료요청','회신대기','배드핏']);
   assert.equal(await d.locator('#iq-res').getAttribute('placeholder'),'무슨 일이 있었는지 한 줄 (선택)');
-  assert.match((await tx('.idv3-sug'))[0],/^다음 행동 ?결과를 고르면 제안$/);assert.equal(await d.locator('.idv3-sug em').count(),0,'규칙 제안에는 AI 표식 없음');assert.equal(await d.locator('.idv3-foot .idv-save.on').count(),0);
+  assert.match((await tx('.idv3-sug'))[0],/^AI ?다음 행동 ?결과를 고르면 제안$/);assert.equal(await d.locator('.idv3-sug em').innerText(),'AI','다음 행동 제안 앞 AI 표식(시안 그대로)');assert.equal(await d.locator('.idv3-foot .idv-save.on').count(),0);
   await d.locator('.idv3-rc',{hasText:'회신대기'}).click();await page.waitForTimeout(150);
-  assert.match((await tx('.idv3-sug'))[0],/^다음 행동 다시 연락 · 2026\.10\.6\(화\) ?바꾸기$/);assert.equal(await d.locator('.idv3-foot .idv-save.on').count(),1);
+  assert.match((await tx('.idv3-sug'))[0],/^AI ?다음 행동 다시 연락 · 2026\.10\.6\(화\) ?바꾸기$/);assert.equal(await d.locator('.idv3-foot .idv-save.on').count(),1);
   const w0=await page.evaluate(()=>__writes.length);await d.locator('.idv3-foot .idv-save').click();await page.waitForTimeout(500);
   assert.ok(await page.evaluate(n=>__writes.length>n,w0),'기존 저장 경로로 저장');
   const ev=await tx('.idv3-ev');assert.match(ev[ev.length-1],/송보람|정정훈/);assert.match(ev[ev.length-1],/· 전화 · 회신대기 ?→ 다음 행동: 다시 연락 · 10\.6$/);
@@ -78,6 +78,6 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{G.inqDetailV3Off=true;InquiryWorkbench.open(A);});await page.waitForTimeout(400);
   assert.equal(await page.locator('#inq-inbox-dialog.idv3').count(),0);assert.deepEqual(await page.locator('#inq-inbox-dialog .idv-ctabs [role=tab]').allInnerTexts(),['응대 기록','문자 보내기','내부 메모'],'끄면 v2 배치');
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',head_one_pill_steps4:true,left_quote_info4_need9_inline:true,center_two_tabs_result_chips:true,optional_line_saves_existing_path:true,no_ai_badge_on_rule:true,right_one_todo_next_step_near:true,assign_uses_existing:true,narrow:true,legacy_switch:true}));
+  console.log(JSON.stringify({status:'PASS',head_one_pill_steps4:true,left_quote_info4_need9_inline:true,center_two_tabs_result_chips:true,optional_line_saves_existing_path:true,ai_badge_as_design:true,right_one_todo_next_step_near:true,assign_uses_existing:true,narrow:true,legacy_switch:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

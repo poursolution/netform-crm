@@ -55,8 +55,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await v.locator('.bb-loss').innerText(),/파이프라인 실주 1건\s*영업기회 상실 · 메이드율에 포함\s*가격 열세 1/);
   assert.equal(await v.locator('.bb-main').first().evaluate(n=>getComputedStyle(n).borderTopColor),'rgb(21, 23, 28)','맨 위 검은 테두리');
   /* 2. 전주 문제 → 조치 → 결과: 지난주 등록 항목을 지금 자료로 다시 센다 */
-  /* 2차 기능 5: 지난주 약속 → 이번 주 결과 요약(큰 숫자 · 막대 · 완료 / 종료 · 다른 처리 / 미완료) — 아래 표와 같은 계산 */
-  assert.match(await v.locator('.bb-card').nth(1).locator('.bb-prom').innerText(),/^2건\s*지난주에 ‘다음 주 반드시 끝낼 것’으로 등록\s*완료 1\s*종료 · 다른 처리 0\s*미완료 1$/);
+  /* 2차 기능 5: 지난주 약속 → 이번 주 결과 요약(큰 숫자 · 막대 · 완료 / 지연 / 미완료 — 시안 그대로) — 아래 표와 같은 계산 */
+  assert.match(await v.locator('.bb-card').nth(1).locator('.bb-prom').innerText(),/^2건\s*지난주에 ‘다음 주 반드시 끝낼 것’으로 등록\s*완료 1\s*지연 0\s*미완료 1$/);
   assert.deepEqual(await v.locator('.bb-card').nth(1).locator('.bb-prom .bar i').evaluateAll(l=>l.map(n=>n.style.width)),['50%','0%','50%']);
   assert.match(await v.locator('.bb-card').nth(1).innerText(),/전주 문제 → 이번 주 조치 → 결과\s*지난주 회의에서 정한 것 · 해결 1 \/ 2건[\s\S]*다음 행동 미등록\s*2건\s*담당자별 코칭 · 다음 행동 등록 요청 — 이필선 · 수요일\s*1건 등록\s*· 1건 미완료/);
   /* 3. 영업 이동 · 4. 계약실적 */
