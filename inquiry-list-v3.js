@@ -162,17 +162,31 @@
  function openDetail(key,act){const w=W();if(!w)return;return act?w.open(key,act):w.open(key);}
  function openDeal(d){if(!d)return;root.G.page='pipe';root.goPage('pipe');setTimeout(()=>root.drwDeal(JSON.stringify(d)),60);}
  function dial(d){if(!d){if(typeof root.toast==='function')root.toast('전화번호가 없습니다 — 상세에서 연락처를 등록해 주세요','warn');return;}const a=document.createElement('a');a.href='tel:'+d;a.style.display='none';document.body.append(a);a.click();a.remove();}
- /* 결과 기록 저장 — 상세의 '연락 결과 저장'과 같은 함수(iqApply → inquiry_status progress). 결과 · 다음 행동일 둘 다 있어야 한다 */
+ /* 결과 기록 저장 — 목록 줄 · 오늘 업무 실행 모드 · 상세가 같이 쓰는 한 길(record). 결과 · 다음 행동일 둘 다 있어야 한다 */
  function tmp(tag,id,value){document.getElementById(id)?.remove();const el=document.createElement(tag);el.id=id;el.hidden=true;el.value=value;document.body.append(el);return el;}
+ /* 그 id 의 입력칸이 이미 화면에 있으면 지우지 않고 값만 잠깐 바꿨다가 되돌린다 */
+ function lend(id,value){const had=document.getElementById(id);if(had){const old=had.value;had.value=value;return ()=>{had.value=old;};}const el=tmp('input',id,value);return ()=>el.remove();}
+ /* 첫 응대 = 단계 진행(접수 → 전화응대 완료 · iqApply → inquiry_status progress).
+    이미 응대한 문의의 후속 연락 = 상태는 그대로 두고 다음 할 일만 다시 잡는다(다음 할 일 등록 · next_action inquiry_next_set).
+    서버는 같은 상태로의 단계 진행을 충돌(PT409)로 거절하고, 상태 이름이 다르면 엉뚱한 단계로 되돌려 버린다 — 후속 연락을 단계 진행으로 보내지 않는다(2026-10-04) */
+ const FIRST_DONE='전화응대 완료';
+ const isFirst=q=>!root.inqCtlFirstResponseAt(q)&&String(q&&q.status||'')!==FIRST_DONE;
+ function record(q,o){
+  const did=String(o.did||'고객 응대 기록').trim(),res=String(o.res||'').trim(),next=String(o.next||'').trim(),due=String(o.due||'');
+  if(!res||!next||!/^\d{4}-\d{2}-\d{2}$/.test(due))throw Error('결과와 다음 행동일을 모두 넣어 주세요.');
+  if(isFirst(q)){const made=[tmp('input','iq-did',did),tmp('textarea','iq-res',res),tmp('input','iq-next',next),tmp('input','iq-due',due)];try{return root.iqApply(q,'step:1')===true;}finally{made.forEach(el=>el.remove());}}
+  if(typeof root.applyInqBulkAction!=='function')throw Error('후속 연락은 상세 창에서 기록해 주세요.');
+  const key=root.inqKey(q),text=(next+' — '+res).slice(0,500),keepSel=root.INQ_SEL,keepMode=root.G.inqBulkMode,keepNotice=root.G.inqNotice,back=[lend('inqActText',text),lend('inqActDue',due)];
+  let ok=false;root.INQ_SEL={[key]:true};
+  try{ok=root.applyInqBulkAction()===true;}finally{back.forEach(f=>f());root.INQ_SEL=keepSel||{};root.G.inqBulkMode=keepMode;root.G.inqNotice=keepNotice;}
+  if(ok){try{const p=root.itemPatch(q,'inq'),at=new Date().toISOString();p.activities=p.activities||[];p.activities.push({id:'fu-'+Date.now(),type:'전화',note:did,result:res,at,actor:root.repN(q.assignee)});q.lastActivity=p.lastActivity=at;if(typeof root.touchCustomer==='function')root.touchCustomer(p,'전화',at);if(typeof root.saveLocal==='function')root.saveLocal();}catch(e){}}
+  return ok;
+ }
  function saveRec(m,errEl){
   const q=root.inqCtlFind(m.key,false);if(!q)return;const p=picks(m);if(!p.r||!p.n){if(errEl)errEl.textContent='결과와 다음 행동일을 모두 골라 주세요.';return;}
   const nd=nextDate(m,p.n),text='통화 결과: '+p.r+' → 다음 연락 '+kday(nd),nextText='다음 연락 · '+p.r;
-  const idx=root.inqCtlFirstResponseAt(q)?root.flowIndex(q,'inq'):1;
-  if(!Number.isInteger(idx)||idx<0||idx>5){if(errEl)errEl.textContent='현재 단계는 상세 창에서 처리해 주세요.';return;}
-  const made=[tmp('input','iq-did','고객 응대 기록'),tmp('textarea','iq-res',text),tmp('input','iq-next',nextText),tmp('input','iq-due',dayStr(nd))];
   const before=JSON.parse(JSON.stringify(q)),patch=root.itemPatch(q,'inq'),beforePatch=JSON.parse(JSON.stringify(patch));
-  let ok=false;try{ok=root.iqApply(q,'step:'+idx)===true;}catch(e){Object.keys(q).forEach(k=>delete q[k]);Object.assign(q,before);Object.keys(patch).forEach(k=>delete patch[k]);Object.assign(patch,beforePatch);if(errEl)errEl.textContent=e.message||'저장 연결을 확인해 주세요.';}
-  made.forEach(el=>el.remove());
+  let ok=false;try{ok=record(q,{res:text,next:nextText,due:dayStr(nd)})===true;}catch(e){Object.keys(q).forEach(k=>delete q[k]);Object.assign(q,before);Object.keys(patch).forEach(k=>delete patch[k]);Object.assign(patch,beforePatch);if(errEl)errEl.textContent=e.message||'저장 연결을 확인해 주세요.';}
   if(ok){const S=st();S.rec=null;delete S.pick[m.key];if(typeof root.toast==='function')root.toast(text);root.paint();}
   else if(errEl&&!errEl.textContent)errEl.textContent=(document.getElementById('iq-msg')||{}).textContent||'저장하지 못했습니다.';
  }
@@ -215,5 +229,5 @@
  }
  const base=root.paintInq;
  if(typeof base==='function')root.paintInq=function(){const r=base.apply(this,arguments);try{render();}catch(err){document.getElementById('pg-inq')?.classList.remove('inq-v3');document.getElementById('inq-v3')?.remove();if(root.console)root.console.warn('inquiry list v3: '+err.message);}return r;};
- root.InquiryListV3={render,enabled,model,meetOf,missing,need9,attached,siteDeals,linkOf,linkable,headHtml,dealTag,dealWork,openDeal,LINK_RPC,TABS:TABS.map(t=>t[0])};
+ root.InquiryListV3={record,isFirst,render,enabled,model,meetOf,missing,need9,attached,siteDeals,linkOf,linkable,headHtml,dealTag,dealWork,openDeal,LINK_RPC,TABS:TABS.map(t=>t[0])};
 })(window);
