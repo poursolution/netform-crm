@@ -1,5 +1,8 @@
 /* 견적문의 상세 v3 (2026-10-04 핸드오프 inquiry_v2 '견적문의 상세 v3' — 최종본). 접두사 idv3- · 창에 .idv3 가 붙었을 때만 */
-#inq-inbox-dialog.idv3 .inq-dialog{width:min(1240px,96vw)!important;height:auto!important;max-height:92vh!important;box-shadow:0 20px 60px rgba(17,24,39,.25)}
+/* 창 크기 = 파이프라인 상세와 같게(2026-10-04 대표 "답답하다 · 파이프라인만큼 키워 줘"): 가로 최대 1640px · 세로 화면 가득(위아래 16px) */
+#inq-inbox-dialog.idv3 .inq-dialog{width:min(1640px,calc(100vw - 32px))!important;height:calc(100vh - 32px)!important;max-height:calc(100vh - 32px)!important;box-shadow:0 20px 60px rgba(17,24,39,.25)}
+#inq-inbox-dialog.idv3{padding:16px!important}
+#inq-inbox-dialog.idv3 .idv3-body{flex:1}
 /* 머리 */
 #inq-inbox-dialog.idv3 .idv3-top{padding:16px 24px 12px;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:10px;border-bottom:1px solid #eef0f3;flex:none;align-self:stretch;box-sizing:border-box;width:100%;text-align:left;margin:0}
 .idv3-top .r1{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.idv3-top .r1 .bar{width:4px;height:16px;border-radius:2px;flex:none}
@@ -13,7 +16,7 @@
 .idv3-steps>div{display:flex;flex-direction:column;gap:4px}.idv3-steps i{height:4px;border-radius:2px;background:#e3e6ec}
 .idv3-steps span{font-size:11.5px;color:#9ca3af}.idv3-steps .done i,.idv3-steps .cur i{background:#3b6ce4}.idv3-steps .done span{color:#6b7280}.idv3-steps .cur span{color:#15171c;font-weight:700}
 /* 3열 */
-#inq-inbox-dialog.idv3 .idv3-body{grid-template-columns:270px minmax(0,1fr) 300px;min-height:min(560px,62vh)}
+#inq-inbox-dialog.idv3 .idv3-body{grid-template-columns:320px minmax(0,1fr) 380px;min-height:min(560px,62vh)}
 #inq-inbox-dialog.idv3 .idv3-c1{border-right:1px solid #eef0f3;padding:16px 18px;gap:16px;background:#fff}
 #inq-inbox-dialog.idv3 .idv3-c2{background:#fff}
 #inq-inbox-dialog.idv3 .idv3-c3{border-left:1px solid #eef0f3;padding:16px 18px;gap:14px;background:#fcfcfd}

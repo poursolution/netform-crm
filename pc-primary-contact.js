@@ -88,7 +88,8 @@
   }
   const value=id=>document.getElementById(id).value.trim(),checked=id=>document.getElementById(id).checked;
   if(value('qc-decision-role')!==form.pcDecision||value('qc-relation-tone')!==form.pcTone){root.quickContactErr('관계정보 변경은 현재 서버 저장 경로에 연결되어 있지 않습니다. 기존 값으로 되돌린 뒤 연락처를 저장해 주세요.');return;}
-  const mobile=root.phoneN(value('qc-mobile')),name=value('qc-name'),role=value('qc-role'),old=form.pcOriginal||{};
+  /* 번호는 숫자만 남겨 검사 · 저장한다(2026-10-04 대표 캡처): 저장돼 있던 번호나 입력에 하이픈(010-1234-5678)이 있으면 '11자리 번호를 확인해 주세요'로 매번 거절됐다 — 동의 칩 · 연락처 등록/수정 모두 */
+  const mobile=String(root.phoneN(value('qc-mobile'))||'').replace(/\D/g,''),name=value('qc-name'),role=value('qc-role'),old=form.pcOriginal||{};
   if(!name||!/^010\d{8}$/.test(mobile)){root.quickContactErr('성명과 010으로 시작하는 11자리 휴대폰 번호를 확인해 주세요.');return;}
   let consentAt=old.consentAt||null;
   if(value('qc-consent-at')!==form.pcConsentInput){
