@@ -1,7 +1,7 @@
 /* 타사 이관 (2026-10-04 디자인 핸드오프 'design_handoff_transfer' · 운영 기준 4단계)
    타사 이관은 영업단계가 아니라 처리 방식(상태값) — 단계는 그대로 두고 상태만 붙인다. 새 단계를 만들지 않는다.
-   흐름: 상세 [··· 기타 처리] → 타사 이관 등록(담당자) → 낙찰결과 대기 → 낙찰결과 등록(담당자) → 실적 인정(관리자 전용) → 수주실적 · 메이드율 반영.
-   실적 금액 = 최종 낙찰금액(VAT 별도) 전액. 사전 정식 보고 + 관리자 인정 건만 수주실적 · 메이드율에 들어간다(대기 · 제외 건은 계산에서 빠진다).
+   흐름: 상세 [··· 기타 처리] → 타사 이관 등록(담당자) → 낙찰결과 대기 → 낙찰결과 등록(담당자) → 실적 인정(예외 승인자 중 한 사람) → 수주실적 · 메이드율 반영.
+   실적 금액 = 최종 낙찰금액(VAT 별도) 전액. 사전 정식 보고 + 승인자 인정 건만 수주실적 · 메이드율에 들어간다(대기 · 제외 건은 계산에서 빠진다).
    저장은 서버 함수(crm_deal_transfer_*_v1 — sql/deal-transfer-v1-20261004.sql)가 확인한 뒤에만 화면에 반영한다. 영업건의 단계 · 담당 · 계약실적 원장은 건드리지 않는다.
    서버가 준 한 줄을 영업건의 transfer 로 붙여 두면 CRMRules.transferOf · dealResult 가 읽는다. 끄기: G.dealTransferOff=true */
 (function(root){
@@ -13,6 +13,9 @@
  const enabled=()=>!R.G.dealTransferOff&&!!R.OpsStore&&!!R.CRMRules;
  const available=()=>enabled()&&R.OpsStore.has(RPC.list);
  const admin=()=>{try{return !!R.todayIsAdmin();}catch(e){return false;}};
+ /* 실적 인정 = 예외 승인자(운영 기준 · 기본 이승우 · 황윤선) 중 한 사람. 본인 건은 다른 승인자가(서버도 같은 규칙) */
+ const approverNames=()=>{try{return R.CRMRules.approvers().join(' · ');}catch(e){return '';}};
+ const canApprove=d=>{try{if(!R.CRMRules.isApprover(R.ME&&R.ME.name))return false;const t=of(d),n=R.repN(R.ME&&R.ME.name);return !(t&&n&&(R.repN(t.performance_owner)===n||R.repN(t.created_by_name)===n));}catch(e){return false;}};
  const toast=m=>{if(typeof R.toast==='function')R.toast(m);};
  const pad=n=>String(n).padStart(2,'0'),todayKey=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());};
  const dot=k=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(k||''));return m?m[1]+'.'+Number(m[2])+'.'+Number(m[3]):'';};
@@ -49,8 +52,8 @@
  function nowOf(d){
   const t=of(d),s=stateOf(d),own=R.repN(t.performance_owner)||'담당자',can=canEdit(d);
   if(s==='pending')return ['타사 이관 결과 확인',t.transfer_company+' 낙찰 여부를 확인하고 결과를 등록하세요.',can?['award','낙찰결과 등록']:null];
-  if(s==='awarded')return ['관리자 실적 인정 대기','관리자 확인 후 실적에 반영됩니다 · '+won(t.award_amount)+' (VAT 별도)',admin()?['approve','실적 인정']:null];
-  if(s==='approved')return ['완료 · 수주실적 반영',own+' 실적 '+won(t.award_amount)+' · 주간 브리핑 · 대시보드에 반영됨',null];
+  if(s==='awarded')return ['승인자 실적 인정 대기','승인자('+approverNames()+') 확인 후 실적에 반영됩니다 · '+won(t.award_amount)+' (VAT 별도)',canApprove(d)?['approve','실적 인정']:null];
+  if(s==='approved')return ['완료 · 수주실적 반영',own+' 실적 '+won(t.award_amount)+' · 주간 브리핑 · 대시보드에 반영됨'+(t.approved_by_name?' · '+R.repN(t.approved_by_name)+' 승인 완료'+(t.approved_at?' '+dot(String(t.approved_at).slice(0,10)):''):''),null];
   if(s==='rejected')return ['실적 제외','제외 사유: '+t.rejected_reason,can?['award','낙찰결과 고치기']:null];
   if(s==='lost')return ['타사 이관 실주','타사도 낙찰하지 못했습니다'+(t.award_note?' — '+t.award_note:'')+'. 실적은 0입니다.',['lost','실주 처리']];
   return ['입찰 취소 · 보류','실적 없이 보류 상태입니다'+(t.award_note?' — '+t.award_note:''),can?['award','낙찰결과 다시 등록']:null];
@@ -72,8 +75,10 @@
   const S=st(),t=of(d),ready=available();
   head.classList.add('tf-on');
   let wrap=head.querySelector('.tf-morewrap');if(!wrap){wrap=document.createElement('div');wrap.className='tf-morewrap';head.append(wrap);}
-  const items=[['owner','담당자 변경'],[t?'info':'reg',t?'타사 이관 정보':'타사 이관 등록',true],['hold','보류'],['lost','실주 처리']];
-  wrap.innerHTML='<button type="button" class="tf-more" data-tf="menu" aria-haspopup="menu" aria-expanded="'+!!S.menu+'">··· 기타 처리</button>'+(S.menu?'<div class="tf-menu" role="menu">'+items.map(m=>'<button type="button" role="menuitem" data-tf="m-'+m[0]+'" class="'+(m[2]?'hot':'')+'"'+(m[2]&&!ready?' disabled title="서버 적용 뒤에 쓸 수 있습니다"':'')+'>'+h(m[1])+(m[2]&&!ready?' <small>서버 적용 대기</small>':'')+'</button>').join('')+'</div>':'');
+  /* [··· 기타 처리]: 담당자 변경 · 타사 이관 등록 · 승인 요청 · 보류 · 실주 처리. [3] = 서버 준비 여부(없으면 늘 켜짐) */
+  const aq=R.ApprovalRequest&&R.ApprovalRequest.enabled()?R.ApprovalRequest:null;
+  const items=[['owner','담당자 변경'],[t?'info':'reg',t?'타사 이관 정보':'타사 이관 등록',true,ready]].concat(aq?[['approval','승인 요청',false,aq.available()]]:[],[['hold','보류'],['lost','실주 처리']]);
+  wrap.innerHTML='<button type="button" class="tf-more" data-tf="menu" aria-haspopup="menu" aria-expanded="'+!!S.menu+'">··· 기타 처리</button>'+(S.menu?'<div class="tf-menu" role="menu">'+items.map(m=>{const off=m.length>3&&!m[3];return '<button type="button" role="menuitem" data-tf="m-'+m[0]+'" class="'+(m[2]?'hot':'')+'"'+(off?' disabled title="서버 적용 뒤에 쓸 수 있습니다"':'')+'>'+h(m[1])+(off?' <small>서버 적용 대기</small>':'')+'</button>';}).join('')+'</div>':'');
   /* 상태 꼬리표: 단계 칩 옆 */
   const row=head.parentElement;row?.querySelectorAll('.tf-badge').forEach(n=>n.remove());
   const b=t?badgeOf(d):null,chip=row&&row.querySelector('.dv3-stagebadge');
@@ -92,7 +97,7 @@
   /* 수주 처리 창에서 넘어올 때: 적어 둔 낙찰 업체 · 금액 · 낙찰일을 미리 채운다 */
   /* 예외 승인함의 [반려]: 제외 사유 입력부터 */
   if(mode==='approve'&&pre&&pre.reject)S.dlg.f.rej=true;
-  if(mode==='award'&&pre&&typeof pre==='object')Object.keys(pre).forEach(k=>{if(pre[k]!==undefined&&pre[k]!==null&&pre[k]!=='')S.dlg.f[k]=pre[k];});
+  if((mode==='award'||mode==='reg')&&pre&&typeof pre==='object')Object.keys(pre).forEach(k=>{if(Object.prototype.hasOwnProperty.call(S.dlg.f,k)&&pre[k]!==undefined&&pre[k]!==null&&pre[k]!=='')S.dlg.f[k]=pre[k];});
   renderDlg();decorate();
  }
  function closeDlg(){st().dlg=null;document.getElementById('tf-dialog')?.remove();}
@@ -123,16 +128,16 @@
    foot='<span></span><button type="button" class="dark" data-tf="save-award"'+(D.busy?' disabled':'')+'>'+(D.busy?'저장 중…':isWon?'실적 확정 요청':'결과 저장')+'</button>';
   }else if(D.mode==='approve'){
    const CK=[['사전 보고 확인',t.transfer_reported?(t.transfer_reported_at?dot(t.transfer_reported_at)+' ':'')+(t.transfer_memo||'보고 완료'):'미보고 — 인정할 수 없음'],['낙찰결과 확인',t.award_evidence||'증빙 없음'],['낙찰금액 확인',comma(t.award_amount)+'원 · VAT 별도']],all=f.c.every(Boolean)&&t.transfer_reported;
-   title='실적 인정';who='관리자 전용';
+   title='실적 인정';who='승인자 '+approverNames()+' 중 한 사람';
    body='<div class="tf-approve"><div class="amt"><b>'+h(won(t.award_amount))+'</b><span>타사 이관 수주 · '+h(own)+' · 실적 반영 대기</span></div><div class="cks">'+CK.map((c,i)=>'<button type="button" class="'+(f.c[i]?'on':'')+'" data-tf="ck" data-v="'+i+'" aria-pressed="'+!!f.c[i]+'"'+(i===0&&!t.transfer_reported?' disabled':'')+'><i>'+(f.c[i]?'✓':'')+'</i><b>'+c[0]+'</b><span>'+h(c[1])+'</span></button>').join('')+'</div>'
-    +(f.rej?'<input data-tf-f="reason" maxlength="300" value="'+attr(f.reason)+'" placeholder="제외 사유 (필수) — 예: 사전 보고 없음 · 단순 중복">':'')+'<small>등록은 담당자가, 인정은 관리자만 합니다.</small></div>';
+    +(f.rej?'<input data-tf-f="reason" maxlength="300" value="'+attr(f.reason)+'" placeholder="제외 사유 (필수) — 예: 사전 보고 없음 · 단순 중복">':'')+'<small>등록은 담당자가, 인정은 승인자('+h(approverNames())+')가 합니다. 본인 건은 다른 승인자가 처리합니다.</small></div>';
    foot='<span></span><button type="button" class="ghost" data-tf="reject"'+(D.busy?' disabled':'')+'>'+(f.rej?'제외 확정':'제외 (사유 입력)')+'</button><button type="button" class="dark" data-tf="approve-ok"'+(all&&!D.busy?'':' disabled')+'>실적 인정</button>';
   }else{
    const s=stateOf(d),b=badgeOf(d);
    title='타사 이관 · '+(s==='pending'?'낙찰결과 대기':s==='awarded'?'실적 인정 대기':s==='approved'?'실적 반영':s==='lost'?'실주':s==='rejected'?'실적 제외':'보류');who=s==='pending'?'등록 직후 상태':'';
    body='<div class="tf-wait"><div><em style="color:'+b[1]+';background:'+b[2]+'">'+h(b[0])+'</em><span>'+h(dot(t.transfer_date)+' 이관 · '+t.transfer_company)+'</span></div>'
     +(s==='pending'?'<p>실주로 닫지 않습니다. 낙찰 여부를 끝까지 추적해야 하므로 파이프라인과 담당자 \'오늘 업무\'에 그대로 남습니다.</p><div class="three"><div><span>개인 실적</span><b>0원</b><span>아직 없음</span></div><div><span>메이드율</span><b>계산 제외</b><span>진행 중 취급</span></div><div><span>예상금액</span><b>참고만</b><span>실적 아님</span></div></div>':'<p>'+h(nowOf(d)[1])+'</p>')+'</div>';
-   foot='<span></span>'+(s==='pending'&&canEdit(d)?'<button type="button" class="ghost" data-tf="edit-reg">이관 정보 고치기</button><button type="button" class="dark" data-tf="award">낙찰결과 등록</button>':s==='awarded'&&admin()?'<button type="button" class="dark" data-tf="approve">실적 인정</button>':'<button type="button" class="dark" data-tf="close">닫기</button>');
+   foot='<span></span>'+(s==='pending'&&canEdit(d)?'<button type="button" class="ghost" data-tf="edit-reg">이관 정보 고치기</button><button type="button" class="dark" data-tf="award">낙찰결과 등록</button>':s==='awarded'&&canApprove(d)?'<button type="button" class="dark" data-tf="approve">실적 인정</button>':'<button type="button" class="dark" data-tf="close">닫기</button>');
   }
   ov.innerHTML='<section class="tf-dlg" role="dialog" aria-modal="true" aria-label="'+attr(title)+'"><header><b>'+h(title)+'</b><span>'+h(who)+'</span><i></i><button type="button" class="x" data-tf="close" aria-label="닫기">✕</button></header>'+body+(D.err?'<div class="tf-err">'+h(D.err)+'</div>':'')+'<footer>'+foot+'</footer></section>';
  }
@@ -159,11 +164,11 @@
   if(a==='save-award'){
    const res=f.result;
    if(res==='transferred_won'){if(!String(f.company).trim()){D.err='낙찰 업체를 적어 주세요.';return renderDlg();}if(!f.date){D.err='낙찰일을 넣어 주세요.';return renderDlg();}if(!(Number(f.amount)>0)){D.err='낙찰금액(VAT 별도)을 넣어 주세요.';return renderDlg();}if(!String(f.evidence).trim()){D.err='증빙(낙찰공고 · 결과자료)을 적어 주세요.';return renderDlg();}
-    return send(RPC.award,{deal_id:id,result:res,company:String(f.company).trim(),date:f.date,amount:Number(f.amount),evidence:String(f.evidence).trim()},()=>{toast('낙찰결과를 등록했습니다 — 관리자 실적 인정 대기');closeDlg();});}
+    return send(RPC.award,{deal_id:id,result:res,company:String(f.company).trim(),date:f.date,amount:Number(f.amount),evidence:String(f.evidence).trim()},()=>{toast('낙찰결과를 등록했습니다 — 승인자 실적 인정 대기(예외 승인함)');closeDlg();});}
    if(res==='lost'&&!String(f.note).trim()){D.err='실주 사유를 적어 주세요.';return renderDlg();}
    return send(RPC.award,{deal_id:id,result:res,note:String(f.note||'').trim()},()=>{toast(res==='lost'?'타사 이관 실주로 저장했습니다 — 실적 0':'입찰 취소 · 보류로 저장했습니다');closeDlg();});
   }
-  if(a==='approve-ok')return send(RPC.approve,{deal_id:id,decision:'approve',checks:{reported:f.c[0],result:f.c[1],amount:f.c[2]}},r=>{toast('실적을 인정했습니다 — 수주실적 '+won(r.transfer.award_amount)+' 반영');closeDlg();});
+  if(a==='approve-ok')return send(RPC.approve,{deal_id:id,decision:'approve',checks:{reported:f.c[0],result:f.c[1],amount:f.c[2]}},r=>{toast((R.repN(r.transfer.approved_by_name)||'승인자')+' 승인 완료 — 수주실적 '+won(r.transfer.award_amount)+' 반영');closeDlg();});
   if(a==='reject'){if(!f.rej){f.rej=true;return renderDlg();}if(!String(f.reason).trim()){D.err='제외 사유를 적어 주세요.';return renderDlg();}return send(RPC.approve,{deal_id:id,decision:'reject',reason:String(f.reason).trim()},()=>{toast('실적에서 제외했습니다');closeDlg();});}
  }
  /* 상세 안의 버튼 · 메뉴 */
@@ -175,6 +180,7 @@
   S.menu=false;
   if(a==='m-owner'){decorate();document.querySelector('.dv3-headact [data-dv3="owner"]')?.click();return;}
   if(a==='m-hold'||a==='m-lost'||a==='lost'){decorate();try{R.StageTransitionUI.open(d,false,a==='m-hold'?'waiting':'lost');}catch(err){}return;}
+  if(a==='m-approval'){decorate();try{R.ApprovalRequest&&R.ApprovalRequest.open();}catch(err){}return;}
   if(a==='m-reg')return openDlg('reg');
   if(a==='m-info')return openDlg('info');
   if(a==='award'||a==='approve')return openDlg(a);

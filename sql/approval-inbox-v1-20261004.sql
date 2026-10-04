@@ -1,6 +1,8 @@
 -- 예외 승인함 v1 (2026-10-04 · design_handoff_rules 2차 기능 4)
 -- 현장에서 바로 고치지 않고 승인함으로 모으는 요청: 귀속 변경 · 중복 리드 정산 · 전략수주 · 특별 인센티브 · 결과 수정.
 -- 타사 이관 실적은 기존 crm_deal_transfer_approve_v1 경로 그대로다 — 승인함 화면이 같이 보여 줄 뿐, 이 표에 넣지 않는다.
+-- 승인 · 반려는 예외 승인자(운영 기준 '예외 승인자' 목록 · 기본 이승우 · 황윤선) 중 한 사람이 한다 — crm_security.approval_approver (sql/ops-rules-v1 에 있다 · 먼저 적용).
+-- 본인이 올린 요청은 다른 승인자가 처리한다. 누가 언제 승인 · 반려했는지는 요청(decided_by_name · decided_at)과 이력에 남는다.
 -- 이 함수들은 요청 · 결정(승인 / 반려 · 사유) · 이력만 기록한다. 영업건 · 담당 · 계약실적 원장 · 수주 유형은 건드리지 않는다.
 -- 표는 RLS 를 켜고 정책을 두지 않는다 — 읽기 · 쓰기는 아래 함수로만. 바꿀 때마다 crm_approval_events 에 전 → 후가 남는다.
 -- 다시 실행해도 안전. 운영 적용: Supabase SQL 편집기에서 대표가 Run. 화면은 함수가 있을 때만 이 요청들을 보여 준다.
@@ -39,16 +41,17 @@ alter table public.crm_approval_events enable row level security;
 revoke all on table public.crm_approval_events from public, anon, authenticated;
 create index if not exists crm_approval_events_request on public.crm_approval_events(request_id,at desc);
 
--- 읽기: 관리자 = 전부, 그 밖 = 자기가 올린 요청만. 거둔 요청은 빼고 최근 300건.
+-- 읽기: 관리자 · 승인자 = 전부, 그 밖 = 자기가 올린 요청 + 자기 영업건의 요청. 거둔 요청은 빼고 최근 300건.
 create or replace function public.crm_approval_list_v1(p jsonb default '{}'::jsonb)
 returns jsonb language plpgsql stable security definer set search_path='' as $fn$
-declare a record; adm boolean;
+declare a record; adm boolean; apr boolean;
 begin
  select * into a from crm_security.actor();
  if not found then raise exception 'forbidden' using errcode='42501'; end if;
- adm:=a.permission_role='admin';
- return jsonb_build_object('ok',true,'admin',adm,'rows',coalesce((select jsonb_agg(to_jsonb(r) order by r.requested_at desc,r.id desc)
-  from (select * from public.crm_approval_requests q where q.status<>'cancelled' and (adm or q.requested_by=a.user_id) order by q.requested_at desc,q.id desc limit 300) r),'[]'::jsonb));
+ adm:=a.permission_role='admin'; apr:=crm_security.approval_approver(a.user_id);
+ return jsonb_build_object('ok',true,'admin',adm,'approver',apr,'rows',coalesce((select jsonb_agg(to_jsonb(r) order by r.requested_at desc,r.id desc)
+  from (select * from public.crm_approval_requests q where q.status<>'cancelled' and (adm or apr or q.requested_by=a.user_id
+    or (q.deal_id is not null and exists(select 1 from public.deals d where d.id::text=q.deal_id and to_jsonb(d)->>'owner_id'=a.user_id::text))) order by q.requested_at desc,q.id desc limit 300) r),'[]'::jsonb));
 end $fn$;
 revoke all on function public.crm_approval_list_v1(jsonb) from public, anon;
 grant execute on function public.crm_approval_list_v1(jsonb) to authenticated;
@@ -98,7 +101,7 @@ end $fn$;
 revoke all on function public.crm_approval_request_v1(jsonb) from public, anon;
 grant execute on function public.crm_approval_request_v1(jsonb) to authenticated;
 
--- 승인 / 반려(관리자 전용): 반려는 사유 필수. 대기 중인 요청만. 결정만 기록한다(다른 자료는 바꾸지 않는다).
+-- 승인 / 반려(예외 승인자 중 한 사람): 반려는 사유 필수. 대기 중인 요청만. 본인이 올린 요청은 다른 승인자가. 결정만 기록한다(다른 자료는 바꾸지 않는다).
 create or replace function public.crm_approval_decide_v1(p jsonb)
 returns jsonb language plpgsql volatile security definer set search_path='' as $fn$
 declare
@@ -107,7 +110,7 @@ declare
 begin
  select * into a from crm_security.actor();
  if not found then raise exception 'forbidden' using errcode='42501'; end if;
- if a.permission_role<>'admin' then raise exception '승인 · 반려는 관리자만 할 수 있습니다' using errcode='42501'; end if;
+ if not crm_security.approval_approver(a.user_id) then raise exception '승인 · 반려는 예외 승인자만 할 수 있습니다' using errcode='42501'; end if;
  if jsonb_typeof(p) is distinct from 'object' then raise exception 'invalid payload' using errcode='22023'; end if;
  begin v_id:=(p->>'id')::bigint; exception when others then raise exception 'invalid payload' using errcode='22023'; end;
  v_dec:=coalesce(p->>'decision','');
@@ -115,6 +118,7 @@ begin
  select * into old from public.crm_approval_requests q where q.id=v_id for update;
  if not found then raise exception '요청을 찾을 수 없습니다' using errcode='22023'; end if;
  if old.status<>'pending' then raise exception '이미 처리된 요청입니다' using errcode='22023'; end if;
+ if old.requested_by is not distinct from a.user_id then raise exception '본인이 올린 요청은 다른 승인자가 처리해야 합니다' using errcode='42501'; end if;
  v_reason:=nullif(btrim(coalesce(p->>'reason','')),'');
  if v_reason is not null and length(v_reason)>300 then raise exception '사유는 300자 이내로 적어 주세요' using errcode='22023'; end if;
  if v_dec='reject' and v_reason is null then raise exception '반려 사유를 적어 주세요' using errcode='22023'; end if;

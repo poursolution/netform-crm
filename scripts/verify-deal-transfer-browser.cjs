@@ -30,7 +30,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     if(name==='crm_deal_transfer_list_v1')return {data:{ok:true,rows:Object.values(__tf).filter(t=>t.transfer_status==='transferred')}};
     if(name==='crm_deal_transfer_register_v1'){if(p.cancel){delete __tf[p.deal_id];return {data:{ok:true,deal_id:p.deal_id,transfer:null}};}__tf[p.deal_id]={deal_id:p.deal_id,transfer_status:'transferred',transfer_company:p.company,transfer_reason:p.reason,transfer_date:p.date,transfer_reported:p.reported,transfer_reported_at:p.reported?p.reported_at||null:null,transfer_memo:p.memo||null,expected_amount:p.expected_amount||null,award_result:'pending',performance_owner:'이필선',incentive_eligible:false,created_at:now()};return {data:{ok:true,deal_id:p.deal_id,transfer:__tf[p.deal_id]}};}
     if(name==='crm_deal_transfer_award_v1'){const t=__tf[p.deal_id];Object.assign(t,{award_result:p.result,award_company:p.company||null,award_date:p.date||'2026-10-21',award_amount:p.amount||null,award_evidence:p.evidence||null,award_note:p.note||null,performance_amount:p.result==='transferred_won'?p.amount:null,incentive_eligible:false,rejected_reason:null});return {data:{ok:true,deal_id:p.deal_id,transfer:t}};}
-    if(name==='crm_deal_transfer_approve_v1'){if(ME.role!=='admin')return {error:{message:'실적 인정은 관리자만 할 수 있습니다'}};const t=__tf[p.deal_id];if(p.decision==='approve')Object.assign(t,{incentive_eligible:true,approved_by_name:'송보람',approved_at:now(),rejected_reason:null});else Object.assign(t,{incentive_eligible:false,rejected_reason:p.reason});return {data:{ok:true,deal_id:p.deal_id,transfer:t}};}
+    if(name==='crm_deal_transfer_approve_v1'){if(!['이승우','황윤선'].includes(ME.name))return {error:{message:'실적 인정은 예외 승인자만 할 수 있습니다'}};const t=__tf[p.deal_id];if(p.decision==='approve')Object.assign(t,{incentive_eligible:true,approved_by_name:ME.name,approved_at:now(),rejected_reason:null});else Object.assign(t,{incentive_eligible:false,rejected_reason:p.reason});return {data:{ok:true,deal_id:p.deal_id,transfer:t}};}
     if(name==='crm_ops_rules_v1')return {data:{ok:true,rules:{},history:[]}};if(name==='crm_ops_settings_v1')return {data:{ok:true,settings:{}}};
     return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
    window.D1=D1;window.__opened=[];window.StageTransitionUI&&(window.__st=StageTransitionUI.open,StageTransitionUI.open=(d,x,code)=>{__opened.push(code);});
@@ -41,7 +41,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 1. [··· 기타 처리] 메뉴: 담당자 변경 · 타사 이관 등록 · 보류 · 실주 처리 — 상시 버튼 아님 */
   assert.deepEqual(await v.locator('.dv3-headact button:visible').allInnerTexts(),['단계 바꾸기 ▾','··· 기타 처리']);assert.equal(await page.locator('#tf-card').count(),0,'등록 전에는 이관 상자 없음');
   await v.locator('.tf-more').click();await page.waitForTimeout(150);
-  assert.deepEqual(await v.locator('.tf-menu button').allInnerTexts(),['담당자 변경','타사 이관 등록','보류','실주 처리']);
+  assert.deepEqual(await v.locator('.tf-menu button').allInnerTexts(),['담당자 변경','타사 이관 등록','승인 요청','보류','실주 처리']);
   await v.locator('.tf-menu [data-tf="m-lost"]').click();await page.waitForTimeout(150);assert.deepEqual(await page.evaluate(()=>__opened),['lost'],'실주 처리 = 기존 단계 전환');
   await v.locator('.tf-more').click();await v.locator('.tf-menu [data-tf="m-reg"]').click();await page.waitForTimeout(200);
   /* 2. 등록 창: 필수값 · 사유는 운영 기준 목록 · 미보고 경고 */
@@ -82,12 +82,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#tf-dialog [data-tf="save-award"]').click();await page.waitForTimeout(500);
   assert.deepEqual(await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_deal_transfer_award_v1').map(c=>c[1])),[{deal_id:'11111111-1111-4111-8111-111111111111',result:'transferred_won',company:'코지건설',date:'2026-10-20',amount:380000000,evidence:'낙찰공고 캡처 · 자료에 첨부'}]);
   assert.equal(await v.locator('.tf-badge').innerText(),'타사 이관 수주 · 실적 인정 대기');
-  assert.match(await page.locator('#tf-card').innerText(),/낙찰\s*코지건설 · 2026\.10\.20 · 3\.8억 \(VAT 별도\)\s*관리자 실적 인정 대기\s*관리자 확인 후 실적에 반영됩니다/);assert.equal(await page.locator('#tf-card [data-tf="approve"]').count(),0,'담당자에게는 실적 인정 버튼 없음');
+  assert.match(await page.locator('#tf-card').innerText(),/낙찰\s*코지건설 · 2026\.10\.20 · 3\.8억 \(VAT 별도\)\s*승인자 실적 인정 대기\s*승인자\(이승우 · 황윤선\) 확인 후 실적에 반영됩니다/);assert.equal(await page.locator('#tf-card [data-tf="approve"]').count(),0,'담당자에게는 실적 인정 버튼 없음');
   assert.equal(await page.evaluate(()=>{const C=DashB.core();return [CRMRules.dealResult(B.deals[0]),C.perf,C.won,C.made].join('|');}),'transfer_pending|500000000|1|50','인정 전에는 실적 아님');
-  /* 5. 실적 인정: 관리자 전용 · 확인 3개 모두 */
+  /* 5. 실적 인정: 예외 승인자(이승우 · 황윤선) 중 한 사람 · 관리자에게는 버튼 없음 · 확인 3개 모두 */
   await page.evaluate(()=>{ME={id:'admin',name:'송보람',role:'admin'};paint();DealDetailV3.apply();});await page.waitForTimeout(300);
+  assert.equal(await page.locator('#tf-card [data-tf="approve"]').count(),0,'승인 요청은 관리자에게 가지 않는다');
+  await page.evaluate(()=>{ME={id:'lead1',name:'이승우',role:'manager'};paint();DealDetailV3.apply();});await page.waitForTimeout(300);
   await page.locator('#tf-card [data-tf="approve"]').click();await page.waitForTimeout(200);
-  assert.match(await page.locator('#tf-dialog .tf-dlg').innerText(),/^실적 인정\s*관리자 전용[\s\S]*3\.8억\s*타사 이관 수주 · 이필선 · 실적 반영 대기\s*사전 보고 확인\s*2026\.10\.2 10\.2 한준엽 팀장 협의 후 코지건설 이관\s*낙찰결과 확인\s*낙찰공고 캡처 · 자료에 첨부\s*낙찰금액 확인\s*380,000,000원 · VAT 별도\s*등록은 담당자가, 인정은 관리자만 합니다\./);
+  assert.match(await page.locator('#tf-dialog .tf-dlg').innerText(),/^실적 인정\s*승인자 이승우 · 황윤선 중 한 사람[\s\S]*3\.8억\s*타사 이관 수주 · 이필선 · 실적 반영 대기\s*사전 보고 확인\s*2026\.10\.2 10\.2 한준엽 팀장 협의 후 코지건설 이관\s*낙찰결과 확인\s*낙찰공고 캡처 · 자료에 첨부\s*낙찰금액 확인\s*380,000,000원 · VAT 별도\s*등록은 담당자가, 인정은 승인자\(이승우 · 황윤선\)가 합니다\. 본인 건은 다른 승인자가 처리합니다\./);
   assert.equal(await page.locator('#tf-dialog [data-tf="approve-ok"]').isDisabled(),true);
   for(const i of [0,1])await page.locator('#tf-dialog .cks button').nth(i).click();assert.equal(await page.locator('#tf-dialog [data-tf="approve-ok"]').isDisabled(),true,'셋 다 확인해야');
   await page.locator('#tf-dialog .cks button').nth(2).click();assert.equal(await page.locator('#tf-dialog [data-tf="approve-ok"]').isDisabled(),false);
