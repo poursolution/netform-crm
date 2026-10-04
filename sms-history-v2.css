@@ -1,0 +1,62 @@
+/* 문자 · 캠페인 · 발송 이력 v2 (2026-10-04 design_handoff_sms_history) — 치수 · 색은 시안(문자 발송 이력 v2.dc.html) 그대로 */
+#pg-campaign.sh2-on>.cf-bar:not([hidden]){display:flex}
+/* 공통 필터줄 하나로 — 예전 상단 필터 박스(브랜드 · 담당자 구분 · 연도 · 분기)는 감춘다 */
+body:has(#pg-campaign.on.sh2-on) #unibar{display:none!important}
+#pg-campaign.sh2-on>.cf-bar .sh2-lab{font-size:12px;color:#6b7280;flex:none}
+#pg-campaign.sh2-on>.cf-bar .cf-brands{display:flex;gap:8px;flex:none}
+#pg-campaign.sh2-on>.cf-bar .cf-pill{font-size:12.5px;font-weight:600;padding:5px 11px}
+#pg-campaign.sh2-on>.cf-bar .cf-pill.sh2-sender{font-size:12px;padding:4px 10px}
+#pg-campaign.sh2-on>.cf-bar .cf-search{margin-left:auto;border-radius:8px;min-width:220px;font-size:12.5px}
+.sh2{display:flex;flex-direction:column;gap:14px;max-width:1240px;width:100%;box-sizing:border-box;color:#15171c;padding-top:14px}
+.sh2 button{font-family:inherit;cursor:pointer;min-height:0;box-shadow:none;line-height:1.35}
+.sh2 .g{color:#1f7a4d}.sh2 .r{color:#b42318}.sh2 .m{color:#9ca3af}
+.sh2-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.sh2-top>b{font-size:20px;letter-spacing:-.02em}.sh2-top>i{flex:1}
+.sh2-pages{display:flex;gap:2px;border-bottom:1px solid #e3e6ec}
+.sh2 .sh2-pages button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;margin-bottom:-1px;padding:7px 12px;font-size:13.5px;font-weight:500;color:#9ca3af}
+.sh2 .sh2-pages button[aria-selected="true"]{border-bottom-color:#15171c;font-weight:700;color:#15171c;cursor:default}
+.sh2 .sh2-pages button:not([aria-selected="true"]):hover{color:#374151}
+.sh2-periods{display:flex;border:1px solid #e3e6ec;border-radius:8px;overflow:hidden;background:#fff}
+.sh2 .sh2-periods button{border:0;border-radius:0;background:#fff;color:#374151;font-size:12.5px;font-weight:600;padding:6px 13px}
+.sh2 .sh2-periods button[aria-pressed="true"]{background:#15171c;color:#fff}
+.sh2-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.sh2-kpi{background:#fff;border:1px solid #e8eaef;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:3px}
+.sh2-kpi>span:first-child{font-size:12px;color:#6b7280}.sh2-kpi>b{font-size:21px;color:#15171c}.sh2-kpi>b.g{color:#1f7a4d}.sh2-kpi>span:last-child{font-size:11.5px;color:#9ca3af}
+.sh2-list{background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden}
+.sh2-head,.sh2 .sh2-row{display:grid;grid-template-columns:110px minmax(0,1.6fr) 80px 110px minmax(0,1.1fr) 76px;gap:12px}
+.sh2-head{padding:9px 18px;font-size:11px;color:#9ca3af;border-bottom:1px solid #eef0f3}
+.sh2-head>span:last-child{text-align:right}
+.sh2-empty{padding:36px;text-align:center;font-size:13px;color:#6b7280}
+.sh2-item{border-bottom:1px solid #f2f3f6;background:#fff}.sh2-item.on{background:#fbfcff}.sh2-item:last-child{border-bottom:0}
+.sh2 .sh2-row{width:100%;border:0;border-radius:0;background:transparent;text-align:left;align-items:center;padding:12px 18px;color:#15171c}
+.sh2-when,.sh2-n{display:flex;flex-direction:column;gap:1px}
+.sh2-when b{font-size:12.5px}.sh2-when span,.sh2-n span{font-size:11.5px;color:#9ca3af}.sh2-n b{font-size:13px}.sh2-n span.r{color:#b42318}
+.sh2-main{min-width:0;display:flex;flex-direction:column;gap:3px}
+.sh2-main>span:first-child{display:flex;align-items:center;gap:6px;min-width:0}
+.sh2-main b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sh2-main>span:last-child{font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sh2-kind{flex:none;font-style:normal;font-size:10.5px;font-weight:700;border-radius:4px;padding:1px 6px}
+.sh2-kind.r{color:#b42318;background:#fdecec}.sh2-kind.y{color:#8a5a00;background:#fff4d6}.sh2-kind.b{color:#1d3f99;background:#eef3fe}.sh2-kind.g{color:#1f7a4d;background:#e8f6ee}.sh2-kind.m{color:#6b7280;background:#f3f4f6}
+.sh2-who{font-size:12.5px}
+.sh2-resp{display:flex;flex-direction:column;gap:3px;min-width:0}
+.sh2-resp>span:first-child{font-size:12.5px}.sh2-resp>span:first-child>span{color:#6b7280}.sh2-resp b{color:#15171c}.sh2-resp b.g{color:#1f7a4d}
+.sh2-bar{height:5px;background:#eef0f3;border-radius:3px;position:relative;max-width:140px;display:block}
+.sh2-bar i{position:absolute;left:0;top:0;bottom:0;background:#3b6ce4;border-radius:3px;display:block}
+.sh2-st{text-align:right}
+.sh2-st em{font-style:normal;font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.sh2-st em.g{color:#1f7a4d;background:#e8f6ee}.sh2-st em.r{color:#b42318;background:#fdecec}.sh2-st em.m{color:#6b7280;background:#f3f4f6}
+.sh2-detail{padding:0 18px 16px 140px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start}
+.sh2-body{flex:0 1 300px;background:#f5f6f8;border-radius:12px;padding:12px 14px;font-size:12.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.sh2-recv{flex:1 1 360px;min-width:0;display:flex;flex-direction:column;border:1px solid #eef0f3;border-radius:10px;overflow:hidden}
+.sh2-rh,.sh2-rv{display:grid;grid-template-columns:minmax(0,1.4fr) 70px minmax(0,1fr);gap:10px}
+.sh2-rh{padding:7px 12px;font-size:11px;color:#9ca3af;background:#fafbfc}
+.sh2-rv{padding:8px 12px;border-top:1px solid #f2f3f6;font-size:12.5px;align-items:center}
+.sh2-rv>span:first-child{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sh2-rv>span:first-child b{font-weight:600}.sh2-rv>span:first-child span{color:#6b7280}
+.sh2-rv>span:nth-child(2){color:#6b7280;font-weight:600}.sh2-rv>span:nth-child(2).r{color:#b42318}
+.sh2-rf{padding:8px 12px;border-top:1px solid #f2f3f6;display:flex;align-items:center;gap:8px}
+.sh2-rf>span{flex:1;font-size:11.5px;color:#9ca3af}
+.sh2 .sh2-rf button{border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:12px;font-weight:700;border-radius:7px;padding:5px 11px}
+.sh2 .sh2-rf button.sh2-more{border:0;padding:0;font-size:11.5px;font-weight:400;color:#9ca3af;background:none}
+.sh2 .sh2-rf button.sh2-more:hover{color:#374151}
+.sh2-note{font-size:11.5px;color:#9ca3af}
+@media(max-width:900px){.sh2-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.sh2-list{overflow-x:auto}.sh2-head,.sh2 .sh2-row{min-width:760px}.sh2-detail{padding-left:18px}}
