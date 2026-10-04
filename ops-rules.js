@@ -148,14 +148,14 @@
    lost_map:Object.freeze({'관리소장 변경':'관계 · 관리소장 변경','입대의 회장 변경':'관계 · 입대의 · 회장 영향','예산 변경':'가격 · 예산 부족','공사시기 변경':'사업 · 연기','공법 변경':'공법 · 타 공법 선호','경쟁업체 등장':'관계 · 경쟁업체 기존 관계','재견적 요청':'가격 · 가격 경쟁'})}),
   stage_gates:Object.freeze({consulting:Object.freeze(['1차 현장미팅 일정 또는 완료']),sent:Object.freeze(['발송일','발송 자료','다음 확인일']),relationship:Object.freeze(['자료 발송일','고객 반응','다음 행동','다음 확인일']),competition:Object.freeze(['입찰/결정 일정','경쟁 상황']),construction:Object.freeze(['계약일','계약금액']),closed:Object.freeze(['수주 유형 · 낙찰금액 / 실주 원인'])}),
   approval_types:Object.freeze(['타사 이관 실적','귀속 변경','중복 리드 정산','전략수주','특별 인센티브','결과 수정']),
-  /* 승인 요청 창(승인 요청 창.dc.html): 종류 순서 · 종류마다 필수칸 2개 · 증빙 필수 여부 · 승인되면 생기는 일 */
-  approval_request:Object.freeze({order:Object.freeze(['dup_lead','strategic_win','special_incentive','result_fix','owner_change','transfer']),types:Object.freeze({
-   dup_lead:Object.freeze({fields:Object.freeze(['함께 접촉','첫 연결일']),evidence:false,effect:'승인되면 실적 귀속 · 정산 비율이 정해진 대로 바뀝니다'}),
+  /* 승인 요청 창(승인 요청 창.dc.html · 2026-10-04 보완): 종류 순서 · 종류마다 받는 칸 · 증빙 필수 여부 · 승인되면 생기는 일. 날짜는 실제 일어난 날(승인한 날로 대신하지 않음) */
+  approval_request:Object.freeze({order:Object.freeze(['dup_lead','strategic_win','special_incentive','result_fix','owner_change','transfer']),hint:'날짜는 실제 일어난 날로 적습니다 · 승인한 날로 대신하지 않음',types:Object.freeze({
+   dup_lead:Object.freeze({fields:Object.freeze(['함께 접촉','첫 연결일','실적 나눔','적용 대상']),evidence:false,effect:'승인되면 수주실적이 비율대로 두 사람에게 나눠 잡힙니다 · 나눈 기록은 정산 내역에 남음'}),
    strategic_win:Object.freeze({fields:Object.freeze(['할인 · 조건','목적']),evidence:false,effect:'승인되면 이 조건으로 견적 · 계약 진행 가능, 승인선 예외로 기록'}),
-   special_incentive:Object.freeze({fields:Object.freeze(['대상자','금액 · 비율']),evidence:true,effect:'승인되면 인센티브 정산에 별도 항목으로 반영'}),
-   result_fix:Object.freeze({fields:Object.freeze(['현재 결과','바꿀 결과 · 금액']),evidence:true,effect:'승인되면 결과 · 낙찰금액이 바뀌고 메이드율 · 수주실적에 반영'}),
+   special_incentive:Object.freeze({fields:Object.freeze(['대상자','방식','금액 · 비율','지급 월']),evidence:true,effect:'승인되면 정산 내역에 별도 항목(대상자 · 금액 · 지급 월)으로 반영'}),
+   result_fix:Object.freeze({fields:Object.freeze(['현재 결과','바꿀 결과','낙찰일','낙찰금액','계약일 · 계약금액']),evidence:true,effect:'승인되면 결과 · 낙찰일 · 금액이 바뀌고 메이드율 · 수주실적에 바로 반영 · 계약 정보도 함께 들어가 계약 전환까지 한 번에'}),
    owner_change:Object.freeze({fields:Object.freeze(['현재 귀속','바꿀 귀속']),evidence:false,effect:'승인되면 실적 귀속이 바뀌고, 이전 귀속은 이력에 남음'}),
-   transfer:Object.freeze({fields:Object.freeze(['이관 업체','낙찰금액']),evidence:true,effect:'승인되면 타사 이관 수주로 실적 반영'})})}),cohort_compare_after_months:3,owner_fields:Object.freeze(['current_owner','first_owner','performance_owner','owner_history']),
+   transfer:Object.freeze({fields:Object.freeze(['이관 업체','이관일','낙찰일','낙찰금액']),evidence:true,effect:'승인되면 낙찰일 기준으로 타사 이관 수주 실적 반영 (승인일 아님)'})})}),cohort_compare_after_months:3,owner_fields:Object.freeze(['current_owner','first_owner','performance_owner','owner_history']),
   urgent_quote:Object.freeze({deadline_required:true,float_to_top:true}),promise_keeping:Object.freeze({window_days:30,warn_below:0.8})});
  const PHASE3=Object.freeze({sales_path:Object.freeze(['inflow_brand','first_sales_company','sales_owner','award_company','tech_advisory_company']),
   amounts:Object.freeze({estimated:'예상금액',award:'낙찰금액',own_contract:'자사계약금액',tech_advisory:'기술자문금액',incentive:'인센티브 실적금액'}),

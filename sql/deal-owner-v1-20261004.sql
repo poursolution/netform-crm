@@ -17,6 +17,8 @@ create table if not exists public.crm_deal_owners(
  created_at timestamptz not null default now(),
  updated_at timestamptz not null default now()
 );
+-- 실적 나눔(중복 리드 정산 승인): [{name,ratio}] 합 100 — 나눠 잡은 기록은 정산 내역(sql/settlement-v1)에 남긴다
+alter table public.crm_deal_owners add column if not exists shares jsonb;
 alter table public.crm_deal_owners enable row level security;
 revoke all on table public.crm_deal_owners from public, anon, authenticated;
 
@@ -124,3 +126,39 @@ begin
  return to_jsonb(cur);
 end $fn$;
 revoke all on function crm_security.deal_owner_apply(text,text,text,text,uuid,text) from public, anon, authenticated;
+
+-- 실적 나눔 반영(내부용): 예외 승인함에서 '중복 리드 정산'이 승인될 때 crm_approval_decide_v1 이 부른다. 직접 부를 수 없다.
+-- 그 영업건의 실적 귀속을 비율(합 100%)로 나눈다 — 나눔은 shares 에, 한 사람만 적는 칸(주담당)에는 비율이 가장 큰 사람을 둔다. 사람별 나눔은 정산 내역에 한 줄씩 남긴다.
+-- 나눠 잡을 금액 = 그때 확정돼 있는 수주실적(인정된 타사 이관 · 수주 확정의 낙찰금액). 아직 수주 전이면 비율만 남긴다.
+create or replace function crm_security.deal_split_apply(p_deal text,p_shares jsonb,p_reason text,p_request bigint,p_actor uuid,p_actor_name text)
+returns jsonb language plpgsql volatile security definer set search_path='' as $fn$
+declare old public.crm_deal_owners%rowtype; cur public.crm_deal_owners%rowtype; has_old boolean; e jsonb; v_top text; v_top_id uuid; v_base numeric; v_at timestamptz:=clock_timestamp();
+begin
+ if jsonb_typeof(p_shares)<>'array' or jsonb_array_length(p_shares) not between 2 and 5
+   or exists(select 1 from jsonb_array_elements(p_shares) x where nullif(btrim(coalesce(x->>'name','')),'') is null or coalesce(x->>'ratio','') !~ '^[0-9]{1,3}(\.[0-9]{1,2})?$' or (x->>'ratio')::numeric<=0
+     or not exists(select 1 from public.users u where u.active is true and btrim(u.name)=btrim(x->>'name')))
+   or (select sum((x->>'ratio')::numeric) from jsonb_array_elements(p_shares) x)<>100
+   or (select count(distinct btrim(x->>'name')) from jsonb_array_elements(p_shares) x)<>jsonb_array_length(p_shares) then
+  raise exception '실적 나눔은 사용 중인 계정 이름과 비율(합 100%%)이어야 합니다' using errcode='22023';
+ end if;
+ select btrim(x->>'name') into v_top from jsonb_array_elements(p_shares) with ordinality as t(x,i) order by (x->>'ratio')::numeric desc,i limit 1;
+ select u.user_id into v_top_id from public.users u where u.active is true and btrim(u.name)=v_top limit 1;
+ select * into old from public.crm_deal_owners o where o.deal_id=p_deal for update;
+ has_old:=found;
+ if has_old then update public.crm_deal_owners o set performance_owner=v_top,performance_owner_id=v_top_id,shares=p_shares,updated_by=p_actor,updated_by_name=p_actor_name,updated_at=v_at where o.deal_id=p_deal returning * into cur;
+ else insert into public.crm_deal_owners(deal_id,performance_owner,performance_owner_id,shares,updated_by,updated_by_name,created_at,updated_at) values(p_deal,v_top,v_top_id,p_shares,p_actor,p_actor_name,v_at,v_at) returning * into cur;
+ end if;
+ insert into public.crm_deal_owner_events(deal_id,action,from_owner,to_owner,reason,attribution,before,after,actor,actor_name,at)
+  values(p_deal,'attribution_change',case when has_old then old.performance_owner end,(select string_agg(btrim(x->>'name')||' '||(x->>'ratio')||'%',' · ') from jsonb_array_elements(p_shares) x),p_reason,'split',case when has_old then to_jsonb(old) end,to_jsonb(cur),p_actor,p_actor_name,v_at);
+ /* 나눠 잡을 금액: 인정된 타사 이관 → 수주 확정 순으로 그때 확정돼 있는 낙찰금액 */
+ if to_regclass('public.crm_deal_transfers') is not null then execute 'select t.award_amount from public.crm_deal_transfers t where t.deal_id=$1 and t.transfer_status=''transferred'' and t.incentive_eligible' into v_base using p_deal; end if;
+ if v_base is null and to_regclass('public.crm_deal_wins') is not null then execute 'select w.award_amount from public.crm_deal_wins w where w.deal_id=$1 and w.win_status=''confirmed''' into v_base using p_deal; end if;
+ if to_regprocedure('crm_security.settlement_add(text,text,bigint,text,numeric,numeric,text,jsonb,uuid,text)') is not null then
+  for e in select x from jsonb_array_elements(p_shares) x loop
+   execute 'select crm_security.settlement_add($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)' using 'split',p_deal,p_request,btrim(e->>'name'),(e->>'ratio')::numeric,
+    case when v_base is null then null else round(v_base*(e->>'ratio')::numeric/100) end,null::text,jsonb_build_object('base',v_base,'shares',p_shares,'reason',p_reason),p_actor,p_actor_name;
+  end loop;
+ end if;
+ return to_jsonb(cur);
+end $fn$;
+revoke all on function crm_security.deal_split_apply(text,jsonb,text,bigint,uuid,text) from public, anon, authenticated;
