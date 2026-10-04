@@ -25,10 +25,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'rep1',name:'이필선',role:'rep'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
-   ContractSalesData.state=()=>({status:'ready',items:[{deal_id:D2,brand:'석민이앤씨',sales_owner_name:'이필선',balance:5e8,events:[{kind:'signed',effective_date:'2026-10-10',amount_delta:5e8}]}]});
+   window.__contracts=[{deal_id:D2,brand:'석민이앤씨',sales_owner_name:'이필선',balance:5e8,events:[{kind:'signed',effective_date:'2026-10-10',amount_delta:5e8}]}];ContractSalesData.state=()=>({status:'ready',items:__contracts});ContractSalesData.entries=(f={})=>__contracts.filter(r=>(!f.owner||f.owner==='전체'||r.sales_owner_name===f.owner)&&(!f.brand||f.brand==='전체'||r.brand===f.brand));
    /* 서버 흉내: sql/deal-win-type-v1 의 규칙. advisory = 예전부터 확정돼 있던 기술자문 낙찰 1건(기술자문료만 입력됨) */
    window.__wn={};window.__tf={};window.__calls=[];
-   const ADV=[{advisory_id:'adv-old',site_name:'옥련현대4차',contractor:'코지건설',decision:'confirmed',origin_business:'석민이앤씨',source_deal_id:null,performance_owner:'이필선',bid_amount:885000000,bid_confirmed_at:'2026-07-31',advisory_fee:300000000,pour_amount:null}];
+   const ADV=[{advisory_id:'adv-old',site_name:'옥련현대4차',contractor:'코지건설',decision:'confirmed',origin_business:'석민이앤씨',source_deal_id:'legacy-verified',performance_owner:'이필선',bid_amount:885000000,bid_confirmed_at:'2026-07-31',advisory_fee:300000000,pour_amount:null}];
    SB={rpc:async(name,args)=>{const p=args.p||{};__calls.push([name,JSON.parse(JSON.stringify(p))]);
     if(name==='crm_deal_win_list_v1')return {data:{ok:true,rows:Object.values(__wn),advisory:ADV}};
     if(name==='crm_deal_win_register_v1'){if(p.cancel){delete __wn[p.deal_id];return {data:{ok:true,deal_id:p.deal_id,win:null}};}const had=!!__wn[p.deal_id];
@@ -44,7 +44,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const v=page.locator('#detailView.dv3');assert.equal(await v.count(),1);
   /* 0. 확정 전: 머리 4칸 없음. 예전 기술자문 낙찰(확정분)은 이미 협약 · 기술자문 수주로 집계된다 */
   assert.equal(await page.locator('#wn-head').count(),0,'수주 전에는 머리 4칸 없음');
-  assert.deepEqual(await page.evaluate(()=>{const C=DashB.core();return [C.pt.count,C.pt.amount,C.perf,C.won,C.made];}),[1,885000000,1385000000,2,66.7],'직접 1(5억) + 협약 · 기술자문 1(8.85억), 메이드율 (1 + 1) ÷ (1 + 1 + 실주 1)');
+  assert.deepEqual(await page.evaluate(()=>{const C=DashB.core();return [C.pt.count,C.pt.amount,C.perf,C.won,C.made];}),[0,0,500000000,1,50],'낙찰확정만으로 계약실적에 합산하지 않는다');
   /* 1. 단계 바꾸기 → [수주]: 입찰 단계에서도 누를 수 있고, 수주 처리 창이 먼저 뜬다 */
   await v.locator('.dv3-headact .mv').click();await page.waitForTimeout(200);
   const wonBtn=v.locator('.dv3-moves [data-stage="won"]');assert.equal(await wonBtn.getAttribute('aria-disabled'),null,'수주 버튼이 잠겨 있지 않음');
@@ -75,14 +75,17 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#wn-dialog [data-wn="save"]').click();await page.waitForTimeout(500);
   assert.deepEqual(await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_deal_win_register_v1').map(c=>c[1])),[{deal_id:'11111111-1111-4111-8111-111111111111',type:'partner_tech',company:'코지건설',amount:1043900000,date:'2026-10-01',site_name:'평택비전지웰푸르지오',tech:true,tech_company:'코지건설',tech_amount:433650000,pour_amount:'136690000'}]);
   /* 3. 확정 뒤: 기술자문 관리 건 안내 · 상세 머리 4칸 + 연결 계약 · 단계는 그대로 */
-  assert.match(await page.locator('#wn-dialog .wn-done').innerText(),/^수주 확정 후 자동 생성\s*기술자문 관리 건 · 평택비전지웰푸르지오\s*계약 상대\s*코지건설\s*기술자문\s*433,650,000원\s*POUR 계약\s*136,690,000원\s*이어서\s*계약 → 현장 → 대금 → 완료 \(기술자문 관리\)\s*영업 CRM은 수주에서 성과를 확정하고 끝\. 시공 · 대금은 기술자문 관리가 이어받습니다\.$/);
-  assert.match(await page.locator('#wn-dialog .wn-note').innerText(),/수주실적 1,043,900,000원\(낙찰금액 · VAT 별도\)이 이필선 실적으로 반영되었습니다\. 기술자문 · POUR 계약금액은 더하지 않았습니다\./);
+  assert.match(await page.locator('#wn-dialog .wn-done').innerText(),/^수주 확정 후 자동 생성\s*기술자문 관리 건 · 평택비전지웰푸르지오\s*계약 상대\s*코지건설\s*기술자문\s*433,650,000원\s*POUR 계약\s*136,690,000원\s*이어서\s*계약 → 현장 → 대금 → 완료 \(기술자문 관리\)\s*영업실적은 공사 계약 체결 확인 후 반영합니다\. 시공 · 대금은 기술자문 관리에서 이어갑니다\.$/);
+  assert.match(await page.locator('#wn-dialog .wn-note').innerText(),/낙찰금액 1,043,900,000원\(VAT 별도\)을 저장했습니다\. 공사 계약일·공사금액·당시 실적 귀속자 확인 후 계약 원장에서 실적을 반영합니다\./);
   if(shot)await page.screenshot({path:shot+'-done.png'});
   await page.locator('#wn-dialog footer [data-wn="close"]').click();await page.waitForTimeout(250);
   assert.equal(await page.evaluate(()=>dealStage(CUR_DETAIL.item)),'bidding','단계는 건드리지 않음');
   assert.deepEqual(await page.locator('#wn-head .wn-boxes>div').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent.trim()))),[['영업 경로 (브랜드)','석민이앤씨'],['영업 담당','이필선'],['결과','수주 · 기술자문'],['낙찰 시공사 · 낙찰금액','코지건설 · 10.4억']]);
   assert.match(await page.locator('#wn-head .wn-links').innerText(),/^연결 계약\s*기술자문 4\.3억 · 코지건설\s*\|\s*POUR 계약 1\.4억\s*수주 정보 고치기$/);
   if(shot)await page.screenshot({path:shot+'-head.png'});
+  assert.equal(await page.evaluate(()=>DashB.core().perf),500000000,'수주 정보 저장만으로 실적 확정 안 함');
+  // Simulate separately verified apartment construction contracts. No advisory fee is posted.
+  await page.evaluate(()=>{const row=(id,at,amount)=>({deal_id:id,brand:'석민이앤씨',sales_owner_name:'이필선',contract_date:at,balance:amount,events:[{kind:'signed',effective_date:at,amount_delta:amount}]});__contracts.push(row(D1,'2026-10-02',1043900000),row('legacy-verified','2026-07-31',885000000));});
   /* 4. 집계: 실적 = 낙찰금액만(연결 계약은 더하지 않는다) · 메이드율 성공 · 같은 함수 */
   assert.deepEqual(await page.evaluate(()=>{const C=DashB.core();return [CRMRules.dealResult(B.deals[0]),C.pt.count,C.pt.amount,C.pt.revenue,C.perf,C.won,C.made,CRMRules.madeRate(1,0,1,2)];}),['won_partner_tech',2,1928900000,870340000,2428900000,3,75,75]);
   await page.evaluate(()=>{document.getElementById('detailView')&&typeof closeDetail==='function'&&closeDetail();goPage('dash');});await page.waitForTimeout(500);
@@ -111,6 +114,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{OpsStore.rpc=(o=>async(name,p)=>name==='crm_report_snapshot_get_v1'?{ok:true,snapshots:[]}:o(name,p))(OpsStore.rpc);goPage('brief');});await page.waitForTimeout(600);
   assert.match(await page.locator('#brief-b .tf-perf').innerText(),/^수주실적\s*1건 · 10\.4억\s*├ 직접 수주\s*0건 · 0원\s*├ 협약시공사 수주 · 기술자문\s*1건 · 10\.4억\s*이필선 · 평택비전지웰푸르지오 · 코지건설 낙찰 10\.4억\s*└ 타사 이관 수주\s*0건 · 0원\s*파이프라인 실주\s*0건\s*배드핏\s*0건 · 메이드율 제외\s*영업 메이드율\s*100\.0%\s*\(0 \+ 1 \+ 0\) ÷ \(0 \+ 1 \+ 0 \+ 0\)$/,'이번 주(9/28~) 낙찰 1건');
   await page.clock.setFixedTime(new Date('2026-10-21T10:00:00+09:00'));
+  /* 월간 보고 본문과 직접/협약 분해는 같은 계약 원장을 사용한다. */
+  await page.evaluate(()=>{G.reportBMonth='2026-10';goPage('report');});await page.waitForTimeout(500);
+  assert.deepEqual(await page.evaluate(()=>{const x=ReportB.data();return [x.cur.contracts.net,x.cur.con.net+x.cur.pt.amount,x.cur.contracts.count,x.cur.con.count+x.cur.pt.count];}),[1543900000,1543900000,2,2]);
+  assert.match(await page.evaluate(()=>ReportB.headline(ReportB.data()).t),/10월 계약 2건 · 15\.4억/);
+  assert.match(await page.evaluate(()=>ReportB.summaryText(ReportB.data())),/→ 계약 2건 · 15\.4억/);
   /* 7. 직접 수주: 유형 · 계약 업체를 남기고 계약 창으로 이어 준다(계약실적 원장은 그 경로 그대로) */
   await page.evaluate(()=>{G._detailPopup=true;goPage('pipe');drwDeal(JSON.stringify(B.deals[3]));});await page.waitForTimeout(800);
   await page.locator('#detailView .dv3-headact .mv').click();await page.waitForTimeout(150);await page.locator('#detailView .dv3-moves [data-stage="won"]').click();await page.waitForTimeout(250);
@@ -144,6 +152,6 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{G.dealWinOff=true;DealDetailV3.apply();});await page.waitForTimeout(200);
   assert.equal(await page.locator('#wn-head').count(),0);assert.equal(await page.evaluate(()=>DashB.core().pt.count),0,'끄면 협약 · 기술자문 집계도 예전 방식');
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',won_opens_type_chooser:true,partner_tech_required_fields:true,advisory_case_notice:true,head_four_boxes_linked_contracts:true,performance_award_amount_only:true,three_way_split_same_function:true,brand_to_contractor_table:true,own_continues_to_contract:true,transfer_routes_to_transfer_flow:true,gate_and_switch:true}));
+  console.log(JSON.stringify({status:'PASS',won_opens_type_chooser:true,partner_tech_required_fields:true,advisory_case_notice:true,head_four_boxes_linked_contracts:true,performance_contract_ledger_only:true,three_way_split_same_function:true,brand_to_contractor_table:true,own_continues_to_contract:true,transfer_routes_to_transfer_flow:true,gate_and_switch:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
