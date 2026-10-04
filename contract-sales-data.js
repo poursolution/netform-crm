@@ -14,16 +14,17 @@
    try{
     const all=[],seen=new Set();let cursor=null;
     for(let page=0;page<1000;page++){
-     const response=await root.SB.rpc('crm_contract_sales_read_v1',{p_cursor:cursor,p_limit:200});
+     const response=await root.SB.rpc('crm_contract_sales_read_v2',{p_cursor:cursor,p_limit:200});
      if(epoch!==generation||who!==identity())return;
      if(response.error)throw response.error;
      const data=response.data;
      if(!data?.ok||data.policy!==L.POLICY||!Array.isArray(data.items)||typeof data.has_more!=='boolean')throw new Error('INVALID_CONTRACT_READ');
      data.items.forEach(row=>{
-      if(seen.has(row.deal_id))throw new Error('DUPLICATE_CONTRACT_READ');
+      const id=L.identity(row);
+      if(!id||seen.has(id))throw new Error('DUPLICATE_CONTRACT_READ');
       const valid=L.validate(row.events);
-      if(valid.events[0].deal_id!==row.deal_id||valid.version!==row.version||valid.balance!==row.balance||valid.events[0].sales_owner!==row.sales_owner)throw new Error('CONTRACT_READ_MISMATCH');
-      seen.add(row.deal_id);all.push(row);
+      if(L.identity(valid.events[0])!==id||valid.events[0].deal_id!==row.deal_id||valid.version!==row.version||valid.balance!==row.balance||valid.events[0].sales_owner!==row.sales_owner)throw new Error('CONTRACT_READ_MISMATCH');
+      seen.add(id);all.push(row);
      });
      if(!data.has_more){items=all;status='ready';return}
      if(!data.next_cursor||data.next_cursor===cursor)throw new Error('INVALID_CONTRACT_CURSOR');

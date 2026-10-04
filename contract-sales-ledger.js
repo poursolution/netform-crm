@@ -6,6 +6,8 @@
 })(typeof window==='object'?window:globalThis,function(){
   'use strict';
   const POLICY='contract-signed-event-v1';
+  // A contract can exist without an operational Deal. Legacy streams keep their ID.
+  function identity(e){return e?.contract_id||e?.deal_id}
   function date(value){
     if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return '';
     const n=Date.parse(value+'T00:00:00Z');
@@ -30,7 +32,7 @@
     rows.forEach((e,i)=>{
       required(e.policy===POLICY&&e.sequence===i+1,'INVALID_EVENT_SEQUENCE');
       required(e.event_id&&!ids.has(e.event_id),'DUPLICATE_EVENT_ID');ids.add(e.event_id);
-      required(e.deal_id&&e.deal_id===rows[0].deal_id,'CONTRACT_ID_CONFLICT');
+      required(identity(e)&&identity(e)===identity(rows[0])&&e.deal_id===rows[0].deal_id,'CONTRACT_ID_CONFLICT');
       required(typeof e.sales_owner==='string'&&e.sales_owner.trim()&&e.sales_owner===rows[0].sales_owner,'SALES_OWNER_CONFLICT');
       required(date(e.effective_date)&&(!i||e.effective_date>=rows[i-1].effective_date),'INVALID_EVENT_DATE');
       required(integer(e.amount_delta),'INVALID_EVENT_AMOUNT');
@@ -50,6 +52,7 @@
     const s=validate(events),first=s.events[0],last=s.events.at(-1);
     required(input.expected_version===s.version,'CONTRACT_VERSION_CONFLICT');
     const e={policy:POLICY,deal_id:first.deal_id,event_id:input.event_id,sequence:s.version+1,kind:input.kind,effective_date:input.effective_date,amount_delta:input.kind==='cancelled'?-s.balance:input.amount_delta,sales_owner:first.sales_owner,sales_owner_name:first.sales_owner_name,reason:input.reason};
+    if(first.contract_id)e.contract_id=first.contract_id;
     required(e.effective_date>=last.effective_date,'INVALID_EVENT_DATE');
     return validate(s.events.concat(e)).events;
   }
@@ -63,7 +66,7 @@
   function summarize(streams,filter){
     const f=filter||{},seen=new Set(),events=[],rows=new Map();
     (streams||[]).forEach(stream=>{
-      const s=validate(stream),id=s.events[0].deal_id;
+      const s=validate(stream),id=identity(s.events[0]);
       required(!seen.has(id),'DUPLICATE_CONTRACT_STREAM');seen.add(id);
       s.events.filter(e=>matches(e,f)).forEach(e=>{
         let r=rows.get(e.sales_owner);
@@ -79,5 +82,5 @@
     result.rows.forEach(r=>['count','newAmount','amendmentAmount','cancellationAmount','netAmount'].forEach(k=>{result[k]+=r[k];required(integer(result[k]),'AMOUNT_OVERFLOW')}));
     return result;
   }
-  return {POLICY,date,initial,append,validate,summarize};
+  return {POLICY,date,identity,initial,append,validate,summarize};
 });

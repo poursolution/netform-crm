@@ -80,7 +80,7 @@
  }
  function contractsIn(L,a,b,owner,kind){
   let count=0,net=0;const list=[];
-  L.rows.forEach(r=>{if(kind==='direct'&&root.DealWin?.isPartnerDeal?.(r.deal_id))return;if(owner&&root.repN(r.sales_owner_name)!==owner)return;(r.events||[]).forEach(e=>{const k=e.effective_date;if(!(k>=a&&k<b))return;net+=e.amount_delta;if(e.kind==='signed'){count++;list.push({r,e});}});});
+  L.rows.forEach(r=>{if(kind==='direct'&&(r.advisory_id||root.DealWin?.isPartnerDeal?.(r.deal_id)))return;if(owner&&root.repN(r.sales_owner_name)!==owner)return;(r.events||[]).forEach(e=>{const k=e.effective_date;if(!(k>=a&&k<b))return;net+=e.amount_delta;if(e.kind==='signed'){count++;list.push({r,e});}});});
   return {count,net,list};
  }
  /* ── 그 시점의 진행 · 장기정체(생성일 · 종료일 · 연락 기록으로 다시 계산) ── */

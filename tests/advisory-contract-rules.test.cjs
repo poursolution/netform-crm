@@ -37,6 +37,21 @@ test('unposted awards and missing ledger never fabricate revenue',async()=>{
  await R.ContractSalesData.refresh();assert.equal(R.DealWin.partnerIn('2026-09-01','2026-10-01').amount,0);
  assert.equal(R.SalesInsights.advMatch({decision:'confirmed',bid_amount:2e9,bid_confirmed_at:'2026-09-01'},{},()=>true),false);
 });
+
+test('verified independent advisory appears in partner performance exactly once without a source Deal',async()=>{
+ const {R,items}=fixture(),event={...items[1].events[0],deal_id:null,contract_id:'independent',event_id:'independent-sign',effective_date:'2026-08-20',amount_delta:885000000};
+ items.push({contract_id:'independent',deal_id:null,advisory_id:'advisory-independent',brand:'A',site:'검증된 현장',
+  sales_owner_name:'original',contract_date:'2026-08-20',events:[event]});
+ await R.ContractSalesData.refresh();
+ R.DealWin._take({rows:[],advisory:[]});
+ const partner=R.DealWin.partnerIn('2026-08-01','2026-09-01','original');
+ assert.equal(partner.amount,885000000);assert.equal(partner.count,1);
+ const lib=R.BriefB.lib,all=lib.ledger(),direct=lib.contractsIn(all,'2026-08-01','2026-09-01',null,'direct');
+ assert.equal(direct.net,0);assert.equal(direct.net+partner.amount,R.ContractSalesData.summarize({year:2026,month:8}).netAmount);
+ const list=[{advisory_id:'advisory-independent',attribution:{decision:'confirmed',source_deal_id:null,bid_amount:1,performance_owner:'changed'}}];
+ assert.equal(R.SalesInsights.advisoryPerformance(list,{},d=>d.startsWith('2026-08'))[0].attribution.bid_amount,885000000);
+ assert.equal(R.DealWin.partnerIn('2026-08-01','2026-09-01','changed').count,0);
+});
 test('advisory cards use the same ledger events and scope; fees, amounts and reassignment cannot double performance',async()=>{
  const {R}=fixture();await R.ContractSalesData.refresh();
  const list=[1,2].map(i=>({advisory_id:i,attribution:{decision:'confirmed',source_deal_id:'partner',bid_amount:1e8,performance_owner:'new owner',bid_confirmed_at:'2026-08-01'}}));

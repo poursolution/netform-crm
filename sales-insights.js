@@ -55,7 +55,7 @@
   const links=new Map();
   (list||[]).forEach(x=>{const t=x?.attribution;if(t?.decision==='confirmed'&&t.source_deal_id&&!links.has(String(t.source_deal_id)))links.set(String(t.source_deal_id),x)});
   return selected.flatMap(r=>{
-   const x=links.get(String(r.deal_id));if(!x)return [];
+   const x=r.advisory_id?(list||[]).find(x=>String(x.advisory_id)===String(r.advisory_id)):links.get(String(r.deal_id));if(!x)return [];
    const events=(r.events||[]).filter(e=>inPeriod(e.effective_date));if(!events.length)return [];
    return [{...x,events,attribution:{...x.attribution,bid_amount:events.reduce((s,e)=>s+e.amount_delta,0),performance_owner:r.sales_owner_name,origin_business:r.brand,contract_date:r.contract_date}}];
   });
