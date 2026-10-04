@@ -196,7 +196,7 @@
   if(a==='save')return saveWeek(b);
   if(a==='req')return request(b);
   if(a==='open')return openTarget(b.dataset.kind,b.dataset.id);
-  if(a==='ask'){const n=b.dataset.n;if(root.RepsV2&&root.RepsV2.enabled()){root.RepsV2.open(n);setTimeout(()=>document.querySelector('#repsDialog textarea')?.focus(),80);}else root.goPerfRep?.(n);return;}
+  if(a==='ask'){const n=b.dataset.n;if(root.RepsV2&&root.RepsV2.enabled()){root.RepsV2.open(n);setTimeout(()=>(document.querySelector('#repWindow.on [data-rw-f="promise"]')||document.querySelector('#repsDialog textarea'))?.focus(),80);}else root.goPerfRep?.(n);return;}
   if(a==='nm'){const C=compute();const nm=names().map(n=>personVals(n,C)).filter(p=>!p.measured);nm.forEach(p=>{requestLine(p.n,'기록 시작 — 통화 · 방문 결과와 다음 할 일을 CRM에 남겨 주세요');const o=O();if(o&&o.has('crm_kpi_action_log_v1'))o.rpc('crm_kpi_action_log_v1',{promise_key:KEY(3),action:'기록 시작 요청',target_type:'person',target_id:p.n,target_name:p.n}).catch(()=>{});});root.G.kbNmSent=O()?O().monday(0):'1';if(typeof root.toast==='function')root.toast(nm.length+'명에게 기록 시작 요청을 남겼습니다');return repaint();}
   if(a==='go'){e.preventDefault();const v=b.dataset.v;if(v==='inquiry')root.goPage('inq');else root.PipelineWorkspace.open(v);return;}
  }

@@ -55,7 +55,7 @@
  }
  function open(key,act){
   V().open(key);
-  if(act==='promise')setTimeout(()=>document.querySelector('#repsDialog textarea')?.focus(),80);
+  if(act==='promise')setTimeout(()=>(document.querySelector('#repWindow.on [data-rw-f="promise"]')||document.querySelector('#repsDialog textarea'))?.focus(),80);
  }
  function paint(host){
   const R=root.REP_MANAGER_ROWS||root.repFlowData(true),S=SB().state('reps');

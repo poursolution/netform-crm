@@ -23,7 +23,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      deal('d3','정상 현장','황윤선','compete',{amt:5e8,created:day(-10),updated:day(-1),next_action:{id:'n3',text:'PT 준비',due:day(3),status:'open'},activities:[{id:'a3',type:'전화',note:'통화',at:at(-1)}]}),
      deal('d4','사유 없는 실주','이필선','lost',{outcome:'lost',closed_at:day(-3)})],
     inquiries:[inq(1,'',2),inq(2,'이필선',3),inq(3,'이필선',4),inq(4,'이필선',5)],activities:[],inquiryTrash:[],expansion_pool:[]};
-   G.kpiBOff=true;/* 새 KPI 화면(2026-10-03)은 verify-kpi-b 에서 */LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
+   G.kpiBOff=true;/* 새 KPI 화면(2026-10-03)은 verify-kpi-b 에서 */LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.repWindowOff=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    window.__writes=[];window.pushWrite=(op)=>{__writes.push(op);return 'req';};
    window.__open=null;drwDeal=s=>{window.__open=JSON.parse(s).id;};

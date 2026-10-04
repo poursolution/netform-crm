@@ -22,7 +22,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      deal('d2','할 일 없는 현장','이필선','sent',{amt:3e8}),
      deal('d3','정상 현장','황윤선','compete',{amt:5e8,created:day(-10),updated:day(-1),next_action:{id:'n3',text:'PT 준비',due:day(3),status:'open'},activities:[{id:'a3',type:'전화',note:'통화',at:at(-1)}]})],
     inquiries:[inq(1,'이필선',2),inq(2,'이필선',3),inq(3,'이필선',4)],activities:[],inquiryTrash:[],expansion_pool:[]};
-   G.repsBOff=true;/* B안(2026-10-03)은 verify-reps-b 에서 */LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
+   G.repsBOff=true;/* B안(2026-10-03)은 verify-reps-b 에서 */LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.repWindowOff=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    window.__writes=[];window.pushWrite=(op,p)=>{__writes.push([op,p.rep_name,p.comment]);return 'req';};
    /* 시험 환경엔 로그인 저장소가 없다 — 메모리로 대신한다 */const mem={};Phase1.storage.getItem=k=>k in mem?mem[k]:null;Phase1.storage.setItem=(k,v)=>{mem[k]=String(v);};

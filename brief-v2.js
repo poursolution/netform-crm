@@ -117,7 +117,7 @@
     const b=e.target.closest('#brief-v2 [data-bv]');if(!b)return;
   if(b.dataset.bv==='meeting')meeting();
    if(b.dataset.bv==='saveweek')return saveWeek(b);
-  if(b.dataset.bv==='rep'){const n=b.dataset.value;if(root.RepsV2&&root.RepsV2.enabled()){root.RepsV2.open(n);if(document.getElementById('repsDialog')?.classList.contains('on'))return;}root.briefFocusRep?.(n,'brief-reps');}
+  if(b.dataset.bv==='rep'){const n=b.dataset.value;if(root.RepsV2&&root.RepsV2.enabled()){root.RepsV2.open(n);if(document.querySelector('#repWindow.on,#repsDialog.on'))return;}root.briefFocusRep?.(n,'brief-reps');}
  }
  function boot(){
   const base=root.paintBrief;if(typeof base!=='function')return;
