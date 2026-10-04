@@ -114,7 +114,7 @@
   const M=groups(r),t=TAG[r.diagnosis.k]||TAG.watch,load=root.repManagerLoadLevel(r),mr=made(r.nm),N=neck(r,M),FL=flow(r),T=topics(r,M),thisWeek=commentOf(r.nm,week(0)),saved=parse(thisWeek&&thisWeek.comment),savedIdx=saved&&saved.topic?T.findIndex(x=>x.l===saved.topic):-1;
   if(st.c==null)st.c=savedIdx>=0?savedIdx:({first:0,nonext:1,overdue:3,stale:1}[N.k]??1);
   if(!st.open)st.open=M.G.length?{[M.G[0].k]:true}:{};
-  const sel=T[st.c],txt=st.txt!=null?st.txt:(savedIdx===st.c&&saved.txt?saved.txt:sel.txt),role=[team(r.nm),title(r.nm)].filter(Boolean).join(' · ');
+  const sel=T[st.c],txt=st.txt!=null?st.txt:(savedIdx===st.c&&saved.txt?saved.txt:sel.txt),tm=team(r.nm),tt=title(r.nm),role=[tm,tt&&tt.replace(/\s+/g,'')!==tm.replace(/\s+/g,'')?tt:''].filter(Boolean).join(' · ');
   const loadC=load.cls==='heavy'||load.cls==='busy'?AMB:load.cls==='free'?GREEN:INK;
   const kpi=[['진행 금액',eok(r.pipeline),INK],['손볼 건',M.total+'건',M.total?RED:INK],['메이드율',mr==null?'–':mr.toFixed(1)+'%',INK],['업무량',LOAD[load.label]||load.label,loadC]];
   const head='<header class="rw-head"><div class="rw-who"><b id="rwTitle">'+h(r.nm)+'</b><span>'+h(role)+'</span><em class="'+t[1]+'">'+t[0]+'</em></div><div class="rw-sp"></div>'+kpi.map(k=>'<div class="rw-kpi"><span>'+k[0]+'</span><b style="color:'+k[2]+'">'+h(k[1])+'</b></div>').join('')+'<button type="button" class="rw-x" data-rw="close" aria-label="닫기">×</button></header>';
@@ -128,7 +128,7 @@
    +'<div class="rw-flow"><b>흐름</b>'+FL.F.map((x,i)=>'<div class="rw-fl"><span>'+x[0]+'</span><i><u class="'+(i===4?'g':'')+'" style="width:'+Math.round(x[1]/FL.base*100)+'%"></u></i><b>'+x[1]+'</b></div>').join('')+'<span class="rw-drop">'+h(FL.drop)+'</span></div>'
    +'<div class="rw-co"><b>이번 주 코칭 · 한 가지</b><div class="rw-chips">'+T.map((x,i)=>'<button type="button" data-rw="pick" data-i="'+i+'" aria-pressed="'+(st.c===i)+'">'+h(x.l)+'</button>').join('')+'</div>'
    +'<span class="rw-ai"><b>AI</b>'+h(sel.ai)+'</span><input type="text" data-rw-f="promise" maxlength="200" aria-label="이번 주 약속" value="'+attr(txt)+'">'
-   +'<div class="rw-cof"><span>'+(savedIdx>=0?'저장됨 '+h(mdOf(thisWeek.updated_at||thisWeek.updatedAt||''))+' · ':'')+'다음 주 월요일 결과 자동 확인</span><button type="button" data-rw="save">코칭 저장</button></div></div>'
+   +'<div class="rw-cof"><span>'+(savedIdx>=0?'저장됨 '+h(mdOf(thisWeek.updated_at||thisWeek.updatedAt||''))+' · 월요일 자동 확인':'다음 주 월요일 결과 자동 확인')+'</span><button type="button" data-rw="save">코칭 저장</button></div></div>'
    +'<div class="rw-past"><b>지난 코칭</b>'+pastHtml+'</div>';
   const reqs=linesOf(thisWeek).filter(isReq);
   const right='<div class="rw-rh"><b>지금 처리할 현장 '+M.total+'건</b><span>사유별로 묶음 · 금액 큰 순</span></div>'+(M.G.length?M.G.map(g=>{
