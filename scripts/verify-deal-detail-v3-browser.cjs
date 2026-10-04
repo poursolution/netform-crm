@@ -31,7 +31,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    window.__writes=[];window.pushWrite=(op,p)=>{__writes.push([op,p]);return 'req-'+__writes.length;};
    window.__ops=[];window.queueDetailContactOperation=(op,payload,actionId)=>{const id='op-'+(__ops.length+1);__ops.push({id,op,payload,actionId});return id;};
    Phase1.queue.flush=async()=>{};Phase1.queue.list=()=>__ops.map(o=>({request_id:o.id,object_id:o.payload.opportunity_id,operation:o.op,status:'done',payload:o.payload,ack:{ok:true,operation:o.op,activity_id:'srv-'+o.id,next_action_id:'srv-'+o.id}})).concat(__writes.map((w,i)=>w[0]==='contact_upsert'?{request_id:'req-'+(i+1),object_id:w[1].opportunity_id,operation:'contact_upsert',status:'done',payload:w[1],ack:{ok:true,operation:'contact_upsert',person_key:w[1].person_key,contact_id:'c-'+i}}:null).filter(Boolean));
-   window.__sf=[];SB={rpc:async(name,args)=>{if(name==='crm_deal_stage_fields_update_v1'){__sf.push(args.p);const d=B.deals.find(x=>x.id===args.p.deal_id),cur=((d.stage_contexts||{})[args.p.stage_code]||{}).fields||{},fields=Object.assign({},cur);Object.entries(args.p.fields).forEach(([k,v])=>{if(v==null)delete fields[k];else fields[k]=v;});return {data:{ok:true,version:(d.version||1)+1,stage_context:{fields}}};}return {data:{ok:true,tasks:[]}};}};TOKEN='test';
+   window.__sf=[];SB={rpc:async(name,args)=>{if(name==='crm_deal_stage_fields_update_v1'){__sf.push(args.p);const d=B.deals.find(x=>x.id===args.p.deal_id),cur=((d.stage_contexts||{})[args.p.stage_code]||{}).fields||{},fields=Object.assign({},cur);Object.entries(args.p.fields).forEach(([k,v])=>{if(v==null)delete fields[k];else fields[k]=v;});return {data:{ok:true,version:(d.version||1)+1,stage_context:{fields}}};}
+   if(name==='crm_deal_closed_info_update_v1'){window.__ci=window.__ci||[];__ci.push(args.p);if(window.__ciMissing)return {error:{code:'PGRST202',message:'function not found'}};const d=B.deals.find(x=>x.id===args.p.deal_id),cur=((d.stage_contexts||{})[args.p.stage_code]||{}).fields||{},fields=Object.assign({},cur);Object.entries(args.p.fields||{}).forEach(([k,v])=>{if(v==null)delete fields[k];else fields[k]=v;});return {data:{ok:true,version:(d.version||1)+1,stage_code:args.p.stage_code,stage_context:{to:args.p.stage_code,fields},amount:args.p.amount!=null?args.p.amount:(d.amount??d.amt??null)}};}
+   return {data:{ok:true,tasks:[]}};}};TOKEN='test';
    window.__ai=[];OpsStore.aiOn=()=>true;OpsStore.ai=async(kind)=>{__ai.push(kind);return {suggestion:kind==='next_action'?{how:'전화',what:'새 소장에게 기존 견적 조건 설명',days:1,why:'관리소장 변경 뒤 첫 응대가 없음'}:{opener:'안녕하세요 소장님',goal:'조건 확인',summary:''}};};
    window.__work=[];const fake={current:null,openWork:async(id,item)=>{fake.current=item;CUR_DETAIL={kind:'deal',key:dealKey(item),item};openWorkEdit();},save:async(item,payload)=>{if(item!==fake.current)throw Error('EDITOR_IDENTITY_MISMATCH');__work.push(payload);item.workItems=payload.work_items;item.primaryWork=payload.primary_work;closeNewDeal();renderDetail();}};window.Phase11=fake;
    G.pipeStageBOff=true;PipelineWorkspace.open('sent');
@@ -220,7 +222,46 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 같은 현장 다른 영업 → 그 건 상세 */
   await page.locator('.dv3-left .dv3-rel').first().click();await page.waitForTimeout(600);
   assert.equal(await page.evaluate(()=>CUR_DETAIL.item.id),'22222222-2222-4222-8222-222222222222');assert.equal(await page.locator('#detailView.dv3 .dv3-left').count(),1);
-  assert.equal(await page.locator('#detailView .dv3-left .dv3-val').count(),0,'종료된 건은 칸이 눌리지 않음');
+  /* 종료된 건(수주 · 실주)도 현장 정보를 파이프라인과 같은 칸 입력으로(2026-10-04 대표 "실주에서 입력 왜 뺐어 · 수주도 마찬가지") — 종료 건 전용 서버 함수로 저장, 진행 중 저장 함수 · 금액 명령은 쓰지 않는다 */
+  {const L=page.locator('#detailView .dv3-left'),row=l=>L.locator('.dv3-row',{has:page.locator('span',{hasText:new RegExp('^'+l+'$')})});
+   assert.deepEqual(await L.locator('.dv3-row>span:first-child').allInnerTexts(),['공종','고객 반응','의사결정자','경쟁사','예상 금액','공사 예정']);
+   assert.equal(await L.locator('.dv3-row .dv3-val').count(),6,'종료된 건도 칸 6개가 눌린다');assert.match(await L.innerText(),/현장 정보\s*누르면 바로 수정/);
+   await page.evaluate(()=>{window.__toasts=[];const o=window.toast;window.__toastKeep=o;window.toast=(m,k)=>{__toasts.push([String(m),k||'']);return o&&o(m,k);};});
+   const sf0=await page.evaluate(()=>__sf.length),w0=await page.evaluate(()=>__writes.length);
+   await row('경쟁사').locator('.dv3-val').click();await page.waitForTimeout(150);
+   const inp=row('경쟁사').locator('input.dv3-in');assert.equal(await inp.count(),1,'그 자리 입력 칸');await inp.fill('한빛방수');await inp.press('Enter');await page.waitForTimeout(400);
+   assert.deepEqual(await page.evaluate(()=>__ci.slice(-1)[0]),{deal_id:'22222222-2222-4222-8222-222222222222',stage_code:'won',reason:'종료 건 상세에서 바로 입력',fields:{competitor:'한빛방수'}});
+   assert.equal(await row('경쟁사').locator('.dv3-val').innerText(),'한빛방수');assert.equal(await page.evaluate(()=>__toasts.slice(-1)[0][0]),'저장했습니다');
+   await row('예상 금액').locator('.dv3-val').click();await page.waitForTimeout(150);
+   const amt=row('예상 금액').locator('input.dv3-in');await amt.fill('250,000,000');await amt.press('Enter');await page.waitForTimeout(400);
+   assert.deepEqual(await page.evaluate(()=>__ci.slice(-1)[0]),{deal_id:'22222222-2222-4222-8222-222222222222',stage_code:'won',reason:'종료 건 상세에서 바로 입력',amount:250000000});
+   assert.equal(await page.evaluate(()=>[CUR_DETAIL.item.amount,CUR_DETAIL.item.won_amount,CUR_DETAIL.item.outcome,CUR_DETAIL.item.code].join('|')),'250000000|200000000|won|won','예상 금액만 바뀐다 · 수주금액 · 종료 상태 그대로');
+   assert.equal(await page.evaluate(()=>__sf.length),sf0,'진행 중 저장 함수는 쓰지 않는다');assert.equal(await page.evaluate(()=>__writes.length),w0,'금액 명령 · 단계 전환을 쓰지 않는다');
+   await row('공종').locator('.dv3-val').click();await page.waitForTimeout(500);assert.equal(await L.locator('.dv3-slot[data-slot="work"] .dv3-work').count(),1,'공종도 그 줄 아래에서 고친다');await L.locator('[data-dv3="workcancel"]').click();await page.waitForTimeout(150);
+   /* 오른쪽 '이 단계 필수 정보': 글 · 선택 항목만 눌리고, 준공일 · 준공 확인 · 최종 수주금액은 읽기 전용 */
+   const Rr=page.locator('#detailView .da-stage-summary .dv3-stage .dv3-row'),kinds=await Rr.evaluateAll(l=>l.map(n=>[n.querySelector('span').textContent,n.querySelector('button.dv3-val')?'칸':'글']));
+   assert.deepEqual(kinds,[['확인된 준공일','글'],['준공 완료 확인','글'],['최종 수주금액(원)','글'],['이긴 이유','칸'],['배운 점','칸']],'수주 건 오른쪽 칸: '+JSON.stringify(kinds));
+   await Rr.filter({hasText:'배운 점'}).locator('.dv3-val').click();await page.waitForTimeout(150);
+   const les=Rr.filter({hasText:'배운 점'}).locator('input.dv3-in');await les.fill('입주자대표 먼저 설득');await les.press('Enter');await page.waitForTimeout(400);
+   assert.deepEqual(await page.evaluate(()=>__ci.slice(-1)[0].fields),{lesson:'입주자대표 먼저 설득'});
+   /* 실주 건: 실주 사유(선택) · 확인한 내용 · 배운 점 · 재접촉 가능 시기 모두 칸 */
+   await page.evaluate(()=>{const d=CUR_DETAIL.item;window.__keepWon=[d.code,d.stage_code,d.outcome];d.code=d.stage_code='lost';d.outcome='lost';renderDetail();});await page.waitForTimeout(600);
+   assert.equal(await L.locator('.dv3-row .dv3-val').count(),6,'실주 건도 칸 6개');
+   const Rl=page.locator('#detailView .da-stage-summary .dv3-stage .dv3-row');assert.deepEqual(await Rl.evaluateAll(l=>l.map(n=>[n.querySelector('span').textContent,n.querySelector('button.dv3-val')?'칸':'글'])),[['실주 원인','칸'],['확인한 내용','칸'],['배운 점','칸'],['재접촉 가능 시기','칸']]);
+   await Rl.filter({hasText:'확인한 내용'}).locator('.dv3-val').click();await page.waitForTimeout(150);
+   const cd=Rl.filter({hasText:'확인한 내용'}).locator('input.dv3-in');await cd.fill('타사 단가가 12% 낮았음');await cd.press('Enter');await page.waitForTimeout(400);
+   assert.deepEqual(await page.evaluate(()=>{const x=__ci.slice(-1)[0];return [x.stage_code,x.fields];}),['lost',{close_detail:'타사 단가가 12% 낮았음'}]);
+   assert.match(await Rl.filter({hasText:'확인한 내용'}).innerText(),/타사 단가가 12% 낮았음/);
+   /* 서버에 아직 없으면: 안내 한 줄 + 예전처럼 읽기 전용(값은 바뀌지 않는다) · 끄기 스위치 */
+   await page.evaluate(()=>{window.__ciMissing=true;window.__missed=[];const o=CRMRelease.noteMissing,h0=CRMRelease.has;window.__relKeep=[o,h0];CRMRelease.noteMissing=n=>{__missed.push(n);};CRMRelease.has=n=>__missed.includes(n)?false:h0(n);});
+   await row('의사결정자').locator('.dv3-val').click();await page.waitForTimeout(150);const dm=row('의사결정자').locator('input.dv3-in');await dm.fill('동대표 회장');await dm.press('Enter');await page.waitForTimeout(500);
+   assert.match(await page.evaluate(()=>__toasts.slice(-1)[0][0]),/종료 건 입력은 서버 적용 대기 중입니다/);assert.deepEqual(await page.evaluate(()=>__missed),['crm_deal_closed_info_update_v1']);
+   await page.evaluate(()=>{const d=CUR_DETAIL.item;DealDetailV3.apply();});await page.waitForTimeout(300);
+   assert.equal(await L.locator('.dv3-row .dv3-val').count(),0,'서버 함수가 없으면 읽기 전용');assert.equal(await page.locator('#detailView .da-stage-summary .dv3-stage button.dv3-val').count(),0);
+   await page.evaluate(()=>{window.__ciMissing=false;CRMRelease.noteMissing=__relKeep[0];CRMRelease.has=__relKeep[1];G.closedEditOff=true;renderDetail();});await page.waitForTimeout(500);
+   assert.equal(await L.locator('.dv3-row .dv3-val').count(),0,'끄면 예전처럼 읽기 전용');
+   await page.evaluate(()=>{G.closedEditOff=false;const d=CUR_DETAIL.item,k=__keepWon;d.code=k[0];d.stage_code=k[1];d.outcome=k[2];renderDetail();});await page.waitForTimeout(500);
+   assert.equal(await L.locator('.dv3-row .dv3-val').count(),6);}
   /* 2026-10-04 대표 캡처: 계약·시공 안에서 시공 · 준공으로 가는 버튼 + 수주 안내 */
   await page.evaluate(()=>{G._detailPopup=true;drwDeal(JSON.stringify(B.deals[0]));});await page.waitForTimeout(700);
   const sub=await page.evaluate(()=>{const d=CUR_DETAIL.item,o=[d.code,d.stage_code];d.code=d.stage_code='contract';DealDetailV3.apply();document.querySelector('#detailView .dv3-headact .mv')?.click();const out={btn:[...document.querySelectorAll('#detailView .dv3-moves button')].map(b=>[b.textContent,b.dataset.code||'',b.className,b.getAttribute('aria-disabled')||'']),names:[stageLabel('contract'),stageLabel('construction'),stageLabel('completion')]};[...document.querySelectorAll('#detailView .dv3-moves button')].find(b=>b.dataset.code==='completion').click();out.target=(document.querySelector('#stage-transition-form #sf-target')||{}).value||'';StageTransitionUI.close();d.code=o[0];d.stage_code=o[1];DealDetailV3.apply();return out;});
@@ -233,6 +274,6 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{G.dealDetailV3Off=true;G._detailPopup=true;drwDeal(JSON.stringify(B.deals[0]));});await page.waitForTimeout(600);
   assert.equal(await page.locator('#detailView.dv3').count(),0);assert.equal(await page.locator('#detailView .dv3-left').count(),0);assert.equal(await page.locator('#detailView .dw-right>.dk-ai').count(),1,'끄면 예전 모양');
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',record_inline:true,next_only_chips:true,manager_replace_box:true,stage_move_header_band:true,center_timeline:true,files_inline:true,consent_chips:true,window_size:true,left_five_sections:true,one_person_one_call:true,related_deals:true,inline_expand_right_intact:true,now_card_merged_ai:true,stage_info_deduped:true,no_save_on_expand:true,legacy_switch:true}));
+  console.log(JSON.stringify({status:'PASS',record_inline:true,next_only_chips:true,manager_replace_box:true,stage_move_header_band:true,center_timeline:true,files_inline:true,consent_chips:true,window_size:true,left_five_sections:true,one_person_one_call:true,related_deals:true,inline_expand_right_intact:true,now_card_merged_ai:true,stage_info_deduped:true,no_save_on_expand:true,legacy_switch:true,closed_deal_inline_edit:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

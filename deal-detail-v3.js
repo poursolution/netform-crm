@@ -46,18 +46,27 @@
  /* ── 칸 안에서 바로 입력 ── */
  const SF_RPC='crm_deal_stage_fields_update_v1';
  const canSF=()=>!!(root.SB&&typeof root.SB.rpc==='function')&&!(root.CRMRelease&&root.CRMRelease.has(SF_RPC)===false);
+ /* 종료된 건(수주 · 실주 · 배드핏 · 연락두절)도 같은 칸에서 바로 입력(2026-10-04 대표 "실주에서 입력 왜 뺐어 · 파이프라인 보고 일괄 적용 · 수주도 마찬가지") — 진행 중 저장 함수 · 금액 명령은 종료 건을 거절하므로
+    종료 건 전용 서버 함수(sql/deal-closed-info-update-v1-20261004.sql)로 저장한다: 허용 항목(글 · 선택 값) + 예상 금액만. 단계 · 종료 상태 · 수주금액 · 준공일 · 계약 원장은 건드리지 않는다.
+    서버에 아직 없으면(CRMRelease) 예전처럼 읽기 전용. 끄기: G.closedEditOff=true */
+ const CI_RPC='crm_deal_closed_info_update_v1',CI_KEYS=['customer_reaction','decision_maker','competitor','construction_plan','close_reason','close_detail','lesson','recontact_possibility','win_reason'];
+ const isClosed=d=>!!d&&(!!d.outcome||d.lifecycle_status==='closed');
+ const canCI=()=>!root.G.closedEditOff&&!!(root.SB&&typeof root.SB.rpc==='function')&&!(root.CRMRelease&&root.CRMRelease.has(CI_RPC)===false);
  const ST={};const st=d=>ST[d.id]||(ST[d.id]={edit:'',draft:'',sedit:'',sdraft:'',busy:false});
  const toast=(m,k)=>{if(typeof root.toast==='function')root.toast(m,k);};
- async function saveSF(d,fields,done){
-  const S=st(d),code=root.dealStage(d);if(S.busy)return;S.busy=true;
+ async function saveSF(d,fields,done,amount){
+  const S=st(d),code=root.dealStage(d),closed=isClosed(d),rpc=closed?CI_RPC:SF_RPC;if(S.busy)return;S.busy=true;
   try{
-   const r=await root.SB.rpc(SF_RPC,{p:{deal_id:String(d.id),stage_code:code,fields,reason:'상세에서 바로 입력'}});
-   if(r.error){if(r.error.code==='PGRST202')root.CRMRelease?.noteMissing?.(SF_RPC);throw Error(r.error.message||'저장 실패');}
+   const r=closed
+    ?await root.SB.rpc(CI_RPC,{p:Object.assign({deal_id:String(d.id),stage_code:String(d.stage_code||code),reason:'종료 건 상세에서 바로 입력'},fields?{fields}:null,amount!=null?{amount}:null)})
+    :await root.SB.rpc(SF_RPC,{p:{deal_id:String(d.id),stage_code:code,fields,reason:'상세에서 바로 입력'}});
+   if(r.error){if(r.error.code==='PGRST202'){root.CRMRelease?.noteMissing?.(rpc);if(closed)throw Error('종료 건 입력은 서버 적용 대기 중입니다 — 적용 뒤 다시 입력해 주세요');}throw Error(r.error.message||'저장 실패');}
    if(!r.data||r.data.ok!==true||!r.data.stage_context)throw Error('서버 확인 응답이 올바르지 않습니다.');
    const ctx=r.data.stage_context,p=root.currentPatch?root.currentPatch():null;
    d.stage_contexts=Object.assign({},d.stage_contexts||{},{[code]:ctx});d.stageContexts=d.stage_contexts;if(p)p.stage_contexts=d.stage_contexts;if(r.data.version!=null)d.version=r.data.version;
+   if(closed&&amount!=null&&r.data.amount!=null){const n=Number(r.data.amount);d.amount=d.amt=n;if(p)p.amt=n;}
    root.saveLocal?.();done();toast('저장했습니다');S.busy=false;root.renderDetail?.();
-  }catch(e){S.busy=false;toast(String(e.message||e),'warn');}
+  }catch(e){S.busy=false;toast(String(e.message||e),'warn');if(closed&&!canCI()){S.edit='';S.draft='';S.sedit='';S.sdraft='';apply();}/* 서버에 없으면 입력 칸을 접고 읽기 전용으로 */}
  }
  function commitLeft(d,key,val){
   const S=st(d);if(S.busy||S.edit!==key)return;const F=siteFields(d).find(x=>x.k===key);if(!F)return;
@@ -65,6 +74,9 @@
   if(val===before){S.edit='';S.draft='';apply();return;}
   if(key==='amount'){
    const inp=$('dv-amt'),n=val===''?0:root.MoneyInput.parse(val);
+    if(isClosed(d)){/* 종료 건: 금액 명령이 거절하므로 종료 건 전용 함수로 저장 */
+     if(!Number.isSafeInteger(n)||n<0){toast('예상 금액은 원 단위 숫자로 적어 주세요','warn');return;}
+     saveSF(d,null,()=>{S.edit='';S.draft='';},n);return;}
    if(!inp||inp.disabled||typeof root.saveBasics!=='function'){toast('지금은 예상 금액을 바꿀 수 없습니다','warn');S.edit='';apply();return;}
    if(!Number.isFinite(n)||n<0){toast('예상 금액은 원 단위 숫자로 적어 주세요','warn');return;}
    inp.value=String(n);S.edit='';S.draft='';root.saveBasics();return;
@@ -437,20 +449,20 @@
   const tag=x=>root.isWon(x)?['수주','won']:root.isOpen(x)?['진행','open']:['실주','lost'];
   const relHtml=rel.length?rel.map(x=>{const t=tag(x),w=root.dealWorkSummary(x),what=w&&!/미분류|미기록/.test(w)?w:root.stageLabel(root.dealStage(x)),ym=ymd(x.closed_at||x.contract_date||x.created).slice(0,7),amt=root.isWon(x)?(root.hasWonAmt(x)?root.fmtAmt(root.wonAmt(x)):''):(Number(x.amount??x.amt??0)>0?root.fmtAmt(Number(x.amount??x.amt)):'');
     return '<button type="button" class="dv3-rel" data-dv3="rel" data-id="'+attr(x.id)+'"><em class="'+t[1]+'">'+t[0]+'</em><span><b>'+h(what)+'</b><small>'+h([ym,amt,root.repN(x.assignee)||'미배정'].filter(Boolean).join(' · '))+'</small></span><i>›</i></button>';}).join(''):'<p class="dv3-none">이 현장의 다른 영업건이 없습니다</p>';
-  const S=st(d),sfOk=canSF();
+  const S=st(d),sfOk=canSF(),ciOk=closed&&canCI();
   const fields=F.map(x=>{
    const emptyTxt=x.empty||'미입력 · 입력하기';
    let val;
-   if(closed)val='<b class="'+(x.v?'':'empty')+'">'+h(x.v||'미입력')+'</b>';
+   if(closed&&!ciOk)val='<b class="'+(x.v?'':'empty')+'">'+h(x.v||'미입력')+'</b>';
    else if(x.k!=='work'&&S.edit===x.k)val='<input class="dv3-in" data-dv3in="left" data-key="'+x.k+'" value="'+attr(S.draft)+'" placeholder="'+attr(x.ph||x.l)+'"'+(x.k==='amount'?' inputmode="decimal"':'')+' aria-label="'+attr(x.l)+'">';
-   else{const act=x.k==='work'?'work':(x.k==='amount'?($('dv-amt')?'field':'amount'):(sfOk?'field':'info'));val='<button type="button" class="dv3-val'+(x.v?'':' empty')+'" data-dv3="'+act+'" data-key="'+x.k+'">'+h(x.v||emptyTxt)+'</button>';}
+   else{const act=x.k==='work'?'work':closed?'field':(x.k==='amount'?($('dv-amt')?'field':'amount'):(sfOk?'field':'info'));val='<button type="button" class="dv3-val'+(x.v?'':' empty')+'" data-dv3="'+act+'" data-key="'+x.k+'">'+h(x.v||emptyTxt)+'</button>';}
    return '<div class="dv3-row"><span>'+h(x.l)+'</span>'+val+'</div>'+(x.k==='work'?'<div class="dv3-slot" data-slot="work"></div>':'');
   }).join('');
   const others=C.others.length?C.others.map(c=>{const k=String(c.personKey||(root.phoneN(c.mobile)?'mobile:'+root.phoneN(c.mobile):'')),tel=root.phoneN(c.mobile);return '<div class="dv3-other"><button type="button" class="nm" data-dv3="editc" data-slot="others" data-key="'+attr(k)+'"'+(closed?' disabled':'')+'>'+h(c.name||'이름 미입력')+'</button><span>'+h(c.role||'담당자')+'</span><i></i>'+(tel?'<a href="tel:'+attr(tel)+'">'+h(root.phoneFmt(c.mobile))+'</a>':'<span class="empty">번호 없음</span>')+'</div>';}).join(''):'<p class="dv3-none">다른 연락처가 없습니다</p>';
   const slot=n=>'<div class="dv3-slot" data-slot="'+n+'"></div>';
   return '<section class="dv3-sec dv3-mgr">'+mgr+slot('mgr')+'</section>'
    +'<section class="dv3-sec"><header><b>같은 현장 다른 영업</b><span>'+rel.length+'건'+(rel.length?' · 누르면 그 건이 열림':'')+'</span></header>'+relHtml+'</section>'
-   +'<section class="dv3-sec"><header><b>현장 정보</b><i></i>'+(closed?'':'<small>누르면 바로 수정</small>')+'</header>'+fields+slot('site')+'</section>'
+   +'<section class="dv3-sec"><header><b>현장 정보</b><i></i>'+(closed&&!ciOk?'':'<small>누르면 바로 수정</small>')+'</header>'+fields+slot('site')+'</section>'
    +'<section class="dv3-sec"><header><b>자료</b><span>사진 '+fc.photos+' · 견적서 '+fc.quotes+' · 기타 '+fc.etc+'</span><i></i><button type="button" class="lnk" data-dv3="files">'+(SS.files?'접기':'자료 보기')+'</button></header>'+(SS.files?filesHtml(d,SS,closed):'')+slot('fform')+slot('files')+'</section>'
    +'<section class="dv3-sec"><header><b>다른 연락처</b><span>'+C.others.length+'명</span><i></i>'+(closed?'':'<button type="button" class="lnk" data-dv3="addc" data-slot="others">+ 추가</button>')+'</header>'+others+slot('others')+'</section>';
  }
@@ -520,11 +532,11 @@
    sum.querySelectorAll('dl>dt').forEach(dt=>{const dd=dt.nextElementSibling;if(!dd||dd.tagName!=='DD')return;const c=dd.cloneNode(true);c.querySelectorAll('button').forEach(b=>b.remove());const tx=c.textContent.trim();shown[dt.textContent.trim()]={text:/^(미입력|—|-|–)?$/.test(tx)?'':tx,fill:dd.querySelector('.da-fill')};});
    const p=root.currentPatch?root.currentPatch():{},cur=sc?(((d.stage_contexts||p.stage_contexts||{})[sc.code]||{}).fields||{}):{};
    const rows=sc?sc.fields.filter(f=>shown[f.label]&&!LEFT_LABELS.includes(f.label)):[];
-   const ok=canSF()&&!closed;let miss=0;
+   const ciOk=closed&&canCI(),ok=closed?ciOk:canSF();let miss=0;/* 종료 건: 글 · 선택 항목만 입력(준공일 · 수주금액 같은 날짜 · 금액 · 체크 항목은 그대로 읽기 전용) */
    const html=rows.map(f=>{
     const info=shown[f.label],special=f.key==='contact_date'||f.key==='last_contact',raw=cur[f.key];if(!info.text)miss++;
     let val;
-    if(closed)val='<b class="'+(info.text?'':'empty')+'">'+h(info.text||'미입력')+'</b>';
+    if(closed&&(!ciOk||special||!CI_KEYS.includes(f.key)||['multi','money','date','quote'].includes(f.type)))val='<b class="'+(info.text?'':'empty')+'">'+h(info.text||'미입력')+'</b>';
     else if(ok&&!special&&S.sedit===f.key){
      if(f.type==='select')val='<select class="dv3-in" data-dv3in="stage" data-key="'+f.key+'" aria-label="'+attr(f.label)+'"><option value="">선택</option>'+(f.options||[]).map(o=>'<option'+(String(raw??'')===o?' selected':'')+'>'+h(o)+'</option>').join('')+'</select>';
      else if(f.type==='multi'){const pick=Array.isArray(S.sdraft)?S.sdraft:[];val='<div class="dv3-multi">'+(f.options||[]).map(o=>'<button type="button" data-dv3="smulti" data-v="'+attr(o)+'" aria-pressed="'+pick.includes(o)+'">'+h(o)+'</button>').join('')+'<button type="button" class="done" data-dv3="smultidone" data-key="'+f.key+'">완료</button></div>';}
