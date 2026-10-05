@@ -285,7 +285,6 @@
    const t=form.querySelector('#sf-target'),def=t&&T.definitions[t.value];if(!def)return;const miss=[];
    if(!form.querySelector('#sf-date')?.value)miss.push('전환일');
    def.fields.forEach(f=>{if(!f.required)return;const empty=f.type==='multi'?!form.querySelector('[name="sf-'+f.key+'"]:checked'):!String(form.querySelector('#sf-'+f.key)?.value||'').trim();if(empty)miss.push(f.label);});
-   const skip=form.querySelector('#sf-skip');if(skip&&skip.value.trim().length<5)miss.push('건너뛰기 · 되돌림 사유');
    const nx=form.querySelector('.sf-next');if(nx&&nx.querySelector('label b')&&!form.querySelector('#sf-next')?.value&&!/비워 두면 위/.test(nx.textContent))miss.push('다음 할 일 날짜');
    {const rr=form.querySelector('#sf-relationship_reason'),rd=form.querySelector('#sf-relationship_reason_detail'),re=rd&&rd.closest('.sf-field');if(rr&&re)re.classList.toggle('dv3-need',rr.value==='기타');}
    const txt=miss.length?'필수 입력: '+miss.join(' · '):'옮기면 응대 이력에 단계 변경과 입력 내용이 함께 남습니다';
