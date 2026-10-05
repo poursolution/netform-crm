@@ -1,0 +1,64 @@
+/* 요청 업무(2026-10-05 design_handoff_request · 요청 업무 · 지사 확인.dc.html) — 요청 창 · 답 기다리는 중 · 받는 사람 오늘 업무 맨 위. 전역 규칙과 겹치지 않게 wrq- 접두사만 */
+/* 요청 창 */
+.wrq-shade{position:fixed;inset:0;background:rgba(17,24,39,.35);display:flex;align-items:flex-start;justify-content:center;padding-top:80px;z-index:1200}
+.wrq-dlg{width:460px;max-width:calc(100% - 32px);max-height:calc(100vh - 100px);overflow:auto;background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(17,24,39,.3);display:flex;flex-direction:column;color:#15171c;font-size:13px}
+.wrq-dlg>header{padding:14px 18px;border-bottom:1px solid #eef0f3;display:flex;align-items:center;gap:8px}.wrq-dlg>header b{font-size:15px}.wrq-dlg>header i{flex:1}
+.wrq-dlg .wrq-x{border:0;background:none;font:inherit;font-size:18px;color:#6b7280;cursor:pointer;min-height:0;padding:0 2px;box-shadow:none;width:auto}
+.wrq-form{padding:14px 18px;display:grid;grid-template-columns:72px minmax(0,1fr);gap:10px 12px;align-items:start}
+.wrq-form .k{color:#6b7280}.wrq-form>b{font-weight:700}
+.wrq-tags{display:flex;flex-wrap:wrap;gap:5px}.wrq-tags span{font-size:11.5px;color:#b42318;background:#fdecec;border-radius:999px;padding:2px 9px}
+.wrq-asks{display:flex;flex-direction:column;gap:6px}
+.wrq-dlg .wrq-asks button{border:0;background:none;padding:0;text-align:left;display:flex;align-items:center;gap:8px;font:inherit;font-size:13px;color:#15171c;cursor:pointer;min-height:0;box-shadow:none;width:auto}
+.wrq-asks button i{width:16px;height:16px;border-radius:4px;border:1.5px solid #c9cdd5;background:#fff;color:#fff;font-size:11px;font-weight:800;font-style:normal;display:flex;align-items:center;justify-content:center;flex:none;box-sizing:border-box}
+.wrq-asks button[aria-pressed="true"] i{border-color:#15171c;background:#15171c}
+.wrq-duebox{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.wrq-dues{display:flex;border:1px solid #e3e6ec;border-radius:7px;overflow:hidden;justify-self:start}
+.wrq-dlg .wrq-dues button{border:0;border-radius:0;background:#fff;color:#374151;font:inherit;font-size:12px;font-weight:700;padding:5px 11px;cursor:pointer;min-height:0;box-shadow:none;width:auto}
+.wrq-dlg .wrq-dues button[aria-pressed="true"]{background:#15171c;color:#fff}.wrq-dlg .wrq-dues button:disabled{color:#c9cdd5;cursor:default}
+.wrq-duebox input[type=date]{font:inherit;font-size:12.5px;border:1px solid #d9dde4;border-radius:7px;padding:4px 8px}
+.wrq-cond{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:#374151}.wrq-cond small{font-size:11px;color:#9ca3af}
+.wrq-memo{background:#f5f6f8;border-radius:8px;padding:8px 10px;font-size:12.5px;line-height:1.5}
+.wrq-memo em,.wrq-in .nx em{font-style:normal;font-size:10px;font-weight:700;color:#fff;background:#3b6ce4;border-radius:3px;padding:1px 4px;margin-right:4px}
+.wrq-err{margin:0;padding:0 18px 10px;font-size:12px;color:#b42318}
+.wrq-dlg>footer{padding:12px 18px;border-top:1px solid #eef0f3;display:flex;gap:8px;align-items:center}.wrq-dlg>footer span{flex:1;font-size:11.5px;color:#9ca3af}
+.wrq-dlg>footer button{border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:13px;font-weight:600;border-radius:8px;padding:8px 14px;cursor:pointer;min-height:0;box-shadow:none;width:auto}
+.wrq-dlg>footer button.go{border:0;background:#15171c;color:#fff;font-weight:700;padding:9px 16px}.wrq-dlg>footer button.go:disabled{background:#c9cdd5;cursor:default}
+/* 답 기다리는 중(오른쪽 열 맨 위 · 보낸 요청이 있을 때만) */
+.tv3-side>section.wrq-wait{padding:0;gap:0;overflow:hidden}
+.wrq-wait>header{padding:12px 16px;border-bottom:1px solid #eef0f3;display:flex;align-items:baseline;gap:8px}.wrq-wait>header b{font-size:14px}.wrq-wait>header span{font-size:12px;color:#6b7280}
+.wrq-w{padding:11px 16px;border-bottom:1px solid #f2f3f6;display:flex;flex-direction:column;gap:5px}
+.wrq-w .l1{display:flex;align-items:center;gap:6px}.wrq-w .l1>i{width:3px;height:14px;border-radius:2px;flex:none}.wrq-w .l1>b{flex:1;min-width:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wrq-pill{flex:none;font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px}.wrq-pill.amb{color:#8a5a00;background:#fff4d6}.wrq-pill.ok{color:#1f7a4d;background:#e8f6ee}.wrq-pill.bad{color:#b42318;background:#fdecec}
+.wrq-w .l2{font-size:12px;color:#374151}
+.wrq-w .l3{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#6b7280;flex-wrap:wrap}.wrq-w .l3>i{flex:1}
+.tv3 .wrq-w .l3 button{border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:11.5px;font-weight:700;border-radius:6px;padding:4px 9px;cursor:pointer;min-height:0;box-shadow:none;width:auto;white-space:nowrap}
+.wrq-w .rp{font-size:12px;border-radius:6px;padding:6px 9px;line-height:1.5}.wrq-w .rp.ok{color:#1f7a4d;background:#e8f6ee}.wrq-w .rp.amb{color:#8a5a00;background:#fffaf0}
+.wrq-w .nt{font-size:11.5px;font-weight:700;color:#b42318}
+.wrq-wait>.ft{margin:0;padding:9px 16px;font-size:11.5px;color:#9ca3af}
+/* 받는 사람 오늘 업무 맨 위: 관리자 요청 / 본사 확인 요청 */
+.wrq-top{background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.wrq-in{padding:14px 16px;border-bottom:1px solid #f2f3f6;display:flex;flex-direction:column;gap:10px;color:#15171c}.wrq-in:last-child{border-bottom:0}
+.wrq-in .hd{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.wrq-in .hd>em{font-style:normal;font-size:11px;font-weight:800;color:#fff;background:#d14a3f;border-radius:4px;padding:2px 7px}.wrq-in .hd>b{font-size:15px}
+.wrq-in .hd .late{font-size:12px;font-weight:700;color:#b42318}.wrq-in .hd>i{flex:1}.wrq-in .hd .by{font-size:12px;color:#6b7280}.wrq-in .hd .by.od{color:#b42318;font-weight:700}
+.wrq-in .memo{font-size:13px;background:#f5f6f8;border-radius:8px;padding:9px 11px;line-height:1.55}.wrq-in .memo span{color:#6b7280}
+.tv3 .wrq-in .call{align-self:flex-start;border:0;background:#15171c;color:#fff;font:inherit;font-size:13.5px;font-weight:700;border-radius:9px;padding:10px 18px;cursor:pointer;min-height:0;box-shadow:none;width:auto}.tv3 .wrq-in .call:disabled{background:#c9cdd5;cursor:default}
+.wrq-in .res,.wrq-in .chips{display:flex;flex-wrap:wrap;gap:5px;align-items:center}.wrq-in .res>span,.wrq-in .nx>span:first-child{width:64px;font-size:12px;font-weight:700;flex:none}
+.tv3 .wrq-in .res button,.tv3 .wrq-in .chips button{border:1px solid #d9dde4;background:#fff;color:#374151;font:inherit;font-size:12px;font-weight:600;border-radius:999px;padding:4px 11px;cursor:pointer;min-height:0;box-shadow:none;width:auto}
+.tv3 .wrq-in .chips button{font-size:12.5px;padding:6px 12px}
+.tv3 .wrq-in .res button[aria-pressed="true"],.tv3 .wrq-in .chips button[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}
+.wrq-in .nx{display:flex;align-items:center;gap:8px;font-size:12.5px}.wrq-in .nx .box{background:#f5f8ff;border:1px solid #dfe5f7;border-radius:8px;padding:6px 10px}
+.wrq-in .lb{font-size:12.5px}
+.wrq-in .own{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;align-items:center;font-size:12.5px}.wrq-in .own select{font:inherit;font-size:13px;border:1px solid #d9dde4;border-radius:8px;padding:7px 10px;background:#fff}
+.wrq-in .wrq-err{padding:0}
+.wrq-in .ft{display:flex;align-items:center;gap:10px}.wrq-in .ft>span{flex:1;font-size:11.5px;color:#9ca3af}
+.tv3 .wrq-in .ft .go{border:0;background:#15171c;color:#fff;font:inherit;font-size:13px;font-weight:700;border-radius:8px;padding:9px 18px;cursor:pointer;min-height:0;box-shadow:none;width:auto;white-space:nowrap}.tv3 .wrq-in .ft .go:disabled{background:#c9cdd5;cursor:default}
+/* 목록 줄: 버튼 칸 190px 고정(모든 줄 정렬) · 이유는 두 줄까지 */
+.tv3.wrq-on .ta-row{grid-template-columns:96px minmax(0,1.25fr) minmax(0,1.6fr) minmax(0,1.3fr) 64px 190px}
+.tv3.wrq-on .ta-row .ta-bt{gap:4px;flex-wrap:nowrap}
+.tv3.wrq-on .ta-row .ta-bt button{font-size:12px;padding:7px 7px;letter-spacing:-0.02em}.tv3.wrq-on .ta-row .ta-bt button.go{padding:7px 8px}
+/* 카드의 요청 버튼: 이름이 길어도 잘리지 않게 그 버튼만 넓게 */
+.tv3.wrq-on .tv3-card .btns button.main[data-wr]{flex:1.9 1 0;letter-spacing:-0.02em}
+.tv3.wrq-on .ta-row .ta-rc small{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.4}
+@media(max-width:1280px){.tv3.wrq-on .ta-row{grid-template-columns:84px minmax(0,1.2fr) minmax(0,1.4fr) minmax(0,1.2fr) 56px 190px}}
+@container tv3main (max-width:880px){.tv3.wrq-on .ta-row{grid-template-columns:76px minmax(0,1fr) minmax(0,1fr) 56px 190px}}
+@media(max-width:640px){.wrq-shade{padding-top:24px}.wrq-form{grid-template-columns:64px minmax(0,1fr)}.wrq-in .ft{flex-wrap:wrap}}

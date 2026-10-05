@@ -72,7 +72,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 6. 오른쪽: 사유별 묶음 — 제목에 사유 · 건수 · 걸린 금액 · 일괄 요청 1개 · 첫 묶음만 펼침 · 금액 큰 순 5건 */
   assert.equal(await w.locator('.rw-rh').innerText().then(s=>s.replace(/\s+/g,' ')),'지금 처리할 현장 13건 사유별로 묶음 · 금액 큰 순');
   const heads=()=>w.locator('.rw-gh').evaluateAll(l=>l.map(n=>[...n.children].filter(c=>!c.classList.contains('rw-sp')).map(c=>c.textContent)));
-  assert.deepEqual(await heads(),[['다음 할 일 없음','7건','진행 46.5억','다음 할 일 등록 요청','접기 ▴'],['다음 할 일 날짜 지남','2건','진행 10.4억 · 최장 30일','날짜 다시 잡기 요청','보기 ▾'],['신규 배정 · 첫 연락 전','3건','금액 미정','첫 연락 독촉','보기 ▾'],['30일 넘게 같은 단계','1건','진행 2억','진행 · 보류 정리 요청','보기 ▾']]);
+  assert.deepEqual(await heads(),[['다음 할 일 없음','7건','진행 46.5억','다음 할 일 등록 요청','접기 ▴'],['다음 할 일 날짜 지남','2건','진행 10.4억 · 최장 30일','날짜 다시 잡기 요청','보기 ▾'],['신규 배정 · 첫 연락 전','3건','금액 미정','첫 연락 요청','보기 ▾'],['30일 넘게 같은 단계','1건','진행 2억','진행 · 보류 정리 요청','보기 ▾']]);
   assert.deepEqual(await w.locator('.rw-gh').evaluateAll(l=>l.map(n=>getComputedStyle(n.children[1]).color)),['rgb(180, 35, 24)','rgb(180, 83, 9)','rgb(180, 35, 24)','rgb(180, 83, 9)']);
   assert.equal(await w.locator('.rw-gh').first().evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(250, 251, 252)');
   const rows=k=>w.locator('.rw-g[data-g="'+k+'"] .rw-row').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent)));
@@ -102,10 +102,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await w.locator('.rw-g[data-g="nonext"] .rw-bulk').evaluate(n=>[n.textContent,n.disabled]),['요청함',true]);
   assert.deepEqual(await page.evaluate(()=>__toasts.slice(-1)),['이필선 오늘 업무에 요청을 남겼습니다 · 다음 할 일 등록 요청']);
   await w.locator('.rw-g[data-g="first"] [data-rw="bulk"]').click();await page.waitForTimeout(250);
-  assert.match(await page.evaluate(()=>__writes.slice(-1)[0][1].comment),/\n· \[요청\] 다음 할 일 등록 요청 — [^\n]+\n· \[요청\] 첫 연락 독촉 — 신규 배정 · 첫 연락 전 3건$/);assert.equal(await page.evaluate(()=>__kpi.length),1);
+  assert.match(await page.evaluate(()=>__writes.slice(-1)[0][1].comment),/\n· \[요청\] 다음 할 일 등록 요청 — [^\n]+\n· \[요청\] 첫 연락 요청 — 신규 배정 · 첫 연락 전 3건$/);assert.equal(await page.evaluate(()=>__kpi.length),1);
   /* 코칭을 다시 저장해도 요청 줄은 남는다 */
   await co.locator('[data-rw="save"]').click();await page.waitForTimeout(250);
-  assert.match(await page.evaluate(()=>__writes.slice(-1)[0][1].comment),/^\[코칭 · 첫 응대\] [^\n]+\n· \[요청\] 다음 할 일 등록 요청 — [^\n]+\n· \[요청\] 첫 연락 독촉 — [^\n]+$/);
+  assert.match(await page.evaluate(()=>__writes.slice(-1)[0][1].comment),/^\[코칭 · 첫 응대\] [^\n]+\n· \[요청\] 다음 할 일 등록 요청 — [^\n]+\n· \[요청\] 첫 연락 요청 — [^\n]+$/);
   if(shot)await page.screenshot({path:shot+'-saved.png'});
   /* 9. 줄의 [열기] = 그 현장 상세(창은 닫힘) · 문의는 문의 상세 */
   await w.locator('.rw-g[data-g="overdue"] .rw-row a').first().click();await page.waitForTimeout(200);
@@ -132,7 +132,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.evaluate(()=>!!document.activeElement&&document.activeElement.matches('#repWindow.on [data-rw-f="promise"]')),true,'목록의 [코칭 약속] → 새 창의 약속 칸에 포커스');
   await page.keyboard.press('Escape');await page.waitForTimeout(150);
   /* 순수 함수: 코칭 줄 쓰고 읽기 */
-  assert.deepEqual(await page.evaluate(()=>[RepWindow.parse('[코칭 · 약속 미이행] 현재 양호 · 유지 (약속 기한 내 85% 유지)'),RepWindow.parse('금요일까지 첫 연락 완료\n· [KPI 요청] 다음 할 일 등록률 — 이필선'),RepWindow.parse('· [요청] 첫 연락 독촉 — 3건'),RepWindow.coachLine({l:'견적 지연',m:{l:'방문 후 3일 견적',u:'%',v:null,to:null}},'방문 후 3일 안에 견적 요청 등록')]),
+  assert.deepEqual(await page.evaluate(()=>[RepWindow.parse('[코칭 · 약속 미이행] 현재 양호 · 유지 (약속 기한 내 85% 유지)'),RepWindow.parse('금요일까지 첫 연락 완료\n· [KPI 요청] 다음 할 일 등록률 — 이필선'),RepWindow.parse('· [요청] 첫 연락 요청 — 3건'),RepWindow.coachLine({l:'견적 지연',m:{l:'방문 후 3일 견적',u:'%',v:null,to:null}},'방문 후 3일 안에 견적 요청 등록')]),
    [{topic:'약속 미이행',txt:'현재 양호 · 유지',m:{l:'약속 기한 내',from:85,u:'%',to:85}},{free:'금요일까지 첫 연락 완료'},null,'[코칭 · 견적 지연] 방문 후 3일 안에 견적 요청 등록']);
   /* 11. 끄기 → 예전 사람별 창 */
   await page.evaluate(()=>{G.repWindowOff=true;RepsV2.open('이필선');});await page.waitForTimeout(200);
