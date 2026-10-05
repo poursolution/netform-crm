@@ -94,6 +94,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 시안의 글자 크기 · 버튼 모양 */
   await page.evaluate(()=>PipelineWorkspace.open('consulting'));await page.waitForTimeout(300);
   const css=(sel,props)=>V.locator(sel).first().evaluate((n,props)=>{const s=getComputedStyle(n);return props.map(p=>s[p]);},props);
+  assert.equal(await V.evaluate(n=>getComputedStyle(n).fontFamily===getComputedStyle(document.body).fontFamily),true,'CRM 본문 글꼴 그대로');
   assert.deepEqual(await css('.ps3-head b',['fontSize']),['22px']);assert.deepEqual(await css('.ps3-head span',['fontSize','color']),['14px','rgb(75, 85, 99)']);
   assert.deepEqual(await css('.ps3-tab .n',['fontSize']),['24px']);assert.deepEqual(await css('.ps3-tab .l',['fontSize','whiteSpace','textOverflow']),['15px','nowrap','ellipsis']);assert.deepEqual(await css('.ps3-tab span',['fontSize','color']),['12.5px','rgb(107, 114, 128)']);
   assert.deepEqual(await css('.ps3-tab.on',['borderBottomWidth','borderBottomColor','backgroundColor']),['3px','rgb(59, 108, 228)','rgb(248, 250, 255)'],'선택 = 파란 밑줄 3px');

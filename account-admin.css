@@ -20,7 +20,7 @@
 .aa-status{grid-column:1/-1;margin:0;font-size:12px;color:#1e50b3;min-height:0}
 
 /* 직원 계정 관리 v2 (2026-10-05 design_handoff_accounts) — 가운데 창 · 최대 880px · aa2- 접두사만 쓴다 */
-dialog.aa2{box-sizing:border-box;position:fixed;inset:0;margin:auto;width:min(880px,calc(100vw - 48px));max-width:880px;height:fit-content;max-height:calc(100vh - 48px);padding:0;border:0;border-radius:16px;background:#fff;color:#15171c;box-shadow:0 20px 60px rgba(17,24,39,.25);overflow:hidden;font-family:Pretendard,system-ui,sans-serif;font-size:13px;line-height:1.4;text-align:left}
+dialog.aa2{box-sizing:border-box;position:fixed;inset:0;margin:auto;width:min(880px,calc(100vw - 48px));max-width:880px;height:fit-content;max-height:calc(100vh - 48px);padding:0;border:0;border-radius:16px;background:#fff;color:#15171c;box-shadow:0 20px 60px rgba(17,24,39,.25);overflow:hidden;font-family:inherit;font-size:13px;line-height:1.4;text-align:left}
 dialog.aa2[open]{display:flex;flex-direction:column}
 dialog.aa2::backdrop{background:rgba(17,24,39,.45)}
 dialog.aa2:focus,dialog.aa2:focus-visible{outline:0}
