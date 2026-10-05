@@ -42,13 +42,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const v=page.locator('#detailView.ddv.dv3');assert.equal(await v.count(),1,'정리된 상세');
   /* 2026-10-05 대표 "두 개 중복되는 것 같은데 오른쪽만 남겨 줘": 왼쪽에는 현장 정보가 없고, 오른쪽 '이 단계 필수 정보' 상자 하나 — 맨 위 공종 · 예상 금액, 그 아래 이 단계가 묻는 항목 */
   const L=v.locator('.dv3-left'),R=v.locator('.dw-right .da-stage-summary'),rows=()=>R.locator('.dv3-stage>.dv3-row>span:first-child').allInnerTexts();
-  assert.deepEqual(await L.locator('.dv3-sec>header b').allInnerTexts(),['같은 현장 다른 영업','담당 정보','자료','다른 연락처'],'왼쪽에 현장 정보 없음');
+  assert.deepEqual(await L.locator('.dv3-sec>header b').allInnerTexts(),['이 단지 영업 이력','담당 정보','자료','다른 연락처'],'왼쪽에 현장 정보 없음');
   assert.equal(await L.locator('.dv3-row').count(),0);assert.equal(await v.locator('.dv3-sec>header b',{hasText:'현장 정보'}).count(),0);
   const labels=await rows();assert.deepEqual(labels.slice(0,2),['공종','예상 금액'],'오른쪽 상자 맨 위 = 공종 · 예상 금액 '+JSON.stringify(labels));assert.equal(new Set(labels).size,labels.length,'같은 항목이 두 번 나오지 않는다');assert.ok(labels.length>2,'이 단계 항목이 이어진다');
   assert.match(await R.locator('h3').innerText(),/^이 단계 필수 정보(\s*미입력 \d+)?$/);
   assert.equal(await R.evaluate(n=>{const m=n.querySelector('.dv3-miss'),k=n.querySelectorAll('.dv3-stage .dv3-val.empty, .dv3-stage .dv3-row>b.empty').length;return m?Number(m.textContent.replace(/\D/g,''))===k:k===0;}),true,'미입력 수 = 빈 줄 수');
   /* 담당 정보: 접어 둔 채 · 머리줄에 지금 담당 이름 · 영업 이력 칸 아래 */
-  assert.deepEqual(await L.locator('.do-card').evaluate(n=>[[...n.querySelectorAll(':scope>header>*')].map(x=>x.textContent).filter(Boolean),n.querySelectorAll('.do-grid').length,n.previousElementSibling.querySelector('header b').textContent]),[['담당 정보','황윤선','펼치기'],0,'같은 현장 다른 영업']);
+  assert.deepEqual(await L.locator('.do-card').evaluate(n=>[[...n.querySelectorAll(':scope>header>*')].map(x=>x.textContent).filter(Boolean),n.querySelectorAll('.do-grid').length,n.previousElementSibling.querySelector('header b').textContent]),[['담당 정보','황윤선','펼치기'],0,'이 단지 영업 이력']);
   /* 공종: 오른쪽 그 줄 아래에서 고친다 */
   await R.locator('.dv3-row.core',{hasText:'공종'}).locator('.dv3-val').click();await page.waitForTimeout(500);
   assert.equal(await R.locator('.dv3-slot[data-slot="work"] .dv3-work').count(),1,'공종 입력 상자는 오른쪽 상자 안');await R.locator('[data-dv3="workcancel"]').click();await page.waitForTimeout(200);
@@ -61,7 +61,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    const inp=R.locator('[data-dv3in="stage"][data-key="'+key+'"]');const multi=R.locator('.dv3-multi');if(await inp.count()){if(await inp.evaluate(n=>n.tagName)==='SELECT'){await inp.selectOption({index:1});}else{await inp.fill('확인함');await inp.press('Enter');}}else{assert.equal(await multi.count(),1,'여러 개 고르는 항목');await multi.locator('button:not(.done)').first().click();await multi.locator('.done').click();}await page.waitForTimeout(500);
    assert.equal(await page.evaluate(()=>__sf.length),n0+1,'단계 항목 저장');}
   /* 종료 건(수주): 공종 · 예상 금액 · 글 항목은 오른쪽에서 입력, 준공일 · 수주금액은 읽기 전용 — 종료 건 전용 함수로 저장 */
-  await L.locator('.dv3-rel').first().click();await page.waitForTimeout(700);
+  await L.locator('.sth .sth-row.past.link .sth-l2').first().click();await page.waitForTimeout(700);
   assert.equal(await page.evaluate(()=>CUR_DETAIL.item.outcome),'won');
   {const k=await page.locator('#detailView .da-stage-summary .dv3-stage>.dv3-row').evaluateAll(l=>l.map(n=>[n.querySelector('span').textContent,n.querySelector('button.dv3-val')?'칸':'글']));
    assert.deepEqual(k,[['공종','칸'],['예상 금액','칸'],['확인된 준공일','글'],['준공 완료 확인','글'],['최종 수주금액(원)','글'],['이긴 이유','칸'],['경쟁사','칸'],['배운 점','칸']],'수주 건 오른쪽 상자 '+JSON.stringify(k));

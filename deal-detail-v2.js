@@ -29,7 +29,7 @@
    const k=[x.ttl,x.body,x.result,String(x.at||'').slice(0,16)].join('|');if(seen.has(k))return;seen.add(k);
    const ttl=String(x.ttl||''),label=NAMES[ttl]||(/^[a-z]+(?:_[a-z]+)+$/.test(ttl)?'업무 기록':ttl||'연락 결과');
    const text=[x.body,x.result].concat((x.fields||[]).map(f=>f.filter(Boolean).join(' · '))).filter(Boolean).map(say).join('\n');
-   const system=/^[a-z]+(?:_[a-z]+)+$/.test(ttl)||/단계|배정|변경|등록|완료/.test(label)&&!/전화|문자|방문/.test(label);
+   const system=/^[a-z]+(?:_[a-z]+)+$/.test(ttl)||/단계|배정|변경|등록|완료|이력 수정/.test(label)&&!/전화|문자|방문/.test(label);/* '이력 수정' = 이 단지 영업 이력을 고친 시스템 기록 */
    const kind=ttl==='견적문의 접수'&&x.body?'in':system?'sys':ttl==='메모'||/^\[지원/.test(String(x.body||''))?'memo':x.src==='auto'?'sys':'out';
    if(label==='진행상태 변경'){
     const lines=String(text||'').split('\n'),first=codeName(lines[0]||''),rest=lines.slice(1).join('\n'),day=String(x.at||'').slice(0,10);
