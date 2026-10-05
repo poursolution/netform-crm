@@ -128,13 +128,12 @@ test('server assignment truth wins over stale localStorage assignment patches', 
   assert.equal(api.inquiryAssigned(api.B.inquiries[0]), false);
 });
 
-test('assignment and reassignment are reflected immediately before the server refresh', () => {
-  const api = runtime();
-  const q = { id: 'optimistic', assigned_to: null, assignee_name: '', assignment_history: [], _assignmentServerTruth: { seen: true, assigned: false } };
-  api.inqCtlRecordAssignment(q, '김성민', '신규 배정');
-  assert.equal(api.inquiryRoutedOwner(q), '김성민');
-  api.inqCtlRecordAssignment(q, '정정훈', '담당 변경');
-  assert.equal(api.inquiryRoutedOwner(q), '정정훈');
+test('unconfirmed local assignment must not override canonical owner', () => {
+ const api = runtime();
+ const q = { id:'pending', assigned_to:null, assignee_name:'', _assignmentServerTruth:{seen:true,assigned:false} };
+ api.inqCtlRecordAssignment(q,'김성민','신규 배정');
+ assert.equal(api.inquiryRoutedOwner(q),'');
+ assert.equal(q._assignmentOptimistic,undefined);
 });
 
 test('duplicate inquiry pairs use the assigned row as the single operational representative', () => {
