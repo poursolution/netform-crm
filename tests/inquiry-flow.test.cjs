@@ -14,16 +14,17 @@ test('① 결과 마스터: 시도(부재 · 통화불가 · 번호오류)와 �
  assert.deepEqual([...F.RESULT.attempt],['부재','통화불가','번호오류']);assert.deepEqual([...F.RESULT.connected],['연결됨','고객 회신','검토중','자료요청','견적요청']);
  assert.deepEqual([...F.RESULTS],['연결됨','고객 회신','검토중','자료요청','견적요청','부재','통화불가','번호오류'],'화면 칩 = 마스터');
  for(const r of F.RESULT.attempt)assert.equal(F.kindOf(r),'attempt',r);for(const r of F.RESULT.connected)assert.equal(F.kindOf(r),'connected',r);
- assert.equal(F.kindOf('회신대기'),'wait','보냈지만 답이 없는 것 = 접촉 아님');assert.equal(F.kindOf('보류'),'connected');assert.equal(F.kindOf('아무말'),'');
+ assert.equal(F.kindOf('회신대기'),'attempt','보냈지만 답이 없는 것(문자 · 카카오) = 연락 시도 · 접촉은 아님(2026-10-05 design_handoff_inquiry_sms)');assert.equal(F.kindOf('보류'),'connected');assert.equal(F.kindOf('아무말'),'');
  assert.equal(JSON.stringify(F.readLine('[전화 · 부재] 두 번 걸었음')),JSON.stringify({ch:'전화',res:'부재',text:'두 번 걸었음'}));assert.equal(F.readLine('통화 결과: 연락 완료 → 다음 연락 2026.10.8(목)').res,'연락 완료');assert.equal(F.readLine('그냥 메모'),null);
  for(const r of F.RESULTS)assert.ok(F.NEXT[r],'다음 행동 제안 '+r);
 });
-test('① 최초응대 = 최초 접촉 시각. 부재만 있으면 시도 n회, 내부 메모 · 보낸 문자는 최초응대가 아니다',()=>{
+test('① 최초응대 = 최초 접촉 시각. 부재 · 보낸 문자는 시도 n회, 내부 메모 · 보낸 문자는 최초응대가 아니다',()=>{
  const F=load().InquiryFlow;
  const q={id:'a',status:'배정완료',activities:[{id:'1',type:'전화',note:'고객 응대 기록',result:'[전화 · 부재]',at:at(2)},{id:'2',type:'기타',note:'내부 메모',at:at(1.5)},{id:'3',type:'문자',note:'[문자 · 회신대기] 안내 문자',at:at(1)}]};
- let s=F.state(q);assert.equal(s.firstConnectedAt,'');assert.equal(s.firstAttemptAt,q.activities[0].at);assert.equal(s.attempts,1);assert.equal(F.attemptNote(q),'시도 1회');
+ let s=F.state(q);assert.equal(s.firstConnectedAt,'');assert.equal(s.firstAttemptAt,q.activities[0].at);assert.equal(s.attempts,2,'부재 1 + 보낸 문자 1');assert.equal(F.attemptNote(q),'시도 2회');
+ {const only={id:'m',status:'배정완료',activities:[{id:'1',type:'문자',note:'[문자 · 회신대기] 안내 문자',at:at(1)}]},v=F.state(only);assert.equal(v.firstConnectedAt,'','문자만 보낸 문의 = 최초 응대 없음');assert.equal(v.firstAttemptAt,only.activities[0].at,'보낸 문자 = 최초 시도');assert.equal(v.attempts,1);}
  q.activities.push({id:'4',type:'전화',note:'고객 응대 기록',result:'[전화 · 연결됨] 통화함',at:at(0.5)});s=F.state(q);
- assert.equal(s.firstConnectedAt,q.activities[3].at,'접촉한 그때가 최초응대');assert.equal(s.attempts,1,'접촉 전 시도 수는 남는다');assert.equal(F.attemptNote(q),'','접촉 뒤에는 시도 표시를 붙이지 않는다');
+ assert.equal(s.firstConnectedAt,q.activities[3].at,'접촉한 그때가 최초응대');assert.equal(s.attempts,2,'접촉 전 시도 수는 남는다(부재 1 + 보낸 문자 1)');assert.equal(F.attemptNote(q),'','접촉 뒤에는 시도 표시를 붙이지 않는다');
  /* 예전 최초응대 시각: 그 시각의 기록이 부재면 시도로 옮겨 본다 · 근거가 없으면 그대로 접촉 */
  const old={id:'b',status:'전화응대 완료',first_response_at:at(3),activities:[{id:'9',type:'단계전환',note:'고객 응대 기록',result:'[전화 · 부재] 안 받음',at:at(3)}]};
  assert.equal(F.state(old).firstConnectedAt,'');assert.equal(F.state(old).firstAttemptAt,old.first_response_at);
@@ -68,7 +69,7 @@ test('서버: 곁표는 잠겨 있고 명령 함수 하나로만 쓴다 · 최�
  assert.match(body,/create or replace function public\.crm_inquiry_command_v1\(p jsonb\)[\s\S]*?security definer set search_path=''/);
  assert.match(body,/if a\.permission_role<>'admin' and \(q\.assigned_to is null or q\.assigned_to<>a\.user_id\) then/,'관리자 또는 담당자만');
  assert.match(body,/v_type not in \('contact_log','close','quote_send','visit','schedule_set','field_set'\)/,'명령 종류');
- assert.match(body,/when p_result in \('부재','통화불가','번호오류'\) then 'attempt'\s*when p_result in \('연결됨','고객 회신','검토중','자료요청','견적요청'\) then 'connected'/,'화면과 같은 결과 마스터');
+ assert.match(body,/when p_result in \('부재','통화불가','번호오류','회신대기'\) then 'attempt'\s*when p_result in \('연결됨','고객 회신','검토중','자료요청','견적요청'\) then 'connected'/,'화면과 같은 결과 마스터(회신대기 = 시도)');
  assert.match(body,/first_attempt_at=coalesce\(x\.first_attempt_at,v_occ\)/,'최초 시도 시각은 한 번만');assert.match(body,/first_connected_at=coalesce\(x\.first_connected_at,v_occ\)/,'최초 접촉 시각은 한 번만');
  assert.match(body,/if v_reason is null or length\(v_reason\)>60 then raise exception 'Bad Fit 사유를 골라 주세요'/,'Bad Fit 사유 필수(목록은 운영 기준)');assert.match(body,/if v_reason='기타' and v_detail is null then raise exception '기타 사유를 적어 주세요'/);assert.match(body,/v_reason not in \('계획 없음','단순 문의','타사 선택'\)/,'상담종결 사유');
  assert.match(body,/v_reason:='시도 '\|\|v_attempts\|\|'회'; v_status:='연락두절'/,'연락두절 사유 = 시도 횟수 자동');
@@ -99,7 +100,7 @@ test('② 종결 4종: 종류는 한곳에서 읽는다 — 다른 업체 선택
  F.take({inquiry_id:'s1',close_kind:'consult_end',close_reason:'단순 문의'});assert.equal(k({id:'s1',status:'종결'}),'consult_end|단순 문의','서버 종결 종류가 먼저');
  const bb=read('brief-b.js');assert.match(bb,/let m=\/Bad Fit · \(\[\^—·\]\+\)\/\.exec\(r\);if\(m\)return m\[1\]\.trim\(\);/);assert.match(bb,/if\(\/\^연락두절 ·\/\.test\(r\)\)return '연락두절';m=\/상담종결 · \(\[\^—·\]\+\)\/\.exec\(r\);if\(m\)return '상담종결 · '\+m\[1\]\.trim\(\);/,'브리핑 · 대시보드의 사유 읽기도 종류대로');
 });
-test('② ③ 화면: [배드핏] 칩 = 종결 창(다음 할 일을 만들지 않는다) · 문자 직접 발송 화면 없음',()=>{
+test('② ③ 화면: [배드핏] 칩 = 종결 창(다음 할 일을 만들지 않는다) · 문자 = 1:1 보내기(가운데 칸) · 연락 시도로 기록 · CRM 발송 큐는 꺼 둠',()=>{
  const html=read('crm.html'),dv=read('inquiry-detail-v2.js'),l3=read('inquiry-list-v3.js'),fl=read('inquiry-flow.js');
  has(html,/if\(window\.InquiryFlow&&InquiryFlow\.on\(\)\)\{var first=InquiryFlow\.state\(q\)\.unreachable\?'unreachable':'bad_fit',opts=\[\['bad_fit',/,'종결 창 = 4종(연락두절 제안이면 연락두절이 먼저)');
  has(html,/return InquiryCommand\.run\('close',q,\{kind:type,reason:cat,detail:reason\}\)\.then\(/,'종결 저장 = 명령 하나');
@@ -110,7 +111,10 @@ test('② ③ 화면: [배드핏] 칩 = 종결 창(다음 할 일을 만들지 �
  /* ③ */
  assert.match(dv,/\(FL\(\)\?\[\['call','응대 기록'\],\['memo','내부 메모'\]\]:\[\['call','응대 기록'\],\['sms','문자'\],\['memo','내부 메모'\]\]\)/,'상세 문자 탭 없음');
  assert.match(dv,/const crmSendable=digits=>!!\(root\.G\.inqSmsQueueOn&&root\.SB&&/,'CRM 직접 발송 큐 = 꺼 둔 플래그(서버 코드는 그대로)');
- assert.match(dv,/if\(k==='ch'\)\{s\.ch=v;if\(FL\(\)&&v==='문자'\)\{s\.tab='sms';/,'수단 문자 = 문자 작은 창');assert.match(dv,/root\.InquiryCommand\.run\('contact_log',q,\{ch:'문자',result:'회신대기',text,next:'회신 확인',due:due3\}\)/,'보낸 문자 = 응대 기록');
+ assert.match(dv,/if\(k==='ch'\)\{s\.ch=v;if\(FL\(\)&&v==='문자'\)\{if\(document\.getElementById\('inq-inbox-dialog'\)\?\.classList\.contains\('idv3'\)\)\{s\.smsOpen=true;/,'수단 문자 = 가운데 칸 문자 보내기');assert.match(dv,/root\.InquiryCommand\.run\('contact_log',q,\{ch:'문자',result:'회신대기',text,next:'회신 확인',due:due3\}\)/,'예전 틀의 보낸 문자 = 응대 기록');
+ assert.match(dv,/if\(s\.smsOpen&&!closedStatus\(q\)\)return smsPanel4\(q,s\);/,'[문자] → 가운데 칸(응대 이력 자리)이 문자 보내기로');assert.match(dv,/root\.InquiryCommand\.run\('contact_log',q,\{ch,result:'회신대기',text:title\+' '\+ch\+' 발송 — '\+text,next:title\+' 회신 확인 전화',due\}\)/,'보내면 회신대기(연락 시도) + 다음 확인일');
+ assert.match(dv,/class="idv3-callrow"><button type="button" class="idv3-call" data-idv="dial"/,'전화 옆 [문자]');assert.match(read('inquiry-detail-v3.css'),/\.idv3-callrow\{display:grid;grid-template-columns:minmax\(0,1\.7fr\) minmax\(0,1fr\);gap:6px\}/,'전화 : 문자 = 1.7 : 1');
+ assert.match(read('sql/inquiry-flow-v1-20261005.sql'),/when p_result in \('부재','통화불가','번호오류','회신대기'\) then 'attempt'/,'서버도 회신대기 = 시도');
  assert.match(l3,/\(F\(\)\?'':'<button type="button" data-il="sms" data-key="'\+k\+'">문자<\/button>'\)/,'목록 문자 버튼 없음');
  for(const f of ['today-tower.js','today-v3.js','today-rep-v2.js'])assert.ok(read(f).includes('root.InquiryDetailV2.openSms()'),f+' 의 [문자] = 문의면 상세의 문자 작은 창');
 });

@@ -4,7 +4,7 @@
    ⑥ 대표회의와 자료 회신 기한은 다른 값 — D-3 탭은 대표회의만
    ⑦ 전화 응대자: 입력 → 새로 고침(서버에서 다시 읽음) → 다시 열었을 때 표시
    ② 종결 4종 — 사유 필수 · 고르는 즉시 종결 · '배드핏 종결 검토' 다음 할 일 없음 · 다른 업체 선택 = 상담종결
-   ③ 문자 직접 발송 화면 없음 — 남는 것은 응대 기록의 수단 문자(문자 작은 창 → 기록)
+   ③ 문자 = 1:1 문자 보내기(가운데 칸 · design_handoff_inquiry_sms) → 응대 기록 '문자 · 회신대기'(연락 시도). CRM 발송 큐 · 목록 문자 버튼 · 문자 탭은 없음
    ④ 전환 = 1차 현장방문 완료 또는 견적 발송 완료 중 먼저('예정'은 전환 아님) — 상세 문구 · 전환 대기 목록 · 전송 계층이 같은 기준
    ⑤ 견적 = 버전(금액은 원 · 다음 할 일 문장에 금액 없음) · 보내면 후속 할 일 = 보낸 날 + 7일 '고객 반응 확인'
    서버는 흉내(저장 명령 · 읽기 함수가 같은 모양으로 응답). 끄면(G.inqFlowOff) 예전 판정 */
@@ -165,14 +165,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await modal.locator('#inq-close-type').selectOption('transfer');await page.waitForTimeout(150);assert.deepEqual(await modal.locator('#inq-close-kind option').allInnerTexts(),['이관처를 골라 주세요','POUR스토어','B2B 협약']);assert.equal(await modal.locator('#inq-ctl-confirm').innerText(),'이관 처리로');
   await modal.locator('#inq-close-kind').selectOption('B2B 협약');await modal.locator('#inq-ctl-confirm').click();await page.waitForTimeout(200);assert.match(await modal.locator('#inq-ctl-error').innerText(),/공종이 협약인 문의만/,'다른 문의를 협약으로 바꾸지 않는다');
   await modal.locator('#inq-close-kind').selectOption('POUR스토어');await modal.locator('#inq-ctl-confirm').click();await page.waitForTimeout(250);assert.equal(await page.locator('#inquiryControlTitle').innerText(),'POUR스토어 이관','스토어 이관 = 기존 이관 창');await page.evaluate(()=>closeInquiryControlModal());
-  /* ── ③ 문자 직접 발송 화면 없음 · 수단 문자 = 문자 작은 창 → 기록 ── */
+  /* ── ③ 문자 탭 · CRM 발송 큐 없음 · 수단 문자 = 가운데 칸 문자 보내기 → 기록(회신대기 = 연락 시도) ── */
   await page.evaluate(()=>{__rpc.length=0;__writes.length=0;InquiryWorkbench.open(X);});await page.waitForTimeout(400);
   assert.deepEqual(await dd.locator('.idv3-tabs [role=tab]').allInnerTexts(),['응대 기록','내부 메모'],'상세 문자 탭 없음');
   await dd.locator('.idv3-rc',{hasText:/^연결됨$/}).click();await page.waitForTimeout(150);await dd.locator('[data-idv="edit-sug"]').click();await page.waitForTimeout(150);
   await dd.locator('.idv-sugedit .idv-chip[data-idv="ch"][data-v="문자"]').click();await page.waitForTimeout(250);
-  assert.equal(await dd.locator('.ds2.iq-ds2 [data-idv="smstext"]').count(),1,'수단 문자 = 문자 작은 창');assert.equal(await dd.locator('[data-idv="sms-crm"]').count(),0,'CRM 직접 발송 버튼 없음');
-  assert.deepEqual(await dd.locator('.ds2-ft button').evaluateAll(l=>l.map(n=>n.dataset.idv)),['sms-copy','sms-send']);
-  await dd.locator('.ds2-ft [data-idv="sms-send"]').click();await page.waitForTimeout(600);
+  assert.equal(await dd.locator('.idv3-smswrap .ds2.iq-ds2 [data-idv="smstext"]').count(),1,'수단 문자 = 가운데 칸 문자 보내기');assert.equal(await dd.locator('[data-idv="sms-crm"]').count(),0,'CRM 직접 발송 버튼 없음');
+  assert.deepEqual(await dd.locator('.ds2-ft button').evaluateAll(l=>l.map(n=>n.dataset.idv)),['sms-back','sms-copy','sms-go']);
+  await dd.locator('.ds2-ft [data-idv="sms-go"]').click();await page.waitForTimeout(600);
   assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_command_v1').map(x=>[x[1].type,x[1].channel,x[1].result])),[['contact_log','문자','회신대기']],'보낸 문자 = 응대 기록(수단 문자 · 회신대기)');
   assert.equal(await page.evaluate(()=>__rpc.filter(x=>/sms_request|sms_list/.test(x[0])).length),0,'문자 발송 큐 함수는 부르지 않는다');assert.equal(await dd.locator('.idv3-res').count(),1,'기록하면 응대 기록 칸으로 돌아온다');
   await page.evaluate(()=>InquiryWorkbench.close());await page.waitForTimeout(200);

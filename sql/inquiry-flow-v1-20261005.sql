@@ -106,13 +106,12 @@ alter table crm_security.inquiry_quote_versions enable row level security;
 alter table crm_security.schedules enable row level security;
 revoke all on crm_security.inquiry_flow_state, crm_security.inquiry_contact_logs, crm_security.inquiry_quote_versions, crm_security.schedules from public, anon, authenticated;
 
--- 결과 → 종류(시도 · 접촉 · 대기). 화면(inquiry-flow.js)의 결과 마스터와 같은 목록. 마스터 밖의 예전 값: 회신대기 = 보냈지만 답이 없는 것(접촉 아님 · 시도 횟수에도 안 넣음), 그 밖 = 대화가 있었던 것
+-- 결과 → 종류(시도 · 접촉 · 대기). 화면(inquiry-flow.js)의 결과 마스터와 같은 목록. 회신대기 = 보냈지만 답이 없는 것(문자 · 카카오) — 연락 시도로 센다(접촉 · 최초 응대 아님 · 2026-10-05 design_handoff_inquiry_sms), 마스터 밖의 그 밖 예전 값 = 대화가 있었던 것
 create or replace function crm_security.inquiry_contact_kind(p_result text)
 returns text language sql immutable set search_path='' as $fn$
  select case
-  when p_result in ('부재','통화불가','번호오류') then 'attempt'
+  when p_result in ('부재','통화불가','번호오류','회신대기') then 'attempt'
   when p_result in ('연결됨','고객 회신','검토중','자료요청','견적요청') then 'connected'
-  when p_result in ('회신대기') then 'wait'
   when p_result in ('보류','거절','연락 완료','대표회의 예정','재견적 요청','경쟁사 비교','계약 검토') then 'connected'
   else null end
 $fn$;
