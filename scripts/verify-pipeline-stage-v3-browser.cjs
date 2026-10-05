@@ -125,7 +125,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await V.locator('.ps3-views button',{hasText:'보드'}).click();await page.waitForTimeout(250);
   assert.deepEqual((await V.locator('.ps3-col .ch').allInnerTexts()).map(one),['미팅 전 · 일정 없음 1','미팅 예정 1','미팅 완료 · 견적 준비 2']);
   assert.deepEqual(await V.locator('.ps3-col').evaluateAll(l=>l.map(c=>c.querySelectorAll('.ps3-card').length)),[1,1,2]);
-  assert.match(one(await V.locator('.ps3-card').first().innerText()),/^석민이앤씨 35일 일정 없는 컨설팅 이필선 · 2억 · 일정 없음 미팅 잡기$/);
+  /* 카드: 막힌 이유 · 다음 행동이 항상 보인다(마우스를 올리지 않아도) + 공종 · 영업건 번호(2026-10-05 정합성 ③ ④) */
+  assert.match(one(await V.locator('.ps3-card').first().innerText()),/^석민이앤씨 #cnone 35일 일정 없는 컨설팅 공종 미분류 · 이필선 · 2억 확인 필요 · 미팅 일정 없음 다음 행동 없음 미팅 잡기$/);
   assert.deepEqual(await V.locator('.ps3-col').first().evaluate(n=>{const s=getComputedStyle(n),c=getComputedStyle(n.querySelector('.ps3-card button')),d=getComputedStyle(n.querySelector('.ch .c'));return [s.backgroundColor,s.borderTopLeftRadius,c.backgroundColor,c.color,c.fontSize,d.color];}),['rgb(238, 240, 244)','12px','rgb(245, 248, 255)','rgb(29, 63, 153)','12.5px','rgb(180, 35, 24)']);
   if(shot)await page.screenshot({path:shot.replace(/\.png$/,'-board.png')});
   await V.locator('.ps3-views button',{hasText:'리스트'}).click();await page.waitForTimeout(200);

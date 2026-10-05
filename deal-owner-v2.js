@@ -17,7 +17,7 @@
  const host=()=>{const s=sel(),a=document.getElementById('detailAction');return s&&a&&a.contains(s)?a:null;};
  const DO=()=>R.DealOwner&&R.DealOwner.enabled&&R.DealOwner.enabled()?R.DealOwner:null;
  const region=d=>{const m=/^\s*\[([^\]]+)\]/.exec(String(d&&d.site||''));if(!m)return '';const t=m[1].trim().split(/\s+/);return t[t.length-1]||'';};
- const active=d=>{try{return R.isOpen(d);}catch(e){return true;}};
+ const active=d=>{try{return (R.isActiveDeal||R.isOpen)(d);}catch(e){return true;}};
  /* 사람별 진행 건수 · 업무량: 영업사원 관리와 같은 계산 */
  function loads(){
   const m=new Map();

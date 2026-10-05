@@ -3,14 +3,15 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const js=fs.readFileSync(path.join(__dirname,'..','pipeline-workspace.js'),'utf8');
 test('메뉴 숫자·상단 띠·단계 지표가 같은 진행 판정을 쓴다',()=>{
- assert.match(js,/function liveRow\(r\)\{return !\['won','lost','expansion'\]\.includes\(r\.group\);\}/);
+ /* 진행 = 수주 · 실주 · 확장 · 과거 이관(분류 전)을 뺀 것(2026-10-05 정합성 ② ③ — 진행 범위는 PipelineScope 하나) */
+ assert.match(js,/function liveRow\(r\)\{return !\['won','lost','expansion','legacy'\]\.includes\(r\.group\);\}/);
  assert.match(js,/const live=data\.filter\(liveRow\)\.length;/);
  assert.match(js,/const live=all\.filter\(liveRow\),amount=/,'칸반 머리 요약');
  assert.match(js,/const active=list\.filter\(liveRow\)/);
  assert.doesNotMatch(js,/filter\(r=>!\['won','lost'\]\.includes\(r\.group\)\)/,'확장 기회를 더하는 옛 판정');
 });
 test('숫자에 기준 설명이 붙는다',()=>{
- assert.match(js,/badge\.title='기준: 진행 중 영업건/);
+ assert.match(js,/badge\.title=PS\(\)\?PS\(\)\.basis\(\)\+' · 모든 연도':'기준: 진행 중 영업건/);
  assert.match(js,/function liveBasis\(\)/);
  const html=fs.readFileSync(path.join(__dirname,'..','crm.html'),'utf8');
  assert.match(html,/inqBadge'\)\.title='기준: 미배정 문의/);

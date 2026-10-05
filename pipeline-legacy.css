@@ -1,0 +1,35 @@
+/* 과거 이관 · 분류 전 목록(pipeline-legacy.js) — 파이프라인 단계 목록(ps3)과 같은 결. 글꼴은 본문 그대로 */
+.plg{display:flex;flex-direction:column;gap:12px;font-family:inherit;color:#15171c}
+.plg-head{display:flex;align-items:baseline;gap:10px}
+.plg-head b{font-size:22px;letter-spacing:-.02em}
+.plg-head span{font-size:14px;color:#6b7280}
+.plg-note{margin:0;font-size:13px;line-height:1.6;color:#374151;background:#f8f9fb;border:1px solid #e8eaef;border-radius:10px;padding:11px 14px}
+.plg-tabs{display:flex;flex-wrap:wrap;gap:6px}
+#pipeline-legacy .plg-tabs button{border:1px solid #e3e6ec;background:#fff;color:#374151;font:inherit;font-size:13px;font-weight:600;border-radius:999px;padding:6px 12px;margin:0;height:auto;box-shadow:none;cursor:pointer}
+#pipeline-legacy .plg-tabs button b{font-weight:700;color:#9aa0ab;margin-left:2px}
+#pipeline-legacy .plg-tabs button[aria-selected="true"]{border-color:#15171c;background:#15171c;color:#fff}
+#pipeline-legacy .plg-tabs button[aria-selected="true"] b{color:#fff}
+.plg-list{background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden}
+.plg-row{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:13px 18px;border-bottom:1px solid #f2f3f6;cursor:pointer}
+.plg-row:hover{background:#f8f9fb}
+.plg-row:focus-visible{outline:2px solid #91b5ff;outline-offset:-2px}
+.plg-a{flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:3px}
+.plg-a b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plg-a span{font-size:12.5px;color:#6b7280}
+.plg-b{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:0}
+.plg-b em{font-style:normal;font-size:12px;font-weight:700;color:#1f7a4d;background:#e9f7ef;border-radius:6px;padding:2px 8px}
+.plg-b small{font-size:12px;color:#8a5a00}
+#pipeline-legacy .plg-row button{flex:none;width:96px;border:1px solid #d5e0fb;background:#f5f8ff;color:#2a52b8;font:inherit;font-size:13px;font-weight:600;border-radius:8px;padding:7px 0;margin:0;height:auto;line-height:1.3;box-shadow:none;cursor:pointer}
+#pipeline-legacy .plg-row button:hover{border-color:#b9cbf8}
+#pipeline-legacy .plg-row button:disabled{border-color:#e3e6ec;background:#f5f6f8;color:#9aa0ab;cursor:not-allowed}
+.plg-empty{padding:28px 18px;text-align:center;font-size:13px;color:#9ca3af}
+.plg .lpg{padding:12px 18px}
+/* 사이드 메뉴 · 전체 파이프라인 머리의 '과거 이관 · 분류 전' — 진행 숫자와 떨어뜨려 옅게 */
+#pipeline-stage-menu .plv-legacy{margin-top:6px;border-top:1px dashed #e3e6ec;padding-top:8px;color:#6b7280}
+.pk-head .pk-legacy{border:1px dashed #d9dde4;background:#fff;color:#6b7280;font:inherit;font-size:12.5px;font-weight:600;border-radius:8px;padding:5px 10px;margin:0 0 0 10px;height:auto;box-shadow:none;cursor:pointer;white-space:nowrap}
+.pk-head .pk-legacy b{color:#15171c}
+.pk-head .pk-legacy:hover{border-color:#9aa0ab}
+/* 상세 창: 과거 이관 건은 진행 단계 띠(지금 · 접촉 …)를 보이지 않는다 — 아직 어느 단계도 아니다 */
+#detailView.dv3.dv3-legacy .ddv-steps{display:none}
+/* 수주실적 = 낙찰금액 · VAT 별도(이름 옆 기준 글자) */
+.tf-perf b small{font-size:11.5px;font-weight:500;color:#9ca3af;margin-left:4px}

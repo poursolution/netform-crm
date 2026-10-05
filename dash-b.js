@@ -110,6 +110,8 @@
   return '<div class="db-tool">'+LINKS[page].map(l=>'<button type="button" class="db-link" data-db="go" data-v="'+l[1]+'">'+l[0]+' ↗</button>').join('')+'<span class="db-basis">'+h(P.label+' 접수 · 계약실적 / 파이프라인 · 조치 필요는 현재 기준')+'</span><i class="db-sp"></i><select class="db-year" data-db="year" aria-label="연도">'+[...years].sort().reverse().map(y=>'<option value="'+y+'"'+(String(P.y)===y?' selected':'')+'>'+y+'년</option>').join('')+'</select><div class="db-seg" role="group" aria-label="기간">'+[[0,'연간'],[1,'1분기'],[2,'2분기'],[3,'3분기'],[4,'4분기']].map(([v,t])=>'<button type="button" data-db="quarter" data-v="'+v+'" aria-pressed="'+(P.q===v)+'">'+t+'</button>').join('')+'</div><span class="db-live"><i></i>LIVE '+live+'</span></div>';
  }
 
+ /* 진행 건수 옆의 기준 한 줄: 진행 범위는 PipelineScope 하나 — 과거 이관 · 분류 전은 빼고 건수만 따로 적는다(2026-10-05 정합성 ②) */
+ function scopeSub(n){const P=root.PipelineScope;if(!P||!P.on())return '진행 '+n+'건';let lg=0;try{lg=P.split().legacy.length;}catch(e){}return '진행 '+n+'건 · 수주 · 실주'+(lg?' · 과거 이관 '+lg+'건':'')+' 제외';}
  /* ── 1. 전체 현황 ── */
  function dash(C){
   const S=st(),N=nearList(C),PP=people(C),{B,P,L,active,risk,cnt,q,bad,fit,con,made,A,names}=C;
@@ -119,12 +121,12 @@
   const tfm=C.DT?C.DT.wonIn(ms,mk(P.ty,P.tm+1),C.target):{count:0,amount:0},ptm=C.DW?C.DW.partnerIn(ms,mk(P.ty,P.tm+1),C.target):{count:0,amount:0},k1=val(L.ready,cm.net+ptm.amount+tfm.amount,won(cm.net+ptm.amount+tfm.amount)),k2=val(L.ready,C.perf,won(C.perf)),k3=val(true,exp,won(exp));
   const cards=[
    ['이번 달 계약 ('+P.tm+'월)',k1[0],k1[1],P.tm+'월 '+P.td+'일째'+(cm.count+ptm.count>0?' · 계약 '+(cm.count+ptm.count)+'건':'')+' · '+(pmD.getMonth()+1)+'월 '+(pm.net>0?won(pm.net):'없음'),P.y===P.ty?'cs-month':'',P.tm],
-   [P.thisYear?'올해 수주실적':P.label+' 수주실적',k2[0],k2[1],'직접 수주 '+(con.net>0?won(con.net):'없음')+'('+con.count+'건) · 협약 · 기술자문 '+(C.pt.amount>0?won(C.pt.amount)+'('+C.pt.count+'건)':'없음')+' · 타사 이관 '+(C.tf.amount>0?won(C.tf.amount)+'('+C.tf.count+'건)':'없음')+(adv&&adv.n&&!adv.merged?' · 기술자문 낙찰 '+won(adv.sum)+' 별도':''),'ev','contract'],
-   ['진행 중 파이프라인',k3[0],k3[1],'진행 '+active.length+'건','ev','active'],
+   [P.thisYear?'올해 수주실적':P.label+' 수주실적',k2[0],k2[1],'낙찰금액 · VAT 별도 = 계약실적(계약 체결일) '+(con.net>0?won(con.net):'없음')+'('+con.count+'건) · 협약 · 기술자문 '+(C.pt.amount>0?won(C.pt.amount)+'('+C.pt.count+'건)':'없음')+' · 타사 이관 '+(C.tf.amount>0?won(C.tf.amount)+'('+C.tf.count+'건)':'없음')+(adv&&adv.n&&!adv.merged?' · 기술자문 낙찰 '+won(adv.sum)+' 별도':''),'ev','contract'],
+   ['진행 중 파이프라인',k3[0],k3[1],scopeSub(active.length),'ev','active',root.PipelineScope&&root.PipelineScope.on()?root.PipelineScope.basis():''],
    ['견적문의',q.length+'건','','적합 '+fit+' · '+B.closedText(bad,'n'),'ev','inquiries'],
    ['조치 필요',risk.length+'건',risk.length?'red':'','기한 지남 '+cnt('overdue')+' · 다음 할 일 없음 '+cnt('missing'),'go','control'],
    ['주간 활동',wkA.length+'건',zero?'red':'','이번 주 · '+names.length+'명 중 '+zero+'명 0건','ev','activity']];
-  const kpis='<div class="db-kpis">'+cards.map(c=>'<button type="button" class="db-kpi"'+(c[4]?' data-db="'+c[4]+'" data-v="'+attr(c[5])+'"':' disabled')+'><span>'+h(c[0])+'</span><div><b class="'+c[2]+'">'+h(c[1])+'</b><small>'+h(c[3])+'</small></div></button>').join('')+'</div>';
+  const kpis='<div class="db-kpis">'+cards.map(c=>'<button type="button" class="db-kpi"'+(c[4]?' data-db="'+c[4]+'" data-v="'+attr(c[5])+'"':' disabled')+(c[6]?' title="'+attr(c[6])+'"':'')+'><span>'+h(c[0])+'</span><div><b class="'+c[2]+'">'+h(c[1])+'</b><small>'+h(c[3])+'</small></div></button>').join('')+'</div>';
   /* '오늘 먼저 볼 것' 검은 띠는 뺐다(2026-10-04 대표) — 같은 숫자가 위 카드에 있고, 계약 임박은 파이프라인 탭에서 본다 */
   const secs=[['perf','성과','문의 → 계약 · 추이 · 브랜드'],['people','사람','담당자별 · 이번 주 기록'],['pipe','파이프라인','단계 · 계약 임박'],['act','활동','최근 기록']];
   const tabs='<div class="db-secs" role="tablist">'+secs.map(t=>'<button type="button" role="tab" aria-selected="'+(S.sec===t[0])+'" data-db="sec" data-v="'+t[0]+'">'+t[1]+'<span>'+t[2]+'</span></button>').join('')+'</div>';

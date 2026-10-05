@@ -34,7 +34,9 @@
    return {key:'deal:'+root.dealKey(d),type:'deal',item:d,site:d.site||'현장명 미입력',owner:root.repN(d.assignee),brand:d.brand||'',created:d.created,active:root.towerActive(d)&&root.outcomeOf(d)==='open',won:root.isWon(d),wonAt:root.wonDate(d),wonAmount:root.hasWonAmt(d)?root.wonAmt(d):0,hasWonAmount:root.hasWonAmt(d),expected:root.oppAmt(d),stage:root.dealStage(d),stageLabel:root.stageLabel(root.dealStage(d)),issues,stallText,reason:stall?(issues.includes('promise')?'고객 약속 미이행 · ':'')+'진행 멈춤 — '+stallText:issues.map(k=>k==='overdue'?'기한 '+Math.abs(due)+'일 지남':k==='contact'?'마지막 연락 '+meta.days+'일 전':labels[k]).join(' · '),lastContact:meta.meaningfulAt||''};
   });
   const inquiries=root.operationalInquiries(base.inquiries||[]).filter(q=>everyone||admin||root.inquiryRoutedOwner(q)===me||root.inquiryConsultant(q)===me).map(q=>({key:'inq:'+String(q.id||root.inqKey(q)),type:'inq',item:q,site:q.site||'현장명 미입력',owner:root.inquiryRoutedOwner(q)||'미배정',brand:q.brand||'',created:root.inquiryDate(q),stage:'inquiry',stageLabel:q.status||'견적문의',issues:[],reason:root.inquiryRoutedOwner(q)?'문의 내용과 후속처리 확인':'담당자 배정 필요'}));
-  return {deals:deals.filter(d=>unscoped||root.SalesScope.matches(d.owner,d.item)&&root.SalesFilterState.matchesBrand(d.brand)),inquiries:inquiries.filter(q=>unscoped||root.SalesScope.matches(q.owner,q.item)&&root.SalesFilterState.matchesBrand(q.brand))};
+  /* 담당 범위를 좁히지 않았을 때는 직원 명단에 있는 사람(영업 담당이 아닌 대표 등)의 영업건도 본다 — 파이프라인 · 오늘 업무와 같은 진행 건수가 되게(PipelineScope · 2026-10-05 정합성 ②) */
+  const sc=root.SalesScope.state(),PSC=root.PipelineScope,wide=sc.type==='all'&&sc.organization==='all'&&sc.owner==='전체'&&sc.assignment==='all'&&!!PSC&&PSC.on(),known=o=>wide&&PSC.ownerKnown(o);
+  return {deals:deals.filter(d=>unscoped||(root.SalesScope.matches(d.owner,d.item)||known(d.owner))&&root.SalesFilterState.matchesBrand(d.brand)),inquiries:inquiries.filter(q=>unscoped||root.SalesScope.matches(q.owner,q.item)&&root.SalesFilterState.matchesBrand(q.brand))};
  }
  /* 계약실적은 검증된 공사 계약 원장만 취합한다. 원장을 읽지 못하면 임의 금액을 표시하지 않는다. */
  // Missing contract evidence is not a zero or a completion-date estimate.

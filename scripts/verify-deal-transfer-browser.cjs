@@ -101,7 +101,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(()=>{const C=DashB.core();return [CRMRules.dealResult(B.deals[0]),C.perf,C.won,C.tf.count,C.tf.amount,C.made,CRMRules.madeRate(1,1,1)];}),['won_transfer',880000000,2,1,380000000,66.7,66.7]);
   await page.evaluate(()=>{document.getElementById('detailView')&&typeof closeDetail==='function'&&closeDetail();goPage('dash');});await page.waitForTimeout(500);
   const kpi=await page.locator('#si-dash .db-kpi').nth(1).evaluate(n=>[n.querySelector('span').textContent,n.querySelector('b').textContent,n.querySelector('small').textContent]);
-  assert.deepEqual(kpi,['올해 수주실적','8.8억','직접 수주 5억(1건) · 협약 · 기술자문 없음 · 타사 이관 3.8억(1건)'],'대시보드: 합산하되 나눠 적는다');
+  assert.deepEqual(kpi,['올해 수주실적','8.8억','낙찰금액 · VAT 별도 = 계약실적(계약 체결일) 5억(1건) · 협약 · 기술자문 없음 · 타사 이관 3.8억(1건)'],'대시보드: 합산하되 나눠 적는다');
   /* 영업 Funnel(2026-10-05): 메이드율은 머리 오른쪽, 식은 '영업력' 상자 아래 한 줄 */
   assert.deepEqual([await page.locator('#si-dash .db-f6 .db-ch .mr b').innerText(),await page.locator('#si-dash .db-f6x').innerText()],['66.7%','(직접 1 + 협약 · 기술자문 0 + 타사 이관 1) ÷ (직접 1 + 협약 · 기술자문 0 + 타사 이관 1 + 실주 1) · 배드핏 제외']);
   await page.locator('#si-dash .db-secs [data-v="people"]').click();await page.waitForTimeout(200);
@@ -111,7 +111,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{OpsStore.rpc=(o=>async(name,p)=>name==='crm_report_snapshot_get_v1'?{ok:true,snapshots:[]}:o(name,p))(OpsStore.rpc);goPage('brief');});await page.waitForTimeout(600);
   /* 이번 주 성과 v2(2026-10-05): 수주 표 대신 꼬리표 한 줄 */
   {const one=s=>String(s).replace(/\s+/g,' ').trim(),win=page.locator('#brief-b .bp2-tags .t.win');
-   assert.equal(one(await win.innerText()),'수주 1건 · 3.8억 · 직접 0 · 협약 · 기술자문 0 · 타사 이관 1건 3.8억','이번 주(10/19~) 낙찰 1건');
+   assert.equal(one(await win.innerText()),'수주 1건 · 3.8억 · 계약실적 0 · 협약 · 기술자문 0 · 타사 이관 1건 3.8억','이번 주(10/19~) 낙찰 1건');
    assert.equal(await win.getAttribute('title'),'이필선 · [세종] 조치원자이아파트 · 3.8억 (타사 이관)');
    assert.equal(one(await page.locator('#brief-b .bp2-step').nth(3).innerText()).startsWith('신규 계약 1 건 · 3.8억'),true);
    assert.match(one(await page.locator('#brief-b .bp2-rates>div').nth(1).innerText()),/^영업 메이드율 100\.0%/);
