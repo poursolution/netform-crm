@@ -36,7 +36,7 @@
   const G=root.G,old=G.campaignCategory;let list=[];
   try{G.campaignCategory=key;list=root.campaignAllTargets();}finally{G.campaignCategory=old;}
   const owner=root.SalesScope.state().owner||'전체',q=String(G.q||'').trim().toLowerCase();
-  return list.filter(t=>root.SalesFilterState.matchesBrand(t.brand)&&(owner==='전체'||t.owner===owner)&&(!q||[t.deal.site,t.contact.name,t.contact.mobile,t.owner].join(' ').toLowerCase().includes(q)));
+  return list.filter(t=>(!root.campaignTargetMatches||root.campaignTargetMatches(t))&&root.SalesFilterState.matchesBrand(t.brand)&&(owner==='전체'||t.owner===owner)&&(!q||[t.deal.site,t.contact.name,t.contact.mobile,t.owner].join(' ').toLowerCase().includes(q)));
  }
  function lastSent(key){const rows=(root.campaignLogs?.()||[]).filter(x=>x.category_key===key).map(x=>String(x.created_at||x.createdAt||'')).sort();return rows.length?rows[rows.length-1].slice(0,10):'';}
  function model(){
