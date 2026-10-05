@@ -6,7 +6,7 @@
  const origin=new URL(c.url).origin,base=`crm:production:${REF}:v${VERSION}:`,nativeLocal=root.localStorage,nativeSession=root.sessionStorage;
  const fetchNative=root.fetch.bind(root),webSocketNative=root.WebSocket,requests=[],blocked=[];let client,profile=null,epoch=0,activeUid=null,controllers=new Set(),sdkChannel=null,realtimeChannel=null,realtimeStatus='CLOSED';
  const realtimeListeners=new Map();
- const rpcAllow=new Set(['crm_profile_scoped_v2','crm_read_scoped_v2','crm_contacts_scoped_v2','crm_write_command_v2','crm_operational_source_v1','crm_operational_changes_v1','crm_expansion_note','crm_expansion_context']);
+ const rpcAllow=new Set(['crm_profile_scoped_v2','crm_read_scoped_v2','crm_contacts_scoped_v2','crm_write_command_v2','crm_operational_source_v1','crm_operational_changes_v1','crm_expansion_note','crm_expansion_context','crm_my_credential_state_v1'/* 임시 비밀번호 변경 강제(2026-10-05) */]);
  function allowed(input){const u=new URL(typeof input==='string'?input:input.url||String(input),location.href);
   if(u.origin===location.origin)return u;
   if(u.origin===origin&&(u.pathname.startsWith('/auth/v1/')||u.pathname.startsWith('/storage/v1/object/upload/sign/crm-site-files/deals/')||u.pathname==='/functions/v1/crm-ai'/* AI 제안 서버 함수(2026-10-03) — 사용자 토큰으로만, 결과는 제안 저장 */||rpcAllow.has(u.pathname.replace('/rest/v1/rpc/',''))&&u.pathname.startsWith('/rest/v1/rpc/')))return u;
@@ -133,5 +133,5 @@
  function restoreQueue(){if(!activeUid)return;const rows=list();let changed=false;for(const q of rows)if(q.status==='sending'){q.status='uncertain';changed=true;}if(changed)save(rows);}
  root.addEventListener('phase1:profile',restoreQueue);
  root.Phase1=Object.freeze({config:c,createClient,admit,beginLogin,signOut,storage,sessionCache,mode,read,rpc,subscribe,queue:{enqueue,flush,list,validateAck,acknowledgeFailure},uploadAttachment,get profile(){return profile;},get realtimeStatus(){return realtimeStatus;},requests,blocked,
-  loginEmail(name){return c.accounts.find(a=>a.name.replace(/\s/g,'')===String(name).replace(/\s/g,''))?.email||null;}});
+  loginEmail(name){/* 관리자 화면에서 새로 만든 계정은 이름 명단에 없으므로 이메일을 그대로 넣어 로그인한다(2026-10-05 직원 계정 관리 v2) */const s=String(name).trim();if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s))return s.toLowerCase();return c.accounts.find(a=>a.name.replace(/\s/g,'')===String(name).replace(/\s/g,''))?.email||null;}});
 })(window);

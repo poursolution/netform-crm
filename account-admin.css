@@ -18,3 +18,92 @@
 .aa-form button{font:inherit;font-size:12px;font-weight:700;border:1px solid #dbe2ec;border-radius:8px;padding:7px 14px;background:#1e50b3;color:#fff;cursor:pointer}
 .aa-form button[data-aa-cancel]{background:#fff;color:#254268}
 .aa-status{grid-column:1/-1;margin:0;font-size:12px;color:#1e50b3;min-height:0}
+
+/* 직원 계정 관리 v2 (2026-10-05 design_handoff_accounts) — 가운데 창 · 최대 880px · aa2- 접두사만 쓴다 */
+dialog.aa2{box-sizing:border-box;position:fixed;inset:0;margin:auto;width:min(880px,calc(100vw - 48px));max-width:880px;height:fit-content;max-height:calc(100vh - 48px);padding:0;border:0;border-radius:16px;background:#fff;color:#15171c;box-shadow:0 20px 60px rgba(17,24,39,.25);overflow:hidden;font-family:Pretendard,system-ui,sans-serif;font-size:13px;line-height:1.4;text-align:left}
+dialog.aa2[open]{display:flex;flex-direction:column}
+dialog.aa2::backdrop{background:rgba(17,24,39,.45)}
+dialog.aa2:focus,dialog.aa2:focus-visible{outline:0}
+.aa2 *{box-sizing:border-box}
+.aa2 button,.aa2 input,.aa2 select{font-family:inherit;margin:0;box-shadow:none;min-height:0;height:auto;width:auto;letter-spacing:normal}
+.aa2 button{cursor:pointer;line-height:16px}
+.aa2 button:disabled{opacity:.4;cursor:not-allowed}
+.aa2 :focus-visible{outline:2px solid #91b5ff;outline-offset:1px}
+.aa2-sp{flex:1}
+.aa2-head{flex:none;padding:18px 22px 14px;border-bottom:1px solid #eef0f3;display:flex;flex-direction:column;gap:12px}
+.aa2-h1{display:flex;align-items:center;gap:10px}
+.aa2-h1>b{font-size:18px}
+.aa2-count{font-size:12.5px;color:#6b7280}
+.aa2-btn{border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:12px;font-weight:700;border-radius:7px;padding:6px 11px;white-space:nowrap}
+.aa2-btn.aa2-dark{border-color:#15171c;background:#15171c;color:#fff}
+.aa2-btn.aa2-red{border-color:#b42318;background:#b42318;color:#fff}
+.aa2-btn.aa2-addbtn{font-size:13px;border-radius:8px;padding:7px 14px}
+.aa2 .aa2-x{border:0;background:none;font-size:18px;color:#6b7280;padding:0 4px;line-height:1}
+.aa2-h2{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.aa2-tabs{display:flex;gap:5px;flex-wrap:wrap}
+.aa2-tab{border:1px solid #d9dde4;background:#fff;color:#374151;font-size:12.5px;font-weight:700;border-radius:999px;padding:5px 12px}
+.aa2-tab.on{border-color:#15171c;background:#15171c;color:#fff}
+.aa2-tab span{opacity:.6}
+.aa2 .aa2-search{min-width:200px;border:1px solid #e3e6ec;border-radius:999px;padding:6px 14px;font-size:12.5px;color:#15171c;background:#fff}
+.aa2-search::placeholder{color:#9ca3af}
+.aa2-add{flex:none;padding:14px 22px;background:#f8f9fb;border-bottom:1px solid #eef0f3;display:flex;flex-direction:column;gap:10px}
+.aa2-add[hidden]{display:none}
+.aa2-addt{font-size:13.5px}
+.aa2-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr) minmax(0,.75fr) minmax(0,.75fr);gap:8px}/* 이메일이 잘리지 않게 이메일 칸만 넓게 */
+.aa2-fields label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;font-weight:400;color:#6b7280;margin:0}
+.aa2 .aa2-fields input,.aa2 .aa2-fields select{width:100%;min-width:0;border:1px solid #d9dde4;border-radius:8px;padding:8px 10px;font-size:13px;color:#15171c;background:#fff}
+.aa2 .aa2-fields input[readonly]{background:#f1f2f5;color:#6b7280}
+.aa2-addfoot{display:flex;align-items:center;gap:8px}
+.aa2-addnote{flex:1;font-size:11.5px;color:#6b7280}
+.aa2-addnote.err{color:#b42318}
+.aa2-addfoot .aa2-btn{font-size:12.5px;font-weight:600;border-radius:8px;padding:7px 12px}
+.aa2-addfoot .aa2-btn.aa2-dark{font-weight:700;padding:7px 14px}
+.aa2-cols{display:grid;grid-template-columns:minmax(0,1.1fr) 92px minmax(0,1.7fr) minmax(0,1fr) 152px;gap:12px}
+.aa2-thead{flex:none;padding:9px 22px;font-size:11px;color:#9ca3af;border-bottom:1px solid #eef0f3}
+.aa2-list{flex:0 1 auto;min-height:0;max-height:532px;overflow-y:auto}/* 시안 520 → 10명(53px × 10)이 잘리지 않게 532 */
+.aa2-item{border-bottom:1px solid #f2f3f6}
+.aa2-row{align-items:center;padding:11px 22px;background:#fff}
+.aa2-row.open{background:#fbfcff}
+.aa2-who{display:flex;align-items:center;gap:10px;min-width:0}
+.aa2-av{flex:none;width:30px;height:30px;border-radius:8px;color:#fff;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.aa2-who>div{min-width:0;display:flex;flex-direction:column;gap:1px}
+.aa2-who b{font-size:13.5px;line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aa2-who>div>span{font-size:11px;line-height:13px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aa2-tag{justify-self:start;font-size:11px;font-weight:700;border-radius:4px;padding:2px 7px;white-space:nowrap}
+.aa2-k-admin{color:#1d3f99;background:#eef3fe}
+.aa2-k-rep,.aa2-k-b2b{color:#374151;background:#f3f4f6}
+.aa2-k-dual{color:#7048e8;background:#f1edfd}
+.aa2-k-lead{color:#1f7a4d;background:#e8f6ee}
+.aa2-k-branch{color:#8a5a00;background:#fff4d6}
+.aa2-mail{font-size:12.5px;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aa2-mail.none{color:#b45309}
+.aa2-last{font-size:12px;color:#374151}
+.aa2-last.none{color:#9ca3af}
+.aa2-act{justify-self:end;display:flex;align-items:center;gap:2px}
+.aa2-na{font-size:11.5px;color:#9ca3af;white-space:nowrap}
+.aa2 .aa2-more{border:0;background:none;color:#6b7280;font-size:17px;font-weight:800;letter-spacing:1px;border-radius:7px;padding:5px 5px 9px;line-height:14px}
+.aa2 .aa2-more:hover:not(:disabled){background:#f3f4f6;color:#15171c}
+.aa2-item.off .aa2-who,.aa2-item.off .aa2-tag,.aa2-item.off .aa2-mail,.aa2-item.off .aa2-last{opacity:.55}
+.aa2-panel{margin:0 22px 12px 62px;background:#f8f9fb;border:1px solid #eef0f3;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.aa2-ptxt{font-size:12.5px;line-height:1.5}
+.aa2-pacts{display:flex;gap:6px;justify-content:flex-end}
+.aa2-pacts .aa2-btn{font-weight:600;padding:6px 12px}
+.aa2-pacts .aa2-btn.aa2-red,.aa2-pacts .aa2-btn.aa2-dark{font-weight:700}
+.aa2-issued{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.aa2-plabel{font-size:12px;color:#6b7280}
+.aa2-pw{font-size:15px;letter-spacing:.06em;font-family:ui-monospace,monospace;background:#fff;border:1px solid #d9dde4;border-radius:7px;padding:5px 10px;user-select:all}
+.aa2 .aa2-link{border:0;background:none;color:#2a52b8;font-size:12px;font-weight:700;padding:0;white-space:nowrap}
+.aa2-pnote{font-size:11.5px;color:#6b7280}
+.aa2-pnote b{color:#374151;font-weight:700}
+.aa2-err{font-size:12px;color:#b42318}
+.aa2-foot{flex:none;padding:10px 22px;border-top:1px solid #eef0f3;font-size:11.5px;color:#9ca3af;display:flex;align-items:center;gap:12px}
+.aa2-foot>span{flex:1}
+.aa2-msg{margin:0;padding:22px;font-size:12.5px;color:#6b7280}
+@media (max-width:720px){
+ .aa2-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .aa2-thead{display:none}
+ .aa2-cols.aa2-row{grid-template-columns:minmax(0,1fr) auto;row-gap:6px}
+ .aa2-row .aa2-who{grid-column:1/-1}
+ .aa2-row .aa2-mail{grid-column:1/-1}
+ .aa2-panel{margin-left:22px}
+}
