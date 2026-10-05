@@ -21,6 +21,10 @@
  const fmtPhone=v=>{const n=digits(v);if(/^01\d{8,9}$/.test(n))return n.replace(/^(01\d)(\d{3,4})(\d{4})$/,'$1-$2-$3');if(/^02\d{7,8}$/.test(n))return n.replace(/^(02)(\d{3,4})(\d{4})$/,'$1-$2-$3');if(/^0\d{9,10}$/.test(n))return n.replace(/^(0\d{2})(\d{3,4})(\d{4})$/,'$1-$2-$3');return String(v||'').trim();};
  const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
  const dayName=k=>{const d=new Date(k+'T00:00:00');return isNaN(d)?'':'('+'일월화수목금토'[d.getDay()]+')';};
+ /* 날짜 칸은 시안 모양으로 보여 준다: 2026.10.8 (수) */
+ const fmtDue=k=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(k||''));return m?m[1]+'.'+Number(m[2])+'.'+Number(m[3])+' '+dayName(k):'';};
+ /* 첫 다음 행동 날짜의 기본값 = 사흘 뒤(주말이면 다음 월요일) — 시안처럼 채워 두고 누르면 바꾼다 */
+ const defaultDue=()=>{const d=new Date();d.setDate(d.getDate()+3);if(d.getDay()===6)d.setDate(d.getDate()+2);else if(d.getDay()===0)d.setDate(d.getDate()+1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
  /* 예상 금액: 1.5억 · 3,000만 · 150,000,000 → 원 */
  function parseAmount(v){
   const s=String(v||'').replace(/[\s,원]/g,'');if(!s)return null;
@@ -43,7 +47,7 @@
   try{const r=await R.Phase1.rpc(RPC);ready=!!(r&&r.ok===true&&r.policy==='new-deal-outbound-v1');}catch(e){ready=e&&(e.code==='PGRST202'||e.message==='CONTRACT_UNAVAILABLE')?false:null;if(ready===null)return false;}
   return ready;
  }
- const st0=()=>({src:'outbound',refName:'',refPhone:'',site:'',address:'',siteId:null,linked:null,dupSkip:'',finding:false,findQ:'',works:[],brand:BRANDS[0],owner:'',amount:'',role:ROLES[0],cname:'',mobile:'',office:'',act:'meet',due:'',err:'',busy:false});
+ const st0=()=>({src:'outbound',refName:'',refPhone:'',site:'',address:'',siteId:null,linked:null,dupSkip:'',finding:false,findQ:'',works:[],brand:BRANDS[0],owner:'',amount:'',role:ROLES[0],cname:'',mobile:'',office:'',act:'meet',due:defaultDue(),err:'',busy:false});
  /* ── 중복 감지: 현장명(지역 · '아파트' 뺀 이름) · 주소 · 관리사무소 전화가 같은 기존 영업건 ── */
  const siteIdOf=d=>String(d.cleanup_site_id||d.site_id||d.siteId||'');
  const statusOf=d=>{try{if(R.isWon(d)){let y='';try{y=String(R.wonDate(d)||'').slice(0,4);}catch(e){}return '수주'+(y?' '+y:'');}if(!R.isOpen(d))return '종결';}catch(e){}return '진행 중';};
@@ -93,7 +97,7 @@
   return '<div class="nd2-sec" data-nd2-works><div class="nd2-lab"><b>공종 <em>*</em></b><span>여러 개 고르면 복합공종</span><i></i><span class="nd2-wk'+(n?'':' none')+'">'+(n?n+'개 · '+(n>1?'복합공종':'단일'):'아직 선택 안 함')+'</span></div><div class="nd2-wgroups">'
    +(R.WORK_MASTER||[]).map(g=>'<div class="nd2-wg"><span>'+h(g.group)+'</span>'+g.items.map(i=>{const k=R.workKey(g.group,i),on=S.works.includes(k);return '<button type="button" class="nd2-chip'+(on?' on':'')+'" data-nd2="work" data-k="'+attr(k)+'" aria-pressed="'+on+'">'+h(i)+'</button>';}).join('')+'</div>').join('')+'</div></div>';
  }
- function footText(){return '등록하면 <b>파이프라인 · 컨설팅 설계 (미팅 '+(S.act==='meet'?'예정':'전')+')</b>로 바로 들어갑니다 · 유입 = <b>'+h(SRC_SHORT[S.src])+'</b> (견적문의 · 인바운드 통계와 따로 집계)';}
+ function footText(){return '등록하면 <b>파이프라인 · 컨설팅 설계 (미팅 전)</b>로 바로 들어갑니다 · 유입 = <b>'+h(SRC_SHORT[S.src])+'</b> (견적문의 · 인바운드 통계와 따로 집계)';}
  function html(){
   return '<div class="nd2-box" role="dialog" aria-modal="true" aria-labelledby="nd2-title"><header class="nd2-head"><b id="nd2-title">새 영업 등록</b><span>문의 없이 우리가 먼저 시작한 영업 · 아웃바운드 · 소개 · 재영업</span><i></i><button type="button" class="nd2-x" data-nd2="close" aria-label="닫기">×</button></header>'
    +'<div class="nd2-body">'
@@ -109,7 +113,7 @@
    +'<div class="nd2-sec nd2-why" id="nd2-why" data-src="text"><div class="nd2-lab"><b>어떻게 시작됐는지 한 줄 <em>*</em></b><i></i><div class="rmode nd2-mode"><button type="button" class="on" data-m="text" onclick="reasonMode(\'nd2-why\',\'text\')">직접 입력</button><button type="button" data-m="voice" onclick="reasonMode(\'nd2-why\',\'voice\')">음성 기록</button></div></div>'
    +'<textarea id="nd2-why-text" placeholder="예: 동탄 현장 소장님 소개 · 내년 재도장 입찰 예정 · 기술자문으로 접근" maxlength="2000"></textarea><div class="rvoice" style="display:none"><button type="button" class="recbtn" id="nd2-why-rec" onclick="reasonRec(\'nd2-why\')">녹음 시작</button><span class="rhint" id="nd2-why-hint">말하면 자동으로 텍스트가 됩니다. 저장 전에 고칠 수 있습니다.</span></div></div>'
    +'<div class="nd2-g2"><label class="nd2-f"><span>첫 다음 행동 <em>*</em></span><select data-nd2-f="act">'+ACTS.map(a=>'<option value="'+a[0]+'"'+(S.act===a[0]?' selected':'')+'>'+h(a[1])+'</option>').join('')+'</select></label>'
-   +'<label class="nd2-f"><span>날짜 <em>*</em> <small data-nd2-day>'+h(S.due?dayName(S.due):'')+'</small></span><input type="date" data-nd2-f="due" value="'+attr(S.due)+'" min="'+today()+'"></label></div>'
+   +'<label class="nd2-f"><span>날짜 <em>*</em></span><span class="nd2-date"><input type="text" readonly data-nd2="pickdue" data-nd2-due value="'+attr(fmtDue(S.due))+'" placeholder="날짜 고르기" aria-label="날짜"><input type="date" class="nd2-date-n" data-nd2-f="due" value="'+attr(S.due)+'" min="'+today()+'" tabindex="-1" aria-label="날짜 고르기"></span></label></div>'
    +'<p class="nd2-err" data-nd2-err role="alert"'+(S.err?'':' hidden')+'>'+h(S.err)+'</p></div>'
    +'<footer class="nd2-foot"><span data-nd2-foot>'+footText()+'</span><button type="button" class="nd2-b big" data-nd2="close">취소</button><button type="button" class="nd2-b big pri" data-nd2="save">영업 등록</button></footer></div>';
  }
@@ -129,7 +133,7 @@
   if(S[f]===e.target.value)return;S[f]=e.target.value;
   if(f==='site'||f==='address'||f==='office')paintDup();
   if(f==='findQ'){redraw('[data-nd2-f="findQ"]');return;}
-  if(f==='due'){const d=$('[data-nd2-day]');if(d)d.textContent=S.due?dayName(S.due):'';}
+  if(f==='due'){const d=$('[data-nd2-due]');if(d)d.value=fmtDue(S.due);}
   if(f==='act'){const ft=$('[data-nd2-foot]');if(ft)ft.innerHTML=footText();}
   if(S.err)fail('');
  }
@@ -145,6 +149,7 @@
   if(a==='unlink'){S.linked=null;S.siteId=null;return redraw('[data-nd2-f="site"]');}
   if(a==='skip'){S.dupSkip=b.dataset.k;return paintDup();}
   if(a==='find'){S.finding=!S.finding;return redraw(S.finding?'[data-nd2-f="findQ"]':null);}
+  if(a==='pickdue'){e.preventDefault();const n=$('[data-nd2-f="due"]');if(n){try{n.showPicker();}catch(err){try{n.focus();n.click();}catch(e2){}}}return;}
   if(a==='save')return R.saveNewDeal();
  }
  /* ── 저장: 기존 영업 생성 명령 하나 ── */

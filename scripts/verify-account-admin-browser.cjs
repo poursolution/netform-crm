@@ -71,6 +71,7 @@ const PW=/^NF-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/;
   assert.equal(Math.round(box.width),880,'창 폭 880');
   assert.ok(Math.abs((box.x+box.width/2)-800)<=1,'가로 가운데 '+JSON.stringify(box));assert.ok(Math.abs((box.y+box.height/2)-500)<=1,'세로 가운데 '+JSON.stringify(box));
   assert.deepEqual(await dlg.evaluate(n=>{const s=getComputedStyle(n);return [s.borderTopLeftRadius,s.backgroundColor,n.querySelector('#aa2-title').textContent,getComputedStyle(n.querySelector('#aa2-title')).fontSize];}),['16px','rgb(255, 255, 255)','직원 계정 관리','18px']);
+  assert.equal(await dlg.evaluate(n=>getComputedStyle(n).fontFamily===getComputedStyle(document.body).fontFamily),true,'CRM 본문 글꼴 그대로');
   assert.equal(await dlg.locator('.aa2-count').innerText(),'10명 · 로그인 연결 8명');
   assert.deepEqual((await dlg.locator('.aa2-tab').allInnerTexts()).map(one),['전체 10','관리자 1','대표 · 겸직 2','영업 · 팀장 5','지사 1']);
   assert.deepEqual(await dlg.locator('.aa2-tab').first().evaluate(b=>{const s=getComputedStyle(b);return [s.backgroundColor,s.color,s.borderRadius,s.fontSize,s.fontWeight];}),['rgb(21, 23, 28)','rgb(255, 255, 255)','999px','12.5px','700']);

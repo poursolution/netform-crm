@@ -51,3 +51,8 @@ test("누를수록 아래로 길어지는 '더 보기' 버튼을 다시 만들�
  for(const f of ['stage-board.js','pipeline-stage-b.js','pipeline-rel-b.js','asset-c.js','inquiry-list-v3.js','today-v3.js','today-assist.js','today-tower.js','kpi-b.js','pipeline-list-v2.js','expansion-v2.js','gyeongnam-v2.js','asset-v2.js','work-v2.js','dup-v2.js','inquiry-list-v2.js','today-v2.js','relationship-management.js','stage-workspaces.js','technical-advisory-ui.js'])
   assert.match(fs.readFileSync(path.join(root,f),'utf8'),/\bListPager\b/,f+' 는 공용 쪽 번호를 쓴다');
 });
+
+test("새 화면은 CRM 본문 글꼴을 물려받는다 — 'Pretendard' 만 적으면 맑은 고딕으로 떨어진다(Pretendard Variable 을 쓴다)",()=>{
+ const bad=fs.readdirSync(root).filter(f=>/\.(css|js)$/.test(f)).filter(f=>/font-family:\s*Pretendard\s*,\s*system-ui/.test(fs.readFileSync(path.join(root,f),'utf8')));
+ assert.deepEqual(bad,[],'font-family:inherit 로 바꿔야 하는 파일: '+bad.join(', '));
+});

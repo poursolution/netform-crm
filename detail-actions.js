@@ -275,7 +275,7 @@ function dock(body){
  right.prepend(box);
 }
 function unfoldDock(){const more=$('detailDock')?.querySelector('.da-dock-more');if(!more)return false;if(more.hidden){more.hidden=false;const t=$('detailDock').querySelector('.da-dock-toggle');if(t)t.textContent='간단히 고르기로 ▴';}return true}
-function focus(id){if(!$('detailView')?.classList.contains('da-ready'))return false;const map={activityFormCard:'activity',nextActionCard:'next','dv-amt':'amount','dw-amount':'amount','dv-assignee':'owner',execFiles:'materials','dw-history':'history'};const key=map[id];if(!key)return false;if(state?.key!==key)open(key);return true;}
+function focus(id){if(!$('detailView')?.classList.contains('da-ready'))return false;const map={activityFormCard:'activity',nextActionCard:'next','dv-amt':'amount','dw-amount':'amount','dv-assignee':'owner',execFiles:'materials','dw-history':'history'};const key=map[id];if(!key)return false;/* 새 상세(v3): 연락 결과 · 다음 할 일 바로가기(dccGoActivity · briefNextAction · dccGoNext — 오늘 업무 · 관계관리 · 목록이 쓴다)는 '지금 할 일' 카드로. 예전 입력 창을 띄우지 않는다(2026-10-05 대표) */if((key==='activity'||key==='next')&&root.DealDetailV3&&typeof root.DealDetailV3.openFrom==='function'&&root.DealDetailV3.openFrom(key))return true;if(state?.key!==key)open(key);return true;}
 function decorate(){
  const view=$('detailView'),body=$('dv-body');if(!view?.classList.contains('dw-wide')){close(false);view?.querySelector('.da-toolbar')?.remove();view?.classList.remove('da-ready');return;}
  // A server-confirmed render replaces the form nodes; retire the old presentation.
@@ -283,16 +283,8 @@ function decorate(){
  if(state&&!body.contains(state.moves[0]?.[1])){if(state.key==='activity'&&!state.panel.querySelector('#rel-contact-save'))nextDraft=[...state.panel.querySelectorAll('#nextActionCard input[id],#nextActionCard select[id],#nextActionCard textarea[id]')].map(n=>[n.id,n.value]);close(false);}
  if(body.querySelector('.da-stash'))return;
  view.querySelector('.da-toolbar')?.remove();view.classList.add('da-ready');
- /* 2026-09-24 CX 지시(G): 첫 화면 CTA는 '지금 할 일' 카드 하나 — 빠른 작업 6버튼은 더보기 뒤로 수납 */
- const toolbar=document.createElement('nav');toolbar.className='da-toolbar';toolbar.setAttribute('aria-label','빠른 작업');
- const tools=document.createElement('span');tools.className='da-tools';tools.hidden=true;
- [['연락 결과','activity'],['다음 할 일','next'],['진행상태 변경','stage'],['담당자 변경','owner'],['자료 추가','materials'],['지원 요청','support'],['ⓘ 관리 기준','help']].forEach(([text,key])=>tools.append(button(text,key,key==='stage'?()=>root.openTransition():null)));
- const more=document.createElement('button');more.type='button';more.className='da-more';more.textContent='···  작업 더보기';
- more.onclick=()=>{tools.hidden=!tools.hidden;more.classList.toggle('on',!tools.hidden);more.textContent=tools.hidden?'···  작업 더보기':'작업 접기 ↑';};
- toolbar.append(more,tools);
- /* 2026-09-24 지시: 빠른 작업 바(더보기·단계 primary)는 상세 헤더 오른쪽에 */
- const top=view.querySelector('.detailtop');
- if(top){toolbar.classList.add('da-top');top.append(toolbar)}else body.before(toolbar);
+ /* 머리줄의 [⋯ 작업 더보기] 메뉴는 없앴다(2026-10-05 대표 "저 위치 없애줘 — 자꾸 전에 만들어놨던 걸로 되돌아간다").
+    연락 · 다음 할 일은 '지금 할 일' 카드, 단계는 [단계 바꾸기], 담당 · 자료는 왼쪽 칸에서 한다. 이 메뉴를 다시 만들지 말 것(tests/detail-no-old-entry.test.cjs) */
  // Keep one set of original inputs and their handlers, outside the viewing surface.
  const stash=document.createElement('div');stash.className='da-stash';stash.hidden=true;const selectors=['#activityFormCard','#nextActionCard','#dw-amount'];const atomic=$('rel-contact-save')?.closest('.dactions');selectors.forEach(s=>{const n=body.querySelector(s);if(n)stash.append(n)});if(atomic&&!stash.contains(atomic))stash.append(atomic);const owner=$('dv-assignee')?.closest('.dcard');if(owner)stash.append(owner);body.append(stash);
  body.querySelectorAll('.dw-fold').forEach(n=>{if(!n.querySelector('.dcard,.dsec,#execFiles,#execQuotePanel'))n.remove()});

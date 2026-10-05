@@ -50,7 +50,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    ],inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.psb=null;G.prb=null;G.ps3=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
-   window.__open=null;window.__act=null;drwDeal=s=>{window.__open=JSON.parse(s).id;};window.DetailActions=Object.assign(window.DetailActions||{},{open:k=>{window.__act=k;}});
+   window.__open=null;window.__act=null;window.__drwReal=drwDeal;window.__daReal=window.DetailActions&&window.DetailActions.open;drwDeal=s=>{window.__open=JSON.parse(s).id;};window.DetailActions=Object.assign(window.DetailActions||{},{open:k=>{window.__act=k;}});
    window.CRMRelease=Object.assign(window.CRMRelease||{},{has:()=>true,noteMissing(){}});
    PipelineWorkspace.open('consulting');
   });
@@ -94,6 +94,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 시안의 글자 크기 · 버튼 모양 */
   await page.evaluate(()=>PipelineWorkspace.open('consulting'));await page.waitForTimeout(300);
   const css=(sel,props)=>V.locator(sel).first().evaluate((n,props)=>{const s=getComputedStyle(n);return props.map(p=>s[p]);},props);
+  assert.equal(await V.evaluate(n=>getComputedStyle(n).fontFamily===getComputedStyle(document.body).fontFamily),true,'CRM 본문 글꼴 그대로');
   assert.deepEqual(await css('.ps3-head b',['fontSize']),['22px']);assert.deepEqual(await css('.ps3-head span',['fontSize','color']),['14px','rgb(75, 85, 99)']);
   assert.deepEqual(await css('.ps3-tab .n',['fontSize']),['24px']);assert.deepEqual(await css('.ps3-tab .l',['fontSize','whiteSpace','textOverflow']),['15px','nowrap','ellipsis']);assert.deepEqual(await css('.ps3-tab span',['fontSize','color']),['12.5px','rgb(107, 114, 128)']);
   assert.deepEqual(await css('.ps3-tab.on',['borderBottomWidth','borderBottomColor','backgroundColor']),['3px','rgb(59, 108, 228)','rgb(248, 250, 255)'],'선택 = 파란 밑줄 3px');
@@ -136,6 +137,23 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.setViewportSize({width:900,height:1000});await page.waitForTimeout(300);
   assert.equal(await V.evaluate(v=>v.querySelector('.ps3-diag').getBoundingClientRect().bottom<=v.querySelector('.ps3-main').getBoundingClientRect().top+1),true,'좁으면 진단이 위로');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'가로 넘침 없음');
   await page.setViewportSize({width:1600,height:1000});
+  /* 목록 버튼은 새 상세 창의 자리로 간다(2026-10-05 대표 "미팅 잡기 누르면 최근에 만들어놨던 걸로 연결" · "이전 버전은 내 눈에 안 띄게"):
+     [미팅 잡기] → 상세 창 '지금 할 일' 카드가 펼쳐진 채로 · 예전 '다음 할 일 설정' 창(#detailAction · .dp-next) 없음 · 머리줄 [⋯] 메뉴 없음 */
+  await page.evaluate(()=>{drwDeal=window.__drwReal;if(window.__daReal)window.DetailActions.open=window.__daReal;window.__act=null;PipelineWorkspace.open('consulting');});await page.waitForTimeout(300);
+  await page.locator('#pipeline-stage-v3 .ps3-row[data-key$="c-none"] button').click();await page.waitForSelector('#detailView.dv3 .dv3-form',{timeout:5000});
+  assert.deepEqual(await page.evaluate(()=>{const v=document.getElementById('detailView');return [!!v.querySelector('.nc-call.dv3-fold'),v.querySelectorAll('.dv3-form').length,document.querySelectorAll('#detailAction,.dp-next').length,v.querySelectorAll('.da-more,.da-toolbar,.da-tools').length,/다음 할 일 설정/.test(v.innerText)];}),[true,1,0,0,false],'미팅 잡기 = 지금 할 일 카드');
+  assert.match(await page.locator('#detailView .dv3-form').innerText(),/어떻게 연락했나요/);
+  if(process.env.SHOT)await page.screenshot({path:process.env.SHOT});
+  /* [견적 요청] → 이 단계 필수 정보 · [단계 판단] 류 → 단계 바꾸기 띠. 둘 다 예전 입력 창을 띄우지 않는다 */
+  assert.deepEqual(await page.evaluate(()=>[DealDetailV3.openFrom('stagefields'),document.querySelectorAll('#detailAction').length,DealDetailV3.openFrom('stage'),!!document.querySelector('#detailView .dv3-move'),DealDetailV3.openFrom('support')]),[true,0,true,true,false]);
+  /* 오늘 업무 · 관계관리 · 다른 목록이 쓰는 바로가기(briefNextAction · dccGoNext · dccGoActivity)도 같은 카드로 간다 — 예전 창 없음 */
+  const fold=async()=>{await page.evaluate(()=>{try{DetailActions.close();}catch(e){}const v=document.getElementById('detailView'),m=v.querySelector('[data-dv3="mv"]');if(v.querySelector('.dv3-move #stage-transition-form')&&m)m.click();});await page.locator('#detailView .nc-call.dv3-fold').click();await page.waitForTimeout(150);assert.equal(await page.locator('#detailView .dv3-form').count(),0);};
+  for(const go of ['briefNextAction','dccGoNext','dccGoActivity']){await fold();await page.evaluate(go=>window[go](),go);await page.waitForTimeout(300);
+   assert.deepEqual(await page.evaluate(()=>[document.querySelectorAll('#detailView.dv3 .dv3-form').length,document.querySelectorAll('#detailAction,.dp-next').length]),[1,0],go+' = 지금 할 일 카드');}
+  /* 창을 열자마자 부르는 경우(오늘 업무: 열기 + 바로가기)도 같다 */
+  await fold();await page.evaluate(()=>{const d=CUR_DETAIL.item;G._detailPopup=true;drwDeal(JSON.stringify(d));dccGoActivity();});await page.waitForTimeout(400);
+  assert.deepEqual(await page.evaluate(()=>[document.querySelectorAll('#detailView.dv3 .dv3-form').length,document.querySelectorAll('#detailAction,.dp-next').length]),[1,0],'열자마자 바로가기 = 지금 할 일 카드');
+  await page.evaluate(()=>{try{closeDetail();}catch(e){}});await page.waitForTimeout(200);
   /* 수주 · 실주는 그대로 · 끄면 이전 화면 */
   for(const k of ['won','lost']){await page.evaluate(k=>PipelineWorkspace.open(k),k);await page.waitForTimeout(300);assert.equal(await page.locator('#pipeline-stage-v3').count(),0,k+': v3 아님');assert.equal(await page.locator('#pipeline-stage-b').count(),1,k+': 기존 화면 그대로');}
   await page.evaluate(()=>{G.pipeStageV3Off=true;PipelineWorkspace.open('consulting');});await page.waitForTimeout(300);

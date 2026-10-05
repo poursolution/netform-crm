@@ -80,10 +80,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#detailAction.ddv-panel #da-title').innerText(),'진행상태 변경');
   assert.match(await page.locator('#detailAction').innerText(),/경쟁|PT/);
   await page.locator('#detailAction .ddv-back').click();await page.waitForTimeout(150);
-  /* 더보기: 전체 이력 */
-  await v.locator('.da-more').click();assert.deepEqual((await v.locator('.da-tools button').allInnerTexts()).slice(0,2),['전체 이력','기술자문 계약']);
-  await v.locator('.da-tools .ddv-tool').first().click();await page.waitForTimeout(200);assert.equal(await page.locator('#detailAction #da-title').innerText(),'전체 이력');
-  await page.locator('#detailAction .ddv-back').click();await page.waitForTimeout(150);
+  /* 머리줄 [⋯ 작업 더보기] 메뉴는 없앴다(2026-10-05 대표 "저 위치 없애줘 — 자꾸 전에 만들어놨던 걸로 되돌아간다") */
+  assert.equal(await v.locator('.da-more,.da-toolbar,.da-tools').count(),0,'⋯ 메뉴 없음');
   /* 입력칸 저장 = 기존 연락 기록 경로, 서버 확인 뒤 대화에 쌓임 */
   await v.locator('#ddvComposer [data-type="메모"]').click();await v.locator('#ddvComposer textarea').fill('12월 입대의 전 예산 자료 준비');
   await v.locator('#ddvComposer .idv-save').click();await page.waitForTimeout(400);

@@ -156,7 +156,8 @@
   const r=root.PipelineWorkspace.rows().find(x=>x.key===key);if(!r)return;
   if(act==='expansion'&&typeof root.goPage==='function'){root.G.expansionFocus=r.item.id;root.goPage('expansion');return;}
   root.G._detailPopup=true;root.drwDeal(JSON.stringify(r.item));
-  if(act&&root.DetailActions&&typeof root.DetailActions.open==='function')setTimeout(()=>{try{root.DetailActions.open(act);}catch(e){}},150);
+  /* 새 상세(v3)가 켜져 있으면 그 창의 자리로 — 예전 입력 창(다음 할 일 설정 등)을 띄우지 않는다. 새 창에 자리가 없는 것(지원 요청)과 예전 틀만 기존 경로 */
+  if(act)setTimeout(()=>{try{if(root.DealDetailV3&&typeof root.DealDetailV3.openFrom==='function'&&root.DealDetailV3.openFrom(act))return;if(root.DetailActions&&typeof root.DetailActions.open==='function')root.DetailActions.open(act);}catch(e){}},150);
  }
  function onClick(e){
   const b=e.target.closest('#pipeline-stage-b [data-psb]');if(!b)return;const S=st(),a=b.dataset.psb,v=b.dataset.v,key=root.G.pipelineStage,C=CFG[key];

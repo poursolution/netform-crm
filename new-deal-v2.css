@@ -1,8 +1,8 @@
 /* 새 영업 등록 v2 (2026-10-05 design_handoff_new_deal) — 상단 [+ 새 영업] 창. nd2- 접두사만 쓴다.
    가운데 흰 창(최대 960px) · 필수 * 는 칸 이름 바로 옆 · 노랑 · 검정 큰 상자 없음(중복 알림만 옅은 띠) */
-.nd2-shade{position:fixed;inset:0;z-index:1300;background:rgba(17,24,39,.45);display:flex;justify-content:center;align-items:flex-start;padding:32px 24px;box-sizing:border-box;overflow-y:auto;font-family:Pretendard,system-ui,sans-serif;color:#15171c}
+.nd2-shade{position:fixed;inset:0;z-index:1300;background:rgba(17,24,39,.45);display:flex;justify-content:center;align-items:flex-start;padding:20px 24px;box-sizing:border-box;overflow-y:auto;font-family:inherit;color:#15171c}
 .nd2-shade *{box-sizing:border-box}
-#newDealV2 .nd2-box{width:100%;max-width:960px;max-height:calc(100vh - 64px);background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(17,24,39,.25);overflow:hidden;display:flex;flex-direction:column}
+#newDealV2 .nd2-box{width:100%;max-width:960px;max-height:calc(100vh - 40px);background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(17,24,39,.25);overflow:hidden;display:flex;flex-direction:column}
 #newDealV2 button{font-family:inherit;cursor:pointer;margin:0;box-shadow:none;height:auto;min-height:0;line-height:1.35}
 #newDealV2 input,#newDealV2 select,#newDealV2 textarea{font-family:inherit;border:1px solid #d9dde4;border-radius:8px;padding:9px 11px;font-size:14px;line-height:1.35;color:#15171c;background:#fff;width:100%;min-width:0;height:auto;margin:0;box-shadow:none}
 #newDealV2 input[readonly]{background:#f6f7f9;color:#374151}
@@ -69,9 +69,34 @@
 #newDealV2 .nd2-mode button.on{background:#15171c;color:#fff}
 #newDealV2 .nd2-why textarea{min-height:64px;resize:vertical}
 #newDealV2 .nd2-why .rvoice{margin-top:0}
+/* 날짜: 시안처럼 '2026.10.8 (수)' 로 보이고, 누르면 달력이 열린다 */
+.nd2-date{position:relative;display:block}
+#newDealV2 .nd2-date input[readonly]{background:#fff;color:#15171c;cursor:pointer}
+#newDealV2 .nd2-date .nd2-date-n{position:absolute;left:0;bottom:0;width:100%;height:100%;opacity:0;pointer-events:none;padding:0;border:0}
 .nd2-err{margin:0;font-size:13px;font-weight:600;color:#b42318}
+.nd2-err[hidden]{display:none}
 .nd2-foot{flex:none;padding:12px 22px;border-top:1px solid #eef0f3;background:#fcfcfd;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .nd2-foot>span{flex:1;min-width:260px;font-size:12.5px;color:#374151}
+/* 세로가 짧은 화면에서는 간격만 조금 줄여 안쪽 스크롤 없이 한 화면에 들어오게(더 짧으면 안쪽 스크롤) */
+@media (max-height:1030px){
+ .nd2-shade{padding:12px 24px}
+ #newDealV2 .nd2-box{max-height:calc(100vh - 24px)}
+ .nd2-head{padding:13px 22px}
+ .nd2-body{padding:14px 22px;gap:12px}
+ .nd2-foot{padding:10px 22px}
+ #newDealV2 .nd2-why textarea{min-height:56px}
+}
+@media (max-height:950px){
+ .nd2-shade{padding:8px 24px}
+ #newDealV2 .nd2-box{max-height:calc(100vh - 16px)}
+ .nd2-head{padding:11px 22px}
+ .nd2-body{padding:12px 22px;gap:10px}
+ .nd2-sec{gap:6px}
+ .nd2-wgroups{gap:4px}
+ .nd2-foot{padding:8px 22px}
+ #newDealV2 .nd2-why textarea{min-height:46px}
+ #newDealV2 input,#newDealV2 select,#newDealV2 textarea{padding:8px 11px}
+}
 @media (max-width:760px){
  .nd2-shade{padding:12px}
  #newDealV2 .nd2-box{max-height:calc(100vh - 24px)}

@@ -51,7 +51,16 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await f('role').evaluate(s=>[...s.options].map(o=>o.textContent)),['관리소장','입대의 회장','관리과장','기타']);
   assert.deepEqual(await f('act').evaluate(s=>[...s.options].map(o=>o.textContent)),['1차 현장미팅','전화 · 니즈 확인','자료 발송','견적 요청']);
   assert.deepEqual((await M.locator('.nd2-mode button').allInnerTexts()),['직접 입력','음성 기록']);
-  assert.equal(one(await M.locator('.nd2-foot').innerText()),'등록하면 파이프라인 · 컨설팅 설계 (미팅 예정)로 바로 들어갑니다 · 유입 = 아웃바운드 (견적문의 · 인바운드 통계와 따로 집계) 취소 영업 등록');
+  assert.equal(one(await M.locator('.nd2-foot').innerText()),'등록하면 파이프라인 · 컨설팅 설계 (미팅 전)로 바로 들어갑니다 · 유입 = 아웃바운드 (견적문의 · 인바운드 통계와 따로 집계) 취소 영업 등록');
+  /* 글꼴은 CRM 본문 글꼴 그대로(2026-10-05 "디자인이 투박해졌는데" — 'Pretendard' 만 적어 맑은 고딕으로 떨어졌던 것) · 안쪽 스크롤 없이 한 화면 */
+  assert.deepEqual(await M.evaluate(m=>{const b=getComputedStyle(document.body).fontFamily;return [getComputedStyle(m).fontFamily===b,getComputedStyle(m.querySelector('input')).fontFamily===b,getComputedStyle(m.querySelector('.nd2-src b')).letterSpacing];}),[true,true,'normal']);
+  assert.equal(await M.locator('.nd2-body').evaluate(n=>n.scrollHeight<=n.clientHeight+1),true,'안쪽 스크롤 없음');
+  /* 아래 줄: 안내 글은 왼쪽 · 버튼은 오른쪽 끝(간격 조정 때 기본 꾸밈이 빠지면 버튼이 글 뒤에 붙는다) */
+  assert.deepEqual(await M.evaluate(m=>{const f=m.querySelector('.nd2-foot'),r=f.getBoundingClientRect(),b=[...f.querySelectorAll('button')].pop().getBoundingClientRect(),c=getComputedStyle(f);return [c.display,c.borderTopWidth,Math.round(r.right-b.right)];}),['flex','1px',22],'아래 줄 버튼은 오른쪽 끝');
+  /* 날짜 칸: 시안 모양(2026.10.8 (수)) · 사흘 뒤(주말이면 월요일)로 채워 둠 · 누르면 달력 */
+  const dflt=await page.evaluate(()=>{const d=new Date();d.setDate(d.getDate()+3);if(d.getDay()===6)d.setDate(d.getDate()+2);else if(d.getDay()===0)d.setDate(d.getDate()+1);return [d.toLocaleDateString('en-CA'),d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate()+' ('+'일월화수목금토'[d.getDay()]+')'];});
+  assert.deepEqual([await f('due').inputValue(),await M.locator('[data-nd2-due]').inputValue()],dflt);
+  assert.deepEqual(await M.locator('[data-nd2-due]').evaluate(i=>[i.readOnly,i.type,getComputedStyle(i).backgroundColor]),[true,'text','rgb(255, 255, 255)']);
   assert.deepEqual(await M.locator('.nd2-foot .pri').evaluate(b=>[getComputedStyle(b).backgroundColor,getComputedStyle(b).color]),['rgb(59, 108, 228)','rgb(255, 255, 255)']);
   /* 노랑 · 검정 큰 상자 없음: 기존 근거 상자(.reasonbox)를 쓰지 않는다 */
   assert.equal(await M.locator('.reasonbox').count(),0);
@@ -81,9 +90,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await f('role').selectOption('입대의 회장');
   await save();assert.equal(await err(),'어떻게 시작됐는지 한 줄(5자 이상)을 남겨 주세요.');
   await M.locator('#nd2-why-text').fill('동탄 현장 소장님 소개 · 내년 재도장 입찰 예정');
-  await save();assert.equal(await err(),'첫 다음 행동의 날짜를 정해 주세요.');
   const due=await page.evaluate(()=>new Date(Date.now()+3*864e5).toLocaleDateString('en-CA'));
-  await f('due').fill(due);assert.match(await M.locator('[data-nd2-day]').innerText(),/^\([일월화수목금토]\)$/);
+  await f('due').fill(due);assert.match(await M.locator('[data-nd2-due]').inputValue(),/^\d{4}\.\d{1,2}\.\d{1,2} \([일월화수목금토]\)$/);
   /* 소개: 소개한 사람 · 연락처(선택) */
   await M.locator('.nd2-src',{hasText:'소개'}).first().click();await page.waitForTimeout(150);
   assert.deepEqual(await M.locator('.nd2-ref input').evaluateAll(l=>l.map(i=>i.placeholder)),['소개한 사람 (예: 김OO 소장 · 동탄푸른마을)','소개한 사람 연락처 · 선택']);
