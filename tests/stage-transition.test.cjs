@@ -93,3 +93,15 @@ for(const mobile of [false,true])test((mobile?'모바일':'PC')+' 직접 계약 
  assert.equal(h.d.nextAction.status,'open');
  for(const entry of h.d.stageHistory)assert.ok(!['compete','bidding'].includes(entry.structured.to));
 });
+
+for(const mobile of [false,true])test((mobile?'모바일':'PC')+' 응대 기록을 기존 입력칸에 불러오고 취소하면 아무것도 저장하지 않는다',()=>{
+ const h=harness(mobile,'first_contact');h.d.legacy_notes=[{id:'note',body:'2025년 2월 12일 PT 진행 완료',occurred_at:'2025-02-14'}];
+ h.open('compete');assert.equal(h.nodes['sf-competition_type'].value,'PT');assert.equal(h.nodes['sf-meeting_date'].value,'2025-02-12');assert.match(h.html(),/과거 메모에서 불러옴/);
+ assert.match(h.nodes['sf-memo'].value||h.html(),/PT 기록/);assert.equal(h.writes.length,0);
+ h.c.StageTransitionUI.close();assert.equal(h.writes.length,0);assert.equal(h.d.code,'first_contact');
+});
+test('과거 발송일이 불명확하면 오늘 날짜로 채우지 않고 실제 참여 기록의 누락만 메모에 남긴다',()=>{
+ const h=harness(false,'first_contact');h.d.legacy_notes=[{body:'제안서 발송완료',occurred_at:'2025-02-14'}];h.open('sent');assert.equal(h.nodes['sf-sent_date'].value,'');
+ h.d.legacy_notes=[{body:'PT 진행 완료\n입찰 참여 완료'},{body:'PT 진행 유도'}];h.open('contract');assert.match(h.html(),/PT 일자 확인/);assert.match(h.html(),/입찰 결과 확인/);assert.equal(h.nodes['sf-bid_result'].value,'');
+ h.set('date',date);h.set('contract_amount','100000000');h.set('contract_status','체결 완료');h.set('contract_date',date);h.c.StageTransitionUI.save();assert.equal(h.d.code,'contract');assert.equal(h.d.stageHistory.length,1);
+});
