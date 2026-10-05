@@ -146,9 +146,10 @@
  function live(){const m=node(),text=sample(),bytes=root.campaignBytes(text),b=m.querySelector('#sd-bubble'),n=m.querySelector('#sd-bytes');if(b){b.textContent=text.trim()?text:'문구를 입력하면 고객이 받는 모습 그대로 보입니다.';b.classList.toggle('empty',!text.trim());}if(n){n.textContent=bytes>90?'LMS · '+bytes+' byte':'SMS · '+bytes+'/90 byte';n.className=bytes>90?'lms':'sms';}}
  function render(){const box=node().querySelector('.sd-box'),y=box.querySelector('.sd-body')?.scrollTop||0;box.innerHTML=dialogHtml();const b=box.querySelector('.sd-body');if(b)b.scrollTop=y;}
  /* custom={title,keys:Set<dealKey>} — 'CRM에게 묻기' 결과 묶음처럼 화면 밖에서 고른 대상에게 보낼 때. 검수 · 발송 경로는 같다 */
- function open(key,custom){
-  const targets=custom?targetsOf('all').filter(t=>custom.keys.has(root.dealKey(t.deal))):targetsOf(key),d=new Date(Date.now()+864e5);d.setHours(9,0,0,0);
+ function open(key,custom,draft){
+  const candidates=custom?targetsOf('all').filter(t=>custom.keys.has(root.dealKey(t.deal))):targetsOf(key),selected=draft&&Object.keys(draft.selected||{}),targets=selected&&selected.length?candidates.filter(t=>draft.selected[t.key]):candidates,d=new Date(Date.now()+864e5);d.setHours(9,0,0,0);
   S={key,title:custom?custom.title:'',targets,ready:targets.filter(t=>t.guard.ok),purpose:DEFAULT_PURPOSE[key]||PURPOSES[0],templateKey:'',body:'',ad:false,mode:'now',at:root.localDateTimeValue?root.localDateTimeValue(d):'',confirmed:false,focus:document.activeElement};
+  if(draft){S.body=String(draft.body||'');S.templateKey=draft.templateKey||'';S.purpose=draft.purpose||S.purpose;S.mode=draft.sendMode==='schedule'?'schedule':'now';S.at=draft.scheduleAt||S.at;}
   const m=node();render();m.classList.add('on');m.querySelector('#sd-body')?.focus();
  }
  function close(){const m=document.getElementById('smsDialog');if(m)m.classList.remove('on');const f=S&&S.focus;S=null;if(f&&f.isConnected)f.focus?.({preventScroll:true});}
@@ -184,9 +185,12 @@
  function boot(){
   const base=root.paintCampaign;if(typeof base!=='function')return;
   root.paintCampaign=function(){
+   const entering=root.G.campaignTab==='send',draft=entering?{...root.CAMPAIGN_STATE,selected:{...root.CAMPAIGN_STATE.selected}}:null;
+   if(entering)root.G.campaignTab='home';
    const r=base.apply(this,arguments),pg=document.getElementById('pg-campaign'),host=document.getElementById('campaign-root'),bar=pg?.querySelector(':scope>.cf-bar'),home=(root.G.campaignTab||'home')==='home';
-   if(!enabled()||!home||!host){pg?.classList.remove('sv-on');if(bar)bar.hidden=true;return r;}
+   if((!enabled()&&!entering)||!home||!host){pg?.classList.remove('sv-on');if(bar)bar.hidden=true;return r;}
    try{paintList(host);pg?.classList.add('sv-on');root.CommonFilterBar?.mount('campaign');const b2=pg?.querySelector(':scope>.cf-bar');if(b2)b2.hidden=false;}catch(e){console.warn('[문자 v2]',e);}
+   if(entering)open(root.G.campaignCategory||'all',null,draft);
    return r;
   };
  }

@@ -78,8 +78,8 @@
   const tools=document.querySelector('#pg-inq .inq-inbox-heading .inq-work-tools');
   if(tools){const body=tools.querySelector('.inq-tools-body');const filters=document.querySelector('#pg-inq .inq-inbox-sticky .inq-work-filters'),bar=document.querySelector('#pg-inq .inq-inbox-sticky .sales-filterbar');
    if(body){if(filters){filters.classList.add('iv-in-more');body.prepend(filters);}if(bar){bar.classList.add('iv-in-more');body.prepend(bar);}
-    if(!body.querySelector('.iv-legacy')){const b=document.createElement('button');b.type='button';b.className='iv-legacy';b.textContent='예전 목록으로 보기(일괄 선택·배정)';b.onclick=()=>{root.G.inqV2Off=true;root.paint();};body.append(b);}}
-   tools.open=!!st().more;tools.addEventListener('toggle',()=>{st().more=tools.open;});host.querySelector('.iv-more-slot').append(tools);}
+   }
+   tools.hidden=true;host.querySelector('.iv-more-slot').append(tools);}
  }
  function open(key,act){const w=W();if(!w)return;if(act==='rep'||act==='none'||!act)return w.open(key);return w.open(key,act);}
  function click(e){

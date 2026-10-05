@@ -141,7 +141,7 @@
   const status=document.createElement('nav');status.className='inq-work-counts';status.setAttribute('aria-label','할 일별 문의');status.innerHTML='<span class="inq-layer">할 일</span>'+[['unassigned','배정'],['waiting','첫 연락'],['followup','후속 연락'],['decision','영업건 전환 판단']].map(([key,label])=>[key,label,active.filter(q=>matches(q,key)).length]).map(([key,label,n])=>'<button aria-pressed="'+(selected===key)+'" data-key="'+key+'" onclick="InquiryWorkbench.set(this.dataset.key)"><span>'+label+'</span><b>'+n+'</b></button>').join('');
   const heading=document.createElement('div');heading.className='inq-inbox-heading';
   if(root.G.page==='inq'){root.$('#ptitle').textContent='견적문의';root.$('#psub').textContent='배정 → 첫 연락 → 후속 연락 → 영업건 전환 판단 순으로 처리합니다.'}
-  const tools=document.createElement('details');tools.className='inq-work-tools';tools.open=!!root.G.inqToolsOpen;tools.addEventListener('toggle',()=>{root.G.inqToolsOpen=tools.open});tools.innerHTML='<summary>더보기</summary><div class="inq-tools-body"></div>';const menu=tools.lastChild;
+  const tools=document.createElement('div');tools.className='inq-work-tools';tools.hidden=true;tools.innerHTML='<div class="inq-tools-body"></div>';const menu=tools.lastChild;
   if(tabs){Array.from(tabs.children).forEach(b=>{if(['전체','미배정','배정완료'].includes(b.dataset.t))b.remove()});menu.append(tabs)}
   if(toolbar){toolbar.querySelector(':scope > span')?.remove();toolbar.querySelectorAll('button[data-v]').forEach(b=>{b.onclick=()=>view(b.dataset.v);if(b.dataset.v==='console')b.textContent='문의 목록'});menu.append(toolbar)}
   heading.append(tools);signals.prepend(heading);if(roles)heading.prepend(roles);
