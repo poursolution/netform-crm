@@ -7,6 +7,8 @@
 -- 새 표 1개(crm_security.work_requests) + 함수 4개. 다른 표는 읽기(public.users)만 한다. 다시 실행해도 안전하다.
 --   · 표는 RLS 를 켜고 정책을 두지 않는다 — 읽기 · 쓰기는 아래 함수로만.
 --   · 보내기 · 재확인 · 취소 = 관리자(admin). 회신 · 완료 = 받는 사람(지사 요청은 지사 계정) 또는 관리자. 읽기 = 보낸 사람 · 받는 사람 · 관리자(현장을 지정하면 로그인한 CRM 사용자).
+--   · 받는 사람이 CRM 에서 요청을 볼 수 없는 경우(운영 확인 2026-10-05: 영업이사 전용성 · 조성용은 로그인 계정이 없고, 경남지사 계정은 권한 승인(access_review)이 없다)도
+--     요청은 남긴다 — to_reach=false 로 내려 주고, 보낸 쪽 화면이 '전화로 전달 · [처리 확인]'으로 다룬다. 영업이사는 관리 명단(crm_security.sales_directors)에 있는 이름만.
 
 create table if not exists crm_security.work_requests(
  id uuid primary key default gen_random_uuid(),
@@ -56,7 +58,9 @@ returns jsonb language sql stable set search_path='' as $fn$
   'result',r.result,'result_owner',r.result_owner,'next_text',r.next_text,'next_due',r.next_due,'reply_note',r.reply_note,'auto_done',r.auto_done,'round',r.round,
   'requested_by',r.requested_by_name,'replied_by',r.replied_by_name,'created_at',r.created_at,'reasked_at',r.reasked_at,'seen_at',r.seen_at,'closed_at',r.closed_at,'updated_at',r.updated_at,
   'open',r.status in ('sent','seen','working'),'overdue',r.status in ('sent','seen','working') and r.due_at<now(),
-  'by_me',r.requested_by_user_id=a_user,'to_me',(r.to_scope='user' and r.to_user_id=a_user) or (r.to_scope='branch' and a_role='branch'));
+  'by_me',r.requested_by_user_id=a_user,'to_me',coalesce((r.to_scope='user' and r.to_user_id=a_user) or (r.to_scope='branch' and a_role='branch'),false),
+  'to_reach',case when r.to_scope='branch' then exists(select 1 from public.users u join crm_security.access_review v on v.user_id=u.user_id where u.active and v.approved and v.expires_at>now() and v.permission_role='branch')
+   else r.to_user_id is not null and exists(select 1 from crm_security.access_review v where v.user_id=r.to_user_id and v.approved and v.expires_at>now()) end);
 $fn$;
 revoke all on function crm_security.work_request_json(crm_security.work_requests,uuid,text) from public, anon, authenticated;
 
@@ -82,7 +86,7 @@ begin
  if v_due<v_at - interval '1 minute' or v_due>v_at + interval '31 days' then raise exception '처리 기한이 올바르지 않습니다' using errcode='22023'; end if;
  if v_scope='user' then
   select u.user_id into v_to_id from public.users u where u.name=v_to and u.active order by u.created_at limit 1;
-  if v_to_id is null then raise exception '받는 사람을 찾을 수 없습니다' using errcode='22023'; end if;
+  if v_to_id is null and not exists(select 1 from crm_security.sales_directors d where d.name=v_to and d.active) then raise exception '받는 사람을 찾을 수 없습니다' using errcode='22023'; end if;
   if v_to_id=a.user_id then raise exception '내 담당 건은 요청 없이 바로 처리합니다' using errcode='22023'; end if;
  end if;
  begin
@@ -136,7 +140,7 @@ begin
  end if;
  select * into r from crm_security.work_requests w where w.id=v_id for update;
  if not found then raise exception '요청을 찾을 수 없습니다' using errcode='22023'; end if;
- v_to_me:=(r.to_scope='user' and r.to_user_id=a.user_id) or (r.to_scope='branch' and a.permission_role='branch');
+ v_to_me:=coalesce((r.to_scope='user' and r.to_user_id=a.user_id) or (r.to_scope='branch' and a.permission_role='branch'),false); -- 받는 계정이 없는 요청(to_user_id 없음)은 누구에게도 내 것이 아니다
  if v_action='cancel' then
   if a.permission_role<>'admin' and r.requested_by_user_id<>a.user_id then raise exception 'forbidden' using errcode='42501'; end if;
  elsif not v_to_me and a.permission_role<>'admin' then

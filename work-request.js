@@ -57,7 +57,7 @@
   S.busy=true;O().rpc(RPC.list,{days:30}).then(r=>{const before=JSON.stringify(S.list),first=!S.loaded;S.list=Array.isArray(r.requests)?r.requests:[];S.loaded=true;S.at=Date.now();
    if(first||before!==JSON.stringify(S.list))repaint();setTimeout(autoClose,0);}).catch(()=>{S.at=Date.now();}).finally(()=>{S.busy=false;});
  }
- function repaint(){try{if(R.G.page==='today'||R.G.page==='mgmt')R.paint();else if(document.getElementById('inq-inbox-dialog')&&R.InquiryDetailV2)R.InquiryDetailV2.reskin();}catch(e){}}
+ function repaint(){try{if(R.G.page==='today'||R.G.page==='mgmt'||document.getElementById('kpi-b'))R.paint();else if(document.getElementById('inq-inbox-dialog')&&R.InquiryDetailV2)R.InquiryDetailV2.reskin();}catch(e){}}
  const put=r=>{if(!r||!r.id)return;const S=st(),i=S.list.findIndex(x=>x.id===r.id);if(i>=0)S.list[i]=r;else S.list.unshift(r);};
  const isOpen=r=>r.status==='sent'||r.status==='seen'||r.status==='working';
  const overdue=r=>isOpen(r)&&Date.parse(r.due_at)<Date.now();
@@ -127,8 +127,8 @@
   const asks=q.K.asks.filter((_,n)=>M.asks[n]),dueLabel=label==='직접 지정'?mdK(M.custom):label;
   M.busy=true;M.err='';drawModal();
   O().rpc(RPC.create,{target_type:q.type,target_id:q.id,site:i.i.site,brand:i.brand||'',kind:q.kind,label:q.label,to_scope:q.scope,to_name:q.to,asks:asks.length?asks:[q.label],due_at:at.toISOString(),due_label:dueLabel,memo:M.memo})
-   .then(r=>{put(r.request);closeModal();toast(q.to+'에게 '+q.label+'을 보냈습니다 · 오른쪽 \'답 기다리는 중\'에서 확인');noteDeal(r.request,'[내부 요청] '+lineReq(r.request));repaint();})
-   .catch(e=>{const M2=st().modal;if(!M2)return;M2.busy=false;M2.err=e&&e.unavailable?'요청 저장소가 아직 서버에 적용되지 않았습니다.':String(e&&e.message||e);drawModal();if(/이미 답을 기다리는/.test(M2.err))load(true);});
+   .then(r=>{put(r.request);closeModal();toast(r.request.to_reach===false?q.to+'은(는) CRM에서 요청을 받을 수 없습니다 — 요청은 기록했으니 전화로 전달해 주세요':q.to+'에게 '+q.label+'을 보냈습니다 · 오른쪽 \'답 기다리는 중\'에서 확인',r.request.to_reach===false?'warn':undefined);noteDeal(r.request,'[내부 요청] '+lineReq(r.request));repaint();})
+   .catch(e=>{const M2=st().modal;if(!M2)return;M2.busy=false;M2.err=e&&e.unavailable?'요청 저장소가 아직 서버에 적용되지 않았습니다.':/받는 사람을 찾을 수 없습니다/.test(String(e&&e.message))?q.to+'은(는) CRM 계정 · 영업이사 명단에 없어 요청을 남길 수 없습니다 — 전화로 전달해 주세요.':String(e&&e.message||e);drawModal();if(/이미 답을 기다리는/.test(M2.err))load(true);});
  }
  /* ── 응대 이력 줄 ── */
  const lineReq=r=>(r.requested_by||'관리자')+' → '+r.to_name+' · '+((r.asks||[]).join(' · ')||r.label)+' · 기한 '+(r.due_label||whenTxt(r.due_at));
@@ -155,6 +155,11 @@
  const touch=r=>{const k=r.target_type+':'+r.target_id;if(TG[k])delete TG[k];};
  /* 영업건은 기존 내부 메모 길(DealDetailV3.memo)로 한 줄 — 응대 이력에 '[내부 요청] …'으로 남는다. 문의는 위 history 가 이력에 끼워 넣는다 */
  function noteDeal(r,text){if(!r||r.target_type!=='deal')return;const t=target(r),D=R.DealDetailV3;if(!t.item||!D||typeof D.memo!=='function')return;try{Promise.resolve(D.memo(t.item,text,{})).catch(()=>{});}catch(e){}}
+ function decorate(){
+  const v=document.getElementById('detailView');if(!v)return;
+  v.querySelectorAll('.idv-thread>.idv-msg').forEach(m=>{const b=m.querySelector('.idv-bubble');if(!b||m.dataset.wrq)return;const t=String(b.textContent||'').trim();if(!/^\[내부 요청\]/.test(t))return;m.dataset.wrq='1';
+   const em=m.querySelector('.idv-meta em'),k=m.querySelector('.idv-meta .dv3-kind');if(k){k.textContent='시스템 · 내부 요청';if(em)em.remove();}else if(em)em.textContent='시스템 · 내부 요청';b.textContent=t.replace(/^\[내부 요청\]\s*/,'');});
+ }
  /* ── 보낸 사람: 답 기다리는 중 ── */
  function waiting(){const S=st(),dayAgo=Date.now()-864e5;return S.list.filter(r=>r.by_me&&(isOpen(r)||(r.closed_at&&Date.parse(r.closed_at)>=dayAgo&&r.status!=='cancelled'&&!S.seen[r.id]))).sort((a,b)=>(overdue(b)?1:0)-(overdue(a)?1:0)||String(b.updated_at).localeCompare(String(a.updated_at)));}
  function sideHtml(){
@@ -162,11 +167,12 @@
   const item=r=>{const od=overdue(r),br=r.kind==='branch',ok=r.status==='replied'||r.status==='done',ab=r.status==='absent';
    const pill=od?['요청 미이행'+(r.round>=2?' · '+r.round+'회':''),'bad']:ok?[r.status==='replied'?'회신 완료':'✓ 처리 완료','ok']:ab?['요청 처리 · 부재','amb']:[r.status==='seen'?'담당 확인':r.status==='working'?'처리 중':'답변 대기','amb'];
    const btns=od?['<button type="button" data-wr="reask" data-id="'+r.id+'">재확인 요청</button>'].concat(br?['<button type="button" data-wr="recall" data-id="'+r.id+'">본사 회수 검토</button>']:r.round>=2?['<button type="button" data-wr="reassign" data-id="'+r.id+'">재배정 검토</button>']:[]):(ok||ab)?['<button type="button" data-wr="check" data-id="'+r.id+'">진행 확인</button>']:[];
-   const reply=ok||ab?lineEnd(r):'',note=od&&r.round>=2?(br?'지사 확인 요청 '+r.round+'회 미이행 → 본사 회수 검토 권장':r.label+' '+r.round+'회 미이행 → 재배정 검토 권장'):'';
+   if(isOpen(r)&&r.to_reach===false)btns.push('<button type="button" data-wr="ack" data-id="'+r.id+'">처리 확인</button>');
+   const reply=ok||ab?lineEnd(r):'',note=od&&r.round>=2?(br?'지사 확인 요청 '+r.round+'회 미이행 → 본사 회수 검토 권장':r.label+' '+r.round+'회 미이행 → 재배정 검토 권장'):'',unreach=isOpen(r)&&r.to_reach===false?r.to_name+'은(는) CRM에서 이 요청을 볼 수 없습니다 · 전화로 전달하고, 처리되면 [처리 확인]':'';
    return '<div class="wrq-w"><div class="l1"><i style="background:'+(BRAND[r.brand]||'#9aa0ab')+'"></i><b title="'+attr(r.site)+'">'+h(r.site)+'</b><span class="wrq-pill '+pill[1]+'">'+h(pill[0])+'</span></div>'
     +'<span class="l2">'+h(r.to_name+'에게 · '+((r.asks||[]).join(' · ')||r.label))+'</span>'
     +'<div class="l3"><span>'+h(whenTxt(r.reasked_at||r.created_at)+' · 기한 '+(r.due_label||whenTxt(r.due_at)))+'</span><i></i>'+btns.join('')+'</div>'
-    +(reply?'<span class="rp '+(ab?'amb':'ok')+'">'+h(reply)+'</span>':'')+(note?'<span class="nt">'+h(note)+'</span>':'')+'</div>';};
+    +(reply?'<span class="rp '+(ab?'amb':'ok')+'">'+h(reply)+'</span>':'')+(note?'<span class="nt">'+h(note)+'</span>':'')+(unreach?'<span class="ur">'+h(unreach)+'</span>':'')+'</div>';};
   return '<section class="wrq-wait"><header><b>답 기다리는 중</b><span>내가 요청한 일 '+L.length+'건</span></header>'+L.map(item).join('')+'<p class="ft">답변 대기 중엔 같은 요청 잠금 · 기한이 지나야 [재확인 요청] · 지사 건은 [본사 회수 검토]</p></section>';
  }
  function autoBranch(){
@@ -243,7 +249,7 @@
  function autoClose(){
   if(!enabled())return;const S=st(),admin=(()=>{try{return !!R.todayIsAdmin();}catch(e){return false;}})();
   S.list.filter(r=>isOpen(r)&&(r.to_me||admin)&&!S.closing[r.id]).forEach(r=>{const ev=evidence(r);if(!ev)return;S.closing[r.id]=true;
-   O().rpc(RPC.reply,{id:r.id,action:'done',auto:true,result:ev.result,absent:ev.absent}).then(x=>{put(x.request);touch(x.request);repaint();}).catch(()=>{}).finally(()=>{delete S.closing[r.id];});});
+   O().rpc(RPC.reply,{id:r.id,action:'done',auto:true,result:ev.result,absent:ev.absent}).then(x=>{put(x.request);touch(x.request);noteDeal(x.request,'[내부 요청] '+lineEnd(x.request));repaint();}).catch(()=>{}).finally(()=>{delete S.closing[r.id];});});
  }
  /* ── 누르기 ── */
  function dial(d){if(!d)return;const a=document.createElement('a');a.href='tel:'+d;a.style.display='none';document.body.append(a);a.click();a.remove();}
@@ -258,6 +264,7 @@
   if(a==='reask')return reask(id);
   const r=S.list.find(x=>x.id===id);if(!r)return;
   if(a==='check'){S.seen[id]=true;openTarget(r);return repaint();}
+  if(a==='ack'){if(S.closing[id])return;S.closing[id]=true;return O().rpc(RPC.reply,{id,action:'done',result:'관리자 확인 · 전화로 전달'}).then(x=>{put(x.request);touch(x.request);toast('처리 확인으로 닫았습니다');noteDeal(x.request,'[내부 요청] '+lineEnd(x.request));repaint();}).catch(e=>toast('닫지 못했습니다: '+String(e&&e.message||e),'warn')).finally(()=>{delete S.closing[id];});}
   if(a==='reassign'||a==='recall')return openTarget(r);
   if(a==='go')return openTarget(r,r.kind==='quote'||r.kind==='contract'||r.kind==='award'?undefined:'contact');
   if(a==='dial')return dial(target(r).digits);
@@ -267,5 +274,5 @@
  }
  document.addEventListener('click',onClick,true);
  document.addEventListener('change',e=>{const t=e.target;if(t&&t.matches&&t.matches('#pg-today [data-wr-in="owner"]')){const C=st().card[t.dataset.id];if(C){C.owner=t.value;repaint();}}},true);
- root.WorkRequest={enabled,load,reqFor,locked,cell,sideHtml,topHtml,history,autoClose,evidence,KIND,RPC,state:st,_dueAt:dueAt,_lineReq:lineReq,_lineEnd:lineEnd};
+ root.WorkRequest={enabled,load,reqFor,locked,cell,sideHtml,topHtml,history,autoClose,evidence,decorate,KIND,RPC,state:st,_dueAt:dueAt,_lineReq:lineReq,_lineEnd:lineEnd};
 })(window);

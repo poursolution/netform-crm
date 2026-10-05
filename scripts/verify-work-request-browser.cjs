@@ -36,14 +36,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    /* 가짜 저장소: sql/work-request-v1-20261005.sql 과 같은 규칙(관리자만 보냄 · 같은 요청 잠금 · 받는 사람만 회신 · 기한이 지나야 재확인) */
    const U={'송보람':'u-admin','이필선':'u-lee','김성민':'u-kim','정정훈':'u-jung','조민준':'u-jo'};window.__db=[];window.__rpc=[];let seq=0;
    const role=()=>ME.role==='admin'?'admin':ME.role==='branch'?'branch':'rep',uid=()=>U[ME.name]||ME.id;
-   const J=r=>Object.assign({},r,{open:['sent','seen','working'].includes(r.status),overdue:['sent','seen','working'].includes(r.status)&&Date.parse(r.due_at)<Date.now(),by_me:r._by===uid(),to_me:(r.to_scope==='user'&&r._to===uid())||(r.to_scope==='branch'&&role()==='branch')});
+   const J=r=>Object.assign({},r,{to_reach:r.to_scope==='branch'?true:!!r._to,open:['sent','seen','working'].includes(r.status),overdue:['sent','seen','working'].includes(r.status)&&Date.parse(r.due_at)<Date.now(),by_me:r._by===uid(),to_me:(r.to_scope==='user'&&r._to===uid())||(r.to_scope==='branch'&&role()==='branch')});
    const err=m=>({error:{message:m}}),now=()=>new Date().toISOString();
    window.__srv=true;
    SB={rpc:async(name,args)=>{const p=(args&&args.p)||{};__rpc.push([name,JSON.parse(JSON.stringify(p)),ME.name]);
     if(!window.__srv&&/^crm_work_request_/.test(name))return {error:{code:'PGRST202',message:'Could not find the function'}};
     if(name==='crm_work_request_create_v1'){if(role()!=='admin')return err('요청은 관리자만 보낼 수 있습니다');
      if(__db.some(r=>r.target_type===p.target_type&&r.target_id===p.target_id&&r.kind===p.kind&&['sent','seen','working'].includes(r.status)))return err('이미 답을 기다리는 같은 요청이 있습니다');
-     if(p.to_scope==='user'&&!U[p.to_name])return err('받는 사람을 찾을 수 없습니다');
+     if(p.to_scope==='user'&&!U[p.to_name]&&!['전용성','조성용'].includes(p.to_name))return err('받는 사람을 찾을 수 없습니다');/* 영업이사 명단은 계정이 없어도 남긴다 */
      const r={id:'r'+(++seq),target_type:p.target_type,target_id:p.target_id,site:p.site,brand:p.brand,kind:p.kind,label:p.label,to_scope:p.to_scope,to_name:p.to_name,asks:p.asks,due_at:p.due_at,due_label:p.due_label,memo:p.memo,status:'sent',result:null,result_owner:null,next_text:null,next_due:null,reply_note:null,auto_done:false,round:1,requested_by:ME.name,replied_by:null,created_at:now(),reasked_at:null,seen_at:null,closed_at:null,updated_at:now(),_by:uid(),_to:U[p.to_name]||null};
      __db.unshift(r);return {data:{ok:true,request:J(r)}};}
     if(name==='crm_work_request_list_v1'){const rows=__db.filter(r=>p.target_type?(r.target_type===p.target_type&&r.target_id===p.target_id):(role()==='admin'||r._by===uid()||(r.to_scope==='user'&&r._to===uid())||(r.to_scope==='branch'&&role()==='branch')));return {data:{ok:true,requests:rows.map(J)}};}
@@ -205,6 +205,23 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(()=>__db.filter(r=>r.kind==='branch').map(r=>[r.site,r.due_label,r.memo,r.to_scope])),[['[경북 경주] 전원하이빌','내일 12시','넘긴 지 15일 · 지사 응대 기록이 없어 자동으로 확인을 요청합니다.','branch']],'설정을 켜면 7일 넘은 지사 건에 자동 확인 요청 한 번');
   await page.evaluate(()=>{G.workReq.autoDay='';paint();});await page.waitForTimeout(400);assert.equal(await page.evaluate(()=>__db.filter(r=>r.kind==='branch').length),1,'이미 보낸 건은 다시 보내지 않는다');
   await page.evaluate(()=>{OPS_RULES.workRequestBranchAuto=false;});
+  /* CRM 에서 받을 수 없는 대상(영업이사 — 로그인 계정 없음 · 운영 확인 2026-10-05): 요청은 남기고 보낸 쪽에서 추적 · [처리 확인] */
+  await page.evaluate(()=>{const at=d=>new Date(Date.now()-d*864e5).toISOString();B.inquiries.push({id:'00000005-0000-4000-8000-000000000005',site:'[서울] 정릉중앙하이츠아파트',status:'배정완료',at:at(17),created_at:at(17),brand:'POUR솔루션',phone:'010-8812-4410',contact_name:'고객5 관리소장',assignee:'전용성',assigned_to:'전용성',assigned_at:at(17),work_type:'옥상방수',raw:{'문의내용':'옥상 방수 문의','상담채널':'전화','공사유형':'옥상방수'}});__toasts.length=0;});
+  await as({id:'u-admin',name:'송보람',role:'admin'});
+  await v.locator('[data-wr="ask"][data-key="inq:00000005-0000-4000-8000-000000000005"]').first().click();await page.waitForTimeout(200);
+  assert.equal(await m.locator('header b').innerText(),'첫 연락 요청');assert.equal(await m.locator('.wrq-form>b').first().innerText(),'[서울] 정릉중앙하이츠아파트 · POUR솔루션 · 담당 전용성');
+  await m.locator('[data-wr="send"]').click();await page.waitForTimeout(350);
+  assert.ok((await page.evaluate(()=>__toasts.join(' | '))).includes('전용성은(는) CRM에서 요청을 받을 수 없습니다 — 요청은 기록했으니 전화로 전달해 주세요'));
+  {const w=(await waits()).find(x=>x[0]==='[서울] 정릉중앙하이츠아파트');assert.deepEqual([w[1],w[2],w[4]],['답변 대기','전용성에게 · 고객 첫 연락','처리 확인']);
+   assert.equal(await v.locator('.wrq-w',{hasText:'정릉중앙'}).locator('.ur').innerText(),'전용성은(는) CRM에서 이 요청을 볼 수 없습니다 · 전화로 전달하고, 처리되면 [처리 확인]');
+   await v.locator('.wrq-w',{hasText:'정릉중앙'}).locator('[data-wr="ack"]').click();await page.waitForTimeout(350);
+   assert.deepEqual(await page.evaluate(()=>{const r=__db.find(x=>x.target_id==='00000005-0000-4000-8000-000000000005');return [r.status,r.result,r.replied_by];}),['done','관리자 확인 · 전화로 전달','송보람']);
+   assert.equal((await waits()).find(x=>x[0]==='[서울] 정릉중앙하이츠아파트')[1],'✓ 처리 완료');}
+  await page.evaluate(()=>{const i=B.inquiries.findIndex(x=>x.id==='00000005-0000-4000-8000-000000000005');B.inquiries.splice(i,1);});
+  /* 관리팀 KPI 8번 '조치 → 처리율'의 자료 = 요청 업무(회신 · 기록으로 완료 ÷ 보낸 요청 · 취소 제외) */
+  assert.deepEqual(await page.evaluate(()=>{const C=KpiB.compute(),k=C.M[7],all=__db.filter(r=>r.status!=='cancelled'),ok=all.filter(r=>r.status==='done'||r.status==='replied');return [k.wrq===all.length,k.den>=all.length,k.num>=ok.length,ok.length>0];}),[true,true,true,true]);
+  /* 영업건 상세 응대 이력: '[내부 요청] …' 메모 줄 = '시스템 · 내부 요청' 표시 */
+  assert.deepEqual(await page.evaluate(()=>{const v=document.getElementById('detailView'),box=document.createElement('div');box.className='idv-thread';box.innerHTML='<div class="idv-msg"><div class="idv-meta"><em>내부 메모</em></div><div class="idv-bubble">[내부 요청] 송보람 → 김성민 · 수신 확인 · 기한 오늘 17:00</div></div><div class="idv-msg"><div class="idv-meta"><em>내부 메모</em></div><div class="idv-bubble">그냥 메모</div></div>';v.append(box);WorkRequest.decorate();const r=[...box.querySelectorAll('.idv-msg')].map(n=>[n.querySelector('.idv-meta em').textContent,n.querySelector('.idv-bubble').textContent]);box.remove();return r;}),[['시스템 · 내부 요청','송보람 → 김성민 · 수신 확인 · 기한 오늘 17:00'],['내부 메모','그냥 메모']]);
   /* 11. 권한: 영업사원 화면에는 요청 버튼 · '답 기다리는 중'이 없다(내 영업만) */
   await as({id:'u-kim',name:'김성민',role:'rep'});
   assert.equal(await page.locator('#today-v2 .tv3 [data-wr="ask"]').count(),0);assert.equal(await page.locator('#today-v2 .tv3 .wrq-wait').count(),0);
@@ -214,6 +231,6 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.evaluate(()=>WorkRequest.enabled()),false);assert.equal(await page.locator('#today-v2 .tv3 [data-wr]').count(),0);assert.equal(await page.locator('#today-v2 .tv3').evaluate(n=>n.classList.contains('wrq-on')),false);
   assert.ok((await page.locator('#today-v2 .tv3').innerText()).includes('독촉'),'저장소가 없으면 예전 버튼');
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',buttons_named_by_situation:true,small_request_window:true,leaves_list_into_waiting:true,duplicate_lock:true,rep_top_request_auto_complete:true,absent_is_attempt_only:true,branch_reply_with_owner:true,overdue_reask_reassign_recall:true,history_system_lines:true,auto_complete_from_records:true,branch_recall_suggest_auto_off_by_default:true,fallback_without_server:true}));
+  console.log(JSON.stringify({status:'PASS',buttons_named_by_situation:true,small_request_window:true,leaves_list_into_waiting:true,duplicate_lock:true,rep_top_request_auto_complete:true,absent_is_attempt_only:true,branch_reply_with_owner:true,overdue_reask_reassign_recall:true,history_system_lines:true,auto_complete_from_records:true,branch_recall_suggest_auto_off_by_default:true,unreachable_recipient_tracked_and_ack:true,kpi8_source:true,deal_history_label:true,fallback_without_server:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
