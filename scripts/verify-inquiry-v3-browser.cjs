@@ -88,13 +88,17 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 상세 머리글: 브랜드 색 칩 · 상태 알약(첫 연락 전 · 경과) · 접수 시각(연도 포함) · 오른쪽 지금 할 일 · 필수 확인 9개 */
   assert.equal(await d.locator('.idv-brand').evaluate(n=>getComputedStyle(n).color),'rgb(232, 89, 12)');assert.match(await d.locator('.idv-pill').innerText(),/^첫 연락 전 · 1일$/);assert.match(await d.locator('.idv-sub').innerText(),/이준호 · \d{4}\.\d{1,2}\.\d{1,2} \d{2}:\d{2} 접수$/);
   assert.match(await d.locator('.idv-c3').innerText(),/^지금 할 일\s*첫 연락\s*배정 후 2시간 안 첫 연락/);assert.match(await d.locator('.idv-recv').innerText(),/^\d{4}년 \d{1,2}월 \d{1,2}일 \d{2}:\d{2} 접수 \(경과 1일\)\s*배정 후 2시간 안 첫 연락$/);
-  assert.deepEqual(await d.locator('.idv-need .idv-needchip').allInnerTexts(),['✓ 현재 문제','· 공사 범위','· 공사 시기','· 경쟁사','· 요청 자료','· 대표회의 일정','· 자료 회신 기한','· 결정권자','· 다음 행동 · 날짜'],'필수 확인 9개');
+  /* 상세 창 기준 = 파이프라인 상세(2026-10-05): 필수 확인 칩 · 보완 필요 상자 없이 문의 정보 한 상자 — 줄 + 제목 옆 '미입력 n' */
+  assert.equal(await d.locator('.idv-need, .idv-needchip, .idv-missing').count(),0,'칩 · 보완 필요 상자 없음');
+  assert.deepEqual((await d.locator('.idv-info dt').allInnerTexts()).slice(-6),['대표회의','회신 기한','공사 시기','경쟁사','요청 자료','결정권자'],'칩에만 있던 항목은 문의 정보의 줄로');
+  assert.match(await d.locator('.idv-fh .idv-miss').innerText(),/^미입력 \d+$/);const miss0=Number((await d.locator('.idv-fh .idv-miss').innerText()).replace(/\D/g,''));assert.equal(miss0,await d.locator('.idv-info dd.warn').count(),'미입력 수 = 빈 줄 수');
   assert.match(await d.locator('.idv-chead').innerText(),/응대 이력\s*2건\s*연락 시도 0 · 실제 연결 0\s*최초 응대 아직 없음/);assert.match(await d.locator('.idv-ev .idv-evmeta').first().innerText(),/^\d{4}\.\d{1,2}\.\d{1,2} \d{2}:\d{2} · 자동\s*시스템\s*구글시트$/,'이력 시각 = 연도 포함 · 출처 배지는 끝');
   assert.equal(await d.locator('.idv-thint').innerText(),'적기만 하면 수단 · 결과 · 다음 행동을 채웁니다');assert.equal(await d.locator('.idv-sug').isVisible(),false,'내용이 없으면 제안 줄 없음');assert.equal(await d.locator('.idv-composer .idv-save').innerText(),'기록 저장');
-  await d.locator('.idv-needchip[data-v="competitor"]').click();await page.waitForTimeout(150);await page.keyboard.type('타 업체 2곳 비교 중');await page.keyboard.press('Enter');await page.waitForTimeout(300);
-  assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_field_update_v1').map(x=>[x[1].p.field,x[1].p.value])),[['competitor','타 업체 2곳 비교 중']],'필수 확인 칩 = 눌러서 바로 입력');assert.equal(await d.locator('.idv-needchip.ok').count(),2);await page.evaluate(()=>{__rpc.length=0;});
+  await d.locator('.idv-edit[data-v="competitor"]').click();await page.waitForTimeout(150);await page.keyboard.type('타 업체 2곳 비교 중');await page.keyboard.press('Enter');await page.waitForTimeout(300);
+  assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_field_update_v1').map(x=>[x[1].p.field,x[1].p.value])),[['competitor','타 업체 2곳 비교 중']],'경쟁사 줄 = 눌러서 바로 입력');
+  assert.match(await d.locator('.idv-info>div',{hasText:'경쟁사'}).innerText(),/경쟁사\s*타 업체 2곳 비교 중/);assert.equal(Number((await d.locator('.idv-fh .idv-miss').innerText()).replace(/\D/g,'')),miss0-1,'채우면 미입력 수가 준다');await page.evaluate(()=>{__rpc.length=0;});
   const edits=await d.locator('.idv-edit').count();assert.ok(edits>=4,'빈 칸은 눌러서 입력 '+edits);
-  assert.deepEqual(await d.locator('.idv-info dt').allInnerTexts(),['문의자','연락처','업체','현장 주소','공종','상담 채널','유입 경로','응대','대표회의','회신 기한'],'핵심 확인 사항 두 칸');
+  assert.deepEqual(await d.locator('.idv-info dt').allInnerTexts(),['문의자','연락처','업체','현장 주소','공종','상담 채널','유입 경로','응대','대표회의','회신 기한','공사 시기','경쟁사','요청 자료','결정권자'],'핵심 확인 사항 두 칸 + 칩에만 있던 네 칸');
   await d.locator('.idv-edit[data-v="meeting_date"]').click();await page.waitForTimeout(150);const md=day=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(Date.now()+day*864e5));/* 화면은 서울 시각 — 검사 기계가 UTC 여도 같은 날짜 */await d.locator('.idv-editin[data-v="meeting_date"]').fill(md(2));await page.waitForTimeout(400);
   assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_field_update_v1').map(x=>x[1].p.field)),['meeting_date'],'날짜는 고르면 바로 저장');assert.match(await d.locator('.idv-info').innerText(),new RegExp('대표회의\\s*'+md(2)));
   assert.match(await d.locator('.idv-nowbox').innerText(),/대표회의 \d{4}\.\d+\.\d+ D-2 · 정확한 견적이 늦으면 개략 금액 먼저/,'입력하자마자 D-3 경고');await page.evaluate(()=>{__rpc.length=0;});

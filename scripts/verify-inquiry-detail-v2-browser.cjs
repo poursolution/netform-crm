@@ -31,7 +31,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await d.locator('.idv-steps span').allInnerTexts(),['접수','지금 · 담당 배정','현장방문 · 견적','파이프라인 인계']);
   assert.equal(await d.evaluate(n=>getComputedStyle(n.querySelector('.idv-body')).gridTemplateColumns.split(' ').length),3);
   assert.match(await d.locator('.idv-quote').innerText(),/옥상 누수/);
-  assert.match(await d.locator('.idv-missing').innerText(),/보완 필요 \d+개/);
+  assert.match(await d.locator('.idv-fh .idv-miss').innerText(),/^미입력 \d+$/);assert.equal(await d.locator('.idv-missing, .idv-need').count(),0,'보완 필요 상자 · 필수 확인 칩 없음(빠진 수는 제목 옆 하나)');
   assert.equal(await d.locator('.idv-primary').innerText(),'담당자를 선택하세요');assert.equal(await d.locator('.idv-primary').isDisabled(),true);
   const reps=await d.locator('.idv-rep').evaluateAll(ns=>ns.map(n=>n.dataset.v));assert.ok(reps.includes('__branch__')&&reps.length>=2,'추천 담당자 + 지사 '+reps.join(','));
   /* 2026-10-03 inquiry_v2 상세보기: 응대 기록은 내용 한 칸 — 배정 전에도 남긴다(수단 · 결과를 자동으로 읽어 머리에 적음) */
