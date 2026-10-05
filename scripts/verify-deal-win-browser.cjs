@@ -91,7 +91,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{document.getElementById('detailView')&&typeof closeDetail==='function'&&closeDetail();goPage('dash');});await page.waitForTimeout(500);
   const kpi=await page.locator('#si-dash .db-kpi').nth(1).evaluate(n=>[n.querySelector('span').textContent,n.querySelector('b').textContent,n.querySelector('small').textContent]);
   assert.deepEqual(kpi,['올해 수주실적','24.3억','직접 수주 5억(1건) · 협약 · 기술자문 19.3억(2건) · 타사 이관 없음'],'대시보드: 합산하되 3줄로 나눠 적는다');
-  assert.deepEqual(await page.locator('#si-dash .db-rates>div').first().evaluate(n=>[...n.children].map(c=>c.textContent)),['영업 메이드율','75.0%','(직접 1 + 협약 · 기술자문 2 + 타사 이관 0) ÷ (직접 1 + 협약 · 기술자문 2 + 타사 이관 0 + 실주 1) · 배드핏 제외']);
+  /* 영업 Funnel(2026-10-05): 메이드율은 머리 오른쪽, 식은 '영업력' 상자 아래 한 줄 */
+  assert.deepEqual([await page.locator('#si-dash .db-f6 .db-ch .mr b').innerText(),await page.locator('#si-dash .db-f6x').innerText()],['75.0%','(직접 1 + 협약 · 기술자문 2 + 타사 이관 0) ÷ (직접 1 + 협약 · 기술자문 2 + 타사 이관 0 + 실주 1) · 배드핏 제외']);
   await page.locator('#si-dash .db-secs [data-v="people"]').click();await page.waitForTimeout(200);
   assert.match(await page.locator('#si-dash .db-prow',{hasText:'이필선'}).innerText(),/24\.3억\s*협약 · 기술자문 19\.3억 포함\s*75\.0%\s*수주 3 · 실주 1/);
   /* 5. 성과 분석: 유입 브랜드 → 낙찰 시공사 → 수주실적 · 매출 */

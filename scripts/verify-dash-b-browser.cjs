@@ -55,10 +55,32 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(kpi[5][1],/^2건$/);assert.match(kpi[5][2],/^이번 주 · \d+명 중 \d+명 0건$/,'주간 활동 = 이번 주(월–일) — 사람 탭 · 활동 탭과 같은 기간');
   assert.equal(await d.locator('.db-band').count(),0,'오늘 먼저 볼 것 검은 띠는 없다(2026-10-04 대표)');assert.ok(!/오늘 먼저 볼 것/.test(await d.innerText()));
   assert.deepEqual(await d.locator('.db-secs button').evaluateAll(a=>a.map(n=>n.childNodes[0].textContent)),['성과','사람','파이프라인','활동']);
-  /* 성과: 흐름 5칸 · 비율 4개 · 배드핏/실주 두 상자 */
+  /* 성과(5차 블록 1 · 2026-10-05): 영업 Funnel 6칸 + 단계별 전주 대비 표 — 숫자 · 문장은 전부 자료에서 */
+  const one0=s=>s.replace(/\s+/g,' ').trim();
+  assert.equal(await d.locator('.db-fun, .db-rates, .db-two').count(),0,'예전 흐름 5칸 대신');
+  assert.equal(one0(await d.locator('.db-f6 .db-ch').innerText()),'2026년 연간 영업 Funnel 2026년 연간 접수 문의 · 기간 안 영업 이동 · 칸 사이 = 빠진 건과 이유 영업 메이드율 40.0% · Bad Fit 제외');
+  assert.deepEqual(await d.locator('.db-f6c').evaluateAll(l=>l.map(n=>[n.querySelector(':scope>span').textContent,n.querySelector(':scope>b').textContent,n.querySelector(':scope>em').textContent,n.querySelector('.dr')?n.querySelector('.dr b').textContent+' | '+n.querySelector('.dr span').textContent:''])),[
+   ['견적문의','4건','',''],['적합 문의','3건','적합률 75.0%','빠짐 1건 | 종결 1 · Bad Fit 1'],['견적 발송','5건','기간 안 견적 발송',''],['경쟁 · 입찰','1건','입찰 전환 20.0%','빠짐 4건 | 아직 진행 중'],['결과 확정','5건','진행 중 1','빠짐 1건 | 아직 결과 전'],['수주','2건','메이드율 40.0% (실주 3)','빠짐 3건 | 실주 3 · 가격 2 · 기타 1']],'문의 → 적합 → 견적 → 입찰 → 결과 → 수주');
+  const fbar=await d.locator('.db-f6c .bar i').evaluateAll(l=>l.map(n=>[n.style.height,getComputedStyle(n).backgroundColor]));
+  assert.deepEqual(fbar.map(x=>x[1]),['rgb(154, 160, 171)','rgb(59, 108, 228)','rgb(59, 108, 228)','rgb(209, 74, 63)','rgb(59, 108, 228)','rgb(31, 157, 85)'],'가장 큰 이탈 칸만 빨강 · 수주 초록');assert.equal(fbar[2][0],'118px','막대 높이 = 가장 큰 칸 대비');
+  assert.deepEqual((await d.locator('.db-f6n>div').allInnerTexts()).map(one0),['문의 품질 · 종결 1건 · Bad Fit 1이 문의 → 적합에서 빠짐. 영업 실패가 아니라 유입 품질 문제 (공사 범위 밖)','가장 큰 이탈 · 견적 발송 → 경쟁 · 입찰 4건','영업력 · 결과 확정 5건 중 2건 수주 (40.0%) 수주 2 ÷ (수주 2 + 실주 3) · 배드핏 제외']);
+  assert.equal(await d.locator('.db-f6n>div').nth(1).evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(253, 236, 236)');
+  assert.deepEqual((await d.locator('.db-wk .wh').allInnerTexts()).map(one0),['단계','새로 들어옴','다음 단계로','정체 (14일+)','수주','실주']);
+  const wk=await d.locator('.db-wk').evaluate(n=>{const c=[...n.children].slice(6).map(x=>x.textContent.replace(/\s+/g,' ').trim()),rows=[];for(let i=0;i<c.length;i+=6)rows.push(c.slice(i,i+6));return rows;});
+  assert.deepEqual(wk.map(r=>r[0]),['견적문의','컨설팅 설계','자료 발송완료','관계관리','경쟁 · 입찰','계약 · 시공','합계']);assert.deepEqual(wk[0].slice(1,3),['2 ▲2','0'],'최근 7일 새 문의 2건 · 그 전 7일 0건');assert.deepEqual(wk[2],['자료 발송완료','0','0','5','0','0'],'14일 넘게 멈춘 자료 발송 5건 · 그 전과 같음');
+  assert.match(one0(await d.locator('.db-wks .db-ch').innerText()),/^단계별 전주 대비 최근 7일\(10\/1 – 10\/7\) · 숫자 옆 = 그 전 7일과 차이 · 단계 이동 기록에서 계산$/);assert.equal(await d.locator('.db-wks .db-whonote').innerText(),'새 견적문의 2건');
+  /* 단계 이동 기록이 있으면: 다음 단계로 · 새로 들어옴 · 수주가 그 줄에 잡힌다 */
+  await page.evaluate(()=>{const o=B.deals.find(x=>x.id==='o1');o.stageHistory=[{from:'sent',to:'compete',at:'2026-10-06T09:00:00+09:00'}];paint();});await page.waitForTimeout(250);
+  const wk2=await d.locator('.db-wk').evaluate(n=>{const c=[...n.children].slice(6).map(x=>x.textContent.replace(/\s+/g,' ').trim()),rows=[];for(let i=0;i<c.length;i+=6)rows.push(c.slice(i,i+6));return rows;});
+  assert.equal(wk2[2][2],'1 ▲1','자료 발송완료 → 다음 단계로 1');assert.equal(wk2[4][1],'1 ▲1','경쟁 · 입찰에 새로 들어옴 1');
+  await page.evaluate(()=>{delete B.deals.find(x=>x.id==='o1').stageHistory;paint();});await page.waitForTimeout(250);
+  if(shot)await page.screenshot({path:shot+'-dash-funnel.png',fullPage:true});
+  /* 예전 흐름(스위치를 켜면): 흐름 5칸 · 비율 4개 · 배드핏/실주 두 상자 */
+  await page.evaluate(()=>{G.dashFunnelOff=true;paint();});await page.waitForTimeout(250);
   assert.deepEqual(await d.locator('.db-fun>div').evaluateAll(a=>a.map(n=>[...n.children].map(c=>c.textContent))),[['견적문의','4건','전체 접수'],['적합 문의','3건','종결 1 제외 · Bad Fit 1'],['견적 발송','5건','기간 안 견적 발송'],['영업건 전환','12건','파이프라인 진입'],['수주','2건 · 8억','실주 3건']]);
   assert.deepEqual(await d.locator('.db-rates>div').evaluateAll(a=>a.map(n=>[...n.children].map(c=>c.textContent))),[['영업 메이드율','40.0%','수주 2 ÷ (수주 2 + 실주 3) · 배드핏 제외'],['문의 적합률','75.0%','적합 3 ÷ 문의 4'],['문의 → 계약 전환율','50.0%','수주 2 ÷ 문의 4'],['확정 전환율 (8월 문의)','50.0%','8월 문의 2건 중 지금까지 1건 계약']]);
   assert.match(await d.locator('.db-two .g').innerText(),/견적문의 종결 1건 · Bad Fit 1 · 영업 실패 아님 · 메이드율 제외\s*공사 범위 밖 1/);assert.match(await d.locator('.db-two .r').innerText(),/파이프라인 실주 3건 · 영업기회 상실 · 메이드율 포함\s*가격 열세 2 · 담당자 부재·인수인계 누락 1/);
+  await page.evaluate(()=>{G.dashFunnelOff=false;paint();});await page.waitForTimeout(250);
   /* 월별: 3월 5억 · 9월 3억 · 10월 진행 중(점선) · 11~12월 빈칸 · 월평균 = 8억 ÷ 9 */
   const cols=await d.locator('.db-col').evaluateAll(a=>a.map(n=>[n.querySelector('span').textContent,n.className.replace('db-col','').trim(),n.disabled]));
   assert.equal(cols.length,12);assert.deepEqual(cols[2],['5억','',false]);assert.deepEqual(cols[8],['3억','',false]);assert.deepEqual(cols[9],['진행 중','cur',false]);assert.deepEqual(cols[10],['','fut',true]);assert.deepEqual(cols[0],['없음','zero',false]);

@@ -137,17 +137,79 @@
    const bq=q.filter(x=>String(x.brand||(R.inquiryBrandOf?R.inquiryBrandOf(x):'')||'')===name),fit=bq.length-bq.filter(B.badfit).length,lo=loss.filter(d=>d.brand===name).length;
    return {name,c,net,w,q:bq.length,fit,lo,made:w+lo?B.made(w,lo):null};});
  }
+ /* ── 5차 블록 1(2026-10-05 영업분석블록.dc.html): 영업 Funnel + 단계별 전주 대비 — 성과 탭의 '견적문의가 계약까지' 자리. 끄기: G.dashFunnelOff=true → 예전 흐름 5칸 ── */
+ let SMAP=null;
+ const sCode=v=>{v=String(v||'').trim();if(!v)return '';if(!SMAP){SMAP={};const S=R.STAGE_MASTER||{};Object.keys(S).forEach(k=>{SMAP[k]=k;[S[k].name,S[k].was].forEach(n=>{if(n&&!SMAP[n])SMAP[n]=k;});});}return SMAP[v]||v;};
+ const gOf=c=>{try{return PS().group(c)||(/^(won|lost|badfit|nocontact)/.test(c)?(c==='won'?'won':'lost'):'');}catch(e){return '';}};
+ /* 영업건의 단계 이동 기록(날짜순): {k 날짜, from 묶음, to 묶음} */
+ function stageEvents(d,K){try{return (R.briefAllStageEvents(d)||[]).map(x=>({k:K(x.at||x.changed_at||x.created_at),from:gOf(sCode(x.from||x.before||x.old_stage)),to:gOf(sCode(x.to||x.after||x.new_stage))})).filter(x=>x.k).sort((a,b)=>a.k.localeCompare(b.k));}catch(e){return [];}}
+ function madeFx(C){const {L,con,loss}=C;if(!L.ready)return '계약 원장을 불러오는 중';return (C.pt.count||C.tf.count||C.tfLost?'(직접 '+con.count+' + 협약 · 기술자문 '+C.pt.count+' + 타사 이관 '+C.tf.count+') ÷ (직접 '+con.count+' + 협약 · 기술자문 '+C.pt.count+' + 타사 이관 '+C.tf.count+' + 실주 '+(loss.length+C.tfLost)+')':'수주 '+con.count+' ÷ (수주 '+con.count+' + 실주 '+loss.length+')')+' · 배드핏 제외';}
+ function funnelV2(C){
+  const {B,K,P,AD,L,q,bad,fit,loss,made,active}=C,FOLLOW=Number(RULE().inquiryFollowDays)||7;
+  const quotedD=AD.filter(d=>B.quoteIn(d,P.a,P.b)),quotes=quotedD.length,comp=AD.filter(d=>B.entered(d,'competition',P.a,P.b)).length;
+  const lossN=loss.length+(C.tfLost||0),done=C.won+lossN,compOpen=active.filter(d=>PS().group(d.stage)==='competition').length;
+  const fitOpen=q.filter(x=>{if(B.badfit(x))return false;try{return !R.inqCtlConverted(x);}catch(e){return true;}}),noFirst=fitOpen.filter(x=>{try{return !R.inqCtlFirstResponseAt(x);}catch(e){return false;}}).length;
+  const sentKey=d=>{const cx=d.stage_contexts||(R.itemPatch(d,'deal')||{}).stage_contexts||{};return K(cx.sent&&cx.sent.fields&&cx.sent.fields.sent_date||'');};
+  const noFollow=quotedD.filter(d=>{if(!R.isOpen(d)||PS().group(R.dealStage(d))==='competition')return false;const sd=sentKey(d);if(!sd||B.between(sd,P.today)<=FOLLOW)return false;const l=B.lastActKey(d,B.addDays(P.today,1));return !l||l<=sd;}).length;
+  const cat=d=>{let c='';try{c=R.CRMRules.lostCategory(R.CRMRules.lostReason?R.CRMRules.lostReason(B.lossReason(d)):B.lossReason(d));}catch(e){}return c||'사유 미기록';};
+  const lossCats=B.tally(loss,cat).slice(0,3).map(x=>x[0]+' '+x[1]).join(' · ');
+  const pc=(a,b)=>pt(B.pct(a,b)),d3=Math.max(0,fit-quotes),d4=Math.max(0,quotes-comp);
+  const cols=[
+   {l:'견적문의',n:q.length,rate:'',drop:null,why:''},
+   {l:'적합 문의',n:fit,rate:'적합률 '+pc(fit,q.length),drop:bad.length,why:B.closedText(bad,'n')},
+   {l:'견적 발송',n:quotes,rate:fit&&quotes<=fit?'견적 진행 '+pc(quotes,fit):'기간 안 견적 발송',drop:d3,why:d3?'아직 견적 전 · 첫 연락 전 '+noFirst+' · 응대 중 '+Math.max(0,fitOpen.length-noFirst):''},
+   {l:'경쟁 · 입찰',n:comp,rate:quotes&&comp<=quotes?'입찰 전환 '+pc(comp,quotes):'기간 안 경쟁 · 입찰 진입',drop:d4,why:d4?(noFollow?'견적 후 '+FOLLOW+'일 후속 없음 '+noFollow+' · ':'')+'아직 진행 중':''},
+   {l:'결과 확정',n:L.ready?done:null,rate:'진행 중 '+compOpen,drop:compOpen,why:compOpen?'아직 결과 전':''},
+   {l:'수주',n:L.ready?C.won:null,rate:'메이드율 '+pt(made)+' (실주 '+lossN+')',drop:lossN,why:lossN?'실주 '+lossN+(lossCats?' · '+lossCats:''):''}];
+  const max=Math.max(1,...cols.map(c=>c.n||0)),big=d3||d4?(d4>=d3?3:2):-1;
+  const bar=(c,i)=>'<div class="db-f6c"><div class="bar"><i style="height:'+(c.n?Math.max(3,Math.round(c.n/max*118)):0)+'px;background:'+(i===0?'#9aa0ab':i===big?'#d14a3f':i===5?'#1f9d55':'#3b6ce4')+'"></i></div><span>'+c.l+'</span><b>'+(c.n===null?'<small>불러오는 중</small>':c.n+'<small>건</small>')+'</b><em class="'+(i===big?'red':'')+'">'+h(c.rate)+'</em>'+(c.drop?'<div class="dr"><b>빠짐 '+c.drop+'건</b><span>'+h(c.why)+'</span></div>':'')+'</div>';
+  const badTop=B.tally(bad,B.badfitReason).slice(0,2).map(x=>x[0]).join(' · ');
+  const notes=[['문의 품질',bad.length?B.closedText(bad)+'이 문의 → 적합에서 빠짐. 영업 실패가 아니라 유입 품질 문제'+(badTop?' ('+badTop+')':''):'문의 → 적합에서 빠진 건이 없습니다',''],
+   ['가장 큰 이탈',big<0?'칸 사이에 빠진 건이 없습니다':cols[big-1].l+' → '+cols[big].l+' '+cols[big].drop+'건'+(big===3&&noFollow?'. 견적 후 '+FOLLOW+'일 후속이 없던 건이 '+noFollow+'건':''),big<0?'':'red'],
+   ['영업력',!L.ready?'계약 원장을 불러오는 중입니다':done?'결과 확정 '+done+'건 중 '+C.won+'건 수주 ('+pt(made)+')':'결과가 난 영업이 아직 없습니다','']];
+  return '<section class="db-card db-f6"><div class="db-ch"><b>'+h(P.label)+' 영업 Funnel</b><span>'+h(P.label)+' 접수 문의 · 기간 안 영업 이동 · 칸 사이 = 빠진 건과 이유</span><i class="db-sp"></i><span class="mr">영업 메이드율 <b>'+pt(made)+'</b> · Bad Fit 제외</span></div><div class="db-f6g">'+cols.map(bar).join('')+'</div>'
+   +'<div class="db-f6n">'+notes.map(n=>'<div class="'+n[2]+'"><b>'+n[0]+'</b> · '+h(n[1])+(n[0]==='영업력'&&L.ready?'<small class="db-f6x">'+h(madeFx(C))+'</small>':'')+'</div>').join('')+'</div></section>';
+ }
+ /* 단계별 전주 대비: 최근 7일과 그 전 7일을 단계 이동 기록에서 센다(따로 저장한 값 없이 기록에서 다시 계산). 정체 = 그 시점에 열려 있고 14일 넘게 기록이 없는 건 */
+ function weekTable(C){
+  const {B,K,P,AD,AQ}=C,STG=[['consulting','컨설팅 설계'],['sent','자료 발송완료'],['relationship','관계관리'],['competition','경쟁 · 입찰'],['construction','계약 · 시공']],ORD=STG.map(s=>s[0]),STALE_D=14;
+  const end=B.addDays(P.today,1),a1=B.addDays(P.today,-6),a0=B.addDays(P.today,-13),inW=(k,a,b)=>!!k&&k>=a&&k<b;
+  const E=AD.map(d=>({d,ev:stageEvents(d,K),ck:K(d.created),closed:R.isOpen(d)?'':(B.closedKey(d)||'')}));
+  const groupAt=(x,T)=>{if(x.ck&&x.ck>=T)return '';let g=x.ev.length?x.ev[0].from:gOf(R.dealStage(x.d));x.ev.forEach(e=>{if(e.k<T)g=e.to;});if(!x.ev.length&&x.closed&&x.closed<T)return 'closed';return g;};
+  const staleAt=(x,T)=>{if(x.closed&&x.closed<T)return false;const l=B.lastActKey(x.d,T);return !!l&&B.between(l,B.addDays(T,-1))>STALE_D;};
+  const count=(a,b,T)=>{const r={};ORD.forEach(g=>r[g]=[0,0,0,0,0]);const tot=[0,0,0,0,0];
+   E.forEach(x=>{
+    ORD.forEach(g=>{if(B.entered(x.d,g,a,b)){r[g][0]++;tot[0]++;}});
+    x.ev.forEach(e=>{if(!inW(e.k,a,b)||!ORD.includes(e.from))return;if(ORD.includes(e.to)&&ORD.indexOf(e.to)>ORD.indexOf(e.from)){r[e.from][1]++;tot[1]++;}});
+    const g=groupAt(x,T);if(ORD.includes(g)&&staleAt(x,T)){r[g][2]++;tot[2]++;}
+    if(x.closed&&inW(x.closed,a,b)){const col=R.isWon(x.d)?3:B.isLoss(x.d)?4:-1;if(col<0)return;const last=x.ev.slice().reverse().find(e=>ORD.includes(e.from)&&!ORD.includes(e.to)),from=last?last.from:(col===3?'construction':'');if(from)r[from][col]++;tot[col]++;}});
+   return {r,tot};};
+  const now=count(a1,end,end),prev=count(a0,a1,a1);
+  const inqNew=(a,b)=>AQ.filter(x=>inW(K(R.inquiryCreatedAt(x)),a,b)).length,inqConv=(a,b)=>AD.filter(d=>inW(K(d.created),a,b)&&!!(d.origin_inquiry_id||d.originInquiryId)).length;
+  const openQ=AQ.filter(x=>{try{if(R.inqCtlConverted(x))return false;if(typeof R.isClosedInq==='function'&&R.isClosedInq(x))return false;}catch(e){}return true;}),inqStale=openQ.filter(x=>{const k=K(x.lastActivity||R.inquiryCreatedAt(x));return !!k&&B.between(k,P.today)>STALE_D;}).length;
+  const diff=(v,p,k)=>{if(p===null)return '';const d=v-p;if(!d)return '';const good=k===2||k===4?d<0:d>0;return '<em class="'+(good?'up':'dn')+'">'+(d>0?'▲':'▼')+Math.abs(d)+'</em>';};
+  const row=(l,v,p,tot)=>'<span class="wl'+(tot?' tot':'')+'">'+l+'</span>'+v.map((n,k)=>'<span class="wv'+(tot?' tot':'')+'">'+n+' '+diff(n,p?p[k]:null,k)+'</span>').join('');
+  const iq=[inqNew(a1,end),inqConv(a1,end),inqStale,0,0],iqp=[inqNew(a0,a1),inqConv(a0,a1),null,0,0];
+  const totN=now.tot.map((v,k)=>v+(k<3?iq[k]:0)),totP=prev.tot.map((v,k)=>k===2?null:v+(k<2?iqp[k]:0));
+  const up=STG.map(s=>({l:s[1],d:now.r[s[0]][2]-prev.r[s[0]][2]})).sort((x,y)=>y.d-x.d)[0],wonRow=STG.map(s=>({l:s[1],n:now.r[s[0]][3]})).sort((x,y)=>y.n-x.n)[0];
+  const moved=totN[0]+totN[1]+totN[3]+totN[4];
+  const note=!moved&&!(up&&up.d)?'최근 7일 동안 단계 이동 · 결과 기록이 없습니다'+(totN[2]?' · 14일 넘게 멈춘 건 '+totN[2]+'건':''):[up&&up.d>0?up.l+' 정체가 그 전 7일보다 '+up.d+'건 늘었습니다':'',wonRow&&wonRow.n?wonRow.l+'에서 '+wonRow.n+'건이 수주로 넘어갔습니다':'',iq[0]?'새 견적문의 '+iq[0]+'건':''].filter(Boolean).join(' · ')||'최근 7일 단계 이동 '+totN[1]+'건 · 새로 들어온 건 '+totN[0]+'건';
+  return '<section class="db-card flush db-wks"><div class="db-ch pad"><b>단계별 전주 대비</b><span>최근 7일('+md(a1)+' – '+md(P.today)+') · 숫자 옆 = 그 전 7일과 차이 · 단계 이동 기록에서 계산</span></div><div class="db-wk" role="table" aria-label="단계별 최근 7일 이동">'
+   +['단계','새로 들어옴','다음 단계로','정체 (14일+)','수주','실주'].map((l,i)=>'<span class="wh'+(i?' r':'')+'">'+l+'</span>').join('')
+   +row('견적문의',iq,iqp)+STG.map(s=>row(s[1],now.r[s[0]],prev.r[s[0]])).join('')+row('합계',totN,totP,true)+'</div><p class="db-whonote">'+h(note)+'</p></section>';
+ }
  function secPerf(C){
   const {B,K,P,AD,AQ,L,inR,q,bad,fit,loss,con,made}=C;
   const quotes=AD.filter(d=>B.quoteIn(d,P.a,P.b)).length,conv=AD.filter(d=>inR(K(d.created),P.a,P.b)).length;
   const fun=[['견적문의',q.length+'건','전체 접수'],['적합 문의',fit+'건',B.closedText(bad,'ex')],['견적 발송',quotes+'건',fit&&quotes<=fit?'적합의 '+pt(B.pct(quotes,fit)):'기간 안 견적 발송'],['영업건 전환',conv+'건','파이프라인 진입'],['수주',L.ready?C.won+'건'+(C.perf>0?' · '+won(C.perf):''):'불러오는 중','실주 '+(loss.length+C.tfLost)+'건'+(C.pt.count?' · 협약 · 기술자문 '+C.pt.count+'건 포함':'')+(C.tf.count?' · 타사 이관 '+C.tf.count+'건 포함':'')]];
   const cd=new Date(P.ty,P.tm-3,1),cym=cd.getFullYear()+'-'+pad(cd.getMonth()+1),coM=cd.getMonth()+1,cohort=AQ.filter(x=>K(R.inquiryCreatedAt(x)).slice(0,7)===cym),cw=L.ready?cohort.filter(x=>B.inquiryContract(x,L,AD)).length:0;
-  const rates=[['영업 메이드율',pt(made),L.ready?(C.pt.count||C.tf.count||C.tfLost?'(직접 '+con.count+' + 협약 · 기술자문 '+C.pt.count+' + 타사 이관 '+C.tf.count+') ÷ (직접 '+con.count+' + 협약 · 기술자문 '+C.pt.count+' + 타사 이관 '+C.tf.count+' + 실주 '+(loss.length+C.tfLost)+') · 배드핏 제외':'수주 '+con.count+' ÷ (수주 '+con.count+' + 실주 '+loss.length+') · 배드핏 제외'):'계약 원장을 불러오는 중','#15171c'],['문의 적합률',pt(B.pct(fit,q.length)),'적합 '+fit+' ÷ 문의 '+q.length,'#c9cdd5'],['문의 → 계약 전환율',L.ready?pt(B.pct(C.won,q.length)):'불러오는 중','수주 '+C.won+' ÷ 문의 '+q.length,'#c9cdd5'],['확정 전환율 ('+coM+'월 문의)',L.ready&&cohort.length?pt(B.pct(cw,cohort.length)):'아직 없음',coM+'월 문의 '+cohort.length+'건 중 지금까지 '+cw+'건 계약','#c9cdd5']];
+  const rates=[['영업 메이드율',pt(made),madeFx(C),'#15171c'],['문의 적합률',pt(B.pct(fit,q.length)),'적합 '+fit+' ÷ 문의 '+q.length,'#c9cdd5'],['문의 → 계약 전환율',L.ready?pt(B.pct(C.won,q.length)):'불러오는 중','수주 '+C.won+' ÷ 문의 '+q.length,'#c9cdd5'],['확정 전환율 ('+coM+'월 문의)',L.ready&&cohort.length?pt(B.pct(cw,cohort.length)):'아직 없음',coM+'월 문의 '+cohort.length+'건 중 지금까지 '+cw+'건 계약','#c9cdd5']];
   const top=(list,fn)=>{const t=B.tally(list,fn),a=t.slice(0,3),rest=t.slice(3).reduce((s,x)=>s+x[1],0);return a.map(x=>x[0]+' '+x[1]).concat(rest?['그 외 '+rest]:[]).join(' · ')||'해당 없음';};
-  const funnel='<section class="db-card"><div class="db-ch"><b>견적문의가 계약까지</b><em>새 지표</em><span>'+h(P.label+' · 문의 접수 기준')+'</span></div>'
+  const funnelOld=()=>'<section class="db-card"><div class="db-ch"><b>견적문의가 계약까지</b><em>새 지표</em><span>'+h(P.label+' · 문의 접수 기준')+'</span></div>'
    +'<div class="db-fun">'+fun.map((u,i)=>'<div class="'+(i===fun.length-1?'last':'')+'"><span>'+u[0]+'</span><b>'+h(u[1])+'</b><small>'+h(u[2])+'</small></div>').join('')+'</div>'
    +'<div class="db-rates">'+rates.map(t=>'<div style="border-left-color:'+t[3]+'"><span>'+h(t[0])+'</span><b'+(/없음|불러/.test(t[1])?' class="mut"':'')+'>'+h(t[1])+'</b><small>'+h(t[2])+'</small></div>').join('')+'</div>'
    +'<div class="db-two"><div class="g"><b>견적문의 '+h(B.closedText(bad))+' <span>· 영업 실패 아님 · 메이드율 제외</span></b><p>'+h(top(bad,B.badfitReason))+'</p></div><div class="r"><b>파이프라인 실주 '+loss.length+'건 <span>· 영업기회 상실 · 메이드율 포함</span></b><p>'+h(top(loss,B.lossReason))+'</p></div></div></section>';
+  const funnel=R.G.dashFunnelOff?funnelOld():funnelV2(C)+weekTable(C);
   /* 월별 계약실적 · 견적문의 */
   const y=P.y,M=[];for(let m=1;m<=12;m++){const a=mk(y,m),b=mk(y,m+1),c=B.contractsIn(L,a,b),qn=AQ.filter(x=>inR(K(R.inquiryCreatedAt(x)),a,b)).length;M.push({m,net:c.net,qn,cur:y===P.ty&&m===P.tm,fut:y>P.ty||(y===P.ty&&m>P.tm)});}
   const past=M.filter(x=>!x.fut&&!x.cur),max=Math.max(1,...M.filter(x=>!x.fut).map(x=>x.net)),qmax=Math.max(1,...M.map(x=>x.qn)),avg=past.length?past.reduce((s,x)=>s+x.net,0)/past.length:0;
@@ -457,5 +519,5 @@
   const again=()=>{if(enabled()&&PAGES.includes(R.G.page)&&R.B){try{render();}catch(e){}}};
   root.addEventListener('contract-sales:changed',again);document.addEventListener('contract-sales:changed',again);
  }
- root.DashB={enabled,render,core,people,ctlModel,period,nearList,channelOf,weekActs,actKind,lib:{brandRows,matrixRows,inquiryFate,pendingStats,eok,won,mk,BRC,MINREC,LOWMADE,MINCLOSED}};
+ root.DashB={enabled,render,core,people,ctlModel,period,nearList,channelOf,weekActs,actKind,stageEvents,lib:{brandRows,matrixRows,inquiryFate,pendingStats,eok,won,mk,BRC,MINREC,LOWMADE,MINCLOSED}};
 })(window);
