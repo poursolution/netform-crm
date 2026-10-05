@@ -58,7 +58,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await btn('혁신LH5단지'),['rgb(255, 255, 255)','rgb(180, 83, 9)','rgb(240, 197, 138)',92],'후속 연락 = 주황 테두리');
   assert.deepEqual(await btn('중계청구3차'),['rgb(255, 255, 255)','rgb(42, 82, 184)','rgb(213, 224, 251)',92],'나머지 = 흰 버튼');
   assert.deepEqual(await row('혁신LH5단지').evaluate(n=>[n.querySelector('.il-who'),n.querySelector('.il-owner'),n.querySelector('.il-el')].map(e=>Math.round(e.getBoundingClientRect().width)).concat(getComputedStyle(n.querySelector('.il-r')).columnGap)),[150,64,108,'28px'],'오른쪽 덩어리 폭 · 간격');
-  assert.equal(await row('한강신도시반도유보라').locator('.il-site b u').innerText(),'기존 현장 · 1건');assert.equal(await row('혁신LH5단지').locator('.il-site b u').count(),0);
+  /* 줄 꼬리표: 같은 단지의 지난 영업 요약(2026-10-05 design_handoff_inquiry_site) — 예전 '기존 현장 · n건' 자리 */
+  assert.match(await row('한강신도시반도유보라').locator('.il-site i.il-sb').innerText(),/^이 단지 실주 1 · \d{4}$/);assert.equal(await row('한강신도시반도유보라').locator('.il-site b u').count(),0);assert.equal(await row('혁신LH5단지').locator('.il-site i.il-sb').count(),0);
   /* 탭 필터 */
   await v.locator('.il-tab[data-v="stale"]').click();await page.waitForTimeout(300);assert.deepEqual(await sites(),['[경남] 혁신LH5단지']);
   await page.locator('#inq-v3 .il-tab[data-v="all"]').click();await page.waitForTimeout(300);

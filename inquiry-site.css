@@ -1,0 +1,77 @@
+/* 견적문의 · 이 단지 영업 이력 + 근처에서 영업했던 현장 (inquiry-site.js · 시안 '견적문의 상세 · 단지 이력.dc.html') — 글꼴은 본문 그대로 */
+/* 목록 줄 꼬리표: 현장명 아래 둘째 줄 앞 */
+.il-site>span>i.il-sb{font-style:normal;flex:none;display:inline-block;border:0;outline:0;box-shadow:none;font-size:11.5px;font-weight:700;border-radius:4px;padding:1px 7px;margin-right:6px;vertical-align:1px;white-space:nowrap}
+.il-site>span>i.il-sb.lost{color:#b42318;background:#fdecec}
+.il-site>span>i.il-sb.won{color:#1f7a4d;background:#e9f7ef}
+.il-site>span>i.il-sb.open{color:#1d3f99;background:#eef3fe}
+.il-site>span>i.il-sb.legacy{color:#4b5563;background:#f3f4f6}
+/* 상세 왼쪽: 이 단지 영업 이력 */
+#inq-inbox-dialog .isd-hist{border-top:1px solid #eef0f3;padding-top:12px;display:flex;flex-direction:column;gap:10px}
+#inq-inbox-dialog .isd-hist>header{display:flex;align-items:baseline;gap:6px}
+#inq-inbox-dialog .isd-hist>header b{font-size:14px}
+#inq-inbox-dialog .isd-hist>header span{font-size:12px;color:#9ca3af}
+#inq-inbox-dialog .isd-sum{font-size:12.5px;color:#374151}
+#inq-inbox-dialog .isd-sum b.r{color:#b42318}
+#inq-inbox-dialog .isd-card{border:1px solid #e3e6ec;background:#fff;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:5px}
+#inq-inbox-dialog .isd-card.lost{border-color:#f3c9c7;background:#fffafa}
+#inq-inbox-dialog .isd-card.now{border-color:#dfe5f7}
+#inq-inbox-dialog .isd-card .t{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#inq-inbox-dialog .isd-card .t>i{width:7px;height:7px;border-radius:50%;flex:none}
+#inq-inbox-dialog .isd-card .t>b{font-size:13.5px}
+#inq-inbox-dialog .isd-card .t>em{font-style:normal;font-size:11px;font-weight:700;border-radius:4px;padding:1px 6px}
+#inq-inbox-dialog .isd-card .t>.sp{flex:1}
+#inq-inbox-dialog .isd-card .lnk{border:0;background:none;padding:0;margin:0;height:auto;box-shadow:none;font:inherit;font-size:12px;font-weight:600;color:#2a52b8;cursor:pointer}
+#inq-inbox-dialog .isd-card .m,#inq-inbox-dialog .isd-card .s{font-size:12px;color:#6b7280}
+#inq-inbox-dialog .isd-card dl{margin:0;display:grid;grid-template-columns:52px minmax(0,1fr);gap:3px 8px;font-size:12px;line-height:1.5;border-top:1px dashed #f3c9c7;padding-top:6px}
+#inq-inbox-dialog .isd-card dt{color:#9ca3af}
+#inq-inbox-dialog .isd-card dd{margin:0;color:#15171c}
+#inq-inbox-dialog .isd-card dd.r{color:#b42318;font-weight:700}
+#inq-inbox-dialog .isd-more{font-size:12px;color:#9ca3af}
+#inq-inbox-dialog .isd-ai{background:#f5f8ff;border:1px solid #dfe5f7;border-radius:9px;padding:9px 11px;font-size:12.5px;line-height:1.55;color:#15171c}
+#inq-inbox-dialog .isd-ai>b{font-size:9.5px;color:#fff;background:#3b6ce4;border-radius:3px;padding:1px 4px;margin-right:5px}
+/* 채울 정보: 접어서 한 줄 */
+#inq-inbox-dialog .idv3-need.fold>header .lnk{border:0;background:none;padding:0;margin:0;height:auto;box-shadow:none;font:inherit;font-size:12px;font-weight:700;color:#2a52b8;cursor:pointer}
+#inq-inbox-dialog .idv3-need>header .lnk{border:0;background:none;padding:0;margin:0;height:auto;box-shadow:none;font:inherit;font-size:12px;font-weight:700;color:#2a52b8;cursor:pointer}
+/* 가운데: [이 문의 | 단지 전체] */
+#inq-inbox-dialog .idv3-chead .isd-scope{margin-left:auto;display:flex;border:1px solid #d9dde4;border-radius:8px;overflow:hidden}
+#inq-inbox-dialog .idv3-chead .isd-scope button{border:0;background:#fff;color:#374151;font:inherit;font-size:12.5px;font-weight:700;padding:5px 12px;margin:0;height:auto;border-radius:0;box-shadow:none;cursor:pointer}
+#inq-inbox-dialog .idv3-chead .isd-scope button[aria-selected="true"]{background:#15171c;color:#fff}
+#inq-inbox-dialog .idv3-ev.st>i{background:#c9cdd5}
+#inq-inbox-dialog .idv3-ev .isd-tag{font-style:normal;margin-left:6px;font-size:10.5px;font-weight:700;color:#6b7280;background:#f3f4f6;border-radius:3px;padding:0 5px}
+#inq-inbox-dialog .idv3-ev.st .t.r{color:#b42318}
+/* 오른쪽: 이 단지 기존 건과 관계 */
+#inq-inbox-dialog .isd-rel{border-top:1px solid #eef0f3;padding-top:12px;display:flex;flex-direction:column;gap:6px}
+#inq-inbox-dialog .isd-rel .lb{font-size:11.5px;font-weight:700;color:#2a52b8}
+#inq-inbox-dialog .isd-rel .two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#inq-inbox-dialog .isd-rel .two button{border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:13px;font-weight:600;border-radius:8px;padding:9px 0;margin:0;height:auto;box-shadow:none;cursor:pointer}
+#inq-inbox-dialog .isd-rel .two button[data-idv="site-new"]{border-color:#d5e0fb;background:#f5f8ff;color:#2a52b8;font-weight:700}
+#inq-inbox-dialog .isd-rel .two button:disabled{border-color:#e3e6ec;background:#f5f6f8;color:#9aa0ab;cursor:not-allowed}
+#inq-inbox-dialog .isd-rel .two button[aria-pressed="true"]:disabled{border-color:#d5e0fb;background:#eef3fe;color:#1d3f99}
+#inq-inbox-dialog .isd-rel small{font-size:11.5px;color:#9ca3af;line-height:1.5}
+/* 오른쪽: 근처에서 영업했던 현장 */
+#inq-inbox-dialog .isd-near{border-top:1px solid #eef0f3;padding-top:12px;display:flex;flex-direction:column;gap:8px}
+#inq-inbox-dialog .isd-near>header{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+#inq-inbox-dialog .isd-near>header b{font-size:14px}
+#inq-inbox-dialog .isd-near>header span{font-size:12px;color:#6b7280}
+#inq-inbox-dialog .isd-near>header>i{flex:1}
+#inq-inbox-dialog .isd-near .ctl{display:flex;gap:4px;align-items:center}
+#inq-inbox-dialog .isd-near .seg{display:flex;border:1px solid #d9dde4;border-radius:7px;overflow:hidden}
+#inq-inbox-dialog .isd-near .seg button{border:0;background:#fff;color:#374151;font:inherit;font-size:12px;font-weight:700;padding:4px 10px;margin:0;height:auto;border-radius:0;box-shadow:none}
+#inq-inbox-dialog .isd-near .seg button:disabled{color:#b6bcc6;cursor:not-allowed}
+#inq-inbox-dialog .isd-near .seg button[aria-pressed="true"]{background:#15171c;color:#fff}
+#inq-inbox-dialog .isd-near .lg{margin-left:auto;display:flex;gap:8px;font-size:11px;color:#6b7280}
+#inq-inbox-dialog .isd-near .lg span{display:flex;align-items:center;gap:3px}
+#inq-inbox-dialog .isd-near .lg i{width:8px;height:8px;border-radius:50%}
+#inq-inbox-dialog .isd-map{height:230px;border-radius:10px;overflow:hidden;border:1px solid #e3e6ec;background:#eef0f3}
+#inq-inbox-dialog .isd-map.empty{height:auto;min-height:84px;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:14px 16px;background:#f8f9fb}
+#inq-inbox-dialog .isd-map.empty b{font-size:13px;color:#374151}
+#inq-inbox-dialog .isd-map.empty span{font-size:12px;color:#6b7280;line-height:1.55}
+#inq-inbox-dialog .isd-nlist{display:flex;flex-direction:column}
+#inq-inbox-dialog .isd-nrow{border:0;border-bottom:1px solid #f2f3f6;background:#fff;text-align:left;padding:7px 2px;margin:0;height:auto;border-radius:0;box-shadow:none;display:flex;align-items:center;gap:8px;font:inherit;color:#15171c;cursor:pointer;width:100%}
+#inq-inbox-dialog .isd-nrow:hover{background:#f8f9fb}
+#inq-inbox-dialog .isd-nrow>i{flex:none;width:8px;height:8px;border-radius:50%}
+#inq-inbox-dialog .isd-nrow>span{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+#inq-inbox-dialog .isd-nrow b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#inq-inbox-dialog .isd-nrow small{font-size:11.5px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#inq-inbox-dialog .isd-near>small{font-size:11.5px;color:#9ca3af;line-height:1.5}
+#inq-inbox-dialog .isd-none{font-size:12.5px;color:#9ca3af;padding:6px 2px}
