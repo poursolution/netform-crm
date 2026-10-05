@@ -48,7 +48,7 @@
   return null;
  }
  /* ── 서버 흐름 상태(문의 id → 상태) ── */
- const SRV=new Map();let SV=0,loadAt=0,loadBusy=false,loadedOk=false;/* loadedOk = 서버 흐름 함수가 실제로 응답함(설치 확인) */
+ const SRV=new Map(),CLOSED=new Map();/* CLOSED = 문의 id → 서버의 종결 사유 글(기본 읽기는 이 칸을 내려 주지 않는다) */let SV=0,loadAt=0,loadBusy=false,loadedOk=false;/* loadedOk = 서버 흐름 함수가 실제로 응답함(설치 확인) */
  const store=()=>root.OpsStore;
  const can=name=>{try{return !!store()&&store().has(name);}catch(e){return false;}};
  const server=q=>SRV.get(String(q&&q.id||''))||null;
@@ -58,7 +58,8 @@
   loadBusy=true;
   return store().rpc(LIST,{}).then(r=>{loadAt=Date.now();loadedOk=true;const next=new Map();(r.states||[]).forEach(s=>{if(s&&s.inquiry_id)next.set(String(s.inquiry_id),s);});
    const sig=m=>JSON.stringify([...m.entries()].map(([k,v])=>[k,v.updated_at]).sort());
-   if(sig(next)!==sig(SRV)){SRV.clear();next.forEach((v,k)=>SRV.set(k,v));SV++;try{root.paint();}catch(e){}}return true;})
+   const nc=new Map();(r.closed||[]).forEach(c=>{if(c&&c.inquiry_id&&c.close_reason)nc.set(String(c.inquiry_id),String(c.close_reason));});const csig=m=>JSON.stringify([...m.entries()].sort());
+   if(sig(next)!==sig(SRV)||csig(nc)!==csig(CLOSED)){SRV.clear();next.forEach((v,k)=>SRV.set(k,v));CLOSED.clear();nc.forEach((v,k)=>CLOSED.set(k,v));SV++;try{root.paint();}catch(e){}}return true;})
    .catch(()=>{loadAt=Date.now();return false;}).finally(()=>{loadBusy=false;});
  }
  function warm(){if(!on()||!root.ME)return;if(!loadAt||Date.now()-loadAt>120000)load();flush();}
@@ -109,10 +110,12 @@
   unreachable:Object.freeze({label:'연락두절',status:'연락두절',reasons:Object.freeze([])}),
   consult_end:Object.freeze({label:'상담종결',status:'종결',reasons:Object.freeze(['계획 없음','단순 문의','타사 선택'])}),
   transfer:Object.freeze({label:'스토어 이관 / B2B 협약',status:'',reasons:Object.freeze(['POUR스토어','B2B 협약'])})});
+ /* 종결 사유 글: 문의에 실려 온 값, 없으면 서버에서 따로 읽은 값 */
+ const closeReasonText=q=>String(q&&q.close_reason||CLOSED.get(String(q&&q.id||''))||'').trim();
  function closeReasons(kind){const C=CLOSE[kind];if(!C)return [];if(kind==='bad_fit'){try{const l=root.CRMRules&&root.CRMRules.reasons&&root.CRMRules.reasons('bad_fit');if(Array.isArray(l)&&l.length)return l.slice();}catch(e){}}return C.reasons.slice();}
  /* 닫힌 문의의 종결 종류(닫히지 않았으면 null). 예전 자료는 상태 · 사유 글에서 읽고, 읽히지 않으면 other(사유 있음) · unknown(사유 미기록) */
  function closeOf(q){
-  if(!q)return null;const S=server(q),s=String(q.status||''),r=String(q.close_reason||'').trim(),mk=(kind,reason,detail)=>({kind,label:(CLOSE[kind]||{}).label||(kind==='other'?'종결':'종결 · 사유 미기록'),reason:String(reason||'').trim(),detail:String(detail||'').trim()});
+  if(!q)return null;const S=server(q),s=String(q.status||''),r=closeReasonText(q),mk=(kind,reason,detail)=>({kind,label:(CLOSE[kind]||{}).label||(kind==='other'?'종결':'종결 · 사유 미기록'),reason:String(reason||'').trim(),detail:String(detail||'').trim()});
   if(/스토어|자재|미구매/.test(s))return mk('transfer','POUR스토어');
   let agreement=false;try{agreement=!!(root.inqNoTrack&&root.inqNoTrack(q));}catch(e){}
   if(['협약완료','해결완료'].includes(s)||/^협약 종결/.test(r)||(agreement&&['종결','종료'].includes(s)))return mk('transfer','B2B 협약');
@@ -138,8 +141,8 @@
  function quotes(q){const S=server(q),p=patchOf(q),L=S&&Array.isArray(S.quotes)&&S.quotes.length?S.quotes:(Array.isArray(p.quoteVersions)?p.quoteVersions:[]);return L.slice().sort((a,b)=>Number(a.version_no)-Number(b.version_no));}
  const parseQuoteText=t=>{const m=/예상\s*([0-9,]+)\s*만원/.exec(String(t||''));return m?Number(m[1].replace(/,/g,''))*10000:0;};
  root.InquiryFlow={on,RESULT,OLD,RESULTS,NEXT,CHANNELS,kindOf,readLine,logOf,logs,state,firstConnectedAt,firstAttemptAt,attempts,attemptNote,meetingDate,replyDue,phoneHandler,legacyResponded,server,load,take,RPC,LIST,
-  CLOSE,closeReasons,closeOf,QUALIFY_TEXT,statusQualifies,qualifiedBy,isQualified,quotes,parseQuoteText,
-  _reset(){SRV.clear();SV++;loadAt=0;}};
+  CLOSE,closeReasons,closeReasonText,closeOf,QUALIFY_TEXT,statusQualifies,qualifiedBy,isQualified,quotes,parseQuoteText,
+  _reset(){SRV.clear();CLOSED.clear();SV++;loadAt=0;}};
 
  /* ── 저장 명령 ── */
  const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -263,7 +266,9 @@
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date))throw Error('방문 날짜를 넣어 주세요.');
   if(done&&date>today)throw Error('방문 완료는 오늘까지의 날짜로 적어 주세요.');
   if(on()&&can(RPC)&&UUID.test(String(q.id||''))){try{const r=await store().rpc(RPC,{type:'visit',inquiry_id:String(q.id),date,time,done});take(r.state);}catch(e){if(!(e&&e.unavailable))throw e;}}
-  if(done){const p=patchFor(q);p.visitDoneAt=p.visitDoneAt||new Date(date+'T'+(time||'12:00')+':00').toISOString();setStatus(q,'현장방문 완료');saveLocal();const msg=promote(q);saveLocal();return {done:true,promoted:!!root.inqCtlConverted(q),label:'1차 현장방문 완료',msg};}
+  if(done){const p=patchFor(q);p.visitDoneAt=p.visitDoneAt||new Date(date+'T'+(time||'12:00')+':00').toISOString();setStatus(q,'현장방문 완료');saveLocal();
+   /* 전환 요청은 서버가 '현장방문 완료' 상태를 받는 것이 확인된 뒤에만 보낸다(같은 SQL 이 흐름 함수와 전환 조건을 함께 설치한다). 그 전에는 저장만 — 전환 대기 목록에 남는다 */
+   const ready=loadedOk&&can(RPC),msg=ready?promote(q):'서버 적용 뒤 전환 대기 목록에서 파이프라인으로 넘길 수 있습니다';saveLocal();return {done:true,promoted:!!root.inqCtlConverted(q),label:'1차 현장방문 완료',msg};}
   if(date>=today&&root.inquiryAssigned(q)&&nextSet(q,'현장방문'+(time?' '+time:''),date)!==true)throw Error('다음 할 일을 저장하지 못했습니다.');
   setStatus(q,'현장방문예정');saveLocal();return {done:false,promoted:false,label:'현장방문 일정',msg:''};
  }
