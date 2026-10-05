@@ -27,7 +27,7 @@
  const CHANNELS=()=>(root.CRMRules&&root.CRMRules.get&&root.CRMRules.get('contact_channels'))||['전화','카카오','문자','이메일','방문','기타'];
  const on=()=>!(root.G&&root.G.inqFlowOff);
  const rule=(k,d)=>{try{const v=root.CRMRules&&root.CRMRules.get?root.CRMRules.get(k):null;return Number(v)>0?Number(v):d;}catch(e){return d;}};
- function kindOf(res){const r=String(res||'').trim();if(!r)return '';if(RESULT.attempt.includes(r))return 'attempt';if(RESULT.connected.includes(r))return 'connected';if(OLD.wait.includes(r))return 'wait';if(OLD.connected.includes(r))return 'connected';return '';}
+ function kindOf(res){const r=String(res||'').trim();if(!r)return '';if(RESULT.attempt.includes(r))return 'attempt';if(RESULT.connected.includes(r))return 'connected';if(OLD.wait.includes(r))return 'attempt';/* 보냈지만 답이 없는 것(문자 · 카카오 회신대기) = 연락 시도(2026-10-05 design_handoff_inquiry_sms) — 접촉 · 최초 응대는 아니다 */if(OLD.connected.includes(r))return 'connected';return '';}
  /* 기록 한 줄의 머리: "[전화 · 부재] 메모" 또는 "통화 결과: 부재 → 다음 연락 …" */
  const HEAD=/^\[(전화|카카오|문자|이메일|방문|기타) · ([^\]]+)\]\s*/,CALL=/^통화 결과:\s*([^→]+?)\s*(?:→|$)/;
  function readLine(text){const s=String(text||'');let m=HEAD.exec(s);if(m)return {ch:m[1],res:m[2].trim(),text:s.replace(HEAD,'')};m=CALL.exec(s);if(m)return {ch:'전화',res:m[1].trim(),text:''};return null;}
@@ -43,7 +43,7 @@
   if(line)return {at,ch:line.ch,res:line.res,kind:kindOf(line.res)||'connected'};
   if(/^고객 응대 기록/.test(note)&&result)return {at,ch:'전화',res:'',kind:attemptOnly(result)?'attempt':'connected'};
   if(/전화|통화/.test(type))return {at,ch:'전화',res:'',kind:attemptOnly(note+' '+result)?'attempt':'connected'};
-  if(/문자|SMS|카카오|메일|메시지/i.test(type))return {at,ch:/카카오/.test(type)?'카카오':/메일/.test(type)?'이메일':'문자',res:'회신대기',kind:'wait'};
+  if(/문자|SMS|카카오|메일|메시지/i.test(type))return {at,ch:/카카오/.test(type)?'카카오':/메일/.test(type)?'이메일':'문자',res:'회신대기',kind:'attempt'};
   if(/방문/.test(type))return {at,ch:'방문',res:'연결됨',kind:'connected'};
   return null;
  }
@@ -68,7 +68,7 @@
   const p=patchOf(q),seen=new Set(),out=[];
   [].concat(q.activities||[],p.activities||[]).forEach(a=>{const k=a.id||[a.at,a.type,a.note,a.result].join('|');if(seen.has(k))return;seen.add(k);const l=logOf(a);if(l)out.push(l);});
   const S=server(q),rids=new Set(out.map(l=>l.rid).filter(Boolean));
-  if(S&&Array.isArray(S.logs))S.logs.forEach(l=>{if(l.request_id&&rids.has(String(l.request_id)))return;out.push({at:l.occurred_at,ch:l.channel,res:l.result,kind:l.kind,rid:String(l.request_id||''),who:l.actor_name||'',text:l.content||'',next:l.next_action||'',server:true});});
+  if(S&&Array.isArray(S.logs))S.logs.forEach(l=>{if(l.request_id&&rids.has(String(l.request_id)))return;out.push({at:l.occurred_at,ch:l.channel,res:l.result,kind:l.kind==='wait'?'attempt':l.kind,rid:String(l.request_id||''),who:l.actor_name||'',text:l.content||'',next:l.next_action||'',server:true});});
   return out.sort((a,b)=>tOf(a.at)-tOf(b.at));
  }
  /* 예전 방식의 '응대함' 근거(상태 이름 · 응대 시각) */
@@ -295,7 +295,7 @@
   setStatus(q,'견적서 발송완료');saveLocal();const msg=promote(q);saveLocal();
   return {sent:true,promoted:!!root.inqCtlConverted(q),label:'견적서 발송 완료',follow,msg};
  }
- const HANDLERS={contact_log:contactLog,memo:memoLog,field_set:fieldSet,schedule_set:(q,o)=>fieldSet(q,{field:o&&o.schedule_type==='reply_due'?'reply_due':'meeting_date',value:o&&o.at}),close:closeInquiry,visit,quote_send:quoteSend};
+ const HANDLERS={contact_log:contactLog,memo:memoLog,field_set:fieldSet,schedule_set:(q,o)=>fieldSet(q,{field:o&&o.schedule_type==='reply_due'?'reply_due':'meeting_date',value:o&&o.at}),close:closeInquiry,visit,quote_send:quoteSend,next_set:(q,o)=>nextSet(q,String(o&&o.text||'').slice(0,500),String(o&&o.due||''))};/* next_set = 다음 할 일만(문자 예약 알림) */
  function run(type,q,payload){const fn=HANDLERS[type];if(!fn)throw Error('알 수 없는 저장 명령입니다: '+type);if(!q)throw Error('문의를 찾지 못했습니다.');return fn(q,payload||{});}
  root.InquiryCommand={run,isFirst,needsProgress,flush,types:()=>Object.keys(HANDLERS),_handlers:HANDLERS,_withFields:withFields,_nextSet:nextSet,_queue:queue,_outbox:outbox};
 })(window);

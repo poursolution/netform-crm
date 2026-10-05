@@ -82,6 +82,17 @@
 .idv3-opener em{display:block;font-style:normal;font-size:11.5px;font-weight:700;color:#b42318;margin-top:6px}
 #inq-inbox-dialog.idv3 .idv3-call{border:0;background:#15171c;color:#fff;font:inherit;font-size:13px;font-weight:700;border-radius:8px;padding:9px 0;cursor:pointer;min-height:0;box-shadow:none;width:100%}
 #inq-inbox-dialog.idv3 .idv3-call:disabled{background:#c9cdd5;cursor:default}
+/* 전화 : 문자 = 1.7 : 1 (2026-10-05 design_handoff_inquiry_sms) · [문자] → 가운데 칸이 문자 보내기로 */
+.idv3-callrow{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:6px}
+#inq-inbox-dialog.idv3 .idv3-callrow .idv3-call{font-size:13.5px;border-radius:9px;padding:11px 0}
+#inq-inbox-dialog.idv3 .idv3-smsbtn{border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:13.5px;font-weight:700;border-radius:9px;padding:11px 0;cursor:pointer;min-height:0;box-shadow:none}
+#inq-inbox-dialog.idv3 .idv3-smsbtn[aria-pressed="true"]{border:1.5px solid #3b6ce4;background:#f5f8ff}
+#inq-inbox-dialog.idv3 .idv3-smsbtn:disabled{color:#9ca3af;cursor:default}
+.idv3-sent{background:#e8f6ee;border-radius:8px;padding:9px 11px;font-size:12.5px;color:#1f7a4d}
+#inq-inbox-dialog.idv3 .idv3-c2:has(>.idv3-smswrap){background:#f5f6f8}
+.idv3-smswrap{flex:1;min-height:0;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:8px}
+.idv3-smswrap .iq-sms4{background:#fff;border:1px solid #e3e6ec;border-radius:12px;overflow:hidden;flex:none}
+#inq-inbox-dialog.idv3 .idv3-smswrap .ds2-text{min-height:150px}
 .idv3-next{border-top:1px solid #eef0f3;padding-top:12px;display:flex;flex-direction:column;gap:8px}.idv3-next .lb{font-size:11.5px;font-weight:700;color:#1d3f99}
 .idv3-next .two{display:grid;grid-template-columns:1fr 1fr;gap:6px}.idv3-next p{margin:0;font-size:12.5px;color:#374151}
 #inq-inbox-dialog.idv3 .idv3-next .two button{border:1px solid #d5e0fb;background:#eef3fe;color:#1d3f99;font:inherit;font-size:12.5px;font-weight:700;border-radius:8px;padding:8px 0;cursor:pointer;min-height:0;box-shadow:none}
