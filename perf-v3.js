@@ -12,7 +12,7 @@
  'use strict';
  const R=root,h=v=>R.esc(String(v==null?'':v)),attr=v=>R.escAttr(String(v==null?'':v));
  const enabled=()=>!R.G.perfV3Off&&!!R.DashB&&!!R.DashB.lib;
- const st=()=>R.G.perfV3||(R.G.perfV3={tab:0});
+ const st=()=>{const s=R.G.perfV3||(R.G.perfV3={tab:0});if(s.xt==null)s.xt=0;if(s.dim==null)s.dim=0;return s;};
  const TYPE={'직접 수주':['직접','d'],'협약 · 기술자문':['협약 · 기술자문','p'],'타사 이관':['타사 이관','t']};
  const STATE={before:['계약 전','r'],progress:['진행 중','b'],settled:['정산 완료','g']};
  const b2b=()=>(R.InquiryB2BTab&&R.InquiryB2BTab.OWNER)||'조재연';
@@ -121,10 +121,97 @@
    return '<div class="pf3-tb adv"><div class="pf3-big"><span>협약시공사 낙찰 · 수주실적에 포함</span><b class="'+(C.pt.amount>0?'':'mut')+'">'+h(amt(C.pt.amount))+'</b><small>'+C.pt.count+'건'+(own?' · 귀속 '+h(own):'')+'</small></div><div class="pf3-at"><div class="pf3-ar hd"><span>현장</span><span>공종</span><span>낙찰 시공사</span><span>낙찰일</span><span>기술자문 계약일</span><span class="r">낙찰금액</span><span class="r">회사 매출</span><span>상태</span></div>'+(rows||'<p class="pf3-empty">'+h(P.label)+' 협약시공사 낙찰 건이 아직 없습니다.</p>')+(pendingServer?'<span class="pf3-tn">기술자문 계약일 · 상태는 서버 읽기 함수를 갱신한 뒤에 표시됩니다.</span>':'')+'</div></div>';
   }
   const tabs='<section class="pf3-tabs"><div class="th" role="tablist">'+TB.map((t,i)=>'<button type="button" role="tab" data-pf3="tab" data-v="'+i+'" aria-selected="'+(tab===i)+'">'+t[0]+'</button>').join('')+'<i></i><span>'+h(TB[tab][1])+'</span></div>'+(tab===0?tMatrix():tab===1?tCohort():tab===2?tChannel():tAdvisory())+'</section>';
+  /* ── 추가 분석(5차 블록 2 · 3 · 4 — 2026-10-05 영업분석블록.dc.html): 영업 성과(기준 전환) · 영업 행동 · 실주 분석. 하나씩 보기.
+       숫자 · 문장은 전부 자료에서. 표본이 없으면 '—' · '기록 부족'으로 둔다(지어내지 않는다). 끄기: G.perfExtraOff=true ── */
+  function extra(){
+   const K=C.K,AD=C.AD,loss=C.loss,inP=k=>!!k&&k>=P.a&&k<P.b,XT=['영업 성과','영업 행동','실주 분석'],xt=Math.max(0,Math.min(2,Number(S.xt)||0));
+   const dealOf=id=>AD.find(d=>String(d.id)===String(id))||null,ctx=d=>d&&(d.stage_contexts||(R.itemPatch(d,'deal')||{}).stage_contexts)||{};
+   const workOf=d=>{if(!d)return '공종 미기록';let w=String(d.primary_work||d.primaryWork||'').trim();if(!w){try{w=String(R.dealWorkSummary(d)||'').split(' · ')[0].trim();}catch(e){}}return !w||/미분류|미기록/.test(w)?'공종 미기록':w;};
+   const regionOf=d=>{const m=/^\s*\[([^\]]+)\]/.exec(String(d&&d.site||''));return m?m[1].trim().split(/\s+/)[0]:'지역 미기록';};
+   /* 유입경로: 영업건에 적힌 값 → 없으면 연결된 견적문의(없으면 같은 현장 문의)의 유입경로 — 유입경로 탭과 같은 함수 */
+   const chDeal=new Map(),chSite=new Map(),nsOf=v=>{try{return R.normSite?R.normSite(v||''):String(v||'').trim();}catch(e){return String(v||'').trim();}};
+   C.AQ.forEach(x=>{let ch='';try{ch=R.DashB.channelOf(x);}catch(e){}if(!ch||ch==='유입경로 미기록')return;let d=null;try{d=R.linkedDeal(x);}catch(e){}if(d)chDeal.set(String(d.id),ch);const ns=nsOf(x.site);if(ns&&!chSite.has(ns))chSite.set(ns,ch);});
+   const chanOf=d=>{if(!d)return '유입경로 미기록';const own=String(d.origin_channel||d.originChannel||'').trim();return own||chDeal.get(String(d.id))||chSite.get(nsOf(d.site))||'유입경로 미기록';};
+   const md=k=>Number(String(k).slice(5,7))+'/'+Number(String(k).slice(8,10)),iga=s=>{const ch=String(s).charCodeAt(String(s).length-1);return ch>=0xAC00&&ch<=0xD7A3&&(ch-0xAC00)%28?'이':'가';};
+   /* 수주(기간 안 계약 · 협약 · 타사 이관) · 실주(기간 안 파이프라인 실주)를 건별로 */
+   const recs=[];
+   if(L.ready){(L.rows||[]).forEach(r=>{if(r.advisory_id||(C.DW&&C.DW.isPartnerDeal&&C.DW.isPartnerDeal(r.deal_id)))return;let n=0,a2=0;(r.events||[]).forEach(e=>{if(!inP(e.effective_date))return;a2+=Number(e.amount_delta)||0;if(e.kind==='signed')n++;});if(!n&&!a2)return;recs.push({won:n,lost:0,amt:a2,owner:String(r.sales_owner_name||'').trim()||'귀속 미기록',brand:String(r.brand||'').trim()||'브랜드 미기록',d:dealOf(r.deal_id),partner:'직접 수주'});});
+    C.pt.list.forEach(x=>recs.push({won:x.signedCount||0,lost:0,amt:x.amount,owner:String(x.owner||'').trim()||'귀속 미기록',brand:String(x.brand||'').trim()||'브랜드 미기록',d:x.deal||dealOf(x.dealId),partner:String(x.company||'시공사 미기록')+(x.tech?' (기술자문)':' (협약시공사)')}));
+    C.tf.list.forEach(x=>recs.push({won:1,lost:0,amt:x.amount,owner:String(x.owner||'').trim()||'귀속 미기록',brand:String(x.brand||'').trim()||'브랜드 미기록',d:x.d||dealOf(x.t&&x.t.deal_id),partner:'타사 이관'}));}
+   loss.forEach(d=>recs.push({won:0,lost:1,amt:0,owner:R.repN(d.assignee)||'미배정',brand:String(d.brand||'').trim()||'브랜드 미기록',d,partner:''}));
+   const DIMS=[['담당자',r=>r.owner],['브랜드',r=>r.brand],['공종',r=>workOf(r.d)],['지역',r=>regionOf(r.d)],['유입경로',r=>chanOf(r.d)],['협약업체',r=>r.partner]];
+   function tPerf(){
+    const dim=Math.max(0,Math.min(5,Number(S.dim)||0)),fn=DIMS[dim][1],m=new Map();
+    recs.forEach(r=>{const k=fn(r);if(!k)return;const v=m.get(k)||{l:k,w:0,lo:0,a:0};v.w+=r.won;v.lo+=r.lost;v.a+=r.amt;m.set(k,v);});
+    const rows=[...m.values()].map(v=>Object.assign(v,{m:v.w+v.lo?Math.round(v.w/(v.w+v.lo)*1000)/10:null})).sort((a,b)=>b.a-a.a||b.w-a.w||a.l.localeCompare(b.l,'ko'));
+    const pills='<div class="pf3-xh"><b>기준</b>'+DIMS.map((x,i)=>'<button type="button" data-pf3="dim" data-v="'+i+'" aria-pressed="'+(dim===i)+'">'+x[0]+'</button>').join('')+'<i></i><span>수주실적 = 낙찰금액 · '+h(P.label)+'</span></div>';
+    if(!L.ready)return pills+'<p class="pf3-empty">계약 원장을 불러오는 중입니다.</p>';
+    if(!rows.length)return pills+'<p class="pf3-empty">'+h(P.label)+' 수주 · 실주가 아직 없습니다.</p>';
+    const ok=rows.filter(r=>r.m!==null&&r.w+r.lo>=MINC),best=ok.slice().sort((a,b)=>b.m-a.m)[0],worst=ok.slice().sort((a,b)=>a.m-b.m)[0],topA=rows[0],sumA=rows.reduce((s,r)=>s+r.a,0);
+    const share=topA&&sumA>0?topA.l+iga(topA.l)+' 수주실적의 '+Math.round(topA.a/sumA*100)+'%':'';
+    const cmp=dim===5?'협약 · 기술자문 수주는 실주 없이 결과 확정 (협약 단계 진입 후)':best&&worst&&best!==worst&&best.m!==worst.m?'메이드율은 '+best.l+' '+best.m.toFixed(1)+'%가 가장 높고 '+worst.l+' '+worst.m.toFixed(1)+'%가 가장 낮음 (결과 '+MINC+'건 이상만 비교)':ok.length>1?'결과 '+MINC+'건 이상인 항목의 메이드율이 같습니다':'결과가 '+MINC+'건 이상인 항목이 둘 이상 쌓이면 메이드율을 비교합니다';
+    const note=[share,cmp].filter(Boolean).join(' · ');
+    return pills+'<div class="pf3-xp" role="table" aria-label="'+attr(DIMS[dim][0])+'별 영업 성과"><span class="hd">'+DIMS[dim][0]+'</span><span class="hd r">수주</span><span class="hd r">실주</span><span class="hd r">낙찰금액</span><span class="hd">메이드율</span>'
+     +rows.map(r=>{const lowR=r.m!==null&&r.m<LOW,c=dim===1?(D.BRC[r.l]||'#c9cdd5'):'#c9cdd5';return '<b class="nm"><i style="background:'+c+'"></i>'+h(r.l)+'</b><span class="r">'+r.w+'</span><span class="r mut">'+r.lo+'</span><b class="r">'+(r.a>0?h(eok(r.a)):r.w?'금액 미입력':'수주 없음')+'</b><span class="mr"><u><i style="width:'+(r.m===null?0:r.m)+'%;background:'+(lowR?'#d14a3f':'#3b6ce4')+'"></i></u><b class="'+(lowR?'red':'')+'">'+(r.m===null?'—':r.m.toFixed(1)+'%')+'</b></span>';}).join('')+'</div><span class="pf3-xnote">'+h(note)+'</span>';
+   }
+   function tLost(){
+    const CR=R.CRMRules,split=d=>{const raw=C.B.lossReason(d);let s=String(raw||''),c='';try{s=CR.lostReason(raw);c=CR.lostCategory(raw);}catch(e){}const i=s.indexOf(' · ');return {c:['관계','공법','가격','사업'].includes(c)?c:'기타',det:(i>0?s.slice(i+3):s)||'사유 미기록'};};
+    const CAT=[['관계','#d14a3f'],['공법','#7048e8'],['가격','#e0a43a'],['사업','#9aa0ab'],['기타','#b9bfca']],amtOf=d=>{try{return Number(CR.amounts(d).estimated)||0;}catch(e){return Number(d.amount!=null?d.amount:d.amt)||0;}};
+    const g=CAT.map(([l,c])=>({l,c,n:0,a:0,sub:new Map()}));loss.forEach(d=>{const x=split(d),v=g.find(y=>y.l===x.c);v.n++;v.a+=amtOf(d);v.sub.set(x.det,(v.sub.get(x.det)||0)+1);});
+    const total=loss.length,missed=g.reduce((s,v)=>s+v.a,0),shown=g.filter(v=>v.l!=='기타'||v.n);
+    const les=new Map();loss.forEach(d=>{const f=ctx(d).lost&&ctx(d).lost.fields||{},t=String(f.lesson||d.lesson||'').replace(/\s+/g,' ').trim();if(t)les.set(t,(les.get(t)||0)+1);});
+    const lesN=[...les.values()].reduce((s,v)=>s+v,0),topL=[...les].sort((a,b)=>b[1]-a[1])[0];
+    const lesTxt=!lesN?'실주 복기(배운 점)가 아직 기록되지 않았습니다 — 실주 처리 때 한 줄씩 남기면 여기에 모입니다':topL[1]>=2?'실주 복기에서 가장 많이 나온 말 · "'+topL[0]+'" ('+topL[1]+'건)':'실주 복기 '+lesN+'건 기록 · 같은 말이 겹치지 않아 묶지 못했습니다 · 예: "'+topL[0]+'"';
+    if(!total)return '<div class="pf3-xl"><div class="hd"><b>실주 0건</b><span>파이프라인 실주만 · Bad Fit 제외 · '+h(P.label)+'</span></div><p class="pf3-empty">'+h(P.label)+' 파이프라인 실주가 없습니다.</p></div>';
+    return '<div class="pf3-xl"><div class="hd"><b>실주 '+total+'건 · 왜 졌나</b><span>파이프라인 실주만 · Bad Fit 제외 · '+h(P.label)+'</span><i></i><span class="ms">놓친 금액(예상금액) <b>'+(missed>0?h(eok(missed)):'금액 미입력')+'</b></span></div>'
+     +'<div class="bar">'+shown.map(v=>'<i style="width:'+(v.n/total*100).toFixed(1)+'%;background:'+v.c+'"></i>').join('')+'</div>'
+     +'<div class="cs" style="grid-template-columns:repeat('+shown.length+',minmax(0,1fr))">'+shown.map(v=>'<div style="border-top-color:'+v.c+'"><div class="t"><b>'+v.l+'</b><b class="n">'+v.n+'</b><span>'+(v.a>0?h(eok(v.a)):'')+'</span></div>'+[...v.sub].sort((a,b)=>b[1]-a[1]).slice(0,3).map(s=>'<div class="s"><span>'+h(s[0])+'</span><b>'+s[1]+'</b></div>').join('')+'</div>').join('')+'</div>'
+     +'<span class="les">'+h(lesTxt)+'</span></div>';
+   }
+   function tBeh(){
+    const wonD=[],addW=d=>{if(d&&!wonD.includes(d))wonD.push(d);};
+    if(L.ready){(L.rows||[]).forEach(r=>{if((r.events||[]).some(e=>e.kind==='signed'&&inP(e.effective_date)))addW(dealOf(r.deal_id));});C.pt.list.forEach(x=>addW(x.deal||dealOf(x.dealId)));C.tf.list.forEach(x=>addW(x.d||dealOf(x.t&&x.t.deal_id)));}
+    const actsOf=d=>{const p=R.itemPatch(d,'deal')||{};return [...(d.activities||[]),...(p.activities||[])].map(x=>({t:Date.parse(x.at||x.occurred_at||x.created_at||''),ty:String(x.type||''),k:K(x.at||x.occurred_at||x.created_at)})).filter(x=>Number.isFinite(x.t)&&/전화|통화|방문|문자|카카오|메일|미팅/.test(x.ty)).sort((a,b)=>a.t-b.t);};
+    const sentK=d=>K(ctx(d).sent&&ctx(d).sent.fields&&ctx(d).sent.fields.sent_date||'');
+    const M=[['첫 응대','시간',d=>{const c=Date.parse(d.created_at||d.created||''),a=actsOf(d)[0];return Number.isFinite(c)&&a&&a.t>=c?(a.t-c)/36e5:null;},true],
+     ['견적까지','일',d=>{const s=sentK(d),c=K(d.created_at||d.created);return s&&c&&s>=c?C.B.between(c,s):null;},true],
+     ['견적 후 재접촉','일',d=>{const s=sentK(d);if(!s)return null;const a=actsOf(d).find(x=>x.k>s);return a?C.B.between(s,a.k):null;},true],
+     ['접촉한 사람 수','명',d=>Array.isArray(d.contacts)&&d.contacts.length?d.contacts.length:null,false],
+     ['견적 수정','회',d=>{const v=d.quote_versions||d.quoteVersions||(R.itemPatch(d,'deal')||{}).quoteVersions;return Array.isArray(v)&&v.length?v.length-1:null;},false]];
+    const avg=(l,f)=>{const v=l.map(f).filter(x=>x!==null&&Number.isFinite(x));return v.length?{v:Math.round(v.reduce((s,x)=>s+x,0)/v.length*10)/10,n:v.length}:null;};
+    const good=[],rows=M.map(([l,u,f,lowBetter])=>{const w=avg(wonD,f),lo=avg(loss,f);let d='기록 부족';
+      if(w&&lo){const df=Math.round(Math.abs(w.v-lo.v)*10)/10,wb=lowBetter?w.v<lo.v:w.v>lo.v;
+       if(!df)d='차이 없음';else if(u==='시간'&&w.v>0&&lo.v>0)d=(Math.round(Math.max(w.v,lo.v)/Math.min(w.v,lo.v)*10)/10)+'배 '+(wb?'빠름':'느림');else d=df+u+' '+(lowBetter?(wb?'빠름':'느림'):(wb?'더':'적음'));
+       if(wb&&df)good.push(l);}
+      return '<b>'+l+'</b><b class="r g">'+(w?w.v+u+' <small>'+w.n+'건</small>':'—')+'</b><span class="r b">'+(lo?lo.v+u+' <small>'+lo.n+'건</small>':'—')+'</span><span class="r">'+h(d)+'</span>';}).join('');
+    const left='<section class="pf3-xb"><div class="hd"><b>수주한 현장 vs 실주한 현장 · 평균 행동</b></div><div class="g4"><span class="hh">행동</span><span class="hh r g">수주 '+wonD.length+'건</span><span class="hh r b">실주 '+loss.length+'건</span><span class="hh r">차이</span>'+rows+'</div><div class="pb">'+(good.length?'플레이북 후보 · 수주한 현장은 <b>'+h(good.join(' · '))+'</b>에서 실주한 현장보다 좋았습니다':'플레이북 후보 · 기록(첫 연락 · 견적 발송일 · 연락처 · 견적 버전)이 쌓이면 수주 현장의 공통점을 여기에 적습니다')+'</div></section>';
+    /* 계획 대비 실제 · 최근 4주: 영업 인사이트 '흐름 품질'과 같은 판정 — 기한이 온 다음 할 일(끝낸 것 + 열려 있는 것) 중 기한 안에 끝낸 비율 = 다음 할 일 이행,
+       그중 고객 약속만 = 약속 지킴. 견적 예정 대비 = 견적 예정일보다 늦어진 평균 일수(예정일이 최근 4주 안 · 아직 안 보냈으면 오늘까지) */
+    const warn=Math.round(Number(R.CRMRules&&R.CRMRules.PHASE2&&R.CRMRules.PHASE2.promise_keeping&&R.CRMRules.PHASE2.promise_keeping.warn_below||0.8)*100);
+    const from=C.B.addDays(P.today,-27),mon=C.B.addDays(P.today,-((new Date(P.ty,P.tm-1,P.td).getDay()+6)%7));
+    const isPromise=x=>/약속/.test(String(x&&x.type||''))||/^\s*고객\s*약속/.test(String(x&&(x.text||x.title)||''));
+    const by=new Map(),slot=n=>{let v=by.get(n);if(!v){v={n,p:[0,0],d:[0,0],q:[]};by.set(n,v);}return v;},off=[];
+    C.deals.forEach(d=>{const it=d.item||{},owner=d.owner&&d.owner!=='미배정'?d.owner:'';if(!owner)return;const v=slot(owner),site=String(d.site||it.site||'');
+     const open=it.nextActionObj||it.next_action,list=[].concat(Array.isArray(it.completed_actions)?it.completed_actions:[],open&&typeof open==='object'&&open.status!=='completed'&&(open.due_at||open.due)?[Object.assign({},open,{status:'open'})]:[]);
+     list.forEach(x=>{const dd=K(x.due_at||x.due||'');if(!dd||dd<from)return;const done=x.status==='completed'&&x.completed_at?K(x.completed_at):'';if(!done&&dd>=P.today)return;/* 아직 기한 전 */
+      const ok=!!done&&done<=dd,pr=isPromise(x);v.d[1]++;if(ok)v.d[0]++;if(pr){v.p[1]++;if(ok)v.p[0]++;}
+      if(!ok&&(done||dd)>=mon)off.push({k:pr?'고객 약속':'다음 할 일',t:site+' · '+md(dd)+' '+String(x.text||x.title||'다음 할 일')+' → '+(done?md(done)+' 완료':'미실행'),d:done?'+'+C.B.between(dd,done)+'일':'미이행',o:done?C.B.between(dd,done):999});});
+     const cx=ctx(it),qk=K(cx.consulting&&cx.consulting.fields&&cx.consulting.fields.quote_due||''),sk=sentK(it);
+     if(qk&&qk>=from&&(sk||qk<P.today)){const late=Math.max(0,C.B.between(qk,sk||P.today));v.q.push(late);if(late>0&&(sk||P.today)>=mon)off.push({k:'견적 약속',t:site+' · '+md(qk)+' 예정 → '+(sk?md(sk)+' 발송':'아직 발송 전'),d:'+'+late+'일',o:late});}});
+    off.sort((a,b)=>b.o-a.o||a.t.localeCompare(b.t,'ko'));
+    const pc2=a=>a[1]?Math.round(a[0]/a[1]*100):null,plan=C.names.map(n=>by.get(n)).filter(v=>v&&(v.d[1]||v.q.length)).map(v=>({n:v.n,keep:pc2(v.p),pn:v.p,run:pc2(v.d),dn:v.d,late:v.q.length?Math.round(v.q.reduce((s,x)=>s+x,0)/v.q.length*10)/10:null,qn:v.q.length}));
+    const right='<section class="pf3-xb"><div class="hd"><b>계획 대비 실제 · 담당자별 · 최근 4주</b></div>'+(plan.length?'<div class="g4 p"><span class="hh">담당</span><span class="hh r">약속 지킴</span><span class="hh r">견적 예정 대비</span><span class="hh r">다음 할 일 이행</span>'
+      +plan.map(p=>'<b>'+h(p.n)+'</b><b class="r'+(p.keep!==null&&p.keep<warn?' red':'')+'" title="'+p.pn[0]+' / '+p.pn[1]+'건">'+(p.keep===null?'—':p.keep+'%')+'</b><b class="r'+(p.late!==null&&p.late>2?' red':'')+'" title="견적 예정 '+p.qn+'건">'+(p.late===null?'—':'+'+p.late+'일')+'</b><b class="r'+(p.run!==null&&p.run<warn?' red':'')+'" title="'+p.dn[0]+' / '+p.dn[1]+'건">'+(p.run===null?'—':p.run+'%')+'</b>').join('')+'</div>':'<p class="pf3-empty">최근 4주 안에 기한이 온 다음 할 일 · 견적 예정이 없습니다.</p>')
+     +'<div class="off"><b>이번 주 어긋난 것</b>'+(off.length?off.slice(0,3).map(v=>'<div><span>'+v.k+'</span><span class="t" title="'+attr(v.t)+'">'+h(v.t)+'</span><b>'+h(v.d)+'</b></div>').join('')+(off.length>3?'<small>외 '+(off.length-3)+'건</small>':''):'<small>이번 주에 어긋난 약속 · 견적 예정이 없습니다</small>')+'</div></section>';
+    return '<div class="pf3-xbs">'+left+right+'</div>';
+   }
+   return '<section class="pf3-x"><div class="pf3-xt"><b>추가 분석</b>'+XT.map((l,i)=>'<button type="button" data-pf3="xt" data-v="'+i+'" aria-pressed="'+(xt===i)+'">'+l+'</button>').join('')+'<i></i><span>하나씩 보기</span></div>'+(xt===0?tPerf():xt===1?tBeh():tLost())+'</section>';
+  }
+  const extraSec=R.G.perfExtraOff?'':extra();
   /* ── ⑤ 아직 판단 못 하는 것 ── */
   const pend=D.pendingStats(),pending='<div class="pf3-pending"><b>아직 판단 못 하는 것</b><span>기록이 '+MINREC+'건 쌓이면 자동으로 보입니다</span>'+pend.map(p=>p[1]>=MINREC?'<span>'+h(p[0])+' <b>'+h(p[2])+'</b> <small>'+p[1]+'건 기준</small></span>':'<span>'+h(p[0])+' <i><u style="width:'+Math.min(100,p[1]*100/MINREC)+'%"></u></i> '+p[1]+'/'+MINREC+'</span>').join('')+'</div>';
-  return '<div class="pf3">'+head+'<div class="pf3-mid">'+peopleSec+funnel+'</div>'+tabs+pending+'</div>';
+  return '<div class="pf3">'+head+'<div class="pf3-mid">'+peopleSec+funnel+'</div>'+tabs+extraSec+pending+'</div>';
  }
- document.addEventListener('click',e=>{const b=e.target.closest('#si-perf [data-pf3="tab"]');if(!b)return;st().tab=Number(b.dataset.v)||0;try{R.DashB.render();}catch(err){}});
+ document.addEventListener('click',e=>{const b=e.target.closest('#si-perf [data-pf3]');if(!b)return;const k=b.dataset.pf3,v=Number(b.dataset.v)||0;if(k==='tab')st().tab=v;else if(k==='xt')st().xt=v;else if(k==='dim')st().dim=v;else return;try{R.DashB.render();}catch(err){}});
  root.PerfV3={enabled,html,state:st};
 })(window);

@@ -128,7 +128,62 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{DealWin._take({rows:[],advisory:__adv.map(x=>{const y=Object.assign({},x);delete y.contract_date;delete y.settle_state;delete y.work_name;delete y.work_type;delete y.advisory_status;return y;})});paint();});await page.waitForTimeout(300);
   {const a2=await page.locator('#si-perf .pf3-ar:not(.hd)').first().evaluate(n=>[...n.children].map(c=>c.textContent));assert.deepEqual([a2[4],a2[7]],['-','-']);assert.equal(await page.locator('#si-perf .pf3-tb.adv .pf3-tn').innerText(),'기술자문 계약일 · 상태는 서버 읽기 함수를 갱신한 뒤에 표시됩니다.');}
   await page.evaluate(()=>{DealWin._take({rows:[],advisory:__adv});paint();});await page.waitForTimeout(200);
-  /* 5. 아직 판단 못 하는 것: 한 줄 */
+  /* 4-2. 추가 분석(5차 블록 2 · 3 · 4 — 2026-10-05 영업분석블록.dc.html): 영업 성과(기준 전환) · 영업 행동 · 실주 분석을 하나씩. 숫자 · 문장은 전부 자료에서 */
+   {const x=page.locator('#si-perf .pf3-x'),one=s=>s.replace(/\s+/g,' ').trim();assert.equal(await x.count(),1);
+    assert.equal(await page.locator('#si-perf .pf3').evaluate(n=>[...n.children].map(c=>c.className.split(' ')[0]).join(' ')),'pf3-verdict pf3-mid pf3-tabs pf3-x pf3-pending','기존 구역은 그대로 · 탭 아래에 덧붙임');
+    assert.deepEqual(await x.locator('.pf3-xt button').evaluateAll(l=>l.map(b=>[b.textContent,b.getAttribute('aria-pressed')])),[['영업 성과','true'],['영업 행동','false'],['실주 분석','false']]);assert.equal(one(await x.locator('.pf3-xt').innerText()),'추가 분석 영업 성과 영업 행동 실주 분석 하나씩 보기');
+    assert.deepEqual(await x.locator('.pf3-xt button').first().evaluate(b=>{const s=getComputedStyle(b);return [s.backgroundColor,s.color,s.borderRadius];}),['rgb(21, 23, 28)','rgb(255, 255, 255)','999px']);
+    /* 영업 성과: 기준 6개 · 수주 = 직접 + 협약 · 기술자문 + 타사 이관, 실주 = 파이프라인 실주, 낙찰금액 = 수주실적 */
+    assert.deepEqual(await x.locator('.pf3-xh button').allInnerTexts(),['담당자','브랜드','공종','지역','유입경로','협약업체']);assert.equal(await x.locator('.pf3-xh>span').innerText(),'수주실적 = 낙찰금액 · 2026년 연간');
+    const rows=()=>x.locator('.pf3-xp>:not(.hd)').evaluateAll(l=>{const o=[];for(let i=0;i<l.length;i+=5)o.push([l[i].textContent,l[i+1].textContent,l[i+2].textContent,l[i+3].textContent,l[i+4].querySelector('b').textContent,l[i+4].querySelector('b').classList.contains('red'),l[i+4].querySelector('u i').style.width,getComputedStyle(l[i].querySelector('i')).backgroundColor]);return o;});
+    const pick=async n=>{await x.locator('.pf3-xh button',{hasText:n}).click();await page.waitForTimeout(150);return rows();};
+    assert.deepEqual(await x.locator('.pf3-xp .hd').allInnerTexts(),['담당자','수주','실주','낙찰금액','메이드율']);
+    assert.deepEqual((await rows()).map(r=>r.slice(0,7)),[['이필선','3','1','6.6억','75.0%',false,'75%'],['황윤선','1','2','3억','33.3%',true,'33.3%']],'담당자: 수주실적 순 · 낮은 메이드율만 빨강');
+    assert.equal(await x.locator('.pf3-xnote').innerText(),'이필선이 수주실적의 69% · 메이드율은 이필선 75.0%가 가장 높고 황윤선 33.3%가 가장 낮음 (결과 3건 이상만 비교)');
+    const br=await pick('브랜드');assert.deepEqual(br.map(r=>r.slice(0,5)),[['석민이앤씨','1','1','5억','50.0%'],['POUR솔루션','3','2','4.6억','60.0%']]);assert.notEqual(br[0][7],'rgb(201, 205, 213)','브랜드일 때만 브랜드색 띠');
+    assert.equal(await x.locator('.pf3-xnote').innerText(),'석민이앤씨가 수주실적의 52% · 결과가 3건 이상인 항목이 둘 이상 쌓이면 메이드율을 비교합니다');
+    assert.deepEqual((await pick('지역')).map(r=>r.slice(0,5).concat([r[7]])),[['서울','1','0','5억','100.0%','rgb(201, 205, 213)'],['경기','3','0','4.6억','100.0%','rgb(201, 205, 213)'],['수원','0','2','수주 없음','0.0%','rgb(201, 205, 213)'],['인천','0','1','수주 없음','0.0%','rgb(201, 205, 213)']],'지역 = 현장명 머리 · 수주 없으면 그렇게 적는다');
+    assert.deepEqual((await pick('유입경로')).map(r=>r.slice(0,4)),[['유입경로 미기록','3','3','6.6억'],['전화','1','0','3억']],'유입경로 = 연결된(없으면 같은 현장) 견적문의의 값');
+    assert.deepEqual((await pick('협약업체')).map(r=>r.slice(0,5)),[['직접 수주','2','0','8억','100.0%'],['여름건설 (기술자문)','1','0','8,810만','100.0%'],['코지건설 (기술자문)','1','0','7,000만','100.0%']]);
+    assert.equal(await x.locator('.pf3-xnote').innerText(),'직접 수주가 수주실적의 83% · 협약 · 기술자문 수주는 실주 없이 결과 확정 (협약 단계 진입 후)');
+    assert.deepEqual((await pick('공종')).map(r=>r[0]),['공종 미기록'],'기록이 없으면 지어내지 않는다');
+    if(shot){await pick('담당자');await page.screenshot({path:shot+'-perf3-x-perf.png',fullPage:true});}
+    /* 실주 분석: 파이프라인 실주만 · 운영 기준 분류(관계 · 공법 · 가격 · 사업 + 분류 밖은 기타) · 놓친 금액 = 예상금액 합 */
+    await x.locator('.pf3-xt button',{hasText:'실주 분석'}).click();await page.waitForTimeout(200);assert.equal(await x.locator('.pf3-xp,.pf3-xh').count(),0,'하나씩 보기');
+    assert.equal(one(await x.locator('.pf3-xl .hd').innerText()),'실주 3건 · 왜 졌나 파이프라인 실주만 · Bad Fit 제외 · 2026년 연간 놓친 금액(예상금액) 3억');
+    assert.deepEqual(await x.locator('.pf3-xl .cs>div').evaluateAll(l=>l.map(n=>[...n.querySelectorAll('.t>*')].map(c=>c.textContent).concat([...n.querySelectorAll('.s')].map(s=>s.children[0].textContent+' '+s.children[1].textContent)))),[['관계','0',''],['공법','0',''],['가격','2','2억','가격 경쟁 2'],['사업','0',''],['기타','1','1억','담당자 부재·인수인계 누락 1']]);
+    assert.deepEqual(await x.locator('.pf3-xl .bar i').evaluateAll(l=>l.map(n=>n.style.width)),['0%','0%','66.7%','0%','33.3%']);
+    assert.equal(await x.locator('.pf3-xl .les').innerText(),'실주 복기(배운 점)가 아직 기록되지 않았습니다 — 실주 처리 때 한 줄씩 남기면 여기에 모입니다');
+    /* 영업 행동: 기록이 없으면 '—' · '기록 부족' */
+    await x.locator('.pf3-xt button',{hasText:'영업 행동'}).click();await page.waitForTimeout(200);
+    const beh=()=>x.locator('.pf3-xb').first().locator('.g4>*').evaluateAll(l=>{const o=[];for(let i=0;i<l.length;i+=4)o.push([0,1,2,3].map(k=>l[i+k].textContent.replace(/\s+/g,' ').trim()));return o;});
+    assert.deepEqual(await beh(),[['행동','수주 4건','실주 3건','차이'],['첫 응대','—','—','기록 부족'],['견적까지','—','—','기록 부족'],['견적 후 재접촉','—','—','기록 부족'],['접촉한 사람 수','—','—','기록 부족'],['견적 수정','—','—','기록 부족']]);
+    assert.equal(await x.locator('.pf3-xb .pb').innerText(),'플레이북 후보 · 기록(첫 연락 · 견적 발송일 · 연락처 · 견적 버전)이 쌓이면 수주 현장의 공통점을 여기에 적습니다');
+    const plan=()=>x.locator('.pf3-xb').nth(1).locator('.g4>*').evaluateAll(l=>{const o=[];for(let i=0;i<l.length;i+=4)o.push([0,1,2,3].map(k=>l[i+k].textContent+(l[i+k].classList.contains('red')?'!':'')));return o;});
+    assert.equal(await x.locator('.pf3-xb').nth(1).locator('.hd').innerText(),'계획 대비 실제 · 담당자별 · 최근 4주');
+    assert.deepEqual(await plan(),[['담당','약속 지킴','견적 예정 대비','다음 할 일 이행'],['황윤선','—','—','0%!']],'기한 지난 다음 할 일 5건 · 끝낸 것 0');
+    assert.equal(one(await x.locator('.pf3-xb .off').innerText()),'이번 주 어긋난 것 이번 주에 어긋난 약속 · 견적 예정이 없습니다');
+    /* 기록이 쌓이면: 수주 현장 · 실주 현장 평균과 차이 · 약속 · 견적 예정 · 복기 */
+    await page.evaluate(()=>{const by=id=>B.deals.find(d=>d.id===id),T=s=>s+':00+09:00';
+     Object.assign(by('w1'),{created_at:T('2026-02-01T09:00'),activities:[{id:'aw1',type:'전화',note:'첫 통화',at:T('2026-02-01T11:00')},{id:'aw2',type:'방문',note:'현장 확인',at:T('2026-02-08T10:00')}],contacts:[{name:'관리소장'},{name:'회장'}],quote_versions:[{},{},{}],stage_contexts:{sent:{fields:{sent_date:'2026-02-04'}}}});
+     Object.assign(by('l1'),{created_at:T('2026-07-01T09:00'),activities:[{id:'al1',type:'전화',note:'첫 통화',at:T('2026-07-01T17:00')},{id:'al2',type:'전화',note:'후속',at:T('2026-07-20T10:00')}],contacts:[{name:'관리소장'}],quote_versions:[{}],stage_contexts:{lost:{fields:{close_reason:'가격 열세',close_detail:'확인',lesson:'소장만 만나고 회장을 못 만남'}},sent:{fields:{sent_date:'2026-07-08'}}}});
+     by('l3').stage_contexts.lost.fields.lesson='소장만 만나고 회장을 못 만남';
+     by('o1').completed_actions=[{id:'c1',type:'고객 약속',text:'재통화',due_at:'2026-10-02',status:'completed',completed_at:T('2026-10-02T15:00')}];
+     by('o2').completed_actions=[{id:'c2',text:'고객 약속 · 견적 설명',due_at:'2026-10-05',status:'completed',completed_at:T('2026-10-07T09:00')}];
+     const n1=by('n1');n1.stage_contexts=Object.assign({},n1.stage_contexts,{consulting:{fields:{quote_due:'2026-10-01'}},sent:{fields:{sent_date:'2026-10-06'}}});n1.completed_actions=[{id:'c3',text:'제안서 공유',due_at:'2026-10-03',status:'completed',completed_at:T('2026-10-03T10:00')}];
+     paint();});await page.waitForTimeout(300);
+    assert.deepEqual((await beh()).slice(1),[['첫 응대','2시간 1건','8시간 1건','4배 빠름'],['견적까지','3일 1건','7일 1건','4일 빠름'],['견적 후 재접촉','4일 1건','12일 1건','8일 빠름'],['접촉한 사람 수','2명 1건','1명 1건','1명 더'],['견적 수정','2회 1건','0회 1건','2회 더']],'평균 = 기록이 있는 현장만(건수 표시)');
+    assert.equal(await x.locator('.pf3-xb .pb').innerText(),'플레이북 후보 · 수주한 현장은 첫 응대 · 견적까지 · 견적 후 재접촉 · 접촉한 사람 수 · 견적 수정에서 실주한 현장보다 좋았습니다');
+    const pl=(await plan()).slice(1);assert.deepEqual(pl.find(r=>r[0]==='이필선'),['이필선','—','+5일!','100%'],'견적 예정 10/1 → 10/6 발송');assert.deepEqual(pl.find(r=>r[0]==='황윤선'),['황윤선','50%!','—','14%!'],'약속 2건 중 1건 · 다음 할 일 7건 중 1건');
+    assert.deepEqual(await x.locator('.pf3-xb .off>div').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent))),[['견적 약속','[수원] 매탄 임박 · 10/1 예정 → 10/6 발송','+5일'],['고객 약속','[경기] 기한 지난 현장 2 · 10/5 고객 약속 · 견적 설명 → 10/7 완료','+2일']],'이번 주(10/5~)에 어긋난 것만');
+    if(shot)await page.screenshot({path:shot+'-perf3-x-beh.png',fullPage:true});
+    await x.locator('.pf3-xt button',{hasText:'실주 분석'}).click();await page.waitForTimeout(200);
+    assert.equal(await x.locator('.pf3-xl .les').innerText(),'실주 복기에서 가장 많이 나온 말 · "소장만 만나고 회장을 못 만남" (2건)');
+    if(shot)await page.screenshot({path:shot+'-perf3-x-lost.png',fullPage:true});
+    /* 끄기: 추가 분석만 숨김 */
+    await page.evaluate(()=>{G.perfExtraOff=true;paint();});await page.waitForTimeout(200);assert.equal(await page.locator('#si-perf .pf3-x').count(),0);assert.equal(await page.locator('#si-perf .pf3-tabs').count(),1);
+    await page.evaluate(()=>{G.perfExtraOff=false;G.perfV3.xt=0;G.perfV3.dim=0;paint();});await page.waitForTimeout(200);}
+   /* 5. 아직 판단 못 하는 것: 한 줄 */
   assert.match(await page.locator('#si-perf .pf3-pending').innerText(),/^아직 판단 못 하는 것\s*기록이 10건 쌓이면 자동으로 보입니다\s*견적 후 첫 후속 → 수주\s*\d+\/10\s*현장 방문 → 견적\s*\d+\/10\s*경쟁 · PT · 입찰 → 수주\s*\d+\/10$/);
   /* 6. 기간 · 브랜드 필터가 판정 · 숫자 · 퍼널 · 브랜드 표에 반영 */
   await page.locator('#si-perf .db-seg [data-v="3"]').click();await page.waitForTimeout(300);
@@ -151,6 +206,6 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{G.perfV3Off=true;paint();});await page.waitForTimeout(300);
   assert.equal(await page.locator('#si-perf .pf3').count(),0);assert.equal(await page.locator('#si-perf .db-verdict').count(),1,'끄면 예전 성과 분석');
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',verdict_white_team_donut:true,auto_sentence_from_data:true,kpi4_month_none_label:true,people_big_donut_cards3:true,blocked_only_red_one_line:true,brand_funnel:true,tabs_one_at_a_time:true,brand_company_matrix:true,cohort_link_warning:true,channel_top4_plus_rest:true,advisory_work_dates_state:true,advisory_gate_before_server:true,filters_reflected:true,other_pages_untouched:true,switch:true}));
+  console.log(JSON.stringify({status:'PASS',verdict_white_team_donut:true,auto_sentence_from_data:true,kpi4_month_none_label:true,people_big_donut_cards3:true,blocked_only_red_one_line:true,brand_funnel:true,tabs_one_at_a_time:true,brand_company_matrix:true,cohort_link_warning:true,channel_top4_plus_rest:true,advisory_work_dates_state:true,advisory_gate_before_server:true,extra_perf_dims6:true,extra_behavior_from_records:true,extra_lost_rules_categories:true,filters_reflected:true,other_pages_untouched:true,switch:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
