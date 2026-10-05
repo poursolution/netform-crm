@@ -190,6 +190,8 @@
    if(FL())FL().logs(q).filter(l=>l.server).forEach(l=>list.push({kind:'contact',ch:l.ch,res:l.res,text:l.text||'',who:l.who||'',at:l.at,src:'CRM',next:l.next||''}));
    /* 견적 = 버전(금액은 원): v1 · 금액 · 보냄 / 초안 */
    if(FL())FL().quotes(q).forEach(v=>list.push({kind:'work',ch:'',res:'',at:v.sent_at||v.created_at||new Date().toISOString(),who:v.author_name||'',src:'CRM',text:'견적 v'+v.version_no+' · '+wonTxt(v.amount)+(v.sent_at?' · 발송':' · 초안(아직 안 보냄)')+(v.method?' · '+v.method:'')+(v.change_reason?' · '+v.change_reason:'')}));
+   /* 요청 업무(2026-10-05): 내부 요청 · 재확인 · 회신 / 완료 = '시스템 · 내부 요청' 한 줄씩 */
+   try{(root.WorkRequest?root.WorkRequest.history('inquiry',q.id):[]).forEach(x=>list.push({kind:'system',at:x.at,who:x.who,src:'CRM',text:x.text}));}catch(e){}
    ((SMSQ[String(q.id||'')]||{}).rows||[]).forEach(x=>{const st=SMS_ST[x.status]||[x.status,''];list.push({kind:'system',at:x.delivered_at||x.failed_at||x.submitted_at||x.created_at,who:x.requested_by_name||'',src:'CRM 문자',text:'CRM 문자 '+st[0]+(x.last_error&&x.status!=='cancelled'?' · '+x.last_error:'')+' — '+String(x.body||'').slice(0,60),smsState:st[1]});});
   const na=root.actionObj(q,p);list.sort((x,y)=>(Date.parse(x.at)||0)-(Date.parse(y.at)||0));
   const lastContact=[...list].reverse().find(e=>e.kind==='contact'||e.kind==='work');if(!closedStatus(q)&&lastContact&&na&&na.text&&!lastContact.next)lastContact.next=na.text+(na.due?' · '+na.due:'');
