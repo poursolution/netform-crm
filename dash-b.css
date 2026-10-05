@@ -86,6 +86,29 @@
 .db-near{text-align:left;background:#fff;border:1px solid #eef0f3;border-left:4px solid #9ca3af;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:5px;min-width:0}
 .db-near>div{display:flex;align-items:center;gap:6px}.db-near em{font-style:normal;font-size:11px;font-weight:800;color:#6b7280;background:#f3f4f6;border-radius:4px;padding:1px 6px}.db-near em.hot{color:#fff;background:#d14a3f}
 .db-near span{font-size:11.5px;color:#6b7280}.db-near>div b{font-size:14px}.db-near>b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.db-near small{font-size:11.5px;color:#6b7280}
+/* 파이프라인 탭 보강(2026-10-05 영업 대시보드 v2 시안): 누가 어느 단계를 쥐고 있나 · 단계에 평균 며칠 머무나 */
+.db-pipe2{display:flex;flex-wrap:wrap;gap:16px;align-items:stretch}
+.db-whos,.db-aps{flex:999 1 560px}.db-dwells,.db-convs{flex:1 1 320px;gap:8px}
+.db-who{display:grid;grid-template-columns:76px repeat(5,minmax(0,1fr)) 64px;font-size:12.5px}
+.db-who>span{padding:8px;border-bottom:1px solid #f2f3f6;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.db-who .wh{font-size:11px;color:#9ca3af;border-bottom-color:#e3e6ec}.db-who .r,.db-who .wc,.db-who .wt{text-align:right}
+.db-who .wn{font-weight:700}.db-who .wc{font-weight:600}.db-who .wc em{font-style:normal;font-size:11px;font-weight:700;color:#b42318}.db-who .wt{font-weight:700;background:#fafbfc}
+.db-whonote{margin:0;padding:9px 16px;font-size:12px;color:#374151}
+.db-dwell{display:grid;grid-template-columns:86px minmax(0,1fr) 52px;gap:10px;align-items:center;font-size:12px}
+.db-dwell>i{height:9px;background:#f3f4f6;border-radius:5px;position:relative;display:block}.db-dwell>i u{position:absolute;left:0;top:0;bottom:0;border-radius:5px;display:block}.db-dwell>i s{position:absolute;top:-3px;bottom:-3px;border-left:1.5px solid #15171c;display:block}
+.db-dwell>b{text-align:right;white-space:nowrap}
+.db-dwnote{margin:auto 0 0;font-size:12px;color:#374151;border-top:1px solid #f0f1f4;padding-top:8px}
+/* 활동 탭 보강: 빨간 띠 → 숫자 5칸 → 담당자별 → 활동이 결과로 이어졌나 */
+.db-actband{background:#fff;border:1px solid #e8eaef;border-left:4px solid #c9cdd5;border-radius:12px;padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}.db-actband.warn{border-left-color:#d14a3f}
+.db-actband>div{flex:1 1 420px;display:flex;flex-direction:column;gap:3px;min-width:0}.db-actband b{font-size:15px}.db-actband span{font-size:12.5px;color:#6b7280}
+.db-shell .db-actband>button{border:0;background:#15171c;color:#fff;font-size:12.5px;font-weight:700;border-radius:8px;padding:8px 14px}.db-shell .db-actband>button:disabled{background:#c9cdd5}
+.db-aks{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.db-ak{background:#fff;border:1px solid #e8eaef;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;min-width:0}.db-ak span{font-size:11.5px;color:#6b7280}.db-ak b{font-size:22px}.db-ak small{font-size:11px;color:#9ca3af}
+.db-ap{display:grid;grid-template-columns:60px minmax(0,1fr) 40px minmax(0,1fr);gap:12px;align-items:center;padding:9px 16px;border-bottom:1px solid #f2f3f6;font-size:12.5px}
+.db-ap>i{display:flex;height:10px;border-radius:5px;overflow:hidden;background:#f3f4f6}.db-ap>i u{display:block;height:100%}.db-ap .t{text-align:right}.db-ap>span{font-size:11.5px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.db-apleg{padding:9px 16px;display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:#6b7280}.db-apleg span{display:flex;align-items:center;gap:5px}.db-apleg i{width:9px;height:9px;border-radius:2px;display:block}
+.db-conv{display:flex;flex-direction:column;gap:4px}.db-conv>div{display:flex;justify-content:space-between;font-size:12.5px}.db-conv>i{height:6px;background:#eef0f3;border-radius:3px;position:relative;display:block}.db-conv>i u{position:absolute;left:0;top:0;bottom:0;border-radius:3px;display:block}.db-conv small{font-size:11px;color:#9ca3af}
+@media(max-width:900px){.db-aks{grid-template-columns:repeat(2,minmax(0,1fr))}.db-who{font-size:11.5px}.db-ap{grid-template-columns:52px minmax(0,1fr) 28px}.db-ap>span{grid-column:1/-1}}
 /* 활동 */
 .db-feed{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));column-gap:20px}
 .db-fg{display:grid;grid-template-columns:84px minmax(0,1fr);gap:12px;padding:8px 0;border-top:1px solid #f0f1f4}.db-fg>span{font-size:12px;font-weight:700;color:#374151;padding-top:2px}
