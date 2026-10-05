@@ -143,6 +143,7 @@
  const gOf=c=>{try{return PS().group(c)||(/^(won|lost|badfit|nocontact)/.test(c)?(c==='won'?'won':'lost'):'');}catch(e){return '';}};
  /* 영업건의 단계 이동 기록(날짜순): {k 날짜, from 묶음, to 묶음} */
  function stageEvents(d,K){try{return (R.briefAllStageEvents(d)||[]).map(x=>({k:K(x.at||x.changed_at||x.created_at),from:gOf(sCode(x.from||x.before||x.old_stage)),to:gOf(sCode(x.to||x.after||x.new_stage))})).filter(x=>x.k).sort((a,b)=>a.k.localeCompare(b.k));}catch(e){return [];}}
+ function madeFx(C){const {L,con,loss}=C;if(!L.ready)return '계약 원장을 불러오는 중';return (C.pt.count||C.tf.count||C.tfLost?'(직접 '+con.count+' + 협약 · 기술자문 '+C.pt.count+' + 타사 이관 '+C.tf.count+') ÷ (직접 '+con.count+' + 협약 · 기술자문 '+C.pt.count+' + 타사 이관 '+C.tf.count+' + 실주 '+(loss.length+C.tfLost)+')':'수주 '+con.count+' ÷ (수주 '+con.count+' + 실주 '+loss.length+')')+' · 배드핏 제외';}
  function funnelV2(C){
   const {B,K,P,AD,L,q,bad,fit,loss,made,active}=C,FOLLOW=Number(RULE().inquiryFollowDays)||7;
   const quotedD=AD.filter(d=>B.quoteIn(d,P.a,P.b)),quotes=quotedD.length,comp=AD.filter(d=>B.entered(d,'competition',P.a,P.b)).length;
@@ -167,7 +168,7 @@
    ['가장 큰 이탈',big<0?'칸 사이에 빠진 건이 없습니다':cols[big-1].l+' → '+cols[big].l+' '+cols[big].drop+'건'+(big===3&&noFollow?'. 견적 후 '+FOLLOW+'일 후속이 없던 건이 '+noFollow+'건':''),big<0?'':'red'],
    ['영업력',!L.ready?'계약 원장을 불러오는 중입니다':done?'결과 확정 '+done+'건 중 '+C.won+'건 수주 ('+pt(made)+')':'결과가 난 영업이 아직 없습니다','']];
   return '<section class="db-card db-f6"><div class="db-ch"><b>'+h(P.label)+' 영업 Funnel</b><span>'+h(P.label)+' 접수 문의 · 기간 안 영업 이동 · 칸 사이 = 빠진 건과 이유</span><i class="db-sp"></i><span class="mr">영업 메이드율 <b>'+pt(made)+'</b> · Bad Fit 제외</span></div><div class="db-f6g">'+cols.map(bar).join('')+'</div>'
-   +'<div class="db-f6n">'+notes.map(n=>'<div class="'+n[2]+'"><b>'+n[0]+'</b> · '+h(n[1])+'</div>').join('')+'</div></section>';
+   +'<div class="db-f6n">'+notes.map(n=>'<div class="'+n[2]+'"><b>'+n[0]+'</b> · '+h(n[1])+(n[0]==='영업력'&&L.ready?'<small class="db-f6x">'+h(madeFx(C))+'</small>':'')+'</div>').join('')+'</div></section>';
  }
  /* 단계별 전주 대비: 최근 7일과 그 전 7일을 단계 이동 기록에서 센다(따로 저장한 값 없이 기록에서 다시 계산). 정체 = 그 시점에 열려 있고 14일 넘게 기록이 없는 건 */
  function weekTable(C){
@@ -202,7 +203,7 @@
   const quotes=AD.filter(d=>B.quoteIn(d,P.a,P.b)).length,conv=AD.filter(d=>inR(K(d.created),P.a,P.b)).length;
   const fun=[['견적문의',q.length+'건','전체 접수'],['적합 문의',fit+'건',B.closedText(bad,'ex')],['견적 발송',quotes+'건',fit&&quotes<=fit?'적합의 '+pt(B.pct(quotes,fit)):'기간 안 견적 발송'],['영업건 전환',conv+'건','파이프라인 진입'],['수주',L.ready?C.won+'건'+(C.perf>0?' · '+won(C.perf):''):'불러오는 중','실주 '+(loss.length+C.tfLost)+'건'+(C.pt.count?' · 협약 · 기술자문 '+C.pt.count+'건 포함':'')+(C.tf.count?' · 타사 이관 '+C.tf.count+'건 포함':'')]];
   const cd=new Date(P.ty,P.tm-3,1),cym=cd.getFullYear()+'-'+pad(cd.getMonth()+1),coM=cd.getMonth()+1,cohort=AQ.filter(x=>K(R.inquiryCreatedAt(x)).slice(0,7)===cym),cw=L.ready?cohort.filter(x=>B.inquiryContract(x,L,AD)).length:0;
-  const rates=[['영업 메이드율',pt(made),L.ready?(C.pt.count||C.tf.count||C.tfLost?'(직접 '+con.count+' + 협약 · 기술자문 '+C.pt.count+' + 타사 이관 '+C.tf.count+') ÷ (직접 '+con.count+' + 협약 · 기술자문 '+C.pt.count+' + 타사 이관 '+C.tf.count+' + 실주 '+(loss.length+C.tfLost)+') · 배드핏 제외':'수주 '+con.count+' ÷ (수주 '+con.count+' + 실주 '+loss.length+') · 배드핏 제외'):'계약 원장을 불러오는 중','#15171c'],['문의 적합률',pt(B.pct(fit,q.length)),'적합 '+fit+' ÷ 문의 '+q.length,'#c9cdd5'],['문의 → 계약 전환율',L.ready?pt(B.pct(C.won,q.length)):'불러오는 중','수주 '+C.won+' ÷ 문의 '+q.length,'#c9cdd5'],['확정 전환율 ('+coM+'월 문의)',L.ready&&cohort.length?pt(B.pct(cw,cohort.length)):'아직 없음',coM+'월 문의 '+cohort.length+'건 중 지금까지 '+cw+'건 계약','#c9cdd5']];
+  const rates=[['영업 메이드율',pt(made),madeFx(C),'#15171c'],['문의 적합률',pt(B.pct(fit,q.length)),'적합 '+fit+' ÷ 문의 '+q.length,'#c9cdd5'],['문의 → 계약 전환율',L.ready?pt(B.pct(C.won,q.length)):'불러오는 중','수주 '+C.won+' ÷ 문의 '+q.length,'#c9cdd5'],['확정 전환율 ('+coM+'월 문의)',L.ready&&cohort.length?pt(B.pct(cw,cohort.length)):'아직 없음',coM+'월 문의 '+cohort.length+'건 중 지금까지 '+cw+'건 계약','#c9cdd5']];
   const top=(list,fn)=>{const t=B.tally(list,fn),a=t.slice(0,3),rest=t.slice(3).reduce((s,x)=>s+x[1],0);return a.map(x=>x[0]+' '+x[1]).concat(rest?['그 외 '+rest]:[]).join(' · ')||'해당 없음';};
   const funnelOld=()=>'<section class="db-card"><div class="db-ch"><b>견적문의가 계약까지</b><em>새 지표</em><span>'+h(P.label+' · 문의 접수 기준')+'</span></div>'
    +'<div class="db-fun">'+fun.map((u,i)=>'<div class="'+(i===fun.length-1?'last':'')+'"><span>'+u[0]+'</span><b>'+h(u[1])+'</b><small>'+h(u[2])+'</small></div>').join('')+'</div>'

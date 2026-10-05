@@ -63,7 +63,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    ['견적문의','4건','',''],['적합 문의','3건','적합률 75.0%','빠짐 1건 | 종결 1 · Bad Fit 1'],['견적 발송','5건','기간 안 견적 발송',''],['경쟁 · 입찰','1건','입찰 전환 20.0%','빠짐 4건 | 아직 진행 중'],['결과 확정','5건','진행 중 1','빠짐 1건 | 아직 결과 전'],['수주','2건','메이드율 40.0% (실주 3)','빠짐 3건 | 실주 3 · 가격 2 · 기타 1']],'문의 → 적합 → 견적 → 입찰 → 결과 → 수주');
   const fbar=await d.locator('.db-f6c .bar i').evaluateAll(l=>l.map(n=>[n.style.height,getComputedStyle(n).backgroundColor]));
   assert.deepEqual(fbar.map(x=>x[1]),['rgb(154, 160, 171)','rgb(59, 108, 228)','rgb(59, 108, 228)','rgb(209, 74, 63)','rgb(59, 108, 228)','rgb(31, 157, 85)'],'가장 큰 이탈 칸만 빨강 · 수주 초록');assert.equal(fbar[2][0],'118px','막대 높이 = 가장 큰 칸 대비');
-  assert.deepEqual((await d.locator('.db-f6n>div').allInnerTexts()).map(one0),['문의 품질 · 종결 1건 · Bad Fit 1이 문의 → 적합에서 빠짐. 영업 실패가 아니라 유입 품질 문제 (공사 범위 밖)','가장 큰 이탈 · 견적 발송 → 경쟁 · 입찰 4건','영업력 · 결과 확정 5건 중 2건 수주 (40.0%)']);
+  assert.deepEqual((await d.locator('.db-f6n>div').allInnerTexts()).map(one0),['문의 품질 · 종결 1건 · Bad Fit 1이 문의 → 적합에서 빠짐. 영업 실패가 아니라 유입 품질 문제 (공사 범위 밖)','가장 큰 이탈 · 견적 발송 → 경쟁 · 입찰 4건','영업력 · 결과 확정 5건 중 2건 수주 (40.0%) 수주 2 ÷ (수주 2 + 실주 3) · 배드핏 제외']);
   assert.equal(await d.locator('.db-f6n>div').nth(1).evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(253, 236, 236)');
   assert.deepEqual((await d.locator('.db-wk .wh').allInnerTexts()).map(one0),['단계','새로 들어옴','다음 단계로','정체 (14일+)','수주','실주']);
   const wk=await d.locator('.db-wk').evaluate(n=>{const c=[...n.children].slice(6).map(x=>x.textContent.replace(/\s+/g,' ').trim()),rows=[];for(let i=0;i<c.length;i+=6)rows.push(c.slice(i,i+6));return rows;});
