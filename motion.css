@@ -1,0 +1,29 @@
+/* 공통 움직임 기준 — 한 곳 (2026-10-05 대표 "화면에 애니메이션 좀 넣어 줄래, 과하지 않은 선에서" · 디자인 기준 design_handoff_motion)
+   쓰는 곳 = 무엇이 바뀌었는지 알려 줄 때만. 길이 0.12 ~ 0.24초(막대만 0.3초).
+     ① 버튼 · 탭 색 전환          ② 목록이 바뀔 때 줄 · 카드 nfIn(아래에서 4px · 0.18초)
+     ③ hover(줄 = 아주 옅은 회색 · 카드 = 옅은 그림자)   ④ 막대 길이(숫자가 바뀌면 0.3초 동안 늘었다 줄었다)
+     ⑤ 완료 · 요청 시 줄 접힘(연초록 → 접힘)   ⑥ 가운데 칸 전환(오른쪽에서 8px · [‹] 는 반대로)
+   쓰지 않는 것: 숫자가 올라가는 효과 · 튕기는 효과 · 페이지 전환 · 모달 확대. 이 표에 없는 곳에는 넣지 않는다.
+   기기의 '동작 줄이기'를 켜 두면 모두 꺼진다. 켜짐 표식(html.nf-motion)과 잠깐 붙는 표식(nf-list · nf-back)은 motion.js 가 붙인다. 끄기: G.motionOff=true */
+:root{--nf-fast:.12s;--nf-base:.18s;--nf-slow:.24s;--nf-bar:.3s;--nf-ease:cubic-bezier(.2,.7,.3,1);--nf-done:#e9f7ef}
+@keyframes nfIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes nfInX{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:none}}
+@keyframes nfBackX{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+/* ⑤ 의 그림자 줄(motion.js 가 잠깐 만들었다 지운다) */
+.nf-ghost{position:fixed;z-index:60;margin:0;box-sizing:border-box;overflow:hidden;pointer-events:none;transform-origin:center top;background:var(--nf-done)}
+@media (prefers-reduced-motion:no-preference){
+ /* ① 버튼 · 탭: 색이 부드럽게 바뀐다. :where 로 감싸 세기를 0으로 — 화면이 이미 정해 둔 전환(스위치 · 펼침 등)을 덮지 않는다 */
+ :where(html.nf-motion .apage button,html.nf-motion .apage [role="tab"],html.nf-motion #detailView button,html.nf-motion #detailView [role="tab"]){transition:background-color var(--nf-fast) ease-out,border-color var(--nf-fast) ease-out,color var(--nf-fast) ease-out,box-shadow var(--nf-fast) ease-out}
+ /* ② 탭 · 필터 · 브랜드 · 쪽 번호를 바꾸면: 줄과 카드가 아래에서 4px 올라오며 나타난다 */
+ html.nf-motion.nf-list .apage.on [class$="-row"],html.nf-motion.nf-list .apage.on [class*="-row "],
+ html.nf-motion.nf-list .apage.on [class$="-card"],html.nf-motion.nf-list .apage.on [class*="-card "],
+ html.nf-motion.nf-list .apage.on tbody>tr,html.nf-motion .nf-in{animation:nfIn var(--nf-base) var(--nf-ease) both}
+ /* ③ 마우스를 올리면: 줄 = 아주 옅은 회색 · 카드 = 옅은 그림자(색 · 그림자는 부드럽게) */
+ :where(html.nf-motion .apage [class$="-row"],html.nf-motion .apage [class*="-row "],html.nf-motion .apage [class$="-card"],html.nf-motion .apage [class*="-card "]){transition:background-color var(--nf-fast) ease-out,box-shadow var(--nf-fast) ease-out}
+ html.nf-motion #pipeline-stage-v3 .ps3-row:hover{background:#f8f9fb}
+ html.nf-motion #pipeline-stage-v3 .ps3-card:hover{box-shadow:0 2px 10px rgba(21,23,28,.08)}
+ /* ④ 막대: motion.js 가 앞 길이에서 새 길이로 움직인다(화면을 다시 그려도 이어지게) — 길이 var(--nf-bar) */
+ /* ⑥ 가운데 칸 전환: 열릴 때 오른쪽에서 8px, [‹] 로 돌아가면 반대로 */
+ html.nf-motion #detailView #ddvPanel,html.nf-motion #detailView .dv3-cpanel:not([hidden]),html.nf-motion #detailView .ds2,html.nf-motion #detailView #detailAction.dv3-inline{animation:nfInX var(--nf-base) var(--nf-ease) both}
+ html.nf-motion #detailView .nf-back>*{animation:nfBackX var(--nf-base) var(--nf-ease) both}
+}
