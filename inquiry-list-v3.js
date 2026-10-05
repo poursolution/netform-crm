@@ -13,7 +13,9 @@
  const h=v=>root.esc(String(v==null?'':v)),attr=v=>root.escAttr(String(v==null?'':v));
  const DAY=864e5,W=()=>root.InquiryWorkbench,L2=()=>root.InquiryListV2;
  const BRAND={'석민이앤씨':'#e8590c','POUR솔루션':'#1f9d55','POUR공법':'#7048e8','아파트스퀘어':'#3b6ce4'};
- const RES=['연락 완료','보류','대표회의 예정','재견적 요청','경쟁사 비교','계약 검토'];
+ /* 결과 칩 = 결과 마스터(InquiryFlow.RESULTS · 목록 · 상세 공통). 끄면(G.inqFlowOff) 예전 목록 */
+ const F=()=>root.InquiryFlow&&root.InquiryFlow.on()?root.InquiryFlow:null;
+ const RES_OLD=['연락 완료','보류','대표회의 예정','재견적 요청','경쟁사 비교','계약 검토'],RES=()=>F()?F().RESULTS.slice():RES_OLD;
  const LINK_RPC='crm_inquiry_site_link_v1';
  const RULES=()=>root.OPS_RULES||{};const ASSIGN_MIN=()=>Number(RULES().inquiryAssignMinutes)||30,FIRST_H=()=>Number(RULES().towerFirstResponseHours)||2,FOLLOW_D=()=>Number(RULES().inquiryFollowDays)||7;
  function st(){const g=root.G;if(!g.inqV3)g.inqV3={tab:'all',sort:'old',open:null,rec:null,pick:{},limit:50,linkBusy:null,linkErr:null};return g.inqV3;}
@@ -24,13 +26,15 @@
  const dayStr=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
  const addDays=n=>{const d=new Date();d.setDate(d.getDate()+n);return d;};
  const parseDate=v=>{const s=String(v||'').trim();let m=/(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/.exec(s);if(m)return new Date(+m[1],+m[2]-1,+m[3]);m=/^(\d{1,2})[.\/](\d{1,2})$/.exec(s);if(m){const y=new Date().getFullYear();return new Date(y,+m[1]-1,+m[2]);}return null;};
- /* 대표회의 · 자료 회신 기한: 시트 칸 또는 다음 할 일(대표회의 …)의 날짜 */
+ /* 대표회의 일정(D-3 판정은 대표회의 날짜만 — 자료 회신 기한은 따로 replyOf): 문의 정보 칸 또는 다음 할 일(대표회의 …)의 날짜 */
  function meetOf(q){
   const d=q.detail&&typeof q.detail==='object'?q.detail:{},r=q.raw&&typeof q.raw==='object'?q.raw:{},p=root.itemPatch(q,'inq')||{};
-  let cand=[d.meetingDate,d.meeting_date,r['대표회의'],r['대표회의 일정'],r['자료 회신 기한'],d.replyDue].map(parseDate).filter(Boolean)[0]||null;
+  let cand=F()?F().meetingDate(q):[d.meetingDate,d.meeting_date,r['대표회의'],r['대표회의 일정'],r['자료 회신 기한'],d.replyDue].map(parseDate).filter(Boolean)[0]||null;
   if(!cand){try{const a=root.actionObj(q,p);if(a&&/대표회의|입대의/.test(String(a.text||''))&&a.due)cand=parseDate(a.due);}catch(e){}}
   if(!cand)return null;const dd=Math.round((new Date(cand.getFullYear(),cand.getMonth(),cand.getDate())-new Date(new Date().setHours(0,0,0,0)))/DAY);return {date:cand,dd};
  }
+ /* 자료 회신 기한(대표회의와 다른 값) */
+ function replyOf(q){const cand=F()?F().replyDue(q):null;if(!cand)return null;const dd=Math.round((new Date(cand.getFullYear(),cand.getMonth(),cand.getDate())-new Date(new Date().setHours(0,0,0,0)))/DAY);return {date:cand,dd};}
  /* 필수 확인 9개 — 문의 원문 · 공종에서 읽히는 것(현재 문제 · 공사 범위)은 채워진 것으로 본다. 나머지는 기록된 값이 있어야 한다 */
  const NEED=['현재 문제','공사 범위','공사 시기','경쟁사','요청 자료','대표회의 일정','자료 회신 기한','결정권자','다음 행동 · 날짜'];
  function need9(q){
@@ -38,7 +42,7 @@
   const has=k=>{const v=r[k];return v!=null&&String(v).trim()!==''&&String(v).trim()!=='-';};
   let a=null;try{a=root.actionObj(q,p);}catch(e){}
   const work=String(root.inqCtlWorkLabel(q)||'');
-  const ok=[has('현재 문제')||!!String(W().originalText(q)||'').trim(),has('공사 범위')||(!!work&&!/미분류/.test(work)),has('공사 시기'),has('경쟁사'),has('요청 자료'),has('대표회의')||has('대표회의 일정')||!!(d.meetingDate||d.meeting_date),has('자료 회신 기한')||!!d.replyDue,has('결정권자')||!!((p.checks||[])[2]),!!(a&&a.text&&a.due)];
+  const ok=[has('현재 문제')||!!String(W().originalText(q)||'').trim(),has('공사 범위')||(!!work&&!/미분류/.test(work)),has('공사 시기'),has('경쟁사'),has('요청 자료'),has('대표회의')||has('대표회의 일정')||!!(d.meetingDate||d.meeting_date)||!!(F()&&F().meetingDate(q)),has('자료 회신 기한')||!!d.replyDue||!!(F()&&F().replyDue(q)),has('결정권자')||!!((p.checks||[])[2]),!!(a&&a.text&&a.due)];
   return NEED.map((l,i)=>({l,ok:ok[i]}));
  }
  function missing(q){return need9(q).filter(x=>!x.ok).map(x=>x.l);}
@@ -87,9 +91,11 @@
   const ec=step===4?'#9ca3af':late?(follow||(hours!==null&&hours<24)?'#d97706':'#d93a3a'):'#1f7a4d';
   const act=step===4?'영업건 보기':step===0?'담당 배정':step===1?'첫 연락':(meet&&meet.dd<=3&&meet.dd>=0)?'자료 제출':(!late&&miss.length)?'정보 보완':'후속 연락';
   const ex=(!conv||att)?siteDeals(q):[];
-  return {x,q,key:x.key,step,conv,att,link,ex,hours,sinceLast,follow,meet,miss,late,brand,bc:BRAND[brand]||'#6b7280',channel,phone:digits.length>=8?phone:'',digits,owner,elapsed,recv,ec,act,
+  /* 접촉 전 시도: '시도 n회'(기준 횟수에 닿으면 연락두절 종결 제안) — 첫 연락 지연 판정은 그대로 */
+  const tries=step===1&&F()?F().attemptNote(q):'';
+  return {x,q,key:x.key,step,conv,att,link,ex,hours,sinceLast,follow,meet,miss,late,tries,brand,bc:BRAND[brand]||'#6b7280',channel,phone:digits.length>=8?phone:'',digits,owner,elapsed,recv,ec,act,
    site:q.site||'현장명 미입력',work:root.inqCtlWorkLabel(q),sum:W().gist(q)||'',who:[d.customerType||r['고객유형'],q.contact_name||q.contact].filter(v=>v&&String(v).trim()).join(' · ')||'고객 미입력',
-   lastText:x.latest?[ymd(lastAt)+' '+(x.latest.type||'연락'),x.latest.note||x.latest.result].filter(Boolean).join(' · '):x.first?ymd(Date.parse(x.first))+' 첫 연락':'연락 기록 없음'};
+   lastText:x.latest?[ymd(lastAt)+' '+(x.latest.type||'연락'),(/^고객 응대 기록/.test(String(x.latest.note||''))&&x.latest.result)?x.latest.result:(x.latest.note||x.latest.result)].filter(Boolean).join(' · '):x.first?ymd(Date.parse(x.first))+' 첫 연락':'연락 기록 없음'};
  }
  const TABS=[
   ['all','전체','시트에 들어온 모든 문의',()=>true,'#15171c'],
@@ -100,7 +106,7 @@
   ['meet','대표회의 · 기한 D-3','정확한 견적이 늦으면 개략 금액 먼저',m=>!!m.meet&&m.meet.dd<=3&&m.meet.dd>=0&&m.step<4,'#d93a3a'],
   ['info','필수정보 미입력','첫 상담 후 필수 9개 확인',m=>m.follow&&m.miss.length>0,'#d97706']];
  function opener(m){const me=root.ME&&root.ME.name||'';const topic=String(m.sum||m.work||'문의').replace(/\s+/g,' ').slice(0,26);return '안녕하세요, 넷폼 '+me+'입니다. 문의 주신 '+topic+' 건으로 연락드렸습니다. 지금 통화 괜찮으실까요?'+(m.meet&&m.meet.dd<=3&&m.meet.dd>=0?' (대표회의 전에 보실 수 있게 개략 금액부터 보내드리겠습니다)':'');}
- function picks(m){const S=st(),p=S.pick[m.key]||{};const hasMeet=!!(m.meet&&m.meet.dd>=0);return {r:p.r||(hasMeet?'대표회의 예정':'연락 완료'),n:p.n||(hasMeet?'대표회의 다음날':'7일 후'),hasMeet};}
+ function picks(m){const S=st(),p=S.pick[m.key]||{},f=F();const hasMeet=!!(m.meet&&m.meet.dd>=0),r=p.r||(f?'연결됨':hasMeet?'대표회의 예정':'연락 완료');return {r,n:p.n||(f?(hasMeet&&f.kindOf(r)!=='attempt'?'대표회의 다음날':(f.NEXT[r]||[])[1]||'7일 후'):(hasMeet?'대표회의 다음날':'7일 후')),hasMeet};}
  function nextDate(m,n){if(n==='대표회의 다음날'&&m.meet){const d=new Date(m.meet.date);d.setDate(d.getDate()+1);return d;}return addDays({'내일':1,'3일 후':3,'7일 후':7}[n]||7);}
  const kday=d=>d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate()+'('+'일월화수목금토'[d.getDay()]+')';
  /* 추천 담당(규칙: 공종 경험 · 업무량 · 지역) — 관리자의 배정 칸이 만든 추천을 그대로 읽는다 */
@@ -123,13 +129,13 @@
    +(m.miss.length?'<span class="w">빠진 정보</span><p class="w">'+h(m.miss.join(' · '))+'</p>':'')
    +(rec?'<span>추천 담당</span><p>'+h(rec)+'</p>':'')
    +'<span>첫마디</span><p class="line">'+h(opener(m))+(root.OpsStore&&root.OpsStore.aiOn()&&m.step<4?' <small>규칙 문장 · AI 첫마디는 상세 창에서</small>':'')+'</p>'
-   +(recOpen?'<span class="b">결과 기록</span><div class="il-rec"><div>'+RES.map(l=>chip('res',l,p.r===l)).join('')+'</div><div><small>다음 행동일</small>'+nx.map(l=>chip('next',l,p.n===l)).join('')+'</div>'+(p.hasMeet&&m.meet.dd<=3?'<em>대표회의 '+ymd(m.meet.date)+' D-'+m.meet.dd+' · 정확한 견적이 늦으면 개략 금액 먼저</em>':'')+'<div class="il-save"><button type="button" data-il="save" data-key="'+k+'">저장</button><span>결과와 다음 행동일을 모두 골라야 저장됩니다 · 제안이 미리 골라져 있음 · 다음 연락 '+h(kday(nd))+'</span></div><div class="il-err" data-il-err></div></div>':'')
+   +(recOpen?'<span class="b">결과 기록</span><div class="il-rec"><div>'+RES().map(l=>chip('res',l,p.r===l)).join('')+'</div><div><small>다음 행동일</small>'+nx.map(l=>chip('next',l,p.n===l)).join('')+'</div>'+(p.hasMeet&&m.meet.dd<=3?'<em>대표회의 '+ymd(m.meet.date)+' D-'+m.meet.dd+' · 정확한 견적이 늦으면 개략 금액 먼저</em>':'')+'<div class="il-save"><button type="button" data-il="save" data-key="'+k+'">저장</button><span>결과와 다음 행동일을 모두 골라야 저장됩니다 · 제안이 미리 골라져 있음 · 다음 연락 '+h(kday(nd))+'</span></div><div class="il-err" data-il-err></div></div>':'')
    +'<span></span><div class="il-acts"><button type="button" class="dark" data-il="detail" data-key="'+k+'">상세 열기</button><button type="button" data-il="call" data-key="'+k+'"'+(m.digits?' data-tel="'+attr(m.digits)+'"':'')+'>전화</button><button type="button" data-il="sms" data-key="'+k+'">문자</button></div></div>';
  }
  function rowHtml(m){
   const S=st(),on=S.open===m.key,k=attr(m.key),cls=m.step===0?' red':m.step===1?' dark':m.follow&&m.late?' amber':'';
   return '<div class="il-item'+(on?' open':'')+'"><div class="il-row" role="button" tabindex="0" data-il="toggle" data-key="'+k+'" style="border-left-color:'+m.bc+'">'
-   +'<div class="il-l"><div class="il-brand"><b style="color:'+m.bc+'">'+h(m.brand||'브랜드 미지정')+'</b><span>'+h(m.channel)+'</span></div><div class="il-site"><b>'+h(m.site)+(m.ex.length?'<u>기존 현장 · '+m.ex.length+'건</u>':'')+'</b><span>'+h(m.work)+(m.sum?' · '+h(m.sum):'')+(m.meet&&m.step<4?'<em> · 대표회의 '+h(ymd(m.meet.date))+' D'+(m.meet.dd<0?'+'+(-m.meet.dd):'-'+m.meet.dd)+'</em>':'')+'</span></div></div>'
+   +'<div class="il-l"><div class="il-brand"><b style="color:'+m.bc+'">'+h(m.brand||'브랜드 미지정')+'</b><span>'+h(m.channel)+'</span></div><div class="il-site"><b>'+h(m.site)+(m.ex.length?'<u>기존 현장 · '+m.ex.length+'건</u>':'')+'</b><span>'+h(m.work)+(m.sum?' · '+h(m.sum):'')+(m.meet&&m.step<4?'<em> · 대표회의 '+h(ymd(m.meet.date))+' D'+(m.meet.dd<0?'+'+(-m.meet.dd):'-'+m.meet.dd)+'</em>':'')+(m.tries?'<em class="il-tries"> · '+h(m.tries)+'</em>':'')+'</span></div></div>'
    +'<div class="il-r"><div class="il-who"><span>'+h(m.who)+'</span><b class="'+(m.phone?'':'none')+'">'+h(m.phone||'연락처 없음')+'</b></div><span class="il-owner'+(m.owner?'':' none')+'">'+h(m.owner?root.repDisplay(m.owner):'미배정')+'</span><div class="il-el"><b style="color:'+m.ec+'">'+h(m.elapsed)+'</b><span>'+h(m.recv)+'</span></div><button type="button" class="il-act'+cls+'" data-il="act" data-key="'+k+'">'+h(m.act)+'</button></div></div>'
    +(on?panel(m):'')+'</div>';
  }
@@ -172,6 +178,8 @@
  const FIRST_DONE='전화응대 완료';
  const isFirst=q=>!root.inqCtlFirstResponseAt(q)&&String(q&&q.status||'')!==FIRST_DONE;
  function record(q,o){
+  /* 저장은 명령 하나(InquiryCommand · contact_log): 시도면 최초응대 · 단계는 그대로, 첫 접촉이면 단계 진행, 그 뒤는 다음 할 일만 */
+  if(F()&&root.InquiryCommand)return root.InquiryCommand.run('contact_log',q,{did:o.did,line:String(o.res||'').trim(),next:o.next,due:o.due})===true;
   const did=String(o.did||'고객 응대 기록').trim(),res=String(o.res||'').trim(),next=String(o.next||'').trim(),due=String(o.due||'');
   if(!res||!next||!/^\d{4}-\d{2}-\d{2}$/.test(due))throw Error('결과와 다음 행동일을 모두 넣어 주세요.');
   if(isFirst(q)){const made=[tmp('input','iq-did',did),tmp('textarea','iq-res',res),tmp('input','iq-next',next),tmp('input','iq-due',due)];try{return root.iqApply(q,'step:1')===true;}finally{made.forEach(el=>el.remove());}}
@@ -184,10 +192,10 @@
  }
  function saveRec(m,errEl){
   const q=root.inqCtlFind(m.key,false);if(!q)return;const p=picks(m);if(!p.r||!p.n){if(errEl)errEl.textContent='결과와 다음 행동일을 모두 골라 주세요.';return;}
-  const nd=nextDate(m,p.n),text='통화 결과: '+p.r+' → 다음 연락 '+kday(nd),nextText='다음 연락 · '+p.r;
+  const f=F(),nd=nextDate(m,p.n),text=f?'[전화 · '+p.r+']':'통화 결과: '+p.r+' → 다음 연락 '+kday(nd),nextText=f?((f.NEXT[p.r]||[])[0]||'다시 연락'):'다음 연락 · '+p.r;
   const before=JSON.parse(JSON.stringify(q)),patch=root.itemPatch(q,'inq'),beforePatch=JSON.parse(JSON.stringify(patch));
   let ok=false;try{ok=record(q,{res:text,next:nextText,due:dayStr(nd)})===true;}catch(e){Object.keys(q).forEach(k=>delete q[k]);Object.assign(q,before);Object.keys(patch).forEach(k=>delete patch[k]);Object.assign(patch,beforePatch);if(errEl)errEl.textContent=e.message||'저장 연결을 확인해 주세요.';}
-  if(ok){const S=st();S.rec=null;delete S.pick[m.key];if(typeof root.toast==='function')root.toast(text);root.paint();}
+  if(ok){const S=st();S.rec=null;delete S.pick[m.key];if(typeof root.toast==='function')root.toast(f?p.r+' → '+nextText+' '+kday(nd):text);root.paint();}
   else if(errEl&&!errEl.textContent)errEl.textContent=(document.getElementById('iq-msg')||{}).textContent||'저장하지 못했습니다.';
  }
  /* 기존 현장 판단 저장 — 서버가 확인한 뒤에만 화면에 반영한다. decision: same(영업건 id) | new | clear */
@@ -213,7 +221,7 @@
   if(a==='more'){S.limit+=50;return root.paint();}
   if(a==='toggle'){if(e.target.closest('button,a,input,select'))return;S.open=S.open===key?null:key;if(S.open!==key)S.rec=null;return render();}
   const m=find(key);if(!m)return;e.stopPropagation();
-  if(a==='res'||a==='next'){const p=S.pick[key]||(S.pick[key]={});const cur=picks(m);p.r=a==='res'?v:cur.r;p.n=a==='next'?v:cur.n;return render();}
+  if(a==='res'||a==='next'){const p=S.pick[key]||(S.pick[key]={});/* 결과를 바꾸면 다음 행동일 제안도 그 결과에 맞게 따라간다(직접 고른 날짜는 그대로) */if(a==='res')p.r=v;else p.n=v;return render();}
   if(a==='save')return saveRec(m,b.closest('.il-rec')?.querySelector('[data-il-err]'));
   if(a==='ex-same')return saveLink(m,m.link.same===v?'clear':'same',m.link.same===v?null:v);
   if(a==='ex-new')return saveLink(m,m.link.isNew?'clear':'new',null);
@@ -229,5 +237,5 @@
  }
  const base=root.paintInq;
  if(typeof base==='function')root.paintInq=function(){const r=base.apply(this,arguments);try{render();}catch(err){document.getElementById('pg-inq')?.classList.remove('inq-v3');document.getElementById('inq-v3')?.remove();if(root.console)root.console.warn('inquiry list v3: '+err.message);}return r;};
- root.InquiryListV3={record,isFirst,render,enabled,model,meetOf,missing,need9,attached,siteDeals,linkOf,linkable,headHtml,dealTag,dealWork,openDeal,LINK_RPC,TABS:TABS.map(t=>t[0])};
+ root.InquiryListV3={record,isFirst,render,enabled,model,meetOf,replyOf,missing,need9,attached,siteDeals,linkOf,linkable,headHtml,dealTag,dealWork,openDeal,LINK_RPC,TABS:TABS.map(t=>t[0])};
 })(window);

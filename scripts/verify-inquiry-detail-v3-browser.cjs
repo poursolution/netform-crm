@@ -76,21 +76,22 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    await page.locator('#inq-inbox-dialog .ds2-tpls button',{hasText:'자료 요청'}).click();await page.waitForTimeout(150);assert.match(await page.locator('#inq-inbox-dialog [data-idv="smstext"]').inputValue(),/도면이나 현장 사진/);
    if(shot)await page.screenshot({path:shot+'-inq-sms.png'});}
   await page.locator('#inq-inbox-dialog .idv3-tabs [role=tab]',{hasText:'응대 기록'}).click();await page.waitForTimeout(200);
-  assert.deepEqual(await tx('.idv3-res .idv3-rc'),['연결됨','부재','검토중','자료요청','회신대기','배드핏']);
+  assert.deepEqual(await tx('.idv3-res .idv3-rc'),['연결됨','고객 회신','검토중','자료요청','견적요청','부재','통화불가','번호오류','배드핏'],'결과 칩 = 결과 마스터(목록 · 상세 공통) + 배드핏');
   assert.equal(await d.locator('#iq-res').getAttribute('placeholder'),'무슨 일이 있었는지 한 줄 (선택)');
   assert.match((await tx('.idv3-sug'))[0],/^AI ?다음 행동 ?결과를 고르면 제안$/);assert.equal(await d.locator('.idv3-sug em').innerText(),'AI','다음 행동 제안 앞 AI 표식(시안 그대로)');assert.equal(await d.locator('.idv3-foot .idv-save.on').count(),0);
-  await d.locator('.idv3-rc',{hasText:'회신대기'}).click();await page.waitForTimeout(150);
-  assert.match((await tx('.idv3-sug'))[0],/^AI ?다음 행동 다시 연락 · 2026\.10\.6\(화\) ?바꾸기$/);assert.equal(await d.locator('.idv3-foot .idv-save.on').count(),1);
+  await d.locator('.idv3-rc',{hasText:/^부재$/}).click();await page.waitForTimeout(150);
+  assert.match((await tx('.idv3-sug'))[0],/^AI ?다음 행동 다시 연락 · 2026\.10\.4\(일\) ?바꾸기$/);assert.equal(await d.locator('.idv3-foot .idv-save.on').count(),1);
   const w0=await page.evaluate(()=>__writes.length);await d.locator('.idv3-foot .idv-save').click();await page.waitForTimeout(500);
   assert.ok(await page.evaluate(n=>__writes.length>n,w0),'기존 저장 경로로 저장');
-  const ev=await tx('.idv3-ev');assert.match(ev[ev.length-1],/송보람|정정훈/);assert.match(ev[ev.length-1],/· 전화 · 회신대기 ?→ 다음 행동: 다시 연락 · 10\.6$/);
+  const ev=await tx('.idv3-ev');assert.match(ev[ev.length-1],/송보람|정정훈/);assert.match(ev[ev.length-1],/· 전화 · 부재 ?→ 다음 행동: 다시 연락 — \[전화 · 부재\] · 10\.4$/,'새 서버 함수가 없는 동안은 다음 할 일 문장에 결과 줄을 붙여 둔다(있으면 행동만 — verify-inquiry-flow)');
+  assert.deepEqual(await page.evaluate(n=>__writes.slice(n).map(x=>x[0]),w0),['next_action'],'부재 = 연락 시도 — 단계 진행(최초응대)이 아니라 다음 할 일만');assert.equal(await page.evaluate(()=>inqCtlFirstResponseAt(inqCtlFind(A,false))),'','부재만으로는 최초응대가 아니다');
   assert.match((await tx('.idv3-chead'))[0],/시도 1 · 연결 0$/);
-  assert.equal((await tx('.idv3-pill'))[0],'회신 대기 · 10.6 확인','머리 꼬리표 = 마지막 결과 + 다음 확인일');assert.equal(await d.locator('.idv3-pill.red').count(),0);
+  assert.match((await tx('.idv3-pill'))[0],/^첫 연락 전 · .+ · 시도 1회$/,'부재 뒤에도 첫 연락 전 그대로 + 시도 n회');assert.equal(await d.locator('.idv3-pill.red').count(),1);
   /* 내부 메모 */
   await d.locator('.idv3-tabs [data-v="memo"]').click();await page.waitForTimeout(150);assert.equal(await d.locator('.idv3-res').count(),0);await d.locator('#spLogNote').fill('회장 의견 영향이 큰 현장');await d.locator('.idv3-foot .idv-save').click();await page.waitForTimeout(400);
   assert.match((await tx('.idv3-ev')).pop(),/· 내부 메모 ?회장 의견 영향이 큰 현장$/);await d.locator('.idv3-tabs [data-v="call"]').click();await page.waitForTimeout(150);
   /* 오른쪽: 지금 할 일 1개 · 첫마디 · 전화 / 다음 단계 / 근처 현장 · 담당 변경 */
-  assert.match((await tx('.idv3-now'))[0],/^지금 할 일 ?다시 연락 · 10\.6 ?첫마디 ?"안녕하세요, 넷폼 .+ 지금 통화 괜찮으실까요\?" ?전화 010-5436-0662$/);
+  assert.match((await tx('.idv3-now'))[0],/^지금 할 일 ?첫 연락 전화 ?첫마디 ?"안녕하세요, 넷폼 .+ 지금 통화 괜찮으실까요\?" ?전화 010-5436-0662$/);
   assert.match((await tx('.idv3-next'))[0],/^다음 단계 · 현장방문 \/ 견적 ?현장방문 일정 ?견적서 발송 ?둘 중 하나 저장 → 파이프라인 ‘컨설팅 설계’로 자동 전환$/);
   assert.match((await tx('.idv3-bottom'))[0],/^근처 현장 ?0곳.*담당 변경$/);
   await d.locator('.idv3-next [data-v="visit"]').click();await page.waitForTimeout(150);assert.equal(await d.locator('.idv3-next [data-idv="visitDate"]').count(),1);assert.equal(await d.locator('.idv3-next [data-idv="handoff"]').isDisabled(),true);

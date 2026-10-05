@@ -5,7 +5,7 @@
  let modalKey=null,returnFocus=null,ignoreBrand=false;
  // Only use the inquiry's own source text; response notes are not customer originals.
  function originalText(q){const detail=q.detail&&typeof q.detail==='object'?q.detail:{},raw=q.raw&&typeof q.raw==='object'?q.raw:{};return [q.message,typeof q.detail==='string'?q.detail:detail.inquiry,q.content,raw['문의내용']].find(v=>typeof v==='string'&&v.trim())?.trim()||''}
- function sourceFields(q){const d=q.detail&&typeof q.detail==='object'?q.detail:{},r=q.raw&&typeof q.raw==='object'?q.raw:{};const value=(...a)=>a.find(v=>typeof v==='string'&&v.trim()&&v.trim()!=='-')||'미입력';return [['현장',value(d.sourceSite,r['현장명'])],['업체·고객정보',value(d.customerType,r['고객유형'])],['건물유형',value(d.buildingType,r['건물유형'])],['건물주소',value(d.address,q.address,r['건물주소'])],['단지개요',value(d.complex,r['단지개요'])],['관리사무소 연락처',value(d.office,r['관리사무소'])],['문의자',value(q.contact_name,q.contact,r['고객성함'])],['문의자 연락처',value(q.phone,q.mobile,r['고객연락처'])],['상담채널',value(d.channel,q.channel,r['상담채널'])],['공사유형',value(d.workType,q.work,q.work_type,r['공사유형'])],['유입경로',value(d.inflow,q.source_channel,r['유입경로'])],['전화 응대자',value(d.responder,r['전화응대자'])]]}
+ function sourceFields(q){const d=q.detail&&typeof q.detail==='object'?q.detail:{},r=q.raw&&typeof q.raw==='object'?q.raw:{};const value=(...a)=>a.find(v=>typeof v==='string'&&v.trim()&&v.trim()!=='-')||'미입력';return [['현장',value(d.sourceSite,r['현장명'])],['업체·고객정보',value(d.customerType,r['고객유형'])],['건물유형',value(d.buildingType,r['건물유형'])],['건물주소',value(d.address,q.address,r['건물주소'])],['단지개요',value(d.complex,r['단지개요'])],['관리사무소 연락처',value(d.office,r['관리사무소'])],['문의자',value(q.contact_name,q.contact,r['고객성함'])],['문의자 연락처',value(q.phone,q.mobile,r['고객연락처'])],['상담채널',value(d.channel,q.channel,r['상담채널'])],['공사유형',value(d.workType,q.work,q.work_type,r['공사유형'])],['유입경로',value(d.inflow,q.source_channel,r['유입경로'])],['전화 응대자',value(root.InquiryFlow&&root.InquiryFlow.on()?root.InquiryFlow.phoneHandler(q):'',d.responder,r['전화응대자'])]]}
  root.inquiryOriginalSummary=function(q){const text=originalText(q),d=q.detail&&typeof q.detail==='object'?q.detail:{},r=q.raw&&typeof q.raw==='object'?q.raw:{};/* 비어 있는 칸은 한 줄 요약으로(2026-09-27 대표 '필요없는 여백') — 값이 있는 칸만 표로 */
   const fields=sourceFields(q),filled=fields.filter(f=>f[1]!=='미입력'),empty=fields.filter(f=>f[1]==='미입력').map(f=>f[0]);
   const notes=[['특이사항',d.note||r['특이사항']],['배정 코멘트',d.assignComment||r['배정 코멘트']],['응대내용',d.response||r['응대내용']]].filter(n=>typeof n[1]==='string'&&n[1].trim());
@@ -223,6 +223,15 @@
  const oldRole=root.inqCtlSetRoleView;root.inqCtlSetRoleView=function(v){dismiss();root.G.inqLegacyView=false;root.G.inqCompactMetric='';return oldRole(v)};
  function saveProcess(){
   const q=root.inqCtlFind(modalKey,false);if(!allowed(q))return;
+  /* 저장은 명령 하나(InquiryCommand · contact_log): 시도 · 첫 접촉 · 후속을 거기서 가른다(2026-10-05 견적문의 흐름 ①) */
+  if(root.InquiryCommand&&root.InquiryFlow&&root.InquiryFlow.on()){
+   const g=id=>String((document.getElementById(id)||{}).value||'').trim(),o={did:g('iq-did'),res:g('iq-res'),next:g('iq-next'),due:g('iq-due')};
+   /* 빈 칸 안내는 아래 예전 경로의 문구 그대로 */
+   if(o.did&&o.res&&o.next&&o.due){
+    try{const ok=root.InquiryCommand.run('contact_log',q,{did:o.did,line:o.res,next:o.next,due:o.due});if(ok===true){root.G.inqAct=null;root.G.iqForm=null;root.paint();}else if(!String((document.getElementById('iq-msg')||{}).textContent||'').trim())root.iqMsg('저장하지 못했습니다.');return ok}
+    catch(e){root.iqMsg(e.message||'저장 연결을 확인해 주세요.');return false}
+   }
+  }
   /* 이미 응대한 문의의 후속 연락은 단계 진행이 아니다 — 상태는 그대로 두고 다음 할 일만 다시 잡는다(서버가 같은 상태로의 진행을 충돌로 거절한다) */
   const L3=root.InquiryListV3;
   if(L3&&typeof L3.record==='function'&&!L3.isFirst(q)){

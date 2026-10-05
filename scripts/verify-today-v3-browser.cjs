@@ -164,7 +164,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 왼쪽에서 골라 가기 · 문의는 목록의 줄 안 저장과 같은 함수 */
   await ex.locator('.tv3-exlist button',{hasText:'인천SK스카이뷰'}).click();await page.waitForTimeout(200);assert.match(await ex.locator('.tv3-excard').innerText(),/^6 \/ 7[\s\S]*견적문의[\s\S]*인천SK스카이뷰/);
   await ex.locator('.tv3-exrec .chips button',{hasText:'부재'}).click();await ex.locator('.tv3-exrec .save').click();await page.waitForTimeout(400);
-  assert.deepEqual(await page.evaluate(()=>__iq),[['인천SK스카이뷰','step:1','[전화 · 부재]','다시 전화',10]],'문의 = iqApply(결과 + 다음 행동 · 날짜)');
+  /* 부재 = 연락 시도(2026-10-05 견적문의 흐름 ①): 단계 진행(최초응대)이 아니라 다음 할 일만 — 저장은 목록 · 상세와 같은 명령(InquiryCommand) */
+  assert.deepEqual(await page.evaluate(()=>__iq),[],'부재만으로는 단계 진행(iqApply)을 부르지 않는다');assert.equal(await page.evaluate(()=>__writes.filter(x=>x==='next_action').length),1,'문의 부재 = 다음 할 일 등록 1건');
+  assert.equal(await page.evaluate(()=>{const q=B.inquiries.find(x=>/인천SK스카이뷰/.test(x.site||''));return [inqCtlFirstResponseAt(q),InquiryFlow.state(q).attempts].join('|');}),'|1','최초응대는 그대로 비어 있고 시도 1회');
   /* 나머지를 끝내면 완료 화면 → 목록으로 */
   for(let n=0;n<5;n++){await ex.locator('.tv3-exrec .chips button',{hasText:'연결됨'}).click();await ex.locator('.tv3-exrec .save').click();await page.waitForTimeout(300);}
   assert.equal(await ex.getAttribute('data-exec'),'done');assert.match(await ex.locator('.tv3-exdone').innerText(),/^오늘 할 일 끝 · 7 \/ 7\s*같은 기록이 상세 · 대시보드 · 브리핑에 그대로 반영됩니다\s*← 목록으로$/);
