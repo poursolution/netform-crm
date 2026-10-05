@@ -27,6 +27,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    LOCAL={deals:{},inquiries:{}};AUTH_ON=true;G.inqDetailV3Off=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';G.inqV3=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op,p)=>{window.__writes.push([op,p]);return 'req-'+window.__writes.length};
    window.__rpc=[];SB={rpc:async(name,args)=>{__rpc.push([name,args]);if(name==='crm_inquiry_field_update_v1'){const p=args.p;return {data:{ok:true,inquiry_id:p.inquiry_id,field:p.field,value:p.value,raw_key:{customer_type:'고객유형',work_type:'공사유형',channel:'상담채널',inflow:'유입경로',responder:'전화 응대자',timing:'공사 시기',competitor:'경쟁사',requested_material:'요청 자료',keyman:'결정권자'}[p.field]||null}};}if(name==='crm_inquiry_site_link_v1'){const p=args.p;return {data:{ok:true,inquiry_id:p.inquiry_id,decision:p.decision,deal_id:p.decision==='same'?p.deal_id:null}};}return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
+   window.CRMRelease=Object.assign(window.CRMRelease||{},{has:n=>!/^crm_inquiry_(command|flow_list)_v1$/.test(n),noteMissing:()=>{}});
    goPage('inq');window.U=U;window.A=A;window.F=F;window.M=M;window.N=N;
   });
   await page.waitForTimeout(600);
@@ -68,21 +69,21 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 줄 안 결과 기록: [후속 연락] → 칩(기본값 연락 완료 · 7일 후) → 저장. 이미 응대한 문의의 후속 연락 = 다음 할 일 등록(next_action) — 단계 진행(inquiry_status)으로 보내면 서버가 같은 상태 충돌(PT409)로 거절한다 */
   await row('혁신LH5단지').locator('.il-act').click();await page.waitForTimeout(200);
   const rec=page.locator('#inq-v3 .il-rec');assert.equal(await rec.count(),1);
-  assert.deepEqual(await rec.locator('.il-chip.on').allInnerTexts(),['연락 완료','7일 후'],'규칙 기본값이 미리 골라짐');
-  await rec.locator('.il-chip[data-il="res"][data-v="재견적 요청"]').click();await page.waitForTimeout(150);await page.locator('#inq-v3 .il-rec .il-chip[data-il="next"][data-v="3일 후"]').click();await page.waitForTimeout(150);
+  assert.deepEqual(await rec.locator('.il-chip[data-il="res"]').allInnerTexts(),['연결됨','고객 회신','검토중','자료요청','견적요청','부재','통화불가','번호오류'],'결과 칩 = 결과 마스터(목록 · 상세 공통)');assert.deepEqual(await rec.locator('.il-chip.on').allInnerTexts(),['연결됨','3일 후'],'규칙 기본값이 미리 골라짐');
+  await rec.locator('.il-chip[data-il="res"][data-v="검토중"]').click();await page.waitForTimeout(150);assert.deepEqual(await page.locator('#inq-v3 .il-rec .il-chip.on').allInnerTexts(),['검토중','7일 후'],'결과를 바꾸면 다음 행동일 제안도 따라감');await page.locator('#inq-v3 .il-rec .il-chip[data-il="next"][data-v="3일 후"]').click();await page.waitForTimeout(150);
   assert.equal(await page.locator('#inq-v3 .il-save button').innerText(),'저장');assert.match(await page.locator('#inq-v3 .il-save span').innerText(),/결과와 다음 행동일을 모두 골라야 저장됩니다[\s\S]*다음 연락 \d{4}\.\d+\.\d+\([일월화수목금토]\)$/);
   if(shot)await page.screenshot({path:shot+'-list.png',fullPage:true});
   await page.locator('#inq-v3 .il-save button').click();await page.waitForTimeout(500);
   const w=await page.evaluate(()=>__writes.filter(x=>x[0]==='inquiry_status'||x[0]==='next_action').map(x=>[x[0],x[1]]));
   assert.equal(w.length,1,'저장 요청 1건 '+JSON.stringify(w));assert.equal(w[0][0],'next_action','후속 연락은 상태를 바꾸지 않는다(단계 진행 아님)');
-  assert.match(String(w[0][1].text),/^다음 연락 · 재견적 요청 — 통화 결과: 재견적 요청 → 다음 연락 \d{4}\.\d+\.\d+/);assert.match(String(w[0][1].due_at),/^\d{4}-\d{2}-\d{2}$/,'다음 할 일 · 날짜 함께 '+JSON.stringify(w[0]));assert.equal(w[0][1].type,'전화');
+  assert.equal(String(w[0][1].text),'다시 연락 — [전화 · 검토중]');assert.match(String(w[0][1].due_at),/^\d{4}-\d{2}-\d{2}$/,'다음 할 일 · 날짜 함께 '+JSON.stringify(w[0]));assert.equal(w[0][1].type,'전화');
   assert.equal(await page.evaluate(()=>!!document.querySelector('#inqActText,#inqActDue')),false,'임시 입력칸은 지운다');
   assert.equal(await page.evaluate(()=>!!document.querySelector('#iq-did')),false,'임시 입력칸은 지운다');
   /* 대표회의 건: 기본값 = 대표회의 예정 · 대표회의 다음날 */
   await row('매탄임광아파트').locator('.il-act').click();await page.waitForTimeout(200);
-  assert.deepEqual(await page.locator('#inq-v3 .il-rec .il-chip.on').allInnerTexts(),['대표회의 예정','대표회의 다음날']);assert.match(await page.locator('#inq-v3 .il-rec em').innerText(),/대표회의 .* D-2 · 정확한 견적이 늦으면 개략 금액 먼저/);
+  assert.deepEqual(await page.locator('#inq-v3 .il-rec .il-chip.on').allInnerTexts(),['연결됨','대표회의 다음날']);assert.match(await page.locator('#inq-v3 .il-rec em').innerText(),/대표회의 .* D-2 · 정확한 견적이 늦으면 개략 금액 먼저/);
   /* 상세: 빈 칸 바로 입력(서버 함수 있음) · Esc 취소 · Enter 저장(서버 확인 뒤 반영 · 감사용 RPC) */
-  await page.evaluate(()=>{window.CRMRelease=Object.assign(window.CRMRelease||{},{has:n=>true,noteMissing:()=>{}});InquiryWorkbench.open(A);});await page.waitForTimeout(400);
+  await page.evaluate(()=>{window.CRMRelease=Object.assign(window.CRMRelease||{},{has:n=>!/^crm_inquiry_(command|flow_list)_v1$/.test(n),noteMissing:()=>{}});InquiryWorkbench.open(A);});await page.waitForTimeout(400);
   const d=page.locator('#inq-inbox-dialog.idv');assert.equal(await d.count(),1);
   /* 상세 머리글: 브랜드 색 칩 · 상태 알약(첫 연락 전 · 경과) · 접수 시각(연도 포함) · 오른쪽 지금 할 일 · 필수 확인 9개 */
   assert.equal(await d.locator('.idv-brand').evaluate(n=>getComputedStyle(n).color),'rgb(232, 89, 12)');assert.match(await d.locator('.idv-pill').innerText(),/^첫 연락 전 · 1일$/);assert.match(await d.locator('.idv-sub').innerText(),/이준호 · \d{4}\.\d{1,2}\.\d{1,2} \d{2}:\d{2} 접수$/);
