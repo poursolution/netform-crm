@@ -82,11 +82,38 @@
   /* 상세 창 기준 = 파이프라인 상세(2026-10-05 대표 "이거 또 나오는데 파이프라인 좀 보고 그거 토대로 지침 설정해"): 같은 정보는 한 번만 — 필수 확인 칩 · '보완 필요' 상자를 없애고
      칩에만 있던 공사 시기 · 경쟁사 · 요청 자료 · 결정권자는 문의 정보의 줄로(같은 저장 길). 빠진 수는 제목 옆 '미입력 n' 하나. 다음 행동 · 날짜는 오른쪽 칸에서만 */
   const rows=FIELDS.map(([k,l,field,ph])=>({l,field,ph,ok:can,date:/_date$|_due$/.test(field),v:(f.get(k)&&f.get(k)!=='미입력')?f.get(k):rv(k)})).concat(Object.keys(NEEDKEY).map(field=>({l:NEEDKEY[field],field,ph:NEEDF[NEEDKEY[field]][1],ok:can2,date:false,v:rv(NEEDKEY[field])||(field==='keyman'&&((root.itemPatch(q,'inq')||{}).checks||[])[2]?'확인됨':'')}))),missing=rows.filter(r=>!r.v).map(r=>r.l);
-  const cell=r=>{if(r.v)return '<dd>'+h(r.v)+'</dd>';if(s&&s.editField===r.field)return '<dd><input class="idv-editin" data-idv="editinput" data-v="'+r.field+'"'+(r.date?' type="date"':'')+' value="'+attr(s.editDraft||'')+'" placeholder="'+attr(r.ph)+'" aria-label="'+attr(r.l)+' 입력"></dd>';return '<dd class="warn">'+(r.ok?'<button type="button" class="idv-edit" data-idv="edit" data-v="'+r.field+'" title="눌러서 바로 입력">미입력 · 입력하기</button>':'미입력')+'</dd>';};
+  const cell=r=>{if(r.v)return '<dd>'+h(r.v)+'</dd>';if(r.field==='work_type'&&r.ok&&s&&s.editField===r.field&&workPickOn())return '<dd class="idv3-picking">아래에서 고르기</dd><dd class="idv3-workwide">'+workSlot+'</dd>';if(s&&s.editField===r.field)return '<dd><input class="idv-editin" data-idv="editinput" data-v="'+r.field+'"'+(r.date?' type="date"':'')+' value="'+attr(s.editDraft||'')+'" placeholder="'+attr(r.ph)+'" aria-label="'+attr(r.l)+' 입력"></dd>';return '<dd class="warn">'+(r.ok?'<button type="button" class="idv-edit" data-idv="edit" data-v="'+r.field+'" title="눌러서 바로 입력">미입력 · 입력하기</button>':'미입력')+'</dd>';};
   const S0=stateOf(q),cd=new Date(S0.created),recvFull=Number.isFinite(S0.created)?cd.getFullYear()+'년 '+(cd.getMonth()+1)+'월 '+cd.getDate()+'일 '+String(cd.getHours()).padStart(2,'0')+':'+String(cd.getMinutes()).padStart(2,'0')+' 접수'+(S0.step<4&&S0.elapsed?' (경과 '+S0.elapsed+')':''):'';
   const basis=S0.step===0?'접수 후 '+ASSIGN_MIN()+'분 안 담당 배정':S0.step===1?'배정 후 '+FIRST_H()+'시간 안 첫 연락':S0.step===4?'영업건으로 넘어감 · 경과 표시 안 함':'첫 연락 후 '+FOLLOW_D()+'일 넘게 연락이 없으면 후속 연락 필요 · 연락하면 0일부터 다시';
   return '<div class="idv-label">고객 문의 원문</div><blockquote class="idv-quote">'+h(W().originalText(q)||'저장된 문의 원문이 없습니다.')+'</blockquote>'+(recvFull?'<p class="idv-recv">'+h(recvFull)+'<br>'+h(basis)+'</p>':'')
    +'<div class="idv-label idv-fh">문의 정보'+(missing.length?'<span class="idv-miss">미입력 '+missing.length+'</span>':'')+(can?'<small class="idv-fhint">누르면 바로 수정</small>':'<small class="idv-fieldnote">빈 칸 입력은 서버 적용 뒤에 열립니다</small>')+'</div><dl class="idv-info">'+rows.map(r=>'<div><dt>'+h(r.l)+'</dt>'+cell(r)+'</div>').join('')+'</dl>';
+ }
+ /* 공종 고르기 = 파이프라인 상세와 같은 부품(DealPanelsV2.workMount — 추정 공종 · 공종 표 · 대표 공종 · [완료]) — 2026-10-05 대표 "공종 파이프라인처럼".
+    고른 값은 파이프라인과 같은 표기('옥상(우레탄) + 재도장(외부)')로 기존 칸 저장 길(work_type)에 저장한다. '공사 범위'는 공종으로 채워지는 칸이라 같은 상자를 연다. 끄기: G.inqWorkPickOff=true */
+ let workBox=null,workFor='';
+ const workPickOn=()=>!root.G.inqWorkPickOff&&!!(root.DealPanelsV2&&root.DealPanelsV2.workMount&&root.NEW_DEAL_WORK&&typeof root.workSummaryFrom==='function');
+ const workSlot='<div class="idv3-workslot" data-idv-workslot></div>';
+ function closeWorkPick(){workBox=null;workFor='';try{root.EDIT_WORK_ITEM=null;}catch(e){}}
+ function mountWorkPick(dlg,q,s){
+  const slot=dlg.querySelector('[data-idv-workslot]');
+  if(!slot||!s||s.editField!=='work_type'||!workPickOn()){if(workBox)closeWorkPick();return;}
+  const fresh=!workBox||workFor!==String(q.id);
+  if(fresh){
+   workFor=String(q.id);workBox=document.createElement('div');workBox.className='dv3-work dp idv3-work';
+   workBox.innerHTML='<div id="dp-work"></div><div class="modalerr" id="nd-err"></div><div class="dv3-workfoot"><button type="button" class="lnk" data-idv="workcancel">취소</button><button type="button" data-idv="workdone">완료</button></div>';
+   const r0=q.raw&&typeof q.raw==='object'?q.raw:{};
+   /* 추정 공종의 근거 = 현장명 · 고객이 남긴 말(파이프라인은 현장명 · 공사명 · 메모) */
+   workBox.__W=root.DealPanelsV2.workMount(workBox,{site:q.site||q.site_name||'',work_name:String(r0['공사유형']||''),legacy_notes:[{body:String(W().originalText(q)||'').slice(0,400)}],activities:[]});
+  }
+  slot.append(workBox);if(fresh){try{workBox.scrollIntoView({block:'nearest'});}catch(e){}}
+ }
+ function saveWorkPick(q,s){
+  const Wk=workBox&&workBox.__W;if(!Wk)return;const o=workBox.querySelector('#nd-work-other');if(o)Wk.other=o.value;
+  const err=workBox.querySelector('#nd-err'),fail=m=>{if(err){err.style.display='block';err.textContent=m;}};
+  if(!Wk.items.length)return fail('공종을 하나 이상 골라 주세요.');if(Wk.items.includes('기타>기타')&&!String(Wk.other||'').trim())return fail('기타 공종을 직접 입력해 주세요.');
+  const keys=[Wk.primary].concat(Wk.items.filter(x=>x!==Wk.primary)).filter(Boolean),items=keys.map(key=>{const w=root.workParts(key);return w&&w.group==='기타'?{group:'기타',item:String(Wk.other).trim(),key}:w;}).filter(Boolean);
+  const btn=workBox.querySelector('[data-idv="workdone"]');if(btn)btn.disabled=true;
+  Promise.resolve(saveField(q,s,'work_type',root.workSummaryFrom(items))).finally(()=>{if(btn)btn.disabled=false;});
  }
  function applyField(q,field,value,rawKey){
   if(field==='contact_name'){q.contact_name=value;}else if(field==='phone'){q.phone=value;}else if(field==='address'){q.address=value;if(q.detail&&typeof q.detail==='object')q.detail.address=value;}else if(field==='site_name'){q.site_name=value;q.site=value;}
@@ -353,7 +380,7 @@
   const val=k=>(f.get(k)&&f.get(k)!=='미입력')?f.get(k):(r0[k]&&String(r0[k]).trim()&&String(r0[k]).trim()!=='-'?String(r0[k]).trim():'');
   const ph=phoneOf(q),who=String(q.contact_name||q.contact||'').trim(),role=who.split(/\s*·\s*|\s+/).find(x=>/(소장|과장|팀장|대리|주임|회장|총무|대표|이사|실장|부장|차장|사원|담당|계장|주무관)$/.test(x))||'';
   const INFO=[['주소','address',val('건물주소'),'예: 수원시 영통구 …'],['공종','work_type',val('공사유형'),'예: 옥상 방수'],['유입','inflow',val('유입경로')||val('상담채널'),'예: 네이버 검색 · 전화'],['연락처','phone',ph.text?[role||who,ph.text].filter(Boolean).join(' · '):'','예: 010-0000-0000']];
-  const rows=INFO.map(([l,field,v,p])=>'<span class="k">'+l+'</span>'+(v?'<span>'+h(v)+'</span>':s&&s.editField===field?'<input class="idv-editin" data-idv="editinput" data-v="'+field+'" value="'+attr(s.editDraft||'')+'" placeholder="'+attr(p)+'" aria-label="'+attr(l)+' 입력">':can?'<button type="button" class="idv3-add" data-idv="edit" data-v="'+field+'">입력</button>':'<span class="no">—</span>')).join('');
+  const rows=INFO.map(([l,field,v,p])=>'<span class="k">'+l+'</span>'+(v?'<span>'+h(v)+'</span>':field==='work_type'&&can&&s&&s.editField===field&&workPickOn()?'<span class="idv3-picking">아래에서 고르기</span><div class="idv3-workwide">'+workSlot+'</div>':s&&s.editField===field?'<input class="idv-editin" data-idv="editinput" data-v="'+field+'" value="'+attr(s.editDraft||'')+'" placeholder="'+attr(p)+'" aria-label="'+attr(l)+' 입력">':can?'<button type="button" class="idv3-add" data-idv="edit" data-v="'+field+'">입력</button>':'<span class="no">—</span>')).join('');
   const N9=L3().need9?L3().need9(q):[],miss=N9.filter(x=>!x.ok),oks=N9.filter(x=>x.ok);
   const fieldOf=x=>{const f2=NEEDF[x.l];return f2?f2[0]:'next';},openOf=x=>{const f2=NEEDF[x.l];return !f2||(NEED_DATE.includes(f2[0])?can:can2);};
   const chips=miss.map(x=>{const fd=fieldOf(x),on=fd!=='next'&&s&&s.editField===fd;return '<button type="button" class="idv3-chip'+(on?' on':'')+'"'+(openOf(x)?' data-idv="need" data-v="'+attr(fd)+'"':' disabled title="서버 적용 뒤에 열립니다"')+'>'+h(x.l)+'</button>';}).join('');
@@ -363,8 +390,10 @@
    const raw9=q.raw&&typeof q.raw==='object'?q.raw:{},det9=q.detail&&typeof q.detail==='object'?q.detail:{};let act9=null;try{act9=root.actionObj(q,root.itemPatch(q,'inq')||{});}catch(e){}
    const rv=k=>{const v=raw9[k];return v!=null&&String(v).trim()&&String(v).trim()!=='-'?String(v).trim():'';};
    const needVal=l=>l==='현재 문제'?(rv('현재 문제')||'문의 원문에 있음'):l==='공사 범위'?(rv('공사 범위')||String(root.inqCtlWorkLabel(q)||'')||'확인됨'):l==='대표회의 일정'?(rv('대표회의')||rv('대표회의 일정')||String(det9.meetingDate||det9.meeting_date||'')||(FL()&&FL().meetingDate(q)?ymdDash(FL().meetingDate(q)):'')||'확인됨'):l==='자료 회신 기한'?(rv('자료 회신 기한')||String(det9.replyDue||'')||(FL()&&FL().replyDue(q)?ymdDash(FL().replyDue(q)):'')||'확인됨'):l==='다음 행동 · 날짜'?(act9&&act9.text?act9.text+(act9.due?' · '+md2(act9.due):''):'확인됨'):(rv(l)||'확인됨');
-   const infoRows=INFO.map(([l,field,v,p])=>'<div class="idv3-row"><span class="k">'+l+'</span>'+(v?'<b>'+h(v)+'</b>':s&&s.editField===field?'<input class="idv-editin" data-idv="editinput" data-v="'+field+'" value="'+attr(s.editDraft||'')+'" placeholder="'+attr(p)+'" aria-label="'+attr(l)+' 입력">':can?'<button type="button" class="idv3-val empty" data-idv="edit" data-v="'+field+'">미입력 · 입력하기</button>':'<b class="no">미입력</b>')+'</div>').join('');
+   const infoRows=INFO.map(([l,field,v,p])=>field==='work_type'&&!v&&can&&s&&s.editField===field&&workPickOn()?'<div class="idv3-row"><span class="k">'+l+'</span><b class="idv3-picking">아래에서 고르기</b></div>'+workSlot:'<div class="idv3-row"><span class="k">'+l+'</span>'+(v?'<b>'+h(v)+'</b>':s&&s.editField===field?'<input class="idv-editin" data-idv="editinput" data-v="'+field+'" value="'+attr(s.editDraft||'')+'" placeholder="'+attr(p)+'" aria-label="'+attr(l)+' 입력">':can?'<button type="button" class="idv3-val empty" data-idv="edit" data-v="'+field+'">미입력 · 입력하기</button>':'<b class="no">미입력</b>')+'</div>').join('');
    const needRows=N9.map(x=>{const fd=fieldOf(x),on=!x.ok&&fd!=='next'&&s&&s.editField===fd;
+     /* 공사 범위 = 공종으로 채워지는 칸 → 위 공종 고르기를 연다(예전에는 가운데 응대 기록으로 보내 눌러도 반응이 없었다) */
+     if(x.l==='공사 범위'&&!x.ok&&workPickOn())return '<div class="idv3-row"><span class="k">'+h(x.l)+'</span>'+(s&&s.editField==='work_type'?'<b class="idv3-picking">위 공종에서 고르는 중</b>':'<button type="button" class="idv3-val empty"'+(can?' data-idv="need" data-v="work_type"':' disabled title="서버 적용 뒤에 열립니다"')+'>미입력 · 입력하기</button>')+'</div>';
     return '<div class="idv3-row"><span class="k">'+h(x.l)+'</span>'+(x.ok?'<b>'+h(needVal(x.l))+'</b>':on?'<span class="idv3-fill"><input class="idv-editin" data-idv="editinput" data-v="'+fd+'"'+(NEED_DATE.includes(fd)?' type="date"':'')+' value="'+attr(s.editDraft||'')+'" placeholder="'+attr(x.l+' 입력')+'" aria-label="'+attr(x.l+' 입력')+'"><button type="button" data-idv="editsave">저장</button></span>':'<button type="button" class="idv3-val empty"'+(openOf(x)?' data-idv="need" data-v="'+attr(fd)+'"':' disabled title="서버 적용 뒤에 열립니다"')+'>미입력 · 입력하기</button>')+'</div>';}).join('');
    return '<div class="idv3-sec"><b class="lb">고객이 남긴 말</b><span class="idv3-quote">'+h(orig?'"'+orig+'"':'저장된 문의 원문이 없습니다.')+'</span></div>'
     +'<section class="idv3-fs"><header><b>문의 정보</b><i></i>'+(can?'<small>누르면 바로 수정</small>':'')+'</header><div class="idv3-info">'+infoRows+'</div></section>'
@@ -427,6 +456,7 @@
   const v3=V3()&&root.itemOwnerTeam?.(q)!=='gyeongnam';overlay.classList.toggle('idv3',v3);
   dlg.innerHTML=v3?header3(q)+'<div class="idv-body idv3-body"><aside class="idv-c1 idv3-c1" aria-label="문의자와 현장">'+col13(q,s)+'</aside><main class="idv-c2 idv3-c2" aria-label="문의와 응대">'+col23(q,s)+'</main><aside class="idv-c3 idv3-c3" aria-label="문의 업무 관리">'+col33(q,s)+'</aside></div>'
    :header(q)+'<div class="idv-body"><aside class="idv-c1" aria-label="문의자와 현장">'+col1(q,s)+'</aside><main class="idv-c2" aria-label="문의와 응대">'+col2(q,s)+'</main><aside class="idv-c3" aria-label="문의 업무 관리">'+col3(q,s)+'</aside></div>';
+  mountWorkPick(dlg,q,s);
   /* 경남지사로 넘긴 문의(본사 관리자): 머리 막대·오른쪽 칸을 '지사 진행 확인'으로 — 담당 변경을 고르는 중에는 기존 배정 칸 그대로 */
   if(!s.reassign){try{root.GyeongnamV2?.decorate?.(dlg,q);}catch(e){}}
   /* 배정 칸을 다시 만들면 기존 배정 상태가 초기화되므로 고른 담당자를 다시 알려 준다 */
@@ -459,6 +489,8 @@
   const b=e.target.closest('[data-idv]');if(!b||!curKey)return;const k=b.dataset.idv,v=b.dataset.v,s=st(curKey),q=root.inqCtlFind(curKey,false);if(!q)return;
   if(closedStatus(q)&&['save','handoff','dial','sms-crm','sms-send','reassign','step'].includes(k))return;
   if(k==='edit'){s.editField=v;s.editDraft='';return reskinFrom();}
+  if(k==='workcancel'){s.editField='';s.editDraft='';closeWorkPick();return reskinFrom();}
+  if(k==='workdone')return saveWorkPick(q,s);
   if(k==='editinput')return;
   if(k==='ch'){s.ch=v;if(FL()&&v==='문자'){if(document.getElementById('inq-inbox-dialog')?.classList.contains('idv3')){s.smsOpen=true;s.smsCh='sms';s.ch='';}else{s.tab='sms';s.smsConfirm=false;}}/* 수단 '문자' = 문자 보내기(상세 v3 = 가운데 칸 · 예전 틀 = 문자 작은 창) */return reskinFrom();}
   if(k==='sms-open'){s.smsOpen=!s.smsOpen;if(s.smsOpen){s.smsTpl='';s.smsText='';s.smsDays=0;s.smsWhen='now';}return reskinFrom();}
@@ -495,7 +527,7 @@
   if(k==='near')return W().openRelated(v);
   if(k==='goto-deal')return root.openPromotedDeal();
   if(k==='goto-att'){const d=attachedOf(q);if(d){W().close();L3().openDeal(d);}return;}
-  if(k==='need'){if(v==='next'){const ta=document.querySelector('#inq-inbox-dialog #iq-res');if(s.tab!=='call'){s.tab='call';reskinFrom();}(document.querySelector('#inq-inbox-dialog #iq-res')||ta)?.focus();return;}s.editField=v;s.editDraft='';return reskinFrom();}
+  if(k==='need'){if(v==='next'){if(s.tab!=='call'||s.smsOpen){s.tab='call';s.smsOpen=false;reskinFrom();}const ta=document.querySelector('#inq-inbox-dialog #iq-res');if(ta){ta.focus();try{ta.scrollIntoView({block:'nearest'});}catch(e){}}return;}s.editField=v;s.editDraft='';return reskinFrom();}
   if(k==='sms-copy'){const text=(s.smsText||'').trim();if(!text){root.iqMsg('보낼 문구를 먼저 적어 주세요.');return;}copyText(text,()=>toast('문구를 복사했습니다'));return;}
   if(k==='save')return save(q,s);
   if(k==='assign')return assign(q,s);
