@@ -46,7 +46,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     deal('l-rec','기록된 실주','황윤선','lost',{outcome:'lost',closed_at:day(-5),lost_reason:'가격 열세',stageHistory:[{from:'sent',to:'lost',at:day(-5)}],stage_contexts:{lost:{fields:{competitor:'타사 B'}}}}),
     deal('l-re','재영업 실주','이필선','lost',{outcome:'lost',closed_at:day(-40),lost_reason:'공법',next_action:{id:'n9',text:'2027 재입찰 확인',due:day(60),status:'open'},stage_contexts:{lost:{fields:{competitor:'타사 C',recontact_possibility:'높음'}}}})
    ],inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.psb=null;
+   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.psb=null;G.relSegOff=true;/* 관계관리 새 배치는 verify-relationship-segment-browser.cjs — 이 검사는 예전 화면(단계 이름 기준) */
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
    window.__open=null;window.__act=null;drwDeal=s=>{window.__open=JSON.parse(s).id;};window.DetailActions=Object.assign(window.DetailActions||{},{open:k=>{window.__act=k;}});
    PipelineWorkspace.open('consulting');
@@ -92,7 +92,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   }
   /* 관계: 일반 30일 · 대기 60일도 사유로 */
   await page.evaluate(()=>PipelineWorkspace.open('relationship'));await page.waitForTimeout(300);
-  assert.match(await page.locator('#pipeline-stage-b .psb-row',{hasText:'일반 현장'}).locator('.i').innerText(),/30일 넘게 접촉 없음/);assert.match(await page.locator('#pipeline-stage-b .psb-row',{hasText:'대기 현장'}).locator('.i').innerText(),/대기 2개월 연락일 도래/);
+  assert.match(await page.locator('#pipeline-stage-b .psb-row',{hasText:'일반 현장'}).locator('.i').innerText(),/30일 넘게 접촉 없음/);assert.match(await page.locator('#pipeline-stage-b .psb-row',{hasText:'대기 현장'}).locator('.i').innerText(),/대기 2개월 연락일 지남/);
   /* 수주 · 실주: 정상 건은 '정상' */
   await page.evaluate(()=>PipelineWorkspace.open('won'));await page.waitForTimeout(300);assert.match(await page.locator('#pipeline-stage-b .psb-row',{hasText:'갓 준공'}).locator('.s b').innerText(),/준공 직후/);
   await page.evaluate(()=>PipelineWorkspace.open('lost'));await page.waitForTimeout(300);assert.match(await page.locator('#pipeline-stage-b .psb-row',{hasText:'재영업 실주'}).locator('.s b').innerText(),/재영업 예정/);

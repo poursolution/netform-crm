@@ -13,6 +13,34 @@
  const BRAND={'석민이앤씨':'#e8590c','POUR솔루션':'#1f9d55','POUR공법':'#7048e8','아파트스퀘어':'#3b6ce4'};
  const R=()=>root.OPS_RULES||{};const N=(k,d)=>Number(R()[k])||d;
  const rules=()=>({quote:N('quoteDays',3),follow:N('sentFollowDays',7),focus:N('focusContactDays',7),month:N('monthContactDays',30),wait:N('waitContactDays',60),site:N('siteVisitDays',7),after:N('afterCompletionDays',30),stay:N('longStayDays',30),focusEnd:N('focusEndDays',30),normalEnd:N('normalEndDays',90),d3:N('deadlineUrgentDays',3)});
+ /* 관계관리 관리 구분(2026-10-05 design_handoff_relationship): 견적 발송일 · 공사 예정 시기로 자동 분류(relationship-segment.js). 기간은 운영 기준(집중 care_focus_months · 일반 care_general_months).
+    끄기 G.relSegOff=true → 예전처럼 단계 이름(유대 · 침묵 · 대기)으로 */
+ const SEG=()=>(!root.G.relSegOff&&root.RelationshipSegment)||null;
+ const segRules=()=>{const q=rules();let f=1,g=3;try{f=Number(root.CRMRules.get('care_focus_months'))||1;g=Number(root.CRMRules.get('care_general_months'))||3;}catch(e){}return Object.assign(q,{focusEnd:f*30,normalEnd:(f+g)*30});};
+ const ctxOf=d=>{let p={};try{p=root.itemPatch(d,'deal')||{};}catch(e){}return d.stage_contexts||p.stage_contexts||{};};
+ const ctxVals=(cx,k)=>Object.keys(cx).map(c=>cx[c]&&cx[c].fields&&cx[c].fields[k]).filter(v=>v!=null&&v!=='');
+ function segInput(r){
+  const G=SEG(),d=r.item,cx=ctxOf(d),today=G.todayKey();let p={};try{p=root.itemPatch(d,'deal')||{};}catch(e){}
+  /* 견적 발송일 = 기록된 날짜만: 단계 정보의 발송일 · 견적 버전 · 자료 발송완료 단계로 옮긴 날 가운데 가장 최근. 등록일 · 지금 단계 진입일은 쓰지 않는다 */
+  const sentC=ctxVals(cx,'sent_date').map(G.dateKey);
+  (d.quote_versions||d.quoteVersions||p.quoteVersions||[]).forEach(v=>{if(v)sentC.push(G.dateKey(v.sent_at||v.created_at));});
+  try{(root.briefAllStageEvents(d)||[]).forEach(x=>{const to=String(x.to||x.after||x.new_stage||'');let g='';try{g=root.PipelineStages.group(to)||'';}catch(e){}if(g==='sent'||to==='자료 발송완료')sentC.push(G.dateKey(x.at||x.changed_at||x.created_at));});}catch(e){}
+  const sent=sentC.filter(k=>k&&k<=today).sort().pop()||'',focusFrom=ctxVals(cx,'focus_from').map(G.dateKey).filter(k=>k&&k<=today).sort().pop()||'';
+  /* 공사 예정 시기: 상세의 '공사 예정' 칸 → 옮겨 온 예정공사일정 → 첫 상담의 공사 예상시기 → 공사 연도 */
+  const lf=d.list_fields&&typeof d.list_fields==='object'?d.list_fields:{},lfv=name=>Object.values(lf).filter(f=>f&&f.name===name).map(f=>Array.isArray(f.value)?f.value[0]:f.value).filter(Boolean);
+  let year='';try{year=root.ConstructionYear.valueOf(d).year||'';}catch(e){}
+  const cur=(cx[r.code]&&cx[r.code].fields)||{};
+  const timing=G.pickTiming([cur.construction_plan].concat(ctxVals(cx,'construction_plan'),[d.planned_construction_date,d.construction_planned_at],lfv('예정공사일정'),ctxVals(cx,'expected_timing'),[d.construction_year,d.constructionYear,year]),today);
+  /* 다가오는 대표회의 · 입찰 일정(잡히면 경쟁 · 입찰로) */
+  let meet=null;const up=(v,kind)=>{const k=G.dateKey(v);if(k&&k>=today&&(!meet||k<meet.date))meet={date:k,kind};};
+  ctxVals(cx,'meeting_date').forEach(v=>up(v,'PT · 협의'));ctxVals(cx,'bid_deadline').forEach(v=>up(v,'입찰 마감'));ctxVals(cx,'briefing_date').forEach(v=>up(v,'현설'));
+  const nx=r.next||{},mm=/대표회의|입대의|입주자대표|입찰|현장설명|현설|PT/.exec(String(nx.text||'')+' '+String(nx.type||''));if(mm&&r.due)up(r.due,/입대의|입주자대표/.test(mm[0])?'대표회의':mm[0]);
+  let mgr=null;try{const c=root.DealKeyman&&root.DealKeyman.enabled()?root.DealKeyman.changeOf(d):null;if(c&&c.date&&!c.after)mgr={date:c.date};}catch(e){}
+  /* 마지막 접촉 = 실제 접촉 기록만(등록일로 대신하지 않는다) */
+  const ago=v=>{const k=G.dateKey(v);return k?Math.max(0,G.diff(k,today)):null;},lastAgo=ago(r.last);
+  const contact=lastAgo!==null?lastAgo:(r.contactDays==null?null:r.contactDays);
+  return {sent,focusFrom,timing,contactDays:contact,ageDays:ago(d.created||d.created_at),due:r.due,hasNext:!!(r.next&&r.next.text),meet,mgr};
+ }
  const st=()=>root.G.psb||(root.G.psb={view:'list',bucket:'all',reason:null,limit:30});
  const enabled=key=>!root.G.pipeStageBOff&&KEYS.includes(key||root.G.pipelineStage)&&!!root.PipelineListV2;
  const days=v=>{if(!v)return null;const n=root.daysTo(String(v).slice(0,10));return Number.isFinite(n)?n:null;};
@@ -42,10 +70,14 @@
     const sub=(sentAt?ymd(sentAt)+' 발송':'발송일 미기록')+(v.reaction?' · '+v.reaction:'')+(meet!==null&&meet>=0?' · 결정 '+ymd(r.date):'');
     const rs=[];if(bucket==='late')rs.push('nofollow');if(meet!==null&&meet>=0&&meet<=q.d3)rs.push('meet');if(!v.reaction)rs.push('noreact');if(/가격|경쟁/.test(String(v.reaction||''))||v.competitor)rs.push('comp');if(!r.next||!r.next.text||!r.due)rs.push('nonext');
     return {bucket,sub,rs};}},
-  relationship:{name:'관계관리',desc:()=>'견적 후 관리 구분 · 집중관리(초기 1개월, '+rules().focus+'일 단위) → 일반관리(월 1회) → 대기('+Math.round(rules().wait/30)+'개월 1회)',axis:'관리 구분',
+  relationship:{name:'관계관리',desc:()=>'견적 후 관리 구분 · 집중관리(초기 1개월, '+rules().focus+'일 단위) → 일반관리(월 1회) → '+(SEG()?'대기관리('+Math.round(rules().wait/30)+'개월 1회) · 견적 발송일 · 공사 예정 시기로 매일 자동 분류':'대기('+Math.round(rules().wait/30)+'개월 1회)'),axis:'관리 구분',
+   /* 기준 넘김 = 집중 7일+ · 일반 30일+ · 대기 연락일 지남(색과 따로 정한다 — 대기 줄은 회색 막대지만 기준 넘김에 든다) */
+   OVER:['focus7','month30','long60'],
    S:[['focus','집중관리 · 7일 단위','#15171c','7일 안 연락 · 대표회의 · 경쟁사 확인'],['normal','일반관리 · 월 1회','#8a909c','카드뉴스 · 공법자료 · 사례 전달'],['wait','대기 · 2개월 1회','#d5d9e0','연도 지정 · 2개월마다 관계 연락']],
-   RS:{focus7:['집중관리 7일 넘게 연락 없음',RED,'연락','집중관리 고객은 7일 단위 후속 · 대표회의 · 경쟁사 · 가격 변화 확인','activity'],month30:['30일 넘게 접촉 없음',RED,'정기 연락','모든 고객 월 1회 이상 접촉 · 자료(카드뉴스 · 사례) 전달','activity'],long60:['대기 2개월 연락일 도래',INK,'관계 연락','공사 시기 확인 + 다음 2개월 연락일 등록','activity'],shift:['구분 전환 검토',INK,'전환 검토','1개월 경과 → 집중관리 종료 검토 · 3개월 진전 없음 → 대기 전환 검토','stage'],nonext:['다음 행동 · 날짜 없음',INK,'다음 행동','연락 후 다음 행동 + 날짜 등록','next']},
-   calc(r,v,q){const code=r.code,bucket=code==='waiting'?'wait':code==='rapport'?'focus':'normal',ld=lastDays(r),f=r.fields||{};
+   RS:{focus7:['집중관리 7일 넘게 연락 없음',RED,'후속 연락','집중관리 고객은 7일 단위 후속 · 대표회의 · 경쟁사 · 가격 변화 확인','activity'],month30:['30일 넘게 접촉 없음',RED,'자료 보내기','모든 고객 월 1회 이상 접촉 · 자료(카드뉴스 · 사례) 전달','activity'],long60:['대기 2개월 연락일 지남',INK,'안부 연락','공사 시기 확인 + 다음 2개월 연락일 등록','activity'],shift:['구분 전환 검토',INK,'전환 검토','자동 이동 대상 — 30일 판단 · 4개월 도달 · 공사 시기 3개월 안','stage'],nonext:['다음 행동 · 날짜 없음',INK,'다음 행동','연락 후 다음 행동 + 날짜 등록','next'],nosent:['견적 발송일 없음',INK,'발송일 입력','견적 발송일을 넣으면 자동으로 분류됩니다','']},
+   calc(r,v,q){
+    if(SEG()){const sq=segRules(),c=SEG().classify(segInput(r),{today:SEG().todayKey(),focusEnd:sq.focusEnd,normalEnd:sq.normalEnd,focus:sq.focus,month:sq.month,wait:sq.wait});return {bucket:c.bucket,sub:c.d+' · '+c.ds,rs:c.rs,seg:c};}
+    const code=r.code,bucket=code==='waiting'?'wait':code==='rapport'?'focus':'normal',ld=lastDays(r),f=r.fields||{};
     const sub=(ld!==null?'마지막 접촉 '+ld+'일 전':'접촉 기록 없음')+(f.resume_date?' · 재개 '+ymd(f.resume_date):'')+(r.next&&r.next.text?' · '+r.next.text:'');
     const rs=[];if(bucket==='focus'&&ld!==null&&ld>q.focus)rs.push('focus7');if(bucket!=='wait'&&ld!==null&&ld>q.month)rs.push('month30');if(bucket==='wait'&&((ld!==null&&ld>=q.wait)||(f.resume_date&&days(f.resume_date)<=0)))rs.push('long60');if((bucket==='focus'&&(r.stall||0)>q.focusEnd)||(bucket==='normal'&&(r.stall||0)>q.normalEnd))rs.push('shift');if(!r.next||!r.next.text||!r.due)rs.push('nonext');
     return {bucket,sub,rs};}},
@@ -84,10 +116,10 @@
  };
  function model(key,list){
   const C=CFG[key],q=rules(),built=root.PipelineListV2.build(key,list);
-  const isRed=k=>C.RS[k]&&C.RS[k][1]===RED,order=Object.keys(C.RS);
-  const items=built.map(x=>{const r=x.row,v=x.values||{};let c;try{c=C.calc(r,v,q);}catch(e){c={bucket:C.S[0][0],sub:'',rs:[]};}const first=c.rs.find(isRed)||c.rs[0]||'';return {row:r,values:v,bucket:c.bucket,sub:c.sub,rs:c.rs,first,red:c.rs.some(isRed),pri:(()=>{const i=order.findIndex(k=>c.rs.includes(k)&&isRed(k));return i<0?99:i;})(),stall:Number(r.stall)||0};});
+  const segOn=key==='relationship'&&!!SEG(),isRed=k=>segOn&&C.OVER?C.OVER.includes(k):!!(C.RS[k]&&C.RS[k][1]===RED),order=Object.keys(C.RS);
+  const items=built.map(x=>{const r=x.row,v=x.values||{};let c;try{c=C.calc(r,v,q);}catch(e){c={bucket:C.S[0][0],sub:'',rs:[]};}const first=c.rs.find(isRed)||c.rs[0]||'';return {row:r,values:v,bucket:c.bucket,sub:c.sub,rs:c.rs,seg:c.seg||null,first,red:c.rs.some(isRed),pri:(()=>{const i=order.findIndex(k=>c.rs.includes(k)&&isRed(k));return i<0?99:i;})(),stall:Number(r.stall)||0};});
   items.sort((a,b)=>a.pri-b.pri||b.rs.length-a.rs.length||b.stall-a.stall||String(a.row.key).localeCompare(String(b.row.key)));
-  return {C,items,isRed};
+  return {C,items,isRed,seg:segOn,q:segOn?segRules():q};
  }
  function rowHtml(C,it,reason){
   const r=it.row,k=reason||it.first,rs=k?C.RS[k]:null,bc=BRAND[r.item.brand]||'#9ca3af',S=C.S.find(s=>s[0]===it.bucket)||C.S[0];
@@ -98,6 +130,8 @@
   return '<div class="psb-card" role="button" tabindex="0" data-psb="open" data-key="'+attr(r.key)+'" style="border-left-color:'+bc+'"><div class="t"><b style="color:'+bc+'">'+h(r.item.brand||'브랜드 미지정')+'</b><i></i><b class="'+(it.stall>rules().stay?'r':'')+'">'+it.stall+'일</b></div><strong>'+h(r.site)+'</strong><span>'+h(it.sub)+' · '+h(money(r.amount))+'</span><div class="b"><em style="color:'+(rs?rs[1]:'#6b7280')+'">'+h(rs?rs[0]:'정상')+'</em><i></i><button type="button" data-psb="act" data-key="'+attr(r.key)+'" data-v="'+attr(k||'')+'">'+h(rs?rs[2]:'열기')+'</button></div></div>';
  }
  function html(key,list){
+  /* 관계관리 = 시안 '관계관리 세분화'의 확정 배치(pipeline-rel-b.js) */
+  if(key==='relationship'&&SEG()&&root.PipelineRelB&&root.PipelineRelB.enabled())return root.PipelineRelB.html(list,model(key,list));
   const S=st(),{C,items,isRed}=model(key,list),q=rules();
   const inB=items,byS=S.bucket==='all'?inB:inB.filter(i=>i.bucket===S.bucket),listed=S.reason?byS.filter(i=>i.rs.includes(S.reason)):byS;
   const n=inB.length||1,cnt=k=>inB.filter(i=>i.bucket===k).length,W=C.S.map(s=>Math.round(cnt(s[0])/n*100));
@@ -148,5 +182,5 @@
   root.CommonFilterBar?.mount('pipe');const bar=pg?.querySelector(':scope>.cf-bar');if(bar)bar.hidden=false;
   return true;
  };
- root.PipelineStageB={enabled,model,html,CFG,rules};
+ root.PipelineStageB={enabled,model,html,CFG,rules,open,segRules};
 })(window);
