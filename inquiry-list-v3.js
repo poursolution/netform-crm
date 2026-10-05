@@ -135,7 +135,7 @@
  function rowHtml(m){
   const S=st(),on=S.open===m.key,k=attr(m.key),cls=m.step===0?' red':m.step===1?' dark':m.follow&&m.late?' amber':'';
   return '<div class="il-item'+(on?' open':'')+'"><div class="il-row" role="button" tabindex="0" data-il="toggle" data-key="'+k+'" style="border-left-color:'+m.bc+'">'
-   +'<div class="il-l"><div class="il-brand"><b style="color:'+m.bc+'">'+h(m.brand||'브랜드 미지정')+'</b><span>'+h(m.channel)+'</span></div><div class="il-site"><b>'+h(m.site)+(m.ex.length?'<u>기존 현장 · '+m.ex.length+'건</u>':'')+'</b><span>'+h(m.work)+(m.sum?' · '+h(m.sum):'')+(m.meet&&m.step<4?'<em> · 대표회의 '+h(ymd(m.meet.date))+' D'+(m.meet.dd<0?'+'+(-m.meet.dd):'-'+m.meet.dd)+'</em>':'')+(m.tries?'<em class="il-tries"> · '+h(m.tries)+'</em>':'')+'</span></div></div>'
+   +'<div class="il-l"><div class="il-brand"><b style="color:'+m.bc+'">'+h(m.brand||'브랜드 미지정')+'</b><span>'+h(m.channel)+'</span></div><div class="il-site"><b>'+h(m.site)+(m.ex.length&&!siteBadge(m)?'<u>기존 현장 · '+m.ex.length+'건</u>':'')+'</b><span>'+(siteBadge(m)?'<i class="il-sb '+siteBadge(m).k+'">'+h(siteBadge(m).text)+'</i>':'')+h(m.work)+(m.sum?' · '+h(m.sum):'')+(m.meet&&m.step<4?'<em> · 대표회의 '+h(ymd(m.meet.date))+' D'+(m.meet.dd<0?'+'+(-m.meet.dd):'-'+m.meet.dd)+'</em>':'')+(m.tries?'<em class="il-tries"> · '+h(m.tries)+'</em>':'')+'</span></div></div>'
    +'<div class="il-r"><div class="il-who"><span>'+h(m.who)+'</span><b class="'+(m.phone?'':'none')+'">'+h(m.phone||'연락처 없음')+'</b></div><span class="il-owner'+(m.owner?'':' none')+'">'+h(m.owner?root.repDisplay(m.owner):'미배정')+'</span><div class="il-el"><b style="color:'+m.ec+'">'+h(m.elapsed)+'</b><span>'+h(m.recv)+'</span></div><button type="button" class="il-act'+cls+'" data-il="act" data-key="'+k+'">'+h(m.act)+'</button></div></div>'
    +(on?panel(m):'')+'</div>';
  }
@@ -202,6 +202,8 @@
   else if(errEl&&!errEl.textContent)errEl.textContent=(document.getElementById('iq-msg')||{}).textContent||'저장하지 못했습니다.';
  }
  /* 기존 현장 판단 저장 — 서버가 확인한 뒤에만 화면에 반영한다. decision: same(영업건 id) | new | clear */
+ /* 줄 꼬리표: 같은 단지의 지난 영업 요약(진행 · 수주 · 실주 + 가장 최근 건의 연도 · 공종) — inquiry-site.js. 꺼져 있으면 예전 '기존 현장 · n건' */
+ function siteBadge(m){try{return root.InquirySite&&root.InquirySite.on()&&m.ex.length?root.InquirySite.badge(m.q):null;}catch(e){return null;}}
  async function saveLink(m,decision,id){
   const S=st(),q=root.inqCtlFind(m.key,false);if(!q||S.linkBusy)return;
   if(!linkable()){S.linkErr={key:m.key,msg:'기존 현장 판단은 서버 적용 뒤에 저장할 수 있습니다.'};return render();}
@@ -240,5 +242,5 @@
  }
  const base=root.paintInq;
  if(typeof base==='function')root.paintInq=function(){const r=base.apply(this,arguments);try{render();}catch(err){document.getElementById('pg-inq')?.classList.remove('inq-v3');document.getElementById('inq-v3')?.remove();if(root.console)root.console.warn('inquiry list v3: '+err.message);}return r;};
- root.InquiryListV3={record,isFirst,render,enabled,model,meetOf,replyOf,missing,need9,attached,siteDeals,linkOf,linkable,headHtml,dealTag,dealWork,openDeal,LINK_RPC,TABS:TABS.map(t=>t[0])};
+ root.InquiryListV3={link:(q,decision,id)=>saveLink({key:root.inqKey(q)},decision,id),record,isFirst,render,enabled,model,meetOf,replyOf,missing,need9,attached,siteDeals,linkOf,linkable,headHtml,dealTag,dealWork,openDeal,LINK_RPC,TABS:TABS.map(t=>t[0])};
 })(window);

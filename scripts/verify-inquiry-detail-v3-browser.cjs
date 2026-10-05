@@ -43,10 +43,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 정보 칸 = 파이프라인 상세의 현장 정보와 같은 줄 틀(2026-10-04 대표 "견적문의 저 현장정보 적는 칸 다르고 파이프라인 다르고"): 제목 + '누르면 바로 수정' / 라벨 84px + 값 / 빈 칸 = 주황 점선 "미입력 · 입력하기" — 노란 상자 · 칩 없음 */
   assert.deepEqual(await d.locator('.idv3-fs').first().locator('header').evaluate(n=>[n.querySelector('b').textContent,n.querySelector('small').textContent,getComputedStyle(n.querySelector('b')).fontSize,getComputedStyle(n.querySelector('small')).fontSize]),['문의 정보','누르면 바로 수정','13.5px','11.5px']);
   assert.deepEqual(await d.locator('.idv3-info .idv3-row').first().evaluate(n=>{const s=getComputedStyle(n),k=getComputedStyle(n.querySelector('.k')),v=getComputedStyle(n.querySelector('b'));return [s.gridTemplateColumns.split(' ')[0],k.fontSize,k.color,v.fontSize];}),['84px','12.5px','rgb(107, 114, 128)','13.5px'],'줄 치수 = 파이프라인 현장 정보');
+  /* 단지 영업 이력이 위에 오면서 채울 정보는 접힌 한 줄이 됐다(2026-10-05 design_handoff_inquiry_site) — 펼쳐서 줄을 확인한다 */
+  assert.deepEqual([await d.locator('.idv3-need.fold').count(),await d.locator('.idv3-need .idv3-row').count()],[1,0],'채울 정보는 접힌 한 줄');
+  await d.locator('.idv3-need [data-idv="need-toggle"]').click();await page.waitForTimeout(150);
   assert.equal(await d.locator('.idv3-chip').count(),0,'칩 대신 줄');assert.equal(await d.locator('.idv3-need').evaluate(n=>getComputedStyle(n).backgroundColor),'rgba(0, 0, 0, 0)','노란 상자 없음');
   const need=()=>d.locator('.idv3-need .idv3-row').evaluateAll(l=>l.map(n=>[n.querySelector('.k').textContent,n.querySelector('.idv3-val.empty')?'':(n.querySelector(':scope>b')?n.querySelector(':scope>b').textContent:'')]));
   const missN=Number(await d.locator('.idv3-need .hd .n').innerText()),N0=await need(),miss0=N0.filter(x=>!x[1]).map(x=>x[0]);assert.equal(N0.length,9,'필수 확인 9줄');assert.equal(miss0.length,missN,'빈 줄 수 = 채울 정보 수');assert.ok(miss0.includes('경쟁사')&&miss0.includes('결정권자'));
-  assert.match((await tx('.idv3-need .hd'))[0],new RegExp('^채울 정보 ?'+missN+' ?/ 9 ?누르면 바로 입력$'));assert.equal(missN,7);
+  assert.match((await tx('.idv3-need .hd'))[0],new RegExp('^채울 정보 ?'+missN+' ?/ 9 ?누르면 바로 입력 ?접기$'));assert.equal(missN,7);
   assert.deepEqual(N0.filter(x=>x[1]),[['현재 문제','문의 원문에 있음'],['공사 범위','지하주차장(에폭시)']],'채워진 줄은 값이 보인다(공사 범위 = 목록과 같은 공종 표기)');
   assert.deepEqual(await d.locator('.idv3-need .idv3-val.empty').first().evaluate(n=>{const s=getComputedStyle(n);return [n.textContent,s.color,s.borderBottomStyle,s.fontWeight];}),['미입력 · 입력하기','rgb(217, 119, 6)','dashed','700'],'빈 칸 = 주황 점선');
   await d.locator('.idv3-need .idv3-row',{hasText:'경쟁사'}).locator('.idv3-val').click();await page.waitForTimeout(150);
@@ -99,13 +102,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 오른쪽: 지금 할 일 1개 · 첫마디 · 전화 / 다음 단계 / 근처 현장 · 담당 변경 */
   assert.match((await tx('.idv3-now'))[0],/^지금 할 일 ?첫 연락 전화 ?첫마디 ?"안녕하세요, 넷폼 .+ 지금 통화 괜찮으실까요\?" ?전화 010-5436-0662 ?문자$/);
   assert.match((await tx('.idv3-next'))[0],/^다음 단계 · 현장방문 \/ 견적 ?현장방문 일정 ?견적서 발송 ?1차 현장방문 완료 또는 견적 발송 완료 중 먼저 → 파이프라인 전환$/);
-  assert.match((await tx('.idv3-bottom'))[0],/^근처 현장 ?0곳.*담당 변경$/);
+  assert.match(String((await tx('.isd-near header'))[0]).replace(/\s+/g,' '),/^근처에서 영업했던 현장 ?0곳.*담당 변경$/);assert.equal(await d.locator('.idv3-bottom').count(),0,'접힌 근처 현장 줄 대신 펼친 칸');
   await d.locator('.idv3-next [data-v="visit"]').click();await page.waitForTimeout(150);assert.equal(await d.locator('.idv3-next [data-idv="visitDate"]').count(),1);assert.equal(await d.locator('.idv3-next [data-idv="handoff"]').isDisabled(),true);
   assert.deepEqual(await d.locator('.idv3-next [data-idv="visitMode"]').allInnerTexts(),['방문 예정','방문 완료'],'방문 예정 / 완료(견적의 발송 예정 / 완료와 같은 버튼)');assert.equal(await d.locator('.idv3-next [data-idv="handoff"]').innerText(),'저장','예정은 저장만 — 전환은 방문 완료 · 견적 발송 완료');
   await d.locator('.idv3-next [data-v="visit"]').click();await page.waitForTimeout(150);
   if(shot)await page.screenshot({path:shot+'-v3.png'});
   /* 담당 변경 · 미배정 = 기존 배정 칸 */
-  await d.locator('.idv3-bottom [data-idv="reassign"]').click();await page.waitForTimeout(200);assert.match(await d.locator('.idv3-c3 h3').innerText(),/담당 변경/);await d.locator('[data-idv="cancel-reassign"]').click();await page.waitForTimeout(150);
+  await d.locator('.isd-near [data-idv="reassign"]').click();await page.waitForTimeout(200);assert.match(await d.locator('.idv3-c3 h3').innerText(),/담당 변경/);await d.locator('[data-idv="cancel-reassign"]').click();await page.waitForTimeout(150);
   await page.evaluate(()=>InquiryWorkbench.open(U));await page.waitForTimeout(400);
   assert.equal((await tx('.idv3-pill'))[0].startsWith('미배정'),true);assert.match(await d.locator('.idv3-c3 h3').innerText(),/담당자 배정/);assert.deepEqual(await tx('.idv3-steps span'),['접수','지금 · 담당 배정','현장방문 / 견적','파이프라인 전환']);
   assert.match((await tx('.idv3-info'))[0],/연락처 ?미입력 · 입력하기$/,'빈 핵심 정보는 그 자리에서 입력(파이프라인과 같은 "미입력 · 입력하기")');
@@ -113,6 +116,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 공종 = 파이프라인 상세와 같은 공종 고르기 · '공사 범위'는 그 상자를 연다(2026-10-05 대표 "공사범위 안 눌려" · "공종 파이프라인처럼") */
   {const nrow=l=>d.locator('.idv3-need .idv3-row',{hasText:l}),irow=l=>d.locator('.idv3-info .idv3-row',{hasText:l});
    assert.equal(await page.evaluate(()=>inqCtlWorkLabel(inqCtlFind(G.inqSelKey,false))),'공종 미분류');
+   /* 다른 문의를 열면 채울 정보는 다시 접힌다 → 펼치고 본다 */
+   if(await d.locator('.idv3-need.fold').count()){await d.locator('.idv3-need [data-idv="need-toggle"]').click();await page.waitForTimeout(150);}
    assert.equal(await nrow('공사 범위').locator('.idv3-val.empty').isEnabled(),true,'공사 범위는 눌린다');
    await nrow('공사 범위').locator('.idv3-val.empty').click();await page.waitForTimeout(250);
    const wb=d.locator('.idv3-info .idv3-workslot .dv3-work');assert.equal(await wb.count(),1,'공종 줄 아래에 공종 상자');
