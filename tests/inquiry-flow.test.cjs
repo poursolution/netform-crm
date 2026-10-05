@@ -76,6 +76,7 @@ test('서버: 곁표는 잠겨 있고 명령 함수 하나로만 쓴다 · 최�
  assert.match(body,/qualified_by=coalesce\(x\.qualified_by,'quote_sent'\)/);assert.match(body,/qualified_by=coalesce\(x\.qualified_by,'visit_done'\)/,'전환 기준 = 둘 중 먼저');
  assert.doesNotMatch(body,/delete\s+from|drop\s+table|truncate|contract_sales|update public\.deals|first_response_at\s*=/i,'지우지 않는다 · 영업건 · 계약 원장 · 기존 최초응대 값은 건드리지 않는다');
  assert.doesNotMatch(body,/update public\.inquiries[^;]*\bstatus=(?!v_status)/,'상태는 종결 때만 바꾼다');
+ assert.match(body,/'closed',coalesce\(\(\s*select jsonb_agg\(jsonb_build_object\('inquiry_id',i\.id,'status',i\.status,'close_reason',i\.close_reason\)\)/,'닫힌 문의의 사유 글 읽기(읽기만)');
  for(const fn of ['crm_inquiry_command_v1','crm_inquiry_flow_list_v1'])assert.match(body,new RegExp('revoke all on function public\\.'+fn+'\\(jsonb\\) from public, anon;\\s*grant execute on function public\\.'+fn+'\\(jsonb\\) to authenticated;'),fn);
  assert.match(body,/where t\.migrated is null;/,'이관은 여러 번 돌려도 같은 결과');
 });
@@ -127,6 +128,7 @@ test('④ ⑤ 전환 기준 하나 · 견적 = 버전: 상세 · 전환 대기 �
  assert.match(read('operational-adapter.js'),/!\/견적\.\*발송\|현장\\s\*방문\\s\*완료\/\.test\(payload\.inquiry_status\)/,'전송 계층');
  assert.match(sql.replace(/\r\n/g,'\n'),/a constant text:=\$a\$status_value !~ '견적\.\*발송'\$a\$;\n b constant text:=\$b\$status_value !~ '견적\.\*발송\|현장\[\[:space:\]\]\*방문\[\[:space:\]\]\*완료'\$b\$;/,'서버 전환 명령의 조건 한 곳');
  assert.match(sql,/if n<>1 then raise exception '전환 조건을 바꿀 자리가 %곳입니다\(1곳이어야 함\) — 아무것도 바꾸지 않았습니다',n; end if;/,'자리가 정확히 1곳이 아니면 멈춘다');
+ assert.match(fl,/const ready=loadedOk&&can\(RPC\),msg=ready\?promote\(q\):'서버 적용 뒤 전환 대기 목록에서 파이프라인으로 넘길 수 있습니다';/,'방문 완료 전환은 서버가 받는 것이 확인된 뒤에만 보낸다');
  assert.match(dv,/const stepConverts=s=>!FL\(\)\|\|\(s\.step==='visit'\?s\.visitMode==='완료':s\.step==='quote'\?s\.quoteMode==='완료':false\);/,'예정은 저장만');assert.match(dv,/\(FL\(\)\?h\(FL\(\)\.QUALIFY_TEXT\):/,'상세 문구 = 같은 기준');
  assert.match(dv,/root\.InquiryCommand\.run\('quote_send',q,\{amount:s\.quoteAmt\?Number\(s\.quoteAmt\)\*10000:0,date:s\.quoteDate,sent:s\.quoteMode==='완료'\}\)/,'견적 금액은 견적 버전으로(원)');
  assert.doesNotMatch(fl,/예상 '\+|만원'\)/,'명령은 다음 할 일 문장에 금액을 넣지 않는다');assert.match(fl,/nextSet\(q,'고객 반응 확인',follow\)/);assert.match(fl,/const f=plusDays\(sentDay,7\);return f>today\?f:plusDays\(today,1\);/,'후속 = 보낸 날 + 7일 · 같은 날 할 일 금지');
