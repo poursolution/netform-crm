@@ -437,6 +437,15 @@
    +(closed?'':'<div class="dv3-fadd"><button type="button" data-dv3="fadd" data-v="photo">+ 사진</button><button type="button" data-dv3="fadd" data-v="quote">+ 견적 버전</button><button type="button" data-dv3="fadd" data-v="file">+ 자료</button></div>')+'</div>';
  }
  /* ── 왼쪽 ── */
+ /* 현장 정보 한 줄(칸 안에서 바로 입력) — 오른쪽 상자 맨 위의 공종 · 예상 금액과, 왼쪽 '현장 정보'(G.dealSiteInfoLeft 로 되살릴 때)가 같이 쓴다 */
+ function fieldRow(d,x,closed,right){
+  const S=st(d),sfOk=canSF(),ciOk=closed&&canCI(),emptyTxt=x.empty||'미입력 · 입력하기';
+  let val;
+  if(closed&&!ciOk)val='<b class="'+(x.v?'':'empty')+'">'+h(x.v||'미입력')+'</b>';
+  else if(x.k!=='work'&&S.edit===x.k)val='<input class="dv3-in" data-dv3in="left" data-key="'+x.k+'" value="'+attr(S.draft)+'" placeholder="'+attr(x.ph||x.l)+'"'+(x.k==='amount'?' inputmode="decimal"':'')+' aria-label="'+attr(x.l)+'">';
+  else{const act=x.k==='work'?'work':closed?'field':(x.k==='amount'?($('dv-amt')?'field':'amount'):(sfOk?'field':'info'));val='<button type="button" class="dv3-val'+(x.v?'':' empty')+'" data-dv3="'+act+'" data-key="'+x.k+'">'+h(x.v||emptyTxt)+'</button>';}
+  return '<div class="dv3-row'+(right?' s core':'')+'"><span>'+h(x.l)+'</span>'+val+'</div>'+(x.k==='work'?'<div class="dv3-slot" data-slot="work"></div>':'');
+ }
  function leftHtml(d,closed){
   const SS=st(d),C=contacts(d),ci=C.ci,chg=root.DealKeyman&&root.DealKeyman.enabled()?root.DealKeyman.changeOf(d):null,rel=related(d),F=siteFields(d),fc=fileCounts(d);
   const mgr=C.has
@@ -449,20 +458,13 @@
   const tag=x=>root.isWon(x)?['수주','won']:root.isOpen(x)?['진행','open']:['실주','lost'];
   const relHtml=rel.length?rel.map(x=>{const t=tag(x),w=root.dealWorkSummary(x),what=w&&!/미분류|미기록/.test(w)?w:root.stageLabel(root.dealStage(x)),ym=ymd(x.closed_at||x.contract_date||x.created).slice(0,7),amt=root.isWon(x)?(root.hasWonAmt(x)?root.fmtAmt(root.wonAmt(x)):''):(Number(x.amount??x.amt??0)>0?root.fmtAmt(Number(x.amount??x.amt)):'');
     return '<button type="button" class="dv3-rel" data-dv3="rel" data-id="'+attr(x.id)+'"><em class="'+t[1]+'">'+t[0]+'</em><span><b>'+h(what)+'</b><small>'+h([ym,amt,root.repN(x.assignee)||'미배정'].filter(Boolean).join(' · '))+'</small></span><i>›</i></button>';}).join(''):'<p class="dv3-none">이 현장의 다른 영업건이 없습니다</p>';
-  const S=st(d),sfOk=canSF(),ciOk=closed&&canCI();
-  const fields=F.map(x=>{
-   const emptyTxt=x.empty||'미입력 · 입력하기';
-   let val;
-   if(closed&&!ciOk)val='<b class="'+(x.v?'':'empty')+'">'+h(x.v||'미입력')+'</b>';
-   else if(x.k!=='work'&&S.edit===x.k)val='<input class="dv3-in" data-dv3in="left" data-key="'+x.k+'" value="'+attr(S.draft)+'" placeholder="'+attr(x.ph||x.l)+'"'+(x.k==='amount'?' inputmode="decimal"':'')+' aria-label="'+attr(x.l)+'">';
-   else{const act=x.k==='work'?'work':closed?'field':(x.k==='amount'?($('dv-amt')?'field':'amount'):(sfOk?'field':'info'));val='<button type="button" class="dv3-val'+(x.v?'':' empty')+'" data-dv3="'+act+'" data-key="'+x.k+'">'+h(x.v||emptyTxt)+'</button>';}
-   return '<div class="dv3-row"><span>'+h(x.l)+'</span>'+val+'</div>'+(x.k==='work'?'<div class="dv3-slot" data-slot="work"></div>':'');
-  }).join('');
+  const S=st(d),ciOk=closed&&canCI(),leftOn=!!root.G.dealSiteInfoLeft;
+   const fields=leftOn?F.map(x=>fieldRow(d,x,closed)).join(''):'';
   const others=C.others.length?C.others.map(c=>{const k=String(c.personKey||(root.phoneN(c.mobile)?'mobile:'+root.phoneN(c.mobile):'')),tel=root.phoneN(c.mobile);return '<div class="dv3-other"><button type="button" class="nm" data-dv3="editc" data-slot="others" data-key="'+attr(k)+'"'+(closed?' disabled':'')+'>'+h(c.name||'이름 미입력')+'</button><span>'+h(c.role||'담당자')+'</span><i></i>'+(tel?'<a href="tel:'+attr(tel)+'">'+h(root.phoneFmt(c.mobile))+'</a>':'<span class="empty">번호 없음</span>')+'</div>';}).join(''):'<p class="dv3-none">다른 연락처가 없습니다</p>';
   const slot=n=>'<div class="dv3-slot" data-slot="'+n+'"></div>';
   return '<section class="dv3-sec dv3-mgr">'+mgr+slot('mgr')+'</section>'
    +'<section class="dv3-sec"><header><b>같은 현장 다른 영업</b><span>'+rel.length+'건'+(rel.length?' · 누르면 그 건이 열림':'')+'</span></header>'+relHtml+'</section>'
-   +'<section class="dv3-sec"><header><b>현장 정보</b><i></i>'+(closed&&!ciOk?'':'<small>누르면 바로 수정</small>')+'</header>'+fields+slot('site')+'</section>'
+   +(leftOn?'<section class="dv3-sec"><header><b>현장 정보</b><i></i>'+(closed&&!ciOk?'':'<small>누르면 바로 수정</small>')+'</header>'+fields+slot('site')+'</section>':'')/* 2026-10-05 대표 "두 개 중복되는 것 같은데 오른쪽만 남겨 줘" — 기본은 오른쪽 '이 단계 필수 정보' 하나 */
    +'<section class="dv3-sec"><header><b>자료</b><span>사진 '+fc.photos+' · 견적서 '+fc.quotes+' · 기타 '+fc.etc+'</span><i></i><button type="button" class="lnk" data-dv3="files">'+(SS.files?'접기':'자료 보기')+'</button></header>'+(SS.files?filesHtml(d,SS,closed):'')+slot('fform')+slot('files')+'</section>'
    +'<section class="dv3-sec"><header><b>다른 연락처</b><span>'+C.others.length+'명</span><i></i>'+(closed?'':'<button type="button" class="lnk" data-dv3="addc" data-slot="others">+ 추가</button>')+'</header>'+others+slot('others')+'</section>';
  }
@@ -525,14 +527,18 @@
    }
    ensureSlot(now,'now');
   }
-  /* 이 단계 필수 정보: 왼쪽 '현장 정보'와 겹치는 항목은 뺀다 */
-  const sum=r.querySelector('.da-stage-summary');
+  /* 이 단계 필수 정보. 2026-10-05 대표 "두 개 중복되는 것 같은데 오른쪽만 남겨 줘": 왼쪽 '현장 정보'는 빼고 이 상자 하나로 —
+      왼쪽에만 있던 공종 · 예상 금액은 이 상자 맨 위에(다른 곳에서는 고칠 수 없다), 고객 반응 · 의사결정자 · 경쟁사 · 공사 예정은 그 단계가 묻는 항목일 때 여기에 나온다.
+      G.dealSiteInfoLeft=true 면 예전처럼 왼쪽 '현장 정보' + 오른쪽은 겹치지 않는 항목만 */
+  let sum=r.querySelector('.da-stage-summary');const leftOn=!!root.G.dealSiteInfoLeft;
+   if(!sum&&!leftOn){sum=el('section','dcard da-info da-stage-summary dv3-made','<h3></h3>');const anchor=r.querySelector(':scope>.dv3-slot[data-slot="now"]')||now;if(anchor)anchor.after(sum);else r.prepend(sum);}
   if(sum){
    const S=st(d),sc=stageSchema(d),h3=sum.querySelector('h3'),shown={};
    sum.querySelectorAll('dl>dt').forEach(dt=>{const dd=dt.nextElementSibling;if(!dd||dd.tagName!=='DD')return;const c=dd.cloneNode(true);c.querySelectorAll('button').forEach(b=>b.remove());const tx=c.textContent.trim();shown[dt.textContent.trim()]={text:/^(미입력|—|-|–)?$/.test(tx)?'':tx,fill:dd.querySelector('.da-fill')};});
    const p=root.currentPatch?root.currentPatch():{},cur=sc?(((d.stage_contexts||p.stage_contexts||{})[sc.code]||{}).fields||{}):{};
-   const rows=sc?sc.fields.filter(f=>shown[f.label]&&!LEFT_LABELS.includes(f.label)):[];
-   const ciOk=closed&&canCI(),ok=closed?ciOk:canSF();let miss=0;/* 종료 건: 글 · 선택 항목만 입력(준공일 · 수주금액 같은 날짜 · 금액 · 체크 항목은 그대로 읽기 전용) */
+   const DUP=leftOn?LEFT_LABELS:['공종','예상 금액','예상금액'],rows=sc?sc.fields.filter(f=>shown[f.label]&&!DUP.includes(f.label)):[];
+    const core=leftOn?[]:siteFields(d).filter(x=>x.k==='work'||x.k==='amount');
+   const ciOk=closed&&canCI(),ok=closed?ciOk:canSF();let miss=core.filter(x=>!x.v).length;/* 종료 건: 글 · 선택 항목만 입력(준공일 · 수주금액 같은 날짜 · 금액 · 체크 항목은 그대로 읽기 전용) */
    const html=rows.map(f=>{
     const info=shown[f.label],special=f.key==='contact_date'||f.key==='last_contact',raw=cur[f.key];if(!info.text)miss++;
     let val;
@@ -547,9 +553,11 @@
    }).join('');
    sum.querySelectorAll(':scope>dl,:scope>.da-stage-edit,:scope>.ddv-pace').forEach(n=>n.classList.add('dv3-old'));
    let box=sum.querySelector(':scope>.dv3-stage');if(!box){box=el('div','dv3-stage');sum.append(box);}
-   box.innerHTML=html;
+   {const keep=[...box.querySelectorAll('.dv3-slot')].map(s=>[s.dataset.slot,[...s.children]]).filter(x=>x[1].length);/* 열려 있던 공종 · 금액 입력 상자는 다시 그려도 그대로 */
+     box.innerHTML=core.map(x=>fieldRow(d,x,closed,true)).join('')+(core.length?'<div class="dv3-slot" data-slot="site"></div>':'')+html;
+     keep.forEach(([name,nodes])=>{const s=box.querySelector('.dv3-slot[data-slot="'+name+'"]');if(s)nodes.forEach(n=>s.append(n));});}
    if(h3)h3.innerHTML='이 단계 필수 정보'+(miss?' <span class="dv3-miss">미입력 '+miss+'</span>':'');
-   sum.classList.toggle('dv3-old',!rows.length);
+   sum.classList.toggle('dv3-old',!rows.length&&!core.length);
    ensureSlot(sum,'stage');
   }
   /* 단계 바꾸기 카드는 오른쪽에서 빼고 창 머리글로 */

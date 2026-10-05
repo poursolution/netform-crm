@@ -62,8 +62,11 @@
  }
  /* ── 상세 왼쪽: 담당 정보 상자 ── */
  function cardHtml(d){
-  const I=info(d),H=history(d);
-  return '<header><b>담당 정보</b></header><div class="do-grid"><span>현재 담당</span><b>'+h(I.current||'미배정')+'</b>'
+  const I=info(d),H=history(d),open=!!st().open;
+  /* 접어 둔 채로 시작(2026-10-05 대표 "이거는 접어 두게 해 줘 · 담당 정보 ; 이필선 해 놓고") — 머리줄에 지금 담당 이름, [펼치기]를 누르면 최초 담당 · 실적 귀속 · 변경 이력. 펼친 상태는 창을 바꿔도 유지 */
+  const head='<header><b>담당 정보</b><span class="do-cur">'+h(I.current||'미배정')+'</span><i></i><button type="button" class="lnk" data-do="fold" aria-expanded="'+open+'">'+(open?'접기':'펼치기')+'</button></header>';
+  if(!open)return head;
+  return head+'<div class="do-grid"><span>현재 담당</span><b>'+h(I.current||'미배정')+'</b>'
    +'<span>최초 담당</span><span>'+(I.first&&I.first.name?h(I.first.name)+(I.first.at?' <small>첫 연결 '+h(dot(I.first.at))+'</small>':''):'<small>아직 없음 — 첫 연결 전</small>')+'</span>'
    +'<span>실적 귀속</span><b class="perf">'+h(I.perf||'미배정')+' <small>'+h(I.sub)+'</small></b></div>'
    +'<div class="do-hist"><span>변경 이력</span>'+(H.length?H.map(x=>'<div><span>'+h(dot(x.k))+'</span><span>'+h(x.t)+'</span></div>').join(''):'<p>아직 변경 이력이 없습니다</p>')+'</div>';
@@ -78,7 +81,7 @@
   const v=document.getElementById('detailView'),d=cur();
   document.querySelectorAll('.do-card,.do-attr').forEach(n=>n.remove());
   if(!v||!d||!enabled())return;
-  const secs=[...v.querySelectorAll('.dw-left .dv3-sec')],site=secs.find(x=>{const b=x.querySelector(':scope>header>b');return b&&b.textContent.trim()==='현장 정보';});
+  const secs=[...v.querySelectorAll('.dw-left .dv3-sec')],title=x=>{const b=x.querySelector(':scope>header>b');return b?b.textContent.trim():'';},site=secs.find(x=>title(x)==='현장 정보')||secs.find(x=>/^(이 단지 영업 이력|같은 현장 다른 영업)$/.test(title(x)));/* 왼쪽 '현장 정보'가 빠진 뒤(2026-10-05)에는 영업 이력 칸 아래 */
   if(site){const sec=document.createElement('section');sec.className='dv3-sec do-card';sec.innerHTML=cardHtml(d);site.after(sec);}
   /* 담당자 변경 창(기존 담당자 관리 상자)에 실적 귀속 선택을 얹는다 — 재배정돼도 귀속 유지가 켜져 있을 때 */
   const sel=document.getElementById('dv-assignee'),card=sel&&sel.closest('.dcard'),actions=card&&card.querySelector('.dactions');
@@ -90,6 +93,7 @@
   }
   ensure(d).then(changed=>{if(changed&&cur()&&String(cur().id)===String(d.id)){try{decorate();}catch(e){}}}).catch(()=>{});
  }
+ document.addEventListener('click',e=>{const f=e.target.closest('#detailView .do-card [data-do="fold"]');if(!f)return;e.preventDefault();st().open=!st().open;try{decorate();}catch(x){}});
  document.addEventListener('click',e=>{const b=e.target.closest('[data-do="attr"]');if(!b||b.disabled)return;e.preventDefault();st().attr=b.dataset.v;const box=b.closest('.do-attr'),sel=document.getElementById('dv-assignee'),d=cur();if(box&&d)box.innerHTML=attrHtml(d,rep(sel&&sel.value));});
  /* ── 담당 변경이 끝난 뒤: 사유 · 귀속 선택 기록 + (요청이면) 승인 요청 ── */
  async function after(d,o){

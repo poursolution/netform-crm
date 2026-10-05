@@ -10,6 +10,9 @@
 #detailView .do-card .do-hist>div{display:grid;grid-template-columns:86px minmax(0,1fr);gap:8px;font-size:12px;line-height:1.45}
 #detailView .do-card .do-hist>div>span:first-child{color:#9ca3af}
 #detailView .do-card .do-hist>p{margin:0;font-size:12px;color:#9ca3af}
+/* 접어 둔 머리줄: 담당 정보 + 지금 담당 이름 + [펼치기] */
+#detailView .do-card>header .do-cur{font-size:13px;font-weight:700;color:#15171c}
+#detailView .do-card>header+.do-grid{margin-top:10px}
 /* 담당자 변경 창: 실적 귀속 선택 */
 .do-attr{display:flex;flex-direction:column;gap:8px;margin:12px 0 4px;font-size:13px;color:#15171c}
 .do-attr>b{font-weight:700}
