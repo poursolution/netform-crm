@@ -34,7 +34,8 @@
  }
  function brandStats(){
   const sel=root.SalesFilterState.state().brands||[],current=new Date().getFullYear(),year=root.G.expansionYear||String(current);let list=[];
-  try{list=root.expansionRecords().filter(r=>root.SalesScope.matches(r.owner,dealOf(r))&&F.yearMatch(r,dealOf(r),year,current));}catch(e){list=[];}
+  /* 2026-10-05 design_handoff_expansion_year: 브랜드 칩은 연도와 무관하게 센다(예전에는 고른 연도만 세어 준공연도 '전체 150'과 브랜드 칩 '전체 16'이 달랐다). 끄기 G.expansionYearRowOff */
+  try{list=root.expansionRecords().filter(r=>root.SalesScope.matches(r.owner,dealOf(r))&&(!root.G.expansionYearRowOff&&root.ExpansionB&&root.ExpansionB.enabled()?true:F.yearMatch(r,dealOf(r),year,current)));}catch(e){list=[];}
   const names=[...new Set(['석민이앤씨','POUR솔루션','POUR공법','아파트스퀘어'].concat(list.map(r=>dealOf(r).brand).filter(Boolean)))];
   return [{name:'전체',n:list.length,on:!sel.length}].concat(names.map(b=>({name:b,n:list.filter(r=>dealOf(r).brand===b).length,on:sel.includes(b)})));
  }
