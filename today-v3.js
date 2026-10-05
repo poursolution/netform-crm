@@ -43,11 +43,11 @@
    const g3=live.filter(i=>!s1.has(i.key)&&i.rk==='contract'),s3=new Set(g3.map(i=>i.key));
    const g2=live.filter(i=>!s1.has(i.key)&&!s3.has(i.key)).sort((a,b)=>((a.days>=7&&a.days<=30)?0:1)-((b.days>=7&&b.days<=30)?0:1)||a.days-b.days);
    groups=[G('오늘 안 넘기면 놓침','배정 '+(root.CRMRules?root.CRMRules.get('assign_minutes'):30)+'분 · 첫 연락 '+(root.CRMRules?root.CRMRules.get('first_contact_hours'):2)+'시간 · 오늘 마감','모두 담당에게 알림',g1.sort(byUrgent)),G('이번 주 새로 멈춘 건','7~30일 사이 기록 없음 · 지금 잡으면 살아남','담당별 코멘트',g2),G('계약 정보 빠짐','계약 · 시공 단계인데 계약일 · 금액 없음 — 실적에 안 잡힘','입력 요청 보내기',g3.sort((a,b)=>(b.amt||0)-(a.amt||0)))];
-   /* 영업관리 표(today-assist · 2026-10-04 대표 시안 → 2026-10-05 대표 "① 오늘 안 넘기면 놓침도 ②번처럼 적용해 줘"): 묶음 4개 모두 같은 표 틀.
-       순서는 그대로 — ① 오늘 안 넘기면 놓침(맨 위) ② 담당 배정 안 된 견적문의 ③ 이번 주 새로 멈춘 건 ④ 계약 정보 빠짐. 담당 배정 안 된 견적문의는 ②에만 나온다(①과 같은 줄이 겹치지 않게 · 합계는 그대로).
-       끄면(G.todayAssistOff) 위 묶음 3개(카드 + 목록) 그대로 · 다른 역할 화면의 카드도 그대로 */
-    if(root.TodayAssist&&root.TodayAssist.enabled()){const ga=groups[0].items.filter(i=>i.rk==='assign'&&i.x.type==='inq'),sa=new Set(ga.map(i=>i.key));
-     groups=[Object.assign(G('오늘 안 넘기면 놓침','첫 연락 '+(root.CRMRules?root.CRMRules.get('first_contact_hours'):2)+'시간 · 오늘 마감 · 오늘 약속','모두 담당에게 알림',groups[0].items.filter(i=>!sa.has(i.key))),{kind:'urgent'}),Object.assign(G('담당 배정 안 된 견적문의','AI 추천 담당을 그대로 쓰면 [추천대로 배정] 한 번','',ga),{kind:'assign'}),Object.assign(groups[1],{kind:'stall'}),Object.assign(groups[2],{kind:'contract'})];}
+   /* 영업관리 화면(today-assist). ① 오늘 안 넘기면 놓침 = 기존 카드 묶음 그대로 맨 위(건수 · 문구 · 카드 4장 · 버튼을 바꾸지 않는다 — 2026-10-04 "기존 카드 상단으로 올려", 2026-10-05 "이거 자꾸 어디 가고": 카드를 없애거나 내리지 말 것).
+       카드 아래 나머지 줄만 ②와 같은 표 줄로 보여 준다(2026-10-05 "① 오늘 안 넘기면 놓침도 ②번처럼"). ② 담당 배정 안 된 견적문의 표(①에 든 건을 추천 담당과 함께 다시 보여 주는 표 — aux: 큰 숫자 · 띠 · 실행 순서에 두 번 세지 않는다) ③ 이번 주 새로 멈춘 건 ④ 계약 정보 빠짐.
+       끄면(G.todayAssistOff) 위 묶음 3개 그대로 */
+    if(root.TodayAssist&&root.TodayAssist.enabled()){const ga=groups[0].items.filter(i=>i.rk==='assign'&&i.x.type==='inq');
+     groups=[Object.assign(groups[0],{kind:'cards'}),Object.assign(G('담당 배정 안 된 견적문의','AI 추천 담당을 그대로 쓰면 [추천대로 배정] 한 번','',ga),{kind:'assign',aux:true}),Object.assign(groups[1],{kind:'stall'}),Object.assign(groups[2],{kind:'contract'})];}
   }else if(role==='ceo'){
    const g1=teamAll.filter(i=>i.rk==='decide'||i.rk==='tfapprove'),s1=new Set(g1.map(i=>i.key));
    const g2=teamAll.filter(i=>!s1.has(i.key)&&(i.amt||0)>=W._big()&&(i.days>=STALL_BIG()||i.rk==='contract'||i.rk==='stallbig')),s2=new Set(g2.map(i=>i.key));
@@ -200,7 +200,7 @@
    if(g.kind&&g.kind!=='cards'&&root.TodayAssist)return root.TodayAssist.groupHtml(g,items,gi,shownNo,!!S.more[gi]);
    const first=g.kind?g.kind==='cards':gi===0,cards=first?items.slice(0,CARDS):[],rest=first?items.slice(CARDS):items,open=!!S.more[gi],shown=open?rest:rest.slice(0,PER);
    return '<section class="tv3-group'+(first?' first':'')+'" data-g="'+(gi+1)+'"><header><i>'+(kinded?shownNo:gi+1)+'</i><b>'+h(g.t)+'</b><b class="n">'+items.length+'건</b><span>'+h(g.why)+'</span><u></u>'+(g.bulk&&team?'<button type="button" data-t3="bulk" data-v="'+gi+'">'+h(g.bulk)+'</button>':'')+'</header>'
-    +(first?'<div class="tv3-cards">'+cards.map(card).join('')+'</div>':'')+shown.map(i=>row(i,first)).join('')
+    +(first?'<div class="tv3-cards">'+cards.map(card).join('')+'</div>':'')+(g.kind==='cards'&&shown.length&&root.TodayAssist&&root.TodayAssist.restHtml?root.TodayAssist.restHtml(shown):shown.map(i=>row(i,first)).join(''))/* 카드 아래 나머지 줄 = ②와 같은 표 줄 */
     +(rest.length>PER?'<button type="button" class="tv3-more" data-t3="more" data-v="'+gi+'">'+(open?'접기 ▴':'나머지 '+(rest.length-PER)+'건 더 보기 ▾')+'</button>':'')+'</section>';}).join('');
   const empty=!total?'<div class="tv3-empty">'+(backN?'오늘 손댈 건은 없습니다. 아래 밀린 건만 정리하면 됩니다.':'오늘 처리할 건이 없습니다.')+'</div>':(!groupsHtml?'<div class="tv3-empty">이 조건에 해당하는 건이 없습니다.</div>':'');
   /* 밀린 건 정리 */
