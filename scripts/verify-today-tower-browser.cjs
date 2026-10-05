@@ -92,7 +92,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.ok(!mgrModel.some(s=>/^deadline|^decide/.test(s)),'영업관리에는 마감 · 지원 요청(팀장 영역) 없음 '+JSON.stringify(mgrModel));
   assert.deepEqual(await sites('#today-v2 .tt-card .who strong'),['길음뉴타운9단지','고덕아이파크','성산시영아파트'],'카드: 배정 → 계약정보 → 고액');
   assert.match(await page.locator('#today-v2 .tt-card').nth(2).innerText(),/담당 김성민[\s\S]*담당에게 보낼 말 · 놓치면[\s\S]*독촉\s*재배정\s*담당 화면/);
-  await page.locator('#today-v2 .tt-card').nth(2).locator('[data-tt="fold"]').click();await page.waitForTimeout(200);assert.match(await page.locator('#today-v2 .tt-card').nth(2).locator('.open p').innerText(),/^“성민님, 성산시영아파트 건 — 고액 견적 후속 없음\. 오늘 중 처리하고 결과 남겨 주세요\.”$/);
+  await page.locator('#today-v2 .tt-card').nth(2).locator('[data-tt="fold"]').click();await page.waitForTimeout(200);assert.match(await page.locator('#today-v2 .tt-card').nth(2).locator('.open p').innerText(),/^“김성민님, 성산시영아파트 건 — 고액 견적 후속 없음\. 오늘 중 처리하고 결과 남겨 주세요\.”$/);
   const reps=await page.locator('#today-v2 .tt-rep').evaluateAll(a=>a.map(n=>n.querySelector('span b').textContent+':'+n.querySelector(':scope>b').textContent));
   assert.ok(reps[0].startsWith('이필선:'),'담당자 줄: 놓침 많은 순 '+JSON.stringify(reps));
   assert.match(await page.locator('#today-v2 .tt-row',{hasText:'인천SK스카이뷰'}).innerText(),/이필선 · /,'영업관리 목록 줄에는 담당 포함');

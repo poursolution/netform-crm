@@ -30,7 +30,7 @@
  const dayN=hours=>Number.isFinite(hours)&&hours>0?Math.max(1,Math.floor(hours/24)):0;
  const money=n=>{n=Number(n)||0;if(!n)return '';if(n>=1e8)return (Math.round(n/1e7)/10)+'억';if(n>=1e4)return Math.round(n/1e4).toLocaleString('ko-KR')+'만';return n.toLocaleString('ko-KR');};
  const cut=(v,n)=>{v=String(v||'').replace(/\s+/g,' ').trim();return v.length>n?v.slice(0,n-1)+'…':v;};
- const given=nm=>{nm=String(nm||'');return /^[가-힣]{3}$/.test(nm)?nm.slice(1):nm;};
+ const given=nm=>String(nm||'');/* 이름은 줄이지 않고 성까지 그대로(2026-10-05 대표 "이름 왜 간결하게 된 거야 제대로 해" — 팀 일정 '윤선 · 통화 약속' → '황윤선 · 통화 약속') */
  const md=v=>{const s=String(v||'').slice(0,10),m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s);return m?Number(m[2])+'/'+Number(m[3]):'';};
  const daysTo=v=>{try{const s=String(v||'').slice(0,10);if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return null;const n=root.daysTo(s);return Number.isFinite(n)?n:null;}catch(e){return null;}};
  const since=v=>{const n=daysTo(v);return n===null?null:-n;};

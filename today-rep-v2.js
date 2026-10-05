@@ -88,7 +88,7 @@
   /* 나머지: 카드에 안 들어간 곳 — 늦음 → 오늘 약속 → 내일 · 이번 주. 빈 묶음은 숨긴다 */
   const first=hidden.filter(u=>u.tone==='r'&&u.rank===0).map(u=>u.x),late=hidden.filter(u=>u.tone==='r'&&u.rank!==0).map(u=>u.x),today=hidden.filter(u=>u.tone==='b').map(u=>u.x),later=hidden.filter(u=>u.tone==='a').map(u=>u.x).concat(sp.rest);
   const groups=[['r','첫 연락 늦음','#fbf3f3','#c93a3f',first,'위 카드 다음 순서'],['r','기한 지남','#fbf3f3','#c93a3f',late,'늦은 순서대로'],['b','오늘 약속','#f3f6fd','#2a52b8',today,'약속한 시간에 다시 연락'],['m','내일 · 이번 주','#f6f7f9','#6b7280',later,'미리 준비']].filter(g=>g[4].length);
-  try{if(root.G.page==='today'&&!root.todayIsAdmin()){const p=document.getElementById('psub'),nm=String(root.ME&&root.ME.name||'');root.G.todayRepSub=(/^[가-힣]{3}$/.test(nm)?nm.slice(1):nm)+'님 · 오늘 '+rows.filter(x=>!x.unassigned).length+'곳'+(U.length?' · 급한 '+U.length+'곳부터':'');if(p)p.textContent=root.G.todayRepSub;}}catch(e){}
+  try{if(root.G.page==='today'&&!root.todayIsAdmin()){const p=document.getElementById('psub'),nm=String(root.ME&&root.ME.name||'');root.G.todayRepSub=nm+'님 · 오늘 '+rows.filter(x=>!x.unassigned).length+'곳'+(U.length?' · 급한 '+U.length+'곳부터':'');if(p)p.textContent=root.G.todayRepSub;}}catch(e){}
   const table=groups.length?'<section class="trv-table" aria-label="나머지 할 곳"><div class="trv-thead"><span>현장 · 고객</span><span>고객이 원한 것</span><span>단계</span><span>금액</span><span>경과</span><span></span></div>'+groups.map(g=>'<div class="trv-ghead" style="background:'+g[2]+'"><b style="color:'+g[3]+'">'+g[1]+' '+g[4].length+'</b><span>· '+g[5]+'</span></div>'+g[4].slice(0,S.limit||30).map(x=>rowHtml(x,g[0])).join('')).join('')+'</section>':'';
   return '<div class="trv" data-urgent="'+U.length+'">'+head+cards+table+'</div>';
  }
