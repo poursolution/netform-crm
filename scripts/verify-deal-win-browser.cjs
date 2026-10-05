@@ -112,7 +112,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 6. 주간 브리핑: 수주실적 3줄 */
   await page.clock.setFixedTime(new Date('2026-10-03T10:00:00+09:00'));
   await page.evaluate(()=>{OpsStore.rpc=(o=>async(name,p)=>name==='crm_report_snapshot_get_v1'?{ok:true,snapshots:[]}:o(name,p))(OpsStore.rpc);goPage('brief');});await page.waitForTimeout(600);
-  assert.match(await page.locator('#brief-b .tf-perf').innerText(),/^수주실적\s*1건 · 10\.4억\s*├ 직접 수주\s*0건 · 0원\s*├ 협약시공사 수주 · 기술자문\s*1건 · 10\.4억\s*이필선 · 평택비전지웰푸르지오 · 코지건설 낙찰 10\.4억\s*└ 타사 이관 수주\s*0건 · 0원\s*파이프라인 실주\s*0건\s*배드핏\s*0건 · 메이드율 제외\s*영업 메이드율\s*100\.0%\s*\(0 \+ 1 \+ 0\) ÷ \(0 \+ 1 \+ 0 \+ 0\)$/,'이번 주(9/28~) 낙찰 1건');
+  assert.match(await page.locator('#brief-b .tf-perf').innerText(),/^수주실적\s*1건 · 10\.4억\s*├ 직접 수주\s*0건 · 0원\s*├ 협약시공사 수주 · 기술자문\s*1건 · 10\.4억\s*이필선 · 평택비전지웰푸르지오 · 코지건설 낙찰 10\.4억\s*└ 타사 이관 수주\s*0건 · 0원\s*파이프라인 실주\s*0건\s*종결\s*0건 · Bad Fit 0 · 메이드율 제외\s*영업 메이드율\s*100\.0%\s*\(0 \+ 1 \+ 0\) ÷ \(0 \+ 1 \+ 0 \+ 0\)$/,'이번 주(9/28~) 낙찰 1건');
   await page.clock.setFixedTime(new Date('2026-10-21T10:00:00+09:00'));
   /* 월간 보고 본문과 직접/협약 분해는 같은 계약 원장을 사용한다. */
   await page.evaluate(()=>{G.reportBMonth='2026-10';goPage('report');});await page.waitForTimeout(500);
