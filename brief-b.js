@@ -104,7 +104,7 @@
   const signedAt=id=>{if(!L.ready)return '';const r=L.rows.find(z=>String(z.deal_id)===String(id)),ev=r&&(r.events||[]).find(e=>e.kind==='signed');return ev?ev.effective_date:'';};
   if(d)return root.isWon(d)||!!signedAt(d.id);
   const qk=K(root.inquiryCreatedAt(q)),sid=String(q.cleanup_site_id||q.site_id||q.siteId||''),ns=root.normSite?root.normSite(q.site||''):'';if(!sid&&!ns)return false;
-  return AD.some(x=>{const same=sid?String(x.cleanup_site_id||x.site_id||x.siteId||'')===sid:(!!ns&&root.normSite(x.site||'')===ns);if(!same)return false;
+  return AD.some(x=>{if(root.NewDealV2&&root.NewDealV2.isOutbound(x))return false;/* 새 영업 등록 v2(2026-10-05): 유입 구분이 있는 영업건(아웃바운드 · 소개 · 재영업)은 인바운드 전환과 따로 센다 */const same=sid?String(x.cleanup_site_id||x.site_id||x.siteId||'')===sid:(!!ns&&root.normSite(x.site||'')===ns);if(!same)return false;
    const s=signedAt(x.id);if(s)return s>=qk;if(!L.ready&&root.isWon(x)){let w='';try{w=K(root.wonDate(x));}catch(e){}return !!w&&w>=qk;}return false;});
  }
  /* ── 잔디 발송(서버 함수 crm-jandi) ── */
