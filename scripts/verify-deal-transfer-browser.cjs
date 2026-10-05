@@ -109,7 +109,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   if(shot)await page.screenshot({path:shot+'-dash.png',fullPage:true});
   /* 주간 브리핑: 수주실적 아래 직접 / 협약 · 기술자문 / 타사 이관 세 줄 + 메이드율 식 */
   await page.evaluate(()=>{OpsStore.rpc=(o=>async(name,p)=>name==='crm_report_snapshot_get_v1'?{ok:true,snapshots:[]}:o(name,p))(OpsStore.rpc);goPage('brief');});await page.waitForTimeout(600);
-  assert.match(await page.locator('#brief-b .tf-perf').innerText(),/^수주실적\s*1건 · 3\.8억\s*├ 직접 수주\s*0건 · 0원\s*├ 협약시공사 수주 · 기술자문\s*0건 · 0원\s*└ 타사 이관 수주\s*1건 · 3\.8억\s*이필선 · \[세종\] 조치원자이아파트 · 3\.8억\s*파이프라인 실주\s*0건\s*종결\s*0건 · Bad Fit 0 · 메이드율 제외\s*영업 메이드율\s*100\.0%\s*\(0 \+ 0 \+ 1\) ÷ \(0 \+ 0 \+ 1 \+ 0\)$/,'이번 주(10/19~) 낙찰 1건');
+  /* 이번 주 성과 v2(2026-10-05): 수주 표 대신 꼬리표 한 줄 */
+  {const one=s=>String(s).replace(/\s+/g,' ').trim(),win=page.locator('#brief-b .bp2-tags .t.win');
+   assert.equal(one(await win.innerText()),'수주 1건 · 3.8억 · 직접 0 · 협약 · 기술자문 0 · 타사 이관 1건 3.8억','이번 주(10/19~) 낙찰 1건');
+   assert.equal(await win.getAttribute('title'),'이필선 · [세종] 조치원자이아파트 · 3.8억 (타사 이관)');
+   assert.equal(one(await page.locator('#brief-b .bp2-step').nth(3).innerText()).startsWith('신규 계약 1 건 · 3.8억'),true);
+   assert.match(one(await page.locator('#brief-b .bp2-rates>div').nth(1).innerText()),/^영업 메이드율 100\.0%/);
+   assert.deepEqual((await page.locator('#brief-b .bp2-tags .t').allInnerTexts()).map(one).slice(1),['파이프라인 실주 0건 · 메이드율에 포함','견적문의 종결 0건 · Bad Fit 0 · 메이드율 제외']);}
   /* 리포트(직전 달 = 9월)는 해당 없음 → 표에 타사 이관 열만 */
   /* 7. 오늘 업무: 대기 건이 다시 생기면 이관 후 14일 → '타사 이관 결과 확인' */
   const cls=await page.evaluate(()=>{__tf[D1]=Object.assign(__tf[D1],{award_result:'pending',incentive_eligible:false,award_amount:null});DealTransfer._take(Object.values(__tf));const d=B.deals[0],x={key:'deal:'+d.id,type:'deal',kind:'pipeline',item:d,owner:'이필선',overdue:false,missingNext:false,dueDays:15};const r=TodayTower.classify(x,'rep');return r&&[r.rk,r.urg,r.missTxt];});

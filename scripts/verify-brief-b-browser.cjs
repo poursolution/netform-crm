@@ -1,6 +1,6 @@
 'use strict';
 /* 주간 영업 브리핑 v2 검사(2026-10-03 design_handoff_weekly):
-   이번 주 성과(흐름 4칸 · 비율 4개 · 배드핏/실주 두 상자) · 전주 문제 → 조치 → 결과(지난주 등록 항목을 지금 자료로 다시 셈) · 영업 이동 · 계약실적(원장) · 담당자별 움직임 ·
+   이번 주 성과(v2: 이번 주 한 줄 · 흐름 4칸 · 비율 한 줄 · 꼬리표 한 줄) · 전주 문제 → 조치 → 결과(지난주 등록 항목을 지금 자료로 다시 셈) · 영업 이동 · 계약실적(원장) · 담당자별 움직임 ·
    다음 주 반드시 끝낼 것(담당 · 기한 · 등록 = 스냅샷 약속 저장) · 전체 현황 · 잔디 미리보기. 메이드율은 배드핏 제외. 이모지 없음. 끄면 이전 화면.
    견적문의 종결 = 배드핏(부적합 종결) · 사유 필수 */
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
@@ -43,17 +43,41 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const v=page.locator('#brief-b');assert.equal(await v.count(),1,'새 주간 브리핑');assert.equal(await page.locator('#brief-v2').count(),0);
   assert.match(await v.locator('.bb-head').innerText(),new RegExp('^'+w.a.replace(/-/g,'\\.')+' – \\d{2}\\.\\d{2}\\s*지난주 대비 무엇이 움직였나\\s*월간 일정 보기$'));
   /* 1. 이번 주 성과 */
-  assert.deepEqual(await v.locator('.bb-fn>span').allInnerTexts(),['신규 견적문의','적합 문의','견적 발송','수주실적']);
-  assert.deepEqual(await v.locator('.bb-fn>b').allInnerTexts(),['3건','1건','1건','1건 · 2억']);
-  assert.match(await v.locator('.bb-fn').nth(0).innerText(),/▲2 \(전주 1\)/);assert.match(await v.locator('.bb-fn').nth(1).innerText(),/종결 2 제외 · Bad Fit 1/,'닫힌 문의 2건(배드핏 종결 1 + 스토어 이관 1) 가운데 Bad Fit 은 1건');
-  assert.equal(await v.locator('.bb-fn.last').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(21, 23, 28)','수주실적 = 검은 바탕');
-  assert.deepEqual(await v.locator('.bb-rates>div>span').allInnerTexts().then(a=>a.slice(0,3)),['문의 적합률','영업 메이드율','문의 → 계약 전환율']);
-  assert.deepEqual(await v.locator('.bb-rates p b').allInnerTexts().then(a=>a.slice(0,3)),['33.3%','50.0%','33.3%'],'메이드율 = 수주 1 ÷ (수주 1 + 실주 1) — 배드핏 2건은 분모에 없음');
-  assert.match(await v.locator('.bb-rates>div').nth(1).innerText(),/수주 1 ÷ \(수주 1 \+ 파이프라인 실주 1\) · 배드핏 제외/);
-  assert.match(await v.locator('.bb-rates>div').nth(3).innerText(),/^확정 전환율 \(\d+월 문의\)/);
-  assert.match(await v.locator('.bb-bad').innerText(),/견적문의 종결 2건 · Bad Fit 1\s*영업 실패 아님 · 메이드율에서 제외\s*(공사 범위 밖 1 · 스토어 · 자재 문의 1|스토어 · 자재 문의 1 · 공사 범위 밖 1)/);
-  assert.match(await v.locator('.bb-loss').innerText(),/파이프라인 실주 1건\s*영업기회 상실 · 메이드율에 포함\s*가격 열세 1/);
-  assert.equal(await v.locator('.bb-main').first().evaluate(n=>getComputedStyle(n).borderTopColor),'rgb(21, 23, 28)','맨 위 검은 테두리');
+  /* 이번 주 성과 v2(2026-10-05 design_handoff_brief_v2): 흰 카드 하나 — 이번 주 한 줄(끊긴 단계 자동 감지) · 흐름 4칸 · 비율 한 줄 · 꼬리표 한 줄. 검정 · 남색 바탕 없음 */
+  const P2=page.locator('#brief-b .bp2'),one=s=>String(s).replace(/\s+/g,' ').trim(),cssOf=(sel,props)=>page.locator('#brief-b .bp2 '+sel).evaluateAll((l,props)=>l.map(n=>{const s=getComputedStyle(n);return props.map(p=>s[p]);}),props);
+  assert.equal(await P2.count(),1);assert.equal(await v.locator('.bb-card').first().evaluate(n=>n.classList.contains('bp2')),true,'맨 위 블록');
+  assert.equal(await v.locator('.bb-funnel,.bb-rates,.tf-perf,.bb-two').count(),0,'예전 숫자 카드 · 수주 표 · 종결 상자는 꼬리표로 합쳤다');
+  assert.equal(one(await P2.locator('.bp2-line').innerText()),'이번 주 한 줄 문의 3건 → 견적 1건 → 계약 1건 · 2억 계약 목록 보기 →');
+  assert.deepEqual(await P2.evaluate(n=>{const s=getComputedStyle(n),b=getComputedStyle(n.querySelector('.bp2-bar'));return [s.backgroundColor,s.borderTopColor,s.borderTopWidth,s.borderTopLeftRadius,b.backgroundColor,b.width,b.height];}),['rgb(255, 255, 255)','rgb(232, 234, 239)','1px','14px','rgb(59, 108, 228)','3px','22px'],'흰 카드 · 끊김 없음 = 파란 띠');
+  assert.deepEqual((await P2.locator('.bp2-step').allInnerTexts()).map(one),['신규 견적문의 3 건 ▲2 전주 대비 →','적합 문의 1 건 전주와 같음 33% 넘어옴 →','견적 발송 1 건 ▲1 전주 대비 100% 넘어옴 →','신규 계약 1 건 · 2억 전주와 같음 100% 넘어옴'],'닫힌 문의 2건(배드핏 종결 1 + 스토어 이관 1)을 뺀 적합 1건');
+  assert.deepEqual(await cssOf('.bp2-step .v b',['fontSize','color']),Array(4).fill(['30px','rgb(21, 23, 28)']));
+  assert.deepEqual((await cssOf('.bp2-step .d',['color'])).flat(),['rgb(31, 122, 77)','rgb(156, 163, 175)','rgb(31, 122, 77)','rgb(156, 163, 175)'],'▲ 초록 · 같으면 회색');
+  assert.equal(await P2.locator('.bp2-step .ar').count(),3,'칸 사이 원형 →');assert.equal(await P2.locator('.bp2-flow').evaluate(n=>getComputedStyle(n).gridTemplateColumns.split(' ').length),4);
+  const rates=(await P2.locator('.bp2-rates>div').allInnerTexts()).map(one);
+  assert.deepEqual(rates.slice(0,3),['문의 적합률 33.3% ▼66.7%p 적합 ÷ 문의 · 문의 품질','영업 메이드율 50.0% ▼50.0%p 수주 ÷ (수주 + 실주) · Bad Fit 제외','문의 → 계약 33.3% ▼66.7%p 이번 주 활동 비율'],'메이드율 = 수주 1 ÷ (수주 1 + 실주 1) — 종결 2건은 분모에 없음');
+  assert.match(rates[3],/^확정 전환율 \((\d+)월 문의\) — \1월에 접수된 문의가 없습니다$/);
+  assert.deepEqual((await P2.locator('.bp2-tags .t').allInnerTexts()).map(one),['수주 1건 · 2억 · 직접 1건 2억 · 협약 · 기술자문 0 · 타사 이관 0','파이프라인 실주 1건 · 메이드율에 포함','견적문의 종결 2건 · Bad Fit 1 (공사 범위 밖 1) · 메이드율 제외']);
+  assert.deepEqual(await cssOf('.bp2-tags .t',['backgroundColor','color','borderTopLeftRadius']),[['rgb(245, 248, 255)','rgb(21, 23, 28)','999px'],['rgb(253, 236, 236)','rgb(180, 35, 24)','999px'],['rgb(245, 246, 248)','rgb(55, 65, 81)','999px']],'수주 = 옅은 파랑 · 실주 있음 = 빨강 · 종결 = 회색');
+  assert.deepEqual(await P2.locator('.bp2-tags .t').evaluateAll(l=>l.map(n=>n.title)).then(a=>[a[1],/^(공사 범위 밖 1 · 스토어 · 자재 문의 1|스토어 · 자재 문의 1 · 공사 범위 밖 1)$/.test(a[2])]),['가격 열세 1',true],'사유는 올려 두면 보인다');
+  assert.deepEqual(await P2.evaluate(n=>[...n.querySelectorAll('*')].concat(n).map(e=>getComputedStyle(e).backgroundColor).filter(c=>/^rgb\((\d+), (\d+), (\d+)\)$/.test(c)&&c.match(/\d+/g).slice(0,3).every(v=>Number(v)<90))),[],'검정 · 남색 바탕 없음');
+  /* 계약 목록 보기 = 이 화면의 이번 주 계약실적으로 */
+  await P2.locator('.bp2-go').click();await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>G.page),'brief');
+  /* 끊긴 단계: 견적 발송이 0이면 빨간 띠 + 그 칸 빨간 숫자 + '여기서 끊김' + [견적 대기 n건 보기] */
+  await page.evaluate(()=>{window.__keepDeals=B.deals;B.deals=B.deals.filter(d=>d.id!=='d1');paintBrief();});await page.waitForTimeout(200);
+  assert.equal(one(await P2.locator('.bp2-line').innerText()),'이번 주 한 줄 적합 문의 1건이 견적 발송으로 넘어가지 않았습니다 — 이번 주 견적 발송 0건 견적 대기 1건 보기 →');
+  assert.equal(await P2.locator('.bp2-bar').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(209, 74, 63)','끊김 = 빨간 띠');
+  assert.deepEqual((await P2.locator('.bp2-step').allInnerTexts()).map(one).slice(2),['견적 발송 0 건 전주와 같음 여기서 끊김 · 1건이 안 넘어옴 →','신규 계약 1 건 · 2억 전주와 같음']);
+  assert.deepEqual(await cssOf('.bp2-step.cut .v b, .bp2-step.cut .n',['color','fontWeight']).then(a=>a.map(x=>x[0])),['rgb(180, 35, 24)','rgb(180, 35, 24)']);assert.equal(await P2.locator('.bp2-step.cut').count(),1,'끊긴 첫 칸만');
+  await P2.locator('.bp2-go').click();await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>G.page),'inq','견적 대기 = 견적문의로');
+  /* 원장을 못 읽으면 계약 칸 · 수주 꼬리표 · 비율을 지어내지 않는다 */
+  await page.evaluate(()=>{B.deals=window.__keepDeals;window.__keepLedger=ContractSalesData.state;ContractSalesData.state=()=>({status:'loading',items:[]});goPage('brief');});await page.waitForTimeout(300);
+  assert.equal(one(await P2.locator('.bp2-line').innerText()),'이번 주 한 줄 문의 3건 → 견적 1건 → 계약 원장 확인 중 계약 목록 보기 →');
+  assert.equal(one(await P2.locator('.bp2-step').nth(3).innerText()),'신규 계약 — 원장 확인 중');assert.equal(one(await P2.locator('.bp2-tags .t').first().innerText()),'수주실적 원장 확인 중');
+  assert.match(one(await P2.locator('.bp2-rates>div').nth(1).innerText()),/^영업 메이드율 — 계약실적 원장을 읽은 뒤 계산합니다$/);
+  /* 끄면 예전 블록 */
+  await page.evaluate(()=>{ContractSalesData.state=window.__keepLedger;G.briefPerfV2Off=true;paintBrief();});await page.waitForTimeout(200);
+  assert.equal(await v.locator('.bp2').count(),0);assert.deepEqual(await v.locator('.bb-fn>b').allInnerTexts(),['3건','1건','1건','1건 · 2억']);assert.match(await v.locator('.tf-perf').innerText(),/^수주실적\s*1건 · 2억/);
+  await page.evaluate(()=>{G.briefPerfV2Off=false;paintBrief();});await page.waitForTimeout(200);assert.equal(await P2.count(),1);
   /* 2. 전주 문제 → 조치 → 결과: 지난주 등록 항목을 지금 자료로 다시 센다 */
   /* 2차 기능 5: 지난주 약속 → 이번 주 결과 요약(큰 숫자 · 막대 · 완료 / 지연 / 미완료 — 시안 그대로) — 아래 표와 같은 계산 */
   assert.match(await v.locator('.bb-card').nth(1).locator('.bb-prom').innerText(),/^2건\s*지난주에 ‘다음 주 반드시 끝낼 것’으로 등록\s*완료 1\s*지연 0\s*미완료 1$/);
@@ -70,7 +94,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(lee,/문의 1 · 견적 1\s*0건/);assert.match(hw,/1건 · 2억/);assert.match(hw,/\d+ → \d+/);
   /* 6. 다음 주 반드시 끝낼 것 */
   const N=v.locator('.bb-next');assert.ok(await N.count()>=2,'규칙 후보');
-  assert.match(await v.locator('.bb-card.bb-main').nth(1).innerText(),/^다음 주 반드시 끝낼 것[\s\S]*계약 예상 1건 · 3억/);
+  assert.match(await v.locator('.bb-card.bb-main').first().innerText(),/^다음 주 반드시 끝낼 것[\s\S]*계약 예상 1건 · 3억/);
   const ce=N.filter({hasText:'계약 예상 1건 진행 확인 · 3억'});assert.equal(await ce.count(),1);assert.deepEqual(await ce.locator('.due button').allInnerTexts(),['월요일','수요일','금요일']);assert.equal(await ce.locator('.due button[aria-pressed="true"]').innerText(),'금요일');assert.equal(await ce.locator('.own button[aria-pressed="true"]').innerText(),'황윤선');
   await ce.locator('.due button',{hasText:'수요일'}).click();await page.waitForTimeout(150);
   assert.deepEqual(await page.evaluate(()=>__saves),[],'고르는 것만으로 저장 없음');
