@@ -65,3 +65,31 @@ test('수주·준공 완료: 이미 아는 금액을 미리 채우고 출처를 
 });
 
 test('단계 건너뛰기와 되돌리기는 사유 없이 허용하고 대상 단계 필수값은 유지한다',()=>{assert.deepEqual(S.validate('first_contact','compete',input({competition_type:'경쟁견적'}),date),[]);assert.deepEqual(S.validate('compete','consulting',input({quote_request:'수정 견적',quote_due:date}),date),[]);assert.ok(S.validate('compete','consulting',input({}),date).some(x=>x.includes('견적 요청내용')));assert.ok(S.validate('compete','lost',input({}),date).some(x=>x.includes('실주 사유')));});
+
+const directContract={contract_amount:100000000,contract_status:'체결 완료',contract_date:date};
+test('PT·입찰 없이 계약 이동: 목적 단계만 검증하고 낙찰결과는 선택',()=>{
+ for(const from of ['first_contact','consulting','sent','rapport','silent','waiting','compete','imminent','bidding']){
+  assert.ok(S.choices(from).includes('contract'));
+  assert.deepEqual(S.validate(from,'contract',input(directContract),date),[]);
+  assert.deepEqual(S.validate(from,'contract',input({...directContract,bid_result:''}),date),[]);
+ }
+ for(const key of ['contract_amount','contract_status','contract_date']){
+  const fields={...directContract};delete fields[key];
+  assert.ok(S.validate('first_contact','contract',input(fields),date).length,key+' is still required');
+ }
+ for(const bid_result of ['낙찰','우선협상','수의계약','확인중'])assert.deepEqual(S.validate('sent','contract',input({...directContract,bid_result}),date),[]);
+ assert.ok(S.validate('sent','contract',input({...directContract,bid_result:'임의 결과'}),date).length);
+});
+for(const mobile of [false,true])test((mobile?'모바일':'PC')+' 직접 계약 이동은 실제 이동 한 건만 저장하고 PT·입찰을 완료 처리하지 않는다',()=>{
+ const h=harness(mobile,'first_contact');h.open('contract');
+ assert.equal(h.nodes['sf-bid_result'].value,'');
+ h.set('date',date);h.set('contract_amount','100,000,000');h.set('contract_status','체결 완료');h.set('contract_date',date);
+ h.c.StageTransitionUI.save();assert.equal(h.d.code,'contract');
+ const transitions=h.writes.filter(x=>x.op==='transition');assert.equal(transitions.length,1);
+ assert.equal(transitions[0].p.stage_context.from,'first_contact');assert.equal(transitions[0].p.stage_context.to,'contract');
+ assert.equal(transitions[0].p.stage_context.fields.bid_result,'');
+ assert.equal(h.d.stageHistory.length,1);assert.equal(h.d.stageHistory[0].structured.to,'contract');
+ assert.ok(!h.writes.some(x=>['stage_check','next_action_complete','pool'].includes(x.op)));
+ assert.equal(h.d.nextAction.status,'open');
+ for(const entry of h.d.stageHistory)assert.ok(!['compete','bidding'].includes(entry.structured.to));
+});
