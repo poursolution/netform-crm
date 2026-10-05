@@ -64,3 +64,27 @@
 @media(max-width:1000px){.xdv{width:96vw;height:96vh}.xdv-body{grid-template-columns:1fr;overflow:auto}.xdv-c1,.xdv-c3{border:0;overflow:visible}.xdv-c3{order:1}.xdv-c2{order:2;min-height:420px}.xdv-c1{order:3}}
 /* 창 크기 · 칸 폭 = 파이프라인 영업건 상세 창과 같게(2026-10-05 대표 "확장관리 창도 파이프라인처럼 동일하게 · 고객 자산도") — 확장관리 · 고객 자산 세부 창(.xdv) */
 @media(min-width:1001px){.xdv{width:min(1640px,calc(100vw - 32px));height:calc(100vh - 32px)}.xdv-body{grid-template-columns:minmax(260px,340px) minmax(380px,1fr) minmax(280px,380px)}}
+/* 확장관리 · 준공연도 필터 위치 + 목록 줄(2026-10-05 design_handoff_expansion_year) — 확장관리(#expansion-b)에만 */
+#expansion-b .xb-yrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 0}
+#expansion-b .xb-yl{display:flex;align-items:center;gap:6px;font-size:13.5px;flex:none}#expansion-b .xb-yl i{width:7px;height:7px;border-radius:50%;background:#15171c;display:block}
+#expansion-b .xb-ypills{display:flex;gap:5px;flex-wrap:wrap}
+#expansion-b .xb-ypills button{border:1px solid #d9dde4;background:#fff;color:#374151;font:inherit;font-size:12.5px;font-weight:700;border-radius:999px;padding:5px 12px;cursor:pointer;min-height:0;box-shadow:none;width:auto;line-height:1.3}
+#expansion-b .xb-ypills button span{opacity:.65;margin-left:2px;font-weight:700;color:inherit}
+#expansion-b .xb-ypills button[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}
+#expansion-b .xb-ypills button.zero{opacity:.45}
+#expansion-b .xb-ydiv{width:1px;height:18px;background:#e3e6ec;margin:0 6px;display:block;flex:none}
+#expansion-b .xb-rule{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#6b7280}#expansion-b .xb-rule+.xb-rule{margin-left:6px}
+#expansion-b .xb-rule select{font:inherit;font-size:12.5px;font-weight:700;border:1px solid #d9dde4;border-radius:7px;padding:4px 8px;background:#fff;color:#15171c}
+#expansion-b .psb-lnote{font-size:12px;color:#9ca3af}
+/* 본문 2단: 좁으면 진단이 위로(진단 최대 380px · 목록이 나머지) */
+#expansion-b .psb-diag{flex:1 1 380px;max-width:380px}#expansion-b .psb-main{flex:999 1 560px}
+/* 목록 줄 = 두 덩어리. 좁으면 오른쪽 덩어리가 통째로 다음 줄 · 글자는 한 줄 말줄임 */
+#expansion-b .psb-row.xb-row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:11px 16px 11px 13px;border-left-width:3px}
+#expansion-b .xb-l{flex:1 1 280px;min-width:0;display:flex;gap:14px;align-items:center}
+#expansion-b .xb-a{flex:1.3 1 0;min-width:0;display:flex;flex-direction:column;gap:2px}#expansion-b .xb-b{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:2px}
+#expansion-b .xb-a b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#expansion-b .xb-a span{font-size:11.5px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#expansion-b .xb-a em{font-style:normal;font-weight:700}
+#expansion-b .xb-b b{font-size:12.5px}#expansion-b .xb-b span{font-size:11.5px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#expansion-b .xb-r{flex:0 0 auto;margin-left:auto;display:flex;align-items:center;gap:12px}
+#expansion-b .xb-why{width:150px;font-size:12px;font-weight:700;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#expansion-b .xb-why.red{color:#b42318}
+#expansion-b .xb-d{width:64px;text-align:right;font-size:13px;white-space:nowrap}
+#expansion-b .xb-r button{width:86px;min-width:0;border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12.5px;font-weight:700;border-radius:7px;padding:7px 0;cursor:pointer;white-space:nowrap;min-height:0;box-shadow:none}
