@@ -6,7 +6,7 @@ test('과거 메모의 실제 발송 내용과 본문 날짜를 가져오며 가
  const unknown=S.evidence(deal(['2월 12일 제안서 발송완료']),{},'sent');assert.equal(unknown.fields.sent_date,undefined);assert.deepEqual(unknown.fields.materials,['제안서']);
 });
 test('실제 PT·입찰만 확인하고 예정·유도·미진행·타사 기록은 가져오지 않는다',()=>{
- for(const body of ['추후 프레젠테이션 유도 - 회장이 대표를 설득해서 PT진행유도','PT 진행 완료 예정','PT 미실시','PT 진행하지 않음','타사 PT 진행 완료','입찰 참여 완료 예정']){
+ for(const body of ['추후 프레젠테이션 유도 - 회장이 대표를 설득해서 PT진행유도','PT 진행 완료 예정','PT 미실시','PT 진행 완료 아님','PT 진행 완료 여부 확인','PT 진행 완료?','PT 진행하지 않음','타사 PT 진행 완료','입찰 참여 완료 예정']){
   const r=S.evidence(deal([body]),{},'compete');assert.deepEqual(r.fields,{});assert.deepEqual(r.pending,[]);assert.deepEqual(r.review,[]);
  }
  const r=S.evidence(deal(['2025년 2월 12일 PT 진행 완료']),{},'compete');assert.equal(r.fields.competition_type,'PT');assert.equal(r.fields.meeting_date,'2025-02-12');
