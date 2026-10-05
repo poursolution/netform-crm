@@ -35,7 +35,7 @@
  function load(force){
   const o=O();if(!o)return;
   if(o.has('crm_kpi_weekly_list_v1')&&(W.state==='idle'||(force&&W.state!=='loading'))){W.state='loading';o.rpc('crm_kpi_weekly_list_v1',{weeks:52}).then(r=>{W.rows=(r.rows||[]).filter(x=>/^kpi:\d$/.test(String(x.promise_key)));W.state='ready';repaint();}).catch(e=>{W.state=e&&e.unavailable?'off':'failed';repaint();});}
-  if(o.has('crm_kpi_action_list_v1')&&(W.actState==='idle'||(force&&W.actState!=='loading'))){W.actState='loading';o.rpc('crm_kpi_action_list_v1',{limit:200}).then(r=>{W.acts=(r.actions||[]).filter(x=>/^kpi:\d$/.test(String(x.promise_key)));W.actState='ready';repaint();}).catch(()=>{W.actState='failed';});}
+  if(o.has('crm_kpi_action_list_v1')&&(W.actState==='idle'||(force&&W.actState!=='loading'))){W.actState='loading';o.rpc('crm_kpi_action_list_v1',{limit:200}).then(r=>{W.acts=(r.actions||[]).filter(x=>/^(kpi:\d|stage:[\w:-]{1,60})$/.test(String(x.promise_key)));/* stage:… = 관리팀 KPI v7 '단계별 기준' 요청 */W.actState='ready';repaint();}).catch(()=>{W.actState='failed';});}
  }
  const repaint=()=>{if(root.G.page==='mgmt')try{root.paintMgmt();}catch(e){}};
  const weekRow=(i,offset)=>{const o=O();if(!o)return null;const wk=o.monday(offset);return W.rows.find(x=>ymd(x.week_start)===wk&&x.promise_key===KEY(i))||null;};
@@ -79,6 +79,8 @@
   /* 8 관리팀 조치 → 처리율: 최근 28일 요청, 대상이 지금 할 일 목록에 없으면 처리됨 */
   const now=Date.now(),recent=W.acts.filter(a=>a.promise_key!=='kpi:8'&&now-Date.parse(a.created_at||0)<28*864e5&&a.target_id);
   const live=new Set();M.forEach((m,i)=>m.todos.forEach(t=>live.add(KEY(i)+'|'+t.tk)));
+  /* 단계별 기준 요청(stage:단계:사유)도 같은 식으로: 그 건에 그 사유가 아직 붙어 있으면 미처리 */
+  items.forEach(it=>(it.rs||[]).forEach(k=>live.add('stage:'+it.stage+':'+k+'|'+todoKey('deal',it.row.key))));try{(root.KpiV7&&root.KpiV7.inquiryLive?root.KpiV7.inquiryLive():[]).forEach(k=>live.add(k));}catch(e){}
   const seen=new Set(),uniq=recent.filter(a=>{const k=a.promise_key+'|'+a.target_type+':'+a.target_id;if(seen.has(k))return false;seen.add(k);return true;});
   const typeKind=t=>t==='inquiry'?'inq':t==='deal'?'deal':'rep';
   const processed=uniq.filter(a=>!live.has(a.promise_key+'|'+todoKey(typeKind(a.target_type),a.target_id)));
@@ -90,7 +92,7 @@
   (root.G.kbDone||[]).forEach(k=>done.add(k));
   M.forEach((m,i)=>{m.i=i;m.def=DEF[i];m.key=KEY(i);m.todos.forEach(t=>{t.done=done.has(m.key+'|'+t.tk);});m.left=m.todos.filter(t=>!t.done).length;m.ok=m.v!=null&&(m.def[5]?m.v<=m.def[4]:m.v>=m.def[4]);
    m.last=rateOf(weekRow(i,-1));const tr=[-3,-2,-1].map(o=>rateOf(weekRow(i,o)));tr.push(m.v);m.trend=tr;});
-  return {S,M,items};
+  return {S,M,items,done};
  }
  /* ── 그리기 ── */
  function trendTxt(m){
@@ -158,7 +160,10 @@
    const week=root.repManagerWeekKey(0),old=root.repManagerComment(ownerName,week),actor=(root.ME&&root.ME.name)||'관리자',at=root.isoNow(),text=((old&&old.comment)?old.comment.trim()+'\n':'')+'· [KPI 요청] '+line;
    const local=root.repManagerLocalComments().filter(x=>!(x.rep_name===ownerName&&x.week_start===week)),row={rep_name:ownerName,week_start:week,comment:text,status:'open',created_by:actor,updated_at:at};
    local.push(row);root.Phase1.storage.setItem(root.REP_MANAGER_COMMENT_KEY||'netform_crm_rep_manager_comments_v1',JSON.stringify(local));
-   root.pushWrite('rep_manager_comment',{rep_name:ownerName,week_start:week,comment:text,status:'open',created_by:actor,updated_at:at});return true;
+   /* 서버 저장: 새 함수(crm_rep_manager_comment_save_v1 · 2026-10-05)가 있으면 그쪽으로 — 예전 전송 명령(rep_manager_comment)은 연결돼 있지 않아 이 PC 에만 남았다 */
+   let sent=false;try{const o=O();if(o&&o.has('crm_rep_manager_comment_save_v1')){o.rpc('crm_rep_manager_comment_save_v1',{rep_name:ownerName,week_start:week,comment:text,status:'open'}).catch(e=>{if(typeof root.toast==='function')root.toast(ownerName+' 관리자 한마디를 서버에 저장하지 못했습니다: '+String(e&&e.message||e),'warn');});sent=true;}}catch(e){}
+   try{root.pushWrite('rep_manager_comment',{rep_name:ownerName,week_start:week,comment:text,status:'open',created_by:actor,updated_at:at});sent=true;}catch(e){}
+   return sent;
   }catch(e){return false;}
  }
  function request(b){
@@ -213,5 +218,5 @@
   wrapped.__kb=true;root.paintMgmt=wrapped;
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- root.KpiB={enabled,compute,DEF,stageItems};
+ root.KpiB={enabled,compute,DEF,stageItems,/* 아래는 관리팀 KPI v7(kpi-v7.js)이 같은 계산 · 저장 경로를 쓰도록 */personVals,requestLine,saveWeek,autoSave,load,names,openTarget,weekly:()=>W,weekRowOf:weekRow};
 })(window);

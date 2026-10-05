@@ -24,7 +24,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      deal('d4','사유 없는 실주','이필선','lost',{outcome:'lost',closed_at:day(-3)}),
      deal('d5','미팅 후 견적 없는 현장','황윤선','consulting',{amt:2e8,created:day(-20),updated:day(-10),next_action:{id:'n5',text:'현장방문',type:'현장방문',due:day(-8),status:'open'},activities:[{id:'a5',type:'방문',note:'1차 미팅',at:at(-8)}]})],
     inquiries:[inq(1,'',2),inq(2,'이필선',3),inq(3,'이필선',4),inq(4,'이필선',5)],activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.kb=null;G.kbDone=null;G.kbNmSent=null;
+   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.kb=null;G.kbDone=null;G.kbNmSent=null;G.kpiV7Off=true;/* 이 검사는 예전 KPI 화면(kpi-b)을 본다 — 새 화면은 verify-kpi-v7-browser.cjs */
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    const mem={};Phase1.storage.getItem=k=>k in mem?mem[k]:null;Phase1.storage.setItem=(k,v)=>{mem[k]=String(v);};
    window.__writes=[];window.pushWrite=(op,p)=>{__writes.push([op,p]);return 'req';};

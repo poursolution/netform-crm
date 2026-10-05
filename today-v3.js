@@ -168,6 +168,23 @@
   }catch(e){return null;}
  }
  /* ── 그리기 ── */
+ /* 관리자 한마디(관리팀 KPI 의 요청 · 영업사원 관리의 코칭): 받은 사람의 오늘 업무 맨 위에 이번 주 것만 — 처리 표시(done)가 되면 안 보인다. 모바일 '오늘'과 같은 자료
+    (2026-10-05 관리팀 KPI v7 "요청 버튼은 담당자 오늘 업무로 연결"). 영업관리 화면에는 없다 — 카드 · 묶음은 그대로. 끄기 G.todayWordOff */
+ /* 관리자 한마디 읽기: 서버 함수(crm_rep_manager_comment_list_v1)가 있으면 최근 2주 것을 읽어 B.rep_manager_comments 에 둔다(5분마다 다시) — 운영의 기본 읽기는 이 자료를 내려 주지 않는다 */
+ const WORD={at:0,busy:false};
+ function loadWord(){
+  const o=root.OpsStore;if(!o||WORD.busy||Date.now()-WORD.at<3e5)return;try{if(!o.has('crm_rep_manager_comment_list_v1'))return;}catch(e){return;}
+  WORD.busy=true;o.rpc('crm_rep_manager_comment_list_v1',{weeks:2}).then(r=>{WORD.at=Date.now();if(!r||!Array.isArray(r.comments)||!root.B)return;const before=JSON.stringify(root.B.rep_manager_comments||[]);root.B.rep_manager_comments=r.comments;
+   if(before!==JSON.stringify(r.comments)&&(root.G.page==='today'||root.G.page==='mgmt'))try{root.paint();}catch(e){}}).catch(()=>{WORD.at=Date.now();}).finally(()=>{WORD.busy=false;});
+ }
+ function wordHtml(role,me){
+  if(root.G.todayWordOff||role==='mgr'||!me||typeof root.repManagerComment!=='function')return '';
+  loadWord();
+  let c=null;try{c=root.repManagerComment(me,root.repManagerWeekKey(0));}catch(e){}
+  if(!c||c.status==='done'||!String(c.comment||'').trim())return '';
+  const lines=String(c.comment).split('\n').map(x=>x.replace(/^·\s*/,'').trim()).filter(Boolean),show=lines.slice(-3),at=String(c.updated_at||c.updatedAt||c.created_at||'').slice(5,10).replace('-','/');
+  return '<div class="tv3-word" title="'+attr(lines.join('\n'))+'"><b>관리자 한마디</b><small>'+h([c.created_by||c.createdBy||'관리자',at].filter(Boolean).join(' · '))+'</small><div>'+show.map(l=>'<span>'+h(l)+'</span>').join('')+(lines.length>3?'<em>외 '+(lines.length-3)+'줄</em>':'')+'</div></div>';
+ }
  function html(X,rows,legacy){
   const S=st(),W=TT(),V=build(X,rows,legacy),role=V.role,team=V.team,me=V.me;
   const all=V.groups.filter(g=>!g.aux).flatMap(g=>g.items),total=all.length,gN=V.groups.filter(g=>g.items.length).length,backN=V.back.length;
@@ -225,7 +242,7 @@
    +'<section><header><b>'+dueT+'</b></header>'+(du.length?du.map(x=>'<div class="tv3-due"><span class="'+(x.hot?'hot':'')+'">'+h(x.dd)+'</span><p><b>'+h(siteShort(x.site))+'</b> <small>'+h(x.what)+'</small></p></div>').join(''):'<p class="none">7일 안 마감(입찰 · 결정 일정)이 없습니다</p>')+'</section>'
    +'<section><header><b>'+weekT+'</b></header>'+wk.map(w=>{const red=w.bad&&w.pct<50;return '<div class="tv3-wk"><div><span>'+h(w.label)+'</span><b'+(red?' class="r"':'')+'>'+h(w.v)+'</b></div><u><i style="width:'+Math.max(1,Math.round(w.pct))+'%;background:'+(red?'#d14a3f':'#15171c')+'"></i></u><small>'+h(w.goal)+'</small></div>';}).join('')+'</section></aside>';
   const badge=document.getElementById('todayBadge');if(badge){badge.textContent=total||'';badge.style.display=total?'':'none';}
-  return '<div class="tv3" data-role="'+role+'" data-total="'+total+'" data-back="'+backN+'">'+hero+strip+'<div class="tv3-body"><div class="tv3-main">'+groupsHtml+empty+backHtml+'</div>'+side+'</div></div>';
+  return '<div class="tv3" data-role="'+role+'" data-total="'+total+'" data-back="'+backN+'">'+wordHtml(role,me)+hero+strip+'<div class="tv3-body"><div class="tv3-main">'+groupsHtml+empty+backHtml+'</div>'+side+'</div></div>';
  }
  /* ── 동작: 전부 기존 경로 ── */
  function dial(digits){if(!digits){toast('전화번호가 없습니다 — 상세에서 연락처를 등록해 주세요','warn');return;}const a=document.createElement('a');a.href='tel:'+digits;a.style.display='none';document.body.append(a);a.click();a.remove();}
@@ -280,5 +297,5 @@
  document.addEventListener('click',onClick,true);
  document.addEventListener('input',e=>{const t=e.target;if(t&&t.matches&&t.matches('#today-v2 .tv3 [data-t3in="em"]'))st().em=t.value;},true);
  document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('#today-v2 .tv3 [data-t3="open"]')){e.preventDefault();openKey(e.target.dataset.key);}});
- root.TodayV3={enabled,html,build,isBack,STG,current,execQueue:()=>EXQ.map(x=>x.i.key)};
+ root.TodayV3={loadWord,enabled,html,build,isBack,STG,current,execQueue:()=>EXQ.map(x=>x.i.key)};
 })(window);
