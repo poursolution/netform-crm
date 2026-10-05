@@ -30,7 +30,6 @@
   const def=definitions[to],errors=[];if(!def||!choices(from).includes(to))return ['현재 단계에서 허용되지 않는 전환입니다.'];
   const v=input.fields||{};
   if(!validDate(input.transition_date)||input.transition_date>today)errors.push('전환일은 오늘까지의 유효한 날짜로 입력해 주세요.');
-  if(isException(from,to)&&String(input.skip_reason||'').trim().length<5)errors.push('단계 건너뛰기·되돌림 사유를 5자 이상 입력해 주세요.');
   def.fields.forEach(x=>{const value=v[x.key],empty=value==null||value===''||Array.isArray(value)&&!value.length;
    if(x.required&&(empty||typeof value==='string'&&!value.trim()))errors.push(x.label+'을(를) 입력해 주세요.');
    if(empty)return;
