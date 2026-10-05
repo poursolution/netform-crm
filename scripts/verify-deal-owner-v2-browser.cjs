@@ -18,7 +18,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    const day=n=>new Date(Date.now()+n*864e5).toLocaleDateString('en-CA'),at=n=>new Date(Date.now()+n*864e5).toISOString();
    let seq=0;const mk=(site,who,brand,code)=>{seq++;const x=String(seq).padStart(2,'0');return {id:x.repeat(4)+'-1111-4111-8111-'+x.repeat(6),site,assignee:who,brand:brand||'POUR솔루션',created:day(-60),code:code||'sent',stage_code:code||'sent',grp:'영업·관리',amt:1e8,manager_name:'김영수',manager_mobile:'01012345678',contacts:[],activities:[],next_action:{id:'n'+seq,text:'후속 통화',due:day(3),status:'open'}};};
    B={deals:[Object.assign(mk('[경기 평택] 오뚜기 포승공장','이필선'),{activities:[{id:'a1',type:'전화',note:'소장 통화',at:at(-20),actor:'이필선',meaningful:true}]}),
-     mk('[경기 평택] 평택 A','정정훈','석민이앤씨'),mk('[경기 평택] 평택 B','정정훈','석민이앤씨','consult'),
+     mk('[경기 평택] 평택 A','정정훈','석민이앤씨'),mk('[경기 평택] 평택 B','정정훈','석민이앤씨','consulting'),
      mk('[서울] 서울 C','김성민'),mk('[서울] 서울 D','한준엽','석민이앤씨')],inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],messageLogs:[],message_logs:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
