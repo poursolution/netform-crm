@@ -50,7 +50,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    ],inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.psb=null;G.prb=null;G.ps3=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
-   window.__open=null;window.__act=null;drwDeal=s=>{window.__open=JSON.parse(s).id;};window.DetailActions=Object.assign(window.DetailActions||{},{open:k=>{window.__act=k;}});
+   window.__open=null;window.__act=null;window.__drwReal=drwDeal;window.__daReal=window.DetailActions&&window.DetailActions.open;drwDeal=s=>{window.__open=JSON.parse(s).id;};window.DetailActions=Object.assign(window.DetailActions||{},{open:k=>{window.__act=k;}});
    window.CRMRelease=Object.assign(window.CRMRelease||{},{has:()=>true,noteMissing(){}});
    PipelineWorkspace.open('consulting');
   });
@@ -137,6 +137,16 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.setViewportSize({width:900,height:1000});await page.waitForTimeout(300);
   assert.equal(await V.evaluate(v=>v.querySelector('.ps3-diag').getBoundingClientRect().bottom<=v.querySelector('.ps3-main').getBoundingClientRect().top+1),true,'좁으면 진단이 위로');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'가로 넘침 없음');
   await page.setViewportSize({width:1600,height:1000});
+  /* 목록 버튼은 새 상세 창의 자리로 간다(2026-10-05 대표 "미팅 잡기 누르면 최근에 만들어놨던 걸로 연결" · "이전 버전은 내 눈에 안 띄게"):
+     [미팅 잡기] → 상세 창 '지금 할 일' 카드가 펼쳐진 채로 · 예전 '다음 할 일 설정' 창(#detailAction · .dp-next) 없음 · 머리줄 [⋯] 메뉴 없음 */
+  await page.evaluate(()=>{drwDeal=window.__drwReal;if(window.__daReal)window.DetailActions.open=window.__daReal;window.__act=null;PipelineWorkspace.open('consulting');});await page.waitForTimeout(300);
+  await page.locator('#pipeline-stage-v3 .ps3-row[data-key$="c-none"] button').click();await page.waitForSelector('#detailView.dv3 .dv3-form',{timeout:5000});
+  assert.deepEqual(await page.evaluate(()=>{const v=document.getElementById('detailView');return [!!v.querySelector('.nc-call.dv3-fold'),v.querySelectorAll('.dv3-form').length,document.querySelectorAll('#detailAction,.dp-next').length,v.querySelectorAll('.da-more,.da-toolbar,.da-tools').length,/다음 할 일 설정/.test(v.innerText)];}),[true,1,0,0,false],'미팅 잡기 = 지금 할 일 카드');
+  assert.match(await page.locator('#detailView .dv3-form').innerText(),/어떻게 연락했나요/);
+  if(process.env.SHOT)await page.screenshot({path:process.env.SHOT});
+  /* [견적 요청] → 이 단계 필수 정보 · [단계 판단] 류 → 단계 바꾸기 띠. 둘 다 예전 입력 창을 띄우지 않는다 */
+  assert.deepEqual(await page.evaluate(()=>[DealDetailV3.openFrom('stagefields'),document.querySelectorAll('#detailAction').length,DealDetailV3.openFrom('stage'),!!document.querySelector('#detailView .dv3-move'),DealDetailV3.openFrom('support')]),[true,0,true,true,false]);
+  await page.evaluate(()=>{try{closeDetail();}catch(e){}});await page.waitForTimeout(200);
   /* 수주 · 실주는 그대로 · 끄면 이전 화면 */
   for(const k of ['won','lost']){await page.evaluate(k=>PipelineWorkspace.open(k),k);await page.waitForTimeout(300);assert.equal(await page.locator('#pipeline-stage-v3').count(),0,k+': v3 아님');assert.equal(await page.locator('#pipeline-stage-b').count(),1,k+': 기존 화면 그대로');}
   await page.evaluate(()=>{G.pipeStageV3Off=true;PipelineWorkspace.open('consulting');});await page.waitForTimeout(300);

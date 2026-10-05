@@ -167,6 +167,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 연락 없이 다음 할 일만 정하기: 그 자리 칩 */
   await page.locator('#nowCard [data-dv3="nextonly"]').click();await page.waitForTimeout(150);
   assert.match(await page.locator('#nowCard .dv3-nextonly').innerText(),/다시 연락\s*내일\s*3일 후\s*7일 후/);assert.equal(await page.locator('#ddvPanel').count(),0);
+  /* [직접 정하기] = 카드 안에서 날짜 고르기 — 예전 '다음 할 일 설정' 창(#ddvPanel · #detailAction)을 띄우지 않는다(2026-10-05 대표 "이전 버전은 내 눈에 안 띄게") */
+  await page.locator('#nowCard [data-dv3="nextmore"]').click();await page.waitForTimeout(150);
+  assert.deepEqual(await page.evaluate(()=>[document.querySelectorAll('#nowCard [data-dv3-nextdate]').length,document.querySelectorAll('#ddvPanel,#detailAction').length,document.querySelectorAll('#nowCard [data-dv3="nextmore"]').length]),[1,0,0]);
+  await page.locator('#nowCard [data-dv3="nextcancel"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#nowCard .dv3-nextonly').count(),0);
+  await page.locator('#nowCard [data-dv3="nextonly"]').click();await page.waitForTimeout(150);
   await page.locator('#nowCard [data-dv3="nextpick"]',{hasText:'7일 후'}).click();await page.waitForTimeout(500);
   assert.deepEqual(await page.evaluate(()=>__ops.slice(3).map(o=>[o.op,o.payload.text,o.payload.due_at])),[['next_action','다시 연락',await day(7)]]);assert.equal(await page.locator('#nowCard .dv3-nextonly').count(),0);
   assert.deepEqual(await page.evaluate(()=>__writes.map(w=>w[0]).filter(o=>o!=='opportunity_touch')),[],'여기까지 다른 저장 없음');

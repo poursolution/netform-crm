@@ -131,9 +131,7 @@
   const stops=[...(journey?.querySelectorAll('.dcc-stop')||[])];
   if(top&&stops.length)top.append(el('div','idv-steps ddv-steps',stops.map(s=>{const now=s.classList.contains('now'),done=s.classList.contains('done');return '<div class="'+(now?'cur':done?'done':'')+'"><i></i><span>'+(now?'지금 · ':'')+h(s.textContent.trim())+'</span></div>';}).join('')));
   const how=journey?.querySelector('.dcc-journey-do b')?.textContent||'',pace=(journey?.querySelector('.dcc-journey-do small')?.textContent||'').split(' · ').slice(0,2).join(' · ');
-  const tools=view.querySelector('.da-tools');
   const advisory=center.querySelector('.technical-advisory');
-  if(tools&&!tools.querySelector('.ddv-tool')){const b1=btn('전체 이력','dact da-action ddv-tool',()=>root.DetailActions.open('history'));tools.prepend(b1);{const b2=btn('기술자문 계약','dact da-action ddv-tool',()=>{const a=view.querySelector('.dw-center>.technical-advisory');if(!a){toast('이 현장에 연결된 기술자문 계약 정보가 없습니다','warn');return;}const on=view.classList.toggle('ddv-adv-on');if(on){a.querySelector('.adv-fold-toggle[aria-expanded="false"]')?.click();a.scrollIntoView({block:'nearest'});}});b1.after(b2);}}
   /* ① 왼쪽 */
   left.querySelector(':scope>h2')?.setAttribute('hidden','');
   left.querySelectorAll('.dw-site,.dw-voice').forEach(n=>n.hidden=true);
