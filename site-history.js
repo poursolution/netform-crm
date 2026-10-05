@@ -35,7 +35,8 @@
   return ((R.B&&R.B.deals)||[]).filter(x=>String(x.id)!==String(d.id)&&(sid?String(x.cleanup_site_id||x.site_id||x.siteId||'')===sid:!!ns&&R.normSite(x.site||'')===ns)).slice(0,40);
  }
  function resultOf(x){
-  try{if(R.isWon(x))return '수주';if(R.isOpen(x))return R.dealStage(x)==='waiting'?'보류':'진행';}catch(e){}
+  /* 과거 이관 · 분류 전(예전 리드 단계 값)은 진행도 실주도 아니다 — PipelineScope */
+  try{if(R.isWon(x))return '수주';if(R.isLegacyDeal&&R.isLegacyDeal(x))return '과거 이관';if(R.isOpen(x))return R.dealStage(x)==='waiting'?'보류':'진행';}catch(e){}
   return /badfit/.test(String(x.code||x.stage_code||''))||String(x.outcome||'')==='badfit'?'배드핏':'실주';
  }
  function fieldsOf(x){
@@ -55,7 +56,7 @@
    hint=[why,f.competitor?f.competitor+' 낙찰':'',f.close_detail].filter(Boolean).join(' · ');}
   else{date=x.created||x.created_at||'';label='문의';amount=Number(x.amount??x.amt??0);
    let na=null;try{na=R.actionObj(x,R.itemPatch?R.itemPatch(x,'deal'):{});}catch(e){}
-   let sl='';try{sl=R.stageLabel(R.dealStage(x));}catch(e){}
+   let sl='';try{sl=tag==='과거 이관'&&R.PipelineScope?'예전 단계 '+R.PipelineScope.oldStage(x):R.stageLabel(R.dealStage(x));}catch(e){}
    hint=[sl,na&&na.text?'다음: '+na.text:(isCur?'다음 할 일 없음':'')].filter(Boolean).join(' · ');}
   const when=ym(date)?ym(date)+' '+label:'';
   return {key:'d:'+x.id,dealId:String(x.id),entryId:'',manual:false,cur:!!isCur,work,tag,when,amount:amount>0?amount:null,who:rep(x.assignee)||'미배정',hint,lost:'',sort:String(date||'').slice(0,7)};

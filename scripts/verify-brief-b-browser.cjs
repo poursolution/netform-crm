@@ -56,7 +56,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const rates=(await P2.locator('.bp2-rates>div').allInnerTexts()).map(one);
   assert.deepEqual(rates.slice(0,3),['문의 적합률 33.3% ▼66.7%p 적합 ÷ 문의 · 문의 품질','영업 메이드율 50.0% ▼50.0%p 수주 ÷ (수주 + 실주) · Bad Fit 제외','문의 → 계약 33.3% ▼66.7%p 이번 주 활동 비율'],'메이드율 = 수주 1 ÷ (수주 1 + 실주 1) — 종결 2건은 분모에 없음');
   assert.match(rates[3],/^확정 전환율 \((\d+)월 문의\) — \1월에 접수된 문의가 없습니다$/);
-  assert.deepEqual((await P2.locator('.bp2-tags .t').allInnerTexts()).map(one),['수주 1건 · 2억 · 직접 1건 2억 · 협약 · 기술자문 0 · 타사 이관 0','파이프라인 실주 1건 · 메이드율에 포함','견적문의 종결 2건 · Bad Fit 1 (공사 범위 밖 1) · 메이드율 제외']);
+  assert.deepEqual((await P2.locator('.bp2-tags .t').allInnerTexts()).map(one),['수주 1건 · 2억 · 계약실적 1건 2억 · 협약 · 기술자문 0 · 타사 이관 0','파이프라인 실주 1건 · 메이드율에 포함','견적문의 종결 2건 · Bad Fit 1 (공사 범위 밖 1) · 메이드율 제외']);
   assert.deepEqual(await cssOf('.bp2-tags .t',['backgroundColor','color','borderTopLeftRadius']),[['rgb(245, 248, 255)','rgb(21, 23, 28)','999px'],['rgb(253, 236, 236)','rgb(180, 35, 24)','999px'],['rgb(245, 246, 248)','rgb(55, 65, 81)','999px']],'수주 = 옅은 파랑 · 실주 있음 = 빨강 · 종결 = 회색');
   assert.deepEqual(await P2.locator('.bp2-tags .t').evaluateAll(l=>l.map(n=>n.title)).then(a=>[a[1],/^(공사 범위 밖 1 · 스토어 · 자재 문의 1|스토어 · 자재 문의 1 · 공사 범위 밖 1)$/.test(a[2])]),['가격 열세 1',true],'사유는 올려 두면 보인다');
   assert.deepEqual(await P2.evaluate(n=>[...n.querySelectorAll('*')].concat(n).map(e=>getComputedStyle(e).backgroundColor).filter(c=>/^rgb\((\d+), (\d+), (\d+)\)$/.test(c)&&c.match(/\d+/g).slice(0,3).every(v=>Number(v)<90))),[],'검정 · 남색 바탕 없음');
@@ -76,7 +76,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(one(await P2.locator('.bp2-rates>div').nth(1).innerText()),/^영업 메이드율 — 계약실적 원장을 읽은 뒤 계산합니다$/);
   /* 끄면 예전 블록 */
   await page.evaluate(()=>{ContractSalesData.state=window.__keepLedger;G.briefPerfV2Off=true;paintBrief();});await page.waitForTimeout(200);
-  assert.equal(await v.locator('.bp2').count(),0);assert.deepEqual(await v.locator('.bb-fn>b').allInnerTexts(),['3건','1건','1건','1건 · 2억']);assert.match(await v.locator('.tf-perf').innerText(),/^수주실적\s*1건 · 2억/);
+  assert.equal(await v.locator('.bp2').count(),0);assert.deepEqual(await v.locator('.bb-fn>b').allInnerTexts(),['3건','1건','1건','1건 · 2억']);assert.match(await v.locator('.tf-perf').innerText(),/^수주실적 낙찰금액 · VAT 별도\s*1건 · 2억\s*├ 계약실적 \(계약 체결일\)/,'수주실적 = 낙찰금액(VAT 별도) · 그 안의 계약실적(계약 체결일)을 이름 붙여 보여 준다');
   await page.evaluate(()=>{G.briefPerfV2Off=false;paintBrief();});await page.waitForTimeout(200);assert.equal(await P2.count(),1);
   /* 2. 전주 문제 → 조치 → 결과: 지난주 등록 항목을 지금 자료로 다시 센다 */
   /* 2차 기능 5: 지난주 약속 → 이번 주 결과 요약(큰 숫자 · 막대 · 완료 / 지연 / 미완료 — 시안 그대로) — 아래 표와 같은 계산 */

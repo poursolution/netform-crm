@@ -107,6 +107,14 @@
   return AD.some(x=>{if(root.NewDealV2&&root.NewDealV2.isOutbound(x))return false;/* 새 영업 등록 v2(2026-10-05): 유입 구분이 있는 영업건(아웃바운드 · 소개 · 재영업)은 인바운드 전환과 따로 센다 */const same=sid?String(x.cleanup_site_id||x.site_id||x.siteId||'')===sid:(!!ns&&root.normSite(x.site||'')===ns);if(!same)return false;
    const s=signedAt(x.id);if(s)return s>=qk;if(!L.ready&&root.isWon(x)){let w='';try{w=K(root.wonDate(x));}catch(e){}return !!w&&w>=qk;}return false;});
  }
+ /* 전체 현황의 '진행' = 모든 화면과 같은 진행 범위(PipelineScope). 사람 · 브랜드 · 공종으로 좁혔을 때는 그 범위의 진행 건만.
+    과거 이관 · 분류 전은 진행 · 정체 · 실주 어디에도 넣지 않고 건수만 따로 적는다(2026-10-05 정합성 ② ③) */
+ function scopeLine(x){
+  const R=root,PSC=R.PipelineScope,n=x.OPEN.length;let narrowed=true;try{narrowed=!!R.targetNameFilter()||R.G.brand!=='전체'||(R.G.workFilter&&R.G.workFilter!=='전체')||!!R.G.q;}catch(e){}
+  if(!PSC||!PSC.on()||narrowed)return '진행 '+n+'건';
+  const sp=PSC.split(),all=sp.active.length,lg=sp.legacy.length;
+  return '진행 '+all+'건'+(all!==n?' (성과 대상 담당 '+n+'건)':'')+(lg?' · '+PSC.LABEL+' '+lg+'건 따로':'');
+ }
  /* ── 잔디 발송(서버 함수 crm-jandi) ── */
  const JMSG={JANDI_NOT_CONFIGURED:'잔디 웹훅 주소가 서버에 등록되지 않았습니다',JANDI_DISABLED:'잔디 발송이 꺼져 있습니다',FORBIDDEN:'관리자만 보낼 수 있습니다',JANDI_UPSTREAM:'잔디가 응답하지 않았습니다 — 잠시 뒤 다시 시도해 주세요',NOT_DEPLOYED:'잔디 발송 서버 함수(crm-jandi)가 아직 설치되지 않았습니다'};
  async function jandiSend(kind,period_key,text,auto,extra){
@@ -221,7 +229,7 @@
   out.push(line,'다음 주 반드시 끝낼 것');
   if(regd.length)regd.forEach(p=>out.push('· '+p.t+' — '+(p.owner||'담당 미정')+' · '+(p.due||'기한 미정')));else out.push('· (회의에서 등록하면 담당 · 기한과 함께 들어갑니다)');
   if(x.ce.length)out.push('계약 예상 '+x.ce.length+'건 · '+amt(x.ceAmt));
-  out.push(line,'전체: 진행 '+x.OPEN.length+(con?' · 수주 '+x.yCon.count+' · 승률 '+pctText(madeOf(x.yCon.count,x.yLoss)):'')+' · 180일+ 방치 '+x.stale180);
+  out.push(line,'전체: '+scopeLine(x)+(con?' · 수주 '+x.yCon.count+' · 승률 '+pctText(madeOf(x.yCon.count,x.yLoss)):'')+' · 180일+ 방치 '+x.stale180);
   return out.join('\n');
  }
  /* ── 그리기 ── */
@@ -249,7 +257,7 @@
   const s1Old='<section class="bb-card bb-main"><div class="bb-cap"><span>이번 주 성과</span><small>견적문의가 계약까지 얼마나 이어졌나</small></div>'
    +'<div class="bb-funnel">'+fn.map(u=>'<div class="bb-fn'+u[4]+'"><span>'+h(u[0])+'</span><b>'+h(u[1])+'</b><em class="'+u[3]+'">'+h(u[2])+'</em></div>').join('')+'</div>'
    +'<div class="bb-rates">'+rates.map(t=>'<div><span>'+h(t[0])+'</span><p><b>'+h(t[1])+'</b><em class="'+(/^▼/.test(t[2])?'down':'up')+'">'+h(t[2])+'</em></p><small>'+h(t[3])+'</small></div>').join('')+'</div>'
-   +'<div class="tf-perf"><div><b>수주실적</b><b>'+(con?cN+'건 · '+h(amt(cA)):'원장 확인 중')+'</b></div><div class="in"><span>├ 직접 수주</span><span>'+(con?directCon.count+'건 · '+h(amt(directCon.net)):'원장 확인 중')+'</span></div><div class="in"><span>├ 협약시공사 수주 · 기술자문</span><span>'+pw.count+'건 · '+h(amt(pw.amount))+'</span></div>'+pw.list.map(i=>'<div class="who">'+h((i.owner||'담당 미기록')+' · '+i.site+' · '+i.company+' 낙찰 '+amt(i.amount))+'</div>').join('')+'<div class="in"><span>└ 타사 이관 수주</span><span>'+tf.count+'건 · '+h(amt(tf.amount))+'</span></div>'+tf.list.map(i=>'<div class="who">'+h(i.owner+' · '+i.site+' · '+amt(i.amount))+'</div>').join('')+'<div class="mu ln"><span>파이프라인 실주</span><span>'+(x.loss.length+tfL)+'건</span></div><div class="mu"><span>'+closedWord()+'</span><span>'+h(closedText(x.bad).replace(/^(종결|배드핏) /,''))+' · 메이드율 제외</span></div><div class="ln"><span>영업 메이드율</span><b>'+h(pctText(made))+' <small>('+directCon.count+' + '+pw.count+' + '+tf.count+') ÷ ('+directCon.count+' + '+pw.count+' + '+tf.count+' + '+(x.loss.length+tfL)+')</small></b></div></div>'
+   +'<div class="tf-perf"><div><b>수주실적 <small>낙찰금액 · VAT 별도</small></b><b>'+(con?cN+'건 · '+h(amt(cA)):'원장 확인 중')+'</b></div><div class="in"><span>├ 계약실적 (계약 체결일)</span><span>'+(con?directCon.count+'건 · '+h(amt(directCon.net)):'원장 확인 중')+'</span></div><div class="in"><span>├ 협약시공사 수주 · 기술자문</span><span>'+pw.count+'건 · '+h(amt(pw.amount))+'</span></div>'+pw.list.map(i=>'<div class="who">'+h((i.owner||'담당 미기록')+' · '+i.site+' · '+i.company+' 낙찰 '+amt(i.amount))+'</div>').join('')+'<div class="in"><span>└ 타사 이관 수주</span><span>'+tf.count+'건 · '+h(amt(tf.amount))+'</span></div>'+tf.list.map(i=>'<div class="who">'+h(i.owner+' · '+i.site+' · '+amt(i.amount))+'</div>').join('')+'<div class="mu ln"><span>파이프라인 실주</span><span>'+(x.loss.length+tfL)+'건</span></div><div class="mu"><span>'+closedWord()+'</span><span>'+h(closedText(x.bad).replace(/^(종결|배드핏) /,''))+' · 메이드율 제외</span></div><div class="ln"><span>영업 메이드율</span><b>'+h(pctText(made))+' <small>('+directCon.count+' + '+pw.count+' + '+tf.count+') ÷ ('+directCon.count+' + '+pw.count+' + '+tf.count+' + '+(x.loss.length+tfL)+')</small></b></div></div>'
    +'<div class="bb-two"><div class="bb-bad"><p><b>견적문의 '+h(closedText(x.bad))+'</b><span>영업 실패 아님 · 메이드율에서 제외</span></p><span>'+h(x.bad.length?tallyText(tally(x.bad,badfitReason)):'이번 주 '+(flowOn()?'':'배드핏 ')+'종결 없음')+'</span></div>'
    +'<div class="bb-loss"><p><b>파이프라인 실주 '+x.loss.length+'건</b><span>영업기회 상실 · 메이드율에 포함</span></p><span>'+h(x.loss.length?tallyText(lossT):'이번 주 실주 없음')+(chg?' · <b>관리소장 변경 이력 '+chg+'건</b>':'')+'</span></div></div></section>';
    /* 1-b. 이번 주 성과 v2(2026-10-05 design_handoff_brief_v2): 흰 카드 하나 — 이번 주 한 줄(끊긴 단계 자동 감지) · 흐름 4칸 · 비율 한 줄 · 꼬리표 한 줄.
@@ -274,7 +282,7 @@
     /* 꼬리표: 수주(직접 / 협약 · 기술자문 / 타사 이관) · 파이프라인 실주(메이드율 포함) · 견적문의 종결(메이드율 제외) — 자세한 내역은 올려 두면 보인다 */
     const part=(n,a)=>n?n+'건 '+amt(a):'0';
     const who=pw.list.map(i=>(i.owner||'담당 미기록')+' · '+i.site+' · '+i.company+' 낙찰 '+amt(i.amount)).concat(tf.list.map(i=>i.owner+' · '+i.site+' · '+amt(i.amount)+' (타사 이관)')).join('\n');
-    const winTag=!con?'<span class="t none">수주실적 원장 확인 중</span>':cN>0?'<span class="t win"'+(who?' title="'+attr(who)+'"':'')+'><b>수주 '+cN+'건 · '+h(amt(cA))+'</b> <i>· 직접 '+h(part(directCon.count,directCon.net))+' · 협약 · 기술자문 '+h(part(pw.count,pw.amount))+' · 타사 이관 '+h(part(tf.count,tf.amount))+'</i></span>':'<span class="t none">이번 주 수주 없음</span>';
+    const winTag=!con?'<span class="t none">수주실적 원장 확인 중</span>':cN>0?'<span class="t win"'+(who?' title="'+attr(who)+'"':'')+'><b>수주 '+cN+'건 · '+h(amt(cA))+'</b> <i>· 계약실적 '+h(part(directCon.count,directCon.net))+' · 협약 · 기술자문 '+h(part(pw.count,pw.amount))+' · 타사 이관 '+h(part(tf.count,tf.amount))+'</i></span>':'<span class="t none">이번 주 수주 없음</span>';
     const lostN=x.loss.length+tfL,lostWhy=[lossT.length?tallyText(lossT):'',chg?'관리소장 변경 이력 '+chg+'건':''].filter(Boolean).join(' · ');
     const bf=x.bad.filter(isBadFit),bfWhy=bf.length?' ('+tallyText(tally(bf,badfitReason))+')':'',allWhy=x.bad.length?tallyText(tally(x.bad,badfitReason)):'';
     /* 닫힌 문의 수 문구는 한 함수(closedText)에서 — 대시보드 · 리포트와 같은 말 */
@@ -313,7 +321,7 @@
      return '<div class="bb-next'+(r?' done':'')+'"><span class="no">'+(i+1)+'</span><div class="tx"><b>'+h(c.t)+'</b><span>'+h(c.why)+'</span></div><div class="ctl"><div class="own">'+(c.owners.length?c.owners.map(o=>'<button type="button" data-bb="own" data-k="'+c.kind+'" data-v="'+attr(o)+'" aria-pressed="'+(own===o)+'"'+(r?' disabled':'')+'>'+h(o)+'</button>').join(''):'<small>담당 미정</small>')+'</div><div class="due">'+DUES.map(o=>'<button type="button" data-bb="due" data-k="'+c.kind+'" data-v="'+o+'" aria-pressed="'+(due===o)+'"'+(r?' disabled':'')+'>'+o+'</button>').join('')+'</div><button type="button" class="reg" data-bb="reg" data-k="'+c.kind+'"'+(admin?'':' disabled title="관리자만 등록할 수 있습니다"')+'>'+(r?'등록됨 ✓':'등록')+'</button></div></div>';}).join('')
     :'<p class="bb-empty">규칙에 걸린 항목이 없습니다 — 입찰 임박 · 견적 지연 · 미응대 · 장기 미접촉 · 다음 행동 미등록 · 계약 예상이 생기면 여기에 뜹니다.</p>')+'</section>';
   /* 7. 전체 현황(참고) */
-  const s7='<section class="bb-ref"><div><b>전체 현황 (참고)</b><span>진행 '+x.OPEN.length+'건'+(con?' · 올해 수주 '+x.yCon.count+'건 · 승률 '+pctText(madeOf(x.yCon.count,x.yLoss)):'')+' · 180일+ 방치 '+x.stale180+'건</span></div><div class="row">'+x.people.map(p=>'<span><b>'+h(p.n)+'</b> 진행 '+p.o1+' · 방치 '+p.stale180+(con?' · 수주 '+contractsIn(x.L,w.a.slice(0,4)+'-01-01',w.b,p.n).count:'')+'</span>').join('')+'</div></section>';
+  const s7='<section class="bb-ref"><div><b>전체 현황 (참고)</b><span>'+h(scopeLine(x))+(con?' · 올해 수주 '+x.yCon.count+'건 · 승률 '+pctText(madeOf(x.yCon.count,x.yLoss)):'')+' · 180일+ 방치 '+x.stale180+'건</span></div><div class="row">'+x.people.map(p=>'<span><b>'+h(p.n)+'</b> 진행 '+p.o1+' · 방치 '+p.stale180+(con?' · 수주 '+contractsIn(x.L,w.a.slice(0,4)+'-01-01',w.b,p.n).count:'')+'</span>').join('')+'</div></section>';
   /* 오른쪽: 잔디 미리보기 */
   const J=jandi(x,fixes,regd),store=canStore(),jd=(SN.map[w.a]&&SN.map[w.a].payload&&SN.map[w.a].payload.jandi)||{};
   /* 화면 머리의 발송 안내는 실제 설정값 그대로(2026-10-05 정합성 ⑤) — 꺼져 있는데 '잔디로 발송됩니다'라고 적지 않는다 */

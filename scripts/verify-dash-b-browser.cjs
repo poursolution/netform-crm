@@ -48,7 +48,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const kpi=await d.locator('.db-kpi').evaluateAll(a=>a.map(n=>[n.querySelector('span').textContent,n.querySelector('b').textContent,n.querySelector('small').textContent]));
   assert.deepEqual(kpi.map(k=>k[0]),['이번 달 계약 (10월)','올해 수주실적','진행 중 파이프라인','견적문의','조치 필요','주간 활동']);
   assert.deepEqual(kpi[0].slice(1),['아직 없음','10월 7일째 · 9월 3억'],'실적 없는 달 = 아직 없음 + 직전 달');assert.equal(await d.locator('.db-kpi').first().locator('b').evaluate(n=>getComputedStyle(n).color),'rgb(156, 163, 175)','아직 없음은 회색');
-  assert.deepEqual(kpi[1].slice(1),['8억','직접 수주 8억(2건) · 협약 · 기술자문 없음 · 타사 이관 없음'],'수주실적 = 직접 + 협약 · 기술자문 + 타사 이관, 화면에서는 나눠 적는다');assert.match(kpi[2][2],/^진행 7건$/);assert.deepEqual(kpi[3].slice(1),['4건','적합 3 · 종결 1 · Bad Fit 1']);
+  assert.deepEqual(kpi[1].slice(1),['8억','낙찰금액 · VAT 별도 = 계약실적(계약 체결일) 8억(2건) · 협약 · 기술자문 없음 · 타사 이관 없음'],'수주실적(낙찰금액 · VAT 별도) = 계약실적(계약 체결일) + 협약 · 기술자문 + 타사 이관, 화면에서는 이름 붙여 나눠 적는다');assert.match(kpi[2][2],/^진행 7건 · 수주 · 실주 제외$/,'진행 건수 옆에 기준 한 줄(진행 범위는 PipelineScope 하나)');assert.deepEqual(kpi[3].slice(1),['4건','적합 3 · 종결 1 · Bad Fit 1']);
   const core=await page.evaluate(()=>{const C=DashB.core();return {risk:C.risk.length,od:C.cnt('overdue'),miss:C.cnt('missing'),made:C.made,active:C.active.length};});
   assert.equal(core.od,5);assert.equal(core.made,40,'메이드율 = 수주 2 ÷ (수주 2 + 실주 3) · 배드핏 제외');
   assert.deepEqual(kpi[4].slice(1),[core.risk+'건','기한 지남 5 · 다음 할 일 없음 '+core.miss]);

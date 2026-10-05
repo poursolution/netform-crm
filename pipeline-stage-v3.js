@@ -84,17 +84,31 @@
  }
  const issueOf=(C,x)=>x.tab===0?C.reasons[0][1]:C.tabs[x.tab][1];
  const bcOf=r=>BRAND[r.item.brand]||'';
+ /* 줄 · 카드에 항상 보이는 것(2026-10-05 정합성 ③ ④ — 마우스를 올려야 보이는 정보를 두지 않는다):
+    다음 행동 · 기한 / 공종 · 사업연도 · 영업건 번호(같은 단지의 여러 건을 구분) / 같은 단지에 진행 건이 여럿이면 '같은 공사인지 확인' */
+ const noOf=r=>'#'+String(r.item.id||r.key||'').replace(/[^0-9a-z]/gi,'').slice(-6);
+ const workOf=r=>{let w='';try{w=root.dealWorkSummary(r.item)||'';}catch(e){}return !w||/미분류|미기록|미입력/.test(w)?'공종 미분류':w;};
+ const bizYearOf=r=>{try{const y=String(root.constructionYearOf?root.constructionYearOf(r.item):'');return /^\d{4}$/.test(y)?y:'';}catch(e){return '';}};
+ const mdOf=v=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(v||''));return m?(+m[2])+'.'+(+m[3]):'';};
+ const nextOf=r=>{const t=r.next&&r.next.text?String(r.next.text).trim():'',due=mdOf(r.due);return t?t+' · '+(due||'날짜 없음'):'없음';};
+ const metaOf=r=>[workOf(r),bizYearOf(r),noOf(r)].filter(Boolean).join(' · ');
+ /* 같은 단지의 진행 건 수(모든 단계 · 진행 범위 안에서) */
+ let DUP=new Map();
+ const siteKeyOf=r=>{const d=r.item,id=d.cleanup_site_id||d.site_id||d.siteId;if(id)return 'id:'+id;let k='';try{k=root.normSite?root.normSite(r.site):String(r.site||'');}catch(e){}return k&&k.length>=2?'n:'+k:'';};
+ function dupMap(){const m=new Map();try{root.PipelineWorkspace.rows({unscoped:true}).forEach(r=>{if(['won','lost','expansion','legacy'].includes(r.group))return;const k=siteKeyOf(r);if(k)m.set(k,(m.get(k)||0)+1);});}catch(e){}return m;}
+ const dupOf=r=>{const k=siteKeyOf(r),n=k?DUP.get(k)||0:0;return n>1?'같은 단지 진행 '+n+'건 · 같은 공사인지 확인':'';};
  function rowHtml(C,x){
   const r=x.row,bc=bcOf(r),a=C.act[x.tab];
-  return '<div class="ps3-row" role="row" tabindex="0" data-ps3="open" data-key="'+attr(r.key)+'" data-tab="'+x.tab+'" style="border-left-color:'+(bc||'#e3e6ec')+'"><div class="ps3-l"><div class="ps3-a"><b title="'+attr(r.site)+'">'+h(r.site)+(root.advisoryBadge?root.advisoryBadge(r.item):'')+'</b><span><em style="color:'+(bc||'#9ca3af')+'">'+h(r.item.brand||'브랜드 미지정')+'</em> · '+h(r.owner||'미배정')+' · '+h(money(r.amount))+'</span></div>'
-   +'<div class="ps3-b"><b'+(x.tab===0?' class="r"':'')+'>'+h(issueOf(C,x))+'</b><span>'+h(x.sub)+'</span></div></div>'
+  return '<div class="ps3-row" role="row" tabindex="0" data-ps3="open" data-key="'+attr(r.key)+'" data-tab="'+x.tab+'" style="border-left-color:'+(bc||'#e3e6ec')+'"><div class="ps3-l"><div class="ps3-a"><b title="'+attr(r.site)+'">'+h(r.site)+(root.advisoryBadge?root.advisoryBadge(r.item):'')+'</b><span><em style="color:'+(bc||'#9ca3af')+'">'+h(r.item.brand||'브랜드 미지정')+'</em> · '+h(r.owner||'미배정')+' · '+h(money(r.amount))+'</span><small class="ps3-meta">'+h(metaOf(r))+'</small>'+(dupOf(r)?'<small class="ps3-dup">'+h(dupOf(r))+'</small>':'')+'</div>'
+   +'<div class="ps3-b"><b'+(x.tab===0?' class="r"':'')+'>'+h(issueOf(C,x))+'</b><span>'+h(x.sub)+'</span><small class="ps3-nx'+(r.next&&r.next.text?'':' none')+'"><i>다음 행동</i> '+h(nextOf(r))+'</small></div></div>'
    +'<div class="ps3-r"><div class="ps3-d"><b'+(x.stall>C.goal?' class="r"':'')+'>'+x.stall+'일</b><span>체류</span></div><button type="button" data-ps3="act" data-key="'+attr(r.key)+'" data-v="'+attr(a[1])+'">'+h(a[0])+'</button></div></div>';
  }
  function cardHtml(C,x){
   const r=x.row,bc=bcOf(r),a=C.act[x.tab];
-  return '<div class="ps3-card" role="button" tabindex="0" data-ps3="open" data-key="'+attr(r.key)+'" style="border-left-color:'+(bc||'#e3e6ec')+'"><div class="t"><b style="color:'+(bc||'#9ca3af')+'">'+h(r.item.brand||'브랜드 미지정')+'</b><i></i><b class="d'+(x.stall>C.goal?' r':'')+'">'+x.stall+'일</b></div><strong>'+h(r.site)+'</strong><span>'+h([r.owner||'미배정',money(r.amount),x.sub].filter(Boolean).join(' · '))+'</span><button type="button" data-ps3="act" data-key="'+attr(r.key)+'" data-v="'+attr(a[1])+'">'+h(a[0])+'</button></div>';
+  return '<div class="ps3-card" role="button" tabindex="0" data-ps3="open" data-key="'+attr(r.key)+'" style="border-left-color:'+(bc||'#e3e6ec')+'"><div class="t"><b style="color:'+(bc||'#9ca3af')+'">'+h(r.item.brand||'브랜드 미지정')+'</b><i></i><span class="no">'+h(noOf(r))+'</span><b class="d'+(x.stall>C.goal?' r':'')+'">'+x.stall+'일</b></div><strong>'+h(r.site)+'</strong><span>'+h([workOf(r)+(bizYearOf(r)?' · '+bizYearOf(r):''),r.owner||'미배정',money(r.amount)].filter(Boolean).join(' · '))+'</span><span class="iss'+(x.tab===0?' r':'')+'">'+h((x.tab===0?'확인 필요 · ':'')+[issueOf(C,x),x.sub&&!String(issueOf(C,x)).includes(x.sub)?x.sub:''].filter(Boolean).join(' · '))+'</span><span class="nx'+(r.next&&r.next.text?'':' none')+'"><i>다음 행동</i> '+h(nextOf(r))+'</span>'+(dupOf(r)?'<span class="dup">'+h(dupOf(r))+'</span>':'')+'<button type="button" data-ps3="act" data-key="'+attr(r.key)+'" data-v="'+attr(a[1])+'">'+h(a[0])+'</button></div>';
  }
  function html(key,list){
+  DUP=dupMap();
   const S=st(),{C,items}=model(key,list),LP=root.ListPager,total=items.length;
   const cnt=t=>items.filter(x=>x.tab===t).length,n=[cnt(0),cnt(1),cnt(2)];
   const rsN=k=>items.filter(x=>x.rs.includes(k)).length;

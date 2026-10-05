@@ -6,28 +6,37 @@ const POPUP_STAGES=['consulting','sent','relationship','competition','constructi
 function state(){const id=String(root.ME?.id||root.ME?.name||'');if(id!==actor){actor=id;root.G.pipelineStage='all';root.G.pipelineQueue={status:'all',page:1};}return root.G.pipelineQueue||(root.G.pipelineQueue={status:'all',page:1});}
 function button(label,action,value,cls){return '<button type="button" class="'+(cls||'')+'" data-ps-action="'+action+'" data-value="'+attr(value||'')+'">'+h(label)+'</button>';}
 function canonicalCode(d){const q=(root.Phase1?.queue?.list?.()||[]).filter(q=>String(q.object_id)===String(d.id)&&q.operation==='transition').at(-1);return q&&q.status!=='done'?q.payload?.from||root.dealStage(d):root.dealStage(d);}
-function rows(filters){
+/* 진행 범위(PipelineScope): 기본은 진행 건만. opt.legacy = 'only'(과거 이관 · 분류 전만) · 'all'(둘 다) */
+const PS=()=>root.PipelineScope&&root.PipelineScope.on()?root.PipelineScope:null;
+function rows(filters,opt){
+ const L=(opt&&opt.legacy)||'';
  state();const f=filters||{brand:root.G.brand,owner:root.SalesScope.state().owner,work:root.G.workFilter,search:root.G.q};const admin=root.todayIsAdmin(),me=root.repN(root.ME?.name),authorized=(root.B?.deals||[]).filter(d=>admin||root.repN(d.assignee)===me),ids=new Set(),result=[];
- function matches(d,owner,site){return (f.unscoped||root.SalesScope.matches(owner,d))&&(f.unscoped||root.SalesFilterState.matchesBrand(d.brand))&&(!f.brand||f.brand==='전체'||d.brand===f.brand)&&(!f.owner||f.owner==='전체'||owner===f.owner)&&(!f.work||f.work==='전체'||root.workMatches(d,f.work))&&(!f.search||[site,owner,root.dealWorkSummary(d)].join(' ').toLowerCase().includes(f.search.toLowerCase()));}
- for(const d of authorized){const id=String(d.id||root.dealKey(d));if(ids.has(id))continue;ids.add(id);const owner=root.repN(d.assignee),site=d.site||'현장명 미입력',code=canonicalCode(d),outcome=root.outcomeOf(d),group=S.group(code,outcome);if(!group||group==='expansion'||!matches(d,owner,site))continue;
+ const sc=root.SalesScope.state(),wide=sc.type==='all'&&sc.organization==='all'&&sc.owner==='전체'&&sc.assignment==='all';
+ /* 담당 범위를 좁히지 않았을 때(전체 · 전체 조직 · 전체 담당): 영업 명단에는 없어도 직원 명단에 있는 사람(대표 등)의 건은 보인다 — 오늘 업무 · 대시보드와 같은 건수가 되게.
+    직원 명단에 아예 없는 담당 이름의 건은 지금처럼 빠진다. 과거 이관 목록은 담당과 상관없이 전부 보인다(분류가 필요한 자료라서) */
+ function matches(d,owner,site,legacy){return (f.unscoped||root.SalesScope.matches(owner,d)||(wide&&PS()&&(legacy||PS().ownerKnown(owner))))&&(f.unscoped||root.SalesFilterState.matchesBrand(d.brand))&&(!f.brand||f.brand==='전체'||d.brand===f.brand)&&(!f.owner||f.owner==='전체'||owner===f.owner)&&(!f.work||f.work==='전체'||root.workMatches(d,f.work))&&(!f.search||[site,owner,root.dealWorkSummary(d)].join(' ').toLowerCase().includes(f.search.toLowerCase()));}
+ for(const d of authorized){const id=String(d.id||root.dealKey(d));if(ids.has(id))continue;ids.add(id);const owner=root.repN(d.assignee),site=d.site||'현장명 미입력',code=canonicalCode(d),outcome=root.outcomeOf(d),legacy=!!(PS()&&PS().isLegacy(d)),group=legacy?'legacy':S.group(code,outcome);if(L!=='all'&&legacy!==(L==='only'))continue;if(!group||group==='expansion'||!matches(d,owner,site,legacy))continue;
  const next=root.briefNext(d),meta=root.relationshipMeta(d),fields=(d.stage_contexts||root.itemPatch(d,'deal').stage_contexts||{})[code]?.fields||{},due=next?.due||next?.due_at||fields.contact_date||fields.followup_date||'',days=due?root.daysTo(due):null,active=!['won','lost'].includes(group),flags=[];
  if(active){if(!next?.text||!due)flags.push('missing');if(days!==null&&days<0)flags.push('overdue');if(meta.days===null||meta.days>=7)flags.push('contact');if(root.issueSet(d).includes('stale'))flags.push('stale');}
- result.push({key:id,item:d,owner,site,code,group,next,due,days,fields,flags,stall:typeof root.stageAge==='function'?root.stageAge(d):null,contactDays:meta.days,last:meta.meaningfulAt||fields.last_contact||'',amount:group==='won'?(root.hasWonAmt(d)?root.wonAmt(d):null):(d.amt==null||d.amt===''?null:root.oppAmt(d)),date:fields.bid_deadline||fields.meeting_date||fields.expected_contract||fields.start_date||fields.contract_date||'',reason:d.lost_reason||fields.close_reason||'미기록'});
+ result.push({key:id,item:d,legacy,owner,site,code,group,next,due,days,fields,flags,stall:typeof root.stageAge==='function'?root.stageAge(d):null,contactDays:meta.days,last:meta.meaningfulAt||fields.last_contact||'',amount:group==='won'?(root.hasWonAmt(d)?root.wonAmt(d):null):(d.amt==null||d.amt===''?null:root.oppAmt(d)),date:fields.bid_deadline||fields.meeting_date||fields.expected_contract||fields.start_date||fields.contract_date||'',reason:d.lost_reason||fields.close_reason||'미기록'});
  }
+ if(L==='only')return result;
  const eligible=new Map(authorized.map(d=>[String(d.id),d]));for(const e of root.expansionRecords?.()||[]){const d=eligible.get(String(e.sourceOpportunityId));if(!d||root.ExpansionFlow.converted(e)||['종료','보류'].includes(e.status)||!matches(d,e.owner,e.site))continue;result.push({key:'exp:'+e.id,item:d,expansion:e,owner:e.owner,site:e.site,group:'expansion',code:'expansion',next:{text:e.needNote||e.candidates.join(' · ')},due:e.nextContactAt,days:e.nextContactAt?root.daysTo(e.nextContactAt):null,last:e.lastContactAt,amount:null,fields:{},flags:[],date:e.completionDate});}
  return result;
 }
-function open(key,filters){if(document.getElementById('detailAction')&&root.PipelineSplit?.active()){root.alert('입력 중인 작업창을 저장하거나 닫은 뒤 단계를 이동해 주세요.');return;}root.PipelineSplit?.release();state();if(filters)root.SalesScope.change('owner',filters.owner||'전체');root.G.pipelineWorkspace=true;root.G.pipelineStage=S.definition(key)?key:'all';root.G.pipelineQueue={status:'all',page:1};expanded=true;if(filters){root.G.q='';root.G.workFilter='전체';root.G.brand=filters.brand||'전체';root.G.rep=filters.owner||'전체';root.G.pipelinePeriod=filters.year+'년 '+(filters.month?filters.month+'월':'연간');}root.G.pipeView='kb';if(root.StageSpecs.get(key)?.specialWorkspace==='expansion'){root.G.pipelineWorkspace=false;if(filters)root.G.expansionOwner=filters.owner||'전체';root.goPage('expansion');sidebar();root.syncExpansionNow?.(false);return;}root.goPage('pipe');}
+function open(key,filters){if(document.getElementById('detailAction')&&root.PipelineSplit?.active()){root.alert('입력 중인 작업창을 저장하거나 닫은 뒤 단계를 이동해 주세요.');return;}root.PipelineSplit?.release();state();if(filters)root.SalesScope.change('owner',filters.owner||'전체');root.G.pipelineWorkspace=true;root.G.pipelineStage=S.definition(key)||(key==='legacy'&&PS()&&root.PipelineLegacy)?key:'all';root.G.pipelineQueue={status:'all',page:1};expanded=true;if(filters){root.G.q='';root.G.workFilter='전체';root.G.brand=filters.brand||'전체';root.G.rep=filters.owner||'전체';root.G.pipelinePeriod=filters.year+'년 '+(filters.month?filters.month+'월':'연간');}root.G.pipeView='kb';if(root.StageSpecs.get(key)?.specialWorkspace==='expansion'){root.G.pipelineWorkspace=false;if(filters)root.G.expansionOwner=filters.owner||'전체';root.goPage('expansion');sidebar();root.syncExpansionNow?.(false);return;}root.goPage('pipe');}
 function sidebar(){
  const parent=document.querySelector('.menu [data-p="pipe"]');if(!parent||!root.B)return;state();if(!booted){booted=true;seen=new Set((root.Phase1?.queue?.list?.()||[]).filter(q=>q.status==='done').map(q=>q.request_id));parent.setAttribute('role','button');parent.tabIndex=0;parent.onclick=()=>{if(root.G.page==='pipe'&&root.G.pipelineWorkspace&&root.G.pipelineStage==='all'){expanded=!expanded;sidebar();}else open('all');};parent.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();parent.click();}};}
  let nav=document.getElementById('pipeline-stage-menu');if(!nav){nav=document.createElement('nav');nav.id='pipeline-stage-menu';nav.setAttribute('aria-label','파이프라인 단계');parent.after(nav);}
  const data=rows(),key=root.G.page==='pipe'&&root.G.pipelineWorkspace?root.G.pipelineStage:['relationship','expansion'].includes(root.G.page)?root.G.page:null;
  /* 메뉴 숫자는 진행 중인 영업건만(2026-09-30 대표: 수주·실주는 결과라 파이프라인 숫자에서 뺀다) — 단계별 숫자는 그대로 */
  const live=data.filter(liveRow).length;
- let badge=parent.querySelector('.badge');if(!badge){badge=document.createElement('span');badge.className='badge';parent.append(badge);}badge.textContent=live;badge.title='기준: 진행 중 영업건 · 수주·실주·확장 제외 · 모든 연도';
+ let badge=parent.querySelector('.badge');if(!badge){badge=document.createElement('span');badge.className='badge';parent.append(badge);}badge.textContent=live;badge.title=PS()?PS().basis()+' · 모든 연도':'기준: 진행 중 영업건 · 수주·실주·확장 제외 · 모든 연도';
  if(key&&key!=='all')expanded=true;
  parent.setAttribute('aria-expanded',String(expanded));parent.setAttribute('aria-controls',nav.id);nav.hidden=!expanded;
- nav.innerHTML=S.definitions.filter(d=>d.key!=='expansion').map(d=>'<button type="button" class="plv-mi'+(key===d.key?' selected':'')+'" data-ps-action="stage" data-value="'+attr(d.key)+'"><i style="background:'+attr(root.PipelineListV2?.COLOR[d.key]||d.color)+'"></i><span>'+h(root.PipelineListV2?.NAME[d.key]||d.label)+'</span> <em>'+data.filter(r=>r.group===d.key).length+'</em></button>').join('');parent.classList.toggle('plv-parent-on',!!key&&key!=='all');nav.querySelector('.selected')?.setAttribute('aria-current','page');nav.onclick=click;
+ nav.innerHTML=S.definitions.filter(d=>d.key!=='expansion').map(d=>'<button type="button" class="plv-mi'+(key===d.key?' selected':'')+'" data-ps-action="stage" data-value="'+attr(d.key)+'"><i style="background:'+attr(root.PipelineListV2?.COLOR[d.key]||d.color)+'"></i><span>'+h(root.PipelineListV2?.NAME[d.key]||d.label)+'</span> <em>'+data.filter(r=>r.group===d.key).length+'</em></button>').join('')
+  /* 과거 이관 · 분류 전: 진행 숫자에 넣지 않고 따로 — 있을 때만 맨 아래에 */
+  +(()=>{const n=legacyCount();return n?'<button type="button" class="plv-mi plv-legacy'+(key==='legacy'?' selected':'')+'" data-ps-action="stage" data-value="legacy" title="'+attr(PS().LEGACY_BASIS)+'"><i style="background:#c4c8d0"></i><span>'+h(PS().LABEL)+'</span> <em>'+n+'</em></button>':'';})();parent.classList.toggle('plv-parent-on',!!key&&key!=='all');nav.querySelector('.selected')?.setAttribute('aria-current','page');nav.onclick=click;
  /* 확장관리는 파이프라인에서 분리해 사이드바 단독 메뉴로 노출한다. 관계관리 단독 메뉴만 숨긴다. */
  document.querySelectorAll('.menu>.mi[data-p="relationship"]').forEach(n=>n.hidden=true);
  const expansionMenu=document.querySelector('.menu>.mi[data-p="expansion"]');
@@ -50,8 +59,9 @@ function cardBadge(r){
  return ['mut','진행중'];
 }
 /* 공용 '진행' 판정 — 메뉴 숫자·상단 띠·단계 지표가 모두 이것만 쓴다 */
-function liveRow(r){return !['won','lost','expansion'].includes(r.group);}
-function liveBasis(){const y=kanbanYear();return '기준: 진행 중 영업건 · 수주·실주·확장 제외 · '+(y==='전체'?'모든 연도':'공사예정년도 '+y);}
+function liveRow(r){return !['won','lost','expansion','legacy'].includes(r.group);}
+function liveBasis(){const y=kanbanYear();return (PS()?PS().basis():'기준: 진행 중 영업건 · 수주·실주·확장 제외')+' · '+(y==='전체'?'모든 연도':'공사예정년도 '+y);}
+const legacyCount=()=>PS()?rows(undefined,{legacy:'only'}).length:0;
 /* ── 전체 파이프라인 칸반 v2 (2026-10-01 디자인 핸드오프 'Pipeline Kanban v2') ──
    7열이 한 화면에(실주는 96px 좁은 열), 카드는 현장명 + 한 줄(상태점·담당자·금액), 열마다 12장 + '더보기'(단계 페이지로).
    카드를 끌어 다른 열에 놓으면 그 단계의 기존 전환창(stage-transition, 한 일·결과·다음 할 일·사유 필수)이 열린다 —
@@ -104,7 +114,7 @@ function pkHead(all,source){
  const year='<select aria-label="공사예정 연도" data-ps-filter="pipeRepYear">'+years.map(v=>'<option value="'+attr(v)+'"'+(String(v)===y?' selected':'')+'>'+h(v==='전체'?'전체 연도':v==='미입력'?'연도 미입력':v+'년')+'</option>').join('')+'</select>';
  const brands=['전체',...new Set(source.map(r=>r.item.brand).filter(Boolean))],owners=['전체',...new Set(source.map(r=>r.owner).filter(Boolean))].sort((a,b)=>a==='전체'?-1:b==='전체'?1:a.localeCompare(b,'ko'));
  const brand=root.G.brand||'전체',owner=root.SalesScope.state().owner||'전체',work=root.G.workFilter||'전체';
- return '<header class="pk-head"><h2>파이프라인</h2><div class="pk-sum" title="'+attr(basis)+'"><span>진행 <b>'+live.length+'건</b></span><span>금액 <b>'+moneyShort(amount)+'</b></span></div><div class="pk-spacer"></div>'
+ return '<header class="pk-head"><h2>파이프라인</h2><div class="pk-sum" title="'+attr(basis)+'"><span>진행 <b>'+live.length+'건</b></span><span>금액 <b>'+moneyShort(amount)+'</b></span></div>'+(()=>{const n=legacyCount();return n?'<button type="button" class="pk-legacy" data-ps-action="stage" data-value="legacy" title="'+attr(PS().LEGACY_BASIS)+'">'+h(PS().LABEL)+' <b>'+n+'건</b></button>':'';})()+'<div class="pk-spacer"></div>'
   +'<div class="pk-seg">'+seg(year,y!=='전체')+seg(sel('브랜드','data-pk-filter="brand"',brands,brand,'전체 브랜드'),brand!=='전체')+seg(sel('담당자','data-pk-filter="owner"',owners,owner,'전체 담당자'),owner!=='전체')+seg('<select aria-label="단계 공종" data-ps-filter="workFilter">'+root.workFilterOptions(root.G.workFilter).replace(/>전체</,'>전체 공종<')+'</select>',work!=='전체')+'</div>'
   +'<input class="pk-search" aria-label="단계 현장 검색" data-ps-filter="q" value="'+attr(root.G.q||'')+'" placeholder="현장 검색"></header>';
 }
@@ -126,6 +136,8 @@ function management(r){const label=['won','lost'].includes(r.group)?'종료':r.d
 function render(){
  root.G.pipelineWorkspace=true;/* 칸반 단일 뷰 — 구형 칸반·스플릿·포캐스트 전환은 사용하지 않는다 */
  const host=document.getElementById('pg-pipe');if(!host)return false;state();let el=document.getElementById('pipeline-stage-root');if(!el){el=document.createElement('div');el.id='pipeline-stage-root';host.append(el);}host.classList.add('ps-active');root.PipelineSplit?.beforePaint();
+ /* 과거 이관 · 분류 전 화면(pipeline-legacy.js) */
+ if(root.G.pipelineStage==='legacy'){if(PS()&&root.PipelineLegacy){el.classList.remove('pk-mode');document.getElementById('ptitle').textContent=PS().LABEL;document.getElementById('psub').textContent='예전 시스템에서 옮겨 온 자료 중 현재 CRM 단계가 정해지지 않은 건';el.innerHTML=root.PipelineLegacy.html(rows(undefined,{legacy:'only'}));el.onclick=click;el.onchange=null;el.onkeydown=null;sidebar();return true;}root.G.pipelineStage='all';}
  const key=root.G.pipelineStage||'all',def=S.definition(key),v2=!!(def&&root.PipelineListV2?.enabled(key));if(v2)root.PipelineListV2.adoptLegacyFilters();const all=rows(),list=def?all.filter(r=>r.group===key):all,f=state(),filtered=list.filter(r=>f.status==='all'||r.flags.includes(f.status));const source=rows({unscoped:true}),brands=['전체',...new Set(source.map(r=>r.item.brand).filter(Boolean))],owners=['전체',...new Set(source.map(r=>r.owner).filter(Boolean))];
  const work='<label>공종<select aria-label="단계 공종" data-ps-filter="workFilter">'+root.workFilterOptions(root.G.workFilter)+'</select></label>';
  let body='';if(v2){body='';}else if(def){body=root.StageWorkspaces?.[key]?'<div class="sw-workspace" data-workspace="'+key+'">'+root.StageWorkspaces.render(key,list)+(list.length?'':'<p class="ps-empty">현재 조건의 현장이 없습니다.</p>')+'</div>':'<p class="ps-empty">단계별 화면을 불러오지 못했습니다. 새로고침해 주세요.</p>';}else{body=kanban(all.filter(kanbanYearMatch));}

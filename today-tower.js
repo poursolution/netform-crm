@@ -150,7 +150,7 @@
   const r1=pct(fast,wq.length),r2=pct(withNext,D.length);
   return [
    {label:'첫 응답 완료율 ('+FIRST_HOURS()+'시간 안)',v:r1===null?'이번 주 문의 없음':r1+'%',pct:r1||0,bad:r1!==null&&r1<90,goal:'기준 90% · 이번 주 '+wq.length+'건 중 '+fast+'건'},
-   {label:'다음 행동 등록률',v:r2===null?'진행 건 없음':r2+'%',pct:r2||0,bad:r2!==null&&r2<95,goal:'기준 95% 이상 · 진행 '+D.length+'건 중 '+withNext+'건'},
+   {label:'다음 행동 등록률',v:r2===null?'진행 건 없음':r2+'%',pct:r2||0,bad:r2!==null&&r2<95,goal:'기준 95% 이상 · 진행 '+D.length+'건 중 '+withNext+'건'+(root.PipelineScope&&root.PipelineScope.on()?' · 과거 이관 제외':'')},
    {label:(team?'팀 ':'')+'이번 주 연락',v:contacted+' / '+goal+'곳',pct:Math.min(100,goal?contacted*100/goal:0),bad:contacted<goal*0.3,goal:'목표 '+goal+'곳(설정값) · 월요일부터 활동이 기록된 현장 수'}];
  }
  /* ── 그리기 ── */
