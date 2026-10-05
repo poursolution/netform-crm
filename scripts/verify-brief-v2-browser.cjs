@@ -14,13 +14,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const page=await ctx.newPage(),errs=[];page.on('pageerror',e=>errs.push(e.message));
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.BriefV2&&window.RepsV2&&window.PipelineDiagnosis&&typeof paintBrief==='function');
   await page.evaluate(()=>{
-   const day=n=>new Date(Date.now()+n*864e5).toLocaleDateString('en-CA'),at=n=>new Date(Date.now()+n*864e5).toISOString();
+   const day=n=>new Date(Date.now()+n*864e5).toLocaleDateString('en-CA'),at=n=>new Date(Date.now()+n*864e5).toISOString();const lastWeekWed=(()=>{const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7)-5);return d.toLocaleDateString('en-CA');})();
    const deal=(id,site,owner,code,extra)=>Object.assign({id,site,assignee:owner,brand:'POUR솔루션',created:day(-90),updated:day(-60),code,stage_code:code,grp:'영업·관리',amt:1e8},extra||{});
    const inq=(n,owner,days)=>({id:'0000000'+n+'-0000-4000-8000-00000000000'+n,site:'신규 문의 '+n,status:owner?'배정완료':'접수',at:at(-days),created_at:at(-days),brand:'POUR솔루션',assignee:owner||'',assigned_to:owner||'',assigned_at:owner?at(-days+0.2):null});
    B={deals:[
      deal('d1','기한 지난 큰 현장','이필선','consulting',{amt:9e8,next_action:{id:'n1',text:'견적 확인',due:day(-12),status:'open'}}),
      deal('d2','할 일 없는 현장','이필선','sent',{amt:3e8}),
-     deal('d3','정상 현장','황윤선','compete',{amt:5e8,created:day(-10),updated:day(-1),next_action:{id:'n3',text:'PT 준비',due:day(1),status:'open'},activities:[{id:'a3',type:'전화',note:'통화',at:at(-1)}]})],
+     deal('d3','정상 현장','황윤선','compete',{amt:5e8,created:lastWeekWed/* 요일과 상관없이 지난주(월~일) 안 — day(-10) 은 월 · 화 · 수요일에 지지난주가 된다 */,updated:day(-1),next_action:{id:'n3',text:'PT 준비',due:day(1),status:'open'},activities:[{id:'a3',type:'전화',note:'통화',at:at(-1)}]})],
     inquiries:[inq(1,'',1),inq(2,'이필선',9),inq(3,'이필선',10)],activities:[],inquiryTrash:[],expansion_pool:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.repWindowOff=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.briefView='week';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op)=>{__writes.push(op);return 'req';};
