@@ -53,6 +53,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await d.locator('.idv3-fill input').getAttribute('placeholder'),'경쟁사 입력');await d.locator('.idv3-fill input').fill('타 업체 2곳 비교 중');await d.locator('.idv3-fill [data-idv="editsave"]').click();await page.waitForTimeout(400);
   assert.deepEqual(await page.evaluate(()=>__rpc.filter(c=>c[0]==='crm_inquiry_field_update_v1').map(c=>c[1])),[{inquiry_id:'22222222-2222-4222-8222-222222222222',field:'competitor',value:'타 업체 2곳 비교 중'}],'빈 칸 → 그 자리 입력 → 서버 저장 한 번');
   assert.equal(Number(await d.locator('.idv3-need .hd .n').innerText()),missN-1,'저장하면 채울 정보가 줄어든다');assert.deepEqual((await need()).find(x=>x[0]==='경쟁사'),['경쟁사','타 업체 2곳 비교 중'],'저장한 값이 그 줄에 보인다');
+  /* 문자 보내기를 연 상태에서 '다음 행동 · 날짜'를 누르면 문자 보내기를 닫고 응대 기록으로 간다(2026-10-05 — 예전에는 눌러도 반응이 없었다) */
+  {const nx=d.locator('.idv3-need .idv3-row',{hasText:'다음 행동 · 날짜'}).locator('.idv3-val.empty');assert.equal(await nx.count(),1,'아직 다음 행동이 비어 있는 상태');
+   await d.locator('.idv3-c3 [data-idv="sms-open"]').first().click();await page.waitForTimeout(250);assert.equal(await d.locator('.idv3-c2 [data-idv="sms-go"]').count(),1,'가운데 칸 = 문자 보내기');assert.equal(await d.locator('.idv3-c2 #iq-res').count(),0);
+   await nx.click();await page.waitForTimeout(250);
+   assert.equal(await d.locator('.idv3-c2 [data-idv="sms-go"]').count(),0,'문자 보내기를 닫고');assert.equal(await page.evaluate(()=>document.activeElement&&document.activeElement.id),'iq-res','응대 기록 입력으로 간다');
+   await page.evaluate(()=>{const s=InquiryDetailV2.state(A);Object.assign(s,{smsText:'',smsTpl:'',smsOpen:false,smsCh:'sms',smsWhen:'now',smsDays:0,tab:'call'});InquiryDetailV2.reskin();});await page.waitForTimeout(150);}
   /* 가운데: 탭 2개 · 결과 칩 → 다음 행동 → 저장(한 줄은 선택) */
   assert.match((await tx('.idv3-chead'))[0],/^응대 이력 ?\d+건 · 시도 0 · 연결 0$/);
   assert.deepEqual(await tx('.idv3-tabs [role=tab]'),['응대 기록','내부 메모'],'문자 탭은 없앴다(2026-10-05 견적문의 흐름 ③) — 문자는 응대 기록의 수단 문자 = 문자 작은 창');
@@ -104,11 +110,45 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal((await tx('.idv3-pill'))[0].startsWith('미배정'),true);assert.match(await d.locator('.idv3-c3 h3').innerText(),/담당자 배정/);assert.deepEqual(await tx('.idv3-steps span'),['접수','지금 · 담당 배정','현장방문 / 견적','파이프라인 전환']);
   assert.match((await tx('.idv3-info'))[0],/연락처 ?미입력 · 입력하기$/,'빈 핵심 정보는 그 자리에서 입력(파이프라인과 같은 "미입력 · 입력하기")');
   await d.locator('.idv3-info .idv3-row',{hasText:'주소'}).locator('.idv3-val.empty').click();await page.waitForTimeout(150);assert.equal(await d.locator('.idv3-info input[data-idv="editinput"][data-v="address"]').count(),1,'누르면 그 자리에 입력칸');await page.keyboard.press('Escape');
+  /* 공종 = 파이프라인 상세와 같은 공종 고르기 · '공사 범위'는 그 상자를 연다(2026-10-05 대표 "공사범위 안 눌려" · "공종 파이프라인처럼") */
+  {const nrow=l=>d.locator('.idv3-need .idv3-row',{hasText:l}),irow=l=>d.locator('.idv3-info .idv3-row',{hasText:l});
+   assert.equal(await page.evaluate(()=>inqCtlWorkLabel(inqCtlFind(G.inqSelKey,false))),'공종 미분류');
+   assert.equal(await nrow('공사 범위').locator('.idv3-val.empty').isEnabled(),true,'공사 범위는 눌린다');
+   await nrow('공사 범위').locator('.idv3-val.empty').click();await page.waitForTimeout(250);
+   const wb=d.locator('.idv3-info .idv3-workslot .dv3-work');assert.equal(await wb.count(),1,'공종 줄 아래에 공종 상자');
+   assert.equal(await d.locator('input[data-idv="editinput"][data-v="work_type"]').count(),0,'글자 입력칸이 아니라 공종 표');
+   assert.deepEqual(await wb.locator('.dp-wtable>div>span').allInnerTexts(),['옥상','재도장','지하주차장','기타'],'파이프라인과 같은 공종 표');assert.equal(await wb.locator('.dp-wtable [data-work]').count(),12);
+   assert.match(await wb.locator('.dp-ai').innerText(),/추정 공종 · 옥상/,'추정 = 현장명 · 고객이 남긴 말에서(파이프라인과 같은 부품)');
+   assert.equal(await wb.locator('.dp-aibtn:visible').count(),0,'문의에는 AI 추정 받기 없음');
+   assert.equal(await irow('공종').locator('.idv3-picking').innerText(),'아래에서 고르기');assert.equal(await nrow('공사 범위').locator('.idv3-picking').innerText(),'위 공종에서 고르는 중');
+   assert.deepEqual(await wb.evaluate(n=>{const r=n.getBoundingClientRect(),p=n.closest('.idv3-c1').getBoundingClientRect();return [r.left>=p.left,r.right<=p.right+1];}),[true,true],'왼쪽 칸 안에 들어간다');
+   await wb.locator('[data-idv="workdone"]').click();await page.waitForTimeout(120);assert.equal(await wb.locator('#nd-err').innerText(),'공종을 하나 이상 골라 주세요.');
+   await wb.locator('[data-work="옥상>우레탄"]').click();await wb.locator('[data-work="재도장>외부"]').click();await page.waitForTimeout(120);
+   assert.deepEqual(await wb.locator('.dp-picked button').allInnerTexts(),['★ 옥상 우레탄','재도장 외부'],'대표 공종 ★');
+   assert.deepEqual(await wb.evaluate(n=>{const s=getComputedStyle(n),c=getComputedStyle(n.querySelector('[data-work="옥상>싱글"]')),on=getComputedStyle(n.querySelector('[data-work="옥상>우레탄"]')),ok=getComputedStyle(n.querySelector('[data-idv="workdone"]')),ai=getComputedStyle(n.querySelector('.dp-ai'));return [s.borderTopColor,s.borderRadius,s.padding,c.borderRadius,c.fontSize,c.backgroundColor,on.backgroundColor,on.color,ok.backgroundColor,ai.backgroundColor,ai.borderTopWidth];}),['rgb(227, 230, 236)','10px','10px','999px','12px','rgb(255, 255, 255)','rgb(21, 23, 28)','rgb(255, 255, 255)','rgb(21, 23, 28)','rgba(0, 0, 0, 0)','0px'],'모양 = 파이프라인 상세의 공종 상자(흰 상자 · 알약 칩 · 고른 칩 검정 · 추정은 한 줄)');
+   /* 다른 곳을 눌러 창을 다시 그려도 고른 것은 그대로 */
+   await nrow('경쟁사').locator('.idv3-val.empty').click();await page.waitForTimeout(200);await page.keyboard.press('Escape');await page.waitForTimeout(150);
+   await irow('공종').locator('.idv3-val.empty').click();await page.waitForTimeout(250);
+   const n0=await page.evaluate(()=>__rpc.length);
+   await wb.locator('[data-work="옥상>우레탄"]').click();await wb.locator('[data-work="재도장>외부"]').click();await page.waitForTimeout(100);
+   if(shot)await page.screenshot({path:shot+'-work-open.png'});
+   await wb.locator('[data-idv="workdone"]').click();await page.waitForTimeout(450);
+   assert.deepEqual(await page.evaluate(n=>__rpc.slice(n).filter(c=>c[0]==='crm_inquiry_field_update_v1').map(c=>c[1]),n0),[{inquiry_id:'11111111-1111-4111-8111-111111111111',field:'work_type',value:'옥상(우레탄) + 재도장(외부)'}],'파이프라인과 같은 표기로 기존 칸 저장 길에 한 번');
+   assert.equal(await d.locator('.idv3-workslot .dv3-work').count(),0,'저장하면 상자가 닫힌다');
+   assert.equal(await irow('공종').locator(':scope>b').innerText(),'옥상(우레탄) + 재도장(외부)');assert.equal(await nrow('공사 범위').locator(':scope>b').innerText(),'옥상(우레탄) + 재도장(외부)','공사 범위도 같이 채워진다');
+   assert.deepEqual(await page.evaluate(()=>{const q=inqCtlFind(G.inqSelKey,false);return [inqCtlWorkLabel(q),workItemsOf(q).map(w=>w.key)];}),['옥상(우레탄) + 재도장(외부)',['옥상>우레탄','재도장>외부']],'목록 · 분석에서도 분류된 공종으로 읽힌다');
+   assert.deepEqual(await page.evaluate(()=>[workItemsOf({work_type:'재도장(외+내부) + 지하주차장(에폭시·배면차수)'}).map(w=>w.key),workItemsOf({work_type:'슬라브(우레탄)'}).map(w=>w.key),workItemsOf({work_type:'옥상 방수'}).map(w=>w.key)]),[['재도장>외+내부','지하주차장>에폭시','지하주차장>배면차수'],['옥상>우레탄'],['옥상>옥상 방수']],'표기를 읽되 예전 글자 값은 예전처럼');
+   if(shot)await page.screenshot({path:shot+'-work.png'});
+   /* [취소] · 끄기 */
+   await page.evaluate(()=>{const q=inqCtlFind(G.inqSelKey,false);delete q.raw['공사유형'];delete q.work_type;if(q.detail&&typeof q.detail==='object')delete q.detail.workType;InquiryWorkbench.open(U);});await page.waitForTimeout(350);
+   await irow('공종').locator('.idv3-val.empty').click();await page.waitForTimeout(200);assert.equal(await d.locator('.idv3-workslot .dv3-work').count(),1);await d.locator('[data-idv="workcancel"]').click();await page.waitForTimeout(200);assert.equal(await d.locator('.idv3-workslot .dv3-work').count(),0);assert.equal(await irow('공종').locator('.idv3-val.empty').count(),1);
+   await page.evaluate(()=>{G.inqWorkPickOff=true;});await irow('공종').locator('.idv3-val.empty').click();await page.waitForTimeout(200);assert.equal(await d.locator('input[data-idv="editinput"][data-v="work_type"]').count(),1,'끄면 예전 글자 입력');await page.keyboard.press('Escape');await page.evaluate(()=>{G.inqWorkPickOff=false;});
+   await page.evaluate(()=>InquiryWorkbench.open(A));await page.waitForTimeout(400);}
   /* 좁은 화면 · 끄기 */
   await page.setViewportSize({width:900,height:900});await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);await page.setViewportSize({width:1600,height:1000});
   await page.evaluate(()=>{G.inqDetailV3Off=true;InquiryWorkbench.open(A);});await page.waitForTimeout(400);
   assert.equal(await page.locator('#inq-inbox-dialog.idv3').count(),0);assert.deepEqual(await page.locator('#inq-inbox-dialog .idv-ctabs [role=tab]').allInnerTexts(),['응대 기록','내부 메모'],'끄면 v2 배치(문자 탭은 두 배치 모두 없앴다)');
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',head_one_pill_steps4:true,left_quote_info4_need9_inline:true,center_two_tabs_result_chips:true,optional_line_saves_existing_path:true,ai_badge_as_design:true,right_one_todo_next_step_near:true,assign_uses_existing:true,narrow:true,legacy_switch:true}));
+  console.log(JSON.stringify({status:'PASS',head_one_pill_steps4:true,left_quote_info4_need9_inline:true,center_two_tabs_result_chips:true,optional_line_saves_existing_path:true,ai_badge_as_design:true,right_one_todo_next_step_near:true,assign_uses_existing:true,work_pick_like_pipeline:true,narrow:true,legacy_switch:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
