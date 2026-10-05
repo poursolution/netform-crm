@@ -63,7 +63,7 @@
   const pills='<div class="plv-pills" role="group" aria-label="분류 상태">'+[['all','전체',m.rows.length],['unclassified','분류 필요',count('unclassified')],['single','단일 공종',count('single')],['multi','복합 공종',count('multi')]].map(([v,t,n])=>'<button type="button" data-wv="scope" data-value="'+v+'" aria-pressed="'+(m.f===v)+'">'+h(t)+' <b>'+n+'</b></button>').join('')+'</div>';
   const intro='<div class="plv-intro"><i style="background:#64748b"></i><b>공종 분석</b><span>어떤 공종에 기회와 매출이 쌓이는지 · '+h(root.perfPeriodLabel?root.perfPeriodLabel():'')+'</span><div class="plv-spacer"></div>'+pills+'</div>';
   const head='<div class="plv-thead" role="row" style="grid-template-columns:'+GRID+'"><span>현장 · 담당</span>'+COLS.map(c=>'<span>'+h(c)+'</span>').join('')+'<span></span></div>';
-  const groups=GROUPS.filter(g=>m.f==='all'||g[0]===m.f).map(([id,title,color,desc])=>{const list=m.rows.filter(r=>r.scope===id).sort((a,b)=>amt(b.d)-amt(a.d)),shown=list.slice(0,20+(more[id]||0)),rest=list.length-shown.length;return '<div class="plv-ghead" data-plv-group="'+id+'"><i style="background:'+color+'"></i><b>'+h(title)+'</b><span>'+list.length+'건</span><small>· '+h(desc)+'</small></div>'+(shown.length?shown.map(rowHtml).join(''):'<div class="plv-empty">해당하는 건이 없습니다</div>')+(rest>0?'<button type="button" class="plv-more" data-wv="more" data-value="'+id+'">+ '+rest+'건 더보기</button>':'');}).join('');
+  const groups=GROUPS.filter(g=>m.f==='all'||g[0]===m.f).map(([id,title,color,desc])=>{const list=m.rows.filter(r=>r.scope===id).sort((a,b)=>amt(b.d)-amt(a.d)),__pg=root.ListPager.cut(list,(more[id]||0)+1),shown=__pg.rows,rest=list.length-shown.length;return '<div class="plv-ghead" data-plv-group="'+id+'"><i style="background:'+color+'"></i><b>'+h(title)+'</b><span>'+list.length+'건</span><small>· '+h(desc)+'</small></div>'+(shown.length?shown.map(rowHtml).join(''):'<div class="plv-empty">해당하는 건이 없습니다</div>')+root.ListPager.html(__pg,{ns:'wv',attrs:'data-value="'+id+'"',small:true});}).join('');
   return '<div id="work-v2" class="plv" data-workspace="work">'+intro+diagnosis(m)+'<div class="plv-table" role="table" aria-label="공종 분류 목록">'+head+groups+'</div></div>';
  }
  /* ── 분류 창: 파이프라인 '공종 분류' 패널과 같은 공종 선택 부품(DealPanelsV2.workMount)을 560px 창에 넣는다.
@@ -128,7 +128,7 @@
   const pd=e.target.closest('[data-pd="toggle"]');if(pd&&pd.closest('#work-v2')){root.G.plvDiagShut=root.G.plvDiagShut!==true;root.paintWorkAnalysis();return;}
   const b=e.target.closest('#work-v2 [data-wv]');if(!b)return;const a=b.dataset.wv,v=b.dataset.value;
   if(a==='scope'){root.G.workScope=v;root.G.wvMore={};root.paintWorkAnalysis();}
-  if(a==='more'){const m=root.G.wvMore||(root.G.wvMore={});m[v]=(m[v]||0)+40;root.paintWorkAnalysis();}
+  if(a==='page'){const m=root.G.wvMore||(root.G.wvMore={});m[v]=(Number(b.dataset.page)||1)-1;root.paintWorkAnalysis();}
   if(a==='classify')classify(v);
  }
  function boot(){

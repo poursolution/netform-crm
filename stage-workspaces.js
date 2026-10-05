@@ -398,8 +398,8 @@ function render(key,list){
   const selected=items.filter(x=>x.values.lossDate),reasons=new Map();selected.forEach(x=>reasons.set(x.values.lossReason,(reasons.get(x.values.lossReason)||0)+1));
   summary='<label class="sw-period">실주 조회월 <input aria-label="실주 조회월" type="month" data-ps-filter="lossResultMonth" value="'+a(month)+'"></label>'+stats([['이번 조회월 실주',selected.length+'건'],['실주 예상금액',money(selected.reduce((s,x)=>s+(x.row.amount||0),0))],['금액 미입력',selected.filter(x=>x.row.amount==null).length],['실주일 미기록',items.length-selected.length]])+'<div class="sw-loss-reasons">'+[...reasons].map(([n,c])=>'<div><span>'+h(n)+'</span><meter min="0" max="'+Math.max(1,selected.length)+'" value="'+c+'"></meter><b>'+c+'건</b></div>').join('')+'</div>';
  }else summary=stats(spec.priorityRule.map((title,i)=>[title,items.filter(x=>x.priority===i).length]));
- const limit=root.G.pipelineQueue?.limit||60,shown=items.slice(0,limit);
- return summary+'<p class="ps-queue-count">'+shown.length+' / '+items.length+'건 표시</p>'+(spec.workspaceType==='schedule'?schedule(shown):['operations','result'].includes(spec.workspaceType)?table(key,shown):queue(key,shown))+(shown.length<items.length?btn('다음 60건 더 보기','queue-more',''):'');
+ const qp=root.ListPager.cut(items,root.G.pipelineQueue?.qpage),shown=qp.rows;/* 쪽 번호(2026-10-05 전체 지침) */
+ return summary+'<p class="ps-queue-count">'+shown.length+' / '+items.length+'건 표시</p>'+(spec.workspaceType==='schedule'?schedule(shown):['operations','result'].includes(spec.workspaceType)?table(key,shown):queue(key,shown))+root.ListPager.html(qp,{ns:'ps-action'});
 }
 // Compatibility names all resolve to the same renderer; no per-stage markup implementations.
 root.StageWorkspaces={render,prepare,relationship,...Object.fromEntries(root.StageSpecs.all.filter(s=>!s.specialWorkspace).map(s=>[s.key,list=>render(s.key,list)]))};

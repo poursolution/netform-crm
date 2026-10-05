@@ -64,8 +64,8 @@
   const chips=root.todayIsAdmin?.()&&map.size?'<div class="plv-owners" role="group" aria-label="담당자별"><span>담당자별</span>'+[...map.values()].sort((a,b)=>b.late-a.late||b.n-a.n).slice(0,12).map(o=>'<button type="button" class="plv-chip'+(cur===o.owner?' on':'')+'" data-av="owner" data-value="'+attr(o.owner)+'" aria-pressed="'+(cur===o.owner)+'">'+h(o.owner)+' <b>'+o.n+'</b>'+(o.late?'<em> · 위험 '+o.late+'</em>':'')+'</button>').join('')+'</div>':'';
   const head='<div class="plv-thead" role="row" style="grid-template-columns:'+GRID+'"><span>현장 · 담당</span>'+COLS.map(c=>'<span>'+h(c)+'</span>').join('')+'<span></span></div>';
   const groups=GROUPS.map(([id,title,color,desc])=>{
-   const list=x.rows.filter(s=>groupOf(s)===id).sort((a,b)=>b.openAmount-a.openAmount||b.wonAmount-a.wonAmount||String(b.lastAt||'').localeCompare(String(a.lastAt||''))),shown=list.slice(0,20+(more[id]||0)),rest=list.length-shown.length;
-   return '<div class="plv-ghead" data-plv-group="'+id+'"><i style="background:'+color+'"></i><b>'+h(title)+'</b><span>'+list.length.toLocaleString('ko-KR')+'건</span><small>· '+h(desc)+'</small></div>'+(shown.length?shown.map(rowHtml).join(''):'<div class="plv-empty">해당하는 건이 없습니다</div>')+(rest>0?'<button type="button" class="plv-more" data-av="more" data-value="'+id+'">+ '+rest.toLocaleString('ko-KR')+'건 더보기</button>':'');
+   const list=x.rows.filter(s=>groupOf(s)===id).sort((a,b)=>b.openAmount-a.openAmount||b.wonAmount-a.wonAmount||String(b.lastAt||'').localeCompare(String(a.lastAt||''))),__pg=root.ListPager.cut(list,(more[id]||0)+1),shown=__pg.rows,rest=list.length-shown.length;
+   return '<div class="plv-ghead" data-plv-group="'+id+'"><i style="background:'+color+'"></i><b>'+h(title)+'</b><span>'+list.length.toLocaleString('ko-KR')+'건</span><small>· '+h(desc)+'</small></div>'+(shown.length?shown.map(rowHtml).join(''):'<div class="plv-empty">해당하는 건이 없습니다</div>')+root.ListPager.html(__pg,{ns:'av',attrs:'data-value="'+id+'"',small:true});
   }).join('');
   return '<div id="asset-v2" class="plv" data-workspace="asset">'+intro+chips+diagnosis(x.rows)+'<div class="plv-table" role="table" aria-label="고객 자산 목록">'+head+groups+'</div></div>';
  }
@@ -75,7 +75,7 @@
   if(a==='open')open(v);
   if(a==='status'){root.G.siteStatus=v;root.G.avMore={};root.paintSites();}
   if(a==='owner'){const cur=root.SalesScope.state().owner||'전체';root.CommonFilterBar.setOwner(cur===v?'전체':v);root.paintSites();}
-  if(a==='more'){const m=root.G.avMore||(root.G.avMore={});m[v]=(m[v]||0)+40;root.paintSites();}
+  if(a==='page'){const m=root.G.avMore||(root.G.avMore={});m[v]=(Number(b.dataset.page)||1)-1;root.paintSites();}
   if(a==='advisory'){const pg=document.getElementById('pg-sites'),on=pg.classList.toggle('av-adv-on');if(on)pg.querySelector('.advisory-library')?.scrollIntoView({block:'nearest'});b.closest('details')?.removeAttribute('open');}
   if(a==='review'){root.goPage('dup');}
  }

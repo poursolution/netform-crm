@@ -217,11 +217,11 @@
    return '<div class="tv3-row" role="button" tabindex="0" data-t3="open" data-key="'+k+'"><span class="bd" style="color:'+i.bc+'">'+h(i.brand||'미입력')+'</span><span class="c"><b>'+h(i.i.site)+'</b><small>'+h([who,i.amt?money(i.amt):'금액 미정',i.missTxt].filter(Boolean).join(' · '))+'</small></span><span class="d"><b'+(hot?' class="r"':'')+'>'+h(noDay?'-':i.short)+'</b><small>'+h(noDay?'':i.rk==='deadline'?(i.deadline?i.deadline.what:'마감'):i.dLabel)+'</small></span>'+(wrBtn(i,'')||'<button type="button" data-t3="act" data-key="'+k+'" data-act="'+attr(i.act)+'"'+(i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>'+h(i.act)+'</button>')+'</div>';};
   let shownNo=0;const kinded=V.groups.some(g=>g.kind);/* 표 묶음이 있으면 번호는 보이는 묶음 순서대로 */
   const groupsHtml=V.groups.map((g,gi)=>{const items=g.items.filter(pass);if(!items.length)return '';shownNo++;
-   if(g.kind&&g.kind!=='cards'&&root.TodayAssist)return root.TodayAssist.groupHtml(g,items,gi,shownNo,!!S.more[gi]);
-   const first=g.kind?g.kind==='cards':gi===0,cards=first?items.slice(0,CARDS):[],rest=first?items.slice(CARDS):items,open=!!S.more[gi],shown=open?rest:rest.slice(0,PER);
+   if(g.kind&&g.kind!=='cards'&&root.TodayAssist)return root.TodayAssist.groupHtml(g,items,gi,shownNo,root.ListPager.page(S,'g'+gi));
+   const first=g.kind?g.kind==='cards':gi===0,cards=first?items.slice(0,CARDS):[],rest=first?items.slice(CARDS):items,pg=root.ListPager.cut(rest,root.ListPager.page(S,'g'+gi),PER),shown=pg.rows;
    return '<section class="tv3-group'+(first?' first':'')+'" data-g="'+(gi+1)+'"><header><i>'+(kinded?shownNo:gi+1)+'</i><b>'+h(g.t)+'</b><b class="n">'+items.length+'건</b><span>'+h(g.why)+'</span><u></u>'+(g.bulk&&team?'<button type="button" data-t3="bulk" data-v="'+gi+'">'+h(g.bulk)+'</button>':'')+'</header>'
     +(first?'<div class="tv3-cards">'+cards.map(card).join('')+'</div>':'')+(g.kind==='cards'&&shown.length&&root.TodayAssist&&root.TodayAssist.restHtml?root.TodayAssist.restHtml(shown):shown.map(i=>row(i,first)).join(''))/* 카드 아래 나머지 줄 = ②와 같은 표 줄 */
-    +(rest.length>PER?'<button type="button" class="tv3-more" data-t3="more" data-v="'+gi+'">'+(open?'접기 ▴':'나머지 '+(rest.length-PER)+'건 더 보기 ▾')+'</button>':'')+'</section>';}).join('');
+    +root.ListPager.html(pg,{ns:'t3',v:'g'+gi,small:true})+'</section>';}).join('');
   const empty=!total?'<div class="tv3-empty">'+(backN?'오늘 손댈 건은 없습니다. 아래 밀린 건만 정리하면 됩니다.':'오늘 처리할 건이 없습니다.')+'</div>':(!groupsHtml?'<div class="tv3-empty">이 조건에 해당하는 건이 없습니다.</div>':'');
   /* 밀린 건 정리 */
   let backHtml='';
@@ -269,11 +269,11 @@
   if(a==='esave')return execSave();
   if(a==='edial')return dial(b.dataset.tel);
   if(a==='enext')return openKey(key,'next');
-  if(a==='fstage'){S.fStage=S.fStage===v?null:v;S.fWho=null;return rerender();}
-  if(a==='fwho'){S.fWho=S.fWho===v?null:v;S.fStage=null;return rerender();}
-  if(a==='clear'){S.fStage=null;S.fWho=null;return rerender();}
+  if(a==='fstage'){S.fStage=S.fStage===v?null:v;S.fWho=null;root.ListPager.reset(S);return rerender();}
+  if(a==='fwho'){S.fWho=S.fWho===v?null:v;S.fStage=null;root.ListPager.reset(S);return rerender();}
+  if(a==='clear'){S.fStage=null;S.fWho=null;root.ListPager.reset(S);return rerender();}
   if(a==='fold'){S.open[key]=!S.open[key];return rerender();}
-  if(a==='more'){S.more[v]=!S.more[v];return rerender();}
+  if(a==='page'){root.ListPager.set(S,v,b.dataset.page);return rerender();}
   if(a==='back'){S.back=!S.back;if(!S.back)S.backOwner='';return rerender();}
   if(a==='backdo'){S.backOwner=S.backOwner===v?'':v;return rerender();}
   if(a==='backreq'){const V=current(),l=V.back.filter(x=>x.owner===v),old=Math.max(0,...l.map(x=>x.days||0));return copy(v+'님, '+BACK()+'일 넘게 기록이 없는 영업건이 '+l.length+'건 있습니다(최장 '+old+'일). 오늘 업무 → 밀린 건 정리에서 진행 / 보류 / 실주 / 배드핏으로 정리해 주세요.','정리 요청 문구를 복사했습니다 — 잔디 · 문자로 보내 주세요');}

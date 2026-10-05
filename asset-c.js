@@ -9,7 +9,7 @@
  const R=root,h=v=>R.esc(String(v==null?'':v)),attr=v=>R.escAttr(String(v==null?'':v));
  const AB=()=>R.AssetB,V=()=>R.AssetV2,SB=()=>R.StageBoard;
  const enabled=()=>!R.G.assetCOff&&!!AB()&&AB().enabled()&&!!R.CRMRules;
- const st=()=>R.G.assetC||(R.G.assetC={rule:false,more:false,why:'',limit:40});
+ const st=()=>R.G.assetC||(R.G.assetC={rule:false,more:false,why:'',page:1});
  const wait=()=>Number((R.OPS_RULES||{}).waitContactDays)||60;
  const BC={'석민이앤씨':'#e8590c','POUR솔루션':'#1f9d55','POUR공법':'#7048e8','아파트스퀘어':'#3b6ce4'};
  const TONE={risk:['#b42318','#fdecec'],recontact:['#b45309','#fff4d6'],active:['#1d3f99','#eef3fe'],customer:['#1f7a4d','#e8f6ee'],dormant:['#6b7280','#f3f4f6']};
@@ -97,10 +97,10 @@
    +'<button type="button" class="ac-act" data-ac="open" data-key="'+attr(s.key)+'">'+actOf(s,m)+'</button></div>';
  }
  function listHtml(x){
-  const S=st(),shown=x.rows.slice(0,S.limit);
+  const S=st(),LP=R.ListPager,pg=LP.cut(x.rows,LP.page(S)),shown=pg.rows;
   return '<section class="ac-list" role="table" aria-label="확인할 단지"><div class="ac-head" role="row"><span>단지 · 담당 · 관리소장</span><span class="r">누적 수주</span><span class="r">진행 중</span><span>지금 상태</span><span class="r">마지막 연락</span><span></span></div>'
    +(shown.length?shown.map(rowHtml).join(''):'<p class="ac-empty">조건에 맞는 단지가 없습니다</p>')
-   +(x.rows.length>shown.length?'<button type="button" class="ac-morerows" data-ac="rows">나머지 '+(x.rows.length-shown.length).toLocaleString('ko-KR')+'곳 더 보기</button>':'')
+   +LP.html(pg,{ns:'ac',unit:'곳'})
    +'<div class="ac-foot">누적 수주 = 이 단지에서 지금까지 수주한 낙찰금액 합 · 진행 중 = 열려 있는 영업건 예상금액 합</div></section>';
  }
  function paint(){
@@ -115,13 +115,13 @@
   if(!enabled()||!e.target.closest('.ac'))return;
   const b=e.target.closest('[data-ac]');if(!b)return;const a=b.dataset.ac,v=b.dataset.v,S=st();
   if(a==='open'){e.stopPropagation();return V().open(b.dataset.key);}
-  if(a==='status'){R.G.siteStatus=v;S.limit=40;return R.paintSites();}
-  if(a==='owner'){const cur=R.SalesScope.state().owner||'전체';S.limit=40;R.CommonFilterBar.setOwner(cur===v?'전체':v);return R.paintSites();}
-  if(a==='why'){S.why=S.why===v?'':v;S.limit=40;return R.paintSites();}
-  if(a==='clear'){R.G.siteStatus='전체';S.why='';S.limit=40;if((R.SalesScope.state().owner||'전체')!=='전체')R.CommonFilterBar.setOwner('전체');return R.paintSites();}
+  if(a==='status'){R.G.siteStatus=v;S.page=1;return R.paintSites();}
+  if(a==='owner'){const cur=R.SalesScope.state().owner||'전체';S.page=1;R.CommonFilterBar.setOwner(cur===v?'전체':v);return R.paintSites();}
+  if(a==='why'){S.why=S.why===v?'':v;S.page=1;return R.paintSites();}
+  if(a==='clear'){R.G.siteStatus='전체';S.why='';S.page=1;if((R.SalesScope.state().owner||'전체')!=='전체')R.CommonFilterBar.setOwner('전체');return R.paintSites();}
   if(a==='rule'){S.rule=!S.rule;return R.paintSites();}
   if(a==='more'){S.more=!S.more;return R.paintSites();}
-  if(a==='rows'){S.limit+=40;return R.paintSites();}
+  if(a==='page'){S.page=Number(b.dataset.page)||1;return R.paintSites();}
   if(a==='board'){SB().state('asset').view='board';return R.paintSites();}
  }
  function boot(){

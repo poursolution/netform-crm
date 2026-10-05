@@ -41,7 +41,7 @@
   const contact=lastAgo!==null?lastAgo:(r.contactDays==null?null:r.contactDays);
   return {sent,focusFrom,timing,contactDays:contact,ageDays:ago(d.created||d.created_at),due:r.due,hasNext:!!(r.next&&r.next.text),meet,mgr};
  }
- const st=()=>root.G.psb||(root.G.psb={view:'list',bucket:'all',reason:null,limit:30});
+ const st=()=>root.G.psb||(root.G.psb={view:'list',bucket:'all',reason:null,page:1});
  const enabled=key=>!root.G.pipeStageBOff&&KEYS.includes(key||root.G.pipelineStage)&&!!root.PipelineListV2;
  const days=v=>{if(!v)return null;const n=root.daysTo(String(v).slice(0,10));return Number.isFinite(n)?n:null;};
  const since=v=>{const n=days(v);return n===null?null:-n;};
@@ -144,11 +144,11 @@
    +'<div class="psb-kpis"><div><span>기준 넘김 (빨강)</span><b style="color:'+(redN?RED:'#15171c')+'">'+redN+'건</b><small>오늘 처리할 것</small></div><div><span>'+h(C.S[0][1])+'</span><b>'+cnt(C.S[0][0])+'건</b><small>'+h(C.S[0][3])+'</small></div><div><span>평균 체류</span><b>'+avg+'일</b><small>이 단계에 머문 일수</small></div></div></div>'
    +'<div class="psb-two"><div class="psb-box"><header><b>왜 멈춰 있나</b><span>누르면 오른쪽 현장이 걸러짐</span></header>'+(reasons.length?reasons.map(x=>'<button type="button" class="psb-reason" data-psb="reason" data-v="'+x.k+'" aria-pressed="'+(S.reason===x.k)+'"><span>'+h(C.RS[x.k][0])+'</span><b style="color:'+C.RS[x.k][1]+'">'+x.n+'</b><i><u style="width:'+(byS.length?Math.round(x.n/byS.length*100):0)+'%;background:'+(isRed(x.k)?RED:'#9aa0ab')+'"></u></i></button>').join(''):'<p class="psb-none">멈춘 사유가 없습니다</p>')+'</div>'
    +'<div class="psb-box"><header><b>그래서 뭘 해야 하나</b></header>'+(acts.length?acts.map(a=>'<div class="psb-act"><span>'+h(a.tag)+'</span><p>'+h(a.t)+'</p></div>').join(''):'<p class="psb-none">기준을 넘긴 현장이 없습니다</p>')+'</div></div></section>';
-  const shown=listed.slice(0,S.limit);
+  const LP=root.ListPager,pg=LP.cut(listed,LP.page(S)),shown=pg.rows;
   const head='<div class="psb-lhead"><b>확인할 현장 <span>'+listed.length+'곳</span></b>'+(filters.length?'<em>'+h(filters.join(' · '))+'</em>':'')+'<i></i><div class="psb-views"><button type="button" data-psb="view" data-v="list" aria-pressed="'+(S.view==='list')+'">리스트</button><button type="button" data-psb="view" data-v="board" aria-pressed="'+(S.view==='board')+'">보드</button></div></div>';
   let body;
-  if(S.view==='board')body='<div class="psb-board">'+C.S.map(s=>{const cards=listed.filter(i=>i.bucket===s[0]).slice(0,40);return '<div class="psb-col"><div class="ch"><i style="background:'+s[2]+'"></i><b>'+h(s[1])+'</b><span>'+cards.length+'</span><em>'+h(s[3])+'</em></div>'+(cards.length?cards.map(i=>cardHtml(C,i,S.reason)).join(''):'<p class="psb-none">없음</p>')+'</div>';}).join('')+'</div>';
-  else body='<div class="psb-list">'+(shown.length?shown.map(i=>rowHtml(C,i,S.reason)).join(''):'<div class="psb-empty">해당하는 현장이 없습니다.</div>')+(listed.length>shown.length?'<button type="button" class="psb-more" data-psb="more">나머지 '+(listed.length-shown.length)+'건 더 보기</button>':'')+'</div>';
+  if(S.view==='board')body='<div class="psb-board">'+C.S.map(s=>{const all=listed.filter(i=>i.bucket===s[0]),cp=LP.cut(all,LP.page(S,'col:'+s[0])),cards=cp.rows;return '<div class="psb-col"><div class="ch"><i style="background:'+s[2]+'"></i><b>'+h(s[1])+'</b><span>'+all.length+'</span><em>'+h(s[3])+'</em></div>'+(cards.length?cards.map(i=>cardHtml(C,i,S.reason)).join(''):'<p class="psb-none">없음</p>')+LP.html(cp,{ns:'psb',v:'col:'+s[0],small:true,info:false})+'</div>';}).join('')+'</div>';
+  else body='<div class="psb-list">'+(shown.length?shown.map(i=>rowHtml(C,i,S.reason)).join(''):'<div class="psb-empty">해당하는 현장이 없습니다.</div>')+LP.html(pg,{ns:'psb',unit:'곳'})+'</div>';
   return '<div id="pipeline-stage-b" class="psb" data-stage="'+key+'"><div class="psb-head"><b>'+h(C.name)+'</b><span>'+h(C.desc())+'</span></div><div class="psb-body">'+diag+'<section class="psb-main">'+head+body+'</section></div></div>';
  }
  /* 열기: 기존 상세 + 액션(연락 결과 · 다음 할 일 · 단계 필드 · 단계 전환 · 지원 요청). 확장관리 등록은 확장관리 화면으로 */
@@ -160,11 +160,11 @@
  }
  function onClick(e){
   const b=e.target.closest('#pipeline-stage-b [data-psb]');if(!b)return;const S=st(),a=b.dataset.psb,v=b.dataset.v,key=root.G.pipelineStage,C=CFG[key];
-  if(a==='bucket'){S.bucket=S.bucket===v?'all':v;S.reason=null;return root.paint();}
-  if(a==='reason'){S.reason=S.reason===v?null:v;return root.paint();}
-  if(a==='clear'){S.bucket='all';S.reason=null;return root.paint();}
+  if(a==='bucket'){S.bucket=S.bucket===v?'all':v;S.reason=null;root.ListPager.reset(S);return root.paint();}
+  if(a==='reason'){S.reason=S.reason===v?null:v;root.ListPager.reset(S);return root.paint();}
+  if(a==='clear'){S.bucket='all';S.reason=null;root.ListPager.reset(S);return root.paint();}
   if(a==='view'){S.view=v;return root.paint();}
-  if(a==='more'){S.limit+=30;return root.paint();}
+  if(a==='page'){root.ListPager.set(S,v,b.dataset.page);return root.paint();}
   e.stopPropagation();
   if(a==='act')return open(b.dataset.key,C&&C.RS[v]?C.RS[v][4]:'');
   if(a==='open'&&!e.target.closest('button'))return open(b.dataset.key);
@@ -175,7 +175,7 @@
  L2.paint=function(el,key,list){
   if(!enabled(key)||!L2.enabled(key))return basePaint.apply(this,arguments);
   const pg=document.getElementById('pg-pipe');pg?.classList.add('plv-on');pg?.classList.add('psb-on');
-  const S=st();if(S.key!==key){S.key=key;S.bucket='all';S.reason=null;S.limit=30;}
+  const S=st();if(S.key!==key){S.key=key;S.bucket='all';S.reason=null;root.ListPager.reset(S);}
   el.classList.remove('pk-mode');el.innerHTML=html(key,list);
   if(!el.__psb){el.__psb=true;el.addEventListener('click',onClick,true);el.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('#pipeline-stage-b [data-psb="open"]')){e.preventDefault();e.target.click();}});}
   document.getElementById('ptitle').textContent=CFG[key].name;const ps=document.getElementById('psub');if(ps)ps.textContent='왼쪽 단계 진단 → 오른쪽 확인할 현장 · 빨강 사유부터';

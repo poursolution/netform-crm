@@ -63,10 +63,10 @@
   const tabs=[['all','전체',all.length,'#15171c','']].concat(GROUPS.map(g=>[g[0],g[1],by[g[0]].length,g[2],g[0]==='assign'?'red':g[0]==='stale'?'amber':'']));
   const tabHtml=tabs.map(t=>'<button type="button" class="iv-tab'+(s.group===t[0]?' on':'')+'" data-iv="group" data-v="'+t[0]+'" aria-pressed="'+(s.group===t[0])+'"><i style="background:'+t[3]+'"></i>'+h(t[1])+'<b class="'+t[4]+'">'+t[2]+'</b></button>').join('');
   const shown=GROUPS.filter(g=>s.group==='all'||s.group===g[0]);
-  const body=shown.map(g=>{const list=by[g[0]],limit=s.limits[g[0]]||PER,part=list.slice(0,limit),more=list.length-part.length;
+  const body=shown.map(g=>{const list=by[g[0]],limit=PER,__pg=root.ListPager.cut(list,s.limits[g[0]]||1,PER),part=__pg.rows,more=list.length-part.length;/* limits = 묶음별 쪽 번호 */
    return '<div class="iv-ghead" role="button" tabindex="0" data-iv="group" data-v="'+(s.group===g[0]?'all':g[0])+'"><i style="background:'+g[2]+'"></i><b>'+h(g[1])+'</b><span>'+list.length+'건</span><small>· '+h(g[3])+'</small><em>'+(s.group===g[0]?'전체 보기':'이것만 보기')+'</em></div>'
     +(list.length?part.map(rowHtml).join(''):'<div class="iv-empty">해당하는 문의가 없습니다</div>')
-    +(more>0?'<button type="button" class="iv-more" data-iv="more" data-v="'+g[0]+'">+ '+more+'건 더보기</button>':'');}).join('');
+    +root.ListPager.html(__pg,{ns:'iv',v:g[0],small:true});}).join('');
   /* 제목·브랜드·담당자·검색은 공통 제목줄과 공통 고정 필터줄에 있다(핸드오프 ②) — 여기는 묶음 알약 + 문의 등록 + 더보기 */
   host.innerHTML='<div class="iv-tabs" role="group" aria-label="우선순위 묶음">'+tabHtml+'<span class="iv-spacer"></span><span class="iv-create-slot"></span><span class="iv-more-slot"></span></div>'
    +'<div class="iv-table"><div class="iv-thead"><span>현장 · 문의</span><span>고객 · 연락처</span><span>브랜드 · 공종 · 채널</span><span>담당</span><span>마지막 연락</span><span>경과</span><span></span></div>'+body+'</div>';
@@ -88,7 +88,7 @@
   if(b){const v=b.dataset.v,s=st();
    /* 머리 줄에 옮겨 둔 기존 요소(브랜드 건수·더보기·등록)가 다시 만들어지도록 전체를 다시 그린다 */
    if(b.dataset.iv==='group'){s.group=v;return root.paint();}
-   if(b.dataset.iv==='more'){s.limits[v]=(s.limits[v]||PER)+PER;return root.paint();}
+   if(b.dataset.iv==='page'){s.limits[v]=Number(b.dataset.page)||1;return root.paint();}
    if(b.dataset.iv==='scope'){if(root.inqCtlRoleView()!==v)root.inqCtlSetRoleView(v);return;}
   }
   const row=e.target.closest('.iv-row');if(row&&!e.target.closest('button,a,input,select'))open(row.dataset.k);

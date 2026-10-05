@@ -201,8 +201,8 @@
   let groups='';
   if(nowRows.length)groups+='<div class="tt-ghead red"><i>긴급</i><b>긴급 · 나머지</b><span>'+nowRows.length+'건</span><em>기준 · 카드 다음 순서 · 단계 순</em></div>'+nowRows.map(rowHtml).join('');
   if(weekRest.length){groups+='<div class="tt-ghead grey"><i>↓</i><b>중요 · 관리</b><span>'+weekRest.length+'건</span><em>단계 순서 · 각 단계 안에서 중요 먼저</em></div>';
-   COLS.forEach((c,ci)=>{const arr=weekRest.filter(i=>i.st===c[0]).sort((a,b)=>(a.urg==='today'?0:1)-(b.urg==='today'?0:1)||b.days-a.days);if(!arr.length)return;const open=!!S.ex[c[0]],shown=open?arr:arr.slice(0,5);
-    groups+='<div class="tt-ghead"><i>'+(ci+1)+'</i><b>'+h(c[1])+'</b><span>'+arr.length+'건</span><em>기준 · '+h(c[2])+'</em></div>'+shown.map(rowHtml).join('')+(arr.length>5?'<button type="button" class="tt-more" data-tt="more" data-v="'+c[0]+'">'+(open?'접기 ▴':'나머지 '+(arr.length-5)+'건 더 보기 ▾')+'</button>':'');});}
+   COLS.forEach((c,ci)=>{const arr=weekRest.filter(i=>i.st===c[0]).sort((a,b)=>(a.urg==='today'?0:1)-(b.urg==='today'?0:1)||b.days-a.days);if(!arr.length)return;const pg=root.ListPager.cut(arr,root.ListPager.page(S,'c:'+c[0]),5),shown=pg.rows;
+    groups+='<div class="tt-ghead"><i>'+(ci+1)+'</i><b>'+h(c[1])+'</b><span>'+arr.length+'건</span><em>기준 · '+h(c[2])+'</em></div>'+shown.map(rowHtml).join('')+root.ListPager.html(pg,{ns:'tt',v:'c:'+c[0],small:true});});}
   const listHtml=rest.length?'<div class="tt-list">'+groups+'<footer><span>놓친 '+list.length+'건 · 카드 '+cards.length+'건 + 목록 '+rest.length+'건</span></footer></div>':'';
   /* 오른쪽 */
   const sc=sched(rows,all,team),du=dues(all),wk=weekMetrics(X,role);
@@ -221,7 +221,7 @@
   if(a==='stage'){S.stage=v&&S.stage!==v?v:null;S.reason='all';return rerender();}
   if(a==='urg'){S.urg=S.urg===v?null:v;return rerender();}
   if(a==='brand'){S.brand=v&&S.brand!==v?v:null;return rerender();}
-  if(a==='more'){S.ex[v]=!S.ex[v];return rerender();}
+  if(a==='page'){root.ListPager.set(S,v,b.dataset.page);return rerender();}
   if(a==='fold'){S.open[key]=!S.open[key];return rerender();}
   if(a==='owner'){if(root.CommonFilterBar)root.CommonFilterBar.setOwner(v);else root.G.todayQueueOwner=v;return root.paint();}
   if(a==='ai'){if(AIB.has(key))return;const X=T().data(),M=model(X,X.rows,root.G._towerRole||'rep'),i=M.mine.find(m=>m.key===key);if(!i)return;AIB.add(key);rerender();

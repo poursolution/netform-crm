@@ -59,7 +59,7 @@
  function open(key){V().open(key);}
  function onTop(e){
   const b=e.target.closest('[data-ab]');if(!b)return;const a=b.dataset.ab,v=b.dataset.value,st=SB().state('asset');
-  if(a==='status'){root.G.siteStatus=v;st.limit=30;root.paintSites();}
+  if(a==='status'){root.G.siteStatus=v;root.ListPager.reset(st);root.paintSites();}
   if(a==='owner'){const cur=root.SalesScope.state().owner||'전체';root.CommonFilterBar.setOwner(cur===v?'전체':v);root.paintSites();}
   if(a==='advisory'){const pg=document.getElementById('pg-sites'),on=pg.classList.toggle('av-adv-on');if(on)pg.querySelector('.advisory-library')?.scrollIntoView({block:'nearest'});b.closest('details')?.removeAttribute('open');}
   if(a==='review')root.goPage('dup');

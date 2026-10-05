@@ -24,7 +24,7 @@ function functionSource(name){
 function sandbox(){
  const panel={innerHTML:''},target={id:'deal-target',site:'대상아파트',created:'2026-09-02',work:'옥상방수',assignee:'황윤선',amt:120000000,code:'sent'},other={id:'deal-other',site:'다른아파트',created:'2026-09-03',work:'재도장',assignee:'이필선',amt:80000000,code:'rapport'};
  const context={
-  G:{inqView:'console',linkTargetDealKey:null,linkAll:false,inqSelKey:'stale',inqPage:9},
+  ListPager:(require('../list-pager.js'),globalThis.ListPager),G:{inqView:'console',linkTargetDealKey:null,linkAll:false,inqSelKey:'stale',inqPage:9},
   CUR_DETAIL:{kind:'deal',item:target},B:{deals:[target,other],inquiries:[]},panel,
   linkCandidates(){return [
    {q:{id:'inq-target',site:'대상아파트',at:'2026-09-01',status:'접수',work:'옥상방수',assignee:'황윤선'},cand:[{d:target,sc:100,gap:1},{d:other,sc:80,gap:2}]},

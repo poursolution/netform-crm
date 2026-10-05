@@ -26,7 +26,7 @@
   const k=reason||it.first,rs=k?C.RS[k]:null,bc=BRAND[it.brand]||'#9ca3af',hot=C.stallRed!=null&&it.stall>C.stallRed;
   return '<div class="psb-card" role="button" tabindex="0" data-sb="open" data-key="'+attr(it.key)+'" style="border-left-color:'+bc+'"><div class="t"><b style="color:'+bc+'">'+h(it.brandText||it.brand||'브랜드 미지정')+'</b><i></i><b class="'+(hot?'r':'')+'">'+h(dayLabel(C,it.stall))+'</b></div><strong>'+h(it.site)+'</strong><span>'+h(it.sub)+' · '+h(it.amountText||money(it.amount))+'</span><div class="b"><em style="color:'+(rs?rs[1]:'#6b7280')+'">'+h(rs?rs[0]:'정상')+'</em><i></i><button type="button" data-sb="act" data-key="'+attr(it.key)+'" data-v="'+attr(k||'')+'">'+h(rs?rs[2]:(C.openLabel||'열기'))+'</button></div></div>';
  }
- /* C: {id,name,desc,axis,S,RS,unit,stallUnit,stallRed,openLabel,kpi2?:(inB,cnt)=>[label,value,sub], topHtml?, moreTitle?} · S 상태: {view,bucket,reason,limit} */
+ /* C: {id,name,desc,axis,S,RS,unit,stallUnit,stallRed,openLabel,kpi2?:(inB,cnt)=>[label,value,sub], topHtml?, moreTitle?} · S 상태: {view,bucket,reason,page} */
  function html(C,rawItems,S){
   const items=rank(C,rawItems),isRed=isRedOf(C),unit=C.unit||'곳';
   const inB=items,byS=S.bucket==='all'?inB:inB.filter(i=>i.bucket===S.bucket),listed=S.reason?byS.filter(i=>i.rs.includes(S.reason)):byS;
@@ -42,11 +42,11 @@
    +'<div class="psb-kpis"><div><span>기준 넘김 (빨강)</span><b style="color:'+(redN?RED:'#15171c')+'">'+redN+unit+'</b><small>오늘 처리할 것</small></div><div><span>'+h(k2[0])+'</span><b>'+h(k2[1])+'</b><small>'+h(k2[2])+'</small></div><div><span>'+h(k3[0])+'</span><b>'+h(k3[1])+'</b><small>'+h(k3[2])+'</small></div></div></div>'
    +'<div class="psb-two"><div class="psb-box"><header><b>왜 멈춰 있나</b><span>누르면 오른쪽이 걸러짐</span></header>'+(reasons.length?reasons.map(x=>'<button type="button" class="psb-reason" data-sb="reason" data-v="'+x.k+'" aria-pressed="'+(S.reason===x.k)+'"><span>'+h(C.RS[x.k][0])+'</span><b style="color:'+C.RS[x.k][1]+'">'+x.n+'</b><i><u style="width:'+(byS.length?Math.round(x.n/byS.length*100):0)+'%;background:'+(isRed(x.k)?RED:'#9aa0ab')+'"></u></i></button>').join(''):'<p class="psb-none">멈춘 사유가 없습니다</p>')+'</div>'
    +'<div class="psb-box"><header><b>그래서 뭘 해야 하나</b></header>'+(acts.length?acts.map(a=>'<div class="psb-act"><span>'+h(a.tag)+'</span><p>'+h(a.t)+'</p></div>').join(''):'<p class="psb-none">기준을 넘긴 곳이 없습니다</p>')+'</div></div>'+(C.sideHtml||'')+'</section>';
-  const shown=listed.slice(0,S.limit||30);
+  const LP=root.ListPager,pg=LP.cut(listed,LP.page(S)),shown=pg.rows;/* 한 쪽 최대 20건 + 쪽 번호(2026-10-05 전체 지침) */
   const head='<div class="psb-lhead"><b>'+h(C.listTitle||'확인할 현장')+' <span>'+listed.length+unit+'</span></b>'+(C.listNote?'<span class="psb-lnote">'+h(C.listNote)+'</span>':'')+(filters.length?'<em>'+h(filters.join(' · '))+'</em>':'')+'<i></i><div class="psb-views"><button type="button" data-sb="view" data-v="list" aria-pressed="'+(S.view==='list')+'">리스트</button><button type="button" data-sb="view" data-v="board" aria-pressed="'+(S.view==='board')+'">보드</button></div></div>';
   let body;
-  if(S.view==='board')body='<div class="psb-board">'+C.S.map(s=>{const cards=listed.filter(i=>i.bucket===s[0]).slice(0,40);return '<div class="psb-col"><div class="ch"><i style="background:'+s[2]+'"></i><b>'+h(s[1])+'</b><span>'+cards.length+'</span><em>'+h(s[3])+'</em></div>'+(cards.length?cards.map(i=>cardHtml(C,i,S.reason)).join(''):'<p class="psb-none">없음</p>')+'</div>';}).join('')+'</div>';
-  else body='<div class="psb-list">'+(shown.length?shown.map(i=>C.rowHtml?C.rowHtml(C,i,S.reason):rowHtml(C,i,S.reason)).join(''):'<div class="psb-empty">'+h(C.empty||'해당하는 곳이 없습니다.')+'</div>')+(listed.length>shown.length?'<button type="button" class="psb-more" data-sb="more">나머지 '+(listed.length-shown.length)+'건 더 보기</button>':'')+'</div>';
+  if(S.view==='board')body='<div class="psb-board">'+C.S.map(s=>{const all=listed.filter(i=>i.bucket===s[0]),cp=LP.cut(all,LP.page(S,'col:'+s[0])),cards=cp.rows;return '<div class="psb-col"><div class="ch"><i style="background:'+s[2]+'"></i><b>'+h(s[1])+'</b><span>'+all.length+'</span><em>'+h(s[3])+'</em></div>'+(cards.length?cards.map(i=>cardHtml(C,i,S.reason)).join(''):'<p class="psb-none">없음</p>')+LP.html(cp,{ns:'sb',v:'col:'+s[0],small:true,info:false})+'</div>';}).join('')+'</div>';
+  else body='<div class="psb-list">'+(shown.length?shown.map(i=>C.rowHtml?C.rowHtml(C,i,S.reason):rowHtml(C,i,S.reason)).join(''):'<div class="psb-empty">'+h(C.empty||'해당하는 곳이 없습니다.')+'</div>')+LP.html(pg,{ns:'sb',unit:unit})+'</div>';
   return '<div id="'+attr(C.id)+'" class="psb sb" data-board="'+attr(C.id)+'"><div class="psb-head"><b>'+h(C.name)+'</b><span>'+h(typeof C.desc==='function'?C.desc():C.desc)+'</span></div>'+(C.topHtml||'')+'<div class="psb-body">'+diag+'<section class="psb-main">'+head+body+'</section></div></div>';
  }
  /* 클릭 연결: ctx = {state():S, cfg():C, paint(), open(key,act)} — host 에 한 번만 붙는다 */
@@ -54,17 +54,17 @@
   if(host.__sb)return;host.__sb=true;
   host.addEventListener('click',e=>{
    const b=e.target.closest('.sb [data-sb]');if(!b||!host.contains(b))return;const S=ctx.state(),a=b.dataset.sb,v=b.dataset.v,C=ctx.cfg();
-   if(a==='bucket'){S.bucket=S.bucket===v?'all':v;S.reason=null;return ctx.paint();}
-   if(a==='reason'){S.reason=S.reason===v?null:v;return ctx.paint();}
-   if(a==='clear'){S.bucket='all';S.reason=null;return ctx.paint();}
+   if(a==='bucket'){S.bucket=S.bucket===v?'all':v;S.reason=null;root.ListPager.reset(S);return ctx.paint();}
+   if(a==='reason'){S.reason=S.reason===v?null:v;root.ListPager.reset(S);return ctx.paint();}
+   if(a==='clear'){S.bucket='all';S.reason=null;root.ListPager.reset(S);return ctx.paint();}
    if(a==='view'){S.view=v;return ctx.paint();}
-   if(a==='more'){S.limit=(S.limit||30)+30;return ctx.paint();}
+   if(a==='page'){root.ListPager.set(S,v,b.dataset.page);return ctx.paint();}
    e.stopPropagation();
    if(a==='act')return ctx.open(b.dataset.key,C&&C.RS[v]?C.RS[v][4]:'',v);
    if(a==='open'&&!e.target.closest('button'))return ctx.open(b.dataset.key,'','');
   },true);
   host.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('.sb [data-sb="open"]')){e.preventDefault();e.target.click();}});
  }
- const state=key=>{const G=root.G;G.sb=G.sb||{};return G.sb[key]||(G.sb[key]={view:'list',bucket:'all',reason:null,limit:30});};
+ const state=key=>{const G=root.G;G.sb=G.sb||{};return G.sb[key]||(G.sb[key]={view:'list',bucket:'all',reason:null,page:1});};
  root.StageBoard={html,bind,rank,state,money,dayLabel,RED,INK,BRAND};
 })(window);

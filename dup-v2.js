@@ -54,7 +54,7 @@
   if(S.f==='done')table='<div class="plv-table" role="table" aria-label="처리 이력"><div class="plv-ghead"><i style="background:#30a46c"></i><b>처리 완료</b><span>'+m.reviews.length+'건</span><small>· 서버에 남은 처리 이력</small></div>'+(m.reviews.length?m.reviews.map(r=>'<div class="dv-hist"><b>'+h(r.source_name)+' → '+h(r.target_name)+'</b><span>'+h(SUGGEST[r.action]||r.action)+' · '+h(r.actor||'')+' · '+h(String(r.created_at||'').slice(0,10))+'</span><small>'+h(r.note||'')+'</small></div>').join(''):'<div class="plv-empty">서버에 확인된 처리 이력이 없습니다</div>')+'</div>';
   else{
    const head='<div class="plv-thead" role="row" style="grid-template-columns:'+GRID+'"><span>대상 (A ↔ B) · 종류</span><span>판단</span><span>근거</span><span>제안</span><span></span></div>';
-   const groups=['sure','maybe','diff'].filter(k=>S.f==='all'||S.f===k).map(k=>{const b=BAND[k],list=m.cases.filter(x=>x.band===k),shown=list.slice(0,20+(S.more[k]||0)),rest=list.length-shown.length;return '<div class="plv-ghead" data-plv-group="'+k+'"><i style="background:'+b[2]+'"></i><b>'+h(b[0])+'</b><span>'+list.length+'건</span><small>· '+h(b[3])+'</small></div>'+(shown.length?shown.map(rowHtml).join(''):'<div class="plv-empty">해당하는 건이 없습니다</div>')+(rest>0?'<button type="button" class="plv-more" data-dv="more" data-value="'+k+'">+ '+rest+'건 더보기</button>':'');}).join('');
+   const groups=['sure','maybe','diff'].filter(k=>S.f==='all'||S.f===k).map(k=>{const b=BAND[k],list=m.cases.filter(x=>x.band===k),__pg=root.ListPager.cut(list,(S.more[k]||0)+1),shown=__pg.rows,rest=list.length-shown.length;return '<div class="plv-ghead" data-plv-group="'+k+'"><i style="background:'+b[2]+'"></i><b>'+h(b[0])+'</b><span>'+list.length+'건</span><small>· '+h(b[3])+'</small></div>'+(shown.length?shown.map(rowHtml).join(''):'<div class="plv-empty">해당하는 건이 없습니다</div>')+root.ListPager.html(__pg,{ns:'dv',attrs:'data-value="'+k+'"',small:true});}).join('');
    table='<div class="plv-table" role="table" aria-label="중복 후보">'+head+groups+'</div>';
   }
   return intro+diagnosis(m)+band+table;
@@ -96,7 +96,7 @@
  function onClick(e){
   const b=e.target.closest('#dup-v2 [data-dv]');if(!b)return;const S=st(),a=b.dataset.dv,v=b.dataset.value;
   if(a==='filter'){S.f=v;S.more={};return root.DataCleanupUI.render();}
-  if(a==='more'){S.more[v]=(S.more[v]||0)+40;return root.DataCleanupUI.render();}
+  if(a==='page'){S.more[v]=(Number(b.dataset.page)||1)-1;return root.DataCleanupUI.render();}
   if(a==='refresh')return root.DataCleanupUI.refresh();
   if(a==='open')return open(Number(v));
  }

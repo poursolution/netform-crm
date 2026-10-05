@@ -82,8 +82,8 @@
  }
  function html(rows,deals){
   rows=rows.concat(upcoming(rows,deals));
-  const S=st(),sp=split(rows),U=sp.urgent,n=t=>U.filter(u=>u.tone===t).length,shown=S.more?U:U.slice(0,4),hidden=U.slice(shown.length);
-  const head='<div class="trv-head"><b>급한 곳 '+U.length+'</b>'+['r','b','a'].map(t=>'<span style="color:'+TONE[t][2]+'"><i style="background:'+TONE[t][0]+'"></i>'+TONE[t][3]+' '+n(t)+'</span>').join('')+'<span class="trv-sp"></span>'+(U.length>4?'<button type="button" class="trv-more" data-trv="more">'+(S.more?'접기 ↑':'+ '+(U.length-4)+'곳 더보기')+'</button>':'')+'</div>';
+  const S=st(),sp=split(rows),U=sp.urgent,n=t=>U.filter(u=>u.tone===t).length,shown=U.slice(0,4),hidden=U.slice(shown.length);/* 쪽 번호 지침(2026-10-05): 카드는 4장까지만 — 나머지는 아래 묶음 표(쪽 번호)로 */
+  const head='<div class="trv-head"><b>급한 곳 '+U.length+'</b>'+['r','b','a'].map(t=>'<span style="color:'+TONE[t][2]+'"><i style="background:'+TONE[t][0]+'"></i>'+TONE[t][3]+' '+n(t)+'</span>').join('')+'<span class="trv-sp"></span>'+''+'</div>';
   const cards=U.length?'<div class="trv-grid">'+shown.map((u,i)=>cardHtml(u,i,S.open===u.x.key)).join('')+'</div>':'<div class="trv-calm"><b>지금 급한 곳이 없습니다</b><span>'+(sp.rest.length?'아래 예정된 곳을 순서대로 챙기면 됩니다.':'새 문의가 배정되거나 기한이 다가오면 여기에 먼저 나옵니다.')+'</span></div>';
   /* 나머지: 카드에 안 들어간 곳 — 늦음 → 오늘 약속 → 내일 · 이번 주. 빈 묶음은 숨긴다 */
   const first=hidden.filter(u=>u.tone==='r'&&u.rank===0).map(u=>u.x),late=hidden.filter(u=>u.tone==='r'&&u.rank!==0).map(u=>u.x),today=hidden.filter(u=>u.tone==='b').map(u=>u.x),later=hidden.filter(u=>u.tone==='a').map(u=>u.x).concat(sp.rest);

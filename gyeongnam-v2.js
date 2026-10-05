@@ -64,8 +64,8 @@
   const head='<div class="plv-thead" role="row" style="grid-template-columns:'+GRID+'"><span>현장 · 지사 담당</span>'+COLS.map(c=>'<span>'+h(c)+'</span>').join('')+'<span></span></div>';
   const more=root.G.gnMore||(root.G.gnMore={});
   const groups=GROUPS.map(([id,title,color,desc])=>{
-   const list=s.rows.filter(x=>x.f.group===id).sort((a,b)=>(b.f.days||0)-(a.f.days||0)),shown=list.slice(0,20+(more[id]||0)),rest=list.length-shown.length;
-   return '<div class="plv-ghead" data-plv-group="'+id+'"><i style="background:'+color+'"></i><b>'+h(title)+'</b><span>'+list.length+'건</span><small>· '+h(desc)+'</small></div>'+(shown.length?shown.map(rowHtml).join(''):'<div class="plv-empty">해당하는 건이 없습니다</div>')+(rest>0?'<button type="button" class="plv-more" data-gn="more" data-value="'+id+'">+ '+rest+'건 더보기</button>':'');
+   const list=s.rows.filter(x=>x.f.group===id).sort((a,b)=>(b.f.days||0)-(a.f.days||0)),__pg=root.ListPager.cut(list,(more[id]||0)+1),shown=__pg.rows,rest=list.length-shown.length;
+   return '<div class="plv-ghead" data-plv-group="'+id+'"><i style="background:'+color+'"></i><b>'+h(title)+'</b><span>'+list.length+'건</span><small>· '+h(desc)+'</small></div>'+(shown.length?shown.map(rowHtml).join(''):'<div class="plv-empty">해당하는 건이 없습니다</div>')+root.ListPager.html(__pg,{ns:'gn',attrs:'data-value="'+id+'"',small:true});
   }).join('');
   return '<div id="gyeongnam-v2" class="plv" data-workspace="gyeongnam">'+intro+chips+diagnosis(s)+'<div class="plv-table" role="table" aria-label="경남지사 넘긴 건">'+head+groups+'</div></div>';
  }
@@ -74,7 +74,7 @@
   const b=e.target.closest('#gyeongnam-v2 [data-gn]');if(!b)return;const a=b.dataset.gn,v=b.dataset.value;
   if(a==='open')root.InquiryWorkbench.openFrom(v,'gyeongnam');/* 견적문의 상세 모달을 그대로 연다 — 닫으면 이 화면으로 돌아온다 */
   if(a==='owner'){root.G.gnOwner=(root.G.gnOwner||'전체')===v?'전체':v;root.paintGyeongnam();}
-  if(a==='more'){const m=root.G.gnMore||(root.G.gnMore={});m[v]=(m[v]||0)+40;root.paintGyeongnam();}
+  if(a==='page'){const m=root.G.gnMore||(root.G.gnMore={});m[v]=(Number(b.dataset.page)||1)-1;root.paintGyeongnam();}
   if(a==='sms')root.campaignOpenGyeongnam?.();
  }
  function paint(){

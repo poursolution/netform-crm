@@ -65,7 +65,7 @@
   CFG.topHtml=topHtml(s);CFG.sideHtml=sideHtml(s);
   host.innerHTML=SB().html(CFG,s.rows.map(item),S);
   SB().bind(host,{state:()=>SB().state('gyeongnam'),cfg:()=>CFG,paint:()=>root.paintGyeongnam(),open});
-  if(!host.__gb){host.__gb=true;host.addEventListener('click',e=>{const b=e.target.closest('[data-gb]');if(!b)return;if(b.dataset.gb==='owner'){root.G.gnOwner=(root.G.gnOwner||'전체')===b.dataset.value?'전체':b.dataset.value;const st=SB().state('gyeongnam');st.limit=30;root.paintGyeongnam();}if(b.dataset.gb==='sms')root.campaignOpenGyeongnam?.();});}
+  if(!host.__gb){host.__gb=true;host.addEventListener('click',e=>{const b=e.target.closest('[data-gb]');if(!b)return;if(b.dataset.gb==='owner'){root.G.gnOwner=(root.G.gnOwner||'전체')===b.dataset.value?'전체':b.dataset.value;const st=SB().state('gyeongnam');root.ListPager.reset(st);root.paintGyeongnam();}if(b.dataset.gb==='sms')root.campaignOpenGyeongnam?.();});}
   const t=document.getElementById('ptitle'),p=document.getElementById('psub');if(t)t.textContent='경남지사';if(p)p.textContent='왼쪽 지사 진행 진단 → 오른쪽 확인할 건 · 빨강 사유부터 — 처리는 지사가, 확인은 본사가';
   pg?.classList.add('gnv-on','gb-on');root.CommonFilterBar?.mount('gyeongnam');const bar=pg?.querySelector(':scope>.cf-bar');if(bar)bar.hidden=false;
  }

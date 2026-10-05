@@ -193,9 +193,9 @@ async function run(){
   assert.ok(!fs.readFileSync(path.join(root,'mobile.html'),'utf8').includes('pc-typography'),'mobile does not load PC typography');
   if(process.env.VERIFY_SCREENSHOT)await page.screenshot({path:process.env.VERIFY_SCREENSHOT,fullPage:true});
   await page.evaluate(()=>{const original=B.deals[3];B.deals=Array.from({length:51},(_,i)=>({...original,id:'scale-'+i,site:'대량검증 '+String(i).padStart(2,'0')}));G.relationshipPage=1;paintRelationshipManagement()});
-  assert.equal(await page.locator('.relpc-table tbody tr').count(),50);
-  await page.getByRole('button',{name:'50건 더보기'}).click();
-  assert.equal(await page.locator('.relpc-table tbody tr').count(),51);
+  /* 쪽 번호(2026-10-05 전체 지침): 한 쪽 20건 · 51건 = 20 · 20 · 11 */assert.equal(await page.locator('.relpc-table tbody tr').count(),20);assert.equal(await page.locator('.lpg .lpg-info').first().innerText(),'1–20 / 51건');
+  await page.locator('.lpg [data-relpc="page"][data-page="3"]').click();
+  assert.equal(await page.locator('.relpc-table tbody tr').count(),11);assert.equal(await page.getByRole('button',{name:/더보기/}).count(),0);
   await page.getByRole('textbox',{name:'관계관리 현장 검색'}).fill('대량검증 50');
   await page.getByRole('button',{name:'검색',exact:true}).click();
   assert.equal(await page.locator('.relpc-table tbody tr').count(),1);
