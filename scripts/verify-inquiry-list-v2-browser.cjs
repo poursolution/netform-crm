@@ -53,13 +53,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('.iv-row[data-group="assign"] .iv-cta').first().click();
   assert.equal(await page.locator('#inq-inbox-dialog.idv .idv-rep').count()>0,true,'[배정] → 새 상세의 배정 칸');
   await page.evaluate(()=>InquiryWorkbench.close());
-  /* 더보기: 공종·상태·담당자 구분 필터와 예전 목록 전환 */
-  await page.click('#inq-v2 .inq-work-tools>summary');
-  assert.equal(await page.locator('#inq-v2 .inq-tools-body .inq-work-filters select[name="work"]').count(),1);
-  assert.equal(await page.locator('#inq-v2 .inq-tools-body .sf-period').count(),1,'연도·분기는 더보기에');
-  await page.click('#inq-v2 .iv-legacy');
-  assert.equal(await page.evaluate(()=>!document.getElementById('inq-v2')&&getComputedStyle(document.querySelector('#sg-panel')).display!=='none'),true,'예전 목록으로 전환');
-  await page.evaluate(()=>{G.inqV2Off=false;paint();});
+  /* 더보기와 구형 목록 진입은 제거하되 공통 필터 데이터는 보존한다. */
+  assert.equal(await page.locator('#inq-v2 .inq-work-tools').isVisible(),false);
+  assert.equal(await page.locator('#pg-inq .inq-work-tools>summary').count(),0);
+  assert.equal(await page.locator('#pg-inq .iv-legacy').count(),0);
+  assert.equal(await page.locator('#inq-v2 .inq-tools-body .sf-period').count(),1);
+  await page.evaluate(()=>{G.inqV3Off=false;paint();});
+  assert.equal(await page.locator('#inq-v3 .inq-work-tools').isVisible(),false);
+  assert.equal(await page.getByText('예전 목록으로 보기(일괄 선택·배정)',{exact:true}).count(),0);
+  await page.evaluate(()=>{G.inqV3Off=true;paint();});
   /* 담당자 선택(공통 필터줄) — '내 담당'을 대신한다. 선택하면 해제 단추, 화면을 옮겨도 유지 */
   await page.selectOption('#pg-inq>.cf-bar [data-cf="owner"]','이필선');
   assert.equal(await page.locator('.iv-row').count(),3,'이필선 담당 3건');assert.equal(await page.locator('#pg-inq>.cf-bar .cf-clear').count(),1);
