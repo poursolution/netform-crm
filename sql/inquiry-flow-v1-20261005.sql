@@ -332,7 +332,8 @@ end $fn$;
 revoke all on function public.crm_inquiry_command_v1(jsonb) from public, anon;
 grant execute on function public.crm_inquiry_command_v1(jsonb) to authenticated;
 
--- 읽기: 관리자는 전체, 그 밖은 본인 담당 문의. 값이 있는 문의만 내려 준다
+-- 읽기: 관리자는 전체, 그 밖은 본인 담당 문의. 값이 있는 문의만 내려 준다.
+-- closed = 종결 사유 글이 적혀 있는 문의의 사유(화면의 기본 읽기는 이 칸을 내려 주지 않아 닫힌 문의가 모두 '사유 미기록'으로 보였다 — 읽기만 한다)
 create or replace function public.crm_inquiry_flow_list_v1(p jsonb)
 returns jsonb language plpgsql stable security definer set search_path='' as $fn$
 declare a record;
@@ -342,7 +343,12 @@ begin
  return jsonb_build_object('ok',true,'server_at',clock_timestamp(),'states',coalesce((
   select jsonb_agg(crm_security.inquiry_flow_state_json(s.inquiry_id))
   from crm_security.inquiry_flow_state s join public.inquiries i on i.id=s.inquiry_id
-  where a.permission_role='admin' or i.assigned_to=a.user_id or crm_security.can_inquiry(i.id)),'[]'::jsonb));
+  where a.permission_role='admin' or i.assigned_to=a.user_id or crm_security.can_inquiry(i.id)),'[]'::jsonb),
+  'closed',coalesce((
+  select jsonb_agg(jsonb_build_object('inquiry_id',i.id,'status',i.status,'close_reason',i.close_reason))
+  from public.inquiries i
+  where nullif(btrim(coalesce(i.close_reason,'')),'') is not null
+   and (a.permission_role='admin' or i.assigned_to=a.user_id or crm_security.can_inquiry(i.id))),'[]'::jsonb));
 end $fn$;
 revoke all on function public.crm_inquiry_flow_list_v1(jsonb) from public, anon;
 grant execute on function public.crm_inquiry_flow_list_v1(jsonb) to authenticated;
