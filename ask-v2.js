@@ -64,7 +64,7 @@
  }
  function rowHtml(d,i){
   const n=days(d),a=next(d),stale=S.conds.some(c=>c.k==='noContact'),amt=money(d);
-  const basis=stale?(n==null?'연락 기록 없음':'마지막 연락 '+n+'일 전'):S.conds.some(c=>c.k==='callToday')&&a?(a.text||a.type||'연락')+' · '+String(a.due||a.due_at||'').slice(5,10).replace('-','/'):S.conds.some(c=>c.k==='noPhone')?'소장 휴대폰 없음':a?'다음 할 일 '+String(a.due||a.due_at||'').slice(5,10).replace('-','/'):'다음 할 일 없음';
+  const basis=stale?(n==null?'CRM 연락 기록 없음':'마지막 연락 '+n+'일 전'):S.conds.some(c=>c.k==='callToday')&&a?(a.text||a.type||'연락')+' · '+String(a.due||a.due_at||'').slice(5,10).replace('-','/'):S.conds.some(c=>c.k==='noPhone')?'소장 휴대폰 없음':a?'다음 할 일 '+String(a.due||a.due_at||'').slice(5,10).replace('-','/'):'다음 할 일 없음';
   const key=stale?'<b class="r">'+(n==null?'–':n+'일')+'</b>':'<b class="'+(amt?'b':'m')+'">'+h(amt?root.fmtAmt(amt):'금액 미입력')+'</b>';
   return '<button type="button" class="ak-row" data-ak="open" data-value="'+i+'"><span class="ak-site"><strong>'+h(d.site||'현장명 미입력')+'</strong><small>'+h(root.repN(d.assignee)||'미배정')+'</small></span><span>'+h(root.stageLabel(root.dealStage(d)))+' · '+h(root.dealWorkSummary(d)||'공종 미분류')+'</span><span>'+h(basis)+'</span>'+key+'</button>';
  }

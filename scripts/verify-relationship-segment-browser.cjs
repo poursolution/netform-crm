@@ -94,7 +94,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await b.locator('.prb-sub').nth(2).click();await page.waitForTimeout(200);
   assert.deepEqual(await rows(),[
    '대기 공사 임박 POUR솔루션 · 정정훈 '+D.nearLabel+' 3개월 안 공사 시기 3개월 안 → 집중관리 복귀 · 다음 행동 없음 1.4억 집중관리로',
-   '대기 내년 공사 석민이앤씨 · 한준엽 '+(D.Y+2)+'년 연락 기록 없음 2개월 연락일 지남 · 다음 행동 없음 2.2억 안부 연락',
+   '대기 내년 공사 석민이앤씨 · 한준엽 '+(D.Y+2)+'년 CRM 연락 기록 없음 2개월 연락일 지남 · 다음 행동 없음 2.2억 안부 연락',
    '대기 연락일 지남 POUR솔루션 · 이필선 시기 미정 연락일 29일 지남 2개월 연락일 지남 · 공사 시기 미정 · 시기 확인 0.9억 안부 연락']);
   assert.deepEqual((await b.locator('.prb-chip').allInnerTexts()).map(one),['전체 3','연락일 지남 2','관리소장 변경 0']);assert.match(await b.locator('.prb-foot').innerText(),/^공사 시기가 3개월 안 = 집중관리로 복귀 · 관리소장이 바뀌면 변화 이벤트 생성$/);
   /* [집중관리로] = 지금 단계 정보에 집중 복귀일 저장 → 30일 집중관리 */

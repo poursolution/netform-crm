@@ -61,14 +61,14 @@
    +'<span class="ta-bt"><button type="button" class="go" data-ta="assign" data-key="'+k+'"'+(r&&r.assignable?'':' disabled title="이 담당자는 여기서 바로 배정할 수 없습니다 — [다른 사람]에서 고르세요"')+'>추천대로 배정</button><button type="button" data-t3="act" data-act="배정" data-key="'+k+'">다른 사람</button></span></div>';
  }
  function stallRow(i){
-  const k=attr(i.key),own=i.x.owner||'미배정',last=String(i.support?'[지원 요청] '+i.support.note:i.i.recent||'최근 연락 기록 없음').replace(/\s+/g,' ').slice(0,36),w=WRC(i);
+  const k=attr(i.key),own=i.x.owner||'미배정',last=String(i.support?'[지원 요청] '+i.support.note:i.i.recent||(root.ContactState?root.ContactState.NONE:'CRM 연락 기록 없음')).replace(/\s+/g,' ').slice(0,36),w=WRC(i);
   return '<div class="ta-row" role="button" tabindex="0" data-t3="open" data-key="'+k+'">'+brandCell(i)+'<span class="ta-st"><b title="'+attr(i.i.site)+'">'+h(i.i.site)+'</b><small>'+h([i.sName,i.amt?money(i.amt):'금액 미정'].filter(Boolean).join(' · '))+'</small></span>'+ai(last,tag(i.missTxt)+(i.x.next?'':tag('다음 할 일 없음','y')))
    +'<span class="ta-rc">'+(w?w.rc:'<b>'+h(own+' · '+i.act)+'</b><small>'+h(i.loss||i.done||'')+'</small>')+'</span>'+dcell(i,false)
    +'<span class="ta-bt">'+(w?w.btn:'<button type="button" class="go" data-t3="act" data-act="'+attr(i.act)+'" data-key="'+k+'"'+(i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>추천대로 '+h(i.act)+'</button>')+(own!=='미배정'?'<button type="button" data-t3="owner" data-key="'+k+'" data-v="'+attr(own)+'">담당 화면</button>':'<button type="button" data-t3="detail" data-key="'+k+'">상세 보기</button>')+'</span></div>';
  }
  /* 오늘 안 넘기면 놓침(첫 연락 · 오늘 마감 · 오늘 약속): ②와 같은 표 줄 — 지난 기록 / 담당 · 할 일 + 놓치면 생기는 일 / 경과(빨강) / [추천대로 …] [담당 화면] */
  function urgentRow(i){
-  const k=attr(i.key),own=i.x.owner&&i.x.owner!=='미배정'?i.x.owner:'',last=String(i.support?'[지원 요청] '+i.support.note:i.i.recent||'최근 연락 기록 없음').replace(/\s+/g,' ').slice(0,36),who=[i.i.name,i.i.role].filter(Boolean).join(' '),w=WRC(i);
+  const k=attr(i.key),own=i.x.owner&&i.x.owner!=='미배정'?i.x.owner:'',last=String(i.support?'[지원 요청] '+i.support.note:i.i.recent||(root.ContactState?root.ContactState.NONE:'CRM 연락 기록 없음')).replace(/\s+/g,' ').slice(0,36),who=[i.i.name,i.i.role].filter(Boolean).join(' '),w=WRC(i);
   return '<div class="ta-row" role="button" tabindex="0" data-t3="open" data-key="'+k+'">'+brandCell(i)+'<span class="ta-st"><b title="'+attr(i.i.site)+'">'+h(i.i.site)+'</b><small>'+h([i.sName,who||'',i.amt?money(i.amt):''].filter(Boolean).join(' · '))+'</small></span>'+ai(last,tag(i.missTxt,'r')+(i.i.want&&!/기록 없음/.test(i.i.want)?tag(i.i.want):''))
    +'<span class="ta-rc">'+(w?w.rc:'<b>'+h((own||'미배정')+' · '+i.act)+'</b><small>'+h(i.loss?'놓치면 '+i.loss:i.done||'')+'</small>')+'</span>'+dcell(i,true,i.rk==='contract')
    +'<span class="ta-bt">'+(w?w.btn:'<button type="button" class="go" data-t3="act" data-act="'+attr(i.act)+'" data-key="'+k+'"'+(i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>추천대로 '+h(i.act)+'</button>')+(own?'<button type="button" data-t3="owner" data-key="'+k+'" data-v="'+attr(own)+'">담당 화면</button>':'<button type="button" data-t3="detail" data-key="'+k+'">상세 보기</button>')+'</span></div>';

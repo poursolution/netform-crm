@@ -80,7 +80,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await m.evaluate(n=>Math.round(n.getBoundingClientRect().width)),460);assert.equal(await m.locator('header b').innerText(),'지사 확인 요청');
   assert.deepEqual(await m.locator('.wrq-form>.k').allInnerTexts(),['현장','현재 상태','요청 대상','요청 내용','처리 기한','메모']);
   assert.equal(await m.locator('.wrq-form>b').first().innerText(),'[경북 경주] 전원하이빌 · POUR솔루션');
-  assert.deepEqual(await m.locator('.wrq-tags span').allInnerTexts(),['지사 실담당 미지정','고객 연락 없음']);
+  assert.deepEqual(await m.locator('.wrq-tags span').allInnerTexts(),['지사 실담당 미지정','CRM 연락 기록 없음']);
   assert.deepEqual(await m.locator('.wrq-asks button').evaluateAll(l=>l.map(b=>[b.textContent.replace('✓',''),b.getAttribute('aria-pressed')])),[['실담당 지정 확인','true'],['고객 첫 연락 진행 확인','true'],['영업 진행 여부 확인','false'],['본사 회수 검토','false']]);
   assert.deepEqual(await m.locator('.wrq-dues button').evaluateAll(l=>l.map(b=>[b.textContent,b.getAttribute('aria-pressed')])),[['오늘 중','true'],['내일 12시','false'],['3일 안','false']]);
   assert.equal(one(await m.locator('.wrq-memo').innerText()),'AI담당자 지정 후 고객 첫 연락 진행 여부를 CRM에 남겨 주세요.');assert.equal(one(await m.locator('footer').innerText()),'직접 안 써도 됩니다 · 체크만 취소 요청 보내기');

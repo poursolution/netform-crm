@@ -81,7 +81,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   if(shot)await page.screenshot({path:shot+'-window.png'});
   await w.locator('.rw-g[data-g="nonext"] [data-rw="all"]').click();assert.equal(await w.locator('.rw-g[data-g="nonext"] .rw-row').count(),7,'나머지 전체 보기');assert.deepEqual((await rows('nonext'))[6],['금액 없는 현장','날짜 없음','-','열기']);
   await w.locator('.rw-g[data-g="overdue"] [data-rw="toggle"]').click();assert.deepEqual(await rows('overdue'),[['[경기 용인] 자봉마을써니밸리','30일 지남','7억','열기'],['[전북 군산] 미룡주공2단지','12일 지남','3.4억','열기']]);
-  await w.locator('.rw-g[data-g="first"] [data-rw="toggle"]').click();assert.deepEqual((await rows('first')).map(r=>r.slice(1)),[['배정 후 미연락','-','열기'],['배정 후 미연락','-','열기'],['배정 후 미연락','-','열기']]);
+  await w.locator('.rw-g[data-g="first"] [data-rw="toggle"]').click();assert.deepEqual((await rows('first')).map(r=>r.slice(1)),[['배정 후 CRM 연락 기록 없음','-','열기'],['배정 후 CRM 연락 기록 없음','-','열기'],['배정 후 CRM 연락 기록 없음','-','열기']]);
   await w.locator('.rw-g[data-g="nonext"] [data-rw="toggle"]').click();assert.equal(await w.locator('.rw-g[data-g="nonext"] .rw-row').count(),0);assert.equal((await heads())[0][4],'보기 ▾');
   /* 7. 코칭 저장 = 기존 주간 관리자 한마디 한 줄(주제 · 약속 · 지표 전 → 목표) */
   await co.locator('.rw-chips button',{hasText:'다음 행동'}).click();

@@ -22,7 +22,7 @@
   const sameDay=(S.sameDayAssigned||[]).length;
   P('배정 · 응대','견적문의는 그날 담당을 정한다','당일 배정 ÷ 접수',95,'오후 5시 자동 배정',sameDay,S.Q.length,S.unassigned.slice(0,6).map(q=>inqItem(q,'미배정 '+(days(root.inquiryCreatedAt(q))??'?')+'일','담당 정하기')));
   const assigned=S.Q.filter(root.inquiryAssigned),noResp=S.noResponse;
-  P('배정 · 응대','배정되면 '+(root.INQUIRY_RESPONSE_SLA_HOURS||2)+'시간 안에 첫 전화','시간 내 연락 기록 ÷ 배정',90,'무응답 시 자동 재배정',S.responseRate==null?0:Math.round(S.responseRate*assigned.length/100),assigned.length,noResp.slice(0,6).map(q=>inqItem(q,(root.repN(root.inquiryRoutedOwner?.(q)||q.assignee)||'담당')+' · 첫 연락 없음','담당에게 전화')));
+  P('배정 · 응대','배정되면 '+(root.INQUIRY_RESPONSE_SLA_HOURS||2)+'시간 안에 첫 전화','시간 내 연락 기록 ÷ 배정',90,'무응답 시 자동 재배정',S.responseRate==null?0:Math.round(S.responseRate*assigned.length/100),assigned.length,noResp.slice(0,6).map(q=>inqItem(q,(root.repN(root.inquiryRoutedOwner?.(q)||q.assignee)||'담당')+' · CRM 연락 기록 없음','담당에게 전화')));
   const rk=root.RecordingKPI?root.RecordingKPI.stats('전체',0):{deals:0,activeN:0},low=names().map(n=>({n,s:root.RecordingKPI?root.RecordingKPI.stats(n,0):{activity:null,deals:0}})).filter(x=>x.s.deals&&x.s.activity!=null&&x.s.activity<70);
   P('기록 · 데이터','통화하면 결과를 남긴다','7일 내 기록 있는 진행 건 ÷ 진행',70,'회의 안건',rk.activeN||0,rk.deals||0,low.slice(0,6).map(x=>({label:x.n,why:'활동 기록률 '+x.s.activity+'%',act:['기록 요청','rep',x.n]})));
   let R=[];try{R=root.repFlowData(true);}catch(e){R=[];}

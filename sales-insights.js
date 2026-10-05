@@ -1,7 +1,7 @@
 (function(root){
  'use strict';
  const M=root.SalesInsightsModel,h=v=>root.esc(String(v??'')),a=v=>root.escAttr(String(v??''));
- const labels={stall:'진행 멈춤',promise:'고객 약속 미이행',overdue:'기한초과',missing:'다음 할 일 없음',contact:'마지막 연락 7일 이상 전',unknown:'연락 기록 없음',stale:'장기정체',amount:'예상금액 미입력'};
+ const labels={stall:'진행 멈춤',promise:'고객 약속 미이행',overdue:'기한초과',missing:'다음 할 일 없음',contact:'마지막 연락 7일 이상 전',unknown:'CRM 연락 기록 없음',stale:'장기정체',amount:'예상금액 미입력'};
  let actor='',focusBefore=null;
  const number=n=>Number(n||0).toLocaleString('ko-KR');
  const money=n=>n>=100000000?(n/100000000).toLocaleString('ko-KR',{maximumFractionDigits:2})+'억':number(Math.round(n/10000))+'만원';
@@ -109,7 +109,7 @@
   return card('담당자 현황','<div class="si-table-scroll"><table class="si-table si-people"><thead><tr><th>담당자</th><th>진행</th><th>예상금액</th><th>계약실적</th><th>기한초과</th><th>다음 할 일 없음</th></tr></thead><tbody>'+r.slice(0,limit||r.length).map(x=>'<tr><td>'+btn(x.name,'person',x.name)+'</td><td>'+number(x.s.active.length)+'</td><td>'+money(x.s.expected)+'</td><td>'+(x.cs?money(x.cs.netAmount):'확인 필요')+'</td><td>'+number(x.s.active.filter(d=>d.issues.includes('overdue')).length)+'</td><td>'+number(x.s.active.filter(d=>d.issues.includes('missing')).length)+'</td></tr>').join('')+'</tbody></table></div>'+(r.length?'':empty())+btn('성과 분석 전체보기 →','navigate','perf'),'선택한 영업 분석 대상 담당자 기준 · 미배정은 배정상태 필터에서 확인합니다.');
  }
  function trend(s){const f=state(),months=Array.from({length:12},(_,i)=>({month:i+1,s:csSum({...f,month:i+1,quarter:0})})).filter(x=>!f.month||x.month===Number(f.month));return card('월별 계약실적',months.map(x=>'<div class="si-bar"><span>'+x.month+'월</span><b>'+(x.s?money(x.s.netAmount):'확인 필요')+'</b></div>').join(''),'계약 체결일 기준 · 변경·취소는 발생일 반영');}
- function execution(s){const ready=s.active.filter(d=>!d.issues.includes('missing')).length;return card('실행 관리','<dl class="si-facts"><div><dt>다음 할 일·기한 등록</dt><dd>'+ready+' / '+s.active.length+'건</dd></div><div><dt>다음 할 일 기한초과</dt><dd>'+s.active.filter(d=>d.issues.includes('overdue')).length+'건</dd></div><div><dt>연락 기록 없음</dt><dd>'+s.active.filter(d=>d.issues.includes('unknown')).length+'건</dd></div></dl>','현재 등록된 다음 할 일과 연락 기록 기준');}
+ function execution(s){const ready=s.active.filter(d=>!d.issues.includes('missing')).length;return card('실행 관리','<dl class="si-facts"><div><dt>다음 할 일·기한 등록</dt><dd>'+ready+' / '+s.active.length+'건</dd></div><div><dt>다음 할 일 기한초과</dt><dd>'+s.active.filter(d=>d.issues.includes('overdue')).length+'건</dd></div><div><dt>CRM 연락 기록 없음</dt><dd>'+s.active.filter(d=>d.issues.includes('unknown')).length+'건</dd></div></dl>','현재 등록된 다음 할 일과 연락 기록 기준');}
  function records(list,limit){return '<div class="si-records">'+(list.slice(0,limit||list.length).map(d=>'<div><span><b>'+h(d.site)+'</b><small>'+h(d.reason||d.stageLabel)+'</small></span>'+btn(d.type==='inq'&&d.owner==='미배정'?'배정':'처리','record',d.key)+'</div>').join('')||empty())+'</div>';}
  function recent(s){
   const seen=new Set(),logs=[];s.deals.forEach(d=>{const patch=root.itemPatch(d.item,'deal');[...(d.item.activities||[]),...(patch.activities||[])].forEach(x=>{const at=x.at||x.created_at||x.occurred_at,k=d.key+':'+(x.id||[at,x.type,x.note||x.result].join('|'));if(seen.has(k)||!M.inPeriod(at,state()))return;seen.add(k);logs.push({at,site:d.site,text:x.note||x.result||root.siteActivityTitle(x.type||'활동')})})});
@@ -545,7 +545,7 @@
   });
   /* 오늘·어제 새로 만든 건 중 처음부터 빠진 것 — 누르면 그 건이 열린다 */
   const recent=new Set(days.slice(0,2)),fix=[];
-  r.inquiries.filter(q=>recent.has(kst(qAt(q)))).forEach(q=>{if(!qAssigned(q))fix.push([q,'문의 미배정']);else if(qJudged(q)&&!qFirst(q))fix.push([q,'첫 연락 기록 없음']);});
+  r.inquiries.filter(q=>recent.has(kst(qAt(q)))).forEach(q=>{if(!qAssigned(q))fix.push([q,'문의 미배정']);else if(qJudged(q)&&!qFirst(q))fix.push([q,'CRM 연락 기록 없음']);});
   r.deals.filter(d=>recent.has(kst(d.created))).forEach(d=>{const miss=[!dOwner(d)&&'담당자',dActive(d)&&!dNext(d)&&'다음 할 일',!dSite(d)&&'현장'].filter(Boolean);if(miss.length)fix.push([d,miss.join('·')+' 없음']);});
   const md=k=>Number(k.slice(5,7))+'/'+Number(k.slice(8,10)),liveDay=md(LIVE);
   const head=started?liveDay+' 이후 · 날짜별 새 데이터':'시험 집계 · 최근 7일 — '+liveDay+'부터 정식';

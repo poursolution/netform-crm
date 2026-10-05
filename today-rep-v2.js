@@ -68,7 +68,7 @@
    +'<header><i class="trv-no">'+(n+1)+'</i><b class="trv-why">'+h(u.why)+'</b><span class="trv-chip">'+h(i.chip)+'</span></header>'
    +'<div class="trv-who"><strong title="'+attr(i.site)+'">'+h(i.site)+'</strong><span>'+h([i.name,i.role,i.phone].filter(Boolean).join(' · ')||'연락처 미입력')+'</span></div>'
    +'<div class="trv-stage">'+bar+'<span>'+h(i.stage)+'</span>'+(i.amt?'<b>'+h(money(i.amt))+'</b>':'')+'</div>'
-   +'<dl class="trv-facts"><dt>원한 것</dt><dd>'+h(i.want||'기록 없음')+'</dd><dt>지난 기록</dt><dd>'+h((AIO.get(x.key)||{}).summary||i.recent||'기록 없음')+'</dd><dt>목표</dt><dd class="goal">'+h((AIO.get(x.key)||{}).goal||i.goal||'다음 할 일 정하기')+'</dd></dl>'
+   +'<dl class="trv-facts"><dt>원한 것</dt><dd>'+h(i.want||'기록 없음')+'</dd><dt>지난 기록</dt><dd>'+h((AIO.get(x.key)||{}).summary||i.recent||(root.ContactState?root.ContactState.NONE:'CRM 연락 기록 없음'))+'</dd><dt>목표</dt><dd class="goal">'+h((AIO.get(x.key)||{}).goal||i.goal||'다음 할 일 정하기')+'</dd></dl>'
    +'<p class="trv-opener">“'+h(opener(x,i))+'”'+(root.OpsStore&&root.OpsStore.aiOn()&&!AIO.has(x.key)?' <button type="button" class="trv-ai" data-trv="ai" data-key="'+k+'"'+(AIB.has(x.key)?' disabled':'')+'>'+(AIB.has(x.key)?'AI…':'✦ AI 첫마디')+'</button>':AIO.has(x.key)?' <em class="trv-aitag">AI</em>':'')+'</p>'
    +'<p class="trv-miss"><b>놓치면</b> '+h(u.miss)+'</p>'
    +'<div class="trv-btns"><button type="button" class="call" data-trv="call" data-key="'+k+'"'+(i.digits?' data-tel="'+attr(i.digits)+'"':'')+'>전화</button><button type="button" data-trv="sms" data-key="'+k+'">문자</button><button type="button" data-trv="result" data-key="'+k+'" aria-expanded="'+open+'">결과</button></div>'

@@ -75,7 +75,8 @@
  const legacyResponded=q=>{const s=String(q.status||'접수');return ['접수','신규','담당자 배정','배정완료',''].indexOf(s)<0||!!(q.firstActivity||q.first_activity||q.respondedAt||q.responded_at);};
  const sheetText=q=>{const r=q.raw&&typeof q.raw==='object'?q.raw:{};return String(r['응대내용']||'').trim();};
  const memo=new WeakMap();
- function state(q){
+ /* 이 문의 줄에만 붙은 기록으로 본 판정. 화면은 state(q) 를 쓴다(같은 건의 연락을 합친 것) */
+ function own(q){
   if(!q||typeof q!=='object')return {firstAttemptAt:'',firstConnectedAt:'',attempts:0,spaced:0,unreachable:false,logs:[]};
   const p=patchOf(q),sig=[(q.activities||[]).length,(p.activities||[]).length,q.status,q.first_response_at,q.responded_at,q.respondedAt,p.firstResponseAt,q.lastActivity,SV].join('|'),c=memo.get(q);
   if(c&&c.sig===sig)return c.v;
@@ -94,6 +95,22 @@
   A.forEach(l=>{const d=dayNo(tOf(l.at));if(d-last>=gap){spaced++;last=d;}});if(!A.length&&n)spaced=n;
   const v={firstAttemptAt:fa,firstConnectedAt:fc,attempts:n,spaced,unreachable:!fc&&spaced>=rule('unreachable_attempts',3),logs:L,server:S};
   memo.set(q,{sig,v});return v;
+ }
+ /* 판정(화면이 쓰는 것): 같은 현장 · 같은 브랜드의 다른 문의에 남긴 연락도 이 문의의 연락이다 — 이 문의가 접수된 뒤의 것만.
+    (2026-10-05 정합성 ①: 재문의 줄 · 복제 줄에는 기록이 없어 한 현장이 줄마다 '기록 없음' / '첫 연락 9.21' 로 달랐다. 묶음 규칙은 ContactState) */
+ function state(q){
+  const o=own(q),CS=root.ContactState;if(!q||typeof q!=='object'||!CS||!CS.on()||!CS.siblings)return o;
+  let sibs=[];try{sibs=CS.siblings(q)||[];}catch(e){}if(!sibs.length)return o;
+  const rec=tOf(q.received_at||q.at||q.created_at||q.created||'')-60000,after=at=>!!at&&!(tOf(at)<rec),min=(a,b)=>!a?b||'':!b?a:(tOf(a)<=tOf(b)?a:b);
+  let fa=o.firstAttemptAt,fc=o.firstConnectedAt,add=[];
+  sibs.forEach(s=>{const v=own(s);if(after(v.firstAttemptAt))fa=min(fa,v.firstAttemptAt);if(after(v.firstConnectedAt))fc=min(fc,v.firstConnectedAt);
+   v.logs.forEach(l=>{if(!after(l.at))return;add.push(Object.assign({},l,{sibling:String(s.id||'')}));if(l.kind==='attempt')fa=min(fa,l.at);else if(l.kind==='connected')fc=min(fc,l.at);});});
+  if(fa===o.firstAttemptAt&&fc===o.firstConnectedAt&&!add.length)return o;
+  const L=o.logs.concat(add).sort((a,b)=>tOf(a.at)-tOf(b.at)),fcT=fc?tOf(fc):Infinity,A=L.filter(l=>l.kind==='attempt'&&tOf(l.at)<fcT);
+  let n=A.length;if(!fc&&o.attempts>n)n=o.attempts;
+  const gap=rule('unreachable_interval_days',1),dayNo=t=>{const d=new Date(t);d.setHours(0,0,0,0);return Math.round(d.getTime()/DAY);};let spaced=0,last=-Infinity;
+  A.forEach(l=>{const d=dayNo(tOf(l.at));if(d-last>=gap){spaced++;last=d;}});if(!A.length&&n)spaced=n;
+  return {firstAttemptAt:fa,firstConnectedAt:fc,attempts:n,spaced,unreachable:!fc&&spaced>=rule('unreachable_attempts',3),logs:L,server:o.server,merged:true};
  }
  const firstConnectedAt=q=>{warm();return state(q).firstConnectedAt||'';};
  const firstAttemptAt=q=>state(q).firstAttemptAt||'';
@@ -140,7 +157,7 @@
  /* ⑤ 견적 버전(서버 것이 있으면 서버, 없으면 이 PC 에 적어 둔 것) · 예전 다음 할 일 문장 속 금액 읽기 */
  function quotes(q){const S=server(q),p=patchOf(q),L=S&&Array.isArray(S.quotes)&&S.quotes.length?S.quotes:(Array.isArray(p.quoteVersions)?p.quoteVersions:[]);return L.slice().sort((a,b)=>Number(a.version_no)-Number(b.version_no));}
  const parseQuoteText=t=>{const m=/예상\s*([0-9,]+)\s*만원/.exec(String(t||''));return m?Number(m[1].replace(/,/g,''))*10000:0;};
- root.InquiryFlow={on,RESULT,OLD,RESULTS,NEXT,CHANNELS,kindOf,readLine,logOf,logs,state,firstConnectedAt,firstAttemptAt,attempts,attemptNote,meetingDate,replyDue,phoneHandler,legacyResponded,server,load,take,RPC,LIST,
+ root.InquiryFlow={on,RESULT,OLD,RESULTS,NEXT,CHANNELS,kindOf,readLine,logOf,logs,state,own,firstConnectedAt,firstAttemptAt,attempts,attemptNote,meetingDate,replyDue,phoneHandler,legacyResponded,server,load,take,RPC,LIST,
   CLOSE,closeReasons,closeReasonText,closeOf,QUALIFY_TEXT,statusQualifies,qualifiedBy,isQualified,quotes,parseQuoteText,
   _reset(){SRV.clear();CLOSED.clear();SV++;loadAt=0;}};
 
