@@ -75,3 +75,16 @@
 #inq-inbox-dialog .isd-nrow small{font-size:11.5px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #inq-inbox-dialog .isd-near>small{font-size:11.5px;color:#9ca3af;line-height:1.5}
 #inq-inbox-dialog .isd-none{font-size:12.5px;color:#9ca3af;padding:6px 2px}
+/* 지도(2차): 카카오맵 상자 · 점 · 거리 · 지도 키 등록 */
+#inq-inbox-dialog .isd-near .seg button:not(:disabled){cursor:pointer}
+#inq-inbox-dialog .isd-mapbox{width:100%;height:100%}
+.isd-dot{display:block;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(21,23,28,.22);cursor:pointer;box-sizing:border-box}
+.isd-dot.now{width:20px;height:20px;border-width:3px;background:#e8590c;cursor:default}
+.isd-dot.on{box-shadow:0 0 0 2px #15171c}
+#inq-inbox-dialog .isd-nrow>em{flex:none;font-style:normal;font-size:12px;font-weight:700;color:#374151}
+#inq-inbox-dialog .isd-nrow.on{background:#f5f8ff}
+#inq-inbox-dialog .isd-pend{font-size:11.5px;color:#9ca3af}
+#inq-inbox-dialog .isd-keyform{display:flex;gap:6px;margin-top:4px}
+#inq-inbox-dialog .isd-keyform input{flex:1;min-width:0;border:1px solid #d9dde4;border-radius:7px;padding:6px 8px;font:inherit;font-size:12.5px;height:auto;margin:0;background:#fff;color:#15171c}
+#inq-inbox-dialog .isd-keyform button{flex:none;border:1px solid #15171c;background:#15171c;color:#fff;font:inherit;font-size:12.5px;font-weight:700;border-radius:7px;padding:6px 12px;margin:0;height:auto;box-shadow:none;cursor:pointer}
+#inq-inbox-dialog .isd-map.empty .err{color:#b42318}
