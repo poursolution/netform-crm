@@ -62,7 +62,15 @@
  function topHtml(s){
   const years=['전체',String(s.current),String(s.current-1),String(s.current-2),'이전'];
   const q=rules(),opt=(cur,list)=>list.map(n=>'<option value="'+n+'"'+(n===cur?' selected':'')+'>'+n+'일</option>').join('');
-  return '<div class="plv-intro xb-years"><i style="background:#64748b"></i><b>준공연도</b><span>'+s.rows.length+'곳</span><label class="sb-rule">사후 연락 기준 준공 후 <select data-xb-rule="afterCompletionDays" aria-label="사후 연락 기준">'+opt(q.after,[...new Set([14,30,60,90,q.after])].sort((a,b)=>a-b))+'</select></label><label class="sb-rule">관계 연락 주기 <select data-xb-rule="waitContactDays" aria-label="관계 연락 주기">'+opt(q.wait,[...new Set([30,60,90,180,q.wait])].sort((a,b)=>a-b))+'</select></label><div class="plv-spacer"></div><div class="plv-pills" role="group" aria-label="준공연도">'+years.map(y=>'<button type="button" data-xb="year" data-value="'+attr(y)+'" aria-pressed="'+(String(s.year)===y)+'">'+h(y)+' <b>'+s.mine.filter(r=>s.inYear(r,y)).length+'</b></button>').join('')+'</div></div>';
+  if(root.G.expansionYearRowOff)return '<div class="plv-intro xb-years"><i style="background:#64748b"></i><b>준공연도</b><span>'+s.rows.length+'곳</span><label class="sb-rule">사후 연락 기준 준공 후 <select data-xb-rule="afterCompletionDays" aria-label="사후 연락 기준">'+opt(q.after,[...new Set([14,30,60,90,q.after])].sort((a,b)=>a-b))+'</select></label><label class="sb-rule">관계 연락 주기 <select data-xb-rule="waitContactDays" aria-label="관계 연락 주기">'+opt(q.wait,[...new Set([30,60,90,180,q.wait])].sort((a,b)=>a-b))+'</select></label><div class="plv-spacer"></div><div class="plv-pills" role="group" aria-label="준공연도">'+years.map(y=>'<button type="button" data-xb="year" data-value="'+attr(y)+'" aria-pressed="'+(String(s.year)===y)+'">'+h(y)+' <b>'+s.mine.filter(r=>s.inYear(r,y)).length+'</b></button>').join('')+'</div></div>';
+  return '<div class="xb-yrow"><span class="xb-yl"><i></i><b>준공연도</b></span><div class="xb-ypills" role="group" aria-label="준공연도">'+years.map(y=>{const n=s.mine.filter(r=>s.inYear(r,y)).length,on=String(s.year)===y;return '<button type="button" data-xb="year" data-value="'+attr(y)+'" aria-pressed="'+on+'"'+(n||on?'':' class="zero"')+'>'+h(y)+' <span>'+n+'</span></button>';}).join('')+'</div><i class="xb-ydiv"></i>'
+   +'<label class="xb-rule">사후 연락 기준 준공 후 <select data-xb-rule="afterCompletionDays" aria-label="사후 연락 기준">'+opt(q.after,[...new Set([14,30,60,90,q.after])].sort((a,b)=>a-b))+'</select></label><label class="xb-rule">관계 연락 주기 <select data-xb-rule="waitContactDays" aria-label="관계 연락 주기">'+opt(q.wait,[...new Set([30,60,90,180,q.wait])].sort((a,b)=>a-b))+'</select></label></div>';
+ }
+ function rowHtml(C,it,reason){
+  const B=SB(),k=reason||it.first,rs=k?C.RS[k]:null,bc=B.BRAND[it.brand]||'#9ca3af',S=C.S.find(x=>x[0]===it.bucket)||C.S[0],why=rs?(it.reasonText&&it.reasonText[k]||rs[0]):'정상';
+  return '<div class="psb-row xb-row" role="row" tabindex="0" data-sb="open" data-key="'+attr(it.key)+'" style="border-left-color:'+bc+'"><div class="xb-l"><div class="xb-a"><b title="'+attr(it.site)+'">'+h(it.site)+'</b><span><em style="color:'+bc+'">'+h(it.brand||'브랜드 미지정')+'</em> · '+h(it.owner||'미배정')+' · '+h(it.amountText||B.money(it.amount))+'</span></div>'
+   +'<div class="xb-b"><b>'+h(S[1].split(' · ')[0])+'</b><span title="'+attr(it.sub)+'">'+h(it.sub)+'</span></div></div>'
+   +'<div class="xb-r"><span class="xb-why'+(rs&&rs[1]===RED?' red':'')+'" title="'+attr(why)+'">'+h(why)+'</span><b class="xb-d">'+h(B.dayLabel(C,it.stall))+'</b><button type="button" data-sb="act" data-key="'+attr(it.key)+'" data-v="'+attr(k||'')+'">'+h(rs?rs[2]:(C.openLabel||'열기'))+'</button></div></div>';
  }
  function open(key,act){
   const r=root.expansionRecords().find(x=>x.id===String(key)||x.sourceOpportunityId===String(key));if(!r)return;
@@ -78,6 +86,8 @@
   pg?.classList.add('xv-on','xb-on');
   const s=scoped(),S=SB().state('expansion'),items=s.rows.map(item);
   CFG.topHtml=topHtml(s);
+  /* 연도를 고르면 제목 옆에 "2025년 준공만" · 목록 줄은 두 덩어리(끄기: G.expansionYearRowOff=true → 예전 줄) */
+  CFG.listNote=root.G.expansionYearRowOff||String(s.year)==='전체'?'':(String(s.year)==='이전'?(s.current-3)+'년 이전':s.year+'년')+' 준공만';CFG.rowHtml=root.G.expansionYearRowOff?null:rowHtml;
   host.innerHTML=SB().html(CFG,items,S);
   SB().bind(host,{state:()=>SB().state('expansion'),cfg:()=>CFG,paint:()=>root.paintExpansion(),open});
   if(!host.__xbr){host.__xbr=true;host.addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.xbRule;if(!k)return;setRule(k,e.target.value);root.paintExpansion();if(typeof root.toast==='function')root.toast((k==='afterCompletionDays'?'사후 연락 기준':'관계 연락 주기')+'을 '+e.target.value+'일로 바꿨습니다 (이 PC에 저장)');});}
