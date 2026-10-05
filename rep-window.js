@@ -34,7 +34,7 @@
   const G=[];
   if(noNext.length)G.push({k:'nonext',t:'다음 할 일 없음',n:noNext.length,c:RED,amt:money(noNext,'진행 '),bulk:'다음 할 일 등록 요청',kind:'deal',rows:byAmt(noNext).map(d=>({d,note:'날짜 없음'}))});
   if(over.length)G.push({k:'overdue',t:'다음 할 일 날짜 지남',n:over.length,c:AMB,amt:money(over,'진행 ')+' · 최장 '+Math.max(...over.map(overDays))+'일',bulk:'날짜 다시 잡기 요청',kind:'deal',rows:byAmt(over).map(d=>({d,note:overDays(d)+'일 지남'}))});
-  if(first.length)G.push({k:'first',t:'신규 배정 · 첫 연락 전',n:first.length,c:RED,amt:money(first,'예상 '),bulk:'첫 연락 요청',kind:'inq',rows:byAmt(first).map(d=>({d,note:'배정 후 미연락'}))});
+  if(first.length)G.push({k:'first',t:'신규 배정 · 첫 연락 전',n:first.length,c:RED,amt:money(first,'예상 '),bulk:'첫 연락 요청',kind:'inq',rows:byAmt(first).map(d=>({d,note:'배정 후 CRM 연락 기록 없음'}))});
   if(stale.length)G.push({k:'stale',t:'30일 넘게 같은 단계',n:stale.length,c:AMB,amt:money(stale,'진행 '),bulk:'진행 · 보류 정리 요청',kind:'deal',rows:byAmt(stale).map(d=>({d,note:stay(d)+'일째'}))});
   return {G,cur,noNext,over,first,stale,inq,overMax:over.length?Math.max(...over.map(overDays)):0,total:G.reduce((a,g)=>a+g.n,0)};
  }

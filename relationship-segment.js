@@ -90,7 +90,7 @@
    if(near)parts.push('공사 시기 3개월 안 → 집중관리 복귀');
    if(!live&&parts.length<2)parts.push(T?'공사 예정 '+T.label+' 지남 · 시기 확인':'공사 시기 미정 · 시기 확인');
    c.over=late;c.d=live?T.label:T?'시기 지남':'시기 미정';c.dRed=late;
-   c.ds=near?'3개월 안':lateDays!==null?'연락일 '+lateDays+'일 지남':late?(contact!==null?contact+'일째 연락 없음':'연락 기록 없음'):due?'다음 연락 '+md(due):'연락일 없음';
+   c.ds=near?'3개월 안':lateDays!==null?'연락일 '+lateDays+'일 지남':late?(contact!==null?contact+'일째 연락 없음':'CRM 연락 기록 없음'):due?'다음 연락 '+md(due):'연락일 없음';
    c.order=live?diff(today,T.start):1e6;
    c.btn=near?['집중관리로','focus']:mgr?['관계 재확인','activity']:late?['안부 연락','activity']:!live?['시기 확인','activity']:nonext?['다음 행동','next']:['열기',''];
    c.chips={late,mgr:!!mgr};

@@ -63,7 +63,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 목록: 중요 · 관리 → 단계 순, 각 단계 안에서 중요 먼저 */
   assert.deepEqual(await sites('#today-v2 .tt-ghead b'),['중요 · 관리','견적문의','컨설팅 설계','관계관리']);
   assert.deepEqual(await sites('#today-v2 .tt-row .site b'),['인천SK스카이뷰','동탄푸른마을','상계주공7단지','풍림1차아파트','byc하이시티']);
-  const r0=tt.locator('.tt-row').first();assert.match(await r0.innerText(),/POUR솔루션\s*인천SK스카이뷰[\s\S]*첫 연락 안 함[\s\S]*3일\s*접수 후\s*전화/);
+  const r0=tt.locator('.tt-row').first();assert.match(await r0.innerText(),/POUR솔루션\s*인천SK스카이뷰[\s\S]*CRM 첫 연락 기록 없음[\s\S]*3일\s*접수 후\s*전화/);
   assert.equal(await r0.locator('.bd').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(31, 157, 85)','브랜드색은 브랜드 이름표에만');
   /* 칩 · 이유 · 브랜드 필터 */
   await tt.locator('.tt-chip[data-tt="urg"][data-v="today"]').click();await page.waitForTimeout(200);assert.equal(await page.locator('#today-v2 .tt-card').count(),0);assert.deepEqual(await sites('#today-v2 .tt-row .site b'),['인천SK스카이뷰','동탄푸른마을','상계주공7단지','풍림1차아파트']);

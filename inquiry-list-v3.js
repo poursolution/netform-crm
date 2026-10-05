@@ -86,7 +86,7 @@
   const phone=root.inqCtlContactLabel(q),digits=String(phone||'').replace(/\D/g,'');
   const owner=root.inquiryRoutedOwner(q);
   const elapsed=step===4?'—':follow?(sinceLast===null?'—':sinceLast+'일째'):hours===null?'—':hours<1?Math.round(hours*60)+'분':hours<24?Math.floor(hours)+'시간 '+Math.round((hours%1)*60)+'분':Math.floor(hours/24)+'일';
-  const recv=step===4?(att&&!conv?'기존 영업건에 붙임':'영업건으로 전환'):follow?(Number.isFinite(lastAt)?ymd(lastAt)+' 연락 후':'연락 기록 없음'):x.ageDays===0?'오늘 '+hm(x.created)+' 접수':ymd(x.created)+' 접수';
+  const recv=step===4?(att&&!conv?'기존 영업건에 붙임':'영업건으로 전환'):follow?(Number.isFinite(lastAt)?ymd(lastAt)+' 연락 후':(root.ContactState?root.ContactState.none(q,'inq'):'CRM 연락 기록 없음')):x.ageDays===0?'오늘 '+hm(x.created)+' 접수':ymd(x.created)+' 접수';
   /* 경과 색: 기준 안 = 초록, 기준을 넘긴 후속 · 하루가 안 된 지연 = 주황, 하루 넘게 배정 · 첫 연락이 없으면 빨강 */
   const ec=step===4?'#9ca3af':late?(follow||(hours!==null&&hours<24)?'#d97706':'#d93a3a'):'#1f7a4d';
   const act=step===4?'영업건 보기':step===0?'담당 배정':step===1?'첫 연락':(meet&&meet.dd<=3&&meet.dd>=0)?'자료 제출':(!late&&miss.length)?'정보 보완':'후속 연락';
@@ -95,7 +95,7 @@
   const tries=step===1&&F()?F().attemptNote(q):'';
   return {x,q,key:x.key,step,conv,att,link,ex,hours,sinceLast,follow,meet,miss,late,tries,brand,bc:BRAND[brand]||'#6b7280',channel,phone:digits.length>=8?phone:'',digits,owner,elapsed,recv,ec,act,
    site:q.site||'현장명 미입력',work:root.inqCtlWorkLabel(q),sum:W().gist(q)||'',who:[d.customerType||r['고객유형'],q.contact_name||q.contact].filter(v=>v&&String(v).trim()).join(' · ')||'고객 미입력',
-   lastText:x.latest?[ymd(lastAt)+' '+(x.latest.type||'연락'),(/^고객 응대 기록/.test(String(x.latest.note||''))&&x.latest.result)?x.latest.result:(x.latest.note||x.latest.result)].filter(Boolean).join(' · '):x.first?ymd(Date.parse(x.first))+' 첫 연락':'연락 기록 없음'};
+   lastText:x.latest?[ymd(lastAt)+' '+(x.latest.type||'연락'),(/^고객 응대 기록/.test(String(x.latest.note||''))&&x.latest.result)?x.latest.result:(x.latest.note||x.latest.result)].filter(Boolean).join(' · '):(root.ContactState&&root.ContactState.on())?root.ContactState.recent(q,'inq'):x.first?ymd(Date.parse(x.first))+' 첫 연락':'CRM 연락 기록 없음'};
  }
  const TABS=[
   ['all','전체','시트에 들어온 모든 문의',()=>true,'#15171c'],

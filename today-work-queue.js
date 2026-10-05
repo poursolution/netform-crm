@@ -32,7 +32,7 @@
    if(n!==null&&n>0)return null;
    const inferred=!explicit&&hasBasis;
    const reason=n===null?'다음 할 일 날짜 미입력':inferred?'준공 후 연락 시점 (자동 계산)':n<0?'다음 할 일 날짜 '+Math.abs(n)+'일 지남':'오늘 기존 고객 접촉';
-   return {key:'expansion:'+r.sourceOpportunityId,type:'expansion',kind:'expansion',item:r,owner:root.repN(r.owner)||'미배정',stage:root.ExpansionFlow.status(r)==='관계관리'?'관계 유지 연락':root.ExpansionFlow.status(r),reason,next:n===null?'확장관리에서 다음 할 일 날짜 등록':r.needNote||'기존 고객에게 연락하고 추가 공사 니즈 확인',recent:r.lastContactAt?'최근 연락 '+root.fmtD(r.lastContactAt):'최근 연락 기록 없음',due,dueDays:n,inferred,overdue:!inferred&&n!==null&&n<0,missingNext:n===null,delay:n!==null&&n<0?-n:0};
+   return {key:'expansion:'+r.sourceOpportunityId,type:'expansion',kind:'expansion',item:r,owner:root.repN(r.owner)||'미배정',stage:root.ExpansionFlow.status(r)==='관계관리'?'관계 유지 연락':root.ExpansionFlow.status(r),reason,next:n===null?'확장관리에서 다음 할 일 날짜 등록':r.needNote||'기존 고객에게 연락하고 추가 공사 니즈 확인',recent:r.lastContactAt?'최근 연락 '+root.fmtD(r.lastContactAt):(root.ContactState?root.ContactState.NONE:'CRM 연락 기록 없음'),due,dueDays:n,inferred,overdue:!inferred&&n!==null&&n<0,missingNext:n===null,delay:n!==null&&n<0?-n:0};
   }).filter(Boolean);
  }
 
@@ -101,6 +101,14 @@
   const requests=managerEntries().filter(x=>base.Q.some(q=>String(q.id)===String(x.request.target_id)));
   const rows=inquiry.concat(pipeline,base.D.filter(relationship).map(contactEntry).filter(Boolean),expansionEntries(base.admin,me),requests).map(decorate).map(prioritize);
   const unique=new Map();rows.forEach(x=>{if(!unique.has(x.key))unique.set(x.key,x)});
+  /* 같은 현장이 두 줄로 나오지 않게(2026-10-05 정합성 ①): 같은 현장 · 같은 브랜드 · 같은 담당의 열린 문의는 한 줄만 — 먼저 접수된 줄을 남기고 건수를 적는다.
+     담당이 다른 줄(재문의가 아직 미배정)은 할 일이 다르므로 따로 둔다. 연락 판정은 줄마다 같다(ContactState) */
+  const CS=root.ContactState,lead=new Map();
+  if(CS&&CS.on())Array.from(unique.values()).forEach(x=>{if(x.type!=='inq'||x.kind==='manager')return;const ck=CS.caseKey(x.item);if(!ck)return;const k=ck+'|'+(x.unassigned?'':x.owner||''),g=lead.get(k);if(g)g.push(x);else lead.set(k,[x]);});
+  lead.forEach(g=>{if(g.length<2)return;g.sort((a,b)=>String(root.inquiryCreatedAt(a.item)).localeCompare(String(root.inquiryCreatedAt(b.item)))||String(a.key).localeCompare(String(b.key)));
+   const keep=g[0];keep.caseCount=g.length;keep.caseKeys=g.map(x=>x.key);keep.band=Math.min.apply(null,g.map(x=>x.band));keep.lag=Math.max.apply(null,g.map(x=>x.lag||0));
+   if(!/같은 현장 문의/.test(String(keep.recent||'')))keep.recent=[keep.recent,'같은 현장 문의 '+g.length+'건'].filter(Boolean).join(' · ');
+   g.slice(1).forEach(x=>unique.delete(x.key));});
   const every=Array.from(unique.values());
   /* 과거 이관분 분리(2026-09-25 대표 확정 'Live만 + 과거 정리 카드'): 이관 영업 중 다음 할 일이 없거나 장기 미접촉만 걸린 건은
      오늘 업무에서 빼고 '과거 영업 정리' 카드로 모은다. 기한이 있는 일·고객 약속·기한 지남은 과거분이어도 그대로 오늘 업무. */

@@ -152,7 +152,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await c.locator('.db-sel .hd').innerText(),/^전체 · 기한 지남\s*5건\s*선택 해제\s*다음 할 일 날짜가 지났는데 기록이 없습니다\.\s*이 5건 할 일 지정\s*담당자에게 알림$/);
   assert.equal(await c.locator('.db-sel .it').count(),5);assert.match(await c.locator('.db-sel .it').first().innerText(),/기한 지난 현장 \d\s*황윤선 · .+ · 기한 지남\s*17일\s*열기/);
   await c.locator('.db-mx .cl[data-v="이필선|first"]').click();await page.waitForTimeout(200);
-  assert.match(await page.locator('#si-control .db-sel .hd').innerText(),/^이필선 · 첫 연락 지연\s*1건[\s\S]*배정 후 2시간 안에 첫 연락을 못 했습니다\./);assert.match(await page.locator('#si-control .db-sel .it').innerText(),/첫 연락 지연\s*이필선 · 견적문의 · 배정 후 첫 연락 없음\s*1일/);
+  assert.match(await page.locator('#si-control .db-sel .hd').innerText(),/^이필선 · 첫 연락 지연\s*1건[\s\S]*배정 후 2시간 안에 첫 연락을 못 했습니다\./);assert.match(await page.locator('#si-control .db-sel .it').innerText(),/첫 연락 지연\s*이필선 · 견적문의 · 배정 후 CRM 연락 기록 없음\s*1일/);
   await page.locator('#si-control .db-sel .it button').click();assert.equal(await page.evaluate(()=>__opened.at(-1)),'00000004-0000-4000-8000-000000000004','[열기] = 기존 상세');
   await page.locator('#si-control .db-mx .rn',{hasText:'황윤선'}).click();await page.waitForTimeout(200);
   assert.match(await page.locator('#si-control .db-sel .hd').innerText(),/^황윤선 · 모든 문제\s*5건[\s\S]*황윤선님 담당 건 중 문제가 있는 전체입니다\./,'이름 클릭 = 그 사람의 모든 문제(같은 건은 한 번)');

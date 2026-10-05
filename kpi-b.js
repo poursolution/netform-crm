@@ -60,7 +60,7 @@
   M.push({v:S.assignRate,num:(S.sameDayAssigned||[]).length,den:S.Q.length,todos:S.unassigned.slice().sort((a,b)=>(ageDays(root.inquiryCreatedAt(b))||0)-(ageDays(root.inquiryCreatedAt(a))||0)).map(q=>{const n=ageDays(root.inquiryCreatedAt(q));return T('inq',root.inqKey(q),q.site||'현장명 미입력','미배정',n==null?'접수일 미기록':n===0?'오늘 접수':n+'일째 미배정','담당 정하기');})});
   /* 2 첫 연락 */
   const assigned=S.Q.filter(root.inquiryAssigned);
-  M.push({v:S.responseRate,num:(S.responseSla||[]).length,den:assigned.length,todos:S.noResponse.slice().sort((a,b)=>(ageDays(root.inquiryAssignedAt(b))||0)-(ageDays(root.inquiryAssignedAt(a))||0)).map(q=>{const n=ageDays(root.inquiryAssignedAt(q)||root.inquiryCreatedAt(q)),o=inqOwner(q);return T('inq',root.inqKey(q),q.site||'현장명 미입력',o,(n!=null&&n>0?n+'일째 ':'')+'첫 연락 기록 없음',n!=null&&n>=30?'재배정 검토':'담당에게 요청',o);})});
+  M.push({v:S.responseRate,num:(S.responseSla||[]).length,den:assigned.length,todos:S.noResponse.slice().sort((a,b)=>(ageDays(root.inquiryAssignedAt(b))||0)-(ageDays(root.inquiryAssignedAt(a))||0)).map(q=>{const n=ageDays(root.inquiryAssignedAt(q)||root.inquiryCreatedAt(q)),o=inqOwner(q);return T('inq',root.inqKey(q),q.site||'현장명 미입력',o,(n!=null&&n>0?n+'일째 ':'')+'CRM 연락 기록 없음',n!=null&&n>=30?'재배정 검토':'담당에게 요청',o);})});
   /* 3 다음 할 일(전 단계) — B안 'nonext' 사유와 같은 건 */
   const nonext=open.filter(it=>it.rs.includes('nonext')),nextMissing=nonext.length?nonext.map(it=>it.row.item):S.nextMissing;
   M.push({v:pct(S.D.length-S.nextMissing.length,S.D.length),num:S.D.length-S.nextMissing.length,den:S.D.length,todos:byOwner(nextMissing,who).map(([o,n])=>T('rep',o,o,n+'건','다음 할 일 없음 '+n+'건','등록 요청',o))});

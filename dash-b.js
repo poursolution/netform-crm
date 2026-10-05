@@ -325,7 +325,7 @@
    let first='';try{first=R.inqCtlFirstResponseAt(q);}catch(e){}if(first)return;
    const t=Date.parse((R.inquiryAssignedAt&&R.inquiryAssignedAt(q))||q.assigned_at||R.inquiryCreatedAt(q)||'');if(!Number.isFinite(t)||(now-t)/36e5<=FIRST_H())return;
    if(liveK&&K(R.inquiryCreatedAt(q))<liveK)return;/* Live 기준일 이전 이관분은 첫 연락 지연으로 세지 않는다 */
-   put(x.owner||'미배정','first',x,'inq',days(x),'견적문의','배정 후 첫 연락 없음');});
+   put(x.owner||'미배정','first',x,'inq',days(x),'견적문의','배정 후 CRM 연락 기록 없음');});
   active.forEach(d=>{const o=d.owner||'미배정',age=ageOf(d);
    if(d.issues.includes('overdue'))put(o,'due',d,'deal',overdueDays(d),d.stageLabel,'기한 지남');
    if(d.issues.includes('contact')){let m=null;try{m=R.relationshipMeta(d.item);}catch(e){}const n=m&&m.days!=null?m.days:0;put(o,'seven',d,'deal',n,d.stageLabel,'마지막 연락 '+n+'일 전');}

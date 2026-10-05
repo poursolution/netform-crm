@@ -197,7 +197,7 @@
    onClose=()=>{if(msgHome&&bodyEl.parentElement!==msgHome)msgHome.append(bodyEl);if(root.REL_MSG){root.REL_MSG=null;}};
   }
   const c=M.contact,i=root.relV8Insight(M.item,c),m=root.relationshipMeta(M.item),t=M.templates[M.index];
-  p.querySelector('#dp-sms-top').innerHTML='<div class="dp-to"><div><strong>'+h(c.name||c.role||'담당자')+' · '+h(root.phoneFmt(c.mobile))+'</strong><em class="dp-heat '+i.heat+'">'+i.heatLabel+' '+i.score+'</em></div><span>'+h((m.days==null?'연락 기록 없음':m.days+'일 연락 없음')+' · 답장 '+(3-Math.min(3,i.attempts))+'/3 · '+i.reason)+'</span></div>'
+  p.querySelector('#dp-sms-top').innerHTML='<div class="dp-to"><div><strong>'+h(c.name||c.role||'담당자')+' · '+h(root.phoneFmt(c.mobile))+'</strong><em class="dp-heat '+i.heat+'">'+i.heatLabel+' '+i.score+'</em></div><span>'+h((m.days==null?'CRM 연락 기록 없음':m.days+'일 연락 없음')+' · 답장 '+(3-Math.min(3,i.attempts))+'/3 · '+i.reason)+'</span></div>'
    +(t.kind==='info'?'<p class="dp-ok">정보성 안내 · 바로 보낼 수 있어요</p>':'<p class="dp-warn">광고성 · 관계관리 문구 — 수신 동의'+(c.smsConsent||c.kakaoConsent?' 확인됨':' 필요 · 미동의')+'</p>');
   /* 정보성 확인 체크는 자동 판단으로 대신한다 */
   const info=$('rm-info-confirm');if(info&&!info.checked){info.checked=true;try{root.renderRelationshipMessage();}catch(e){}}
@@ -263,7 +263,7 @@
  function recommendNext(d){
   const code=root.dealStage(d),m=root.relationshipMeta(d),r=root.NextActionPicker?.recommendation?.(code);
   if(r)return {how:'전화',what:r.text,due:dayStr(r.days),why:(code==='sent'?'자료를 보낸 뒤 후속 확인이 필요한 단계':'PT · 입찰 일정이 가까운 단계')+(m.days!=null?' · 마지막 연락 '+m.days+'일 전':'')};
-  if(['rapport','silent','waiting'].includes(code))return {how:m.days!=null&&m.days>=30?'문자 · 카카오':'전화',what:m.days!=null&&m.days>=30?'안부 · 일정 확인 문자':'입대의 일정 확인',due:nextMon(),why:'관계관리 단계'+(m.days!=null?' · 마지막 연락 '+m.days+'일 전':' · 연락 기록 없음')};
+  if(['rapport','silent','waiting'].includes(code))return {how:m.days!=null&&m.days>=30?'문자 · 카카오':'전화',what:m.days!=null&&m.days>=30?'안부 · 일정 확인 문자':'입대의 일정 확인',due:nextMon(),why:'관계관리 단계'+(m.days!=null?' · 마지막 연락 '+m.days+'일 전':' · CRM 연락 기록 없음')};
   if(['contract','construction','completion'].includes(code))return {how:'입찰 · 계약',what:'계약 조건 확인',due:dayStr(3),why:'계약 · 시공 단계 — 일정과 조건 확인'};
   return {how:'전화',what:'견적서 검토 여부 확인',due:dayStr(3),why:'요구 확인 뒤 견적 준비 단계'+(m.days!=null?' · 마지막 연락 '+m.days+'일 전':'')};
  }
