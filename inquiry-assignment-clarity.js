@@ -12,9 +12,9 @@
  function normalizedOwnerName(value){
   var name=firstText([value]);
   if(!name)return '';
-  // A department without a named person is not the approved named alias.
-  // Keep this ahead of repN, whose reporting aliases include team labels.
-  if(name.replace(/\s+/g,'')==='서비스운영팀')return '';
+  // Preserve a real team routing without inventing a personal assignment.
+  // repN maps team labels for reporting, so return before that alias lookup.
+  if(name.replace(/\s+/g,'')==='서비스운영팀')return '서비스운영팀';
   if(/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(name))return '';
   name=typeof root.repN==='function'?root.repN(name):name;
   return /^(미배정|중복|중복건|없음|null|undefined|담당자 배정|배정완료)$/i.test(name)?'':name;

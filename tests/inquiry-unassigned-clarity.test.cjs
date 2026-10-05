@@ -202,11 +202,11 @@ test('name-only server records and alias-only legacy records remain readable', (
   assert.equal(api.inquiryRoutedOwner({ raw: { 담당자: '송보람' } }), '송보람');
 });
 
-test('an operations-team label alone cannot fabricate a personal assignment', () => {
+test('an operations-team routing remains assigned without fabricating a person', () => {
   const api = runtime();
   api.repN = value => value === '서비스운영팀' ? '송보람' : String(value || '').trim();
-  assert.equal(api.inquiryAssigned({ assigned_to: null, assignee_name: '서비스운영팀' }), false);
-  assert.equal(api.inquiryRoutedOwner({ assigned_to: null, assignee_name: '서비스운영팀' }), '');
+  assert.equal(api.inquiryAssigned({ assigned_to: null, assignee_name: '서비스운영팀' }), true);
+  assert.equal(api.inquiryRoutedOwner({ assigned_to: null, assignee_name: '서비스운영팀' }), '서비스운영팀');
   const id = '44444444-4444-4444-8444-444444444444';
   api.B.users = [{ user_id: id, name: '송보람' }];
   assert.equal(api.inquiryRoutedOwner({ assigned_to: id, assignee_name: '서비스운영팀' }), '송보람');
