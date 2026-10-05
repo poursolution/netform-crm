@@ -41,7 +41,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const v=page.locator('#detailView.dv3');assert.equal(await v.count(),1);
   /* 1. 담당 정보 상자: 현장 정보 아래 · 현재 담당 / 최초 담당 / 실적 귀속 / 변경 이력 */
   const card=v.locator('.dw-left .do-card');assert.equal(await card.count(),1);
-  assert.equal(await card.evaluate(n=>n.previousElementSibling.querySelector('header b').textContent),'현장 정보');
+  assert.match(await card.evaluate(n=>n.previousElementSibling.querySelector('header b').textContent),/^(이 단지 영업 이력|같은 현장 다른 영업)$/,'왼쪽 현장 정보가 빠진 뒤에는 영업 이력 칸 아래');
+  /* 접어 둔 채로 시작: 머리줄 = 담당 정보 + 지금 담당 이름 + [펼치기](2026-10-05 대표) → 펼치면 예전 내용 그대로, 다시 누르면 접힘 */
+  assert.deepEqual(await card.evaluate(n=>[[...n.querySelectorAll(':scope>header>*')].map(x=>x.textContent).filter(Boolean),n.querySelectorAll('.do-grid,.do-hist').length,n.querySelector('[data-do="fold"]').getAttribute('aria-expanded')]),[['담당 정보','김성민','펼치기'],0,'false']);
+  await card.locator('[data-do="fold"]').click();await page.waitForTimeout(250);
+  assert.deepEqual(await card.evaluate(n=>[[...n.querySelectorAll(':scope>header>*')].map(x=>x.textContent).filter(Boolean),n.querySelector('[data-do="fold"]').getAttribute('aria-expanded')]),[['담당 정보','김성민','접기'],'true']);
   assert.deepEqual(await card.locator('.do-grid>*').evaluateAll(l=>l.map(n=>n.textContent.replace(/\s+/g,' ').trim())),['현재 담당','김성민','최초 담당','이필선 첫 연결 2026.7.14','실적 귀속','이필선 주담당 · 김성민 보조']);
   assert.equal(await card.locator('.do-grid b.perf').evaluate(n=>getComputedStyle(n).color),'rgb(29, 63, 153)');assert.equal(await card.locator('.do-grid').evaluate(n=>getComputedStyle(n).gridTemplateColumns.split(' ')[0]),'96px');
   assert.deepEqual(await card.locator('.do-hist>div').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent))),[['2026.7.14','최초 담당 이필선 · 첫 연결 (주담당 확정)'],['2026.9.20','담당 변경 이필선 → 김성민 · 사유: 지역 재배치 · 귀속 유지'],['2026.10.2','귀속 변경 요청 → 승인함 대기']]);
