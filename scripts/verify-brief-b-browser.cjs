@@ -45,13 +45,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 1. 이번 주 성과 */
   assert.deepEqual(await v.locator('.bb-fn>span').allInnerTexts(),['신규 견적문의','적합 문의','견적 발송','수주실적']);
   assert.deepEqual(await v.locator('.bb-fn>b').allInnerTexts(),['3건','1건','1건','1건 · 2억']);
-  assert.match(await v.locator('.bb-fn').nth(0).innerText(),/▲2 \(전주 1\)/);assert.match(await v.locator('.bb-fn').nth(1).innerText(),/배드핏 2 제외/);
+  assert.match(await v.locator('.bb-fn').nth(0).innerText(),/▲2 \(전주 1\)/);assert.match(await v.locator('.bb-fn').nth(1).innerText(),/종결 2 제외 · Bad Fit 1/,'닫힌 문의 2건(배드핏 종결 1 + 스토어 이관 1) 가운데 Bad Fit 은 1건');
   assert.equal(await v.locator('.bb-fn.last').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(21, 23, 28)','수주실적 = 검은 바탕');
   assert.deepEqual(await v.locator('.bb-rates>div>span').allInnerTexts().then(a=>a.slice(0,3)),['문의 적합률','영업 메이드율','문의 → 계약 전환율']);
   assert.deepEqual(await v.locator('.bb-rates p b').allInnerTexts().then(a=>a.slice(0,3)),['33.3%','50.0%','33.3%'],'메이드율 = 수주 1 ÷ (수주 1 + 실주 1) — 배드핏 2건은 분모에 없음');
   assert.match(await v.locator('.bb-rates>div').nth(1).innerText(),/수주 1 ÷ \(수주 1 \+ 파이프라인 실주 1\) · 배드핏 제외/);
   assert.match(await v.locator('.bb-rates>div').nth(3).innerText(),/^확정 전환율 \(\d+월 문의\)/);
-  assert.match(await v.locator('.bb-bad').innerText(),/견적문의 배드핏 2건\s*영업 실패 아님 · 메이드율에서 제외\s*(공사 범위 밖 1 · 스토어 · 자재 문의 1|스토어 · 자재 문의 1 · 공사 범위 밖 1)/);
+  assert.match(await v.locator('.bb-bad').innerText(),/견적문의 종결 2건 · Bad Fit 1\s*영업 실패 아님 · 메이드율에서 제외\s*(공사 범위 밖 1 · 스토어 · 자재 문의 1|스토어 · 자재 문의 1 · 공사 범위 밖 1)/);
   assert.match(await v.locator('.bb-loss').innerText(),/파이프라인 실주 1건\s*영업기회 상실 · 메이드율에 포함\s*가격 열세 1/);
   assert.equal(await v.locator('.bb-main').first().evaluate(n=>getComputedStyle(n).borderTopColor),'rgb(21, 23, 28)','맨 위 검은 테두리');
   /* 2. 전주 문제 → 조치 → 결과: 지난주 등록 항목을 지금 자료로 다시 센다 */
@@ -80,7 +80,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#brief-b .bb-next.done .reg').innerText(),'등록됨 ✓');
   /* 잔디 미리보기 */
   const J=await page.locator('#bbJandi').innerText();
-  assert.match(J,/^\[주간 영업 브리핑\][\s\S]*1\. 이번 주 성과\s*견적문의 3건 → 적합 1 → 견적 발송 1 → 계약 1건 · 2억[\s\S]*영업 메이드율 50\.0%[\s\S]*배드핏 2건 \(메이드율 제외\) · 파이프라인 실주 1건 \(가격 열세 1\)[\s\S]*\[전주 문제 → 결과\]\s*· 다음 행동 미등록 2건 → 1건 등록 \/ 1건 미완료[\s\S]*계약실적 1건 · 2억[\s\S]*다음 주 반드시 끝낼 것\s*· 계약 예상 1건 진행 확인 · 3억 — 황윤선 · 수요일/);
+  assert.match(J,/^\[주간 영업 브리핑\][\s\S]*1\. 이번 주 성과\s*견적문의 3건 → 적합 1 → 견적 발송 1 → 계약 1건 · 2억[\s\S]*영업 메이드율 50\.0%[\s\S]*종결 2건 · Bad Fit 1 \(메이드율 제외\) · 파이프라인 실주 1건 \(가격 열세 1\)[\s\S]*\[전주 문제 → 결과\]\s*· 다음 행동 미등록 2건 → 1건 등록 \/ 1건 미완료[\s\S]*계약실적 1건 · 2억[\s\S]*다음 주 반드시 끝낼 것\s*· 계약 예상 1건 진행 확인 · 3억 — 황윤선 · 수요일/);
   assert.equal(/\p{Extended_Pictographic}/u.test((await v.innerText()).replace(/[✓▲▼]/g,'')),false,'이모지 없음');
   /* 잔디: 꺼져 있으면 켜기 → 아직 발송 전 → [다시 보내기] = 서버 함수로 실제 발송(약속 포함) → 회의 후 다시 보냄 */
   assert.match(await v.locator('.bb-side dl').innerText(),/자동 발송\s*매주 월요일 08:30\s*상태\s*잔디 발송 꺼짐/);
@@ -104,11 +104,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    const keepRpc=OpsStore.rpc;OpsStore.rpc=async(name,p)=>{if(name==='crm_inquiry_command_v1'){__rpc.push([name,p]);return {ok:true,status:'배드핏',close_reason:'Bad Fit · '+p.reason,state:null};}return keepRpc(name,p);};
    const q=B.inquiries[0];inqCtlOpenClose(inqKey(q));const m=document.querySelector('.inq-ctl-modalintro').closest('[role=dialog],.modal,.inq-ctl-modal,div');const title=document.getElementById('inquiryControlTitle').textContent==='문의 종결'&&document.getElementById('inq-close-type').value==='bad_fit';
    const opts=[...document.querySelectorAll('#inq-close-kind option')].map(o=>o.textContent);inqCtlConfirmClose();const err=document.getElementById('inq-ctl-error').textContent;
-   document.getElementById('inq-close-kind').value='시공 불가 지역';inqCtlConfirmClose();await new Promise(z=>setTimeout(z,150));
+   document.getElementById('inq-close-kind').value='대상 고객 아님';inqCtlConfirmClose();await new Promise(z=>setTimeout(z,150));
    return {title,opts,err,rpc:__rpc,status:q.status,bad:BriefB.badfit(q),reason:BriefB.badfitReason(q)};
   });
-  assert.equal(r.title,true);assert.deepEqual(r.opts,['사유를 골라 주세요','수행 불가 공종','규모 부적합','시공 불가 지역','기타']/* 운영 기준(ops-rules.js)의 Bad Fit 사유 */);assert.match(r.err,/Bad Fit 사유를 골라 주세요/,'사유 필수');
-  assert.deepEqual(r.rpc,[['crm_inquiry_command_v1',{type:'close',inquiry_id:'00000001-0000-4000-8000-000000000001',kind:'bad_fit',reason:'시공 불가 지역',detail:'',attempts:0}]]);assert.equal(r.status,'배드핏');assert.equal(r.bad,true);assert.equal(r.reason,'시공 불가 지역');
+  assert.equal(r.title,true);assert.deepEqual(r.opts,['사유를 골라 주세요','수행불가 공종','규모 부적합','대상 고객 아님','서비스 범위 아님','기타']/* 운영 기준(ops-rules.js)의 Bad Fit 사유 */);assert.match(r.err,/Bad Fit 사유를 골라 주세요/,'사유 필수');
+  assert.deepEqual(r.rpc,[['crm_inquiry_command_v1',{type:'close',inquiry_id:'00000001-0000-4000-8000-000000000001',kind:'bad_fit',reason:'대상 고객 아님',detail:'',attempts:0}]]);assert.equal(r.status,'배드핏');assert.equal(r.bad,true);assert.equal(r.reason,'대상 고객 아님');
   /* 끄기 */
   await page.evaluate(()=>{G.briefBOff=true;goPage('brief');});await page.waitForTimeout(400);
   assert.equal(await page.locator('#brief-b').count(),0);assert.equal(await page.locator('#brief-v2').count(),1,'끄면 이전 화면');

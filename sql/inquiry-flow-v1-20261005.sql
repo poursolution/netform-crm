@@ -1,3 +1,6 @@
+-- 함수 · 표 정의는 코덱스가 운영에 배포한 실행 버전(supabase/migrations/20261005034655_inquiry_flow_runtime.sql)과 같은 본문이다 — 보호 조건 포함:
+--   휴지통에 있는 문의 · 볼 수 없는 문의는 거절 / 이미 종결 · 전환된 문의에는 close · quote_send · visit · schedule_set 불가 / 협약문의는 B2B 전용 처리로만 닫음 / 같은 요청 번호를 다른 내용으로 다시 쓰지 못함.
+--   이 파일은 거기에 README 의 기존 자료 이관과 전환 조건 한 줄 바꾸기(④)를 더한 것이다. 함수를 고칠 때는 두 파일을 같이 고친다(tests/inquiry-flow.test.cjs 가 본문이 같은지 본다).
 -- 견적문의 흐름 v1 (2026-10-05 대표 핸드오프 design_handoff_inquiry_flow · P0 1~7)
 -- 견적문의 → 실제 접촉 → 적합 판단 → 견적 → 파이프라인 전환이 한 흐름으로 이어지도록, 화면이 부르는 저장 명령을 하나(crm_inquiry_command_v1)로 둔다.
 --   · contact_log  응대 기록 한 줄. 결과가 시도(부재 · 통화불가 · 번호오류)면 first_attempt_at, 접촉(연결됨 · 고객 회신 · 검토중 · 자료요청 · 견적요청)이면 first_connected_at 을
@@ -159,6 +162,20 @@ begin
   raise exception '담당자 또는 관리자만 저장할 수 있습니다' using errcode='42501';
  end if;
  if coalesce(q.inquiry_type,'')='기술자문' or coalesce(q.brand,'')='기술자문' then raise exception '기술자문 문의는 기술자문 화면에서 처리합니다' using errcode='22023'; end if;
+ -- Reuse existing inquiry visibility and recoverable-trash rules.
+ if not crm_security.can_inquiry(v_id) then raise exception 'forbidden' using errcode='42501'; end if;
+ if (select e.action from crm_security.inquiry_audit_events e where e.inquiry_id=v_id
+     and e.action in ('inquiry_trash','inquiry_restore','inquiry_purge') order by e.created_at desc,e.event_id desc limit 1)
+     in ('inquiry_trash','inquiry_purge') then raise exception '문의를 찾을 수 없습니다' using errcode='22023'; end if;
+ if v_type in ('close','quote_send','visit','schedule_set') and
+   (coalesce(q.status,'') in ('종결','종료','수주','실주','배드핏','연락두절','협약완료','해결완료','영업전환')
+    or q.deal_id is not null or q.opportunity_id is not null or q.qualified_at is not null)
+ then raise exception '이미 종결 또는 전환된 문의입니다' using errcode='22023'; end if;
+ if v_type in ('close','quote_send','visit') and
+   (coalesce(q.work_type,'') ~ '협약' or coalesce(q.raw->>'공사유형','') ~ '협약'
+    or (coalesce(q.raw->>'문의내용','') !~ '협약(서)?[[:space:]]*(관련[[:space:]]*)?(문의|상담|요청)?[[:space:]]*(아님|아니|없음)'
+    and coalesce(q.raw->>'문의내용','') ~ '협약(서)?[[:space:]]*(관련[[:space:]]*)?(문의|상담|요청|진행|체결)'))
+ then raise exception '협약문의는 B2B 전용 처리로 완료해 주세요' using errcode='22023'; end if;
  insert into crm_security.inquiry_flow_state(inquiry_id) values(v_id) on conflict (inquiry_id) do nothing;
  select * into s from crm_security.inquiry_flow_state x where x.inquiry_id=v_id for update;
 
@@ -177,7 +194,12 @@ begin
   if v_occ is null or v_occ>v_at+interval '5 minutes' or v_occ<v_at-interval '30 days' then v_occ:=v_at; end if;
   -- 같은 요청을 다시 보내면 한 번만 남긴다
   select l.id into v_log from crm_security.inquiry_contact_logs l where l.actor_auth_uid=a.auth_uid and l.request_id=v_rid;
-  if found then return jsonb_build_object('ok',true,'type',v_type,'replayed',true,'log_id',v_log,'state',crm_security.inquiry_flow_state_json(v_id),'server_at',v_at); end if;
+  if found then
+   if exists(select 1 from crm_security.inquiry_contact_logs l where l.id=v_log and
+     (l.inquiry_id is distinct from v_id or l.channel is distinct from v_channel or l.result is distinct from v_result
+      or l.content is distinct from v_content or l.next_action is distinct from v_next or l.next_check_date is distinct from v_due))
+   then raise exception 'REQUEST_ID_REUSE' using errcode='PT409'; end if;
+   return jsonb_build_object('ok',true,'type',v_type,'replayed',true,'log_id',v_log,'state',crm_security.inquiry_flow_state_json(v_id),'server_at',v_at); end if;
   insert into crm_security.inquiry_contact_logs(inquiry_id,request_id,channel,result,kind,content,next_action,next_check_date,occurred_at,actor_auth_uid,actor_user_id,actor_name)
    values(v_id,v_rid,v_channel,v_result,v_kind,v_content,v_next,v_due,v_occ,a.auth_uid,a.user_id,a.display_name) returning id into v_log;
   -- 최초 시도 · 최초 접촉 시각은 처음 한 번만 찍는다(변경 불가)
@@ -343,12 +365,16 @@ begin
  return jsonb_build_object('ok',true,'server_at',clock_timestamp(),'states',coalesce((
   select jsonb_agg(crm_security.inquiry_flow_state_json(s.inquiry_id))
   from crm_security.inquiry_flow_state s join public.inquiries i on i.id=s.inquiry_id
-  where a.permission_role='admin' or i.assigned_to=a.user_id or crm_security.can_inquiry(i.id)),'[]'::jsonb),
+  where crm_security.can_inquiry(i.id) and coalesce((select e.action from crm_security.inquiry_audit_events e
+    where e.inquiry_id=i.id and e.action in ('inquiry_trash','inquiry_restore','inquiry_purge')
+    order by e.created_at desc,e.event_id desc limit 1),'') not in ('inquiry_trash','inquiry_purge')),'[]'::jsonb),
   'closed',coalesce((
   select jsonb_agg(jsonb_build_object('inquiry_id',i.id,'status',i.status,'close_reason',i.close_reason))
   from public.inquiries i
   where nullif(btrim(coalesce(i.close_reason,'')),'') is not null
-   and (a.permission_role='admin' or i.assigned_to=a.user_id or crm_security.can_inquiry(i.id))),'[]'::jsonb));
+   and (crm_security.can_inquiry(i.id) and coalesce((select e.action from crm_security.inquiry_audit_events e
+    where e.inquiry_id=i.id and e.action in ('inquiry_trash','inquiry_restore','inquiry_purge')
+    order by e.created_at desc,e.event_id desc limit 1),'') not in ('inquiry_trash','inquiry_purge'))),'[]'::jsonb));
 end $fn$;
 revoke all on function public.crm_inquiry_flow_list_v1(jsonb) from public, anon;
 grant execute on function public.crm_inquiry_flow_list_v1(jsonb) to authenticated;
@@ -432,3 +458,5 @@ begin
  if n<>1 then raise exception '전환 조건을 바꿀 자리가 %곳입니다(1곳이어야 함) — 아무것도 바꾸지 않았습니다',n; end if;
  execute replace(d,a,b);
 end $do$;
+
+notify pgrst, 'reload schema';

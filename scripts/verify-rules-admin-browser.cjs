@@ -66,7 +66,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>goPage('inq'));await page.waitForTimeout(400);
   assert.match(await page.locator('#inq-v3 .il-tab[data-v="unassigned"] small').innerText(),/^20분 안에 담당 지정$/);
   assert.deepEqual(await page.evaluate(()=>{const d=document.createElement('select');d.innerHTML=reasonOptionsFor('lost');return [...d.options].map(o=>o.textContent).slice(1);}),['관계 · 관리소장 변경','관계 · 입대의 · 회장 영향','관계 · 경쟁업체 기존 관계','공법 · 타 공법 선호','공법 · 특허 조건 불리','공법 · 설계 변경','가격 · 가격 경쟁','가격 · 예산 부족','가격 · 실행가 문제','사업 · 공사 취소','사업 · 연기','사업 · 예산 미확정','단가 인상']);
-  assert.deepEqual(await page.evaluate(()=>inqBadFitReasons()),['수행 불가 공종','규모 부적합','시공 불가 지역','기타']);
+  assert.deepEqual(await page.evaluate(()=>inqBadFitReasons()),['수행불가 공종','규모 부적합','대상 고객 아님','서비스 범위 아님','기타']);
   assert.deepEqual(await page.evaluate(()=>StageTransition.definitions.lost.fields.find(f=>f.key==='close_reason').options),['관계 · 관리소장 변경','관계 · 입대의 · 회장 영향','관계 · 경쟁업체 기존 관계','공법 · 타 공법 선호','공법 · 특허 조건 불리','공법 · 설계 변경','가격 · 가격 경쟁','가격 · 예산 부족','가격 · 실행가 문제','사업 · 공사 취소','사업 · 연기','사업 · 예산 미확정','단가 인상'],'단계 바꾸기(실주)의 사유 선택도 같은 목록');
   assert.equal(await page.evaluate(()=>BriefB.lib.made(62,58)),51.7,'메이드율 = 공통 계산 함수');
   /* 서버 함수가 없으면: 기본값으로 동작 · 값은 잠금 · 안내 */

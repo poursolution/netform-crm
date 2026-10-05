@@ -110,7 +110,7 @@
    ['이번 달 계약 ('+P.tm+'월)',k1[0],k1[1],P.tm+'월 '+P.td+'일째'+(cm.count+ptm.count>0?' · 계약 '+(cm.count+ptm.count)+'건':'')+' · '+(pmD.getMonth()+1)+'월 '+(pm.net>0?won(pm.net):'없음'),P.y===P.ty?'cs-month':'',P.tm],
    [P.thisYear?'올해 수주실적':P.label+' 수주실적',k2[0],k2[1],'직접 수주 '+(con.net>0?won(con.net):'없음')+'('+con.count+'건) · 협약 · 기술자문 '+(C.pt.amount>0?won(C.pt.amount)+'('+C.pt.count+'건)':'없음')+' · 타사 이관 '+(C.tf.amount>0?won(C.tf.amount)+'('+C.tf.count+'건)':'없음')+(adv&&adv.n&&!adv.merged?' · 기술자문 낙찰 '+won(adv.sum)+' 별도':''),'ev','contract'],
    ['진행 중 파이프라인',k3[0],k3[1],'진행 '+active.length+'건','ev','active'],
-   ['견적문의',q.length+'건','','적합 '+fit+' · 배드핏 '+bad.length,'ev','inquiries'],
+   ['견적문의',q.length+'건','','적합 '+fit+' · '+B.closedText(bad,'n'),'ev','inquiries'],
    ['조치 필요',risk.length+'건',risk.length?'red':'','기한 지남 '+cnt('overdue')+' · 다음 할 일 없음 '+cnt('missing'),'go','control'],
    ['주간 활동',wkA.length+'건',zero?'red':'','최근 7일 · '+names.length+'명 중 '+zero+'명 0건','ev','activity']];
   const kpis='<div class="db-kpis">'+cards.map(c=>'<button type="button" class="db-kpi"'+(c[4]?' data-db="'+c[4]+'" data-v="'+attr(c[5])+'"':' disabled')+'><span>'+h(c[0])+'</span><div><b class="'+c[2]+'">'+h(c[1])+'</b><small>'+h(c[3])+'</small></div></button>').join('')+'</div>';
@@ -129,14 +129,14 @@
  function secPerf(C){
   const {B,K,P,AD,AQ,L,inR,q,bad,fit,loss,con,made}=C;
   const quotes=AD.filter(d=>B.quoteIn(d,P.a,P.b)).length,conv=AD.filter(d=>inR(K(d.created),P.a,P.b)).length;
-  const fun=[['견적문의',q.length+'건','전체 접수'],['적합 문의',fit+'건','배드핏 '+bad.length+' 제외'],['견적 발송',quotes+'건',fit&&quotes<=fit?'적합의 '+pt(B.pct(quotes,fit)):'기간 안 견적 발송'],['영업건 전환',conv+'건','파이프라인 진입'],['수주',L.ready?C.won+'건'+(C.perf>0?' · '+won(C.perf):''):'불러오는 중','실주 '+(loss.length+C.tfLost)+'건'+(C.pt.count?' · 협약 · 기술자문 '+C.pt.count+'건 포함':'')+(C.tf.count?' · 타사 이관 '+C.tf.count+'건 포함':'')]];
+  const fun=[['견적문의',q.length+'건','전체 접수'],['적합 문의',fit+'건',B.closedText(bad,'ex')],['견적 발송',quotes+'건',fit&&quotes<=fit?'적합의 '+pt(B.pct(quotes,fit)):'기간 안 견적 발송'],['영업건 전환',conv+'건','파이프라인 진입'],['수주',L.ready?C.won+'건'+(C.perf>0?' · '+won(C.perf):''):'불러오는 중','실주 '+(loss.length+C.tfLost)+'건'+(C.pt.count?' · 협약 · 기술자문 '+C.pt.count+'건 포함':'')+(C.tf.count?' · 타사 이관 '+C.tf.count+'건 포함':'')]];
   const cd=new Date(P.ty,P.tm-3,1),cym=cd.getFullYear()+'-'+pad(cd.getMonth()+1),coM=cd.getMonth()+1,cohort=AQ.filter(x=>K(R.inquiryCreatedAt(x)).slice(0,7)===cym),cw=L.ready?cohort.filter(x=>B.inquiryContract(x,L,AD)).length:0;
   const rates=[['영업 메이드율',pt(made),L.ready?(C.pt.count||C.tf.count||C.tfLost?'(직접 '+con.count+' + 협약 · 기술자문 '+C.pt.count+' + 타사 이관 '+C.tf.count+') ÷ (직접 '+con.count+' + 협약 · 기술자문 '+C.pt.count+' + 타사 이관 '+C.tf.count+' + 실주 '+(loss.length+C.tfLost)+') · 배드핏 제외':'수주 '+con.count+' ÷ (수주 '+con.count+' + 실주 '+loss.length+') · 배드핏 제외'):'계약 원장을 불러오는 중','#15171c'],['문의 적합률',pt(B.pct(fit,q.length)),'적합 '+fit+' ÷ 문의 '+q.length,'#c9cdd5'],['문의 → 계약 전환율',L.ready?pt(B.pct(C.won,q.length)):'불러오는 중','수주 '+C.won+' ÷ 문의 '+q.length,'#c9cdd5'],['확정 전환율 ('+coM+'월 문의)',L.ready&&cohort.length?pt(B.pct(cw,cohort.length)):'아직 없음',coM+'월 문의 '+cohort.length+'건 중 지금까지 '+cw+'건 계약','#c9cdd5']];
   const top=(list,fn)=>{const t=B.tally(list,fn),a=t.slice(0,3),rest=t.slice(3).reduce((s,x)=>s+x[1],0);return a.map(x=>x[0]+' '+x[1]).concat(rest?['그 외 '+rest]:[]).join(' · ')||'해당 없음';};
   const funnel='<section class="db-card"><div class="db-ch"><b>견적문의가 계약까지</b><em>새 지표</em><span>'+h(P.label+' · 문의 접수 기준')+'</span></div>'
    +'<div class="db-fun">'+fun.map((u,i)=>'<div class="'+(i===fun.length-1?'last':'')+'"><span>'+u[0]+'</span><b>'+h(u[1])+'</b><small>'+h(u[2])+'</small></div>').join('')+'</div>'
    +'<div class="db-rates">'+rates.map(t=>'<div style="border-left-color:'+t[3]+'"><span>'+h(t[0])+'</span><b'+(/없음|불러/.test(t[1])?' class="mut"':'')+'>'+h(t[1])+'</b><small>'+h(t[2])+'</small></div>').join('')+'</div>'
-   +'<div class="db-two"><div class="g"><b>견적문의 배드핏 '+bad.length+'건 <span>· 영업 실패 아님 · 메이드율 제외</span></b><p>'+h(top(bad,B.badfitReason))+'</p></div><div class="r"><b>파이프라인 실주 '+loss.length+'건 <span>· 영업기회 상실 · 메이드율 포함</span></b><p>'+h(top(loss,B.lossReason))+'</p></div></div></section>';
+   +'<div class="db-two"><div class="g"><b>견적문의 '+h(B.closedText(bad))+' <span>· 영업 실패 아님 · 메이드율 제외</span></b><p>'+h(top(bad,B.badfitReason))+'</p></div><div class="r"><b>파이프라인 실주 '+loss.length+'건 <span>· 영업기회 상실 · 메이드율 포함</span></b><p>'+h(top(loss,B.lossReason))+'</p></div></div></section>';
   /* 월별 계약실적 · 견적문의 */
   const y=P.y,M=[];for(let m=1;m<=12;m++){const a=mk(y,m),b=mk(y,m+1),c=B.contractsIn(L,a,b),qn=AQ.filter(x=>inR(K(R.inquiryCreatedAt(x)),a,b)).length;M.push({m,net:c.net,qn,cur:y===P.ty&&m===P.tm,fut:y>P.ty||(y===P.ty&&m>P.tm)});}
   const past=M.filter(x=>!x.fut&&!x.cur),max=Math.max(1,...M.filter(x=>!x.fut).map(x=>x.net)),qmax=Math.max(1,...M.map(x=>x.qn)),avg=past.length?past.reduce((s,x)=>s+x.net,0)/past.length:0;
@@ -232,7 +232,7 @@
    +M.owners.map(o=>'<button type="button" class="rn'+(S.selP===o&&!S.selC?' on':'')+'" data-db="cell" data-v="'+attr(o)+'|"><b class="'+(o==='미배정'?'red':'')+'">'+h(o)+'</b><small>합계 '+M.tot(o)+'</small></button>'
     +M.COLS.map(c=>{const v=M.n(o,c[0]),sh=shade(v,c[2]);return '<button type="button" class="cl" data-db="cell" data-v="'+attr(o)+'|'+c[0]+'" aria-label="'+attr(o+' '+c[1]+' '+v+'건')+'"><span style="background:'+sh[0]+';color:'+sh[1]+(S.selP===o&&S.selC===c[0]?';outline:2px solid #15171c':'')+'">'+(v||'·')+'</span></button>';}).join('')
     +'<span class="as">'+(can?'<button type="button" data-db="assign-row" data-v="'+attr(o)+'">지정</button>':'')+'</span>').join('')+'</div>';
-  const risks=[['견적 발송 · 영업 미전환',C.rows.inquiries.filter(x=>{try{return !!R.isAwaitingPromotion(x.item);}catch(e){return false;}}).length],['배드핏 사유 미입력',C.bad.filter(x=>B.badfitReason(x)==='사유 미기록').length],['실주 사유 미입력',C.loss.filter(d=>B.lossReason(d)==='사유 미기록').length]].filter(x=>x[1]>0);
+  const risks=[['견적 발송 · 영업 미전환',C.rows.inquiries.filter(x=>{try{return !!R.isAwaitingPromotion(x.item);}catch(e){return false;}}).length],[B.closedWord()+' 사유 미입력',C.bad.filter(x=>B.badfitReason(x)==='사유 미기록').length],['실주 사유 미입력',C.loss.filter(d=>B.lossReason(d)==='사유 미기록').length]].filter(x=>x[1]>0);
   const table='<section class="db-card flush db-table"><div class="db-ch pad"><b>누가 · 무엇이 끊겼나</b><span>칸 = 건수 · 진할수록 많음 · 빨간 열 = 오늘 손대야 함</span></div>'+(M.owners.length?grid:'<p class="db-empty">끊긴 건이 없습니다.</p>')+'<div class="db-risk"><b>데이터 위험</b>'+(risks.length?risks.map(r=>'<span>'+r[0]+' '+r[1]+'</span>').join(''):'<i>없음</i>')+'</div></section>';
   const list=M.pick(S.selP,S.selC),cdef=M.COLS.find(c=>c[0]===S.selC),why=cdef?(typeof WHYC[cdef[0]]==='function'?WHYC[cdef[0]]():WHYC[cdef[0]]):S.selP?S.selP+'님 담당 건 중 문제가 있는 전체입니다.':'칸을 하나 골라 주세요.';
   const hasSel=!!(S.selP||S.selC);
@@ -242,7 +242,7 @@
    +'<div class="mr">'+(!hasSel?'표에서 칸 · 이름 · 열을 누르세요':list.length>6?'외 '+(list.length-6)+'건 · 오래된 순':list.length?'오래된 순':'해당 건 없음')+'</div></section>';
   /* 점검 지표 */
   const ms=mk(P.ty,P.tm),mq=AQ.filter(x=>{try{return K(R.inquiryCreatedAt(x))>=ms&&R.inquiryAssigned(x);}catch(e){return false;}}),inTime=mq.filter(x=>{let f='';try{f=R.inqCtlFirstResponseAt(x);}catch(e){}const t=Date.parse(f||''),a=Date.parse((R.inquiryAssignedAt&&R.inquiryAssignedAt(x))||x.assigned_at||R.inquiryCreatedAt(x)||'');return Number.isFinite(t)&&Number.isFinite(a)&&(t-a)/36e5<=FIRST_H();});
-  const health=[['다음 할 일 등록률',B.pct(active.filter(d=>!d.issues.includes('missing')).length,active.length),95],['기록 당일 입력',null,0],['배드핏 사유 입력률',B.pct(C.bad.filter(x=>B.badfitReason(x)!=='사유 미기록').length,C.bad.length),90],['실주 사유 입력률',B.pct(C.loss.filter(d=>B.lossReason(d)!=='사유 미기록').length,C.loss.length),90],['첫 연락 '+FIRST_H()+'시간 안',B.pct(inTime.length,mq.length),80],['견적 3일 안 발송',null,0]];
+  const health=[['다음 할 일 등록률',B.pct(active.filter(d=>!d.issues.includes('missing')).length,active.length),95],['기록 당일 입력',null,0],[B.closedWord()+' 사유 입력률',B.pct(C.bad.filter(x=>B.badfitReason(x)!=='사유 미기록').length,C.bad.length),90],['실주 사유 입력률',B.pct(C.loss.filter(d=>B.lossReason(d)!=='사유 미기록').length,C.loss.length),90],['첫 연락 '+FIRST_H()+'시간 안',B.pct(inTime.length,mq.length),80],['견적 3일 안 발송',null,0]];
   const strip='<section class="db-card db-health"><b>점검 지표</b>'+health.map(m=>'<span>'+h(m[0])+' <b class="'+(m[1]===null?'mut':m[1]<m[2]*0.8?'red':m[1]<m[2]?'amb':'')+'">'+(m[1]===null?'아직 없음':m[1].toFixed(1)+'%')+'</b></span>').join('')+'</section>';
   return top+'<div class="db-ctl">'+table+side+'</div>'+strip;
  }

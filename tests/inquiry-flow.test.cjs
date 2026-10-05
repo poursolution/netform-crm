@@ -134,3 +134,18 @@ test('④ ⑤ 전환 기준 하나 · 견적 = 버전: 상세 · 전환 대기 �
  assert.doesNotMatch(fl,/예상 '\+|만원'\)/,'명령은 다음 할 일 문장에 금액을 넣지 않는다');assert.match(fl,/nextSet\(q,'고객 반응 확인',follow\)/);assert.match(fl,/const f=plusDays\(sentDay,7\);return f>today\?f:plusDays\(today,1\);/,'후속 = 보낸 날 + 7일 · 같은 날 할 일 금지');
  assert.match(sql,/v_draft:=coalesce\(\(p->>'draft'\)='true',false\);/);assert.match(sql,/if found and lv\.sent_at is null then/,'초안은 같은 버전을 고쳐 쓴다');
 });
+test('서버 함수 본문은 운영에 배포된 실행 버전과 같다 — 보호 조건이 빠진 버전으로 덮어쓰지 않게',()=>{
+ const mine=read('sql/inquiry-flow-v1-20261005.sql'),cx=read('supabase/migrations/20261005034655_inquiry_flow_runtime.sql');
+ const fn=(t,name)=>{const a=t.indexOf('create or replace function '+name),b=t.indexOf('end $fn$;',a);assert.ok(a>=0&&b>a,name+' 을 찾지 못함');return t.slice(a,b);};
+ for(const n of ['public.crm_inquiry_command_v1(p jsonb)','public.crm_inquiry_flow_list_v1(p jsonb)','crm_security.inquiry_flow_state_json(p_inquiry_id uuid)','crm_security.inquiry_contact_kind(p_result text)'].slice(0,2))assert.ok(fn(mine,n)===fn(cx,n),n+' 본문이 실행 버전과 다름');
+ for(const guard of ['협약문의는 B2B 전용 처리로 완료해 주세요','REQUEST_ID_REUSE','이미 종결 또는 전환된 문의입니다',"in ('inquiry_trash','inquiry_purge')"])assert.ok(mine.includes(guard),'보호 조건: '+guard);
+ assert.ok(mine.indexOf('-- ── 이관(여러 번 돌려도 같은 결과) ──')>mine.indexOf('create or replace function public.crm_inquiry_flow_list_v1'),'이관 · 전환 조건은 함수 뒤에');
+});
+test('③ 닫힌 문의 수 문구: 종결 N건 · Bad Fit n(대시보드 · 브리핑 · 리포트가 같은 함수) · Bad Fit 사유 기본 목록 = README 표',()=>{
+ const bb=read('brief-b.js'),db=read('dash-b.js'),rb=read('report-b.js');
+ assert.match(bb,/const isBadFit=q=>\{if\(!flowOn\(\)\)return true;const c=root\.InquiryFlow\.closeOf\(q\);return !!c&&c\.kind==='bad_fit';\};/,'Bad Fit = 종결 종류가 bad_fit 인 것만');
+ assert.match(bb,/return '종결 '\+n\+\(form==='ex'\?' 제외':form==='n'\?'':'건'\)\+' · Bad Fit '\+b;/);assert.match(bb,/STALE,badfit,badfitReason,isBadFit,closedText,closedWord,isLoss,/);
+ assert.doesNotMatch(bb,/'배드핏 '\+x\.bad\.length|견적문의 배드핏 '\+x\.bad\.length/);assert.doesNotMatch(db,/배드핏 '\+bad\.length|'배드핏 사유/);assert.doesNotMatch(rb,/배드핏 '\+(x\.cur|c)\.bad\.length/);
+ assert.match(db,/B\.closedText\(bad,'ex'\)/);assert.match(db,/<b>견적문의 '\+h\(B\.closedText\(bad\)\)\+' <span>/);assert.match(rb,/<p><b>견적문의 '\+h\(B\.closedText\(c\.bad\)\)\+'<\/b>/);
+ assert.deepEqual(require('../ops-rules.js').reasons('bad_fit'),['수행불가 공종','규모 부적합','대상 고객 아님','서비스 범위 아님','기타']);
+});

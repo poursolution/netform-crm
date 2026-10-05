@@ -138,7 +138,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await dd.locator('.idv3-rc',{hasText:/^배드핏$/}).click();await page.waitForTimeout(250);
   assert.equal(await page.locator('#inquiryControlTitle').innerText(),'문의 종결','[배드핏] 칩 = 종결 창(다음 할 일을 만들지 않는다)');
   assert.deepEqual(await modal.locator('#inq-close-type option').evaluateAll(l=>l.map(n=>n.value)),['bad_fit','unreachable','consult_end','transfer'],'종결 4종');assert.equal(await modal.locator('#inq-close-type').inputValue(),'bad_fit');
-  assert.deepEqual(await modal.locator('#inq-close-kind option').allInnerTexts(),['사유를 골라 주세요'].concat(await page.evaluate(()=>CRMRules.reasons('bad_fit'))),'Bad Fit 사유 = 운영 기준 목록(다른 업체 선택은 없다)');assert.deepEqual(await page.evaluate(()=>CRMRules.reasons('bad_fit')),['수행 불가 공종','규모 부적합','시공 불가 지역','기타']);
+  assert.deepEqual(await modal.locator('#inq-close-kind option').allInnerTexts(),['사유를 골라 주세요'].concat(await page.evaluate(()=>CRMRules.reasons('bad_fit'))),'Bad Fit 사유 = 운영 기준 목록(다른 업체 선택은 없다)');assert.deepEqual(await page.evaluate(()=>CRMRules.reasons('bad_fit')),['수행불가 공종','규모 부적합','대상 고객 아님','서비스 범위 아님','기타']);
   await modal.locator('#inq-ctl-confirm').click();await page.waitForTimeout(150);assert.match(await modal.locator('#inq-ctl-error').innerText(),/Bad Fit 사유를 골라 주세요/,'사유 필수');
   await modal.locator('#inq-close-kind').selectOption('기타');await modal.locator('#inq-ctl-confirm').click();await page.waitForTimeout(150);assert.match(await modal.locator('#inq-ctl-error').innerText(),/기타 사유는 메모에/);
   await modal.locator('#inq-close-type').selectOption('consult_end');await page.waitForTimeout(150);

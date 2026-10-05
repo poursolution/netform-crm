@@ -50,12 +50,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 2. 흐름 5칸 + 비율 4개(메이드율은 배드핏 제외) */
   assert.deepEqual(await v.locator('.rb-funnel>div>span').allInnerTexts(),['신규 견적문의','적합 문의','견적 발송','파이프라인 전환','수주실적']);
   assert.deepEqual(await v.locator('.rb-funnel>div>b').allInnerTexts(),['4건','2건','1건','1건','2건 · 8억']);
-  assert.match(await v.locator('.rb-funnel>div').nth(0).innerText(),/▲3 \(1\)/);assert.match(await v.locator('.rb-funnel>div').nth(1).innerText(),/배드핏 2 제외/);assert.match(await v.locator('.rb-funnel>div.last').innerText(),/▲1건 · \+6억/);
+  assert.match(await v.locator('.rb-funnel>div').nth(0).innerText(),/▲3 \(1\)/);assert.match(await v.locator('.rb-funnel>div').nth(1).innerText(),/종결 2 제외 · Bad Fit 2/);assert.match(await v.locator('.rb-funnel>div.last').innerText(),/▲1건 · \+6억/);
   assert.deepEqual(await v.locator('.rb-rates>div>span').allInnerTexts().then(a=>a.slice(0,3)),['영업 메이드율','문의 적합률','문의 → 계약 전환율']);
   assert.deepEqual(await v.locator('.rb-rates p b').allInnerTexts().then(a=>a.slice(0,3)),['40.0%','50.0%','50.0%'],'메이드율 = 수주 2 ÷ (수주 2 + 실주 3) — 배드핏 2건은 분모에 없음');
   assert.match(await v.locator('.rb-rates>div').nth(0).innerText(),/수주 2 ÷ \(수주 2 \+ 실주 3\) · 배드핏 제외/);
   /* 3. 놓친 것 두 종류 */
-  assert.match(await v.locator('.rb-box.bad').innerText(),/견적문의 배드핏 2건\s*우리와 맞지 않는 문의 · 영업 실패 아님 · 메이드율 제외[\s\S]*공사 범위 밖\s*1[\s\S]*소규모 \(최소 금액 미만\)\s*1/);
+  assert.match(await v.locator('.rb-box.bad').innerText(),/견적문의 종결 2건 · Bad Fit 2\s*영업건이 되지 않고 닫힌 문의 · 영업 실패 아님 · 메이드율 제외[\s\S]*공사 범위 밖\s*1[\s\S]*소규모 \(최소 금액 미만\)\s*1/);
   assert.match(await v.locator('.rb-box.loss').innerText(),/파이프라인 실주 3건 · 6억\s*영업기회 상실 · 메이드율에 포함\s*가격 열세\s*2\s*담당자 부재·인수인계 누락\s*1/);
   /* 4. 6개월 계약실적 · 5. 다음 달 전망 */
   assert.equal(await v.locator('.rb-trend>div').count(),6);assert.equal(await v.locator('.rb-trend>div').last().locator('span').innerText(),'8억');assert.equal(await v.locator('.rb-tl>div').last().innerText().then(t=>t.replace(/\s+/g,' ')),P.m+'월 40%');
@@ -73,7 +73,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await v.locator('.rb-ask').first().locator('button',{hasText:'기존 조건 유지'}).click();await page.waitForTimeout(350);
   assert.deepEqual(await page.evaluate(()=>__saves.map(s=>[s.kind,s.period_key,s.payload.decisions,s.payload.asks.length])),[['monthly',P.ym,{mgrchg:1},3]],'선택 = 월간 스냅샷 저장');
   assert.equal(await page.locator('#report-b .rb-ask').first().locator('button[aria-pressed="true"]').innerText(),'기존 조건 유지');
-  assert.match(await v.locator('.rb-foot').innerText(),/계약실적 = 계약 체결일 기준 계약금액 \(회계 매출 아님\)\s*배드핏 = 견적문의 단계 부적합 종결 · 파이프라인 실주 = 영업기회 상실\s*확정 전환율 = 해당 월 접수 문의 중 현재까지 계약 비율/);
+  assert.match(await v.locator('.rb-foot').innerText(),/계약실적 = 계약 체결일 기준 계약금액 \(회계 매출 아님\)\s*종결 = 영업건이 되지 않고 닫힌 문의\(그중 우리와 맞지 않는 것 = Bad Fit\) · 파이프라인 실주 = 영업기회 상실\s*확정 전환율 = 해당 월 접수 문의 중 현재까지 계약 비율/);
   assert.equal(/\p{Extended_Pictographic}/u.test((await v.innerText()).replace(/[✓▲▼]/g,'')),false,'이모지 없음');
   if(shot){await page.locator('#report-b .rb-bar0').scrollIntoViewIfNeeded();await page.waitForTimeout(200);await page.screenshot({path:shot+'-1.png'});await page.locator('#report-b .rb-foot').scrollIntoViewIfNeeded();await page.waitForTimeout(200);await page.screenshot({path:shot+'-2.png'});}
   /* 편집 · 보내기 · 상세 표 */
