@@ -1,0 +1,81 @@
+/* 새 영업 등록 v2 (2026-10-05 design_handoff_new_deal) — 상단 [+ 새 영업] 창. nd2- 접두사만 쓴다.
+   가운데 흰 창(최대 960px) · 필수 * 는 칸 이름 바로 옆 · 노랑 · 검정 큰 상자 없음(중복 알림만 옅은 띠) */
+.nd2-shade{position:fixed;inset:0;z-index:1300;background:rgba(17,24,39,.45);display:flex;justify-content:center;align-items:flex-start;padding:32px 24px;box-sizing:border-box;overflow-y:auto;font-family:Pretendard,system-ui,sans-serif;color:#15171c}
+.nd2-shade *{box-sizing:border-box}
+#newDealV2 .nd2-box{width:100%;max-width:960px;max-height:calc(100vh - 64px);background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(17,24,39,.25);overflow:hidden;display:flex;flex-direction:column}
+#newDealV2 button{font-family:inherit;cursor:pointer;margin:0;box-shadow:none;height:auto;min-height:0;line-height:1.35}
+#newDealV2 input,#newDealV2 select,#newDealV2 textarea{font-family:inherit;border:1px solid #d9dde4;border-radius:8px;padding:9px 11px;font-size:14px;line-height:1.35;color:#15171c;background:#fff;width:100%;min-width:0;height:auto;margin:0;box-shadow:none}
+#newDealV2 input[readonly]{background:#f6f7f9;color:#374151}
+#newDealV2 :focus-visible{outline:2px solid #91b5ff;outline-offset:1px}
+#newDealV2 em{font-style:normal;color:#b42318}
+#newDealV2 small{font-weight:500;color:#9ca3af;font-size:12px}
+.nd2-head{flex:none;padding:16px 22px;border-bottom:1px solid #eef0f3;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.nd2-head>b{font-size:18px}
+.nd2-head>span{font-size:13px;color:#6b7280}
+.nd2-head>i,.nd2-lab>i,.nd2-dup>i{flex:1}
+#newDealV2 .nd2-x{border:0;background:none;font-size:20px;color:#6b7280;padding:0 4px;line-height:1}
+.nd2-body{flex:1 1 auto;min-height:0;overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:18px}
+.nd2-sec{display:flex;flex-direction:column;gap:8px}
+.nd2-t,.nd2-lab>b{font-size:14px}
+.nd2-lab{display:flex;align-items:baseline;gap:8px}
+.nd2-lab>span{font-size:12px;color:#9ca3af}
+/* 어떻게 시작했나요 */
+.nd2-srcs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+#newDealV2 .nd2-src{border:1.5px solid #e3e6ec;background:#fff;border-radius:10px;padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:2px;color:#15171c}
+#newDealV2 .nd2-src b{font-size:14px;color:#15171c}
+#newDealV2 .nd2-src span{font-size:12px;color:#6b7280}
+#newDealV2 .nd2-src.on{border-color:#3b6ce4;background:#f5f8ff}
+#newDealV2 .nd2-src.on b{color:#1d3f99}
+.nd2-ref{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.nd2-re{display:flex;flex-direction:column;gap:8px}
+.nd2-re>span{font-size:12.5px;color:#374151;background:#f5f8ff;border:1px solid #dfe5f7;border-radius:8px;padding:8px 11px}
+#newDealV2 .nd2-lnk{border:0;background:none;padding:0;color:#2a52b8;font-size:12.5px;font-weight:700}
+.nd2-find{display:flex;flex-direction:column;gap:4px}
+#newDealV2 .nd2-find button{border:1px solid #e8eaef;background:#fff;border-radius:8px;padding:7px 11px;text-align:left;display:flex;align-items:baseline;gap:10px;color:#15171c}
+#newDealV2 .nd2-find button:hover{border-color:#b9cbf8;background:#fbfcff}
+.nd2-find button b{font-size:13.5px}
+.nd2-find button span,.nd2-find p{font-size:12.5px;color:#6b7280;margin:0}
+/* 칸 묶음 */
+.nd2-g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.nd2-g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 16px}
+.nd2-f{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:700;margin:0;color:#15171c}
+.nd2-addr{display:flex;gap:6px}
+.nd2-addr input{flex:1}
+#newDealV2 .nd2-b{flex:none;border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:12.5px;font-weight:600;border-radius:7px;padding:6px 12px;white-space:nowrap}
+#newDealV2 .nd2-addr .nd2-b{font-size:13px;font-weight:700;border-radius:8px;padding:0 12px}
+#newDealV2 .nd2-b.dark{border-color:#15171c;background:#15171c;color:#fff;font-weight:700}
+#newDealV2 .nd2-b.big{font-size:13.5px;border-radius:8px;padding:9px 16px}
+#newDealV2 .nd2-b.pri{border-color:#3b6ce4;background:#3b6ce4;color:#fff;font-weight:700;padding:9px 18px}
+.nd2-dupslot{grid-column:1 / -1}
+.nd2-dupslot:empty{display:none}
+.nd2-dup{border:1px solid #f5dfa8;background:#fffaf0;border-radius:10px;padding:10px 13px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.nd2-dup.on{border-color:#dfe5f7;background:#f5f8ff}
+.nd2-dup .k{font-size:12px;font-weight:700;color:#8a5a00}
+.nd2-dup.on .k{color:#1d3f99}
+.nd2-dup>b{font-size:13.5px}
+.nd2-dup .m{font-size:12.5px;color:#6b7280}
+/* 공종 칩 */
+#newDealV2 .nd2-wk{font-size:12.5px;font-weight:700;color:#15171c}
+#newDealV2 .nd2-wk.none{color:#b42318}
+.nd2-wgroups{display:flex;flex-direction:column;gap:6px}
+.nd2-wg{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.nd2-wg>span{width:76px;font-size:13px;color:#6b7280}
+#newDealV2 .nd2-chip{border:1px solid #d9dde4;background:#fff;color:#374151;font-size:13px;font-weight:600;border-radius:999px;padding:5px 12px}
+#newDealV2 .nd2-chip.on{border-color:#15171c;background:#15171c;color:#fff}
+.nd2-person{display:grid;grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:8px}
+/* 시작 근거: 직접 입력 | 음성 기록 */
+#newDealV2 .nd2-mode{display:flex;gap:0;margin:0;border:1px solid #d9dde4;border-radius:8px;overflow:hidden}
+#newDealV2 .nd2-mode button{flex:none;border:0;border-radius:0;background:#fff;color:#374151;font-size:12.5px;font-weight:700;padding:5px 12px}
+#newDealV2 .nd2-mode button.on{background:#15171c;color:#fff}
+#newDealV2 .nd2-why textarea{min-height:64px;resize:vertical}
+#newDealV2 .nd2-why .rvoice{margin-top:0}
+.nd2-err{margin:0;font-size:13px;font-weight:600;color:#b42318}
+.nd2-foot{flex:none;padding:12px 22px;border-top:1px solid #eef0f3;background:#fcfcfd;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.nd2-foot>span{flex:1;min-width:260px;font-size:12.5px;color:#374151}
+@media (max-width:760px){
+ .nd2-shade{padding:12px}
+ #newDealV2 .nd2-box{max-height:calc(100vh - 24px)}
+ .nd2-srcs,.nd2-g2,.nd2-g3,.nd2-ref{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .nd2-g3{grid-template-columns:minmax(0,1fr)}
+ .nd2-person{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
