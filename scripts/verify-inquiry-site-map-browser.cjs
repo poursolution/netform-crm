@@ -53,6 +53,11 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const d=page.locator('#inq-inbox-dialog'),NR=d.locator('.isd-near');
   assert.deepEqual(await page.evaluate(()=>[InquirySite.regionTokens('[경기 화성] 가'),InquirySite.regionTokens('[경기용인] 가'),InquirySite.regionTokens('[서울_마포] 가'),InquirySite.regionTokens('[대구 동구] 가'),InquirySite.regionTokens('이름만'),InquirySite.cleanAddr('경기 화성시 동탄대로 99 (오산동) 101동 1203호'),InquirySite.kmText(0.9),InquirySite.kmText(2.44)]),
    [['경기','화성'],['경기','용인'],['서울','마포'],['대구','동구'],[],'경기 화성시 동탄대로 99','900m','2.4km']);
+  /* 바깥 연결: 카카오 주소 검색 · 장소 검색(GET)만 열려 있고, 다른 카카오 주소 · POST · 다른 사이트는 계속 막힌다 */
+  assert.deepEqual(await page.evaluate(()=>{const t=(m,u)=>{try{new XMLHttpRequest().open(m,u);return 'ok';}catch(e){return String(e.message||e);}};
+   return [t('GET','https://dapi.kakao.com/v2/local/search/address.json?query=x'),t('GET','https://dapi.kakao.com/v2/local/search/keyword.json?query=x'),t('GET','https://dapi.kakao.com/v2/local/search/category.json'),t('GET','https://dapi.kakao.com/v2/local/geo/coord2address.json'),t('POST','https://dapi.kakao.com/v2/local/search/address.json'),t('GET','https://dapi.kakao.com.example.com/v2/local/search/address.json'),t('GET','https://example.com/')];}),
+   ['ok','ok','PHASE1_TRANSPORT_DENIED','PHASE1_TRANSPORT_DENIED','PHASE1_TRANSPORT_DENIED','PHASE1_TRANSPORT_DENIED','PHASE1_TRANSPORT_DENIED']);
+  assert.equal(await page.evaluate(()=>fetch('https://dapi.kakao.com/v2/local/search/address.json',{method:'POST'}).then(()=>'sent',e=>String(e.message||e))),'PHASE1_TRANSPORT_DENIED','fetch 로도 POST 는 막힌다');
   /* ① 지도 키가 없으면: 관리자에게만 등록 칸, 목록은 같은 지역 기준 그대로 */
   await page.evaluate(()=>InquiryWorkbench.open(A));await page.waitForSelector('#inq-inbox-dialog.idv3 .isd-near .isd-keyform');
   assert.match(one(await NR.locator('.isd-map').innerText()),/^카카오맵 키 등록 카카오 개발자 사이트에서 받은 JavaScript 키를 넣으면 지도 · 반경 · 거리가 켜집니다\. 지금은 같은 지역\(.*화성.*\)의 현장을 보여 줍니다\./);
