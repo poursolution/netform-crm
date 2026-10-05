@@ -1,0 +1,57 @@
+/* 이 단지 영업 이력 (2026-10-05 design_handoff_site_history · 같은 현장 다른 영업 v2.dc.html) — 치수 · 색은 시안 그대로. 접두사 sth- */
+#detailView .sth{display:flex;flex-direction:column;gap:12px}
+#detailView .sth>.sth-hd{display:flex;align-items:baseline;gap:6px;flex-wrap:nowrap}
+#detailView .sth>.sth-hd b{font-size:14px;font-weight:700;color:#15171c}
+#detailView .sth>.sth-hd span{font-size:12px;color:#6b7280}
+#detailView .sth>.sth-hd i{flex:1}
+#detailView .sth button{font-family:inherit;cursor:pointer;min-height:0;box-shadow:none;line-height:1.3}
+#detailView .sth .sth-add{border:0;background:none;color:#2a52b8;font-size:12px;font-weight:700;padding:0}
+#detailView .sth .sth-add:disabled{color:#c9cdd5;cursor:default}
+#detailView .sth .sth-sum{font-size:12px;color:#374151;margin-top:-9px}
+#detailView .sth .sth-sum b{font-weight:700;color:#15171c}
+#detailView .sth .sth-list{display:flex;flex-direction:column}
+#detailView .sth .sth-row{display:grid;grid-template-columns:14px minmax(0,1fr);gap:10px;padding:10px 8px;border-radius:8px}
+#detailView .sth .sth-row.cur{background:#f5f6f8}
+#detailView .sth .sth-row.ed{background:#fafbfc}
+#detailView .sth .sth-row.link{cursor:pointer}
+#detailView .sth .sth-row.link:hover{background:#fafbfc}
+#detailView .sth .sth-dot{display:flex;flex-direction:column;align-items:center;padding-top:4px}
+#detailView .sth .sth-dot i{width:9px;height:9px;border-radius:50%;border:2px solid #9aa0ab;box-sizing:border-box;flex:none}
+#detailView .sth .sth-dot u{flex:1;width:1.5px;background:#e3e6ec;margin-top:3px;text-decoration:none}
+#detailView .sth .sth-v{display:flex;flex-direction:column;gap:3px;min-width:0}
+#detailView .sth .sth-l1{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#detailView .sth .sth-l1 b{font-size:13.5px;font-weight:700;color:#15171c}
+#detailView .sth .sth-l1 em{font-style:normal;font-size:10.5px;font-weight:700;border-radius:4px;padding:1px 6px;color:#2a52b8;background:#eef3fe}
+#detailView .sth .sth-l1 em.cur{color:#fff;background:#15171c}
+#detailView .sth .sth-l1 em.t1{color:#1f7a4d;background:#e8f6ee}
+#detailView .sth .sth-l1 em.t2{color:#b42318;background:#fdecec}
+#detailView .sth .sth-l1 em.t3{color:#8a5a00;background:#fff4d6}
+#detailView .sth .sth-l1 em.t4{color:#6b7280;background:#f3f4f6}
+#detailView .sth .sth-man{font-size:10px;font-weight:600;color:#9ca3af;border:1px solid #e3e6ec;border-radius:4px;padding:0 4px}
+#detailView .sth .sth-l1 i{flex:1}
+#detailView .sth .sth-edit{border:0;background:none;color:#6b7280;font-size:11.5px;font-weight:600;padding:0;text-decoration:underline}
+#detailView .sth .sth-l2{font-size:12px;color:#374151}
+#detailView .sth .sth-l3{font-size:11.5px;color:#6b7280;line-height:1.45}
+#detailView .sth .sth-l3.warn{color:#b42318}
+/* 그 자리 편집 */
+#detailView .sth .sth-form{display:flex;flex-direction:column;gap:7px;min-width:0}
+#detailView .sth .sth-grid{display:grid;grid-template-columns:44px minmax(0,1fr);gap:6px 8px;align-items:center;font-size:11.5px}
+#detailView .sth .sth-grid>span{color:#6b7280}
+#detailView .sth .sth-in{border:1px solid #d9dde4;border-radius:6px;padding:5px 8px;font:inherit;font-size:12.5px;min-width:0;width:100%;box-sizing:border-box;background:#fff;color:#15171c;outline:none;height:auto;min-height:0}
+#detailView .sth select.sth-in{padding:5px 6px}
+#detailView .sth .sth-in:focus{border-color:#3b6ce4}
+#detailView .sth .sth-chips{display:flex;flex-wrap:wrap;gap:4px}
+#detailView .sth .sth-chips button{border:1px solid #d9dde4;background:#fff;color:#374151;font-size:11.5px;font-weight:600;border-radius:999px;padding:2px 8px}
+#detailView .sth .sth-chips button[aria-pressed="true"]{border-color:#15171c;background:#15171c;color:#fff}
+#detailView .sth .sth-lost{display:flex;flex-direction:column;gap:5px;min-width:0}
+#detailView .sth .sth-lost small{font-size:11px;color:#b42318}
+#detailView .sth .sth-foot{display:flex;align-items:center;gap:6px}
+#detailView .sth .sth-foot i{flex:1}
+#detailView .sth .sth-del{border:0;background:none;color:#b42318;font-size:11.5px;font-weight:600;padding:0}
+#detailView .sth .sth-del.arm{text-decoration:underline}
+#detailView .sth .sth-cancel{border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:12px;font-weight:600;border-radius:6px;padding:5px 10px}
+#detailView .sth .sth-save{border:0;background:#15171c;color:#fff;font-size:12px;font-weight:700;border-radius:6px;padding:5px 12px}
+#detailView .sth .sth-save:disabled,#detailView .sth .sth-cancel:disabled{opacity:.5;cursor:default}
+#detailView .sth .sth-fn{font-size:10.5px;color:#9ca3af}
+#detailView .sth .sth-ai{background:#f5f8ff;border-radius:8px;padding:9px 11px;font-size:12px;line-height:1.5;color:#1d3f99}
+#detailView .sth .sth-ai b{font-size:10px;color:#fff;background:#3b6ce4;border-radius:3px;padding:1px 4px;margin-right:5px}
