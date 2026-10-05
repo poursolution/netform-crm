@@ -62,12 +62,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#smsDialog.on').count(),1,'새 문자 최신 창');
   assert.equal(await page.locator('#campaign-root .cc-layout').count(),0,'구형 작성기 없음');
   await page.keyboard.press('Escape');
-  await page.evaluate(()=>{window.__allForEntry=campaignAllTargets;window.campaignAllTargets=()=>__allForEntry().filter(t=>G.campaignRegion!=='경남지사'||t.deal.id==='11111111-1111-4111-8111-111111111111');campaignOpenGyeongnam();});
+  await page.evaluate(()=>{B.deals[0].site='[부산] 검증용 지사 현장';campaignOpenGyeongnam();});
   assert.equal(await page.locator('#smsDialog.on').count(),1,'지사 문자 최신 창');
   assert.match(await page.locator('#smsDialog .sd-sum').innerText(),/대상\s*1명/,'지사 범위 유지');
   assert.equal(await page.locator('#campaign-root .cc-layout').count(),0);
   await page.keyboard.press('Escape');
-  await page.evaluate(()=>{G.campaignRegion='전체';window.campaignAllTargets=__allForEntry;G.campaignCategory='all';const t=campaignAllTargets().find(t=>t.guard.ok);CAMPAIGN_STATE.selected={[t.key]:1};CAMPAIGN_STATE.body='보존할 작성 내용';G.campaignTab='send';paintCampaign();});
+  await page.evaluate(()=>{G.campaignRegion='전체';G.campaignCategory='all';const t=campaignAllTargets().find(t=>t.guard.ok);CAMPAIGN_STATE.selected={[t.key]:1};CAMPAIGN_STATE.body='보존할 작성 내용';G.campaignTab='send';paintCampaign();});
   assert.match(await page.locator('#smsDialog .sd-sum').innerText(),/대상\s*1명/,'선택 대상 보존');
   assert.equal(await page.locator('#smsDialog #sd-body').inputValue(),'보존할 작성 내용');
   assert.equal(await page.locator('#smsDialog #cc-final-approval').isChecked(),false,'최종 확인 초기화');
