@@ -48,7 +48,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const kpi=await d.locator('.db-kpi').evaluateAll(a=>a.map(n=>[n.querySelector('span').textContent,n.querySelector('b').textContent,n.querySelector('small').textContent]));
   assert.deepEqual(kpi.map(k=>k[0]),['이번 달 계약 (10월)','올해 수주실적','진행 중 파이프라인','견적문의','조치 필요','주간 활동']);
   assert.deepEqual(kpi[0].slice(1),['아직 없음','10월 7일째 · 9월 3억'],'실적 없는 달 = 아직 없음 + 직전 달');assert.equal(await d.locator('.db-kpi').first().locator('b').evaluate(n=>getComputedStyle(n).color),'rgb(156, 163, 175)','아직 없음은 회색');
-  assert.deepEqual(kpi[1].slice(1),['8억','직접 수주 8억(2건) · 협약 · 기술자문 없음 · 타사 이관 없음'],'수주실적 = 직접 + 협약 · 기술자문 + 타사 이관, 화면에서는 나눠 적는다');assert.match(kpi[2][2],/^진행 7건$/);assert.deepEqual(kpi[3].slice(1),['4건','적합 3 · 배드핏 1']);
+  assert.deepEqual(kpi[1].slice(1),['8억','직접 수주 8억(2건) · 협약 · 기술자문 없음 · 타사 이관 없음'],'수주실적 = 직접 + 협약 · 기술자문 + 타사 이관, 화면에서는 나눠 적는다');assert.match(kpi[2][2],/^진행 7건$/);assert.deepEqual(kpi[3].slice(1),['4건','적합 3 · 종결 1 · Bad Fit 1']);
   const core=await page.evaluate(()=>{const C=DashB.core();return {risk:C.risk.length,od:C.cnt('overdue'),miss:C.cnt('missing'),made:C.made,active:C.active.length};});
   assert.equal(core.od,5);assert.equal(core.made,40,'메이드율 = 수주 2 ÷ (수주 2 + 실주 3) · 배드핏 제외');
   assert.deepEqual(kpi[4].slice(1),[core.risk+'건','기한 지남 5 · 다음 할 일 없음 '+core.miss]);
@@ -56,9 +56,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await d.locator('.db-band').count(),0,'오늘 먼저 볼 것 검은 띠는 없다(2026-10-04 대표)');assert.ok(!/오늘 먼저 볼 것/.test(await d.innerText()));
   assert.deepEqual(await d.locator('.db-secs button').evaluateAll(a=>a.map(n=>n.childNodes[0].textContent)),['성과','사람','파이프라인','활동']);
   /* 성과: 흐름 5칸 · 비율 4개 · 배드핏/실주 두 상자 */
-  assert.deepEqual(await d.locator('.db-fun>div').evaluateAll(a=>a.map(n=>[...n.children].map(c=>c.textContent))),[['견적문의','4건','전체 접수'],['적합 문의','3건','배드핏 1 제외'],['견적 발송','5건','기간 안 견적 발송'],['영업건 전환','12건','파이프라인 진입'],['수주','2건 · 8억','실주 3건']]);
+  assert.deepEqual(await d.locator('.db-fun>div').evaluateAll(a=>a.map(n=>[...n.children].map(c=>c.textContent))),[['견적문의','4건','전체 접수'],['적합 문의','3건','종결 1 제외 · Bad Fit 1'],['견적 발송','5건','기간 안 견적 발송'],['영업건 전환','12건','파이프라인 진입'],['수주','2건 · 8억','실주 3건']]);
   assert.deepEqual(await d.locator('.db-rates>div').evaluateAll(a=>a.map(n=>[...n.children].map(c=>c.textContent))),[['영업 메이드율','40.0%','수주 2 ÷ (수주 2 + 실주 3) · 배드핏 제외'],['문의 적합률','75.0%','적합 3 ÷ 문의 4'],['문의 → 계약 전환율','50.0%','수주 2 ÷ 문의 4'],['확정 전환율 (8월 문의)','50.0%','8월 문의 2건 중 지금까지 1건 계약']]);
-  assert.match(await d.locator('.db-two .g').innerText(),/견적문의 배드핏 1건 · 영업 실패 아님 · 메이드율 제외\s*공사 범위 밖 1/);assert.match(await d.locator('.db-two .r').innerText(),/파이프라인 실주 3건 · 영업기회 상실 · 메이드율 포함\s*가격 열세 2 · 담당자 부재·인수인계 누락 1/);
+  assert.match(await d.locator('.db-two .g').innerText(),/견적문의 종결 1건 · Bad Fit 1 · 영업 실패 아님 · 메이드율 제외\s*공사 범위 밖 1/);assert.match(await d.locator('.db-two .r').innerText(),/파이프라인 실주 3건 · 영업기회 상실 · 메이드율 포함\s*가격 열세 2 · 담당자 부재·인수인계 누락 1/);
   /* 월별: 3월 5억 · 9월 3억 · 10월 진행 중(점선) · 11~12월 빈칸 · 월평균 = 8억 ÷ 9 */
   const cols=await d.locator('.db-col').evaluateAll(a=>a.map(n=>[n.querySelector('span').textContent,n.className.replace('db-col','').trim(),n.disabled]));
   assert.equal(cols.length,12);assert.deepEqual(cols[2],['5억','',false]);assert.deepEqual(cols[8],['3억','',false]);assert.deepEqual(cols[9],['진행 중','cur',false]);assert.deepEqual(cols[10],['','fut',true]);assert.deepEqual(cols[0],['없음','zero',false]);
@@ -118,7 +118,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#si-control .db-sel [data-db="clear"]').click();await page.waitForTimeout(200);assert.match(await page.locator('#si-control .db-sel .mr').innerText(),/표에서 칸 · 이름 · 열을 누르세요/);
   assert.match(await page.locator('#si-control .db-risk').innerText(),/^데이터 위험/);
   const hl=await page.locator('#si-control .db-health span').evaluateAll(a=>a.map(n=>n.innerText.replace(/\s+/g,' ').trim()));
-  assert.equal(hl.length,6);assert.match(hl[0],/^다음 할 일 등록률 \d+\.\d%$/);assert.equal(hl[1],'기록 당일 입력 아직 없음');assert.equal(hl[2],'배드핏 사유 입력률 100.0%');assert.equal(hl[3],'실주 사유 입력률 100.0%');assert.equal(hl[4],'첫 연락 2시간 안 0.0%');assert.equal(hl[5],'견적 3일 안 발송 아직 없음');
+  assert.equal(hl.length,6);assert.match(hl[0],/^다음 할 일 등록률 \d+\.\d%$/);assert.equal(hl[1],'기록 당일 입력 아직 없음');assert.equal(hl[2],'종결 사유 입력률 100.0%');assert.equal(hl[3],'실주 사유 입력률 100.0%');assert.equal(hl[4],'첫 연락 2시간 안 0.0%');assert.equal(hl[5],'견적 3일 안 발송 아직 없음');
   if(shot)await page.screenshot({path:shot+'-control.png',fullPage:true});
   /* 권한: 영업사원은 보기만 — 할 일 지정 · 알림 · 줄 끝 [지정] 없음 */
   await page.evaluate(()=>{window.__me=ME;ME={id:'rep1',name:'이필선',role:'rep'};paint();});await page.waitForTimeout(300);

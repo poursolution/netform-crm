@@ -6,7 +6,7 @@ const root=path.resolve(__dirname,'..'),R=require('../ops-rules.js'),read=f=>fs.
 test('기본값 = 회의 기준서',()=>{
  assert.equal(R.get('assign_minutes'),30);assert.equal(R.get('first_contact_hours'),2);assert.equal(R.get('inactive_days'),7);assert.equal(R.get('quote_followup_days'),7);
  assert.equal(R.get('unreachable_attempts'),3);assert.equal(R.get('unreachable_interval_days'),1);assert.equal(R.get('long_wait_contact_days'),60);assert.equal(R.get('transfer_result_check_days'),14);
- assert.deepEqual(R.reasons('bad_fit'),['수행 불가 공종','규모 부적합','시공 불가 지역','기타']);
+ assert.deepEqual(R.reasons('bad_fit'),['수행불가 공종','규모 부적합','대상 고객 아님','서비스 범위 아님','기타']);
  assert.deepEqual(R.reasons('lost'),['관계 · 관리소장 변경','관계 · 입대의 · 회장 영향','관계 · 경쟁업체 기존 관계','공법 · 타 공법 선호','공법 · 특허 조건 불리','공법 · 설계 변경','가격 · 가격 경쟁','가격 · 예산 부족','가격 · 실행가 문제','사업 · 공사 취소','사업 · 연기','사업 · 예산 미확정']);
  assert.deepEqual(R.reasons('transfer'),['영업권 조율','영업권 중복','안전 · 시공조건','파트너사 협업','시공역량 문제','기타']);
  assert.deepEqual(R.get('contact_channels'),['전화','카카오','문자','이메일','방문','기타']);
