@@ -293,6 +293,8 @@
    if(act==='다음 할 일')return openKey(key,'next');
    /* 배정 창은 문의 번호만 받는다('inq:' 머리 없이) — 머리를 붙인 채 넘기면 "먼저 처리할 견적문의를 선택해 주세요"만 뜬다 */
    if(act==='배정'&&/^inq:/.test(key)&&typeof root.todayAssignInquiry==='function')return root.todayAssignInquiry(key.replace(/^inq:/,''));
+   /* 담당 없는 영업건의 [배정]: 상세 창을 열고 담당 정하는 칸으로(2026-10-05 정합성 ⑤) */
+   if(act==='배정'&&/^deal:/.test(key)){openKey(key);setTimeout(()=>{try{root.DealDetailV3&&root.DealDetailV3.openFrom&&root.DealDetailV3.openFrom('owner');}catch(e){}},250);return;}
    if(['독촉','코멘트','결과 기록','정기 연락','관계 연락','현장 확인'].includes(act))return openKey(key,'contact');
    return openKey(key);}
   if(a==='open'&&(!e.target.closest('button')||b.tagName==='BUTTON'))return openKey(key);

@@ -25,7 +25,7 @@
  const LOSS={transfer:'낙찰결과를 놓쳐 실적 인정이 늦어집니다',tfapprove:'담당자 수주실적 반영이 늦어집니다',decide:'담당이 움직이지 못합니다',assign:'고객이 다른 업체로 갑니다',deadline:'제안 없이 마감을 맞습니다',contract:'착공 준비와 집계가 멈춥니다',stallbig:'큰 건이 검토 단계에서 빠집니다',silent:'검토 단계에서 빠집니다',first:'다른 업체가 먼저 현장을 봅니다',promise:'약속을 안 지킨 업체로 기억됩니다',quote:'고객이 다른 견적부터 받습니다',site:'현장 불만을 늦게 알게 됩니다',month:'관계가 식어 재문의가 줄어듭니다',long:'공사 시기를 놓칩니다',data:'대표회의 · 경쟁 대응을 준비할 수 없습니다',stall:'다음 움직임이 정해지지 않습니다',after:'추가 공사 기회를 놓칩니다'};
  const ACT_REP={transfer:'결과 등록',tfapprove:'인정 대기',first:'전화',promise:'전화',month:'전화',silent:'전화',after:'전화',stallbig:'전화',deadline:'제안 준비',quote:'견적 요청',stall:'다음 할 일',site:'현장 확인',long:'관계 연락',data:'정보 보완',contract:'정보 입력'};
  const ACT_TEAM={transfer:'독촉',tfapprove:'실적 인정',assign:'배정',decide:'결정 기록',contract:'입력 요청',first:'독촉',silent:'독촉',quote:'독촉',after:'독촉',deadline:'독촉',stallbig:'독촉',promise:'코멘트',stall:'코멘트',month:'코멘트',site:'코멘트',long:'코멘트',data:'정보 요청'};
- const DONE={'결과 등록':'낙찰결과(수주 · 실주 · 취소) 등록','실적 인정':'사전 보고 · 낙찰결과 · 낙찰금액 확인 후 인정','인정 대기':'관리자 인정 뒤 실적 반영','재배정':'결정 기록 + 담당 통보 · 인수 확인','배정':'담당자 지정 + 인계 확인','결정 기록':'결정 내용 기록 + 담당 통보','자료 제출':'자료 · 개략 금액 발송 + 회의 결과 확인일 등록','현장 확인':'공정 · 불만 · 소장 요청 · 추가공사 기록','정보 보완':'결정 일정 · 경쟁사 · 결정권자 입력','정보 요청':'담당자 확인 + 입력 약속 시간 받기','정기 연락':'연락 결과 + 다음 행동 · 날짜','관계 연락':'공사 시기 확인 + 다음 2개월 연락일','전화':'결과 + 다음 행동 · 날짜 함께 기록 (완료만 선택 불가)','제안 준비':'제안서 업로드 + 제출일 확정','견적 요청':'견적 요청 등록 + 견적 예정일 입력','다음 할 일':'다음 할 일 · 날짜 등록','독촉':'담당자 확인 + 처리 약속 시간 받기','코멘트':'담당자 확인 + 통화 결과 기록 확인','입력 요청':'계약일 · 금액 입력 확인','정보 입력':'계약일 · 금액 입력'};
+ const DONE={'결과 등록':'낙찰결과(수주 · 실주 · 취소) 등록','실적 인정':'사전 보고 · 낙찰결과 · 낙찰금액 확인 후 인정','인정 대기':'관리자 인정 뒤 실적 반영','재배정':'결정 기록 + 담당 통보 · 인수 확인','배정':'담당자 지정 + 인계 확인','결정 기록':'결정 내용 기록 + 담당 통보','자료 제출':'자료 · 개략 금액 발송 + 회의 결과 확인일 등록','현장 확인':'공정 · 불만 · 소장 요청 · 추가공사 기록','정보 보완':'결정 일정 · 경쟁사 · 결정권자 입력','정보 요청':'담당자 확인 + 입력 약속 시간 받기','정기 연락':'연락 결과 + 다음 행동 · 날짜','관계 연락':'공사 시기 확인 + 다음 2개월 연락일','전화':'결과 + 다음 행동 · 날짜 함께 기록 (완료만 선택 불가)','제안 준비':'제안서 업로드 + 제출일 확정','견적 요청':'견적 요청 등록 + 견적 예정일 입력','다음 할 일':'다음 할 일 · 날짜 등록','독촉':'고객 연락 기록 + 결과 + 다음 행동 (담당 확인 · 약속 시간은 중간 상태)','코멘트':'담당자 확인 + 통화 결과 기록 확인','입력 요청':'계약일 · 금액 입력 확인','정보 입력':'계약일 · 금액 입력'};
  const BRAND={'석민이앤씨':'#e8590c','POUR솔루션':'#1f9d55','POUR공법':'#7048e8','아파트스퀘어':'#3b6ce4'};
  const dayN=hours=>Number.isFinite(hours)&&hours>0?Math.max(1,Math.floor(hours/24)):0;
  const money=n=>{n=Number(n)||0;if(!n)return '';if(n>=1e8)return (Math.round(n/1e7)/10)+'억';if(n>=1e4)return Math.round(n/1e4).toLocaleString('ko-KR')+'만';return n.toLocaleString('ko-KR');};
@@ -116,7 +116,7 @@
   if(role==='rep')mine=rows.filter(x=>!x.unassigned).map(x=>classify(x,'rep')).filter(Boolean);
   else if(role==='mgr'||role==='lead')mine=rows.map(x=>classify(x,role)).filter(Boolean);
   else mine=rows.map(x=>classify(x,role)).filter(i=>i&&(i.rk==='decide'||i.x.owner===me));/* 상무 · 대표: 결정 요청 + 내 담당 */
-  mine.forEach(i=>{i.i=info(i.x);i.brand=i.i.brand;i.bc=BRAND[i.brand]||'#6b7280';i.act=team?(ACT_TEAM[i.rk]||'코멘트'):(ACT_REP[i.rk]||'전화');if(role!=='rep'&&role!=='mgr'&&role!=='lead'&&i.x.owner===me)i.act=ACT_REP[i.rk]||'전화';i.done=DONE[i.act]||DONE['전화'];i.loss=LOSS[i.rk];i.sName=(COLS.find(c=>c[0]===i.st)||[])[1]||'';});
+  mine.forEach(i=>{i.i=info(i.x);i.brand=i.i.brand;i.bc=BRAND[i.brand]||'#6b7280';i.act=team?(ACT_TEAM[i.rk]||'코멘트'):(ACT_REP[i.rk]||'전화');if(role!=='rep'&&role!=='mgr'&&role!=='lead'&&i.x.owner===me)i.act=ACT_REP[i.rk]||'전화';/* 담당 없는 영업건은 받을 사람이 없다 — 독촉 · 코멘트 대신 담당 배정부터(2026-10-05 정합성 ⑤) */if(team&&i.x.type==='deal'&&(!i.x.owner||i.x.owner==='미배정'))i.act='배정';i.done=DONE[i.act]||DONE['전화'];i.loss=LOSS[i.rk];i.sName=(COLS.find(c=>c[0]===i.st)||[])[1]||'';});
   return {teamItems,mine};
  }
  /* AI 첫마디(기존 call_opener · 제안만): 영업사원 카드에서 누를 때만 부른다 */
@@ -229,7 +229,7 @@
   if(a==='reassign')return openKey(key);
   if(a==='result')return openKey(key,'contact');
   if(a==='sms'){openKey(key);setTimeout(()=>{const tab=document.querySelector('dialog[open] [data-idv="tab"][data-v="sms"], .inq-dialog [data-idv="tab"][data-v="sms"]');if(tab)tab.click();else if(root.InquiryDetailV2&&root.InquiryDetailV2.openSms&&root.InquiryDetailV2.openSms()){/* 문의 = 상세의 문자 작은 창 */}else if(root.CUR_DETAIL&&root.CUR_DETAIL.kind==='deal'&&typeof root.contactSms==='function')root.contactSms();},400);return;}
-  if(a==='act'){const act=b.dataset.act;if(act==='전화'){dial(b.dataset.tel);return openKey(key,'contact');}if(act==='다음 할 일')return openKey(key,'next');if(['독촉','코멘트','결과 기록','정기 연락','관계 연락','현장 확인'].includes(act))return openKey(key,'contact');return openKey(key);}
+  if(a==='act'){const act=b.dataset.act;if(act==='전화'){dial(b.dataset.tel);return openKey(key,'contact');}if(act==='다음 할 일')return openKey(key,'next');if(act==='배정'&&/^deal:/.test(key)){openKey(key);setTimeout(()=>{try{root.DealDetailV3&&root.DealDetailV3.openFrom&&root.DealDetailV3.openFrom('owner');}catch(e){}},250);return;}if(['독촉','코멘트','결과 기록','정기 연락','관계 연락','현장 확인'].includes(act))return openKey(key,'contact');return openKey(key);}
   if(a==='open'&&!e.target.closest('button'))return openKey(key);
  }
  function onChange(e){const s=e.target.closest('#today-v2 .tt select[data-tt="reason"]');if(!s)return;st().reason=s.value;root.TodayV2.render();}
