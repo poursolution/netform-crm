@@ -59,7 +59,7 @@
  // Read only this opportunity's records. These are editable drafts, never events or performance.
  function evidence(deal,patch={},to){
   const fields={},sources={},candidates={},seen=new Set(),performed={pt:false,bid:false},review=[],contexts={...(deal.stage_contexts||{}),...(patch.stage_contexts||{})};
-  const nonEvent=/예정|계획|유도|제안(?!서)|요청|희망|준비|검토|추진|취소|미진행|미실시|미참여|미발송|안\s*(?:했|함|보냄)|않|못|불참|타사|타업체|경쟁사/;
+  const nonEvent=/예정|계획|유도|제안(?!서)|요청|희망|준비|검토|추진|취소|미진행|미실시|미참여|미발송|안\s*(?:했|함|보냄)|않|못|불참|아님|아니|여부|실패|[?？]|타사|타업체|경쟁사/;
   const plain=value=>String(value||'').replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi,'').replace(/<br\s*\/?\s*>|<\/(?:p|div|li)>/gi,'\n').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').trim();
   const fullDate=text=>{const dates=[...String(text).matchAll(/\b(20\d{2}|\d{2})\s*(?:년|[.\/-])\s*(\d{1,2})\s*(?:월|[.\/-])\s*(\d{1,2})(?:일|\b)/g)].map(m=>(m[1].length===2?'20':'')+m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0')).filter(validDate);return new Set(dates).size===1?dates[0]:'';};
   function add(key,value,source){if(value==null||value===''||Array.isArray(value)&&!value.length)return;(candidates[key]??=[]).push({value,source});}
