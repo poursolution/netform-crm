@@ -38,22 +38,27 @@
     return messages[error?.code] || messages[error?.message] || '변경 완료를 확인하지 못했습니다. 입력값을 확인하고 다시 시도해 주세요.';
   }
   let dialog;
-  function open() {
+  /* 강제 모드(2026-10-05 직원 계정 관리 v2): 관리자가 내준 임시 비밀번호로 로그인한 계정은 본인 비밀번호로 바꿔야 창이 닫힌다.
+     서버(crm_my_credential_state_v1)가 '바꿔야 함' 표시를 들고 있고, 실제로 비밀번호가 바뀐 뒤에만 풀어 준다. */
+  function open(options) {
     if (!root.Phase1?.profile || !root.SB) return;
     if (dialog?.open) return;
+    const force = !!(options && options.force === true);
+    let changed = false;
     const uid = root.Phase1.profile.auth_uid;
     const previousFocus = root.document.activeElement;
     const element = root.document.createElement('dialog');
     dialog = element;
-    element.className = 'account-password';
+    element.className = 'account-password' + (force ? ' account-password-force' : '');
     element.setAttribute('aria-labelledby', 'account-password-title');
-    element.innerHTML = '<form><h2 id="account-password-title">비밀번호 변경</h2>' +
-      '<p>다른 곳에서 쓰지 않는 비밀번호를 12자 이상 입력하세요. 문자와 기호를 그대로 사용할 수 있습니다.</p>' +
+    element.innerHTML = '<form><h2 id="account-password-title">' + (force ? '비밀번호를 먼저 바꿔 주세요' : '비밀번호 변경') + '</h2>' +
+      (force ? '<p>임시 비밀번호로 로그인했습니다. 계속 쓰려면 지금 본인 비밀번호로 바꿔 주세요. 현재 비밀번호 칸에는 받은 임시 비밀번호를 넣고, 새 비밀번호는 다른 곳에서 쓰지 않는 12자 이상으로 정합니다.</p>'
+        : '<p>다른 곳에서 쓰지 않는 비밀번호를 12자 이상 입력하세요. 문자와 기호를 그대로 사용할 수 있습니다.</p>') +
       '<label for="account-password-current">현재 비밀번호</label><input id="account-password-current" type="password" autocomplete="current-password" required>' +
       '<label for="account-password-new">새 비밀번호</label><input id="account-password-new" type="password" autocomplete="new-password" required>' +
       '<label for="account-password-confirm">새 비밀번호 확인</label><input id="account-password-confirm" type="password" autocomplete="new-password" required>' +
       '<p class="account-password-status" role="status" aria-live="polite"></p>' +
-      '<div class="account-password-actions"><button type="button">취소</button><button type="submit">비밀번호 변경</button></div></form>';
+      '<div class="account-password-actions"><button type="button">' + (force ? '로그아웃' : '취소') + '</button><button type="submit">비밀번호 변경</button></div></form>';
     const form = element.querySelector('form');
     const fields = Array.from(element.querySelectorAll('input'));
     const close = element.querySelector('button[type="button"]');
@@ -63,7 +68,7 @@
     const clear = () => fields.forEach(field => { field.value = ''; });
     const identity = () => root.Phase1?.profile?.auth_uid;
     const invalidated = () => { clear(); element.close(); };
-    element.addEventListener('cancel', event => { if (busy) event.preventDefault(); });
+    element.addEventListener('cancel', event => { if (busy || (force && !changed)) event.preventDefault(); });
     element.addEventListener('close', () => {
       clear();
       root.removeEventListener('phase1:identity-cleared', invalidated);
@@ -72,7 +77,12 @@
       if (previousFocus?.isConnected) previousFocus.focus();
     }, {once: true});
     root.addEventListener('phase1:identity-cleared', invalidated);
-    close.onclick = () => { if (!busy) element.close(); };
+    close.onclick = () => {
+      if (busy) return;
+      /* 강제 모드에서 바꾸지 않고 나가는 길은 로그아웃뿐 */
+      if (force && !changed) { if (typeof root.authSignOut === 'function') root.authSignOut(); else if (typeof root.doSignOut === 'function') root.doSignOut(); else element.close(); return; }
+      element.close();
+    };
     form.onsubmit = async event => {
       event.preventDefault();
       if (busy) return;
@@ -82,6 +92,8 @@
       status.textContent = '변경 중입니다…';
       try {
         await change(root.SB, identity, fields[0].value, fields[1].value, fields[2].value);
+        changed = true;
+        if (force) { try { await root.Phase1.rpc('crm_my_credential_state_v1'); } catch (ignore) { /* 다음 로그인 때 서버가 다시 확인해 푼다 */ } }
         if (!element.open) return;
         status.textContent = '비밀번호를 변경했습니다. 다음 로그인부터 새 비밀번호를 사용하세요.';
         fields.forEach(field => { field.disabled = true; });
@@ -100,6 +112,18 @@
     element.showModal();
     fields[0].focus();
   }
+  /* 로그인 직후: 임시 비밀번호를 아직 쓰고 있으면 변경 창을 강제로 띄운다(서버 함수가 없으면 조용히 넘어간다) */
+  async function checkForced() {
+    try {
+      if (!root.Phase1?.profile || typeof root.Phase1.rpc !== 'function' || !root.SB) return;
+      const state = await root.Phase1.rpc('crm_my_credential_state_v1');
+      if (state?.ok === true && state.must_change === true) open({force: true});
+    } catch (ignore) { /* 미설치 · 통신 실패는 로그인 흐름을 막지 않는다 */ }
+  }
   if (typeof module === 'object' && module.exports) module.exports = {validate, change, errorText};
-  else root.CRMPassword = Object.freeze({open});
+  else {
+    root.CRMPassword = Object.freeze({open, checkForced});
+    if (typeof root.addEventListener === 'function') root.addEventListener('phase1:profile', () => { root.setTimeout(checkForced, 600); });
+    if (root.Phase1?.profile) root.setTimeout(checkForced, 600);
+  }
 })(typeof window === 'object' ? window : globalThis);
