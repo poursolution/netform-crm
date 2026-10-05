@@ -1,0 +1,66 @@
+/* 파이프라인 · 관계관리 단계 화면 (2026-10-05 design_handoff_relationship · 관계관리 세분화.dc.html 치수 그대로)
+   빨강(#b42318 글자 · #d14a3f 막대) = 기준 넘김만 · 주황(#8a5a00) = 곧 넘김 · 브랜드색은 띠 · 이름에만
+   버튼 규칙은 #pipeline-stage-b.prb 로 시작한다 — 단계 화면 공통 규칙(#pipeline-stage-root button)이 색 · 테두리 · 여백을 덮어쓰기 때문 */
+.prb{display:flex;flex-direction:column;gap:14px;color:#15171c}
+.prb-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.prb-head b{font-size:17px}.prb-head span{font-size:12px;color:#6b7280;flex:1 1 300px;min-width:0;line-height:1.5}
+/* 3칸 카드 */
+.prb-subs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+#pipeline-stage-b.prb .prb-sub{text-align:left;background:#fff;border:1.5px solid #e8eaef;border-top:4px solid #15171c;border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:6px;font:inherit;color:#15171c;cursor:pointer;min-height:0;box-shadow:none;min-width:0}
+#pipeline-stage-b.prb .prb-sub[aria-pressed="true"]{border-left-color:#15171c;border-right-color:#15171c;border-bottom-color:#15171c}
+.prb-sub .h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.prb-sub .h>b{font-size:15px}.prb-sub .h>span{font-size:12px;color:#6b7280}
+.prb-sub .h>b.n{margin-left:auto;font-size:22px}.prb-sub .h>b.n span{font-size:12px;font-weight:500;color:#6b7280}
+.prb-sub .rule{font-size:12.5px;color:#374151}
+.prb-sub .bar{display:flex;align-items:center;gap:8px}.prb-sub .bar>i{flex:1;height:6px;background:#eef0f3;border-radius:3px;position:relative;display:block}.prb-sub .bar>i u{position:absolute;left:0;top:0;bottom:0;border-radius:3px;display:block}
+.prb-sub .bar>span{font-size:12px;white-space:nowrap}.prb-sub .bar b.r{color:#b42318}
+.prb-sub .over{font-size:12px;color:#b42318}.prb-sub .over.none{color:#6b7280;font-weight:500}
+/* 견적 발송일이 없어 분류하지 못한 건 — 카드 아래 한 줄 */
+#pipeline-stage-b.prb .prb-nodata{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;text-align:left;background:#fff;border:1.5px solid #e8eaef;border-radius:12px;padding:10px 16px;font:inherit;color:#15171c;cursor:pointer;min-height:0;box-shadow:none}
+#pipeline-stage-b.prb .prb-nodata[aria-pressed="true"]{border-color:#15171c}
+.prb-nodata>b{font-size:13.5px}.prb-nodata>b em{font-style:normal;color:#8a5a00}.prb-nodata>span{font-size:12px;color:#6b7280}.prb-nodata>i{flex:1}.prb-nodata>u{text-decoration:none;font-size:12.5px;font-weight:700;color:#2a52b8}
+/* 아래 2단: 왼쪽 340px · 오른쪽 나머지 전부 */
+.prb-body{display:grid;grid-template-columns:340px minmax(0,1fr);gap:14px;align-items:start}
+.prb-left{display:flex;flex-direction:column;gap:12px;min-width:0}
+.prb-box{background:#fff;border:1px solid #e8eaef;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.prb-box>header{display:flex;align-items:baseline;gap:8px}.prb-box>header b{font-size:14px}.prb-box>header span{font-size:12px;color:#9ca3af}
+.prb-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.prb-kpis>div{background:#f5f6f8;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.prb-kpis span{font-size:11.5px;color:#6b7280}.prb-kpis b{font-size:20px}.prb-kpis b.r{color:#b42318}.prb-kpis small{font-size:11px;color:#9ca3af}
+.prb-why{gap:7px}.prb-why>header span{font-size:11px}
+#pipeline-stage-b.prb .prb-reason{text-align:left;border:1px solid #e3e6ec;background:#fff;border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:5px;font:inherit;cursor:pointer;min-height:0;box-shadow:none}
+#pipeline-stage-b.prb .prb-reason[aria-pressed="true"]{background:#f5f6f8;border-color:#15171c}
+.prb-reason>span{display:flex;justify-content:space-between;gap:8px;font-size:12.5px}.prb-reason>span>span{color:#2a52b8}
+.prb-reason>i{height:4px;background:#eef0f3;border-radius:2px;position:relative;display:block}.prb-reason>i u{position:absolute;left:0;top:0;bottom:0;border-radius:2px;display:block}
+.prb-todo{gap:8px}
+.prb-act{background:#f5f6f8;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.prb-act>span{font-size:11.5px;font-weight:700;color:#6b7280}.prb-act>span.r{color:#b42318}.prb-act p{margin:0;font-size:13px;line-height:1.5}.prb-act small{font-size:11.5px;color:#6b7280}
+#pipeline-stage-b.prb .prb-rule{border:0;background:none;text-align:left;padding:4px 0 0;color:#2a52b8;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;min-height:0;box-shadow:none}
+.prb-moves{display:flex;flex-direction:column;gap:5px;border-top:1px solid #f0f1f4;padding-top:8px}
+.prb-moves>div{display:grid;grid-template-columns:minmax(0,1fr) 24px;gap:8px;font-size:12px;line-height:1.5}.prb-moves>div>span>span{color:#6b7280}.prb-moves>div>b{text-align:right}
+/* 오른쪽: 확인할 현장 */
+#pipeline-stage-b.prb .psb-views button{border:0;border-radius:0;background:#fff;color:#374151;font:inherit;font-size:12.5px;font-weight:500;padding:6px 14px;min-height:0;box-shadow:none}
+#pipeline-stage-b.prb .psb-views button[aria-pressed="true"]{background:#15171c;color:#fff;font-weight:700}
+.prb-main{min-width:0;display:flex;flex-direction:column;gap:10px}
+.prb-lhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.prb-lhead>b{font-size:14px}.prb-lhead>b span{font-weight:500;color:#6b7280}.prb-lhead>small{font-size:11.5px;color:#9ca3af}.prb-lhead>i{flex:1}
+#pipeline-stage-b.prb .prb-chip{border:1px solid #d9dde4;background:#fff;color:#374151;font:inherit;font-size:12px;font-weight:600;border-radius:999px;padding:4px 11px;cursor:pointer;min-height:0;box-shadow:none}
+#pipeline-stage-b.prb .prb-chip[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}.prb-chip span{opacity:.7}
+.prb-table{background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden}
+.prb-thead,.prb-row{display:grid;grid-template-columns:4px minmax(0,1.2fr) 110px minmax(0,1.4fr) 64px 96px;gap:14px}
+.prb-thead{padding:8px 16px 8px 0;font-size:11px;color:#9ca3af;border-bottom:1px solid #f2f3f6}.prb-thead .a{text-align:right}
+.prb-row{align-items:center;padding:11px 16px 11px 0;border-bottom:1px solid #f4f5f7;font-size:12.5px;cursor:pointer}.prb-row:hover{background:#fafbfc}
+.prb-row>i{height:32px;border-radius:0 2px 2px 0;display:block}
+.prb-row .s{display:flex;flex-direction:column;gap:1px;min-width:0}.prb-row .s b{font-size:13px;line-height:1.35;overflow-wrap:anywhere}.prb-row .s small{font-size:11.5px;color:#6b7280}.prb-row .s em{font-style:normal;font-weight:600}
+.prb-row .d{display:flex;flex-direction:column;gap:1px;min-width:0}.prb-row .d b.r{color:#b42318}.prb-row .d small{font-size:11px;color:#9ca3af}
+.prb-row .i{font-size:12px;line-height:1.45;overflow-wrap:anywhere}.prb .lv1{color:#b42318;font-weight:700}.prb .lv0{color:#8a5a00;font-weight:700}.prb .lvn{color:#6b7280;font-weight:400}
+.prb-row .a{text-align:right;white-space:nowrap}
+#pipeline-stage-b.prb .prb-row>button,#pipeline-stage-b.prb .prb-card .b button{border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12px;font-weight:700;border-radius:7px;padding:7px 0;white-space:nowrap;cursor:pointer;min-height:0;min-width:0;box-shadow:none}
+#pipeline-stage-b.prb .prb-row>button.fill,#pipeline-stage-b.prb .prb-card .b button.fill{background:#15171c;border-color:#15171c;color:#fff}
+#pipeline-stage-b.prb .prb-card .b button{padding:4px 9px;font-size:11px}.prb-card .b em{font-style:normal;font-size:11.5px;min-width:0}
+.prb-empty{padding:28px;text-align:center;font-size:13px;color:#6b7280}
+.prb-foot{padding:9px 16px;font-size:11.5px;color:#9ca3af}
+#pipeline-stage-b.prb .prb-more{width:100%;border:0;border-bottom:1px solid #f4f5f7;background:#fff;padding:10px;font:inherit;font-size:12px;font-weight:600;color:#374151;cursor:pointer;min-height:0;box-shadow:none}
+/* 날짜 한 칸 입력(발송일 · 집중관리 복귀) — 그 줄 바로 아래 */
+.prb-pop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 16px 12px 18px;background:#f8f9fb;border-bottom:1px solid #f4f5f7;font-size:12.5px}
+.prb-pop label{font-weight:700}.prb-pop input{border:1px solid #15171c;border-radius:7px;padding:5px 8px;font:inherit;font-size:13px;background:#fff}
+#pipeline-stage-b.prb .prb-pop button{border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12px;font-weight:700;border-radius:7px;padding:6px 12px;cursor:pointer;min-height:0;box-shadow:none}
+#pipeline-stage-b.prb .prb-pop button.ok{background:#15171c;border-color:#15171c;color:#fff}.prb-pop small{font-size:11.5px;color:#6b7280}.prb-pop p{margin:0;flex-basis:100%;font-size:12px;color:#b42318}
+@media(max-width:1100px){.prb-body{grid-template-columns:1fr}}
+@media(max-width:900px){.prb-subs{grid-template-columns:1fr}.prb-thead{display:none}.prb-row{grid-template-columns:4px minmax(0,1fr) 96px;gap:6px 12px}.prb-row .d,.prb-row .i{grid-column:2/-1}.prb-row .a{grid-column:2;text-align:left}.prb-row>button{grid-column:3}.prb-row>i{grid-row:1/span 4;height:auto;align-self:stretch}}
