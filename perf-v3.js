@@ -53,25 +53,41 @@
     return '<div class="pf3-fr"><div><i style="background:'+b.c+'"></i><b>'+h(b.name)+'</b><u></u><b class="rt'+(none?' mut':lowB?' red':'')+'">'+(none?'수주 없음':b.made===null?'—':b.made.toFixed(1)+'%')+'</b></div><div class="bar'+(b.q||b.fit||b.w?'':' zero')+'"><span style="flex:'+b.q+';background:'+b.c+';opacity:.25"></span><span style="flex:'+b.fit+';background:'+b.c+';opacity:.55"></span><span style="flex:'+Math.max(b.w,1)+';background:'+b.c+'"></span></div><span>문의 '+b.q+' → 적합 '+b.fit+' → 수주 '+(L.ready?b.w:'—')+'</span></div>';}).join('')
    +(zero.length&&L.ready?'<span class="pf3-warn">'+h(zero.map(b=>b.name).join(' · ')+' — 적합 '+zero.reduce((s,b)=>s+b.fit,0)+'건인데 수주 0')+'</span>':'')+'</section>';
   /* ── ④ 탭 ── */
-  const TB=[['유입 브랜드 → 낙찰사 · 매출',P.label+' · 수주실적 = 낙찰금액 · 매출 = 회사에 들어오는 돈'],['접수 월별 전환','같은 달 들어온 문의가 결국 몇 건 계약됐나'],['유입경로','어디서 계약되는 문의가 오나'],['기술자문','협약시공사 낙찰 건']];
+  const TB=[['유입 브랜드 → 낙찰사 · 매출',P.label+' · 수주실적 = 낙찰금액 · 매출 = 회사에 실제 들어오는 금액(직접 계약 · 기술자문 · POUR 계약)'],['접수 월별 전환','같은 달 들어온 문의가 결국 몇 건 계약됐나'],['유입경로','어디서 계약되는 문의가 오나'],['기술자문','협약시공사 낙찰 건']];
   const tab=Math.max(0,Math.min(3,Number(S.tab)||0));
+  /* 유입 브랜드 → 낙찰 시공사 → 수주실적 · 매출 (2026-10-05 design_handoff_dashboard · 영업 대시보드 v2.dc.html)
+     위 3칸 = 수주실적 · 회사 매출 · 매출 비율, 칸마다 직접 / 협약 · 기술자문 두 부분. 줄마다 회색 막대 = 수주실적, 그 안의 파란 부분 = 회사 매출.
+     금액은 전부 계약 원장 · 수주 기록에서 센다(DashB.lib.matrixRows). 수주실적과 매출은 서로 더하지 않는다. 매출을 아직 안 넣은 협약 수주는 비율에서 빼고 빨간 글로 알린다 */
   function tMatrix(){
    if(!L.ready)return '<p class="pf3-empty">계약 원장을 불러오는 중입니다.</p>';
    if(!MX.length)return '<p class="pf3-empty">'+h(P.label)+' 수주가 아직 없습니다.</p>';
-   const own=MX.filter(r=>r.type==='직접 수주').reduce((s,r)=>s+r.rev,0),ptR=MX.filter(r=>r.type==='협약 · 기술자문'),ptAmt=ptR.reduce((s,r)=>s+r.amt,0),ptRev=ptR.reduce((s,r)=>s+r.rev,0),ratio=(rev,a)=>a>0?Math.round(rev/a*100):null;
-   const tops=[['수주실적 (낙찰금액)',money(tot.amt),tot.n+'건 · 인센티브 기준'],['회사 매출',money(tot.rev),'직접 계약 '+money(own)+' + 기술자문 · POUR '+money(ptRev)],['협약 · 기술자문 비중',tot.amt>0?Math.round(ptAmt/tot.amt*100)+'%':'—','수주실적 중 '+money(ptAmt)]];
-   const groups=[];MX.forEach(r=>{let g=groups[groups.length-1];if(!g||g.brand!==r.brand){g={brand:r.brand,rows:[]};groups.push(g);}g.rows.push(r);});
-   const line=(o)=>'<div class="pf3-mr'+(o.sub===2?' tot':o.sub===1?' sub':'')+'"><span class="pb" style="color:'+(o.c||'#15171c')+'">'+(o.brand?'<i style="background:'+(o.c||'transparent')+'"></i>'+h(o.brand):'')+'</span><span title="'+attr(o.co)+'">'+h(o.co)+'</span><span>'+(o.type?'<em class="'+TYPE[o.type][1]+'">'+TYPE[o.type][0]+'</em>':'')+'</span><span class="r">'+o.n+'</span><span class="r">'+h(o.amt)+'</span><span class="r'+(o.rev==='미입력'?' red':'')+'">'+h(o.rev)+'</span><span class="pc">'+(o.pct==null?'':'<small>'+o.pct+'%</small><u><i style="width:'+Math.max(0,Math.min(100,o.pct))+'%"></i></u>')+'</span></div>';
-   const revOf=r=>r.type==='타사 이관'?'-':r.type==='협약 · 기술자문'&&r.unknown===r.n?'미입력':money(r.rev),pctOf=r=>r.type==='타사 이관'||(r.type==='협약 · 기술자문'&&r.unknown===r.n)?null:ratio(r.rev,r.amt);
-   const lines=[];groups.forEach(g=>{const c=D.BRC[g.brand]||'#9aa0ab';
-    if(g.rows.length===1){const r=g.rows[0];lines.push(line({brand:g.brand,c,co:r.company,type:r.type,n:r.n,amt:money(r.amt),rev:revOf(r),pct:pctOf(r)}));return;}
-    const s=g.rows.reduce((a,r)=>({n:a.n+r.n,amt:a.amt+r.amt,rev:a.rev+r.rev}),{n:0,amt:0,rev:0});
-    lines.push(line({brand:g.brand,c,co:'소계',type:'',n:s.n,amt:money(s.amt),rev:money(s.rev),pct:ratio(s.rev,s.amt),sub:1}));
-    g.rows.forEach(r=>lines.push(line({brand:'',co:'└ '+r.company,type:r.type,n:r.n,amt:money(r.amt),rev:revOf(r),pct:pctOf(r)})));});
-   if(groups.length>1)lines.push(line({brand:'합계',co:'',type:'',n:tot.n,amt:money(tot.amt),rev:money(tot.rev),pct:null,sub:2}));
+   const TG={'직접 수주':['#15171c','#eef0f3'],'협약 · 기술자문':['#b4530b','#fff1e6'],'타사 이관':['#1d3f99','#eef3fe']};
+   const sum=(l,k)=>l.reduce((s,r)=>s+(Number(r[k])||0),0),known=r=>!(r.type==='협약 · 기술자문'&&r.unknown===r.n)&&r.type!=='타사 이관';
+   const dir=MX.filter(r=>r.type==='직접 수주'),pt=MX.filter(r=>r.type==='협약 · 기술자문'),tf=MX.filter(r=>r.type==='타사 이관');
+   const dirA=sum(dir,'amt'),ptA=sum(pt,'amt'),tfA=sum(tf,'amt'),dirR=sum(dir,'rev'),ptR=sum(pt,'rev');
+   /* 매출 비율 = 매출 ÷ 수주실적 — 매출을 아는 줄만(미입력 · 타사 이관 제외) */
+   const ratioOf=l=>{const k=l.filter(known),a2=sum(k,'amt');return a2>0?Math.round(sum(k,'rev')/a2*100):null;},missN=l=>l.filter(r=>r.type==='협약 · 기술자문'&&r.unknown===r.n).reduce((s,r)=>s+r.n,0);
+   const pct=(v,l)=>v==null?(missN(l)?'미입력':'—'):v+'%'+(missN(l)?' · 미입력 '+missN(l)+'건 제외':'');
+   const ptNames=[...new Set(pt.map(r=>r.company).filter(Boolean))],ptLabel='협약 · 기술자문'+(ptNames.length?' (낙찰 '+ptNames.slice(0,2).join(' · ')+(ptNames.length>2?' 외 '+(ptNames.length-2)+'곳':'')+')':'');
+   const tops=[
+    ['수주실적 · 낙찰금액 ('+tot.n+'건)',money(tot.amt),[['직접 수주',money(dirA),'#3b6ce4'],[ptLabel,money(ptA),'#e0a43a']].concat(tfA>0?[['타사 이관',money(tfA),'#9aa0ab']]:[])],
+    ['회사 매출',money(tot.rev),[['직접 계약',money(dirR),'#3b6ce4'],['기술자문 · POUR 계약',pt.length&&missN(pt)===sum(pt,'n')?'미입력':money(ptR),'#e0a43a']]],
+    ['매출 비율 (매출 ÷ 수주실적)'+(missN(MX)&&ratioOf(MX)!=null?' · 미입력 '+missN(MX)+'건 제외':''),ratioOf(MX)==null?pct(null,MX):ratioOf(MX)+'%',[['직접 수주',pct(ratioOf(dir),dir),'#3b6ce4'],['협약 · 기술자문',pct(ratioOf(pt),pt),'#e0a43a']]]];
+   const mx=Math.max(1,...MX.map(r=>r.amt)),w=v=>Math.max(0,Math.min(100,Math.round(v/mx*100)));
+   let prev='';
+   const rows=MX.map(r=>{const first=r.brand!==prev;prev=r.brand;const c=D.BRC[r.brand]||'#9aa0ab',t=TG[r.type]||TG['직접 수주'],unk=r.type==='협약 · 기술자문'&&r.unknown===r.n,none=r.type==='타사 이관',ra=!unk&&!none&&r.amt>0?Math.round(r.rev/r.amt*100):null;
+    const sub=none?['회사 매출 없음',''] :unk?['→ 매출 미입력','red']:ra===100?['= 매출 전액','']:['→ 매출 '+money(r.rev)+' · '+ra+'%',ra!==null&&ra<60?'pf3-am':''];
+    return '<div class="pf3-bx" role="row"><span class="pf3-bxb" style="color:'+c+'">'+(first?'<i style="background:'+c+'"></i>'+h(r.brand):'')+'</span><span class="pf3-bxc" title="'+attr(r.company)+'">'+h(r.company)+'</span><span><em style="color:'+t[0]+';background:'+t[1]+'">'+h(r.type)+'</em></span><span class="pf3-bxn">'+r.n+'</span><span class="pf3-bxw"><span class="pf3-bxbar"><i class="a" style="width:'+w(r.amt)+'%"></i><i class="r" style="width:'+(unk||none?0:w(r.rev))+'%"></i></span><b class="pf3-bxv">'+h(money(r.amt))+'</b><small class="'+sub[1]+'">'+h(sub[0])+'</small></span></div>';}).join('');
+   const totRatio=ratioOf(MX),total=MX.length>1?'<div class="pf3-bx tot" role="row"><span class="pf3-bxb">합계</span><span></span><span></span><span class="pf3-bxn">'+tot.n+'</span><span class="pf3-bxw"><b class="pf3-bxv">'+h(money(tot.amt))+'</b><small class="pf3-dk">→ 매출 '+h(money(tot.rev))+(totRatio==null?'':' · '+totRatio+'%')+'</small></span></div>':'';
+   /* 해석 한 줄: 협약 · 기술자문 수주가 가장 큰 유입 브랜드 */
+   const josa=s=>{const ch=String(s).charCodeAt(String(s).length-1),j=ch>=0xAC00&&ch<=0xD7A3?(ch-0xAC00)%28:0;return j&&j!==8?'으로':'로';};
+   const byB={};MX.forEach(r=>{const g=byB[r.brand]||(byB[r.brand]={brand:r.brand,amt:0,pt:0,cos:[]});g.amt+=r.amt;if(r.type==='협약 · 기술자문'){g.pt+=r.amt;if(r.company&&!g.cos.includes(r.company))g.cos.push(r.company);}});
+   const top=Object.values(byB).filter(g=>g.pt>0).sort((x,y)=>y.pt-x.pt)[0];
+   const note=top?top.brand+josa(top.brand)+' 들어온 수주실적 '+money(top.amt)+' 중 '+money(top.pt)+'('+Math.round(top.pt/top.amt*100)+'%)이 '+top.cos.slice(0,2).join(' · ')+(top.cos.length>2?' 외 '+(top.cos.length-2)+'곳':'')+' 낙찰 · 기술자문 구조라 회사 매출은 수주실적보다 작게 잡힙니다. 매출 비율 = 매출 ÷ 수주실적.':'직접 수주만 있어 수주실적과 회사 매출이 같습니다. 매출 비율 = 매출 ÷ 수주실적.';
    const miss=MX.filter(r=>r.unknown>0).map(r=>r.company+' '+r.unknown+'건');
-   return '<div class="pf3-tb"><div class="pf3-tops">'+tops.map(t=>'<div><span>'+t[0]+'</span><b>'+h(t[1])+'</b><small>'+h(t[2])+'</small></div>').join('')+'</div><div class="pf3-mr hd"><span>유입 브랜드</span><span>낙찰 시공사</span><span>수주 유형</span><span class="r">건수</span><span class="r">수주실적</span><span class="r">매출</span><span>매출 / 수주실적</span></div>'+lines.join('')
-    +'<span class="pf3-tn">협약 · 기술자문 수주는 낙찰금액 전액이 수주실적이고, 회사 매출은 기술자문 · POUR 계약만큼만 잡힙니다.'+(miss.length?' <b class="red">'+h(miss.join(' · '))+' 매출 미입력</b>':'')+'</span></div>';
+   return '<div class="pf3-tb bx"><div class="pf3-bxtops">'+tops.map(t=>'<div><div class="pf3-bxh"><span>'+h(t[0])+'</span><b>'+h(t[1])+'</b></div>'+t[2].map(p=>'<div class="pf3-bxp"><i style="background:'+p[2]+'"></i><span>'+h(p[0])+'</span><u></u><b>'+h(p[1])+'</b></div>').join('')+'</div>').join('')+'</div>'
+    +'<div class="pf3-bxt" role="table" aria-label="유입 브랜드별 낙찰 시공사 · 수주실적 · 매출"><div class="pf3-bx hd" role="row"><span>유입 브랜드</span><span>낙찰 시공사</span><span>수주 유형</span><span class="pf3-bxn">건수</span><span>수주실적 (회색) 중 회사 매출 (파랑)</span></div>'+rows+total+'</div>'
+    +'<span class="pf3-tn bxn">'+h(note)+(miss.length?' <b class="red">'+h(miss.join(' · '))+' 매출 미입력</b>':'')+'</span></div>';
   }
   function tCohort(){
    const after=(R.CRMRules&&R.CRMRules.PHASE2&&R.CRMRules.PHASE2.cohort_compare_after_months)||3,rows=[];

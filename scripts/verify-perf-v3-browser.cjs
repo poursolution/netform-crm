@@ -78,17 +78,27 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 4. 탭 4개 중 하나만 */
   const th=v.locator('.pf3-tabs .th');
   assert.deepEqual(await th.locator('button').evaluateAll(l=>l.map(n=>[n.textContent,n.getAttribute('aria-selected')])),[['유입 브랜드 → 낙찰사 · 매출','true'],['접수 월별 전환','false'],['유입경로','false'],['기술자문','false']]);
-  assert.equal(await th.locator(':scope>span').innerText(),'2026년 연간 · 수주실적 = 낙찰금액 · 매출 = 회사에 들어오는 돈');
+  assert.equal(await th.locator(':scope>span').innerText(),'2026년 연간 · 수주실적 = 낙찰금액 · 매출 = 회사에 실제 들어오는 금액(직접 계약 · 기술자문 · POUR 계약)');
   assert.equal(await v.locator('.pf3-cr,.pf3-ch,.pf3-ar').count(),0,'다른 탭 표는 그려지지 않는다');
-  assert.deepEqual(await v.locator('.pf3-tops>div').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent))),[['수주실적 (낙찰금액)','9.6억','4건 · 인센티브 기준'],['회사 매출','8.6억','직접 계약 8억 + 기술자문 · POUR 5,904만'],['협약 · 기술자문 비중','17%','수주실적 중 1.6억']]);
-  const mr=await v.locator('.pf3-mr:not(.hd)').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent.trim()).concat([n.className.replace('pf3-mr','').trim()])));
-  assert.deepEqual(mr,[['석민이앤씨','석민이앤씨','직접','1','5억','5억','100%',''],['POUR솔루션','소계','','3','4.6억','3.6억','78%','sub'],['','└ POUR솔루션','직접','1','3억','3억','100%',''],['','└ 여름건설','협약 · 기술자문','1','8,810만','5,904만','67%',''],['','└ 코지건설','협약 · 기술자문','1','7,000만','미입력','',''],['합계','','','4','9.6억','8.6억','','tot']],'브랜드 소계 + 낙찰사 └ 줄 · 합계 줄엔 비율 없음');
-  assert.equal(await v.locator('.pf3-mr',{hasText:'코지건설'}).locator('span').nth(5).evaluate(n=>getComputedStyle(n).color),'rgb(180, 35, 24)','매출 미입력 빨강');
-  assert.match(await v.locator('.pf3-tn').innerText(),/회사 매출은 기술자문 · POUR 계약만큼만 잡힙니다\. 코지건설 1건 매출 미입력$/);
+  /* 위 3칸 = 수주실적 · 회사 매출 · 매출 비율, 칸마다 직접 / 협약 · 기술자문 두 부분(2026-10-05 영업 대시보드 v2 시안) — 전부 자료에서 센 값 */
+  assert.deepEqual(await v.locator('.pf3-bxtops>div').evaluateAll(l=>l.map(n=>[n.querySelector('.pf3-bxh span').textContent,n.querySelector('.pf3-bxh b').textContent].concat([...n.querySelectorAll('.pf3-bxp')].map(p=>p.querySelector('span').textContent+' = '+p.querySelector('b').textContent)))),[
+   ['수주실적 · 낙찰금액 (4건)','9.6억','직접 수주 = 8억','협약 · 기술자문 (낙찰 여름건설 · 코지건설) = 1.6억'],
+   ['회사 매출','8.6억','직접 계약 = 8억','기술자문 · POUR 계약 = 5,904만'],
+   ['매출 비율 (매출 ÷ 수주실적) · 미입력 1건 제외','97%','직접 수주 = 100%','협약 · 기술자문 = 67% · 미입력 1건 제외']]);
+  assert.deepEqual(await v.locator('.pf3-bxtops .pf3-bxp i').evaluateAll(l=>l.slice(0,2).map(n=>getComputedStyle(n).backgroundColor)),['rgb(59, 108, 228)','rgb(224, 164, 58)'],'직접 = 파랑 · 협약 = 주황');
+  assert.deepEqual(await v.locator('.pf3-bx.hd span').allInnerTexts(),['유입 브랜드','낙찰 시공사','수주 유형','건수','수주실적 (회색) 중 회사 매출 (파랑)']);
+  const mr=await v.locator('.pf3-bx:not(.hd)').evaluateAll(l=>l.map(n=>[...n.children].slice(0,4).map(c=>c.textContent.trim()).concat([n.querySelector('.pf3-bxv').textContent,n.querySelector('small').textContent,n.classList.contains('tot')?'tot':''])));
+  assert.deepEqual(mr,[['석민이앤씨','석민이앤씨','직접 수주','1','5억','= 매출 전액',''],['POUR솔루션','POUR솔루션','직접 수주','1','3억','= 매출 전액',''],['','여름건설','협약 · 기술자문','1','8,810만','→ 매출 5,904만 · 67%',''],['','코지건설','협약 · 기술자문','1','7,000만','→ 매출 미입력',''],['합계','','','4','9.6억','→ 매출 8.6억 · 97%','tot']],'줄 = 유입 브랜드(첫 줄만) · 낙찰 시공사 · 유형 · 건수 · 수주실적과 매출');
+  /* 줄마다 회색 막대 = 수주실적, 그 안의 파란 부분 = 회사 매출 */
+  const bars=await v.locator('.pf3-bx:not(.hd):not(.tot) .pf3-bxbar').evaluateAll(l=>l.map(n=>[n.querySelector('.a').style.width,n.querySelector('.r').style.width,getComputedStyle(n.querySelector('.a')).backgroundColor,getComputedStyle(n.querySelector('.r')).backgroundColor]));
+  assert.deepEqual(bars.map(b=>[b[0],b[1]]),[['100%','100%'],['60%','60%'],['18%','12%'],['14%','0%']],'막대 폭 = 가장 큰 수주실적 대비');assert.deepEqual([bars[0][2],bars[0][3]],['rgb(223, 227, 234)','rgb(59, 108, 228)']);
+  assert.equal(await v.locator('.pf3-bx',{hasText:'코지건설'}).locator('small').evaluate(n=>getComputedStyle(n).color),'rgb(180, 35, 24)','매출 미입력 빨강');
+  assert.deepEqual(await v.locator('.pf3-bx:not(.hd)').first().locator('>span').evaluateAll(l=>l.map(n=>getComputedStyle(n).borderRightWidth)),['0px','0px','0px','0px','0px'],'칸 사이 세로선 없음(다른 화면의 짧은 클래스 규칙이 걸리지 않는다)');
+  assert.equal(await v.locator('.pf3-tn').innerText(),'POUR솔루션으로 들어온 수주실적 4.6억 중 1.6억(35%)이 여름건설 · 코지건설 낙찰 · 기술자문 구조라 회사 매출은 수주실적보다 작게 잡힙니다. 매출 비율 = 매출 ÷ 수주실적. 코지건설 1건 매출 미입력','해석 문장의 숫자도 자료에서');
   if(shot)await page.screenshot({path:shot+'-perf3.png',fullPage:true});
   /* 접수 월별 전환: 수주가 견적문의와 연결되지 않았으면 빨간 경고 */
   await th.locator('button',{hasText:'접수 월별 전환'}).click();await page.waitForTimeout(200);
-  assert.equal(await page.locator('#si-perf .pf3-tabs .th>span').innerText(),'같은 달 들어온 문의가 결국 몇 건 계약됐나');assert.equal(await page.locator('#si-perf .pf3-mr').count(),0);
+  assert.equal(await page.locator('#si-perf .pf3-tabs .th>span').innerText(),'같은 달 들어온 문의가 결국 몇 건 계약됐나');assert.equal(await page.locator('#si-perf .pf3-bx').count(),0);
   assert.match(await page.locator('#si-perf .pf3-alert').innerText(),/^데이터 확인 필요 · 2026년 연간 수주 4건 중 견적문의와 연결된 건이 0건입니다\. 수주 건 대부분이 견적문의와 연결되지 않은 채 등록돼 있어, 이 표는 연결을 고친 뒤에 의미가 생깁니다\.$/);
   assert.deepEqual(await page.locator('#si-perf .pf3-cr.hd span').allInnerTexts(),['접수 월','문의','적합','진행 중','수주 · 실주','확정 전환율']);
   const cr=await page.locator('#si-perf .pf3-cr:not(.hd)').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent)));
@@ -129,7 +139,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await page.locator('#si-perf .pf3-verdict .tx>b').innerText(),/^석민이앤씨 2026년 연간 수주실적 5억 · 결과 난 영업 2건 중 1건을 이겼습니다\.$/);
   assert.deepEqual(await page.locator('#si-perf .pf3-fr b:first-of-type').evaluateAll(l=>l.map(n=>n.textContent)),['석민이앤씨'],'퍼널도 그 브랜드만');
   await page.locator('#si-perf .pf3-tabs .th button',{hasText:'유입 브랜드'}).click();await page.waitForTimeout(200);
-  assert.deepEqual(await page.locator('#si-perf .pf3-mr:not(.hd)').evaluateAll(l=>l.map(n=>n.children[0].textContent)),['석민이앤씨'],'브랜드 표도 그 브랜드만 · 합계 줄 없음');
+  assert.deepEqual(await page.locator('#si-perf .pf3-bx:not(.hd)').evaluateAll(l=>l.map(n=>n.children[0].textContent)),['석민이앤씨'],'브랜드 표도 그 브랜드만 · 합계 줄 없음');assert.match(await page.locator('#si-perf .pf3-tn').innerText(),/^직접 수주만 있어 수주실적과 회사 매출이 같습니다\./);
   await page.locator('#pg-perf>.cf-bar [data-sf-brand="전체"]').click();await page.waitForTimeout(400);
   /* 이름을 누르면 그 담당자로(기존 동작) · 전체 현황 · 컨트롤타워는 그대로 */
   await page.evaluate(()=>goPage('dash'));await page.waitForTimeout(300);assert.equal(await page.locator('#si-dash .pf3').count(),0);assert.equal(await page.locator('#si-dash .db-kpis').count(),1,'전체 현황은 그대로');
