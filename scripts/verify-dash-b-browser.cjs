@@ -162,6 +162,59 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await page.locator('#si-control .db-risk').innerText(),/^데이터 위험/);
   const hl=await page.locator('#si-control .db-health span').evaluateAll(a=>a.map(n=>n.innerText.replace(/\s+/g,' ').trim()));
   assert.equal(hl.length,6);assert.match(hl[0],/^다음 할 일 등록률 \d+\.\d%$/);assert.equal(hl[1],'기록 당일 입력 아직 없음');assert.equal(hl[2],'종결 사유 입력률 100.0%');assert.equal(hl[3],'실주 사유 입력률 100.0%');assert.equal(hl[4],'첫 연락 2시간 안 0.0%');assert.equal(hl[5],'견적 3일 안 발송 아직 없음');
+  /* '가장 먼저' 띠 = 흰 바탕 + 왼쪽 빨간 선(5차) */
+  assert.deepEqual(await c.locator('.db-first').evaluate(n=>{const s=getComputedStyle(n);return [s.backgroundColor,s.borderLeftColor,s.borderLeftWidth,getComputedStyle(n.querySelector('span')).color];}),['rgb(255, 255, 255)','rgb(209, 74, 63)','4px','rgb(180, 35, 24)']);
+  /* 추가 분석(5차 블록 6 · 7 · 5): 점검 지표 아래 · 하나씩 보기 — 진단 → 인사이트 → 액션 / 지금 잡아야 할 현장 / 관계 변화 */
+  {const x=page.locator('#si-control .db-cx'),one1=s=>s.replace(/\s+/g,' ').trim();assert.equal(await x.count(),1);
+   assert.equal(await page.locator('#si-control .db-shell').evaluate(n=>[...n.children].map(e=>e.className.split(' ').pop()).join(' ')),'db-tool db-hero db-ctl db-health db-cx','기존 구역은 그대로 · 맨 아래에 덧붙임');
+   assert.equal(one1(await x.locator('.db-cxt').innerText()),'추가 분석 진단 → 인사이트 → 액션 지금 잡아야 할 현장 관계 변화 하나씩 보기');assert.deepEqual(await x.locator('.db-cxt button').evaluateAll(l=>l.map(b=>b.getAttribute('aria-pressed'))),['true','false','false']);
+   assert.deepEqual(await x.locator('.db-dxh>div').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent))),[['1','진단','데이터'],['2','인사이트','왜 그런지'],['3','액션','오늘 누구에게 무엇을']]);
+   const dx=()=>x.locator('.db-dxr').evaluateAll(l=>l.map(n=>[n.querySelector('.db-dx1 b').textContent,n.querySelector('.db-dx1 span').textContent,n.querySelector('.db-dx2 em').textContent,n.querySelector('.db-dx2 span').textContent,n.querySelector('.db-dx3 b').textContent,n.querySelector('.db-dx3 button')?n.querySelector('.db-dx3 button').textContent:'']));
+   assert.deepEqual(await dx(),[['견적 → 입찰 이탈 4건','견적 후 7일 후속 없던 건 0','AI','후속 여부를 비교할 기록(견적 발송일 · 연락 기록)이 아직 부족합니다','이번 주 견적 발송 건 후속 일정 확인','']],'자료에서 보이는 문제만 · 영업 Funnel 과 같은 숫자');
+   /* 기록이 쌓이면 줄이 생긴다: 견적 지연 · 소장 변경 후 미접촉 · 견적 후 후속 없음 */
+   await page.evaluate(()=>{window.__keepDeals=JSON.stringify(B.deals);const by=id=>B.deals.find(d=>d.id===id),T=k=>k+'T10:00:00+09:00',ce=(id,t,from,to,k,act)=>({id,type:'메모',note:'[변화 · '+t+'] 이전: '+from+' | 이후: '+to+' | 날짜: '+k+' | 확인: '+act,at:T(k)});
+    by('o1').stage_contexts={sent:{fields:{sent_date:'2026-09-01'}}};by('o1').quote_versions=[{version_no:1,amount:1e8,created_at:T('2026-09-01')},{version_no:2,amount:9e7,created_at:T('2026-10-05')}];
+    by('o2').stage_contexts={consulting:{fields:{quote_due:'2026-10-01'}}};
+    by('o3').activities.push(ce('ce1','관리소장 변경','김소장','박소장','2026-10-05','기존 견적 · 공법 조건 재확인 (새 소장 첫 미팅)'));
+    by('o4').activities.push(ce('ce2','경쟁업체 등장','미기록','시트 방수 업체','2026-10-06','경쟁사 견적 · 조건 파악'),{id:'s1',type:'문자',note:'안내 문자',at:T('2026-09-28')});
+    by('o5').activities.push({id:'f1',type:'전화',note:'후속 통화',at:T('2026-10-06')});
+    by('l2').activities=[ce('ce3','관리소장 변경','이소장','최소장','2026-09-10','기존 견적 · 공법 조건 재확인 (새 소장 첫 미팅)')];
+    const mem={};Phase1.storage.getItem=k=>k in mem?mem[k]:null;Phase1.storage.setItem=(k,v)=>{mem[k]=String(v);};window.__mem=mem;paint();});await page.waitForTimeout(350);
+   assert.deepEqual(await dx(),[
+    ['황윤선 · 견적 지연 1건','견적 예정일 대비 평균 +6일','AI','1건 중 1건은 예정일 뒤 연락 기록도 없음 — 견적과 고객 연락이 같이 멈춤','견적 지연 1건 발송일 다시 잡기','황윤선에게 요청'],
+    ['관리소장 변경 후 미접촉 1건','변경 이벤트 후 평균 2일 연락 없음','AI','소장 변경 현장 실주율 100% — 변화 없는 현장 50%','1건 기존 견적 · 공법 재확인 통화','황윤선에게 요청'],
+    ['견적 → 입찰 이탈 4건','견적 후 7일 후속 없던 건 1','AI','후속 여부를 비교할 기록(견적 발송일 · 연락 기록)이 아직 부족합니다','견적 후 후속 없는 1건 후속 통화','황윤선에게 요청']]);
+   /* [요청] = 그 담당자 오늘 업무 '관리자 한마디'에 한 줄 — 남긴 뒤에만 '보냄 ✓' */
+   await x.locator('.db-dxr').first().locator('.db-dx3 button').click();await page.waitForTimeout(250);
+   assert.deepEqual(await x.locator('.db-dxr').first().locator('.db-dx3 button').evaluate(b=>[b.textContent,b.disabled,getComputedStyle(b).backgroundColor,getComputedStyle(b).color]),['보냄 ✓',true,'rgb(232, 246, 238)','rgb(31, 122, 77)']);
+   assert.match(await page.evaluate(()=>Object.values(__mem).join(' | ')),/컨트롤타워 — 황윤선 · 견적 지연 1건 · 견적 지연 1건 발송일 다시 잡기/,'담당자 오늘 업무에 남는 한 줄');
+   await x.locator('.db-dxr').nth(1).locator('.db-dx1').click();await page.waitForTimeout(250);assert.match(await page.locator('.si-evidence, #si-evidence, .hl-ev, [class*="evidence"]').first().innerText(),/관리소장 변경 후 미접촉 1건[\s\S]*기한 지난 현장 3/,'진단 칸을 누르면 해당 건 목록(기존 근거 창)');
+   await page.keyboard.press('Escape');await page.evaluate(()=>{document.querySelectorAll('.si-evidence, #si-evidence, .hl-ev').forEach(n=>n.remove&&n.classList.contains('on')&&n.classList.remove('on'));});
+   if(shot)await page.screenshot({path:shot+'-control-diag.png',fullPage:true});
+   /* 지금 잡아야 할 현장: 우선도 70점 이상만 · 점수는 숨김 · [근거]를 누르면 가감점 */
+   await x.locator('.db-cxt button',{hasText:'지금 잡아야 할 현장'}).click();await page.waitForTimeout(250);assert.equal(await x.locator('.db-dx').count(),0,'하나씩 보기');
+   assert.equal(one1(await x.locator('.db-prh').innerText()),'지금 잡아야 할 현장 2곳 점수는 숨기고 결론만 · 근거는 눌러서');
+   assert.deepEqual(await x.locator('.db-prl').evaluateAll(l=>l.map(n=>[n.querySelector('.db-prn b').textContent,n.querySelector('.db-prn span').textContent,n.querySelector('.db-pro').textContent,n.querySelector('.db-prw').textContent,n.querySelector('.db-prg').textContent,getComputedStyle(n.querySelector(':scope>i')).backgroundColor])),[['[수원] 매탄 임박','이필선 · 4억','4억 이상 · 입찰 마감 D-2','근거','회장 접촉','rgb(232, 89, 12)'],['[서울 송파] 계약 검토','이필선 · 3억','3억 이상','근거','회장 접촉','rgb(31, 157, 85)']],'금액 큰 순이 아니라 우선도 순 · 띠 = 브랜드색');
+   assert.equal(/\d+점(?! 이상)/.test(await x.locator('.db-pr').innerText()),false,'화면에 점수 없음');assert.equal(await x.locator('.db-prf').count(),0);
+   await x.locator('.db-prw').first().click();await page.waitForTimeout(200);
+   assert.deepEqual(await x.locator('.db-prf span').evaluateAll(l=>l.map(n=>[n.textContent,n.className])),[['+25 4억 이상','db-pru'],['+20 입찰 마감 D-2','db-pru']]);assert.equal(await x.locator('.db-prw').first().innerText(),'근거 접기');
+   assert.deepEqual(await x.locator('.db-prb').first().evaluate(n=>{const s=getComputedStyle(n);return [s.borderTopWidth,s.backgroundColor];}),['0px','rgba(0, 0, 0, 0)'],'버튼 묶음에 전역 테두리가 붙지 않는다');
+   assert.equal(await x.locator('.db-prt').innerText(),'우선도 = 금액 · 공사시기 확정 · 회의 임박 · 견적 발송 · 결정권자 접촉(+) − 무응답 · 경쟁 공법(−) · 70점 이상만 이 묶음 · 화면엔 점수 없음');
+   await x.locator('.db-prg').first().click();assert.equal(await page.evaluate(()=>__opened.at(-1)),'n1','버튼 = 기존 상세 열기');
+   if(shot)await page.screenshot({path:shot+'-control-pri.png',fullPage:true});
+   /* 관계 변화: 이번 주(최근 7일) 달라진 것 8칸 + 변화가 결과에 준 영향 */
+   await x.locator('.db-cxt button',{hasText:'관계 변화'}).click();await page.waitForTimeout(250);
+   assert.equal(one1(await x.locator('.db-cwt').first().innerText()),'이번 주 달라진 것 상태가 아니라 변화만 · 누르면 해당 현장');
+   assert.deepEqual(await x.locator('.db-cwg button').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent).concat([n.querySelector('b').className]))),[['신규 문의','2','▲2','cw-ink'],['수주 전환','0','','mut'],['실주','0','','mut'],['관리소장 변경','1','재확인 필요 1','cw-bad'],['견적금액 변경','1','평균 −10%','cw-ink'],['새 경쟁사 등장','1','시트 방수 업체 1','cw-bad'],['7일+ 정체 신규','1','자료 발송완료 1','cw-bad'],['정체 해소','1','전화 1','cw-ok']]);
+   assert.deepEqual(await x.locator('.db-cwi').evaluateAll(l=>l.map(n=>[n.querySelector('b').textContent,n.querySelector('.db-cwp').textContent,n.querySelector('i.cw-a').style.width,n.querySelector('i.cw-b').style.width])),[['관리소장 변경 후','100% / 50%','100%','50%'],['견적 2회 이상 수정','기록 없음','0%','60%'],['새 경쟁사 등장','기록 없음','0%','60%'],['결정권자 변경','기록 없음','0%','60%']],'올해 결과가 난 현장 5건 · 변화가 있던 현장 / 없던 현장 실주율');
+   assert.equal(await x.locator('.db-cwl').innerText(),'빨강 = 변화가 있던 현장 실주율 · 회색 = 변화 없던 현장 실주율');
+   assert.deepEqual(await x.locator('.db-cwi').first().evaluate(n=>[n.getBoundingClientRect().height<40,getComputedStyle(n.querySelector('.db-cwb u')).height,getComputedStyle(n.querySelector('i.cw-a')).backgroundColor]),[true,'8px','rgb(209, 74, 63)'],'막대 줄 높이 · 색(전역 규칙과 겹치지 않음)');
+   if(shot)await page.screenshot({path:shot+'-control-chg.png',fullPage:true});
+   /* 영업사원: 보기만 — [요청]은 눌리지 않는다 · 끄기 */
+   await page.evaluate(()=>{G.dashB.cx=0;window.__me2=ME;ME={id:'rep1',name:'이필선',role:'rep'};paint();});await page.waitForTimeout(300);
+   assert.deepEqual(await page.locator('#si-control .db-dxr').nth(1).locator('.db-dx3 button').evaluate(b=>[b.textContent,b.disabled]),['황윤선에게 요청',true]);
+   await page.evaluate(()=>{ME=window.__me2;G.ctlExtraOff=true;paint();});await page.waitForTimeout(250);assert.equal(await page.locator('#si-control .db-cx').count(),0,'끄면 추가 분석만 숨김');assert.equal(await page.locator('#si-control .db-health').count(),1);
+   await page.evaluate(()=>{G.ctlExtraOff=false;B.deals=JSON.parse(__keepDeals);paint();});await page.waitForTimeout(300);}
   if(shot)await page.screenshot({path:shot+'-control.png',fullPage:true});
   /* 권한: 영업사원은 보기만 — 할 일 지정 · 알림 · 줄 끝 [지정] 없음 */
   await page.evaluate(()=>{window.__me=ME;ME={id:'rep1',name:'이필선',role:'rep'};paint();});await page.waitForTimeout(300);
@@ -206,6 +259,6 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{G.dashBOff=true;goPage('dash');});await page.waitForTimeout(400);
   assert.equal(await page.locator('#si-dash .db-shell').count(),0);assert.equal(await page.locator('#si-dash .si-shell').count(),1,'끄면 예전 화면');assert.equal(await page.locator('#pg-dash>.cf-bar').count(),0);
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',overview_kpi_none_label:true,funnel_rates_same_definition:true,monthly_chart:true,brand_rows:true,people_blocked_why:true,week_heat:true,pipeline_near:true,activity_feed:true,control_matrix_no_inner_scroll:true,control_select_assign_open:true,control_permission:true,perf_verdict_cards3:true,quarter_switch:true,legacy_switch:true}));
+  console.log(JSON.stringify({status:'PASS',overview_kpi_none_label:true,funnel_rates_same_definition:true,monthly_chart:true,brand_rows:true,people_blocked_why:true,week_heat:true,pipeline_near:true,activity_feed:true,control_matrix_no_inner_scroll:true,control_select_assign_open:true,control_permission:true,control_extra_diag_request:true,control_extra_priority_hidden_score:true,control_extra_change_week:true,perf_verdict_cards3:true,quarter_switch:true,legacy_switch:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

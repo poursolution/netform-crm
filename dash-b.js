@@ -369,7 +369,124 @@
   const ms=mk(P.ty,P.tm),mq=AQ.filter(x=>{try{return K(R.inquiryCreatedAt(x))>=ms&&R.inquiryAssigned(x);}catch(e){return false;}}),inTime=mq.filter(x=>{let f='';try{f=R.inqCtlFirstResponseAt(x);}catch(e){}const t=Date.parse(f||''),a=Date.parse((R.inquiryAssignedAt&&R.inquiryAssignedAt(x))||x.assigned_at||R.inquiryCreatedAt(x)||'');return Number.isFinite(t)&&Number.isFinite(a)&&(t-a)/36e5<=FIRST_H();});
   const health=[['다음 할 일 등록률',B.pct(active.filter(d=>!d.issues.includes('missing')).length,active.length),95],['기록 당일 입력',null,0],[B.closedWord()+' 사유 입력률',B.pct(C.bad.filter(x=>B.badfitReason(x)!=='사유 미기록').length,C.bad.length),90],['실주 사유 입력률',B.pct(C.loss.filter(d=>B.lossReason(d)!=='사유 미기록').length,C.loss.length),90],['첫 연락 '+FIRST_H()+'시간 안',B.pct(inTime.length,mq.length),80],['견적 3일 안 발송',null,0]];
   const strip='<section class="db-card db-health"><b>점검 지표</b>'+health.map(m=>'<span>'+h(m[0])+' <b class="'+(m[1]===null?'mut':m[1]<m[2]*0.8?'red':m[1]<m[2]?'amb':'')+'">'+(m[1]===null?'아직 없음':m[1].toFixed(1)+'%')+'</b></span>').join('')+'</section>';
-  return top+'<div class="db-ctl">'+table+side+'</div>'+strip;
+  return top+'<div class="db-ctl">'+table+side+'</div>'+strip+(R.G.ctlExtraOff?'':ctlExtra(C));
+ }
+ /* ── 컨트롤타워 '추가 분석'(5차 블록 6 · 7 · 5 — 2026-10-05 영업분석블록.dc.html · 영업 대시보드 v2.dc.html 의 자리): 진단 → 인사이트 → 액션 / 지금 잡아야 할 현장 / 관계 변화. 하나씩 보기.
+    숫자 · 문장은 전부 자료에서(기록이 없으면 그렇게 적는다). [요청] = 담당자 오늘 업무 '관리자 한마디'에 한 줄(KpiB.requestLine) — 남긴 뒤에만 '보냄 ✓'. 끄기: G.ctlExtraOff=true ── */
+ const BIG=()=>Number(RULE().dashBigDealAmount)||3e8;
+ /* 우선도(시안 값 · 운영하며 조정 — OPS_RULES.dashPriority 로 바꾼다): 기본 + 가점 − 감점, cut 이상만 보인다. 화면에는 점수를 적지 않는다 */
+ const PRI=()=>Object.assign({base:50,cut:70,amount:25,timing:20,near:20,quote:10,decider:10,silent:-15,competitor:-10,manager:-15,noinfo:-20,silentDays:7},RULE().dashPriority||{});
+ const cxOf=d=>{let p={};try{p=R.itemPatch(d,'deal')||{};}catch(e){}return d.stage_contexts||p.stage_contexts||{};};
+ const fldAny=(d,k)=>{const c=cxOf(d);for(const s of Object.keys(c)){const v=c[s]&&c[s].fields&&c[s].fields[k];if(v)return v;}return d[k]||'';};
+ const estOf=d=>{try{return Number(R.CRMRules.amounts(d).estimated)||0;}catch(e){return Number(d.amount!=null?d.amount:d.amt)||0;}};
+ const sentKeyOf=(d,K)=>{const c=cxOf(d);return K((c.sent&&c.sent.fields&&c.sent.fields.sent_date)||'');};
+ const CONTACT_T=/전화|통화|방문|문자|카카오|메일|미팅/;
+ const contactActs=(d,K)=>{let p={};try{p=R.itemPatch(d,'deal')||{};}catch(e){}const seen=new Set();return [...(d.activities||[]),...(p.activities||[])].filter(x=>{if(!x||!CONTACT_T.test(String(x.type||''))||/전화 시도/.test(String(x.note||'')))return false;const k=x.id||(x.type+'|'+(x.at||x.occurred_at));if(seen.has(k))return false;seen.add(k);return true;}).map(x=>({k:K(x.at||x.occurred_at||''),type:String(x.type||'')})).filter(x=>x.k).sort((a,b)=>a.k.localeCompare(b.k));};
+ const chgOf=d=>{try{return R.ChangeEvent&&R.ChangeEvent.list?R.ChangeEvent.list(d):[];}catch(e){return [];}};
+ const hasDecider=d=>{const cs=Array.isArray(d.contacts)?d.contacts:[];return cs.some(c=>/회장|입대의|동대표|대표회의/.test(String(c&&(c.role||c.manager_role||c.position||c.title)||'')))||!!String(fldAny(d,'decision_maker')||'').trim();};
+ const quotesOf=d=>{let p={};try{p=R.itemPatch(d,'deal')||{};}catch(e){}const v=d.quote_versions||d.quoteVersions||p.quoteVersions;return Array.isArray(v)?v.filter(Boolean):[];};
+ /* 견적 뒤 후속: 영업 Funnel 과 같은 정의(견적 발송 → 경쟁 · 입찰, 견적 후 n일 후속 없음) + 후속 여부별 입찰 전환 */
+ function quoteFollow(C){
+  const {B,K,P,AD}=C,FOLLOW=Number(RULE().inquiryFollowDays)||7,quotedD=AD.filter(d=>B.quoteIn(d,P.a,P.b)),inComp=d=>B.entered(d,'competition',P.a,P.b),comp=AD.filter(inComp).length;
+  const nfD=quotedD.filter(d=>{if(!R.isOpen(d)||PS().group(R.dealStage(d))==='competition')return false;const sd=sentKeyOf(d,K);if(!sd||B.between(sd,P.today)<=FOLLOW)return false;const l=B.lastActKey(d,B.addDays(P.today,1));return !l||l<=sd;});
+  const fo={n:0,c:0},nf={n:0,c:0};quotedD.forEach(d=>{const sd=sentKeyOf(d,K);if(!sd||B.between(sd,P.today)<=FOLLOW)return;const end=B.addDays(sd,FOLLOW),g=contactActs(d,K).some(x=>x.k>sd&&x.k<=end)?fo:nf;g.n++;if(inComp(d)||PS().group(R.dealStage(d))==='competition')g.c++;});
+  return {FOLLOW,quotes:quotedD.length,comp,d4:Math.max(0,quotedD.length-comp),nfD,fo,nf};
+ }
+ /* 변화가 결과에 준 영향: 올해 결과가 난 현장(수주 · 파이프라인 실주)에서 변화가 있던 현장과 없던 현장의 실주율 */
+ function impact(C){
+  const {B,P,AD}=C,closed=AD.filter(d=>(R.isWon(d)||B.isLoss(d))&&String(B.closedKey(d)||'').slice(0,4)===String(P.ty)),has=(d,t)=>chgOf(d).some(e=>e.type===t);
+  const rate=l=>l.length?Math.round(l.filter(d=>B.isLoss(d)).length/l.length*100):null;
+  return [['manager','관리소장 변경 후',d=>has(d,'관리소장 변경')],['requote','견적 2회 이상 수정',d=>quotesOf(d).length>=3],['competitor','새 경쟁사 등장',d=>has(d,'경쟁업체 등장')],['decider','결정권자 변경',d=>has(d,'입대의 회장 변경')]].map(([k,l,fn])=>{const w=closed.filter(fn),wo=closed.filter(d=>!fn(d));return {k,l,a:rate(w),b:rate(wo),na:w.length,nb:wo.length};});
+ }
+ /* 진단 → 인사이트 → 액션: 지금 자료에서 보이는 문제만(없으면 줄을 만들지 않는다) */
+ function diagRows(C){
+  const {B,K,P,active}=C,rows=[],own=d=>d.owner||'미배정',top=(l,fn)=>B.tally(l,fn)[0]||null,real=l=>[...new Set(l.filter(o=>o&&o!=='미배정'))];
+  const late=active.map(d=>{const c=cxOf(d.item),qk=K((c.consulting&&c.consulting.fields&&c.consulting.fields.quote_due)||'');return qk&&!sentKeyOf(d.item,K)&&qk<P.today?{d,qk,days:B.between(qk,P.today)}:null;}).filter(Boolean);
+  if(late.length){const t=top(late,x=>own(x.d)),mine=late.filter(x=>own(x.d)===t[0]),avg=Math.round(mine.reduce((s,x)=>s+x.days,0)/mine.length*10)/10,talk=mine.filter(x=>contactActs(x.d.item,K).some(a=>a.k>x.qk)).length;
+   rows.push({id:'quote',a:t[0]+' · 견적 지연 '+mine.length+'건',as:'견적 예정일 대비 평균 +'+avg+'일',i:talk*2>=mine.length?'병목은 고객 연락이 아니라 견적 작성 · 회신 쪽 ('+mine.length+'건 중 '+talk+'건은 예정일 뒤에도 연락 기록 있음)':mine.length+'건 중 '+(mine.length-talk)+'건은 예정일 뒤 연락 기록도 없음 — 견적과 고객 연락이 같이 멈춤',x:'견적 지연 '+mine.length+'건 발송일 다시 잡기',to:real([t[0]]),list:mine.map(x=>x.d)});}
+  const big=active.filter(d=>estOf(d.item)>=BIG()&&d.issues.includes('stale'));
+  if(big.length){const t=top(big,own),mine=big.filter(d=>own(d)===t[0]).sort((a,b)=>estOf(b.item)-estOf(a.item)),noDec=mine.filter(d=>!hasDecider(d.item)).length,eN=Math.floor(BIG()/1e8);
+   rows.push({id:'big',a:t[0]+' · '+eN+'억 이상 장기정체 '+mine.length+'건',as:mine.slice(0,2).map(d=>siteShort(d.site)+' '+eok(estOf(d.item))).join(' · ')+(mine.length>2?' 외 '+(mine.length-2)+'건':''),
+    i:noDec===mine.length?(mine.length>1?mine.length+'건 모두 ':'')+'관리소장만 접촉 · 회장 · 입대의 연락처와 결정권자 기록 0':noDec?mine.length+'건 중 '+noDec+'건은 회장 · 입대의 연락처와 결정권자 기록이 없음':'결정권자 기록은 있음 — 단계가 그대로(최장 '+Math.max(0,...mine.map(ageOf))+'일)',
+    x:noDec?'회장 미팅 일정 확보 · 팀장 동행':'다음 단계로 갈 조건 확인 · 팀장 동행',to:real([t[0]]),list:mine});}
+  const mgr=active.map(d=>{const e=chgOf(d.item).filter(x=>x.type==='관리소장 변경').pop();if(!e||contactActs(d.item,K).some(a=>a.k>e.date))return null;return {d,days:Math.max(0,B.between(e.date,P.today))};}).filter(Boolean);
+  if(mgr.length){const im=impact(C)[0],avg=Math.round(mgr.reduce((s,x)=>s+x.days,0)/mgr.length);
+   rows.push({id:'mgr',a:'관리소장 변경 후 미접촉 '+mgr.length+'건',as:'변경 이벤트 후 평균 '+avg+'일 연락 없음',i:im.a!==null&&im.b!==null?'소장 변경 현장 실주율 '+im.a+'% — 변화 없는 현장 '+im.b+'%':'올해 결과가 난 소장 변경 현장이 아직 없어 실주율 비교는 보류',x:mgr.length+'건 기존 견적 · 공법 재확인 통화',to:real(mgr.map(x=>own(x.d))),list:mgr.map(x=>x.d)});}
+  const qf=quoteFollow(C);
+  if(qf.d4>0){const nfRows=qf.nfD.map(d=>C.deals.find(r=>String(r.item.id)===String(d.id))).filter(Boolean);
+   rows.push({id:'q2b',a:'견적 → 입찰 이탈 '+qf.d4+'건',as:'견적 후 '+qf.FOLLOW+'일 후속 없던 건 '+qf.nfD.length,i:qf.fo.n&&qf.nf.n?qf.FOLLOW+'일 안에 후속한 건은 '+qf.fo.n+'건 중 '+qf.fo.c+'건이 입찰로 · 후속 없던 건은 '+qf.nf.n+'건 중 '+qf.nf.c+'건':'후속 여부를 비교할 기록(견적 발송일 · 연락 기록)이 아직 부족합니다',x:nfRows.length?'견적 후 후속 없는 '+nfRows.length+'건 후속 통화':'이번 주 견적 발송 건 후속 일정 확인',to:real(nfRows.map(own)),list:nfRows});}
+  return rows;
+ }
+ /* 지금 잡아야 할 현장: 우선도 cut 이상만 · 한 문장 이유 · [근거]를 누르면 가감점 */
+ function priList(C){
+  const {K,active}=C,W=PRI(),near=new Map(nearList(C).map(n=>[String(n.d.id),n]));
+  return active.map(d=>{const it=d.item,f=[],amt=estOf(it);let s=W.base;const add=(p,l,k)=>{if(!p)return;s+=p;f.push({p,l,k});};
+   if(amt>=BIG())add(W.amount,Math.floor(amt/1e8)+'억 이상','amount');
+   const tm=String(fldAny(it,'expected_timing')||it.construction_plan||'').trim();if(tm&&!/미정|미확인|모름/.test(tm))add(W.timing,'공사시기 확정','timing');
+   const n=near.get(String(it.id));if(n&&n.hot)add(W.near,n.due.replace(/\s*\d+\/\d+$/,'')+' D-'+n.dd,'near');
+   if(sentKeyOf(it,K))add(W.quote,'견적 발송','quote');
+   const dec=hasDecider(it);if(dec)add(W.decider,'결정권자 접촉','decider');
+   let m=null;try{m=R.relationshipMeta(it);}catch(e){}const sil=m&&m.days!=null?Number(m.days):null;if(sil!==null&&sil>W.silentDays)add(W.silent,sil+'일 무응답','silent');
+   if(String(fldAny(it,'competitor')||'').trim())add(W.competitor,'경쟁사 있음','competitor');
+   if(chgOf(it).some(e=>e.type==='관리소장 변경'))add(W.manager,'소장 변경','manager');
+   if(n&&!n.k&&R.dealStage(it)==='contract')add(W.noinfo,'계약정보 없음','noinfo');
+   const g=k=>f.find(v=>v.k===k),up=g('near')||g('timing')||g('amount')||g('quote'),dn=g('silent')||g('noinfo')||g('manager')||g('competitor');
+   const one=up&&dn?up.l+(up.k==='near'?'인데 ':' · ')+(dn.k==='silent'?sil+'일째 고객 반응 없음':dn.l):f.filter(v=>v.p>0).slice(0,2).map(v=>v.l).join(' · ');
+   const act=dn&&dn.k==='silent'?'후속 연락':dn&&dn.k==='noinfo'?'정보 입력':dn&&dn.k==='manager'?'재확인 통화':!dec?'회장 접촉':up&&up.k==='near'?'준비 확인':'열기';
+   return {d,s,f,amt,one,act};}).filter(x=>x.s>=W.cut).sort((a,b)=>b.s-a.s||b.amt-a.amt);
+ }
+ /* 이번 주 달라진 것: 최근 7일(오늘 포함)에 생긴 변화만 — 전주 = 그 전 7일(단계별 전주 대비 표와 같은 기간) */
+ function changeWeek(C){
+  const {B,K,P,AD,AQ,L}=C,end=B.addDays(P.today,1),a1=B.addDays(P.today,-6),a0=B.addDays(P.today,-13),inW=(k,a,b)=>!!k&&k>=a&&k<b,row=d=>C.deals.find(r=>String(r.item.id)===String(d.id)),rows=l=>l.map(row).filter(Boolean),CD=CONTACT_D();
+  const nq=AQ.filter(x=>inW(K(R.inquiryCreatedAt(x)),a1,end)),pq=AQ.filter(x=>inW(K(R.inquiryCreatedAt(x)),a0,a1)).length,dq=nq.length-pq;
+  const con=B.contractsIn(L,a1,end,null,'direct'),ptw=C.DW?C.DW.partnerIn(a1,end,C.target):{count:0,amount:0},tfw=C.DT?C.DT.wonIn(a1,end,C.target):{count:0,amount:0},wonA=(con.net||0)+ptw.amount+tfw.amount;
+  const lost=AD.filter(d=>B.isLoss(d)&&inW(B.closedKey(d),a1,end)),lostA=lost.reduce((s,d)=>s+estOf(d),0);
+  const ev=[];AD.forEach(d=>chgOf(d).forEach(e=>{if(inW(e.date,a1,end))ev.push({d,e});}));
+  const mgr=ev.filter(x=>x.e.type==='관리소장 변경'),mgrTodo=mgr.filter(x=>R.isOpen(x.d)&&!contactActs(x.d,K).some(a=>a.k>x.e.date)).length,cmp=ev.filter(x=>x.e.type==='경쟁업체 등장'),cmpTop=B.tally(cmp,x=>String(x.e.to||'').trim()||'미기록')[0];
+  const rq=[];AD.forEach(d=>{const v=quotesOf(d);v.forEach((q,i)=>{if(!i||!inW(K(q.created_at||q.sent_at||''),a1,end))return;const p=Number(v[i-1].amount)||0,n=Number(q.amount)||0;rq.push({d,pc:p>0&&n>0?(n-p)/p*100:null});});});
+  const rqPc=rq.filter(x=>x.pc!==null),rqAvg=rqPc.length?Math.round(rqPc.reduce((s,x)=>s+x.pc,0)/rqPc.length):null;
+  const stuck=[],freed=[];AD.forEach(d=>{const a=contactActs(d,K);if(!a.length)return;const last=a[a.length-1];
+   if(R.isOpen(d)&&B.between(last.k,P.today)>CD&&inW(B.addDays(last.k,CD+1),a1,end))stuck.push(d);
+   for(let i=a.length-1;i>0;i--){if(!inW(a[i].k,a1,end))break;if(B.between(a[i-1].k,a[i].k)>CD){freed.push({d,type:a[i].type});break;}}});
+  const stTop=B.tally(rows(stuck),r=>r.stageLabel)[0],frTop=B.tally(freed,x=>x.type)[0],inqRows=nq.map(x=>C.rows.inquiries.find(r=>String(r.item.id)===String(x.id))).filter(Boolean);
+  return {a1,end,tiles:[
+   ['new','신규 문의',nq.length,'cw-ink',dq?(dq>0?'▲':'▼')+Math.abs(dq):'전주와 같음',inqRows],
+   ['won','수주 전환',L.ready?con.count+ptw.count+tfw.count:null,'cw-ok',wonA>0?eok(wonA):'',[]],
+   ['lost','실주',lost.length,'cw-bad',lostA>0?eok(lostA):'',rows(lost)],
+   ['mgr','관리소장 변경',mgr.length,'cw-bad',mgr.length?'재확인 필요 '+mgrTodo:'',rows(mgr.map(x=>x.d))],
+   ['requote','견적금액 변경',rq.length,'cw-ink',rqAvg===null?'':'평균 '+(rqAvg>0?'+':rqAvg<0?'−':'')+Math.abs(rqAvg)+'%',rows(rq.map(x=>x.d))],
+   ['comp','새 경쟁사 등장',cmp.length,'cw-bad',cmpTop?cmpTop[0]+' '+cmpTop[1]:'',rows(cmp.map(x=>x.d))],
+   ['stuck',CD+'일+ 정체 신규',stuck.length,'cw-bad',stTop?stTop[0]+' '+stTop[1]:'',rows(stuck)],
+   ['freed','정체 해소',freed.length,'cw-ok',frTop?frTop[0]+' '+frTop[1]:'',rows(freed.map(x=>x.d))]]};
+ }
+ let LASTX=null;
+ function ctlExtra(C){
+  const S=st(),P=C.P,can=canAssign(),CT=['진단 → 인사이트 → 액션','지금 잡아야 할 현장','관계 변화'],t=Math.max(0,Math.min(2,Number(S.cx)||0));S.dxSent=S.dxSent||{};
+  const head='<div class="db-cxt"><b>추가 분석</b>'+CT.map((l,i)=>'<button type="button" data-db="cx" data-v="'+i+'" aria-pressed="'+(t===i)+'">'+l+'</button>').join('')+'<i></i><span>하나씩 보기</span></div>';
+  let body='';LASTX={};
+  if(t===0){const rows=LASTX.diag=diagRows(C);
+   body='<div class="db-dx"><div class="db-dxh">'+[['1','진단','데이터'],['2','인사이트','왜 그런지'],['3','액션','오늘 누구에게 무엇을']].map(x=>'<div><em>'+x[0]+'</em><b>'+x[1]+'</b><span>'+x[2]+'</span></div>').join('')+'</div>'
+    +(rows.length?rows.map(r=>{const sent=!!S.dxSent[r.id+'|'+P.today],lab=sent?'보냄 ✓':!r.to.length?'목록 보기':r.to.length===1?r.to[0]+'에게 요청':'담당 '+r.to.length+'명에게 요청';
+      return '<div class="db-dxr"><button type="button" class="db-dx1" data-db="dx-list" data-v="'+r.id+'" title="해당 건 보기"><b>'+h(r.a)+'</b><span>'+h(r.as)+'</span></button><div class="db-dx2"><em>AI</em><span>'+h(r.i)+'</span></div><div class="db-dx3"><span><b>'+h(r.x)+'</b></span>'+(!r.to.length&&!r.list.length?'':'<button type="button" class="'+(sent?'db-dxd':'')+'" data-db="'+(r.to.length?'dx-ask':'dx-list')+'" data-v="'+r.id+'"'+(r.to.length&&!sent&&!can?' disabled title="요청은 관리자 · 팀장만 할 수 있습니다"':sent?' disabled':'')+'>'+h(lab)+'</button>')+'</div></div>';}).join(''):'<p class="db-empty">지금 자료에서 짚을 문제가 없습니다.</p>')+'</div>';}
+  else if(t===1){const all=priList(C),list=all.slice(0,6);LASTX.pri=list;
+   body='<div class="db-pr"><div class="db-prh"><i></i><b>지금 잡아야 할 현장 '+all.length+'곳</b><span>점수는 숨기고 결론만 · 근거는 눌러서</span></div>'
+    +(list.length?list.map(x=>{const op=S.priOpen===x.d.key;return '<div class="db-prr"><div class="db-prl"><i style="background:'+(BRC[x.d.item.brand]||'#9aa0ab')+'"></i><div class="db-prn"><b>'+h(x.d.site)+'</b><span>'+h((x.d.owner||'미배정')+' · '+(x.amt>0?eok(x.amt):'금액 미입력'))+'</span></div><span class="db-pro">'+h(x.one)+'</span><span class="db-prb"><button type="button" class="db-prw" data-db="pri-why" data-v="'+attr(x.d.key)+'" aria-expanded="'+op+'">'+(op?'근거 접기':'근거')+'</button><button type="button" class="db-prg" data-db="open" data-v="'+attr(x.d.key)+'">'+h(x.act)+'</button></span></div>'
+      +(op?'<div class="db-prf">'+x.f.map(v=>'<span class="'+(v.p>0?'db-pru':'db-prd')+'"><b>'+(v.p>0?'+':'−')+Math.abs(v.p)+'</b> '+h(v.l)+'</span>').join('')+'</div>':'')+'</div>';}).join('')+(all.length>list.length?'<div class="db-prm">외 '+(all.length-list.length)+'곳</div>':''):'<p class="db-empty">지금 우선도 기준을 넘는 현장이 없습니다.</p>')
+    +'<div class="db-prt">우선도 = 금액 · 공사시기 확정 · 회의 임박 · 견적 발송 · 결정권자 접촉(+) − 무응답 · 경쟁 공법(−) · '+PRI().cut+'점 이상만 이 묶음 · 화면엔 점수 없음</div></div>';}
+  else{const W=LASTX.chg=changeWeek(C),im=impact(C);
+   body='<div class="db-cw"><section><b class="db-cwt">이번 주 달라진 것 <span>상태가 아니라 변화만 · 누르면 해당 현장</span></b><div class="db-cwg">'+W.tiles.map(x=>'<button type="button" data-db="cw-tile" data-v="'+x[0]+'"'+(x[5].length?'':' disabled')+'><span>'+h(x[1])+'</span><b class="'+(x[2]===null?'mut':x[2]?x[3]:'mut')+'">'+(x[2]===null?'불러오는 중':x[2])+'</b><small>'+h(x[4])+'</small></button>').join('')+'</div></section>'
+    +'<section><b class="db-cwt">변화가 결과에 준 영향 <span>올해 · 결과가 난 현장</span></b>'+im.map(x=>'<div class="db-cwi"><b>'+h(x.l)+'</b><span class="db-cwb"><u><i class="cw-a" style="width:'+(x.a||0)+'%"></i></u><u><i class="cw-b" style="width:'+(x.b||0)+'%"></i></u></span><span class="db-cwp">'+(x.a===null?'<small>기록 없음</small>':'<b>'+x.a+'%</b> / '+(x.b===null?'—':x.b+'%'))+'</span></div>').join('')+'<span class="db-cwl">빨강 = 변화가 있던 현장 실주율 · 회색 = 변화 없던 현장 실주율</span></section></div>';}
+  return '<section class="db-card flush db-cx">'+head+body+'</section>';
+ }
+ function dxAsk(id){
+  if(!canAssign()||!LASTX||!LASTX.diag)return;const r=LASTX.diag.find(x=>x.id===id),S=st(),P=period();if(!r||!r.to.length)return;const key=id+'|'+P.today;if(S.dxSent&&S.dxSent[key])return;
+  const line='컨트롤타워 — '+r.a+' · '+r.x;let sent=0;r.to.forEach(n=>{try{if(R.KpiB&&R.KpiB.requestLine&&R.KpiB.requestLine(n,line))sent++;}catch(e){}});
+  if(sent){(S.dxSent=S.dxSent||{})[key]=true;toast(sent+'명의 오늘 업무에 요청을 남겼습니다');render();}else toast('요청을 남기지 못했습니다 — 잠시 뒤 다시 시도해 주세요');
+ }
+ function cxList(kind,id){
+  if(!LASTX)return;const X=SI();
+  if(kind==='diag'){const r=(LASTX.diag||[]).find(x=>x.id===id);if(r&&r.list.length)X.openEvidence(r.a,r.as,evRows(r.list));return;}
+  const t=LASTX.chg&&LASTX.chg.tiles.find(x=>x[0]===id);if(t&&t[5].length)X.openEvidence('이번 주 달라진 것 · '+t[1],md(LASTX.chg.a1)+' 이후 '+t[5].length+'건',evRows(t[5]));
  }
 
  /* ── 3. 성과 분석 ── */
@@ -495,6 +612,11 @@
   if(a==='assign-row')return assign(v);
   if(a==='notify')return notify();
   if(a==='act-ask')return askRecords();
+  if(a==='cx'){S.cx=Number(v)||0;return render();}
+  if(a==='dx-ask')return dxAsk(v);
+  if(a==='dx-list')return cxList('diag',v);
+  if(a==='cw-tile')return cxList('chg',v);
+  if(a==='pri-why'){S.priOpen=S.priOpen===v?null:v;return render();}
   if(a==='advisory'){try{R.ContractSalesUI.advisorySync();}catch(err){}return;}
   const C=core(),P=C.P;
   if(a==='cs-month')return X.openEvidence(P.y+'년 '+v+'월 계약 근거','계약 체결 · 변경 · 취소 원장 기록',X.contractEvidence({month:Number(v)}));
@@ -519,5 +641,5 @@
   const again=()=>{if(enabled()&&PAGES.includes(R.G.page)&&R.B){try{render();}catch(e){}}};
   root.addEventListener('contract-sales:changed',again);document.addEventListener('contract-sales:changed',again);
  }
- root.DashB={enabled,render,core,people,ctlModel,period,nearList,channelOf,weekActs,actKind,stageEvents,lib:{brandRows,matrixRows,inquiryFate,pendingStats,eok,won,mk,BRC,MINREC,LOWMADE,MINCLOSED}};
+ root.DashB={enabled,render,core,people,ctlModel,period,nearList,channelOf,weekActs,actKind,stageEvents,diagRows,priList,changeWeek,impact,lib:{brandRows,matrixRows,inquiryFate,pendingStats,eok,won,mk,BRC,MINREC,LOWMADE,MINCLOSED}};
 })(window);
