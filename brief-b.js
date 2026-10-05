@@ -60,7 +60,9 @@
  const BADFIT_ST=['실주','배드핏','종결','종료','연락두절','미구매 종료'];
  function badfit(q){try{if(root.inqCtlConverted(q))return false;}catch(e){}const s=String(q.status||'');return BADFIT_ST.includes(s)||/스토어|자재/.test(s)||!!(root.inqNoTrack&&root.inqNoTrack(q));}
  function badfitReason(q){
-  const r=String(q.close_reason||''),s=String(q.status||'');let m=/배드핏[^·]*·\s*([^—·]+)/.exec(r);if(m)return m[1].trim();
+  const r=String(q.close_reason||''),s=String(q.status||'');let m=/Bad Fit · ([^—·]+)/.exec(r);if(m)return m[1].trim();/* 종결 4종(2026-10-05): 종류가 적힌 사유는 그 종류대로 읽는다 */
+  if(/^연락두절 ·/.test(r))return '연락두절';m=/상담종결 · ([^—·]+)/.exec(r);if(m)return '상담종결 · '+m[1].trim();
+  m=/배드핏[^·]*·\s*([^—·]+)/.exec(r);if(m)return m[1].trim();
   if(/스토어|자재/.test(s))return '스토어 · 자재 문의';if(root.inqNoTrack&&root.inqNoTrack(q))return '협약 문의';
   m=/^(상담만|협약|기타) 종결/.exec(r);if(m)return m[1]==='상담만'?'상담만 하고 끝남':m[1]==='협약'?'협약 문의':'기타';
   return s==='연락두절'?'연락두절':'사유 미기록';

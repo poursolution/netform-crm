@@ -55,8 +55,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(Number(await d.locator('.idv3-need .hd .n').innerText()),missN-1,'저장하면 채울 정보가 줄어든다');assert.deepEqual((await need()).find(x=>x[0]==='경쟁사'),['경쟁사','타 업체 2곳 비교 중'],'저장한 값이 그 줄에 보인다');
   /* 가운데: 탭 2개 · 결과 칩 → 다음 행동 → 저장(한 줄은 선택) */
   assert.match((await tx('.idv3-chead'))[0],/^응대 이력 ?\d+건 · 시도 0 · 연결 0$/);
-  assert.deepEqual(await tx('.idv3-tabs [role=tab]'),['응대 기록','문자','내부 메모'],'문자 탭(2026-10-04 대표 "문자 할 수 있는 게 없어" — 목록 · 오늘 업무의 [문자]가 이 탭을 연다)');
-  await page.locator('#inq-inbox-dialog .idv3-tabs [role=tab]',{hasText:/^문자$/}).click();await page.waitForTimeout(200);assert.equal(await page.locator('#inq-inbox-dialog [data-idv="smstext"]').count(),1,'문자 탭 = 문구 고르고 보내기');assert.ok((await page.locator('#inq-inbox-dialog [data-idv="tpl"]').count())>=3,'상황에 맞는 문구');
+  assert.deepEqual(await tx('.idv3-tabs [role=tab]'),['응대 기록','내부 메모'],'문자 탭은 없앴다(2026-10-05 견적문의 흐름 ③) — 문자는 응대 기록의 수단 문자 = 문자 작은 창');
+  assert.equal(await page.evaluate(()=>InquiryDetailV2.openSms()),true,'오늘 업무의 [문자] · 수단 문자가 여는 문자 작은 창');await page.waitForTimeout(200);assert.equal(await page.locator('#inq-inbox-dialog [data-idv="smstext"]').count(),1,'문자 작은 창 = 문구 고르고 복사 / 폰 열기 → 기록');assert.equal(await page.locator('#inq-inbox-dialog [data-idv="sms-crm"]').count(),0,'CRM 직접 발송 버튼 없음');assert.equal(await page.locator('#inq-inbox-dialog .idv3-tabs [role=tab][aria-selected="true"]').innerText(),'응대 기록','문자 작은 창은 응대 기록 안');assert.ok((await page.locator('#inq-inbox-dialog [data-idv="tpl"]').count())>=3,'상황에 맞는 문구');
   /* 문자 탭 = 파이프라인 문자 창과 같은 틀(2026-10-04 대표): 머리 → 추천 문구 카드 → 문구(바이트 · 넣기 칩) → 보낸 뒤 → 폰 미리보기 → 아래 버튼. 설명 상자 없음 · 가운데 칸 전체 */
   {const S=page.locator('#inq-inbox-dialog .idv3-composer .ds2.iq-ds2');assert.equal(await S.count(),1,'파이프라인과 같은 틀(.ds2)');assert.equal(await page.locator('#inq-inbox-dialog .idv-smsnote,#inq-inbox-dialog .idv-tpls,#inq-inbox-dialog .idv-smsto').count(),0,'예전 설명 상자 · 칩 줄 없음');
    assert.deepEqual(await S.locator('.ds2-hd').evaluate(n=>[n.querySelector('b').textContent,n.querySelector('span').textContent]),['문자 보내기','신수진 시설팀장 · 010-5436-0662']);
@@ -92,9 +92,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match((await tx('.idv3-ev')).pop(),/· 내부 메모 ?회장 의견 영향이 큰 현장$/);await d.locator('.idv3-tabs [data-v="call"]').click();await page.waitForTimeout(150);
   /* 오른쪽: 지금 할 일 1개 · 첫마디 · 전화 / 다음 단계 / 근처 현장 · 담당 변경 */
   assert.match((await tx('.idv3-now'))[0],/^지금 할 일 ?첫 연락 전화 ?첫마디 ?"안녕하세요, 넷폼 .+ 지금 통화 괜찮으실까요\?" ?전화 010-5436-0662$/);
-  assert.match((await tx('.idv3-next'))[0],/^다음 단계 · 현장방문 \/ 견적 ?현장방문 일정 ?견적서 발송 ?둘 중 하나 저장 → 파이프라인 ‘컨설팅 설계’로 자동 전환$/);
+  assert.match((await tx('.idv3-next'))[0],/^다음 단계 · 현장방문 \/ 견적 ?현장방문 일정 ?견적서 발송 ?1차 현장방문 완료 또는 견적 발송 완료 중 먼저 → 파이프라인 전환$/);
   assert.match((await tx('.idv3-bottom'))[0],/^근처 현장 ?0곳.*담당 변경$/);
   await d.locator('.idv3-next [data-v="visit"]').click();await page.waitForTimeout(150);assert.equal(await d.locator('.idv3-next [data-idv="visitDate"]').count(),1);assert.equal(await d.locator('.idv3-next [data-idv="handoff"]').isDisabled(),true);
+  assert.deepEqual(await d.locator('.idv3-next [data-idv="visitMode"]').allInnerTexts(),['방문 예정','방문 완료'],'방문 예정 / 완료(견적의 발송 예정 / 완료와 같은 버튼)');assert.equal(await d.locator('.idv3-next [data-idv="handoff"]').innerText(),'저장','예정은 저장만 — 전환은 방문 완료 · 견적 발송 완료');
   await d.locator('.idv3-next [data-v="visit"]').click();await page.waitForTimeout(150);
   if(shot)await page.screenshot({path:shot+'-v3.png'});
   /* 담당 변경 · 미배정 = 기존 배정 칸 */
@@ -106,7 +107,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 좁은 화면 · 끄기 */
   await page.setViewportSize({width:900,height:900});await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);await page.setViewportSize({width:1600,height:1000});
   await page.evaluate(()=>{G.inqDetailV3Off=true;InquiryWorkbench.open(A);});await page.waitForTimeout(400);
-  assert.equal(await page.locator('#inq-inbox-dialog.idv3').count(),0);assert.deepEqual(await page.locator('#inq-inbox-dialog .idv-ctabs [role=tab]').allInnerTexts(),['응대 기록','문자 보내기','내부 메모'],'끄면 v2 배치');
+  assert.equal(await page.locator('#inq-inbox-dialog.idv3').count(),0);assert.deepEqual(await page.locator('#inq-inbox-dialog .idv-ctabs [role=tab]').allInnerTexts(),['응대 기록','내부 메모'],'끄면 v2 배치(문자 탭은 두 배치 모두 없앴다)');
   assert.deepEqual(errs,[]);
   console.log(JSON.stringify({status:'PASS',head_one_pill_steps4:true,left_quote_info4_need9_inline:true,center_two_tabs_result_chips:true,optional_line_saves_existing_path:true,ai_badge_as_design:true,right_one_todo_next_step_near:true,assign_uses_existing:true,narrow:true,legacy_switch:true}));
  }finally{await browser.close();srv.close();}

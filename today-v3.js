@@ -284,7 +284,7 @@
    if(root.CommonFilterBar)root.CommonFilterBar.setOwner(v);else root.G.todayQueueOwner=v;root.paint();if(typeof root.toast==='function')root.toast(v+' 담당 화면으로 좁혔습니다 · 위 담당자 [해제]를 누르면 전체로 돌아갑니다');try{document.getElementById('pg-today').scrollIntoView({block:'start'});}catch(err){}return;}
   if(a==='reassign')return openKey(key);
   if(a==='result')return openKey(key,'contact');
-  if(a==='sms'){openKey(key);setTimeout(()=>{const tab=document.querySelector('dialog[open] [data-idv="tab"][data-v="sms"], .inq-dialog [data-idv="tab"][data-v="sms"]');if(tab)tab.click();else if(root.CUR_DETAIL&&root.CUR_DETAIL.kind==='deal'&&typeof root.contactSms==='function')root.contactSms();},400);return;}
+  if(a==='sms'){openKey(key);setTimeout(()=>{const tab=document.querySelector('dialog[open] [data-idv="tab"][data-v="sms"], .inq-dialog [data-idv="tab"][data-v="sms"]');if(tab)tab.click();else if(root.InquiryDetailV2&&root.InquiryDetailV2.openSms&&root.InquiryDetailV2.openSms()){/* 문의 = 상세의 문자 작은 창 */}else if(root.CUR_DETAIL&&root.CUR_DETAIL.kind==='deal'&&typeof root.contactSms==='function')root.contactSms();},400);return;}
   if(a==='act'){const act=b.dataset.act;
    if(act==='전화'){dial(b.dataset.tel);return openKey(key,'contact');}
    if(act==='다음 할 일')return openKey(key,'next');

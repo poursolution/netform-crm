@@ -65,7 +65,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 줄 펼침: 원문 · 마지막 연락 · 빠진 정보 · 첫마디 · [상세 열기] 전화 문자 */
   await row('혁신LH5단지').click();await page.waitForTimeout(200);
   const pn=page.locator('#inq-v3 .il-item.open .il-panel');assert.equal(await pn.count(),1);
-  assert.match(await pn.innerText(),/문의 원문\s*외벽 재도장 · 주차장 · 현장 확인 요청[\s\S]*마지막 연락\s*\d{4}\.\d+\.\d+ 전화 · 첫 연락 — 현장 확인 요청[\s\S]*빠진 정보[\s\S]*첫마디\s*안녕하세요, 넷폼 송보람입니다\.[\s\S]*상세 열기\s*전화\s*문자/);
+  assert.match(await pn.innerText(),/문의 원문\s*외벽 재도장 · 주차장 · 현장 확인 요청[\s\S]*마지막 연락\s*\d{4}\.\d+\.\d+ 전화 · 첫 연락 — 현장 확인 요청[\s\S]*빠진 정보[\s\S]*첫마디\s*안녕하세요, 넷폼 송보람입니다\.[\s\S]*상세 열기\s*전화$/,'목록의 문자 버튼은 없앴다(견적문의 흐름 ③)');
   /* 줄 안 결과 기록: [후속 연락] → 칩(기본값 연락 완료 · 7일 후) → 저장. 이미 응대한 문의의 후속 연락 = 다음 할 일 등록(next_action) — 단계 진행(inquiry_status)으로 보내면 서버가 같은 상태 충돌(PT409)로 거절한다 */
   await row('혁신LH5단지').locator('.il-act').click();await page.waitForTimeout(200);
   const rec=page.locator('#inq-v3 .il-rec');assert.equal(await rec.count(),1);

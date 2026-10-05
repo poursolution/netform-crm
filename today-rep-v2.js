@@ -109,7 +109,7 @@
   if(a==='call'){dial(b.dataset.tel);S.open=key;return root.TodayV2.render();}
   if(a==='rowcall'){dial(b.dataset.tel);return openKey(key,'contact');}
   if(a==='pick'){const r=RESULTS[Number(b.dataset.value)];S.open='';openKey(key,'contact');if(r)prefill(r[1]);return;}
-  if(a==='sms'){openKey(key);setTimeout(()=>{const tab=document.querySelector('dialog[open] [data-idv="tab"][data-v="sms"], .inq-dialog [data-idv="tab"][data-v="sms"]');if(tab)tab.click();else if(root.CUR_DETAIL&&root.CUR_DETAIL.kind==='deal'&&typeof root.contactSms==='function')root.contactSms();},400);return;}
+  if(a==='sms'){openKey(key);setTimeout(()=>{const tab=document.querySelector('dialog[open] [data-idv="tab"][data-v="sms"], .inq-dialog [data-idv="tab"][data-v="sms"]');if(tab)tab.click();else if(root.InquiryDetailV2&&root.InquiryDetailV2.openSms&&root.InquiryDetailV2.openSms()){/* 문의 = 상세의 문자 작은 창 */}else if(root.CUR_DETAIL&&root.CUR_DETAIL.kind==='deal'&&typeof root.contactSms==='function')root.contactSms();},400);return;}
   if(a==='open'&&!e.target.closest('button'))return openKey(key);
  }
  document.addEventListener('click',onClick,true);

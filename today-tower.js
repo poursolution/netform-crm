@@ -228,7 +228,7 @@
    root.OpsStore.ai('call_opener',i.x.type==='inq'?'inquiry':'deal',i.x.item.id||key,{caller:root.ME&&root.ME.name||'',company:'넷폼',site:i.i.site,contact:[i.i.name,i.i.role].filter(Boolean).join(' '),stage:i.sName,want:i.i.want,recent:i.x.recent||'',goal:i.x.next||''}).then(s=>{AIO.set(key,s.suggestion||{});}).catch(err=>{if(typeof root.toast==='function')root.toast(String(err.message||err),'warn');}).finally(()=>{AIB.delete(key);rerender();});return;}
   if(a==='reassign')return openKey(key);
   if(a==='result')return openKey(key,'contact');
-  if(a==='sms'){openKey(key);setTimeout(()=>{const tab=document.querySelector('dialog[open] [data-idv="tab"][data-v="sms"], .inq-dialog [data-idv="tab"][data-v="sms"]');if(tab)tab.click();else if(root.CUR_DETAIL&&root.CUR_DETAIL.kind==='deal'&&typeof root.contactSms==='function')root.contactSms();},400);return;}
+  if(a==='sms'){openKey(key);setTimeout(()=>{const tab=document.querySelector('dialog[open] [data-idv="tab"][data-v="sms"], .inq-dialog [data-idv="tab"][data-v="sms"]');if(tab)tab.click();else if(root.InquiryDetailV2&&root.InquiryDetailV2.openSms&&root.InquiryDetailV2.openSms()){/* 문의 = 상세의 문자 작은 창 */}else if(root.CUR_DETAIL&&root.CUR_DETAIL.kind==='deal'&&typeof root.contactSms==='function')root.contactSms();},400);return;}
   if(a==='act'){const act=b.dataset.act;if(act==='전화'){dial(b.dataset.tel);return openKey(key,'contact');}if(act==='다음 할 일')return openKey(key,'next');if(['독촉','코멘트','결과 기록','정기 연락','관계 연락','현장 확인'].includes(act))return openKey(key,'contact');return openKey(key);}
   if(a==='open'&&!e.target.closest('button'))return openKey(key);
  }

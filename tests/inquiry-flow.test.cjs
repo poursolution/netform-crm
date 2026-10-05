@@ -70,7 +70,7 @@ test('서버: 곁표는 잠겨 있고 명령 함수 하나로만 쓴다 · 최�
  assert.match(body,/v_type not in \('contact_log','close','quote_send','visit','schedule_set','field_set'\)/,'명령 종류');
  assert.match(body,/when p_result in \('부재','통화불가','번호오류'\) then 'attempt'\s*when p_result in \('연결됨','고객 회신','검토중','자료요청','견적요청'\) then 'connected'/,'화면과 같은 결과 마스터');
  assert.match(body,/first_attempt_at=coalesce\(x\.first_attempt_at,v_occ\)/,'최초 시도 시각은 한 번만');assert.match(body,/first_connected_at=coalesce\(x\.first_connected_at,v_occ\)/,'최초 접촉 시각은 한 번만');
- assert.match(body,/v_reason not in \('수행불가 공종','규모 부적합','대상 고객 아님','서비스 범위 아님','기타'\)/,'Bad Fit 사유');assert.match(body,/v_reason not in \('계획 없음','단순 문의','타사 선택'\)/,'상담종결 사유');
+ assert.match(body,/if v_reason is null or length\(v_reason\)>60 then raise exception 'Bad Fit 사유를 골라 주세요'/,'Bad Fit 사유 필수(목록은 운영 기준)');assert.match(body,/if v_reason='기타' and v_detail is null then raise exception '기타 사유를 적어 주세요'/);assert.match(body,/v_reason not in \('계획 없음','단순 문의','타사 선택'\)/,'상담종결 사유');
  assert.match(body,/v_reason:='시도 '\|\|v_attempts\|\|'회'; v_status:='연락두절'/,'연락두절 사유 = 시도 횟수 자동');
  assert.match(body,/v_follow:=greatest\(v_sent_day\+7,v_today\+1\)/,'견적 후속 = 보낸 날 + 7일(같은 날 할 일 금지)');assert.match(body,/'전화','고객 반응 확인'/);
  assert.match(body,/qualified_by=coalesce\(x\.qualified_by,'quote_sent'\)/);assert.match(body,/qualified_by=coalesce\(x\.qualified_by,'visit_done'\)/,'전환 기준 = 둘 중 먼저');
@@ -78,4 +78,57 @@ test('서버: 곁표는 잠겨 있고 명령 함수 하나로만 쓴다 · 최�
  assert.doesNotMatch(body,/update public\.inquiries[^;]*\bstatus=(?!v_status)/,'상태는 종결 때만 바꾼다');
  for(const fn of ['crm_inquiry_command_v1','crm_inquiry_flow_list_v1'])assert.match(body,new RegExp('revoke all on function public\\.'+fn+'\\(jsonb\\) from public, anon;\\s*grant execute on function public\\.'+fn+'\\(jsonb\\) to authenticated;'),fn);
  assert.match(body,/where t\.migrated is null;/,'이관은 여러 번 돌려도 같은 결과');
+});
+test('② 종결 4종: 종류는 한곳에서 읽는다 — 다른 업체 선택은 Bad Fit 이 아니라 상담종결, 종류가 안 적힌 예전 종결은 사유 미기록',()=>{
+ const F=load({inqNoTrack:q=>/협약/.test(String(q.work||''))}).InquiryFlow,k=q=>{const c=F.closeOf(q);return c?c.kind+'|'+c.reason:null;};
+ assert.deepEqual(Object.keys(F.CLOSE),['bad_fit','unreachable','consult_end','transfer']);
+ assert.deepEqual([...F.closeReasons('consult_end')],['계획 없음','단순 문의','타사 선택']);assert.deepEqual([...F.closeReasons('transfer')],['POUR스토어','B2B 협약']);assert.deepEqual([...F.closeReasons('unreachable')],[]);
+ /* Bad Fit 사유 = 운영 기준(설정 화면) 한 곳. 못 읽을 때만 기본 목록 */
+ assert.deepEqual([...F.closeReasons('bad_fit')],['수행불가 공종','규모 부적합','대상 고객 아님','서비스 범위 아님','기타']);
+ const F2=load({CRMRules:{get:()=>3,reasons:k=>k==='bad_fit'?['수행 불가 공종','규모 부적합','시공 불가 지역','기타']:[]}}).InquiryFlow;assert.deepEqual([...F2.closeReasons('bad_fit')],['수행 불가 공종','규모 부적합','시공 불가 지역','기타'],'운영 기준 목록을 그대로');
+ assert.ok(![...F.closeReasons('bad_fit'),...F2.closeReasons('bad_fit')].some(r=>/타사|다른 업체|거절/.test(r)),'Bad Fit 사유에 타사 선택이 없다');
+ assert.equal(k({status:'배정완료'}),null,'닫히지 않은 문의');assert.equal(k({status:'수주'}),null,'영업 결과는 문의 종결이 아니다');
+ assert.equal(k({status:'배드핏',close_reason:'Bad Fit · 규모 부적합 — 3세대'}),'bad_fit|규모 부적합');assert.equal(k({status:'연락두절',close_reason:'연락두절 · 시도 3회'}),'unreachable|시도 3회');
+ assert.equal(k({status:'종결',close_reason:'상담종결 · 타사 선택 — 다른 업체와 계약'}),'consult_end|타사 선택');
+ assert.equal(k({status:'종결',close_reason:'기타 종결 — 배드핏(부적합) · 수행 불가 공종 · 이전 상태: 접수'}),'bad_fit|수행 불가 공종','예전 배드핏 종결 글');
+ assert.equal(k({status:'종결',close_reason:'기타 종결 — 상담종결 · 계획 없음 · 이전 상태: 배정완료'}),'consult_end|계획 없음','새 함수 설치 전 종결');
+ assert.equal(k({status:'종결',close_reason:'상담만 종결 — 가격만 문의 · 이전 상태: 접수'}),'consult_end|상담만');
+ assert.equal(k({status:'POUR스토어 이관대기'}),'transfer|POUR스토어');assert.equal(k({status:'종결',work:'협약문의'}),'transfer|B2B 협약');assert.equal(k({status:'해결완료'}),'transfer|B2B 협약');
+ assert.equal(k({status:'종결'}),'unknown|');assert.equal(k({status:'종결',close_reason:'중복 문의 · sheet:405'}),'other|중복 문의 · sheet:405');
+ F.take({inquiry_id:'s1',close_kind:'consult_end',close_reason:'단순 문의'});assert.equal(k({id:'s1',status:'종결'}),'consult_end|단순 문의','서버 종결 종류가 먼저');
+ const bb=read('brief-b.js');assert.match(bb,/let m=\/Bad Fit · \(\[\^—·\]\+\)\/\.exec\(r\);if\(m\)return m\[1\]\.trim\(\);/);assert.match(bb,/if\(\/\^연락두절 ·\/\.test\(r\)\)return '연락두절';m=\/상담종결 · \(\[\^—·\]\+\)\/\.exec\(r\);if\(m\)return '상담종결 · '\+m\[1\]\.trim\(\);/,'브리핑 · 대시보드의 사유 읽기도 종류대로');
+});
+test('② ③ 화면: [배드핏] 칩 = 종결 창(다음 할 일을 만들지 않는다) · 문자 직접 발송 화면 없음',()=>{
+ const html=read('crm.html'),dv=read('inquiry-detail-v2.js'),l3=read('inquiry-list-v3.js'),fl=read('inquiry-flow.js');
+ has(html,/if\(window\.InquiryFlow&&InquiryFlow\.on\(\)\)\{var first=InquiryFlow\.state\(q\)\.unreachable\?'unreachable':'bad_fit',opts=\[\['bad_fit',/,'종결 창 = 4종(연락두절 제안이면 연락두절이 먼저)');
+ has(html,/return InquiryCommand\.run\('close',q,\{kind:type,reason:cat,detail:reason\}\)\.then\(/,'종결 저장 = 명령 하나');
+ has(html,/if\(cat==='POUR스토어'\)\{closeInquiryControlModal\(\);return inqCtlOpenStore\(key\)\}/,'스토어 이관 = 기존 이관 창');has(html,/if\(!\(window\.InquiryB2B&&InquiryB2B\.isAgreement\(q\)\)\)return inqCtlError\(/,'B2B = 협약 문의만 · 다른 문의를 협약으로 바꾸지 않는다');
+ assert.match(dv,/RES3=\(\)=>FL\(\)\?FL\(\)\.RESULTS\.map\(r=>\[r,r\]\)\.concat\(\[\['배드핏','__close'\]\]\):RES3_OLD;/);assert.match(dv,/if\(k==='res'&&v==='__close'\)\{if\(typeof root\.inqCtlOpenClose==='function'\)root\.inqCtlOpenClose\(curKey\);return;\}/);
+ assert.match(dv,/none:!FL\(\)&&res==='거절'\};\}/,'흐름 기준에서는 배드핏 종결 검토 다음 할 일을 만들지 않는다');assert.match(dv,/return r==='거절'\|\|r==='회신대기'\?'연결됨':r==='보류'\?'검토중':r;\};/,'글에서 읽은 결과도 마스터 안에서만');
+ assert.match(fl,/if\(!C\|\|kind==='transfer'\)throw Error\('종결 종류를 골라 주세요\.'\);/);assert.match(fl,/if\(reason==='기타'&&!detail\)throw Error\('기타 사유는 메모에 적어 주세요\.'\);/,'사유 필수');
+ /* ③ */
+ assert.match(dv,/\(FL\(\)\?\[\['call','응대 기록'\],\['memo','내부 메모'\]\]:\[\['call','응대 기록'\],\['sms','문자'\],\['memo','내부 메모'\]\]\)/,'상세 문자 탭 없음');
+ assert.match(dv,/const crmSendable=digits=>!!\(root\.G\.inqSmsQueueOn&&root\.SB&&/,'CRM 직접 발송 큐 = 꺼 둔 플래그(서버 코드는 그대로)');
+ assert.match(dv,/if\(k==='ch'\)\{s\.ch=v;if\(FL\(\)&&v==='문자'\)\{s\.tab='sms';/,'수단 문자 = 문자 작은 창');assert.match(dv,/root\.InquiryCommand\.run\('contact_log',q,\{ch:'문자',result:'회신대기',text,next:'회신 확인',due:due3\}\)/,'보낸 문자 = 응대 기록');
+ assert.match(l3,/\(F\(\)\?'':'<button type="button" data-il="sms" data-key="'\+k\+'">문자<\/button>'\)/,'목록 문자 버튼 없음');
+ for(const f of ['today-tower.js','today-v3.js','today-rep-v2.js'])assert.ok(read(f).includes('root.InquiryDetailV2.openSms()'),f+' 의 [문자] = 문의면 상세의 문자 작은 창');
+});
+test('④ ⑤ 전환 기준 하나 · 견적 = 버전: 상세 · 전환 대기 목록 · 전송 계층 · 서버가 같은 기준',()=>{
+ const F=load().InquiryFlow,html=read('crm.html'),dv=read('inquiry-detail-v2.js'),fl=read('inquiry-flow.js'),sql=read('sql/inquiry-flow-v1-20261005.sql');
+ assert.equal(F.QUALIFY_TEXT,'1차 현장방문 완료 또는 견적 발송 완료 중 먼저 → 파이프라인 전환');
+ for(const [s,v] of [['현장방문예정',false],['견적서 발송예정',false],['전화응대 완료',false],['현장방문 완료',true],['견적서 발송완료',true],['견적서 발송 완료',true]]){assert.equal(F.statusQualifies(s),v,s);assert.equal(F.isQualified({status:s}),v,s);}
+ F.take({inquiry_id:'q1',visit_done_at:'2026-10-03T03:00:00Z',quote_sent_at:'2026-10-05T03:00:00Z'});assert.equal(F.qualifiedBy({id:'q1',status:'배정완료'}),'visit_done','먼저 일어난 것');
+ F.take({inquiry_id:'q2',quote_sent_at:'2026-10-05T03:00:00Z',quotes:[{version_no:2,amount:172000000,sent_at:'2026-10-05T03:00:00Z'},{version_no:1,amount:185000000,sent_at:'2026-10-01T03:00:00Z'}]});
+ assert.equal(F.qualifiedBy({id:'q2'}),'quote_sent');assert.equal(F.quotes({id:'q2'}).map(v=>v.version_no).join(),'1,2','견적 버전 순서');assert.equal(F.parseQuoteText('견적서 발송 후 확인 연락 · 예상 1,200만원'),12000000);
+ has(html,/function inqStatusQualifies\(s\)\{return window\.InquiryFlow&&InquiryFlow\.on\(\)\?InquiryFlow\.statusQualifies\(s\):QUALIFY_ST\.test\(String\(s\|\|''\)\)\}/);has(html,/  if\(inqStatusQualifies\(to\)&&CLOSED_ST\.indexOf\(to\)<0\)\{/,'상태 변경 → 자동 전환도 같은 기준');
+ has(html,/if\(window\.InquiryFlow&&InquiryFlow\.on\(\)\)return inqIsQualified\(q\)&&CLOSED_ST\.indexOf\(q\.status\)<0&&!linkedDeal\(q\);/,'전환 대기 판정(대시보드 · 오늘 업무가 쓰는 함수)');
+ has(html,/if\(\/현장\\s\*방문\\s\*완료\/\.test\(t\)\)return t\+' 상태로 파이프라인 인계';/,'인계 사유 문장 = 서버와 같은 모양');
+ assert.match(read('inquiry-conversion.js'),/\(F\?F\.isQualified\(q\):qualify\.test\(String\(q\.status\|\|''\)\)\)/,'전환 대기 목록');
+ assert.match(read('operational-adapter.js'),/!\/견적\.\*발송\|현장\\s\*방문\\s\*완료\/\.test\(payload\.inquiry_status\)/,'전송 계층');
+ assert.match(sql.replace(/\r\n/g,'\n'),/a constant text:=\$a\$status_value !~ '견적\.\*발송'\$a\$;\n b constant text:=\$b\$status_value !~ '견적\.\*발송\|현장\[\[:space:\]\]\*방문\[\[:space:\]\]\*완료'\$b\$;/,'서버 전환 명령의 조건 한 곳');
+ assert.match(sql,/if n<>1 then raise exception '전환 조건을 바꿀 자리가 %곳입니다\(1곳이어야 함\) — 아무것도 바꾸지 않았습니다',n; end if;/,'자리가 정확히 1곳이 아니면 멈춘다');
+ assert.match(dv,/const stepConverts=s=>!FL\(\)\|\|\(s\.step==='visit'\?s\.visitMode==='완료':s\.step==='quote'\?s\.quoteMode==='완료':false\);/,'예정은 저장만');assert.match(dv,/\(FL\(\)\?h\(FL\(\)\.QUALIFY_TEXT\):/,'상세 문구 = 같은 기준');
+ assert.match(dv,/root\.InquiryCommand\.run\('quote_send',q,\{amount:s\.quoteAmt\?Number\(s\.quoteAmt\)\*10000:0,date:s\.quoteDate,sent:s\.quoteMode==='완료'\}\)/,'견적 금액은 견적 버전으로(원)');
+ assert.doesNotMatch(fl,/예상 '\+|만원'\)/,'명령은 다음 할 일 문장에 금액을 넣지 않는다');assert.match(fl,/nextSet\(q,'고객 반응 확인',follow\)/);assert.match(fl,/const f=plusDays\(sentDay,7\);return f>today\?f:plusDays\(today,1\);/,'후속 = 보낸 날 + 7일 · 같은 날 할 일 금지');
+ assert.match(sql,/v_draft:=coalesce\(\(p->>'draft'\)='true',false\);/);assert.match(sql,/if found and lv\.sent_at is null then/,'초안은 같은 버전을 고쳐 쓴다');
 });

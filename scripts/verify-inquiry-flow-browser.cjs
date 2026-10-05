@@ -3,6 +3,10 @@
    ① 부재 저장 → 목록 '첫 연락 전' 탭에 그대로 남는다 · 2시간 첫 연락 지표 분자에 안 들어간다 · '시도 n회' · 접촉 없이 3회(간격 1일)면 연락두절 종결 제안 · 접촉을 저장하면 그때 최초응대
    ⑥ 대표회의와 자료 회신 기한은 다른 값 — D-3 탭은 대표회의만
    ⑦ 전화 응대자: 입력 → 새로 고침(서버에서 다시 읽음) → 다시 열었을 때 표시
+   ② 종결 4종 — 사유 필수 · 고르는 즉시 종결 · '배드핏 종결 검토' 다음 할 일 없음 · 다른 업체 선택 = 상담종결
+   ③ 문자 직접 발송 화면 없음 — 남는 것은 응대 기록의 수단 문자(문자 작은 창 → 기록)
+   ④ 전환 = 1차 현장방문 완료 또는 견적 발송 완료 중 먼저('예정'은 전환 아님) — 상세 문구 · 전환 대기 목록 · 전송 계층이 같은 기준
+   ⑤ 견적 = 버전(금액은 원 · 다음 할 일 문장에 금액 없음) · 보내면 후속 할 일 = 보낸 날 + 7일 '고객 반응 확인'
    서버는 흉내(저장 명령 · 읽기 함수가 같은 모양으로 응답). 끄면(G.inqFlowOff) 예전 판정 */
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
@@ -37,12 +41,16 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    const st=id=>__srv[id]||(__srv[id]={inquiry_id:id,first_attempt_at:null,first_connected_at:null,attempt_count:0,connected_count:0,meeting_date:null,reply_due:null,phone_handler:null,migrated:null,logs:[],quotes:[],schedules:[],updated_at:new Date().toISOString()});
    SB={rpc:async(name,args)=>{const p=args&&args.p||{};__rpc.push([name,p]);
     if(name==='crm_inquiry_flow_list_v1')return {data:{ok:true,states:Object.values(__srv).map(x=>JSON.parse(JSON.stringify(x)))}};
-    if(name==='crm_inquiry_command_v1'){const s=st(p.inquiry_id);s.updated_at=new Date().toISOString();
+    if(name==='crm_inquiry_command_v1'){const s=st(p.inquiry_id);let extra={};s.updated_at=new Date().toISOString();
      if(p.type==='contact_log'){const k=kind(p.result);if(!k)return {error:{message:'invalid payload'}};if(!s.logs.some(l=>l.request_id===p.request_id)){s.logs.push({request_id:p.request_id,channel:p.channel,result:p.result,kind:k,content:p.content,next_action:p.next_action,next_check_date:p.next_check_date,occurred_at:p.occurred_at,actor_name:'송보람'});if(k==='attempt'){s.first_attempt_at=s.first_attempt_at||p.occurred_at;s.attempt_count++;}if(k==='connected'){s.first_connected_at=s.first_connected_at||p.occurred_at;s.connected_count++;}}}
      else if(p.type==='schedule_set'){if(p.schedule_type==='meeting')s.meeting_date=p.at;else s.reply_due=p.at;}
      else if(p.type==='field_set'){if(p.field!=='phone_handler')return {error:{message:'invalid payload'}};s.phone_handler=p.value;}
+     else if(p.type==='close'){const L={bad_fit:['Bad Fit','배드핏'],unreachable:['연락두절','연락두절'],consult_end:['상담종결','종결']}[p.kind];if(!L)return {error:{message:'invalid payload'}};const reason=p.kind==='unreachable'?'시도 '+Math.max(s.attempt_count,p.attempts||0)+'회':p.reason;s.close_kind=p.kind;s.close_reason=reason;s.close_detail=p.detail||null;extra={status:L[1],close_reason:L[0]+' · '+reason+(p.detail?' — '+p.detail:''),close_kind:p.kind};}
+     else if(p.type==='visit'){if(p.done){s.visit_done_at=s.visit_done_at||new Date().toISOString();s.qualified_at=s.qualified_at||s.visit_done_at;s.qualified_by=s.qualified_by||'visit_done';}}
+     else if(p.type==='quote_send'){const last=s.quotes[s.quotes.length-1],sent=p.draft?null:(p.sent_at||new Date().toISOString());let ver;if(last&&!last.sent_at){last.amount=p.amount;last.sent_at=sent;ver=last.version_no;}else{ver=s.quotes.length+1;s.quotes.push({version_no:ver,amount:p.amount,sent_at:sent,method:p.method||null,change_reason:p.change_reason||null,author_name:'송보람',created_at:new Date().toISOString()});}
+      extra={version_no:ver,draft:!!p.draft};if(!p.draft){s.quote_sent_at=s.quote_sent_at||sent;s.qualified_at=s.qualified_at||sent;s.qualified_by=s.qualified_by||'quote_sent';extra.next_action_id='99999999-9999-4999-8999-999999999999';extra.next_action_date=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(Date.now()+7*864e5));extra.next_action_text='고객 반응 확인';}}
      else return {error:{message:'invalid payload'}};
-     return {data:{ok:true,type:p.type,inquiry_id:p.inquiry_id,state:JSON.parse(JSON.stringify(s))}};}
+     return {data:Object.assign({ok:true,type:p.type,inquiry_id:p.inquiry_id,state:JSON.parse(JSON.stringify(s))},extra)};}
     if(name==='crm_inquiry_field_update_v1')return {data:{ok:true,value:p.value}};
     return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
    window.CRMRelease=Object.assign(window.CRMRelease||{},{has:n=>true,noteMissing:()=>{}});
@@ -122,12 +130,89 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{InquiryWorkbench.close();G.inqDetailV3Off=false;});
   /* 새로 고친 뒤(이 PC 기록 없음)에도 서버 흐름 상태로 같은 판정 */
   assert.deepEqual(await page.evaluate(()=>{const q=inqCtlFind(A,false),s=InquiryFlow.state(q);return [!!s.firstConnectedAt,s.logs.filter(l=>l.server).length];}),[true,2],'다른 PC 에서도 같은 최초응대 · 같은 이력');
+  /* ── ② 종결 4종 ── */
+  const modal=page.locator('#inquiryControlModal.on'),day=d=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(Date.now()+d*864e5));
+  await page.evaluate(()=>{__writes.length=0;__rpc.length=0;InquiryWorkbench.open(R);});await page.waitForTimeout(400);
+  const dd=page.locator('#inq-inbox-dialog.idv.idv3');
+  assert.deepEqual(await dd.locator('.idv3-res .idv3-rc').allInnerTexts(),['연결됨','고객 회신','검토중','자료요청','견적요청','부재','통화불가','번호오류','배드핏']);
+  await dd.locator('.idv3-rc',{hasText:/^배드핏$/}).click();await page.waitForTimeout(250);
+  assert.equal(await page.locator('#inquiryControlTitle').innerText(),'문의 종결','[배드핏] 칩 = 종결 창(다음 할 일을 만들지 않는다)');
+  assert.deepEqual(await modal.locator('#inq-close-type option').evaluateAll(l=>l.map(n=>n.value)),['bad_fit','unreachable','consult_end','transfer'],'종결 4종');assert.equal(await modal.locator('#inq-close-type').inputValue(),'bad_fit');
+  assert.deepEqual(await modal.locator('#inq-close-kind option').allInnerTexts(),['사유를 골라 주세요'].concat(await page.evaluate(()=>CRMRules.reasons('bad_fit'))),'Bad Fit 사유 = 운영 기준 목록(다른 업체 선택은 없다)');assert.deepEqual(await page.evaluate(()=>CRMRules.reasons('bad_fit')),['수행 불가 공종','규모 부적합','시공 불가 지역','기타']);
+  await modal.locator('#inq-ctl-confirm').click();await page.waitForTimeout(150);assert.match(await modal.locator('#inq-ctl-error').innerText(),/Bad Fit 사유를 골라 주세요/,'사유 필수');
+  await modal.locator('#inq-close-kind').selectOption('기타');await modal.locator('#inq-ctl-confirm').click();await page.waitForTimeout(150);assert.match(await modal.locator('#inq-ctl-error').innerText(),/기타 사유는 메모에/);
+  await modal.locator('#inq-close-type').selectOption('consult_end');await page.waitForTimeout(150);
+  assert.deepEqual(await modal.locator('#inq-close-kind option').allInnerTexts(),['사유를 골라 주세요','계획 없음','단순 문의','타사 선택'],'다른 업체 선택 = 상담종결');
+  await modal.locator('#inq-close-kind').selectOption('타사 선택');await modal.locator('#inq-ctl-reason').fill('다른 업체와 계약');if(shot)await page.screenshot({path:shot+'-close.png'});await modal.locator('#inq-ctl-confirm').click();await page.waitForTimeout(500);
+  assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_command_v1'&&x[1].type==='close').map(x=>[x[1].kind,x[1].reason,x[1].detail])),[['consult_end','타사 선택','다른 업체와 계약']]);
+  assert.deepEqual(await page.evaluate(()=>{const q=inqCtlAll().find(x=>x.id===R),c=InquiryFlow.closeOf(q);return [q.status,q.close_reason,c.kind,c.reason,BriefB.badfitReason(q),__writes.length];}),['종결','상담종결 · 타사 선택 — 다른 업체와 계약','consult_end','타사 선택','상담종결 · 타사 선택',0],'고르는 즉시 종결 · 배드핏 종결 검토 같은 다음 할 일 없음');
+  assert.equal(await page.locator('#inquiryControlModal.on').count(),0);assert.equal(await page.locator('#inq-inbox-dialog').count(),0,'종결하면 상세도 닫는다');assert.equal(await row('중계청구3차').count(),0,'종결 건은 목록에서 빠진다');
+  /* 연락두절: 시도 횟수 자동 · 접촉한 문의는 못 고른다 */
+  await page.evaluate(()=>inqCtlOpenClose(A));await page.waitForTimeout(200);await modal.locator('#inq-close-type').selectOption('unreachable');await page.waitForTimeout(150);
+  assert.match(await modal.locator('#inq-close-auto').innerText(),/이미 접촉한 문의입니다 — 상담종결을 골라 주세요/);await modal.locator('#inq-ctl-confirm').click();await page.waitForTimeout(200);assert.match(await modal.locator('#inq-ctl-error').innerText(),/이미 접촉한 문의/);await page.evaluate(()=>closeInquiryControlModal());
+  await page.evaluate(()=>{__rpc.length=0;inqCtlOpenClose(C);});await page.waitForTimeout(200);await modal.locator('#inq-close-type').selectOption('unreachable');await page.waitForTimeout(150);
+  assert.match(await modal.locator('#inq-close-auto').innerText(),/^접촉 없이 시도 1회$/);if(shot)await page.screenshot({path:shot+'-close2.png'});await modal.locator('#inq-ctl-confirm').click();await page.waitForTimeout(500);
+  assert.deepEqual(await page.evaluate(()=>{const q=inqCtlAll().find(x=>x.id===C),c=InquiryFlow.closeOf(q);return [q.status,q.close_reason,c.kind,BriefB.badfitReason(q)];}),['연락두절','연락두절 · 시도 1회','unreachable','연락두절']);
+  /* Bad Fit: 고르는 즉시 종결 */
+  await page.evaluate(()=>{__writes.length=0;inqCtlOpenClose(M);});await page.waitForTimeout(200);await modal.locator('#inq-close-kind').selectOption('규모 부적합');await modal.locator('#inq-ctl-confirm').click();await page.waitForTimeout(500);
+  assert.deepEqual(await page.evaluate(()=>{const q=inqCtlAll().find(x=>x.id===M),c=InquiryFlow.closeOf(q);return [q.status,q.close_reason,c.kind,c.reason,BriefB.badfitReason(q),__writes.length];}),['배드핏','Bad Fit · 규모 부적합','bad_fit','규모 부적합','규모 부적합',0]);
+  /* 예전 자료 읽기: 종류가 안 적힌 종결 = 사유 미기록, 예전 배드핏 종결 글 = Bad Fit */
+  assert.deepEqual(await page.evaluate(()=>[{status:'종결'},{status:'종결',close_reason:'기타 종결 — 배드핏(부적합) · 규모 부적합 · 이전 상태: 접수'},{status:'배드핏',close_reason:'배드핏 · 공사범위 밖'},{status:'POUR스토어 이관대기'},{status:'배정완료'}].map(q=>{const c=InquiryFlow.closeOf(q);return c?c.kind+'|'+c.reason:null;})),['unknown|','bad_fit|규모 부적합','bad_fit|공사범위 밖','transfer|POUR스토어',null]);
+  /* 스토어 이관 / B2B 협약 = 기존 전용 처리로 */
+  await page.evaluate(()=>{const X='99999999-0000-4000-8000-000000000001',now=new Date(Date.now()-864e5).toISOString();B.inquiries.push({id:X,site:'[대전] 둔산자이',status:'전화응대 완료',at:now,created_at:now,brand:'POUR솔루션',phone:'042-000-3333',contact_name:'최소장',assignee:'이필선',assigned_to:'이필선',assigned_at:now,responded_at:now,raw:{'문의내용':'자재만 구매 문의'}});window.X=X;inqCtlOpenClose(X);});await page.waitForTimeout(200);
+  await modal.locator('#inq-close-type').selectOption('transfer');await page.waitForTimeout(150);assert.deepEqual(await modal.locator('#inq-close-kind option').allInnerTexts(),['이관처를 골라 주세요','POUR스토어','B2B 협약']);assert.equal(await modal.locator('#inq-ctl-confirm').innerText(),'이관 처리로');
+  await modal.locator('#inq-close-kind').selectOption('B2B 협약');await modal.locator('#inq-ctl-confirm').click();await page.waitForTimeout(200);assert.match(await modal.locator('#inq-ctl-error').innerText(),/공종이 협약인 문의만/,'다른 문의를 협약으로 바꾸지 않는다');
+  await modal.locator('#inq-close-kind').selectOption('POUR스토어');await modal.locator('#inq-ctl-confirm').click();await page.waitForTimeout(250);assert.equal(await page.locator('#inquiryControlTitle').innerText(),'POUR스토어 이관','스토어 이관 = 기존 이관 창');await page.evaluate(()=>closeInquiryControlModal());
+  /* ── ③ 문자 직접 발송 화면 없음 · 수단 문자 = 문자 작은 창 → 기록 ── */
+  await page.evaluate(()=>{__rpc.length=0;__writes.length=0;InquiryWorkbench.open(X);});await page.waitForTimeout(400);
+  assert.deepEqual(await dd.locator('.idv3-tabs [role=tab]').allInnerTexts(),['응대 기록','내부 메모'],'상세 문자 탭 없음');
+  await dd.locator('.idv3-rc',{hasText:/^연결됨$/}).click();await page.waitForTimeout(150);await dd.locator('[data-idv="edit-sug"]').click();await page.waitForTimeout(150);
+  await dd.locator('.idv-sugedit .idv-chip[data-idv="ch"][data-v="문자"]').click();await page.waitForTimeout(250);
+  assert.equal(await dd.locator('.ds2.iq-ds2 [data-idv="smstext"]').count(),1,'수단 문자 = 문자 작은 창');assert.equal(await dd.locator('[data-idv="sms-crm"]').count(),0,'CRM 직접 발송 버튼 없음');
+  assert.deepEqual(await dd.locator('.ds2-ft button').evaluateAll(l=>l.map(n=>n.dataset.idv)),['sms-copy','sms-send']);
+  await dd.locator('.ds2-ft [data-idv="sms-send"]').click();await page.waitForTimeout(600);
+  assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_command_v1').map(x=>[x[1].type,x[1].channel,x[1].result])),[['contact_log','문자','회신대기']],'보낸 문자 = 응대 기록(수단 문자 · 회신대기)');
+  assert.equal(await page.evaluate(()=>__rpc.filter(x=>/sms_request|sms_list/.test(x[0])).length),0,'문자 발송 큐 함수는 부르지 않는다');assert.equal(await dd.locator('.idv3-res').count(),1,'기록하면 응대 기록 칸으로 돌아온다');
+  await page.evaluate(()=>InquiryWorkbench.close());await page.waitForTimeout(200);
+  /* ── ④ ⑤ 전환 기준 하나 · 견적 = 버전 ── */
+  assert.equal(await page.evaluate(()=>InquiryFlow.QUALIFY_TEXT),'1차 현장방문 완료 또는 견적 발송 완료 중 먼저 → 파이프라인 전환');
+  assert.deepEqual(await page.evaluate(()=>['현장방문예정','현장방문 완료','견적서 발송예정','견적서 발송완료','전화응대 완료'].map(s=>[InquiryFlow.statusQualifies(s),InquiryFlow.isQualified({status:s}),inqStatusQualifies(s)].join())),['false,false,false','true,true,true','false,false,false','true,true,true','false,false,false'],'예정은 전환 기준이 아니다 — 판정 함수 하나');
+  /* 견적 발송 예정: 금액은 견적 초안으로 · 다음 할 일 문장에 금액 없음 · 전환 안 함 */
+  await page.evaluate(()=>{__rpc.length=0;__writes.length=0;InquiryWorkbench.open(X);});await page.waitForTimeout(400);
+  assert.match(await dd.locator('.idv3-next small').innerText(),/^1차 현장방문 완료 또는 견적 발송 완료 중 먼저 → 파이프라인 전환$/,'상세 문구 = 같은 기준');
+  await dd.locator('.idv3-next [data-idv="step"][data-v="quote"]').click();await page.waitForTimeout(150);await dd.locator('[data-idv="quoteAmt"]').fill('1850');await dd.locator('[data-idv="quoteDate"]').fill(day(2));await page.waitForTimeout(200);
+  assert.equal(await dd.locator('[data-idv="handoff"]').innerText(),'저장','발송 예정 = 저장만');await dd.locator('[data-idv="handoff"]').click();await page.waitForTimeout(700);
+  assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_command_v1').map(x=>[x[1].type,x[1].amount,x[1].draft])),[['quote_send',18500000,true]],'금액 = 견적 초안(원)');
+  assert.deepEqual(await page.evaluate(()=>__writes.map(x=>[x[0],x[1].text||''])),[['next_action','견적서 발송']],'다음 할 일 문장에 금액을 넣지 않는다 · 전환 요청 없음');
+  assert.deepEqual(await page.evaluate(()=>{const q=inqCtlFind(X,false);return [q.status,inqCtlConverted(q),InquiryFlow.isQualified(q),isAwaitingPromotion(q),InquiryConversion.candidates().length];}),['견적서 발송예정',false,false,false,0],'발송 예정은 전환 · 전환 대기가 아니다');
+  /* 견적 발송 완료: 버전에 보낸 날 · 후속 할 일 = +7일 고객 반응 확인 · 파이프라인 전환 */
+  await page.evaluate(()=>{__rpc.length=0;__writes.length=0;if(!document.getElementById('inq-inbox-dialog'))InquiryWorkbench.open(X);});await page.waitForTimeout(400);
+  await dd.locator('.idv3-next [data-idv="step"][data-v="quote"]').click();await page.waitForTimeout(150);await dd.locator('[data-idv="quoteMode"][data-v="완료"]').click();await page.waitForTimeout(150);
+  assert.equal(await dd.locator('[data-idv="handoff"]').isDisabled(),true,'발송 완료는 금액이 있어야 한다');await dd.locator('[data-idv="quoteAmt"]').fill('1850');await page.waitForTimeout(150);
+  assert.equal(await dd.locator('[data-idv="handoff"]').innerText(),'저장하고 파이프라인으로');await dd.locator('[data-idv="handoff"]').click();await page.waitForTimeout(800);
+  assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_command_v1').map(x=>[x[1].type,x[1].amount,x[1].draft])),[['quote_send',18500000,false]]);
+  const after=await page.evaluate(()=>{const q=inqCtlFind(X,false),p=itemPatch(q,'inq'),S=InquiryFlow.server(q),w=__writes.map(x=>[x[0],x[1].stage_code||'',x[1].reason||x[1].text||'']);const add=n=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(Date.now()+n*864e5));return {st:q.status,conv:!!inqCtlConverted(q),by:InquiryFlow.qualifiedBy(q),na:[p.nextActionObj&&p.nextActionObj.text,p.nextActionObj&&p.nextActionObj.due===add(7)],quotes:InquiryFlow.quotes(q).map(v=>[v.version_no,v.amount,!!v.sent_at]),w};});
+  assert.equal(after.st,'견적서 발송완료');assert.equal(after.conv,true,'견적 발송 완료 = 전환');assert.equal(after.by,'quote_sent');assert.deepEqual(after.na,['고객 반응 확인',true],'후속 할 일 = 보낸 날 + 7일 · 고객 반응 확인(같은 날 아님)');
+  assert.deepEqual(after.quotes,[[1,18500000,true]],'초안이던 v1 에 보낸 날이 찍힌다');assert.deepEqual(after.w,[['opportunity_create','sent','견적 발송완료로 파이프라인 인계']],'전환 요청 1건 · 다음 할 일 문장에 금액 없음');
+  /* 1차 현장방문: 예정 = 저장만 / 완료 = 전환(컨설팅 설계) */
+  await page.evaluate(()=>{const mk=(id,site)=>{const now=new Date(Date.now()-864e5).toISOString();return {id,site,status:'전화응대 완료',at:now,created_at:now,brand:'석민이앤씨',phone:'031-111-2222',contact_name:'소장',assignee:'이필선',assigned_to:'이필선',assigned_at:now,responded_at:now,raw:{'문의내용':'외벽 균열 보수'}};};window.V1='99999999-0000-4000-8000-000000000002';window.V2='99999999-0000-4000-8000-000000000003';B.inquiries.push(mk(V1,'[경기 화성] 동탄시범'),mk(V2,'[경기 안산] 고잔푸르지오'));__rpc.length=0;__writes.length=0;InquiryWorkbench.open(V1);});await page.waitForTimeout(400);
+  await dd.locator('.idv3-next [data-idv="step"][data-v="visit"]').click();await page.waitForTimeout(150);assert.deepEqual(await dd.locator('[data-idv="visitMode"]').evaluateAll(l=>l.map(n=>n.textContent+':'+n.getAttribute('aria-pressed'))),['방문 예정:true','방문 완료:false']);
+  await dd.locator('[data-idv="visitDate"]').fill(day(3));await dd.locator('[data-idv="visitTime"]').fill('14:00');await page.waitForTimeout(200);assert.equal(await dd.locator('[data-idv="handoff"]').innerText(),'저장');await dd.locator('[data-idv="handoff"]').click();await page.waitForTimeout(700);
+  assert.deepEqual(await page.evaluate(()=>{const q=inqCtlFind(V1,false);return [q.status,inqCtlConverted(q),InquiryFlow.isQualified(q),__writes.map(x=>x[0]+':'+(x[1].text||'')).join(),__rpc.filter(x=>x[0]==='crm_inquiry_command_v1').map(x=>x[1].type+':'+x[1].done).join()];}),['현장방문예정',false,false,'next_action:현장방문 14:00','visit:false'],'방문 예정은 전환이 아니다');
+  await page.evaluate(()=>{__rpc.length=0;__writes.length=0;if(!document.getElementById('inq-inbox-dialog'))InquiryWorkbench.open(V1);});await page.waitForTimeout(400);
+  await dd.locator('.idv3-next [data-idv="step"][data-v="visit"]').click();await page.waitForTimeout(150);await dd.locator('[data-idv="visitMode"][data-v="완료"]').click();await page.waitForTimeout(150);await dd.locator('[data-idv="visitDate"]').fill(day(0));await page.waitForTimeout(200);
+  assert.equal(await dd.locator('[data-idv="handoff"]').innerText(),'저장하고 파이프라인으로');await dd.locator('[data-idv="handoff"]').click();await page.waitForTimeout(800);
+  assert.deepEqual(await page.evaluate(()=>{const q=inqCtlFind(V1,false);return [q.status,!!inqCtlConverted(q),InquiryFlow.qualifiedBy(q),JSON.stringify(__writes.map(x=>[x[0],x[1].stage_code||'',x[1].reason||'']))];}),['현장방문 완료',true,'visit_done',JSON.stringify([['opportunity_create','consulting','현장방문 완료 상태로 파이프라인 인계']])],'1차 현장방문 완료 = 전환(컨설팅 설계)');
+  /* 전송 계층도 같은 기준: 현장방문 완료는 받고, 예정은 거절 */
+  assert.deepEqual(await page.evaluate(()=>{const P=s=>({intent:'inquiry_promote_create',inquiry_id:V2,promotion_mode:'auto',inquiry_status:s,owner:'이필선',from:'',to:/견적.*발송\s*완료/.test(s)?'sent':'consulting',note:/견적.*발송\s*완료/.test(s)?'견적 발송완료로 파이프라인 인계':/견적.*발송/.test(s)?'견적 준비 단계로 파이프라인 인계':s+' 상태로 파이프라인 인계',name:'고잔푸르지오',work_name:'',brand:'석민이앤씨',client_ref:'local-1'});return ['현장방문 완료','견적서 발송완료','현장방문예정','전화응대 완료'].map(s=>{try{OperationalAdapter.normalize('opportunity_create',V2,0,P(s));return 'ok';}catch(e){return String(e.code||e.message);}});}),['ok','ok','INQUIRY_PROMOTION_INTENT_NOT_CONNECTED','INQUIRY_PROMOTION_INTENT_NOT_CONNECTED']);
+  if(shot)await page.screenshot({path:shot+'-flow2.png'});
+  await page.evaluate(()=>InquiryWorkbench.close());await page.waitForTimeout(200);
   /* 끄기: 예전 판정(어떤 기록이든 최초응대) */
   await page.evaluate(()=>{G.inqFlowOff=true;paint();});await page.waitForTimeout(300);
   assert.equal(await page.evaluate(()=>!!inqCtlFirstResponseAt(inqCtlFind(C,false))),true,'끄면 예전 판정');
-  assert.deepEqual(await page.evaluate(()=>{const b=document.createElement('div');return InquiryListV3.meetOf(inqCtlFind(R,false))?1:0;}),1,'끄면 회신 기한도 D-3 판정에 섞이는 예전 방식');
+  assert.equal(await page.evaluate(()=>QUALIFY_ST.test('견적서 발송예정')&&inqStatusQualifies('견적서 발송예정')),true,'끄면 예전 전환 기준(발송 예정도 전환)');
   await page.evaluate(()=>{G.inqFlowOff=false;paint();});await page.waitForTimeout(200);
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',attempt_keeps_no_first_tab:true,kpi_2h_numerator_excludes_attempt:true,attempt_count_and_unreachable_suggestion:true,first_connected_on_contact:true,single_command:true,meeting_vs_reply_due:true,phone_handler_survives_reload:true,server_state_shared:true,off_switch:true}));
+  console.log(JSON.stringify({status:'PASS',close_four_kinds_reason_required:true,no_direct_sms_ui:true,one_qualified_rule:true,quote_versions_followup_7d:true,attempt_keeps_no_first_tab:true,kpi_2h_numerator_excludes_attempt:true,attempt_count_and_unreachable_suggestion:true,first_connected_on_contact:true,single_command:true,meeting_vs_reply_due:true,phone_handler_survives_reload:true,server_state_shared:true,off_switch:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
