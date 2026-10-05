@@ -10,7 +10,8 @@
  function candidates(){
   const all=typeof root.operationalInquiries==='function'?root.operationalInquiries(root.B?.inquiries||[]):(root.B?.inquiries||[]);
   const qualify=root.QUALIFY_ST instanceof RegExp?root.QUALIFY_ST:/견적.*발송/,closed=root.CLOSED_ST||[];
-  return all.filter(q=>qualify.test(String(q.status||''))&&closed.indexOf(q.status)<0&&!(root.linkedDeal&&root.linkedDeal(q))&&!(root.promotedInfo&&root.promotedInfo(q)?.linked))
+  const F=root.InquiryFlow&&root.InquiryFlow.on()?root.InquiryFlow:null;/* 전환 기준은 한 곳(1차 현장방문 완료 또는 견적 발송 완료) — '발송 예정'은 전환 대기가 아니다 */
+  return all.filter(q=>(F?F.isQualified(q):qualify.test(String(q.status||'')))&&closed.indexOf(q.status)<0&&!(root.linkedDeal&&root.linkedDeal(q))&&!(root.promotedInfo&&root.promotedInfo(q)?.linked))
    .map(q=>{
     const owner=root.inquiryRoutedOwner?root.inquiryRoutedOwner(q):String(q.assignee||'');
     const tech=q.brand==='기술자문'||(root.isTechnicalInquiry&&root.isTechnicalInquiry(q));

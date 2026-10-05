@@ -98,16 +98,17 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 7. 전체 현황(참고) */
   assert.match(await page.locator('#brief-b .bb-ref').innerText(),/^전체 현황 \(참고\)\s*진행 3건 · 올해 수주 \d+건 · 승률 [\d.]+% · 180일\+ 방치 \d+건[\s\S]*이필선 진행 \d+ · 방치 \d+ · 수주 \d+/);
   if(shot){await page.locator('#brief-b .bb-head').scrollIntoViewIfNeeded();await page.waitForTimeout(200);await page.screenshot({path:shot+'-1.png'});await page.locator('#brief-b .bb-prow').first().scrollIntoViewIfNeeded();await page.waitForTimeout(200);await page.screenshot({path:shot+'-2.png'});}
-  /* 견적문의 종결 = 배드핏(부적합 종결) · 사유 필수 */
+  /* 견적문의 종결 = 종결 창(4종 · 2026-10-05 견적문의 흐름 ②)에서 Bad Fit · 사유 필수(목록 = 운영 기준) · 저장은 명령 하나 */
   const r=await page.evaluate(async()=>{
    window.__rpc=[];SB={rpc:async(name,args)=>{__rpc.push([name,args.p]);return {data:{ok:true,closed_at:new Date().toISOString(),close_reason:args.p.kind+' 종결 — '+args.p.reason+' · 이전 상태: 배정완료'}};}};
-   const q=B.inquiries[0];inqCtlOpenClose(inqKey(q));const m=document.querySelector('.inq-ctl-modalintro').closest('[role=dialog],.modal,.inq-ctl-modal,div');const title=document.body.innerText.includes('배드핏(부적합 종결)');
+   const keepRpc=OpsStore.rpc;OpsStore.rpc=async(name,p)=>{if(name==='crm_inquiry_command_v1'){__rpc.push([name,p]);return {ok:true,status:'배드핏',close_reason:'Bad Fit · '+p.reason,state:null};}return keepRpc(name,p);};
+   const q=B.inquiries[0];inqCtlOpenClose(inqKey(q));const m=document.querySelector('.inq-ctl-modalintro').closest('[role=dialog],.modal,.inq-ctl-modal,div');const title=document.getElementById('inquiryControlTitle').textContent==='문의 종결'&&document.getElementById('inq-close-type').value==='bad_fit';
    const opts=[...document.querySelectorAll('#inq-close-kind option')].map(o=>o.textContent);inqCtlConfirmClose();const err=document.getElementById('inq-ctl-error').textContent;
    document.getElementById('inq-close-kind').value='시공 불가 지역';inqCtlConfirmClose();await new Promise(z=>setTimeout(z,150));
    return {title,opts,err,rpc:__rpc,status:q.status,bad:BriefB.badfit(q),reason:BriefB.badfitReason(q)};
   });
-  assert.equal(r.title,true);assert.deepEqual(r.opts,['사유를 골라 주세요','수행 불가 공종','규모 부적합','시공 불가 지역','기타']/* 운영 기준(ops-rules.js)의 Bad Fit 사유 */);assert.match(r.err,/배드핏 사유를 골라 주세요/,'사유 필수');
-  assert.deepEqual(r.rpc,[['crm_inquiry_close_v1',{inquiry_id:'00000001-0000-4000-8000-000000000001',reason:'배드핏(부적합) · 시공 불가 지역',kind:'기타'}]]);assert.equal(r.status,'종결');assert.equal(r.bad,true);assert.equal(r.reason,'시공 불가 지역');
+  assert.equal(r.title,true);assert.deepEqual(r.opts,['사유를 골라 주세요','수행 불가 공종','규모 부적합','시공 불가 지역','기타']/* 운영 기준(ops-rules.js)의 Bad Fit 사유 */);assert.match(r.err,/Bad Fit 사유를 골라 주세요/,'사유 필수');
+  assert.deepEqual(r.rpc,[['crm_inquiry_command_v1',{type:'close',inquiry_id:'00000001-0000-4000-8000-000000000001',kind:'bad_fit',reason:'시공 불가 지역',detail:'',attempts:0}]]);assert.equal(r.status,'배드핏');assert.equal(r.bad,true);assert.equal(r.reason,'시공 불가 지역');
   /* 끄기 */
   await page.evaluate(()=>{G.briefBOff=true;goPage('brief');});await page.waitForTimeout(400);
   assert.equal(await page.locator('#brief-b').count(),0);assert.equal(await page.locator('#brief-v2').count(),1,'끄면 이전 화면');

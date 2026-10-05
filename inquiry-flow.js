@@ -9,7 +9,10 @@
      ⑥ 대표회의(meeting_date)와 자료 회신 기한(reply_due)은 다른 값 — 대표회의 D-3 판정은 대표회의 날짜만 본다.
      ⑦ 전화 응대자 = phone_handler 한 칸(시트 열 '전화응대자' · 예전 화면 저장 이름 '전화 응대자'를 같이 읽는다).
    InquiryCommand = 저장(쓰기). 화면은 run(type, 문의, 값)만 부른다 — 화면이 숨은 입력칸을 만들어 예전 함수를 돌려 부르지 않는다.
-     contact_log · memo · field_set · schedule_set. 서버 전송 계층(operational-overlay)이 화면 칸에서 값을 읽는 부분은 이 파일 안(withFields)에서만 잠깐 만든다.
+     contact_log · memo · field_set · schedule_set · close · visit · quote_send. 서버 전송 계층(operational-overlay)이 화면 칸에서 값을 읽는 부분은 이 파일 안(withFields)에서만 잠깐 만든다.
+     ② 종결 4종: Bad Fit · 연락두절 · 상담종결 · 스토어 이관 / B2B 협약 — 사유 필수 · 고르는 즉시 종결('배드핏 종결 검토' 같은 다음 할 일을 만들지 않는다). '다른 업체 선택'은 Bad Fit 이 아니라 상담종결.
+     ④ 전환 기준 하나(isQualified): 1차 현장방문 완료 또는 견적 발송 완료 중 먼저 일어난 것. '예정'은 전환이 아니다.
+     ⑤ 견적 = 버전(금액은 원). 금액을 다음 할 일 문장에 넣지 않는다. 보내면 후속 할 일 = 보낸 날 + 7일 '고객 반응 확인'(같은 날 할 일은 만들지 않는다).
    서버: sql/inquiry-flow-v1-20261005.sql (crm_inquiry_command_v1 · crm_inquiry_flow_list_v1). 설치 전에는 이 PC 의 기록만으로 같은 판정을 하고, 보낼 기록은 모아 두었다가 설치 뒤 보낸다.
    끄기: G.inqFlowOff=true → 판정 · 저장 모두 예전 방식. */
 (function(root){
@@ -100,7 +103,42 @@
  function meetingDate(q){const S=server(q),d=q.detail&&typeof q.detail==='object'?q.detail:{},r=q.raw&&typeof q.raw==='object'?q.raw:{};return [S&&S.meeting_date,d.meetingDate,d.meeting_date,r['대표회의'],r['대표회의 일정']].map(parseDate).filter(Boolean)[0]||null;}
  function replyDue(q){const S=server(q),d=q.detail&&typeof q.detail==='object'?q.detail:{},r=q.raw&&typeof q.raw==='object'?q.raw:{};return [S&&S.reply_due,d.replyDue,d.reply_due,r['자료 회신 기한']].map(parseDate).filter(Boolean)[0]||null;}
  function phoneHandler(q){const S=server(q),d=q.detail&&typeof q.detail==='object'?q.detail:{},r=q.raw&&typeof q.raw==='object'?q.raw:{};return [S&&S.phone_handler,r.phone_handler,d.responder,r['전화응대자'],r['전화 응대자']].map(v=>String(v==null?'':v).trim()).find(v=>v&&v!=='-')||'';}
+ /* ② 종결 4종. Bad Fit 사유 = 운영 기준(설정 화면의 'Bad Fit 사유' · CRMRules.reasons('bad_fit')) — 여기 목록은 그 기준을 못 읽을 때만 쓴다. 스토어 이관 · B2B 협약은 기존 전용 처리로 넘긴다 */
+ const CLOSE=Object.freeze({
+  bad_fit:Object.freeze({label:'Bad Fit',status:'배드핏',reasons:Object.freeze(['수행불가 공종','규모 부적합','대상 고객 아님','서비스 범위 아님','기타'])}),
+  unreachable:Object.freeze({label:'연락두절',status:'연락두절',reasons:Object.freeze([])}),
+  consult_end:Object.freeze({label:'상담종결',status:'종결',reasons:Object.freeze(['계획 없음','단순 문의','타사 선택'])}),
+  transfer:Object.freeze({label:'스토어 이관 / B2B 협약',status:'',reasons:Object.freeze(['POUR스토어','B2B 협약'])})});
+ function closeReasons(kind){const C=CLOSE[kind];if(!C)return [];if(kind==='bad_fit'){try{const l=root.CRMRules&&root.CRMRules.reasons&&root.CRMRules.reasons('bad_fit');if(Array.isArray(l)&&l.length)return l.slice();}catch(e){}}return C.reasons.slice();}
+ /* 닫힌 문의의 종결 종류(닫히지 않았으면 null). 예전 자료는 상태 · 사유 글에서 읽고, 읽히지 않으면 other(사유 있음) · unknown(사유 미기록) */
+ function closeOf(q){
+  if(!q)return null;const S=server(q),s=String(q.status||''),r=String(q.close_reason||'').trim(),mk=(kind,reason,detail)=>({kind,label:(CLOSE[kind]||{}).label||(kind==='other'?'종결':'종결 · 사유 미기록'),reason:String(reason||'').trim(),detail:String(detail||'').trim()});
+  if(/스토어|자재|미구매/.test(s))return mk('transfer','POUR스토어');
+  let agreement=false;try{agreement=!!(root.inqNoTrack&&root.inqNoTrack(q));}catch(e){}
+  if(['협약완료','해결완료'].includes(s)||/^협약 종결/.test(r)||(agreement&&['종결','종료'].includes(s)))return mk('transfer','B2B 협약');
+  if(!['배드핏','연락두절','종결','종료'].includes(s))return null;
+  if(S&&S.close_kind&&CLOSE[S.close_kind])return mk(S.close_kind,S.close_reason,S.close_detail);
+  let m=/연락두절 · (시도 \d+회)/.exec(r);if(s==='연락두절'||m)return mk('unreachable',m?m[1]:'');
+  m=/Bad Fit · ([^—·]+)/.exec(r)||/배드핏[^·]*·\s*([^—·]+)/.exec(r);if(s==='배드핏'||m)return mk('bad_fit',m?m[1]:'');
+  m=/상담종결 · ([^—·]+)/.exec(r);if(m)return mk('consult_end',m[1]);
+  if(/^상담만 종결/.test(r))return mk('consult_end','상담만');
+  return r?mk('other',r.replace(/ · 이전 상태:.*$/,'').slice(0,60)):mk('unknown','');
+ }
+ /* ④ 전환 기준(하나): 1차 현장방문 완료 또는 견적 발송 완료 중 먼저 일어난 것 */
+ const QUALIFY_TEXT='1차 현장방문 완료 또는 견적 발송 완료 중 먼저 → 파이프라인 전환';
+ const Q_STATUS=/견적.*발송\s*완료|현장\s*방문\s*완료/;
+ const statusQualifies=s=>Q_STATUS.test(String(s||''));
+ function qualifiedBy(q){
+  if(!q)return '';const S=server(q),p=patchOf(q),s=String(q.status||''),v=S&&S.visit_done_at||p.visitDoneAt||'',qs=S&&S.quote_sent_at||p.quoteSentAt||'';
+  if(v&&qs)return tOf(v)<=tOf(qs)?'visit_done':'quote_sent';if(v)return 'visit_done';if(qs)return 'quote_sent';
+  return /견적.*발송\s*완료/.test(s)?'quote_sent':/현장\s*방문\s*완료/.test(s)?'visit_done':'';
+ }
+ const isQualified=q=>!!qualifiedBy(q);
+ /* ⑤ 견적 버전(서버 것이 있으면 서버, 없으면 이 PC 에 적어 둔 것) · 예전 다음 할 일 문장 속 금액 읽기 */
+ function quotes(q){const S=server(q),p=patchOf(q),L=S&&Array.isArray(S.quotes)&&S.quotes.length?S.quotes:(Array.isArray(p.quoteVersions)?p.quoteVersions:[]);return L.slice().sort((a,b)=>Number(a.version_no)-Number(b.version_no));}
+ const parseQuoteText=t=>{const m=/예상\s*([0-9,]+)\s*만원/.exec(String(t||''));return m?Number(m[1].replace(/,/g,''))*10000:0;};
  root.InquiryFlow={on,RESULT,OLD,RESULTS,NEXT,CHANNELS,kindOf,readLine,logOf,logs,state,firstConnectedAt,firstAttemptAt,attempts,attemptNote,meetingDate,replyDue,phoneHandler,legacyResponded,server,load,take,RPC,LIST,
+  CLOSE,closeReasons,closeOf,QUALIFY_TEXT,statusQualifies,qualifiedBy,isQualified,quotes,parseQuoteText,
   _reset(){SRV.clear();SV++;loadAt=0;}};
 
  /* ── 저장 명령 ── */
@@ -194,7 +232,65 @@
   }
   return legacyField(q,field==='phone_handler'?'responder':field,value);
  }
- const HANDLERS={contact_log:contactLog,memo:memoLog,field_set:fieldSet,schedule_set:(q,o)=>fieldSet(q,{field:o&&o.schedule_type==='reply_due'?'reply_due':'meeting_date',value:o&&o.at})};
+ /* ② 종결: Bad Fit · 연락두절 · 상담종결 — 서버가 확인한 뒤에만 화면에 반영한다. 새 함수가 아직 없으면 기존 종결 함수로(사유 글머리에 종류를 남긴다) */
+ async function closeInquiry(q,o){
+  o=o||{};const kind=String(o.kind||''),C=CLOSE[kind];if(!C||kind==='transfer')throw Error('종결 종류를 골라 주세요.');
+  let reason=String(o.reason||'').trim();const detail=String(o.detail||'').trim(),v=state(q);
+  if(kind==='unreachable'){if(v.firstConnectedAt)throw Error('이미 접촉한 문의입니다 — 상담종결로 처리해 주세요.');if(!v.attempts)throw Error('연락 시도 기록이 없습니다.');reason='시도 '+v.attempts+'회';}
+  else{if(!closeReasons(kind).includes(reason))throw Error(C.label+' 사유를 골라 주세요.');if(reason==='기타'&&!detail)throw Error('기타 사유는 메모에 적어 주세요.');}
+  if(root.inqCtlConverted(q))throw Error('영업건으로 전환된 문의는 영업건에서 처리합니다.');
+  if(!root.SB||typeof root.SB.rpc!=='function')throw Error('로그인 상태에서만 종결할 수 있습니다.');
+  const from=q.status||'접수';let status=C.status,closeReason=C.label+' · '+reason+(detail?' — '+detail:''),at='',done=false;
+  if(on()&&can(RPC)){try{const r=await store().rpc(RPC,{type:'close',inquiry_id:String(q.id),kind,reason:kind==='unreachable'?'':reason,detail,attempts:v.attempts});take(r.state);status=r.status||status;closeReason=r.close_reason||closeReason;at=r.server_at||'';done=true;}catch(e){if(!(e&&e.unavailable))throw e;}}
+  if(!done){
+   const text=kind==='bad_fit'?'배드핏(부적합) · '+reason+(detail?' — '+detail:''):closeReason,r=await root.SB.rpc('crm_inquiry_close_v1',{p:{inquiry_id:String(q.id||root.inqKey(q)),reason:text,kind:'기타'}});
+   if(r.error)throw Error(r.error.message||'저장 실패');if(!r.data||r.data.ok!==true)throw Error('서버 확인 응답이 올바르지 않습니다.');
+   status='종결';closeReason=r.data.close_reason||('기타 종결 — '+text);at=r.data.closed_at||'';
+  }
+  const p=patchFor(q);at=at||new Date().toISOString();q.status=p.status=status;q.close_reason=p.close_reason=closeReason;q.next_action_date=p.next_action_date=null;
+  p.activities=p.activities||[];p.activities.push({id:'cl-'+Date.now(),type:'상태변경',note:from+' → '+C.label+' 종결('+reason+')',result:detail,at,actor:(root.inqCtlActor?root.inqCtlActor():meName())});
+  saveLocal();return {kind,label:C.label,reason,status};
+ }
+ /* ④ ⑤ 다음 단계 */
+ const pad2=n=>String(n).padStart(2,'0'),dayOf=d=>d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()),todayStr=()=>dayOf(new Date()),plusDays=(ymd,n)=>{const d=new Date(ymd+'T00:00:00');d.setDate(d.getDate()+n);return dayOf(d);};
+ function setStatus(q,to){const from=q.status||'접수';if(to===from)return;const p=patchFor(q),at=new Date().toISOString();q.status=p.status=to;q.lastActivity=p.lastActivity=at;p.activities=p.activities||[];p.activities.push({type:'상태변경',note:from+' → '+to,result:'',at,actor:meName()||'관리자'});}
+ /* 전환 기준을 채웠으면 그 자리에서 파이프라인으로(기존 전환 경로 autoPromote — 현장 · 브랜드 · 담당 · 문의 연결을 그대로 넘긴다) */
+ function promote(q){if(!isQualified(q)||root.inqCtlConverted(q)||typeof root.autoPromote!=='function')return '';return String(root.autoPromote(q)||'');}
+ function localNext(q,text,due,id){const p=patchFor(q);p.nextActionObj={id:id||('na-'+Date.now()),type:'전화',text,due,status:'open'};q.nextActionText=p.nextActionText=text;q.nextAction=p.nextAction=due;}
+ /* 1차 현장방문: 일정(예정) = 상태 + 그날 할 일 / 완료 = 전환 기준 충족 → 파이프라인 */
+ async function visit(q,o){
+  o=o||{};const date=String(o.date||''),time=String(o.time||''),done=!!o.done,today=todayStr();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date))throw Error('방문 날짜를 넣어 주세요.');
+  if(done&&date>today)throw Error('방문 완료는 오늘까지의 날짜로 적어 주세요.');
+  if(on()&&can(RPC)&&UUID.test(String(q.id||''))){try{const r=await store().rpc(RPC,{type:'visit',inquiry_id:String(q.id),date,time,done});take(r.state);}catch(e){if(!(e&&e.unavailable))throw e;}}
+  if(done){const p=patchFor(q);p.visitDoneAt=p.visitDoneAt||new Date(date+'T'+(time||'12:00')+':00').toISOString();setStatus(q,'현장방문 완료');saveLocal();const msg=promote(q);saveLocal();return {done:true,promoted:!!root.inqCtlConverted(q),label:'1차 현장방문 완료',msg};}
+  if(date>=today&&root.inquiryAssigned(q)&&nextSet(q,'현장방문'+(time?' '+time:''),date)!==true)throw Error('다음 할 일을 저장하지 못했습니다.');
+  setStatus(q,'현장방문예정');saveLocal();return {done:false,promoted:false,label:'현장방문 일정',msg:''};
+ }
+ /* 견적: 금액은 견적 버전으로(원). 발송 완료 = 후속 할 일(보낸 날 + 7일 · 고객 반응 확인) + 전환 / 발송 예정 = 상태 + 발송일 할 일(금액이 있으면 초안 버전) */
+ async function quoteSend(q,o){
+  o=o||{};const amount=Math.round(Number(o.amount||0))||0,sent=!!o.sent,today=todayStr(),date=/^\d{4}-\d{2}-\d{2}$/.test(String(o.date||''))?String(o.date):'';
+  if(sent&&!(amount>0))throw Error('보낸 견적 금액을 넣어 주세요.');
+  if(sent&&date&&date>today)throw Error('보낸 날은 오늘까지의 날짜로 적어 주세요.');
+  if(!sent&&!(amount>0)&&!date)throw Error('견적 금액이나 발송 예정일을 넣어 주세요.');
+  const sentDay=sent?(date||today):'',sentAt=sent?(sentDay===today?new Date().toISOString():new Date(sentDay+'T12:00:00').toISOString()):'',p=patchFor(q);let srv=null;
+  if(amount>0&&on()&&can(RPC)&&UUID.test(String(q.id||''))){
+   try{srv=await store().rpc(RPC,{type:'quote_send',inquiry_id:String(q.id),request_id:uuid(),amount,draft:!sent,sent_at:sentAt,method:String(o.method||''),file_name:String(o.file||''),change_reason:String(o.reason||''),recipient:o.recipient||null});take(srv.state);}
+   catch(e){if(!(e&&e.unavailable))throw e;srv=null;}}
+  if(amount>0&&!srv){const L=p.quoteVersions=Array.isArray(p.quoteVersions)?p.quoteVersions:[],last=L[L.length-1];
+   if(last&&!last.sent_at)Object.assign(last,{amount,sent_at:sentAt||null,author_name:meName()});else L.push({version_no:L.length+1,amount,sent_at:sentAt||null,method:String(o.method||''),change_reason:String(o.reason||''),author_name:meName(),created_at:new Date().toISOString()});}
+  if(!sent){
+   if(date&&date>=today&&root.inquiryAssigned(q)&&nextSet(q,'견적서 발송',date)!==true)throw Error('다음 할 일을 저장하지 못했습니다.');
+   setStatus(q,'견적서 발송예정');saveLocal();return {sent:false,promoted:false,label:'견적서 발송 예정',msg:''};
+  }
+  p.quoteSentAt=p.quoteSentAt||sentAt;
+  const follow=srv&&srv.next_action_date?String(srv.next_action_date).slice(0,10):(()=>{const f=plusDays(sentDay,7);return f>today?f:plusDays(today,1);})();
+  if(srv&&srv.next_action_id)localNext(q,'고객 반응 확인',follow,srv.next_action_id);
+  else if(root.inquiryAssigned(q)){try{nextSet(q,'고객 반응 확인',follow);}catch(e){}}
+  setStatus(q,'견적서 발송완료');saveLocal();const msg=promote(q);saveLocal();
+  return {sent:true,promoted:!!root.inqCtlConverted(q),label:'견적서 발송 완료',follow,msg};
+ }
+ const HANDLERS={contact_log:contactLog,memo:memoLog,field_set:fieldSet,schedule_set:(q,o)=>fieldSet(q,{field:o&&o.schedule_type==='reply_due'?'reply_due':'meeting_date',value:o&&o.at}),close:closeInquiry,visit,quote_send:quoteSend};
  function run(type,q,payload){const fn=HANDLERS[type];if(!fn)throw Error('알 수 없는 저장 명령입니다: '+type);if(!q)throw Error('문의를 찾지 못했습니다.');return fn(q,payload||{});}
  root.InquiryCommand={run,isFirst,needsProgress,flush,types:()=>Object.keys(HANDLERS),_handlers:HANDLERS,_withFields:withFields,_nextSet:nextSet,_queue:queue,_outbox:outbox};
 })(window);

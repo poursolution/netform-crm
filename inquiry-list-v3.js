@@ -130,7 +130,7 @@
    +(rec?'<span>추천 담당</span><p>'+h(rec)+'</p>':'')
    +'<span>첫마디</span><p class="line">'+h(opener(m))+(root.OpsStore&&root.OpsStore.aiOn()&&m.step<4?' <small>규칙 문장 · AI 첫마디는 상세 창에서</small>':'')+'</p>'
    +(recOpen?'<span class="b">결과 기록</span><div class="il-rec"><div>'+RES().map(l=>chip('res',l,p.r===l)).join('')+'</div><div><small>다음 행동일</small>'+nx.map(l=>chip('next',l,p.n===l)).join('')+'</div>'+(p.hasMeet&&m.meet.dd<=3?'<em>대표회의 '+ymd(m.meet.date)+' D-'+m.meet.dd+' · 정확한 견적이 늦으면 개략 금액 먼저</em>':'')+'<div class="il-save"><button type="button" data-il="save" data-key="'+k+'">저장</button><span>결과와 다음 행동일을 모두 골라야 저장됩니다 · 제안이 미리 골라져 있음 · 다음 연락 '+h(kday(nd))+'</span></div><div class="il-err" data-il-err></div></div>':'')
-   +'<span></span><div class="il-acts"><button type="button" class="dark" data-il="detail" data-key="'+k+'">상세 열기</button><button type="button" data-il="call" data-key="'+k+'"'+(m.digits?' data-tel="'+attr(m.digits)+'"':'')+'>전화</button><button type="button" data-il="sms" data-key="'+k+'">문자</button></div></div>';
+   +'<span></span><div class="il-acts"><button type="button" class="dark" data-il="detail" data-key="'+k+'">상세 열기</button><button type="button" data-il="call" data-key="'+k+'"'+(m.digits?' data-tel="'+attr(m.digits)+'"':'')+'>전화</button>'+(F()?'':'<button type="button" data-il="sms" data-key="'+k+'">문자</button>')+'</div></div>';
  }
  function rowHtml(m){
   const S=st(),on=S.open===m.key,k=attr(m.key),cls=m.step===0?' red':m.step===1?' dark':m.follow&&m.late?' amber':'';

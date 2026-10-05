@@ -3,7 +3,9 @@
 --   · contact_log  응대 기록 한 줄. 결과가 시도(부재 · 통화불가 · 번호오류)면 first_attempt_at, 접촉(연결됨 · 고객 회신 · 검토중 · 자료요청 · 견적요청)이면 first_connected_at 을
 --                  처음 한 번만 찍는다(그 뒤로 바뀌지 않는다). 최초응대 완료 = first_connected_at 이 있는 것.
 --   · close        종결 3종(Bad Fit · 연락두절 · 상담종결) — 사유 필수, 고르는 즉시 종결(열린 다음 할 일은 취소). 스토어 이관 · B2B 협약은 기존 전용 명령이 처리한다.
+--                  Bad Fit 사유 목록은 운영 기준(설정 화면의 'Bad Fit 사유')이 정한다 — 화면이 그 목록에서 고른 값을 그대로 적는다. 상담종결 사유는 계획 없음 · 단순 문의 · 타사 선택.
 --   · quote_send   견적 = 버전(version · 금액(원) · 보낸 날 · 받는 사람 · 방법 · 파일 · 바꾼 이유 · 작성자). 보내면 후속 할 일이 '보낸 날 + 7일 · 고객 반응 확인'으로 잡힌다(같은 날 할 일은 만들지 않는다).
+--                  draft=true 면 아직 안 보낸 금액(초안)만 적어 둔다 — 전환 기준 · 후속 할 일은 보낼 때 생긴다. 초안이 있으면 보낼 때 그 버전에 보낸 날을 찍는다.
 --   · visit        1차 현장방문 일정 / 완료. 전환 기준 = 1차 현장방문 완료 또는 견적 발송 완료 중 먼저 일어난 것(qualified_at · qualified_by).
 --   · schedule_set 대표회의(meeting) · 자료 회신 기한(reply_due)을 따로 저장(일정 표 crm_security.schedules).
 --   · field_set    phone_handler(전화 응대자) — 시트 열 이름과 화면 저장 이름이 달라 새로 고치면 사라지던 값을 한 칸으로.
@@ -12,6 +14,8 @@
 --          기존 first_response_at · 응대 이력 · 영업건 · 계약 원장은 바꾸지 않는다.
 -- 권한: 관리자 또는 그 문의의 담당자(영업 · 상담). 읽기(crm_inquiry_flow_list_v1)는 관리자 = 전체, 그 밖 = 본인 담당 문의.
 -- 맨 아래 '이관'은 여러 번 돌려도 같은 결과(이미 옮긴 문의는 건너뜀). 배드핏 재분류는 여기서 하지 않는다(목록만 따로 — 관리자 확인 뒤 적용).
+-- 끝의 '전환 조건' 한 줄 바꾸기: 기존 파이프라인 전환 명령이 '견적 … 발송' 상태만 받던 것을 '현장방문 완료'도 받게 한다(④ 전환 기준 = 1차 현장방문 완료 또는 견적 발송 완료).
+--   지금 운영에 설치된 함수 본문을 읽어 그 조건 한 곳만 바꿔 다시 만든다. 바꿀 자리가 정확히 1곳이 아니면 아무것도 바꾸지 않고 멈춘다. 이미 바뀌어 있으면 건너뛴다.
 
 create table if not exists crm_security.inquiry_flow_state(
  inquiry_id uuid primary key references public.inquiries(id) on delete cascade,
@@ -140,7 +144,7 @@ declare
  v_amount bigint; v_sent timestamptz; v_sent_day date; v_ver integer; v_method text; v_file text; v_change text; v_recipient jsonb;
  v_owner text; v_follow date; v_next_id uuid; v_cancelled jsonb:='[]'::jsonb;
  v_date date; v_time time; v_done boolean; v_stype text; v_field text; v_value text;
- v_log uuid; v_audit uuid; v_extra jsonb:='{}'::jsonb;
+ v_log uuid; v_audit uuid; v_extra jsonb:='{}'::jsonb; v_draft boolean:=false; lv crm_security.inquiry_quote_versions%rowtype;
 begin
  select * into a from crm_security.actor();
  if not found or a.permission_role not in ('admin','rep','consultation') then raise exception 'forbidden' using errcode='42501'; end if;
@@ -200,7 +204,7 @@ begin
   if coalesce(q.status,'') in ('종결','종료','수주','실주','배드핏','연락두절') then raise exception '이미 종결된 문의입니다' using errcode='22023'; end if;
   if q.deal_id is not null or q.opportunity_id is not null then raise exception '영업건으로 전환된 문의는 영업건에서 처리합니다' using errcode='22023'; end if;
   if v_kind='bad_fit' then
-   if v_reason is null or v_reason not in ('수행불가 공종','규모 부적합','대상 고객 아님','서비스 범위 아님','기타') then raise exception 'Bad Fit 사유를 골라 주세요' using errcode='22023'; end if;
+   if v_reason is null or length(v_reason)>60 then raise exception 'Bad Fit 사유를 골라 주세요' using errcode='22023'; end if;
    if v_reason='기타' and v_detail is null then raise exception '기타 사유를 적어 주세요' using errcode='22023'; end if;
    v_status:='배드핏'; v_label:='Bad Fit';
   elsif v_kind='unreachable' then
@@ -230,6 +234,7 @@ begin
   begin v_amount:=nullif(p->>'amount','')::bigint; exception when others then raise exception '금액은 원 단위 숫자여야 합니다' using errcode='22023'; end;
   begin v_sent:=nullif(p->>'sent_at','')::timestamptz; exception when others then raise exception '보낸 날이 올바르지 않습니다' using errcode='22023'; end;
   v_sent:=coalesce(v_sent,v_at);
+  v_draft:=coalesce((p->>'draft')='true',false);
   v_method:=nullif(btrim(coalesce(p->>'method','')),''); v_file:=nullif(btrim(coalesce(p->>'file_name','')),''); v_change:=nullif(btrim(coalesce(p->>'change_reason','')),'');
   v_recipient:=case when jsonb_typeof(p->'recipient')='object' then p->'recipient' else null end;
   if v_amount is null or v_amount<=0 or v_amount>1000000000000 or v_sent>v_at+interval '1 day' or v_sent<v_at-interval '366 days'
@@ -240,15 +245,27 @@ begin
    select v.version_no into v_ver from crm_security.inquiry_quote_versions v where v.inquiry_id=v_id and v.request_id=v_rid;
    if found then return jsonb_build_object('ok',true,'type',v_type,'replayed',true,'version_no',v_ver,'state',crm_security.inquiry_flow_state_json(v_id),'server_at',v_at); end if;
   end if;
-  select coalesce(max(v.version_no),0)+1 into v_ver from crm_security.inquiry_quote_versions v where v.inquiry_id=v_id;
-  insert into crm_security.inquiry_quote_versions(inquiry_id,version_no,amount,sent_at,recipient,method,file_name,change_reason,author_user_id,author_name,actor_auth_uid,request_id)
-   values(v_id,v_ver,v_amount,v_sent,v_recipient,v_method,v_file,v_change,a.user_id,a.display_name,a.auth_uid,v_rid);
-  update crm_security.inquiry_flow_state x set quote_sent_at=coalesce(x.quote_sent_at,v_sent),
-   qualified_at=coalesce(x.qualified_at,v_sent),qualified_by=coalesce(x.qualified_by,'quote_sent'),updated_at=v_at where x.inquiry_id=v_id;
-  -- 후속 할 일 자동: 보낸 날 + 7일 '고객 반응 확인' (같은 날 할 일은 만들지 않는다). 담당자가 있고 아직 종결 · 전환 전일 때만
+  -- 아직 안 보낸 초안이 마지막 버전이면 그 버전을 고쳐 쓴다(보낼 때 보낸 날을 찍는다). 아니면 새 버전
+  select * into lv from crm_security.inquiry_quote_versions v where v.inquiry_id=v_id order by v.version_no desc limit 1;
+  if found and lv.sent_at is null then
+   v_ver:=lv.version_no;
+   update crm_security.inquiry_quote_versions v set amount=v_amount,sent_at=case when v_draft then null else v_sent end,recipient=coalesce(v_recipient,v.recipient),method=coalesce(v_method,v.method),
+    file_name=coalesce(v_file,v.file_name),change_reason=coalesce(v_change,v.change_reason),author_user_id=a.user_id,author_name=a.display_name,actor_auth_uid=a.auth_uid,request_id=v_rid where v.id=lv.id;
+  else
+   v_ver:=coalesce(lv.version_no,0)+1;
+   insert into crm_security.inquiry_quote_versions(inquiry_id,version_no,amount,sent_at,recipient,method,file_name,change_reason,author_user_id,author_name,actor_auth_uid,request_id)
+    values(v_id,v_ver,v_amount,case when v_draft then null else v_sent end,v_recipient,v_method,v_file,v_change,a.user_id,a.display_name,a.auth_uid,v_rid);
+  end if;
+  if not v_draft then
+   update crm_security.inquiry_flow_state x set quote_sent_at=coalesce(x.quote_sent_at,v_sent),
+    qualified_at=coalesce(x.qualified_at,v_sent),qualified_by=coalesce(x.qualified_by,'quote_sent'),updated_at=v_at where x.inquiry_id=v_id;
+  else
+   update crm_security.inquiry_flow_state x set updated_at=v_at where x.inquiry_id=v_id;
+  end if;
+  -- 후속 할 일 자동: 보낸 날 + 7일 '고객 반응 확인' (같은 날 할 일은 만들지 않는다). 보냈을 때만 · 담당자가 있고 아직 종결 · 전환 전일 때만
   v_sent_day:=(v_sent at time zone 'Asia/Seoul')::date; v_follow:=greatest(v_sent_day+7,v_today+1);
   select u.name into v_owner from public.users u where u.user_id=q.assigned_to;
-  if v_owner is not null and coalesce(q.status,'') not in ('종결','종료','수주','실주','배드핏','연락두절') and q.deal_id is null and q.opportunity_id is null then
+  if not v_draft and v_owner is not null and coalesce(q.status,'') not in ('종결','종료','수주','실주','배드핏','연락두절') and q.deal_id is null and q.opportunity_id is null then
    select coalesce(jsonb_agg(n.id order by n.created_at,n.id),'[]'::jsonb) into v_cancelled from public.next_actions n where n.inquiry_id=v_id and n.status='open';
    update public.next_actions n set status='cancelled',updated_at=v_at where n.inquiry_id=v_id and n.status='open';
    insert into public.next_actions(inquiry_id,action_type,title,due_at,assignee_name,status,created_at,updated_at)
@@ -259,10 +276,10 @@ begin
     on conflict (inquiry_id,type) where status='open' and inquiry_id is not null do update set at=excluded.at,owner_user_id=excluded.owner_user_id,owner_name=excluded.owner_name,updated_at=v_at;
   end if;
   insert into crm_security.inquiry_audit_events(actor_auth_uid,actor_user_id,inquiry_id,action,before_data,after_data,reason,created_at)
-   values(a.auth_uid,a.user_id,v_id,'flow_quote_send',jsonb_build_object('next_action_date',q.next_action_date,'cancelled_action_ids',v_cancelled,'quote_sent_at',s.quote_sent_at),
-    jsonb_build_object('version_no',v_ver,'amount',v_amount,'sent_at',v_sent,'method',v_method,'file_name',v_file,'change_reason',v_change,'next_action_id',v_next_id,'next_action_date',v_follow,'actor',a.display_name),
-    '견적 v'||v_ver||' 발송',v_at) returning event_id into v_audit;
-  v_extra:=jsonb_build_object('version_no',v_ver,'next_action_id',v_next_id,'next_action_date',case when v_next_id is not null then v_follow end,'next_action_text',case when v_next_id is not null then '고객 반응 확인' end,'cancelled_action_ids',v_cancelled);
+   values(a.auth_uid,a.user_id,v_id,case when v_draft then 'flow_quote_draft' else 'flow_quote_send' end,jsonb_build_object('next_action_date',q.next_action_date,'cancelled_action_ids',v_cancelled,'quote_sent_at',s.quote_sent_at),
+    jsonb_build_object('version_no',v_ver,'amount',v_amount,'sent_at',case when v_draft then null else v_sent end,'method',v_method,'file_name',v_file,'change_reason',v_change,'next_action_id',v_next_id,'next_action_date',case when v_next_id is not null then v_follow end,'actor',a.display_name),
+    '견적 v'||v_ver||case when v_draft then ' 초안' else ' 발송' end,v_at) returning event_id into v_audit;
+  v_extra:=jsonb_build_object('version_no',v_ver,'draft',v_draft,'next_action_id',v_next_id,'next_action_date',case when v_next_id is not null then v_follow end,'next_action_text',case when v_next_id is not null then '고객 반응 확인' end,'cancelled_action_ids',v_cancelled);
 
  elsif v_type='visit' then
   begin v_date:=nullif(p->>'date','')::date; exception when others then raise exception '날짜는 YYYY-MM-DD 형식이어야 합니다' using errcode='22023'; end;
@@ -393,3 +410,19 @@ from public.next_actions n
 where n.inquiry_id is not null and n.title ~ '예상 *[0-9,]+ *만원' and replace(substring(n.title from '예상 *([0-9,]+) *만원'),',','') ~ '^[1-9][0-9]{0,9}$'
  and not exists(select 1 from crm_security.inquiry_quote_versions v where v.inquiry_id=n.inquiry_id)
 order by n.inquiry_id,n.created_at desc;
+
+-- ── 전환 조건 한 줄 바꾸기(④): '견적 … 발송' 상태 또는 '현장방문 완료' 상태면 파이프라인 전환을 받는다 ──
+do $do$
+declare
+ d text; o oid; n integer;
+ a constant text:=$a$status_value !~ '견적.*발송'$a$;
+ b constant text:=$b$status_value !~ '견적.*발송|현장[[:space:]]*방문[[:space:]]*완료'$b$;
+begin
+ select p.oid into o from pg_proc p join pg_namespace s on s.oid=p.pronamespace where s.nspname='crm_security' and p.proname='crm_inquiry_pipeline_promote_command_v1';
+ if o is null then raise notice '파이프라인 전환 명령 함수가 없습니다 — 건너뜁니다'; return; end if;
+ d:=pg_get_functiondef(o);
+ if position(b in d)>0 then raise notice '전환 조건은 이미 바뀌어 있습니다 — 건너뜁니다'; return; end if;
+ n:=(length(d)-length(replace(d,a,'')))/length(a);
+ if n<>1 then raise exception '전환 조건을 바꿀 자리가 %곳입니다(1곳이어야 함) — 아무것도 바꾸지 않았습니다',n; end if;
+ execute replace(d,a,b);
+end $do$;
