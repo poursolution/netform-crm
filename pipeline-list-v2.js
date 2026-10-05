@@ -103,8 +103,8 @@
   const head='<div class="plv-thead" role="row" style="grid-template-columns:'+spec.grid+'"><span>현장 · 담당</span>'+spec.cols.map(c=>'<span>'+h(c)+'</span>').join('')+'<span></span></div>';
   const shownMore=more()[key]||(more()[key]={});
   const groups=spec.groups.map(([id,title,color,,desc])=>{
-   const rows=items.filter(x=>x.shape.group===id).sort(compare),limit=PER+(shownMore[id]||0),shown=rows.slice(0,limit),rest=rows.length-shown.length;
-   return '<div class="plv-ghead" data-plv-group="'+id+'"><i style="background:'+color+'"></i><b>'+h(title)+'</b><span>'+rows.length+'건</span><small>· '+h(desc)+'</small></div>'+(shown.length?shown.map(x=>rowHtml(key,x)).join(''):'<div class="plv-empty">해당하는 건이 없습니다</div>')+(rest>0?'<button type="button" class="plv-more" data-plv="more" data-value="'+id+'">+ '+rest+'건 더보기</button>':'');
+   const rows=items.filter(x=>x.shape.group===id).sort(compare),limit=PER,__pg=root.ListPager.cut(rows,(shownMore[id]||0)+1,PER),shown=__pg.rows,rest=rows.length-shown.length;
+   return '<div class="plv-ghead" data-plv-group="'+id+'"><i style="background:'+color+'"></i><b>'+h(title)+'</b><span>'+rows.length+'건</span><small>· '+h(desc)+'</small></div>'+(shown.length?shown.map(x=>rowHtml(key,x)).join(''):'<div class="plv-empty">해당하는 건이 없습니다</div>')+root.ListPager.html(__pg,{ns:'plv',attrs:'data-value="'+id+'"',small:true});
   }).join('');
   return '<div id="pipeline-list-v2" class="plv" data-workspace="'+key+'">'+intro+ownerChips(key,cur)+(root.PipelineDiagnosis?root.PipelineDiagnosis.stage(key,all,{open:root.G.plvDiagShut!==true}):'')+'<div class="plv-table" role="table" aria-label="'+attr(NAME[key])+' 목록">'+head+groups+'</div></div>';
  }
@@ -120,7 +120,7 @@
   const a=b.dataset.plv,v=b.dataset.value,key=root.G.pipelineStage;
   if(a==='owner'){const cur=root.SalesScope.state().owner||'전체';root.CommonFilterBar.setOwner(cur===v?'전체':v);root.paint();}
   if(a==='seg'){root.G[SPEC[key].seg[0]]=v;root.paint();}
-  if(a==='more'){const m=more()[key]||(more()[key]={});m[v]=(m[v]||0)+STEP;root.paint();}
+  if(a==='page'){const m=more()[key]||(more()[key]={});m[v]=(Number(b.dataset.page)||1)-1;root.paint();}
  }
  function onKey(e){if((e.key==='Enter'||e.key===' ')&&e.target.classList?.contains('plv-row')){e.preventDefault();e.target.click();}}
  /* PipelineWorkspace.render 가 부른다: 단계 화면이면 새 목록을 그리고 true, 아니면(칸반·끔) 정리만 하고 false */

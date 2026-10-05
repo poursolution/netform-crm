@@ -12,7 +12,7 @@
  const BRAND={'석민이앤씨':'#e8590c','POUR솔루션':'#1f9d55','POUR공법':'#7048e8','아파트스퀘어':'#3b6ce4'};
  const SF_RPC='crm_deal_stage_fields_update_v1';
  const enabled=()=>!root.G.relSegOff&&!!root.RelationshipSegment&&!!root.PipelineStageB;
- const st=()=>root.G.prb||(root.G.prb={sub:null,chip:'all',why:null,rule:false,view:'list',limit:30,pop:null});
+ const st=()=>root.G.prb||(root.G.prb={sub:null,chip:'all',why:null,rule:false,view:'list',page:1,pop:null});
  const mo=n=>Math.round(n/30);
  const money=v=>{const n=Number(v)||0;if(!n)return '미정';if(n>=1e8)return (Math.round(n/1e7)/10)+'억';if(n>=1e7)return (Math.round(n/1e6)/100)+'억';if(n>=1e4)return Math.round(n/1e4).toLocaleString('ko-KR')+'만';return n.toLocaleString('ko-KR');};
  const sumMoney=v=>{const n=Number(v)||0;if(!n)return '금액 미정';return n>=1e8?(Math.round(n/1e7)/10)+'억':Math.round(n/1e4).toLocaleString('ko-KR')+'만';};
@@ -82,11 +82,11 @@
   const chips=chipDefs.map(([l,k])=>'<button type="button" class="prb-chip" data-prb="chip" data-v="'+k+'" aria-pressed="'+(S.chip===k)+'">'+h(l)+' <span>'+inSub.filter(i=>chipOk(i,k)).length+'</span></button>').join('');
   const head='<div class="prb-lhead"><b>확인할 현장 <span>'+cur.l+' '+inSub.length+'곳</span></b>'+(S.view==='list'?chips+'<small>'+h(cur.sort)+(S.why?' · '+h(C.RS[S.why][0])+' '+filtered.length+'곳':'')+'</small>':(S.why?'<small>'+h(C.RS[S.why][0])+'</small>':''))+'<i></i><div class="psb-views"><button type="button" data-prb="view" data-v="list" aria-pressed="'+(S.view==='list')+'">리스트</button><button type="button" data-prb="view" data-v="board" aria-pressed="'+(S.view==='board')+'">보드</button></div></div>';
   let body;
-  if(S.view==='board')body='<div class="psb-board prb-board">'+SUB.map(s=>{const l=sortIn(by(s.k).filter(i=>!S.why||i.rs.includes(S.why))),cardsIn=l.slice(0,40);return '<div class="psb-col"><div class="ch"><i style="background:'+s.top+'"></i><b>'+s.l+'</b><span>'+l.length+'</span><em>'+h(s.hint(q))+'</em></div>'+(cardsIn.length?cardsIn.map(cardHtml).join(''):'<p class="psb-none">없음</p>')+'</div>';}).join('')+'</div>';
-  else{const shown=filtered.slice(0,S.limit);
+  if(S.view==='board')body='<div class="psb-board prb-board">'+SUB.map(s=>{const l=sortIn(by(s.k).filter(i=>!S.why||i.rs.includes(S.why))),cp=root.ListPager.cut(l,root.ListPager.page(S,'col:'+s.k)),cardsIn=cp.rows;return '<div class="psb-col"><div class="ch"><i style="background:'+s.top+'"></i><b>'+s.l+'</b><span>'+l.length+'</span><em>'+h(s.hint(q))+'</em></div>'+(cardsIn.length?cardsIn.map(cardHtml).join(''):'<p class="psb-none">없음</p>')+root.ListPager.html(cp,{ns:'prb',v:'col:'+s.k,small:true,info:false})+'</div>';}).join('')+'</div>';
+  else{const LP=root.ListPager,pg=LP.cut(filtered,LP.page(S)),shown=pg.rows;
    body='<div class="prb-table" role="table" aria-label="'+attr(cur.l)+' 현장"><div class="prb-thead" role="row"><span></span><span>현장 · 담당</span><span>'+h(cur.col)+'</span><span>지금 걸린 것</span><span class="a">금액</span><span></span></div>'
     +(shown.length?shown.map(i=>rowHtml(i,S.pop)).join(''):'<div class="prb-empty">해당하는 현장이 없습니다</div>')
-    +(filtered.length>shown.length?'<button type="button" class="prb-more" data-prb="more">나머지 '+(filtered.length-shown.length)+'건 더 보기</button>':'')
+    +LP.html(pg,{ns:'prb',unit:'곳'})
     +'<div class="prb-foot">'+h(cur.foot(q))+'</div></div>';}
   return '<div id="pipeline-stage-b" class="psb prb" data-stage="relationship"><div class="prb-head"><b>'+h(C.name)+'</b><span>'+h(C.desc())+'</span></div><div class="prb-subs">'+cards+'</div>'+nd
    +'<div class="prb-body"><aside class="prb-left">'+diag+why+todo+'</aside><section class="prb-main">'+head+body+'</section></div></div>';
@@ -111,12 +111,12 @@
  function onClick(e){
   const b=e.target.closest('#pipeline-stage-b[data-stage="relationship"] [data-prb]');if(!b||!enabled())return;
   const S=st(),a=b.dataset.prb,v=b.dataset.v;
-  if(a==='sub'){S.sub=v;S.chip='all';S.why=null;S.limit=30;S.pop=null;return root.paint();}
-  if(a==='chip'){S.chip=v;S.why=null;S.limit=30;return root.paint();}
-  if(a==='why'){if(S.why===v){S.why=null;}else{S.why=v;S.chip='all';const to=(WHY.find(w=>w[0]===v)||[])[2];if(to)S.sub=to;}S.limit=30;S.pop=null;return root.paint();}
+  if(a==='sub'){S.sub=v;S.chip='all';S.why=null;root.ListPager.reset(S);S.pop=null;return root.paint();}
+  if(a==='chip'){S.chip=v;S.why=null;root.ListPager.reset(S);return root.paint();}
+  if(a==='why'){if(S.why===v){S.why=null;}else{S.why=v;S.chip='all';const to=(WHY.find(w=>w[0]===v)||[])[2];if(to)S.sub=to;}root.ListPager.reset(S);S.pop=null;return root.paint();}
   if(a==='rule'){S.rule=!S.rule;return root.paint();}
   if(a==='view'){S.view=v;S.pop=null;return root.paint();}
-  if(a==='more'){S.limit+=30;return root.paint();}
+  if(a==='page'){root.ListPager.set(S,v,b.dataset.page);S.pop=null;return root.paint();}
   if(a==='popclose'){S.pop=null;return root.paint();}
   if(a==='popsave'){if(S.pop&&!S.pop.busy)saveDate(S.pop);return;}
   e.stopPropagation();

@@ -91,7 +91,7 @@
   host.innerHTML=SB().html(CFG,items,S);
   SB().bind(host,{state:()=>SB().state('expansion'),cfg:()=>CFG,paint:()=>root.paintExpansion(),open});
   if(!host.__xbr){host.__xbr=true;host.addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.xbRule;if(!k)return;setRule(k,e.target.value);root.paintExpansion();if(typeof root.toast==='function')root.toast((k==='afterCompletionDays'?'사후 연락 기준':'관계 연락 주기')+'을 '+e.target.value+'일로 바꿨습니다 (이 PC에 저장)');});}
-  if(!host.__xb){host.__xb=true;host.addEventListener('click',e=>{const b=e.target.closest('[data-xb="year"]');if(!b)return;root.G.expansionYear=b.dataset.value;const st=SB().state('expansion');st.bucket='all';st.reason=null;st.limit=30;root.paintExpansion();});}
+  if(!host.__xb){host.__xb=true;host.addEventListener('click',e=>{const b=e.target.closest('[data-xb="year"]');if(!b)return;root.G.expansionYear=b.dataset.value;const st=SB().state('expansion');st.bucket='all';st.reason=null;root.ListPager.reset(st);root.paintExpansion();});}
   const ps=document.getElementById('psub');if(ps&&root.G.page==='expansion')ps.textContent='왼쪽 사후관리 진단 → 오른쪽 확인할 현장 · 빨강 사유부터';
   return true;
  }

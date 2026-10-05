@@ -143,11 +143,11 @@
  function peopleHtml(C){
   const S=ST(),col=S.sel<7?S.sel:3,P=names().map(n=>personVals(n,C)),measured=P.filter(p=>p.measured),nm=P.filter(p=>!p.measured);
   const rows=measured.map(p=>{const bad=p.vals.map((v,c)=>({c,v,gap:v==null?0:(DEF[c][5]?v-DEF[c][4]:DEF[c][4]-v)})).filter(x=>x.gap>0).sort((a,b)=>b.gap-a.gap);const v=p.vals[col],tg=DEF[col][4],lower=DEF[col][5],ok=v==null?null:(lower?v<=tg:v>=tg);return Object.assign(p,{bad,v,ok,sortKey:v==null?999:(lower?-v:v)});}).sort((a,b)=>a.sortKey-b.sortKey);
-  const SHOW=5,shown=S.more?rows:rows.slice(0,SHOW);
+  const SHOW=5,pg=root.ListPager.cut(rows,root.ListPager.page(S,'people'),SHOW),shown=pg.rows;
   const line=p=>'<div class="kb-person"><div class="who"><b>'+h(p.n)+'</b><span>'+h((()=>{try{const pr=root.repProfile(p.n);return pr.team==='gyeongnam'?'경남지사':'본사 영업';}catch(e){return '본사 영업';}})())+'</span></div><div class="bar"><span><i style="width:'+(p.v==null?0:Math.min(100,p.v))+'%;background:'+(p.ok===false?RED:INK)+'"></i><u style="left:'+Math.min(99,DEF[col][4])+'%"></u></span><b style="color:'+(p.v==null?GRAY:p.ok?INK:RED)+'">'+h(fmt(p.v))+'</b></div><div class="bad"><span>미달 '+p.bad.length+'/7</span>'+p.bad.slice(0,2).map(b=>'<em>'+h(LBL[b.c])+' '+h(fmt(b.v))+'</em>').join('')+'</div><button type="button" data-kb="ask" data-n="'+attr(p.n)+'">요청 보내기</button></div>';
   const sent=!!(root.G.kbNmSent&&root.G.kbNmSent===O()?.monday(0));
   return '<section class="kb-people"><header><b>담당별 · '+h(LBL[col])+' 기준</b><span>위에서 고른 지표로 정렬 · 못 미친 지표는 많은 것 2개만</span><i></i><span>미달 <b style="color:'+RED+'">'+rows.filter(r=>r.ok===false).length+'</b>명 · 전체 '+P.length+'명</span></header>'+(shown.length?shown.map(line).join(''):'<p class="kb-empty">측정 가능한 담당이 없습니다.</p>')
-   +(rows.length>SHOW?'<button type="button" class="kb-more" data-kb="more">'+(S.more?'접기':'나머지 '+(rows.length-SHOW)+'명 더 보기')+'</button>':'')
+   +root.ListPager.html(pg,{ns:'kb',v:'people',unit:'명',small:true})
    +(nm.length?'<div class="kb-nm"><b>측정 불가 '+nm.length+'명</b><span>'+h(nm.map(p=>p.n).join(' · '))+' · 기록이 없어 지표가 안 나옴</span><button type="button" data-kb="nm"'+(sent?' class="done" disabled':'')+'>'+(sent?'요청함':'한 번에 기록 시작 요청')+'</button></div>':'')+'</section>';
  }
  function html(){
@@ -197,9 +197,9 @@
  }
  function onClick(e){
   const b=e.target.closest('#kpi-b [data-kb]');if(!b)return;const a=b.dataset.kb,S=ST();
-  if(a==='pick'){S.sel=Number(b.dataset.i);S.more=false;return repaint();}
+  if(a==='pick'){S.sel=Number(b.dataset.i);root.ListPager.reset(S);return repaint();}
   if(a==='rg'){S.rg=b.dataset.v;return repaint();}
-  if(a==='more'){S.more=!S.more;return repaint();}
+  if(a==='page'){root.ListPager.set(S,b.dataset.v,b.dataset.page);return repaint();}
   if(a==='save')return saveWeek(b);
   if(a==='req')return request(b);
   if(a==='open')return openTarget(b.dataset.kind,b.dataset.id);

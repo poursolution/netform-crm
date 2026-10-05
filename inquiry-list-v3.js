@@ -18,7 +18,7 @@
  const RES_OLD=['연락 완료','보류','대표회의 예정','재견적 요청','경쟁사 비교','계약 검토'],RES=()=>F()?F().RESULTS.slice():RES_OLD;
  const LINK_RPC='crm_inquiry_site_link_v1';
  const RULES=()=>root.OPS_RULES||{};const ASSIGN_MIN=()=>Number(RULES().inquiryAssignMinutes)||30,FIRST_H=()=>Number(RULES().towerFirstResponseHours)||2,FOLLOW_D=()=>Number(RULES().inquiryFollowDays)||7;
- function st(){const g=root.G;if(!g.inqV3)g.inqV3={tab:'all',sort:'old',open:null,rec:null,pick:{},limit:50,linkBusy:null,linkErr:null};return g.inqV3;}
+ function st(){const g=root.G;if(!g.inqV3)g.inqV3={tab:'all',sort:'old',open:null,rec:null,pick:{},page:1,linkBusy:null,linkErr:null};return g.inqV3;}
  function enabled(){return !root.G.inqV3Off&&!!L2()&&L2().enabled();}
  const pad=n=>String(n).padStart(2,'0');
  const ymd=t=>{const d=new Date(t);return Number.isFinite(d.getTime())?d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate():'';};
@@ -153,13 +153,16 @@
   const tabs=TABS.map(t=>{const rule=typeof t[2]==='function'?t[2]():t[2],n=inB.filter(t[3]).length,on=S.tab===t[0];return '<button type="button" class="il-tab'+(on?' on':'')+'" data-il="tab" data-v="'+t[0]+'" aria-pressed="'+on+'"><span><b style="color:'+(n&&t[0]!=='all'?t[4]:'#15171c')+'">'+n+'</b>'+h(t[1])+'</span><small>'+h(rule)+'</small></button>';}).join('');
   const tf=(TABS.find(t=>t[0]===S.tab)||TABS[0])[3];
   const list=inB.filter(tf).sort((a,b)=>S.sort==='old'?(a.x.created||0)-(b.x.created||0):(b.x.created||0)-(a.x.created||0));
-  const shown=list.slice(0,S.limit);
+  const LP=root.ListPager;let pg=LP.cut(list,LP.page(S));
+  /* 펼쳐 둔 문의가 다른 쪽에 있으면 그 쪽으로 간다 */
+  if(S.open){const ix=list.findIndex(m=>m.key===S.open);if(ix>=0&&(ix<pg.from||ix>=pg.to)){S.page=Math.floor(ix/pg.size)+1;pg=LP.cut(list,S.page);}}
+  const shown=pg.rows;
   /* 건수 · 정렬 줄: 기존 문의 등록 · 더보기(일괄 처리 · 예전 목록)는 정렬 버튼 왼쪽에 조용히 둔다 */
   const sorts='<div class="il-sortrow"><span><b>'+list.length+'건</b> · '+(S.sort==='old'?'접수일 오름차순 (가장 먼저 들어온 문의가 맨 위)':'시트에 들어온 순서 (최근 먼저)')+'</span><span class="il-sp"></span><span class="il-create-slot"></span><span class="il-more-slot"></span><div class="il-sorts"><button type="button" data-il="sort" data-v="old" aria-pressed="'+(S.sort==='old')+'">접수일 오름차순</button><button type="button" data-il="sort" data-v="new" aria-pressed="'+(S.sort==='new')+'">최근 접수 순</button></div></div>';
   const thead='<div class="il-thead"><div class="il-l"><span class="a">브랜드 · 채널</span><span>현장 · 문의 요약</span></div><div class="il-r"><span class="b">고객 · 연락처</span><span class="c">담당</span><span class="d">경과</span><span class="e"></span></div></div>';
   /* 옮겨 둔 기존 버튼은 다시 그리기 전에 잡아 둔다 */
   const keepC=host.querySelector('.inq-create-trigger'),keepT=host.querySelector('.inq-work-tools');
-  host.innerHTML='<div class="il-tabs" role="group" aria-label="상황 탭">'+tabs+'</div>'+sorts+'<div class="il-table">'+thead+(shown.length?shown.map(rowHtml).join(''):'<div class="il-empty">이 조건에 해당하는 문의가 없습니다.</div>')+(list.length>shown.length?'<button type="button" class="il-more" data-il="more">나머지 '+(list.length-shown.length)+'건 더 보기</button>':'')+'</div>';
+  host.innerHTML='<div class="il-tabs" role="group" aria-label="상황 탭">'+tabs+'</div>'+sorts+'<div class="il-table">'+thead+(shown.length?shown.map(rowHtml).join(''):'<div class="il-empty">이 조건에 해당하는 문의가 없습니다.</div>')+LP.html(pg,{ns:'il',unit:'건'})+'</div>';
   const v2t=document.querySelector('#inq-v2 .iv-table');if(v2t)v2t.replaceChildren();/* v2 표는 숨겨져 있으니 노드만 비운다(페이지 노드 상한) */
   const create=document.querySelector('#inq-v2 .inq-create-trigger, #pg-inq .inq-inbox-heading .inq-create-trigger')||keepC;if(create)host.querySelector('.il-create-slot').append(create);
   const tools=document.querySelector('#inq-v2 .inq-work-tools, #pg-inq .inq-inbox-heading .inq-work-tools')||keepT;if(tools)host.querySelector('.il-more-slot').append(tools);
@@ -216,9 +219,9 @@
  }
  function onClick(e){
   const b=e.target.closest('[data-il]');if(!b)return;const S=st(),a=b.dataset.il,v=b.dataset.v,key=b.dataset.key;
-  if(a==='tab'){S.tab=v;S.open=null;S.rec=null;return root.paint();}
-  if(a==='sort'){S.sort=v;return root.paint();}
-  if(a==='more'){S.limit+=50;return root.paint();}
+  if(a==='tab'){S.tab=v;S.open=null;S.rec=null;S.page=1;return root.paint();}
+  if(a==='sort'){S.sort=v;S.page=1;return root.paint();}
+  if(a==='page'){S.page=Number(b.dataset.page)||1;S.open=null;S.rec=null;return root.paint();}
   if(a==='toggle'){if(e.target.closest('button,a,input,select'))return;S.open=S.open===key?null:key;if(S.open!==key)S.rec=null;return render();}
   const m=find(key);if(!m)return;e.stopPropagation();
   if(a==='res'||a==='next'){const p=S.pick[key]||(S.pick[key]={});/* 결과를 바꾸면 다음 행동일 제안도 그 결과에 맞게 따라간다(직접 고른 날짜는 그대로) */if(a==='res')p.r=v;else p.n=v;return render();}

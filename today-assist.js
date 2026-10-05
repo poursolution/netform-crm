@@ -87,12 +87,12 @@
  function restHtml(items){return '<div class="ta-box ta-rest"><div class="ta-row hd"><span>브랜드</span><span>현장</span><span>'+HEAD.urgent[0]+'</span><span>'+HEAD.urgent[1]+'</span><span class="ta-d">경과</span><span></span></div>'+items.map(urgentRow).join('')+'</div>';}
  /* 오늘 업무(today-v3)가 묶음마다 부른다 */
  function groupHtml(g,items,gi,no,more){
-  const S=st(),kind=g.kind,rowFn=kind==='assign'?assignRow:kind==='urgent'?urgentRow:kind==='stall'?stallRow:contractRow,shown=more?items:items.slice(0,PER);
+  const S=st(),kind=g.kind,rowFn=kind==='assign'?assignRow:kind==='urgent'?urgentRow:kind==='stall'?stallRow:contractRow,pg=R.ListPager.cut(items,more,PER),shown=pg.rows;/* more = 이 묶음의 쪽 번호 */
   const recs=kind==='assign'?items.filter(i=>{const r=recFor(i.x.item);return r&&r.assignable;}).length:0;
   const bulk=kind==='assign'?(recs?'<button type="button" class="ta-all'+(S.confirm?' cf':'')+'" data-ta="assign-all"'+(S.busy?' disabled':'')+'>'+(S.busy?'배정하는 중…':S.confirm?'한 번 더 누르면 '+recs+'건 배정':'추천대로 '+recs+'건 한 번에 배정')+'</button>':''):(g.bulk?'<button type="button" data-t3="bulk" data-v="'+gi+'">'+h(g.bulk)+'</button>':'');
   return '<section class="tv3-group ta-group'+(kind==='assign'||kind==='urgent'?' first':'')+'" data-g="'+(gi+1)+'" data-kind="'+kind+'"><header><i>'+no+'</i><b>'+h(g.t)+'</b><b class="n">'+items.length+'건</b><span>'+h(g.why)+'</span><u></u>'+bulk+'</header>'
    +'<div class="ta-box"><div class="ta-row hd"><span>브랜드</span><span>현장</span><span>'+HEAD[kind][0]+'</span><span>'+HEAD[kind][1]+'</span><span class="ta-d">경과</span><span></span></div>'+shown.map(rowFn).join('')
-   +(items.length>PER?'<button type="button" class="tv3-more" data-t3="more" data-v="'+gi+'">'+(more?'접기 ▴':'나머지 '+(items.length-PER)+'건 더 보기 ▾')+'</button>':'')+'</div><p class="ta-note">'+h(NOTE[kind]())+'</p></section>';
+   +R.ListPager.html(pg,{ns:'t3',v:'g'+gi,small:true})+'</div><p class="ta-note">'+h(NOTE[kind]())+'</p></section>';
  }
  /* ── 동작 ── */
  const inqOf=key=>{try{return R.inqCtlFind(String(key).replace(/^inq:/,''),false);}catch(e){return null;}};

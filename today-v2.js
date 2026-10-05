@@ -51,8 +51,8 @@
   const pills='<div class="tv-pills" role="group" aria-label="상태 필터">'+FILTERS[panel].map(f=>'<button type="button" data-tv="status" data-v="'+f[0]+'" aria-pressed="'+(active===f[0])+'">'+f[1]+' <b>'+src.filter(x=>T().matches(x,f[0])).length+'</b></button>').join('')+'</div>';
   const filtered=src.filter(x=>T().matches(x,active)),used=new Set();
   const groups=GROUPS[panel].map(g=>{const items=filtered.filter(x=>!used.has(x.key)&&g[4](x));items.forEach(x=>used.add(x.key));return [g,items.sort((a,b)=>(b.lag||0)-(a.lag||0)||String(a.key).localeCompare(String(b.key)))];}).filter(([g,items])=>g[0]!=='rest'||items.length);
-  const body=groups.map(([g,items])=>{const limit=s.limits[panel+':'+g[0]]||PER,part=items.slice(0,limit),more=items.length-part.length;
-   return '<div class="tv-ghead"><i style="background:'+g[2]+'"></i><b>'+h(g[1])+'</b><span>'+items.length+'건</span><small>· '+h(g[3])+'</small></div>'+(items.length?part.map(x=>rowHtml(x,admin)).join(''):'<div class="tv-empty">해당하는 업무가 없습니다</div>')+(more>0?'<button type="button" class="tv-more" data-tv="more" data-v="'+panel+':'+g[0]+'">+ '+more+'건 더보기</button>':'');}).join('');
+  const body=groups.map(([g,items])=>{const limit=PER,__pg=root.ListPager.cut(items,s.limits[panel+':'+g[0]]||1,PER),part=__pg.rows,more=items.length-part.length;/* limits = 묶음별 쪽 번호 */
+   return '<div class="tv-ghead"><i style="background:'+g[2]+'"></i><b>'+h(g[1])+'</b><span>'+items.length+'건</span><small>· '+h(g[3])+'</small></div>'+(items.length?part.map(x=>rowHtml(x,admin)).join(''):'<div class="tv-empty">해당하는 업무가 없습니다</div>')+root.ListPager.html(__pg,{ns:'tv',v:panel+':'+g[0],small:true});}).join('');
   return '<section class="tv-list" aria-label="업무 목록"><div class="tv-lhead">'+seg+'<span class="tv-spacer"></span>'+pills+'</div><div class="tv-table"><div class="tv-thead"><span>현장 · 고객</span><span>구분</span><span>담당</span><span>지금 할 일</span><span>경과</span><span></span></div>'+body+'</div></section>';
  }
  function render(){
@@ -84,7 +84,7 @@
    if(k==='owner')return setOwner(v==='전체'||(root.G.todayQueueOwner===v)?'전체':v);
    if(k==='panel'){s.panel=v;return render();}
    if(k==='status'){root.G[s.panel==='inquiry'?'todayInquiryStatus':'todayPipelineStatus']=v;s.limits={};return render();}
-   if(k==='more'){s.limits[v]=(s.limits[v]||PER)+PER;return render();}
+   if(k==='page'){s.limits[v]=Number(b.dataset.page)||1;return render();}
    if(k==='unassigned'){s.panel='inquiry';root.G.todayInquiryStatus='unassigned';s.limits={};setOwner('전체');document.querySelector('#today-v2 .tv-list')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
   }
   const row=e.target.closest('.tv-row');if(row&&!e.target.closest('button,select,input'))T().open(row.dataset.key);
