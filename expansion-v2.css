@@ -62,3 +62,5 @@
 .xdv-hint{margin:0;font-size:11.5px;color:#9ca3af;line-height:1.5}
 .xdv-done{background:#ecf8f1;border-color:#d5eede}.xdv-done>b{color:#1f7a4d}
 @media(max-width:1000px){.xdv{width:96vw;height:96vh}.xdv-body{grid-template-columns:1fr;overflow:auto}.xdv-c1,.xdv-c3{border:0;overflow:visible}.xdv-c3{order:1}.xdv-c2{order:2;min-height:420px}.xdv-c1{order:3}}
+/* 창 크기 · 칸 폭 = 파이프라인 영업건 상세 창과 같게(2026-10-05 대표 "확장관리 창도 파이프라인처럼 동일하게 · 고객 자산도") — 확장관리 · 고객 자산 세부 창(.xdv) */
+@media(min-width:1001px){.xdv{width:min(1640px,calc(100vw - 32px));height:calc(100vh - 32px)}.xdv-body{grid-template-columns:minmax(260px,340px) minmax(380px,1fr) minmax(280px,380px)}}

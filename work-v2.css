@@ -224,3 +224,5 @@
 #gongjongDialog .gj-ai-tools{text-align:right;margin-bottom:8px;color:#2a52b8}
 #gongjongDialog .gj-ai-basis{font-size:12px;color:#6b7280}
 #gongjongDialog .gj-ai-confirm{white-space:normal;width:100%;font-size:13.5px;padding:11px 8px;margin:0 0 9px}
+/* 공종 분석 세부 창도 파이프라인 영업건 상세 창과 같은 크기 · 칸 폭(2026-10-05 대표 "전체적인 세부 창 … 파이프라인 창이랑 동일하게") */
+@media(min-width:1001px){#gongjongDialog{padding:16px}#gongjongDialog .gj-dialog{width:min(1640px,100%);height:calc(100vh - 32px);max-height:none}#gongjongDialog .gj-columns{flex:1;grid-template-columns:minmax(260px,340px) minmax(380px,1fr) minmax(280px,380px)}}
