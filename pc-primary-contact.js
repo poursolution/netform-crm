@@ -80,7 +80,7 @@
  };
  root.saveQuickContact=function(){
   const form=root.QUICK_CONTACT;if(!form)return;
-  const report=msg=>{const box=form.pcRoot?.querySelector('#qc-err');if(box)box.textContent=msg;else root.quickContactErr(msg);};
+  const report=msg=>{const box=form.pcRoot?.querySelector('#qc-err');if(box){box.style.display='block';box.style.color='var(--danger)';box.style.background='var(--danger-bg)';box.textContent=msg;}else root.quickContactErr(msg);};
   const item=form.item,entry=pending.get(item.id);
   if(entry){
    if(entry.form!==form){report('진행 중인 연락처 저장을 먼저 확인해 주세요.');return;}
