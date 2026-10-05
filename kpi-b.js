@@ -86,7 +86,9 @@
   const processed=uniq.filter(a=>!live.has(a.promise_key+'|'+todoKey(typeKind(a.target_type),a.target_id)));
   const pending=uniq.filter(a=>live.has(a.promise_key+'|'+todoKind(a))&&now-Date.parse(a.created_at)>=864e5);
   function todoKind(a){return todoKey(typeKind(a.target_type),a.target_id);}
-  M.push({v:pct(processed.length,uniq.length),num:processed.length,den:uniq.length,todos:pending.map(a=>{const i=Number(String(a.promise_key).slice(4))-1;const t=(M[i]&&M[i].todos.find(x=>x.tk===todoKind(a)))||null;return Object.assign(T(typeKind(a.target_type),a.target_id,a.target_name||a.target_id,t?t.who:'',md(a.created_at)+' 요청 · '+(t?t.why:'답 없음'),'다시 확인',t?t.owner:''),{origin:i});})});
+  /* 요청 업무(2026-10-05 design_handoff_request): 오늘 업무에서 보낸 요청도 이 처리율의 자료다 — 처리 = 회신 · 기록으로 완료. 부재 · 답 대기는 아직 미처리, 취소한 요청은 세지 않는다 */
+  const wrq=(()=>{try{const WR=root.WorkRequest;if(!WR||!WR.enabled())return [];return WR.state().list.filter(r=>r.status!=='cancelled'&&now-Date.parse(r.created_at||0)<28*864e5);}catch(e){return [];}})(),wrqDone=wrq.filter(r=>r.status==='done'||r.status==='replied').length;
+  M.push({wrq:wrq.length,v:pct(processed.length+wrqDone,uniq.length+wrq.length),num:processed.length+wrqDone,den:uniq.length+wrq.length,todos:pending.map(a=>{const i=Number(String(a.promise_key).slice(4))-1;const t=(M[i]&&M[i].todos.find(x=>x.tk===todoKind(a)))||null;return Object.assign(T(typeKind(a.target_type),a.target_id,a.target_name||a.target_id,t?t.who:'',md(a.created_at)+' 요청 · '+(t?t.why:'답 없음'),'다시 확인',t?t.owner:''),{origin:i});})});
   /* 요청함 표시: 이번 주 조치 기록(서버) + 방금 누른 것(이 PC) */
   const mon=O()?O().monday(0):'',done=new Set(W.acts.filter(a=>ymd(a.created_at)>=mon&&a.target_id).map(a=>a.promise_key+'|'+todoKey(typeKind(a.target_type),a.target_id)));
   (root.G.kbDone||[]).forEach(k=>done.add(k));
