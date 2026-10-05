@@ -40,6 +40,17 @@
   return out.filter(x=>x.k).sort((a,b)=>b.at.localeCompare(a.at));
  }
  function week(P){const d=new Date(P.ty,P.tm-1,P.td),mon=new Date(d);mon.setDate(d.getDate()-((d.getDay()+6)%7));const days=[];for(let i=0;i<7;i++){const x=new Date(mon);x.setDate(mon.getDate()+i);days.push(x.getFullYear()+'-'+pad(x.getMonth()+1)+'-'+pad(x.getDate()));}return days;}
+ /* 이번 주(월–일) 영업 기록 — 맨 위 '주간 활동' 카드 · 사람 탭 '이번 주 영업 기록' · 활동 탭이 같이 쓴다(같은 기록 · 같은 기간이라 숫자가 서로 다를 수 없다) */
+ function weekActs(C){const W=week(C.P),rows=C.names.map(n=>{const my=C.A.filter(x=>x.owner===n),wk=my.filter(x=>W.includes(x.k));return {n,my,wk,t:wk.length};});return {W,rows,total:rows.reduce((s,r)=>s+r.t,0),zero:rows.filter(r=>!r.t).map(r=>r.n),list:rows.reduce((l,r)=>l.concat(r.wk),[])};}
+ /* 기록 종류: 통화(시도 / 연결) · 문자 · 카카오 · 방문 · 견적 · 자료 — 그 밖(메모 등)은 건수에만 든다 */
+ function actKind(x){
+  const ty=String(x.type||''),tx=String(x.text||'');let res='';try{const l=R.InquiryFlow&&R.InquiryFlow.readLine?R.InquiryFlow.readLine(tx):null;res=l?String(l.res||''):'';}catch(e){}
+  if(/방문|미팅|현설|실측/.test(ty))return 'visit';
+  if(/견적|제안|자료/.test(ty))return 'quote';
+  if(/문자|카카오|메일|메시지|SMS/i.test(ty))return 'msg';
+  if(/전화|통화|부재/.test(ty))return /부재|통화불가|번호오류/.test(ty+' '+res)||/^(부재|전화 시도|안 ?받)/.test(tx)?'try':'call';
+  return 'etc';
+ }
  function overdueDays(d){try{const nx=R.briefNext(d.item),t=nx&&nx.due?R.daysTo(nx.due):null;return t!==null&&t<0?-t:0;}catch(e){return 0;}}
  function ageOf(d){try{const a=R.stageAge(d.item);return a==null?0:a;}catch(e){return 0;}}
  function core(){
@@ -103,7 +114,7 @@
  function dash(C){
   const S=st(),N=nearList(C),PP=people(C),{B,P,L,active,risk,cnt,q,bad,fit,con,made,A,names}=C;
   const ms=mk(P.ty,P.tm),cm=B.contractsIn(L,ms,mk(P.ty,P.tm+1),null,'direct'),pmD=new Date(P.ty,P.tm-2,1),pm=B.contractsIn(L,mk(P.ty,P.tm-1),ms),exp=active.reduce((s,d)=>s+(Number(d.expected)||0),0);
-  const since=B.addDays(P.today,-6),wkA=A.filter(x=>x.k>=since),zero=names.filter(n=>!wkA.some(x=>x.owner===n)).length,adv=advisory(C);
+  const WA=weekActs(C),wkA=WA.list,zero=WA.zero.length,adv=advisory(C);
   const val=(ready,n,text)=>!ready?['불러오는 중','mut']:n>0?[text,'']:['아직 없음','mut'];
   const tfm=C.DT?C.DT.wonIn(ms,mk(P.ty,P.tm+1),C.target):{count:0,amount:0},ptm=C.DW?C.DW.partnerIn(ms,mk(P.ty,P.tm+1),C.target):{count:0,amount:0},k1=val(L.ready,cm.net+ptm.amount+tfm.amount,won(cm.net+ptm.amount+tfm.amount)),k2=val(L.ready,C.perf,won(C.perf)),k3=val(true,exp,won(exp));
   const cards=[
@@ -112,7 +123,7 @@
    ['진행 중 파이프라인',k3[0],k3[1],'진행 '+active.length+'건','ev','active'],
    ['견적문의',q.length+'건','','적합 '+fit+' · '+B.closedText(bad,'n'),'ev','inquiries'],
    ['조치 필요',risk.length+'건',risk.length?'red':'','기한 지남 '+cnt('overdue')+' · 다음 할 일 없음 '+cnt('missing'),'go','control'],
-   ['주간 활동',wkA.length+'건',zero?'red':'','최근 7일 · '+names.length+'명 중 '+zero+'명 0건','ev','activity']];
+   ['주간 활동',wkA.length+'건',zero?'red':'','이번 주 · '+names.length+'명 중 '+zero+'명 0건','ev','activity']];
   const kpis='<div class="db-kpis">'+cards.map(c=>'<button type="button" class="db-kpi"'+(c[4]?' data-db="'+c[4]+'" data-v="'+attr(c[5])+'"':' disabled')+'><span>'+h(c[0])+'</span><div><b class="'+c[2]+'">'+h(c[1])+'</b><small>'+h(c[3])+'</small></div></button>').join('')+'</div>';
   /* '오늘 먼저 볼 것' 검은 띠는 뺐다(2026-10-04 대표) — 같은 숫자가 위 카드에 있고, 계약 임박은 파이프라인 탭에서 본다 */
   const secs=[['perf','성과','문의 → 계약 · 추이 · 브랜드'],['people','사람','담당자별 · 이번 주 기록'],['pipe','파이프라인','단계 · 계약 임박'],['act','활동','최근 기록']];
@@ -177,13 +188,65 @@
   const out=d=>{try{return R.outcomeOf(d.item);}catch(e){return 'open';}},wonN=deals.filter(d=>d.won).length,lostN=deals.filter(d=>['lost','badfit','nocontact'].includes(out(d))).length,expN=deals.filter(d=>String(d.item.code||'')==='expansion').length;
   const hot=N.filter(n=>n.hot),sum=l=>l.reduce((s,n)=>s+n.amount,0),top=N.slice(0,4),rest=N.slice(4);
   const card=n=>{const badge=n.dd===null?'기한 없음':n.dd<0?'D+'+(-n.dd):'D-'+n.dd,red=n.hot||n.late;return '<button type="button" class="db-near" data-db="open" data-v="deal:'+attr(R.dealKey(n.d))+'" style="border-left-color:'+(BRC[n.d.brand]||'#9ca3af')+'"><div><em class="'+(red?'hot':'')+'">'+badge+'</em><span>'+h(n.due)+'</span><i class="db-sp"></i><b>'+(n.amount>0?h(won(n.amount)):'금액 없음')+'</b></div><b>'+h(n.d.site||'현장명 미입력')+'</b><small>'+h(n.sub)+'</small></button>';};
+  /* 누가 어느 단계를 쥐고 있나(2026-10-05 영업 대시보드 v2 시안 보강): 담당 × 5단계 진행 건수 · 진할수록 많음 · 괄호 = 그중 조치 필요 */
+  const SH={consulting:'컨설팅',sent:'자료 발송',relationship:'관계관리',competition:'경쟁·입찰',construction:'계약·시공'};
+  const who=[...new Set(active.map(d=>d.owner||'미배정'))].map(o=>{const mine=active.filter(d=>(d.owner||'미배정')===o),cells=defs.map(df=>{const l=mine.filter(x=>PS().group(x.stage)===df.key);return {n:l.length,f:l.filter(x=>x.issues.length).length};});return {o,cells,t:mine.length};}).sort((a,b)=>(a.o==='미배정')-(b.o==='미배정')||b.t-a.t||a.o.localeCompare(b.o,'ko'));
+  const cmax=Math.max(1,...who.flatMap(r=>r.cells.map(c=>c.n)));let worst=null;who.forEach(r=>r.cells.forEach((c,i)=>{if(c.f&&(!worst||c.f>worst.c.f))worst={r,c,i};}));
+  const stT=defs.map((df,i)=>({l:SH[df.key]||df.label,f:who.reduce((s,r)=>s+r.cells[i].f,0)})).sort((a,b)=>b.f-a.f)[0];
+  const whoNote=worst?worst.r.o+' '+(SH[defs[worst.i].key]||defs[worst.i].label)+' '+worst.c.n+'건 중 '+worst.c.f+'건이 조치 필요'+(stT&&stT.f>worst.c.f?' · 조치 필요는 '+stT.l+' 단계가 가장 많음('+stT.f+'건)':''):'조치가 필요한 건이 없습니다';
+  const whoSec='<section class="db-card flush db-whos"><div class="db-ch pad"><b>누가 어느 단계를 쥐고 있나</b><span>진행 건수 · 진할수록 많음 · 괄호 = 그중 조치 필요</span></div>'
+   +(who.length?'<div class="db-who" role="table" aria-label="담당자별 단계 진행 건수"><span class="wh">담당</span>'+defs.map(df=>'<span class="wh r">'+h(SH[df.key]||df.label)+'</span>').join('')+'<span class="wh r">합계</span>'
+    +who.map(r=>'<span class="wn'+(r.o==='미배정'?' red':'')+'">'+h(r.o)+'</span>'+r.cells.map(c=>'<span class="wc" style="background:rgba(59,108,228,'+(0.06+Math.min(1,c.n/cmax)*0.34).toFixed(2)+')">'+c.n+(c.f?'<em> ('+c.f+')</em>':'')+'</span>').join('')+'<span class="wt">'+r.t+'</span>').join('')+'</div><p class="db-whonote">'+h(whoNote)+'</p>':'<p class="db-empty">진행 중인 영업건이 없습니다.</p>')+'</section>';
+  /* 단계에 평균 며칠 머무나: 세로선 = 운영 기준(stage_dwell_days) · 넘으면 빨강 */
+  const DWL=(R.CRMRules&&R.CRMRules.PHASE3&&R.CRMRules.PHASE3.stage_dwell_days)||{inq:2,cons:7,sent:14,rel:60,bid:30,con:14},DK={consulting:'cons',sent:'sent',relationship:'rel',competition:'bid',construction:'con'};
+  const HINT={inq:'배정 · 첫 연락이 늦는 구간',cons:'미팅 · 견적 준비가 늦는 구간',sent:'견적 후 후속이 늦는 구간',rel:'정기 연락이 끊기는 구간',bid:'결정 일정이 밀리는 구간',con:'계약 · 인계가 늦는 구간'};
+  const avgOf=l=>l.length?Math.round(l.reduce((s,v)=>s+v,0)/l.length):null,nowT=C.P.now.getTime();
+  const openQ=C.rows.inquiries.filter(x=>{const q=x.item;try{if(R.inqCtlConverted(q))return false;if(typeof R.isClosedInq==='function'&&R.isClosedInq(q))return false;}catch(e){}return true;}).map(x=>{const t=Date.parse(R.inquiryCreatedAt(x.item)||'');return Number.isFinite(t)?Math.max(0,Math.floor((nowT-t)/864e5)):null;}).filter(v=>v!==null);
+  const dw=[{k:'inq',l:'견적문의',d:avgOf(openQ),g:DWL.inq}].concat(defs.map(df=>({k:DK[df.key],l:SH[df.key]==='컨설팅'?'컨설팅 설계':(SH[df.key]||df.label),d:avgOf(active.filter(x=>PS().group(x.stage)===df.key).map(ageOf)),g:DWL[DK[df.key]]})));
+  const dmax=Math.max(60,...dw.map(x=>Math.max(x.d||0,x.g||0))),over=dw.filter(x=>x.d!==null&&x.d>x.g).sort((a,b)=>(b.d-b.g)-(a.d-a.g))[0];
+  const dwSec='<section class="db-card db-dwells"><div class="db-ch"><b>단계에 평균 며칠 머무나</b><span>세로선 = 기준</span></div>'+dw.map(x=>{const o2=x.d!==null&&x.d>x.g;return '<div class="db-dwell"><span>'+h(x.l)+'</span><i>'+(x.d===null?'':'<u style="width:'+Math.min(100,Math.round(x.d/dmax*100))+'%;background:'+(o2?'#d14a3f':'#3b6ce4')+'"></u>')+'<s style="left:'+Math.min(100,Math.round(x.g/dmax*100))+'%"></s></i><b class="'+(o2?'red':x.d===null?'mut':'')+'">'+(x.d===null?'건 없음':x.d+'일')+'</b></div>';}).join('')
+   +'<p class="db-dwnote">'+h(over?over.l+' 단계가 기준('+over.g+'일)보다 '+(over.d-over.g)+'일 길게 머묾 · '+HINT[over.k]:'모든 단계가 기준 안에 있습니다')+'</p></section>';
   return '<section class="db-card"><div class="db-ch"><b>진행 중 '+active.length+'건'+(exp>0?' · '+h(won(exp)):'')+'</b><span>단계 클릭 = 그 단계 목록 · 빨간 숫자 = 조치 필요</span></div><div class="db-flow">'+flow+'</div><div class="db-ended"><span>끝난 영업 <i>· 전체 기간 누적</i></span><span>수주 <b>'+wonN+'</b></span><span>실주 <b>'+lostN+'</b></span>'+(expN?'<span>확장관리로 이어짐 <b>'+expN+'</b></span>':'')+'<i class="db-sp"></i><span>조치 필요 합계 <b class="red">'+risk.length+'</b></span></div></section>'
+   +'<div class="db-pipe2">'+whoSec+dwSec+'</div>'
    +'<section class="db-card"><div class="db-ch"><b>계약 임박 · 다음 달 전망</b><span>경쟁 · 입찰 · 계약 검토 '+N.length+'건'+(sum(N)>0?' · '+h(won(sum(N))):'')+' · 기한 가까운 순</span></div>'+(N.length?'<div class="db-nears">'+top.map(card).join('')+'</div><p class="db-note">위 '+top.length+'건 '+(sum(top)>0?h(won(sum(top))):'금액 없음')+(rest.length?' · 나머지 '+rest.length+'건 '+(sum(rest)>0?h(won(sum(rest))):'금액 없음'):'')+' · 이번 주 기한 '+hot.length+'건'+(sum(hot)>0?' '+h(won(sum(hot))):'')+'</p>':'<p class="db-empty">경쟁 · 입찰 · 계약 검토 단계에 있는 건이 없습니다.</p>')+'</section>';
+ }
+ function actExtra(C){
+  const {B,P}=C,WA=weekActs(C),W=WA.W,names=C.names,all=WA.list,K4=['call','msg','visit','quote'],AC=['#3b6ce4','#9ab6f2','#1f9d55','#e0a43a'],AL=['통화','문자 · 카카오','방문','견적 · 자료'];
+  const kinds=all.map(x=>({x,k:actKind(x)})),n=k=>kinds.filter(y=>y.k===k).length,calls=n('call')+n('try');
+  /* 기록 없는 날: 담당 × 지난 영업일(월~금, 오늘까지) 중 기록이 없는 날 수 */
+  const days=W.slice(0,5).filter(k=>k<=P.today),slots=names.length*days.length,filled=WA.rows.reduce((s,r)=>s+days.filter(k=>r.wk.some(x=>x.k===k)).length,0),empty=slots-filled;
+  const kpi=[['통화',calls,'전화 시도 '+calls+' · 실제 연결 '+n('call'),''],['문자 · 카카오',n('msg'),'응대 기록 기준',''],['현장 방문',n('visit'),'1차 미팅 · 재방문',''],['견적 · 자료 발송',n('quote'),'견적 · 제안서',''],['기록 없는 날',empty+'일',names.length+'명 × '+days.length+'영업일 = '+slots+'일 중',empty?'red':'']];
+  const PP=people(C),lastOf=nm=>PP.find(p=>p.n===nm)||{lastDays:null,lastK:''};
+  const ppl=WA.rows.map(r=>({r,p:lastOf(r.n),seg:K4.map(k=>r.wk.filter(x=>{const kk=actKind(x);return k==='call'?(kk==='call'||kk==='try'):kk===k;}).length)})).sort((a,b)=>a.r.t-b.r.t||(b.p.lastDays===null?-1:b.p.lastDays)-(a.p.lastDays===null?-1:a.p.lastDays)||a.r.n.localeCompare(b.r.n,'ko'));
+  const pmax=Math.max(1,...ppl.map(x=>x.r.t));
+  /* 활동이 결과로 이어졌나 — 이번 주 기록만. 대상이 없으면 회색 '측정 대상 없음' */
+  const dealOf=key=>C.deals.find(d=>d.key===key),uniq=l=>[...new Set(l)];
+  const conKeys=uniq(kinds.filter(y=>y.k==='call'||y.k==='visit').map(y=>y.x.key)),conNext=conKeys.filter(k=>{const d=dealOf(k);try{const nx=d&&R.briefNext(d.item);return !!(nx&&nx.text&&(nx.due||nx.due_at));}catch(e){return false;}}).length;
+  const visAll=uniq(kinds.filter(y=>y.k==='visit').map(y=>y.x.key)),visKeys=visAll.filter(k=>{const d=dealOf(k);return !!d&&['consulting','sent'].includes(PS().group(d.stage));}),visQ=visKeys.filter(k=>{const d=dealOf(k),it=d&&d.item,cx=it&&(it.stage_contexts||(R.itemPatch(it,'deal')||{}).stage_contexts)||{},f=cx.consulting&&cx.consulting.fields||{};const vk=kinds.filter(y=>y.k==='visit'&&y.x.key===k).map(y=>y.x.k).sort()[0];return !!(f.quote_request||f.quote_due)||(!!it&&B.quoteIn(it,vk,B.addDays(vk,4)));}).length;
+  const sentD=C.deals.filter(d=>{try{return B.quoteIn(d.item,W[0],B.addDays(W[6],1));}catch(e){return false;}}),sentF=sentD.filter(d=>{const cx=d.item.stage_contexts||(R.itemPatch(d.item,'deal')||{}).stage_contexts||{},sd=B.K(cx.sent&&cx.sent.fields&&cx.sent.fields.sent_date||'')||W[0];return C.A.some(x=>x.key===d.key&&x.k>sd&&['call','try','msg','visit'].includes(actKind(x)));}).length;
+  const conv=[['전화 시도 → 실제 연결',calls,n('call'),calls?calls+'건 중 '+n('call')+'건'+(n('call')?'':' · 모두 부재'):'이번 주 통화 0건 · 측정 대상 없음'],['연결 → 다음 할 일 등록',conKeys.length,conNext,conKeys.length?'연결된 현장 '+conKeys.length+'곳 중 '+conNext+'곳':'이번 주 연결 0건 · 측정 대상 없음'],['방문 → 3일 안 견적 요청',visKeys.length,visQ,visKeys.length?'방문한 현장 '+visKeys.length+'곳 중 '+visQ+'곳':(visAll.length?'견적 전 단계 방문 0건':'이번 주 방문 0건')+' · 측정 대상 없음'],['견적 발송 → 7일 안 후속',sentD.length,sentF,sentD.length?'이번 주 발송 '+sentD.length+'건 중 '+sentF+'건 후속':'이번 주 발송 0건 · 측정 대상 없음']];
+  const S=st(),asked=S.actAsk===W[0],can=canAssign(),zn=WA.zero.length;
+  const band='<section class="db-actband'+(zn?' warn':'')+'"><div><b>이번 주 영업 기록 '+WA.total+'건 — '+names.length+'명 중 '+(zn?zn+'명이 0건':'모두 기록함')+'</b><span>'+(zn?'활동이 없었던 게 아니라 CRM에 안 남았을 가능성이 큽니다. 기록이 없으면 아래 전환율도 잴 수 없습니다.':md(W[0])+'(월) – '+md(W[6])+'(일) · 맨 위 주간 활동 카드 · 사람 탭과 같은 기록')+'</span></div>'+(zn&&can?'<button type="button" data-db="act-ask"'+(asked?' disabled':'')+'>'+(asked?'요청 보냄 ✓':zn+'명에게 기록 요청')+'</button>':'')+'</section>';
+  const cards='<div class="db-aks">'+kpi.map(k=>'<div class="db-ak"><span>'+k[0]+'</span><b class="'+k[3]+'">'+k[1]+'</b><small>'+h(k[2])+'</small></div>').join('')+'</div>';
+  const pplSec='<section class="db-card flush db-aps"><div class="db-ch pad"><b>담당자별 이번 주 활동</b><span>'+md(W[0])+' – '+md(W[6])+' · 기록 없는 사람 먼저 · 마지막 기록 오래된 순</span></div>'
+   +ppl.map(x=>'<div class="db-ap"><b>'+h(x.r.n)+'</b><i>'+x.seg.map((v,i)=>v?'<u style="width:'+(v/pmax*100).toFixed(1)+'%;background:'+AC[i]+'"></u>':'').join('')+'</i><b class="t'+(x.r.t?'':' red')+'">'+x.r.t+'</b><span>마지막 기록 '+(x.p.lastDays===null?'없음':agoText(x.p)+' ('+md(x.p.lastK)+')')+'</span></div>').join('')
+   +'<div class="db-apleg">'+AL.map((l,i)=>'<span><i style="background:'+AC[i]+'"></i>'+l+'</span>').join('')+'</div></section>';
+  const convSec='<section class="db-card db-convs"><div class="db-ch"><b>활동이 결과로 이어졌나</b></div>'+conv.map(c=>{const none=!c[1],p=none?0:Math.round(c[2]/c[1]*100),col=none?'#c9cdd5':p<50?'#d14a3f':'#3b6ce4';return '<div class="db-conv"><div><span>'+c[0]+'</span><b style="color:'+(none?'#9ca3af':p<50?'#b42318':'#15171c')+'">'+(none?'—':p+'%')+'</b></div><i><u style="width:'+p+'%;background:'+col+'"></u></i><small>'+h(c[3])+'</small></div>';}).join('')+'<p class="db-dwnote">기록이 쌓이면 이 칸이 채워집니다 · 회색 = 이번 주 측정 대상 없음</p></section>';
+  return band+cards+'<div class="db-pipe2">'+pplSec+convSec+'</div>';
+ }
+ /* [n명에게 기록 요청]: 그 사람들의 오늘 업무 '관리자 한마디'에 한 줄(관리팀 KPI 요청과 같은 저장 길 KpiB.requestLine) */
+ function askRecords(){
+  if(!canAssign())return;const C=core(),WA=weekActs(C),S=st();if(!WA.zero.length||S.actAsk===WA.W[0])return;
+  const line='영업 기록 — 이번 주('+md(WA.W[0])+' – '+md(WA.W[6])+') CRM 기록 0건 · 통화 · 방문 · 견적 내용을 남겨 주세요';let sent=0;
+  WA.zero.forEach(n=>{try{if(R.KpiB&&R.KpiB.requestLine&&R.KpiB.requestLine(n,line))sent++;}catch(e){}});
+  if(sent){S.actAsk=WA.W[0];toast(sent+'명의 오늘 업무에 기록 요청을 남겼습니다');}
+  else{const text='[영업 기록 요청] '+WA.zero.join(' · ')+' — '+line;const done=()=>toast('요청 문구를 복사했습니다 — 잔디에 붙여 넣어 보내세요');try{navigator.clipboard.writeText(text).then(done,done);}catch(e){done();}}
+  render();
  }
  function secAct(C){
   const A=C.A.slice(0,40),G=[];A.forEach(x=>{let g=G.find(z=>z.k===x.k);if(!g){g={k:x.k,items:[]};G.push(g);}if(g.items.length<5)g.items.push(x);});
   const dl=k=>{const d=new Date(k+'T00:00:00');return d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate()+' ('+'일월화수목금토'[d.getDay()]+')';};
-  return '<section class="db-card"><div class="db-ch"><b>최근 활동</b><span>날짜별 · 행 클릭 = 현장 상세</span><i class="db-sp"></i><button type="button" class="db-more" data-db="ev" data-v="activity-all">전체 보기 →</button></div>'
+  return actExtra(C)+'<section class="db-card"><div class="db-ch"><b>최근 활동</b><span>날짜별 · 행 클릭 = 현장 상세</span><i class="db-sp"></i><button type="button" class="db-more" data-db="ev" data-v="activity-all">전체 보기 →</button></div>'
    +(G.length?'<div class="db-feed">'+G.slice(0,8).map(g=>'<div class="db-fg"><span>'+dl(g.k)+'</span><div>'+g.items.map(f=>'<button type="button" data-db="open" data-v="'+attr(f.key)+'"><em>'+h(f.type.slice(0,6))+'</em><b class="'+(f.owner==='미배정'?'red':'')+'">'+h(f.owner||'미배정')+'</b><span>'+h(siteShort(f.site)+(f.text?' · '+f.text:''))+'</span><b class="amt">'+(f.amt>0?h(won(f.amt)):'')+'</b></button>').join('')+'</div></div>').join('')+'</div>':'<p class="db-empty">영업 기록이 아직 없습니다.</p>')+'</section>';
  }
 
@@ -369,6 +432,7 @@
   if(a==='assign')return assign(null);
   if(a==='assign-row')return assign(v);
   if(a==='notify')return notify();
+  if(a==='act-ask')return askRecords();
   if(a==='advisory'){try{R.ContractSalesUI.advisorySync();}catch(err){}return;}
   const C=core(),P=C.P;
   if(a==='cs-month')return X.openEvidence(P.y+'년 '+v+'월 계약 근거','계약 체결 · 변경 · 취소 원장 기록',X.contractEvidence({month:Number(v)}));
@@ -378,7 +442,7 @@
    if(v==='contract')return X.openEvidence(P.label+' 계약 근거','계약 체결 · 변경 · 취소 원장 기록',X.contractEvidence({}));
    if(v==='active')return X.openEvidence('진행 파이프라인 · '+C.active.length+'건','현재 진행 중',C.active.map(x=>Object.assign(X.evRow(x),{reason:x.reason||'진행 중'})));
    if(v==='inquiries'){const list=evRows(C.rows.inquiries.filter(x=>C.inR(C.K(R.inquiryCreatedAt(x.item)),P.a,P.b)));return X.openEvidence('견적문의 · '+list.length+'건',P.label+' 접수 기준',list);}
-   if(v==='activity'||v==='activity-all'){const since=C.B.addDays(P.today,-6),list=(v==='activity'?C.A.filter(x=>x.k>=since):C.A.slice(0,60)).map(x=>({site:x.site,owner:x.owner,stageLabel:x.type,reason:x.k+(x.text?' · '+x.text:''),amt:x.amt,key:x.key}));return X.openEvidence(v==='activity'?'최근 7일 영업 기록':'최근 영업 기록',list.length+'건',list);}
+   if(v==='activity'||v==='activity-all'){const list=(v==='activity'?weekActs(C).list:C.A.slice(0,60)).map(x=>({site:x.site,owner:x.owner,stageLabel:x.type,reason:x.k+(x.text?' · '+x.text:''),amt:x.amt,key:x.key}));return X.openEvidence(v==='activity'?'최근 7일 영업 기록':'최근 영업 기록',list.length+'건',list);}
   }
  }
  function onChange(e){const el=e.target;if(el.dataset&&el.dataset.db==='year'){const f=F();f.year=el.value;f.month=0;R.paint();}}
@@ -393,5 +457,5 @@
   const again=()=>{if(enabled()&&PAGES.includes(R.G.page)&&R.B){try{render();}catch(e){}}};
   root.addEventListener('contract-sales:changed',again);document.addEventListener('contract-sales:changed',again);
  }
- root.DashB={enabled,render,core,people,ctlModel,period,nearList,channelOf,lib:{brandRows,matrixRows,inquiryFate,pendingStats,eok,won,mk,BRC,MINREC,LOWMADE,MINCLOSED}};
+ root.DashB={enabled,render,core,people,ctlModel,period,nearList,channelOf,weekActs,actKind,lib:{brandRows,matrixRows,inquiryFate,pendingStats,eok,won,mk,BRC,MINREC,LOWMADE,MINCLOSED}};
 })(window);
