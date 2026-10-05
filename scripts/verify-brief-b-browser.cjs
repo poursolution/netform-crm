@@ -107,7 +107,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(J,/^\[주간 영업 브리핑\][\s\S]*1\. 이번 주 성과\s*견적문의 3건 → 적합 1 → 견적 발송 1 → 계약 1건 · 2억[\s\S]*영업 메이드율 50\.0%[\s\S]*종결 2건 · Bad Fit 1 \(메이드율 제외\) · 파이프라인 실주 1건 \(가격 열세 1\)[\s\S]*\[전주 문제 → 결과\]\s*· 다음 행동 미등록 2건 → 1건 등록 \/ 1건 미완료[\s\S]*계약실적 1건 · 2억[\s\S]*다음 주 반드시 끝낼 것\s*· 계약 예상 1건 진행 확인 · 3억 — 황윤선 · 수요일/);
   assert.equal(/\p{Extended_Pictographic}/u.test((await v.innerText()).replace(/[✓▲▼]/g,'')),false,'이모지 없음');
   /* 잔디: 꺼져 있으면 켜기 → 아직 발송 전 → [다시 보내기] = 서버 함수로 실제 발송(약속 포함) → 회의 후 다시 보냄 */
-  assert.match(await v.locator('.bb-side dl').innerText(),/자동 발송\s*매주 월요일 08:30\s*상태\s*잔디 발송 꺼짐/);
+  assert.match(await v.locator('.bb-side dl').innerText(),/자동 발송\s*꺼짐 \(화면에서만 확인\)\s*상태\s*잔디 발송 꺼짐/);
   await v.locator('.bb-side [data-bb="jandion"]').click();await page.waitForTimeout(300);
   assert.match(await page.locator('#brief-b .bb-side dl').innerText(),/상태\s*아직 발송 전 — 월요일 08:30 이후 자동 발송/);assert.equal(await page.locator('#brief-b .bb-side [data-bb="jandion"]').count(),0);
   await page.locator('#brief-b .bb-side .send').click();await page.waitForTimeout(600);

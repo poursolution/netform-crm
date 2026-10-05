@@ -43,6 +43,10 @@
   if(nb)return {name:nb.rep,label:R.repDisplay?R.repDisplay(nb.rep):nb.rep,why:region+' 진행 현장 '+near[rep(nb.rep)]+'곳'+(nb.score<=min?' · 업무 여유':'')+tail,assignable:true};
   return {name:stats[0].rep,label:R.repDisplay?R.repDisplay(stats[0].rep):stats[0].rep,why:'업무량 가장 적음'+(region?'':' · 지역 확인 필요')+tail,assignable:true};
  }
+ /* 담당 없는 영업건: 독촉할 사람이 없으므로 담당 배정을 권한다 — 추천 담당은 문의와 같은 규칙(같은 현장 기존 담당 → 근처 진행 현장 → 업무량). AI 가 아니라 규칙이다 */
+ const recLine=it=>{try{const r=recFor(it);return r&&r.label?'추천 '+r.label+(r.why?' · '+r.why:''):'';}catch(e){return '';}};
+ const noOwner=i=>i.x.type==='deal'&&(!i.x.owner||i.x.owner==='미배정');
+ const actName=i=>i.act==='배정'?'담당 배정':i.act;
  /* ── 표 줄 ── */
  const brandCell=i=>'<span class="ta-bd" style="color:'+i.bc+'">'+h(i.brand||'브랜드 미입력')+'</span>';
  const tag=(t,k)=>'<em class="'+(k||'')+'">'+h(t)+'</em>';
@@ -63,14 +67,14 @@
  function stallRow(i){
   const k=attr(i.key),own=i.x.owner||'미배정',last=String(i.support?'[지원 요청] '+i.support.note:i.i.recent||(root.ContactState?root.ContactState.NONE:'CRM 연락 기록 없음')).replace(/\s+/g,' ').slice(0,36),w=WRC(i);
   return '<div class="ta-row" role="button" tabindex="0" data-t3="open" data-key="'+k+'">'+brandCell(i)+'<span class="ta-st"><b title="'+attr(i.i.site)+'">'+h(i.i.site)+'</b><small>'+h([i.sName,i.amt?money(i.amt):'금액 미정'].filter(Boolean).join(' · '))+'</small></span>'+ai(last,tag(i.missTxt)+(i.x.next?'':tag('다음 할 일 없음','y')))
-   +'<span class="ta-rc">'+(w?w.rc:'<b>'+h(own+' · '+i.act)+'</b><small>'+h(i.loss||i.done||'')+'</small>')+'</span>'+dcell(i,false)
+   +'<span class="ta-rc">'+(w?w.rc:'<b>'+h(own+' · '+actName(i))+'</b><small>'+h((noOwner(i)&&recLine(i.x.item))||i.loss||i.done||'')+'</small>')+'</span>'+dcell(i,false)
    +'<span class="ta-bt">'+(w?w.btn:'<button type="button" class="go" data-t3="act" data-act="'+attr(i.act)+'" data-key="'+k+'"'+(i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>추천대로 '+h(i.act)+'</button>')+(own!=='미배정'?'<button type="button" data-t3="owner" data-key="'+k+'" data-v="'+attr(own)+'">담당 화면</button>':'<button type="button" data-t3="detail" data-key="'+k+'">상세 보기</button>')+'</span></div>';
  }
  /* 오늘 안 넘기면 놓침(첫 연락 · 오늘 마감 · 오늘 약속): ②와 같은 표 줄 — 지난 기록 / 담당 · 할 일 + 놓치면 생기는 일 / 경과(빨강) / [추천대로 …] [담당 화면] */
  function urgentRow(i){
   const k=attr(i.key),own=i.x.owner&&i.x.owner!=='미배정'?i.x.owner:'',last=String(i.support?'[지원 요청] '+i.support.note:i.i.recent||(root.ContactState?root.ContactState.NONE:'CRM 연락 기록 없음')).replace(/\s+/g,' ').slice(0,36),who=[i.i.name,i.i.role].filter(Boolean).join(' '),w=WRC(i);
   return '<div class="ta-row" role="button" tabindex="0" data-t3="open" data-key="'+k+'">'+brandCell(i)+'<span class="ta-st"><b title="'+attr(i.i.site)+'">'+h(i.i.site)+'</b><small>'+h([i.sName,who||'',i.amt?money(i.amt):''].filter(Boolean).join(' · '))+'</small></span>'+ai(last,tag(i.missTxt,'r')+(i.i.want&&!/기록 없음/.test(i.i.want)?tag(i.i.want):''))
-   +'<span class="ta-rc">'+(w?w.rc:'<b>'+h((own||'미배정')+' · '+i.act)+'</b><small>'+h(i.loss?'놓치면 '+i.loss:i.done||'')+'</small>')+'</span>'+dcell(i,true,i.rk==='contract')
+   +'<span class="ta-rc">'+(w?w.rc:'<b>'+h((own||'미배정')+' · '+actName(i))+'</b><small>'+h((noOwner(i)&&recLine(i.x.item))||(i.loss?'놓치면 '+i.loss:i.done||''))+'</small>')+'</span>'+dcell(i,true,i.rk==='contract')
    +'<span class="ta-bt">'+(w?w.btn:'<button type="button" class="go" data-t3="act" data-act="'+attr(i.act)+'" data-key="'+k+'"'+(i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>추천대로 '+h(i.act)+'</button>')+(own?'<button type="button" data-t3="owner" data-key="'+k+'" data-v="'+attr(own)+'">담당 화면</button>':'<button type="button" data-t3="detail" data-key="'+k+'">상세 보기</button>')+'</span></div>';
  }
  function contractRow(i){

@@ -656,6 +656,8 @@
   }
   if(act==='stagefields')return !!(show('.da-stage-summary')||show('.dw-right'));
   if(act==='stage'){if(!S.mvOpen){closeIn('center');S.mvOpen=true;syncMove(v);}show('.dv3-move');return true;}
+  /* 담당 정하기(오늘 업무의 [배정]): 가운데 칸의 담당 변경 */
+  if(act==='owner'){const p=ensureCenter(v);if(p&&p.dataset.by==='owner'&&p.firstElementChild&&p.firstElementChild.children.length)return true;if(!centerToggle('owner'))root.DetailActions.open('owner');return true;}
   return false;
  }
  function cleanup(v){v.classList.remove('dv3');v.querySelectorAll('.dv3-left').forEach(n=>n.remove());v.querySelectorAll('.dv3-old').forEach(n=>n.classList.remove('dv3-old'));v.querySelectorAll('.dv3-chg,.dv3-hint,.dv3-title,.dv3-reco,.dv3-form,.dv3-nextonly,.dv3-move,.dv3-cpanel,.dv3-subrow,.dv3-kind').forEach(n=>n.remove());{const bc=v.querySelector('.ddv-chips .idv-brand');if(bc){bc.style.background='';bc.style.color='';delete bc.dataset.c;}}v.querySelectorAll('.dv3-slot').forEach(n=>{if(!n.children.length)n.remove();});}

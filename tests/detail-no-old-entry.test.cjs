@@ -14,7 +14,7 @@ test('목록 버튼([미팅 잡기] · [확인 연락] · [견적 요청] · [�
  const v3=read('deal-detail-v3.js');
  assert.match(v3,/function openFrom\(act\)/);assert.match(v3,/NXT,openFrom\}/);
  /* next · activity 는 예전 창(DetailActions · DealPanelsV2)을 부르지 않고 '지금 할 일' 카드를 펼친다 */
- const body=v3.slice(v3.indexOf('function openFrom(act)'),v3.indexOf('function cleanup(v)'));
+ const body=v3.slice(v3.indexOf('function openFrom(act)'),v3.indexOf("if(act==='stagefields')"));/* next · activity 부분 */
  assert.doesNotMatch(body,/DetailActions\.open|DealPanelsV2/);assert.match(body,/S\.rec=\{ch:'전화'/);
 });
 test("'지금 할 일' 카드의 [직접 정하기]는 카드 안에서 날짜를 고른다 — 예전 '다음 할 일 설정' 창을 열지 않는다",()=>{
