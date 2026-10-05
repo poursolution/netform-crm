@@ -21,3 +21,7 @@ test("'지금 할 일' 카드의 [직접 정하기]는 카드 안에서 날짜�
  const v3=read('deal-detail-v3.js'),i=v3.indexOf("if(a==='nextmore')"),line=v3.slice(i,v3.indexOf('\n',i));
  assert.ok(i>0);assert.doesNotMatch(line,/DetailActions\.open|DealPanelsV2/);assert.match(line,/nextDate=true/);
 });
+test('연락 결과 · 다음 할 일 바로가기(dccGoActivity · briefNextAction)는 새 상세에서 지금 할 일 카드로 간다',()=>{
+ const js=read('detail-actions.js'),i=js.indexOf('function focus(id)'),line=js.slice(i,js.indexOf('\n',i));
+ assert.ok(i>0);assert.ok(line.indexOf('DealDetailV3.openFrom(key)')>0&&line.indexOf('DealDetailV3.openFrom(key)')<line.indexOf('open(key);return true'),'새 상세를 먼저');
+});

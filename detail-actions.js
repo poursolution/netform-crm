@@ -275,7 +275,7 @@ function dock(body){
  right.prepend(box);
 }
 function unfoldDock(){const more=$('detailDock')?.querySelector('.da-dock-more');if(!more)return false;if(more.hidden){more.hidden=false;const t=$('detailDock').querySelector('.da-dock-toggle');if(t)t.textContent='간단히 고르기로 ▴';}return true}
-function focus(id){if(!$('detailView')?.classList.contains('da-ready'))return false;const map={activityFormCard:'activity',nextActionCard:'next','dv-amt':'amount','dw-amount':'amount','dv-assignee':'owner',execFiles:'materials','dw-history':'history'};const key=map[id];if(!key)return false;if(state?.key!==key)open(key);return true;}
+function focus(id){if(!$('detailView')?.classList.contains('da-ready'))return false;const map={activityFormCard:'activity',nextActionCard:'next','dv-amt':'amount','dw-amount':'amount','dv-assignee':'owner',execFiles:'materials','dw-history':'history'};const key=map[id];if(!key)return false;/* 새 상세(v3): 연락 결과 · 다음 할 일 바로가기(dccGoActivity · briefNextAction · dccGoNext — 오늘 업무 · 관계관리 · 목록이 쓴다)는 '지금 할 일' 카드로. 예전 입력 창을 띄우지 않는다(2026-10-05 대표) */if((key==='activity'||key==='next')&&root.DealDetailV3&&typeof root.DealDetailV3.openFrom==='function'&&root.DealDetailV3.openFrom(key))return true;if(state?.key!==key)open(key);return true;}
 function decorate(){
  const view=$('detailView'),body=$('dv-body');if(!view?.classList.contains('dw-wide')){close(false);view?.querySelector('.da-toolbar')?.remove();view?.classList.remove('da-ready');return;}
  // A server-confirmed render replaces the form nodes; retire the old presentation.

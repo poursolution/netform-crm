@@ -146,6 +146,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   if(process.env.SHOT)await page.screenshot({path:process.env.SHOT});
   /* [견적 요청] → 이 단계 필수 정보 · [단계 판단] 류 → 단계 바꾸기 띠. 둘 다 예전 입력 창을 띄우지 않는다 */
   assert.deepEqual(await page.evaluate(()=>[DealDetailV3.openFrom('stagefields'),document.querySelectorAll('#detailAction').length,DealDetailV3.openFrom('stage'),!!document.querySelector('#detailView .dv3-move'),DealDetailV3.openFrom('support')]),[true,0,true,true,false]);
+  /* 오늘 업무 · 관계관리 · 다른 목록이 쓰는 바로가기(briefNextAction · dccGoNext · dccGoActivity)도 같은 카드로 간다 — 예전 창 없음 */
+  const fold=async()=>{await page.evaluate(()=>{try{DetailActions.close();}catch(e){}const v=document.getElementById('detailView'),m=v.querySelector('[data-dv3="mv"]');if(v.querySelector('.dv3-move #stage-transition-form')&&m)m.click();});await page.locator('#detailView .nc-call.dv3-fold').click();await page.waitForTimeout(150);assert.equal(await page.locator('#detailView .dv3-form').count(),0);};
+  for(const go of ['briefNextAction','dccGoNext','dccGoActivity']){await fold();await page.evaluate(go=>window[go](),go);await page.waitForTimeout(300);
+   assert.deepEqual(await page.evaluate(()=>[document.querySelectorAll('#detailView.dv3 .dv3-form').length,document.querySelectorAll('#detailAction,.dp-next').length]),[1,0],go+' = 지금 할 일 카드');}
+  /* 창을 열자마자 부르는 경우(오늘 업무: 열기 + 바로가기)도 같다 */
+  await fold();await page.evaluate(()=>{const d=CUR_DETAIL.item;G._detailPopup=true;drwDeal(JSON.stringify(d));dccGoActivity();});await page.waitForTimeout(400);
+  assert.deepEqual(await page.evaluate(()=>[document.querySelectorAll('#detailView.dv3 .dv3-form').length,document.querySelectorAll('#detailAction,.dp-next').length]),[1,0],'열자마자 바로가기 = 지금 할 일 카드');
   await page.evaluate(()=>{try{closeDetail();}catch(e){}});await page.waitForTimeout(200);
   /* 수주 · 실주는 그대로 · 끄면 이전 화면 */
   for(const k of ['won','lost']){await page.evaluate(k=>PipelineWorkspace.open(k),k);await page.waitForTimeout(300);assert.equal(await page.locator('#pipeline-stage-v3').count(),0,k+': v3 아님');assert.equal(await page.locator('#pipeline-stage-b').count(),1,k+': 기존 화면 그대로');}
