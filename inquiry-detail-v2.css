@@ -30,7 +30,8 @@
 .idv-info{gap:0}.idv-info>div{grid-template-columns:84px minmax(0,1fr);gap:10px;align-items:center;padding:6px 0;font-size:13.5px}
 .idv-info dt{font-size:12.5px;font-weight:500;color:#6b7280}.idv-info dd{font-weight:500;color:#15171c}.idv-info dd.warn{color:#9ca3af;font-weight:500}
 .idv-info .idv-edit{border:0;border-bottom:1px dashed #f0b860;background:none;color:#d97706;font:inherit;font-size:13.5px;font-weight:700;padding:0;cursor:pointer;min-height:0;box-shadow:none;border-radius:0}
-.idv-missing{background:#fff8ec;color:#8a5a00;border-radius:10px;padding:9px 11px;font-size:12px;line-height:1.5}
+/* 빠진 수는 제목 옆 하나로만(파이프라인 '이 단계 필수 정보 · 미입력 n'과 같은 표시) — 칩 · 보완 필요 상자는 쓰지 않는다 */
+.idv-label.idv-fh .idv-miss{font-size:12px;font-weight:700;color:#d97706}
 .idv-c2{background:#fcfcfd;display:flex;flex-direction:column;min-height:0;min-width:0}
 .idv-chead{display:flex;align-items:center;gap:8px;padding:14px 18px 10px;white-space:nowrap;flex:none}
 .idv-chead b{font-size:14px;font-weight:700}.idv-chead span{font-size:12.5px;color:#6b7280}
@@ -176,11 +177,6 @@
 .idv-ctabs .idv-toggle{margin-left:8px;color:#9ca3af}
 .idv-ctabs [role=tab]{font-weight:700;color:#374151;padding:6px 12px}
 .idv-sug.off{display:none}
-.idv-need{display:flex;flex-wrap:wrap;gap:5px}
-.idv-needchip{border:1px solid #e3e6ec;background:#fff;color:#6b7280;font:inherit;font-size:11.5px;border-radius:999px;padding:3px 9px;cursor:default}
-.idv-needchip.no{background:#fff8e6;border-color:#f5dfa8;color:#a35c00;font-weight:600}.idv-needchip.no[data-idv]{cursor:pointer}
-.idv-needin{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:#6b7280}.idv-needin input{width:100%;box-sizing:border-box}
 .idv-nowbox small+small{margin-top:4px}
-.idv-needn{margin-left:6px;font-size:11px;font-weight:400;color:#9ca3af}
 /* 경남지사 세부 창(예전 배치 .idv 만 쓰는 창)도 파이프라인 영업건 상세 창과 같은 크기 · 칸 폭(2026-10-05 대표 "경남지사 창도 파이프라인 창처럼 동일하게") */
 @media(min-width:1001px){#inq-inbox-dialog.idv:not(.idv3){padding:16px!important}#inq-inbox-dialog.idv:not(.idv3) .inq-dialog{width:min(1640px,calc(100vw - 32px))!important;height:calc(100vh - 32px)!important;max-height:calc(100vh - 32px)!important}#inq-inbox-dialog.idv:not(.idv3) .idv-body{grid-template-columns:minmax(260px,340px) minmax(380px,1fr) minmax(280px,380px)}}
