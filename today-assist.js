@@ -96,18 +96,18 @@
  }
  /* ── 동작 ── */
  const inqOf=key=>{try{return R.inqCtlFind(String(key).replace(/^inq:/,''),false);}catch(e){return null;}};
- function assignOne(key){
+ async function assignOne(key){
   const q=inqOf(key);if(!q||R.inquiryAssigned(q))return null;const r=recFor(q);if(!r||!r.assignable)return null;
-  R.inqCtlRecordAssignment(q,r.name,'오늘 업무 · 추천대로 배정 — '+r.why);
+  await R.inqCtlRecordAssignment(q,r.name,'오늘 업무 · 추천대로 배정 — '+r.why);
   return rep(R.inquiryRoutedOwner(q))===rep(r.name)?r:null;
  }
- function onClick(e){
+ async function onClick(e){
   const b=e.target.closest('[data-ta]');if(!b||b.disabled||!b.closest('#pg-today'))return;e.preventDefault();e.stopPropagation();const a=b.dataset.ta,S=st();
-  if(a==='assign'){const q=inqOf(b.dataset.key),site=q?String(q.site||'문의'):'문의';let r=null;try{r=assignOne(b.dataset.key);}catch(err){toast('배정을 저장하지 못했습니다: '+String(err&&err.message||err),'warn');return;}
+  if(a==='assign'){if(S.busy)return;const q=inqOf(b.dataset.key),site=q?String(q.site||'문의'):'문의';let r=null;try{S.busy=true;b.disabled=true;r=await assignOne(b.dataset.key);}catch(err){toast('배정을 저장하지 못했습니다: '+String(err&&err.message||err),'warn');return;}finally{S.busy=false;b.disabled=false;}
    if(!r){toast('배정하지 못했습니다 — [다른 사람]에서 직접 골라 주세요','warn');return;}try{R.saveLocal&&R.saveLocal();}catch(err){}S.confirm=false;R.paint();toast(site+' → '+(r.label||r.name)+' 배정');return;}
-  if(a==='assign-all'){if(!S.confirm){S.confirm=true;R.paint();toast('추천대로 한 번에 배정합니다 — 한 번 더 누르면 저장됩니다');return;}
+  if(a==='assign-all'){if(S.busy)return;if(!S.confirm){S.confirm=true;R.paint();toast('추천대로 한 번에 배정합니다 — 한 번 더 누르면 저장됩니다');return;}
    S.busy=true;let ok=0,fail=0;const keys=[...document.querySelectorAll('#pg-today .ta-group[data-kind="assign"]')].length?(R.TodayV3&&R.TodayV3.current?R.TodayV3.current().groups.filter(g=>g.kind==='assign').flatMap(g=>g.items.map(i=>i.key)):[]):[];
-   keys.forEach(k=>{try{assignOne(k)?ok++:fail++;}catch(err){fail++;}});try{R.saveLocal&&R.saveLocal();}catch(err){}S.busy=false;S.confirm=false;R.paint();toast(ok+'건 배정'+(fail?' · '+fail+'건은 추천 담당이 없어 그대로 둠':''),fail?'warn':undefined);return;}
+   for(const k of keys){try{(await assignOne(k))?ok++:fail++;}catch(err){fail+=keys.length-ok-fail;break;}}try{R.saveLocal&&R.saveLocal();}catch(err){}S.busy=false;S.confirm=false;R.paint();toast(ok+'건 배정'+(fail?' · '+fail+'건은 미완료 · 담당과 저장 결과 확인 필요':''),fail?'warn':undefined);return;}
   if(a==='askfill'){const V=R.TodayV3&&R.TodayV3.current?R.TodayV3.current():null,i=V?V.groups.flatMap(g=>g.items).find(x=>x.key===b.dataset.key):null;if(!i)return;const own=i.x.owner||'담당자';
    const text=own+'님, '+String(i.i.site||'').replace(/^\s*\[[^\]]*\]\s*/,'')+' 계약 정보('+i.missTxt+')가 비어 있어 수주실적에 안 잡힙니다. 오늘 안에 계약일 · 계약금액 입력 부탁드립니다.';
    const done=()=>toast('입력 요청 문구를 복사했습니다 — 잔디 · 문자로 보내 주세요');try{const p=navigator.clipboard&&navigator.clipboard.writeText(text);if(p&&p.then)p.then(done).catch(done);else done();}catch(err){done();}return;}

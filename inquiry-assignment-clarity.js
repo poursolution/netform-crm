@@ -149,19 +149,76 @@
  var originalOperationalInquiries=root.operationalInquiries||function(list){return list||[]};
  root.operationalInquiries=function(list){return root.inquiryCanonicalRows(originalOperationalInquiries(list))};
 
- /* 저장 직후에는 서버 재조회보다 화면 갱신이 먼저 일어난다. 그 짧은 구간에만
-    새 담당자를 정본보다 우선해 배정·재배정 결과를 즉시 보여준다. */
- var originalRecordAssignment=root.inqCtlRecordAssignment;
- if(typeof originalRecordAssignment==='function')root.inqCtlRecordAssignment=function(q,to,reason,intent){
-  var requestId=originalRecordAssignment(q,to,reason,intent),current=directOwnerIdentity(q),expected=normalizedOwnerName(to);
-  if(current.assigned&&(!expected||current.name===expected||String(current.id)===String(to)))q._assignmentOptimistic=true;
-  if(typeof root.setTimeout==='function')root.setTimeout(function(){
-   var modal=objectOf(root.INQ_CTL_MODAL),key=typeof root.inqKey==='function'?root.inqKey(q):q.id;
-   if((modal.keys||[]).map(String).indexOf(String(key))>=0&&typeof root.closeInquiryControlModal==='function')root.closeInquiryControlModal();
-   if(root.G&&root.G.page==='today'&&typeof root.paintTodayHome==='function')root.paintTodayHome();
-  },0);
+ /* Assignment changes are confirmed commands, never local optimistic records. */
+ var assignmentJobs=new Map(),assignmentReceipts=new Map();
+ function assignmentError(message){return new Error(message)}
+ function assignmentIdentity(){var p=root.Phase1&&root.Phase1.profile;return p&&String(p.auth_uid||p.user_id||'')}
+ function checkAssignmentIdentity(identity){if(!identity||assignmentIdentity()!==identity)throw assignmentError('로그인 사용자가 변경되었습니다. 다시 확인해 주세요.')}
+ function assignmentRow(key){return root.Phase1.queue.list().find(function(row){return row.request_id===key})}
+ async function confirmedAssignment(q,to,reason,intent){
+  var id=String(root.inqKey(q)),identity=assignmentIdentity(),receiptKey=identity+':'+id;
+  checkAssignmentIdentity(identity);
+  if(root.isTechnicalInquiry(q))throw assignmentError('기술자문 기존 문의는 담당자 배정 대상이 아닙니다.');
+  var receipt=assignmentReceipts.get(receiptKey),requestId;
+  if(receipt){
+   if(receipt.to!==to||receipt.intent!==intent)throw assignmentError('이전 배정의 저장 결과를 먼저 확인해 주세요.');
+   requestId=receipt.requestId;
+  }else{
+   var pending=root.Phase1.queue.list().find(function(row){return row.operation==='inquiry_assign'&&String(row.object_id)===id&&!/^response_/.test(row.payload&&row.payload.intent||'')&&['pending','sending','uncertain'].includes(row.status)});
+   if(pending){
+    var target=pending.payload.to_name||(['branch_handoff','branch_owner_pool'].includes(pending.payload.intent)?'경남지사':'');
+    if(target!==to||(pending.payload.intent||'direct_assign')!==(intent||'direct_assign'))throw assignmentError('이 문의의 이전 배정 요청을 확인 중입니다. 동기화 결과를 먼저 확인해 주세요.');
+    requestId=pending.request_id;
+   }else requestId=root.pushWrite('inquiry_assign',{inquiry_id:id,to:to,reason:reason,intent:intent||'direct_assign'});
+   assignmentReceipts.set(receiptKey,{requestId:requestId,to:to,intent:intent});
+  }
+  // flush may already be processing an earlier snapshot. A second drain is
+  // needed when this request was added while another command was in flight.
+  for(var attempt=0;attempt<2;attempt++){
+   var row=assignmentRow(requestId);if(!row)throw assignmentError('배정 요청을 찾을 수 없습니다. 새로고침 후 확인해 주세요.');
+   if(['done','rejected','conflict'].includes(row.status))break;
+   try{await root.Phase1.queue.flush()}catch(error){break}
+   checkAssignmentIdentity(identity);
+  }
+  checkAssignmentIdentity(identity);
+  var result=assignmentRow(requestId);
+  if(!result||result.status!=='done'||!result.ack){
+   if(result&&['rejected','conflict'].includes(result.status))assignmentReceipts.delete(receiptKey);
+   throw assignmentError(result&&['rejected','conflict'].includes(result.status)?'배정이 저장되지 않았습니다. 담당자와 권한을 확인해 주세요. ('+(result.error||result.status)+')':'배정 결과 확인 중입니다. 완료로 표시하지 않았습니다. 같은 요청으로 다시 확인할 수 있습니다.');
+  }
+  // Read through the same authorized endpoint as a fresh page. Do not invent
+  // actor, timestamps, routing, history, or owner UUIDs in a display patch.
+  var response;
+  try{response=await root.Phase1.read('operational_row',{domain:'inquiry_core',id:id})}catch(error){throw assignmentError('배정은 저장됐지만 최신 정보 조회가 실패했습니다. 다시 확인해 주세요.')}
+  checkAssignmentIdentity(identity);
+  var item=response&&response.data&&response.data.item;
+  if(!item||String(item.id)!==id)throw assignmentError('저장 후 문의를 조회하지 못했습니다. 조회 권한과 현재 담당을 확인해 주세요.');
+  var latest=root.OperationalUI.shell({inquiries:[item]}).inquiries[0],patch=root.detailPatchFor('inq',id);
+  // Clear obsolete assignment-only patches; preserve response drafts and notes.
+  ['assignee','assigned_to','assignee_name','sales_assignee','salesAssignee','assigned_at','sales_assigned_at','assigned_by','assignmentHistory','assignment_history','assignmentGroup','assignment_group','ownerGroup','owner_group','branchCode','branch_code','reportingGroup','reporting_group'].forEach(function(key){delete patch[key]});
+  patch.status=latest.status;
+  var targets=[q].concat(root.B&&root.B.inquiries||[]);
+  targets.forEach(function(target){if(String(root.inqKey(target))!==id)return;delete target._assignmentServerTruth;delete target._assignmentOptimistic;Object.assign(target,latest);if(Array.isArray(latest.assignment_history))target.assignmentHistory=latest.assignment_history;root.mergeInquiryAssignmentTruth(target,{},id)});
+  assignmentReceipts.delete(receiptKey);
+  if(root.saveLocal)root.saveLocal();
+  if(root.inquiryRoutedOwner(q)!==to)throw assignmentError('저장 후 다른 담당자 변경이 확인됐습니다. 최신 담당자를 확인해 주세요.');
   return requestId;
+ }
+ root.inquiryCommitAssignment=function(q,to,reason,intent){
+  var key=assignmentIdentity()+':'+String(root.inqKey(q));
+  if(assignmentJobs.has(key))return Promise.reject(assignmentError('이 문의의 배정을 저장 중입니다. 잠시 후 확인해 주세요.'));
+  var job=confirmedAssignment(q,to,reason,intent);assignmentJobs.set(key,job);
+  return job.finally(function(){assignmentJobs.delete(key)});
  };
+ var assignmentBatchBusy=false;
+ root.inquiryAssignmentBatch=async function(rows,to,reason,intent){
+  if(assignmentBatchBusy)throw assignmentError('배정을 저장 중입니다. 잠시 후 확인해 주세요.');
+  assignmentBatchBusy=true;var count=0,identity=assignmentIdentity(),modal=root.INQ_CTL_MODAL;
+  try{for(var q of rows){checkAssignmentIdentity(identity);await root.inqCtlRecordAssignment(q,to,reason,intent);count++;if(root.INQ_SEL)delete root.INQ_SEL[root.inqKey(q)];if(modal===root.INQ_CTL_MODAL&&modal&&Array.isArray(modal.keys))modal.keys=modal.keys.filter(function(key){return String(key)!==String(root.inqKey(q))})}return count}
+  catch(error){throw assignmentError((rows.length>1?count+'건 저장 확인 · '+(rows.length-count)+'건 미완료. ':'')+error.message)}
+  finally{assignmentBatchBusy=false}
+ };
+
  function receivedAt(q){return root.inquiryCreatedAt(q)||q.received_at||q.created_at||q.at||''}
  function elapsed(q){
   var at=receivedAt(q),time=new Date(at).getTime();

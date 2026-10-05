@@ -24,7 +24,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    B={deals:[],inquiries:[mk(SHOWN,{inquiry_type:'견적문의',source_channel:'홈페이지'}),mk(TWIN,{inquiry_type:'관리소장'}),mk(THIRD,{site:'[경기 광주] 신영프로방스아파트',site_name:'[경기 광주] 신영프로방스아파트',phone:'031-798-3819',contact:'관리소직원',contact_name:'관리소직원'})],activities:[],inquiryTrash:[],expansion_pool:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
-   window.__writes=[];window.pushWrite=(op,p)=>{__writes.push([op,p&&p.inquiry_id||'',p&&p.to||'']);return 'req';};
+   window.__writes=[];const assignmentQueue=[];window.pushWrite=(op,p)=>{__writes.push([op,p&&p.inquiry_id||'',p&&p.to||'']);const request_id='req-'+__writes.length;assignmentQueue.push({request_id,operation:op,object_id:p.inquiry_id,payload:p,status:'pending'});return request_id;};
+   window.Phase1={profile:{auth_uid:'admin'},queue:{list:()=>assignmentQueue,flush:async()=>{for(const x of assignmentQueue){x.status='done';x.ack={assigned_to:'aaaaaaaa-0000-4000-8000-000000000001'};}}},read:async(resource,args)=>{const q=B.inquiries.find(q=>q.id===args.id),last=assignmentQueue.filter(x=>x.object_id===args.id).at(-1);return {data:{item:{...q,assigned_to:'aaaaaaaa-0000-4000-8000-000000000001',assignee_name:last.payload.to,status:'배정완료',assignment_history:[]}}};}};
    window.__calls=[];window.__mode='ok';window.__hold=null;
    SB={rpc:(name,args)=>{const p=args&&args.p||{};if(name!=='crm_inquiry_director_assign_v1')return Promise.resolve({error:{message:'CONTRACT_UNAVAILABLE'}});__calls.push([p.inquiry_id,p.to_name,p.reason]);
      if(__mode==='fail')return Promise.resolve({error:{message:'forbidden'}});
