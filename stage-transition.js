@@ -56,6 +56,58 @@
  }
  function summary(to,v){return definitions[to].fields.filter(f=>v[f.key]!==''&&v[f.key]!=null).map(f=>f.label+': '+(Array.isArray(v[f.key])?v[f.key].join(' · '):f.type==='money'?Number(v[f.key]).toLocaleString('ko-KR'):v[f.key])).join('\n')}
  function next(to,fields){const due=fields.followup_date||fields.contact_date;return due?{type:'후속접촉',text:to==='sent'?'발송자료 검토 여부 확인':'고객 재접촉',due}:null}
- const api={definitions,terminal,normal,choices,isException,validDate,validate,summary,next};
+ // Read only this opportunity's records. These are editable drafts, never events or performance.
+ function evidence(deal,patch={},to){
+  const fields={},sources={},candidates={},seen=new Set(),performed={pt:false,bid:false},review=[],contexts={...(deal.stage_contexts||{}),...(patch.stage_contexts||{})};
+  const nonEvent=/예정|계획|유도|제안(?!서)|요청|희망|준비|검토|추진|취소|미진행|미실시|미참여|미발송|안\s*(?:했|함|보냄)|않|못|불참|타사|타업체|경쟁사/;
+  const plain=value=>String(value||'').replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi,'').replace(/<br\s*\/?\s*>|<\/(?:p|div|li)>/gi,'\n').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').trim();
+  const fullDate=text=>{const dates=[...String(text).matchAll(/\b(20\d{2}|\d{2})\s*(?:년|[.\/-])\s*(\d{1,2})\s*(?:월|[.\/-])\s*(\d{1,2})(?:일|\b)/g)].map(m=>(m[1].length===2?'20':'')+m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0')).filter(validDate);return new Set(dates).size===1?dates[0]:'';};
+  function add(key,value,source){if(value==null||value===''||Array.isArray(value)&&!value.length)return;(candidates[key]??=[]).push({value,source});}
+  for(const [legacy,rows] of [[true,deal.legacy_notes],[false,deal.activities],[false,patch.activities]])for(const row of rows||[]){
+   if(!row||[row.opportunity_id,row.deal_id].some(id=>id&&String(id)!==String(deal.id)))continue;
+   if(/단계전환|단계정보|변화|자동|내부.?메모/.test(String(row.type||'')))continue;
+   const text=plain(legacy?row.body:[row.note||row.body,row.result,row.detail?.note,row.detail?.result].filter(Boolean).join('\n'));
+   const identity=String(row.id||'')+'|'+text;if(!text||seen.has(identity))continue;seen.add(identity);
+   const lines=text.split(/\n+/).map(x=>x.trim()).filter(Boolean),headerDate=fullDate(lines[0]),at=String(row.occurred_at||row.at||'').slice(0,10);
+   for(const line of lines){
+    if(nonEvent.test(line))continue;
+    const source={id:row.id||'',kind:legacy?'과거 메모':'응대 기록',text:line,recorded_at:at};
+    // Imported note dates can be import timestamps. Only an explicit date in the text is used.
+    const shortDate=/\d{1,2}\s*월\s*\d{1,2}|\d{1,2}[\/-]\d{1,2}/.test(line);
+    const date=fullDate(line)||(shortDate?'':headerDate)||(!legacy&&!shortDate&&validDate(at)?at:'');
+    const pt=/(?:PT|프레젠테이션|프리젠테이션)\s*(?:(?:발표|진행|실시)\s*)?(?:완료|했음|했슴|함|마침)/i.test(line);
+    const bid=/(?:입찰\s*(?:참여|접수)|투찰)\s*(?:완료|했음|했슴|함|마침)/.test(line);
+    if(pt){performed.pt=true;add('competition_type','PT',source);add('meeting_date',date,source);review.push('PT 기록 · '+line);}
+    if(bid){performed.bid=true;review.push('입찰 기록 · '+line);}
+    if(to==='bidding'){
+     const deadline=line.match(/입찰\s*마감(?:일|일시)?\s*[:：]?\s*(.+)/),terms=line.match(/입찰\s*조건\s*[:：]\s*(.+)/);
+     if(deadline)add('bid_deadline',fullDate(deadline[1]),source);
+     if(terms)add('bid_terms',terms[1].trim(),source);
+    }
+    if(to==='sent'&&/(?:발송|전송|보냄)\s*(?:완료|했음|했슴|함|$)/.test(line)){
+     const materials=['견적서','제안서','공법자료','기타자료'].filter(x=>line.includes(x));
+     add('materials',materials,source);add('sent_date',date,source);
+     const recipient=line.match(/(?:수신자|받는\s*사람)\s*[:：]\s*([^·,;]+)/);if(recipient)add('recipient',recipient[1].trim(),source);
+    }
+   }
+  }
+  const conflicts=[];
+  for(const [key,values] of Object.entries(candidates)){
+   const unique=[...new Set(values.map(x=>JSON.stringify(x.value)))];
+   if(unique.length!==1){conflicts.push(key);continue;}
+   fields[key]=values[0].value;sources[key]=values[0].source;
+  }
+  const knownPTDate=fields.meeting_date;
+  const saved=contexts[to]?.fields||{},allowed=new Set((definitions[to]?.fields||[]).map(f=>f.key));
+  for(const key of Object.keys(fields))if(!allowed.has(key)){delete fields[key];delete sources[key];}
+  for(const [key,value] of Object.entries(saved))if(value!=null&&value!==''&&(!Array.isArray(value)||value.length)){delete fields[key];delete sources[key];}
+  const pending=[];
+  if(performed.pt&&!contexts.compete?.fields?.meeting_date&&!knownPTDate)pending.push('실제 PT 진행 기록 있음 · PT 일자 확인');
+  if(performed.bid&&!contexts.contract?.fields?.bid_result)pending.push('실제 입찰 참여 기록 있음 · 입찰 결과 확인');
+  conflicts.filter(key=>allowed.has(key)&&!saved[key]).forEach(key=>pending.push((definitions[to]?.fields.find(f=>f.key===key)?.label||key)+' · 서로 다른 기록 확인'));
+  return {fields,sources,pending,review:[...new Set(review)].slice(0,5).map(x=>x.slice(0,180))};
+ }
+
+ const api={definitions,terminal,normal,choices,isException,validDate,validate,summary,next,evidence};
  if(typeof module!=='undefined'&&module.exports)module.exports=api;root.StageTransition=api;
 })(typeof window==='undefined'?globalThis:window);
