@@ -69,6 +69,25 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.locator('#stage-transition-form .sg-row').evaluateAll(l=>l.map(n=>[n.querySelector('b').textContent,n.classList.contains('ok')])),[['실주 원인',true]]);
   await page.locator('#stage-transition-form .lr-cats button',{hasText:'가격'}).click();await page.waitForTimeout(200);
   assert.deepEqual(await page.locator('#stage-transition-form .sg-row').evaluateAll(l=>l.map(n=>n.classList.contains('ok'))),[false],'분류만 고르면 아직 비어 있음');assert.equal(await page.locator('#stage-transition-form button[type="submit"]').getAttribute('aria-disabled'),'true');
+  /* 실주 분류 선택기는 공통 폼의 전체 사유 칩과 중복 표시되면 안 된다. */
+  const lossField=f.locator('.sf-field',{has:page.locator('#sf-close_reason')});
+  assert.equal(await lossField.locator('.dv3-pills:visible').count(),0,'전체 사유 목록은 숨김');
+  const lossGroups=[['관계',['관리소장 변경','입대의 · 회장 영향','경쟁업체 기존 관계']],['공법',['타 공법 선호','특허 조건 불리','설계 변경']],['가격',['가격 경쟁','예산 부족','실행가 문제']],['사업',['공사 취소','연기','예산 미확정']]];
+  for(const [cat,details] of lossGroups){
+   await lossField.locator('.lr-cats button',{hasText:new RegExp('^'+cat+'$')}).click();
+   assert.deepEqual(await lossField.locator('.lr-subs button:visible').allInnerTexts(),details,'선택한 '+cat+'의 세부 사유만 표시');
+   assert.equal(await f.locator('#sf-close_reason').inputValue(),'','분류를 바꾸면 이전 세부 사유 초기화');
+   await lossField.locator('.lr-subs button').first().click();
+   assert.equal(await f.locator('#sf-close_reason').inputValue(),cat+' · '+details[0],'기존 저장 값 유지');
+   assert.equal(await lossField.locator('.dv3-pills:visible').count(),0);
+  }
+  if(shot)await page.screenshot({path:shot+'-lost.png'});
+  await page.evaluate(()=>{G.lostPickOff=true;LostReasonPick.decorate();});
+  assert.equal(await lossField.locator('.lr-pick').count(),0);
+  assert.equal(await lossField.locator('.dv3-pills:visible').count(),1,'분류 선택기를 끄면 기존 선택 목록 복구');
+  await page.evaluate(()=>{G.lostPickOff=false;LostReasonPick.decorate();});
+  assert.equal(await lossField.locator('.lr-cats button[aria-pressed="true"]').innerText(),'사업','기존 선택 분류 복구');
+  assert.equal(await lossField.locator('.dv3-pills:visible').count(),0);
   /* 5. 기록에서만 확인하는 조건(1차 현장미팅): 비어 있으면 저장을 막고, 그 줄을 눌러 직접 체크할 수 있다(체크한 사실은 단계 변경 메모에 남는다) · 건너뛰기 사유로도 대신한다 */
   const gate=await page.evaluate(()=>{StageTransitionUI.close();const d=CUR_DETAIL.item;d.code=d.stage_code='first_contact';StageTransitionUI.open(d,false,'consulting');return new Promise(r=>setTimeout(()=>r(StageGate.model()),500));});
   assert.deepEqual([gate.to,gate.list.map(x=>[x.l,x.ok]),gate.ok],['consulting',[['1차 현장미팅 일정 또는 완료',false]],false]);
