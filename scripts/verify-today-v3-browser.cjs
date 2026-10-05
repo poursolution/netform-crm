@@ -183,6 +183,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(()=>[__rec,__memo]),[[],[['today1','[영업관리 · 담당에게 보냄] 다음 연락일 도래(오늘)']]],'남의 건 = 내부 메모만');
   await mx.locator('.tv3-exbar button').click();await page.waitForTimeout(400);assert.equal(await page.locator('#today-v2 .tv3.tv3-ex').count(),0);
   /* 좁은 화면 · 끄기 */
+  /* 노트북 폭(대표 화면 1207 × 914 · 2026-10-05 "봐봐"): 카드의 첫 버튼(class=main)에 화면 전체용 여백 규칙(body.shell-v2 .main · 941~1500px)이 걸려 버튼이 세로로 커지고, 4열이라 카드가 150px 로 찌그러졌다 → 버튼 3개는 같은 크기 한 줄, 카드 열 수는 목록 칸의 실제 폭으로 */
+  await page.setViewportSize({width:1207,height:914});await page.waitForTimeout(300);
+  {const m=await page.evaluate(()=>{const c=document.querySelector('#today-v2 .tv3-card'),cs=getComputedStyle,bs=[...c.querySelectorAll('.btns button')].map(b=>{const r=b.getBoundingClientRect();return [Math.round(r.width),Math.round(r.height),cs(b).paddingTop,cs(b).paddingBottom];});return {shell:document.body.classList.contains('shell-v2'),main:Math.round(document.querySelector('#today-v2 .tv3-main').getBoundingClientRect().width),w:Math.round(c.getBoundingClientRect().width),cols:cs(document.querySelector('#today-v2 .tv3-cards')).gridTemplateColumns.split(' ').length,bs};});
+   assert.equal(m.shell,true);assert.ok(m.bs.every(b=>b[1]<=40&&b[2]==='8px'&&b[3]==='8px'&&Math.abs(b[0]-m.bs[0][0])<=2),'노트북 폭: 카드 버튼 3개 같은 크기 한 줄 '+JSON.stringify(m.bs));
+   assert.equal(m.cols,2,'노트북 폭(목록 칸 '+m.main+'px): 카드 2열');assert.ok(m.w>=240,'카드 폭 '+m.w+'px');}
+  if(shot)await page.screenshot({path:shot+'-laptop.png'});
   await page.setViewportSize({width:1100,height:900});await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true,'옆으로 넘치지 않음');await page.setViewportSize({width:1600,height:1000});
   await page.evaluate(()=>{G.todayV3Off=true;paint();});await page.waitForTimeout(500);
   assert.equal(await page.locator('#today-v2 .tv3').count(),0);assert.equal(await page.locator('#today-v2 .tt').count(),1,'끄면 관제탑');

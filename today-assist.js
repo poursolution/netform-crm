@@ -64,20 +64,27 @@
    +'<span class="ta-rc"><b>'+h(own+' · '+i.act)+'</b><small>'+h(i.loss||i.done||'')+'</small></span>'+dcell(i,false)
    +'<span class="ta-bt"><button type="button" class="go" data-t3="act" data-act="'+attr(i.act)+'" data-key="'+k+'"'+(i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>추천대로 '+h(i.act)+'</button>'+(own!=='미배정'?'<button type="button" data-t3="owner" data-key="'+k+'" data-v="'+attr(own)+'">담당 화면</button>':'<button type="button" data-t3="detail" data-key="'+k+'">상세 보기</button>')+'</span></div>';
  }
+ /* 오늘 안 넘기면 놓침(첫 연락 · 오늘 마감 · 오늘 약속): ②와 같은 표 줄 — 지난 기록 / 담당 · 할 일 + 놓치면 생기는 일 / 경과(빨강) / [추천대로 …] [담당 화면] */
+ function urgentRow(i){
+  const k=attr(i.key),own=i.x.owner&&i.x.owner!=='미배정'?i.x.owner:'',last=String(i.support?'[지원 요청] '+i.support.note:i.i.recent||'최근 연락 기록 없음').replace(/\s+/g,' ').slice(0,36),who=[i.i.name,i.i.role].filter(Boolean).join(' ');
+  return '<div class="ta-row" role="button" tabindex="0" data-t3="open" data-key="'+k+'">'+brandCell(i)+'<span class="ta-st"><b title="'+attr(i.i.site)+'">'+h(i.i.site)+'</b><small>'+h([i.sName,who||'',i.amt?money(i.amt):''].filter(Boolean).join(' · '))+'</small></span>'+ai(last,tag(i.missTxt,'r')+(i.i.want&&!/기록 없음/.test(i.i.want)?tag(i.i.want):''))
+   +'<span class="ta-rc"><b>'+h((own||'미배정')+' · '+i.act)+'</b><small>'+h(i.loss?'놓치면 '+i.loss:i.done||'')+'</small></span>'+dcell(i,true,i.rk==='contract')
+   +'<span class="ta-bt"><button type="button" class="go" data-t3="act" data-act="'+attr(i.act)+'" data-key="'+k+'"'+(i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>추천대로 '+h(i.act)+'</button>'+(own?'<button type="button" data-t3="owner" data-key="'+k+'" data-v="'+attr(own)+'">담당 화면</button>':'<button type="button" data-t3="detail" data-key="'+k+'">상세 보기</button>')+'</span></div>';
+ }
  function contractRow(i){
   const k=attr(i.key),own=i.x.owner||'미배정',d=i.x.item||{},f=(d.stage_contexts&&d.stage_contexts.contract&&d.stage_contexts.contract.fields)||{},miss=[!(f.contract_date||d.contract_date)?'계약일':'',!(Number(f.contract_amount||d.contract_amount)>0)?'계약금액':''].filter(Boolean);
   return '<div class="ta-row" role="button" tabindex="0" data-t3="open" data-key="'+k+'">'+brandCell(i)+'<span class="ta-st"><b title="'+attr(i.i.site)+'">'+h(i.i.site)+'</b><small>'+h([i.sName,i.amt?'예상 '+money(i.amt):'금액 미정'].filter(Boolean).join(' · '))+'</small></span>'+ai(i.missTxt,miss.map(m=>tag(m+' 없음','r')).join(''))
    +'<span class="ta-rc"><b>'+h(own+' · '+i.act)+'</b><small>'+h(i.loss||'수주실적에 안 잡힙니다')+'</small></span>'+dcell(i,false,true)
    +'<span class="ta-bt"><button type="button" class="go" data-ta="askfill" data-key="'+k+'">입력 요청</button><button type="button" data-t3="detail" data-key="'+k+'">바로 입력</button></span></div>';
  }
- const HEAD={assign:['고객이 원한 것 · AI 요약','AI 추천 담당 · 이유'],stall:['멈춘 이유 · AI 요약','AI 추천 행동 · 이유'],contract:['빠진 정보 · AI 요약','AI 추천 행동 · 이유']};
- const NOTE={assign:()=>'추천 기준: 같은 현장 기존 담당 > 같은 지역 진행 현장 > 업무량 · 협약문의는 '+b2bOwner()+' 자동 추천 · 연락처 없으면 먼저 확인 표시',stall:()=>'추천 행동 = 오늘 업무가 정한 할 일 그대로 · 줄을 누르면 그 건의 상세',contract:()=>'계약일 · 계약금액이 있어야 수주실적에 잡힙니다 · [입력 요청] = 담당에게 보낼 문구 복사'};
+ const HEAD={urgent:['지난 기록 · AI 요약','AI 추천 행동 · 이유'],assign:['고객이 원한 것 · AI 요약','AI 추천 담당 · 이유'],stall:['멈춘 이유 · AI 요약','AI 추천 행동 · 이유'],contract:['빠진 정보 · AI 요약','AI 추천 행동 · 이유']};
+ const NOTE={urgent:()=>'추천 행동 = 오늘 업무가 정한 할 일 그대로 · 아래 줄은 오늘 넘기면 생기는 일 · 줄을 누르면 그 건의 상세',assign:()=>'추천 기준: 같은 현장 기존 담당 > 같은 지역 진행 현장 > 업무량 · 협약문의는 '+b2bOwner()+' 자동 추천 · 연락처 없으면 먼저 확인 표시',stall:()=>'추천 행동 = 오늘 업무가 정한 할 일 그대로 · 줄을 누르면 그 건의 상세',contract:()=>'계약일 · 계약금액이 있어야 수주실적에 잡힙니다 · [입력 요청] = 담당에게 보낼 문구 복사'};
  /* 오늘 업무(today-v3)가 묶음마다 부른다 */
  function groupHtml(g,items,gi,no,more){
-  const S=st(),kind=g.kind,rowFn=kind==='assign'?assignRow:kind==='stall'?stallRow:contractRow,shown=more?items:items.slice(0,PER);
+  const S=st(),kind=g.kind,rowFn=kind==='assign'?assignRow:kind==='urgent'?urgentRow:kind==='stall'?stallRow:contractRow,shown=more?items:items.slice(0,PER);
   const recs=kind==='assign'?items.filter(i=>{const r=recFor(i.x.item);return r&&r.assignable;}).length:0;
   const bulk=kind==='assign'?(recs?'<button type="button" class="ta-all'+(S.confirm?' cf':'')+'" data-ta="assign-all"'+(S.busy?' disabled':'')+'>'+(S.busy?'배정하는 중…':S.confirm?'한 번 더 누르면 '+recs+'건 배정':'추천대로 '+recs+'건 한 번에 배정')+'</button>':''):(g.bulk?'<button type="button" data-t3="bulk" data-v="'+gi+'">'+h(g.bulk)+'</button>':'');
-  return '<section class="tv3-group ta-group'+(kind==='assign'?' first':'')+'" data-g="'+(gi+1)+'" data-kind="'+kind+'"><header><i>'+no+'</i><b>'+h(g.t)+'</b><b class="n">'+items.length+'건</b><span>'+h(g.why)+'</span><u></u>'+bulk+'</header>'
+  return '<section class="tv3-group ta-group'+(kind==='assign'||kind==='urgent'?' first':'')+'" data-g="'+(gi+1)+'" data-kind="'+kind+'"><header><i>'+no+'</i><b>'+h(g.t)+'</b><b class="n">'+items.length+'건</b><span>'+h(g.why)+'</span><u></u>'+bulk+'</header>'
    +'<div class="ta-box"><div class="ta-row hd"><span>브랜드</span><span>현장</span><span>'+HEAD[kind][0]+'</span><span>'+HEAD[kind][1]+'</span><span class="ta-d">경과</span><span></span></div>'+shown.map(rowFn).join('')
    +(items.length>PER?'<button type="button" class="tv3-more" data-t3="more" data-v="'+gi+'">'+(more?'접기 ▴':'나머지 '+(items.length-PER)+'건 더 보기 ▾')+'</button>':'')+'</div><p class="ta-note">'+h(NOTE[kind]())+'</p></section>';
  }

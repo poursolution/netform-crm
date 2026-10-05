@@ -33,7 +33,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(model.urgent,['r:첫 연락 늦은 현장','r:첫 연락 늦은 현장 2','b:오늘 약속 현장','a:입찰 임박 현장','r:기한 지난 현장 A','r:기한 지난 현장 B'],'급한 순서: 첫 연락 늦음 → 오늘 약속 → 입찰 임박 → 기한 지남 '+JSON.stringify(model));assert.deepEqual(model.rest,['다음 주 현장']);
   /* ① 머리줄 */
   assert.match(await v.locator('.trv-head').innerText(),/급한 곳 6[\s\S]*늦음 4[\s\S]*오늘 약속 1[\s\S]*마감 임박 1[\s\S]*\+ 2곳 더보기/);
-  assert.equal(await page.evaluate(()=>document.getElementById('psub').textContent),'필선님 · 오늘 7곳 · 급한 6곳부터');
+  assert.equal(await page.evaluate(()=>document.getElementById('psub').textContent),'이필선님 · 오늘 7곳 · 급한 6곳부터');
   /* ② 카드: 처음 4장 · 급한 순서 · 색 */
   const cards=v.locator('.trv-card');assert.equal(await cards.count(),4,'처음에는 4장');
   assert.deepEqual(await cards.evaluateAll(a=>a.map(c=>c.dataset.tone)),['r','r','b','a']);

@@ -10,7 +10,7 @@
  'use strict';
  const enabled=()=>!(root.G&&root.G.mobileV2Off);
  const TAB={mine:'내 현장',find:'등록',my:'이번 주',perf:'사람',rpt:'보고'};
- const given=nm=>{nm=String(nm||'').trim();return /^[가-힣]{3}$/.test(nm)?nm.slice(1):nm;};
+ const given=nm=>String(nm||'').trim();/* 이름은 성까지 그대로(2026-10-05 대표) */
  function statusPill(){
   const bar=document.querySelector('#scr .home-bar');if(!bar)return;
   let pill=bar.querySelector('.mv-status');if(!pill){pill=document.createElement('span');pill.className='mv-status';const rgt=bar.querySelector('.rgt');if(rgt)rgt.prepend(pill);else return;}
