@@ -80,25 +80,28 @@
  };
  root.saveQuickContact=function(){
   const form=root.QUICK_CONTACT;if(!form)return;
+  const report=msg=>{const box=form.pcRoot?.querySelector('#qc-err');if(box)box.textContent=msg;else root.quickContactErr(msg);};
   const item=form.item,entry=pending.get(item.id);
   if(entry){
-   if(entry.form!==form){root.quickContactErr('진행 중인 연락처 저장을 먼저 확인해 주세요.');return;}
+   if(entry.form!==form){report('진행 중인 연락처 저장을 먼저 확인해 주세요.');return;}
    if(entry.status==='uncertain'){entry.status='sending';root.Phase1.queue.flush().catch(()=>{}).finally(sync);}
    return;
   }
-  const value=id=>document.getElementById(id).value.trim(),checked=id=>document.getElementById(id).checked;
-  if(value('qc-decision-role')!==form.pcDecision||value('qc-relation-tone')!==form.pcTone){root.quickContactErr('관계정보 변경은 현재 서버 저장 경로에 연결되어 있지 않습니다. 기존 값으로 되돌린 뒤 연락처를 저장해 주세요.');return;}
+  // Inline contact forms share legacy field IDs. Read only the form that initiated this save.
+  const field=id=>form.pcRoot?form.pcRoot.querySelector('#'+id):document.getElementById(id);
+  const value=id=>String(field(id)?.value||'').trim(),checked=id=>!!field(id)?.checked;
+  if(value('qc-decision-role')!==form.pcDecision||value('qc-relation-tone')!==form.pcTone){report('관계정보 변경은 현재 서버 저장 경로에 연결되어 있지 않습니다. 기존 값으로 되돌린 뒤 연락처를 저장해 주세요.');return;}
   /* 번호는 숫자만 남겨 검사 · 저장한다(2026-10-04 대표 캡처): 저장돼 있던 번호나 입력에 하이픈(010-1234-5678)이 있으면 '11자리 번호를 확인해 주세요'로 매번 거절됐다 — 동의 칩 · 연락처 등록/수정 모두 */
   const mobile=String(root.phoneN(value('qc-mobile'))||'').replace(/\D/g,''),name=value('qc-name'),role=value('qc-role'),old=form.pcOriginal||{};
-  if(!name||!/^010\d{8}$/.test(mobile)){root.quickContactErr('성명과 010으로 시작하는 11자리 휴대폰 번호를 확인해 주세요.');return;}
+  if(!name||!/^010\d{8}$/.test(mobile)){report('성명과 010으로 시작하는 11자리 휴대폰 번호를 확인해 주세요.');return;}
   let consentAt=old.consentAt||null;
   if(value('qc-consent-at')!==form.pcConsentInput){
    const input=value('qc-consent-at');
-   if(input&&!Number.isFinite(Date.parse(input))){root.quickContactErr('동의 확인 일시를 확인해 주세요.');return;}
+   if(input&&!Number.isFinite(Date.parse(input))){report('동의 확인 일시를 확인해 주세요.');return;}
    consentAt=input?new Date(input).toISOString():null;
   }
   const blocked=checked('qc-block'),sms=!blocked&&checked('qc-sms'),kakao=!blocked&&checked('qc-kakao');
-  if((sms||kakao)&&!consentAt){root.quickContactErr('수신 동의 확인 일시를 입력해 주세요.');return;}
+  if((sms||kakao)&&!consentAt){report('수신 동의 확인 일시를 입력해 주세요.');return;}
   const key='mobile:'+mobile,primary=root.contactInfo(item,root.itemPatch(item,'deal'));
   const payload={opportunity_id:item.id,site_id:item.cleanup_site_id||item.site_id||item.siteId||null,person_key:key,site_name:item.site,office_phone:value('qc-office')||null,office_email:value('qc-email')||null,
    manager_name:name,manager_mobile:mobile,manager_role:role,is_primary:role==='관리소장'||(form.mode!=='new'&&root.phoneN(primary.mobile)===root.phoneN(old.mobile)),
@@ -109,8 +112,8 @@
    if(!root.Phase1?.queue)throw Error('저장 연결을 확인해 주세요.');
    const requestId=root.pushWrite('contact_upsert',payload);
    if(typeof requestId!=='string')throw Error('저장 요청을 확인할 수 없습니다.');
-   pending.set(item.id,{item,c,payload,raw,form,requestId});root.quickContactErr('서버 저장을 확인 중입니다.');sync();
-  }catch(e){root.quickContactErr('저장하지 못했습니다. '+e.message);}
+   pending.set(item.id,{item,c,payload,raw,form,requestId});report('서버 저장을 확인 중입니다.');sync();
+  }catch(e){report('저장하지 못했습니다. '+e.message);}
  };
  root.addEventListener('phase1:queue',sync);
  root.addEventListener('phase1:identity-cleared',()=>pending.clear());
