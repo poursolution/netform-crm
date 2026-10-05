@@ -40,7 +40,7 @@ test('consent withdrawal and send block remain disabled in the queued payload',(
 });
 
 test('PC contact normalization fix has a fresh browser asset version',()=>{
-  assert.match(source,/pc-primary-contact\.js\?v=20261005-consent-phone/);
+  assert.match(source,/pc-primary-contact\.js\?v=20261005-form-scope/);
 });
 
 test('existing Deal contact saves pass canonical Site ID into person history', () => {

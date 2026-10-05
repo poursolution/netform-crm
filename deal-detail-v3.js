@@ -418,7 +418,7 @@
   const box=el('div','','<input id="qc-name" value="'+attr(f.name||C.ci.name||'')+'"><input id="qc-mobile" value="'+attr(root.phoneN(f.mobile||C.ci.mobile))+'"><input id="qc-role" value="'+attr(f.role||C.ci.role||'관리소장')+'"><input type="checkbox" id="qc-sms"'+(sms?' checked':'')+'><input type="checkbox" id="qc-kakao"'+(kakao?' checked':'')+'><input type="checkbox" id="qc-block"'+(f.sendBlocked&&!on?' checked':'')+'><input id="qc-consent-at" value="'+((sms||kakao)&&!f.consentAt?localNow():'')+'"><input id="qc-block-reason" value="'+attr(sms||kakao?'통화 중 구두 동의':(f.sendBlocked&&!on?f.sendBlockedReason||'':''))+'"><input id="qc-decision-role" value=""><input id="qc-relation-tone" value=""><input id="qc-office" value="'+attr(f.officeTel||d.office_phone||'')+'"><input id="qc-email" value="'+attr(f.officeEmail||'')+'"><div id="qc-err"></div>');
   box.id='dv3-consbox';box.hidden=true;view().append(box);
   const legacy=$('quickContactBody');if(legacy)legacy.innerHTML='';
-  root.QUICK_CONTACT={item:d,key:root.dealKey(d),contactKey:C.key,mode:'primary',overflow:document.body.style.overflow,pcDecision:'',pcTone:'',pcConsentInput:'',pcOriginal:{mobile:f.mobile||C.ci.mobile,consentAt:f.consentAt||null,optOutAt:f.optOutAt||null}};
+  root.QUICK_CONTACT={pcRoot:box,item:d,key:root.dealKey(d),contactKey:C.key,mode:'primary',overflow:document.body.style.overflow,pcDecision:'',pcTone:'',pcConsentInput:'',pcOriginal:{mobile:f.mobile||C.ci.mobile,consentAt:f.consentAt||null,optOutAt:f.optOutAt||null}};
   root.saveQuickContact();
   const msg=box.querySelector('#qc-err').textContent.trim();box.remove();
   if(msg&&!/확인 중/.test(msg))toast(msg,'warn');else toast((k==='sms'?'문자':'카카오')+' '+(on?'동의':'미동의')+' — 서버 저장을 확인하고 있습니다');
