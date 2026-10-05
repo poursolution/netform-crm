@@ -5,6 +5,44 @@ const adapter = require('../operational-adapter.js');
 
 const source = fs.readFileSync('crm.html', 'utf8');
 
+function consentSaveFixture({mobile='010-1234-5678', name='테스트 소장', sms=true, blocked=false, consentAt='2026-10-05T00:00:00Z'}={}) {
+  const values={'qc-name':name,'qc-mobile':mobile,'qc-role':'관리소장','qc-decision-role':'','qc-relation-tone':'','qc-consent-at':'','qc-block-reason':'','qc-office':'','qc-email':''};
+  const checks={'qc-sms':sms,'qc-kakao':false,'qc-block':blocked};
+  const document={getElementById:id=>({value:values[id]??'',checked:!!checks[id]})};
+  const writes=[],messages=[],item={id:'11111111-1111-4111-8111-111111111111',site:'테스트 현장'};
+  const root={contactDirectoryHTML:()=>'',phoneN:value=>String(value||''),addEventListener:()=>{},
+    QUICK_CONTACT:{item,mode:'primary',pcDecision:'',pcTone:'',pcConsentInput:'',pcOriginal:{mobile,consentAt}},
+    quickContactErr:message=>messages.push(message),contactInfo:()=>({mobile}),itemPatch:()=>({}),
+    Phase1:{queue:{list:()=>[]}},pushWrite:(operation,payload)=>{writes.push({operation,payload});return 'test-request';}};
+  require('node:vm').runInNewContext(fs.readFileSync('pc-primary-contact.js','utf8'),{window:root,document});
+  root.saveQuickContact();return {writes,messages,item};
+}
+
+test('consent save accepts formatted mobile and queues its canonical identity without optimistic changes',()=>{
+  const result=consentSaveFixture();assert.equal(result.writes.length,1);
+  const {operation,payload}=result.writes[0];assert.equal(operation,'contact_upsert');
+  assert.equal(payload.manager_mobile,'01012345678');assert.equal(payload.person_key,'mobile:01012345678');
+  assert.equal(payload.sms_consent,true);assert.equal(payload.kakao_consent,false);
+  assert.equal(result.item.contact,undefined);assert.equal(result.messages.some(x=>x.includes('11자리')),false);
+});
+
+test('consent validation still blocks missing evidence and invalid customer identity',()=>{
+  for(const options of [{mobile:'0101234'},{mobile:'0212345678'},{name:''},{consentAt:null}]){
+    assert.equal(consentSaveFixture(options).writes.length,0);
+  }
+});
+
+test('consent withdrawal and send block remain disabled in the queued payload',()=>{
+  const withdrawn=consentSaveFixture({sms:false,consentAt:null}).writes[0].payload;
+  assert.equal(withdrawn.sms_consent,false);assert.equal(withdrawn.kakao_consent,false);
+  const blocked=consentSaveFixture({blocked:true}).writes[0].payload;
+  assert.equal(blocked.send_blocked,true);assert.equal(blocked.sms_consent,false);assert.equal(blocked.kakao_consent,false);
+});
+
+test('PC contact normalization fix has a fresh browser asset version',()=>{
+  assert.match(source,/pc-primary-contact\.js\?v=20261005-consent-phone/);
+});
+
 test('existing Deal contact saves pass canonical Site ID into person history', () => {
   const calls = source.match(/upsertPerson\(c,item\.site,office,at,item\.cleanup_site_id\|\|item\.site_id\|\|item\.siteId\|\|' '\)/g) || [];
   assert.equal(calls.length, 0, 'guard against an accidental spaced empty fallback');
