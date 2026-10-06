@@ -192,3 +192,7 @@
 #detailView.dvt .isd-near .ctl{flex-wrap:wrap;row-gap:6px}
 #detailView.dvt .isd-near .ctl .seg{flex:none}
 #detailView.dvt .isd-near .ctl .seg button,#detailView.dvt .isd-near .lg span{white-space:nowrap}
+/* 지금 할 일의 AI 한 줄: 표식과 글이 한 줄에(예전 '추천 다음 행동' 상자의 세로 배치 규칙이 남아 표식이 빈 상자처럼 늘어나던 것 · 2026-10-06 운영 캡처) */
+#detailView.ddv.dv3.dvt #nowCard .dv3-reco.dvt-reco{display:block}
+#detailView.ddv.dv3.dvt #nowCard .dvt-reco .dv3-aitag{display:inline-block;width:auto;flex:none;vertical-align:1px}
+#detailView.ddv.dv3.dvt #nowCard .dvt-reco>span{display:inline}

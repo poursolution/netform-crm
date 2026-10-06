@@ -103,6 +103,14 @@
    +'<div class="ps3-b"><b'+(x.tab===0?' class="r"':'')+'>'+h(issueOf(C,x))+'</b><span>'+h(x.sub)+'</span><small class="ps3-nx'+(r.next&&r.next.text?'':' none')+'"><i>다음 행동</i> '+h(nextOf(r))+'</small></div></div>'
    +'<div class="ps3-r"><div class="ps3-d"><b'+(x.stall>C.goal?' class="r"':'')+'>'+x.stall+'일</b><span>체류</span></div><button type="button" data-ps3="act" data-key="'+attr(r.key)+'" data-v="'+attr(a[1])+'">'+h(a[0])+'</button></div></div>';
  }
+ /* 목록 줄 v11(2026-10-06 design_handoff_pipeline_v11): 4칸 줄 + 펼침 — 그리기는 pipeline-row-v11.js 한곳, 여기서는 그 단계의 상태 · 업무 · 버튼만 정한다 */
+ const V11=()=>root.PipelineRowV11&&root.PipelineRowV11.on()?root.PipelineRowV11:null;
+ function v11(key,C,x){
+  const r=x.row,a=C.act[x.tab],st0=x.tab===0?C.reasons[0][1]:C.tabs[x.tab][0],sub=x.sub&&!String(st0).includes(x.sub)&&!String(x.sub).includes(st0)?x.sub:'';
+  /* 버튼 = 업무 동사: 연락할 일이면 '연락 기록'(미팅 날짜만 남은 컨설팅 건은 '일정 등록'), 나머지는 그 단계의 일(견적 요청 · 정보 입력 · 단계 판단 …) */
+  const contact=a[1]==='next'||a[1]==='activity',btn=contact?[key==='consulting'&&x.tab===0&&r.last?'일정 등록':'연락 기록',a[1]]:[a[0],a[1]];
+  return {r,now:[st0,sub].filter(Boolean).join(' · '),task:C.tabs[x.tab][1],btn,stall:x.stall,goal:C.goal,reasons:x.rs.map(k=>(C.reasons.find(q=>q[0]===k)||[])[1]).filter(Boolean),dup:dupOf(r),tab:x.tab};
+ }
  function cardHtml(C,x){
   const r=x.row,bc=bcOf(r),a=C.act[x.tab];
   return '<div class="ps3-card" role="button" tabindex="0" data-ps3="open" data-key="'+attr(r.key)+'" style="border-left-color:'+(bc||'#e3e6ec')+'"><div class="t"><b style="color:'+(bc||'#9ca3af')+'">'+h(r.item.brand||'브랜드 미지정')+'</b><i></i><span class="no">'+h(noOf(r))+'</span><b class="d'+(x.stall>C.goal?' r':'')+'">'+x.stall+'일</b></div><strong>'+h(r.site)+'</strong><span>'+h([workOf(r)+(bizYearOf(r)?' · '+bizYearOf(r):''),r.owner||'미배정',money(r.amount)].filter(Boolean).join(' · '))+'</span><span class="iss'+(x.tab===0?' r':'')+'">'+h((x.tab===0?'확인 필요 · ':'')+[issueOf(C,x),x.sub&&!String(issueOf(C,x)).includes(x.sub)?x.sub:''].filter(Boolean).join(' · '))+'</span><span class="nx'+(r.next&&r.next.text?'':' none')+'"><i>다음 행동</i> '+h(nextOf(r))+'</span>'+(dupOf(r)?'<span class="dup">'+h(dupOf(r))+'</span>':'')+'<button type="button" data-ps3="act" data-key="'+attr(r.key)+'" data-v="'+attr(a[1])+'">'+h(a[0])+'</button></div>';
@@ -130,17 +138,21 @@
   let body;
   if(S.view==='board')body='<div class="ps3-board">'+C.tabs.map((t,i)=>{const all=items.filter(x=>x.tab===i&&(!S.reason||x.rs.includes(S.reason))),cp=LP.cut(all,LP.page(S,'col:'+i)),cards=cp.rows;
     return '<div class="ps3-col"><div class="ch"><b title="'+attr(t[0])+'">'+h(t[0])+'</b><b class="c'+(i===0?' r':'')+'">'+n[i].toLocaleString('ko-KR')+'</b></div>'+(cards.length?cards.map(x=>cardHtml(C,x)).join(''):'<p class="ps3-none">없음</p>')+LP.html(cp,{ns:'ps3',v:'col:'+i,small:true,info:false})+'</div>';}).join('')+'</div>';
-  else{const pg=LP.cut(listed,LP.page(S));body='<div class="ps3-list" role="table" aria-label="확인할 현장">'+(pg.rows.length?pg.rows.map(x=>rowHtml(C,x)).join(''):'<div class="ps3-empty">해당하는 현장이 없습니다</div>')+LP.html(pg,{ns:'ps3',unit:'곳'})+'</div>';}
+  else{const V=V11(),pg=LP.cut(V?V.sort(listed,x=>x.row):listed,LP.page(S));if(S.open&&!pg.rows.some(x=>x.row.key===S.open))S.open=null;
+   body='<div class="ps3-list'+(V?' prv-list':'')+'" role="table" aria-label="확인할 현장">'+(V?V.head():'')+(pg.rows.length?pg.rows.map(x=>V?V.row(v11(key,C,x),S.open===x.row.key,'ps3','ps3-row'):rowHtml(C,x)).join(''):'<div class="ps3-empty">해당하는 현장이 없습니다</div>')+LP.html(pg,{ns:'ps3',unit:'곳'})+'</div>';}
   return '<div id="pipeline-stage-v3" class="ps3" data-stage="'+key+'"><div class="ps3-top"><div class="ps3-head"><b>'+h(C.name)+'</b><span>'+h(C.desc)+'</span></div>'+tabs+'</div><div class="ps3-body">'+diag+'<section class="ps3-main">'+head+body+'</section></div></div>';
  }
  function onClick(e){
   const b=e.target.closest('#pipeline-stage-v3 [data-ps3]');if(!b||b.disabled)return;const S=st(),a=b.dataset.ps3,v=b.dataset.v,LP=root.ListPager;
-  if(a==='tab'){S.tab=Number(v);S.reason=null;LP.reset(S);return root.paint();}
-  if(a==='reason'){S.reason=S.reason===v?null:v;LP.reset(S);return root.paint();}
-  if(a==='clear'){S.reason=null;LP.reset(S);return root.paint();}
+  if(a==='toggle'){if(e.target.closest('button,a'))return;S.open=S.open===b.dataset.key?null:b.dataset.key;return root.paint();}/* 줄을 누르면 그 줄 아래 펼침(한 번에 한 줄) */
+  if(a==='call')return;
+  if(a==='tab'){S.tab=Number(v);S.reason=null;S.open=null;LP.reset(S);return root.paint();}
+  if(a==='reason'){S.reason=S.reason===v?null:v;S.open=null;LP.reset(S);return root.paint();}
+  if(a==='clear'){S.reason=null;S.open=null;LP.reset(S);return root.paint();}
   if(a==='view'){S.view=v;return root.paint();}
-  if(a==='page'){LP.set(S,v,b.dataset.page);return root.paint();}
+  if(a==='page'){S.open=null;LP.set(S,v,b.dataset.page);return root.paint();}
   e.stopPropagation();
+  if(a==='detail')return B.open(b.dataset.key);
   if(a==='act')return B.open(b.dataset.key,v);
   if(a==='open'&&!e.target.closest('button'))return B.open(b.dataset.key);
  }
@@ -149,9 +161,9 @@
  L2.paint=function(el,key,list){
   if(!enabled(key)||!L2.enabled(key))return prevPaint.apply(this,arguments);
   const pg=document.getElementById('pg-pipe');pg?.classList.add('plv-on');pg?.classList.add('psb-on');
-  const S=st();if(S.key!==key){S.key=key;S.tab=-1;S.reason=null;root.ListPager.reset(S);}
+  const S=st();if(S.key!==key){S.key=key;S.tab=-1;S.reason=null;S.open=null;root.ListPager.reset(S);}
   el.classList.remove('pk-mode');el.innerHTML=html(key,list);
-  if(!el.__ps3){el.__ps3=true;el.addEventListener('click',onClick,true);el.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('#pipeline-stage-v3 [data-ps3="open"]')){e.preventDefault();e.target.click();}});}
+  if(!el.__ps3){el.__ps3=true;el.addEventListener('click',onClick,true);el.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('#pipeline-stage-v3 [data-ps3="open"],#pipeline-stage-v3 [data-ps3="toggle"]')){e.preventDefault();e.target.click();}});}
   const C=cfg(key);document.getElementById('ptitle').textContent=C.name.replace(' · ','·');const ps=document.getElementById('psub');if(ps)ps.textContent='위 상태 탭 → 왼쪽 단계 진단 · 오른쪽 확인할 현장';
   root.CommonFilterBar?.mount('pipe');const bar=pg?.querySelector(':scope>.cf-bar');if(bar)bar.hidden=false;
   return true;
