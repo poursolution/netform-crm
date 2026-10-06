@@ -153,7 +153,7 @@
  function geoLoad(){
   if(M.st!=='idle')return;if(!rpcOk(GEO_LIST)){M.st='nostore';return;}
   M.st='loading';
-  Promise.resolve().then(()=>root.SB.rpc(GEO_LIST,{})).then(r=>{
+  Promise.resolve().then(()=>root.SB.rpc(GEO_LIST,{p:{}})).then(r=>{
    if(!r||r.error){if(r&&r.error&&(r.error.code==='PGRST202'||/CONTRACT_UNAVAILABLE|Could not find the function/i.test(String(r.error.message||'')))){try{root.CRMRelease.noteMissing(GEO_LIST);}catch(e){}M.st='nostore';}else M.st='error';return refreshNear();}
    const D=r.data||{};M.key=String(D.kakao_js_key||'');M.pts.clear();M.todo.clear();
    (Array.isArray(D.sites)?D.sites:[]).forEach(x=>{const id=String(x[0]);if(x[3]==='none')M.pts.set(id,null);else if(x[1]!=null&&x[2]!=null)M.pts.set(id,{lat:Number(x[1]),lng:Number(x[2]),src:String(x[3]||'address')});else M.todo.set(id,{address:String(x[4]||'').trim(),name:String(x[5]||'').trim()});});
@@ -166,9 +166,10 @@
   if(root.kakao&&root.kakao.maps&&typeof root.kakao.maps.load==='function')return done();
   const sc=document.createElement('script');sc.src=SDK_URL+'?appkey='+encodeURIComponent(M.key)+'&libraries=services&autoload=false';sc.async=true;sc.onload=done;sc.onerror=()=>{M.sdk='error';sc.remove();refreshNear();};document.head.append(sc);
  }
- /* 주소 → 좌표. 결과 없음 = null, 연결이 막힘(예외) = undefined */
+ /* 주소 → 좌표. 결과 없음(ZERO_RESULT) = null, 연결이 막힘(예외) · 지도 서비스 오류(ERROR — 설정 · 사용량 문제) = undefined.
+    오류를 '못 찾음'으로 저장하면 멀쩡한 현장이 30일 동안 지도에서 빠지므로 둘을 꼭 가른다 */
  const SV=()=>root.kakao.maps.services;
- const geoAddr=addr=>new Promise(res=>{try{new (SV().Geocoder)().addressSearch(addr,(R,status)=>{const x=status===SV().Status.OK&&Array.isArray(R)&&R[0];res(x&&Number.isFinite(Number(x.y))&&Number.isFinite(Number(x.x))?{lat:Number(x.y),lng:Number(x.x),matched:String(x.address_name||addr)}:null);});}catch(e){res(undefined);}});
+ const geoAddr=addr=>new Promise(res=>{try{new (SV().Geocoder)().addressSearch(addr,(R,status)=>{if(status!==SV().Status.OK&&status!==SV().Status.ZERO_RESULT)return res(undefined);const x=status===SV().Status.OK&&Array.isArray(R)&&R[0];res(x&&Number.isFinite(Number(x.y))&&Number.isFinite(Number(x.x))?{lat:Number(x.y),lng:Number(x.x),matched:String(x.address_name||addr)}:null);});}catch(e){res(undefined);}});
  /* 건물 번호 뒤의 동 · 호 · 단지명은 떼고 다시 찾는다 */
  function cleanAddr(a){const T=String(a||'').replace(/\(.*?\)/g,' ').replace(/,.*$/,'').trim().split(/\s+/);let i=-1;T.forEach((t,j)=>{if(/^\d+(-\d+)?(번지)?$/.test(t))i=j;});return (i>=2?T.slice(0,i+1):T).join(' ');}
  /* 현장 이름 앞의 지역 표기: '[경기 화성]' · '[경기용인]' · '[서울_마포]' → ['경기','화성'] */
@@ -179,7 +180,7 @@
  /* 이름으로 찾기(주소가 없는 현장): 장소 이름이 현장 이름과 맞고, 지역 표기가 있으면 주소에 그 지역이 들어 있고, 맞는 곳이 서로 1km 넘게 떨어져 있지 않을 때만 받는다 */
  const geoName=name=>new Promise(res=>{const T=regionTokens(name),key=nameKey(name);if(key.length<3)return res(null);
   try{new (SV().Places)().keywordSearch((T.length?T.join(' ')+' ':'')+bare(name),(R,status)=>{
-   if(status!==SV().Status.OK||!Array.isArray(R))return res(null);
+   if(status===SV().Status.ZERO_RESULT)return res(null);if(status!==SV().Status.OK||!Array.isArray(R))return res(undefined);
    const ok=R.filter(p=>{const pn=nameKey(p.place_name);if(!pn||!Number.isFinite(Number(p.y))||!Number.isFinite(Number(p.x)))return false;const hit=pn===key||(pn.includes(key)&&key.length/pn.length>=.6)||(key.includes(pn)&&pn.length/key.length>=.6),ad=String(p.address_name||'')+' '+String(p.road_address_name||'');return hit&&T.every(t=>ad.includes(t));});
    if(!ok.length)return res(null);const p0={lat:Number(ok[0].y),lng:Number(ok[0].x)};
    if(ok.some(p=>KM(p0,{lat:Number(p.y),lng:Number(p.x)})>1))return res(null);
@@ -192,7 +193,7 @@
   if(!r&&name){src='name';query=name;r=await geoName(name);if(r===undefined)return {blocked:true};}
   return r?{pt:{lat:r.lat,lng:r.lng,src},row:{lat:r.lat,lng:r.lng,source:src,query,matched:r.matched}}:{pt:null,row:{source:'none',query:address||name||'-'}};
  }
- function flush(){if(!M.buf.length||!rpcOk(GEO_SAVE))return Promise.resolve();const rows=M.buf.splice(0,50);return Promise.resolve().then(()=>root.SB.rpc(GEO_SAVE,{rows})).then(r=>{if(r&&r.error&&r.error.code==='PGRST202'){try{root.CRMRelease.noteMissing(GEO_SAVE);}catch(e){}}}).catch(()=>{});}
+ function flush(){if(!M.buf.length||!rpcOk(GEO_SAVE))return Promise.resolve();const rows=M.buf.splice(0,50);return Promise.resolve().then(()=>root.SB.rpc(GEO_SAVE,{p:{rows}})).then(r=>{if(r&&r.error&&r.error.code==='PGRST202'){try{root.CRMRelease.noteMissing(GEO_SAVE);}catch(e){}}}).catch(()=>{});}
  /* 지금 문의의 위치: 현장 좌표가 있으면 그것, 없으면 문의 주소(없으면 현장 이름)로 찾는다. 'wait' = 찾는 중 */
  function centerOf(q){
   const id=q.site_id?String(q.site_id):'',p=id?M.pts.get(id):undefined;if(p)return p;
@@ -273,7 +274,7 @@
    const f=b.closest('.isd-keyform'),val=String(f&&f.querySelector('input')?f.querySelector('input').value:'').trim();if(!val||M.keyBusy)return true;
    if(!rpcOk(MAP_CFG)){M.keyErr='서버 적용 뒤에 등록할 수 있습니다';refreshNear();return true;}
    M.keyBusy=true;M.keyErr='';refreshNear();
-   Promise.resolve().then(()=>root.SB.rpc(MAP_CFG,{kakao_js_key:val})).then(r=>{M.keyBusy=false;if(!r||r.error){M.keyErr=String(r&&r.error&&r.error.message||'저장하지 못했습니다');return refreshNear();}M.key=String((r.data||{}).kakao_js_key||'');M.sdk='none';sdkLoad();refreshNear();}).catch(()=>{M.keyBusy=false;M.keyErr='저장하지 못했습니다';refreshNear();});
+   Promise.resolve().then(()=>root.SB.rpc(MAP_CFG,{p:{kakao_js_key:val}})).then(r=>{M.keyBusy=false;if(!r||r.error){M.keyErr=String(r&&r.error&&r.error.message||'저장하지 못했습니다');return refreshNear();}M.key=String((r.data||{}).kakao_js_key||'');M.sdk='none';sdkLoad();refreshNear();}).catch(()=>{M.keyBusy=false;M.keyErr='저장하지 못했습니다';refreshNear();});
    return true;
   }
   return false;
@@ -286,7 +287,7 @@
   if(mode==='locating')return '<b>이 문의의 위치를 찾는 중</b>';
   if(mode==='nokey')return admin?'<b>카카오맵 키 등록</b><span>카카오 개발자 사이트에서 받은 JavaScript 키를 넣으면 지도 · 반경 · 거리가 켜집니다.'+fall+'</span>'+keyform:'<b>지도 준비 중</b><span>관리자가 카카오맵 키를 등록하면 지도가 켜집니다.'+fall+'</span>';
   if(mode==='sdkerr')return '<b>카카오맵을 불러오지 못했습니다</b><span>등록한 키와, 카카오 개발자 사이트에 이 사이트 주소('+h(location.origin)+')가 등록돼 있는지 확인해 주세요.'+fall+'</span>'+(admin?keyform:'');
-  if(mode==='blocked')return '<b>위치를 찾지 못했습니다</b><span>주소를 좌표로 바꾸는 연결이 막혀 있습니다.'+fall+'</span>';
+  if(mode==='blocked')return '<b>위치를 찾지 못했습니다</b><span>지도 서비스의 주소 검색이 응답하지 않습니다. 카카오 개발자 사이트의 앱 설정(카카오맵 사용 · 사이트 주소 등록)을 확인해 주세요.'+fall+'</span>';
   if(mode==='nocenter')return '<b>이 문의의 위치를 찾지 못했습니다</b><span>주소를 입력하면 지도에 표시됩니다.'+fall+'</span>';
   if(mode==='error')return '<b>지도를 불러오지 못했습니다</b><span>잠시 뒤 창을 다시 열어 주세요.'+fall+'</span>';
   return '<b>지도 준비 중</b><span>카카오맵 키 등록과 현장 좌표 저장이 끝나면 여기에 지도 · 반경 · 거리가 표시됩니다.'+fall+'</span>';

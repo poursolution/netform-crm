@@ -34,7 +34,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    const C=[37.2005,127.0975];window.C=C;
    /* 좌표 저장소: 2번(가까움) · 6번(멀리)은 좌표가 있고, 1번 · 3번은 주소만, 4번 · 5번은 이름만 */
    window.GEO={key:'',saved:[],calls:[],sites:[[U(2),37.2086,127.0975,'address',null,null],[U(6),36.8151,127.1139,'address',null,null],[U(1),null,null,null,ADDR,SITE],[U(3),null,null,null,'경기 화성시 동탄대로 99 (오산동) 101동 1203호','[경기 화성] 동탄푸른교회'],[U(4),null,null,null,null,'[경기 화성] 동탄파크뷰'],[U(5),null,null,null,null,'다른이름타워']]};
-   SB={rpc:async(n,p)=>{GEO.calls.push(n);if(n==='crm_site_geo_list_v1')return {data:{ok:true,kakao_js_key:GEO.key,sites:GEO.sites}};if(n==='crm_site_geo_save_v1'){GEO.saved.push(...p.rows);return {data:{ok:true,saved:p.rows.length}};}if(n==='crm_map_config_v1'){GEO.key=p.kakao_js_key;return {data:{ok:true,kakao_js_key:GEO.key}};}return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
+   SB={rpc:async(n,a)=>{GEO.calls.push(n);const p=a&&a.p;/* 서버 함수는 인자 이름이 p 하나다 — 다르게 보내면 운영에서는 '함수 없음'이 된다 */if(!p||Object.keys(a).length!==1)return {error:{code:'PGRST202',message:'Could not find the function'}};if(n==='crm_site_geo_list_v1')return {data:{ok:true,kakao_js_key:GEO.key,sites:GEO.sites}};if(n==='crm_site_geo_save_v1'){GEO.saved.push(...p.rows);return {data:{ok:true,saved:p.rows.length}};}if(n==='crm_map_config_v1'){GEO.key=p.kakao_js_key;return {data:{ok:true,kakao_js_key:GEO.key}};}return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
    /* 가짜 지도: 부른 것을 적어 둔다 */
    const K={log:{maps:0,relayout:0,bounds:0,pan:[],level:[],overlays:[],circle:null,addr:[],place:[]}};window.KLOG=K.log;
    window.kakao={maps:{load:cb=>setTimeout(cb,0),LatLng:class{constructor(a,b){this.lat=a;this.lng=b;}},
@@ -97,6 +97,12 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* ⑤ 창 전체를 다시 그려도 지도는 새로 만들지 않고 옮겨 꽂는다 */
   await d.locator('.isd-scope [data-v="all"]').click();await page.waitForTimeout(150);
   assert.deepEqual(await page.evaluate(()=>[KLOG.maps,KLOG.relayout>0,!!document.querySelector('#inq-inbox-dialog [data-isd-map] .isd-mapbox[data-made]'),document.querySelector('#inq-inbox-dialog .isd-near header span').textContent]),[1,true,true,'1곳 · 반경 1km']);
+  /* ⑤-2 지도 서비스가 오류를 돌려주면(설정 · 사용량 문제) '못 찾음'으로 저장하지 않고 멈춘다 — 지도는 이미 아는 좌표로 그대로 */
+  const er=await page.evaluate(async()=>{InquiryWorkbench.close();InquirySite._resetMap();GEO.saved=[];GEO.sites=[[U(1),C[0],C[1],'address',null,null],[U(3),null,null,null,'오류 나는 주소 1','[경기 화성] 동탄푸른교회']];
+   const G0=kakao.maps.services.Geocoder;kakao.maps.services.Geocoder=class{addressSearch(a,cb){setTimeout(()=>cb([],'ERROR'),0);}};
+   InquiryWorkbench.open(A);await new Promise(r=>setTimeout(r,900));kakao.maps.services.Geocoder=G0;
+   return [GEO.saved.length,InquirySite._map.err,InquirySite._map.todo.size,!!document.querySelector('#inq-inbox-dialog [data-isd-map] .isd-mapbox')];});
+  assert.deepEqual(er,[0,'blocked',1,true]);
   /* ⑥ 서버 함수가 없으면 1차 화면 그대로 */
   const off=await page.evaluate(async()=>{InquiryWorkbench.close();InquirySite._resetMap();SB={rpc:async()=>({error:{code:'PGRST202',message:'Could not find the function'}})};InquiryWorkbench.open(A);await new Promise(r=>setTimeout(r,200));const m=document.querySelector('#inq-inbox-dialog .isd-map');return [m.classList.contains('empty'),m.textContent.startsWith('지도 준비 중카카오맵 키 등록과 현장 좌표 저장이 끝나면'),document.querySelectorAll('#inq-inbox-dialog .isd-nrow').length];});
   assert.deepEqual(off,[true,true,3]);
