@@ -91,10 +91,15 @@
  }
  function change(e){const k=e.target.dataset?.tv;if(k==='year'||k==='quarter'){T().repPeriodSet(k,e.target.value);}}
  /* 기존 화면이 다시 그려질 때마다 새 화면도 그린다(기존 render는 내부에서 직접 불리므로 결과 DOM 변화를 본다) */
+ function renderReady(){
+  try{render();}catch(err){document.getElementById('pg-today')?.classList.remove('today-v2');document.getElementById('pg-today')?.classList.add('today-legacy');document.getElementById('today-v2')?.remove();if(root.console)root.console.warn('today v2: '+err.message);}
+ }
  function boot(){
   const old=document.getElementById('today-home-root');if(!old)return;let t=null;
-  new MutationObserver(()=>{if(t)return;t=setTimeout(()=>{t=null;try{render();}catch(err){document.getElementById('pg-today')?.classList.remove('today-v2');document.getElementById('pg-today')?.classList.add('today-legacy');document.getElementById('today-v2')?.remove();if(root.console)root.console.warn('today v2: '+err.message);}},0);}).observe(old,{childList:true});
-  const base=root.paintTodayHome;if(typeof base==='function')root.paintTodayHome=function(){const r=base.apply(this,arguments);try{render();}catch(err){document.getElementById('pg-today')?.classList.remove('today-v2');document.getElementById('pg-today')?.classList.add('today-legacy');document.getElementById('today-v2')?.remove();}return r;};
+  new MutationObserver(()=>{if(t)return;t=setTimeout(()=>{t=null;renderReady();},0);}).observe(old,{childList:true});
+  const base=root.paintTodayHome;if(typeof base==='function')root.paintTodayHome=function(){const r=base.apply(this,arguments);renderReady();return r;};
+  /* 저장된 로그인으로 자료가 먼저 도착하면 관찰 시작 전의 변경은 통지되지 않는다. */
+  renderReady();
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
  root.TodayV2={render,enabled};

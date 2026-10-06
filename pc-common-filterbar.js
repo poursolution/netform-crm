@@ -95,6 +95,8 @@
   const baseSync=root.syncPage;if(typeof baseSync==='function')root.syncPage=function(){const r=baseSync.apply(this,arguments);if(!PAGES.includes(root.G?.page)&&!(root.G?.page==='pipe'&&root.PipelineListV2?.enabled())&&!(root.G?.page==='expansion'&&root.ExpansionV2?.enabled())&&!(root.G?.page==='gyeongnam'&&root.GyeongnamV2?.enabled())&&!(root.G?.page==='sites'&&root.AssetV2?.enabled())&&!(root.G?.page==='campaign'&&root.SmsV2?.enabled()&&(root.G.campaignTab||'home')==='home'))document.querySelector('.mhead')?.classList.remove('cf-title');return r;};
   /* Ctrl/⌘+K: 이 두 화면에서는 필터줄 검색으로 */
   document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&!e.altKey&&String(e.key).toLowerCase()==='k'&&(PAGES.includes(root.G?.page)||['pipe','expansion','gyeongnam','sites','campaign'].includes(root.G?.page))){const s=document.querySelector('#pg-'+root.G.page+'>.cf-bar:not([hidden]) .cf-search');if(s){e.preventDefault();e.stopImmediatePropagation();s.focus();s.select();}}},true);
+  /* 자료가 DOMContentLoaded보다 먼저 그려진 첫 진입도 현재 필터로 연결한다. */
+  if(root.G?.page==='today'&&root.B){try{syncToday();mount('today');}catch(e){console.warn('[공통 필터줄 초기화]',e);}}
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
  root.CommonFilterBar={mount,setOwner,setSearch,owner};
