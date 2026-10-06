@@ -29,7 +29,7 @@
  function warm(){const me=R.ME&&String(R.ME.id||R.ME.name||'');if(!me||warmed===me||!available())return;warmed=me;load().then(()=>{if(rows&&rows.length){try{R.paint();}catch(e){}}});}
  const of=d=>d&&map.get(String(d.id))||null;
  const stateOf=d=>{attach();return R.CRMRules.transferOf(d).status;};
- const dealOf=id=>(R.B&&R.B.deals||[]).find(d=>String(d.id)===String(id))||null;
+ const dealOf=id=>((R.DashboardData&&R.DashboardData.active()?R.DashboardData.source():R.B)?.deals||[]).find(d=>String(d.id)===String(id))||null;
  /* 이관 뒤 기준 일수(운영 기준 · 기본 14일)가 지나면 '타사 이관 결과 확인'이 오늘 업무에 뜬다 */
  function checkDue(d){const t=of(d);if(!t||stateOf(d)!=='pending')return false;return R.CRMRules.miss.transferCheck(String(t.transfer_date).slice(0,10)+'T00:00:00');}
  const awaiting=d=>!!of(d)&&stateOf(d)==='awarded';

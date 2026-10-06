@@ -10,7 +10,7 @@ function canonicalCode(d){const q=(root.Phase1?.queue?.list?.()||[]).filter(q=>S
 const PS=()=>root.PipelineScope&&root.PipelineScope.on()?root.PipelineScope:null;
 function rows(filters,opt){
  const L=(opt&&opt.legacy)||'';
- state();const f=filters||{brand:root.G.brand,owner:root.SalesScope.state().owner,work:root.G.workFilter,search:root.G.q};const admin=root.todayIsAdmin(),me=root.repN(root.ME?.name),authorized=(root.B?.deals||[]).filter(d=>admin||root.repN(d.assignee)===me),ids=new Set(),result=[];
+ state();const f=filters||{brand:root.G.brand,owner:root.SalesScope.state().owner,work:root.G.workFilter,search:root.G.q};const dashboard=root.DashboardData&&root.DashboardData.active(),base=dashboard?root.DashboardData.source():root.B,admin=root.todayIsAdmin(),me=root.repN(root.ME?.name),authorized=(base?.deals||[]).filter(d=>dashboard||admin||root.repN(d.assignee)===me),ids=new Set(),result=[];
  const sc=root.SalesScope.state(),wide=sc.type==='all'&&sc.organization==='all'&&sc.owner==='전체'&&sc.assignment==='all';
  /* 담당 범위를 좁히지 않았을 때(전체 · 전체 조직 · 전체 담당): 영업 명단에는 없어도 직원 명단에 있는 사람(대표 등)의 건은 보인다 — 오늘 업무 · 대시보드와 같은 건수가 되게.
     직원 명단에 아예 없는 담당 이름의 건은 지금처럼 빠진다. 과거 이관 목록은 담당과 상관없이 전부 보인다(분류가 필요한 자료라서) */

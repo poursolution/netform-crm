@@ -223,7 +223,7 @@
   const w=whenOf(m,S),nd=dueOf(m,w),nt=nextText(S.res),memo=String(S.memo||'').trim(),line='[전화 · '+S.res+']'+(memo?' '+memo:'');
   const before=JSON.parse(JSON.stringify(q)),patch=root.itemPatch(q,'inq'),beforePatch=JSON.parse(JSON.stringify(patch));
   let ok=false;S.err='';
-  try{ok=L3().record(q,{res:line,next:nt,due:dayStr(nd)})===true;}
+  try{ok=L3().record(q,Object.assign({res:line,next:nt,due:dayStr(nd)},S.con?{contact_result:root.InquiryFlow.TWO.of(S.con,S.rea).contact_result,customer_reaction:root.InquiryFlow.TWO.of(S.con,S.rea).customer_reaction}:{}))===true;}
   catch(e){Object.keys(q).forEach(k=>delete q[k]);Object.assign(q,before);Object.keys(patch).forEach(k=>delete patch[k]);Object.assign(patch,beforePatch);S.err=e.message||'저장 연결을 확인해 주세요.';}
   if(!ok){if(!S.err)S.err=(document.getElementById('iq-msg')||{}).textContent||'저장하지 못했습니다.';return render();}
   toast(S.res+' → '+nt+' '+kday(nd));resetForm(S);if(nextKey)S.sel=nextKey;fresh();root.paint();

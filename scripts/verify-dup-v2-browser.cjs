@@ -25,6 +25,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op)=>{__writes.push(op);return 'req';};
    window.__rpc=[];SB={rpc:async(n,a)=>{__rpc.push(n);if(n==='crm_improvement_task_list_v1')return {data:{ok:true,tasks:[]}};return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
+   /* This case explicitly models a DB without consultation RPCs; the production allowlist now includes them. */
+   const has=CRMRelease.has;CRMRelease.has=n=>!['crm_inquiry_consultation_preview_v1','crm_inquiry_consultation_write_v1'].includes(n)&&has(n);
    goPage('dup');
   });
   await page.waitForTimeout(600);

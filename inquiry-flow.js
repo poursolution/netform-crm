@@ -34,7 +34,7 @@
  function kindOf(res){const r=String(res||'').trim();if(!r)return '';if(RESULT.attempt.includes(r))return 'attempt';if(RESULT.connected.includes(r))return 'connected';if(OLD.wait.includes(r))return 'attempt';/* 보냈지만 답이 없는 것(문자 · 카카오 회신대기) = 연락 시도(2026-10-05 design_handoff_inquiry_sms) — 접촉 · 최초 응대는 아니다 */if(OLD.connected.includes(r))return 'connected';return '';}
  const twoReal=c=>kindOf((CONTACT.find(x=>x[0]===c)||[])[1]||'')==='connected';
  const twoRes=(c,r)=>{const cm=(CONTACT.find(x=>x[0]===c)||[])[1]||'';if(!cm||kindOf(cm)!=='connected')return cm;const rm=(REACTION.find(x=>x[0]===r)||[])[1];return rm===undefined?'':(rm||cm);};
- const twoOf=(c,r)=>({contact_result:(CONTACT.find(x=>x[0]===c)||[])[1]||'',customer_reaction:twoReal(c)?String(r||''):'',res:twoRes(c,r)});
+ const twoOf=(c,r)=>({contact_result:(CONTACT.find(x=>x[0]===c)||[])[1]||'',customer_reaction:twoReal(c)?((REACTION.find(x=>x[0]===r)||[])[1]||''):'',res:twoRes(c,r)});
  const TWO=Object.freeze({CONTACT,REACTION,isReal:twoReal,res:twoRes,of:twoOf});
  /* 기록 한 줄의 머리: "[전화 · 부재] 메모" 또는 "통화 결과: 부재 → 다음 연락 …" */
  const HEAD=/^\[(전화|카카오|문자|이메일|방문|기타) · ([^\]]+)\]\s*/,CALL=/^통화 결과:\s*([^→]+?)\s*(?:→|$)/;
@@ -59,7 +59,7 @@
  const SRV=new Map(),CLOSED=new Map();/* CLOSED = 문의 id → 서버의 종결 사유 글(기본 읽기는 이 칸을 내려 주지 않는다) */let SV=0,loadAt=0,loadBusy=false,loadedOk=false;/* loadedOk = 서버 흐름 함수가 실제로 응답함(설치 확인) */
  const store=()=>root.OpsStore;
  const can=name=>{try{return !!store()&&store().has(name);}catch(e){return false;}};
- const server=q=>SRV.get(String(q&&q.id||''))||null;
+ const server=q=>root.DashboardData&&root.DashboardData.active()?root.DashboardData.flow(q&&q.id):SRV.get(String(q&&q.id||''))||null;
  function take(s){if(!s||!s.inquiry_id)return;SRV.set(String(s.inquiry_id),s);SV++;}
  function load(force){
   if(!on()||loadBusy||!can(LIST))return Promise.resolve(false);if(!force&&loadAt&&Date.now()-loadAt<120000)return Promise.resolve(false);
@@ -76,7 +76,7 @@
   const p=patchOf(q),seen=new Set(),out=[];
   [].concat(q.activities||[],p.activities||[]).forEach(a=>{const k=a.id||[a.at,a.type,a.note,a.result].join('|');if(seen.has(k))return;seen.add(k);const l=logOf(a);if(l)out.push(l);});
   const S=server(q),rids=new Set(out.map(l=>l.rid).filter(Boolean));
-  if(S&&Array.isArray(S.logs))S.logs.forEach(l=>{if(l.request_id&&rids.has(String(l.request_id)))return;out.push({at:l.occurred_at,ch:l.channel,res:l.result,kind:l.kind==='wait'?'attempt':l.kind,rid:String(l.request_id||''),who:l.actor_name||'',text:l.content||'',next:l.next_action||'',server:true});});
+  if(S&&Array.isArray(S.logs))S.logs.forEach(l=>{if(l.request_id&&rids.has(String(l.request_id)))return;out.push({at:l.occurred_at,ch:l.channel,res:l.result,contact_result:l.contact_result,customer_reaction:l.customer_reaction,kind:l.kind==='wait'?'attempt':l.kind,rid:String(l.request_id||''),who:l.actor_name||'',text:l.content||'',next:l.next_action||'',server:true});});
   return out.sort((a,b)=>tOf(a.at)-tOf(b.at));
  }
  /* 예전 방식의 '응대함' 근거(상태 이름 · 응대 시각) */
@@ -214,8 +214,8 @@
   let ch=String(o.ch||'').trim(),res=String(o.result||'').trim(),text=String(o.text||'').trim(),line=String(o.line||'').trim();
   if(line){const r=readLine(line);if(r){ch=ch||r.ch;res=res||r.res;if(!text)text=r.text;}}
   ch=ch||'전화';if(!line){if(!res)throw Error('결과와 다음 행동일을 모두 넣어 주세요.');line=('['+ch+' · '+res+'] '+text).trim();}
-  const kind=kindOf(res)||'connected',next=String(o.next||'').trim(),due=String(o.due||''),rid=uuid(),at=new Date().toISOString(),flow={ch,res,kind,rid},type=ch==='기타'?'전화':ch;
-  const send=()=>{if(kindOf(res)&&UUID.test(String(q.id||'')))queue({type:'contact_log',inquiry_id:String(q.id),request_id:rid,channel:ch,result:res,content:text.slice(0,4000),next_action:next.slice(0,500),next_check_date:/^\d{4}-\d{2}-\d{2}$/.test(due)?due:'',occurred_at:at});};
+  const kind=kindOf(res)||'connected',next=String(o.next||'').trim(),due=String(o.due||''),rid=uuid(),at=new Date().toISOString(),flow={ch,res,kind,rid,contact_result:o.contact_result,customer_reaction:o.customer_reaction},type=ch==='기타'?'전화':ch;
+  const send=()=>{if(kindOf(res)&&UUID.test(String(q.id||'')))queue({type:'contact_log',inquiry_id:String(q.id),request_id:rid,channel:ch,result:res,contact_result:o.contact_result,customer_reaction:o.customer_reaction,content:text.slice(0,4000),next_action:next.slice(0,500),next_check_date:/^\d{4}-\d{2}-\d{2}$/.test(due)?due:'',occurred_at:at});};
   if(!root.inquiryAssigned(q)){/* 배정 전: 기록만(다음 할 일은 배정 뒤) */
    const p=patchFor(q);p.activities=p.activities||[];p.activities.push({id:'lg-'+Date.now(),type,note:line,result:'',at,actor:meName()||root.repN(q.assignee),flow});
    q.lastActivity=p.lastActivity=at;if(kind==='connected'){try{root.touchCustomer(p,type,at);}catch(e){}}saveLocal();send();return true;}

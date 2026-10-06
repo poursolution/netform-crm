@@ -52,9 +52,9 @@ test('화면: 판정 함수 두 개가 InquiryFlow 를 쓰고, 목록 · 상세 
  has(html,/function inqCtlFirstResponseAt\(q\)\{\n[^\n]*\n if\(window\.InquiryFlow&&InquiryFlow\.on\(\)\)return InquiryFlow\.firstConnectedAt\(q\);/,'최초응대 판정 = InquiryFlow');
  has(html,/function inquiryResponded\(q\)\{if\(window\.InquiryFlow&&InquiryFlow\.on\(\)\)return !!InquiryFlow\.firstConnectedAt\(q\);return inquiryRespondedLegacy\(q\)\}/,'응대함 판정 = InquiryFlow');
  has(html,/<script src="\.\/inquiry-flow\.js\?v=[a-z0-9-]+"><\/script><link rel="stylesheet" href="\.\/inquiry-list-v2\.css/,'목록 · 상세보다 먼저 불러온다');
- assert.match(l3,/if\(F\(\)&&root\.InquiryCommand\)return root\.InquiryCommand\.run\('contact_log',q,\{did:o\.did,line:String\(o\.res\|\|''\)\.trim\(\),next:o\.next,due:o\.due\}\)===true;/,'목록 · 오늘 업무의 결과 기록');
+ assert.match(l3,/if\(F\(\)&&root\.InquiryCommand\)return root\.InquiryCommand\.run\('contact_log',q,\{did:o\.did,line:String\(o\.res\|\|''\)\.trim\(\),next:o\.next,due:o\.due,contact_result:o\.contact_result,customer_reaction:o\.customer_reaction\}\)===true;/,'목록 · 오늘 업무의 결과 기록');
  assert.match(l3,/RES=\(\)=>F\(\)\?F\(\)\.RESULTS\.slice\(\):RES_OLD/,'목록 결과 칩 = 마스터');assert.match(l3,/let cand=F\(\)\?F\(\)\.meetingDate\(q\):/,'D-3 판정은 대표회의만');
- assert.match(dv,/root\.InquiryCommand\.run\('contact_log',q,\{ch:g\.ch,result:g\.res,text,next:nextText,due\}\)/,'상세 응대 기록');assert.match(dv,/root\.InquiryCommand\.run\('memo',q,\{text\}\)/,'상세 내부 메모');
+ assert.match(dv,/root\.InquiryCommand\.run\('contact_log',q,Object\.assign\(\{ch:g\.ch,result:g\.res,text,next:nextText,due\}/,'상세 응대 기록');assert.match(dv,/root\.InquiryCommand\.run\('memo',q,\{text\}\)/,'상세 내부 메모');
  assert.match(dv,/await root\.InquiryCommand\.run\('field_set',q,\{field,value\}\)/,'상세 칸 저장');assert.match(dv,/RES3=\(\)=>FL\(\)\?FL\(\)\.RESULTS\.map\(r=>\[r,r\]\)/,'상세 결과 칩 = 마스터');
  assert.match(wb,/root\.InquiryCommand\.run\('contact_log',q,\{did:o\.did,line:o\.res,next:o\.next,due:o\.due\}\)/,'작업대 처리 저장');assert.match(wb,/root\.InquiryFlow\.phoneHandler\(q\)/,'전화 응대자 읽기');
  /* 시도는 단계 진행(iqApply)으로 보내지 않는다 */

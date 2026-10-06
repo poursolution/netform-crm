@@ -42,6 +42,8 @@ test('consultation links preserve independent inquiries and enforce transactiona
    ($2,'Brand B','test site','접수',null,'{"original":"keep B"}','010-0000-0002'),
    ($3,'Brand C','other site','접수',$5,'{}','010-0000-0003')`,[left,right,third,rep,other]);
   await db.exec(sql);
+  const indexSql=readFileSync(new URL('../sql/inquiry-consultation-index-20261007.sql',import.meta.url),'utf8');
+  await db.exec(indexSql);await db.exec(indexSql);
   const login=async id=>{
    await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id??'']);
    await db.exec('set role authenticated');
@@ -85,7 +87,7 @@ test('consultation links preserve independent inquiries and enforce transactiona
    assert.deepEqual(await write(initial,'link',requestId,'Confirmed same construction request',right,left),linked);
    await assert.rejects(write(initial,'unlink',requestId),/REQUEST_ID_REUSE/);
    await assert.rejects(write(initial,'link',requestId,'different evidence'),/REQUEST_ID_REUSE/);
-   assert.equal((await peers()).items[0].id,right);
+   assert.equal((await peers()).items[0].id,right);assert.ok((await peers()).items[0].at);assert.equal((await peers()).items[0].by,'admin');
    await assert.rejects(write(await preview(),'link'),/RELATIONSHIP_UNCHANGED/);
    const unlinked=await write(await preview(),'unlink');assert.equal(unlinked.version,2);assert.equal(unlinked.active,false);
    assert.equal((await peers()).items.length,0);
