@@ -5,18 +5,41 @@ const adapter = require('../operational-adapter.js');
 
 const source = fs.readFileSync('crm.html', 'utf8');
 
-function consentSaveFixture({mobile='010-1234-5678', name='테스트 소장', sms=true, blocked=false, consentAt='2026-10-05T00:00:00Z'}={}) {
+function consentSaveFixture({mobile='010-1234-5678', name='테스트 소장', sms=true, kakao=false, blocked=false, consentAt='2026-10-05T00:00:00Z', scoped=false}={}) {
   const values={'qc-name':name,'qc-mobile':mobile,'qc-role':'관리소장','qc-decision-role':'','qc-relation-tone':'','qc-consent-at':'','qc-block-reason':'','qc-office':'','qc-email':''};
-  const checks={'qc-sms':sms,'qc-kakao':false,'qc-block':blocked};
-  const document={getElementById:id=>({value:values[id]??'',checked:!!checks[id]})};
+  const checks={'qc-sms':sms,'qc-kakao':kakao,'qc-block':blocked};
+  const errorBox={style:{},textContent:''};let globalReads=0;
+  const selected=id=>id==='qc-err'?errorBox:({value:values[id]??'',checked:!!checks[id]});
+  const document={getElementById:id=>{globalReads++;return scoped?{value:'',checked:false}:selected(id);}};
   const writes=[],messages=[],item={id:'11111111-1111-4111-8111-111111111111',site:'테스트 현장'};
   const root={contactDirectoryHTML:()=>'',phoneN:value=>String(value||''),addEventListener:()=>{},
-    QUICK_CONTACT:{item,mode:'primary',pcDecision:'',pcTone:'',pcConsentInput:'',pcOriginal:{mobile,consentAt}},
+    QUICK_CONTACT:{item,mode:'primary',pcDecision:'',pcTone:'',pcConsentInput:'',pcOriginal:{mobile,consentAt},...(scoped?{pcRoot:{querySelector:selector=>selected(selector.slice(1))}}:{})},
     quickContactErr:message=>messages.push(message),contactInfo:()=>({mobile}),itemPatch:()=>({}),
     Phase1:{queue:{list:()=>[]}},pushWrite:(operation,payload)=>{writes.push({operation,payload});return 'test-request';}};
   require('node:vm').runInNewContext(fs.readFileSync('pc-primary-contact.js','utf8'),{window:root,document});
-  root.saveQuickContact();return {writes,messages,item};
+  root.saveQuickContact();return {writes,messages,item,errorBox,globalReads};
 }
+
+test('selected contact form wins over stale duplicate IDs for both channels and withdrawal',()=>{
+  for(const [sms,kakao] of [[true,false],[false,true],[false,false],[true,true]]){
+    const r=consentSaveFixture({scoped:true,sms,kakao});assert.equal(r.writes.length,1);
+    assert.equal(r.writes[0].payload.manager_mobile,'01012345678');assert.equal(r.writes[0].payload.manager_name,'테스트 소장');
+    assert.equal(r.writes[0].payload.sms_consent,sms);assert.equal(r.writes[0].payload.kakao_consent,kakao);
+    assert.equal(r.globalReads,0);assert.equal(r.messages.length,0);assert.equal(r.item.contact,undefined);
+  }
+});
+
+test('selected form validation remains local and blocks invalid identity or missing consent evidence',()=>{
+  for(const options of [{mobile:'0101234'},{name:''},{consentAt:null}]){
+    const r=consentSaveFixture({scoped:true,...options});assert.equal(r.writes.length,0);
+    assert.equal(r.globalReads,0);assert.equal(r.messages.length,0);assert.ok(r.errorBox.textContent);assert.equal(r.errorBox.style.display,'block');
+  }
+});
+
+test('both current contact callers pass their own form root',()=>{
+  assert.match(fs.readFileSync('deal-detail-v3.js','utf8'),/QUICK_CONTACT=\{pcRoot:box,item:d,/);
+  assert.match(fs.readFileSync('deal-panels-v2.js','utf8'),/QUICK_CONTACT=\{pcRoot:p,item,key:/);
+});
 
 test('consent save accepts formatted mobile and queues its canonical identity without optimistic changes',()=>{
   const result=consentSaveFixture();assert.equal(result.writes.length,1);
@@ -40,7 +63,7 @@ test('consent withdrawal and send block remain disabled in the queued payload',(
 });
 
 test('PC contact normalization fix has a fresh browser asset version',()=>{
-  assert.match(source,/pc-primary-contact\.js\?v=20261005-consent-phone/);
+  for(const file of ['pc-primary-contact','deal-detail-v3','deal-panels-v2'])assert.ok(source.includes(file+'.js?v=20261006-consent-scope'));
 });
 
 test('existing Deal contact saves pass canonical Site ID into person history', () => {
