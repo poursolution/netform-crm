@@ -97,6 +97,23 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* ⑤ 창 전체를 다시 그려도 지도는 새로 만들지 않고 옮겨 꽂는다 */
   await d.locator('.isd-scope [data-v="all"]').click();await page.waitForTimeout(150);
   assert.deepEqual(await page.evaluate(()=>[KLOG.maps,KLOG.relayout>0,!!document.querySelector('#inq-inbox-dialog [data-isd-map] .isd-mapbox[data-made]'),document.querySelector('#inq-inbox-dialog .isd-near header span').textContent]),[1,true,true,'1곳 · 반경 1km']);
+  /* ⑤-1 영업건 상세(파이프라인)에도 같은 칸: 그 영업건의 현장이 가운데 · 같은 현장의 다른 영업건은 뺀다 · 지도는 새로 만들지 않고 옮겨 쓴다 */
+  await page.evaluate(()=>{InquiryWorkbench.close();drwDeal(JSON.stringify(B.deals[1]));});await page.waitForSelector('#detailView.on .dw-right .dv3-near .isd-near');await page.waitForTimeout(250);
+  const DN=page.locator('#detailView .dv3-near');
+  const dexp=await page.evaluate(()=>{const c={lat:37.2086,lng:127.0975},k=(a,b)=>InquirySite.kmText(InquirySite.km(c,{lat:a,lng:b}));return [k(C[0],C[1]),k(37.2005,127.1246),k(37.2374,127.0975)];});
+  assert.deepEqual(dexp,['901m','2.6km','3.2km']);
+  assert.equal(one(await DN.locator('header').innerText()),'근처에서 영업했던 현장 2곳 · 반경 3km');
+  assert.deepEqual((await DN.locator('.isd-nrow').allInnerTexts()).map(one).map(s=>s.replace(/^(\S+) .* (\S+)$/,'$1|$2')),['한빛마을2차아파트|901m','동탄푸른교회|2.6km'],'가까운 순 · 같은 현장(동탄새빛캐슬)의 다른 영업건은 없다');
+  assert.deepEqual(await page.evaluate(()=>[KLOG.maps,!!document.querySelector('#detailView .dv3-near [data-isd-map] .isd-mapbox[data-made]'),document.querySelector('#detailView .isd-dot.now').title,document.querySelector('#detailView .dw-right').lastElementChild.classList.contains('dv3-near'),getComputedStyle(document.querySelector('#detailView .isd-map')).height]),[1,true,'지금 문의 · 동탄새빛캐슬',true,'230px']);
+  await DN.locator('[data-idv="rad"][data-v="5"]').click();await page.waitForTimeout(150);
+  assert.deepEqual([one(await DN.locator('header').innerText()),await DN.locator('.isd-nrow em').allInnerTexts(),await page.evaluate(()=>KLOG.circle.radius)],['근처에서 영업했던 현장 3곳 · 반경 5km',['901m','2.6km','3.2km'],5000]);
+  /* 줄을 한 번 누르면 지도 이동, 다시 누르면 그 영업건이 열린다 */
+  {const pan0=await page.evaluate(()=>KLOG.pan.length);await DN.locator('.isd-nrow').first().click();await page.waitForTimeout(120);
+   assert.deepEqual(await page.evaluate(n=>[KLOG.pan.length-n,CUR_DETAIL.item.id===B.deals[1].id],pan0),[1,true]);
+   await DN.locator('.isd-nrow').first().click();await page.waitForTimeout(350);
+   assert.equal(await page.evaluate(()=>CUR_DETAIL.item.id===B.deals[0].id),true,'다시 누르면 그 영업건(한빛마을2차아파트)이 열린다');
+   assert.match(one(await page.locator('#detailView .dv3-near header').innerText()),/^근처에서 영업했던 현장 \d+곳 · 반경 3km$/);}
+  await page.evaluate(()=>{try{closeDetail();}catch(e){}});await page.waitForTimeout(150);
   /* ⑤-2 지도 서비스가 오류를 돌려주면(설정 · 사용량 문제) '못 찾음'으로 저장하지 않고 멈춘다 — 지도는 이미 아는 좌표로 그대로 */
   const er=await page.evaluate(async()=>{InquiryWorkbench.close();InquirySite._resetMap();GEO.saved=[];GEO.sites=[[U(1),C[0],C[1],'address',null,null],[U(3),null,null,null,'오류 나는 주소 1','[경기 화성] 동탄푸른교회']];
    const G0=kakao.maps.services.Geocoder;kakao.maps.services.Geocoder=class{addressSearch(a,cb){setTimeout(()=>cb([],'ERROR'),0);}};
