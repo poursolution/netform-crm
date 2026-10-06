@@ -97,13 +97,14 @@
     const sub=code==='contract'?(v.contractDate?'계약 '+ymd(v.contractDate):'계약 서류 진행'):code==='construction'?('인계 '+(bf.handover||'미기록')+(bf.start_date?' · 착공 '+ymd(bf.start_date):'')):('준공 '+(ymd(v.completionDate)||'일자 미기록'));
     const rs=[];if(!v.contractDate||!v.contractAmount)rs.push('cinfo');if(code==='construction'&&bf.handover!=='완료')rs.push('handoff');if(code==='construction'&&ld!==null&&ld>q.site)rs.push('site7');if(code==='contract'&&!cf.special_terms)rs.push('verbal');if(/추가/.test(String(bf.requests||'')))rs.push('extra');
     return {bucket,sub,rs};}},
-  won:{name:'수주',desc:()=>'준공 이후 단계 · 준공은 끝이 아니라 사후관리 → 재영업 · D+'+rules().after+' 만족도 · 하자 · 내년 공사 · 추가 공종 · 주변 단지 소개 확인',axis:'사후관리',
-   S:[['fresh','준공 직후 · D+30 전','#8a909c','D+30에 사후 연락'],['check','D+30 사후 확인','#15171c','만족도 · 하자 · 차기 공사 확인'],['resale','재영업 연결','#d5d9e0','새 영업건 · 소개 단지 등록']],
-   RS:{after30:['준공 D+30 사후 연락 안 함',RED,'사후 연락','만족도 · 하자 · 내년 공사 · 추가 공종 · 주변 단지 소개 확인','activity'],refer:['추가공사 · 소개 미등록',INK,'영업건 등록','기회는 메모가 아니라 새 영업건(확장관리)으로 등록','expansion'],nextyear:['차기 공사 미확인',INK,'연도 확인','장기수선계획 · 내년도 예정 공종 확인 → 대기(2개월) 연결','next'],keyman:['결정권자 관계 유지 안 함',INK,'관계 연락','입대의 · 관리소장 교체 여부 확인 · 2개월 1회 연락','activity']},
-   calc(r,v,q){const cd=since(v.completionDate),ld=lastDays(r),exp=expansionOf(r),after=cd!==null&&cd>=q.after,contacted=ld!==null&&cd!==null&&ld<cd;
-    const bucket=exp?'resale':(cd!==null&&cd<q.after)?'fresh':'check';
-    const sub=(v.completionDate?'준공 '+ymd(v.completionDate)+(cd!==null?' · D+'+cd:''):'준공일 미기록')+(exp?' · 확장관리 연결':'');
-    const rs=[];if(after&&!contacted)rs.push('after30');if(after&&!exp)rs.push('refer');if(!(r.next&&r.next.text)&&!exp)rs.push('nextyear');if(ld!==null&&ld>q.wait)rs.push('keyman');
+  /* 수주 = 실적 · 완료 정보(2026-10-06 design_handoff_followup4 ②): 수주 유형 · 낙찰금액 · 낙찰사 / 계약일 · 착공 · 준공 확인 / 빠진 계약 정보. 준공 후 연락 · 추가 공사 업무는 여기서 만들지 않는다 → 확장관리 */
+  won:{name:'수주',desc:()=>'계약이 끝난 건의 결과를 정확히 남기는 곳 · 수주 유형 · 낙찰금액 · 낙찰사 → 계약일 · 착공 · 준공 확인 → 빠진 계약 정보 입력. 준공 후 연락 · 추가 공사는 확장관리에서',axis:'실적 · 완료 정보',
+   S:[['result','수주 정보 미기록','#15171c','수주 유형 · 낙찰금액 · 낙찰사 기록'],['dates','계약일 · 착공 · 준공 확인','#8a909c','세 날짜 확인 · 기록'],['done','실적 · 완료 정보 완료','#d5d9e0','사후 연락은 확장관리에서']],
+   RS:{wtype:['수주 유형 · 낙찰금액 · 낙찰사 미기록',RED,'수주 정보','수주 유형(직접 · 협약 · 타사 이관) · 낙찰금액(VAT 별도) · 낙찰사를 기록 — 실적 집계 기준','win'],cdate:['계약일 · 착공 · 준공 확인 안 됨',INK,'일정 확인','계약일 · 착공일 · 준공일을 확인해 기록','stagefields'],cinfo:['빠진 계약 정보 입력',INK,'정보 입력','계약금액 · 계약서 등 빠진 계약 정보를 입력(매출 집계)','stagefields']},
+   calc(r,v,q){let w=null;try{w=root.DealWin&&root.DealWin.resultOf?root.DealWin.resultOf(r.item):null;}catch(e){}const typed=!!(w&&w.type&&w.type!=='none'&&(w.amount||w.company)),dOk=!!(v.contractDate&&v.startDate&&v.completionDate),info=!!v.contractAmount;
+    const bucket=!typed?'result':!dOk?'dates':'done';
+    const sub=(typed?String(w.text||'수주 기록')+(w.amount?' · '+money(w.amount):''):'수주 유형 미기록')+' · '+(v.completionDate?'준공 '+ymd(v.completionDate):v.contractDate?'계약 '+ymd(v.contractDate):'계약일 미기록');
+    const rs=[];if(!typed)rs.push('wtype');if(!dOk)rs.push('cdate');if(!info)rs.push('cinfo');
     return {bucket,sub,rs};}},
   lost:{name:'실주',desc:()=>'이번 공사는 끝났지만 영업은 계속 · 실주 사유 · 낙찰사 · 금액 기록 → 차기 공사 연도 지정 → 대기('+Math.round(rules().wait/30)+'개월 1회)로 관계 유지',axis:'실주 기록',
    S:[['nore','사유 미기록','#15171c','사유 · 낙찰사 · 금액 기록'],['rec','기록 완료','#d5d9e0','차기 공사 연도 지정'],['re','재영업 예정','#8a909c','대기 · 2개월 1회 연락']],
@@ -163,6 +164,8 @@
   const r=root.PipelineWorkspace.rows().find(x=>x.key===key);if(!r)return;
   if(act==='expansion'&&typeof root.goPage==='function'){root.G.expansionFocus=r.item.id;root.goPage('expansion');return;}
   root.G._detailPopup=true;root.drwDeal(JSON.stringify(r.item));
+  /* 수주 정보(수주 유형 · 낙찰금액 · 낙찰사) = 상세 위의 수주 유형 창(deal-win.js) */
+  if(act==='win'){setTimeout(()=>{try{if(root.DealWin&&typeof root.DealWin.open==='function')root.DealWin.open(r.item);}catch(e){}},200);return;}
   /* 연락처 찾기: 상세를 열고 연락처 등록 칸을 바로 연다 */
   if(act==='contact'){setTimeout(()=>{try{const b=document.querySelector('#detailView [data-dv3="addc"]');if(b&&!b.disabled)b.click();}catch(e){}},250);return;}
   /* 새 상세(v3)가 켜져 있으면 그 창의 자리로 — 예전 입력 창(다음 할 일 설정 등)을 띄우지 않는다. 새 창에 자리가 없는 것(지원 요청)과 예전 틀만 기존 경로 */

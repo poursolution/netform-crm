@@ -421,7 +421,12 @@
   if(s.tab==='sms')form=smsForm(q,s,String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'').replace(/\D/g,''),true);
   else if(s.tab==='memo')form='<input id="spLogNote" class="idv3-in" data-idv="text" placeholder="내부에서만 보는 메모 (고객에게 보이지 않음)" value="'+attr(s.text)+'"><div class="idv3-foot"><span class="idv3-sug">팀 내부용 · 고객에게 보이지 않습니다</span><button type="button" class="idv-save'+(s.text.trim()?' on':'')+'" data-idv="save">저장</button></div><select id="spLogType" hidden><option selected>기타</option></select>';
   else{const u=sugText(q,s),g=u.g;
-   form='<div class="idv3-res">'+RES3().map(([l,v])=>'<button type="button" class="idv3-rc'+(s.res===v?' on':'')+'" data-idv="res" data-v="'+v+'" aria-pressed="'+(s.res===v)+'">'+l+'</button>').join('')+'</div>'
+   /* 결과 두 줄(2026-10-06 design_handoff_followup4): 연락 결과 4(+ 배드핏 종결) → 실제 연결일 때만 고객 반응 6. 흐름 모듈이 없으면 예전 한 줄 */
+   const T=FL()&&FL().TWO,rc=(k,l,v,on)=>'<button type="button" class="idv3-rc'+(on?' on':'')+'" data-idv="'+k+'" data-v="'+attr(v)+'" aria-pressed="'+on+'">'+h(l)+'</button>';
+   form=(T?'<div class="idv3-res"><span class="idv3-rl">연락 결과</span>'+T.CONTACT.map(([l])=>rc('con',l,l,s.con===l)).join('')+rc('res','배드핏','__close',false)+'<small class="idv3-rn">실제 연결 = 연결됨 · 회신 받음</small></div>'
+    +(T.isReal(s.con)?'<div class="idv3-res"><span class="idv3-rl">고객 반응</span>'+T.REACTION.map(([l])=>rc('rea',l,l,s.rea===l)).join('')+'</div>':'')
+    +'<small class="idv3-rnote">'+h(s.con?(T.isReal(s.con)?'실제 연결 → 최초 응대 시각 기록 · 고객 반응으로 다음 행동 제안':'연락 시도로만 기록 · 고객 반응 줄은 숨김 · 다음 행동은 재연락'):'연락 결과를 고르면 다음 행동을 제안합니다')+'</small>'
+    :'<div class="idv3-res">'+RES3().map(([l,v])=>'<button type="button" class="idv3-rc'+(s.res===v?' on':'')+'" data-idv="res" data-v="'+v+'" aria-pressed="'+(s.res===v)+'">'+l+'</button>').join('')+'</div>')
     +'<input id="iq-res" class="idv3-in" data-idv="text" placeholder="무슨 일이 있었는지 한 줄 (선택)" value="'+attr(s.text)+'">'
     +(u.has&&s.edit?'<div class="idv-sugedit"><small>수단</small><div>'+((root.CRMRules&&root.CRMRules.get('contact_channels'))||CH).map(l=>'<button type="button" class="idv-chip'+(g.ch===l?' on':'')+'" data-idv="ch" data-v="'+l+'">'+l+'</button>').join('')+'</div><small>다음 행동</small><div>'+AC.map(l=>'<button type="button" class="idv-chip'+(g.act===l?' on':'')+'" data-idv="act" data-v="'+l+'">'+l+'</button>').join('')+'</div><small>날짜</small><div>'+DY.map(l=>'<button type="button" class="idv-chip'+(g.nday===l&&!s.due?' on':'')+'" data-idv="nday" data-v="'+l+'">'+l+'</button>').join('')+'<input type="date" id="iq-due" data-idv="due" value="'+attr(g.due)+'" aria-label="다음 행동 날짜"></div><input id="iq-next" data-idv="next" placeholder="다음 행동을 직접 적기" value="'+attr(s.next||'')+'"></div>':'<input type="hidden" id="iq-next" value="'+attr(s.next||(u.has?(g.none?'배드핏 종결 검토':g.act):''))+'"><input type="hidden" id="iq-due" value="'+attr(u.has?g.due:'')+'">')
     +'<div class="idv3-foot"><span class="idv3-sug"><em>AI</em>다음 행동 <b>'+h(u.txt)+'</b>'+(u.has?'<button type="button" class="lnk" data-idv="edit-sug">'+(s.edit?'닫기':'바꾸기')+'</button>':'')+'</span><button type="button" class="idv-save'+(u.has?' on':'')+'" data-idv="save">저장</button></div><input type="hidden" id="iq-did" value="고객 응대 기록">';}
@@ -514,6 +519,7 @@
   if(k==='tpl4'){const L4=timeline(q),y=smsTpl4(q,L4).T.find(t=>t.k===v);if(y){s.smsTpl=y.k;s.smsText=y.body;s.smsDays=0;}return reskinFrom();}
   if(k==='sms-go')return smsGo4(q,s);
   if(k==='res'&&v==='__close'){if(typeof root.inqCtlOpenClose==='function')root.inqCtlOpenClose(curKey);return;}
+  if(k==='con'||k==='rea'){const T=FL()&&FL().TWO;if(!T)return;if(k==='con'){s.con=s.con===v?'':v;if(!T.isReal(s.con))s.rea='';}else s.rea=s.rea===v?'':v;s.res=T.res(s.con,s.rea);s.act='';s.nday='';s.due='';return reskinFrom();}
   if(k==='res'){s.res=(s.res===v&&document.getElementById('inq-inbox-dialog')?.classList.contains('idv3'))?'':v;s.act='';s.nday='';s.due='';return reskinFrom();}
   if(k==='editsave'){const inp=document.querySelector('#inq-inbox-dialog [data-idv="editinput"]');if(inp&&!inp.disabled)saveField(q,s,inp.dataset.v,inp.value);return;}
   if(k==='dial')return dial(phoneOf(q).digits);
@@ -563,7 +569,7 @@
   if(FL()&&root.InquiryCommand){
    /* 저장은 명령 하나(InquiryCommand): 응대 기록 = contact_log(시도면 최초응대 · 단계는 그대로), 내부 메모 = memo. 화면이 숨은 입력칸을 만들어 예전 함수를 돌려 부르지 않는다 */
    if(!root.inqCtlRoleMatch(q))return;
-   const reset=()=>Object.assign(s,{text:'',ch:'',res:'',act:'',nday:'',due:'',next:'',edit:false,aiRead:false});
+   const reset=()=>Object.assign(s,{text:'',ch:'',res:'',con:'',rea:'',act:'',nday:'',due:'',next:'',edit:false,aiRead:false});
    try{
     if(s.tab==='call'){
      const g=sugOf(q,s),assigned=!!root.inquiryAssigned(q),nextText=(s.next||'').trim()||(g.none?'배드핏 종결 검토':g.act),due=(document.getElementById('iq-due')||{}).value||g.due;

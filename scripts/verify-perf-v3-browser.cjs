@@ -58,7 +58,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const vd=v.locator('.pf3-verdict');
   assert.equal(await vd.evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(255, 255, 255)','흰 배경(남색 금지)');
   assert.deepEqual(await vd.locator('.pf3-ring').evaluate(n=>[n.querySelector('b').textContent,n.querySelector('span').textContent,/#3b6ce4 0 57\.1/.test(n.getAttribute('style').replace(/\s/g,' ')),getComputedStyle(n).width]),['57.1%','메이드율',true,'78px']);
-  assert.deepEqual(await vd.locator('.tx').evaluate(n=>[...n.children].map(c=>c.textContent)),['한 줄 판정 · 2026년 연간','2026년 연간 수주실적 9.6억 · 결과 난 영업 7건 중 4건을 이겼습니다.','메이드율 57.1% · 기준 50% 이상 · 황윤선이(가) 팀 평균을 끌어내림']);
+  assert.deepEqual(await vd.locator('.tx').evaluate(n=>[...n.children].map(c=>c.textContent)),['한 줄 판정 · 2026년 연간','2026년 연간 수주실적 9.6억 · 결과 난 영업 7건 중 4건을 이겼습니다.','메이드율 57.1% · 기준 50% 이상 / 황윤선 · 메이드율 33% · 팀 평균(57%) 미만 · 결과 확정 3건(수주 1 · 실주 2)']);
   const ks=()=>page.locator('#si-perf .pf3-verdict .ks>div').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent)));
   assert.deepEqual(await ks(),[['연 수주실적','9.6억','4건 · 월평균 1.1억'],['회사 매출','8.6억','직접 계약 + 기술자문 · POUR'],['메이드율','57.1%','기준 50%'],['10월','아직 없음','7일째 · 9월 3.7억']]);
   assert.equal(await vd.locator('.ks>div').nth(3).locator('b').evaluate(n=>getComputedStyle(n).color),'rgb(156, 163, 175)','아직 없음은 회색');

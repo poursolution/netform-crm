@@ -94,7 +94,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.waitForTimeout(150);assert.equal(await det.locator('.i4-dh .site').innerText(),'[서울 노원] 중계청구3차');
   /* ⑦ 결과 저장 → 다음 문의. 부재 = 연락 시도로만(최초 응대 시각은 그대로) */
   const firstBefore=await page.evaluate(()=>String(inqCtlFirstResponseAt(B.inquiries.find(q=>q.id===N))||''));
-  await det.locator('[data-i4="res"][data-v="부재"]').click();await page.waitForTimeout(100);
+  await det.locator('[data-i4="con"][data-v="부재"]').click();await page.waitForTimeout(100);
   assert.match(one(await det.locator('.i4-next').innerText()),/^AI 다음 행동 다시 연락 · 내일 \(\d{4}\.\d+\.\d+\([일월화수목금토]\)\) 바꾸기$/);
   assert.equal(one(await det.locator('.i4-save span').innerText()),'부재 = 연락 시도로만 기록 · 최초 응대 아님');
   await det.locator('[data-i4="pick"]').click();await page.waitForTimeout(80);
@@ -110,7 +110,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual([await det.locator('.i4-chip.on').count(),await det.locator('.i4-memo').inputValue()],[0,''],'다음 문의는 빈 기록 칸으로');
   /* 첫 연락 전 탭에서 '연결됨'을 저장하면 그 탭에서 빠진다 */
   await V.locator('[data-i4="tab"][data-v="nofirst"]').click();await page.waitForTimeout(120);
-  await det.locator('[data-i4="res"][data-v="연결됨"]').click();await det.locator('[data-i4="save"]').click();await page.waitForTimeout(500);
+  await det.locator('[data-i4="con"][data-v="연결됨"]').click();await det.locator('[data-i4="rea"][data-v="관심 있음"]').click();await det.locator('[data-i4="save"]').click();await page.waitForTimeout(500);
   assert.deepEqual([await tabNums(),await rows().count(),one(await det.innerText())],[[5,1,0,1,3],0,'왼쪽에서 문의를 고르면 여기에 열립니다']);
   await V.locator('[data-i4="tab"][data-v="all"]').click();await page.waitForTimeout(120);
   /* ⑧ 빠진 정보: 누르면 그 자리에서 입력 */

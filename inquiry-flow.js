@@ -24,10 +24,18 @@
  const RESULTS=Object.freeze(RESULT.connected.concat(RESULT.attempt));
  /* 결과 → 다음 행동 제안(행동 · 날짜) */
  const NEXT=Object.freeze({'연결됨':['다시 연락','3일 후'],'고객 회신':['다시 연락','3일 후'],'검토중':['다시 연락','7일 후'],'자료요청':['자료 확인','3일 후'],'견적요청':['견적 준비','3일 후'],'부재':['다시 연락','내일'],'통화불가':['다시 연락','내일'],'번호오류':['연락처 확인','내일'],'회신대기':['다시 연락','3일 후']});
+ /* 결과 두 줄(2026-10-06 design_handoff_followup4): 연락 결과 4 → 실제 연결(연결됨 · 회신 받음)일 때만 고객 반응 6. 부재 · 번호 오류 = 연락 시도.
+    저장값은 기존 결과 마스터 한 칸(contact_result)으로 맞춘다 — 시도면 그 결과, 실제 연결이면 고객 반응(관심 있음 = 연락 결과 그대로). 서버에 contact_result · customer_reaction 두 칸이 생기면 twoOf 로 둘 다 넘긴다(Codex) */
+ const CONTACT=Object.freeze([['연결됨','연결됨'],['회신 받음','고객 회신'],['부재','부재'],['번호 오류','번호오류']]);
+ const REACTION=Object.freeze([['관심 있음',''],['검토중','검토중'],['자료 요청','자료요청'],['견적 요청','견적요청'],['보류','보류'],['거절','거절']]);
  const CHANNELS=()=>(root.CRMRules&&root.CRMRules.get&&root.CRMRules.get('contact_channels'))||['전화','카카오','문자','이메일','방문','기타'];
  const on=()=>!(root.G&&root.G.inqFlowOff);
  const rule=(k,d)=>{try{const v=root.CRMRules&&root.CRMRules.get?root.CRMRules.get(k):null;return Number(v)>0?Number(v):d;}catch(e){return d;}};
  function kindOf(res){const r=String(res||'').trim();if(!r)return '';if(RESULT.attempt.includes(r))return 'attempt';if(RESULT.connected.includes(r))return 'connected';if(OLD.wait.includes(r))return 'attempt';/* 보냈지만 답이 없는 것(문자 · 카카오 회신대기) = 연락 시도(2026-10-05 design_handoff_inquiry_sms) — 접촉 · 최초 응대는 아니다 */if(OLD.connected.includes(r))return 'connected';return '';}
+ const twoReal=c=>kindOf((CONTACT.find(x=>x[0]===c)||[])[1]||'')==='connected';
+ const twoRes=(c,r)=>{const cm=(CONTACT.find(x=>x[0]===c)||[])[1]||'';if(!cm||kindOf(cm)!=='connected')return cm;const rm=(REACTION.find(x=>x[0]===r)||[])[1];return rm===undefined?'':(rm||cm);};
+ const twoOf=(c,r)=>({contact_result:(CONTACT.find(x=>x[0]===c)||[])[1]||'',customer_reaction:twoReal(c)?String(r||''):'',res:twoRes(c,r)});
+ const TWO=Object.freeze({CONTACT,REACTION,isReal:twoReal,res:twoRes,of:twoOf});
  /* 기록 한 줄의 머리: "[전화 · 부재] 메모" 또는 "통화 결과: 부재 → 다음 연락 …" */
  const HEAD=/^\[(전화|카카오|문자|이메일|방문|기타) · ([^\]]+)\]\s*/,CALL=/^통화 결과:\s*([^→]+?)\s*(?:→|$)/;
  function readLine(text){const s=String(text||'');let m=HEAD.exec(s);if(m)return {ch:m[1],res:m[2].trim(),text:s.replace(HEAD,'')};m=CALL.exec(s);if(m)return {ch:'전화',res:m[1].trim(),text:''};return null;}
@@ -157,7 +165,7 @@
  /* ⑤ 견적 버전(서버 것이 있으면 서버, 없으면 이 PC 에 적어 둔 것) · 예전 다음 할 일 문장 속 금액 읽기 */
  function quotes(q){const S=server(q),p=patchOf(q),L=S&&Array.isArray(S.quotes)&&S.quotes.length?S.quotes:(Array.isArray(p.quoteVersions)?p.quoteVersions:[]);return L.slice().sort((a,b)=>Number(a.version_no)-Number(b.version_no));}
  const parseQuoteText=t=>{const m=/예상\s*([0-9,]+)\s*만원/.exec(String(t||''));return m?Number(m[1].replace(/,/g,''))*10000:0;};
- root.InquiryFlow={on,RESULT,OLD,RESULTS,NEXT,CHANNELS,kindOf,readLine,logOf,logs,state,own,firstConnectedAt,firstAttemptAt,attempts,attemptNote,meetingDate,replyDue,phoneHandler,legacyResponded,server,load,take,RPC,LIST,
+ root.InquiryFlow={on,RESULT,OLD,RESULTS,NEXT,TWO,CHANNELS,kindOf,readLine,logOf,logs,state,own,firstConnectedAt,firstAttemptAt,attempts,attemptNote,meetingDate,replyDue,phoneHandler,legacyResponded,server,load,take,RPC,LIST,
   CLOSE,closeReasons,closeReasonText,closeOf,QUALIFY_TEXT,statusQualifies,qualifiedBy,isQualified,quotes,parseQuoteText,
   _reset(){SRV.clear();CLOSED.clear();SV++;loadAt=0;}};
 
