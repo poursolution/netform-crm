@@ -82,7 +82,8 @@
   if(role==='mgr'&&(rk==='deadline'||rk==='decide'))return null;
   /* 경과일: 견적문의 · 첫 연락 전 = 접수부터, 그 뒤와 모든 단계 = 마지막 응대부터 */
   let days=0,dLabel='경과';
-  if(inq){let fr=null;try{fr=root.inqCtlFirstResponseAt(d);}catch(e){}if(fr){days=dayN(root.todayHoursFrom(fr));dLabel='응대 후';}else{days=dayN(x.lag);dLabel='접수 후';}}
+  if(inq&&x.reassignmentPending){days=dayN(root.todayHoursFrom(x.reassignmentAt));dLabel='재배정 후';}
+  else if(inq){let fr=null;try{fr=root.inqCtlFirstResponseAt(d);}catch(e){}if(fr){days=dayN(root.todayHoursFrom(fr));dLabel='응대 후';}else{days=dayN(x.lag);dLabel='접수 후';}}
   else if(exp){days=x.dueDays!==null&&x.dueDays<0?-x.dueDays:0;dLabel='연락일 후';}
   else{days=relDays!=null?relDays:lastDays!=null?lastDays:(stAge||0);dLabel='응대 후';}
   const short=rk==='deadline'&&dl?'D-'+dl.n:x.dueDays===0?'오늘':days+'일';if(x.dueDays===0&&rk==='promise')dLabel='약속';
