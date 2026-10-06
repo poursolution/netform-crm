@@ -4,9 +4,10 @@
  let actor='',generation=0,items=[],status='idle',pending=null;
  const identity=()=>String(root.ME?.id||root.ME?.user_id||root.ME?.name||'');
  function reset(){generation++;actor=identity();items=[];status='idle';pending=null}
- function state(){if(actor!==identity())reset();return {status,items:status==='ready'?items:[]}}
+ function ownState(){if(actor!==identity())reset();return {status,items:status==='ready'?items:[]}}
+ function state(){return root.DashboardData&&root.DashboardData.active()?root.DashboardData.contractState():ownState();}
  async function refresh(){
-  state();if(pending)return pending;
+  ownState();if(pending)return pending;
   if(!actor||!root.SB||!root.TOKEN){status='unavailable';return}
   const previous=JSON.stringify([status,items]);
   status='loading';const epoch=generation,who=actor;
@@ -38,7 +39,7 @@
  function entries(f={}){
   const s=state();if(s.status!=='ready')return null;
   const scope=root.SalesScope?.state();
-  const selected=items.filter(r=>{
+  const selected=s.items.filter(r=>{
    if(root.SalesFilterState&&!root.SalesFilterState.matchesBrand(r.brand))return false;
    if(f.brand&&f.brand!=='전체'&&r.brand!==f.brand||f.owner&&f.owner!=='전체'&&r.sales_owner_name!==f.owner)return false;
    if(!scope)return true;
@@ -61,7 +62,7 @@
   const ack=response.data;
   if(!ack?.ok||ack.policy!==L.POLICY||ack.deal_id!==p.deal_id||ack.kind!==p.kind||ack.version!==p.expected_version+1||!ack.event_id)throw new Error('저장 완료 응답을 확인하지 못했습니다. 같은 요청으로 재확인해 주세요.');
   await refresh();
-  if(state().status!=='ready'||!items.some(r=>r.deal_id===p.deal_id&&r.events.some(e=>e.event_id===ack.event_id)))throw new Error('서버 응답은 받았지만 저장 결과 재조회를 확인하지 못했습니다. 같은 요청으로 재확인해 주세요.');
+  if(ownState().status!=='ready'||!items.some(r=>r.deal_id===p.deal_id&&r.events.some(e=>e.event_id===ack.event_id)))throw new Error('서버 응답은 받았지만 저장 결과 재조회를 확인하지 못했습니다. 같은 요청으로 재확인해 주세요.');
   return ack;
  }
  root.addEventListener('phase1:identity-cleared',reset);

@@ -182,7 +182,7 @@
  const isFirst=q=>!root.inqCtlFirstResponseAt(q)&&String(q&&q.status||'')!==FIRST_DONE;
  function record(q,o){
   /* 저장은 명령 하나(InquiryCommand · contact_log): 시도면 최초응대 · 단계는 그대로, 첫 접촉이면 단계 진행, 그 뒤는 다음 할 일만 */
-  if(F()&&root.InquiryCommand)return root.InquiryCommand.run('contact_log',q,{did:o.did,line:String(o.res||'').trim(),next:o.next,due:o.due})===true;
+  if(F()&&root.InquiryCommand)return root.InquiryCommand.run('contact_log',q,{did:o.did,line:String(o.res||'').trim(),next:o.next,due:o.due,contact_result:o.contact_result,customer_reaction:o.customer_reaction})===true;
   const did=String(o.did||'고객 응대 기록').trim(),res=String(o.res||'').trim(),next=String(o.next||'').trim(),due=String(o.due||'');
   if(!res||!next||!/^\d{4}-\d{2}-\d{2}$/.test(due))throw Error('결과와 다음 행동일을 모두 넣어 주세요.');
   if(isFirst(q)){const made=[tmp('input','iq-did',did),tmp('textarea','iq-res',res),tmp('input','iq-next',next),tmp('input','iq-due',due)];try{return root.iqApply(q,'step:1')===true;}finally{made.forEach(el=>el.remove());}}
