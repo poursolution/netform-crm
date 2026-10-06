@@ -85,13 +85,14 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await page.locator('#detailView .dv3-moves [data-stage="relationship"]').click();await page.waitForSelector('#stage-transition-form');
   assert.match(one(await page.locator('#stage-transition-form header p').innerText()),/^과거 이관 · 검증된 고객 → /);
   await page.evaluate(()=>{try{StageTransitionUI.close();}catch(e){}try{closeDetail();}catch(e){}});await page.waitForTimeout(200);
-  /* ⑤ 파이프라인 줄: 다음 행동 · 기한 · 공종 · 영업건 번호가 항상 보인다 + 같은 단지 진행 n건 */
+  /* ⑤ 파이프라인 줄(2026-10-06 목록 줄 v11): 공종 · 다음 업무 · 기한은 줄에 항상 보이고, 영업건 번호 · 같은 단지 진행 n건은 줄을 누르면 펼쳐지는 칸에 있다 */
   await page.evaluate(()=>PipelineWorkspace.open('consulting'));await page.waitForSelector('#pipeline-stage-v3 .ps3-row');
-  const r1=await page.evaluate(()=>{const r=document.querySelector('#pipeline-stage-v3 .ps3-row[data-key="a1"]'),t=s=>{const n=r.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():null;};return [document.querySelectorAll('#pipeline-stage-v3 .ps3-row').length,t('.ps3-meta'),t('.ps3-nx'),t('.ps3-dup')];});
-  assert.equal(r1[0],1,'컨설팅 설계 목록에 과거 이관이 없다');assert.match(r1[1],/^옥상\(우레탄\) · (\d{4} · )?#a1$/);assert.match(r1[2],/^다음 행동 1차 미팅 · \d{1,2}\.\d{1,2}$/);assert.equal(r1[3],null);
+  const r1=await page.evaluate(()=>{const r=document.querySelector('#pipeline-stage-v3 .ps3-row[data-key="a1"]'),t=s=>{const n=r.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():null;};return [document.querySelectorAll('#pipeline-stage-v3 .ps3-row').length,t('.prv-a>span'),t('.prv-c'),t('.prv-more')];});
+  assert.equal(r1[0],1,'컨설팅 설계 목록에 과거 이관이 없다');assert.match(r1[1],/ · 옥상\(우레탄\) · /);assert.match(r1[2],/^1차 미팅 (\d+일 지남|오늘까지|내일까지|\d{1,2}\/\d{1,2}까지)$/);assert.equal(r1[3],null,'펼치기 전에는 아래 칸이 없다');
   await page.evaluate(()=>PipelineWorkspace.open('sent'));await page.waitForSelector('#pipeline-stage-v3 .ps3-row[data-key="a2"]');
   await shot('rows');
-  assert.deepEqual(await page.evaluate(()=>{const r=document.querySelector('#pipeline-stage-v3 .ps3-row[data-key="a2"]'),t=s=>{const n=r.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():null;};return [t('.ps3-dup'),t('.ps3-nx'),r.querySelector('.ps3-nx').classList.contains('none'),t('.ps3-meta')];}),['같은 단지 진행 2건 · 같은 공사인지 확인','다음 행동 없음',true,'공종 미분류 · #a2']);
+  await page.locator('#pipeline-stage-v3 .ps3-row[data-key="a2"] .prv-main').click();await page.waitForSelector('#pipeline-stage-v3 .ps3-row[data-key="a2"] .prv-more');
+  assert.deepEqual(await page.evaluate(()=>{const r=document.querySelector('#pipeline-stage-v3 .ps3-row[data-key="a2"]'),t=s=>{const n=r.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():null;},m=t('.prv-more');return [/같은 단지 진행 2건 · 같은 공사인지 확인/.test(m),/영업건 번호 #a2/.test(m),t('.prv-c>small'),/ · 공종 미분류 · /.test(t('.prv-a>span'))];}),[true,true,'기한 없음 · 정하기',true]);
   /* ⑥ 끄면 예전처럼: 예전 단계 값이 컨설팅 설계로 들어온다 */
   const off=await page.evaluate(()=>{G.pipeScopeOff=true;PipelineWorkspace.open('all');const r=PipelineWorkspace.rows();const out=[r.filter(x=>x.group==='consulting').length,!!document.querySelector('#pipeline-stage-menu .plv-legacy')];G.pipeScopeOff=false;PipelineWorkspace.open('all');return out;});
   assert.deepEqual(off,[6,false]);

@@ -48,7 +48,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     deal('w-1','수주 현장','이필선','won',{outcome:'won',won_amount:1.4e8,closed_at:day(-34),completion_date:day(-34)}),
     deal('l-1','실주 현장','이필선','lost',{outcome:'lost',closed_at:day(-3)})
    ],inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.psb=null;G.prb=null;G.ps3=null;
+   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.pipeRowV11Off=true;/* 이 검사는 목록 줄 v11 이전의 줄(끄기 스위치 뒤)을 본다 — v11 줄은 scripts/verify-pipeline-row-v11-browser.cjs */ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.psb=null;G.prb=null;G.ps3=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
    window.__open=null;window.__act=null;window.__drwReal=drwDeal;window.__daReal=window.DetailActions&&window.DetailActions.open;drwDeal=s=>{window.__open=JSON.parse(s).id;};window.DetailActions=Object.assign(window.DetailActions||{},{open:k=>{window.__act=k;}});
    window.CRMRelease=Object.assign(window.CRMRelease||{},{has:()=>true,noteMissing(){}});
