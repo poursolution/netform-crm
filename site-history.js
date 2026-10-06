@@ -12,6 +12,7 @@
  const R=root,h=v=>R.esc(String(v==null?'':v)),attr=v=>R.escAttr(String(v==null?'':v));
  const LIST='crm_site_history_list_v1',WRITE='crm_site_history_write_v1',TAGS=['진행','수주','실주','보류','배드핏'];
  const enabled=()=>!R.G.siteHistoryOff;
+ const tidy=()=>{try{return !!(R.DealDetailV3&&R.DealDetailV3.tidy&&R.DealDetailV3.tidy());}catch(e){return false;}};/* 영업건 상세 정돈안(2026-10-06) */
  const rpcOk=n=>!!(R.SB&&typeof R.SB.rpc==='function')&&!(R.CRMRelease&&R.CRMRelease.has(n)===false);
  const canEdit=()=>rpcOk(LIST)&&rpcOk(WRITE);
  const BY={},st=d=>BY[d.id]||(BY[d.id]={state:'idle',entries:[],edit:'',form:null,busy:false,arm:''});
@@ -75,6 +76,7 @@
  function aiLine(rows){
   const past=rows.filter(r=>!r.cur),yr=r=>(/(\d{4})/.exec(r.when||r.sort||'')||[])[1]||'';
   const won=past.find(r=>r.tag==='수주'),lost=past.find(r=>r.tag==='실주'),open=past.find(r=>r.tag==='진행'||r.tag==='보류');
+  if(won&&/^공종 (미분류|미기록)$/.test(won.work))return (yr(won)?yr(won)+'년 ':'')+'수주한 기존 고객입니다. 지난 공사 뒤 문제 없었는지부터 물어보세요.';
   if(won)return '이 단지는 '+(yr(won)?yr(won)+'년 ':'')+won.work+'를 맡긴 기존 고객입니다. 첫 통화에서 "'+won.work+' 공사 이후 문제 없으셨는지"부터 여쭤보세요.';
   if(lost)return '이 단지는 '+(yr(lost)?yr(lost)+'년 ':'')+lost.work+' 건을 놓친 곳입니다'+(lost.hint?'('+lost.hint+')':'')+'. 첫 통화에서 그때 무엇을 보고 결정하셨는지부터 확인하세요.';
   if(open)return '이 단지에는 진행 중인 다른 영업('+open.work+(open.who?' · '+open.who:'')+')이 있습니다. 같은 공사인지 먼저 확인하세요.';
@@ -114,11 +116,33 @@
    +'<span class="sth-l2">'+h([r.when||'날짜 미기록',amtT(r),r.who||'담당 미기록'].join(' · '))+'</span>'
    +(r.hint?'<span class="sth-l3'+(r.cur&&/없음/.test(r.hint)?' warn':'')+'">'+h(r.hint)+'</span>':'')+'</div></div>';
  }
+ /* ── 영업건 상세 정돈안(2026-10-06 design_handoff_deal_detail_tidy): 줄 = 점 · 시기 · 상태 · 금액(오른쪽) + 회색 설명 한 줄(상자 없음).
+    같은 단지 수주가 있으면 맨 위에 '✓ YYYY.M 수주 완료 · 금액' 줄. 줄을 누르면 창 전체가 아니라 가운데 칸만 그 영업건 요약으로 바뀐다(지금 보는 줄 = 연파랑 + 왼쪽 파란 띠) ── */
+ const TC={'수주':['#1f7a4d','#3fb37f','수주 완료'],'실주':['#b42318','#d14a3f','실주'],'배드핏':['#6b7280','#c9cdd5','배드핏'],'과거 이관':['#6b7280','#c9cdd5','과거 이관'],'보류':['#6b4a00','#d9a400','보류'],'진행':['#2a52b8','#3b6ce4','진행']};
+ function rowTidy(d,r,S,edit,peek){
+  if(S.edit===r.key)return '<div class="sth-row ed" data-key="'+attr(r.key)+'">'+formHtml(d,r,S)+'</div>';
+  const c=r.cur?['#15171c','#15171c','지금 이 건']:(TC[r.tag]||['#6b7280','#c9cdd5',r.tag]),open=!r.cur&&!!r.dealId,on=peek?(!r.cur&&r.dealId===peek):r.cur;
+  const work=/^공종 (미분류|미기록)$/.test(r.work)?'공종 미정':r.work,desc=[r.hint,work,r.cur?'':r.who].filter(Boolean).join(' · ');
+  return '<div class="sth-row t'+(r.cur?' cur':' past')+(open||r.cur?' link':'')+(on?' on':'')+'" data-key="'+attr(r.key)+'"'+(open?' data-sth="open" data-id="'+attr(r.dealId)+'" role="button" tabindex="0"':r.cur?' data-sth="cur" role="button" tabindex="0"':'')+'>'
+   +'<span class="sth-t1"><i style="background:'+c[1]+'"></i><b>'+h(r.when||'날짜 미기록')+'</b><em style="color:'+c[0]+'">'+h(c[2])+'</em>'+(r.manual?'<small class="sth-man" title="CRM 밖 과거 공사를 직접 적은 이력">수기</small>':'')+'<span class="amt">'+h(amtT(r))+'</span></span>'
+   +'<span class="sth-t2"><span>'+h(desc)+'</span>'+(edit?'<button type="button" class="sth-edit" data-sth="edit" data-key="'+attr(r.key)+'">수정</button>':'')+'</span></div>';
+ }
+ function htmlTidy(d,S,rows,edit,isNew,won,sum){
+  let peek='',W=null;try{peek=R.DealDetailV3.peekOf(d)||'';W=R.DealDetailV3.wonRow(d);}catch(e){}
+  let wt='';try{const x=W&&W.r.dealId?((R.B&&R.B.deals)||[]).find(z=>String(z.id)===W.r.dealId):null,res=x&&R.DealWin&&R.DealWin.enabled()?R.DealWin.resultOf(x):null;wt=res&&res.text?res.text:'';}catch(e){}
+  const wl=W?'<div class="sth-won"><b>✓ '+h((W.ym?W.ym+' ':'')+'수주 완료'+(W.r.amount?' · '+fmt(W.r.amount):''))+'</b><span>'+h([wt,W.r.hint,W.r.who].filter(Boolean).join(' · '))+'</span></div>':'';
+  const list=rows.map(r=>rowTidy(d,r,S,edit,peek)).join('')+(isNew?'<div class="sth-row ed new" data-key="new">'+formHtml(d,null,S)+'</div>':'');
+  return '<section class="dv3-sec sth sth-tidy" data-deal="'+attr(d.id)+'"><header class="sth-hd"><b>이 단지 영업 이력</b><span>'+rows.length+'건'+(won.length?' · 누적 수주 '+h(sum?R.fmtAmt(sum):'금액 미정'):'')+'</span></header>'
+   +wl+'<div class="sth-list">'+list+'</div>'
+   +'<div class="sth-ai"><b>AI</b>'+h(aiLine(rows))+'</div>'
+   +(edit?'<div class="sth-more"><button type="button" class="sth-add" data-sth="add"'+(S.edit?' disabled':'')+'>+ 이력 추가</button></div>':'')+'</section>';/* 제목 줄은 요약이 다 보이게 — 이력 추가는 맨 아래 */
+ }
  function html(d){
   const S=st(d),rows=rowsOf(d),edit=canEdit()&&S.state!=='fail',isNew=S.edit==='new'&&S.form;
   if(S.state==='idle')load(d);
   if(S.edit&&S.edit!=='new'&&!rows.some(r=>r.key===S.edit)){S.edit='';S.form=null;}
   const won=rows.filter(r=>r.tag==='수주'),sum=won.reduce((s,r)=>s+(Number(r.amount)||0),0),n=rows.length+(isNew?1:0);
+  if(tidy())return htmlTidy(d,S,rows,edit,isNew,won,sum);
   const list=rows.map((r,i)=>rowHtml(d,r,i,n,S,edit)).join('')
    +(isNew?'<div class="sth-row ed new" data-key="new"><span class="sth-dot"><i style="background:#fff;border-color:#9aa0ab"></i></span>'+formHtml(d,null,S)+'</div>':'');
   return '<section class="dv3-sec sth" data-deal="'+attr(d.id)+'"><header class="sth-hd"><b>이 단지 영업 이력</b><span>'+rows.length+'건</span><i></i>'
@@ -135,6 +159,7 @@
    if(r.error){if(r.error.code==='PGRST202'&&R.CRMRelease&&R.CRMRelease.noteMissing)R.CRMRelease.noteMissing(LIST);throw Error(r.error.message||'읽기 실패');}
    S.entries=r.data&&Array.isArray(r.data.entries)?r.data.entries:[];S.state='ok';
   }catch(e){S.state='fail';}
+  if(tidy()&&cur()&&String(cur().id)===String(d.id)){try{R.DealDetailV3.apply();return;}catch(e){}}/* 수기 수주 이력이 있으면 머리의 '기존 고객' 알약도 같이 */
   paint();
  }
  /* 전 → 후 요약(응대 이력 '이력 수정'에 그대로 남는다) */
@@ -183,7 +208,9 @@
  }
  document.addEventListener('click',e=>{
   const b=e.target.closest('#detailView .sth [data-sth]');if(!b||b.disabled)return;const d=cur();if(!d||!enabled())return;const S=st(d),a=b.dataset.sth;
-  if(a==='open'){if(e.target.closest('button'))return;const x=((R.B&&R.B.deals)||[]).find(z=>String(z.id)===String(b.dataset.id));if(x){R.G._detailPopup=true;R.drwDeal(JSON.stringify(x));}return;}
+  if(a==='open'||a==='cur'){if(e.target.closest('button'))return;
+   if(tidy()&&R.DealDetailV3.peek){R.DealDetailV3.peek(a==='cur'?'':b.dataset.id);return;}/* 정돈안: 가운데 칸만 그 영업건 요약으로 */
+   if(a==='cur')return;const x=((R.B&&R.B.deals)||[]).find(z=>String(z.id)===String(b.dataset.id));if(x){R.G._detailPopup=true;R.drwDeal(JSON.stringify(x));}return;}
   e.preventDefault();e.stopPropagation();
   if(a==='add'){if(S.edit)return;S.edit='new';S.arm='';S.form={work:'',tag:'수주',when:'',amt:'',who:rep(d.assignee),hint:'',lost:'',lostCat:''};paint();setTimeout(()=>{const n=document.querySelector('#detailView .sth .sth-row.new [data-sthf="work"]');if(n)n.focus();},0);return;}
   if(a==='edit'){const r=rowsOf(d).find(x=>x.key===b.dataset.key);if(!r)return;let cat='';try{cat=r.lost&&R.CRMRules&&R.CRMRules.lostCategory?R.CRMRules.lostCategory(r.lost)||'':'';}catch(x){}

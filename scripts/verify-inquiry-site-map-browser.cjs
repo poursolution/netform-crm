@@ -136,10 +136,12 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    GEO.sites=[[U(2),37.2086,127.0975,'address',null,null,1,null],[U(4),37.2374,127.0975,'name',null,null,2,null],[U(5),null,null,'none',null,'다른이름타워',2,'다른이름타워']];
    drwDeal(JSON.stringify(B.deals[4]));});
   const FX=page.locator('#detailView .dv3-near');
-  await page.waitForSelector('#detailView.on .dv3-near .isd-fx .isd-fxrow');
-  assert.deepEqual([one(await FX.locator('.isd-map.empty>b').innerText()),await FX.locator('.isd-fx input').inputValue(),(await FX.locator('.isd-fxrow').allInnerTexts()).map(one),await FX.locator('[data-idv="geo-fix-cancel"]').count()],
-   ['이 현장의 위치를 찾지 못했습니다','다른이름타워',['다른이름타워 서울 강남구 역삼동 1 이 위치로','다른이름타워 부산 해운대구 우동 2 이 위치로'],0],'이름으로 찾은 후보 두 곳을 보여 준다');
-  assert.match(one(await FX.locator('.isd-map.empty').innerText()),/주소나 이름만으로는 한 곳을 정하지 못했습니다\. 아래에서 맞는 곳을 누르면 지도에 표시됩니다\./);
+  /* 영업건 상세(정돈안): 큰 안내 상자 대신 한 줄 — [주소 입력]을 누르면 그 자리에서 후보를 찾는다 */
+  await page.waitForSelector('#detailView.on .dv3-near .isd-compact .isd-line');
+  assert.deepEqual([one(await FX.locator('.isd-line').innerText()),await FX.locator('.isd-map,.isd-fx,.ctl').count(),await page.evaluate(()=>KLOG.place.length)],['주소가 없어 지도에 못 올렸어요. 주소 입력 하면 반경 1 · 3 · 5km로 보여 줍니다.',0,1],'누르기 전에는 후보를 찾지 않는다');
+  await FX.locator('[data-idv="geo-fix"]').click();await page.waitForSelector('#detailView.on .dv3-near .isd-fx .isd-fxrow');
+  assert.deepEqual([await FX.locator('.isd-fx input').inputValue(),(await FX.locator('.isd-fxrow').allInnerTexts()).map(one),await FX.locator('[data-idv="geo-fix-cancel"]').count()],
+   ['다른이름타워',['다른이름타워 서울 강남구 역삼동 1 이 위치로','다른이름타워 부산 해운대구 우동 2 이 위치로'],1],'이름으로 찾은 후보 두 곳을 보여 준다');
   assert.equal(await page.evaluate(()=>GEO.saved.length),0,'고르기 전에는 아무것도 저장하지 않는다');
   if(process.env.SHOT_DIR){await FX.scrollIntoViewIfNeeded();await page.screenshot({path:path.join(process.env.SHOT_DIR,'inqsite-geofx-pick.png')});}
   /* 저장이 실패하면 지도에 올리지 않고 알린다 */

@@ -12,10 +12,12 @@ test('목록 버튼([미팅 잡기] · [확인 연락] · [견적 요청] · [�
  const b=read('pipeline-stage-b.js'),i=b.indexOf('DealDetailV3.openFrom(act)'),j=b.indexOf('root.DetailActions.open(act)');
  assert.ok(i>0&&j>i,'새 상세(openFrom)를 먼저, 예전 입력 창은 그다음');
  const v3=read('deal-detail-v3.js');
- assert.match(v3,/function openFrom\(act\)/);assert.match(v3,/NXT,openFrom\}/);
+ assert.match(v3,/function openFrom\(act\)/);assert.match(v3,/NXT,openFrom[,}]/);
  /* next · activity 는 예전 창(DetailActions · DealPanelsV2)을 부르지 않고 '지금 할 일' 카드를 펼친다 */
  const body=v3.slice(v3.indexOf('function openFrom(act)'),v3.indexOf("if(act==='stagefields')"));/* next · activity 부분 */
  assert.doesNotMatch(body,/DetailActions\.open|DealPanelsV2/);assert.match(body,/S\.rec=\{ch:'전화'/);
+ /* 정돈안(2026-10-06): 연락 입구는 가운데 입력칸 하나 — 오른쪽 카드 안의 입력 틀을 펼치지 않고 입력칸으로 간다 */
+ assert.match(body,/if\(tidy\(\)\)\{if\(!S\.calling\)startCall\(d,true\);show\('#ddvComposer'\);return true;\}/);
 });
 test("'지금 할 일' 카드의 [직접 정하기]는 카드 안에서 날짜를 고른다 — 예전 '다음 할 일 설정' 창을 열지 않는다",()=>{
  const v3=read('deal-detail-v3.js'),i=v3.indexOf("if(a==='nextmore')"),line=v3.slice(i,v3.indexOf('\n',i));
