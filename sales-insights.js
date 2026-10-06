@@ -14,7 +14,7 @@
  }
  function rows(unscoped=false,everyone=false){
   // B is ACL-filtered by the operational adapter. Apply the same per-user UI scope as Today.
-  const admin=root.todayIsAdmin(),me=root.repN(root.ME?.name),base=root.B||{};
+  const dashboard=root.DashboardData&&root.DashboardData.active(),admin=root.todayIsAdmin(),me=root.repN(root.ME?.name),base=dashboard?root.DashboardData.source():(root.B||{});if(dashboard)everyone=true;
   const deals=(base.deals||[]).filter(d=>everyone||admin||root.repN(d.assignee)===me).map(d=>{
    const next=root.briefNext(d),meta=root.relationshipMeta(d),old=root.issueSet(d),issues=[];
    const due=next?.due&&Number.isFinite(Date.parse(next.due))?root.daysTo(next.due):null;

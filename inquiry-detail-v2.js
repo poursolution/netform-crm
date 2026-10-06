@@ -574,7 +574,7 @@
     if(s.tab==='call'){
      const g=sugOf(q,s),assigned=!!root.inquiryAssigned(q),nextText=(s.next||'').trim()||(g.none?'배드핏 종결 검토':g.act),due=(document.getElementById('iq-due')||{}).value||g.due;
      if(assigned&&(!nextText||!due)){root.iqMsg('다음 행동과 날짜가 있어야 저장됩니다.');return;}
-     if(root.InquiryCommand.run('contact_log',q,{ch:g.ch,result:g.res,text,next:nextText,due})!==true){root.iqMsg((document.getElementById('iq-msg')||{}).textContent||'저장하지 못했습니다.');return;}
+     if(root.InquiryCommand.run('contact_log',q,Object.assign({ch:g.ch,result:g.res,text,next:nextText,due},s.con?{contact_result:root.InquiryFlow.TWO.of(s.con,s.rea).contact_result,customer_reaction:root.InquiryFlow.TWO.of(s.con,s.rea).customer_reaction}:{}))!==true){root.iqMsg((document.getElementById('iq-msg')||{}).textContent||'저장하지 못했습니다.');return;}
      reset();reskinFrom();toast(assigned?g.ch+' · '+resShow(g.res)+(g.none?'':' → '+nextText+' '+kday(new Date(due+'T00:00:00'))):'응대 기록을 저장했습니다');return;
     }
     root.InquiryCommand.run('memo',q,{text});s.text='';reskinFrom();toast('내부 메모를 저장했습니다');

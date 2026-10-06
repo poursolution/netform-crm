@@ -32,7 +32,7 @@
  async function load(){if(!available()||busy)return rows||[];busy=true;try{take(await R.OpsStore.rpc(RPC.list,{}));}catch(e){rows=rows||[];}finally{busy=false;}return rows;}
  function warm(){const me=R.ME&&String(R.ME.id||R.ME.name||'');if(!me||warmed===me||!available())return;warmed=me;load().then(()=>{if((rows&&rows.length)||(adv&&adv.length)){try{R.paint();}catch(e){}}});}
  const of=d=>d&&map.get(String(d.id))||null;
- const dealOf=id=>(R.B&&R.B.deals||[]).find(d=>String(d.id)===String(id))||null;
+ const dealOf=id=>((R.DashboardData&&R.DashboardData.active()?R.DashboardData.source():R.B)?.deals||[]).find(d=>String(d.id)===String(id))||null;
  const ledgerOf=d=>{try{const key=String(R.dealKey?R.dealKey(d):d.id);return (R.ContractSalesData.state().items||[]).find(r=>String(r.deal_id)===key&&!r.cancelled&&Number(r.balance)>0)||null;}catch(e){return null;}};
  /* 확정된 기술자문 낙찰실적: 서버가 준 목록(전 직원), 서버 함수 설치 전에는 관리자 화면의 기존 목록 */
  function advRows(){

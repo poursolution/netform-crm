@@ -32,11 +32,14 @@
  const whoWhen=v=>[fmtAt(v.linked_at||(v.relationship&&v.relationship.linked_at)||v.saved_at||''),String(v.linked_by_name||v.linked_by||(v.relationship&&v.relationship.linked_by)||'')].filter(Boolean).join(' · ');
  function noteView(v){
   if(!v||!v.left_id||!v.right_id)return;const l=low(v.left_id),r=low(v.right_id);
+  const X=root.InquiryConsultationIndex;if(X){X.invalidate([l,r]);X.load(l,true);X.load(r,true);}
   if(v.active){const at=v.linked_at||(v.relationship&&v.relationship.linked_at)||v.saved_at||'',by=String(v.linked_by_name||v.linked_by||(v.relationship&&v.relationship.linked_by)||'');LINKS.set(l,{partner:rowOf(v,r),at,by});LINKS.set(r,{partner:rowOf(v,l),at,by});GONE.delete(l);GONE.delete(r);}
   else{LINKS.delete(l);LINKS.delete(r);GONE.add(l);GONE.add(r);}
  }
  function linkOf(id){
-  id=low(id);if(!id)return null;if(LINKS.has(id))return LINKS.get(id);if(GONE.has(id))return null;
+  id=low(id);if(!id)return null;
+  const I=root.InquiryConsultationIndex;if(I&&I.loaded(id)){const r=I.of(id);return r?{partner:{id:low(r.partner_id)},at:r.at,by:r.by,fromIndex:true}:null;}
+  if(LINKS.has(id))return LINKS.get(id);if(GONE.has(id))return null;
   try{const X=root.InquiryConsultationIndex,r=X&&typeof X.of==='function'?X.of(id):null;if(r&&r.partner_id)return {partner:{id:low(r.partner_id)},at:r.at||'',by:r.by||'',fromIndex:true};}catch(e){}
   return null;
  }
@@ -135,7 +138,7 @@
   return x;
  }
  function place(host,anchor,q,mode){
-  const id=low(q.id),L=id?linkOf(id):null;let box=host.querySelector('.icl-box');
+  const id=low(q.id);if(id&&root.InquiryConsultationIndex)root.InquiryConsultationIndex.load(id);const L=id?linkOf(id):null;let box=host.querySelector('.icl-box');
   if(!L){if(box)box.remove();if(mode==='v3')scopeSync(host,q,null,null);return;}
   const s=dst(id),html=lineHtml(q,L,s),act=document.activeElement;
   if(!box){box=document.createElement('div');box.className='icl-box';anchor.after(box);}else if(box.previousElementSibling!==anchor)anchor.after(box);
@@ -202,6 +205,9 @@
  }
  function boot(){
   if(!root.document||root.document.__icl)return;root.document.__icl=true;
+  root.addEventListener('inquiry-consultation:changed',kick);
+  root.addEventListener('phase1:profile',()=>{LINKS.clear();GONE.clear();CS.clear();CL=null;kick();});
+  root.addEventListener('phase1:identity-cleared',()=>{LINKS.clear();GONE.clear();CS.clear();CL=null;kick();});
   document.addEventListener('click',onDocClick,true);document.addEventListener('input',onDocInput);
   const mo=new MutationObserver(rs=>{for(const r of rs){for(const n of r.addedNodes){if(n.nodeType!==1)continue;if((n.matches&&n.matches('.i4-detail,.i4-panes,.inq-dialog,#inq-inbox-dialog,#inq-v4,.idv3-top,.i4-dh'))||(n.querySelector&&n.querySelector('.i4-dh,.idv3-top'))){kick();return;}}}});
   mo.observe(document.body,{childList:true,subtree:true});
