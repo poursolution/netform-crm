@@ -14,6 +14,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});
   const page=await ctx.newPage(),errs=[];page.on('pageerror',e=>errs.push(e.message));
+  // Keep date-only fixture ages stable across the UTC/KST date boundary.
+  await page.clock.setFixedTime(new Date('2026-10-06T12:00:00+09:00'));
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.AssetC&&window.AssetB&&window.AssetV2&&window.StageBoard&&window.CRMRules&&window.DealWin);
   await page.evaluate(()=>{
    const day=n=>new Date(Date.now()+n*864e5).toLocaleDateString('en-CA'),at=n=>new Date(Date.now()+n*864e5).toISOString();
