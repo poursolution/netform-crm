@@ -18,7 +18,7 @@ test('library reads contracts without a Deal and reports errors instead of empty
  win.SB.rpc=async()=>({error:{code:'42501'}});await button.onclick();
  assert.match(content.textContent,/조회하지 못했습니다/);
 });
-function setup(document={}){const window={};vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../technical-advisory-ui.js'),'utf8'),{window,document,URL});return window;}
+function setup(document={}){const window={},context={window,document,URL};for(const file of ['list-pager.js','technical-advisory-ui.js'])vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../'+file),'utf8'),context);return window;}
 
 test('legacy document explains missing amount without exposing internal status codes',()=>{
  const html=setup().TechnicalAdvisoryUI.html([{contracts:[{source_structure:'legacy_modusign',source_status:'document_all_signed',document_amount:null}]}]);
