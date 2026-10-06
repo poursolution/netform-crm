@@ -73,7 +73,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 가운데: 응대 이력 */
   assert.match(await v.locator('.ddv-talk .idv-chead').innerText(),/^응대 이력\s*2건\s*연락 시도 1 · 실제 연결 0$/);
   assert.deepEqual(await v.locator('.ddv-talk .dv3-kind').allInnerTexts(),['고객 접점','변경']);
-  assert.deepEqual(await v.locator('#ddvComposer [role=tab]').allInnerTexts(),['응대 기록','문자 기록','내부 메모']);assert.equal(await v.locator('#ddvComposer .idv-save').innerText(),'기록 저장');assert.match(await v.locator('#ddvComposer textarea').getAttribute('placeholder'),/^무슨 일이 있었는지 한 줄로/);
+  assert.deepEqual(await v.locator('#ddvComposer [role=tab]').allInnerTexts(),['응대 기록','내부 메모']);assert.equal(await v.locator('#ddvComposer .idv-save').innerText(),'기록 저장');assert.match(await v.locator('#ddvComposer textarea').getAttribute('placeholder'),/^무슨 일이 있었는지 한 줄로/);
   assert.equal(await v.locator('#ddvComposer .dv3-chint').innerText(),'전화 · 카카오 · 문자 · 이메일 · 방문 모두 여기');
   assert.equal(await now.evaluate(n=>getComputedStyle(n).borderTopColor),'rgb(21, 23, 28)','검은 테두리');
   await now.locator('[data-dk="check"]').first().click();await page.waitForTimeout(250);
