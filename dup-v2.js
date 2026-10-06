@@ -14,6 +14,7 @@
  const SUGGEST={site_merge:'합치기',inquiry_merge:'합치기',deal_review:'비교 후 판단',site_link:'연결만',inquiry_activity:'연결만',contact_move:'사람 · 근무지 확인',separate:'그대로 두기',different_person:'그대로 두기',defer:'정보 보완 뒤 판단'};
  const GRID='minmax(0,1.7fr) 110px minmax(0,1.5fr) 110px 84px';
  const st=()=>root.G.dupV2||(root.G.dupV2={f:'all',more:{}});
+ const ICL=()=>root.InquiryConsultationLink&&root.InquiryConsultationLink.on()?root.InquiryConsultationLink:null;
  /* 규칙 판단: 근거가 몇 개 겹치는지로 묶음만 정한다 */
  function judge(c){
   const R=c.reasons||[],has=t=>R.some(x=>x.indexOf(t)>=0),strong=[has('주소 동일'),has('관리사무소 전화 동일'),has('현장명 표기 일치'),has('1일 이내 문의 접수'),has('관리소장 휴대전화 동일')].filter(Boolean).length;
@@ -83,10 +84,12 @@
    +'<div class="dv-body"><section class="dv-judge '+b[1]+'"><b>판단 · '+h(b[0])+'</b><span>근거: '+h(c.reasons.join(' · '))+'</span><span>제안: '+h(SUGGEST[c.action]||c.action)+' — '+h(c.text)+'</span><small>규칙 판단입니다(근거 조합). 확률은 표시하지 않습니다.</small>'+(root.OpsStore&&root.OpsStore.aiOn()?'<button type="button" class="dv-ai" data-dd-ai="1">✦ AI 판단 받기</button><span class="dv-aiout" id="dvAiOut"></span>':'')+'</section>'
    +'<div class="dv-cmp" role="table" aria-label="A B 비교"><div class="dv-ch" role="row"><span></span><b>A</b><b>B</b></div>'+F.map(f=>'<div role="row" class="'+(f.diff?'diff':'')+'"><span>'+h(f.label)+'</span><em>'+h(f.a||'–')+'</em><em>'+h(f.b||'–')+'</em></div>').join('')+'</div>'
    +'<p class="dv-note">합치면 '+older+'(먼저 등록)를 남기고 다른 쪽의 기록은 활동으로 옮깁니다. 어떤 원본도 지우지 않습니다.'+(ro?' <b>지금은 검토 전용이라 아래 버튼이 잠겨 있습니다 — 합치기 · 연결이 필요하면 관리자에게 알려 주세요.</b>':' 버튼을 누르면 서버의 최신 원본으로 결과를 미리 본 뒤, 사유를 적고 처리합니다.')+'</p></div>'
-   +'<footer class="dv-foot"><button type="button" class="dv-ghost" data-dd="'+act.keep+'"'+(ro?' disabled':'')+'>다른 건 · 그대로 두기</button>'+(act.link?'<button type="button" class="dv-ghost" data-dd="'+act.link+'"'+(ro?' disabled':'')+'>연결만</button>':'')+'<button type="button" class="dv-primary" data-dd="'+act.merge+'"'+(ro?' disabled':'')+'>'+(c.type==='contact'?'같은 사람 · 이동 연결':c.type==='deal'?'같은 건 · 비교 후 처리':'같은 건 · 합치기')+'</button></footer>';
+   +'<footer class="dv-foot"><button type="button" class="dv-ghost" data-dd="'+act.keep+'"'+(ro?' disabled':'')+'>다른 건 · 그대로 두기</button>'+(act.link?(ICL()&&c.type==='inquiry'?ICL().footBtn(c):'<button type="button" class="dv-ghost" data-dd="'+act.link+'"'+(ro?' disabled':'')+'>연결만</button>'):'')+'<button type="button" class="dv-primary" data-dd="'+act.merge+'"'+(ro?' disabled':'')+'>'+(c.type==='contact'?'같은 사람 · 이동 연결':c.type==='deal'?'같은 건 · 비교 후 처리':'같은 건 · 합치기')+'</button></footer>';
   const aiB=m.querySelector('[data-dd-ai]');if(aiB)aiB.onclick=()=>{const out=m.querySelector('#dvAiOut');aiB.disabled=true;aiB.textContent='AI가 비교하는 중…';const row=k=>Object.fromEntries(F.map(f=>[f.label,f[k]]));
    root.OpsStore.ai('dup_judge','pair',c.key,{a:row('a'),b:row('b'),rule_reasons:c.reasons}).then(s=>{const r=s.suggestion||{};out.textContent='AI 판단 · 같은 건일 가능성 '+r.probability+'% · '+(r.basis||'')+' · 제안: '+({merge:'합치기',link:'연결만',keep:'그대로 두기'}[r.action]||'그대로 두기')+' (참고용 — 처리는 아래 버튼으로 직접)';aiB.textContent='✦ AI 판단 다시 받기';}).catch(e=>{out.textContent=String(e.message||e);aiB.textContent='✦ AI 판단 받기';}).finally(()=>{aiB.disabled=false;});};
   m.classList.add('on');m.querySelector('.xdv-close').focus();
+  /* 상담 연결(2026-10-06 design_handoff_consultation_link): 문의끼리면 footer 의 그 버튼 · 근거 칸을 inquiry-consultation-link.js 가 맡는다 — 예전 '연결만'(inquiry_activity) 경로는 다시 켜지 않는다 */
+  if(ICL()&&c.type==='inquiry')ICL().mount(m,c);
  }
  function host(){
   const base=document.getElementById('dups');if(!base)return null;let el=document.getElementById('dup-v2');

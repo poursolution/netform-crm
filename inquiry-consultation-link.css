@@ -1,0 +1,37 @@
+/* 상담 연결 · 표시 위치 (2026-10-06 design_handoff_consultation_link) — 비교 창 근거 칸 · 상세 연결 줄 · 연결된 상담 꼬리표만.
+   버튼은 비교 창 기존 dv-ghost · dv-primary / 상세 기존 흰 버튼 모양 그대로. 다른 배치는 바꾸지 않는다 */
+#dupDialog .icl-pane{border-top:1px solid #f0f1f4;background:#fcfcfd;padding:12px 18px;display:flex;flex-direction:column;gap:8px}
+#dupDialog .icl-hd{display:flex;align-items:center;gap:8px}
+#dupDialog .icl-hd b{font-size:13px}
+#dupDialog .icl-hd button{margin-left:auto;border:0;background:none;font:inherit;font-size:12px;color:#6b7280;cursor:pointer;padding:0;height:auto;min-height:0;box-shadow:none}
+#dupDialog .icl-ck{border:0;background:none;padding:0;margin:0;height:auto;min-height:0;box-shadow:none;display:flex;align-items:center;gap:8px;font:inherit;font-size:13px;color:#15171c;text-align:left;cursor:pointer;width:auto}
+#dupDialog .icl-ck .bx{width:16px;height:16px;border-radius:4px;border:1.5px solid #c9cdd5;background:#fff;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none;line-height:1}
+#dupDialog .icl-ck[aria-pressed="true"] .bx{border-color:#15171c;background:#15171c}
+#dupDialog .icl-pane input{border:1px solid #e3e6ec;border-radius:8px;padding:8px 11px;font:inherit;font-size:13px;height:auto;margin:0;background:#fff;color:#15171c;box-sizing:border-box;width:100%}
+#dupDialog .icl-pane small{font-size:11.5px;color:#6b7280;line-height:1.5}
+#dupDialog .icl-done{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
+#dupDialog .icl-done b{color:#1f7a4d}
+#dupDialog .icl-done span{color:#6b7280}
+#dupDialog .icl-done.warn b{color:#8a5a00}
+.icl-err{font-size:12.5px;color:#b42318;line-height:1.5}
+/* 상세 머리 바로 아래 한 줄 */
+.icl-box{display:flex;flex-direction:column;gap:6px}
+#inq-inbox-dialog.idv3 .inq-dialog>.icl-box{margin:12px 24px 0;flex:none}
+#inq-v4 .i4-detail>.icl-box{margin:12px 20px 0}
+.icl-line{border:1px solid #e3e6ec;border-radius:10px;padding:9px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;background:#fff;color:#15171c}
+.icl-line>b{color:#374151;font-weight:700}
+.icl-line .bar{width:3px;height:12px;border-radius:2px;flex:none}
+.icl-line .br{font-weight:700}
+.icl-line>span{color:#15171c}
+.icl-line>em{flex:1;min-width:0}
+.icl-line .when{color:#9ca3af;white-space:nowrap}
+.icl-line .lnk{border:0;background:none;padding:0;margin:0;height:auto;min-height:0;box-shadow:none;font:inherit;font-size:12.5px;font-weight:700;color:#2a52b8;cursor:pointer;width:auto}
+.icl-line .icl-btn{border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12px;font-weight:600;border-radius:7px;padding:4px 10px;height:auto;min-height:0;margin:0;box-shadow:none;cursor:pointer;white-space:nowrap;width:auto}
+.icl-line .icl-btn.pri{background:#15171c;border-color:#15171c;color:#fff}
+.icl-line .icl-btn:disabled{opacity:.45;cursor:not-allowed}
+.icl-line.icl-unlink input{flex:1;min-width:160px;border:1px solid #e3e6ec;border-radius:8px;padding:6px 10px;font:inherit;font-size:12.5px;height:auto;margin:0;background:#fff;color:#15171c;box-sizing:border-box}
+.icl-line .icl-err{flex-basis:100%}
+/* 연결된 상담 이력: 줄마다 브랜드 꼬리표 · 쪽 번호 · 안내 */
+.idv3-ev .icl-tag{font-style:normal;font-size:10.5px;font-weight:700;border:1px solid;border-radius:4px;padding:0 5px;margin-left:6px;white-space:nowrap}
+.icl-none{padding:24px 0;text-align:center;font-size:13px;color:#9ca3af}
+.icl-note{display:block;font-size:11.5px;color:#9ca3af;line-height:1.5;padding:4px 0}
