@@ -252,6 +252,12 @@
   const first=!R.logged;R.logged=true;R.msg='';
   root.DealPanelsV2.saveContact(box,{consent:R.consent,replace:first,prevWhere:R.where||''},cur,null,'');
  }
+ /* 정돈안: 창을 닫으면 '통화 중' · 다른 영업건 요약 보기 표시를 끈다(다시 열었을 때 지난 상태가 남지 않게) */
+ function wrapDetailClose(){
+  const prev=root.closeDetail;if(typeof prev!=='function'||prev.__dvt)return;
+  const w=function(){try{const c=root.CUR_DETAIL,S=c&&c.kind==='deal'&&c.item&&tidy()?ST[c.item.id]:null;if(S){S.peek='';if(!(S.rec&&S.rec.busy)&&!S.cmpBusy){S.calling=false;S.rec=null;}}}catch(e){}return prev.apply(this,arguments);};
+  w.__dvt=true;root.closeDetail=w;
+ }
  function wrapClose(){
   const prev=root.closeQuickContact;if(typeof prev!=='function'||prev.__dv3)return;
   const w=function(){const d=root.CUR_DETAIL?.item,S=d&&ST[d.id];if(S&&S.repl&&S.repl.logged)S.repl=null;return prev.apply(this,arguments);};
@@ -321,7 +327,7 @@
   let age=null;try{age=legacy?null:typeof root.stageAge==='function'?root.stageAge(d):null;}catch(e){}
   const amt=Number(d.amount??d.amt??0),hint=closed?null:ruleHint(d);
   const wonR=tidy()?wonRow(d):null,lead=tidy()
-   ?'<span class="dv3-stagebadge"'+(sname&&sname!==gname?' title="'+attr(sname)+'"':'')+'>'+h(gname+(age!=null&&!closed?' · '+age+'일째':''))+'</span><span class="tx">'+h('담당 '+(root.repN(d.assignee)||'미배정')+' · '+(amt>0?'예상 금액 '+root.fmtAmt(amt):'예상 금액 미정'))+'</span>'+(wonR?'<span class="dvt-won">✓ 기존 고객 · '+h(wonR.ym?wonR.ym+' ':'')+'수주 완료</span>':'')+(hint&&hint.red?'<b class="over" hidden>· '+h(hint.why)+'</b>':'')/* 사유 문장은 오른쪽 '지금 할 일'에만 보인다 — 문자 창(deal-sms-v2)이 읽는 자리는 남긴다 */
+   ?'<span class="dv3-stagebadge"'+(sname&&sname!==gname?' title="'+attr(sname)+'"':'')+'>'+h(gname+(age!=null&&!closed?' · '+age+'일째':''))+'</span><span class="tx">'+h('담당 '+(root.repN(d.assignee)||'미배정')+' · '+(amt>0?'예상 금액 '+root.fmtAmt(amt):'예상 금액 미정')+(legacy&&sname?' · '+sname:'')/* 과거 이관 건: 꼬리표가 단계가 아니므로 예전 단계 이름을 여기 남긴다 */)+'</span>'+(wonR?'<span class="dvt-won">✓ 기존 고객 · '+h(wonR.ym?wonR.ym+' ':'')+'수주 완료</span>':'')+(hint&&hint.red?'<b class="over" hidden>· '+h(hint.why)+'</b>':'')/* 사유 문장은 오른쪽 '지금 할 일'에만 보인다 — 문자 창(deal-sms-v2)이 읽는 자리는 남긴다 */
    :'<span class="dv3-stagebadge">'+h(gname)+'</span><span class="tx">'+h(['담당 '+(root.repN(d.assignee)||'미배정'),amt>0?'예상 금액 '+root.fmtAmt(amt):'예상 금액 미입력',(sname&&sname!==gname?sname:gname)+(age!=null&&!closed?' '+age+'일째':'')].join(' · '))+'</span>'+(hint&&hint.red?'<b class="over">· '+h(hint.why)+'</b>':'');
   const html=lead+'<i></i><div class="dv3-headact">'+(choices.length?'<button type="button" class="mv" data-dv3="mv" aria-expanded="'+!!S.mvOpen+'">'+S.mvLabel+' '+(S.mvOpen?'▴':'▾')+'</button>':legacy?'<button type="button" class="mv" disabled title="서버에 단계 값이 비어 있는 자료입니다 — 서버 보완 뒤에 영업 재개를 할 수 있습니다">영업 재개</button>':'')+'<button type="button" data-dv3="owner">담당자 변경</button></div>';
   if(row.dataset.h!==html){row.innerHTML=html;row.dataset.h=html;}
@@ -840,7 +846,7 @@
   v.classList.add('dv3');v.classList.toggle('dvt',tidy());
   {const S0=st(d);if(S0.calling&&S0.callN!=null&&(Array.isArray(d.activities)?d.activities:[]).length>S0.callN){S0.calling=false;S0.rec=null;}}/* 기록이 쌓였으면 통화 표시를 끈다 */
   if(!v.__dv3){v.__dv3=true;new MutationObserver(list=>{for(const m of list)for(const n of m.addedNodes)if(n.nodeType===1&&(n.id==='ddvPanel'||n.id==='detailAction'))relocate(n);syncFilesLabel(v);syncMove(v);}).observe(v,{childList:true,subtree:true});}
-  wrapWork();wrapClose();$('dv3-consbox')?.remove();
+  wrapWork();wrapClose();wrapDetailClose();$('dv3-consbox')?.remove();
   const act=document.activeElement,keepFocus=act&&act.dataset&&act.dataset.dv3in?[act.dataset.dv3in,act.dataset.key,act.selectionStart]:null,keepMemo=!!(act&&act.dataset&&act.dataset.dv3rec),keepRepl=act&&act.dataset&&act.dataset.dv3repl||'';
   buildHead(v,d,closed);buildLeft(v,d,closed);buildCenter(v,d,closed);buildRight(v,d,closed);peekSync(v,d);
   if(keepRepl){const m=v.querySelector('[data-dv3repl="'+keepRepl+'"]');if(m){m.focus({preventScroll:true});try{const n=m.value.length;m.setSelectionRange(n,n);}catch(e){}}}

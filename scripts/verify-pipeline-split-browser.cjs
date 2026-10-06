@@ -21,9 +21,9 @@ assert.equal(await page.locator('#detailView').isVisible(),false);
 await page.locator('.sw-work-table tr[data-deal="B"] [data-ps-action="primary"]').click();
 assert.equal(await page.locator('#detailView').isVisible(),true);
 assert.match(await page.locator('#dv-title').innerText(),/B/);
-assert.equal(await page.locator('#detailView.dv3 .dw-right .dv3-form').count(),1,'primary opens current contact form');
+assert.equal(await page.locator('#detailView.dv3 #ddvComposer.dvt-calling').count(),1,'primary opens current contact form');/* 정돈안(2026-10-06): 연락 입구는 가운데 입력칸 하나 */
 assert.equal(await page.locator('#detailAction').count(),0,'primary does not open legacy action layer');
-for(const [action,selector] of [['next','.dv3-form'],['contact','.dv3-form'],['stage-edit','.dv3-move']]){
+for(const [action,selector] of [['next','#ddvComposer.dvt-calling'],['contact','#ddvComposer.dvt-calling'],['stage-edit','.dv3-move']]){
  await page.evaluate(()=>{DetailActions.close(false);closeDetail();});
  const button=page.locator('.sw-work-table tr[data-deal="B"] [data-ps-action="primary"]');
  await button.evaluate((el,value)=>{el.dataset.psAction=value;},action);
