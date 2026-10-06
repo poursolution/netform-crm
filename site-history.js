@@ -97,8 +97,8 @@
    +'<span>공종</span>'+inp('work','공종')
    +'<span>결과</span><div class="sth-chips">'+TAGS.map(l=>'<button type="button" data-sth="tag" data-v="'+l+'" aria-pressed="'+(F.tag===l)+'">'+l+'</button>').join('')+'</div>'
    +lostRow
-   +'<span>날짜</span>'+inp('when','2025.11 계약')
-   +'<span>금액</span>'+inp('amt',F.tag==='수주'?'낙찰금액 · 450만':'450만')
+   /* 날짜 · 금액 = 한 줄 반반(2026-10-07 design_handoff_site_history_edit — 칸 이름은 입력칸 위에) */
+   +'<div class="sth-half"><label><span>날짜</span>'+inp('when','2025.11 계약')+'</label><label><span>금액</span>'+inp('amt',F.tag==='수주'?'낙찰금액 · 450만':'450만')+'</label></div>'
    +'<span>담당</span><select class="sth-in" data-sthf="who" aria-label="담당"><option value="">미기록</option>'+people(d,F.who).map(p=>'<option'+(p===F.who?' selected':'')+'>'+h(p)+'</option>').join('')+'</select>'
    +'<span>설명</span>'+inp('hint','준공 · 하자 / 실주 사유 · 낙찰사')
    +'</div><div class="sth-foot">'+(!isNew&&r&&!r.cur?'<button type="button" class="sth-del'+(S.arm===r.key?' arm':'')+'" data-sth="del"'+(S.busy?' disabled':'')+'>'+(S.arm===r.key?'한 번 더 누르면 삭제':'삭제')+'</button>':'')
