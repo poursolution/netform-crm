@@ -18,7 +18,7 @@
  const on=()=>!(root.G&&root.G.inqV4Off)&&!!L3()&&L3().enabled()&&!!F()&&!!root.InquiryCommand&&!!root.ListPager;
  const DEF={tab:'all',flag:'',sort:'old',sel:'',page:1,res:'',memo:'',when:'',pick:false,edit:'',draft:'',busy:false,err:'',detail:false};
  function st(){const g=root.G;if(!g.inqV4||!g.inqV4._v4)g.inqV4=Object.assign({},DEF,g.inqV4||{},{_v4:true});return g.inqV4;}
- const resetForm=S=>Object.assign(S,{res:'',memo:'',when:'',pick:false,edit:'',draft:'',busy:false,err:''});
+ const resetForm=S=>Object.assign(S,{res:'',con:'',rea:'',memo:'',when:'',pick:false,edit:'',draft:'',busy:false,err:''});
  const RULES=()=>root.OPS_RULES||{},ASSIGN_MIN=()=>Number(RULES().inquiryAssignMinutes)||30,FIRST_H=()=>Number(RULES().towerFirstResponseHours)||2,FOLLOW_D=()=>Number(RULES().inquiryFollowDays)||7;
  const ST={1:['unassigned','배정 필요'],2:['nofirst','첫 연락 전'],3:['stale','후속 연락 필요'],4:['ok','정상 진행']};
  const TABS=()=>[['all','진행 중 전체','종결 · 휴지통 제외','#15171c',0],['unassigned','배정 필요',ASSIGN_MIN()+'분 안에 담당 지정','#b42318',1],['nofirst','첫 연락 전','배정 후 '+FIRST_H()+'시간 안 첫 연락','#b42318',2],['stale','후속 연락 필요','첫 연락 후 '+FOLLOW_D()+'일 넘게 연락 없음','#b45309',3],['ok','정상 진행','마지막 연락 '+FOLLOW_D()+'일 안','#6b7280',4]];
@@ -130,9 +130,13 @@
  const nextText=r=>(F().NEXT[r]||[])[0]||'다시 연락';
  function recordHtml(m,S){
   if(m.st===1)return '<div class="i4-rec"><b class="ttl">응대 기록</b><div class="i4-assign"><span>담당이 정해지기 전입니다 — 배정 뒤에 응대 기록을 남깁니다.</span>'+(isAdmin()?'<button type="button" data-i4="assign">담당 배정</button>':'')+'</div></div>';
-  const R=results(),w=whenOf(m,S),nd=w?dueOf(m,w):null,att=S.res&&F().kindOf(S.res)==='attempt',opts=['내일','3일 후','7일 후'].concat(hasMeet(m)?['대표회의 다음날']:[]);
+  const w=whenOf(m,S),nd=w?dueOf(m,w):null,att=S.res&&F().kindOf(S.res)==='attempt',opts=['내일','3일 후','7일 후'].concat(hasMeet(m)?['대표회의 다음날']:[]);
+  /* 결과 두 줄(2026-10-06 design_handoff_followup4): 연락 결과 → 실제 연결일 때만 고객 반응. 칩 자리만 바뀌고 다른 칸은 그대로 */
+  const T=F().TWO,real=T.isReal(S.con),chip=(k,l,on)=>'<button type="button" class="i4-chip'+(on?' on':'')+'" data-i4="'+k+'" data-v="'+attr(l)+'" aria-pressed="'+on+'">'+h(l)+'</button>';
   return '<div class="i4-rec"><b class="ttl">응대 기록</b>'
-   +'<div class="i4-res"><span>결과</span>'+R.map(r=>'<button type="button" class="i4-chip'+(S.res===r?' on':'')+'" data-i4="res" data-v="'+attr(r)+'" aria-pressed="'+(S.res===r)+'">'+h(r)+'</button>').join('')+'</div>'
+   +'<div class="i4-res two"><span>연락 결과</span>'+T.CONTACT.map(([l])=>chip('con',l,S.con===l)).join('')+'<small class="i4-rn">실제 연결 = 연결됨 · 회신 받음</small></div>'
+   +(real?'<div class="i4-res two"><span>고객 반응</span>'+T.REACTION.map(([l])=>chip('rea',l,S.rea===l)).join('')+'</div>':'')
+   +'<small class="i4-rnote">'+h(S.con?(real?'실제 연결 → 최초 응대 시각 기록 · 고객 반응으로 다음 행동 제안':'연락 시도로만 기록 · 고객 반응 줄은 숨김 · 다음 행동은 재연락'):'연락 결과를 고르면 다음 행동을 제안합니다')+'</small>'
    +'<input type="text" class="i4-memo" data-i4f="memo" aria-label="한 줄 메모" placeholder="한 줄 메모 (선택)" maxlength="300" value="'+attr(S.memo)+'">'
    +'<div class="i4-next"><b class="ai">AI</b><span><b>다음 행동</b> '+(S.res?h(nextText(S.res)+' · '+w+' ('+kday(nd)+')'):'결과를 고르면 제안')+'</span>'+(S.res?'<button type="button" class="lnk" data-i4="pick" aria-expanded="'+!!S.pick+'">바꾸기</button>':'')+'</div>'
    +(S.res&&S.pick?'<div class="i4-res when"><span>날짜</span>'+opts.map(o=>'<button type="button" class="i4-chip'+(w===o?' on':'')+'" data-i4="when" data-v="'+attr(o)+'" aria-pressed="'+(w===o)+'">'+h(o)+'</button>').join('')+'</div>':'')
@@ -250,7 +254,7 @@
   if(a==='miss'){if(v==='다음 행동 · 날짜'){const r=document.querySelector('#inq-v4 .i4-rec');if(r&&r.scrollIntoView)r.scrollIntoView({block:'nearest'});return;}if(!FIELD[v]||!canFill())return openFull(m.key);S.edit=v;S.draft='';S.err='';render();const i=document.querySelector('#inq-v4 [data-i4f="draft"]');if(i)i.focus();return;}
   if(a==='miss-cancel'){S.edit='';S.draft='';return render();}
   if(a==='miss-save')return saveMiss();
-  if(a==='res'){S.res=S.res===v?'':v;S.when='';S.pick=false;S.err='';return render();}
+  if(a==='con'||a==='rea'){const T=F().TWO;if(a==='con'){S.con=S.con===v?'':v;if(!T.isReal(S.con))S.rea='';}else S.rea=S.rea===v?'':v;S.res=T.res(S.con,S.rea);S.when='';S.pick=false;S.err='';return render();}
   if(a==='pick'){S.pick=!S.pick;return render();}
   if(a==='when'){S.when=v;return render();}
   if(a==='save')return save();

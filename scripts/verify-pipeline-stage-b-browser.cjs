@@ -81,7 +81,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#pipeline-stage-b .psb-row',{hasText:'정상 컨설팅'}).locator('.l').click();await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>__open),'c-ok');
   if(shot)await page.screenshot({path:shot+'-consulting.png',fullPage:true});
   /* 단계 전환: 발송 · 관계 · 경쟁 · 계약 · 수주 · 실주 — 막대 칸과 첫 빨강 사유 */
-  const expect={sent:[['D+7 전 · 후속 대기','7일 넘김 · 후속 없음','후속 완료 · 반응 기록'],'후속 없는 발송','발송 후 7일 · 후속 없음'],relationship:[['집중관리 · 7일 단위','일반관리 · 월 1회','대기 · 2개월 1회'],'집중 현장','집중관리 7일 넘게 연락 없음'],competition:[['참여 · 가격 결정 대기','서류 · 제안서 준비','제출 완료 · 결과 대기'],'입찰 D-2','마감 D-3 · 준비 안 됨'],construction:[['계약 진행','시공팀 인계','착공 · 시공 중'],'계약 진행','계약일 · 금액 미입력'],won:[['준공 직후 · D+30 전','D+30 사후 확인','재영업 연결'],'사후 연락 없는 수주','준공 D+30 사후 연락 안 함'],lost:[['사유 미기록','기록 완료','재영업 예정'],'사유 없는 실주','실주 사유 미입력']};
+  const expect={sent:[['D+7 전 · 후속 대기','7일 넘김 · 후속 없음','후속 완료 · 반응 기록'],'후속 없는 발송','발송 후 7일 · 후속 없음'],relationship:[['집중관리 · 7일 단위','일반관리 · 월 1회','대기 · 2개월 1회'],'집중 현장','집중관리 7일 넘게 연락 없음'],competition:[['참여 · 가격 결정 대기','서류 · 제안서 준비','제출 완료 · 결과 대기'],'입찰 D-2','마감 D-3 · 준비 안 됨'],construction:[['계약 진행','시공팀 인계','착공 · 시공 중'],'계약 진행','계약일 · 금액 미입력'],won:[['수주 정보 미기록','계약일 · 착공 · 준공 확인','실적 · 완료 정보 완료'],'','수주 유형 · 낙찰금액 · 낙찰사 미기록'],lost:[['사유 미기록','기록 완료','재영업 예정'],'사유 없는 실주','실주 사유 미입력']};
   for(const [key,[bars,firstSite,firstReason]] of Object.entries(expect)){
    await page.evaluate(k=>PipelineWorkspace.open(k),key);await page.waitForTimeout(300);
    assert.equal(await page.locator('#pipeline-stage-b').getAttribute('data-stage'),key);
@@ -94,7 +94,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>PipelineWorkspace.open('relationship'));await page.waitForTimeout(300);
   assert.match(await page.locator('#pipeline-stage-b .psb-row',{hasText:'일반 현장'}).locator('.i').innerText(),/30일 넘게 접촉 없음/);assert.match(await page.locator('#pipeline-stage-b .psb-row',{hasText:'대기 현장'}).locator('.i').innerText(),/대기 2개월 연락일 지남/);
   /* 수주 · 실주: 정상 건은 '정상' */
-  await page.evaluate(()=>PipelineWorkspace.open('won'));await page.waitForTimeout(300);assert.match(await page.locator('#pipeline-stage-b .psb-row',{hasText:'갓 준공'}).locator('.s b').innerText(),/준공 직후/);
+  await page.evaluate(()=>PipelineWorkspace.open('won'));await page.waitForTimeout(300);assert.match(await page.locator('#pipeline-stage-b .psb-row',{hasText:'갓 준공'}).locator('.s b').innerText(),/수주 정보 미기록/);
   await page.evaluate(()=>PipelineWorkspace.open('lost'));await page.waitForTimeout(300);assert.match(await page.locator('#pipeline-stage-b .psb-row',{hasText:'재영업 실주'}).locator('.s b').innerText(),/재영업 예정/);
   /* 좁은 화면 · 끄기 */
   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'좁은 화면 넘침 없음');

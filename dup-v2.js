@@ -10,7 +10,9 @@
  const h=v=>root.esc(String(v==null?'':v)),attr=v=>root.escAttr(String(v==null?'':v));
  const enabled=()=>!root.G.dupV2Off&&!!root.DataCleanupUI&&typeof root.DataCleanupUI.active==='function';
  const KIND={site:'현장',inquiry:'문의',contact:'연락처',deal:'영업기회'};
- const BAND={sure:['확실 · 같은 건','g','#30a46c','근거가 겹쳐 같은 건으로 보이는 쌍'],maybe:['애매 · 확인 필요','a','#f5a524','사람이 비교해서 정해야 하는 쌍'],diff:['다른 건','m','#9ca3af','겹쳐 보이지만 따로 두는 것이 맞는 쌍']};
+ /* 묶음(2026-10-06 design_handoff_followup4 ④): '확실한 같은 건' → 같은 공사 · 합치기 검토(같은 현장 + 같은 공종 · 같은 시기) / 같은 현장 · 다른 공사(공종 · 시기가 다름 → 그대로 두기 · 같은 현장으로만 묶음) */
+ const BAND={work:['같은 공사 · 합치기 검토','g','#30a46c','같은 현장 + 같은 공종 · 같은 시기 요청 — 같은 상담 연결 또는 합치기'],site:['같은 현장 · 다른 공사','s','#3b6ce4','현장은 같지만 공종 · 시기가 다름 — 그대로 두기 · 같은 현장으로만 묶음'],maybe:['애매 · 확인 필요','a','#f5a524','사람이 비교해서 정해야 하는 쌍'],diff:['다른 건','m','#9ca3af','겹쳐 보이지만 따로 두는 것이 맞는 쌍']};
+ const ORDER=['work','site','maybe','diff'];
  const SUGGEST={site_merge:'합치기',inquiry_merge:'합치기',deal_review:'비교 후 판단',site_link:'연결만',inquiry_activity:'연결만',contact_move:'사람 · 근무지 확인',separate:'그대로 두기',different_person:'그대로 두기',defer:'정보 보완 뒤 판단'};
  const GRID='minmax(0,1.7fr) 110px minmax(0,1.5fr) 110px 84px';
  const st=()=>root.G.dupV2||(root.G.dupV2={f:'all',more:{}});
@@ -19,9 +21,11 @@
  function judge(c){
   const R=c.reasons||[],has=t=>R.some(x=>x.indexOf(t)>=0),strong=[has('주소 동일'),has('관리사무소 전화 동일'),has('현장명 표기 일치'),has('1일 이내 문의 접수'),has('관리소장 휴대전화 동일')].filter(Boolean).length;
   if(c.action==='separate')return 'diff';
-  if(c.action==='inquiry_merge')return strong>=2?'sure':'maybe';
-  if(c.action==='site_merge')return has('주소 동일')&&(has('관리사무소 전화 동일')||has('현장명 표기 일치'))?'sure':'maybe';
-  if(c.action==='site_link')return has('주소 동일')?'sure':'maybe';
+  if(c.action==='inquiry_merge')return strong>=2?'work':'maybe';
+  if(c.action==='site_merge')return has('주소 동일')&&(has('관리사무소 전화 동일')||has('현장명 표기 일치'))?'work':'maybe';
+  if(c.action==='deal_review')return has('동일 공종')&&(has('주소 동일')||has('현장 ID 동일')||has('현장명 표기 일치'))?'work':'maybe';
+  /* 같은 현장이지만 공종 · 사업유형 · 시기가 다른 복수 영업 = 같은 현장 · 다른 공사 */
+  if(c.action==='site_link')return has('주소 동일')||has('현장 ID 동일')||has('현장명 표기 일치')?'site':'maybe';
   return 'maybe';
  }
  function model(){
@@ -36,26 +40,26 @@
   const K=(label,value,sub,tone)=>({label,value,sub,tone:tone||''}),inq=m.cases.filter(x=>x.c.type==='inquiry'&&x.c.action==='inquiry_merge').length,site=m.cases.filter(x=>x.c.type==='site').length;
   const tasks=[[inq,'같은 전화 · 1일 내 재접수 '+inq+'건','7일 내 같은 전화로 온 문의는 기존 건에 연결되게 접수 규칙 정하기','관리팀 · 이번 주','문의 재접수'],[site,'현장 겹침 '+site+'건','현장을 등록할 때 주소로 기존 현장을 먼저 찾아보기','영업팀 · 등록할 때','현장 중복 등록'],[n('maybe'),'애매한 건 '+n('maybe')+'건','애매한 건은 주 1회 10분 검토','관리팀 · 매주','애매한 건 검토']].filter(t=>t[0]>0).map(t=>({basis:t[1],todo:t[2],who:t[3],label:t[4],count:t[0]}));
   return D.render({accent:'blue',
-   kpis:[K('검토 후보',m.cases.length+'건','쌍 기준 · 지금 불러온 자료'),K('확실',n('sure')+'건','근거가 겹침','good'),K('애매',n('maybe')+'건','사람이 비교',n('maybe')?'warn':''),K('다른 건',n('diff')+'건','따로 두기')],
+   kpis:[K('검토 후보',m.cases.length+'건','쌍 기준 · 지금 불러온 자료'),K('같은 공사',n('work')+'건','합치기 검토','good'),K('같은 현장 · 다른 공사',n('site')+'건','같은 현장으로만 묶음'),K('애매',n('maybe')+'건','사람이 비교 · 다른 건 '+n('diff'),n('maybe')?'warn':'')],
    cards:[{title:'무엇이 겹치나',desc:'종류별 쌍',bars:by(c=>KIND[c.type]),empty:'겹치는 후보가 없습니다'},{title:'왜 생기나',desc:'잡힌 근거',bars:why,empty:'근거가 없습니다'},{title:'생기는 곳',desc:'어느 자료끼리',bars:by(pairKind),empty:'후보가 없습니다'}],
    action:{title:'다시 안 생기게',desc:'데이터 정리에서 나온 과제',tasks}},{open:true,noToggle:true,scope:'dup'});
  }
  function rowHtml(x){
-  const c=x.c,b=BAND[x.band],cta=x.band==='sure'?'승인':x.band==='maybe'?'비교하기':'확인';
+  const c=x.c,b=BAND[x.band],cta=x.band==='work'?'승인':x.band==='maybe'?'비교하기':'확인';
   return '<div class="plv-row" role="row" tabindex="0" data-dv="open" data-value="'+x.i+'" style="grid-template-columns:'+GRID+'"><span class="plv-c plv-site"><b title="'+attr(c.a.name+' ↔ '+c.b.name)+'">'+h(c.a.name)+' <i class="dv-arrow">↔</i> '+h(c.b.name)+'</b><small>'+h(KIND[c.type]||c.type)+' · '+h(pairKind(c))+'</small></span>'
    +'<span class="plv-c"><em class="plv-tag '+b[1]+'">'+h(b[0].split(' · ')[0])+'</em></span><span class="plv-c"><span title="'+attr(c.reasons.join(' · '))+'">'+h(c.reasons.join(' · '))+'</span></span><span class="plv-c"><em class="plv-tag m">'+h(SUGGEST[c.action]||c.action)+'</em></span>'
    +'<button type="button" class="plv-cta" data-dv="open" data-value="'+x.i+'">'+cta+'</button></div>';
  }
  function listHtml(m){
   const S=st(),n=k=>m.cases.filter(x=>x.band===k).length;
-  const pills='<div class="plv-pills" role="group" aria-label="판단">'+[['all','전체',m.cases.length],['sure','확실 · 같은 건',n('sure')],['maybe','애매 · 확인 필요',n('maybe')],['diff','다른 건',n('diff')],['done','처리 완료',m.reviews.length]].map(([v,t,c])=>'<button type="button" data-dv="filter" data-value="'+v+'" aria-pressed="'+(S.f===v)+'">'+h(t)+' <b>'+c+'</b></button>').join('')+'</div>';
-  const intro='<div class="plv-intro"><i style="background:#64748b"></i><b>데이터 정리 · 검토</b><span>먼저 판단해 둡니다 — 확실한 건은 빨리 승인, 애매한 건만 사람이 봅니다</span><div class="plv-spacer"></div>'+pills+'<button type="button" class="sv-ghost" data-dv="refresh">'+(m.loading?'확인 중…':'후보 다시 계산')+'</button></div>';
-  const band='<section class="dv-band"><div><b>'+m.cases.length+'건 중 '+n('sure')+'건은 같은 건이 확실해요. 사람이 볼 건 '+n('maybe')+'건입니다</b><span>규칙 판단(근거 조합)입니다 · 승인하기 전에는 데이터가 바뀌지 않습니다'+(m.readOnly?' · 지금은 검토 전용 — 합치기 · 연결은 운영 확인 뒤 관리자만 켭니다':'')+'</span></div><button type="button" disabled title="한 번에 승인과 30일 되돌리기는 구조 확인 뒤에 열립니다">확실한 '+n('sure')+'건 한 번에 승인</button></section>';
+  const pills='<div class="plv-pills" role="group" aria-label="판단">'+[['all','전체',m.cases.length]].concat(ORDER.map(k=>[k,BAND[k][0],n(k)]),[['done','처리 완료',m.reviews.length]]).map(([v,t,c])=>'<button type="button" data-dv="filter" data-value="'+v+'" aria-pressed="'+(S.f===v)+'">'+h(t)+' <b>'+c+'</b></button>').join('')+'</div>';
+  const intro='<div class="plv-intro"><i style="background:#64748b"></i><b>데이터 정리 · 검토</b><span>먼저 판단해 둡니다 — 같은 공사는 빨리 승인, 같은 현장 · 다른 공사는 그대로 두고, 애매한 건만 사람이 봅니다</span><div class="plv-spacer"></div>'+pills+'<button type="button" class="sv-ghost" data-dv="refresh">'+(m.loading?'확인 중…':'후보 다시 계산')+'</button></div>';
+  const band='<section class="dv-band"><div><b>'+m.cases.length+'건 중 '+n('work')+'건은 같은 공사로 보여요 · 같은 현장 · 다른 공사 '+n('site')+'건 · 사람이 볼 건 '+n('maybe')+'건입니다</b><span>규칙 판단(근거 조합)입니다 · 승인하기 전에는 데이터가 바뀌지 않습니다'+(m.readOnly?' · 지금은 검토 전용 — 합치기 · 연결은 운영 확인 뒤 관리자만 켭니다':'')+'</span></div><button type="button" disabled title="한 번에 승인과 30일 되돌리기는 구조 확인 뒤에 열립니다">같은 공사 '+n('work')+'건 한 번에 승인</button></section>';
   let table;
   if(S.f==='done')table='<div class="plv-table" role="table" aria-label="처리 이력"><div class="plv-ghead"><i style="background:#30a46c"></i><b>처리 완료</b><span>'+m.reviews.length+'건</span><small>· 서버에 남은 처리 이력</small></div>'+(m.reviews.length?m.reviews.map(r=>'<div class="dv-hist"><b>'+h(r.source_name)+' → '+h(r.target_name)+'</b><span>'+h(SUGGEST[r.action]||r.action)+' · '+h(r.actor||'')+' · '+h(String(r.created_at||'').slice(0,10))+'</span><small>'+h(r.note||'')+'</small></div>').join(''):'<div class="plv-empty">서버에 확인된 처리 이력이 없습니다</div>')+'</div>';
   else{
    const head='<div class="plv-thead" role="row" style="grid-template-columns:'+GRID+'"><span>대상 (A ↔ B) · 종류</span><span>판단</span><span>근거</span><span>제안</span><span></span></div>';
-   const groups=['sure','maybe','diff'].filter(k=>S.f==='all'||S.f===k).map(k=>{const b=BAND[k],list=m.cases.filter(x=>x.band===k),__pg=root.ListPager.cut(list,(S.more[k]||0)+1),shown=__pg.rows,rest=list.length-shown.length;return '<div class="plv-ghead" data-plv-group="'+k+'"><i style="background:'+b[2]+'"></i><b>'+h(b[0])+'</b><span>'+list.length+'건</span><small>· '+h(b[3])+'</small></div>'+(shown.length?shown.map(rowHtml).join(''):'<div class="plv-empty">해당하는 건이 없습니다</div>')+root.ListPager.html(__pg,{ns:'dv',attrs:'data-value="'+k+'"',small:true});}).join('');
+   const groups=ORDER.filter(k=>S.f==='all'||S.f===k).map(k=>{const b=BAND[k],list=m.cases.filter(x=>x.band===k),__pg=root.ListPager.cut(list,(S.more[k]||0)+1),shown=__pg.rows,rest=list.length-shown.length;return '<div class="plv-ghead" data-plv-group="'+k+'"><i style="background:'+b[2]+'"></i><b>'+h(b[0])+'</b><span>'+list.length+'건</span><small>· '+h(b[3])+'</small></div>'+(shown.length?shown.map(rowHtml).join(''):'<div class="plv-empty">해당하는 건이 없습니다</div>')+root.ListPager.html(__pg,{ns:'dv',attrs:'data-value="'+k+'"',small:true});}).join('');
    table='<div class="plv-table" role="table" aria-label="중복 후보">'+head+groups+'</div>';
   }
   return intro+diagnosis(m)+band+table;

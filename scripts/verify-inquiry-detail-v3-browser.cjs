@@ -85,7 +85,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    await page.locator('#inq-inbox-dialog .ds2-tpls button',{hasText:'자료 요청'}).click();await page.waitForTimeout(150);assert.match(await page.locator('#inq-inbox-dialog [data-idv="smstext"]').inputValue(),/도면이나 현장 사진/);
    if(shot)await page.screenshot({path:shot+'-inq-sms.png'});}
   await page.locator('#inq-inbox-dialog .idv3-tabs [role=tab]',{hasText:'응대 기록'}).click();await page.waitForTimeout(200);
-  assert.deepEqual(await tx('.idv3-res .idv3-rc'),['연결됨','고객 회신','검토중','자료요청','견적요청','부재','통화불가','번호오류','배드핏'],'결과 칩 = 결과 마스터(목록 · 상세 공통) + 배드핏');
+  assert.deepEqual(await tx('.idv3-res .idv3-rc'),['연결됨','회신 받음','부재','번호 오류','배드핏'],'결과 두 줄(followup4): 연락 결과 4 + 배드핏 · 고객 반응은 실제 연결일 때만');
   assert.equal(await d.locator('#iq-res').getAttribute('placeholder'),'무슨 일이 있었는지 한 줄 (선택)');
   assert.match((await tx('.idv3-sug'))[0],/^AI ?다음 행동 ?결과를 고르면 제안$/);assert.equal(await d.locator('.idv3-sug em').innerText(),'AI','다음 행동 제안 앞 AI 표식(시안 그대로)');assert.equal(await d.locator('.idv3-foot .idv-save.on').count(),0);
   await d.locator('.idv3-rc',{hasText:/^부재$/}).click();await page.waitForTimeout(150);

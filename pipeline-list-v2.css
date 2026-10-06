@@ -50,3 +50,5 @@
 #pipeline-stage-menu button.plv-mi.selected{background:#eef3fe;color:#2a52b8;font-weight:600}
 /* 단계 화면은 #pipeline-stage-root 만 보이게 돼 있다 — 공통 필터줄은 예외로 보인다 */
 #pg-pipe.ps-active.plv-on>.cf-bar:not(#pipeline-stage-root):not([hidden]){display:flex!important}
+
+.plv-tag.s{background:#eef3fe;color:#1d3f99}

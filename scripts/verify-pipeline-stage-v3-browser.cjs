@@ -156,7 +156,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(()=>[document.querySelectorAll('#detailView.dv3 #ddvComposer.dvt-calling').length,document.querySelectorAll('#detailAction,.dp-next').length]),[1,0],'열자마자 바로가기 = 지금 할 일 카드');
   await page.evaluate(()=>{try{closeDetail();}catch(e){}});await page.waitForTimeout(200);
   /* 수주 · 실주도 같은 틀(2026-10-06 대표 "이 기준으로 수주 · 실주 크기 및 배치 동일하게"): 상태 탭 4칸 = B안 막대 3칸, 사유 · 버튼은 B안 표 그대로 · 끄면 이전 화면 */
-  for(const [k,tabs,reason0] of [['won',['전체','준공 직후 · D+30 전','D+30 사후 확인','재영업 연결'],'준공 D+30 사후 연락 안 함'],['lost',['전체','사유 미기록','기록 완료','재영업 예정'],'실주 사유 미입력']]){
+  for(const [k,tabs,reason0] of [['won',['전체','수주 정보 미기록','계약일 · 착공 · 준공 확인','실적 · 완료 정보 완료'],'수주 유형 · 낙찰금액 · 낙찰사 미기록'],['lost',['전체','사유 미기록','기록 완료','재영업 예정'],'실주 사유 미입력']]){
    await page.evaluate(k=>PipelineWorkspace.open(k),k);await page.waitForTimeout(300);
    assert.equal(await page.locator('#pipeline-stage-v3[data-stage="'+k+'"]').count(),1,k+': 공통 틀 v3');assert.equal(await page.locator('#pipeline-stage-b').count(),0,k+': 예전 화면 없음');
    assert.deepEqual(await page.locator('#pipeline-stage-v3 .ps3-tab .l').allInnerTexts(),tabs,k+' 탭');

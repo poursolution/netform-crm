@@ -33,8 +33,10 @@
   /* ── ① 판정 카드 ── */
   const bn=brand?brand+' ':'',scope=P.label;
   const verdict=!L.ready?'계약 원장을 불러오는 중입니다.':C.perf<=0?bn+scope+' 수주실적은 아직 없습니다.'+(C.fit>0?' 적합 문의 '+C.fit+'건이 수주로 넘어가지 않고 있습니다.':''):made===null?bn+scope+' 수주실적 '+eok(C.perf)+' · 결과 난 영업이 아직 없습니다.':bn+scope+' 수주실적 '+eok(C.perf)+' · 결과 난 영업 '+closed+'건 중 '+C.won+'건을 이겼습니다.';
-  const drag=C.target||made===null?[]:PP.filter(p=>p.made!==null&&p.made<made&&p.w+p.l>=MINC).map(p=>p.n);
-  const verdictS=!L.ready?'':made===null?'메이드율은 결과가 나와야 계산됩니다':'메이드율 '+made.toFixed(1)+'% · 기준 '+LOW+'%'+(low?' 아래':' 이상')+(drag.length?' · '+drag.join(' · ')+'이(가) 팀 평균을 끌어내림':'');
+  /* 사람 평가 문구 대신 숫자 문장(2026-10-06 design_handoff_followup4): "이름 · 메이드율 n% · 팀 평균(n%) 미만 · 결과 확정 n건(수주 n · 실주 n) · 실주 사유 요약" — 숫자는 전부 자료에서 */
+  const drag=C.target||made===null?[]:PP.filter(p=>p.made!==null&&p.made<made&&p.w+p.l>=MINC).map(p=>{const tr=/가장 많은 실주 사유: (.+?) (\d+)건$/.exec(String(p.why||'')),k=tr?Number(tr[2]):0;
+   return p.n+' · 메이드율 '+p.made.toFixed(0)+'% · 팀 평균('+made.toFixed(0)+'%) 미만 · 결과 확정 '+(p.w+p.l)+'건(수주 '+p.w+' · 실주 '+p.l+')'+(tr?' · 실주 '+(k===p.l?p.l+'건 모두':k+'건')+" '"+tr[1]+"'":'');});
+  const verdictS=!L.ready?'':made===null?'메이드율은 결과가 나와야 계산됩니다':'메이드율 '+made.toFixed(1)+'% · 기준 '+LOW+'%'+(low?' 아래':' 이상')+(drag.length?' / '+drag.join(' / '):'');
   const kpi=[[(P.q?'분기':'연')+' 수주실적',L.ready?amt(C.perf):'불러오는 중',C.won+'건'+(avg>0?' · 월평균 '+eok(avg):''),C.perf>0?'':'mut'],
    ['회사 매출',L.ready?amt(tot.rev):'불러오는 중','직접 계약 + 기술자문 · POUR',tot.rev>0?'':'mut'],
    ['메이드율',made===null?'-':made.toFixed(1)+'%','기준 '+LOW+'%',low?'red':''],

@@ -53,7 +53,7 @@
    if(need)rs.push('needwait');
    if(!r.lastContactAt&&!rs.includes('after30'))rs.push('nocontact');
    if(unclassified(r))rs.push('work');
-   if(r.wonAmount==null)rs.push('amt');
+   /* 계약금액 등 실적 · 계약 정보는 확장관리에서 고치지 않는다(2026-10-06 followup4 ② → 수주 화면) */
    if(!r.nextContactAt)rs.push('nonext');
   }
   const reasonText={after30:'사후 연락 없음 · 기준 D+'+q.after+' 넘김',wait60:'연락 없음 '+(ld===null?'':ld+'일')+' · 기준 '+q.wait+'일',late:nd!==null&&nd<0?'다음 접촉일 '+Math.abs(nd)+'일 지남':''};

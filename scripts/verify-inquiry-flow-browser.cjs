@@ -97,7 +97,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(()=>{const q={id:'x',status:'배정완료',activities:[0,1,2].map(i=>({id:'t'+i,type:'전화',note:'고객 응대 기록',result:'[전화 · 부재]',at:new Date(Date.now()-i*6e5).toISOString()}))};const s=InquiryFlow.state(q);return [s.attempts,s.spaced,s.unreachable];}),[3,1,false]);
   /* 접촉(연결됨)을 저장하면 그때 최초응대: 단계 진행 1건 + 서버 최초 접촉 시각 */
   await page.evaluate(()=>{__writes.length=0;});
-  await d.locator('.idv3-rc',{hasText:/^연결됨$/}).click();await page.waitForTimeout(150);await d.locator('#iq-res').fill('소장님과 통화 · 방문 일정 조율');await d.locator('.idv3-foot .idv-save').click();await page.waitForTimeout(700);
+  await d.locator('.idv3-rc',{hasText:/^연결됨$/}).click();await page.waitForTimeout(150);await d.locator('.idv3-rc',{hasText:/^관심 있음$/}).click();await page.waitForTimeout(150);await d.locator('#iq-res').fill('소장님과 통화 · 방문 일정 조율');await d.locator('.idv3-foot .idv-save').click();await page.waitForTimeout(700);
   const w2=await page.evaluate(()=>__writes.map(x=>[x[0],x[1].intent||'',x[1].result||x[1].text||'']));
   assert.equal(w2.length,1,JSON.stringify(w2));assert.equal(w2[0][0],'inquiry_status');assert.equal(w2[0][1],'progress');assert.match(w2[0][2],/^\[전화 · 연결됨\] 소장님과 통화/);
   assert.deepEqual(await page.evaluate(()=>{const q=inqCtlFind(A,false),s=InquiryFlow.state(q),S=InquiryFlow.server(q);return [!!inqCtlFirstResponseAt(q),inquiryResponded(q),s.attempts,!!S.first_connected_at,S.attempt_count,S.connected_count];}),[true,true,3,true,1,1],'접촉 뒤: 최초응대 완료 · 그 전 시도 수는 남는다');
@@ -134,7 +134,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const modal=page.locator('#inquiryControlModal.on'),day=d=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(Date.now()+d*864e5));
   await page.evaluate(()=>{__writes.length=0;__rpc.length=0;InquiryWorkbench.open(R);});await page.waitForTimeout(400);
   const dd=page.locator('#inq-inbox-dialog.idv.idv3');
-  assert.deepEqual(await dd.locator('.idv3-res .idv3-rc').allInnerTexts(),['연결됨','고객 회신','검토중','자료요청','견적요청','부재','통화불가','번호오류','배드핏']);
+  assert.deepEqual(await dd.locator('.idv3-res .idv3-rc').allInnerTexts(),['연결됨','회신 받음','부재','번호 오류','배드핏']);
   await dd.locator('.idv3-rc',{hasText:/^배드핏$/}).click();await page.waitForTimeout(250);
   assert.equal(await page.locator('#inquiryControlTitle').innerText(),'문의 종결','[배드핏] 칩 = 종결 창(다음 할 일을 만들지 않는다)');
   assert.deepEqual(await modal.locator('#inq-close-type option').evaluateAll(l=>l.map(n=>n.value)),['bad_fit','unreachable','consult_end','transfer'],'종결 4종');assert.equal(await modal.locator('#inq-close-type').inputValue(),'bad_fit');
@@ -168,13 +168,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* ── ③ 문자 탭 · CRM 발송 큐 없음 · 수단 문자 = 가운데 칸 문자 보내기 → 기록(회신대기 = 연락 시도) ── */
   await page.evaluate(()=>{__rpc.length=0;__writes.length=0;InquiryWorkbench.open(X);});await page.waitForTimeout(400);
   assert.deepEqual(await dd.locator('.idv3-tabs [role=tab]').allInnerTexts(),['응대 기록','내부 메모'],'상세 문자 탭 없음');
-  await dd.locator('.idv3-rc',{hasText:/^연결됨$/}).click();await page.waitForTimeout(150);await dd.locator('[data-idv="edit-sug"]').click();await page.waitForTimeout(150);
+  await dd.locator('.idv3-rc',{hasText:/^연결됨$/}).click();await page.waitForTimeout(150);await dd.locator('.idv3-rc',{hasText:/^관심 있음$/}).click();await page.waitForTimeout(150);await dd.locator('[data-idv="edit-sug"]').click();await page.waitForTimeout(150);
   await dd.locator('.idv-sugedit .idv-chip[data-idv="ch"][data-v="문자"]').click();await page.waitForTimeout(250);
   assert.equal(await dd.locator('.idv3-smswrap .ds2.iq-ds2 [data-idv="smstext"]').count(),1,'수단 문자 = 가운데 칸 문자 보내기');assert.equal(await dd.locator('[data-idv="sms-crm"]').count(),0,'CRM 직접 발송 버튼 없음');
   assert.deepEqual(await dd.locator('.ds2-ft button').evaluateAll(l=>l.map(n=>n.dataset.idv)),['sms-back','sms-copy','sms-go']);
   await dd.locator('.ds2-ft [data-idv="sms-go"]').click();await page.waitForTimeout(600);
   assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_command_v1').map(x=>[x[1].type,x[1].channel,x[1].result])),[['contact_log','문자','회신대기']],'보낸 문자 = 응대 기록(수단 문자 · 회신대기)');
-  assert.equal(await page.evaluate(()=>__rpc.filter(x=>/sms_request|sms_list/.test(x[0])).length),0,'문자 발송 큐 함수는 부르지 않는다');assert.equal(await dd.locator('.idv3-res').count(),1,'기록하면 응대 기록 칸으로 돌아온다');
+  assert.equal(await page.evaluate(()=>__rpc.filter(x=>/sms_request|sms_list/.test(x[0])).length),0,'문자 발송 큐 함수는 부르지 않는다');assert.ok(await dd.locator('.idv3-res').count()>=1,'기록하면 응대 기록 칸으로 돌아온다');/* 결과 두 줄이면 2줄 */
   await page.evaluate(()=>InquiryWorkbench.close());await page.waitForTimeout(200);
   /* ── ④ ⑤ 전환 기준 하나 · 견적 = 버전 ── */
   assert.equal(await page.evaluate(()=>InquiryFlow.QUALIFY_TEXT),'1차 현장방문 완료 또는 견적 발송 완료 중 먼저 → 파이프라인 전환');
