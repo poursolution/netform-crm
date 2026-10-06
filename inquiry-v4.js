@@ -177,9 +177,9 @@
  }
  function fit(){
   const p=document.querySelector('#inq-v4 .i4-panes');if(p){const top=p.getBoundingClientRect().top;p.style.height=Math.max(420,Math.floor(window.innerHeight-top-14))+'px';}
-  /* 등록 버튼 자리: 위 탭 줄의 오른쪽 끝 · 세로 가운데 */
+  /* 등록 버튼 자리: 위 탭 줄의 오른쪽 끝(CSS right:0 — 재는 값에 기대지 않는다) · 세로는 탭 줄 높이에 맞춘다 */
   const slot=document.getElementById('i4-create-slot'),page=document.getElementById('pg-inq'),bar=page&&page.querySelector(':scope>.b2b-bar');
-  if(slot&&bar){slot.style.top=bar.offsetTop+'px';slot.style.height=bar.offsetHeight+'px';slot.style.right=Math.max(0,page.clientWidth-(bar.offsetLeft+bar.offsetWidth))+'px';}
+  if(slot&&bar){slot.style.top=bar.offsetTop+'px';if(bar.offsetHeight)slot.style.height=bar.offsetHeight+'px';}
  }
  function render(){
   const page=document.getElementById('pg-inq');if(!page)return;let host=document.getElementById('inq-v4');

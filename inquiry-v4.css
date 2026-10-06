@@ -8,7 +8,7 @@
 #inq-v4 .lnk:hover{color:#1d3f99}
 /* [+ 문의 등록] = 위 탭 줄 오른쪽 */
 #pg-inq.inq-v4{position:relative}
-#pg-inq.inq-v4>#i4-create-slot{position:absolute;z-index:1;display:flex;align-items:center}
+#pg-inq.inq-v4>#i4-create-slot{position:absolute;right:0;top:0;min-height:37px;z-index:1;display:flex;align-items:center}
 #pg-inq.b2b-on>#i4-create-slot{display:none}
 #i4-create-slot .inq-create-trigger{border:0;background:#3b6ce4;color:#fff;font:inherit;font-size:13.5px;font-weight:700;border-radius:8px;padding:8px 14px;margin:0;height:auto;box-shadow:none;cursor:pointer;white-space:nowrap}
 /* 상태 탭 5칸 */
