@@ -65,6 +65,8 @@ async function run() {
       window.loadData=async()=>{if(__manualReadable&&!B.inquiries.some(q=>q.id===__created.id))B.inquiries.push(__created);return B;};
       await InquiryCreate.refresh();paintInq();
     });
+    /* 견적문의 v4: 버튼은 위 탭 줄의 오른쪽 끝에 놓이고 탭 글자를 가리지 않는다(2026-10-06 운영에서 처음 뜰 때 탭 위에 겹치던 것) */
+    {const pos=await page.evaluate(()=>{const b=document.querySelector('#pg-inq #i4-create-slot .inq-create-trigger'),k=document.querySelector('#pg-inq .b2b-kinds');if(!b||!k)return null;const r=b.getBoundingClientRect(),q=k.getBoundingClientRect(),p=document.getElementById('pg-inq').getBoundingClientRect();return [r.left>q.right,Math.abs(r.right-p.right)<2,r.width>40];});if(pos)assert.deepEqual(pos,[true,true,true],'문의 등록 버튼은 위 탭 줄 오른쪽 끝');}
     await page.getByRole('button',{name:'+ 문의 등록',exact:true}).click();
     const dialog=page.getByRole('dialog',{name:'신규 문의 등록',exact:true});
     for(const width of [1440,760,390]){await page.setViewportSize({width,height:900});assert.ok(await dialog.evaluate(e=>e.scrollWidth<=e.clientWidth+1),'registration dialog overflow '+width);assert.ok(await dialog.evaluate(e=>{const r=e.getBoundingClientRect();return Math.abs((innerWidth-r.width)/2-r.x)<2&&r.y>=0}),'centered dialog '+width);}
