@@ -26,16 +26,16 @@
   /* 같은 단계 변경이 화면 기록('계약')과 서버 기록('bidding → contract')으로 두 번 오면 한 번만 보인다 — 같은 날 · 같은 입력 내용이면 같은 변경. 단계 코드는 단계 이름으로 바꿔 적는다 */
   const stageSeen=[],codeName=s=>String(s||'').replace(/[a-z]+(?:_[a-z]+)*/g,c=>root.STAGE_MASTER&&root.STAGE_MASTER[c]?root.stageLabel(c):c),toOf=s=>{s=codeName(s);const i=s.lastIndexOf('→');return (i>=0?s.slice(i+1):s).trim();};
   rows.forEach(x=>{
-   const k=[x.ttl,x.body,x.result,String(x.at||'').slice(0,16)].join('|');if(seen.has(k))return;seen.add(k);
+   const k=x.id?'id:'+x.id:[x.ttl,x.body,x.result,String(x.at||'')].join('|');if(seen.has(k))return;seen.add(k);
    const ttl=String(x.ttl||''),label=NAMES[ttl]||(/^[a-z]+(?:_[a-z]+)+$/.test(ttl)?'업무 기록':ttl||'연락 결과');
    const text=[x.body,x.result].concat((x.fields||[]).map(f=>f.filter(Boolean).join(' · '))).filter(Boolean).map(say).join('\n');
    const system=/^[a-z]+(?:_[a-z]+)+$/.test(ttl)||/단계|배정|변경|등록|완료|이력 수정/.test(label)&&!/전화|문자|방문/.test(label);/* '이력 수정' = 이 단지 영업 이력을 고친 시스템 기록 */
    const kind=ttl==='견적문의 접수'&&x.body?'in':system?'sys':ttl==='메모'||/^\[지원/.test(String(x.body||''))?'memo':x.src==='auto'?'sys':'out';
    if(label==='진행상태 변경'){
     const lines=String(text||'').split('\n'),first=codeName(lines[0]||''),rest=lines.slice(1).join('\n'),day=String(x.at||'').slice(0,10);
-    const prev=stageSeen.find(p=>p.day===day&&p.rest===rest&&(rest?true:toOf(p.first)===toOf(first)));
+    const prev=stageSeen.find(p=>!(p.id&&x.id&&p.id!==x.id)&&p.day===day&&p.rest===rest&&(rest?true:toOf(p.first)===toOf(first)));
     if(prev){if(/→/.test(first)&&!/→/.test(prev.first)){prev.first=first;prev.item.text=[first].concat(rest?[rest]:[]).join('\n');}return;}
-    const item={kind,label,who:x.who||'',at:x.at,text:[first].concat(rest?[rest]:[]).join('\n')||label};stageSeen.push({day,rest,first,item});out.push(item);return;
+    const item={kind,label,who:x.who||'',at:x.at,text:[first].concat(rest?[rest]:[]).join('\n')||label};stageSeen.push({id:x.id,day,rest,first,item});out.push(item);return;
    }
    out.push({kind,label,who:x.who||'',at:x.at,text:text||label});
   });
