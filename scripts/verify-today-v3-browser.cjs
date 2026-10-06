@@ -207,7 +207,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{
    const now=Date.now(),at=new Date(now-864e5).toISOString();
    B.deals=[];LOCAL={deals:{},inquiries:{}};G.today3=null;G.todayV3Off=false;
-   B.inquiries=Array.from({length:4},(_,n)=>({id:'90000000-0000-4000-8000-00000000000'+n,site:'재배정 검증 '+n,brand:'POUR솔루션',status:n?'응대중':'배정완료',assignee:'조민준',assigned_to:'조민준',assigned_at:at,assignment_history:[{at,from_owner:'이필선',to_owner:'조민준'}],received_at:'2026-03-11T04:15:00Z',at:'2026-03-11T04:15:00Z',responded_at:n?'2026-03-11T04:15:00Z':'',phone:'010-5555-000'+n,raw:{},activities:[]}));
+   B.inquiries=Array.from({length:4},(_,n)=>({id:'90000000-0000-4000-8000-00000000000'+n,site:'재배정 검증 '+n,brand:'POUR솔루션',status:n?'응대중':'배정완료',assignee:'조민준',assigned_to:'조민준',assigned_at:at,assignment_history:[],received_at:'2026-03-11T04:15:00Z',at:'2026-03-11T04:15:00Z',responded_at:n?'2026-03-11T04:15:00Z':'',phone:'010-5555-000'+n,raw:{},activities:[{id:'91000000-0000-4000-8000-00000000000'+n,type:'담당자 변경',note:'경남지사 → 조민준',at,actor:'영업관리'}]}));
    OPS_RULES.liveFrom=new Date(now-2*864e5).toISOString().slice(0,10);ContactState._reset();paint();
   });
   await page.waitForTimeout(300);
