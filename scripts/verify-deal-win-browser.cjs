@@ -124,7 +124,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 월간 보고 본문과 직접/협약 분해는 같은 계약 원장을 사용한다. */
   await page.evaluate(()=>{G.reportBMonth='2026-10';goPage('report');});await page.waitForTimeout(500);
   assert.deepEqual(await page.evaluate(()=>{const x=ReportB.data();return [x.cur.contracts.net,x.cur.con.net+x.cur.pt.amount,x.cur.contracts.count,x.cur.con.count+x.cur.pt.count];}),[1543900000,1543900000,2,2]);
-  assert.match(await page.evaluate(()=>ReportB.headline(ReportB.data()).t),/10월 계약 2건 · 15\.4억/);
+  assert.match(await page.evaluate(()=>ReportB.headline(ReportB.data()).t),/10월 체결 계약 2건 · 15\.4억/);
   assert.match(await page.evaluate(()=>ReportB.summaryText(ReportB.data())),/→ 계약 2건 · 15\.4억/);
   /* 7. 직접 수주: 유형 · 계약 업체를 남기고 계약 창으로 이어 준다(계약실적 원장은 그 경로 그대로) */
   await page.evaluate(()=>{G._detailPopup=true;goPage('pipe');drwDeal(JSON.stringify(B.deals[3]));});await page.waitForTimeout(800);

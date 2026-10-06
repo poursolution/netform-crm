@@ -62,7 +62,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const shot=async n=>{if(process.env.SHOT_DIR)await page.screenshot({path:require('node:path').join(process.env.SHOT_DIR,'scope-'+n+'.png')});};
   const L=page.locator('#pipeline-legacy');await shot('legacy');
   /* 정리안(2026-10-06 design_handoff_legacy): 제목 줄 숫자 3개 · 담당자별 재개 카드 · 탭 4개 + 예전 단계 선택칸 · v11 모양 줄 — 상세는 scripts/verify-pipeline-legacy-browser.cjs */
-  assert.equal(one(await L.locator('.plg-head').innerText()),'과거 이관 · 분류 전 예전 시스템에서 옮겨 온 자료 · 진행 건수 · 메이드율 계산에 안 들어감 전체 6 · 바로 재개 가능 5 · 서버 보완 필요 1');
+  assert.equal(one(await L.locator('.plg-head').innerText()),'과거 이관 · 분류 전 예전 시스템에서 옮겨 온 자료 · 진행 건수 · 메이드율 계산에 안 들어감 전체 6 · 바로 재개 가능 3 · 배정 후 재개 가능 2 · 서버 보완 필요 1');
   assert.deepEqual(await L.locator('.plg-owner').evaluateAll(l=>l.map(n=>n.querySelector('b').textContent+' '+n.querySelector('span').textContent)),['이필선 2건','황윤선 1건','한준엽 1건','담당 없음 2건']);
   assert.deepEqual((await L.locator('.plg-tabs [role="tab"]').allInnerTexts()).map(one),['전체 6','바로 재개 가능 3','담당 없음 2','서버 보완 필요 1']);
   const rows=await L.locator('.plg-row').evaluateAll(l=>l.map(r=>{const t=s=>r.querySelector(s).innerText.replace(/\s+/g,' ').trim();return [r.dataset.key,t('.prv-a span'),t('.prv-c'),t(':scope>button'),t('.prv-b')];}));
