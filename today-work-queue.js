@@ -106,7 +106,7 @@
   const CS=root.ContactState,lead=new Map();
   if(CS&&CS.on())Array.from(unique.values()).forEach(x=>{if(x.type!=='inq'||x.kind==='manager')return;const ck=CS.caseKey(x.item);if(!ck)return;const k=ck+'|'+(x.unassigned?'':x.owner||''),g=lead.get(k);if(g)g.push(x);else lead.set(k,[x]);});
   lead.forEach(g=>{if(g.length<2)return;g.sort((a,b)=>String(root.inquiryCreatedAt(a.item)).localeCompare(String(root.inquiryCreatedAt(b.item)))||String(a.key).localeCompare(String(b.key)));
-   const keep=g[0];keep.caseCount=g.length;keep.caseKeys=g.map(x=>x.key);keep.band=Math.min.apply(null,g.map(x=>x.band));keep.lag=Math.max.apply(null,g.map(x=>x.lag||0));
+   const keep=g[0];keep.reassignmentPending=g.some(x=>x.reassignmentPending);keep.reassignmentAt=g.filter(x=>x.reassignmentPending).map(x=>x.reassignmentAt).sort().pop()||'';keep.caseCount=g.length;keep.caseKeys=g.map(x=>x.key);keep.band=Math.min.apply(null,g.map(x=>x.band));keep.lag=Math.max.apply(null,g.map(x=>x.lag||0));
    if(!/같은 현장 문의/.test(String(keep.recent||'')))keep.recent=[keep.recent,'같은 현장 문의 '+g.length+'건'].filter(Boolean).join(' · ');
    g.slice(1).forEach(x=>unique.delete(x.key));});
   const every=Array.from(unique.values());

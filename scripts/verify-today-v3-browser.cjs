@@ -8,7 +8,7 @@ const root=path.resolve(__dirname,'..'),shot=process.argv[2]||'',dump=process.en
 const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':t.endsWith('.png')?'image/png':'text/html');fs.createReadStream(t).pipe(res)});
 (async()=>{
  await new Promise(r=>srv.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({headless:true});
+ const browser=await chromium.launch({headless:true,...(process.env.EDGE_PATH?{executablePath:process.env.EDGE_PATH}:{})});
  try{
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});
@@ -202,6 +202,24 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.setViewportSize({width:1100,height:900});await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true,'옆으로 넘치지 않음');await page.setViewportSize({width:1600,height:1000});
   await page.evaluate(()=>{G.todayV3Off=true;paint();});await page.waitForTimeout(500);
   assert.equal(await page.locator('#today-v2 .tv3').count(),0);assert.equal(await page.locator('#today-v2 .tt').count(),1,'끄면 관제탑');
+  /* Live reassignment must survive both candidate selection and the old-record backlog split. */
+  await seed(ROLES[1][1]);
+  await page.evaluate(()=>{
+   const now=Date.now(),at=new Date(now-864e5).toISOString();
+   B.deals=[];LOCAL={deals:{},inquiries:{}};G.today3=null;G.todayV3Off=false;
+   B.inquiries=Array.from({length:4},(_,n)=>({id:'90000000-0000-4000-8000-00000000000'+n,site:'재배정 검증 '+n,brand:'POUR솔루션',status:n?'응대중':'배정완료',assignee:'조민준',assigned_to:'조민준',assigned_at:at,assignment_history:[{at,from_owner:'이필선',to_owner:'조민준'}],received_at:'2026-03-11T04:15:00Z',at:'2026-03-11T04:15:00Z',responded_at:n?'2026-03-11T04:15:00Z':'',phone:'010-5555-000'+n,raw:{},activities:[]}));
+   OPS_RULES.liveFrom=new Date(now-2*864e5).toISOString().slice(0,10);ContactState._reset();paint();
+  });
+  await page.waitForTimeout(300);
+  const re=await page.evaluate(()=>{
+   const X=TodayWorkQueue.data(),M=TodayV3.build(X,X.rows,X.backlog);
+   return {candidates:X.inquiry.filter(x=>x.reassignmentPending).length,visible:M.groups.flatMap(g=>g.items).map(i=>i.key),history:B.inquiries.map(q=>q.responded_at)};
+  });
+  assert.equal(re.candidates,4);assert.equal(new Set(re.visible).size,4,'all four newly reassigned inquiries remain live');
+  for(let n=0;n<4;n++)assert.ok((await page.locator('#today-v2').innerText()).includes('재배정 검증 '+n));
+  assert.deepEqual(re.history,['','2026-03-11T04:15:00Z','2026-03-11T04:15:00Z','2026-03-11T04:15:00Z']);
+  if(shot)await page.screenshot({path:shot+'-reassignment.png',fullPage:true});
+
   assert.deepEqual(errs,[]);
   console.log(JSON.stringify({status:'PASS',five_roles:true,hero_equals_groups_equals_rows:true,strips_same_source:true,first_group_cards4:true,red_only_first:true,backlog_split_over_90:true,role_groups_readme:true,side_panels:true,existing_open_paths:true,no_write_on_render:true,exec_same_list_same_order:true,exec_saves_existing_paths:true,exec_manage_chips:true,legacy_switch:true}));
  }finally{await browser.close();srv.close();}

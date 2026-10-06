@@ -23,7 +23,7 @@
  const toast=(m,k)=>{if(typeof root.toast==='function')root.toast(m,k);};
  /* 밀린 건: 마지막 기록 뒤 기준 일수(운영 기준 · 기본 90일)를 넘긴 건 — 마감 · 결정 · 배정 · 오늘 약속이 걸린 건은 오늘 할 일에 남긴다 */
  const KEEP=['deadline','decide','assign','tfapprove','transfer'];
- const isBack=i=>i.days>BACK()&&!KEEP.includes(i.rk)&&!(i.x.dueDays!==null&&i.x.dueDays!==undefined&&i.x.dueDays>=0);
+ const isBack=i=>!i.x.reassignmentPending&&i.days>BACK()&&!KEEP.includes(i.rk)&&!(i.x.dueDays!==null&&i.x.dueDays!==undefined&&i.x.dueDays>=0);
  const tier=i=>i.rk==='decide'?0:i.rk==='assign'?0.5:(i.rk==='deadline'||i.rk==='contract'||i.rk==='tfapprove')?1:i.rk==='stallbig'?2:i.urg==='now'?3:i.urg==='today'?4:5;
  const byUrgent=(a,b)=>tier(a)-tier(b)||(a.deadline&&b.deadline?a.deadline.n-b.deadline.n:0)||(b.amt||0)-(a.amt||0)||a.days-b.days;
  /* 과거 영업 정리(이관분) 줄 → 밀린 건 한 줄 */
