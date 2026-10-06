@@ -1,29 +1,62 @@
-/* 과거 이관 · 분류 전 목록(pipeline-legacy.js) — 파이프라인 단계 목록(ps3)과 같은 결. 글꼴은 본문 그대로 */
-.plg{display:flex;flex-direction:column;gap:12px;font-family:inherit;color:#15171c}
-.plg-head{display:flex;align-items:baseline;gap:10px}
-.plg-head b{font-size:22px;letter-spacing:-.02em}
-.plg-head span{font-size:14px;color:#6b7280}
-.plg-note{margin:0;font-size:13px;line-height:1.6;color:#374151;background:#f8f9fb;border:1px solid #e8eaef;border-radius:10px;padding:11px 14px}
-.plg-tabs{display:flex;flex-wrap:wrap;gap:6px}
-#pipeline-legacy .plg-tabs button{border:1px solid #e3e6ec;background:#fff;color:#374151;font:inherit;font-size:13px;font-weight:600;border-radius:999px;padding:6px 12px;margin:0;height:auto;box-shadow:none;cursor:pointer}
-#pipeline-legacy .plg-tabs button b{font-weight:700;color:#9aa0ab;margin-left:2px}
-#pipeline-legacy .plg-tabs button[aria-selected="true"]{border-color:#15171c;background:#15171c;color:#fff}
-#pipeline-legacy .plg-tabs button[aria-selected="true"] b{color:#fff}
-.plg-list{background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden}
-.plg-row{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:13px 18px;border-bottom:1px solid #f2f3f6;cursor:pointer}
-.plg-row:hover{background:#f8f9fb}
-.plg-row:focus-visible{outline:2px solid #91b5ff;outline-offset:-2px}
-.plg-a{flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:3px}
-.plg-a b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.plg-a span{font-size:12.5px;color:#6b7280}
-.plg-b{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:0}
-.plg-b em{font-style:normal;font-size:12px;font-weight:700;color:#1f7a4d;background:#e9f7ef;border-radius:6px;padding:2px 8px}
-.plg-b small{font-size:12px;color:#8a5a00}
-#pipeline-legacy .plg-row button{flex:none;width:96px;border:1px solid #d5e0fb;background:#f5f8ff;color:#2a52b8;font:inherit;font-size:13px;font-weight:600;border-radius:8px;padding:7px 0;margin:0;height:auto;line-height:1.3;box-shadow:none;cursor:pointer}
-#pipeline-legacy .plg-row button:hover{border-color:#b9cbf8}
-#pipeline-legacy .plg-row button:disabled{border-color:#e3e6ec;background:#f5f6f8;color:#9aa0ab;cursor:not-allowed}
-.plg-empty{padding:28px 18px;text-align:center;font-size:13px;color:#9ca3af}
-.plg .lpg{padding:12px 18px}
+/* 과거 이관 · 분류 전 정리안(pipeline-legacy.js · 2026-10-06 design_handoff_legacy) — 목록 줄은 파이프라인 목록 줄 v11(pipeline-row-v11.css 의 prv-*)과 같은 모양. 글꼴은 본문 그대로 */
+.plg{display:flex;flex-direction:column;gap:14px;font-family:inherit;color:#15171c}
+.plg-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.plg-head>b{font-size:20px;letter-spacing:-.03em}
+.plg-head>span{font-size:12.5px;color:#6b7280}
+.plg-head>i{flex:1}
+.plg-head .plg-nums{font-size:12.5px;color:#6b7280;white-space:nowrap}
+.plg-head .plg-nums b{color:#15171c}
+.plg-head .plg-nums b.fx{color:#b45309}
+/* 담당자별 재개 */
+.plg-owners{background:#fff;border:1px solid #e8eaef;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.plg-owners>.hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.plg-owners>.hd>b{font-size:14px}
+.plg-owners>.hd>span{font-size:12px;color:#6b7280}
+.plg-owners>.hd>i{flex:1}
+#pipeline-legacy .plg-owners>.hd .lnk{border:0;background:none;color:#6b7280;font:inherit;font-size:12px;font-weight:600;text-decoration:underline;padding:0;margin:0;height:auto;box-shadow:none;cursor:pointer}
+.plg-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.plg-owner{border:1px solid #e3e6ec;background:#fff;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:7px;cursor:pointer;min-width:0}
+.plg-owner:hover{border-color:#9ca3af}
+.plg-owner.on{border-color:#15171c;background:#f8f9fb}
+.plg-owner:focus-visible{outline:2px solid #91b5ff;outline-offset:2px}
+.plg-owner>.t{display:flex;align-items:baseline;gap:6px;min-width:0}
+.plg-owner>.t>b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plg-owner.none>.t>b{color:#b42318}
+.plg-owner>.t>span{font-size:12px;color:#6b7280;white-space:nowrap}
+.plg-owner>.t>i{flex:1}
+.plg-owner>.t>small{font-size:11.5px;color:#9ca3af;white-space:nowrap}
+#pipeline-legacy .plg-owner>button{height:30px;min-height:0;width:100%;border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12px;font-weight:700;border-radius:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px;margin:0;box-shadow:none;cursor:pointer}
+#pipeline-legacy .plg-owner>button:hover:not(:disabled){background:#f3f4f6}
+#pipeline-legacy .plg-owner>button:disabled{color:#9ca3af;cursor:default}
+.plg-sent{font-size:12.5px;color:#1f7a4d;background:#e8f6ee;border-radius:8px;padding:8px 11px;line-height:1.5}
+/* 탭 4개 + 예전 단계 선택칸 */
+.plg-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid #e3e6ec}
+.plg-bar>i{flex:1}
+.plg-tabs{display:flex;flex-wrap:wrap;gap:0}
+#pipeline-legacy .plg-tabs button{border:0;background:none;padding:9px 14px;margin:0 0 -1px;height:auto;border-bottom:2px solid transparent;border-radius:0;box-shadow:none;display:flex;align-items:baseline;gap:6px;white-space:nowrap;font:inherit;cursor:pointer}
+#pipeline-legacy .plg-tabs button span{font-size:13.5px;font-weight:500;color:#6b7280}
+#pipeline-legacy .plg-tabs button b{font-size:13.5px;font-weight:700;color:#9ca3af}
+#pipeline-legacy .plg-tabs button b.fx{color:#b45309}
+#pipeline-legacy .plg-tabs button[aria-selected="true"]{border-bottom-color:#15171c}
+#pipeline-legacy .plg-tabs button[aria-selected="true"] span{font-weight:700;color:#15171c}
+#pipeline-legacy .plg-tabs button[aria-selected="true"] b:not(.fx){color:#15171c}
+.plg-old{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#6b7280;margin-bottom:6px;white-space:nowrap}
+#pipeline-legacy .plg-old select{border:1px solid #e3e6ec;border-radius:8px;padding:5px 8px;font:inherit;font-size:12.5px;background:#fff;color:#15171c;height:auto;min-height:0;margin:0;max-width:240px}
+/* 목록(prv-* 는 pipeline-row-v11.css) — 과거 이관만의 칸 색 */
+#pg-pipe .prv-list.plg-list .prv-head,#pg-pipe .prv-list.plg-list .prv-row{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1.1fr) 120px}
+#pg-pipe .prv-list .plg-row .prv-a i{font-style:normal;color:#9ca3af}
+#pg-pipe .prv-list .plg-row .prv-b>small.r{color:#b42318}
+#pg-pipe .prv-list .plg-row .prv-c>small.fx{color:#b45309}
+#pg-pipe .prv-list .plg-row.dn{opacity:.55}
+#pg-pipe .prv-list .plg-row.dn>button{color:#1f7a4d;border-color:#cfe6d8;cursor:default}
+.plg-empty{padding:28px 18px;text-align:center;font-size:13px;color:#9ca3af;margin:0}
+.plg-foot{font-size:12px;color:#6b7280;line-height:1.5}
+/* 받는 사람 오늘 업무: '과거 자료 재개 n건' 묶음 카드(work-request.js) */
+#pg-today .wrq-in.wrq-legacy .wrq-lg{display:flex;flex-direction:column;border:1px solid #eef0f3;border-radius:8px;overflow:hidden;background:#fff}
+#pg-today .wrq-in.wrq-legacy .wrq-lg>div{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f2f3f6;font-size:13px}
+#pg-today .wrq-in.wrq-legacy .wrq-lg>div:last-child{border-bottom:0}
+#pg-today .wrq-in.wrq-legacy .wrq-lg>div>b{flex:1;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pg-today .wrq-in.wrq-legacy .wrq-lg>div>button{flex:none;border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12px;font-weight:700;border-radius:7px;padding:5px 10px;height:auto;min-height:0;margin:0;box-shadow:none;cursor:pointer}
 /* 사이드 메뉴 · 전체 파이프라인 머리의 '과거 이관 · 분류 전' — 진행 숫자와 떨어뜨려 옅게 */
 #pipeline-stage-menu .plv-legacy{margin-top:6px;border-top:1px dashed #e3e6ec;padding-top:8px;color:#6b7280}
 .pk-head .pk-legacy{border:1px dashed #d9dde4;background:#fff;color:#6b7280;font:inherit;font-size:12.5px;font-weight:600;border-radius:8px;padding:5px 10px;margin:0 0 0 10px;height:auto;box-shadow:none;cursor:pointer;white-space:nowrap}

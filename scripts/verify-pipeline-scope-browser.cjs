@@ -61,18 +61,20 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await page.evaluate(()=>{goPage('pipe');PipelineWorkspace.open('legacy');});await page.waitForSelector('#pipeline-legacy .plg-row');
   const shot=async n=>{if(process.env.SHOT_DIR)await page.screenshot({path:require('node:path').join(process.env.SHOT_DIR,'scope-'+n+'.png')});};
   const L=page.locator('#pipeline-legacy');await shot('legacy');
-  assert.equal(one(await L.locator('.plg-head').innerText()),'과거 이관 · 분류 전 6건');
-  assert.match(one(await L.locator('.plg-note').innerText()),/진행 · 실주 · Bad Fit · 보류 어느 쪽도 아니며, 진행 건수와 전환율 · 메이드율 계산에 들어가지 않습니다/);
-  assert.deepEqual((await L.locator('.plg-tabs [role="tab"]').allInnerTexts()).map(one),['전체 6','검증된 고객 2','잠재고객 1','후속 관리 고객 1','접촉단계 1','서포트 단계 1']);
-  const rows=await L.locator('.plg-row').evaluateAll(l=>l.map(r=>[r.dataset.key,r.querySelector('.plg-a span').innerText,r.querySelector('.plg-b').innerText.replace(/\s+/g,' ').trim(),r.querySelector('button').disabled]));
-  assert.equal(rows[0][0],'l3','CRM 기록이 있는 건이 먼저');assert.equal(rows[0][2],'CRM 기록 있음');
-  assert.equal(rows.find(r=>r[0]==='l1')[1],'브랜드 미지정 · 예전 단계 검증된 고객 · 기존 담당 이필선 · 예전 등록 2025.3');
-  assert.deepEqual(rows.find(r=>r[0]==='l5').slice(2),['단계 값 없음 · 서버 보완 필요',true],'서버에 단계 값이 비어 있으면 영업 재개 잠금');
-  assert.ok(rows.some(r=>r[0]==='l6'),'명단에 없는 담당의 과거 이관 자료도 목록에 있다(분류가 필요한 자료)');
-  await L.locator('.plg-tabs [role="tab"]',{hasText:'검증된 고객'}).click();await page.waitForTimeout(200);
+  /* 정리안(2026-10-06 design_handoff_legacy): 제목 줄 숫자 3개 · 담당자별 재개 카드 · 탭 4개 + 예전 단계 선택칸 · v11 모양 줄 — 상세는 scripts/verify-pipeline-legacy-browser.cjs */
+  assert.equal(one(await L.locator('.plg-head').innerText()),'과거 이관 · 분류 전 예전 시스템에서 옮겨 온 자료 · 진행 건수 · 메이드율 계산에 안 들어감 전체 6 · 바로 재개 가능 5 · 서버 보완 필요 1');
+  assert.deepEqual(await L.locator('.plg-owner').evaluateAll(l=>l.map(n=>n.querySelector('b').textContent+' '+n.querySelector('span').textContent)),['이필선 2건','황윤선 1건','한준엽 1건','담당 없음 2건']);
+  assert.deepEqual((await L.locator('.plg-tabs [role="tab"]').allInnerTexts()).map(one),['전체 6','바로 재개 가능 3','담당 없음 2','서버 보완 필요 1']);
+  const rows=await L.locator('.plg-row').evaluateAll(l=>l.map(r=>{const t=s=>r.querySelector(s).innerText.replace(/\s+/g,' ').trim();return [r.dataset.key,t('.prv-a span'),t('.prv-c'),t(':scope>button'),t('.prv-b')];}));
+  assert.equal(rows[0][0],'l3','CRM 기록이 있는 건이 먼저');assert.equal(rows[0][2],'CRM 기록 있음 지난 응대 이력 이어서 사용');
+  assert.deepEqual(rows.find(r=>r[0]==='l1').slice(1),['브랜드 미지정 · 예전 등록 2025.3','CRM 기록 없음 새로 시작 · 첫 연락부터','영업 재개','예전 단계 · 검증된 고객 기존 담당 이필선']);
+  assert.deepEqual(rows.find(r=>r[0]==='l5').slice(2,4),['CRM 기록 없음 예전 단계 값이 비어 있음 · 서버 보완 필요','서버 보완 요청'],'서버에 단계 값이 비어 있으면 영업 재개 대신 서버 보완 요청');
+  assert.deepEqual(rows.find(r=>r[0]==='l6').slice(3),['담당 배정','예전 단계 · 검증된 고객 기존 담당 김성준 · CRM 명단에 없음'],'명단에 없는 담당의 과거 이관 자료도 목록에 있다(배정이 필요한 자료)');
+  assert.equal(rows[rows.length-1][0],'l5','서버 보완 필요 건은 맨 아래');
+  await L.locator('select[data-plg="old"]').selectOption('검증된 고객');await page.waitForTimeout(200);
   assert.deepEqual((await L.locator('.plg-row').evaluateAll(l=>l.map(r=>r.dataset.key))).sort(),['l1','l6']);
   /* ④ [영업 재개] → 상세 창: '컨설팅 설계'라고 적지 않고, 단계 올리기 띠가 열린다 */
-  await L.locator('.plg-row[data-key="l1"] button').click();await page.waitForSelector('#detailView.dv3 .dv3-move:not([hidden])',{timeout:5000});
+  await L.locator('.plg-row[data-key="l1"]>button').click();await page.waitForSelector('#detailView.dv3 .dv3-move:not([hidden])',{timeout:5000});
   const D=await page.evaluate(()=>{const v=document.getElementById('detailView'),t=s=>{const n=v.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():'';};
    return {legacy:v.classList.contains('dv3-legacy'),badge:t('.dv3-stagebadge'),sub:t('.dv3-subrow .tx'),mv:t('.dv3-headact .mv'),band:t('.dv3-move .hd'),steps:getComputedStyle(v.querySelector('.ddv-steps')||v).display,
     stages:[...v.querySelectorAll('.dv3-moves [data-stage]')].map(b=>[b.textContent.trim(),b.classList.contains('cur'),b.getAttribute('aria-disabled')==='true']),now:t('.dv3-title')};});
@@ -85,14 +87,13 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await page.locator('#detailView .dv3-moves [data-stage="relationship"]').click();await page.waitForSelector('#stage-transition-form');
   assert.match(one(await page.locator('#stage-transition-form header p').innerText()),/^과거 이관 · 검증된 고객 → /);
   await page.evaluate(()=>{try{StageTransitionUI.close();}catch(e){}try{closeDetail();}catch(e){}});await page.waitForTimeout(200);
-  /* ⑤ 파이프라인 줄(2026-10-06 목록 줄 v11): 공종 · 다음 업무 · 기한은 줄에 항상 보이고, 영업건 번호 · 같은 단지 진행 n건은 줄을 누르면 펼쳐지는 칸에 있다 */
+  /* ⑤ 파이프라인 줄(2026-10-06 목록 줄 v11 · 펼침 없음): 공종 · 다음 업무 · 기한은 줄에 항상 보인다. 줄을 누르면 바로 상세 */
   await page.evaluate(()=>PipelineWorkspace.open('consulting'));await page.waitForSelector('#pipeline-stage-v3 .ps3-row');
-  const r1=await page.evaluate(()=>{const r=document.querySelector('#pipeline-stage-v3 .ps3-row[data-key="a1"]'),t=s=>{const n=r.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():null;};return [document.querySelectorAll('#pipeline-stage-v3 .ps3-row').length,t('.prv-a>span'),t('.prv-c'),t('.prv-more')];});
-  assert.equal(r1[0],1,'컨설팅 설계 목록에 과거 이관이 없다');assert.match(r1[1],/ · 옥상\(우레탄\) · /);assert.match(r1[2],/^1차 미팅 (\d+일 지남|오늘까지|내일까지|\d{1,2}\/\d{1,2}까지)$/);assert.equal(r1[3],null,'펼치기 전에는 아래 칸이 없다');
+  const r1=await page.evaluate(()=>{const r=document.querySelector('#pipeline-stage-v3 .ps3-row[data-key="a1"]'),t=s=>{const n=r.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():null;};return [document.querySelectorAll('#pipeline-stage-v3 .ps3-row').length,t('.prv-a>span'),t('.prv-c'),r.dataset.ps3];});
+  assert.equal(r1[0],1,'컨설팅 설계 목록에 과거 이관이 없다');assert.match(r1[1],/ · 옥상\(우레탄\) · /);assert.match(r1[2],/^1차 미팅 (\d+일 지남|오늘까지|내일까지|\d{1,2}\/\d{1,2}까지)$/);assert.equal(r1[3],'open','줄 = 바로 상세');
   await page.evaluate(()=>PipelineWorkspace.open('sent'));await page.waitForSelector('#pipeline-stage-v3 .ps3-row[data-key="a2"]');
   await shot('rows');
-  await page.locator('#pipeline-stage-v3 .ps3-row[data-key="a2"] .prv-main').click();await page.waitForSelector('#pipeline-stage-v3 .ps3-row[data-key="a2"] .prv-more');
-  assert.deepEqual(await page.evaluate(()=>{const r=document.querySelector('#pipeline-stage-v3 .ps3-row[data-key="a2"]'),t=s=>{const n=r.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():null;},m=t('.prv-more');return [/같은 단지 진행 2건 · 같은 공사인지 확인/.test(m),/영업건 번호 #a2/.test(m),t('.prv-c>small'),/ · 공종 미분류 · /.test(t('.prv-a>span'))];}),[true,true,'기한 없음 · 정하기',true]);
+  assert.deepEqual(await page.evaluate(()=>{const r=document.querySelector('#pipeline-stage-v3 .ps3-row[data-key="a2"]'),t=s=>{const n=r.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():null;};return [t('.prv-c>small'),/ · 공종 미분류 · /.test(t('.prv-a>span')),t('.prv-c>b')];}),['기한 없음 · 정하기',true,'오늘 후속 연락']);
   /* ⑥ 끄면 예전처럼: 예전 단계 값이 컨설팅 설계로 들어온다 */
   const off=await page.evaluate(()=>{G.pipeScopeOff=true;PipelineWorkspace.open('all');const r=PipelineWorkspace.rows();const out=[r.filter(x=>x.group==='consulting').length,!!document.querySelector('#pipeline-stage-menu .plv-legacy')];G.pipeScopeOff=false;PipelineWorkspace.open('all');return out;});
   assert.deepEqual(off,[6,false]);
