@@ -101,7 +101,16 @@
  root.inquiryReassignmentPending=function(q){
   if(!q||q._assignmentOptimistic||queueHasLiveAssignment(q.id))return false;
   if((root.isClosedInq&&root.isClosedInq(q))||(root.inqCtlConverted&&root.inqCtlConverted(q))||/보류|스토어|휴지통/.test(String(q.status||'')))return false;
-  var owner=root.inquiryOwnerIdentity(q),latest=assignmentHistory(q)[0];
+  // The authorized public read embeds assignment_history rows in activities.
+  // Match its exact type and UUID contract; never infer an assignment from free text.
+  var history=assignmentHistory(q).slice();
+  (q.activities||[]).forEach(function(a){
+   if(!a||a.type!=='담당자 변경'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(a.id||'')))return;
+   var names=String(a.note||'').split(' → ');
+   if(names.length===2)history.push({at:a.at,from_owner:names[0],to_owner:names[1]});
+  });
+  history=history.filter(function(h){return Number.isFinite(Date.parse(h.changed_at||h.at||''))}).sort(function(a,b){return Date.parse(b.changed_at||b.at)-Date.parse(a.changed_at||a.at)});
+  var owner=root.inquiryOwnerIdentity(q),latest=history[0];
   if(!owner.assigned||!owner.name||!latest)return false;
   var to=userNameForId(latest.to_owner||latest.to||latest.to_assignee),from=userNameForId(latest.from_owner||latest.from||latest.from_assignee);
   if(to!==owner.name||!from||from===to)return false;
