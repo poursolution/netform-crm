@@ -1,6 +1,6 @@
 # 견적문의 상담 연결 API — 원본 두 건 보존
 
-2026-10-06 구현 후보. 아직 운영 DB에 적용하지 않았으며 화면 버튼도 활성화하지 않았다.
+2026-10-06 서버 반영 완료: PR #481, migration `20261006104300` (`inquiry_consultation_links`). 화면 버튼은 아직 활성화하지 않았다.
 디자인 변경, 실제 문의 연결, 배정·상태 변경, n8n 추가는 포함하지 않는다.
 
 ## 문제와 결과
@@ -48,6 +48,31 @@
 
 `node --test tests/inquiry-consultation-links-postgres.test.mjs`
 
-PGlite에서 원본/알림/실적 불변, 관리자·상대 권한, 휴지통/권한 회수, 미리보기 충돌, 역순·재요청, 감사 저장 실패 롤백, 직접 관계만 조회, 이력 중복 제거·20건 커서를 실행 검증한다. 실제 PostgreSQL 다중 세션 동시 실행과 운영 적용은 별도 배포 검증 대상이다.
+PGlite에서 원본/알림/실적 불변, 관리자·상대 권한, 휴지통/권한 회수, 미리보기 충돌, 역순·재요청, 감사 저장 실패 롤백, 직접 관계만 조회, 이력 중복 제거·20건 커서를 실행 검증했다. 로컬 PostgreSQL 17.10 여러 세션에서도 같은 요청 재시도, 역순 요청 충돌, 잠금 대기 중 원본 변경, 무관한 쌍 동시 저장, 선행 롤백, 감사 실패 롤백 6개를 통과했다. 운영 서버에는 합성 기록을 넣지 않았다.
 
-SQL 후보: `sql/inquiry-consultation-links.sql`. 운영 적용 전 원본/권한 함수 및 이력 테이블 호환을 다시 확인하고 전체 트랜잭션으로 적용한다. 현재 CLI를 사용할 수 없어 임의 timestamp 마이그레이션 파일은 만들지 않았다. 승인된 배포 시 CLI가 생성한 마이그레이션으로 등록한다. 변경은 기존 테이블 UPDATE/DELETE나 신규 트리거/정기 실행을 포함하지 않는다.
+SQL: `sql/inquiry-consultation-links.sql`. 원본/권한 함수 및 이력 테이블 호환을 확인하고 Supabase apply_migration으로 등록했다. 변경은 기존 테이블 UPDATE/DELETE나 신규 트리거/정기 실행을 포함하지 않는다.
+
+## 화면 호출 로직 — 미연결 모듈
+
+`inquiry-consultation-client.js`는 DOM/CSS, 자동 조회/저장, 폴링이 없는 호출 모듈이다. HTML script, 프런트 RPC 허용 목록과 버튼은 아직 연결하지 않았다. Claude의 위치 확정 후 기존 Phase1 프로필/저장소/RPC를 주입한다.
+
+```js
+const client = InquiryConsultationClient.create({
+  profile: () => Phase1.profile,
+  storage: Phase1.storage,
+  rpc: (name, args) => Phase1.rpc(name, args),
+  uuid: () => crypto.randomUUID()
+});
+const read = await client.preview(leftInquiryId, rightInquiryId);
+// 사용자가 두 접수와 같은 공사 요청 근거를 확인한 뒤에만:
+const result = await client.save(read, 'link', confirmedReason);
+// 해제는 새 preview와 'unlink', 해제 사유로 같은 흐름을 쓴다.
+```
+
+- `pending()`은 현재 계정의 미확인 요청 복사본만 반환한다. 같은 미리보기/명령의 중복 클릭은 같은 promise, 다른 내용은 PENDING_REQUEST_EXISTS다.
+- 네트워크 실패나 불완전 ACK 뒤에는 `retry()`로 같은 요청 ID/인수만 다시 보낸다. 새 명령으로 대체하거나 pending을 임의 삭제하지 않는다. 명확한 서버 충돌/권한/입력 거부만 보관 요청을 해제한다. 이 경우 새 미리보기와 사용자 확인이 필요하며 자동 저장하지 않는다.
+- 정상 ACK의 쌍/명령/요청/사건 ID/버전/시각을 확인한 뒤 서버를 다시 읽는다. ACK 이후 재조회 실패는 `{saved:true, verified:false, code:'READBACK_PENDING'}`이며, 이후 retry는 재조회만 수행한다.
+- `{saved:true, verified:true}` 뒤 `current.active`가 현재 관계다. `superseded:true`면 영수증 이후 다른 변경이 생긴 것이므로 receipt.active를 현재 상태로 표시하지 않는다.
+- 계정 변경 시 진행 중 응답을 화면에 돌려주지 않고 IDENTITY_CHANGED로 중단한다. 이전 계정의 보관 명령을 다른 계정으로 재전송하지 않는다.
+- 이 모듈은 원본 문의, 담당, 상태, 응대 기록, 통화수, 업무, 알림, 계약실적을 변경하거나 화면 데이터에 투영하지 않는다.
+- 단위 검사 11개와 실제 로컬 PostgreSQL 연결 검사(저장 성공 뒤 응답 유실 → 동일 요청 재시도 → 재조회 → 해제) 통과. 단위 검사: `node --test tests/inquiry-consultation-client.test.cjs`.
