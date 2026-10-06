@@ -51,8 +51,8 @@
   const peopleSec='<section class="pf3-people"><div class="pf3-sh"><b>누가 얼마나 · 얼마나 이기나</b><span>수주실적 순 · 원 = 메이드율(수주 ÷ (수주 + 실주), 배드핏 제외) · '+LOW+'% 미만 빨강</span></div>'+(ranked.length?'<div class="pf3-pcs">'+ranked.map(card).join('')+'</div>':'<p class="pf3-empty">진행 · 수주 기록이 있는 담당자가 없습니다.</p>')+(quiet.length?'<span class="pf3-quiet">아직 기록 없음: '+h(quiet.map(x=>x===b2b()?x+'(B2B 협약 전담 · 영업 집계 제외)':x).join(' · '))+'</span>':'')+'</section>';
   /* ── ③ 브랜드별 · 문의가 수주까지 ── */
   const BRW=D.brandRows(C).filter(b=>!brand||b.name===brand),zero=BRW.filter(b=>b.fit>0&&!b.w);
-  const funnel='<section class="pf3-fun"><div class="pf3-sh"><b>브랜드별 · 문의가 수주까지</b></div>'+BRW.map(b=>{const none=!b.w,lowB=!none&&b.made!==null&&b.made<LOW;
-    return '<div class="pf3-fr"><div><i style="background:'+b.c+'"></i><b>'+h(b.name)+'</b><u></u><b class="rt'+(none?' mut':lowB?' red':'')+'">'+(none?'수주 없음':b.made===null?'—':b.made.toFixed(1)+'%')+'</b></div><div class="bar'+(b.q||b.fit||b.w?'':' zero')+'"><span style="flex:'+b.q+';background:'+b.c+';opacity:.25"></span><span style="flex:'+b.fit+';background:'+b.c+';opacity:.55"></span><span style="flex:'+Math.max(b.w,1)+';background:'+b.c+'"></span></div><span>문의 '+b.q+' → 적합 '+b.fit+' → 수주 '+(L.ready?b.w:'—')+'</span></div>';}).join('')
+  const funnel='<section class="pf3-fun"><div class="pf3-sh"><b>브랜드별 · 문의가 수주까지</b></div>'+BRW.map(b=>{const none=L.ready&&!b.w,lowB=L.ready&&!none&&b.made!==null&&b.made<LOW;/* 원장 읽는 중엔 '수주 없음' 단정 금지(2026-10-07 점검) */
+    return '<div class="pf3-fr"><div><i style="background:'+b.c+'"></i><b>'+h(b.name)+'</b><u></u><b class="rt'+(!L.ready||none?' mut':lowB?' red':'')+'">'+(!L.ready?'불러오는 중':none?'수주 없음':b.made===null?'—':b.made.toFixed(1)+'%')+'</b></div><div class="bar'+(b.q||b.fit||b.w?'':' zero')+'"><span style="flex:'+b.q+';background:'+b.c+';opacity:.25"></span><span style="flex:'+b.fit+';background:'+b.c+';opacity:.55"></span><span style="flex:'+Math.max(b.w,1)+';background:'+b.c+'"></span></div><span>문의 '+b.q+' → 적합 '+b.fit+' → 수주 '+(L.ready?b.w:'—')+'</span></div>';}).join('')
    +(zero.length&&L.ready?'<span class="pf3-warn">'+h(zero.map(b=>b.name).join(' · ')+' — 적합 '+zero.reduce((s,b)=>s+b.fit,0)+'건인데 수주 0')+'</span>':'')+'</section>';
   /* ── ④ 탭 ── */
   const TB=[['유입 브랜드 → 낙찰사 · 매출',P.label+' · 수주실적 = 낙찰금액 · 매출 = 회사에 실제 들어오는 금액(직접 계약 · 기술자문 · POUR 계약)'],['접수 월별 전환','같은 달 들어온 문의가 결국 몇 건 계약됐나'],['유입경로','어디서 계약되는 문의가 오나'],['기술자문','협약시공사 낙찰 건']];
@@ -74,11 +74,13 @@
    const tops=[
     ['수주실적 · 낙찰금액 ('+tot.n+'건)',money(tot.amt),[['직접 수주',money(dirA),'#3b6ce4'],[ptLabel,money(ptA),'#e0a43a']].concat(tfA>0?[['타사 이관',money(tfA),'#9aa0ab']]:[])],
     ['회사 매출',money(tot.rev),[['직접 계약',money(dirR),'#3b6ce4'],['기술자문 · POUR 계약',pt.length&&missN(pt)===sum(pt,'n')?'미입력':money(ptR),'#e0a43a']]],
-    ['매출 비율 (매출 ÷ 수주실적)'+(missN(MX)&&ratioOf(MX)!=null?' · 미입력 '+missN(MX)+'건 제외':''),ratioOf(MX)==null?pct(null,MX):ratioOf(MX)+'%',[['직접 수주',pct(ratioOf(dir),dir),'#3b6ce4'],['협약 · 기술자문',pct(ratioOf(pt),pt),'#e0a43a']]]];
+    /* 비율의 분자 · 분모를 같이 적는다(2026-10-07 점검: 분모 불명확) — 매출을 아는 줄만(미입력 · 타사 이관 제외) */
+    (()=>{const kn=MX.filter(known),ka=sum(kn,'amt'),kr=sum(kn,'rev');return ['매출 비율 = 매출 '+money(kr)+' ÷ 수주실적 '+money(ka)+(missN(MX)?' · 미입력 '+missN(MX)+'건 제외':'')+(tfA>0?' · 타사 이관 제외':''),ratioOf(MX)==null?pct(null,MX):ratioOf(MX)+'%',[['직접 수주',pct(ratioOf(dir),dir),'#3b6ce4'],['협약 · 기술자문',pct(ratioOf(pt),pt),'#e0a43a']]];})()];
    const mx=Math.max(1,...MX.map(r=>r.amt)),w=v=>Math.max(0,Math.min(100,Math.round(v/mx*100)));
    let prev='';
    const rows=MX.map(r=>{const first=r.brand!==prev;prev=r.brand;const c=D.BRC[r.brand]||'#9aa0ab',t=TG[r.type]||TG['직접 수주'],unk=r.type==='협약 · 기술자문'&&r.unknown===r.n,none=r.type==='타사 이관',ra=!unk&&!none&&r.amt>0?Math.round(r.rev/r.amt*100):null;
-    const sub=none?['회사 매출 없음',''] :unk?['→ 매출 미입력','red']:ra===100?['= 매출 전액','']:['→ 매출 '+money(r.rev)+' · '+ra+'%',ra!==null&&ra<60?'pf3-am':''];
+    /* 전액이어도 금액을 적는다 — 줄 금액을 더하면 위 '회사 매출'과 맞아야 한다(2026-10-07 점검: 합계 근거) */
+    const sub=none?['회사 매출 없음',''] :unk?['→ 매출 미입력','red']:ra===100?['→ 매출 '+money(r.rev)+' · 전액','']:['→ 매출 '+money(r.rev)+' · '+ra+'%',ra!==null&&ra<60?'pf3-am':''];
     return '<div class="pf3-bx" role="row"><span class="pf3-bxb" style="color:'+c+'">'+(first?'<i style="background:'+c+'"></i>'+h(r.brand):'')+'</span><span class="pf3-bxc" title="'+attr(r.company)+'">'+h(r.company)+'</span><span><em style="color:'+t[0]+';background:'+t[1]+'">'+h(r.type)+'</em></span><span class="pf3-bxn">'+r.n+'</span><span class="pf3-bxw"><span class="pf3-bxbar"><i class="a" style="width:'+w(r.amt)+'%"></i><i class="r" style="width:'+(unk||none?0:w(r.rev))+'%"></i></span><b class="pf3-bxv">'+h(money(r.amt))+'</b><small class="'+sub[1]+'">'+h(sub[0])+'</small></span></div>';}).join('');
    const totRatio=ratioOf(MX),total=MX.length>1?'<div class="pf3-bx tot" role="row"><span class="pf3-bxb">합계</span><span></span><span></span><span class="pf3-bxn">'+tot.n+'</span><span class="pf3-bxw"><b class="pf3-bxv">'+h(money(tot.amt))+'</b><small class="pf3-dk">→ 매출 '+h(money(tot.rev))+(totRatio==null?'':' · '+totRatio+'%')+'</small></span></div>':'';
    /* 해석 한 줄: 협약 · 기술자문 수주가 가장 큰 유입 브랜드 */

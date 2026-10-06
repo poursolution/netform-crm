@@ -107,7 +107,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 오른쪽: 일정 · 마감 · 기준(역할별 제목) */
   assert.deepEqual(S.mgr.side.map(x=>x.split(' :: ')[0]),['오늘 팀 일정','이번 주 팀 마감','팀 이번 주 기준']);assert.deepEqual(S.rep.side.map(x=>x.split(' :: ')[0]),['오늘 일정','이번 주 마감','내 이번 주']);
   assert.deepEqual(S.ceo.side.map(x=>x.split(' :: ')[0]),['오늘 일정','이번 주 결정 마감','회사 이번 주']);assert.deepEqual(S.vp.side.map(x=>x.split(' :: ')[0]),['오늘 일정','이번 주 마감','본인 이번 주']);
-  assert.match(S.rep.side[0],/11:00현장 방문상계주공7단지/);assert.match(S.lead.side[1],/D-3햇빛마을23단지 입찰 마감/);assert.match(S.ceo.side[2],/이번 달 수주실적[\s\S]*영업 메이드율[\s\S]*계약 임박/);
+  assert.match(S.rep.side[0],/11:00현장 방문상계주공7단지/);assert.match(S.lead.side[1],/D-3햇빛마을23단지 입찰 마감/);assert.match(S.ceo.side[2],/이번 달 수주실적[\s\S]*영업 메이드율[\s\S]*계약 예정\(날짜 확인\)/);
   assert.equal(S.mgr.sub.replace(/^\d+월 \d+일 \(.\) · /,''),'영업관리 · 팀 전체');assert.equal(S.ceo.sub.replace(/^\d+월 \d+일 \(.\) · /,''),'대표 · 결정과 큰 흐름만');
   /* ── 동작(영업관리 화면) ── */
   await seed(ROLES[1][1]);await page.waitForTimeout(700);

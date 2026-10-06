@@ -45,7 +45,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await v.locator('.rb-bar0 button').allInnerTexts(),['편집','PDF로 저장','대표님께 보내기']);assert.equal(await v.locator('.rb-seg .on').innerText(),'월간');
   /* 1. 한 줄 결론: 숫자는 계산값 */
   const band=await v.locator('.rb-band').innerText();
-  assert.match(band,new RegExp('^'+P.m+'월 계약 2건 · 8억 — 6개월 중 최고, 메이드율은 40\\.0%로 내렸습니다\\s*'+P.nm+'월은 계약 임박 2건 · 7\\.5억 중 1건\\(4억\\)이 이번 주에 갈립니다\\. 실주 3건 중 1건이 관리소장 변경과 겹쳐 대응 정책 결정이 필요합니다\\.\\s*결정 요청\\s*3건$'),band);
+  assert.match(band,new RegExp('^'+P.m+'월 체결 계약 2건 · 8억 — 6개월 중 최고, 메이드율은 40\\.0%로 내렸습니다\\s*'+P.nm+'월은 날짜 확인된 계약 예정 2건 · 7\\.5억 중 1건\\(4억\\)이 이번 주에 갈립니다\\. 실주 3건 중 1건이 관리소장 변경과 겹쳐 대응 정책 결정이 필요합니다\\.\\s*결정 요청\\s*3건$'),band);
   assert.equal(await v.locator('.rb-band').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(17, 26, 46)','남색 띠');
   /* 2. 흐름 5칸 + 비율 4개(메이드율은 배드핏 제외) */
   assert.deepEqual(await v.locator('.rb-funnel>div>span').allInnerTexts(),['신규 견적문의','적합 문의','견적 발송','파이프라인 전환','수주실적']);
@@ -59,7 +59,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await v.locator('.rb-box.loss').innerText(),/파이프라인 실주 3건 · 6억\s*영업기회 상실 · 메이드율에 포함\s*가격 열세\s*2\s*담당자 부재·인수인계 누락\s*1/);
   /* 4. 6개월 계약실적 · 5. 다음 달 전망 */
   assert.equal(await v.locator('.rb-trend>div').count(),6);assert.equal(await v.locator('.rb-trend>div').last().locator('span').innerText(),'8억');assert.equal(await v.locator('.rb-tl>div').last().innerText().then(t=>t.replace(/\s+/g,' ')),P.m+'월 40%');
-  assert.match(await v.locator('.rb-g3 .rb-sec').nth(2).innerText(),new RegExp('^4\\. '+P.nm+'월 전망\\s*계약 임박 2건 · 7\\.5억\\s*\\[수원\\] 매탄 임박\\s*[\\s\\S]*황윤선\\s*4억\\s*입찰 마감 \\d+\\/\\d+\\s*\\[서울 송파\\] 계약 검토\\s*이필선\\s*3\\.5억\\s*계약 예정 \\d+\\/\\d+\\s*위 2건 7\\.5억 = 7\\.5억 · 이번 주\\(7일 안\\) 기한 1건 4억$'));
+  assert.match(await v.locator('.rb-g3 .rb-sec').nth(2).innerText(),new RegExp('^4\\. '+P.nm+'월 전망\\s*계약 예정\\(날짜 확인\\) 2건 · 7\\.5억\\s*\\[수원\\] 매탄 임박\\s*[\\s\\S]*황윤선\\s*4억\\s*입찰 마감 \\d+\\/\\d+\\s*\\[서울 송파\\] 계약 검토\\s*이필선\\s*3\\.5억\\s*계약 예정 \\d+\\/\\d+\\s*위 2건 7\\.5억 = 7\\.5억 · 이번 주\\(7일 안\\) 기한 1건 4억$'));
   assert.equal(await v.locator('.rb-near').first().locator('.r span').evaluate(n=>getComputedStyle(n).color),'rgb(180, 35, 24)','7일 안 기한 = 빨강');assert.equal(await v.locator('.rb-near').first().locator('i').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(232, 89, 12)','브랜드 띠');
   /* 6. 담당자별 + 합계(위 숫자와 일치) */
   const cells=await v.locator('.rb-table>span').allInnerTexts(),row=n=>{const i=cells.indexOf(n);return cells.slice(i,i+9);};
