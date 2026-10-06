@@ -5463,12 +5463,26 @@ function inqOfDeal(item){
 
 /* 통합 타임라인 원본 — 출처만 다르고 줄기는 하나 */
 function unifiedTimeline(p,item){
- var R=[];
+ var R=[],stageCopies=[];
  [].concat(item.activities||item.activity_signals||[],p.activities||[]).forEach(function(a){
    var detail=a.detail&&typeof a.detail==='object'?a.detail:{},note=a.note&&typeof a.note==='object'?a.note:detail;
    function text(value){return typeof value==='string'?value:''}
    R.push({id:a.id,at:a.at||a.occurred_at||a.created_at,src:(a.src==='mobile'?'mobile':'crm'),ttl:a.type||'활동',
-     who:a.actor||a.actor_name||a.assignee||'', body:text(a.note)||text(note.note)||text(a.detail), result:text(a.result)||text(note.result), fields:[]})});
+     who:a.actor||a.actor_name||a.assignee||'', body:text(a.note)||text(note.note)||text(a.detail), result:text(a.result)||text(note.result), fields:[]});
+   if(/^(단계 ?전환|stage_change|stage_changed)$/.test(a.type||''))stageCopies.push({row:R[R.length-1],op:note.op,from:text(note.from)||text(note.from_stage),to:text(note.to)||text(note.to_stage)});
+ });
+ /* 과거 한 번의 이동이 activity/transition 두 쓰기로 남은 경우만 표시를 합친다. */
+ var paired=new Set(),hidden=new Set(),stageName=function(v){return typeof stageLabel==='function'?stageLabel(String(v||'').trim()):String(v||'').trim()};
+ stageCopies.forEach(function(c){
+   if(c.op!=='transition'||!c.from||!c.to||c.row.result||!c.row.who||!Number.isFinite(Date.parse(c.row.at)))return;
+   var legacy=stageCopies.find(function(x){
+     if(x.op!=='activity'||paired.has(x.row)||x.row.who!==c.row.who||Date.parse(x.row.at)!==Date.parse(c.row.at)||x.row.result!==c.row.body)return false;
+     var path=String(x.row.body||'').split('→');
+     return path.length===2&&stageName(path[0])===stageName(c.from)&&stageName(path[1])===stageName(c.to);
+   });
+   if(legacy){paired.add(legacy.row);hidden.add(c.row);}
+ });
+ R=R.filter(function(x){return !hidden.has(x)});
  inqOfDeal(item).forEach(function(q){
    (q.responses||[]).forEach(function(r){
      var pj=parseJandi(r.body);
