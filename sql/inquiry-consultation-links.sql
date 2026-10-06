@@ -49,7 +49,7 @@ declare a record; l uuid:=least(p_left,p_right); r uuid:=greatest(p_left,p_right
  rows jsonb; versions jsonb; rel crm_security.inquiry_consultation_links%rowtype;
 begin
  select * into a from crm_security.actor();
- if not found or a.permission_role<>'admin' then raise exception 'forbidden' using errcode='42501'; end if;
+ if not found or a.permission_role is distinct from 'admin' then raise exception 'forbidden' using errcode='42501'; end if;
  if p_left is null or p_right is null or p_left=p_right then raise exception 'INVALID_PAIR' using errcode='22023'; end if;
  if not crm_security.consultation_can_read(l) or not crm_security.consultation_can_read(r) then
   raise exception 'forbidden' using errcode='42501'; end if;
@@ -74,7 +74,7 @@ declare a record; l uuid:=least(p_left,p_right); r uuid:=greatest(p_left,p_right
  eid uuid:=gen_random_uuid(); at_time timestamptz; result jsonb; target_active boolean;
 begin
  select * into a from crm_security.actor();
- if not found or a.permission_role<>'admin' then raise exception 'forbidden' using errcode='42501'; end if;
+ if not found or a.permission_role is distinct from 'admin' then raise exception 'forbidden' using errcode='42501'; end if;
  if p_left is null or p_right is null or p_left=p_right or p_request_id is null
   or p_operation is null or p_operation not in ('link','unlink')
   or p_reason is null or length(btrim(p_reason)) not between 1 and 2000
