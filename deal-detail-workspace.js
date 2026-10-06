@@ -8,6 +8,8 @@ function run(action){
  if(action==='primary')action=spec.primaryAction.key;
  if(action==='record')return true;
  if(action==='process')action=root.briefNext(root.CUR_DETAIL.item)?.text?'contact':'next';
+ const currentAction={contact:'activity',next:'next','stage-edit':'stage'}[action];
+ if(currentAction&&root.DealDetailV3?.openFrom?.(currentAction))return true;
  if(action==='contact'){root.DetailActions.open('activity');return true;}
  if(action==='next'){root.DetailActions.open('next');return true;}
  if(action==='stage-edit'){root.openTransition();return true;}
