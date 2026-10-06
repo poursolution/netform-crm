@@ -33,6 +33,11 @@ test('주소 없거나 접수 시각 미확인·1일 초과이면 교차 브랜�
 test('기존 현장 ID가 같아도 다른 브랜드 새 접수는 문의 검토를 생략하지 않는다',()=>{
  const [a,b]=crossBrand();a.siteId=b.siteId='site-one';b.address=a.address;assert.equal(C.classify(a,b).type,'inquiry');
 });
+test('새 비교 화면도 교차 브랜드 후보를 확실한 중복으로 표시하지 않는다',()=>{
+ const window={},document={readyState:'loading',addEventListener(){}};
+ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../dup-v2.js'),'utf8'),{window,document});
+ assert.equal(window.DupV2.judge(C.classify(...crossBrand())),'maybe');
+});
 test('같은 현장 다른 공종은 Deal 병합이 아닌 Site 연결',()=>assert.equal(C.classify(row('1'),row('2',{works:['재도장>외부']})).action,'site_link'));
 test('ASQ와 POUR는 다른 영업기회로 보존',()=>assert.equal(C.classify(row('1'),row('2',{brand:'아파트스퀘어'})).action,'site_link'));
 test('동일 공종 가까운 시기는 검토만',()=>assert.equal(C.classify(row('1'),row('2')).action,'deal_review'));
