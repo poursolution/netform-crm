@@ -136,6 +136,7 @@ function mount(v){
   if (!f) {
     f = document.createElement('iframe');
     f.id = 'app';
+    if(v === 'pc') f.style.visibility = 'hidden';
     f.setAttribute('allow', 'microphone; geolocation');   /* 음성 근거 입력에 마이크가 필요하다 */
     document.body.appendChild(f);
   }
@@ -146,8 +147,10 @@ function mount(v){
   /* 매 접속마다 Date.now()를 붙이면 브라우저가 같은 HTML도 다시 받는다.
      빌드 번호는 배포 때만 바꿔 반복 접속에서는 캐시를 재사용한다. */
   /* 안쪽 앱의 화면·상세 해시(#p=…)를 넘겨 공유 링크·새로고침에서 같은 화면이 뜬다 (2026-10-01) */
+  /* PC의 기존 초기 로딩을 유지하고, 화면 초기화 전의 예전 틀은 노출하지 않는다. */
+  f.style.visibility = v === 'pc' ? 'hidden' : '';
+  f.onload = function(){ f.style.visibility = ''; var b = document.getElementById('boot'); if (b) b.remove(); };
   f.src = encodeURI(src) + '?v=' + APP_BUILD + extra + (/^#p=/.test(location.hash) ? location.hash : '');
-  f.onload = function(){ var b = document.getElementById('boot'); if (b) b.remove(); };
   document.body.classList.toggle('mob', v === 'mobile');
   paintToggle();
   document.title = (v === 'mobile' ? '넷폼 CRM · 모바일' : '넷폼 CRM · PC');
