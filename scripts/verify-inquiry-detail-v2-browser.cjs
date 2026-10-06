@@ -80,6 +80,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await d.locator('.idv-link[data-idv="showall"]').click();
   await d.locator('.idv-rep[data-v="이필선"]').click();
   assert.equal(await d.locator('.idv-primary').innerText(),'이필선에게 배정');
+  /* 배정 완료는 저장 ACK와 서버 재조회 뒤에만 반영한다. 앞선 비로그인 문자 검사는 그대로 둔다. */
+  await page.evaluate(()=>{
+   const assignmentQueue=[];
+   window.pushWrite=(op,p)=>{__writes.push([op,p]);const request_id='req-'+__writes.length;assignmentQueue.push({request_id,operation:op,object_id:p.inquiry_id,payload:p,status:'pending'});return request_id;};
+   window.Phase1={profile:{auth_uid:'admin'},queue:{list:()=>assignmentQueue,flush:async()=>{for(const x of assignmentQueue){x.status='done';x.ack={assigned_to:'aaaaaaaa-0000-4000-8000-000000000001'};}}},read:async(resource,args)=>{const q=B.inquiries.find(q=>q.id===args.id),last=assignmentQueue.filter(x=>x.object_id===args.id).at(-1);return {data:{item:{...q,assigned_to:'aaaaaaaa-0000-4000-8000-000000000001',assignee_name:last.payload.to,status:'배정완료',assignment_history:[]}}};}};
+  });
   await d.locator('.idv-primary').click();await page.waitForTimeout(300);
   assert.equal(await page.evaluate(()=>inquiryRoutedOwner(inqCtlFind(U,false))),'이필선','기존 배정 경로로 저장');
   assert.equal(await page.evaluate(()=>__writes.filter(w=>w[0]==='inquiry_assign').length),1,'배정 쓰기 1건');
