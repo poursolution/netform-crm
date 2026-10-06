@@ -200,7 +200,10 @@
   Promise.resolve().then(()=>root.SB.rpc(GEO_LIST,{p:{}})).then(r=>{
    if(!r||r.error){if(r&&r.error&&(r.error.code==='PGRST202'||/CONTRACT_UNAVAILABLE|Could not find the function/i.test(String(r.error.message||'')))){try{root.CRMRelease.noteMissing(GEO_LIST);}catch(e){}M.st='nostore';}else M.st='error';return refreshNear();}
    const D=r.data||{};M.key=String(D.kakao_js_key||'');M.pts.clear();M.todo.clear();
-   (Array.isArray(D.sites)?D.sites:[]).forEach(x=>{const id=String(x[0]);if(x[3]==='none')M.pts.set(id,null);else if(x[1]!=null&&x[2]!=null)M.pts.set(id,{lat:Number(x[1]),lng:Number(x[2]),src:String(x[3]||'address')});else M.todo.set(id,{address:String(x[4]||'').trim(),name:String(x[5]||'').trim()});});
+   (Array.isArray(D.sites)?D.sites:[]).forEach(x=>{const id=String(x[0]),addr=String(x[4]||'').trim(),nm=String(x[5]||'').trim();
+    /* '못 찾음'을 다시 찾는 때: 찾기 규칙이 새 판이 됐거나, 그 뒤에 주소가 채워졌을 때만(서버가 주소 · 이름 · 규칙 판 · 그때 찾은 말을 줄 때 — sql/site-geo-v2) */
+    if(x[3]==='none'){if((nm||addr)&&((Number(x[6])||1)<GEO_RULE||(addr&&addr!==String(x[7]||'').trim())))M.todo.set(id,{address:addr,name:nm});else M.pts.set(id,null);}
+    else if(x[1]!=null&&x[2]!=null)M.pts.set(id,{lat:Number(x[1]),lng:Number(x[2]),src:String(x[3]||'address')});else M.todo.set(id,{address:addr,name:nm});});
    M.st='ready';sdkLoad();refreshNear();
   }).catch(()=>{M.st='error';refreshNear();});
  }
@@ -218,14 +221,29 @@
  function cleanAddr(a){const T=String(a||'').replace(/\(.*?\)/g,' ').replace(/,.*$/,'').trim().split(/\s+/);let i=-1;T.forEach((t,j)=>{if(/^\d+(-\d+)?(번지)?$/.test(t))i=j;});return (i>=2?T.slice(0,i+1):T).join(' ');}
  /* 현장 이름 앞의 지역 표기: '[경기 화성]' · '[경기용인]' · '[서울_마포]' → ['경기','화성'] */
  const SIDO=/^(서울|경기|인천|부산|대구|광주|대전|울산|세종|강원|충북|충남|전북|전남|경북|경남|제주)/;
+ const shortRegion=t=>{if(SIDO.test(t)&&t.length<=3)return t.slice(0,2);const u=t.replace(/(특별시|광역시|특별자치시|특별자치도|시|군|구)$/,'');return u.length>=2?u:t;};
  function regionTokens(name){const m=/^\s*\[([^\]]+)\]/.exec(String(name||''));if(!m)return [];let T=m[1].split(/[\s_·,\/]+/).filter(Boolean);if(T.length===1){const s=SIDO.exec(T[0]);if(s&&T[0].length>s[0].length)T=[s[0],T[0].slice(s[0].length)];}
-  return T.map(t=>{if(SIDO.test(t)&&t.length<=3)return t.slice(0,2);const u=t.replace(/(특별시|광역시|특별자치시|특별자치도|시|군|구)$/,'');return u.length>=2?u:t;}).filter(t=>t.length>=2);}
+  return T.map(shortRegion).filter(t=>t.length>=2);}
  const nameKey=v=>bare(v).replace(/\(.*?\)/g,'').replace(/아파트|\s|[·.,\-_]/g,'').toLowerCase();
- /* 이름으로 찾기(주소가 없는 현장): 장소 이름이 현장 이름과 맞고, 지역 표기가 있으면 주소에 그 지역이 들어 있고, 맞는 곳이 서로 1km 넘게 떨어져 있지 않을 때만 받는다 */
- const geoName=name=>new Promise(res=>{const T=regionTokens(name),key=nameKey(name);if(key.length<3)return res(null);
-  try{new (SV().Places)().keywordSearch((T.length?T.join(' ')+' ':'')+bare(name),(R,status)=>{
+ /* 찾기 규칙의 판 — 규칙을 다듬으면 올린다. 예전 판에서 '못 찾음'이던 현장만 다시 찾는다(sql/site-geo-v2-20261006.sql) */
+ const GEO_RULE=2;
+ /* 이름에서 읽는 단서(2판): 대괄호 지역 표기 + (대괄호가 없을 때) 이름 맨 앞의 시도명('대전…아파트' · '서울 가락…') + 맨 뒤의 시 · 군 · 구('… 도봉구').
+    맞춰 볼 이름(keys) = 통째로 / 맨 뒤의 지역 · 동 번호('105동')를 뗀 것 / 맨 앞 시도명까지 뗀 것(세 글자 이상만) */
+ function nameHints(name){
+  const T=regionTokens(name),base=bare(name).replace(/\(.*?\)/g,' ').replace(/\s+/g,' ').trim(),W=base.split(' ');
+  while(W.length>1&&/^\d+동$/.test(W[W.length-1]))W.pop();
+  let tail='';if(W.length>1&&/^[가-힣]{1,4}(시|군|구)$/.test(W[W.length-1]))tail=W.pop();
+  const core=W.join(' '),s=SIDO.exec(core),lead=!T.length&&s?s[0]:'',noLead=lead?core.slice(lead.length).replace(/^(특별시|광역시|도)?\s*/,''):'';
+  return {tokens:[...new Set(T.concat(lead?[lead]:[],tail?[shortRegion(tail)]:[]))],keys:[...new Set([nameKey(base),nameKey(core),noLead?nameKey(noLead):''].filter(k=>k.length>=3))],query:(T.length?T.join(' ')+' ':'')+base};
+ }
+ /* 이름으로 찾기(주소가 없는 현장): 장소 이름이 맞춰 볼 이름 가운데 하나와 맞고, 지역 단서가 있으면 주소에 그 지역이 모두 들어 있고, 맞는 곳이 서로 1km 넘게 떨어져 있지 않을 때만 받는다.
+    이름에서 읽은 단서(맨 앞 시도명 · 맨 뒤 시군구)로 하나도 안 남으면 — 그 말이 지역이 아니라 이름의 일부일 수 있으므로('경남아너스빌') — 대괄호 표기만으로 한 번 더 본다 */
+ const geoName=name=>new Promise(res=>{const H=nameHints(name),T0=regionTokens(name);if(!H.keys.length)return res(null);
+  try{new (SV().Places)().keywordSearch(H.query,(R,status)=>{
    if(status===SV().Status.ZERO_RESULT)return res(null);if(status!==SV().Status.OK||!Array.isArray(R))return res(undefined);
-   const ok=R.filter(p=>{const pn=nameKey(p.place_name);if(!pn||!Number.isFinite(Number(p.y))||!Number.isFinite(Number(p.x)))return false;const hit=pn===key||(pn.includes(key)&&key.length/pn.length>=.6)||(key.includes(pn)&&pn.length/key.length>=.6),ad=String(p.address_name||'')+' '+String(p.road_address_name||'');return hit&&T.every(t=>ad.includes(t));});
+   const fits=(pn,key)=>pn===key||(pn.includes(key)&&key.length/pn.length>=.6)||(key.includes(pn)&&pn.length/key.length>=.6);
+   const pick=tokens=>R.filter(p=>{const pn=nameKey(p.place_name);if(!pn||!Number.isFinite(Number(p.y))||!Number.isFinite(Number(p.x)))return false;const ad=String(p.address_name||'')+' '+String(p.road_address_name||'');return H.keys.some(k=>fits(pn,k))&&tokens.every(t=>ad.includes(t));});
+   let ok=pick(H.tokens);if(!ok.length&&H.tokens.length>T0.length)ok=pick(T0);
    if(!ok.length)return res(null);const p0={lat:Number(ok[0].y),lng:Number(ok[0].x)};
    if(ok.some(p=>KM(p0,{lat:Number(p.y),lng:Number(p.x)})>1))return res(null);
    res({lat:p0.lat,lng:p0.lng,matched:String(ok[0].place_name||'')+' · '+String(ok[0].road_address_name||ok[0].address_name||'')});
@@ -235,7 +253,7 @@
   if(address){r=await geoAddr(address);if(r===null){const c=cleanAddr(address);if(c&&c!==address)r=await geoAddr(c);}}
   if(r===undefined)return {blocked:true};
   if(!r&&name){src='name';query=name;r=await geoName(name);if(r===undefined)return {blocked:true};}
-  return r?{pt:{lat:r.lat,lng:r.lng,src},row:{lat:r.lat,lng:r.lng,source:src,query,matched:r.matched}}:{pt:null,row:{source:'none',query:address||name||'-'}};
+  return r?{pt:{lat:r.lat,lng:r.lng,src},row:{lat:r.lat,lng:r.lng,source:src,query,matched:r.matched,rule:GEO_RULE}}:{pt:null,row:{source:'none',query:address||name||'-',rule:GEO_RULE}};
  }
  function flush(){if(!M.buf.length||!rpcOk(GEO_SAVE))return Promise.resolve();const rows=M.buf.splice(0,50);return Promise.resolve().then(()=>root.SB.rpc(GEO_SAVE,{p:{rows}})).then(r=>{if(r&&r.error&&r.error.code==='PGRST202'){try{root.CRMRelease.noteMissing(GEO_SAVE);}catch(e){}}}).catch(()=>{});}
  /* 지금 문의의 위치: 현장 좌표가 있으면 그것, 없으면 문의 주소(없으면 현장 이름)로 찾는다. 'wait' = 찾는 중 */
@@ -368,5 +386,5 @@
  const DEAL_CTX={host:()=>document.getElementById('detailView'),alive:q=>{const c=root.CUR_DETAIL,v=document.getElementById('detailView');return !!(c&&c.kind==='deal'&&c.item===q.__deal&&v&&v.classList.contains('on'));}};
  const dealNear={html:(d,s)=>nearHtml(dealSubject(d),s,'',DEAL_CTX),mount:host=>mount(host),action:(k,v,b,d,s)=>onAction(k,v,b,dealSubject(d),s)};
  root.InquirySite={dealNear,on,KIND,REOPEN_RPC,deals,summary,badge,lostFacts,historyHtml,aiLine,timeline,hasHistory,openerClue,relationHtml,nearList,nearHtml,reopenReady,shortWork,
-  REOPEN_STAGES,GEO_LIST,GEO_SAVE,MAP_CFG,km:KM,kmText,nearBy,mapMode,mount,onAction,regionTokens,cleanAddr,_map:M,_resetMap:resetMap};
+  REOPEN_STAGES,GEO_LIST,GEO_SAVE,MAP_CFG,km:KM,kmText,nearBy,mapMode,mount,onAction,regionTokens,nameHints,GEO_RULE,cleanAddr,_map:M,_resetMap:resetMap};
 })(window);
