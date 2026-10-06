@@ -55,7 +55,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await v.locator('.plv-chip',{hasText:'이필선'}).click();await page.waitForTimeout(150);assert.equal(await v.locator('.plv-row').count(),1,'담당자 공통 필터');
   await v.locator('.plv-chip.on').click();await page.waitForTimeout(150);
   /* 더보기: 기술자문 계약 · 연결 검토 이동 */
-  await v.locator('.av-more summary').click();assert.deepEqual(await v.locator('.av-menu button').allInnerTexts(),['기술자문 계약','연결 검토 · 과거자료 연결 → 데이터 정리 · 검토']);
+  await v.locator('.av-more summary').click();assert.deepEqual(await v.locator('.av-menu button').allInnerTexts(),['기술자문 원본 자료','연결 검토 · 과거자료 연결 → 데이터 정리 · 검토']);
   await v.locator('.av-menu [data-av="advisory"]').click();assert.equal(await page.evaluate(()=>document.getElementById('pg-sites').classList.contains('av-adv-on')),true);
   /* 상세: 3단 모달 */
   await v.locator('.plv-row').first().locator('.plv-site').click();await page.waitForTimeout(250);

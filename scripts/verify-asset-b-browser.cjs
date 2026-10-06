@@ -58,7 +58,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#asset-b [data-sb="clear"]').click();await page.waitForTimeout(150);
   await page.locator('#asset-b [data-sb="view"][data-v="board"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#asset-b .psb-col').count(),3);assert.equal(await page.locator('#asset-b .psb-card').count(),4);
   await page.locator('#asset-b [data-sb="view"][data-v="list"]').click();await page.waitForTimeout(150);
-  await page.locator('#asset-b .av-more summary').click();assert.deepEqual(await page.locator('#asset-b .av-menu button').allInnerTexts(),['기술자문 계약','연결 검토 · 과거자료 연결 → 데이터 정리 · 검토']);
+  await page.locator('#asset-b .av-more summary').click();assert.deepEqual(await page.locator('#asset-b .av-menu button').allInnerTexts(),['기술자문 원본 자료','연결 검토 · 과거자료 연결 → 데이터 정리 · 검토']);
   await page.locator('#asset-b .av-menu [data-ab="advisory"]').click();assert.equal(await page.evaluate(()=>document.getElementById('pg-sites').classList.contains('av-adv-on')),true);
   /* 열기 = 기존 3단 모달 */
   await page.locator('#asset-b .psb-row').first().locator('.l').click();await page.waitForTimeout(300);

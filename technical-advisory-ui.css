@@ -30,3 +30,28 @@
 .adv-fold-toggle{all:unset;cursor:pointer;display:flex;align-items:baseline;gap:8px;font-size:13px;font-weight:850;color:#0f172a}
 .adv-more-toggle{all:unset;cursor:pointer;font-size:11.5px;color:#8a97ab;font-weight:800;margin-top:7px;display:inline-block}
 .adv-fold-body{margin-top:8px}
+
+/* 기술자문 원본 자료: [프로젝트 기본 정보 | 계약 문서] 탭 · 프로젝트 목록 · 기본 정보(2026-10-06) */
+.advisory-library .adv-tabs{display:flex;gap:2px;border-bottom:1px solid #e3e6ec;margin:4px 0 12px}
+.advisory-library .adv-tabs button{border:0;border-bottom:2px solid transparent;margin:0 0 -1px;background:none;padding:7px 12px;font:inherit;font-size:13.5px;font-weight:700;color:#6b7280;border-radius:0;height:auto;box-shadow:none;cursor:pointer}
+.advisory-library .adv-tabs button[aria-selected="true"]{color:#15171c;border-bottom-color:#15171c}
+.advisory-library .adv-pane[hidden]{display:none}
+.adv-count{margin:0 0 8px}
+.adv-state{margin:10px 0;font-size:13px!important;color:#6b7280}
+.adv-state.bad{color:#b42318!important}
+.adv-proj-list{display:flex;flex-direction:column;border:1px solid #e8eaef;border-radius:10px;overflow:hidden;background:#fff}
+.adv-proj-row{display:flex;align-items:center;gap:10px;border:0;border-bottom:1px solid #f2f3f6;background:#fff;text-align:left;padding:10px 14px;margin:0;height:auto;border-radius:0;box-shadow:none;font:inherit;color:#15171c;cursor:pointer;width:100%}
+.adv-proj-row:last-child{border-bottom:0}
+.adv-proj-row:hover{background:#f8faff}
+.adv-proj-row.on{background:#eef3fe}
+.adv-proj-row .s{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.adv-proj-row .s b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adv-proj-row .s small{font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adv-proj-row .id{flex:none;font-size:11px;color:#9ca3af;font-variant-numeric:tabular-nums}
+.adv-chip.b2{background:#f3f4f6;color:#374151}
+.adv-proj-slot{max-width:800px}
+.adv-proj-detail{border:1px solid #e2e8f1;border-radius:11px;background:#fbfcfe;padding:13px 15px;margin-top:12px}
+.adv-proj-detail dl{display:grid;grid-template-columns:minmax(120px,1fr) minmax(0,2fr);gap:7px 12px;font-size:13px;margin:10px 0 0}
+.adv-proj-detail dt{color:#64748b}
+.adv-proj-detail dd{margin:0;overflow-wrap:anywhere}
+.adv-nodoc{margin:8px 0 0;color:#6b7280}
