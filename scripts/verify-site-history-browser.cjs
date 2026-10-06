@@ -75,7 +75,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 5. [수정] = 그 자리 편집: 공종 · 결과 칩 · 날짜 · 금액 · 담당 · 설명 → [취소] [저장], [삭제]는 지난 건만 */
   await row('옥상(우레탄)').locator('[data-sth="edit"]').click();await page.waitForTimeout(200);
   const F=H.locator('.sth-row.ed');assert.equal(await F.count(),1);assert.equal(await page.evaluate(()=>CUR_DETAIL.item.id),CUR,'수정을 눌러도 그 건이 열리지 않는다');
-  assert.deepEqual(await F.locator('.sth-grid>span').allInnerTexts(),['공종','결과','날짜','금액','담당','설명']);
+  assert.deepEqual(await F.locator('.sth-grid span')/* 날짜 · 금액은 .sth-half label 안(2026-10-07 편집칸 배치) */.allInnerTexts(),['공종','결과','날짜','금액','담당','설명']);
   assert.deepEqual(await F.locator('.sth-chips button').evaluateAll(l=>l.map(b=>b.textContent+(b.getAttribute('aria-pressed')==='true'?'*':''))),['진행','수주*','실주','보류','배드핏']);
   assert.deepEqual(await F.evaluate(n=>[n.querySelector('[data-sthf="work"]').value,n.querySelector('[data-sthf="amt"]').value,n.querySelector('[data-sthf="who"]').value,n.querySelector('[data-sthf="amt"]').placeholder,n.querySelector('[data-sthf="when"]').placeholder,n.querySelector('[data-sthf="hint"]').placeholder]),['옥상(우레탄)','2억','이필선','낙찰금액 · 450만','2025.11 계약','준공 · 하자 / 실주 사유 · 낙찰사']);
   assert.deepEqual(await F.locator('.sth-foot button').allInnerTexts(),['삭제','취소','저장']);assert.equal(await F.locator('.sth-fn').innerText(),"저장하면 응대 이력에 '이력 수정' 시스템 기록이 남습니다");
@@ -95,7 +95,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   {const n=await page.evaluate(()=>__shw.length);await row('옥상(우레탄)').locator('[data-sth="edit"]').click();await page.waitForTimeout(150);await H.locator('.sth-row.ed [data-sth="save"]').click();await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>__shw.length),n);assert.equal((await toasts()).slice(-1)[0],'바뀐 내용이 없습니다');}
   /* 6. 실주로 저장하려면 실주 원인(분류 → 세부 사유) */
   await row('지하주차장 에폭시').locator('[data-sth="edit"]').click();await page.waitForTimeout(200);
-  {const E=H.locator('.sth-row.ed');assert.deepEqual(await E.locator('.sth-grid>span').allInnerTexts(),['공종','결과','사유','날짜','금액','담당','설명'],'실주면 사유 줄');
+  {const E=H.locator('.sth-row.ed');assert.deepEqual(await E.locator('.sth-grid span')/* 날짜 · 금액은 .sth-half label 안(2026-10-07 편집칸 배치) */.allInnerTexts(),['공종','결과','사유','날짜','금액','담당','설명'],'실주면 사유 줄');
    const cats=await E.locator('.sth-lost .sth-chips button').allInnerTexts();assert.ok(cats.length>=4,'실주 원인 분류 '+JSON.stringify(cats));
    await E.locator('[data-sthf="hint"]').fill('가격 · A건설 낙찰 (−18%)');const n=await page.evaluate(()=>__shw.length);await E.locator('[data-sth="save"]').click();await page.waitForTimeout(300);
    assert.equal(await page.evaluate(()=>__shw.length),n,'사유 없이는 저장하지 않는다');assert.match((await toasts()).slice(-1)[0],/실주 원인을 골라 주세요/);
