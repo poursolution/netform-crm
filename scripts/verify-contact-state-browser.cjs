@@ -25,7 +25,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     /* 다른 현장: 기록이 없는 배정 건(운영 시작일 뒤 접수) */
     row('c1',{site:'새빛타운',site_name:'새빛타운',phone:'031-555-0111',detail:{phone:'031-555-0111'},assignee:'이필선',assignee_name:'이필선',sales_assignee:'이필선',assigned_to:'u-lee',status:'배정완료',received_at:at(1),at:at(1),created:at(1),assigned_at:at(1,36e5)})];
    B={deals:[],inquiries:q,activities:[],inquiryTrash:[],inquiryCleanupArchived:[],expansion_pool:[]};LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'adm',name:'송보람',role:'admin'};
-   G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';window.saveLocal=()=>{};
+   G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';/* 견적문의 v4: 위 탭 숫자 = 목록 범위의 진행 중 건수 → 기간 필터 없이 본다 */window.saveLocal=()=>{};
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';
    ContactState._reset();inqCtlPartition();
    const by=id=>B.inquiries.concat(B.inquiryCleanupArchived).find(x=>x.id===id),D=TodayWorkQueue.data(),mine=D.rows.filter(x=>x.type==='inq'&&x.item.site===SITE);
@@ -55,7 +55,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 견적문의 화면: 건수에 복제 줄이 들어가지 않는다(5줄 중 3건) */
   await page.waitForTimeout(500);
   const inq=await page.evaluate(()=>document.body.innerText.replace(/\s+/g,' '));
-  assert.match(inq,/구글시트 연결됨 · 3건/);assert.match(inq,/공사 견적문의 3 /);
+  assert.match(inq,/구글시트 연결됨 · 3건/);
+  /* 위 탭 '공사 견적문의 n'은 견적문의 v4 부터 목록 범위(담당 · 브랜드 · 검색)의 진행 중 건수다 — 이 자료의 담당(u-lee)은 명단에 없어 목록에 안 잡히므로, 복제 줄이 빠지는지는 진행 중 자료 건수로 본다 */
+  assert.equal(await page.evaluate(()=>operationalInquiries(B.inquiries||[]).filter(q=>!isClosedInq(q)).length),3);assert.match(inq,/공사 견적문의 \d+ /);
   assert.deepEqual(errs,[],'화면 오류 없음: '+errs.join(' | '));
   console.log('contact state ok');
  }finally{await browser.close();srv.close();}

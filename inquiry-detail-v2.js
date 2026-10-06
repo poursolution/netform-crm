@@ -670,5 +670,6 @@
  if(typeof base==='function')root.paintInq=function(){const r=base.apply(this,arguments);try{reskin();}catch(err){document.getElementById('inq-inbox-dialog')?.classList.remove('idv');if(root.console)root.console.warn('inquiry detail v2: '+err.message);}return r;};
  /* 오늘 업무 등의 [문자]: 열려 있는 문의 상세를 문자 작은 창으로(문자 탭은 없앴다) */
  function openSms(){const ov=document.getElementById('inq-inbox-dialog');if(!ov||!curKey||root.G.inqDetailV2Off||!root.inqCtlFind(curKey,false))return false;const s=st(curKey);s.tab='sms';s.smsConfirm=false;reskinFrom();return true;}
- root.InquiryDetailV2={reskin,state:st,bubbles,v3:V3,openSms};
+ /* timeline · applyField · fieldEditable = 견적문의 v4(목록 옆 상세)가 같은 응대 이력 · 같은 빈 칸 저장 길을 쓴다 */
+ root.InquiryDetailV2={reskin,state:st,bubbles,v3:V3,openSms,timeline,applyField,fieldEditable};
 })(window);

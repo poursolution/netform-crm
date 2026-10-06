@@ -37,7 +37,10 @@
     +'<div class="b2b-foot"><span>· 수주 · 계약실적 · 메이드율 · 인센티브에 들어가지 않습니다</span><span>· 다음 행동 · 놓침 · 후속 순서 대상이 아닙니다</span><span>· 결과는 잔디와 같은 이름으로 동기화됩니다</span></div>';}
   return '<section class="b2b-list"><div class="b2b-tabs">'+[['open','처리할 것',openL.length],['done','처리 끝',doneL.length]].map(t=>'<button type="button" data-b2b="tab" data-v="'+t[0]+'" aria-pressed="'+(S.tab===t[0])+'">'+t[1]+' '+t[2]+'</button>').join('')+'<i></i><span>접수 오래된 순</span></div>'+(rows||'<div class="b2b-empty">'+(S.tab==='open'?'처리할 협약문의가 없습니다.':'처리가 끝난 협약문의가 없습니다.')+'</div>')+'</section><aside class="b2b-side">'+side+'</aside>';
  }
- function counts(){let inq=0,b2b=0;try{const L=root.operationalInquiries((root.B&&root.B.inquiries)||[]);inq=L.filter(q=>!API().isAgreement(q)&&!root.isClosedInq(q)).length;b2b=all().filter(q=>stOf(q)==='pending').length;}catch(e){}return {inq,b2b};}
+ function counts(){let inq=0,b2b=0;try{const L=root.operationalInquiries((root.B&&root.B.inquiries)||[]);inq=L.filter(q=>!API().isAgreement(q)&&!root.isClosedInq(q)).length;b2b=all().filter(q=>stOf(q)==='pending').length;}catch(e){}
+  /* 견적문의 v4: 위 탭의 숫자 = 진행 중(브랜드 · 담당 · 검색 반영) — 목록 · 브랜드 '전체' · 상태 탭과 같은 숫자 하나 */
+  try{if(root.InquiryV4&&root.InquiryV4.on())inq=root.InquiryV4.total();}catch(e){}
+  return {inq,b2b};}
  function sync(){
   const page=document.getElementById('pg-inq');if(!page)return;
   let bar=page.querySelector(':scope>.b2b-bar'),view=page.querySelector(':scope>.b2b-view');
