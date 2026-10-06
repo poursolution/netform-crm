@@ -176,8 +176,8 @@
     M.pts = 현장 ID → {lat,lng,src} | null(못 찾음),  M.todo = 좌표를 아직 찾지 않은 현장 ID → {address,name},  M.inq = 문의 → 그 문의의 위치 */
  const GEO_LIST='crm_site_geo_list_v1',GEO_SAVE='crm_site_geo_save_v1',MAP_CFG='crm_map_config_v1',SDK_URL='https://dapi.kakao.com/v2/maps/sdk.js',FILL_MAX=40,FILL_GAP=150;
  const DOT={won:'#1f9d55',open:'#3b6ce4',hold:'#3b6ce4',lost:'#9aa0ab'};
- const M={st:'idle',key:'',pts:new Map(),todo:new Map(),sdk:'none',inq:new Map(),last:null,map:null,el:null,circle:null,marks:new Map(),sig:'',job:false,buf:[],err:'',keyErr:'',keyBusy:false,focus:''};
- function resetMap(){M.marks.forEach(m=>{try{m.o.setMap(null);}catch(e){}});Object.assign(M,{st:'idle',key:'',sdk:'none',last:null,map:null,el:null,circle:null,sig:'',job:false,buf:[],err:'',keyErr:'',keyBusy:false,focus:''});M.pts.clear();M.todo.clear();M.inq.clear();M.marks.clear();}
+ const M={st:'idle',key:'',pts:new Map(),todo:new Map(),sdk:'none',inq:new Map(),last:null,map:null,el:null,circle:null,marks:new Map(),sig:'',job:false,buf:[],err:'',keyErr:'',keyBusy:false,focus:'',fx:null};
+ function resetMap(){M.marks.forEach(m=>{try{m.o.setMap(null);}catch(e){}});Object.assign(M,{st:'idle',key:'',sdk:'none',last:null,map:null,el:null,circle:null,sig:'',job:false,buf:[],err:'',keyErr:'',keyBusy:false,focus:'',fx:null});M.pts.clear();M.todo.clear();M.inq.clear();M.marks.clear();}
  const rpcOk=n=>!!(root.SB&&typeof root.SB.rpc==='function'&&root.TOKEN)&&(root.CRM_RPC_ALLOW||[]).includes(n)&&!(root.CRMRelease&&root.CRMRelease.has&&root.CRMRelease.has(n)===false);
  /* 두 점 사이 거리(km · 하버사인) */
  const KM=(a,b)=>{const R=6371,r=x=>x*Math.PI/180,dl=r(b.lat-a.lat),dn=r(b.lng-a.lng),s=Math.sin(dl/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(s));};
@@ -192,7 +192,10 @@
  /* 근처 현장 칸만 다시 그린다 — 창 전체를 다시 그리면 적고 있던 글의 커서가 튄다 */
  function refreshNear(){
   const L=M.last;if(!L||!on())return;const ctx=L.ctx||INQ_CTX,dlg=ctx.host(),sec=dlg&&dlg.querySelector('.isd-near');if(!sec||!ctx.alive(L.q))return;
+  /* 위치 정하기 칸에 적던 글 · 커서는 지킨다 */
+  const old=sec.querySelector('.isd-fx input'),foc=old&&document.activeElement===old?[old.selectionStart,old.selectionEnd]:null;if(old&&M.fx)M.fx.text=old.value;
   const t=document.createElement('template');t.innerHTML=nearHtml(L.q,L.s,L.extra,ctx);if(M.el&&M.el.parentNode)M.el.remove();sec.replaceWith(t.content);mount(dlg);
+  if(foc){const n=dlg.querySelector('.isd-fx input');if(n&&!n.disabled){n.focus();try{n.setSelectionRange(foc[0],foc[1]);}catch(e){}}}
  }
  function geoLoad(){
   if(M.st!=='idle')return;if(!rpcOk(GEO_LIST)){M.st='nostore';return;}
@@ -256,6 +259,51 @@
   return r?{pt:{lat:r.lat,lng:r.lng,src},row:{lat:r.lat,lng:r.lng,source:src,query,matched:r.matched,rule:GEO_RULE}}:{pt:null,row:{source:'none',query:address||name||'-',rule:GEO_RULE}};
  }
  function flush(){if(!M.buf.length||!rpcOk(GEO_SAVE))return Promise.resolve();const rows=M.buf.splice(0,50);return Promise.resolve().then(()=>root.SB.rpc(GEO_SAVE,{p:{rows}})).then(r=>{if(r&&r.error&&r.error.code==='PGRST202'){try{root.CRMRelease.noteMissing(GEO_SAVE);}catch(e){}}}).catch(()=>{});}
+ /* ── 위치 직접 정하기(2026-10-06 대표 "진행해" — 주소가 없어 못 찾은 현장): 주소나 단지 이름으로 후보를 찾아 보여 주고, 맞는 곳은 사람이 고른다.
+    고른 곳은 그 현장의 좌표로 저장한다(좌표 저장소만 — 현장 주소 칸은 건드리지 않는다). 서버가 저장을 확인한 뒤에만 지도에 올린다.
+    M.fx = {key,text,st:'idle'|'busy'|'list'|'none'|'err',list,saving,err,open(추정 위치 고치기로 연 것),auto(후보를 한 번 자동으로 찾았는가),seq} — 한 번에 한 건 ── */
+ const siteIdOf=q=>isUuid(q&&q.site_id)?String(q.site_id):'';
+ function fxOf(q){const k=keyOf(q);if(!M.fx||M.fx.key!==k)M.fx={key:k,text:'',st:'idle',list:[],saving:false,err:'',open:false,auto:false,seq:0};return M.fx;}
+ /* 후보 찾기: 주소 검색(적은 말이 주소일 때) 먼저, 그다음 장소 검색(단지 · 건물 이름). 같은 자리는 한 줄로 · 여섯 곳까지. 둘 다 지도 서비스가 답하지 않으면 ok=false */
+ function fxSearch(text){
+  const out=[],seen=new Set(),add=(name,addr,y,x)=>{const lat=Number(y),lng=Number(x);if(!Number.isFinite(lat)||!Number.isFinite(lng))return;const k=lat.toFixed(4)+','+lng.toFixed(4);if(seen.has(k))return;seen.add(k);out.push({name:String(name||'').trim(),addr:String(addr||'').trim(),lat,lng});};
+  const okSt=st=>st===SV().Status.OK||st===SV().Status.ZERO_RESULT;
+  const A=()=>new Promise(res=>{try{new (SV().Geocoder)().addressSearch(text,(R,st)=>{if(st===SV().Status.OK&&Array.isArray(R))R.slice(0,3).forEach(x=>add(x.road_address&&x.road_address.building_name||'',x.road_address&&x.road_address.address_name||x.address_name||text,x.y,x.x));res(okSt(st));});}catch(e){res(false);}});
+  const P=()=>new Promise(res=>{try{new (SV().Places)().keywordSearch(text,(R,st)=>{if(st===SV().Status.OK&&Array.isArray(R))R.forEach(p=>add(p.place_name,p.road_address_name||p.address_name,p.y,p.x));res(okSt(st));},{size:8});}catch(e){res(false);}});
+  return A().then(a=>P().then(p=>({ok:a||p,list:out.slice(0,6)})));
+ }
+ function fxFind(q,text){
+  const F=fxOf(q);text=String(text==null?F.text:text).trim();F.text=text;F.err='';
+  if(!text||M.sdk!=='ready'||F.saving){F.st='idle';F.list=[];return refreshNear();}
+  const seq=++F.seq;F.st='busy';F.list=[];refreshNear();
+  fxSearch(text).then(r=>{if(M.fx!==F||F.seq!==seq)return;F.list=r.list;F.st=!r.ok?'err':r.list.length?'list':'none';refreshNear();}).catch(()=>{if(M.fx!==F||F.seq!==seq)return;F.st='err';refreshNear();});
+ }
+ /* 고른 곳을 그 현장의 좌표로 저장한다 — 사람이 고른 곳은 그 곳의 주소로 찾은 것으로 적는다(source address · matched '직접 지정 · …') */
+ function fxPick(q,i){
+  const F=fxOf(q),c=F.list[Number(i)],id=siteIdOf(q);if(!c||!id||F.saving)return;
+  if(!rpcOk(GEO_SAVE)){F.err='서버 적용 뒤에 저장할 수 있습니다';return refreshNear();}
+  F.saving=true;F.err='';refreshNear();
+  const fail=()=>{F.saving=false;if(M.fx!==F)return;F.err='저장하지 못했습니다. 잠시 뒤 다시 눌러 주세요.';refreshNear();};
+  const row={site_id:id,lat:c.lat,lng:c.lng,source:'address',query:String(c.addr||F.text).slice(0,300),matched:('직접 지정 · '+(c.name?c.name+' · ':'')+c.addr).slice(0,300),rule:GEO_RULE};
+  Promise.resolve().then(()=>root.SB.rpc(GEO_SAVE,{p:{rows:[row]}})).then(r=>{
+   if(!r||r.error||!r.data||r.data.ok!==true||Number(r.data.saved)!==1)return fail();
+   F.saving=false;M.todo.delete(id);M.pts.set(id,{lat:c.lat,lng:c.lng,src:'address'});M.inq.delete(keyOf(q));M.sig='';if(M.fx===F)M.fx=null;refreshNear();
+  }).catch(fail);
+ }
+ function fxHtml(q,fix){
+  const F=fxOf(q),dis=F.saving?' disabled':'';
+  const body=F.st==='busy'?'<span class="isd-fxmsg">찾는 중</span>'
+   :F.st==='err'?'<span class="isd-fxmsg bad">지도 서비스가 답하지 않습니다. 잠시 뒤 다시 찾아 주세요.</span>'
+   :F.st==='none'?'<span class="isd-fxmsg">찾은 곳이 없습니다. 도로명 주소나 단지 이름을 조금 다르게 적어 보세요.</span>'
+   :F.st==='list'?'<div class="isd-fxlist">'+F.list.map((c,i)=>'<button type="button" class="isd-fxrow" data-idv="geo-pick" data-v="'+i+'"'+dis+'><span><b>'+h(c.name||c.addr)+'</b>'+(c.name&&c.addr?'<small>'+h(c.addr)+'</small>':'')+'</span><em>'+(F.saving?'저장 중':'이 위치로')+'</em></button>').join('')+'</div>':'';
+  return '<div class="isd-fx"><div class="isd-fxform"><input type="text" autocomplete="off" spellcheck="false" aria-label="도로명 주소나 단지 이름" placeholder="도로명 주소나 단지 이름" value="'+attr(F.text)+'"'+dis+'><button type="button" data-idv="geo-find"'+dis+'>찾기</button>'+(fix?'<button type="button" class="sub" data-idv="geo-fix-cancel"'+dis+'>닫기</button>':'')+'</div>'+body+(F.err?'<span class="isd-fxmsg bad">'+h(F.err)+'</span>':'')+'</div>';
+ }
+ /* 위치 정하기 칸: 적는 글을 기억하고, Enter 로 찾는다 */
+ function bindFx(host){
+  const i=host&&host.querySelector&&host.querySelector('.isd-fx input');if(!i||i.__fx)return;i.__fx=true;
+  i.addEventListener('input',()=>{if(M.fx)M.fx.text=i.value;});
+  i.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.isComposing)return;e.preventDefault();e.stopPropagation();const L=M.last;if(L)fxFind(L.q,i.value);});
+ }
  /* 지금 문의의 위치: 현장 좌표가 있으면 그것, 없으면 문의 주소(없으면 현장 이름)로 찾는다. 'wait' = 찾는 중 */
  function centerOf(q){
   const id=q.site_id?String(q.site_id):'',p=id?M.pts.get(id):undefined;if(p)return p;
@@ -306,6 +354,7 @@
  }
  /* 상세 창을 그린 뒤: 지도 상자를 제자리에 꽂고 원 · 점을 맞춘다(지도는 한 번만 만들어 옮겨 쓴다) */
  function mount(dlg){
+  bindFx(dlg);
   const L=M.last,box=dlg&&dlg.querySelector('[data-isd-map]');if(!L||!box||M.sdk!=='ready')return;
   const c=centerOf(L.q);if(!c||c==='wait')return;
   const K=root.kakao.maps,rad=radOf(L.s),ll=p=>new K.LatLng(p.lat,p.lng);
@@ -321,7 +370,7 @@
     M.circle.setPosition(ll(c));M.circle.setRadius(rad*1000);
     const dot=(key,p,cls,color,title)=>{const e=document.createElement('span');e.className='isd-dot'+(cls?' '+cls:'');if(color)e.style.background=color;e.title=title;if(key!=='now')e.addEventListener('click',()=>focusRow(key));const o=new K.CustomOverlay({position:ll(p),content:e,xAnchor:.5,yAnchor:.5,clickable:true,zIndex:key==='now'?3:2});o.setMap(M.map);M.marks.set(key,{o,e,p});};
     rows.forEach(x=>dot(root.dealKey(x.d),x.pt,'',DOT[x.k],nearTitle(x)));
-    dot('now',c,'now','','지금 문의 · '+bare(L.q.site));
+    dot('now',c,'now','',(L.q.__deal?'이 현장 · ':'지금 문의 · ')+bare(L.q.site));
     M.map.setBounds(M.circle.getBounds());M.sig=sig;M.focus='';
    }
   }catch(e){M.sdk='error';return refreshNear();}
@@ -343,18 +392,23 @@
    Promise.resolve().then(()=>root.SB.rpc(MAP_CFG,{p:{kakao_js_key:val}})).then(r=>{M.keyBusy=false;if(!r||r.error){M.keyErr=String(r&&r.error&&r.error.message||'저장하지 못했습니다');return refreshNear();}M.key=String((r.data||{}).kakao_js_key||'');M.sdk='none';sdkLoad();refreshNear();}).catch(()=>{M.keyBusy=false;M.keyErr='저장하지 못했습니다';refreshNear();});
    return true;
   }
+  if(k==='geo-fix'){const F=fxOf(q);F.open=true;if(!F.text)F.text=nameHints(String(q.site||'')).query;fxFind(q);return true;}
+  if(k==='geo-fix-cancel'){M.fx=null;refreshNear();return true;}
+  if(k==='geo-find'){const f=b.closest('.isd-fx'),i=f&&f.querySelector('input');fxFind(q,i?i.value:'');return true;}
+  if(k==='geo-pick'){fxPick(q,v);return true;}
   return false;
  }
- function mapNote(mode,N){
+ function mapNote(mode,N,q){
   let admin=false;try{admin=!!root.inqCtlIsAdmin();}catch(e){}
+  const who=q&&q.__deal?'이 현장':'이 문의';
   const fall=' 지금은 같은 지역'+(N.region?'('+h(N.region)+')':'')+'의 현장을 보여 줍니다.';
   const keyform='<div class="isd-keyform"><input type="text" autocomplete="off" spellcheck="false" aria-label="카카오맵 JavaScript 키" placeholder="카카오맵 JavaScript 키 붙여 넣기"><button type="button" data-idv="map-key-save"'+(M.keyBusy?' disabled':'')+'>'+(M.keyBusy?'저장 중':'등록')+'</button></div>'+(M.keyErr?'<span class="err">'+h(M.keyErr)+'</span>':'');
   if(mode==='loading')return '<b>지도를 불러오는 중</b>';
-  if(mode==='locating')return '<b>이 문의의 위치를 찾는 중</b>';
+  if(mode==='locating')return '<b>'+who+'의 위치를 찾는 중</b>';
   if(mode==='nokey')return admin?'<b>카카오맵 키 등록</b><span>카카오 개발자 사이트에서 받은 JavaScript 키를 넣으면 지도 · 반경 · 거리가 켜집니다.'+fall+'</span>'+keyform:'<b>지도 준비 중</b><span>관리자가 카카오맵 키를 등록하면 지도가 켜집니다.'+fall+'</span>';
   if(mode==='sdkerr')return '<b>카카오맵을 불러오지 못했습니다</b><span>등록한 키와, 카카오 개발자 사이트에 이 사이트 주소('+h(location.origin)+')가 등록돼 있는지 확인해 주세요.'+fall+'</span>'+(admin?keyform:'');
   if(mode==='blocked')return '<b>위치를 찾지 못했습니다</b><span>지도 서비스의 주소 검색이 응답하지 않습니다. 카카오 개발자 사이트의 앱 설정(카카오맵 사용 · 사이트 주소 등록)을 확인해 주세요.'+fall+'</span>';
-  if(mode==='nocenter')return '<b>이 문의의 위치를 찾지 못했습니다</b><span>주소를 입력하면 지도에 표시됩니다.'+fall+'</span>';
+  if(mode==='nocenter')return '<b>'+who+'의 위치를 찾지 못했습니다</b><span>'+(siteIdOf(q)&&rpcOk(GEO_SAVE)?'주소나 이름만으로는 한 곳을 정하지 못했습니다. 아래에서 맞는 곳을 누르면 지도에 표시됩니다.':'주소를 입력하면 지도에 표시됩니다.')+fall+'</span>';
   if(mode==='error')return '<b>지도를 불러오지 못했습니다</b><span>잠시 뒤 창을 다시 열어 주세요.'+fall+'</span>';
   return '<b>지도 준비 중</b><span>카카오맵 키 등록과 현장 좌표 저장이 끝나면 여기에 지도 · 반경 · 거리가 표시됩니다.'+fall+'</span>';
  }
@@ -362,17 +416,20 @@
   if(!on())return '';M.last={q,s,extra,ctx:ctx||null};const mode=mapMode(q);
   const legend='<span class="lg"><span><i style="background:#1f9d55"></i>수주</span><span><i style="background:#3b6ce4"></i>진행</span><span><i style="background:#9aa0ab"></i>실주</span></span>',tip='<small>방문 일정 잡을 때 같은 날 들를 현장 · 소개받을 관리소장 찾기용 · 수주 현장은 레퍼런스로</small>';
   if(mode==='map'){
-   const rad=radOf(s),rows=nearBy(q,rad),shown=rows.slice(0,8),pend=pendingCount();
+   const rad=radOf(s),rows=nearBy(q,rad),shown=rows.slice(0,8),pend=pendingCount(),sid=siteIdOf(q),sp=sid?M.pts.get(sid):null,est=!!(sp&&sp.src==='name')&&rpcOk(GEO_SAVE),fixing=est&&!!(M.fx&&M.fx.key===keyOf(q)&&M.fx.open);
    return '<section class="isd-near"><header><b>근처에서 영업했던 현장</b><span>'+rows.length+'곳 · 반경 '+rad+'km</span><i></i>'+(extra||'')+'</header>'
     +'<div class="ctl"><div class="seg" role="group" aria-label="반경">'+[1,3,5].map(k=>'<button type="button" data-idv="rad" data-v="'+k+'" aria-pressed="'+(k===rad)+'">'+k+'km</button>').join('')+'</div>'+legend+'</div>'
     +'<div class="isd-map" data-isd-map></div>'
+    +(est?(fixing?fxHtml(q,true):'<span class="isd-est">이 현장 위치는 이름으로 찾은 추정입니다 · <button type="button" data-idv="geo-fix">위치 고치기</button></span>'):'')
     +(shown.length?'<div class="isd-nlist">'+shown.map(x=>nearRow(x,kmText(x.dist))).join('')+(rows.length>shown.length?'<span class="isd-more">외 '+(rows.length-shown.length)+'곳</span>':'')+'</div>':'<div class="isd-none">반경 '+rad+'km 안에 영업했던 현장이 없습니다.</div>')
     +(pend?'<span class="isd-pend">위치를 확인하는 중인 현장 '+pend+'곳은 아직 지도에 없습니다</span>':'')+tip+'</section>';
   }
-  const N=nearList(q),shown=N.list.slice(0,8);
+  const N=nearList(q),shown=N.list.slice(0,8),canFix=mode==='nocenter'&&!!siteIdOf(q)&&rpcOk(GEO_SAVE);
+  /* 못 찾은 현장: 이름으로 찾은 후보를 바로 보여 준다(한 번만) — 맞는 곳은 사람이 고른다 */
+  if(canFix){const F=fxOf(q);if(!F.auto){F.auto=true;F.text=nameHints(String(q.site||'')).query;if(F.text)setTimeout(()=>{if(M.fx===F&&F.st==='idle')fxFind(q);},0);}}
   return '<section class="isd-near"><header><b>근처에서 영업했던 현장</b><span>'+N.list.length+'곳'+(N.region?' · '+h(N.region):'')+'</span><i></i>'+(extra||'')+'</header>'
    +'<div class="ctl"><div class="seg" role="group" aria-label="반경">'+[1,3,5].map(k=>'<button type="button" disabled title="반경은 지도가 켜지면 고를 수 있습니다">'+k+'km</button>').join('')+'</div>'+legend+'</div>'
-   +'<div class="isd-map empty">'+mapNote(mode,N)+'</div>'
+   +'<div class="isd-map empty">'+mapNote(mode,N,q)+(canFix?fxHtml(q,false):'')+'</div>'
    +(shown.length?'<div class="isd-nlist">'+shown.map(x=>nearRow(x)).join('')+(N.list.length>shown.length?'<span class="isd-more">외 '+(N.list.length-shown.length)+'곳</span>':'')+'</div>':'<div class="isd-none">같은 지역에서 영업했던 현장이 없습니다.</div>')
    +tip+'</section>';
  }
@@ -386,5 +443,5 @@
  const DEAL_CTX={host:()=>document.getElementById('detailView'),alive:q=>{const c=root.CUR_DETAIL,v=document.getElementById('detailView');return !!(c&&c.kind==='deal'&&c.item===q.__deal&&v&&v.classList.contains('on'));}};
  const dealNear={html:(d,s)=>nearHtml(dealSubject(d),s,'',DEAL_CTX),mount:host=>mount(host),action:(k,v,b,d,s)=>onAction(k,v,b,dealSubject(d),s)};
  root.InquirySite={dealNear,on,KIND,REOPEN_RPC,deals,summary,badge,lostFacts,historyHtml,aiLine,timeline,hasHistory,openerClue,relationHtml,nearList,nearHtml,reopenReady,shortWork,
-  REOPEN_STAGES,GEO_LIST,GEO_SAVE,MAP_CFG,km:KM,kmText,nearBy,mapMode,mount,onAction,regionTokens,nameHints,GEO_RULE,cleanAddr,_map:M,_resetMap:resetMap};
+  REOPEN_STAGES,GEO_LIST,GEO_SAVE,MAP_CFG,km:KM,kmText,nearBy,mapMode,mount,onAction,regionTokens,nameHints,GEO_RULE,cleanAddr,fxSearch,_map:M,_resetMap:resetMap};
 })(window);
