@@ -65,6 +65,11 @@ test('consultation links preserve independent inquiries and enforce transactiona
   await t.test('untrusted sessions, ordinary reps and direct table access are denied',async()=>{
    await login(null);await assert.rejects(preview(),/forbidden/);
    await login(rep);await assert.rejects(preview(),/forbidden/);
+   await db.exec('reset role');await db.query('update crm_security.access_review set permission_role=null where user_id=$1',[admin]);
+   await login(admin);await assert.rejects(preview(),/forbidden/);
+   await assert.rejects(write({expected:{}}),/forbidden/);
+   await db.exec('reset role');await db.query("update crm_security.access_review set permission_role='admin' where user_id=$1",[admin]);
+   await login(rep);
    await assert.rejects(db.query('select * from crm_security.inquiry_consultation_links'),/permission denied/);
    await assert.rejects(db.query('select crm_security.consultation_can_read($1)',[right]),/permission denied/);
    await login(admin);
