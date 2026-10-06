@@ -72,7 +72,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* 오른쪽: 첫마디에 지난 이력 · 기존 건과 관계 · 근처에서 영업했던 현장(지도는 준비 중 — 사실대로 적는다) */
   assert.match(one(await d.locator('.idv3-opener').innerText()),/^첫마디 ?"안녕하세요, 넷폼 이필선입니다\. 작년 옥상 건 이후 다시 연락 주셔서 감사합니다\. 이번 옥상\(도로 보수\) 건으로 연락드렸습니다\. 지금 통화 괜찮으실까요\?"/);
   assert.deepEqual(await d.locator('.isd-rel .two button').evaluateAll(l=>l.map(b=>[b.textContent,b.disabled])),[['새 공사로 진행',true],['실주 건 다시 열기',true]],'서버 확인 전에는 잠금');
-  assert.equal(await page.evaluate(()=>{const t=window.TOKEN;try{TOKEN='t';return InquirySite.reopenReady();}finally{try{TOKEN=t;}catch(e){}}}),false,'다시 열기 명령이 서버에 생기기 전에는 로그인돼 있어도 잠금');
+  assert.deepEqual(await page.evaluate(()=>{const t=window.TOKEN;try{const off=InquirySite.reopenReady();TOKEN='t';return [off,InquirySite.reopenReady(),CRM_RPC_ALLOW.includes('crm_deal_reopen_v1')];}finally{try{TOKEN=t;}catch(e){}}}),[false,true,true],'다시 열기는 로그인 + 화면이 부를 수 있는 함수일 때만 열린다');
   assert.equal(one(await d.locator('.isd-rel small').innerText()),'공종이 다르면 새 공사 · 같은 공종이면 실주 건을 다시 열어 이력을 이어 갑니다');
   const NR=d.locator('.isd-near');
   assert.match(one(await NR.locator('header').innerText()),/^근처에서 영업했던 현장 3곳 · .*화성.* 담당 변경$/);
@@ -88,6 +88,26 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* 끄면 예전처럼 */
   const off=await page.evaluate(()=>{InquiryWorkbench.close();G.inqSiteOff=true;goPage('inq');paint();InquiryWorkbench.open(A);const dl=document.getElementById('inq-inbox-dialog');return [!!document.querySelector('.il-site i.il-sb'),!!document.querySelector('.il-site b u'),dl.querySelectorAll('.isd-hist,.isd-near,.isd-rel,.isd-scope').length,dl.querySelectorAll('.idv3-bottom').length];});
   assert.deepEqual(off,[false,true,0,1]);
+  /* [실주 건 다시 열기]: 단계 · 다음 행동 · 날짜를 받아 서버 명령으로 다시 열고, 문의를 그 영업건에 붙인다 */
+  await page.evaluate(()=>{InquiryWorkbench.close();G.inqSiteOff=false;TOKEN='t';window.RPC=[];B.deals[0].version=7;
+   SB={rpc:async(n,a)=>{RPC.push([n,a]);if(!a||!a.p||Object.keys(a).length!==1)return {error:{code:'PGRST202',message:'Could not find the function'}};
+    if(n==='crm_deal_reopen_v1')return {data:{ok:true,deal_id:a.p.deal_id,previous_version:7,version:8,from_stage:'lost',to_stage:a.p.to,stage_group:'sent',next_action:a.p.next_action,next_action_date:a.p.next_date,next_action_id:'n1',server_at:'2026-10-05T06:00:00Z'}};
+    if(n==='crm_inquiry_site_link_v1')return {data:{ok:true,decision:a.p.decision,deal_id:a.p.deal_id}};return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
+   goPage('inq');paint();InquiryWorkbench.open(A);});
+  await page.waitForSelector('#inq-inbox-dialog.idv3 .isd-rel');
+  assert.deepEqual(await d.locator('.isd-rel .two button').evaluateAll(l=>l.map(b=>[b.textContent,b.disabled])),[['새 공사로 진행',false],['실주 건 다시 열기',false]]);
+  assert.equal(await d.locator('.isd-reopen').count(),0);
+  await d.locator('[data-idv="site-reopen"]').click();await page.waitForTimeout(100);
+  assert.deepEqual(await d.locator('.isd-reopen').evaluate(n=>[n.querySelector('select').value,[...n.querySelectorAll('option')].map(x=>x.value).join(),n.querySelector('[data-idv="reopen-next"]').value,n.querySelector('[data-idv="reopen-date"]').value,n.querySelector('[data-idv="reopen-date"]').min]),
+   ['consulting','consulting,sent,rapport,silent,compete,imminent,bidding','재문의 건 첫 연락','2026-10-05','2026-10-05']);
+  await d.locator('[data-idv="reopen-next"]').fill('');await d.locator('[data-idv="reopen-save"]').click();await page.waitForTimeout(100);
+  assert.equal(one(await d.locator('.isd-rel .idv-err').innerText()),'다음 행동과 날짜를 정해 주세요');assert.equal(await page.evaluate(()=>RPC.filter(x=>x[0]==='crm_deal_reopen_v1').length),0,'다음 행동이 없으면 보내지 않는다');
+  await d.locator('[data-idv="reopen-to"]').selectOption('sent');await d.locator('[data-idv="reopen-next"]').fill('소장 통화 · 범위 다시 확인');await d.locator('[data-idv="reopen-date"]').fill('2026-10-07');
+  await d.locator('[data-idv="reopen-save"]').click();await page.waitForTimeout(500);
+  const ro=await page.evaluate(()=>{const c=RPC.find(x=>x[0]==='crm_deal_reopen_v1')[1].p,l=RPC.find(x=>x[0]==='crm_inquiry_site_link_v1')[1].p,x=B.deals[0],q=B.inquiries.find(i=>i.id===A);
+   return {c:[c.deal_id===x.id,c.expected_version,c.to,c.next_action,c.next_date,c.inquiry_id===A,!!c.note],l:[l.decision,l.deal_id===x.id],d:[x.code,x.grp,x.version,outcomeOf(x),x.closed_at,x.nextActionObj.text,x.nextActionObj.due],raw:[q.raw['기존 현장 판단'],q.raw['기존 영업건']===x.id]};});
+  assert.deepEqual(ro,{c:[true,7,'sent','소장 통화 · 범위 다시 확인','2026-10-07',true,true],l:['same',true],d:['sent','컨설팅·견적',8,'open',null,'소장 통화 · 범위 다시 확인','2026-10-07'],raw:['같은 공사',true]});
+  assert.deepEqual([await d.locator('.isd-reopen').count(),await d.locator('.isd-card.lost').count(),await d.locator('.isd-card.open').count()],[0,0,1],'다시 연 건은 진행 카드로 보인다');
   assert.deepEqual(errs,[],'화면 오류 없음: '+errs.join(' | '));
   console.log('inquiry site ok');
  }finally{await browser.close();srv.close();}
