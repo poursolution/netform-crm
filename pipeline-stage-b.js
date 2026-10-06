@@ -154,8 +154,8 @@
   const head='<div class="psb-lhead"><b>확인할 현장 <span>'+listed.length+'곳</span></b>'+(filters.length?'<em>'+h(filters.join(' · '))+'</em>':'')+'<i></i><div class="psb-views"><button type="button" data-psb="view" data-v="list" aria-pressed="'+(S.view==='list')+'">리스트</button><button type="button" data-psb="view" data-v="board" aria-pressed="'+(S.view==='board')+'">보드</button></div></div>';
   let body;
   if(S.view==='board')body='<div class="psb-board">'+C.S.map(s=>{const all=listed.filter(i=>i.bucket===s[0]),cp=LP.cut(all,LP.page(S,'col:'+s[0])),cards=cp.rows;return '<div class="psb-col"><div class="ch"><i style="background:'+s[2]+'"></i><b>'+h(s[1])+'</b><span>'+all.length+'</span><em>'+h(s[3])+'</em></div>'+(cards.length?cards.map(i=>cardHtml(C,i,S.reason)).join(''):'<p class="psb-none">없음</p>')+LP.html(cp,{ns:'psb',v:'col:'+s[0],small:true,info:false})+'</div>';}).join('')+'</div>';
-  else{const V=V11(),pv=V?LP.cut(V.sort(listed,i=>i.row),LP.page(S)):pg,rowsV=pv.rows;if(S.open&&!rowsV.some(i=>i.row.key===S.open))S.open=null;
-   body='<div class="psb-list'+(V?' prv-list':'')+'">'+(V?V.head():'')+(rowsV.length?rowsV.map(i=>V?V.row(v11(key,C,i,S.reason),S.open===i.row.key,'psb','psb-row'):rowHtml(C,i,S.reason)).join(''):'<div class="psb-empty">해당하는 현장이 없습니다.</div>')+LP.html(pv,{ns:'psb',unit:'곳'})+'</div>';}
+  else{const V=V11(),pv=V?LP.cut(V.sort(listed,i=>i.row),LP.page(S)):pg,rowsV=pv.rows;
+   body='<div class="psb-list'+(V?' prv-list':'')+'">'+(V?V.head():'')+(rowsV.length?rowsV.map(i=>V?V.row(v11(key,C,i,S.reason),'psb','psb-row'):rowHtml(C,i,S.reason)).join(''):'<div class="psb-empty">해당하는 현장이 없습니다.</div>')+LP.html(pv,{ns:'psb',unit:'곳'})+'</div>';}
   return '<div id="pipeline-stage-b" class="psb" data-stage="'+key+'"><div class="psb-head"><b>'+h(C.name)+'</b><span>'+h(C.desc())+'</span></div><div class="psb-body">'+diag+'<section class="psb-main">'+head+body+'</section></div></div>';
  }
  /* 열기: 기존 상세 + 액션(연락 결과 · 다음 할 일 · 단계 필드 · 단계 전환 · 지원 요청). 확장관리 등록은 확장관리 화면으로 */
@@ -170,16 +170,13 @@
  }
  function onClick(e){
   const b=e.target.closest('#pipeline-stage-b [data-psb]');if(!b)return;const S=st(),a=b.dataset.psb,v=b.dataset.v,key=root.G.pipelineStage,C=CFG[key];
-  if(a==='toggle'){if(e.target.closest('button,a'))return;S.open=S.open===b.dataset.key?null:b.dataset.key;return root.paint();}/* 줄을 누르면 그 줄 아래 펼침(한 번에 한 줄) */
-  if(a==='call')return;
-  if(a==='bucket'){S.bucket=S.bucket===v?'all':v;S.reason=null;S.open=null;root.ListPager.reset(S);return root.paint();}
-  if(a==='reason'){S.reason=S.reason===v?null:v;S.open=null;root.ListPager.reset(S);return root.paint();}
-  if(a==='clear'){S.bucket='all';S.reason=null;S.open=null;root.ListPager.reset(S);return root.paint();}
+  if(a==='bucket'){S.bucket=S.bucket===v?'all':v;S.reason=null;root.ListPager.reset(S);return root.paint();}
+  if(a==='reason'){S.reason=S.reason===v?null:v;root.ListPager.reset(S);return root.paint();}
+  if(a==='clear'){S.bucket='all';S.reason=null;root.ListPager.reset(S);return root.paint();}
   if(a==='view'){S.view=v;return root.paint();}
-  if(a==='page'){S.open=null;root.ListPager.set(S,v,b.dataset.page);return root.paint();}
+  if(a==='page'){root.ListPager.set(S,v,b.dataset.page);return root.paint();}
   e.stopPropagation();
-  if(a==='detail')return open(b.dataset.key);
-  if(a==='act')return open(b.dataset.key,b.closest('.prv-main')?(v||''):(C&&C.RS[v]?C.RS[v][4]:''));/* v11 줄의 버튼은 동작 이름을 그대로 넘긴다(보드 카드는 사유 키) */
+  if(a==='act')return open(b.dataset.key,b.closest('.prv-row')?(v||''):(C&&C.RS[v]?C.RS[v][4]:''));/* v11 줄의 버튼은 동작 이름을 그대로 넘긴다(보드 카드는 사유 키) */
   if(a==='open'&&!e.target.closest('button'))return open(b.dataset.key);
  }
  /* PipelineListV2.paint 를 감싼다: B안이 켜져 있으면 B안을 그리고 true */
@@ -188,9 +185,9 @@
  L2.paint=function(el,key,list){
   if(!enabled(key)||!L2.enabled(key))return basePaint.apply(this,arguments);
   const pg=document.getElementById('pg-pipe');pg?.classList.add('plv-on');pg?.classList.add('psb-on');
-  const S=st();if(S.key!==key){S.key=key;S.bucket='all';S.reason=null;S.open=null;root.ListPager.reset(S);}
+  const S=st();if(S.key!==key){S.key=key;S.bucket='all';S.reason=null;root.ListPager.reset(S);}
   el.classList.remove('pk-mode');el.innerHTML=html(key,list);
-  if(!el.__psb){el.__psb=true;el.addEventListener('click',onClick,true);el.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('#pipeline-stage-b [data-psb="open"],#pipeline-stage-b [data-psb="toggle"]')){e.preventDefault();e.target.click();}});}
+  if(!el.__psb){el.__psb=true;el.addEventListener('click',onClick,true);el.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('#pipeline-stage-b [data-psb="open"]')){e.preventDefault();e.target.click();}});}
   document.getElementById('ptitle').textContent=CFG[key].name;const ps=document.getElementById('psub');if(ps)ps.textContent='왼쪽 단계 진단 → 오른쪽 확인할 현장 · 빨강 사유부터';
   root.CommonFilterBar?.mount('pipe');const bar=pg?.querySelector(':scope>.cf-bar');if(bar)bar.hidden=false;
   return true;

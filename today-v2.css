@@ -56,3 +56,5 @@
 @media(max-width:1100px){.tv-board{overflow-x:auto}.tv-bgroups,.tv-bhead,.tv-brow{min-width:900px}.tv-thead{display:none}.tv-row{grid-template-columns:minmax(0,1fr) 76px;gap:6px 12px}.tv-row .tv-c:first-child{grid-column:1}.tv-row .tv-cta{grid-column:2;grid-row:1}.tv-row .tv-task{grid-column:1/-1}.tv-ghead small{display:none}}
 /* 예전 공통 상단 필터(브랜드·담당자 구분·기간)는 공통 고정 필터줄과 미배정 알림의 기간 칩으로 대신한다 — 오늘 업무 새 화면에서만 감춘다 */
 body:has(#pg-today.on.today-v2) #unibar{display:none!important}
+/* 자료를 받는 동안(아직 today-v2 가 붙기 전)에도 예전 두 줄 필터(#unibar)는 보이지 않는다 — 예전 화면은 끄기 · 실패(.today-legacy)일 때만(2026-10-06 대표 "전버전이야, 이 버전 삭제") */
+body:has(#pg-today.on:not(.today-legacy)) #unibar{display:none!important}

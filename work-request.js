@@ -9,6 +9,7 @@
 (function(root){
  'use strict';
  const R=root,h=v=>R.esc(String(v==null?'':v)),attr=v=>R.escAttr(String(v==null?'':v));
+ const LEGACY_LABEL='과거 자료 재개';/* 과거 이관 · 분류 전 화면이 보내는 묶음 요청(pipeline-legacy.js) — 받는 쪽에서는 한 카드로 */
  const RPC={create:'crm_work_request_create_v1',list:'crm_work_request_list_v1',reply:'crm_work_request_reply_v1',reask:'crm_work_request_reask_v1'};
  const O=()=>R.OpsStore,T=()=>R.TodayWorkQueue;
  const ready=()=>{try{return !R.G.workRequestOff&&!!O()&&O().has(RPC.list)&&O().has(RPC.create)&&O().has(RPC.reply);}catch(e){return false;}};
@@ -216,7 +217,11 @@
     +'<div class="ft"><span>완료 조건 · '+h(K.done||'')+' — 입력되면 자동 완료 · 따로 [완료] 없음</span><button type="button" class="go" data-wr="go" data-id="'+r.id+'">열어서 입력</button></div></article>';};
   /* 받은 사람이 화면을 열면 '담당 확인'으로 */
   L.filter(r=>r.status==='sent'&&!S.closing['seen:'+r.id]).forEach(r=>{S.closing['seen:'+r.id]=true;O().rpc(RPC.reply,{id:r.id,action:'seen'}).then(x=>put(x.request)).catch(()=>{});});
-  return '<section class="wrq-top" aria-label="받은 요청">'+L.map(card).join('')+'</section>';
+  const LG=L.filter(r=>r.label===LEGACY_LABEL),rest=L.filter(r=>r.label!==LEGACY_LABEL);
+  const bundle=LG.length?'<article class="wrq-in wrq-legacy"><div class="hd"><em>관리자 요청</em><b>'+h(LEGACY_LABEL+' '+LG.length+'건')+'</b><i></i><span class="by'+(LG.some(overdue)?' od':'')+'">'+h((LG[0].requested_by||'관리자')+' · '+whenTxt(LG[0].reasked_at||LG[0].created_at)+' · '+(LG[0].due_label||'')+'까지')+(LG.some(overdue)?' · 기한 지남':'')+'</span></div>'
+   +'<span class="memo">예전 시스템에서 옮겨 온 자료입니다 · 한 건씩 [영업 재개]에서 지금 단계 · 다음 행동 · 날짜를 정하면 그 건은 자동으로 완료됩니다</span>'
+   +'<div class="wrq-lg">'+LG.map(r=>'<div><b title="'+attr(r.site)+'">'+h(r.site)+'</b><button type="button" data-wr="resume" data-id="'+r.id+'">영업 재개</button></div>').join('')+'</div></article>':'';
+  return '<section class="wrq-top" aria-label="받은 요청">'+bundle+rest.map(card).join('')+'</section>';
  }
  /* [저장] = 실제 기록 저장(기존 저장 길) → 성공하면 요청 자동 완료. 부재는 연락 시도로만 남는다 */
  async function saveCard(id){
@@ -241,6 +246,7 @@
  /* ── 실제 기록으로 자동 완료: 받은 사람(또는 관리자) 화면에서 완료 조건이 채워진 열린 요청을 닫는다 ── */
  function evidence(r){
   const t=target(r),it=t.item;if(!it)return null;const since=Date.parse(r.created_at);
+  if(r.label===LEGACY_LABEL){try{return R.PipelineScope&&R.PipelineScope.on()&&!R.PipelineScope.isLegacy(it)?{result:'영업 재개 확인',absent:false}:null;}catch(e){return null;}}
   try{
    if(r.kind==='branch'||r.kind==='deadline'||r.kind==='support')return null;
    if(r.target_type==='inquiry'){const F=R.InquiryFlow&&R.InquiryFlow.on&&R.InquiryFlow.on()?R.InquiryFlow:null;if(!F)return null;const L=(F.state(it).logs||[]).filter(l=>Date.parse(l.at)>=since);
@@ -262,6 +268,7 @@
  function dial(d){if(!d)return;const a=document.createElement('a');a.href='tel:'+d;a.style.display='none';document.body.append(a);a.click();a.remove();}
  function onClick(e){
   const b=e.target.closest('[data-wr]');if(!b||b.disabled)return;const a=b.dataset.wr,S=st(),id=b.dataset.id,M=S.modal;
+  if(a==='resume'){const r=S.list.find(x=>x.id===id);if(r&&R.PipelineLegacy&&typeof R.PipelineLegacy.open==='function')R.PipelineLegacy.open(String(r.target_id),true);return;}
   if(!b.closest('#pg-today')&&!b.closest('#wrq-modal'))return;e.preventDefault();e.stopPropagation();
   if(a==='ask')return openModal(b.dataset.key);
   if(a==='close')return closeModal();

@@ -138,21 +138,18 @@
   let body;
   if(S.view==='board')body='<div class="ps3-board">'+C.tabs.map((t,i)=>{const all=items.filter(x=>x.tab===i&&(!S.reason||x.rs.includes(S.reason))),cp=LP.cut(all,LP.page(S,'col:'+i)),cards=cp.rows;
     return '<div class="ps3-col"><div class="ch"><b title="'+attr(t[0])+'">'+h(t[0])+'</b><b class="c'+(i===0?' r':'')+'">'+n[i].toLocaleString('ko-KR')+'</b></div>'+(cards.length?cards.map(x=>cardHtml(C,x)).join(''):'<p class="ps3-none">없음</p>')+LP.html(cp,{ns:'ps3',v:'col:'+i,small:true,info:false})+'</div>';}).join('')+'</div>';
-  else{const V=V11(),pg=LP.cut(V?V.sort(listed,x=>x.row):listed,LP.page(S));if(S.open&&!pg.rows.some(x=>x.row.key===S.open))S.open=null;
-   body='<div class="ps3-list'+(V?' prv-list':'')+'" role="table" aria-label="확인할 현장">'+(V?V.head():'')+(pg.rows.length?pg.rows.map(x=>V?V.row(v11(key,C,x),S.open===x.row.key,'ps3','ps3-row'):rowHtml(C,x)).join(''):'<div class="ps3-empty">해당하는 현장이 없습니다</div>')+LP.html(pg,{ns:'ps3',unit:'곳'})+'</div>';}
+  else{const V=V11(),pg=LP.cut(V?V.sort(listed,x=>x.row):listed,LP.page(S));
+   body='<div class="ps3-list'+(V?' prv-list':'')+'" role="table" aria-label="확인할 현장">'+(V?V.head():'')+(pg.rows.length?pg.rows.map(x=>V?V.row(v11(key,C,x),'ps3','ps3-row'):rowHtml(C,x)).join(''):'<div class="ps3-empty">해당하는 현장이 없습니다</div>')+LP.html(pg,{ns:'ps3',unit:'곳'})+'</div>';}
   return '<div id="pipeline-stage-v3" class="ps3" data-stage="'+key+'"><div class="ps3-top"><div class="ps3-head"><b>'+h(C.name)+'</b><span>'+h(C.desc)+'</span></div>'+tabs+'</div><div class="ps3-body">'+diag+'<section class="ps3-main">'+head+body+'</section></div></div>';
  }
  function onClick(e){
   const b=e.target.closest('#pipeline-stage-v3 [data-ps3]');if(!b||b.disabled)return;const S=st(),a=b.dataset.ps3,v=b.dataset.v,LP=root.ListPager;
-  if(a==='toggle'){if(e.target.closest('button,a'))return;S.open=S.open===b.dataset.key?null:b.dataset.key;return root.paint();}/* 줄을 누르면 그 줄 아래 펼침(한 번에 한 줄) */
-  if(a==='call')return;
-  if(a==='tab'){S.tab=Number(v);S.reason=null;S.open=null;LP.reset(S);return root.paint();}
-  if(a==='reason'){S.reason=S.reason===v?null:v;S.open=null;LP.reset(S);return root.paint();}
-  if(a==='clear'){S.reason=null;S.open=null;LP.reset(S);return root.paint();}
+  if(a==='tab'){S.tab=Number(v);S.reason=null;LP.reset(S);return root.paint();}
+  if(a==='reason'){S.reason=S.reason===v?null:v;LP.reset(S);return root.paint();}
+  if(a==='clear'){S.reason=null;LP.reset(S);return root.paint();}
   if(a==='view'){S.view=v;return root.paint();}
-  if(a==='page'){S.open=null;LP.set(S,v,b.dataset.page);return root.paint();}
+  if(a==='page'){LP.set(S,v,b.dataset.page);return root.paint();}
   e.stopPropagation();
-  if(a==='detail')return B.open(b.dataset.key);
   if(a==='act')return B.open(b.dataset.key,v);
   if(a==='open'&&!e.target.closest('button'))return B.open(b.dataset.key);
  }
@@ -161,9 +158,9 @@
  L2.paint=function(el,key,list){
   if(!enabled(key)||!L2.enabled(key))return prevPaint.apply(this,arguments);
   const pg=document.getElementById('pg-pipe');pg?.classList.add('plv-on');pg?.classList.add('psb-on');
-  const S=st();if(S.key!==key){S.key=key;S.tab=-1;S.reason=null;S.open=null;root.ListPager.reset(S);}
+  const S=st();if(S.key!==key){S.key=key;S.tab=-1;S.reason=null;root.ListPager.reset(S);}
   el.classList.remove('pk-mode');el.innerHTML=html(key,list);
-  if(!el.__ps3){el.__ps3=true;el.addEventListener('click',onClick,true);el.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('#pipeline-stage-v3 [data-ps3="open"],#pipeline-stage-v3 [data-ps3="toggle"]')){e.preventDefault();e.target.click();}});}
+  if(!el.__ps3){el.__ps3=true;el.addEventListener('click',onClick,true);el.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('#pipeline-stage-v3 [data-ps3="open"]')){e.preventDefault();e.target.click();}});}
   const C=cfg(key);document.getElementById('ptitle').textContent=C.name.replace(' · ','·');const ps=document.getElementById('psub');if(ps)ps.textContent='위 상태 탭 → 왼쪽 단계 진단 · 오른쪽 확인할 현장';
   root.CommonFilterBar?.mount('pipe');const bar=pg?.querySelector(':scope>.cf-bar');if(bar)bar.hidden=false;
   return true;
