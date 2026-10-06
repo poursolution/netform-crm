@@ -399,7 +399,7 @@
   });
   const head=sec.querySelector('.idv-chead');
   if(head){const hh='<b>응대 이력</b><span>'+msgs.length+'건</span><span class="cnt">연락 시도 <b>'+tries+'</b> · 실제 연결 <b>'+conn+'</b></span>';if(head.dataset.h!==hh){head.innerHTML=hh;head.dataset.h=hh;}}
-  if(tidy()){const none=sec.querySelector('.ddv-nothing'),t='아직 없습니다. 위에 첫 연락 결과를 적으면 여기 쌓입니다.';if(none&&none.textContent!==t)none.textContent=t;}
+  if(tidy()){const none=sec.querySelector('.ddv-nothing'),t='아직 없습니다. 아래에 첫 연락 결과를 적으면 여기 쌓입니다.';if(none&&none.textContent!==t)none.textContent=t;}
   const box=sec.querySelector('#ddvComposer');if(!box||closed)return;
   if(!box.dataset.dv3){
    box.dataset.dv3='1';
