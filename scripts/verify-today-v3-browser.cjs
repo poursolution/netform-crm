@@ -5,7 +5,8 @@
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=path.resolve(__dirname,'..'),shot=process.argv[2]||'',dump=process.env.T3_DUMP==='1';
-const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':t.endsWith('.png')?'image/png':'text/html');fs.createReadStream(t).pipe(res)});
+const earlyBootFixture="<script>\nloadData=async function(){};AUTH_ON=true;ME={id:'boot-test',name:'테스트 관리자',role:'admin'};\nB={deals:[],inquiries:[{id:'11111111-1111-4111-8111-111111111111',site:'초기 로딩 검증 현장',status:'접수',at:new Date().toISOString(),created_at:new Date().toISOString(),brand:'POUR솔루션',phone:'01000000000',contact_name:'검증 고객',raw:{}}],activities:[],inquiryTrash:[],expansion_pool:[]};\nLOCAL={deals:{},inquiries:{}};G.page='today';G.year='전체';G.quarter=0;G.brand='전체';G.rep='전체';G.q='';G.today3=null;G.tower=null;G.todayAssistOff=true;\nwindow.saveLocal=function(){};window.pushWrite=function(){throw new Error('TEST_NO_WRITES')};\ndocument.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';\ngoPage('today');\ndocument.addEventListener('DOMContentLoaded',()=>{document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';});\n</script>";
+const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':t.endsWith('.png')?'image/png':'text/html');if(t.endsWith('crm.html')&&new URL(req.url,'http://localhost').searchParams.get('boot')==='early')return res.end(fs.readFileSync(t,'utf8').replace('</body>',earlyBootFixture+'</body>'));fs.createReadStream(t).pipe(res)});
 (async()=>{
  await new Promise(r=>srv.listen(0,'127.0.0.1',r));
  const browser=await chromium.launch({headless:true,...(process.env.EDGE_PATH?{executablePath:process.env.EDGE_PATH}:{})});
@@ -14,6 +15,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});
   const page=await ctx.newPage(),errs=[];page.on('pageerror',e=>errs.push(e.message));
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.TodayV2&&window.TodayV3&&window.TodayTower&&window.TodayWorkQueue&&window.CommonFilterBar);
+  /* 회귀: 저장된 로그인/빠른 응답으로 본문이 DOMContentLoaded 전에 그려져도 최신 화면과 필터가 나온다. */
+  await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html?boot=early`);
+  await page.waitForSelector('#today-v2 .tv3');
+  assert.equal(await page.locator('#pg-today').evaluate(e=>e.classList.contains('today-v2')),true,'첫 진입에서 최신 오늘 업무가 자동 렌더됨');
+  assert.equal(await page.locator('#pg-today > .cf-bar').isVisible(),true,'첫 진입에서 공통 필터 표시');
+  assert.equal(await page.locator('#unibar').isVisible(),false,'이전 두 줄 필터 숨김');
+  assert.equal(await page.locator('#today-home-root').isVisible(),false,'이전 목록 숨김');
+  assert.match(await page.locator('#today-v2').innerText(),/초기 로딩 검증 현장/);
+  await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);
   const seed=async(me)=>page.evaluate((me)=>{
    const at=d=>new Date(Date.now()-d*864e5).toISOString(),day=d=>new Date(Date.now()+d*864e5).toLocaleDateString('en-CA');
    const inq=(i,site,days,extra)=>Object.assign({id:'0000000'+i+'-0000-4000-8000-00000000000'+i,site,status:'배정완료',at:at(days),created_at:at(days),brand:'POUR솔루션',phone:'010-1234-56'+(10+i),contact_name:'고객'+i,assignee:'이필선',assigned_to:'이필선',assigned_at:at(days-0.1),memo:'옥상 방수 견적 문의',raw:{'문의내용':'견적 문의'}},extra||{});
