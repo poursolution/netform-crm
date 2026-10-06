@@ -55,7 +55,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
    window.CRMRelease=Object.assign(window.CRMRelease||{},{has:n=>true,noteMissing:()=>{}});
    try{localStorage.removeItem('crm.inqFlow.outbox.v1');}catch(e){}
-   goPage('inq');window.A=A;window.R=R;window.M=M;window.C=C;
+   G.inqV4Off=true;/* 흐름 판정 · 저장을 목록 v3 의 줄에서 누르며 본다(끄기 스위치 뒤) — 보이는 화면의 저장은 verify-inquiry-v4-browser.cjs */goPage('inq');window.A=A;window.R=R;window.M=M;window.C=C;
   });
   await page.waitForTimeout(700);
   const v=page.locator('#inq-v3'),row=site=>page.locator('#inq-v3 .il-row',{hasText:site});
