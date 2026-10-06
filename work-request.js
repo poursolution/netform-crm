@@ -64,14 +64,21 @@
  /* ── 오늘 업무 항목 → 요청 ── */
  const typeOf=i=>i.x.type==='inq'?'inquiry':i.x.type==='deal'?'deal':'';
  const isBranch=i=>{try{return i.x.type==='inq'&&R.itemOwnerTeam(i.x.item)==='gyeongnam';}catch(e){return false;}};
+ // 지사 경과는 실제 배정일 기준. 접수일이나 마지막 연락일로 대신 추정하지 않는다.
+ function branchDays(i){
+  try{
+   const at=R.inquiryAssignedAt(i.x.item);if(!at)return null;
+   const days=R.gnDaysSince(at);return Number.isFinite(days)&&days>=0?days:null;
+  }catch(e){return null;}
+ }
  function reqFor(i,me){
   if(!enabled()||!i||!i.x||!i.x.item)return null;const type=typeOf(i);if(!type)return null;
   const br=isBranch(i),kind=br&&(i.rk==='first'||i.rk==='assign'||i.rk==='promise'||i.rk==='stall')?'branch':RK[i.rk];if(!kind)return null;
   const own=rep(i.x.owner)===(me||meName());
   if(own&&kind!=='branch')return {self:true,label:'직접 전화',why:'내 담당 · 요청 대상 없음 → 바로 전화'};
   const to=kind==='branch'?BRANCH_TO:rep(i.x.owner);if(!to||to==='미배정')return null;
-  const K=KIND[kind];
-  return {kind,label:K.label,to,scope:kind==='branch'?'branch':'user',type,id:String(i.x.item.id||''),K,recall:kind==='branch'&&(i.days||0)>=RECALL_DAYS(),why:kind==='branch'?((i.days||0)>=RECALL_DAYS()?'넘긴 지 '+i.days+'일 · 본사 회수 검토 권장':'이관 후 담당 지정 · 첫 연락 여부를 회신받아야 합니다'):(i.loss?'놓치면 '+i.loss:K.done)};
+  const K=KIND[kind],days=kind==='branch'?branchDays(i):null;
+  return {kind,label:K.label,to,scope:kind==='branch'?'branch':'user',type,id:String(i.x.item.id||''),K,branchDays:days,recall:kind==='branch'&&days!==null&&days>=RECALL_DAYS(),why:kind==='branch'?(days!==null&&days>=RECALL_DAYS()?'넘긴 지 '+days+'일 · 본사 회수 검토 권장':'이관 후 담당 지정 · 첫 연락 여부를 회신받아야 합니다'):(i.loss?'놓치면 '+i.loss:K.done)};
  }
  const openFor=(type,id,kind)=>st().list.find(r=>r.target_type===type&&String(r.target_id)===String(id)&&r.kind===kind&&isOpen(r))||null;
  /* 답을 기다리는 건은 보낸 쪽 목록에서 뺀다(= 같은 요청 잠금) */
@@ -178,8 +185,8 @@
  function autoBranch(){
   const S=st();if(!BRANCH_AUTO()||!S.loaded||S.autoDay===ymd(new Date()))return;let V=null;try{V=R.TodayV3&&R.TodayV3.current?R.TodayV3.current():null;}catch(e){}
   if(!V||!V.team)return;S.autoDay=ymd(new Date());const me=meName(),weekAgo=Date.now()-7*864e5;
-  V.mine.filter(i=>{const q=reqFor(i,me);return q&&q.kind==='branch'&&(i.days||0)>=SILENT_DAYS()&&!S.list.some(r=>r.target_type===q.type&&String(r.target_id)===q.id&&r.kind==='branch'&&(isOpen(r)||Date.parse(r.created_at)>=weekAgo));}).forEach(i=>{const q=reqFor(i,me),at=dueAt('내일 12시');
-   O().rpc(RPC.create,{target_type:q.type,target_id:q.id,site:i.i.site,brand:i.brand||'',kind:'branch',label:q.label,to_scope:'branch',to_name:q.to,asks:q.K.asks.filter((_,n)=>q.K.def[n]),due_at:at.toISOString(),due_label:'내일 12시',memo:'넘긴 지 '+i.days+'일 · 지사 응대 기록이 없어 자동으로 확인을 요청합니다.'}).then(r=>{put(r.request);repaint();}).catch(()=>{});});
+  V.mine.filter(i=>{const q=reqFor(i,me);return q&&q.kind==='branch'&&q.branchDays!==null&&q.branchDays>=SILENT_DAYS()&&!S.list.some(r=>r.target_type===q.type&&String(r.target_id)===q.id&&r.kind==='branch'&&(isOpen(r)||Date.parse(r.created_at)>=weekAgo));}).forEach(i=>{const q=reqFor(i,me),at=dueAt('내일 12시');
+   O().rpc(RPC.create,{target_type:q.type,target_id:q.id,site:i.i.site,brand:i.brand||'',kind:'branch',label:q.label,to_scope:'branch',to_name:q.to,asks:q.K.asks.filter((_,n)=>q.K.def[n]),due_at:at.toISOString(),due_label:'내일 12시',memo:'넘긴 지 '+q.branchDays+'일 · 지사 응대 기록이 없어 자동으로 확인을 요청합니다.'}).then(r=>{put(r.request);repaint();}).catch(()=>{});});
  }
  function reask(id){
   const r=st().list.find(x=>x.id===id);if(!r||!overdue(r))return;const br=r.kind==='branch',label=br?'내일 12시':(new Date().getHours()>=17?'오늘 중':'오늘 17:00'),at=dueAt(label);
