@@ -120,6 +120,17 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    InquiryWorkbench.open(A);await new Promise(r=>setTimeout(r,900));kakao.maps.services.Geocoder=G0;
    return [GEO.saved.length,InquirySite._map.err,InquirySite._map.todo.size,!!document.querySelector('#inq-inbox-dialog [data-isd-map] .isd-mapbox')];});
   assert.deepEqual(er,[0,'blocked',1,true]);
+  /* ⑤-3 찾기 규칙 2판: 이름 맨 앞의 시도명 · 맨 뒤의 시군구를 지역 단서로 쓴다 */
+  assert.deepEqual(await page.evaluate(()=>[InquirySite.GEO_RULE,InquirySite.nameHints('대전합성아파트'),InquirySite.nameHints('서울가든아파트 도봉구'),InquirySite.nameHints('서울 가락합성3차 105동(단독관리동)'),InquirySite.nameHints('[경기 화성] 동탄파크뷰'),InquirySite.nameHints('다른이름타워')]),
+   [2,{tokens:['대전'],keys:['대전합성','합성'].filter(k=>k.length>=3),query:'대전합성아파트'},{tokens:['서울','도봉'],keys:['서울가든도봉구','서울가든'],query:'서울가든아파트 도봉구'},{tokens:['서울'],keys:['서울가락합성3차105동','서울가락합성3차','가락합성3차'],query:'서울 가락합성3차 105동'},{tokens:['경기','화성'],keys:['동탄파크뷰'],query:'경기 화성 동탄파크뷰'},{tokens:[],keys:['다른이름타워'],query:'다른이름타워'}]);
+  /* 예전 판(1)에서 못 찾은 현장 · 그 뒤 주소가 채워진 현장만 다시 찾는다 — 이미 새 판(2)으로 못 찾은 곳은 다시 찾지 않는다 */
+  const rt=await page.evaluate(async()=>{InquiryWorkbench.close();InquirySite._resetMap();GEO.saved=[];KLOG.place.length=0;KLOG.addr.length=0;
+   GEO.sites=[[U(1),C[0],C[1],'address',null,null,1,null],[U(3),null,null,'none',null,'대전합성타운아파트',1,'대전합성타운아파트'],[U(4),null,null,'none',null,'[경기 화성] 동탄파크뷰',2,'[경기 화성] 동탄파크뷰'],[U(5),null,null,'none','경기 화성시 동탄대로 99','다른이름타워',2,'다른이름타워']];
+   const P0=kakao.maps.services.Places;kakao.maps.services.Places=class{keywordSearch(q,cb){KLOG.place.push(q);const R=q.includes('합성타운')?[{place_name:'합성타운아파트',address_name:'부산 해운대구 우동 9',road_address_name:'',y:'35.16',x:'129.16'},{place_name:'합성타운아파트',address_name:'대전 유성구 봉명동 1',road_address_name:'대전 유성구 대학로 1',y:'36.35',x:'127.34'}]:[];setTimeout(()=>R.length?cb(R,'OK'):cb([],'ZERO_RESULT'),0);}};
+   InquiryWorkbench.open(A);await new Promise(r=>setTimeout(r,1300));kakao.maps.services.Places=P0;
+   return {saved:GEO.saved.map(r=>[r.site_id.slice(-1),r.source,r.lat||null,r.rule,r.matched||null]).sort((a,b)=>a[0].localeCompare(b[0])),place:KLOG.place.slice(),addr:KLOG.addr.slice(),none4:InquirySite._map.pts.get(U(4)),todo:InquirySite._map.todo.size};});
+  assert.deepEqual(rt.saved,[['3','name',36.35,2,'합성타운아파트 · 대전 유성구 대학로 1'],['5','address',37.2005,2,'경기 화성시 동탄대로 99']],'대전 것만 고른다(부산의 같은 이름은 지역 단서로 걸러짐) · 주소가 생긴 곳은 주소로');
+  assert.deepEqual([rt.place,rt.addr,rt.none4,rt.todo],[['대전합성타운아파트'],['경기 화성시 동탄대로 99'],null,0],'새 판으로 이미 못 찾은 곳(4번)은 다시 찾지 않는다');
   /* ⑥ 서버 함수가 없으면 1차 화면 그대로 */
   const off=await page.evaluate(async()=>{InquiryWorkbench.close();InquirySite._resetMap();SB={rpc:async()=>({error:{code:'PGRST202',message:'Could not find the function'}})};InquiryWorkbench.open(A);await new Promise(r=>setTimeout(r,200));const m=document.querySelector('#inq-inbox-dialog .isd-map');return [m.classList.contains('empty'),m.textContent.startsWith('지도 준비 중카카오맵 키 등록과 현장 좌표 저장이 끝나면'),document.querySelectorAll('#inq-inbox-dialog .isd-nrow').length];});
   assert.deepEqual(off,[true,true,3]);
