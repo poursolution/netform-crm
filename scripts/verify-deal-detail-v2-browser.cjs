@@ -47,7 +47,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 가운데: 말풍선 시간순 + 입력칸 */
   assert.deepEqual(await v.locator('.ddv-talk .idv-msg .idv-bubble').allInnerTexts(),['견적서 발송 안내 문자','통화 완료 · 진행 중 (예산 확인 중이라고 함)','관리소장 교체 예정이라고 들음']);
   assert.equal(await v.locator('.ddv-talk .idv-msg.out').count(),2);assert.equal(await v.locator('.ddv-talk .idv-msg.memo').count(),1);
-  assert.deepEqual(await v.locator('#ddvComposer [role=tab]').allInnerTexts(),['통화 기록','문자 기록','내부 메모']);
+  assert.deepEqual(await v.locator('#ddvComposer [role=tab]').allInnerTexts(),['통화 기록','내부 메모']);
   /* 오른쪽: 지금 할 일 → 챙길 정보 → 단계 바꾸기 */
   assert.equal(await page.evaluate(()=>[...document.querySelector('#detailView .dw-right').children].filter(n=>getComputedStyle(n).display!=='none').map(n=>n.id||n.className.split(' ').pop()).join('|')),'nowCard|da-stage-summary|ddv-switch');
   assert.match(await v.locator('#nowCard').innerText(),/지금 할 일[\s\S]*통화 후 진행 확인[\s\S]*9일 지남[\s\S]*연락하고 결과 남기기[\s\S]*다음 할 일 · 날짜/);

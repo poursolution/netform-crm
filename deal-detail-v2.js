@@ -2,7 +2,7 @@
    기존 상세(연락처·다음 할 일·단계 전환·금액·공종·자료·관리정보 입력과 저장)는 그대로 두고, 그 위에 틀만 다시 짠다.
    머리: 칩(브랜드·단계·공종) + 현장명 + "담당 · 예상 금액 · 단계 N일째" + 영업 진행 막대 6칸(영업 흐름 줄·영업 진행도를 이 막대로 합침)
    ① 왼쪽 고객·현장: 연락처 카드 · 관리 정보 6줄([공종][금액][수정]) · 자료
-   ② 가운데 고객과 주고받은 내용: 말풍선 대화(기존 통합 이력) + 입력칸(통화 기록·문자 기록·내부 메모 → 기존 연락 기록 저장 경로)
+   ② 가운데 고객과 주고받은 내용: 말풍선 대화(기존 통합 이력) + 입력칸(통화 기록·내부 메모 → 기존 연락 기록 저장 경로). 문자는 왼쪽 버튼에서 발송하고 기존 통합 이력에 표시
    ③ 오른쪽 지금 할 일: 지금 할 일 카드 · 이 단계에서 챙길 정보 · 단계 바꾸기(기존 단계 전환창)
    작업창(연락 결과·다음 할 일·진행상태 변경·단계 정보·연락처·금액·관리정보·자료)은 모달 위 모달 대신 오른쪽 열 자리에서 열린다.
    끄기: G.dealDetailV2Off=true → 예전 상세. */
@@ -47,7 +47,7 @@
   const list=bubbles(d),cls={in:'in',out:'out',memo:'memo',sys:'sys'};
   const thread=list.length?list.map(b=>'<div class="idv-msg '+cls[b.kind]+'"><div class="idv-meta"><em>'+h(b.label)+'</em>'+(b.who?'<span>'+h(b.who)+'</span>':'')+'<span>'+h(fmt(b.at))+'</span></div><div class="idv-bubble">'+h(b.text)+'</div></div>').join(''):'<p class="ddv-nothing">아직 기록이 없습니다 — 첫 연락 결과부터 여기에 쌓입니다</p>';
   const composer=closed?'<div class="idv-composer idv-locked">종료된 영업건입니다 — 기록은 읽기만 할 수 있습니다</div>'
-   :'<div class="idv-composer" id="ddvComposer"><div class="idv-ctabs"><div role="tablist" aria-label="기록 종류">'+[['전화','통화 기록'],['문자','문자 기록'],['메모','내부 메모']].map((t,i)=>'<button type="button" role="tab" data-type="'+t[0]+'" aria-selected="'+(i===0)+'">'+t[1]+'</button>').join('')+'</div><button type="button" class="idv-toggle" data-ddv="full">다음 할 일까지 함께 기록 ▸</button></div><div class="idv-input"><textarea rows="1" aria-label="기록 내용" placeholder="예: 관리소장과 통화 — 예산 확정은 12월 입대의 이후"></textarea><button type="button" class="idv-save" data-ddv="save">저장</button></div><div class="idv-err" role="alert"></div></div>';
+   :'<div class="idv-composer" id="ddvComposer"><div class="idv-ctabs"><div role="tablist" aria-label="기록 종류">'+[['전화','통화 기록'],['메모','내부 메모']].map((t,i)=>'<button type="button" role="tab" data-type="'+t[0]+'" aria-selected="'+(i===0)+'">'+t[1]+'</button>').join('')+'</div><button type="button" class="idv-toggle" data-ddv="full">다음 할 일까지 함께 기록 ▸</button></div><div class="idv-input"><textarea rows="1" aria-label="기록 내용" placeholder="예: 관리소장과 통화 — 예산 확정은 12월 입대의 이후"></textarea><button type="button" class="idv-save" data-ddv="save">저장</button></div><div class="idv-err" role="alert"></div></div>';
   const sec=el('section','ddv-talk','<div class="idv-chead"><b>고객과 주고받은 내용</b><span>'+list.length+'건</span><em>시간순 · 최신이 아래</em></div><div class="idv-thread">'+thread+'</div>'+composer);
   sec.setAttribute('aria-label','고객과 주고받은 내용');
   return sec;
