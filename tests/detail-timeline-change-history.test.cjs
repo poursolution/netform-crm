@@ -2,7 +2,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const html=fs.readFileSync(require('node:path').join(__dirname,'..','crm.html'),'utf8');
 const source=html.slice(html.indexOf('function unifiedTimeline(p,item){'),html.indexOf('var SRC_LABEL='));
-function timeline(p={},item={},inquiries=[]){const c={inqOfDeal:()=>inquiries,parseJandi:()=>({fields:[]}),jandiTime:x=>x,bizHistOf:()=>[]};vm.runInNewContext(source,c);return JSON.parse(JSON.stringify(c.unifiedTimeline(p,item)));}
+function timeline(p={},item={},inquiries=[]){const c={stageLabel:s=>({consulting:'컨설팅 설계',sent:'자료 발송완료',contract:'계약'}[s]||s),inqOfDeal:()=>inquiries,parseJandi:()=>({fields:[]}),jandiTime:x=>x,bizHistOf:()=>[]};vm.runInNewContext(source,c);return JSON.parse(JSON.stringify(c.unifiedTimeline(p,item)));}
 const at='2026-10-05T01:00:00Z';
 test('중앙 이력은 영업건과 패치의 단계·담당자 변경을 모두 보존한다',()=>{
  const item={stageHistory:[{at,from:'sent',to:'contract',actor:'관리자',reason:'계약 체결'}],assignmentHistory:[{at,from:'이필선',to:'조민준',actor:'관리자',reason:'지사 이관'}]};
@@ -37,4 +37,22 @@ test('가운데 렌더러도 서로 다른 사건 ID와 같은 분의 기록을 
 test('정보가 없는 변경을 지어내지 않고 원래 연락 기록을 유지한다',()=>{
  const rows=timeline({}, {activities:[{id:'call',at,type:'전화',note:'고객 통화'}],assignmentHistory:[{},null,{from:'A',to:'B'}]});
  assert.equal(rows.length,1);assert.equal(rows[0].body,'고객 통화');
+});
+
+function stagePair(at='2026-09-01T23:35:23.239Z'){
+ return [{id:'activity-a',type:'단계전환',actor_name:'검증담당',occurred_at:at,detail:{op:'activity',note:'컨설팅 설계 → 자료 발송완료',result:'견적서 발송 완료',write_id:'write-a'}},
+ {id:'command-b',type:'stage_change',actor_name:'검증담당',occurred_at:at,detail:{op:'transition',from:'컨설팅 설계',to_stage:'sent',note:'견적서 발송 완료',write_id:'write-b'}}];
+}
+test('과거 activity/transition 짝은 원본을 보존하고 가운데에 한 번만 표시한다',()=>{
+ for(const reverse of [false,true]){const activities=stagePair();if(reverse)activities.reverse();const before=JSON.stringify(activities);const rows=timeline({}, {activities});assert.equal(rows.length,1);assert.equal(rows[0].body,'컨설팅 설계 → 자료 발송완료');assert.equal(rows[0].result,'견적서 발송 완료');assert.equal(bubbles(rows).length,1);assert.equal(JSON.stringify(activities),before);}
+});
+test('시각·작성자·단계·사유가 다른 기록은 합치지 않는다',()=>{
+ for(const change of [x=>x.occurred_at='2026-09-01T23:35:23.240Z',x=>x.actor_name='다른담당',x=>x.detail.to_stage='contract',x=>x.detail.note='다른 사유',x=>x.detail.from='계약',x=>x.detail.result='추가 정보',x=>delete x.detail.op]){const activities=stagePair();change(activities[1]);assert.equal(timeline({}, {activities}).length,2);}
+});
+test('같은 시각의 별개 이동은 일대일로만 짝지어 보존한다',()=>{
+ const a=stagePair(),b=stagePair();b[0].id='activity-c';b[1].id='command-d';const rows=timeline({}, {activities:[...a,...b]});assert.equal(rows.length,2);assert.equal(bubbles(rows).length,2);
+ const unpaired=stagePair();unpaired.push({...unpaired[1],id:'another-command'});assert.equal(timeline({}, {activities:unpaired}).length,2);
+});
+test('작성자나 시각이 없는 기록과 일반 연락 기록은 짝으로 추정하지 않는다',()=>{
+ for(const change of [x=>x.forEach(a=>a.actor_name=''),x=>x.forEach(a=>a.occurred_at=''),x=>x[1].type='전화']){const activities=stagePair();change(activities);assert.equal(timeline({}, {activities}).length,2);}
 });
