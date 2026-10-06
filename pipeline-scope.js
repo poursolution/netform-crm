@@ -28,8 +28,11 @@
  function isActive(d){if(!d||typeof d!=='object'||!open(d))return false;if(!on())return true;return validStage(d);}
  /* 예전 단계 이름: 예전 리드 단계 → 우리말 이름, 그 밖에는 원래 적혀 있던 단계 글자, 없으면 '단계 없음' */
  function oldStage(d){const c=rawCode(d);if(OLD[c])return OLD[c];const raw=String((d&&(d.stage_raw||d.stage))||'').replace(/\s*\([^)]*\)\s*$/,'').trim();return raw&&raw!==c?raw:(c||'단계 없음');}
- /* 영업 재개(단계 전환)를 서버가 받을 수 있는가: 서버는 출발 단계 값이 저장된 값과 같아야 받는다 — 값이 비어 있으면 보낼 수 없다 */
- const canResume=d=>!!rawCode(d);
+ /* 영업 재개(단계 전환)의 출발 단계: 서버는 출발 단계 값이 저장된 값과 같아야 받는다.
+    저장된 값이 비어 있는 과거 이관 건은 'unclassified' 를 보낸다 — 서버가 NULL 을 그 값으로 본다(sql/transition-null-stage-v1-20261007.sql · 2026-10-07) */
+ const NULL_FROM='unclassified';
+ const fromCode=d=>rawCode(d)||(isLegacy(d)?NULL_FROM:'');
+ const canResume=d=>!!fromCode(d);
  /* 직원 명단에 있는 사람인가(영업 담당이 아니어도 — 대표 · 운영 등). 명단에 없는 이름 · 비활성은 아니다 */
  function ownerKnown(owner){try{const p=root.repProfile?root.repProfile(owner):null;return !!p&&!/^legacy:/.test(String(p.id||''))&&p.active!==false;}catch(e){return false;}}
  const deals=()=>(root.B&&Array.isArray(root.B.deals))?root.B.deals:[];
@@ -38,5 +41,5 @@
  const BASIS=Object.freeze(['현재 CRM 유효 단계(컨설팅 설계 · 자료 발송완료 · 관계관리 · 경쟁·입찰 · 계약·시공)','열린 건(수주 · 실주 · Bad Fit · 연락두절 · 종결 제외)','과거 이관 · 분류 전 제외']);
  const basis=()=>'기준: '+BASIS.join(' · ');
  const LEGACY_BASIS='예전 시스템에서 옮겨 온 자료 중 현재 CRM 단계가 정해지지 않은 건 · 진행 · 실주 · Bad Fit · 보류 어느 쪽도 아님 · 진행 건수와 전환율 · 메이드율에 들어가지 않음';
- root.PipelineScope={on,LABEL,OLD,ACTIVE_GROUPS,rawCode,validStage,isLegacy,isActive,oldStage,canResume,ownerKnown,split,basis,BASIS,LEGACY_BASIS,_reset(){sets=null;}};
+ root.PipelineScope={on,LABEL,OLD,ACTIVE_GROUPS,rawCode,fromCode,NULL_FROM,validStage,isLegacy,isActive,oldStage,canResume,ownerKnown,split,basis,BASIS,LEGACY_BASIS,_reset(){sets=null;}};
 })(typeof window!=='undefined'?window:globalThis);

@@ -47,12 +47,12 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await page.waitForSelector('#pipeline-legacy .plg-row');await page.waitForTimeout(300);
   const L=page.locator('#pipeline-legacy');
   /* ① 제목 줄 숫자 3개 · 큰 안내 상자 없음 · 담당자별 재개 카드 */
-  assert.equal(one(await L.locator('.plg-head').innerText()),'과거 이관 · 분류 전 예전 시스템에서 옮겨 온 자료 · 진행 건수 · 메이드율 계산에 안 들어감 전체 8 · 바로 재개 가능 3 · 배정 후 재개 가능 3 · 서버 보완 필요 2');
+  assert.equal(one(await L.locator('.plg-head').innerText()),'과거 이관 · 분류 전 예전 시스템에서 옮겨 온 자료 · 진행 건수 · 메이드율 계산에 안 들어감 전체 8 · 바로 재개 가능 3 · 배정 후 재개 가능 5 · 서버 보완 필요 0');
   assert.equal(await L.locator('.plg-note').count(),0,'큰 안내 상자 없음');
   assert.deepEqual(await L.locator('.plg-owner').evaluateAll(l=>l.map(n=>[n.querySelector('b').textContent,n.querySelector('span').textContent,n.querySelector('small').textContent,n.querySelector('button').textContent,n.querySelector('button').disabled])),
-   [['황윤선','2건','바로 재개 2','2건 담당에게 재개 요청',false],['이필선','1건','바로 재개 1','1건 담당에게 재개 요청',false],['담당 없음','3건','배정 필요','담당 3건 배정하기',false]],'카드 = 명단 담당(바로 재개 수 순) + 담당 없음(담당 없음 · 명단에 없는 담당 · 서버 보완 불필요)');
+   [['황윤선','2건','바로 재개 2','2건 담당에게 재개 요청',false],['이필선','1건','바로 재개 1','1건 담당에게 재개 요청',false],['담당 없음','5건','배정 필요','담당 5건 배정하기',false]],'카드 = 명단 담당(바로 재개 수 순) + 담당 없음(담당 없음 · 명단에 없는 담당 · 단계 값이 비어 있는 건도 — 서버가 unclassified 출발을 받는다)');
   /* ② 탭 4개 + 예전 단계 선택칸 — 같은 집계 */
-  assert.deepEqual((await L.locator('.plg-tabs [role="tab"]').allInnerTexts()).map(one),['전체 8','바로 재개 가능 3','담당 없음 3','서버 보완 필요 2']);
+  assert.deepEqual((await L.locator('.plg-tabs [role="tab"]').allInnerTexts()).map(one),['전체 8','바로 재개 가능 3','담당 없음 5','서버 보완 필요 0']);
   assert.deepEqual(await L.locator('select[data-plg="old"] option').evaluateAll(l=>l.map(o=>o.textContent)),['전체 8','검증된 고객 3','잠재고객 1','후속 관리 고객 2','경남지사 인계 1','단계 없음 1']);
   /* ③ v11 모양 줄: 정렬(서버 보완 불필요 → 명단 담당 → CRM 기록 → 최근) · 칸 글 · 버튼 */
   assert.deepEqual((await L.locator('.prv-head span').allInnerTexts()).map(one),['현장 · 브랜드','예전 단계 · 기존 담당','CRM 기록','']);
@@ -61,26 +61,26 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    ['[경기 수원] 창전삼성래미안','브랜드 미지정 · 예전 등록 2025.4','예전 단계 · 검증된 고객 기존 담당 이필선','CRM 기록 있음 지난 응대 이력 이어서 사용','영업 재개','ok'],
    ['[서울 성동] 행당대림아파트','브랜드 미지정 · 예전 등록 2026.3','예전 단계 · 검증된 고객 기존 담당 황윤선','CRM 기록 없음 새로 시작 · 첫 연락부터','영업 재개','ok'],
    ['[대전] 싸이언스빌','브랜드 미지정 · 예전 등록 2025.1','예전 단계 · 후속 관리 고객 기존 담당 황윤선','CRM 기록 없음 새로 시작 · 첫 연락부터','영업 재개','ok'],
+   ['영업기회 · 2c5cfb','아파트스퀘어 · 예전 등록 2025.7','예전 단계 · 단계 없음 기존 담당 없음','CRM 기록 있음 지난 응대 이력 이어서 사용','담당 배정','noown'],
    ['[부산] 해운대롯데캐슬','석민이앤씨 · 예전 등록 2025.6','예전 단계 · 검증된 고객 기존 담당 없음','CRM 기록 있음 지난 응대 이력 이어서 사용','담당 배정','noown'],
    ['[경기 고양] 일산후곡마을','아파트스퀘어 · 예전 등록 2025.12','예전 단계 · 잠재고객 기존 담당 없음','CRM 기록 없음 새로 시작 · 첫 연락부터','담당 배정','noown'],
    ['[인천 연수] 송도더샵센트럴','POUR솔루션 · 예전 등록 2025.10','예전 단계 · 후속 관리 고객 기존 담당 김성준 · CRM 명단에 없음','CRM 기록 없음 새로 시작 · 첫 연락부터','담당 배정','noown'],
-   ['영업기회 · 2c5cfb','아파트스퀘어 · 예전 등록 2025.7','예전 단계 · 단계 없음 기존 담당 없음','CRM 기록 있음 예전 단계 값이 비어 있음 · 서버 보완 필요','서버 보완 요청','fix'],
-   ['사천청구타운','POUR솔루션 · 예전 등록 2025.8','예전 단계 · 경남지사 인계 기존 담당 없음','CRM 기록 없음 예전 단계 값이 비어 있음 · 서버 보완 필요','서버 보완 요청','fix']]);
-  const css=await page.evaluate(()=>{const R=[...document.querySelectorAll('#pipeline-legacy .plg-row')],cs=(n,p)=>getComputedStyle(n)[p];return [cs(R[3].querySelector('.prv-b>small'),'color'),cs(R[0].querySelector('.prv-b>small'),'color'),cs(R[6].querySelector('.prv-c>small'),'color'),cs(R[3],'borderLeftColor'),Math.round(R[0].querySelector(':scope>button').getBoundingClientRect().width),cs(R[0].querySelector(':scope>button'),'backgroundColor')];});
-  assert.deepEqual(css,['rgb(180, 35, 24)','rgb(156, 163, 175)','rgb(180, 83, 9)','rgb(232, 89, 12)',120,'rgb(255, 255, 255)'],'담당 없음 빨강 · 서버 보완 주황 · 브랜드 띠 · 흰 버튼 120px');
+   ['사천청구타운','POUR솔루션 · 예전 등록 2025.8','예전 단계 · 경남지사 인계 기존 담당 없음','CRM 기록 없음 새로 시작 · 첫 연락부터','담당 배정','noown']],'단계 값이 비어 있는 건(2c5cfb · 사천)도 서버 보완 대신 배정 → 영업 재개(출발 단계 unclassified)');
+  const css=await page.evaluate(()=>{const R=[...document.querySelectorAll('#pipeline-legacy .plg-row')],cs=(n,p)=>getComputedStyle(n)[p];return [cs(R[4].querySelector('.prv-b>small'),'color'),cs(R[0].querySelector('.prv-b>small'),'color'),cs(R[4],'borderLeftColor'),Math.round(R[0].querySelector(':scope>button').getBoundingClientRect().width),cs(R[0].querySelector(':scope>button'),'backgroundColor')];});
+  assert.deepEqual(css,['rgb(180, 35, 24)','rgb(156, 163, 175)','rgb(232, 89, 12)',120,'rgb(255, 255, 255)'],'담당 없음 빨강 · 브랜드 띠 · 흰 버튼 120px');
   if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'legacy-v2.png')});
   /* 카드 = 필터(다시 누르면 해제) · 선택칸 · 탭 */
   await L.locator('.plg-owner',{hasText:'황윤선'}).locator('.t').click();await page.waitForTimeout(200);
   if(process.env.DIAG)console.log(JSON.stringify(await page.evaluate(()=>[G.plg.owner,G.plg.busy,G.plg.tab,G.plg.old,SRV.reqs.length,[...document.querySelectorAll('#pipeline-legacy .plg-row')].map(r=>r.dataset.cat+':'+r.querySelector('.prv-b small').textContent)])));
   assert.deepEqual([(await L.locator('.plg-row .prv-a b').allInnerTexts()),(await L.locator('.plg-tabs [role="tab"]').allInnerTexts()).map(one),await L.locator('[data-plg="owner-clear"]').count()],[['[서울 성동] 행당대림아파트','[대전] 싸이언스빌'],['전체 2','바로 재개 가능 2','담당 없음 0','서버 보완 필요 0'],1]);
   await L.locator('.plg-owner',{hasText:'황윤선'}).locator('.t').click();await page.waitForTimeout(200);assert.equal(await L.locator('.plg-row').count(),8);
-  await L.locator('.plg-tabs [data-v="fix"]').click();await page.waitForTimeout(200);assert.deepEqual(await L.locator('.plg-row .prv-a b').allInnerTexts(),['영업기회 · 2c5cfb','사천청구타운']);
+  await L.locator('.plg-tabs [data-v="fix"]').click();await page.waitForTimeout(200);assert.deepEqual(await L.locator('.plg-row .prv-a b').allInnerTexts(),[],'서버가 unclassified 출발을 받으므로 서버 보완 필요 건은 없다');
   await L.locator('.plg-tabs [data-v="all"]').click();await L.locator('select[data-plg="old"]').selectOption('검증된 고객');await page.waitForTimeout(200);
   assert.deepEqual((await L.locator('.plg-row .prv-a b').allInnerTexts()),['[경기 수원] 창전삼성래미안','[서울 성동] 행당대림아파트','[부산] 해운대롯데캐슬']);
   await L.locator('select[data-plg="old"]').selectOption('all');await page.waitForTimeout(200);
   /* ④ 줄을 누르면 바로 그 영업건 상세(펼침 없음) */
   assert.equal(await L.locator('.prv-more,.prv-main,[data-plg="toggle"]').count(),0,'펼침 칸 · 펼침 누름이 없다');
-  await L.locator('.plg-row').nth(6).click();await page.waitForSelector('#detailView.on.dv3');
+  await L.locator('.plg-row').nth(3).click();await page.waitForSelector('#detailView.on.dv3');
   assert.deepEqual(await page.evaluate(()=>[CUR_DETAIL.item.id===U(6),document.getElementById('detailView').classList.contains('dv3-legacy')]),[true,true]);
   await page.evaluate(()=>closeDetail());await page.waitForTimeout(250);
   /* ⑥ 버튼: [영업 재개] = 상세의 단계 바꾸기 띠 · [담당 배정] = 담당 정하는 칸 · [서버 보완 요청] = 응대 이력 내부 메모 */
@@ -88,10 +88,15 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual(await page.evaluate(()=>[CUR_DETAIL.item.id===U(1),document.getElementById('detailView').classList.contains('dv3-legacy'),document.querySelector('#pipeline-legacy .plg-row.dn>button').textContent]),[true,true,'재개 중']);
   await page.evaluate(()=>{try{StageTransitionUI.close();}catch(e){}closeDetail();});await page.waitForTimeout(250);
   await L.locator('.plg-row[data-cat="noown"]').first().locator(':scope>button').click();await page.waitForSelector('#detailView.on.dv3');await page.waitForTimeout(500);
-  assert.deepEqual(await page.evaluate(()=>[CUR_DETAIL.item.id===U(5),!!document.querySelector('#detailView .dw-center>.dv3-cpanel:not([hidden])')]),[true,true],'담당 배정 = 상세의 담당 정하는 칸');
+  assert.deepEqual(await page.evaluate(()=>[CUR_DETAIL.item.id===U(6),!!document.querySelector('#detailView .dw-center>.dv3-cpanel:not([hidden])')]),[true,true],'담당 배정 = 상세의 담당 정하는 칸(첫 담당 없음 줄 = 단계 값이 비어 있는 2c5cfb)');
   await page.evaluate(()=>{try{DetailActions.close(false);}catch(e){}closeDetail();});await page.waitForTimeout(250);
-  await L.locator('.plg-row[data-cat="fix"]').first().locator(':scope>button').click();await page.waitForFunction(()=>__ops.some(o=>o.op==='activity'&&/서버 보완 요청/.test(o.payload.note)));await page.waitForTimeout(300);
-  assert.deepEqual(await page.evaluate(()=>[__ops.filter(o=>o.op==='activity').map(o=>o.payload.note.slice(0,28)),document.querySelector('#pipeline-legacy .plg-row[data-cat="fix"]>button').textContent]),[['[서버 보완 요청] 예전 단계 값이 비어 있어 영업'],'요청함']);
+  /* 단계 값이 비어 있는 건: 출발 단계 = unclassified(서버 sql/transition-null-stage-v1-20261007.sql) → 상세의 띠는 '영업 재개' · 전환 후보가 있다 */
+  assert.equal(await L.locator('.plg-row[data-cat="fix"]').count(),0,'서버 보완 요청 줄이 없다');
+  await page.evaluate(()=>{G._detailPopup=true;drwDeal(JSON.stringify(B.deals.find(x=>x.id===U(6))));});await page.waitForSelector('#detailView.on.dv3');await page.waitForTimeout(400);
+  const nul=await page.evaluate(()=>[PipelineScope.fromCode(CUR_DETAIL.item),PipelineScope.canResume(CUR_DETAIL.item),StageTransition.choices('unclassified').length>0,StageTransition.choices('unclassified').includes('won'),document.getElementById('detailView').classList.contains('dv3-legacy'),String((document.querySelector('#detailView .dv3-headact .mv')||{}).textContent||'').replace(/\s*▾\s*$/,'')]);
+  if(process.env.DUMP)require('fs').writeFileSync(process.env.DUMP,JSON.stringify(nul));
+  assert.deepEqual(nul,['unclassified',true,true,false,true,'영업 재개'],'단계 값이 비어 있는 과거 이관 건도 영업 재개 띠 · 출발 단계 unclassified');
+  await page.evaluate(()=>closeDetail());await page.waitForTimeout(250);
   /* ⑦ 담당 카드 [n건 담당에게 재개 요청]: 요청 엔진으로 한 건씩(중복은 건너뜀) · 받는 쪽 오늘 업무에는 한 묶음 카드 · 단계가 정해지면 자동 완료 */
   await L.locator('.plg-owner',{hasText:'황윤선'}).locator('button').click();await page.waitForTimeout(900);
   /* 카드 버튼은 마우스 좌표로 누른다(위치 지정 클릭 — 카드 전체가 role=button 이라 Playwright 의 요소 클릭이 카드로 잡히는 일이 있었다) */
@@ -122,7 +127,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await page.evaluate(()=>{window.confirm=()=>true;SRV.deny='계약실적이 연결된 자료는 삭제할 수 없습니다';});await page.locator('#detailView .tf-menu [data-tf="m-discard"]').click();await page.waitForFunction(()=>SRV.discard.length===1);await page.waitForTimeout(300);
   assert.deepEqual(await page.evaluate(()=>[B.deals.some(x=>x.id===U(4)),document.getElementById('detailView').classList.contains('on'),SRV.discard[0].deal_id===U(4),SRV.discard[0].expected_version,SRV.discard[0].reason]),[true,true,true,3,'상세 창에서 삭제'],'서버가 거절하면 화면 자료 · 창은 그대로');
   await page.evaluate(()=>{SRV.deny='';});await page.locator('#detailView .tf-more').click();await page.waitForTimeout(150);await page.locator('#detailView .tf-menu [data-tf="m-discard"]').click();await page.waitForFunction(()=>!B.deals.some(x=>x.id===U(4)));await page.waitForTimeout(300);
-  assert.deepEqual(await page.evaluate(()=>[document.getElementById('detailView').classList.contains('on'),SRV.discard.length,document.querySelectorAll('#pipeline-legacy .plg-row').length,document.querySelector('#pipeline-legacy .plg-head').innerText.replace(/\s+/g,' ').trim().replace(/^[\s\S]*?(?=전체 \d)/,'')]),[false,2,6,'전체 6 · 바로 재개 가능 2 · 배정 후 재개 가능 2 · 서버 보완 필요 2'],'서버 확인 뒤 창이 닫히고 목록 · 숫자에서 빠진다(행당대림은 단계를 정해 떠났고 일산후곡은 지웠다)');
+  assert.deepEqual(await page.evaluate(()=>[document.getElementById('detailView').classList.contains('on'),SRV.discard.length,document.querySelectorAll('#pipeline-legacy .plg-row').length,document.querySelector('#pipeline-legacy .plg-head').innerText.replace(/\s+/g,' ').trim().replace(/^[\s\S]*?(?=전체 \d)/,'')]),[false,2,6,'전체 6 · 바로 재개 가능 2 · 배정 후 재개 가능 4 · 서버 보완 필요 0'],'서버 확인 뒤 창이 닫히고 목록 · 숫자에서 빠진다(행당대림은 단계를 정해 떠났고 일산후곡은 지웠다)');
   await page.evaluate(()=>{G._detailPopup=true;drwDeal(JSON.stringify(B.deals.find(x=>x.id===U(9))));});await page.waitForSelector('#detailView.on.dv3 .tf-more');await page.locator('#detailView .tf-more').click();await page.waitForTimeout(150);
   assert.equal(await page.locator('#detailView .tf-menu [data-tf="m-discard"]').count(),0,'진행 건에는 삭제가 없다');
   await page.evaluate(()=>closeDetail());

@@ -62,15 +62,15 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const shot=async n=>{if(process.env.SHOT_DIR)await page.screenshot({path:require('node:path').join(process.env.SHOT_DIR,'scope-'+n+'.png')});};
   const L=page.locator('#pipeline-legacy');await shot('legacy');
   /* 정리안(2026-10-06 design_handoff_legacy): 제목 줄 숫자 3개 · 담당자별 재개 카드 · 탭 4개 + 예전 단계 선택칸 · v11 모양 줄 — 상세는 scripts/verify-pipeline-legacy-browser.cjs */
-  assert.equal(one(await L.locator('.plg-head').innerText()),'과거 이관 · 분류 전 예전 시스템에서 옮겨 온 자료 · 진행 건수 · 메이드율 계산에 안 들어감 전체 6 · 바로 재개 가능 3 · 배정 후 재개 가능 2 · 서버 보완 필요 1');
-  assert.deepEqual(await L.locator('.plg-owner').evaluateAll(l=>l.map(n=>n.querySelector('b').textContent+' '+n.querySelector('span').textContent)),['이필선 2건','황윤선 1건','한준엽 1건','담당 없음 2건']);
-  assert.deepEqual((await L.locator('.plg-tabs [role="tab"]').allInnerTexts()).map(one),['전체 6','바로 재개 가능 3','담당 없음 2','서버 보완 필요 1']);
+  assert.equal(one(await L.locator('.plg-head').innerText()),'과거 이관 · 분류 전 예전 시스템에서 옮겨 온 자료 · 진행 건수 · 메이드율 계산에 안 들어감 전체 6 · 바로 재개 가능 4 · 배정 후 재개 가능 2 · 서버 보완 필요 0');
+  assert.deepEqual(await L.locator('.plg-owner').evaluateAll(l=>l.map(n=>n.querySelector('b').textContent+' '+n.querySelector('span').textContent)),['이필선 2건','한준엽 1건','황윤선 1건','담당 없음 2건']);
+  assert.deepEqual((await L.locator('.plg-tabs [role="tab"]').allInnerTexts()).map(one),['전체 6','바로 재개 가능 4','담당 없음 2','서버 보완 필요 0']);
   const rows=await L.locator('.plg-row').evaluateAll(l=>l.map(r=>{const t=s=>r.querySelector(s).innerText.replace(/\s+/g,' ').trim();return [r.dataset.key,t('.prv-a span'),t('.prv-c'),t(':scope>button'),t('.prv-b')];}));
   assert.equal(rows[0][0],'l3','CRM 기록이 있는 건이 먼저');assert.equal(rows[0][2],'CRM 기록 있음 지난 응대 이력 이어서 사용');
   assert.deepEqual(rows.find(r=>r[0]==='l1').slice(1),['브랜드 미지정 · 예전 등록 2025.3','CRM 기록 없음 새로 시작 · 첫 연락부터','영업 재개','예전 단계 · 검증된 고객 기존 담당 이필선']);
-  assert.deepEqual(rows.find(r=>r[0]==='l5').slice(2,4),['CRM 기록 없음 예전 단계 값이 비어 있음 · 서버 보완 필요','서버 보완 요청'],'서버에 단계 값이 비어 있으면 영업 재개 대신 서버 보완 요청');
+  assert.deepEqual(rows.find(r=>r[0]==='l5').slice(2,4),['CRM 기록 없음 새로 시작 · 첫 연락부터','영업 재개'],'서버에 단계 값이 비어 있어도 영업 재개(출발 단계 unclassified · sql/transition-null-stage-v1-20261007.sql)');
   assert.deepEqual(rows.find(r=>r[0]==='l6').slice(3),['담당 배정','예전 단계 · 검증된 고객 기존 담당 김성준 · CRM 명단에 없음'],'명단에 없는 담당의 과거 이관 자료도 목록에 있다(배정이 필요한 자료)');
-  assert.equal(rows[rows.length-1][0],'l5','서버 보완 필요 건은 맨 아래');
+  assert.equal(rows.some(r=>r[3]==='서버 보완 요청'),false,'서버 보완 요청 줄이 없다');
   await L.locator('select[data-plg="old"]').selectOption('검증된 고객');await page.waitForTimeout(200);
   assert.deepEqual((await L.locator('.plg-row').evaluateAll(l=>l.map(r=>r.dataset.key))).sort(),['l1','l6']);
   /* ④ [영업 재개] → 상세 창: '컨설팅 설계'라고 적지 않고, 단계 올리기 띠가 열린다 */

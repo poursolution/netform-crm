@@ -4,8 +4,9 @@
  const S=root.StageTransition, esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
  let ctx=null;
- /* 출발 단계: 보통은 화면 단계. 과거 이관 · 분류 전(예전 리드 단계 값)은 서버에 저장된 값 그대로 — 서버는 출발 단계가 저장된 값과 같아야 받는다(2026-10-05 정합성 ③) */
- const fromOf=d=>{try{const P=root.PipelineScope;if(P&&P.on()&&P.isLegacy(d)&&P.rawCode(d))return P.rawCode(d);}catch(e){}return dealStage(d);};
+ /* 출발 단계: 보통은 화면 단계. 과거 이관 · 분류 전(예전 리드 단계 값)은 서버에 저장된 값 그대로 — 서버는 출발 단계가 저장된 값과 같아야 받는다(2026-10-05 정합성 ③).
+    저장된 값이 비어 있으면 'unclassified'(PipelineScope.fromCode · 서버 sql/transition-null-stage-v1-20261007.sql) */
+ const fromOf=d=>{try{const P=root.PipelineScope;if(P&&P.on()&&P.isLegacy(d)){const f=P.fromCode?P.fromCode(d):P.rawCode(d);if(f)return f;}}catch(e){}return dealStage(d);};
  /* 흐름 유지(2026-09-26 컨설턴트 '행동의 연속성'): 단계만 바꾸고 다음 할 일이 없으면 흐름이 끊긴다.
     진행 단계로 바꿀 때, 앞으로의 다음 할 일이 없으면 '다음 할 일 날짜'를 반드시 고른다(날짜 칩).
     이미 앞으로의 다음 할 일이 있으면 그대로 유지하고, 바꾸고 싶을 때만 고른다. 종료 단계·단계 자체 날짜(자료 발송 다음 확인일·재접촉일)는 기존대로. */

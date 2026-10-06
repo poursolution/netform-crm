@@ -315,7 +315,7 @@
  function buildHead(v,d,closed){
   const top=v.querySelector('.detailtop'),sub=$('dv-sub');if(!top||!sub)return;
   /* 과거 이관 · 분류 전(PipelineScope): 아직 어느 단계도 아니다 — '컨설팅 설계'라고 적지 않고, [단계 바꾸기] 대신 [영업 재개](서버에 저장된 예전 단계 값에서 출발) */
-  const S=st(d),PSC=root.PipelineScope,legacy=!closed&&!!(PSC&&PSC.on()&&PSC.isLegacy(d)),from=legacy?PSC.rawCode(d):root.dealStage(d),T=root.StageTransition,P=root.PipelineStages;let choices=[];try{choices=closed||!T||(legacy&&!from)?[]:T.choices(from);}catch(e){}
+  const S=st(d),PSC=root.PipelineScope,legacy=!closed&&!!(PSC&&PSC.on()&&PSC.isLegacy(d)),from=legacy?(PSC.fromCode?PSC.fromCode(d):PSC.rawCode(d)):root.dealStage(d),T=root.StageTransition,P=root.PipelineStages;let choices=[];try{choices=closed||!T||(legacy&&!from)?[]:T.choices(from);}catch(e){}
   v.classList.toggle('dv3-legacy',legacy);S.mvLabel=legacy?'영업 재개':'단계 바꾸기';
   if(S.mvFrom&&S.mvFrom!==from)S.mvOpen=false;S.mvFrom=from;
   const group=legacy?'legacy':P.group(from,root.outcomeOf?root.outcomeOf(d):null),gname=legacy?PSC.LABEL:((STAGES.find(s=>s[0]===group)||[])[1]||root.stageLabel(from)),sname=legacy?'예전 단계 '+PSC.oldStage(d):root.stageLabel(from);
@@ -420,7 +420,7 @@
   syncComposer(box);if(tidy())callingSync(box,d);
  }
  function pickStage(d,key,want){
-  const def=root.PipelineStages.definition(key),T=root.StageTransition,UI=root.StageTransitionUI;const PSC=root.PipelineScope,lg=!!(PSC&&PSC.on()&&PSC.isLegacy(d));let choices=[];try{choices=T.choices(lg?PSC.rawCode(d):root.dealStage(d));}catch(e){}
+  const def=root.PipelineStages.definition(key),T=root.StageTransition,UI=root.StageTransitionUI;const PSC=root.PipelineScope,lg=!!(PSC&&PSC.on()&&PSC.isLegacy(d));let choices=[];try{choices=T.choices(lg?(PSC.fromCode?PSC.fromCode(d):PSC.rawCode(d)):root.dealStage(d));}catch(e){}
   const code=want&&choices.includes(want)?want:(def?def.codes:[]).find(c=>choices.includes(c));if(!code||!UI||typeof UI.open!=='function')return false;
   if(document.getElementById('stage-transition-form'))UI.close();
   UI.open(d,false,code);return true;
