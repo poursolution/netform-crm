@@ -45,7 +45,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await v.locator('.dw-left .ddv-files').count(),1,'자료는 왼쪽');
   assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#detailView .dw-site,#detailView .dw-voice')].every(n=>getComputedStyle(n).display==='none')),true,'현장 정보·핵심 발언 카드는 합침');
   /* 가운데: 말풍선 시간순 + 입력칸 */
-  assert.deepEqual(await v.locator('.ddv-talk .idv-msg .idv-bubble').allInnerTexts(),['견적서 발송 안내 문자','통화 완료 · 진행 중 (예산 확인 중이라고 함)','관리소장 교체 예정이라고 들음']);
+  assert.deepEqual(await v.locator('.ddv-talk .idv-msg .idv-bubble').allInnerTexts(),['컨설팅 설계 → 자료 발송완료','견적서 발송 안내 문자','통화 완료 · 진행 중 (예산 확인 중이라고 함)','자료 발송완료 → 장기 무응답 관리','관리소장 교체 예정이라고 들음']);
   assert.equal(await v.locator('.ddv-talk .idv-msg.out').count(),2);assert.equal(await v.locator('.ddv-talk .idv-msg.memo').count(),1);
   assert.deepEqual(await v.locator('#ddvComposer [role=tab]').allInnerTexts(),['통화 기록','내부 메모']);
   /* 오른쪽: 지금 할 일 → 챙길 정보 → 단계 바꾸기 */
@@ -87,7 +87,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await v.locator('#ddvComposer .idv-save').click();await page.waitForTimeout(400);
   assert.deepEqual(await page.evaluate(()=>__ops.map(o=>[o.op,o.payload.type,o.payload.note,o.payload.opportunity_id])),[['activity','메모','12월 입대의 전 예산 자료 준비','11111111-1111-4111-8111-111111111111']]);
   assert.equal(await page.locator('#detailView.ddv .ddv-talk .idv-msg .idv-bubble').last().innerText(),'12월 입대의 전 예산 자료 준비');
-  assert.equal(await page.locator('#detailView.ddv .ddv-talk .idv-chead span').innerText(),'4건');
+  assert.equal(await page.locator('#detailView.ddv .ddv-talk .idv-chead span').innerText(),'6건');
   /* 좁은 화면 · 끄기 */
   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(200);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'좁은 화면 넘침 없음');
