@@ -27,7 +27,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */(G.briefBOff=true,goPage('brief'));return 0;}),0);await page.waitForTimeout(450);assert.equal(await page.evaluate(()=>document.querySelectorAll('#pg-brief>.pm-strip').length),0,'주간 브리핑 새 화면에도 공통 기준 띠가 없다');
   await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */G.repsV2Off=true;G.briefV2Off=true;});
   const texts=[];
-  for(const p of ['brief','perf','repmanage']){await page.evaluate(p=>goPage(p),p);await page.waitForTimeout(450);texts.push(await page.evaluate(p=>{const el=document.querySelector('#pg-'+p+'>.pm-strip');return el?el.textContent.replace(/\s+/g,' ').trim():null},p));}
+  for(const p of ['brief','perf','repmanage']){await page.evaluate(p=>goPage(p),p);await page.locator('#pg-'+p+'>.pm-strip').waitFor({state:'attached',timeout:5000});texts.push(await page.evaluate(p=>{const el=document.querySelector('#pg-'+p+'>.pm-strip');return el?el.textContent.replace(/\s+/g,' ').trim():null},p));}
   assert.ok(texts.every(Boolean),'세 화면 모두 띠 표시 '+JSON.stringify(texts));
   assert.equal(new Set(texts).size,1,'세 화면의 값이 같다');
   assert.match(texts[0],/전체 진행.*4건.*가중 예상.*확정 임박.*2건/);
