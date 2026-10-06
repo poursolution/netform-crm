@@ -45,7 +45,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     over:[...v.querySelectorAll('.dv3-subrow .over')].map(n=>getComputedStyle(n).display),fav:getComputedStyle(v.querySelector('.exec-favorite')).display,btn:[...v.querySelectorAll('.dv3-headact button')].filter(b=>b.offsetParent).map(b=>b.textContent.trim()),
     rowY:[...v.querySelectorAll('#dv-title,.dv3-stagebadge,.dv3-subrow .tx,.dvt-won,.dv3-headact .mv,.backbtn')].map(n=>{const r=n.getBoundingClientRect();return Math.round(r.top+r.height/2);})};});
   assert.deepEqual(head.brand,['석민이앤씨','rgba(0, 0, 0, 0)','rgb(232, 89, 12)','3px','rgb(232, 89, 12)'],'브랜드 = 색 띠 + 글자');
-  assert.deepEqual([head.badge,head.tx,head.won,head.over,head.fav,head.btn],['컨설팅 설계 · 34일째','담당 황윤선 · 예상 금액 미정','✓ 기존 고객 · '+ym+' 수주 완료',['none'],'none',['단계 바꾸기 ▾','···']]);
+  assert.deepEqual([head.badge.replace(/\d+일째/,'n일째'),head.tx,head.won,head.over,head.fav,head.btn],['컨설팅 설계 · n일째',/* 일수는 시각(UTC 자정 경계)에 따라 33 · 34 가 갈려 세지 않는다 */'담당 황윤선 · 예상 금액 미정','✓ 기존 고객 · '+ym+' 수주 완료',['none'],'none',['단계 바꾸기 ▾','···']]);
   assert.ok(Math.max(...head.rowY)-Math.min(...head.rowY)<=16,'머리 글자 · 버튼이 한 줄에 있다 '+JSON.stringify(head.rowY));
   /* [···] 메뉴: 즐겨찾기 · 소장이 바뀌었어요 · 담당자 변경 · … · 실주 처리 */
   await v.locator('.tf-more').click();await page.waitForTimeout(150);
@@ -69,7 +69,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* ④ 오른쪽: 지금 할 일 = 상자 없이 행동 + 근거 한 줄 · 필수 정보 'n / m [채우기 ▾]' */
   const right=await page.evaluate(()=>{const v=document.getElementById('detailView'),n=v.querySelector('#nowCard'),cs=getComputedStyle(n);return [cs.borderTopWidth,n.querySelector('.nc-stage').textContent,n.querySelector('.dv3-title b').textContent,n.querySelector('.dv3-title span').textContent,n.querySelector('.nc-call').textContent,n.querySelector('.dv3-sub').textContent,n.querySelectorAll('.dv3-reco').length];});
   assert.deepEqual(right.slice(0,2).concat(right.slice(4)),['0px','지금 할 일','전화하고 결과 남기기','연락 없이 다음 일만 정하기',0]);
-  assert.match(right[3],/^컨설팅 설계 34일째 · /,'근거 한 줄 = 단계 · 체류일 · 사유');assert.ok(right[2]&&right[2]!==right[3].replace(/^컨설팅 설계 34일째 · /,''),'제목은 사유가 아니라 할 일');
+  assert.match(right[3],/^컨설팅 설계 3[34]일째 · /,'근거 한 줄 = 단계 · 체류일 · 사유');assert.ok(right[2]&&right[2]!==right[3].replace(/^컨설팅 설계 3[34]일째 · /,''),'제목은 사유가 아니라 할 일');
   assert.deepEqual([one(await v.locator('.da-stage-summary>h3').innerText()),await v.locator('.da-stage-summary .dv3-row').count(),one(await v.locator('.dvt-reqlist').innerText()).split(' · ').slice(0,2)],['이 단계 필수 정보 0 / 5 채우기 ▾',0,['공종','예상 금액']]);
   await v.locator('[data-dv3="reqtoggle"]').click();await page.waitForTimeout(150);
   assert.deepEqual([one(await v.locator('.da-stage-summary>h3').innerText()),await v.locator('.da-stage-summary .dv3-row').count(),await v.locator('.dvt-reqlist').count()],['이 단계 필수 정보 0 / 5 접기 ▴',5,0],'펼치면 그 자리에서 입력');
