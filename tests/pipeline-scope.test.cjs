@@ -23,8 +23,10 @@ test('과거 이관 · 분류 전 = 열린 건인데 현재 CRM 단계 값이 �
  for(const c of ['qualified','potential','nurturing','working','',undefined,null,'something_else']){const x=d(c);assert.equal(P.isLegacy(x),true,String(c));assert.equal(P.isActive(x),false,String(c));assert.equal(w.outcomeOf(x),'open','실주 · 종결로 바뀌지 않는다');}
  assert.deepEqual(['qualified','potential','nurturing','working'].map(c=>P.oldStage(d(c))),['검증된 고객','잠재고객','후속 관리 고객','접촉단계']);
  assert.equal(P.oldStage(d('',{stage:'서포트 단계'})),'서포트 단계');assert.equal(P.oldStage(d('',{stage_raw:'검증된 고객(Qualified)'})),'검증된 고객');assert.equal(P.oldStage(d('')),'단계 없음');
- /* 서버는 출발 단계 값이 저장된 값과 같아야 전환을 받는다 — 값이 비어 있으면 영업 재개를 할 수 없다 */
- assert.equal(P.canResume(d('qualified')),true);assert.equal(P.canResume(d('')),false);assert.equal(P.rawCode(d('qualified')),'qualified');
+ /* 서버는 출발 단계 값이 저장된 값과 같아야 전환을 받는다 — 값이 비어 있는 과거 이관 건은 'unclassified' 로 보낸다(sql/transition-null-stage-v1-20261007.sql · 서버가 NULL 을 그 값으로 본다) */
+ assert.equal(P.canResume(d('qualified')),true);assert.equal(P.canResume(d('')),true);assert.equal(P.rawCode(d('qualified')),'qualified');
+ assert.equal(P.NULL_FROM,'unclassified');assert.equal(P.fromCode(d('qualified')),'qualified');assert.equal(P.fromCode(d('')),'unclassified');assert.equal(P.rawCode(d('')),'','저장된 값 자체는 그대로 빈 값');
+ assert.equal(P.fromCode(d('sent')),'sent');assert.equal(P.fromCode(d('won')),'won','과거 이관이 아닌 건은 저장된 값 그대로');
 });
 
 test('나누기 · 기준 한 줄 · 끄기',()=>{
@@ -49,8 +51,8 @@ test('모든 화면이 같은 판정을 쓴다(코드 연결)',()=>{
  assert.match(pw,/legacy=!!\(PS\(\)&&PS\(\)\.isLegacy\(d\)\),group=legacy\?'legacy':S\.group\(code,outcome\);if\(L!=='all'&&legacy!==\(L==='only'\)\)continue;/);
  assert.match(pw,/data-value="legacy"/);assert.match(pw,/root\.PipelineLegacy\.html\(rows\(undefined,\{legacy:'only'\}\)\)/);
  /* 영업 재개: 서버에 저장된 예전 단계 값에서 출발(first_contact 로 바꿔 보내면 서버가 거절한다) */
- assert.match(ui,/const fromOf=d=>\{try\{const P=root\.PipelineScope;if\(P&&P\.on\(\)&&P\.isLegacy\(d\)&&P\.rawCode\(d\)\)return P\.rawCode\(d\);\}catch\(e\)\{\}return dealStage\(d\);\};/);
+ assert.match(ui,/const fromOf=d=>\{try\{const P=root\.PipelineScope;if\(P&&P\.on\(\)&&P\.isLegacy\(d\)\)\{const f=P\.fromCode\?P\.fromCode\(d\):P\.rawCode\(d\);if\(f\)return f;\}\}catch\(e\)\{\}return dealStage\(d\);\};/);
  assert.equal((ui.match(/mobile\?d(?:eal)?\.code:fromOf\(/g)||[]).length,2);
- assert.match(dv,/legacy\?PSC\.rawCode\(d\):root\.dealStage\(d\)/);assert.match(dv,/S\.mvLabel=legacy\?'영업 재개':'단계 바꾸기'/);
+ assert.match(dv,/legacy\?\(PSC\.fromCode\?PSC\.fromCode\(d\):PSC\.rawCode\(d\)\):root\.dealStage\(d\)/);assert.match(dv,/lg\?\(PSC\.fromCode\?PSC\.fromCode\(d\):PSC\.rawCode\(d\)\):root\.dealStage\(d\)/);assert.match(dv,/S\.mvLabel=legacy\?'영업 재개':'단계 바꾸기'/);
  assert.match(br,/function scopeLine\(x\)/);
 });
