@@ -94,6 +94,18 @@ function installLibrary(){
      items[i] = crm_advisory_project_read_v1 의 한 줄 + (있으면) has_contract_document:true|false — 이 값이 없으면 문서 꼬리표를 달지 않는다(추정하지 않는다).
    연결되기 전에는 탭이 생기지 않고 계약 문서 칸만 보인다. 빈 값은 '미기록' — 0원 · 미진행 · 미체결로 추정하지 않는다. */
 const PJ={loader:null,rows:[],cursor:null,page:1,sel:'',state:'idle',busy:false,tab:'proj'};
+let projectEpoch=0;
+/* 기존 로그인 클라이언트로만 읽는다. 문서 유무나 실적 값을 원본 필드에서 추정하지 않는다. */
+async function readProjects({after=null}={}){
+ if(!root.SB?.rpc)throw new Error('UNAVAILABLE');
+ const response=await root.SB.rpc('crm_advisory_project_read_v1',{p_after:after,p_deal_id:null});
+ if(response.error)throw response.error;
+ const r=response.data;
+ if(r?.ok!==true||!Array.isArray(r.items)||r.items.length>20||!(r.next_cursor===null||typeof r.next_cursor==='string'))throw new Error('READ_FAILED');
+ if(r.next_cursor!==null&&(!r.next_cursor||!r.items.length||r.next_cursor===after))throw new Error('READ_FAILED');
+ return {items:r.items,next_cursor:r.next_cursor};
+}
+function resetProjects(){projectEpoch++;Object.assign(PJ,{rows:[],cursor:null,page:1,sel:'',state:'idle',busy:false});drawProjects();}
 const STATE_TEXT={loading:'조회 중…',failed:'프로젝트 기본 정보를 조회하지 못했습니다. 다시 시도해 주세요.',denied:'이 계정에는 기술자문 프로젝트 조회 권한이 없습니다.',empty:'조회 권한이 있는 기술자문 프로젝트가 없습니다.',more:'다음 쪽을 불러오지 못했습니다. 다시 시도해 주세요.'};
 const val=v=>v==null||String(v).trim()===''?'미기록':String(v);
 const pid=p=>String(p&&p.source_project_id!=null?p.source_project_id:'');
@@ -130,16 +142,16 @@ const projView=()=>document.querySelector?.('#pg-sites .advisory-library .adv-pr
 function drawProjects(){const v=projView();if(v)v.innerHTML=projectsHtml();}
 async function projLoad(reset){
  if(!PJ.loader||PJ.busy)return;if(reset){PJ.rows=[];PJ.cursor=null;PJ.page=1;PJ.sel='';}
- const had=PJ.rows.length,after=reset?null:PJ.cursor;PJ.busy=true;PJ.state='loading';drawProjects();
+ const ticket=projectEpoch,had=PJ.rows.length,after=reset?null:PJ.cursor;PJ.busy=true;PJ.state='loading';drawProjects();
  try{
-  const r=await PJ.loader({after});if(!r||!Array.isArray(r.items))throw new Error('READ_FAILED');
+  const r=await PJ.loader({after});if(ticket!==projectEpoch)return;if(!r||!Array.isArray(r.items))throw new Error('READ_FAILED');
   const seen=new Set(PJ.rows.map(pid));r.items.forEach(p=>{if(p&&pid(p)&&!seen.has(pid(p))){seen.add(pid(p));PJ.rows.push(p);}});
   PJ.cursor=r.next_cursor||null;PJ.state='ready';if(had)PJ.page=Math.floor(had/root.ListPager.SIZE)+1;
- }catch(e){PJ.state=e&&(e.code==='42501'||e.code===42501)?'denied':'failed';}
- finally{PJ.busy=false;drawProjects();}
+ }catch(e){if(ticket===projectEpoch){PJ.state=e&&(e.code==='42501'||e.code===42501)?'denied':'failed';if(PJ.state==='denied'){PJ.rows=[];PJ.cursor=null;PJ.sel='';PJ.page=1;}}}
+ finally{if(ticket===projectEpoch){PJ.busy=false;drawProjects();}}
 }
 function setTab(tab){
- const panel=document.querySelector?.('#pg-sites .advisory-library');if(!panel)return;PJ.tab=tab==='docs'?'docs':'proj';
+ const panel=document.querySelector?.('#pg-sites .advisory-library');if(!panel)return;const next=tab==='docs'?'docs':'proj';if(PJ.tab!==next){PJ.page=1;PJ.sel='';drawProjects();}PJ.tab=next;
  panel.querySelectorAll('.adv-tabs [data-advtab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.advtab===PJ.tab)));
  panel.querySelectorAll('.adv-pane').forEach(n=>{n.hidden=!n.classList.contains(PJ.tab==='docs'?'adv-docs':'adv-proj');});
  if(PJ.tab==='proj')shown();
@@ -163,9 +175,11 @@ function installProjects(){
  proj.className='adv-pane adv-proj';proj.innerHTML='<p>기술자문 플랫폼에서 받은 원본 프로젝트입니다. 계약 문서가 없는 프로젝트도 보이며, 계약 체결 · 계약실적과는 별개입니다.</p><div class="adv-proj-view" aria-live="polite"></div>';
  panel.append(tabs,proj,docs);panel.addEventListener('click',onProjClick);setTab(PJ.tab);
 }
-function connect(loader){PJ.loader=typeof loader==='function'?loader:null;if(PJ.loader){installLibrary();installProjects();shown();}}
+function connect(loader){resetProjects();PJ.loader=typeof loader==='function'?loader:null;if(PJ.loader){installLibrary();installProjects();shown();}}
 root.TechnicalAdvisoryUI={mount,html,installLibrary,libraryLabel:()=>'기술자문 원본 자료',
- projects:{connect,shown,reload:()=>projLoad(true),html:projectsHtml,detailHtml:projectDetail,setTab,STATE_TEXT,_state:PJ,_reset(){Object.assign(PJ,{rows:[],cursor:null,page:1,sel:'',state:'idle',busy:false,tab:'proj'});drawProjects();}}};
+ projects:{connect,shown,read:readProjects,reload:()=>projLoad(true),html:projectsHtml,detailHtml:projectDetail,setTab,STATE_TEXT,_state:PJ,_reset:resetProjects}};
 installLibrary();
+root.addEventListener?.('phase1:identity-cleared',resetProjects);
+if(root.SB?.rpc)connect(readProjects);
 
 })(window);
