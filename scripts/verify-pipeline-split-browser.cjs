@@ -21,6 +21,17 @@ assert.equal(await page.locator('#detailView').isVisible(),false);
 await page.locator('.sw-work-table tr[data-deal="B"] [data-ps-action="primary"]').click();
 assert.equal(await page.locator('#detailView').isVisible(),true);
 assert.match(await page.locator('#dv-title').innerText(),/B/);
+assert.equal(await page.locator('#detailView.dv3 .dw-right .dv3-form').count(),1,'primary opens current contact form');
+assert.equal(await page.locator('#detailAction').count(),0,'primary does not open legacy action layer');
+for(const [action,selector] of [['next','.dv3-form'],['contact','.dv3-form'],['stage-edit','.dv3-move']]){
+ await page.evaluate(()=>{DetailActions.close(false);closeDetail();});
+ const button=page.locator('.sw-work-table tr[data-deal="B"] [data-ps-action="primary"]');
+ await button.evaluate((el,value)=>{el.dataset.psAction=value;},action);
+ await page.locator('.sw-work-table tr[data-deal="B"] [data-ps-action="'+action+'"]').click();
+ assert.equal(await page.locator('#detailView.dv3 '+selector).count(),1,action+' opens current detail');
+ assert.equal(await page.locator('#detailAction').count(),0,action+' avoids legacy action layer');
+ await page.locator('.sw-work-table tr[data-deal="B"] [data-ps-action="'+action+'"]').evaluate(el=>{el.dataset.psAction='primary';});
+}
 await page.locator('#detailView .backbtn').click();
 
 for(const width of [1440,1024,390]){await page.setViewportSize({width,height:1000});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}
