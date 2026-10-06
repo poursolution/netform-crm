@@ -32,9 +32,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const v=page.locator('#sms-b');assert.equal(await v.count(),1,'B안 보드');assert.equal(await page.locator('#sms-v2').count(),0,'v2 묶음 표 없음');
   assert.equal(await page.locator('#pg-campaign>.cf-bar:not([hidden])').count(),1,'공통 필터줄');
   assert.equal(await page.evaluate(()=>document.getElementById('ptitle').textContent),'문자 · 캠페인');
-  assert.deepEqual((await v.locator('.psb-axis .leg button').allInnerTexts()).map(t=>t.replace(/\s+/g,' ')),['지금 보낼 때 · 병목 4','시즌 · 정기 관계 6','재활성 3']);
-  assert.match(await v.locator('.psb-kpis').innerText(),/기준 넘김 \(빨강\)\s*\d+묶음[\s\S]*발송 가능\s*\d+명[\s\S]*이번 달 발송\s*0건\s*예약 0 · 실패·확인 0/);
-  const reasons=await v.locator('.psb-reason span').allInnerTexts();
+  /* 공용 틀(2026-10-06 "리스트에서 이질감 없이"): 파이프라인 v3 와 같은 틀 — 상태 탭 4칸 · 진단 숫자 3개 · 사유 · 할 일 · 왜 못 보내나 */
+  assert.deepEqual(await v.locator('.ps3-tabs .ps3-tab').evaluateAll(l=>l.map(b=>b.querySelector('.l').textContent+' '+b.querySelector('.n').textContent)),['전체 13','지금 보낼 때 · 병목 4','시즌 · 정기 관계 6','재활성 3']);
+  assert.match(await v.locator('.ps3-kpis').innerText(),/기준 넘김\s*\d+묶음[\s\S]*발송 가능\s*\d+명[\s\S]*이번 달 발송\s*0건\s*예약 0 · 실패·확인 0/);
+  assert.deepEqual((await v.locator('.prv-head span').allInnerTexts()).map(t=>t.trim()),['현장 · 담당','현재 상황','걸린 사유 · 경과',''],'줄 = 파이프라인 v11 4칸');
+  const reasons=await v.locator('.ps3-reason>span>b:first-child').allInnerTexts();
   assert.ok(reasons[0]==='병목 묶음 · 한 번도 안 보냄'||reasons[0]==='대상 있음 · 발송 가능 0명',JSON.stringify(reasons));
   assert.ok(reasons.includes('자동 제외 대상 있음'),JSON.stringify(reasons));
   assert.match(await v.locator('.sb-why').innerText(),/왜 못 보내나[\s\S]*문자 수신동의 없음 1명[\s\S]*휴대폰번호 없음 1명/);
@@ -47,9 +49,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await v.locator('.psb-row[data-key="yearend"]').innerText(),/연말 인사[\s\S]*시즌 · 전체 · 시즌 인사[\s\S]*(12월 15일|지남)/);
   if(shot)await page.screenshot({path:shot+'-list.png',fullPage:true});
   /* 막대 칸 · 보드 · 머리 버튼 */
-  await v.locator('.psb-axis .leg button').nth(2).click();await page.waitForTimeout(150);assert.equal(await page.locator('#sms-b .psb-row').count(),3);
+  await v.locator('.ps3-tabs .ps3-tab').nth(3).click();await page.waitForTimeout(150);assert.equal(await page.locator('#sms-b .psb-row').count(),3);
   await page.locator('#sms-b [data-sb="clear"]').click();await page.waitForTimeout(150);
-  await page.locator('#sms-b [data-sb="view"][data-v="board"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#sms-b .psb-col').count(),3);assert.equal(await page.locator('#sms-b .psb-card').count(),13);
+  await page.locator('#sms-b [data-sb="view"][data-v="board"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#sms-b .ps3-col').count(),3);assert.equal(await page.locator('#sms-b .ps3-card').count(),13);
   await page.locator('#sms-b [data-sb="view"][data-v="list"]').click();await page.waitForTimeout(150);
   assert.deepEqual(await page.locator('#sms-b .sb-top button').allInnerTexts().then(a=>a.filter(t=>!/테스트/.test(t))),['발송 이력','+ 문자 보내기']);
   /* 보내기 = 기존 v2 창(760px · 최종 확인란) · 발송 요청은 기존 campaignQueue 만 */

@@ -54,14 +54,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await pills(),['전체 3',Y+' 2',(Y-1)+' 1',(Y-2)+' 0','이전 0'],'담당을 고르면 그 담당 기준');assert.match(one(await page.locator('#pg-expansion>.cf-bar .cf-pill').first().innerText()),/^전체 3$/);
   await page.evaluate(()=>{SalesScope.change('owner','전체');SalesFilterState.sync();paint();});await page.waitForTimeout(300);assert.deepEqual(await pills(),['전체 7',Y+' 6',(Y-1)+' 1',(Y-2)+' 0','이전 0']);
   /* [리스트 | 보드] = '확인할 현장 n곳' 제목 줄 오른쪽 끝 · 준공연도와 겹치지 않는다 · 연도를 고르면 제목 옆에 "○○년 준공만" */
-  assert.deepEqual(await v.evaluate(n=>{const y=n.querySelector('.xb-yrow').getBoundingClientRect(),w=n.querySelector('.psb-views').getBoundingClientRect(),h=n.querySelector('.psb-lhead').getBoundingClientRect();return [w.top>=y.bottom,Math.abs(w.right-h.right)<2,n.querySelector('.psb-views').parentElement.classList.contains('psb-lhead')];}),[true,true,true]);
-  assert.equal(one(await v.locator('.psb-lhead').innerText()),'확인할 현장 6곳 '+Y+'년 준공만 리스트 보드');
-  /* 진단: 막대 3칸(사후 연락 · 니즈 확인 · 전환 · 보류) · 숫자 3개 · 사유 · 할 일 */
-  assert.deepEqual((await v.locator('.psb-axis .leg button').allInnerTexts()).map(t=>t.replace(/\s+/g,' ')),['사후 연락 · 관계 유지 4','니즈 확인 1','보류 · 전환 완료 1']);
-  assert.match(await v.locator('.psb-kpis').innerText(),/기준 넘김 \(빨강\)\s*2곳[\s\S]*니즈 확인\s*1곳[\s\S]*평균 준공 후\s*\d+일/);
-  const reasons=await v.locator('.psb-reason span').allInnerTexts();
+  assert.deepEqual(await v.evaluate(n=>{const y=n.querySelector('.xb-yrow').getBoundingClientRect(),w=n.querySelector('.ps3-views').getBoundingClientRect(),h=n.querySelector('.ps3-lhead').getBoundingClientRect();return [w.top>=y.bottom,Math.abs(w.right-h.right)<2,n.querySelector('.ps3-views').parentElement.classList.contains('ps3-lhead')];}),[true,true,true]);
+  assert.equal(one(await v.locator('.ps3-lhead').innerText()),'확인할 현장 6곳 '+Y+'년 준공만 리스트 보드');
+  /* 공용 틀(2026-10-06 "리스트에서 이질감 없이"): 파이프라인 v3 와 같은 틀 — 상태 탭 4칸([전체] + 막대 3칸) · 진단 숫자 3개 · 사유 · 할 일 */
+  assert.deepEqual(await v.locator('.ps3-tabs .ps3-tab').evaluateAll(l=>l.map(b=>b.querySelector('.l').textContent+' '+b.querySelector('.n').textContent)),['전체 6','사후 연락 · 관계 유지 4','니즈 확인 1','보류 · 전환 완료 1']);
+  assert.equal(await page.locator('#expansion-b .ps3-head b').evaluate(n=>getComputedStyle(n).fontSize),'22px','제목 글자 = 파이프라인 v3');
+  assert.match(await v.locator('.ps3-kpis').innerText(),/기준 넘김\s*2곳[\s\S]*니즈 확인\s*1곳[\s\S]*평균 준공 후\s*\d+일/);
+  const reasons=await v.locator('.ps3-reason>span>b:first-child').allInnerTexts();
   assert.deepEqual(reasons,['다음 접촉일 지남','준공 후 사후 연락 안 함','관계 연락 주기 넘김','니즈 확인 → 전환 대기','공종 미분류'],'사유 순서 = 표 순서 '+JSON.stringify(reasons));
-  assert.match(await v.locator('.psb-two .psb-box').nth(1).innerText(),/그래서 뭘 해야 하나[\s\S]*다음 접촉일 지남 1곳[\s\S]*준공 후 사후 연락 안 함 1곳[\s\S]*관계 연락 주기 넘김 1곳/);
+  assert.match(await v.locator('.ps3-diag>.ps3-box').nth(2).innerText(),/그래서 뭘 해야 하나[\s\S]*다음 접촉일 지남 1곳[\s\S]*준공 후 사후 연락 안 함 1곳[\s\S]*관계 연락 주기 넘김 1곳/);
   /* 현장: 빨강 사유 순(접촉일 지남 e1 → 2개월 연락 없음 e7) → 사유 수 */
   const order=await v.locator('.psb-row').evaluateAll(a=>a.map(n=>n.dataset.key));
   assert.deepEqual(order.slice(0,2),['e1','e7'],'빨강 먼저 '+JSON.stringify(order));
@@ -69,17 +70,17 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await v.locator('.psb-row[data-key="e7"]').innerText(),/연락 없음 75일 · 기준 60일[\s\S]*D\+120일[\s\S]*관계 연락/);
   assert.match(await v.locator('.psb-row[data-key="e4"]').innerText(),/니즈 확인[\s\S]*니즈 지하주차장 에폭시 견적 요청[\s\S]*니즈 확인 → 전환 대기[\s\S]*전환/);
   assert.match(await v.locator('.psb-row[data-key="e5"]').innerText(),/보류 현장[\s\S]*보류[\s\S]*정상/);
-  /* 줄 = 두 덩어리: 왼쪽(현장 · 브랜드 · 담당 · 금액 / 사후 연락) · 오른쪽(사유 150px · D+ 64px · 버튼 86px · 오른쪽 끝). 글자는 한 줄 */
-  const geo=()=>page.locator('#expansion-b .psb-row[data-key="e1"]').evaluate(n=>{const L=n.querySelector('.xb-l').getBoundingClientRect(),R=n.querySelector('.xb-r'),r=R.getBoundingClientRect(),row=n.getBoundingClientRect(),w=k=>Math.round(R.querySelector(k).getBoundingClientRect().width),tops=[...R.children].map(c=>Math.round(c.getBoundingClientRect().top+c.getBoundingClientRect().height/2));
-   return {disp:getComputedStyle(n).display,widths:[w('.xb-why'),w('.xb-d'),w('button')],right:Math.round(row.right-r.right),wrapped:r.top>=L.bottom-1,oneLine:Math.max(...tops)-Math.min(...tops)<=3,h:[...n.querySelectorAll('.xb-a b,.xb-a span,.xb-b span,.xb-why,.xb-d')].every(e=>e.getBoundingClientRect().height<22),leftColor:getComputedStyle(n).borderLeftWidth};});
-  {const g=await geo();assert.equal(g.disp,'flex');assert.deepEqual(g.widths,[150,64,86]);assert.equal(g.right,16,'오른쪽 덩어리는 줄 오른쪽 끝');assert.equal(g.wrapped,false,'넓으면 한 줄');assert.equal(g.oneLine,true);assert.equal(g.h,true,'글자가 쪼개지지 않는다');assert.equal(g.leftColor,'3px');}
-  assert.equal(await v.locator('.psb-row[data-key="e1"] .xb-why').evaluate(n=>getComputedStyle(n).color),'rgb(180, 35, 24)','기준을 넘긴 사유는 빨강');
-  /* 좁으면 오른쪽 덩어리가 통째로 다음 줄(사유 · D+ · 버튼은 한 줄 그대로) · 본문은 진단이 위로 */
+  /* 줄 = 파이프라인 v11 과 같은 4칸(현장 · 담당 | 현재 상황 | 걸린 사유 · 경과 | 버튼 34px). 글자는 한 줄 */
+  assert.deepEqual((await v.locator('.prv-head span').allInnerTexts()).map(one),['현장 · 담당','현재 상황','걸린 사유 · 경과','']);
+  const geo=()=>page.locator('#expansion-b .psb-row[data-key="e1"]').evaluate(n=>{const cs=getComputedStyle(n);return {disp:cs.display,cols:cs.gridTemplateColumns.split(' ').length,h:[...n.querySelectorAll('.prv-a>b,.prv-a>span,.prv-b>span,.prv-b>small,.prv-c>b,.prv-c>small')].every(e=>e.getBoundingClientRect().height<parseFloat(getComputedStyle(e).fontSize)*1.9),leftColor:cs.borderLeftWidth,btn:Math.round(n.querySelector(':scope>button').getBoundingClientRect().height),site:getComputedStyle(n.querySelector('.prv-a>b')).fontSize};});
+  {const g=await geo();assert.equal(g.disp,'grid');assert.equal(g.cols,4,'파이프라인 v11 과 같은 4칸');assert.equal(g.h,true,'글자가 쪼개지지 않는다');assert.equal(g.leftColor,'3px');assert.equal(g.btn,34,'버튼 높이 = 파이프라인');assert.equal(g.site,'14.5px','현장 글자 = 파이프라인');}
+  assert.equal(await v.locator('.psb-row[data-key="e1"] .prv-c>b').evaluate(n=>getComputedStyle(n).color),'rgb(180, 35, 24)','기준을 넘긴 사유는 빨강');
+  /* 좁으면 본문은 진단이 위로 · 줄은 4칸 그대로 */
   await page.setViewportSize({width:900,height:900});await page.waitForTimeout(250);
-  {await page.evaluate(()=>{document.querySelector('#expansion-b .psb-list').style.width='520px';});await page.waitForTimeout(100);const g=await geo();await page.evaluate(()=>{document.querySelector('#expansion-b .psb-list').style.width='';});assert.equal(g.wrapped,true,'목록 폭이 좁으면(520px) 오른쪽 덩어리가 다음 줄');assert.equal(g.oneLine,true,'통째로');assert.deepEqual(g.widths,[150,64,86]);assert.equal(g.h,true);
-   assert.deepEqual(await page.locator('#expansion-b').evaluate(n=>{const d=n.querySelector('.psb-diag').getBoundingClientRect(),m=n.querySelector('.psb-main').getBoundingClientRect();return [d.bottom<=m.top+1,Math.round(d.width)<=380];}),[true,true],'진단이 위로 · 최대 380px');}
+  {const g=await geo();assert.equal(g.cols,4);assert.equal(g.h,true);
+   assert.deepEqual(await page.locator('#expansion-b').evaluate(n=>{const d=n.querySelector('.ps3-diag').getBoundingClientRect(),m=n.querySelector('.ps3-main').getBoundingClientRect();return [d.bottom<=m.top+1,Math.abs(d.width-m.width)<2];}),[true,true],'진단이 위로 · 목록과 같은 폭(파이프라인 v3 와 같음)');}
   await page.setViewportSize({width:1600,height:1000});await page.waitForTimeout(200);
-  assert.deepEqual(await page.locator('#expansion-b').evaluate(n=>{const d=n.querySelector('.psb-diag').getBoundingClientRect(),m=n.querySelector('.psb-main').getBoundingClientRect();return [Math.abs(d.top-m.top)<4,Math.round(d.width)<=380,m.width>d.width*2];}),[true,true,true],'넓으면 2단(진단 최대 380px · 목록이 나머지)');
+  assert.deepEqual(await page.locator('#expansion-b').evaluate(n=>{const d=n.querySelector('.ps3-diag').getBoundingClientRect(),m=n.querySelector('.ps3-main').getBoundingClientRect();return [Math.abs(d.top-m.top)<4,Math.round(d.width)<=380,m.width>d.width*2];}),[true,true,true],'넓으면 2단(진단 최대 380px · 목록이 나머지)');
   /* 사후 연락 기준을 화면에서 바꾼다(이 PC 저장) — 90일로 올리면 D+60 은 빨강에서 빠진다 */
   assert.equal(await v.locator('[data-xb-rule="afterCompletionDays"]').inputValue(),'30');
   await v.locator('[data-xb-rule="afterCompletionDays"]').selectOption('90');await page.waitForTimeout(200);
@@ -87,21 +88,21 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#expansion-b [data-xb-rule="afterCompletionDays"]').selectOption('30');await page.waitForTimeout(200);
   if(shot)await page.screenshot({path:shot+'-list.png',fullPage:true});
   /* 필터: 막대 칸 · 사유 · 해제 · 보드 */
-  await v.locator('.psb-axis .leg button').nth(1).click();await page.waitForTimeout(150);assert.equal(await page.locator('#expansion-b .psb-row').count(),1);
+  await v.locator('.ps3-tabs .ps3-tab').nth(2).click();await page.waitForTimeout(150);assert.equal(await page.locator('#expansion-b .psb-row').count(),1);
   await page.locator('#expansion-b [data-sb="clear"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#expansion-b .psb-row').count(),6);
-  await page.locator('#expansion-b .psb-reason[data-v="after30"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#expansion-b .psb-row').count(),1);
+  await page.locator('#expansion-b .ps3-reason[data-v="after30"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#expansion-b .psb-row').count(),1);
   await page.locator('#expansion-b [data-sb="clear"]').click();await page.waitForTimeout(150);
-  await page.locator('#expansion-b [data-sb="view"][data-v="board"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#expansion-b .psb-col').count(),3);assert.equal(await page.locator('#expansion-b .psb-card').count(),6);
+  await page.locator('#expansion-b [data-sb="view"][data-v="board"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#expansion-b .ps3-col').count(),3);assert.equal(await page.locator('#expansion-b .ps3-card').count(),6);
   await page.locator('#expansion-b [data-sb="view"][data-v="list"]').click();await page.waitForTimeout(150);
   /* 준공연도 알약 */
   await page.locator('#expansion-b .xb-ypills [data-value="'+(Y-1)+'"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#expansion-b .psb-row').count(),1);
-  assert.equal(one(await page.locator('#expansion-b .psb-lhead').innerText()),'확인할 현장 1곳 '+(Y-1)+'년 준공만 리스트 보드');assert.match(one(await page.locator('#pg-expansion>.cf-bar .cf-pill').first().innerText()),/^전체 7$/,'연도를 골라도 브랜드 칩은 그대로');
-  await page.locator('#expansion-b .xb-ypills [data-value="이전"]').click();await page.waitForTimeout(150);assert.equal(one(await page.locator('#expansion-b .psb-lhead').innerText()),'확인할 현장 0곳 '+(Y-3)+'년 이전 준공만 리스트 보드');assert.equal(await page.locator('#expansion-b .xb-ypills [data-value="이전"]').evaluate(b=>getComputedStyle(b).opacity),'1','고른 알약은 0건이어도 또렷하게');
-  await page.locator('#expansion-b .xb-ypills [data-value="전체"]').click();await page.waitForTimeout(150);assert.equal(one(await page.locator('#expansion-b .psb-lhead').innerText()),'확인할 현장 7곳 리스트 보드','전체면 안내 없음');
+  assert.equal(one(await page.locator('#expansion-b .ps3-lhead').innerText()),'확인할 현장 1곳 '+(Y-1)+'년 준공만 리스트 보드');assert.match(one(await page.locator('#pg-expansion>.cf-bar .cf-pill').first().innerText()),/^전체 7$/,'연도를 골라도 브랜드 칩은 그대로');
+  await page.locator('#expansion-b .xb-ypills [data-value="이전"]').click();await page.waitForTimeout(150);assert.equal(one(await page.locator('#expansion-b .ps3-lhead').innerText()),'확인할 현장 0곳 '+(Y-3)+'년 이전 준공만 리스트 보드');assert.equal(await page.locator('#expansion-b .xb-ypills [data-value="이전"]').evaluate(b=>getComputedStyle(b).opacity),'1','고른 알약은 0건이어도 또렷하게');
+  await page.locator('#expansion-b .xb-ypills [data-value="전체"]').click();await page.waitForTimeout(150);assert.equal(one(await page.locator('#expansion-b .ps3-lhead').innerText()),'확인할 현장 7곳 리스트 보드','전체면 안내 없음');
   await page.locator('#expansion-b .xb-ypills [data-value="'+Y+'"]').click();await page.waitForTimeout(150);
   if(shot)await page.screenshot({path:shot+'-year.png',fullPage:true});
   /* 열기 = 기존 v2 상세창 · 사유 버튼은 그 액션으로(연락 → 입력칸 포커스, 전환 → 기존 전환창) */
-  await page.locator('#expansion-b .psb-row[data-key="e2"] .xb-a').click();await page.waitForTimeout(250);
+  await page.locator('#expansion-b .psb-row[data-key="e2"] .prv-a').click();await page.waitForTimeout(250);
   assert.equal(await page.locator('#expansionV2.on .xdv').count(),1,'v2 상세창');assert.match(await page.locator('#expansionV2 .xdv-top').innerText(),/마곡청구아파트/);
   /* 관리 정보 빈 칸 입력(2026-10-03): 현재 담당(관리자) · 준공일 = 서버 함수, 공종 = 기존 편집기 버튼, 계약일 · 수주 금액 = 계약실적 안내 */
   const facts=page.locator('#expansionV2 .xdv-facts');
@@ -130,7 +131,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.setViewportSize({width:1600,height:1000});
   /* 끄기: 준공연도 줄 · 목록 줄만 예전으로 */
   await page.evaluate(()=>{G.expansionYearRowOff=true;paint();});await page.waitForTimeout(250);
-  assert.equal(await page.locator('#expansion-b .xb-yrow,#expansion-b .xb-row').count(),0);assert.equal(await page.locator('#expansion-b .plv-pills button').count(),5);assert.equal(await page.locator('#expansion-b .psb-row .l').count(),6);
+  assert.equal(await page.locator('#expansion-b .xb-yrow,#expansion-b .xb-row').count(),0);assert.equal(await page.locator('#expansion-b .plv-pills button').count(),5);assert.equal(await page.locator('#expansion-b .psb-row .prv-a').count(),6);
   await page.evaluate(()=>{G.expansionYearRowOff=false;paint();});await page.waitForTimeout(250);
   await page.evaluate(()=>{G.expansionBOff=true;paintExpansion();});await page.waitForTimeout(200);
   assert.equal(await page.locator('#expansion-b').count(),0);assert.equal(await page.locator('#expansion-v2').count(),1,'끄면 v2 묶음 표');

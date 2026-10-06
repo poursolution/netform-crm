@@ -1,20 +1,20 @@
 /* 파이프라인 단계 화면 v3 — 전 단계 공통 틀 (2026-10-05 design_handoff_pipeline_v3). ps3- 접두사만 쓴다.
    글자 크기 · 버튼은 시안 그대로: 제목 22 · 탭 숫자 24 / 이름 15 / 기준 12.5 · 현장 15.5 · 사유 14 · 버튼 96px 고정(연파랑 #f5f8ff · 테두리 #d5e0fb · 글자 #2a52b8 13px 600) */
 .ps3{display:flex;flex-direction:column;gap:16px;color:#15171c;font-family:inherit}
-#pipeline-stage-v3 button{font-family:inherit;cursor:pointer}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) button{font-family:inherit;cursor:pointer}
 .ps3-top{display:flex;flex-direction:column;gap:12px}
 .ps3-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .ps3-head b{font-size:22px;letter-spacing:-.03em}
 .ps3-head span{font-size:14px;color:#4b5563}
 /* 상태 탭 4칸 */
 .ps3-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden}
-#pipeline-stage-v3 .ps3-tab{border:0;border-left:1px solid #f0f1f4;border-bottom:3px solid transparent;border-radius:0;background:#fff;text-align:left;padding:13px 18px 11px;display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;margin:0;color:#15171c;box-shadow:none;height:auto}
-#pipeline-stage-v3 .ps3-tab:first-child{border-left:0}
-#pipeline-stage-v3 .ps3-tab.on{background:#f8faff;border-bottom-color:#3b6ce4}
-#pipeline-stage-v3 .ps3-tab .n{font-size:24px;line-height:1.2;letter-spacing:-.02em;color:#15171c}
-#pipeline-stage-v3 .ps3-tab .n.r{color:#b42318}
-#pipeline-stage-v3 .ps3-tab .l{font-size:15px;line-height:1.3;color:#15171c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-#pipeline-stage-v3 .ps3-tab span{font-size:12.5px;line-height:1.3;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-tab{border:0;border-left:1px solid #f0f1f4;border-bottom:3px solid transparent;border-radius:0;background:#fff;text-align:left;padding:13px 18px 11px;display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;margin:0;color:#15171c;box-shadow:none;height:auto}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-tab:first-child{border-left:0}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-tab.on{background:#f8faff;border-bottom-color:#3b6ce4}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-tab .n{font-size:24px;line-height:1.2;letter-spacing:-.02em;color:#15171c}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-tab .n.r{color:#b42318}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-tab .l{font-size:15px;line-height:1.3;color:#15171c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-tab span{font-size:12.5px;line-height:1.3;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 /* 아래 2단 */
 .ps3-body{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
 .ps3-diag{flex:1 1 300px;max-width:360px;min-width:0;display:flex;flex-direction:column;gap:12px}
@@ -32,12 +32,12 @@
 .ps3-kpis b{font-size:24px;line-height:1.25;color:#15171c}
 .ps3-kpis .over b{color:#b42318}
 .ps3-kpis small{font-size:12px;color:#9ca3af}
-#pipeline-stage-v3 .ps3-reason{border:1px solid #e8eaef;background:#fff;border-radius:9px;padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:6px;margin:0;color:#15171c;box-shadow:none;height:auto;width:100%}
-#pipeline-stage-v3 .ps3-reason.on{border-color:#15171c;background:#f8f9fb}
-#pipeline-stage-v3 .ps3-reason>span{display:flex;justify-content:space-between;gap:10px;font-size:14px}
-#pipeline-stage-v3 .ps3-reason>span b{font-weight:600}
-#pipeline-stage-v3 .ps3-reason>span .c{font-weight:700;color:#9aa0ab}
-#pipeline-stage-v3 .ps3-reason.first>span .c{color:#d14a3f}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-reason{border:1px solid #e8eaef;background:#fff;border-radius:9px;padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:6px;margin:0;color:#15171c;box-shadow:none;height:auto;width:100%}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-reason.on{border-color:#15171c;background:#f8f9fb}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-reason>span{display:flex;justify-content:space-between;gap:10px;font-size:14px}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-reason>span b{font-weight:600}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-reason>span .c{font-weight:700;color:#9aa0ab}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-reason.first>span .c{color:#d14a3f}
 .ps3-reason>i{display:block;height:4px;background:#eef0f3;border-radius:2px;position:relative;overflow:hidden}
 .ps3-reason>i u{position:absolute;left:0;top:0;bottom:0;background:#9aa0ab;border-radius:2px;text-decoration:none}
 .ps3-reason.first>i u{background:#d14a3f}
@@ -47,10 +47,10 @@
 .ps3-lhead>b{font-size:16px}
 .ps3-lhead>b span{color:#6b7280;font-weight:500}
 .ps3-lhead>i{flex:1}
-#pipeline-stage-v3 .ps3-chip{border:1px solid #e3e6ec;background:#fff;color:#15171c;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 11px;margin:0;height:auto;box-shadow:none}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-chip{border:1px solid #e3e6ec;background:#fff;color:#15171c;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 11px;margin:0;height:auto;box-shadow:none}
 .ps3-views{display:flex;border:1px solid #d9dde4;border-radius:9px;overflow:hidden;background:#fff}
-#pipeline-stage-v3 .ps3-views button{border:0;border-radius:0;background:#fff;color:#374151;font-size:13.5px;font-weight:700;padding:7px 16px;margin:0;height:auto;box-shadow:none}
-#pipeline-stage-v3 .ps3-views button[aria-pressed="true"]{background:#15171c;color:#fff}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-views button{border:0;border-radius:0;background:#fff;color:#374151;font-size:13.5px;font-weight:700;padding:7px 16px;margin:0;height:auto;box-shadow:none}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-views button[aria-pressed="true"]{background:#15171c;color:#fff}
 .ps3-list{background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden}
 .ps3-row{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:13px 18px 13px 15px;border-bottom:1px solid #f2f3f6;border-left:3px solid #e3e6ec;cursor:pointer}
 .ps3-row:hover{background:#fbfcff}
@@ -69,8 +69,8 @@
 .ps3-d b{font-size:16px;line-height:1.25;color:#15171c}
 .ps3-d b.r{color:#b42318}
 .ps3-d span{font-size:11.5px;color:#9ca3af}
-#pipeline-stage-v3 .ps3-row button{flex:none;width:96px;border:1px solid #d5e0fb;background:#f5f8ff;color:#2a52b8;font-size:13px;font-weight:600;border-radius:8px;padding:7px 0;margin:0;height:auto;line-height:1.3;box-shadow:none;white-space:nowrap}
-#pipeline-stage-v3 .ps3-row button:hover,#pipeline-stage-v3 .ps3-card button:hover{border-color:#b9cbf8}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-row button{flex:none;width:96px;border:1px solid #d5e0fb;background:#f5f8ff;color:#2a52b8;font-size:13px;font-weight:600;border-radius:8px;padding:7px 0;margin:0;height:auto;line-height:1.3;box-shadow:none;white-space:nowrap}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-row button:hover,:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-card button:hover{border-color:#b9cbf8}
 .ps3-empty{padding:32px;text-align:center;font-size:14px;color:#6b7280}
 /* 보드 */
 .ps3-board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:start}
@@ -88,11 +88,11 @@
 .ps3-card .t .d.r{color:#b42318}
 .ps3-card strong{font-size:14.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .ps3-card>span{font-size:12.5px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#pipeline-stage-v3 .ps3-card button{align-self:flex-start;border:1px solid #d5e0fb;background:#f5f8ff;color:#1d3f99;font-size:12.5px;font-weight:600;border-radius:8px;padding:5px 11px;margin:0;height:auto;line-height:1.3;box-shadow:none}
+:is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-card button{align-self:flex-start;border:1px solid #d5e0fb;background:#f5f8ff;color:#1d3f99;font-size:12.5px;font-weight:600;border-radius:8px;padding:5px 11px;margin:0;height:auto;line-height:1.3;box-shadow:none}
 @media (max-width:900px){
  .ps3-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
- #pipeline-stage-v3 .ps3-tab:nth-child(3){border-left:0}
- #pipeline-stage-v3 .ps3-tab:nth-child(-n+2){border-bottom-width:3px}
+ :is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-tab:nth-child(3){border-left:0}
+ :is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-tab:nth-child(-n+2){border-bottom-width:3px}
  .ps3-diag{max-width:none}
  .ps3-board{grid-template-columns:minmax(0,1fr)}
 }
@@ -105,3 +105,18 @@
 .ps3-card .t .no{font-size:11.5px;color:#6b7280;margin-right:6px}
 .ps3-card .iss{font-size:12.5px;color:#374151}
 .ps3-card .iss.r{color:#b42318;font-weight:700}
+
+/* 공용 틀(2026-10-06 대표 "리스트에서 이질감 없이"): 확장관리 · 경남지사 · 문자(StageBoard) · 수주 · 실주도 이 틀. 진단 숫자 3칸 · 사유별 할 일 · 화면별 옆 상자(psb-box)는 같은 크기로 */
+.ps3-kpis.three{grid-template-columns:1fr 1fr}
+.ps3-kpis.three>div:last-child{grid-column:1/-1}
+.ps3-kpis.three b{font-size:22px;line-height:1.3;overflow-wrap:anywhere}
+.ps3 .psb-box{background:#fff;border:1px solid #e8eaef;border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+.ps3 .psb-box header{display:flex;align-items:baseline;gap:8px}
+.ps3 .psb-box header b{font-size:16px}
+.ps3 .psb-box header span{font-size:13px;color:#9ca3af}
+.ps3 .psb-act{background:#f8f9fb;border-radius:10px;padding:10px 13px;display:flex;flex-direction:column;gap:3px}
+.ps3 .psb-act span{font-size:12.5px;font-weight:700;color:#6b7280}
+.ps3 .psb-act p{margin:0;font-size:14px;line-height:1.55;color:#374151}
+.ps3 .psb-none{font-size:13px;color:#9ca3af;text-align:center;padding:8px 0;margin:0}
+.ps3 .psb-lnote{font-size:13px;color:#6b7280}
+.ps3-top>.plv-intro,.ps3-top>.plv-owners{margin:0}

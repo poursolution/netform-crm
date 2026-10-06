@@ -83,17 +83,17 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await page.evaluate(()=>{G.pipeRowV11Off=false;paint();});await page.waitForSelector('#pipeline-stage-v3 .prv-list .prv-row');
   /* ⑦ 수주 · 실주도 같은 줄 구조(위 진단은 그 화면 그대로) · 줄 = 바로 상세 */
   for(const [key,want] of [['won',['[경기 용인] 가람마을아파트','석민이앤씨 · 공종 미분류 · 황윤선','CRM 연락 기록 없음','기한 없음 · 정하기','연도 확인']],['lost',['[경기 수원] 선경빌','석민이앤씨 · 공종 미분류 · 황윤선','CRM 연락 기록 없음','기한 없음 · 정하기','사유 기록']]]){
-   await page.evaluate(k=>PipelineWorkspace.open(k),key);await page.waitForSelector('#pipeline-stage-b .prv-list .prv-row');await page.waitForTimeout(200);
-   const b=page.locator('#pipeline-stage-b');
-   assert.deepEqual([(await b.locator('.prv-head span').allInnerTexts()).map(one),await b.locator('.psb-diag .psb-box').count()>=1,await b.locator('.prv-row.psb-row').count(),await b.locator('.prv-more,.prv-main').count()],[['현장 · 담당','현재 상황','다음 업무 · 기한',''],true,1,0],key+': 같은 줄 · 진단은 그대로 · 펼침 없음');
+   await page.evaluate(k=>PipelineWorkspace.open(k),key);await page.waitForSelector('#pipeline-stage-v3 .prv-list .prv-row');await page.waitForTimeout(200);
+   const b=page.locator('#pipeline-stage-v3');
+   assert.deepEqual([(await b.locator('.prv-head span').allInnerTexts()).map(one),await b.locator('.ps3-diag .ps3-box').count()>=1,await b.locator('.prv-row.ps3-row').count(),await b.locator('.prv-more,.prv-main').count()],[['현장 · 담당','현재 상황','다음 업무 · 기한',''],true,1,0],key+': 같은 줄 · 진단은 그대로 · 펼침 없음');
    assert.deepEqual(await b.locator('.prv-row').first().evaluate(r=>{const t=s=>r.querySelector(s).innerText.replace(/\s+/g,' ').trim();return [t('.prv-a>b'),t('.prv-a>span'),t('.prv-b>small'),t('.prv-c>small'),t(':scope>button')];}),want,key);
    assert.match(one(await b.locator('.prv-b>span').first().innerText()),key==='won'?/^차기 공사 미확인 · /:/^실주 사유 미입력 · \d{1,2}\/\d{1,2} 실주$/);
    if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'pipe-v11-'+key+'.png')});
   }
-  await page.locator('#pipeline-stage-b .prv-row').first().click();await page.waitForSelector('#detailView.on.dv3');
+  await page.locator('#pipeline-stage-v3 .prv-row').first().click();await page.waitForSelector('#detailView.on.dv3');
   assert.equal(await page.evaluate(()=>CUR_DETAIL.item.site),'[경기 수원] 선경빌','실주 줄을 누르면 그 영업건 상세');
   await page.evaluate(()=>closeDetail());await page.waitForTimeout(200);
-  await page.locator('#pipeline-stage-b .prv-row>button').first().click();await page.waitForSelector('#detailView.on.dv3');
+  await page.locator('#pipeline-stage-v3 .prv-row>button').first().click();await page.waitForSelector('#detailView.on.dv3');
   assert.equal(await page.evaluate(()=>CUR_DETAIL.item.site),'[경기 수원] 선경빌','실주 줄의 버튼 = 그 영업건 상세');
   await page.evaluate(()=>{try{StageTransitionUI.close();}catch(e){}try{DetailActions.close(false);}catch(e){}closeDetail();});await page.waitForTimeout(200);
   assert.deepEqual(errs,[],'화면 오류 없음: '+errs.join(' | '));

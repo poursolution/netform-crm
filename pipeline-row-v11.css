@@ -1,24 +1,27 @@
 /* 파이프라인 단계별 화면 · '확인할 현장' 목록 줄 v11 (2026-10-06 design_handoff_pipeline_v11 · 펼침 없음) — 줄만. 위 탭 · 왼쪽 진단 · 보드는 그대로 */
-#pg-pipe .prv-list{background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden;padding:0;display:block}
-#pg-pipe .prv-list .prv-head,#pg-pipe .prv-list .prv-row{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.2fr) minmax(0,1.2fr) 120px;gap:16px}
-#pg-pipe .prv-list .prv-head{padding:9px 18px 9px 21px;font-size:11.5px;color:#9ca3af;border-bottom:1px solid #eef0f3}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list{background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden;padding:0;display:block}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-head,:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-row{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.2fr) minmax(0,1.2fr) 120px;gap:16px}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-head{padding:9px 18px 9px 21px;font-size:11.5px;color:#9ca3af;border-bottom:1px solid #eef0f3}
 /* 줄: 예전 줄 클래스(ps3-row · psb-row)를 같이 달고 있어 그 규칙을 여기서 지운다. 누르면 바로 영업건 상세 */
-#pg-pipe .prv-list .prv-row{align-items:center;min-height:0;height:auto;margin:0;padding:13px 18px;border:0;border-bottom:1px solid #f0f1f4;border-left:3px solid #e3e6ec;border-radius:0;background:#fff;box-shadow:none;cursor:pointer;outline-offset:-2px}
-#pg-pipe .prv-list .prv-row:hover{background:#fafbfc}
-#pg-pipe .prv-list .prv-a,#pg-pipe .prv-list .prv-b,#pg-pipe .prv-list .prv-c{display:flex;flex-direction:column;gap:3px;min-width:0}
-#pg-pipe .prv-list .prv-a>b{font-size:14.5px;font-weight:700;color:#15171c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#pg-pipe .prv-list .prv-a>span{font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#pg-pipe .prv-list .prv-a em{font-style:normal;font-weight:600}
-#pg-pipe .prv-list .prv-a i{font-style:normal}
-#pg-pipe .prv-list .prv-a i.r{color:#b42318}
-#pg-pipe .prv-list .prv-b>span{font-size:13px;color:#15171c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#pg-pipe .prv-list .prv-b>small{font-size:12px;color:#9ca3af;white-space:nowrap}
-#pg-pipe .prv-list .prv-c>b{font-size:13.5px;font-weight:600;color:#15171c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#pg-pipe .prv-list .prv-c>b.none{color:#9ca3af;font-weight:500}
-#pg-pipe .prv-list .prv-c>small{font-size:12px;color:#6b7280;white-space:nowrap}
-#pg-pipe .prv-list .prv-c>small.r{color:#b42318;font-weight:700}
-#pg-pipe .prv-list .prv-c>small.g{color:#9ca3af}
-#pg-pipe .prv-list .prv-row>button{height:34px;min-height:0;width:auto;border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12.5px;font-weight:700;border-radius:8px;white-space:nowrap;padding:0 8px;margin:0;box-shadow:none;cursor:pointer}
-#pg-pipe .prv-list .prv-row>button:hover:not(:disabled){background:#f3f4f6}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-row{align-items:center;min-height:0;height:auto;margin:0;padding:13px 18px;border:0;border-bottom:1px solid #f0f1f4;border-left:3px solid #e3e6ec;border-radius:0;background:#fff;box-shadow:none;cursor:pointer;outline-offset:-2px}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-row:hover{background:#fafbfc}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-a,:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-b,:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-c{display:flex;flex-direction:column;gap:3px;min-width:0}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-a>b{font-size:14.5px;font-weight:700;color:#15171c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-a>span{font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-a em{font-style:normal;font-weight:600}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-a i{font-style:normal}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-a i.r{color:#b42318}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-b>span{font-size:13px;color:#15171c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-b>small{font-size:12px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-c>b{font-size:13.5px;font-weight:600;color:#15171c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-c>b.none{color:#9ca3af;font-weight:500}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-c>small{font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-c>small.r{color:#b42318;font-weight:700}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-c>small.g{color:#9ca3af}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-row>button{height:34px;min-height:0;width:auto;border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12.5px;font-weight:700;border-radius:8px;white-space:nowrap;padding:0 8px;margin:0;box-shadow:none;cursor:pointer}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-row>button:hover:not(:disabled){background:#f3f4f6}
 /* 좁은 화면: 버튼 칸만 줄이고 글은 말줄임 */
-@media(max-width:1100px){#pg-pipe .prv-list .prv-head,#pg-pipe .prv-list .prv-row{grid-template-columns:minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1.1fr) 96px;gap:12px}}
+@media(max-width:1100px){:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-head,:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-row{grid-template-columns:minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1.1fr) 96px;gap:12px}}
+/* 공용 틀의 줄(확장관리 · 경남지사 · 문자): 세 번째 칸 = 걸린 사유(빨강 = 기준 넘김) · 경과 */
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-c>b.r{color:#b42318}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-c>small.r{color:#b42318;font-weight:700}

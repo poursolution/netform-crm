@@ -91,7 +91,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#avTitle').innerText(),'예현마을현대홈타운아파트');await page.evaluate(()=>{const b=document.querySelector('[data-ad="close"]');if(b)b.click();});await page.waitForTimeout(200);
   /* 8. 보드 보기 · 끄기 = 이전 목록(B안) */
   await v.locator('[data-ac="board"]').click();await page.waitForTimeout(300);
-  assert.equal(await page.locator('#site-master .ac').count(),0);assert.equal(await page.locator('#site-master .psb-board').count(),1);
+  assert.equal(await page.locator('#site-master .ac').count(),0);assert.equal(await page.locator('#site-master .ps3-board').count(),1);
   await page.locator('#site-master [data-sb="view"][data-v="list"]').click();await page.waitForTimeout(300);assert.equal(await page.locator('#site-master .ac').count(),1,'리스트로 돌아오면 v2 목록');
   await page.evaluate(()=>{G.assetCOff=true;paintSites();});await page.waitForTimeout(200);
   assert.equal(await page.locator('#site-master .ac').count(),0);assert.equal(await page.locator('#site-master .sb').count(),1);

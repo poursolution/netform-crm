@@ -34,13 +34,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#pg-sites>.cf-bar:not([hidden])').count(),1,'공통 필터줄');
   assert.equal(await page.evaluate(()=>document.getElementById('ptitle').textContent),'고객 자산');
   assert.deepEqual(await v.locator('.plv-pills button').allInnerTexts(),['전체 4','활성 1','기존고객 1','재접촉 필요 0','관계위험 1','휴면 1']);
-  assert.deepEqual((await v.locator('.psb-axis .leg button').allInnerTexts()).map(t=>t.replace(/\s+/g,' ')),['활성 · 진행 중 1','기존고객 · 재접촉 1','관계위험 · 휴면 2']);
-  assert.match(await v.locator('.psb-kpis').innerText(),/기준 넘김 \(빨강\)\s*1곳[\s\S]*누적 수주\s*3,400만\s*2곳 · 평균 1,700만[\s\S]*평균 최근 기록\s*\d+일/);
-  const reasons=await v.locator('.psb-reason span').allInnerTexts();
+  assert.deepEqual(await v.locator('.ps3-tabs .ps3-tab').evaluateAll(l=>l.map(b=>b.querySelector('.l').textContent+' '+b.querySelector('.n').textContent)),['전체 4','활성 · 진행 중 1','기존고객 · 재접촉 1','관계위험 · 휴면 2'],'공용 틀: 상태 탭 4칸([전체] + 3칸)');
+  assert.match(await v.locator('.ps3-kpis').innerText(),/기준 넘김\s*1곳[\s\S]*누적 수주\s*3,400만\s*2곳 · 평균 1,700만[\s\S]*평균 최근 기록\s*\d+일/);
+  const reasons=await v.locator('.ps3-reason>span>b:first-child').allInnerTexts();
   assert.deepEqual(reasons,['관계위험 · 진행 금액 걸림','실주 2회 · 수주 없음','수주 고객 2개월 넘게 연락 없음','핵심 인물 미확인','1년 이상 움직임 없음','주소 미입력'],JSON.stringify(reasons));
-  assert.match(await v.locator('.psb-two .psb-box').nth(1).innerText(),/그래서 뭘 해야 하나[\s\S]*관계위험 · 진행 금액 걸림 1곳[\s\S]*실주 2회 · 수주 없음 1곳/);
+  assert.match(await v.locator('.ps3-diag>.ps3-box').nth(2).innerText(),/그래서 뭘 해야 하나[\s\S]*관계위험 · 진행 금액 걸림 1곳[\s\S]*실주 2회 · 수주 없음 1곳/);
   /* 정렬: 관계위험(빨강 2개) → 나머지는 사유 수 → 일수 */
-  const order=await v.locator('.psb-row').evaluateAll(a=>a.map(n=>n.querySelector('.l b').textContent));
+  const order=await v.locator('.psb-row').evaluateAll(a=>a.map(n=>n.querySelector('.prv-a>b').textContent));
   assert.equal(order[0],'예현마을현대홈타운아파트',JSON.stringify(order));
   assert.match(await v.locator('.psb-row').first().innerText(),/예현마을현대홈타운아파트[\s\S]*POUR솔루션 · 황윤선 · 누적 0원[\s\S]*관계위험[\s\S]*관계위험 · 진행 1건 3\.7억 · 실주 2건[\s\S]*관계위험 · 진행 금액 걸림[\s\S]*(119|120)일[\s\S]*연락/);
   assert.match(await v.locator('.psb-row',{hasText:'수주 뒤 조용한 단지'}).innerText(),/기존고객[\s\S]*박소장 관리소장[\s\S]*수주 고객 2개월 넘게 연락 없음[\s\S]*(79|80)일[\s\S]*관계 연락/);
@@ -54,14 +54,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#pg-sites>.cf-bar [data-sf-brand="전체"]').click();await page.waitForTimeout(150);
   await page.locator('#asset-b .plv-chip',{hasText:'이필선'}).click();await page.waitForTimeout(150);assert.equal(await page.locator('#asset-b .psb-row').count(),1,'담당자 공통 필터');
   await page.locator('#asset-b .plv-chip.on').click();await page.waitForTimeout(150);
-  await page.locator('#asset-b .psb-axis .leg button').nth(2).click();await page.waitForTimeout(150);assert.equal(await page.locator('#asset-b .psb-row').count(),2);
+  await page.locator('#asset-b .ps3-tabs .ps3-tab').nth(3).click();await page.waitForTimeout(150);assert.equal(await page.locator('#asset-b .psb-row').count(),2);
   await page.locator('#asset-b [data-sb="clear"]').click();await page.waitForTimeout(150);
-  await page.locator('#asset-b [data-sb="view"][data-v="board"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#asset-b .psb-col').count(),3);assert.equal(await page.locator('#asset-b .psb-card').count(),4);
+  await page.locator('#asset-b [data-sb="view"][data-v="board"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#asset-b .ps3-col').count(),3);assert.equal(await page.locator('#asset-b .ps3-card').count(),4);
   await page.locator('#asset-b [data-sb="view"][data-v="list"]').click();await page.waitForTimeout(150);
   await page.locator('#asset-b .av-more summary').click();assert.deepEqual(await page.locator('#asset-b .av-menu button').allInnerTexts(),['기술자문 원본 자료','연결 검토 · 과거자료 연결 → 데이터 정리 · 검토']);
   await page.locator('#asset-b .av-menu [data-ab="advisory"]').click();assert.equal(await page.evaluate(()=>document.getElementById('pg-sites').classList.contains('av-adv-on')),true);
   /* 열기 = 기존 3단 모달 */
-  await page.locator('#asset-b .psb-row').first().locator('.l').click();await page.waitForTimeout(300);
+  await page.locator('#asset-b .psb-row').first().locator('.prv-a').click();await page.waitForTimeout(300);
   const d=page.locator('#assetV2.on .xdv');assert.equal(await d.count(),1,'v2 상세 모달');assert.match(await d.innerText(),/예현마을현대홈타운아파트/);
   await page.keyboard.press('Escape');await page.waitForTimeout(150);
   /* 좁은 화면 · 끄기 */
