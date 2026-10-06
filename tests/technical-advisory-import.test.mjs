@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeProject, prepareImport } from '../server/technical-advisory/normalize.mjs';
+import { normalizeProject, prepareImport } from '../supabase/functions/technical-advisory-ingest/normalize.mjs';
 const source = () => ({ projectId: 'fixture-project', data: {
   aptName: '검증 현장', managerName: '현재 담당자', contractDate: '2026-09-01',
   crosscheck: { execAmount: 90000000 }, modusign: { documentId: 'doc-1' },
