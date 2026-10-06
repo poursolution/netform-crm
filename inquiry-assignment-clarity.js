@@ -95,6 +95,39 @@
  root.inquiryRoutedOwner=function(q){return root.inquiryOwnerIdentity(q).name};
  root.inquiryAssigned=function(q){return root.inquiryOwnerIdentity(q).assigned};
 
+
+ /* A live reassignment is unfinished until this owner records a customer contact.
+    Preserve original response dates; assignment/system/internal notes are not contact evidence. */
+ root.inquiryReassignmentPending=function(q){
+  if(!q||q._assignmentOptimistic||queueHasLiveAssignment(q.id))return false;
+  if((root.isClosedInq&&root.isClosedInq(q))||(root.inqCtlConverted&&root.inqCtlConverted(q))||/보류|스토어|휴지통/.test(String(q.status||'')))return false;
+  var owner=root.inquiryOwnerIdentity(q),latest=assignmentHistory(q)[0];
+  if(!owner.assigned||!owner.name||!latest)return false;
+  var to=userNameForId(latest.to_owner||latest.to||latest.to_assignee),from=userNameForId(latest.from_owner||latest.from||latest.from_assignee);
+  if(to!==owner.name||!from||from===to)return false;
+  var at=Date.parse(latest.changed_at||latest.at||''),now=Date.now(),live=Date.parse(String(root.OPS_RULES&&root.OPS_RULES.liveFrom||'2026-10-01')+'T00:00:00+09:00');
+  if(!Number.isFinite(at)||at<live||at>now)return false;
+  var canonical=q.sales_assigned_at||q.assigned_at||q.assignedAt||(q.detail&&q.detail.assigned_at);
+  if(canonical&&(!Number.isFinite(Date.parse(canonical))||Math.abs(Date.parse(canonical)-at)>1000))return false;
+  var flow=root.InquiryFlow;if(!flow||!flow.logOf)return false;
+  var sources=[q],CS=root.ContactState;
+  if(CS&&CS.on()&&CS.siblings)sources=sources.concat((CS.siblings(q)||[]).filter(function(other){return root.inquiryOwnerIdentity(other).name===owner.name}));
+  function handled(a,server){
+   var stamp=Date.parse(server?a.occurred_at:(a.at||a.occurred_at||a.created_at));
+   if(!Number.isFinite(stamp)||stamp<at||stamp>now)return false;
+   var actor=firstText([a.actor_name,a.actor,a.who,a.created_by_name,a.actor_user_id,a.created_by]);
+   if(!(actor&&((owner.id&&actor===owner.id)||userNameForId(actor)===owner.name)))return false;
+   if(!server&&/메모|담당자|배정|요청|상태변경|시스템|이관/.test(String(a.type||'')))return false;
+   var log=server?a:flow.logOf(a);
+   return !!log&&['attempt','connected','wait'].indexOf(log.kind)>=0;
+  }
+  return !sources.some(function(source){
+   var patch=typeof root.itemPatch==='function'?root.itemPatch(source,'inq'):{},S=flow.server&&flow.server(source);
+   return [].concat(source.activities||[],patch.activities||[]).some(function(a){return handled(a,false)})||
+    !!(S&&Array.isArray(S.logs)&&S.logs.some(function(a){return handled(a,true)}));
+  });
+ };
+
  function contactToken(q){
   var detail=objectOf(q.detail),raw=objectOf(q.raw||q.data),phone=firstText([q.phone,q.mobile,q.contact_phone,detail.phone,detail.mobile,raw.phone,raw.mobile,raw['연락처'],raw['전화번호']]).replace(/\D/g,'');
   if(phone.length>=8)return 'p:'+phone;
