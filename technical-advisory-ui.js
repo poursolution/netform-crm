@@ -58,7 +58,7 @@ function installLibrary(){
  const host=document.getElementById?.('pg-sites');
  if(!host||host.querySelector('.advisory-library'))return;
  const panel=document.createElement('section');panel.className='technical-advisory advisory-library';
- panel.innerHTML='<h3>기술자문 계약</h3><p>영업건 등록 여부와 관계없이 조회 권한이 있는 원본 계약을 확인합니다.</p><button type="button" class="dact">계약 조회</button><div class="advisory-library-items" aria-live="polite"></div>';
+ panel.innerHTML='<h3>기술자문 원본 자료</h3><p>영업건 등록 여부와 관계없이 조회 권한이 있는 원본 계약을 확인합니다.</p><button type="button" class="dact">계약 조회</button><div class="advisory-library-items" aria-live="polite"></div>';
  host.prepend(panel);
  const button=panel.querySelector('button'),content=panel.querySelector('.advisory-library-items');
  let cursor=null,rows=[],page=1;
@@ -86,6 +86,86 @@ function installLibrary(){
   finally{button.disabled=false;}
  };
 }
-root.TechnicalAdvisoryUI={mount,html,installLibrary};
+/* ── 프로젝트 기본 정보(원본) — 2026-10-06 표시 위치 결정(Claude · docs/ADVISORY_PROJECT_DISPLAY_DECISION_20261006.md)
+   어디서: 고객 자산 → 제목 줄 [기술자문 원본 자료] → 화면 아래 칸의 [프로젝트 기본 정보] 탭(옆 탭 = 기존 [계약 문서]).
+   무엇을: 기술자문 플랫폼에서 받은 원본 프로젝트. 계약 문서가 없는 프로젝트도 보인다 — '문서 없음'은 미체결 확정도, 원본 정보 없음도 아니다.
+   여기는 화면만 그린다. 조회(권한 · RPC · 커서)는 projects.connect(loader) 로 넘겨받는다(Codex).
+     loader({after}) → {items:[…], next_cursor:null|string}   · 권한 없음 = code '42501' 인 오류   · 한 번에 최대 20건
+     items[i] = crm_advisory_project_read_v1 의 한 줄 + (있으면) has_contract_document:true|false — 이 값이 없으면 문서 꼬리표를 달지 않는다(추정하지 않는다).
+   연결되기 전에는 탭이 생기지 않고 계약 문서 칸만 보인다. 빈 값은 '미기록' — 0원 · 미진행 · 미체결로 추정하지 않는다. */
+const PJ={loader:null,rows:[],cursor:null,page:1,sel:'',state:'idle',busy:false,tab:'proj'};
+const STATE_TEXT={loading:'조회 중…',failed:'프로젝트 기본 정보를 조회하지 못했습니다. 다시 시도해 주세요.',denied:'이 계정에는 기술자문 프로젝트 조회 권한이 없습니다.',empty:'조회 권한이 있는 기술자문 프로젝트가 없습니다.',more:'다음 쪽을 불러오지 못했습니다. 다시 시도해 주세요.'};
+const val=v=>v==null||String(v).trim()===''?'미기록':String(v);
+const pid=p=>String(p&&p.source_project_id!=null?p.source_project_id:'');
+const docChip=p=>p.has_contract_document===true?'<span class="adv-chip b">계약 문서 있음</span>':p.has_contract_document===false?'<span class="adv-chip x" title="계약 문서가 CRM 에 연결되지 않은 상태입니다 — 미체결 확정이 아닙니다">계약 문서 없음</span>':'';
+function projectDetail(p){
+ const o=p.operations&&typeof p.operations==='object'?p.operations:{},amt=p.source_consulting_contract_amount==null||p.source_consulting_contract_amount===''?null:fmtAmt(Number(p.source_consulting_contract_amount));
+ const done=o.completed===true?'준공 확인됨':o.completed===false?'준공 확인 전':null,rate=o.progress_rate==null||o.progress_rate===''?null:o.progress_rate+'%';
+ const rows=[['원본 프로젝트 번호',pid(p)],['업체',p.company_name],['원본 현재 담당자',p.current_source_manager],['원본 프로젝트 상태',p.source_project_status],['원본 계약 문서 유형',p.source_contract_document_type],['원본 문서 표시일',p.source_printed_contract_date],['기술자문 계약금액(원본)',amt],['원본 진행 상태',o.source_status],['공정률(원본)',rate],['시작일(원본)',o.start_date],['준공일(원본 기재)',o.completion_date],['준공 확인(원본)',done],['CRM 수신',p.received_at?String(p.received_at).slice(0,16).replace('T',' '):null]];
+ return '<article class="adv-proj-detail"><div class="adv-line"><b>'+esc(val(p.site_name))+'</b>'+docChip(p)+'</div><div class="adv-sub">'+esc(val(p.work_name))+'</div>'
+  +'<p class="adv-note"><span class="adv-chip n">원본 기본 정보</span><span class="adv-chip n">실적 합산 안 함</span> 기술자문 플랫폼에서 받은 정보입니다. 기술자문 계약금액은 아파트 공사 계약실적이 아니고, 문서 표시일은 계약 체결일 확정값이 아닙니다.</p>'
+  +(p.has_contract_document===false?'<p class="adv-nodoc">연결된 계약 문서가 없습니다 — 미체결 확정이 아닙니다. 문서가 연결되면 [계약 문서] 탭에 나타납니다.</p>':'')
+  +'<dl>'+rows.map(([l,v])=>'<dt>'+esc(l)+'</dt><dd>'+esc(val(v))+'</dd>').join('')+'</dl></article>';
+}
+function projectsHtml(){
+ if(PJ.state==='denied')return '<p class="adv-state">'+STATE_TEXT.denied+'</p>';
+ if(!PJ.rows.length){
+  if(PJ.busy||PJ.state==='loading')return '<p class="adv-state">'+STATE_TEXT.loading+'</p>';
+  if(PJ.state==='failed')return '<p class="adv-state bad">'+STATE_TEXT.failed+'</p><button type="button" class="dact" data-advproj="retry">다시 조회</button>';
+  if(PJ.state==='ready')return '<p class="adv-state">'+STATE_TEXT.empty+'</p>';
+  return '';
+ }
+ /* 쪽 번호: 받아 온 것은 한 쪽 20건. 다음 묶음이 있으면 그다음 쪽 번호까지만 보여 주고(전체 쪽 수는 마지막 묶음을 받기 전에는 알 수 없다), 그 쪽을 누르면 받아 온다 */
+ const LP=root.ListPager,SIZE=LP.SIZE,more=!!PJ.cursor,pad=more?((SIZE-(PJ.rows.length%SIZE))%SIZE)+1:0,pg=LP.cut(PJ.rows.concat(new Array(pad).fill(null)),PJ.page),shown=pg.rows.filter(Boolean);
+ const count=new Map();PJ.rows.forEach(p=>{const k=String(p.site_name||'');count.set(k,(count.get(k)||0)+1);});
+ const sel=PJ.rows.find(p=>pid(p)===PJ.sel);
+ return '<p class="adv-count">받아 온 프로젝트 '+PJ.rows.length+'건'+(more?' · 다음 쪽이 더 있습니다':'')+' · 줄을 누르면 기본 정보가 열립니다</p>'
+  +(PJ.state==='failed'?'<p class="adv-state bad">'+STATE_TEXT.more+'</p>':'')
+  +(shown.length?'<div class="adv-proj-list">'+shown.map(p=>{const on=pid(p)===PJ.sel,dup=(count.get(String(p.site_name||''))||0)>1;/* 같은 현장명이라도 원본 번호가 다르면 다른 프로젝트 — 번호를 같이 보여 가른다 */
+    return '<button type="button" class="adv-proj-row'+(on?' on':'')+'" data-advproj="pick" data-id="'+esc(pid(p))+'" aria-pressed="'+on+'"><span class="s"><b>'+esc(val(p.site_name))+'</b><small>'+esc([p.work_name,p.company_name].filter(v=>v!=null&&String(v).trim()).join(' · ')||'공사 · 업체 미기록')+'</small></span>'+(dup?'<span class="id">원본 '+esc(pid(p))+'</span>':'')+(p.source_project_status?'<span class="adv-chip b2">'+esc(p.source_project_status)+'</span>':'')+docChip(p)+'</button>';}).join('')+'</div>'
+   :'<p class="adv-state">'+STATE_TEXT.loading+'</p>')
+  +LP.html(pg,{ns:'advproj',info:false})+'<div class="adv-proj-slot">'+(sel?projectDetail(sel):'')+'</div>';
+}
+const projView=()=>document.querySelector?.('#pg-sites .advisory-library .adv-proj-view');
+function drawProjects(){const v=projView();if(v)v.innerHTML=projectsHtml();}
+async function projLoad(reset){
+ if(!PJ.loader||PJ.busy)return;if(reset){PJ.rows=[];PJ.cursor=null;PJ.page=1;PJ.sel='';}
+ const had=PJ.rows.length,after=reset?null:PJ.cursor;PJ.busy=true;PJ.state='loading';drawProjects();
+ try{
+  const r=await PJ.loader({after});if(!r||!Array.isArray(r.items))throw new Error('READ_FAILED');
+  const seen=new Set(PJ.rows.map(pid));r.items.forEach(p=>{if(p&&pid(p)&&!seen.has(pid(p))){seen.add(pid(p));PJ.rows.push(p);}});
+  PJ.cursor=r.next_cursor||null;PJ.state='ready';if(had)PJ.page=Math.floor(had/root.ListPager.SIZE)+1;
+ }catch(e){PJ.state=e&&(e.code==='42501'||e.code===42501)?'denied':'failed';}
+ finally{PJ.busy=false;drawProjects();}
+}
+function setTab(tab){
+ const panel=document.querySelector?.('#pg-sites .advisory-library');if(!panel)return;PJ.tab=tab==='docs'?'docs':'proj';
+ panel.querySelectorAll('.adv-tabs [data-advtab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.advtab===PJ.tab)));
+ panel.querySelectorAll('.adv-pane').forEach(n=>{n.hidden=!n.classList.contains(PJ.tab==='docs'?'adv-docs':'adv-proj');});
+ if(PJ.tab==='proj')shown();
+}
+/* 칸이 눈에 보일 때 처음 한 번 받아 온다(가려져 있는 동안에는 조회하지 않는다) */
+function shown(){const panel=document.querySelector?.('#pg-sites .advisory-library');if(!panel||!PJ.loader||PJ.tab!=='proj'||PJ.state!=='idle'||panel.offsetParent===null)return;projLoad(true);}
+function onProjClick(e){
+ const t=e.target.closest('[data-advtab]');if(t)return setTab(t.dataset.advtab);
+ const b=e.target.closest('[data-advproj]');if(!b)return;const a=b.dataset.advproj;
+ if(a==='retry')return projLoad(!PJ.rows.length);
+ if(a==='pick'){PJ.sel=PJ.sel===b.dataset.id?'':b.dataset.id;return drawProjects();}
+ if(a==='page'){const p=Number(b.dataset.page)||1,loaded=Math.max(1,Math.ceil(PJ.rows.length/root.ListPager.SIZE));if(p>loaded&&PJ.cursor)return projLoad(false);PJ.page=p;PJ.sel='';return drawProjects();}
+}
+function installProjects(){
+ const panel=document.querySelector?.('#pg-sites .advisory-library');if(!panel||!PJ.loader||panel.querySelector('.adv-tabs'))return;
+ const h3=panel.querySelector('h3'),docs=document.createElement('div'),proj=document.createElement('div'),tabs=document.createElement('div');
+ /* 기존 계약 문서 칸(설명 · 조회 버튼 · 목록)은 그대로 한 묶음으로 옮긴다 */
+ docs.className='adv-pane adv-docs';[...panel.children].forEach(n=>{if(n!==h3)docs.append(n);});
+ tabs.className='adv-tabs';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','기술자문 원본 자료');
+ tabs.innerHTML='<button type="button" role="tab" data-advtab="proj">프로젝트 기본 정보</button><button type="button" role="tab" data-advtab="docs">계약 문서</button>';
+ proj.className='adv-pane adv-proj';proj.innerHTML='<p>기술자문 플랫폼에서 받은 원본 프로젝트입니다. 계약 문서가 없는 프로젝트도 보이며, 계약 체결 · 계약실적과는 별개입니다.</p><div class="adv-proj-view" aria-live="polite"></div>';
+ panel.append(tabs,proj,docs);panel.addEventListener('click',onProjClick);setTab(PJ.tab);
+}
+function connect(loader){PJ.loader=typeof loader==='function'?loader:null;if(PJ.loader){installLibrary();installProjects();shown();}}
+root.TechnicalAdvisoryUI={mount,html,installLibrary,libraryLabel:()=>'기술자문 원본 자료',
+ projects:{connect,shown,reload:()=>projLoad(true),html:projectsHtml,detailHtml:projectDetail,setTab,STATE_TEXT,_state:PJ,_reset(){Object.assign(PJ,{rows:[],cursor:null,page:1,sel:'',state:'idle',busy:false,tab:'proj'});drawProjects();}}};
 installLibrary();
+
 })(window);

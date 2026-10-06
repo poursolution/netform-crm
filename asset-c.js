@@ -10,6 +10,7 @@
  const AB=()=>R.AssetB,V=()=>R.AssetV2,SB=()=>R.StageBoard;
  const enabled=()=>!R.G.assetCOff&&!!AB()&&AB().enabled()&&!!R.CRMRules;
  const st=()=>R.G.assetC||(R.G.assetC={rule:false,more:false,why:'',page:1});
+ const advOpen=()=>{const pg=document.getElementById('pg-sites');return !!(pg&&pg.classList.contains('av-adv-on'));};
  const wait=()=>Number((R.OPS_RULES||{}).waitContactDays)||60;
  const BC={'석민이앤씨':'#e8590c','POUR솔루션':'#1f9d55','POUR공법':'#7048e8','아파트스퀘어':'#3b6ce4'};
  const TONE={risk:['#b42318','#fdecec'],recontact:['#b45309','#fff4d6'],active:['#1d3f99','#eef3fe'],customer:['#1f7a4d','#e8f6ee'],dormant:['#6b7280','#f3f4f6']};
@@ -67,7 +68,7 @@
   const S=st(),count=k=>k==='전체'?x.scope.length:x.scope.filter(s=>s.health===k).length;
   const tabs='<div class="ac-tabs" role="tablist" aria-label="관계 상태">'+TABS.map(k=>{const n=count(k),on=x.status===k,hot=(k==='recontact'||k==='risk')&&n>0;return '<button type="button" role="tab" data-ac="status" data-v="'+k+'" aria-selected="'+on+'"><span>'+h(label(k))+'</span><b class="'+(hot?'hot':!n?'zero':'')+'">'+n.toLocaleString('ko-KR')+'</b></button>';}).join('')
    +'</div>';
-  const title='<div class="ac-title"><b>고객 자산</b><span>단지별로 쌓인 금액 · 진행 중 금액 · 관계 상태</span><i></i><button type="button" class="ac-rulebtn" data-ac="rule" aria-expanded="'+!!S.rule+'">관계 기준 '+(S.rule?'▴':'▾')+'</button></div>';
+  const title='<div class="ac-title"><b>고객 자산</b><span>단지별로 쌓인 금액 · 진행 중 금액 · 관계 상태</span><i></i><button type="button" class="ac-rulebtn" data-ac="advisory" aria-expanded="'+advOpen()+'">기술자문 원본 자료 '+(advOpen()?'▴':'▾')+'</button><button type="button" class="ac-rulebtn" data-ac="rule" aria-expanded="'+!!S.rule+'">관계 기준 '+(S.rule?'▴':'▾')+'</button></div>';
   const rules=S.rule?'<div class="ac-rules">'+[['진행 중 단지','30일 안에 한 번 연락'],['수주 고객',Math.round(wait()/30)+'개월에 한 번 관계 연락'],['실주 단지','사유 확인 후 재제안 시기 등록']].map(r=>'<div><b>'+r[0]+'</b> <span>'+r[1]+'</span></div>').join('')+'</div>':'';
   const map=new Map();x.ownerFree.forEach(s=>s.owners.forEach(o=>{const v=map.get(o)||{owner:o,n:0,risk:0};v.n++;if(s.health==='risk')v.risk++;map.set(o,v);}));
   const P=[...map.values()].sort((a,b)=>b.risk-a.risk||b.n-a.n||String(a.owner).localeCompare(String(b.owner),'ko')),shown=S.more?P:P.slice(0,6);
@@ -120,6 +121,8 @@
   if(a==='why'){S.why=S.why===v?'':v;S.page=1;return R.paintSites();}
   if(a==='clear'){R.G.siteStatus='전체';S.why='';S.page=1;if((R.SalesScope.state().owner||'전체')!=='전체')R.CommonFilterBar.setOwner('전체');return R.paintSites();}
   if(a==='rule'){S.rule=!S.rule;return R.paintSites();}
+  /* 기술자문 원본 자료(프로젝트 기본 정보 · 계약 문서): 화면 아래 칸을 열고 닫는다 — 영업건과 관계없이 권한 안의 원본을 본다(technical-advisory-ui.js) */
+  if(a==='advisory'){const pg=document.getElementById('pg-sites'),on=pg.classList.toggle('av-adv-on');b.setAttribute('aria-expanded',String(on));b.textContent='기술자문 원본 자료 '+(on?'▴':'▾');if(on){const lib=pg.querySelector('.advisory-library');if(lib&&lib.scrollIntoView)lib.scrollIntoView({block:'start'});try{R.TechnicalAdvisoryUI&&R.TechnicalAdvisoryUI.projects&&R.TechnicalAdvisoryUI.projects.shown();}catch(err){}}return;}
   if(a==='more'){S.more=!S.more;return R.paintSites();}
   if(a==='page'){S.page=Number(b.dataset.page)||1;return R.paintSites();}
   if(a==='board'){SB().state('asset').view='board';return R.paintSites();}

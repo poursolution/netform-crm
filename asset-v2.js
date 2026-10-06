@@ -58,7 +58,7 @@
   const cur=root.SalesScope.state().owner||'전체',more=root.G.avMore||(root.G.avMore={});
   const count=k=>x.scope.filter(s=>s.health===k).length;
   const pills='<div class="plv-pills" role="group" aria-label="관계 상태">'+[['전체','전체',x.scope.length]].concat(['active','customer','recontact','risk','dormant'].map(k=>[k,root.SITE_HEALTH[k].label,count(k)])).map(([v,t,n])=>'<button type="button" data-av="status" data-value="'+v+'" aria-pressed="'+(x.status===v)+'">'+h(t)+' <b>'+n.toLocaleString('ko-KR')+'</b></button>').join('')+'</div>';
-  const menu='<details class="av-more"><summary>··· 더보기</summary><div class="av-menu"><button type="button" data-av="advisory">기술자문 계약</button><button type="button" data-av="review">연결 검토 · 과거자료 연결 → 데이터 정리 · 검토</button><label>주소 상태 <select data-av-address aria-label="주소 상태">'+['전체','완료','후보','미입력'].map(v=>'<option'+(root.G.siteAddress===v?' selected':'')+'>'+v+'</option>').join('')+'</select></label></div></details>';
+  const menu='<details class="av-more"><summary>··· 더보기</summary><div class="av-menu"><button type="button" data-av="advisory">기술자문 원본 자료</button><button type="button" data-av="review">연결 검토 · 과거자료 연결 → 데이터 정리 · 검토</button><label>주소 상태 <select data-av-address aria-label="주소 상태">'+['전체','완료','후보','미입력'].map(v=>'<option'+(root.G.siteAddress===v?' selected':'')+'>'+v+'</option>').join('')+'</select></label></div></details>';
   const intro='<div class="plv-intro"><i style="background:#64748b"></i><b>고객 자산</b><span>'+x.rows.length.toLocaleString('ko-KR')+'곳</span><div class="plv-spacer"></div>'+pills+menu+'</div>';
   const map=new Map();x.ownerFree.forEach(s=>s.owners.forEach(o=>{const v=map.get(o)||{owner:o,n:0,late:0};v.n++;if(s.health==='risk')v.late++;map.set(o,v);}));
   const chips=root.todayIsAdmin?.()&&map.size?'<div class="plv-owners" role="group" aria-label="담당자별"><span>담당자별</span>'+[...map.values()].sort((a,b)=>b.late-a.late||b.n-a.n).slice(0,12).map(o=>'<button type="button" class="plv-chip'+(cur===o.owner?' on':'')+'" data-av="owner" data-value="'+attr(o.owner)+'" aria-pressed="'+(cur===o.owner)+'">'+h(o.owner)+' <b>'+o.n+'</b>'+(o.late?'<em> · 위험 '+o.late+'</em>':'')+'</button>').join('')+'</div>':'';
@@ -76,7 +76,7 @@
   if(a==='status'){root.G.siteStatus=v;root.G.avMore={};root.paintSites();}
   if(a==='owner'){const cur=root.SalesScope.state().owner||'전체';root.CommonFilterBar.setOwner(cur===v?'전체':v);root.paintSites();}
   if(a==='page'){const m=root.G.avMore||(root.G.avMore={});m[v]=(Number(b.dataset.page)||1)-1;root.paintSites();}
-  if(a==='advisory'){const pg=document.getElementById('pg-sites'),on=pg.classList.toggle('av-adv-on');if(on)pg.querySelector('.advisory-library')?.scrollIntoView({block:'nearest'});b.closest('details')?.removeAttribute('open');}
+  if(a==='advisory'){const pg=document.getElementById('pg-sites'),on=pg.classList.toggle('av-adv-on');if(on){pg.querySelector('.advisory-library')?.scrollIntoView({block:'nearest'});try{root.TechnicalAdvisoryUI?.projects?.shown();}catch(e){}}b.closest('details')?.removeAttribute('open');}
   if(a==='review'){root.goPage('dup');}
  }
  function paint(){
