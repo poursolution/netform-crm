@@ -58,3 +58,6 @@
 body:has(#pg-today.on.today-v2) #unibar{display:none!important}
 /* 자료를 받는 동안(아직 today-v2 가 붙기 전)에도 예전 두 줄 필터(#unibar)는 보이지 않는다 — 예전 화면은 끄기 · 실패(.today-legacy)일 때만(2026-10-06 대표 "전버전이야, 이 버전 삭제") */
 body:has(#pg-today.on:not(.today-legacy)) #unibar{display:none!important}
+
+/* 오늘 업무 중복 표시(2026-10-06 집계 ⑧): 같은 건이 다른 묶음에 또 나오면 '위 n번과 같은 건' */
+#pg-today .ta-st .ta-dup{display:block;font-size:11.5px;color:#8a5a00}

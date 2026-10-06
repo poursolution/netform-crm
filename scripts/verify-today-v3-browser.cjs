@@ -80,17 +80,17 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   if(dump){process.exit(0);}
   /* ── 역할별 묶음(README 표) ── */
   const titles=k=>S[k].groups.map(g=>g.t.replace(/ \d+건$/,''));
-  assert.deepEqual(titles('mgr'),['오늘 안 넘기면 놓침','이번 주 새로 멈춘 건','계약 정보 빠짐']);assert.deepEqual(S.mgr.groups.map(g=>g.bulk),['모두 담당에게 알림','담당별 코멘트','입력 요청 보내기']);
+  assert.deepEqual(titles('mgr'),['오늘 안 넘기면 놓침','이번 주 새로 멈춘 건','계약 정보 빠짐']);assert.deepEqual(S.mgr.groups.map(g=>g.bulk),['문구 복사','문구 복사','문구 복사']/* 2026-10-06 집계 ⑦: [문구 복사] = 클립보드만 · [요청 보내기]는 요청 엔진이 있을 때 */);
   assert.equal(S.mgr.groups[0].why,'배정 30분 · 첫 연락 2시간 · 오늘 마감','시간 기준 = 운영 기준 값');
   assert.deepEqual(titles('rep'),['오늘 연락할 곳','이번 주 안에','정보 채우기'].filter((t,i)=>S.rep.groups.some(g=>g.t.startsWith(t))));
-  assert.deepEqual(titles('lead'),['본인 영업 · 오늘','팀원 코칭 · 입찰 준비']);assert.equal(S.lead.groups[1].bulk,'팀원에게 코멘트');
+  assert.deepEqual(titles('lead'),['본인 영업 · 오늘','팀원 코칭 · 입찰 준비']);assert.equal(S.lead.groups[1].bulk,'문구 복사');
   assert.equal(titles('vp')[0],'오늘 연락할 곳');assert.ok(titles('vp').includes('상무님 결정 요청'));
   assert.equal(titles('ceo')[0],'대표님 결정 요청');assert.ok(titles('ceo').includes('큰 금액인데 멈춘 건'));assert.ok(titles('ceo').includes('본인 영업'));
   /* 영업관리: 배정 · 첫 연락 · 오늘 마감이 카드, 입찰 마감 · 지원 요청은 다루지 않음, 계약 정보 빠짐은 셋째 묶음 */
   const all=k=>S[k].groups.flatMap(g=>g.cards.concat(g.rows)).join('\n');
   assert.match(S.mgr.groups[0].cards.join('\n'),/담당 배정 안 됨[^\n]*\| 견적문의 \| 길음뉴타운9단지 \| 담당 미배정[^\n]*\| 배정\/재배정\/상세 보기/,'담당이 없는 건에는 [담당 화면] 대신 [상세 보기]');
   assert.doesNotMatch(all('mgr'),/마감 전 준비 안 됨|지원 요청/,'영업관리는 개입 범위만');
-  assert.match(S.mgr.groups[2].rows.join('\n'),/고덕아이파크 \| 정정훈 · 2\.1억 · 계약정보 입력 안 함 \| -\s+\| 입력 요청/);assert.match(S.mgr.groups[2].rows.join('\n'),/이천신한아파트/);
+  assert.match(S.mgr.groups[2].rows.join('\n'),/고덕아이파크 \| 정정훈 · 2\.1억 · 계약정보 입력 안 함( · 판정: [^|]+)? \| -\s+\| 입력 요청/);assert.match(S.mgr.groups[2].rows.join('\n'),/이천신한아파트/);
   assert.match(S.mgr.backT,/^밀린 건 정리 3건90일 넘게 기록 없음 · 오늘 할 일과 따로 · 담당자에게 정리\(진행 \/ 보류 \/ 실주 \/ 배드핏\) 요청보기 ▼$/);
   /* 영업사원: 내 담당만 · 담당 칸 = 고객명 · 본인 밀린 건만 */
   assert.doesNotMatch(all('rep'),/성산시영|고덕아이파크|분당시범우성|이천신한|평동동남|율량동아/,'남의 현장 없음');
@@ -98,7 +98,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(S.rep.backT,/^내 밀린 건 1건/);assert.equal(S.rep.sub.replace(/^\d+월 \d+일 \(.\) · /,''),'내 영업만');
   /* 팀장: 본인 것이 카드, 팀원 것은 둘째 묶음(입찰 마감 · 지원 요청 · 미배정 포함) */
   assert.match(S.lead.groups[0].cards.join('\n'),/이천신한아파트/);assert.doesNotMatch(S.lead.groups[0].cards.concat(S.lead.groups[0].rows).join('\n'),/햇빛마을|길음뉴타운/);
-  assert.match(S.lead.groups[1].rows.join('\n'),/햇빛마을23단지 \| 이필선 · 4\.2억 · 마감 전 준비 안 됨 \| D-3 입찰 마감 \| 독촉/);assert.match(S.lead.groups[1].rows.join('\n'),/분당시범우성[^\n]*지원 요청/);assert.match(S.lead.backT,/^팀 밀린 건 3건/);
+  assert.match(S.lead.groups[1].rows.join('\n'),/햇빛마을23단지 \| 이필선 · 4\.2억 · 마감 전 준비 안 됨( · 판정: [^|]+)? \| D-3 입찰 마감 \| 독촉/);assert.match(S.lead.groups[1].rows.join('\n'),/분당시범우성[^\n]*지원 요청/);assert.match(S.lead.backT,/^팀 밀린 건 3건/);
   /* 상무: 본인 영업이 카드 · 결정 요청은 둘째 · 본인 밀린 건(없음) */
   assert.match(S.vp.groups[0].cards.join('\n'),/평동동남아파트/);assert.match(S.vp.groups.find(g=>g.t.startsWith('상무님 결정 요청')).rows.join('\n'),/분당시범우성/);assert.equal(S.vp.back,0);assert.equal(S.vp.backT,'');
   /* 대표: 결정 요청이 카드 · 3억 이상 14일 넘게 멈춘 건 · 본인 영업 · 본인 밀린 건 */
@@ -135,7 +135,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 밀린 건 정리: 펼치면 담당자별 건수 · 최장 일수 · [정리 요청], 목록 → 진행 / 보류 / 실주 / 배드핏 */
   await v.locator('.tv3-back .hd').click();await page.waitForTimeout(200);
   const bl=await v.locator('.tv3-bl').evaluateAll(l=>l.map(n=>[...n.children].filter(c=>!c.classList.contains('bar')).map(c=>c.textContent.trim()).join('|')));
-  assert.deepEqual(bl.sort().map(x=>x.replace(/최장 \d+일/,'최장 n일')),['김성민|1건|최장 n일|정리 요청|목록','이승우|1건|최장 n일|정리 요청|목록','이필선|1건|최장 n일|정리 요청|목록']);
+  assert.deepEqual(bl.sort().map(x=>x.replace(/최장 \d+일/,'최장 n일')),['김성민|1건|최장 n일|문구 복사|목록','이승우|1건|최장 n일|문구 복사|목록','이필선|1건|최장 n일|문구 복사|목록']/* 2026-10-06 집계 ⑦: [문구 복사] = 클립보드만 · 요청 엔진이 켜지면 [요청 보내기]가 앞에 */);
   const olds=Object.fromEntries(bl.map(x=>[x.split('|')[0],Number((/최장 (\d+)일/.exec(x)||[0,0])[1])]));assert.ok(olds['이필선']>=299&&olds['이필선']<=300&&olds['김성민']>=399&&olds['김성민']<=400&&olds['이승우']>=499&&olds['이승우']<=500,'최장 일수 = 마지막 기록 뒤 지난 날');
   await v.locator('.tv3-bl',{hasText:'이필선'}).locator('[data-t3="backdo"]').click();await page.waitForTimeout(200);
   assert.match(await v.locator('.tv3-brow').first().innerText(),/오래된 현장 A\s*관계관리 · 1\.5억 · (299|300)일째\s*진행\s*보류\s*실주\s*배드핏/);

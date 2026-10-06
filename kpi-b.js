@@ -63,7 +63,9 @@
   M.push({v:S.responseRate,num:(S.responseSla||[]).length,den:assigned.length,todos:S.noResponse.slice().sort((a,b)=>(ageDays(root.inquiryAssignedAt(b))||0)-(ageDays(root.inquiryAssignedAt(a))||0)).map(q=>{const n=ageDays(root.inquiryAssignedAt(q)||root.inquiryCreatedAt(q)),o=inqOwner(q);return T('inq',root.inqKey(q),q.site||'현장명 미입력',o,(n!=null&&n>0?n+'일째 ':'')+'CRM 연락 기록 없음',n!=null&&n>=30?'재배정 검토':'담당에게 요청',o);})});
   /* 3 다음 할 일(전 단계) — B안 'nonext' 사유와 같은 건 */
   const nonext=open.filter(it=>it.rs.includes('nonext')),nextMissing=nonext.length?nonext.map(it=>it.row.item):S.nextMissing;
-  M.push({v:pct(S.D.length-S.nextMissing.length,S.D.length),num:S.D.length-S.nextMissing.length,den:S.D.length,todos:byOwner(nextMissing,who).map(([o,n])=>T('rep',o,o,n+'건','다음 할 일 없음 '+n+'건','등록 요청',o))});
+  /* 같은 분모 한 함수(PipelineJudge.nextRate · 진행 중 영업건 전체 · 과거 이관 제외) — 오늘 업무 '내 이번 주 기준'과 같은 값(2026-10-06 집계 ⑥) */
+  const NR=root.PipelineJudge&&root.PipelineJudge.on()?root.PipelineJudge.nextRate(S.D):null;
+  M.push({v:NR?NR.pct:pct(S.D.length-S.nextMissing.length,S.D.length),num:NR?NR.num:S.D.length-S.nextMissing.length,den:NR?NR.den:S.D.length,todos:byOwner(nextMissing,who).map(([o,n])=>T('rep',o,o,n+'건','다음 할 일 없음 '+n+'건','등록 요청',o))});
   /* 4 활동 기록률 */
   const low=names().map(n=>({n,s:root.RecordingKPI?root.RecordingKPI.stats(n,0):{activity:null,deals:0}})).filter(x=>x.s.deals>0&&(x.s.activity==null||x.s.activity<70)).sort((a,b)=>(a.s.activity??-1)-(b.s.activity??-1));
   M.push({v:rk.activity,num:rk.activeN||0,den:rk.deals||0,todos:low.map(x=>T('rep',x.n,x.n,x.s.deals+'건',x.s.activity==null?'기록 없음 · 측정 불가':'7일 기록 '+x.s.activity+'%','기록 요청',x.n))});

@@ -69,7 +69,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    construction:{name:'계약 · 시공',goal:14,tabs:[['계약정보 누락','계약일 · 금액 입력'],['시공 중','정해진 주기로 확인'],['준공 확인','준공 · 하자 인계']],n:[4,1,2,1],reasons:[['계약일 · 금액 없음',1],['인계서 미확인',1],['시공 중 연락 없음',2]/* 인계 중(접촉 기록 없음) + 시공 중(9일 무연락) */,['준공 확인 없음',1]],act:['정보 입력','현장 확인','준공 확인'],order:null}};
   for(const key of Object.keys(EXPECT)){
    const E=EXPECT[key];await page.evaluate(k=>PipelineWorkspace.open(k),key);await page.waitForTimeout(350);
-   assert.equal(await V.count(),1,key+': 공통 틀 v3');assert.equal(await page.locator('#pipeline-stage-b').count(),0,key+': 예전 화면은 없다');
+   assert.equal(await V.count(),1,key+': 공통 틀 v3');assert.equal((await page.locator('#pg-pipe>.cf-bar .cf-pill').first().innerText()).replace(/\s+/g,' ').trim().replace(/^전체 /,''),(await page.locator('#pipeline-stage-v3 .ps3-tab .n').first().innerText()).trim(),key+': 브랜드 칩 전체 = 목록 전체(2026-10-06 집계 ①)');assert.equal(await page.locator('#pipeline-stage-b').count(),0,key+': 예전 화면은 없다');
    const s=await snap();if(dump)console.log('=====',key,'\n'+JSON.stringify(s,null,1));
    assert.equal(s.stage,key);assert.equal(s.head,E.name);assert.ok(s.desc.length>10,key+': 설명 한 줄');
    /* 상태 탭: [전체] + 상태 3개 · 기본 선택 = 전체 · 첫 상태만 빨강 */

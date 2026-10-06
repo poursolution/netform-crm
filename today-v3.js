@@ -47,7 +47,7 @@
        카드 아래 나머지 줄만 ②와 같은 표 줄로 보여 준다(2026-10-05 "① 오늘 안 넘기면 놓침도 ②번처럼"). ② 담당 배정 안 된 견적문의 표(①에 든 건을 추천 담당과 함께 다시 보여 주는 표 — aux: 큰 숫자 · 띠 · 실행 순서에 두 번 세지 않는다) ③ 이번 주 새로 멈춘 건 ④ 계약 정보 빠짐.
        끄면(G.todayAssistOff) 위 묶음 3개 그대로 */
     if(root.TodayAssist&&root.TodayAssist.enabled()){const ga=groups[0].items.filter(i=>i.rk==='assign'&&i.x.type==='inq');
-     groups=[Object.assign(groups[0],{kind:'cards'}),Object.assign(G('담당 배정 안 된 견적문의','AI 추천 담당을 그대로 쓰면 [추천대로 배정] 한 번','',ga),{kind:'assign',aux:true}),Object.assign(groups[1],{kind:'stall'}),Object.assign(groups[2],{kind:'contract'})];}
+     groups=[Object.assign(groups[0],{kind:'cards'}),Object.assign(G('담당 배정 안 된 견적문의','AI 추천 담당을 그대로 쓰면 [추천대로 배정] 한 번','',ga),{kind:'assign',aux:true,dupOf:1/* 같은 건이 위 1번 묶음에도 있다 → 줄마다 '위 1번과 같은 건'(2026-10-06 집계 ⑧) */}),Object.assign(groups[1],{kind:'stall'}),Object.assign(groups[2],{kind:'contract'})];}
   }else if(role==='ceo'){
    const g1=teamAll.filter(i=>i.rk==='decide'||i.rk==='tfapprove'),s1=new Set(g1.map(i=>i.key));
    const g2=teamAll.filter(i=>!s1.has(i.key)&&(i.amt||0)>=W._big()&&(i.days>=STALL_BIG()||i.rk==='contract'||i.rk==='stallbig')),s2=new Set(g2.map(i=>i.key));
@@ -213,13 +213,14 @@
     +'<div class="fold"><button type="button" data-t3="fold" data-key="'+k+'"><span>'+(far?'담당에게 보낼 말 · 놓치면':'첫마디 · 놓치면')+'</span><span>'+(open?'접기 ▴':'펼치기 ▾')+'</span></button>'+(open?'<div class="open"><span>'+h(W._line(i,role,me))+'</span><p><b>놓치면</b> '+h(i.loss)+'</p></div>':'')+'<p class="done"><b>완료 기준</b> <span>'+h(i.done)+'</span></p></div>'
     +'<div class="btns">'+(wrBtn(i,'main')||'<button type="button" class="main" data-t3="act" data-key="'+k+'" data-act="'+attr(i.act)+'"'+(i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>'+h(i.act)+'</button>')+'<button type="button" data-t3="'+(far?'reassign':'sms')+'" data-key="'+k+'">'+(far?'재배정':'문자')+'</button><button type="button" data-t3="'+(far?(i.x.owner&&i.x.owner!=='미배정'?'owner':'detail'):'result')+'" data-key="'+k+'" data-v="'+attr(i.x.owner||'')+'">'+(far?(i.x.owner&&i.x.owner!=='미배정'?'담당 화면':'상세 보기'):'결과 기록')+'</button></div></article>';};/* 담당이 없는 건은 갈 담당 화면이 없다 → [상세 보기] */
   /* 목록 줄(② ③ · 첫 묶음의 5번째부터) */
+  const J=root.PipelineJudge&&root.PipelineJudge.on()?root.PipelineJudge:null,judgeOf=i=>{if(!J||i.x.type!=='deal')return '';try{return '판정: '+J.basis(i.x.item).why;}catch(e){return '';}};/* 목록 · 상세와 같은 판정 함수(2026-10-06 집계 · 판정 정리 ②) */
   const row=(i,hot)=>{const k=attr(i.key),own=i.x.owner===me,far=team&&!own,who=far?(i.x.owner||'미배정'):([i.i.name,i.i.role].filter(Boolean).join(' ')||(team?i.x.owner:'고객 미등록')),noDay=i.rk==='contract'||i.rk==='data';
-   return '<div class="tv3-row" role="button" tabindex="0" data-t3="open" data-key="'+k+'"><span class="bd" style="color:'+i.bc+'">'+h(i.brand||'미입력')+'</span><span class="c"><b>'+h(i.i.site)+'</b><small>'+h([who,i.amt?money(i.amt):'금액 미정',i.missTxt].filter(Boolean).join(' · '))+'</small></span><span class="d"><b'+(hot?' class="r"':'')+'>'+h(noDay?'-':i.short)+'</b><small>'+h(noDay?'':i.rk==='deadline'?(i.deadline?i.deadline.what:'마감'):i.dLabel)+'</small></span>'+(wrBtn(i,'')||'<button type="button" data-t3="act" data-key="'+k+'" data-act="'+attr(i.act)+'"'+(i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>'+h(i.act)+'</button>')+'</div>';};
+   return '<div class="tv3-row" role="button" tabindex="0" data-t3="open" data-key="'+k+'"><span class="bd" style="color:'+i.bc+'">'+h(i.brand||'미입력')+'</span><span class="c"><b>'+h(i.i.site)+'</b><small>'+h([who,i.amt?money(i.amt):'금액 미정',i.missTxt,judgeOf(i)].filter(Boolean).join(' · '))+'</small></span><span class="d"><b'+(hot?' class="r"':'')+'>'+h(noDay?'-':i.short)+'</b><small>'+h(noDay?'':i.rk==='deadline'?(i.deadline?i.deadline.what:'마감'):i.dLabel)+'</small></span>'+(wrBtn(i,'')||'<button type="button" data-t3="act" data-key="'+k+'" data-act="'+attr(i.act)+'"'+(i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>'+h(i.act)+'</button>')+'</div>';};
   let shownNo=0;const kinded=V.groups.some(g=>g.kind);/* 표 묶음이 있으면 번호는 보이는 묶음 순서대로 */
   const groupsHtml=V.groups.map((g,gi)=>{const items=g.items.filter(pass);if(!items.length)return '';shownNo++;
    if(g.kind&&g.kind!=='cards'&&root.TodayAssist)return root.TodayAssist.groupHtml(g,items,gi,shownNo,root.ListPager.page(S,'g'+gi));
    const first=g.kind?g.kind==='cards':gi===0,cards=first?items.slice(0,CARDS):[],rest=first?items.slice(CARDS):items,pg=root.ListPager.cut(rest,root.ListPager.page(S,'g'+gi),PER),shown=pg.rows;
-   return '<section class="tv3-group'+(first?' first':'')+'" data-g="'+(gi+1)+'"><header><i>'+(kinded?shownNo:gi+1)+'</i><b>'+h(g.t)+'</b><b class="n">'+items.length+'건</b><span>'+h(g.why)+'</span><u></u>'+(g.bulk&&team?'<button type="button" data-t3="bulk" data-v="'+gi+'">'+h(g.bulk)+'</button>':'')+'</header>'
+   return '<section class="tv3-group'+(first?' first':'')+'" data-g="'+(gi+1)+'"><header><i>'+(kinded?shownNo:gi+1)+'</i><b>'+h(g.t)+'</b><b class="n">'+items.length+'건</b><span>'+h(g.why)+'</span><u></u>'+(g.bulk&&team?bulkBtns(gi):'')+'</header>'
     +(first?'<div class="tv3-cards">'+cards.map(card).join('')+'</div>':'')+(g.kind==='cards'&&shown.length&&root.TodayAssist&&root.TodayAssist.restHtml?root.TodayAssist.restHtml(shown):shown.map(i=>row(i,first)).join(''))/* 카드 아래 나머지 줄 = ②와 같은 표 줄 */
     +root.ListPager.html(pg,{ns:'t3',v:'g'+gi,small:true})+'</section>';}).join('');
   const empty=!total?'<div class="tv3-empty">'+(backN?'오늘 손댈 건은 없습니다. 아래 밀린 건만 정리하면 됩니다.':'오늘 처리할 건이 없습니다.')+'</div>':(!groupsHtml?'<div class="tv3-empty">이 조건에 해당하는 건이 없습니다.</div>':'');
@@ -233,7 +234,7 @@
    if(S.backOwner&&!by.has(S.backOwner))S.backOwner='';
    const tri=b=>{const k=attr(b.key),deal=b.x.type==='deal';return '<div class="tv3-brow"><button type="button" class="o" data-t3="open" data-key="'+k+'"><b>'+h(b.site)+'</b><small>'+h([b.stage,b.amt?money(b.amt):'',b.days?b.days+'일째':''].filter(Boolean).join(' · '))+'</small></button>'+(deal?'<span>'+[['keep','진행'],['hold','보류'],['lost','실주'],['badfit','배드핏']].map(a=>'<button type="button" data-t3="tri" data-key="'+k+'" data-v="'+a[0]+'">'+a[1]+'</button>').join('')+'</span>':'')+'</div>';};
    backHtml='<section class="tv3-back'+(S.back?' open':'')+'"><button type="button" class="hd" data-t3="back" aria-expanded="'+!!S.back+'"><b>'+h(title)+'</b><span>'+h(subT)+'</span><u></u><em>'+(S.back?'접기 ▲':'보기 ▼')+'</em></button>'
-    +(S.back?'<div class="bd">'+list.map(([n,v])=>{const mineRow=selfOnly||n===me,on=S.backOwner===n;return '<div class="tv3-bl"><b>'+h(n)+'</b><span class="bar"><i style="width:'+Math.round(v.n/max*100)+'%"></i></span><b class="c">'+v.n+'건</b><small>최장 '+v.old+'일</small><button type="button" data-t3="'+(mineRow?'backdo':'backreq')+'" data-v="'+attr(n)+'">'+(mineRow?(on?'접기':'정리하기'):'정리 요청')+'</button>'+(!mineRow?'<button type="button" class="s" data-t3="backdo" data-v="'+attr(n)+'">'+(on?'접기':'목록')+'</button>':'')+'</div>'
+    +(S.back?'<div class="bd">'+list.map(([n,v])=>{const mineRow=selfOnly||n===me,on=S.backOwner===n;return '<div class="tv3-bl"><b>'+h(n)+'</b><span class="bar"><i style="width:'+Math.round(v.n/max*100)+'%"></i></span><b class="c">'+v.n+'건</b><small>최장 '+v.old+'일</small>'+(mineRow?'<button type="button" data-t3="backdo" data-v="'+attr(n)+'">'+(on?'접기':'정리하기')+'</button>':(canSend()?'<button type="button" data-t3="backsend" data-v="'+attr(n)+'"'+(S.sending?' disabled':'')+'>요청 보내기</button>':'')+'<button type="button" data-t3="backreq" data-v="'+attr(n)+'">문구 복사</button>')+(!mineRow?'<button type="button" class="s" data-t3="backdo" data-v="'+attr(n)+'">'+(on?'접기':'목록')+'</button>':'')+'</div>'
       +(on?'<div class="tv3-bls">'+v.list.slice().sort((a,b)=>b.amt-a.amt||b.days-a.days).slice(0,10).map(tri).join('')+(v.list.length>10?'<p>금액 큰 순 10건 · 정리하면 다음 건이 올라옵니다 (남은 '+(v.list.length-10)+'건)</p>':'')+'</div>':'');}).join('')+'</div>':'')+'</section>';
   }
   /* 오른쪽: 일정 · 마감 · 기준 */
@@ -253,6 +254,23 @@
  function current(){const X=T().data(),G=root.G,owner=X.admin?(G.todayQueueOwner||'전체'):'전체',q=String(G.todayQueueSearch||'').trim().toLowerCase(),brand=G.brand&&G.brand!=='전체'?G.brand:'';
   const scoped=x=>(owner==='전체'||x.owner===owner)&&(!brand||String(x.item.brand||'')===brand)&&(!q||[x.item.site,x.item.site_name,x.owner,x.reason,x.next,x.item.contact_name,x.item.phone].join(' ').toLowerCase().includes(q));
   return build(X,X.rows.filter(scoped),(X.backlog||[]).filter(scoped));}
+ /* 요청 버튼 이름(2026-10-06 집계 · 판정 정리 ⑦): [요청 보내기] = 요청 엔진(crm_work_request_create_v1)으로 담당 오늘 업무에 등록 + 알림 / [문구 복사] = 클립보드만 */
+ const canSend=()=>{try{const W=root.WorkRequest,O=root.OpsStore;return !!(W&&W.enabled()&&O&&O.has(W.RPC.create)&&root.todayIsAdmin&&root.todayIsAdmin());}catch(e){return false;}};
+ const bulkBtns=gi=>(canSend()?'<button type="button" data-t3="bulkreq" data-v="'+gi+'"'+(st().sending?' disabled':'')+'>요청 보내기</button>':'')+'<button type="button" data-t3="bulk" data-v="'+gi+'">문구 복사</button>';
+ const KIND_OF=i=>({first:'first',deadline:'deadline',contract:'contract',quote:'quote',decide:'support'})[i.rk]||'follow';
+ async function sendItems(list,label){
+  const W=root.WorkRequest,O=root.OpsStore,S=st();if(S.sending||!canSend())return;const me=root.repN(root.ME&&root.ME.name);
+  const todo=list.filter(i=>i.x&&i.x.owner&&i.x.owner!=='미배정'&&i.x.owner!==me).slice(0,20);if(!todo.length){toast('보낼 담당이 있는 건이 없습니다(미배정 · 본인 건 제외)','warn');return;}
+  const due=new Date(),sameDay=due.getHours()<17;if(sameDay)due.setHours(17,0,0,0);else{due.setDate(due.getDate()+1);due.setHours(12,0,0,0);}
+  S.sending=true;root.TodayV2.render();let ok=0,dup=0,fail=0,stop='';
+  for(const i of todo){const d=i.x.item||{};
+   try{await O.rpc(W.RPC.create,{target_type:i.x.type==='inq'?'inquiry':'deal',target_id:String(d.id||String(i.key).replace(/^(inq|deal):/,'')),site:(i.i&&i.i.site)||d.site||d.site_name||'',brand:i.brand||d.brand||'',kind:KIND_OF(i),label,to_scope:'user',to_name:i.x.owner,asks:[i.missTxt||label],due_at:due.toISOString(),due_label:sameDay?'오늘 17:00':'내일 12:00',memo:'오늘 업무 묶음 요청 — '+label});ok++;}
+   catch(e){const m=String(e&&e.message||e);if(/이미 답을 기다리는/.test(m))dup++;else{fail++;if(/받는 사람|관리자만|적용되지|설치되지/.test(m)){stop=m;break;}}}
+  }
+  S.sending=false;try{W.load(true);}catch(e){}
+  toast(stop?'보내지 못했습니다 — '+stop:label+' 요청 '+ok+'건을 담당 오늘 업무에 보냈습니다'+(dup?' · 이미 요청한 '+dup+'건 제외':'')+(fail?' · 실패 '+fail+'건':'')+(list.length>todo.length?' · 미배정 · 본인 건 '+(list.length-todo.length)+'건 제외':''),stop||fail?'warn':undefined);
+  root.paint();
+ }
  function copy(text,done){const ok=()=>toast(done);try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(ok,()=>toast('복사하지 못했습니다 — 브라우저 권한을 확인해 주세요','warn'));return;}}catch(e){}const ta=document.createElement('textarea');ta.value=text;document.body.append(ta);ta.select();try{document.execCommand('copy');ok();}catch(e){toast('복사하지 못했습니다','warn');}ta.remove();}
  function triage(b,act){
   if(!b||b.x.type!=='deal')return;root.G._detailPopup=true;root.drwDeal(JSON.stringify(b.x.item));
@@ -277,6 +295,8 @@
   if(a==='back'){S.back=!S.back;if(!S.back)S.backOwner='';return rerender();}
   if(a==='backdo'){S.backOwner=S.backOwner===v?'':v;return rerender();}
   if(a==='backreq'){const V=current(),l=V.back.filter(x=>x.owner===v),old=Math.max(0,...l.map(x=>x.days||0));return copy(v+'님, '+BACK()+'일 넘게 기록이 없는 영업건이 '+l.length+'건 있습니다(최장 '+old+'일). 오늘 업무 → 밀린 건 정리에서 진행 / 보류 / 실주 / 배드핏으로 정리해 주세요.','정리 요청 문구를 복사했습니다 — 잔디 · 문자로 보내 주세요');}
+  if(a==='backsend'){const V=current(),l=V.back.filter(x=>x.owner===v).map(b=>({x:b.x,key:b.key,i:{site:b.site},brand:(b.x.item||{}).brand||'',missTxt:BACK()+'일 넘게 기록 없음 · 진행 / 보류 / 실주 / 배드핏으로 정리',rk:'stall'}));return sendItems(l,'밀린 건 정리');}
+  if(a==='bulkreq'){const V=current(),g=V.groups[Number(v)];if(!g||!g.items.length)return;return sendItems(g.items,g.t);}
   if(a==='tri'){const V=current();return triage(V.back.find(x=>x.key===key),v);}
   if(a==='bulk'){const V=current(),g=V.groups[Number(v)];if(!g||!g.items.length)return;const by=new Map();g.items.forEach(i=>{const o=i.x.owner||'미배정';(by.get(o)||by.set(o,[]).get(o)).push(i);});
    return copy([...by].map(([o,l])=>'['+o+'] '+g.t+' '+l.length+'건\n'+l.map(i=>'· '+siteShort(i.i.site)+' — '+i.missTxt+(i.short&&!/^(0일|오늘)$/.test(i.short)&&i.rk!=='contract'?' · '+i.short:'')).join('\n')).join('\n\n'),'담당자 '+by.size+'명 · '+g.items.length+'건 문구를 복사했습니다 — 잔디 · 문자로 보내 주세요');}

@@ -94,3 +94,6 @@
 #kpi-v7 .k7-who.on{background:#15171c;border-color:#15171c;color:#fff}
 .k7-filter>i{flex:1}
 .k7-period{font-size:12.5px;color:#374151;border:1px solid #e3e6ec;border-radius:999px;padding:6px 12px}
+
+/* 지표 아래 '대상: …' 한 줄(2026-10-06 집계 ⑥) */
+.k7-row .q .k7-target{font-size:11.5px;color:#9ca3af}

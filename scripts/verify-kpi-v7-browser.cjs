@@ -44,14 +44,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const pills=await v.locator('.k7-filter .k7-who').evaluateAll(l=>l.map(b=>[b.textContent.replace(/\s+/g,' ').trim(),b.getAttribute('aria-pressed')]));
   assert.equal(pills[0][0],'전체');assert.equal(pills[0][1],'true');assert.ok(pills.length>=3,'담당자 알약 '+JSON.stringify(pills));assert.ok(pills.slice(1).every(p=>/ (미달 \d+|기록 없음)$/.test(p[0])),'알약마다 미달 n');
   assert.equal(pills.some(p=>/^조재연/.test(p[0])),false,'B2B 협약 전담은 영업 지표에서 뺀다');
-  assert.match(await v.locator('.k7-filter .k7-period').innerText(),/^기간 이번 주 \d+\/\d+ – \d+\/\d+$/);
+  assert.match(await v.locator('.k7-filter .k7-period').innerText(),/^기간 이번 주 \d+\/\d+\(월\) – \d+\/\d+\(금\)$/);
   assert.equal(await page.evaluate(()=>{const b=document.querySelector('#pg-mgmt>.cf-bar');return !!b&&getComputedStyle(b).display==='none';}),true,'공통 필터줄은 가림');
   assert.match(await v.locator('.k7-intro').innerText(),/^관리팀 KPI\s*관리팀이 할 일을 지표 8개로 잽니다 — 빨강 = 이번 주 목표 미달 · 줄마다 버튼 하나로 담당에게 요청 · 금요일 18시 결과 자동 저장$/);
   assert.deepEqual(await v.locator('.k7-bar button').allInnerTexts(),['지난주 보기','기준 설정','이번 주 결과 저장']);assert.match(await v.locator('.k7-bar').innerText(),/관리팀 KPI\s*한 줄 = 지표 하나/);
   /* 2. 왼쪽 진단 380px: 막대 · 작은 칸 3개 · 단계별 기준 넘긴 건 · 원인 4개 · 뭘 해야 하나 */
   assert.equal(await v.locator('.k7-left').evaluate(n=>getComputedStyle(n).flexBasis),'380px');
   assert.deepEqual(await v.locator('.k7-left .k7-card>header b').allInnerTexts(),['KPI 진단','왜 멈춰 있나','그래서 뭘 해야 하나']);
-  const K=await page.evaluate(()=>{const C=KpiB.compute();return C.M.map(m=>({key:m.key,v:m.v,num:m.num,den:m.den,ok:m.ok,left:m.left,n:m.todos.length,last:m.last}));});
+  const K=await page.evaluate(()=>KpiV7.coreRows(KpiB.compute(),[],false).map(m=>({key:m.key,v:m.v,num:m.num,den:m.den,ok:m.ok,left:m.left,n:m.total})));/* 화면과 같은 줄 계산(견적문의 둘은 이번 주 월~금 · 2026-10-06 집계 ⑤) */
   const miss=K.filter(m=>m.v!=null&&!m.ok).length,nd=K.filter(m=>m.v==null).length,hit=8-miss-nd;
   assert.match((await v.locator('.k7-leg').innerText()).replace(/\s+/g,' '),new RegExp('미달 '+miss+' ■ 달성 '+hit+' ■ 아직 못 잼 '+nd));
   assert.deepEqual(await v.locator('.k7-tiles>div>span').allInnerTexts(),['목표 미달','남은 요청','지난주보다']);
@@ -65,7 +65,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const rows=await v.locator('.k7-list>.k7-row').evaluateAll(l=>l.map(n=>({key:n.dataset.kpi,cls:n.className.replace('k7-row','').trim(),q:n.querySelector('.q b').textContent,sub:n.querySelector('.q span').textContent,frac:n.querySelector('.m b').textContent,meta:n.querySelector('.m span').textContent,why:n.querySelector('.why').textContent,v:n.querySelector('.v').textContent,btn:(n.querySelector('.k7-req')||n.querySelector('.k7-auto')).textContent})));
   assert.equal(rows.length,8);assert.deepEqual(rows.map(r=>r.key).sort(),['kpi:1','kpi:2','kpi:3','kpi:4','kpi:5','kpi:6','kpi:7','kpi:8'],'지표 키는 예전 그대로');
   const order=rows.map(r=>r.cls==='bad'?0:r.cls==='ok'?1:2);assert.deepEqual(order,order.slice().sort((a,b)=>a-b),'미달 → 달성 → 아직 못 잼 순');
-  for(const r of rows){const m=K.find(x=>x.key===r.key),f=v=>v==null?'–':(Math.round(v*10)/10)+'%';assert.equal(r.v,f(m.v),r.key+' 값');assert.ok(m.den?r.frac.startsWith(m.num+' / '+m.den+'건 · 목표 '):r.frac.startsWith('아직 못 잼 · 목표 '),r.key+' 분자/분모 '+r.frac);assert.match(r.meta,/^지난주 .+ · 누가 .+/);assert.equal(r.cls,m.v==null?'':m.ok?'ok':'bad');assert.match(r.why,m.v==null?/^아직 못 잼$/:m.ok?/^달성$/:/^미달 · [\d.]+%p (부족|초과)$/);assert.ok(m.v==null||!m.n?r.btn==='자동 측정':true,r.key+' 버튼 '+r.btn);}
+  for(const r of rows){const m=K.find(x=>x.key===r.key),f=v=>v==null?'–':(Math.round(v*10)/10)+'%';assert.equal(r.v,f(m.v),r.key+' 값');assert.ok(m.den?r.frac.startsWith(m.num+' / '+m.den+'건 · 목표 '):r.frac.startsWith('아직 못 잼 · 목표 '),r.key+' 분자/분모 '+r.frac);assert.match(r.meta,/^지난주 .+ · 누가 .+/);assert.equal(r.cls,m.v==null?'':m.ok?'ok':'bad');assert.match(r.why,m.v==null?/^아직 못 잼$/:m.ok?/^달성$/:/^미달 · [\d.]+%p (부족|초과)$/);assert.ok(!m.n?r.btn==='자동 측정':true,r.key+' 버튼 '+r.btn);/* 이번 주 값이 없어도 누적 미처리가 있으면 요청 버튼(2026-10-06 집계 ⑤) */}
   const lost=rows.find(r=>r.key==='kpi:7');assert.deepEqual([lost.q,lost.sub,lost.v,lost.why,lost.btn],['실주 처리할 때 왜 졌는지 남겼나','실주 · 실주 사유 입력','0%','미달 · 100%p 부족','1건 요청']);
   assert.equal(rows.find(r=>r.key==='kpi:5').sub,'파이프라인 · 장기정체 비율');assert.match(rows.find(r=>r.key==='kpi:5').frac,/목표 ≤ 10%$/,'낮을수록 좋은 지표');
   assert.match(rows.find(r=>r.key==='kpi:3').meta,/^지난주 25% (▲|▼)[\d.]+%p · 누가 /,'지난주 저장값과 비교');
