@@ -63,9 +63,9 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    ['이 단지 영업 이력 3건 · 누적 수주 9,200만','✓ '+ym+' 수주 완료 · 9,200만',['문의 지금 이 건 금액 미정','계약 수주 완료 9,200만','문의 과거 이관 9,200만'],[true,false,false]]);
   assert.match(one(await v.locator('.sth-row.cur .sth-t2').innerText()),/다음 할 일 없음 · 공종 미정/);
   assert.equal(one(await v.locator('.sth-ai').innerText()).replace(/^AI\s*/,''),ym.slice(0,4)+'년 수주한 기존 고객입니다. 지난 공사 뒤 문제 없었는지부터 물어보세요.');
-  /* ③ 가운데: 입력칸이 맨 위 → 응대 이력 · 빈 기록은 한 줄 */
-  const mid=await page.evaluate(()=>{const v=document.getElementById('detailView'),y=s=>Math.round(v.querySelector(s).getBoundingClientRect().top);return [y('#ddvComposer')<y('.ddv-talk>.idv-chead'),y('.ddv-talk>.idv-chead')<y('.idv-thread'),[...v.querySelectorAll('#ddvComposer [role=tab],#ddvComposer .ce-open')].map(b=>b.textContent.trim()),v.querySelector('.ddv-nothing').textContent,Math.round(v.querySelector('.ddv-nothing').getBoundingClientRect().height)<30,v.querySelector('.dv3-cfoot>span').textContent];});
-  assert.deepEqual(mid,[true,true,['응대 기록','내부 메모','변화 기록'],'아직 없습니다. 위에 첫 연락 결과를 적으면 여기 쌓입니다.',true,'부재는 연락 시도로만 셈']);
+  /* ③ 가운데: 응대 이력 → 입력칸은 맨 아래(2026-10-06 대표 "원래대로 응대 이력 아래, 맨 밑으로") · 빈 기록은 한 줄 */
+  const mid=await page.evaluate(()=>{const v=document.getElementById('detailView'),y=s=>Math.round(v.querySelector(s).getBoundingClientRect().top),c=v.querySelector('.ddv-talk');return [y('.ddv-talk>.idv-chead')<y('.idv-thread'),y('.idv-thread')<y('#ddvComposer'),c.lastElementChild===v.querySelector('#ddvComposer'),[...v.querySelectorAll('#ddvComposer [role=tab],#ddvComposer .ce-open')].map(b=>b.textContent.trim()),v.querySelector('.ddv-nothing').textContent,Math.round(v.querySelector('.ddv-nothing').getBoundingClientRect().height)<30,v.querySelector('.dv3-cfoot>span').textContent];});
+  assert.deepEqual(mid,[true,true,true,['응대 기록','내부 메모','변화 기록'],'아직 없습니다. 아래에 첫 연락 결과를 적으면 여기 쌓입니다.',true,'부재는 연락 시도로만 셈']);
   /* ④ 오른쪽: 지금 할 일 = 상자 없이 행동 + 근거 한 줄 · 필수 정보 'n / m [채우기 ▾]' */
   const right=await page.evaluate(()=>{const v=document.getElementById('detailView'),n=v.querySelector('#nowCard'),cs=getComputedStyle(n);return [cs.borderTopWidth,n.querySelector('.nc-stage').textContent,n.querySelector('.dv3-title b').textContent,n.querySelector('.dv3-title span').textContent,n.querySelector('.nc-call').textContent,n.querySelector('.dv3-sub').textContent,n.querySelectorAll('.dv3-reco').length];});
   assert.deepEqual(right.slice(0,2).concat(right.slice(4)),['0px','지금 할 일','전화하고 결과 남기기','연락 없이 다음 일만 정하기',0]);

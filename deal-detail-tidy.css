@@ -80,12 +80,12 @@
 #detailView.dvt .sth.sth-tidy .sth-ai{background:none;border:0;border-radius:0;padding:2px 2px 0;margin-top:6px;font-size:12px;color:#374151;line-height:1.55}
 @media (prefers-reduced-motion:no-preference){#detailView.dvt .sth.sth-tidy .sth-row.t{transition:background-color .18s ease-out,box-shadow .18s ease-out}}
 
-/* ── 가운데: 입력칸이 맨 위 → 응대 이력 ── */
+/* ── 가운데: 응대 이력 → 입력칸은 맨 아래(2026-10-06 대표 "원래대로 응대 이력 아래, 맨 밑으로" — 정돈안 README 정정 · 전 단계 같은 창) ── */
 #detailView.ddv.dv3.dvt .ddv-talk{display:flex;flex-direction:column;min-height:0;background:#fcfcfd}
-#detailView.ddv.dv3.dvt .ddv-talk>.idv-composer{order:1}
-#detailView.ddv.dv3.dvt .ddv-talk>.idv-chead{order:2}
-#detailView.ddv.dv3.dvt .ddv-talk>.idv-thread{order:3;flex:1;min-height:0}
-#detailView.ddv.dv3.dvt #ddvComposer{border-top:0;border-bottom:1px solid #eef0f3;background:#fff;padding:16px 22px 14px;gap:10px}
+#detailView.ddv.dv3.dvt .ddv-talk>.idv-chead{order:1}
+#detailView.ddv.dv3.dvt .ddv-talk>.idv-thread{order:2;flex:1;min-height:0}
+#detailView.ddv.dv3.dvt .ddv-talk>.idv-composer{order:3}
+#detailView.ddv.dv3.dvt #ddvComposer{border-top:1px solid #eef0f3;border-bottom:0;background:#fff;padding:14px 22px 14px;gap:10px}
 #detailView.ddv.dv3.dvt #ddvComposer .idv-ctabs{display:flex;align-items:center;gap:14px;min-width:0}
 #detailView.ddv.dv3.dvt #ddvComposer .idv-ctabs>[role=tablist]{display:flex;gap:14px;flex:none;background:none;border:0;padding:0;border-radius:0}
 #detailView.ddv.dv3.dvt #ddvComposer .idv-ctabs [role=tab],#detailView.ddv.dv3.dvt #ddvComposer .idv-ctabs .ce-open{flex:none;border:0;border-bottom:2px solid transparent;border-radius:0;background:none;box-shadow:none;height:auto;min-height:0;margin:0;padding:0 0 6px;font-size:13.5px;font-weight:700;color:#9ca3af;white-space:nowrap}
