@@ -166,7 +166,7 @@
    return [
     {label:'이번 달 수주실적',v:cur===null?'불러오는 중':cur>0?money(cur):'아직 없음',pct:cur&&prev>0?Math.min(100,Math.round(cur/prev*100)):0,bad:cur!==null&&!(prev>0&&cur/prev>=0.5),goal:pm+'월 '+(prev>0?money(prev):'없음')+' · '+P.tm+'월 '+P.td+'일째'},
     {label:'영업 메이드율',v:C.made===null?'아직 없음':C.made.toFixed(1)+'%',pct:C.made||0,bad:C.made!==null&&C.made<50,goal:P.label+' · 배드핏 제외'},
-    {label:'계약 임박',v:N.length+'건'+(sum>0?' · '+money(sum):''),pct:Math.min(100,N.length*10),bad:false,goal:'이번 주 기한 '+hot+'건'}];
+    (()=>{/* 날짜 확인된 계약 예정만 · 기한 미등록은 따로(2026-10-07 점검) */const dated=N.filter(n=>n.k),ds=dated.reduce((s,n)=>s+(n.amount||0),0);return {label:'계약 예정(날짜 확인)',v:dated.length+'건'+(ds>0?' · '+money(ds):''),pct:Math.min(100,dated.length*10),bad:false,goal:'이번 주 기한 '+hot+'건'+(N.length>dated.length?' · 기한 미등록 '+(N.length-dated.length)+'건은 제외':'')};})()];
   }catch(e){return null;}
  }
  /* ── 그리기 ── */

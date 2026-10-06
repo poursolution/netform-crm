@@ -53,6 +53,8 @@
    return {d,amount,dueKey:k,due:k?raw[0]+' '+md(k):R.stageLabel(c)+' · 기한 미등록',hot,late:!!k&&k<P.today,sub:[work&&!/미분류|미기록/.test(work)?work:'',R.repN(d.assignee)||'미배정'].filter(Boolean).join(' · ')};
   }).sort((a,b)=>b.amount-a.amount);
   const nearAmt=near.reduce((s,n)=>s+n.amount,0),hot=near.filter(n=>n.hot),hotAmt=hot.reduce((s,n)=>s+n.amount,0),top=near.slice(0,4),topAmt=top.reduce((s,n)=>s+n.amount,0);
+  /* 날짜가 확인된 계약 예정과 기한 미등록 후반 단계 기회를 나눈다(2026-10-07 점검: 일정 없이 '임박' 판정 금지) */
+  const dated=near.filter(n=>n.dueKey),undated=near.filter(n=>!n.dueKey),datedAmt=dated.reduce((s,n)=>s+n.amount,0),undatedAmt=undated.reduce((s,n)=>s+n.amount,0);
   /* 담당자별 */
   const people=names.map(n=>{const q=cur.q.filter(x=>R.inquirySalesOwner(x)===n).length,e=cur.quotes.filter(d=>R.repN(d.assignee)===n).length,c=B.contractsIn(L,P.a,P.b,n,'direct'),l=cur.loss.filter(d=>R.repN(d.assignee)===n),t=DT?DT.wonIn(P.a,P.b,n):{count:0,amount:0},pw=DW?DW.partnerIn(P.a,P.b,n):{count:0,amount:0};return {n,q,e,w:c.count+pw.count+t.count,net:c.net,pt:pw.amount,tf:t.amount,l:l.length,loss:l,made:L.ready?B.made(c.count,l.length,t.count,pw.count):null};});
   /* 결정 요청(규칙 · 근거 숫자는 위 자료에서) */
@@ -65,16 +67,18 @@
   if(low)asks.push({k:'low:'+low.n,t:low.n+' 메이드율 '+low.made.toFixed(1)+'% — 견적 지원을 붙일까요',why:'문의 '+low.q+' · 견적 '+low.e+' · 수주 '+low.w+' · 실주 '+low.l+'건'+(low.loss.length?' (사유: '+B.tallyText(B.tally(low.loss,B.lossReason))+')':'')+'입니다.',opts:['견적 지원 우선 배정','코칭만 유지']});
   const stale=OPEN.filter(d=>(R.activityAge(d)||0)>B.STALE());
   if(asks.length<3&&stale.length)asks.push({k:'stale',t:B.STALE()+'일 넘게 접촉 없는 진행 '+stale.length+'건 — 정리 기준을 정해 주세요',why:'진행 '+OPEN.length+'건 중 '+stale.length+'건('+eok(sumAmt(stale))+')이 '+B.STALE()+'일 넘게 연락 기록이 없습니다. 회의 지침은 대기 고객도 2개월에 1회 연락입니다.',opts:['대기 전환 · 정리','담당 재배정']});
-  return {P,L,cur,prev,made:made(cur),madeP:made(prev),cy,cohort,linked,cwon,trend,near,nearAmt,hot,hotAmt,top,topAmt,people,asks:asks.slice(0,3),lossChg,OPEN};
+  return {P,L,cur,prev,made:made(cur),madeP:made(prev),cy,cohort,linked,cwon,trend,near,nearAmt,hot,hotAmt,top,topAmt,dated,undated,datedAmt,undatedAmt,people,asks:asks.slice(0,3),lossChg,OPEN};
  }
  /* 한 줄 결론: 숫자는 전부 계산값 */
  function headline(x){
   const P=x.P,L=x.L;if(!L.ready)return {t:P.m+'월 계약실적 원장을 읽는 중입니다',s:'원장을 읽은 뒤에 계약 · 메이드율 문장을 채웁니다.'};
   const nets=x.trend.map(t=>t.net),me=x.cur.contracts.net,rank=nets.filter(v=>v>me).length+1,pos=x.trend.some(t=>!t.cur&&t.count)?(rank===1?'6개월 중 최고':rank===nets.length?'6개월 중 최저':'6개월 중 '+rank+'번째'):'비교할 지난달 계약 기록 없음';
   const mt=x.made==null?'메이드율은 수주 · 실주가 없어 계산하지 않았습니다':'메이드율'+(x.madeP==null?'은 ':x.made>x.madeP?'도 ':'은 ')+x.made.toFixed(1)+'%'+(x.madeP==null?'입니다':x.made>x.madeP?'로 올랐습니다':x.made<x.madeP?'로 내렸습니다':'로 전월과 같습니다');
-  const t=P.m+'월 계약 '+x.cur.contracts.count+'건 · '+eok(me)+' — '+pos+', '+mt;
+  /* 체결 계약(계약실적 원장)과 낙찰(수주실적)은 따로 적는다(2026-10-07 점검: 낙찰 · 계약 기준 혼재) */
+  const c0=x.cur,awardN=(c0.con?c0.con.count:0)+(c0.pt?c0.pt.count:0)+(c0.tf?c0.tf.count:0),awardAmt=(c0.con?c0.con.net:0)+(c0.pt?c0.pt.amount:0)+(c0.tf?c0.tf.amount:0);
+  const t=P.m+'월 체결 계약 '+x.cur.contracts.count+'건 · '+eok(me)+(x.L.ready&&((c0.pt&&c0.pt.count)||(c0.tf&&c0.tf.count))?' · 낙찰(수주실적) '+awardN+'건 · '+eok(awardAmt):'')+' — '+pos+', '+mt;
   const B=root.BriefB.lib,top=B.tally(x.cur.loss,B.lossReason)[0];
-  const s=P.nm+'월은 계약 임박 '+x.near.length+'건 · '+eok(x.nearAmt)+(x.near.length?' 중 '+x.hot.length+'건('+eok(x.hotAmt)+')이 이번 주에 갈립니다.':'입니다.')
+  const s=P.nm+'월은 날짜 확인된 계약 예정 '+x.dated.length+'건 · '+eok(x.datedAmt)+(x.hot.length?' 중 '+x.hot.length+'건('+eok(x.hotAmt)+')이 이번 주에 갈립니다.':'입니다.')+(x.undated.length?' 기한 미등록 후반 단계 기회 '+x.undated.length+'건 · '+eok(x.undatedAmt)+'은 날짜가 잡혀야 전망에 듭니다.':'')
    +(x.cur.loss.length?' 실주 '+x.cur.loss.length+'건 중 '+(x.lossChg.length?x.lossChg.length+'건이 관리소장 변경과 겹쳐 대응 정책 결정이 필요합니다.':top[1]+'건이 ‘'+top[0]+'’ 사유입니다.'):' 이번 달 파이프라인 실주는 없습니다.');
   return {t,s};
  }
@@ -120,7 +124,7 @@
      +'<div class="rb-box bad"><p><b>견적문의 '+h(B.closedText(c.bad))+'</b><span>'+(B.closedWord()==='종결'?'영업건이 되지 않고 닫힌 문의':'우리와 맞지 않는 문의')+' · 영업 실패 아님 · 메이드율 제외</span></p>'+bars(B.tally(c.bad,B.badfitReason),'g')+'</div>'
      +'<div class="rb-box loss"><p><b>파이프라인 실주 '+c.loss.length+'건 · '+eok(c.lossAmt)+'</b><span>영업기회 상실 · 메이드율에 포함</span></p>'+bars(B.tally(c.loss,B.lossReason),'r')+'</div></section>'
     +'<section class="rb-sec"><div class="rb-h"><b>3. 6개월 계약실적</b><span>계약 체결일 기준</span></div>'+(con?'<div class="rb-trend">'+x.trend.map(t=>'<div><span class="'+(t.cur?'c':'')+'">'+eok(t.net)+'</span><i style="height:'+Math.max(2,Math.round(t.net/tmx*112))+'px;background:'+(t.cur?NAVY:'#c9cdd5')+'"></i></div>').join('')+'</div><div class="rb-tl">'+x.trend.map(t=>'<div><span>'+t.m+'월</span><small>'+(t.made==null?'-':t.made.toFixed(t.made%1?1:0)+'%')+'</small></div>').join('')+'</div><span class="rb-note">아래 작은 숫자 = 그 달 영업 메이드율</span>':'<span class="rb-none">계약실적 원장을 읽는 중입니다 — 읽지 못하면 숫자를 내지 않습니다.</span>')+'</section>'
-    +'<section class="rb-sec"><div class="rb-h"><b>4. '+P.nm+'월 전망</b><span>계약 임박 '+x.near.length+'건 · '+eok(x.nearAmt)+'</span></div>'+(x.top.length?x.top.map(n=>'<div class="rb-near"><i style="background:'+(B.BRAND[n.d.brand]||'#9aa0ab')+'"></i><div><b>'+h(n.d.site||'현장명 미입력')+'</b><span>'+h(n.sub)+'</span></div><div class="r"><b>'+eok(n.amount)+'</b><span class="'+(n.hot||n.late?'hot':'')+'">'+h(n.due+(n.late?' (지남)':''))+'</span></div></div>').join('')
+    +'<section class="rb-sec"><div class="rb-h"><b>4. '+P.nm+'월 전망</b><span>계약 예정(날짜 확인) '+x.dated.length+'건 · '+eok(x.datedAmt)+(x.undated.length?' · 기한 미등록 '+x.undated.length+'건 '+eok(x.undatedAmt):'')+'</span></div>'+(x.top.length?x.top.map(n=>'<div class="rb-near"><i style="background:'+(B.BRAND[n.d.brand]||'#9aa0ab')+'"></i><div><b>'+h(n.d.site||'현장명 미입력')+'</b><span>'+h(n.sub)+'</span></div><div class="r"><b>'+eok(n.amount)+'</b><span class="'+(n.hot||n.late?'hot':'')+'">'+h(n.due+(n.late?' (지남)':''))+'</span></div></div>').join('')
       +'<span class="rb-note">위 '+x.top.length+'건 '+eok(x.topAmt)+(rest>0?' + 나머지 '+rest+'건 '+eok(x.nearAmt-x.topAmt):'')+' = '+eok(x.nearAmt)+' · 이번 주(7일 안) 기한 '+x.hot.length+'건 '+eok(x.hotAmt)+'</span>':'<span class="rb-none">경쟁 · 입찰 · 계약 단계에 있는 진행 건이 없습니다.</span>')+'</section></div>'
    +'<div class="rb-g2"><section class="rb-sec"><div class="rb-h"><b>5. 담당자별 — 얼마나 했고, 얼마나 땄고, 얼마나 놓쳤나</b></div><div class="rb-table"><span class="l th">담당</span><span class="th">문의</span><span class="th">견적</span><span class="th">수주</span><span class="th">계약실적</span><span class="th">협약 · 기술자문</span><span class="th">타사 이관</span><span class="th">실주</span><span class="th">메이드율</span>'+rowsP+total+'</div><span class="rb-note">수주실적(낙찰금액 · VAT 별도) = 계약실적(계약 체결일) + 협약시공사 수주 · 기술자문 + 인정된 타사 이관 수주 · 메이드율 = 수주 ÷ (수주 + 파이프라인 실주) · 배드핏 · 진행 중 · 낙찰결과 대기 제외</span></section>'
     +'<section class="rb-sec"><div class="rb-h"><b>6. 대표님 결정 요청</b></div>'+(x.asks.length?x.asks.map((q,i)=>'<div class="rb-ask"><div><b class="n">'+(i+1)+'</b><b>'+h(q.t)+'</b></div><span>'+h(q.why)+'</span><div class="o">'+q.opts.map((o,k)=>'<button type="button" data-rb="pick" data-k="'+attr(q.k)+'" data-v="'+k+'" aria-pressed="'+(dec[q.k]===k)+'"'+(admin?'':' disabled')+'>'+h(o)+'</button>').join('')+'</div></div>').join(''):'<span class="rb-none">이번 달 자료에서 결정이 필요한 항목이 잡히지 않았습니다.</span>')+'</section></div>'

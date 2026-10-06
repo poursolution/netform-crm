@@ -155,21 +155,25 @@
   const noFollow=quotedD.filter(d=>{if(!R.isOpen(d)||PS().group(R.dealStage(d))==='competition')return false;const sd=sentKey(d);if(!sd||B.between(sd,P.today)<=FOLLOW)return false;const l=B.lastActKey(d,B.addDays(P.today,1));return !l||l<=sd;}).length;
   const cat=d=>{let c='';try{c=R.CRMRules.lostCategory(R.CRMRules.lostReason?R.CRMRules.lostReason(B.lossReason(d)):B.lossReason(d));}catch(e){}return c||'사유 미기록';};
   const lossCats=B.tally(loss,cat).slice(0,3).map(x=>x[0]+' '+x[1]).join(' · ');
-  const pc=(a,b)=>pt(B.pct(a,b)),d3=Math.max(0,fit-quotes),d4=Math.max(0,quotes-comp);
+  /* 같은 문의 집단만 따라가는 퍼널(2026-10-07 점검: 기간 접수 문의와 기간 안 영업 이동을 한 줄에 섞지 않는다) — 전환 · 결과 · 수주는 그 문의들에서 난 것(inquiryFate). 기간 안 활동량은 아래 한 줄로 따로 */
+  const pc=(a,b)=>pt(B.pct(a,b)),fateOf=x=>{try{return inquiryFate(C,x);}catch(e){return 'open';}},fates=q.map(fateOf);
+  const conv=q.filter((x,i)=>{if(fates[i]==='won'||fates[i]==='lost')return true;try{return !!R.inqCtlConverted(x);}catch(e){return false;}}).length,/* 결과가 난 문의는 전환된 것 — 전환 ≥ 결과 확정 */cWon=fates.filter(f=>f==='won').length,cLost=fates.filter(f=>f==='lost').length,cDone=cWon+cLost,cMade=cDone?Math.round(cWon/cDone*1000)/10:null;
+  const d2=Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):0;
   const cols=[
    {l:'견적문의',n:q.length,rate:'',drop:null,why:''},
    {l:'적합 문의',n:fit,rate:'적합률 '+pc(fit,q.length),drop:bad.length,why:B.closedText(bad,'n')},
-   {l:'견적 발송',n:quotes,rate:fit&&quotes<=fit?'견적 진행 '+pc(quotes,fit):'기간 안 견적 발송',drop:d3,why:d3?'아직 견적 전 · 첫 연락 전 '+noFirst+' · 응대 중 '+Math.max(0,fitOpen.length-noFirst):''},
-   {l:'경쟁 · 입찰',n:comp,rate:quotes&&comp<=quotes?'입찰 전환 '+pc(comp,quotes):'기간 안 경쟁 · 입찰 진입',drop:d4,why:d4?(noFollow?'견적 후 '+FOLLOW+'일 후속 없음 '+noFollow+' · ':'')+'아직 진행 중':''},
-   {l:'결과 확정',n:L.ready?done:null,rate:'진행 중 '+compOpen,drop:compOpen,why:compOpen?'아직 결과 전':''},
-   {l:'수주',n:L.ready?C.won:null,rate:'메이드율 '+pt(made)+' (실주 '+lossN+')',drop:lossN,why:lossN?'실주 '+lossN+(lossCats?' · '+lossCats:''):''}];
-  const max=Math.max(1,...cols.map(c=>c.n||0)),big=d3||d4?(d4>=d3?3:2):-1;
-  const bar=(c,i)=>'<div class="db-f6c"><div class="bar"><i style="height:'+(c.n?Math.max(3,Math.round(c.n/max*118)):0)+'px;background:'+(i===0?'#9aa0ab':i===big?'#d14a3f':i===5?'#1f9d55':'#3b6ce4')+'"></i></div><span>'+c.l+'</span><b>'+(c.n===null?'<small>불러오는 중</small>':c.n+'<small>건</small>')+'</b><em class="'+(i===big?'red':'')+'">'+h(c.rate)+'</em>'+(c.drop?'<div class="dr"><b>빠짐 '+c.drop+'건</b><span>'+h(c.why)+'</span></div>':'')+'</div>';
+   {l:'영업건 전환',n:conv,rate:'전환 '+pc(conv,fit),drop:d2,why:d2?'아직 문의 단계 · 첫 연락 전 '+noFirst+' · 응대 중 '+Math.max(0,fitOpen.length-noFirst):''},
+   {l:'결과 확정',n:L.ready?cDone:null,rate:'진행 중 '+Math.max(0,conv-cDone),drop:d3,why:d3?'아직 결과 전':''},
+   {l:'수주',n:L.ready?cWon:null,rate:'이 문의 집단 메이드율 '+pt(cMade)+' (실주 '+cLost+')',drop:cLost,why:cLost?'실주 '+cLost:''}];
+  const max=Math.max(1,...cols.map(c=>c.n||0)),big=d2||d3?(d3>d2?3:2):-1,last=cols.length-1;
+  const bar=(c,i)=>'<div class="db-f6c"><div class="bar"><i style="height:'+(c.n?Math.max(3,Math.round(c.n/max*118)):0)+'px;background:'+(i===0?'#9aa0ab':i===big?'#d14a3f':i===last?'#1f9d55':'#3b6ce4')+'"></i></div><span>'+c.l+'</span><b>'+(c.n===null?'<small>불러오는 중</small>':c.n+'<small>건</small>')+'</b><em class="'+(i===big?'red':'')+'">'+h(c.rate)+'</em>'+(c.drop?'<div class="dr"><b>빠짐 '+c.drop+'건</b><span>'+h(c.why)+'</span></div>':'')+'</div>';
   const badTop=B.tally(bad,B.badfitReason).slice(0,2).map(x=>x[0]).join(' · ');
+  const act='견적 발송 '+quotes+' · 경쟁 · 입찰 진입 '+comp+(noFollow?'(견적 후 '+FOLLOW+'일 후속 없음 '+noFollow+')':'')+' · 결과 확정 '+(L.ready?done:'—')+' · 수주 '+(L.ready?C.won:'—')+(L.ready&&lossN?' · 실주 '+lossN+(lossCats?' ('+lossCats+')':''):'');
   const notes=[['문의 품질',bad.length?B.closedText(bad)+'이 문의 → 적합에서 빠짐. 영업 실패가 아니라 유입 품질 문제'+(badTop?' ('+badTop+')':''):'문의 → 적합에서 빠진 건이 없습니다',''],
-   ['가장 큰 이탈',big<0?'칸 사이에 빠진 건이 없습니다':cols[big-1].l+' → '+cols[big].l+' '+cols[big].drop+'건'+(big===3&&noFollow?'. 견적 후 '+FOLLOW+'일 후속이 없던 건이 '+noFollow+'건':''),big<0?'':'red'],
-   ['영업력',!L.ready?'계약 원장을 불러오는 중입니다':done?'결과 확정 '+done+'건 중 '+C.won+'건 수주 ('+pt(made)+')':'결과가 난 영업이 아직 없습니다','']];
-  return '<section class="db-card db-f6"><div class="db-ch"><b>'+h(P.label)+' 영업 Funnel</b><span>'+h(P.label)+' 접수 문의 · 기간 안 영업 이동 · 칸 사이 = 빠진 건과 이유</span><i class="db-sp"></i><span class="mr">영업 메이드율 <b>'+pt(made)+'</b> · Bad Fit 제외</span></div><div class="db-f6g">'+cols.map(bar).join('')+'</div>'
+   ['가장 큰 이탈',big<0?'칸 사이에 빠진 건이 없습니다':cols[big-1].l+' → '+cols[big].l+' '+cols[big].drop+'건',big<0?'':'red'],
+   ['영업력',!L.ready?'계약 원장을 불러오는 중입니다':cDone?'이 문의 집단에서 결과 확정 '+cDone+'건 중 '+cWon+'건 수주 ('+pt(cMade)+')':'이 문의 집단에서 결과가 난 영업이 아직 없습니다',''],
+   ['기간 안 활동량 (대상이 다름 · 전체 영업건)',act,'']];
+  return '<section class="db-card db-f6"><div class="db-ch"><b>'+h(P.label)+' 영업 Funnel</b><span>'+h(P.label)+' 접수 문의 집단만 따라감 · 칸 사이 = 빠진 건과 이유</span><i class="db-sp"></i><span class="mr">영업 메이드율(기간 전체) <b>'+pt(made)+'</b> · Bad Fit 제외</span></div><div class="db-f6g">'+cols.map(bar).join('')+'</div>'
    +'<div class="db-f6n">'+notes.map(n=>'<div class="'+n[2]+'"><b>'+n[0]+'</b> · '+h(n[1])+(n[0]==='영업력'&&L.ready?'<small class="db-f6x">'+h(madeFx(C))+'</small>':'')+'</div>').join('')+'</div></section>';
  }
  /* 단계별 전주 대비: 최근 7일과 그 전 7일을 단계 이동 기록에서 센다(따로 저장한 값 없이 기록에서 다시 계산). 정체 = 그 시점에 열려 있고 14일 넘게 기록이 없는 건 */
@@ -223,7 +227,7 @@
    +'<div class="db-bars"><span class="avg" style="bottom:'+Math.round(avg/max*72)+'px"'+(avg>0?'':' hidden')+'></span>'+M.map(col).join('')+'</div><div class="db-qbars">'+M.map(qcol).join('')+'</div><div class="db-mlab">'+M.map(x=>'<span class="'+(x.cur?'cur':x.fut?'fut':'')+'">'+x.m+'월</span>').join('')+'</div><p>'+foot+'</p></section>';
   const BRW=brandRows(C),tot=BRW.reduce((s,b)=>s+Math.max(0,b.net),0);
   const brand='<section class="db-card db-brand"><div class="db-ch"><b>브랜드별 계약실적</b><i class="db-sp"></i><span>'+h((P.thisYear?'올해 누적 ':P.label+' ')+(L.ready?(tot>0?won(tot):'아직 없음'):'불러오는 중'))+'</span></div><div class="db-share">'+BRW.map(b=>'<span style="width:'+(tot>0?Math.max(0,b.net)/tot*100:0).toFixed(1)+'%;background:'+b.c+'"></span>').join('')+'</div>'
-   +BRW.map(b=>'<button type="button" class="db-brow" data-db="brand-ev" data-v="'+attr(b.name)+'"><div><i style="background:'+b.c+'"></i><b>'+h(b.name)+'</b><span class="db-sp"></span><b class="'+(b.net>0?'':'mut')+'">'+(b.net>0?h(won(b.net)):'수주 없음')+'</b><em>'+(b.net>0&&tot>0?Math.round(b.net/tot*100)+'%':'')+'</em></div><small>문의 '+b.q+' · 수주 '+b.w+' · 메이드율 <b class="'+(b.made!==null&&b.made<LOWMADE()?'red':'')+'">'+(b.made===null?'—':b.made.toFixed(1)+'%')+'</b>'+(!b.w&&b.fit>0?' · 적합 문의는 있는데 계약 전환 0':'')+'</small></button>').join('')+'</section>';
+   +BRW.map(b=>'<button type="button" class="db-brow" data-db="brand-ev" data-v="'+attr(b.name)+'"><div><i style="background:'+b.c+'"></i><b>'+h(b.name)+'</b><span class="db-sp"></span><b class="'+(b.net>0?'':'mut')+'">'+(b.net>0?h(won(b.net)):L.ready?'수주 없음':'불러오는 중')+'</b><em>'+(b.net>0&&tot>0?Math.round(b.net/tot*100)+'%':'')+'</em></div><small>문의 '+b.q+' · 수주 '+(L.ready?b.w:'—')+' · 메이드율 <b class="'+(L.ready&&b.made!==null&&b.made<LOWMADE()?'red':'')+'">'+(!L.ready?'불러오는 중':b.made===null?'—':b.made.toFixed(1)+'%')+'</b>'+(L.ready&&!b.w&&b.fit>0?' · 적합 문의는 있는데 계약 전환 0':'')+'</small></button>').join('')+'</section>';/* 원장 읽는 중엔 '수주 없음 · 전환 0' 단정 금지(2026-10-07 점검) */
   return funnel+'<div class="db-row">'+chart+brand+'</div>';
  }
  function secPeople(C,PP){
@@ -272,7 +276,7 @@
    +'<p class="db-dwnote">'+h(over?over.l+' 단계가 기준('+over.g+'일)보다 '+(over.d-over.g)+'일 길게 머묾 · '+HINT[over.k]:'모든 단계가 기준 안에 있습니다')+'</p></section>';
   return '<section class="db-card"><div class="db-ch"><b>진행 중 '+active.length+'건'+(exp>0?' · '+h(won(exp)):'')+'</b><span>단계 클릭 = 그 단계 목록 · 빨간 숫자 = 조치 필요</span></div><div class="db-flow">'+flow+'</div><div class="db-ended"><span>끝난 영업 <i>· 전체 기간 누적</i></span><span>수주 <b>'+wonN+'</b></span><span>실주 <b>'+lostN+'</b></span>'+(expN?'<span>확장관리로 이어짐 <b>'+expN+'</b></span>':'')+'<i class="db-sp"></i><span>조치 필요 합계 <b class="red">'+risk.length+'</b></span></div></section>'
    +'<div class="db-pipe2">'+whoSec+dwSec+'</div>'
-   +'<section class="db-card"><div class="db-ch"><b>계약 임박 · 다음 달 전망</b><span>경쟁 · 입찰 · 계약 검토 '+N.length+'건'+(sum(N)>0?' · '+h(won(sum(N))):'')+' · 기한 가까운 순</span></div>'+(N.length?'<div class="db-nears">'+top.map(card).join('')+'</div><p class="db-note">위 '+top.length+'건 '+(sum(top)>0?h(won(sum(top))):'금액 없음')+(rest.length?' · 나머지 '+rest.length+'건 '+(sum(rest)>0?h(won(sum(rest))):'금액 없음'):'')+' · 이번 주 기한 '+hot.length+'건'+(sum(hot)>0?' '+h(won(sum(hot))):'')+'</p>':'<p class="db-empty">경쟁 · 입찰 · 계약 검토 단계에 있는 건이 없습니다.</p>')+'</section>';
+   +'<section class="db-card"><div class="db-ch"><b>계약 임박 · 다음 달 전망</b><span>날짜 확인된 계약 예정 '+N.filter(n=>n.k).length+'건'+(sum(N.filter(n=>n.k))>0?' · '+h(won(sum(N.filter(n=>n.k)))):'')+(N.some(n=>!n.k)?' · 기한 미등록 후반 단계 '+N.filter(n=>!n.k).length+'건':'')+' · 기한 가까운 순</span></div>'+(N.length?'<div class="db-nears">'+top.map(card).join('')+'</div><p class="db-note">위 '+top.length+'건 '+(sum(top)>0?h(won(sum(top))):'금액 없음')+(rest.length?' · 나머지 '+rest.length+'건 '+(sum(rest)>0?h(won(sum(rest))):'금액 없음'):'')+' · 이번 주 기한 '+hot.length+'건'+(sum(hot)>0?' '+h(won(sum(hot))):'')+'</p>':'<p class="db-empty">경쟁 · 입찰 · 계약 검토 단계에 있는 건이 없습니다.</p>')+'</section>';
  }
  function actExtra(C){
   const {B,P}=C,WA=weekActs(C),W=WA.W,names=C.names,all=WA.list,K4=['call','msg','visit','quote'],AC=['#3b6ce4','#9ab6f2','#1f9d55','#e0a43a'],AL=['통화','문자 · 카카오','방문','견적 · 자료'];
