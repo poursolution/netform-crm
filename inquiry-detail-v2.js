@@ -519,7 +519,7 @@
   if(k==='dial')return dial(phoneOf(q).digits);
   if(k==='near-toggle'){s.nearOpen=!s.nearOpen;return reskinFrom();}
   /* 지도: 반경 고르기 · 목록 줄 = 지도 이동 · 지도 키 등록 — inquiry-site.js 가 처리하면 여기서 끝 */
-  if(IS()&&IS().onAction&&IS().onAction(k,v,b,q,s))return;
+  if(IS()&&IS().onAction&&IS().onAction(k,v,b,q,s,reskinFrom))return;
   /* 단지 이력(inquiry-site.js): 응대 이력 범위 · 채울 정보 접기 · 지난 영업건 열기 · 새 공사로 진행 */
   if(k==='scope'){s.scope=v==='all'?'all':'now';return reskinFrom();}
   if(k==='need-toggle'){s.needOpen=!s.needOpen;return reskinFrom();}

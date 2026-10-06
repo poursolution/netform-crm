@@ -5,7 +5,8 @@
      · 목록 줄 꼬리표: "이 단지 실주 1 · 2025 옥상"(빨강) · "이 단지 수주 2"(초록) · "이 단지 진행 1"(파랑) — 가장 최근 건의 연도 · 공종.
      · 상세 왼쪽 '이 단지 영업 이력': 요약 한 줄 + 영업건 카드(실주는 사유 · 낙찰사(기록된 경쟁사) · 마지막 견적 · 그때 관리소장) + 한 줄 조언 + 지금 문의.
      · 가운데 응대 이력 [이 문의 | 단지 전체]: 단지 전체 = 같은 단지 다른 영업건의 기록을 '2025 옥상' 꼬리표와 함께 시간순으로.
-     · 오른쪽: 첫마디에 지난 이력 반영 · [새 공사로 진행](기존 판단 저장 crm_inquiry_site_link_v1) / [실주 건 다시 열기](서버 적용 뒤) · 근처에서 영업했던 현장.
+     · 오른쪽: 첫마디에 지난 이력 반영 · [새 공사로 진행](기존 판단 저장 crm_inquiry_site_link_v1) / [실주 건 다시 열기] · 근처에서 영업했던 현장.
+       [실주 건 다시 열기] = 서버 명령 crm_deal_reopen_v1(실주로 닫힌 건만 · 단계 + 다음 행동 + 날짜를 꼭 받는다 · 실주 때 기록은 그대로 남는다) → 문의는 그 영업건에 붙인다(같은 공사).
    없는 사실은 적지 않는다 — 기록에 없으면 '미기록'. 조언 한 줄은 이력에 있는 사실만으로 만든 문장이다(영업건 상세의 '이 단지 영업 이력'과 같은 방식).
    지도 · 반경 · 거리(2차): 현장 좌표는 서버 저장소(site_geo · crm_site_geo_list_v1 / crm_site_geo_save_v1)에서 읽는다. 좌표가 없는 현장은 카카오 지도로 주소 → 좌표를 찾아 저장하고,
      주소가 없으면 현장 이름으로 찾는다(이름이 맞고 지역 표기가 맞을 때만 · 'name' = 추정으로 표시해 저장). 못 찾으면 '못 찾음'으로 남기고 지도에 넣지 않는다.
@@ -101,14 +102,54 @@
   return x.k==='won'?when+' '+w+' 공사 이후 다시 찾아 주셔서 감사합니다.':when+' '+w+' 건 이후 다시 연락 주셔서 감사합니다.';
  }
  /* 이 단지 기존 건과 관계: [새 공사로 진행] / [실주 건 다시 열기] */
- /* 다시 열기 명령은 아직 서버에 없다 — 화면이 부를 수 있는 함수 목록(CRM_RPC_ALLOW)에 올라오고 운영에 설치된 것이 확인될 때만 연다 */
+ /* 다시 열기: 화면이 부를 수 있는 함수 목록(CRM_RPC_ALLOW)에 있고 운영에 설치된 것이 확인될 때만 연다 */
  const reopenReady=()=>!!(root.SB&&typeof root.SB.rpc==='function'&&root.TOKEN)&&(root.CRM_RPC_ALLOW||[]).includes(REOPEN_RPC)&&!!(root.CRMRelease&&root.CRMRelease.has&&root.CRMRelease.has(REOPEN_RPC)===true);
  function relationHtml(q,s){
   if(!on())return '';const S=summary(q);if(!S.D.length)return '';
   let link={};try{link=L3().linkOf?L3().linkOf(q):{};}catch(e){}const can=!!(L3().linkable&&L3().linkable()),lost=S.lost[0],busy=!!(s&&s.siteBusy);
   return '<div class="isd-rel"><span class="lb">이 단지 기존 건과 관계</span><div class="two"><button type="button" data-idv="site-new" aria-pressed="'+!!link.isNew+'"'+(can&&!busy&&!link.isNew?'':' disabled')+(can?'':' title="서버 적용 뒤에 고를 수 있습니다"')+'>'+(link.isNew?'새 공사로 진행 ✓':'새 공사로 진행')+'</button>'
-   +(lost?'<button type="button" data-idv="site-reopen" data-v="'+attr(root.dealKey(lost.d))+'"'+(reopenReady()&&!busy?'':' disabled title="실주 건 다시 열기는 서버 적용 뒤에 열립니다"')+'>실주 건 다시 열기</button>':'')+'</div>'
+   +(lost?'<button type="button" data-idv="site-reopen" data-v="'+attr(root.dealKey(lost.d))+'" aria-pressed="'+!!(s&&s.reopen)+'"'+(reopenReady()&&!busy?'':' disabled'+(reopenReady()?'':' title="실주 건 다시 열기는 서버 적용 뒤에 열립니다"'))+'>실주 건 다시 열기</button>':'')+'</div>'
+   +(lost&&s&&s.reopen&&reopenReady()?reopenForm(s,lost):'')
    +'<small>'+(lost?'공종이 다르면 새 공사 · 같은 공종이면 실주 건을 다시 열어 이력을 이어 갑니다':'공종이 다르면 새 공사로 진행합니다 · 같은 공사면 목록 줄에서 기존 영업건에 붙입니다')+'</small>'+(s&&s.siteErr?'<div class="idv-err">'+h(s.siteErr)+'</div>':'')+'</div>';
+ }
+ /* 실주 건 다시 열기: 단계 · 다음 행동 · 날짜를 받는다(대표 기준 — 재개는 셋을 함께). 계약 이후 단계로는 바로 올리지 않는다 */
+ const REOPEN_STAGES=['consulting','sent','rapport','silent','compete','imminent','bidding'];
+ const REOPEN_GRP={consulting:'영업·관리',sent:'컨설팅·견적',rapport:'영업·관리',silent:'영업·관리',compete:'경쟁·임박',imminent:'경쟁·임박',bidding:'경쟁·임박'};
+ const todayYmd=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+ function reopenForm(s,lost){
+  const to=REOPEN_STAGES.includes(s.reopenTo)?s.reopenTo:'consulting',t=todayYmd(),busy=!!s.siteBusy,dis=busy?' disabled':'';
+  const lab=c=>{try{return root.stageNoLabel?root.stageNoLabel(c):root.stageLabel(c);}catch(e){return c;}};
+  return '<div class="isd-reopen"><span class="lb2">'+h(lost.work)+' 건을 다시 엽니다 · 단계 · 다음 행동 · 날짜</span>'
+   +'<select data-idv="reopen-to" aria-label="다시 열 단계"'+dis+'>'+REOPEN_STAGES.map(c=>'<option value="'+c+'"'+(c===to?' selected':'')+'>'+h(lab(c))+'</option>').join('')+'</select>'
+   +'<div class="row"><input type="text" data-idv="reopen-next" aria-label="다음 행동" placeholder="다음 행동" maxlength="200" value="'+attr(s.reopenNext==null?'재문의 건 첫 연락':s.reopenNext)+'"'+dis+'><input type="date" data-idv="reopen-date" aria-label="다음 행동 날짜" min="'+t+'" value="'+attr(s.reopenDate||t)+'"'+dis+'></div>'
+   +'<div class="two"><button type="button" data-idv="reopen-cancel"'+dis+'>취소</button><button type="button" class="pri" data-idv="reopen-save"'+dis+'>'+(busy?'저장 중':'다시 열기')+'</button></div></div>';
+ }
+ /* 관계 칸만 다시 그린다 */
+ function refreshRel(q,s){const dlg=document.querySelector('#inq-inbox-dialog .inq-dialog'),box=dlg&&dlg.querySelector('.isd-rel');if(!box)return;const t=document.createElement('template');t.innerHTML=relationHtml(q,s);box.replaceWith(t.content);}
+ function reopenSave(b,q,s,reskin){
+  const f=b.closest('.isd-reopen'),S=summary(q),lost=S.lost[0];if(!f||!lost||s.siteBusy)return;
+  const to=f.querySelector('[data-idv="reopen-to"]').value,next=f.querySelector('[data-idv="reopen-next"]').value.trim(),date=f.querySelector('[data-idv="reopen-date"]').value,d=lost.d;
+  Object.assign(s,{reopenTo:to,reopenNext:next,reopenDate:date,siteErr:''});
+  if(!next||!date){s.siteErr='다음 행동과 날짜를 정해 주세요';return refreshRel(q,s);}
+  if(date<todayYmd()){s.siteErr='다음 행동 날짜는 오늘 이후로 정해 주세요';return refreshRel(q,s);}
+  if(!Number.isSafeInteger(Number(d.version))){s.siteErr='영업건 자료를 다시 불러온 뒤 시도해 주세요';return refreshRel(q,s);}
+  s.siteBusy=true;refreshRel(q,s);
+  const fail=msg=>{s.siteBusy=false;s.siteErr=msg;refreshRel(q,s);};
+  Promise.resolve().then(()=>root.SB.rpc(REOPEN_RPC,{p:{deal_id:String(d.id),expected_version:Number(d.version),to,next_action:next,next_date:date,note:'같은 단지 재문의 — 같은 공사로 보고 이어서 진행',inquiry_id:isUuid(q.id)?String(q.id):null}})).then(async r=>{
+   if(!r||r.error){if(r&&r.error&&r.error.code==='PGRST202'){try{root.CRMRelease.noteMissing(REOPEN_RPC);}catch(e){}return fail('실주 건 다시 열기는 서버 적용 뒤에 쓸 수 있습니다');}return fail(String(r&&r.error&&r.error.message||'저장하지 못했습니다').replace(/^forbidden$/,'이 영업건의 담당자 또는 관리자만 다시 열 수 있습니다'));}
+   const R=r.data||{};if(R.ok!==true)return fail('서버 확인 응답이 올바르지 않습니다');
+   /* 화면 자료를 서버가 확인한 값으로 맞춘다(곧 서버 자료로 다시 덮인다) */
+   const na={id:R.next_action_id||null,type:'후속접촉',text:next,due:date,due_at:date,assignee:d.assignee,status:'open'};
+   Object.assign(d,{code:to,stage_code:to,stage:to,stage_raw:to,grp:REOPEN_GRP[to],stage_group:R.stage_group||d.stage_group,lifecycle_status:'active',outcome:null,closed_at:null,closed:null,lost_reason:null,lost_kind:null,
+    version:Number.isSafeInteger(Number(R.version))?Number(R.version):d.version,stage_entered_at:R.server_at||d.stage_entered_at,next_action:{id:na.id,type:na.type,text:next,due_at:date,assignee_name:d.assignee,status:'open'},nextActionObj:na,nextAction:na});
+   try{root.saveLocal&&root.saveLocal();}catch(e){}
+   /* 문의를 다시 연 영업건에 붙인다(같은 공사) — 기존 판단 저장 함수 */
+   try{if(L3().link)await L3().link(q,'same',String(d.id));}catch(e){}
+   Object.assign(s,{siteBusy:false,reopen:false,siteErr:''});
+   try{if(typeof root.toast==='function')root.toast('실주 건을 다시 열었습니다');}catch(e){}
+   try{root.paint&&root.paint();}catch(e){}
+   if(typeof reskin==='function')reskin();else refreshRel(q,s);
+  }).catch(()=>fail('저장하지 못했습니다'));
  }
  /* 근처에서 영업했던 현장: 지금은 같은 지역(주소의 시 · 구) 기준 — 좌표가 준비되면 반경 · 거리로 바꾼다 */
  function nearList(q){
@@ -266,8 +307,12 @@
   fillStart(L.q);
  }
  /* 상세 창의 누름: 반경 · 목록 줄(지도 이동 — 이미 고른 줄을 다시 누르면 영업건 열기로 넘긴다) · 지도 키 등록 */
- function onAction(k,v,b,q,s){
+ function onAction(k,v,b,q,s,reskin){
   if(!on())return false;
+  if(k==='site-reopen'){if(!reopenReady()||s.siteBusy)return true;s.reopen=!s.reopen;s.siteErr='';refreshRel(q,s);return true;}
+  if(k==='reopen-cancel'){s.reopen=false;s.siteErr='';refreshRel(q,s);return true;}
+  if(k==='reopen-save'){reopenSave(b,q,s,reskin);return true;}
+  if(k==='reopen-to'||k==='reopen-next'||k==='reopen-date')return true;
   if(k==='rad'){s.rad=[1,3,5].includes(Number(v))?Number(v):3;refreshNear();return true;}
   if(k==='near'){if(M.focus===v||!M.marks.has(v))return false;return focusRow(v);}
   if(k==='map-key-save'){
@@ -311,5 +356,5 @@
    +tip+'</section>';
  }
  root.InquirySite={on,KIND,REOPEN_RPC,deals,summary,badge,lostFacts,historyHtml,aiLine,timeline,hasHistory,openerClue,relationHtml,nearList,nearHtml,reopenReady,shortWork,
-  GEO_LIST,GEO_SAVE,MAP_CFG,km:KM,kmText,nearBy,mapMode,mount,onAction,regionTokens,cleanAddr,_map:M,_resetMap:resetMap};
+  REOPEN_STAGES,GEO_LIST,GEO_SAVE,MAP_CFG,km:KM,kmText,nearBy,mapMode,mount,onAction,regionTokens,cleanAddr,_map:M,_resetMap:resetMap};
 })(window);
