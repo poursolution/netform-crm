@@ -3,6 +3,36 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const C=require('../data-cleanup.js');
 const row=(id,extra={})=>({ref:{type:'deal',id},name:'검증용 한빛아파트',address:'수원시 테스트로 12',mobile:'',office:'0311112222',siteId:'',works:['옥상>금속기와'],brand:'POUR',at:'2026-09-01',...extra});
+
+const crossBrand=()=>[
+ row('a',{ref:{type:'inquiry',id:'a'},name:'[서울 강동] 검증스테이',address:'서울 강동구 검증로 54',mobile:'01011110001',brand:'POUR솔루션',works:['누수'],at:'2026-10-06T04:19:00Z',status:'배드핏',owner:'담당A'}),
+ row('b',{ref:{type:'inquiry',id:'b'},name:'[서울] 검증스테이',address:'서울시 강동구 검증로 54',mobile:'01011110002',brand:'POUR공법',works:['지하누수'],at:'2026-10-06T05:10:00Z',status:'접수',owner:''})];
+test('다른 브랜드·다른 전화·서울 주소 표기 차이는 문의 검토 후보로만 찾는다',()=>{
+ const [a,b]=crossBrand(),before=JSON.stringify([a,b]),r=C.classify(a,b);
+ assert.equal(r.type,'inquiry');assert.equal(r.action,'defer');
+ assert.ok(r.reasons.includes('연락처 서로 다름'));assert.ok(r.reasons.includes('공사 범위 확인 필요'));
+ assert.match(r.text,/상태는 자동으로 복사하지 않습니다/);assert.equal(JSON.stringify([a,b]),before);
+ assert.equal(C.classify(b,a).key,r.key);
+});
+test('서울특별시 표기도 같은 주소 검토에 포함한다',()=>{
+ const [a,b]=crossBrand();b.address='서울특별시 강동구 검증로 54';assert.equal(C.classify(a,b).type,'inquiry');
+});
+test('번호·동·호가 다른 주소는 교차 브랜드 문의 후보로 묶지 않는다',()=>{
+ for(const address of ['서울시 강동구 검증로 55','서울시 강동구 검증로 5-4','서울시 강동구 검증로 54 101동','서울시 강동구 검증로 54 101호']){
+  const [a,b]=crossBrand();b.address=address;const r=C.classify(a,b);assert.ok(!r||r.type!=='inquiry',address);
+ }
+});
+test('하이픈 제거로 같아진 번지를 교차 브랜드 주소 일치로 쓰지 않는다',()=>{
+ const [a,b]=crossBrand();a.address='서울시 강동구 검증동 54-1';b.address='서울시 강동구 검증동 541';assert.notEqual(C.classify(a,b)?.type,'inquiry');
+});
+test('주소 없거나 접수 시각 미확인·1일 초과이면 교차 브랜드 후보를 단정하지 않는다',()=>{
+ for(const patch of [{address:''},{address:'서울시 강동구'},{at:''},{at:'2026-10-08T04:19:00Z'}]){
+  const [a,b]=crossBrand();Object.assign(b,patch);assert.notEqual(C.classify(a,b)?.type,'inquiry');
+ }
+});
+test('기존 현장 ID가 같아도 다른 브랜드 새 접수는 문의 검토를 생략하지 않는다',()=>{
+ const [a,b]=crossBrand();a.siteId=b.siteId='site-one';b.address=a.address;assert.equal(C.classify(a,b).type,'inquiry');
+});
 test('같은 현장 다른 공종은 Deal 병합이 아닌 Site 연결',()=>assert.equal(C.classify(row('1'),row('2',{works:['재도장>외부']})).action,'site_link'));
 test('ASQ와 POUR는 다른 영업기회로 보존',()=>assert.equal(C.classify(row('1'),row('2',{brand:'아파트스퀘어'})).action,'site_link'));
 test('동일 공종 가까운 시기는 검토만',()=>assert.equal(C.classify(row('1'),row('2')).action,'deal_review'));
