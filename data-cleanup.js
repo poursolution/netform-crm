@@ -5,6 +5,9 @@
  const name=v=>norm(v).replace(/아파트/g,'');
  const phone=v=>String(v||'').replace(/\D/g,'');
  const same=(a,b)=>!!a&&!!b&&a===b;
+ /* 후보 검토용 주소. 서울 행정명 표기만 통일하고 번지의 하이픈·동/호는 보존한다.
+    원본 주소와 기존 현장/영업건 병합 규칙은 바꾸지 않는다. */
+ const reviewAddress=v=>String(v||'').normalize('NFKC').trim().replace(/\s+/g,' ').replace(/^(서울특별시|서울시|서울)(?=\s)/,'서울');
  const grams=s=>new Set(Array.from({length:s.length-1},(_,i)=>s.slice(i,i+2)));
  /* 행마다 정규화·2-gram을 한 번만 계산해 둔다(2026-10-01 — 1,700행이면 쌍 140만 개마다 다시 계산해 데이터 정리 진입에 4.5초 걸렸다) */
  const prepared=new WeakMap();
@@ -26,7 +29,17 @@
   const da=pa.at,db=pb.at,days=Number.isFinite(da)&&Number.isFinite(db)?Math.abs(da-db)/864e5:null;
   const reasons=[];if(address)reasons.push('주소 동일');if(office)reasons.push('관리사무소 전화 동일');if(siteId)reasons.push('현장 ID 동일');if(names===1)reasons.push('현장명 표기 일치');else if(names>=.72)reasons.push('현장명 유사 — 확인 필요');if(conflict)reasons.push('등록 주소 서로 다름');
   let type,action,text;
-  if(mobile&&!siteId&&(conflict||names<.72)){
+  const reviewA=reviewAddress(a.address),reviewB=reviewAddress(b.address);
+  const crossBrandRequest=a.ref.type==='inquiry'&&b.ref.type==='inquiry'&&differentBiz&&days!==null&&days<=1
+   &&((same(reviewA,reviewB)&&/(?:로|길|동|리)\s*\d/.test(reviewA))||siteId&&!conflict);
+  if(crossBrandRequest){
+   type='inquiry';action='defer';
+   /* 기존 norm은 번지 하이픈도 지운다. 새 후보에는 그 결과를 주소 일치 근거로 쓰지 않는다. */
+   reasons.splice(0,reasons.length,...(siteId?['현장 ID 동일']:[]),...(same(reviewA,reviewB)?['주소 표기 정규화 일치']:[]),'다른 브랜드 · 1일 이내 문의 접수');
+   if(a.mobile&&b.mobile&&!mobile)reasons.push('연락처 서로 다름');
+   if(differentWork)reasons.push('공사 범위 확인 필요');
+   text='같은 현장의 다른 브랜드 접수입니다. 같은 공사 요청인지 확인하고 두 접수·연락처·응대 이력을 보존하세요. 담당자·배드핏 등 상태는 자동으로 복사하지 않습니다.';
+  }else if(mobile&&!siteId&&(conflict||names<.72)){
    type='contact';action='contact_move';reasons.push('관리소장 휴대전화 동일');text='관리소장 이동 또는 공용 연락처일 수 있습니다. 사람과 근무지만 확인하고 현장은 합치지 마세요.';
   }else if(conflict&&!siteId&&names>=.72){type='site';action='separate';text='주소가 다릅니다. 단지·동 구분을 확인하고 별도 현장으로 유지하세요.';
   }else if(a.ref.type==='inquiry'&&b.ref.type==='inquiry'&&(sameSite||names===1)&&(office||mobile||address)&&!differentWork&&!differentBiz&&days!==null&&days<=1){
