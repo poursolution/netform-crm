@@ -136,3 +136,43 @@
 #detailView .isd-keyform input{flex:1;min-width:0;border:1px solid #d9dde4;border-radius:7px;padding:6px 8px;font:inherit;font-size:12.5px;height:auto;margin:0;background:#fff;color:#15171c}
 #detailView .isd-keyform button{flex:none;border:1px solid #15171c;background:#15171c;color:#fff;font:inherit;font-size:12.5px;font-weight:700;border-radius:7px;padding:6px 12px;margin:0;height:auto;box-shadow:none;cursor:pointer}
 #detailView .isd-map.empty .err{color:#b42318}
+/* 위치 직접 정하기: 후보 찾기 · 맞는 곳 고르기(2026-10-06) */
+#inq-inbox-dialog .isd-near .isd-fx{display:flex;flex-direction:column;gap:6px;margin-top:6px;align-self:stretch;text-align:left}
+#inq-inbox-dialog .isd-near .isd-fxform{display:flex;gap:6px}
+#inq-inbox-dialog .isd-near .isd-fxform input{flex:1;min-width:0;border:1px solid #d9dde4;border-radius:7px;padding:6px 8px;font:inherit;font-size:12.5px;height:auto;margin:0;background:#fff;color:#15171c;box-sizing:border-box}
+#inq-inbox-dialog .isd-near .isd-fxform button{flex:none;border:1px solid #15171c;background:#15171c;color:#fff;font:inherit;font-size:12.5px;font-weight:700;border-radius:7px;padding:6px 12px;margin:0;height:auto;box-shadow:none;cursor:pointer}
+#inq-inbox-dialog .isd-near .isd-fxform button.sub{border-color:#d9dde4;background:#fff;color:#374151;font-weight:600}
+#inq-inbox-dialog .isd-near .isd-fxform button:disabled,#inq-inbox-dialog .isd-near .isd-fxform input:disabled{opacity:.55;cursor:default}
+#inq-inbox-dialog .isd-near .isd-fxlist{display:flex;flex-direction:column;border:1px solid #e3e6ec;border-radius:9px;overflow:hidden;background:#fff}
+#inq-inbox-dialog .isd-near .isd-fxrow{border:0;border-bottom:1px solid #f2f3f6;background:#fff;text-align:left;padding:8px 10px;margin:0;height:auto;border-radius:0;box-shadow:none;display:flex;align-items:center;gap:8px;font:inherit;color:#15171c;cursor:pointer;width:100%}
+#inq-inbox-dialog .isd-near .isd-fxrow:last-child{border-bottom:0}
+#inq-inbox-dialog .isd-near .isd-fxrow:hover:not(:disabled){background:#f5f8ff}
+#inq-inbox-dialog .isd-near .isd-fxrow:disabled{opacity:.55;cursor:default}
+#inq-inbox-dialog .isd-near .isd-fxrow>span{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;line-height:1.35}
+#inq-inbox-dialog .isd-near .isd-fxrow b{font-size:13px;color:#15171c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#inq-inbox-dialog .isd-near .isd-fxrow small{font-size:11.5px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#inq-inbox-dialog .isd-near .isd-fxrow>em{flex:none;font-style:normal;font-size:12px;font-weight:700;color:#3b6ce4}
+#inq-inbox-dialog .isd-near .isd-fxmsg{font-size:12px;color:#6b7280;line-height:1.55}
+#inq-inbox-dialog .isd-near .isd-fx .isd-fxmsg.bad{color:#b42318}
+#inq-inbox-dialog .isd-near .isd-est{font-size:11.5px;color:#9ca3af}
+#inq-inbox-dialog .isd-near .isd-est button{border:0;background:none;padding:0;margin:0;height:auto;box-shadow:none;border-radius:0;font:inherit;font-size:11.5px;font-weight:700;color:#3b6ce4;cursor:pointer;text-decoration:underline}
+/* 위치 직접 정하기: 후보 찾기 · 맞는 곳 고르기(2026-10-06) */
+#detailView .isd-near .isd-fx{display:flex;flex-direction:column;gap:6px;margin-top:6px;align-self:stretch;text-align:left}
+#detailView .isd-near .isd-fxform{display:flex;gap:6px}
+#detailView .isd-near .isd-fxform input{flex:1;min-width:0;border:1px solid #d9dde4;border-radius:7px;padding:6px 8px;font:inherit;font-size:12.5px;height:auto;margin:0;background:#fff;color:#15171c;box-sizing:border-box}
+#detailView .isd-near .isd-fxform button{flex:none;border:1px solid #15171c;background:#15171c;color:#fff;font:inherit;font-size:12.5px;font-weight:700;border-radius:7px;padding:6px 12px;margin:0;height:auto;box-shadow:none;cursor:pointer}
+#detailView .isd-near .isd-fxform button.sub{border-color:#d9dde4;background:#fff;color:#374151;font-weight:600}
+#detailView .isd-near .isd-fxform button:disabled,#detailView .isd-near .isd-fxform input:disabled{opacity:.55;cursor:default}
+#detailView .isd-near .isd-fxlist{display:flex;flex-direction:column;border:1px solid #e3e6ec;border-radius:9px;overflow:hidden;background:#fff}
+#detailView .isd-near .isd-fxrow{border:0;border-bottom:1px solid #f2f3f6;background:#fff;text-align:left;padding:8px 10px;margin:0;height:auto;border-radius:0;box-shadow:none;display:flex;align-items:center;gap:8px;font:inherit;color:#15171c;cursor:pointer;width:100%}
+#detailView .isd-near .isd-fxrow:last-child{border-bottom:0}
+#detailView .isd-near .isd-fxrow:hover:not(:disabled){background:#f5f8ff}
+#detailView .isd-near .isd-fxrow:disabled{opacity:.55;cursor:default}
+#detailView .isd-near .isd-fxrow>span{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;line-height:1.35}
+#detailView .isd-near .isd-fxrow b{font-size:13px;color:#15171c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#detailView .isd-near .isd-fxrow small{font-size:11.5px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#detailView .isd-near .isd-fxrow>em{flex:none;font-style:normal;font-size:12px;font-weight:700;color:#3b6ce4}
+#detailView .isd-near .isd-fxmsg{font-size:12px;color:#6b7280;line-height:1.55}
+#detailView .isd-near .isd-fx .isd-fxmsg.bad{color:#b42318}
+#detailView .isd-near .isd-est{font-size:11.5px;color:#9ca3af}
+#detailView .isd-near .isd-est button{border:0;background:none;padding:0;margin:0;height:auto;box-shadow:none;border-radius:0;font:inherit;font-size:11.5px;font-weight:700;color:#3b6ce4;cursor:pointer;text-decoration:underline}

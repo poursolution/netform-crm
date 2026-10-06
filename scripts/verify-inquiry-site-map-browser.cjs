@@ -104,7 +104,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual(dexp,['901m','2.6km','3.2km']);
   assert.equal(one(await DN.locator('header').innerText()),'근처에서 영업했던 현장 2곳 · 반경 3km');
   assert.deepEqual((await DN.locator('.isd-nrow').allInnerTexts()).map(one).map(s=>s.replace(/^(\S+) .* (\S+)$/,'$1|$2')),['한빛마을2차아파트|901m','동탄푸른교회|2.6km'],'가까운 순 · 같은 현장(동탄새빛캐슬)의 다른 영업건은 없다');
-  assert.deepEqual(await page.evaluate(()=>[KLOG.maps,!!document.querySelector('#detailView .dv3-near [data-isd-map] .isd-mapbox[data-made]'),document.querySelector('#detailView .isd-dot.now').title,document.querySelector('#detailView .dw-right').lastElementChild.classList.contains('dv3-near'),getComputedStyle(document.querySelector('#detailView .isd-map')).height]),[1,true,'지금 문의 · 동탄새빛캐슬',true,'230px']);
+  assert.deepEqual(await page.evaluate(()=>[KLOG.maps,!!document.querySelector('#detailView .dv3-near [data-isd-map] .isd-mapbox[data-made]'),document.querySelector('#detailView .isd-dot.now').title,document.querySelector('#detailView .dw-right').lastElementChild.classList.contains('dv3-near'),getComputedStyle(document.querySelector('#detailView .isd-map')).height]),[1,true,'이 현장 · 동탄새빛캐슬',true,'230px']);
   await DN.locator('[data-idv="rad"][data-v="5"]').click();await page.waitForTimeout(150);
   assert.deepEqual([one(await DN.locator('header').innerText()),await DN.locator('.isd-nrow em').allInnerTexts(),await page.evaluate(()=>KLOG.circle.radius)],['근처에서 영업했던 현장 3곳 · 반경 5km',['901m','2.6km','3.2km'],5000]);
   /* 줄을 한 번 누르면 지도 이동, 다시 누르면 그 영업건이 열린다 */
@@ -131,6 +131,39 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    return {saved:GEO.saved.map(r=>[r.site_id.slice(-1),r.source,r.lat||null,r.rule,r.matched||null]).sort((a,b)=>a[0].localeCompare(b[0])),place:KLOG.place.slice(),addr:KLOG.addr.slice(),none4:InquirySite._map.pts.get(U(4)),todo:InquirySite._map.todo.size};});
   assert.deepEqual(rt.saved,[['3','name',36.35,2,'합성타운아파트 · 대전 유성구 대학로 1'],['5','address',37.2005,2,'경기 화성시 동탄대로 99']],'대전 것만 고른다(부산의 같은 이름은 지역 단서로 걸러짐) · 주소가 생긴 곳은 주소로');
   assert.deepEqual([rt.place,rt.addr,rt.none4,rt.todo],[['대전합성타운아파트'],['경기 화성시 동탄대로 99'],null,0],'새 판으로 이미 못 찾은 곳(4번)은 다시 찾지 않는다');
+  /* ⑤-4 위치 직접 정하기: 못 찾은 현장(5번 — 같은 이름이 서울 · 부산에 있다)은 후보를 바로 보여 주고, 사람이 고른 곳을 그 현장의 좌표로 저장한다 */
+  await page.evaluate(()=>{InquiryWorkbench.close();try{closeDetail();}catch(e){}InquirySite._resetMap();GEO.saved=[];KLOG.place.length=0;KLOG.addr.length=0;
+   GEO.sites=[[U(2),37.2086,127.0975,'address',null,null,1,null],[U(4),37.2374,127.0975,'name',null,null,2,null],[U(5),null,null,'none',null,'다른이름타워',2,'다른이름타워']];
+   drwDeal(JSON.stringify(B.deals[4]));});
+  const FX=page.locator('#detailView .dv3-near');
+  await page.waitForSelector('#detailView.on .dv3-near .isd-fx .isd-fxrow');
+  assert.deepEqual([one(await FX.locator('.isd-map.empty>b').innerText()),await FX.locator('.isd-fx input').inputValue(),(await FX.locator('.isd-fxrow').allInnerTexts()).map(one),await FX.locator('[data-idv="geo-fix-cancel"]').count()],
+   ['이 현장의 위치를 찾지 못했습니다','다른이름타워',['다른이름타워 서울 강남구 역삼동 1 이 위치로','다른이름타워 부산 해운대구 우동 2 이 위치로'],0],'이름으로 찾은 후보 두 곳을 보여 준다');
+  assert.match(one(await FX.locator('.isd-map.empty').innerText()),/주소나 이름만으로는 한 곳을 정하지 못했습니다\. 아래에서 맞는 곳을 누르면 지도에 표시됩니다\./);
+  assert.equal(await page.evaluate(()=>GEO.saved.length),0,'고르기 전에는 아무것도 저장하지 않는다');
+  if(process.env.SHOT_DIR){await FX.scrollIntoViewIfNeeded();await page.screenshot({path:path.join(process.env.SHOT_DIR,'inqsite-geofx-pick.png')});}
+  /* 저장이 실패하면 지도에 올리지 않고 알린다 */
+  await page.evaluate(()=>{window.RPC0=SB.rpc;SB.rpc=async(n,a)=>n==='crm_site_geo_save_v1'?{error:{message:'boom'}}:RPC0(n,a);});
+  await FX.locator('.isd-fxrow').first().click();await page.waitForSelector('#detailView .dv3-near .isd-fxmsg.bad');
+  assert.deepEqual(await page.evaluate(()=>[document.querySelector('#detailView .dv3-near .isd-fxmsg.bad').textContent,getComputedStyle(document.querySelector('#detailView .dv3-near .isd-fxmsg.bad')).color,InquirySite._map.pts.get(U(5))||null,!!document.querySelector('#detailView .dv3-near [data-isd-map]')]),['저장하지 못했습니다. 잠시 뒤 다시 눌러 주세요.','rgb(180, 35, 24)',null,false]);
+  await page.evaluate(()=>{SB.rpc=RPC0;});
+  await FX.locator('.isd-fxrow').first().click();await page.waitForSelector('#detailView .dv3-near [data-isd-map] .isd-mapbox');
+  assert.deepEqual(await page.evaluate(()=>[GEO.saved,InquirySite._map.pts.get(U(5)),InquirySite._map.fx,document.querySelectorAll('#detailView .dv3-near .isd-fx,#detailView .dv3-near .isd-est').length,document.querySelector('#detailView .isd-dot.now').title]),
+   [[{site_id:'00000000-0000-4000-8000-000000000005',lat:37.5,lng:127.03,source:'address',query:'서울 강남구 역삼동 1',matched:'직접 지정 · 다른이름타워 · 서울 강남구 역삼동 1',rule:2}],{lat:37.5,lng:127.03,src:'address'},null,0,'이 현장 · 다른이름타워'],'고른 곳이 그 현장의 좌표가 되고 지도가 켜진다');
+  /* 이름으로 추정한 위치(4번)는 고칠 수 있다: 후보 → 다른 말로 다시 찾기(Enter) → 닫기 */
+  await page.evaluate(()=>{closeDetail();drwDeal(JSON.stringify(B.deals[3]));});await page.waitForSelector('#detailView.on .dv3-near .isd-est');
+  assert.equal(one(await FX.locator('.isd-est').innerText()),'이 현장 위치는 이름으로 찾은 추정입니다 · 위치 고치기');
+  await FX.locator('[data-idv="geo-fix"]').click();await page.waitForSelector('#detailView .dv3-near .isd-fx .isd-fxrow');
+  assert.deepEqual([await FX.locator('.isd-fx input').inputValue(),await FX.locator('.isd-fxrow').count(),await FX.locator('.isd-est').count(),await FX.locator('[data-isd-map] .isd-mapbox').count()],['경기 화성 동탄파크뷰',3,0,1],'지도는 그대로 두고 그 아래에서 후보를 고른다');
+  if(process.env.SHOT_DIR){await FX.scrollIntoViewIfNeeded();await page.screenshot({path:path.join(process.env.SHOT_DIR,'inqsite-geofx-fix.png')});}
+  await FX.locator('.isd-fx input').fill('경기 화성시 동탄대로 99');await FX.locator('.isd-fx input').press('Enter');
+  await page.waitForFunction(()=>{const r=document.querySelectorAll('#detailView .dv3-near .isd-fxrow');return r.length===1&&/동탄대로 99/.test(r[0].textContent);});
+  assert.deepEqual([(await FX.locator('.isd-fxrow').allInnerTexts()).map(one),await FX.locator('.isd-fx input').inputValue()],[['경기 화성시 동탄대로 99 이 위치로'],'경기 화성시 동탄대로 99'],'주소로 찾으면 그 주소가 후보로 나온다');
+  await FX.locator('.isd-fx input').fill('없는곳없는곳');await FX.locator('[data-idv="geo-find"]').click();await page.waitForFunction(()=>{const m=document.querySelector('#detailView .dv3-near .isd-fxmsg');return !!m&&/찾은 곳이 없습니다/.test(m.textContent);});
+  assert.equal(one(await FX.locator('.isd-fxmsg').innerText()),'찾은 곳이 없습니다. 도로명 주소나 단지 이름을 조금 다르게 적어 보세요.');
+  await FX.locator('[data-idv="geo-fix-cancel"]').click();await page.waitForSelector('#detailView .dv3-near .isd-est');
+  assert.deepEqual(await page.evaluate(()=>[GEO.saved.length,InquirySite._map.pts.get(U(4)).src,document.querySelectorAll('#detailView .dv3-near .isd-fx').length]),[1,'name',0],'닫으면 아무것도 바뀌지 않는다');
+  await page.evaluate(()=>{try{closeDetail();}catch(e){}});await page.waitForTimeout(150);
   /* ⑥ 서버 함수가 없으면 1차 화면 그대로 */
   const off=await page.evaluate(async()=>{InquiryWorkbench.close();InquirySite._resetMap();SB={rpc:async()=>({error:{code:'PGRST202',message:'Could not find the function'}})};InquiryWorkbench.open(A);await new Promise(r=>setTimeout(r,200));const m=document.querySelector('#inq-inbox-dialog .isd-map');return [m.classList.contains('empty'),m.textContent.startsWith('지도 준비 중카카오맵 키 등록과 현장 좌표 저장이 끝나면'),document.querySelectorAll('#inq-inbox-dialog .isd-nrow').length];});
   assert.deepEqual(off,[true,true,3]);
