@@ -37,10 +37,14 @@
   const now=noOwner?'담당자 미지정':(o.now||'');
   const task=noOwner?'담당자 배정':hasNext?String(r.next.text).trim():(o.task||''),lt=lastTouch(r),last=lt?'최근 연락 '+ymdDot(lt):NOLOG;
   const key=attr(r.key),A='data-'+ns;
+  /* 판정 하나(2026-10-06 집계 · 판정 정리 · pipeline-judge.js): 최근 연락 두 줄(시도 / 실제 연결) · 기한 상태 3가지 · 다음 업무 아래 '판정: 근거' */
+  const J=root.PipelineJudge&&root.PipelineJudge.on()?root.PipelineJudge:null,jb=J&&!noOwner?J.basis(d,o.stage):null,tl=J?J.touchLines(d):null;
+  const dueHtml=jb?'<small class="'+J.dueClass(jb)+'">'+h(J.dueText(jb))+'</small><small class="why">'+h('판정: '+jb.why)+'</small>':'<small class="'+(due!=null&&due<0?'r':due==null?'g':'')+'">'+h(dueText(due,r.due))+'</small>';
+  const lastHtml=tl?'<small title="'+attr(tl.attempt)+'">'+h(tl.attempt)+'</small><small class="cn'+(tl.hasConnect?'':' none')+'">'+h(tl.connect)+'</small>':'<small>'+h(last)+'</small>';
   return '<div class="prv-row '+(cls||'')+'" role="row" tabindex="0" '+A+'="open" data-key="'+key+'"'+(o.tab!=null?' data-tab="'+attr(o.tab)+'"':'')+' style="border-left-color:'+(bc||'#e3e6ec')+'">'
    +'<div class="prv-a"><b title="'+attr(r.site)+'">'+h(r.site)+(root.advisoryBadge?root.advisoryBadge(d):'')+'</b><span><em style="color:'+(bc||'#9ca3af')+'">'+h(d.brand||'브랜드 미지정')+'</em> · '+h(workOf(r))+' · <i'+(noOwner?' class="r"':'')+'>'+h(owner||'미배정')+'</i></span></div>'
-   +'<div class="prv-b"><span title="'+attr(now)+'">'+h(now)+'</span><small>'+h(last)+'</small></div>'
-   +'<div class="prv-c"><b'+(task?'':' class="none"')+' title="'+attr(task)+'">'+h(task||'다음 업무 없음')+'</b><small class="'+(due!=null&&due<0?'r':due==null?'g':'')+'">'+h(dueText(due,r.due))+'</small></div>'
+   +'<div class="prv-b"><span title="'+attr(now)+'">'+h(now)+'</span>'+lastHtml+'</div>'
+   +'<div class="prv-c"><b'+(task?'':' class="none"')+' title="'+attr(task)+'">'+h(task||'다음 업무 없음')+'</b>'+dueHtml+'</div>'
    +'<button type="button" '+A+'="act" data-key="'+key+'" data-v="'+attr(btn[1])+'">'+h(btn[0])+'</button></div>';
  }
  root.PipelineRowV11={on,head,row,sort,dueText};

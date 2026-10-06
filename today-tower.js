@@ -145,14 +145,16 @@
   const wq=Q.filter(q=>{try{return inWeek(root.inquiryCreatedAt(q));}catch(e){return false;}});
   const fast=wq.filter(q=>{try{const c=Date.parse(root.inquiryCreatedAt(q)),f=Date.parse(root.inqCtlFirstResponseAt(q)||'');return Number.isFinite(f)&&f-c<=FIRST_HOURS()*3600e3;}catch(e){return false;}}).length;
   const D=(X.D||[]).filter(d=>{try{return root.isOpen(d)&&own(d);}catch(e){return false;}});
-  const withNext=D.filter(d=>{try{const a=root.actionObj(d,root.itemPatch(d,'deal'));return !!(a&&a.text&&a.due);}catch(e){return false;}}).length;
+  /* 다음 행동 등록률 = 같은 분모 한 함수(PipelineJudge.nextRate · 진행 중 영업건 전체 · 과거 이관 제외) — 관리팀 KPI 와 같은 값(2026-10-06 집계 ⑥) */
+  const J=root.PipelineJudge&&root.PipelineJudge.on()?root.PipelineJudge:null,NR=J?J.nextRate(D):null;
+  const withNext=NR?NR.num:D.filter(d=>{try{const a=root.actionObj(d,root.itemPatch(d,'deal'));return !!(a&&a.text&&a.due);}catch(e){return false;}}).length,denD=NR?NR.den:D.length;
   const contacted=D.filter(d=>{try{return inWeek(root.salesActivityAt(d));}catch(e){return false;}}).length;
   const reps=team?Math.max(1,new Set(D.map(d=>root.repN(d.assignee)).values()).size):1,goal=WEEK_GOAL()*reps;
   const pct=(a,b)=>b?Math.round(a*100/b):null;
-  const r1=pct(fast,wq.length),r2=pct(withNext,D.length);
+  const r1=pct(fast,wq.length),r2=pct(withNext,denD);
   return [
-   {label:'첫 응답 완료율 ('+FIRST_HOURS()+'시간 안)',v:r1===null?'이번 주 문의 없음':r1+'%',pct:r1||0,bad:r1!==null&&r1<90,goal:'기준 90% · 이번 주 '+wq.length+'건 중 '+fast+'건'},
-   {label:'다음 행동 등록률',v:r2===null?'진행 건 없음':r2+'%',pct:r2||0,bad:r2!==null&&r2<95,goal:'기준 95% 이상 · 진행 '+D.length+'건 중 '+withNext+'건'+(root.PipelineScope&&root.PipelineScope.on()?' · 과거 이관 제외':'')},
+   {label:'첫 응답 완료율 ('+FIRST_HOURS()+'시간 안)',v:r1===null?'이번 주 문의 없음':r1+'%',pct:r1||0,bad:r1!==null&&r1<90,goal:'기준 90% · 이번 주 '+wq.length+'건 중 '+fast+'건'+(J?' · 대상: '+J.TARGET.firstContact:'')},
+   {label:'다음 행동 등록률',v:r2===null?'진행 건 없음':r2+'%',pct:r2||0,bad:r2!==null&&r2<95,goal:'기준 95% 이상 · 진행 '+denD+'건 중 '+withNext+'건'+(J?' · 대상: '+J.TARGET.nextRate:(root.PipelineScope&&root.PipelineScope.on()?' · 과거 이관 제외':''))},
    {label:(team?'팀 ':'')+'이번 주 연락',v:contacted+' / '+goal+'곳',pct:Math.min(100,goal?contacted*100/goal:0),bad:contacted<goal*0.3,goal:'목표 '+goal+'곳(설정값) · 월요일부터 활동이 기록된 현장 수'}];
  }
  /* ── 그리기 ── */

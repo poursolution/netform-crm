@@ -44,7 +44,7 @@
   /* 단계·금액·브랜드·담당은 상세 헤더 한 줄에만(2026-09-26 중복 정리) — 이 카드는 '지금 할 일'만 */
   return '<section class="now-card" id="nowCard"><div class="nc-stage">지금 할 일</div>'
    +'<div class="nc-todo">'+(todo.promise?'<span class="nc-promise">🤝 고객 약속</span> ':'')+h(todo.text)+' '+dueTag+'</div>'
-   +'<div class="nc-meta">'+(meta.meaningfulAt?'마지막 연락 '+h(String(meta.meaningfulAt).slice(0,10)):'CRM 연락 기록 없음')+'</div>'
+   +'<div class="nc-meta">'+(meta.meaningfulAt?'마지막 연락 '+h(String(meta.meaningfulAt).slice(0,10)):'CRM 연락 기록 없음')+(root.PipelineJudge&&root.PipelineJudge.on()?' · '+h('판정: '+root.PipelineJudge.basis(d).why):'')+'</div>'/* 목록 · 오늘 업무와 같은 판정 함수(2026-10-06 집계 ②) */
    +'<div class="nc-cta"><button type="button" class="nc-call" onclick="NowCard.sheet()">📞 연락하고 결과 남기기</button><button type="button" onclick="dccGoActivity()">결과 남기기</button><button type="button" onclick="dccGoNext()">다른 날짜로</button>'+(todo&&!todo.suggested&&todo.due?'<button type="button" onclick="completeNextAction()">다음 할 일 완료</button>':'')+'</div>'
    +'<div class="nc-brief">'+brief+'</div></section>';
  }

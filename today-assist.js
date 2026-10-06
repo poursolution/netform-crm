@@ -52,7 +52,7 @@
  const tag=(t,k)=>'<em class="'+(k||'')+'">'+h(t)+'</em>';
  const ai=(text,tags)=>'<span class="ta-sm"><span><i class="ta-ai">AI</i><b>'+h(text)+'</b></span>'+(tags?'<span class="ta-tg">'+tags+'</span>':'')+'</span>';
  const dcell=(i,hot,none)=>'<span class="ta-d"><b'+(hot?' class="r"':'')+'>'+h(none?'-':i.short)+'</b><small>'+h(none?'':i.dLabel||'')+'</small></span>';
- function assignRow(i){
+ function assignRow(i,dupOf){
   const q=i.x.item,k=attr(i.key),r=recFor(q),dg=digitsOf(q),orig=origOf(q),region=regionOf(q),raw=q.raw&&typeof q.raw==='object'?q.raw:{};
   let work='';try{work=String(R.inqCtlWorkLabel(q)||'');}catch(e){}
   const ch=String(raw['상담채널']||q.channel||q.source_channel||'').trim(),who=[i.i.name,i.i.role].filter(Boolean).join(' '),acts=Array.isArray(q.activities)?q.activities.filter(a=>/전화|문자|방문|메일|카카오/.test(String(a.type||''))).length:0;
@@ -60,7 +60,7 @@
   const B2B=R.InquiryB2B,isAg=!!(B2B&&B2B.isAgreement&&B2B.isAgreement(q)),same=sameSiteDeals(q).length>0;
   const tags=[isAg?tag('협약문의','b'):tag(work&&!/미분류/.test(work)?work:'기타 공종'),/자료|카탈로그/.test(orig)&&!isAg?tag('자료 요청'):'',!dg?tag('연락처 없음','r'):'',!region?tag('지역 미상','r'):'',same?tag('같은 현장 기존 건','y'):''].join('');
   const sum=(orig||i.i.want||'남긴 내용 없음').slice(0,34)+((orig||'').length>34?'…':'');
-  return '<div class="ta-row" role="button" tabindex="0" data-t3="open" data-key="'+k+'">'+brandCell(i)+'<span class="ta-st"><b title="'+attr(i.i.site)+'">'+h(i.i.site)+'</b><small>'+h(sub)+'</small></span>'+ai(sum,tags)
+  return '<div class="ta-row" role="button" tabindex="0" data-t3="open" data-key="'+k+'">'+brandCell(i)+'<span class="ta-st"><b title="'+attr(i.i.site)+'">'+h(i.i.site)+'</b><small>'+h(sub)+'</small>'+(dupOf?'<small class="ta-dup">위 '+dupOf+'번과 같은 건</small>':'')+'</span>'+ai(sum,tags)
    +'<span class="ta-rc">'+(r?'<b>'+h(r.label||r.name)+'</b><small>'+h(r.why)+'</small>':'<b class="m">추천 없음</b><small>배정할 수 있는 담당자가 없습니다</small>')+'</span>'+dcell(i,true)
    +'<span class="ta-bt"><button type="button" class="go" data-ta="assign" data-key="'+k+'"'+(r&&r.assignable?'':' disabled title="이 담당자는 여기서 바로 배정할 수 없습니다 — [다른 사람]에서 고르세요"')+'>추천대로 배정</button><button type="button" data-t3="act" data-act="배정" data-key="'+k+'">다른 사람</button></span></div>';
  }
@@ -81,7 +81,7 @@
   const k=attr(i.key),own=i.x.owner||'미배정',d=i.x.item||{},f=(d.stage_contexts&&d.stage_contexts.contract&&d.stage_contexts.contract.fields)||{},miss=[!(f.contract_date||d.contract_date)?'계약일':'',!(Number(f.contract_amount||d.contract_amount)>0)?'계약금액':''].filter(Boolean),w=WRC(i);
   return '<div class="ta-row" role="button" tabindex="0" data-t3="open" data-key="'+k+'">'+brandCell(i)+'<span class="ta-st"><b title="'+attr(i.i.site)+'">'+h(i.i.site)+'</b><small>'+h([i.sName,i.amt?'예상 '+money(i.amt):'금액 미정'].filter(Boolean).join(' · '))+'</small></span>'+ai(i.missTxt,miss.map(m=>tag(m+' 없음','r')).join(''))
    +'<span class="ta-rc">'+(w?w.rc:'<b>'+h(own+' · '+i.act)+'</b><small>'+h(i.loss||'수주실적에 안 잡힙니다')+'</small>')+'</span>'+dcell(i,false,true)
-   +'<span class="ta-bt">'+(w?w.btn:'<button type="button" class="go" data-ta="askfill" data-key="'+k+'">입력 요청</button>')+'<button type="button" data-t3="detail" data-key="'+k+'">바로 입력</button></span></div>';
+   +'<span class="ta-bt">'+(w?w.btn:'<button type="button" class="go" data-ta="askfill" data-key="'+k+'">문구 복사</button>')+'<button type="button" data-t3="detail" data-key="'+k+'">바로 입력</button></span></div>';
  }
  const HEAD0={urgent:['지난 기록 · AI 요약','AI 추천 행동 · 이유'],assign:['고객이 원한 것 · AI 요약','AI 추천 담당 · 이유'],stall:['멈춘 이유 · AI 요약','AI 추천 행동 · 이유'],contract:['빠진 정보 · AI 요약','AI 추천 행동 · 이유']};
  /* 요청 업무가 켜지면 칸 이름도 시안대로 'AI 추천 요청 · 이유'(배정 표는 그대로) */
@@ -91,9 +91,11 @@
  function restHtml(items){return '<div class="ta-box ta-rest"><div class="ta-row hd"><span>브랜드</span><span>현장</span><span>'+HEAD.urgent[0]+'</span><span>'+HEAD.urgent[1]+'</span><span class="ta-d">경과</span><span></span></div>'+items.map(urgentRow).join('')+'</div>';}
  /* 오늘 업무(today-v3)가 묶음마다 부른다 */
  function groupHtml(g,items,gi,no,more){
-  const S=st(),kind=g.kind,rowFn=kind==='assign'?assignRow:kind==='urgent'?urgentRow:kind==='stall'?stallRow:contractRow,pg=R.ListPager.cut(items,more,PER),shown=pg.rows;/* more = 이 묶음의 쪽 번호 */
+  const S=st(),kind=g.kind,rowFn=kind==='assign'?i=>assignRow(i,g.dupOf):kind==='urgent'?urgentRow:kind==='stall'?stallRow:contractRow,pg=R.ListPager.cut(items,more,PER),shown=pg.rows;/* more = 이 묶음의 쪽 번호 */
   const recs=kind==='assign'?items.filter(i=>{const r=recFor(i.x.item);return r&&r.assignable;}).length:0;
-  const bulk=kind==='assign'?(recs?'<button type="button" class="ta-all'+(S.confirm?' cf':'')+'" data-ta="assign-all"'+(S.busy?' disabled':'')+'>'+(S.busy?'배정하는 중…':S.confirm?'한 번 더 누르면 '+recs+'건 배정':'추천대로 '+recs+'건 한 번에 배정')+'</button>':''):(g.bulk?'<button type="button" data-t3="bulk" data-v="'+gi+'">'+h(g.bulk)+'</button>':'');
+  /* 묶음 버튼(2026-10-06 집계 ⑦): [요청 보내기] = 담당 오늘 업무 등록 + 알림(요청 엔진이 있을 때) / [문구 복사] = 클립보드만 */
+  const canSend=(()=>{try{const W=R.WorkRequest,O=R.OpsStore;return !!(W&&W.enabled()&&O&&O.has(W.RPC.create)&&R.todayIsAdmin&&R.todayIsAdmin());}catch(e){return false;}})();
+  const bulk=kind==='assign'?(recs?'<button type="button" class="ta-all'+(S.confirm?' cf':'')+'" data-ta="assign-all"'+(S.busy?' disabled':'')+'>'+(S.busy?'배정하는 중…':S.confirm?'한 번 더 누르면 '+recs+'건 배정':'추천대로 '+recs+'건 한 번에 배정')+'</button>':''):(g.bulk?(canSend?'<button type="button" data-t3="bulkreq" data-v="'+gi+'">요청 보내기</button>':'')+'<button type="button" data-t3="bulk" data-v="'+gi+'">문구 복사</button>':'');
   return '<section class="tv3-group ta-group'+(kind==='assign'||kind==='urgent'?' first':'')+'" data-g="'+(gi+1)+'" data-kind="'+kind+'"><header><i>'+no+'</i><b>'+h(g.t)+'</b><b class="n">'+items.length+'건</b><span>'+h(g.why)+'</span><u></u>'+bulk+'</header>'
    +'<div class="ta-box"><div class="ta-row hd"><span>브랜드</span><span>현장</span><span>'+HEAD[kind][0]+'</span><span>'+HEAD[kind][1]+'</span><span class="ta-d">경과</span><span></span></div>'+shown.map(rowFn).join('')
    +R.ListPager.html(pg,{ns:'t3',v:'g'+gi,small:true})+'</div><p class="ta-note">'+h(NOTE[kind]())+'</p></section>';

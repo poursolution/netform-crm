@@ -23,7 +23,18 @@
  const b2b=()=>{try{return (R.InquiryB2BTab&&R.InquiryB2BTab.OWNER)||'조재연';}catch(e){return '조재연';}};
  const people=()=>K().names().filter(n=>n!==b2b());
  const owner=()=>{try{const o=R.SalesScope.state().owner;return o&&o!=='전체'?o:'';}catch(e){return '';}};
- const period=()=>{const o=O();if(!o)return '';const mon=o.monday(0),md=s=>Number(s.slice(5,7))+'/'+Number(s.slice(8,10)),end=new Date(Date.parse(mon+'T00:00:00')+5*864e5).toLocaleDateString('en-CA');return md(mon)+' – '+md(end);};
+ /* 주간 기준 = 월~금(2026-10-06 집계 ⑤ · 주간 브리핑과 같음) */
+ const period=()=>{const o=O();if(!o)return '';const mon=o.monday(0),md=s=>Number(s.slice(5,7))+'/'+Number(s.slice(8,10)),end=new Date(Date.parse(mon+'T00:00:00')+4*864e5).toLocaleDateString('en-CA');return md(mon)+'(월) – '+md(end)+'(금)';};
+ /* 이번 주 / 누적 분리(2026-10-06 집계 ⑤): 견적문의 지표 둘은 이번 주(월~금) 접수 · 배정 건만 세고, 누적 미처리는 따로 적는다. 지표마다 '대상: …' 한 줄(⑥ 같은 이름 = 같은 분모) */
+ const J=()=>R.PipelineJudge&&R.PipelineJudge.on()?R.PipelineJudge:null;
+ const TARGET=i=>{const T=(J()||{}).TARGET||{};return [T.sameDay||'이번 주 접수 견적문의',T.firstContact||'이번 주 배정된 견적문의',T.nextRate||'진행 중 영업건(과거 이관 제외)',T.activity||'진행 중 영업건',T.stale||'컨설팅 설계 · 관계관리 진행 건',T.quote3||'1차 미팅을 마친 컨설팅 설계 건',T.lostReason||'실주 처리된 영업건',T.action||'최근 28일 관리팀 요청'][i]||'';};
+ function weekly(S){
+  const j=J();if(!j||!S)return null;const w=j.week(0),H=Number((R.OPS_RULES||{}).towerFirstResponseHours)||2;
+  const Q=(S.Q||[]).filter(q=>{try{return j.inWeek(R.inquiryCreatedAt(q),w);}catch(e){return false;}});
+  const same=Q.filter(q=>{try{const a=R.inquiryAssignedAt(q);return !!a&&j.dayKey(a)===j.dayKey(R.inquiryCreatedAt(q));}catch(e){return false;}});
+  const asg=Q.filter(q=>{try{return !!R.inquiryAssigned(q);}catch(e){return false;}}),fast=asg.filter(q=>{try{const a=Date.parse(R.inquiryAssignedAt(q)||''),f=Date.parse(R.inqCtlFirstResponseAt(q)||'');return Number.isFinite(a)&&Number.isFinite(f)&&f-a<=H*3600e3;}catch(e){return false;}});
+  return [{num:same.length,den:Q.length,cum:(S.unassigned||[]).length,cumL:'누적 미배정'},{num:fast.length,den:asg.length,cum:(S.noResponse||[]).length,cumL:'누적 첫 연락 전'}];
+ }
  /* 담당자별 값은 지금 걸린 담당 필터와 상관없이(전원) 잰다 — 알약의 '미달 n' 이 고른 사람에 따라 바뀌지 않게 */
  function allItems(){
   const P=R.PipelineStageB,out=[];if(!P||!R.PipelineWorkspace)return out;let rows=[];try{rows=R.PipelineWorkspace.rows({unscoped:true});}catch(e){rows=[];}
@@ -44,16 +55,18 @@
  }
  /* 핵심 지표 8줄 */
  function coreRows(C,PV,last){
+  const WK=last?null:weekly(C.S);
   return C.M.map((m,i)=>{
-   const q=QN[i],g=m.def[4],lb=!!m.def[5];let v=m.v,num=m.num,den=m.den;
+   const q=QN[i],g=m.def[4],lb=!!m.def[5];let v=m.v,num=m.num,den=m.den,cum='';
    if(last){const w=K().weekRowOf(i,-1);v=w?pct(w.numerator,w.denominator):null;num=w?w.numerator:0;den=w?w.denominator:0;}
+   else if(WK&&WK[i]){num=WK[i].num;den=WK[i].den;v=pct(num,den);cum=WK[i].cumL+' '+WK[i].cum+'건(이번 주 지표에는 안 들어감)';}
    const nd=v==null,bad=!nd&&(lb?v>g:v<g),gap=nd?0:Math.round(Math.abs(g-v)*10)/10,d=last||m.v==null||m.last==null?null:Math.round((m.v-m.last)*10)/10;
    const left=last?0:m.left,total=last?0:m.todos.length;
-   return {i,key:m.key,grp:q[0],l:q[1],q:q[2],cause:nd?'none':q[3],nd,bad,lb,v,g,gap,left,total,d,
+   return {i,key:m.key,grp:q[0],l:q[1],q:q[2],cause:nd?'none':q[3],nd,bad,lb,v,g,gap,left,total,d,num,den,ok:!nd&&!bad,
     frac:den?num+' / '+den+'건':'아직 못 잼',goal:(lb?'≤ ':'')+g+'%',
-    meta:last?'지난주 금요일 저장본':(m.last==null?'지난주 –':'지난주 '+fmt(m.last)+' '+(d===0?'→ 그대로':(d>0?'▲':'▼')+Math.abs(d)+'%p'))+' · 누가 '+whoOf(i,m,PV),
+    meta:last?'지난주 금요일 저장본':(m.last==null?'지난주 –':'지난주 '+fmt(m.last)+' '+(d===0?'→ 그대로':(d>0?'▲':'▼')+Math.abs(d)+'%p'))+' · 누가 '+whoOf(i,m,PV)+(cum?' · '+cum:''),target:'대상: '+TARGET(i),
     reason:nd?'아직 못 잼':bad?'미달 · '+gap+'%p '+(lb?'초과':'부족'):'달성',
-    btn:last||nd||!total?'':!left?'보냄 ✓':i===0?left+'건 배정':i===4?left+'건 판단 요청':i===3?'담당별 요청':i===7?left+'건 다시 확인':left+'건 요청'};
+    btn:last||!total?'':/* 이번 주 값이 '아직 못 잼'이어도 누적 미처리가 있으면 요청 버튼은 둔다(2026-10-06 집계 ⑤) */!left?'보냄 ✓':i===0?left+'건 배정':i===4?left+'건 판단 요청':i===3?'담당별 요청':i===7?left+'건 다시 확인':left+'건 요청'};
   }).sort((a,b)=>(a.nd?2:a.bad?0:1)-(b.nd?2:b.bad?0:1)||b.gap-a.gap||a.i-b.i);
  }
  /* 단계별 기준: 파이프라인 각 단계 화면의 '그래서 뭘 해야 하나' 기준(빨강 사유)을 같은 함수로 — 기준 넘긴 건 = 그 사유가 붙은 건.
@@ -127,7 +140,7 @@
    if(s.last&&!hasLast)body=head+'<p class="k7-empty">지난주 저장본이 없습니다 — [이번 주 결과 저장]을 누르면 다음 주부터 비교할 수 있습니다.</p>';
    else if(s.view==='board')body=head+'<div class="k7-board">'+[['미달','#d14a3f',r=>r.bad],['달성','#3fb37f',r=>!r.bad&&!r.nd],['아직 못 잼','#c9cdd5',r=>r.nd]].map(c=>{const cards=list.filter(c[2]);return '<div class="k7-col"><header><i style="background:'+c[1]+'"></i><b>'+c[0]+'</b><span>'+cards.length+'</span></header>'
      +cards.map(r=>'<div class="k7-kcard'+cls(r)+'" data-kpi="'+r.key+'"><small>'+h(r.grp+' · '+r.l)+'</small><b>'+h(r.q)+'</b><div><b>'+fmt(r.v)+'</b><span>'+h(r.frac)+'</span></div><em>'+h(r.reason)+'</em></div>').join('')+'</div>';}).join('')+'</div>';
-   else body=head+(list.length?'<div class="k7-list">'+list.map(r=>'<div class="k7-row'+cls(r)+'" data-kpi="'+r.key+'"><div class="q"><b>'+h(r.q)+'</b><span>'+h(r.grp+' · '+r.l)+'</span></div><div class="m"><b>'+h(r.frac+' · 목표 '+r.goal)+'</b><span>'+h(r.meta)+'</span></div><span class="why">'+h(r.reason)+'</span><b class="v">'+fmt(r.v)+'</b>'+reqBtn(r.btn,'req',r.i)+'</div>').join('')+'</div>':'<p class="k7-empty">이 원인에 해당하는 지표가 없습니다.</p>');
+   else body=head+(list.length?'<div class="k7-list">'+list.map(r=>'<div class="k7-row'+cls(r)+'" data-kpi="'+r.key+'"><div class="q"><b>'+h(r.q)+'</b><span>'+h(r.grp+' · '+r.l)+'</span><span class="k7-target">'+h(r.target)+'</span></div><div class="m"><b>'+h(r.frac+' · 목표 '+r.goal)+'</b><span>'+h(r.meta)+'</span></div><span class="why">'+h(r.reason)+'</span><b class="v">'+fmt(r.v)+'</b>'+reqBtn(r.btn,'req',r.i)+'</div>').join('')+'</div>':'<p class="k7-empty">이 원인에 해당하는 지표가 없습니다.</p>');
   }
   return '<div id="kpi-v7" data-workspace="kpi" data-tab="'+s.tab+'">'+filter
    +'<div class="k7-intro"><b>관리팀 KPI</b><span>관리팀이 할 일을 지표 '+rows.length+'개로 잽니다 — 빨강 = 이번 주 목표 미달 · 줄마다 버튼 하나로 담당에게 요청 · 금요일 18시 결과 자동 저장</span></div>'

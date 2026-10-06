@@ -24,4 +24,7 @@
 @media(max-width:1100px){:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-head,:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-row{grid-template-columns:minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1.1fr) 96px;gap:12px}}
 /* 공용 틀의 줄(확장관리 · 경남지사 · 문자): 세 번째 칸 = 걸린 사유(빨강 = 기준 넘김) · 경과 */
 :is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-c>b.r{color:#b42318}
-:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-c>small.r{color:#b42318;font-weight:700}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-c>small.r{color:#b42318;font-weight:700}/* 판정 하나(2026-10-06 집계 · 판정 정리): 현재 상황 = 상태 / 최근 연락 시도 / 최근 실제 연결 · 다음 업무 = 업무 / 기한 상태 / 판정 근거 */
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-b>small.cn{color:#374151}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-b>small.cn.none{color:#9ca3af}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-c>small.why{font-size:11px;color:#9ca3af;font-weight:400}

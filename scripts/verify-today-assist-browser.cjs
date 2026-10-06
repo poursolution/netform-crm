@@ -42,7 +42,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(G4.map(g=>g.slice(0,3)),[['1','오늘 안 넘기면 놓침','cards'],['2','담당 배정 안 된 견적문의','assign'],['3','이번 주 새로 멈춘 건','stall'],['4','계약 정보 빠짐','contract']]);
   {const C=v.locator('.tv3-group').first(),n1=Number(G4[0][3].replace('건','')),n2=Number(G4[1][3].replace('건',''));
    assert.equal(await C.evaluate(g=>g.classList.contains('first')&&!g.classList.contains('ta-group')),true,'맨 위 묶음 = 기존 카드 묶음');
-   assert.deepEqual(await C.locator(':scope>header').evaluate(n=>[n.querySelector('span').textContent,n.querySelector('button').textContent]),['배정 30분 · 첫 연락 2시간 · 오늘 마감','모두 담당에게 알림']);
+   assert.deepEqual(await C.locator(':scope>header').evaluate(n=>[n.querySelector('span').textContent,n.querySelector('button').textContent]),['배정 30분 · 첫 연락 2시간 · 오늘 마감','문구 복사']);
    assert.equal(await C.locator('.tv3-card').count(),Math.min(4,n1),'카드 4장');assert.ok(n1>=n2&&n2===3,'배정 안 된 건도 카드 묶음에 그대로('+n1+' ≥ '+n2+')');
    assert.deepEqual(await C.locator('.tv3-card').first().locator('.btns button').allInnerTexts(),['배정','재배정','상세 보기'],'카드 버튼 그대로');
    /* 카드 아래 나머지 줄 = ②와 같은 표 줄(예전의 한 줄 목록이 아님) */
@@ -102,10 +102,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await St.locator('.ta-row.hd span').allInnerTexts(),['브랜드','현장','멈춘 이유 · AI 요약','AI 추천 행동 · 이유','경과','']);
   const sr=await St.locator('.ta-row:not(.hd)').first().evaluate(n=>({site:n.querySelector('.ta-st b').textContent,ai:n.querySelector('.ta-sm .ta-ai').textContent,rec:n.querySelector('.ta-rc b').textContent,dRed:getComputedStyle(n.querySelector('.ta-d b')).color,btn:[...n.querySelectorAll('.ta-bt button')].map(b=>b.textContent)}));
   assert.equal(sr.ai,'AI');assert.match(sr.rec,/^.+ · .+$/,'담당 · 할 일');assert.match(sr.btn[0],/^추천대로 /);assert.notEqual(sr.dRed,'rgb(180, 35, 24)','빨강은 첫 표에만');
-  assert.equal(await St.locator(':scope>header button').innerText(),'담당별 코멘트','묶음 버튼은 그대로');
+  assert.equal(await St.locator(':scope>header button').innerText(),'문구 복사','묶음 버튼은 그대로');
   assert.deepEqual(await Ct.locator('.ta-row.hd span').allInnerTexts(),['브랜드','현장','빠진 정보 · AI 요약','AI 추천 행동 · 이유','경과','']);
   const cr=await Ct.locator('.ta-row:not(.hd)').first().evaluate(n=>({site:n.querySelector('.ta-st b').textContent,tags:[...n.querySelectorAll('.ta-tg em')].map(e=>e.textContent),rec:n.querySelector('.ta-rc b').textContent,btn:[...n.querySelectorAll('.ta-bt button')].map(b=>b.textContent)}));
-  assert.equal(cr.site,'[경기 하남] 고덕아이파크');assert.deepEqual(cr.tags,['계약일 없음','계약금액 없음']);assert.match(cr.rec,/^정정훈 · /);assert.deepEqual(cr.btn,['입력 요청','바로 입력']);
+  assert.equal(cr.site,'[경기 하남] 고덕아이파크');assert.deepEqual(cr.tags,['계약일 없음','계약금액 없음']);assert.match(cr.rec,/^정정훈 · /);assert.deepEqual(cr.btn,['문구 복사','바로 입력']);/* 2026-10-06 집계 ⑦: 복사는 [문구 복사], 요청 엔진이 켜지면 요청 업무 칸의 [요청 보내기] */
   await Ct.locator('[data-ta="askfill"]').first().click();await page.waitForTimeout(200);
   assert.match(await page.evaluate(()=>__clip.slice(-1)[0]),/^정정훈님, 고덕아이파크 계약 정보\(.+\)가 비어 있어 수주실적에 안 잡힙니다\. 오늘 안에 계약일 · 계약금액 입력 부탁드립니다\.$/);assert.match(await page.evaluate(()=>__toasts.slice(-1)[0]),/입력 요청 문구를 복사했습니다/);
   {const n=await page.evaluate(()=>__open.length);await Ct.locator('.ta-bt button',{hasText:'바로 입력'}).first().click();await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>__open.length),n+1,'바로 입력 = 그 건의 상세');}
