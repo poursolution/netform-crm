@@ -1,4 +1,4 @@
-﻿/* 데이터 정리 · 검토 v2 (2026-10-02 디자인 핸드오프 'design_handoff_dup') — 데이터 정리 · 검토 메뉴(#p=dup)만.
+/* 데이터 정리 · 검토 v2 (2026-10-02 디자인 핸드오프 'design_handoff_dup') — 데이터 정리 · 검토 메뉴(#p=dup)만.
    목록: 안내 줄(확실 · 애매 · 다른 건 · 처리 완료) → 진단(숫자 4 · 카드 3 · '다시 안 생기게' 과제) → 판단 띠 → 묶음 표(확실 → 애매 → 다른 건)
    비교 창(760px): 판단 박스 + A | B 비교 표(다른 값은 노란 칸) + [그대로 두기] [연결만] [합치기]
    후보 계산 · "왜 잡혔나요" 근거 · [후보 다시 계산] · 처리 이력은 기존 그대로(CleanupCore · DataCleanupUI).
@@ -32,7 +32,7 @@
   const D=root.PipelineDiagnosis;if(!D)return '';
   const n=k=>m.cases.filter(x=>x.band===k).length,by=(f)=>{const map=new Map();m.cases.forEach(x=>{const k=f(x.c);if(k)map.set(k,(map.get(k)||0)+1);});return [...map].sort((a,b)=>b[1]-a[1]);};
   const why=[['1일 내 재접수',m.cases.filter(x=>x.c.reasons.some(r=>r.includes('1일 이내'))).length],['표기 차이(이름만 비슷)',m.cases.filter(x=>x.c.reasons.some(r=>r.includes('현장명 유사'))).length],['같은 주소로 따로 등록',m.cases.filter(x=>x.c.reasons.some(r=>r.includes('주소 동일'))).length],['같은 전화로 따로 등록',m.cases.filter(x=>x.c.reasons.some(r=>r.includes('전화 동일'))).length]].filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);
-  const K=(label,value,sub,tone)=>({label,value,sub,tone:tone||''}),inq=m.cases.filter(x=>x.c.type==='inquiry').length,site=m.cases.filter(x=>x.c.type==='site').length;
+  const K=(label,value,sub,tone)=>({label,value,sub,tone:tone||''}),inq=m.cases.filter(x=>x.c.type==='inquiry'&&x.c.action==='inquiry_merge').length,site=m.cases.filter(x=>x.c.type==='site').length;
   const tasks=[[inq,'같은 전화 · 1일 내 재접수 '+inq+'건','7일 내 같은 전화로 온 문의는 기존 건에 연결되게 접수 규칙 정하기','관리팀 · 이번 주','문의 재접수'],[site,'현장 겹침 '+site+'건','현장을 등록할 때 주소로 기존 현장을 먼저 찾아보기','영업팀 · 등록할 때','현장 중복 등록'],[n('maybe'),'애매한 건 '+n('maybe')+'건','애매한 건은 주 1회 10분 검토','관리팀 · 매주','애매한 건 검토']].filter(t=>t[0]>0).map(t=>({basis:t[1],todo:t[2],who:t[3],label:t[4],count:t[0]}));
   return D.render({accent:'blue',
    kpis:[K('검토 후보',m.cases.length+'건','쌍 기준 · 지금 불러온 자료'),K('확실',n('sure')+'건','근거가 겹침','good'),K('애매',n('maybe')+'건','사람이 비교',n('maybe')?'warn':''),K('다른 건',n('diff')+'건','따로 두기')],
