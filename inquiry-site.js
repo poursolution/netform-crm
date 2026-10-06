@@ -153,7 +153,7 @@
  function geoLoad(){
   if(M.st!=='idle')return;if(!rpcOk(GEO_LIST)){M.st='nostore';return;}
   M.st='loading';
-  Promise.resolve().then(()=>root.SB.rpc(GEO_LIST,{})).then(r=>{
+  Promise.resolve().then(()=>root.SB.rpc(GEO_LIST,{p:{}})).then(r=>{
    if(!r||r.error){if(r&&r.error&&(r.error.code==='PGRST202'||/CONTRACT_UNAVAILABLE|Could not find the function/i.test(String(r.error.message||'')))){try{root.CRMRelease.noteMissing(GEO_LIST);}catch(e){}M.st='nostore';}else M.st='error';return refreshNear();}
    const D=r.data||{};M.key=String(D.kakao_js_key||'');M.pts.clear();M.todo.clear();
    (Array.isArray(D.sites)?D.sites:[]).forEach(x=>{const id=String(x[0]);if(x[3]==='none')M.pts.set(id,null);else if(x[1]!=null&&x[2]!=null)M.pts.set(id,{lat:Number(x[1]),lng:Number(x[2]),src:String(x[3]||'address')});else M.todo.set(id,{address:String(x[4]||'').trim(),name:String(x[5]||'').trim()});});
@@ -192,7 +192,7 @@
   if(!r&&name){src='name';query=name;r=await geoName(name);if(r===undefined)return {blocked:true};}
   return r?{pt:{lat:r.lat,lng:r.lng,src},row:{lat:r.lat,lng:r.lng,source:src,query,matched:r.matched}}:{pt:null,row:{source:'none',query:address||name||'-'}};
  }
- function flush(){if(!M.buf.length||!rpcOk(GEO_SAVE))return Promise.resolve();const rows=M.buf.splice(0,50);return Promise.resolve().then(()=>root.SB.rpc(GEO_SAVE,{rows})).then(r=>{if(r&&r.error&&r.error.code==='PGRST202'){try{root.CRMRelease.noteMissing(GEO_SAVE);}catch(e){}}}).catch(()=>{});}
+ function flush(){if(!M.buf.length||!rpcOk(GEO_SAVE))return Promise.resolve();const rows=M.buf.splice(0,50);return Promise.resolve().then(()=>root.SB.rpc(GEO_SAVE,{p:{rows}})).then(r=>{if(r&&r.error&&r.error.code==='PGRST202'){try{root.CRMRelease.noteMissing(GEO_SAVE);}catch(e){}}}).catch(()=>{});}
  /* 지금 문의의 위치: 현장 좌표가 있으면 그것, 없으면 문의 주소(없으면 현장 이름)로 찾는다. 'wait' = 찾는 중 */
  function centerOf(q){
   const id=q.site_id?String(q.site_id):'',p=id?M.pts.get(id):undefined;if(p)return p;
@@ -273,7 +273,7 @@
    const f=b.closest('.isd-keyform'),val=String(f&&f.querySelector('input')?f.querySelector('input').value:'').trim();if(!val||M.keyBusy)return true;
    if(!rpcOk(MAP_CFG)){M.keyErr='서버 적용 뒤에 등록할 수 있습니다';refreshNear();return true;}
    M.keyBusy=true;M.keyErr='';refreshNear();
-   Promise.resolve().then(()=>root.SB.rpc(MAP_CFG,{kakao_js_key:val})).then(r=>{M.keyBusy=false;if(!r||r.error){M.keyErr=String(r&&r.error&&r.error.message||'저장하지 못했습니다');return refreshNear();}M.key=String((r.data||{}).kakao_js_key||'');M.sdk='none';sdkLoad();refreshNear();}).catch(()=>{M.keyBusy=false;M.keyErr='저장하지 못했습니다';refreshNear();});
+   Promise.resolve().then(()=>root.SB.rpc(MAP_CFG,{p:{kakao_js_key:val}})).then(r=>{M.keyBusy=false;if(!r||r.error){M.keyErr=String(r&&r.error&&r.error.message||'저장하지 못했습니다');return refreshNear();}M.key=String((r.data||{}).kakao_js_key||'');M.sdk='none';sdkLoad();refreshNear();}).catch(()=>{M.keyBusy=false;M.keyErr='저장하지 못했습니다';refreshNear();});
    return true;
   }
   return false;

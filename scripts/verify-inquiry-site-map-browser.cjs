@@ -34,7 +34,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    const C=[37.2005,127.0975];window.C=C;
    /* 좌표 저장소: 2번(가까움) · 6번(멀리)은 좌표가 있고, 1번 · 3번은 주소만, 4번 · 5번은 이름만 */
    window.GEO={key:'',saved:[],calls:[],sites:[[U(2),37.2086,127.0975,'address',null,null],[U(6),36.8151,127.1139,'address',null,null],[U(1),null,null,null,ADDR,SITE],[U(3),null,null,null,'경기 화성시 동탄대로 99 (오산동) 101동 1203호','[경기 화성] 동탄푸른교회'],[U(4),null,null,null,null,'[경기 화성] 동탄파크뷰'],[U(5),null,null,null,null,'다른이름타워']]};
-   SB={rpc:async(n,p)=>{GEO.calls.push(n);if(n==='crm_site_geo_list_v1')return {data:{ok:true,kakao_js_key:GEO.key,sites:GEO.sites}};if(n==='crm_site_geo_save_v1'){GEO.saved.push(...p.rows);return {data:{ok:true,saved:p.rows.length}};}if(n==='crm_map_config_v1'){GEO.key=p.kakao_js_key;return {data:{ok:true,kakao_js_key:GEO.key}};}return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
+   SB={rpc:async(n,a)=>{GEO.calls.push(n);const p=a&&a.p;/* 서버 함수는 인자 이름이 p 하나다 — 다르게 보내면 운영에서는 '함수 없음'이 된다 */if(!p||Object.keys(a).length!==1)return {error:{code:'PGRST202',message:'Could not find the function'}};if(n==='crm_site_geo_list_v1')return {data:{ok:true,kakao_js_key:GEO.key,sites:GEO.sites}};if(n==='crm_site_geo_save_v1'){GEO.saved.push(...p.rows);return {data:{ok:true,saved:p.rows.length}};}if(n==='crm_map_config_v1'){GEO.key=p.kakao_js_key;return {data:{ok:true,kakao_js_key:GEO.key}};}return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
    /* 가짜 지도: 부른 것을 적어 둔다 */
    const K={log:{maps:0,relayout:0,bounds:0,pan:[],level:[],overlays:[],circle:null,addr:[],place:[]}};window.KLOG=K.log;
    window.kakao={maps:{load:cb=>setTimeout(cb,0),LatLng:class{constructor(a,b){this.lat=a;this.lng=b;}},
