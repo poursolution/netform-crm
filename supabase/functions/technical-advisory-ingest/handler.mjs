@@ -1,5 +1,6 @@
 import { operationalSnapshot } from './lifecycle.mjs';
 import { normalizeProject } from './normalize.mjs';
+import { projectSnapshot } from './project.mjs';
 const encoder = new TextEncoder();
 const reply = (body,status=200) => new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json'}});
 export function handler({secret,store,now=Date.now}) {
@@ -19,7 +20,7 @@ export function handler({secret,store,now=Date.now}) {
     if(!await crypto.subtle.verify('HMAC',key,sig,encoder.encode(timestamp+'.'+body)))return reply({error:'UNAUTHORIZED'},401);
     let input,normalized;
     try{input=JSON.parse(body);if(!/^[1-9]\d{0,24}$/.test(input.revision))throw Error();normalized=normalizeProject(input);}catch{return reply({error:'INVALID_CONTRACT_PAYLOAD'},400);}
-    try { const ack=await store(input.projectId,input.revision,normalized,operationalSnapshot(input.data));return reply(ack); }
+    try { const ack=await store(input.projectId,input.revision,normalized,operationalSnapshot(input.data),projectSnapshot(input));return reply(ack); }
     catch{return reply({error:'PERSIST_FAILED'},503);}
   };
 }
