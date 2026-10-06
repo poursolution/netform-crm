@@ -468,6 +468,8 @@
   dlg.innerHTML=v3?header3(q)+'<div class="idv-body idv3-body"><aside class="idv-c1 idv3-c1" aria-label="문의자와 현장">'+col13(q,s)+'</aside><main class="idv-c2 idv3-c2" aria-label="문의와 응대">'+col23(q,s)+'</main><aside class="idv-c3 idv3-c3" aria-label="문의 업무 관리">'+col33(q,s)+'</aside></div>'
    :header(q)+'<div class="idv-body"><aside class="idv-c1" aria-label="문의자와 현장">'+col1(q,s)+'</aside><main class="idv-c2" aria-label="문의와 응대">'+col2(q,s)+'</main><aside class="idv-c3" aria-label="문의 업무 관리">'+col3(q,s)+'</aside></div>';
   mountWorkPick(dlg,q,s);
+  /* 근처 현장 지도(inquiry-site.js): 다시 그릴 때마다 지도 상자를 제자리에 꽂는다 */
+  if(v3&&IS()&&IS().mount){try{IS().mount(dlg);}catch(e){}}
   /* 경남지사로 넘긴 문의(본사 관리자): 머리 막대·오른쪽 칸을 '지사 진행 확인'으로 — 담당 변경을 고르는 중에는 기존 배정 칸 그대로 */
   if(!s.reassign){try{root.GyeongnamV2?.decorate?.(dlg,q);}catch(e){}}
   /* 배정 칸을 다시 만들면 기존 배정 상태가 초기화되므로 고른 담당자를 다시 알려 준다 */
@@ -516,6 +518,8 @@
   if(k==='editsave'){const inp=document.querySelector('#inq-inbox-dialog [data-idv="editinput"]');if(inp&&!inp.disabled)saveField(q,s,inp.dataset.v,inp.value);return;}
   if(k==='dial')return dial(phoneOf(q).digits);
   if(k==='near-toggle'){s.nearOpen=!s.nearOpen;return reskinFrom();}
+  /* 지도: 반경 고르기 · 목록 줄 = 지도 이동 · 지도 키 등록 — inquiry-site.js 가 처리하면 여기서 끝 */
+  if(IS()&&IS().onAction&&IS().onAction(k,v,b,q,s))return;
   /* 단지 이력(inquiry-site.js): 응대 이력 범위 · 채울 정보 접기 · 지난 영업건 열기 · 새 공사로 진행 */
   if(k==='scope'){s.scope=v==='all'?'all':'now';return reskinFrom();}
   if(k==='need-toggle'){s.needOpen=!s.needOpen;return reskinFrom();}
