@@ -64,3 +64,17 @@ test('contact on retained same-case row clears duplicate reassignment, never a d
  w.ContactState={on:()=>true,siblings:()=>[other]};assert.equal(w.inquiryReassignmentPending(q),false);
  other.assigned_to=null;other.assignee_name='한준엽';assert.equal(w.inquiryReassignmentPending(q),true);
 });
+
+test('public read assignment activities restore pending work without fabricating contacts',()=>{
+ const assignment={id:'90000000-0000-4000-8000-000000000001',type:'담당자 변경',note:'경남지사 → 조민준',at:assigned,actor:'송보람'};
+ const q=row({assignment_history:[],activities:[assignment]}),w=setup([q]);
+ assert.equal(w.inquiryReassignmentPending(q),true);assert.ok(w.todayInquiryEntry(q));
+ assert.equal(w.TodayV3.isBack(w.TodayTower.classify(w.TodayWorkQueue.data().rows[0],'mgr')),false);
+ q.activities.push({type:'전화',actor:'조민준',at:after});assert.equal(w.inquiryReassignmentPending(q),false);
+ for(const invalid of [{type:'내부 메모'},{id:'local-note'},{note:'조민준에게 인계'},{note:'경남지사 → 한준엽'},{at:'invalid'}]){
+  const bad=row({assignment_history:[],activities:[Object.assign({},assignment,invalid)]});assert.equal(w.inquiryReassignmentPending(bad),false);
+ }
+});
+test('public read latest reassignment overrides an older structured history',()=>{
+ const q=row({assignment_history:[{at:'2026-09-01',from_owner:'이필선',to_owner:'경남지사'}],activities:[{id:'90000000-0000-4000-8000-000000000001',type:'담당자 변경',note:'경남지사 → 조민준',at:assigned}]}),w=setup([q]);assert.equal(w.inquiryReassignmentPending(q),true);
+});
