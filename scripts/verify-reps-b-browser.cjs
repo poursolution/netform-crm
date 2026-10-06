@@ -34,13 +34,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const n=await page.evaluate(()=>REP_MANAGER_ROWS.length);assert.ok(n>=3,'본사 영업사원 '+n+'명');
   assert.equal(await v.locator('.psb-row').count(),n,'한 줄 = 한 사람');
   assert.match(await v.locator('.rb-top').innerText(),new RegExp('영업사원\\s*'+n+'명 · .+ 기준'));
-  const legs=(await v.locator('.psb-axis .leg button').allInnerTexts()).map(t=>t.replace(/\s+/g,' '));
-  assert.match(legs.join('|'),/^관리자 확인 필요 \d+\|확인 필요 \d+\|여유 · 흐름 정상 \d+$/,legs.join('|'));
-  assert.match(await v.locator('.psb-kpis').innerText(),/기준 넘김 \(빨강\)\s*\d+명[\s\S]*첫 연락 전 · 기한 초과\s*3건 · 1건[\s\S]*이번 주 진전/);
-  const reasons=await v.locator('.psb-reason span').allInnerTexts();
+  const legs=await v.locator('.ps3-tabs .ps3-tab').evaluateAll(l=>l.map(b=>b.querySelector('.l').textContent+' '+b.querySelector('.n').textContent));
+  assert.match(legs.join('|'),/^전체 \d+\|관리자 확인 필요 \d+\|확인 필요 \d+\|여유 · 흐름 정상 \d+$/,legs.join('|'));
+  assert.match(await v.locator('.ps3-kpis').innerText(),/기준 넘김\s*\d+명[\s\S]*첫 연락 전 · 기한 초과\s*3건 · 1건[\s\S]*이번 주 진전/);
+  const reasons=await v.locator('.ps3-reason>span>b:first-child').allInnerTexts();
   assert.deepEqual(reasons.slice(0,2),['첫 연락 전 3건 이상','다음 할 일 기한 초과'],JSON.stringify(reasons));
   assert.ok(reasons.includes('이번 주 코칭 약속 없음'),JSON.stringify(reasons));
-  assert.match(await v.locator('.psb-two .psb-box').nth(1).innerText(),/그래서 뭘 해야 하나[\s\S]*첫 연락 전 3건 이상 1명[\s\S]*금요일까지 첫 연락 완료/);
+  assert.match(await v.locator('.ps3-diag>.ps3-box').nth(2).innerText(),/그래서 뭘 해야 하나[\s\S]*첫 연락 전 3건 이상 1명[\s\S]*금요일까지 첫 연락 완료/);
   assert.match(await v.locator('.rb-load').innerText(),/누가 일이 몰렸나[\s\S]*이필선 · 12억[\s\S]*진행 2건[\s\S]*황윤선 · 5억/);
   assert.match(await v.locator('.rb-week').innerText(),/이번 주 진전[\s\S]*신규 기회 \d+/);
   /* 정렬: 이필선(빨강 2개) 먼저 */
@@ -49,14 +49,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await v.locator('.psb-row[data-key="황윤선"]').innerText(),/황윤선[\s\S]*Pipeline 5억[\s\S]*(여유|확인 필요)/);
   if(shot)await page.screenshot({path:shot+'-list.png',fullPage:true});
   /* 막대 칸 · 보드 · 더보기(팀 비교 · 계정 관리) */
-  await v.locator('.psb-axis .leg button').first().click();await page.waitForTimeout(150);assert.equal(await page.locator('#reps-b .psb-row').count(),1);
+  await v.locator('.ps3-tabs .ps3-tab').nth(1).click();await page.waitForTimeout(150);assert.equal(await page.locator('#reps-b .psb-row').count(),1);
   await page.locator('#reps-b [data-sb="clear"]').click();await page.waitForTimeout(150);
-  await page.locator('#reps-b [data-sb="view"][data-v="board"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#reps-b .psb-col').count(),3);assert.equal(await page.locator('#reps-b .psb-card').count(),n);
+  await page.locator('#reps-b [data-sb="view"][data-v="board"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#reps-b .ps3-col').count(),3);assert.equal(await page.locator('#reps-b .ps3-card').count(),n);
   await page.locator('#reps-b [data-sb="view"][data-v="list"]').click();await page.waitForTimeout(150);
   await page.locator('#reps-b .av-more summary').click();assert.deepEqual(await page.locator('#reps-b .av-menu button').allInnerTexts(),['팀 비교','계정 관리']);
   await page.locator('#reps-b .av-menu [data-rb="account"]').click();assert.equal(await page.evaluate(()=>window.__account),1,'계정 관리 = 기존 창');
   /* 열기 = 기존 사람별 창 · 코칭 약속 버튼 = 창 + 약속 칸 포커스 · 저장은 기존 경로 */
-  await page.locator('#reps-b .psb-row').first().locator('.l').click();await page.waitForTimeout(250);
+  await page.locator('#reps-b .psb-row').first().locator('.prv-a').click();await page.waitForTimeout(250);
   const d=page.locator('#repsDialog.on .rd-box');assert.equal(await d.count(),1,'v2 사람별 창');assert.match(await d.locator('.rd-head').innerText(),/이필선/);
   await page.keyboard.press('Escape');await page.waitForTimeout(150);
   await page.locator('#reps-b .psb-row').first().locator('[data-sb="act"]').click();await page.waitForTimeout(300);

@@ -26,14 +26,16 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const v=page.locator('#gyeongnam-b');assert.equal(await v.count(),1,'B안 보드');assert.equal(await page.locator('#gyeongnam-v2').count(),0,'v2 묶음 표 없음');
   assert.equal(await page.locator('#pg-gyeongnam>.cf-bar:not([hidden])').count(),1,'공통 필터줄');
   assert.equal(await page.evaluate(()=>document.getElementById('ptitle').textContent),'경남지사');
-  assert.deepEqual((await v.locator('.psb-axis .leg button').allInnerTexts()).map(t=>t.replace(/\s+/g,' ')),['지사 미착수 · 실담당 없음 2','실담당 지정 · 연락 전 2','영업 진행 확인됨 1']);
-  assert.match(await v.locator('.psb-kpis').innerText(),/기준 넘김 \(빨강\)\s*3건[\s\S]*지사 미착수\s*2건[\s\S]*평균 넘긴 후\s*\d+일/);
-  const reasons=await v.locator('.psb-reason span').allInnerTexts();
+  /* 공용 틀(2026-10-06 "리스트에서 이질감 없이"): 파이프라인 v3 와 같은 틀 — 상태 탭 4칸 · 진단 숫자 3개 · 사유 · 할 일 · 지사 담당 상자 */
+  assert.deepEqual(await v.locator('.ps3-tabs .ps3-tab').evaluateAll(l=>l.map(b=>b.querySelector('.l').textContent+' '+b.querySelector('.n').textContent)),['전체 5','지사 미착수 · 실담당 없음 2','실담당 지정 · 연락 전 2','영업 진행 확인됨 1']);
+  assert.match(await v.locator('.ps3-kpis').innerText(),/기준 넘김\s*3건[\s\S]*지사 미착수\s*2건[\s\S]*평균 넘긴 후\s*\d+일/);
+  const reasons=await v.locator('.ps3-reason>span>b:first-child').allInnerTexts();
   assert.deepEqual(reasons,['넘긴 지 16일 · 움직임 없음','넘긴 후 7일 · 지사 응대 없음','지사 실담당 미지정','지사 첫 연락 없음','영업기회 미등록'],JSON.stringify(reasons));
-  assert.match(await v.locator('.psb-two .psb-box').nth(1).innerText(),/그래서 뭘 해야 하나[\s\S]*넘긴 지 16일 · 움직임 없음 2건[\s\S]*넘긴 후 7일 · 지사 응대 없음 3건/);
+  assert.match(await v.locator('.ps3-diag>.ps3-box').nth(2).innerText(),/그래서 뭘 해야 하나[\s\S]*넘긴 지 16일 · 움직임 없음 2건[\s\S]*넘긴 후 7일 · 지사 응대 없음 3건/);
+  assert.deepEqual((await v.locator('.prv-head span').allInnerTexts()).map(t=>t.trim()),['현장 · 담당','현재 상황','걸린 사유 · 경과',''],'줄 = 파이프라인 v11 4칸');
   assert.match(await v.locator('.gb-team').innerText(),new RegExp('지사 담당은 움직이나[\\s\\S]*'+rep+'[\\s\\S]*넘겨받음 3 · 연락 1'));
   /* 정렬: 16일 넘은 둘(18일 → 17일) → 8일 무응답 → 6일 → 진행 중 */
-  const order=await v.locator('.psb-row').evaluateAll(a=>a.map(n=>n.querySelector('.l b').textContent));
+  const order=await v.locator('.psb-row').evaluateAll(a=>a.map(n=>n.querySelector('.prv-a>b').textContent));
   assert.deepEqual(order,['[부산] 이편한세상광안비치아파트','[경남 거제] 한국전력공사','[경남 양산] 8일 무응답 현장','[경남 김해] 진행 중 현장','[경남 창원] 응대 없는 현장'],JSON.stringify(order));
   assert.match(await v.locator('.psb-row').first().innerText(),/이편한세상광안비치아파트[\s\S]*POUR솔루션 · 지사 미지정 · 문의[\s\S]*지사 미착수[\s\S]*지사 연락 없음[\s\S]*넘긴 지 16일 · 움직임 없음[\s\S]*18일[\s\S]*회수 검토/);
   assert.match(await v.locator('.psb-row').nth(2).innerText(),new RegExp('8일 무응답 현장[\\s\\S]*'+rep+'[\\s\\S]*실담당 지정[\\s\\S]*넘긴 후 7일 · 지사 응대 없음[\\s\\S]*8일[\\s\\S]*확인 요청'));
@@ -44,12 +46,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const chips=await v.locator('.plv-chip').allInnerTexts();assert.ok(chips.some(c=>/^지사 미지정 2 · 멈춤 2$/.test(c)),chips.join('|'));assert.ok(chips.some(c=>c.startsWith(rep+' 3')),chips.join('|'));
   await v.locator('.plv-chip',{hasText:rep}).click();await page.waitForTimeout(150);assert.equal(await page.locator('#gyeongnam-b .psb-row').count(),3);
   await page.locator('#gyeongnam-b .plv-chip.on').click();await page.waitForTimeout(150);assert.equal(await page.locator('#gyeongnam-b .psb-row').count(),5);
-  await page.locator('#gyeongnam-b .psb-axis .leg button').nth(2).click();await page.waitForTimeout(150);assert.equal(await page.locator('#gyeongnam-b .psb-row').count(),1);
+  await page.locator('#gyeongnam-b .ps3-tabs .ps3-tab').nth(3).click();await page.waitForTimeout(150);assert.equal(await page.locator('#gyeongnam-b .psb-row').count(),1);
   await page.locator('#gyeongnam-b [data-sb="clear"]').click();await page.waitForTimeout(150);
-  await page.locator('#gyeongnam-b [data-sb="view"][data-v="board"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#gyeongnam-b .psb-col').count(),3);assert.equal(await page.locator('#gyeongnam-b .psb-card').count(),5);
+  await page.locator('#gyeongnam-b [data-sb="view"][data-v="board"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#gyeongnam-b .ps3-col').count(),3);assert.equal(await page.locator('#gyeongnam-b .ps3-card').count(),5);
   await page.locator('#gyeongnam-b [data-sb="view"][data-v="list"]').click();await page.waitForTimeout(150);
   /* 열기 = 기존 확인 창(견적문의 상세 모달 + 지사 진행 확인) · 사유 버튼은 그 버튼에 포커스(자동 기록 없음) */
-  await page.locator('#gyeongnam-b .psb-row').first().locator('.l').click();await page.waitForTimeout(400);
+  await page.locator('#gyeongnam-b .psb-row').first().locator('.prv-a').click();await page.waitForTimeout(400);
   const d=page.locator('#inq-inbox-dialog.idv');assert.equal(await d.count(),1,'확인 창');
   assert.match(await d.locator('.idv-pill').innerText(),/^지사 미착수 · 18일$/);assert.match(await d.locator('.idv-c3').innerText(),/지사 진행 확인[\s\S]*지사에 확인 요청[\s\S]*본사 회수 검토/);
   await page.keyboard.press('Escape');await page.waitForTimeout(200);assert.equal(await page.locator('#inq-inbox-dialog.idv').count(),0);

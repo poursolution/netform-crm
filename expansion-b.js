@@ -87,7 +87,9 @@
   const s=scoped(),S=SB().state('expansion'),items=s.rows.map(item);
   CFG.topHtml=topHtml(s);
   /* 연도를 고르면 제목 옆에 "2025년 준공만" · 목록 줄은 두 덩어리(끄기: G.expansionYearRowOff=true → 예전 줄) */
-  CFG.listNote=root.G.expansionYearRowOff||String(s.year)==='전체'?'':(String(s.year)==='이전'?(s.current-3)+'년 이전':s.year+'년')+' 준공만';CFG.rowHtml=root.G.expansionYearRowOff?null:rowHtml;
+  CFG.listNote=root.G.expansionYearRowOff||String(s.year)==='전체'?'':(String(s.year)==='이전'?(s.current-3)+'년 이전':s.year+'년')+' 준공만';
+  /* 공용 틀(2026-10-06 "리스트에서 이질감 없이"): 줄은 StageBoard 의 파이프라인 v11 모양 줄. 두 덩어리 줄은 공용 틀을 껐을 때(G.boardV3Off)만 */
+  CFG.rowHtml=root.G.expansionYearRowOff||!root.G.boardV3Off?null:rowHtml;
   host.innerHTML=SB().html(CFG,items,S);
   SB().bind(host,{state:()=>SB().state('expansion'),cfg:()=>CFG,paint:()=>root.paintExpansion(),open});
   if(!host.__xbr){host.__xbr=true;host.addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.xbRule;if(!k)return;setRule(k,e.target.value);root.paintExpansion();if(typeof root.toast==='function')root.toast((k==='afterCompletionDays'?'사후 연락 기준':'관계 연락 주기')+'을 '+e.target.value+'일로 바꿨습니다 (이 PC에 저장)');});}

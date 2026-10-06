@@ -11,7 +11,8 @@
  'use strict';
  const B=root.PipelineStageB,L2=root.PipelineListV2;if(!B||!L2)return;
  const h=v=>root.esc(String(v==null?'':v)),attr=v=>root.escAttr(String(v==null?'':v));
- const KEYS=['consulting','sent','relationship','competition','construction'];
+ /* 수주 · 실주도 같은 틀(2026-10-06 대표 "이 기준으로 수주 · 실주 크기 및 배치 동일하게") — 상태 · 사유 · 버튼 · 할 일은 B안 표(PipelineStageB.CFG) 그대로, 틀만 v3 */
+ const KEYS=['consulting','sent','relationship','competition','construction','won','lost'];
  const BRAND={'석민이앤씨':'#e8590c','POUR솔루션':'#1f9d55','POUR공법':'#7048e8','아파트스퀘어':'#3b6ce4'};
  const RED='#b42318';
  const enabled=key=>!root.G.pipeStageV3Off&&KEYS.includes(key||root.G.pipelineStage)&&B.enabled(key||root.G.pipelineStage);
@@ -29,7 +30,24 @@
  const finOk=it=>{const c=(ctxOf(it.row.item).completion||{}).fields||{},k=Array.isArray(c.completion_checks)?c.completion_checks:[];return ['공사 완료','준공검사 완료'].every(x=>k.includes(x));};
  const goalOf=(key,d)=>{const g=(root.OPS_RULES||{}).pipeStageGoalDays;return Number(g&&g[key])||d;};
  /* ── 단계 설정값(README 표 + 시안의 ST): tabs [이름, 기준 한 줄] 첫 칸 = 빨강 · reasons [키, 이름] 첫 사유 = 빨강 상태 · act [버튼, 상세 액션] · tab(it) = 0 · 1 · 2 ── */
+ const REDB=()=>(root.StageBoard&&root.StageBoard.RED)||'#d93a3a';
+ /* 수주 · 실주: 탭 = B안 막대 3칸, 사유 · 버튼 · 할 일 = B안 RS 표. 줄 글은 첫 빨강 사유(없으면 상태 이름) + 근거, 기준 넘김 = 빨강 사유가 있는 건 */
+ function closedCfg(key){
+  const K=B.CFG[key],Q=B.rules(),RS=K.RS,red=k=>!!(RS[k]&&RS[k][1]===REDB()),rsOf=x=>{const k=x.it.first||x.rs[0];return k&&RS[k]||null;};
+  return {name:K.name,goal:Q.stay,desc:K.desc(),closed:true,amountLabel:key==='won'?'수주 금액':'예상 금액',
+   tabs:K.S.map(s=>[s[1],s[3]]),reasons:Object.keys(RS).map(k=>[k,RS[k][0]]),act:K.S.map(()=>['열기','']),todo:'',
+   tab:it=>{const i=K.S.findIndex(s=>s[0]===it.bucket);return i<0?0:i;},
+   has:Object.fromEntries(Object.keys(RS).map(k=>[k,it=>it.rs.includes(k)])),sub:it=>it.sub,
+   redOf:it=>!!it.red,redReason:red,
+   btnOf:x=>{const rs=rsOf(x);return rs?[rs[2],rs[4]]:['열기',''];},
+   nowOf:x=>{const rs=rsOf(x);return [rs?rs[0]:K.S[x.tab][1].split(' · ')[0],x.sub].filter(Boolean).join(' · ');},
+   taskOf:x=>{const rs=rsOf(x);return rs?rs[3]:K.S[x.tab][3];},
+   issueOf:x=>{const rs=rsOf(x);return rs?rs[0]:K.S[x.tab][1];},
+   todoHtml:(items,S)=>{const byS=S.tab===-1?items:items.filter(x=>x.tab===S.tab),rs=Object.keys(RS).map(k=>({k,n:byS.filter(x=>x.rs.includes(k)).length})).filter(x=>x.n>0),acts=(S.reason?[S.reason]:rs.slice(0,3).map(x=>x.k)).map(k=>({tag:RS[k][0]+' '+byS.filter(x=>x.rs.includes(k)).length+'건',t:RS[k][3]}));
+    return acts.length?acts.map(a=>'<div class="psb-act"><span>'+h(a.tag)+'</span><p>'+h(a.t)+'</p></div>').join(''):'<p class="ps3-none">기준을 넘긴 현장이 없습니다</p>';}};
+ }
  function cfg(key){
+  if(key==='won'||key==='lost')return closedCfg(key);
   const Q=B.rules(),mo=Math.max(1,Math.round(Q.wait/30)),D7=Number((root.OPS_RULES||{}).bidPrepDays)||7;
   const nonext=it=>!(it.row.next&&it.row.next.text&&it.row.due),long=it=>it.stall>Q.stay;
   if(key==='consulting')return {name:'컨설팅 설계',goal:goalOf(key,14),desc:'1차 현장미팅으로 고객 요구를 확인하고 견적을 준비하는 단계 · 견적 처리 목표 '+Q.quote+'일 / 최대 5일',
@@ -78,11 +96,12 @@
  /* 줄마다 상태(탭) · 걸린 사유를 붙인다. 정렬: 빨강 상태 → 다음 상태 → 체류 긴 순 */
  function model(key,list){
   const C=cfg(key),M=B.model(key,list);
-  const items=M.items.map(it=>{let t=0;try{t=C.tab(it);}catch(e){t=2;}t=t===0||t===1||t===2?t:2;const rs=C.reasons.map(r=>r[0]).filter(k=>{try{return !!C.has[k](it,t);}catch(e){return false;}});let sub='';try{sub=C.sub(it,t)||'';}catch(e){}return {it,row:it.row,tab:t,rs,sub,stall:it.stall};});
+  const items=M.items.map(it=>{let t=0;try{t=C.tab(it);}catch(e){t=2;}t=t===0||t===1||t===2?t:2;const rs=C.reasons.map(r=>r[0]).filter(k=>{try{return !!C.has[k](it,t);}catch(e){return false;}});let sub='';try{sub=C.sub(it,t)||'';}catch(e){}let red=t===0;if(C.redOf){try{red=!!C.redOf(it,t);}catch(e){}}return {it,row:it.row,tab:t,rs,sub,stall:it.stall,red};});
   items.sort((a,b)=>a.tab-b.tab||b.stall-a.stall||String(a.row.key).localeCompare(String(b.row.key)));
   return {C,items};
  }
- const issueOf=(C,x)=>x.tab===0?C.reasons[0][1]:C.tabs[x.tab][1];
+ const issueOf=(C,x)=>C.issueOf?C.issueOf(x):(x.tab===0?C.reasons[0][1]:C.tabs[x.tab][1]);
+ const actOf=(C,x)=>C.btnOf?C.btnOf(x):C.act[x.tab];
  const bcOf=r=>BRAND[r.item.brand]||'';
  /* 줄 · 카드에 항상 보이는 것(2026-10-05 정합성 ③ ④ — 마우스를 올려야 보이는 정보를 두지 않는다):
     다음 행동 · 기한 / 공종 · 사업연도 · 영업건 번호(같은 단지의 여러 건을 구분) / 같은 단지에 진행 건이 여럿이면 '같은 공사인지 확인' */
@@ -98,40 +117,40 @@
  function dupMap(){const m=new Map();try{root.PipelineWorkspace.rows({unscoped:true}).forEach(r=>{if(['won','lost','expansion','legacy'].includes(r.group))return;const k=siteKeyOf(r);if(k)m.set(k,(m.get(k)||0)+1);});}catch(e){}return m;}
  const dupOf=r=>{const k=siteKeyOf(r),n=k?DUP.get(k)||0:0;return n>1?'같은 단지 진행 '+n+'건 · 같은 공사인지 확인':'';};
  function rowHtml(C,x){
-  const r=x.row,bc=bcOf(r),a=C.act[x.tab];
+  const r=x.row,bc=bcOf(r),a=actOf(C,x);
   return '<div class="ps3-row" role="row" tabindex="0" data-ps3="open" data-key="'+attr(r.key)+'" data-tab="'+x.tab+'" style="border-left-color:'+(bc||'#e3e6ec')+'"><div class="ps3-l"><div class="ps3-a"><b title="'+attr(r.site)+'">'+h(r.site)+(root.advisoryBadge?root.advisoryBadge(r.item):'')+'</b><span><em style="color:'+(bc||'#9ca3af')+'">'+h(r.item.brand||'브랜드 미지정')+'</em> · '+h(r.owner||'미배정')+' · '+h(money(r.amount))+'</span><small class="ps3-meta">'+h(metaOf(r))+'</small>'+(dupOf(r)?'<small class="ps3-dup">'+h(dupOf(r))+'</small>':'')+'</div>'
-   +'<div class="ps3-b"><b'+(x.tab===0?' class="r"':'')+'>'+h(issueOf(C,x))+'</b><span>'+h(x.sub)+'</span><small class="ps3-nx'+(r.next&&r.next.text?'':' none')+'"><i>다음 행동</i> '+h(nextOf(r))+'</small></div></div>'
+   +'<div class="ps3-b"><b'+(x.red?' class="r"':'')+'>'+h(issueOf(C,x))+'</b><span>'+h(x.sub)+'</span><small class="ps3-nx'+(r.next&&r.next.text?'':' none')+'"><i>다음 행동</i> '+h(nextOf(r))+'</small></div></div>'
    +'<div class="ps3-r"><div class="ps3-d"><b'+(x.stall>C.goal?' class="r"':'')+'>'+x.stall+'일</b><span>체류</span></div><button type="button" data-ps3="act" data-key="'+attr(r.key)+'" data-v="'+attr(a[1])+'">'+h(a[0])+'</button></div></div>';
  }
  /* 목록 줄 v11(2026-10-06 design_handoff_pipeline_v11): 4칸 줄 + 펼침 — 그리기는 pipeline-row-v11.js 한곳, 여기서는 그 단계의 상태 · 업무 · 버튼만 정한다 */
  const V11=()=>root.PipelineRowV11&&root.PipelineRowV11.on()?root.PipelineRowV11:null;
  function v11(key,C,x){
-  const r=x.row,a=C.act[x.tab],st0=x.tab===0?C.reasons[0][1]:C.tabs[x.tab][0],sub=x.sub&&!String(st0).includes(x.sub)&&!String(x.sub).includes(st0)?x.sub:'';
-  /* 버튼 = 업무 동사: 연락할 일이면 '연락 기록'(미팅 날짜만 남은 컨설팅 건은 '일정 등록'), 나머지는 그 단계의 일(견적 요청 · 정보 입력 · 단계 판단 …) */
-  const contact=a[1]==='next'||a[1]==='activity',btn=contact?[key==='consulting'&&x.tab===0&&r.last?'일정 등록':'연락 기록',a[1]]:[a[0],a[1]];
-  return {r,now:[st0,sub].filter(Boolean).join(' · '),task:C.tabs[x.tab][1],btn,stall:x.stall,goal:C.goal,reasons:x.rs.map(k=>(C.reasons.find(q=>q[0]===k)||[])[1]).filter(Boolean),dup:dupOf(r),tab:x.tab};
+  const r=x.row,a=actOf(C,x),st0=x.tab===0?C.reasons[0][1]:C.tabs[x.tab][0],sub=x.sub&&!String(st0).includes(x.sub)&&!String(x.sub).includes(st0)?x.sub:'';
+  /* 버튼 = 업무 동사: 연락할 일이면 '연락 기록'(미팅 날짜만 남은 컨설팅 건은 '일정 등록'), 나머지는 그 단계의 일(견적 요청 · 정보 입력 · 단계 판단 …). 수주 · 실주는 B안 표의 버튼 이름 그대로 */
+  const contact=a[1]==='next'||a[1]==='activity',btn=C.btnOf?[a[0],a[1]]:contact?[key==='consulting'&&x.tab===0&&r.last?'일정 등록':'연락 기록',a[1]]:[a[0],a[1]];
+  return {r,now:C.nowOf?C.nowOf(x):[st0,sub].filter(Boolean).join(' · '),task:C.taskOf?C.taskOf(x):C.tabs[x.tab][1],btn,stall:x.stall,goal:C.goal,reasons:x.rs.map(k=>(C.reasons.find(q=>q[0]===k)||[])[1]).filter(Boolean),dup:dupOf(r),tab:x.tab,closed:!!C.closed,amountLabel:C.amountLabel};
  }
  function cardHtml(C,x){
-  const r=x.row,bc=bcOf(r),a=C.act[x.tab];
-  return '<div class="ps3-card" role="button" tabindex="0" data-ps3="open" data-key="'+attr(r.key)+'" style="border-left-color:'+(bc||'#e3e6ec')+'"><div class="t"><b style="color:'+(bc||'#9ca3af')+'">'+h(r.item.brand||'브랜드 미지정')+'</b><i></i><span class="no">'+h(noOf(r))+'</span><b class="d'+(x.stall>C.goal?' r':'')+'">'+x.stall+'일</b></div><strong>'+h(r.site)+'</strong><span>'+h([workOf(r)+(bizYearOf(r)?' · '+bizYearOf(r):''),r.owner||'미배정',money(r.amount)].filter(Boolean).join(' · '))+'</span><span class="iss'+(x.tab===0?' r':'')+'">'+h((x.tab===0?'확인 필요 · ':'')+[issueOf(C,x),x.sub&&!String(issueOf(C,x)).includes(x.sub)?x.sub:''].filter(Boolean).join(' · '))+'</span><span class="nx'+(r.next&&r.next.text?'':' none')+'"><i>다음 행동</i> '+h(nextOf(r))+'</span>'+(dupOf(r)?'<span class="dup">'+h(dupOf(r))+'</span>':'')+'<button type="button" data-ps3="act" data-key="'+attr(r.key)+'" data-v="'+attr(a[1])+'">'+h(a[0])+'</button></div>';
+  const r=x.row,bc=bcOf(r),a=actOf(C,x);
+  return '<div class="ps3-card" role="button" tabindex="0" data-ps3="open" data-key="'+attr(r.key)+'" style="border-left-color:'+(bc||'#e3e6ec')+'"><div class="t"><b style="color:'+(bc||'#9ca3af')+'">'+h(r.item.brand||'브랜드 미지정')+'</b><i></i><span class="no">'+h(noOf(r))+'</span><b class="d'+(x.stall>C.goal?' r':'')+'">'+x.stall+'일</b></div><strong>'+h(r.site)+'</strong><span>'+h([workOf(r)+(bizYearOf(r)?' · '+bizYearOf(r):''),r.owner||'미배정',money(r.amount)].filter(Boolean).join(' · '))+'</span><span class="iss'+(x.red?' r':'')+'">'+h((x.red?'확인 필요 · ':'')+[issueOf(C,x),x.sub&&!String(issueOf(C,x)).includes(x.sub)?x.sub:''].filter(Boolean).join(' · '))+'</span><span class="nx'+(r.next&&r.next.text?'':' none')+'"><i>다음 행동</i> '+h(nextOf(r))+'</span>'+(dupOf(r)?'<span class="dup">'+h(dupOf(r))+'</span>':'')+'<button type="button" data-ps3="act" data-key="'+attr(r.key)+'" data-v="'+attr(a[1])+'">'+h(a[0])+'</button></div>';
  }
  function html(key,list){
   DUP=dupMap();
   const S=st(),{C,items}=model(key,list),LP=root.ListPager,total=items.length;
-  const cnt=t=>items.filter(x=>x.tab===t).length,n=[cnt(0),cnt(1),cnt(2)];
+  const cnt=t=>items.filter(x=>x.tab===t).length,n=[cnt(0),cnt(1),cnt(2)],over=items.filter(x=>x.red).length,hot=t=>items.some(x=>x.tab===t&&x.red);
   const rsN=k=>items.filter(x=>x.rs.includes(k)).length;
   if(S.reason&&!C.reasons.some(r=>r[0]===S.reason))S.reason=null;
   const listed=items.filter(x=>(S.tab===-1||x.tab===S.tab)&&(!S.reason||x.rs.includes(S.reason)));
   const sumAmt=items.reduce((s,x)=>s+(Number(x.row.amount)||0),0),avg=total?Math.round(items.reduce((s,x)=>s+x.stall,0)/total):0;
   /* 상태 탭 4칸: [전체] + 상태 3개 */
   const tab=(t,l,rule,num,hot)=>'<button type="button" class="ps3-tab'+(S.tab===t?' on':'')+'" data-ps3="tab" data-v="'+t+'" aria-pressed="'+(S.tab===t)+'"><b class="n'+(hot&&num?' r':'')+'">'+num.toLocaleString('ko-KR')+'</b><b class="l">'+h(l)+'</b><span>'+h(rule)+'</span></button>';
-  const tabs='<div class="ps3-tabs" role="group" aria-label="상태">'+tab(-1,'전체','이 단계 모든 현장',total,false)+C.tabs.map((t,i)=>tab(i,t[0],t[1],n[i],i===0)).join('')+'</div>';
+  const tabs='<div class="ps3-tabs" role="group" aria-label="상태">'+tab(-1,'전체','이 단계 모든 현장',total,false)+C.tabs.map((t,i)=>tab(i,t[0],t[1],n[i],hot(i))).join('')+'</div>';
   /* 왼쪽: 단계 진단 */
   const diag='<aside class="ps3-diag"><section class="ps3-box"><header><b>단계 진단</b><span>'+total.toLocaleString('ko-KR')+'건 · '+h(money(sumAmt))+'</span></header>'
-   +'<div class="ps3-kpis"><div class="over"><span>기준 넘김</span><b>'+n[0].toLocaleString('ko-KR')+'건</b><small>오늘 처리할 것</small></div><div><span>평균 체류</span><b>'+avg+'일</b><small>기준 '+C.goal+'일</small></div></div></section>'
+   +'<div class="ps3-kpis"><div class="over"><span>기준 넘김</span><b>'+over.toLocaleString('ko-KR')+'건</b><small>오늘 처리할 것</small></div><div><span>평균 체류</span><b>'+avg+'일</b><small>기준 '+C.goal+'일</small></div></div></section>'
    +'<section class="ps3-box ps3-why"><header><b>왜 멈춰 있나</b><span>누르면 목록이 걸러짐</span></header>'
-   +C.reasons.map((r,i)=>{const c=rsN(r[0]),on=S.reason===r[0];return '<button type="button" class="ps3-reason'+(on?' on':'')+(i===0?' first':'')+'" data-ps3="reason" data-v="'+r[0]+'" aria-pressed="'+on+'"><span><b>'+h(r[1])+'</b><b class="c">'+c.toLocaleString('ko-KR')+'</b></span><i><u style="width:'+(total?Math.min(100,Math.round(c/total*100)):0)+'%"></u></i></button>';}).join('')+'</section>'
-   +'<section class="ps3-box"><header><b>그래서 뭘 해야 하나</b></header><p class="ps3-todo">'+h(C.todo)+'</p></section></aside>';
+   +C.reasons.map((r,i)=>{const c=rsN(r[0]),on=S.reason===r[0];return '<button type="button" class="ps3-reason'+(on?' on':'')+((C.redReason?C.redReason(r[0]):i===0)?' first':'')+'" data-ps3="reason" data-v="'+r[0]+'" aria-pressed="'+on+'"><span><b>'+h(r[1])+'</b><b class="c">'+c.toLocaleString('ko-KR')+'</b></span><i><u style="width:'+(total?Math.min(100,Math.round(c/total*100)):0)+'%"></u></i></button>';}).join('')+'</section>'
+   +'<section class="ps3-box"><header><b>그래서 뭘 해야 하나</b></header>'+(C.todoHtml?C.todoHtml(items,S):'<p class="ps3-todo">'+h(C.todo)+'</p>')+'</section></aside>';
   /* 오른쪽: 확인할 현장 */
   const fl=S.reason?(C.reasons.find(r=>r[0]===S.reason)||[])[1]:'';
   const head='<div class="ps3-lhead"><b>확인할 현장 <span>'+listed.length.toLocaleString('ko-KR')+'곳</span></b>'+(fl?'<button type="button" class="ps3-chip" data-ps3="clear" aria-label="'+attr(fl)+' 필터 해제">'+h(fl)+' ×</button>':'')+'<i></i><div class="ps3-views" role="group" aria-label="보기"><button type="button" data-ps3="view" data-v="list" aria-pressed="'+(S.view!=='board')+'">리스트</button><button type="button" data-ps3="view" data-v="board" aria-pressed="'+(S.view==='board')+'">보드</button></div></div>';

@@ -41,7 +41,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   });
   await page.waitForTimeout(400);
   /* 1. 목록에서 사람을 누르면 새 창(예전 창은 뜨지 않음) */
-  await page.locator('#reps-b .psb-row[data-key="이필선"] .l').click();await page.waitForTimeout(250);
+  await page.locator('#reps-b .psb-row[data-key="이필선"] .prv-a').click();await page.waitForTimeout(250);
   const w=page.locator('#repWindow.on .rw-box');assert.equal(await w.count(),1,'새 사람 창');assert.equal(await page.locator('#repsDialog.on').count(),0,'예전 창은 열리지 않음');
   assert.deepEqual(await w.evaluate(n=>{const s=getComputedStyle(n),b=getComputedStyle(n.querySelector('.rw-body'));return [s.maxWidth,s.borderTopLeftRadius,b.gridTemplateColumns.split(' ')[0]];}),['1640px','16px','320px']);
   /* 창 크기 = 상세 창과 같은 기준(가로 1640 한도 · 세로 화면 − 32) · 머리 고정 · 좌우 칸 각자 스크롤 */
@@ -114,7 +114,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#repWindow .rw-g[data-g="first"] [data-rw="toggle"]').click();await page.locator('#repWindow .rw-g[data-g="first"] .rw-row a').first().click();await page.waitForTimeout(200);
   assert.match(await page.evaluate(()=>window.__openInq),/^신규 문의 \d$/);assert.equal(await page.locator('#repWindow.on').count(),0);
   /* 10. 목록의 [코칭 약속] = 창 + 약속 칸 포커스 · Esc 닫기 · 손볼 건이 없는 사람 */
-  await page.locator('#reps-b .psb-row[data-key="황윤선"] .l').click();await page.waitForTimeout(250);
+  await page.locator('#reps-b .psb-row[data-key="황윤선"] .prv-a').click();await page.waitForTimeout(250);
   assert.match(await page.locator('#repWindow.on .rw-who').innerText().then(s=>s.replace(/\s+/g,' ')),/^황윤선 본사 영업 · 상무 /,'소속 · 직함(대표 지정)');
   assert.deepEqual(await page.evaluate(()=>['이필선','김성민','정정훈','한준엽','조재연','조현식','황윤선','이승우','송보람','전용성'].map(n=>repProfile(n).title||'')),['본사영업','본사영업','본사영업','팀장','팀장','이사','상무','대표','영업관리','']);
   await page.evaluate(()=>RepsV2.open('한준엽'));await page.waitForTimeout(150);assert.match(await page.locator('#repWindow.on .rw-who').innerText().then(s=>s.replace(/\s+/g,' ')),/^한준엽 본사 영업 · 팀장 /);
