@@ -424,7 +424,13 @@
     +(shown.length?'<div class="isd-nlist">'+shown.map(x=>nearRow(x,kmText(x.dist))).join('')+(rows.length>shown.length?'<span class="isd-more">외 '+(rows.length-shown.length)+'곳</span>':'')+'</div>':'<div class="isd-none">반경 '+rad+'km 안에 영업했던 현장이 없습니다.</div>')
     +(pend?'<span class="isd-pend">위치를 확인하는 중인 현장 '+pend+'곳은 아직 지도에 없습니다</span>':'')+tip+'</section>';
   }
-  const N=nearList(q),shown=N.list.slice(0,8),canFix=mode==='nocenter'&&!!siteIdOf(q)&&rpcOk(GEO_SAVE);
+  const N=nearList(q),shown=N.list.slice(0,8),canFix=mode==='nocenter'&&!!siteIdOf(q)&&rpcOk(GEO_SAVE),compact=canFix&&!!(ctx&&ctx.compact&&ctx.compact());
+  if(compact){/* 큰 안내 상자 대신 한 줄 — [주소 입력]을 누르면 그 자리에 위치 정하기 칸 */
+   const F=fxOf(q);
+   return '<section class="isd-near isd-compact"><header><b>근처에서 영업했던 현장</b><span>'+(N.region?h(N.region)+' ':'')+N.list.length+'곳</span><i></i>'+(extra||'')+'</header>'
+    +(F.open?fxHtml(q,true):'<span class="isd-line">주소가 없어 지도에 못 올렸어요. <button type="button" data-idv="geo-fix">주소 입력</button> 하면 반경 1 · 3 · 5km로 보여 줍니다.</span>')
+    +(shown.length?'<div class="isd-nlist">'+shown.map(x=>nearRow(x)).join('')+(N.list.length>shown.length?'<span class="isd-more">외 '+(N.list.length-shown.length)+'곳</span>':'')+'</div>':'')+'</section>';
+  }
   /* 못 찾은 현장: 이름으로 찾은 후보를 바로 보여 준다(한 번만) — 맞는 곳은 사람이 고른다 */
   if(canFix){const F=fxOf(q);if(!F.auto){F.auto=true;F.text=nameHints(String(q.site||'')).query;if(F.text)setTimeout(()=>{if(M.fx===F&&F.st==='idle')fxFind(q);},0);}}
   return '<section class="isd-near"><header><b>근처에서 영업했던 현장</b><span>'+N.list.length+'곳'+(N.region?' · '+h(N.region):'')+'</span><i></i>'+(extra||'')+'</header>'
@@ -440,7 +446,7 @@
   if(!q||q.__deal!==d){let addr='';try{addr=String(root.detailAddress(d)||'');}catch(e){}q={__key:'deal:'+id,__deal:d,id:d.id,site:d.site,site_id:d.site_id,address:addr==='미입력'?'':addr};DSUB.set(id,q);if(DSUB.size>40)DSUB.delete(DSUB.keys().next().value);}
   return q;
  }
- const DEAL_CTX={host:()=>document.getElementById('detailView'),alive:q=>{const c=root.CUR_DETAIL,v=document.getElementById('detailView');return !!(c&&c.kind==='deal'&&c.item===q.__deal&&v&&v.classList.contains('on'));}};
+ const DEAL_CTX={compact:()=>{try{return !!(root.DealDetailV3&&root.DealDetailV3.tidy&&root.DealDetailV3.tidy());}catch(e){return false;}},host:()=>document.getElementById('detailView'),alive:q=>{const c=root.CUR_DETAIL,v=document.getElementById('detailView');return !!(c&&c.kind==='deal'&&c.item===q.__deal&&v&&v.classList.contains('on'));}};
  const dealNear={html:(d,s)=>nearHtml(dealSubject(d),s,'',DEAL_CTX),mount:host=>mount(host),action:(k,v,b,d,s)=>onAction(k,v,b,dealSubject(d),s)};
  root.InquirySite={dealNear,on,KIND,REOPEN_RPC,deals,summary,badge,lostFacts,historyHtml,aiLine,timeline,hasHistory,openerClue,relationHtml,nearList,nearHtml,reopenReady,shortWork,
   REOPEN_STAGES,GEO_LIST,GEO_SAVE,MAP_CFG,km:KM,kmText,nearBy,mapMode,mount,onAction,regionTokens,nameHints,GEO_RULE,cleanAddr,fxSearch,_map:M,_resetMap:resetMap};

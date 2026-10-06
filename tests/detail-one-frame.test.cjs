@@ -17,5 +17,8 @@ test('견적문의 예전 틀(경남지사로 넘긴 문의)의 왼쪽 = 문의 
  assert.match(col1,/'<span class="idv-miss">미입력 '\+missing\.length\+'<\/span>'/);
  assert.match(col1,/Object\.keys\(NEEDKEY\)\.map\(field=>/,'공사 시기 · 경쟁사 · 요청 자료 · 결정권자는 문의 정보의 줄');
  assert.doesNotMatch(col1,/need9|필수 확인</,'필수 확인 묶음을 따로 그리지 않는다');
- assert.match(read('deal-detail-v3.js'),/h3\.innerHTML='이 단계 필수 정보'\+\(miss\?' <span class="dv3-miss">미입력 '\+miss\+'<\/span>':''\)/,'기준: 파이프라인 상세의 필수 정보 상자');
+ /* 기준: 파이프라인 상세의 필수 정보 상자 — 정돈안(2026-10-06 design_handoff_deal_detail_tidy)부터는 제목 옆 '채운 수 / 전체' 하나 + [채우기 ▾] 접기(끄면 예전 '미입력 n') */
+ const v3=read('deal-detail-v3.js');
+ assert.match(v3,/h3\.innerHTML='이 단계 필수 정보'\+\(T\?' <span class="dvt-cnt'/);
+ assert.match(v3,/:\(miss\?' <span class="dv3-miss">미입력 '\+miss\+'<\/span>':''\)\);/);
 });

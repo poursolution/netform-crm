@@ -40,6 +40,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.waitForTimeout(900);
   const v=page.locator('#detailView.dv3');assert.equal(await v.count(),1);
   /* 종료된 영업건(실주): 빈 값 줄이 벌어지지 않는다(공통 빈칸 상자 규칙이 걸리던 것 · 2026-10-04 대표 캡처) */
+  await v.locator('[data-dv3="reqtoggle"]').click();await page.waitForTimeout(150);/* 정돈안: 이 단계 필수 정보는 접혀 있다 — 펼쳐서 본다 */
   assert.deepEqual(await v.locator('.dv3-row').evaluateAll(l=>[l.length>5,Math.max(...l.map(n=>Math.round(n.getBoundingClientRect().height)))<60,[...new Set(l.map(n=>n.querySelector('.empty')).filter(Boolean).map(n=>getComputedStyle(n).display+'|'+getComputedStyle(n).minHeight+'|'+getComputedStyle(n).paddingTop))].join(',')]),[true,true,'block|0px|0px']);
   const before=await page.evaluate(()=>JSON.stringify(B.deals[0]));
   const writes0=await page.evaluate(()=>JSON.stringify(__writes));
@@ -47,7 +48,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 1. [··· 기타 처리] → 승인 요청 */
   assert.equal(await v.locator('.aq-tag').count(),0);
   await v.locator('.tf-more').click();await page.waitForTimeout(150);
-  assert.deepEqual(await v.locator('.tf-menu button').allInnerTexts(),['담당자 변경','타사 이관 등록','승인 요청','보류','실주 처리']);
+  assert.deepEqual(await v.locator('.tf-menu button').allInnerTexts(),['☆ 즐겨찾기','담당자 변경','타사 이관 등록','승인 요청','보류','실주 처리']);/* 정돈안: 즐겨찾기도 이 메뉴에서 */
   await v.locator('.tf-menu button',{hasText:'승인 요청'}).click();await page.waitForTimeout(200);
   const dlg=page.locator('#aq-dialog .aq-dlg');assert.equal(await dlg.count(),1);
   const labels=()=>dlg.locator('.aq-form>span').allInnerTexts();
@@ -170,7 +171,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 10. 끄기 */
   await page.evaluate(()=>{goPage('pipe');G._detailPopup=true;drwDeal(JSON.stringify(B.deals[1]));});await page.waitForTimeout(700);
   await page.evaluate(()=>{G.approvalRequestOff=true;DealDetailV3.apply();});await page.locator('#detailView .tf-more').click();await page.waitForTimeout(150);
-  assert.deepEqual(await page.locator('#detailView .tf-menu button').allInnerTexts(),['담당자 변경','타사 이관 등록','보류','실주 처리']);
+  assert.deepEqual(await page.locator('#detailView .tf-menu button').allInnerTexts(),['☆ 즐겨찾기','담당자 변경','타사 이관 등록','보류','실주 처리']);
   assert.deepEqual(errs,[]);
   console.log(JSON.stringify({status:'PASS',menu_and_dialog_as_design:true,real_dates_not_approval_day:true,result_fix_contract_fields:true,split_sum_100:true,incentive_auto_amount_month:true,transfer_dates_in_this_dialog:true,sent_review_tag_no_data_change:true,approver_decides_who_recorded:true,own_and_admin_no_buttons:true,requester_notified_once:true,switch:true}));
  }finally{await browser.close();srv.close();}

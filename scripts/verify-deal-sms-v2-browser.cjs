@@ -25,7 +25,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   });
   await page.waitForTimeout(900);
   /* 1. [문자] → 가운데 패널 · v2 화면 · 스크롤 없음 */
-  await page.locator('#detailView .dv3-acts button',{hasText:'문자'}).first().click();await page.waitForTimeout(700);
+  await page.locator('#detailView [data-dv3="sms"]',{hasText:'문자'}).first().click();await page.waitForTimeout(700);
   const p=page.locator('#detailView .dw-center>.dv3-cpanel:not([hidden]) #ddvPanel.dp-sms.ds2-on');assert.equal(await p.count(),1,'가운데 패널의 문자 보내기 v2');
   const box=p.locator('.ds2');
   assert.deepEqual(await page.evaluate(()=>{const c=document.querySelector('#detailView .dv3-cpanel'),o=document.querySelector('#ddvPanel>.ddv-side-body');return [c.scrollHeight<=c.clientHeight,getComputedStyle(o).display,!!document.querySelector('#ddvPanel #rm-body')];}),[true,'none',true],'한 화면(스크롤 없음) · 예전 본문은 숨겨 둠(엔진이 읽는 칸은 유지)');
@@ -75,13 +75,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#ddvPanel').count(),0,'보낸 뒤 창이 닫힌다');assert.equal(await page.locator('#detailView .dv3-cpanel:not([hidden])').count(),0);
   /* 6. 수신 거부 연락처: 보낼 수 없음 + 이유 */
   await page.evaluate(()=>{const d=CUR_DETAIL.item,p=itemPatch(d,'deal');p.contactInfo=Object.assign({},contactInfo(d,p),{sendBlocked:true,sendBlockedReason:'고객 요청'});});
-  await page.locator('#detailView .dv3-acts button',{hasText:'문자'}).first().click();await page.waitForTimeout(600);
+  await page.locator('#detailView [data-dv3="sms"]',{hasText:'문자'}).first().click();await page.waitForTimeout(600);
   const blocked=await page.evaluate(()=>!!(REL_MSG&&(REL_MSG.contact.sendBlocked||REL_MSG.contact.optOutAt)));
   if(blocked){assert.deepEqual(await page.locator('#ddvPanel .ds2-ft .go').evaluate(n=>[n.textContent,n.disabled]),['보낼 수 없음',true]);assert.match(await page.locator('#ddvPanel .ds2-ft>span').innerText(),/수신거부 · 발송차단|수신거부·발송차단/);assert.equal(await page.locator('#ddvPanel .ds2-hd em').innerText(),'수신 거부');}
   await page.locator('#ddvPanel [data-ds="cancel"]').first().click();await page.waitForTimeout(200);assert.equal(await page.locator('#ddvPanel').count(),0,'취소 = 닫기');
   /* 7. 끄기 → 예전 본문 */
   await page.evaluate(()=>{G.dealSmsV2Off=true;});
-  await page.locator('#detailView .dv3-acts button',{hasText:'문자'}).first().click();await page.waitForTimeout(600);
+  await page.locator('#detailView [data-dv3="sms"]',{hasText:'문자'}).first().click();await page.waitForTimeout(600);
   assert.equal(await page.locator('#ddvPanel.dp-sms.ds2-on').count(),0);assert.equal(await page.locator('#ddvPanel.dp-sms .rm-shell').count(),1);
   /* 8. 상세 밖에서 연 문자(확장관리 · 고객 자산)도 같은 화면(2026-10-04 대표 "확장관리 문자 누르면 옛날 거 뜬다 · 통일화"): 예전 '메시지 보내기' 창 내용 대신 같은 .ds2 */
   await page.evaluate(()=>{G.dealSmsV2Off=false;try{closeKakaoModal();}catch(e){}try{closeDetail();}catch(e){}});await page.waitForTimeout(300);
