@@ -154,7 +154,7 @@
  /* 근처에서 영업했던 현장: 지금은 같은 지역(주소의 시 · 구) 기준 — 좌표가 준비되면 반경 · 거리로 바꾼다 */
  function nearList(q){
   let region='';try{region=String(root.siteRegionAny({site:root.standardSiteTitle(q.site,root.detailAddress(q)),address:root.detailAddress(q)})||'').trim();}catch(e){}
-  if(!region)return {region:'',list:[]};const mine=new Set(deals(q).map(x=>x.d));
+  if(!region)return {region:'',list:[]};const mine=new Set(deals(q).map(x=>x.d));if(q.__deal)mine.add(q.__deal);
   const ORDER={won:0,open:1,hold:1,lost:2},list=((root.B&&root.B.deals)||[]).filter(d=>!mine.has(d)).map(d=>({d,k:kindOf(d)})).filter(x=>ORDER[x.k]!=null).filter(x=>{try{return root.siteRegionAny(x.d)===region;}catch(e){return false;}})
    .map(x=>Object.assign(x,{date:dateOf(x.d,x.k),work:workOf(x.d)})).sort((a,b)=>ORDER[a.k]-ORDER[b.k]||String(b.date).localeCompare(String(a.date)));
   return {region,list:oneRowPerSite(list)};
@@ -185,11 +185,14 @@
  const isUuid=v=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v||''));
  const radOf=s=>[1,3,5].includes(Number(s&&s.rad))?Number(s.rad):3;
  const bare=v=>String(v||'').replace(/^\s*\[[^\]]*\]\s*/,'').trim();
+ /* 지도 칸의 주인: 견적문의(q) 또는 영업건(dealSubject 가 만든 것 — __key · __deal). 열쇠는 하나로 */
+ const keyOf=q=>q&&q.__key?q.__key:root.inqKey(q);
+ /* 지도 칸이 놓이는 곳: 견적문의 상세(기본) 또는 영업건 상세(DEAL_CTX) — 지금 보고 있는 건이 바뀌었으면 건드리지 않는다 */
+ const INQ_CTX={host:()=>document.querySelector('#inq-inbox-dialog .inq-dialog'),alive:q=>{let cur=null;try{cur=root.inqCtlFind(root.G.inqSelKey,false);}catch(e){}return cur===q;}};
  /* 근처 현장 칸만 다시 그린다 — 창 전체를 다시 그리면 적고 있던 글의 커서가 튄다 */
  function refreshNear(){
-  const L=M.last,dlg=document.querySelector('#inq-inbox-dialog .inq-dialog'),sec=dlg&&dlg.querySelector('.isd-near');if(!L||!sec||!on())return;
-  let cur=null;try{cur=root.inqCtlFind(root.G.inqSelKey,false);}catch(e){}if(cur!==L.q)return;
-  const t=document.createElement('template');t.innerHTML=nearHtml(L.q,L.s,L.extra);if(M.el&&M.el.parentNode)M.el.remove();sec.replaceWith(t.content);mount(dlg);
+  const L=M.last;if(!L||!on())return;const ctx=L.ctx||INQ_CTX,dlg=ctx.host(),sec=dlg&&dlg.querySelector('.isd-near');if(!sec||!ctx.alive(L.q))return;
+  const t=document.createElement('template');t.innerHTML=nearHtml(L.q,L.s,L.extra,ctx);if(M.el&&M.el.parentNode)M.el.remove();sec.replaceWith(t.content);mount(dlg);
  }
  function geoLoad(){
   if(M.st!=='idle')return;if(!rpcOk(GEO_LIST)){M.st='nostore';return;}
@@ -238,7 +241,7 @@
  /* 지금 문의의 위치: 현장 좌표가 있으면 그것, 없으면 문의 주소(없으면 현장 이름)로 찾는다. 'wait' = 찾는 중 */
  function centerOf(q){
   const id=q.site_id?String(q.site_id):'',p=id?M.pts.get(id):undefined;if(p)return p;
-  const k=root.inqKey(q);if(M.inq.has(k))return M.inq.get(k);
+  const k=keyOf(q);if(M.inq.has(k))return M.inq.get(k);
   if(M.sdk!=='ready')return 'wait';
   M.inq.set(k,'wait');let addr='';try{addr=String(root.detailAddress(q)||'').trim();}catch(e){}if(addr==='미입력')addr='';
   locate(addr,String(q.site||'').trim()).then(r=>{
@@ -258,7 +261,7 @@
  }
  /* 좌표가 있는 다른 현장 전부(가까운 순) */
  function nearAll(q){
-  const c=centerOf(q);if(!c||c==='wait')return [];const mine=new Set(deals(q).map(x=>x.d)),ORDER={won:0,open:1,hold:1,lost:2};
+  const c=centerOf(q);if(!c||c==='wait')return [];const mine=new Set(deals(q).map(x=>x.d)),ORDER={won:0,open:1,hold:1,lost:2};if(q.__deal)mine.add(q.__deal);
   const list=((root.B&&root.B.deals)||[]).filter(d=>!mine.has(d)&&d.site_id&&M.pts.get(String(d.site_id))).map(d=>({d,k:kindOf(d)})).filter(x=>ORDER[x.k]!=null)
    .map(x=>Object.assign(x,{date:dateOf(x.d,x.k),work:workOf(x.d),pt:M.pts.get(String(x.d.site_id))})).sort((a,b)=>ORDER[a.k]-ORDER[b.k]||String(b.date).localeCompare(String(a.date)));
   return oneRowPerSite(list).map(x=>Object.assign(x,{dist:KM(c,x.pt)})).sort((a,b)=>a.dist-b.dist);
@@ -281,7 +284,7 @@
   const m=M.marks.get(key);if(!m||!M.map)return false;const K=root.kakao.maps;
   try{M.map.setLevel(4);M.map.panTo(new K.LatLng(m.p.lat,m.p.lng));}catch(e){}
   M.marks.forEach(x=>x.e.classList.remove('on'));m.e.classList.add('on');M.focus=key;
-  document.querySelectorAll('#inq-inbox-dialog .isd-nrow').forEach(b=>b.classList.toggle('on',b.dataset.v===key));return true;
+  document.querySelectorAll('.isd-near .isd-nrow').forEach(b=>b.classList.toggle('on',b.dataset.v===key));return true;
  }
  /* 상세 창을 그린 뒤: 지도 상자를 제자리에 꽂고 원 · 점을 맞춘다(지도는 한 번만 만들어 옮겨 쓴다) */
  function mount(dlg){
@@ -294,7 +297,7 @@
    if(!M.map){M.map=new K.Map(M.el,{center:ll(c),level:6});M.circle=new K.Circle({center:ll(c),radius:rad*1000,strokeWeight:1.5,strokeColor:'#3b6ce4',strokeOpacity:.9,strokeStyle:'dash',fillColor:'#3b6ce4',fillOpacity:.06});M.circle.setMap(M.map);}
    else M.map.relayout();
    /* 점은 반경 밖도 조금 더(가장 큰 반경의 두 배까지) 찍는다 — 목록은 반경 안만 */
-   const rows=nearAll(L.q).filter(x=>x.dist<=10),sig=[root.inqKey(L.q),rad,c.lat,c.lng,rows.map(x=>root.dealKey(x.d)).join(',')].join('|');
+   const rows=nearAll(L.q).filter(x=>x.dist<=10),sig=[keyOf(L.q),rad,c.lat,c.lng,rows.map(x=>root.dealKey(x.d)).join(',')].join('|');
    if(sig!==M.sig){
     M.marks.forEach(m=>m.o.setMap(null));M.marks.clear();
     M.circle.setPosition(ll(c));M.circle.setRadius(rad*1000);
@@ -337,8 +340,8 @@
   if(mode==='error')return '<b>지도를 불러오지 못했습니다</b><span>잠시 뒤 창을 다시 열어 주세요.'+fall+'</span>';
   return '<b>지도 준비 중</b><span>카카오맵 키 등록과 현장 좌표 저장이 끝나면 여기에 지도 · 반경 · 거리가 표시됩니다.'+fall+'</span>';
  }
- function nearHtml(q,s,extra){
-  if(!on())return '';M.last={q,s,extra};const mode=mapMode(q);
+ function nearHtml(q,s,extra,ctx){
+  if(!on())return '';M.last={q,s,extra,ctx:ctx||null};const mode=mapMode(q);
   const legend='<span class="lg"><span><i style="background:#1f9d55"></i>수주</span><span><i style="background:#3b6ce4"></i>진행</span><span><i style="background:#9aa0ab"></i>실주</span></span>',tip='<small>방문 일정 잡을 때 같은 날 들를 현장 · 소개받을 관리소장 찾기용 · 수주 현장은 레퍼런스로</small>';
   if(mode==='map'){
    const rad=radOf(s),rows=nearBy(q,rad),shown=rows.slice(0,8),pend=pendingCount();
@@ -355,6 +358,15 @@
    +(shown.length?'<div class="isd-nlist">'+shown.map(x=>nearRow(x)).join('')+(N.list.length>shown.length?'<span class="isd-more">외 '+(N.list.length-shown.length)+'곳</span>':'')+'</div>':'<div class="isd-none">같은 지역에서 영업했던 현장이 없습니다.</div>')
    +tip+'</section>';
  }
- root.InquirySite={on,KIND,REOPEN_RPC,deals,summary,badge,lostFacts,historyHtml,aiLine,timeline,hasHistory,openerClue,relationHtml,nearList,nearHtml,reopenReady,shortWork,
+ /* ── 영업건 상세의 같은 칸(2026-10-06 대표 "파이프라인도 동일하게 지도 넣어줘") — deal-detail-v3.js 가 오른쪽 맨 아래에 꽂는다 ── */
+ const DSUB=new Map();
+ function dealSubject(d){
+  const id=String(d&&d.id||'');let q=DSUB.get(id);
+  if(!q||q.__deal!==d){let addr='';try{addr=String(root.detailAddress(d)||'');}catch(e){}q={__key:'deal:'+id,__deal:d,id:d.id,site:d.site,site_id:d.site_id,address:addr==='미입력'?'':addr};DSUB.set(id,q);if(DSUB.size>40)DSUB.delete(DSUB.keys().next().value);}
+  return q;
+ }
+ const DEAL_CTX={host:()=>document.getElementById('detailView'),alive:q=>{const c=root.CUR_DETAIL,v=document.getElementById('detailView');return !!(c&&c.kind==='deal'&&c.item===q.__deal&&v&&v.classList.contains('on'));}};
+ const dealNear={html:(d,s)=>nearHtml(dealSubject(d),s,'',DEAL_CTX),mount:host=>mount(host),action:(k,v,b,d,s)=>onAction(k,v,b,dealSubject(d),s)};
+ root.InquirySite={dealNear,on,KIND,REOPEN_RPC,deals,summary,badge,lostFacts,historyHtml,aiLine,timeline,hasHistory,openerClue,relationHtml,nearList,nearHtml,reopenReady,shortWork,
   REOPEN_STAGES,GEO_LIST,GEO_SAVE,MAP_CFG,km:KM,kmText,nearBy,mapMode,mount,onAction,regionTokens,cleanAddr,_map:M,_resetMap:resetMap};
 })(window);

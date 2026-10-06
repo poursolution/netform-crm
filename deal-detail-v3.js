@@ -667,8 +667,26 @@
   if(act==='owner'){const p=ensureCenter(v);if(p&&p.dataset.by==='owner'&&p.firstElementChild&&p.firstElementChild.children.length)return true;if(!centerToggle('owner'))root.DetailActions.open('owner');return true;}
   return false;
  }
- function cleanup(v){v.classList.remove('dv3','dv3-legacy');v.querySelectorAll('.dv3-left').forEach(n=>n.remove());v.querySelectorAll('.dv3-old').forEach(n=>n.classList.remove('dv3-old'));v.querySelectorAll('.dv3-chg,.dv3-hint,.dv3-title,.dv3-reco,.dv3-form,.dv3-nextonly,.dv3-move,.dv3-cpanel,.dv3-subrow,.dv3-kind').forEach(n=>n.remove());{const bc=v.querySelector('.ddv-chips .idv-brand');if(bc){bc.style.background='';bc.style.color='';delete bc.dataset.c;}}v.querySelectorAll('.dv3-slot').forEach(n=>{if(!n.children.length)n.remove();});}
- function apply(){const r=applyBase();try{root.DealTransfer&&root.DealTransfer.decorate();}catch(e){if(root.console)root.console.warn('[타사 이관]',e);}try{root.DealWin&&root.DealWin.decorate();}catch(e){if(root.console)root.console.warn('[수주 유형]',e);}try{root.ChangeEvent&&root.ChangeEvent.decorate();}catch(e){if(root.console)root.console.warn('[변화 이벤트]',e);}try{root.WorkRequest&&root.WorkRequest.decorate&&root.WorkRequest.decorate();}catch(e){}try{root.ApprovalRequest&&root.ApprovalRequest.decorate();}catch(e){if(root.console)root.console.warn('[승인 요청]',e);}try{root.DealOwner&&root.DealOwner.decorate();}catch(e){if(root.console)root.console.warn('[담당 · 귀속]',e);}return r;}
+ function cleanup(v){v.classList.remove('dv3','dv3-legacy');v.querySelectorAll('.dv3-left,.dv3-near').forEach(n=>n.remove());v.querySelectorAll('.dv3-old').forEach(n=>n.classList.remove('dv3-old'));v.querySelectorAll('.dv3-chg,.dv3-hint,.dv3-title,.dv3-reco,.dv3-form,.dv3-nextonly,.dv3-move,.dv3-cpanel,.dv3-subrow,.dv3-kind').forEach(n=>n.remove());{const bc=v.querySelector('.ddv-chips .idv-brand');if(bc){bc.style.background='';bc.style.color='';delete bc.dataset.c;}}v.querySelectorAll('.dv3-slot').forEach(n=>{if(!n.children.length)n.remove();});}
+ /* 근처에서 영업했던 현장(지도 · 반경 · 거리순) — 견적문의 상세와 같은 칸을 오른쪽 맨 아래에 둔다(2026-10-06 대표 "파이프라인도 동일하게 지도 넣어줘").
+    그리기 · 좌표 · 지도는 inquiry-site.js(InquirySite.dealNear) 한곳. 끄기: G.inqSiteOff */
+ function nearMount(){
+  const v=view(),cur=root.CUR_DETAIL,IS=root.InquirySite;
+  if(!v||!v.classList.contains('dv3')||!cur||cur.kind!=='deal'||!IS||!IS.on()||!IS.dealNear){if(v)v.querySelectorAll('.dv3-near').forEach(n=>n.remove());return;}
+  const r=v.querySelector('.dw-right');if(!r)return;const d=cur.item,S=st(d);S.near=S.near||{};
+  let box=r.querySelector(':scope>.dv3-near');if(!box){box=el('div','dv3-near');box.addEventListener('click',onNearClick);}
+  if(r.lastElementChild!==box)r.append(box);
+  const html=IS.dealNear.html(d,S.near);if(box.__h!==html||!box.querySelector('.isd-near')){box.__h=html;box.innerHTML=html;}
+  IS.dealNear.mount(box);
+ }
+ function onNearClick(e){
+  const b=e.target.closest('[data-idv]');if(!b)return;const cur=root.CUR_DETAIL,IS=root.InquirySite;if(!cur||cur.kind!=='deal'||!IS||!IS.dealNear)return;e.stopPropagation();
+  const d=cur.item,S=st(d);S.near=S.near||{};const k=b.dataset.idv,val=b.dataset.v;
+  if(IS.dealNear.action(k,val,b,d,S.near))return;
+  /* 이미 고른 줄을 다시 누르면(또는 지도에 점이 없는 줄) 그 영업건을 연다 */
+  if(k==='near'){const t=(root.B&&root.B.deals||[]).find(x=>root.dealKey(x)===val);if(t)root.drwDeal(JSON.stringify(t));}
+ }
+ function apply(){const r=applyBase();try{nearMount();}catch(e){if(root.console)root.console.warn('[근처 현장]',e);}try{root.DealTransfer&&root.DealTransfer.decorate();}catch(e){if(root.console)root.console.warn('[타사 이관]',e);}try{root.DealWin&&root.DealWin.decorate();}catch(e){if(root.console)root.console.warn('[수주 유형]',e);}try{root.ChangeEvent&&root.ChangeEvent.decorate();}catch(e){if(root.console)root.console.warn('[변화 이벤트]',e);}try{root.WorkRequest&&root.WorkRequest.decorate&&root.WorkRequest.decorate();}catch(e){}try{root.ApprovalRequest&&root.ApprovalRequest.decorate();}catch(e){if(root.console)root.console.warn('[승인 요청]',e);}try{root.DealOwner&&root.DealOwner.decorate();}catch(e){if(root.console)root.console.warn('[담당 · 귀속]',e);}return r;}
  function applyBase(){
   const v=view(),cur=root.CUR_DETAIL;if(!v)return;
   if(!enabled()||!v.classList.contains('ddv')||!cur||cur.kind!=='deal'){if(v.classList.contains('dv3'))cleanup(v);return;}

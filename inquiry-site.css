@@ -96,3 +96,43 @@
 #inq-inbox-dialog .isd-reopen .row{display:grid;grid-template-columns:minmax(0,1fr) 132px;gap:6px}
 #inq-inbox-dialog .isd-reopen .two button.pri{border-color:#15171c;background:#15171c;color:#fff;font-weight:700}
 #inq-inbox-dialog .isd-reopen .two button:disabled{border-color:#e3e6ec;background:#f5f6f8;color:#9aa0ab}
+/* 영업건 상세(파이프라인)의 같은 칸 — 위 견적문의 상세 규칙을 그대로(2026-10-06) */
+#detailView .dv3-near{margin-top:14px}
+#detailView .isd-near button{font:inherit;margin:0;height:auto;box-shadow:none}
+#detailView .isd-near .idv-link{display:none}
+#detailView .isd-more{font-size:12px;color:#9ca3af}
+#detailView .isd-near{border-top:1px solid #eef0f3;padding-top:12px;display:flex;flex-direction:column;gap:8px}
+#detailView .isd-near>header{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+#detailView .isd-near>header b{font-size:14px}
+#detailView .isd-near>header span{font-size:12px;color:#6b7280}
+#detailView .isd-near>header>i{flex:1}
+#detailView .isd-near .ctl{display:flex;gap:4px;align-items:center}
+#detailView .isd-near .seg{display:flex;border:1px solid #d9dde4;border-radius:7px;overflow:hidden}
+#detailView .isd-near .seg button{border:0;background:#fff;color:#374151;font:inherit;font-size:12px;font-weight:700;padding:4px 10px;margin:0;height:auto;border-radius:0;box-shadow:none}
+#detailView .isd-near .seg button:disabled{color:#b6bcc6;cursor:not-allowed}
+#detailView .isd-near .seg button[aria-pressed="true"]{background:#15171c;color:#fff}
+#detailView .isd-near .lg{margin-left:auto;display:flex;gap:8px;font-size:11px;color:#6b7280}
+#detailView .isd-near .lg span{display:flex;align-items:center;gap:3px}
+#detailView .isd-near .lg i{width:8px;height:8px;border-radius:50%}
+#detailView .isd-map{height:230px;border-radius:10px;overflow:hidden;border:1px solid #e3e6ec;background:#eef0f3}
+#detailView .isd-map.empty{height:auto;min-height:84px;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:14px 16px;background:#f8f9fb}
+#detailView .isd-map.empty b{font-size:13px;color:#374151}
+#detailView .isd-map.empty span{font-size:12px;color:#6b7280;line-height:1.55}
+#detailView .isd-nlist{display:flex;flex-direction:column}
+#detailView .isd-nrow{border:0;border-bottom:1px solid #f2f3f6;background:#fff;text-align:left;padding:7px 2px;margin:0;height:auto;border-radius:0;box-shadow:none;display:flex;align-items:center;gap:8px;font:inherit;color:#15171c;cursor:pointer;width:100%}
+#detailView .isd-nrow:hover{background:#f8f9fb}
+#detailView .isd-nrow>i{flex:none;width:8px;height:8px;border-radius:50%}
+#detailView .isd-nrow>span{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+#detailView .isd-nrow b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#detailView .isd-nrow small{font-size:11.5px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#detailView .isd-near>small{font-size:11.5px;color:#9ca3af;line-height:1.5}
+#detailView .isd-none{font-size:12.5px;color:#9ca3af;padding:6px 2px}
+#detailView .isd-near .seg button:not(:disabled){cursor:pointer}
+#detailView .isd-mapbox{width:100%;height:100%}
+#detailView .isd-nrow>em{flex:none;font-style:normal;font-size:12px;font-weight:700;color:#374151}
+#detailView .isd-nrow.on{background:#f5f8ff}
+#detailView .isd-pend{font-size:11.5px;color:#9ca3af}
+#detailView .isd-keyform{display:flex;gap:6px;margin-top:4px}
+#detailView .isd-keyform input{flex:1;min-width:0;border:1px solid #d9dde4;border-radius:7px;padding:6px 8px;font:inherit;font-size:12.5px;height:auto;margin:0;background:#fff;color:#15171c}
+#detailView .isd-keyform button{flex:none;border:1px solid #15171c;background:#15171c;color:#fff;font:inherit;font-size:12.5px;font-weight:700;border-radius:7px;padding:6px 12px;margin:0;height:auto;box-shadow:none;cursor:pointer}
+#detailView .isd-map.empty .err{color:#b42318}
