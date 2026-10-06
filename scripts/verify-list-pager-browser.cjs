@@ -69,12 +69,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
 
   /* 2. 견적문의 목록: 45건 → 20 · 20 · 5 */
   await page.evaluate(()=>goPage('inq'));await page.waitForTimeout(500);
-  const I='#inq-v3',irows=page.locator(I+' .il-table .il-row');
+  /* 견적문의 v4(목록 옆 상세)의 왼쪽 목록 — 예전 목록 v3 는 가려져 있다 */
+  const I='#inq-v4',irows=page.locator(I+' .i4-list .i4-row');
   assert.equal(await irows.count(),20);assert.match(await pagerOf(I).locator('.lpg-info').innerText(),/^1–20 \/ 45건$/);assert.deepEqual(await nums(I),['‹','1','2','3','›']);
   assert.equal(await page.locator(I+' .il-more').count(),0);
   await pagerOf(I).locator('.lpg-b',{hasText:/^3$/}).click();await page.waitForTimeout(250);
   assert.equal(await irows.count(),5);assert.match(await pagerOf(I).locator('.lpg-info').innerText(),/^41–45 \/ 45건$/);
-  await page.locator(I+' [data-il="sort"]').last().click();await page.waitForTimeout(250);
+  await page.locator(I+' [data-i4="sort"]').last().click();await page.waitForTimeout(250);
   assert.match(await pagerOf(I).locator('.lpg-info').innerText(),/^1–20 \/ 45건$/,'정렬을 바꾸면 1쪽으로');
   if(shot)await page.screenshot({path:shot.replace(/\.png$/,'-2-inq.png')});
 

@@ -104,7 +104,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await side.locator('.b2b-go>span').innerText(),'이미 처리됐거나 영업으로 넘어간 문의입니다. 새로 고쳐 확인해 주세요.');
   /* 8. 공사 견적문의로 돌아가기 · 끄기 */
   await pg.locator('.b2b-kinds a',{hasText:'공사 견적문의'}).click();await page.waitForTimeout(200);
-  assert.equal(await pg.locator('.b2b-view').count(),0);assert.ok((await pg.locator('.il-row:visible').count())>=1,'공사 견적문의 목록이 다시 보인다');
+  assert.equal(await pg.locator('.b2b-view').count(),0);assert.ok((await pg.locator('#inq-v4 .i4-row:visible').count())>=1,'공사 견적문의 목록이 다시 보인다');
   await page.evaluate(()=>{G.inquiryB2BOff=true;paint();});await page.waitForTimeout(200);
   assert.equal(await pg.locator('.b2b-bar').count(),0,'끄면 탭이 없다');
   assert.deepEqual(errs,[]);
