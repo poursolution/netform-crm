@@ -42,8 +42,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual([one(await entry.innerText()),await entry.getAttribute('aria-expanded'),await lib.evaluate(n=>getComputedStyle(n).display)],['기술자문 원본 자료 ▾','false','none']);
   await entry.click();await page.waitForTimeout(150);
   assert.deepEqual([one(await pgS.locator('.ac-title [data-ac="advisory"]').innerText()),await lib.evaluate(n=>getComputedStyle(n).display!=='none'),await lib.locator('h3').innerText()],['기술자문 원본 자료 ▴',true,'기술자문 원본 자료']);
-  /* ② 조회가 연결되기 전: 탭 없이 계약 문서 칸만(예전 그대로) */
-  assert.deepEqual([await lib.locator('.adv-tabs').count(),await lib.locator('button.dact').first().innerText(),await page.evaluate(()=>TechnicalAdvisoryUI.libraryLabel())],[0,'계약 조회','기술자문 원본 자료']);
+  /* ② 운영 초기화로 기존 SB 조회 어댑터가 연결되어 탭이 생긴다. 외부 요청은 이 합성 검사에서 차단한다. */
+  assert.deepEqual([await lib.locator('.adv-tabs').count(),await lib.locator('.adv-docs button.dact').first().innerText(),await page.evaluate(()=>TechnicalAdvisoryUI.libraryLabel())],[1,'계약 조회','기술자문 원본 자료']);
+  assert.equal(await page.evaluate(()=>TechnicalAdvisoryUI.projects._state.loader===TechnicalAdvisoryUI.projects.read),true);
   /* ③ 연결(가짜 조회 함수): 33건 = 20 + 13 */
   await page.evaluate(()=>{
    const mk=n=>({source_project_id:'P-'+String(1000+n),revision:'r1',received_at:'2026-10-06T01:02:03Z',site_name:n===4||n===5?'[경기 수원] 같은이름아파트':'[합성] 현장 '+n,work_name:'옥상 방수 '+n,company_name:n%3?'합성건설':'',current_source_manager:'담당 '+(n%4),source_project_status:n%2?'진행':'계약',source_contract_document_type:n<=10?null:'용역계약서',source_printed_contract_date:n<=10?null:'2026-08-0'+(n%9+1),source_consulting_contract_amount:n===1?null:n===2?0:n*1100000,has_contract_document:n>10,operations:n===3?null:{schema_version:1,source_status:'시공',completed:n%5===0,progress_rate:n*2,start_date:'2026-09-01',completion_date:n%5===0?'2026-09-30':null}});
@@ -51,9 +52,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    window.ADV={calls:[],mode:'ok',ALL};
    window.advLoader=async({after})=>{ADV.calls.push(after);await new Promise(r=>setTimeout(r,30));if(ADV.mode==='denied')throw Object.assign(new Error('forbidden'),{code:'42501'});if(ADV.mode==='fail')throw new Error('READ_FAILED');if(ADV.mode==='empty')return {items:[],next_cursor:null};
     const from=after?ALL.findIndex(p=>p.source_project_id===after)+1:0,items=ALL.slice(from,from+20);return {items,next_cursor:from+20<ALL.length?items[items.length-1].source_project_id:null};};
-   TechnicalAdvisoryUI.projects.connect(advLoader);
+   ADV.rpc=[];
+   window.SB={rpc:async(name,args)=>{ADV.rpc.push({name,args});try{return {data:{ok:true,...await advLoader({after:args.p_after})}};}catch(error){return {error};}}};
+   TechnicalAdvisoryUI.projects.connect(TechnicalAdvisoryUI.projects.read);
   });
   await page.waitForSelector('#pg-sites .advisory-library .adv-proj-row');
+  assert.deepEqual(await page.evaluate(()=>ADV.rpc),[{name:'crm_advisory_project_read_v1',args:{p_after:null,p_deal_id:null}}],'실제 조회 어댑터는 기존 SB RPC로 한 쪽만 요청한다');
   assert.deepEqual(await lib.locator('.adv-tabs [role="tab"]').evaluateAll(l=>l.map(b=>[b.textContent,b.getAttribute('aria-selected')])),[['프로젝트 기본 정보','true'],['계약 문서','false']]);
   assert.deepEqual([await lib.locator('.adv-proj-row').count(),one(await lib.locator('.adv-count').innerText()),await page.evaluate(()=>ADV.calls.length+':'+ADV.calls[0])],[20,'받아 온 프로젝트 20건 · 다음 쪽이 더 있습니다 · 줄을 누르면 기본 정보가 열립니다','1:null']);
   assert.deepEqual((await lib.locator('.lpg .lpg-b').allInnerTexts()).map(one),['‹','1','2','›'],'다음 묶음이 있으면 그다음 쪽 번호까지만');assert.equal(await lib.locator('.lpg .lpg-info').count(),0,'전체 건수는 알 수 없으므로 적지 않는다');
@@ -88,9 +92,23 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await lib.locator('[data-advtab="docs"]').click();await page.waitForTimeout(60);
   assert.deepEqual([await lib.locator('.adv-proj').evaluate(n=>n.hidden),await lib.locator('.adv-docs').evaluate(n=>n.hidden),await lib.locator('.adv-docs button.dact').first().innerText(),one(await lib.locator('.adv-docs>p').first().innerText())],[true,false,'계약 조회','영업건 등록 여부와 관계없이 조회 권한이 있는 원본 계약을 확인합니다.']);
   await lib.locator('[data-advtab="proj"]').click();await page.waitForTimeout(60);assert.equal(await lib.locator('.adv-proj-row').count(),20);
+  /* 문서 유무 없는 실제 RPC 명세: 유형이 있어도 꼬리표를 추정하지 않는다. 다음 쪽 실패는 받은 자료를 보존한다. */
+  await page.evaluate(()=>{ADV.ALL.forEach(p=>delete p.has_contract_document);return TechnicalAdvisoryUI.projects.reload();});
+  assert.equal(await lib.locator('.adv-proj-row .adv-chip.x').count(),0);
+  assert.equal(await lib.getByText('계약 문서 있음',{exact:true}).count(),0);
+  await page.evaluate(()=>{ADV.mode='fail';});await lib.locator('[data-advproj="page"][data-page="2"]').first().click();
+  await page.waitForFunction(()=>TechnicalAdvisoryUI.projects._state.state==='failed');
+  assert.equal(await lib.locator('.adv-proj-row').count(),20);assert.match(await lib.locator('.adv-proj-view').innerText(),/다음 쪽을 불러오지 못했습니다/);
+  await page.evaluate(()=>{ADV.mode='ok';});await lib.locator('[data-advproj="page"][data-page="2"]').first().click();
+  await page.waitForFunction(()=>TechnicalAdvisoryUI.projects._state.page===2&&!TechnicalAdvisoryUI.projects._state.busy);
+  assert.equal(await lib.locator('.adv-proj-row').count(),13);
+  await lib.locator('[data-advtab="docs"]').click();await lib.locator('[data-advtab="proj"]').click();
+  assert.equal(await lib.locator('.adv-proj-row').count(),20,'탭 이동 후 첫 쪽');
   /* ⑧ 진입 버튼을 다시 누르면 칸이 닫힌다 · 자료는 바뀌지 않는다(조회만) */
   await pgS.locator('.ac-title [data-ac="advisory"]').click();await page.waitForTimeout(100);
   assert.deepEqual([await lib.evaluate(n=>getComputedStyle(n).display),await page.evaluate(()=>B.deals.length)],['none',7]);
+  await page.evaluate(()=>window.dispatchEvent(new Event('phase1:identity-cleared')));
+  assert.equal(await lib.locator('.adv-proj-row').count(),0,'계정 변경 시 이전 자료 제거');
   assert.deepEqual(errs,[],'화면 오류 없음: '+errs.join(' | '));
   console.log('advisory projects ok');
  }finally{await browser.close();srv.close();}
