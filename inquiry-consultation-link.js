@@ -57,8 +57,16 @@
  function footBtn(c){
   if(!on()||!c||c.type!=='inquiry'||!admin())return '';
   const s=cst(c),rd=ready(),linked=isLinked(c,s),dis=!rd||s.loading||s.busy,t=rd?'':' title="서버 적용 뒤에 열립니다"';
-  if(linked)return s.open?'<button type="button" class="dv-primary" data-icl="save-unlink"'+(s.reason.trim()&&!dis?'':' disabled')+'>'+(s.busy?'저장 중…':'해제 저장')+'</button>':'<button type="button" class="dv-ghost" data-icl="unlink"'+(dis?' disabled':'')+t+'>연결 해제</button>';
-  return s.open?'<button type="button" class="dv-primary" data-icl="save-link"'+(s.ck.every(Boolean)&&!dis?'':' disabled')+'>'+(s.busy?'저장 중…':'저장')+'</button>':'<button type="button" class="dv-ghost" data-icl="link"'+(dis?' disabled':'')+t+'>같은 상담으로 연결</button>';
+  /* 시안 색: 연결 · 저장 = 검정, 해제 = 회색, 아직 못 누르는 저장 = 흐린 회색 */
+  if(linked)return s.open?'<button type="button" class="dv-primary icl-main" data-icl="save-unlink"'+(s.reason.trim()&&!dis?'':' disabled')+'>'+(s.busy?'저장 중…':'해제 저장')+'</button>':'<button type="button" class="dv-primary icl-main icl-grey" data-icl="unlink"'+(dis?' disabled':'')+t+'>연결 해제</button>';
+  return s.open?'<button type="button" class="dv-primary icl-main" data-icl="save-link"'+(s.ck.every(Boolean)&&!dis?'':' disabled')+'>'+(s.busy?'저장 중…':'저장')+'</button>':'<button type="button" class="dv-primary icl-main" data-icl="link"'+(dis?' disabled':'')+t+'>같은 상담으로 연결</button>';
+ }
+ /* footer 왼쪽 안내 한 줄(시안의 hint) */
+ function hintOf(c,s){
+  if(!admin())return '';if(!ready())return '서버 적용 뒤에 열립니다';const linked=isLinked(c,s);
+  if(s.loading)return '서버에서 연결 상태를 읽는 중…';
+  if(linked)return s.open?'사유를 적으면 해제 저장이 열립니다 · 해제해도 이력은 남습니다':'해제하면 사유를 받고 이력은 남습니다';
+  return s.open?(s.ck.every(Boolean)?'저장 → 서버 확인 → 다시 읽은 결과로 표시':'근거 3개를 확인해야 저장됩니다'):'관리자만 · 두 접수는 그대로 두고 같은 상담으로만 묶습니다';
  }
  function paneHtml(c,s){
   const linked=isLinked(c,s);let x='';
@@ -75,6 +83,7 @@
   const foot=m.querySelector('.dv-foot');if(!foot)return;const s=cst(c);
   const act=document.activeElement,keep=act&&m.contains(act)&&act.dataset&&(act.dataset.icl==='memo'||act.dataset.icl==='reason');
   const old=foot.querySelector('[data-icl]'),nb=footBtn(c);if(old&&nb){const t=document.createElement('template');t.innerHTML=nb;old.replaceWith(t.content.firstElementChild);}
+  let hint=foot.querySelector('.icl-hint');const ht=hintOf(c,s);if(ht&&!hint){hint=document.createElement('span');hint.className='icl-hint';foot.prepend(hint);}if(hint){if(ht)hint.textContent=ht;else hint.remove();}
   if(keep)return;/* 입력 중에는 칸을 다시 그리지 않는다(버튼만) */
   m.querySelectorAll('.icl-pane').forEach(n=>n.remove());const ph=paneHtml(c,s);if(ph){const t=document.createElement('template');t.innerHTML=ph;foot.before(t.content.firstElementChild);}
  }

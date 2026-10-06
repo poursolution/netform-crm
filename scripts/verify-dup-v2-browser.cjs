@@ -62,7 +62,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(async()=>{window.CRM_CLEANUP_WRITE=true;TOKEN='t';SB.rpc=async(n)=>{__rpc.push(n);if(n==='crm_cleanup_state')return {data:{ok:true,reviews:[{pair_key:'x',action:'site_link',actor:'송보람',source_name:'옛 현장',target_name:'새 현장',note:'같은 단지 확인',created_at:'2026-09-30T01:00:00Z'}],links:[],sites:[],moves:[]}};if(n==='crm_improvement_task_list_v1')return {data:{ok:true,tasks:[]}};return {error:{message:'not in test'}};};await DataCleanupUI.refresh();});await page.waitForTimeout(400);
   assert.equal((await v.locator('.plv-pills button').allInnerTexts())[4],'처리 완료 1');
   await v.locator('.plv-row',{hasText:'역북금강아파트'}).locator('.plv-cta').click();await page.waitForTimeout(200);
-  assert.equal(await d.locator('.dv-foot button:disabled').count(),0);await d.locator('.dv-foot .dv-primary').click();await page.waitForTimeout(300);
+  /* 문의끼리: 예전 [연결만] 자리는 상담 연결 버튼(inquiry-consultation-link.js) — 서버 함수가 허용 목록에 없으면 잠긴 채 보인다 */
+  assert.equal(await d.locator('.dv-foot button:disabled:not([data-icl])').count(),0);assert.deepEqual(await d.locator('.dv-foot [data-icl]').evaluateAll(l=>l.map(b=>[b.textContent.trim(),b.disabled,b.title])),[['같은 상담으로 연결',true,'서버 적용 뒤에 열립니다']]);assert.equal(await d.locator('[data-dd="inquiry_activity"]').count(),0,'옛 연결만 경로 없음');
+  await d.locator('.dv-foot [data-dd="inquiry_merge"]').click();await page.waitForTimeout(300);
   assert.equal(await page.locator('#dupDialog.on').count(),0);assert.equal(await page.locator('#cleanup-dialog').count(),1,'기존 처리 창');assert.equal(await page.locator('#cleanup-action').inputValue(),'inquiry_merge','고른 처리 방식으로 열림');
   assert.equal(await page.locator('#cleanup-save').isDisabled(),true,'미리보기 전에는 처리할 수 없음');
   await page.evaluate(()=>DataCleanupUI.close());await page.waitForTimeout(200);
