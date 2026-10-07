@@ -226,8 +226,11 @@
   const S=st(d);if(S.nbusy)return;if(on&&(!/^\d{4}-\d{2}-\d{2}$/.test(on)||on<KST(0))){toast('오늘 이후 날짜를 골라 주세요','warn');return;}
   if(!root.Phase1?.queue||typeof root.queueDetailContactOperation!=='function'){toast('로그인 상태에서만 저장할 수 있습니다','warn');return;}
   const due=on||KST(n),next={type:'전화',text:'다시 연락',due_at:due,assignee:root.repN(d.assignee)||root.repN(root.ME?.name)||''},P=S.nprog||(S.nprog={});
-  S.nbusy=true;apply();
-  try{const row=await confirmOp(d,P,on?'nd'+on:'n'+n,'next_action',next);setNext(d,row.ack.next_action_id,next,due);S.nbusy=false;S.nextOpen=false;S.nextDate=false;S.nprog=null;toast('다음 할 일 · 다시 연락 · '+dd(due));afterSave(d);}
+  /* 기한 미루기(exec_wording): 새 기한이 지금 열린 기한보다 늦으면 원래 기한 · 새 기한 · 사유(필수)를 받는다 — 미뤄도 지연 기록은 그대로 남는다 */
+  S.nbusy=true;let gate=null;try{gate=root.ExecWording&&root.ExecWording.postponeAsk?await root.ExecWording.postponeAsk(d,due):null;}catch(e){gate=null;}
+  if(gate&&gate.cancel){S.nbusy=false;apply();return;}
+  apply();
+  try{const row=await confirmOp(d,P,on?'nd'+on:'n'+n,'next_action',next);setNext(d,row.ack.next_action_id,next,due);if(gate&&gate.postpone){try{await root.ExecWording.logPostpone(d,gate);}catch(e){}}S.nbusy=false;S.nextOpen=false;S.nextDate=false;S.nprog=null;toast('다음 할 일 · 다시 연락 · '+dd(due));afterSave(d);}
   catch(e){S.nbusy=false;toast(String(e.message||e),'warn');apply();}
  }
 

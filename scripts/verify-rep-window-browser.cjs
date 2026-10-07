@@ -49,7 +49,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 2. 머리: 이름 · 소속 · 상태 꼬리표 + 숫자 4개 */
   assert.equal(await w.locator('.rw-who').innerText().then(s=>s.replace(/\s+/g,' ')),'이필선 본사 영업 관리자 확인 필요');
   assert.deepEqual(await w.locator('.rw-who em').evaluate(n=>[getComputedStyle(n).color,getComputedStyle(n).backgroundColor]),['rgb(180, 35, 24)','rgb(253, 236, 236)']);
-  assert.deepEqual(await w.locator('.rw-kpi').evaluateAll(l=>l.map(n=>[n.children[0].textContent,n.children[1].textContent,getComputedStyle(n.children[1]).color])),[['진행 금액','63.9억','rgb(21, 23, 28)'],['손볼 건','13건','rgb(180, 35, 24)'],['메이드율','55.0%','rgb(21, 23, 28)'],['업무량','관리 부하','rgb(192, 57, 43)']]);
+  assert.deepEqual(await w.locator('.rw-kpi').evaluateAll(l=>l.map(n=>[n.children[0].textContent,n.children[1].textContent,getComputedStyle(n.children[1]).color])),[['진행 금액','63.9억','rgb(21, 23, 28)'],['손볼 건','13건','rgb(180, 35, 24)'],['메이드율','55.0%','rgb(21, 23, 28)'],['신규 배정','첫 연락 먼저','rgb(180, 35, 24)']]);
   /* 3. 왼쪽: 병목 한 문장 + 보조 한 줄 → 흐름 + 가장 많이 빠지는 구간 */
   assert.deepEqual(await w.locator('.rw-neck').evaluate(n=>[[...n.children].map(c=>c.textContent),getComputedStyle(n).backgroundColor]),[['가장 큰 병목','진행 11건 중 7건이 다음 할 일 없음','신규 배정 3건도 아직 첫 연락 전'],'rgb(253, 236, 236)']);
   assert.deepEqual(await w.locator('.rw-fl').evaluateAll(l=>l.map(n=>[n.children[0].textContent,n.children[2].textContent,n.querySelector('u').style.width,getComputedStyle(n.querySelector('u')).backgroundColor])),[['배정','4','20%','rgb(59, 108, 228)'],['응대','1','5%','rgb(59, 108, 228)'],['기회','20','100%','rgb(59, 108, 228)'],['경쟁','1','5%','rgb(59, 108, 228)'],['수주','0','0%','rgb(63, 179, 127)']]);
@@ -62,7 +62,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await ai(),'AI진행 11건 중 7건 다음 할 일 없음 (등록률 36%)');assert.equal(await co.locator('.rw-ai b').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(59, 108, 228)');
   assert.equal(await txt(),'이번 주 금액 큰 7건부터 다음 할 일 · 날짜 등록');
   assert.equal(await co.locator('.rw-cof').innerText().then(s=>s.replace(/\s+/g,' ')),'다음 주 월요일 결과 자동 확인 코칭 저장');
-  await co.locator('.rw-chips button',{hasText:'첫 응대'}).click();assert.equal(await ai(),'AI신규 배정 3건 · 평균 첫 연결 6.8시간');assert.equal(await txt(),'금요일까지 신규 배정 3건 첫 연락 완료');
+  await co.locator('.rw-chips button',{hasText:'첫 응대'}).click();assert.equal(await ai(),'AI신규 배정 3건 · 평균 첫 연결 6.8시간');assert.equal(await txt(),'밀린 첫 연락 3건 정리 · 금요일까지(신규 문의는 배정 후 2시간 안)');
   await co.locator('.rw-chips button',{hasText:'견적 지연'}).click();assert.equal(await ai(),'AI미팅 완료 건이 없어 아직 잴 수 없음','없는 숫자는 만들지 않는다');assert.equal(await txt(),'방문 후 3일 안에 견적 요청 등록');
   await page.evaluate(()=>{KpiB.stageItems=()=>[{stage:'consulting',bucket:'done',rs:['nodue'],stall:4,row:{item:{assignee:'이필선'}}},{stage:'consulting',bucket:'done',rs:[],stall:1,row:{item:{assignee:'이필선'}}},{stage:'consulting',bucket:'done',rs:['nodue'],stall:9,row:{item:{assignee:'황윤선'}}}];});
   await co.locator('.rw-chips button',{hasText:'약속 미이행'}).click();assert.equal(await ai(),'AI약속 4건 중 2건 기한 내 (50%)');assert.equal(await txt(),'기한 지난 약속 2건 이번 주 안에 완료 · 날짜 다시 잡기');

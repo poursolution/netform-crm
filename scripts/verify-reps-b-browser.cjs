@@ -40,12 +40,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const reasons=await v.locator('.ps3-reason>span>b:first-child').allInnerTexts();
   assert.deepEqual(reasons.slice(0,2),['첫 연락 전 3건 이상','다음 할 일 기한 초과'],JSON.stringify(reasons));
   assert.ok(reasons.includes('이번 주 코칭 약속 없음'),JSON.stringify(reasons));
-  assert.match(await v.locator('.ps3-diag>.ps3-box').nth(2).innerText(),/그래서 뭘 해야 하나[\s\S]*첫 연락 전 3건 이상 1명[\s\S]*금요일까지 첫 연락 완료/);
+  assert.match(await v.locator('.ps3-diag>.ps3-box').nth(2).innerText(),/그래서 뭘 해야 하나[\s\S]*첫 연락 전 3건 이상 1명[\s\S]*밀린 첫 연락 정리 · 금요일까지/);
   assert.match(await v.locator('.rb-load').innerText(),/누가 일이 몰렸나[\s\S]*이필선 · 12억[\s\S]*진행 2건[\s\S]*황윤선 · 5억/);
   assert.match(await v.locator('.rb-week').innerText(),/이번 주 진전[\s\S]*신규 기회 \d+/);
   /* 정렬: 이필선(빨강 2개) 먼저 */
   const first=v.locator('.psb-row').first();assert.equal(await first.getAttribute('data-key'),'이필선','문제 많은 사람부터');
-  assert.match(await first.innerText(),/이필선[\s\S]*본사 영업 · 업무량 [^·]+ · Pipeline 12억[\s\S]*관리자 확인 필요[\s\S]*기한초과 1 · 정체 2 · 할 일 없음 1 · 첫 연락 전 3건 · 진행 2건[\s\S]*첫 연락 전 3건 이상[\s\S]*조치 \d+건[\s\S]*코칭 약속/);
+  assert.match(await first.innerText(),/이필선[\s\S]*본사 영업 · 신규 배정 [^·]+ · Pipeline 12억[\s\S]*관리자 확인 필요[\s\S]*기한초과 1 · 정체 2 · 할 일 없음 1 · 첫 연락 전 3건 · 진행 2건[\s\S]*첫 연락 전 3건 이상[\s\S]*조치 \d+건[\s\S]*코칭 약속/);
   assert.match(await v.locator('.psb-row[data-key="황윤선"]').innerText(),/황윤선[\s\S]*Pipeline 5억[\s\S]*(여유|확인 필요)/);
   if(shot)await page.screenshot({path:shot+'-list.png',fullPage:true});
   /* 막대 칸 · 보드 · 더보기(팀 비교 · 계정 관리) */

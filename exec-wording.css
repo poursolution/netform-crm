@@ -1,0 +1,47 @@
+/* 대표 판단 문구 (2026-10-07 design_handoff_exec_wording) — 접두어 ew- · 근거 패널은 측정 기준(kpi-measure.css)의 km- 모양을 그대로 쓴다 */
+.ew-ov{position:fixed;inset:0;z-index:9000;background:rgba(17,24,39,.42);display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px 4vh;overflow:auto}
+.ew-card{width:min(980px,100%);color:#15171c;font-size:13px}
+.ew-card .km-panel{box-shadow:0 18px 48px rgba(17,24,39,.22)}
+.ew-sp{flex:1}
+.ew-x{border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:12px;font-weight:600;border-radius:8px;height:30px;padding:0 12px;cursor:pointer;font-family:inherit}
+.ew-pb{padding:14px 18px;border-bottom:1px solid #f2f3f6;display:flex;flex-direction:column;gap:10px}
+.ew-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.ew-tiles>div{background:#f8f9fb;border-radius:8px;padding:9px 11px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.ew-tiles span{font-size:11px;color:#6b7280}.ew-tiles b{font-size:18px;font-variant-numeric:tabular-nums}
+.ew-dl{margin:0;display:grid;grid-template-columns:64px minmax(0,1fr);gap:5px 10px;font-size:12.5px}
+.ew-dl dt{color:#6b7280}.ew-dl dd{margin:0;line-height:1.5}
+.ew-dl dd b.r{color:#b42318}
+.ew-sum{margin:0;font-size:12px;color:#374151}
+.ew-form{background:#fff;border:1px solid #d9dde4;border-radius:14px;box-shadow:0 18px 48px rgba(17,24,39,.22);padding:18px 20px;width:min(440px,100%);display:flex;flex-direction:column;gap:12px;margin-top:10vh}
+.ew-form h3{margin:0;font-size:15px}
+.ew-form textarea{width:100%;box-sizing:border-box;border:1px solid #d9dde4;border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;resize:vertical}
+.ew-hint{margin:0;font-size:11.5px;color:#6b7280}
+.ew-err{margin:0;font-size:12px;color:#b42318;min-height:0}
+.ew-act{display:flex;justify-content:flex-end;gap:8px}
+.ew-act button{border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:12.5px;font-weight:600;border-radius:8px;height:34px;padding:0 14px;cursor:pointer;font-family:inherit}
+.ew-act button.pri{background:#15171c;border-color:#15171c;color:#fff}
+/* 판정 문구(누르면 근거) */
+button.ew-j{border:0;background:none;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer;text-decoration:underline dotted #9ca3af;text-underline-offset:3px}
+button.ew-j:hover{text-decoration-color:#15171c}
+/* 대시보드: 종결 사유 · 전환 대기 두 칸 */
+.ew-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;margin-top:12px}
+.ew-box{background:#fff;border:1px solid #e8eaef;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:9px;min-width:0}
+.ew-box>b{font-size:13.5px}
+.ew-bar{display:grid;grid-template-columns:minmax(0,1fr) 110px 36px;gap:10px;align-items:center;font-size:12.5px}
+.ew-bar>i{display:block;height:6px;background:#eef0f3;border-radius:3px;position:relative}
+.ew-bar>i>u{position:absolute;left:0;top:0;bottom:0;border-radius:3px;text-decoration:none}
+.ew-bar>b{text-align:right;font-variant-numeric:tabular-nums}
+.ew-box>span{font-size:12px;color:#374151;line-height:1.5}
+/* 영업사원 관리: 업무량 5칸 */
+.ew-load{background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden;margin-top:12px}
+.ew-load>header{padding:13px 18px 9px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.ew-load>header b{font-size:14.5px}.ew-load>header span{font-size:12px;color:#6b7280}
+.ew-lr{display:grid;grid-template-columns:84px repeat(5,minmax(0,1fr)) 116px;gap:10px;padding:10px 18px;border-top:1px solid #f2f3f6;font-size:13px;align-items:center}
+.ew-lr.h{font-size:11px;color:#9ca3af;border-top:1px solid #eef0f3;padding-top:8px;padding-bottom:8px}
+.ew-lr>span{min-width:0;overflow-wrap:anywhere}
+.ew-lr .r{color:#b42318;font-weight:700}.ew-lr .g{color:#6b7280}
+.ew-lr .tag{font-size:11.5px;font-weight:700;border-radius:4px;padding:2px 7px;justify-self:start;white-space:nowrap}
+.ew-load>footer{padding:10px 18px;border-top:1px solid #eef0f3;display:flex;flex-direction:column;gap:4px;font-size:12px;color:#374151}
+@media(max-width:1100px){.ew-lr{grid-template-columns:84px repeat(3,minmax(0,1fr))}.ew-lr.h{display:none}.ew-two{grid-template-columns:minmax(0,1fr)}}
+.ew-lr button.tag{border:0;cursor:pointer;font-family:inherit}
+.db-wks .ew-adv{margin:0;padding:4px 16px 12px;font-size:12px;color:#374151;line-height:1.5}.db-wks .ew-adv small{color:#6b7280}

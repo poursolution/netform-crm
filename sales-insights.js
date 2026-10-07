@@ -1,7 +1,7 @@
 (function(root){
  'use strict';
  const M=root.SalesInsightsModel,h=v=>root.esc(String(v??'')),a=v=>root.escAttr(String(v??''));
- const labels={stall:'진행 멈춤',promise:'고객 약속 미이행',overdue:'기한초과',missing:'다음 할 일 없음',contact:'마지막 연락 7일 이상 전',unknown:'CRM 연락 기록 없음',stale:'장기정체',amount:'예상금액 미입력'};
+ const labels={stall:'진행 멈춤',promise:'고객 약속 미이행',overdue:'기한초과',missing:'다음 할 일 없음',contact:'마지막 연락 7일 이상 전',unknown:'CRM 연락 기록 없음',stale:'장기정체',amount:'예상금액 미입력',unassigned:'담당 미배정'};
  let actor='',focusBefore=null;
  const number=n=>Number(n||0).toLocaleString('ko-KR');
  const money=n=>n>=100000000?(n/100000000).toLocaleString('ko-KR',{maximumFractionDigits:2})+'억':number(Math.round(n/10000))+'만원';
@@ -21,6 +21,8 @@
    if(due!==null&&due<0)issues.push('overdue');
    if(due!==null&&due<0&&(/약속/.test(String(next?.type||''))||/^\s*고객\s*약속/.test(String(next?.text||''))))issues.unshift('promise');/* 상세 '약속했어요' 칩=종류 '고객 약속', 결과 창 칩=문구 '고객 약속:' — 둘 다 *//* 고객 약속 미이행 — 관리자 예외 최우선 */
    if(!next?.text||due===null)issues.push('missing');
+   /* 2026-10-07 exec_wording: 담당이 없는 진행 건도 조치 필요 — 빠진 사유까지 표시해야 합계가 맞는다 */
+   if(!String(root.repN(d.assignee)||'').trim()||root.repN(d.assignee)==='미배정')issues.push('unassigned');
    if(meta.days!==null&&meta.days>=(root.OPS_RULES?.contactWarnDays??7))issues.push('contact');
    if(meta.days===null)issues.push('unknown');
    if(old.includes('stale'))issues.push('stale');
@@ -453,7 +455,7 @@
    /* 공통 지표(2026-10-01 대표 승인): 대시보드 260억/148건이 파이프라인 메뉴 536건과 달랐다 — 기간 필터와 무관하게 '지금 진행 중' 전체를 같은 정의로 보여 주고, 누르면 파이프라인으로 간다 */
    (()=>{const pm=root.PipelineMetrics?.summary?.({brand:f.brand,owner:f.owner});return pm?'<button type="button" class="dc-p dc-kpi c2" data-si-action="navigate" data-value="pipe" title="'+a('기준: 진행 중 영업건 · 수주·실주·확장 제외 · 모든 연도 · 파이프라인 메뉴와 같은 숫자')+'"><span class="dc-ph">파이프라인</span><b>'+h(money(pm.total))+'</b><small>'+h('진행 '+number(pm.count)+'건 · 가중 '+money(pm.weighted))+'</small></button>':kpi('파이프라인',money(s.expected),'진행 '+number(s.active.length)+'건','active');})()+
    kpi('문의',number(s.inquiries.length)+'건','선택 기간 접수','inquiries')+
-   kpi('조치 필요',number(s.risk.length)+'건','기한초과 '+s.active.filter(d=>d.issues.includes('overdue')).length+' · 다음 할 일 없음 '+s.active.filter(d=>d.issues.includes('missing')).length,'risk','bad')+
+   kpi('조치 필요',number(s.risk.length)+'건',root.ExecWording&&root.ExecWording.on()?root.ExecWording.actionSplit(s.risk).text:'기한초과 '+s.active.filter(d=>d.issues.includes('overdue')).length+' · 다음 할 일 없음 '+s.active.filter(d=>d.issues.includes('missing')).length,'risk','bad')+
    kpi('주간 활동',number(weekTotal)+'건','최근 7일 전체','activity')+
    p('c5','매출 추이 · 월별','계약 체결일 기준 · 월 클릭=근거',dcLine(mVals,460,118,'#3B6CE4','dcg1',money,'cs-month'))+
    p('c4','문의 유입 · 월별','접수 기준 · 월 클릭=근거',dcLine(inqVals,380,118,'#0E9F8A','dcg2',v=>number(v)+'건','inq-month'))+

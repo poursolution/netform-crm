@@ -39,7 +39,7 @@
  function agenda(x){
   const R=root,out=[],moved=x.advanced.length+x.pt.length+x.bid.length+x.contract.length,top=x.reps.slice().sort((a,b)=>b.risk-a.risk)[0];
   if(!x.wins.length&&!moved)out.push({basis:'지난주 수주 0 · 진전 0',todo:'단계 변경 기록이 없어 판단 불가 → 연락 결과 기록부터 (관리팀 KPI)',who:'회의 · 관리팀',label:'기록 없음',count:0});
-  if(x.noResponse.length){const by=new Map();x.noResponse.forEach(q=>{const o=R.repN(R.inquiryRoutedOwner?.(q)||q.assignee)||'미배정';by.set(o,(by.get(o)||0)+1);});const who=[...by].sort((a,b)=>b[1]-a[1]).slice(0,3);out.push({basis:'신규 미응대 '+x.noResponse.length+'건',todo:who.map(w=>w[0]+' '+w[1]).join(' · ')+' — 금요일까지 첫 연락',who:'담당 '+who.length+'명 · 금요일',label:'미응대',count:x.noResponse.length});}
+  if(x.noResponse.length){const by=new Map();x.noResponse.forEach(q=>{const o=R.repN(R.inquiryRoutedOwner?.(q)||q.assignee)||'미배정';by.set(o,(by.get(o)||0)+1);});const who=[...by].sort((a,b)=>b[1]-a[1]).slice(0,3);out.push({basis:'신규 미응대 '+x.noResponse.length+'건',todo:who.map(w=>w[0]+' '+w[1]).join(' · ')+' — 밀린 첫 연락 정리 · 금요일까지',who:'담당 '+who.length+'명 · 금요일',label:'미응대',count:x.noResponse.length});}
   if(x.unassigned.length)out.push({basis:'미배정 '+x.unassigned.length+'건',todo:'오늘 안에 담당 정하기',who:'관리팀 · 오늘',label:'미배정',count:x.unassigned.length});
   if(x.silentHot.length)out.push({basis:'입찰 · 계약인데 활동 없음 '+x.silentHot.length+'건',todo:'오늘 상태 확인 · 대표 보고',who:'담당 · 오늘',label:'입찰·계약 활동 없음',count:x.silentHot.length});
   if(x.risk.length)out.push({basis:'위험 '+x.risk.length+'건 중 TOP '+Math.min(5,x.risk.length),todo:'다음 할 일 · 기한 확정 ('+(x.risk[0].site||'현장')+(x.risk.length>1?' 외 '+(Math.min(5,x.risk.length)-1):'')+')',who:(top&&top.risk?top.n:'담당')+' · 이번 주',label:'위험 TOP',count:x.risk.length});
