@@ -65,7 +65,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual(await page.evaluate(()=>[CUR_DETAIL.item.id,document.querySelectorAll('#detailView .dvt-calling,#detailAction').length]),['11111111-1111-4111-8111-111111111111',0]);
   await page.evaluate(()=>closeDetail());await page.waitForTimeout(200);
   /* ④ 위 상태 탭 · 왜 멈춰 있나를 누르면 이 목록이 걸러진다(기존 동작) */
-  await V.locator('.ps3-reason').nth(2).click();await page.waitForTimeout(200);
+  await V.locator('.ps3-reason',{hasText:'다음 행동 · 날짜 없음'}).click();await page.waitForTimeout(200);/* stage7 ①: 사유에 '물량 산출 기한 넘김'이 들어와 번호 대신 이름으로 */
   assert.deepEqual([(await L.locator('.prv-row .prv-a>b').allInnerTexts()).map(one),one(await V.locator('.ps3-lhead>b').innerText())],[['[경기 인천] 삼보','한강제이타워'],'확인할 현장 2곳'],'다음 행동 · 날짜 없음 = 2곳');
   await V.locator('[data-ps3="clear"]').click();await page.waitForTimeout(200);
   /* ⑤ 버튼 = 새 상세의 그 자리 */
@@ -84,12 +84,15 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual(await page.evaluate(()=>[document.querySelectorAll('#pipeline-stage-v3 .prv-row,#pipeline-stage-v3 .prv-head').length,document.querySelectorAll('#pipeline-stage-v3 .ps3-row .ps3-a').length]),[0,6]);
   await page.evaluate(()=>{G.pipeRowV11Off=false;paint();});await page.waitForSelector('#pipeline-stage-v3 .prv-list .prv-row');
   /* ⑦ 수주 · 실주도 같은 줄 구조(위 진단은 그 화면 그대로) · 줄 = 바로 상세 */
-  for(const [key,want] of [['won',['[경기 용인] 가람마을아파트','석민이앤씨 · 공종 미분류 · 황윤선','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','기한 없음','수주 정보']],['lost',['[경기 수원] 선경빌','석민이앤씨 · 공종 미분류 · 황윤선','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','기한 없음','사유 기록']]]){
+  /* stage7 ⑥⑦: 끝 상태 줄 = '확인 필요 · 기한 아님'(정보 보완 · 주황) */
+  for(const [key,want] of [['won',['[경기 용인] 가람마을아파트','석민이앤씨 · 공종 미분류 · 황윤선','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','확인 필요 · 기한 아님','수주 정보']],['lost',['[경기 수원] 선경빌','석민이앤씨 · 공종 미분류 · 황윤선','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','확인 필요 · 기한 아님','사유 기록']]]){
    await page.evaluate(k=>PipelineWorkspace.open(k),key);await page.waitForSelector('#pipeline-stage-v3 .prv-list .prv-row');await page.waitForTimeout(200);
    const b=page.locator('#pipeline-stage-v3');
    assert.deepEqual([(await b.locator('.prv-head span').allInnerTexts()).map(one),await b.locator('.ps3-diag .ps3-box').count()>=1,await b.locator('.prv-row.ps3-row').count(),await b.locator('.prv-more,.prv-main').count()],[['현장 · 담당','현재 상황','다음 업무 · 기한',''],true,1,0],key+': 같은 줄 · 진단은 그대로 · 펼침 없음');
    assert.deepEqual(await b.locator('.prv-row').first().evaluate(r=>{const t=s=>r.querySelector(s).innerText.replace(/\s+/g,' ').trim();return [t('.prv-a>b'),t('.prv-a>span'),t('.prv-b>small'),t('.prv-c>small'),t(':scope>button')];}),want,key);
-   assert.match(one(await b.locator('.prv-b>span').first().innerText()),key==='won'?/^수주 유형 · 낙찰금액 · 낙찰사 미기록 · /:/^실주 사유 미입력 · \d{1,2}\/\d{1,2} 실주$/);
+   assert.match(one(await b.locator('.prv-b>span').first().innerText()),key==='won'?/^수주 · \d{4}\.\d{1,2}\.\d{1,2} · 9,200만$/:/^실주 · \d{4}\.\d{1,2}\.\d{1,2}$/,key+': 줄 = 결과 · 날짜 · 금액(stage7)');
+   assert.equal(one(await b.locator('.prv-b>small.base').first().innerText()),key==='won'?'수주 유형 · 낙찰금액 · 낙찰사 미기록':'실주 사유 미입력',key+': 기준일 줄 = 빠진 정보');
+   assert.equal(await b.locator('.prv-c>small').first().evaluate(n=>n.classList.contains('amb')&&getComputedStyle(n).color),'rgb(138, 90, 0)',key+': 확인 필요는 주황');
    if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'pipe-v11-'+key+'.png')});
   }
   await page.locator('#pipeline-stage-v3 .prv-row').first().click();await page.waitForSelector('#detailView.on.dv3');

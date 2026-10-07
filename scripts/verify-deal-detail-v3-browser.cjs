@@ -84,8 +84,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 머리글: [단계 바꾸기 ▾] [담당자 변경] — 오른쪽에는 단계 바꾸기 카드 없음 */
   assert.deepEqual(await v.locator('.dv3-headact button:visible').allInnerTexts(),['단계 바꾸기 ▾','··· 기타 처리'],'담당자 변경은 [··· 기타 처리] 메뉴 안으로');assert.equal(await R.locator('.ddv-switch:visible').count(),0,'단계 바꾸기 카드는 오른쪽에 없음');assert.equal(await v.locator('.dw-center>.dv3-move:visible').count(),0,'띠는 접혀 있음');
   const sumText=await R.locator('.da-stage-summary').innerText();assert.match(sumText,/^이 단계 필수 정보/);
-  assert.deepEqual(await R.locator('.dv3-stage .dv3-row>span').allInnerTexts(),['무엇을 발송했나요?','견적 Version','수신자','발송일'],'왼쪽과 같은 항목(고객 반응)은 오른쪽에 없음');
-  assert.match(sumText,/미입력 3/);assert.equal(await R.locator('.da-stage-summary .da-fill:visible,.da-stage-summary .da-stage-edit:visible').count(),0,'[입력하기] · [단계 정보 입력] 버튼 없음');
+  assert.deepEqual(await R.locator('.dv3-stage .dv3-row>span').allInnerTexts(),['담당 최종 검토'/* 2026-10-07 stage7 ② */,'무엇을 발송했나요?','견적 Version','수신자','발송일'],'왼쪽과 같은 항목(고객 반응)은 오른쪽에 없음');
+  assert.match(sumText,/미입력 4/);assert.equal(await R.locator('.da-stage-summary .da-fill:visible,.da-stage-summary .da-stage-edit:visible').count(),0,'[입력하기] · [단계 정보 입력] 버튼 없음');
   if(shot)await page.screenshot({path:shot+'-detail.png'});
   /* 그 자리에서 펼침: 오른쪽은 바뀌지 않는다 */
   const rightIntact=async(msg)=>{assert.equal(await page.evaluate(()=>{const r=document.querySelector('#detailView .dw-right'),n=document.getElementById('nowCard');return !r.classList.contains('ddv-covered')&&!r.querySelector(':scope>#ddvPanel')&&n.getClientRects().length>0&&!document.getElementById('dv-body').inert;}),true,msg+' — 오른쪽 그대로');};
@@ -114,7 +114,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 이 단계 필수 정보: 칸 안에서 바로 입력(글자 · 여러 개 고르기) */
   await page.locator('#detailView .dv3-stage [data-dv3="sfield"][data-key="recipient"]').click();await page.waitForTimeout(200);
   await page.locator('#detailView .dv3-stage [data-dv3in="stage"][data-key="recipient"]').fill('김영수 소장');await page.keyboard.press('Enter');await page.waitForTimeout(500);
-  assert.deepEqual(await page.evaluate(()=>__sf.at(-1).fields),{recipient:'김영수 소장'});assert.match(await page.locator('#detailView .da-stage-summary').innerText(),/미입력 2[\s\S]*수신자\s*김영수 소장/);
+  assert.deepEqual(await page.evaluate(()=>__sf.at(-1).fields),{recipient:'김영수 소장'});assert.match(await page.locator('#detailView .da-stage-summary').innerText(),/미입력 3[\s\S]*수신자\s*김영수 소장/);/* stage7 ②: 담당 최종 검토 칸이 하나 더 */
   await page.locator('#detailView .dv3-stage [data-dv3="sfield"][data-key="materials"]').click();await page.waitForTimeout(200);
   assert.deepEqual(await page.locator('#detailView .dv3-multi button').allInnerTexts(),['견적서','제안서','공법자료','기타자료','완료']);
   await page.locator('#detailView .dv3-multi button',{hasText:'견적서'}).click();await page.locator('#detailView .dv3-multi .done').click();await page.waitForTimeout(500);
@@ -245,14 +245,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    await row('공종').locator('.dv3-val').click();await page.waitForTimeout(500);assert.equal(await L.locator('.dv3-slot[data-slot="work"] .dv3-work').count(),1,'공종도 그 줄 아래에서 고친다');await L.locator('[data-dv3="workcancel"]').click();await page.waitForTimeout(150);
    /* 오른쪽 '이 단계 필수 정보': 글 · 선택 항목만 눌리고, 준공일 · 준공 확인 · 최종 수주금액은 읽기 전용 */
    const Rr=page.locator('#detailView .da-stage-summary .dv3-stage .dv3-row'),kinds=await Rr.evaluateAll(l=>l.map(n=>[n.querySelector('span').textContent,n.querySelector('button.dv3-val')?'칸':'글']));
-   assert.deepEqual(kinds,[['확인된 준공일','글'],['준공 완료 확인','글'],['최종 수주금액(원)','글'],['이긴 이유','칸'],['배운 점','칸']],'수주 건 오른쪽 칸: '+JSON.stringify(kinds));
+   assert.deepEqual(kinds,[['확인된 준공일','글'],['준공 완료 확인','글'],['최종 수주금액(원)','글'],['결과 확인일','글'/* 날짜는 종료 뒤 읽기 전용 */],['인정 근거','칸'/* stage7 ⑥ */],['이긴 이유','칸'],['배운 점','칸']],'수주 건 오른쪽 칸: '+JSON.stringify(kinds));
    await Rr.filter({hasText:'배운 점'}).locator('.dv3-val').click();await page.waitForTimeout(150);
    const les=Rr.filter({hasText:'배운 점'}).locator('input.dv3-in');await les.fill('입주자대표 먼저 설득');await les.press('Enter');await page.waitForTimeout(400);
    assert.deepEqual(await page.evaluate(()=>__ci.slice(-1)[0].fields),{lesson:'입주자대표 먼저 설득'});
    /* 실주 건: 실주 사유(선택) · 확인한 내용 · 배운 점 · 재접촉 가능 시기 모두 칸 */
    await page.evaluate(()=>{const d=CUR_DETAIL.item;window.__keepWon=[d.code,d.stage_code,d.outcome];d.code=d.stage_code='lost';d.outcome='lost';renderDetail();});await page.waitForTimeout(600);
    assert.equal(await L.locator('.dv3-row .dv3-val').count(),6,'실주 건도 칸 6개');
-   const Rl=page.locator('#detailView .da-stage-summary .dv3-stage .dv3-row');assert.deepEqual(await Rl.evaluateAll(l=>l.map(n=>[n.querySelector('span').textContent,n.querySelector('button.dv3-val')?'칸':'글'])),[['실주 원인','칸'],['확인한 내용','칸'],['배운 점','칸'],['재접촉 가능 시기','칸']]);
+   const Rl=page.locator('#detailView .da-stage-summary .dv3-stage .dv3-row');assert.deepEqual(await Rl.evaluateAll(l=>l.map(n=>[n.querySelector('span').textContent,n.querySelector('button.dv3-val')?'칸':'글'])),[['실주 원인','칸'],['확인한 내용 · 고객 반응','칸'],['재영업 가능 여부','칸'],['배운 점','칸'],['재접촉 가능 시기','칸']]);
    await Rl.filter({hasText:'확인한 내용'}).locator('.dv3-val').click();await page.waitForTimeout(150);
    const cd=Rl.filter({hasText:'확인한 내용'}).locator('input.dv3-in');await cd.fill('타사 단가가 12% 낮았음');await cd.press('Enter');await page.waitForTimeout(400);
    assert.deepEqual(await page.evaluate(()=>{const x=__ci.slice(-1)[0];return [x.stage_code,x.fields];}),['lost',{close_detail:'타사 단가가 12% 낮았음'}]);
