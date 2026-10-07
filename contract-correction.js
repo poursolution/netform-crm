@@ -13,7 +13,7 @@
   const r=await root.OpsStore.rpc(name,p);sync();if(gen!==epoch||owner!==identity)throw Error('계정이 변경되었습니다. 다시 조회해 주세요.');return r;
  }
  async function preview(dealId){if(!uuid(dealId))throw Error('영업건 ID가 필요합니다.');const r=await call(PREVIEW,{deal_id:dealId});
-  if(r?.ok!==true||r.deal_id!==dealId||!uuid(r.source_event_id)||!Number.isSafeInteger(r.expected_version)||r.expected_version<1||!Number.isSafeInteger(r.balance)||typeof r.cancelled!=='boolean'||!date(r.last_effective_date))throw Error('계약 원장 조회 결과를 확인하지 못했습니다.');return r;
+  if(r?.ok!==true||r.deal_id!==dealId||!uuid(r.source_event_id)||!Number.isSafeInteger(r.expected_version)||r.expected_version<1||!Number.isSafeInteger(r.balance)||typeof r.cancelled!=='boolean'||(r.cancelled?r.balance!==0:r.balance<=0)||!Number.isSafeInteger(r.contract_amount)||r.contract_amount<=0||!uuid(r.sales_owner)||!date(r.contract_date)||!date(r.last_effective_date)||r.last_effective_date<r.contract_date||(r.previous_balance!==null&&(!Number.isSafeInteger(r.previous_balance)||r.previous_balance<=0)))throw Error('계약 원장 조회 결과를 확인하지 못했습니다.');return r;
  }
  async function request(input){sync();
   const p={deal_id:input?.deal_id,source_event_id:input?.source_event_id,expected_version:input?.expected_version,target_balance:input?.target_balance,effective_date:input?.effective_date,reason:input?.reason?.trim?.()};
