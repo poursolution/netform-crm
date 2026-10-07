@@ -27,6 +27,8 @@
  function basis(d,key){
   if(!d||typeof d!=='object')return {kind:'norecord',why:'자료 없음',due:'',n:null};
   const Q=rules(),nx=nextOf(d);
+  /* 대기 이유(contact_link ④): 고른 날짜까지는 정체 · 무활동 경고에서 뺀다 — 기한은 그 날짜, 판정 문장에 이유 */
+  try{const CL=root.ContactLink,w=CL&&CL.on()?CL.waitActive(d):null;if(w)return {kind:'date',why:'대기 이유: '+w.reason+' · '+md(w.until)+'까지 경고 없음',due:w.until,n:daysTo(w.until),src:'wait',wait:w};}catch(e){}
   if(nx&&nx.due)return {kind:'date',why:'다음 행동일 '+md(nx.due),due:nx.due,n:daysTo(nx.due),src:'next'};
   const g=key||groupOf(d),D=(label,k,plus)=>{const due=plus?addDays(k,plus):k;return {kind:'date',why:label+' '+md(k)+(plus?' + '+plus+'일':''),due,n:daysTo(due),src:'stage'};};
   /* 2026-10-07 design_handoff_ops_12 A①②: 세 화면 같은 문장 — none = 날짜 미입력(지연 아님 · fix = 보완 단추 · rec = 추천 행동) / norecord = 판정 불가(이관 전 기록 등 · 지연 · 평가 제외 → 데이터 검토) / na = 기한을 세지 않는 단계(수주 · 실주) */

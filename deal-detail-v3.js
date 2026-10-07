@@ -385,7 +385,8 @@
   if(!root.Phase1?.queue||(rel?typeof root.pushWrite!=='function':typeof root.queueDetailContactOperation!=='function')){err.textContent='로그인 상태에서만 저장할 수 있습니다.';return;}
   const at=C.at||(C.at=new Date().toISOString()),next={type:'전화',text:C.text,due_at:C.date,assignee:root.repN(d.assignee)||root.repN(root.ME?.name)||''};
   S.cmpBusy=true;save.disabled=true;save.textContent='확인 중…';err.textContent='';
-  try{await writeContact(d,{ch:C.ch,note:recNote(C.ch,C.res,C.raw),at,meaningful:!['부재','회신대기'].includes(C.res),next,due:C.date,P:C.prog});S.cmp=null;S.cmpBusy=false;S.calling=false;toast('기록했습니다 · 다음 행동 '+next.text+' · '+dd(C.date));afterSave(d);}
+  const clb=box.querySelector('.cl-box'),mk=root.ContactLink&&clb?root.ContactLink.markerOf(clb):'';/* 연결 표식(원본 1건 + 연결 · 복사 안 함) */
+  try{await writeContact(d,{ch:C.ch,note:recNote(C.ch,C.res,C.raw)+mk,at,meaningful:!['부재','회신대기'].includes(C.res),next,due:C.date,P:C.prog});S.cmp=null;S.cmpBusy=false;S.calling=false;toast('기록했습니다 · 다음 행동 '+next.text+' · '+dd(C.date)+(mk?' · 연결 '+mk.split(',').length+'곳':''));try{root.ContactLink&&root.ContactLink.afterSave(d,clb);}catch(e){}afterSave(d);}
   catch(e){S.cmpBusy=false;save.disabled=false;save.textContent='기록 저장';err.textContent=String(e.message||e);}
  }
  function buildCenter(v,d,closed){
@@ -409,7 +410,9 @@
    if(tabs)tabs.append(el('span','dv3-chint'));
    const sug=el('div','dv3-csug');sug.hidden=true;const foot=el('div','dv3-cfoot','<span></span>');
    if(input)input.after(sug,foot);if(save){foot.append(save);save.textContent='기록 저장';}
-   if(ta){ta.rows=2;ta.addEventListener('input',()=>composerAi(box));ta.addEventListener('input',()=>{const x=root.CUR_DETAIL?.item,R=x&&st(x).rec;if(R)R.memo=ta.value;});}
+   /* 연락 한 번 연결(contact-link.js): 입력칸 아래 '이 기록이 반영될 곳' + AI 가 뽑은 것 · 저장 버튼 'n곳 반영' */
+   const clb=el('div','cl-box');clb.hidden=true;sug.after(clb);
+   if(ta){ta.rows=2;ta.addEventListener('input',()=>composerAi(box));ta.addEventListener('input',()=>{clearTimeout(box.__clT);box.__clT=setTimeout(()=>{try{const x=root.CUR_DETAIL?.item,type=box.querySelector('[role=tab][aria-selected="true"]')?.dataset.type||'전화';if(type==='메모'){clb.hidden=true;return;}root.ContactLink&&root.ContactLink.render(clb,x,ta.value,box);}catch(e){}},400);});ta.addEventListener('input',()=>{const x=root.CUR_DETAIL?.item,R=x&&st(x).rec;if(R)R.memo=ta.value;});}
    box.addEventListener('click',e=>{if(e.target.closest('[role=tab]'))setTimeout(()=>syncComposer(box),0);});
    /* AI 제안이 떠 있으면 그 제안대로(기록 + 다음 할 일) 저장한다 */
    box.addEventListener('click',e=>{const b=e.target.closest('.idv-save');if(!b)return;const x=root.CUR_DETAIL?.item,C=x&&st(x).cmp,type=box.querySelector('[role=tab][aria-selected="true"]')?.dataset.type||'전화',raw=box.querySelector('textarea').value.trim();

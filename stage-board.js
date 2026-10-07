@@ -90,7 +90,7 @@
   let body;
   if(S.view==='board')body='<div class="ps3-board">'+C.S.map(s=>{const all=listed.filter(i=>i.bucket===s[0]),cp=LP.cut(all,LP.page(S,'col:'+s[0])),cards=cp.rows;return '<div class="ps3-col"><div class="ch"><b title="'+attr(s[1])+'">'+h(s[1])+'</b><b class="c'+(hot(s[0])?' r':'')+'">'+all.length.toLocaleString('ko-KR')+'</b></div>'+(cards.length?cards.map(i=>card3(C,i,S.reason)).join(''):'<p class="ps3-none">없음</p>')+LP.html(cp,{ns:'sb',v:'col:'+s[0],small:true,info:false})+'</div>';}).join('')+'</div>';
   else{const pg=LP.cut(listed,LP.page(S));/* 한 쪽 최대 20건 + 쪽 번호(2026-10-05 전체 지침) */
-   body='<div class="ps3-list prv-list" role="table" aria-label="'+attr(C.listTitle||'확인할 현장')+'">'+head3(C)+(pg.rows.length?pg.rows.map(i=>C.rowHtml?C.rowHtml(C,i,S.reason):row3(C,i,S.reason)).join(''):'<div class="ps3-empty">'+h(C.empty||'해당하는 곳이 없습니다')+'</div>')+LP.html(pg,{ns:'sb',unit:unit})+'</div>';}
+   body='<div class="ps3-list prv-list" role="table" aria-label="'+attr(C.listTitle||'확인할 현장')+'">'+head3(C)+(pg.rows.length?pg.rows.map((i,n)=>(C.groupHead?(C.groupHead(C,i,pg.rows,n)||''):'')/* 묶음 머리 줄(확장관리 같은 단지 계약 여러 건 · contact_link ③) */+(C.rowHtml?C.rowHtml(C,i,S.reason):row3(C,i,S.reason))).join(''):'<div class="ps3-empty">'+h(C.empty||'해당하는 곳이 없습니다')+'</div>')+LP.html(pg,{ns:'sb',unit:unit})+'</div>';}
   return '<div id="'+attr(C.id)+'" class="ps3 sb" data-board="'+attr(C.id)+'"><div class="ps3-top"><div class="ps3-head"><b>'+h(C.name)+'</b><span>'+h(typeof C.desc==='function'?C.desc():C.desc)+'</span></div>'+(C.topHtml||'')+tabs+'</div><div class="ps3-body">'+diag+'<section class="ps3-main">'+head+body+'</section></div></div>';
  }
  const html=(C,rawItems,S)=>root.G.boardV3Off?htmlB(C,rawItems,S):html3(C,rawItems,S);

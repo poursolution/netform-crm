@@ -7,7 +7,7 @@
  const h=v=>root.esc(String(v??'')),attr=v=>root.escAttr(String(v??''));
  const DEFAULT_TODO={first_contact:'고객에게 연락하고 니즈를 확인해 주세요',consulting:'견적 요청 내용을 확인하고 회신해 주세요',sent:'보낸 자료의 검토 여부를 확인해 주세요',rapport:'관계 유지 연락을 해주세요',silent:'다시 연락해 주세요',waiting:'재개 시점을 확인해 주세요',compete:'경쟁 상황과 다음 일정을 확인해 주세요',imminent:'계약 조건을 확인해 주세요',bidding:'입찰 일정을 확인해 주세요',contract:'계약 체결 상태를 확인해 주세요',construction:'착공 준비 상황을 확인해 주세요',completion:'준공·수금 상태를 확인해 주세요'};
  /* 표시 전용(2026-09-26 문구 정리): 예전 기록 문구를 새 용어로 보여 준다 — 저장된 값은 바꾸지 않는다. crm.html sayLegacyNote와 같은 규칙 */
- const SAY=[[/전화 부재 — 못 받으심|통화 시도 — 부재/g,'부재중 (전화 안 받음)'],[/통화 — 진행됨/g,'통화 완료 · 진행 중'],[/^통화 — 진행 중, \d{4}-(\d{2})-(\d{2}) 다시 확인/,'통화 완료 · 진행 중 ($1/$2 다시 확인)'],[/^통화 시도 — 다시 연락하기로 함/,'통화 시도 · 다시 연락하기로 함'],[/^통화 — 고객 약속: /,'통화 완료 · 고객 약속: '],[/재통화 시도/g,'다시 전화하기'],[/고객 요청 재연락/g,'요청 시점에 다시 연락'],[/통화 후속 확인/g,'통화 후 진행 확인'],[/고객 요청으로 후속 연기/g,'고객 요청으로 다음 주 재연락']];
+ const SAY=[[/\s*\[연결 [^\]]*\]/g,''],[/전화 부재 — 못 받으심|통화 시도 — 부재/g,'부재중 (전화 안 받음)'],[/통화 — 진행됨/g,'통화 완료 · 진행 중'],[/^통화 — 진행 중, \d{4}-(\d{2})-(\d{2}) 다시 확인/,'통화 완료 · 진행 중 ($1/$2 다시 확인)'],[/^통화 시도 — 다시 연락하기로 함/,'통화 시도 · 다시 연락하기로 함'],[/^통화 — 고객 약속: /,'통화 완료 · 고객 약속: '],[/재통화 시도/g,'다시 전화하기'],[/고객 요청 재연락/g,'요청 시점에 다시 연락'],[/통화 후속 확인/g,'통화 후 진행 확인'],[/고객 요청으로 후속 연기/g,'고객 요청으로 다음 주 재연락']];
  function say(v){if(typeof root.sayLegacyNote==='function')return root.sayLegacyNote(v);v=String(v??'');SAY.forEach(r=>{v=v.replace(r[0],r[1])});return v}
  function money(n){n=Number(n)||0;if(!n)return '';return n>=1e8?(Math.round(n/1e7)/10)+'억':Math.round(n/1e4).toLocaleString('ko-KR')+'만'}
  function dueDays(v){if(!v||!Number.isFinite(Date.parse(v)))return null;const n=root.daysTo(v);return Number.isFinite(n)?n:null}
@@ -88,7 +88,7 @@
   return (inline?'<p class="nc-lead">':'<h4>어떻게 됐나요? — '+h(d.site||'')+'</h4><p>')+(phone?'연락처 '+h(phone)+' · ':'')+'하나만 고르면 기록과 다음 할 일까지 자동으로 만듭니다</p>'
    +'<div class="nc-chips">'+CHIPS.map(c=>'<button type="button" data-chip="'+c[0]+'"><b>'+c[1]+'</b><small>'+c[2]+'</small></button>').join('')+'</div>'
    +'<div class="nc-step2" hidden><label class="nc-note-label" hidden>어떤 약속인가요? <input class="nc-note" placeholder="예: 금요일까지 견적 전달"></label>'
-   +(Array.isArray(root.CHECKS)?'<div class="nc-checks"><h5>이번 통화에서 확인한 것 <small>(해당하면 누르세요)</small></h5><div>'+root.CHECKS.map((n,i)=>'<button type="button" data-check="'+i+'" aria-pressed="false">'+h(n)+'</button>').join('')+'</div></div>':'')+'<h5>언제 다시 확인할까요?</h5><div class="nc-dates">'+dateOptions().map(x=>'<button type="button" data-date="'+x[1]+'">'+x[0]+' <small>'+x[1].slice(5)+'</small></button>').join('')+'<label class="nc-pick">날짜 선택 <input type="date"></label></div></div>'
+   +(Array.isArray(root.CHECKS)?'<div class="nc-checks"><h5>이번 통화에서 확인한 것 <small>(해당하면 누르세요)</small></h5><div>'+root.CHECKS.map((n,i)=>'<button type="button" data-check="'+i+'" aria-pressed="false">'+h(n)+'</button>').join('')+'</div></div>':'')+(root.ContactLink&&root.ContactLink.on()?'<div class="nc-waits"><h5>기다리는 이유가 있나요? <small>(고르면 그 날짜까지 정체 · 무활동 경고 없음 · 다음날 결과 확인 할 일)</small></h5>'+root.ContactLink.WAIT.map(w=>'<button type="button" data-wait="'+attr(w)+'" aria-pressed="false">'+h(w)+'</button>').join('')+'</div>':'')+'<h5>언제 다시 확인할까요?</h5><div class="nc-dates">'+dateOptions().map(x=>'<button type="button" data-date="'+x[1]+'">'+x[0]+' <small>'+x[1].slice(5)+'</small></button>').join('')+'<label class="nc-pick">날짜 선택 <input type="date"></label></div></div>'
    +'<p class="nc-status" role="status" aria-live="polite"></p>'+(inline?'':'<footer><button type="button" data-close>닫기</button></footer>');
  }
  function bindChooser(el,d,onDetail){
@@ -102,6 +102,8 @@
    (chip==='promise'?noteLabel.querySelector('input'):step2.querySelector('[data-date]')).focus();
   };});
   el.querySelectorAll('[data-check]').forEach(b=>{b.onclick=()=>{const on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(on));b.classList.toggle('on',on);};});
+  /* 대기 이유(contact_link ④): 하나만 고름 · 다시 누르면 해제 */
+  el.querySelectorAll('[data-wait]').forEach(b=>{b.onclick=()=>{const on=b.getAttribute('aria-pressed')!=='true';el.querySelectorAll('[data-wait]').forEach(x=>{x.setAttribute('aria-pressed','false');x.classList.remove('on');});b.setAttribute('aria-pressed',String(on));b.classList.toggle('on',on);};});
   const submit=due=>save(d,chip,due,el.querySelector('.nc-note').value.trim(),status,el);
   el.querySelectorAll('[data-date]').forEach(b=>{b.onclick=()=>submit(b.dataset.date);});
   el.querySelector('.nc-pick input').onchange=e=>{if(e.target.value)submit(e.target.value);};
@@ -129,10 +131,13 @@
   if(promise&&!note){status.textContent='어떤 약속인지 한 줄만 적어주세요.';return;}
   /* 기록 문구(2026-09-26 문구 정리): 첫머리 '통화 완료 ·'=유효 접촉, '통화 시도 ·'·'부재중'=유효 접촉 아님 — isMeaningfulContact 분류와 맞춘다 */
   const noteText=chip==='ongoing'?'통화 완료 · 진행 중 ('+String(due).slice(5,10).replace('-','/')+' 다시 확인)':chip==='recall'?'통화 시도 · 다시 연락하기로 함':chip==='absent'?'부재중 (전화 안 받음)':'통화 완료 · 고객 약속: '+note;
-  const nextText=promise?note:chip==='absent'?'다시 전화하기':'진행 상황 확인 전화';
+  let nextText=promise?note:chip==='absent'?'다시 전화하기':'진행 상황 확인 전화';el.__waitDue=due;
   const assignee=root.repN(d.assignee)||root.repN(root.ME?.name)||'';
   const ticked=[...el.querySelectorAll('[data-check][aria-pressed="true"]')].map(b=>Number(b.dataset.check));
-  const activity={type:'전화',note:noteText+(ticked.length?' · 확인: '+ticked.map(i=>root.CHECKS[i]).join(', '):''),result:'',occurred_at:new Date().toISOString()};
+  /* 대기 이유(contact_link ④): 기록에 '대기 이유: X (날짜까지)' · 다음 할 일 = 그 다음날 결과 확인 */
+  const waitBtn=el.querySelector('[data-wait][aria-pressed="true"]'),wait=waitBtn?waitBtn.dataset.wait:'';
+  if(wait){const t=new Date(due+'T00:00:00');t.setDate(t.getDate()+1);const nd=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(t);nextText=wait.replace(/\s*·.*$/,'')+' 결과 확인';due=nd;}
+  const activity={type:'전화',note:noteText+(ticked.length?' · 확인: '+ticked.map(i=>root.CHECKS[i]).join(', '):'')+(wait?' · '+root.ContactLink.waitText(wait,String(waitBtn&&el.__waitDue||due)):''),result:'',occurred_at:new Date().toISOString()};
   const next={type:promise?'고객 약속':'전화',text:nextText,due_at:due,assignee};
   busy=true;el.querySelectorAll('button,input').forEach(n=>n.disabled=true);
   const progress=el._progress||(el._progress={});

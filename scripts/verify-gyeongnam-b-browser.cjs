@@ -27,8 +27,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#pg-gyeongnam>.cf-bar:not([hidden])').count(),1,'공통 필터줄');
   assert.equal(await page.evaluate(()=>document.getElementById('ptitle').textContent),'경남지사');
   /* 공용 틀(2026-10-06 "리스트에서 이질감 없이"): 파이프라인 v3 와 같은 틀 — 상태 탭 4칸 · 진단 숫자 3개 · 사유 · 할 일 · 지사 담당 상자 */
-  assert.deepEqual(await v.locator('.ps3-tabs .ps3-tab').evaluateAll(l=>l.map(b=>b.querySelector('.l').textContent+' '+b.querySelector('.n').textContent)),['전체 5','지사 미착수 · 실담당 없음 2','실담당 지정 · 연락 전 2','영업 진행 확인됨 1']);
-  assert.match(await v.locator('.ps3-kpis').innerText(),/기준 넘김\s*3건[\s\S]*지사 미착수\s*2건[\s\S]*평균 넘긴 후\s*\d+일/);
+  assert.deepEqual(await v.locator('.ps3-tabs .ps3-tab').evaluateAll(l=>l.map(b=>b.querySelector('.l').textContent+' '+b.querySelector('.n').textContent)),['전체 5','고객 연결 확인 4','니즈 확인 0','방문·견적 진행 1']/* contact_link ②: 3단계 · 연락 전은 1단계 안의 빨강 */);
+  assert.match(await v.locator('.ps3-kpis').innerText(),/기준 넘김\s*3건[\s\S]*연락 전\s*4건[\s\S]*평균 넘긴 후\s*\d+일/);
   const reasons=await v.locator('.ps3-reason>span>b:first-child').allInnerTexts();
   assert.deepEqual(reasons,['넘긴 지 16일 · 움직임 없음','넘긴 후 7일 · 지사 응대 없음','지사 실담당 미지정','지사 첫 연락 없음','영업기회 미등록'],JSON.stringify(reasons));
   assert.match(await v.locator('.ps3-diag>.ps3-box').nth(2).innerText(),/그래서 뭘 해야 하나[\s\S]*넘긴 지 16일 · 움직임 없음 2건[\s\S]*넘긴 후 7일 · 지사 응대 없음 3건/);
@@ -37,9 +37,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 정렬: 16일 넘은 둘(18일 → 17일) → 8일 무응답 → 6일 → 진행 중 */
   const order=await v.locator('.psb-row').evaluateAll(a=>a.map(n=>n.querySelector('.prv-a>b').textContent));
   assert.deepEqual(order,['[부산] 이편한세상광안비치아파트','[경남 거제] 한국전력공사','[경남 양산] 8일 무응답 현장','[경남 김해] 진행 중 현장','[경남 창원] 응대 없는 현장'],JSON.stringify(order));
-  assert.match(await v.locator('.psb-row').first().innerText(),/이편한세상광안비치아파트[\s\S]*POUR솔루션 · 지사 미지정 · 문의[\s\S]*지사 미착수[\s\S]*지사 연락 없음[\s\S]*넘긴 지 16일 · 움직임 없음[\s\S]*18일[\s\S]*회수 검토/);
-  assert.match(await v.locator('.psb-row').nth(2).innerText(),new RegExp('8일 무응답 현장[\\s\\S]*'+rep+'[\\s\\S]*실담당 지정[\\s\\S]*넘긴 후 7일 · 지사 응대 없음[\\s\\S]*8일[\\s\\S]*확인 요청'));
-  assert.match(await v.locator('.psb-row').nth(3).innerText(),/진행 중 현장[\s\S]*영업 진행 확인됨[\s\S]*영업기회 미등록[\s\S]*9일[\s\S]*진행 확인/);
+  assert.match(await v.locator('.psb-row').first().innerText(),/이편한세상광안비치아파트[\s\S]*POUR솔루션 · 지사 미지정 · 문의[\s\S]*고객 연결 확인[\s\S]*지사 연락 없음[\s\S]*넘긴 지 16일 · 움직임 없음[\s\S]*18일[\s\S]*회수 검토/);
+  assert.match(await v.locator('.psb-row').nth(2).innerText(),new RegExp('8일 무응답 현장[\\s\\S]*'+rep+'[\\s\\S]*고객 연결 확인[\\s\\S]*넘긴 후 7일 · 지사 응대 없음[\\s\\S]*8일[\\s\\S]*확인 요청'));
+  assert.match(await v.locator('.psb-row').nth(3).innerText(),/진행 중 현장[\s\S]*방문·견적 진행[\s\S]*영업기회 미등록[\s\S]*9일[\s\S]*진행 확인/);
   assert.equal(await v.locator('[onclick*="gnOpenOwner"],[data-gn="assign"],.psb-row button:has-text("실담당 지정")').count(),0,'본사 화면에 실담당 지정 버튼 없음');
   if(shot)await page.screenshot({path:shot+'-list.png',fullPage:true});
   /* 지사 담당 칩 · 막대 칸 필터 · 보드 */
