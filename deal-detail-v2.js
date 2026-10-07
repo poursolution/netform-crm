@@ -178,5 +178,13 @@
   const view=$('detailView');if(view)new MutationObserver(list=>{for(const m of list)for(const n of m.addedNodes)if(n.id==='detailAction')panelize(n);}).observe(view,{childList:true});
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+ root.addEventListener('activity-links:changed',e=>{
+  const d=root.CUR_DETAIL?.kind==='deal'&&root.CUR_DETAIL.item,v=$('detailView'),thread=v?.querySelector('.ddv-talk .idv-thread');
+  if(!d||e.detail?.key!=='deal:'+d.id||!thread)return;
+  const fresh=talk(d,!!d.outcome||d.lifecycle_status==='closed'),pos=thread.scrollTop;
+  thread.innerHTML=fresh.querySelector('.idv-thread').innerHTML;thread.scrollTop=pos;
+  const count=v.querySelector('.ddv-talk .idv-chead>span');if(count)count.textContent=bubbles(d).length+'건';
+  root.DealDetailV3?.refreshCenter?.();
+ });
  root.DealDetailV2={reskin,bubbles,enabled,contactPanel};
 })(window);
