@@ -56,7 +56,7 @@
   const tf=(TAB.find(t=>t[0]===S.tab)||TAB[0])[2],list=base.filter(tf).sort((a,b)=>Number(a.fix)-Number(b.fix)||Number(!a.known)-Number(!b.known)||Number(b.rec)-Number(a.rec)||String(b.created).localeCompare(String(a.created))||String(a.r.site).localeCompare(String(b.r.site),'ko'));
   const pg=LP().cut(list,LP().page(S,'list:'+S.tab+':'+(S.owner||'')+':'+S.old),20);
   const isAdm=admin();
-  const head='<div class="plg-head"><b>'+h(P().LABEL)+'</b><span>예전 시스템에서 옮겨 온 자료 · 진행 건수 · 메이드율 계산에 안 들어감</span><i></i><span class="plg-nums">전체 <b>'+M.all.toLocaleString('ko-KR')+'</b> · 바로 재개 가능 <b>'+M.okAll.toLocaleString('ko-KR')+'</b>'+(M.noownAll?' · 배정 후 재개 가능 <b>'+M.noownAll.toLocaleString('ko-KR')+'</b>':'')+' · 서버 보완 필요 <b class="fx">'+M.fixAll.toLocaleString('ko-KR')+'</b></span></div>';
+  const head='<div class="plg-head"><b>'+h(P().LABEL)+'</b><span>예전 시스템에서 옮겨 온 자료 · 진행 건수 · 메이드율 계산에 안 들어감</span><i></i><span class="plg-nums">전체 <b>'+M.all.toLocaleString('ko-KR')+'</b> · 바로 재개 가능 <b>'+M.okAll.toLocaleString('ko-KR')+'</b>'+(M.noownAll?' · 배정 후 재개 가능 <b>'+M.noownAll.toLocaleString('ko-KR')+'</b>':'')+' · 서버 보완 필요 <b class="fx">'+M.fixAll.toLocaleString('ko-KR')+'</b></span>'+(isAdm&&root.DealTrash&&root.DealTrash.ready()?'<button type="button" class="plg-trash" data-plg="trash">휴지통</button>':'')+'</div>';/* 휴지통 = 보낸 영업건 30일 보관 · 복원(deal-trash.js · 관리자) */
   const card=o=>{const on=S.owner===o.n;return '<div class="plg-owner'+(on?' on':'')+'" data-plg="owner" data-v="'+attr(o.n)+'" role="button" tabindex="0" aria-pressed="'+on+'"><div class="t"><b>'+h(o.n)+'</b><span>'+o.total+'건</span><i></i><small>바로 재개 '+o.ok+'</small></div>'
    +'<button type="button" data-plg="req" data-v="'+attr(o.n)+'"'+(o.ok&&isAdm&&!S.busy?'':' disabled')+(isAdm?'':' title="요청은 관리자만 보낼 수 있습니다"')+'>'+(S.busy===o.n?'보내는 중…':o.ok+'건 담당에게 재개 요청')+'</button></div>';};
   const none=M.noown.length?'<div class="plg-owner none'+(S.owner==='__none'?' on':'')+'" data-plg="owner" data-v="__none" role="button" tabindex="0" aria-pressed="'+(S.owner==='__none')+'"><div class="t"><b>담당 없음</b><span>'+M.noown.length+'건</span><i></i><small>배정 필요</small></div><button type="button" data-plg="assign-all">담당 '+M.noown.length+'건 배정하기</button></div>':'';
@@ -103,6 +103,7 @@
   if(a==='page'){LP().set(S,'list:'+S.tab+':'+(S.owner||'')+':'+S.old,Number(b.dataset.page)||1);return paint();}
   if(a==='owner'){if(e.target.closest('button'))return;S.owner=S.owner===b.dataset.v?null:b.dataset.v;LP().reset(S);return paint();}
   if(a==='owner-clear'){S.owner=null;LP().reset(S);return paint();}
+  if(a==='trash'){e.stopPropagation();try{root.DealTrash.open();}catch(err){}return;}
   if(a==='req'){e.stopPropagation();sendRequests(b.dataset.v);return;}
   if(a==='assign-all'){e.stopPropagation();S.owner='__none';S.tab='noown';LP().reset(S);paint();const first=LAST&&LAST.noown[0];if(first)openDeal(first.key,'owner');return;}
   e.stopPropagation();

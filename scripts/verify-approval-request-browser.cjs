@@ -40,7 +40,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.waitForTimeout(900);
   const v=page.locator('#detailView.dv3');assert.equal(await v.count(),1);
   /* 종료된 영업건(실주): 빈 값 줄이 벌어지지 않는다(공통 빈칸 상자 규칙이 걸리던 것 · 2026-10-04 대표 캡처) */
-  await v.locator('[data-dv3="reqtoggle"]').click();await page.waitForTimeout(150);/* 정돈안: 이 단계 필수 정보는 접혀 있다 — 펼쳐서 본다 */
+  /* 2026-10-07: 이 단계 필수 정보는 항상 펼쳐져 있다(접는 단추 없음) */
   assert.deepEqual(await v.locator('.dv3-row').evaluateAll(l=>[l.length>5,Math.max(...l.map(n=>Math.round(n.getBoundingClientRect().height)))<60,[...new Set(l.map(n=>n.querySelector('.empty')).filter(Boolean).map(n=>getComputedStyle(n).display+'|'+getComputedStyle(n).minHeight+'|'+getComputedStyle(n).paddingTop))].join(',')]),[true,true,'block|0px|0px']);
   const before=await page.evaluate(()=>JSON.stringify(B.deals[0]));
   const writes0=await page.evaluate(()=>JSON.stringify(__writes));
