@@ -82,7 +82,7 @@
   const tab=(v,l,rule,num,hotOn,on)=>'<button type="button" class="ps3-tab'+(on?' on':'')+'" data-sb="bucket" data-v="'+attr(v)+'" aria-pressed="'+on+'"><b class="n'+(hotOn&&num?' r':'')+'">'+num.toLocaleString('ko-KR')+'</b><b class="l">'+h(l)+'</b><span>'+h(rule)+'</span></button>';
   const tabs='<div class="ps3-tabs" role="group" aria-label="상태">'+tab('all','전체','모든 '+(C.listTitle||'확인할 현장').replace(/^확인할\s*/,''),inB.length,false,S.bucket==='all')+C.S.map(s=>tab(s[0],s[1],s[3],cnt(s[0]),hot(s[0]),S.bucket===s[0])).join('')+'</div>';
   const diag='<aside class="ps3-diag"><section class="ps3-box"><header><b>'+h(C.diagTitle||'진단')+'</b><span>'+inB.length.toLocaleString('ko-KR')+unit+(C.noAmount?'':' · '+h(money(sumAmt)))+'</span></header>'
-   +'<div class="ps3-kpis three"><div class="over"><span>기준 넘김</span><b>'+redN.toLocaleString('ko-KR')+unit+'</b><small>오늘 처리할 것</small></div><div><span>'+h(k2[0])+'</span><b>'+h(k2[1])+'</b><small>'+h(k2[2])+'</small></div><div><span>'+h(k3[0])+'</span><b>'+h(k3[1])+'</b><small>'+h(k3[2])+'</small></div></div></section>'
+   +'<div class="ps3-kpis three"><div class="over"><span>기준 넘김</span><b>'+redN.toLocaleString('ko-KR')+unit+'</b><small>'+h((()=>{try{const J=root.PipelineJudge,dl=inB.map(i=>i.row&&i.row.item).filter(Boolean);return J&&J.on()&&dl.length&&dl.length===inB.length?J.tallyText(J.tally(dl)):'';}catch(e){return '';}})()||'오늘 처리할 것')+'</small></div>'/* ops_12 A②: 영업건 묶음이면 기한 초과 · 날짜 미입력 · 판정 불가 분해 */+'<div><span>'+h(k2[0])+'</span><b>'+h(k2[1])+'</b><small>'+h(k2[2])+'</small></div><div><span>'+h(k3[0])+'</span><b>'+h(k3[1])+'</b><small>'+h(k3[2])+'</small></div></div></section>'
    +'<section class="ps3-box ps3-why"><header><b>왜 멈춰 있나</b><span>누르면 목록이 걸러짐</span></header>'+(reasons.length?reasons.map(x=>{const on=S.reason===x.k;return '<button type="button" class="ps3-reason'+(on?' on':'')+(isRed(x.k)?' first':'')+'" data-sb="reason" data-v="'+x.k+'" aria-pressed="'+on+'"><span><b>'+h(C.RS[x.k][0])+'</b><b class="c">'+x.n.toLocaleString('ko-KR')+'</b></span><i><u style="width:'+(byS.length?Math.min(100,Math.round(x.n/byS.length*100)):0)+'%"></u></i></button>';}).join(''):'<p class="ps3-none">멈춘 사유가 없습니다</p>')+'</section>'
    +'<section class="ps3-box"><header><b>그래서 뭘 해야 하나</b></header>'+(acts.length?acts.map(a=>'<div class="psb-act"><span>'+h(a.tag)+'</span><p>'+h(a.t)+'</p></div>').join(''):'<p class="ps3-none">기준을 넘긴 곳이 없습니다</p>')+'</section>'+(C.sideHtml||'')+'</aside>';
   const chips=[S.bucket!=='all'?(C.S.find(s=>s[0]===S.bucket)||[])[1]:'',S.reason?C.RS[S.reason][0]:''].filter(Boolean);
@@ -106,6 +106,7 @@
    if(a==='page'){root.ListPager.set(S,v,b.dataset.page);return ctx.paint();}
    e.stopPropagation();
    if(a==='act')return ctx.open(b.dataset.key,C&&C.RS[v]?C.RS[v][4]:'',v);
+   if(a==='fix'){e.stopPropagation();return ctx.open(b.dataset.key,'stagefields','fix');}/* 날짜 미입력 보완 단추(ops_12 A②) */
    if(a==='open'&&!e.target.closest('button'))return ctx.open(b.dataset.key,'','');
   },true);
   host.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('.sb [data-sb="open"]')){e.preventDefault();e.target.click();}});

@@ -147,7 +147,7 @@
   const tabs='<div class="ps3-tabs" role="group" aria-label="상태">'+tab(-1,'전체','이 단계 모든 현장',total,false)+C.tabs.map((t,i)=>tab(i,t[0],t[1],n[i],hot(i))).join('')+'</div>';
   /* 왼쪽: 단계 진단 */
   const diag='<aside class="ps3-diag"><section class="ps3-box"><header><b>단계 진단</b><span>'+total.toLocaleString('ko-KR')+'건 · '+h(money(sumAmt))+'</span></header>'
-   +'<div class="ps3-kpis"><div class="over"><span>기준 넘김</span><b>'+over.toLocaleString('ko-KR')+'건</b><small>오늘 처리할 것</small></div><div><span>평균 체류</span><b>'+avg+'일</b><small>기준 '+C.goal+'일</small></div></div></section>'
+   +'<div class="ps3-kpis"><div class="over"><span>기준 넘김</span><b>'+over.toLocaleString('ko-KR')+'건</b><small>'+h((()=>{try{const J=root.PipelineJudge;return J&&J.on()?J.tallyText(J.tally(items.map(x=>x.row&&x.row.item).filter(Boolean))):'';}catch(e){return '';}})()||'오늘 처리할 것')+'</small></div>'/* ops_12 A②: 기한 초과 · 날짜 미입력 · 판정 불가 분해(합 = 전체) */+'<div><span>평균 체류</span><b>'+avg+'일</b><small>기준 '+C.goal+'일</small></div></div></section>'
    +'<section class="ps3-box ps3-why"><header><b>왜 멈춰 있나</b><span>누르면 목록이 걸러짐</span></header>'
    +C.reasons.map((r,i)=>{const c=rsN(r[0]),on=S.reason===r[0];return '<button type="button" class="ps3-reason'+(on?' on':'')+((C.redReason?C.redReason(r[0]):i===0)?' first':'')+'" data-ps3="reason" data-v="'+r[0]+'" aria-pressed="'+on+'"><span><b>'+h(r[1])+'</b><b class="c">'+c.toLocaleString('ko-KR')+'</b></span><i><u style="width:'+(total?Math.min(100,Math.round(c/total*100)):0)+'%"></u></i></button>';}).join('')+'</section>'
    +'<section class="ps3-box"><header><b>그래서 뭘 해야 하나</b></header>'+(C.todoHtml?C.todoHtml(items,S):'<p class="ps3-todo">'+h(C.todo)+'</p>')+'</section></aside>';
@@ -170,6 +170,7 @@
   if(a==='page'){LP.set(S,v,b.dataset.page);return root.paint();}
   e.stopPropagation();
   if(a==='act')return B.open(b.dataset.key,v);
+  if(a==='fix'){e.stopPropagation();return B.open(b.dataset.key,'stagefields');}/* 날짜 미입력 보완 단추 → 상세의 이 단계 필수 정보(ops_12 A②) */
   if(a==='open'&&!e.target.closest('button'))return B.open(b.dataset.key);
  }
  /* 단계 목록 그리기를 감싼다(B안 · 관계관리 세분화보다 뒤): v3 가 켜진 단계면 v3 를 그리고 true */

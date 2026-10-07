@@ -180,6 +180,7 @@
   if(a==='page'){root.ListPager.set(S,v,b.dataset.page);return root.paint();}
   e.stopPropagation();
   if(a==='act')return open(b.dataset.key,b.closest('.prv-row')?(v||''):(C&&C.RS[v]?C.RS[v][4]:''));/* v11 줄의 버튼은 동작 이름을 그대로 넘긴다(보드 카드는 사유 키) */
+  if(a==='fix'){e.stopPropagation();return open(b.dataset.key,'stagefields');}/* 날짜 미입력 보완 단추(ops_12 A②) */
   if(a==='open'&&!e.target.closest('button'))return open(b.dataset.key);
  }
  /* PipelineListV2.paint 를 감싼다: B안이 켜져 있으면 B안을 그리고 true */

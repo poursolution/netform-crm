@@ -528,7 +528,7 @@
      const plan=!!(a&&a.text),ahead=plan&&!!due&&days>=0;
      if(ahead){lab='다음 할 일';t1=String(a.text)+' · '+dd(due);t2=(days===0?'오늘':days+'일 남음')+(hint?' · '+hint.why:'');}
      else if(hint){t1=hint.todo||hint.why;t2=[gl?gl+(age!=null?' '+age+'일째':''):'',hint.why].filter(Boolean).join(' · ');}
-     else if(plan){t1=String(a.text)+(due?' · '+dd(due):'');const J=root.PipelineJudge&&root.PipelineJudge.on()?root.PipelineJudge:null,jb=J?J.basis(d):null;t2=jb?J.dueText(jb)+' · 판정: '+jb.why:(due?(-days)+'일 지남':'날짜 미등록');}/* 기한 상태 3가지 · 판정 = 목록 · 오늘 업무와 같은 함수(2026-10-06 집계 ② ④) */
+     else if(plan){t1=String(a.text)+(due?' · '+dd(due):'');const J=root.PipelineJudge&&root.PipelineJudge.on()?root.PipelineJudge:null,jb=J?J.basis(d):null;t2=jb?J.dueText(jb)+' · '+J.line(jb):(due?(-days)+'일 지남':'날짜 미등록');}/* 기한 상태 3가지 · 판정 = 목록 · 오늘 업무와 같은 함수(2026-10-06 집계 ② ④) */
     }
     now.insertBefore(el('div','dv3-title','<b>'+h(t1)+'</b><span>'+h(t2)+'</span>'),now.querySelector('.nc-todo')||anchor);
    }

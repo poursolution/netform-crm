@@ -49,9 +49,9 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    ['[서울 노원] 상계7단지','POUR솔루션 · 공종 미분류 · 이필선','미팅 일정 없음','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','입대의 일정 확인 전화','내일까지','연락 기록','next','open'],
    ['전농아름숲','POUR솔루션 · 공종 미분류 · 정정훈','미팅 일정 없음','최근 연락 시도 '+d5[0]+' · 연결됨','방문 일정 확정',due5[1]+'까지','일정 등록','next','open'],
    ['[경기 인천] 삼보','POUR솔루션 · 공종 미분류 · 미배정','담당자 미지정','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','담당자 배정','기한 없음 · 정하기','담당 배정','owner','open'],
-   ['한강제이타워','POUR솔루션 · 공종 미분류 · 정정훈','미팅 일정 없음','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','첫 통화에서 미팅 날짜 잡기','기록 없음 · 기한 계산 안 함','연락처 찾기','contact','open']]);
+   ['한강제이타워','POUR솔루션 · 공종 미분류 · 정정훈','미팅 일정 없음','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','첫 통화에서 미팅 날짜 잡기','판정 불가 · 기한 계산 안 함','연락처 찾기','contact','open']]);
   /* 판정 하나(2026-10-06 집계 · 판정 정리 ② ③ ④): 다음 업무 아래 '판정: 근거', 현재 상황 아래 '최근 실제 연결 / 실제 연결 없음' */
-  assert.deepEqual(await L.locator('.prv-row').evaluateAll(l=>l.map(r=>[((r.querySelector('.prv-c>small.why')||{}).textContent||'').replace(/[\d.]+/g,'D'),r.querySelector('.prv-b>small.cn').textContent.replace(/[\d.]+/g,'D')])),[['판정: 다음 행동일 D','실제 연결 없음'],['판정: 다음 행동일 D','실제 연결 없음'],['판정: 다음 행동일 D','실제 연결 없음'],['판정: 다음 행동일 D','최근 실제 연결 D'],['판정: 미팅 · 연락 기록 없음 → 지연으로 세지 않음','실제 연결 없음'],['판정: 미팅 · 연락 기록 없음 → 지연으로 세지 않음','실제 연결 없음']].map((x,i)=>i===4?['','실제 연결 없음']:x)/* 미배정 줄은 담당 배정이 먼저 — 판정 줄 없음 */,'판정 줄 · 실제 연결 줄');
+  assert.deepEqual(await L.locator('.prv-row').evaluateAll(l=>l.map(r=>[((r.querySelector('.prv-c>small.why')||{}).textContent||'').replace(/[\d.]+/g,'D'),r.querySelector('.prv-b>small.cn').textContent.replace(/[\d.]+/g,'D')])),[['판정: 다음 행동일 D','실제 연결 없음'],['판정: 다음 행동일 D','실제 연결 없음'],['판정: 다음 행동일 D','실제 연결 없음'],['판정: 다음 행동일 D','최근 실제 연결 D'],['판정: 판정 불가 · 미팅 · 연락 기록 없음(이관 전 기록 확인) → 데이터 검토에서 이관 전 기록 확인','실제 연결 없음'],['판정: 판정 불가 · 미팅 · 연락 기록 없음(이관 전 기록 확인) → 데이터 검토에서 이관 전 기록 확인','실제 연결 없음']].map((x,i)=>i===4?['','실제 연결 없음']:x)/* 미배정 줄은 담당 배정이 먼저 — 판정 줄 없음 */,'판정 줄 · 실제 연결 줄');
   assert.equal(await page.evaluate(()=>document.querySelectorAll('#pipeline-stage-v3 .prv-more,#pipeline-stage-v3 .prv-main,#pipeline-stage-v3 [data-ps3="toggle"]').length),0,'펼침 칸 · 펼침 누름이 없다');
   /* 강조색은 빨강 하나: 기한 지남 · 미배정. 왼쪽 3px 브랜드 띠 · 흰 버튼 120px 칸 · 줄 높이 */
   const css=await page.evaluate(()=>{const R=[...document.querySelectorAll('#pipeline-stage-v3 .prv-row')],cs=(n,p)=>getComputedStyle(n)[p];
@@ -84,7 +84,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual(await page.evaluate(()=>[document.querySelectorAll('#pipeline-stage-v3 .prv-row,#pipeline-stage-v3 .prv-head').length,document.querySelectorAll('#pipeline-stage-v3 .ps3-row .ps3-a').length]),[0,6]);
   await page.evaluate(()=>{G.pipeRowV11Off=false;paint();});await page.waitForSelector('#pipeline-stage-v3 .prv-list .prv-row');
   /* ⑦ 수주 · 실주도 같은 줄 구조(위 진단은 그 화면 그대로) · 줄 = 바로 상세 */
-  for(const [key,want] of [['won',['[경기 용인] 가람마을아파트','석민이앤씨 · 공종 미분류 · 황윤선','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','기한 없음 · 정하기','수주 정보']],['lost',['[경기 수원] 선경빌','석민이앤씨 · 공종 미분류 · 황윤선','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','기한 없음 · 정하기','사유 기록']]]){
+  for(const [key,want] of [['won',['[경기 용인] 가람마을아파트','석민이앤씨 · 공종 미분류 · 황윤선','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','기한 없음','수주 정보']],['lost',['[경기 수원] 선경빌','석민이앤씨 · 공종 미분류 · 황윤선','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','기한 없음','사유 기록']]]){
    await page.evaluate(k=>PipelineWorkspace.open(k),key);await page.waitForSelector('#pipeline-stage-v3 .prv-list .prv-row');await page.waitForTimeout(200);
    const b=page.locator('#pipeline-stage-v3');
    assert.deepEqual([(await b.locator('.prv-head span').allInnerTexts()).map(one),await b.locator('.ps3-diag .ps3-box').count()>=1,await b.locator('.prv-row.ps3-row').count(),await b.locator('.prv-more,.prv-main').count()],[['현장 · 담당','현재 상황','다음 업무 · 기한',''],true,1,0],key+': 같은 줄 · 진단은 그대로 · 펼침 없음');

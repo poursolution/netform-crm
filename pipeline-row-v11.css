@@ -28,3 +28,6 @@
 :is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-b>small.cn{color:#374151}
 :is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-b>small.cn.none{color:#9ca3af}
 :is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-c>small.why{font-size:11px;color:#9ca3af;font-weight:400}
+
+/* ops_12 A②: 날짜 미입력 줄의 보완 단추([발송일 입력] 등) */
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-c>small.why u{color:#2a52b8;font-weight:600;text-decoration:underline;text-underline-offset:2px;cursor:pointer;margin-left:4px}
