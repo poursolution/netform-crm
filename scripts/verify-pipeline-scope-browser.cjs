@@ -93,7 +93,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.equal(r1[0],1,'컨설팅 설계 목록에 과거 이관이 없다');assert.match(r1[1],/ · 옥상\(우레탄\) · /);assert.match(r1[2],/^1차 미팅 (\d+일 지남|오늘까지|내일까지|\d{1,2}\/\d{1,2}까지)( 판정: .+)?$/);assert.equal(r1[3],'open','줄 = 바로 상세');
   await page.evaluate(()=>PipelineWorkspace.open('sent'));await page.waitForSelector('#pipeline-stage-v3 .ps3-row[data-key="a2"]');
   await shot('rows');
-  assert.deepEqual(await page.evaluate(()=>{const r=document.querySelector('#pipeline-stage-v3 .ps3-row[data-key="a2"]'),t=s=>{const n=r.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():null;};return [t('.prv-c>small'),/ · 공종 미분류 · /.test(t('.prv-a>span')),t('.prv-c>b')];}),['판정 불가 · 기한 계산 안 함',true,'오늘 후속 연락']/* 발송일 · 연락 기록이 없는 건은 기한을 세지 않는다(2026-10-06 집계 ④) */);
+  assert.deepEqual(await page.evaluate(()=>{const r=document.querySelector('#pipeline-stage-v3 .ps3-row[data-key="a2"]'),t=s=>{const n=r.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():null;};return [t('.prv-c>small'),/ · 공종 미분류 · /.test(t('.prv-a>span')),t('.prv-c>b')];}),['판정 불가 · 기한 계산 안 함',true,'발송일 · 자료 · 수신자 입력']/* 발송일 · 연락 기록이 없는 건은 기한을 세지 않는다(2026-10-06 집계 ④) · stage7 ②: 발송일 없는 건의 다음 업무 = 발송일 · 자료 · 수신자 입력 */);
   /* ⑥ 끄면 예전처럼: 예전 단계 값이 컨설팅 설계로 들어온다 */
   const off=await page.evaluate(()=>{G.pipeScopeOff=true;PipelineWorkspace.open('all');const r=PipelineWorkspace.rows();const out=[r.filter(x=>x.group==='consulting').length,!!document.querySelector('#pipeline-stage-menu .plv-legacy')];G.pipeScopeOff=false;PipelineWorkspace.open('all');return out;});
   assert.deepEqual(off,[6,false]);

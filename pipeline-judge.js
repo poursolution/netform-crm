@@ -38,12 +38,16 @@
   const nr=(why)=>({kind:'norecord',why,rec:'데이터 검토에서 이관 전 기록 확인',due:'',n:null,src:'stage'});
   const na=(why)=>({kind:'na',why,due:'',n:null,src:'stage'});
   const lc=lastContactAt(d);
-  if(g==='consulting'){const qd=dayKey(fld(d,'consulting','quote_due')||'');if(qd)return D('견적 기한',qd,0);
-   const mt=dayKey(fld(d,'consulting','meeting_date')||fld(d,'first_contact','meeting_date')||'')||lastActAt(d,/방문|미팅|실측|실사/);if(mt)return D('미팅 완료',mt,Q.quote);
-   return lc?none('미팅 일정 미등록 · 견적 기한 계산 안 함','미팅 일정 입력','미팅 여부 확인 → 일정 등록 또는 보류 사유 등록'):nr('판정 불가 · 미팅 · 연락 기록 없음(이관 전 기록 확인)');}
-  if(g==='sent'){const sd=dayKey(fld(d,'sent','sent_date')||'');if(sd)return D('발송',sd,Q.follow);const fu=dayKey(fld(d,'sent','followup_date')||'');if(fu)return D('후속 확인일',fu,0);return lc?none('발송일 미등록 · 후속 기한 계산 안 함','발송일 입력','발송 여부 확인 → 발송일 등록 또는 보류 사유 등록'):nr('판정 불가 · 발송일 · 연락 기록 없음(이관 전 기록 확인)');}
+  /* 2026-10-07 design_handoff_stage7 ①: '견적 처리 3일 · 5일' = 물량 산출 기한(견적 요청 등록일부터 · 견적팀 · 견적 예정일 칸). '미팅 후 견적 요청 등록'은 따로 둔 업무 — 기한은 설정값(quote_request_days · 운영 제안), 정해지기 전엔 '기한 없음 · 설정값 확인' */
+  if(g==='consulting'){const qd=dayKey(fld(d,'consulting','quote_due')||'');if(qd)return D('물량 산출 기한',qd,0);
+   const qr=String(fld(d,'consulting','quote_request')||'').trim();if(qr)return none('견적 요청 등록됨 · 물량 산출 기한(견적 예정일) 미입력','견적 예정일 입력','견적팀에 물량 산출 기한(목표 '+Q.quote+'일 · 최대 5일) 확인 → 견적 예정일 입력');
+   const mt=dayKey(fld(d,'consulting','meeting_date')||fld(d,'first_contact','meeting_date')||'')||lastActAt(d,/방문|미팅|실측|실사/);
+   if(mt){const qn=Number(R().quoteRequestDays)||0;if(qn>0)return D('미팅 완료',mt,qn);return Object.assign(none('미팅 완료 '+md(mt)+' · 견적 요청 등록 전 · 등록 기한 = 설정값(운영 제안 · 미확정)','견적 요청 등록','미팅 후 견적 요청 등록 → 물량 산출은 견적팀(등록일부터 목표 '+Q.quote+'일)'),{dueLabel:'기한 없음 · 설정값 확인'});}
+   return lc?none('미팅 일정 미등록 · 기한 계산 안 함','미팅 일정 입력','미팅 여부 확인 → 일정 등록 또는 보류 사유 등록'):nr('판정 불가 · 미팅 · 연락 기록 없음(이관 전 기록 확인)');}
+  /* stage7 ②: 발송일 있는 건만 7일 판정 · 없으면 '발송일 확인 필요 · 7일 계산 안 함' */
+  if(g==='sent'){const sd=dayKey(fld(d,'sent','sent_date')||'');if(sd)return D('발송',sd,Q.follow);const fu=dayKey(fld(d,'sent','followup_date')||'');if(fu)return D('후속 확인일',fu,0);return lc?Object.assign(none('발송일 미등록 · 7일 후속 판정 안 함','발송일 입력','발송일 · 자료 · 수신자 입력 → 발송 여부 확인 또는 보류 사유 등록'),{dueLabel:'발송일 확인 필요 · 7일 계산 안 함'}):nr('판정 불가 · 발송일 · 연락 기록 없음(이관 전 기록 확인)');}
   if(g==='relationship'){const rs=dayKey(fld(d,'waiting','resume_date')||'');if(rs)return D('재개일',rs,0);if(lc)return D('마지막 연락',lc,Q.month);return nr('판정 불가 · 연락 기록 없음(이관 전 기록 확인)');}
-  if(g==='competition'){const bd=dayKey(anyFld(d,'bid_deadline')||anyFld(d,'decision_date')||anyFld(d,'briefing_date')||anyFld(d,'meeting_date')||'');if(bd)return D('마감 · 결정 일정',bd,0);return lc?none('결정 일정 미등록 · 마감 기한 계산 안 함','결정 일정 입력','결정 일정 확인 → 일정 등록 또는 보류 사유 등록'):nr('판정 불가 · 결정 일정 · 연락 기록 없음(이관 전 기록 확인)');}
+  if(g==='competition'){const bd=dayKey(anyFld(d,'bid_deadline')||anyFld(d,'decision_date')||anyFld(d,'briefing_date')||anyFld(d,'meeting_date')||'');if(bd)return D('마감 · 결정 일정',bd,0);return lc?Object.assign(none('결정 · 입찰 일정 미등록 · D-'+(Number(R().bidPrepDays)||7)+' 계산 안 함','입찰 · PT 일정 입력','입찰 · PT 일정 확인 → 일정 등록 또는 보류 사유 등록'),{dueLabel:'기한 없음 · 일정 입력 후 계산'}):nr('판정 불가 · 결정 일정 · 연락 기록 없음(이관 전 기록 확인)');}
   if(g==='construction'){const st=dayKey(fld(d,'construction','start_date')||'');if(st)return D('착공',st,Q.site);const cd=dayKey(fld(d,'contract','contract_date')||d.contract_date||'');if(cd)return D('계약',cd,0);return lc?none('계약일 미등록 · 기한 계산 안 함','계약일 입력','계약 여부 확인 → 계약일 등록'):nr('판정 불가 · 계약일 · 연락 기록 없음(이관 전 기록 확인)');}
   /* 수주 · 실주: 기한을 세지 않는다(준공 · 실주일은 근거로만) */
   if(g==='won'){const cp=dayKey(d.completion_date||fld(d,'completion','completion_date')||'');return na(cp?'준공 '+md(cp)+' · 기한 없음':'준공일 미등록 · 기한 없음');}
@@ -55,7 +59,7 @@
  function dueText(b){
   if(!b||b.kind==='norecord')return '판정 불가 · 기한 계산 안 함';
   if(b.kind==='na')return '기한 없음';
-  if(b.kind!=='date'||b.n==null)return '날짜 미입력 · 기한 계산 안 함';
+  if(b.kind!=='date'||b.n==null)return b.dueLabel||'날짜 미입력 · 기한 계산 안 함';/* stage7: 단계가 정한 글이 있으면 그것(발송일 확인 필요 · 설정값 확인 · 일정 입력 후 계산) */
   const n=b.n,m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(dayKey(b.due));return n<0?(-n)+'일 지남':n===0?'오늘까지':n===1?'내일까지':(m?(+m[2])+'/'+(+m[3]):md(b.due))+'까지';
  }
  const dueClass=b=>!b||b.kind!=='date'||b.n==null?'g':b.n<0?'r':'';

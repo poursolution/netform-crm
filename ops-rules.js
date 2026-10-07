@@ -37,6 +37,8 @@
    N('unreachable_interval_days','연락두절 시도 간격','시도와 시도 사이 간격','cond','일',1,1,7),
    N('inactive_days','활동 없음','진행 중 영업건에 기록이 이 기간 없으면 알림 · 놓침','fix','일'),
    N('quote_followup_days','견적 발송 후 후속','견적 발송 후 이 기간 안에 후속 확인이 없으면 지연','fix','일'),
+   /* 2026-10-07 stage7 ①: '미팅 후 견적 요청 등록' 기한은 운영 제안(회의 확정 전) — 값이 정해지기 전에는 목록 기한이 '기한 없음 · 설정값 확인'. 물량 산출 3일 · 5일(견적팀)과는 다른 업무 */
+   N('quote_request_days','미팅 후 견적 요청 등록','1차 미팅 후 며칠 안에 견적 요청을 등록하는지. 운영 제안 · 회의 확정 전이라 아직 기한을 계산하지 않습니다(물량 산출 목표 3일 · 최대 5일은 견적 요청 등록일부터 · 견적팀).','hold','일',1,1,14),
    T('next_action_required','다음 행동 필수','진행 중 영업건은 다음 행동 + 날짜가 있어야 합니다. 없으면 놓침.','fix'),
    T('stage_gates','단계 이동 필수조건','단계별 필수값이 비면 [옮기기]를 잠급니다 — → 컨설팅 설계: 1차 현장미팅 / → 자료 발송완료: 발송일 · 발송 자료 · 다음 확인일 / → 관계관리: 자료 발송일 · 고객 반응 · 다음 행동 · 다음 확인일 / → 경쟁 · 입찰: 입찰 · 결정 일정 · 경쟁 상황 / → 계약 · 시공: 계약일 · 계약금액 / → 수주 · 실주: 수주 유형 · 낙찰금액 / 실주 원인','cond'),
    X('고객관리 기간','견적 후 집중관리 → 일반관리 → 장기 대기','fix','집중 1개월 → 일반 3개월 → 장기 대기'),
@@ -95,7 +97,7 @@
   const O=root.OPS_RULES;if(!O||typeof O!=='object')return;
   O.inquiryAssignMinutes=get('assign_minutes');O.towerFirstResponseHours=get('first_contact_hours');O.responseSlaHours=get('first_contact_hours');
   O.contactWarnDays=get('inactive_days');O.stallDays=get('inactive_days');O.inquiryFollowDays=get('quote_followup_days');
-  O.waitContactDays=get('long_wait_contact_days');O.longContactDays=get('care_general_months')*30;O.loopContactDays=get('care_focus_months')*30;
+  O.waitContactDays=get('long_wait_contact_days');O.longContactDays=get('care_general_months')*30;O.loopContactDays=get('care_focus_months')*30;O.quoteRequestDays=get('quote_request_days');
   /* 단계 바꾸기 '실주'의 사유 선택 = 실주 원인 목록 */
   try{const ST=root.StageTransition,f=ST&&ST.definitions&&ST.definitions.lost&&ST.definitions.lost.fields.find(x=>x.key==='close_reason');if(f){f.label='실주 원인';f.options=reasons('lost');}}catch(e){}
   O.unreachableAttempts=get('unreachable_attempts');O.unreachableIntervalDays=get('unreachable_interval_days');O.transferResultCheckDays=get('transfer_result_check_days');

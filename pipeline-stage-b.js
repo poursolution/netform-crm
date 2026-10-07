@@ -45,7 +45,8 @@
  const enabled=key=>!root.G.pipeStageBOff&&KEYS.includes(key||root.G.pipelineStage)&&!!root.PipelineListV2;
  const days=v=>{if(!v)return null;const n=root.daysTo(String(v).slice(0,10));return Number.isFinite(n)?n:null;};
  const since=v=>{const n=days(v);return n===null?null:-n;};
- const ymd=v=>{const s=String(v||'').slice(0,10),m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s);return m?Number(m[2])+'/'+Number(m[3]):'';};
+ /* 날짜는 한국 시간 기준(2026-10-07 stage7 공통 · 실주일 하루 차이 원인 = 시각 붙은 값을 UTC 로 자르던 것) */
+ const ymd=v=>{const J=root.PipelineJudge,s=J&&J.dayKey?(J.dayKey(v)||String(v||'').slice(0,10)):String(v||'').slice(0,10),m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s);return m?Number(m[2])+'/'+Number(m[3]):'';};
  const money=v=>{const n=Number(v)||0;if(!n)return '금액 미정';if(n>=1e8)return (Math.round(n/1e7)/10)+'억';if(n>=1e4)return Math.round(n/1e4).toLocaleString('ko-KR')+'만';return n.toLocaleString('ko-KR');};
  const VISIT=['현장방문','방문','회의','PT','현장설명'];
  const nextIsVisit=r=>!!(r.next&&VISIT.includes(String(r.next.type||'')));
@@ -54,20 +55,24 @@
  const expansionOf=r=>{try{const id=String(r.item.id),raw=(root.expServerRows?.()||[]).concat((root.LOCAL&&root.LOCAL.expansionPool)||[]);if(!raw.some(x=>String(root.expSourceId?root.expSourceId(x):(x.source_opportunity_id||x.sourceOpportunityId))===id))return null;return (root.expansionRecords?.()||[]).find(e=>String(e.sourceOpportunityId)===id)||null;}catch(e){return null;}};
  /* ── 단계별 지침(README 표). S = 막대 3칸 [키, 이름, 색, 기준 한 줄], RS = 사유 [키 → 이름, 색(빨강=기준 넘김), 버튼, 해야 할 일, 상세 열기 액션] ── */
  const CFG={
-  consulting:{name:'컨설팅 설계',desc:()=>'1차 현장미팅으로 고객 요구를 확인하고 견적을 준비하는 단계 · 견적 처리 목표 '+rules().quote+'일 / 최대 5일',axis:'1차 현장미팅 진행',
-   S:[['none','미팅 전 · 일정 없음','#15171c','첫 통화에서 날짜 잡기'],['plan','미팅 예정','#8a909c','미팅 전날 확인 연락'],['done','미팅 완료 · 견적 준비','#d5d9e0','3일 안 견적 요청(잔디)']],
-   RS:{nodate:['미팅 일정 없음',RED,'미팅 잡기','첫 통화에서 1차 미팅 날짜까지 잡기','next'],nodue:['견적 요청 3일 넘김',RED,'견적 요청','미팅 후 3일 안 견적 요청 등록 · 대표회의 임박이면 개략 금액 먼저','stagefields'],req:['필수 확인 미입력',INK,'정보 보완','미팅 때 현재 문제 · 범위 · 시기 · 경쟁사 · 요청 자료 · 대표회의 일정 · 결정권자 채우기','stagefields'],nonext:['다음 행동 · 날짜 없음',INK,'다음 행동','모든 현장에 다음 행동 + 날짜 등록 (완료만 선택 불가)','next'],long:['30일 넘게 머묾',INK,'보류 판단','30일 넘은 현장은 일반관리 전환 · 보류 여부 판단','stage']},
+  /* stage7 ①(2026-10-07): '견적 처리 3일 · 5일' = 물량 산출 기한(견적 요청 등록일부터 · 견적팀). '미팅 후 견적 요청 등록'은 따로 둔 업무 · 기한은 설정값(운영 제안) */
+  consulting:{name:'컨설팅 설계',desc:()=>'1차 현장미팅으로 고객 요구를 확인하고 견적을 준비하는 단계 · 물량 산출 목표 '+rules().quote+'일 · 최대 5일 (견적 요청 등록일부터 · 견적팀)',axis:'1차 현장미팅 진행',
+   S:[['none','미팅 전 · 일정 없음','#15171c','첫 통화에서 날짜 잡기'],['plan','미팅 예정','#8a909c','미팅 전날 확인 연락'],['done','미팅 완료 · 견적 준비','#d5d9e0','미팅 후 견적 요청 등록']],
+   RS:{nodate:['미팅 일정 없음',RED,'미팅 잡기','첫 통화에서 1차 미팅 날짜까지 잡기','next'],nodue:['물량 산출 기한 넘김',RED,'견적 요청','견적 요청 등록일부터 목표 3일 · 최대 5일(견적팀) · 대표회의 임박이면 개략 금액 먼저','stagefields'],req:['필수 확인 미입력',INK,'정보 보완','미팅 때 현재 문제 · 범위 · 시기 · 경쟁사 · 요청 자료 · 대표회의 일정 · 결정권자 채우기','stagefields'],nonext:['다음 행동 · 날짜 없음',INK,'다음 행동','모든 현장에 다음 행동 + 날짜 등록 (완료만 선택 불가)','next'],long:['30일 넘게 머묾',INK,'보류 판단','30일 넘은 현장은 일반관리 전환 · 보류 여부 판단','stage']},
    calc(r,v,q){const f=r.fields||{},fc=(r.item.stage_contexts||{}).first_contact?.fields||{},visit=nextIsVisit(r),nd=r.days,quoteDue=v.quoteDue,past=visit&&nd!==null&&nd<0;
-    const bucket=(quoteDue||f.quote_request||past)?'done':(visit&&nd!==null&&nd>=0)?'plan':'none';
-    const sub=bucket==='plan'?ymd(r.due)+' 미팅 예정':bucket==='done'?(past?ymd(r.due)+' 미팅':'견적 준비 중')+(quoteDue?' · 견적 '+ymd(quoteDue):''):'일정 없음';
+    /* stage7 ①: 미팅 완료 = 지난 방문 일정 또는 방문 · 미팅 기록(종류가 방문 · 미팅 · 실측 · 실사) — 판정 함수와 같은 근거 */
+    const metLog=(()=>{try{return [].concat(r.item.activities||[]).some(a=>a&&/방문|미팅|실측|실사/.test(String(a.type||''))&&(()=>{const n=days(String(a.at||a.occurred_at||'').slice(0,10));return n!==null&&n<=0;})());}catch(e){return false;}})();
+    const bucket=(quoteDue||f.quote_request||past||metLog)?'done':(visit&&nd!==null&&nd>=0)?'plan':'none';
+    const sub=bucket==='plan'?ymd(r.due)+' 미팅 예정':bucket==='done'?(past?ymd(r.due)+' 미팅':metLog&&!f.quote_request?'미팅 완료 · 견적 요청 전':'견적 준비 중')+(quoteDue?' · 견적 '+ymd(quoteDue):''):'일정 없음';
     const rs=[];if(bucket==='none')rs.push('nodate');if(bucket==='done'&&((quoteDue&&days(quoteDue)<0)||(!quoteDue&&(r.stall||0)>q.quote)))rs.push('nodue');if(!v.needs||!fc.work_scope||!fc.expected_timing)rs.push('req');if(!r.next||!r.next.text||!r.due)rs.push('nonext');if((r.stall||0)>q.stay)rs.push('long');
     return {bucket,sub,rs};}},
   sent:{name:'자료 발송완료',desc:()=>'견적 · 자료를 보낸 단계 · 견적 발송은 완료가 아니라 후속관리 시작 — 발송일 기준 D+'+rules().follow+' 후속 연락',axis:'발송 후 후속 연락',
    S:[['wait','D+7 전 · 후속 대기','#d5d9e0','7일 안에 반응 확인'],['late','7일 넘김 · 후속 없음','#15171c','오늘 후속 통화'],['done','후속 완료 · 반응 기록','#8a909c','결과 기록 + 다음 행동일']],
    RS:{nofollow:['발송 후 7일 · 후속 없음',RED,'후속 통화','발송 7일 넘은 건은 오늘 후속 통화 → 결과 기록','activity'],meet:['대표회의 D-3 · 자료 회신',RED,'자료 제출','대표회의 전 비교 자료 · 개략 금액 먼저 발송','activity'],noreact:['반응 미기록',INK,'결과 기록','연락 결과(연결됨 · 검토중 · 자료요청 · 견적요청 · 보류 · 거절)를 기록','activity'],comp:['경쟁사 비교 중',INK,'조건 확인','경쟁사 · 가격 · 조건 변화 확인 → 비교표 · 사례로 설명','activity'],nonext:['다음 행동 · 날짜 없음',INK,'다음 행동','후속 통화 후 다음 행동일 지정','next']},
    calc(r,v,q){const f=r.fields||{},sentAt=f.sent_date||'',sd=since(sentAt),stay=sd!==null?sd:(r.stall||0),ld=lastDays(r),reacted=!!v.reaction||(ld!==null&&sd!==null&&ld<sd),meet=days(r.date);
-    const bucket=reacted?'done':stay>q.follow?'late':'wait';
-    const sub=(sentAt?ymd(sentAt)+' 발송':'발송일 미기록')+(v.reaction?' · '+v.reaction:'')+(meet!==null&&meet>=0?' · 결정 '+ymd(r.date):'');
+    /* stage7 ②: 발송일 있는 건만 7일 판정 — 없으면 'nodate'(발송일 확인 필요 · 7일 계산 안 함) */
+    const bucket=reacted?'done':!sentAt?'nodate':stay>q.follow?'late':'wait';
+    const sub=(sentAt?ymd(sentAt)+' 발송':'발송일 미기록 · 자료 · 수신자 기록 확인')+(v.reaction?' · '+v.reaction:'')+(meet!==null&&meet>=0?' · 결정 '+ymd(r.date):'');
     const rs=[];if(bucket==='late')rs.push('nofollow');if(meet!==null&&meet>=0&&meet<=q.d3)rs.push('meet');if(!v.reaction)rs.push('noreact');if(/가격|경쟁/.test(String(v.reaction||''))||v.competitor)rs.push('comp');if(!r.next||!r.next.text||!r.due)rs.push('nonext');
     return {bucket,sub,rs};}},
   relationship:{name:'관계관리',desc:()=>'견적 후 관리 구분 · 집중관리(초기 1개월, '+rules().focus+'일 단위) → 일반관리(월 1회) → '+(SEG()?'대기관리('+Math.round(rules().wait/30)+'개월 1회) · 견적 발송일 · 공사 예정 시기로 매일 자동 분류':'대기('+Math.round(rules().wait/30)+'개월 1회)'),axis:'관리 구분',
@@ -98,7 +103,7 @@
     const rs=[];if(!v.contractDate||!v.contractAmount)rs.push('cinfo');if(code==='construction'&&bf.handover!=='완료')rs.push('handoff');if(code==='construction'&&ld!==null&&ld>q.site)rs.push('site7');if(code==='contract'&&!cf.special_terms)rs.push('verbal');if(/추가/.test(String(bf.requests||'')))rs.push('extra');
     return {bucket,sub,rs};}},
   /* 수주 = 실적 · 완료 정보(2026-10-06 design_handoff_followup4 ②): 수주 유형 · 낙찰금액 · 낙찰사 / 계약일 · 착공 · 준공 확인 / 빠진 계약 정보. 준공 후 연락 · 추가 공사 업무는 여기서 만들지 않는다 → 확장관리 */
-  won:{name:'수주',desc:()=>'계약이 끝난 건의 결과를 정확히 남기는 곳 · 수주 유형 · 낙찰금액 · 낙찰사 → 계약일 · 착공 · 준공 확인 → 빠진 계약 정보 입력. 준공 후 연락 · 추가 공사는 확장관리에서',axis:'실적 · 완료 정보',
+  won:{name:'수주',desc:()=>'끝 상태 · 계약이 끝난 건의 결과를 정확히 남기는 곳 · 수주 유형 · 낙찰금액(VAT 별도) · 낙찰사 → 계약일 · 착공 · 준공 확인 → 빠진 계약 정보 입력. 준공 후 연락 · 추가 공사는 확장관리에서',axis:'실적 · 완료 정보',
    S:[['result','수주 정보 미기록','#15171c','수주 유형 · 낙찰금액 · 낙찰사 기록'],['dates','계약일 · 착공 · 준공 확인','#8a909c','세 날짜 확인 · 기록'],['done','실적 · 완료 정보 완료','#d5d9e0','사후 연락은 확장관리에서']],
    RS:{wtype:['수주 유형 · 낙찰금액 · 낙찰사 미기록',RED,'수주 정보','수주 유형(직접 · 협약 · 타사 이관) · 낙찰금액(VAT 별도) · 낙찰사를 기록 — 실적 집계 기준','win'],cdate:['계약일 · 착공 · 준공 확인 안 됨',INK,'일정 확인','계약일 · 착공일 · 준공일을 확인해 기록','stagefields'],cinfo:['빠진 계약 정보 입력',INK,'정보 입력','계약금액 · 계약서 등 빠진 계약 정보를 입력(매출 집계)','stagefields']},
    calc(r,v,q){let w=null;try{w=root.DealWin&&root.DealWin.resultOf?root.DealWin.resultOf(r.item):null;}catch(e){}const typed=!!(w&&w.type&&w.type!=='none'&&(w.amount||w.company)),dOk=!!(v.contractDate&&v.startDate&&v.completionDate),info=!!v.contractAmount;
@@ -106,13 +111,14 @@
     const sub=(typed?String(w.text||'수주 기록')+(w.amount?' · '+money(w.amount):''):'수주 유형 미기록')+' · '+(v.completionDate?'준공 '+ymd(v.completionDate):v.contractDate?'계약 '+ymd(v.contractDate):'계약일 미기록');
     const rs=[];if(!typed)rs.push('wtype');if(!dOk)rs.push('cdate');if(!info)rs.push('cinfo');
     return {bucket,sub,rs};}},
-  lost:{name:'실주',desc:()=>'이번 공사는 끝났지만 영업은 계속 · 실주 사유 · 낙찰사 · 금액 기록 → 차기 공사 연도 지정 → 대기('+Math.round(rules().wait/30)+'개월 1회)로 관계 유지',axis:'실주 기록',
-   S:[['nore','사유 미기록','#15171c','사유 · 낙찰사 · 금액 기록'],['rec','기록 완료','#d5d9e0','차기 공사 연도 지정'],['re','재영업 예정','#8a909c','대기 · 2개월 1회 연락']],
-   RS:{noreason:['실주 사유 미입력',RED,'사유 기록','가격 · 공법 · 관계 · 일정 중 사유 + 고객 반응 기록','stage'],nobid:['경쟁사 · 금액 미기록',INK,'결과 기록','낙찰사 · 낙찰가 · 당사 제안가 · 가격차 · 결정요인 기록','stagefields'],relist:['차기 공사 연도 없음',INK,'연도 지정','다음 공사 예상 연도 지정 → 대기 2개월 연락 자동 생성','next'],contact:['관계 연락 안 함',INK,'관계 연락','실주 후 2개월 안 관계 연락 · 하자 발생 여부 확인','activity']},
-   calc(r,v,q){const reason=v.lossReason&&v.lossReason!=='미기록'?v.lossReason:'',re=!!(v.recontact&&!/없|낮/.test(String(v.recontact)))||!!(r.next&&r.next.text),ld=lastDays(r);
+  /* stage7 ⑦(2026-10-07): 끝 상태. '차기 연도 → 대기 2개월 연락(전체)' 안내 삭제 · 재영업 가능 '예'인 건만 재접촉 할 일 · 실주 처리하면 기존 영업 업무는 서버가 닫는다(단계 전환 때 열린 다음 할 일 취소) · 다시 열어도 실주 기록은 보존 */
+  lost:{name:'실주',desc:()=>'끝 상태 · 실주일 · 원인 · 고객 반응 · 재영업 가능 여부를 남기는 곳 · 재영업 가능 "예"인 건만 재접촉 할 일(이전 실주 결과는 그대로 보존)',axis:'실주 기록',
+   S:[['nore','사유 미기록','#15171c','원인 · 고객 반응 기록'],['rec','기록 완료','#d5d9e0','결과 기록만 · 할 일 없음'],['re','재영업 가능 · 예','#8a909c','재접촉 할 일 하나']],
+   RS:{noreason:['실주 사유 미입력',RED,'사유 기록','가격 · 공법 · 관계 · 사업 중 원인 + 고객 반응 기록','stage'],nobid:['경쟁사 · 금액 미기록',INK,'결과 기록','낙찰사 · 낙찰가 · 당사 제안가 · 가격차 · 결정요인 기록(적용안)','stagefields'],relist:['재영업 가능 여부 미입력',INK,'여부 입력','재영업 가능 여부(예 · 아니오 · 미정) 입력 → "예"만 재접촉 할 일 생성 · 나머지는 결과 기록만','stagefields'],contact:['재접촉 할 일 없음',INK,'재접촉 등록','재영업 가능 "예" 건은 재접촉 할 일을 하나 등록(이전 실주 결과는 그대로)','next']},
+   calc(r,v,q){const reason=v.lossReason&&v.lossReason!=='미기록'?v.lossReason:'',lf=((r.item.stage_contexts||{}).lost||{}).fields||{},eng=String(lf.reengage||(r.fields||{}).reengage||'').trim(),re=eng?eng==='예':!!(v.recontact&&!/없|낮|불가/.test(String(v.recontact)));
     const bucket=!reason?'nore':re?'re':'rec';
-    const sub=(v.lossDate?ymd(v.lossDate)+' 실주':'실주일 미기록')+(reason?' · '+reason:'')+(v.recontact?' · 재접촉 '+v.recontact:'');
-    const rs=[];if(!reason)rs.push('noreason');if(!v.competitor)rs.push('nobid');if(!re)rs.push('relist');if(ld!==null&&ld>q.wait)rs.push('contact');
+    const sub=(v.lossDate?ymd(v.lossDate)+' 실주':'실주일 미기록')+(reason?' · '+reason:'')+(eng?' · 재영업 '+eng:v.recontact?' · 재접촉 '+v.recontact:' · 재영업 가능 미정');
+    const rs=[];if(!reason)rs.push('noreason');if(!v.competitor)rs.push('nobid');if(!eng&&!v.recontact)rs.push('relist');if(re&&!(r.next&&r.next.text))rs.push('contact');
     return {bucket,sub,rs};}}
  };
  function model(key,list){

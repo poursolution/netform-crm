@@ -5,6 +5,7 @@
 --   · stage_contexts[종료 단계].fields 중 허용 항목(글 · 선택 값):
 --       customer_reaction · decision_maker · competitor · construction_plan      (현장 정보)
 --       close_reason · close_detail · lesson · recontact_possibility · win_reason (이 단계 필수 정보)
+--       reengage(재영업 가능 여부) · recognition_basis(수주 인정 근거) — 2026-10-07 stage7
 --   · 예상 금액(deals.amount)
 -- 건드리지 않는 것: 단계 · 종료 상태 · 종료일 · 수주금액(won_amount) · 준공일 · 담당 · 계약 단계 항목(stage_contexts.contract) · 계약 원장(contract_sales).
 --   계약 체결 기록 트리거(capture_contract_signing)는 stage_contexts.contract.fields 가 바뀔 때만 움직이므로 이 함수로는 움직이지 않는다.
@@ -17,7 +18,8 @@ declare
  v_id uuid; v_stage text; v_fields jsonb; v_prev jsonb; v_ctx jsonb; v_at timestamptz:=clock_timestamp();
  v_amount bigint; v_has_amount boolean:=false; v_has_fields boolean:=false;
  v_audit uuid; v_act uuid; v_email text; v_summary text; r record;
- v_allowed constant text[]:=array['customer_reaction','decision_maker','competitor','construction_plan','close_reason','close_detail','lesson','recontact_possibility','win_reason'];
+ -- 2026-10-07 stage7 ⑦: 재영업 가능 여부(reengage · 예 · 아니오 · 미정) · 수주 인정 근거(recognition_basis)를 종료 건에서 고칠 수 있게 허용 목록에 추가. 이 파일을 다시 Run 해야 상세에서 저장된다
+ v_allowed constant text[]:=array['customer_reaction','decision_maker','competitor','construction_plan','close_reason','close_detail','lesson','recontact_possibility','win_reason','reengage','recognition_basis'];
  v_closed constant text[]:=array['won','lost','badfit_lead','badfit_pipe','nocontact'];
 begin
  select * into a from crm_security.actor();

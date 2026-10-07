@@ -8,6 +8,10 @@
 .ps3-head span{font-size:14px;color:#4b5563}
 /* 상태 탭 4칸 */
 .ps3-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden}
+/* 2026-10-07 stage7: 자료 발송완료 · 경쟁 입찰은 넷째 상태(발송일 확인 필요 · 일정 미등록)가 생겨 5칸 · 그 칸 숫자는 주황(확인 필요) */
+#pipeline-stage-v3 .ps3-tabs[data-n="5"]{grid-template-columns:repeat(5,minmax(0,1fr))}
+#pipeline-stage-v3 .ps3-tab .n.amb{color:#b45309}
+#pipeline-stage-v3 .ps3-kpis>div.over.amb{background:#fff7e6}#pipeline-stage-v3 .ps3-kpis .over.amb b{color:#8a5a00}
 :is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-tab{border:0;border-left:1px solid #f0f1f4;border-bottom:3px solid transparent;border-radius:0;background:#fff;text-align:left;padding:13px 18px 11px;display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;margin:0;color:#15171c;box-shadow:none;height:auto}
 :is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-tab:first-child{border-left:0}
 :is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-tab.on{background:#f8faff;border-bottom-color:#3b6ce4}

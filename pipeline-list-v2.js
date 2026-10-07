@@ -21,7 +21,8 @@
  };
  const PER=20,STEP=40;
  const h=v=>root.esc(String(v==null?'':v)),attr=v=>root.escAttr(String(v==null?'':v));
- const ymd=v=>v?String(v).slice(0,10):'';
+ /* 날짜는 한국 시간 기준으로(2026-10-07 stage7 공통: 실주일 5/7 · 판정 5/8 처럼 하루 다르던 원인 = 시각이 붙은 값을 UTC 로 자르던 것) */
+ const ymd=v=>{if(!v)return '';const J=root.PipelineJudge;return J&&J.dayKey?(J.dayKey(v)||String(v).slice(0,10)):String(v).slice(0,10);};
  const days=v=>{if(!v)return null;const n=root.daysTo(v);return Number.isFinite(n)?n:null;};
  const money=v=>{const n=Number(v)||0;if(!n)return '';if(n>=1e8)return (Math.round(n/1e7)/10)+'억';if(n>=1e4)return Math.round(n/1e4).toLocaleString('ko-KR')+'만';return n.toLocaleString('ko-KR');};
  const admin=()=>{try{return !!root.todayIsAdmin?.();}catch(e){return false;}};

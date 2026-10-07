@@ -50,7 +50,7 @@
  /* 종료된 건(수주 · 실주 · 배드핏 · 연락두절)도 같은 칸에서 바로 입력(2026-10-04 대표 "실주에서 입력 왜 뺐어 · 파이프라인 보고 일괄 적용 · 수주도 마찬가지") — 진행 중 저장 함수 · 금액 명령은 종료 건을 거절하므로
     종료 건 전용 서버 함수(sql/deal-closed-info-update-v1-20261004.sql)로 저장한다: 허용 항목(글 · 선택 값) + 예상 금액만. 단계 · 종료 상태 · 수주금액 · 준공일 · 계약 원장은 건드리지 않는다.
     서버에 아직 없으면(CRMRelease) 예전처럼 읽기 전용. 끄기: G.closedEditOff=true */
- const CI_RPC='crm_deal_closed_info_update_v1',CI_KEYS=['customer_reaction','decision_maker','competitor','construction_plan','close_reason','close_detail','lesson','recontact_possibility','win_reason'];
+ const CI_RPC='crm_deal_closed_info_update_v1',CI_KEYS=['customer_reaction','decision_maker','competitor','construction_plan','close_reason','close_detail','lesson','recontact_possibility','win_reason','reengage','recognition_basis'];/* stage7 ⑥⑦ 재영업 가능 여부 · 인정 근거 — sql/deal-closed-info-update-v1-20261004.sql 허용 목록도 같이(다시 Run 필요) */
  const isClosed=d=>!!d&&(!!d.outcome||d.lifecycle_status==='closed');
  const canCI=()=>!root.G.closedEditOff&&!!(root.SB&&typeof root.SB.rpc==='function')&&!(root.CRMRelease&&root.CRMRelease.has(CI_RPC)===false);
  const ST={};const st=d=>ST[d.id]||(ST[d.id]={edit:'',draft:'',sedit:'',sdraft:'',busy:false});
@@ -586,7 +586,8 @@
      else val='<input class="dv3-in" data-dv3in="stage" data-key="'+f.key+'" type="'+(f.type==='date'?'date':'text')+'" value="'+attr(S.sdraft)+'" placeholder="'+attr(f.label)+'"'+(f.type==='money'?' inputmode="decimal"':'')+' aria-label="'+attr(f.label)+'">';
     }
     else val='<button type="button" class="dv3-val'+(info.text?'':' empty')+'" data-dv3="'+(special||!ok||f.type==='quote'?'sfill':'sfield')+'" data-key="'+f.key+'" data-label="'+attr(f.label)+'">'+h(info.text||'미입력 · 입력하기')+'</button>';
-    return '<div class="dv3-row s'+(f.type==='multi'&&S.sedit===f.key?' wide':'')+'"><span>'+h(f.label)+'</span>'+val+'</div>';
+    /* stage7 필수 정보 칩: 회의 확정(mark 'conf') = 진하게 · 적용안('prop') = 회색 */
+    return '<div class="dv3-row s'+(f.type==='multi'&&S.sedit===f.key?' wide':'')+'"><span'+(f.mark==='conf'?' class="conf" title="회의 확정"':f.mark==='prop'?' class="prop" title="적용안 · 회의 확정 전"':'')+'>'+h(f.label)+'</span>'+val+'</div>';
    }).join('');
    sum.querySelectorAll(':scope>dl,:scope>.da-stage-edit,:scope>.ddv-pace').forEach(n=>n.classList.add('dv3-old'));
    let box=sum.querySelector(':scope>.dv3-stage');if(!box){box=el('div','dv3-stage');sum.append(box);}

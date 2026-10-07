@@ -31,7 +31,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#ptitle').innerText(),'운영 기준 설정');assert.match(await page.locator('#psub').innerText(),/모든 화면이 이 값으로 놓침 · 메이드율 · 수주실적을 계산합니다 · 관리자 전용/);
   assert.equal(await page.locator('.menu [data-p="rules"]').isVisible(),true,'사이드바 설정 → 운영 기준 설정');
   /* 목차 7묶음 + 꼬리표 설명 */
-  assert.deepEqual(await v.locator('.ra-nav>button').evaluateAll(a=>a.map(n=>n.querySelector('span').textContent+' '+n.querySelector('i').textContent)),['시간 기준 13'/* 2026-10-07 관계관리 v12: 집중 · 일반관리 기간(개월) 조건부 2항목 */,'결과 · 실적 7','사유 목록 3','응대 기록 3','사람 · 관계 9','공개 · 권한 3','보류 · 추후 1']);
+  assert.deepEqual(await v.locator('.ra-nav>button').evaluateAll(a=>a.map(n=>n.querySelector('span').textContent+' '+n.querySelector('i').textContent)),['시간 기준 14'/* 2026-10-07 관계관리 v12: 집중 · 일반관리 기간(개월) 조건부 2항목 + stage7 ① 미팅 후 견적 요청 등록(보류 · 운영 제안) */,'결과 · 실적 7','사유 목록 3','응대 기록 3','사람 · 관계 9','공개 · 권한 3','보류 · 추후 1']);
   assert.deepEqual((await v.locator('.ra-legend span').allInnerTexts()).map(s=>s.replace(/\s+/g,' ')),['확정 회의 확정 · 잠금','조건부 관리자가 값 변경','보류 구현 안 함']);
   assert.equal(await v.locator('.ra-sec').count(),7);
   const row=l=>page.locator('#rules-admin .ra-row',{has:page.locator('.ra-l b',{hasText:new RegExp('^'+l+'$')})});
