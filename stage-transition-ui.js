@@ -98,6 +98,9 @@
  function open(deal,mobile,to){
   const from=mobile?deal.code:fromOf(deal),choices=S.choices(from);
   if(!choices.length||S.terminal.includes(deal.outcome)){(mobile?toast:alert)('종료된 영업기회는 다시 열지 않습니다. 추가 니즈는 새 영업기회로 등록해 주세요.');return}
+  /* 2026-10-07: 담당 없는 과거 이관 건은 영업 재개 전에 담당부터 — 서버의 다음 할 일 저장이 담당 없으면 42501 로 거절한다(운영 2c5cfb 건 '저장 실패 내역') */
+  if(!mobile){try{const P=root.PipelineScope,own=typeof root.repN==='function'?root.repN(deal.assignee):String(deal.assignee||'').trim();
+   if(P&&P.on()&&P.isLegacy(deal)&&(!own||own==='미배정')){alert('담당을 먼저 정해 주세요 — 담당이 없으면 영업 재개의 다음 할 일이 서버에 저장되지 않습니다.');try{root.DealDetailV3&&root.DealDetailV3.openFrom&&root.DealDetailV3.openFrom('owner');}catch(e){}return;}}catch(e){}}
   const target=to||((S.normal[from]||[]).find(k=>choices.includes(k)))||choices[0];
   if(!choices.includes(target)){(mobile?toast:alert)('Closed Won은 준공 완료 확인 후에만 가능합니다.');return}
   ctx={deal,mobile,from,to:target,patch:mobile?null:itemPatch(deal,'deal'),drafts:{},quotes:mobile?quoteVersionsM(deal):execQuoteVersions(deal),returnFocus:document.activeElement};
