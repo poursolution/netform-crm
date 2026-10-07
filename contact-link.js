@@ -96,7 +96,7 @@
  }
  const markerOf=box=>marker(selected(box).filter(k=>!/^req:/.test(k)));
  /* 저장 뒤: 관리 요청은 증빙으로 자동 완료 · 상자 비우기 */
- function afterSave(d,box){clearLinks();try{if(box){box.hidden=true;box.innerHTML='';}}catch(e){}try{root.WorkRequest&&root.WorkRequest.autoClose&&setTimeout(()=>root.WorkRequest.autoClose(),300);}catch(e){}}
+ function afterSave(d,box){clearLinks();root.ActivityContext?.clear?.();try{if(box){box.hidden=true;box.innerHTML='';}}catch(e){}try{root.WorkRequest&&root.WorkRequest.autoClose&&setTimeout(()=>root.WorkRequest.autoClose(),300);}catch(e){}}
  /* ── 연결된 건에서 읽기: 다른 건의 기록 중 이 건을 가리키는 표식이 있는 것 ── */
  function linkedInto(key){
   if(!on()||!key)return [];const want=String(key),out=[];
@@ -111,7 +111,7 @@
  }
  /* ── 대기 이유 ── */
  function waitOf(d){
-  if(!d)return null;let best=null;
+  if(!d)return null;const stored=root.ActivityContext?.of?.(d);if(stored)return stored.wait;let best=null;
   try{const p=root.itemPatch?root.itemPatch(d,'deal')||{}:{};[].concat(d.activities||[],p.activities||[]).forEach(a=>{const m=WAIT_RE.exec(String(a&&a.note||''));if(!m)return;const at=String(a.at||a.occurred_at||'');if(!best||at>best.at)best={reason:m[1].trim(),until:m[2],at};});}catch(e){}
   return best;
  }
