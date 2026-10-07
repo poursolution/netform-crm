@@ -28,7 +28,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      /* 중요: 약속일 지남 · 오늘 약속 · 견적 지연 · 30일 미접촉 */
      deal('prom1','풍림1차아파트',{amt:2.4e8,code:'rapport',stage_code:'rapport',next_action:{id:'n6',type:'고객 약속',text:'고객 약속: 장기수선 회의 결과 확인',due:day(-3),status:'open'}}),
      deal('today1','상계주공7단지',{amt:2.6e8,next_action:{id:'n7',type:'방문',text:'현장 실측',due:day(0)+'T11:00',status:'open'}}),
-     deal('quote1','동탄푸른마을',{amt:1.8e8,last_activity_at:at(5),stage_entered_at:at(5),next_action:{id:'n8',type:'전화',text:'견적 범위 확인',due:day(2),status:'open'}}),
+     deal('quote1','동탄푸른마을',{amt:1.8e8,last_activity_at:at(5),stage_entered_at:at(5),stage_contexts:{consulting:{fields:{quote_due:day(-1)}}},next_action:{id:'n8',type:'전화',text:'견적 범위 확인',due:day(2),status:'open'}}),
      /* 관리: 다음 할 일 없음 · 남의 현장(영업사원에겐 안 보임) */
      deal('stall1','byc하이시티',{amt:9e7,code:'rapport',stage_code:'rapport',last_activity_at:at(21)}),
      deal('other1','남의 현장',{assignee:'이서준',next_action:{id:'n9',text:'x',due:day(-9),status:'open'}})],

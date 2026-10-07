@@ -11,7 +11,9 @@
  function nextOk(d){try{const a=root.actionObj(d,root.itemPatch(d,'deal'));return !!(a&&a.text&&(a.due||a.due_at));}catch(e){return false;}}
  function stats(name,offsetDays){
   const end=Date.now()-offsetDays*DAY,start=end-7*DAY;
-  const D=(root.targetDeals?root.targetDeals(name):[]);
+  /* 2026-10-07 kpi_measure: 다음 할 일 등록률과 같은 분모 — 과거 이관은 뺀다(PipelineScope) */
+  const PS=root.PipelineScope,legacy=d=>{try{return !!(PS&&PS.on&&PS.on()&&PS.isLegacy(d));}catch(e){return false;}};
+  const D=(root.targetDeals?root.targetDeals(name):[]).filter(d=>!legacy(d));
   const Q=(root.operationalInquiries?root.operationalInquiries(root.B?.inquiries||[]):[]).filter(q=>{const at=Date.parse(root.inquiryAssignedAt(q)||'');return at&&at>=end-14*DAY&&at<end&&(!name||name==='전체'||root.repN(root.inquiryRoutedOwner?.(q)||q.assignee)===name);});
   const first=Q.filter(q=>root.inqCtlFirstResponseAt&&root.inqCtlFirstResponseAt(q));
   const active=D.filter(d=>acts(d).some(x=>{const t=actAt(x);return t>=start&&t<end;}));

@@ -25,9 +25,9 @@
   ['2시간 첫 연락','inquiry','견적문의','배정 후 2시간 안 첫 연락 기록 ÷ 배정',90,false,'배정됐는데 첫 연락이 없는 건을 담당에게 바로 요청.'],
   ['다음 할 일 등록률','all','전 단계','다음 할 일 + 날짜 있는 진행 건 ÷ 진행 건',95,false,'다음 할 일이 빈 건이 많은 담당부터 등록 요청.'],
   ['활동 기록률','all','전 단계','7일 안 응대 기록 있는 진행 건 ÷ 진행 건',70,false,'통화하면 결과를 남기게 — 기록이 없으면 다른 지표도 측정이 안 됩니다.'],
-  ['장기정체 비율','consulting','컨설팅 설계 · 관계관리','같은 단계 30일 이상 ÷ 진행 건',10,true,'큰 금액부터 담당과 상황 확인 → 보류 · 실주 판단.'],
+  ['장기정체 비율','consulting','컨설팅 설계 · 관계관리','같은 단계 30일 이상 ÷ 진행 건',10,true,'큰 금액부터 ① 고객 반응 확인 → ② 추진 상태 확인 → ③ 근거 남기고 계속 · 대기 · 보류 · 실주.'],
   ['방문 후 3일 견적','consulting','컨설팅 설계','1차 미팅 후 3일 안 견적 요청 ÷ 미팅 완료 건',80,false,'미팅은 했는데 견적 요청이 없는 건 — 견적 요청 등록 확인.'],
-  ['실주 사유 입력','lost','실주','사유 · 낙찰사 입력된 실주 ÷ 실주 건',100,false,'사유 없는 실주는 다음 영업에 쓸 수 없음 — 사유 입력 요청.'],
+  ['실주 사유 입력','lost','실주','사유 + 재영업 여부 입력된 실주 ÷ 실주 건',100,false,'사유 없는 실주는 다음 영업에 쓸 수 없음 — 사유 입력 요청.'],
   ['관리팀 조치 → 처리율','mgmt','관리팀','최근 28일 요청 중 담당이 처리한 것 ÷ 요청',80,false,'요청만 하고 끝내지 않기 — 답이 없는 요청을 다시 확인.']];
  const KEY=i=>'kpi:'+(i+1);
  /* ── 저장소: 주간 결과(최대 52주) · 조치 기록(최근 200) ── */
@@ -71,13 +71,13 @@
   M.push({v:rk.activity,num:rk.activeN||0,den:rk.deals||0,todos:low.map(x=>T('rep',x.n,x.n,x.s.deals+'건',x.s.activity==null?'기록 없음 · 측정 불가':'7일 기록 '+x.s.activity+'%','기록 요청',x.n))});
   /* 5 장기정체(컨설팅 · 관계관리) — B안 'long' · 'shift' + 30일 체류 */
   const cr=open.filter(it=>it.stage==='consulting'||it.stage==='relationship'),stale=cr.filter(it=>it.rs.includes('long')||it.rs.includes('shift')||(it.stall||0)>=30);
-  M.push({v:pct(stale.length,cr.length),num:stale.length,den:cr.length,todos:stale.slice().sort((a,b)=>(Number(b.row.amount)||0)-(Number(a.row.amount)||0)).map(it=>{const r=it.row,amt=money(r.amount),kc=root.DealKeyman?root.DealKeyman.changeOf(r.item):null;return T('deal',r.key,r.site,r.owner||'미배정',[amt,(it.stall||0)+'일 정체',kc?'소장 변경':'',it.row.contactDays!=null?it.row.contactDays+'일 무응답':''].filter(Boolean).join(' · '),(it.stall||0)>=60?'보류 판단':'상황 확인',r.owner);})});
+  M.push({v:pct(stale.length,cr.length),num:stale.length,den:cr.length,todos:stale.slice().sort((a,b)=>(Number(b.row.amount)||0)-(Number(a.row.amount)||0)).map(it=>{const r=it.row,amt=money(r.amount),kc=root.DealKeyman?root.DealKeyman.changeOf(r.item):null;return T('deal',r.key,r.site,r.owner||'미배정',[amt,(it.stall||0)+'일 정체',kc?'소장 변경':'',it.row.contactDays!=null?it.row.contactDays+'일 무응답':''].filter(Boolean).join(' · '),'상황 확인',r.owner);})});
   /* 6 방문 후 3일 견적 — 컨설팅 B안 '미팅 완료 · 견적 준비' 칸, 'nodue' 사유 */
   const met=open.filter(it=>it.stage==='consulting'&&it.bucket==='done'),late=met.filter(it=>it.rs.includes('nodue'));
   M.push({v:pct(met.length-late.length,met.length),num:met.length-late.length,den:met.length,todos:late.map(it=>{const r=it.row;return T('deal',r.key,r.site,r.owner||'미배정',(r.due?'미팅 '+md(r.due)+' · ':'')+'견적 요청 없음 · '+(it.stall||0)+'일','견적 요청 확인',r.owner);})});
   /* 7 실주 사유 — B안 실주 'noreason' · 'nobid' */
-  const lost=items.filter(it=>it.stage==='lost'),noR=lost.filter(it=>it.rs.includes('noreason')||it.rs.includes('nobid'));
-  M.push({v:pct(lost.length-noR.length,lost.length),num:lost.length-noR.length,den:lost.length,todos:noR.map(it=>{const r=it.row;return T('deal',r.key,r.site,r.owner||'미배정',it.rs.includes('noreason')?'실주 사유 없음':'낙찰사 · 금액 미기록','사유 요청',r.owner);})});
+  const lost=items.filter(it=>it.stage==='lost'),noR=lost.filter(it=>it.bucket==='nore');/* 2026-10-07 kpi_measure: 실주 화면 · 측정 기준 a3 와 같은 완료 판정 — 사유 + 재영업 가능 여부(경쟁사 낙찰일 때만 경쟁사 · 낙찰가) */
+  M.push({v:pct(lost.length-noR.length,lost.length),num:lost.length-noR.length,den:lost.length,todos:noR.map(it=>{const r=it.row;return T('deal',r.key,r.site,r.owner||'미배정',it.rs.includes('noreason')?'실주 사유 없음':it.rs.includes('relist')?'재영업 가능 여부 없음':'낙찰사 · 금액 미기록','사유 요청',r.owner);})});
   /* 8 관리팀 조치 → 처리율: 최근 28일 요청, 대상이 지금 할 일 목록에 없으면 처리됨 */
   const now=Date.now(),recent=W.acts.filter(a=>a.promise_key!=='kpi:8'&&now-Date.parse(a.created_at||0)<28*864e5&&a.target_id);
   const live=new Set();M.forEach((m,i)=>m.todos.forEach(t=>live.add(KEY(i)+'|'+t.tk)));

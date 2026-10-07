@@ -6,7 +6,7 @@ test('KPI v7 은 따로 세지 않는다: 핵심 지표 = KpiB.compute, 단계�
  const js=read('kpi-v7.js'),kb=read('kpi-b.js');
  assert.match(js,/const s=ST\(\),C=K\(\)\.compute\(\)/,'핵심 지표는 기존 계산');
  assert.match(js,/try\{md=P\.model\(key,list\);\}catch/,'단계별 기준 = PipelineStageB.model');
- assert.match(js,/const red=Object\.keys\(md\.C\.RS\)\.filter\(k=>md\.isRed\(k\)\)/,'기준 = 단계 화면의 빨강 사유');
+ assert.match(js,/red=Object\.keys\(md\.C\.RS\)\.filter\(k=>md\.isRed\(k\)\|\|LF\.includes\(k\)\)/,'기준 = 단계 화면의 빨강 사유(실주는 완료 판정 사유 3개 · 측정 기준 a3 와 같은 판정)');
  assert.match(js,/const ms=IV\.rows\(\)\.map\(x=>IL\.model\(x\)\)/,'견적문의 = 목록 화면과 같은 판정');
  assert.match(js,/const enabled=\(\)=>!R\.G\.kpiV7Off&&!!K\(\)&&K\(\)\.enabled\(\)/,'끄기 스위치 · 예전 화면이 꺼져 있으면 같이 꺼짐');
  assert.match(kb,/root\.KpiB=\{enabled,compute,DEF,stageItems,[^}]*personVals,requestLine,saveWeek,autoSave,load,names,openTarget,weekly:\(\)=>W,weekRowOf:weekRow\};/);

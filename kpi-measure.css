@@ -1,0 +1,43 @@
+/* KPI 측정 기준 (2026-10-07 design_handoff_kpi_measure) — 접두어 km- · 관리팀 KPI v7 의 세 번째 탭 안에서만 */
+#kpi-v7 .km{display:flex;flex-direction:column;gap:12px;color:#15171c;font-size:13px;min-width:0}
+#kpi-v7 .km .k7-note{font-size:12px;color:#6b7280}
+.km-g{background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden;min-width:0}
+.km-g>header{padding:11px 16px;border-bottom:1px solid #eef0f3;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.km-g>header b{font-size:14px}.km-g>header span{font-size:12px;color:#6b7280}
+.km-gr{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+#kpi-v7 button.km-card{border:0;border-right:1px solid #f2f3f6;border-bottom:1px solid #f2f3f6;background:#fff;text-align:left;padding:12px 16px;display:flex;flex-direction:column;gap:4px;min-width:0;border-radius:0;color:#15171c}
+#kpi-v7 button.km-card.on{background:#f8faff;box-shadow:inset 3px 0 0 #15171c}
+#kpi-v7 button.km-card:hover:not(.on){background:#fafbfc}
+.km-l{font-size:12px;color:#6b7280}
+.km-vr{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;min-width:0}
+.km-v{font-size:22px;color:#15171c;font-variant-numeric:tabular-nums}
+.km-v.na{font-size:17px;color:#6b7280}
+.km-tag{font-style:normal;font-size:11px;font-weight:700;border-radius:4px;padding:2px 7px;white-space:nowrap}
+.km-tag.pilot{color:#3d4b8c;background:#edf0fb}
+.km-tag.na{color:#6b7280;background:#f3f4f6}
+.km-s{font-size:11.5px;color:#9ca3af;line-height:1.45;overflow-wrap:anywhere}
+.km-panel{background:#fff;border:1px solid #d9dde4;border-radius:14px;box-shadow:0 12px 32px rgba(17,24,39,.08);overflow:hidden;min-width:0}
+.km-panel>header{padding:13px 18px;border-bottom:1px solid #eef0f3;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.km-panel>header b{font-size:15px}.km-panel>header span{font-size:12px;color:#6b7280}
+.km-pb{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr)}
+.km-pl{padding:14px 18px;border-right:1px solid #f2f3f6;display:flex;flex-direction:column;gap:12px;min-width:0}
+.km-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.km-tiles>div{background:#f8f9fb;border-radius:8px;padding:9px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.km-tiles span{font-size:11px;color:#6b7280}
+.km-tiles b{font-size:18px;color:#15171c;font-variant-numeric:tabular-nums}.km-tiles b.bad{color:#b42318}.km-tiles b.na{color:#6b7280}
+.km-pl dl{margin:0;display:grid;grid-template-columns:44px minmax(0,1fr);gap:6px 10px;font-size:12.5px}
+.km-pl dt{color:#6b7280}.km-pl dd{margin:0;line-height:1.5}
+.km-pr{padding:8px 0;display:flex;flex-direction:column;min-width:0}
+.km-rh,.km-row{display:grid;grid-template-columns:minmax(0,1.2fr) 84px minmax(0,1fr);gap:10px;padding:6px 18px;align-items:center}
+.km-rh{font-size:11px;color:#9ca3af}
+.km-row{padding-top:8px;padding-bottom:8px;border-top:1px solid #f4f5f7;font-size:12.5px;align-items:start}
+.k7-row .k7-reqn{color:#374151}
+.km-row[role=button]{cursor:pointer}.km-row[role=button]:hover{background:#fafbfc}
+.km-s1,.km-e{min-width:0;overflow-wrap:anywhere;line-height:1.45}
+.km-s1 b{font-weight:600}
+.km-e{color:#6b7280}
+.km-j{font-size:11.5px;font-weight:700;white-space:nowrap}
+.km-j.bad{color:#b42318}.km-j.ok{color:#1f7a4d}.km-j.na{color:#6b7280}
+.km-none{margin:0;padding:18px;font-size:12.5px;color:#9ca3af}
+@media(max-width:900px){.km-pb{grid-template-columns:minmax(0,1fr)}.km-pl{border-right:0;border-bottom:1px solid #f2f3f6}}
+.k7-track span:nth-child(4){background:#b8c0e0}.k7-leg i.d{color:#b8c0e0}
