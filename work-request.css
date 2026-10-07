@@ -63,3 +63,15 @@
 @media(max-width:1280px){.tv3.wrq-on .ta-row{grid-template-columns:84px minmax(0,1.2fr) minmax(0,1.4fr) minmax(0,1.2fr) 56px 190px}}
 @container tv3main (max-width:880px){.tv3.wrq-on .ta-row{grid-template-columns:76px minmax(0,1fr) minmax(0,1fr) 56px 190px}}
 @media(max-width:640px){.wrq-shade{padding-top:24px}.wrq-form{grid-template-columns:64px minmax(0,1fr)}.wrq-in .ft{flex-wrap:wrap}}
+
+/* ops_12 C⑦ 요청 5단계(요청 → 담당 확인 → 실행 → 증빙 → 완료) · C⑧ 재배정 인계 카드 */
+.wrq-steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:4px}
+.wrq-steps>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.wrq-steps>div>span{height:4px;border-radius:2px;background:#e3e6ec}
+.wrq-steps>div.done>span{background:#15171c}.wrq-steps>div.cur>span{background:#3b6ce4}
+.wrq-steps>div>b{font-size:11.5px;font-weight:500;color:#9ca3af;white-space:nowrap}.wrq-steps>div.done>b,.wrq-steps>div.cur>b{color:#15171c}.wrq-steps>div.cur>b{font-weight:700}
+.wrq-steps>div>small{font-size:10.5px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wrq-in.wrq-ho{border-left:3px solid #e0a43a}
+.wrq-in.wrq-ho .hd>em{background:#e0a43a}
+.wrq-hrows{display:grid;grid-template-columns:72px minmax(0,1fr);gap:5px 10px;font-size:12.5px}.wrq-hrows>span{color:#6b7280}.wrq-hrows>b{font-weight:500;min-width:0}
+.tv3 .wrq-in .ft button:not(.go){border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12px;font-weight:600;border-radius:7px;padding:6px 11px;cursor:pointer;min-height:0;box-shadow:none;width:auto;margin-right:6px}
