@@ -730,7 +730,7 @@ var NEXT_BY_CODE={
  consulting   :[['sent','자료 발송완료'],['rapport','응답 없음 → 관계 유지']],
  sent         :[['compete','경쟁 PT 잡힘'],['imminent','공사 임박'],['rapport','응답 없음 → 관계 유지']],
  rapport      :[['compete','경쟁 PT 잡힘'],['imminent','공사 임박'],['sent','자료 재발송'],['silent','3개월 무응답 → 장기 관리']],
- silent       :[['rapport','다시 연락 옴 → 관계 유지'],['compete','경쟁 PT 잡힘'],['imminent','공사 임박'],['waiting','보류 고객 (반기 관리)']],
+ silent       :[['rapport','다시 연락 옴 → 관계 유지'],['compete','경쟁 PT 잡힘'],['imminent','공사 임박'],['waiting','대기 고객 (2개월 1회)']],
  waiting      :[['rapport','다시 진행 → 관계 유지'],['imminent','공사 임박']],
  compete      :[['imminent','최종 협의 단계'],['bidding','입찰 공고 나옴'],['contract','계약 협의 시작']],
  imminent     :[['contract','계약 협의 시작'],['bidding','입찰로 전환']],
@@ -762,7 +762,7 @@ var DEALS=[
  {id:13,nm:'[안양] 만안로얄아파트',rep:'조현식',code:'consulting',gj:['방수','에폭시'],amt:0,_lag:5,sub:'자료 작성 중 (7일 내 발송)',tl:[['8/26','니즈 파악 통화']]},
  {id:14,nm:'[고양] 백송마을아파트',rep:'김성민',code:'completion',gj:['재도장','재도장(외부+부대)'],amt:210000000,_lag:1,sub:'준공 검사 대기',tl:[['8/30','준공 검사 일정 확정']]},
  {id:15,nm:'[서울] 목동센트럴파크',rep:'정정훈',code:'bidding',gj:['지하주차장','유도방수'],amt:180000000,_lag:4,sub:'입찰 서류 제출 완료',tl:[['8/27','입찰 공고 지원']]},
- {id:11,nm:'[평택] 보성청실아파트',rep:'정정훈',code:'waiting',gj:['재도장','재도장(외부)'],amt:0,_lag:190,sub:'반기 재접촉 대상',tl:[['2/20','대기 전환 — 반기 1회 확인']]},
+ {id:11,nm:'[평택] 보성청실아파트',rep:'정정훈',code:'waiting',gj:['재도장','재도장(외부)'],amt:0,_lag:190,sub:'2개월 1회 재접촉 대상',tl:[['2/20','대기 전환 — 2개월 1회 확인']]},
  {id:12,nm:'[부천] 로얄아파트',rep:'이필선',code:'silent',gj:['방수','에폭시'],amt:45000000,_lag:75,sub:'월 1회 동향 확인',tl:[['6/17','침묵 관리 전환']]},
  {id:17,nm:'[수원] 매탄임광아파트',rep:'황윤선',code:'rapport',gj:['재도장','재도장(외부)'],amt:62000000,latitude:37.2848,longitude:127.0436,_lag:38,sub:'최근 접촉 38일 전 · 같이 방문 추천',tl:[['7/29','견적 검토 후 일정 보류']]},
  {id:10,nm:'[속초] 청초대우아파트',rep:'황윤선',code:'won',outcome:'won',won_amount:120000000,gj:['방수','아스팔트 슁글'],amt:120000000,_lag:0,sub:'Closed Won · 확장관리 Pool',tl:[['8/8','준공 및 Closed Won']]}

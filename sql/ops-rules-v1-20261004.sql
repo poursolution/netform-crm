@@ -22,7 +22,8 @@ returns jsonb language plpgsql volatile security definer set search_path='' as $
 declare
  a record; k text; v jsonb; cur jsonb; old jsonb; n numeric; lo numeric; hi numeric; v_name text; v_at timestamptz:=clock_timestamp(); changed int:=0;
  -- 조건부 숫자 항목과 범위(ops-rules.js 의 SPEC 과 같아야 한다)
- lim constant jsonb:='{"assign_minutes":[10,240],"unreachable_attempts":[1,10],"unreachable_interval_days":[1,7],"long_wait_contact_days":[30,180],"transfer_result_check_days":[3,60],"nearby_radius_km":[1,20]}'::jsonb;
+ -- 2026-10-07 관계관리 v12: 집중 · 일반관리 기간(개월)을 조건부 설정으로(care_focus_months 1~6 · care_general_months 1~12). 이 파일을 다시 Run 해야 설정 화면에서 바꿀 수 있다
+ lim constant jsonb:='{"assign_minutes":[10,240],"unreachable_attempts":[1,10],"unreachable_interval_days":[1,7],"long_wait_contact_days":[30,180],"transfer_result_check_days":[3,60],"nearby_radius_km":[1,20],"care_focus_months":[1,6],"care_general_months":[1,12]}'::jsonb;
  bools constant text[]:=array['stage_gates','year_management','year_required_on_convert','year_future_skip_focus','auto_owner_attribution','owner_keep_on_reassign','nearby_map'];
  lists constant text[]:=array['reasons_bad_fit','reasons_lost','reasons_transfer','contact_channels','approvers'];
 begin

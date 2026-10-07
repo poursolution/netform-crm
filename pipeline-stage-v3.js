@@ -64,6 +64,19 @@
    todo:'보낸 지 '+Q.follow+'일 넘은 건은 오늘 반응을 확인하고, 결정권자 일정을 함께 물어보세요.',
    tab:it=>it.bucket==='late'?0:it.bucket==='done'?2:1,
    has:{nofollow:(it,t)=>t===0,nodecider:it=>!deciderKnown(it),nonext,long},sub:it=>it.sub};
+  /* 관계관리 v12(2026-10-07 design_handoff_relationship_v12): 상태 5칸(집중 · 일반 · 대기 · 보류 · 미확인) + 업무 필터(상태와 별개) + 왼쪽 전환 검토 요청 · 재분류 진행률. 끄기 G.relV12Off */
+  if(key==='relationship'&&root.RelV12&&root.RelV12.on()){const RV=root.RelV12,TB=RV.tabs();
+   return {name:'관계관리',goal:goalOf(key,60),desc:'견적 후 고객 상태에 따라 연락 주기를 다르게 · 고객과 약속한 날짜가 있으면 그 날짜 우선',
+    tabs:TB.map(t=>[t[0],t[1]]),tabSrc:TB.map(t=>t[2]),ambTab:4,
+    reasons:RV.REVIEW.map(r=>[r[0],RV.reviewLabel(r[0])]),act:[['연락 기록','activity'],['연락 기록','activity'],['연락 기록','activity'],['연락 기록','activity'],['분류하기','classify']],
+    todo:'',workFilters:RV.WORKS,workNote:'다음 행동 미등록 · 연락 기록 없음만으로 대기 · 보류로 판정하지 않음',
+    prep:it=>{it.rv=RV.state(it.row);},tab:it=>RV.tabIndex(it.rv||(it.rv=RV.state(it.row))),
+    has:{toNormal:it=>it.rv.review==='toNormal',toWait:it=>it.rv.review==='toWait',holdDue:it=>it.rv.review==='holdDue'},
+    work:(x,k)=>{const s=x.it.rv||RV.state(x.row);return k==='od'?s.od:k==='wk'?s.wk:k==='nx'?s.nx:true;},
+    redOf:it=>!!it.rv.od,sub:it=>it.rv.now,
+    nowOf:x=>x.it.rv.now,taskOf:x=>x.it.rv.task,btnOf:x=>x.it.rv.btn,
+    rowOpts:x=>{const s=x.it.rv;return {tag:s.tag,tagClass:s.key,base:s.base,dueText:s.key==='unk'?'기한 없음 · 분류 후 정해짐':(s.due&&!x.row.due?(s.n<0?(-s.n)+'일 지남':s.n===0?'오늘까지':s.n+'일 남음')+' · '+s.dueWhy:''),dueClass:s.key==='unk'?'g':(s.od?'r':'')};},
+    leftHtml:(items,S)=>RV.leftHtml(items,S)};}
   if(key==='relationship')return {name:'관계관리',goal:goalOf(key,60),desc:'공사 시기가 남은 고객과 관계를 이어가는 단계 · '+mo+'개월 1회 연락',
    tabs:[['다음 연락일 지남','오늘 연락'],['이번 주 연락','약속일 지키기'],['장기 대기',mo+'개월마다 안부']],
    reasons:[['over','다음 연락일 지남'],['nonext','다음 행동 없음'],['noyear','공사 예정 연도 없음'],['quiet',Q.wait+'일 무접촉']],
@@ -96,7 +109,8 @@
  /* 줄마다 상태(탭) · 걸린 사유를 붙인다. 정렬: 빨강 상태 → 다음 상태 → 체류 긴 순 */
  function model(key,list){
   const C=cfg(key),M=B.model(key,list);
-  const items=M.items.map(it=>{let t=0;try{t=C.tab(it);}catch(e){t=2;}t=t===0||t===1||t===2?t:2;const rs=C.reasons.map(r=>r[0]).filter(k=>{try{return !!C.has[k](it,t);}catch(e){return false;}});let sub='';try{sub=C.sub(it,t)||'';}catch(e){}let red=t===0;if(C.redOf){try{red=!!C.redOf(it,t);}catch(e){}}return {it,row:it.row,tab:t,rs,sub,stall:it.stall,red};});
+  const nT=C.tabs.length;
+  const items=M.items.map(it=>{if(C.prep){try{C.prep(it);}catch(e){}}let t=0;try{t=C.tab(it);}catch(e){t=nT-1;}t=Number.isInteger(t)&&t>=0&&t<nT?t:nT-1;const rs=C.reasons.map(r=>r[0]).filter(k=>{try{return !!C.has[k](it,t);}catch(e){return false;}});let sub='';try{sub=C.sub(it,t)||'';}catch(e){}let red=t===0;if(C.redOf){try{red=!!C.redOf(it,t);}catch(e){}}return {it,row:it.row,tab:t,rs,sub,stall:it.stall,red};});
   items.sort((a,b)=>a.tab-b.tab||b.stall-a.stall||String(a.row.key).localeCompare(String(b.row.key)));
   return {C,items};
  }
@@ -128,7 +142,9 @@
   const r=x.row,a=actOf(C,x),st0=x.tab===0?C.reasons[0][1]:C.tabs[x.tab][0],sub=x.sub&&!String(st0).includes(x.sub)&&!String(x.sub).includes(st0)?x.sub:'';
   /* 버튼 = 업무 동사: 연락할 일이면 '연락 기록'(미팅 날짜만 남은 컨설팅 건은 '일정 등록'), 나머지는 그 단계의 일(견적 요청 · 정보 입력 · 단계 판단 …). 수주 · 실주는 B안 표의 버튼 이름 그대로 */
   const contact=a[1]==='next'||a[1]==='activity',btn=C.btnOf?[a[0],a[1]]:contact?[key==='consulting'&&x.tab===0&&r.last?'일정 등록':'연락 기록',a[1]]:[a[0],a[1]];
-  return {r,now:C.nowOf?C.nowOf(x):[st0,sub].filter(Boolean).join(' · '),task:C.taskOf?C.taskOf(x):C.tabs[x.tab][1],btn,stall:x.stall,goal:C.goal,reasons:x.rs.map(k=>(C.reasons.find(q=>q[0]===k)||[])[1]).filter(Boolean),dup:dupOf(r),tab:x.tab,closed:!!C.closed,amountLabel:C.amountLabel,stage:key};
+  const o={r,now:C.nowOf?C.nowOf(x):[st0,sub].filter(Boolean).join(' · '),task:C.taskOf?C.taskOf(x):C.tabs[x.tab][1],btn,stall:x.stall,goal:C.goal,reasons:x.rs.map(k=>(C.reasons.find(q=>q[0]===k)||[])[1]).filter(Boolean),dup:dupOf(r),tab:x.tab,closed:!!C.closed,amountLabel:C.amountLabel,stage:key};
+  if(C.rowOpts){try{Object.assign(o,C.rowOpts(x)||{});}catch(e){}}/* 관계관리 v12: 상태 · 주기 꼬리표 · 기준일 · 기한 글 */
+  return o;
  }
  function cardHtml(C,x){
   const r=x.row,bc=bcOf(r),a=actOf(C,x);
@@ -137,16 +153,16 @@
  function html(key,list){
   DUP=dupMap();
   const S=st(),{C,items}=model(key,list),LP=root.ListPager,total=items.length;
-  const cnt=t=>items.filter(x=>x.tab===t).length,n=[cnt(0),cnt(1),cnt(2)],over=items.filter(x=>x.red).length,hot=t=>items.some(x=>x.tab===t&&x.red);
+  const cnt=t=>items.filter(x=>x.tab===t).length,n=C.tabs.map((_,i)=>cnt(i)),over=items.filter(x=>x.red).length,hot=t=>items.some(x=>x.tab===t&&x.red);
   const rsN=k=>items.filter(x=>x.rs.includes(k)).length;
   if(S.reason&&!C.reasons.some(r=>r[0]===S.reason))S.reason=null;
-  const listed=items.filter(x=>(S.tab===-1||x.tab===S.tab)&&(!S.reason||x.rs.includes(S.reason)));
+  if(S.work&&!(C.workFilters||[]).some(w=>w[0]===S.work))S.work=null;const listed=items.filter(x=>(S.tab===-1||x.tab===S.tab)&&(!S.reason||x.rs.includes(S.reason))&&(!S.work||!C.work||C.work(x,S.work)));/* 업무 필터는 상태와 함께 걸림(관계관리 v12) */
   const sumAmt=items.reduce((s,x)=>s+(Number(x.row.amount)||0),0),avg=total?Math.round(items.reduce((s,x)=>s+x.stall,0)/total):0;
   /* 상태 탭 4칸: [전체] + 상태 3개 */
-  const tab=(t,l,rule,num,hot)=>'<button type="button" class="ps3-tab'+(S.tab===t?' on':'')+'" data-ps3="tab" data-v="'+t+'" aria-pressed="'+(S.tab===t)+'"><b class="n'+(hot&&num?' r':'')+'">'+num.toLocaleString('ko-KR')+'</b><b class="l">'+h(l)+'</b><span>'+h(rule)+'</span></button>';
-  const tabs='<div class="ps3-tabs" role="group" aria-label="상태">'+tab(-1,'전체','이 단계 모든 현장',total,false)+C.tabs.map((t,i)=>tab(i,t[0],t[1],n[i],hot(i))).join('')+'</div>';
+  const tab=(t,l,rule,num,hot,src,amb)=>'<button type="button" class="ps3-tab'+(S.tab===t?' on':'')+'" data-ps3="tab" data-v="'+t+'" aria-pressed="'+(S.tab===t)+'"><b class="n'+(hot&&num?' r':amb&&num?' amb':'')+'">'+num.toLocaleString('ko-KR')+'</b><b class="l">'+h(l)+'</b><span>'+h(rule)+'</span>'+(src?'<small class="src">'+h(src)+'</small>':'')+'</button>';
+  const tabs='<div class="ps3-tabs" role="group" aria-label="상태" data-n="'+(C.tabs.length+1)+'">'+tab(-1,'전체','이 단계 모든 현장',total,false)+C.tabs.map((t,i)=>tab(i,t[0],t[1],n[i],hot(i),C.tabSrc?C.tabSrc[i]:'',C.ambTab===i)).join('')+'</div>'+(C.workFilters?'<div class="ps3-works" role="group" aria-label="업무 필터"><span>업무 필터 · 상태와 함께 걸림</span>'+C.workFilters.map(w=>{const m=items.filter(x=>(S.tab===-1||x.tab===S.tab)&&C.work(x,w[0])).length;return '<button type="button" data-ps3="work" data-v="'+w[0]+'" aria-pressed="'+(S.work===w[0])+'">'+h(w[1])+' <span>'+m+'</span></button>';}).join('')+'<i></i>'+(C.workNote?'<small>'+h(C.workNote)+'</small>':'')+'</div>':'');
   /* 왼쪽: 단계 진단 */
-  const diag='<aside class="ps3-diag"><section class="ps3-box"><header><b>단계 진단</b><span>'+total.toLocaleString('ko-KR')+'건 · '+h(money(sumAmt))+'</span></header>'
+  const diag=C.leftHtml?'<aside class="ps3-diag"><section class="ps3-box"><header><b>단계 진단</b><span>'+total.toLocaleString('ko-KR')+'건 · '+h(money(sumAmt))+'</span></header><div class="ps3-kpis"><div class="over"><span>다음 연락일 지남</span><b>'+over.toLocaleString('ko-KR')+'건</b><small>오늘 연락</small></div><div><span>평균 체류</span><b>'+avg+'일</b><small>기준 '+C.goal+'일</small></div></div></section>'+C.leftHtml(items,S)+'</aside>':'<aside class="ps3-diag"><section class="ps3-box"><header><b>단계 진단</b><span>'+total.toLocaleString('ko-KR')+'건 · '+h(money(sumAmt))+'</span></header>'
    +'<div class="ps3-kpis"><div class="over"><span>기준 넘김</span><b>'+over.toLocaleString('ko-KR')+'건</b><small>'+h((()=>{try{const J=root.PipelineJudge;return J&&J.on()?J.tallyText(J.tally(items.map(x=>x.row&&x.row.item).filter(Boolean))):'';}catch(e){return '';}})()||'오늘 처리할 것')+'</small></div>'/* ops_12 A②: 기한 초과 · 날짜 미입력 · 판정 불가 분해(합 = 전체) */+'<div><span>평균 체류</span><b>'+avg+'일</b><small>기준 '+C.goal+'일</small></div></div></section>'
    +'<section class="ps3-box ps3-why"><header><b>왜 멈춰 있나</b><span>누르면 목록이 걸러짐</span></header>'
    +C.reasons.map((r,i)=>{const c=rsN(r[0]),on=S.reason===r[0];return '<button type="button" class="ps3-reason'+(on?' on':'')+((C.redReason?C.redReason(r[0]):i===0)?' first':'')+'" data-ps3="reason" data-v="'+r[0]+'" aria-pressed="'+on+'"><span><b>'+h(r[1])+'</b><b class="c">'+c.toLocaleString('ko-KR')+'</b></span><i><u style="width:'+(total?Math.min(100,Math.round(c/total*100)):0)+'%"></u></i></button>';}).join('')+'</section>'
@@ -163,12 +179,13 @@
  }
  function onClick(e){
   const b=e.target.closest('#pipeline-stage-v3 [data-ps3]');if(!b||b.disabled)return;const S=st(),a=b.dataset.ps3,v=b.dataset.v,LP=root.ListPager;
-  if(a==='tab'){S.tab=Number(v);S.reason=null;LP.reset(S);return root.paint();}
+  if(a==='tab'){S.tab=Number(v);S.reason=null;LP.reset(S);return root.paint();}if(a==='work'){S.work=S.work===v?null:v;LP.reset(S);return root.paint();}
   if(a==='reason'){S.reason=S.reason===v?null:v;LP.reset(S);return root.paint();}
   if(a==='clear'){S.reason=null;LP.reset(S);return root.paint();}
   if(a==='view'){S.view=v;return root.paint();}
   if(a==='page'){LP.set(S,v,b.dataset.page);return root.paint();}
   e.stopPropagation();
+  if(a==='act'&&v==='classify'&&root.RelV12)return root.RelV12.openClassify(b.dataset.key);/* 관계관리 v12 분류 · 전환 창 */
   if(a==='act')return B.open(b.dataset.key,v);
   if(a==='fix'){e.stopPropagation();return B.open(b.dataset.key,'stagefields');}/* 날짜 미입력 보완 단추 → 상세의 이 단계 필수 정보(ops_12 A②) */
   if(a==='open'&&!e.target.closest('button'))return B.open(b.dataset.key);
@@ -178,7 +195,7 @@
  L2.paint=function(el,key,list){
   if(!enabled(key)||!L2.enabled(key))return prevPaint.apply(this,arguments);
   const pg=document.getElementById('pg-pipe');pg?.classList.add('plv-on');pg?.classList.add('psb-on');
-  const S=st();if(S.key!==key){S.key=key;S.tab=-1;S.reason=null;root.ListPager.reset(S);}
+  const S=st();if(S.key!==key){S.key=key;S.tab=-1;S.reason=null;S.work=null;root.ListPager.reset(S);}
   el.classList.remove('pk-mode');el.innerHTML=html(key,list);
   if(!el.__ps3){el.__ps3=true;el.addEventListener('click',onClick,true);el.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('#pipeline-stage-v3 [data-ps3="open"]')){e.preventDefault();e.target.click();}});}
   const C=cfg(key);document.getElementById('ptitle').textContent=C.name.replace(' · ','·');const ps=document.getElementById('psub');if(ps)ps.textContent='위 상태 탭 → 왼쪽 단계 진단 · 오른쪽 확인할 현장';

@@ -64,7 +64,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const EXPECT={
    consulting:{name:'컨설팅 설계',goal:14,tabs:[['미팅 전 · 일정 없음','첫 통화에서 미팅 날짜 잡기'],['미팅 예정','미팅 전날 확인 연락'],['미팅 완료 · 견적 준비','3일 안 견적 요청']],n:[4,1,1,2],reasons:[['미팅 일정 없음',1],['필수 확인 미입력',2],['다음 행동 · 날짜 없음',1],['30일 넘게 머묾',1]],act:['미팅 잡기','확인 연락','견적 요청'],order:['c-none','c-plan','c-late','c-ok']},
    sent:{name:'자료 발송완료',goal:14,tabs:[['7일 넘음 · 후속 없음','오늘 후속 연락'],['발송 후 7일 안','D+3 수신 확인'],['고객 반응 있음','다음 단계 판단']],n:[3,1,1,1],reasons:[['발송 후 7일 · 후속 없음',1],['결정권자 미확인',2],['다음 행동 · 날짜 없음',2],['30일 넘게 머묾',0]],act:['후속 연락','수신 확인','단계 판단'],order:['s-late','s-wait','s-done']},
-   relationship:{name:'관계관리',goal:60,tabs:[['다음 연락일 지남','오늘 연락'],['이번 주 연락','약속일 지키기'],['장기 대기','2개월마다 안부']],n:[4,1,1,2],reasons:[['다음 연락일 지남',1],['다음 행동 없음',1],['공사 예정 연도 없음',3],['60일 무접촉',1]],act:['연락','연락','안부 연락'],order:['r-over','r-week','r-none','r-far']},
+   /* 관계관리는 2026-10-07 v12(상태 5칸 · 업무 필터 · 전환 검토)로 바뀌어 전용 검사(scripts/verify-relationship-v12-browser.cjs)가 본다. 끄기(G.relV12Off) 경로의 예전 탭 3개는 아래 relOld 로 */
    competition:{name:'경쟁 · 입찰',goal:30,tabs:[['마감 D-7 이내','제안서 · 가격 확정'],['진행 중','일정 확인'],['결과 대기','개찰 다음날 결과 등록']],n:[5,2,1,2],reasons:[['제안서 미공유',2],['경쟁 공법 미확인',4],['결정권자 미확인',5],['결과 미등록',1]],act:['제안 준비','일정 확인','결과 등록'],order:null},
    construction:{name:'계약 · 시공',goal:14,tabs:[['계약정보 누락','계약일 · 금액 입력'],['시공 중','정해진 주기로 확인'],['준공 확인','준공 · 하자 인계']],n:[4,1,2,1],reasons:[['계약일 · 금액 없음',1],['인계서 미확인',1],['시공 중 연락 없음',2]/* 인계 중(접촉 기록 없음) + 시공 중(9일 무연락) */,['준공 확인 없음',1]],act:['정보 입력','현장 확인','준공 확인'],order:null}};
   for(const key of Object.keys(EXPECT)){
@@ -164,6 +164,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    assert.match(await page.locator('#pipeline-stage-v3 .ps3-kpis').innerText(),/기준 넘김\s*\d+건[\s\S]*평균 체류\s*\d+일/);
    assert.equal(await page.locator('#pipeline-stage-v3 .ps3-diag>.ps3-box').nth(2).locator('.psb-act,.ps3-none').count()>0,true,k+' 그래서 뭘 해야 하나 = 사유별 할 일');
   }
+  /* 관계관리: v12 를 끄면(G.relV12Off) 예전 탭 3개(다음 연락일 지남 · 이번 주 연락 · 장기 대기) · 켜면 상태 5칸 — 자세한 것은 scripts/verify-relationship-v12-browser.cjs */
+  await page.evaluate(()=>{G.relV12Off=true;PipelineWorkspace.open('relationship');});await page.waitForTimeout(300);
+  assert.deepEqual(await page.locator('#pipeline-stage-v3 .ps3-tab .l').allInnerTexts(),['전체','다음 연락일 지남','이번 주 연락','장기 대기'],'relOld: 끄면 예전 탭 3개');
+  assert.deepEqual(await page.locator('#pipeline-stage-v3 .ps3-tab .n').allInnerTexts(),['4','1','1','2'],'relOld: 탭 건수');
+  await page.evaluate(()=>{G.relV12Off=false;PipelineWorkspace.open('relationship');});await page.waitForTimeout(300);
+  assert.deepEqual(await page.locator('#pipeline-stage-v3 .ps3-tab .l').allInnerTexts(),['전체','집중관리','일반관리','대기','보류','미확인 · 기준일 확인 필요'],'v12: 상태 5칸');
   await page.evaluate(()=>{G.pipeStageV3Off=true;PipelineWorkspace.open('consulting');});await page.waitForTimeout(300);
   assert.equal(await page.locator('#pipeline-stage-v3').count(),0);assert.equal(await page.locator('#pipeline-stage-b').count(),1,'끄면 이전 화면');
   assert.deepEqual(errs,[],'화면 오류 없음: '+errs.join(' | '));
