@@ -588,11 +588,12 @@
    sum.querySelectorAll(':scope>dl,:scope>.da-stage-edit,:scope>.ddv-pace').forEach(n=>n.classList.add('dv3-old'));
    let box=sum.querySelector(':scope>.dv3-stage');if(!box){box=el('div','dv3-stage');sum.append(box);}
    {const keep=[...box.querySelectorAll('.dv3-slot')].map(s=>[s.dataset.slot,[...s.children]]).filter(x=>x[1].length);/* 열려 있던 공종 · 금액 입력 상자는 다시 그려도 그대로 */
-     const T=tidy(),total=core.length+rows.length,opened=!T||!!S.reqOpen||!!S.edit||!!S.sedit||keep.length>0;
+     /* 2026-10-07 대표 "이 단계 필수 정보 접지 마": 항상 펼친 채 — 접기 · 채우기 단추 없음(숫자 n / m 만) */
+     const T=tidy(),total=core.length+rows.length,opened=true;
      box.innerHTML=opened?core.map(x=>fieldRow(d,x,closed,true)).join('')+(core.length?'<div class="dv3-slot" data-slot="site"></div>':'')+html:'<span class="dvt-reqlist">'+h(missL.length?missL.join(' · '):'모두 채웠습니다')+'</span>';
      box.classList.toggle('dvt-closed',!opened);
      keep.forEach(([name,nodes])=>{const s=box.querySelector('.dv3-slot[data-slot="'+name+'"]');if(s)nodes.forEach(n=>s.append(n));});
-     if(h3)h3.innerHTML='이 단계 필수 정보'+(T?' <span class="dvt-cnt'+(miss?'':' ok')+'">'+(total-miss)+' / '+total+'</span><i></i><button type="button" class="lnk" data-dv3="reqtoggle" aria-expanded="'+opened+'">'+(opened?'접기 ▴':'채우기 ▾')+'</button>':(miss?' <span class="dv3-miss">미입력 '+miss+'</span>':''));}
+     if(h3)h3.innerHTML='이 단계 필수 정보'+(T?' <span class="dvt-cnt'+(miss?'':' ok')+'">'+(total-miss)+' / '+total+'</span>':(miss?' <span class="dv3-miss">미입력 '+miss+'</span>':''));}
    /* 과거 이관 건은 아직 단계가 없다 — 제목만 바꾼다 */if(h3&&h3.firstChild&&v.classList.contains('dv3-legacy'))h3.firstChild.textContent='영업 재개 전 확인할 정보';
    sum.classList.toggle('dv3-old',!rows.length&&!core.length);
    ensureSlot(sum,'stage');
@@ -604,7 +605,7 @@
     머리 = 브랜드 색 띠 + 글자 · '단계 · n일째' 꼬리표 하나 · 담당 · 예상 금액 · (같은 단지 수주 이력이 있으면) '✓ 기존 고객' 알약 · [단계 바꾸기 ▾] [···] [×]
     왼쪽 = 연락처 세 줄(이름 · 역할 · 수정 / 번호 + 작은 전화 · 문자 / 동의 · 결정권자 회색 한 줄) · 이 단지 영업 이력(site-history.js)
     가운데 = 입력칸이 맨 위 · 이력 줄을 누르면 가운데 칸만 그 영업건 요약(머리 · 왼쪽 · 오른쪽은 지금 건 그대로)
-    오른쪽 = 지금 할 일은 상자 없이 문장(행동 + 근거 한 줄) · [전화하고 결과 남기기] = 가운데 입력칸으로 · 이 단계 필수 정보는 'n / m [채우기 ▾]' 접기 */
+    오른쪽 = 지금 할 일은 상자 없이 문장(행동 + 근거 한 줄) · [전화하고 결과 남기기] = 가운데 입력칸으로 · 이 단계 필수 정보는 'n / m' 숫자만 달고 항상 펼침(2026-10-07 대표 "접지 마") */
  /* 같은 단지의 지난 수주(가장 최근 한 건) — '이 단지 영업 이력'과 같은 줄에서 읽는다(머리의 '기존 고객' 알약 · 이력 맨 위 줄) */
  function wonRow(d){
   try{

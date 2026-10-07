@@ -49,7 +49,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.ok(Math.max(...head.rowY)-Math.min(...head.rowY)<=16,'머리 글자 · 버튼이 한 줄에 있다 '+JSON.stringify(head.rowY));
   /* [···] 메뉴: 즐겨찾기 · 소장이 바뀌었어요 · 담당자 변경 · … · 실주 처리 */
   await v.locator('.tf-more').click();await page.waitForTimeout(150);
-  assert.deepEqual((await v.locator('.tf-menu button').allInnerTexts()).filter(t=>!/타사 이관|승인 요청/.test(t)),['☆ 즐겨찾기','소장이 바뀌었어요','담당자 변경','보류','실주 처리']);
+  assert.deepEqual((await v.locator('.tf-menu button').allInnerTexts()).filter(t=>!/타사 이관|승인 요청/.test(t)),['☆ 즐겨찾기','소장이 바뀌었어요','담당자 변경','보류','실주 처리','휴지통으로 보내기']);/* 운영 시작 전 등록된 이관 자료 · 관리자 → 휴지통(2026-10-07) */
   await v.locator('.tf-menu [data-tf="m-repl"]').click();await page.waitForSelector('#detailView .dv3-mgr .dv3-repl');
   assert.match(one(await v.locator('.dv3-repl').innerText()),/^새 관리소장 등록 취소 이영수 소장님은 지우지 않고 이전 소장으로 남깁니다/);
   await v.locator('[data-dv3="replcancel"]').click();await page.waitForTimeout(150);
@@ -66,14 +66,11 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* ③ 가운데: 응대 이력 → 입력칸은 맨 아래(2026-10-06 대표 "원래대로 응대 이력 아래, 맨 밑으로") · 빈 기록은 한 줄 */
   const mid=await page.evaluate(()=>{const v=document.getElementById('detailView'),y=s=>Math.round(v.querySelector(s).getBoundingClientRect().top),c=v.querySelector('.ddv-talk');return [y('.ddv-talk>.idv-chead')<y('.idv-thread'),y('.idv-thread')<y('#ddvComposer'),c.lastElementChild===v.querySelector('#ddvComposer'),[...v.querySelectorAll('#ddvComposer [role=tab],#ddvComposer .ce-open')].map(b=>b.textContent.trim()),v.querySelector('.ddv-nothing').textContent,Math.round(v.querySelector('.ddv-nothing').getBoundingClientRect().height)<30,v.querySelector('.dv3-cfoot>span').textContent];});
   assert.deepEqual(mid,[true,true,true,['응대 기록','내부 메모','변화 기록'],'아직 없습니다. 아래에 첫 연락 결과를 적으면 여기 쌓입니다.',true,'부재는 연락 시도로만 셈']);
-  /* ④ 오른쪽: 지금 할 일 = 상자 없이 행동 + 근거 한 줄 · 필수 정보 'n / m [채우기 ▾]' */
+  /* ④ 오른쪽: 지금 할 일 = 상자 없이 행동 + 근거 한 줄 · 필수 정보 'n / m' 항상 펼침(2026-10-07 대표 "접지 마" — 접기 · 채우기 단추 없음) */
   const right=await page.evaluate(()=>{const v=document.getElementById('detailView'),n=v.querySelector('#nowCard'),cs=getComputedStyle(n);return [cs.borderTopWidth,n.querySelector('.nc-stage').textContent,n.querySelector('.dv3-title b').textContent,n.querySelector('.dv3-title span').textContent,n.querySelector('.nc-call').textContent,n.querySelector('.dv3-sub').textContent,n.querySelectorAll('.dv3-reco').length];});
   assert.deepEqual(right.slice(0,2).concat(right.slice(4)),['0px','지금 할 일','전화하고 결과 남기기','연락 없이 다음 일만 정하기',0]);
   assert.match(right[3],/^컨설팅 설계 3[34]일째 · /,'근거 한 줄 = 단계 · 체류일 · 사유');assert.ok(right[2]&&right[2]!==right[3].replace(/^컨설팅 설계 3[34]일째 · /,''),'제목은 사유가 아니라 할 일');
-  assert.deepEqual([one(await v.locator('.da-stage-summary>h3').innerText()),await v.locator('.da-stage-summary .dv3-row').count(),one(await v.locator('.dvt-reqlist').innerText()).split(' · ').slice(0,2)],['이 단계 필수 정보 0 / 5 채우기 ▾',0,['공종','예상 금액']]);
-  await v.locator('[data-dv3="reqtoggle"]').click();await page.waitForTimeout(150);
-  assert.deepEqual([one(await v.locator('.da-stage-summary>h3').innerText()),await v.locator('.da-stage-summary .dv3-row').count(),await v.locator('.dvt-reqlist').count()],['이 단계 필수 정보 0 / 5 접기 ▴',5,0],'펼치면 그 자리에서 입력');
-  await v.locator('[data-dv3="reqtoggle"]').click();await page.waitForTimeout(150);
+  assert.deepEqual([one(await v.locator('.da-stage-summary>h3').innerText()),await v.locator('.da-stage-summary .dv3-row').count(),await v.locator('.dvt-reqlist').count(),await v.locator('[data-dv3="reqtoggle"]').count(),await v.locator('.da-stage-summary .dvt-closed').count()],['이 단계 필수 정보 0 / 5',5,0,0,0],'항상 펼친 채 · 그 자리에서 입력 · 접는 단추 없음');
   if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'deal-tidy.png')});
   /* ⑤ 이력 줄을 누르면: 가운데 칸만 그 영업건 요약 — 머리 · 왼쪽 · 오른쪽 · 지금 보는 영업건은 그대로 */
   await v.locator('.sth-row.past').first().click();await page.waitForSelector('#detailView .dw-center.dvt-peeking .dvt-peek');

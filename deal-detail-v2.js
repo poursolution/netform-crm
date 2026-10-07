@@ -24,7 +24,7 @@
   let rows=[];try{rows=root.unifiedTimeline(root.currentPatch?root.currentPatch():{},d)||[];}catch(e){rows=[];}
   const seen=new Set(),say=t=>root.sayLegacyNote?root.sayLegacyNote(t):t,out=[];
   /* 같은 단계 변경이 화면 기록('계약')과 서버 기록('bidding → contract')으로 두 번 오면 한 번만 보인다 — 같은 날 · 같은 입력 내용이면 같은 변경. 단계 코드는 단계 이름으로 바꿔 적는다 */
-  const stageSeen=[],codeName=s=>String(s||'').replace(/[a-z]+(?:_[a-z]+)*/g,c=>root.STAGE_MASTER&&root.STAGE_MASTER[c]?root.stageLabel(c):c),toOf=s=>{s=codeName(s);const i=s.lastIndexOf('→');return (i>=0?s.slice(i+1):s).trim();};
+  const stageSeen=[],codeName=s=>String(s||'').replace(/[a-z]+(?:_[a-z]+)*/g,c=>c==='unclassified'?'단계 없음(과거 이관)':root.STAGE_MASTER&&root.STAGE_MASTER[c]?root.stageLabel(c):c),/* 'unclassified' = 단계 값이 비어 있던 과거 이관 건의 출발 단계(2026-10-07) */toOf=s=>{s=codeName(s);const i=s.lastIndexOf('→');return (i>=0?s.slice(i+1):s).trim();};
   rows.forEach(x=>{
    const k=x.id?'id:'+x.id:[x.ttl,x.body,x.result,String(x.at||'')].join('|');if(seen.has(k))return;seen.add(k);
    const ttl=String(x.ttl||''),label=NAMES[ttl]||(/^[a-z]+(?:_[a-z]+)+$/.test(ttl)?'업무 기록':ttl||'연락 결과');

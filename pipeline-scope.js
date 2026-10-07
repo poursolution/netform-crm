@@ -27,7 +27,7 @@
  function isLegacy(d){if(!on()||!d||typeof d!=='object')return false;const c=rawCode(d),K=codes();if(!K.known.size)return false;return !K.known.has(c)&&open(d);}
  function isActive(d){if(!d||typeof d!=='object'||!open(d))return false;if(!on())return true;return validStage(d);}
  /* 예전 단계 이름: 예전 리드 단계 → 우리말 이름, 그 밖에는 원래 적혀 있던 단계 글자, 없으면 '단계 없음' */
- function oldStage(d){const c=rawCode(d);if(OLD[c])return OLD[c];const raw=String((d&&(d.stage_raw||d.stage))||'').replace(/\s*\([^)]*\)\s*$/,'').trim();return raw&&raw!==c?raw:(c||'단계 없음');}
+ function oldStage(d){const c=rawCode(d);if(OLD[c])return OLD[c];if(OLD[c.toLowerCase()])return OLD[c.toLowerCase()];/* 'Qualified' 처럼 대문자로 저장된 값도 같은 이름(2026-10-07 운영 화면) */const raw=String((d&&(d.stage_raw||d.stage))||'').replace(/\s*\([^)]*\)\s*$/,'').trim();return raw&&raw!==c?raw:(c||'단계 없음');}
  /* 영업 재개(단계 전환)의 출발 단계: 서버는 출발 단계 값이 저장된 값과 같아야 받는다.
     저장된 값이 비어 있는 과거 이관 건은 'unclassified' 를 보낸다 — 서버가 NULL 을 그 값으로 본다(sql/transition-null-stage-v1-20261007.sql · 2026-10-07) */
  const NULL_FROM='unclassified';
