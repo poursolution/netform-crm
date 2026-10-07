@@ -1,8 +1,8 @@
 /* 주요 변화 이벤트(2차 기능 1) ce- · 단계 이동 필수조건(2차 기능 2) sg- · 실주 원인 제안 lr-ai */
-#detailView .ce-open{margin-left:6px;border:1px dashed #e0a43a;background:#fffaf0;color:#8a5a00;font:inherit;font-size:12.5px;font-weight:700;border-radius:7px;padding:6px 12px;cursor:pointer;min-height:0;box-shadow:none}
+#detailView .ce-open{margin-left:6px;border:1px dashed #e8a09a;background:#fdf0ee;color:#c0392b;font:inherit;font-size:12.5px;font-weight:700;border-radius:7px;padding:6px 12px;cursor:pointer;min-height:0;box-shadow:none}
 /* 응대 이력의 변화 이벤트: 노란 줄 */
-#detailView .idv-msg.ce-ev .idv-bubble,#detailView.ddv.dv3 .ddv-talk .idv-msg.ce-ev[data-dv3k] .idv-bubble{font-weight:400;background:#fff4d6;border-radius:8px;padding:9px 10px;display:flex;flex-direction:column;gap:2px;color:#15171c;border:0;box-shadow:none}
-#detailView .idv-msg.ce-ev .idv-meta em,#detailView .idv-msg.ce-ev .idv-meta .dv3-kind{color:#8a5a00;font-weight:700;font-style:normal;background:#fff4d6;border-color:#f5dfa8}
+#detailView .idv-msg.ce-ev .idv-bubble,#detailView.ddv.dv3 .ddv-talk .idv-msg.ce-ev[data-dv3k] .idv-bubble{font-weight:400;background:#fdeceb;border-radius:8px;padding:9px 10px;display:flex;flex-direction:column;gap:2px;color:#15171c;border:0;box-shadow:none}
+#detailView .idv-msg.ce-ev .idv-meta em,#detailView .idv-msg.ce-ev .idv-meta .dv3-kind{color:#c0392b;font-weight:700;font-style:normal;background:#fdeceb;border-color:#f5dfa8}
 #detailView .idv-msg.ce-ev .ce-act{color:#6b7280;font-size:12.5px}
 .ce-shade{position:fixed;inset:0;z-index:1200;background:rgba(20,26,46,.45);display:flex;align-items:flex-start;justify-content:center;padding:60px 20px;overflow:auto}
 .ce-dlg{width:100%;max-width:480px;background:#fff;border-radius:12px;border:1px solid #e8eaef;box-shadow:0 10px 40px rgba(17,24,39,.14);padding:16px 18px;display:flex;flex-direction:column;gap:12px;color:#15171c;font-size:13px}
@@ -14,8 +14,8 @@
 .ce-types button[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}
 .ce-form{display:grid;grid-template-columns:72px minmax(0,1fr);gap:9px 12px;align-items:center}.ce-form label{font-weight:700}
 .ce-form input{border:1px solid #d9dde4;border-radius:8px;padding:7px 10px;font-size:13px;min-width:0;width:100%;box-sizing:border-box;background:#fff;color:#15171c}
-.ce-auto{border:1px solid #f5dfa8;background:#fffaf0;border-radius:10px;padding:11px 13px;display:flex;flex-direction:column;gap:6px}
-.ce-auto>span{font-size:11.5px;font-weight:700;color:#8a5a00}.ce-auto>b{font-size:13.5px}.ce-auto small{font-size:12px;color:#6b7280}
+.ce-auto{border:1px solid #f5dfa8;background:#fdf0ee;border-radius:10px;padding:11px 13px;display:flex;flex-direction:column;gap:6px}
+.ce-auto>span{font-size:11.5px;font-weight:700;color:#c0392b}.ce-auto>b{font-size:13.5px}.ce-auto small{font-size:12px;color:#6b7280}
 .ce-auto button{align-self:flex-start;border:0;background:#15171c;color:#fff;font-size:12.5px;font-weight:700;border-radius:7px;padding:7px 14px}.ce-auto button:disabled{background:#c9cdd5}
 .ce-err{margin:0;color:#b42318;font-size:12.5px;font-weight:600}
 /* 단계 이동 필수조건 */
@@ -29,4 +29,4 @@
 .sg-msg{margin:0;font-size:12px;font-weight:600;color:#b42318}.sg-msg.ok{color:#1f7a4d}
 #stage-transition-form button[type="submit"].sg-locked{background:#c9cdd5!important;border-color:#c9cdd5!important;color:#fff!important}
 /* 실주 원인: 변화 이벤트에서 온 제안 */
-.lr-ai{margin:0;font-size:12px;color:#8a5a00;background:#fffaf0;border-radius:7px;padding:8px 10px;line-height:1.5}.lr-ai b{color:#15171c}
+.lr-ai{margin:0;font-size:12px;color:#c0392b;background:#fdf0ee;border-radius:7px;padding:8px 10px;line-height:1.5}.lr-ai b{color:#15171c}

@@ -33,7 +33,7 @@
 .il-el{width:108px;display:flex;flex-direction:column;gap:2px;text-align:right}.il-el b{font-size:15px;white-space:nowrap}.il-el span{font-size:11px;color:#9ca3af;white-space:nowrap}
 /* 줄 끝 버튼 색 = 급한 정도: 배정 빨강 채움 · 첫 연락 검정 채움 · 기준 넘긴 후속 주황 테두리 · 나머지 흰 버튼 */
 .il-act{width:92px;border:1px solid #d5e0fb;background:#fff;color:#2a52b8;font:inherit;font-size:12px;font-weight:700;border-radius:7px;padding:7px 0;cursor:pointer}
-.il-act.red{background:#d93a3a;border-color:#d93a3a;color:#fff}.il-act.dark{background:#15171c;border-color:#15171c;color:#fff}.il-act.amber{background:#fff;border-color:#f0c58a;color:#b45309}
+.il-act.red{background:#d93a3a;border-color:#d93a3a;color:#fff}.il-act.dark{background:#15171c;border-color:#15171c;color:#fff}.il-act.amber{background:#fff;border-color:#f0c58a;color:#c0392b}
 .il-panel{margin:0 16px 14px 125px;background:#f8f9fb;border:1px solid #eef0f3;border-radius:8px;padding:12px 14px;display:grid;grid-template-columns:90px minmax(0,1fr);gap:6px 12px;font-size:12px;line-height:1.55}
 .il-panel>span{color:#9ca3af}.il-panel>span.w,.il-panel>p.w{color:#a35c00}.il-panel>p.w{font-weight:600}.il-panel>span.b{color:#15171c;font-weight:700;padding-top:6px}
 .il-panel>p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}.il-panel>p.line{background:#fff;border:1px solid #eef0f3;border-radius:6px;padding:6px 10px}.il-panel small{display:block;color:#9ca3af;font-size:11px}

@@ -28,13 +28,13 @@
 .wrq-wait>header{padding:12px 16px;border-bottom:1px solid #eef0f3;display:flex;align-items:baseline;gap:8px}.wrq-wait>header b{font-size:14px}.wrq-wait>header span{font-size:12px;color:#6b7280}
 .wrq-w{padding:11px 16px;border-bottom:1px solid #f2f3f6;display:flex;flex-direction:column;gap:5px}
 .wrq-w .l1{display:flex;align-items:center;gap:6px}.wrq-w .l1>i{width:3px;height:14px;border-radius:2px;flex:none}.wrq-w .l1>b{flex:1;min-width:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wrq-pill{flex:none;font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px}.wrq-pill.amb{color:#8a5a00;background:#fff4d6}.wrq-pill.ok{color:#1f7a4d;background:#e8f6ee}.wrq-pill.bad{color:#b42318;background:#fdecec}
+.wrq-pill{flex:none;font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px}.wrq-pill.amb{color:#c0392b;background:#fdeceb}.wrq-pill.ok{color:#1f7a4d;background:#e8f6ee}.wrq-pill.bad{color:#b42318;background:#fdecec}
 .wrq-w .l2{font-size:12px;color:#374151}
 .wrq-w .l3{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#6b7280;flex-wrap:wrap}.wrq-w .l3>i{flex:1}
 .tv3 .wrq-w .l3 button{border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:11.5px;font-weight:700;border-radius:6px;padding:4px 9px;cursor:pointer;min-height:0;box-shadow:none;width:auto;white-space:nowrap}
-.wrq-w .rp{font-size:12px;border-radius:6px;padding:6px 9px;line-height:1.5}.wrq-w .rp.ok{color:#1f7a4d;background:#e8f6ee}.wrq-w .rp.amb{color:#8a5a00;background:#fffaf0}
+.wrq-w .rp{font-size:12px;border-radius:6px;padding:6px 9px;line-height:1.5}.wrq-w .rp.ok{color:#1f7a4d;background:#e8f6ee}.wrq-w .rp.amb{color:#c0392b;background:#fdf0ee}
 .wrq-w .nt{font-size:11.5px;font-weight:700;color:#b42318}
-.wrq-w .ur{font-size:11.5px;color:#8a5a00;background:#fffaf0;border-radius:6px;padding:5px 9px;line-height:1.5}
+.wrq-w .ur{font-size:11.5px;color:#c0392b;background:#fdf0ee;border-radius:6px;padding:5px 9px;line-height:1.5}
 .wrq-wait>.ft{margin:0;padding:9px 16px;font-size:11.5px;color:#9ca3af}
 /* 받는 사람 오늘 업무 맨 위: 관리자 요청 / 본사 확인 요청 */
 .wrq-top{background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
@@ -71,7 +71,7 @@
 .wrq-steps>div.done>span{background:#15171c}.wrq-steps>div.cur>span{background:#3b6ce4}
 .wrq-steps>div>b{font-size:11.5px;font-weight:500;color:#9ca3af;white-space:nowrap}.wrq-steps>div.done>b,.wrq-steps>div.cur>b{color:#15171c}.wrq-steps>div.cur>b{font-weight:700}
 .wrq-steps>div>small{font-size:10.5px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wrq-in.wrq-ho{border-left:3px solid #e0a43a}
-.wrq-in.wrq-ho .hd>em{background:#e0a43a}
+.wrq-in.wrq-ho{border-left:3px solid #e8a09a}
+.wrq-in.wrq-ho .hd>em{background:#e8a09a}
 .wrq-hrows{display:grid;grid-template-columns:72px minmax(0,1fr);gap:5px 10px;font-size:12.5px}.wrq-hrows>span{color:#6b7280}.wrq-hrows>b{font-weight:500;min-width:0}
 .tv3 .wrq-in .ft button:not(.go){border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12px;font-weight:600;border-radius:7px;padding:6px 11px;cursor:pointer;min-height:0;box-shadow:none;width:auto;margin-right:6px}

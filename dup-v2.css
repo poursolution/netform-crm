@@ -1,4 +1,4 @@
-﻿/* 데이터 정리 · 검토 v2 (2026-10-02 핸드오프 dup) */
+/* 데이터 정리 · 검토 v2 (2026-10-02 핸드오프 dup) */
 #dup-v2[hidden]{display:none}
 #dups.dv-on>*:not(dialog){display:none!important}
 #dup-v2 .plv-pills button{border:1px solid #e1e4ea;background:#fff;color:#374151;border-radius:999px;padding:6px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
@@ -16,13 +16,13 @@
 .dv-box .xdv-close{width:32px;height:32px;border:0;border-radius:8px;background:#f3f4f7;color:#6b7280;font-size:14px;cursor:pointer;padding:0;flex:none}
 .dv-body{padding:14px 18px;overflow:auto;display:flex;flex-direction:column;gap:12px}
 .dv-judge{border-radius:12px;padding:11px 14px;display:flex;flex-direction:column;gap:3px;border:1px solid #e7e9ee;background:#f7f8fa}
-.dv-judge.g{background:#ecf8f1;border-color:#cfeadb}.dv-judge.g b{color:#1f7a4d}.dv-judge.a{background:#fff8ec;border-color:#f6e7c1}.dv-judge.a b{color:#8a5a00}
+.dv-judge.g{background:#ecf8f1;border-color:#cfeadb}.dv-judge.g b{color:#1f7a4d}.dv-judge.a{background:#fdf0ee;border-color:#f6e7c1}.dv-judge.a b{color:#c0392b}
 .dv-judge b{font-size:14px}.dv-judge span{font-size:12.5px;color:#374151;line-height:1.5}.dv-judge small{font-size:11.5px;color:#9ca3af}
 .dv-cmp{border:1px solid #eceef2;border-radius:12px;overflow:hidden}
 .dv-cmp>div{display:grid;grid-template-columns:120px minmax(0,1fr) minmax(0,1fr);border-top:1px solid #f5f6f8}.dv-cmp>div:first-child{border-top:0;background:#f7f8fa}
 .dv-cmp span,.dv-cmp em,.dv-cmp b{padding:8px 12px;font-style:normal;min-width:0;overflow-wrap:anywhere}.dv-cmp span{color:#6b7280;font-size:12px}.dv-cmp em+em,.dv-cmp b+b{border-left:1px solid #f5f6f8}
 .dv-cmp>div.diff em{background:#fff8e1}
-.dv-note{margin:0;font-size:12.5px;color:#6b7280;line-height:1.6}.dv-note b{color:#8a5a00;font-weight:600}
+.dv-note{margin:0;font-size:12.5px;color:#6b7280;line-height:1.6}.dv-note b{color:#c0392b;font-weight:600}
 .dv-foot{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:12px 18px 14px;border-top:1px solid #f0f1f4;background:#fafbfc}
 .dv-ghost{border:1px solid #e1e4ea;background:#fff;color:#374151;border-radius:8px;padding:8px 14px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
 .dv-primary{border:0;background:#3b6ce4;color:#fff;border-radius:8px;padding:8px 16px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}

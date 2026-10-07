@@ -19,7 +19,7 @@
 .ta-row .ta-ai{flex:none;font-style:normal;font-size:9.5px;font-weight:800;color:#fff;background:#3b6ce4;border-radius:3px;padding:1px 4px}
 .ta-row .ta-tg{display:flex;flex-wrap:wrap;gap:4px}
 .ta-row .ta-tg em{font-style:normal;font-size:10.5px;font-weight:700;color:#374151;background:#f3f4f6;border-radius:4px;padding:1px 6px;white-space:nowrap}
-.ta-row .ta-tg em.r{color:#b42318;background:#fdecec}.ta-row .ta-tg em.y{color:#8a5a00;background:#fff4d6}.ta-row .ta-tg em.b{color:#1d3f99;background:#eef3fe}
+.ta-row .ta-tg em.r{color:#b42318;background:#fdecec}.ta-row .ta-tg em.y{color:#c0392b;background:#fdeceb}.ta-row .ta-tg em.b{color:#1d3f99;background:#eef3fe}
 .ta-row .ta-d{display:flex;flex-direction:column;gap:1px;text-align:right;align-items:flex-end}
 .ta-row .ta-d b{font-size:14px;font-weight:700}.ta-row .ta-d b.r{color:#b42318}.ta-row .ta-d small{font-size:11px;color:#9ca3af}
 .ta-row.hd .ta-d{text-align:right;display:block}

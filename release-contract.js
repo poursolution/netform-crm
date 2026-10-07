@@ -13,7 +13,7 @@
   const s=document.createElement('style');s.id='crm-release-style';
   /* 흐름 안 배치(2026-10-01 컨설턴트 7항 — 떠 있던 띠가 제목·단추를 가림) */
   s.textContent='#crm-release-banner{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:12px 20px 0;box-sizing:border-box;border:1px solid #f6d9b0;border-left:4px solid #E08A00;border-radius:12px;background:#fffaf2;box-shadow:0 10px 30px rgba(15,23,42,.12);padding:10px 14px;font-size:12.5px;color:#33415e}'
-   +'#crm-release-banner b{color:#b45309;font-size:13px}#crm-release-banner code{flex-basis:100%;font:11.5px/1.5 ui-monospace,Consolas,monospace;color:#5b6b85;word-break:break-all}'
+   +'#crm-release-banner b{color:#c0392b;font-size:13px}#crm-release-banner code{flex-basis:100%;font:11.5px/1.5 ui-monospace,Consolas,monospace;color:#5b6b85;word-break:break-all}'
    +'#crm-release-banner button{margin-left:auto;border:1px solid #e2e8f1;border-radius:8px;background:#fff;color:#5b6b85;padding:4px 9px;font:inherit;font-size:12px;cursor:pointer}';
   document.head.append(s);
  }

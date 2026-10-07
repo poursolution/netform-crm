@@ -1,4 +1,4 @@
-﻿/* 오늘 업무 · 영업사원 화면 v2 (2026-10-02 디자인 핸드오프 'design_handoff_today_inquiry' 추가 · 2a)
+/* 오늘 업무 · 영업사원 화면 v2 (2026-10-02 디자인 핸드오프 'design_handoff_today_inquiry' 추가 · 2a)
    영업사원으로 열었을 때만: ① 급한 곳 머리줄 → ② 급한 곳 카드(처음 4장 · 더보기) → ③ 나머지 묶음 표. 관리자 화면은 그대로.
    목록 · 우선순위 · 열기는 기존 TodayWorkQueue(data · open)를 그대로 쓴다. 급한 이유 · 놓치면 · 목표는 기존 기한 · 약속 · 입찰일로 계산한다.
    ※ 통화 첫마디 · 원한 것 요약 · 지난 기록 요약은 Claude API 연결 전이라 실제 기록 값을 그대로 보여 주고, 첫마디는 그 값으로 만든 틀 문장이다.
@@ -11,7 +11,7 @@
  const T=()=>root.TodayWorkQueue;
  const enabled=()=>!root.G.todayRepV2Off;
  const st=()=>root.G.todayRep||(root.G.todayRep={more:false,open:''});
- const TONE={r:['#e5484d','#f3d3d1','#c93a3f','늦음'],b:['#3b6ce4','#d9e2f7','#2a52b8','오늘 약속'],a:['#f5a524','#f6e3bd','#b7791f','마감 임박']};
+ const TONE={r:['#e5484d','#f3d3d1','#c93a3f','늦음'],b:['#3b6ce4','#d9e2f7','#2a52b8','오늘 약속'],a:['#f5a524','#f6e3bd','#c0392b','마감 임박']};
  const RESULTS=[['실사 잡음','통화 완료 — 현장 실사 일정 잡음'],['견적 요청','통화 완료 — 견적 요청 받음'],['나중에 다시','통화 완료 — 나중에 다시 연락하기로 함'],['안 받음','전화 — 받지 않음'],['번호 틀림','전화 — 번호가 맞지 않음'],['관심 없음','통화 완료 — 관심 없음']];
  const STEPS=['문의','설계','자료','경쟁','계약'];
  const dayN=hours=>Number.isFinite(hours)&&hours>0?Math.max(1,Math.floor(hours/24)):0;

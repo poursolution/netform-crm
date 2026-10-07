@@ -3,7 +3,7 @@
 .ra-shell{color:#15171c;font-size:13px;padding:4px 4px 120px}
 .ra-shell button,.ra-shell input{font:inherit}.ra-shell button{cursor:pointer}.ra-shell button:disabled{cursor:default}
 .ra-empty{padding:40px;text-align:center;color:#6b7280}
-.ra-gate{background:#fff8e6;border:1px solid #f5dfa8;border-radius:10px;padding:10px 14px;font-size:12.5px;color:#8a5a00;margin-bottom:14px}
+.ra-gate{background:#fff8e6;border:1px solid #f5dfa8;border-radius:10px;padding:10px 14px;font-size:12.5px;color:#c0392b;margin-bottom:14px}
 .ra-wrap{display:flex;gap:24px;align-items:flex-start}
 .ra-nav{flex:0 0 180px;position:sticky;top:18px;display:flex;flex-direction:column;gap:2px}
 .ra-nav>button{display:flex;justify-content:space-between;align-items:center;border:0;background:none;font-size:13px;color:#374151;padding:8px 10px;border-radius:7px;text-align:left}.ra-nav>button:hover{background:#eef0f3}

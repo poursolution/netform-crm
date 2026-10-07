@@ -126,6 +126,6 @@
 .tv3 em.ai{font-style:normal;font-size:10.5px;font-weight:700;color:#fff;background:#3b6ce4;border-radius:3px;padding:1px 5px}.tv3-exrec .nx em.ai{margin-right:6px}
 .tv3-exside .tip{font-size:11.5px;color:#6b7280;border-top:1px solid #f0f1f4;padding-top:7px;line-height:1.5}.tv3-exside .tip b{color:#15171c}
 /* 관리자 한마디: 받은 사람의 오늘 업무 맨 위 한 줄 띠(이번 주 · 처리 전) */
-.tv3-word{display:flex;align-items:flex-start;gap:10px;background:#fffaf0;border:1px solid #f6e3b8;border-radius:12px;padding:10px 14px;font-size:12.5px;color:#15171c}
-.tv3-word>b{flex:none;font-size:12.5px;color:#8a5a00}.tv3-word>small{flex:none;font-size:11.5px;color:#9ca3af}
+.tv3-word{display:flex;align-items:flex-start;gap:10px;background:#fdf0ee;border:1px solid #f6e3b8;border-radius:12px;padding:10px 14px;font-size:12.5px;color:#15171c}
+.tv3-word>b{flex:none;font-size:12.5px;color:#c0392b}.tv3-word>small{flex:none;font-size:11.5px;color:#9ca3af}
 .tv3-word>div{display:flex;flex-direction:column;gap:3px;min-width:0;line-height:1.5}.tv3-word>div em{font-style:normal;font-size:11.5px;color:#9ca3af}

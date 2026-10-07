@@ -16,7 +16,7 @@
 #dupDialog .icl-done{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
 #dupDialog .icl-done b{color:#1f7a4d}
 #dupDialog .icl-done span{color:#6b7280}
-#dupDialog .icl-done.warn b{color:#8a5a00}
+#dupDialog .icl-done.warn b{color:#c0392b}
 .icl-err{font-size:12.5px;color:#b42318;line-height:1.5}
 /* 상세 머리 바로 아래 한 줄 */
 .icl-box{display:flex;flex-direction:column;gap:6px}

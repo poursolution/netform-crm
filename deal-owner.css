@@ -21,4 +21,4 @@
 .do-attr .do-chips button[aria-pressed="true"]{border-color:#15171c;background:#15171c;color:#fff}
 .do-attr .do-chips button:disabled{opacity:.5;cursor:default}
 .do-attr .do-note{margin:0;font-size:12px;border-radius:7px;padding:8px 10px;line-height:1.5;color:#374151;background:#f5f6f8}
-.do-attr .do-note.req{color:#8a5a00;background:#fffaf0}
+.do-attr .do-note.req{color:#c0392b;background:#fdf0ee}

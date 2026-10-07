@@ -49,7 +49,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 2. 머리: 이름 · 소속 · 상태 꼬리표 + 숫자 4개 */
   assert.equal(await w.locator('.rw-who').innerText().then(s=>s.replace(/\s+/g,' ')),'이필선 본사 영업 관리자 확인 필요');
   assert.deepEqual(await w.locator('.rw-who em').evaluate(n=>[getComputedStyle(n).color,getComputedStyle(n).backgroundColor]),['rgb(180, 35, 24)','rgb(253, 236, 236)']);
-  assert.deepEqual(await w.locator('.rw-kpi').evaluateAll(l=>l.map(n=>[n.children[0].textContent,n.children[1].textContent,getComputedStyle(n.children[1]).color])),[['진행 금액','63.9억','rgb(21, 23, 28)'],['손볼 건','13건','rgb(180, 35, 24)'],['메이드율','55.0%','rgb(21, 23, 28)'],['업무량','관리 부하','rgb(180, 83, 9)']]);
+  assert.deepEqual(await w.locator('.rw-kpi').evaluateAll(l=>l.map(n=>[n.children[0].textContent,n.children[1].textContent,getComputedStyle(n.children[1]).color])),[['진행 금액','63.9억','rgb(21, 23, 28)'],['손볼 건','13건','rgb(180, 35, 24)'],['메이드율','55.0%','rgb(21, 23, 28)'],['업무량','관리 부하','rgb(192, 57, 43)']]);
   /* 3. 왼쪽: 병목 한 문장 + 보조 한 줄 → 흐름 + 가장 많이 빠지는 구간 */
   assert.deepEqual(await w.locator('.rw-neck').evaluate(n=>[[...n.children].map(c=>c.textContent),getComputedStyle(n).backgroundColor]),[['가장 큰 병목','진행 11건 중 7건이 다음 할 일 없음','신규 배정 3건도 아직 첫 연락 전'],'rgb(253, 236, 236)']);
   assert.deepEqual(await w.locator('.rw-fl').evaluateAll(l=>l.map(n=>[n.children[0].textContent,n.children[2].textContent,n.querySelector('u').style.width,getComputedStyle(n.querySelector('u')).backgroundColor])),[['배정','4','20%','rgb(59, 108, 228)'],['응대','1','5%','rgb(59, 108, 228)'],['기회','20','100%','rgb(59, 108, 228)'],['경쟁','1','5%','rgb(59, 108, 228)'],['수주','0','0%','rgb(63, 179, 127)']]);
@@ -68,12 +68,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await co.locator('.rw-chips button',{hasText:'약속 미이행'}).click();assert.equal(await ai(),'AI약속 4건 중 2건 기한 내 (50%)');assert.equal(await txt(),'기한 지난 약속 2건 이번 주 안에 완료 · 날짜 다시 잡기');
   await co.locator('.rw-chips button',{hasText:'견적 지연'}).click();assert.equal(await ai(),'AI방문 후 견적 요청 없이 평균 4일 · 미팅 완료 2건 중 1건','관리팀 KPI와 같은 건');
   /* 5. 지난 코칭 · 이번 주 결과(전 → 후): 지난주에 남긴 지표를 지금 값으로 다시 잰다 */
-  assert.deepEqual(await w.locator('.rw-past').evaluate(n=>[[...n.children].map(c=>c.textContent.replace(/\s+/g,' ')),getComputedStyle(n.querySelector('.rw-res b')).color]),[['지난 코칭','"다음 할 일 등록률 20% → 60%" · 10.14','이번 주 결과20% → 36%'],'rgb(180, 83, 9)'],'나아졌지만 목표 전 = 주황');
+  assert.deepEqual(await w.locator('.rw-past').evaluate(n=>[[...n.children].map(c=>c.textContent.replace(/\s+/g,' ')),getComputedStyle(n.querySelector('.rw-res b')).color]),[['지난 코칭','"다음 할 일 등록률 20% → 60%" · 10.14','이번 주 결과20% → 36%'],'rgb(192, 57, 43)'],'나아졌지만 목표 전 = 주황');
   /* 6. 오른쪽: 사유별 묶음 — 제목에 사유 · 건수 · 걸린 금액 · 일괄 요청 1개 · 첫 묶음만 펼침 · 금액 큰 순 5건 */
   assert.equal(await w.locator('.rw-rh').innerText().then(s=>s.replace(/\s+/g,' ')),'지금 처리할 현장 13건 사유별로 묶음 · 금액 큰 순');
   const heads=()=>w.locator('.rw-gh').evaluateAll(l=>l.map(n=>[...n.children].filter(c=>!c.classList.contains('rw-sp')).map(c=>c.textContent)));
   assert.deepEqual(await heads(),[['다음 할 일 없음','7건','진행 46.5억','다음 할 일 등록 요청','접기 ▴'],['다음 할 일 날짜 지남','2건','진행 10.4억 · 최장 30일','날짜 다시 잡기 요청','보기 ▾'],['신규 배정 · 첫 연락 전','3건','금액 미정','첫 연락 요청','보기 ▾'],['30일 넘게 같은 단계','1건','진행 2억','진행 · 보류 정리 요청','보기 ▾']]);
-  assert.deepEqual(await w.locator('.rw-gh').evaluateAll(l=>l.map(n=>getComputedStyle(n.children[1]).color)),['rgb(180, 35, 24)','rgb(180, 83, 9)','rgb(180, 35, 24)','rgb(180, 83, 9)']);
+  assert.deepEqual(await w.locator('.rw-gh').evaluateAll(l=>l.map(n=>getComputedStyle(n.children[1]).color)),['rgb(180, 35, 24)','rgb(192, 57, 43)','rgb(180, 35, 24)','rgb(192, 57, 43)']);
   assert.equal(await w.locator('.rw-gh').first().evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(250, 251, 252)');
   const rows=k=>w.locator('.rw-g[data-g="'+k+'"] .rw-row').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent)));
   assert.deepEqual(await rows('nonext'),[['강동 롯데캐슬퍼스트','날짜 없음','23억','열기'],['아시아선수촌아파트','날짜 없음','6.8억','열기'],['[경기 양주] 양주자이1단지','날짜 없음','5.5억','열기'],['대한제분(공장)','날짜 없음','4.9억','열기'],['[경기 의정부] 산들마을2단지','날짜 없음','4.3억','열기']]);

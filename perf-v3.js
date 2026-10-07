@@ -100,10 +100,10 @@
    const pct=(v,l)=>v==null?(missN(l)?'미입력':'—'):v+'%'+(missN(l)?' · 미입력 '+missN(l)+'건 제외':'');
    const ptNames=[...new Set(pt.map(r=>r.company).filter(Boolean))],ptLabel='협약 · 기술자문'+(ptNames.length?' (낙찰 '+ptNames.slice(0,2).join(' · ')+(ptNames.length>2?' 외 '+(ptNames.length-2)+'곳':'')+')':'');
    const tops=[
-    ['수주실적 · 낙찰금액 ('+tot.n+'건)',money(tot.amt),[['직접 수주',money(dirA),'#3b6ce4'],[ptLabel,money(ptA),'#e0a43a']].concat(tfA>0?[['타사 이관',money(tfA),'#9aa0ab']]:[])],
-    ['회사 매출',money(tot.rev),[['직접 계약',money(dirR),'#3b6ce4'],['기술자문 · POUR 계약',pt.length&&missN(pt)===sum(pt,'n')?'미입력':money(ptR),'#e0a43a']]],
+    ['수주실적 · 낙찰금액 ('+tot.n+'건)',money(tot.amt),[['직접 수주',money(dirA),'#3b6ce4'],[ptLabel,money(ptA),'#e8a09a']].concat(tfA>0?[['타사 이관',money(tfA),'#9aa0ab']]:[])],
+    ['회사 매출',money(tot.rev),[['직접 계약',money(dirR),'#3b6ce4'],['기술자문 · POUR 계약',pt.length&&missN(pt)===sum(pt,'n')?'미입력':money(ptR),'#e8a09a']]],
     /* 비율의 분자 · 분모를 같이 적는다(2026-10-07 점검: 분모 불명확) — 매출을 아는 줄만(미입력 · 타사 이관 제외) */
-    (()=>{const kn=MX.filter(known),ka=sum(kn,'amt'),kr=sum(kn,'rev');return ['매출 비율 = 매출 '+money(kr)+' ÷ 수주실적 '+money(ka)+(missN(MX)?' · 미입력 '+missN(MX)+'건 제외':'')+(tfA>0?' · 타사 이관 제외':''),ratioOf(MX)==null?pct(null,MX):ratioOf(MX)+'%',[['직접 수주',pct(ratioOf(dir),dir),'#3b6ce4'],['협약 · 기술자문',pct(ratioOf(pt),pt),'#e0a43a']]];})()];
+    (()=>{const kn=MX.filter(known),ka=sum(kn,'amt'),kr=sum(kn,'rev');return ['매출 비율 = 매출 '+money(kr)+' ÷ 수주실적 '+money(ka)+(missN(MX)?' · 미입력 '+missN(MX)+'건 제외':'')+(tfA>0?' · 타사 이관 제외':''),ratioOf(MX)==null?pct(null,MX):ratioOf(MX)+'%',[['직접 수주',pct(ratioOf(dir),dir),'#3b6ce4'],['협약 · 기술자문',pct(ratioOf(pt),pt),'#e8a09a']]];})()];
    const mx=Math.max(1,...MX.map(r=>r.amt)),w=v=>Math.max(0,Math.min(100,Math.round(v/mx*100)));
    let prev='';
    const rows=MX.map(r=>{const first=r.brand!==prev;prev=r.brand;const c=D.BRC[r.brand]||'#9aa0ab',t=TG[r.type]||TG['직접 수주'],unk=r.type==='협약 · 기술자문'&&r.unknown===r.n,none=r.type==='타사 이관',ra=!unk&&!none&&r.amt>0?Math.round(r.rev/r.amt*100):null;
@@ -188,7 +188,7 @@
    }
    function tLost(){
     const CR=R.CRMRules,split=d=>{const raw=C.B.lossReason(d);let s=String(raw||''),c='';try{s=CR.lostReason(raw);c=CR.lostCategory(raw);}catch(e){}const i=s.indexOf(' · ');return {c:['관계','공법','가격','사업'].includes(c)?c:'기타',det:(i>0?s.slice(i+3):s)||'사유 미기록'};};
-    const CAT=[['관계','#d14a3f'],['공법','#7048e8'],['가격','#e0a43a'],['사업','#9aa0ab'],['기타','#b9bfca']],amtOf=d=>{try{return Number(CR.amounts(d).estimated)||0;}catch(e){return Number(d.amount!=null?d.amount:d.amt)||0;}};
+    const CAT=[['관계','#d14a3f'],['공법','#7048e8'],['가격','#e8a09a'],['사업','#9aa0ab'],['기타','#b9bfca']],amtOf=d=>{try{return Number(CR.amounts(d).estimated)||0;}catch(e){return Number(d.amount!=null?d.amount:d.amt)||0;}};
     const g=CAT.map(([l,c])=>({l,c,n:0,a:0,sub:new Map()}));loss.forEach(d=>{const x=split(d),v=g.find(y=>y.l===x.c);v.n++;v.a+=amtOf(d);v.sub.set(x.det,(v.sub.get(x.det)||0)+1);});
     const total=loss.length,missed=g.reduce((s,v)=>s+v.a,0),shown=g.filter(v=>v.l!=='기타'||v.n);
     const les=new Map();loss.forEach(d=>{const f=ctx(d).lost&&ctx(d).lost.fields||{},t=String(f.lesson||d.lesson||'').replace(/\s+/g,' ').trim();if(t)les.set(t,(les.get(t)||0)+1);});

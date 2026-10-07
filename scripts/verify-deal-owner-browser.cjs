@@ -71,7 +71,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await box.locator('.do-note').evaluate(n=>[getComputedStyle(n).color,getComputedStyle(n).backgroundColor]),['rgb(55, 65, 81)','rgb(245, 246, 248)']);
   await box.locator('.do-chips button',{hasText:'귀속도 변경 요청'}).click();
   assert.equal(await box.locator('.do-note').innerText(),'귀속 변경은 바로 바뀌지 않고 예외 승인함으로 갑니다. 승인자(이승우 · 황윤선) 승인 후 반영 · 이력 기록.');
-  assert.deepEqual(await box.locator('.do-note').evaluate(n=>[getComputedStyle(n).color,getComputedStyle(n).backgroundColor]),['rgb(138, 90, 0)','rgb(255, 250, 240)']);
+  assert.deepEqual(await box.locator('.do-note').evaluate(n=>[getComputedStyle(n).color,getComputedStyle(n).backgroundColor]),['rgb(192, 57, 43)','rgb(253, 240, 238)']);
   if(shot)await page.screenshot({path:shot+'-change.png'});
   /* 3. 저장(귀속도 변경 요청): 기존 담당 변경 → 사유 · 귀속 선택 기록 → 승인 요청. 승인 전에는 귀속 그대로 */
   await page.evaluate(()=>{__calls.length=0;const t=document.getElementById('rs-asg-text');t.value='지역 재배치 (경기 남부) — 정정훈이 계약 진행';t.dispatchEvent(new Event('input',{bubbles:true}));});

@@ -85,7 +85,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    ['수주실적 · 낙찰금액 (4건)','9.6억','직접 수주 = 8억','협약 · 기술자문 (낙찰 여름건설 · 코지건설) = 1.6억'],
    ['회사 매출','8.6억','직접 계약 = 8억','기술자문 · POUR 계약 = 5,904만'],
    ['매출 비율 = 매출 8.6억 ÷ 수주실적 8.9억 · 미입력 1건 제외','97%','직접 수주 = 100%','협약 · 기술자문 = 67% · 미입력 1건 제외']]);
-  assert.deepEqual(await v.locator('.pf3-bxtops .pf3-bxp i').evaluateAll(l=>l.slice(0,2).map(n=>getComputedStyle(n).backgroundColor)),['rgb(59, 108, 228)','rgb(224, 164, 58)'],'직접 = 파랑 · 협약 = 주황');
+  assert.deepEqual(await v.locator('.pf3-bxtops .pf3-bxp i').evaluateAll(l=>l.slice(0,2).map(n=>getComputedStyle(n).backgroundColor)),['rgb(59, 108, 228)','rgb(232, 160, 154)'],'직접 = 파랑 · 협약 = 주황');
   assert.deepEqual(await v.locator('.pf3-bx.hd span').allInnerTexts(),['유입 브랜드','낙찰 시공사','수주 유형','건수','수주실적 (회색) 중 회사 매출 (파랑)']);
   const mr=await v.locator('.pf3-bx:not(.hd)').evaluateAll(l=>l.map(n=>[...n.children].slice(0,4).map(c=>c.textContent.trim()).concat([n.querySelector('.pf3-bxv').textContent,n.querySelector('small').textContent,n.classList.contains('tot')?'tot':''])));
   assert.deepEqual(mr,[['석민이앤씨','석민이앤씨','직접 수주','1','5억','→ 매출 5억 · 전액',''],['POUR솔루션','POUR솔루션','직접 수주','1','3억','→ 매출 3억 · 전액',''],['','여름건설','협약 · 기술자문','1','8,810만','→ 매출 5,904만 · 67%',''],['','코지건설','협약 · 기술자문','1','7,000만','→ 매출 미입력',''],['합계','','','4','9.6억','→ 매출 8.6억 · 97%','tot']],'줄 = 유입 브랜드(첫 줄만) · 낙찰 시공사 · 유형 · 건수 · 수주실적과 매출');

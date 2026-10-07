@@ -10,7 +10,7 @@
  const R=root,h=v=>R.esc(String(v==null?'':v)),attr=v=>R.escAttr(String(v==null?'':v));
  const RPC={list:'crm_approval_list_v1',request:'crm_approval_request_v1',decide:'crm_approval_decide_v1'};
  const CODES=['transfer','owner_change','dup_lead','strategic_win','special_incentive','result_fix'];
- const TONE=[['#1d3f99','#eef3fe'],['#8a5a00','#fff4d6'],['#6b7280','#f3f4f6'],['#1f7a4d','#e8f6ee'],['#7048e8','#f1edfd'],['#b42318','#fdecec']];
+ const TONE=[['#1d3f99','#eef3fe'],['#c0392b','#fdeceb'],['#6b7280','#f3f4f6'],['#1f7a4d','#e8f6ee'],['#7048e8','#f1edfd'],['#b42318','#fdecec']];
  const labelOf=code=>{if(code==='contract_amount')return '계약금액 정정';const L=R.CRMRules&&R.CRMRules.PHASE2&&R.CRMRules.PHASE2.approval_types||[],i=CODES.indexOf(code);return i>=0&&L[i]?L[i]:code;};
  const toneOf=code=>TONE[CODES.indexOf(code)]||TONE[2];
  function st(){const g=R.G;if(!g.approvalInbox)g.approvalInbox={rows:null,busy:false,err:'',rej:'',reason:'',sending:''};return g.approvalInbox;}

@@ -16,7 +16,7 @@
 .adv-note{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:10px 0 4px}
 .adv-chip{display:inline-block;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:850}
 .adv-chip.g{background:#e7f7ef;color:#15803d}.adv-chip.b{background:#eef3ff;color:#2f5fd0}
-.adv-chip.x{background:#f0f2f5;color:#8a97ab}.adv-chip.n{background:#fffaf2;color:#b45309;border:1px solid #fde4c4}
+.adv-chip.x{background:#f0f2f5;color:#8a97ab}.adv-chip.n{background:#fffaf2;color:#c0392b;border:1px solid #fde4c4}
 .advisory-contract{border:1px solid #e2e8f1;border-radius:11px;background:#fbfcfe;padding:11px 13px;margin-top:8px}
 .adv-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .adv-line b{font-size:13px;color:#0f172a}

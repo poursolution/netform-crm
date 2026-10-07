@@ -5,7 +5,7 @@
 (function(root){
  'use strict';
  const R=root,h=v=>R.esc(String(v==null?'':v)),attr=v=>R.escAttr(String(v==null?'':v)),CR=()=>R.CRMRules;
- const TAG={fix:['확정','#374151','#eef0f3'],cond:['조건부','#1d3f99','#eef3fe'],hold:['보류','#8a5a00','#fff4d6']};
+ const TAG={fix:['확정','#374151','#eef0f3'],cond:['조건부','#1d3f99','#eef3fe'],hold:['보류','#c0392b','#fdeceb']};
  /* 지금 화면 계산에 실제로 쓰이는 항목(ops_12 B⑤ '적용 중' 알약 · 2026-10-07 코드 대조: CRMRules.get · OPS_RULES sync 로 읽히는 열쇠) — 나머지는 '값만 저장 · 화면 미적용' */
  const WIRED=new Set(['approvers','stage_gates','assign_minutes','first_contact_hours','inactive_days','quote_followup_days','long_wait_contact_days','care_focus_months','care_general_months','unreachable_attempts','unreachable_interval_days','transfer_result_check_days','reasons_bad_fit','reasons_lost','reasons_transfer','contact_channels','owner_keep_on_reassign','auto_owner_attribution']);
  const PILL=on=>'<span class="ra-pill" style="color:'+(on?'#1f7a4d':'#6b7280')+';background:'+(on?'#e8f6ee':'#f3f4f6')+'">'+(on?'적용 중':'값만 저장 · 화면 미적용')+'</span>';

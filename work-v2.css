@@ -4,8 +4,8 @@
 #work-v2 .plv-pills button b{color:#6b7280;font-weight:700}
 #work-v2 .plv-pills button[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}#work-v2 .plv-pills button[aria-pressed="true"] b{color:#fff}
 #work-v2 .plv-cta{border:1px solid #c9d6fa;background:#fff;color:#3b6ce4;border-radius:8px;padding:7px 0;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
-.wv-hint{background:#fff8ec;border:1px solid #f6e7c1;border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;flex-direction:column;gap:3px}
-.wv-hint b{font-size:13.5px;color:#8a5a00}.wv-hint span{font-size:12.5px;color:#374151}.wv-hint small{font-size:11.5px;color:#6b7280;line-height:1.5}
+.wv-hint{background:#fdf0ee;border:1px solid #f6e7c1;border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;flex-direction:column;gap:3px}
+.wv-hint b{font-size:13.5px;color:#c0392b}.wv-hint span{font-size:12.5px;color:#374151}.wv-hint small{font-size:11.5px;color:#6b7280;line-height:1.5}
 /* 분류 창(560px) — 공종 선택 부품(.dp-*)은 파이프라인 패널과 같다 */
 .wd-layer{position:fixed;inset:0;z-index:1500;display:none;justify-content:center;align-items:flex-start;padding-top:5vh;background:rgba(17,24,39,.32)}.wd-layer.on{display:flex}
 .wd-box{width:min(560px,96vw);max-height:90vh;background:#fff;border-radius:16px;box-shadow:0 24px 64px rgba(17,24,39,.24);display:flex;flex-direction:column;overflow:hidden;color:#15171c;font-size:13px}

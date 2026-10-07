@@ -46,7 +46,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 2. 응대 이력: 노란 변화 이벤트 */
   const ev=v.locator('.idv-thread .idv-msg.ce-ev');assert.equal(await ev.count(),1);
   assert.match(await ev.locator('.idv-meta').innerText(),/변화 · 관리소장 변경/);assert.match(await ev.locator('.idv-bubble').innerText(),/^박영호 소장 → 김영수 소장 · 2026\.10\.21\s*→ 기존 견적 · 공법 조건 재확인 \(새 소장 첫 미팅\)$/);
-  assert.equal(await ev.locator('.idv-bubble').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(255, 244, 214)');
+  assert.equal(await ev.locator('.idv-bubble').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(253, 236, 235)');
   if(shot)await page.screenshot({path:shot+'-timeline.png'});
   /* 3. 단계 바꾸기 → 관계관리: 필수조건 줄 · 비면 [옮기기] 잠금 · 채우면 열림 */
   await v.locator('.dv3-headact .mv').click();await page.waitForTimeout(200);await v.locator('.dv3-moves [data-stage="relationship"]').first().click();await page.waitForTimeout(600);

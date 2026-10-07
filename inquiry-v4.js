@@ -21,9 +21,9 @@
  const resetForm=S=>Object.assign(S,{res:'',con:'',rea:'',memo:'',when:'',pick:false,edit:'',draft:'',busy:false,err:''});
  const RULES=()=>root.OPS_RULES||{},ASSIGN_MIN=()=>Number(RULES().inquiryAssignMinutes)||30,FIRST_H=()=>Number(RULES().towerFirstResponseHours)||2,FOLLOW_D=()=>Number(RULES().inquiryFollowDays)||7;
  const ST={1:['unassigned','배정 필요'],2:['nofirst','첫 연락 전'],3:['stale','후속 연락 필요'],4:['ok','정상 진행']};
- const TABS=()=>[['all','진행 중 전체','종결 · 휴지통 제외','#15171c',0],['unassigned','배정 필요',ASSIGN_MIN()+'분 안에 담당 지정','#b42318',1],['nofirst','첫 연락 전','배정 후 '+FIRST_H()+'시간 안 첫 연락','#b42318',2],['stale','후속 연락 필요','첫 연락 후 '+FOLLOW_D()+'일 넘게 연락 없음','#b45309',3],['ok','정상 진행','마지막 연락 '+FOLLOW_D()+'일 안','#6b7280',4]];
+ const TABS=()=>[['all','진행 중 전체','종결 · 휴지통 제외','#15171c',0],['unassigned','배정 필요',ASSIGN_MIN()+'분 안에 담당 지정','#b42318',1],['nofirst','첫 연락 전','배정 후 '+FIRST_H()+'시간 안 첫 연락','#b42318',2],['stale','후속 연락 필요','첫 연락 후 '+FOLLOW_D()+'일 넘게 연락 없음','#c0392b',3],['ok','정상 진행','마지막 연락 '+FOLLOW_D()+'일 안','#6b7280',4]];
  const d3=x=>!!x&&x.dd>=0&&x.dd<=3;
- const FLAGS=[['info','필수정보 미입력','#b45309',m=>m.follow&&m.miss.length>0],['meet','대표회의 · 기한 D-3','#b42318',m=>d3(m.meet)||d3(replyOf(m.q))],['today','오늘 들어온 문의','#2a52b8',m=>m.x.ageDays===0]];
+ const FLAGS=[['info','필수정보 미입력','#c0392b',m=>m.follow&&m.miss.length>0],['meet','대표회의 · 기한 D-3','#b42318',m=>d3(m.meet)||d3(replyOf(m.q))],['today','오늘 들어온 문의','#2a52b8',m=>m.x.ageDays===0]];
  function replyOf(q){try{return L3().replyOf(q);}catch(e){return null;}}
  const ymd=t=>{const d=new Date(t);return Number.isFinite(d.getTime())?d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate():'';};
  const kday=d=>d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate()+'('+'일월화수목금토'[d.getDay()]+')';
@@ -42,7 +42,7 @@
   if(s===1){basis='접수 후';from=x.created;}
   else if(s===2){basis='배정 후';let a=NaN;try{a=Date.parse(root.inqCtlAssignedAt(q)||'');}catch(e){}from=Number.isFinite(a)?a:x.created;}
   else{basis=quoteSent(m)?'견적 발송 후':'마지막 연락 후';from=lastAt;}
-  return Object.assign(m,{st:s,stLabel:ST[s][1],basis,from,el:Number.isFinite(from)?span(now-from):'—',dc:s===4?'#6b7280':s===3?'#b45309':'#b42318'});
+  return Object.assign(m,{st:s,stLabel:ST[s][1],basis,from,el:Number.isFinite(from)?span(now-from):'—',dc:s===4?'#6b7280':s===3?'#c0392b':'#b42318'});
  }
  /* 연락 기록 한 줄의 말: 실제 연결 / 연락 시도(부재 · 통화불가 …) — 상세의 응대 이력과 같은 읽기 */
  const conText=e=>{const k=e.res?F().kindOf(e.res):'';return {real:k==='connected',text:(k==='connected'?'실제 연결':k==='attempt'?'연락 시도':'연락')+(e.res?' · '+e.res:'')+(e.text?' · '+e.text:'')};};

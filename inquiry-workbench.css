@@ -32,17 +32,17 @@ body:has(#pg-inq.on.inq-workbench) .reptabs,body:has(#pg-inq.on.inq-workbench) .
 .inq-work-counts [data-key=all] span::before{display:none}
 .inq-work-counts [data-key=unassigned] span::before{background:#dc2626}
 .inq-work-counts [data-key=waiting] span::before{background:#f97316}
-.inq-work-counts [data-key=delayed] span::before{background:#b45309}
+.inq-work-counts [data-key=delayed] span::before{background:#c0392b}
 #pg-inq .inq-work-row.inq-ctl-row:hover{background:#f8fafd}
 #pg-inq .inq-work-row.priority{border-left-color:#df4a61;background:linear-gradient(90deg,#fff8f8,rgba(255,255,255,0) 65%)}
 .inq-resp-badge{display:inline-block;font-size:11px;font-weight:800;border-radius:6px;padding:3px 8px;white-space:nowrap}
 .inq-resp-badge.done{background:#ecfdf3;color:#15803d}
-.inq-resp-badge.miss{background:#fef4e6;color:#b45309}
+.inq-resp-badge.miss{background:#fef4e6;color:#c0392b}
 .inq-resp-badge.miss-late{background:#fef1f1;color:#c03246}
 .inq-work-recent .inq-resp-badge+small{margin-top:5px}
 .inq-due-chip{display:inline-block;font-size:10.5px;font-weight:800;border-radius:5px;padding:1px 6px;margin-right:4px}
 .inq-due-chip.hot{background:#fef1f1;color:#c03246}
-.inq-due-chip.warn{background:#fef4e6;color:#b45309}
+.inq-due-chip.warn{background:#fef4e6;color:#c0392b}
 .inq-due-chip.ok{background:#ecfdf3;color:#15803d}
 
 /* ── 상단 한 줄 정리: [전체/내 문의] ── [+ 문의 등록][기타 관리] — 빈 띠 제거 ── */
@@ -95,7 +95,7 @@ body:has(#pg-inq.on.inq-workbench) .reptabs,body:has(#pg-inq.on.inq-workbench) .
 .inq-task-modes{display:flex;align-items:center;gap:8px;margin-top:12px}.inq-task-modes button{font:inherit;font-size:12px;padding:7px 12px;border:1px solid transparent;border-radius:6px;background:transparent;color:#64748b;cursor:pointer}.inq-task-modes [aria-pressed=true]{background:#edf3ff;border-color:#bfd1f5;color:#244e98;font-weight:700}.inq-task-modes b{margin-left:5px}
 .inq-work-counts [data-key=today] span::before{background:#2563eb}
 #pg-inq .inq-work-row.inq-ctl-row{grid-template-columns:106px minmax(180px,1.4fr) 86px minmax(220px,1.7fr) 86px 110px}
-.inq-work-row .inq-task-title{font-size:14px;line-height:1.5;color:#172b49;font-weight:750;display:block}.inq-work-row .inq-work-recent .inq-next-link{font-size:11px;margin-top:5px;color:#526b91}.inq-work-row .inq-due-chip{white-space:nowrap;text-align:center;min-width:70px;padding:5px 6px;box-sizing:border-box}.inq-work-row[data-task=unassigned] .inq-received strong{color:#b42338}.inq-work-row[data-task=waiting] .inq-received strong{color:#b45309}
+.inq-work-row .inq-task-title{font-size:14px;line-height:1.5;color:#172b49;font-weight:750;display:block}.inq-work-row .inq-work-recent .inq-next-link{font-size:11px;margin-top:5px;color:#526b91}.inq-work-row .inq-due-chip{white-space:nowrap;text-align:center;min-width:70px;padding:5px 6px;box-sizing:border-box}.inq-work-row[data-task=unassigned] .inq-received strong{color:#b42338}.inq-work-row[data-task=waiting] .inq-received strong{color:#c0392b}
 @media(max-width:1100px){#pg-inq .inq-work-row.inq-ctl-row{grid-template-columns:92px minmax(125px,1.2fr) 70px minmax(145px,1.6fr) 76px 106px;gap:8px}}
 @media(max-width:760px){.inq-work-counts{grid-template-columns:repeat(2,minmax(0,1fr))}.inq-work-counts button{flex-direction:row}.inq-inbox-sticky{position:static}#pg-inq .inq-work-row.inq-ctl-row{grid-template-columns:90px minmax(0,1fr)}#pg-inq .inq-work-row .inq-work-recent{grid-column:2;grid-row:2/4}#pg-inq .inq-work-row .inq-work-next{grid-column:1;grid-row:3}.inq-work-row .inq-task-title{font-size:14px}}
 .inq-work-counts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.inq-work-counts button{justify-content:space-between;min-height:54px;padding:10px 12px}.inq-work-counts b{font-size:20px}.inq-work-counts [data-key=unassigned]{border-top:3px solid #dc5c69}.inq-work-counts [data-key=waiting]{border-top:3px solid #ef9859}.inq-work-counts [data-key=delayed]{border-top:3px solid #d3a34c}.inq-work-counts [data-key=today]{border-top:3px solid #638fe6}@media(max-width:760px){.inq-work-counts{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -190,7 +190,7 @@ body:has(#pg-inq.on.inq-workbench) .reptabs,body:has(#pg-inq.on.inq-workbench) .
 #pg-inq .inq-work-row .inq-when strong{font-weight:700;color:#0f172a;font-variant-numeric:tabular-nums}
 #pg-inq .inq-work-row .inq-when em{font-style:normal;color:#5b6b85}
 #pg-inq .inq-work-row .inq-when.hot strong,#pg-inq .inq-work-row .inq-when.hot em{color:#dc2626}
-#pg-inq .inq-work-row .inq-when.warn em{color:#b45309}
+#pg-inq .inq-work-row .inq-when.warn em{color:#c0392b}
 /* 맥락 잇기(2026-09-29): 공종·브랜드 칩은 현장명 아래 · 6칸 · 창 머리에 문의 요약 */
 #pg-inq .inq-work-row .inq-ctl-site .inq-work-kind{display:flex;flex-wrap:nowrap;gap:4px;margin:4px 0 0;overflow:hidden}
 #pg-inq .inq-work-row .inq-question-preview{margin-top:5px}
