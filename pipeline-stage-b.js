@@ -16,7 +16,7 @@
  /* 관계관리 관리 구분(2026-10-05 design_handoff_relationship): 견적 발송일 · 공사 예정 시기로 자동 분류(relationship-segment.js). 기간은 운영 기준(집중 care_focus_months · 일반 care_general_months).
     끄기 G.relSegOff=true → 예전처럼 단계 이름(유대 · 침묵 · 대기)으로 */
  const SEG=()=>(!root.G.relSegOff&&root.RelationshipSegment)||null;
- const segRules=()=>{const q=rules();let f=1,g=3;try{f=Number(root.CRMRules.get('care_focus_months'))||1;g=Number(root.CRMRules.get('care_general_months'))||3;}catch(e){}return Object.assign(q,{focusEnd:f*30,normalEnd:(f+g)*30});};
+ const segRules=()=>{const q=rules();let f=1,g=3;try{f=Number(root.CRMRules.get('care_focus_months'))||1;g=Number(root.CRMRules.get('care_general_months'))||3;}catch(e){}return Object.assign(q,{focusEnd:f*30,normalEnd:Math.max(g,f+1)*30});/* 일반관리 = 견적 발송일부터 총 g개월(stage7_2 ③) */};
  const ctxOf=d=>{let p={};try{p=root.itemPatch(d,'deal')||{};}catch(e){}return d.stage_contexts||p.stage_contexts||{};};
  const ctxVals=(cx,k)=>Object.keys(cx).map(c=>cx[c]&&cx[c].fields&&cx[c].fields[k]).filter(v=>v!=null&&v!=='');
  function segInput(r){
@@ -100,7 +100,7 @@
    calc(r,v,q){const code=r.code,cx=r.item.stage_contexts||{},cf=cx.contract?.fields||{},bf=cx.construction?.fields||{},ld=lastDays(r);
     const bucket=code==='contract'?'sign':(code==='construction'&&bf.handover!=='완료')?'hand':'build';
     const sub=code==='contract'?(v.contractDate?'계약 '+ymd(v.contractDate):'계약 서류 진행'):code==='construction'?('인계 '+(bf.handover||'미기록')+(bf.start_date?' · 착공 '+ymd(bf.start_date):'')):('준공 '+(ymd(v.completionDate)||'일자 미기록'));
-    const rs=[];if(!v.contractDate||!v.contractAmount)rs.push('cinfo');if(code==='construction'&&bf.handover!=='완료')rs.push('handoff');if(code==='construction'&&ld!==null&&ld>q.site)rs.push('site7');if(code==='contract'&&!cf.special_terms)rs.push('verbal');if(/추가/.test(String(bf.requests||'')))rs.push('extra');
+    const rs=[];if(!v.contractDate||!v.contractAmount)rs.push('cinfo');if(code==='construction'&&bf.handover!=='완료')rs.push('handoff');if(code==='construction'&&ld!==null&&ld>q.site&&bf.start_date&&days(bf.start_date)!==null&&days(bf.start_date)<=0)rs.push('site7');/* stage7_2 ⑤: 착공일이 입력된 건만 '시공 중' */if(code==='contract'&&!cf.special_terms)rs.push('verbal');if(/추가/.test(String(bf.requests||'')))rs.push('extra');
     return {bucket,sub,rs};}},
   /* 수주 = 실적 · 완료 정보(2026-10-06 design_handoff_followup4 ②): 수주 유형 · 낙찰금액 · 낙찰사 / 계약일 · 착공 · 준공 확인 / 빠진 계약 정보. 준공 후 연락 · 추가 공사 업무는 여기서 만들지 않는다 → 확장관리 */
   won:{name:'수주',desc:()=>'끝 상태 · 계약이 끝난 건의 결과를 정확히 남기는 곳 · 수주 유형 · 낙찰금액(VAT 별도) · 낙찰사 → 계약일 · 착공 · 준공 확인 → 빠진 계약 정보 입력. 준공 후 연락 · 추가 공사는 확장관리에서',axis:'실적 · 완료 정보',
@@ -111,16 +111,18 @@
     const sub=(typed?String(w.text||'수주 기록')+(w.amount?' · '+money(w.amount):''):'수주 유형 미기록')+' · '+(v.completionDate?'준공 '+ymd(v.completionDate):v.contractDate?'계약 '+ymd(v.contractDate):'계약일 미기록');
     const rs=[];if(!typed)rs.push('wtype');if(!dOk)rs.push('cdate');if(!info)rs.push('cinfo');
     return {bucket,sub,rs};}},
-  /* stage7 ⑦(2026-10-07): 끝 상태. '차기 연도 → 대기 2개월 연락(전체)' 안내 삭제 · 재영업 가능 '예'인 건만 재접촉 할 일 · 실주 처리하면 기존 영업 업무는 서버가 닫는다(단계 전환 때 열린 다음 할 일 취소) · 다시 열어도 실주 기록은 보존 */
+  /* stage7 ⑦(2026-10-07) + stage7_2 ⑥⑦: 끝 상태. '차기 연도 → 대기 2개월 연락(전체)' 안내 삭제 · 재영업 가능 '예'인 건만 재접촉 할 일 · 실주 처리하면 기존 영업 업무는 서버가 닫는다 · 다시 열어도 실주 기록은 보존.
+     '기록 완료' = 실주 사유 + 재영업 가능 여부(예 · 아니오) 둘 다. 경쟁사 · 낙찰가는 '경쟁사 낙찰'일 때만 필수 — 사업 취소 · 중단 · 연기 · 예산 같은 사유는 '해당 없음'(미기록으로 세지 않음) */
   lost:{name:'실주',desc:()=>'끝 상태 · 실주일 · 원인 · 고객 반응 · 재영업 가능 여부를 남기는 곳 · 재영업 가능 "예"인 건만 재접촉 할 일(이전 실주 결과는 그대로 보존)',axis:'실주 기록',
-   S:[['nore','사유 미기록','#15171c','원인 · 고객 반응 기록'],['rec','기록 완료','#d5d9e0','결과 기록만 · 할 일 없음'],['re','재영업 가능 · 예','#8a909c','재접촉 할 일 하나']],
-   RS:{noreason:['실주 사유 미입력',RED,'사유 기록','원인 · 고객 반응 기록','stage'],nobid:['경쟁사 · 금액 미기록',INK,'결과 기록','경쟁사 · 낙찰가 · 결정요인 기록','stagefields'],relist:['재영업 가능 여부 미입력',INK,'여부 입력','재영업 가능 여부 입력','stagefields'],contact:['재접촉 할 일 없음',INK,'재접촉 등록','재접촉 할 일 하나 등록','next']},
-   calc(r,v,q){const reason=v.lossReason&&v.lossReason!=='미기록'?v.lossReason:'',lf=((r.item.stage_contexts||{}).lost||{}).fields||{},eng=String(lf.reengage||(r.fields||{}).reengage||'').trim(),re=eng?eng==='예':!!(v.recontact&&!/없|낮|불가/.test(String(v.recontact)));
-    const bucket=!reason?'nore':re?'re':'rec';
-    const sub=(v.lossDate?ymd(v.lossDate)+' 실주':'실주일 미기록')+(reason?' · '+reason:'')+(eng?' · 재영업 '+eng:v.recontact?' · 재접촉 '+v.recontact:' · 재영업 가능 미정');
-    const rs=[];if(!reason)rs.push('noreason');if(!v.competitor)rs.push('nobid');if(!eng&&!v.recontact)rs.push('relist');if(re&&!(r.next&&r.next.text))rs.push('contact');
-    return {bucket,sub,rs};}}
- };
+   S:[['nore','기록 보완 필요','#15171c','사유 · 재영업 여부 기록'],['rec','기록 완료','#d5d9e0','사유 + 재영업 여부 입력됨'],['re','재영업 가능 · 예','#8a909c','재접촉 할 일 하나']],
+   RS:{noreason:['실주 사유 미입력',RED,'사유 기록','원인 · 고객 반응 기록','stage'],nobid:['경쟁사 낙찰 · 경쟁사 · 낙찰가 미입력',INK,'결과 기록','경쟁사 · 낙찰가 기록(경쟁사 낙찰일 때만)','stagefields'],relist:['재영업 가능 여부 미입력',INK,'여부 입력','재영업 가능 여부 입력','stagefields'],contact:['재접촉 할 일 없음',INK,'재접촉 등록','재접촉 할 일 하나 등록','next']},
+   calc(r,v,q){const reason=v.lossReason&&v.lossReason!=='미기록'?v.lossReason:'',lf=((r.item.stage_contexts||{}).lost||{}).fields||{},eng=String(lf.reengage||(r.fields||{}).reengage||'').trim(),legacy=!eng&&!!v.recontact,
+    recorded=eng==='예'||eng==='아니오'||legacy,re=eng?eng==='예':legacy&&!/불가|없|낮/.test(String(v.recontact)),
+    compWin=/타사 선정|경쟁 패배|경쟁사 낙찰|타사 낙찰|경쟁업체/.test(reason),na=!!reason&&!compWin&&/취소|중단|연기|예산|사업/.test(reason),done=!!reason&&recorded;
+    const bucket=!done?'nore':re?'re':'rec';
+    const sub=(v.lossDate?ymd(v.lossDate)+' 실주':'실주일 미기록')+(reason?' · '+reason:'')+(eng?' · 재영업 '+eng:legacy?' · 재접촉 '+v.recontact:' · 재영업 가능 미정')+(na?' · 경쟁사 해당 없음':'');
+    const rs=[];if(!reason)rs.push('noreason');if(compWin&&!v.competitor)rs.push('nobid');if(!recorded)rs.push('relist');if(re&&!(r.next&&r.next.text))rs.push('contact');
+    return {bucket,sub,rs,na};}} };
  function model(key,list){
   const C=CFG[key],q=rules(),built=root.PipelineListV2.build(key,list);
   const segOn=key==='relationship'&&!!SEG(),isRed=k=>segOn&&C.OVER?C.OVER.includes(k):!!(C.RS[k]&&C.RS[k][1]===RED),order=Object.keys(C.RS);

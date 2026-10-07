@@ -39,3 +39,12 @@
 .rv-box2>footer{display:flex;justify-content:flex-end;gap:6px}
 .rv-box2>footer button{border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:13px;font-weight:600;border-radius:8px;padding:8px 14px;cursor:pointer;min-height:0;box-shadow:none;width:auto;height:auto;margin:0}
 .rv-box2>footer button.go{border:0;background:#15171c;color:#fff;font-weight:700}.rv-box2>footer button:disabled{opacity:.5;cursor:default}
+/* 재분류 창(stage7_2): 발송일 · 모름 칩 · 비활성 상태 · 업무 비교 */
+.rv-f>span small{font-weight:500;color:#9ca3af;margin-left:4px}
+.rv-sent{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.rv-sent input{width:150px}
+.rv-chip{border:1px solid #d9dde4;background:#fff;color:#374151;font:inherit;font-size:12.5px;font-weight:600;border-radius:999px;padding:6px 12px;cursor:pointer;min-height:0;box-shadow:none;width:auto;height:auto;margin:0}
+.rv-chip.on{background:#15171c;border-color:#15171c;color:#fff}
+.rv-states>button.off{opacity:.35;cursor:not-allowed}
+.rv-cmp{background:#f8f9fb;border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:56px minmax(0,1fr);gap:5px 10px;font-size:12.5px}
+.rv-cmp>b:first-child{grid-column:1/3;font-size:11.5px;color:#6b7280}.rv-cmp>span:nth-child(odd){color:#6b7280}.rv-cmp small{color:#9ca3af;margin-left:4px}
+.prv-a>em.prv-tag[role="button"]{cursor:pointer}

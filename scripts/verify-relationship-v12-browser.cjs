@@ -45,6 +45,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    window.pushWrite=()=>'req';window.queueDetailContactOperation=()=>'op';SB={rpc:async()=>({data:{ok:true,tasks:[],entries:[],sites:[]}})};TOKEN='test';if(window.OpsStore)OpsStore.aiOn=()=>false;
    /* 저장 경로는 기존 그대로(DealDetailV3.memo · next) — 여기서는 무엇을 보냈는지만 받는다 */
    window.__memo=[];window.__next=[];
+   window.__sf=[];DealDetailV3.stageFields=async(d,f)=>{__sf.push([d.id,f]);d.stage_contexts=Object.assign({},d.stage_contexts||{},{rapport:{fields:Object.assign({},((d.stage_contexts||{}).rapport||{}).fields,f),edited_at:new Date().toISOString()}});};
    DealDetailV3.memo=async(d,t)=>{__memo.push([d.id,t]);const at=new Date().toISOString();d.activities=d.activities||[];d.activities.unshift({id:'mm'+__memo.length,type:'메모',note:t,at,occurred_at:at});};
    DealDetailV3.next=async(d,o)=>{__next.push([d.id,o.type,o.text,o.due]);d.next_action={id:'nn'+__next.length,type:o.type,text:o.text,due:o.due,status:'open'};};
    PipelineWorkspace.open('relationship');
@@ -58,7 +59,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual(tabs,[
    ['전체','이 단계 모든 현장','',8,false,false],
    ['집중관리','견적 후 1개월 · 7일 안 후속 통화','7일 = 회의 결정 · 1개월 = 잠정(설정)',3,false,true]/* 기한 지난 건이 있는 칸만 숫자 빨강 */,
-   ['일반관리','견적 후 1~4개월 · 최소 월 1회','월 1회 = 회의 결정 · 기간 = 잠정(설정)',2,false,false],
+   ['일반관리','집중 이후 ~ 발송일부터 3개월 · 최소 월 1회','월 1회 = 회의 결정 · 기간 = 해석 미확정(설정)',2,false,false],
    ['대기','향후 추진 가능 · 2개월 1회','2개월 = 회의 결정',1,false,false],
    ['보류','고객이 중단 사유를 밝힘 · 재검토일에 확인','주기 미확정 · 재검토일만',1,false,true],
    ['미확인 · 기준일 확인 필요','견적 발송일 · 반응 · 시기 모름','자동 분류 안 함 · 재분류 대상',1,true,false]],'상태 6칸 · 기준 · 근거 · 건수 · 빨강 = 기한 지난 건이 있는 칸 · 미확인은 주황');
@@ -70,7 +71,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.equal(one(await V.locator('.ps3-works>span').innerText()),'업무 필터 · 상태와 함께 걸림');assert.match(one(await V.locator('.ps3-works>small').innerText()),/대기 · 보류로 판정하지 않음/);
   /* ③ 왼쪽: 단계 진단 + 전환 검토 요청 3줄(자동 전환 없음) + 기존 8건 재분류(미확인 1건만 남음) */
   assert.deepEqual(await V.locator('.ps3-diag .ps3-box header b').allInnerTexts().then(l=>l.map(one)),['단계 진단','전환 검토 요청 3','기존 8건 재분류']);
-  assert.deepEqual(await V.locator('.rv-rev').evaluateAll(l=>l.map(b=>[b.querySelector('span').textContent,b.querySelector('b').textContent,b.dataset.v])),[['집중 1개월 지남 → 일반관리 검토','1','toNormal'],['일반 4개월 지남 → 대기 · 보류 검토','1','toWait'],['보류 재검토일 도래','1','holdDue']]);
+  assert.deepEqual(await V.locator('.rv-rev').evaluateAll(l=>l.map(b=>[b.querySelector('span').textContent,b.querySelector('b').textContent,b.dataset.v])),[['집중 1개월 지남 → 일반관리 검토','1','toNormal'],['일반 3개월 지남 → 대기 · 보류 검토','1','toWait'],['보류 재검토일 도래','1','holdDue']]);
   assert.equal(one(await V.locator('.rv-prog').innerText()),'분류 끝남 7 / 8');assert.match(one(await V.locator('.rv-box .rv-note').first().innerText()),/자동으로 바꾸지 않음/);
   assert.equal(await V.locator('.ps3-kpis .over b').innerText(),'3건','다음 연락일 지남 = 업무 필터와 같은 수');
   /* ④ 목록 줄: v11 4칸 그대로 + 상태 꼬리표(현장 아래) · 기준일(현재 상황 둘째 줄) · 상태 주기로 정한 기한 · 버튼 */
@@ -82,11 +83,11 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual(byKey['f-new'],['f-new','집중관리 · 7일 후속','focus','마지막 연락 4일 전','견적 '+d10+' · 집중 D+10 · 분류 전','수신 · 반응 확인 통화','3일 남음 · 연락 + 7일','','다음 행동','next']);
   assert.deepEqual(byKey['f-over'],['f-over','집중관리 · 7일 후속','focus','마지막 연락 12일 전','견적 '+d20+' · 집중 D+20 · 분류 전','수신 · 반응 확인 통화','5일 지남 · 연락 + 7일','r','연락 기록','activity']);
   assert.deepEqual(byKey['f-mark-rev'].slice(0,6).concat(byKey['f-mark-rev'].slice(8)),['f-mark-rev','집중관리 · 7일 후속','focus','집중 1개월 지남 → 일반관리 검토','견적 '+d40+' · 집중 D+40','결정 일정 확인'/* 등록된 다음 할 일이 있으면 그것(v11 규칙) */,'전환 검토','classify'],'담당이 분류한 건은 기간이 지나도 자동 전환 없음 · 전환 검토만');
-  assert.deepEqual(byKey['n-rev'],['n-rev','일반관리 · 월 1회','normal','일반 4개월 지남 → 대기 · 보류 검토','견적 '+d130+' · 일반 4개월째 · 분류 전','전환 검토 · 사유 · 다음 확인일','10일 남음 · 연락 + 30일','','전환 검토','classify']);
+  assert.deepEqual(byKey['n-rev'],['n-rev','일반관리 · 월 1회','normal','일반 3개월 지남 → 대기 · 보류 검토','견적 '+d130+' · 일반 4개월째 · 분류 전','전환 검토 · 사유 · 다음 확인일','10일 남음 · 연락 + 30일','','전환 검토','classify']);
   assert.deepEqual(byKey['wk-1'].slice(0,6),['wk-1','일반관리 · 월 1회','normal','CRM 연락 기록 없음','견적 '+d50+' · 일반 2개월째 · 분류 전','진행 확인 통화'],'약속 연락일이 있으면 그 날짜(기한은 판정 함수 글)');
   assert.deepEqual(byKey['w-1'].slice(0,6),['w-1','대기 · 2개월 1회','wait','2027 봄 공사 · 장기수선 반영 대기',''+(await page.evaluate(()=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(DAY(-10));return (+m[2])+'.'+(+m[3]);}))+' 전환 · 향후 연도','대기 · 공사 시기 · 예산 확인']);
   assert.deepEqual(byKey['h-1'],['h-1','보류 · 재검토일','hold','보류 재검토일 도래 → 추진 여부','재검토 '+dr,'전환 검토 · 사유 · 다음 확인일','1일 지남 · 재검토일','r','전환 검토','classify']);
-  assert.deepEqual(byKey['u-1'],['u-1','미확인 · 기준일 확인 필요','unk','CRM 연락 기록 없음','발송일 없음 · 기간 계산 안 함','상태 재분류','기한 없음 · 분류 후 정해짐','g','분류하기','classify']);
+  assert.deepEqual(byKey['u-1'],['u-1','미확인 · 분류 필요','unk','CRM 연락 기록 없음','발송일 없음 · 기간 계산 안 함','상태 재분류','기한 없음 · 분류 후 정해짐','g','분류하기','classify']);
   assert.equal(rows.length,8);assert.deepEqual((await L.locator('.prv-head span').allInnerTexts()).map(one),['현장 · 담당','현재 상황','다음 업무 · 기한','']);
   /* 꼬리표 색: 집중 파랑 · 미확인 붉은 바탕 · 기준일 회색 */
   assert.deepEqual(await page.evaluate(()=>{const q=k=>document.querySelector('#pipeline-stage-v3 .prv-row[data-key$="'+k+'"]'),cs=(n,p)=>getComputedStyle(n)[p];return [cs(q('f-new').querySelector('.prv-tag'),'color'),cs(q('u-1').querySelector('.prv-tag'),'backgroundColor'),cs(q('f-new').querySelector('.prv-b>small.base'),'color'),cs(document.querySelector('#pipeline-stage-v3 .ps3-tab:last-child .n'),'color')];}),['rgb(29, 63, 153)','rgb(253, 236, 235)','rgb(156, 163, 175)','rgb(192, 57, 43)']);
@@ -107,26 +108,32 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await V.locator('.rv-rev[data-v="toNormal"]').click();await page.waitForTimeout(200);
   assert.deepEqual([await L.locator('.prv-row').evaluateAll(l=>l.map(r=>r.dataset.key.replace(/^deal:/,''))),one(await V.locator('.ps3-chip').innerText()),await V.locator('.rv-rev[data-v="toNormal"]').getAttribute('aria-pressed')],[['f-mark-rev'],'집중 1개월 지남 → 일반관리 검토 ×','true']);
   await V.locator('.ps3-chip').click();await page.waitForTimeout(200);assert.equal(await L.locator('.prv-row').count(),8);
-  /* ⑦ [분류하기] → 분류 창: 상태 4개(미확인은 고를 수 없음) · 대기 · 보류는 사유 필수 · 다음 확인일 필수 · 저장 = 표식 메모 + 다음 할 일 → 대기 칸으로 · 재분류 8 / 8 */
+  /* ⑦ [분류하기] → 재분류 창(stage7_2): ① 발송일(날짜 / 모름) → ② 상태(발송일 모름이면 집중 · 일반 비활성 · 기본 '미확인 유지') → ③ 사유 → ④ 다음 확인일 · '지금 → 저장 후' 비교 */
   await L.locator('.prv-row[data-key$="u-1"]>button').click();await page.waitForSelector('#rv-dlg .rv-box2');
-  assert.deepEqual(await page.evaluate(()=>{const b=document.querySelector('#rv-dlg .rv-box2');return [b.querySelector('header b').textContent,b.querySelector('header span').textContent,[...b.querySelectorAll('.rv-states [role=radio]')].map(x=>[x.querySelector('b').textContent,x.getAttribute('aria-checked')]),!!b.querySelector('[data-rv-in="next"]'),!!b.querySelector('[data-rv-in="review"]'),b.querySelector('[data-rv-in="year"]')&&[...b.querySelectorAll('[data-rv-in="year"] option')].map(o=>o.textContent)];}),
-   ['상태 분류','미확인 이관 현장 · 지금 미확인 · 기준일 확인 필요',[['집중관리','true'],['일반관리','false'],['대기','false'],['보류','false']],true,false,['선택','올해','향후 연도','미정']]);
+  assert.deepEqual(await page.evaluate(()=>{const b=document.querySelector('#rv-dlg .rv-box2');return [b.querySelector('header b').textContent,b.querySelector('header span').textContent,[...b.querySelectorAll('.rv-states [role=radio]')].map(x=>[x.querySelector('b').textContent,x.getAttribute('aria-checked'),x.getAttribute('aria-disabled')||'']),[...b.querySelectorAll('.rv-f>span')].map(x=>x.firstChild.textContent.trim()),!!b.querySelector('[data-rv-in="next"]'),!!b.querySelector('[data-rv-in="review"]'),!!b.querySelector('[data-rv-in="year"]'),b.querySelector('.rv-cmp').innerText.replace(/\s+/g,' ').trim()];}),
+   ['재분류','미확인 이관 현장 · 기준일부터 확인',[['미확인 유지','true',''],['집중관리','false','true'],['일반관리','false','true'],['대기','false',''],['보류','false','']],['① 견적 발송일','② 상태','③ 사유','④ 다음 확인일'],true,false,false,'저장하면 업무가 이렇게 바뀝니다 지금 등록된 업무 없음 저장 후 변경 없음 다음 확인일을 넣으면 새 업무가 만들어집니다']);
+  await page.locator('#rv-dlg [data-rv="state"][data-v="focus"]').click({force:true});await page.waitForTimeout(80);assert.equal(await page.locator('#rv-dlg .rv-states [aria-checked="true"] b').innerText(),'미확인 유지','발송일 모르면 집중 · 일반은 못 고름');
+  const sentDay=await page.evaluate(()=>DAY(-10));await page.fill('#rv-dlg [data-rv-in="sent"]',sentDay);await page.locator('#rv-dlg [data-rv-in="sent"]').dispatchEvent('change');await page.waitForTimeout(100);
+  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#rv-dlg .rv-states [role=radio]')].map(x=>[x.getAttribute('aria-checked'),x.getAttribute('aria-disabled')||''])),[['false',''],['true',''],['false',''],['false',''],['false','']],'발송일을 넣으면 집중(기본 자리)이 골라지고 집중 · 일반을 고를 수 있음');
+  await page.locator('#rv-dlg [data-rv="unknown"]').click();await page.waitForTimeout(80);assert.deepEqual(await page.evaluate(()=>[document.querySelector('#rv-dlg [data-rv-in="sent"]').value,document.querySelector('#rv-dlg .rv-states [aria-checked="true"] b').textContent]),['','미확인 유지'],'모름 = 날짜 비움 · 미확인 유지');
+  await page.fill('#rv-dlg [data-rv-in="sent"]',sentDay);await page.locator('#rv-dlg [data-rv-in="sent"]').dispatchEvent('change');await page.waitForTimeout(80);
   await page.locator('#rv-dlg [data-rv="state"][data-v="wait"]').click();await page.waitForTimeout(100);
   await page.locator('#rv-dlg [data-rv="save"]').click();await page.waitForTimeout(150);assert.equal(one(await page.locator('#rv-dlg .rv-err').innerText()),'사유를 적어 주세요.','대기는 사유 필수');
   await page.fill('#rv-dlg [data-rv-in="reason"]','2027 하반기 공사 · 예산 반영 뒤');await page.locator('#rv-dlg [data-rv="save"]').click();await page.waitForTimeout(150);assert.equal(one(await page.locator('#rv-dlg .rv-err').innerText()),'다음 확인일을 골라 주세요.','다음 확인일 필수');
-  const nextDay=await page.evaluate(()=>DAY(30));await page.fill('#rv-dlg [data-rv-in="next"]',nextDay);await page.selectOption('#rv-dlg [data-rv-in="year"]','향후 연도');
+  const nextDay=await page.evaluate(()=>DAY(30));await page.fill('#rv-dlg [data-rv-in="next"]',nextDay);await page.locator('#rv-dlg [data-rv-in="next"]').dispatchEvent('change');await page.waitForTimeout(100);
+  assert.match(one(await page.locator('#rv-dlg .rv-cmp').innerText()),/지금 등록된 업무 없음 저장 후 공사 시기 · 예산 확인 · \d+\.\d+ 기존 업무가 없어 새로 만듦$/,'기존 업무가 없으면 새 업무 · 그렇다고 말해 줌');
   await page.locator('#rv-dlg [data-rv="save"]').click();await page.waitForSelector('#rv-dlg',{state:'detached'});await page.waitForTimeout(300);
-  assert.deepEqual(await page.evaluate(()=>[__memo,__next]),[[['u-1','[관계 상태] 대기 | 2027 하반기 공사 · 예산 반영 뒤 | '+nextDay+' | 없음 | 향후 연도']],[['u-1','전화','대기 · 공사 시기 · 예산 확인',nextDay]]],'표식 메모 + 다음 할 일(기존 저장 경로)');
+  assert.deepEqual(await page.evaluate(()=>[__sf,__memo,__next]),[[['u-1',{sent_date:sentDay}]],[['u-1','[관계 상태] 대기 | 2027 하반기 공사 · 예산 반영 뒤 | '+nextDay+' | 없음 | 미정']],[['u-1','전화','공사 시기 · 예산 확인',nextDay]]],'발송일(단계 정보) + 표식 메모 + 다음 할 일(기존 저장 경로)');
   assert.deepEqual(await V.locator('.ps3-tab .n').allInnerTexts(),['8','3','2','2','1','0'],'미확인 → 대기로');assert.equal(one(await V.locator('.rv-prog').innerText()),'분류 끝남 8 / 8');
   assert.deepEqual((await L.locator('.prv-row[data-key$="u-1"]').evaluate(r=>[r.querySelector('.prv-tag').textContent,r.querySelector('.prv-b>span').textContent,r.querySelector(':scope>button').textContent])),['대기 · 2개월 1회','2027 하반기 공사 · 예산 반영 뒤','연락 기록']);
   /* ⑧ [전환 검토](보류 재검토일 도래) → 창 머리 '전환 검토' · 지금 상태 보류가 골라져 있음 · 재검토일 칸 · Esc 로 닫힘. 자동으로 바뀐 것은 없다 */
   await L.locator('.prv-row[data-key$="h-1"]>button').click();await page.waitForSelector('#rv-dlg .rv-box2');
-  assert.deepEqual(await page.evaluate(()=>{const b=document.querySelector('#rv-dlg .rv-box2');return [b.querySelector('header b').textContent,/지금 보류 · 보류 재검토일 도래/.test(b.querySelector('header span').textContent),b.querySelector('.rv-states [aria-checked="true"] b').textContent,!!b.querySelector('[data-rv-in="review"]')];}),['전환 검토',true,'보류',true]);
+  assert.deepEqual(await page.evaluate(()=>{const b=document.querySelector('#rv-dlg .rv-box2');return [b.querySelector('header b').textContent,/기준일부터 확인 · 보류 재검토일 도래/.test(b.querySelector('header span').textContent),b.querySelector('.rv-states [aria-checked="true"] b').textContent,!!b.querySelector('[data-rv-in="review"]')];}),['전환 검토',true,'보류',true]);
   await page.keyboard.press('Escape');await page.waitForTimeout(150);assert.equal(await page.locator('#rv-dlg').count(),0);
   assert.deepEqual(await V.locator('.ps3-tab .n').allInnerTexts(),['8','3','2','2','1','0'],'창을 닫기만 하면 아무것도 바뀌지 않음');
   /* ⑨ 설정값: 집중 · 일반 기간은 운영 기준(care_focus_months · care_general_months) — 바꾸면 칸 기준 글이 따라간다 */
   await page.evaluate(()=>{CRMRules.apply({care_focus_months:2,care_general_months:4});paint();});await page.waitForTimeout(300);
-  assert.deepEqual((await V.locator('.ps3-tab span').allInnerTexts()).slice(1,3).map(one),['견적 후 2개월 · 7일 안 후속 통화','견적 후 2~6개월 · 최소 월 1회']);
+  assert.deepEqual((await V.locator('.ps3-tab span').allInnerTexts()).slice(1,3).map(one),['견적 후 2개월 · 7일 안 후속 통화','집중 이후 ~ 발송일부터 4개월 · 최소 월 1회']);
   assert.deepEqual(await page.evaluate(()=>CRMRules.ROWS.filter(r=>/^care_/.test(r.k)).map(r=>[r.k,r.st,r.unit,r.min,r.max])),[['care_focus_months','cond','개월',1,6],['care_general_months','cond','개월',1,12]],'설정 화면 항목(조건부)');
   await page.evaluate(()=>{CRMRules.apply({care_focus_months:1,care_general_months:3});});
   /* ⑩ 끄기: G.relV12Off → 예전 탭 3개 */

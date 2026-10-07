@@ -42,11 +42,15 @@
   let best=null;acts(d).forEach(a=>{const who=rep(a.actor||a.actor_name||''),at=a.at||a.occurred_at||'';if(!who||!at)return;let ok=false;try{ok=!!R.isMeaningfulContact(a.type,a.note,a.result||'',a.meaningful);}catch(e){}if(!ok)return;const t=Date.parse(at);if(isFinite(t)&&(!best||t<best.t))best={name:who,at:dayKey(at),t};});
   return best;
  }
+ /* 2026-10-07 design_handoff_stage7_2 ④ — 실적 귀속의 두 기준을 따로 본다: '최초 연락을 받은 사원'(회의 잠정안 · 연락 기록 중 가장 이른 것 — 시도 · 부재 포함)과 '최초 실제 연결된 사원'(현재 설정 · 연락 시도 · 부재 제외).
+    둘이 다르고 저장된 귀속이 없으면 '귀속 확인 필요' — 상세에 두 이름을 다 보여 준다. (두 값을 서버 필드로 따로 저장하는 것은 코덱스 몫 — 지금은 연락 기록에서 계산) */
+ function firstReceive(d){let best=null;acts(d).forEach(a=>{if(!/전화|통화|문자|카카오|카톡|방문|이메일|메일/.test(String(a.type||'')))return;const who=rep(a.actor||a.actor_name||''),at=a.at||a.occurred_at||'';if(!who||!at)return;const t=Date.parse(at);if(isFinite(t)&&(!best||t<best.t))best={name:who,at:dayKey(at),t};});return best;}
  function first(d){const r=rowOf(d);if(r&&r.first_owner)return {name:rep(r.first_owner),at:dayKey(r.first_connected_at),stored:true};return firstConnect(d);}
  /* 실적 귀속(주담당): 저장된 귀속 → 최초 연결 담당자 → 지금 담당 */
  function perf(d){if(!d)return '';const r=rowOf(d);if(r&&r.performance_owner)return rep(r.performance_owner);const f=autoRule()?firstConnect(d):null;return (f&&f.name)||rep(d.assignee)||'';}
  /* 실적 나눔(중복 리드 정산이 승인된 영업건): [{name,ratio}] 합 100 */
  function shares(d){const r=rowOf(d),s=r&&Array.isArray(r.shares)?r.shares.filter(x=>x&&x.name&&Number(x.ratio)>0):[];return s.length>=2?s.map(x=>({name:rep(x.name),ratio:Number(x.ratio)})):[];}
+ function attribution(d){const a=firstReceive(d),b=first(d),r=rowOf(d),stored=!!(r&&r.performance_owner),differ=!!(a&&b&&a.name&&b.name&&a.name!==b.name);return {received:a,connected:b,differ,stored,pending:differ&&!stored};}
  function info(d){const now=rep(d.assignee)||'',p=perf(d),f=first(d),sh=shares(d);return {current:now,first:f,perf:sh.length?sh.map(x=>x.name+' '+x.ratio+'%').join(' · '):p,sub:sh.length?'실적 나눔 · 정산 내역에 기록':p&&now&&p!==now?'주담당 · '+now+' 보조':'주담당',stored:!!rowOf(d),shares:sh};}
  /* 변경 이력: 최초 연결 → 담당 변경(서버 기록 · 예전 것은 기존 담당 이력) → 귀속 변경 요청 · 승인 */
  function history(d){
@@ -62,13 +66,14 @@
  }
  /* ── 상세 왼쪽: 담당 정보 상자 ── */
  function cardHtml(d){
-  const I=info(d),H=history(d),open=!!st().open;
+  const I=info(d),H=history(d),A=attribution(d),open=!!st().open;
   /* 접어 둔 채로 시작(2026-10-05 대표 "이거는 접어 두게 해 줘 · 담당 정보 ; 이필선 해 놓고") — 머리줄에 지금 담당 이름, [펼치기]를 누르면 최초 담당 · 실적 귀속 · 변경 이력. 펼친 상태는 창을 바꿔도 유지 */
   const head='<header><b>담당 정보</b><span class="do-cur">'+h(I.current||'미배정')+'</span><i></i><button type="button" class="lnk" data-do="fold" aria-expanded="'+open+'">'+(open?'접기':'펼치기')+'</button></header>';
   if(!open)return head;
   return head+'<div class="do-grid"><span>현재 담당</span><b>'+h(I.current||'미배정')+'</b>'
-   +'<span>최초 담당</span><span>'+(I.first&&I.first.name?h(I.first.name)+(I.first.at?' <small>첫 연결 '+h(dot(I.first.at))+'</small>':''):'<small>아직 없음 — 첫 연결 전</small>')+'</span>'
-   +'<span>실적 귀속</span><b class="perf">'+h(I.perf||'미배정')+' <small>'+h(I.sub)+'</small></b></div>'
+   +'<span>최초 연락 받은 사원</span><span>'+(A.received&&A.received.name?h(A.received.name)+(A.received.at?' <small>'+h(dot(A.received.at))+'</small>':'')+' <em class="do-conf">회의 잠정안</em>':'<small>아직 없음 — 연락 기록 전</small>')+'</span>'
+   +'<span>최초 실제 연결된 사원</span><span>'+(I.first&&I.first.name?h(I.first.name)+(I.first.at?' <small>첫 연결 '+h(dot(I.first.at))+'</small>':'')+' <em class="do-conf cur">현재 설정</em>':'<small>아직 없음 — 첫 연결 전</small>')+'</span>'
+   +'<span>실적 귀속</span><b class="perf">'+h(I.perf||'미배정')+' <small>'+h(I.sub)+'</small></b>'+(A.pending?'<p class="do-pend" role="status"><b>귀속 확인 필요</b> 두 사람이 다릅니다('+h(A.received.name)+' · '+h(A.connected.name)+') — 확정 전에는 실적 · 정산에 자동 반영하지 않는 건으로 봅니다</p>':'')+'</div>'
    +'<div class="do-hist"><span>변경 이력</span>'+(H.length?H.map(x=>'<div><span>'+h(dot(x.k))+'</span><span>'+h(x.t)+'</span></div>').join(''):'<p>아직 변경 이력이 없습니다</p>')+'</div>';
  }
  /* ── 담당자 변경 창: 실적 귀속 선택 ── */
@@ -161,5 +166,5 @@
   fn.__do=true;R.saveAssigneeChange=fn;
  }
  wrap();document.addEventListener('DOMContentLoaded',wrap);
- root.DealOwner={enabled,available,perf,first,info,shares,history,load,ensure,take,decorate,after,change,RPC,state:st};
+ root.DealOwner={enabled,available,perf,first,firstReceive,attribution,info,shares,history,load,ensure,take,decorate,after,change,RPC,state:st};
 })(window);

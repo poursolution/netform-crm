@@ -71,7 +71,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    sent:{name:'자료 발송완료',goal:14,tabs:[['7일 넘음 · 후속 없음','오늘 후속 연락'],['발송 후 7일 안','D+3 수신 확인'],['고객 반응 있음','다음 단계 판단'],['발송일 확인 필요','발송일 · 자료 · 수신자 입력']],n:[4,1,1,1,1],reasons:[['발송 후 7일 · 후속 없음',1],['발송일 미기록 · 판정 불가',1],['결정권자 미확인',3],['다음 행동 · 날짜 없음',3],['30일 넘게 머묾',0]],act:['후속 연락','수신 확인','단계 판단','정보 입력'],order:['s-late','s-wait','s-done','s-nodate'],amb:3},
    /* 관계관리는 2026-10-07 v12(상태 5칸 · 업무 필터 · 전환 검토)로 바뀌어 전용 검사(scripts/verify-relationship-v12-browser.cjs)가 본다. 끄기(G.relV12Off) 경로의 예전 탭 3개는 아래 relOld 로 */
    competition:{name:'경쟁 · 입찰',goal:30,tabs:[['마감 D-7 이내','제안서 · 가격 확정 · 운영 제안'],['진행 중','일정 확인'],['결과 대기','개찰 다음날 결과 등록 · 운영 제안'],['일정 미등록','입찰 · PT 일정 확인']],n:[6,2,1,2,1],reasons:[['제안서 미공유',2],['결정 · 입찰 일정 미등록',1],['경쟁 공법 미확인',5],['결정권자 미확인',6],['결과 미등록',1]],act:['제안 준비','일정 확인','결과 등록','일정 입력'],order:null,amb:3},
-   construction:{name:'계약 · 시공',goal:14,tabs:[['계약정보 누락','계약일 · 금액 입력'],['시공 중','착공 준비 · 착공 후 주 1회 현장 방문'],['준공 확인','준공 · 하자 인계']],n:[4,1,2,1],reasons:[['계약일 · 금액 없음',1],['인계서 미확인',1],['시공 중 주 1회 방문 없음',1]/* 착공한 시공 중 건(9일 무연락)만 — 인계 중(착공 전)은 세지 않는다 */,['준공 확인 없음',1]],act:['정보 입력','현장 확인','준공 확인'],order:null}};
+   construction:{name:'계약 · 시공',goal:14,/* stage7_2 ⑤: 4상태 — 계약 체결 · 착공 준비(착공일 미입력 · 아직 안 온 착공일) · 시공 중(착공일 입력 후) · 준공 확인 */
+   tabs:[['계약 체결','계약일 · 금액 · 계약서'],['착공 준비','착공일 미입력 · 착공일 확인'],['시공 중','착공일 입력 후 · 주 1회 방문'],['준공 확인','준공검사 · 고객 확인']],n:[4,1,1,1,1],reasons:[['계약일 · 금액 없음',1],['착공일 미입력',0],['인계서 미확인',1],['시공 중 주 1회 방문 없음',1]/* 착공한 시공 중 건(9일 무연락)만 — 인계 중(착공 전)은 세지 않는다 */,['준공 확인 없음',1]],act:['정보 입력','착공일 입력','현장 확인','준공 확인'],order:null}};
   for(const key of Object.keys(EXPECT)){
    const E=EXPECT[key];await page.evaluate(k=>PipelineWorkspace.open(k),key);await page.waitForTimeout(350);
    assert.equal(await V.count(),1,key+': 공통 틀 v3');assert.equal((await page.locator('#pg-pipe>.cf-bar .cf-pill').first().innerText()).replace(/\s+/g,' ').trim().replace(/^전체 /,''),(await page.locator('#pipeline-stage-v3 .ps3-tab .n').first().innerText()).trim(),key+': 브랜드 칩 전체 = 목록 전체(2026-10-06 집계 ①)');assert.equal(await page.locator('#pipeline-stage-b').count(),0,key+': 예전 화면은 없다');
@@ -166,12 +167,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(()=>[document.querySelectorAll('#detailView.dv3 #ddvComposer.dvt-calling').length,document.querySelectorAll('#detailAction,.dp-next').length]),[1,0],'열자마자 바로가기 = 지금 할 일 카드');
   await page.evaluate(()=>{try{closeDetail();}catch(e){}});await page.waitForTimeout(200);
   /* 수주 · 실주도 같은 틀(2026-10-06 대표 "이 기준으로 수주 · 실주 크기 및 배치 동일하게"): 상태 탭 4칸 = B안 막대 3칸, 사유 · 버튼은 B안 표 그대로 · 끄면 이전 화면 */
-  for(const [k,tabs,reason0] of [['won',['전체','수주 정보 미기록','계약일 · 착공 · 준공 확인','실적 · 완료 정보 완료'],'수주 유형 · 낙찰금액 · 낙찰사 미기록'],['lost',['전체','사유 미기록','기록 완료','재영업 가능 · 예'/* stage7 ⑦ */],'실주 사유 미입력']]){
+  for(const [k,tabs,reason0] of [['won',['전체','수주 정보 미기록','계약일 · 착공 · 준공 확인','실적 · 완료 정보 완료'],'수주 유형 · 낙찰금액 · 낙찰사 미기록'],['lost',['전체','기록 보완 필요','기록 완료','재영업 가능 · 예'/* stage7 ⑦ */],'실주 사유 미입력']]){
    await page.evaluate(k=>PipelineWorkspace.open(k),k);await page.waitForTimeout(300);
    assert.equal(await page.locator('#pipeline-stage-v3[data-stage="'+k+'"]').count(),1,k+': 공통 틀 v3');assert.equal(await page.locator('#pipeline-stage-b').count(),0,k+': 예전 화면 없음');
    assert.deepEqual(await page.locator('#pipeline-stage-v3 .ps3-tab .l').allInnerTexts(),tabs,k+' 탭');
    assert.deepEqual(await page.locator('#pipeline-stage-v3 .ps3-reason.first>span>b:first-child').allInnerTexts(),[reason0],k+' 빨강 사유 = B안 표의 빨강');
-   assert.match(await page.locator('#pipeline-stage-v3 .ps3-kpis').innerText(),k==='won'?/실적 정보 보완\s*\d+건\s*기한 초과 0 · 지연 아님 · 끝 상태[\s\S]*평균 체류\s*\d+일/:/결과 정보 보완\s*\d+건\s*기한 초과 0 · 지연 아님 · 끝 상태[\s\S]*평균 체류\s*\d+일/,k+': stage7 ⑥⑦ 끝 상태 제목 숫자');
+   assert.match(await page.locator('#pipeline-stage-v3 .ps3-kpis').innerText(),k==='won'?/실적 정보 보완\s*\d+건\s*기한 초과 0 · 지연 아님 · 끝 상태[\s\S]*결과 기록 완성률\s*[\d.]+%\s*\d+ \/ \d+/:/결과 정보 보완\s*\d+건\s*기한 초과 0 · 지연 아님 · 끝 상태[\s\S]*결과 기록 완성률\s*[\d.]+%\s*\d+ \/ \d+/,k+': stage7 ⑥⑦ 끝 상태 제목 숫자');
    if(k==='won')assert.match(await page.locator('#pipeline-stage-v3 .ps3-diag .ps3-box header span').first().innerText(),/^1건 · 1\.4억 · 낙찰금액 입력 1건 기준$/,'수주 금액 옆 근거 건수');
    assert.equal(await page.locator('#pipeline-stage-v3 .ps3-diag>.ps3-box').nth(2).locator('.psb-act,.ps3-none').count()>0,true,k+' 그래서 뭘 해야 하나 = 사유별 할 일');
   }

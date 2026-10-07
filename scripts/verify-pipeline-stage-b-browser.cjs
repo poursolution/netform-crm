@@ -81,7 +81,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#pipeline-stage-b .psb-row',{hasText:'정상 컨설팅'}).locator('.l').click();await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>__open),'c-ok');
   if(shot)await page.screenshot({path:shot+'-consulting.png',fullPage:true});
   /* 단계 전환: 발송 · 관계 · 경쟁 · 계약 · 수주 · 실주 — 막대 칸과 첫 빨강 사유 */
-  const expect={sent:[['D+7 전 · 후속 대기','7일 넘김 · 후속 없음','후속 완료 · 반응 기록'],'후속 없는 발송','발송 후 7일 · 후속 없음'],relationship:[['집중관리 · 7일 단위','일반관리 · 월 1회','대기 · 2개월 1회'],'집중 현장','집중관리 7일 넘게 연락 없음'],competition:[['참여 · 가격 결정 대기','서류 · 제안서 준비','제출 완료 · 결과 대기'],'입찰 D-2','마감 D-3 · 준비 안 됨'],construction:[['계약 진행','시공팀 인계','착공 · 시공 중'],'계약 진행','계약일 · 금액 미입력'],won:[['수주 정보 미기록','계약일 · 착공 · 준공 확인','실적 · 완료 정보 완료'],'','수주 유형 · 낙찰금액 · 낙찰사 미기록'],lost:[['사유 미기록','기록 완료','재영업 가능 · 예'/* stage7 ⑦ */],'사유 없는 실주','실주 사유 미입력']};
+  const expect={sent:[['D+7 전 · 후속 대기','7일 넘김 · 후속 없음','후속 완료 · 반응 기록'],'후속 없는 발송','발송 후 7일 · 후속 없음'],relationship:[['집중관리 · 7일 단위','일반관리 · 월 1회','대기 · 2개월 1회'],'집중 현장','집중관리 7일 넘게 연락 없음'],competition:[['참여 · 가격 결정 대기','서류 · 제안서 준비','제출 완료 · 결과 대기'],'입찰 D-2','마감 D-3 · 준비 안 됨'],construction:[['계약 진행','시공팀 인계','착공 · 시공 중'],'계약 진행','계약일 · 금액 미입력'],won:[['수주 정보 미기록','계약일 · 착공 · 준공 확인','실적 · 완료 정보 완료'],'','수주 유형 · 낙찰금액 · 낙찰사 미기록'],lost:[['기록 보완 필요','기록 완료','재영업 가능 · 예'/* stage7 ⑦ · stage7_2 ⑥ */],'사유 없는 실주','실주 사유 미입력']};
   for(const [key,[bars,firstSite,firstReason]] of Object.entries(expect)){
    await page.evaluate(k=>PipelineWorkspace.open(k),key);await page.waitForTimeout(300);
    assert.equal(await page.locator('#pipeline-stage-b').getAttribute('data-stage'),key);

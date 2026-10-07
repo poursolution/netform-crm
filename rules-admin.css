@@ -39,3 +39,7 @@
 
 /* ops_12 B⑤: 적용 중 / 값만 저장 · 화면 미적용 알약 */
 #rules-admin .ra-pill{font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap;margin-left:6px}
+/* stage7_2 ④: 확정 · 잠정 칩 · 출처 · 적용 예정 */
+.ra-conf{font-style:normal;font-size:11px;font-weight:700;border-radius:4px;padding:2px 7px;margin-left:4px;white-space:nowrap}
+.ra-src{display:block;font-size:11.5px;color:#9ca3af;margin-top:2px}
+.ra-pend>p{margin:0;padding:11px 18px;font-size:12.5px;color:#374151;line-height:1.6;background:#fafbfc}

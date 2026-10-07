@@ -54,7 +54,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await card.evaluate(n=>[[...n.querySelectorAll(':scope>header>*')].map(x=>x.textContent).filter(Boolean),n.querySelectorAll('.do-grid,.do-hist').length,n.querySelector('[data-do="fold"]').getAttribute('aria-expanded')]),[['담당 정보','김성민','펼치기'],0,'false']);
   await card.locator('[data-do="fold"]').click();await page.waitForTimeout(250);
   assert.deepEqual(await card.evaluate(n=>[[...n.querySelectorAll(':scope>header>*')].map(x=>x.textContent).filter(Boolean),n.querySelector('[data-do="fold"]').getAttribute('aria-expanded')]),[['담당 정보','김성민','접기'],'true']);
-  assert.deepEqual(await card.locator('.do-grid>*').evaluateAll(l=>l.map(n=>n.textContent.replace(/\s+/g,' ').trim())),['현재 담당','김성민','최초 담당','이필선 첫 연결 2026.7.14','실적 귀속','이필선 주담당 · 김성민 보조']);
+  assert.deepEqual(await card.locator('.do-grid>*').evaluateAll(l=>l.map(n=>n.textContent.replace(/\s+/g,' ').trim())),['현재 담당','김성민','최초 연락 받은 사원','이필선 2026.7.10 회의 잠정안','최초 실제 연결된 사원','이필선 첫 연결 2026.7.14 현재 설정','실적 귀속','이필선 주담당 · 김성민 보조']);
   assert.equal(await card.locator('.do-grid b.perf').evaluate(n=>getComputedStyle(n).color),'rgb(29, 63, 153)');assert.equal(await card.locator('.do-grid').evaluate(n=>getComputedStyle(n).gridTemplateColumns.split(' ')[0]),'96px');
   assert.deepEqual(await card.locator('.do-hist>div').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent))),[['2026.7.14','최초 담당 이필선 · 첫 연결 (주담당 확정)'],['2026.9.20','담당 변경 이필선 → 김성민 · 사유: 지역 재배치 · 귀속 유지'],['2026.10.2','귀속 변경 요청 → 승인함 대기']]);
   assert.deepEqual(await page.evaluate(()=>[DealOwner.perf(B.deals[0]),DealOwner.perf(B.deals[1]),DealOwner.info(B.deals[1]).sub]),['이필선','정정훈','주담당'],'저장된 귀속이 없으면 최초로 실제 연결된 담당자');
@@ -89,7 +89,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('.do-attr .do-note').innerText(),'담당만 바뀌고 수주실적 · 인센티브는 정정훈(주담당) 유지. 김성민은 보조로 표시됩니다.');
   await page.evaluate(()=>saveAssigneeChange());await page.waitForTimeout(900);
   assert.deepEqual(await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_deal_reassign_handover_v1').map(c=>{const {request_id,...p}=c[1];return [c[0],p];})),[['crm_deal_reassign_handover_v1',{deal_id:'22222222-2222-4222-8222-222222222222',from:'정정훈',to:'김성민',reason:'업무량 재배분 — 대전 권역 조정',attribution:'keep',memo:''}]]);
-  assert.deepEqual(await page.locator('#detailView .do-card .do-grid>*').evaluateAll(l=>l.map(n=>n.textContent.replace(/\s+/g,' ').trim())),['현재 담당','김성민','최초 담당','정정훈 첫 연결 2026.8.3','실적 귀속','정정훈 주담당 · 김성민 보조']);
+  assert.deepEqual(await page.locator('#detailView .do-card .do-grid>*').evaluateAll(l=>l.map(n=>n.textContent.replace(/\s+/g,' ').trim())),['현재 담당','김성민','최초 연락 받은 사원','정정훈 2026.8.3 회의 잠정안','최초 실제 연결된 사원','정정훈 첫 연결 2026.8.3 현재 설정','실적 귀속','정정훈 주담당 · 김성민 보조']);
   assert.match(await page.locator('#detailView .do-card .do-hist').innerText(),/2026\.10\.21\s*담당 변경 정정훈 → 김성민 · 사유: 업무량 재배분 — 대전 권역 조정 · 귀속 유지/);
   /* 5. 승인 요청 창의 귀속 변경: 지금 귀속을 미리 넣고, 바꿀 귀속은 담당자 이름이어야 한다 */
   await page.evaluate(()=>{window.SALES_PEOPLE_MASTER=[{name:'정정훈',active:true},{name:'김성민',active:true},{name:'이필선',active:true}];__calls.length=0;ApprovalRequest.open('owner_change');});await page.waitForTimeout(200);

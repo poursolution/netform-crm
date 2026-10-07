@@ -66,8 +66,17 @@
  const isLate=b=>!!(b&&b.kind==='date'&&b.n!=null&&b.n<0);
  const STATE={late:'기한 초과',ok:'기한 내',nodate:'날짜 미입력',norecord:'판정 불가',na:'기한 없음'};
  const state=b=>{const k=!b||b.kind==='norecord'?'norecord':b.kind==='na'?'na':b.kind!=='date'||b.n==null?'nodate':b.n<0?'late':'ok';return {key:k,label:STATE[k]};};
- /* 한 묶음의 분해(단계 진단 '기준 넘김' 아래 · 리포트): 기한 초과 n · 날짜 미입력 n · 판정 불가 n — 합 = 전체 */
- function tally(list,key){const t={late:0,ok:0,nodate:0,norecord:0,na:0,total:0};(list||[]).forEach(d=>{if(!d)return;t[state(basis(d,key)).key]++;t.total++;});return t;}
+ /* '자료 없음' 3가지(2026-10-07 stage7_2 ⑤) — 현재 업무 미수행(평가 · 지연 통계 포함) / 과거 자료 미확인(이관 전 · 보완 대상 · 평가 제외) / 해당 없음(집계 제외). 자료발송 · 입찰 · 계약 단계에 같이 적용 */
+ const liveFrom=()=>String(R().liveFrom||'2026-10-01');
+ function missKind(d,b){
+  if(!b)return '';if(b.kind==='na')return 'na';if(b.kind!=='none'&&b.kind!=='norecord')return '';
+  let legacy=false;try{const PS=root.PipelineScope;legacy=!!(PS&&PS.on&&PS.on()&&PS.isLegacy(d));}catch(e){}
+  const cr=dayKey((d&&(d.created||d.created_at))||'');
+  return (b.kind==='norecord'||legacy||(cr&&cr<liveFrom()))?'past':'cur';/* 이관 전 기록이 없거나 Live 기준일 전 자료 = 과거 · 그 뒤 건인데 담당이 안 채운 것 = 현재 업무 미수행 */
+ }
+ /* 한 묶음의 분해(단계 진단 '기준 넘김' 아래 · 리포트): 기한 초과 n · 날짜 미입력 n · 판정 불가 n — 합 = 전체. + 자료 없음 3가지(cur · past · na) */
+ function tally(list,key){const t={late:0,ok:0,nodate:0,norecord:0,na:0,total:0,missCur:0,missPast:0,missNa:0};(list||[]).forEach(d=>{if(!d)return;const b=basis(d,key);t[state(b).key]++;t.total++;const m=missKind(d,b);if(m==='cur')t.missCur++;else if(m==='past')t.missPast++;else if(m==='na')t.missNa++;});return t;}
+ const missCounts=t=>t?{cur:t.late+t.missCur,past:t.missPast,na:t.missNa}:null;
  const tallyText=t=>t?'기한 초과 '+t.late+' · 날짜 미입력 '+t.nodate+' · 판정 불가 '+t.norecord:'';
  /* 세 화면(목록 줄 · 오늘 업무 · 상세 · 지금 할 일 카드)이 같은 한 줄: '판정: 근거 → 추천 행동' */
  const line=b=>{if(b&&typeof b==='object'&&!('kind' in b))return '';const x=b&&b.kind?b:null;return x?'판정: '+x.why+(x.rec?' → '+x.rec:''):'';};
@@ -90,5 +99,5 @@
   const den=(deals||[]).filter(d=>d&&open(d)&&!legacy(d)),num=den.filter(d=>{const x=nextOf(d);return !!(x&&x.text&&x.due);});
   return {num:num.length,den:den.length,pct:den.length?Math.round(num.length*100/den.length):null,target:TARGET.nextRate,list:den.filter(d=>!num.includes(d))};
  }
- root.PipelineJudge={on,basis,dueText,dueClass,isLate,state,STATE,tally,tallyText,line,touchLines,week,inWeek,dayKey,md,nextRate,TARGET,rules};
+ root.PipelineJudge={on,basis,missKind,missCounts,dueText,dueClass,isLate,state,STATE,tally,tallyText,line,touchLines,week,inWeek,dayKey,md,nextRate,TARGET,rules};
 })(window);
