@@ -172,8 +172,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(()=>[document.querySelectorAll('#nowCard [data-dv3-nextdate]').length,document.querySelectorAll('#ddvPanel,#detailAction').length,document.querySelectorAll('#nowCard [data-dv3="nextmore"]').length]),[1,0,0]);
   await page.locator('#nowCard [data-dv3="nextcancel"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#nowCard .dv3-nextonly').count(),0);
   await page.locator('#nowCard [data-dv3="nextonly"]').click();await page.waitForTimeout(150);
-  await page.locator('#nowCard [data-dv3="nextpick"]',{hasText:'7일 후'}).click();await page.waitForTimeout(500);
-  assert.deepEqual(await page.evaluate(()=>__ops.slice(3).map(o=>[o.op,o.payload.text,o.payload.due_at])),[['next_action','다시 연락',await day(7)]]);assert.equal(await page.locator('#nowCard .dv3-nextonly').count(),0);
+  await page.locator('#nowCard [data-dv3="nextpick"]',{hasText:'7일 후'}).click();await page.waitForTimeout(300);
+  /* 기한 미루기(exec_wording): 지금 열린 기한보다 늦추면 원래 기한 · 새 기한 · 사유(필수) */
+  assert.equal(await page.locator('#ew-postpone').count(),1,'기한을 미루면 사유 창');await page.locator('#ew-postpone textarea').fill('고객 요청');await page.locator('#ew-postpone button[type=submit]').click();await page.waitForTimeout(500);
+  assert.deepEqual(await page.evaluate(()=>__ops.slice(3).filter(o=>o.op==='next_action').map(o=>[o.op,o.payload.text,o.payload.due_at])),[['next_action','다시 연락',await day(7)]]);assert.equal(await page.evaluate(()=>__ops.slice(3).some(o=>o.op==='activity'&&/^\[기한 변경\] 원래 .+\| 새 .+\| 사유 고객 요청$/.test(String(o.payload.note)))),true,'미룬 기록(원래 기한 · 새 기한 · 사유)');assert.equal(await page.locator('#nowCard .dv3-nextonly').count(),0);
   assert.deepEqual(await page.evaluate(()=>__writes.map(w=>w[0]).filter(o=>o!=='opportunity_touch')),[],'여기까지 다른 저장 없음');
   /* 소장이 바뀌었어요: 관리소장 카드 안 '새 관리소장 등록' 상자 */
   await page.locator('.dv3-left [data-dv3="replace"]').click();await page.waitForTimeout(250);

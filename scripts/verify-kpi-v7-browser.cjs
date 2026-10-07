@@ -51,7 +51,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 2. 왼쪽 진단 380px: 막대 · 작은 칸 3개 · 단계별 기준 넘긴 건 · 원인 4개 · 뭘 해야 하나 */
   assert.equal(await v.locator('.k7-left').evaluate(n=>getComputedStyle(n).flexBasis),'380px');
   assert.deepEqual(await v.locator('.k7-left .k7-card>header b').allInnerTexts(),['KPI 진단','관리팀 지표','왜 멈춰 있나','그래서 뭘 해야 하나'],'ops_12 D⑩: 관리팀 지표 칸');
-  assert.deepEqual(await v.locator('.k7-left .k7-mg .k7-tiles>div>span, .k7-left .k7-mg .k7-none').allInnerTexts().then(a=>a.length?a:['없음']),(await v.locator('.k7-left .k7-mg .k7-tiles').count())?['요청','기한 내 해결률','재요청률','평균 처리 시간']:['요청 저장소가 아직 서버에 없어 잴 수 없습니다'],'관리팀 지표 = 요청 · 기한 내 해결률 · 재요청률 · 평균 처리 시간(요청 엔진 기록)');
+  assert.deepEqual(await v.locator('.k7-left .k7-mg .k7-tiles>div>span, .k7-left .k7-mg .k7-none').allInnerTexts().then(a=>a.length?a:['없음']),(await v.locator('.k7-left .k7-mg .k7-tiles').count())?['요청','기한 내 해결률','재요청률','평균 처리 시간','기한 변경']:['요청 저장소가 아직 서버에 없어 잴 수 없습니다'],'관리팀 지표 = 요청 · 기한 내 해결률 · 재요청률 · 평균 처리 시간(요청 엔진 기록)');
   const K=await page.evaluate(()=>KpiV7.coreRows(KpiB.compute(),[],false).map(m=>({key:m.key,v:m.v,num:m.num,den:m.den,ok:m.ok,pilot:m.pilot,left:m.left,n:m.total})));/* 화면과 같은 줄 계산(견적문의 둘은 이번 주 월~금 · 2026-10-06 집계 ⑤) */
   const miss=K.filter(m=>m.v!=null&&!m.ok&&!m.pilot).length,pl=K.filter(m=>m.pilot).length,nd=K.filter(m=>m.v==null&&!m.pilot).length,hit=8-miss-nd-pl;/* 시범 측정(kpi:6)은 미달 · 달성에 넣지 않는다 */
   assert.match((await v.locator('.k7-leg').innerText()).replace(/\s+/g,' '),new RegExp('미달 '+miss+' ■ 달성 '+hit+' ■ 아직 못 잼 '+nd+(pl?' ■ 시범 · 평가 제외 '+pl:'')));

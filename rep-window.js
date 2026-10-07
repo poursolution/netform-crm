@@ -77,7 +77,7 @@
   const c=M.cur.length,miss=M.noNext.length,rate=pct(c-miss,c),step=Math.min(10,miss),f=M.first.length;
   const due=M.cur.filter(d=>{const n=nextOf(d);return !!(n&&n.due);}),kept=due.filter(d=>root.daysTo(nextOf(d).due)>=0),keep=pct(kept.length,due.length),qr=q&&q.met?pct(q.met-q.late,q.met):null;
   return [
-   {l:T[0],ai:f?'신규 배정 '+f+'건 · '+(avg!=null?'평균 첫 연결 '+avg+'시간':'첫 연결 기록 없음'):(M.inq.length?'신규 배정 '+M.inq.length+'건 모두 첫 연락 완료'+(avg!=null?' · 평균 첫 연결 '+avg+'시간':''):'이 기간 신규 배정 없음'),txt:f?'금요일까지 신규 배정 '+f+'건 첫 연락 완료':OK,m:{l:'첫 연락 전',u:'건',v:f,to:0,lower:true}},
+   {l:T[0],ai:f?'신규 배정 '+f+'건 · '+(avg!=null?'평균 첫 연결 '+avg+'시간':'첫 연결 기록 없음'):(M.inq.length?'신규 배정 '+M.inq.length+'건 모두 첫 연락 완료'+(avg!=null?' · 평균 첫 연결 '+avg+'시간':''):'이 기간 신규 배정 없음'),txt:f?(root.ExecWording&&root.ExecWording.on()?'밀린 첫 연락 '+f+'건 정리 · 금요일까지(신규 문의는 배정 후 2시간 안)':'금요일까지 신규 배정 '+f+'건 첫 연락 완료'):OK,m:{l:'첫 연락 전',u:'건',v:f,to:0,lower:true}},
    {l:T[1],ai:c?'진행 '+c+'건 중 '+miss+'건 다음 할 일 없음 (등록률 '+rate+'%)':'진행 중인 현장 없음',txt:miss?'이번 주 금액 큰 '+step+'건부터 다음 할 일 · 날짜 등록':OK,m:{l:'다음 할 일 등록률',u:'%',v:rate,to:c?pct(c-miss+step,c):null}},
    {l:T[2],ai:!q||!q.met?'미팅 완료 건이 없어 아직 잴 수 없음':q.late?'방문 후 견적 요청 없이 평균 '+q.avg+'일 · 미팅 완료 '+q.met+'건 중 '+q.late+'건':'미팅 완료 '+q.met+'건 모두 '+qd+'일 안 견적 요청',txt:q&&q.met&&!q.late?OK:'방문 후 '+qd+'일 안에 견적 요청 등록',m:{l:'방문 후 '+qd+'일 견적',u:'%',v:qr,to:qr==null?null:Math.max(qt,qr)}},
    {l:T[3],ai:due.length?'약속 '+due.length+'건 중 '+kept.length+'건 기한 내 ('+keep+'%)':'날짜가 있는 다음 할 일이 없어 아직 잴 수 없음',txt:due.length&&keep<warn?'기한 지난 약속 '+(due.length-kept.length)+'건 이번 주 안에 완료 · 날짜 다시 잡기':OK,m:{l:'약속 기한 내',u:'%',v:keep,to:keep==null?null:Math.max(warn,keep)}}];
@@ -116,7 +116,7 @@
   if(!st.open)st.open=M.G.length?{[M.G[0].k]:true}:{};
   const sel=T[st.c],txt=st.txt!=null?st.txt:(savedIdx===st.c&&saved.txt?saved.txt:sel.txt),tm=team(r.nm),tt=title(r.nm),role=[tm,tt&&tt.replace(/\s+/g,'')!==tm.replace(/\s+/g,'')?tt:''].filter(Boolean).join(' · ');
   const loadC=load.cls==='heavy'||load.cls==='busy'?AMB:load.cls==='free'?GREEN:INK;
-  const kpi=[['진행 금액',eok(r.pipeline),INK],['손볼 건',M.total+'건',M.total?RED:INK],['메이드율',mr==null?'–':mr.toFixed(1)+'%',INK],['업무량',LOAD[load.label]||load.label,loadC]];
+  const kpi=[['진행 금액',eok(r.pipeline),INK],['손볼 건',M.total+'건',M.total?RED:INK],['메이드율',mr==null?'–':mr.toFixed(1)+'%',INK],(root.ExecWording&&root.ExecWording.on()?(()=>{const L=root.ExecWording.loadOf(r),st=root.ExecWording.JUDGE_STYLE[L.judge]||[INK];return ['신규 배정',L.judge,st[0]];})():['업무량',LOAD[load.label]||load.label,loadC])];
   const head='<header class="rw-head"><div class="rw-who"><b id="rwTitle">'+h(r.nm)+'</b><span>'+h(role)+'</span><em class="'+t[1]+'">'+t[0]+'</em></div><div class="rw-sp"></div>'+kpi.map(k=>'<div class="rw-kpi"><span>'+k[0]+'</span><b style="color:'+k[2]+'">'+h(k[1])+'</b></div>').join('')+'<button type="button" class="rw-x" data-rw="close" aria-label="닫기">×</button></header>';
   /* 지난 코칭 · 이번 주 결과 */
   const P=past(r.nm);let pastHtml;
