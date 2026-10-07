@@ -93,8 +93,18 @@
  /* '조치 → 처리율'이 단계별 기준 요청도 세도록: 지금 기준을 넘긴 건의 열쇠(견적문의 몫) */
  function inquiryLive(){const out=[];try{stageGroups(new Set()).filter(g=>g.key==='inquiry').forEach(g=>g.rules.forEach(r=>r.targets.forEach(t=>out.push(r.pk+'|'+t.kind+':'+t.id))));}catch(e){}return out;}
  const reqBtn=(label,act,v,dis)=>!label?'<span class="k7-auto">자동 측정</span>':'<button type="button" class="k7-req'+(label==='보냄 ✓'?' sent':'')+'" data-k7="'+act+'" data-v="'+attr(v)+'"'+(label==='보냄 ✓'||dis?' disabled':'')+'>'+h(label)+'</button>';
+ /* ops_12 D⑩ 관리팀 지표 — 요청 수보다 해결: 요청(이번 주 등록 · 문구 복사 제외) · 기한 내 해결률 · 재요청률 · 평균 처리 시간. 요청 엔진 기록(WorkRequest · 최근 30일)에서만 센다 */
+ function mgmtMetrics(){
+  const W=R.WorkRequest;if(!W||!W.enabled||!W.enabled())return null;const L=W.state().list||[],j=J(),wk=j?j.week(0):null;
+  const week=L.filter(r=>wk&&j.inWeek(r.created_at,wk)&&r.status!=='cancelled');
+  const closed=L.filter(r=>r.closed_at&&(r.status==='done'||r.status==='replied')),onTime=closed.filter(r=>Date.parse(r.closed_at)<=Date.parse(r.due_at)).length;
+  const all=L.filter(r=>r.status!=='cancelled'),re=all.filter(r=>Number(r.round)>=2).length;
+  const avg=closed.length?closed.reduce((s,r)=>s+(Date.parse(r.closed_at)-Date.parse(r.created_at))/864e5,0)/closed.length:null;
+  return [['요청',week.length+'건','이번 주 등록 기준 · 문구 복사 제외'],['기한 내 해결률',closed.length?Math.round(onTime*100/closed.length)+'%':'–',closed.length?onTime+' / '+closed.length+' · 기한 안 처리':'완료된 요청 없음'],['재요청률',all.length?Math.round(re*100/all.length)+'%':'–',all.length?re+' / '+all.length+' · 같은 건 2번 이상 요청':'요청 없음'],['평균 처리 시간',avg==null?'–':(Math.round(avg*10)/10)+'일','요청 → 완료 · 최근 30일']];
+ }
  function html(){
   const s=ST(),C=K().compute(),PV=personVals(),rows=coreRows(C,PV,s.last),SG=stageGroups(C.done||new Set()),o=O(),w=K().weekly();
+  const MG=mgmtMetrics();
   const miss=rows.filter(r=>r.bad).length,nd=rows.filter(r=>r.nd).length,hit=rows.length-miss-nd,N=rows.length||1;
   const leftN=C.M.reduce((a,m)=>a+m.left,0),sentN=C.M.reduce((a,m)=>a+(m.todos.length-m.left),0);
   const cmp=C.M.filter(m=>m.v!=null&&m.last!=null).map(m=>{const d=m.v-m.last;return m.def[5]?-d:d;}),up=cmp.filter(d=>d>0).length,dn=cmp.filter(d=>d<0).length;
@@ -123,6 +133,7 @@
    +'<div class="k7-leg"><span><i class="a">■</i> 미달 <b>'+miss+'</b></span><span><i class="b">■</i> 달성 <b>'+hit+'</b></span><span><i class="c">■</i> 아직 못 잼 <b>'+nd+'</b></span></div>'
    +'<div class="k7-tiles"><div><span>목표 미달</span><b class="r">'+miss+'지표</b><small>오늘 처리</small></div><div><span>남은 요청</span><b>'+leftN+'건</b><small>보냄 '+sentN+'건</small></div><div><span>지난주보다</span><b>'+(cmp.length?'<span class="up">▲'+up+'</span> · <span class="dn">▼'+dn+'</span>':'–')+'</b><small>'+(cmp.length?'나아짐 · 나빠짐':'지난주 저장본 없음')+'</small></div></div>'
    +'<span class="k7-over">단계별 기준 넘긴 건 <b>'+stageOver+'건</b> · 오른쪽 \'단계별 기준\' 탭</span></section>'
+   +'<section class="k7-card k7-mg"><header><b>관리팀 지표</b><span>요청 수보다 해결</span></header>'+(MG?'<div class="k7-tiles">'+MG.map(m=>'<div><span>'+h(m[0])+'</span><b>'+h(m[1])+'</b><small>'+h(m[2])+'</small></div>').join('')+'</div>':'<p class="k7-none">요청 저장소가 아직 서버에 없어 잴 수 없습니다</p>')+'</section>'/* ops_12 D⑩ */
    +'<section class="k7-card"><header><b>왜 멈춰 있나</b><span>누르면 오른쪽이 걸러짐</span></header>'+causes+'</section>'
    +'<section class="k7-card"><header><b>그래서 뭘 해야 하나</b></header>'+acts+'</section></div>';
   /* 오른쪽 */

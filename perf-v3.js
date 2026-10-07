@@ -19,6 +19,29 @@
  const ymd=v=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(v||''));return m?m[1]+'.'+Number(m[2])+'.'+Number(m[3]):'';};
  const mdot=k=>{const m=/^\d{4}-(\d{2})-(\d{2})/.exec(String(k||''));return m?Number(m[1])+'.'+Number(m[2]):'';};
  const ring=(v,low,cls)=>'<div class="pf3-ring'+(cls?' '+cls:'')+'" style="background:conic-gradient('+(low?'#d14a3f':'#3b6ce4')+' 0 '+(v==null?0:Math.max(0,Math.min(100,v)))+'%,#eef0f3 '+(v==null?0:Math.max(0,Math.min(100,v)))+'% 100%)"><div><b class="'+(low?'red':'')+'">'+(v==null?'-':v.toFixed(1)+'%')+'</b><span>메이드율</span></div></div>';
+ /* ops_12 D⑪ 단계별 선행 → 결과. 선행 = 그 단계 진행 건 중 선행 행동이 기록된 비율, 결과 = 다음 단계로 움직인 비율(이력 · 필드) — 경쟁 · 입찰의 결과는 메이드율(같은 계산) */
+ function leadRows(made){
+  const deals=(R.B&&R.B.deals||[]),PS=R.PipelineScope;
+  const act=deals.filter(d=>{try{return PS&&PS.on()?PS.isActive(d):R.isActiveDeal(d);}catch(e){return false;}});
+  const grp=d=>{try{return R.PipelineStages.group(R.dealStage(d))||'';}catch(e){return '';}};
+  const fld=(d,s,k)=>{const c=d.stage_contexts&&d.stage_contexts[s];return c&&c.fields?c.fields[k]:'';},any=(d,k)=>{const c=d.stage_contexts||{};return Object.keys(c).some(s=>c[s]&&c[s].fields&&c[s].fields[k]);};
+  const pct=(a,b)=>b?Math.round(a*100/b):null,row=(s,a,an,ad,b,bn,bd,bsub)=>({s,a,an,ad,av:pct(an,ad),b,bn,bd,bv:pct(bn,bd),bsub});
+  const out=[];
+  try{const F=R.InquiryFlow,Q=(R.operationalInquiries(R.B.inquiries||[])||[]),asg=Q.filter(q=>{try{return !!R.inquiryAssigned(q);}catch(e){return false;}});
+   const st=q=>{try{return F&&F.on&&F.on()?F.state(q):null;}catch(e){return null;}};
+   const tried=asg.filter(q=>{const s=st(q);return !!(s&&(s.logs||[]).length);}),conn=asg.filter(q=>{const s=st(q);return !!(s&&s.firstConnectedAt);}),fit=conn.filter(q=>{try{return !!R.inqCtlConverted(q);}catch(e){return false;}});
+   out.push(row('견적문의','배정 · 연락 시도',tried.length,Q.length,'실제 연결 → 영업건 전환',fit.length,conn.length));}catch(e){out.push(row('견적문의','배정 · 연락 시도',0,0,'실제 연결 → 영업건 전환',0,0));}
+  const cons=act.filter(d=>grp(d)==='consulting'),met=cons.filter(d=>fld(d,'consulting','meeting_date')||fld(d,'first_contact','meeting_date')),qreq=met.filter(d=>fld(d,'consulting','quote_request')||fld(d,'consulting','quote_due'));
+  out.push(row('컨설팅 설계','미팅 확정 · 완료',met.length,cons.length,'미팅 후 견적 요청',qreq.length,met.length));
+  const sent=act.filter(d=>grp(d)==='sent'),fu=sent.filter(d=>fld(d,'sent','sent_date')&&fld(d,'sent','followup_date')),react=sent.filter(d=>{const r=fld(d,'sent','reaction');return !!r&&r!=='확인 전';});
+  out.push(row('자료 발송','견적 발송 · 후속 확인일',fu.length,sent.length,'고객 회신 · 반응 기록',react.length,sent.length));
+  const rel=act.filter(d=>grp(d)==='relationship'),nx=rel.filter(d=>{try{const a=R.actionObj(d,R.itemPatch(d,'deal'));return !!(a&&a.text&&a.due);}catch(e){return false;}});
+  const relEver=deals.filter(d=>Array.isArray(d.stageHistory)&&d.stageHistory.some(x=>['rapport','silent','waiting'].includes(x.to))),moved=relEver.filter(d=>d.stageHistory.some(x=>['compete','imminent','bidding'].includes(x.to)));
+  out.push(row('관계관리','다음 행동 등록',nx.length,rel.length,'경쟁 · 입찰 전환(단계 이력)',moved.length,relEver.length));
+  const comp=act.filter(d=>grp(d)==='competition'),dl=comp.filter(d=>any(d,'bid_deadline')||any(d,'decision_date')||any(d,'expected_contract'));
+  const r5=row('경쟁 · 입찰','제출 · 결과 일정 등록',dl.length,comp.length,'수주(메이드율)',0,0,'수주 ÷ (수주 + 실주)');r5.bv=made==null?null:Math.round(made);out.push(r5);
+  return out;
+ }
  function html(C){
   const D=R.DashB.lib,{B,P,L,made,q}=C,S=st(),LOW=D.LOWMADE(),MINC=D.MINCLOSED(),MINREC=D.MINREC,eok=D.eok;
   const money=v=>v>0?eok(v):v<0?'-'+eok(-v):'-',amt=v=>v>0?eok(v):'아직 없음';
@@ -54,6 +77,11 @@
   const funnel='<section class="pf3-fun"><div class="pf3-sh"><b>브랜드별 · 문의가 수주까지</b></div>'+BRW.map(b=>{const none=L.ready&&!b.w,lowB=L.ready&&!none&&b.made!==null&&b.made<LOW;/* 원장 읽는 중엔 '수주 없음' 단정 금지(2026-10-07 점검) */
     return '<div class="pf3-fr"><div><i style="background:'+b.c+'"></i><b>'+h(b.name)+'</b><u></u><b class="rt'+(!L.ready||none?' mut':lowB?' red':'')+'">'+(!L.ready?'불러오는 중':none?'수주 없음':b.made===null?'—':b.made.toFixed(1)+'%')+'</b></div><div class="bar'+(b.q||b.fit||b.w?'':' zero')+'"><span style="flex:'+b.q+';background:'+b.c+';opacity:.25"></span><span style="flex:'+b.fit+';background:'+b.c+';opacity:.55"></span><span style="flex:'+Math.max(b.w,1)+';background:'+b.c+'"></span></div><span>문의 '+b.q+' → 적합 '+b.fit+' → 수주 '+(L.ready?b.w:'—')+'</span></div>';}).join('')
    +(zero.length&&L.ready?'<span class="pf3-warn">'+h(zero.map(b=>b.name).join(' · ')+' — 적합 '+zero.reduce((s,b)=>s+b.fit,0)+'건인데 수주 0')+'</span>':'')+'</section>';
+  /* ── ③-2 단계별 선행 → 결과(ops_12 D⑪): 기록량이 아니라 다음 단계로 움직였는지 · 결과 50% 미만 빨강 · 숫자는 전부 자료에서(진행 중 영업건 · 단계 필드 · 단계 이력 · 견적문의 연락 기록) ── */
+  const LR=leadRows(made);
+  const leadSec='<section class="pf3-lead"><div class="pf3-sh"><b>단계별 선행지표 → 결과</b><span>기록량이 아니라 다음 단계로 움직였는지 · 결과 50% 미만 빨강</span></div>'
+   +'<div class="pf3-lt" role="table" aria-label="단계별 선행지표와 결과"><span class="hd">단계</span><span class="hd">선행 (했나)</span><span class="hd r"></span><span class="hd">결과 (움직였나)</span><span class="hd r"></span>'
+   +LR.map(r=>'<b>'+h(r.s)+'</b><span>'+h(r.a)+'<small>'+h(r.ad?r.an+' / '+r.ad+'건':'대상 없음')+'</small></span><b class="r">'+(r.av==null?'–':r.av+'%')+'</b><span>'+h(r.b)+'<small>'+h(r.bd?r.bn+' / '+r.bd+'건':r.bsub||'대상 없음')+'</small></span><b class="r'+(r.bv!=null&&r.bv<50?' red':'')+'">'+(r.bv==null?'–':r.bv+'%')+'</b>').join('')+'</div></section>';
   /* ── ④ 탭 ── */
   const TB=[['유입 브랜드 → 낙찰사 · 매출',P.label+' · 수주실적 = 낙찰금액 · 매출 = 회사에 실제 들어오는 금액(직접 계약 · 기술자문 · POUR 계약)'],['접수 월별 전환','같은 달 들어온 문의가 결국 몇 건 계약됐나'],['유입경로','어디서 계약되는 문의가 오나'],['기술자문','협약시공사 낙찰 건']];
   const tab=Math.max(0,Math.min(3,Number(S.tab)||0));
@@ -214,7 +242,7 @@
   const extraSec=R.G.perfExtraOff?'':extra();
   /* ── ⑤ 아직 판단 못 하는 것 ── */
   const pend=D.pendingStats(),pending='<div class="pf3-pending"><b>아직 판단 못 하는 것</b><span>기록이 '+MINREC+'건 쌓이면 자동으로 보입니다</span>'+pend.map(p=>p[1]>=MINREC?'<span>'+h(p[0])+' <b>'+h(p[2])+'</b> <small>'+p[1]+'건 기준</small></span>':'<span>'+h(p[0])+' <i><u style="width:'+Math.min(100,p[1]*100/MINREC)+'%"></u></i> '+p[1]+'/'+MINREC+'</span>').join('')+'</div>';
-  return '<div class="pf3">'+head+'<div class="pf3-mid">'+peopleSec+funnel+'</div>'+tabs+extraSec+pending+'</div>';
+  return '<div class="pf3">'+head+'<div class="pf3-mid">'+peopleSec+funnel+'</div>'+tabs+extraSec+leadSec+pending+'</div>';/* 새 구역은 기존 아래(탭 · 표 다음 · '아직 판단 못 하는 것' 앞) */
  }
  document.addEventListener('click',e=>{const b=e.target.closest('#si-perf [data-pf3]');if(!b)return;const k=b.dataset.pf3,v=Number(b.dataset.v)||0;if(k==='tab')st().tab=v;else if(k==='xt')st().xt=v;else if(k==='dim')st().dim=v;else return;try{R.DashB.render();}catch(err){}});
  root.PerfV3={enabled,html,state:st};
