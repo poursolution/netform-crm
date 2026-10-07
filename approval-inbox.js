@@ -102,7 +102,7 @@
  async function decide(x,decision,reason){
   const S=st();if(S.sending)return;S.sending=x.key;S.err='';render();
   let row=null;
-  try{const r=await R.OpsStore.rpc(RPC.decide,{id:x.id,decision,reason:reason||undefined});row=r.request;take(row);if(x.code==='contract_amount'&&row?.status==='approved')await R.ContractSalesData?.refresh?.();S.rej='';S.reason='';try{if(r.owner&&R.DealOwner)R.DealOwner.take(r.owner);}catch(e){}
+  try{const r=await R.OpsStore.rpc(RPC.decide,{id:x.id,decision,reason:reason||undefined});row=r.request;take(row);try{if(x.code==='contract_amount'&&row?.status==='approved')await R.ContractSalesData?.refresh?.();}catch(e){}S.rej='';S.reason='';try{if(r.owner&&R.DealOwner)R.DealOwner.take(r.owner);}catch(e){}
    /* 승인으로 반영된 자료(타사 이관 실적 · 수주 결과)를 다시 읽는다 — 대시보드 · 상세가 같은 자료를 본다 */
    if(r.applied){try{if(x.code==='transfer'&&R.DealTransfer&&R.DealTransfer.available())await R.DealTransfer.load();}catch(e){}try{if(x.code==='result_fix'&&R.DealWin&&R.DealWin.available())await R.DealWin.load();}catch(e){}try{if(x.code==='result_fix'&&r.applied.contract==='signed'&&R.ContractSalesData&&typeof R.ContractSalesData.refresh==='function')await R.ContractSalesData.refresh();}catch(e){}}}
   catch(e){S.err='저장하지 못했습니다: '+String(e&&e.message||e);}
