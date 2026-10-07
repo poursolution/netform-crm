@@ -7,7 +7,7 @@
 (function(root){
  'use strict';
  const R=root,h=v=>R.esc(String(v==null?'':v)),attr=v=>R.escAttr(String(v==null?'':v));
- const RPC={list:'crm_deal_owner_list_v1',reassign:'crm_deal_owner_reassign_v1'};
+ const RPC={change:'crm_deal_reassign_handover_v1',list:'crm_deal_owner_list_v1',reassign:'crm_deal_owner_reassign_v1'};
  const enabled=()=>!R.G.dealOwnerOff&&!!R.CRMRules&&!!R.OpsStore;
  const available=()=>enabled()&&R.OpsStore.has(RPC.list);
  const keepRule=()=>{try{return R.CRMRules.get('owner_keep_on_reassign')!==false;}catch(e){return true;}};
@@ -111,6 +111,35 @@
   st().attr='keep';
   try{R.DealDetailV3&&R.DealDetailV3.apply();}catch(e){}
  }
+ /* Server ACK precedes local owner/history updates. One request id survives an uncertain retry. */
+ const pendingChanges=new Map();
+ async function change(d,o){
+  if(!R.OpsStore?.has(RPC.change)||R.CRMRelease?.has(RPC.change)===false)throw Error('담당 변경 서버 적용 대기');
+  const identity=String(R.ME?.id||R.ME?.name||''),key=String(d.id),payload={deal_id:key,from:o.from,to:o.to,reason:o.reason,attribution:o.attr,
+   memo:String(R.G.dealOwnerV2?.memo||'').trim()};
+  const signature=JSON.stringify(payload);let pending=pendingChanges.get(key);
+  if(pending?.busy)return null;
+  if(!pending||pending.signature!==signature){pending={signature,requestId:crypto.randomUUID(),busy:false};pendingChanges.set(key,pending);}
+  pending.busy=true;
+  try{
+   const r=await R.OpsStore.rpc(RPC.change,{...payload,request_id:pending.requestId});
+   if(String(R.ME?.id||R.ME?.name||'')!==identity)throw Error('로그인 사용자가 변경되었습니다. 새로고침 후 확인해 주세요');
+   if(r.deal_id!==key||r.assignee!==o.to||!r.activity_id||!Number.isInteger(r.version))throw Error('담당 변경 저장 확인 응답이 올바르지 않습니다');
+   const p=R.itemPatch(d,'deal');
+   d.assignee=p.assignee=r.assignee;d.owner_id=r.owner_id;d.version=r.version;
+   p.assignmentHistory=p.assignmentHistory||[];
+   p.assignmentHistory.push({at:r.server_at,from:o.from,to:r.assignee,actor:rep(R.ME?.name),reason:o.reason,request_id:pending.requestId});
+   p.activities=p.activities||d.activities||[];
+   if(!p.activities.some(x=>x.id===r.activity_id))p.activities.push({id:r.activity_id,type:'담당자변경',note:(o.from||'미배정')+' → '+r.assignee,result:o.reason,at:r.server_at,actor_name:rep(R.ME?.name)});
+   d.activities=p.activities;
+   if(r.owner)take(r.owner);events.delete(key);
+   if(r.approval)R.ApprovalInbox?.take(r.approval);
+   R.WorkRequest?.load(true)?.catch(()=>{});
+   R.saveLocal?.();R.renderDetail?.();
+   toast(r.approval?'담당 변경과 인계 요청을 저장했습니다 · 귀속 변경은 승인 대기':'담당 변경과 인계 기록을 저장했습니다');
+   st().attr='keep';pendingChanges.delete(key);return r;
+  }finally{pending.busy=false;}
+ }
  /* 기존 담당자 변경 저장을 감싼다: 저장이 실제로 담당을 바꿨을 때만 뒤처리 */
  function wrap(){
   const base=R.saveAssigneeChange;if(typeof base!=='function'||base.__do)return;
@@ -118,6 +147,13 @@
    const c=R.CUR_DETAIL;if(!enabled()||!c||c.kind!=='deal')return base.apply(this,arguments);
    const d=c.item,sel=document.getElementById('dv-assignee'),from=rep(d.assignee),to=rep(sel&&sel.value);let reason='';try{reason=R.reasonValue('rs-asg');}catch(e){}
    const I=info(d),o={from,to,reason,attr:st().attr||'keep',perfBefore:I.perf||from,first:I.first};
+   if(!R.FIELD_DEMO){
+    if(!to||to===from||!reason)return Promise.resolve(null);
+    if(R.PeopleEligibility&&!R.PeopleEligibility.allowed(R.SALES_PEOPLE_MASTER,'pipeline',d,to)){
+     toast('이 현장의 조직에 속한 활성 영업담당자를 선택해 주세요');return Promise.resolve(null);
+    }
+    return change(d,o).catch(e=>{toast('담당 변경 저장 실패: '+String(e&&e.message||e),'warn');return null;});
+   }
    const r=base.apply(this,arguments);
    if(to&&to!==from&&rep(d.assignee)===to)after(d,o);
    return r;
@@ -125,5 +161,5 @@
   fn.__do=true;R.saveAssigneeChange=fn;
  }
  wrap();document.addEventListener('DOMContentLoaded',wrap);
- root.DealOwner={enabled,available,perf,first,info,shares,history,load,ensure,take,decorate,after,RPC,state:st};
+ root.DealOwner={enabled,available,perf,first,info,shares,history,load,ensure,take,decorate,after,change,RPC,state:st};
 })(window);

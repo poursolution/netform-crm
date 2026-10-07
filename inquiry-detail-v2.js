@@ -188,6 +188,8 @@
   const p=root.itemPatch(q,'inq')||{};(p.stageHistory||[]).forEach(x=>{if(x.from&&x.to&&x.from!==x.to)list.push({kind:'system',at:x.at,who:x.actor||'',src:'CRM',text:'상태 '+x.from+' → '+x.to});});
    acts(q).forEach(a=>{const e=parseEntry(a);if(e)list.push(e);});
    list.push(...externalResponses(q));
+   // Linked evidence is not another contact attempt or an automatic next action.
+   root.ContactLink?.linkedInto('inq:'+q.id).forEach(x=>list.push({kind:'system',at:x.at,who:x.who||'',src:'연결 기록',text:'원본: '+(x.site||'다른 건')+' · '+x.text}));
    /* 다른 PC 에서 남긴 응대 기록(서버 흐름 기록) — 이 PC 에 같은 기록이 있으면 InquiryFlow 가 한 번만 돌려준다 */
    if(FL())FL().logs(q).filter(l=>l.server).forEach(l=>list.push({kind:'contact',ch:l.ch,res:l.res,text:l.text||'',who:l.who||'',at:l.at,src:'CRM',next:l.next||''}));
    /* 견적 = 버전(금액은 원): v1 · 금액 · 보냄 / 초안 */
@@ -677,5 +679,6 @@
  /* 오늘 업무 등의 [문자]: 열려 있는 문의 상세를 문자 작은 창으로(문자 탭은 없앴다) */
  function openSms(){const ov=document.getElementById('inq-inbox-dialog');if(!ov||!curKey||root.G.inqDetailV2Off||!root.inqCtlFind(curKey,false))return false;const s=st(curKey);s.tab='sms';s.smsConfirm=false;reskinFrom();return true;}
  /* timeline · applyField · fieldEditable = 견적문의 v4(목록 옆 상세)가 같은 응대 이력 · 같은 빈 칸 저장 길을 쓴다 */
+ root.addEventListener?.('activity-links:changed',e=>{if(e.detail?.key==='inq:'+curKey)reskinKeepFocus();});
  root.InquiryDetailV2={reskin,state:st,bubbles,v3:V3,openSms,timeline,applyField,fieldEditable};
 })(window);

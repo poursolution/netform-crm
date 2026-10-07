@@ -15,6 +15,29 @@
  const today=()=>KST.format(new Date());
  const strip=t=>String(t==null?'':t).replace(MARK,'');
  const marker=keys=>keys&&keys.length?' [연결 '+keys.join(',')+']':'';
+ const LINK_RPC='crm_activity_links_v1',linkRows=new Map(),linkJobs=new Map(),linkTimes=new Map();let linkEpoch=0,linkIdentity='';
+ const identity=()=>JSON.stringify(root.Phase1?.profile||root.ME||null);
+ function clearLinks(){linkEpoch++;linkRows.clear();linkJobs.clear();linkTimes.clear();linkIdentity=identity();}
+ const serverLinks=()=>!root.FIELD_DEMO&&!!root.OpsStore?.has?.(LINK_RPC)&&root.CRMRelease?.has?.(LINK_RPC)===true;
+ const syncLinks=()=>{if(identity()!==linkIdentity)clearLinks();};
+ function loadLinks(key,force){
+  syncLinks();if(!serverLinks()||! /^(deal|inq):[0-9a-f-]{36}$/i.test(key))return Promise.resolve(false);
+  if(linkJobs.has(key))return linkJobs.get(key);
+  if(!force&&Date.now()-(linkTimes.get(key)||0)<60000)return Promise.resolve(linkRows.has(key));
+  const epoch=linkEpoch,owner=linkIdentity;linkTimes.set(key,Date.now());
+  const task=(async()=>{const [kind,id]=key.split(':'),items=[],seen=new Set();let after=null;
+   do{const r=await root.OpsStore.rpc(LINK_RPC,{target_type:kind==='inq'?'inquiry':'deal',target_id:id,after});
+    if(r?.ok!==true||!Array.isArray(r.items))throw Error('연결 기록 조회 응답을 확인할 수 없습니다');
+    items.push(...r.items);after=r.next_cursor||null;
+    if(after&&(seen.has(after)||seen.size>=100))throw Error('연결 기록 조회를 완료하지 못했습니다');if(after)seen.add(after);
+   }while(after);
+   syncLinks();if(epoch!==linkEpoch||owner!==linkIdentity)return false;
+   linkRows.set(key,items);root.dispatchEvent(new CustomEvent('activity-links:changed',{detail:{key}}));return true;
+  })().catch(e=>{syncLinks();if(epoch===linkEpoch){linkRows.delete(key);if(e?.code==='PGRST202')root.CRMRelease?.noteMissing?.(LINK_RPC);root.toast?.('연결 기록 조회 실패: '+String(e?.message||e),'warn');}return false;
+  }).finally(()=>{if(linkJobs.get(key)===task)linkJobs.delete(key);});linkJobs.set(key,task);return task;
+ }
+ root.addEventListener('phase1:identity-cleared',clearLinks);root.addEventListener('phase1:profile',clearLinks);
+ root.addEventListener('crm:read-state',e=>{if(e.detail?.ready)clearLinks();});
  const siteKey=x=>String(x&&(x.site_id||x.siteId||'')||'').trim();
  const siteName=x=>String(x&&(x.site||x.site_name||x.list_name||'')||'').replace(/\s+/g,' ').trim();
  const sameSite=(a,b)=>{const ka=siteKey(a),kb=siteKey(b);if(ka&&kb)return ka===kb;const na=siteName(a),nb=siteName(b);return !!na&&na===nb;};
@@ -73,10 +96,14 @@
  }
  const markerOf=box=>marker(selected(box).filter(k=>!/^req:/.test(k)));
  /* 저장 뒤: 관리 요청은 증빙으로 자동 완료 · 상자 비우기 */
- function afterSave(d,box){try{if(box){box.hidden=true;box.innerHTML='';}}catch(e){}try{root.WorkRequest&&root.WorkRequest.autoClose&&setTimeout(()=>root.WorkRequest.autoClose(),300);}catch(e){}}
+ function afterSave(d,box){clearLinks();root.ActivityContext?.clear?.();try{if(box){box.hidden=true;box.innerHTML='';}}catch(e){}try{root.WorkRequest&&root.WorkRequest.autoClose&&setTimeout(()=>root.WorkRequest.autoClose(),300);}catch(e){}}
  /* ── 연결된 건에서 읽기: 다른 건의 기록 중 이 건을 가리키는 표식이 있는 것 ── */
  function linkedInto(key){
   if(!on()||!key)return [];const want=String(key),out=[];
+  syncLinks();if(serverLinks()){
+   const selected=root.CUR_DETAIL?.kind==='deal'&&want==='deal:'+root.CUR_DETAIL.item.id||want==='inq:'+root.G?.inqSelKey||want==='inq:'+root.InquiryV4?.selected?.();
+   if(selected)loadLinks(want);return linkRows.get(want)||[];
+  }
   const scan=(rows,src,site)=>{(rows||[]).forEach(a=>{const n=String(a&&a.note||'');const m=/\[연결 ([^\]]*)\]/.exec(n);if(!m||!m[1].split(',').includes(want))return;out.push({at:a.at||a.occurred_at||a.created_at||'',who:a.actor_name||a.who||'',type:a.type||'',text:strip(n),src,site});});};
   try{(root.B&&root.B.deals||[]).forEach(x=>{const p=root.itemPatch?root.itemPatch(x,'deal')||{}:{};scan([].concat(x.activities||[],p.activities||[]),'deal:'+x.id,siteName(x));});}catch(e){}
   try{(root.B&&root.B.inquiries||[]).forEach(q=>{const p=root.itemPatch?root.itemPatch(q,'inq')||{}:{};scan([].concat(q.activities||[],p.activities||[]),'inq:'+(root.inqKey?root.inqKey(q):q.id),siteName(q));});}catch(e){}
@@ -84,11 +111,11 @@
  }
  /* ── 대기 이유 ── */
  function waitOf(d){
-  if(!d)return null;let best=null;
+  if(!d)return null;const stored=root.ActivityContext?.of?.(d);if(stored)return stored.wait;let best=null;
   try{const p=root.itemPatch?root.itemPatch(d,'deal')||{}:{};[].concat(d.activities||[],p.activities||[]).forEach(a=>{const m=WAIT_RE.exec(String(a&&a.note||''));if(!m)return;const at=String(a.at||a.occurred_at||'');if(!best||at>best.at)best={reason:m[1].trim(),until:m[2],at};});}catch(e){}
   return best;
  }
  const waitActive=d=>{const w=waitOf(d);return w&&w.until>=today()?w:null;};
  const waitText=(reason,until)=>'대기 이유: '+reason+' ('+until+'까지)';
- root.ContactLink={on,WAIT,related,extract,boxHtml,render,selected,marker,markerOf,strip,afterSave,linkedInto,waitOf,waitActive,waitText,sameSite};
+ root.ContactLink={on,WAIT,related,extract,boxHtml,render,selected,marker,markerOf,strip,afterSave,linkedInto,loadLinks,clearLinks,waitOf,waitActive,waitText,sameSite};
 })(window);

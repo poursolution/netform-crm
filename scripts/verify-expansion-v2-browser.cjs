@@ -29,7 +29,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    G.expansionBOff=true;/* B안(2026-10-03)은 verify-expansion-b 에서 */LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    window.__writes=[];window.pushWrite=(op,p)=>{__writes.push([op,p.expansion_status,p.next_contact_at]);return 'req';};
-   window.__rpc=[];SB={rpc:async(name,args)=>{if(name==='crm_improvement_task_list_v1')return {data:{ok:true,tasks:[]}};__rpc.push([name,args.p.source_opportunity_id,args.p.note]);return {data:{ok:true,event:{source_opportunity_id:args.p.source_opportunity_id,occurred_at:new Date().toISOString(),kind:'접촉·니즈',note:args.p.note,actor:'송보람'}}};}};TOKEN='test';
+   window.__rpc=[];SB={rpc:async(name,args)=>{if(name==='crm_improvement_task_list_v1')return {data:{ok:true,tasks:[]}};__rpc.push([name,args.p.source_opportunity_id,args.p.note]);if(name==='crm_expansion_contact_context_v1')return {data:{ok:true,events:B.expansion_events.filter(x=>x.source_opportunity_id===args.p.source_opportunity_id),dispatches:[]}};return {data:{ok:true,operation:name,request_id:args.p.request_id,source_opportunity_id:args.p.source_opportunity_id,target_ids:args.p.target_ids,linked_count:(args.p.target_ids||[]).length,event:{source_opportunity_id:args.p.source_opportunity_id,occurred_at:new Date().toISOString(),kind:'접촉·니즈',note:args.p.note,actor:'송보람'}}};}};TOKEN='test';
    window.__new=null;expansionOpenNew=id=>{window.__new=id;};
    goPage('expansion');
   });
@@ -81,7 +81,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   if(shot)await page.screenshot({path:shot+'-detail.png'});
   /* 기록 = 기존 서버 함수, 서버 확인 뒤 대화에 쌓임 */
   await d.locator('.idv-input textarea').fill('지하주차장 누수 문의 — 11월 견적 요청');await d.locator('.idv-save').click();await page.waitForTimeout(300);
-  assert.deepEqual(await page.evaluate(()=>__rpc.filter(r=>r[0]!=='crm_ops_settings_v1'&&r[0]!=='crm_ops_rules_v1'&&r[0]!=='crm_deal_transfer_list_v1'&&r[0]!=='crm_deal_win_list_v1'&&r[0]!=='crm_approval_list_v1'/* 로그인 뒤 설정 · 운영 기준 · 타사 이관 · 수주 유형 · 승인 요청 읽기 */)),[['crm_expansion_note','w2','지하주차장 누수 문의 — 11월 견적 요청']]);
+  assert.deepEqual(await page.evaluate(()=>__rpc.filter(r=>r[0]!=='crm_ops_settings_v1'&&r[0]!=='crm_ops_rules_v1'&&r[0]!=='crm_deal_transfer_list_v1'&&r[0]!=='crm_deal_win_list_v1'&&r[0]!=='crm_approval_list_v1'/* 로그인 뒤 설정 · 운영 기준 · 타사 이관 · 수주 유형 · 승인 요청 읽기 */)),[['crm_expansion_contact_context_v1','w2',undefined],['crm_expansion_contact_write_v1','w2','지하주차장 누수 문의 — 11월 견적 요청']]);
   assert.equal(await page.locator('#expansionV2 .xdv-c2 .idv-bubble').last().innerText(),'지하주차장 누수 문의 — 11월 견적 요청');
   /* 관리 상태 · 다음 접촉일 = 기존 저장 함수 */
   await page.locator('#expansionV2 .ddv-stages [data-value="니즈확인"]').click();await page.waitForTimeout(250);
@@ -92,6 +92,20 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 전환 = 기존 견적 확인 · 전환창 */
   await page.locator('#expansionV2 .xdv-convert').click();await page.waitForTimeout(200);
   assert.equal(await page.evaluate(()=>expansionRecords().find(r=>r.id===window.__new).sourceOpportunityId),'w2','기존 전환창이 이 고객으로 열림');assert.equal(await page.locator('#expansionV2.on').count(),0);
+  /* 서버 이력 도착이 작성 중인 입력을 지우지 않고, 단지 연락은 한 요청으로 저장한다. */
+  await page.evaluate(()=>{
+   const prior=OpsStore.rpc;window.__groupWrites=[];window.__resolveExpansion=null;
+   OpsStore.rpc=async(name,p)=>{if(name==='crm_expansion_contact_context_v1')return new Promise(resolve=>{window.__resolveExpansion=resolve;});if(name==='crm_expansion_contact_write_v1'){__groupWrites.push(p);return {ok:true,operation:name,request_id:p.request_id,source_opportunity_id:p.source_opportunity_id,target_ids:p.target_ids,linked_count:p.target_ids.length,event:{id:'group-event',source_opportunity_id:p.source_opportunity_id,note:p.note,actor:'송보람',kind:'접촉·니즈 기록',occurred_at:new Date().toISOString()}};}return prior(name,p);};
+   const records=expansionRecords(),r=records.find(x=>x.sourceOpportunityId==='w1'),s=records.find(x=>x.sourceOpportunityId==='w2');G.xbSiteNote={ids:[r.id,s.id]};ExpansionPool.open(r.id);
+  });
+  await page.waitForFunction(()=>window.__resolveExpansion);
+  await page.locator('#expansionV2 .idv-input textarea').fill('단지 연락 작성 중');
+  await page.evaluate(()=>__resolveExpansion({ok:true,events:[{id:'linked-read',source_opportunity_id:'w1',note:'기존 연결 기록',kind:'접촉·니즈 기록',occurred_at:new Date().toISOString()}],dispatches:[]}));
+  await page.waitForFunction(()=>document.querySelector('#expansionV2 .idv-thread').textContent.includes('기존 연결 기록'));
+  assert.equal(await page.locator('#expansionV2 .idv-input textarea').inputValue(),'단지 연락 작성 중');
+  await page.locator('#expansionV2 .idv-save').click();await page.waitForFunction(()=>__groupWrites.length===1);
+  assert.deepEqual(await page.evaluate(()=>__groupWrites.map(x=>[x.source_opportunity_id,x.target_ids,x.note])),[['w1',['w2'],'단지 연락 작성 중']]);
+  await page.evaluate(()=>ExpansionV2.close());
   /* 좁은 화면 · 끄기 */
   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(200);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'좁은 화면 넘침 없음');
