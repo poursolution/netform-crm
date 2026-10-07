@@ -27,7 +27,11 @@ const root=path.join(__dirname,'..'),one=s=>String(s||'').replace(/\s+/g,' ').tr
     inquiries:[{id:'q1',site:'[경북 경주] 전원하이빌',site_id:'s-A',brand:'POUR솔루션',status:'접수',created_at:'2026-10-03T01:00:00Z',assignee:'이필선'}],activities:[],inquiryTrash:[],inquiryCleanupArchived:[],expansion_pool:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'adm',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';window.saveLocal=()=>{};
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';
-   SB={rpc:async()=>({data:{ok:true,tasks:[],entries:[],sites:[],requests:[]}})};TOKEN='test';
+   CRMRelease.has=()=>true;window.__linkCalls=[];
+   SB={rpc:async(name,args)=>{if(name==='crm_activity_links_v1'){
+    __linkCalls.push(args.p);if(window.__holdLinks)await new Promise(r=>window.__resolveLinks=r);
+    return {data:{ok:true,items:args.p.target_id===U(5)?[{activity_id:'server-original',src:'deal:'+U(6),site:'[경기 수원] 연결받는현장',text:'통화 완료 · 소장과 방문 일정 협의',type:'전화',who:'황윤선',at:new Date().toISOString()}]:[],next_cursor:null}};
+   }return {data:{ok:true,tasks:[],entries:[],sites:[],requests:[]}};}};TOKEN='test';
    PipelineScope._reset();goPage('pipe');
   });
   /* AI 추출(규칙) */
@@ -47,9 +51,14 @@ const root=path.join(__dirname,'..'),one=s=>String(s||'').replace(/\s+/g,' ').tr
   assert.deepEqual(await page.evaluate(()=>[document.querySelectorAll('#detailView .cl-link.on').length,document.querySelector('#detailView #ddvComposer .idv-save').textContent]),[1,'기록 저장 · 1곳 반영'],'해제 가능');
   await page.evaluate(()=>closeDetail());await page.waitForTimeout(200);
   /* 연결된 건의 이력: 원본은 다른 건(U6)에 1건 · 이 건(U5)에는 '연결 기록'으로 보이고 표식은 숨는다 */
+  await page.evaluate(()=>ContactLink.loadLinks('deal:'+U(5)));
   const linked=await page.evaluate(()=>ContactLink.linkedInto('deal:'+U(5)).map(x=>x.src+'|'+x.text));
   assert.deepEqual(linked,['deal:'+await page.evaluate(()=>U(6))+'|통화 완료 · 소장과 방문 일정 협의'],JSON.stringify(linked));
-  await page.evaluate(()=>{G._detailPopup=true;drwDeal(JSON.stringify(B.deals[4]));});await page.waitForSelector('#detailView.on.dv3 .idv-thread');await page.waitForTimeout(300);
+  await page.evaluate(()=>{ContactLink.clearLinks();B.deals[5].activities=[];window.__holdLinks=true;G._detailPopup=true;drwDeal(JSON.stringify(B.deals[4]));});await page.waitForSelector('#detailView.on.dv3 .idv-thread');
+  await page.locator('#detailView #ddvComposer textarea').fill('입력 중인 메모 유지');
+  await page.waitForFunction(()=>typeof window.__resolveLinks==='function');await page.evaluate(()=>{__holdLinks=false;__resolveLinks();});
+  await page.waitForSelector('#detailView .cl-linked');
+  assert.equal(await page.locator('#detailView #ddvComposer textarea').inputValue(),'입력 중인 메모 유지','연결 기록을 읽어 와도 작성 중인 내용 유지');
   const msgs=await page.evaluate(()=>[...document.querySelectorAll('#detailView .idv-thread .idv-msg')].map(m=>m.className.includes('cl-linked')+'|'+m.querySelector('.idv-meta em')?.textContent+'|'+m.querySelector('.idv-bubble').textContent.replace(/\s+/g,' ').trim()));
   assert.ok(msgs.some(m=>/^true\|연결 기록\|원본: \[경기 수원\] 연결받는현장 · 통화 완료 · 소장과 방문 일정 협의$/.test(m)),JSON.stringify(msgs));
   assert.ok(!msgs.some(m=>/\[연결/.test(m)),'표식은 숨는다 '+JSON.stringify(msgs));
