@@ -35,6 +35,8 @@
   let btn=o.btn||['열기',''];const contactAct=btn[1]==='next'||btn[1]==='activity';
   if(noOwner)btn=['담당 배정','owner'];else if(!o.closed&&contactAct&&!telOf(d))btn=['연락처 찾기','contact'];
   const now=noOwner?'담당자 미지정':(o.now||'');
+  /* decision_collab ②③: '현재 상황' 앞 막힌 곳 꼬리표([고객] / [내부 · 견적팀] / [내부 · 자료 부족]) · 뒤에 '연락 n회 · 진척 없음 n일'(주황) */
+  let tagHtml='',staleHtml='';try{const DC=root.DecisionCollab,tg=DC&&DC.on()&&!noOwner?DC.tags(d):null;if(tg&&tg.block)tagHtml='<em class="dcb-tag'+(tg.block==='고객'?'':' in')+'">'+h(tg.block)+'</em>';if(tg&&tg.stale)staleHtml=' <em class="dcb-stale">'+h(tg.stale)+'</em>';}catch(e){}
   const task=noOwner?'담당자 배정':hasNext?String(r.next.text).trim():(o.task||''),lt=lastTouch(r),last=lt?'최근 연락 '+ymdDot(lt):NOLOG;
   const key=attr(r.key),A='data-'+ns;
   /* 판정 하나(2026-10-06 집계 · 판정 정리 · pipeline-judge.js): 최근 연락 두 줄(시도 / 실제 연결) · 기한 상태 3가지 · 다음 업무 아래 '판정: 근거' */
@@ -44,7 +46,7 @@
   const lastHtml=tl?'<small title="'+attr(tl.attempt)+'">'+h(tl.attempt)+'</small><small class="cn'+(tl.hasConnect?'':' none')+'">'+h(tl.connect)+'</small>':'<small>'+h(last)+'</small>';
   return '<div class="prv-row '+(cls||'')+'" role="row" tabindex="0" '+A+'="open" data-key="'+key+'"'+(o.tab!=null?' data-tab="'+attr(o.tab)+'"':'')+' style="border-left-color:'+(bc||'#e3e6ec')+'">'
    +'<div class="prv-a"><b title="'+attr(r.site)+'">'+h(r.site)+(root.advisoryBadge?root.advisoryBadge(d):'')+'</b><span><em style="color:'+(bc||'#9ca3af')+'">'+h(d.brand||'브랜드 미지정')+'</em> · '+h(workOf(r))+' · <i'+(noOwner?' class="r"':'')+'>'+h(owner||'미배정')+'</i></span></div>'
-   +'<div class="prv-b"><span title="'+attr(now)+'">'+h(now)+'</span>'+lastHtml+'</div>'
+   +'<div class="prv-b"><span title="'+attr(now)+'">'+tagHtml+h(now)+staleHtml+'</span>'+lastHtml+'</div>'
    +'<div class="prv-c"><b'+(task?'':' class="none"')+' title="'+attr(task)+'">'+h(task||'다음 업무 없음')+'</b>'+dueHtml+'</div>'
    +'<button type="button" '+A+'="act" data-key="'+key+'" data-v="'+attr(btn[1])+'">'+h(btn[0])+'</button></div>';
  }

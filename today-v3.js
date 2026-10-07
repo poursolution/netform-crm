@@ -71,7 +71,9 @@
   const back=backSrc.map(i=>({key:i.key,owner:i.x.owner||'미배정',days:i.days,site:i.i.site,stage:i.sName,amt:i.amt||0,x:i.x}))
    .concat((legacy||[]).filter(x=>teamBack||root.repN(x.owner)===me||!team).map(x=>{let amt=0;try{amt=Number(root.oppAmt(x.item))||0;}catch(e){}return {key:x.key,owner:x.owner||'미배정',days:legacyDays(x),site:x.item.site||x.item.site_name||'현장명 미입력',stage:x.stage||'',amt,x};}))
    .filter(b=>{if(seen.has(b.key))return false;seen.add(b.key);return true;});
-  const inGroup=new Set();groups.forEach(g=>{if(g.aux)return;/* 다시 보여 주는 표는 중복 정리에서 뺀다 */g.items=g.items.filter(i=>{if(inGroup.has(i.key))return false;inGroup.add(i.key);return true;});});
+  /* decision_collab ⑦: 같은 건의 경고는 한 묶음 — 중복 정리 전에 건마다 경고 문구를 모아 두고(경고 n), 줄은 한 번만 */
+  const AL=new Map();groups.forEach(g=>{if(g.aux)return;g.items.forEach(i=>{const a=AL.get(i.key)||[];const t=String(i.missTxt||'').trim();if(t&&!a.includes(t))a.push(t);AL.set(i.key,a);});});
+  const inGroup=new Set();groups.forEach(g=>{if(g.aux)return;/* 다시 보여 주는 표는 중복 정리에서 뺀다 */g.items=g.items.filter(i=>{if(inGroup.has(i.key))return false;inGroup.add(i.key);i.alerts=AL.get(i.key)||[];return true;});});
   /* 요청 업무: 답을 기다리는 건은 보낸 쪽 목록에서 빠지고 오른쪽 '답 기다리는 중'에 있다(같은 요청 잠금) */
   if(team&&root.WorkRequest&&root.WorkRequest.enabled())groups.forEach(g=>{g.items=g.items.filter(i=>!root.WorkRequest.locked(i,me));});
   return {role,team,me,groups,back:back.filter(b=>!inGroup.has(b.key)),teamBack,mine,teamAll};
@@ -215,7 +217,7 @@
   /* 목록 줄(② ③ · 첫 묶음의 5번째부터) */
   const J=root.PipelineJudge&&root.PipelineJudge.on()?root.PipelineJudge:null,judgeOf=i=>{if(!J||i.x.type!=='deal')return '';try{return J.line(J.basis(i.x.item));}catch(e){return '';}};/* 목록 · 상세와 같은 판정 함수(2026-10-06 집계 · 판정 정리 ②) */
   const row=(i,hot)=>{const k=attr(i.key),own=i.x.owner===me,far=team&&!own,who=far?(i.x.owner||'미배정'):([i.i.name,i.i.role].filter(Boolean).join(' ')||(team?i.x.owner:'고객 미등록')),noDay=i.rk==='contract'||i.rk==='data';
-   return '<div class="tv3-row" role="button" tabindex="0" data-t3="open" data-key="'+k+'"><span class="bd" style="color:'+i.bc+'">'+h(i.brand||'미입력')+'</span><span class="c"><b>'+h(i.i.site)+'</b><small>'+h([who,i.amt?money(i.amt):'금액 미정',i.missTxt,judgeOf(i)].filter(Boolean).join(' · '))+'</small></span><span class="d"><b'+(hot?' class="r"':'')+'>'+h(noDay?'-':i.short)+'</b><small>'+h(noDay?'':i.rk==='deadline'?(i.deadline?i.deadline.what:'마감'):i.dLabel)+'</small></span>'+(wrBtn(i,'')||'<button type="button" data-t3="act" data-key="'+k+'" data-act="'+attr(i.act)+'"'+(i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>'+h(i.act)+'</button>')+'</div>';};
+   return '<div class="tv3-row" role="button" tabindex="0" data-t3="open" data-key="'+k+'"><span class="bd" style="color:'+i.bc+'">'+h(i.brand||'미입력')+'</span><span class="c"><b>'+h(i.i.site)+'</b>'+(i.alerts&&i.alerts.length>1?'<em class="tv3-alert" title="'+attr(i.alerts.join(' · ')+' · '+(root.DecisionCollab&&i.x.type==='deal'?root.DecisionCollab.nextAlert(i.x.item):'같은 내용 하루 1회'))+'">경고 '+i.alerts.length+'</em>':'')+'<small>'+h([who,i.amt?money(i.amt):'금액 미정',i.missTxt,judgeOf(i)].filter(Boolean).join(' · '))+'</small></span><span class="d"><b'+(hot?' class="r"':'')+'>'+h(noDay?'-':i.short)+'</b><small>'+h(noDay?'':i.rk==='deadline'?(i.deadline?i.deadline.what:'마감'):i.dLabel)+'</small></span>'+(wrBtn(i,'')||'<button type="button" data-t3="act" data-key="'+k+'" data-act="'+attr(i.act)+'"'+(i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>'+h(i.act)+'</button>')+'</div>';};
   let shownNo=0;const kinded=V.groups.some(g=>g.kind);/* 표 묶음이 있으면 번호는 보이는 묶음 순서대로 */
   const groupsHtml=V.groups.map((g,gi)=>{const items=g.items.filter(pass);if(!items.length)return '';shownNo++;
    if(g.kind&&g.kind!=='cards'&&root.TodayAssist)return root.TodayAssist.groupHtml(g,items,gi,shownNo,root.ListPager.page(S,'g'+gi));

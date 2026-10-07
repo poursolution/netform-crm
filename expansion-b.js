@@ -24,7 +24,8 @@
   desc:()=>'준공 고객의 다음 매출 · 준공은 끝이 아니라 사후관리 → 재영업 — D+'+rules().after+' 사후 연락(만족도 · 하자 · 내년 공사 · 추가 공종 · 주변 단지) → 니즈 확인 → 견적 확인 후 새 영업건 전환 · 관계는 '+Math.round(rules().wait/30)+'개월 1회',
   axis:'사후관리 진행',
   S:[['after','사후 연락 · 관계 유지','#15171c','준공 후 사후 연락 · 주기마다 관계 연락'],['need','니즈 확인','#8a909c','견적 확인 후 새 영업건 전환'],['hold','보류 · 전환 완료','#d5d9e0','새 영업건에서 진행 · 보류는 연도 지정']],
-  RS:{late:['다음 접촉일 지남',RED,'연락','다음 접촉일이 지난 고객 — 오늘 통화 후 접촉 · 니즈 기록 + 다음 접촉일','note'],
+  RS:{defect:['하자 먼저 · 미해결 불만',RED,'하자 확인','미해결 하자 · 불만이 있으면 재영업 연락보다 하자 처리 확인이 먼저 — 해결로 기록되면 자동 해제(decision_collab ④)','source'],
+      late:['다음 접촉일 지남',RED,'연락','다음 접촉일이 지난 고객 — 오늘 통화 후 접촉 · 니즈 기록 + 다음 접촉일','note'],
       after30:['준공 후 사후 연락 안 함',RED,'사후 연락','만족도 · 하자 · 내년 공사 · 추가 공종 · 주변 단지 소개를 확인하는 사후 통화','note'],
       wait60:['관계 연락 주기 넘김',RED,'관계 연락','모든 수주 고객은 2개월 1회 관계 연락 · 입대의 · 관리소장 교체 여부 확인','note'],
       needwait:['니즈 확인 → 전환 대기',INK,'전환','확인한 니즈는 메모가 아니라 새 영업건 — 견적 발송 확인 후 전환','convert'],
@@ -45,7 +46,8 @@
   const bucket=done||hold?'hold':need?'need':'after';
   const cd=since(r.completionDate),ld=since(r.lastContactAt),nd=days(r.nextContactAt);
   const sub=(r.completionDate?'준공 '+ymd(r.completionDate):'준공일 미기록')+(r.lastContactAt?' · 마지막 접촉 '+ymd(r.lastContactAt):' · 접촉 기록 없음')+(done?' · 전환 완료':hold?' · 보류':need?(r.needNote?' · 니즈 '+r.needNote:''):(r.nextContactAt?' · 다음 '+ymd(r.nextContactAt):''));
-  const rs=[];
+  const rs=[];let defect=false;try{const DC=root.DecisionCollab;defect=!!(DC&&DC.on()&&d&&d.id&&DC.openDefect(d));}catch(e){}
+  if(bucket!=='hold'&&defect)rs.push('defect');/* 하자 먼저: 재영업 사유(접촉 · 사후 연락 · 관계 연락)는 뒤로 */
   if(bucket!=='hold'){
    if(nd!==null&&nd<0)rs.push('late');
    if(bucket==='after'&&cd!==null&&cd>=q.after&&!r.lastContactAt)rs.push('after30');
