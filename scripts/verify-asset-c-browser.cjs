@@ -46,13 +46,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await v.locator('.ac-title').evaluate(n=>[getComputedStyle(n.querySelector('b')).fontSize,getComputedStyle(n.querySelector('span')).color]),['20px','rgb(75, 85, 99)']);
   assert.equal(await v.locator('.av-more,[data-ac-address]').count(),0);assert.equal(await v.locator('.ac-title [data-ac="advisory"]').count(),1);assert.deepEqual(await v.locator('.ac-top>*').evaluateAll(l=>l.map(n=>n.className)),['ac-title','ac-tabs','ac-people','ac-listhd']);
   /* 1. 관계 상태 = 밑줄 탭 · 숫자 색 */
-  assert.deepEqual(await v.locator('.ac-tabs [role=tab]').evaluateAll(l=>l.map(n=>[n.querySelector('span').textContent,n.querySelector('b').textContent,n.querySelector('b').className,n.getAttribute('aria-selected')])),[['전체','4','','true'],['활성','1','','false'],['재접촉 필요','0','zero','false'],['관계위험','1','hot','false'],['기존고객','1','','false'],['휴면','1','','false']]);
+  assert.deepEqual(await v.locator('.ac-tabs [role=tab]').evaluateAll(l=>l.map(n=>[n.querySelector('span').textContent,n.querySelector('b').textContent,n.querySelector('b').className,n.getAttribute('aria-selected')])),[['전체','4','','true'],['활성','1','','false'],['재접촉 필요','0','zero','false'],['반복 실주','1','hot','false'],['기존고객','1','','false'],['휴면','1','','false']]);
   assert.deepEqual(await v.locator('.ac-tabs [role=tab]').evaluateAll(l=>[getComputedStyle(l[0]).borderBottomColor,getComputedStyle(l[1]).borderBottomColor,getComputedStyle(l[3].querySelector('b')).color,getComputedStyle(l[2].querySelector('b')).color]),['rgb(21, 23, 28)','rgba(0, 0, 0, 0)','rgb(180, 35, 24)','rgb(201, 205, 213)']);
   /* 2. 담당자별 위험 = 알약(위험 많은 순) */
-  assert.deepEqual(await v.locator('.ac-people>button:not(.ac-moreppl)').evaluateAll(l=>l.map(n=>[n.querySelector('b').textContent,n.querySelector('span').textContent,(n.querySelector('em')||{}).textContent||'',n.className])),[['황윤선','1곳','위험 1',''],['김성민','1곳','','none'],['이필선','1곳','','none'],['한준엽','1곳','','none']]);
+  assert.deepEqual(await v.locator('.ac-people>button:not(.ac-moreppl)').evaluateAll(l=>l.map(n=>[n.querySelector('b').textContent,n.querySelector('span').textContent,(n.querySelector('em')||{}).textContent||'',n.className])),[['황윤선','1곳','반복 실주 1',''],['김성민','1곳','','none'],['이필선','1곳','','none'],['한준엽','1곳','','none']]);
   /* 3. 관계 기준 접기 */
   assert.equal(await v.locator('.ac-rules').count(),0);await v.locator('[data-ac="rule"]').click();
-  assert.deepEqual(await v.locator('.ac-rules>div').allInnerTexts(),['진행 중 단지 30일 안에 한 번 연락','수주 고객 2개월에 한 번 관계 연락','실주 단지 사유 확인 후 재제안 시기 등록']);await v.locator('[data-ac="rule"]').click();
+  assert.deepEqual(await v.locator('.ac-rules>div').allInnerTexts(),['집중 견적 후 7일 후속','일반 월 1회','대기 2개월 1회','보류 재검토일','미확인 분류 보완 · 재접촉 대상에서 제외','수주 고객 2개월에 한 번 관계 연락','실주 단지 사유 확인 후 재제안 시기 등록','고객과 약속한 날짜가 있으면 그 날짜 우선 · 관계관리 단계와 같은 기준']);await v.locator('[data-ac="rule"]').click();
   /* 4. 목록 제목 · 열 · 줄: 누적 수주 · 진행 중을 크게, 상태 꼬리표 한 번, 이유 줄은 금액 · 사유만 */
   assert.equal(await v.locator('.ac-listhd').innerText().then(s=>s.replace(/\s+/g,' ')),'확인할 단지 4곳 오래 연락 안 한 순 리스트 보드');
   assert.deepEqual(await v.locator('.ac-head>span').allInnerTexts(),['단지 · 담당 · 관리소장','누적 수주','진행 중','지금 상태','마지막 연락','']);
@@ -60,7 +60,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const R=await rows();
   assert.deepEqual(R.map(r=>r.site),['오산 원동 e편한세상','예현마을현대홈타운아파트','수주 뒤 조용한 단지','시범현대아파트'],'오래 연락 안 한 순');
   const by=Object.fromEntries(R.map(r=>[r.site,r]));
-  assert.deepEqual(by['예현마을현대홈타운아파트'],{site:'예현마을현대홈타운아파트',sub:'석민이앤씨 · 황윤선 · 관리소장 미확인',acc:['0원','수주 없음'],prog:['3.7억','1건 진행'],tag:'관계위험',why:'진행 3.7억 · 실주 2건 · 120일 연락 없음',days:'120일',late:true,act:'연락'});
+  assert.deepEqual(by['예현마을현대홈타운아파트'],{site:'예현마을현대홈타운아파트',sub:'석민이앤씨 · 황윤선 · 관리소장 미확인',acc:['0원','수주 없음'],prog:['3.7억','1건 진행'],tag:'반복 실주',why:'진행 3.7억 · 실주 2건 · 120일 연락 없음',days:'120일',late:true,act:'연락'});
   assert.deepEqual(by['수주 뒤 조용한 단지'],{site:'수주 뒤 조용한 단지',sub:'POUR솔루션 · 김성민 · 박소장 관리소장',acc:['5.3억','2건'],prog:['0원','진행 없음'],tag:'기존고객',why:'수주 고객 · 2개월 관계 연락 시기',days:'80일',late:true,act:'안부 연락'},'협약시공사 수주 = 낙찰금액 5억(예상 9억 · 기술자문료 1억 아님) + 직접 수주 3,000만');
   assert.deepEqual([by['시범현대아파트'].acc,by['시범현대아파트'].prog,by['시범현대아파트'].tag,by['시범현대아파트'].days,by['시범현대아파트'].late,by['시범현대아파트'].act],[['400만','1건'],['2,000만','1건 진행'],'활성','9일',false,'열기']);
   assert.match(by['시범현대아파트'].why,/^수주 1건 · .*중$/);assert.doesNotMatch(R.map(r=>r.why).join(' '),/관계위험|재접촉 필요|기존고객|활성|휴면/,'이유 줄에 꼬리표와 같은 말을 쓰지 않는다');
@@ -69,14 +69,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await r0.evaluate(n=>[getComputedStyle(n).borderLeftColor,getComputedStyle(n).gridTemplateColumns.split(' ').slice(1,3).join(' '),getComputedStyle(n.querySelectorAll('.ac-amt b')[0]).color,getComputedStyle(n.querySelectorAll('.ac-amt b')[1]).color,getComputedStyle(n.querySelectorAll('.ac-amt b')[1]).fontSize,getComputedStyle(n.querySelector('.ac-state>span')).color,getComputedStyle(n.querySelector('.ac-state>span')).backgroundColor,getComputedStyle(n.querySelector('.ac-days')).color]),['rgb(232, 89, 12)','110px 110px','rgb(201, 205, 213)','rgb(29, 63, 153)','14px','rgb(180, 35, 24)','rgb(253, 236, 236)','rgb(180, 35, 24)']);
   assert.equal(await v.locator('.ac-foot').innerText(),'누적 수주 = 이 단지에서 지금까지 수주한 낙찰금액 합 · 진행 중 = 열려 있는 영업건 예상금액 합');
   /* 5. 왼쪽: 단지에 쌓인 금액 · 왜 멈춰 있나 */
-  assert.deepEqual(await v.locator('.ac-num').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent))),[['누적 수주 (전 단지)','5.3억','수주한 단지 2곳 · 평균 2.7억'],['지금 진행 중','3.9억','현재 영업기회 2건 · 3.9억 / 과거 미정리 · 이관 0건 · 0원 · 단지 2곳'],['위험한 진행 금액','3.7억','관계위험 · 재접촉 필요 단지에 걸린 금액']]);
-  assert.deepEqual(await v.locator('.ac-num b').evaluateAll(l=>l.map(n=>getComputedStyle(n).color)),['rgb(21, 23, 28)','rgb(29, 63, 153)','rgb(180, 35, 24)']);
+  assert.deepEqual(await v.locator('.ac-num').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent))),[['누적 수주 (전 단지)','5.3억','수주한 단지 2곳 · 평균 2.7억'],['현재 영업기회','3.9억','2건 · 파이프라인과 같은 숫자'],['과거 검토 금액','0원','0건 · 이관 · 미정리 · 위험 판정은 정리 후'],['현재 위험 금액','3.7억','현재 영업기회 중 기한 초과 · 원인 확인 필요 단지']]);
+  assert.deepEqual(await v.locator('.ac-num b').evaluateAll(l=>l.map(n=>getComputedStyle(n).color)),['rgb(21, 23, 28)','rgb(29, 63, 153)','rgb(107, 114, 128)','rgb(180, 35, 24)']);
   const why=await v.locator('.ac-why button').evaluateAll(l=>l.map(n=>[n.querySelector('b').textContent,n.querySelector('b.n').textContent,n.querySelector('span').textContent]));
-  assert.deepEqual(why.slice(0,2),[['관계위험 · 진행 금액 걸림','1','3.7억 걸림'],['실주 2회 · 수주 없음','1','재제안 시기 미등록']]);
+  assert.deepEqual(why.slice(0,2),[['반복 실주 · 진행 금액 걸림','1','3.7억 걸림'],['실주 2회 · 수주 없음','1','재제안 시기 미등록']]);
   if(shot)await page.screenshot({path:shot+'-list.png',fullPage:true});
   /* 6. 탭 · 알약 · 사유 = 목록 필터, [필터 · 해제] */
-  await v.locator('.ac-tabs [role=tab]',{hasText:'관계위험'}).click();await page.waitForTimeout(200);
-  assert.equal(await v.locator('.ac-listhd').innerText().then(s=>s.replace(/\s+/g,' ')),'확인할 단지 1곳 진행 금액이 걸린 곳 먼저 관계위험 · 해제 리스트 보드');assert.deepEqual((await rows()).map(r=>r.site),['예현마을현대홈타운아파트']);
+  await v.locator('.ac-tabs [role=tab]',{hasText:'반복 실주'}).click();await page.waitForTimeout(200);
+  assert.equal(await v.locator('.ac-listhd').innerText().then(s=>s.replace(/\s+/g,' ')),'확인할 단지 1곳 진행 금액이 걸린 곳 먼저 반복 실주 · 해제 리스트 보드');assert.deepEqual((await rows()).map(r=>r.site),['예현마을현대홈타운아파트']);
   await v.locator('[data-ac="clear"]').click();await page.waitForTimeout(200);assert.equal((await rows()).length,4);
   await v.locator('.ac-people>button',{hasText:'김성민'}).click();await page.waitForTimeout(250);
   assert.deepEqual((await rows()).map(r=>r.site),['수주 뒤 조용한 단지']);assert.equal(await page.evaluate(()=>SalesScope.state().owner),'김성민','위 담당자 칸과 같이 바뀐다');

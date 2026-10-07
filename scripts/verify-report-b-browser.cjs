@@ -51,7 +51,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await v.locator('.rb-funnel>div>span').allInnerTexts(),['신규 견적문의','적합 문의','견적 발송','파이프라인 전환','수주실적']);
   assert.deepEqual(await v.locator('.rb-funnel>div>b').allInnerTexts(),['4건','2건','1건','1건','2건 · 8억']);
   assert.match(await v.locator('.rb-funnel>div').nth(0).innerText(),/▲3 \(1\)/);assert.match(await v.locator('.rb-funnel>div').nth(1).innerText(),/종결 2 제외 · Bad Fit 2/);assert.match(await v.locator('.rb-funnel>div.last').innerText(),/▲1건 · \+6억/);
-  assert.deepEqual(await v.locator('.rb-rates>div>span').allInnerTexts().then(a=>a.slice(0,3)),['영업 메이드율','문의 적합률','문의 → 계약 전환율']);
+  assert.deepEqual(await v.locator('.rb-rates>div>span').allInnerTexts().then(a=>a.slice(0,3)),['영업 메이드율','문의 적합률','월간 계약 · 문의 비율 (활동량)']);
   assert.deepEqual(await v.locator('.rb-rates p b').allInnerTexts().then(a=>a.slice(0,3)),['40.0%','50.0%','50.0%'],'메이드율 = 수주 2 ÷ (수주 2 + 실주 3) — 배드핏 2건은 분모에 없음');
   assert.match(await v.locator('.rb-rates>div').nth(0).innerText(),/수주 2 ÷ \(수주 2 \+ 실주 3\) · 배드핏 제외/);
   /* 3. 놓친 것 두 종류 */
