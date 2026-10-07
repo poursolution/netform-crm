@@ -91,7 +91,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(S.mgr.groups[0].cards.join('\n'),/담당 배정 안 됨[^\n]*\| 견적문의 \| 길음뉴타운9단지 \| 담당 미배정[^\n]*\| 배정\/재배정\/상세 보기/,'담당이 없는 건에는 [담당 화면] 대신 [상세 보기]');
   assert.doesNotMatch(all('mgr'),/마감 전 준비 안 됨|지원 요청/,'영업관리는 개입 범위만');
   assert.match(S.mgr.groups[2].rows.join('\n'),/고덕아이파크 \| 정정훈 · 2\.1억 · 계약정보 입력 안 함( · 판정: [^|]+)? \| -\s+\| 입력 요청/);assert.match(S.mgr.groups[2].rows.join('\n'),/이천신한아파트/);
-  assert.match(S.mgr.backT,/^밀린 건 정리 3건90일 넘게 기록 없음 · 오늘 할 일과 따로 · 담당자에게 정리\(진행 \/ 보류 \/ 실주 \/ 배드핏\) 요청보기 ▼$/);
+  assert.match(S.mgr.backT,/^밀린 건 정리 3건이번 주 새로 멈춘 \d+건 · 이전부터 누적 \d+건(\(이관 전 기록 확인 필요 \d+건 포함 · 미응대로 평가하지 않음\))? · 90일 넘게 기록 없음 · 오늘 할 일과 따로 · 담당자에게 정리\(진행 \/ 보류 \/ 실주 \/ 배드핏\) 요청보기 ▼$/,'ops_12 B⑥: 이번 주 새로 멈춘 vs 이전부터 누적');
   /* 영업사원: 내 담당만 · 담당 칸 = 고객명 · 본인 밀린 건만 */
   assert.doesNotMatch(all('rep'),/성산시영|고덕아이파크|분당시범우성|이천신한|평동동남|율량동아/,'남의 현장 없음');
   assert.match(S.rep.groups[0].cards.join('\n'),/\| 담당 김소장 관리소장 · 010-7777-8888 \| [^\n]*\/문자\/결과 기록/);

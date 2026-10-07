@@ -61,7 +61,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   }
   await page.evaluate(()=>(G.briefBOff=true,goPage('brief')));await page.waitForTimeout(300);
   const bar=page.locator('#pg-brief>.cf-bar');
-  assert.deepEqual(await bar.locator('[data-cf="owner"] optgroup').evaluateAll(a=>a.map(o=>o.label)).then(a=>a.filter(x=>x==='내부직원').length),1,'담당자 구분은 선택 안의 묶음 머리');
+  assert.deepEqual(await bar.locator('[data-cf="owner"] optgroup').evaluateAll(a=>a.map(o=>o.label)),['영업','관리 · 경영','지사 · 그 밖'],'담당자 묶음 = 영업 / 관리 · 경영 / 지사 · 그 밖(ops_12 B④)');
+  assert.ok((await bar.locator('[data-cf="owner"] option').evaluateAll(a=>a.map(o=>o.textContent))).some(t=>/^미배정/.test(t)),'미배정 항목');
   await bar.locator('[data-cf="owner"]').selectOption('이필선');await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>G.rep),'이필선','담당자 = 기존 공통 상태');
   await bar.locator('[data-cf="clear"]').click();await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>G.rep),'전체');
   const y=String(new Date().getFullYear());await bar.locator('[data-cf="period"]').selectOption(y+'|3');await page.waitForTimeout(300);assert.deepEqual(await page.evaluate(()=>[String(G.year),G.quarter]),[y,3],'기간 = 기존 연도 · 분기 상태');

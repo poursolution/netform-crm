@@ -6,8 +6,9 @@
  'use strict';
  const R=root,h=v=>R.esc(String(v==null?'':v)),attr=v=>R.escAttr(String(v==null?'':v)),CR=()=>R.CRMRules;
  const TAG={fix:['확정','#374151','#eef0f3'],cond:['조건부','#1d3f99','#eef3fe'],hold:['보류','#8a5a00','#fff4d6']};
- /* 지금 화면 계산에 실제로 쓰이는 조건부 항목(나머지는 값만 저장 — 연결 예정) */
- const WIRED=new Set(['approvers','stage_gates','assign_minutes','long_wait_contact_days','reasons_bad_fit','reasons_lost','contact_channels','transfer_result_check_days','reasons_transfer']);
+ /* 지금 화면 계산에 실제로 쓰이는 항목(ops_12 B⑤ '적용 중' 알약 · 2026-10-07 코드 대조: CRMRules.get · OPS_RULES sync 로 읽히는 열쇠) — 나머지는 '값만 저장 · 화면 미적용' */
+ const WIRED=new Set(['approvers','stage_gates','assign_minutes','first_contact_hours','inactive_days','quote_followup_days','long_wait_contact_days','care_focus_months','care_general_months','unreachable_attempts','unreachable_interval_days','transfer_result_check_days','reasons_bad_fit','reasons_lost','reasons_transfer','contact_channels','owner_keep_on_reassign','auto_owner_attribution']);
+ const PILL=on=>'<span class="ra-pill" style="color:'+(on?'#1f7a4d':'#6b7280')+';background:'+(on?'#e8f6ee':'#f3f4f6')+'">'+(on?'적용 중':'값만 저장 · 화면 미적용')+'</span>';
  function st(){const g=R.G;if(!g.rulesAdmin)g.rulesAdmin={draft:{},adding:'',busy:false,err:''};return g.rulesAdmin;}
  const admin=()=>{try{return !!R.todayIsAdmin();}catch(e){return false;}};
  const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
@@ -37,7 +38,7 @@
   else if(r.type==='chips'){const list=v||[];ctl='<div class="ra-chips">'+list.map((c,i)=>edit?'<button type="button" class="ra-chip" data-ra="chip-del" data-k="'+attr(r.k)+'" data-i="'+i+'" title="눌러서 빼기"'+(list.length>1?'':' disabled')+'>'+h(c)+'<i>×</i></button>':'<span class="ra-chip">'+h(c)+'</span>').join('')
     +(edit?(S.adding===r.k?'<input class="ra-add" data-ra="add-input" data-k="'+attr(r.k)+'" maxlength="30" placeholder="새 항목 · Enter" aria-label="'+attr(r.l)+' 항목 추가">':'<button type="button" class="ra-plus" data-ra="add" data-k="'+attr(r.k)+'">+ 추가</button>'):'')+'</div>';}
   else ctl='<span class="ra-text">'+h(r.text)+'</span>';
-  const note=r.st==='fix'?'<span class="ra-lock">회의 확정 · 변경 불가</span>':r.st==='cond'&&r.k&&!WIRED.has(r.k)?'<span class="ra-lock">화면 연결 예정 · 값은 저장됩니다</span>':'';
+  const note=(r.st==='fix'?'<span class="ra-lock">회의 확정 · 변경 불가</span>':'')+(r.k&&r.st!=='hold'?PILL(WIRED.has(r.k)):'');/* 항목마다 적용 중(초록) / 값만 저장 · 화면 미적용(회색) 알약을 토글 옆에(ops_12 B⑤) */
   return '<div class="ra-row'+(changed?' chg':'')+'"><div class="ra-l"><div><b>'+h(r.l)+'</b><em style="color:'+t[1]+';background:'+t[2]+'">'+t[0]+'</em>'+(changed?'<em class="new">변경됨</em>':'')+'</div><span>'+h(r.d)+'</span>'+(im?'<span class="ra-imp">'+h(im)+'</span>':'')+'</div><div class="ra-r">'+ctl+note+'</div></div>';
  }
  const when=v=>{const d=new Date(v);return Number.isFinite(d.getTime())?d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate():'';};

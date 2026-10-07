@@ -230,7 +230,11 @@
    const by=new Map();V.back.forEach(b=>{const v=by.get(b.owner)||{n:0,old:0,list:[]};v.n++;v.old=Math.max(v.old,b.days||0);v.list.push(b);by.set(b.owner,v);});
    const list=[...by].sort((a,b)=>b[1].n-a[1].n),max=Math.max(1,...list.map(x=>x[1].n)),selfOnly=!V.teamBack;
    const title=(role==='mgr'?'밀린 건 정리':role==='lead'?'팀 밀린 건':role==='rep'?'내 밀린 건':'본인 밀린 건')+' '+backN+'건';
-   const subT=BACK()+'일 넘게 기록 없음 · '+(V.teamBack?'오늘 할 일과 따로 · 담당자에게 정리(진행 / 보류 / 실주 / 배드핏) 요청':'진행 / 보류 / 실주 / 배드핏으로 정리하면 오늘 업무가 가벼워집니다');
+   /* ops_12 B⑥: 이번 주 새로 멈춘 건(이번 주에 처음 기준을 넘김) vs 이전부터 누적(이관 전 기록 확인 필요 포함 · 미응대로 평가하지 않음) */
+   const J=root.PipelineJudge&&root.PipelineJudge.on()?root.PipelineJudge:null,wk=J?J.week(0):null,sinceMon=wk?Math.max(0,Math.round((Date.parse(J.dayKey(new Date())+'T00:00:00')-Date.parse(wk.mon+'T00:00:00'))/864e5)):7;
+   let fresh=0,pre=0;V.back.forEach(b=>{const over=(Number(b.days)||0)-BACK();let nr=!(b.x&&b.x.type);/* 과거 영업 정리(이관분) 줄 */try{if(!nr&&J&&b.x.type==='deal')nr=J.state(J.basis(b.x.item)).key==='norecord';}catch(e){}if(nr)pre++;else if(over>=0&&over<=sinceMon)fresh++;});
+   const splitT='이번 주 새로 멈춘 '+fresh+'건 · 이전부터 누적 '+(backN-fresh)+'건'+(pre?'(이관 전 기록 확인 필요 '+pre+'건 포함 · 미응대로 평가하지 않음)':'')+' · ';
+   const subT=splitT+BACK()+'일 넘게 기록 없음 · '+(V.teamBack?'오늘 할 일과 따로 · 담당자에게 정리(진행 / 보류 / 실주 / 배드핏) 요청':'진행 / 보류 / 실주 / 배드핏으로 정리하면 오늘 업무가 가벼워집니다');
    if(S.backOwner&&!by.has(S.backOwner))S.backOwner='';
    const tri=b=>{const k=attr(b.key),deal=b.x.type==='deal';return '<div class="tv3-brow"><button type="button" class="o" data-t3="open" data-key="'+k+'"><b>'+h(b.site)+'</b><small>'+h([b.stage,b.amt?money(b.amt):'',b.days?b.days+'일째':''].filter(Boolean).join(' · '))+'</small></button>'+(deal?'<span>'+[['keep','진행'],['hold','보류'],['lost','실주'],['badfit','배드핏']].map(a=>'<button type="button" data-t3="tri" data-key="'+k+'" data-v="'+a[0]+'">'+a[1]+'</button>').join('')+'</span>':'')+'</div>';};
    backHtml='<section class="tv3-back'+(S.back?' open':'')+'"><button type="button" class="hd" data-t3="back" aria-expanded="'+!!S.back+'"><b>'+h(title)+'</b><span>'+h(subT)+'</span><u></u><em>'+(S.back?'접기 ▲':'보기 ▼')+'</em></button>'

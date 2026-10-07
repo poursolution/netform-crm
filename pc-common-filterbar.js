@@ -37,9 +37,24 @@
   const names=[...new Set(BRANDS.concat(rows.map(brandOf).filter(Boolean)))];
   return [{name:'전체',n:rows.length,on:!sel.length}].concat(names.map(b=>({name:b,n:rows.filter(r=>brandOf(r)===b).length,on:sel.includes(b)})));
  }
- function ownerOptions(){const names=[...new Set((root.SalesScope.people()||[]).map(p=>p.name))].sort(root.repCompare||undefined);return ['전체',...names,'미배정','경남지사'];}
- /* 담당자 선택: 내부직원 · 외부직원을 묶음 머리로(예전 '담당자 구분' 줄을 대신한다) */
- function groupedOwners(cur){const P=(root.SalesFilters?.people?.()||[]),opt=n=>'<option value="'+attr(n)+'"'+(n===cur?' selected':'')+'>'+h(n)+'</option>',grp=(label,type)=>{const l=P.filter(p=>p.employeeType===type).map(p=>p.name);return l.length?'<optgroup label="'+label+'">'+l.map(opt).join('')+'</optgroup>':'';};return '<option value="전체"'+(cur==='전체'?' selected':'')+'>담당자 전체</option>'+grp('내부직원','INTERNAL')+grp('외부직원','EXTERNAL');}
+ /* 담당자 선택 = 실제 업무 담당자 전부(2026-10-07 design_handoff_ops_12 B④): 묶음 = 영업 / 관리 · 경영 / 지사 · 그 밖(지사 · 외부 · 경남지사 미지정 · 퇴사자 담당 남음 · 미배정).
+    이름 뒤 (n) = 진행 중 영업건 수(PipelineScope.isActive · 과거 이관 제외). 퇴사 · 명단 밖 담당 · 미배정은 빨강. 예전 '내부직원 · 외부직원' 묶음을 대신한다 */
+ function ownerSelectHtml(cur){
+  const M=root.SALES_PEOPLE_MASTER||[],PS=root.PipelineScope;let act=[];
+  try{act=(root.B&&root.B.deals||[]).filter(d=>{try{return PS&&PS.on()?PS.isActive(d):root.isActiveDeal(d);}catch(e){return false;}});}catch(e){act=[];}
+  const cnt=new Map();act.forEach(d=>{let n='';try{n=root.repN(d.assignee);}catch(e){n=String(d.assignee||'').trim();}n=n||'미배정';cnt.set(n,(cnt.get(n)||0)+1);});
+  const n_=n=>cnt.get(n)?' ('+cnt.get(n)+')':'';
+  const opt=(n,tag,red)=>'<option value="'+attr(n)+'"'+(n===cur?' selected':'')+(red?' style="color:#b42318"':'')+'>'+h(n+(tag?' · '+tag:'')+n_(n))+'</option>';
+  const active=M.filter(p=>p.active!==false&&p.role!=='branch_pool'&&p.name);/* 경남지사 미지정(풀)은 아래에 따로 */
+  const tag=p=>p.title&&p.title!=='본사영업'?p.title:(p.badge&&!/내부영업/.test(p.badge)?p.badge:'');/* 직함(팀장 · 이사 · 상무 · 대표 · 영업관리) 또는 소속 꼬리표 */
+  const sales=active.filter(p=>p.team==='head_office'&&p.role==='sales'),mgmt=active.filter(p=>p.team==='head_office'&&p.role!=='sales'),etc=active.filter(p=>p.team!=='head_office');
+  const gone=[...cnt.keys()].filter(n=>n!=='미배정'&&n!=='경남지사'&&!active.some(p=>p.name===n)).sort((a,b)=>a.localeCompare(b,'ko'));/* 명단에 없거나 비활성인 담당이 남은 진행 건 */
+  const grp=(label,list)=>list.length?'<optgroup label="'+attr(label)+'">'+list.join('')+'</optgroup>':'';
+  return '<option value="전체"'+(cur==='전체'?' selected':'')+'>담당자 전체</option>'
+   +grp('영업',sales.map(p=>opt(p.name,tag(p))))+grp('관리 · 경영',mgmt.map(p=>opt(p.name,tag(p))))
+   +grp('지사 · 그 밖',etc.map(p=>opt(p.name,tag(p))).concat(['<option value="경남지사"'+(cur==='경남지사'?' selected':'')+'>경남지사 미지정'+h(n_('경남지사'))+'</option>'],gone.map(n=>opt(n,'퇴사 · 재배정 필요',true)),[opt('미배정','',true)]));
+ }
+ const groupedOwners=ownerSelectHtml;
  function periodHtml(){const G=root.G,years=[...new Set((root.B.deals||[]).map(d=>String(d.created||'').slice(0,4)).filter(y=>/^20/.test(y)))].sort().reverse();if(!years.length)years.push(String(new Date().getFullYear()));const cur=String(G.year)+'|'+(Number(G.quarter)||0),opts=[['전체|0','전체 기간']];years.forEach(y=>{opts.push([y+'|0',y+' · 연간']);[1,2,3,4].forEach(q=>opts.push([y+'|'+q,y+' · '+q+'분기']));});return '<label class="cf-period"><span>기간</span><select aria-label="기간 선택" data-cf="period">'+opts.map(o=>'<option value="'+o[0]+'"'+(o[0]===cur?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></label>';}
  function html(page){
   const cur=owner(),q=root.G.q||'';
@@ -49,7 +64,7 @@
    return '<div class="cf-brands" role="group" aria-label="브랜드">'+pills+'</div>'+own+'<input class="cf-search" data-cf="search" aria-label="현장·고객·연락처 검색" placeholder="현장 · 고객 · 연락처" value="'+attr(q)+'">'+(PERIOD.includes(page)?periodHtml():'');
   }
   const pills=brandStats(page).map(b=>'<button type="button" class="cf-pill'+(b.on?' on':'')+'" data-sf-brand="'+attr(b.name)+'" aria-pressed="'+b.on+'"><i style="background:'+(DOT[b.name]||'#9ca3af')+'"></i>'+h(b.name)+' <em>'+h(b.n)+'</em></button>').join('');
-  const own=admin()?'<i class="cf-div"></i><label class="cf-owner'+(cur!=='전체'?' on':'')+'"><span>담당자</span><select aria-label="담당자 선택" data-cf="owner">'+ownerOptions().map(o=>'<option value="'+attr(o)+'"'+(o===cur?' selected':'')+'>'+h(o)+'</option>').join('')+'</select></label>'+(cur!=='전체'?'<button type="button" class="cf-clear" data-cf="clear">✕ 해제</button>':''):'';
+  const own=admin()?'<i class="cf-div"></i><label class="cf-owner'+(cur!=='전체'?' on':'')+'"><span>담당자</span><select aria-label="담당자 선택" data-cf="owner">'+ownerSelectHtml(cur)+'</select></label>'+(cur!=='전체'?'<button type="button" class="cf-clear" data-cf="clear">✕ 해제</button>':''):'';
   return '<div class="cf-brands" role="group" aria-label="브랜드">'+pills+'</div>'+own+'<input class="cf-search" data-cf="search" aria-label="현장·고객·연락처 검색" placeholder="'+(root.ShellV2?.enabled?.()?'현장 · 고객 · 연락처':'현장 · 고객 · 연락처 (Ctrl K)')+'" value="'+attr(q)+'">';
  }
  function mount(page){
