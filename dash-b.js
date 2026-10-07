@@ -664,5 +664,7 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
   EW.register('action',()=>EW.openWhy(()=>EW.specAction(core().risk)));
  }
  ewRegister();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ewRegister);
- root.DashB={enabled,render,core,people,ctlModel,period,nearList,channelOf,weekActs,actKind,stageEvents,diagRows,priList,changeWeek,impact,lib:{brandRows,matrixRows,inquiryFate,pendingStats,eok,won,mk,BRC,MINREC,LOWMADE,MINCLOSED}};
+ /* 월 문의 수 — 월별 막대(견적문의)와 같은 조건. 리포트 · 보고서 검증이 같은 숫자를 비교한다(asset_report ⑨) */
+ function monthQ(a,b){const C=core();return C.AQ.filter(x=>!!C.K(R.inquiryCreatedAt(x))&&C.K(R.inquiryCreatedAt(x))>=a&&C.K(R.inquiryCreatedAt(x))<b).length;}
+ root.DashB={enabled,monthQ,render,core,people,ctlModel,period,nearList,channelOf,weekActs,actKind,stageEvents,diagRows,priList,changeWeek,impact,lib:{brandRows,matrixRows,inquiryFate,pendingStats,eok,won,mk,BRC,MINREC,LOWMADE,MINCLOSED}};
 })(window);
