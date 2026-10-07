@@ -50,12 +50,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await v.locator('.k7-bar button').allInnerTexts(),['지난주 보기','기준 설정','이번 주 결과 저장']);assert.match(await v.locator('.k7-bar').innerText(),/관리팀 KPI\s*한 줄 = 지표 하나/);
   /* 2. 왼쪽 진단 380px: 막대 · 작은 칸 3개 · 단계별 기준 넘긴 건 · 원인 4개 · 뭘 해야 하나 */
   assert.equal(await v.locator('.k7-left').evaluate(n=>getComputedStyle(n).flexBasis),'380px');
-  assert.deepEqual(await v.locator('.k7-left .k7-card>header b').allInnerTexts(),['KPI 진단','왜 멈춰 있나','그래서 뭘 해야 하나']);
+  assert.deepEqual(await v.locator('.k7-left .k7-card>header b').allInnerTexts(),['KPI 진단','관리팀 지표','왜 멈춰 있나','그래서 뭘 해야 하나'],'ops_12 D⑩: 관리팀 지표 칸');
+  assert.deepEqual(await v.locator('.k7-left .k7-mg .k7-tiles>div>span, .k7-left .k7-mg .k7-none').allInnerTexts().then(a=>a.length?a:['없음']),(await v.locator('.k7-left .k7-mg .k7-tiles').count())?['요청','기한 내 해결률','재요청률','평균 처리 시간']:['요청 저장소가 아직 서버에 없어 잴 수 없습니다'],'관리팀 지표 = 요청 · 기한 내 해결률 · 재요청률 · 평균 처리 시간(요청 엔진 기록)');
   const K=await page.evaluate(()=>KpiV7.coreRows(KpiB.compute(),[],false).map(m=>({key:m.key,v:m.v,num:m.num,den:m.den,ok:m.ok,left:m.left,n:m.total})));/* 화면과 같은 줄 계산(견적문의 둘은 이번 주 월~금 · 2026-10-06 집계 ⑤) */
   const miss=K.filter(m=>m.v!=null&&!m.ok).length,nd=K.filter(m=>m.v==null).length,hit=8-miss-nd;
   assert.match((await v.locator('.k7-leg').innerText()).replace(/\s+/g,' '),new RegExp('미달 '+miss+' ■ 달성 '+hit+' ■ 아직 못 잼 '+nd));
-  assert.deepEqual(await v.locator('.k7-tiles>div>span').allInnerTexts(),['목표 미달','남은 요청','지난주보다']);
-  assert.equal(await v.locator('.k7-tiles>div').nth(0).locator('b').innerText(),miss+'지표');assert.equal(await v.locator('.k7-tiles>div').nth(1).locator('b').innerText(),K.reduce((a,m)=>a+m.left,0)+'건');
+  assert.deepEqual(await v.locator('.k7-card:not(.k7-mg) .k7-tiles>div>span').allInnerTexts(),['목표 미달','남은 요청','지난주보다']);
+  assert.equal(await v.locator('.k7-card:not(.k7-mg) .k7-tiles>div').nth(0).locator('b').innerText(),miss+'지표');assert.equal(await v.locator('.k7-card:not(.k7-mg) .k7-tiles>div').nth(1).locator('b').innerText(),K.reduce((a,m)=>a+m.left,0)+'건');
   assert.match(await v.locator('.k7-tiles>div').nth(2).innerText(),/▲\d+ · ▼\d+/,'지난주 저장본과 비교');
   const SG=await page.evaluate(()=>KpiV7.stageGroups(KpiB.compute().done).map(g=>({key:g.key,label:g.label,total:g.total,over:g.over,rules:g.rules.map(r=>[r.k,r.t,r.n,r.base,r.p,r.left])})));
   assert.equal(await v.locator('.k7-over').innerText(),"단계별 기준 넘긴 건 "+SG.reduce((a,g)=>a+g.over,0)+"건 · 오른쪽 '단계별 기준' 탭");

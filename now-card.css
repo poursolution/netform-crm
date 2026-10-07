@@ -93,3 +93,7 @@
 .nc-checks button.on::before{content:'✓ '}
 /* 약속 칸은 '고객과 약속함'을 골랐을 때만(hidden 속성이 display 규칙에 덮이던 것) */
 .nc-note-label[hidden],.nc-step2[hidden]{display:none!important}
+
+/* ops_12 D⑫ AI 추천 근거 3줄 */
+.now-card .nc-why{display:grid;grid-template-columns:76px minmax(0,1fr);gap:3px 10px;font-size:11.5px;margin:-4px 0 11px}
+.now-card .nc-why>span{color:#6b7280}.now-card .nc-why>b{font-weight:500;color:#15171c;min-width:0;word-break:break-word}.now-card .nc-why>b.amb{color:#8a5a00}

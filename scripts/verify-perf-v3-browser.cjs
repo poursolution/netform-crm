@@ -130,7 +130,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{DealWin._take({rows:[],advisory:__adv});paint();});await page.waitForTimeout(200);
   /* 4-2. 추가 분석(5차 블록 2 · 3 · 4 — 2026-10-05 영업분석블록.dc.html): 영업 성과(기준 전환) · 영업 행동 · 실주 분석을 하나씩. 숫자 · 문장은 전부 자료에서 */
    {const x=page.locator('#si-perf .pf3-x'),one=s=>s.replace(/\s+/g,' ').trim();assert.equal(await x.count(),1);
-    assert.equal(await page.locator('#si-perf .pf3').evaluate(n=>[...n.children].map(c=>c.className.split(' ')[0]).join(' ')),'pf3-verdict pf3-mid pf3-tabs pf3-x pf3-pending','기존 구역은 그대로 · 탭 아래에 덧붙임');
+    assert.equal(await page.locator('#si-perf .pf3').evaluate(n=>[...n.children].map(c=>c.className.split(' ')[0]).join(' ')),'pf3-verdict pf3-mid pf3-tabs pf3-x pf3-lead pf3-pending','기존 구역은 그대로 · 탭 아래에 덧붙임(ops_12 D⑪ 단계별 선행 → 결과는 그 아래)');
+    assert.deepEqual(await page.locator('#si-perf .pf3-lead .pf3-lt>b:not(.r)').allInnerTexts(),['견적문의','컨설팅 설계','자료 발송','관계관리','경쟁 · 입찰'],'단계별 선행 → 결과 5줄');
+    assert.ok((await page.locator('#si-perf .pf3-lead .pf3-lt>b.r').allInnerTexts()).every(t=>/^(–|\d+%)$/.test(t)),'값은 % 또는 –');
     assert.deepEqual(await x.locator('.pf3-xt button').evaluateAll(l=>l.map(b=>[b.textContent,b.getAttribute('aria-pressed')])),[['영업 성과','true'],['영업 행동','false'],['실주 분석','false']]);assert.equal(one(await x.locator('.pf3-xt').innerText()),'추가 분석 영업 성과 영업 행동 실주 분석 하나씩 보기');
     assert.deepEqual(await x.locator('.pf3-xt button').first().evaluate(b=>{const s=getComputedStyle(b);return [s.backgroundColor,s.color,s.borderRadius];}),['rgb(21, 23, 28)','rgb(255, 255, 255)','999px']);
     /* 영업 성과: 기준 6개 · 수주 = 직접 + 협약 · 기술자문 + 타사 이관, 실주 = 파이프라인 실주, 낙찰금액 = 수주실적 */

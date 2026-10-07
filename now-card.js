@@ -31,6 +31,21 @@
   if(a&&a.text)return {text:say(a.text),due:a.due||'',days:due,suggested:false,promise:/약속/.test(String(a.type||''))};
   return {text:DEFAULT_TODO[root.dealStage(d)]||'고객에게 연락하고 진행 상황을 확인해 주세요',due:'',days:null,suggested:true,promise:false};
  }
+ /* ops_12 D⑫ AI 추천 근거 3줄: 사용한 기록(최근 기록 2개) · 확인 안 된 것(주황 · 결정권자 · 공사 시기 · 미팅 완료 · 연락처) · 왜 이 행동(판정 근거 = 목록 · 오늘 업무와 같은 함수) */
+ function whyRows(d,p){
+  const acts=[...(d.activities||[]),...((p&&p.activities)||[])].filter(x=>x&&(x.type||x.note)).sort((a,b)=>String(b.at||b.occurred_at||'').localeCompare(String(a.at||a.occurred_at||''))).slice(0,2);
+  const used=acts.map(x=>{const k=String(x.at||x.occurred_at||'').slice(0,10),m=/^\d{4}-(\d{2})-(\d{2})/.exec(k);return (m?(+m[1])+'.'+(+m[2])+' ':'')+String(x.type||'기록')+(x.note?' "'+say(x.note).slice(0,24)+'"':'');}).join(' · ')||'CRM 연락 기록 없음';
+  const c=d.stage_contexts||{},f=(s,k)=>{const x=c[s];return x&&x.fields?x.fields[k]:'';},any=k=>Object.keys(c).some(s=>c[s]&&c[s].fields&&c[s].fields[k]);
+  const g=(()=>{try{return root.PipelineStages.group(root.dealStage(d))||'';}catch(e){return '';}}),miss=[];
+  if(g==='consulting'&&!(f('consulting','meeting_date')||f('first_contact','meeting_date')))miss.push('미팅 완료 여부');
+  if(g==='sent'&&!f('sent','sent_date'))miss.push('발송일');
+  if(!(d.decision_maker||any('decision_maker')||any('speaker')))miss.push('결정권자');
+  if(!(f('first_contact','expected_timing')||any('expected_contract')||d.construction_year||d.relate_planned_construction_year))miss.push('공사 시기');
+  let tel='';try{const ci=root.contactInfo(d,p)||{};tel=String(ci.mobile||ci.officeTel||d.office_phone||'');}catch(e){}if(!tel)miss.push('연락처');
+  const J=root.PipelineJudge&&root.PipelineJudge.on()?root.PipelineJudge:null,b=J?J.basis(d):null;
+  const why=b?b.why+(b.rec?' → '+b.rec:''):'';
+  return [['사용한 기록',used,''],['확인 안 된 것',miss.length?miss.join(' · '):'없음',miss.length?'amb':''],['왜 이 행동',why||'다음 할 일이 등록돼 있어 그대로 진행','']];
+ }
  function card(){
   const cur=root.CUR_DETAIL;if(!cur||cur.kind!=='deal')return '';
   const d=cur.item,p=root.currentPatch?root.currentPatch():{};
@@ -45,6 +60,7 @@
   return '<section class="now-card" id="nowCard"><div class="nc-stage">지금 할 일</div>'
    +'<div class="nc-todo">'+(todo.promise?'<span class="nc-promise">🤝 고객 약속</span> ':'')+h(todo.text)+' '+dueTag+'</div>'
    +'<div class="nc-meta">'+(meta.meaningfulAt?'마지막 연락 '+h(String(meta.meaningfulAt).slice(0,10)):'CRM 연락 기록 없음')+(root.PipelineJudge&&root.PipelineJudge.on()?' · '+h(root.PipelineJudge.line(root.PipelineJudge.basis(d))):'')+'</div>'/* 목록 · 오늘 업무와 같은 판정 함수(2026-10-06 집계 ②) */
+   +'<div class="nc-why" aria-label="AI 추천 근거">'+whyRows(d,p).map(r=>'<span>'+h(r[0])+'</span><b class="'+r[2]+'">'+h(r[1])+'</b>').join('')+'</div>'/* ops_12 D⑫ */
    +'<div class="nc-cta"><button type="button" class="nc-call" onclick="NowCard.sheet()">📞 연락하고 결과 남기기</button><button type="button" onclick="dccGoActivity()">결과 남기기</button><button type="button" onclick="dccGoNext()">다른 날짜로</button>'+(todo&&!todo.suggested&&todo.due?'<button type="button" onclick="completeNextAction()">다음 할 일 완료</button>':'')+'</div>'
    +'<div class="nc-brief">'+brief+'</div></section>';
  }
