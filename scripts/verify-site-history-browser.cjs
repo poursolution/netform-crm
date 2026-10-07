@@ -77,6 +77,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const F=H.locator('.sth-row.ed');assert.equal(await F.count(),1);assert.equal(await page.evaluate(()=>CUR_DETAIL.item.id),CUR,'수정을 눌러도 그 건이 열리지 않는다');
   assert.deepEqual(await F.locator('.sth-grid span')/* 날짜 · 금액은 .sth-half label 안(2026-10-07 편집칸 배치) */.allInnerTexts(),['공종','결과','날짜','금액','담당','설명']);
   assert.deepEqual(await F.locator('.sth-chips button').evaluateAll(l=>l.map(b=>b.textContent+(b.getAttribute('aria-pressed')==='true'?'*':''))),['진행','수주*','실주','보류','배드핏']);
+  /* 편집칸은 줄 폭을 다 쓴다(2026-10-07 운영 캡처: 정돈안 줄은 점 칸이 없어 편집칸이 14px 첫 칸에 들어가 글자가 세로로 흘러내렸다) · 결과 버튼은 한 줄에 가로 */
+  const fw=await F.evaluate(n=>{const f=n.querySelector('.sth-form'),r=n.getBoundingClientRect(),b=f.getBoundingClientRect(),chips=[...f.querySelectorAll('.sth-chips button')].map(c=>c.getBoundingClientRect());return [Math.round(r.width),Math.round(b.width),Math.max(...chips.map(c=>Math.round(c.height))),new Set(chips.map(c=>Math.round(c.top))).size];});
+  assert.ok(fw[1]>=fw[0]-48&&fw[1]>=200,'편집칸 폭 = 줄 폭(안쪽 여백 제외) '+JSON.stringify(fw));assert.ok(fw[2]<=34&&fw[3]<=2,'결과 버튼은 가로 한두 줄 · 글자 쪼개짐 없음 '+JSON.stringify(fw));
   assert.deepEqual(await F.evaluate(n=>[n.querySelector('[data-sthf="work"]').value,n.querySelector('[data-sthf="amt"]').value,n.querySelector('[data-sthf="who"]').value,n.querySelector('[data-sthf="amt"]').placeholder,n.querySelector('[data-sthf="when"]').placeholder,n.querySelector('[data-sthf="hint"]').placeholder]),['옥상(우레탄)','2억','이필선','낙찰금액 · 450만','2025.11 계약','준공 · 하자 / 실주 사유 · 낙찰사']);
   assert.deepEqual(await F.locator('.sth-foot button').allInnerTexts(),['삭제','취소','저장']);assert.equal(await F.locator('.sth-fn').innerText(),"저장하면 응대 이력에 '이력 수정' 시스템 기록이 남습니다");
   assert.equal(await H.locator('.sth-add').isDisabled(),true,'편집 중에는 추가 버튼 잠금');

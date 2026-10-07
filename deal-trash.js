@@ -26,8 +26,10 @@
  const stageName=c=>{try{if(root.PipelineScope&&root.PipelineScope.OLD[c])return root.PipelineScope.OLD[c];if(root.STAGE_MASTER&&root.STAGE_MASTER[c])return root.stageLabel(c);}catch(e){}return c||'단계 없음';};
  function rowHtml(i){
   const left=Number(i.days_left)||0,urgent=left<=7;
+  /* 현장 이름이 비어 있거나 브랜드 이름과 같으면 목록과 같은 꼴 '영업기회 · 끝 6자리' */
+  const site=(i.site&&String(i.site).trim()&&String(i.site).trim()!==String(i.brand||'').trim())?i.site:'영업기회 · '+String(i.deal_id||'').slice(-6);
   return '<div class="dtr-row'+(urgent?' urgent':'')+'" role="row">'
-   +'<div class="dtr-a"><b>'+h(i.site||'현장명 미입력')+'</b><span>'+h(i.brand||'브랜드 미지정')+(i.created?' · 예전 등록 '+h(md(i.created)):'')+'</span></div>'
+   +'<div class="dtr-a"><b>'+h(site)+'</b><span>'+h(i.brand||'브랜드 미지정')+(i.created?' · 예전 등록 '+h(md(i.created)):'')+'</span></div>'
    +'<div class="dtr-b"><b>'+h(stageName(i.stage_code))+'</b><span>담당 '+h(i.owner||'없음')+(i.child_rows?' · 함께 보관 '+h(i.child_rows)+'건':'')+'</span></div>'
    +'<div class="dtr-c"><b>'+h(md(i.trashed_at))+' '+h(i.by||'')+'</b><span>'+h(i.reason||'')+'</span></div>'
    +'<div class="dtr-d"><b>'+(left?'남은 '+left+'일':'오늘 삭제')+'</b><span>'+h(md(i.expires_at))+' 자동 삭제</span></div>'
