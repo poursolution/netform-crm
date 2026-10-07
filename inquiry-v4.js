@@ -278,5 +278,6 @@
  const basePaint=root.paintInq;
  if(typeof basePaint==='function')root.paintInq=function(){fresh();const r=basePaint.apply(this,arguments);try{render();}catch(err){const p=document.getElementById('pg-inq');if(p)p.classList.remove('inq-v4');const hst=document.getElementById('inq-v4');if(hst)hst.remove();try{giveBack();}catch(e){}if(root.console)root.console.warn('inquiry v4: '+err.message);}return r;};
  if(L2()&&typeof L2().brandStats==='function'){ORIG_BS=L2().brandStats;L2().brandStats=brandStats;}
+ root.addEventListener('activity-links:changed',e=>{const key=String(st().sel||''),log=document.querySelector('#inq-v4 .i4-log'),q=root.inqCtlFind?.(key,false);if(on()&&q&&log&&e.detail?.key==='inq:'+key)log.outerHTML=logHtml(q,key);});
  root.InquiryV4={on,render,select,move,total,brandStats,base,compute,state:st,fresh,TABS:()=>TABS().map(t=>t[0]),FLAGS:FLAGS.map(f=>f[0]),selected:()=>on()?String(st().sel||''):''};
 })(window);
