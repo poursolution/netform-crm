@@ -34,7 +34,7 @@
    +'.icv-list{overflow:auto;display:grid;gap:6px;min-height:0}'
    +'.icv-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;border:1px solid #e2e8f1;border-left:3px solid #3B6CE4;border-radius:9px;background:#fff;padding:9px 12px;font-size:12px}'
    +'.icv-row.no{border-left-color:#94a3b8;background:#fafbfc}.icv-row.done{border-left-color:#15803d;background:#f5fbf7}'
-   +'.icv-row b{font-size:13px;color:#0f172a}.icv-row span{color:#5b6b85}.icv-row em{grid-column:1/-1;font-style:normal;font-size:11.5px;color:#b45309}.icv-row.done em{color:#15803d}'
+   +'.icv-row b{font-size:13px;color:#0f172a}.icv-row span{color:#5b6b85}.icv-row em{grid-column:1/-1;font-style:normal;font-size:11.5px;color:#c0392b}.icv-row.done em{color:#15803d}'
    +'.icv-row button{border:1px solid #3B6CE4;border-radius:8px;background:#fff;color:#3B6CE4;padding:7px 11px;font:inherit;font-size:12px;font-weight:850;cursor:pointer;white-space:nowrap}.icv-row button[disabled]{opacity:.5;cursor:default}';
   document.head.append(s);
  }

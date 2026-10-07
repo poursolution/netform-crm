@@ -13,7 +13,7 @@
  const advOpen=()=>{const pg=document.getElementById('pg-sites');return !!(pg&&pg.classList.contains('av-adv-on'));};
  const wait=()=>Number((R.OPS_RULES||{}).waitContactDays)||60;
  const BC={'석민이앤씨':'#e8590c','POUR솔루션':'#1f9d55','POUR공법':'#7048e8','아파트스퀘어':'#3b6ce4'};
- const TONE={risk:['#b42318','#fdecec'],recontact:['#b45309','#fff4d6'],active:['#1d3f99','#eef3fe'],customer:['#1f7a4d','#e8f6ee'],dormant:['#6b7280','#f3f4f6']};
+ const TONE={risk:['#b42318','#fdecec'],recontact:['#c0392b','#fdeceb'],active:['#1d3f99','#eef3fe'],customer:['#1f7a4d','#e8f6ee'],dormant:['#6b7280','#f3f4f6']};
  const TABS=['전체','active','recontact','risk','customer','dormant'];
  const won=n=>Number(n)>0?R.fmtAmt(Number(n)):'0원';
  const label=k=>k==='전체'?'전체':(R.SITE_HEALTH[k]||{}).label||k;
@@ -95,7 +95,7 @@
   const note={risk:k=>won(sum(k,m=>m[1].prog))+' 걸림',lost2:()=>'재제안 시기 미등록',recontact:k=>'진행 '+won(sum(k,m=>m[1].prog)),cold60:k=>'누적 수주 '+won(sum(k,m=>m[1].acc)),nokey:()=>'관리소장 · 입대의 회장 연락처 없음',dormant:()=>'장기수선 일정 확인 대상',wonamt:()=>'누적 수주 집계에서 빠짐',noaddr:()=>'근처 현장 · 지도에 안 나옴'};
   const why=Object.keys(RS).map(k=>({k,n:M.filter(m=>reasonsOf(m[0]).includes(k)).length})).filter(w=>w.n>0);
   return '<aside class="ac-side"><section><b>단지에 쌓인 금액</b>'+nums.map(n=>'<div class="ac-num"><span>'+n[0]+'</span><b style="color:'+n[3]+'">'+h(n[1])+'</b><small>'+h(n[2])+'</small></div>').join('')+'</section>'+splits
-   +'<section class="ac-why"><b>왜 멈춰 있나 <small>누르면 목록이 좁혀짐</small></b>'+(why.length?why.map(w=>'<button type="button" data-ac="why" data-v="'+w.k+'" aria-pressed="'+(S.why===w.k)+'"><b>'+h(RS[w.k][0])+'</b><b class="n" style="color:'+(RS[w.k][1]==='#374151'?'#374151':w.k==='recontact'?'#b45309':'#b42318')+'">'+w.n.toLocaleString('ko-KR')+'</b><span>'+h(note[w.k]?note[w.k](w.k):'')+'</span></button>').join(''):'<p>멈춰 있는 단지가 없습니다</p>')+'</section></aside>';
+   +'<section class="ac-why"><b>왜 멈춰 있나 <small>누르면 목록이 좁혀짐</small></b>'+(why.length?why.map(w=>'<button type="button" data-ac="why" data-v="'+w.k+'" aria-pressed="'+(S.why===w.k)+'"><b>'+h(RS[w.k][0])+'</b><b class="n" style="color:'+(RS[w.k][1]==='#374151'?'#374151':w.k==='recontact'?'#c0392b':'#b42318')+'">'+w.n.toLocaleString('ko-KR')+'</b><span>'+h(note[w.k]?note[w.k](w.k):'')+'</span></button>').join(''):'<p>멈춰 있는 단지가 없습니다</p>')+'</section></aside>';
  }
  function rowHtml(s){
   const m=money(s),brand=s.brands[0]||'',bc=BC[brand]||'#9ca3af',t=TONE[s.health]||TONE.dormant,ld=s.lastDays,p=s.primary;

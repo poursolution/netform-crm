@@ -10,7 +10,7 @@
 (function(root){
  'use strict';
  const h=v=>root.esc(String(v==null?'':v)),attr=v=>root.escAttr(String(v==null?'':v));
- const RED='#b42318',AMB='#b45309',INK='#15171c',GREEN='#1f7a4d',GRAY='#9ca3af';
+ const RED='#b42318',AMB='#c0392b',INK='#15171c',GREEN='#1f7a4d',GRAY='#9ca3af';
  const enabled=()=>!root.G.repWindowOff&&!!root.RepsV2;
  const RULE=()=>(root.CRMRules&&root.CRMRules.PHASE5&&root.CRMRules.PHASE5.coaching_box)||{topics:['첫 응대','다음 행동','견적 지연','약속 미이행']};
  const eok=v=>root.eok(v),num=v=>Number(v)||0,pct=(a,b)=>b?Math.round(a*100/b):null;

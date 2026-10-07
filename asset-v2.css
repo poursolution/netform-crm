@@ -24,12 +24,12 @@
 #assetV2 .av-flow{font-size:13px;color:#6b7280;line-height:1.6}
 #assetV2 .av-flow b{font-weight:600}
 .av-blue{color:#2a52b8}.av-green{color:#1f7a4d}
-.xdv-tag.av-tag-r{background:#fdecec;color:#c93a3f}.xdv-tag.av-tag-o{background:#fff8ec;color:#b26a00}.xdv-tag.av-tag-m{background:#f0f1f4;color:#4b5563}
+.xdv-tag.av-tag-r{background:#fdecec;color:#c93a3f}.xdv-tag.av-tag-o{background:#fdf0ee;color:#b26a00}.xdv-tag.av-tag-m{background:#f0f1f4;color:#4b5563}
 #assetV2 .xdv-three a{display:block;text-align:center;border:1px solid #e1e4ea;background:#fff;color:#374151;border-radius:8px;padding:8px 6px;font-size:12.5px;font-weight:600;text-decoration:none}
 #assetV2 .xdv-three a.fill{background:#3b6ce4;border-color:#3b6ce4;color:#fff}
 .av-tags{display:flex;gap:6px;flex-wrap:wrap}
 .av-tags em,.av-person em{font-style:normal;font-size:11.5px;font-weight:600;border-radius:6px;padding:2px 7px;background:#eef3fe;color:#2a52b8;align-self:flex-start}
-.av-tags em.amber,.av-person em{background:#fff8ec;color:#b26a00}
+.av-tags em.amber,.av-person em{background:#fdf0ee;color:#b26a00}
 .av-person{display:flex;flex-direction:column;gap:2px;padding-top:7px;border-top:1px solid #f0f1f4;font-size:12.5px}
 .av-person b{font-weight:600}.av-person span{color:#6b7280;font-size:12px}
 .av-target{margin-left:auto;font-size:11.5px;color:#9ca3af;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
@@ -44,7 +44,7 @@
 .av-hist{display:grid;grid-template-columns:38px minmax(0,1fr) auto auto;gap:8px;align-items:center;font-size:12.5px;padding-top:6px;border-top:1px solid #f5f6f8}
 .av-hist b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.av-hist span{color:#6b7280;font-size:12px}
 .av-hist em{font-style:normal;font-size:11.5px;font-weight:600;border-radius:6px;padding:1px 6px}.av-hist em.g{background:#ecf8f1;color:#1f7a4d}.av-hist em.r{background:#fdecec;color:#c93a3f}.av-hist em.b{background:#eef3fe;color:#2a52b8}
-.av-learn{background:#fff8ec;border-color:#f6e7c1}.av-learn .xdv-eyebrow{color:#b26a00}.av-learn>b{font-size:13.5px;line-height:1.45}
+.av-learn{background:#fdf0ee;border-color:#f6e7c1}.av-learn .xdv-eyebrow{color:#b26a00}.av-learn>b{font-size:13.5px;line-height:1.45}
 .av-signal{display:flex;flex-direction:column;gap:2px;padding-top:7px;border-top:1px solid #f6e7c1;font-size:12.5px}.av-signal span{font-size:12px;color:#6b7280}
 /* 데이터 정리 · 검토 화면 아래로 옮긴 연결 검토 */
 .av-reviews{margin-top:18px}

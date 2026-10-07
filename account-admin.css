@@ -74,9 +74,9 @@ dialog.aa2:focus,dialog.aa2:focus-visible{outline:0}
 .aa2-k-rep,.aa2-k-b2b{color:#374151;background:#f3f4f6}
 .aa2-k-dual{color:#7048e8;background:#f1edfd}
 .aa2-k-lead{color:#1f7a4d;background:#e8f6ee}
-.aa2-k-branch{color:#8a5a00;background:#fff4d6}
+.aa2-k-branch{color:#c0392b;background:#fdeceb}
 .aa2-mail{font-size:12.5px;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.aa2-mail.none{color:#b45309}
+.aa2-mail.none{color:#c0392b}
 .aa2-last{font-size:12px;color:#374151}
 .aa2-last.none{color:#9ca3af}
 .aa2-act{justify-self:end;display:flex;align-items:center;gap:2px}

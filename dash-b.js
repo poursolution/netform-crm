@@ -100,8 +100,8 @@
   });
  }
  const agoText=p=>p.lastDays===null?'기록 없음':p.lastDays===0?'오늘':p.lastDays===1?'어제':p.lastDays+'일 전';
- const agoColor=p=>p.lastDays===null||p.lastDays>LOSTCUT()?'#b42318':p.lastDays>7?'#b45309':'#15171c';
- const TAGC={'막힘':'#d14a3f','접촉 끊김':'#e0a43a','메이드율 낮음':'#e0a43a'};
+ const agoColor=p=>p.lastDays===null||p.lastDays>LOSTCUT()?'#b42318':p.lastDays>7?'#c0392b':'#15171c';
+ const TAGC={'막힘':'#d14a3f','접촉 끊김':'#e8a09a','메이드율 낮음':'#e8a09a'};
 
  /* ── 공통: 바로가기 · 기준 문구 · 연도 · 연간/분기 · LIVE ── */
  function toolbar(page,C){
@@ -279,7 +279,7 @@
    +'<section class="db-card"><div class="db-ch"><b>계약 임박 · 다음 달 전망</b><span>날짜 확인된 계약 예정 '+N.filter(n=>n.k).length+'건'+(sum(N.filter(n=>n.k))>0?' · '+h(won(sum(N.filter(n=>n.k)))):'')+(N.some(n=>!n.k)?' · 기한 미등록 후반 단계 '+N.filter(n=>!n.k).length+'건':'')+' · 기한 가까운 순</span></div>'+(N.length?'<div class="db-nears">'+top.map(card).join('')+'</div><p class="db-note">위 '+top.length+'건 '+(sum(top)>0?h(won(sum(top))):'금액 없음')+(rest.length?' · 나머지 '+rest.length+'건 '+(sum(rest)>0?h(won(sum(rest))):'금액 없음'):'')+' · 이번 주 기한 '+hot.length+'건'+(sum(hot)>0?' '+h(won(sum(hot))):'')+'</p>':'<p class="db-empty">경쟁 · 입찰 · 계약 검토 단계에 있는 건이 없습니다.</p>')+'</section>';
  }
  function actExtra(C){
-  const {B,P}=C,WA=weekActs(C),W=WA.W,names=C.names,all=WA.list,K4=['call','msg','visit','quote'],AC=['#3b6ce4','#9ab6f2','#1f9d55','#e0a43a'],AL=['통화','문자 · 카카오','방문','견적 · 자료'];
+  const {B,P}=C,WA=weekActs(C),W=WA.W,names=C.names,all=WA.list,K4=['call','msg','visit','quote'],AC=['#3b6ce4','#9ab6f2','#1f9d55','#e8a09a'],AL=['통화','문자 · 카카오','방문','견적 · 자료'];
   const kinds=all.map(x=>({x,k:actKind(x)})),n=k=>kinds.filter(y=>y.k===k).length,calls=n('call')+n('try');
   /* 기록 없는 날: 담당 × 지난 영업일(월~금, 오늘까지) 중 기록이 없는 날 수 */
   const days=W.slice(0,5).filter(k=>k<=P.today),slots=names.length*days.length,filled=WA.rows.reduce((s,r)=>s+days.filter(k=>r.wk.some(x=>x.k===k)).length,0),empty=slots-filled;
@@ -358,7 +358,7 @@
   let firstLine='오늘 손대야 할 건이 없습니다';
   if(best){const l=M.pick(best.o,best.c),t=B.tally(l,x=>x.stage)[0],lab=M.COLS.find(c=>c[0]===best.c)[1];firstLine=best.c==='unasg'?'미배정 문의 '+best.v+'건 — 가장 오래된 건 '+maxD(l)+'일 대기. 배정이 먼저입니다':best.o+' '+lab+' '+best.v+'건'+(t?' — '+t[0]+' 단계에 몰려 있습니다':'')+' (최장 '+maxD(l)+'일)';}
   const top='<div class="db-hero">'+hero.map(k=>'<button type="button" class="db-hk'+(S.selC===k[3]&&!S.selP?' on':'')+'" data-db="cell" data-v="|'+k[3]+'"><span>'+k[0]+'</span><b class="'+(k[1]?'red':'mut')+'">'+k[1]+'</b><small>'+h(k[2])+'</small></button>').join('')+'<div class="db-first"><span>가장 먼저</span><b>'+h(firstLine)+'</b><small>표에서 칸을 누르면 옆(좁은 화면은 아래) 목록에 그 건들이 나옵니다</small></div></div>';
-  const TOPC={3:'#d14a3f',2:'#e0a43a',1:'#9aa0ab'};
+  const TOPC={3:'#d14a3f',2:'#e8a09a',1:'#9aa0ab'};
   const grid='<div class="db-mx" role="table" aria-label="담당자별 문제 건수"><span class="h"></span>'+M.COLS.map(c=>'<button type="button" class="hc'+(S.selC===c[0]&&!S.selP?' on':'')+'" style="border-top-color:'+TOPC[c[2]]+'" data-db="cell" data-v="|'+c[0]+'"><span>'+h(c[1])+'</span><small>'+M.colT(c[0])+'건</small></button>').join('')+'<span class="h r">지시</span>'
    +M.owners.map(o=>'<button type="button" class="rn'+(S.selP===o&&!S.selC?' on':'')+'" data-db="cell" data-v="'+attr(o)+'|"><b class="'+(o==='미배정'?'red':'')+'">'+h(o)+'</b><small>합계 '+M.tot(o)+'</small></button>'
     +M.COLS.map(c=>{const v=M.n(o,c[0]),sh=shade(v,c[2]);return '<button type="button" class="cl" data-db="cell" data-v="'+attr(o)+'|'+c[0]+'" aria-label="'+attr(o+' '+c[1]+' '+v+'건')+'"><span style="background:'+sh[0]+';color:'+sh[1]+(S.selP===o&&S.selC===c[0]?';outline:2px solid #15171c':'')+'">'+(v||'·')+'</span></button>';}).join('')
@@ -562,7 +562,7 @@
   const g=gauge===null?0:Math.min(100,gauge);
   const verdict='<section class="db-card db-verdict"><div class="ring" style="background:conic-gradient(#3b6ce4 0 '+g+'%,#eef0f3 '+g+'% 100%)"><div><b>'+(gauge===null?'—':gauge+'%')+'</b><span>월평균 대비</span></div></div><div class="tx"><span>'+s1+'</span>'+(s2?'<span class="'+(low.length?'amb':'mut')+'">'+h(s2)+'</span>':'')+'</div><div class="rt"><b class="'+(L.ready&&C.perf>0?'':'mut')+'">'+(L.ready?(C.perf>0?h(won(C.perf)):'아직 없음'):'불러오는 중')+'</b><span>'+(P.thisYear?'연 누적':h(P.label))+' · 수주 '+C.won+'건'+(C.pt.count||C.tf.count?' ('+[C.pt.count?'협약 · 기술자문 '+C.pt.count+'건 · '+h(won(C.pt.amount)):'',C.tf.count?'타사 이관 '+C.tf.count+'건 · '+h(won(C.tf.amount)):''].filter(Boolean).join(' / ')+')':'')+'</span><small>메이드율 <b>'+pt(made)+'</b> · 문의→계약 <b>'+(L.ready?pt(B.pct(C.won,q.length)):'—')+'</b></small></div></section>';
   const ranked=PP.slice().sort((a,b)=>b.yr-a.yr||b.w-a.w);
-  const card=(p,i)=>{const first=i===0&&p.yr>0,badge=first?'1위':p.sev?'주의':(i+1)+'위',bc=first?'#3b6ce4':p.sev?'#e0a43a':'#9aa0ab',lowM=p.made!==null&&p.made<LOWMADE(),deg=p.made===null?0:p.made;
+  const card=(p,i)=>{const first=i===0&&p.yr>0,badge=first?'1위':p.sev?'주의':(i+1)+'위',bc=first?'#3b6ce4':p.sev?'#e8a09a':'#9aa0ab',lowM=p.made!==null&&p.made<LOWMADE(),deg=p.made===null?0:p.made;
    return '<div class="db-pc"><div class="hd"><em style="background:'+bc+'">'+badge+'</em><button type="button" data-db="person" data-v="'+attr(p.n)+'">'+h(p.n)+'</button><i class="db-sp"></i><span>'+(p.lastK||'-')+'</span></div><div class="bd"><div class="ring" style="background:conic-gradient('+(lowM?'#d14a3f':'#3b6ce4')+' 0 '+deg+'%,#eef0f3 '+deg+'% 100%)"><div><b class="'+(lowM?'red':'')+'">'+(p.made===null?'-':p.made.toFixed(1)+'%')+'</b><span>메이드율</span></div></div>'
     +'<div class="kv"><span>'+(P.thisYear?'올해 수주실적':'기간 수주실적')+' <b>'+(p.yr>0?h(won(p.yr)):'아직 없음')+'</b></span><span>'+P.tm+'월 <b>'+(p.mo>0?h(won(p.mo)):'아직 없음')+'</b></span><span>수주 · 실주 <b>'+p.w+' · '+p.l+'</b></span><span>진행 <b>'+p.prog+'건</b></span><span>주간 활동 <b>'+p.wk+'건</b></span><span>손볼 건 <b class="red">'+p.fix+'건</b></span></div></div><p class="'+(lowM||p.fix>10?'red':'')+'">'+h(p.why||(p.fix?'손볼 건 '+p.fix+'건':'막힌 곳 없음'))+'</p></div>';};
   const quiet=ALL.filter(p=>!PP.includes(p)).map(p=>p.n);

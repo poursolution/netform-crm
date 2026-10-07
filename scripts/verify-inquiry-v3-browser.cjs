@@ -55,7 +55,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const btn=site=>row(site).locator('.il-act').evaluate(n=>{const c=getComputedStyle(n);return [c.backgroundColor,c.color,c.borderTopColor,Math.round(n.getBoundingClientRect().width)];});
   assert.deepEqual(await btn('길음뉴타운9단지'),['rgb(217, 58, 58)','rgb(255, 255, 255)','rgb(217, 58, 58)',92],'담당 배정 = 빨강 채움');
   assert.deepEqual(await btn('한강신도시반도유보라'),['rgb(21, 23, 28)','rgb(255, 255, 255)','rgb(21, 23, 28)',92],'첫 연락 = 검정 채움');
-  assert.deepEqual(await btn('혁신LH5단지'),['rgb(255, 255, 255)','rgb(180, 83, 9)','rgb(240, 197, 138)',92],'후속 연락 = 주황 테두리');
+  assert.deepEqual(await btn('혁신LH5단지'),['rgb(255, 255, 255)','rgb(192, 57, 43)','rgb(240, 197, 138)',92],'후속 연락 = 주황 테두리');
   assert.deepEqual(await btn('중계청구3차'),['rgb(255, 255, 255)','rgb(42, 82, 184)','rgb(213, 224, 251)',92],'나머지 = 흰 버튼');
   assert.deepEqual(await row('혁신LH5단지').evaluate(n=>[n.querySelector('.il-who'),n.querySelector('.il-owner'),n.querySelector('.il-el')].map(e=>Math.round(e.getBoundingClientRect().width)).concat(getComputedStyle(n.querySelector('.il-r')).columnGap)),[150,64,108,'28px'],'오른쪽 덩어리 폭 · 간격');
   /* 줄 꼬리표: 같은 단지의 지난 영업 요약(2026-10-05 design_handoff_inquiry_site) — 예전 '기존 현장 · n건' 자리 */

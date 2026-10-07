@@ -6,7 +6,7 @@
 #pipeline-stage-root .ps-kpis{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
 .ps-kpi{background:#fff;border:1px solid #e0e6ef;border-radius:10px;padding:6px 12px;font-size:12px;color:#5b6b82;display:flex;gap:8px;align-items:baseline}
 .ps-kpi b{font-size:15px;color:#1a2332;letter-spacing:-.3px}
-.ps-kpi.bad b{color:#dc2626}.ps-kpi.warn b{color:#b45309}
+.ps-kpi.bad b{color:#dc2626}.ps-kpi.warn b{color:#c0392b}
 /* ── 전체 파이프라인 칸반 v2 (2026-10-01 디자인 핸드오프) — 이 보기 전용 색(따뜻한 회색)·간격. 단계별 목록 화면은 그대로 ── */
 #pipeline-stage-root.pk-mode{background:#f7f7f5;border-radius:14px;padding:24px 28px 36px;display:flex;flex-direction:column;gap:18px;min-width:980px;color:#1a1b1f}
 .pk-head{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
@@ -95,7 +95,7 @@
 .sw-stg{font-size:10.5px;font-weight:800;border-radius:5px;padding:1px 7px;white-space:nowrap}
 .sw-stg-rap{background:#ecfdf3;color:#15803d}
 .sw-stg-sil{background:#eef2f7;color:#4b5c77}
-.sw-stg-wait{background:#fef4e6;color:#b45309}
+.sw-stg-wait{background:#fef4e6;color:#c0392b}
 .rel-promo{border:1.5px solid #d9c7f2!important;background:linear-gradient(100deg,#faf7ff,#fff)!important;border-radius:12px;padding:13px 15px;margin-bottom:14px}
 .rel-promo-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px}
 .rel-promo-head b{font-size:13px;color:#6b46a8}
@@ -136,7 +136,7 @@
 #expansion-root .exp-hero .k>span,#site-master .exp-hero .k>span,#campaign-root .exp-hero .k>span{font-size:11.5px;color:#5b6b85;font-weight:700;white-space:nowrap}
 #expansion-root .exp-hero .k>b,#site-master .exp-hero .k>b,#campaign-root .exp-hero .k>b{font-size:19px;letter-spacing:-.5px;color:#0f172a}
 #expansion-root .exp-hero .k.bad>b,#site-master .exp-hero .k.bad>b,#campaign-root .exp-hero .k.bad>b{color:#dc2626}
-#expansion-root .exp-hero .k.warn>b,#site-master .exp-hero .k.warn>b,#campaign-root .exp-hero .k.warn>b{color:#b45309}
+#expansion-root .exp-hero .k.warn>b,#site-master .exp-hero .k.warn>b,#campaign-root .exp-hero .k.warn>b{color:#c0392b}
 #expansion-root .exp-hero .k.ok>b,#site-master .exp-hero .k.ok>b,#campaign-root .exp-hero .k.ok>b{color:#15803d}
 #expansion-root .exp-hero .kbtn,#site-master .exp-hero .kbtn,#campaign-root .exp-hero .kbtn{cursor:pointer;border-radius:9px;padding:4px 9px;margin:-4px -9px}
 #expansion-root .exp-hero .kbtn:hover,#site-master .exp-hero .kbtn:hover,#campaign-root .exp-hero .kbtn:hover{background:#f4f6fa}
@@ -172,7 +172,7 @@
 #expansion-root .exp-bcard .foot em{font-style:normal;font-size:11px;font-weight:800;color:#3b4c66}
 #expansion-root .chip,#gyeongnam-root .chip{display:inline-block;font-size:10.5px;font-weight:800;border-radius:5px;padding:1px 7px;white-space:nowrap}
 #expansion-root .chip.hot,#gyeongnam-root .chip.hot{background:#fef1f1;color:#dc2626}
-#expansion-root .chip.warn,#gyeongnam-root .chip.warn{background:#fef4e6;color:#b45309}
+#expansion-root .chip.warn,#gyeongnam-root .chip.warn{background:#fef4e6;color:#c0392b}
 #expansion-root .chip.ok,#gyeongnam-root .chip.ok{background:#ecfdf3;color:#15803d}
 #expansion-root .chip.mut,#gyeongnam-root .chip.mut{background:#eef2f7;color:#64748b}
 #expansion-root .chip.need,#gyeongnam-root .chip.need{background:#eef4ff;color:#2454a4}
@@ -199,7 +199,7 @@
 #gyeongnam-root .gn2-qcard>header h3{font-size:13px;margin:0}
 #gyeongnam-root .gn2-qcard>header .cnt{font-size:11px;font-weight:800;border-radius:99px;padding:1px 9px}
 #gyeongnam-root .gn2-qcard.hot>header .cnt{background:#fef1f1;color:#dc2626}
-#gyeongnam-root .gn2-qcard.warn>header .cnt{background:#fef4e6;color:#b45309}
+#gyeongnam-root .gn2-qcard.warn>header .cnt{background:#fef4e6;color:#c0392b}
 #gyeongnam-root .gn2-qcard>header small{margin-left:auto;font-size:10.5px;color:#66758d}
 #gyeongnam-root .gn2-qrow{display:flex;align-items:center;gap:12px;padding:10px 15px;border-top:1px solid #f0f3f8}
 #gyeongnam-root .gn2-qrow:first-of-type{border-top:0}
@@ -241,7 +241,7 @@
 .sw-frame td small{display:block;color:#78859a;margin-top:4px}
 .sw-due-chip{display:inline-block;font-size:10.5px;font-weight:800;border-radius:5px;padding:1px 7px;white-space:nowrap}
 .sw-due-chip.hot{background:#fef1f1;color:#c03246}
-.sw-due-chip.warn{background:#fef4e6;color:#b45309}
+.sw-due-chip.warn{background:#fef4e6;color:#c0392b}
 .sw-due-chip.ok{background:#ecfdf3;color:#15803d}
 .sw-due-chip.mut{background:#eef2f7;color:#7284a0}
 

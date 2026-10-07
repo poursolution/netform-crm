@@ -36,7 +36,7 @@ body:has(#pg-campaign.on.sh2-on) #unibar{display:none!important}
 .sh2-main b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sh2-main>span:last-child{font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sh2-kind{flex:none;font-style:normal;font-size:10.5px;font-weight:700;border-radius:4px;padding:1px 6px}
-.sh2-kind.r{color:#b42318;background:#fdecec}.sh2-kind.y{color:#8a5a00;background:#fff4d6}.sh2-kind.b{color:#1d3f99;background:#eef3fe}.sh2-kind.g{color:#1f7a4d;background:#e8f6ee}.sh2-kind.m{color:#6b7280;background:#f3f4f6}
+.sh2-kind.r{color:#b42318;background:#fdecec}.sh2-kind.y{color:#c0392b;background:#fdeceb}.sh2-kind.b{color:#1d3f99;background:#eef3fe}.sh2-kind.g{color:#1f7a4d;background:#e8f6ee}.sh2-kind.m{color:#6b7280;background:#f3f4f6}
 .sh2-who{font-size:12.5px}
 .sh2-resp{display:flex;flex-direction:column;gap:3px;min-width:0}
 .sh2-resp>span:first-child{font-size:12.5px}.sh2-resp>span:first-child>span{color:#6b7280}.sh2-resp b{color:#15171c}.sh2-resp b.g{color:#1f7a4d}

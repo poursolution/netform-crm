@@ -148,7 +148,7 @@
 .si-dark .pf-facts b{color:var(--dci);font-variant-numeric:tabular-nums}
 .si-dark .pf-bad,.si-dark .pf-facts b.pf-bad{color:var(--dcbad)}
 .si-dark .pf-why{grid-column:1/-1;font-size:10.5px;color:var(--dcs);border-top:1px solid #eef2f8;padding-top:8px;line-height:1.6}
-.si-dark .pf-why.bad{color:#b91c1c}.si-dark .pf-why.warn{color:#b45309}.si-dark .pf-why.good{color:#15803d}
+.si-dark .pf-why.bad{color:#b91c1c}.si-dark .pf-why.warn{color:#c0392b}.si-dark .pf-why.good{color:#15803d}
 /* 컨트롤타워 */
 .si-dark .dc-kchips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 .si-dark .dc-kchip{min-height:0;padding:6px 13px;font-size:12px;font-weight:700;border-radius:99px;background:#fff;border:1px solid var(--dcl);color:var(--dcs)}
@@ -191,7 +191,7 @@
 .si-dark .ct-tag{font-size:11px;font-weight:700;border-radius:99px;padding:3px 10px;background:#f4f6fa;color:var(--dcs);border:1px solid transparent;min-height:0}
 .si-dark .ct-tag:hover{border-color:var(--dc1);background:#f4f6fa}
 .si-dark .ct-tag.hot{background:#fef2f2;color:var(--dcbad)}
-.si-dark .ct-tag.warn{background:#fef7ec;color:#b45309}
+.si-dark .ct-tag.warn{background:#fef7ec;color:#c0392b}
 .si-dark .ct-tag.sel{border-color:var(--dc1)}
 .si-dark .ct-old{font-size:11px;color:var(--dcm);text-align:right;white-space:nowrap}
 .si-dark .ct-old b{color:var(--dcbad)}
@@ -199,7 +199,7 @@
 .si-dark button.ct-orderbtn:hover{border-color:var(--dc1);background:#fff}
 .si-dark .ct-selcol{width:30px}
 .si-dark .ct-hot{color:var(--dcbad);font-weight:700}
-.si-dark .ct-warn{color:#b45309;font-weight:700}
+.si-dark .ct-warn{color:#c0392b;font-weight:700}
 .si-dark .ct-bulk{display:flex;gap:10px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #eef2f8;font-size:12px;color:var(--dcs);flex-wrap:wrap}
 .si-dark button.ct-bulkbtn{font-size:12px;font-weight:800;border:0;background:#1e50b3;color:#fff;border-radius:8px;padding:8px 16px;min-height:0}
 .si-dark button.ct-bulkbtn:hover{background:#1a459c;border:0}
@@ -237,7 +237,7 @@
 .si-dark .ct-drchip{border:1px solid #e2e8f1;border-radius:999px;background:#fff;padding:5px 11px;font:inherit;font-size:12px;font-weight:800;color:#33415e;cursor:pointer;white-space:nowrap}
 .si-dark .ct-drchip b{font-variant-numeric:tabular-nums}
 .si-dark .ct-drchip.red{border-color:#f5c2c2;background:#fff5f5;color:#b42318}
-.si-dark .ct-drchip.org{border-color:#f6d9b0;background:#fffaf2;color:#b45309}
+.si-dark .ct-drchip.org{border-color:#f6d9b0;background:#fffaf2;color:#c0392b}
 .si-dark .ct-drchip.yel{border-color:#ecdfa6;background:#fffdf0;color:#8a6d00}
 .si-dark .ct-drchip:hover{border-color:#3B6CE4}
 /* 운영 건강 — Live KPI · 과거 데이터 정상화 (2026-09-25) */
@@ -257,7 +257,7 @@
 .si-dark .hl-norm b{font-size:22px;color:#1e50b3;font-variant-numeric:tabular-nums}
 .si-dark .hl-norm span{font-size:11.5px;color:#5b6b85}
 .si-dark .hl-gaps{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
-.si-dark .hl-gaps span{border:1px solid #f6d9b0;background:#fffaf2;color:#b45309;border-radius:999px;padding:3px 9px;font-size:11.5px;font-weight:800;white-space:nowrap}
+.si-dark .hl-gaps span{border:1px solid #f6d9b0;background:#fffaf2;color:#c0392b;border-radius:999px;padding:3px 9px;font-size:11.5px;font-weight:800;white-space:nowrap}
 @media(max-width:900px){.si-dark .hl-grid{grid-template-columns:1fr}.si-dark .hl-legacy{border-left:0;padding-left:0}.si-dark .hl-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* hidden 속성이 .dc-p의 display 규칙에 덮여 빈 칸으로 보이던 문제 (2026-09-25) */
 .si-shell .dc-p[hidden],.si-shell [hidden]{display:none!important}

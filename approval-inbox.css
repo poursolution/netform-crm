@@ -51,5 +51,5 @@
 .aq-sent button{align-self:flex-start;border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:12.5px;border-radius:8px;padding:7px 12px}
 /* 상세 머리 꼬리표 · 응대 이력의 시스템 기록 */
 #detailView .aq-tag{font-size:11px;font-weight:700;border-radius:4px;padding:1px 7px;white-space:nowrap}
-#detailView .aq-tag.wait{color:#8a5a00;background:#fff4d6}#detailView .aq-tag.ok{color:#1f7a4d;background:#e8f6ee}
+#detailView .aq-tag.wait{color:#c0392b;background:#fdeceb}#detailView .aq-tag.ok{color:#1f7a4d;background:#e8f6ee}
 #detailView .idv-msg.aq-ev .idv-bubble,#detailView.ddv.dv3 .ddv-talk .idv-msg.aq-ev[data-dv3k] .idv-bubble{background:#f5f6f8;color:#374151;font-weight:400}

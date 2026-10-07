@@ -1,5 +1,5 @@
 /* 파이프라인 · 관계관리 단계 화면 (2026-10-05 design_handoff_relationship · 관계관리 세분화.dc.html 치수 그대로)
-   빨강(#b42318 글자 · #d14a3f 막대) = 기준 넘김만 · 주황(#8a5a00) = 곧 넘김 · 브랜드색은 띠 · 이름에만
+   빨강(#b42318 글자 · #d14a3f 막대) = 기준 넘김만 · 주황(#c0392b) = 곧 넘김 · 브랜드색은 띠 · 이름에만
    버튼 규칙은 #pipeline-stage-b.prb 로 시작한다 — 단계 화면 공통 규칙(#pipeline-stage-root button)이 색 · 테두리 · 여백을 덮어쓰기 때문 */
 .prb{display:flex;flex-direction:column;gap:14px;color:#15171c}
 .prb-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.prb-head b{font-size:17px}.prb-head span{font-size:12px;color:#6b7280;flex:1 1 300px;min-width:0;line-height:1.5}
@@ -16,7 +16,7 @@
 /* 견적 발송일이 없어 분류하지 못한 건 — 카드 아래 한 줄 */
 #pipeline-stage-b.prb .prb-nodata{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;text-align:left;background:#fff;border:1.5px solid #e8eaef;border-radius:12px;padding:10px 16px;font:inherit;color:#15171c;cursor:pointer;min-height:0;box-shadow:none}
 #pipeline-stage-b.prb .prb-nodata[aria-pressed="true"]{border-color:#15171c}
-.prb-nodata>b{font-size:13.5px}.prb-nodata>b em{font-style:normal;color:#8a5a00}.prb-nodata>span{font-size:12px;color:#6b7280}.prb-nodata>i{flex:1}.prb-nodata>u{text-decoration:none;font-size:12.5px;font-weight:700;color:#2a52b8}
+.prb-nodata>b{font-size:13.5px}.prb-nodata>b em{font-style:normal;color:#c0392b}.prb-nodata>span{font-size:12px;color:#6b7280}.prb-nodata>i{flex:1}.prb-nodata>u{text-decoration:none;font-size:12.5px;font-weight:700;color:#2a52b8}
 /* 아래 2단: 왼쪽 340px · 오른쪽 나머지 전부 */
 .prb-body{display:grid;grid-template-columns:340px minmax(0,1fr);gap:14px;align-items:start}
 .prb-left{display:flex;flex-direction:column;gap:12px;min-width:0}
@@ -49,7 +49,7 @@
 .prb-row>i{height:32px;border-radius:0 2px 2px 0;display:block}
 .prb-row .s{display:flex;flex-direction:column;gap:1px;min-width:0}.prb-row .s b{font-size:13px;line-height:1.35;overflow-wrap:anywhere}.prb-row .s small{font-size:11.5px;color:#6b7280}.prb-row .s em{font-style:normal;font-weight:600}
 .prb-row .d{display:flex;flex-direction:column;gap:1px;min-width:0}.prb-row .d b.r{color:#b42318}.prb-row .d small{font-size:11px;color:#9ca3af}
-.prb-row .i{font-size:12px;line-height:1.45;overflow-wrap:anywhere}.prb .lv1{color:#b42318;font-weight:700}.prb .lv0{color:#8a5a00;font-weight:700}.prb .lvn{color:#6b7280;font-weight:400}
+.prb-row .i{font-size:12px;line-height:1.45;overflow-wrap:anywhere}.prb .lv1{color:#b42318;font-weight:700}.prb .lv0{color:#c0392b;font-weight:700}.prb .lvn{color:#6b7280;font-weight:400}
 .prb-row .a{text-align:right;white-space:nowrap}
 #pipeline-stage-b.prb .prb-row>button,#pipeline-stage-b.prb .prb-card .b button{border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12px;font-weight:700;border-radius:7px;padding:7px 0;white-space:nowrap;cursor:pointer;min-height:0;min-width:0;box-shadow:none}
 #pipeline-stage-b.prb .prb-row>button.fill,#pipeline-stage-b.prb .prb-card .b button.fill{background:#15171c;border-color:#15171c;color:#fff}

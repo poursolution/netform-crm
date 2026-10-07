@@ -1,5 +1,5 @@
 /* 단계 진단 영역 (2026-10-01 디자인 핸드오프 pipeline ②) — 숫자 4개 · 분석 카드 3개 · 행동 카드. 다른 화면도 같은 모양으로 쓴다 */
-.pd{display:flex;flex-direction:column;gap:10px;position:relative;color:#15171c;--pd-accent:#3b6ce4;--pd-tag-bg:#fff8ec;--pd-tag:#b26a00}
+.pd{display:flex;flex-direction:column;gap:10px;position:relative;color:#15171c;--pd-accent:#3b6ce4;--pd-tag-bg:#fdf0ee;--pd-tag:#b26a00}
 .pd-green{--pd-accent:#30a46c;--pd-tag-bg:#ecf8f1;--pd-tag:#1f7a4d}.pd-red{--pd-accent:#e5484d;--pd-tag-bg:#fdecec;--pd-tag:#c93a3f}
 .pd button.pd-toggle{position:static;align-self:flex-end;order:-1;margin:-6px 0 -4px;border:0!important;background:none!important;color:#6b7280;font:inherit;font-size:12px;cursor:pointer;padding:2px;min-height:0;height:auto;box-shadow:none!important}
 .pd button.pd-toggle:hover{color:#15171c}

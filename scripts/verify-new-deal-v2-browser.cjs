@@ -72,7 +72,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 중복 감지: 같은 현장일 수 있어요 → [다른 현장] / [이 현장에 다른 공사로 추가] */
   await f('site').fill('호매실경남아너스빌');
   assert.equal(one(await M.locator('.nd2-dup').innerText()),'같은 현장일 수 있어요 [경기 수원] 호매실경남아너스빌 이필선 · 수주 2025 · 옥상(우레탄) 이 현장에 다른 공사로 추가 다른 현장');
-  assert.deepEqual(await M.locator('.nd2-dup').evaluate(n=>[getComputedStyle(n).backgroundColor,getComputedStyle(n).borderTopColor]),['rgb(255, 250, 240)','rgb(245, 223, 168)']);
+  assert.deepEqual(await M.locator('.nd2-dup').evaluate(n=>[getComputedStyle(n).backgroundColor,getComputedStyle(n).borderTopColor]),['rgb(253, 240, 238)','rgb(245, 223, 168)']);
   if(shot)await page.screenshot({path:shot.replace(/\.png$/,'-2-dup.png')});
   await M.locator('[data-nd2="skip"]').click();assert.equal(await M.locator('.nd2-dup').count(),0,'[다른 현장] = 알림 닫기');
   await f('site').fill('전혀다른현장');assert.equal(await M.locator('.nd2-dup').count(),0);

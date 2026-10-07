@@ -65,7 +65,7 @@
 .avq-chip.on{background:#3B6CE4;border-color:#3B6CE4;color:#fff}.avq-chip.on small{color:#dbe6ff}
 .avq-sep{width:1px;height:18px;background:#e2e8f1;margin:0 3px}
 .avq-why{grid-column:2;font-size:11.5px;color:#5b6b85}
-.avq-warn{grid-column:2;font-style:normal;font-size:11.5px;color:#b45309;font-weight:800}
+.avq-warn{grid-column:2;font-style:normal;font-size:11.5px;color:#c0392b;font-weight:800}
 .avq-fields{display:grid;grid-template-columns:.9fr 1fr 1.55fr 1fr 1.15fr 1fr;gap:8px}
 .avq .avq-fields label{display:grid;gap:3px;align-content:start;margin:0;font-size:11px;font-weight:850;color:#8a97ab;min-width:0}
 .avq .avq-fields input,.avq .avq-fields select{display:block;width:100%;margin:0;border:1px solid #e2e8f1;border-radius:8px;padding:7px 9px;font:inherit;font-size:12.5px;color:#0f172a;background:#fff;box-sizing:border-box;font-variant-numeric:tabular-nums}

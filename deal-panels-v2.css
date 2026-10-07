@@ -14,18 +14,18 @@
 .dp-chips button em{font-style:normal;color:#9ca3af;font-size:11.5px}
 .dp-person{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fff;border:1px solid #e7e9ee;border-radius:10px;padding:10px 12px}
 .dp-person strong{display:block;font-size:13px}.dp-person span{font-size:12px;color:#6b7280}
-.dp-note{margin:0;background:#fff8ec;border-radius:9px;padding:8px 10px;font-size:12px;color:#8a5a00;line-height:1.5}
+.dp-note{margin:0;background:#fdf0ee;border-radius:9px;padding:8px 10px;font-size:12px;color:#c0392b;line-height:1.5}
 .dp-empty{margin:0;font-size:12.5px;color:#9ca3af}
 .dp-hint{font-size:11.5px;color:#9ca3af;line-height:1.5}
 .dp-check{display:flex;align-items:center;gap:7px;font-size:12.5px}
 .dp-more>summary{cursor:pointer;font-size:12.5px;color:#3b6ce4}.dp-more[open]{display:flex;flex-direction:column;gap:8px}
 #detailView.ddv .dp .dp-ghost{border:1px solid #e1e4ea;background:#fff;color:#374151;border-radius:8px;padding:7px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;min-height:0;box-shadow:none;align-self:flex-start}
-#detailView.ddv .dp .dp-ghost[aria-pressed="true"]{background:#fff8ec;border-color:#f5a524;color:#8a5a00}
+#detailView.ddv .dp .dp-ghost[aria-pressed="true"]{background:#fdf0ee;border-color:#f5a524;color:#c0392b}
 #detailView.ddv .dp .dp-primary{border:0;background:#3b6ce4;color:#fff;border-radius:8px;padding:8px 14px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;min-height:0;box-shadow:none}
 .dp-foot{display:flex;justify-content:flex-end;gap:8px;padding:10px 16px 14px;border-top:1px solid #f0f1f4;flex:none;background:#fafbfc}
 .dp .modalerr:empty{display:none}
-.dp-ai{background:#fff8ec;border:1px solid #f6e7c1;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
-.dp-ai b{font-size:13px;color:#8a5a00}.dp-ai span{font-size:12px}.dp-ai small{font-size:11.5px;color:#6b7280;line-height:1.5}
+.dp-ai{background:#fdf0ee;border:1px solid #f6e7c1;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.dp-ai b{font-size:13px;color:#c0392b}.dp-ai span{font-size:12px}.dp-ai small{font-size:11.5px;color:#6b7280;line-height:1.5}
 .dp-wtable{border:1px solid #e7e9ee;border-radius:10px;background:#fff;overflow:hidden}
 .dp-wtable>div{display:grid;grid-template-columns:70px minmax(0,1fr);gap:8px;align-items:center;padding:8px 10px;border-top:1px solid #f5f6f8}
 .dp-wtable>div:first-child{border-top:0}.dp-wtable span{font-size:12px;font-weight:600;color:#6b7280}
@@ -35,7 +35,7 @@
 .dp-to{display:flex;flex-direction:column;gap:3px;background:#fff;border:1px solid #e7e9ee;border-radius:10px;padding:10px 12px}
 .dp-to>div{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.dp-to strong{font-size:13px;line-height:1.45}.dp-to span{font-size:12px;color:#6b7280;line-height:1.5}
 .dp-heat{font-style:normal;font-size:11px;font-weight:700;border-radius:6px;padding:2px 7px;background:#eef3fe;color:#2a52b8;white-space:nowrap}
-.dp-heat.hot{background:#fdecec;color:#c93a3f}.dp-heat.warm{background:#fff8ec;color:#b26a00}.dp-heat.dormant{background:#f0f1f4;color:#6b7280}
+.dp-heat.hot{background:#fdecec;color:#c93a3f}.dp-heat.warm{background:#fdf0ee;color:#b26a00}.dp-heat.dormant{background:#f0f1f4;color:#6b7280}
 .dp-ok,.dp-warn{margin:8px 0 0;border-radius:9px;padding:8px 10px;font-size:12px;font-weight:600}
 .dp-ok{background:#ecf8f1;color:#1f7a4d}.dp-warn{background:#fdecec;color:#c93a3f}
 .dp-four{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
@@ -76,7 +76,7 @@
 .dp-preview{background:#f7f8fa;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
 .dp-preview small{font-size:11.5px;color:#9ca3af}.dp-preview b{font-size:13px}
 /* 추정 박스: 근거가 있으면 주황(누르면 채움), 없으면 회색 한 줄 */
-#detailView.ddv .dp button.dp-ai.on,.wd-box button.dp-ai.on{text-align:left;font:inherit;color:inherit;cursor:pointer;min-height:0;box-shadow:none;width:100%;border:1px solid #f1c97a;background:#fff8ec}
+#detailView.ddv .dp button.dp-ai.on,.wd-box button.dp-ai.on{text-align:left;font:inherit;color:inherit;cursor:pointer;min-height:0;box-shadow:none;width:100%;border:1px solid #f1c97a;background:#fdf0ee}
 button.dp-ai.on:hover{background:#fff1d6}
 .dp-ai.none{margin:0;background:#f4f5f7;border-color:#eceef2;color:#6b7280;font-size:12.5px;display:block}
 /* AI 제안 버튼(설정이 켜져 있을 때만 보인다) */

@@ -18,7 +18,7 @@
 .kv-card.kept{background:#f3faf6}
 .kv-card>header{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .kv-card>header small{font-size:11.5px;font-weight:600;color:#3b6ce4}
-.kv-card .plv-tag.g{background:#ecf8f1;color:#1f7a4d}.kv-card .plv-tag.o{background:#fff8ec;color:#b26a00}.kv-card .plv-tag.m{background:#f0f1f4;color:#6b7280}
+.kv-card .plv-tag.g{background:#ecf8f1;color:#1f7a4d}.kv-card .plv-tag.o{background:#fdf0ee;color:#b26a00}.kv-card .plv-tag.m{background:#f0f1f4;color:#6b7280}
 .kv-card h4{margin:0;font-size:14.5px;font-weight:700;line-height:1.45}
 .kv-result{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
 .kv-result b{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}.kv-result span{font-size:12px;color:#374151}.kv-result small{flex-basis:100%;font-size:11.5px;color:#9ca3af}

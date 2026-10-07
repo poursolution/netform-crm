@@ -147,7 +147,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    assert.equal(await page.evaluate(()=>!!inqCtlFirstResponseAt(inqCtlFind('00000003-0000-4000-8000-000000000003',false))),false,'이 모듈은 최초 응대 시각을 찍지 않는다');}
   await as({id:'u-admin',name:'송보람',role:'admin'});
   {const r3=(await waits()).find(x=>x[0]==='[서울 송파] 가락현대TWELVE');assert.deepEqual([r3[1],r3[5]],['요청 처리 · 부재','이필선 · 전화 시도 · 부재 → 다음 연락 10/08 (실제 연결 아님 · 최초 응대 미완료)']);
-   assert.deepEqual(await v.locator('.wrq-w',{hasText:'가락현대'}).evaluate(n=>[getComputedStyle(n.querySelector('.wrq-pill')).color,getComputedStyle(n.querySelector('.rp')).backgroundColor]),['rgb(138, 90, 0)','rgb(255, 250, 240)'],'주황');
+   assert.deepEqual(await v.locator('.wrq-w',{hasText:'가락현대'}).evaluate(n=>[getComputedStyle(n.querySelector('.wrq-pill')).color,getComputedStyle(n.querySelector('.rp')).backgroundColor]),['rgb(192, 57, 43)','rgb(253, 240, 238)'],'주황');
    assert.ok((await cards()).some(c=>c[0]==='[서울 송파] 가락현대TWELVE'),'연결이 안 됐으니 목록에 다시 나온다(다시 요청할 수 있다)');}
   /* 8. 지사 화면: '본사 확인 요청' → 처리 결과 하나 → (담당 지정 완료면) 실담당 → [본사에 회신] */
   await as({id:'u-jo',name:'조민준',role:'branch'});

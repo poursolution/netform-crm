@@ -64,7 +64,7 @@
   /* ① 3칸 카드 */
   const cards=SUB.map(s=>{const l=by(s.k),n=l.length,ov=l.filter(i=>i.seg.over).length,p=n?Math.round((n-ov)/n*100):null,on=S.sub===s.k;
    return '<button type="button" class="prb-sub" data-prb="sub" data-v="'+s.k+'" aria-pressed="'+on+'" style="border-top-color:'+s.top+'"><span class="h"><b>'+s.l+'</b><span>'+h(s.range(q))+'</span><b class="n">'+n+'<span>건</span></b></span><span class="rule">'+h(s.rule(q))+'</span>'
-    +'<span class="bar"><i><u style="width:'+(p==null?0:p)+'%;background:'+(p==null?'transparent':p<50?BAR:p<80?'#e0a43a':'#3fb37f')+'"></u></i><span>기준 지킴 <b'+(p!=null&&p<50?' class="r"':'')+'>'+(p==null?'–':p+'%')+'</b></span></span><b class="over'+(ov?'':' none')+'">'+h(s.over(q,ov))+'</b></button>';}).join('');
+    +'<span class="bar"><i><u style="width:'+(p==null?0:p)+'%;background:'+(p==null?'transparent':p<50?BAR:p<80?'#e8a09a':'#3fb37f')+'"></u></i><span>기준 지킴 <b'+(p!=null&&p<50?' class="r"':'')+'>'+(p==null?'–':p+'%')+'</b></span></span><b class="over'+(ov?'':' none')+'">'+h(s.over(q,ov))+'</b></button>';}).join('');
   const nd=nodata.length?'<button type="button" class="prb-nodata" data-prb="sub" data-v="nodata" aria-pressed="'+(S.sub==='nodata')+'"><b>데이터 확인 필요 <em>'+nodata.length+'건</em></b><span>견적 발송일이 없어 분류하지 못했습니다 · 발송일을 넣으면 자동으로 분류됩니다</span><i></i><u>'+(S.sub==='nodata'?'보는 중':'보기')+'</u></button>':'';
   /* ② 왼쪽: 단계 진단 · 왜 멈춰 있나 · 그래서 뭘 해야 하나 */
   const total=md.items.length,sumAmt=md.items.reduce((a,i)=>a+(Number(i.row.amount)||0),0),avg=total?Math.round(md.items.reduce((a,i)=>a+i.stall,0)/total):0,overN=classed.filter(i=>i.seg.over).length;

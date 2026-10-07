@@ -92,12 +92,12 @@ const PW=/^NF-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/;
   assert.equal(await cells('조재연'),'조 조재연 B2B팀 · 협약문의 B2B 로그인 미연결 로그인 기록 없음 계정 연결 ···');
   assert.equal(await cells('경남지사'),'경 경남지사 경남지사 지사 로그인 미연결 로그인 기록 없음 계정 연결 ···');
   const css=(n,sel,props)=>row(n).locator(sel).first().evaluate((e,props)=>{const s=getComputedStyle(e);return props.map(p=>s[p]);},props);
-  assert.deepEqual(await css('경남지사','.aa2-mail',['color']),['rgb(180, 83, 9)'],'미연결 = 주황');
+  assert.deepEqual(await css('경남지사','.aa2-mail',['color']),['rgb(192, 57, 43)'],'미연결 = 주황');
   assert.deepEqual(await css('경남지사','[data-aa2="link"]',['backgroundColor','color']),['rgb(21, 23, 28)','rgb(255, 255, 255)'],'[계정 연결] = 검정');
   assert.deepEqual(await css('이필선','[data-aa2="reset"]',['backgroundColor','color','fontSize','fontWeight','borderRadius']),['rgb(255, 255, 255)','rgb(21, 23, 28)','12px','700','7px']);
   assert.deepEqual(await css('이승우','.aa2-last',['color']),['rgb(156, 163, 175)'],'로그인 기록 없음 = 회색');
   assert.deepEqual([await css('송보람','.aa2-tag',['color','backgroundColor']),await css('황윤선','.aa2-tag',['color','backgroundColor']),await css('한준엽','.aa2-tag',['color','backgroundColor']),await css('경남지사','.aa2-tag',['color','backgroundColor'])],
-   [['rgb(29, 63, 153)','rgb(238, 243, 254)'],['rgb(112, 72, 232)','rgb(241, 237, 253)'],['rgb(31, 122, 77)','rgb(232, 246, 238)'],['rgb(138, 90, 0)','rgb(255, 244, 214)']]);
+   [['rgb(29, 63, 153)','rgb(238, 243, 254)'],['rgb(112, 72, 232)','rgb(241, 237, 253)'],['rgb(31, 122, 77)','rgb(232, 246, 238)'],['rgb(192, 57, 43)','rgb(253, 236, 235)']]);
   assert.deepEqual(await css('송보람','.aa2-av',['width','height','borderRadius','backgroundColor']),['30px','30px','8px','rgb(21, 23, 28)']);
   assert.equal(one(await dlg.locator('.aa2-foot').innerText()),'본인 비밀번호는 오른쪽 위 내 이름 → 비밀번호 변경 · 퇴사자는 [···] → 비활성화(기록은 유지) 비활성 2명 보기');
   if(shot)await page.screenshot({path:shot.replace(/\.png$/,'-1-list.png')});

@@ -57,7 +57,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    ['결과 수정','[경기 화성] 동탄 실주 → 수주','재입찰로 낙찰 · 낙찰공고 첨부','정정훈 · 3일 전','반려|승인'],
    ['타사 이관 실적','[대전] 싸이언스빌 · 한빛건설 2.1억','사전 보고 없음 · 결과 통보 문자','황윤선 · 4일 전','반려|승인'],
    ['특별 인센티브','[인천] 옥련현대 특별 인센티브','신규 공법 첫 수주','한준엽 · 11일 전','승인됨 · 이승우']]);
-  assert.deepEqual(await v.locator('.apv-type').evaluateAll(l=>l.slice(0,5).concat(l.slice(6)).map(n=>[getComputedStyle(n).color,getComputedStyle(n).backgroundColor])),[['rgb(29, 63, 153)','rgb(238, 243, 254)'],['rgb(138, 90, 0)','rgb(255, 244, 214)'],['rgb(107, 114, 128)','rgb(243, 244, 246)'],['rgb(31, 122, 77)','rgb(232, 246, 238)'],['rgb(180, 35, 24)','rgb(253, 236, 236)'],['rgb(112, 72, 232)','rgb(241, 237, 253)']]);
+  assert.deepEqual(await v.locator('.apv-type').evaluateAll(l=>l.slice(0,5).concat(l.slice(6)).map(n=>[getComputedStyle(n).color,getComputedStyle(n).backgroundColor])),[['rgb(29, 63, 153)','rgb(238, 243, 254)'],['rgb(192, 57, 43)','rgb(253, 236, 235)'],['rgb(107, 114, 128)','rgb(243, 244, 246)'],['rgb(31, 122, 77)','rgb(232, 246, 238)'],['rgb(180, 35, 24)','rgb(253, 236, 236)'],['rgb(112, 72, 232)','rgb(241, 237, 253)']]);
   assert.deepEqual(await v.locator('.apv-row').evaluateAll(l=>l.map(n=>[n.classList.contains('done'),getComputedStyle(n).opacity,getComputedStyle(n).gridTemplateColumns.split(' ')[0]])).then(a=>[a[0],a[6]]),[[false,'1','96px'],[true,'0.55','96px']]);
   assert.deepEqual(await v.locator('.apv-row').first().locator('.apv-act button').evaluateAll(l=>l.map(n=>[getComputedStyle(n).backgroundColor,getComputedStyle(n).color])),[['rgb(255, 255, 255)','rgb(21, 23, 28)'],['rgb(21, 23, 28)','rgb(255, 255, 255)']]);
   if(shot)await page.screenshot({path:shot+'-list.png'});

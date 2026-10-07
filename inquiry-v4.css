@@ -54,13 +54,13 @@
 #inq-v4 .i4-tag.lost,#inq-v4 .i4-tag.meet{color:#b42318;background:#fdecec}
 #inq-v4 .i4-tag.won{color:#1f7a4d;background:#e9f7ef}
 #inq-v4 .i4-tag.open{color:#1d3f99;background:#eef3fe}
-#inq-v4 .i4-tag.try{color:#8a5a00;background:#fff4d6}
+#inq-v4 .i4-tag.try{color:#c0392b;background:#fdeceb}
 #inq-v4 .i4-row .site{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #inq-v4 .i4-row .sum{font-size:12.5px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #inq-v4 .i4-row .c2{min-width:0;display:flex;flex-direction:column;gap:3px;border-left:1px solid #f0f1f4;padding-left:14px}
 #inq-v4 .i4-row .who{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #inq-v4 .i4-row .who>span{color:#6b7280}
-#inq-v4 .i4-row .who b.none,#inq-v4 .i4-dh .r3 b.none{color:#b45309}
+#inq-v4 .i4-row .who b.none,#inq-v4 .i4-dh .r3 b.none{color:#c0392b}
 #inq-v4 .i4-row .last{font-size:12px;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #inq-v4 .i4-row .last>span{color:#9ca3af}
 #inq-v4 .i4-row .last>i,#inq-v4 .i4-ev>i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#c9cdd5;margin-right:5px;vertical-align:1px}
@@ -77,7 +77,7 @@
 #inq-v4 .i4-dh .r1>b{font-size:12.5px}
 #inq-v4 .i4-dh .r1>span{font-size:12.5px;color:#6b7280}
 #inq-v4 .i4-dh em{flex:1;font-style:normal}
-#inq-v4 .i4-pill{font-size:12px!important;font-weight:700;border-radius:999px;padding:3px 10px;color:#8a5a00!important;background:#fff4d6;white-space:nowrap}
+#inq-v4 .i4-pill{font-size:12px!important;font-weight:700;border-radius:999px;padding:3px 10px;color:#c0392b!important;background:#fdeceb;white-space:nowrap}
 #inq-v4 .i4-pill.s1,#inq-v4 .i4-pill.s2{color:#b42318!important;background:#fdecec}
 #inq-v4 .i4-pill.s4{color:#4b5563!important;background:#f3f4f6}
 #inq-v4 .i4-dh .site{font-size:20px;letter-spacing:-.02em}
@@ -89,7 +89,7 @@
 #inq-v4 .i4-db{padding:14px 20px 20px;display:flex;flex-direction:column;gap:14px}
 #inq-v4 .i4-sec{display:flex;flex-direction:column;gap:6px}
 #inq-v4 .i4-sec .lb{font-size:12.5px;color:#374151}
-#inq-v4 .i4-sec .lb em{font-style:normal;color:#b45309}
+#inq-v4 .i4-sec .lb em{font-style:normal;color:#c0392b}
 #inq-v4 .i4-sec .lb span{color:#9ca3af;font-weight:500}
 #inq-v4 .i4-raw{margin:0;background:#f5f6f8;border-radius:8px;padding:10px 12px;font-size:13.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
 #inq-v4 .i4-hist{border:1px solid #dfe5f7;background:#f8faff;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
@@ -100,7 +100,7 @@
 #inq-v4 .i4-hist.won{border-color:#cfe9da;background:#f4fbf7}
 #inq-v4 .i4-hist.won b{color:#1f7a4d}
 #inq-v4 .i4-chips{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
-#inq-v4 .i4-miss{border:1px dashed #e6c789;background:#fffaf0;color:#8a5a00;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 10px}
+#inq-v4 .i4-miss{border:1px dashed #e6c789;background:#fdf0ee;color:#c0392b;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 10px}
 #inq-v4 .i4-fill{display:inline-flex;gap:5px;align-items:center}
 #inq-v4 .i4-fill input,#inq-v4 .i4-memo{border:1px solid #e3e6ec;border-radius:8px;padding:8px 11px;font:inherit;font-size:13px;height:auto;margin:0;background:#fff;color:#15171c;box-sizing:border-box;min-width:0}
 #inq-v4 .i4-fill input{padding:5px 9px;width:190px}

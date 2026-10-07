@@ -44,7 +44,7 @@
  function lostIn(a,b,owner){return (rows||[]).filter(t=>{if(t.transfer_status!=='transferred'||t.award_result!=='lost'||!inR(t.award_date,a,b)||!scoped(t,owner))return false;const d=dealOf(t.deal_id);let o='open';try{o=d?R.outcomeOf(d):'open';}catch(e){}return !['lost','nocontact','closed'].includes(o);}).length;}
  const pendingList=owner=>(rows||[]).filter(t=>t.transfer_status==='transferred'&&(t.award_result==='pending'||(t.award_result==='transferred_won'&&!t.incentive_eligible&&!t.rejected_reason))&&scoped(t,owner));
  /* ── 꼬리표 ── */
- const BADGE={pending:['타사 이관 · 낙찰결과 대기','#8a5a00','#fff4d6'],awarded:['타사 이관 수주 · 실적 인정 대기','#1d3f99','#eef3fe'],approved:['타사 이관 수주','#1f7a4d','#e8f6ee'],rejected:['타사 이관 수주 · 실적 제외','#6b7280','#f3f4f6'],lost:['타사 이관 · 실주','#b42318','#fdecec'],cancelled:['타사 이관 · 입찰 취소 · 보류','#6b7280','#f3f4f6']};
+ const BADGE={pending:['타사 이관 · 낙찰결과 대기','#c0392b','#fdeceb'],awarded:['타사 이관 수주 · 실적 인정 대기','#1d3f99','#eef3fe'],approved:['타사 이관 수주','#1f7a4d','#e8f6ee'],rejected:['타사 이관 수주 · 실적 제외','#6b7280','#f3f4f6'],lost:['타사 이관 · 실주','#b42318','#fdecec'],cancelled:['타사 이관 · 입찰 취소 · 보류','#6b7280','#f3f4f6']};
  function badgeOf(d){const s=stateOf(d),b=BADGE[s];if(!b)return null;const t=of(d);return [s==='approved'?'타사 이관 수주 · '+won(t.award_amount)+' 반영':b[0],b[1],b[2]];}
  function tag(d){if(!enabled()||!d)return '';const b=badgeOf(d);return b?'<span class="tf-tag" style="color:'+b[1]+';background:'+b[2]+'">'+h(b[0])+'</span>':'';}
  /* ── 상세: [··· 기타 처리] 메뉴 · 상태 꼬리표 · 이관 정보 상자 ── */

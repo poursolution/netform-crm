@@ -3,9 +3,9 @@
 .now-card .nc-stage{font-size:11px;font-weight:700;color:#5b6b85}
 .now-card .nc-todo{font-size:15px;font-weight:800;line-height:1.55;margin:6px 0 2px;color:#0f172a}
 .now-card .nc-late{color:#dc2626}
-.now-card .nc-today{color:#b45309}
+.now-card .nc-today{color:#c0392b}
 .now-card .nc-ok{color:#15803d;font-size:12px}
-.now-card .nc-warn{color:#b45309;font-size:12px}
+.now-card .nc-warn{color:#c0392b;font-size:12px}
 .now-card .nc-sug{font-size:10.5px;font-weight:800;color:#1e50b3;background:#eaf1fd;border-radius:99px;padding:2px 8px;vertical-align:2px}
 .now-card .nc-promise{color:#dc2626;font-weight:800}
 .now-card .nc-meta{font-size:11.5px;color:#5b6b85;margin-bottom:11px}
@@ -96,4 +96,4 @@
 
 /* ops_12 D⑫ AI 추천 근거 3줄 */
 .now-card .nc-why{display:grid;grid-template-columns:76px minmax(0,1fr);gap:3px 10px;font-size:11.5px;margin:-4px 0 11px}
-.now-card .nc-why>span{color:#6b7280}.now-card .nc-why>b{font-weight:500;color:#15171c;min-width:0;word-break:break-word}.now-card .nc-why>b.amb{color:#8a5a00}
+.now-card .nc-why>span{color:#6b7280}.now-card .nc-why>b{font-weight:500;color:#15171c;min-width:0;word-break:break-word}.now-card .nc-why>b.amb{color:#c0392b}
