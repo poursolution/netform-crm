@@ -67,6 +67,7 @@
    todo:'미팅 전 현장은 첫 통화에서 1차 미팅 날짜까지 잡고, 미팅 후 견적 요청을 등록하세요(등록 기한은 운영 제안 · 설정값). 물량 산출은 견적 요청 등록일부터 목표 '+Q.quote+'일 · 최대 5일(견적팀).',
    tab:it=>it.bucket==='plan'?1:it.bucket==='done'?2:0,
    taskOf:x=>x.tab===2?(qrOf(x.row.item)?'물량 산출 기한 확인 (견적팀)':'견적 요청 등록'):x.tab===1?'미팅 전날 확인 연락':'첫 통화에서 미팅 날짜 잡기',
+   nowOf:x=>x.tab===0?'미팅 일정 없음':x.sub,/* 상태 이름 + 같은 말 반복으로 줄이 길어지지 않게 */
    has:{nodate:(it,t)=>t===0,nodue:it=>it.rs.includes('nodue'),req:it=>it.rs.includes('req'),nonext,long},sub:it=>it.sub};
   /* stage7 ②: 발송일 있는 건만 7일 판정 · 없으면 넷째 칸 '발송일 확인 필요'(판정 불가 · 7일 계산 안 함) → 발송일 · 자료 · 수신자 입력 */
   if(key==='sent')return {name:'자료 발송완료',goal:goalOf(key,14),desc:'견적 · 제안 자료를 보낸 뒤 고객 반응을 확인하는 단계 · 발송 후 '+Q.follow+'일 안 후속 · 발송일 있는 건만 '+Q.follow+'일 판정',
@@ -121,7 +122,7 @@
    tab:it=>(!it.values.contractDate||!it.values.contractAmount)?0:(it.row.code==='completion'||it.values.completionDate)?2:1,
    taskOf:x=>x.tab===0?'계약 정보 입력':x.tab===2?'준공 확인':started(x.it)?'주간 현장 방문':'착공 준비',
    btnOf:x=>x.tab===1&&!started(x.it)?['착공 준비','stagefields']:x.tab===0?['정보 입력','stagefields']:x.tab===2?['준공 확인','stage']:['현장 확인','activity'],
-   rowOpts:x=>{const nx=x.row.next&&x.row.next.text?String(x.row.next.text):'';return x.tab>0&&STALE.test(nx)?{forceTask:true,staleNext:'등록된 "'+nx.trim()+'" 은 계약 확인이 끝나 종료 대상 · 다음 기록 때 자동 종료'}:{};},
+   rowOpts:x=>{const nx=x.row.next&&x.row.next.text?String(x.row.next.text):'';return x.tab>0&&STALE.test(nx)?{forceTask:true,staleNext:'"'+nx.trim()+'" 종료 대상'}:{};},
    has:{cinfo:(it,t)=>t===0,handoff:(it,t)=>t===1&&it.rs.includes('handoff'),site7:(it,t)=>t===1&&started(it)&&it.rs.includes('site7'),nofin:(it,t)=>t===2&&!finOk(it)},
    sub:(it,t)=>t===0?(!it.values.contractDate&&!it.values.contractAmount?'계약일 · 금액 미입력':!it.values.contractDate?'계약일 미입력':'계약금액 미입력'):it.sub};
  }

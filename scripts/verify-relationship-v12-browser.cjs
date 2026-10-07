@@ -74,21 +74,24 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.equal(one(await V.locator('.rv-prog').innerText()),'분류 끝남 7 / 8');assert.match(one(await V.locator('.rv-box .rv-note').first().innerText()),/자동으로 바꾸지 않음/);
   assert.equal(await V.locator('.ps3-kpis .over b').innerText(),'3건','다음 연락일 지남 = 업무 필터와 같은 수');
   /* ④ 목록 줄: v11 4칸 그대로 + 상태 꼬리표(현장 아래) · 기준일(현재 상황 둘째 줄) · 상태 주기로 정한 기한 · 버튼 */
-  const d10=await dot(-10),d20=await dot(-20),d40=await dot(-40),d130=await dot(-130),d50=await dot(-50),dr=await dot(-1);
+  const mdn=n=>page.evaluate(n=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(DAY(n));return (+m[2])+'.'+(+m[3]);},n);/* 줄 안 글은 짧게(2026-10-07 대표 "내용 넘어가는 것 하지 말아") — 기준일은 월.일 */
+  const d10=await mdn(-10),d20=await mdn(-20),d40=await mdn(-40),d130=await mdn(-130),d50=await mdn(-50),dr=await mdn(-1);
   const rows=await L.locator('.prv-row').evaluateAll(l=>l.map(r=>{const t=s=>{const n=r.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():null;};return [r.dataset.key.replace(/^deal:/,''),t('.prv-a>em.prv-tag'),r.querySelector('.prv-a>em.prv-tag').className.replace('prv-tag','').trim(),t('.prv-b>span'),t('.prv-b>small.base'),t('.prv-c>b'),t('.prv-c>small:first-of-type'),r.querySelector('.prv-c>small:first-of-type').className,t(':scope>button'),r.querySelector(':scope>button').dataset.v];}));
   if(process.env.DUMP)fs.writeFileSync(process.env.DUMP,JSON.stringify(rows,null,1));
   const byKey=Object.fromEntries(rows.map(r=>[r[0],r]));
-  assert.deepEqual(byKey['f-new'],['f-new','집중관리 · 7일 후속','focus','마지막 연락 4일 전','견적 '+d10+' · 집중 D+10 · 담당 분류 전','수신 · 반응 확인 통화','3일 남음 · 마지막 연락 + 7일','','다음 행동','next']);
-  assert.deepEqual(byKey['f-over'],['f-over','집중관리 · 7일 후속','focus','마지막 연락 12일 전','견적 '+d20+' · 집중 D+20 · 담당 분류 전','수신 · 반응 확인 통화','5일 지남 · 마지막 연락 + 7일','r','연락 기록','activity']);
+  assert.deepEqual(byKey['f-new'],['f-new','집중관리 · 7일 후속','focus','마지막 연락 4일 전','견적 '+d10+' · 집중 D+10 · 분류 전','수신 · 반응 확인 통화','3일 남음 · 연락 + 7일','','다음 행동','next']);
+  assert.deepEqual(byKey['f-over'],['f-over','집중관리 · 7일 후속','focus','마지막 연락 12일 전','견적 '+d20+' · 집중 D+20 · 분류 전','수신 · 반응 확인 통화','5일 지남 · 연락 + 7일','r','연락 기록','activity']);
   assert.deepEqual(byKey['f-mark-rev'].slice(0,6).concat(byKey['f-mark-rev'].slice(8)),['f-mark-rev','집중관리 · 7일 후속','focus','집중 1개월 지남 → 일반관리 검토','견적 '+d40+' · 집중 D+40','결정 일정 확인'/* 등록된 다음 할 일이 있으면 그것(v11 규칙) */,'전환 검토','classify'],'담당이 분류한 건은 기간이 지나도 자동 전환 없음 · 전환 검토만');
-  assert.deepEqual(byKey['n-rev'],['n-rev','일반관리 · 월 1회','normal','일반 4개월 지남 → 대기 · 보류 검토','견적 '+d130+' · 일반 4개월째 · 담당 분류 전','전환 검토 · 사유 · 다음 확인일','10일 남음 · 마지막 연락 + 30일','','전환 검토','classify']);
-  assert.deepEqual(byKey['wk-1'].slice(0,6),['wk-1','일반관리 · 월 1회','normal','CRM 연락 기록 없음','견적 '+d50+' · 일반 2개월째 · 담당 분류 전','진행 확인 통화'],'약속 연락일이 있으면 그 날짜(기한은 판정 함수 글)');
-  assert.deepEqual(byKey['w-1'].slice(0,6),['w-1','대기 · 2개월 1회','wait','2027 봄 공사 · 장기수선 반영 대기','대기 사유 입력됨 · '+(await page.evaluate(()=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(DAY(-10));return (+m[2])+'.'+(+m[3]);}))+' 전환 · 향후 연도','대기 · 공사 시기 · 예산 확인']);
-  assert.deepEqual(byKey['h-1'],['h-1','보류 · 재검토일','hold','보류 재검토일 도래 → 추진 여부','보류 사유 입력 · 재검토 '+dr,'전환 검토 · 사유 · 다음 확인일','1일 지남 · 재검토일','r','전환 검토','classify']);
-  assert.deepEqual(byKey['u-1'],['u-1','미확인 · 기준일 확인 필요','unk','CRM 연락 기록 없음 (이관 전 확인 필요)','견적 발송일 없음 · 기간 계산 안 함','상태 재분류','기한 없음 · 분류 후 정해짐','g','분류하기','classify']);
+  assert.deepEqual(byKey['n-rev'],['n-rev','일반관리 · 월 1회','normal','일반 4개월 지남 → 대기 · 보류 검토','견적 '+d130+' · 일반 4개월째 · 분류 전','전환 검토 · 사유 · 다음 확인일','10일 남음 · 연락 + 30일','','전환 검토','classify']);
+  assert.deepEqual(byKey['wk-1'].slice(0,6),['wk-1','일반관리 · 월 1회','normal','CRM 연락 기록 없음','견적 '+d50+' · 일반 2개월째 · 분류 전','진행 확인 통화'],'약속 연락일이 있으면 그 날짜(기한은 판정 함수 글)');
+  assert.deepEqual(byKey['w-1'].slice(0,6),['w-1','대기 · 2개월 1회','wait','2027 봄 공사 · 장기수선 반영 대기',''+(await page.evaluate(()=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(DAY(-10));return (+m[2])+'.'+(+m[3]);}))+' 전환 · 향후 연도','대기 · 공사 시기 · 예산 확인']);
+  assert.deepEqual(byKey['h-1'],['h-1','보류 · 재검토일','hold','보류 재검토일 도래 → 추진 여부','재검토 '+dr,'전환 검토 · 사유 · 다음 확인일','1일 지남 · 재검토일','r','전환 검토','classify']);
+  assert.deepEqual(byKey['u-1'],['u-1','미확인 · 기준일 확인 필요','unk','CRM 연락 기록 없음','발송일 없음 · 기간 계산 안 함','상태 재분류','기한 없음 · 분류 후 정해짐','g','분류하기','classify']);
   assert.equal(rows.length,8);assert.deepEqual((await L.locator('.prv-head span').allInnerTexts()).map(one),['현장 · 담당','현재 상황','다음 업무 · 기한','']);
-  /* 꼬리표 색: 집중 파랑 · 미확인 노랑 바탕 · 기준일 회색 */
-  assert.deepEqual(await page.evaluate(()=>{const q=k=>document.querySelector('#pipeline-stage-v3 .prv-row[data-key$="'+k+'"]'),cs=(n,p)=>getComputedStyle(n)[p];return [cs(q('f-new').querySelector('.prv-tag'),'color'),cs(q('u-1').querySelector('.prv-tag'),'backgroundColor'),cs(q('f-new').querySelector('.prv-b>small.base'),'color'),cs(document.querySelector('#pipeline-stage-v3 .ps3-tab:last-child .n'),'color')];}),['rgb(29, 63, 153)','rgb(255, 244, 214)','rgb(156, 163, 175)','rgb(180, 83, 9)']);
+  /* 꼬리표 색: 집중 파랑 · 미확인 붉은 바탕 · 기준일 회색 */
+  assert.deepEqual(await page.evaluate(()=>{const q=k=>document.querySelector('#pipeline-stage-v3 .prv-row[data-key$="'+k+'"]'),cs=(n,p)=>getComputedStyle(n)[p];return [cs(q('f-new').querySelector('.prv-tag'),'color'),cs(q('u-1').querySelector('.prv-tag'),'backgroundColor'),cs(q('f-new').querySelector('.prv-b>small.base'),'color'),cs(document.querySelector('#pipeline-stage-v3 .ps3-tab:last-child .n'),'color')];}),['rgb(29, 63, 153)','rgb(253, 236, 235)','rgb(156, 163, 175)','rgb(192, 57, 43)']);
+  /* 2026-10-07 대표 "내용 넘어가는 것 하지 말아": 줄 안 글이 말줄임(…)으로 잘리지 않는다(1600 폭) */
+  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#pipeline-stage-v3 .prv-row *')].filter(e=>e.scrollWidth>e.clientWidth+1&&getComputedStyle(e).overflow!=='visible').map(e=>(e.className||e.tagName)+': '+e.textContent.trim().slice(0,40))),[],'관계관리 줄 안 글이 잘림');
   if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'rel-v12.png'),fullPage:true});
   /* ⑤ 업무 필터는 상태와 함께 걸림: [다음 연락일 지남] → 3줄 · 다시 누르면 풀림 · [집중관리] + [다음 행동 미등록] → 2줄 */
   await V.locator('.ps3-works button[data-v="od"]').click();await page.waitForTimeout(200);

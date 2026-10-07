@@ -98,7 +98,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    if(E.order)assert.deepEqual(s.rows.map(r=>r[0]),E.order,key+': 빨강 상태 먼저 → 체류 긴 순');
    for(const r of s.rows){const t=Number(r[1]);assert.equal(r[7],key==='construction'&&r[0]==='t-hand'?'착공 준비'/* stage7 ⑤: 착공 전 시공 중 건 */:E.act[t],key+' '+r[0]+': 버튼 = 상태별 이름');assert.equal(r[4],t===0?E.reasons[0][0]:E.tabs[t][1],key+' '+r[0]+': 사유 = 상태별');assert.equal(r[8],t===0,key+' '+r[0]+': 빨강 상태만 빨강');assert.equal(r[9],Number(r[6].replace('일',''))>E.goal,key+' '+r[0]+': 체류 기준 '+E.goal+'일');assert.ok(r[5].length>0,key+' '+r[0]+': 보조 한 줄');}
    assert.deepEqual(E.tabs.map((_,t)=>s.rows.filter(r=>Number(r[1])===t).length),E.n.slice(1),key+': 줄 수 = 탭 건수');
-   if(E.amb!=null)assert.equal(await page.locator('#pipeline-stage-v3 .ps3-tab').nth(E.amb+1).locator('.n').evaluate(n=>n.classList.contains('amb')&&getComputedStyle(n).color),'rgb(180, 83, 9)',key+': 넷째 칸(확인 필요) 숫자는 주황');
+   if(E.amb!=null)assert.equal(await page.locator('#pipeline-stage-v3 .ps3-tab').nth(E.amb+1).locator('.n').evaluate(n=>n.classList.contains('amb')&&getComputedStyle(n).color),'rgb(192, 57, 43)',key+': 넷째 칸(확인 필요) 숫자는 붉은 계열');
    if(shot)await page.screenshot({path:shot.replace(/\.png$/,'-'+key+'.png')});
   }
   /* 시안의 글자 크기 · 버튼 모양 */

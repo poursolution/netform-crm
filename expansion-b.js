@@ -81,7 +81,16 @@
   const k=siteKeyOf(it),g=GRP.get(k);if(!g||g.items.length<2)return '';if(n>0&&siteKeyOf(rows[n-1])===k)return '';
   const B=SB(),last=g.items.map(x=>x.extra.r.lastContactAt||'').filter(Boolean).sort().pop()||'',comp=g.items.map(x=>x.extra.r.completionDate||'').filter(Boolean).sort().pop()||'',owner=g.items.map(x=>x.owner).find(o=>o&&o!=='미배정')||'미배정';
   const st=last?'최근 '+ymd(last):'기록 보완 필요';
-  return '<div class="psb-row xb-site" role="row" data-site="'+attr(k)+'"><div class="prv-a"><b title="'+attr(it.site)+'">'+h(it.site)+'</b><span>계약 '+g.items.length+'건'+(comp?' · '+String(comp).slice(0,7).replace('-','.')+' 준공':'')+' · '+h(owner)+'</span></div><div class="prv-b"><span>사후 연락 · <b>'+h(st)+'</b></span></div><div class="prv-c"><span>기록은 단지 단위로 모든 계약에 연결</span></div><button type="button" data-sb="act" data-key="'+attr(it.key)+'" data-v="sitenote">단지 한 번 연락 기록</button></div>';
+  /* 2026-10-07 확장관리 배치 오류(단지 묶음 시안): 머리 줄도 다른 목록 줄과 같은 4칸(prv-row) — 1칸 현장 · 계약 n건 · 합계 · 준공 · 담당 / 2칸 사후 연락 상태 / 3칸 다음 접촉일 + 연결 문구 / 4칸 흰 버튼 [단지 연락 기록] */
+  const nds=g.items.map(x=>days(x.extra.r.nextContactAt)).filter(v=>v!==null),nmin=nds.length?Math.min(...nds):null,sum=g.items.reduce((a,x)=>a+(Number(x.amount)||0),0);
+  const nxt=nmin===null?'다음 접촉일 미지정':nmin<0?'다음 접촉일 '+(-nmin)+'일 지남':nmin===0?'다음 접촉일 오늘':'다음 접촉일 '+nmin+'일 뒤',cnt=g.items.length===2?'두 계약':g.items.length+'개 계약';
+  return '<div class="prv-row psb-row xb-site" role="row" data-site="'+attr(k)+'"><div class="prv-a"><b title="'+attr(it.site)+'">'+h(it.site)+'</b><span>계약 '+g.items.length+'건'+(sum?' · '+h(B.money(sum)):'')+(comp?' · '+String(comp).slice(0,7).replace('-','.')+' 준공':'')+' · '+h(owner)+'</span></div><div class="prv-b"><span>사후 연락 · <b>'+h(st)+'</b></span></div><div class="prv-c"><b'+(nmin!==null&&nmin<0?' class="r"':nmin===null?' class="none"':'')+'>'+h(nxt)+'</b><small>기록은 단지 단위로 '+h(cnt)+'에 연결</small></div><button type="button" data-sb="act" data-key="'+attr(it.key)+'" data-v="sitenote">단지 연락 기록</button></div>';
+ }
+ /* 같은 단지 묶음 안의 계약 줄: 현장명을 다시 쓰지 않고 '계약 n · 공종 · 금액 · 준공월' 들여쓰기 + 버튼 자리는 '위 단지 줄에서'(연락은 머리 줄에서 한 번) */
+ function groupRow(C,it,reason){
+  const B=SB(),k=siteKeyOf(it),g=GRP.get(k);if(!g||g.items.length<2)return B.row3(C,it,reason);
+  const n=g.items.findIndex(x=>x.key===it.key)+1,r=it.extra&&it.extra.r||{},w=workOf(r),bc=B.BRAND[it.brand]||'',rs=(reason||it.first)?C.RS[reason||it.first]:null,S=C.S.find(x=>x[0]===it.bucket)||C.S[0],why=rs?(it.reasonText&&it.reasonText[reason||it.first]||rs[0]):'정상',red=!!(rs&&rs[1]===RED),ct=r.completionDate?String(r.completionDate).slice(0,7).replace('-','.')+' 준공':'';
+  return '<div class="prv-row psb-row xb-sub" role="row" tabindex="0" data-sb="open" data-key="'+attr(it.key)+'" style="border-left-color:'+(bc||'#e3e6ec')+'"><div class="prv-a"><b>'+h('계약 '+n+(w?' · '+w:'')+' · '+(it.amountText||B.money(it.amount))+(ct?' · '+ct:''))+'</b><span><em style="color:'+(bc||'#9ca3af')+'">'+h(it.brandText||it.brand||'브랜드 미지정')+'</em> · '+h(it.owner||'미배정')+'</span></div><div class="prv-b"><span title="'+attr(S[1])+'">'+h(S[1].split(' · ')[0])+'</span><small title="'+attr(it.sub)+'">'+h(it.sub)+'</small></div><div class="prv-c"><b'+(red?' class="r"':rs?'':' class="none"')+' title="'+attr(why)+'">'+h(why)+'</b><small>'+h(B.dayLabel(C,it.stall))+'</small></div><span class="xb-up">위 단지 줄에서</span></div>';
  }
  function groupItems(items){
   GRP=new Map();const order=new Map();
@@ -101,6 +110,7 @@
   /* 상세창 갱신 · 제목 · 필터줄은 기존 v2 그대로(보이지 않는 칸에 그리게 하고 목록만 바꾼다) */
   const dummy=document.createElement('div');base.apply(root.ExpansionV2,[dummy].concat(args.slice(1)));
   pg?.classList.add('xv-on','xb-on');
+  /* 필터줄(고정)의 위치 + 높이만큼 아래 목록 칸 이름 줄을 내려 고정 — 겹치지 않게 */{const cf=()=>{const g=document.getElementById('pg-expansion'),b=g&&g.querySelector(':scope>.cf-bar:not([hidden])');if(!g)return;const top=b?(parseFloat(getComputedStyle(b).top)||0):0;g.style.setProperty('--xb-cf',Math.round(top+(b?b.offsetHeight:0)+4)+'px');};cf();requestAnimationFrame(cf);if(!root.__xbCfBound){root.__xbCfBound=true;root.addEventListener('resize',cf);}}
   const s=scoped(),S=SB().state('expansion'),items=groupItems(s.rows.map(item));
   CFG.topHtml=topHtml(s);CFG.groupHead=root.G.boardV3Off?null:groupHead;
   /* 대상 수 나누기(contact_link ③): 사후 연락 대상 vs 기록 보완 필요(공종 · 연락 기록 없음 — 미실행으로 세지 않음) */
@@ -109,7 +119,7 @@
   /* 연도를 고르면 제목 옆에 "2025년 준공만" · 목록 줄은 두 덩어리(끄기: G.expansionYearRowOff=true → 예전 줄) */
   CFG.listNote=root.G.expansionYearRowOff||String(s.year)==='전체'?'':(String(s.year)==='이전'?(s.current-3)+'년 이전':s.year+'년')+' 준공만';
   /* 공용 틀(2026-10-06 "리스트에서 이질감 없이"): 줄은 StageBoard 의 파이프라인 v11 모양 줄. 두 덩어리 줄은 공용 틀을 껐을 때(G.boardV3Off)만 */
-  CFG.rowHtml=root.G.expansionYearRowOff||!root.G.boardV3Off?null:rowHtml;
+  CFG.rowHtml=root.G.expansionYearRowOff?null:(root.G.boardV3Off?rowHtml:groupRow);/* 공용 틀이면 같은 단지 묶음 안의 계약 줄만 다르게(groupRow) */
   host.innerHTML=SB().html(CFG,items,S);
   SB().bind(host,{state:()=>SB().state('expansion'),cfg:()=>CFG,paint:()=>root.paintExpansion(),open});
   if(!host.__xbr){host.__xbr=true;host.addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.xbRule;if(!k)return;setRule(k,e.target.value);root.paintExpansion();if(typeof root.toast==='function')root.toast((k==='afterCompletionDays'?'사후 연락 기준':'관계 연락 주기')+'을 '+e.target.value+'일로 바꿨습니다 (이 PC에 저장)');});}

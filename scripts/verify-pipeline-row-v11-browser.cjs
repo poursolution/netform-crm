@@ -57,7 +57,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const css=await page.evaluate(()=>{const R=[...document.querySelectorAll('#pipeline-stage-v3 .prv-row')],cs=(n,p)=>getComputedStyle(n)[p];
    return [cs(R[0].querySelector('.prv-c>small'),'color'),cs(R[1].querySelector('.prv-c>small'),'color'),cs(R[4].querySelector('.prv-c>small'),'color'),cs(R[4].querySelector('.prv-a i'),'color'),cs(R[0].querySelector('.prv-a i'),'color'),
     cs(R[0],'borderLeftColor'),cs(R[0],'borderLeftWidth'),cs(R[1],'borderLeftColor'),cs(R[0].querySelector(':scope>button'),'backgroundColor'),Math.round(R[0].querySelector(':scope>button').getBoundingClientRect().width),cs(R[0].querySelector('.prv-a>b'),'fontSize'),
-    Math.max(...R.map(r=>Math.round(r.getBoundingClientRect().height)))<=92/* 세 줄 글(상태 · 시도 · 실제 연결 / 업무 · 기한 · 판정 — 2026-10-06 집계 정리) + 안쪽 여백 26 + 밑줄 1 */,cs(R[0],'cursor')];});
+    Math.max(...R.map(r=>Math.round(r.getBoundingClientRect().height)))<=108/* 2026-10-07: 긴 판정 근거는 잘리지 않고 두 줄로 접힘(대표 "내용 넘어가는 것 하지 말아") *//* 세 줄 글(상태 · 시도 · 실제 연결 / 업무 · 기한 · 판정 — 2026-10-06 집계 정리) + 안쪽 여백 26 + 밑줄 1 */,cs(R[0],'cursor')];});
   assert.deepEqual(css,['rgb(180, 35, 24)','rgb(107, 114, 128)','rgb(156, 163, 175)','rgb(180, 35, 24)','rgb(107, 114, 128)','rgb(232, 89, 12)','3px','rgb(31, 157, 85)','rgb(255, 255, 255)',120,'14.5px',true,'pointer']);
   if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'pipe-v11.png')});
   /* ③ 줄을 누르면 바로 그 영업건 상세(예전 입력 창 없음) */
@@ -92,7 +92,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    assert.deepEqual(await b.locator('.prv-row').first().evaluate(r=>{const t=s=>r.querySelector(s).innerText.replace(/\s+/g,' ').trim();return [t('.prv-a>b'),t('.prv-a>span'),t('.prv-b>small'),t('.prv-c>small'),t(':scope>button')];}),want,key);
    assert.match(one(await b.locator('.prv-b>span').first().innerText()),key==='won'?/^수주 · \d{4}\.\d{1,2}\.\d{1,2} · 9,200만$/:/^실주 · \d{4}\.\d{1,2}\.\d{1,2}$/,key+': 줄 = 결과 · 날짜 · 금액(stage7)');
    assert.equal(one(await b.locator('.prv-b>small.base').first().innerText()),key==='won'?'수주 유형 · 낙찰금액 · 낙찰사 미기록':'실주 사유 미입력',key+': 기준일 줄 = 빠진 정보');
-   assert.equal(await b.locator('.prv-c>small').first().evaluate(n=>n.classList.contains('amb')&&getComputedStyle(n).color),'rgb(138, 90, 0)',key+': 확인 필요는 주황');
+   assert.equal(await b.locator('.prv-c>small').first().evaluate(n=>n.classList.contains('amb')&&getComputedStyle(n).color),'rgb(192, 57, 43)',key+': 확인 필요는 붉은 계열');
    if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'pipe-v11-'+key+'.png')});
   }
   await page.locator('#pipeline-stage-v3 .prv-row').first().click();await page.waitForSelector('#detailView.on.dv3');

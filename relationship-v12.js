@@ -53,7 +53,7 @@
   let due='',dueWhy='';
   if(promised){due=promised;dueWhy='약속 연락일';}
   else if(key==='hold'){due=mk&&mk.review||'';dueWhy=due?'재검토일':'';}
-  else if(key!=='unk'&&cyc[0]){const base=lastKey||sent;if(base){due=addDays(base,cyc[0]);dueWhy=(lastKey?'마지막 연락':'견적')+' + '+cyc[0]+'일';}}
+  else if(key!=='unk'&&cyc[0]){const base=lastKey||sent;if(base){due=addDays(base,cyc[0]);dueWhy=(lastKey?'연락':'견적')+' + '+cyc[0]+'일';}}
   const n=due?diff(T,due):null;
   /* 전환 검토(자동 전환 금지) */
   let review='';
@@ -61,8 +61,8 @@
   else if(key==='normal'&&el!==null&&el>q.normalEnd)review='toWait';
   else if(key==='hold'&&mk&&mk.review&&mk.review<=T)review='holdDue';
   /* 기준일 한 줄. 표식 없이 견적 발송일로 자리만 잡은 건은 '담당 분류 전'을 붙인다(일괄 분류가 아니라 기본 자리라는 뜻) */
-  const base=(key==='unk'?'견적 발송일 없음 · 기간 계산 안 함':key==='focus'?(sent?'견적 '+dot(sent)+' · 집중 D+'+el:'분류 '+dot(mk.at)+' · 집중'):key==='normal'?(sent?'견적 '+dot(sent)+' · 일반 '+Math.max(1,Math.round(el/30))+'개월째':'분류 '+dot(mk.at)+' · 일반'):key==='wait'?'대기 사유 입력됨 · '+md(mk.at)+' 전환'+(mk.year?' · '+mk.year:''):'보류 사유 입력 · 재검토 '+(mk.review?dot(mk.review):'미정'))+(!mk&&key!=='unk'?' · 담당 분류 전':'');
-  const nowText=key==='unk'?(last==null?'CRM 연락 기록 없음 (이관 전 확인 필요)':'마지막 연락 '+last+'일 전'):review==='toNormal'?'집중 '+q.focusMonths+'개월 지남 → 일반관리 검토':review==='toWait'?'일반 '+(q.focusMonths+q.generalMonths)+'개월 지남 → 대기 · 보류 검토':review==='holdDue'?'보류 재검토일 도래 → 추진 여부':(mk&&mk.reason?mk.reason:(last==null?'CRM 연락 기록 없음':'마지막 연락 '+last+'일 전'));
+  const base=(key==='unk'?'발송일 없음 · 기간 계산 안 함':key==='focus'?(sent?'견적 '+md(sent)+' · 집중 D+'+el:'분류 '+md(mk.at)+' · 집중'):key==='normal'?(sent?'견적 '+md(sent)+' · 일반 '+Math.max(1,Math.round(el/30))+'개월째':'분류 '+md(mk.at)+' · 일반'):key==='wait'?md(mk.at)+' 전환'+(mk.year?' · '+mk.year:''):'재검토 '+(mk.review?md(mk.review):'미정'))+(!mk&&key!=='unk'?' · 분류 전':'');
+  const nowText=key==='unk'?(last==null?'CRM 연락 기록 없음':'마지막 연락 '+last+'일 전'):review==='toNormal'?'집중 '+q.focusMonths+'개월 지남 → 일반관리 검토':review==='toWait'?'일반 '+(q.focusMonths+q.generalMonths)+'개월 지남 → 대기 · 보류 검토':review==='holdDue'?'보류 재검토일 도래 → 추진 여부':(mk&&mk.reason?mk.reason:(last==null?'CRM 연락 기록 없음':'마지막 연락 '+last+'일 전'));
   const od=n!==null&&n<0,W=week(),wk=!!due&&due>=W.mon&&due<=W.fri&&!od,nx=!hasNext;
   const task=key==='unk'?'상태 재분류':review?'전환 검토 · 사유 · 다음 확인일':hasNext?String(r.next.text).trim():key==='focus'?'수신 · 반응 확인 통화':key==='normal'?'월 1회 진행 확인':key==='wait'?'공사 시기 · 예산 확인':'재검토일에 추진 여부';
   const btn=key==='unk'?['분류하기','classify']:review?['전환 검토','classify']:od?['연락 기록','activity']:nx?['다음 행동','next']:['연락 기록','activity'];
