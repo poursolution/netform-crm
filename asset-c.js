@@ -22,15 +22,16 @@
  let memo=new Map();
  function money(s){
   const hit=memo.get(s.key);if(hit)return hit;
-  let acc=0,accN=0,prog=0,progN=0,noTime=true;
+  let acc=0,accN=0,prog=0,progN=0,cur=0,curN=0,leg=0,legN=0,noTime=true;
+  const PS=R.PipelineScope,isLeg=d=>{try{return !!(PS&&PS.on()&&PS.isLegacy(d));}catch(e){return false;}};
   (s.deals||[]).forEach(d=>{
    let r=null;try{r=R.DealWin&&R.DealWin.enabled()?R.DealWin.resultOf(d):null;}catch(e){}
    if(r&&r.done){accN++;acc+=Number(r.amount)||0;return;}
    if(!r&&R.isWon(d)){accN++;acc+=Number(R.wonAmt(d))||0;return;}
-   if(R.isOpen(d)){progN++;prog+=Number(R.oppAmt(d))||0;}
+   if(R.isOpen(d)){const a=Number(R.oppAmt(d))||0;progN++;prog+=a;if(isLeg(d)){legN++;leg+=a;}else{curN++;cur+=a;}}/* decision_collab ⑧: 진행 금액 = 현재 영업기회 vs 과거 미정리 · 이관 */
   });
   (s.lost||[]).forEach(d=>{const f=d.stage_contexts&&d.stage_contexts.lost&&d.stage_contexts.lost.fields||{};if(String(f.recontact_possibility||d.recontact_possibility||'').trim())noTime=false;});
-  const v={acc,accN,prog,progN,noReproposal:noTime};memo.set(s.key,v);return v;
+  const v={acc,accN,prog,progN,cur,curN,leg,legN,noReproposal:noTime};memo.set(s.key,v);return v;
  }
  /* 왜 멈춰 있나: 기존 사유 분류(asset-b) 그대로 */
  const reasonsOf=s=>{try{return AB().item(s).rs||[];}catch(e){return [];}};
@@ -81,11 +82,19 @@
   const S=st(),M=x.scope.map(s=>[s,money(s)]);
   const accSites=M.filter(m=>m[1].acc>0),acc=accSites.reduce((a,m)=>a+m[1].acc,0),prog=M.reduce((a,m)=>a+m[1].prog,0),progN=M.reduce((a,m)=>a+m[1].progN,0),progSites=M.filter(m=>m[1].progN>0).length;
   const risk=M.filter(m=>m[0].health==='risk'||m[0].health==='recontact').reduce((a,m)=>a+m[1].prog,0);
-  const nums=[['누적 수주 (전 단지)',won(acc),'수주한 단지 '+accSites.length.toLocaleString('ko-KR')+'곳'+(accSites.length?' · 평균 '+won(acc/accSites.length):''),'#15171c'],['지금 진행 중',won(prog),'열린 영업건 '+progN.toLocaleString('ko-KR')+'건 · 단지 '+progSites.toLocaleString('ko-KR')+'곳','#1d3f99'],['위험한 진행 금액',won(risk),'관계위험 · 재접촉 필요 단지에 걸린 금액','#b42318']];
+  /* decision_collab ⑧ 숫자 다시 나누기: 진행 금액 = 현재 영업기회 vs 과거 미정리 · 이관 / 관계위험 = 실주 원인별 / 주소 미입력 = 담당 있음 · 진행 중(→ 담당 오늘 업무) vs 과거 · 휴면(→ 데이터 검토) */
+  const cur=M.reduce((a,m)=>a+m[1].cur,0),curN=M.reduce((a,m)=>a+m[1].curN,0),leg=M.reduce((a,m)=>a+m[1].leg,0),legN=M.reduce((a,m)=>a+m[1].legN,0);
+  const nums=[['누적 수주 (전 단지)',won(acc),'수주한 단지 '+accSites.length.toLocaleString('ko-KR')+'곳'+(accSites.length?' · 평균 '+won(acc/accSites.length):''),'#15171c'],['지금 진행 중',won(prog),'현재 영업기회 '+curN.toLocaleString('ko-KR')+'건 · '+won(cur)+' / 과거 미정리 · 이관 '+legN.toLocaleString('ko-KR')+'건 · '+won(leg)+' · 단지 '+progSites.toLocaleString('ko-KR')+'곳','#1d3f99'],['위험한 진행 금액',won(risk),'관계위험 · 재접촉 필요 단지에 걸린 금액','#b42318']];
+  const riskSites=M.filter(m=>m[0].health==='risk'),cat=d=>{const f=d.stage_contexts&&d.stage_contexts.lost&&d.stage_contexts.lost.fields||{};const r=String(f.close_reason||d.close_reason||d.lost_reason||'').trim();if(!r)return '원인 미입력';const m=/^(관계|공법|가격|사업)\s*·/.exec(r);if(m)return m[1]==='사업'?'공사 취소 · 연기':m[1];if(/가격|예산/.test(r))return '가격';if(/공법|기술/.test(r))return '공법';if(/취소|연기/.test(r))return '공사 취소 · 연기';if(/관계|소장|연락/.test(r))return '관계';return '기타';};
+  const byCat=new Map();riskSites.forEach(m=>{const s=m[0],last=(s.lost||[]).slice().sort((a,b)=>String(b.closed_at||b.closed||'').localeCompare(String(a.closed_at||a.closed||'')))[0];const k=last?cat(last):(s.lost&&s.lost.length?'원인 미입력':'실주 없음 · 접촉 끊김');byCat.set(k,(byCat.get(k)||0)+1);});
+  const noAddr=M.map(m=>m[0]).filter(s=>!s.canonicalAddress),naWork=noAddr.filter(s=>s.owners.length&&(s.open||[]).some(d=>{try{return R.PipelineScope&&R.PipelineScope.on()?R.PipelineScope.isActive(d):R.isActiveDeal(d);}catch(e){return false;}})).length;
+  const splits='<section class="ac-split"><b>숫자 다시 나누기</b>'
+   +'<div><span>관계위험 '+riskSites.length.toLocaleString('ko-KR')+'곳 → 실주 원인별</span>'+([...byCat.entries()].sort((a,b)=>b[1]-a[1]).map(e=>'<i><span>'+h(e[0])+'</span><b>'+e[1].toLocaleString('ko-KR')+'</b></i>').join('')||'<i><span>관계위험 단지 없음</span><b>0</b></i>')+'</div>'
+   +'<div><span>주소 미입력 '+noAddr.length.toLocaleString('ko-KR')+'곳 → 보완 업무</span><i><span>담당 있음 · 진행 중 → 담당 오늘 업무</span><b>'+naWork.toLocaleString('ko-KR')+'</b></i><i><span>과거 · 휴면 → 데이터 검토</span><b>'+(noAddr.length-naWork).toLocaleString('ko-KR')+'</b></i></div></section>';
   const RS=AB().CFG.RS,sum=(k,f)=>M.filter(m=>reasonsOf(m[0]).includes(k)).reduce((a,m)=>a+f(m),0);
   const note={risk:k=>won(sum(k,m=>m[1].prog))+' 걸림',lost2:()=>'재제안 시기 미등록',recontact:k=>'진행 '+won(sum(k,m=>m[1].prog)),cold60:k=>'누적 수주 '+won(sum(k,m=>m[1].acc)),nokey:()=>'관리소장 · 입대의 회장 연락처 없음',dormant:()=>'장기수선 일정 확인 대상',wonamt:()=>'누적 수주 집계에서 빠짐',noaddr:()=>'근처 현장 · 지도에 안 나옴'};
   const why=Object.keys(RS).map(k=>({k,n:M.filter(m=>reasonsOf(m[0]).includes(k)).length})).filter(w=>w.n>0);
-  return '<aside class="ac-side"><section><b>단지에 쌓인 금액</b>'+nums.map(n=>'<div class="ac-num"><span>'+n[0]+'</span><b style="color:'+n[3]+'">'+h(n[1])+'</b><small>'+h(n[2])+'</small></div>').join('')+'</section>'
+  return '<aside class="ac-side"><section><b>단지에 쌓인 금액</b>'+nums.map(n=>'<div class="ac-num"><span>'+n[0]+'</span><b style="color:'+n[3]+'">'+h(n[1])+'</b><small>'+h(n[2])+'</small></div>').join('')+'</section>'+splits
    +'<section class="ac-why"><b>왜 멈춰 있나 <small>누르면 목록이 좁혀짐</small></b>'+(why.length?why.map(w=>'<button type="button" data-ac="why" data-v="'+w.k+'" aria-pressed="'+(S.why===w.k)+'"><b>'+h(RS[w.k][0])+'</b><b class="n" style="color:'+(RS[w.k][1]==='#374151'?'#374151':w.k==='recontact'?'#b45309':'#b42318')+'">'+w.n.toLocaleString('ko-KR')+'</b><span>'+h(note[w.k]?note[w.k](w.k):'')+'</span></button>').join(''):'<p>멈춰 있는 단지가 없습니다</p>')+'</section></aside>';
  }
  function rowHtml(s){

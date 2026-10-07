@@ -81,6 +81,20 @@
    if(c0&&c0.conf==='확인됨'&&c0.date&&daysBetween(c0.date,today())>183){conf='다시 확인';note='확인한 지 6개월 지남 · '+note;}
    return {k,v:v||'미입력',conf,note};});
  }
+ /* ⑥ 바꾼 기록(단계 · 담당 · 변화 이벤트의 금액) 전 → 후 · 누가 · 언제 · 이유 + [되돌리기](단계 = 전환 창으로 · 담당 = 담당 정하는 칸에 이전 담당 미리 넣음 · 금액 = 관리자 승인 요청). 되돌리기도 기록으로 남는다(같은 저장 경로) */
+ function changes(d){
+  const out=[];
+  try{(d.stageHistory||[]).forEach(x=>{if(!x||!x.to)return;out.push({kind:'stage',f:'단계',a:x.from?(root.stageLabel?root.stageLabel(x.from):x.from):'',b:root.stageLabel?root.stageLabel(x.to):x.to,raw:x,who:[dot(dayKey(x.at)),x.actor||x.actor_name||''].filter(Boolean).join(' · '),at:dayKey(x.at)});});}catch(e){}
+  try{const DO=root.DealOwner;(DO&&DO.history?DO.history(d):[]).forEach(x=>{const m=/^담당 변경 (.+?) → (.+?)(?: · 사유: (.*?))?(?: · (귀속.*))?$/.exec(String(x.t||''));if(!m)return;out.push({kind:'owner',f:'담당',a:m[1],b:m[2],who:[dot(x.k),m[3]||''].filter(Boolean).join(' · '),at:x.k||''});});}catch(e){}
+  try{const CE=root.ChangeEvent;(CE&&CE.list?CE.list(d):[]).forEach(e=>{const money=/금액|예산/.test(e.type);out.push({kind:money?'amount':'event',f:e.type,a:e.from&&e.from!=='미기록'?e.from:'',b:e.to,who:[dot(e.date),e.act?'확인: '+e.act:''].filter(Boolean).join(' · '),at:e.date});});}catch(e){}
+  return out.sort((a,b)=>String(b.at).localeCompare(String(a.at))).slice(0,6);
+ }
+ function revert(d,c){
+  if(c.kind==='stage'){const from=c.raw&&c.raw.from;if(!from)return toast('이전 단계 기록이 없어 되돌릴 수 없습니다','warn');try{const T=root.StageTransition,cur=root.dealStage(d);if(!T.choices(cur).includes(from))return toast('지금 단계에서 '+c.a+'(으)로 바로 옮길 수 없습니다 — 단계 바꾸기에서 사유와 함께 옮겨 주세요','warn');root.StageTransitionUI.open(d,false,from);toast('되돌리기 = 단계 바꾸기 창 · 사유에 "되돌리기"를 적어 저장하면 기록으로 남습니다');}catch(e){toast('단계 바꾸기 창을 열지 못했습니다','warn');}return;}
+  if(c.kind==='owner'){try{const S=root.DealOwnerV2&&root.DealOwnerV2.state?root.DealOwnerV2.state():null;if(S){S.to=c.a;S.why='';S.more='되돌리기';}root.DealDetailV3.openFrom('owner');toast('이전 담당 '+c.a+'을(를) 미리 넣었습니다 — 사유를 고르고 저장하면 기록으로 남습니다');}catch(e){toast('담당 정하는 칸을 열지 못했습니다','warn');}return;}
+  if(c.kind==='amount'){try{if(root.ApprovalRequest&&root.ApprovalRequest.open){root.ApprovalRequest.open();toast('실적 · 계약 금액 되돌리기는 관리자 승인이 필요합니다 — 승인 요청에 "'+c.f+' '+c.b+' → '+c.a+' 되돌리기"를 적어 주세요');}else toast('실적 · 계약 금액 되돌리기는 관리자 승인이 필요합니다','warn');}catch(e){}return;}
+  toast('이 변화는 응대 기록에서 새 변화 이벤트로 바로잡아 주세요');
+ }
  /* ── 상세 오른쪽 상자 ── */
  const pill=c=>'<em class="dcb-c '+(c==='확인됨'?'ok':c==='추정'?'est':c==='다시 확인'?'re':'')+'">'+h(c)+'</em>';
  function html(d){
@@ -102,11 +116,14 @@
   /* ⑤ 정보 확인 상태 */
   const info='<div class="dcb-info">'+infoRows(d).map(r=>'<button type="button" data-dc="chk" data-v="'+attr(r.k)+'" title="누르면 확인 상태 · 출처 입력"><span>'+h(r.k)+'</span><b>'+h(r.v)+'</b>'+pill(r.conf)+'<small>'+h(r.note)+'</small></button>').join('')+'</div>'
    +(S.chk?'<div class="dcb-form"><b class="dcb-fl">'+h(S.chk)+'</b><select data-dcf="cconf">'+CONF.map(c=>'<option>'+c+'</option>').join('')+'</select><input data-dcf="csrc" maxlength="60" placeholder="출처 (예: 관리소장 통화 10.1)"><div class="dcb-fb"><button type="button" data-dc="chk-cancel">취소</button><button type="button" class="go" data-dc="chk-save">저장</button></div></div>':'');
+  /* ⑥ 바꾼 기록 */
+  const CH=changes(d),chg=CH.length?CH.map((c,i)=>'<div class="dcb-chg"><span><b>'+h(c.f)+'</b> '+(c.a?'<s>'+h(c.a)+'</s> → ':'')+'<b>'+h(c.b)+'</b></span><button type="button" data-dc="revert" data-i="'+i+'"'+(c.kind==='event'?' disabled title="변화 이벤트는 새 기록으로 바로잡습니다"':'')+'>'+(c.kind==='amount'?'승인 요청':'되돌리기')+'</button><small>'+h(c.who||'기록 시각 없음')+'</small></div>').join('')+'<small class="dcb-fn">되돌리기도 기록으로 남음 · 실적 · 계약 금액은 관리자 승인 필요</small>':'<p class="dcb-none">아직 바뀐 기록이 없습니다</p>';
   return '<h3>고객 결정 일정'+(W?' <span class="dcb-wait">고객 합의 대기 · '+h(W.label+' '+md(W.date))+'</span>':'')+'</h3>'+dec+todos+decForm
    +'<h4>막힌 곳 · 고객인가 내부인가</h4>'+blk+blkForm
    +'<h4>진척과 접촉 따로</h4>'+prg
    +'<h4>미해결 불만 · 하자</h4>'+(defs||'<p class="dcb-none">미해결 하자 · 불만이 없습니다</p>')+defForm
-   +'<h4>정보 확인 상태</h4>'+info+(S.err?'<p class="dcb-err">'+h(S.err)+'</p>':'');
+   +'<h4>정보 확인 상태</h4>'+info
+   +'<h4>바꾼 기록 · 전후 비교 · 되돌리기</h4>'+chg+(S.err?'<p class="dcb-err">'+h(S.err)+'</p>':'');
  }
  const st=d=>{const k=String(d&&d.id||'');const S=root.G.dcb||(root.G.dcb={});if(S.id!==k)Object.assign(S,{id:k,dec:false,blk:false,prg:false,def:false,chk:'',err:'',busy:false});return S;};
  function mount(right,d,after){
@@ -131,8 +148,15 @@
   if(a==='def-open'){S.def=true;return paint();}if(a==='def-cancel'){S.def=false;return paint();}
   if(a==='def-save'){const t=val(sec,'dtext');if(!t){S.err='하자 · 불만 내용을 적어 주세요.';return paint();}return save(d,'[하자] '+t+' | 접수 '+(val(sec,'drecv')||today())+' | 담당 '+(val(sec,'downer')||'미지정')+' | 약속 '+(val(sec,'ddue')||'없음')+' | 미해결');}
   if(a==='def-done'){const x=list(d).def.find(y=>y.text===b.dataset.v);if(!x)return;return save(d,'[하자] '+x.text+' | 접수 '+(x.recv||'미기록')+' | 담당 '+(x.owner||'미지정')+' | 약속 '+(x.due||'없음')+' | 해결');}
+  if(a==='revert'){const c=changes(d)[Number(b.dataset.i)];if(c)revert(d,c);return;}
   if(a==='chk'){S.chk=b.dataset.v;return paint();}if(a==='chk-cancel'){S.chk='';return paint();}
   if(a==='chk-save'){const k=S.chk,c=val(sec,'cconf'),s=val(sec,'csrc');return save(d,'[확인] '+k+' | '+c+' | '+(s||'출처 미기록')+' | '+today());}
  },true);
- root.DecisionCollab={on,list,decWaiting,autoTodos,progress,touches,tags,openDefect,infoRows,html,mount,DEC_TYPES,MEET,CONF,BLOCK,QSTEP,PRG,INFO};
+ /* ⑦ 같은 고객 경고 묶음: 오늘 업무가 쓴다 — 다음 알림 기준(처리 = 끔 / 보류 · 대기 = 재개일 / 기한 변경 = 새 기한 하루 전 / 같은 내용 하루 1회) */
+ function nextAlert(d){
+  if(!d)return '같은 내용 하루 1회';
+  try{const J=root.PipelineJudge,b=J&&J.on()?J.basis(d):null;if(b&&(b.src==='wait'||b.src==='decide'))return '다음 알림 '+md(b.due)+' (재개 · 회의일)';if(b&&b.kind==='date'&&b.due&&b.n>1)return '다음 알림 '+md(addDays(b.due,-1))+' (기한 하루 전)';}catch(e){}
+  return '처리하면 끔 · 같은 내용 하루 1회';
+ }
+ root.DecisionCollab={on,list,decWaiting,autoTodos,progress,touches,tags,openDefect,infoRows,changes,revert,nextAlert,html,mount,DEC_TYPES,MEET,CONF,BLOCK,QSTEP,PRG,INFO};
 })(window);

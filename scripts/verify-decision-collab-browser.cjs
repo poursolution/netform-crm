@@ -47,7 +47,7 @@ const root=path.join(__dirname,'..'),one=s=>String(s||'').replace(/\s+/g,' ').tr
   assert.match(sec.h3,/^고객 결정 일정 고객 합의 대기 · 입대의 회의 \d+\.\d+$/,sec.h3);
   assert.deepEqual(sec.dec,['대표회의 상정|확인됨|true','입대의 회의|확인됨|false','공사 예정|미확인|false']);
   assert.equal(sec.auto,3);assert.deepEqual(sec.info,['주소|다시 확인','예상 금액|미확인','공사 예정|미확인','결정권자|확인됨']);
-  assert.deepEqual(sec.h4,['막힌 곳 · 고객인가 내부인가','진척과 접촉 따로','미해결 불만 · 하자','정보 확인 상태']);
+  assert.deepEqual(sec.h4,['막힌 곳 · 고객인가 내부인가','진척과 접촉 따로','미해결 불만 · 하자','정보 확인 상태','바꾼 기록 · 전후 비교 · 되돌리기']);
   /* 입력 폼 열림 · 저장은 메모 경로(가짜 큐) */
   await page.locator('#detailView .dcb [data-dc="dec-open"]').click();await page.waitForSelector('#detailView .dcb .dcb-form select[data-dcf="type"]');
   assert.deepEqual(await page.locator('#detailView .dcb .dcb-form select[data-dcf="type"] option').allInnerTexts(),['관리소장 변경','대표회의 상정','입대의 회의','예산 편성','현설','입찰','공사 예정']);

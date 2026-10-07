@@ -41,3 +41,9 @@
 :is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-b>span .dcb-tag{display:inline-block;font-size:10.5px;font-weight:700;border-radius:4px;padding:1px 6px;margin-right:5px;color:#374151;background:#f3f4f6;vertical-align:1px}
 :is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-b>span .dcb-tag.in{color:#2a52b8;background:#eef3fe}
 :is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-b>span .dcb-stale{color:#8a5a00;font-weight:700}
+
+/* ⑥ 바꾼 기록 · 되돌리기 */
+#detailView .dcb .dcb-chg{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;align-items:center;padding:6px 0;border-top:1px solid #f2f3f6;font-size:12.5px}
+#detailView .dcb .dcb-chg>span s{color:#9ca3af}#detailView .dcb .dcb-chg>small{grid-column:1/3;font-size:11px;color:#6b7280}
+#detailView .dcb .dcb-chg>button{border:1px solid #d9dde4;background:#fff;font:inherit;font-size:11.5px;font-weight:600;border-radius:6px;padding:4px 9px;cursor:pointer;min-height:0;box-shadow:none;width:auto}#detailView .dcb .dcb-chg>button:disabled{opacity:.5;cursor:default}
+#detailView .dcb .dcb-fn{font-size:10.5px;color:#9ca3af}
