@@ -10,7 +10,7 @@
  'use strict';
  const R=root,h=v=>R.esc(String(v==null?'':v)),attr=v=>R.escAttr(String(v==null?'':v));
  const LEGACY_LABEL='과거 자료 재개';/* 과거 이관 · 분류 전 화면이 보내는 묶음 요청(pipeline-legacy.js) — 받는 쪽에서는 한 카드로 */
- const RPC={create:'crm_work_request_create_v1',list:'crm_work_request_list_v1',reply:'crm_work_request_reply_v1',reask:'crm_work_request_reask_v1'};
+ const RPC={handover:'crm_work_request_handover_v1',create:'crm_work_request_create_v1',list:'crm_work_request_list_v1',reply:'crm_work_request_reply_v1',reask:'crm_work_request_reask_v1'};
  const O=()=>R.OpsStore,T=()=>R.TodayWorkQueue;
  const ready=()=>{try{return !R.G.workRequestOff&&!!O()&&O().has(RPC.list)&&O().has(RPC.create)&&O().has(RPC.reply);}catch(e){return false;}};
  /* 저장소가 실제로 한 번 응답한 뒤에만 켠다 — 서버에 아직 없으면(SQL 적용 전) 예전 [독촉] 화면 그대로 */
@@ -29,6 +29,7 @@
   follow:{label:'후속 연락 요청',asks:['수신 확인','고객 반응 기록'],def:[1,1],done:'응대 기록 + 고객 반응',contact:true},
   award:{label:'낙찰결과 확인 요청',asks:['낙찰사 확인','낙찰금액 확인','증빙 등록'],def:[1,1,1],done:'낙찰사 · 금액 · 증빙'},
   contract:{label:'계약정보 입력 요청',asks:['계약일 입력','계약금액 입력','계약서 등록'],def:[1,1,0],done:'계약일 · 금액 · 계약서'},
+  handover:{label:'재배정 인계',asks:['인계 메모 확인','남은 할 일 확인','인수 확인'],def:[1,1,1],done:'인수 확인'},
   support:{label:'지원처리 확인',asks:['처리 담당 확인','처리 예정일 확인'],def:[1,1],done:'처리 기록'},
   deadline:{label:'마감 준비 확인',asks:['제안 · 입찰 준비 상태 확인','제출일 확정'],def:[1,1],done:'준비 상태 + 제출일 기록'}};
  const RK={first:'first',quote:'quote',silent:'follow',stallbig:'follow',after:'follow',transfer:'award',contract:'contract',deadline:'deadline'};
@@ -169,13 +170,14 @@
    const em=m.querySelector('.idv-meta em'),k=m.querySelector('.idv-meta .dv3-kind');if(k){k.textContent='시스템 · 내부 요청';if(em)em.remove();}else if(em)em.textContent='시스템 · 내부 요청';b.textContent=t.replace(/^\[내부 요청\]\s*/,'');});
  }
  /* ── ops_12 C⑦ 요청 5단계: 요청 → 담당 확인 → 실행 → 증빙 → 완료 — 실제 기록으로 판정(담당 확인 = 받은 사람이 화면을 염 · 실행 = 요청 뒤 응대 기록 · 증빙 = 완료 조건 충족 · 완료 = 자동 판정 / 회신) ── */
- const HANDOVER_LABEL='재배정 인계';/* ops_12 C⑧: 재배정 인계는 kind 'support'(서버 허용 종류) + 이 이름으로 구분 */
+ const HANDOVER_LABEL='재배정 인계';
+ const isHandover=r=>!!r&&(r.kind==='handover'||(r.kind==='support'&&r.label===HANDOVER_LABEL));
  function steps(r){
   const t=target(r),it=t.item,since=Date.parse(r.created_at)||0,K=KIND[r.kind]||{};
   const seen=r.status!=='sent',done=r.status==='done'||r.status==='replied';let ev=null,exec=false;
   if(!done&&it){try{ev=evidence(r);}catch(e){ev=null;}
    try{if(r.target_type==='deal'){const at=R.salesActivityAt(it)||'';exec=!!at&&Date.parse(at)>=since;}else{const F=R.InquiryFlow;exec=!!(F&&F.on&&F.on()&&(F.state(it).logs||[]).some(l=>Date.parse(l.at)>=since));}}catch(e){}}
-  const evid=r.kind==='contract'?'계약일 · 금액 · 계약서':r.kind==='award'?'낙찰사 · 금액 · 증빙':r.kind==='quote'?'견적 요청 · 예정일':r.label===HANDOVER_LABEL?'인수 확인':K.contact?'결과 · 다음 행동':'처리 기록';
+  const evid=r.kind==='contract'?'계약일 · 금액 · 계약서':r.kind==='award'?'낙찰사 · 금액 · 증빙':r.kind==='quote'?'견적 요청 · 예정일':isHandover(r)?'인수 확인':K.contact?'결과 · 다음 행동':'처리 기록';
   const idx=done?4:ev?3:exec?2:seen?1:0;
   const rows=[['요청',whenTxt(r.created_at)+(r.requested_by?' '+r.requested_by:'')],['담당 확인',seen?(r.to_name||'')+' 열어 봄':'열기 전'],['실행',idx>=2?(r.to_name||'')+' 기록 중':'기록 전'],['증빙',idx>=3?evid+' 확인':evid+' 전'],['완료',done?whenTxt(r.closed_at||r.updated_at)+(r.auto?' · 자동 판정':' · 확인'):'자동 판정']];
   return rows.map((s,i)=>({l:s[0],t:s[1],s:done?1:i<idx?1:i===idx?2:0}));
@@ -188,7 +190,7 @@
  function sideHtml(){
   if(!enabled())return '';load();try{autoBranch();}catch(e){}const L=waiting();if(!L.length)return '';
   const item=r=>{const od=overdue(r),br=r.kind==='branch',ok=r.status==='replied'||r.status==='done',ab=r.status==='absent';
-   const pill=od?['요청 미이행'+(r.round>=2?' · '+r.round+'회':''),'bad']:ok?[r.status==='replied'?'회신 완료':'✓ 처리 완료','ok']:ab?['요청 처리 · 부재','amb']:r.label===HANDOVER_LABEL?['인계 대기','amb']:[r.status==='seen'?'담당 확인':r.status==='working'?'처리 중':'답변 대기','amb'];/* 인계 대기 = 새 담당이 [인수 확인] 전(ops_12 C⑧) */
+   const pill=od?['요청 미이행'+(r.round>=2?' · '+r.round+'회':''),'bad']:ok?[r.status==='replied'?'회신 완료':'✓ 처리 완료','ok']:ab?['요청 처리 · 부재','amb']:isHandover(r)?['인계 대기','amb']:[r.status==='seen'?'담당 확인':r.status==='working'?'처리 중':'답변 대기','amb'];/* 인계 대기 = 새 담당이 [인수 확인] 전(ops_12 C⑧) */
    const btns=od?['<button type="button" data-wr="reask" data-id="'+r.id+'">재확인 요청</button>'].concat(br?['<button type="button" data-wr="recall" data-id="'+r.id+'">본사 회수 검토</button>']:r.round>=2?['<button type="button" data-wr="reassign" data-id="'+r.id+'">재배정 검토</button>']:[]):(ok||ab)?['<button type="button" data-wr="check" data-id="'+r.id+'">진행 확인</button>']:[];
    if(isOpen(r)&&r.to_reach===false)btns.push('<button type="button" data-wr="ack" data-id="'+r.id+'">처리 확인</button>');
    const reply=ok||ab?lineEnd(r):'',note=od&&r.round>=2?(br?'지사 확인 요청 '+r.round+'회 미이행 → 본사 회수 검토 권장':r.label+' '+r.round+'회 미이행 → 재배정 검토 권장'):'',unreach=isOpen(r)&&r.to_reach===false?r.to_name+'은(는) CRM에서 이 요청을 볼 수 없습니다 · 전화로 전달하고, 처리되면 [처리 확인]':'';
@@ -215,7 +217,7 @@
  function topHtml(){
   if(!enabled())return '';load();const L=incoming();if(!L.length)return '';const S=st();
   const card=r=>{const C=S.card[r.id]||(S.card[r.id]={res:'',owner:'',busy:false,err:''}),br=r.kind==='branch',K=KIND[r.kind]||{},t=target(r),od=overdue(r);
-   const ho=r.label===HANDOVER_LABEL;
+   const ho=isHandover(r);
    const head='<div class="hd"><em>'+(br?'본사 확인 요청':ho?'재배정 인계':'관리자 요청')+'</em><b>'+h(r.site)+'</b>'+(lateTxt(r)?'<span class="late">'+h(lateTxt(r))+'</span>':'')+(r.round>=2?'<span class="late">재확인 '+r.round+'회차</span>':'')+'<i></i><span class="by'+(od?' od':'')+'">'+h((r.requested_by||'관리자')+' · '+whenTxt(r.reasked_at||r.created_at)+' · '+(br?'기한 '+(r.due_label||''):(r.due_label||'')+'까지')+(od?' · 기한 지남':''))+'</span></div>'+stepsHtml(r);
    /* ops_12 C⑧ 재배정 인계 카드: 이전 담당 → 새 담당 · 재배정자 · 사유 / 인계 메모 · 남은 할 일 · 마지막 연락 / [이전 담당에게 질문] [인수 확인] — 확인 전까지 관리자 화면 '인계 대기' */
    if(ho){const rows=handoverRows(r),first=rows.find(x=>x[0]==='')||rows[0]||['',''],rest=rows.filter(x=>x[0]);
@@ -271,7 +273,7 @@
   const t=target(r),it=t.item;if(!it)return null;const since=Date.parse(r.created_at);
   if(r.label===LEGACY_LABEL){try{return R.PipelineScope&&R.PipelineScope.on()&&!R.PipelineScope.isLegacy(it)?{result:'영업 재개 확인',absent:false}:null;}catch(e){return null;}}
   try{
-   if(r.kind==='branch'||r.kind==='deadline'||r.kind==='support')return null;
+   if(isHandover(r)||r.kind==='branch'||r.kind==='deadline'||r.kind==='support')return null;
    if(r.target_type==='inquiry'){const F=R.InquiryFlow&&R.InquiryFlow.on&&R.InquiryFlow.on()?R.InquiryFlow:null;if(!F)return null;const L=(F.state(it).logs||[]).filter(l=>Date.parse(l.at)>=since);
     if(L.some(l=>l.kind==='connected'))return {result:'연락 기록 확인',absent:false};if(L.some(l=>l.kind==='attempt'))return {result:'부재',absent:true};return null;}
    const f=(k,n)=>{const c=it.stage_contexts&&it.stage_contexts[k];return c&&c.fields?c.fields[n]:'';};
@@ -313,5 +315,5 @@
  }
  document.addEventListener('click',onClick,true);
  document.addEventListener('change',e=>{const t=e.target;if(t&&t.matches&&t.matches('#pg-today [data-wr-in="owner"]')){const C=st().card[t.dataset.id];if(C){C.owner=t.value;repaint();}}},true);
- root.WorkRequest={enabled,load,reqFor,locked,cell,sideHtml,topHtml,history,autoClose,evidence,decorate,steps,HANDOVER_LABEL,KIND,RPC,state:st,_dueAt:dueAt,_lineReq:lineReq,_lineEnd:lineEnd};
+ root.WorkRequest={enabled,load,reqFor,locked,cell,sideHtml,topHtml,history,autoClose,evidence,decorate,steps,HANDOVER_LABEL,isHandover,KIND,RPC,state:st,_dueAt:dueAt,_lineReq:lineReq,_lineEnd:lineEnd};
 })(window);

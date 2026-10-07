@@ -24,7 +24,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    window.__writes=[];window.pushWrite=(op,p)=>{__writes.push([op,p]);return 'req-'+__writes.length;};
    /* 실적 귀속 서버 흉내 */
-   window.__rpc=[];const base=OpsStore.rpc.bind(OpsStore);OpsStore.has=()=>true;OpsStore.rpc=async(name,p)=>{__rpc.push([name,p]);if(name==='crm_deal_owner_list_v1')return {rows:[],events:[]};if(name==='crm_deal_owner_reassign_v1')return {owner:{deal_id:p.deal_id,performance_owner:p.keep_owner,first_owner:p.first_owner||null}};if(/approval/.test(name))return {request:{id:'ap1',type:'owner_change',state:'pending',deal_id:p.deal_id,at:new Date().toISOString()},requests:[],rows:[]};return {rows:[],tasks:[]};};
+   window.CRMRelease.has=()=>true;window.__rejectOwner=false;window.__holdOwner=true;window.__rpc=[];const base=OpsStore.rpc.bind(OpsStore);OpsStore.has=()=>true;OpsStore.rpc=async(name,p)=>{__rpc.push([name,p]);if(name==='crm_deal_reassign_handover_v1'){
+     if(__holdOwner)await new Promise(resolve=>{window.__releaseOwner=resolve;});
+     if(__rejectOwner)throw Error('검사용 저장 실패');
+     const d=B.deals.find(x=>x.id===p.deal_id);return {ok:true,deal_id:p.deal_id,assignee:p.to,owner_id:'mock-'+p.to,version:(d.version||0)+1,activity_id:'mock-'+__rpc.length,server_at:new Date().toISOString(),owner:{deal_id:p.deal_id,performance_owner:'이필선',first_owner:'이필선'},request:{id:'h1',kind:'handover'},approval:p.attribution==='request'?{id:'ap1',type:'owner_change',status:'pending',deal_id:p.deal_id}:null};
+    }if(name==='crm_deal_owner_list_v1')return {rows:[],events:[]};if(name==='crm_deal_owner_reassign_v1')return {owner:{deal_id:p.deal_id,performance_owner:p.keep_owner,first_owner:p.first_owner||null}};if(/approval/.test(name))return {request:{id:'ap1',type:'owner_change',state:'pending',deal_id:p.deal_id,at:new Date().toISOString()},requests:[],rows:[]};return {rows:[],tasks:[]};};
    window.__toasts=[];window.toast=m=>__toasts.push(String(m));
    G.pipeStageBOff=true;PipelineWorkspace.open('sent');
   });
@@ -75,13 +79,20 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await o.locator('.ow2-hint').innerText(),'이필선 → 정정훈 · 지역 재배치 · 평택 현장이 몰려 있어 묶음');
   assert.equal(await page.evaluate(()=>document.activeElement&&document.activeElement.matches('.ow2-more')),true,'적는 동안 포커스 유지');
   if(shot)await page.screenshot({path:shot+'-owner-ready.png'});
-  /* 6. 저장 = 기존 경로 그대로(assign + 사유 + 실적 귀속 유지 기록) */
-  await o.locator('.ow2-act .go').click();await page.waitForTimeout(500);
-  const w=await page.evaluate(()=>__writes.filter(x=>x[0]==='assign').map(x=>[x[1].from,x[1].to,x[1].reason]));
-  assert.deepEqual(w,[['이필선','정정훈','지역 재배치 · 평택 현장이 몰려 있어 묶음']]);
-  const re=await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_deal_owner_reassign_v1').map(x=>[x[1].from,x[1].to,x[1].reason,x[1].attribution,x[1].keep_owner]));
-  assert.deepEqual(re,[['이필선','정정훈','지역 재배치 · 평택 현장이 몰려 있어 묶음','keep','이필선']],'실적 귀속은 주담당 유지로 기록');
-  assert.equal(await page.evaluate(()=>repN(B.deals[0].assignee)),'정정훈');
+  /* 6. 서버 확인 전/실패에는 담당 유지. 재시도는 같은 request_id, 성공 뒤에만 변경 */
+  await o.locator('.ow2-act .go').click();
+  await page.waitForFunction(()=>typeof window.__releaseOwner==='function');
+  assert.equal(await page.evaluate(()=>repN(B.deals[0].assignee)),'이필선','서버 응답 대기 중에는 이전 담당 유지');
+  await page.evaluate(()=>{__rejectOwner=true;__releaseOwner();});
+  await page.waitForFunction(()=>__toasts.some(x=>x.includes('검사용 저장 실패')));
+  assert.equal(await page.evaluate(()=>repN(B.deals[0].assignee)),'이필선','실패 뒤에도 이전 담당 유지');
+  await page.evaluate(()=>{__holdOwner=false;__rejectOwner=false;});
+  await o.locator('.ow2-act .go').click();
+  await page.waitForFunction(()=>repN(B.deals[0].assignee)==='정정훈');
+  assert.deepEqual(await page.evaluate(()=>__writes.filter(x=>['assign','handover'].includes(x[0]))),[],'이전 assign/handover 큐를 만들지 않는다');
+  const re=await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_deal_reassign_handover_v1').map(x=>[x[1].from,x[1].to,x[1].reason,x[1].attribution]));
+  assert.deepEqual(re,[['이필선','정정훈','지역 재배치 · 평택 현장이 몰려 있어 묶음','keep'],['이필선','정정훈','지역 재배치 · 평택 현장이 몰려 있어 묶음','keep']]);
+  assert.equal(await page.evaluate(()=>new Set(__rpc.filter(x=>x[0]==='crm_deal_reassign_handover_v1').map(x=>x[1].request_id)).size),1,'불확실한 실패 재시도는 같은 요청');
   /* 저장 뒤: 고른 값은 비우고, 지금 담당이 바뀌어 있다 */
   if(!(await A.count()))await openOwner();
   assert.deepEqual(await flow(),[['지금','정정훈',false],['새 담당','선택하세요',true]]);
@@ -92,7 +103,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await o.locator('.ow2-attr button',{hasText:'새 담당에게 넘기기'}).click();await page.waitForTimeout(80);
   assert.equal(await o.locator('.ow2-attr button[aria-checked="true"] b').innerText(),'새 담당에게 넘기기');
   await o.locator('.ow2-act .go').click();await page.waitForTimeout(500);
-  const re2=await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_deal_owner_reassign_v1').map(x=>[x[1].to,x[1].reason,x[1].attribution]).pop());
+  const re2=await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_deal_reassign_handover_v1').map(x=>[x[1].to,x[1].reason,x[1].attribution]).pop());
   assert.deepEqual(re2,['김성민','고객 요청','request']);
   /* 8. 취소 = 패널 닫힘 · 끄면 예전 상자 */
   if(!(await A.count()))await openOwner();
