@@ -2,7 +2,9 @@
 (function(root){
  'use strict';
  const norm=v=>String(v||'').normalize('NFKC').toLowerCase().replace(/[\s·.,()\[\]_-]/g,'');
- const name=v=>norm(v).replace(/아파트/g,'');
+ /* 빈 값 · '미입력' · '무제' 같은 표시 문구는 일치 근거가 아니다(2026-10-07 data_review_rules ①) — 둘 다 '현장명 미입력'이라고 같은 현장이 되지 않는다 */
+ const blank=v=>{const n=norm(v);return !n||/^(현장명|주소|공종|연락처|고객명|이름)?미(입력|기재|기록|확인|분류|정)$/.test(n)||/^무제/.test(n)||/^(없음|해당없음|null|undefined|n\/a)$/.test(n);};
+ const name=v=>blank(v)?'':norm(v).replace(/아파트/g,'');
  const phone=v=>String(v||'').replace(/\D/g,'');
  const same=(a,b)=>!!a&&!!b&&a===b;
  /* 후보 검토용 주소. 서울 행정명 표기만 통일하고 번지의 하이픈·동/호는 보존한다.
@@ -11,7 +13,7 @@
  const grams=s=>new Set(Array.from({length:s.length-1},(_,i)=>s.slice(i,i+2)));
  /* 행마다 정규화·2-gram을 한 번만 계산해 둔다(2026-10-01 — 1,700행이면 쌍 140만 개마다 다시 계산해 데이터 정리 진입에 4.5초 걸렸다) */
  const prepared=new WeakMap();
- function prep(r){let p=prepared.get(r);if(p)return p;const n=name(r.name);p={n,g:n.length>=4?grams(n):null,addr:norm(r.address),mobile:phone(r.mobile),office:phone(r.office),work:[...new Set(r.works||[])].sort().join('|'),at:Date.parse(r.at)};prepared.set(r,p);return p}
+ function prep(r){let p=prepared.get(r);if(p)return p;const n=name(r.name);p={n,g:n.length>=4?grams(n):null,addr:blank(r.address)?'':norm(r.address),mobile:phone(r.mobile),office:phone(r.office),work:[...new Set((r.works||[]).filter(w=>!blank(w)))].sort().join('|'),at:Date.parse(r.at)};prepared.set(r,p);return p}
  function simPrepared(pa,pb){const a=pa.n,b=pb.n;if(!a||!b)return 0;if(a===b)return 1;if(!pa.g||!pb.g)return 0;let hit=0;for(const v of pa.g)if(pb.g.has(v))hit++;return 2*hit/(pa.g.size+pb.g.size)}
  function similarity(a,b){return simPrepared(prep({name:a}),prep({name:b}))}
  function pairKey(a,b){return [a.ref.type+':'+a.ref.id,b.ref.type+':'+b.ref.id].sort().join('|')}
@@ -27,6 +29,8 @@
   const workA=pa.work,workB=pb.work;
   const differentWork=!!workA&&!!workB&&workA!==workB,differentBiz=!!a.brand&&!!b.brand&&a.brand!==b.brand;
   const da=pa.at,db=pb.at,days=Number.isFinite(da)&&Number.isFinite(db)?Math.abs(da-db)/864e5:null;
+  /* 식별 근거가 없는 쌍(현장명 · 주소가 둘 다 비어 있음): 같은 전화 하나뿐이면 '확인 불가' — 같은 전화는 후보를 찾는 조건일 뿐 같은 현장의 증거가 아니다(관리소장 한 명이 여러 단지 · 공종을 문의할 수 있다) */
+  if(!pa.n&&!pb.n&&!pa.addr&&!pb.addr&&!siteId&&(mobile||office)){const ty=a.ref.type===b.ref.type&&(a.ref.type==='inquiry'||a.ref.type==='deal')?a.ref.type:'site';return {key:pairKey(a,b),a,b,type:ty,action:'defer',reasons:['현장명이 둘 다 비어 있음','다른 식별 근거 없음','같은 전화는 후보 찾기에만 씀'],text:'현장명 · 주소가 비어 있어 같은 현장인지 알 수 없습니다. 자료를 보완한 뒤 판단하세요.',unknown:true};}
   const reasons=[];if(address)reasons.push('주소 동일');if(office)reasons.push('관리사무소 전화 동일');if(siteId)reasons.push('현장 ID 동일');if(names===1)reasons.push('현장명 표기 일치');else if(names>=.72)reasons.push('현장명 유사 — 확인 필요');if(conflict)reasons.push('등록 주소 서로 다름');
   let type,action,text;
   const reviewA=reviewAddress(a.address),reviewB=reviewAddress(b.address);
@@ -56,5 +60,5 @@
   return {key:pairKey(a,b),a,b,type,action,reasons,text};
  }
  function candidates(rows){const out=[];for(let i=0;i<rows.length;i++)for(let j=i+1;j<rows.length;j++){const c=classify(rows[i],rows[j]);if(c)out.push(c)}return out.sort((a,b)=>({inquiry:0,contact:1,deal:2,site:3}[a.type]-{inquiry:0,contact:1,deal:2,site:3}[b.type])||a.key.localeCompare(b.key))}
- const api={norm,phone,similarity,pairKey,classify,candidates};root.CleanupCore=api;if(typeof module!=='undefined')module.exports=api;
+ const api={norm,blank,phone,similarity,pairKey,classify,candidates};root.CleanupCore=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window==='undefined'?globalThis:window);

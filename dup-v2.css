@@ -35,3 +35,21 @@ body:has(#pg-dup.on #dups.dv-on) #periodbar,body:has(#pg-dup.on #dups.dv-on) #re
 
 /* 같은 현장 · 다른 공사 묶음(2026-10-06 followup4 ④) = 파랑 */
 .dv-judge.s{background:#eef3fe;border-color:#cfdcf8}.dv-judge.s b{color:#1d3f99}
+/* 데이터 정리 판단 근거(2026-10-07 design_handoff_data_review_rules) */
+.plv-tag.u{color:#6b7280;background:#f3f4f6}.plv-tag.k{color:#3d4b8c;background:#edf0fb}
+.dv-r{align-items:start}
+.dv-ab{display:flex;flex-direction:column;gap:3px;margin-top:5px}
+.dv-s{display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline;font-size:11.5px;color:#6b7280;min-width:0}
+.dv-s i{font-style:normal;font-weight:700;width:12px;flex:none}.dv-s b{font-size:12.5px;font-weight:600;color:#15171c;overflow-wrap:anywhere}.dv-s b.blank{color:#b42318}
+.dv-s em{font-style:normal}.dv-s em.dv-d{background:#fff8e1;color:#374151;font-weight:700;border-radius:3px;padding:0 4px}
+.dv-ctac{display:flex!important;flex-direction:column;gap:3px;align-items:stretch}.dv-ctac small{font-size:10.5px;color:#9ca3af;text-align:center}
+.dv-legend{margin:0;padding:10px 16px;border-top:1px solid #eef0f3;background:#fafbfc;font-size:12px;color:#374151;line-height:1.55}
+.dv-warn{display:flex;gap:6px 12px;flex-wrap:wrap;align-items:baseline;background:#fdf1f0;border-radius:9px;padding:10px 12px;font-size:12.5px}.dv-warn b{color:#b42318}.dv-warn span{flex:1 1 260px;color:#374151;line-height:1.5}
+.dv-pv{border:1px solid #eceef2;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.dv-pv>header{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.dv-pv>header b{font-size:13.5px}.dv-pv>header span{font-size:12px;color:#6b7280}
+.dv-pvt{display:grid;grid-template-columns:92px minmax(0,1fr) minmax(0,1fr) 150px;font-size:12.5px;border-top:1px solid #eef0f3}
+.dv-pvt>*{padding:8px 8px 8px 0;border-top:1px solid #f2f3f6;min-width:0;overflow-wrap:anywhere}.dv-pvt>.h{border-top:0;font-size:11px;color:#9ca3af;padding-top:6px;padding-bottom:6px}.dv-pvt>.g{color:#9ca3af}
+.dv-pk{display:flex;gap:4px;flex-wrap:wrap}.dv-pk button{border:1px solid #d9dde4;background:#fff;color:#15171c;border-radius:6px;font-size:11.5px;font-weight:700;padding:4px 9px;cursor:pointer;font-family:inherit}.dv-pk button[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}
+.dv-pvb{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.dv-pvb>div{background:#f8f9fb;border-radius:9px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;font-size:12.5px;line-height:1.5}.dv-pvb b{font-size:11.5px;color:#6b7280}
+@media(max-width:700px){.dv-pvt{grid-template-columns:70px minmax(0,1fr) minmax(0,1fr)}.dv-pvt>:nth-child(4n){grid-column:1/-1}.dv-pvb{grid-template-columns:minmax(0,1fr)}}
+.dv-r .plv-tag{white-space:normal;line-height:1.35;display:inline-block;max-width:100%;overflow:visible;text-overflow:clip}.dv-r .plv-c>span[title]{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.45}
