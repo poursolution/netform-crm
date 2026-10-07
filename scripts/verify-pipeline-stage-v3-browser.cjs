@@ -79,7 +79,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    assert.equal(E.n[1]+E.n[2]+E.n[3],E.n[0],key+': 탭 합 = 전체');
    assert.equal(await page.evaluate(k=>PipelineWorkspace.rows({}).filter(r=>PipelineStages.group(r.code)===k).length,key),E.n[0],key+': 전체 = 이 단계 건수');
    /* 진단: 기준 넘김 = 빨강 상태 건수 · 평균 체류 · 기준 n일 */
-   assert.match(s.diag,new RegExp('^단계 진단 ?'+E.n[0]+'건 · '));assert.match(s.kpis[0],new RegExp('^기준 넘김 ?'+E.n[1]+'건 ?오늘 처리할 것$'));assert.match(s.kpis[1],new RegExp('^평균 체류 ?\\d+일 ?기준 '+E.goal+'일$'));
+   assert.match(s.diag,new RegExp('^단계 진단 ?'+E.n[0]+'건 · '));assert.match(s.kpis[0],new RegExp('^기준 넘김 ?'+E.n[1]+'건 ?기한 초과 \\d+ · 날짜 미입력 \\d+ · 판정 불가 \\d+$'),'ops_12 A②: 기준 넘김 아래 분해(기한 초과 · 날짜 미입력 · 판정 불가)');assert.match(s.kpis[1],new RegExp('^평균 체류 ?\\d+일 ?기준 '+E.goal+'일$'));
    /* 왜 멈춰 있나: 사유 4개 · 첫 사유 = 빨강 상태 건수 */
    assert.deepEqual(s.reasons.map(r=>[r[0],Number(r[1])]),E.reasons,key+': 사유 4개 건수');assert.equal(Number(s.reasons[0][1]),E.n[1],key+': 첫 사유 = 빨강 상태');
    assert.deepEqual(s.reasons.map(r=>r[2]),E.reasons.map(r=>Math.min(100,Math.round(r[1]/E.n[0]*100))+'%'),key+': 막대 = 건수 ÷ 전체');

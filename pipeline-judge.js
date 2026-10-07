@@ -29,30 +29,40 @@
   const Q=rules(),nx=nextOf(d);
   if(nx&&nx.due)return {kind:'date',why:'다음 행동일 '+md(nx.due),due:nx.due,n:daysTo(nx.due),src:'next'};
   const g=key||groupOf(d),D=(label,k,plus)=>{const due=plus?addDays(k,plus):k;return {kind:'date',why:label+' '+md(k)+(plus?' + '+plus+'일':''),due,n:daysTo(due),src:'stage'};};
-  const none=(why)=>({kind:'none',why,due:'',n:null,src:'stage'});
-  const nr=(why)=>({kind:'norecord',why,due:'',n:null,src:'stage'});
+  /* 2026-10-07 design_handoff_ops_12 A①②: 세 화면 같은 문장 — none = 날짜 미입력(지연 아님 · fix = 보완 단추 · rec = 추천 행동) / norecord = 판정 불가(이관 전 기록 등 · 지연 · 평가 제외 → 데이터 검토) / na = 기한을 세지 않는 단계(수주 · 실주) */
+  const none=(why,fix,rec)=>({kind:'none',why,fix,rec,due:'',n:null,src:'stage'});
+  const nr=(why)=>({kind:'norecord',why,rec:'데이터 검토에서 이관 전 기록 확인',due:'',n:null,src:'stage'});
+  const na=(why)=>({kind:'na',why,due:'',n:null,src:'stage'});
   const lc=lastContactAt(d);
   if(g==='consulting'){const qd=dayKey(fld(d,'consulting','quote_due')||'');if(qd)return D('견적 기한',qd,0);
    const mt=dayKey(fld(d,'consulting','meeting_date')||fld(d,'first_contact','meeting_date')||'')||lastActAt(d,/방문|미팅|실측|실사/);if(mt)return D('미팅 완료',mt,Q.quote);
-   return lc?none('미팅 완료일 없음 → 견적 기한 아님'):nr('미팅 · 연락 기록 없음 → 지연으로 세지 않음');}
-  if(g==='sent'){const sd=dayKey(fld(d,'sent','sent_date')||'');if(sd)return D('발송',sd,Q.follow);const fu=dayKey(fld(d,'sent','followup_date')||'');if(fu)return D('후속 확인일',fu,0);return lc?none('발송일 없음 → 후속 기한 아님'):nr('발송일 · 연락 기록 없음 → 지연으로 세지 않음');}
-  if(g==='relationship'){const rs=dayKey(fld(d,'waiting','resume_date')||'');if(rs)return D('재개일',rs,0);if(lc)return D('마지막 연락',lc,Q.month);return nr('연락 기록 없음 → 지연으로 세지 않음');}
-  if(g==='competition'){const bd=dayKey(anyFld(d,'bid_deadline')||anyFld(d,'decision_date')||anyFld(d,'briefing_date')||anyFld(d,'meeting_date')||'');if(bd)return D('마감 · 결정 일정',bd,0);return lc?none('결정 일정 없음 → 마감 기한 아님'):nr('결정 일정 · 연락 기록 없음 → 지연으로 세지 않음');}
-  if(g==='construction'){const st=dayKey(fld(d,'construction','start_date')||'');if(st)return D('착공',st,Q.site);const cd=dayKey(fld(d,'contract','contract_date')||d.contract_date||'');if(cd)return D('계약',cd,0);return lc?none('계약일 없음 → 기한 아님'):nr('계약일 · 연락 기록 없음 → 지연으로 세지 않음');}
+   return lc?none('미팅 일정 미등록 · 견적 기한 계산 안 함','미팅 일정 입력','미팅 여부 확인 → 일정 등록 또는 보류 사유 등록'):nr('판정 불가 · 미팅 · 연락 기록 없음(이관 전 기록 확인)');}
+  if(g==='sent'){const sd=dayKey(fld(d,'sent','sent_date')||'');if(sd)return D('발송',sd,Q.follow);const fu=dayKey(fld(d,'sent','followup_date')||'');if(fu)return D('후속 확인일',fu,0);return lc?none('발송일 미등록 · 후속 기한 계산 안 함','발송일 입력','발송 여부 확인 → 발송일 등록 또는 보류 사유 등록'):nr('판정 불가 · 발송일 · 연락 기록 없음(이관 전 기록 확인)');}
+  if(g==='relationship'){const rs=dayKey(fld(d,'waiting','resume_date')||'');if(rs)return D('재개일',rs,0);if(lc)return D('마지막 연락',lc,Q.month);return nr('판정 불가 · 연락 기록 없음(이관 전 기록 확인)');}
+  if(g==='competition'){const bd=dayKey(anyFld(d,'bid_deadline')||anyFld(d,'decision_date')||anyFld(d,'briefing_date')||anyFld(d,'meeting_date')||'');if(bd)return D('마감 · 결정 일정',bd,0);return lc?none('결정 일정 미등록 · 마감 기한 계산 안 함','결정 일정 입력','결정 일정 확인 → 일정 등록 또는 보류 사유 등록'):nr('판정 불가 · 결정 일정 · 연락 기록 없음(이관 전 기록 확인)');}
+  if(g==='construction'){const st=dayKey(fld(d,'construction','start_date')||'');if(st)return D('착공',st,Q.site);const cd=dayKey(fld(d,'contract','contract_date')||d.contract_date||'');if(cd)return D('계약',cd,0);return lc?none('계약일 미등록 · 기한 계산 안 함','계약일 입력','계약 여부 확인 → 계약일 등록'):nr('판정 불가 · 계약일 · 연락 기록 없음(이관 전 기록 확인)');}
   /* 수주 · 실주: 기한을 세지 않는다(준공 · 실주일은 근거로만) */
-  if(g==='won'){const cp=dayKey(d.completion_date||fld(d,'completion','completion_date')||'');return none(cp?'준공 '+md(cp)+' · 기한 없음':'준공일 없음');}
-  if(g==='lost'){const cl=dayKey(d.closed_at||d.closed||'');return none(cl?'실주 '+md(cl)+' · 기한 없음':'실주일 없음');}
+  if(g==='won'){const cp=dayKey(d.completion_date||fld(d,'completion','completion_date')||'');return na(cp?'준공 '+md(cp)+' · 기한 없음':'준공일 미등록 · 기한 없음');}
+  if(g==='lost'){const cl=dayKey(d.closed_at||d.closed||'');return na(cl?'실주 '+md(cl)+' · 기한 없음':'실주일 미등록 · 기한 없음');}
   const ag=dayKey(root.inquiryAssignedAt&&d.assigned_at?d.assigned_at:'');if(ag)return D('배정',ag,0);
-  return lc?none('기한 없음'):nr('배정일 · 연락 기록 없음 → 지연으로 세지 않음');
+  return lc?none('기한 미등록 · 기한 계산 안 함','기한 정하기','다음 행동 · 날짜 등록'):nr('판정 불가 · 배정일 · 연락 기록 없음(이관 전 기록 확인)');
  }
- /* ── ④ 기한 상태 3가지 ── */
+ /* ── ④ 기한 상태 3가지(ops_12 A②: 기한 초과 / 날짜 미입력 / 판정 불가 · 수주 · 실주는 기한 없음) ── */
  function dueText(b){
-  if(!b||b.kind==='norecord')return '기록 없음 · 기한 계산 안 함';
-  if(b.kind!=='date'||b.n==null)return '기한 없음 · 정하기';
+  if(!b||b.kind==='norecord')return '판정 불가 · 기한 계산 안 함';
+  if(b.kind==='na')return '기한 없음';
+  if(b.kind!=='date'||b.n==null)return '날짜 미입력 · 기한 계산 안 함';
   const n=b.n,m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(dayKey(b.due));return n<0?(-n)+'일 지남':n===0?'오늘까지':n===1?'내일까지':(m?(+m[2])+'/'+(+m[3]):md(b.due))+'까지';
  }
  const dueClass=b=>!b||b.kind!=='date'||b.n==null?'g':b.n<0?'r':'';
  const isLate=b=>!!(b&&b.kind==='date'&&b.n!=null&&b.n<0);
+ const STATE={late:'기한 초과',ok:'기한 내',nodate:'날짜 미입력',norecord:'판정 불가',na:'기한 없음'};
+ const state=b=>{const k=!b||b.kind==='norecord'?'norecord':b.kind==='na'?'na':b.kind!=='date'||b.n==null?'nodate':b.n<0?'late':'ok';return {key:k,label:STATE[k]};};
+ /* 한 묶음의 분해(단계 진단 '기준 넘김' 아래 · 리포트): 기한 초과 n · 날짜 미입력 n · 판정 불가 n — 합 = 전체 */
+ function tally(list,key){const t={late:0,ok:0,nodate:0,norecord:0,na:0,total:0};(list||[]).forEach(d=>{if(!d)return;t[state(basis(d,key)).key]++;t.total++;});return t;}
+ const tallyText=t=>t?'기한 초과 '+t.late+' · 날짜 미입력 '+t.nodate+' · 판정 불가 '+t.norecord:'';
+ /* 세 화면(목록 줄 · 오늘 업무 · 상세 · 지금 할 일 카드)이 같은 한 줄: '판정: 근거 → 추천 행동' */
+ const line=b=>{if(b&&typeof b==='object'&&!('kind' in b))return '';const x=b&&b.kind?b:null;return x?'판정: '+x.why+(x.rec?' → '+x.rec:''):'';};
  /* ── ③ 최근 연락 두 줄 ── */
  function touchLines(d){
   const CS=root.ContactState;if(!CS)return {attempt:'CRM 연락 기록 없음',connect:'실제 연결 없음',hasAttempt:false,hasConnect:false};
@@ -72,5 +82,5 @@
   const den=(deals||[]).filter(d=>d&&open(d)&&!legacy(d)),num=den.filter(d=>{const x=nextOf(d);return !!(x&&x.text&&x.due);});
   return {num:num.length,den:den.length,pct:den.length?Math.round(num.length*100/den.length):null,target:TARGET.nextRate,list:den.filter(d=>!num.includes(d))};
  }
- root.PipelineJudge={on,basis,dueText,dueClass,isLate,touchLines,week,inWeek,dayKey,md,nextRate,TARGET,rules};
+ root.PipelineJudge={on,basis,dueText,dueClass,isLate,state,STATE,tally,tallyText,line,touchLines,week,inWeek,dayKey,md,nextRate,TARGET,rules};
 })(window);
