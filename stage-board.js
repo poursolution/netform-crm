@@ -112,5 +112,5 @@
   host.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('.sb [data-sb="open"]')){e.preventDefault();e.target.click();}});
  }
  const state=key=>{const G=root.G;G.sb=G.sb||{};return G.sb[key]||(G.sb[key]={view:'list',bucket:'all',reason:null,page:1});};
- root.StageBoard={html,htmlB,html3,bind,rank,state,money,dayLabel,RED,INK,BRAND};
+ root.StageBoard={html,htmlB,html3,bind,rank,state,money,dayLabel,RED,INK,BRAND,row3};
 })(window);

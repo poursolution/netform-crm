@@ -38,18 +38,20 @@
   if(noOwner)btn=['담당 배정','owner'];else if(!o.closed&&contactAct&&!telOf(d))btn=['연락처 찾기','contact'];
   const now=noOwner?'담당자 미지정':(o.now||'');
   /* decision_collab ②③: '현재 상황' 앞 막힌 곳 꼬리표([고객] / [내부 · 견적팀] / [내부 · 자료 부족]) · 뒤에 '연락 n회 · 진척 없음 n일'(주황) */
-  let tagHtml='',staleHtml='';try{const DC=root.DecisionCollab,tg=DC&&DC.on()&&!noOwner?DC.tags(d):null;if(tg&&tg.block)tagHtml='<em class="dcb-tag'+(tg.block==='고객'?'':' in')+'">'+h(tg.block)+'</em>';if(tg&&tg.stale)staleHtml=' <em class="dcb-stale">'+h(tg.stale)+'</em>';}catch(e){}
+  let tagHtml='',staleHtml='';try{const DC=root.DecisionCollab,tg=DC&&DC.on()&&!noOwner?DC.tags(d):null;if(tg&&tg.block)tagHtml='<em class="dcb-tag'+(tg.block==='고객'?'':' in')+'">'+h(tg.block)+'</em>';if(tg&&tg.stale)staleHtml='<small class="dcb-stale" title="'+attr(tg.stale)+'">'+h(tg.stale)+'</small>';}catch(e){}
   /* stage7 ⑤: 세부 상태가 정한 업무가 등록된 다음 할 일보다 앞설 때(o.forceTask — 예: 계약 확인이 끝난 건의 '계약 체결 확인' → '주간 현장 방문') · 이전 업무는 o.staleNext 로 '종료 대상' 표시 */
   const task=noOwner?'담당자 배정':hasNext&&!o.forceTask?String(r.next.text).trim():(o.task||''),lt=lastTouch(r),last=lt?'최근 연락 '+ymdDot(lt):NOLOG;
   const key=attr(r.key),A='data-'+ns;
   /* 판정 하나(2026-10-06 집계 · 판정 정리 · pipeline-judge.js): 최근 연락 두 줄(시도 / 실제 연결) · 기한 상태 3가지 · 다음 업무 아래 '판정: 근거' */
   const J=root.PipelineJudge&&root.PipelineJudge.on()?root.PipelineJudge:null,jb=J&&!noOwner?J.basis(d,o.stage):null,tl=J?J.touchLines(d):null;
+  /* 2026-10-07 대표 "내용 넘어가는 것 하지 말아": 보완 단추([발송일 입력] 등)가 같이 있는 줄은 근거만 — 추천 행동 문구는 단추 이름과 같은 말이라 줄이 길어지기만 한다 */
+  const jl=jb?(jb.fix?'판정: '+jb.why:J.line(jb)):'';
   /* ops_12 A①②: '판정: 근거 → 추천' 한 줄은 오늘 업무 · 상세와 같은 함수(PipelineJudge.line) · 날짜 미입력이면 보완 단추([발송일 입력] 등 → 상세의 이 단계 필수 정보) */
-  const dueHtml=o.dueText?'<small class="'+attr(o.dueClass||'')+'">'+h(o.dueText)+'</small>'+(jb?'<small class="why">'+h(J.line(jb))+'</small>':'')/* 관계관리 v12: 상태 주기로 정한 기한 글 */:jb?'<small class="'+J.dueClass(jb)+'">'+h(J.dueText(jb))+'</small><small class="why">'+h(J.line(jb))+(jb.fix?' <u '+A+'="fix" data-key="'+key+'" role="button" tabindex="0">'+h(jb.fix)+'</u>':'')+'</small>':'<small class="'+(due!=null&&due<0?'r':due==null?'g':'')+'">'+h(dueText(due,r.due))+'</small>';
+  const dueHtml=o.dueText?'<small class="'+attr(o.dueClass||'')+'">'+h(o.dueText)+'</small>'+(jb?'<small class="why">'+h(jl)+'</small>':'')/* 관계관리 v12: 상태 주기로 정한 기한 글 */:jb?'<small class="'+J.dueClass(jb)+'">'+h(J.dueText(jb))+'</small><small class="why">'+h(jl)+(jb.fix?' <u '+A+'="fix" data-key="'+key+'" role="button" tabindex="0">'+h(jb.fix)+'</u>':'')+'</small>':'<small class="'+(due!=null&&due<0?'r':due==null?'g':'')+'">'+h(dueText(due,r.due))+'</small>';
   const lastHtml=tl?'<small title="'+attr(tl.attempt)+'">'+h(tl.attempt)+'</small><small class="cn'+(tl.hasConnect?'':' none')+'">'+h(tl.connect)+'</small>':'<small>'+h(last)+'</small>';
   return '<div class="prv-row '+(cls||'')+'" role="row" tabindex="0" '+A+'="open" data-key="'+key+'"'+(o.tab!=null?' data-tab="'+attr(o.tab)+'"':'')+' style="border-left-color:'+(bc||'#e3e6ec')+'">'
    +'<div class="prv-a"><b title="'+attr(r.site)+'">'+h(r.site)+(root.advisoryBadge?root.advisoryBadge(d):'')+'</b><span><em style="color:'+(bc||'#9ca3af')+'">'+h(d.brand||'브랜드 미지정')+'</em> · '+h(workOf(r))+' · <i'+(noOwner?' class="r"':'')+'>'+h(owner||'미배정')+'</i></span>'+(o.tag?'<em class="prv-tag '+attr(o.tagClass||'')+'">'+h(o.tag)+'</em>':'')+'</div>'
-   +'<div class="prv-b"><span title="'+attr(now)+'">'+tagHtml+h(now)+staleHtml+'</span>'+lastHtml+(o.base?'<small class="base" title="'+attr(o.base)+'">'+h(o.base)+'</small>':'')+'</div>'
+   +'<div class="prv-b"><span title="'+attr(now)+'">'+tagHtml+h(now)+'</span>'+staleHtml+lastHtml+(o.base?'<small class="base" title="'+attr(o.base)+'">'+h(o.base)+'</small>':'')+'</div>'
    +'<div class="prv-c"><b'+(task?'':' class="none"')+' title="'+attr(task)+'">'+h(task||'다음 업무 없음')+'</b>'+dueHtml+(o.staleNext?'<small class="why stale" title="'+attr(o.staleNext)+'">'+h(o.staleNext)+'</small>':'')+'</div>'
    +'<button type="button" '+A+'="act" data-key="'+key+'" data-v="'+attr(btn[1])+'">'+h(btn[0])+'</button></div>';
  }

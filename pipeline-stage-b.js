@@ -72,7 +72,7 @@
    calc(r,v,q){const f=r.fields||{},sentAt=f.sent_date||'',sd=since(sentAt),stay=sd!==null?sd:(r.stall||0),ld=lastDays(r),reacted=!!v.reaction||(ld!==null&&sd!==null&&ld<sd),meet=days(r.date);
     /* stage7 ②: 발송일 있는 건만 7일 판정 — 없으면 'nodate'(발송일 확인 필요 · 7일 계산 안 함) */
     const bucket=reacted?'done':!sentAt?'nodate':stay>q.follow?'late':'wait';
-    const sub=(sentAt?ymd(sentAt)+' 발송':'발송일 미기록 · 자료 · 수신자 기록 확인')+(v.reaction?' · '+v.reaction:'')+(meet!==null&&meet>=0?' · 결정 '+ymd(r.date):'');
+    const sub=(sentAt?ymd(sentAt)+' 발송':'자료 · 수신자 없음')+(v.reaction?' · '+v.reaction:'')+(meet!==null&&meet>=0?' · 결정 '+ymd(r.date):'');
     const rs=[];if(bucket==='late')rs.push('nofollow');if(meet!==null&&meet>=0&&meet<=q.d3)rs.push('meet');if(!v.reaction)rs.push('noreact');if(/가격|경쟁/.test(String(v.reaction||''))||v.competitor)rs.push('comp');if(!r.next||!r.next.text||!r.due)rs.push('nonext');
     return {bucket,sub,rs};}},
   relationship:{name:'관계관리',desc:()=>'견적 후 관리 구분 · 집중관리(초기 1개월, '+rules().focus+'일 단위) → 일반관리(월 1회) → '+(SEG()?'대기관리('+Math.round(rules().wait/30)+'개월 1회) · 견적 발송일 · 공사 예정 시기로 매일 자동 분류':'대기('+Math.round(rules().wait/30)+'개월 1회)'),axis:'관리 구분',
@@ -105,7 +105,7 @@
   /* 수주 = 실적 · 완료 정보(2026-10-06 design_handoff_followup4 ②): 수주 유형 · 낙찰금액 · 낙찰사 / 계약일 · 착공 · 준공 확인 / 빠진 계약 정보. 준공 후 연락 · 추가 공사 업무는 여기서 만들지 않는다 → 확장관리 */
   won:{name:'수주',desc:()=>'끝 상태 · 계약이 끝난 건의 결과를 정확히 남기는 곳 · 수주 유형 · 낙찰금액(VAT 별도) · 낙찰사 → 계약일 · 착공 · 준공 확인 → 빠진 계약 정보 입력. 준공 후 연락 · 추가 공사는 확장관리에서',axis:'실적 · 완료 정보',
    S:[['result','수주 정보 미기록','#15171c','수주 유형 · 낙찰금액 · 낙찰사 기록'],['dates','계약일 · 착공 · 준공 확인','#8a909c','세 날짜 확인 · 기록'],['done','실적 · 완료 정보 완료','#d5d9e0','사후 연락은 확장관리에서']],
-   RS:{wtype:['수주 유형 · 낙찰금액 · 낙찰사 미기록',RED,'수주 정보','수주 유형(직접 · 협약 · 타사 이관) · 낙찰금액(VAT 별도) · 낙찰사를 기록 — 실적 집계 기준','win'],cdate:['계약일 · 착공 · 준공 확인 안 됨',INK,'일정 확인','계약일 · 착공일 · 준공일을 확인해 기록','stagefields'],cinfo:['빠진 계약 정보 입력',INK,'정보 입력','계약금액 · 계약서 등 빠진 계약 정보를 입력(매출 집계)','stagefields']},
+   RS:{wtype:['수주 유형 · 낙찰금액 · 낙찰사 미기록',RED,'수주 정보','수주 유형 · 낙찰금액 · 낙찰사 기록','win'],cdate:['계약일 · 착공 · 준공 확인 안 됨',INK,'일정 확인','계약일 · 착공일 · 준공일 확인','stagefields'],cinfo:['빠진 계약 정보 입력',INK,'정보 입력','빠진 계약 정보 입력','stagefields']},
    calc(r,v,q){let w=null;try{w=root.DealWin&&root.DealWin.resultOf?root.DealWin.resultOf(r.item):null;}catch(e){}const typed=!!(w&&w.type&&w.type!=='none'&&(w.amount||w.company)),dOk=!!(v.contractDate&&v.startDate&&v.completionDate),info=!!v.contractAmount;
     const bucket=!typed?'result':!dOk?'dates':'done';
     const sub=(typed?String(w.text||'수주 기록')+(w.amount?' · '+money(w.amount):''):'수주 유형 미기록')+' · '+(v.completionDate?'준공 '+ymd(v.completionDate):v.contractDate?'계약 '+ymd(v.contractDate):'계약일 미기록');
@@ -114,7 +114,7 @@
   /* stage7 ⑦(2026-10-07): 끝 상태. '차기 연도 → 대기 2개월 연락(전체)' 안내 삭제 · 재영업 가능 '예'인 건만 재접촉 할 일 · 실주 처리하면 기존 영업 업무는 서버가 닫는다(단계 전환 때 열린 다음 할 일 취소) · 다시 열어도 실주 기록은 보존 */
   lost:{name:'실주',desc:()=>'끝 상태 · 실주일 · 원인 · 고객 반응 · 재영업 가능 여부를 남기는 곳 · 재영업 가능 "예"인 건만 재접촉 할 일(이전 실주 결과는 그대로 보존)',axis:'실주 기록',
    S:[['nore','사유 미기록','#15171c','원인 · 고객 반응 기록'],['rec','기록 완료','#d5d9e0','결과 기록만 · 할 일 없음'],['re','재영업 가능 · 예','#8a909c','재접촉 할 일 하나']],
-   RS:{noreason:['실주 사유 미입력',RED,'사유 기록','가격 · 공법 · 관계 · 사업 중 원인 + 고객 반응 기록','stage'],nobid:['경쟁사 · 금액 미기록',INK,'결과 기록','낙찰사 · 낙찰가 · 당사 제안가 · 가격차 · 결정요인 기록(적용안)','stagefields'],relist:['재영업 가능 여부 미입력',INK,'여부 입력','재영업 가능 여부(예 · 아니오 · 미정) 입력 → "예"만 재접촉 할 일 생성 · 나머지는 결과 기록만','stagefields'],contact:['재접촉 할 일 없음',INK,'재접촉 등록','재영업 가능 "예" 건은 재접촉 할 일을 하나 등록(이전 실주 결과는 그대로)','next']},
+   RS:{noreason:['실주 사유 미입력',RED,'사유 기록','원인 · 고객 반응 기록','stage'],nobid:['경쟁사 · 금액 미기록',INK,'결과 기록','경쟁사 · 낙찰가 · 결정요인 기록','stagefields'],relist:['재영업 가능 여부 미입력',INK,'여부 입력','재영업 가능 여부 입력','stagefields'],contact:['재접촉 할 일 없음',INK,'재접촉 등록','재접촉 할 일 하나 등록','next']},
    calc(r,v,q){const reason=v.lossReason&&v.lossReason!=='미기록'?v.lossReason:'',lf=((r.item.stage_contexts||{}).lost||{}).fields||{},eng=String(lf.reengage||(r.fields||{}).reengage||'').trim(),re=eng?eng==='예':!!(v.recontact&&!/없|낮|불가/.test(String(v.recontact)));
     const bucket=!reason?'nore':re?'re':'rec';
     const sub=(v.lossDate?ymd(v.lossDate)+' 실주':'실주일 미기록')+(reason?' · '+reason:'')+(eng?' · 재영업 '+eng:v.recontact?' · 재접촉 '+v.recontact:' · 재영업 가능 미정');
