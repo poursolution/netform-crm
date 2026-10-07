@@ -182,7 +182,9 @@
  }
  function open(id){
   const r=find(id);if(!r)return;if(!enabled())return legacyOpen&&legacyOpen(id);
+  if(root.G.xbSiteNote?.ids&&!root.G.xbSiteNote.ids.includes(r.id))root.G.xbSiteNote=null;
   const m=node(),key=r.sourceOpportunityId||r.id;if(openId!==key)draft='';openId=key;returnFocus=document.activeElement;renderDetail();m.classList.add('on');m.setAttribute('aria-hidden','false');m.querySelector('.xdv-close')?.focus();
+  root.ExpansionContact?.read(r.sourceOpportunityId).then(ok=>{if(!ok||openId!==key)return;const temp=document.createElement('div');temp.innerHTML=detailHtml(find(key)||r);for(const selector of ['.idv-chead','.idv-thread']){const old=m.querySelector(selector),fresh=temp.querySelector(selector);if(old&&fresh)old.replaceWith(fresh);}}).catch(e=>toast('이력 조회 실패: '+String(e.message||e),'warn'));
  }
  function close(restore){
   const m=document.getElementById('expansionV2');if(m){m.classList.remove('on');m.setAttribute('aria-hidden','true');}
@@ -195,11 +197,12 @@
   save.disabled=true;save.textContent='확인 중…';
   try{
    if(!root.SB||!root.TOKEN)throw Error('로그인 후 서버 연결이 필요합니다.');
-   const res=await root.SB.rpc('crm_expansion_note',{p:{source_opportunity_id:r.sourceOpportunityId,note,request_id:crypto.randomUUID()}});
+   const g=root.G.xbSiteNote,ids=g&&Array.isArray(g.ids)?root.expansionRecords().filter(x=>g.ids.includes(x.id)&&x.id!==r.id).map(x=>x.sourceOpportunityId):[];
+   const res={data:await root.ExpansionContact.write(r.sourceOpportunityId,note,ids)};
    if(res.error)throw res.error;if(!res.data||res.data.ok!==true||!res.data.event)throw Error('서버 저장을 확인하지 못했습니다.');
    root.B.expansion_events=(root.B.expansion_events||[]).concat(res.data.event);draft='';
    /* 단지 한 번 연락(contact_link ③): 같은 단지의 다른 계약에는 원본을 가리키는 연결 줄만 남긴다(글 복사 안 함) */
-   let linked=0;const g=root.G.xbSiteNote;if(g&&Array.isArray(g.ids)&&g.ids.length){const sib=root.expansionRecords().filter(x=>g.ids.includes(x.id)&&x.id!==r.id);for(const x of sib){try{const rr=await root.SB.rpc('crm_expansion_note',{p:{source_opportunity_id:x.sourceOpportunityId,note:'[단지 연락 · 연결] '+(r.site||'')+' 원본 기록 '+String(res.data.event.id||res.data.event.event_id||''),request_id:crypto.randomUUID()}});if(rr&&rr.data&&rr.data.event){root.B.expansion_events=root.B.expansion_events.concat(rr.data.event);linked++;}}catch(e){}}root.G.xbSiteNote=null;}
+   const linked=res.data.linked_count||0;root.G.xbSiteNote=null;
    toast(linked?'접촉 · 니즈 기록을 남기고 같은 단지 계약 '+linked+'건에 연결했습니다':'접촉 · 니즈 기록을 남겼습니다');root.paintExpansion();if(root.G.page!=='expansion')renderDetail();
   }catch(e){err.textContent='기록을 저장하지 못했습니다. '+String(e.message||e);save.disabled=false;save.textContent='저장';}
  }
