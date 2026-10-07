@@ -64,7 +64,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await L.locator('.sth .sth-row.past.link .sth-l2').first().click();await page.waitForTimeout(700);
   assert.equal(await page.evaluate(()=>CUR_DETAIL.item.outcome),'won');
   {const k=await page.locator('#detailView .da-stage-summary .dv3-stage>.dv3-row').evaluateAll(l=>l.map(n=>[n.querySelector('span').textContent,n.querySelector('button.dv3-val')?'칸':'글']));
-   assert.deepEqual(k,[['공종','칸'],['예상 금액','칸'],['확인된 준공일','글'],['준공 완료 확인','글'],['최종 수주금액(원)','글'],['이긴 이유','칸'],['경쟁사','칸'],['배운 점','칸']],'수주 건 오른쪽 상자 '+JSON.stringify(k));
+   assert.deepEqual(k,[['공종','칸'],['예상 금액','칸'],['확인된 준공일','글'],['준공 완료 확인','글'],['최종 수주금액(원)','글'],['결과 확인일','글'],['인정 근거','칸'],['이긴 이유','칸'],['경쟁사','칸'],['배운 점','칸']/* 2026-10-07 stage7 ⑥ */],'수주 건 오른쪽 상자 '+JSON.stringify(k));
    const R2=page.locator('#detailView .da-stage-summary');await R2.locator('.dv3-row.core',{hasText:'예상 금액'}).locator('.dv3-val').click();await page.waitForTimeout(200);
    const amt=R2.locator('.dv3-row.core input.dv3-in');await amt.fill('250,000,000');await amt.press('Enter');await page.waitForTimeout(400);
    assert.deepEqual(await page.evaluate(()=>__ci.slice(-1)[0]),{deal_id:'22222222-2222-4222-8222-222222222222',stage_code:'won',reason:'종료 건 상세에서 바로 입력',amount:250000000});
