@@ -27,6 +27,8 @@
  function basis(d,key){
   if(!d||typeof d!=='object')return {kind:'norecord',why:'자료 없음',due:'',n:null};
   const Q=rules(),nx=nextOf(d);
+  /* 고객 합의 대기(decision_collab ①): 앞으로의 회의 · 입찰 일정이 있으면 그날까지 무연락 경고 없음 */
+  try{const DC=root.DecisionCollab,w=DC&&DC.on()?DC.decWaiting(d):null;if(w)return {kind:'date',why:'고객 합의 대기 · '+w.label+' '+md(w.date)+(w.conf==='추정'?'(추정)':'')+' · 회의 전 경고 없음',due:w.date,n:daysTo(w.date),src:'decide',rec:'회의 D-5 자료 준비 · D-3 발송 + 수신 확인 · D+1 결과 확인'};}catch(e){}
   /* 대기 이유(contact_link ④): 고른 날짜까지는 정체 · 무활동 경고에서 뺀다 — 기한은 그 날짜, 판정 문장에 이유 */
   try{const CL=root.ContactLink,w=CL&&CL.on()?CL.waitActive(d):null;if(w)return {kind:'date',why:'대기 이유: '+w.reason+' · '+md(w.until)+'까지 경고 없음',due:w.until,n:daysTo(w.until),src:'wait',wait:w};}catch(e){}
   if(nx&&nx.due)return {kind:'date',why:'다음 행동일 '+md(nx.due),due:nx.due,n:daysTo(nx.due),src:'next'};

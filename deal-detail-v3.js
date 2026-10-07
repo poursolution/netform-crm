@@ -600,6 +600,7 @@
    /* 과거 이관 건은 아직 단계가 없다 — 제목만 바꾼다 */if(h3&&h3.firstChild&&v.classList.contains('dv3-legacy'))h3.firstChild.textContent='영업 재개 전 확인할 정보';
    sum.classList.toggle('dv3-old',!rows.length&&!core.length);
    ensureSlot(sum,'stage');
+   /* 결정 일정 · 협업 상자(decision-collab.js): 필수 정보 아래 */try{root.DecisionCollab&&root.DecisionCollab.mount(r,d,sum.nextElementSibling&&sum.nextElementSibling.classList.contains('dv3-slot')?sum.nextElementSibling:sum);}catch(e){}
   }
   /* 단계 바꾸기 카드는 오른쪽에서 빼고 창 머리글로 */
   r.querySelectorAll(':scope>.ddv-switch').forEach(n=>n.classList.add('dv3-old'));
