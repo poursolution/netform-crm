@@ -26,9 +26,17 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    window.__own={[D1]:{deal_id:D1,first_owner:'이필선',first_connected_at:'2026-07-14',performance_owner:'이필선'}};
    window.__ev={[D1]:[{action:'reassign',from_owner:'이필선',to_owner:'김성민',reason:'지역 재배치',attribution:'keep',actor_name:'송보람',at:T('2026-09-20')}]};
    window.__ap=[{id:1,type:'owner_change',deal_id:D1,title:'[경기 용인] 수지삼성래미안 이필선 → 김성민',reason:'지역 재배치 · 계약은 김성민이 진행',payload:{from_owner:'이필선',to_owner:'김성민'},status:'pending',requested_by_name:'김성민',requested_at:T('2026-10-02'),decided_by_name:null,decided_at:null,decision_reason:null}];
-   window.__calls=[];let seq=1;const now=()=>new Date().toISOString();
+   window.CRMRelease.has=()=>true;window.OpsStore.has=()=>true;window.__calls=[];let seq=1;const now=()=>new Date().toISOString();
    SB={rpc:async(name,args)=>{const p=args.p||{};__calls.push([name,JSON.parse(JSON.stringify(p))]);
     if(name==='crm_deal_owner_list_v1')return {data:{ok:true,rows:Object.values(__own),events:p.deal_id?(__ev[p.deal_id]||[]):[]}};
+    if(name==='crm_deal_reassign_handover_v1'){
+     const d=B.deals.find(x=>x.id===p.deal_id),first=DealOwner.first(d);
+     if(!__own[p.deal_id])__own[p.deal_id]={deal_id:p.deal_id,first_owner:first.name,first_connected_at:first.at,performance_owner:first.name};
+     (__ev[p.deal_id]=__ev[p.deal_id]||[]).push({action:'reassign',from_owner:p.from,to_owner:p.to,reason:p.reason,attribution:p.attribution,actor_name:ME.name,at:now()});
+     const approval=p.attribution==='request'?{id:++seq,type:'owner_change',deal_id:p.deal_id,status:'pending',requested_by_name:ME.name,requested_at:now(),payload:{from_owner:__own[p.deal_id].performance_owner,to_owner:p.to}}:null;
+     if(approval)__ap.unshift(approval);
+     return {data:{ok:true,deal_id:p.deal_id,owner_id:'mock-'+p.to,assignee:p.to,version:(d.version||0)+1,activity_id:'mock-'+seq++,server_at:now(),owner:__own[p.deal_id],approval}};
+    }
     if(name==='crm_deal_owner_reassign_v1'){if(!__own[p.deal_id])__own[p.deal_id]={deal_id:p.deal_id,first_owner:p.first_owner||p.keep_owner,first_connected_at:p.first_connected_at||null,performance_owner:p.keep_owner};(__ev[p.deal_id]=__ev[p.deal_id]||[]).push({action:'reassign',from_owner:p.from,to_owner:p.to,reason:p.reason,attribution:p.attribution,actor_name:ME.name,at:now()});return {data:{ok:true,deal_id:p.deal_id,owner:__own[p.deal_id]}};}
     if(name==='crm_approval_list_v1')return {data:{ok:true,admin:true,approver:false,rows:__ap}};
     if(name==='crm_approval_request_v1'){const r={id:++seq,type:p.type,deal_id:p.deal_id||null,title:p.title,reason:p.reason,payload:p.payload||{},status:'pending',requested_by_name:ME.name,requested_at:now(),decided_by_name:null,decided_at:null,decision_reason:null};__ap.unshift(r);return {data:{ok:true,request:r}};}
@@ -68,10 +76,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 3. 저장(귀속도 변경 요청): 기존 담당 변경 → 사유 · 귀속 선택 기록 → 승인 요청. 승인 전에는 귀속 그대로 */
   await page.evaluate(()=>{__calls.length=0;const t=document.getElementById('rs-asg-text');t.value='지역 재배치 (경기 남부) — 정정훈이 계약 진행';t.dispatchEvent(new Event('input',{bubbles:true}));});
   await page.evaluate(()=>saveAssigneeChange());await page.waitForTimeout(900);
-  assert.equal(await page.evaluate(()=>B.deals[0].assignee),'정정훈','담당 변경은 기존 저장 경로 그대로');
-  const calls=await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_deal_owner_reassign_v1'||c[0]==='crm_approval_request_v1'));
-  assert.deepEqual(calls,[['crm_deal_owner_reassign_v1',{deal_id:'11111111-1111-4111-8111-111111111111',from:'김성민',to:'정정훈',reason:'지역 재배치 (경기 남부) — 정정훈이 계약 진행',attribution:'request',keep_owner:'이필선',first_owner:'이필선',first_connected_at:'2026-07-14'}],
-   ['crm_approval_request_v1',{type:'owner_change',deal_id:'11111111-1111-4111-8111-111111111111',title:'[경기 용인] 수지삼성래미안 이필선 → 정정훈',reason:'지역 재배치 (경기 남부) — 정정훈이 계약 진행',payload:{fields:[{l:'현재 귀속',v:'이필선 (주담당)',auto:true},{l:'바꿀 귀속',v:'정정훈',auto:true}],from_owner:'이필선',to_owner:'정정훈',evidence:null}}]]);
+  assert.equal(await page.evaluate(()=>B.deals[0].assignee),'정정훈','서버 확인 응답 뒤 담당 변경');
+  const calls=await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_deal_reassign_handover_v1').map(c=>{const {request_id,...p}=c[1];return [c[0],p];}));
+  assert.deepEqual(calls,[['crm_deal_reassign_handover_v1',{deal_id:'11111111-1111-4111-8111-111111111111',from:'김성민',to:'정정훈',reason:'지역 재배치 (경기 남부) — 정정훈이 계약 진행',attribution:'request',memo:''}]]);
+  assert.deepEqual(await page.evaluate(()=>__writes.filter(x=>['assign','handover'].includes(x[0]))),[],'서버 확인 전 로컬 assign/handover 명령을 만들지 않는다');
   assert.deepEqual(await page.evaluate(()=>[DealOwner.perf(B.deals[0]),DealOwner.info(B.deals[0]).sub]),['이필선','주담당 · 정정훈 보조'],'승인 전에는 귀속을 바꾸지 않는다');
   assert.equal(await page.evaluate(()=>DealOwner.state().attr),'keep','다음에는 다시 기본(주담당 유지)');
   /* 4. 주담당 유지(기본): 승인 요청 없이 기록만 — 귀속이 아직 저장되지 않은 영업건은 최초 연결 담당자를 주담당으로 고정 */
@@ -80,7 +88,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{__calls.length=0;const s=document.getElementById('dv-assignee');if(![...s.options].some(o=>o.value==='김성민')){const o=document.createElement('option');o.value='김성민';o.textContent='김성민';s.append(o);}s.value='김성민';s.dispatchEvent(new Event('change',{bubbles:true}));const t=document.getElementById('rs-asg-text');t.value='업무량 재배분 — 대전 권역 조정';t.dispatchEvent(new Event('input',{bubbles:true}));});
   assert.equal(await page.locator('.do-attr .do-note').innerText(),'담당만 바뀌고 수주실적 · 인센티브는 정정훈(주담당) 유지. 김성민은 보조로 표시됩니다.');
   await page.evaluate(()=>saveAssigneeChange());await page.waitForTimeout(900);
-  assert.deepEqual(await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_deal_owner_reassign_v1'||c[0]==='crm_approval_request_v1')),[['crm_deal_owner_reassign_v1',{deal_id:'22222222-2222-4222-8222-222222222222',from:'정정훈',to:'김성민',reason:'업무량 재배분 — 대전 권역 조정',attribution:'keep',keep_owner:'정정훈',first_owner:'정정훈',first_connected_at:'2026-08-03'}]]);
+  assert.deepEqual(await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_deal_reassign_handover_v1').map(c=>{const {request_id,...p}=c[1];return [c[0],p];})),[['crm_deal_reassign_handover_v1',{deal_id:'22222222-2222-4222-8222-222222222222',from:'정정훈',to:'김성민',reason:'업무량 재배분 — 대전 권역 조정',attribution:'keep',memo:''}]]);
   assert.deepEqual(await page.locator('#detailView .do-card .do-grid>*').evaluateAll(l=>l.map(n=>n.textContent.replace(/\s+/g,' ').trim())),['현재 담당','김성민','최초 담당','정정훈 첫 연결 2026.8.3','실적 귀속','정정훈 주담당 · 김성민 보조']);
   assert.match(await page.locator('#detailView .do-card .do-hist').innerText(),/2026\.10\.21\s*담당 변경 정정훈 → 김성민 · 사유: 업무량 재배분 — 대전 권역 조정 · 귀속 유지/);
   /* 5. 승인 요청 창의 귀속 변경: 지금 귀속을 미리 넣고, 바꿀 귀속은 담당자 이름이어야 한다 */

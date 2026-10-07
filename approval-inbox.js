@@ -11,7 +11,7 @@
  const RPC={list:'crm_approval_list_v1',request:'crm_approval_request_v1',decide:'crm_approval_decide_v1'};
  const CODES=['transfer','owner_change','dup_lead','strategic_win','special_incentive','result_fix'];
  const TONE=[['#1d3f99','#eef3fe'],['#8a5a00','#fff4d6'],['#6b7280','#f3f4f6'],['#1f7a4d','#e8f6ee'],['#7048e8','#f1edfd'],['#b42318','#fdecec']];
- const labelOf=code=>{const L=R.CRMRules&&R.CRMRules.PHASE2&&R.CRMRules.PHASE2.approval_types||[],i=CODES.indexOf(code);return i>=0&&L[i]?L[i]:code;};
+ const labelOf=code=>{if(code==='contract_amount')return '계약금액 정정';const L=R.CRMRules&&R.CRMRules.PHASE2&&R.CRMRules.PHASE2.approval_types||[],i=CODES.indexOf(code);return i>=0&&L[i]?L[i]:code;};
  const toneOf=code=>TONE[CODES.indexOf(code)]||TONE[2];
  function st(){const g=R.G;if(!g.approvalInbox)g.approvalInbox={rows:null,busy:false,err:'',rej:'',reason:'',sending:''};return g.approvalInbox;}
  const enabled=()=>!R.G.approvalInboxOff&&!!R.CRMRules;
@@ -102,7 +102,7 @@
  async function decide(x,decision,reason){
   const S=st();if(S.sending)return;S.sending=x.key;S.err='';render();
   let row=null;
-  try{const r=await R.OpsStore.rpc(RPC.decide,{id:x.id,decision,reason:reason||undefined});row=r.request;take(row);S.rej='';S.reason='';try{if(r.owner&&R.DealOwner)R.DealOwner.take(r.owner);}catch(e){}
+  try{const r=await R.OpsStore.rpc(RPC.decide,{id:x.id,decision,reason:reason||undefined});row=r.request;take(row);try{if(x.code==='contract_amount'&&row?.status==='approved')await R.ContractSalesData?.refresh?.();}catch(e){}S.rej='';S.reason='';try{if(r.owner&&R.DealOwner)R.DealOwner.take(r.owner);}catch(e){}
    /* 승인으로 반영된 자료(타사 이관 실적 · 수주 결과)를 다시 읽는다 — 대시보드 · 상세가 같은 자료를 본다 */
    if(r.applied){try{if(x.code==='transfer'&&R.DealTransfer&&R.DealTransfer.available())await R.DealTransfer.load();}catch(e){}try{if(x.code==='result_fix'&&R.DealWin&&R.DealWin.available())await R.DealWin.load();}catch(e){}try{if(x.code==='result_fix'&&r.applied.contract==='signed'&&R.ContractSalesData&&typeof R.ContractSalesData.refresh==='function')await R.ContractSalesData.refresh();}catch(e){}}}
   catch(e){S.err='저장하지 못했습니다: '+String(e&&e.message||e);}

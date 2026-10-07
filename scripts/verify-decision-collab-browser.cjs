@@ -64,6 +64,13 @@ const root=path.join(__dirname,'..'),one=s=>String(s||'').replace(/\s+/g,' ').tr
   await page.evaluate(()=>PipelineWorkspace.open('relationship'));await page.waitForSelector('#pipeline-stage-v3 .prv-row');
   const row3=await page.evaluate(()=>{const r=document.querySelector('#pipeline-stage-v3 .prv-row[data-key="'+U(3)+'"]');return r?r.querySelector('.prv-b .dcb-stale')?.textContent:null;});
   assert.match(String(row3),/^연락 5회 · 진척 없음 41일$/,String(row3));
+  // A server projection must work without original activity rows and preserve an open input form.
+  await page.evaluate(()=>{const stored=JSON.parse(JSON.stringify(DecisionCollab.list(B.deals[0])));stored.wait=null;window.__ctxStored=stored;B.deals[0].activities=[];const priorRelease=window.CRMRelease,priorOps=window.OpsStore;window.CRMRelease={...priorRelease,has:n=>n==='crm_activity_context_v1'||priorRelease?.has?.(n)};window.OpsStore={...priorOps,has:n=>n==='crm_activity_context_v1'||priorOps?.has?.(n),rpc:async(n,p)=>({ok:true,items:Object.fromEntries(p.deal_ids.map(id=>[id,id===U(1)?__ctxStored:{dec:[],blk:null,blkAt:'',prg:[],def:[],chk:{},wait:null}]))})};ActivityContext.clear();G._detailPopup=true;drwDeal(JSON.stringify(B.deals[0]));});
+  await page.evaluate(()=>ActivityContext.load());await page.waitForSelector('#detailView .dcb .dcb-dec');
+  assert.equal(await page.locator('#detailView .dcb .dcb-dec').count(),3,'server context renders without loaded original memos');
+  await page.locator('#detailView .dcb [data-dc="dec-open"]').click();await page.locator('#detailView .dcb [data-dcf="src"]').fill('작성 중인 출처');
+  await page.evaluate(async()=>{ActivityContext.clear();ActivityContext.of(B.deals[0]);await ActivityContext.load();});
+  assert.equal(await page.locator('#detailView .dcb [data-dcf="src"]').inputValue(),'작성 중인 출처','async context never replaces open form');
   if(process.env.SHOT_DIR){await page.evaluate(()=>{G._detailPopup=true;drwDeal(JSON.stringify(B.deals[0]));});await page.waitForSelector('#detailView.on.dv3 .dcb');await page.evaluate(()=>document.querySelector('#detailView .dcb').scrollIntoView());await page.screenshot({path:path.join(process.env.SHOT_DIR,'decision-collab.png')});}
   assert.deepEqual(errs,[],'페이지 오류 없음');
   console.log('verify-decision-collab: ok');

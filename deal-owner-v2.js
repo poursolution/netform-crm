@@ -66,25 +66,25 @@
   if(keep){const n=box.querySelector('[data-ow2-f="more"]');if(n){n.focus();try{n.setSelectionRange(keep[0],keep[1]);}catch(e){}}}
  }
  /* 이 화면의 값을 기존 칸에 옮기고 기존 저장을 부른다 */
- function save(){
+ async function save(){
   const d=cur(),S=st(),s=sel(),t=document.getElementById('rs-asg-text');if(!d||!s||!S.to||!S.why)return;
   s.value=S.to;s.dispatchEvent(new Event('change',{bubbles:true}));
   const reason=S.why+(S.more.trim()?' · '+S.more.trim():'');
   if(t){t.value=reason;try{R.reasonGate('rs-asg');}catch(e){}}
   const before=rep(d.assignee),to=rep(S.to),memo=String(S.memo||'').trim();
-  R.saveAssigneeChange();
-  if(rep(d.assignee)!==before){handover(d,before,to,reason,memo);S.to='';S.why='';S.more='';S.memo='';}
+  const saved=await R.saveAssigneeChange();
+  if(rep(d.assignee)!==before){if(R.FIELD_DEMO&&!saved)handover(d,before,to,reason,memo);S.to='';S.why='';S.more='';S.memo='';}
   setTimeout(render,0);
  }
- /* ops_12 C⑧ 재배정 인계: 담당이 바뀌면 새 담당 오늘 업무에 '재배정 인계' 요청(요청 엔진 · kind support) — 이전 담당 · 새 담당 · 재배정자 · 사유 · 인계 메모 · 남은 할 일 · 마지막 연락. 새 담당이 [인수 확인]하기 전까지 관리자 화면 '인계 대기' */
+ /* ops_12 C⑧ 재배정 인계: 담당이 바뀌면 새 담당 오늘 업무에 '재배정 인계' 요청(요청 엔진 · kind handover) — 이전 담당 · 새 담당 · 재배정자 · 사유 · 인계 메모 · 남은 할 일 · 마지막 연락. 새 담당이 [인수 확인]하기 전까지 관리자 화면 '인계 대기' */
  function handover(d,before,to,reason,memo){
   try{
-   const W=R.WorkRequest,O=R.OpsStore;if(!W||!W.enabled||!W.enabled()||!O||!to||to==='미배정')return;
+   const W=R.WorkRequest,O=R.OpsStore;if(!W||!W.enabled||!W.enabled()||!O||!O.has(W.RPC.handover)||R.CRMRelease?.has(W.RPC.handover)===false||!to||to==='미배정')return;
    let next='',last='';try{const a=R.actionObj?R.actionObj(d,R.itemPatch(d,'deal')):null;if(a&&(a.text||a.due))next=String(a.text||'').trim()+(a.due?' · '+String(a.due).slice(0,10):'');}catch(e){}
    try{const c=R.ContactState?R.ContactState.of(d,'deal'):null;last=c&&(c.lastConnectedAt||c.lastAttemptAt)?String(c.lastConnectedAt||c.lastAttemptAt).slice(0,10)+(c.lastConnectedAt?' 통화 연결':' 연락 시도')+' · '+(before||''):'';}catch(e){}
    const me=rep(R.ME&&R.ME.name)||'관리자',at=new Date();at.setDate(at.getDate()+3);at.setHours(23,59,0,0);
    const lines=[(before||'미배정')+' → '+to+' · '+me+' 재배정 · '+reason,'이전 담당: '+(before||'미배정'),'인계 메모: '+(memo||'없음'),'남은 할 일: '+(next||'등록된 다음 할 일 없음'),'마지막 연락: '+(last||'CRM 연락 기록 없음')];
-   O.rpc(W.RPC.create,{target_type:'deal',target_id:String(d.id),site:d.site||d.site_name||'',brand:d.brand||'',kind:'support',label:W.HANDOVER_LABEL,to_scope:'user',to_name:to,asks:['인계 메모 확인','남은 할 일 확인','인수 확인'],due_at:at.toISOString(),due_label:'3일 안',memo:lines.join('\n')}).then(()=>{try{W.load(true);}catch(e){}}).catch(()=>{});
+   O.rpc(W.RPC.handover,{target_type:'deal',target_id:String(d.id),site:d.site||d.site_name||'',brand:d.brand||'',kind:'handover',label:W.HANDOVER_LABEL,to_scope:'user',to_name:to,asks:['인계 메모 확인','남은 할 일 확인','인수 확인'],due_at:at.toISOString(),due_label:'3일 안',memo:lines.join('\n')}).then(()=>{try{W.load(true);}catch(e){}}).catch(()=>{});
   }catch(e){}
  }
  function onClick(e){

@@ -24,7 +24,7 @@
  const parts=s=>String(s).split('|').map(x=>x.trim());
  /* ── 읽기 ── */
  function list(d){
-  const out={dec:[],blk:null,blkAt:'',prg:[],def:[],chk:{}};if(!d)return out;
+  const out={dec:[],blk:null,blkAt:'',prg:[],def:[],chk:{}};if(!d)return out;const stored=root.ActivityContext?.of?.(d);if(stored)return stored;
   acts(d).sort((a,b)=>a.at.localeCompare(b.at)).forEach(a=>{const n=a.note.replace(/\s*\[연결 [^\]]*\]/g,'');
    let m;
    if((m=/^\[결정 일정\]\s*(.*)$/.exec(n))){const p=parts(m[1]);if(p[0])out.dec.push({type:p[0],date:p[1]||'미정',conf:CONF.includes(p[2])?p[2]:'미확인',src:p[3]||'',at:a.at});return;}
@@ -133,7 +133,8 @@
   const html_=html(d);if(sec.__h!==html_){sec.__h=html_;sec.innerHTML=html_;}
  }
  const paint=()=>{try{root.DealDetailV3&&root.DealDetailV3.apply();}catch(e){}try{root.paint();}catch(e){}};
- async function save(d,text){const S=st(d);if(S.busy)return;S.busy=true;S.err='';try{await root.DealDetailV3.memo(d,text,{});S.busy=false;S.dec=S.blk=S.prg=S.def=false;S.chk='';toast('기록했습니다');paint();}catch(e){S.busy=false;S.err=String(e&&e.message||e);paint();}}
+ async function save(d,text){const S=st(d);if(S.busy)return;S.busy=true;S.err='';try{await root.DealDetailV3.memo(d,text,{});root.ActivityContext?.clear?.();S.busy=false;S.dec=S.blk=S.prg=S.def=false;S.chk='';toast('기록했습니다');paint();}catch(e){S.busy=false;S.err=String(e&&e.message||e);paint();}}
+ root.addEventListener?.('activity-context:changed',()=>{const d=root.CUR_DETAIL?.kind==='deal'&&root.CUR_DETAIL.item,sec=document.querySelector('#detailView .dcb');if(d&&sec&&!sec.querySelector('.dcb-form')){const next=html(d);if(sec.__h!==next){sec.__h=next;sec.innerHTML=next;}}else if(!root.CUR_DETAIL&&!document.activeElement?.matches?.('input,textarea,select,[contenteditable]')){try{root.paint?.();}catch(e){}}});
  const val=(sec,k)=>{const n=sec.querySelector('[data-dcf="'+k+'"]');return n?String(n.value||'').trim():'';};
  document.addEventListener('click',e=>{
   const b=e.target.closest('.dcb [data-dc]');if(!b)return;const cur=root.CUR_DETAIL,d=cur&&cur.kind==='deal'?cur.item:null;if(!d)return;const a=b.dataset.dc,sec=b.closest('.dcb'),S=st(d);e.preventDefault();e.stopPropagation();
