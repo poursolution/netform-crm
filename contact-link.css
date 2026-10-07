@@ -1,0 +1,28 @@
+/* 연락 한 번 연결 — 응대 기록 입력칸 아래 '이 기록이 반영될 곳' (contact-link.js) */
+#detailView .cl-box{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:10px;margin:6px 0 2px}
+#detailView .cl-box[hidden]{display:none}
+#detailView .cl-ai{background:#f5f8ff;border:1px solid #dfe5f7;border-radius:10px;padding:9px 11px;display:flex;flex-direction:column;gap:5px;min-width:0}
+#detailView .cl-ai>span{font-size:11.5px;font-weight:700;color:#2a52b8}
+#detailView .cl-ai>div{display:flex;gap:8px;font-size:12.5px;min-width:0}
+#detailView .cl-ai>div>em{flex:none;width:44px;font-style:normal;font-size:11px;font-weight:700;color:#6b7280;padding-top:1px}
+#detailView .cl-ai>div>span{min-width:0;color:#15171c;line-height:1.45}
+#detailView .cl-links{display:flex;flex-direction:column;gap:5px;min-width:0}
+#detailView .cl-links>b{font-size:12px;font-weight:700;color:#15171c}
+#detailView .cl-links>small{font-size:11.5px;color:#9ca3af;line-height:1.45}
+#detailView .cl-link{display:flex;align-items:flex-start;gap:8px;border:1px solid #eef0f3;border-radius:9px;padding:7px 10px;cursor:pointer;min-width:0}
+#detailView .cl-link input{position:absolute;opacity:0;width:0;height:0}
+#detailView .cl-link .bx{flex:none;width:16px;height:16px;border-radius:4px;border:1.5px solid #d9dde4;background:#fff;margin-top:1px;position:relative}
+#detailView .cl-link.on .bx{background:#15171c;border-color:#15171c}
+#detailView .cl-link.on .bx::after{content:'✓';position:absolute;inset:0;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+#detailView .cl-link .tx{display:flex;flex-direction:column;gap:1px;min-width:0}
+#detailView .cl-link .tx b{font-size:12.5px;font-weight:700;color:#15171c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#detailView .cl-link .tx small{font-size:11px;color:#6b7280}
+@media (max-width:1100px){#detailView .cl-box{grid-template-columns:1fr}}
+/* 연결 기록(다른 건의 원본을 가리키는 줄) */
+#detailView .idv-msg.cl-linked .idv-bubble{border-left:3px solid #3b6ce4}
+/* 지금 할 일 카드 · 대기 이유 칩 */
+.nc-waits{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 2px}
+.nc-waits>h5{width:100%;margin:0 0 2px;font-size:12px;color:#5b6b85}
+.nc-waits button{border:1px solid #d9dde4;background:#fff;color:#374151;font:inherit;font-size:12px;font-weight:600;border-radius:999px;padding:4px 10px;cursor:pointer;min-height:0;box-shadow:none;width:auto}
+.nc-waits button.on{background:#15171k;background:#15171c;color:#fff;border-color:#15171c}
+.nc-waits small{width:100%;font-size:11px;color:#9ca3af}

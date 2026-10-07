@@ -17,19 +17,28 @@
  const CFG={id:'gyeongnam-b',name:'경남지사',unit:'건',stallUnit:'',stallName:'넘긴 후',stallDesc:'본사가 넘긴 뒤 지난 일수',stallRed:RECALL_DAYS,listTitle:'확인할 건',openLabel:'진행 확인',diagTitle:'지사 진행 진단',noAmount:true,
   desc:()=>'본사가 지사에 넘긴 건이 실제로 영업되고 있는지 확인하는 곳 — 처리는 지사가, 확인은 본사가 · 넘김 → 지사 실담당 → 지사 첫 연락 → 영업기회 · '+SILENT+'일 무응답이면 확인 요청, '+RECALL_DAYS+'일 넘으면 회수 검토',
   axis:'지사 진행',
-  S:[['none','지사 미착수 · 실담당 없음','#15171c','지사장에게 실담당 지정 확인'],['first','실담당 지정 · 연락 전','#8a909c','지사 첫 연락 확인'],['ok','영업 진행 확인됨','#d5d9e0','월 1회 진척 리뷰']],
+  /* 진행 상태 3단계(contact_link ②): 고객 연결 확인(실제 통화 · 회신) / 니즈 확인(공종 · 범위 · 시기) / 방문 · 견적 진행(→ 영업기회). 연락 시도만으로 진척으로 세지 않는다 · 연락 전은 1단계 안의 빨강 사유 */
+  S:[['conn','고객 연결 확인','#9aa0ab','실제 통화 · 회신 있음 (연락 전 포함 · 빨강)'],['need','니즈 확인','#3b6ce4','공종 · 범위 · 시기 들음'],['visit','방문·견적 진행','#1f9d55','방문 일정 또는 견적 요청 → 영업기회']],
   RS:{recall:['넘긴 지 16일 · 움직임 없음',RED,'회수 검토','16일 넘게 지사 실담당 지정 · 연락이 없는 건은 본사 회수 또는 본사 직접 응대 검토','recall'],
       silent:['넘긴 후 7일 · 지사 응대 없음',RED,'확인 요청','7일 넘게 지사 연락 기록이 없으면 확인 창에서 [지사에 확인 요청]으로 기록','request'],
       none:['지사 실담당 미지정',INK,'확인 요청','지사장에게 실담당 지정을 확인 요청(이 화면에서 직접 배정하지 않음)','request'],
       nofirst:['지사 첫 연락 없음',INK,'확인 요청','실담당은 정해졌지만 고객 연락 기록이 없음 — 첫 연락 진행 확인','request'],
       noopp:['영업기회 미등록',INK,'진행 확인','지사 연락은 있으나 영업기회가 없음 — 견적 · 방문 진행 여부 확인','open'],
       asked:['확인 요청함 · 응답 대기',INK,'진행 확인','지사장 응답을 기다리는 건 — 응답 없으면 회수 검토','open']},
-  kpi2:(inB)=>{const n=inB.filter(i=>i.bucket==='none').length;return ['지사 미착수',n+'건',n?'실담당 미지정':'모두 실담당 지정됨'];}
+  kpi2:(inB)=>{const n=inB.filter(i=>i.rs.includes('none')||i.rs.includes('nofirst')).length;return ['연락 전',n+'건',n?'실담당 미지정 · 첫 연락 없음':'모두 고객 연결됨'];}
  };
+ /* 3단계 판정: 방문 · 견적 = 영업기회가 있거나 연결 뒤 방문 · 견적 기록 / 니즈 = 연결됐고 공사 범위 · 시기를 들음(견적문의 필수 확인 9개) / 그 밖 = 고객 연결 확인 단계 */
+ function step(q,f){
+  const ns=notes(q);
+  if(f.deal||(f.resp&&ns.some(n=>/방문|실측|견적 ?요청|견적서/.test(n))))return 'visit';
+  if(f.resp){try{const IL=root.InquiryListV3,miss=IL&&IL.missing?IL.missing(q):[];if(!miss.includes('공사 범위')&&!miss.includes('공사 시기'))return 'need';}catch(e){}}
+  return 'conn';
+ }
  function item(x){
   const q=x.q,f=x.f,d=f.days==null?0:f.days,asked=requested(q),recall=recallMarked(q);
   const stage=f.deal?root.stageLabel(root.dealStage(f.deal)):'문의';
-  const sub=(handedAt(q)?'넘김 '+ymd(handedAt(q)):'넘긴 날 미기록')+(f.resp?' · 지사 연락 있음':' · 지사 연락 없음')+' · '+stage+(asked?' · 확인 요청함':'')+(recall?' · 회수 검토':'');
+  const noSite=!String(q.site||'').trim(),ident=noSite?'문의 '+String(root.inqKey(q)||'').slice(-6)+' · '+h0(q.region||q.area||q.addr||q.address||'지역 미입력')+' · '+h0(q.work||q.gongjong||q.workType||'공종 미입력')+' · 접수 '+(ymd(root.inquiryDate(q))||'미기록')+' · ':'';
+  const sub=ident+(handedAt(q)?'넘김 '+ymd(handedAt(q)):'넘긴 날 미기록')+(f.resp?' · 지사 연락 있음':' · 지사 연락 없음')+' · '+stage+(asked?' · 확인 요청함':'')+(recall?' · 회수 검토':'');
   const rs=[];
   if(f.group!=='ok'){
    if(d>=RECALL_DAYS)rs.push('recall');
@@ -38,8 +47,9 @@
    if(f.rep&&!f.resp)rs.push('nofirst');
    if(asked)rs.push('asked');
   }else if(!f.deal)rs.push('noopp');
-  return {key:root.inqKey(q),site:q.site||'현장명 미입력',brand:q.brand||'',owner:f.rep||'지사 미지정',amountText:stage,bucket:f.group,sub,rs,stall:d,extra:{q,f}};
+  return {key:root.inqKey(q),site:q.site||'현장명 미입력',brand:q.brand||'',owner:f.rep||'지사 미지정',amountText:stage,bucket:step(q,f),sub,rs,stall:d,extra:{q,f,noSite}};
  }
+ const h0=v=>String(v==null?'':v).replace(/\s+/g,' ').trim();
  function scoped(){
   const X=root.gnData(),owner=root.G.gnOwner||'전체';
   const base=X.Q.filter(q=>root.SalesFilterState.matchesBrand(q.brand)).map(q=>({q,f:V().facts(q)}));
@@ -63,7 +73,7 @@
   const host=document.getElementById('gyeongnam-root'),pg=document.getElementById('pg-gyeongnam');if(!host)return;
   const s=scoped(),S=SB().state('gyeongnam');
   CFG.topHtml=topHtml(s);CFG.sideHtml=sideHtml(s);
-  host.innerHTML=SB().html(CFG,s.rows.map(item),S);
+  host.innerHTML=SB().html(CFG,s.rows.map(item),S);host.querySelectorAll('.prv-a>b').forEach(b=>{if(b.textContent.trim()==='현장명 미입력')b.classList.add('gb-nosite');});/* 현장명 없으면 주황(contact_link ②) */
   SB().bind(host,{state:()=>SB().state('gyeongnam'),cfg:()=>CFG,paint:()=>root.paintGyeongnam(),open});
   if(!host.__gb){host.__gb=true;host.addEventListener('click',e=>{const b=e.target.closest('[data-gb]');if(!b)return;if(b.dataset.gb==='owner'){root.G.gnOwner=(root.G.gnOwner||'전체')===b.dataset.value?'전체':b.dataset.value;const st=SB().state('gyeongnam');root.ListPager.reset(st);root.paintGyeongnam();}if(b.dataset.gb==='sms')root.campaignOpenGyeongnam?.();});}
   const t=document.getElementById('ptitle'),p=document.getElementById('psub');if(t)t.textContent='경남지사';if(p)p.textContent='왼쪽 지사 진행 진단 → 오른쪽 확인할 건 · 빨강 사유부터 — 처리는 지사가, 확인은 본사가';

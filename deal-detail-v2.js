@@ -39,13 +39,15 @@
    }
    out.push({kind,label,who:x.who||'',at:x.at,text:text||label});
   });
+  /* 연락 한 번 연결(contact-link.js): 같은 현장의 다른 건에 남긴 원본 기록이 이 건을 가리키면 '연결 기록'으로 보인다(복사 아님 · 원본 현장 표시) */
+  try{const CL=root.ContactLink;if(CL&&CL.on()){CL.linkedInto('deal:'+d.id).forEach(x=>out.push({kind:'out',label:'연결 기록',who:x.who||'',at:x.at,text:'원본: '+(x.site||'다른 건')+' · '+say(x.text),linked:true}));}}catch(e){}
   return out.sort((a,b)=>String(a.at||'').localeCompare(String(b.at||'')));
  }
  /* 2026-10-03 대표: 기록마다 해당 연도까지 보이게(오래된 견적문의 접수가 올해 것처럼 보이던 문제) */
  const fmt=v=>{try{const x=new Date(v);return v&&!isNaN(x)?x.getFullYear()+'.'+(x.getMonth()+1)+'.'+x.getDate()+' '+String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0'):'미기록';}catch(e){return String(v||'').slice(0,10);}};
  function talk(d,closed){
   const list=bubbles(d),cls={in:'in',out:'out',memo:'memo',sys:'sys'};
-  const thread=list.length?list.map(b=>'<div class="idv-msg '+cls[b.kind]+'"><div class="idv-meta"><em>'+h(b.label)+'</em>'+(b.who?'<span>'+h(b.who)+'</span>':'')+'<span>'+h(fmt(b.at))+'</span></div><div class="idv-bubble">'+h(b.text)+'</div></div>').join(''):'<p class="ddv-nothing">아직 기록이 없습니다 — 첫 연락 결과부터 여기에 쌓입니다</p>';
+  const thread=list.length?list.map(b=>'<div class="idv-msg '+cls[b.kind]+(b.linked?' cl-linked':'')+'"><div class="idv-meta"><em>'+h(b.label)+'</em>'+(b.who?'<span>'+h(b.who)+'</span>':'')+'<span>'+h(fmt(b.at))+'</span></div><div class="idv-bubble">'+h(b.text)+'</div></div>').join(''):'<p class="ddv-nothing">아직 기록이 없습니다 — 첫 연락 결과부터 여기에 쌓입니다</p>';
   const composer=closed?'<div class="idv-composer idv-locked">종료된 영업건입니다 — 기록은 읽기만 할 수 있습니다</div>'
    :'<div class="idv-composer" id="ddvComposer"><div class="idv-ctabs"><div role="tablist" aria-label="기록 종류">'+[['전화','통화 기록'],['메모','내부 메모']].map((t,i)=>'<button type="button" role="tab" data-type="'+t[0]+'" aria-selected="'+(i===0)+'">'+t[1]+'</button>').join('')+'</div><button type="button" class="idv-toggle" data-ddv="full">다음 할 일까지 함께 기록 ▸</button></div><div class="idv-input"><textarea rows="1" aria-label="기록 내용" placeholder="예: 관리소장과 통화 — 예산 확정은 12월 입대의 이후"></textarea><button type="button" class="idv-save" data-ddv="save">저장</button></div><div class="idv-err" role="alert"></div></div>';
   const sec=el('section','ddv-talk','<div class="idv-chead"><b>고객과 주고받은 내용</b><span>'+list.length+'건</span><em>시간순 · 최신이 아래</em></div><div class="idv-thread">'+thread+'</div>'+composer);

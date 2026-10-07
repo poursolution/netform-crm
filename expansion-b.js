@@ -72,8 +72,23 @@
    +'<div class="xb-b"><b>'+h(S[1].split(' · ')[0])+'</b><span title="'+attr(it.sub)+'">'+h(it.sub)+'</span></div></div>'
    +'<div class="xb-r"><span class="xb-why'+(rs&&rs[1]===RED?' red':'')+'" title="'+attr(why)+'">'+h(why)+'</span><b class="xb-d">'+h(B.dayLabel(C,it.stall))+'</b><button type="button" data-sb="act" data-key="'+attr(it.key)+'" data-v="'+attr(k||'')+'">'+h(rs?rs[2]:(C.openLabel||'열기'))+'</button></div></div>';
  }
+ /* 같은 단지 계약 여러 건 = 연락은 한 번(contact_link ③): 단지 묶음 열쇠 · 머리 줄 · 대상 나누기 */
+ const siteKeyOf=it=>{const r=it.extra&&it.extra.r,d=r?dealOf(r):{};return String((d&&d.site_id)||(r&&r.siteId)||'')||String(it.site||'').replace(/\s+/g,' ').trim();};
+ let GRP=new Map();
+ function groupHead(C,it,rows,n){
+  const k=siteKeyOf(it),g=GRP.get(k);if(!g||g.items.length<2)return '';if(n>0&&siteKeyOf(rows[n-1])===k)return '';
+  const B=SB(),last=g.items.map(x=>x.extra.r.lastContactAt||'').filter(Boolean).sort().pop()||'',comp=g.items.map(x=>x.extra.r.completionDate||'').filter(Boolean).sort().pop()||'',owner=g.items.map(x=>x.owner).find(o=>o&&o!=='미배정')||'미배정';
+  const st=last?'최근 '+ymd(last):'기록 보완 필요';
+  return '<div class="psb-row xb-site" role="row" data-site="'+attr(k)+'"><div class="prv-a"><b title="'+attr(it.site)+'">'+h(it.site)+'</b><span>계약 '+g.items.length+'건'+(comp?' · '+String(comp).slice(0,7).replace('-','.')+' 준공':'')+' · '+h(owner)+'</span></div><div class="prv-b"><span>사후 연락 · <b>'+h(st)+'</b></span></div><div class="prv-c"><span>기록은 단지 단위로 모든 계약에 연결</span></div><button type="button" data-sb="act" data-key="'+attr(it.key)+'" data-v="sitenote">단지 한 번 연락 기록</button></div>';
+ }
+ function groupItems(items){
+  GRP=new Map();const order=new Map();
+  items.forEach((it,n)=>{const k=siteKeyOf(it);if(!GRP.has(k)){GRP.set(k,{items:[]});order.set(k,n);}GRP.get(k).items.push(it);});
+  return items.slice().sort((a,b)=>order.get(siteKeyOf(a))-order.get(siteKeyOf(b)));/* 같은 단지는 나란히 · 단지 순서는 원래 순서 */
+ }
  function open(key,act){
   const r=root.expansionRecords().find(x=>x.id===String(key)||x.sourceOpportunityId===String(key));if(!r)return;
+  if(act==='sitenote'){const it=[...GRP.values()].find(g=>g.items.some(x=>x.key===r.id)),ids=it?it.items.map(x=>x.extra.r.id):[r.id];root.G.xbSiteNote={site:r.site,ids};root.ExpansionV2.open(r.id);setTimeout(()=>{document.querySelector('#expansionV2 .idv-input textarea')?.focus();if(typeof root.toast==='function')root.toast('저장하면 같은 단지 계약 '+ids.length+'건에 연결됩니다 · 기록은 한 번');},120);return;}
   if(act==='convert'){if(F().converted(r)){root.ExpansionPool.openPipeline(r.id);return;}root.expansionOpenNew(r.id);return;}
   if(act==='source'){const d=dealOf(r);if(d.id){root.G._detailPopup=true;root.drwDeal(JSON.stringify(d));return;}}
   root.ExpansionV2.open(r.id);
@@ -84,8 +99,11 @@
   /* 상세창 갱신 · 제목 · 필터줄은 기존 v2 그대로(보이지 않는 칸에 그리게 하고 목록만 바꾼다) */
   const dummy=document.createElement('div');base.apply(root.ExpansionV2,[dummy].concat(args.slice(1)));
   pg?.classList.add('xv-on','xb-on');
-  const s=scoped(),S=SB().state('expansion'),items=s.rows.map(item);
-  CFG.topHtml=topHtml(s);
+  const s=scoped(),S=SB().state('expansion'),items=groupItems(s.rows.map(item));
+  CFG.topHtml=topHtml(s);CFG.groupHead=root.G.boardV3Off?null:groupHead;
+  /* 대상 수 나누기(contact_link ③): 사후 연락 대상 vs 기록 보완 필요(공종 · 연락 기록 없음 — 미실행으로 세지 않음) */
+  {const live=items.filter(i=>i.bucket!=='hold'),fix=live.filter(i=>i.rs.includes('work')||i.rs.includes('nocontact')||i.rs.includes('after30')),tgt=live.length-fix.length;
+   CFG.sideHtml='<div class="psb-box xb-split"><header><b>대상 나누기</b><span>'+h(String(s.year)==='전체'?'전체':s.year)+' 대상 '+live.length+'곳</span></header><div class="psb-act"><span>사후 연락 대상 '+tgt+'</span><p>준공 · 연락 기준 확인됨</p></div><div class="psb-act"><span>기록 보완 필요 '+fix.length+'</span><p>공종 · 연락 기록 없음 · 미실행으로 세지 않음</p></div></div>';}
   /* 연도를 고르면 제목 옆에 "2025년 준공만" · 목록 줄은 두 덩어리(끄기: G.expansionYearRowOff=true → 예전 줄) */
   CFG.listNote=root.G.expansionYearRowOff||String(s.year)==='전체'?'':(String(s.year)==='이전'?(s.current-3)+'년 이전':s.year+'년')+' 준공만';
   /* 공용 틀(2026-10-06 "리스트에서 이질감 없이"): 줄은 StageBoard 의 파이프라인 v11 모양 줄. 두 덩어리 줄은 공용 틀을 껐을 때(G.boardV3Off)만 */
