@@ -42,11 +42,11 @@
   /* 판정 하나(2026-10-06 집계 · 판정 정리 · pipeline-judge.js): 최근 연락 두 줄(시도 / 실제 연결) · 기한 상태 3가지 · 다음 업무 아래 '판정: 근거' */
   const J=root.PipelineJudge&&root.PipelineJudge.on()?root.PipelineJudge:null,jb=J&&!noOwner?J.basis(d,o.stage):null,tl=J?J.touchLines(d):null;
   /* ops_12 A①②: '판정: 근거 → 추천' 한 줄은 오늘 업무 · 상세와 같은 함수(PipelineJudge.line) · 날짜 미입력이면 보완 단추([발송일 입력] 등 → 상세의 이 단계 필수 정보) */
-  const dueHtml=jb?'<small class="'+J.dueClass(jb)+'">'+h(J.dueText(jb))+'</small><small class="why">'+h(J.line(jb))+(jb.fix?' <u '+A+'="fix" data-key="'+key+'" role="button" tabindex="0">'+h(jb.fix)+'</u>':'')+'</small>':'<small class="'+(due!=null&&due<0?'r':due==null?'g':'')+'">'+h(dueText(due,r.due))+'</small>';
+  const dueHtml=o.dueText?'<small class="'+attr(o.dueClass||'')+'">'+h(o.dueText)+'</small>'+(jb?'<small class="why">'+h(J.line(jb))+'</small>':'')/* 관계관리 v12: 상태 주기로 정한 기한 글 */:jb?'<small class="'+J.dueClass(jb)+'">'+h(J.dueText(jb))+'</small><small class="why">'+h(J.line(jb))+(jb.fix?' <u '+A+'="fix" data-key="'+key+'" role="button" tabindex="0">'+h(jb.fix)+'</u>':'')+'</small>':'<small class="'+(due!=null&&due<0?'r':due==null?'g':'')+'">'+h(dueText(due,r.due))+'</small>';
   const lastHtml=tl?'<small title="'+attr(tl.attempt)+'">'+h(tl.attempt)+'</small><small class="cn'+(tl.hasConnect?'':' none')+'">'+h(tl.connect)+'</small>':'<small>'+h(last)+'</small>';
   return '<div class="prv-row '+(cls||'')+'" role="row" tabindex="0" '+A+'="open" data-key="'+key+'"'+(o.tab!=null?' data-tab="'+attr(o.tab)+'"':'')+' style="border-left-color:'+(bc||'#e3e6ec')+'">'
-   +'<div class="prv-a"><b title="'+attr(r.site)+'">'+h(r.site)+(root.advisoryBadge?root.advisoryBadge(d):'')+'</b><span><em style="color:'+(bc||'#9ca3af')+'">'+h(d.brand||'브랜드 미지정')+'</em> · '+h(workOf(r))+' · <i'+(noOwner?' class="r"':'')+'>'+h(owner||'미배정')+'</i></span></div>'
-   +'<div class="prv-b"><span title="'+attr(now)+'">'+tagHtml+h(now)+staleHtml+'</span>'+lastHtml+'</div>'
+   +'<div class="prv-a"><b title="'+attr(r.site)+'">'+h(r.site)+(root.advisoryBadge?root.advisoryBadge(d):'')+'</b><span><em style="color:'+(bc||'#9ca3af')+'">'+h(d.brand||'브랜드 미지정')+'</em> · '+h(workOf(r))+' · <i'+(noOwner?' class="r"':'')+'>'+h(owner||'미배정')+'</i></span>'+(o.tag?'<em class="prv-tag '+attr(o.tagClass||'')+'">'+h(o.tag)+'</em>':'')+'</div>'
+   +'<div class="prv-b"><span title="'+attr(now)+'">'+tagHtml+h(now)+staleHtml+'</span>'+lastHtml+(o.base?'<small class="base" title="'+attr(o.base)+'">'+h(o.base)+'</small>':'')+'</div>'
    +'<div class="prv-c"><b'+(task?'':' class="none"')+' title="'+attr(task)+'">'+h(task||'다음 업무 없음')+'</b>'+dueHtml+'</div>'
    +'<button type="button" '+A+'="act" data-key="'+key+'" data-v="'+attr(btn[1])+'">'+h(btn[0])+'</button></div>';
  }

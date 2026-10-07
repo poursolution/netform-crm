@@ -1,0 +1,40 @@
+/* 관계관리 v12 (relationship-v12.js) — 공용 틀 안에서 상태 6칸 · 업무 필터 · 왼쪽 카드 · 분류 창 */
+#pipeline-stage-v3 .ps3-tabs[data-n="6"]{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+#pipeline-stage-v3 .ps3-tabs[data-n="6"] .ps3-tab span{white-space:normal;line-height:1.35}/* 여섯 칸이면 기준 한 줄이 좁아 잘리므로 줄바꿈 */
+#pipeline-stage-v3 .ps3-tab small.src{font-size:10.5px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+#pipeline-stage-v3 .ps3-tab .n.amb{color:#b45309}
+#pipeline-stage-v3 .ps3-works{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px}
+#pipeline-stage-v3 .ps3-works>span{font-size:12px;color:#6b7280;margin-right:4px}
+#pipeline-stage-v3 .ps3-works>i{flex:1}
+#pipeline-stage-v3 .ps3-works>small{font-size:11.5px;color:#9ca3af}
+#pipeline-stage-v3 .ps3-works button{border:1px solid #d9dde4;background:#fff;color:#374151;font:inherit;font-size:12.5px;font-weight:600;border-radius:999px;padding:5px 12px;white-space:nowrap;cursor:pointer;min-height:0;box-shadow:none;width:auto;height:auto;margin:0}
+#pipeline-stage-v3 .ps3-works button[aria-pressed="true"]{background:#15171c;color:#fff;border-color:#15171c}
+#pipeline-stage-v3 .rv-box header b em{font-style:normal;color:#b42318;margin-left:4px}
+#pipeline-stage-v3 .rv-note{margin:0 0 6px;font-size:11.5px;color:#6b7280;line-height:1.5;word-break:keep-all}
+#pipeline-stage-v3 .rv-rev{display:flex;justify-content:space-between;gap:8px;width:100%;border:0;border-top:1px solid #f2f3f6;background:none;padding:7px 0;font:inherit;font-size:12.5px;color:#15171c;text-align:left;cursor:pointer;min-height:0;box-shadow:none;height:auto;margin:0;border-radius:0}
+#pipeline-stage-v3 .rv-rev.on{color:#1d3f99;font-weight:700}
+#pipeline-stage-v3 .rv-rev>b{font-weight:700}
+#pipeline-stage-v3 .rv-prog{display:flex;justify-content:space-between;font-size:12.5px}#pipeline-stage-v3 .rv-prog>span{color:#6b7280}
+#pipeline-stage-v3 .rv-bar{display:block;height:5px;background:#eef0f3;border-radius:3px;position:relative;margin-top:6px}#pipeline-stage-v3 .rv-bar>i{position:absolute;left:0;top:0;bottom:0;background:#15171c;border-radius:3px}
+/* 목록 줄: 현장 아래 '상태 · 주기' 꼬리표 · 현재 상황 둘째 줄 기준일 */
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-a>em.prv-tag{align-self:flex-start;font-style:normal;font-size:11px;font-weight:700;border-radius:4px;padding:2px 7px;white-space:nowrap;color:#374151;background:#f3f4f6;margin-top:2px}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-a>em.prv-tag.focus{color:#1d3f99;background:#eef3fe}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-a>em.prv-tag.hold{color:#6b7280}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-a>em.prv-tag.unk{color:#8a5a00;background:#fff4d6}
+:is(#pg-pipe,#pg-expansion,#pg-gyeongnam,#pg-campaign,#pg-sites,#pg-repmanage) .prv-list .prv-b>small.base{color:#9ca3af}
+/* 분류 · 전환 창 */
+.rv-shade{position:fixed;inset:0;z-index:1250;background:rgba(15,23,42,.42);display:flex;align-items:flex-start;justify-content:center;padding:60px 20px;overflow:auto}
+.rv-box2{width:min(560px,100%);background:#fff;border-radius:14px;box-shadow:0 24px 60px rgba(15,23,42,.25);padding:16px 18px;display:flex;flex-direction:column;gap:10px;font-size:13px;color:#15171c;word-break:keep-all}
+.rv-box2>header{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.rv-box2>header>b{font-size:16px}.rv-box2>header>span{font-size:12px;color:#6b7280}.rv-box2>header>i{flex:1}
+.rv-x{border:1px solid #e5e7eb;background:#fff;border-radius:8px;width:28px;height:28px;font:inherit;cursor:pointer;color:#374151}
+.rv-states{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.rv-states>button{text-align:left;border:1px solid #d9dde4;background:#fff;border-radius:9px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;font:inherit;cursor:pointer;min-height:0;box-shadow:none;width:auto;height:auto;margin:0;color:#15171c}
+.rv-states>button[aria-checked="true"]{border-color:#15171c;background:#f8faff;box-shadow:inset 0 0 0 1px #15171c}
+.rv-states>button>b{font-size:13px}.rv-states>button>span{font-size:11px;color:#6b7280}
+.rv-f{display:flex;flex-direction:column;gap:4px;min-width:0}.rv-f>span{font-size:11.5px;font-weight:700;color:#374151}
+.rv-f input,.rv-f select{border:1px solid #d9dde4;border-radius:8px;padding:7px 9px;font:inherit;font-size:13px;background:#fff;color:#15171c;width:100%;box-sizing:border-box;height:auto;min-height:0}
+.rv-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rv-hint{margin:0;font-size:11.5px;color:#9ca3af;line-height:1.5}.rv-err{margin:0;font-size:12px;color:#b42318}
+.rv-box2>footer{display:flex;justify-content:flex-end;gap:6px}
+.rv-box2>footer button{border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:13px;font-weight:600;border-radius:8px;padding:8px 14px;cursor:pointer;min-height:0;box-shadow:none;width:auto;height:auto;margin:0}
+.rv-box2>footer button.go{border:0;background:#15171c;color:#fff;font-weight:700}.rv-box2>footer button:disabled{opacity:.5;cursor:default}
