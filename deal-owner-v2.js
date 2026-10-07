@@ -47,6 +47,7 @@
   return '<div class="ow2-flow"><div><span>지금</span><b>'+h(from)+'</b></div><i aria-hidden="true">→</i><div class="'+(to?'':'empty')+'"><span>새 담당</span><b>'+h(to||'선택하세요')+'</b></div></div>'
    +'<b class="ow2-lb">누구에게 *</b><div class="ow2-people" role="radiogroup" aria-label="새 담당">'+(P.map(p=>'<button type="button" role="radio" data-ow2="to" data-v="'+attr(p.value)+'" aria-checked="'+(S.to===p.value)+'"><span><b>'+h(p.name)+'</b><span>'+h(p.sub)+'</span></span><em class="'+p.tone+'">진행 '+p.open+(p.label?' · '+p.label:'')+'</em></button>').join('')||'<p class="ow2-none">바꿀 수 있는 담당자가 없습니다.</p>')+'</div>'
    +'<b class="ow2-lb">왜 *</b><div class="ow2-chips" role="group" aria-label="변경 사유">'+WHY.map(w=>'<button type="button" data-ow2="why" data-v="'+attr(w)+'" aria-pressed="'+(S.why===w)+'">'+w+'</button>').join('')+'</div><input class="ow2-more" data-ow2-f="more" maxlength="200" placeholder="한 줄 더 (선택)" value="'+attr(S.more)+'">'
+   +'<b class="ow2-lb">인계 메모 <small>새 담당 오늘 업무에 인계 카드로 갑니다</small></b><input class="ow2-memo" data-ow2-f="memo" maxlength="300" placeholder="예: 10/2 소장 통화 · 입대의 10월 중순 · 사진 받기로 함" value="'+attr(S.memo||'')+'">'/* ops_12 C⑧ 재배정 인계 */
    +(withAttr?'<b class="ow2-lb">실적은 누구에게</b><div class="ow2-attr" role="radiogroup" aria-label="실적 귀속"><button type="button" role="radio" data-ow2="attr" data-v="keep" aria-checked="'+(A.attr!=='request')+'"><b>'+h(keep)+' 유지 (기본)</b><span>지금까지 영업한 사람에게 · 바로 저장</span></button><button type="button" role="radio" data-ow2="attr" data-v="request" aria-checked="'+(A.attr==='request')+'"'+(same?' disabled':'')+'><b>새 담당에게 넘기기</b><span>'+(same?'새 담당이 이미 주담당입니다':'예외 승인함으로 올라감 · 승인 후 바뀜')+'</span></button></div>':'')
    +'<p class="ow2-hint">'+h(ready?from+' → '+to+' · '+S.why+(S.more.trim()?' · '+S.more.trim():''):'누구에게 · 왜를 고르면 저장할 수 있습니다')+'</p>'
    +'<div class="ow2-act"><button type="button" data-ow2="cancel">취소</button><button type="button" class="go" data-ow2="save"'+(ready?'':' disabled')+'>담당자 변경 저장</button></div>'
@@ -58,7 +59,7 @@
   const S=st();if(S.id!==String(d.id)){S.id=String(d.id);S.to='';S.why='';S.more='';}
   const card=sel().closest('.dcard');if(!card)return;
   let box=a.querySelector('.ow2');
-  if(!box){box=document.createElement('div');box.className='ow2';card.before(box);box.addEventListener('click',onClick);box.addEventListener('input',e=>{if(e.target.matches('[data-ow2-f="more"]')){st().more=e.target.value;const hint=box.querySelector('.ow2-hint'),S2=st(),x=cur();if(hint&&S2.to&&S2.why&&x)hint.textContent=(rep(x.assignee)||'미배정')+' → '+rep(S2.to)+' · '+S2.why+(S2.more.trim()?' · '+S2.more.trim():'');}});}
+  if(!box){box=document.createElement('div');box.className='ow2';card.before(box);box.addEventListener('click',onClick);box.addEventListener('input',e=>{if(e.target.matches('[data-ow2-f="memo"]')){st().memo=e.target.value;return;}if(e.target.matches('[data-ow2-f="more"]')){st().more=e.target.value;const hint=box.querySelector('.ow2-hint'),S2=st(),x=cur();if(hint&&S2.to&&S2.why&&x)hint.textContent=(rep(x.assignee)||'미배정')+' → '+rep(S2.to)+' · '+S2.why+(S2.more.trim()?' · '+S2.more.trim():'');}});}
   a.classList.add('ow2-on');
   const el=document.activeElement,keep=el&&box.contains(el)&&el.matches('[data-ow2-f="more"]')?[el.selectionStart,el.selectionEnd]:null;
   box.innerHTML=html(d);
@@ -70,10 +71,21 @@
   s.value=S.to;s.dispatchEvent(new Event('change',{bubbles:true}));
   const reason=S.why+(S.more.trim()?' · '+S.more.trim():'');
   if(t){t.value=reason;try{R.reasonGate('rs-asg');}catch(e){}}
-  const before=rep(d.assignee);
+  const before=rep(d.assignee),to=rep(S.to),memo=String(S.memo||'').trim();
   R.saveAssigneeChange();
-  if(rep(d.assignee)!==before){S.to='';S.why='';S.more='';}
+  if(rep(d.assignee)!==before){handover(d,before,to,reason,memo);S.to='';S.why='';S.more='';S.memo='';}
   setTimeout(render,0);
+ }
+ /* ops_12 C⑧ 재배정 인계: 담당이 바뀌면 새 담당 오늘 업무에 '재배정 인계' 요청(요청 엔진 · kind support) — 이전 담당 · 새 담당 · 재배정자 · 사유 · 인계 메모 · 남은 할 일 · 마지막 연락. 새 담당이 [인수 확인]하기 전까지 관리자 화면 '인계 대기' */
+ function handover(d,before,to,reason,memo){
+  try{
+   const W=R.WorkRequest,O=R.OpsStore;if(!W||!W.enabled||!W.enabled()||!O||!to||to==='미배정')return;
+   let next='',last='';try{const a=R.actionObj?R.actionObj(d,R.itemPatch(d,'deal')):null;if(a&&(a.text||a.due))next=String(a.text||'').trim()+(a.due?' · '+String(a.due).slice(0,10):'');}catch(e){}
+   try{const c=R.ContactState?R.ContactState.of(d,'deal'):null;last=c&&(c.lastConnectedAt||c.lastAttemptAt)?String(c.lastConnectedAt||c.lastAttemptAt).slice(0,10)+(c.lastConnectedAt?' 통화 연결':' 연락 시도')+' · '+(before||''):'';}catch(e){}
+   const me=rep(R.ME&&R.ME.name)||'관리자',at=new Date();at.setDate(at.getDate()+3);at.setHours(23,59,0,0);
+   const lines=[(before||'미배정')+' → '+to+' · '+me+' 재배정 · '+reason,'이전 담당: '+(before||'미배정'),'인계 메모: '+(memo||'없음'),'남은 할 일: '+(next||'등록된 다음 할 일 없음'),'마지막 연락: '+(last||'CRM 연락 기록 없음')];
+   O.rpc(W.RPC.create,{target_type:'deal',target_id:String(d.id),site:d.site||d.site_name||'',brand:d.brand||'',kind:'support',label:W.HANDOVER_LABEL,to_scope:'user',to_name:to,asks:['인계 메모 확인','남은 할 일 확인','인수 확인'],due_at:at.toISOString(),due_label:'3일 안',memo:lines.join('\n')}).then(()=>{try{W.load(true);}catch(e){}}).catch(()=>{});
+  }catch(e){}
  }
  function onClick(e){
   const b=e.target.closest('[data-ow2]');if(!b||b.disabled)return;const a=b.dataset.ow2,S=st();

@@ -109,7 +109,10 @@
  }
  function save(){
   if(!ctx||ctx.saving)return;
-  const input=collect(),d=ctx.deal,from=ctx.mobile?d.code:fromOf(d),errors=S.validate(from,ctx.to,input,today());
+  const input=collect(),d=ctx.deal,from=ctx.mobile?d.code:fromOf(d);
+  /* ops_12 C⑨: 보류의 재접촉 예정일은 재개 날짜와 같다(비워 두면 재개 날짜로 — 서버가 그 날 담당 오늘 업무를 만든다) */
+  if(ctx.to==='waiting'&&input&&input.fields&&!input.fields.contact_date&&input.fields.resume_date)input.fields.contact_date=input.fields.resume_date;
+  const errors=S.validate(from,ctx.to,input,today());
   if(from!==ctx.from)errors.push('현재 단계가 변경되었습니다. 창을 다시 열어 주세요.');
   if(S.terminal.includes(d.outcome))errors.push('이미 종료된 영업기회입니다. 창을 다시 열어 주세요.');
   if(ctx.to==='sent'&&input.fields.materials.includes('견적서')&&!ctx.quotes.some(q=>String(q.id??q.version??q.version_no)===input.fields.quote_version))errors.push('실제 등록된 견적 Version을 선택해 주세요.');

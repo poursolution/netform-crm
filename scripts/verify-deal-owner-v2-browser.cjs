@@ -44,7 +44,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const flow=()=>o.locator('.ow2-flow>div').evaluateAll(l=>l.map(n=>[n.querySelector('span').textContent,n.querySelector('b').textContent,n.classList.contains('empty')]));
   assert.deepEqual(await flow(),[['지금','이필선',false],['새 담당','선택하세요',true]]);
   assert.equal(await o.locator('.ow2-flow>div.empty').evaluate(n=>getComputedStyle(n).borderTopStyle),'dashed');
-  assert.deepEqual(await o.locator('.ow2-lb').allInnerTexts(),['누구에게 *','왜 *','실적은 누구에게']);
+  assert.deepEqual(await o.locator('.ow2-lb').allInnerTexts(),['누구에게 *','왜 *','인계 메모 새 담당 오늘 업무에 인계 카드로 갑니다','실적은 누구에게'],'ops_12 C⑧: 인계 메모 칸');
   /* 3. 누구에게: 기존 선택지 그대로(지금 담당 제외) · 진행 건수 · 업무량 · 아래 한 줄은 자료에서 */
   const people=await o.locator('.ow2-people button').evaluateAll(l=>l.map(n=>[n.querySelector('b').textContent,n.querySelector('span>span').textContent,n.querySelector('em').textContent]));
   const optNames=await page.evaluate(()=>[...document.getElementById('dv-assignee').options].map(x=>repN(x.value)).filter(n=>n!=='이필선'));
