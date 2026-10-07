@@ -36,3 +36,6 @@
 .ra-bar b{font-size:14px}.ra-bar span{flex:1;min-width:200px;font-size:12.5px;color:#c9d1e2}.ra-bar span em{display:block;margin-top:3px;padding:0;font-size:12px;font-weight:600;color:#ffb4ad;background:none}
 .ra-bar button{border:1px solid #39435c;background:transparent;color:#fff;font-size:13px;font-weight:600;border-radius:8px;padding:8px 14px}.ra-bar button.save{border:0;background:#fff;color:#111a2e;font-weight:700;padding:9px 18px}.ra-bar button:disabled{opacity:.6}
 @media(max-width:900px){.ra-wrap{flex-direction:column}.ra-nav{position:static;flex:none;width:100%;flex-direction:row;flex-wrap:wrap}.ra-legend,.ra-hist{width:100%}.ra-bar{left:0}}
+
+/* ops_12 B⑤: 적용 중 / 값만 저장 · 화면 미적용 알약 */
+#rules-admin .ra-pill{font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap;margin-left:6px}
