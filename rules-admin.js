@@ -8,6 +8,11 @@
  const TAG={fix:['확정','#374151','#eef0f3'],cond:['조건부','#1d3f99','#eef3fe'],hold:['보류','#c0392b','#fdeceb']};
  /* 지금 화면 계산에 실제로 쓰이는 항목(ops_12 B⑤ '적용 중' 알약 · 2026-10-07 코드 대조: CRMRules.get · OPS_RULES sync 로 읽히는 열쇠) — 나머지는 '값만 저장 · 화면 미적용' */
  const WIRED=new Set(['approvers','stage_gates','assign_minutes','first_contact_hours','inactive_days','quote_followup_days','long_wait_contact_days','care_focus_months','care_general_months','unreachable_attempts','unreachable_interval_days','transfer_result_check_days','reasons_bad_fit','reasons_lost','reasons_transfer','contact_channels','owner_keep_on_reassign','auto_owner_attribution']);
+ /* 2026-10-07 stage7_2 ④ — 항목마다 확정 / 잠정 + 출처 · 결정일 · 승인(시안의 출처 그대로 · 모르는 항목에는 만들어 넣지 않는다). 키 = 항목 열쇠, 열쇠가 없는 안내 줄은 이름 */
+ const META={'고객관리 기간':['확정','회의 2026.9 · 송보람 승인'],care_focus_months:['잠정','회의록 · 승인 전'],care_general_months:['잠정 · 해석 미확정','회의록 · 승인 전 · 발송일부터 총 기간으로 둔 기본값'],long_wait_contact_days:['확정','회의 2026.9'],quote_request_days:['잠정','운영 제안 · 회의 확정 전']};
+ const CONF=r=>META[r.k||r.l]||null;
+ /* 적용 예정: 값은 저장되지만 아직 어느 화면 계산에도 안 쓰이는 규칙 + 앞으로 들어갈 화면 */
+ const TARGET={next_action_required:'단계 이동 창',year_required_on_convert:'관계관리 재분류',owner_change_log:'상세 담당 변경'};
  const PILL=on=>'<span class="ra-pill" style="color:'+(on?'#1f7a4d':'#6b7280')+';background:'+(on?'#e8f6ee':'#f3f4f6')+'">'+(on?'적용 중':'값만 저장 · 화면 미적용')+'</span>';
  function st(){const g=R.G;if(!g.rulesAdmin)g.rulesAdmin={draft:{},adding:'',busy:false,err:''};return g.rulesAdmin;}
  const admin=()=>{try{return !!R.todayIsAdmin();}catch(e){return false;}};
@@ -39,7 +44,8 @@
     +(edit?(S.adding===r.k?'<input class="ra-add" data-ra="add-input" data-k="'+attr(r.k)+'" maxlength="30" placeholder="새 항목 · Enter" aria-label="'+attr(r.l)+' 항목 추가">':'<button type="button" class="ra-plus" data-ra="add" data-k="'+attr(r.k)+'">+ 추가</button>'):'')+'</div>';}
   else ctl='<span class="ra-text">'+h(r.text)+'</span>';
   const note=(r.st==='fix'?'<span class="ra-lock">회의 확정 · 변경 불가</span>':'')+(r.k&&r.st!=='hold'?PILL(WIRED.has(r.k)):'');/* 항목마다 적용 중(초록) / 값만 저장 · 화면 미적용(회색) 알약을 토글 옆에(ops_12 B⑤) */
-  return '<div class="ra-row'+(changed?' chg':'')+'"><div class="ra-l"><div><b>'+h(r.l)+'</b><em style="color:'+t[1]+';background:'+t[2]+'">'+t[0]+'</em>'+(changed?'<em class="new">변경됨</em>':'')+'</div><span>'+h(r.d)+'</span>'+(im?'<span class="ra-imp">'+h(im)+'</span>':'')+'</div><div class="ra-r">'+ctl+note+'</div></div>';
+  const cf=CONF(r),cfOk=cf&&cf[0]==='확정';
+  return '<div class="ra-row'+(changed?' chg':'')+'"><div class="ra-l"><div><b>'+h(r.l)+'</b><em style="color:'+t[1]+';background:'+t[2]+'">'+t[0]+'</em>'+(cf?'<em class="ra-conf" style="color:'+(cfOk?'#1f7a4d':'#c0392b')+';background:'+(cfOk?'#e8f6ee':'#fdeceb')+'">'+h(cf[0])+'</em>':'')+(changed?'<em class="new">변경됨</em>':'')+'</div><span>'+h(r.d)+'</span>'+(cf?'<span class="ra-src">출처 · '+h(cf[1])+'</span>':'')+(im?'<span class="ra-imp">'+h(im)+'</span>':'')+'</div><div class="ra-r">'+ctl+note+'</div></div>';
  }
  const when=v=>{const d=new Date(v);return Number.isFinite(d.getTime())?d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate():'';};
  function render(){
@@ -50,7 +56,8 @@
    +'<div class="ra-legend">'+[['fix','회의 확정 · 잠금'],['cond','관리자가 값 변경'],['hold','구현 안 함']].map(g=>'<span><em style="color:'+TAG[g[0]][1]+';background:'+TAG[g[0]][2]+'">'+TAG[g[0]][0]+'</em>'+g[1]+'</span>').join('')+'</div>'
    +'<div class="ra-hist"><b>마지막 변경</b><span>'+(meta.updated_at?h(when(meta.updated_at)+(meta.updated_by?' · '+meta.updated_by:'')):C.available()?'아직 없음 · 기본값으로 동작':'서버 적용 전 · 기본값으로 동작')+'</span>'
    +(meta.history&&meta.history.length?meta.history.slice(0,5).map(x=>{const r=C.SPEC[x.key];return '<p>'+h(when(x.at)+' '+(x.by||''))+'<br>'+h((r?r.l:x.key)+' '+(x.before==null?show(C.DEFAULTS[x.key]):show(x.before))+' → '+show(x.after))+'</p>';}).join(''):'')+'</div></nav>';
-  const body=C.SECTIONS.map(s=>'<section class="ra-sec" id="ra-'+s[0]+'"><header><b>'+h(s[1])+'</b><span>'+h(s[2])+'</span></header>'+s[3].map(r=>rowHtml(r,can)).join('')+'</section>').join('');
+  const pend=[];C.SECTIONS.forEach(s=>s[3].forEach(r=>{if(r.k&&r.st!=='hold'&&!WIRED.has(r.k))pend.push((r.l)+' (→ '+(TARGET[r.k]||'적용 화면 미정')+')');}));
+  const body=C.SECTIONS.map(s=>'<section class="ra-sec" id="ra-'+s[0]+'"><header><b>'+h(s[1])+'</b><span>'+h(s[2])+'</span></header>'+s[3].map(r=>rowHtml(r,can)).join('')+'</section>').join('')+(pend.length?'<section class="ra-sec ra-pend" id="ra-pending"><header><b>적용 예정</b><span>값은 저장되지만 아직 어느 화면의 계산에도 쓰이지 않습니다 · 들어갈 화면</span></header><p>'+pend.map(h).join(' · ')+'</p></section>':'');
   const gate=C.available()?'':'<div class="ra-gate">값을 바꾸려면 서버 적용(sql/ops-rules-v1-20261004.sql)이 필요합니다 — 그 전까지는 회의에서 정한 기본값으로 모든 화면이 계산됩니다.</div>';
   const diff=k=>{const a=C.get(k),b=S.draft[k];if(!Array.isArray(a))return show(a)+' → '+show(b);const add=b.filter(x=>!a.includes(x)),del=a.filter(x=>!b.includes(x));return a.length+'개 → '+b.length+'개'+(add.length?' (+'+add.join(', ')+')':'')+(del.length?' (−'+del.join(', ')+')':'');};
   const list=keys.map(k=>C.SPEC[k].l+' '+diff(k)).join(' · ');

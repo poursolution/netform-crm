@@ -208,6 +208,13 @@
   const at=new Date().toISOString(),rec=await confirmOp(d,P||{},'memo','activity',{type:'메모',note,result:'',occurred_at:at});
   d.activities=Array.isArray(d.activities)?d.activities:[];if(!d.activities.some(x=>x.id===rec.ack.activity_id))d.activities.unshift({id:rec.ack.activity_id,type:'메모',note,at,occurred_at:at,actor:root.repN(root.ME?.name)});try{root.saveLocal?.();}catch(e){}
  }
+ /* 단계 정보 몇 칸만 저장(상세 밖 — 관계관리 재분류의 견적 발송일). 서버 확인 뒤에만 화면에 반영 */
+ async function stageFieldsOutside(d,fields){
+  if(!root.SB||!root.SB.rpc)throw Error('로그인 상태에서만 저장할 수 있습니다.');if(isClosed(d))throw Error('종료된 영업건은 단계 정보를 바꿀 수 없습니다.');
+  const code=root.dealStage(d),r=await root.SB.rpc(SF_RPC,{p:{deal_id:String(d.id),stage_code:code,fields,reason:'상세에서 바로 입력'}});
+  if(r.error)throw Error(r.error.message||'저장 실패');if(!r.data||r.data.ok!==true||!r.data.stage_context)throw Error('서버 확인 응답이 올바르지 않습니다.');
+  const ctx=r.data.stage_context,p=root.currentPatch?root.currentPatch():null;d.stage_contexts=Object.assign({},d.stage_contexts||{},{[code]:ctx});d.stageContexts=d.stage_contexts;if(p)p.stage_contexts=d.stage_contexts;if(r.data.version!=null)d.version=r.data.version;try{root.saveLocal?.();}catch(e){}
+ }
  /* 다음 행동만 등록(지금 할 일을 닫지 않는다) — 변화 이벤트의 '확인할 일'이 쓴다 */
  async function nextOutside(d,o){
   if(!root.Phase1?.queue||typeof root.queueDetailContactOperation!=='function')throw Error('로그인 상태에서만 저장할 수 있습니다.');
@@ -884,7 +891,7 @@
  },true);
  document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||t.dataset.dv3Nextdate===undefined||!t.closest('#detailView.dv3'))return;const d=root.CUR_DETAIL?.item;if(d&&t.value)saveNextOnly(d,null,t.value);});
  document.addEventListener('click',onClick);
- root.DealDetailV3={enabled,apply,related,siteFields,stageSchema,record:recordOutside,memo:memoOutside,next:nextOutside,NXT,openFrom,
+ root.DealDetailV3={enabled,apply,related,siteFields,stageSchema,record:recordOutside,memo:memoOutside,next:nextOutside,stageFields:stageFieldsOutside,NXT,openFrom,
   refreshCenter(){const d=root.CUR_DETAIL?.kind==='deal'&&root.CUR_DETAIL.item,v=view();if(d&&v&&enabled())buildCenter(v,d,!!d.outcome||d.lifecycle_status==='closed');},
   tidy,wonRow,peek:setPeek,peekOf:d=>(d&&ST[d.id]&&ST[d.id].peek)||'',canReplace:d=>!!d&&!isClosed(d)&&!!contacts(d).ci.mobile,replace:()=>{const d=root.CUR_DETAIL?.item;if(d&&!isClosed(d)&&contacts(d).ci.mobile)doReplace(d);}};/* record · memo · NXT 는 오늘 업무 실행 모드가 쓴다 */
 })(window);

@@ -81,8 +81,8 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const ti=await rowOf('t-info'),tp=await rowOf('t-prep'),tb=await rowOf('t-build'),tf=await rowOf('t-fin');
   assert.deepEqual([ti.task,ti.btn,tp.task,tp.btn,tb.task,tb.btn,tf.task,tf.btn],['계약 정보 입력','정보 입력','착공 준비','착공 준비','주간 현장 방문','현장 확인','준공 확인','준공 확인'],'세부 상태별 다음 업무');
   assert.equal(tb.stale,'"계약 체결 확인" 종료 대상','계약 확인 끝난 건의 이전 업무는 종료 대상');assert.equal(tb.due,'1일 지남');
-  assert.deepEqual(await V.locator('.ps3-reason').evaluateAll(l=>l.map(b=>[b.querySelector('span>b').textContent,b.querySelector('.c').textContent])),[['계약일 · 금액 없음','1'],['인계서 미확인','1'],['시공 중 주 1회 방문 없음','0'],['준공 확인 없음','1']],'시공 중 방문 없음은 착공한 건만(2일 전 연락 → 0)');
-  assert.equal(one(await V.locator('.ps3-tab').nth(2).locator('span').innerText()),'착공 준비 · 착공 후 주 1회 현장 방문');
+  assert.deepEqual(await V.locator('.ps3-reason').evaluateAll(l=>l.map(b=>[b.querySelector('span>b').textContent,b.querySelector('.c').textContent])),[['계약일 · 금액 없음','1'],['착공일 미입력','0'],['인계서 미확인','1'],['시공 중 주 1회 방문 없음','0'],['준공 확인 없음','1']],'시공 중 방문 없음은 착공한 건만(2일 전 연락 → 0)');
+  assert.equal(one(await V.locator('.ps3-tab').nth(3).locator('span').innerText()),'착공일 입력 후 · 주 1회 방문');/* stage7_2 ⑤: 4상태 — 계약 체결 · 착공 준비 · 시공 중 · 준공 확인 */
   /* ⑥ 수주 · ⑦ 실주: 끝 상태 · 제목 숫자 · 실주일 한국 시간 · 재영업 '예'만 재접촉 */
   await page.evaluate(()=>PipelineWorkspace.open('won'));await page.waitForSelector('#pipeline-stage-v3[data-stage="won"] .prv-row');await page.waitForTimeout(200);
   assert.match(await kpi(),/^실적 정보 보완 1건 기한 초과 0 · 지연 아님 · 끝 상태$/);assert.match(one(await V.locator('.ps3-diag .ps3-box header span').first().innerText()),/^1건 · 1\.4억 · 낙찰금액 입력 1건 기준$/);
@@ -93,8 +93,8 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const kd=await page.evaluate(()=>{const k=DAY(-9),m=/^(\d{4})-(\d{2})-(\d{2})/.exec(k);return {dot:m[1]+'.'+(+m[2])+'.'+(+m[3]),md:(+m[2])+'.'+(+m[3])};});
   const ly=await rowOf('l-yes'),ln=await rowOf('l-no');
   assert.deepEqual([ly.now,ly.why],['실주 · '+kd.dot+' · 가격','판정: 실주 '+kd.md+' · 기한 없음'],'실주일 = 한국 날짜(UTC 15:00 = 다음날) · 목록과 판정이 같은 날');
-  assert.deepEqual([ly.tab,ly.task,ly.btn,ly.base,ln.tab,ln.task,ln.base],['2','재접촉 할 일 하나 등록','재접촉 등록','재접촉 할 일 없음','1','결과 기록만 · 할 일 없음','기록 완료'],'재영업 "예"만 재접촉 할 일 · "아니오"는 결과 기록만');
-  assert.deepEqual(await V.locator('.ps3-tab .l').allInnerTexts(),['전체','사유 미기록','기록 완료','재영업 가능 · 예']);
+  assert.deepEqual([ly.tab,ly.task,ly.btn,ly.base,ln.tab,ln.task,ln.base],['2','재접촉 할 일 하나 등록','재접촉 등록','재접촉 할 일 없음','1','사유 + 재영업 여부 입력됨','기록 완료 · 경쟁사 해당 없음'],'재영업 "예"만 재접촉 할 일 · "아니오"는 결과 기록만');
+  assert.deepEqual(await V.locator('.ps3-tab .l').allInnerTexts(),['전체','기록 보완 필요','기록 완료','재영업 가능 · 예']);
   /* 공통: 수주 ↔ 실주 서로 거치지 않음 · 필수값 없으면 단계 이동 차단 · 실주 처리 때 서버가 열린 업무를 닫는다(전환 함수 계약) */
   assert.deepEqual(await page.evaluate(()=>[StageTransition.choices('won'),StageTransition.choices('lost'),StageTransition.validate('compete','lost',{transition_date:DAY(0),fields:{}},DAY(0)).length>0,StageTransition.validate('consulting','sent',{transition_date:DAY(0),fields:{materials:['견적서'],quote_version:'v1',recipient:'관리소장',sent_date:DAY(0),followup_date:DAY(3)}},DAY(0))]),[[],[],true,[]]);
   assert.match(fs.readFileSync(path.join(root,'sql','pipeline-transition','20260906','helper.sql'),'utf8'),/UPDATE public\.next_actions SET status='cancelled'[^\n]*WHERE deal_id=p_object_id AND status='open'/,'단계가 바뀌면 열린 다음 할 일은 서버가 취소');

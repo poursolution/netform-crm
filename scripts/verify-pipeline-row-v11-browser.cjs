@@ -38,7 +38,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const V=page.locator('#pipeline-stage-v3'),L=V.locator('.prv-list');
   const ymd=n=>page.evaluate(n=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(DAY(n));return [+m[1]+'.'+(+m[2])+'.'+(+m[3]),(+m[2])+'/'+(+m[3])];},n);
   /* ① 위 상태 탭 · 왼쪽 진단 · 리스트/보드는 그대로 */
-  assert.deepEqual(await page.evaluate(()=>{const v=document.getElementById('pipeline-stage-v3');return [v.querySelectorAll('.ps3-tab').length,v.querySelectorAll('.ps3-diag .ps3-box').length,[...v.querySelectorAll('.ps3-views button')].map(b=>b.textContent),v.querySelector('.ps3-lhead>b').textContent.replace(/\s+/g,' ').trim()];}),[4,3,['리스트','보드'],'확인할 현장 6곳']);
+  assert.deepEqual(await page.evaluate(()=>{const v=document.getElementById('pipeline-stage-v3');return [v.querySelectorAll('.ps3-tab').length,v.querySelectorAll('.ps3-diag .ps3-box').length,[...v.querySelectorAll('.ps3-views button')].map(b=>b.textContent),v.querySelector('.ps3-lhead>b').textContent.replace(/\s+/g,' ').trim()];}),[4,4/* stage7_2 ⑤: 자료 없음 3가지 상자가 진단에 하나 더 */,['리스트','보드'],'확인할 현장 6곳']);
   /* ② 칸 이름 줄 + 4칸 줄 · 기한 급한 순(지난 것 → 오늘 → 내일 → 날짜 → 기한 없음) · 펼침 칸 없음 */
   assert.deepEqual((await L.locator('.prv-head span').allInnerTexts()).map(one),['현장 · 담당','현재 상황','다음 업무 · 기한','']);
   const d2=await ymd(-39),d5=await ymd(-37),due5=await ymd(4);

@@ -124,3 +124,5 @@
 .ps3 .psb-none{font-size:13px;color:#9ca3af;text-align:center;padding:8px 0;margin:0}
 .ps3 .psb-lnote{font-size:13px;color:#6b7280}
 .ps3-top>.plv-intro,.ps3-top>.plv-owners{margin:0}
+/* stage7_2 ⑤: 자료 없음 3가지 */
+.ps3-miss .ps3-ms{display:flex;flex-direction:column;gap:1px;border-top:1px solid #f2f3f6;padding:6px 0}.ps3-miss .ps3-ms:first-of-type{border-top:0}.ps3-miss .ps3-ms span{font-size:12.5px}.ps3-miss .ps3-ms small{font-size:11.5px;color:#6b7280}

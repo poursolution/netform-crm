@@ -41,9 +41,9 @@
    N('quote_request_days','미팅 후 견적 요청 등록','1차 미팅 후 며칠 안에 견적 요청을 등록하는지. 운영 제안 · 회의 확정 전이라 아직 기한을 계산하지 않습니다(물량 산출 목표 3일 · 최대 5일은 견적 요청 등록일부터 · 견적팀).','hold','일',1,1,14),
    T('next_action_required','다음 행동 필수','진행 중 영업건은 다음 행동 + 날짜가 있어야 합니다. 없으면 놓침.','fix'),
    T('stage_gates','단계 이동 필수조건','단계별 필수값이 비면 [옮기기]를 잠급니다 — → 컨설팅 설계: 1차 현장미팅 / → 자료 발송완료: 발송일 · 발송 자료 · 다음 확인일 / → 관계관리: 자료 발송일 · 고객 반응 · 다음 행동 · 다음 확인일 / → 경쟁 · 입찰: 입찰 · 결정 일정 · 경쟁 상황 / → 계약 · 시공: 계약일 · 계약금액 / → 수주 · 실주: 수주 유형 · 낙찰금액 / 실주 원인','cond'),
-   X('고객관리 기간','견적 후 집중관리 → 일반관리 → 장기 대기','fix','집중 1개월 → 일반 3개월 → 장기 대기'),
-   N('care_focus_months','집중관리 기간','견적 발송 후 이 기간은 집중관리(7일 안 후속 = 회의 결정). 기간은 잠정 — 관계관리 v12 상태 칸이 읽습니다.','cond','개월',1,1,6),
-   N('care_general_months','일반관리 기간','집중 이후 이 기간은 일반관리(최소 월 1회 = 회의 결정). 지나도 자동 전환하지 않고 전환 검토 요청.','cond','개월',1,1,12),
+   X('고객관리 기간','견적 발송일부터 집중관리 → 일반관리 → 대기','fix','집중 발송일부터 1개월 → 일반 발송일부터 총 3개월(해석 미확정) → 대기 2개월 1회'),
+   N('care_focus_months','집중관리 기간','견적 발송일부터 이 기간은 집중관리(7일 안 후속 = 회의 결정). 기간은 잠정 — 관계관리 상태 칸이 읽습니다.','cond','개월',1,1,6),
+   N('care_general_months','일반관리 기간','집중 이후 ~ 견적 발송일부터 총 이 기간까지는 일반관리(최소 월 1회 = 회의 결정). 회의록 "초기 1개월, 이후 3개월까지"가 총 기간인지 추가 기간인지 확정 전이라 총 기간으로 둔 기본값 — 지나도 자동 전환하지 않고 전환 검토 요청.','cond','개월',1,1,12),
    N('long_wait_contact_days','장기 대기 연락 주기','장기 대기 고객에게 후속 확인 할 일을 만드는 간격','cond','일',10,30,180),
    N('transfer_result_check_days','타사 이관 결과 확인','이관 후 이 기간이 지나면 담당자 오늘 업무에 결과 확인 생성','cond','일',1,3,60)]],
   ['perf','결과 · 실적','주간 브리핑 · 대시보드 · 리포트가 같은 계산식을 씁니다',[
@@ -198,7 +198,7 @@
   longWait:(lastContactAt,now)=>{const t=ms(lastContactAt);return !Number.isFinite(t)||((now||Date.now())-t)/864e5>=get('long_wait_contact_days');},
   transferCheck:(reportedAt,now)=>{const t=ms(reportedAt);return Number.isFinite(t)&&((now||Date.now())-t)/864e5>=get('transfer_result_check_days');}};
  /* 고객관리 기간: 견적 뒤 지난 달수 → focus(집중) | general(일반) | long_wait(장기 대기) */
- function carePhase(quoteSentAt,now){const t=ms(quoteSentAt);if(!Number.isFinite(t))return '';const m=((now||Date.now())-t)/(864e5*30);return m<get('care_focus_months')?'focus':m<get('care_focus_months')+get('care_general_months')?'general':'long_wait';}
+ function carePhase(quoteSentAt,now){const t=ms(quoteSentAt);if(!Number.isFinite(t))return '';const m=((now||Date.now())-t)/(864e5*30);return m<get('care_focus_months')?'focus':m<Math.max(get('care_general_months'),get('care_focus_months')+1)?'general':'long_wait';/* 2026-10-07 stage7_2 ③: 일반관리 = 발송일부터 총 기간 */}
  /* ── 서버 ── */
  const store=()=>root.OpsStore,available=()=>!!(store()&&store().has&&store().has(RPC));
  function take(r){apply(r.rules||{});meta={updated_at:r.updated_at||'',updated_by:r.updated_by_name||'',history:Array.isArray(r.history)?r.history:[]};loaded=true;try{root.dispatchEvent(new CustomEvent('crm-rules:changed',{detail:{rules:all()}}));}catch(e){}return all();}
