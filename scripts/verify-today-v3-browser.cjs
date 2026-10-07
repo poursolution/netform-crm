@@ -36,7 +36,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      deal('sup1','분당시범우성',{amt:4e7,code:'construction',stage_code:'construction',assignee:'정정훈',last_activity_at:at(1),stage_contexts:{contract:{fields:{contract_date:day(-20),contract_amount:3.4e8}}},activities:[{id:'a1',type:'메모',note:'[지원 요청] 추가 균열 보수 승인 요청 — 요청자 정정훈',at:at(1),occurred_at:at(1)}],next_action:{id:'n5',type:'방문',text:'현장 확인',due:day(2),status:'open'}}),
      deal('prom1','풍림1차아파트',{amt:2.4e8,code:'rapport',stage_code:'rapport',next_action:{id:'n6',type:'고객 약속',text:'고객 약속: 장기수선 회의 결과 확인',due:day(-3),status:'open'}}),
      deal('today1','상계주공7단지',{amt:2.6e8,next_action:{id:'n7',type:'방문',text:'현장 실측',due:day(0)+'T11:00',status:'open'}}),
-     deal('quote1','동탄푸른마을',{amt:1.8e8,last_activity_at:at(5),stage_entered_at:at(5),next_action:{id:'n8',type:'전화',text:'견적 범위 확인',due:day(2),status:'open'}}),
+     deal('quote1','동탄푸른마을',{amt:1.8e8,last_activity_at:at(5),stage_entered_at:at(5),stage_contexts:{consulting:{fields:{quote_due:day(-1)}}},next_action:{id:'n8',type:'전화',text:'견적 범위 확인',due:day(2),status:'open'}}),
      deal('stall1','byc하이시티',{amt:9e7,code:'rapport',stage_code:'rapport',last_activity_at:at(21)}),
      /* 팀장 · 상무 · 대표 본인 담당 */
      deal('lead1','이천신한아파트',{amt:4.4e8,code:'contract',stage_code:'contract',assignee:'한준엽',brand:'석민이앤씨',next_action:{id:'n10',type:'전화',text:'계약서 확인',due:day(3),status:'open'}}),
@@ -91,7 +91,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(S.mgr.groups[0].cards.join('\n'),/담당 배정 안 됨[^\n]*\| 견적문의 \| 길음뉴타운9단지 \| 담당 미배정[^\n]*\| 배정\/재배정\/상세 보기/,'담당이 없는 건에는 [담당 화면] 대신 [상세 보기]');
   assert.doesNotMatch(all('mgr'),/마감 전 준비 안 됨|지원 요청/,'영업관리는 개입 범위만');
   assert.match(S.mgr.groups[2].rows.join('\n'),/고덕아이파크 \| 정정훈 · 2\.1억 · 계약정보 입력 안 함( · 판정: [^|]+)? \| -\s+\| 입력 요청/);assert.match(S.mgr.groups[2].rows.join('\n'),/이천신한아파트/);
-  assert.match(S.mgr.backT,/^밀린 건 정리 3건이번 주 새로 멈춘 \d+건 · 이전부터 누적 \d+건(\(이관 전 기록 확인 필요 \d+건 포함 · 미응대로 평가하지 않음\))? · 90일 넘게 기록 없음 · 오늘 할 일과 따로 · 담당자에게 정리\(진행 \/ 보류 \/ 실주 \/ 배드핏\) 요청보기 ▼$/,'ops_12 B⑥: 이번 주 새로 멈춘 vs 이전부터 누적');
+  assert.match(S.mgr.backT,/^밀린 건 정리 3건이번 주 새로 멈춘 \d+건 · 이전부터 누적 \d+건(\(이관 전 기록 확인 필요 \d+건 포함 · 미응대로 평가하지 않음\))? · 90일 넘게 기록 없음 · 오늘 할 일과 따로 · 담당자에게 확인 순서 안내\(고객 반응 → 추진 상태 → 근거 남기고 정리\) 요청보기 ▼$/,'ops_12 B⑥: 이번 주 새로 멈춘 vs 이전부터 누적');
   /* 영업사원: 내 담당만 · 담당 칸 = 고객명 · 본인 밀린 건만 */
   assert.doesNotMatch(all('rep'),/성산시영|고덕아이파크|분당시범우성|이천신한|평동동남|율량동아/,'남의 현장 없음');
   assert.match(S.rep.groups[0].cards.join('\n'),/\| 담당 김소장 관리소장 · 010-7777-8888 \| [^\n]*\/문자\/결과 기록/);

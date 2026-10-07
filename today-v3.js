@@ -236,7 +236,7 @@
    const J=root.PipelineJudge&&root.PipelineJudge.on()?root.PipelineJudge:null,wk=J?J.week(0):null,sinceMon=wk?Math.max(0,Math.round((Date.parse(J.dayKey(new Date())+'T00:00:00')-Date.parse(wk.mon+'T00:00:00'))/864e5)):7;
    let fresh=0,pre=0;V.back.forEach(b=>{const over=(Number(b.days)||0)-BACK();let nr=!(b.x&&b.x.type);/* 과거 영업 정리(이관분) 줄 */try{if(!nr&&J&&b.x.type==='deal')nr=J.state(J.basis(b.x.item)).key==='norecord';}catch(e){}if(nr)pre++;else if(over>=0&&over<=sinceMon)fresh++;});
    const splitT='이번 주 새로 멈춘 '+fresh+'건 · 이전부터 누적 '+(backN-fresh)+'건'+(pre?'(이관 전 기록 확인 필요 '+pre+'건 포함 · 미응대로 평가하지 않음)':'')+' · ';
-   const subT=splitT+BACK()+'일 넘게 기록 없음 · '+(V.teamBack?'오늘 할 일과 따로 · 담당자에게 정리(진행 / 보류 / 실주 / 배드핏) 요청':'진행 / 보류 / 실주 / 배드핏으로 정리하면 오늘 업무가 가벼워집니다');
+   const subT=splitT+BACK()+'일 넘게 기록 없음 · '+(V.teamBack?'오늘 할 일과 따로 · 담당자에게 확인 순서 안내(고객 반응 → 추진 상태 → 근거 남기고 정리) 요청':'고객 반응 → 추진 상태 확인 뒤 근거를 남기고 계속 · 대기 · 보류 · 실주로 정리합니다');
    if(S.backOwner&&!by.has(S.backOwner))S.backOwner='';
    const tri=b=>{const k=attr(b.key),deal=b.x.type==='deal';return '<div class="tv3-brow"><button type="button" class="o" data-t3="open" data-key="'+k+'"><b>'+h(b.site)+'</b><small>'+h([b.stage,b.amt?money(b.amt):'',b.days?b.days+'일째':''].filter(Boolean).join(' · '))+'</small></button>'+(deal?'<span>'+[['keep','진행'],['hold','보류'],['lost','실주'],['badfit','배드핏']].map(a=>'<button type="button" data-t3="tri" data-key="'+k+'" data-v="'+a[0]+'">'+a[1]+'</button>').join('')+'</span>':'')+'</div>';};
    backHtml='<section class="tv3-back'+(S.back?' open':'')+'"><button type="button" class="hd" data-t3="back" aria-expanded="'+!!S.back+'"><b>'+h(title)+'</b><span>'+h(subT)+'</span><u></u><em>'+(S.back?'접기 ▲':'보기 ▼')+'</em></button>'
@@ -300,8 +300,8 @@
   if(a==='page'){root.ListPager.set(S,v,b.dataset.page);return rerender();}
   if(a==='back'){S.back=!S.back;if(!S.back)S.backOwner='';return rerender();}
   if(a==='backdo'){S.backOwner=S.backOwner===v?'':v;return rerender();}
-  if(a==='backreq'){const V=current(),l=V.back.filter(x=>x.owner===v),old=Math.max(0,...l.map(x=>x.days||0));return copy(v+'님, '+BACK()+'일 넘게 기록이 없는 영업건이 '+l.length+'건 있습니다(최장 '+old+'일). 오늘 업무 → 밀린 건 정리에서 진행 / 보류 / 실주 / 배드핏으로 정리해 주세요.','정리 요청 문구를 복사했습니다 — 잔디 · 문자로 보내 주세요');}
-  if(a==='backsend'){const V=current(),l=V.back.filter(x=>x.owner===v).map(b=>({x:b.x,key:b.key,i:{site:b.site},brand:(b.x.item||{}).brand||'',missTxt:BACK()+'일 넘게 기록 없음 · 진행 / 보류 / 실주 / 배드핏으로 정리',rk:'stall'}));return sendItems(l,'밀린 건 정리');}
+  if(a==='backreq'){const V=current(),l=V.back.filter(x=>x.owner===v),old=Math.max(0,...l.map(x=>x.days||0));return copy(v+'님, '+BACK()+'일 넘게 기록이 없는 영업건이 '+l.length+'건 있습니다(최장 '+old+'일). 오늘 업무 → 밀린 건 정리에서 ① 고객 반응 확인 → ② 추진 상태 확인 → ③ 근거 남기고 계속 · 대기 · 보류 · 실주 순서로 정리해 주세요(기간이 지났다는 이유만으로 실주 처리하지 않습니다).','정리 요청 문구를 복사했습니다 — 잔디 · 문자로 보내 주세요');}
+  if(a==='backsend'){const V=current(),l=V.back.filter(x=>x.owner===v).map(b=>({x:b.x,key:b.key,i:{site:b.site},brand:(b.x.item||{}).brand||'',missTxt:BACK()+'일 넘게 기록 없음 · 고객 반응 → 추진 상태 확인 뒤 근거 남기고 정리',rk:'stall'}));return sendItems(l,'밀린 건 정리');}
   if(a==='bulkreq'){const V=current(),g=V.groups[Number(v)];if(!g||!g.items.length)return;return sendItems(g.items,g.t);}
   if(a==='tri'){const V=current();return triage(V.back.find(x=>x.key===key),v);}
   if(a==='bulk'){const V=current(),g=V.groups[Number(v)];if(!g||!g.items.length)return;const by=new Map();g.items.forEach(i=>{const o=i.x.owner||'미배정';(by.get(o)||by.set(o,[]).get(o)).push(i);});

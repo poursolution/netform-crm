@@ -114,8 +114,8 @@
   const s=scoped(),S=SB().state('expansion'),items=groupItems(s.rows.map(item));
   CFG.topHtml=topHtml(s);CFG.groupHead=root.G.boardV3Off?null:groupHead;
   /* 대상 수 나누기(contact_link ③): 사후 연락 대상 vs 기록 보완 필요(공종 · 연락 기록 없음 — 미실행으로 세지 않음) */
-  {const live=items.filter(i=>i.bucket!=='hold'),fix=live.filter(i=>i.rs.includes('work')||i.rs.includes('nocontact')||i.rs.includes('after30')),tgt=live.length-fix.length;
-   CFG.sideHtml='<div class="psb-box xb-split"><header><b>대상 나누기</b><span>'+h(String(s.year)==='전체'?'전체':s.year)+' 대상 '+live.length+'곳</span></header><div class="psb-act"><span>사후 연락 대상 '+tgt+'</span><p>준공 · 연락 기준 확인됨</p></div><div class="psb-act"><span>기록 보완 필요 '+fix.length+'</span><p>공종 · 연락 기록 없음 · 미실행으로 세지 않음</p></div></div>';}
+  {const live=items.filter(i=>i.bucket!=='hold'),kinds=live.map(i=>kindOf(i.rs,!!(i.extra&&i.extra.r&&i.extra.r.completionDate)).kind),miss=kinds.filter(k=>k==='miss').length,fix=kinds.filter(k=>k==='fix'),tgt=live.length-miss-fix.length;
+   CFG.sideHtml='<div class="psb-box xb-split"><header><b>대상 나누기</b><span>'+h(String(s.year)==='전체'?'전체':s.year)+' 대상 '+live.length+'곳</span></header><div class="psb-act"><span>확인된 미실행 '+miss+'</span><p>준공일 · 연락 기준이 확인된 건이 기준을 넘김</p></div><div class="psb-act"><span>사후 연락 대상 '+tgt+'</span><p>준공 · 연락 기준 확인됨</p></div><div class="psb-act"><span>기록 보완 필요 '+fix.length+'</span><p>준공일 · 공종 · 연락 기록 없음 · 미실행으로 세지 않음</p></div></div>';}
   /* 연도를 고르면 제목 옆에 "2025년 준공만" · 목록 줄은 두 덩어리(끄기: G.expansionYearRowOff=true → 예전 줄) */
   CFG.listNote=root.G.expansionYearRowOff||String(s.year)==='전체'?'':(String(s.year)==='이전'?(s.current-3)+'년 이전':s.year+'년')+' 준공만';
   /* 공용 틀(2026-10-06 "리스트에서 이질감 없이"): 줄은 StageBoard 의 파이프라인 v11 모양 줄. 두 덩어리 줄은 공용 틀을 껐을 때(G.boardV3Off)만 */
@@ -132,5 +132,18 @@
   V.paint=function(host){if(!enabled())return base.apply(this,arguments);return paint(host,base,[].slice.call(arguments));};
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- root.ExpansionB={enabled,CFG,item,rules};
+ /* 2026-10-07 kpi_measure: '확인된 미실행'과 '기록 보완 필요'를 한 곳에서 가른다 — 대상 나누기 · 오늘 업무 · 위 경고가 같은 분류.
+    확인된 미실행 = 준공일 · 연락 기준이 확인된 건이 기준을 넘김(사후 연락 D+30 · 다음 접촉일 지남 · 관계 연락 주기 넘김)
+    기록 보완 = 판단할 기록이 없음(준공일 없음 · 공종 미분류 · 연락 기록 없음 · 아직 기준 전) → 미실행으로 세지 않음 */
+ function kindOf(rs,hasCompletion){
+  if(rs.includes('after30'))return {kind:'miss',key:'after30',label:'사후 연락 안 함'};
+  if(rs.includes('late'))return {kind:'miss',key:'late',label:'다음 접촉일 지남'};
+  if(rs.includes('wait60'))return {kind:'miss',key:'wait60',label:'관계 연락 주기 넘김'};
+  if(!hasCompletion)return {kind:'fix',key:'nodate',label:'준공일 미기록'};
+  if(rs.includes('work'))return {kind:'fix',key:'work',label:'공종 미분류'};
+  if(rs.includes('nocontact'))return {kind:'fix',key:'nocontact',label:'접촉 기록 없음'};
+  return {kind:'ok',key:'',label:'정상'};
+ }
+ function classify(r){try{const it=item(r);return kindOf(it.rs,!!r.completionDate);}catch(e){return {kind:'ok',key:'',label:'정상'};}}
+ root.ExpansionB={enabled,CFG,item,rules,classify,kindOf};
 })(window);

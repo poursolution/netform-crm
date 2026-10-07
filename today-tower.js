@@ -17,14 +17,14 @@
  /* 역할은 로그인 계정으로 자동(2026-10-03 대표 확정): 송보람 = 영업관리 · 이승우 = 대표 · 황윤선 = 상무 · 한준엽 = 팀장 · 영업사원 = 정정훈 · 김성민 · 이필선. OPS_RULES.towerRoles 로 바꿀 수 있다 */
  const ROLE_BY_NAME=()=>Object.assign({'이승우':'ceo','황윤선':'vp','한준엽':'lead','송보람':'mgr'},RULES().towerRoles||{});
  const ROLE_LABEL={rep:'영업사원',mgr:'영업관리',lead:'팀장',vp:'상무',ceo:'대표'};
-  const COLS=[['inq','견적문의',FIRST_HOURS()+'시간 안 첫 연락'],['cons','컨설팅 설계','방문 후 3일 안 견적'],['sent','자료 발송완료','견적 발송 후 7일 안 후속 연락'],['rel','관계관리','월 1회 이상 · 장기 2개월 1회'],['bid','경쟁·입찰','마감 D-7부터 준비'],['con','계약·시공','계약일 · 금액 입력 · 착공 후 주 1회 현장 확인'],['won','수주·확장','준공 D+30 사후 연락']];
+  const COLS=[['inq','견적문의',FIRST_HOURS()+'시간 안 첫 연락'],['cons','컨설팅 설계','물량 산출 기한 · 미팅 후 견적 요청은 시범'],['sent','자료 발송완료','견적 발송 후 7일 안 후속 연락'],['rel','관계관리','월 1회 이상 · 장기 2개월 1회'],['bid','경쟁·입찰','마감 D-7부터 준비'],['con','계약·시공','계약일 · 금액 입력 · 착공 후 주 1회 현장 확인'],['won','수주·확장','준공 D+30 사후 연락']];
  const COL_OF={first_contact:'cons',consulting:'cons',sent:'sent',rapport:'rel',silent:'rel',waiting:'rel',compete:'bid',imminent:'bid',bidding:'bid',contract:'con',construction:'con',completion:'won',won:'won'};
  /* 이유(칩 드롭다운) · 색: 빨강 = 기준 초과 · 손실 위험만 */
- const R={transfer:['타사 이관 결과 확인','#d97706'],tfapprove:['실적 인정 대기','#d93a3a'],decide:['결정 · 지원 요청','#d93a3a'],assign:['배정 필요','#d93a3a'],deadline:['마감 임박','#c2410c'],contract:['계약정보 누락','#d93a3a'],stallbig:['고액 정체','#d93a3a'],silent:['발송 후 무응답','#d97706'],first:['첫 연락 늦음','#d93a3a'],promise:['약속일 지남','#d93a3a'],quote:['견적 지연','#d97706'],site:['현장 방문 미실시','#c0392b'],month:['30일 미접촉','#c0392b'],long:['장기관리 도래','#6b7280'],data:['필수정보 미입력','#6b7280'],stall:['다음 할 일 없음','#c0392b'],after:['사후 연락 없음','#c0392b']};
- const MISS={transfer:'타사 이관 뒤 낙찰결과 확인 안 함',tfapprove:'타사 이관 수주 · 관리자 실적 인정 대기',decide:'결정 대기 · 담당 통보 필요',assign:'담당 배정 안 됨',deadline:'마감 전 준비 안 됨',contract:'계약정보 입력 안 함',stallbig:'고액 견적 후속 없음',silent:'견적 발송 후 7일 · 후속 연락 없음',first:'CRM 첫 연락 기록 없음',promise:'다음 연락일 지남',quote:'견적 처리기한(3일) 넘김',site:'착공 현장 주 1회 방문 안 함',month:'30일 넘게 접촉 없음',long:'장기관리 2개월 연락일 도래',data:'CRM 필수정보 미입력',stall:'다음 행동 · 날짜 없음',after:'준공 D+30 사후 연락 안 함'};
- const LOSS={transfer:'낙찰결과를 놓쳐 실적 인정이 늦어집니다',tfapprove:'담당자 수주실적 반영이 늦어집니다',decide:'담당이 움직이지 못합니다',assign:'고객이 다른 업체로 갑니다',deadline:'제안 없이 마감을 맞습니다',contract:'착공 준비와 집계가 멈춥니다',stallbig:'큰 건이 검토 단계에서 빠집니다',silent:'검토 단계에서 빠집니다',first:'다른 업체가 먼저 현장을 봅니다',promise:'약속을 안 지킨 업체로 기억됩니다',quote:'고객이 다른 견적부터 받습니다',site:'현장 불만을 늦게 알게 됩니다',month:'관계가 식어 재문의가 줄어듭니다',long:'공사 시기를 놓칩니다',data:'대표회의 · 경쟁 대응을 준비할 수 없습니다',stall:'다음 움직임이 정해지지 않습니다',after:'추가 공사 기회를 놓칩니다'};
- const ACT_REP={transfer:'결과 등록',tfapprove:'인정 대기',first:'전화',promise:'전화',month:'전화',silent:'전화',after:'전화',stallbig:'전화',deadline:'제안 준비',quote:'견적 요청',stall:'다음 할 일',site:'현장 확인',long:'관계 연락',data:'정보 보완',contract:'정보 입력'};
- const ACT_TEAM={transfer:'독촉',tfapprove:'실적 인정',assign:'배정',decide:'결정 기록',contract:'입력 요청',first:'독촉',silent:'독촉',quote:'독촉',after:'독촉',deadline:'독촉',stallbig:'독촉',promise:'코멘트',stall:'코멘트',month:'코멘트',site:'코멘트',long:'코멘트',data:'정보 요청'};
+ const R={transfer:['타사 이관 결과 확인','#d97706'],tfapprove:['실적 인정 대기','#d93a3a'],decide:['결정 · 지원 요청','#d93a3a'],assign:['배정 필요','#d93a3a'],deadline:['마감 임박','#c2410c'],contract:['계약정보 누락','#d93a3a'],stallbig:['고액 정체','#d93a3a'],silent:['발송 후 무응답','#d97706'],first:['첫 연락 늦음','#d93a3a'],promise:['약속일 지남','#d93a3a'],quote:['견적 지연','#d97706'],site:['현장 방문 미실시','#c0392b'],month:['30일 미접촉','#c0392b'],long:['장기관리 도래','#6b7280'],data:['필수정보 미입력','#6b7280'],stall:['다음 할 일 없음','#c0392b'],after:['사후 연락 없음','#c0392b'],fix:['기록 보완','#6b7280']};
+ const MISS={transfer:'타사 이관 뒤 낙찰결과 확인 안 함',tfapprove:'타사 이관 수주 · 관리자 실적 인정 대기',decide:'결정 대기 · 담당 통보 필요',assign:'담당 배정 안 됨',deadline:'마감 전 준비 안 됨',contract:'계약정보 입력 안 함',stallbig:'고액 견적 후속 없음',silent:'견적 발송 후 7일 · 후속 연락 없음',first:'CRM 첫 연락 기록 없음',promise:'다음 연락일 지남',quote:'물량 산출 기한 넘김',site:'착공 현장 주 1회 방문 안 함',month:'30일 넘게 접촉 없음',long:'장기관리 2개월 연락일 도래',data:'CRM 필수정보 미입력',stall:'다음 행동 · 날짜 없음',after:'준공 D+30 사후 연락 안 함',fix:'기록 보완 필요 · 미실행으로 세지 않음'};
+ const LOSS={transfer:'낙찰결과를 놓쳐 실적 인정이 늦어집니다',tfapprove:'담당자 수주실적 반영이 늦어집니다',decide:'담당이 움직이지 못합니다',assign:'고객이 다른 업체로 갑니다',deadline:'제안 없이 마감을 맞습니다',contract:'착공 준비와 집계가 멈춥니다',stallbig:'큰 건이 검토 단계에서 빠집니다',silent:'검토 단계에서 빠집니다',first:'다른 업체가 먼저 현장을 봅니다',promise:'약속을 안 지킨 업체로 기억됩니다',quote:'고객이 다른 견적부터 받습니다',site:'현장 불만을 늦게 알게 됩니다',month:'관계가 식어 재문의가 줄어듭니다',long:'공사 시기를 놓칩니다',data:'대표회의 · 경쟁 대응을 준비할 수 없습니다',stall:'다음 움직임이 정해지지 않습니다',after:'추가 공사 기회를 놓칩니다',fix:'판단할 기록이 없어 관리 대상에서 빠집니다'};
+ const ACT_REP={transfer:'결과 등록',tfapprove:'인정 대기',first:'전화',promise:'전화',month:'전화',silent:'전화',after:'전화',stallbig:'전화',deadline:'제안 준비',quote:'견적 요청',stall:'다음 할 일',site:'현장 확인',long:'관계 연락',data:'정보 보완',fix:'정보 보완',contract:'정보 입력'};
+ const ACT_TEAM={transfer:'독촉',tfapprove:'실적 인정',assign:'배정',decide:'결정 기록',contract:'입력 요청',first:'독촉',silent:'독촉',quote:'독촉',after:'독촉',deadline:'독촉',stallbig:'독촉',promise:'코멘트',stall:'코멘트',month:'코멘트',site:'코멘트',long:'코멘트',data:'정보 요청',fix:'정보 요청'};
  const DONE={'결과 등록':'낙찰결과(수주 · 실주 · 취소) 등록','실적 인정':'사전 보고 · 낙찰결과 · 낙찰금액 확인 후 인정','인정 대기':'관리자 인정 뒤 실적 반영','재배정':'결정 기록 + 담당 통보 · 인수 확인','배정':'담당자 지정 + 인계 확인','결정 기록':'결정 내용 기록 + 담당 통보','자료 제출':'자료 · 개략 금액 발송 + 회의 결과 확인일 등록','현장 확인':'공정 · 불만 · 소장 요청 · 추가공사 기록','정보 보완':'결정 일정 · 경쟁사 · 결정권자 입력','정보 요청':'담당자 확인 + 입력 약속 시간 받기','정기 연락':'연락 결과 + 다음 행동 · 날짜','관계 연락':'공사 시기 확인 + 다음 2개월 연락일','전화':'결과 + 다음 행동 · 날짜 함께 기록 (완료만 선택 불가)','제안 준비':'제안서 업로드 + 제출일 확정','견적 요청':'견적 요청 등록 + 견적 예정일 입력','다음 할 일':'다음 할 일 · 날짜 등록','독촉':'고객 연락 기록 + 결과 + 다음 행동 (담당 확인 · 약속 시간은 중간 상태)','코멘트':'담당자 확인 + 통화 결과 기록 확인','입력 요청':'계약일 · 금액 입력 확인','정보 입력':'계약일 · 금액 입력'};
  const BRAND={'석민이앤씨':'#e8590c','POUR솔루션':'#1f9d55','POUR공법':'#7048e8','아파트스퀘어':'#3b6ce4'};
  const dayN=hours=>Number.isFinite(hours)&&hours>0?Math.max(1,Math.floor(hours/24)):0;
@@ -55,7 +55,7 @@
   const f=deal?fieldsOf(d):{};
   const dl=deal?deadlineOf(d):null;
   let lastDays=null,relDays=null,stAge=null;if(deal){try{lastDays=root.activityAge(d);}catch(e){}if(lastDays===null||lastDays===0){const s=since(d.last_activity_at||d.lastActivity||d.last_worked_at||'');if(s!==null&&s>(lastDays||0))lastDays=s;}try{relDays=root.relationshipMeta(d).days;}catch(e){}try{stAge=root.stageAge(d);}catch(e){}}
-  const sentDays=code==='sent'?(since(f['sent.sent_date'])??stAge):null;
+  const sentDays=code==='sent'?since(f['sent.sent_date']):null;/* 2026-10-07 kpi_measure: 발송일이 있는 건만 7일 판정(PipelineJudge 와 같은 기준) — 없으면 단계 체류일로 대신하지 않는다 */
   const support=deal&&team?openSupport(d):null;
   const contractMissing=['contract','construction'].includes(code)&&!((f['contract.contract_date']||d.contract_date)&&(f['contract.contract_amount']||d.contract_amount||d.won_amount));
   let rk='',urg='';
@@ -68,12 +68,12 @@
   else if(sentDays!==null&&sentDays>=7&&(x.overdue||x.missingNext||(lastDays!==null&&lastDays>=7))){rk=amt>=BIG()?'stallbig':'silent';urg='now';}
   else if(x.responseLate){rk='first';urg='today';}
   else if(x.overdue){rk='promise';urg='today';}
-  else if(code==='consulting'&&((f['consulting.quote_due']&&daysTo(f['consulting.quote_due'])<0)||(stAge!==null&&stAge>3&&!f['consulting.quote_due']))){rk='quote';urg='today';}
-  else if(code==='construction'&&lastDays!==null&&lastDays>=7){rk='site';urg='today';}
+  else if(code==='consulting'&&f['consulting.quote_due']&&daysTo(f['consulting.quote_due'])<0){rk='quote';urg='today';}/* 물량 산출 기한(견적 예정일)이 지난 건만 — 기한이 없는 건을 체류일 3일로 세지 않는다(PipelineJudge 와 같은 기준) */
+  else if(code==='construction'&&lastDays!==null&&lastDays>=7&&(()=>{const n=since(f['construction.start_date']);return n!==null&&n>=0;})()){rk='site';urg='today';}/* 착공일이 입력된 현장만(계약 · 시공 화면 · KPI 와 같은 조건) */
   else if(deal&&col!=='won'&&relDays!==null&&relDays>=30&&code!=='waiting'){rk='month';urg='today';}
   else if(code==='waiting'&&relDays!==null&&relDays>=60){rk='long';urg='week';}
   else if(col==='bid'&&!(f['compete.decision_date']||f['imminent.decision_date']||f['bidding.decision_date']||f['bidding.bid_deadline'])){rk='data';urg='week';}
-  else if(exp){rk=x.missingNext?'stall':'after';urg='week';}/* 확장관리: 연락일이 지났거나 준공 후 계산된 건만 '사후 연락', 날짜 자체가 없으면 '다음 행동 · 날짜 없음' */
+  else if(exp){const ek=root.ExpansionB&&root.ExpansionB.classify?root.ExpansionB.classify(d):null;/* 확인된 미실행 = 사후 연락 · 약속일 · 관계 연락 / 기록 보완 = 미실행으로 세지 않음(확장관리 화면과 같은 분류) */if(ek&&ek.kind==='fix'){rk='fix';urg='week';}else if(ek&&ek.kind==='miss'&&ek.key==='late'){rk='promise';urg='today';}else if(ek&&ek.kind==='miss'&&ek.key==='wait60'){rk='long';urg='week';}else{rk=x.missingNext?'stall':'after';urg='week';}}/* 확장관리: 연락일이 지났거나 준공 후 계산된 건만 '사후 연락', 날짜 자체가 없으면 '다음 행동 · 날짜 없음' */
   else if(code==='completion'){const cd=since(d.completion_date)??stAge;if(!(cd!==null&&cd>=30&&(lastDays===null||lastDays>=30)))return null;rk='after';urg='week';}
   else if(x.reassignmentPending){rk='promise';urg='today';}
   else if(x.missingNext){rk='stall';urg='week';}

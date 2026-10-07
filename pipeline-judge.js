@@ -23,6 +23,9 @@
  const acts=d=>{const p=patch(d);return [].concat(d.activities||[],p.activities||[]);};
  const lastActAt=(d,re)=>acts(d).filter(a=>a&&re.test(String(a.type||'')+' '+String(a.note||''))).map(a=>dayKey(a.at||a.occurred_at||a.created_at)).filter(Boolean).sort().pop()||'';
  const lastContactAt=d=>{try{const v=root.ContactState.of(d,'deal');return dayKey(v.lastConnectedAt||v.lastAttemptAt||'');}catch(e){return '';}};
+ /* 미팅일 · 후속 근거(KPI 측정 기준 · 판정 · 상세가 같은 근거): 미팅일 = 단계 칸의 미팅일 → 없으면 방문 · 미팅 · 실측 · 실사 기록 가운데 가장 나중 */
+ const meetingOf=d=>dayKey(fld(d,'consulting','meeting_date')||fld(d,'first_contact','meeting_date')||'')||lastActAt(d,/방문|미팅|실측|실사/);
+ const sentOfDeal=d=>dayKey(fld(d,'sent','sent_date')||'');
  /* ── ② 다음 업무 판정(근거) ── */
  function basis(d,key){
   if(!d||typeof d!=='object')return {kind:'norecord',why:'자료 없음',due:'',n:null};
@@ -41,7 +44,7 @@
   /* 2026-10-07 design_handoff_stage7 ①: '견적 처리 3일 · 5일' = 물량 산출 기한(견적 요청 등록일부터 · 견적팀 · 견적 예정일 칸). '미팅 후 견적 요청 등록'은 따로 둔 업무 — 기한은 설정값(quote_request_days · 운영 제안), 정해지기 전엔 '기한 없음 · 설정값 확인' */
   if(g==='consulting'){const qd=dayKey(fld(d,'consulting','quote_due')||'');if(qd)return D('물량 산출 기한',qd,0);
    const qr=String(fld(d,'consulting','quote_request')||'').trim();if(qr)return none('견적 요청 등록 · 예정일 없음','견적 예정일 입력','견적팀에 물량 산출 기한 확인');
-   const mt=dayKey(fld(d,'consulting','meeting_date')||fld(d,'first_contact','meeting_date')||'')||lastActAt(d,/방문|미팅|실측|실사/);
+   const mt=meetingOf(d);
    if(mt){const qn=Number(R().quoteRequestDays)||0;if(qn>0)return D('미팅 완료',mt,qn);return Object.assign(none('미팅 완료 '+md(mt)+' · 견적 요청 전','견적 요청 등록','견적 요청 등록'),{dueLabel:'기한 없음 · 설정값 확인'});}
    return lc?none('미팅 일정 미등록 · 기한 계산 안 함','미팅 일정 입력','미팅 여부 확인 → 일정 등록 또는 보류 사유 등록'):nr('판정 불가 · 미팅 · 연락 기록 없음(이관 전 기록 확인)');}
   /* stage7 ②: 발송일 있는 건만 7일 판정 · 없으면 '발송일 확인 필요 · 7일 계산 안 함' */
@@ -93,11 +96,11 @@
  }
  const inWeek=(v,w)=>{const k=dayKey(v);w=w||week(0);return !!k&&k>=w.mon&&k<=w.fri;};
  /* ── ⑥ 같은 분모: 다음 행동 등록률 = 진행 중 영업건 전체(과거 이관 제외) ── */
- const TARGET={nextRate:'진행 중 영업건 전체(과거 이관 제외) · 오늘 업무 · KPI 같은 값',sameDay:'이번 주 접수 견적문의 · 휴지통 제외',firstContact:'이번 주 배정된 견적문의',activity:'진행 중 영업건(과거 이관 제외) · 최근 7일 기록',stale:'컨설팅 설계 · 관계관리 진행 건',quote3:'1차 미팅을 마친 컨설팅 설계 건',lostReason:'실주 처리된 영업건',action:'최근 28일 관리팀 요청'};
+ const TARGET={nextRate:'진행 중 영업건 전체(과거 이관 제외) · 오늘 업무 · KPI 같은 값',sameDay:'이번 주 접수 견적문의 · 휴지통 제외',firstContact:'이번 주 배정된 견적문의',activity:'진행 중 영업건(과거 이관 제외) · 최근 7일 기록',stale:'컨설팅 설계 · 관계관리 진행 건(과거 이관 제외)',quote3:'1차 미팅을 마친 컨설팅 설계 건',lostReason:'실주 처리된 영업건',action:'최근 28일 관리팀 요청'};
  function nextRate(deals){
   const PS=root.PipelineScope,open=d=>{try{return root.isOpen(d);}catch(e){return false;}},legacy=d=>{try{return !!(PS&&PS.on()&&PS.isLegacy(d));}catch(e){return false;}};
   const den=(deals||[]).filter(d=>d&&open(d)&&!legacy(d)),num=den.filter(d=>{const x=nextOf(d);return !!(x&&x.text&&x.due);});
   return {num:num.length,den:den.length,pct:den.length?Math.round(num.length*100/den.length):null,target:TARGET.nextRate,list:den.filter(d=>!num.includes(d))};
  }
- root.PipelineJudge={on,basis,missKind,missCounts,dueText,dueClass,isLate,state,STATE,tally,tallyText,line,touchLines,week,inWeek,dayKey,md,nextRate,TARGET,rules};
+ root.PipelineJudge={on,meetingOf,sentOfDeal,field:fld,basis,missKind,missCounts,dueText,dueClass,isLate,state,STATE,tally,tallyText,line,touchLines,week,inWeek,dayKey,md,nextRate,TARGET,rules};
 })(window);
