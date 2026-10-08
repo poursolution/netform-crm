@@ -78,7 +78,7 @@
   const q=x.q,now=Date.now(),link=linkOf(q),att=link.same?dealById(link.same):null,conv=!!root.inqCtlConverted(q),step=conv||att?4:!x.assigned?0:!x.first?1:2;
   const hours=Number.isFinite(x.created)?Math.max(0,(now-x.created)/36e5):null;
   const lastAt=x.latest?Date.parse(x.latest.at||x.latest.occurred_at||x.latest.created_at):x.first?Date.parse(x.first):NaN;
-  const sinceLast=Number.isFinite(lastAt)?Math.floor((now-lastAt)/DAY):null;
+  const sinceLast=Number.isFinite(lastAt)?(root.InquiryMemo?root.InquiryMemo.days(lastAt,now):Math.floor((now-lastAt)/DAY)):null;/* 한국 날짜 기준 일수(2026-10-08 inquiry_memo ③) */
   const follow=step>=2&&step<4,meet=step<4?meetOf(q):null,miss=follow?missing(q):[];
   const late=step===0?hours!==null&&hours>ASSIGN_MIN()/60:step===1?hours!==null&&hours>FIRST_H():follow?sinceLast!==null&&sinceLast>FOLLOW_D():false;
   const d=q.detail&&typeof q.detail==='object'?q.detail:{},r=q.raw&&typeof q.raw==='object'?q.raw:{};
@@ -142,7 +142,7 @@
  /* 상단 제목줄(제목 옆): 구글시트 연결 상태 · 고정 문구 — 공통 필터줄의 제목 함수가 이 문자열을 넣는다 */
  function headHtml(){
   const total=(root.B&&Array.isArray(root.B.inquiries)?root.B.inquiries.length:0),syncAt=Date.parse(root.LAST_INQUIRY_SYNC||''),mins=Number.isFinite(syncAt)?Math.max(0,Math.round((Date.now()-syncAt)/6e4)):null;
-  return '<span class="il-sheet"><i></i>구글시트 연결됨'+(mins!==null?' · '+(mins<1?'방금':mins+'분 전')+' 동기화':'')+' · '+total+'건</span><span class="il-fixed">12시까지 결과 · 다음 행동 업데이트</span>';
+  return '<span class="il-sheet"><i></i>구글시트 연결됨'+(mins!==null?' · '+(mins<1?'방금':mins+'분 전')+' 동기화':'')+' · '+total+'건</span><span class="il-fixed"><b>응대는 즉시</b> (배정 '+ASSIGN_MIN()+'분 · 첫 연락 '+FIRST_H()+'시간) · 기록 점검 12시</span>';
  }
  function render(){
   const page=document.getElementById('pg-inq');if(!page)return;let host=document.getElementById('inq-v3');

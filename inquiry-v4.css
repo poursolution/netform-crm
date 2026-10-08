@@ -12,14 +12,14 @@
 #pg-inq.b2b-on>#i4-create-slot{display:none}
 #i4-create-slot .inq-create-trigger{border:0;background:#3b6ce4;color:#fff;font:inherit;font-size:13.5px;font-weight:700;border-radius:8px;padding:8px 14px;margin:0;height:auto;box-shadow:none;cursor:pointer;white-space:nowrap}
 /* 상태 탭 5칸 */
-#inq-v4 .i4-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden}
+#inq-v4 .i4-tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden}
 #inq-v4 .i4-tab{border:0;border-right:1px solid #eef0f3;border-bottom:3px solid transparent;border-radius:0;background:#fff;color:#15171c;text-align:left;padding:10px 16px;display:flex;flex-direction:column;gap:2px;min-width:0}
 #inq-v4 .i4-tab:last-child{border-right:0}
 #inq-v4 .i4-tab.on{background:#f8faff;border-bottom-color:#3b6ce4}
 #inq-v4 .i4-tab>span{display:flex;align-items:baseline;gap:8px;min-width:0}
 #inq-v4 .i4-tab b{font-size:14.5px;white-space:nowrap}
 #inq-v4 .i4-tab b.n{font-size:22px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-#inq-v4 .i4-tab small{font-size:12px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#inq-v4 .i4-tab small{font-size:12px;color:#9ca3af;white-space:normal;line-height:1.35}
 /* 함께 확인 칩 · 건수 · 정렬 */
 #inq-v4 .i4-flags{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 #inq-v4 .i4-flags>.lb{font-size:13px;color:#6b7280}
@@ -42,7 +42,7 @@
 #inq-v4 .i4-none{padding:40px 20px;font-size:13px;color:#6b7280}
 #inq-v4 .i4-list .lpg{padding:8px 12px}
 /* 목록 한 줄 */
-#inq-v4 .i4-row{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) 96px;gap:14px;align-items:center;padding:11px 14px 11px 12px;border-bottom:1px solid #f2f3f6;border-left:3px solid #6b7280;background:#fff;cursor:pointer;outline:0}
+#inq-v4 .i4-row{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.95fr) 190px;gap:14px;align-items:center;padding:11px 14px 11px 12px;border-bottom:1px solid #f2f3f6;border-left:3px solid #6b7280;background:#fff;cursor:pointer;outline:0}
 #inq-v4 .i4-row:hover{background:#f8faff}
 #inq-v4 .i4-row.on{background:#eef3fe}
 #inq-v4 .i4-row:focus-visible{box-shadow:inset 0 0 0 2px #3b6ce4}
@@ -65,10 +65,11 @@
 #inq-v4 .i4-row .last>span{color:#9ca3af}
 #inq-v4 .i4-row .last>i,#inq-v4 .i4-ev>i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#c9cdd5;margin-right:5px;vertical-align:1px}
 #inq-v4 .i4-row .last>i.real,#inq-v4 .i4-ev>i.real{background:#3b6ce4}
-#inq-v4 .i4-row .c3{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
-#inq-v4 .i4-row .c3 span{font-size:11px;color:#6b7280;white-space:nowrap}
-#inq-v4 .i4-row .c3 span:last-child{color:#9ca3af}
-#inq-v4 .i4-row .c3 b{font-size:15px;font-variant-numeric:tabular-nums}
+#inq-v4 .i4-row .c3{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;border-left:1px solid #f0f1f4;padding-left:12px}
+#inq-v4 .i4-row .c3 span{font-size:11.5px;color:#6b7280;overflow-wrap:anywhere}
+#inq-v4 .i4-row .c3 span.g{font-size:11px;color:#6b7280;font-weight:700}
+#inq-v4 .i4-row .c3 span:last-child:not(.g){color:#6b7280}
+#inq-v4 .i4-row .c3 b{font-size:12.5px;line-height:1.35;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 /* 오른쪽 상세 */
 #inq-v4 .i4-dh{padding:16px 20px 12px;border-bottom:1px solid #eef0f3;display:flex;flex-direction:column;gap:8px;position:sticky;top:0;background:#fff;z-index:2}
 #inq-v4 .i4-dh .back{display:none;align-self:flex-start;border:0;background:none;padding:0;color:#2a52b8;font-size:12.5px;font-weight:700}
@@ -79,7 +80,7 @@
 #inq-v4 .i4-dh em{flex:1;font-style:normal}
 #inq-v4 .i4-pill{font-size:12px!important;font-weight:700;border-radius:999px;padding:3px 10px;color:#c0392b!important;background:#fdeceb;white-space:nowrap}
 #inq-v4 .i4-pill.s1,#inq-v4 .i4-pill.s2{color:#b42318!important;background:#fdecec}
-#inq-v4 .i4-pill.s4{color:#4b5563!important;background:#f3f4f6}
+#inq-v4 .i4-pill.s4,#inq-v4 .i4-pill.s5{color:#4b5563!important;background:#f3f4f6}
 #inq-v4 .i4-dh .site{font-size:20px;letter-spacing:-.02em}
 #inq-v4 .i4-dh .r3{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 #inq-v4 .i4-dh .r3>span{font-size:13.5px;color:#374151}
@@ -134,7 +135,7 @@
 /* 노트북: 목록 340px · 가운데 열(고객 · 마지막 기록)은 접는다 */
 @media (max-width:1279px){
  #inq-v4 .i4-panes{grid-template-columns:340px minmax(0,1fr)}
- #inq-v4 .i4-row{grid-template-columns:minmax(0,1fr) 84px;gap:10px}
+ #inq-v4 .i4-row{grid-template-columns:minmax(0,1fr) 150px;gap:10px}
  #inq-v4 .i4-row .c2{display:none}
  #inq-v4 .i4-tab{padding:9px 12px}
 }
@@ -145,9 +146,9 @@
  #inq-v4 .i4-panes.show-detail .i4-list{display:none}
  #inq-v4 .i4-panes.show-detail .i4-detail{display:block}
  #inq-v4 .i4-dh .back{display:block}
- #inq-v4 .i4-row{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) 84px}
+ #inq-v4 .i4-row{grid-template-columns:minmax(0,1.2fr) minmax(0,.95fr) 170px}
  #inq-v4 .i4-row .c2{display:flex}
- #inq-v4 .i4-tabs{grid-template-columns:repeat(5,minmax(132px,1fr));overflow-x:auto}
+ #inq-v4 .i4-tabs{grid-template-columns:repeat(6,minmax(132px,1fr));overflow-x:auto}
 }
 
 /* 결과 두 줄(2026-10-06 design_handoff_followup4) */

@@ -25,7 +25,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     {id:M,site:'[경기 수원] 매탄임광아파트',status:'배정완료',at:at(8),created_at:at(8),brand:'POUR공법',phone:'031-214-7710',contact_name:'관리소장',assignee:'이필선',assigned_to:'이필선',assigned_at:at(7.9),responded_at:at(5),raw:{'문의내용':'외벽 재도장 견적 · 대표회의 전 자료 필요','상담채널':'전화','대표회의':day(2),'고객유형':'관리사무소','건물주소':'수원시 영통구','공사유형':'외벽 재도장','유입경로':'지인 소개','전화 응대자':'송보람'},address:'수원시 영통구',activities:[{type:'전화',note:'견적 범위 확인',at:at(5),actor:'이필선'}]},
     {id:N,site:'[서울 노원] 중계청구3차',status:'배정완료',at:at(2),created_at:at(2),brand:'아파트스퀘어',phone:'02-933-1180',contact_name:'홍성우',assignee:'이필선',assigned_to:'이필선',assigned_at:at(1.9),responded_at:at(1),raw:{'문의내용':'공법 설명 자료 요청','상담채널':'홈페이지'},activities:[{type:'전화',note:'자료 발송 안내',at:at(1),actor:'이필선'}]}],
     activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;G.inqDetailV3Off=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';G.inqV3=null;
+   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;G.inqDetailV3Off=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';G.inqV3=null;G.inqV4={sort:'old'};/* 기본은 급한 순(inquiry_memo) — 이 검사는 오래된 순 기준 */
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op,p)=>{window.__writes.push([op,p]);return 'req-'+window.__writes.length};
    window.__rpc=[];SB={rpc:async(name,args)=>{__rpc.push([name,args]);if(name==='crm_inquiry_field_update_v1'){const p=args.p;return {data:{ok:true,inquiry_id:p.inquiry_id,field:p.field,value:p.value,raw_key:{customer_type:'고객유형',work_type:'공사유형',channel:'상담채널',inflow:'유입경로',responder:'전화 응대자',timing:'공사 시기',competitor:'경쟁사',requested_material:'요청 자료',keyman:'결정권자'}[p.field]||null}};}if(name==='crm_inquiry_site_link_v1'){const p=args.p;return {data:{ok:true,inquiry_id:p.inquiry_id,decision:p.decision,deal_id:p.decision==='same'?p.deal_id:null}};}return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
    window.CRMRelease=Object.assign(window.CRMRelease||{},{has:n=>!/^crm_inquiry_(command|flow_list)_v1$/.test(n),noteMissing:()=>{}});
@@ -39,21 +39,27 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const sites=()=>V.locator('.i4-row .site').evaluateAll(l=>l.map(b=>b.textContent.replace(/^\[[^\]]*\]\s*/,'')));
   /* ① 숫자는 하나: 위 탭 = 브랜드 '전체' = 진행 중 전체 = 목록 건수, 뒤 네 칸의 합 = 전체 */
   assert.deepEqual(await page.evaluate(()=>[document.getElementById('pg-inq').classList.contains('inq-v4'),getComputedStyle(document.getElementById('inq-v3')).display,InquiryV4.on()]),[true,'none',true]);
-  assert.deepEqual((await V.locator('.i4-tab').allInnerTexts()).map(one),['5 진행 중 전체 종결 · 휴지통 제외','1 배정 필요 30분 안에 담당 지정','1 첫 연락 전 배정 후 2시간 안 첫 연락','1 후속 연락 필요 첫 연락 후 7일 넘게 연락 없음','2 정상 진행 마지막 연락 7일 안']);
-  {const n=await tabNums();assert.equal(n[1]+n[2]+n[3]+n[4],n[0],'네 칸의 합 = 진행 중 전체');}
+  assert.deepEqual((await V.locator('.i4-tab').allInnerTexts()).map(one),['5 진행 중 전체 종결 · 휴지통 제외','1 배정 필요 30분 안에 담당 지정','1 첫 연락 전 배정 후 2시간 안 첫 연락','1 후속 연락 필요 첫 연락 후 7일 넘게 연락 없음','2 정상 진행 마지막 연락 7일 안','0 연락처 보완 연락처 찾기 · 이관 기록 확인']);
+  {const n=await tabNums();assert.equal(n[1]+n[2]+n[3]+n[4]+n[5],n[0],'뒤 다섯 칸의 합 = 진행 중 전체');}
   assert.deepEqual(await page.evaluate(()=>[document.querySelector('.b2b-kinds a span').textContent,document.querySelector('.cf-brands .cf-pill em').textContent,[...document.querySelectorAll('.cf-brands .cf-pill em')].slice(1).reduce((s,e)=>s+Number(e.textContent),0),document.querySelector('#inq-v4 .cnt b').textContent]),['5','5',5,'5건']);
   assert.equal(one(await V.locator('.i4-flags .cnt').innerText()),'5건 · 오래된 순 · ↑ ↓ 이동');
   assert.deepEqual((await V.locator('.i4-flag').allInnerTexts()).map(one),['필수정보 미입력 3','대표회의 · 기한 D-3 1','오늘 들어온 문의 1']);
   /* ② 목록 줄: 경과 기준 라벨 + 경과 + 상태(오래된 순) · 꼬리표 · 마지막 기록 점 */
   assert.deepEqual(await sites(),['혁신LH5단지','매탄임광아파트','중계청구3차','한강신도시반도유보라','길음뉴타운9단지']);
-  assert.deepEqual(await V.locator('.i4-row .c3').evaluateAll(l=>l.map(c=>[c.children[0].textContent,c.children[2].textContent])),[['마지막 연락 후','후속 연락 필요'],['마지막 연락 후','정상 진행'],['마지막 연락 후','정상 진행'],['배정 후','첫 연락 전'],['접수 후','배정 필요']]);
-  assert.deepEqual(await V.locator('.i4-row .c3 b').evaluateAll(l=>l.map(b=>b.textContent)),['30일','5일','1일','21시간','3시간']);
-  assert.deepEqual(await rows().evaluateAll(l=>l.map(r=>[...r.querySelectorAll('.i4-tag')].map(t=>t.className.replace('i4-tag ','')+':'+t.textContent).join('|'))),['','meet:대표회의 D-2','','lost:이 단지 실주 1','']);
+     /* 줄 오른쪽 세 줄(2026-10-08 inquiry_memo): 묶음 · 지금 상태 · 기한 — 날짜는 한국 날짜 기준 일수 */
+   {const c3=await V.locator('.i4-row .c3').evaluateAll(l=>l.map(c=>[...c.children].map(x=>x.textContent)));
+    assert.deepEqual(c3.map(x=>x[0]),['③ 후속 기한','② 고객 약속 · 회의','③ 후속 기한','① 신규 첫 연락','① 신규 첫 연락']);
+    assert.match(c3[0][1],/^실제 연결 후 30일 · \d+\.\d+ 통화$/);assert.match(c3[0][2],/^\d+\.\d+까지 · 2\d일 지남$/);
+    assert.match(c3[1][1],/^대표회의 D-2 · \d+\.\d+$/);assert.match(c3[1][2],/^\d+\.\d+까지 · 2일 남음$/);
+    assert.match(c3[2][1],/^실제 연결 후 1일 · \d+\.\d+ 통화$/);assert.match(c3[2][2],/^\d+\.\d+까지 · \d+일 남음$/);
+    assert.match(c3[3][1],/^첫 연락 기한 \d+시간 지남$/);assert.match(c3[3][2],/^\d+\.\d+ \d\d:\d\d까지$/);
+    assert.match(c3[4][1],/^배정 기한 \d+시간 지남$/);}
+assert.deepEqual(await rows().evaluateAll(l=>l.map(r=>[...r.querySelectorAll('.i4-tag')].map(t=>t.className.replace('i4-tag ','')+':'+t.textContent).join('|'))),['','meet:대표회의 D-2','','lost:이 단지 실주 1','']);
   assert.deepEqual(await V.locator('.i4-row .last').evaluateAll(l=>l.map(s=>[s.querySelector('i').className,s.textContent.replace(/^\d{4}\.\d+\.\d+ /,'')])),[['real','실제 연결 · 연결됨 · 첫 연락 — 현장 확인 요청'],['real','실제 연결 · 연결됨 · 견적 범위 확인'],['real','실제 연결 · 연결됨 · 자료 발송 안내'],['','CRM 연락 기록 없음'],['','CRM 연락 기록 없음']]);
   assert.deepEqual(await rows().first().evaluate(r=>[getComputedStyle(r).borderLeftColor,getComputedStyle(r).backgroundColor,r.getAttribute('aria-current')]),['rgb(232, 89, 12)','rgb(238, 243, 254)','true']);
   /* ③ 오른쪽 상세: 고른 줄이 바로 열린다(첫 줄) */
   assert.equal(await det.locator('.i4-dh .site').innerText(),'[경남] 혁신LH5단지');
-  assert.match(one(await det.locator('.i4-pill').innerText()),/^후속 연락 필요 · 마지막 연락 후 30일 \(\d{4}\.\d+\.\d+\)$/);
+  assert.match(one(await det.locator('.i4-pill').innerText()),/^후속 연락 필요 · 실제 연결 후 30일 · \d+\.\d+ 통화$/);
   assert.equal(one(await det.locator('.i4-dh .r1').innerText()).startsWith('석민이앤씨 전화 · 담당 이필선'),true);
   assert.deepEqual((await det.locator('.i4-dh .r3 button').allInnerTexts()).map(one),['전화','문자','전체 상세 ↗']);
   assert.equal(one(await det.locator('.i4-raw').innerText()),'외벽 재도장 · 주차장 · 현장 확인 요청');
@@ -68,7 +74,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await V.locator('[data-i4="tab"][data-v="nofirst"]').click();await page.waitForTimeout(120);
   assert.deepEqual([await sites(),one(await V.locator('.cnt b').innerText()),await det.locator('.i4-dh .site').innerText()],[['한강신도시반도유보라'],'1건','[경기 김포] 한강신도시반도유보라']);
   assert.match(one(await det.locator('.i4-hist').innerText()),/^이 단지 지난 영업 · .*실주/);assert.equal(await det.locator('.i4-hist.lost').count(),1);
-  assert.match(one(await det.locator('.i4-pill').innerText()),/^첫 연락 전 · 배정 후 21시간 \(/);
+  assert.match(one(await det.locator('.i4-pill').innerText()),/^첫 연락 전 · 첫 연락 기한 \d+시간 지남$/);
   await V.locator('[data-i4="tab"][data-v="unassigned"]').click();await page.waitForTimeout(120);
   assert.deepEqual([await sites(),one(await det.locator('.i4-assign').innerText()),await det.locator('[data-i4="save"]').count()],[['길음뉴타운9단지'],'담당이 정해지기 전입니다 — 배정 뒤에 응대 기록을 남깁니다. 담당 배정',0]);
   await V.locator('[data-i4="tab"][data-v="all"]').click();await V.locator('[data-i4="flag"][data-v="meet"]').click();await page.waitForTimeout(120);
@@ -78,9 +84,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await V.locator('[data-i4="sort"][data-v="old"]').click();await page.waitForTimeout(120);
   /* ⑤ 브랜드를 바꾸면 위 탭 · 상태 탭 · 목록이 그 기준으로(브랜드 칩의 건수는 그대로) */
   await page.locator('.cf-brands .cf-pill',{hasText:'석민이앤씨'}).click();await page.waitForTimeout(250);
-  assert.deepEqual(await page.evaluate(()=>[document.querySelector('.b2b-kinds a span').textContent,[...document.querySelectorAll('#inq-v4 .i4-tab b.n')].map(b=>Number(b.textContent)),[...document.querySelectorAll('.cf-brands .cf-pill')].map(b=>b.innerText.replace(/\s+/g,' ').trim()),document.querySelector('#inq-v4 .cnt b').textContent]),['2',[2,0,1,1,0],['전체 5','석민이앤씨 2','POUR솔루션 1','POUR공법 1','아파트스퀘어 1'],'2건']);
+  assert.deepEqual(await page.evaluate(()=>[document.querySelector('.b2b-kinds a span').textContent,[...document.querySelectorAll('#inq-v4 .i4-tab b.n')].map(b=>Number(b.textContent)),[...document.querySelectorAll('.cf-brands .cf-pill')].map(b=>b.innerText.replace(/\s+/g,' ').trim()),document.querySelector('#inq-v4 .cnt b').textContent]),['2',[2,0,1,1,0,0],['전체 5','석민이앤씨 2','POUR솔루션 1','POUR공법 1','아파트스퀘어 1'],'2건']);
   assert.equal(await V.locator('.i4-tab b.n').nth(1).evaluate(b=>b.style.color),'rgb(201, 205, 213)','0은 회색 숫자');
-  await page.locator('.cf-brands .cf-pill',{hasText:'전체'}).click();await page.waitForTimeout(250);assert.deepEqual(await tabNums(),[5,1,1,1,2]);
+  await page.locator('.cf-brands .cf-pill',{hasText:'전체'}).click();await page.waitForTimeout(250);assert.deepEqual(await tabNums(),[5,1,1,1,2,0]);
   /* ⑥ 키보드 ↑ ↓ = 이동(입력 중엔 무시) · 고른 문의가 주소에 남는다 */
   await rows().first().click();await page.waitForTimeout(100);
   await page.evaluate(()=>document.activeElement&&document.activeElement.blur());
@@ -111,7 +117,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 첫 연락 전 탭에서 '연결됨'을 저장하면 그 탭에서 빠진다 */
   await V.locator('[data-i4="tab"][data-v="nofirst"]').click();await page.waitForTimeout(120);
   await det.locator('[data-i4="con"][data-v="연결됨"]').click();await det.locator('[data-i4="rea"][data-v="관심 있음"]').click();await det.locator('[data-i4="save"]').click();await page.waitForTimeout(500);
-  assert.deepEqual([await tabNums(),await rows().count(),one(await det.innerText())],[[5,1,0,1,3],0,'왼쪽에서 문의를 고르면 여기에 열립니다']);
+  assert.deepEqual([await tabNums(),await rows().count(),one(await det.innerText())],[[5,1,0,1,3,0],0,'왼쪽에서 문의를 고르면 여기에 열립니다']);
   await V.locator('[data-i4="tab"][data-v="all"]').click();await page.waitForTimeout(120);
   /* ⑧ 빠진 정보: 누르면 그 자리에서 입력 */
   await rows().first().click();await page.waitForTimeout(100);

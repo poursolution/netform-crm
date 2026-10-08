@@ -23,7 +23,7 @@
   const created=Date.parse(root.inquiryCreatedAt(q)||''),now=Date.now(),ageDays=Number.isFinite(created)?Math.max(0,Math.round((startOfDay(now)-startOfDay(created))/DAY)):null;
   const assigned=root.inquiryAssigned(q),list=contacts(q),latest=list[0],first=root.inqCtlFirstResponseAt(q);
   const lastAt=latest?Date.parse(latest.at||latest.occurred_at||latest.created_at):first?Date.parse(first):Date.parse(root.inquiryAssignedAt?.(q)||'')||created;
-  const silent=Number.isFinite(lastAt)?Math.floor((now-lastAt)/DAY):null;
+  const silent=Number.isFinite(lastAt)?(root.InquiryMemo?root.InquiryMemo.days(lastAt,now):Math.floor((now-lastAt)/DAY)):null;
   const group=!assigned?'assign':silent!==null&&silent>=7?'stale':ageDays===0?'today':'active';
   return {q,key:root.inqKey(q),ageDays,assigned,latest,first,created,group,silent};
  }

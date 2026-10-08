@@ -29,8 +29,8 @@
   const created=Date.parse(root.inquiryCreatedAt(q)||''),handed=!!root.inqCtlConverted(q),att=attachedOf(q),first=root.inqCtlFirstResponseAt(q);
   const step=handed||att?4:!root.inquiryAssigned(q)?0:!first?1:2;
   let last=first?Date.parse(first):NaN;acts(q).forEach(a=>{const e=parseEntry(a);if(e&&(e.kind==='contact'||e.kind==='work')){const t=Date.parse(e.at);if(Number.isFinite(t)&&(!Number.isFinite(last)||t>last))last=t;}});
-  const since=Number.isFinite(last)?Math.floor((Date.now()-last)/DAY):null,elapsed=Number.isFinite(created)?span(Date.now()-created):'';
-  return {step,handed,att,closed:closedStatus(q),created,since,elapsed,days:Number.isFinite(created)?Math.floor((Date.now()-created)/DAY):null};
+  const IM=root.InquiryMemo,since=Number.isFinite(last)?(IM?IM.days(last,Date.now()):Math.floor((Date.now()-last)/DAY)):null,elapsed=Number.isFinite(created)?span(Date.now()-created):'';
+  return {step,handed,att,closed:closedStatus(q),created,since,elapsed,days:Number.isFinite(created)?(IM?IM.days(created,Date.now()):Math.floor((Date.now()-created)/DAY)):null};
  }
  // Read-only projection of source responses; never infer a call or its author.
  function externalResponses(q){
