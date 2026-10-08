@@ -16,7 +16,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
   const page=await ctx.newPage();page.on('pageerror',e=>errs.push(String(e.message||e)));
-  await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.DealDetailV3&&window.SiteHistory&&window.DealTransfer&&window.DealKeyman&&window.DealPanelsV2&&window.OpsStore&&window.ListPager);
+  await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.DealDetailV3&&window.SiteHistory&&window.DealTransfer&&window.DealKeyman&&window.DealPanelsV2&&window.OpsStore&&window.ListPager);await page.evaluate(()=>{window.G=window.G||{};G.dealSameOff=true;});/* 2026-10-08 같은 정보 같은 판단 층은 끄고 본다 */
   await page.evaluate(()=>{
    const day=n=>new Date(Date.now()+n*864e5).toLocaleDateString('en-CA'),at=n=>new Date(Date.now()+n*864e5).toISOString();
    const S='aaaaaaaa-0000-4000-8000-000000000001';window.DAY=day;

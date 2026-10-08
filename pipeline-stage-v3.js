@@ -119,7 +119,7 @@
      끝난 상태의 업무(계약 체결 확인)는 종료 대상으로 표시(실제로는 단계가 바뀔 때 서버가 열린 업무를 닫는다) · 진단 '시공 중 방문 없음'은 시공 중 칸과 같은 조건 */
   const startOf=it=>String(it.values.startDate||'').slice(0,10);
   const started=it=>{const s=startOf(it),n=s?days(s):null;return n!==null&&n<=0;};
-  const infoMiss=it=>!it.values.contractDate||!it.values.contractAmount;
+  const infoMiss=it=>!it.values.contractDate||!it.values.contractAmount,proofMiss=it=>!infoMiss(it)&&it.values.contractProof==='check';
   const STALE=/계약\s*체결\s*확인|계약\s*확인/;
   return {name:'계약 · 시공',goal:goalOf(key,14),desc:'계약 체결 → 착공 준비 → 시공 중(착공일 입력 후 주 1회 현장 방문) → 준공 확인 · 계약일만으로 시공 중으로 보지 않음',
    tabs:[['계약 체결','계약일 · 금액 · 계약서'],['착공 준비','착공일 미입력 · 착공일 확인'],['시공 중','착공일 입력 후 · 주 1회 방문'],['준공 확인','준공검사 · 고객 확인']],
@@ -128,11 +128,13 @@
    todo:'계약정보가 빠진 건은 오늘 입력하세요. 실적 · 인센티브 계산에 바로 쓰입니다. 착공일이 입력돼야 시공 중이 되며, 착공한 현장은 주 1회 현장 방문을 기록하세요.',
    tab:it=>(it.row.code==='completion'||it.values.completionDate)?3:(it.row.code==='construction'&&!infoMiss(it))?(started(it)?2:1):0,
    redOf:(it,t)=>t===0&&infoMiss(it),/* 빨강 = 계약 정보가 빠진 건만(계약 체결 중인 정상 건은 빨강 아님) */
-   taskOf:x=>x.tab===0?(infoMiss(x.it)?'계약 정보 입력':'계약 체결 확인'):x.tab===1?(startOf(x.it)?'착공 준비':'착공일 확인'):x.tab===2?'주간 현장 방문':'준공 확인',
-   btnOf:x=>x.tab===0?(infoMiss(x.it)?['정보 입력','stagefields']:['계약 확인','stagefields']):x.tab===1?(startOf(x.it)?['착공 준비','stagefields']:['착공일 입력','stagefields']):x.tab===2?['현장 확인','activity']:['준공 확인','stage'],
+   nowOf:x=>{const names=['계약 체결','착공 준비','시공 중','준공 확인'];if(x.tab>0)return [names[x.tab],x.sub].filter(Boolean).join(' · ');const head=infoMiss(x.it)?'계약일 · 금액 없음':((root.DealSame&&root.DealSame.on()?root.DealSame.contract(x.row.item).text:'')||'계약 체결 확인 중');return [head,x.sub&&x.sub!==head?x.sub:''].filter(Boolean).join(' · ');},
+    issueOf:x=>x.tab===0?(infoMiss(x.it)?'계약일 · 금액 없음':(root.DealSame&&root.DealSame.on()?root.DealSame.contract(x.row.item).text:'')||'계약 체결 확인 중'):[['계약 체결','계약일 · 금액 · 계약서'],['착공 준비','착공일 미입력 · 착공일 확인'],['시공 중','착공일 입력 후 · 주 1회 방문'],['준공 확인','준공검사 · 고객 확인']][x.tab][1],/* 같은 정보 같은 판단: 입력된 계약 정보는 그대로 보이고 증빙만 '확인 필요'(2026-10-08) */
+    taskOf:x=>x.tab===0?(infoMiss(x.it)?'계약 정보 입력':proofMiss(x.it)?'계약서 확인':'계약 체결 확인'):x.tab===1?(startOf(x.it)?'착공 준비':'착공일 확인'):x.tab===2?'주간 현장 방문':'준공 확인',
+   btnOf:x=>x.tab===0?(infoMiss(x.it)?['정보 입력','stagefields']:proofMiss(x.it)?['계약서 확인','stagefields']:['계약 확인','stagefields']):x.tab===1?(startOf(x.it)?['착공 준비','stagefields']:['착공일 입력','stagefields']):x.tab===2?['현장 확인','activity']:['준공 확인','stage'],
    rowOpts:x=>{const nx=x.row.next&&x.row.next.text?String(x.row.next.text):'';return x.tab>0&&STALE.test(nx)?{forceTask:true,staleNext:'"'+nx.trim()+'" 종료 대상'}:{};},
    has:{cinfo:(it,t)=>t===0&&infoMiss(it),nostart:(it,t)=>t===1&&!startOf(it),handoff:(it,t)=>(t===1||t===2)&&it.rs.includes('handoff'),site7:(it,t)=>t===2&&it.rs.includes('site7'),nofin:(it,t)=>t===3&&!finOk(it)},
-   sub:(it,t)=>t===0?(!it.values.contractDate&&!it.values.contractAmount?'계약일 · 금액 미입력':!it.values.contractDate?'계약일 미입력':!it.values.contractAmount?'계약금액 미입력':'계약 체결 확인 중'):t===1?(startOf(it)?'착공 '+ymd(startOf(it))+' 예정':'착공일 미입력'):it.sub};
+   sub:(it,t)=>t===0?(!it.values.contractDate&&!it.values.contractAmount?'계약일 · 금액 미입력':!it.values.contractDate?'계약일 미입력':!it.values.contractAmount?'계약금액 미입력':proofMiss(it)?'계약 정보 입력됨 · 증빙 확인 필요':'계약 체결 확인 중'):t===1?(startOf(it)?'착공 '+ymd(startOf(it))+' 예정':'착공일 미입력'):it.sub};
  }
  /* 줄마다 상태(탭) · 걸린 사유를 붙인다. 정렬: 빨강 상태 → 다음 상태 → 체류 긴 순 */
  function model(key,list){

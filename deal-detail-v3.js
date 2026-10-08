@@ -15,7 +15,9 @@
  const h=v=>root.esc(String(v==null?'':v)),attr=v=>root.escAttr(String(v==null?'':v));
  const el=(tag,cls,html)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(html!=null)n.innerHTML=html;return n;};
  const enabled=()=>!root.G.dealDetailV3Off&&!root.G.dealDetailV2Off;
- const tidy=()=>enabled()&&!root.G.dealTidyOff;/* 정돈안(2026-10-06 design_handoff_deal_detail_tidy) — 끄기: G.dealTidyOff=true */
+ const tidy=()=>enabled()&&!root.G.dealTidyOff;
+  /* 같은 정보 같은 판단(2026-10-08 design_handoff_deal_same_info · deal-same.js) — 정돈안 위에: 머리 둘째 줄 · 이력 탭 · 등록된 다음 업무 · 빠진 정보 · 6줄. 끄기: G.dealSameOff=true */
+  const same=()=>tidy()&&!root.G.dealSameOff&&!!root.DealSame&&root.DealSame.on();/* 정돈안(2026-10-06 design_handoff_deal_detail_tidy) — 끄기: G.dealTidyOff=true */
  const view=()=>$('detailView');
  const ymd=v=>String(v||'').slice(0,10),md=v=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(ymd(v));return m?Number(m[2])+'/'+Number(m[3]):'';};
  let pending=null;/* {slot, at} — 방금 누른 자리 */
@@ -322,7 +324,13 @@
   if(form&&!form.classList.contains('dv3-enh'))enhanceMove(form,d);
  }
  const BRAND={'석민이앤씨':'#e8590c','POUR솔루션':'#1f9d55','POUR공법':'#7048e8','아파트스퀘어':'#3b6ce4'};
- function buildHead(v,d,closed){
+ /* 머리: 담당은 누르면 담당 정보(최초 연락 · 실적 귀속 · 변경 이력) · 둘째 줄 = 영업 경로 · 낙찰(확정) · 기술자문(확정) · 예상(참고) · 기존 고객 */
+  function sameLead(lead,d){
+   return lead.replace(/<span class="tx">([\s\S]*?)<\/span>/,(m,t)=>'<span class="tx dvs-own" data-dv3="owner" role="button" tabindex="0" title="담당자 변경 · 최초 연락 · 실적 귀속 · 변경 이력">'+t.replace(/ · 예상 금액 [^·<]*/,'')+'</span>').replace(/<span class="dvt-won">[\s\S]*?<\/span>/,'');
+  }
+  function wonInfo(d){try{const SH=root.SiteHistory;if(!(SH&&SH.enabled()))return null;const rows=SH.rowsOf(d).filter(r=>!r.cur&&r.tag==='수주');if(!rows.length)return null;const w=wonRow(d);return {year:w&&w.ym?w.ym.split('.')[0]:'',n:rows.length};}catch(e){return null;}}
+  function l2html(d){const b=String(d.brand||'').trim();return root.DealSame.line2(d,{brand:b,color:BRAND[b]||'#15171c',won:wonInfo(d)});}
+  function buildHead(v,d,closed){
   const top=v.querySelector('.detailtop'),sub=$('dv-sub');if(!top||!sub)return;
   /* 과거 이관 · 분류 전(PipelineScope): 아직 어느 단계도 아니다 — '컨설팅 설계'라고 적지 않고, [단계 바꾸기] 대신 [영업 재개](서버에 저장된 예전 단계 값에서 출발) */
   const S=st(d),PSC=root.PipelineScope,legacy=!closed&&!!(PSC&&PSC.on()&&PSC.isLegacy(d)),from=legacy?(PSC.fromCode?PSC.fromCode(d):PSC.rawCode(d)):root.dealStage(d),T=root.StageTransition,P=root.PipelineStages;let choices=[];try{choices=closed||!T||(legacy&&!from)?[]:T.choices(from);}catch(e){}
@@ -337,9 +345,9 @@
   let age=null;try{age=legacy?null:typeof root.stageAge==='function'?root.stageAge(d):null;}catch(e){}
   const amt=Number(d.amount??d.amt??0),hint=closed?null:ruleHint(d);
   const wonR=tidy()?wonRow(d):null,lead=tidy()
-   ?'<span class="dv3-stagebadge"'+(sname&&sname!==gname?' title="'+attr(sname)+'"':'')+'>'+h(gname+(age!=null&&!closed?' · '+age+'일째':''))+'</span><span class="tx">'+h('담당 '+(root.repN(d.assignee)||'미배정')+' · '+(amt>0?'예상 금액 '+root.fmtAmt(amt):'예상 금액 미정')+(legacy&&sname?' · '+sname:'')/* 과거 이관 건: 꼬리표가 단계가 아니므로 예전 단계 이름을 여기 남긴다 */)+'</span>'+(wonR?'<span class="dvt-won">✓ 기존 고객 · '+h(wonR.ym?wonR.ym+' ':'')+'수주 완료</span>':'')+(hint&&hint.red?'<b class="over" hidden>· '+h(hint.why)+'</b>':'')/* 사유 문장은 오른쪽 '지금 할 일'에만 보인다 — 문자 창(deal-sms-v2)이 읽는 자리는 남긴다 */
+   ?'<span class="dv3-stagebadge"'+(sname&&sname!==gname?' title="'+attr(sname)+'"':'')+'>'+h(gname+(age!=null&&!closed&&!same()?' · '+age+'일째':''))+'</span><span class="tx">'+h('담당 '+(root.repN(d.assignee)||'미배정')+' · '+(amt>0?'예상 금액 '+root.fmtAmt(amt):'예상 금액 미정')+(legacy&&sname?' · '+sname:'')/* 과거 이관 건: 꼬리표가 단계가 아니므로 예전 단계 이름을 여기 남긴다 */)+'</span>'+(wonR?'<span class="dvt-won">✓ 기존 고객 · '+h(wonR.ym?wonR.ym+' ':'')+'수주 완료</span>':'')+(hint&&hint.red?'<b class="over" hidden>· '+h(hint.why)+'</b>':'')/* 사유 문장은 오른쪽 '지금 할 일'에만 보인다 — 문자 창(deal-sms-v2)이 읽는 자리는 남긴다 */
    :'<span class="dv3-stagebadge">'+h(gname)+'</span><span class="tx">'+h(['담당 '+(root.repN(d.assignee)||'미배정'),amt>0?'예상 금액 '+root.fmtAmt(amt):'예상 금액 미입력',(sname&&sname!==gname?sname:gname)+(age!=null&&!closed?' '+age+'일째':'')].join(' · '))+'</span>'+(hint&&hint.red?'<b class="over">· '+h(hint.why)+'</b>':'');
-  const html=lead+'<i></i><div class="dv3-headact">'+(choices.length?'<button type="button" class="mv" data-dv3="mv" aria-expanded="'+!!S.mvOpen+'">'+S.mvLabel+' '+(S.mvOpen?'▴':'▾')+'</button>':legacy?'<button type="button" class="mv" disabled title="서버에 단계 값이 비어 있는 자료입니다 — 서버 보완 뒤에 영업 재개를 할 수 있습니다">영업 재개</button>':'')+'<button type="button" data-dv3="owner">담당자 변경</button></div>';
+  const lead2=same()?sameLead(lead,d):lead,html=lead2+'<i></i><div class="dv3-headact">'+(choices.length?'<button type="button" class="mv" data-dv3="mv" aria-expanded="'+!!S.mvOpen+'">'+S.mvLabel+' '+(S.mvOpen?'▴':'▾')+'</button>':legacy?'<button type="button" class="mv" disabled title="서버에 단계 값이 비어 있는 자료입니다 — 서버 보완 뒤에 영업 재개를 할 수 있습니다">영업 재개</button>':'')+'<button type="button" data-dv3="owner">담당자 변경</button></div>'+(same()?l2html(d):'');
   if(row.dataset.h!==html){row.innerHTML=html;row.dataset.h=html;}
   /* 단계 바꾸기 창은 가운데 칸 위에 띄운다(2026-10-04 대표: 위에 끼우면 아래가 밀려 내려가 이상함). 가운데 칸이 없으면 예전처럼 머리 아래 */
   let band=v.querySelector('.dv3-move');const mvHost=v.querySelector('.dw-center')||top;
@@ -409,7 +417,13 @@
    if(meta&&m.dataset.dv3k!==kind){m.dataset.dv3k=kind;meta.querySelector('.dv3-kind')?.remove();const k=el('i','dv3-kind');k.textContent=KIND[kind];meta.prepend(k);}
   });
   const head=sec.querySelector('.idv-chead');
-  if(head){const hh='<b>응대 이력</b><span>'+msgs.length+'건</span><span class="cnt">연락 시도 <b>'+tries+'</b> · 실제 연결 <b>'+conn+'</b></span>';if(head.dataset.h!==hh){head.innerHTML=hh;head.dataset.h=hh;}}
+  if(head){let hh='<b>응대 이력</b><span>'+msgs.length+'건</span><span class="cnt">연락 시도 <b>'+tries+'</b> · 실제 연결 <b>'+conn+'</b></span>';
+    if(same()){/* 고객 접촉 / 내부 변경 분리 · 기본 '고객 접촉' · 접촉 수 = 고객 접촉만 */
+     const H=st(d).hist||'cust',cc=msgs.filter(m=>m.dataset.dv3k==='touch').length;
+     hh='<b>응대 이력</b>'+root.DealSame.histBar({all:msgs.length,cust:cc,sys:msgs.length-cc,tries,conn},H);
+     let shown=0;msgs.forEach(m=>{const t=m.dataset.dv3k==='touch',hide=H==='cust'?!t:H==='sys'?t:false;m.classList.toggle('dvs-hide',hide);if(!hide)shown++;});
+     let hn=sec.querySelector('.dvs-hnone');if(msgs.length&&!shown){if(!hn){hn=el('p','dvs-hnone');const th=sec.querySelector('.idv-thread');if(th)th.after(hn);else sec.append(hn);}hn.textContent=H==='cust'?'고객 접촉 기록이 없습니다 — 아래에 연락 결과를 적으면 여기 쌓입니다':'내부 변경 기록이 없습니다';}else if(hn)hn.remove();
+    }if(head.dataset.h!==hh){head.innerHTML=hh;head.dataset.h=hh;}}
   if(tidy()){const none=sec.querySelector('.ddv-nothing'),t='아직 없습니다. 아래에 첫 연락 결과를 적으면 여기 쌓입니다.';if(none&&none.textContent!==t)none.textContent=t;}
   const box=sec.querySelector('#ddvComposer');if(!box||closed)return;
   if(!box.dataset.dv3){
@@ -517,7 +531,43 @@
  const syncFilesLabel=v=>{const d=root.CUR_DETAIL?.item,b=v.querySelector('.dv3-left [data-dv3="files"]'),t=(d&&st(d).files)||v.querySelector('.dv3-slot[data-slot="files"]>*')?'접기':'자료 보기';if(b&&b.textContent!==t)b.textContent=t;};
  /* ── 오른쪽 ── */
  function ensureSlot(after,name){if(!after)return;const nx=after.nextElementSibling;if(nx&&nx.classList.contains('dv3-slot')&&nx.dataset.slot===name)return;after.parentElement.querySelectorAll(':scope>.dv3-slot[data-slot="'+name+'"]').forEach(n=>{if(!n.children.length)n.remove();});const s=el('div','dv3-slot');s.dataset.slot=name;after.after(s);}
- function buildRight(v,d,closed){
+ /* 같은 정보 같은 판단 · 오른쪽: 이 단계 필수 정보를 '빠진 정보 n'(입력된 것은 회색 한 줄)으로 — 접는 곳 없음 · 입력 칸은 그대로(Enter · 바깥 클릭 = 저장) */
+  function sameStage(box,d,h3,closed,sc,total){
+   const S=st(d),DS=root.DealSame,cs=DS.contract(d),W=DS.winInfo(d),missing=[],filled=[];
+   [...box.querySelectorAll('.dv3-row')].forEach(row=>{
+    const sp=row.querySelector(':scope>span'),label=sp?sp.textContent.trim():'',val=row.querySelector(':scope>.dv3-val,:scope>b');
+    if(label==='특이조건'){row.remove();return;}
+    if(row.querySelector('input,select,.dv3-multi')){missing.push({row,label});return;}
+    let empty=!val||val.classList.contains('empty')||/^미입력/.test(String(val.textContent||'').trim());
+    if(label==='계약서'&&!cs.proof){empty=true;if(sp)sp.textContent='계약서 파일';if(val&&val.classList){val.textContent='미첨부';val.classList.add('empty');}}
+    if(empty){missing.push({row,label:label==='계약서'?'계약서 파일':label});return;}
+    const b=val&&val.tagName==='BUTTON'?'<button type="button" class="dvs-fl" data-dv3="'+attr(val.dataset.dv3||'')+'" data-key="'+attr(val.dataset.key||'')+'" data-label="'+attr(val.dataset.label||label)+'" title="'+attr(label+' · '+val.textContent.trim())+'">'+h(label)+'</button>':'<span class="dvs-fl" title="'+attr(label+' · '+(val?val.textContent.trim():''))+'">'+h(label)+'</span>';
+    filled.push(b);row.remove();
+   });
+   const code=sc?sc.code:'',spOn=code==='contract',sp0=DS.special(d),spMiss=spOn&&sp0.v==='확인 필요';
+   if(W.award&&W.award.company)filled.push('<span class="dvs-fl">낙찰사</span>');
+   if(W.tech)filled.push('<span class="dvs-fl">기술자문</span>');
+   if(d.assignee)filled.push('<span class="dvs-fl">담당</span>');
+   const n=missing.length+(spMiss?1:0);
+   S.req={miss:missing.map(x=>x.label).concat(spMiss?['특이조건']:[]),total:total+(spOn?1:0)};
+   box.querySelectorAll(':scope>.dvs-ok,:scope>.dvs-sp').forEach(x=>x.remove());
+   if(filled.length)box.insertAdjacentHTML('beforeend','<div class="dvs-ok"><span>입력됨</span>'+filled.join('<i>·</i>')+'</div>');
+   if(spOn)box.insertAdjacentHTML('beforeend',DS.specialHtml(d,closed,S.sedit==='special_terms',S.sdraft));
+   if(h3)h3.innerHTML='빠진 정보'+(n?' <span class="dvt-cnt">'+n+'</span>':' <span class="dvt-cnt ok">없음</span>');
+   box.classList.add('dvs-stage');
+  }
+  /* 같은 정보 같은 판단 · 오른쪽 맨 위: 등록된 다음 업무(업무 · 기한 · 확인됨 · 확인할 것 · 완료 조건) + [연락하기][결과 기록][다음 업무] + 지침 · 추천 보조 줄. 기존 '지금 할 일' 카드는 숨기고 단추 동작은 그대로 쓴다 */
+  function sameRight(v,d,closed,r){
+   const S=st(d),DS=root.DealSame,now=r.querySelector('#nowCard');
+   let tk=r.querySelector(':scope>.dvs-task');if(!tk)tk=el('section','dvs-task dv3-made');if(r.firstElementChild!==tk)r.prepend(tk);
+   const ci=contacts(d).ci,hint=closed?null:ruleHint(d);let reco='';
+   try{const K=root.DealKeyman&&root.DealKeyman.ai&&aiOn()?root.DealKeyman.ai(d):null,nx=K&&K.next;if(nx)reco=nx.how+' · '+nx.what+' · '+(nx.days===0?'오늘':nx.days+'일 뒤')+' (AI)';}catch(e){}
+   const nextHtml=S.nextOpen?'<div class="dv3-nextonly"><span>다시 연락</span>'+[['내일',1],['3일 후',3],['7일 후',7]].map(([l,n])=>'<button type="button" data-dv3="nextpick" data-v="'+n+'"'+(S.nbusy?' disabled':'')+'>'+l+'</button>').join('')+(S.nextDate?'<input type="date" data-dv3-nextdate min="'+KST(0)+'" aria-label="다음 연락 날짜"'+(S.nbusy?' disabled':'')+'>':'<button type="button" class="lnk" data-dv3="nextmore">직접 정하기</button>')+'<button type="button" class="lnk gray" data-dv3="nextcancel">취소</button></div>':'';
+   const html=DS.taskHtml(d,{closed,tel:!!ci.mobile,calling:!!S.calling,req:S.req,guide:String(root.dealStage(d))==='contract'?String(((root.CRMRules&&root.CRMRules.PHASE4&&root.CRMRules.PHASE4.playbook_tips)||{}).con||''):(hint?(hint.todo||hint.why):''),reco,nextHtml});
+   if(tk.__h!==html){tk.__h=html;tk.innerHTML=html;}
+   if(now)now.classList.add('dv3-old');
+  }
+  function buildRight(v,d,closed){
   const r=v.querySelector('.dw-right');if(!r)return;
   const now=r.querySelector('#nowCard'),chg=root.DealKeyman&&root.DealKeyman.enabled()?root.DealKeyman.changeOf(d):null;
   r.querySelectorAll(':scope>.dk-now').forEach(n=>n.classList.add('dv3-old'));
@@ -607,13 +657,14 @@
      box.innerHTML=opened?core.map(x=>fieldRow(d,x,closed,true)).join('')+(core.length?'<div class="dv3-slot" data-slot="site"></div>':'')+html:'<span class="dvt-reqlist">'+h(missL.length?missL.join(' · '):'모두 채웠습니다')+'</span>';
      box.classList.toggle('dvt-closed',!opened);
      keep.forEach(([name,nodes])=>{const s=box.querySelector('.dv3-slot[data-slot="'+name+'"]');if(s)nodes.forEach(n=>s.append(n));});
-     if(h3)h3.innerHTML='이 단계 필수 정보'+(T?' <span class="dvt-cnt'+(miss?'':' ok')+'">'+(total-miss)+' / '+total+'</span>':(miss?' <span class="dv3-miss">미입력 '+miss+'</span>':''));}
+     if(same()&&!closed&&!v.classList.contains('dv3-legacy')){sameStage(box,d,h3,closed,sc,total);}else if(h3)h3.innerHTML='이 단계 필수 정보'+(T?' <span class="dvt-cnt'+(miss?'':' ok')+'">'+(total-miss)+' / '+total+'</span>':(miss?' <span class="dv3-miss">미입력 '+miss+'</span>':''));}
    /* 과거 이관 건은 아직 단계가 없다 — 제목만 바꾼다 */if(h3&&h3.firstChild&&v.classList.contains('dv3-legacy'))h3.firstChild.textContent='영업 재개 전 확인할 정보';
    sum.classList.toggle('dv3-old',!rows.length&&!core.length);
    ensureSlot(sum,'stage');
    /* 결정 일정 · 협업 상자(decision-collab.js): 필수 정보 아래 */try{root.DecisionCollab&&root.DecisionCollab.mount(r,d,sum.nextElementSibling&&sum.nextElementSibling.classList.contains('dv3-slot')?sum.nextElementSibling:sum);}catch(e){}
   }
-  /* 단계 바꾸기 카드는 오른쪽에서 빼고 창 머리글로 */
+  if(same()&&!closed&&!v.classList.contains('dv3-legacy'))sameRight(v,d,closed,r);else{const tk=r.querySelector(':scope>.dvs-task');if(tk)tk.remove();if(now)now.classList.remove('dv3-old');}
+   /* 단계 바꾸기 카드는 오른쪽에서 빼고 창 머리글로 */
   r.querySelectorAll(':scope>.ddv-switch').forEach(n=>n.classList.add('dv3-old'));
  }
  /* ════ 정돈안(2026-10-06 design_handoff_deal_detail_tidy · 시안 '영업건 상세 정돈안') — 배치만 정리한다. 저장 경로 · 단계 흐름 · 자료는 그대로. 끄기: G.dealTidyOff=true ════
@@ -816,7 +867,11 @@
   if(a==='mv'){const S=st(d);closeIn('center');if(S.peek){S.peek='';peekSync(view(),d);}S.mvOpen=!S.mvOpen;if(!S.mvOpen&&document.getElementById('stage-transition-form'))root.StageTransitionUI?.close();syncMove(view());return;}
   if(a==='mvpick'&&b.dataset.stage==='won'&&root.DealWin&&root.DealWin.enabled()&&root.DealWin.intercept(d))return;
   if(a==='mvpick'){if(b.getAttribute('aria-disabled')==='true'){if(!b.classList.contains('cur'))toast(b.dataset.stage==='won'?(root.PipelineStages.group(root.dealStage(d))==='construction'?'수주는 준공 처리 뒤에 옮길 수 있습니다 — 「계약·시공」 옆의 [→ 준공]을 먼저 눌러 주세요':'수주는 준공 단계에서만 옮길 수 있습니다 — 먼저 계약·시공으로 옮겨 주세요'):'지금 단계에서는 바로 옮길 수 없는 단계입니다','warn');return;}if(b.getAttribute('aria-pressed')==='true')return;pickStage(d,b.dataset.stage,b.dataset.code);return;}
-  if(a==='owner'){if(centerToggle('owner'))return;root.DetailActions.open('owner');return;}
+  if(a==='htab'){st(d).hist=b.dataset.v;apply();return;}
+   if(a==='callnow'){try{root.contactDial('mobile');}catch(err){}startCall(d,true);return;}
+   if(a==='spick'){const S=st(d);S.sedit='special_terms';S.sdraft='';commitStage(d,'special_terms',b.dataset.v);return;}
+   if(a==='sptext'){const S=st(d);S.sedit='special_terms';S.sdraft=root.DealSame.special(d).text;apply();return;}
+   if(a==='owner'){if(centerToggle('owner'))return;root.DetailActions.open('owner');return;}
  }
  /* 목록 · 다른 화면의 버튼([미팅 잡기] · [확인 연락] · [견적 요청] · [단계 판단] …)이 이 창을 열 때: 예전 입력 창이 아니라 이 창의 자리로 간다
     (2026-10-05 대표 "미팅 잡기 누르면 최근에 만들어놨던 걸로 연결" · "이전 버전은 내 눈에 안 띄게").
@@ -896,5 +951,5 @@
  document.addEventListener('click',onClick);
  root.DealDetailV3={enabled,apply,related,siteFields,stageSchema,record:recordOutside,memo:memoOutside,next:nextOutside,stageFields:stageFieldsOutside,NXT,openFrom,
   refreshCenter(){const d=root.CUR_DETAIL?.kind==='deal'&&root.CUR_DETAIL.item,v=view();if(d&&v&&enabled())buildCenter(v,d,!!d.outcome||d.lifecycle_status==='closed');},
-  tidy,wonRow,peek:setPeek,peekOf:d=>(d&&ST[d.id]&&ST[d.id].peek)||'',canReplace:d=>!!d&&!isClosed(d)&&!!contacts(d).ci.mobile,replace:()=>{const d=root.CUR_DETAIL?.item;if(d&&!isClosed(d)&&contacts(d).ci.mobile)doReplace(d);}};/* record · memo · NXT 는 오늘 업무 실행 모드가 쓴다 */
+  tidy,same,wonRow,peek:setPeek,peekOf:d=>(d&&ST[d.id]&&ST[d.id].peek)||'',canReplace:d=>!!d&&!isClosed(d)&&!!contacts(d).ci.mobile,replace:()=>{const d=root.CUR_DETAIL?.item;if(d&&!isClosed(d)&&contacts(d).ci.mobile)doReplace(d);}};/* record · memo · NXT 는 오늘 업무 실행 모드가 쓴다 */
 })(window);

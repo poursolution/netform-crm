@@ -57,7 +57,7 @@
   let lastDays=null,relDays=null,stAge=null;if(deal){try{lastDays=root.activityAge(d);}catch(e){}if(lastDays===null||lastDays===0){const s=since(d.last_activity_at||d.lastActivity||d.last_worked_at||'');if(s!==null&&s>(lastDays||0))lastDays=s;}try{relDays=root.relationshipMeta(d).days;}catch(e){}try{stAge=root.stageAge(d);}catch(e){}}
   const sentDays=code==='sent'?since(f['sent.sent_date']):null;/* 2026-10-07 kpi_measure: 발송일이 있는 건만 7일 판정(PipelineJudge 와 같은 기준) — 없으면 단계 체류일로 대신하지 않는다 */
   const support=deal&&team?openSupport(d):null;
-  const contractMissing=['contract','construction'].includes(code)&&!((f['contract.contract_date']||d.contract_date)&&(f['contract.contract_amount']||d.contract_amount||d.won_amount));
+  const cs0=root.DealSame&&root.DealSame.on()?root.DealSame.contract(d):null,contractMissing=['contract','construction'].includes(code)&&(cs0?cs0.state==='none':!((f['contract.contract_date']||d.contract_date)&&(f['contract.contract_amount']||d.contract_amount||d.won_amount)));
   let rk='',urg='';
   if(support&&role!=='mgr'){rk='decide';urg='now';}
   else if(x.unassigned){if(!team)return null;rk='assign';urg='now';}

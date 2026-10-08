@@ -63,9 +63,9 @@
  function tags(d){
   if(!on()||!d)return {block:'',stale:'',defect:false};
   const L=list(d),block=L.blk?L.blk.who:'';
-  const P=progress(d),T=touches(d),n=T.length,lastP=P.map(x=>x.date).filter(Boolean).sort().pop()||'',lastT=T.map(x=>dayKey(x.at||x.lastAt||'')).filter(Boolean).sort().pop()||'';
+  const DS=root.DealSame&&root.DealSame.on()?root.DealSame:null,LPG=DS?DS.lastProgress(d):null,P=progress(d),T=touches(d),n=T.length,lastP=LPG&&LPG.last?LPG.last.date:P.map(x=>x.date).filter(Boolean).sort().pop()||'',lastT=T.map(x=>dayKey(x.at||x.lastAt||'')).filter(Boolean).sort().pop()||'';
   let stale='';const since=lastP?daysBetween(lastP,today()):(lastT?daysBetween(dayKey(d.created||d.created_at)||lastT,today()):null);
-  if(n>=3&&(!lastP||since>=30)&&since!==null)stale='연락 '+n+'회 · 진척 없음 '+since+'일';
+  /* 2026-10-08 같은 정보 같은 판단: 단계 이동 · 낙찰 · 계약 체결도 진척 · '진척 없음 n일' 대신 마지막 진척 날짜 · 내용 */if(n>=3&&(!lastP||since>=30)&&since!==null)stale=DS?'연락 '+n+'회 · '+(LPG.last?'마지막 진척 '+md(lastP)+' · '+LPG.last.text:'진척 기록 없음'):'연락 '+n+'회 · 진척 없음 '+since+'일';
   return {block,stale,defect:L.def.some(x=>x.state==='미해결'),blk:L.blk};
  }
  const openDefect=d=>list(d).def.find(x=>x.state==='미해결')||null;
@@ -125,16 +125,59 @@
    +'<h4>정보 확인 상태</h4>'+info
    +'<h4>바꾼 기록 · 전후 비교 · 되돌리기</h4>'+chg+(S.err?'<p class="dcb-err">'+h(S.err)+'</p>':'');
  }
+ /* ── 같은 정보 같은 판단(2026-10-08 design_handoff_deal_same_info): 오른쪽 아래 6줄 — 일정 · 막힌 곳 · 진척 · 특이조건 · 하자 · 출처 · (근처 현장은 상세가 붙인다).
+     접는 곳 없이 이름과 내용을 한 줄씩 늘 펼쳐 둔다(일정 · 막힌 곳만 빨강). 입력 칸 · 단추는 위 html() 과 같은 data-dc 를 쓴다 — 저장 경로는 그대로 */
+  function htmlSame(d){
+   const DS=root.DealSame,L=list(d),T=today(),S=st(d),code=String(root.dealStage?root.dealStage(d):''),LP=DS.lastProgress(d),sp=DS.special(d),TC=touches(d),CH=changes(d),I=infoRows(d),W=decWaiting(d);
+   const cx=d.stage_contexts||{},startOk=!!((cx.construction&&cx.construction.fields&&cx.construction.fields.start_date)||d.start_date);
+   const row=(label,hot,main,sub,more)=>'<div class="dvs-row'+(hot?' hot':'')+'"><b>'+h(label)+'</b><div class="bd"><span class="m">'+main+'</span>'+(sub?'<small>'+sub+'</small>':'')+(more||'')+'</div></div>';
+   const add=(a,t)=>'<button type="button" class="dcb-add" data-dc="'+a+'">'+t+'</button>';
+   /* 일정 */
+   const decs=L.dec.map(x=>{const past=/^\d{4}-\d{2}-\d{2}$/.test(x.date)&&x.date<T;return '<small class="dd'+(past?' past':'')+'">'+h((/^\d{4}-\d{2}/.test(x.date)?md(x.date):x.date)+' · '+x.type+' · '+x.conf+(x.src?' · '+x.src:''))+'</small>';}).join('');
+   const noStart=(code==='contract'||code==='construction')&&!startOk;
+   const dMain=noStart?'착공 예정일 없음':W?h(W.label+' '+md(W.date)):L.dec.length?'결정 일정 '+L.dec.length+'건':'기록된 결정 일정 없음';
+   const dSub=noStart?'착공 준비로 넘어가려면 착공 · 준공 예정일 필요':W?'고객 합의 대기 · 회의 전 7일 무연락 경고 없음':L.dec.length?'':'대표회의 · 입대의 회의 · 입찰 일정을 적으면 할 일이 자동으로 잡힙니다';
+   const decForm=S.dec?'<div class="dcb-form"><select data-dcf="type">'+DEC_TYPES.map(t=>'<option>'+t+'</option>').join('')+'</select><input type="date" data-dcf="date" aria-label="날짜"><select data-dcf="conf">'+CONF.map(c=>'<option>'+c+'</option>').join('')+'</select><input data-dcf="src" maxlength="60" placeholder="출처 (예: 관리소장 통화 10.1)"><div class="dcb-fb"><button type="button" data-dc="dec-cancel">취소</button><button type="button" class="go" data-dc="dec-save">추가</button></div></div>':add('dec-open','+ 결정 일정 기록');
+   /* 막힌 곳 = 사람이 표시한 것 + 자료로 보이는 것(계약서 · 기한) */
+   const B=L.blk,cs=DS.contract(d),nt=DS.nextTask(d),names=[];
+   if(B)names.push(B.who==='고객'?'고객':B.who);
+   if(code==='contract'&&!cs.proof)names.push('계약서');
+   const bSub=[B?(B.st||'막힌 곳')+(B.owner?' · '+B.owner:'')+(B.due?' · '+md(B.due)+'까지':''):'',code==='contract'&&!cs.proof?'계약서 미첨부':'',names.length&&nt.late?'기한 '+md(nt.due)+' '+(-nt.days)+'일 지남':''].filter(Boolean).join(' · ');
+   const blkForm=S.blk?'<div class="dcb-form"><select data-dcf="who">'+BLOCK.map(t=>'<option>'+t+'</option>').join('')+'</select><input data-dcf="st" maxlength="80" placeholder="상태 한 줄 (예: 견적 검토 대기 3일)"><input data-dcf="owner" maxlength="30" placeholder="담당"><input type="date" data-dcf="due" aria-label="기한"><select data-dcf="step"><option value="">견적팀 단계 (해당 시)</option>'+QSTEP.map(s=>'<option>'+s+'</option>').join('')+'</select><div class="dcb-fb"><button type="button" data-dc="blk-cancel">취소</button><button type="button" class="go" data-dc="blk-save">저장</button></div></div>':B?'<div class="dcb-fb">'+(B.who==='내부 · 견적팀'?'<button type="button" data-dc="blk-ask">견적팀에 확인</button>':'')+'<button type="button" data-dc="blk-clear">해제</button></div>':add('blk-open','+ 막힌 곳 표시');
+   /* 진척 */
+   const pMain=LP.last?'마지막 '+md(LP.last.date):'진척 기록 없음',pSub=(LP.line||'')+(TC.length?(LP.line?' · ':'')+'고객 접촉 '+TC.length+'회':'');
+   const prgForm=S.prg?'<div class="dcb-form"><select data-dcf="ptype">'+PRG.map(t=>'<option>'+t+'</option>').join('')+'<option>기타</option></select><input data-dcf="pnote" maxlength="40" placeholder="기타일 때 내용"><input type="date" data-dcf="pdate" aria-label="날짜" value="'+T+'"><div class="dcb-fb"><button type="button" data-dc="prg-cancel">취소</button><button type="button" class="go" data-dc="prg-save">기록</button></div></div>':add('prg-open','+ 진척 기록');
+   /* 특이조건 · 구두 약속 지침 */
+   const contractish=['contract','construction','completion','won'].includes(code);
+   const sMain=contractish?(sp.v==='있음'?'있음'+(sp.text?' · '+h(sp.text):''):sp.v):'계약 단계에서 확인';
+   const sSub=contractish?'계약 때 말로 약속한 조건이 있으면 특이조건 \'있음\'으로 기록 — 없으면 \'없음\'을 골라 주세요':'계약 단계에서 구두 약속 · 특약을 확인합니다';
+   /* 하자 · 출처 · 되돌리기 */
+   const open=L.def.filter(x=>x.state==='미해결').length,srcN=I.filter(x=>x.conf!=='미확인').length;
+   const hMain=open?'미해결 '+open+'건':'없음';
+   const hSub='하자 접수 '+L.def.length+' · 정보 출처 '+srcN+' · '+(CH.length?'되돌릴 변경 '+CH.length+'건':'되돌릴 변경 없음');
+   const defs=L.def.map(x=>'<div class="dcb-def'+(x.state==='미해결'?' open':'')+'"><b>'+h(x.text)+'</b><span>'+h([x.recv?'접수 '+md(x.recv):'',x.owner?'담당 '+x.owner:'',x.due?'약속 '+md(x.due):''].filter(Boolean).join(' · '))+'</span><em>'+h(x.state)+'</em>'+(x.state==='미해결'?'<button type="button" data-dc="def-done" data-v="'+attr(x.text)+'">해결</button>':'')+'</div>').join('');
+   const defForm=S.def?'<div class="dcb-form"><input data-dcf="dtext" maxlength="80" placeholder="내용 (예: 101동 옥상 배수구 주변 들뜸)"><input type="date" data-dcf="drecv" aria-label="접수일" value="'+T+'"><input data-dcf="downer" maxlength="30" placeholder="처리 담당"><input type="date" data-dcf="ddue" aria-label="약속 기한"><div class="dcb-fb"><button type="button" data-dc="def-cancel">취소</button><button type="button" class="go" data-dc="def-save">등록</button></div></div>':add('def-open','+ 하자 · 불만 등록');
+   const info='<div class="dcb-info">'+I.map(r=>'<button type="button" data-dc="chk" data-v="'+attr(r.k)+'" title="누르면 확인 상태 · 출처 입력"><span>'+h(r.k)+'</span><b>'+h(r.v)+'</b>'+pill(r.conf)+'<small>'+h(r.note)+'</small></button>').join('')+'</div>'
+    +(S.chk?'<div class="dcb-form"><b class="dcb-fl">'+h(S.chk)+'</b><select data-dcf="cconf">'+CONF.map(c=>'<option>'+c+'</option>').join('')+'</select><input data-dcf="csrc" maxlength="60" placeholder="출처 (예: 관리소장 통화 10.1)"><div class="dcb-fb"><button type="button" data-dc="chk-cancel">취소</button><button type="button" class="go" data-dc="chk-save">저장</button></div></div>':'');
+   const chg=CH.length?CH.map((c,i)=>'<div class="dcb-chg"><span><b>'+h(c.f)+'</b> '+(c.a?'<s>'+h(c.a)+'</s> → ':'')+'<b>'+h(c.b)+'</b></span><button type="button" data-dc="revert" data-i="'+i+'"'+(c.kind==='event'?' disabled title="변화 이벤트는 새 기록으로 바로잡습니다"':'')+'>'+(c.kind==='amount'?'승인 요청':'되돌리기')+'</button><small>'+h(c.who||'기록 시각 없음')+'</small></div>').join('')+'<small class="dcb-fn">되돌리기도 기록으로 남음 · 실적 · 계약 금액은 관리자 승인 필요</small>':'';
+   return row('일정',noStart,h(dMain),h(dSub),decs+decForm)
+    +row('막힌 곳',!!(B||names.length),names.length?names.length+' · '+h(names.join(' · ')):'없음',names.length?h(bSub):'막힌 곳이 없습니다',blkForm)
+    +row('진척',false,h(pMain),h(pSub),prgForm)
+    +row('특이조건',false,sMain,h(sSub),'')
+    +row('하자 · 출처',open>0,h(hMain),h(hSub),defs+defForm+info+chg)
+    +(S.err?'<p class="dcb-err">'+h(S.err)+'</p>':'');
+  }
+  const sameOn=()=>!!(root.DealSame&&root.DealSame.on&&root.DealSame.on()&&root.DealDetailV3&&root.DealDetailV3.tidy&&root.DealDetailV3.tidy());
  const st=d=>{const k=String(d&&d.id||'');const S=root.G.dcb||(root.G.dcb={});if(S.id!==k)Object.assign(S,{id:k,dec:false,blk:false,prg:false,def:false,chk:'',err:'',busy:false});return S;};
  function mount(right,d,after){
   if(!on()||!right||!d)return;let sec=right.querySelector(':scope>.dcb');
   const anchor=(after&&after.nextElementSibling&&after.nextElementSibling.classList.contains('dv3-slot'))?after.nextElementSibling:after;
   if(!sec){sec=document.createElement('section');sec.className='dcard dv3-made dcb';if(anchor)anchor.after(sec);else right.append(sec);}
-  const html_=html(d);if(sec.__h!==html_){sec.__h=html_;sec.innerHTML=html_;}
+  const same=sameOn(),html_=same?htmlSame(d):html(d);sec.classList.toggle('dvs-rows',same);if(sec.__h!==html_){sec.__h=html_;sec.innerHTML=html_;}
  }
  const paint=()=>{try{root.DealDetailV3&&root.DealDetailV3.apply();}catch(e){}try{root.paint();}catch(e){}};
  async function save(d,text){const S=st(d);if(S.busy)return;S.busy=true;S.err='';try{await root.DealDetailV3.memo(d,text,{});root.ActivityContext?.clear?.();S.busy=false;S.dec=S.blk=S.prg=S.def=false;S.chk='';toast('기록했습니다');paint();}catch(e){S.busy=false;S.err=String(e&&e.message||e);paint();}}
- root.addEventListener?.('activity-context:changed',()=>{const d=root.CUR_DETAIL?.kind==='deal'&&root.CUR_DETAIL.item,sec=document.querySelector('#detailView .dcb');if(d&&sec&&!sec.querySelector('.dcb-form')){const next=html(d);if(sec.__h!==next){sec.__h=next;sec.innerHTML=next;}}else if(!root.CUR_DETAIL&&!document.activeElement?.matches?.('input,textarea,select,[contenteditable]')){try{root.paint?.();}catch(e){}}});
+ root.addEventListener?.('activity-context:changed',()=>{const d=root.CUR_DETAIL?.kind==='deal'&&root.CUR_DETAIL.item,sec=document.querySelector('#detailView .dcb');if(d&&sec&&!sec.querySelector('.dcb-form')){const next=sameOn()?htmlSame(d):html(d);if(sec.__h!==next){sec.__h=next;sec.innerHTML=next;}}else if(!root.CUR_DETAIL&&!document.activeElement?.matches?.('input,textarea,select,[contenteditable]')){try{root.paint?.();}catch(e){}}});
  const val=(sec,k)=>{const n=sec.querySelector('[data-dcf="'+k+'"]');return n?String(n.value||'').trim():'';};
  document.addEventListener('click',e=>{
   const b=e.target.closest('.dcb [data-dc]');if(!b)return;const cur=root.CUR_DETAIL,d=cur&&cur.kind==='deal'?cur.item:null;if(!d)return;const a=b.dataset.dc,sec=b.closest('.dcb'),S=st(d);e.preventDefault();e.stopPropagation();

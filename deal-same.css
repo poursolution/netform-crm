@@ -1,0 +1,77 @@
+/* 영업건 상세 · 같은 정보 같은 판단 (deal-same.js · 시안 '영업건 상세 · 같은 정보 같은 판단 시안') — #detailView.dv3.dvt 에만. 붉은 계열 · 접는 곳 없음. 끄기: G.dealSameOff=true */
+.dvs-hide{display:none!important}
+/* ── 머리 둘째 줄: 영업 경로 · 낙찰(확정) · 기술자문(확정) · 예상(참고) · 기존 고객 ── */
+#detailView.ddv.dv3.dvt:has(.dvs-line2) .ddv-chips .idv-brand{display:none}
+#detailView.ddv.dv3.dvt .dv3-subrow>.dvs-line2{order:11;flex:1 0 100%;display:flex;align-items:center;gap:6px 16px;flex-wrap:wrap;font-size:12.5px;padding-left:15px;min-width:0}
+#detailView.ddv.dv3.dvt .dvs-ch{font-weight:700}
+#detailView.ddv.dv3.dvt .dvs-w{white-space:nowrap}
+#detailView.ddv.dv3.dvt .dvs-w>span{color:#6b7280}
+#detailView.ddv.dv3.dvt .dvs-est{color:#9ca3af;white-space:nowrap}
+#detailView.ddv.dv3.dvt .dvs-line2 .dvt-won{font-weight:600;color:#374151;background:#f3f4f6;border-radius:999px;padding:1px 9px;font-size:11.5px}
+/* 수주 정보 상자(DealWin)의 네 칸은 둘째 줄과 같은 말이라 숨기고, 연결 계약 · [수주 정보 고치기] 줄만 남긴다 */
+#detailView.ddv.dv3.dvt:has(.dvs-line2) #wn-head .wn-boxes{display:none}
+#detailView.ddv.dv3.dvt:has(.dvs-line2) #wn-head{margin-top:0}
+#detailView.ddv.dv3.dvt .dvs-own{cursor:pointer;border-radius:5px;padding:1px 4px;margin:-1px -4px}
+#detailView.ddv.dv3.dvt .dvs-own:hover{background:#f3f4f6}
+/* ── 가운데: 이력 탭 [전체 · 고객 접촉 · 내부 변경] ── */
+#detailView.ddv.dv3.dvt .idv-chead{display:flex;align-items:center;gap:10px 12px;flex-wrap:wrap}
+#detailView.ddv.dv3.dvt .dvs-htabs{display:flex;border:1px solid #e3e6ec;border-radius:8px;overflow:hidden;flex:none}
+#detailView.ddv.dv3.dvt .dvs-htabs button{border:0;border-radius:0;background:#fff;color:#374151;font-size:12.5px;font-weight:600;padding:5px 12px;white-space:nowrap;height:auto;margin:0;cursor:pointer}
+#detailView.ddv.dv3.dvt .dvs-htabs button[aria-pressed="true"]{background:#15171c;color:#fff}
+#detailView.ddv.dv3.dvt .dvs-hnote{font-size:12px;color:#6b7280}
+#detailView.ddv.dv3.dvt .dvs-hnote b{color:#15171c}
+#detailView.ddv.dv3.dvt .dvs-hnone{margin:10px 0;font-size:12.5px;color:#6b7280}
+/* ── 오른쪽 맨 위: 등록된 다음 업무 ── */
+#detailView.ddv.dv3.dvt .dvs-task{display:flex;flex-direction:column;gap:10px;padding:2px 0 14px;border-bottom:1px solid #eef0f3;margin-bottom:12px}
+#detailView.ddv.dv3.dvt .dvs-task>.lb{font-size:11.5px;font-weight:700;color:#6b7280}
+#detailView.ddv.dv3.dvt .dvs-tt{display:flex;flex-direction:column;gap:3px;margin-top:-6px}
+#detailView.ddv.dv3.dvt .dvs-tt>b{font-size:16px;line-height:1.35;overflow-wrap:anywhere}
+#detailView.ddv.dv3.dvt .dvs-tt>span{font-size:12.5px;font-weight:700;color:#374151}
+#detailView.ddv.dv3.dvt .dvs-tt>span.red{color:#b42318}
+#detailView.ddv.dv3.dvt .dvs-kv{display:grid;grid-template-columns:62px minmax(0,1fr);gap:5px 8px;font-size:12.5px;line-height:1.45}
+#detailView.ddv.dv3.dvt .dvs-kv>span:nth-child(odd){color:#6b7280}
+#detailView.ddv.dv3.dvt .dvs-kv>span{overflow-wrap:anywhere}
+#detailView.ddv.dv3.dvt .dvs-kv .warn{color:#b42318}
+#detailView.ddv.dv3.dvt .dvs-btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+#detailView.ddv.dv3.dvt .dvs-btns button{height:34px;border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:12px;font-weight:600;border-radius:8px;padding:0 4px;white-space:nowrap;margin:0;cursor:pointer}
+#detailView.ddv.dv3.dvt .dvs-btns button.fill{border-color:#15171c;background:#15171c;color:#fff;font-weight:700}
+#detailView.ddv.dv3.dvt .dvs-btns button[aria-pressed="true"]{border-color:#15171c;box-shadow:inset 0 0 0 1px #15171c}
+#detailView.ddv.dv3.dvt .dvs-btns button:disabled{background:#f5f6f8;color:#9aa0ab;border-color:#e3e6ec;cursor:not-allowed}
+#detailView.ddv.dv3.dvt .dvs-aux{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:#6b7280;line-height:1.5}
+#detailView.ddv.dv3.dvt .dvs-aux b{color:#374151;margin-right:4px}
+/* ── 빠진 정보 n · 입력됨(회색 한 줄) · 특이조건 칩 ── */
+#detailView.ddv.dv3.dvt .dvt-cnt.ok{color:#6b7280}
+#detailView.ddv.dv3.dvt .dvs-ok{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;font-size:12px;color:#6b7280;line-height:1.5;margin-top:4px}
+#detailView.ddv.dv3.dvt .dvs-ok>span:first-child{color:#6b7280}
+#detailView.ddv.dv3.dvt .dvs-ok>i{font-style:normal;color:#c9cdd5}
+#detailView.ddv.dv3.dvt .dvs-fl{border:0;background:none;padding:0;margin:0;font:inherit;color:#6b7280;cursor:default}
+#detailView.ddv.dv3.dvt button.dvs-fl{cursor:pointer;text-decoration:underline dotted #c9cdd5;text-underline-offset:3px}
+#detailView.ddv.dv3.dvt button.dvs-fl:hover{color:#15171c}
+#detailView.ddv.dv3.dvt .dvs-sp{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;font-size:12.5px}
+#detailView.ddv.dv3.dvt .dvs-sp>span{color:#374151}
+#detailView.ddv.dv3.dvt .dvs-sp button{border:1px solid #d9dde4;background:#fff;color:#374151;font-size:11.5px;font-weight:600;border-radius:999px;padding:3px 9px;margin:0;height:auto;cursor:pointer}
+#detailView.ddv.dv3.dvt .dvs-sp button[aria-pressed="true"]{border-color:#15171c;background:#15171c;color:#fff}
+#detailView.ddv.dv3.dvt .dvs-sp button:disabled{opacity:.6;cursor:not-allowed}
+#detailView.ddv.dv3.dvt .dvs-sp .dvs-sptx{border-style:dashed;font-weight:500;color:#374151}
+#detailView.ddv.dv3.dvt .dvs-sp .dvs-sptx.empty{color:#b42318}
+#detailView.ddv.dv3.dvt .dvs-sp input{flex:1 1 100%;min-width:0;border:1px solid #e3e6ec;border-radius:8px;padding:6px 9px;font:inherit;font-size:12.5px;box-sizing:border-box}
+/* ── 6줄: 일정 · 막힌 곳 · 진척 · 특이조건 · 하자 · 출처 (이름 · 내용 한 줄씩 늘 펼침) ── */
+#detailView.ddv.dv3.dvt .dcb.dvs-rows{background:none;border:0;border-radius:0;box-shadow:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:0}
+#detailView.ddv.dv3.dvt .dvs-rows .dvs-row{display:grid;grid-template-columns:76px minmax(0,1fr);gap:8px;padding:8px 0;border-bottom:1px solid #f2f3f6;font-size:12.5px}
+#detailView.ddv.dv3.dvt .dvs-rows .dvs-row>b{font-weight:600;color:#15171c}
+#detailView.ddv.dv3.dvt .dvs-rows .bd{display:flex;flex-direction:column;gap:3px;min-width:0}
+#detailView.ddv.dv3.dvt .dvs-rows .bd>.m{color:#374151;line-height:1.5;overflow-wrap:anywhere}
+#detailView.ddv.dv3.dvt .dvs-rows .bd>small{color:#6b7280;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+#detailView.ddv.dv3.dvt .dvs-rows .dvs-row.hot>.bd>.m{color:#b42318;font-weight:600}
+#detailView.ddv.dv3.dvt .dvs-rows .bd>small.dd{color:#374151}
+#detailView.ddv.dv3.dvt .dvs-rows .bd>small.dd.past{color:#9ca3af}
+#detailView.ddv.dv3.dvt .dvs-rows .dcb-add{align-self:flex-start;border:0;background:none;padding:0;margin:2px 0 0;color:#2a52b8;font-size:12px;font-weight:700;cursor:pointer}
+#detailView.ddv.dv3.dvt .dvs-rows .dcb-form{margin-top:4px}
+#detailView.ddv.dv3.dvt .dvs-rows .dcb-info{display:flex;flex-direction:column;gap:2px;margin-top:4px}
+/* 근처 현장은 마지막 줄 */
+#detailView.ddv.dv3.dvt .dw-right>.dv3-near{margin-top:4px}
+#detailView.ddv.dv3.dvt .dvs-rows .dcb-info>button{display:grid;grid-template-columns:62px minmax(0,1fr) auto;gap:6px;align-items:center;border:0;border-radius:0;background:none;padding:3px 0;width:100%}
+#detailView.ddv.dv3.dvt .dvs-rows .dcb-info>button>small{display:none}
+#detailView.ddv.dv3.dvt .dvs-rows .dcb-chg{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;align-items:center;padding:4px 0}
+#detailView.ddv.dv3.dvt .dvs-rows .dcb-chg>small{grid-column:1/-1;color:#9ca3af}
+#detailView.ddv.dv3.dvt .dvs-rows .dcb-def{border:0;border-left:3px solid #d14a3f;border-radius:0;padding:2px 8px}

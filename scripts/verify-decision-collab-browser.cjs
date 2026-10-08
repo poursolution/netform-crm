@@ -10,7 +10,7 @@ const root=path.join(__dirname,'..'),one=s=>String(s||'').replace(/\s+/g,' ').tr
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
   const page=await ctx.newPage();page.on('pageerror',e=>errs.push(String(e.message||e)));
-  await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.DecisionCollab&&window.PipelineJudge&&window.DealDetailV3&&typeof goPage==='function');
+  await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.DecisionCollab&&window.PipelineJudge&&window.DealDetailV3&&typeof goPage==='function');await page.evaluate(()=>{window.G=window.G||{};G.dealSameOff=true;});/* 2026-10-08 같은 정보 같은 판단 층은 끄고 본다 */
   await page.evaluate(()=>{
    const U=n=>'cccccccc-0000-4000-8000-00000000000'+n;window.U=U;
    const k=d=>{const x=new Date();x.setDate(x.getDate()+d);return x.toLocaleDateString('en-CA');};window.K=k;
