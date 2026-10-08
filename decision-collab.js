@@ -136,7 +136,7 @@
    const decs=L.dec.map(x=>{const past=/^\d{4}-\d{2}-\d{2}$/.test(x.date)&&x.date<T;return '<small class="dd'+(past?' past':'')+'">'+h((/^\d{4}-\d{2}/.test(x.date)?md(x.date):x.date)+' · '+x.type+' · '+x.conf+(x.src?' · '+x.src:''))+'</small>';}).join('');
    const noStart=(code==='contract'||code==='construction')&&!startOk;
    const dMain=noStart?'착공 예정일 없음':W?h(W.label+' '+md(W.date)):L.dec.length?'결정 일정 '+L.dec.length+'건':'기록된 결정 일정 없음';
-   const dSub=noStart?'착공 준비로 넘어가려면 착공 · 준공 예정일 필요':W?'고객 합의 대기 · 회의 전 7일 무연락 경고 없음':L.dec.length?'':'대표회의 · 입대의 회의 · 입찰 일정을 적으면 할 일이 자동으로 잡힙니다';
+   const kinds=DS.dueKinds(d,L,noStart),dSub=(noStart?'착공 준비로 넘어가려면 착공 · 준공 예정일 필요 · ':W?'고객 합의 대기 · 회의 전 7일 무연락 경고 없음 · ':'')+kinds;
    const decForm=S.dec?'<div class="dcb-form"><select data-dcf="type">'+DEC_TYPES.map(t=>'<option>'+t+'</option>').join('')+'</select><input type="date" data-dcf="date" aria-label="날짜"><select data-dcf="conf">'+CONF.map(c=>'<option>'+c+'</option>').join('')+'</select><input data-dcf="src" maxlength="60" placeholder="출처 (예: 관리소장 통화 10.1)"><div class="dcb-fb"><button type="button" data-dc="dec-cancel">취소</button><button type="button" class="go" data-dc="dec-save">추가</button></div></div>':add('dec-open','+ 결정 일정 기록');
    /* 막힌 곳 = 사람이 표시한 것 + 자료로 보이는 것(계약서 · 기한) */
    const B=L.blk,cs=DS.contract(d),nt=DS.nextTask(d),names=[];

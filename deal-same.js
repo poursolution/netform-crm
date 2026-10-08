@@ -78,6 +78,8 @@
  const esc=v=>{const s=String(v==null?'':v);return root.esc?root.esc(s):s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));};
  const attr=v=>root.escAttr?root.escAttr(String(v==null?'':v)):esc(v);
  const pf=n=>Number(n||0).toLocaleString('ko-KR');
+ /* 10억 4,390만원 */
+ function wonText(n){n=Number(n)||0;const e=Math.floor(n/1e8),m=Math.round((n%1e8)/1e4);return (e?e+'억':'')+(m?(e?' ':'')+m.toLocaleString('ko-KR')+'만원':e?'':pf(n)+'원');}
  const todayKey=()=>fDay.format(new Date());
  const dayNo=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(s||''));return m?Math.round(Date.UTC(+m[1],+m[2]-1,+m[3])/864e5):NaN;};
  const diffDays=(from,to)=>dayNo(to)-dayNo(from);
@@ -89,18 +91,37 @@
  }
  function line2(d,o){
   o=o||{};const W=winInfo(d),amt=Number(d&&(d.amount??d.amt))||0,parts=[];
+  const cs=contract(d);
   parts.push('<span class="dvs-ch" style="color:'+attr(o.color||'#15171c')+'" title="영업 경로">'+esc(o.brand||'브랜드 미입력')+'</span>');
-  if(W.award)parts.push('<span class="dvs-w"><span>'+esc(W.award.label)+'</span> <b>'+esc(eok(W.award.amount,4))+'</b>'+(W.award.company?' · '+esc(W.award.company):'')+'</span>');
-  if(W.tech)parts.push('<span class="dvs-w"><span>기술자문 (확정)</span> <b>'+esc(eok(W.tech.amount,4))+'</b>'+(W.tech.company?' · '+esc(W.tech.company):'')+'</span>');
-  parts.push('<span class="dvs-est">'+(amt>0?'예상 '+esc(eok(amt,2))+(W.award?' · 참고':''):'예상 금액 미정')+'</span>');
+  /* 금액은 이름을 나눠 보인다: 계약금액(이 단계 우선 · 크게) · 낙찰금액 · 기술자문금액 · 예상금액(회색 참고) */
+  if(cs.state!=='none'&&cs.amount)parts.push('<span class="dvs-w big"><span>계약금액</span> <b>'+esc(wonText(cs.amount))+'</b></span>');
+  if(W.award)parts.push('<span class="dvs-w"><span>낙찰금액</span> <b>'+esc(eok(W.award.amount,4))+'</b>'+(W.award.company?' · '+esc(W.award.company):'')+'</span>');
+  if(W.tech)parts.push('<span class="dvs-w"><span>기술자문금액</span> <b>'+esc(eok(W.tech.amount,4))+'</b>'+(W.tech.company?' · '+esc(W.tech.company):'')+'</span>');
+  parts.push('<span class="dvs-est">'+(amt>0?'예상금액 '+esc(eok(amt,2))+' · 참고':'예상금액 미정')+'</span>');
   if(o.won)parts.push('<span class="dvt-won">✓ 기존 고객 · '+esc(o.won.year?o.won.year+' ':'')+'수주 '+esc(o.won.n||1)+'</span>');
   return '<div class="dvs-line2">'+parts.join('')+'</div>';
  }
  /* 등록된 다음 업무(맨 위): 업무 · 기한 · 확인됨 · 확인할 것 · 완료 조건 */
+ /* 기한 종류: 고객 약속 / 입찰 마감 / 내부 처리 / 기록 보완 — '기한 초과'만 쓰지 않는다 */
+ function dueKind(a){const t=String(a&&(a.type||'')||'')+' '+String(a&&a.text||'');return /고객\s*약속/.test(t)?'고객 약속':/입찰|현설|PT|마감/.test(t)?'입찰 마감':/입력|보완|등록|채우/.test(t)?'기록 보완':'내부 처리';}
  function nextTask(d){
   let a=null;try{a=root.actionObj?root.actionObj(d,patchOf(d)):null;}catch(e){}
   const text=a&&a.text?String(a.text).trim():'',due=day(a&&(a.due||a.due_at)||''),n=due?diffDays(todayKey(),due):null;
-  return {text,due,days:n,dueText:!text?'다음 업무를 등록하세요':due?md(due)+' · '+(n<0?(-n)+'일 지남':n===0?'오늘':n+'일 남음'):'날짜 미등록',late:!!text&&n!==null&&n<0,none:!text};
+  const kind=dueKind(a);
+  return {text,due,days:n,kind,dueText:!text?'다음 업무를 등록하세요':due?md(due)+' · '+(n<0?(-n)+'일 지남':n===0?'오늘':n+'일 남음'):'날짜 미등록',late:!!text&&n!==null&&n<0,none:!text};
+ }
+ /* 일정 줄: 기한을 종류별로 — 고객 약속 · 입찰 마감 · 내부 처리 · 기록 보완 */
+ function dueKinds(d,L,noStart){
+  const T=todayKey(),nt=nextTask(d),up=(types)=>((L&&L.dec)||[]).filter(x=>types.includes(x.type)&&/^\d{4}-\d{2}-\d{2}$/.test(x.date)&&x.date>=T).sort((a,b)=>a.date.localeCompare(b.date))[0];
+  const cust=up(['대표회의 상정','입대의 회의']),bid=up(['입찰','현설']);let bf='';try{const c=d.stage_contexts||{};Object.keys(c).forEach(k=>{const v=c[k]&&c[k].fields&&c[k].fields.bid_deadline;if(v&&day(v)>=T)bf=bf||day(v);});}catch(e){}
+  const code=String(root.dealStage?root.dealStage(d):'');
+  const rel=x=>{const n=diffDays(T,x);return n<0?(-n)+'일 지남':n===0?'오늘':n+'일 남음';};
+  const out=[];
+  out.push(cust?'고객 약속 '+md(cust.date)+' · '+rel(cust.date):nt.kind==='고객 약속'&&nt.due?'고객 약속 '+md(nt.due)+' · '+rel(nt.due):'고객 약속 없음');
+  out.push(bid||bf?'입찰 마감 '+md(bid?bid.date:bf):['bidding','compete','imminent'].includes(code)?'입찰 마감 없음':'입찰 마감 해당 없음');
+  out.push(nt.kind==='내부 처리'&&nt.due?'내부 처리 '+md(nt.due)+' '+(nt.days<0?'지남':nt.days===0?'오늘':nt.days+'일 남음'):nt.none?'내부 처리 기한 없음':nt.kind==='기록 보완'&&nt.due?'기록 보완 '+nt.text:'내부 처리 기한 없음');
+  if(noStart)out.push('기록 보완 착공 예정일');
+  return out.join(' · ');
  }
  function facts(d,ctx){
   const code=String(root.dealStage?root.dealStage(d):''),T=nextTask(d);
@@ -116,9 +137,9 @@
  }
  function taskHtml(d,ctx){
   ctx=ctx||{};const T=nextTask(d),F=facts(d,ctx),closed=!!ctx.closed,tel=!!ctx.tel;
-  const btns=closed?'':'<div class="dvs-btns"><button type="button" class="fill" data-dv3="callnow"'+(tel?'':' disabled title="휴대폰 번호가 없습니다"')+'>연락하기</button><button type="button" data-dv3="rec" aria-pressed="'+!!ctx.calling+'">결과 기록</button><button type="button" data-dv3="nextonly">다음 업무</button></div>'+(ctx.nextHtml||'');
+  const P=ctx.primary,btns=closed?'':'<div class="dvs-btns">'+(P?'<button type="button" class="fill dvs-primary" data-dv3="primary" data-act="'+attr(P.act)+'">'+esc(P.label)+'</button>':'')+'<button type="button" class="'+(P?'':'fill')+'" data-dv3="callnow"'+(tel?'':' disabled title="휴대폰 번호가 없습니다"')+'>연락하기</button><button type="button" data-dv3="rec" aria-pressed="'+!!ctx.calling+'">결과 기록</button><button type="button" data-dv3="nextonly">다음 업무</button><span class="dvs-scope">다음 업무 = 업무 · 기한만 저장 · 결과 기록 = 응대 이력 1건 · 칸 수정 = 그 칸만</span></div>'+(ctx.nextHtml||'');
   const aux=[ctx.guide?'<span><b>지침</b> '+esc(ctx.guide)+'</span>':'',ctx.reco?'<span><b>추천</b> '+esc(ctx.reco)+'</span>':''].filter(Boolean).join('');
-  return '<span class="lb">등록된 다음 업무</span><div class="dvs-tt"><b>'+esc(T.none?'등록된 업무 없음':T.text)+'</b><span class="'+(T.late||T.none?'red':'')+'">'+esc(T.dueText)+'</span></div>'
+  return '<span class="dvs-area on">현재 영업건</span><span class="lb">등록된 다음 업무</span><div class="dvs-tt"><b>'+esc(T.none?'등록된 업무 없음':T.text)+'</b><span>'+(T.none||!T.due?'':'<span class="k">'+esc(T.kind)+' 기한</span> ')+'<b class="'+(T.late||T.none?'red':'')+'">'+esc(T.dueText)+'</b></span></div>'
    +'<div class="dvs-kv"><span>확인됨</span><span>'+esc(F.done)+'</span><span>확인할 것</span><span class="'+(F.warn?'warn':'')+'">'+esc(F.todo)+'</span><span>완료 조건</span><span>'+esc(F.cond)+'</span></div>'
    +btns+(aux?'<div class="dvs-aux">'+aux+'</div>':'');
  }
@@ -131,7 +152,7 @@
  /* 이력 탭 [전체 · 고객 접촉 · 내부 변경] — 접촉 수 = 고객 접촉만 */
  function histBar(counts,active){
   const T=[['all','전체',counts.all],['cust','고객 접촉',counts.cust],['sys','내부 변경',counts.sys]];
-  return '<div class="dvs-htabs" role="group" aria-label="이력 구분">'+T.map(([k,l,n])=>'<button type="button" data-dv3="htab" data-v="'+k+'" aria-pressed="'+(active===k)+'">'+esc(l)+' '+n+'</button>').join('')+'</div><span class="dvs-hnote">고객 접촉 = 연락 시도 <b>'+counts.tries+'</b> · 실제 연결 <b>'+counts.conn+'</b> · 내부 변경은 따로</span>';
+  return '<span class="dvs-area on">현재 영업건</span><div class="dvs-htabs" role="group" aria-label="이력 구분">'+T.map(([k,l,n])=>'<button type="button" data-dv3="htab" data-v="'+k+'" aria-pressed="'+(active===k)+'">'+esc(l)+' '+n+'</button>').join('')+'</div><span class="dvs-hnote">고객 접촉 = 연락 시도 <b>'+counts.tries+'</b> · 실제 연결 <b>'+counts.conn+'</b> · 내부 변경은 따로</span>';
  }
- return {on,day,dot,md,stamp,eok,contract,special,SPECIAL,progressEvents,lastProgress,histKind,CUSTOMER,nextTask,facts,winInfo,line2,taskHtml,specialHtml,histBar};
+ return {on,day,dot,md,stamp,eok,wonText,dueKind,dueKinds,contract,special,SPECIAL,progressEvents,lastProgress,histKind,CUSTOMER,nextTask,facts,winInfo,line2,taskHtml,specialHtml,histBar};
 });
