@@ -61,6 +61,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const S={};
   for(const [k,me] of ROLES){await seed(me);await page.waitForTimeout(700);S[k]=await snap();if(dump&&(k==='vp'||k==='ceo'))console.log('=====',k,'\n'+JSON.stringify(S[k],null,1));if(shot)await page.screenshot({path:shot+'-'+k+'.png',fullPage:true});
    const s=S[k];assert.ok(s,k+': v3 화면');assert.equal(s.role,k);assert.equal(await page.locator('#today-v2 .tt').count(),0,k+': 관제탑 대신 v3');
+   /* 브랜드 칩(2026-10-08): '전체' = 큰 숫자 = 사이드바 · 브랜드별 합 = '전체'(브랜드 없는 건은 칩에 없음) */
+   {const chips=await page.evaluate(()=>[...document.querySelectorAll('#pg-today .cf-bar [data-cf="brand"], #pg-today .cf-bar .cf-brand button, #pg-today .cf-bar button')].map(b=>({t:b.textContent.trim().replace(/\s+/g,' '),brand:b.dataset.brand||b.dataset.value||''})).filter(x=>/ \d+$/.test(x.t)));
+    const nums=chips.map(x=>Number(x.t.split(' ').pop())),allN=nums[0];
+    assert.equal(allN,s.total,k+': 브랜드 칩 전체 = 큰 숫자 '+JSON.stringify(chips));
+    assert.ok(nums.slice(1).reduce((a,b)=>a+b,0)<=allN,k+': 브랜드별 합이 전체를 넘지 않음');}
    /* 공통: 큰 숫자 = 묶음 합계 = 목록 줄 수 = 띠 합계 */
    const lines=s.groups.reduce((n,g)=>n+g.cards.length+g.rows.length+g.hidden,0),gsum=s.groups.reduce((n,g)=>n+Number((/(\d+)건$/.exec(g.t)||[0,0])[1]),0),ssum=s.stage.reduce((n,x)=>n+Number(x.split(' ').pop()),0);
    assert.equal(lines,s.total,k+': 목록 줄 수(카드 + 줄 + 다른 쪽의 줄) = 큰 숫자');assert.equal(gsum,s.total,k+': 묶음 합계 = 큰 숫자');assert.equal(ssum,s.total,k+': 단계 띠 합계 = 큰 숫자');
