@@ -24,7 +24,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    B={deals:[
     {id:D1,site:'[경기 평택] 평택비전지웰푸르지오',site_id:S,assignee:'황윤선',brand:'석민이앤씨',created:'2025-11-20',code:'contract',stage_code:'contract',grp:'계약·시공',amt:1120000000,manager_name:'김정훈',manager_mobile:'0316562210',
      contacts:[{person_key:'mobile:0316562210',name:'김정훈',role:'관리소장',mobile:'0316562210',status:'current'}],
-     stage_contexts:{contract:{fields:{contract_date:'2026-01-26',contract_amount:1043900000}}},
+     stage_contexts:{contract:{fields:{contract_date:'2026-01-26',contract_amount:1043900000,decision_maker:'최OO · 입대의 회장'}}},
      next_action:{id:'n1',text:'계약 체결 확인',type:'전화',due:day(-3),status:'open'},
      stageHistory:[{id:'h1',from:'bidding',to:'contract',at:'2026-10-03T14:20:00+09:00',actor:'황윤선'}],
      activities:[act('a1','전화','통화 연결 · 관리소장 · 낙찰 결과 안내 (코지건설) 고객 말: 결과 나왔으니 계약 진행하자 담당 판단: 코지 낙찰 확정 · 계약 단계로','2026-09-12T10:05:00+09:00'),act('a2','방문','현장 방문 · 착공 일정 협의','2026-02-03T15:40:00+09:00'),act('a3','전화','통화 연결 · 계약 조건 확인','2026-01-15T09:30:00+09:00'),{id:'a4',type:'메모',note:'[내부] 계약 체결 기록 · 10.439억',at:'2026-01-26T11:00:00+09:00',actor:'황윤선'}]},
@@ -63,6 +63,9 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.equal(one(await V.locator('.dv3-subrow .tx').innerText()),'담당 황윤선');
   assert.equal(one(await V.locator('.dvs-line2').innerText()),'석민이앤씨 계약금액 10억 4,390만원 낙찰금액 10.439억 · 코지건설 기술자문금액 4.3365억 · 넷폼 예상금액 11.2억 · 참고 ✓ 기존 고객 · 2023 수주 1');
   assert.equal(await V.locator('.ddv-chips .idv-brand').evaluate(n=>getComputedStyle(n).display),'none','맨 위 브랜드 글자는 둘째 줄과 겹쳐 숨김');
+  /* 왼쪽 결정권자 줄: 이름 · 역할 / 결정권자 · 연락처 [입력](점선) */
+  assert.equal(one(await V.locator('.dv3-left .dvs-dm').innerText()),'최OO · 입대의 회장 결정권자 · 연락처 입력');
+  assert.equal(await V.locator('.dv3-left .dvs-dm .dvs-in').evaluate(b=>getComputedStyle(b).borderTopStyle),'dashed');
   /* 오른쪽 맨 위 */
   assert.equal(await V.locator('.dw-right').evaluate(r=>r.firstElementChild.className.includes('dvs-task')),true);
   assert.equal(one(await V.locator('.dvs-task .lb').innerText()),'등록된 다음 업무');
