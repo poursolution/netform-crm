@@ -26,6 +26,7 @@
  /* 건수: 견적문의=새 목록이 읽어 둔 기존 브랜드 건수, 오늘 업무=오늘 목록의 브랜드별 건수 */
  function brandStats(page){
   const sel=root.SalesFilterState.state().brands||[];
+  if(page==='today'){const s=root.TodayV2?.brandStats?.();if(s&&s.length)return s;}
   if(page==='inq'){const s=root.InquiryListV2?.brandStats?.();if(s&&s.length)return s;}
   if(page==='pipe'){const s=root.PipelineListV2?.brandStats?.();if(s&&s.length)return s;}
   if(page==='expansion'){const s=root.ExpansionV2?.brandStats?.();if(s&&s.length)return s;}

@@ -102,5 +102,17 @@
   renderReady();
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- root.TodayV2={render,enabled};
+ /* 공통 필터줄 브랜드 칩 건수(2026-10-08): 화면에 실제로 나오는 묶음 합계(큰 숫자 · 사이드바와 같은 값)를 브랜드로 센다 — 예전에는 확장관리 · 예정 건까지 든 전체 목록 건수라 '전체'와 브랜드 합이 달랐다 */
+ function brandStats(){
+  const T3=root.TodayV3;if(!enabled()||!root.B||!T3||!T3.brandItems||!root.TodayTower||!root.TodayTower.enabled()||!T3.enabled())return null;
+  try{
+   const X=T().data(),G=root.G,owner=X.admin?(G.todayQueueOwner||'전체'):'전체',q=String(G.todayQueueSearch||'').trim().toLowerCase();
+   const scoped=x=>(owner==='전체'||x.owner===owner)&&(!q||[x.item.site,x.item.site_name,x.owner,x.reason,x.next,x.item.contact_name,x.item.phone].join(' ').toLowerCase().includes(q));
+   const items=T3.brandItems(X,X.inquiry.filter(scoped).concat(X.pipeline.filter(scoped)),(X.backlog||[]).filter(scoped));
+   const sel=root.SalesFilterState.state().brands||[],names=['석민이앤씨','POUR솔루션','POUR공법','아파트스퀘어'];
+   const extra=[...new Set(items.filter(Boolean))].filter(b=>!names.includes(b));
+   return [{name:'전체',n:items.length,on:!sel.length}].concat(names.concat(extra).map(b=>({name:b,n:items.filter(x=>x===b).length,on:sel.includes(b)})));
+  }catch(e){return null;}
+ }
+ root.TodayV2={render,enabled,brandStats};
 })(window);

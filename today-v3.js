@@ -328,5 +328,7 @@
  document.addEventListener('click',onClick,true);
  document.addEventListener('input',e=>{const t=e.target;if(t&&t.matches&&t.matches('#today-v2 .tv3 [data-t3in="em"]'))st().em=t.value;},true);
  document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('#today-v2 .tv3 [data-t3="open"]')){e.preventDefault();openKey(e.target.dataset.key);}});
- root.TodayV3={loadWord,enabled,html,build,isBack,STG,current,execQueue:()=>EXQ.map(x=>x.i.key)};
+ /* 화면의 큰 숫자와 같은 묶음 항목의 브랜드 목록(브랜드 칩 건수용) */
+ function brandItems(X,rows,legacy){return build(X,rows,legacy).groups.filter(g=>!g.aux).flatMap(g=>g.items).map(i=>i.brand||(i.x&&i.x.item&&(i.x.item.brand||(root.inquiryBrandOf&&root.inquiryBrandOf(i.x.item))))||'');}
+ root.TodayV3={loadWord,enabled,html,build,brandItems,isBack,STG,current,execQueue:()=>EXQ.map(x=>x.i.key)};
 })(window);
