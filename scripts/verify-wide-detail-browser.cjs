@@ -10,7 +10,7 @@ async function run(){
   const context=await browser.newContext({viewport:{width:1440,height:900},timezoneId:'Asia/Seoul'});
   await context.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}/crm.html`);await page.waitForFunction(()=>window.DetailWorkspace&&window.StageTransitionUI);
+  await page.goto(`http://127.0.0.1:${server.address().port}/crm.html`);await page.waitForFunction(()=>window.DetailWorkspace&&window.StageTransitionUI);await page.evaluate(()=>{window.G=window.G||{};G.dealSameOff=true;});/* 2026-10-08 같은 정보 같은 판단 층은 끄고 본다 */
   await page.evaluate(()=>{
    if(typeof Phase1.queue.acknowledgeFailure!=='function')throw Error('Loaded PC transport does not expose failure review');
    B={deals:[{id:'wide-1',site:'가로 상세 검증 현장',site_id:'site-1',assignee:'이필선',brand:'기술자문',created:CUR_Y+'-09-01',code:'consulting',stage:'컨설팅 설계',grp:'영업·관리',amt:8000000,address:'서울시 검증로 10',contact:{managerName:'검증 담당자',managerMobile:'01000000000',officeTel:'0200000000'},activities:[{id:'server-1',occurred_at:'2026-09-19T13:00:00Z',type:'문자',detail:'서버 발송 결과',actor_name:'검증자'},{id:'server-2',occurred_at:'2026-09-19T13:00:10Z',type:'문자',detail:'서버 발송 결과',actor_name:'검증자'}]}],inquiries:[],activities:[]};

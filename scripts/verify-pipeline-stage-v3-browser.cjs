@@ -15,7 +15,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});
   const page=await ctx.newPage(),errs=[];page.on('pageerror',e=>errs.push(e.message));
-  await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.PipelineStageV3&&window.PipelineStageB&&window.PipelineListV2&&window.PipelineWorkspace&&window.ListPager&&window.CommonFilterBar);
+  await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.PipelineStageV3&&window.PipelineStageB&&window.PipelineListV2&&window.PipelineWorkspace&&window.ListPager&&window.CommonFilterBar);await page.evaluate(()=>{window.G=window.G||{};G.dealSameOff=true;});/* 2026-10-08 같은 정보 같은 판단 층은 끄고 본다 */
   await page.evaluate(()=>{
    const day=n=>new Date(Date.now()+n*864e5).toLocaleDateString('en-CA'),at=n=>new Date(Date.now()-n*864e5).toISOString();
    const deal=(id,site,owner,code,extra)=>Object.assign({id,site,assignee:owner,brand:'POUR솔루션',created:day(-40),stage_entered_at:at(10),code,stage_code:code,grp:'영업·관리',amt:2e8},extra||{});

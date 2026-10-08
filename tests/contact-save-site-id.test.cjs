@@ -63,7 +63,9 @@ test('consent withdrawal and send block remain disabled in the queued payload',(
 });
 
 test('PC contact normalization fix has a fresh browser asset version',()=>{
-  for(const file of ['pc-primary-contact','deal-detail-v3','deal-panels-v2'])assert.ok(source.includes(file+'.js?v=20261006-consent-scope'));
+  for(const file of ['pc-primary-contact','deal-panels-v2'])assert.ok(source.includes(file+'.js?v=20261006-consent-scope'));
+  /* deal-detail-v3 는 이 뒤에도 고쳐졌다(같은 정보 같은 판단 · 2026-10-08) — 새 버전 표식이면 된다 */
+  assert.match(source,/deal-detail-v3\.js\?v=(?!20261006-consent-scope)[^"' >]+/);
 });
 
 test('existing Deal contact saves pass canonical Site ID into person history', () => {
