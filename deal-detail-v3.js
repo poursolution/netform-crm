@@ -704,9 +704,17 @@
    +'<div class="dvt-c2"><b class="dv3-tel'+(ci.mobile?'':' none')+'">'+h(ci.mobile?root.phoneFmt(ci.mobile):'휴대폰 미입력')+'</b><i></i><div class="dvt-cbtn"><button type="button" data-dv3="call"'+(ci.mobile?'':' disabled')+'>전화</button><button type="button" data-dv3="sms"'+(ci.mobile?'':' disabled')+'>문자</button></div></div>'
    +(chg?'<div class="dv3-chgnote"><b>⚠ '+h(md(chg.date)||'날짜 미기록')+' 관리소장 변경</b><span>이전: '+h(chg.prevName||'이름 미기록')+(chg.after?' · 변경 후 응대 '+chg.after+'건':' · 변경 후 첫 응대 전')+'</span></div>':'')
    +(ci.mobile?'<span class="dvt-c3"><button type="button" data-dv3="editc" data-key="'+attr(C.key)+'" title="수신 동의는 [수정]에서 바꿉니다"'+dis+'>'+h(cons)+'</button> · <button type="button" data-dv3="cons" data-k="key" aria-pressed="'+key+'" title="누르면 확인 · 미확인이 바뀝니다"'+dis+'>'+(key?'결정권자 확인됨':'결정권자 미확인')+'</button></span>':'')
-   +(SS.repl&&!closed&&ci.mobile?replHtml(d,C,SS.repl):'');
+   +(SS.repl&&!closed&&ci.mobile?replHtml(d,C,SS.repl):'')+(same()?dmLine(d,C,closed):'');
  }
- function doReplace(d){
+ /* 같은 정보 같은 판단 3차: 결정권자 줄 — 이름 · 역할 / '결정권자 · 연락처 [입력]'(번호가 있으면 번호). 결정권자 = '다른 연락처'에서 결정권자로 표시한 사람, 없으면 관리 정보의 의사결정자 글 */
+  function dmLine(d,C,closed){
+   const kp=patchOf(d).keyPerson||{},keyOf=c=>String(c.personKey||(root.phoneN(c.mobile)?'mobile:'+root.phoneN(c.mobile):'')),o=C.others.find(c=>kp[keyOf(c)]);
+   const txt=((siteFields(d).find(x=>x.k==='decision_maker')||{}).v||'').trim(),name=o?[o.name,o.role].filter(Boolean).join(' · '):txt;if(!name)return '';
+   const tel=o?root.phoneN(o.mobile):'',dis=closed?' disabled':'';
+   const fill=o?'<button type="button" class="dvs-in" data-dv3="editc" data-slot="others" data-key="'+attr(keyOf(o))+'"'+dis+'>입력</button>':'<button type="button" class="dvs-in" data-dv3="addc" data-slot="others"'+dis+'>입력</button>';
+   return '<div class="dvs-dm"><span>'+h(name)+'</span><span class="s">결정권자 · '+(tel?'<a href="tel:'+attr(tel)+'">'+h(root.phoneFmt(o.mobile))+'</a>':'연락처 '+fill)+'</span></div>';
+  }
+  function doReplace(d){
   const S=st(d);if(S.repl){S.repl=null;apply();return;}
   closeIn('mgr');closeIn('others');closeIn('center');S.repl={where:'',consent:'ask',name:'',mobile:'',paste:'',msg:''};apply();setTimeout(()=>view().querySelector('[data-dv3repl="paste"]')?.focus(),0);
  }
