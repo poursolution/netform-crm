@@ -33,7 +33,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.waitForTimeout(600);
   const v=page.locator('#inq-v3');assert.equal(await v.count(),1,'목록 v3');assert.equal(await page.locator('#pg-inq.inq-v3 #inq-v2').isVisible(),false,'v2 목록은 숨김');
   /* 구글시트 상태 · 고정 문구는 상단 제목 옆 */
-  assert.equal(await page.locator('#ptitle').innerText(),'견적문의');assert.match(await page.locator('#psub .il-sheet').innerText(),/^구글시트 연결됨 · .*5건$/);assert.equal(await page.locator('#psub .il-fixed').innerText(),'12시까지 결과 · 다음 행동 업데이트');assert.equal(await v.locator('.il-sheet').count(),0,'목록 안에는 다시 그리지 않음');
+  assert.equal(await page.locator('#ptitle').innerText(),'견적문의');assert.match(await page.locator('#psub .il-sheet').innerText(),/^구글시트 연결됨 · .*5건$/);assert.equal(await page.locator('#psub .il-fixed').innerText(),'응대는 즉시 (배정 30분 · 첫 연락 2시간) · 기록 점검 12시');assert.equal(await v.locator('.il-sheet').count(),0,'목록 안에는 다시 그리지 않음');
   /* 탭 7개 + 건수 */
   const tabs=await v.locator('.il-tab').evaluateAll(a=>a.map(n=>n.querySelector('span').textContent.trim()+'|'+n.querySelector('small').textContent.trim()));
   assert.deepEqual(tabs.map(t=>t.split('|')[0]),['5전체','1배정 필요','1첫 연락 전','1후속 연락 필요',((d=>d(Date.now()-3*36e5)===d(Date.now()))(t=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(t)))?1:0)+'오늘 들어온 문의','1대표회의 · 기한 D-3','3필수정보 미입력'],JSON.stringify(tabs));

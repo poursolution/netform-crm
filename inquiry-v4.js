@@ -16,12 +16,12 @@
  const L3=()=>root.InquiryListV3,L2=()=>root.InquiryListV2,W=()=>root.InquiryWorkbench,DV=()=>root.InquiryDetailV2||{};
  const F=()=>root.InquiryFlow&&root.InquiryFlow.on()?root.InquiryFlow:null,IS=()=>root.InquirySite&&root.InquirySite.on()?root.InquirySite:null;
  const on=()=>!(root.G&&root.G.inqV4Off)&&!!L3()&&L3().enabled()&&!!F()&&!!root.InquiryCommand&&!!root.ListPager;
- const DEF={tab:'all',flag:'',sort:'old',sel:'',page:1,res:'',memo:'',when:'',pick:false,edit:'',draft:'',busy:false,err:'',detail:false};
+ const DEF={tab:'all',flag:'',sort:'urgent',sel:'',page:1,res:'',memo:'',when:'',pick:false,edit:'',draft:'',busy:false,err:'',detail:false};
  function st(){const g=root.G;if(!g.inqV4||!g.inqV4._v4)g.inqV4=Object.assign({},DEF,g.inqV4||{},{_v4:true});return g.inqV4;}
- const resetForm=S=>Object.assign(S,{res:'',con:'',rea:'',memo:'',when:'',pick:false,edit:'',draft:'',busy:false,err:''});
+ const resetForm=S=>Object.assign(S,{res:'',con:'',rea:'',memo:'',when:'',pick:false,edit:'',draft:'',busy:false,err:'',memoErr:'',find:false,findErr:''});
  const RULES=()=>root.OPS_RULES||{},ASSIGN_MIN=()=>Number(RULES().inquiryAssignMinutes)||30,FIRST_H=()=>Number(RULES().towerFirstResponseHours)||2,FOLLOW_D=()=>Number(RULES().inquiryFollowDays)||7;
- const ST={1:['unassigned','배정 필요'],2:['nofirst','첫 연락 전'],3:['stale','후속 연락 필요'],4:['ok','정상 진행']};
- const TABS=()=>[['all','진행 중 전체','종결 · 휴지통 제외','#15171c',0],['unassigned','배정 필요',ASSIGN_MIN()+'분 안에 담당 지정','#b42318',1],['nofirst','첫 연락 전','배정 후 '+FIRST_H()+'시간 안 첫 연락','#b42318',2],['stale','후속 연락 필요','첫 연락 후 '+FOLLOW_D()+'일 넘게 연락 없음','#c0392b',3],['ok','정상 진행','마지막 연락 '+FOLLOW_D()+'일 안','#6b7280',4]];
+ const ST={1:['unassigned','배정 필요'],2:['nofirst','첫 연락 전'],3:['stale','후속 연락 필요'],4:['ok','정상 진행'],5:['nocontact','연락처 보완']};
+ const TABS=()=>[['all','진행 중 전체','종결 · 휴지통 제외','#15171c',0],['unassigned','배정 필요',ASSIGN_MIN()+'분 안에 담당 지정','#b42318',1],['nofirst','첫 연락 전','배정 후 '+FIRST_H()+'시간 안 첫 연락','#b42318',2],['stale','후속 연락 필요','첫 연락 후 '+FOLLOW_D()+'일 넘게 연락 없음','#c0392b',3],['ok','정상 진행','마지막 연락 '+FOLLOW_D()+'일 안','#6b7280',4],['nocontact','연락처 보완','연락처 찾기 · 이관 기록 확인','#6b7280',5]];
  const d3=x=>!!x&&x.dd>=0&&x.dd<=3;
  const FLAGS=[['info','필수정보 미입력','#c0392b',m=>m.follow&&m.miss.length>0],['meet','대표회의 · 기한 D-3','#b42318',m=>d3(m.meet)||d3(replyOf(m.q))],['today','오늘 들어온 문의','#2a52b8',m=>m.x.ageDays===0]];
  function replyOf(q){try{return L3().replyOf(q);}catch(e){return null;}}
@@ -34,16 +34,60 @@
  /* 기록 한 줄(전화 · 결과 머리)에서 실제 연결인지 읽는다 */
  const lineOf=a=>{const note=String(a.note||''),res=String(a.result||'');return (/^고객 응대 기록/.test(note)&&res)?res:(note||res);};
  const quoteSent=m=>/견적\s*발송/.test(String(m.q.status||''))||(!!m.x.latest&&/견적/.test(String(m.x.latest.type||'')+lineOf(m.x.latest))&&/발송|보냄|전달/.test(lineOf(m.x.latest)));
- /* 상태(네 칸 중 하나) · 경과 기준(무엇부터 센 시간인지)을 줄마다 같이 둔다 */
- function ext(m){
-  const q=m.q,x=m.x,now=Date.now(),s=m.step===0?1:m.step===1?2:(m.follow&&m.late)?3:4;
-  const lastAt=x.latest?Date.parse(x.latest.at||x.latest.occurred_at||x.latest.created_at):x.first?Date.parse(x.first):NaN;
-  let basis,from;
-  if(s===1){basis='접수 후';from=x.created;}
-  else if(s===2){basis='배정 후';let a=NaN;try{a=Date.parse(root.inqCtlAssignedAt(q)||'');}catch(e){}from=Number.isFinite(a)?a:x.created;}
-  else{basis=quoteSent(m)?'견적 발송 후':'마지막 연락 후';from=lastAt;}
-  return Object.assign(m,{st:s,stLabel:ST[s][1],basis,from,el:Number.isFinite(from)?span(now-from):'—',dc:s===4?'#6b7280':s===3?'#c0392b':'#b42318'});
- }
+  /* 상태(다섯 칸 중 하나) · 경과 기준(무엇부터 센 시간인지) · 급한 순 묶음(① 신규 첫 연락 → ② 고객 약속 · 회의 → ③ 후속 기한 → ④ 과거 기록 정리)을 줄마다 같이 둔다.
+     연락처가 없는 과거 문의(후속 단계이거나 접수 하루 넘김)는 '후속 연락 필요'에서 빼고 '연락처 보완' 상태 · ④ 묶음으로 보낸다(2026-10-08 inquiry_memo ⑥). 날짜는 한국 날짜 기준(InquiryMemo). */
+  const GROUP=['','① 신규 첫 연락','② 고객 약속 · 회의','③ 후속 기한','④ 과거 기록 정리'];
+  const K=()=>root.InquiryMemo;
+  const dayMs=d=>Date.parse(d+'T00:00:00+09:00');
+  const dayNo=d=>Math.round(dayMs(d)/864e5);
+  function nextDueOf(q){try{const a=root.actionObj(q,root.itemPatch(q,'inq'));if(a&&a.text&&a.due){const d=String(a.due).slice(0,10);if(/^\d{4}-\d{2}-\d{2}$/.test(d))return d;}}catch(e){}return '';}
+  function ext(m){
+   const q=m.q,x=m.x,now=Date.now(),k=K(),noPhone=!m.phone&&!!(m.follow||(x.ageDays||0)>=1),s=noPhone?5:m.step===0?1:m.step===1?2:(m.follow&&m.late)?3:4;
+   const lastAt=x.latest?Date.parse(x.latest.at||x.latest.occurred_at||x.latest.created_at):x.first?Date.parse(x.first):NaN;
+   let basis,from;
+   if(s===1){basis='접수 후';from=x.created;}
+   else if(s===2){basis='배정 후';let a=NaN;try{a=Date.parse(root.inqCtlAssignedAt(q)||'');}catch(e){}from=Number.isFinite(a)?a:x.created;}
+   else{basis=quoteSent(m)?'견적 발송 후':'마지막 연락 후';from=lastAt;}
+   let g,due=null,dueDay='';
+   if(noPhone)g=4;
+   else if(m.step<=1){g=1;due=Number.isFinite(from)?from+(m.step===0?ASSIGN_MIN()*60000:FIRST_H()*3600000):null;}
+   else{
+    const rd=replyOf(q),cand=[];if(m.meet&&m.meet.dd>=0)cand.push(k?k.day(m.meet.date):'');if(rd&&rd.dd>=0)cand.push(k?k.day(rd.date):'');
+    const pend=k&&k.on()?k.pendingN(q):0;
+    if(cand.length||pend>0){g=2;dueDay=cand.filter(Boolean).sort()[0]||'';}
+    else{g=3;dueDay=nextDueOf(q)||(Number.isFinite(lastAt)&&k?k.addDays(k.day(lastAt),FOLLOW_D()):'');}
+    due=dueDay?dayMs(dueDay):null;
+   }
+   const days=Number.isFinite(from)?(k?k.span(from,now):span(now-from)):'—';
+   return Object.assign(m,{st:s,stLabel:ST[s][1],basis,from,el:days,g,gLabel:GROUP[g],due,dueDay,dc:s===4||s===5?'#6b7280':s===3?'#c0392b':'#b42318'});
+  }
+  /* 목록 줄 오른쪽 세 줄(묶음 · 지금 상태 · 기한) — 보이는 줄만 계산한다 */
+  function remain(ms){const k=K();return ms>=0?k.span(Date.now(),Date.now()+ms)+' 남음':k.span(Date.now()+ms,Date.now())+' 지남';}
+  function basisText(m){
+   const k=K(),lc=Object.assign({},lastOf(m));let at=Number.isFinite(lc.at)?lc.at:((m.st===3||m.st===4)&&Number.isFinite(m.from)?m.from:NaN);
+   /* 메모 속 통화로 실제 연결일을 보완한 문의 = 그 날짜를 실제 연결로 센다(더 늦은 연락 기록이 없을 때) */
+   try{const cn=k&&k.on()?k.connection(m.q):null;if(cn&&cn.state==='supplemented'&&cn.day){const t=dayMs(cn.day);if(!Number.isFinite(lc.at)||t>lc.at){at=t;lc.real=true;lc.res='';}}}catch(e){}
+   if(!Number.isFinite(at))return '연락 기록 없음';
+   const sent=quoteSent(m),label=sent?'견적 발송 후':lc.real?'실제 연결 후':lc.res?'연락 시도 후':'마지막 연락 후',kind=sent?'발송':lc.real?'통화':lc.res||'연락';
+   return label+' '+k.span(at)+' · '+k.md(at)+' '+kind;
+  }
+  function lines(m){
+   if(m._ln)return m._ln;const k=K(),q=m.q,now=Date.now();let l2='',l3='',col=m.dc;
+   const copy=!!k&&k.copied(q),mc=k?k.memoCallDay(q):'',pend=k&&k.on()?k.pendingN(q):0;
+   const copyText='과거 통화일 확인 필요'+(mc?' · 메모에 '+k.md(mc)+' 통화':'');
+   if(m.g===1){
+    const hhmm=Number.isFinite(m.due)?(k.day(m.due)===k.today()?'오늘':k.md(m.due))+' '+k.hm(m.due)+'까지':'';
+    l2=(m.step===0?'배정 기한 ':'첫 연락 기한 ')+(Number.isFinite(m.due)?remain(m.due-now):'—');l3=hhmm;col='#b42318';
+   }else if(m.g===4){l2='연락처 없음 · 연락처 보완 먼저';l3='기한 없음';col='#6b7280';}
+   else{
+    let due='';
+    if(m.dueDay){const dd=dayNo(m.dueDay)-dayNo(k.today());due=k.md(dayMs(m.dueDay))+'까지 · '+(dd===0?'오늘':dd>0?dd+'일 남음':(-dd)+'일 지남');if(dd<0)col='#c0392b';}
+    const meet=m.meet&&m.meet.dd>=0?'대표회의 D-'+m.meet.dd+' · '+k.md(m.meet.date):(()=>{const r=replyOf(q);return r&&r.dd>=0?'회신 기한 D-'+r.dd+' · '+k.md(r.date):'';})();
+    if(m.g===2){l2=meet||(copy?copyText:basisText(m));l3=pend>0?'메모 약속 '+pend+'건 확인 전':due;col='#c0392b';}
+    else{l2=copy?copyText:basisText(m);l3=due||'기한 없음';if(m.late&&m.dueDay===''&&!copy)col='#c0392b';}
+   }
+   return (m._ln={l1:m.gLabel,l2,l3,col});
+  }
  /* 연락 기록 한 줄의 말: 실제 연결 / 연락 시도(부재 · 통화불가 …) — 상세의 응대 이력과 같은 읽기 */
  const conText=e=>{const k=e.res?F().kindOf(e.res):'';return {real:k==='connected',text:(k==='connected'?'실제 연결':k==='attempt'?'연락 시도':'연락')+(e.res?' · '+e.res:'')+(e.text?' · '+e.text:'')};};
  const isCon=e=>e.kind==='contact'||(e.kind==='work'&&!!e.ch);
@@ -51,7 +95,7 @@
  function lastOf(m){
   if(m._lc)return m._lc;let e=null;
   try{e=(DV().timeline?DV().timeline(m.q):[]).filter(isCon).sort((a,b)=>(Date.parse(b.at)||0)-(Date.parse(a.at)||0))[0]||null;}catch(err){}
-  if(e){const c=conText(e);m._lc={when:ymd(e.at),text:c.text,real:c.real};}else m._lc={when:'',text:m.lastText,real:false};
+  if(e){const c=conText(e);m._lc={when:ymd(e.at),at:Date.parse(e.at),text:c.text,real:c.real,res:e.res||''};}else m._lc={when:'',at:NaN,text:m.lastText,real:false,res:''};
   return m._lc;
  }
  /* 진행 중 = 목록 범위(역할 · 브랜드 · 담당 · 검색) 가운데 영업건으로 넘기지 않은 문의. 한 번 그릴 때 여러 곳(위 탭 · 브랜드 칩 · 목록)이 같이 쓰므로 잠깐 담아 둔다 */
@@ -77,7 +121,8 @@
  function compute(){
   const S=st(),all=base(),T=TABS();if(!T.some(t=>t[0]===S.tab))S.tab='all';if(S.flag&&!FLAGS.some(f=>f[0]===S.flag))S.flag='';
   const inTab=S.tab==='all'?all:all.filter(m=>ST[m.st][0]===S.tab),flag=FLAGS.find(f=>f[0]===S.flag)||null;
-  const list=(flag?inTab.filter(flag[3]):inTab).slice().sort((a,b)=>S.sort==='old'?(a.x.created||0)-(b.x.created||0):(b.x.created||0)-(a.x.created||0));
+  const INF=1e18,cmp=S.sort==='urgent'?(a,b)=>a.g-b.g||(a.due==null?INF:a.due)-(b.due==null?INF:b.due)||(a.x.created||0)-(b.x.created||0):S.sort==='old'?(a,b)=>(a.x.created||0)-(b.x.created||0):(a,b)=>(b.x.created||0)-(a.x.created||0);
+   const list=(flag?inTab.filter(flag[3]):inTab).slice().sort(cmp);
   return (VIEW={all,inTab,list,T});
  }
  /* ── 왼쪽 목록 한 줄 ── */
@@ -93,7 +138,7 @@
   return '<div class="i4-row'+(sel?' on':'')+'" role="button" tabindex="0" data-i4="row" data-key="'+attr(m.key)+'" aria-current="'+sel+'" style="border-left-color:'+m.bc+'">'
    +'<div class="c1"><div class="t"><b style="color:'+m.bc+'">'+h(m.brand||'브랜드 미지정')+'</b><span>'+h(m.channel)+' · '+h(m.owner?repName(m.owner):'미배정')+'</span>'+tagsOf(m)+'</div><b class="site">'+h(m.site)+'</b><span class="sum">'+h([m.work,m.sum].filter(Boolean).join(' · '))+'</span></div>'
    +'<div class="c2"><span class="who"><span>'+h(m.who)+'</span> · <b class="'+(m.phone?'':'none')+'">'+h(m.phone||'연락처 없음')+'</b></span><span class="last"><i class="'+(lc.real?'real':'')+'"></i>'+(lc.when?'<span>'+h(lc.when)+'</span> ':'')+h(lc.text)+'</span></div>'
-   +'<div class="c3"><span>'+h(m.basis)+'</span><b style="color:'+m.dc+'">'+h(m.el)+'</b><span>'+h(m.stLabel)+'</span></div></div>';
+   +(()=>{const L=lines(m);return '<div class="c3"><span class="g">'+h(L.l1)+'</span><b style="color:'+L.col+'">'+h(L.l2)+'</b><span>'+h(L.l3)+'</span></div></div>';})();
  }
  /* ── 오른쪽 상세 ── */
  const yearOf=v=>(/^(\d{4})/.exec(String(v||''))||[])[1]||'';
@@ -117,7 +162,10 @@
    return '<button type="button" class="i4-miss" data-i4="miss" data-v="'+attr(l)+'">+ '+h(l)+'</button>';}).join('');
   return '<div class="i4-sec"><b class="lb">빠진 정보 <em>'+miss.length+'</em><span> / 9'+(miss.length?' · 누르면 바로 입력':' · 모두 채움')+'</span></b>'+(miss.length?'<div class="i4-chips">'+chips+'</div>':'')+'</div>';
  }
- function opener(m){
+ /* 날짜 3개 · 이관 메모 원문(통화 노랑 · 약속 파랑) · 과거 약속 확인함 — 메모가 있는 문의에만 */
+  function memoBlocks(q,S,m){const k=K();if(!k||!k.on())return '';try{return (m&&m.st===5?k.findHtml(q,S.find,canFill(),S.findErr):'')+k.datesHtml(q)+k.memoHtml(q)+k.promiseHtml(q,S.memoErr);}catch(e){return '';}}
+  function opener(m){
+   try{const k=K(),o=k&&k.opener(m.q,m.owner?repName(m.owner):String(root.ME&&root.ME.name||''));if(o)return o;}catch(e){}
   const q=m.q,who=m.owner?repName(m.owner):String(root.ME&&root.ME.name||''),wl=String(root.inqCtlWorkLabel(q)||''),topic=(wl&&!/미분류/.test(wl)?wl:'')||String(W().gist(q)||'').replace(/\s+/g,' ').slice(0,26)||'견적';let clue='';try{clue=IS()?IS().openerClue(q):'';}catch(e){}
   return '"안녕하세요, 넷폼 '+who+'입니다. '+(clue?clue+' 이번 ':'문의 주신 ')+topic+' 건으로 연락드렸습니다. 지금 통화 괜찮으실까요?"';
  }
@@ -129,7 +177,7 @@
  function dueOf(m,w){if(w==='대표회의 다음날'&&m.meet){const d=new Date(m.meet.date);d.setDate(d.getDate()+1);return d;}const d=new Date();d.setDate(d.getDate()+({'내일':1,'3일 후':3,'7일 후':7}[w]||7));return d;}
  const nextText=r=>(F().NEXT[r]||[])[0]||'다시 연락';
  function recordHtml(m,S){
-  if(m.st===1)return '<div class="i4-rec"><b class="ttl">응대 기록</b><div class="i4-assign"><span>담당이 정해지기 전입니다 — 배정 뒤에 응대 기록을 남깁니다.</span>'+(isAdmin()?'<button type="button" data-i4="assign">담당 배정</button>':'')+'</div></div>';
+  if(m.step===0)return '<div class="i4-rec"><b class="ttl">응대 기록</b><div class="i4-assign"><span>담당이 정해지기 전입니다 — 배정 뒤에 응대 기록을 남깁니다.</span>'+(isAdmin()?'<button type="button" data-i4="assign">담당 배정</button>':'')+'</div></div>';
   const w=whenOf(m,S),nd=w?dueOf(m,w):null,att=S.res&&F().kindOf(S.res)==='attempt',opts=['내일','3일 후','7일 후'].concat(hasMeet(m)?['대표회의 다음날']:[]);
   /* 결과 두 줄(2026-10-06 design_handoff_followup4): 연락 결과 → 실제 연결일 때만 고객 반응. 칩 자리만 바뀌고 다른 칸은 그대로 */
   const T=F().TWO,real=T.isReal(S.con),chip=(k,l,on)=>'<button type="button" class="i4-chip'+(on?' on':'')+'" data-i4="'+k+'" data-v="'+attr(l)+'" aria-pressed="'+on+'">'+h(l)+'</button>';
@@ -154,11 +202,11 @@
  function detailHtml(m,S){
   const q=m.q,raw=String(W().originalText(q)||'').trim();
   return '<header class="i4-dh"><button type="button" class="back" data-i4="back">‹ 목록</button>'
-   +'<div class="r1"><i style="background:'+m.bc+'"></i><b style="color:'+m.bc+'">'+h(m.brand||'브랜드 미지정')+'</b><span>'+h(m.channel)+' · 담당 '+h(m.owner?repName(m.owner):'미배정')+'</span><em></em><span class="i4-pill s'+m.st+'">'+h(m.stLabel+' · '+m.basis+' '+m.el+(Number.isFinite(m.from)?' ('+ymd(m.from)+')':''))+'</span></div>'
+   +'<div class="r1"><i style="background:'+m.bc+'"></i><b style="color:'+m.bc+'">'+h(m.brand||'브랜드 미지정')+'</b><span>'+h(m.channel)+' · 담당 '+h(m.owner?repName(m.owner):'미배정')+'</span><em></em><span class="i4-pill s'+m.st+'">'+h(m.stLabel+' · '+lines(m).l2)+'</span></div>'
    +'<b class="site">'+h(m.site)+'</b>'
    +'<div class="r3"><span>'+h(m.who)+' · <b class="'+(m.phone?'':'none')+'">'+h(m.phone||'연락처 없음')+'</b></span><em></em><button type="button" class="call" data-i4="call"'+(m.digits?' data-tel="'+attr(m.digits)+'"':' disabled')+'>전화</button><button type="button" class="sms" data-i4="sms"'+(m.digits?'':' disabled')+'>문자</button><button type="button" class="lnk" data-i4="full">전체 상세 ↗</button></div></header>'
    +'<div class="i4-db"><div class="i4-sec"><b class="lb">고객이 남긴 말</b><p class="i4-raw">'+h(raw||'저장된 문의 원문이 없습니다.')+'</p></div>'
-   +histBox(q)+missHtml(m,S)
+   +memoBlocks(q,S,m)+histBox(q)+missHtml(m,S)
    +'<div class="i4-line"><b class="ai">AI 첫마디</b>'+h(opener(m))+'</div>'
    +recordHtml(m,S)+logHtml(q,m.key)+'</div>';
  }
@@ -188,7 +236,7 @@
  function render(){
   const page=document.getElementById('pg-inq');if(!page)return;let host=document.getElementById('inq-v4');
   if(!on()){if(page.classList.contains('inq-v4')){page.classList.remove('inq-v4');giveBack();}if(host)host.remove();return;}
-  page.classList.add('inq-v4');
+  page.classList.add('inq-v4');try{const k=K();if(k)k.warm();}catch(e){}
   if(!host){host=document.createElement('div');host.id='inq-v4';const v3=document.getElementById('inq-v3');if(v3)v3.before(host);else page.append(host);host.addEventListener('click',onClick);host.addEventListener('input',onInput);host.addEventListener('keydown',onKeyIn);}
   const S=st(),V=compute(),LP=root.ListPager,list=V.list,prevSel=host.__sel;
   let ix=S.sel?list.findIndex(m=>m.key===S.sel):-1;
@@ -200,7 +248,7 @@
   const act=document.activeElement,focusF=act&&host.contains(act)&&act.dataset?act.dataset.i4f:'',caret=focusF?act.selectionStart:null;
   const tabs='<div class="i4-tabs" role="group" aria-label="상태 탭">'+V.T.map(t=>{const n=t[4]?V.all.filter(m=>m.st===t[4]).length:V.all.length,o=S.tab===t[0];return '<button type="button" class="i4-tab'+(o?' on':'')+'" data-i4="tab" data-v="'+t[0]+'" aria-pressed="'+o+'"><span><b class="n" style="color:'+(n?t[3]:'#c9cdd5')+'">'+n+'</b><b>'+h(t[1])+'</b></span><small>'+h(t[2])+'</small></button>';}).join('')+'</div>';
   const flags='<div class="i4-flags"><span class="lb">함께 확인</span>'+FLAGS.map(f=>{const n=V.inTab.filter(f[3]).length,o=S.flag===f[0];return '<button type="button" class="i4-flag'+(o?' on':'')+(n||o?'':' zero')+'" data-i4="flag" data-v="'+f[0]+'" aria-pressed="'+o+'">'+h(f[1])+' <b'+(o||!n?'':' style="color:'+f[2]+'"')+'>'+n+'</b></button>';}).join('')
-   +'<i></i><span class="i4-more-slot"></span><span class="cnt"'+(CACHE.handed?' title="영업건으로 넘긴(전환 · 기존 영업건에 붙임) 문의 '+CACHE.handed+'건은 진행 중에서 빠집니다"':'')+'><b>'+list.length+'건</b> · '+(S.sort==='old'?'오래된 순':'최근 순')+' · ↑ ↓ 이동</span><div class="i4-sorts"><button type="button" data-i4="sort" data-v="old" aria-pressed="'+(S.sort==='old')+'">오래된 순</button><button type="button" data-i4="sort" data-v="new" aria-pressed="'+(S.sort==='new')+'">최근 순</button></div></div>';
+   +'<i></i><span class="i4-more-slot"></span><span class="cnt"'+(CACHE.handed?' title="영업건으로 넘긴(전환 · 기존 영업건에 붙임) 문의 '+CACHE.handed+'건은 진행 중에서 빠집니다"':'')+'><b>'+list.length+'건</b> · '+(S.sort==='urgent'?'급한 순':S.sort==='old'?'오래된 순':'최근 순')+' · ↑ ↓ 이동</span><div class="i4-sorts"><button type="button" data-i4="sort" data-v="urgent" aria-pressed="'+(S.sort==='urgent')+'" title="① 신규 첫 연락 → ② 고객 약속 · 회의 → ③ 후속 기한 → ④ 과거 기록 정리">급한 순</button><button type="button" data-i4="sort" data-v="old" aria-pressed="'+(S.sort==='old')+'">오래된 순</button><button type="button" data-i4="sort" data-v="new" aria-pressed="'+(S.sort==='new')+'">최근 순</button></div></div>';
   const kt=KEEP.tools;if(kt&&host.contains(kt))kt.remove();
   host.innerHTML=tabs+flags+'<div class="i4-panes'+(S.detail&&cur?' show-detail':'')+'"><section class="i4-list" aria-label="문의 목록">'+(pg.rows.length?pg.rows.map(m=>rowHtml(m,m.key===S.sel)).join(''):'<div class="i4-empty">이 조건에 해당하는 문의가 없습니다</div>')+LP.html(pg,{ns:'i4',unit:'건',small:true})+'</section>'
    +'<section class="i4-detail" aria-label="고른 문의">'+(cur?detailHtml(cur,S):'<div class="i4-none">왼쪽에서 문의를 고르면 여기에 열립니다</div>')+'</section></div>';
@@ -218,7 +266,7 @@
  const toast=(m,k)=>{try{if(typeof root.toast==='function')root.toast(m,k);}catch(e){}};
  /* 응대 기록 저장 → 다음 문의 */
  function save(){
-  const S=st(),m=find(S.sel);if(!m||!S.res||S.busy||m.st===1)return;const q=root.inqCtlFind(m.key,false);if(!q)return;
+  const S=st(),m=find(S.sel);if(!m||!S.res||S.busy||m.step===0)return;const q=root.inqCtlFind(m.key,false);if(!q)return;
   const order=VIEW.list.map(x=>x.key),p=order.indexOf(m.key),nextKey=order[p+1]||order[p-1]||'';
   const w=whenOf(m,S),nd=dueOf(m,w),nt=nextText(S.res),memo=String(S.memo||'').trim(),line='[전화 · '+S.res+']'+(memo?' '+memo:'');
   const before=JSON.parse(JSON.stringify(q)),patch=root.itemPatch(q,'inq'),beforePatch=JSON.parse(JSON.stringify(patch));
@@ -228,7 +276,22 @@
   if(!ok){if(!S.err)S.err=(document.getElementById('iq-msg')||{}).textContent||'저장하지 못했습니다.';return render();}
   toast(S.res+' → '+nt+' '+kday(nd));resetForm(S);if(nextKey)S.sel=nextKey;fresh();root.paint();
  }
- /* 빠진 정보 한 칸 저장 */
+ /* 메모 속 통화 보완 · 과거 약속 판단(InquiryMemo.run → 서버 + 이 PC) */
+  function memoAct(a,m,b){
+   const S=st(),k=K(),q=root.inqCtlFind(m.key,false);if(!k||!q)return;S.memoErr='';
+   try{if(a==='memo-call')k.run('call_supplement',q,{key:b.dataset.v});else k.run('promise',q,{key:b.dataset.key,res:b.dataset.v});}
+   catch(e){S.memoErr=String(e&&e.message||'저장하지 못했습니다');return render();}
+   toast(a==='memo-call'?'실제 연결일을 보완했습니다':'약속 판단을 저장했습니다');fresh();root.paint();
+  }
+  /* 연락처 보완: 찾은 번호를 문의 연락처로 저장(상세 창과 같은 저장 길 — InquiryCommand field_set · phone) → 후속 연락 목록으로 */
+  function savePhone(m,digits){
+   const S=st(),q=root.inqCtlFind(m.key,false),value=String(digits||'').trim();if(!q||!value||S.busy)return;
+   S.busy=true;S.findErr='';render();
+   Promise.resolve().then(()=>root.InquiryCommand.run('field_set',q,{field:'phone',value})).then(done=>{DV().applyField(q,(done&&done.field)||'phone',(done&&done.value)||value,done&&done.rawKey);try{root.saveLocal&&root.saveLocal();}catch(e){}
+    Object.assign(S,{busy:false,find:false,findErr:''});toast('연락처를 저장했습니다 — 후속 연락 목록으로 옮겨집니다');fresh();root.paint();
+   }).catch(e=>{Object.assign(S,{busy:false,findErr:String(e&&e.message||e||'저장하지 못했습니다')});render();});
+  }
+  /* 빠진 정보 한 칸 저장 */
  function saveMiss(){
   const S=st(),m=find(S.sel),f=FIELD[S.edit];if(!m||!f||S.busy)return;const q=root.inqCtlFind(m.key,false),value=String(S.draft||'').trim();if(!q)return;
   if(!value){S.edit='';S.draft='';return render();}
@@ -242,7 +305,7 @@
   const b=e.target.closest('[data-i4]');if(!b)return;const S=st(),a=b.dataset.i4,v=b.dataset.v;
   if(a==='tab'){S.tab=v;S.flag='';S.page=1;S.sel='';return render();}
   if(a==='flag'){S.flag=S.flag===v?'':v;S.page=1;S.sel='';return render();}
-  if(a==='sort'){S.sort=v==='new'?'new':'old';S.page=1;S.sel='';return render();}
+  if(a==='sort'){S.sort=v==='new'?'new':v==='old'?'old':'urgent';S.page=1;S.sel='';return render();}
   if(a==='page'){const pg=root.ListPager.cut(VIEW.list,Number(b.dataset.page)||1);S.page=pg.page;S.sel=pg.rows.length?pg.rows[0].key:'';resetForm(S);S.detail=false;return render();}
   if(a==='row'){const key=b.dataset.key;if(S.sel===key){S.detail=true;return render();}return select(key);}
   if(a==='back'){S.detail=false;return render();}
@@ -258,6 +321,9 @@
   if(a==='pick'){S.pick=!S.pick;return render();}
   if(a==='when'){S.when=v;return render();}
   if(a==='save')return save();
+   if(a==='memo-call'||a==='promise')return memoAct(a,m,b);
+   if(a==='phone-find'){S.find=!S.find;S.findErr='';return render();}
+   if(a==='phone-save')return savePhone(m,b.dataset.v);
  }
  function onInput(e){const k=e.target.dataset&&e.target.dataset.i4f;if(!k)return;const S=st();if(k==='memo')S.memo=e.target.value;else if(k==='draft')S.draft=e.target.value;}
  function onKeyIn(e){
