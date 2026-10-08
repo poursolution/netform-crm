@@ -122,7 +122,7 @@
  const LEFT_LABELS=['공종','고객 반응','의사결정자','경쟁사','예상 금액','예상금액','공사 예정'];
  function fileCounts(d){let files=[],quotes=[];try{files=d.id?root.execAttachments(d):[];quotes=d.id?root.execQuoteVersions(d):[];}catch(e){}const photos=files.filter(x=>/^image\//.test(x.mime_type||'')).length;return {photos,quotes:quotes.length,etc:Math.max(0,files.length-photos)};}
  /* 단계별 B안의 첫 사유 = 추천 다음 행동(규칙 — AI 표식 없음) */
- function ruleHint(d){try{const P=root.PipelineStageB,key=String(d.id||root.dealKey(d)),row=root.PipelineWorkspace.rows({unscoped:true}).find(r=>r.key===key);if(!P||!row||!P.CFG[row.group])return null;const it=P.model(row.group,[row]).items[0];if(!it||!it.first)return null;const rs=P.CFG[row.group].RS[it.first];return {why:rs[0],todo:rs[3],btn:rs[2],red:rs[1]==='#d93a3a'};}catch(e){return null;}}
+ function ruleHint(d){try{const P=root.PipelineStageB,key=String(d.id||root.dealKey(d)),row=root.PipelineWorkspace.rows({unscoped:true}).find(r=>r.key===key);if(!P||!row||!P.CFG[row.group])return null;const it=P.model(row.group,[row]).items[0];if(!it||!it.first)return null;const rs=P.CFG[row.group].RS[it.first];return {why:rs[0],todo:rs[3],btn:rs[2],act:rs[4],red:rs[1]==='#d93a3a'};}catch(e){return null;}}
  /* ── 연락하고 결과 남기기: '지금 할 일' 카드 안에서 펼침(시안) — 저장은 기존 연락 기록 경로 그대로 ── */
  const STAGES=[['consulting','컨설팅 설계'],['sent','자료 발송완료'],['relationship','관계관리'],['competition','경쟁·입찰'],['construction','계약·시공'],['won','수주'],['lost','실주']];
  const RCH=['전화','문자','카카오','방문','이메일'];
@@ -378,7 +378,8 @@
   const d0=root.CUR_DETAIL?.item,T=tidy(),call=T&&type==='전화'&&!!(d0&&st(d0).calling);
   if(ta)ta.placeholder=type==='메모'?'내부에서만 보는 메모':type==='문자'?'보낸 문자':call?'통화 결과를 한 줄로 (예: 소장 통화 — 12월 입대의 후 결정, 10/14 미팅)':'무슨 일이 있었는지 한 줄로 (예: 관리소장과 통화 — 예산 확정은 12월 입대의 이후)';
   if(foot)foot.textContent=T?(type==='전화'?(aiOn()?'적으면 AI가 수단 · 결과 · 다음 행동을 채웁니다 · 부재는 연락 시도로만 셈':'부재는 연락 시도로만 셈'):''):(type==='전화'&&aiOn()?'내용을 적으면 AI가 수단 · 결과 · 다음 행동을 채웁니다':'');
-  if(sug&&type!=='전화')sug.hidden=true;
+  if(same()&&foot){const sc=type==='메모'?'저장 = 내부 메모 1건':'저장 = 이 응대 기록 1건';foot.textContent=(foot.textContent?foot.textContent+' · ':'')+sc+' · 다른 칸은 안 바뀜'+(type==='메모'?'':' · \'고객 말: … 담당 판단: …\'으로 나눠 적으면 이력에서 구분');}
+   if(sug&&type!=='전화')sug.hidden=true;
  }
  /* 응대 기록: 적은 내용을 AI(memo_tidy)가 읽어 결과 · 다음 행동을 채운다 — 보이는 제안대로만 저장한다 */
  function composerAi(box){
@@ -407,7 +408,17 @@
   try{await writeContact(d,{ch:C.ch,note:recNote(C.ch,C.res,C.raw)+mk,at,meaningful:!['부재','회신대기'].includes(C.res),next,due:C.date,P:C.prog});S.cmp=null;S.cmpBusy=false;S.calling=false;toast('기록했습니다 · 다음 행동 '+next.text+' · '+dd(C.date)+(mk?' · 연결 '+mk.split(',').length+'곳':''));try{root.ContactLink&&root.ContactLink.afterSave(d,clb);}catch(e){}afterSave(d);}
   catch(e){S.cmpBusy=false;save.disabled=false;save.textContent='기록 저장';err.textContent=String(e.message||e);}
  }
- function buildCenter(v,d,closed){
+ /* 이력 한 줄: 작성자 · 날짜 · 종류(고객 접촉 / 내부 변경) 같은 위치 · 내부 ID 대신 사용자 이름 · 본문에 '고객 말:' '담당 판단:' 'AI 추천:' 머리가 있으면 줄을 나눠 보인다(검은 선 · 회색 선 · AI 표시) */
+  function sameMsg(m,touch){
+   const k=m.querySelector('.dv3-kind');if(k&&!m.classList.contains('ce-ev')){/* 변화 이벤트는 '변화 · 종류' 이름을 그대로 둔다 */const t=touch?'고객 접촉':'내부 변경';if(k.textContent!==t)k.textContent=t;k.classList.toggle('dvs-k-cust',touch);}
+   const sp=[...m.querySelectorAll('.idv-meta>span')];if(sp[0]){const raw=sp[0].textContent.trim();if(/^u[_-]?[a-z0-9]{2,}$/i.test(raw)||UUID.test(raw)){let nm='';try{nm=root.repDisplay?root.repDisplay(raw):'';}catch(e){}if(!nm||nm===raw)nm='담당자';sp[0].textContent=nm;}sp[0].classList.add('dvs-who');}
+   const bub=m.querySelector('.idv-bubble');if(!bub||bub.dataset.dvsDone===bub.textContent)return;
+   const txt=bub.textContent;if(!/(고객 말|담당 판단|AI 추천)\s*[·:]/.test(txt)){bub.dataset.dvsDone=txt;return;}
+   const parts=txt.split(/(?=(?:고객 말|담당 판단|AI 추천)\s*[·:])/),main=parts.filter(p=>!/^(고객 말|담당 판단|AI 추천)\s*[·:]/.test(p)).join(' ').trim();
+   const blocks=parts.filter(p=>/^(고객 말|담당 판단|AI 추천)\s*[·:]/.test(p)).map(p=>{const mm=/^(고객 말|담당 판단|AI 추천)\s*[·:]\s*([\s\S]*)$/.exec(p),cls=mm[1]==='고객 말'?'said':mm[1]==='담당 판단'?'judge':'ai';return '<span class="dvs-q '+cls+'"><b>'+(cls==='ai'?'<em class="dv3-aitag">AI</em>':h(mm[1]))+'</b>'+h(mm[2].trim())+'</span>';}).join('');
+   bub.innerHTML=(main?'<span class="dvs-qm">'+h(main)+'</span>':'')+blocks;bub.dataset.dvsDone=bub.textContent;
+  }
+  function buildCenter(v,d,closed){
   const sec=v.querySelector('.dw-center .ddv-talk');if(!sec)return;
   const msgs=[...sec.querySelectorAll('.idv-thread>.idv-msg')];let tries=0,conn=0;
   msgs.forEach(m=>{
@@ -421,7 +432,7 @@
     if(same()){/* 고객 접촉 / 내부 변경 분리 · 기본 '고객 접촉' · 접촉 수 = 고객 접촉만 */
      const H=st(d).hist||'cust',cc=msgs.filter(m=>m.dataset.dv3k==='touch').length;
      hh='<b>응대 이력</b>'+root.DealSame.histBar({all:msgs.length,cust:cc,sys:msgs.length-cc,tries,conn},H);
-     let shown=0;msgs.forEach(m=>{const t=m.dataset.dv3k==='touch',hide=H==='cust'?!t:H==='sys'?t:false;m.classList.toggle('dvs-hide',hide);if(!hide)shown++;});
+     let shown=0;msgs.forEach(m=>{const t=m.dataset.dv3k==='touch',hide=H==='cust'?!t:H==='sys'?t:false;m.classList.toggle('dvs-hide',hide);if(!hide)shown++;sameMsg(m,t);});
      let hn=sec.querySelector('.dvs-hnone');if(msgs.length&&!shown){if(!hn){hn=el('p','dvs-hnone');const th=sec.querySelector('.idv-thread');if(th)th.after(hn);else sec.append(hn);}hn.textContent=H==='cust'?'고객 접촉 기록이 없습니다 — 아래에 연락 결과를 적으면 여기 쌓입니다':'내부 변경 기록이 없습니다';}else if(hn)hn.remove();
     }if(head.dataset.h!==hh){head.innerHTML=hh;head.dataset.h=hh;}}
   if(tidy()){const none=sec.querySelector('.ddv-nothing'),t='아직 없습니다. 아래에 첫 연락 결과를 적으면 여기 쌓입니다.';if(none&&none.textContent!==t)none.textContent=t;}
@@ -510,7 +521,7 @@
    const fields=leftOn?F.map(x=>fieldRow(d,x,closed)).join(''):'';
   const others=C.others.length?C.others.map(c=>{const k=String(c.personKey||(root.phoneN(c.mobile)?'mobile:'+root.phoneN(c.mobile):'')),tel=root.phoneN(c.mobile);return '<div class="dv3-other"><button type="button" class="nm" data-dv3="editc" data-slot="others" data-key="'+attr(k)+'"'+(closed?' disabled':'')+'>'+h(c.name||'이름 미입력')+'</button><span>'+h(c.role||'담당자')+'</span><i></i>'+(tel?'<a href="tel:'+attr(tel)+'">'+h(root.phoneFmt(c.mobile))+'</a>':'<span class="empty">번호 없음</span>')+'</div>';}).join(''):'<p class="dv3-none">다른 연락처가 없습니다</p>';
   const slot=n=>'<div class="dv3-slot" data-slot="'+n+'"></div>';
-  return '<section class="dv3-sec dv3-mgr">'+(tidy()?mgrTidy(d,C,closed,SS,chg):mgr)+slot('mgr')+'</section>'
+  return (same()?'<span class="dvs-area">단지 공통</span>':'')+'<section class="dv3-sec dv3-mgr">'+(tidy()?mgrTidy(d,C,closed,SS,chg):mgr)+slot('mgr')+'</section>'
    +(root.SiteHistory&&root.SiteHistory.enabled()?root.SiteHistory.html(d,closed)/* 이 단지 영업 이력(2026-10-05 design_handoff_site_history) — 끄면(G.siteHistoryOff) 아래 예전 칸 */:'<section class="dv3-sec"><header><b>같은 현장 다른 영업</b><span>'+rel.length+'건'+(rel.length?' · 누르면 그 건이 열림':'')+'</span></header>'+relHtml+'</section>')
    +(leftOn?'<section class="dv3-sec"><header><b>현장 정보</b><i></i>'+(closed&&!ciOk?'':'<small>누르면 바로 수정</small>')+'</header>'+fields+slot('site')+'</section>':'')/* 2026-10-05 대표 "두 개 중복되는 것 같은데 오른쪽만 남겨 줘" — 기본은 오른쪽 '이 단계 필수 정보' 하나 */
    +'<section class="dv3-sec"><header><b>자료</b><span>사진 '+fc.photos+' · 견적서 '+fc.quotes+' · 기타 '+fc.etc+'</span><i></i><button type="button" class="lnk" data-dv3="files">'+(SS.files?'접기':'자료 보기')+'</button></header>'+(SS.files?filesHtml(d,SS,closed):'')+slot('fform')+slot('files')+'</section>'
@@ -540,8 +551,9 @@
     if(row.querySelector('input,select,.dv3-multi')){missing.push({row,label});return;}
     let empty=!val||val.classList.contains('empty')||/^미입력/.test(String(val.textContent||'').trim());
     if(label==='계약서'&&!cs.proof){empty=true;if(sp)sp.textContent='계약서 파일';if(val&&val.classList){val.textContent='미첨부';val.classList.add('empty');}}
-    if(empty){missing.push({row,label:label==='계약서'?'계약서 파일':label});return;}
-    const b=val&&val.tagName==='BUTTON'?'<button type="button" class="dvs-fl" data-dv3="'+attr(val.dataset.dv3||'')+'" data-key="'+attr(val.dataset.key||'')+'" data-label="'+attr(val.dataset.label||label)+'" title="'+attr(label+' · '+val.textContent.trim())+'">'+h(label)+'</button>':'<span class="dvs-fl" title="'+attr(label+' · '+(val?val.textContent.trim():''))+'">'+h(label)+'</span>';
+    if(empty){/* 미입력 = 점선 [입력] · [첨부] 버튼 */const vb=row.querySelector(':scope>.dv3-val');if(vb){vb.classList.add('dvs-in');vb.textContent=label==='계약서'?'첨부':'입력';if(label==='계약서'){vb.dataset.dv3='files';delete vb.dataset.key;}}if(sp&&/\(원\)$/.test(sp.textContent))sp.textContent=sp.textContent.replace(/\(원\)$/,'');missing.push({row,label:label==='계약서'?'계약서 파일':label});return;}
+    const vtx=val?val.textContent.trim():'',nm=label.replace(/\(원\)$/,''),showV=/^\d{4}-\d{2}-\d{2}$/.test(vtx)?DS.dot(vtx):'';/* 입력됨 = 값 + [수정] 링크 */
+    const b='<span class="dvs-fl" title="'+attr(label+' · '+vtx)+'">'+h(nm)+(showV?' <b>'+h(showV)+'</b>':'')+(val&&val.tagName==='BUTTON'?' <button type="button" class="dvs-ed" data-dv3="'+attr(val.dataset.dv3||'')+'" data-key="'+attr(val.dataset.key||'')+'" data-label="'+attr(val.dataset.label||label)+'">수정</button>':'')+'</span>';
     filled.push(b);row.remove();
    });
    const code=sc?sc.code:'',spOn=code==='contract',sp0=DS.special(d),spMiss=spOn&&sp0.v==='확인 필요';
@@ -563,7 +575,8 @@
    const ci=contacts(d).ci,hint=closed?null:ruleHint(d);let reco='';
    try{const K=root.DealKeyman&&root.DealKeyman.ai&&aiOn()?root.DealKeyman.ai(d):null,nx=K&&K.next;if(nx)reco=nx.how+' · '+nx.what+' · '+(nx.days===0?'오늘':nx.days+'일 뒤')+' (AI)';}catch(e){}
    const nextHtml=S.nextOpen?'<div class="dv3-nextonly"><span>다시 연락</span>'+[['내일',1],['3일 후',3],['7일 후',7]].map(([l,n])=>'<button type="button" data-dv3="nextpick" data-v="'+n+'"'+(S.nbusy?' disabled':'')+'>'+l+'</button>').join('')+(S.nextDate?'<input type="date" data-dv3-nextdate min="'+KST(0)+'" aria-label="다음 연락 날짜"'+(S.nbusy?' disabled':'')+'>':'<button type="button" class="lnk" data-dv3="nextmore">직접 정하기</button>')+'<button type="button" class="lnk gray" data-dv3="nextcancel">취소</button></div>':'';
-   const html=DS.taskHtml(d,{closed,tel:!!ci.mobile,calling:!!S.calling,req:S.req,guide:String(root.dealStage(d))==='contract'?String(((root.CRMRules&&root.CRMRules.PHASE4&&root.CRMRules.PHASE4.playbook_tips)||{}).con||''):(hint?(hint.todo||hint.why):''),reco,nextHtml});
+   const primary=hint&&hint.btn?{label:hint.btn+(/하기$/.test(hint.btn)?'':'하기'),act:hint.why==='계약 정보 입력됨 · 증빙 확인 필요'?'files':String(hint.act||'')}:null;
+   const html=DS.taskHtml(d,{closed,primary,tel:!!ci.mobile,calling:!!S.calling,req:S.req,guide:String(root.dealStage(d))==='contract'?String(((root.CRMRules&&root.CRMRules.PHASE4&&root.CRMRules.PHASE4.playbook_tips)||{}).con||''):(hint?(hint.todo||hint.why):''),reco,nextHtml});
    if(tk.__h!==html){tk.__h=html;tk.innerHTML=html;}
    if(now)now.classList.add('dv3-old');
   }
@@ -868,6 +881,7 @@
   if(a==='mvpick'&&b.dataset.stage==='won'&&root.DealWin&&root.DealWin.enabled()&&root.DealWin.intercept(d))return;
   if(a==='mvpick'){if(b.getAttribute('aria-disabled')==='true'){if(!b.classList.contains('cur'))toast(b.dataset.stage==='won'?(root.PipelineStages.group(root.dealStage(d))==='construction'?'수주는 준공 처리 뒤에 옮길 수 있습니다 — 「계약·시공」 옆의 [→ 준공]을 먼저 눌러 주세요':'수주는 준공 단계에서만 옮길 수 있습니다 — 먼저 계약·시공으로 옮겨 주세요'):'지금 단계에서는 바로 옮길 수 없는 단계입니다','warn');return;}if(b.getAttribute('aria-pressed')==='true')return;pickStage(d,b.dataset.stage,b.dataset.code);return;}
   if(a==='htab'){st(d).hist=b.dataset.v;apply();return;}
+   if(a==='primary'){const act=b.dataset.act||'';if(act==='files'){const S=st(d);if(!S.files){S.files=true;apply();}const t=view().querySelector('.dv3-left [data-dv3="files"]');if(t)try{t.scrollIntoView({block:'nearest'});}catch(e){}return;}if(openFrom(act))return;startCall(d,true);return;}
    if(a==='callnow'){try{root.contactDial('mobile');}catch(err){}startCall(d,true);return;}
    if(a==='spick'){const S=st(d);S.sedit='special_terms';S.sdraft='';commitStage(d,'special_terms',b.dataset.v);return;}
    if(a==='sptext'){const S=st(d);S.sedit='special_terms';S.sdraft=root.DealSame.special(d).text;apply();return;}

@@ -27,7 +27,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
      stage_contexts:{contract:{fields:{contract_date:'2026-01-26',contract_amount:1043900000}}},
      next_action:{id:'n1',text:'계약 체결 확인',type:'전화',due:day(-3),status:'open'},
      stageHistory:[{id:'h1',from:'bidding',to:'contract',at:'2026-10-03T14:20:00+09:00',actor:'황윤선'}],
-     activities:[act('a1','전화','통화 연결 · 관리소장 · 낙찰 결과 안내 (코지건설)','2026-09-12T10:05:00+09:00'),act('a2','방문','현장 방문 · 착공 일정 협의','2026-02-03T15:40:00+09:00'),act('a3','전화','통화 연결 · 계약 조건 확인','2026-01-15T09:30:00+09:00'),{id:'a4',type:'메모',note:'[내부] 계약 체결 기록 · 10.439억',at:'2026-01-26T11:00:00+09:00',actor:'황윤선'}]},
+     activities:[act('a1','전화','통화 연결 · 관리소장 · 낙찰 결과 안내 (코지건설) 고객 말: 결과 나왔으니 계약 진행하자 담당 판단: 코지 낙찰 확정 · 계약 단계로','2026-09-12T10:05:00+09:00'),act('a2','방문','현장 방문 · 착공 일정 협의','2026-02-03T15:40:00+09:00'),act('a3','전화','통화 연결 · 계약 조건 확인','2026-01-15T09:30:00+09:00'),{id:'a4',type:'메모',note:'[내부] 계약 체결 기록 · 10.439억',at:'2026-01-26T11:00:00+09:00',actor:'황윤선'}]},
     {id:D2,site:'[경기 평택] 평택비전지웰푸르지오',site_id:S,assignee:'황윤선',brand:'석민이앤씨',created:'2023-01-10',code:'won',stage_code:'won',outcome:'won',won_amount:120000000,closed_at:'2023-06-01',contract_date:'2023-06-01',grp:'영업·관리',amt:120000000,activities:[]},
     /* 진척 판단: 연락은 많고 마지막 진척(견적 요청 · 단계 이동)이 오래된 건 */
     {id:D3,site:'[서울] 진척이 멈춘 단지',assignee:'황윤선',brand:'POUR솔루션',created:'2026-06-01',code:'sent',stage_code:'sent',grp:'컨설팅·견적',amt:5e7,stageHistory:[{id:'h9',from:'consulting',to:'sent',at:'2026-08-28T10:00:00+09:00',actor:'황윤선'}],
@@ -61,15 +61,19 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* 머리 */
   assert.equal(one(await V.locator('.dv3-stagebadge').innerText()),'계약 · 시공'.replace(' · ','·'),'단계 알약에 n일째를 붙이지 않는다');
   assert.equal(one(await V.locator('.dv3-subrow .tx').innerText()),'담당 황윤선');
-  assert.equal(one(await V.locator('.dvs-line2').innerText()),'석민이앤씨 낙찰 (확정) 10.439억 · 코지건설 기술자문 (확정) 4.3365억 · 넷폼 예상 1.12억'.replace('1.12억','11.2억')+' · 참고 ✓ 기존 고객 · 2023 수주 1');
+  assert.equal(one(await V.locator('.dvs-line2').innerText()),'석민이앤씨 계약금액 10억 4,390만원 낙찰금액 10.439억 · 코지건설 기술자문금액 4.3365억 · 넷폼 예상금액 11.2억 · 참고 ✓ 기존 고객 · 2023 수주 1');
   assert.equal(await V.locator('.ddv-chips .idv-brand').evaluate(n=>getComputedStyle(n).display),'none','맨 위 브랜드 글자는 둘째 줄과 겹쳐 숨김');
   /* 오른쪽 맨 위 */
   assert.equal(await V.locator('.dw-right').evaluate(r=>r.firstElementChild.className.includes('dvs-task')),true);
   assert.equal(one(await V.locator('.dvs-task .lb').innerText()),'등록된 다음 업무');
-  assert.equal(one(await V.locator('.dvs-tt b').innerText()),'계약 체결 확인');
-  assert.match(one(await V.locator('.dvs-tt>span').innerText()),/^\d+\.\d+ · 3일 지남$/);assert.equal(await V.locator('.dvs-tt>span').evaluate(n=>n.className),'red');
+  /* 3차 정돈: 영역 라벨 · 기한 종류 */
+  assert.deepEqual([one(await V.locator('.dv3-left>.dvs-area').innerText()),one(await V.locator('.dvs-task>.dvs-area').innerText()),one(await V.locator('.dw-center .dvs-area').innerText())],['단지 공통','현재 영업건','현재 영업건']);
+  assert.equal(one(await V.locator('.dvs-tt>b').innerText()),'계약 체결 확인');
+  assert.match(one(await V.locator('.dvs-tt>span').innerText()),/^내부 처리 기한 \d+\.\d+ · 3일 지남$/,'기한 종류를 붙인다(기한 초과만 쓰지 않음)');assert.equal(await V.locator('.dvs-tt>span>b').evaluate(n=>n.className),'red');
   assert.deepEqual(await V.locator('.dvs-kv>span').allInnerTexts(),['확인됨','체결 완료 · 2026.1.26 · 1,043,900,000원','확인할 것','계약서 미첨부 · 실제 체결 · 자료 확인','완료 조건','계약서 첨부 + 특이조건 선택']);
-  assert.deepEqual(await V.locator('.dvs-btns button').allInnerTexts(),['연락하기','결과 기록','다음 업무']);
+  assert.deepEqual(await V.locator('.dvs-btns button').allInnerTexts(),['계약서 확인하기','연락하기','결과 기록','다음 업무'],'강조 버튼은 현재 업무 실행 하나 · 나머지는 보조');
+  assert.deepEqual(await V.locator('.dvs-btns button').evaluateAll(l=>l.map(b=>b.classList.contains('fill'))),[true,false,false,false]);
+  assert.equal(one(await V.locator('.dvs-scope').innerText()),'다음 업무 = 업무 · 기한만 저장 · 결과 기록 = 응대 이력 1건 · 칸 수정 = 그 칸만');
   assert.match(one(await V.locator('.dvs-aux').innerText()),/^지침 구두 약속은 계약서 특약에 남겨야 분쟁이 없습니다/,'지침 · 추천은 아래 보조 줄');
   /* 예전 '지금 할 일' 카드는 숨김 · 접는 곳 없음 */
   assert.equal(await V.locator('#nowCard').evaluate(n=>getComputedStyle(n).display),'none');
@@ -77,7 +81,8 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* 빠진 정보 n · 입력된 것은 회색 한 줄 · 특이조건 기본 확인 필요 */
   assert.match(one(await V.locator('.da-stage-summary h3').innerText()),/^빠진 정보 5$/);
   assert.deepEqual(await V.locator('.da-stage-summary .dv3-row>span').allInnerTexts(),['공종','낙찰결과','계약 상태','계약서 파일']);
-  assert.match(one(await V.locator('.dvs-ok').innerText()),/^입력됨 예상 금액 · 계약금액\(원\) · 계약예정·체결일 · 낙찰사 · 기술자문 · 담당$/);
+  assert.deepEqual(await V.locator('.da-stage-summary .dv3-row .dvs-in').allInnerTexts(),['입력','입력','입력','첨부'],'미입력 = 점선 [입력] · [첨부]');
+  assert.match(one(await V.locator('.dvs-ok').innerText()),/^입력됨 예상 금액 수정 · 계약금액 수정 · 계약예정·체결일 2026\.1\.26 수정 · 낙찰사 · 기술자문 · 담당$/,'입력됨 = 값 + [수정] 링크');
   assert.deepEqual(await V.locator('.dvs-sp button').evaluateAll(l=>l.map(b=>[b.textContent,b.getAttribute('aria-pressed')])),[['없음','false'],['있음','false'],['확인 필요','true']]);
   /* 특이조건을 고르면 저장 경로로 가고, 빠진 정보가 하나 줄어든다 */
   await V.locator('.dvs-sp button',{hasText:'없음'}).click();await page.waitForTimeout(500);
@@ -85,7 +90,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* 6줄 */
   const rows=await V.locator('.dvs-rows .dvs-row').evaluateAll(l=>l.map(r=>[r.children[0].textContent,r.classList.contains('hot'),r.children[1].innerText.replace(/\s+/g,' ').trim()]));
   assert.deepEqual(rows.map(r=>[r[0],r[1]]),[['일정',true],['막힌 곳',true],['진척',false],['특이조건',false],['하자 · 출처',false]],'일정 · 막힌 곳만 빨강');
-  assert.match(rows[0][2],/^착공 예정일 없음 착공 준비로 넘어가려면 착공 · 준공 예정일 필요/);
+  assert.match(rows[0][2],/^착공 예정일 없음 착공 준비로 넘어가려면 착공 · 준공 예정일 필요 · 고객 약속 없음 · 입찰 마감 해당 없음 · 내부 처리 \d+\.\d+ 지남 · 기록 보완 착공 예정일/,'일정 = 기한을 종류별로');
   assert.match(rows[1][2],/^1 · 계약서 계약서 미첨부 · 기한 \d+\.\d+ 3일 지남/);
   assert.match(rows[2][2],/^마지막 10\.3 10\.3 계약 · 시공 이동 · 1\.26 계약 체결 · 1\.20 낙찰 · 코지건설 · 고객 접촉 3회/,'진척 = 단계 이동 · 낙찰 · 계약 체결');
   assert.match(rows[3][2],/^확인 필요 계약 때 말로 약속한 조건이 있으면/);
@@ -94,7 +99,11 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual(await V.locator('.dvs-htabs button').allInnerTexts(),['전체 5','고객 접촉 3','내부 변경 2']);
   assert.equal(await V.locator('.dvs-htabs [aria-pressed="true"]').innerText(),'고객 접촉 3');
   assert.equal(one(await V.locator('.dvs-hnote').innerText()),'고객 접촉 = 연락 시도 3 · 실제 연결 1 · 내부 변경은 따로');
+  /* 이력 한 줄: 작성자 · 날짜 · 종류 같은 위치 · 고객 말 / 담당 판단 구분 */
+  assert.deepEqual(await V.locator('.idv-thread>.idv-msg:not(.dvs-hide)').first().evaluate(m=>[...m.querySelectorAll('.idv-meta>*')].sort((a,b)=>Number(getComputedStyle(a).order)-Number(getComputedStyle(b).order)).map(n=>n.textContent)),['황윤선','2026.1.15 09:30','고객 접촉','전화']);
+  assert.deepEqual(await V.locator('.idv-msg:has(.dvs-q) .dvs-q').evaluateAll(l=>l.map(q=>[q.className,q.textContent,getComputedStyle(q).borderLeftColor])),[['dvs-q said','고객 말결과 나왔으니 계약 진행하자','rgb(21, 23, 28)'],['dvs-q judge','담당 판단코지 낙찰 확정 · 계약 단계로','rgb(201, 205, 213)']]);
   assert.equal(await V.locator('.idv-thread>.idv-msg:not(.dvs-hide)').count(),3);
+  assert.match(one(await page.locator('#ddvComposer').innerText()),/저장 = 이 응대 기록 1건 · 다른 칸은 안 바뀜/,'입력칸 저장 범위 한 줄');
   await V.locator('.dvs-htabs button',{hasText:'내부 변경'}).click();await page.waitForTimeout(150);
   assert.deepEqual(await V.locator('.idv-thread>.idv-msg:not(.dvs-hide)').evaluateAll(l=>l.map(m=>m.dataset.dv3k)).then(a=>a.every(k=>k!=='touch')&&a.length),2);
   await V.locator('.dvs-htabs button',{hasText:'전체'}).click();await page.waitForTimeout(150);assert.equal(await V.locator('.idv-thread>.idv-msg:not(.dvs-hide)').count(),5);
@@ -120,6 +129,17 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* ④ 끄기: 정돈안 그대로(같은 정보 층만 사라짐) */
   await page.evaluate(()=>{closeDetail();G.dealSameOff=true;drwDeal(JSON.stringify(B.deals[0]));});await page.waitForSelector('#detailView.dv3.dvt');await page.waitForTimeout(500);
   assert.deepEqual(await page.evaluate(()=>[document.querySelectorAll('#detailView .dvs-task,#detailView .dvs-line2,#detailView .dvs-htabs,#detailView .dvs-rows').length,getComputedStyle(document.getElementById('nowCard')).display!=='none']),[0,true]);
+  /* ⑤ 상세를 닫으면 목록의 단계 · 쪽 · 스크롤 위치 그대로 복귀 */
+  await page.evaluate(()=>{closeDetail();const base=B.deals[0];for(let k=0;k<30;k++){const d=JSON.parse(JSON.stringify(base));d.id='aaaaaaaa-0000-4000-8000-'+String(100000+k).padStart(12,'0');d.site='[경기] 목록 현장 '+k;d.site_id=null;B.deals.push(d);}goPage('pipe');});await page.waitForTimeout(800);
+  await page.setViewportSize({width:1600,height:800});
+  await page.evaluate(()=>{document.querySelector('#pipeline-stage-menu [data-ps-action="stage"][data-value="construction"]').click();});await page.waitForTimeout(1000);
+  await page.locator('#pipeline-stage-root .lpg button',{hasText:'2'}).first().click();await page.waitForTimeout(300);
+  await page.evaluate(()=>window.scrollTo(0,300));await page.waitForTimeout(200);
+  const snap=()=>page.evaluate(()=>({stage:document.querySelector('#pipeline-stage-menu [aria-current], #pipeline-stage-menu .on')&&1,rows:document.querySelectorAll('#pipeline-stage-root .prv-row').length,first:document.querySelector('#pipeline-stage-root .prv-row b').textContent,scroll:Math.round(window.scrollY)}));
+  const before=await snap();assert.equal(before.rows,11);assert.equal(before.scroll,300);
+  await page.locator('#pipeline-stage-root .prv-row').nth(2).click();await page.waitForSelector('#detailView.on');await page.waitForTimeout(500);
+  await page.locator('#detailView .backbtn').first().click();await page.waitForTimeout(500);
+  assert.deepEqual(await snap(),before,'상세를 닫으면 목록의 단계 · 쪽 · 스크롤 위치 그대로');
   assert.deepEqual(errs,[],'화면 오류 없음: '+errs.join(' | '));
   console.log('deal same info ok');
  }finally{await browser.close();srv.close();}
