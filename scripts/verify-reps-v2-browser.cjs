@@ -69,7 +69,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   if(shot)await page.screenshot({path:shot+'-dialog.png'});
   /* 이번 주 약속 = 기존 관리자 약속 저장 */
   await d.locator('.rd-promise textarea').fill('금요일까지 신규 배정 첫 연락 완료');await d.locator('[data-rd="save"]').click();await page.waitForTimeout(250);
-  assert.deepEqual(await page.evaluate(()=>__commentCalls.map(x=>[x[0],x[1].rep_name,x[1].comment])),[['crm_rep_manager_comment_save_v1','이필선','금요일까지 신규 배정 첫 연락 완료']]);assert.equal(await page.evaluate(()=>__writes.length),0);
+  assert.deepEqual(await page.evaluate(()=>__commentCalls.map(x=>[x[0],x[1].rep_name,x[1].comment])),[['crm_rep_manager_comment_save_v2','이필선','금요일까지 신규 배정 첫 연락 완료']]);assert.equal(await page.evaluate(()=>__writes.length),0);
   assert.equal(await page.locator('#repsDialog.on .rd-promise textarea').inputValue(),'금요일까지 신규 배정 첫 연락 완료');assert.match(await page.locator('#repsDialog .rd-promise small').innerText(),/저장됨/);
   assert.match(await page.locator('#reps-v2 .pd-action').innerText(),/약속 수정[\s\S]*이번 주 약속 · 금요일까지/);
   /* 현장 줄 → 창을 닫고 그 현장의 파이프라인 상세 */

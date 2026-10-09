@@ -87,7 +87,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 7. 코칭 저장 = 기존 주간 관리자 한마디 한 줄(주제 · 약속 · 지표 전 → 목표) */
   await co.locator('.rw-chips button',{hasText:'다음 행동'}).click();
   await co.locator('[data-rw="save"]').click();await page.waitForTimeout(250);
-  assert.deepEqual(await page.evaluate(()=>__commentCalls.map(x=>[x[0],x[1].rep_name,x[1].week_start,x[1].comment,x[1].status])),[['crm_rep_manager_comment_save_v1','이필선','2026-10-19','[코칭 · 다음 행동] 이번 주 금액 큰 7건부터 다음 할 일 · 날짜 등록 (다음 할 일 등록률 36% → 100%)','open']]);
+  assert.deepEqual(await page.evaluate(()=>__commentCalls.map(x=>[x[0],x[1].rep_name,x[1].week_start,x[1].comment,x[1].status])),[['crm_rep_manager_comment_save_v2','이필선','2026-10-19','[코칭 · 다음 행동] 이번 주 금액 큰 7건부터 다음 할 일 · 날짜 등록 (다음 할 일 등록률 36% → 100%)','open']]);
   assert.deepEqual(await page.evaluate(()=>__toasts.slice(-1)),['이필선 · 이번 주 코칭을 저장했습니다 · 다음 주 월요일에 결과가 보입니다']);
   assert.equal(await page.locator('#repWindow.on .rw-cof>span').innerText(),'저장됨 10.21 · 월요일 자동 확인');assert.equal(await page.locator('#repWindow.on .rw-cof>span').evaluate(n=>n.getClientRects().length),1,'한 줄');
   assert.doesNotMatch(await page.locator('#reps-b .psb-row[data-key="이필선"]').innerText(),/이번 주 코칭 약속 없음/,'목록의 사유도 같이 사라진다');
@@ -95,6 +95,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await co.locator('.rw-chips button',{hasText:'첫 응대'}).click();await co.locator('[data-rw-f="promise"]').fill('목요일까지 신규 배정 3건 첫 연락 완료');await co.locator('[data-rw="save"]').click();await page.waitForTimeout(250);
   assert.equal(await page.evaluate(()=>repManagerComment('이필선',repManagerWeekKey(0)).comment),'[코칭 · 첫 응대] 목요일까지 신규 배정 3건 첫 연락 완료 (첫 연락 전 3건 → 0건)');
   assert.deepEqual(await co.locator('.rw-chips button[aria-pressed="true"]').allInnerTexts(),['첫 응대']);assert.equal(await txt(),'목요일까지 신규 배정 3건 첫 연락 완료');
+  // A refreshed cache must not silently change the base of an already visible editor.
+  await co.locator('[data-rw-f="promise"]').fill('내가 작성 중인 코칭');
+  await page.evaluate(()=>{const c=repManagerComment('이필선',repManagerWeekKey(0));B.repManagerComments=[{...c,comment:'다른 관리자의 코칭',updated_at:'2026-10-21T12:00:00Z'}];paintRepManagement();});
+  await co.locator('[data-rw="save"]').click();await page.waitForTimeout(100);
+  assert.equal(await txt(),'내가 작성 중인 코칭');assert.equal(await page.evaluate(()=>repManagerComment('이필선',repManagerWeekKey(0)).comment),'다른 관리자의 코칭');
+  assert.match(await page.evaluate(()=>__toasts.at(-1)),/저장 확인 실패/);
+  await page.evaluate(()=>RepWindow.open('이필선'));
+  await co.locator('.rw-chips button',{hasText:'첫 응대'}).click();await co.locator('[data-rw-f="promise"]').fill('목요일까지 신규 배정 3건 첫 연락 완료');
+  await co.locator('[data-rw="save"]').click();await page.waitForTimeout(100);
   /* 8. 일괄 요청 = 같은 한마디에 한 줄 추가 → 담당자 오늘 업무에 뜬다 · 묶음마다 한 번 */
   await w.locator('.rw-g[data-g="nonext"] [data-rw="bulk"]').click();await page.waitForTimeout(250);
   assert.equal(await page.evaluate(()=>repManagerComment('이필선',repManagerWeekKey(0)).comment),'[코칭 · 첫 응대] 목요일까지 신규 배정 3건 첫 연락 완료 (첫 연락 전 3건 → 0건)\n· [KPI 요청] [요청] 다음 할 일 등록 요청 — 다음 할 일 없음 7건 · 진행 46.5억');
