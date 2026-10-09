@@ -1,0 +1,23 @@
+/* 모바일 관리자 요청(2026-10-09) — 새 요청 팝업 · '오늘' 맨 위 작은 카드. mobile.html 토큰(--line-2 · --danger-bg) 그대로, mrq- 접두사만 */
+.mrq-shade{position:fixed;inset:0;z-index:1300;background:rgba(17,24,39,.4);display:flex;align-items:center;justify-content:center;padding:16px}
+.mrq-pop{width:100%;max-width:400px;max-height:calc(100vh - 32px);overflow:auto;background:#fff;border-radius:18px;box-shadow:0 20px 60px rgba(17,24,39,.3);color:#15171c;font-size:14px;display:flex;flex-direction:column}
+.mrq-pop>header{padding:14px 18px;border-bottom:1px solid var(--line-2,#eef0f3);display:flex;align-items:center}.mrq-pop>header b{flex:1;font-size:16px}
+.mrq-pop .x{border:0;background:none;font:inherit;font-size:20px;color:#6b7280;padding:0 4px;min-height:0;width:auto;box-shadow:none}
+.mrq-body{padding:4px 18px}
+.mrq-item{padding:12px 0;border-bottom:1px solid var(--line-2,#f2f3f6);display:flex;flex-direction:column;gap:5px}.mrq-item:last-child{border-bottom:0}
+.mrq-item .who{margin:0;font-size:13.5px;color:#374151}.mrq-item .site{font-size:17px}.mrq-item .task{margin:0;font-size:14px;line-height:1.5}
+.mrq-item .due{margin:0;font-size:13px;font-weight:700}.mrq-item .due.od{color:#b42318}
+.mrq-pop .bt{display:flex;gap:8px;margin-top:4px}.mrq-pop .bt button{flex:1}
+.mrq-pop button:not(.x){border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:14px;font-weight:700;border-radius:12px;padding:12px 10px;min-height:0;width:auto;box-shadow:none;white-space:nowrap}
+.mrq-pop button.go{border:0;background:#15171c;color:#fff}
+.mrq-pop>footer{padding:12px 18px 16px;border-top:1px solid var(--line-2,#eef0f3);display:flex;flex-direction:column;gap:8px}.mrq-pop>footer>span{font-size:12px;color:#9ca3af}
+.mrq-top{background:#fff;border-radius:20px;padding:0 16px;margin:0 0 12px;flex:none}
+.mrq-top .hd{display:flex;align-items:center;gap:8px;padding:12px 0;border-bottom:1px solid var(--line-2,#f2f3f6);flex-wrap:wrap}
+.mrq-top .hd>em{font-style:normal;font-size:11px;font-weight:800;color:#fff;background:#d14a3f;border-radius:4px;padding:2px 7px}.mrq-top .hd>b{font-size:15px;flex:1}
+.mrq-top .hd .new{font-size:12px;font-weight:700;color:#b42318}
+.mrq-top .hd button{border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12px;font-weight:700;border-radius:8px;padding:6px 10px;min-height:0;width:auto;box-shadow:none}
+.mrq-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line-2,#f2f3f6)}.mrq-row:last-of-type{border-bottom:0}
+.mrq-row .l{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.mrq-row .l b{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mrq-row .l span{font-size:12.5px;color:#374151}.mrq-row .l em{font-style:normal;font-weight:700;color:#b42318;margin-left:6px}
+.mrq-row .st{flex:none;font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px;background:#f3f4f6;color:#6b7280}.mrq-row .st.nw{color:#b42318;background:#fdecec}.mrq-row .st.wk{color:#2a52b8;background:#e8eefc}
+.mrq-row .go{flex:none;border:0;background:#15171c;color:#fff;font:inherit;font-size:13px;font-weight:700;border-radius:10px;padding:9px 14px;min-height:0;width:auto;box-shadow:none;white-space:nowrap}
+.mrq-top .ft{margin:0;padding:8px 0 10px;font-size:11.5px;color:#9ca3af}
