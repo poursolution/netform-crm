@@ -126,14 +126,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{TOKEN='test';__rpc.length=0;paint();});await page.waitForTimeout(300);
   if(!await page.locator('#inq-v3 .il-item.open',{hasText:'한강신도시반도유보라'}).count()){await row('한강신도시반도유보라').locator('.il-brand').click();await page.waitForTimeout(200);}
   const ex=page.locator('#inq-v3 .il-item.open .il-ex');assert.equal(await ex.count(),1);
-  assert.match(await ex.innerText(),/^이 현장에 영업건 1개가 있어요 — 같은 공사인가요, 새 공사인가요\?\s*실주\s*공종 미분류\s*이필선\s*같은 공사 · 여기에 붙이기\s*같은 공사면 기존 건의 견적 버전 · 이력에 이어집니다\s*새 공사로 등록$/);
+  /* design_handoff_units ② 새 문의 3택 문구: 같은 영업건에 추가 문의 / 같은 현장 · 새 영업건(추천) / 다른 현장 · 신규는 주소 · 전화가 다를 때만 */
+  assert.match(await ex.innerText(),/^이 현장에 영업건 1개가 있어요 — 같은 영업건에 추가 문의인가요, 같은 현장의 새 영업건인가요\?\s*실주\s*공종 미분류\s*이필선\s*같은 영업건에 추가 문의\s*같은 영업건 = 추가 문의\(신규 아님\) \/ 같은 현장 · 새 영업건 = 추천 · 신규 영업건 수에 셈 \/ 다른 현장 · 신규는 주소 · 관리사무소 전화가 다를 때만\(현장 주소를 고치면 다른 현장으로\)\s*같은 현장 · 새 영업건 \(추천\)$/);
   assert.equal(await ex.evaluate(n=>getComputedStyle(n).borderTopColor),'rgb(21, 23, 28)','고르기 전 = 검은 테두리');
   await ex.locator('.il-exnew').click();await page.waitForTimeout(400);
   assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_site_link_v1').map(x=>[x[1].p.inquiry_id,x[1].p.decision,x[1].p.deal_id])),[['22222222-2222-4222-8222-222222222222','new',null]]);
-  assert.match(await page.locator('#inq-v3 .il-ex').innerText(),/^새 공사로 등록 · 같은 현장에 영업건 하나 추가[\s\S]*관리소장 · 연락처 · 이력은 현장 기준으로 함께 씁니다\s*새 공사 ✓$/);assert.equal(await page.evaluate(()=>inqCtlFind(A,false).raw['기존 현장 판단']),'새 공사');
+  assert.match(await page.locator('#inq-v3 .il-ex').innerText(),/^같은 현장 · 새 영업건으로 등록 · 기존 관계 · 담당을 이어받음[\s\S]*관리소장 · 연락처 · 연락 이력은 현장 공통 · 단계 · 금액 · 다음 행동은 이 영업건만 · 신규 영업건 수에 셈\s*같은 현장 · 새 영업건 ✓$/);assert.equal(await page.evaluate(()=>inqCtlFind(A,false).raw['기존 현장 판단']),'새 공사');
   await page.locator('#inq-v3 .il-exbtn').click();await page.waitForTimeout(400);
   assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_site_link_v1').map(x=>[x[1].p.decision,x[1].p.deal_id]).at(-1)),['same','d-ex1']);
-  assert.match(await page.locator('#inq-v3 .il-ex').innerText(),/^같은 공사 · 공종 미분류 건에 붙임[\s\S]*붙임 ✓/);
+  assert.match(await page.locator('#inq-v3 .il-ex').innerText(),/^같은 영업건에 추가 문의 · 공종 미분류 건에 붙임[\s\S]*붙임 ✓/);
   assert.equal(await row('한강신도시반도유보라').locator('.il-act').innerText(),'영업건 보기');assert.match(await row('한강신도시반도유보라').locator('.il-el').innerText(),/기존 영업건에 붙임$/);
   assert.match(String(await page.evaluate(()=>autoPromote(inqCtlFind(A,false)))),/기존 영업건에 붙인 문의입니다/,'붙인 문의는 새 영업건을 만들지 않음');
   await page.locator('#inq-v3 .il-exbtn').click();await page.waitForTimeout(400);
