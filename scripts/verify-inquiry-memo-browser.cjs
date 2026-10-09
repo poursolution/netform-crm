@@ -145,6 +145,27 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await V.locator('.i4-row',{hasText:'천안두정'}).click();await page.waitForTimeout(150);
   assert.match(one(await det.locator('.im-prom .lb').innerText()),/^과거 약속 확인함 1 \/ 2$/,'서버 판단이 보인다');
   assert.equal((await det.locator('.im-cell').nth(1).locator('b').innerText()),'2026.1.7','서버의 보완 날짜가 보인다');
+  /* 원문에만 있는 과거 통화·미팅: 첫 연락 연체로 몰지 않고 기존 기록 정리 묶음에서 확인한다. */
+  const imported=await page.evaluate(()=>{
+   const q={id:'77777777-7777-4777-8777-777777777777',site:'합성 진단 상담',status:'배정완료',at:'2026-01-16T08:00:00+09:00',created_at:'2026-01-16T08:00:00+09:00',brand:'POUR솔루션',phone:'010-0000-1234',assignee:'이필선',assigned_to:'이필선',assigned_at:'2026-01-16T09:00:00+09:00',raw:{문의내용:'유상 하자 진단보고서 상담. 2026/01/16 PM 05:02 1차통화완료. 다음주 월요일 현장 미팅 후 아파트스퀘어 연계 예정'}};
+   B.inquiries.push(q);InquiryV4.state().sort='urgent';InquiryV4.fresh();paint();
+   const m=InquiryV4.base().find(x=>x.q.id===q.id);return {g:m.g,due:m.due,review:m.review,label:m.stLabel,first:InquiryFlow.firstConnectedAt(q)};
+  });
+  assert.deepEqual(imported,{g:4,due:null,review:true,label:'이관 기록 확인 필요',first:''});
+  const reviewRow=V.locator('.i4-row',{hasText:'합성 진단 상담'});
+  assert.match(await reviewRow.innerText(),/이관 기록 확인 필요/);assert.doesNotMatch(await reviewRow.innerText(),/첫 연락 기한|일 지남/);
+  const beforeReview=await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_memo_review_v1').length);
+  await reviewRow.click();await page.waitForTimeout(120);
+  assert.match(await det.locator('.im-cell').nth(2).innerText(),/2026.1.16/);
+  assert.match(await det.locator('.i4-line').innerText(),/진단보고서 상담 기록/);
+  assert.match(await det.locator('.im-prom').innerText(),/현장 미팅/);
+  assert.equal(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_memo_review_v1').length),beforeReview,'후보 조회만으로 완료나 후속 업무를 저장하지 않음');
+  assert.equal(await page.evaluate(()=>{
+   const original=window.actionObj;try{
+    window.actionObj=(q,p)=>q.id==='77777777-7777-4777-8777-777777777777'?{text:'진단 결과 확인',due:InquiryMemo.today()}:original(q,p);
+    InquiryV4.fresh();return InquiryV4.base().find(m=>m.q.id==='77777777-7777-4777-8777-777777777777').review;
+   }finally{window.actionObj=original;InquiryV4.fresh();}
+  }),false,'현재 등록된 다음 할 일이 있으면 과거 기록 정리로 우선순위를 낮추지 않음');
   /* 끄면: 새 칸 · 문장이 사라진다 */
   assert.deepEqual(await page.evaluate(()=>{G.inqMemoOff=true;InquiryV4.fresh();paint();return [document.querySelectorAll('#inq-v4 .im-prom, #inq-v4 .im-d3, #inq-v4 .im-memo').length];}),[0]);
   await page.evaluate(()=>{G.inqMemoOff=false;InquiryV4.fresh();paint();});
