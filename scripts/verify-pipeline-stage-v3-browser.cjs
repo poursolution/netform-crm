@@ -87,9 +87,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    /* 진단: 기준 넘김 = 빨강 상태 건수 · 평균 체류 · 기준 n일 */
    assert.match(s.diag,new RegExp('^단계 진단 ?'+E.n[0]+'건 · '));
    /* stage7 공통: 제목 숫자 = '기한 초과 n'(판정 함수의 기한 초과와 같은 수) · 아래 '확인 필요 n = 날짜 미입력 + 판정 불가'. '기준 넘김' 단어 없음 */
-   {const m=/^기한 초과 ?(\d+)건 ?확인 필요 (\d+) · 날짜 미입력 (\d+) · 판정 불가 (\d+)$/.exec(s.kpis[0]);assert.ok(m,key+': 제목 숫자 글 — '+s.kpis[0]);assert.equal(Number(m[2]),Number(m[3])+Number(m[4]),key+': 확인 필요 = 날짜 미입력 + 판정 불가');
+   if(key==='competition'){assert.match(s.kpis[0],/^후속 업무 지연 ?0건 ?입찰 일정 없음 1 · 다음 행동일 없음 6 · 판정 불가 0$/);}else{const m=/^기한 초과 ?(\d+)건 ?확인 필요 (\d+) · 날짜 미입력 (\d+) · 판정 불가 (\d+)$/.exec(s.kpis[0]);assert.ok(m,key+': 제목 숫자 글 — '+s.kpis[0]);assert.equal(Number(m[2]),Number(m[3])+Number(m[4]),key+': 확인 필요 = 날짜 미입력 + 판정 불가');
     const T=await page.evaluate(k=>{const J=PipelineJudge,T=J.tally(PipelineWorkspace.rows({}).filter(r=>PipelineStages.group(r.code)===k).map(r=>r.item));return [T.late,T.nodate,T.norecord];},key);assert.deepEqual([Number(m[1]),Number(m[3]),Number(m[4])],T,key+': 판정 함수와 같은 수');}
-   assert.doesNotMatch(s.kpis[0]+s.diag+s.todo,/기준 넘김/,key+': 기준 넘김 단어 없음');assert.match(s.kpis[1],new RegExp('^평균 체류 ?\\d+일 ?기준 '+E.goal+'일$'));
+   assert.doesNotMatch(s.kpis[0]+s.diag+s.todo,/기준 넘김/,key+': 기준 넘김 단어 없음');assert.match(s.kpis[1],key==='competition'?/^평균 체류 ?\d+일 ?진입일 입력 6 \/ 6건$/:new RegExp('^평균 체류 ?\\d+일 ?기준 '+E.goal+'일$'));
    /* 왜 멈춰 있나: 사유(4~5개) · 첫 사유 = 빨강 상태 건수 */
    assert.deepEqual(s.reasons.map(r=>[r[0],Number(r[1])]),E.reasons,key+': 사유 건수');assert.equal(Number(s.reasons[0][1]),E.n[1],key+': 첫 사유 = 빨강 상태');
    assert.deepEqual(s.reasons.map(r=>r[2]),E.reasons.map(r=>Math.min(100,Math.round(r[1]/E.n[0]*100))+'%'),key+': 막대 = 건수 ÷ 전체');
