@@ -94,7 +94,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await d.locator('.idv3-pill').innerText(),/^첫 연락 전 · .+ · 시도 3회$/);assert.match(await d.locator('.idv3-opener').innerText(),/접촉 없이 시도 3회 — 연락두절로 종결할 수 있습니다/);
   assert.match(await d.locator('.idv3-chead').innerText(),/시도 3 · 연결 0$/);
   /* 같은 날 여러 번은 간격(1일)을 지킨 시도로 한 번만 센다 */
-  assert.deepEqual(await page.evaluate(()=>{const q={id:'x',status:'배정완료',activities:[0,1,2].map(i=>({id:'t'+i,type:'전화',note:'고객 응대 기록',result:'[전화 · 부재]',at:new Date(Date.now()-i*6e5).toISOString()}))};const s=InquiryFlow.state(q);return [s.attempts,s.spaced,s.unreachable];}),[3,1,false]);
+  assert.deepEqual(await page.evaluate(()=>{const noon=Date.parse('2026-10-08T12:00:00+09:00');const q={id:'x',status:'배정완료',activities:[0,1,2].map(i=>({id:'t'+i,type:'전화',note:'고객 응대 기록',result:'[전화 · 부재]',at:new Date(noon-i*6e5).toISOString()}))};const s=InquiryFlow.state(q);return [s.attempts,s.spaced,s.unreachable];}),[3,1,false]);
   /* 접촉(연결됨)을 저장하면 그때 최초응대: 단계 진행 1건 + 서버 최초 접촉 시각 */
   await page.evaluate(()=>{__writes.length=0;});
   await d.locator('.idv3-rc',{hasText:/^연결됨$/}).click();await page.waitForTimeout(150);await d.locator('.idv3-rc',{hasText:/^관심 있음$/}).click();await page.waitForTimeout(150);await d.locator('#iq-res').fill('소장님과 통화 · 방문 일정 조율');await d.locator('.idv3-foot .idv-save').click();await page.waitForTimeout(700);

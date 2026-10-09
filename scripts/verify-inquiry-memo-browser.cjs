@@ -31,12 +31,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op,p)=>{window.__writes.push([op,p]);return 'req-'+window.__writes.length};
    window.__rpc=[];window.__reviews=[];
    SB={rpc:async(name,args)=>{__rpc.push([name,args]);
-    if(name==='crm_inquiry_memo_review_v1'){
+    if(name==='crm_inquiry_memo_review_v1'||name==='crm_inquiry_memo_followup_v1'){
      if(window.__rejectMemo)return {error:{message:'forbidden'}};
      const p=args.p,kind=p.type==='promise'?'promise':'call';
      const review={inquiry_id:p.inquiry_id,kind,item_key:p.item_key,title:p.title||'',source_text:p.source_text||'',result:p.result||null,on_date:p.on_date||null,original_at:p.original_at||null,decided_at:new Date().toISOString(),decided_by:'이필선'};
      __reviews=__reviews.filter(r=>!(r.inquiry_id===p.inquiry_id&&r.kind===kind&&r.item_key===p.item_key));__reviews.push(review);
-     return {data:{ok:true,type:p.type,inquiry_id:p.inquiry_id,review}};
+     const data={ok:true,type:p.type,inquiry_id:p.inquiry_id,review};
+     if(name==='crm_inquiry_memo_followup_v1')Object.assign(data,{request_id:p.request_id,next_action:{id:'77777777-7777-4777-8777-777777777777',status:'open',type:'전화',text:p.next_action.text,due:p.next_action.due,due_at:p.next_action.due+'T00:00:00+09:00',assignee:'이필선'}});
+     return {data};
     }
     if(name==='crm_inquiry_field_update_v1'){const p=args.p;return {data:{ok:true,inquiry_id:p.inquiry_id,field:p.field,value:p.value,raw_key:null}};}
     if(name==='crm_inquiry_memo_review_list_v1')return {data:{ok:true,reviews:__reviews}};
@@ -109,14 +111,24 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.waitForFunction(()=>document.querySelector('#inq-v4 .i4-detail').textContent.includes('forbidden'));
   assert.match(one(await det.locator('.im-prom .lb').innerText()),/^과거 약속 확인함 0 \/ 2$/);
   assert.equal(await det.locator('.i4-log').innerText(),historyBefore);
+  const nextBefore=await page.evaluate(()=>{const q=B.inquiries.find(x=>x.id===ANS);return actionObj(q,itemPatch(q,'inq'));});
+  const writesBeforeReject=await page.evaluate(()=>__writes.length);
+  await det.locator('.im-p',{hasText:'사진 이메일로 받기'}).locator('button',{hasText:/^미완료$/}).click();
+  await page.waitForFunction(()=>__rpc.some(x=>x[0]==='crm_inquiry_memo_followup_v1'));
+  await page.waitForTimeout(150);
+  assert.match(one(await det.locator('.im-prom .lb').innerText()),/^과거 약속 확인함 0 \/ 2$/);
+  assert.equal(await det.locator('.i4-log').innerText(),historyBefore);
+  assert.deepEqual(await page.evaluate(()=>{const q=B.inquiries.find(x=>x.id===ANS);return actionObj(q,itemPatch(q,'inq'));}),nextBefore,'거절 시 기존 할 일도 그대로');
+  assert.equal(await page.evaluate(()=>__writes.length),writesBeforeReject,'거절 시 분리 저장 명령 없음');
   if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'memo-save-rejected.png')});
-  await page.evaluate(()=>{window.__rejectMemo=false;__rpc=__rpc.filter(x=>x[0]!=='crm_inquiry_memo_review_v1'||x[1].p.type==='call_supplement');});
+  await page.evaluate(()=>{window.__rejectMemo=false;__rpc=__rpc.filter(x=>!/^crm_inquiry_memo_(review|followup)_v1$/.test(x[0])||x[1].p.type==='call_supplement');});
   const before=await page.evaluate(()=>__writes.length);
   await det.locator('.im-p',{hasText:'사진 이메일로 받기'}).locator('button',{hasText:/^미완료$/}).click();await page.waitForTimeout(250);
   assert.match(one(await det.locator('.im-prom .lb').innerText()),/^과거 약속 확인함 1 \/ 2$/);
   assert.match(one(await det.locator('.im-p').first().locator('.im-pr').innerText()),/^미완료 · 지금 할 일로 등록/);
   assert.equal(await page.evaluate(()=>{const q=B.inquiries.find(x=>x.id===ANS),a=actionObj(q,itemPatch(q,'inq'));return a&&a.text;}),'[과거 약속] 사진 이메일로 받기 다시 확인','미완료만 지금 할 일로');
-  assert.ok(await page.evaluate(b=>__writes.length>b,before),'다음 할 일 저장 명령이 나감');
+  assert.equal(await page.evaluate(()=>__writes.length),before,'별도 next_set 저장 없이 판단과 할 일을 함께 저장');
+  assert.equal(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_memo_followup_v1').length),1,'원자적 저장 한 번');
   const w1=await page.evaluate(()=>__writes.length);
   await det.locator('.im-p',{hasText:'다음 날 현장 방문'}).locator('button',{hasText:/^완료$/}).click();await page.waitForTimeout(250);
   assert.equal(await page.evaluate(()=>__writes.length),w1,'완료는 기록만 — 새 업무를 만들지 않는다');
@@ -129,7 +141,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await det.locator('.im-p',{hasText:'다음 날 현장 방문'}).locator('button',{hasText:/^완료$/}).click();await page.waitForTimeout(250);
   assert.match(one(await det.locator('.i4-line').innerText()),/기록에 「사진 이메일로 받기로 함\.」라고 남아 있어/);assert.equal(await det.locator('.im-ask').count(),0);
   /* 서버 저장 · 서버에서 읽은 판단 */
-  {const sent=await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_memo_review_v1').map(x=>[x[1].p.type,x[1].p.title,x[1].p.result]));
+  {const sent=await page.evaluate(()=>__rpc.filter(x=>/^crm_inquiry_memo_(review|followup)_v1$/.test(x[0])).map(x=>[x[1].p.type,x[1].p.title,x[1].p.result]));
    assert.deepEqual(sent,[['call_supplement',undefined,undefined],['promise','사진 이메일로 받기','미완료'],['promise','다음 날 현장 방문','완료'],['promise','다음 날 현장 방문','확인 불가'],['promise','다음 날 현장 방문','완료']]);}
   /* 담당이 정해지지 않은 문의: 보완 · 판단 단추는 눌리지 않는다 */
   await V.locator('.i4-row',{hasText:'담당 미정 이관단지'}).click();await page.waitForTimeout(150);

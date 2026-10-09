@@ -11,7 +11,7 @@
    끄기: G.inqMemoOff=true → 날짜 · 메모 · 약속 칸과 첫마디 문장이 사라지고, 경과일 계산만 한국 날짜 기준으로 남는다. */
 (function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;else root.InquiryMemo=api;})(typeof window==='undefined'?globalThis:window,function(root){
  'use strict';
- const TZ='Asia/Seoul',DAY=864e5,RPC='crm_inquiry_memo_review_v1',LIST='crm_inquiry_memo_review_list_v1',OUT_KEY='crm.inqMemo.outbox.v1',MARK='[과거 약속]';
+ const TZ='Asia/Seoul',DAY=864e5,RPC='crm_inquiry_memo_review_v1',ATOMIC='crm_inquiry_memo_followup_v1',LIST='crm_inquiry_memo_review_list_v1',OUT_KEY='crm.inqMemo.outbox.v1',MARK='[과거 약속]';
  const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
  const on=()=>!(root.G&&root.G.inqMemoOff);
  /* ── 한국 날짜 ── */
@@ -260,8 +260,38 @@
   if(kind==='call')next.call=row;else next.promises[v.item_key]=row;
   SRV.set(body.inquiry_id,next);SV++;
  }
+ // Retain an uncertain atomic request only in this session for explicit retry.
+ // Never send it automatically or split it into the legacy next_set queue.
+ const uncertain=new Map();
+ function nextAck(body,result){
+  const n=result&&result.next_action;
+  if(!n||result.request_id!==body.request_id||!UUID.test(String(n.id||''))||n.status!=='open'||
+   n.text!==body.next_action.text||n.due!==body.next_action.due||!n.type||!n.assignee||!n.due_at||
+   day(n.due_at)!==n.due||n.type!==(body.next_action.expected?body.next_action.expected.type:'전화')||
+   (body.next_action.expected&&n.id!==body.next_action.expected.id))throw Error('서버 할 일 저장 확인 응답이 올바르지 않습니다. 다시 확인해 주세요.');
+  return n;
+ }
+ function applyNext(q,n){
+  const v=Object.assign({},n),p=patchFor(q);
+  q.next_action=Object.assign({},v);q.nextActionObj=q.nextAction=Object.assign({},v);
+  q.nextActionText=v.text;q.next_action_date=q.nextActionDate=q.due=v.due;
+  p.nextActionObj=Object.assign({},v);
+ }
  function persist(q,body,commit){
   if(!UUID.test(String(q.id||''))){commit();return true;}
+  if(body.next_action){
+   const previous=uncertain.get(body.inquiry_id);
+   if(previous&&previous.item_key!==body.item_key)throw Error('이전 미완료 약속의 저장 확인이 남아 있습니다. 같은 약속을 다시 확인해 주세요.');
+   body=previous||body;uncertain.set(body.inquiry_id,body);
+   return store().rpc(ATOMIC,body).then(result=>{
+    const n=nextAck(body,result);ack(body,result);applyNext(q,n);uncertain.delete(body.inquiry_id);commit();return true;
+   }).catch(e=>{
+    // Definitive server rejection means neither write committed. Network or
+    // malformed ACK keeps the identical ID/body for an explicit safe retry.
+    if(e&&e.unavailable||/invalid payload|forbidden/.test(String(e&&e.message||'')))uncertain.delete(body.inquiry_id);
+    throw e;
+   });
+  }
   return store().rpc(RPC,body).then(result=>{ack(body,result);commit();return true;});
  }
  function warm(){if(!on()||!root.ME)return;if(!loadAt||Date.now()-loadAt>120000)load();flush();}
@@ -292,19 +322,26 @@
   const at=new Date().toISOString(),p=patchFor(q);p.memoReview=p.memoReview||{promises:{}};p.memoReview.promises=p.memoReview.promises||{};
   const had=p.memoReview.promises[it.key],prev=review(q).promises[it.key];
   /* 미완료 = 지금 할 일로 등록(같은 건에서 미완료로 고른 약속을 한 문장으로 모은다). 등록이 안 되면 판단도 저장하지 않는다 */
+  let followup=null;
   if(res==='미완료'){
    const mine=promises(q).filter(x=>x.key!==it.key&&x.res==='미완료').map(x=>x.title).concat([it.title]);
-   let old='',oldDue='';try{const a=root.actionObj(q,root.itemPatch(q,'inq'));if(a&&a.text){old=String(a.text);oldDue=String(a.due||'').slice(0,10);}}catch(e){}
+   let old='',oldDue='',existing=null;try{const a=root.actionObj(q,root.itemPatch(q,'inq'));if(a&&a.text){existing=a;old=String(a.text);oldDue=String(a.due||'').slice(0,10);}}catch(e){}
    const keepOld=old&&old.indexOf(MARK)!==0?' (기존: '+old+')':'';
    // An existing next-action date is an explicit schedule, including future dates
    // and dates retained by an earlier promise review. Do not replace it with today.
    const text=old.indexOf(MARK)===0?(old.includes(it.title)?old:old+' · '+it.title+' 다시 확인'):(MARK+' '+mine.join(' · ')+' 다시 확인'+keepOld),due=oldDue||today();
    if(text.length>500)throw Error('기존 할 일과 약속을 합치면 500자를 넘습니다. 기존 할 일을 정리한 뒤 다시 판단해 주세요.');
-   let ok=false;
-   try{ok=root.InquiryCommand.run('next_set',q,{text,due})===true;}catch(e){throw Error(e&&e.message||'지금 할 일로 등록하지 못했습니다.');}
-   if(!ok)throw Error('지금 할 일로 등록하지 못했습니다 — 연결을 확인해 주세요.');
+   if(UUID.test(String(q.id||''))){
+    if(existing&&!UUID.test(String(existing.id||'')))throw Error('기존 할 일의 서버 확인이 필요합니다. 새로고침 후 다시 판단해 주세요.');
+    followup={text,due,expected:existing?{id:existing.id,text:old,type:existing.type,due:oldDue}:null};
+   }else{
+    let ok=false;
+    try{ok=root.InquiryCommand.run('next_set',q,{text,due})===true;}catch(e){throw Error(e&&e.message||'지금 할 일로 등록하지 못했습니다.');}
+    if(!ok)throw Error('지금 할 일로 등록하지 못했습니다 — 연결을 확인해 주세요.');
+   }
   }
   const body={type:'promise',inquiry_id:String(q.id),item_key:it.key,title:it.title,source_text:it.sentence.slice(0,600),on_date:it.date||'',result:res,request_id:uuid()};
+  if(followup)body.next_action=followup;
   return persist(q,body,()=>{p.memoReview.promises[it.key]={res,title:it.title,src:it.sentence,on_date:it.date||'',at,by:meName()};
   note(q,'[과거 약속 확인] '+it.title+' — '+res+(res==='미완료'?' · 지금 할 일로 등록':res==='확인 불가'?' · 첫 통화에서 물어볼 것':' · 기록만')+(prev&&prev.res&&prev.res!==res?' (이전: '+prev.res+')':''),at);
   void had;save();
@@ -317,6 +354,8 @@
   const id=String(q.id||'');if(!UUID.test(id))return fn(q,o||{});
   if(saving.has(id))throw Error('이 문의의 판단을 저장 중입니다. 잠시 후 다시 확인해 주세요.');
   if(!can(RPC))throw Error('서버 저장 연결을 확인한 뒤 다시 판단해 주세요.');
+  if(type==='promise'&&o&&o.res==='미완료'&&!can(ATOMIC))throw Error('서버 저장 연결을 확인한 뒤 다시 판단해 주세요.');
+  if(uncertain.has(id)&&(type!=='promise'||!o||o.res!=='미완료'||o.key!==uncertain.get(id).item_key))throw Error('이전 미완료 약속의 저장 확인이 남아 있습니다. 같은 약속을 다시 확인해 주세요.');
   saving.add(id);
   return (async()=>{try{
    await flush();
