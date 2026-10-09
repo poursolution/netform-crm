@@ -54,7 +54,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const c3=await V.locator('.i4-row .c3').evaluateAll(l=>l.map(c=>[...c.children].map(x=>x.textContent.replace(/\s+/g,' ').trim())));
   assert.deepEqual(c3.map(x=>x[0]),['① 신규 첫 연락','① 신규 첫 연락','② 고객 약속 · 회의','③ 후속 기한','③ 후속 기한','④ 과거 기록 정리']);
   assert.match(c3[0][1],/^배정 기한 \d+(시간|일) 지남$/);
-  assert.equal(c3[2][1],'과거 통화일 확인 필요 · 메모에 1.7 통화','천안두정: 실제 연결일 = 접수일 복사 → 확인 필요');assert.equal(c3[2][2],'메모 약속 2건 확인 전');
+  assert.equal(c3[2][1],'연결일 확인 필요 · 메모에 1.7 통화','천안두정: 실제 연결일 = 접수일 복사 → 확인 필요');assert.equal(c3[2][2],'메모 약속 2건 확인 전');
   assert.match(c3[3][1],/^실제 연결 후 8일 · \d+\.\d+ 통화$/,'밤 11시 반 통화: 시간으로는 8일이 안 됐어도 한국 날짜로 8일');
   assert.deepEqual(c3[5].slice(1),['연락처 없음 · 연락처 보완 먼저','기한 없음']);
   /* 상태 탭 6칸: 연락처 없는 과거 문의는 후속 연락 필요에서 빠지고 '연락처 보완' */
@@ -79,8 +79,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(one(await det.locator('.im-src').first().innerText()),/^이관 메모 · 2026\.1\.7 · 원문$/);
   assert.match(one(await det.locator('.im-prom .lb').innerText()),/^과거 약속 확인함 0 \/ 2$/);
   assert.deepEqual(await det.locator('.im-pt b').allInnerTexts(),['사진 이메일로 받기','다음 날 현장 방문']);
-  assert.match(one(await det.locator('.i4-line').innerText()),/^AI 첫마디 ?"안녕하세요, 넷폼 이필선입니다\. 1월에 사진 이메일로 받기로, 다음 날 현장 방문하기로 했었는데, 그 뒤 진행 상황 여쭤보려고 연락드렸습니다\."$/);
-  assert.match(one(await det.locator('.i4-pill').innerText()),/^후속 연락 필요 · 과거 통화일 확인 필요 · 메모에 1\.7 통화$/);
+  assert.match(one(await det.locator('.i4-line').innerText()),/고객님이 보내주시기로 한 사진.*전달 여부.*현장 방문 진행 여부.*확인해도 될까요/);
+  assert.match(one(await det.locator('.i4-pill').innerText()),/^후속 연락 필요 · 연결일 확인 필요 · 메모에 1\.7 통화$/);
   assert.deepEqual(await clip('#inq-v4 .im-cell, #inq-v4 .im-cell *, #inq-v4 .im-btn, #inq-v4 .im-ps button, #inq-v4 .im-pt *'),[],'새 칸의 글이 잘리지 않는다');
   if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'inq-memo.png')});
   /* 보완: 원래 값 보존 · 첫 연락 판정은 그대로 */
@@ -109,10 +109,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await det.locator('.im-p',{hasText:'다음 날 현장 방문'}).locator('button',{hasText:'확인 불가'}).click();await page.waitForTimeout(250);
   assert.deepEqual(await det.locator('.im-ask span').allInnerTexts(),['· 다음 날 현장 방문 — 했는지 확인']);assert.equal(one(await det.locator('.im-ask b').innerText()),'첫 통화에서 물어볼 것');
   assert.equal(await page.evaluate(()=>{const q=B.inquiries.find(x=>x.id===ANS),a=actionObj(q,itemPatch(q,'inq'));return a&&a.text;}),'[과거 약속] 사진 이메일로 받기 다시 확인','확인 불가도 새 업무를 만들지 않는다');
-  assert.match(one(await det.locator('.i4-line').innerText()),/1월에 사진 이메일로 받기로, 다음 날 현장 방문하기로 했었는데/,'미완료 · 확인 불가는 첫마디에 남는다');
+  assert.match(one(await det.locator('.i4-line').innerText()),/사진.*전달 여부.*현장 방문 진행 여부.*확인해도 될까요/,'미완료 · 확인 불가는 첫마디에 남는다');
   if(process.env.SHOT_DIR){await det.locator('.im-prom').scrollIntoViewIfNeeded();await page.screenshot({path:path.join(process.env.SHOT_DIR,'inq-memo2.png')});}
   await det.locator('.im-p',{hasText:'다음 날 현장 방문'}).locator('button',{hasText:/^완료$/}).click();await page.waitForTimeout(250);
-  assert.match(one(await det.locator('.i4-line').innerText()),/1월에 사진 이메일로 받기로 했었는데/);assert.equal(await det.locator('.im-ask').count(),0);
+  assert.match(one(await det.locator('.i4-line').innerText()),/사진.*전달 여부.*확인해도 될까요/);assert.equal(await det.locator('.im-ask').count(),0);
   /* 서버 저장 · 서버에서 읽은 판단 */
   {const sent=await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_memo_review_v1').map(x=>[x[1].p.type,x[1].p.title,x[1].p.result]));
    assert.deepEqual(sent,[['call_supplement',undefined,undefined],['promise','사진 이메일로 받기','미완료'],['promise','다음 날 현장 방문','완료'],['promise','다음 날 현장 방문','확인 불가'],['promise','다음 날 현장 방문','완료']]);}
@@ -145,6 +145,53 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await V.locator('.i4-row',{hasText:'천안두정'}).click();await page.waitForTimeout(150);
   assert.match(one(await det.locator('.im-prom .lb').innerText()),/^과거 약속 확인함 1 \/ 2$/,'서버 판단이 보인다');
   assert.equal((await det.locator('.im-cell').nth(1).locator('b').innerText()),'2026.1.7','서버의 보완 날짜가 보인다');
+  /* 실제 관찰 문법을 익명 합성 문의로 재현: 날짜, 고객 발송, 조건부 방문, 접수일 복사. */
+  await page.evaluate(()=>{
+   const q=B.inquiries.find(x=>x.id===ANS);delete detailPatchFor('inq',inqKey(q)).memoReview;InquiryMemo.takeServer([]);__reviews=[];
+   q.raw.응대내용='[2026. 1. 7. 오후 5:06:44] 시설 팀장님과 통화완료 사진은 메일로 보내주신다 고 하셨고\n내일 일정 때문에 시간이 맞으면\n내일바로 방문드리기로 함 .';
+   InquiryV4.fresh();paint();
+  });
+  await V.locator('.i4-row',{hasText:'천안두정'}).click();
+  assert.match(await det.locator('.im-cell').nth(2).innerText(),/2026.1.7/);
+  assert.match(await det.locator('.i4-line').innerText(),/고객님이 보내주시기로 한 사진.*시간이 맞으면.*논의한.*확인해도 될까요/);
+  assert.doesNotMatch(await det.locator('.i4-line').innerText(),/보내드리기로|했었는데/);
+  assert.match(await V.locator('.i4-row',{hasText:'천안두정'}).locator('.last').innerText(),/연결일 확인 필요/);
+  assert.doesNotMatch(await V.locator('.i4-row',{hasText:'천안두정'}).locator('.last').innerText(),/실제 연결|2026.1.6/);
+  /* 번호 저장은 연락 완료가 아니다: 배정 없음·첫 연락·이관 후보·확인된 후속의 기존 분류를 재계산한다. */
+  const phoneCases=await page.evaluate(()=>{
+   const source=B.inquiries.find(x=>x.id===OK),rows=[];
+   for(const [id,kind] of [['88888888-8888-4888-8888-888888888881','first'],['88888888-8888-4888-8888-888888888882','review'],['88888888-8888-4888-8888-888888888883','follow']]){
+    const q={...source,id,site:'합성 '+kind,phone:'',responded_at:'',activities:[],raw:{문의내용:'방수 문의'}};
+    if(kind==='review')q.raw.응대내용='[2026-01-07 10:00:00] 관리소장 통화 완료';
+    if(kind==='follow'){q.responded_at=source.responded_at;q.activities=source.activities;}
+    B.inquiries.push(q);InquiryV4.fresh();const before=InquiryV4.base().find(x=>x.q.id===id).st;
+    InquiryDetailV2.applyField(q,'phone','010-0000-5678');InquiryV4.fresh();const after=InquiryV4.base().find(x=>x.q.id===id);
+    rows.push([kind,before,after.st,after.review,InquiryFlow.firstConnectedAt(q)]);
+   }return rows;
+  });
+  assert.deepEqual(phoneCases.map(x=>x.slice(0,4)),[['first',5,2,false],['review',5,2,true],['follow',5,4,false]]);
+  assert.equal(phoneCases[0][4],'');assert.equal(phoneCases[1][4],'');assert.ok(phoneCases[2][4]);
+  /* 원문에만 있는 과거 통화·미팅: 첫 연락 연체로 몰지 않고 기존 기록 정리 묶음에서 확인한다. */
+  const imported=await page.evaluate(()=>{
+   const q={id:'77777777-7777-4777-8777-777777777777',site:'합성 진단 상담',status:'배정완료',at:'2026-01-16T08:00:00+09:00',created_at:'2026-01-16T08:00:00+09:00',brand:'POUR솔루션',phone:'010-0000-1234',assignee:'이필선',assigned_to:'이필선',assigned_at:'2026-01-16T09:00:00+09:00',raw:{문의내용:'2026/01/16 PM 05:02\n1차 통화완료\n유상 하자 진단보고서 상담\n다음주 월요일 현장 미팅 후 아파트스퀘어 연계 진행 예정'}};
+   B.inquiries.push(q);InquiryV4.state().sort='urgent';InquiryV4.fresh();paint();
+   const m=InquiryV4.base().find(x=>x.q.id===q.id);return {g:m.g,due:m.due,review:m.review,label:m.stLabel,first:InquiryFlow.firstConnectedAt(q)};
+  });
+  assert.deepEqual(imported,{g:4,due:null,review:true,label:'이관 기록 확인 필요',first:''});
+  const reviewRow=V.locator('.i4-row',{hasText:'합성 진단 상담'});
+  assert.match(await reviewRow.innerText(),/이관 기록 확인 필요/);assert.doesNotMatch(await reviewRow.innerText(),/첫 연락 기한|일 지남/);
+  const beforeReview=await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_memo_review_v1').length);
+  await reviewRow.click();await page.waitForTimeout(120);
+  assert.match(await det.locator('.im-cell').nth(2).innerText(),/2026.1.16/);
+  assert.match(await det.locator('.i4-line').innerText(),/진단보고서 상담 기록/);
+  assert.match(await det.locator('.im-prom').innerText(),/현장 미팅/);
+  assert.equal(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_memo_review_v1').length),beforeReview,'후보 조회만으로 완료나 후속 업무를 저장하지 않음');
+  assert.equal(await page.evaluate(()=>{
+   const original=window.actionObj;try{
+    window.actionObj=(q,p)=>q.id==='77777777-7777-4777-8777-777777777777'?{text:'진단 결과 확인',due:InquiryMemo.today()}:original(q,p);
+    InquiryV4.fresh();return InquiryV4.base().find(m=>m.q.id==='77777777-7777-4777-8777-777777777777').review;
+   }finally{window.actionObj=original;InquiryV4.fresh();}
+  }),false,'현재 등록된 다음 할 일이 있으면 과거 기록 정리로 우선순위를 낮추지 않음');
   /* 끄면: 새 칸 · 문장이 사라진다 */
   assert.deepEqual(await page.evaluate(()=>{G.inqMemoOff=true;InquiryV4.fresh();paint();return [document.querySelectorAll('#inq-v4 .im-prom, #inq-v4 .im-d3, #inq-v4 .im-memo').length];}),[0]);
   await page.evaluate(()=>{G.inqMemoOff=false;InquiryV4.fresh();paint();});
