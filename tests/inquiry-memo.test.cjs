@@ -1,5 +1,28 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const M=require('../inquiry-memo.js'),BG=require('../boot-guard.js');
+test('문의 원문의 일시·붙여 쓴 통화 완료와 현장 미팅은 확인 후보로만 읽는다',()=>{
+ const text='유상 하자 진단보고서 요청. 2026/01/16 PM 05:02 1차통화완료. 다음주 월요일 현장 미팅 후 아파트스퀘어 연계 예정';
+ for(const q of [{raw:{문의내용:text}},{message:text},{detail:{inquiry:text}},{content:text},{detail:text}]){
+  const before=JSON.stringify(q),s=M.scan(q);
+  assert.equal(s.calls[0].date,'2026-01-16');assert.equal(s.promises[0].type,'visit');
+  assert.match(s.promises[0].title,/다음주 월요일 현장 미팅/);assert.equal(s.promises[0].when,'','상대 날짜를 현재 날짜로 확정하지 않음');
+  assert.equal(M.connection(q).state,'none');assert.equal(M.needsReview(q),true);
+  assert.match(M.opener(q,'담당자'),/진단보고서 상담 기록/);assert.match(M.opener(q,'담당자'),/현장 미팅 진행 여부/);assert.match(M.opener(q,'담당자'),/연계 결과/);
+  assert.equal(JSON.stringify(q),before,'읽기만으로 응대 완료·후속 업무를 저장하지 않음');
+ }
+});
+test('예정·부정 통화를 실제 통화 후보로 읽지 않으며 취소 예정은 방문 약속이 아니다',()=>{
+ for(const text of ['1차통화예정','통화완료 예정','통화완료 아님','1차 통화 불가','통화 시도'])assert.equal(M.parse(text,'').calls.length,0,text);
+ assert.equal(M.parse('현장 미팅 취소 예정','').promises.length,0);
+ assert.equal(M.parse('2026/01/16 PM 05:02 1차 통화완료','').calls[0].date,'2026-01-16');
+});
+test('원문과 응대 메모가 같으면 후보를 중복 생성하지 않고 같은 길이 수정도 다시 읽는다',()=>{
+ const text='2026/01/16 PM 05:02 1차통화완료',q={message:text,raw:{문의내용:text,응대내용:text}};
+ assert.equal(M.scan(q).calls.length,1);
+ q.message=q.raw.문의내용=q.raw.응대내용=text.replace('16','17');
+ assert.equal(M.scan(q).calls[0].date,'2026-01-17');
+ assert.equal(M.scan({raw:{문의내용:'옥상 방수 문의드립니다'}}).memos.length,0,'일반 문의 원문을 이관 메모 칸에 중복 표시하지 않음');
+});
 /* 견적문의 · 과거 메모의 통화 · 약속(2026-10-08) — 규칙은 후보만 찾는다: 통화 기록 · 약속 · 날짜 · 한국 날짜 일수 */
 test('메모에서 통화 후보와 약속 후보를 찾는다(시안의 천안두정 메모)',()=>{
  const tx='관리소장 통화 완료. 옥상 누수 3세대. 사진 이메일로 받기로 함. 다음 날 방문 가능하다고 함.',r=M.parse(tx,'2026-01-07');
