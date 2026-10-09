@@ -109,6 +109,7 @@
  const rowOf=()=>(root.REP_MANAGER_ROWS||[]).find(x=>x.nm===cur)||null;
  function html(r){
   const M=groups(r),t=TAG[r.diagnosis.k]||TAG.watch,load=root.repManagerLoadLevel(r),mr=made(r.nm),N=neck(r,M),FL=flow(r),T=topics(r,M),thisWeek=commentOf(r.nm,week(0)),saved=parse(thisWeek&&thisWeek.comment),savedIdx=saved&&saved.topic?T.findIndex(x=>x.l===saved.topic):-1;
+  if(!Object.prototype.hasOwnProperty.call(st,'base'))st.base=root.repManagerCommentBase(thisWeek);
   if(st.c==null)st.c=savedIdx>=0?savedIdx:({first:0,nonext:1,overdue:3,stale:1}[N.k]??1);
   if(!st.open)st.open=M.G.length?{[M.G[0].k]:true}:{};
   const sel=T[st.c],txt=st.txt!=null?st.txt:(savedIdx===st.c&&saved.txt?saved.txt:sel.txt),tm=team(r.nm),tt=title(r.nm),role=[tm,tt&&tt.replace(/\s+/g,'')!==tm.replace(/\s+/g,'')?tt:''].filter(Boolean).join(' · ');
@@ -164,7 +165,8 @@
    const t=topics(r,M)[st.c],keep=linesOf(commentOf(r.nm,week(0))).filter(isReq);
    if(st.saving)return;const state=st,chosen=st.c;state.saving=true;
    node().querySelectorAll('[data-rw="save"],[data-rw="bulk"]').forEach(x=>x.disabled=true);
-   try{await root.repManagerCommitComment(r.nm,[coachLine(t,txt)].concat(keep).join('\n'),'open');
+   try{const saved=await root.repManagerCommitComment(r.nm,[coachLine(t,txt)].concat(keep).join('\n'),'open',state.base);
+    state.base=root.repManagerCommentBase(saved);
     if(st===state&&st.c===chosen&&String(st.txt==null?txt:st.txt).trim()===txt)st.txt=null;
     toast(r.nm+' · 이번 주 코칭을 저장했습니다 · 다음 주 월요일에 결과가 보입니다');
    }catch(err){toast('코칭 저장 확인 실패 · 입력을 유지했습니다');}
@@ -172,16 +174,18 @@
   }
   const g=M.G.find(x=>x.k===b.dataset.g);if(!g)return;
   if(a==='bulk'){
-   const lines=linesOf(commentOf(r.nm,week(0)));if(lines.some(s=>s.includes('[요청] '+g.bulk)))return;
+   const before=commentOf(r.nm,week(0)),lines=linesOf(before);if(lines.some(s=>s.includes('[요청] '+g.bulk)))return;
    if(st.saving)return;const state=st;state.saving=true;
    node().querySelectorAll('[data-rw="save"],[data-rw="bulk"]').forEach(x=>x.disabled=true);
    try{
     const k=root.KpiB;if(!k||!k.requestLine)throw Error('요청 저장 연결 확인 필요');
-    await root.repManagerCommentCommand(r.nm,week(0),async()=>{
+    const saved=await root.repManagerCommentCommand(r.nm,week(0),async()=>{
      if(!k.requestStatus().ready)await k.load(true);
      const line='[요청] '+g.bulk+' — '+g.t+' '+g.n+'건'+(g.amt&&g.amt!=='금액 미정'?' · '+g.amt:'');
      return k.requestLine(r.nm,line,g.k==='nonext'?'kpi:3':'stage:coaching:'+g.k,[{target_type:'person',target_id:r.nm,target_name:r.nm,action:g.k==='nonext'?'등록 요청':g.bulk,note:g.t+' '+g.n+'건'}]);
     });
+    const added='· [KPI 요청] [요청] '+g.bulk+' — '+g.t+' '+g.n+'건'+(g.amt&&g.amt!=='금액 미정'?' · '+g.amt:'');
+    if(JSON.stringify(state.base)===JSON.stringify(root.repManagerCommentBase(before))&&saved.comment===[before&&before.comment,added].filter(Boolean).join('\n'))state.base=root.repManagerCommentBase(saved);
     toast(r.nm+' 오늘 업무에 요청을 남겼습니다 · '+g.bulk);
    }catch(err){toast('요청 저장 확인 실패 · 다시 시도해 주세요');}
    finally{state.saving=false;if(st===state)root.paintRepManagement();}return;
