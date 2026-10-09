@@ -184,6 +184,16 @@
   const c=connection(q),sc=scan(q),first=sc.calls.filter(x=>x.date).sort((a,b)=>a.date.localeCompare(b.date))[0]||null;
   return {recv:createdOf(q),conn:c,memoCall:first,calls:sc.calls};
  }
+ /* Shared read-only evidence for a review category. Never invent a connected date.
+    Screen placement/count integration is deferred to Claude's handoff. */
+ function contactReview(q){
+  const empty={required:false,reason:'',candidateDate:'',calls:[]};
+  if(!q||!on())return empty;
+  const c=connection(q),calls=scan(q).calls;
+  if(c.state==='ok'||c.state==='supplemented')return empty;
+  const reason=c.state==='copy'?'copied_received_date':calls.length?'memo_call_unconfirmed':'';
+  return {required:!!reason,reason,candidateDate:calls.map(x=>x.date).filter(Boolean).sort()[0]||'',calls:calls.map(x=>Object.assign({},x))};
+ }
  /* 목록 · 첫마디가 쓰는 한 줄 */
  const pendingN=q=>pending(q).length;
  const copied=q=>{try{return on()&&connection(q).state==='copy';}catch(e){return false;}};
@@ -259,7 +269,10 @@
    const mine=promises(q).filter(x=>x.key!==it.key&&x.res==='미완료').map(x=>x.title).concat([it.title]);
    let old='',oldDue='';try{const a=root.actionObj(q,root.itemPatch(q,'inq'));if(a&&a.text){old=String(a.text);oldDue=String(a.due||'').slice(0,10);}}catch(e){}
    const keepOld=old&&old.indexOf(MARK)!==0?' (기존: '+old+')':'';
-   const text=(MARK+' '+mine.join(' · ')+' 다시 확인'+keepOld).slice(0,500),due=oldDue&&oldDue<today()&&old.indexOf(MARK)!==0?oldDue:today();
+   // An existing next-action date is an explicit schedule, including future dates
+   // and dates retained by an earlier promise review. Do not replace it with today.
+   const text=old.indexOf(MARK)===0?(old.includes(it.title)?old:old+' · '+it.title+' 다시 확인'):(MARK+' '+mine.join(' · ')+' 다시 확인'+keepOld),due=oldDue||today();
+   if(text.length>500)throw Error('기존 할 일과 약속을 합치면 500자를 넘습니다. 기존 할 일을 정리한 뒤 다시 판단해 주세요.');
    let ok=false;
    try{ok=root.InquiryCommand.run('next_set',q,{text,due})===true;}catch(e){throw Error(e&&e.message||'지금 할 일로 등록하지 못했습니다.');}
    if(!ok)throw Error('지금 할 일로 등록하지 못했습니다 — 연결을 확인해 주세요.');
@@ -332,5 +345,5 @@
    +(open?(list.length?list.map(p=>'<div class="im-ph"><b>'+esc(p.text)+'</b><span>'+esc(p.from)+'</span><button type="button" class="im-btn" data-i4="phone-save" data-v="'+attr(p.text)+'"'+(canSave?'':' disabled')+'>이 번호로 저장</button></div>').join(''):'<span class="im-none">이관 기록 · 같은 현장에서 찾은 번호가 없습니다 — [전체 상세 ↗]에서 직접 입력해 주세요</span>'):'')
    +(err?'<div class="i4-err">'+esc(err)+'</div>':'')+'</div>';
  }
- return {on,day,diff,days,md,ymd,hm,span,today,phones,findHtml,addDays,parse,marked,sentences,memosOf,scan,promises,pending,pendingN,asks,connection,dates,copied,memoCallDay,hasMemo,opener,canEdit,review,run,load,flush,warm,takeServer,datesHtml,memoHtml,promiseHtml,RPC,LIST,MARK,_srv:SRV};
+ return {on,day,diff,days,md,ymd,hm,span,today,phones,findHtml,addDays,parse,marked,sentences,memosOf,scan,promises,pending,pendingN,asks,connection,dates,contactReview,copied,memoCallDay,hasMemo,opener,canEdit,review,run,load,flush,warm,takeServer,datesHtml,memoHtml,promiseHtml,RPC,LIST,MARK,_srv:SRV};
 });
