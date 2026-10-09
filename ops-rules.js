@@ -219,25 +219,33 @@
   const epoch=writeEpoch,pending=(async()=>{try{const r=await store().rpc(RPC,{});return epoch===writeEpoch?take(r):all();}catch(e){return all();}})();
   readPending=pending;try{return await pending;}finally{if(readPending===pending)readPending=null;}
  }
- /* 저장: 바뀐 조건부 값만 보낸다. 서버가 확인한 값만 화면에 적용한다.
-    apply 명령은 현행 v1/v2 서버에서 실행되지 않는다. 이력 저장을 예약 적용·기존 업무 보존으로 취급하지 않는다.
-    지원 계약과 대상별 정책 버전이 연결되기 전에는 쓰기 RPC 전송 전에 거절한다. 기존 apply 없는 즉시 값 저장은 유지한다. */
+ /* contract 3: 오늘(KST) 즉시 적용 및 대상 설명 이력만 지원한다.
+    scope는 설명이며 대상별 정책 필터가 아니다. 예약·existing 명령은 전송 전 거절한다. */
  async function save(changes,apply){
-  if(apply!==undefined)throw new Error('적용일·대상·기존 업무 처리 기능이 아직 연결되지 않아 저장하지 않았습니다. 기존 기준과 입력 내용은 유지됩니다.');
+  let ap;
+  if(apply!==undefined&&apply!==null){
+   const today=new Date(Date.now()+9*36e5).toISOString().slice(0,10);
+   if(typeof apply!=='object'||Array.isArray(apply)||Object.keys(apply).some(k=>!['effective_on','scope'].includes(k))||
+    apply.effective_on!==today||typeof apply.scope!=='string'||!apply.scope.trim()||apply.scope.length>300)
+    throw new Error('오늘(KST) 즉시 적용만 가능합니다. 예약 적용·기존 업무 처리 기능은 아직 연결되지 않아 저장하지 않았습니다.');
+   if(!loaded||meta.contract<3)throw new Error('즉시 적용 검증 계약(contract 3)을 서버에서 확인한 뒤 저장할 수 있습니다. 다시 조회하거나 SQL 적용 상태를 확인해 주세요.');
+   ap={effective_on:apply.effective_on,scope:apply.scope};
+  }
   const set={};Object.keys(changes||{}).forEach(k=>{const v=clean(k,changes[k]);if(v===undefined)throw new Error((SPEC[k]?SPEC[k].l:k)+' 값이 범위를 벗어났습니다');set[k]=v;});
   if(!Object.keys(set).length)return all();if(!available())throw new Error('운영 기준 저장은 서버 적용 뒤에 쓸 수 있습니다');
   if(savePending)throw new Error('운영 기준을 저장 중입니다. 결과 확인 후 다시 저장해 주세요.');
   /* 저장 전에 시작한 조회는 늦게 도착해도 확정값·버전을 되돌릴 수 없다. */
   writeEpoch++;readPending=null;
   const pending=(async()=>{
-   const r=await store().rpc(RPC,{set});
+   const r=await store().rpc(RPC,ap?{set,apply:ap}:{set});
    if(!r||r.ok!==true||!r.rules||typeof r.rules!=='object'||Array.isArray(r.rules)||Object.keys(set).some(k=>!same(r.rules[k],set[k])))throw new Error('운영 기준 저장 결과를 확인하지 못했습니다. 다시 조회해 확인해 주세요.');
+   if(ap&&(r.contract!==3||!r.apply||Object.keys(r.apply).length!==2||r.apply.effective_on!==ap.effective_on||r.apply.scope!==ap.scope))throw new Error('서버가 확인한 적용 조건이 요청과 다릅니다. 다시 조회해 확인해 주세요.');
    return take(r);
   })();
   savePending=pending;try{return await pending;}finally{if(savePending===pending)savePending=null;}
  }
  /* 기준 버전(근거 보기 · 이력 표시용): 서버 이력 건수 = 버전, 마지막 변경일. 서버 적용 전이면 v0 · 기본값 */
- function version(){const at=String(meta.updated_at||'');const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(at);return {n:Number(meta.version)||0,at,label:'기준 v'+(Number(meta.version)||0)+(m?' · '+Number(m[2])+'.'+Number(m[3]):' · 기본값')};}
+ function version(){const at=String(meta.updated_at||''),t=Date.parse(at),k=Number.isFinite(t)?new Date(t+9*36e5).toISOString().slice(0,10):'',m=/^(\d{4})-(\d{2})-(\d{2})/.exec(k);return {n:Number(meta.version)||0,at,label:'기준 v'+(Number(meta.version)||0)+(m?' · '+Number(m[2])+'.'+Number(m[3]):' · 기본값')};}
  /* 로그인하면 한 번 읽고, 값이 기본과 다르면 다시 그린다 */
  function warm(){const me=root.ME&&String(root.ME.id||root.ME.name||'');if(!me||warmed===me||!available())return;warmed=me;const before=JSON.stringify(all());load(true).then(()=>{if(JSON.stringify(all())!==before&&typeof root.paint==='function'){try{root.paint();}catch(e){}}});}
  if(typeof root.paint==='function'){const base=root.paint;root.paint=function(){try{sync();}catch(e){}const r=base.apply(this,arguments);try{warm();}catch(e){}return r;};}
