@@ -111,6 +111,8 @@
   const avg=closed.length?closed.reduce((s,r)=>s+(Date.parse(r.closed_at)-Date.parse(r.created_at))/864e5,0)/closed.length:null;
   return [['요청',week.length+'건','이번 주 등록 기준 · 문구 복사 제외'],['기한 내 해결률',closed.length?Math.round(onTime*100/closed.length)+'%':'–',closed.length?onTime+' / '+closed.length+' · 기한 안 처리':'완료된 요청 없음'],['재요청률',all.length?Math.round(re*100/all.length)+'%':'–',all.length?re+' / '+all.length+' · 같은 건 2번 이상 요청':'요청 없음'],['평균 처리 시간',avg==null?'–':(Math.round(avg*10)/10)+'일','요청 → 완료 · 최근 30일']].map(m=>{const d=KMD&&KMD.byId(m[0]==='기한 내 해결률'?'d1':m[0]==='평균 처리 시간'?'d2':'');return d?[m[0],d.vText,d.sub+' · 이번 주']:m;}).concat(R.ExecWording&&R.ExecWording.on()?[['기한 변경',R.ExecWording.postponeCount().n+'회','이번 주(월~금) · 원래 기한 · 사유와 함께 기록 · 지연 기록은 그대로']]:[]);/* 기한 내 해결률 · 평균 처리 시간 = 측정 기준 탭 d1 · d2 와 같은 값(이번 주 등록 요청) */
  }
+ /* design_handoff_units ④: 오늘 업무 · KPI · 성과 분석 · 고객 자산이 같은 영업건 단위로 세는지 — DealUnits.audit 한 함수 */
+ function unitLine(){try{const U=R.DealUnits;if(!U||!U.on())return '';const a=U.audit((R.B&&R.B.deals)||[],(R.B&&R.B.inquiries)||[]);return '<p class="k7-unit">'+h(a.line)+'</p>';}catch(e){return '';}}
  function html(){
   const s=ST(),C=K().compute(),PV=personVals(),rows=coreRows(C,PV,s.last),SG=stageGroups(C.done||new Set()),o=O(),w=K().weekly();
   const KM=R.KpiMeasure&&R.KpiMeasure.enabled()?R.KpiMeasure:null,KMD=KM?KM.compute():null;/* 측정 기준 탭 · 왼쪽 관리팀 지표가 같은 계산(한 번만) */
@@ -144,7 +146,7 @@
    +'<div class="k7-leg"><span><i class="a">■</i> 미달 <b>'+miss+'</b></span><span><i class="b">■</i> 달성 <b>'+hit+'</b></span><span><i class="c">■</i> 아직 못 잼 <b>'+nd+'</b></span>'+(pilotN?'<span><i class="d">■</i> 시범 · 평가 제외 <b>'+pilotN+'</b></span>':'')+'</div>'
    +'<div class="k7-tiles"><div><span>목표 미달</span><b class="r">'+miss+'지표</b><small>오늘 처리</small></div><div><span>남은 요청</span><b>'+leftN+'건</b><small>보냄 '+sentN+'건</small></div><div><span>지난주보다</span><b>'+(cmp.length?'<span class="up">▲'+up+'</span> · <span class="dn">▼'+dn+'</span>':'–')+'</b><small>'+(cmp.length?'나아짐 · 나빠짐':'지난주 저장본 없음')+'</small></div></div>'
    +'<span class="k7-over">단계별 기준 넘긴 건 <b>'+stageOver+'건</b> · 오른쪽 \'단계별 기준\' 탭</span></section>'
-   +'<section class="k7-card k7-mg"><header><b>관리팀 지표</b><span>요청 수보다 해결</span></header>'+(MG?'<div class="k7-tiles">'+MG.map(m=>'<div><span>'+h(m[0])+'</span><b>'+h(m[1])+'</b><small>'+h(m[2])+'</small></div>').join('')+'</div>':'<p class="k7-none">요청 저장소가 아직 서버에 없어 잴 수 없습니다</p>')+'</section>'/* ops_12 D⑩ */
+   +'<section class="k7-card k7-mg"><header><b>관리팀 지표</b><span>요청 수보다 해결</span></header>'+(MG?'<div class="k7-tiles">'+MG.map(m=>'<div><span>'+h(m[0])+'</span><b>'+h(m[1])+'</b><small>'+h(m[2])+'</small></div>').join('')+'</div>':'<p class="k7-none">요청 저장소가 아직 서버에 없어 잴 수 없습니다</p>')+unitLine()+'</section>'/* ops_12 D⑩ · design_handoff_units ④ 집계 단위 한 줄 */
    +'<section class="k7-card"><header><b>왜 멈춰 있나</b><span>누르면 오른쪽이 걸러짐</span></header>'+causes+'</section>'
    +'<section class="k7-card"><header><b>그래서 뭘 해야 하나</b></header>'+acts+'</section></div>';
   /* 오른쪽 */

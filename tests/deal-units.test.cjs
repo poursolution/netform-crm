@@ -34,6 +34,10 @@ test('집계 대조: 회사 수주실적 = 영업건 단위 1번 · 개인 = 주
  const co=U.companySum(g.B.deals);assert.deepEqual(co,{n:2,sum:5.2e8},'실주 · 지원자 금액은 더하지 않음 · 영업건마다 1번');
  const p=U.personal(g.B.deals);assert.deepEqual(p.get('이필선'),{n:1,sum:4.2e8,support:0});assert.deepEqual(p.get('황윤선'),{n:1,sum:1e8,support:0});assert.deepEqual(p.get('한준엽'),{n:0,sum:0,support:1},'지원자 = 기여 표시만');
  assert.equal([...p.values()].reduce((s,x)=>s+x.sum,0),co.sum,'개인 합 = 회사 합(두 번 세지 않음)');
+ /* ④ 집계 단위 한 줄: 진행 중은 영업건마다 · 같은 현장 2건 이상은 각각 · 붙인 재문의는 신규 아님 */
+ const O1={id:'o1',site:'S1',site_id:'s9',code:'first_contact',amt:1,brand:'POUR솔루션',assignee:'이필선'},O2={id:'o2',site:'S1',site_id:'s9',code:'rapport',amt:1,brand:'POUR솔루션',assignee:'이필선'},O3={id:'o3',site:'S2',site_id:'s8',code:'first_contact',amt:1,brand:'POUR솔루션',assignee:'황윤선'};
+ const au=U.audit([A,C,L,O1,O2,O3],[{raw:{'기존 현장 판단':'같은 공사','기존 영업건':'o1'}},{raw:{'기존 현장 판단':'새 공사'}},{}]);
+ assert.deepEqual([au.open,au.sites,au.multi,au.attached,au.won,au.wonSum],[3,2,1,1,2,5.2e8]);assert.match(au.line,/^집계 단위 = 영업건: 진행 중 3건 · 현장 2곳\(같은 현장 2건 이상 1곳은 각각 센다\) · 같은 영업건에 붙인 재문의 1건은 신규로 안 셈 · 수주실적은 영업건마다 1번/);
 });
 test('서버 함수 · 허용 목록 · 오류 이름 · 요청 엔진 수령 확인',()=>{
  const sql=read('sql/deal-units-v1-20261010.sql'),tr=read('pc-manager-transport.js'),es=read('pc-error-state.js');

@@ -86,7 +86,9 @@
   const W=R.WorkRequest,o=O(),S=st();if(!W||!W.enabled()||!o||!o.has(W.RPC.create)){toast('요청 저장소가 아직 서버에 없습니다','warn');return;}
   const to=roles(d).list.find(x=>x.role==='시공 담당');if(!to){S.err='참여 역할에 시공 담당을 먼저 넣어 주세요';return repaint();}
   const at=new Date();at.setDate(at.getDate()+3);at.setHours(23,59,0,0);S.busy=true;S.err='';repaint();
-  try{await o.rpc(W.RPC.create,{target_type:'deal',target_id:String(d.id),site:d.site||d.site_name||'',brand:d.brand||'',kind:'support',label:RECEIPT_LABEL,to_scope:'user',to_name:to.name,asks:['공사 범위 확인','제외 사항 확인','금액 · 일정 확인','고객 약속 확인','수령 확인'],due_at:at.toISOString(),due_label:'3일 안',memo:handoverSummary(d).map(x=>x[0]+': '+x[1]).join('\n')});
+  try{const r=await o.rpc(W.RPC.create,{target_type:'deal',target_id:String(d.id),site:d.site||d.site_name||'',brand:d.brand||'',kind:'support',label:RECEIPT_LABEL,to_scope:'user',to_name:to.name,asks:['공사 범위 확인','제외 사항 확인','금액 · 일정 확인','고객 약속 확인','수령 확인'],due_at:at.toISOString(),due_label:'3일 안',memo:handoverSummary(d).map(x=>x[0]+': '+x[1]).join('\n')});
+   /* 서버가 돌려준 요청을 요청 목록에 바로 넣는다(상자가 '수령 확인 대기'로 바뀜) · 목록은 다시 읽는다 */
+   try{const S2=W.state();if(r&&r.request&&!S2.list.some(x=>x.id===r.request.id))S2.list.unshift(r.request);}catch(e){}
    toast(to.name+'에게 시공 인계 수령 확인을 요청했습니다 · 수령 확인 전까지 영업 단계가 끝나지 않습니다');try{W.load(true);}catch(e){}}
   catch(e){S.err='요청을 보내지 못했습니다: '+String(e&&e.message||e);}
   S.busy=false;repaint();
@@ -97,7 +99,16 @@
   const open=siblings(d).filter(x=>{try{return R.isOpen(x);}catch(e){return false;}});
   return {keep:true,next:String(sc.recontact_possibility||d.wake_up_at||'').slice(0,10)||'',basis:String(sc.lesson||sc.close_detail||'').trim(),reengage:String(sc.reengage||''),openSiblings:open};
  }
- /* ── 집계 대조(④): 회사 = 영업건 단위 1번 · 개인 = 주담당만 · 지원자 = 기여 표시만 ── */
+ /* ── 집계 대조(④): 영업건 단위 — 진행 중 영업건 n · 현장 m(같은 현장 2건 이상 k곳) · 같은 영업건에 붙인 재문의 j(영업건을 만들지 않아 신규 수에 안 셈) · 수주 = 영업건 1번 ── */
+ function siteKeyOf(d){const sid=String(d.cleanup_site_id||d.site_id||d.siteId||'');if(sid)return 'id:'+sid;try{return 'nm:'+R.normSite(d.site||'');}catch(e){return 'nm:'+String(d.site||'');}}
+ function audit(deals,inquiries){
+  const D=(deals||[]).filter(d=>{try{return R.isOpen(d);}catch(e){return false;}}),by=new Map();D.forEach(d=>{const k=siteKeyOf(d);by.set(k,(by.get(k)||0)+1);});
+  const multi=[...by.values()].filter(n=>n>=2).length;
+  const attached=(inquiries||[]).filter(q=>{const r=q&&q.raw&&typeof q.raw==='object'?q.raw:{};return r['기존 현장 판단']==='같은 공사'&&r['기존 영업건'];}).length;
+  const co=companySum(deals||[]);
+  return {open:D.length,sites:by.size,multi,attached,won:co.n,wonSum:co.sum,line:'집계 단위 = 영업건: 진행 중 '+D.length+'건 · 현장 '+by.size+'곳(같은 현장 2건 이상 '+multi+'곳은 각각 센다) · 같은 영업건에 붙인 재문의 '+attached+'건은 신규로 안 셈 · 수주실적은 영업건마다 1번(주담당 귀속 · 지원자 금액 합산 없음)'};
+ }
+ /* ── 회사 = 영업건 단위 1번 · 개인 = 주담당만 · 지원자 = 기여 표시만 ── */
  function companySum(deals){let n=0,sum=0;(deals||[]).forEach(d=>{try{const r=R.CRMRules.dealResult(d);if(!/^won_/.test(r))return;n++;sum+=Number(R.CRMRules.amounts(d).incentive)||0;}catch(e){}});return {n,sum};}
  function personal(deals){const m=new Map();(deals||[]).forEach(d=>{try{const r=R.CRMRules.dealResult(d);if(!/^won_/.test(r))return;const who=perf(d)||'미배정',v=m.get(who)||{n:0,sum:0,support:0};v.n++;v.sum+=Number(R.CRMRules.amounts(d).incentive)||0;m.set(who,v);roles(d).list.forEach(x=>{const s=m.get(x.name)||{n:0,sum:0,support:0};s.support++;m.set(x.name,s);});}catch(e){}});return m;}
  /* ── 상세 오른쪽 상자 ── */
@@ -162,5 +173,5 @@
  }
  function onChange(e){const t=e.target;if(!t||!t.matches||!t.closest('.dvu'))return;const S=st(),k=t.dataset.dvuIn;if(k==='who')S.who=t.value;else if(k==='role')S.role=t.value;else if(/^b-/.test(k||'')){S.brand=S.brand||{};S.brand[k.slice(2)]=t.value;}}
  if(typeof document!=='undefined'){document.addEventListener('click',onClick,true);document.addEventListener('change',onChange,true);}
- return {on,avail,load,take,unit,tagOf,newness,newCounts,roles,brand3,responsible,requests,siblings,siteCommon,receipt,handoverSummary,relationAfterLost,companySum,personal,html,assetLine,mount,ROLES,MAIN,RECEIPT_LABEL,SAVE,LIST,state:st,_rows:()=>rows};
+ return {on,avail,load,take,unit,tagOf,newness,newCounts,audit,siteKeyOf,roles,brand3,responsible,requests,siblings,siteCommon,receipt,handoverSummary,relationAfterLost,companySum,personal,html,assetLine,mount,ROLES,MAIN,RECEIPT_LABEL,SAVE,LIST,state:st,_rows:()=>rows};
 });
