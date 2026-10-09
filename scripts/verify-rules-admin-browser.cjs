@@ -28,11 +28,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   });
   await page.waitForTimeout(500);
   const v=page.locator('#rules-admin .ra-shell');assert.equal(await v.count(),1);
-  assert.equal(await page.locator('#ptitle').innerText(),'운영 기준 설정');assert.match(await page.locator('#psub').innerText(),/모든 화면이 이 값으로 놓침 · 메이드율 · 수주실적을 계산합니다 · 관리자 전용/);
+  assert.equal(await page.locator('#ptitle').innerText(),'운영 기준 설정');assert.match(await page.locator('#psub').innerText(),/적용 중인 설정만 연결된 화면 계산에 반영됩니다 · 관리자 전용/);
   assert.equal(await page.locator('.menu [data-p="rules"]').isVisible(),true,'사이드바 설정 → 운영 기준 설정');
   /* 목차 7묶음 + 꼬리표 설명 */
   assert.deepEqual(await v.locator('.ra-nav>button').evaluateAll(a=>a.map(n=>n.querySelector('span').textContent+' '+n.querySelector('i').textContent)),['시간 기준 14'/* 2026-10-07 관계관리 v12: 집중 · 일반관리 기간(개월) 조건부 2항목 + stage7 ① 미팅 후 견적 요청 등록(보류 · 운영 제안) */,'결과 · 실적 7','사유 목록 3','응대 기록 3','사람 · 관계 9','공개 · 권한 3','보류 · 추후 1']);
-  assert.deepEqual((await v.locator('.ra-legend span').allInnerTexts()).map(s=>s.replace(/\s+/g,' ')),['확정 회의 확정 · 잠금','조건부 관리자가 값 변경','보류 구현 안 함']);
+  assert.deepEqual((await v.locator('.ra-legend span').allInnerTexts()).map(s=>s.replace(/\s+/g,' ')),['확정 정책 항목 · 잠금','조건부 관리자가 값 변경','보류 구현 안 함']);
   assert.equal(await v.locator('.ra-sec').count(),8);/* 7묶음 + stage7_2 ④ '적용 예정' 한 묶음 */
   const row=l=>page.locator('#rules-admin .ra-row',{has:page.locator('.ra-l b',{hasText:new RegExp('^'+l+'$')})});
   /* 관계관리 v12(2026-10-07): 집중 · 일반관리 기간(개월)은 조건부 숫자 — 7일 · 월 1회 · 2개월은 회의 결정이라 설정 밖 */
@@ -42,15 +42,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 예외 승인자(2026-10-04 대표 지정) = 조건부 목록 · 기본 이승우 · 황윤선 */
   assert.match(await row('예외 승인자').innerText(),/예외 승인자\s*조건부[\s\S]*한 사람만 승인해도 됩니다[\s\S]*이승우[\s\S]*황윤선/);
   /* 확정 = 잠금 */
-  assert.match(await row('첫 연락').innerText(),/첫 연락\s*확정[\s\S]*2\s*\+?\s*시간\s*회의 확정 · 변경 불가/);assert.equal(await row('첫 연락').locator('.ra-num button').first().isDisabled(),true);
-  assert.match(await row('영업 메이드율').innerText(),/\(자사 수주 \+ 승인 타사 이관\) ÷ \(자사 수주 \+ 승인 타사 이관 \+ 파이프라인 실주\)\s*회의 확정 · 변경 불가/);
+  assert.match(await row('첫 연락').innerText(),/첫 연락\s*확정[\s\S]*2\s*\+?\s*시간\s*정책 항목 · 설정 변경 불가/);assert.equal(await row('첫 연락').locator('.ra-num button').first().isDisabled(),true);
+  assert.match(await row('영업 메이드율').innerText(),/\(자사 수주 \+ 승인 타사 이관\) ÷ \(자사 수주 \+ 승인 타사 이관 \+ 파이프라인 실주\)\s*정책 항목 · 설정 변경 불가/);
   /* 보류 = 꺼짐 고정 */
   assert.match(await row('콘텐츠 후속관리').innerText(),/보류[\s\S]*꺼짐/);assert.equal(await row('콘텐츠 후속관리').locator('.ra-tg').isDisabled(),true);
   /* 조건부: − + → 변경됨 + 영향 한 줄(실제 건수) + 남색 띠 */
   assert.equal(await page.locator('#rules-admin .ra-bar').count(),0,'바꾸기 전에는 띠 없음');
   await row('담당 배정').locator('[data-ra="inc"]').click();await page.waitForTimeout(100);
   assert.match(await row('담당 배정').innerText(),/담당 배정\s*조건부\s*변경됨[\s\S]*바꾸면 지금 배정 기준을 넘긴 문의 2건 → 1건[\s\S]*40\s*\+\s*분/);
-  assert.match(await page.locator('#rules-admin .ra-bar').innerText(),/^변경 1건\s*담당 배정 30 → 40 · 저장하면 모든 화면에 바로 적용되고 변경 이력에 남습니다\s*되돌리기\s*저장$/);
+  assert.match(await page.locator('#rules-admin .ra-bar').innerText(),/^변경 1건\s*담당 배정 30 → 40 · 저장하면 변경 이력에 남습니다\. 적용 중인 항목만 연결된 화면 계산에 반영됩니다\s*되돌리기\s*저장$/);
   await page.locator('#rules-admin [data-ra="reset"]').click();await page.waitForTimeout(100);assert.equal(await page.locator('#rules-admin .ra-bar').count(),0,'되돌리기');assert.equal(await page.evaluate(()=>__calls.filter(c=>c[1].set).length),0,'저장 전에는 서버에 안 보냄');
   /* 세 가지 바꾸고 저장: 숫자 · 토글 · 칩 추가 */
   await row('담당 배정').locator('[data-ra="dec"]').click();await page.waitForTimeout(80);

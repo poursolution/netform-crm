@@ -101,7 +101,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const rq=await v.locator('.k7-row .k7-reqn').allInnerTexts();assert.ok(rq.length>=1&&rq.every(t=>/ \d+건 중 요청 가능 \d+건/.test(t)),'요청 숫자 설명 '+JSON.stringify(rq));
   assert.ok((await v.locator('.k7-req').allInnerTexts()).filter(t=>/요청 가능 \d+건|배정|판단 요청|담당별 요청|다시 확인|보냄/.test(t)).length>=1);
   /* 9. 확장관리 · 오늘 업무: '확인된 미실행'과 '기록 보완'을 같은 함수로 가른다 · 판정 함수가 미팅일 · 발송일 근거를 내보낸다 */
-  assert.deepEqual(await page.evaluate(()=>{const K=ExpansionB.kindOf;return [K(['after30','work'],true).kind+':'+K(['after30','work'],true).key,K(['late'],true).kind,K(['wait60'],true).kind,K(['work'],true).kind+':'+K(['work'],true).key,K([],false).kind+':'+K([],false).key,K(['nocontact'],true).key,K(['nonext'],true).kind];}),['miss:after30','miss','miss','fix:work','fix:nodate','nocontact','ok'],'확인된 미실행 = 사후 연락 · 약속일 · 관계 연락 / 기록 보완 = 준공일 · 공종 · 연락 기록 없음');
+  assert.deepEqual(await page.evaluate(()=>{const K=ExpansionB.kindOf;return [K(['after30','work'],true).kind+':'+K(['after30','work'],true).key,K(['late'],true).kind,K(['wait60'],true).kind,K(['work'],true).kind+':'+K(['work'],true).key,K([],false).kind+':'+K([],false).key,K(['nocontact'],true).key,K(['nonext'],true).kind];}),['fix:work','miss','miss','fix:work','fix:nodate','nocontact','ok'],'확인된 미실행 = 사후 연락 · 약속일 · 관계 연락 / 기록 보완 = 준공일 · 공종 · 연락 기록 없음');
   assert.equal(await page.evaluate(()=>typeof PipelineJudge.meetingOf+typeof PipelineJudge.sentOfDeal+typeof PipelineJudge.field),'functionfunctionfunction');
   assert.equal(await page.evaluate(()=>PipelineJudge.TARGET.stale),'컨설팅 설계 · 관계관리 진행 건(과거 이관 제외)','장기정체 대상 한 줄 = 과거 이관 제외');
   /* 10. 끄기 */

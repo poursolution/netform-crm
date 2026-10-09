@@ -33,26 +33,28 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const v=page.locator('#dup-v2');assert.equal(await v.count(),1,'새 화면');
   assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#dups>*:not(dialog)')].every(n=>getComputedStyle(n).display==='none')),true,'예전 목록은 감춤');
   const cases=await page.evaluate(()=>DataCleanupUI.active().map(c=>c.type+':'+c.action+':'+DupV2.judge(c)));
-  assert.deepEqual(cases.slice().sort(),['inquiry:inquiry_merge:work','site:defer:maybe','site:separate:diff','site:site_merge:work'].sort(),JSON.stringify(cases));
-  assert.deepEqual(await v.locator('.plv-pills button').allInnerTexts(),['전체 4','같은 공사 · 합치기 검토 2','같은 현장 · 다른 공사 0','애매 · 확인 필요 1','확인 불가 0','다른 건 1','처리 완료 0']);
+  assert.deepEqual(cases.slice().sort(),['inquiry:inquiry_merge:maybe','site:defer:maybe','site:separate:diff','site:defer:maybe'].sort(),JSON.stringify(cases));
+  assert.deepEqual(await v.locator('.plv-pills button').allInnerTexts(),['전체 4','같은 공사 · 합치기 검토 0','같은 현장 · 다른 공사 0','애매 · 확인 필요 3','확인 불가 0','다른 건 1','처리 완료 0']);
   assert.deepEqual(await v.locator('.pd-kpi span').allInnerTexts(),['검토 후보','같은 공사','같은 현장 · 다른 공사','애매']);
-  assert.match(await v.locator('.pd-kpis').innerText(),/검토 후보\s*4건[\s\S]*같은 공사\s*2건[\s\S]*같은 현장 · 다른 공사\s*0건[\s\S]*애매\s*1건/);
+  assert.match(await v.locator('.pd-kpis').innerText(),/검토 후보\s*4건[\s\S]*같은 공사\s*0건[\s\S]*같은 현장 · 다른 공사\s*0건[\s\S]*애매\s*3건/);
   assert.deepEqual(await v.locator('.pd-card header b').allInnerTexts(),['무엇이 겹치나','왜 생기나','생기는 곳']);
   assert.match(await v.locator('.pd-card').nth(0).innerText(),/현장\s*3[\s\S]*문의\s*1/);assert.match(await v.locator('.pd-card').nth(1).innerText(),/1일 내 재접수\s*1/);
   assert.match(await v.locator('.pd-action').innerText(),/다시 안 생기게[\s\S]*같은 전화 · 1일 내 재접수 1건[\s\S]*애매한 건은 주 1회 10분 검토/);assert.equal(await v.locator('.pd-toggle').count(),0);
-  assert.match(await v.locator('.dv-band').innerText(),/4건 중 2건은 같은 공사로 보여요 · 같은 현장 · 다른 공사 0건 · 사람이 볼 건 1건입니다[\s\S]*승인하기 전에는 데이터가 바뀌지 않습니다[\s\S]*검토 전용/);
+  assert.match(await v.locator('.dv-band').innerText(),/4건 중 0건은 같은 공사로 보여요 · 같은 현장 · 다른 공사 0건 · 사람이 볼 건 3건입니다[\s\S]*승인하기 전에는 데이터가 바뀌지 않습니다[\s\S]*검토 전용/);
   assert.equal(await v.locator('.dv-band button').isDisabled(),true,'한 번에 승인은 구조 확인 뒤(잠김)');
   assert.equal(await page.evaluate(()=>['periodbar','reptabs'].every(id=>getComputedStyle(document.getElementById(id)).display==='none')),true,'예전 조회기간 · 담당자 줄 감춤');
   assert.deepEqual(await v.locator('.plv-thead span').allInnerTexts(),['대상 (A ↔ B) · 종류','판단','근거','제안','']);
   assert.deepEqual(await v.locator('.plv-ghead b').allInnerTexts(),['같은 공사 · 합치기 검토','같은 현장 · 다른 공사','애매 · 확인 필요','확인 불가','다른 건']);
-  assert.deepEqual(await v.locator('.plv-ghead span').allInnerTexts(),['2건','0건','1건','0건','1건'],'묶음 건수 = 알약 건수(실제 건수)');
-  assert.deepEqual(await v.locator('.plv-row .plv-cta').allInnerTexts(),['승인','승인','비교하기','확인']);
+  assert.deepEqual(await v.locator('.plv-ghead span').allInnerTexts(),['0건','0건','3건','0건','1건'],'묶음 건수 = 알약 건수(실제 건수)');
+  assert.deepEqual(await v.locator('.plv-row .plv-cta').allInnerTexts(),['비교하기','비교하기','비교하기','비교하기']);
   assert.equal(await page.evaluate(()=>/%/.test(document.querySelector('#dup-v2 .plv-table').innerText)),false,'확률(%)을 지어내지 않는다');
   if(shot)await page.screenshot({path:shot+'-list.png',fullPage:true});
+  assert.equal(await v.locator('.dv-ctac small').evaluateAll(ns=>ns.every(n=>n.textContent==='규칙 추천 · 확인 전')),true,'자동 추천은 사람의 확정 아님');
+  assert.match(await v.locator('.dv-ab').first().innerText(),/20\d{2}\./,'접수·등록 시각에 연도 포함');
   /* 비교 창 */
   await v.locator('.plv-row',{hasText:'강동 롯데캐슬퍼스트'}).locator('.plv-cta').click();await page.waitForTimeout(200);
   const d=page.locator('#dupDialog.on .dv-box');assert.equal(await d.count(),1);assert.equal(await page.evaluate(()=>Math.round(document.querySelector('.dv-box').getBoundingClientRect().width)),760);
-  assert.match(await d.locator('.dv-judge.g').innerText(),/판단 · 같은 공사 · 합치기 검토[\s\S]*근거: 주소 동일 · 관리사무소 전화 동일[\s\S]*제안: 합치기[\s\S]*확률은 표시하지 않습니다/);
+  assert.match(await d.locator('.dv-judge.a').innerText(),/판단 · 같은 현장 · 공사 확인 필요[\s\S]*근거: 주소 동일 · 관리사무소 전화 동일[\s\S]*제안: 정보 보완 뒤 판단[\s\S]*확률은 표시하지 않습니다/);
   assert.deepEqual(await d.locator('.dv-cmp>div:not(.dv-ch) span').allInnerTexts(),['종류','이름','주소','관리사무소 전화','담당','사업유형','단계','금액','등록','접수 시각','연락처 끝자리']);
   assert.deepEqual(await d.locator('.dv-cmp>div.diff span').allInnerTexts(),['이름','담당','등록','접수 시각'],'서로 다른 값만 노란 칸');
   assert.equal(await d.locator('.dv-cmp>div.diff em').first().evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(255, 248, 225)');
@@ -72,7 +74,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>DataCleanupUI.close());await page.waitForTimeout(200);
   await page.locator('#dup-v2 .plv-pills [data-value="done"]').click();await page.waitForTimeout(200);
   assert.match(await page.locator('#dup-v2 .dv-hist').innerText(),/옛 현장 → 새 현장[\s\S]*연결만 · 송보람 · 2026-09-30[\s\S]*같은 단지 확인/);
-  await page.locator('#dup-v2 .plv-pills [data-value="maybe"]').click();await page.waitForTimeout(200);assert.equal(await page.locator('#dup-v2 .plv-row').count(),1);
+  await page.locator('#dup-v2 .plv-pills [data-value="maybe"]').click();await page.waitForTimeout(200);assert.equal(await page.locator('#dup-v2 .plv-row').count(),3);
   assert.deepEqual(await page.evaluate(()=>__writes),[],'이 화면은 직접 저장하지 않는다');assert.equal(await page.evaluate(()=>__rpc.filter(n=>n==='crm_cleanup_apply').length),0);
   /* 좁은 화면 · 끄기 */
   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(250);

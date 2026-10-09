@@ -55,14 +55,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{SalesScope.change('owner','전체');SalesFilterState.sync();paint();});await page.waitForTimeout(300);assert.deepEqual(await pills(),['전체 7',Y+' 6',(Y-1)+' 1',(Y-2)+' 0','이전 0']);
   /* [리스트 | 보드] = '확인할 현장 n곳' 제목 줄 오른쪽 끝 · 준공연도와 겹치지 않는다 · 연도를 고르면 제목 옆에 "○○년 준공만" */
   assert.deepEqual(await v.evaluate(n=>{const y=n.querySelector('.xb-yrow').getBoundingClientRect(),w=n.querySelector('.ps3-views').getBoundingClientRect(),h=n.querySelector('.ps3-lhead').getBoundingClientRect();return [w.top>=y.bottom,Math.abs(w.right-h.right)<2,n.querySelector('.ps3-views').parentElement.classList.contains('ps3-lhead')];}),[true,true,true]);
-  assert.equal(one(await v.locator('.ps3-lhead').innerText()),'확인할 현장 6곳 '+Y+'년 준공만 리스트 보드');
+  assert.equal(one(await v.locator('.ps3-lhead').innerText()),'확인할 현장 6건 '+Y+'년 준공만 리스트 보드');
   /* 공용 틀(2026-10-06 "리스트에서 이질감 없이"): 파이프라인 v3 와 같은 틀 — 상태 탭 4칸([전체] + 막대 3칸) · 진단 숫자 3개 · 사유 · 할 일 */
   assert.deepEqual(await v.locator('.ps3-tabs .ps3-tab').evaluateAll(l=>l.map(b=>b.querySelector('.l').textContent+' '+b.querySelector('.n').textContent)),['전체 6','사후 연락 · 관계 유지 4','니즈 확인 1','보류 · 전환 완료 1']);
   assert.equal(await page.locator('#expansion-b .ps3-head b').evaluate(n=>getComputedStyle(n).fontSize),'22px','제목 글자 = 파이프라인 v3');
-  assert.match(await v.locator('.ps3-kpis').innerText(),/기준 넘김\s*2곳[\s\S]*니즈 확인\s*1곳[\s\S]*평균 준공 후\s*\d+일/);
+  assert.match(await v.locator('.ps3-kpis').innerText(),/기준 넘김\s*2건[\s\S]*니즈 확인\s*1건[\s\S]*평균 준공 후\s*\d+일/);
   const reasons=await v.locator('.ps3-reason>span>b:first-child').allInnerTexts();
-  assert.deepEqual(reasons,['다음 접촉일 지남','준공 후 사후 연락 안 함','관계 연락 주기 넘김','니즈 확인 → 전환 대기','공종 미분류'],'사유 순서 = 표 순서 '+JSON.stringify(reasons));
-  assert.match(await v.locator('.ps3-diag>.ps3-box').nth(2).innerText(),/그래서 뭘 해야 하나[\s\S]*다음 접촉일 지남 1곳[\s\S]*준공 후 사후 연락 안 함 1곳[\s\S]*관계 연락 주기 넘김 1곳/);
+  assert.deepEqual(reasons,['다음 접촉일 지남','사후 연락 기록 확인 필요','관계 연락 주기 넘김','니즈 확인 → 전환 대기','공종 미분류'],'사유 순서 = 표 순서 '+JSON.stringify(reasons));
+  assert.match(await v.locator('.ps3-diag>.ps3-box').nth(2).innerText(),/그래서 뭘 해야 하나[\s\S]*다음 접촉일 지남 1건[\s\S]*사후 연락 기록 확인 필요 1건[\s\S]*관계 연락 주기 넘김 1건/);
   /* 현장: 빨강 사유 순(접촉일 지남 e1 → 2개월 연락 없음 e7) → 사유 수 */
   const order=await v.locator('.psb-row').evaluateAll(a=>a.map(n=>n.dataset.key));
   assert.deepEqual(order.slice(0,2),['e1','e7'],'빨강 먼저 '+JSON.stringify(order));
@@ -96,9 +96,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#expansion-b [data-sb="view"][data-v="list"]').click();await page.waitForTimeout(150);
   /* 준공연도 알약 */
   await page.locator('#expansion-b .xb-ypills [data-value="'+(Y-1)+'"]').click();await page.waitForTimeout(150);assert.equal(await page.locator('#expansion-b .psb-row').count(),1);
-  assert.equal(one(await page.locator('#expansion-b .ps3-lhead').innerText()),'확인할 현장 1곳 '+(Y-1)+'년 준공만 리스트 보드');assert.match(one(await page.locator('#pg-expansion>.cf-bar .cf-pill').first().innerText()),/^전체 7$/,'연도를 골라도 브랜드 칩은 그대로');
-  await page.locator('#expansion-b .xb-ypills [data-value="이전"]').click();await page.waitForTimeout(150);assert.equal(one(await page.locator('#expansion-b .ps3-lhead').innerText()),'확인할 현장 0곳 '+(Y-3)+'년 이전 준공만 리스트 보드');assert.equal(await page.locator('#expansion-b .xb-ypills [data-value="이전"]').evaluate(b=>getComputedStyle(b).opacity),'1','고른 알약은 0건이어도 또렷하게');
-  await page.locator('#expansion-b .xb-ypills [data-value="전체"]').click();await page.waitForTimeout(150);assert.equal(one(await page.locator('#expansion-b .ps3-lhead').innerText()),'확인할 현장 7곳 리스트 보드','전체면 안내 없음');
+  assert.equal(one(await page.locator('#expansion-b .ps3-lhead').innerText()),'확인할 현장 1건 '+(Y-1)+'년 준공만 리스트 보드');assert.match(one(await page.locator('#pg-expansion>.cf-bar .cf-pill').first().innerText()),/^전체 7$/,'연도를 골라도 브랜드 칩은 그대로');
+  await page.locator('#expansion-b .xb-ypills [data-value="이전"]').click();await page.waitForTimeout(150);assert.equal(one(await page.locator('#expansion-b .ps3-lhead').innerText()),'확인할 현장 0건 '+(Y-3)+'년 이전 준공만 리스트 보드');assert.equal(await page.locator('#expansion-b .xb-ypills [data-value="이전"]').evaluate(b=>getComputedStyle(b).opacity),'1','고른 알약은 0건이어도 또렷하게');
+  await page.locator('#expansion-b .xb-ypills [data-value="전체"]').click();await page.waitForTimeout(150);assert.equal(one(await page.locator('#expansion-b .ps3-lhead').innerText()),'확인할 현장 7건 리스트 보드','전체면 안내 없음');
   await page.locator('#expansion-b .xb-ypills [data-value="'+Y+'"]').click();await page.waitForTimeout(150);
   if(shot)await page.screenshot({path:shot+'-year.png',fullPage:true});
   /* 열기 = 기존 v2 상세창 · 사유 버튼은 그 액션으로(연락 → 입력칸 포커스, 전환 → 기존 전환창) */
