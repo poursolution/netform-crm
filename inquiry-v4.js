@@ -76,7 +76,7 @@
   function lines(m){
    if(m._ln)return m._ln;const k=K(),q=m.q,now=Date.now();let l2='',l3='',col=m.dc;
    const copy=!!k&&k.copied(q),mc=k?k.memoCallDay(q):'',pend=k&&k.on()?k.pendingN(q):0;
-   const copyText='과거 통화일 확인 필요'+(mc?' · 메모에 '+k.md(mc)+' 통화':'');
+   const copyText='연결일 확인 필요'+(mc?' · 메모에 '+k.md(mc)+' 통화':'');
    if(m.g===1){
     const hhmm=Number.isFinite(m.due)?(k.day(m.due)===k.today()?'오늘':k.md(m.due))+' '+k.hm(m.due)+'까지':'';
     l2=(m.step===0?'배정 기한 ':'첫 연락 기한 ')+(Number.isFinite(m.due)?remain(m.due-now):'—');l3=hhmm;col='#b42318';
@@ -98,6 +98,7 @@
   if(m._lc)return m._lc;let e=null;
   try{e=(DV().timeline?DV().timeline(m.q):[]).filter(isCon).sort((a,b)=>(Date.parse(b.at)||0)-(Date.parse(a.at)||0))[0]||null;}catch(err){}
   if(e){const c=conText(e);m._lc={when:ymd(e.at),at:Date.parse(e.at),text:c.text,real:c.real,res:e.res||''};}else m._lc={when:'',at:NaN,text:m.lastText,real:false,res:''};
+  const k=K();try{if(k&&k.copied(m.q)&&(!e||k.day(e.at)===k.day(k.connection(m.q).orig))){m._lc={when:'',at:NaN,text:'연결일 확인 필요 · 접수일과 같음',real:false,res:''};}}catch(err){}
   return m._lc;
  }
  /* 진행 중 = 목록 범위(역할 · 브랜드 · 담당 · 검색) 가운데 영업건으로 넘기지 않은 문의. 한 번 그릴 때 여러 곳(위 탭 · 브랜드 칩 · 목록)이 같이 쓰므로 잠깐 담아 둔다 */
@@ -285,12 +286,12 @@
    catch(e){S.memoErr=String(e&&e.message||'저장하지 못했습니다');return render();}
    toast(a==='memo-call'?'실제 연결일을 보완했습니다':'약속 판단을 저장했습니다');fresh();root.paint();
   }
-  /* 연락처 보완: 찾은 번호를 문의 연락처로 저장(상세 창과 같은 저장 길 — InquiryCommand field_set · phone) → 후속 연락 목록으로 */
+  /* 연락처 보완: 찾은 번호를 문의 연락처로 저장(상세 창과 같은 저장 길 — InquiryCommand field_set · phone) → 저장된 배정·연락 기록으로 목록 재계산 */
   function savePhone(m,digits){
    const S=st(),q=root.inqCtlFind(m.key,false),value=String(digits||'').trim();if(!q||!value||S.busy)return;
    S.busy=true;S.findErr='';render();
    Promise.resolve().then(()=>root.InquiryCommand.run('field_set',q,{field:'phone',value})).then(done=>{DV().applyField(q,(done&&done.field)||'phone',(done&&done.value)||value,done&&done.rawKey);try{root.saveLocal&&root.saveLocal();}catch(e){}
-    Object.assign(S,{busy:false,find:false,findErr:''});toast('연락처를 저장했습니다 — 후속 연락 목록으로 옮겨집니다');fresh();root.paint();
+    Object.assign(S,{busy:false,find:false,findErr:''});toast('연락처를 저장했습니다 — 배정·연락·이관 기록에 따라 할 일을 다시 확인합니다');fresh();root.paint();
    }).catch(e=>{Object.assign(S,{busy:false,findErr:String(e&&e.message||e||'저장하지 못했습니다')});render();});
   }
   /* 빠진 정보 한 칸 저장 */
