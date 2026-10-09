@@ -153,3 +153,15 @@ test('③ 닫힌 문의 수 문구: 종결 N건 · Bad Fit n(대시보드 · 브
  assert.match(db,/B\.closedText\(bad,'ex'\)/);assert.match(db,/<b>견적문의 '\+h\(B\.closedText\(bad\)\)\+' <span>/);assert.match(rb,/<p><b>견적문의 '\+h\(B\.closedText\(c\.bad\)\)\+'<\/b>/);
  assert.deepEqual(require('../ops-rules.js').reasons('bad_fit'),['수행불가 공종','규모 부적합','대상 고객 아님','서비스 범위 아님','기타']);
 });
+
+// Rule updates must invalidate already-read inquiry decisions without changing records.
+ test('연락두절 간격·횟수 변경은 같은 문의 객체를 즉시 재판정한다',()=>{
+  const rules={unreachable_attempts:3,unreachable_interval_days:1};
+  const F=load({CRMRules:{get:k=>rules[k]}}).InquiryFlow;
+  const q={id:'rule-change',status:'배정완료',activities:[3,2,1].map((d,i)=>({id:'r'+i,type:'전화',note:'[전화 · 부재]',at:at(d)}))};
+  const before=JSON.stringify(q);
+  assert.equal(F.state(q).unreachable,true);
+  rules.unreachable_interval_days=2;assert.equal(F.state(q).unreachable,false);assert.equal(F.state(q).spaced,2);
+  rules.unreachable_attempts=2;assert.equal(F.state(q).unreachable,true);
+  assert.equal(JSON.stringify(q),before,'원본 상태·활동 기록을 변경하지 않는다');
+ });
