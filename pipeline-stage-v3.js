@@ -107,14 +107,15 @@
     if(t===1)return '등록 일정 '+ymd(r.due)+(r.next&&r.next.text?' · '+r.next.text:'');
     return (y?y+' 공사 예정':'공사 예정 연도 없음')+(r.due?' · 다음 연락 '+ymd(r.due):' · 다음 연락일 없음');}};
   /* stage7 ④: D-7 준비 · 개찰 다음날 등록은 '운영 제안'(회의 확정 아님) 표시 · 결정 · 입찰 일정 없으면 넷째 칸 '일정 미등록' → 입찰 · PT 일정 확인(D-7 계산 안 함) */
-  if(key==='competition')return {name:'경쟁 · 입찰',goal:goalOf(key,30),desc:'현설 · PT · 입찰을 준비하는 단계 · 마감 D-'+D7+' 준비 · 개찰 다음날 결과 등록(운영 제안 · 회의 확정 아님)',
+  if(key==='competition')return {key:'competition',amountLabel:'예상 금액',name:'경쟁 · 입찰',goal:goalOf(key,30),desc:'현설 · PT · 입찰을 준비하는 단계 · 마감 D-'+D7+' 준비 · 개찰 다음날 결과 등록(운영 제안 · 회의 확정 아님)',
    tabs:[['마감 D-'+D7+' 이내','제안서 · 가격 확정 · 운영 제안'],['진행 중','일정 확인'],['결과 대기','개찰 다음날 결과 등록 · 운영 제안'],['일정 미등록','입찰 · PT 일정 확인']],ambTab:3,
    reasons:[['noprop','제안서 미공유'],['nodate','결정 · 입찰 일정 미등록'],['nocomp','경쟁 공법 미확인'],['nodecider','결정권자 미확인'],['nores','결과 미등록']],
    act:[['제안 준비','stagefields'],['일정 확인','stagefields'],['결과 등록','stage'],['일정 입력','stagefields']],
-   todo:'마감 D-'+D7+' 이내 건은 제안서를 팀장과 공유하고, 개찰 다음날 결과를 등록하세요(둘 다 운영 제안). 결정 · 입찰 일정이 없는 건은 입찰 · PT 일정부터 확인하세요(일정 없으면 D-'+D7+' 계산 안 함).',
+   todo:'마감 D-'+D7+' 이내 건은 제안서를 팀장과 공유하고, 개찰 다음날 결과를 등록하세요(둘 다 운영 제안). 기한 뒤 연락 기록이 있으면 기존 업무 처리 여부와 다음 행동을 먼저 확인하고, 결정 · 입찰 일정도 확인하세요(일정 없으면 D-'+D7+' 계산 안 함).',
    /* 결과 대기 = 제출했거나 마감 · 결정 일정이 지난 건 / 마감 D-7 이내 = 아직 내지 않았고 일정이 7일 안 / 일정 미등록 = 날짜 없음(제출 전) / 나머지 = 진행 중 */
    tab:it=>{const f=it.row.fields||{},dd=days(it.row.date),sub=/제출|완료/.test(String(f.bid_plan||f.position||''));if(!it.row.date&&!sub)return 3;return (sub||(dd!==null&&dd<0))?2:(dd!==null&&dd<=D7)?0:1;},
-   has:{noprop:(it,t)=>t===0,nodate:(it,t)=>t===3,nocomp:it=>!it.values.competitor,nodecider:it=>!deciderKnown(it),nores:it=>it.rs.includes('nores')},sub:it=>it.sub};
+   has:{noprop:(it,t)=>t===0,nodate:it=>days(it.row.date)===null,nocomp:it=>!it.values.competitor,nodecider:it=>!deciderKnown(it),nores:it=>it.rs.includes('nores')},sub:it=>it.sub,
+   rowOpts:x=>{const e=competitionEvidence(x.row);return e&&e.review?{forceTask:true,task:e.task,staleNext:'기존 업무: '+nextOf(x.row)+' · 입찰 일정도 확인',btn:['업무 확인','next']}:{};}};
   /* stage7_2 ⑤: 계약 · 시공 4상태 — 계약 체결 → 착공 준비(착공일 미입력 · 아직 안 온 착공일) → 시공 중(착공일이 입력되고 오늘 이전) → 준공 확인. 계약일만으로 '시공 중' 판정 금지.
      끝난 상태의 업무(계약 체결 확인)는 종료 대상으로 표시(실제로는 단계가 바뀔 때 서버가 열린 업무를 닫는다) · 진단 '시공 중 방문 없음'은 시공 중 칸과 같은 조건 */
   const startOf=it=>String(it.values.startDate||'').slice(0,10);
@@ -176,9 +177,10 @@
   if(C.rowOpts){try{Object.assign(o,C.rowOpts(x)||{});}catch(e){}}/* 관계관리 v12: 상태 · 주기 꼬리표 · 기준일 · 기한 글 */
   return o;
  }
+ const competitionEvidence=r=>root.PipelineRowV11&&root.PipelineRowV11.competitionEvidence?root.PipelineRowV11.competitionEvidence(r):null;
  function cardHtml(C,x){
-  const r=x.row,bc=bcOf(r),a=actOf(C,x);
-  return '<div class="ps3-card" role="button" tabindex="0" data-ps3="open" data-key="'+attr(r.key)+'" style="border-left-color:'+(bc||'#e3e6ec')+'"><div class="t"><b style="color:'+(bc||'#9ca3af')+'">'+h(r.item.brand||'브랜드 미지정')+'</b><i></i><span class="no">'+h(noOf(r))+'</span><b class="d'+(x.stall>C.goal?' r':'')+'">'+x.stall+'일</b></div><strong>'+h(r.site)+'</strong><span>'+h([workOf(r)+(bizYearOf(r)?' · '+bizYearOf(r):''),r.owner||'미배정',money(r.amount)].filter(Boolean).join(' · '))+'</span><span class="iss'+(x.red?' r':'')+'">'+h((x.red?'확인 필요 · ':'')+[issueOf(C,x),x.sub&&!String(issueOf(C,x)).includes(x.sub)?x.sub:''].filter(Boolean).join(' · '))+'</span><span class="nx'+(r.next&&r.next.text?'':' none')+'"><i>다음 행동</i> '+h(nextOf(r))+'</span>'+(dupOf(r)?'<span class="dup">'+h(dupOf(r))+'</span>':'')+'<button type="button" data-ps3="act" data-key="'+attr(r.key)+'" data-v="'+attr(a[1])+'">'+h(a[0])+'</button></div>';
+  const r=x.row,bc=bcOf(r),e=C.key==='competition'?competitionEvidence(r):null,a=e&&e.review?['업무 확인','next']:actOf(C,x);
+  return '<div class="ps3-card" role="button" tabindex="0" data-ps3="open" data-key="'+attr(r.key)+'" style="border-left-color:'+(bc||'#e3e6ec')+'"><div class="t"><b style="color:'+(bc||'#9ca3af')+'">'+h(r.item.brand||'브랜드 미지정')+'</b><i></i><span class="no">'+h(noOf(r))+'</span><b class="d'+((e?e.age!==null&&e.age>C.goal:x.stall>C.goal)?' r':'')+'">'+h(e?e.ageText:x.stall+'일')+'</b></div><strong>'+h(r.site)+'</strong><span>'+h([workOf(r)+(bizYearOf(r)?' · '+bizYearOf(r):''),r.owner||'미배정',(e?'예상 ':'')+money(r.amount)].filter(Boolean).join(' · '))+'</span><span class="iss'+(x.red?' r':'')+'">'+h(e&&e.warning?e.warning:(x.red?'확인 필요 · ':'')+[issueOf(C,x),x.sub&&!String(issueOf(C,x)).includes(x.sub)?x.sub:''].filter(Boolean).join(' · '))+'</span><span class="nx'+(r.next&&r.next.text?'':' none')+'"><i>다음 행동</i> '+h(nextOf(r))+'</span>'+(dupOf(r)?'<span class="dup">'+h(dupOf(r))+'</span>':'')+'<button type="button" data-ps3="act" data-key="'+attr(r.key)+'" data-v="'+attr(a[1])+'">'+h(a[0])+'</button></div>';
  }
  function html(key,list){
   DUP=dupMap();
@@ -193,16 +195,19 @@
   const tabs='<div class="ps3-tabs" role="group" aria-label="상태" data-n="'+(C.tabs.length+1)+'">'+tab(-1,'전체','이 단계 모든 현장',total,false)+C.tabs.map((t,i)=>tab(i,t[0],t[1],n[i],hot(i),C.tabSrc?C.tabSrc[i]:'',C.ambTab===i)).join('')+'</div>'+(C.workFilters?'<div class="ps3-works" role="group" aria-label="업무 필터"><span>업무 필터 · 상태와 함께 걸림</span>'+C.workFilters.map(w=>{const m=items.filter(x=>(S.tab===-1||x.tab===S.tab)&&C.work(x,w[0])).length;return '<button type="button" data-ps3="work" data-v="'+w[0]+'" aria-pressed="'+(S.work===w[0])+'">'+h(w[1])+' <span>'+m+'</span></button>';}).join('')+'<i></i>'+(C.workNote?'<small>'+h(C.workNote)+'</small>':'')+'</div>':'');
   /* stage7 공통(2026-10-07): 제목 숫자 = '기한 초과 n'(날짜 있고 넘김 · 판정 함수와 같은 수) + '확인 필요 n'(날짜 미입력 · 판정 불가 · 정보 보완). '기준 넘김' 단어 없음. 수주 · 실주는 끝 상태라 기한 초과 0 · 지연 아님 */
   const TL=(()=>{try{const J=root.PipelineJudge;return J&&J.on()?J.tally(items.map(x=>x.row&&x.row.item).filter(Boolean)):null;}catch(e){return null;}})();
-  const kpi1=C.closed?'<div class="over amb"><span>'+h(C.kpiLabel||'정보 보완')+'</span><b>'+over.toLocaleString('ko-KR')+'건</b><small>기한 초과 0 · 지연 아님 · 끝 상태</small></div>'
-   :'<div class="over"><span>기한 초과</span><b>'+(TL?TL.late:over).toLocaleString('ko-KR')+'건</b><small>확인 필요 '+(TL?TL.nodate+TL.norecord:0)+' · 날짜 미입력 '+(TL?TL.nodate:0)+' · 판정 불가 '+(TL?TL.norecord:0)+'</small></div>';
+  const CE=key==='competition'?items.map(x=>competitionEvidence(x.row)).filter(Boolean):null;
+  const competitionKpi=CE?'<div class="over"><span>후속 업무 지연</span><b>'+CE.filter(e=>e.late).length+'건</b><small>입찰 일정 없음 '+CE.filter(e=>e.scheduleMissing).length+' · 다음 행동일 없음 '+CE.filter(e=>e.nextMissing).length+' · 판정 불가 '+(TL?TL.norecord:0)+'</small></div>':null;
+  const kpi1=competitionKpi||(C.closed?'<div class="over amb"><span>'+h(C.kpiLabel||'정보 보완')+'</span><b>'+over.toLocaleString('ko-KR')+'건</b><small>기한 초과 0 · 지연 아님 · 끝 상태</small></div>'
+   :'<div class="over"><span>기한 초과</span><b>'+(TL?TL.late:over).toLocaleString('ko-KR')+'건</b><small>확인 필요 '+(TL?TL.nodate+TL.norecord:0)+' · 날짜 미입력 '+(TL?TL.nodate:0)+' · 판정 불가 '+(TL?TL.norecord:0)+'</small></div>');
   /* stage7_2 ⑤: 자료 없음 3가지(자료발송 · 입찰 · 계약 단계) — 현재 업무 미수행만 평가 · 지연 통계에 들어간다 */
   const MS=(!C.closed&&!C.leftHtml&&['consulting','sent','competition','construction'].includes(key)&&TL&&root.PipelineJudge&&root.PipelineJudge.missCounts)?root.PipelineJudge.missCounts(TL):null;
   const missHtml=MS?'<section class="ps3-box ps3-miss"><header><b>자료 없음 3가지</b></header>'+[['현재 업무 미수행',MS.cur,'기준일 있고 기한 넘김 · 담당 평가 · 지연 통계 포함'],['과거 자료 미확인',MS.past,'이관 전 기록 · 보완 대상 · 평가 제외'],['해당 없음',MS.na,'그 단계에 필요 없는 정보 · 집계 제외']].map(x=>'<div class="ps3-ms"><span><b>'+h(x[0])+'</b> '+x[1]+'</span><small>'+h(x[2])+'</small></div>').join('')+'</section>':'';
   const doneN=C.closed&&C.doneOf?items.filter(x=>C.doneOf(x.it)).length:0,donePct=total?Math.round(doneN*1000/total)/10:0,fixN=total-doneN;
   const headNote=C.headNote?' · '+h(C.headNote(items)):'';
+  const ages=CE?CE.filter(e=>e.age!==null).map(e=>e.age):null,ageAvg=ages&&ages.length?Math.round(ages.reduce((a,b)=>a+b,0)/ages.length):null;
   /* 왼쪽: 단계 진단 */
-  const diag=C.leftHtml?'<aside class="ps3-diag"><section class="ps3-box"><header><b>단계 진단</b><span>'+total.toLocaleString('ko-KR')+'건 · '+h(money(sumAmt))+'</span></header><div class="ps3-kpis"><div class="over"><span>다음 연락일 지남</span><b>'+over.toLocaleString('ko-KR')+'건</b><small>오늘 연락</small></div><div><span>평균 체류</span><b>'+avg+'일</b><small>기준 '+C.goal+'일</small></div></div></section>'+C.leftHtml(items,S)+'</aside>':'<aside class="ps3-diag"><section class="ps3-box"><header><b>단계 진단</b><span>'+total.toLocaleString('ko-KR')+'건 · '+h(money(sumAmt))+headNote+'</span></header>'
-   +'<div class="ps3-kpis">'+kpi1+(C.closed?'<div><span>결과 기록 완성률</span><b>'+donePct+'%</b><small>'+doneN+' / '+total+'</small></div>':'<div><span>평균 체류</span><b>'+avg+'일</b><small>기준 '+C.goal+'일</small></div>')+'</div>'+(C.closed?'<span class="rv-bar" aria-label="결과 기록 완성률"><i style="width:'+Math.max(donePct>0?2:0,donePct)+'%"></i></span>':'')+'</section>'
+  const diag=C.leftHtml?'<aside class="ps3-diag"><section class="ps3-box"><header><b>단계 진단</b><span>'+total.toLocaleString('ko-KR')+'건 · '+h(money(sumAmt))+'</span></header><div class="ps3-kpis"><div class="over"><span>다음 연락일 지남</span><b>'+over.toLocaleString('ko-KR')+'건</b><small>오늘 연락</small></div><div><span>평균 체류</span><b>'+avg+'일</b><small>기준 '+C.goal+'일</small></div></div></section>'+C.leftHtml(items,S)+'</aside>':'<aside class="ps3-diag"><section class="ps3-box"><header><b>단계 진단</b><span>'+total.toLocaleString('ko-KR')+'건 · '+h((CE?'예상 ':'')+money(sumAmt))+headNote+'</span></header>'
+   +'<div class="ps3-kpis">'+kpi1+(C.closed?'<div><span>결과 기록 완성률</span><b>'+donePct+'%</b><small>'+doneN+' / '+total+'</small></div>':'<div><span>평균 체류</span><b>'+h(CE?(ageAvg===null?'미확인':ageAvg+'일'):avg+'일')+'</b><small>'+h(CE?'진입일 입력 '+ages.length+' / '+total+'건':'기준 '+C.goal+'일')+'</small></div>')+'</div>'+(C.closed?'<span class="rv-bar" aria-label="결과 기록 완성률"><i style="width:'+Math.max(donePct>0?2:0,donePct)+'%"></i></span>':'')+'</section>'
    +missHtml+'<section class="ps3-box ps3-why"><header><b>'+(C.closed?'보완할 것 '+fixN+'건':'왜 멈춰 있나')+'</b><span>누르면 목록이 걸러짐</span></header>'
    +C.reasons.map((r,i)=>{const c=rsN(r[0]),on=S.reason===r[0];return '<button type="button" class="ps3-reason'+(on?' on':'')+((C.redReason?C.redReason(r[0]):i===0)?' first':'')+'" data-ps3="reason" data-v="'+r[0]+'" aria-pressed="'+on+'"><span><b>'+h(r[1])+'</b><b class="c">'+c.toLocaleString('ko-KR')+'</b></span><i><u style="width:'+(total?Math.min(100,Math.round(c/total*100)):0)+'%"></u></i></button>';}).join('')+'</section>'
    +'<section class="ps3-box"><header><b>그래서 뭘 해야 하나</b></header>'+(C.todoHtml?C.todoHtml(items,S):'<p class="ps3-todo">'+h(C.todo)+'</p>')+'</section></aside>';
@@ -210,7 +215,7 @@
   const fl=S.reason?(C.reasons.find(r=>r[0]===S.reason)||[])[1]:'';
   const head='<div class="ps3-lhead"><b>확인할 현장 <span>'+listed.length.toLocaleString('ko-KR')+'곳</span></b>'+(fl?'<button type="button" class="ps3-chip" data-ps3="clear" aria-label="'+attr(fl)+' 필터 해제">'+h(fl)+' ×</button>':'')+'<i></i><div class="ps3-views" role="group" aria-label="보기"><button type="button" data-ps3="view" data-v="list" aria-pressed="'+(S.view!=='board')+'">리스트</button><button type="button" data-ps3="view" data-v="board" aria-pressed="'+(S.view==='board')+'">보드</button></div></div>';
   let body;
-  if(S.view==='board')body='<div class="ps3-board">'+C.tabs.map((t,i)=>{const all=items.filter(x=>x.tab===i&&(!S.reason||x.rs.includes(S.reason))),cp=LP.cut(all,LP.page(S,'col:'+i)),cards=cp.rows;
+  if(S.view==='board')body='<div class="ps3-board">'+C.tabs.map((t,i)=>{const selected=listed.filter(x=>x.tab===i),all=V11()?V11().sort(selected,x=>x.row):selected,cp=LP.cut(all,LP.page(S,'col:'+i)),cards=cp.rows;
     return '<div class="ps3-col"><div class="ch"><b title="'+attr(t[0])+'">'+h(t[0])+'</b><b class="c'+(i===0?' r':'')+'">'+n[i].toLocaleString('ko-KR')+'</b></div>'+(cards.length?cards.map(x=>cardHtml(C,x)).join(''):'<p class="ps3-none">없음</p>')+LP.html(cp,{ns:'ps3',v:'col:'+i,small:true,info:false})+'</div>';}).join('')+'</div>';
   else{const V=V11(),pg=LP.cut(V?V.sort(listed,x=>x.row):listed,LP.page(S));
    body='<div class="ps3-list'+(V?' prv-list':'')+'" role="table" aria-label="확인할 현장">'+(V?V.head():'')+(pg.rows.length?pg.rows.map(x=>V?V.row(v11(key,C,x),'ps3','ps3-row'):rowHtml(C,x)).join(''):'<div class="ps3-empty">해당하는 현장이 없습니다</div>')+LP.html(pg,{ns:'ps3',unit:'곳'})+'</div>';}

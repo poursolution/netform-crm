@@ -28,6 +28,18 @@
  function sort(list,rowOf){
   return list.map((x,i)=>{const r=rowOf(x),n=r&&r.due?dayNum(r.due):null;return {x,i,n:n==null?1e9:n};}).sort((a,b)=>a.n-b.n||a.i-b.i).map(o=>o.x);
  }
+ /* 경쟁·입찰: 다음 업무 기한과 입찰 일정은 독립 근거다. 연락 기록만으로 기존 업무를 완료하지 않는다. */
+ function competitionEvidence(r){
+  const d=r.item||{},J=root.PipelineJudge,b=J&&J.on()?J.basis(d,'competition'):null;
+  const scheduleMissing=dayNum(r.date)==null,nextMissing=dayNum(r.due)==null;
+  const late=!!(b&&b.src==='next'&&J.isLate(b));
+  let connected='';try{connected=KD(root.ContactState.of(d,'deal').lastConnectedAt||'');}catch(e){}
+  const review=late&&!!connected&&connected>KD(r.due);
+  const warning=b&&b.kind==='norecord'?'판정 불가 · 이관 기록 확인':b&&b.kind==='none'?'일정 미등록 · 기한 판정 불가':review?'기존 후속 업무 처리 확인':late?'후속 업무 '+J.dueText(b):'';
+  const p=patchOf(d),entered=p.stageEnteredAt||p.stageChangedAt||d.stageEnteredAt||d.stage_entered_at||d.stageChangedAt||'';
+  const age=entered&&r.stall!=null&&Number.isFinite(Number(r.stall))?Number(r.stall):null;
+  return {basis:b,scheduleMissing,nextMissing,late,review,warning,age,ageText:age==null?'진입일 미확인':'진입 '+age+'일',task:review?'기존 업무 처리 확인 → 다음 행동 갱신':'',amountText:'예상 금액'};
+ }
  const head=()=>'<div class="prv-head" role="row"><span>현장 · 담당</span><span>현재 상황</span><span>다음 업무 · 기한</span><span></span></div>';
  /* o = {r(행), now(한 줄 상태), task(다음 업무 — 등록된 다음 할 일이 없을 때), btn[이름, 동작], closed(수주 · 실주), tab}
     ns = 그 화면의 누름 속성 이름(ps3 · psb — 줄 = data-ns="open" · 버튼 = data-ns="act"), cls = 그 화면의 줄 클래스(예전 선택자 유지) */
@@ -55,5 +67,5 @@
    +'<div class="prv-c"><b'+(task?'':' class="none"')+' title="'+attr(task)+'">'+h(task||'다음 업무 없음')+'</b>'+dueHtml+(o.staleNext?'<small class="why stale" title="'+attr(o.staleNext)+'">'+h(o.staleNext)+'</small>':'')+'</div>'
    +'<button type="button" '+A+'="act" data-key="'+key+'" data-v="'+attr(btn[1])+'">'+h(btn[0])+'</button></div>';
  }
- root.PipelineRowV11={on,head,row,sort,dueText};
+ root.PipelineRowV11={on,head,row,sort,dueText,competitionEvidence};
 })(window);
