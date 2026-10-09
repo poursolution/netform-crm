@@ -277,7 +277,7 @@
    R.localStorage.removeItem(key);delete st().card[r.id];load(true);
    if(R.InquiryFlow&&R.InquiryFlow.load)R.InquiryFlow.load(true);
    toast(p.result==='부재'?'부재와 재연락 일정을 저장했습니다 · 연결 요청은 진행 중':'응대와 다음 일정을 저장했습니다 · 첫 연락 요청 완료');
-  }catch(e){C.busy=false;C.err=String(e&&e.message||e);}
+  }catch(e){if(e&&e.databaseRejected===true&&['22023','42501'].includes(e.code)){try{R.localStorage.removeItem(key);}catch(ignore){}}C.busy=false;C.err=String(e&&e.message||e);}
   repaint();
  }
  /* [저장] = 실제 기록 저장(기존 저장 길) → 성공하면 요청 자동 완료. 부재는 연락 시도로만 남는다 */
