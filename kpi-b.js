@@ -100,7 +100,7 @@
   const wrq=(()=>{try{const WR=root.WorkRequest;if(!WR||!WR.enabled())return [];return WR.state().list.filter(r=>r.status!=='cancelled'&&now-Date.parse(r.created_at||0)<28*864e5);}catch(e){return [];}})(),wrqDone=wrq.filter(r=>r.status==='done'||r.status==='replied').length;
   M.push({wrq:wrq.length,v:pct(processed.length+wrqDone,uniq.length+wrq.length),num:processed.length+wrqDone,den:uniq.length+wrq.length,todos:pending.map(a=>{const i=Number(String(a.promise_key).slice(4))-1;const t=(M[i]&&M[i].todos.find(x=>x.tk===todoKind(a)))||null;return Object.assign(T(typeKind(a.target_type),a.target_id,a.target_name||a.target_id,t?t.who:'',md(a.created_at)+' 요청 · '+(t?t.why:'답 없음'),'다시 확인',t?t.owner:''),{origin:i});})});
   const history=requestStatus(),workRequests=root.WorkRequest,ws=workRequests&&typeof workRequests.state==='function'?workRequests.state():null;
-  const workPending=!!(workRequests&&!root.G.workRequestOff&&O()&&workRequests.RPC&&O().has(workRequests.RPC.list)&&(!ws||!ws.loaded||ws.busy));
+  const workPending=!!(workRequests&&!root.G.workRequestOff&&O()&&workRequests.RPC&&O().has(workRequests.RPC.list)&&(!ws||!ws.loaded));
   Object.assign(M[7],{ready:history.ready&&!workPending&&!unverified.length,unverified:unverified.length,readState:history.state});
   if(!M[7].ready){M[7].v=null;M[7].pendingReason=!history.ready?history.message:workPending?'요청 업무 계산 중':'완료 근거 미확인 '+unverified.length+'건';}
   /* 요청함 표시: 이번 주 조치 기록(서버) + 방금 누른 것(이 PC) */
