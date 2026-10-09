@@ -127,6 +127,42 @@ test('needed decisions require matching persisted followup, never a fabricated o
  await db.exec(`reset role;update next_actions set action_type='견적' where id='${id(90)}'`);await as(owner);
  const a=await writeReview(reviewBody(c,{decisions:[decision],complete:false}));assert.equal(a.decisions[0].next_action.id,id(90));assert.equal(a.request_complete,false);
 });
+ const invalidFollowups=[{title:'   ',status:'open',due:'2030-01-01',completed:null},{title:'\t\n',status:'open',due:'2030-01-01',completed:null},
+  {title:'견적 준비',status:'open',due:'infinity',completed:null},{title:'견적 준비',status:'open',due:'-infinity',completed:null},
+  {title:'견적 준비',status:'completed',due:'2030-01-01',completed:null},{title:'견적 준비',status:'completed',due:'2030-01-01',completed:'infinity'},
+  {title:'견적 준비',status:'cancelled',due:'2030-01-01',completed:null}];
+ for(const [index,item] of invalidFollowups.entries())test('incomplete linked followup '+index+' cannot finish a request or create decision history',async()=>{
+  const c=await connectedReview();await db.exec('reset role');
+  await db.query('insert into next_actions(id,inquiry_id,action_type,title,due_at,assignee_name,status,completed_at) values($1,$2,$3,$4,$5,$6,$7,$8)',[id(90),inq,'견적',item.title,item.due,'담당',item.status,item.completed]);
+  const before=(await db.query('select id,title,status,due_at::text,completed_at::text from next_actions order by id')).rows;
+  await as(owner);const p=reviewBody(c,{decisions:[{ask:allAsks[1],value:'needed',note:'고객 견적 요청 확인',next_action_id:id(90)}, {ask:allAsks[2],value:'not_needed',note:'방문 불필요 확인'}]});
+  await assert.rejects(writeReview(p),/REQUEST_FOLLOWUP_REQUIRED/,JSON.stringify(item));
+  const after=await readReview();assert.equal(after.revision,0);assert.equal(after.request.status,'working');assert.equal(after.expected_updated_at,c.expected_updated_at);
+  await db.exec('reset role');assert.deepEqual((await db.query('select id,title,status,due_at::text,completed_at::text from next_actions order by id')).rows,before);
+});
+for(const status of ['open','completed'])test('valid '+status+' followup retains its original dates and independent status',async()=>{
+  const c=await connectedReview();await db.exec('reset role');
+  await db.query('insert into next_actions(id,inquiry_id,action_type,title,due_at,assignee_name,status,completed_at) values($1,$2,$3,$4,$5,$6,$7,$8)',[id(90),inq,'견적','기존 견적 준비','2000-01-01','담당',status,status==='completed'?'2000-01-02':null]);
+  const before=(await db.query('select id,title,status,due_at::text,completed_at::text from next_actions order by id')).rows;await as(owner);
+  const a=await writeReview(reviewBody(c,{decisions:[{ask:allAsks[1],value:'needed',note:'기존 업무와 같은 견적 요청 확인',next_action_id:id(90)},{ask:allAsks[2],value:'not_needed',note:'방문 불필요 확인'}]}));
+  assert.equal(a.request_complete,true);await db.exec('reset role');assert.deepEqual((await db.query('select id,title,status,due_at::text,completed_at::text from next_actions order by id')).rows,before);
+});
+for(const value of ['needed','not_needed','unknown'])test('whitespace-only '+value+' decision cannot create proof or complete a request',async()=>{
+ await compound();const contact=await call2(body({result:'견적요청'}));const c=await readReview();
+ await db.exec('reset role');const plans=(await db.query('select * from next_actions order by id')).rows;await as(owner);
+ for(const note of ['\t','\n','\r\n',' \t\n ']){
+  const decision={ask:allAsks[1],value,note,...(value==='needed'?{next_action_id:contact.next_action_id}:{})};
+  await assert.rejects(writeReview(reviewBody(c,{decisions:[decision,{ask:allAsks[2],value:'not_needed',note:'방문 불필요 확인'}],complete:value!=='unknown'})),/invalid decisions/);
+ }
+ const after=await readReview();assert.equal(after.revision,0);assert.equal(after.request.status,'working');assert.equal(after.expected_updated_at,c.expected_updated_at);assert.deepEqual(after.history,[]);
+ await db.exec('reset role');assert.deepEqual((await db.query('select * from next_actions order by id')).rows,plans);
+});
+test('multiline decision evidence is preserved when it contains an actual reason',async()=>{
+ const c=await connectedReview(),note='고객 확인\n견적은 필요 없음\t방문도 불필요';
+ const a=await writeReview(reviewBody(c,{decisions:allAsks.slice(1).map(ask=>({ask,value:'not_needed',note}))}));
+ assert.equal(a.request_complete,true);assert.equal((await readReview()).decisions[0].note,note);
+});
+
 test('objective CAS and operation receipts reject stale, changed and duplicate completion',async()=>{
  const c=await connectedReview(),p=reviewBody(c),a=await writeReview(p);const again=await writeReview(p);assert.equal(again.replayed,true);assert.equal(again.revision,a.revision);
  await assert.rejects(writeReview({...p,complete:false}),/REQUEST_ID_REUSE/);
