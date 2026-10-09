@@ -136,5 +136,124 @@ begin
 end $fn$;
 revoke all on function public.crm_work_request_inquiry_contact_v2(jsonb) from public,anon,service_role;
 grant execute on function public.crm_work_request_inquiry_contact_v2(jsonb) to authenticated;
+-- Full review snapshots are append-only; no public table access or historical backfill.
+create table if not exists crm_security.work_request_objective_events(
+ request_id uuid not null references crm_security.work_requests(id),
+ revision integer not null check(revision>0),
+ actor_auth_uid uuid not null, actor_user_id uuid not null,
+ operation_id uuid not null, payload jsonb not null, ack jsonb not null,
+ created_at timestamptz not null default clock_timestamp(),
+ primary key(request_id,revision),unique(actor_auth_uid,operation_id)
+);
+alter table crm_security.work_request_objective_events enable row level security;
+revoke all on crm_security.work_request_objective_events from public,anon,authenticated,service_role;
+
+create or replace function public.crm_work_request_objectives_read_v1(p jsonb)
+returns jsonb language plpgsql stable security definer set search_path='' as $fn$
+declare a record; r crm_security.work_requests%rowtype; rid uuid; proof jsonb; latest jsonb; rev integer; hist jsonb; page_no integer;
+begin
+ select * into a from crm_security.actor();
+ if not found then raise exception 'forbidden' using errcode='42501'; end if;
+ if jsonb_typeof(p) is distinct from 'object' or p-array['id','page']<>'{}'::jsonb or (p ? 'page' and (jsonb_typeof(p->'page') is distinct from 'number' or coalesce(p->>'page','')!~'^[0-9]+$')) then raise exception 'invalid payload' using errcode='22023'; end if;
+ begin rid:=(p->>'id')::uuid;page_no:=coalesce((p->>'page')::integer,1); exception when others then raise exception 'invalid payload' using errcode='22023'; end;
+ if page_no not between 1 and 100000 then raise exception 'invalid page' using errcode='22023';end if;
+ select * into r from crm_security.work_requests where id=rid;
+ if not found or not coalesce(a.permission_role='admin' or r.requested_by_user_id=a.user_id or r.to_user_id=a.user_id,false) then
+  raise exception 'forbidden' using errcode='42501'; end if;
+ if r.target_type<>'inquiry' or r.kind<>'first' then raise exception 'unsupported request' using errcode='22023'; end if;
+ select c.ack->'completion' into proof from crm_security.work_request_contact_receipts c
+  where c.request_id=rid and c.ack->>'contract_version'='2' order by c.created_at desc,c.operation_id desc limit 1;
+ select e.revision,e.ack into rev,latest from crm_security.work_request_objective_events e where e.request_id=rid order by e.revision desc limit 1;
+ -- History is bounded. Older revisions stay persisted and are not silently discarded.
+ select coalesce(jsonb_agg(x.row order by x.revision desc),'[]'::jsonb) into hist from (
+  select e.revision,jsonb_build_object('revision',e.revision,'actor_user_id',e.actor_user_id,'at',e.created_at,
+   'decisions',e.ack->'decisions','request_complete',e.ack->'request_complete','policy_version',e.ack->'policy_version') row
+  from crm_security.work_request_objective_events e where e.request_id=rid order by e.revision desc limit 20 offset (page_no-1)*20) x;
+ return jsonb_build_object('ok',true,'contract_version',1,'request_id',rid,'revision',coalesce(rev,0),
+  'request',crm_security.work_request_json(r,a.user_id,a.permission_role),'expected_updated_at',r.updated_at,
+  'policy_version','first-compound-v1','contact_proof',proof,'decisions',coalesce(latest->'decisions','[]'::jsonb),
+  'request_complete',coalesce((latest->>'request_complete')::boolean,false) and r.status='done',
+  'history',hist,'history_total',coalesce(rev,0),'history_page',page_no,'history_has_more',coalesce(rev,0)>page_no*20);
+end $fn$;
+revoke all on function public.crm_work_request_objectives_read_v1(jsonb) from public,anon,service_role;
+grant execute on function public.crm_work_request_objectives_read_v1(jsonb) to authenticated;
+
+create or replace function public.crm_work_request_objectives_write_v1(p jsonb)
+returns jsonb language plpgsql volatile security definer set search_path='' as $fn$
+declare a record; r crm_security.work_requests%rowtype; q public.inquiries%rowtype;
+ saved crm_security.work_request_objective_events%rowtype; task public.next_actions%rowtype;
+ rid uuid; oid uuid; qid uuid; logid uuid; taskid uuid; expected integer; rev integer; stamp timestamptz;
+ proof jsonb; decisions jsonb; d jsonb; facts jsonb:='[]'::jsonb; taskproof jsonb; ack jsonb; complete boolean;
+begin
+ select * into a from crm_security.actor();
+ if not found or a.permission_role not in ('admin','rep','consultation') then raise exception 'forbidden' using errcode='42501'; end if;
+ if jsonb_typeof(p) is distinct from 'object' or p-array['id','operation_id','expected_revision','expected_updated_at','decisions','complete']<>'{}'::jsonb
+  or jsonb_typeof(p->'complete') is distinct from 'boolean' or jsonb_typeof(p->'expected_revision') is distinct from 'number'
+  or coalesce(p->>'expected_revision','')!~'^[0-9]+$' then raise exception 'invalid payload' using errcode='22023'; end if;
+ begin rid:=(p->>'id')::uuid;oid:=(p->>'operation_id')::uuid;expected:=(p->>'expected_revision')::integer;stamp:=(p->>'expected_updated_at')::timestamptz;
+ exception when others then raise exception 'invalid payload' using errcode='22023'; end;
+ if rid is null or oid is null or stamp is null then raise exception 'invalid payload' using errcode='22023'; end if;
+ complete:=(p->>'complete')::boolean;decisions:=p->'decisions';
+ if jsonb_typeof(decisions) is distinct from 'array' then raise exception 'invalid decisions' using errcode='22023'; end if;
+ if jsonb_array_length(decisions)>2 then raise exception 'invalid decisions' using errcode='22023'; end if;
+ perform pg_advisory_xact_lock(hashtextextended('work-objectives:'||a.auth_uid::text||oid::text,0));
+ select * into r from crm_security.work_requests where id=rid;
+ if not found or r.target_type<>'inquiry' or r.to_scope<>'user' or r.to_user_id is distinct from a.user_id then raise exception 'forbidden' using errcode='42501'; end if;
+ qid:=r.target_id::uuid;
+ select * into q from public.inquiries where id=qid for update;
+ if not found or q.assigned_to is distinct from a.user_id or not crm_security.can_inquiry(qid) then raise exception 'forbidden' using errcode='42501'; end if;
+ select * into r from crm_security.work_requests where id=rid for update;
+ if r.target_type<>'inquiry' or r.target_id<>qid::text or r.to_scope<>'user' or r.to_user_id is distinct from a.user_id then raise exception 'forbidden' using errcode='42501'; end if;
+ select * into saved from crm_security.work_request_objective_events where actor_auth_uid=a.auth_uid and operation_id=oid;
+ if found then
+  if saved.payload is distinct from p then raise exception 'REQUEST_ID_REUSE' using errcode='22023'; end if;
+  return saved.ack||jsonb_build_object('replayed',true);
+ end if;
+ if r.status not in ('sent','seen','working') then raise exception 'REQUEST_CLOSED' using errcode='22023'; end if;
+ if r.kind<>'first' or r.label<>'첫 연락 요청' or jsonb_typeof(r.asks) is distinct from 'array' then raise exception 'unsupported request' using errcode='22023'; end if;
+ if jsonb_array_length(r.asks) not between 2 and 3 or not(r.asks ? '고객 첫 연락') or not(r.asks <@ '["고객 첫 연락","연락 후 견적 필요 여부 확인","현장방문 필요 여부 확인"]'::jsonb)
+  or (select count(distinct x) from jsonb_array_elements_text(r.asks) x)<>jsonb_array_length(r.asks) then raise exception 'unsupported request' using errcode='22023'; end if;
+ if coalesce(q.status,'') in ('종결','종료','수주','실주','배드핏','연락두절','협약완료','해결완료','영업전환') or q.deal_id is not null or q.opportunity_id is not null or q.qualified_at is not null then
+  raise exception 'REQUEST_STAGE_REVIEW_REQUIRED' using errcode='22023'; end if;
+ if (select e.action from crm_security.inquiry_audit_events e where e.inquiry_id=qid and e.action in ('inquiry_trash','inquiry_restore','inquiry_purge') order by e.created_at desc,e.event_id desc limit 1) in ('inquiry_trash','inquiry_purge') then
+  raise exception 'REQUEST_STAGE_REVIEW_REQUIRED' using errcode='22023'; end if;
+ select coalesce(max(e.revision),0) into rev from crm_security.work_request_objective_events e where e.request_id=rid;
+ if rev<>expected or r.updated_at is distinct from stamp then raise exception 'REQUEST_REVIEW_CONFLICT' using errcode='40001'; end if;
+ select c.ack->'completion' into proof from crm_security.work_request_contact_receipts c where c.request_id=rid and c.ack->>'contract_version'='2'
+  and c.payload->>'result'<>'부재' order by c.created_at desc,c.operation_id desc limit 1;
+ if proof is null or proof->'requested_asks' is distinct from r.asks then raise exception 'REQUEST_CONTACT_PROOF_REQUIRED' using errcode='22023'; end if;
+ logid:=(proof->>'contact_log_id')::uuid;
+ if not exists(select 1 from crm_security.inquiry_contact_logs l where l.id=logid and l.inquiry_id=qid and l.kind='connected') then raise exception 'REQUEST_CONTACT_PROOF_REQUIRED' using errcode='22023'; end if;
+ if (select count(distinct x->>'ask') from jsonb_array_elements(decisions) x)<>jsonb_array_length(decisions) then raise exception 'invalid decisions' using errcode='22023'; end if;
+ for d in select x from jsonb_array_elements(decisions) x loop
+  if jsonb_typeof(d) is distinct from 'object' or d-array['ask','value','note','next_action_id']<>'{}'::jsonb
+   or jsonb_typeof(d->'ask') is distinct from 'string' or not(r.asks ? (d->>'ask')) or d->>'ask'='고객 첫 연락'
+   or coalesce(d->>'value','') not in ('needed','not_needed','unknown') or jsonb_typeof(d->'note') is distinct from 'string'
+   or length(btrim(d->>'note')) not between 1 and 2000 then raise exception 'invalid decisions' using errcode='22023'; end if;
+  taskproof:=null;taskid:=null;
+  if d->>'value'='needed' then
+   begin taskid:=(d->>'next_action_id')::uuid;exception when others then raise exception 'REQUEST_FOLLOWUP_REQUIRED' using errcode='22023';end;
+   select * into task from public.next_actions where id=taskid for update;
+   if not found or task.inquiry_id is distinct from qid or task.assignee_name is distinct from a.display_name
+    or task.status not in ('open','completed') or (task.status='completed' and task.completed_at is null)
+    or task.action_type is distinct from (case when d->>'ask'='연락 후 견적 필요 여부 확인' then '견적' else '방문' end) then
+    raise exception 'REQUEST_FOLLOWUP_REQUIRED' using errcode='22023'; end if;
+   taskproof:=jsonb_build_object('id',task.id,'title',task.title,'action_type',task.action_type,'due_at',task.due_at,'status',task.status,'completed_at',task.completed_at);
+  elsif d ? 'next_action_id' and d->'next_action_id'<>'null'::jsonb then raise exception 'invalid decisions' using errcode='22023'; end if;
+  facts:=facts||jsonb_build_array(jsonb_build_object('ask',d->>'ask','value',d->>'value','note',btrim(d->>'note'),'contact_log_id',logid,'next_action',taskproof));
+ end loop;
+ if complete and (jsonb_array_length(decisions)<>jsonb_array_length(r.asks)-1 or exists(select 1 from jsonb_array_elements(decisions) x where x->>'value'='unknown')) then
+  raise exception 'REQUEST_OBJECTIVES_REMAIN' using errcode='22023'; end if;
+ update crm_security.work_requests set status=case when complete then 'done' else 'working' end,closed_at=case when complete then clock_timestamp() else null end,
+  auto_done=false,updated_at=clock_timestamp(),replied_by_user_id=a.user_id,replied_by_name=a.display_name where id=rid returning * into r;
+ ack:=jsonb_build_object('ok',true,'contract_version',1,'operation_id',oid,'request_id',rid,'revision',rev+1,'policy_version','first-compound-v1',
+  'requested_asks',r.asks,'decisions',facts,'contact_proof',proof,'request_complete',complete,'request',crm_security.work_request_json(r,a.user_id,a.permission_role),
+  'expected_updated_at',r.updated_at,'server_at',clock_timestamp());
+ insert into crm_security.work_request_objective_events(request_id,revision,actor_auth_uid,actor_user_id,operation_id,payload,ack)
+ values(rid,rev+1,a.auth_uid,a.user_id,oid,p,ack);
+ return ack;
+end $fn$;
+revoke all on function public.crm_work_request_objectives_write_v1(jsonb) from public,anon,service_role;
+grant execute on function public.crm_work_request_objectives_write_v1(jsonb) to authenticated;
 notify pgrst,'reload schema';
 commit;
