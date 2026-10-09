@@ -41,6 +41,34 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const reasons=await v.locator('.ps3-reason>span>b:first-child').allInnerTexts();
   assert.deepEqual(reasons.slice(0,2),['첫 연락 전 3건 이상','다음 할 일 기한 초과'],JSON.stringify(reasons));
   assert.ok(reasons.includes('이번 주 코칭 약속 없음'),JSON.stringify(reasons));
+  /* A request receipt is not a coaching promise, even when marked done.
+     Use the existing detail parser for both list/board and the fallback diagnosis. */
+  const request='· [KPI 요청] [요청] 첫 연락 요청 — 신규 문의 3건';
+  const presenceCases=[
+   {comment:'',present:false},
+   {comment:request,present:false},
+   {comment:request+'\n· [KPI 요청] [완료] 날짜 다시 잡기',status:'done',present:false},
+   {comment:request+'\n[코칭 · 첫 응대] 금요일까지 첫 연락 확인 (첫 연락 전 3건 → 0건)',present:true,preview:'금요일까지 첫 연락 확인'},
+   {comment:request+'\n목요일까지 기존 고객 연락 결과 확인',present:true,preview:'목요일까지 기존 고객 연락 결과 확인'},
+   {comment:'[코칭 · 첫 응대] 지난주 약속',previous:true,present:false}
+  ];
+  for(const tc of presenceCases){
+   await page.evaluate(tc=>{B.repManagerComments=[{rep_name:'이필선',week_start:repManagerWeekKey(tc.previous?-1:0),comment:tc.comment,status:tc.status||'open',updated_at:new Date().toISOString()}];paintRepManagement();},tc);
+   const row=page.locator('#reps-b .psb-row[data-key="이필선"]');
+   assert.equal((await row.innerText()).includes(' · 약속 있음'),tc.present,'list coaching presence: '+tc.comment);
+   assert.equal(await page.evaluate(()=>RepsB.item(REP_MANAGER_ROWS.find(r=>r.nm==='이필선')).rs.includes('promise')),!tc.present,'request-only must keep coaching follow-up');
+   await page.locator('#reps-b [data-sb="view"][data-v="board"]').click();
+   const card=page.locator('#reps-b .ps3-card[data-key="이필선"]');
+   assert.equal((await card.innerText()).includes(' · 약속 있음'),tc.present,'board uses the same classification');
+   await page.locator('#reps-b [data-sb="view"][data-v="list"]').click();
+   await page.evaluate(()=>{G.repsBOff=true;paintRepManagement();});
+   const action=page.locator('#reps-v2 [data-rv="promise"][data-value="이필선"]');
+   assert.equal(await action.innerText(),tc.present?'약속 수정':'약속 등록','fallback coaching action');
+   if(tc.preview)assert.ok((await page.locator('#reps-v2 .it-done').allInnerTexts()).some(t=>t==='이번 주 약속 · '+tc.preview.slice(0,24)),'preview uses the coaching text, not the leading request');
+   assert.equal(await page.evaluate(()=>B.repManagerComments[0].comment),tc.comment,'classification preserves the stored request/comment');
+   await page.evaluate(()=>{G.repsBOff=false;paintRepManagement();});
+  }
+  await page.evaluate(()=>{B.repManagerComments=[];paintRepManagement();});
   assert.match(await v.locator('.ps3-diag>.ps3-box').nth(2).innerText(),/그래서 뭘 해야 하나[\s\S]*첫 연락 전 3건 이상 1명[\s\S]*밀린 첫 연락 정리 · 금요일까지/);
   assert.match(await v.locator('.rb-load').innerText(),/누가 일이 몰렸나[\s\S]*이필선 · 12억[\s\S]*진행 2건[\s\S]*황윤선 · 5억/);
   assert.match(await v.locator('.rb-week').innerText(),/이번 주 진전[\s\S]*신규 기회 \d+/);
