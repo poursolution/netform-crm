@@ -40,3 +40,10 @@ test('legacy name-only accounts cannot create new coaching groups; SQL and RPC g
  for(const file of ['pc-manager-transport.js','pc-error-state.js','kpi-b.js'])assert.ok(fs.readFileSync(path.join(base,file),'utf8').includes(fn));
  assert.ok(fs.readFileSync(path.join(base,'sql/20261009203001_coaching_target_receipts.sql'),'utf8').includes('function public.'+fn+'('));
 });
+test('shared KPI sent markers also reject another recipient coaching receipt',()=>{
+ const {r}=setup(),d=r.B.deals.find(x=>x.id==='d30');assert.ok(d);
+ r.KpiB.weekly().acts=[{id:'receipt',target_type:'deal',target_id:'d30',promise_key:'kpi:3',created_at:'2026-10-09T03:00:00Z',recipient_user_id:recipient,request_group_id:'group'}];
+ assert.equal(r.KpiB.compute().done.has('kpi:3|deal:d30'),true);
+ d.assignee='담당1';const changed=r.KpiB.compute();assert.equal(changed.done.has('kpi:3|deal:d30'),false);
+ assert.equal(changed.M[7].unverified,1);assert.equal(changed.M[7].todos.length,0,'old-recipient reminder is not routed to the new owner');
+});
