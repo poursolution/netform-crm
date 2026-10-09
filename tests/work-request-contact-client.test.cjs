@@ -62,3 +62,16 @@ test('migration mirror, transport and error registry stay coupled with strict re
  for(const file of ['pc-manager-transport.js','pc-error-state.js'])assert.match(read(file),/crm_work_request_inquiry_contact_v1/);
  assert.match(read('work-request.js'),/CRMRelease.has\(RPC.contact\)!==true/);
 });
+
+test('definite server rejection releases pending payload while uncertain errors retain it',async()=>{
+ const x=setup({rpc:async()=>{throw Object.assign(Error('schedule rejected'),{code:'22023',databaseRejected:true});}});
+ await x.save();assert.equal(x.storage.size,0);x.S.card[x.r.id].res='부재';await x.save();assert.equal(x.calls.length,2);assert.equal(x.takes.length,0);
+ const y=setup({rpc:async()=>{throw Object.assign(Error('connection lost'),{code:'22023'});}});await y.save();assert.equal(y.storage.size,1);
+});
+test('OpsStore preserves only explicit PostgreSQL rollback evidence',async()=>{
+ for(const code of ['22023','42501','PGRST301',undefined]){
+  const R={ME:{},SB:{rpc:async()=>({error:{code,message:'rejected'}})}};
+  vm.runInNewContext(read('ops-store.js'),{window:R,Date,Set,Map});
+  await assert.rejects(R.OpsStore.rpc('crm_work_request_inquiry_contact_v1',{}),e=>e.code===code&&e.databaseRejected===['22023','42501'].includes(code));
+ }
+});
