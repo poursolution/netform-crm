@@ -5,8 +5,8 @@
      대기 = 향후 추진 가능 · 2개월 1회(회의 결정 · long_wait_contact_days) / 보류 = 고객이 중단 사유를 밝힘 · 재검토일에 확인(주기 미확정)
      미확인 · 기준일 확인 필요 = 견적 발송일 없음 · 자동 분류 안 함 · 재분류 대상
    분류 저장 = 기존 내부 메모 경로(DealDetailV3.memo) + 표식 '[관계 상태] 상태 | 사유 | 다음 확인일 | 재검토일 | 공사 예정 연도' · 다음 확인일은 다음 행동(DealDetailV3.next)으로. 새 저장소 없음.
-   기간이 지나도 자동 전환하지 않는다 — '전환 검토 요청'(집중 1개월 지남 → 일반 검토 / 일반 3개월 지남 → 대기 · 보류 검토 / 보류 재검토일 도래). 기존 건은 일괄 대기로 바꾸지 않는다(발송일 없으면 미확인).
-   고객과 약속한 연락일(다음 행동 날짜)이 있으면 그 날짜 우선. 끄기: G.relV12Off=true → 예전 관계관리 탭(다음 연락일 지남 · 이번 주 · 장기 대기) */
+   기간이 지나도 자동 전환하지 않는다 — '전환 검토 요청'(집중 1개월 지남 → 일반 검토 / 일반 3개월 지남 → 고객 반응·추진 시기 재확인 / 보류 재검토일 도래). 기존 건은 일괄 대기로 바꾸지 않는다(발송일 없으면 미확인).
+   등록된 다음 행동 날짜를 우선하되 고객 약속 표식이 있는 경우만 약속으로 표시. 끄기: G.relV12Off=true → 예전 관계관리 탭(다음 연락일 지남 · 이번 주 · 장기 대기) */
 (function(root){
  'use strict';
  const h=v=>root.esc(String(v==null?'':v)),attr=v=>root.escAttr(String(v==null?'':v));
@@ -51,9 +51,9 @@
   let key=mk?mk.state:(sent?(el<=q.focusEnd?'focus':'normal'):'unk');
   const explicit=!!mk,cyc=C[key],last=(()=>{let n=null;try{n=root.PipelineStageB&&typeof root.PipelineStageB.lastDays==='function'?root.PipelineStageB.lastDays(r):null;}catch(e){}if(n==null){const c=r.contactDays;n=c==null?null:c;}return n;})();
   const lastKey=last==null?'':addDays(T,-last);
-  const promised=dayKey(r.due),hasNext=!!(r.next&&r.next.text&&promised);
+  const promised=dayKey(r.due),hasNext=!!(r.next&&r.next.text&&promised),customerPromise=hasNext&&(/^고객\s*약속$/.test(String(r.next.type||'').trim())||/^\s*고객\s*약속\s*[:：]/.test(String(r.next.text||'')));
   let due='',dueWhy='';
-  if(promised){due=promised;dueWhy='약속 연락일';}
+  if(promised){due=promised;dueWhy=customerPromise?'고객 약속일':'등록된 다음 행동일';}
   else if(key==='hold'){due=mk&&mk.review||'';dueWhy=due?'재검토일':'';}
   else if(key!=='unk'&&cyc[0]){const base=lastKey||sent;if(base){due=addDays(base,cyc[0]);dueWhy=(lastKey?'연락':'견적')+' + '+cyc[0]+'일';}}
   const n=due?diff(T,due):null;
@@ -64,16 +64,16 @@
   else if(key==='hold'&&mk&&mk.review&&mk.review<=T)review='holdDue';
   /* 기준일 한 줄. 표식 없이 견적 발송일로 자리만 잡은 건은 '담당 분류 전'을 붙인다(일괄 분류가 아니라 기본 자리라는 뜻) */
   const base=(key==='unk'?'발송일 없음 · 기간 계산 안 함':key==='focus'?(sent?'견적 '+md(sent)+' · 집중 D+'+el:'분류 '+md(mk.at)+' · 집중'):key==='normal'?(sent?'견적 '+md(sent)+' · 일반 '+Math.max(1,Math.round(el/30))+'개월째':'분류 '+md(mk.at)+' · 일반'):key==='wait'?md(mk.at)+' 전환'+(mk.year?' · '+mk.year:''):'재검토 '+(mk.review?md(mk.review):'미정'))+(!mk&&key!=='unk'?' · 분류 전':'');
-  const nowText=key==='unk'?(promised?(n<0?'다음 연락일 지남 · 약속 있음':n===0?'오늘 연락 약속':'연락 약속 '+md(promised)):(last==null?'CRM 연락 기록 없음':'마지막 연락 '+last+'일 전')):review==='toNormal'?'집중 '+q.focusMonths+'개월 지남 → 일반관리 검토':review==='toWait'?'일반 '+q.generalEnd+'개월 지남 → 대기 · 보류 검토':review==='holdDue'?'보류 재검토일 도래 → 추진 여부':(mk&&mk.reason?mk.reason:(last==null?'CRM 연락 기록 없음':'마지막 연락 '+last+'일 전'));
+  const nowText=key==='unk'?(promised?(customerPromise?(n<0?'고객 약속일 지남 · 처리 결과 확인':n===0?'오늘 고객 약속':'고객 약속 '+md(promised)):(n<0?'기존 일정 '+(-n)+'일 경과 · 약속 여부 확인':n===0?'오늘 등록된 일정 · 고객 약속 여부 확인':'등록된 일정 '+md(promised)+' · 고객 약속 여부 확인')):(last==null?'CRM 연락 기록 없음':'마지막 연락 '+last+'일 전')):review==='toNormal'?'집중 '+q.focusMonths+'개월 지남 → 일반관리 검토':review==='toWait'?'고객 반응·추진 시기 재확인':review==='holdDue'?'보류 재검토일 도래 → 추진 여부':(mk&&mk.reason?mk.reason:(last==null?'CRM 연락 기록 없음':'마지막 연락 '+last+'일 전'));
   const od=n!==null&&n<0,W=week(),wk=!!due&&due>=W.mon&&due<=W.fri&&!od,nx=!hasNext;
   const task=key==='unk'&&!hasNext?'상태 재분류':review?'전환 검토 · 사유 · 다음 확인일':hasNext?String(r.next.text).trim():key==='focus'?'수신 · 반응 확인 통화':key==='normal'?'월 1회 진행 확인':key==='wait'?'공사 시기 · 예산 확인':'재검토일에 추진 여부';
   /* 미확인이어도 이미 연락 약속이 있으면 그 업무가 먼저 — 분류는 꼬리표(미확인 · 분류 필요)를 눌러서 */
   const btn=key==='unk'&&!hasNext?['분류하기','classify']:review?['전환 검토','classify']:od?['연락 기록','activity']:nx?['다음 행동','next']:['연락 기록','activity'];
-  return {key,label:LABEL[key],explicit,mark:mk,sent,elapsed:el,cycle:cyc[0],cycleLabel:cyc[1],tag:LABEL[key].split(' · ')[0]+' · '+cyc[1],base,now:nowText,due,dueWhy,n,od,wk,nx,review,task,btn,classified:(!!mk&&mk.state!=='unk')||!!sent,last,promised};
+  return {key,label:LABEL[key],explicit,mark:mk,sent,elapsed:el,cycle:cyc[0],cycleLabel:cyc[1],tag:LABEL[key].split(' · ')[0]+' · '+cyc[1],base,now:nowText,due,dueWhy,n,od,wk,nx,review,task,btn,classified:!!mk&&mk.state!=='unk',last,promised,customerPromise};
  }
  const tabIndex=s=>KEYS.indexOf(s.key);
- const REVIEW=[['toNormal','집중 1개월 지남 → 일반관리 검토'],['toWait','일반 기간 지남 → 대기 · 보류 검토'],['holdDue','보류 재검토일 도래']];
- function reviewLabel(k){const q=rules();return k==='toNormal'?'집중 '+q.focusMonths+'개월 지남 → 일반관리 검토':k==='toWait'?'일반 '+q.generalEnd+'개월 지남 → 대기 · 보류 검토':'보류 재검토일 도래';}
+ const REVIEW=[['toNormal','집중 1개월 지남 → 일반관리 검토'],['toWait','일반 기간 지남 → 고객 반응·추진 시기 재확인'],['holdDue','보류 재검토일 도래']];
+ function reviewLabel(k){const q=rules();return k==='toNormal'?'집중 '+q.focusMonths+'개월 지남 → 일반관리 검토':k==='toWait'?'일반 '+q.generalEnd+'개월 지남 → 고객 반응·추진 시기 재확인':'보류 재검토일 도래';}
  /* ── 왼쪽: 전환 검토 요청 · 기존 건 재분류 ── */
  function leftHtml(items,S){
   const st_=items.map(x=>(x.it&&x.it.rv)||x.rv||state(x.row)),rev=REVIEW.map(([k])=>({k,l:reviewLabel(k),n:st_.filter(s=>s.review===k).length})),revN=rev.reduce((a,r)=>a+r.n,0);
@@ -94,8 +94,8 @@
  function openClassify(key){
   let r=null;try{r=root.PipelineWorkspace.rows().find(x=>x.key===key)||root.PipelineWorkspace.rows({unscoped:true}).find(x=>x.key===key)||null;}catch(e){}
   if(!r){toast('현장을 찾지 못했습니다','warn');return;}
-  const s=state(r),promised=dayKey(r.due),nx=r.next&&r.next.text&&promised?{text:String(r.next.text).trim(),due:promised}:null;
-  st().dlg={key,r,s,nx,sent:s.sent||'',sentUnknown:false,state:s.review==='toNormal'?'normal':s.review==='toWait'?'wait':s.key,reason:s.mark&&s.mark.reason&&s.mark.reason!=='사유 없음'?s.mark.reason:'',next:nx?nx.due:'',review:'',busy:false,err:''};render();
+  const s=state(r),promised=dayKey(r.due),nx=r.next&&r.next.text&&promised?{text:String(r.next.text).trim(),due:promised,type:r.next.type||'전화'}:null;
+  st().dlg={key,r,s,nx,sent:s.sent||'',sentUnknown:false,state:s.key,reason:s.mark&&s.mark.reason&&s.mark.reason!=='사유 없음'?s.mark.reason:'',next:nx?nx.due:(s.mark&&s.mark.next||''),review:s.mark&&s.mark.review||'',busy:false,err:''};render();
  }
  function close(){st().dlg=null;document.getElementById('rv-dlg')?.remove();}
  /* 저장하면 업무가 이렇게 바뀝니다 — 지금 / 저장 후 */
@@ -106,6 +106,7 @@
   if(!D.next||(nx&&D.next===nx.due)){after=nx?nx.text+' · '+md(nx.due):'변경 없음';note=nx?'기존 업무는 그대로 둡니다':'다음 확인일을 넣으면 새 업무가 만들어집니다';}
   else if(nx){after=nx.text+' · '+md(D.next);note='기존 업무 날짜만 바꿈 · 새로 추가 안 함';}
   else{after=defaultTask(D.state)+' · '+md(D.next);note='기존 업무가 없어 새로 만듦';}
+  if(D.state==='hold')note+=' · 연락 전 중단 사유·연락 제한 확인';
   return {now,after,note,change:!!D.next&&(!nx||D.next!==nx.due)};
  }
  const defaultTask=s=>s==='hold'?'재검토 전 확인':s==='wait'?'공사 시기 · 예산 확인':s==='unk'?'발송일 확인':'진행 확인';
@@ -133,14 +134,14 @@
   if(D.state==='hold'&&!D.review){D.err='보류는 재검토일이 필요합니다.';return render();}
   D.busy=true;D.err='';render();
   const d=D.r.item,P=plan(D),name=NAME[D.state],sentChanged=sentOk(D)&&D.sent!==(D.s.sent||'');
-  const markNeeded=D.state!==D.s.key||!!String(D.reason).trim()&&String(D.reason).trim()!==(D.s.mark&&D.s.mark.reason||'')||D.sentUnknown;
+  const markNeeded=(!D.s.explicit&&D.state!=='unk')||D.review!==(D.s.mark&&D.s.mark.review||'')||(!!D.s.mark&&D.next!==D.s.mark.next)||D.state!==D.s.key||!!String(D.reason).trim()&&String(D.reason).trim()!==(D.s.mark&&D.s.mark.reason||'')||D.sentUnknown;
   try{
    /* ① 견적 발송일: 현재 단계의 단계 정보 칸(서버 확인 뒤 반영) */
    if(sentChanged)await root.DealDetailV3.stageFields(d,{sent_date:D.sent});
    /* ②③ 상태 · 사유: 응대 이력의 표식 */
    if(markNeeded)await root.DealDetailV3.memo(d,'[관계 상태] '+name+' | '+(String(D.reason).trim()||(D.sentUnknown?'발송일 모름':'사유 없음'))+' | '+(D.next||'없음')+' | '+(D.review||'없음')+' | 미정',{});
    /* ④ 다음 확인일: 기존 업무는 날짜만 바꾸고(같은 내용으로 다시 등록 — 서버가 열린 업무를 하나로 유지) 새로 추가하지 않는다 */
-   if(P.change)await root.DealDetailV3.next(d,{type:'전화',text:nx?nx.text:defaultTask(D.state)+'',due:D.next});
+   if(P.change)await root.DealDetailV3.next(d,{type:nx?nx.type:'전화',text:nx?nx.text:defaultTask(D.state)+'',due:D.next});
    close();toast((D.state==='unk'?'미확인으로 유지했습니다':name+'(으)로 분류했습니다')+(P.change?' · 다음 확인일 '+md(D.next):''));try{root.paint();}catch(e){}
   }catch(e){D.busy=false;D.err='저장하지 못했습니다: '+String(e&&e.message||e);render();}
  }

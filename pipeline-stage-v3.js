@@ -92,10 +92,10 @@
     redOf:it=>!!it.rv.od,sub:it=>it.rv.now,
     nowOf:x=>x.it.rv.now,taskOf:x=>x.it.rv.task,btnOf:x=>x.it.rv.btn,
     /* stage7_2 ①: 상태 분류 ≠ 업무 기한 — 미확인이어도 이미 잡힌 연락 약속은 그대로 계산 · 표시('35일 지남 · 9/2 약속'), '기한 없음'은 다음 행동일이 정말 없을 때만 */
-    rowOpts:x=>{const s=x.it.rv,rel=(n)=>n<0?(-n)+'일 지남':n===0?'오늘까지':n+'일 남음';return {tag:s.tag,tagClass:s.key,tagAct:s.key==='unk'?'classify':'',base:s.base,dueText:s.key==='unk'?(x.row.due?rel(s.n)+' · '+ymd(x.row.due)+' 약속':'기한 없음 · 분류 후 정해짐'):(s.due&&!x.row.due?rel(s.n)+' · '+s.dueWhy:''),dueClass:s.key==='unk'?(x.row.due?(s.od?'r':''):'g'):(s.od?'r':'')};},
+    rowOpts:x=>{const s=x.it.rv,rel=(n)=>n<0?(-n)+'일 지남':n===0?'오늘까지':n+'일 남음';return {tag:s.tag,tagClass:s.key,tagAct:s.key==='unk'?'classify':'',base:s.base,dueText:s.key==='unk'?(x.row.due?rel(s.n)+' · '+ymd(x.row.due)+(s.customerPromise?' 고객 약속':' 등록 일정'):'기한 없음 · 분류 후 정해짐'):(s.due&&!x.row.due?rel(s.n)+' · '+s.dueWhy:''),dueClass:s.key==='unk'?(x.row.due?(s.od?'r':''):'g'):(s.od?'r':'')};},
     leftHtml:(items,S)=>RV.leftHtml(items,S)};}
   if(key==='relationship')return {name:'관계관리',goal:goalOf(key,60),desc:'공사 시기가 남은 고객과 관계를 이어가는 단계 · '+mo+'개월 1회 연락',
-   tabs:[['다음 연락일 지남','오늘 연락'],['이번 주 연락','약속일 지키기'],['장기 대기',mo+'개월마다 안부']],
+   tabs:[['다음 연락일 지남','오늘 연락'],['이번 주 연락','등록 일정 확인'],['장기 대기',mo+'개월마다 안부']],
    reasons:[['over','다음 연락일 지남'],['nonext','다음 행동 없음'],['noyear','공사 예정 연도 없음'],['quiet',Q.wait+'일 무접촉']],
    act:[['연락','activity'],['연락','activity'],['안부 연락','activity']],
    todo:'다음 연락일이 지난 고객부터 오늘 연락하고, 공사 예정 연도를 꼭 받아 두세요.',
@@ -104,7 +104,7 @@
    has:{over:(it,t)=>t===0,nonext,noyear:it=>!yearOf(it),quiet:it=>{const ld=lastDays(it.row);return ld===null?it.stall>Q.wait:ld>Q.wait;}},
    sub:(it,t)=>{const r=it.row,d=r.due?days(r.due):null,y=yearOf(it);
     if(t===0)return '다음 연락 '+ymd(r.due)+' → '+(-d)+'일 지남';
-    if(t===1)return '약속 '+ymd(r.due)+(r.next&&r.next.text?' · '+r.next.text:'');
+    if(t===1)return '등록 일정 '+ymd(r.due)+(r.next&&r.next.text?' · '+r.next.text:'');
     return (y?y+' 공사 예정':'공사 예정 연도 없음')+(r.due?' · 다음 연락 '+ymd(r.due):' · 다음 연락일 없음');}};
   /* stage7 ④: D-7 준비 · 개찰 다음날 등록은 '운영 제안'(회의 확정 아님) 표시 · 결정 · 입찰 일정 없으면 넷째 칸 '일정 미등록' → 입찰 · PT 일정 확인(D-7 계산 안 함) */
   if(key==='competition')return {name:'경쟁 · 입찰',goal:goalOf(key,30),desc:'현설 · PT · 입찰을 준비하는 단계 · 마감 D-'+D7+' 준비 · 개찰 다음날 결과 등록(운영 제안 · 회의 확정 아님)',
