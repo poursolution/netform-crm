@@ -51,6 +51,8 @@
 .ra-cf>header{display:flex;flex-direction:column;gap:3px}.ra-cf>header b{font-size:14px}.ra-cf>header span{font-size:11.5px;color:#6b7280;line-height:1.5}
 .ra-cf-row{display:grid;grid-template-columns:76px minmax(0,1fr);gap:5px 10px;align-items:start;font-size:12.5px}.ra-cf-row>span:nth-child(odd){color:#6b7280;padding-top:2px}.ra-cf-row>b{font-size:13px}
 .ra-cf-row input[type=date]{font:inherit;font-size:13px;border:1px solid #d9dde4;border-radius:8px;padding:6px 10px;justify-self:start}
+.ra-cf-now{font-size:13px}
+.ra-cf-opts button:disabled{opacity:.55;cursor:not-allowed;background:#fafbfc}
 .ra-cf-opts{display:flex;flex-direction:column;gap:5px}
 .ra-cf-opts button{border:1px solid #e3e6ec;background:#fff;border-radius:8px;padding:7px 10px;text-align:left;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.ra-cf-opts button[aria-pressed="true"]{border-color:#3b6ce4;background:#f8faff}
 .ra-cf-opts button b{font-size:12.5px}.ra-cf-opts button small{font-size:11.5px;color:#9ca3af}.ra-cf-opts button[aria-pressed="true"] small{color:#2a52b8}

@@ -219,11 +219,17 @@
  async function save(changes,apply){
   const set={};Object.keys(changes||{}).forEach(k=>{const v=clean(k,changes[k]);if(v===undefined)throw new Error((SPEC[k]?SPEC[k].l:k)+' 값이 범위를 벗어났습니다');set[k]=v;});
   if(!Object.keys(set).length)return all();if(!available())throw new Error('운영 기준 저장은 서버 적용 뒤에 쓸 수 있습니다');
-  const body={set};if(apply&&typeof apply==='object'){const ap={};if(/^\d{4}-\d{2}-\d{2}$/.test(String(apply.effective_on||'')))ap.effective_on=apply.effective_on;if(apply.scope)ap.scope=String(apply.scope).slice(0,300);if(['keep','recalc','ask'].includes(apply.existing))ap.existing=apply.existing;if(Object.keys(ap).length)body.apply=ap;}
-  return take(await store().rpc(RPC,body));
+  const body={set};
+  /* 적용 조건은 서버가 contract 2 라고 응답한 뒤에만 보낸다(v1 서버는 조용히 버린다 — 코덱스 검토 2026-10-10). 보낸 적용 조건을 서버가 받지 않았으면 성공으로 보지 않는다 */
+  if(apply&&typeof apply==='object'){if(meta.contract<2)throw new Error('이 서버는 적용 조건(적용일 · 대상)을 받지 않습니다 — sql/ops-rules-v2-20261010.sql 적용 뒤에 쓸 수 있습니다');const ap={};if(/^\d{4}-\d{2}-\d{2}$/.test(String(apply.effective_on||'')))ap.effective_on=apply.effective_on;if(apply.scope)ap.scope=String(apply.scope).slice(0,300);if(['keep','recalc','ask'].includes(apply.existing))ap.existing=apply.existing;if(Object.keys(ap).length)body.apply=ap;}
+  const r=await store().rpc(RPC,body);
+  if(!r||r.ok!==true||!r.rules||typeof r.rules!=='object')throw new Error('서버 확인 응답이 올바르지 않습니다');
+  if(body.apply&&(Number(r.contract)||1)<2)throw new Error('서버가 적용 조건을 받지 않았습니다(contract '+(r.contract||1)+')');
+  const miss=Object.keys(set).filter(k=>JSON.stringify(r.rules[k])!==JSON.stringify(set[k]));if(miss.length)throw new Error('서버가 확인한 값이 요청과 다릅니다: '+miss.join(', '));
+  return take(r);
  }
  /* 기준 버전(근거 보기 · 이력 표시용): 서버 이력 건수 = 버전, 마지막 변경일. 서버 적용 전이면 v0 · 기본값 */
- function version(){const at=String(meta.updated_at||'');const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(at);return {n:Number(meta.version)||0,at,label:'기준 v'+(Number(meta.version)||0)+(m?' · '+Number(m[2])+'.'+Number(m[3]):' · 기본값')};}
+ function version(){const at=String(meta.updated_at||''),t=Date.parse(at),k=Number.isFinite(t)?new Date(t+9*36e5).toISOString().slice(0,10):'',m=/^(\d{4})-(\d{2})-(\d{2})/.exec(k);/* 한국 날짜 */return {n:Number(meta.version)||0,at,label:'기준 v'+(Number(meta.version)||0)+(m?' · '+Number(m[2])+'.'+Number(m[3]):' · 기본값')};}
  /* 로그인하면 한 번 읽고, 값이 기본과 다르면 다시 그린다 */
  function warm(){const me=root.ME&&String(root.ME.id||root.ME.name||'');if(!me||warmed===me||!available())return;warmed=me;const before=JSON.stringify(all());load(true).then(()=>{if(JSON.stringify(all())!==before&&typeof root.paint==='function'){try{root.paint();}catch(e){}}});}
  if(typeof root.paint==='function'){const base=root.paint;root.paint=function(){try{sync();}catch(e){}const r=base.apply(this,arguments);try{warm();}catch(e){}return r;};}
