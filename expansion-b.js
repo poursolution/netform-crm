@@ -20,20 +20,20 @@
  const ymd=v=>{const s=String(v||'').slice(0,10),m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s);return m?Number(m[2])+'/'+Number(m[3]):'';};
  const workOf=r=>{const s=r.sourceWorkSummary||'';if(s&&!/미분류|미기록/.test(s))return s;try{const w=root.dealWorkSummary(dealOf(r));return w&&!/미분류|미기록/.test(w)?w:'';}catch(e){return '';}};
  const unclassified=r=>!workOf(r);
- const CFG={id:'expansion-b',name:'확장관리',unit:'곳',stallUnit:'D+',stallName:'준공 후',stallDesc:'준공 뒤 지난 일수',listTitle:'확인할 현장',openLabel:'열기',diagTitle:'사후관리 진단',
+ const CFG={id:'expansion-b',name:'확장관리',unit:'건',stallUnit:'D+',stallName:'준공 후',stallDesc:'준공 뒤 지난 일수',listTitle:'확인할 현장',openLabel:'열기',diagTitle:'사후관리 진단',
   desc:()=>'준공 고객의 다음 매출 · 준공은 끝이 아니라 사후관리 → 재영업 — D+'+rules().after+' 사후 연락(만족도 · 하자 · 내년 공사 · 추가 공종 · 주변 단지) → 니즈 확인 → 견적 확인 후 새 영업건 전환 · 관계는 '+Math.round(rules().wait/30)+'개월 1회',
   axis:'사후관리 진행',
   S:[['after','사후 연락 · 관계 유지','#15171c','준공 후 사후 연락 · 주기마다 관계 연락'],['need','니즈 확인','#8a909c','견적 확인 후 새 영업건 전환'],['hold','보류 · 전환 완료','#d5d9e0','새 영업건에서 진행 · 보류는 연도 지정']],
   RS:{defect:['하자 먼저 · 미해결 불만',RED,'하자 확인','미해결 하자 · 불만이 있으면 재영업 연락보다 하자 처리 확인이 먼저 — 해결로 기록되면 자동 해제(decision_collab ④)','source'],
       late:['다음 접촉일 지남',RED,'연락','다음 접촉일이 지난 고객 — 오늘 통화 후 접촉 · 니즈 기록 + 다음 접촉일','note'],
-      after30:['준공 후 사후 연락 안 함',RED,'사후 연락','만족도 · 하자 · 내년 공사 · 추가 공종 · 주변 단지 소개를 확인하는 사후 통화','note'],
+      after30:['사후 연락 기록 확인 필요',RED,'사후 연락','만족도 · 하자 · 내년 공사 · 추가 공종 · 주변 단지 소개를 확인하는 사후 통화','note'],
       wait60:['관계 연락 주기 넘김',RED,'관계 연락','모든 수주 고객은 2개월 1회 관계 연락 · 입대의 · 관리소장 교체 여부 확인','note'],
       needwait:['니즈 확인 → 전환 대기',INK,'전환','확인한 니즈는 메모가 아니라 새 영업건 — 견적 발송 확인 후 전환','convert'],
       nocontact:['접촉 기록 없음',INK,'첫 접촉','하자 점검 통화 체크리스트(누수 · 균열 · 주차장)로 첫 접촉','note'],
       work:['공종 미분류',INK,'공종 기록','준공 공종을 기록해야 추천 타공종이 정확해짐','source'],
       amt:['계약금액 미입력',INK,'금액 확인','수주 금액을 확인해 기록(매출 집계)','source'],
       nonext:['다음 접촉일 미지정',INK,'날짜 지정','모든 고객에 다음 접촉일 등록','next']},
-  kpi2:(inB,cnt)=>{const n=inB.filter(i=>i.extra.need).length;return ['니즈 확인',n+'곳',n?'견적 확인 후 전환할 고객':'아직 확인된 추가 공사 없음'];}
+  kpi2:(inB,cnt)=>{const n=inB.filter(i=>i.extra.need).length;return ['니즈 확인',n+'건',n?'견적 확인 후 전환할 고객':'아직 확인된 추가 공사 없음'];}
  };
  function scoped(){
   const current=new Date().getFullYear(),year=root.G.expansionYear||String(current),q=String(root.G.q||'').trim().toLowerCase(),f=F();
@@ -58,13 +58,13 @@
    /* 계약금액 등 실적 · 계약 정보는 확장관리에서 고치지 않는다(2026-10-06 followup4 ② → 수주 화면) */
    if(!r.nextContactAt)rs.push('nonext');
   }
-  const reasonText={after30:'사후 연락 없음 · 기준 D+'+q.after+' 넘김',wait60:'연락 없음 '+(ld===null?'':ld+'일')+' · 기준 '+q.wait+'일',late:nd!==null&&nd<0?'다음 접촉일 '+Math.abs(nd)+'일 지남':''};
+  const reasonText={after30:'사후 연락 기록 미확인 · 기준 D+'+q.after+' 넘김',wait60:'연락 없음 '+(ld===null?'':ld+'일')+' · 기준 '+q.wait+'일',late:nd!==null&&nd<0?'다음 접촉일 '+Math.abs(nd)+'일 지남':''};
   return {key:r.id,site:r.site||'현장명 확인 필요',brand:d.brand||'',owner:r.owner||'미배정',amount:r.wonAmount,amountText:r.wonAmount==null?'계약금액 미입력':undefined,bucket,sub,rs,reasonText,stall:cd===null?0:Math.max(0,cd),extra:{need,r}};
  }
  function topHtml(s){
   const years=['전체',String(s.current),String(s.current-1),String(s.current-2),'이전'];
   const q=rules(),opt=(cur,list)=>list.map(n=>'<option value="'+n+'"'+(n===cur?' selected':'')+'>'+n+'일</option>').join('');
-  if(root.G.expansionYearRowOff)return '<div class="plv-intro xb-years"><i style="background:#64748b"></i><b>준공연도</b><span>'+s.rows.length+'곳</span><label class="sb-rule">사후 연락 기준 준공 후 <select data-xb-rule="afterCompletionDays" aria-label="사후 연락 기준">'+opt(q.after,[...new Set([14,30,60,90,q.after])].sort((a,b)=>a-b))+'</select></label><label class="sb-rule">관계 연락 주기 <select data-xb-rule="waitContactDays" aria-label="관계 연락 주기">'+opt(q.wait,[...new Set([30,60,90,180,q.wait])].sort((a,b)=>a-b))+'</select></label><div class="plv-spacer"></div><div class="plv-pills" role="group" aria-label="준공연도">'+years.map(y=>'<button type="button" data-xb="year" data-value="'+attr(y)+'" aria-pressed="'+(String(s.year)===y)+'">'+h(y)+' <b>'+s.mine.filter(r=>s.inYear(r,y)).length+'</b></button>').join('')+'</div></div>';
+  if(root.G.expansionYearRowOff)return '<div class="plv-intro xb-years"><i style="background:#64748b"></i><b>준공연도</b><span>'+s.rows.length+'건</span><label class="sb-rule">사후 연락 기준 준공 후 <select data-xb-rule="afterCompletionDays" aria-label="사후 연락 기준">'+opt(q.after,[...new Set([14,30,60,90,q.after])].sort((a,b)=>a-b))+'</select></label><label class="sb-rule">관계 연락 주기 <select data-xb-rule="waitContactDays" aria-label="관계 연락 주기">'+opt(q.wait,[...new Set([30,60,90,180,q.wait])].sort((a,b)=>a-b))+'</select></label><div class="plv-spacer"></div><div class="plv-pills" role="group" aria-label="준공연도">'+years.map(y=>'<button type="button" data-xb="year" data-value="'+attr(y)+'" aria-pressed="'+(String(s.year)===y)+'">'+h(y)+' <b>'+s.mine.filter(r=>s.inYear(r,y)).length+'</b></button>').join('')+'</div></div>';
   return '<div class="xb-yrow"><span class="xb-yl"><i></i><b>준공연도</b></span><div class="xb-ypills" role="group" aria-label="준공연도">'+years.map(y=>{const n=s.mine.filter(r=>s.inYear(r,y)).length,on=String(s.year)===y;return '<button type="button" data-xb="year" data-value="'+attr(y)+'" aria-pressed="'+on+'"'+(n||on?'':' class="zero"')+'>'+h(y)+' <span>'+n+'</span></button>';}).join('')+'</div><i class="xb-ydiv"></i>'
    +'<label class="xb-rule">사후 연락 기준 준공 후 <select data-xb-rule="afterCompletionDays" aria-label="사후 연락 기준">'+opt(q.after,[...new Set([14,30,60,90,q.after])].sort((a,b)=>a-b))+'</select></label><label class="xb-rule">관계 연락 주기 <select data-xb-rule="waitContactDays" aria-label="관계 연락 주기">'+opt(q.wait,[...new Set([30,60,90,180,q.wait])].sort((a,b)=>a-b))+'</select></label></div>';
  }
@@ -115,7 +115,7 @@
   CFG.topHtml=topHtml(s);CFG.groupHead=root.G.boardV3Off?null:groupHead;
   /* 대상 수 나누기(contact_link ③): 사후 연락 대상 vs 기록 보완 필요(공종 · 연락 기록 없음 — 미실행으로 세지 않음) */
   {const live=items.filter(i=>i.bucket!=='hold'),kinds=live.map(i=>kindOf(i.rs,!!(i.extra&&i.extra.r&&i.extra.r.completionDate)).kind),miss=kinds.filter(k=>k==='miss').length,fix=kinds.filter(k=>k==='fix'),tgt=live.length-miss-fix.length;
-   CFG.sideHtml='<div class="psb-box xb-split"><header><b>대상 나누기</b><span>'+h(String(s.year)==='전체'?'전체':s.year)+' 대상 '+live.length+'곳</span></header><div class="psb-act"><span>확인된 미실행 '+miss+'</span><p>준공일 · 연락 기준이 확인된 건이 기준을 넘김</p></div><div class="psb-act"><span>사후 연락 대상 '+tgt+'</span><p>준공 · 연락 기준 확인됨</p></div><div class="psb-act"><span>기록 보완 필요 '+fix.length+'</span><p>준공일 · 공종 · 연락 기록 없음 · 미실행으로 세지 않음</p></div></div>';}
+   CFG.sideHtml='<div class="psb-box xb-split"><header><b>대상 나누기</b><span>'+h(String(s.year)==='전체'?'전체':s.year)+' 대상 '+live.length+'건</span></header><div class="psb-act"><span>기한 경과·결과 확인 '+miss+'</span><p>기록된 기한이 경과함 · 실제 미실행 확정 아님</p></div><div class="psb-act"><span>사후 연락 대상 '+tgt+'</span><p>준공 · 연락 기준 확인됨</p></div><div class="psb-act"><span>기록 보완 필요 '+fix.length+'</span><p>준공일 · 공종 · 연락 기록 없음 · 미실행으로 세지 않음</p></div></div>';}
   /* 연도를 고르면 제목 옆에 "2025년 준공만" · 목록 줄은 두 덩어리(끄기: G.expansionYearRowOff=true → 예전 줄) */
   CFG.listNote=root.G.expansionYearRowOff||String(s.year)==='전체'?'':(String(s.year)==='이전'?(s.current-3)+'년 이전':s.year+'년')+' 준공만';
   /* 공용 틀(2026-10-06 "리스트에서 이질감 없이"): 줄은 StageBoard 의 파이프라인 v11 모양 줄. 두 덩어리 줄은 공용 틀을 껐을 때(G.boardV3Off)만 */
@@ -132,18 +132,15 @@
   V.paint=function(host){if(!enabled())return base.apply(this,arguments);return paint(host,base,[].slice.call(arguments));};
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- /* 2026-10-07 kpi_measure: '확인된 미실행'과 '기록 보완 필요'를 한 곳에서 가른다 — 대상 나누기 · 오늘 업무 · 위 경고가 같은 분류.
-    확인된 미실행 = 준공일 · 연락 기준이 확인된 건이 기준을 넘김(사후 연락 D+30 · 다음 접촉일 지남 · 관계 연락 주기 넘김)
-    기록 보완 = 판단할 기록이 없음(준공일 없음 · 공종 미분류 · 연락 기록 없음 · 아직 기준 전) → 미실행으로 세지 않음 */
+ /* 기록 보완을 우선 분류한다. miss는 확인 가능한 기한 경과이며 실제 미실행을 확정하지 않는다. */
  function kindOf(rs,hasCompletion){
-  if(rs.includes('after30'))return {kind:'miss',key:'after30',label:'사후 연락 안 함'};
-  if(rs.includes('late'))return {kind:'miss',key:'late',label:'다음 접촉일 지남'};
-  if(rs.includes('wait60'))return {kind:'miss',key:'wait60',label:'관계 연락 주기 넘김'};
   if(!hasCompletion)return {kind:'fix',key:'nodate',label:'준공일 미기록'};
   if(rs.includes('work'))return {kind:'fix',key:'work',label:'공종 미분류'};
-  if(rs.includes('nocontact'))return {kind:'fix',key:'nocontact',label:'접촉 기록 없음'};
+  if(rs.includes('after30')||rs.includes('nocontact'))return {kind:'fix',key:'nocontact',label:'접촉 기록 미확인'};
+  if(rs.includes('late'))return {kind:'miss',key:'late',label:'다음 접촉일 지남'};
+  if(rs.includes('wait60'))return {kind:'miss',key:'wait60',label:'관계 연락 주기 넘김'};
   return {kind:'ok',key:'',label:'정상'};
  }
- function classify(r){try{const it=item(r);return kindOf(it.rs,!!r.completionDate);}catch(e){return {kind:'ok',key:'',label:'정상'};}}
+ function classify(r){try{const it=item(r);return kindOf(it.rs,!!r.completionDate);}catch(e){return {kind:'fix',key:'unknown',label:'자료 확인 필요'};}}
  root.ExpansionB={enabled,CFG,item,rules,classify,kindOf};
 })(window);

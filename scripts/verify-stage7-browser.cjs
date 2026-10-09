@@ -2,7 +2,7 @@
 /* 파이프라인 7단계 기준 · 판정 정리 검사(2026-10-07 design_handoff_stage7 · 시안 '7단계 기준 정리 시안.dc.html') — 합성 자료(현장 이름은 지어낸 것)
    단계 순서 · 메뉴 · 배치는 그대로. 확인하는 것:
    ① 컨설팅: '물량 산출 기한'(견적 예정일 · 견적팀) · 견적 요청 등록 전 = '기한 없음 · 설정값 확인'(설정 quote_request_days 는 보류 · 운영 제안)
-   ② 발송: 발송일 없으면 '발송일 확인 필요 · 7일 계산 안 함' + 다음 업무 = 발송일 · 자료 · 수신자 입력
+   ② 발송: 발송일 없으면 '발송일 확인 필요 · 7일 계산 안 함' + 다음 업무 = 실제 발송 · 기존 증빙 확인
    ④ 경쟁: 일정 없으면 '입찰 · PT 일정 확인' · '기한 없음 · 일정 입력 후 계산' · 운영 제안 표시
    ⑤ 계약 · 시공: 세부 상태별 다음 업무(계약 정보 입력 / 착공 준비 / 주간 현장 방문 / 준공 확인) · 계약 확인 끝난 건의 '계약 체결 확인'은 종료 대상
    ⑥⑦ 수주 · 실주: 끝 상태 · 서로 거치지 않음 · 재영업 가능 '예'만 재접촉 · 실주일은 한국 시간(목록 · 판정 같은 날)
@@ -54,12 +54,12 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const kpi=()=>V.locator('.ps3-kpis .over').innerText().then(one);
   /* ① 컨설팅 */
   assert.match(one(await V.locator('.ps3-head span').innerText()),/물량 산출 목표 3일 · 최대 5일 \(견적 요청 등록일부터 · 견적팀\)$/);assert.doesNotMatch(one(await V.locator('.ps3-head span').innerText()),/견적 처리/);
-  assert.equal(one(await V.locator('.ps3-tab').nth(3).locator('span').innerText()),'미팅 후 견적 요청 등록');
+  assert.equal(one(await V.locator('.ps3-tab').nth(3).locator('span').innerText()),'미팅 기록 · 견적 요청 확인');
   const cm=await rowOf('c-meet');assert.deepEqual([cm.task,cm.due,cm.why,cm.btn],['견적 요청 등록','기한 없음 · 설정값 확인','판정: 미팅 완료 '+(await page.evaluate(()=>PipelineJudge.md(DAY(-4))))+' · 견적 요청 전 견적 요청 등록','견적 요청'],'미팅 후 견적 요청 등록 = 별도 업무 · 기한은 설정값');
   const cr=await rowOf('c-req');assert.deepEqual([cr.task,cr.due,cr.why.replace(/\s*견적 예정일 입력$/,'')],['물량 산출 기한 확인 (견적팀)','날짜 미입력 · 기한 계산 안 함','판정: 견적 요청 등록 · 예정일 없음']);
   const cd=await rowOf('c-due');assert.deepEqual([cd.due,cd.dueCls,cd.why.slice(0,22)],['2일 지남','r','판정: 물량 산출 기한 '+(await page.evaluate(()=>PipelineJudge.md(DAY(-2))))]);
   assert.match(await kpi(),/^기한 초과 1건 확인 필요 2 · 날짜 미입력 2 · 판정 불가 0$/,'제목 숫자: 기한 초과(물량 산출 기한) 1 · 확인 필요 2');
-  assert.deepEqual((await V.locator('.ps3-reason span>b:first-child').allInnerTexts()),['미팅 일정 없음','물량 산출 기한 넘김','필수 확인 미입력','다음 행동 · 날짜 없음','30일 넘게 머묾']);
+  assert.deepEqual((await V.locator('.ps3-reason span>b:first-child').allInnerTexts()),['미팅 여부 확인 필요','물량 산출 기한 넘김','필수 확인 미입력','다음 행동 · 날짜 없음','30일 넘게 머묾']);
   /* 설정: '미팅 후 견적 요청 등록'은 보류(운영 제안) · 값이 없으니 기한 계산 안 함 · 값을 넣으면 계산 */
   assert.deepEqual(await page.evaluate(()=>{const r=CRMRules.ROWS.find(x=>x.k==='quote_request_days');return [r.st,r.l,r.unit,CRMRules.get('quote_request_days')===undefined];}),['hold','미팅 후 견적 요청 등록','일',true]);
   /* 값이 정해지면(회의 확정 뒤 설정에 값이 들어오면) 미팅 완료 + n일로 계산 — 지금은 보류 행이라 설정 화면에서 못 넣으므로 읽기 함수만 잠시 바꿔 본다 */
@@ -68,9 +68,9 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await page.evaluate(()=>{delete window.OPS_RULES.quoteRequestDays;paint();});await page.waitForTimeout(250);assert.equal((await rowOf('c-meet')).due,'기한 없음 · 설정값 확인');
   /* ② 발송 */
   await page.evaluate(()=>PipelineWorkspace.open('sent'));await page.waitForSelector('#pipeline-stage-v3[data-stage="sent"] .prv-row');await page.waitForTimeout(200);
-  assert.deepEqual(await V.locator('.ps3-tab .l').allInnerTexts(),['전체','7일 넘음 · 후속 없음','발송 후 7일 안','고객 반응 있음','발송일 확인 필요']);
-  const sn=await rowOf('s-nodate');assert.deepEqual([sn.tab,sn.now,sn.task,sn.due,sn.dueCls,sn.btn,sn.act],['3','발송일 확인 필요 · 자료 · 수신자 없음','발송일 · 자료 · 수신자 입력','발송일 확인 필요 · 7일 계산 안 함','g','정보 입력','stagefields']);
-  assert.match(sn.why,/^판정: 발송일 미등록 발송일 입력$/);assert.match(await kpi(),/^기한 초과 0건 확인 필요 1 · 날짜 미입력 1 · 판정 불가 0$/,'발송일 없는 건은 지연이 아니라 확인 필요');
+  assert.deepEqual(await V.locator('.ps3-tab .l').allInnerTexts(),['전체','7일 넘음 · 후속 없음','발송 후 7일 안','후속 확인 기록 있음','발송일 확인 필요']);
+  const sn=await rowOf('s-nodate');assert.deepEqual([sn.tab,sn.now,sn.task,sn.due,sn.dueCls,sn.btn,sn.act],['3','발송일 확인 필요 · 발송 여부 · 기존 증빙 확인','실제 발송 · 기존 증빙 확인','발송일 확인 필요 · 7일 계산 안 함','g','증빙 확인','stagefields']);
+  assert.match(sn.why,/^판정: 발송일 미등록 발송일 입력$/);assert.match(await kpi(),/^발송 후 후속 지연 0건 판정 가능 0 \/ 1건 · 발송일 확인 1건$/,'발송일 없는 건은 지연이 아니라 확인 필요');
   /* ④ 경쟁 */
   await page.evaluate(()=>PipelineWorkspace.open('competition'));await page.waitForSelector('#pipeline-stage-v3[data-stage="competition"] .prv-row');await page.waitForTimeout(200);
   assert.deepEqual(await V.locator('.ps3-tab').evaluateAll(l=>l.map(t=>[t.querySelector('.l').textContent,t.querySelector('span').textContent])),[['전체','이 단계 모든 현장'],['마감 D-7 이내','제안서 · 가격 확정 · 운영 제안'],['진행 중','일정 확인'],['결과 대기','개찰 다음날 결과 등록 · 운영 제안'],['일정 미등록','입찰 · PT 일정 확인']]);
@@ -86,7 +86,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* ⑥ 수주 · ⑦ 실주: 끝 상태 · 제목 숫자 · 실주일 한국 시간 · 재영업 '예'만 재접촉 */
   await page.evaluate(()=>PipelineWorkspace.open('won'));await page.waitForSelector('#pipeline-stage-v3[data-stage="won"] .prv-row');await page.waitForTimeout(200);
   assert.match(await kpi(),/^실적 정보 보완 1건 기한 초과 0 · 지연 아님 · 끝 상태$/);assert.match(one(await V.locator('.ps3-diag .ps3-box header span').first().innerText()),/^1건 · 1\.4억 · 낙찰금액 입력 1건 기준$/);
-  const w1=await rowOf('w-1');assert.deepEqual([w1.now,w1.base,w1.due,w1.dueCls],['수주 · '+(await page.evaluate(()=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(DAY(-34));return m[1]+'.'+(+m[2])+'.'+(+m[3]);}))+' · 1.4억','수주 유형 · 낙찰금액 · 낙찰사 미기록','확인 필요 · 기한 아님','amb']);
+  const w1=await rowOf('w-1');assert.deepEqual([w1.now,w1.base,w1.due,w1.dueCls],['수주 · '+(await page.evaluate(()=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(DAY(-34));return m[1]+'.'+(+m[2])+'.'+(+m[3]);}))+' · 1.4억','수주 결과 항목 보완 필요','확인 필요 · 기한 아님','amb']);
   assert.match(one(await V.locator('.ps3-head span').innerText()),/^끝 상태 · /);
   await page.evaluate(()=>PipelineWorkspace.open('lost'));await page.waitForSelector('#pipeline-stage-v3[data-stage="lost"] .prv-row');await page.waitForTimeout(200);
   assert.match(await kpi(),/^결과 정보 보완 \d+건 기한 초과 0 · 지연 아님 · 끝 상태$/);assert.doesNotMatch(one(await V.locator('.ps3-head span').innerText()),/대기|2개월|차기 공사/);

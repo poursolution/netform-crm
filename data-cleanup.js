@@ -13,7 +13,7 @@
  const grams=s=>new Set(Array.from({length:s.length-1},(_,i)=>s.slice(i,i+2)));
  /* 행마다 정규화·2-gram을 한 번만 계산해 둔다(2026-10-01 — 1,700행이면 쌍 140만 개마다 다시 계산해 데이터 정리 진입에 4.5초 걸렸다) */
  const prepared=new WeakMap();
- function prep(r){let p=prepared.get(r);if(p)return p;const n=name(r.name);p={n,g:n.length>=4?grams(n):null,addr:blank(r.address)?'':norm(r.address),mobile:phone(r.mobile),office:phone(r.office),work:[...new Set((r.works||[]).filter(w=>!blank(w)))].sort().join('|'),at:Date.parse(r.at)};prepared.set(r,p);return p}
+ function prep(r){let p=prepared.get(r);if(p)return p;const n=name(r.name);p={n,g:n.length>=4?grams(n):null,addr:blank(r.address)?'':reviewAddress(r.address).toLowerCase().replace(/\s/g,''),mobile:phone(r.mobile),office:phone(r.office),work:[...new Set((r.works||[]).filter(w=>!blank(w)).map(norm))].sort().join('|'),at:Date.parse(r.at)};prepared.set(r,p);return p}
  function simPrepared(pa,pb){const a=pa.n,b=pb.n;if(!a||!b)return 0;if(a===b)return 1;if(!pa.g||!pb.g)return 0;let hit=0;for(const v of pa.g)if(pb.g.has(v))hit++;return 2*hit/(pa.g.size+pb.g.size)}
  function similarity(a,b){return simPrepared(prep({name:a}),prep({name:b}))}
  function pairKey(a,b){return [a.ref.type+':'+a.ref.id,b.ref.type+':'+b.ref.id].sort().join('|')}
@@ -53,12 +53,36 @@
   }else if(siteId){
    return null;
   }else if((sameSite||names===1)&&!conflict&&(differentWork||differentBiz||(days!==null&&days>365))){
-   type='site';action='site_link';reasons.push(differentWork?'공종 서로 다름':differentBiz?'사업유형 서로 다름':'영업 시기 서로 다름');text='정상적인 복수 영업입니다. 하나의 현장으로 연결하고 영업기회는 각각 유지하세요.';
+   type='site';action=differentWork?'site_link':'defer';
+   if(differentWork)reasons.push('공종 서로 다름');
+   if(differentBiz)reasons.push('사업유형 서로 다름 — 공사 차이 근거 아님');
+   if(days!==null&&days>365)reasons.push('접수·등록일 1년 초과 차이 — 공사 시기 미확인');
+   text='같은 현장 후보입니다. 사업유형과 접수·등록일 차이만으로 다른 공사라고 확정하지 않습니다. 공종·범위·실제 공사 시기를 확인할 때까지 개별 원본과 이력을 유지하세요.';
   }else if(!conflict&&(address||office&&names>=.72||names>=.82)){
    type='site';action=address||office?'site_merge':'defer';text=address||office?'현장 Master 통합 후보입니다. 이름·주소를 확인하고 개별 영업기회와 이력은 유지하세요.':'이름만으로 확정할 수 없습니다. 주소와 관리사무소 정보를 보완한 뒤 검토하세요.';
   }else return null;
-  return {key:pairKey(a,b),a,b,type,action,reasons,text};
+  /* 영업 자료끼리는 현장 Master 병합 추천으로 우회하지 않는다. 현재 입력에는
+     공사 범위·추진 시기의 확인 결과가 없으므로 등록일로 같은 공사를 확정하지 않는다. */
+  const businessPair=[a,b].every(r=>['inquiry','deal'].includes(r.ref.type));
+  if(businessPair&&action==='site_merge'){
+   action='defer';text='같은 현장 후보입니다. 공종·공사 범위·실제 공사 시기를 확인한 뒤 상담 또는 현장 연결 여부를 정하세요. 두 원본은 그대로 보존합니다.';
+  }
+  if(businessPair&&(!workA||!workB)&&!['contact_move','separate'].includes(action)){
+   action='defer';reasons.push('공종 미입력 — 같은 공사 여부 확인 필요');
+  }
+  return {key:pairKey(a,b),a,b,type,action,reasons,text,
+   evidence:{businessPair,work:!businessPair?'not_applicable':!workA||!workB?'unknown':differentWork?'different':'same',construction:'unverified',registrationGapDays:days,
+    addresses:[a,b].map(r=>({original:r.address||'',normalized:reviewAddress(r.address)}))}};
  }
  function candidates(rows){const out=[];for(let i=0;i<rows.length;i++)for(let j=i+1;j<rows.length;j++){const c=classify(rows[i],rows[j]);if(c)out.push(c)}return out.sort((a,b)=>({inquiry:0,contact:1,deal:2,site:3}[a.type]-{inquiry:0,contact:1,deal:2,site:3}[b.type])||a.key.localeCompare(b.key))}
- const api={norm,blank,phone,similarity,pairKey,classify,candidates};root.CleanupCore=api;if(typeof module!=='undefined')module.exports=api;
+ function mergeIssue(c,action){
+  const rows=[c.a,c.b],business=rows.filter(r=>['inquiry','deal'].includes(r.ref.type));
+  if(action==='site_merge'&&business.length)return '현장 원본 통합으로 문의·영업건을 합칠 수 없습니다. 현장 연결 여부를 따로 확인해 주세요.';
+  if(!['inquiry_merge','deal_review'].includes(action))return '';
+  const works=business.map(r=>prep(r).work);
+  if(business.length!==2||works.some(w=>!w))return '공종 미입력 — 공사 범위와 시기를 확인한 뒤 비교해 주세요.';
+  if(works[0]!==works[1])return '공종이 달라 같은 공사로 합칠 근거가 부족합니다. 원본을 유지해 주세요.';
+  return '';
+ }
+ const api={norm,blank,phone,similarity,pairKey,classify,candidates,mergeIssue};root.CleanupCore=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window==='undefined'?globalThis:window);

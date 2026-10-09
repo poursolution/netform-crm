@@ -60,7 +60,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 기록 완성도 */
   assert.deepEqual([by('a1').num,by('a1').den,by('a1').vText],[3,4,'75%'],'발송일 입력률 = 입력 3 ÷ 발송 단계 4');
   assert.deepEqual(by('a1').n,[['입력됨',3],['미입력',1],['해당 없음',0]]);
-  assert.deepEqual([by('a2').num,by('a2').den],[2,3],'관계관리 분류 완료 2 ÷ 3(발송일 없는 1건 = 미확인)');
+  assert.deepEqual([by('a2').num,by('a2').den],[0,3],'발송일에 따른 임시 분류는 담당자 확인 완료가 아니다');
+  const confirmed=await page.evaluate(()=>{
+   const rows=B.deals.filter(d=>['r1','r2'].includes(d.id)),original=rows.map(d=>d.activities);
+   try{
+    rows.forEach((d,i)=>{d.activities=(d.activities||[]).concat({id:'confirm-'+d.id,type:'메모',note:'[관계 상태] '+(i?'일반관리':'집중관리')+' | 담당 확인 | 없음 | 없음 | 올해',at:new Date().toISOString()});});
+    const m=KpiMeasure.compute().list.find(m=>m.id==='a2');return [m.num,m.den];
+   }finally{rows.forEach((d,i)=>{d.activities=original[i];});}
+  });
+  assert.deepEqual(confirmed,[2,3],'저장된 관계 상태 확인 표식이 있는 두 건만 분류 완료');
   assert.deepEqual([by('a3').num,by('a3').den,by('a3').vText],[1,2,'50%'],'실주 결과 기록 완성: 사유 + 재영업 여부 둘 다 있는 1 ÷ 2');
   /* 행동 준수 — 측정 가능 건만 분모 */
   assert.deepEqual(by('b1').n,[['준수',1],['미준수',1],['측정 불가',1]],'발송 후 7일 후속: 준수 1 · 미준수 1 · 발송일 없음 1 · (기한 전 1은 분모에서 뺌)');
@@ -101,7 +109,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const rq=await v.locator('.k7-row .k7-reqn').allInnerTexts();assert.ok(rq.length>=1&&rq.every(t=>/ \d+건 중 요청 가능 \d+건/.test(t)),'요청 숫자 설명 '+JSON.stringify(rq));
   assert.ok((await v.locator('.k7-req').allInnerTexts()).filter(t=>/요청 가능 \d+건|배정|판단 요청|담당별 요청|다시 확인|보냄/.test(t)).length>=1);
   /* 9. 확장관리 · 오늘 업무: '확인된 미실행'과 '기록 보완'을 같은 함수로 가른다 · 판정 함수가 미팅일 · 발송일 근거를 내보낸다 */
-  assert.deepEqual(await page.evaluate(()=>{const K=ExpansionB.kindOf;return [K(['after30','work'],true).kind+':'+K(['after30','work'],true).key,K(['late'],true).kind,K(['wait60'],true).kind,K(['work'],true).kind+':'+K(['work'],true).key,K([],false).kind+':'+K([],false).key,K(['nocontact'],true).key,K(['nonext'],true).kind];}),['miss:after30','miss','miss','fix:work','fix:nodate','nocontact','ok'],'확인된 미실행 = 사후 연락 · 약속일 · 관계 연락 / 기록 보완 = 준공일 · 공종 · 연락 기록 없음');
+  assert.deepEqual(await page.evaluate(()=>{const K=ExpansionB.kindOf;return [K(['after30','work'],true).kind+':'+K(['after30','work'],true).key,K(['late'],true).kind,K(['wait60'],true).kind,K(['work'],true).kind+':'+K(['work'],true).key,K([],false).kind+':'+K([],false).key,K(['nocontact'],true).key,K(['nonext'],true).kind];}),['fix:work','miss','miss','fix:work','fix:nodate','nocontact','ok'],'확인된 미실행 = 사후 연락 · 약속일 · 관계 연락 / 기록 보완 = 준공일 · 공종 · 연락 기록 없음');
   assert.equal(await page.evaluate(()=>typeof PipelineJudge.meetingOf+typeof PipelineJudge.sentOfDeal+typeof PipelineJudge.field),'functionfunctionfunction');
   assert.equal(await page.evaluate(()=>PipelineJudge.TARGET.stale),'컨설팅 설계 · 관계관리 진행 건(과거 이관 제외)','장기정체 대상 한 줄 = 과거 이관 제외');
   /* 10. 끄기 */

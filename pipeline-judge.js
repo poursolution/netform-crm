@@ -23,8 +23,8 @@
  const acts=d=>{const p=patch(d);return [].concat(d.activities||[],p.activities||[]);};
  const lastActAt=(d,re)=>acts(d).filter(a=>a&&re.test(String(a.type||'')+' '+String(a.note||''))).map(a=>dayKey(a.at||a.occurred_at||a.created_at)).filter(Boolean).sort().pop()||'';
  const lastContactAt=d=>{try{const v=root.ContactState.of(d,'deal');return dayKey(v.lastConnectedAt||v.lastAttemptAt||'');}catch(e){return '';}};
- /* 미팅일 · 후속 근거(KPI 측정 기준 · 판정 · 상세가 같은 근거): 미팅일 = 단계 칸의 미팅일 → 없으면 방문 · 미팅 · 실측 · 실사 기록 가운데 가장 나중 */
- const meetingOf=d=>dayKey(fld(d,'consulting','meeting_date')||fld(d,'first_contact','meeting_date')||'')||lastActAt(d,/방문|미팅|실측|실사/);
+ /* 완료된 방문 기록만 미팅 완료 근거다. 예정일·견적 요청·내부 메모는 완료를 증명하지 않는다. */
+ const meetingOf=d=>acts(d).filter(a=>a&&/^(현장방문|방문|미팅|실측|실사)$/.test(String(a.type||'').trim())&&!/예정|계획|취소|불발|미실시|미완료|못함|못했|안 함|안했|조건부|시간이 맞으면/.test(String(a.note||'')+' '+String(a.result||'')+' '+String(a.status||''))&&!/^(open|pending|cancelled|canceled|planned)$/.test(String(a.status||''))).map(a=>dayKey(a.at||a.occurred_at||a.created_at)).filter(k=>k&&daysTo(k)!==null&&daysTo(k)<=0).sort().pop()||'';
  const sentOfDeal=d=>dayKey(fld(d,'sent','sent_date')||'');
  /* ── ② 다음 업무 판정(근거) ── */
  function basis(d,key){
@@ -42,10 +42,12 @@
   const na=(why)=>({kind:'na',why,due:'',n:null,src:'stage'});
   const lc=lastContactAt(d);
   /* 2026-10-07 design_handoff_stage7 ①: '견적 처리 3일 · 5일' = 물량 산출 기한(견적 요청 등록일부터 · 견적팀 · 견적 예정일 칸). '미팅 후 견적 요청 등록'은 따로 둔 업무 — 기한은 설정값(quote_request_days · 운영 제안), 정해지기 전엔 '기한 없음 · 설정값 확인' */
-  if(g==='consulting'){const qd=dayKey(fld(d,'consulting','quote_due')||'');if(qd)return D('물량 산출 기한',qd,0);
-   const qr=String(fld(d,'consulting','quote_request')||'').trim();if(qr)return none('견적 요청 등록 · 예정일 없음','견적 예정일 입력','견적팀에 물량 산출 기한 확인');
+  if(g==='consulting'){const qd=dayKey(fld(d,'consulting','quote_due')||''),qr=String(fld(d,'consulting','quote_request')||'').trim();if(qd&&qr)return D('물량 산출 기한',qd,0);
+   if(qd&&!qr)return none('견적 예정일 입력 · 요청 근거 미확인','견적 요청 확인','요청 근거 확인 후 기한 판단');
+   if(qr)return none('견적 요청 등록 · 예정일 없음','견적 예정일 입력','견적팀에 물량 산출 기한 확인');
    const mt=meetingOf(d);
    if(mt){const qn=Number(R().quoteRequestDays)||0;if(qn>0)return D('미팅 완료',mt,qn);return Object.assign(none('미팅 완료 '+md(mt)+' · 견적 요청 전','견적 요청 등록','견적 요청 등록'),{dueLabel:'기한 없음 · 설정값 확인'});}
+   const scheduled=dayKey(fld(d,'consulting','meeting_date')||fld(d,'first_contact','meeting_date')||'');if(scheduled&&daysTo(scheduled)!==null)return daysTo(scheduled)>=0?D('미팅 예정',scheduled,0):none('지난 미팅 일정 · 실행 여부 미확인','미팅 결과 확인','실행 여부·결과 확인 후 다음 행동 설정');
    return lc?none('미팅 일정 미등록 · 기한 계산 안 함','미팅 일정 입력','미팅 여부 확인 → 일정 등록 또는 보류 사유 등록'):nr('판정 불가 · 미팅 · 연락 기록 없음(이관 전 기록 확인)');}
   /* stage7 ②: 발송일 있는 건만 7일 판정 · 없으면 '발송일 확인 필요 · 7일 계산 안 함' */
   if(g==='sent'){const sd=dayKey(fld(d,'sent','sent_date')||'');if(sd)return D('발송',sd,Q.follow);const fu=dayKey(fld(d,'sent','followup_date')||'');if(fu)return D('후속 확인일',fu,0);return lc?Object.assign(none('발송일 미등록','발송일 입력','발송일 입력'),{dueLabel:'발송일 확인 필요 · 7일 계산 안 함'}):nr('판정 불가 · 발송일 · 연락 기록 없음(이관 전 기록 확인)');}

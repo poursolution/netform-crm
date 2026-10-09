@@ -54,7 +54,7 @@
   const sum=f=>R.reduce((a,r)=>a+(Number(f(r))||0),0);
   const load=R.filter(r=>r.pipeline>0).sort((a,b)=>b.pipeline-a.pipeline).slice(0,5);
   return '<div class="psb-box rb-load"><header><b>누가 일이 몰렸나</b><span>Pipeline · 진행 건수</span></header>'+(load.length?load.map(r=>'<div class="psb-act"><span>'+h(r.nm)+' · '+h(eok(r.pipeline))+'</span><p>진행 '+r.current.length+'건 · 조치 필요 '+(EWon()?act(r):r.risk)+'건 · '+(EWon()&&r.__load?'신규 배정 '+h(r.__load.judge):'업무량 '+h(root.repManagerLoadLevel(r).label))+'</p></div>').join(''):'<p class="psb-none">진행 금액이 없습니다</p>')+'</div>'
-   +'<div class="psb-box rb-week"><header><b>이번 주 진전</b><span>지난 7일 실제 기록</span></header><div class="psb-act"><span>신규 기회 '+sum(r=>r.weekNew)+'</span><p>단계 전진 '+sum(r=>r.weekAdvanced)+' · 수주 '+sum(r=>r.weekWon)+'</p></div></div>';
+   +'<div class="psb-box rb-week"><header><b>이번 주 진전</b><span>월~금 실제 기록</span></header><div class="psb-act"><span>신규 기회 '+sum(r=>r.weekNew)+'</span><p>단계 전진 '+sum(r=>r.weekAdvanced)+' · 수주 '+sum(r=>r.weekWon)+'</p></div></div>';
  }
  function open(key,act){
   V().open(key);

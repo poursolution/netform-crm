@@ -1,9 +1,9 @@
 /* 과거 이관 · 분류 전 — 정리안 (2026-10-06 design_handoff_legacy · 시안 '과거 이관 정리안.dc.html' · 2026-10-05 대표 승인 design_handoff_consistency ③ 위에)
    예전 시스템에서 옮겨 온 자료 중 현재 CRM 단계가 정해지지 않은 건(판정은 PipelineScope.isLegacy 하나). 진행 · 실주 · Bad Fit · 보류 어느 쪽도 아니다 — 진행 건수 · 전환율 · 메이드율에 들어가지 않는다.
-   맨 위 = 제목 · 한 줄 · 숫자 3개(전체 · 바로 재개 가능 · 서버 보완 필요). 큰 안내 상자는 없앴다.
-   담당자별 재개 = 기존 담당 카드(이름 · 건수 · 바로 재개 n · [n건 담당에게 재개 요청] = 그 담당 오늘 업무에 '과거 자료 재개' 요청(요청 엔진 work-request.js 공통 · 한 건씩 · 한 번에 20건))
+   맨 위 = 제목 · 한 줄 · 숫자 3개(전체 · 담당자 확인 대상 · 서버 보완 필요). 큰 안내 상자는 없앴다.
+   담당자별 재개 = 기존 담당 카드(이름 · 건수 · 확인 대상 n · [n건 담당에게 재개 요청] = 그 담당 오늘 업무에 '과거 자료 재개' 요청(요청 엔진 work-request.js 공통 · 한 건씩 · 한 번에 20건))
                  + '담당 없음' 카드(담당 없음 · CRM 명단에 없는 담당 · 서버 보완 불필요 건 · [n건 배정하기] = 목록을 그 건들로 좁히고 첫 건의 담당 정하는 칸). 카드 클릭 = 아래 목록 필터, 다시 누르면 해제.
-   탭 4개(전체 · 바로 재개 가능 · 담당 없음 · 서버 보완 필요) + 예전 단계 선택칸 1개 — 모든 숫자(머리 · 카드 · 탭 · 선택칸)는 같은 집계(model)에서.
+   탭 4개(전체 · 담당자 확인 대상 · 담당 없음 · 서버 보완 필요) + 예전 단계 선택칸 1개 — 모든 숫자(머리 · 카드 · 탭 · 선택칸)는 같은 집계(model)에서.
    목록 = 파이프라인 목록 줄 v11 모양(pipeline-row-v11.css 의 prv-*): 현장 · 브랜드(예전 등록) / 예전 단계 · 기존 담당(없음 빨강) / CRM 기록(있음 · 없음 + 한 줄) / 버튼 1개(영업 재개 · 담당 배정 · 서버 보완 요청).
    줄을 누르면 바로 그 영업건 상세(펼침 없음 — 2026-10-06 대표 지시 2). 삭제는 상세 창 [···] 메뉴의 [이 자료 삭제](deal-discard.js · 관리자 · 백업 뒤 삭제).
    [영업 재개] = 상세 창의 단계 바꾸기(새 단계 + 그 단계 필수 정보 + 다음 할 일 날짜를 같이 받는 기존 전환 창) — 저장되면 그때부터 진행 건(이 목록에서 빠진다).
@@ -16,7 +16,7 @@
  const BRAND={'석민이앤씨':'#e8590c','POUR솔루션':'#1f9d55','POUR공법':'#7048e8','아파트스퀘어':'#3b6ce4'};
  const st=()=>root.G.plg||(root.G.plg={tab:'all',owner:null,old:'all',done:{},sent:'',busy:false});
  const NO_CODE='서버에 단계 값이 비어 있는 자료입니다 — 서버 보완 뒤에 영업 재개를 할 수 있습니다';
- const REQ_LABEL='과거 자료 재개',REQ_ASK='CRM 단계 · 다음 행동 · 날짜 정하기(영업 재개)';
+ const REQ_LABEL='과거 자료 재개',REQ_ASK='과거 연락·결과·현재 추진 여부 확인 후 재개 판단';
  const toast=(m,k)=>{if(typeof root.toast==='function')root.toast(m,k);};
  const admin=()=>{try{return !!root.inqCtlIsAdmin();}catch(e){return false;}};
  function hasRecord(d){try{const a=root.actionObj?root.actionObj(d,root.itemPatch(d,'deal')):null;if(a&&(a.text||a.due))return true;}catch(e){}
@@ -32,15 +32,15 @@
   const order=Object.values(P().OLD),oldList=[...cnt.entries()].sort((a,b)=>{const i=order.indexOf(a[0]),j=order.indexOf(b[0]);return (i<0?99:i)-(j<0?99:j)||b[1]-a[1]||String(a[0]).localeCompare(String(b[0]),'ko');});
   const own=new Map();items.forEach(i=>{if(!i.known)return;const o=own.get(i.owner)||{n:i.owner,total:0,ok:0};o.total++;if(i.can)o.ok++;own.set(i.owner,o);});
   const owners=[...own.values()].sort((a,b)=>b.ok-a.ok||b.total-a.total||a.n.localeCompare(b.n,'ko')),noown=items.filter(i=>i.cat==='noown');
-  /* 바로 재개 가능 = 담당이 있는 건만(탭과 같은 수) · 담당 없는 건은 '배정 후 재개 가능'으로 따로(2026-10-07 점검: 403 · 393 · 10 이름 혼란) */
+  /* 담당자 확인 대상 = 담당이 있는 건만(탭과 같은 수) · 담당 없는 건은 '담당 배정 후 확인'으로 따로(2026-10-07 점검: 403 · 393 · 10 이름 혼란) */
   return {items,oldList,owners,noown,all:items.length,okAll:items.filter(i=>i.cat==='ok').length,noownAll:noown.length,fixAll:items.filter(i=>i.fix).length};
  }
- const TAB=[['all','전체',()=>true],['ok','바로 재개 가능',i=>i.cat==='ok'],['noown','담당 없음',i=>i.cat==='noown'],['fix','서버 보완 필요',i=>i.fix]];
+ const TAB=[['all','전체',()=>true],['ok','담당자 확인 대상',i=>i.cat==='ok'],['noown','담당 없음',i=>i.cat==='noown'],['fix','서버 보완 필요',i=>i.fix]];
  const DONE={resume:'재개 중',assign:'배정 중',fix:'요청함'};
  function rowHtml(i,S){
   const d=i.d,r=i.r,bc=BRAND[d.brand]||'',dn=S.done[i.key]||'';
   const btn=dn?[DONE[dn]||'처리함','']:i.fix?['서버 보완 요청','fix']:i.known?['영업 재개','resume']:['담당 배정','assign'];
-  const note=i.fix?'예전 단계 값이 비어 있음 · 서버 보완 필요':i.rec?'지난 응대 이력 이어서 사용':'새로 시작 · 첫 연락부터';
+  const note=i.fix?'예전 단계 값이 비어 있음 · 서버 보완 필요':i.rec?'지난 응대 이력 이어서 사용':'기존 연락·결과·현재 추진 여부 확인';
   const ownerTxt=i.owner?'기존 담당 '+i.owner+(i.known?'':' · CRM 명단에 없음'):'기존 담당 없음';
   return '<div class="prv-row plg-row'+(dn?' dn':'')+'" role="row" tabindex="0" data-plg="open" data-key="'+attr(i.key)+'" data-cat="'+i.cat+'" style="border-left-color:'+(bc||'#d9dde4')+'">'
    +'<div class="prv-a"><b title="'+attr(r.site)+'">'+h(r.site)+'</b><span><em style="color:'+(bc||'#9ca3af')+'">'+h(d.brand||'브랜드 미지정')+'</em><i> · 예전 등록 '+h(ym(i.created)||'미기록')+'</i></span></div>'
@@ -56,8 +56,8 @@
   const tf=(TAB.find(t=>t[0]===S.tab)||TAB[0])[2],list=base.filter(tf).sort((a,b)=>Number(a.fix)-Number(b.fix)||Number(!a.known)-Number(!b.known)||Number(b.rec)-Number(a.rec)||String(b.created).localeCompare(String(a.created))||String(a.r.site).localeCompare(String(b.r.site),'ko'));
   const pg=LP().cut(list,LP().page(S,'list:'+S.tab+':'+(S.owner||'')+':'+S.old),20);
   const isAdm=admin();
-  const head='<div class="plg-head"><b>'+h(P().LABEL)+'</b><span>예전 시스템에서 옮겨 온 자료 · 진행 건수 · 메이드율 계산에 안 들어감</span><i></i><span class="plg-nums">전체 <b>'+M.all.toLocaleString('ko-KR')+'</b> · 바로 재개 가능 <b>'+M.okAll.toLocaleString('ko-KR')+'</b>'+(M.noownAll?' · 배정 후 재개 가능 <b>'+M.noownAll.toLocaleString('ko-KR')+'</b>':'')+' · 서버 보완 필요 <b class="fx">'+M.fixAll.toLocaleString('ko-KR')+'</b></span>'+(isAdm&&root.DealTrash&&root.DealTrash.ready()?'<button type="button" class="plg-trash" data-plg="trash">휴지통</button>':'')+'</div>';/* 휴지통 = 보낸 영업건 30일 보관 · 복원(deal-trash.js · 관리자) */
-  const card=o=>{const on=S.owner===o.n;return '<div class="plg-owner'+(on?' on':'')+'" data-plg="owner" data-v="'+attr(o.n)+'" role="button" tabindex="0" aria-pressed="'+on+'"><div class="t"><b>'+h(o.n)+'</b><span>'+o.total+'건</span><i></i><small>바로 재개 '+o.ok+'</small></div>'
+  const head='<div class="plg-head"><b>'+h(P().LABEL)+'</b><span>예전 시스템에서 옮겨 온 자료 · 진행 건수 · 메이드율 계산에 안 들어감</span><i></i><span class="plg-nums">전체 <b>'+M.all.toLocaleString('ko-KR')+'</b> · 담당자 확인 대상 <b>'+M.okAll.toLocaleString('ko-KR')+'</b>'+(M.noownAll?' · 담당 배정 후 확인 <b>'+M.noownAll.toLocaleString('ko-KR')+'</b>':'')+' · 서버 보완 필요 <b class="fx">'+M.fixAll.toLocaleString('ko-KR')+'</b></span>'+(isAdm&&root.DealTrash&&root.DealTrash.ready()?'<button type="button" class="plg-trash" data-plg="trash">휴지통</button>':'')+'</div>';/* 휴지통 = 보낸 영업건 30일 보관 · 복원(deal-trash.js · 관리자) */
+  const card=o=>{const on=S.owner===o.n;return '<div class="plg-owner'+(on?' on':'')+'" data-plg="owner" data-v="'+attr(o.n)+'" role="button" tabindex="0" aria-pressed="'+on+'"><div class="t"><b>'+h(o.n)+'</b><span>'+o.total+'건</span><i></i><small>확인 대상 '+o.ok+'</small></div>'
    +'<button type="button" data-plg="req" data-v="'+attr(o.n)+'"'+(o.ok&&isAdm&&!S.busy?'':' disabled')+(isAdm?'':' title="요청은 관리자만 보낼 수 있습니다"')+'>'+(S.busy===o.n?'보내는 중…':o.ok+'건 담당에게 재개 요청')+'</button></div>';};
   const none=M.noown.length?'<div class="plg-owner none'+(S.owner==='__none'?' on':'')+'" data-plg="owner" data-v="__none" role="button" tabindex="0" aria-pressed="'+(S.owner==='__none')+'"><div class="t"><b>담당 없음</b><span>'+M.noown.length+'건</span><i></i><small>배정 필요</small></div><button type="button" data-plg="assign-all">담당 '+M.noown.length+'건 배정하기</button></div>':'';
   const owners='<section class="plg-owners"><div class="hd"><b>담당자별 재개</b><span>기존 담당이 있는 자료는 그 사람에게 돌려주고, 없는 자료는 배정부터</span><i></i>'+(S.owner?'<button type="button" class="lnk" data-plg="owner-clear">담당 선택 해제</button>':'')+'</div>'

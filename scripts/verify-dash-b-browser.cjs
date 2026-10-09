@@ -1,6 +1,6 @@
 'use strict';
 /* 영업 대시보드 v2 검사(2026-10-04 핸드오프 dashboard): 전체 현황 · 컨트롤타워 · 성과 분석
-   지표 = 주간 브리핑 · 월간 리포트와 같은 정의(계약실적 = 원장, 메이드율 = 수주 ÷ (수주 + 실주) · 배드핏 제외, 적합률, 문의 → 계약, 확정 전환율)
+   지표 = 주간 브리핑 · 월간 리포트와 같은 정의(계약실적 = 원장, 메이드율 = 수주 ÷ (수주 + 실주) · 배드핏 제외, 적합률, 문의 → 계약, 현재 전환율)
    실적이 없는 기간 = '아직 없음' · 문장 속 숫자는 자료에서 · 컨트롤타워 표는 안쪽 스크롤 없이 · 할 일 지정 · 알림은 관리자 · 팀장만 · 끄면(G.dashBOff) 예전 화면 */
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
@@ -79,7 +79,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 예전 흐름(스위치를 켜면): 흐름 5칸 · 비율 4개 · 배드핏/실주 두 상자 */
   await page.evaluate(()=>{G.dashFunnelOff=true;paint();});await page.waitForTimeout(250);
   assert.deepEqual(await d.locator('.db-fun>div').evaluateAll(a=>a.map(n=>[...n.children].map(c=>c.textContent))),[['견적문의','4건','전체 접수'],['적합 문의','3건','종결 1 제외 · Bad Fit 1'],['견적 발송','5건','기간 안 견적 발송'],['영업건 전환','12건','파이프라인 진입'],['수주','2건 · 8억','실주 3건']]);
-  assert.deepEqual(await d.locator('.db-rates>div').evaluateAll(a=>a.map(n=>[...n.children].map(c=>c.textContent))),[['영업 메이드율','40.0%','수주 2 ÷ (수주 2 + 실주 3) · 배드핏 제외'],['문의 적합률','75.0%','적합 3 ÷ 문의 4'],['문의 → 계약 전환율','50.0%','수주 2 ÷ 문의 4'],['확정 전환율 (8월 문의)','50.0%','8월 문의 2건 중 지금까지 1건 계약']]);
+  assert.deepEqual(await d.locator('.db-rates>div').evaluateAll(a=>a.map(n=>[...n.children].map(c=>c.textContent))),[['영업 메이드율','40.0%','수주 2 ÷ (수주 2 + 실주 3) · 배드핏 제외'],['문의 적합률','75.0%','적합 3 ÷ 문의 4'],['문의 → 계약 전환율','50.0%','수주 2 ÷ 문의 4'],['현재 전환율 (8월 문의)','50.0%','8월 문의 2건 중 지금까지 1건 계약']]);
   assert.match(await d.locator('.db-two .g').innerText(),/견적문의 종결 1건 · Bad Fit 1 · 영업 실패 아님 · 메이드율 제외\s*공사 범위 밖 1/);assert.match(await d.locator('.db-two .r').innerText(),/파이프라인 실주 3건 · 영업기회 상실 · 메이드율 포함\s*가격 열세 2 · 담당자 부재·인수인계 누락 1/);
   await page.evaluate(()=>{G.dashFunnelOff=false;paint();});await page.waitForTimeout(250);
   /* 월별: 3월 5억 · 9월 3억 · 10월 진행 중(점선) · 11~12월 빈칸 · 월평균 = 8억 ÷ 9 */
@@ -235,7 +235,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const c3=p.locator('.db-c3');assert.equal(await c3.count(),3);
   assert.match(await c3.nth(0).innerText(),/^기술자문 낙찰실적\s*협약시공사 수주 · 수주실적에 합산\s*아직 없음/);
   /* 2차 기능 6 · 7: 문의 코호트 전환율(접수 월 기준 최근 6개월) · 유입경로 → 계약 — 같은 문의 목록 · 같은 수주 판정 */
-  {const co=(await page.locator('#si-perf .db-co>span').allInnerTexts()).map(s=>s.trim());assert.equal(co.length,49,'머리 7칸 + 6개월 × 7칸');assert.deepEqual(co.slice(0,7),['접수 월','문의','적합','수주','진행 중','실주','확정 전환율']);
+  {const co=(await page.locator('#si-perf .db-co>span').allInnerTexts()).map(s=>s.trim());assert.equal(co.length,49,'머리 7칸 + 6개월 × 7칸');assert.deepEqual(co.slice(0,7),['접수 월','문의','적합','수주','진행 중','실주','현재 전환율']);
    const rows=[];for(let i=7;i<co.length;i+=7)rows.push(co.slice(i,i+7));assert.equal(rows[5][0],(await page.evaluate(()=>DashB.core().P.tm))+'월','마지막 줄 = 이번 달');
    rows.forEach(r=>{const [m,q,fit,won,open,lost]=r;assert.equal(Number(fit),Number(won)+Number(open)+Number(lost),m+': 적합 = 수주 + 진행 중 + 실주');assert.ok(Number(q)>=Number(fit));});
    assert.match(await page.locator('#si-perf .db-cos').first().locator('.db-con').innerText(),/^최근 달은 아직 진행 중이 많아 전환율이 낮게 보입니다\. 3개월 지난 달끼리 비교하세요\.$/);

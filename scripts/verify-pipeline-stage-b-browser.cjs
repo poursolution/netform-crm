@@ -20,7 +20,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     /* 컨설팅: 일정 없음(빨강 1순위) · 미팅 예정 · 미팅 완료 후 견적 3일 넘김(빨강 2순위) · 정상 */
     deal('c-none','일정 없는 컨설팅','이필선','consulting',{brand:'석민이앤씨',stage_entered_at:at(35)}),
     deal('c-plan','미팅 예정 컨설팅','이필선','consulting',{next_action:{id:'n1',type:'현장방문',text:'1차 미팅',due:day(3),status:'open'},stage_contexts:{first_contact:{fields:{needs:'옥상 누수',work_scope:'옥상 전체',expected_timing:'10월'}}}}),
-    deal('c-late','견적 늦은 컨설팅','황윤선','consulting',{amt:6e8,stage_entered_at:at(12),next_action:{id:'n2',type:'현장방문',text:'1차 미팅',due:day(-6),status:'open'},stage_contexts:{first_contact:{fields:{needs:'외벽 균열'}}}}),
+    deal('c-late','견적 늦은 컨설팅','황윤선','consulting',{amt:6e8,stage_entered_at:at(12),next_action:{id:'n2',type:'현장방문',text:'1차 미팅',due:day(-6),status:'open'},stage_contexts:{first_contact:{fields:{needs:'외벽 균열'}},consulting:{fields:{quote_request:'외벽 견적',quote_due:day(-1)}}}}),
     deal('c-ok','정상 컨설팅','황윤선','consulting',{stage_entered_at:at(4),next_action:{id:'n3',type:'견적',text:'견적 작성',due:day(2),status:'open'},stage_contexts:{first_contact:{fields:{needs:'옥상 방수',work_scope:'옥상',expected_timing:'11월'}},consulting:{fields:{quote_request:'옥상 방수',quote_due:day(2)}}}}),
     /* 발송: 7일 넘김 후속 없음 · 반응 기록 완료 · 대기 */
     deal('s-late','후속 없는 발송','이필선','sent',{amt:3.1e8,stage_contexts:{sent:{fields:{sent_date:day(-9),materials:['견적서']}}}}),
@@ -44,7 +44,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     /* 실주: 사유 없음 · 기록 완료 · 재영업 */
     deal('l-none','사유 없는 실주','이필선','lost',{outcome:'lost',closed_at:day(-3),stageHistory:[{from:'compete',to:'lost',at:day(-3)}]}),
     deal('l-rec','기록된 실주','황윤선','lost',{outcome:'lost',closed_at:day(-5),lost_reason:'가격 열세',stageHistory:[{from:'sent',to:'lost',at:day(-5)}],stage_contexts:{lost:{fields:{competitor:'타사 B'}}}}),
-    deal('l-re','재영업 실주','이필선','lost',{outcome:'lost',closed_at:day(-40),lost_reason:'공법',next_action:{id:'n9',text:'2027 재입찰 확인',due:day(60),status:'open'},stage_contexts:{lost:{fields:{competitor:'타사 C',recontact_possibility:'높음'}}}})
+    deal('l-re','재영업 실주','이필선','lost',{outcome:'lost',closed_at:day(-40),lost_reason:'공법',next_action:{id:'n9',text:'2027 재입찰 확인',due:day(60),status:'open'},stage_contexts:{lost:{fields:{competitor:'타사 C',recontact_possibility:'높음',reengage:'예'}}}})
    ],inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.pipeRowV11Off=true;/* 이 검사는 목록 줄 v11 이전의 줄(끄기 스위치 뒤)을 본다 — v11 줄은 scripts/verify-pipeline-row-v11-browser.cjs */ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.psb=null;G.pipeStageV3Off=true;/* 공통 틀 v3 는 verify-pipeline-stage-v3-browser.cjs — 이 검사는 끄기 스위치 뒤의 B안 */G.relSegOff=true;/* 관계관리 새 배치는 verify-relationship-segment-browser.cjs — 이 검사는 예전 화면(단계 이름 기준) */
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
@@ -56,32 +56,32 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#pipeline-list-v2').count(),0,'v2 목록은 안 그린다');assert.equal(await page.locator('#pg-pipe>.cf-bar:not([hidden])').count(),1,'공통 필터줄(브랜드 · 검색)');
   assert.match(await b.locator('.psb-head').innerText(),/^컨설팅 설계\s+1차 현장미팅으로 고객 요구를 확인하고 견적을 준비하는 단계 · 물량 산출 목표 3일 · 최대 5일 \(견적 요청 등록일부터 · 견적팀\)$/);/* 2026-10-07 stage7 ① */
   /* 진단: 막대 3칸 · 숫자 · 사유 */
-  assert.deepEqual((await b.locator('.psb-axis .leg button').allInnerTexts()).map(x=>x.replace(/\s+/g,' ')),['미팅 전 · 일정 없음 1','미팅 예정 1','미팅 완료 · 견적 준비 2']);
-  assert.match(await b.locator('.psb-kpis').innerText(),/기준 넘김 \(빨강\)\s*2건[\s\S]*미팅 전 · 일정 없음\s*1건[\s\S]*평균 체류\s*\d+일/);
-  const reasons=await b.locator('.psb-reason span').allInnerTexts();assert.deepEqual(reasons.slice(0,2),['미팅 일정 없음','물량 산출 기한 넘김'/* stage7 ① */],'빨강 사유가 표 순서대로 '+reasons.join(','));
-  assert.match(await b.locator('.psb-act').first().innerText(),/미팅 일정 없음 1건\s*첫 통화에서 1차 미팅 날짜까지 잡기/);
+  assert.deepEqual((await b.locator('.psb-axis .leg button').allInnerTexts()).map(x=>x.replace(/\s+/g,' ')),['미팅 여부 확인 필요 1','미팅 예정 1','미팅 기록 · 견적 준비 2']);
+  assert.match(await b.locator('.psb-kpis').innerText(),/기준 넘김 \(빨강\)\s*2건[\s\S]*미팅 여부 확인 필요\s*1건[\s\S]*평균 체류\s*\d+일/);
+  const reasons=await b.locator('.psb-reason span').allInnerTexts();assert.deepEqual(reasons.slice(0,2),['미팅 여부 확인 필요','물량 산출 기한 넘김'/* stage7 ① */],'빨강 사유가 표 순서대로 '+reasons.join(','));
+  assert.match(await b.locator('.psb-act').first().innerText(),/미팅 여부 확인 필요 1건\s*기존 연락·미팅 기록 확인 → 미팅이 없었다면 일정 협의/);
   /* 리스트: 빨강 사유 순서(일정 없음 → 견적 3일 넘김) → 사유 개수 → 체류일 */
   const sites=async()=>page.locator('#pipeline-stage-b .psb-row .l b').allInnerTexts();
   assert.deepEqual(await sites(),['일정 없는 컨설팅','견적 늦은 컨설팅','미팅 예정 컨설팅','정상 컨설팅']);
-  const r0=b.locator('.psb-row').first();assert.match(await r0.innerText(),/일정 없는 컨설팅\s*석민이앤씨 · 이필선 · 2억\s*미팅 전\s*일정 없음\s*미팅 일정 없음\s*35일\s*미팅 잡기/);
+  const r0=b.locator('.psb-row').first();assert.match(await r0.innerText(),/일정 없는 컨설팅\s*석민이앤씨 · 이필선 · 2억\s*미팅 여부 확인 필요\s*미팅 여부 확인 필요\s*미팅 여부 확인 필요\s*35일\s*미팅 확인/);
   assert.equal(await r0.evaluate(n=>getComputedStyle(n).borderLeftColor),'rgb(232, 89, 12)','브랜드 띠');
-  assert.match(await b.locator('.psb-row',{hasText:'견적 늦은 컨설팅'}).innerText(),/미팅 완료[\s\S]*물량 산출 기한 넘김\s*12일\s*견적 요청/);/* stage7 ① */
+  assert.match(await b.locator('.psb-row',{hasText:'견적 늦은 컨설팅'}).innerText(),/견적 요청 · 미팅 미확인[\s\S]*물량 산출 기한 넘김\s*12일\s*견적 요청/);/* stage7 ① */
   /* 막대 칸 · 사유 클릭 = 필터 */
-  await b.locator('.psb-axis .leg button').nth(2).click();await page.waitForTimeout(250);assert.deepEqual(await sites(),['견적 늦은 컨설팅','정상 컨설팅']);assert.match(await page.locator('#pipeline-stage-b .psb-lhead em').innerText(),/미팅 완료 · 견적 준비/);
+  await b.locator('.psb-axis .leg button').nth(2).click();await page.waitForTimeout(250);assert.deepEqual(await sites(),['견적 늦은 컨설팅','정상 컨설팅']);assert.match(await page.locator('#pipeline-stage-b .psb-lhead em').innerText(),/미팅 기록 · 견적 준비/);
   await page.locator('#pipeline-stage-b .psb-reason[data-v="req"]').click();await page.waitForTimeout(250);assert.deepEqual(await sites(),['견적 늦은 컨설팅']);
   await page.locator('#pipeline-stage-b [data-psb="clear"]').click();await page.waitForTimeout(250);assert.equal((await sites()).length,4);
   /* 보드 = 막대 3칸 */
   await page.locator('#pipeline-stage-b [data-psb="view"][data-v="board"]').click();await page.waitForTimeout(250);
-  assert.deepEqual(await page.locator('#pipeline-stage-b .psb-col .ch b').allInnerTexts(),['미팅 전 · 일정 없음','미팅 예정','미팅 완료 · 견적 준비']);assert.equal(await page.locator('#pipeline-stage-b .psb-card').count(),4);
+  assert.deepEqual(await page.locator('#pipeline-stage-b .psb-col .ch b').allInnerTexts(),['미팅 여부 확인 필요','미팅 예정','미팅 기록 · 견적 준비']);assert.equal(await page.locator('#pipeline-stage-b .psb-card').count(),4);
   if(shot)await page.screenshot({path:shot+'-board.png',fullPage:true});
   await page.locator('#pipeline-stage-b [data-psb="view"][data-v="list"]').click();await page.waitForTimeout(250);
   /* 버튼 → 기존 상세 + 액션 · 줄 → 상세 */
   await page.locator('#pipeline-stage-b .psb-row',{hasText:'일정 없는 컨설팅'}).locator('button').click();await page.waitForTimeout(300);
-  assert.equal(await page.evaluate(()=>__open),'c-none');assert.equal(await page.evaluate(()=>__act),'next','미팅 잡기 = 다음 할 일');
+  assert.equal(await page.evaluate(()=>__open),'c-none');assert.equal(await page.evaluate(()=>__act),'next','미팅 확인 = 다음 할 일');
   await page.locator('#pipeline-stage-b .psb-row',{hasText:'정상 컨설팅'}).locator('.l').click();await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>__open),'c-ok');
   if(shot)await page.screenshot({path:shot+'-consulting.png',fullPage:true});
   /* 단계 전환: 발송 · 관계 · 경쟁 · 계약 · 수주 · 실주 — 막대 칸과 첫 빨강 사유 */
-  const expect={sent:[['D+7 전 · 후속 대기','7일 넘김 · 후속 없음','후속 완료 · 반응 기록'],'후속 없는 발송','발송 후 7일 · 후속 없음'],relationship:[['집중관리 · 7일 단위','일반관리 · 월 1회','대기 · 2개월 1회'],'집중 현장','집중관리 7일 넘게 연락 없음'],competition:[['참여 · 가격 결정 대기','서류 · 제안서 준비','제출 완료 · 결과 대기'],'입찰 D-2','마감 D-3 · 준비 안 됨'],construction:[['계약 진행','시공팀 인계','착공 · 시공 중'],'계약 진행','계약일 · 금액 미입력'],won:[['수주 정보 미기록','계약일 · 착공 · 준공 확인','실적 · 완료 정보 완료'],'','수주 유형 · 낙찰금액 · 낙찰사 미기록'],lost:[['기록 보완 필요','기록 완료','재영업 가능 · 예'/* stage7 ⑦ · stage7_2 ⑥ */],'사유 없는 실주','실주 사유 미입력']};
+  const expect={sent:[['발송 근거 · 후속 확인','7일 넘김 · 후속 없음','후속 완료 · 반응 기록'],'후속 없는 발송','발송 후 7일 · 후속 없음'],relationship:[['집중관리 · 7일 단위','일반관리 · 월 1회','대기 · 2개월 1회'],'집중 현장','집중관리 7일 넘게 연락 없음'],competition:[['참여 · 가격 결정 대기','서류 · 제안서 준비','제출 완료 · 결과 대기'],'입찰 D-2','마감 D-3 · 준비 안 됨'],construction:[['계약 진행','시공팀 인계','착공 · 시공 중'],'계약 진행','계약일 · 금액 미입력'],won:[['수주 정보 미기록','계약일 · 착공 · 준공 확인','실적 · 완료 정보 완료'],'','수주 결과 항목 보완 필요'],lost:[['기록 보완 필요','기록 완료','재영업 가능 · 예'/* stage7 ⑦ · stage7_2 ⑥ */],'사유 없는 실주','실주 사유 미입력']};
   for(const [key,[bars,firstSite,firstReason]] of Object.entries(expect)){
    await page.evaluate(k=>PipelineWorkspace.open(k),key);await page.waitForTimeout(300);
    assert.equal(await page.locator('#pipeline-stage-b').getAttribute('data-stage'),key);

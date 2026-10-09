@@ -123,16 +123,17 @@
   });
   /* 이번 주 일정에는 오늘 처리에 이미 든 건(기한 도래)을 또 세지 않는다 · 오늘 날짜 일정은 오늘 처리 */
   const fb=firstBefore(name),now=Date.now(),late=fb.filter(q=>{try{const a=Date.parse(R.inquiryAssignedAt(q)||'');return Number.isFinite(a)&&(now-a)/36e5>FIRST_H();}catch(e){return false;}});
-  const rel={focus:0,normal:0,wait:0};
-  (wsRows||[]).forEach(x=>{try{if(x.group!=='relationship'||R.repN(x.owner)!==name)return;const s=R.RelV12.state(x);if(rel[s.key]!=null)rel[s.key]++;}catch(e){}});
+  const rel={focus:0,normal:0,wait:0,hold:0,unk:0};let relUnknown=!Array.isArray(wsRows);
+  (wsRows||[]).forEach(x=>{try{if(x.group!=='relationship'||R.repN(x.owner)!==name)return;const s=R.RelV12.state(x);if(rel[s.key]!=null)rel[s.key]++;else rel.unk++;}catch(e){relUnknown=true;}});
   const kinds={};sched.forEach(s=>kinds[s.kind]=(kinds[s.kind]||0)+1);
   const schedText=sched.length?sched.length+' · '+Object.keys(kinds).map(k=>k+' '+kinds[k]).join(' · '):'0';
-  const relN=rel.focus+rel.normal+rel.wait,relText=relN?[rel.focus?'집중 '+rel.focus:'',rel.normal?'일반 '+rel.normal:'',rel.wait?'대기 '+rel.wait:''].filter(Boolean).join(' · '):'—';
+  const relN=Object.values(rel).reduce((a,n)=>a+n,0),relText=relUnknown?'집계 미확인':relN?[rel.focus?'집중 '+rel.focus:'',rel.normal?'일반 '+rel.normal:'',rel.wait?'대기 '+rel.wait:'',rel.hold?'보류 '+rel.hold:'',rel.unk?'분류 미확인 '+rel.unk:''].filter(Boolean).join(' · '):'0';
+  const noNext=cur.filter(d=>{try{const a=R.actionObj(d,patch(d));return !(a&&String(a.text||'').trim()&&dk(a.due||a.due_at));}catch(e){return true;}}),stale=Number(r.stale)||0;
   let judge='가능';
-  if(fb.length)judge='첫 연락 먼저';else if(due.length>=LIMIT.busy)judge='여유 없음';else if(miss.length>=LIMIT.fix)judge='기록 보완 먼저';
-  return {name,due,sched,first:fb,late,miss,rel,relN,relText,schedText,judge,counts:{due:due.length,sched:sched.length,first:fb.length,fix:miss.length}};
+  if(fb.length)judge='첫 연락 먼저';else if(due.length>=LIMIT.busy)judge='여유 없음';else if(noNext.length||stale||rel.unk||relUnknown||miss.length>=LIMIT.fix)judge='기록 보완 먼저';
+  return {name,due,sched,first:fb,late,miss,noNext,stale,rel,relN,relUnknown,relText,schedText,judge,counts:{due:due.length,sched:sched.length,first:fb.length,fix:miss.length}};
  }
- function loadAll(rows){let ws=[];try{ws=R.PipelineWorkspace.rows({unscoped:true});}catch(e){}return (rows||[]).map(r=>loadOf(r,ws));}
+ function loadAll(rows){let ws=null;try{ws=R.PipelineWorkspace.rows({unscoped:true});}catch(e){}return (rows||[]).map(r=>loadOf(r,ws));}
  const JUDGE_STYLE={'가능':['#1f7a4d','#e8f6ee'],'기록 보완 먼저':['#3d4b8c','#edf0fb'],'여유 없음':['#b42318','#fdecec'],'첫 연락 먼저':['#b42318','#fdecec']};
  /* ── ⑦ 왜 이 판단인지: 모달 · 측정 기준 근거 패널과 같은 모양(km-panel) ── */
  const WS=()=>R.G.ew||(R.G.ew={why:null,page:1});
@@ -185,7 +186,7 @@
   L.sched.forEach(x=>rows.push(row(x,x.kind,'ok','이번 주 '+md(x.k)+' · '+(x.a&&x.a.text||''))));
   L.miss.forEach(x=>rows.push(row(x,'기록 보완',x.mk==='cur'?'bad':'na',x.mk==='cur'?'현재 업무 · 기록 없음':'과거 이관 · 자료 확인')));
   const st=JUDGE_STYLE[L.judge]||JUDGE_STYLE['가능'];
-  return {title:L.name+' · 신규 배정 '+L.judge,tiles:[['오늘 처리',L.due.length+'건'],['첫 연락 전',L.first.length+'건'],['기록 보완',L.miss.length+'건']],cond:'오늘 처리(기한 도래 · 초과) · 이번 주 일정(미팅 · 현설 · PT · 입찰 · 방문) · 첫 연락 전 · 관리 고객(집중 · 일반 · 대기) · 기록 보완 5칸으로 판단 — 첫 연락 전이 있으면 첫 연락 먼저 → 오늘 처리 '+LIMIT.busy+'건 이상이면 여유 없음 → 기록 보완 '+LIMIT.fix+'건 이상이면 기록 보완 먼저 → 그 밖 가능',exc:'수주 · 실주 · 종료 · 과거 이관(진행 범위 밖) · 문턱 숫자는 잠정 기준(설정값 아님)',sum:'판단 = '+L.judge,rows,_st:st};
+  return {title:L.name+' · 신규 배정 '+L.judge,tiles:[['오늘 처리',L.due.length+'건'],['첫 연락 전',L.first.length+'건'],['기록 보완',L.miss.length+'건']],cond:'오늘 처리(기한 도래 · 초과) · 이번 주 일정(미팅 · 현설 · PT · 입찰 · 방문) · 첫 연락 전 · 관리 고객(집중 · 일반 · 대기) · 기록 보완 5칸으로 판단 — 첫 연락 전이 있으면 첫 연락 먼저 → 오늘 처리 '+LIMIT.busy+'건 이상이면 여유 없음 → 기록 보완 '+LIMIT.fix+'건 이상이면 기록 보완 먼저 → 다음 행동 미등록·정체·관계 분류 미확인이 있으면 기록 보완 먼저 → 그 밖 가능',exc:'수주 · 실주 · 종료 · 과거 이관(진행 범위 밖) · 문턱 숫자는 잠정 기준(설정값 아님)',sum:'판단 = '+L.judge,rows,_st:st};
  }
  /* ── ⑥ 기한 미루기 ── */
  const openDue=d=>{let a=null;try{a=R.actionObj(d,patch(d));}catch(e){}const k=a&&(a.due||a.due_at)?dk(a.due||a.due_at):'';return {a,k};};

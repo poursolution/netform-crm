@@ -44,12 +44,12 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const d2=await ymd(-39),d5=await ymd(-37),due5=await ymd(4);
   const rows=await L.locator('.prv-row').evaluateAll(l=>l.map(r=>{const t=s=>{const n=r.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():null;};return [t('.prv-a>b'),t('.prv-a>span'),t('.prv-b>span'),t('.prv-b>small'),t('.prv-c>b'),t('.prv-c>small'),t(':scope>button'),r.querySelector(':scope>button').dataset.v,r.dataset.ps3];}));
   if(process.env.DUMP)fs.writeFileSync(process.env.DUMP,JSON.stringify(rows,null,1));assert.deepEqual(rows,[
-   ['[경기 용인] 가람마을아파트','석민이앤씨 · 공종 미분류 · 황윤선','미팅 일정 없음','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','관리소장 첫 통화','3일 지남','연락 기록','next','open'],
-   ['새빛파크뷰','POUR솔루션 · 공종 미분류 · 이승우','미팅 일정 없음','최근 연락 시도 '+d2[0],'관리과장 재통화','오늘까지','연락 기록','next','open'],
-   ['[서울 노원] 상계7단지','POUR솔루션 · 공종 미분류 · 이필선','미팅 일정 없음','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','입대의 일정 확인 전화','내일까지','연락 기록','next','open'],
-   ['전농아름숲','POUR솔루션 · 공종 미분류 · 정정훈','미팅 일정 없음','최근 연락 시도 '+d5[0]+' · 연결됨','방문 일정 확정',due5[1]+'까지','일정 등록','next','open'],
+   ['[경기 용인] 가람마을아파트','석민이앤씨 · 공종 미분류 · 황윤선','미팅 여부 확인 필요','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','관리소장 첫 통화','3일 지남','미팅 확인','next','open'],
+   ['새빛파크뷰','POUR솔루션 · 공종 미분류 · 이승우','미팅 여부 확인 필요','최근 연락 시도 '+d2[0],'관리과장 재통화','오늘까지','미팅 확인','next','open'],
+   ['[서울 노원] 상계7단지','POUR솔루션 · 공종 미분류 · 이필선','미팅 여부 확인 필요','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','입대의 일정 확인 전화','내일까지','미팅 확인','next','open'],
+   ['전농아름숲','POUR솔루션 · 공종 미분류 · 정정훈','미팅 여부 확인 필요','최근 연락 시도 '+d5[0]+' · 연결됨','방문 일정 확정',due5[1]+'까지','미팅 확인','next','open'],
    ['[경기 인천] 삼보','POUR솔루션 · 공종 미분류 · 미배정','담당자 미지정','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','담당자 배정','기한 없음 · 정하기','담당 배정','owner','open'],
-   ['한강제이타워','POUR솔루션 · 공종 미분류 · 정정훈','미팅 일정 없음','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','첫 통화에서 미팅 날짜 잡기','판정 불가 · 기한 계산 안 함','연락처 찾기','contact','open']]);
+   ['한강제이타워','POUR솔루션 · 공종 미분류 · 정정훈','미팅 여부 확인 필요','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','기존 연락·미팅 기록 확인 → 첫 연락 전이면 연락 후 일정 협의','판정 불가 · 기한 계산 안 함','연락처 찾기','contact','open']]);
   /* 판정 하나(2026-10-06 집계 · 판정 정리 ② ③ ④): 다음 업무 아래 '판정: 근거', 현재 상황 아래 '최근 실제 연결 / 실제 연결 없음' */
   assert.deepEqual(await L.locator('.prv-row').evaluateAll(l=>l.map(r=>[((r.querySelector('.prv-c>small.why')||{}).textContent||'').replace(/[\d.]+/g,'D'),r.querySelector('.prv-b>small.cn').textContent.replace(/[\d.]+/g,'D')])),[['판정: 다음 행동일 D','실제 연결 없음'],['판정: 다음 행동일 D','실제 연결 없음'],['판정: 다음 행동일 D','실제 연결 없음'],['판정: 다음 행동일 D','최근 실제 연결 D'],['판정: 판정 불가 · 미팅 · 연락 기록 없음(이관 전 기록 확인) → 데이터 검토에서 이관 전 기록 확인','실제 연결 없음'],['판정: 판정 불가 · 미팅 · 연락 기록 없음(이관 전 기록 확인) → 데이터 검토에서 이관 전 기록 확인','실제 연결 없음']].map((x,i)=>i===4?['','실제 연결 없음']:x)/* 미배정 줄은 담당 배정이 먼저 — 판정 줄 없음 */,'판정 줄 · 실제 연결 줄');
   assert.equal(await page.evaluate(()=>document.querySelectorAll('#pipeline-stage-v3 .prv-more,#pipeline-stage-v3 .prv-main,#pipeline-stage-v3 [data-ps3="toggle"]').length),0,'펼침 칸 · 펼침 누름이 없다');
@@ -91,7 +91,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    assert.deepEqual([(await b.locator('.prv-head span').allInnerTexts()).map(one),await b.locator('.ps3-diag .ps3-box').count()>=1,await b.locator('.prv-row.ps3-row').count(),await b.locator('.prv-more,.prv-main').count()],[['현장 · 담당','현재 상황','다음 업무 · 기한',''],true,1,0],key+': 같은 줄 · 진단은 그대로 · 펼침 없음');
    assert.deepEqual(await b.locator('.prv-row').first().evaluate(r=>{const t=s=>r.querySelector(s).innerText.replace(/\s+/g,' ').trim();return [t('.prv-a>b'),t('.prv-a>span'),t('.prv-b>small'),t('.prv-c>small'),t(':scope>button')];}),want,key);
    assert.match(one(await b.locator('.prv-b>span').first().innerText()),key==='won'?/^수주 · \d{4}\.\d{1,2}\.\d{1,2} · 9,200만$/:/^실주 · \d{4}\.\d{1,2}\.\d{1,2}$/,key+': 줄 = 결과 · 날짜 · 금액(stage7)');
-   assert.equal(one(await b.locator('.prv-b>small.base').first().innerText()),key==='won'?'수주 유형 · 낙찰금액 · 낙찰사 미기록':'실주 사유 미입력',key+': 기준일 줄 = 빠진 정보');
+   assert.equal(one(await b.locator('.prv-b>small.base').first().innerText()),key==='won'?'수주 결과 항목 보완 필요':'실주 사유 미입력',key+': 기준일 줄 = 빠진 정보');
    assert.equal(await b.locator('.prv-c>small').first().evaluate(n=>n.classList.contains('amb')&&getComputedStyle(n).color),'rgb(192, 57, 43)',key+': 확인 필요는 붉은 계열');
    if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'pipe-v11-'+key+'.png')});
   }

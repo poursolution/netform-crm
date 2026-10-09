@@ -62,13 +62,13 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const shot=async n=>{if(process.env.SHOT_DIR)await page.screenshot({path:require('node:path').join(process.env.SHOT_DIR,'scope-'+n+'.png')});};
   const L=page.locator('#pipeline-legacy');await shot('legacy');
   /* 정리안(2026-10-06 design_handoff_legacy): 제목 줄 숫자 3개 · 담당자별 재개 카드 · 탭 4개 + 예전 단계 선택칸 · v11 모양 줄 — 상세는 scripts/verify-pipeline-legacy-browser.cjs */
-  assert.equal(one(await L.locator('.plg-head').innerText()),'과거 이관 · 분류 전 예전 시스템에서 옮겨 온 자료 · 진행 건수 · 메이드율 계산에 안 들어감 전체 6 · 바로 재개 가능 4 · 배정 후 재개 가능 2 · 서버 보완 필요 0');
+  assert.equal(one(await L.locator('.plg-head').innerText()),'과거 이관 · 분류 전 예전 시스템에서 옮겨 온 자료 · 진행 건수 · 메이드율 계산에 안 들어감 전체 6 · 담당자 확인 대상 4 · 담당 배정 후 확인 2 · 서버 보완 필요 0');
   assert.deepEqual(await L.locator('.plg-owner').evaluateAll(l=>l.map(n=>n.querySelector('b').textContent+' '+n.querySelector('span').textContent)),['이필선 2건','한준엽 1건','황윤선 1건','담당 없음 2건']);
-  assert.deepEqual((await L.locator('.plg-tabs [role="tab"]').allInnerTexts()).map(one),['전체 6','바로 재개 가능 4','담당 없음 2','서버 보완 필요 0']);
+  assert.deepEqual((await L.locator('.plg-tabs [role="tab"]').allInnerTexts()).map(one),['전체 6','담당자 확인 대상 4','담당 없음 2','서버 보완 필요 0']);
   const rows=await L.locator('.plg-row').evaluateAll(l=>l.map(r=>{const t=s=>r.querySelector(s).innerText.replace(/\s+/g,' ').trim();return [r.dataset.key,t('.prv-a span'),t('.prv-c'),t(':scope>button'),t('.prv-b')];}));
   assert.equal(rows[0][0],'l3','CRM 기록이 있는 건이 먼저');assert.equal(rows[0][2],'CRM 기록 있음 지난 응대 이력 이어서 사용');
-  assert.deepEqual(rows.find(r=>r[0]==='l1').slice(1),['브랜드 미지정 · 예전 등록 2025.3','CRM 기록 없음 새로 시작 · 첫 연락부터','영업 재개','예전 단계 · 검증된 고객 기존 담당 이필선']);
-  assert.deepEqual(rows.find(r=>r[0]==='l5').slice(2,4),['CRM 기록 없음 새로 시작 · 첫 연락부터','영업 재개'],'서버에 단계 값이 비어 있어도 영업 재개(출발 단계 unclassified · sql/transition-null-stage-v1-20261007.sql)');
+  assert.deepEqual(rows.find(r=>r[0]==='l1').slice(1),['브랜드 미지정 · 예전 등록 2025.3','CRM 기록 없음 기존 연락·결과·현재 추진 여부 확인','영업 재개','예전 단계 · 검증된 고객 기존 담당 이필선']);
+  assert.deepEqual(rows.find(r=>r[0]==='l5').slice(2,4),['CRM 기록 없음 기존 연락·결과·현재 추진 여부 확인','영업 재개'],'서버에 단계 값이 비어 있어도 영업 재개(출발 단계 unclassified · sql/transition-null-stage-v1-20261007.sql)');
   assert.deepEqual(rows.find(r=>r[0]==='l6').slice(3),['담당 배정','예전 단계 · 검증된 고객 기존 담당 김성준 · CRM 명단에 없음'],'명단에 없는 담당의 과거 이관 자료도 목록에 있다(배정이 필요한 자료)');
   assert.equal(rows.some(r=>r[3]==='서버 보완 요청'),false,'서버 보완 요청 줄이 없다');
   await L.locator('select[data-plg="old"]').selectOption('검증된 고객');await page.waitForTimeout(200);
@@ -93,7 +93,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.equal(r1[0],1,'컨설팅 설계 목록에 과거 이관이 없다');assert.match(r1[1],/ · 옥상\(우레탄\) · /);assert.match(r1[2],/^1차 미팅 (\d+일 지남|오늘까지|내일까지|\d{1,2}\/\d{1,2}까지)( 판정: .+)?$/);assert.equal(r1[3],'open','줄 = 바로 상세');
   await page.evaluate(()=>PipelineWorkspace.open('sent'));await page.waitForSelector('#pipeline-stage-v3 .ps3-row[data-key="a2"]');
   await shot('rows');
-  assert.deepEqual(await page.evaluate(()=>{const r=document.querySelector('#pipeline-stage-v3 .ps3-row[data-key="a2"]'),t=s=>{const n=r.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():null;};return [t('.prv-c>small'),/ · 공종 미분류 · /.test(t('.prv-a>span')),t('.prv-c>b')];}),['판정 불가 · 기한 계산 안 함',true,'발송일 · 자료 · 수신자 입력']/* 발송일 · 연락 기록이 없는 건은 기한을 세지 않는다(2026-10-06 집계 ④) · stage7 ②: 발송일 없는 건의 다음 업무 = 발송일 · 자료 · 수신자 입력 */);
+  assert.deepEqual(await page.evaluate(()=>{const r=document.querySelector('#pipeline-stage-v3 .ps3-row[data-key="a2"]'),t=s=>{const n=r.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():null;};return [t('.prv-c>small'),/ · 공종 미분류 · /.test(t('.prv-a>span')),t('.prv-c>b')];}),['판정 불가 · 기한 계산 안 함',true,'실제 발송 · 기존 증빙 확인']/* 발송일 · 연락 기록이 없는 건은 기한을 세지 않는다(2026-10-06 집계 ④) · stage7 ②: 발송일 없는 건의 다음 업무 = 실제 발송 · 기존 증빙 확인 */);
   /* ⑥ 끄면 예전처럼: 예전 단계 값이 컨설팅 설계로 들어온다 */
   const off=await page.evaluate(()=>{G.pipeScopeOff=true;PipelineWorkspace.open('all');const r=PipelineWorkspace.rows();const out=[r.filter(x=>x.group==='consulting').length,!!document.querySelector('#pipeline-stage-menu .plv-legacy')];G.pipeScopeOff=false;PipelineWorkspace.open('all');return out;});
   assert.deepEqual(off,[6,false]);

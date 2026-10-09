@@ -39,7 +39,7 @@ test('새 비교 화면도 교차 브랜드 후보를 확실한 중복으로 표
  assert.equal(window.DupV2.judge(C.classify(...crossBrand())),'maybe');
 });
 test('같은 현장 다른 공종은 Deal 병합이 아닌 Site 연결',()=>assert.equal(C.classify(row('1'),row('2',{works:['재도장>외부']})).action,'site_link'));
-test('ASQ와 POUR는 다른 영업기회로 보존',()=>assert.equal(C.classify(row('1'),row('2',{brand:'아파트스퀘어'})).action,'site_link'));
+test('ASQ와 POUR는 다른 영업기회로 보존',()=>assert.equal(C.classify(row('1'),row('2',{brand:'아파트스퀘어'})).action,'defer'));
 test('동일 공종 가까운 시기는 검토만',()=>assert.equal(C.classify(row('1'),row('2')).action,'deal_review'));
 test('같은 번호 다른 현장은 사람 이동 검토',()=>assert.equal(C.classify(row('1',{mobile:'010-1234-5678'}),row('2',{name:'다른 단지',address:'창원시 테스트로 3',mobile:'01012345678'})).action,'contact_move'));
 test('이름 동일 주소 다름은 별도 현장',()=>assert.equal(C.classify(row('1'),row('2',{address:'서울시 테스트로 5'})).action,'separate'));
@@ -47,7 +47,7 @@ test('상담담당과 영업담당 차이는 판단 근거 아님',()=>assert.eq
 test('빈 주소/전화번호로 같은 현장 판정하지 않음',()=>assert.equal(C.classify(row('1',{name:'가람',address:'',office:''}),row('2',{name:'새빛',address:'',office:''})),null));
 test('이름만 비슷하면 보류 추천',()=>assert.equal(C.classify(row('1',{address:'',office:''}),row('2',{address:'',office:'',works:[]})).action,'defer'));
 test('중복 문의는 1일 이내 + 확인 가능한 식별정보 필요',()=>{const a=row('1',{ref:{type:'inquiry',id:'i1'}}),b=row('2',{ref:{type:'inquiry',id:'i2'},at:'2026-09-02'});assert.equal(C.classify(a,b).action,'inquiry_merge');assert.notEqual(C.classify(a,{...b,at:'2026-09-05'}).action,'inquiry_merge')});
-test('과거 수주와 올해 영업은 각각 유지',()=>assert.equal(C.classify(row('1',{at:'2024-09-01'}),row('2')).action,'site_link'));
+test('과거 수주와 올해 영업은 각각 유지',()=>assert.equal(C.classify(row('1',{at:'2024-09-01'}),row('2')).action,'defer'));
 test('같은 record ID 자기 자신 제외',()=>assert.equal(C.classify(row('1'),row('1')),null));
 test('Site와 이미 귀속된 자식 Deal을 중복 후보로 만들지 않음',()=>assert.equal(C.classify(row('o1',{ref:{type:'organization',id:'o1'}}),row('d1',{siteId:'o1'})),null));
 test('같은 Site ID에 이미 연결된 정상 복수 영업은 현장 연결 후보에서 제외',()=>assert.equal(C.classify(row('1',{siteId:'site-a'}),row('2',{siteId:'site-a',works:['재도장>외부']})),null));
@@ -58,3 +58,28 @@ test('미확인 날짜로 중복 Deal 확정 안 함',()=>assert.notEqual(C.clas
 test('CRM inline JS / modules parse',()=>{const html=fs.readFileSync(path.join(__dirname,'../crm.html'),'utf8');for(const s of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))new vm.Script(s[1]);new vm.Script(fs.readFileSync(path.join(__dirname,'../data-cleanup-ui.js'),'utf8'))});
 test('미배포 cleanup 계약은 원시 오류 대신 검토 전용 UI로 전환',()=>{const ui=fs.readFileSync(path.join(__dirname,'../data-cleanup-ui.js'),'utf8');assert.match(ui,/PHASE1_RPC_DENIED/);assert.match(ui,/검토 전용/);assert.match(ui,/S\.readOnly/)});
 test('SQL: 원본 삭제 없음, 인증/충돌검사/감사 기록 있음',()=>{const sql=fs.readFileSync(path.join(__dirname,'../sql/20260905_data_cleanup.sql'),'utf8');assert.doesNotMatch(sql,/delete\s+from\s+public\.(deals|inquiries|organizations|contacts)/i);assert.match(sql,/auth\.uid\(\)/);assert.match(sql,/fingerprint' is distinct from/);assert.match(sql,/crm_cleanup_audit/);assert.match(sql,/revoke all on function/)});
+
+const judge=c=>{const window={CleanupCore:C},document={readyState:'loading',addEventListener(){}};vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../dup-v2.js'),'utf8'),{window,document});return window.DupV2.judge(c);};
+test('공종 미입력은 현장 후보 분류를 거쳐도 합치기 추천·실행으로 우회하지 않는다',()=>{
+ for(const type of ['inquiry','deal']){
+  const a=row('a',{ref:{type,id:'a'},works:[]}),b=row('b',{ref:{type,id:'b'},works:['옥상','아스콘']});
+  const c=C.classify(a,b);assert.equal(c.action,'defer');assert.equal(judge(c),'maybe');
+  assert.equal(c.evidence.work,'unknown');assert.equal(c.evidence.construction,'unverified');
+  assert.match(C.mergeIssue(c,'site_merge'),/현장 원본/);assert.match(C.mergeIssue(c,type==='inquiry'?'inquiry_merge':'deal_review'),/공종 미입력/);
+ }
+});
+test('사업유형·등록 연도 차이는 다른 공사의 확정 근거로 쓰지 않는다',()=>{
+ for(const patch of [{brand:'아파트스퀘어'},{at:'2024-01-01'},{brand:'아파트스퀘어',at:'2024-01-01'}]){
+  const c=C.classify(row('a'),row('b',patch));assert.equal(c.action,'defer');assert.equal(judge(c),'maybe');
+  assert.equal(c.evidence.construction,'unverified');assert.doesNotMatch(c.text,/정상적인 복수 영업입니다/);
+ }
+});
+test('같은 공종·가까운 등록일도 공사 범위·시기 확인을 대신하지 않는다',()=>{
+ const c=C.classify(row('a'),row('b'));assert.equal(c.action,'deal_review');assert.equal(judge(c),'maybe');
+ assert.equal(c.evidence.registrationGapDays,0);assert.equal(c.evidence.construction,'unverified');
+});
+test('번지 하이픈을 보존하고 원본·정규화 주소를 비교 데이터로 제공한다',()=>{
+ const c=C.classify(row('a',{address:'서울특별시 검증동 54-1'}),row('b',{address:'서울 검증동 541'}));
+ assert.equal(c.action,'separate');assert.ok(c.reasons.includes('등록 주소 서로 다름'));
+ assert.deepEqual(c.evidence.addresses,[{original:'서울특별시 검증동 54-1',normalized:'서울 검증동 54-1'},{original:'서울 검증동 541',normalized:'서울 검증동 541'}]);
+});

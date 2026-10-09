@@ -115,7 +115,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(nd,{code:'first_contact',site:'[서울 마포] 새로찾은아파트',assignee:'이필선',src:'referral',out:true,inb:'inbound',next:['전화','전화 · 니즈 확인',due,'open'],inq:0},'유입 구분은 영업건에 남고 견적문의는 생기지 않는다');
   assert.match(await page.evaluate(()=>__toasts.join(' | ')),/새로찾은아파트 · 옥상\(우레탄\) \+ 지하주차장\(에폭시\) 영업을 등록했습니다 — 파이프라인 · 컨설팅 설계 · 유입 소개/);
   await page.evaluate(()=>PipelineWorkspace.open('consulting'));await page.waitForTimeout(400);
-  assert.deepEqual(await page.locator('#pipeline-stage-v3 .ps3-row').evaluateAll(l=>l.map(r=>[r.querySelector('.prv-a b').textContent.trim(),r.dataset.tab,r.querySelector('button').textContent])),[['[서울 마포] 새로찾은아파트','0','연락 기록']],'컨설팅 설계 · 미팅 전');/* 목록 줄 v11: 버튼 = 업무 동사 */
+  assert.deepEqual(await page.locator('#pipeline-stage-v3 .ps3-row').evaluateAll(l=>l.map(r=>[r.querySelector('.prv-a b').textContent.trim(),r.dataset.tab,r.querySelector('button').textContent])),[['[서울 마포] 새로찾은아파트','0','미팅 확인']],'컨설팅 설계 · 미팅 전');/* 목록 줄 v11: 버튼 = 업무 동사 */
 
   /* ── 재영업: [기존 현장 찾기] → 같은 현장의 다른 공사 · 관리소장 승계 ── */
   await page.evaluate(()=>{__writes.length=0;});await openIt();

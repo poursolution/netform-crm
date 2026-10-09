@@ -28,14 +28,32 @@
  function sort(list,rowOf){
   return list.map((x,i)=>{const r=rowOf(x),n=r&&r.due?dayNum(r.due):null;return {x,i,n:n==null?1e9:n};}).sort((a,b)=>a.n-b.n||a.i-b.i).map(o=>o.x);
  }
+ /* 경쟁·입찰: 다음 업무 기한과 입찰 일정은 독립 근거다. 연락 기록만으로 기존 업무를 완료하지 않는다. */
+ function competitionEvidence(r){
+  const d=r.item||{},J=root.PipelineJudge,b=J&&J.on()?J.basis(d,'competition'):null;
+  const scheduleMissing=dayNum(r.date)==null,nextMissing=dayNum(r.due)==null;
+  const late=!!(b&&b.src==='next'&&J.isLate(b));
+  let connected='';try{connected=KD(root.ContactState.of(d,'deal').lastConnectedAt||'');}catch(e){}
+  const review=late&&!!connected&&connected>KD(r.due);
+  const warning=b&&b.kind==='norecord'?'판정 불가 · 이관 기록 확인':b&&b.kind==='none'?'일정 미등록 · 기한 판정 불가':review?'기존 후속 업무 처리 확인':late?'후속 업무 '+J.dueText(b):'';
+  const p=patchOf(d),entered=p.stageEnteredAt||p.stageChangedAt||d.stageEnteredAt||d.stage_entered_at||d.stageChangedAt||'';
+  const age=entered&&r.stall!=null&&Number.isFinite(Number(r.stall))?Number(r.stall):null;
+  return {basis:b,scheduleMissing,nextMissing,late,review,warning,age,ageText:age==null?'진입일 미확인':'진입 '+age+'일',task:review?'기존 업무 처리 확인 → 다음 행동 갱신':'',amountText:'예상 금액'};
+ }
+ /* 목록·보드·끄기 스위치 뒤에서도 같은 우선순위. 조회 권한이나 저장 경로는 바꾸지 않는다. */
+ function primaryAction(r,btn,closed){
+  const owner=String(r.owner||'').trim(),a=btn||['열기',''];
+  if(!closed&&(!owner||owner==='미배정'))return ['담당 배정','owner'];
+  return a;
+ }
  const head=()=>'<div class="prv-head" role="row"><span>현장 · 담당</span><span>현재 상황</span><span>다음 업무 · 기한</span><span></span></div>';
  /* o = {r(행), now(한 줄 상태), task(다음 업무 — 등록된 다음 할 일이 없을 때), btn[이름, 동작], closed(수주 · 실주), tab}
     ns = 그 화면의 누름 속성 이름(ps3 · psb — 줄 = data-ns="open" · 버튼 = data-ns="act"), cls = 그 화면의 줄 클래스(예전 선택자 유지) */
  function row(o,ns,cls){
   const r=o.r,d=r.item,bc=BRAND[d.brand]||'',owner=String(r.owner||'').trim(),noOwner=!o.closed&&(!owner||owner==='미배정');
   const due=r.due?dayNum(r.due):null,hasNext=!!(r.next&&r.next.text);
-  let btn=o.btn||['열기',''];const contactAct=btn[1]==='next'||btn[1]==='activity';
-  if(noOwner)btn=['담당 배정','owner'];else if(!o.closed&&contactAct&&!telOf(d))btn=['연락처 찾기','contact'];
+  let btn=primaryAction(r,o.btn,o.closed);
+  if(!o.closed&&['next','activity'].includes(btn[1])&&!telOf(d))btn=['연락처 찾기','contact'];
   const now=noOwner?'담당자 미지정':(o.now||'');
   /* decision_collab ②③: '현재 상황' 앞 막힌 곳 꼬리표([고객] / [내부 · 견적팀] / [내부 · 자료 부족]) · 뒤에 '연락 n회 · 진척 없음 n일'(주황) */
   let tagHtml='',staleHtml='';try{const DC=root.DecisionCollab,tg=DC&&DC.on()&&!noOwner?DC.tags(d):null;if(tg&&tg.block)tagHtml='<em class="dcb-tag'+(tg.block==='고객'?'':' in')+'">'+h(tg.block)+'</em>';if(tg&&tg.stale)staleHtml='<small class="dcb-stale" title="'+attr(tg.stale)+'">'+h(tg.stale)+'</small>';}catch(e){}
@@ -55,5 +73,5 @@
    +'<div class="prv-c"><b'+(task?'':' class="none"')+' title="'+attr(task)+'">'+h(task||'다음 업무 없음')+'</b>'+dueHtml+(o.staleNext?'<small class="why stale" title="'+attr(o.staleNext)+'">'+h(o.staleNext)+'</small>':'')+'</div>'
    +'<button type="button" '+A+'="act" data-key="'+key+'" data-v="'+attr(btn[1])+'">'+h(btn[0])+'</button></div>';
  }
- root.PipelineRowV11={on,head,row,sort,dueText};
+ root.PipelineRowV11={on,head,row,sort,dueText,competitionEvidence,primaryAction};
 })(window);

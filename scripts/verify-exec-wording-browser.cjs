@@ -98,6 +98,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await page.evaluate(()=>ExecWording.markText(window.__ppRes)),/^\[기한 변경\] 원래 2026-09-20 \(17일 지남\) \| 새 2026-10-10 \| 사유 고객 요청 · 입대의 후 연락$/);
   assert.equal(await page.evaluate(()=>(DashB.core().loss||[]).length>=0),true);
   /* ── 5 영업사원 관리: 업무량 5칸 + 신규 배정 판단 ── */
+  const auditLoad=await page.evaluate(()=>{const cur=Array.from({length:17},(_,i)=>({id:'capacity-'+i,assignee:'검증담당',code:'consulting',stage_code:'consulting',site:'합성 현장'}));const x=ExecWording.loadOf({nm:'검증담당',current:cur,stale:17},[]),u=ExecWording.loadOf({nm:'검증담당',current:[],stale:0},null);return {judge:x.judge,noNext:x.noNext.length,zero:x.relText,unknown:u.relText};});
+  assert.deepEqual(auditLoad,{judge:'기록 보완 먼저',noNext:17,zero:'0',unknown:'집계 미확인'},'다음 행동 없는 17건을 신규 배정 여유로 취급하지 않는다');
   await page.evaluate(()=>{goPage('repmanage');});await page.waitForTimeout(500);
   const rb=page.locator('#reps-b');assert.equal(await rb.count(),1);
   const ld=page.locator('.ew-load');assert.equal(await ld.count(),1,'업무량 5칸 블록');
@@ -105,8 +107,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const L=await page.evaluate(()=>ExecWording.loadAll(REP_MANAGER_ROWS).map(l=>[l.name,l.due.length,l.first.length,l.late.length,l.miss.length,l.judge]));
   const lp=L.find(x=>x[0]==='이필선'),hy=L.find(x=>x[0]==='황윤선');assert.ok(lp&&hy,'사람 '+JSON.stringify(L));
   assert.equal(lp[2],2,'이필선 첫 연락 전 2건(기한 안 1 · 2시간 넘김 1)');assert.equal(lp[3],1,'밀린 첫 연락 = 2시간 넘김 1건');assert.equal(lp[5],'첫 연락 먼저','첫 연락 전이 있으면 신규 배정은 첫 연락 먼저');
-  assert.equal(hy[1],2,'황윤선 오늘 처리 = 기한 지난 2건');assert.equal(hy[5],'가능');
-  const lrow=ld.locator('.ew-lr:not(.h)').filter({hasText:'이필선'});assert.match(await lrow.innerText(),/이필선\s*0\s*1 · 입찰 1\s*2\s*—\s*\d+\s*첫 연락 먼저/);
+  assert.equal(hy[1],2,'황윤선 오늘 처리 = 기한 지난 2건');assert.equal(hy[5],'기록 보완 먼저');
+  const lrow=ld.locator('.ew-lr:not(.h)').filter({hasText:'이필선'});assert.match(await lrow.innerText(),/이필선\s*0\s*1 · 입찰 1\s*2\s*0\s*\d+\s*첫 연락 먼저/);
   assert.match(await ld.locator('footer').innerText(),/첫 연락 기준 신규 문의는 배정 후 2시간 안 · 밀린 첫 연락 1건 정리 · 금요일까지로 따로[\s\S]*조치 n건 = 견적문의 \+ 파이프라인 모두[\s\S]*신규 배정 판단 첫 연락 전이 있으면 첫 연락 먼저/);
   assert.match(await rb.locator('.psb-row[data-key="이필선"]').innerText(),/신규 배정 첫 연락 먼저/,'사람 줄: 업무량 대신 신규 배정 판단');assert.doesNotMatch(await rb.innerText(),/관리부하/);
   /* 조치 n = 견적문의 + 파이프라인: 이필선 조치 = 위험 현장 + 첫 연락 전 2 */

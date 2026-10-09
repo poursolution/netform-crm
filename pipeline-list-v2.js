@@ -111,7 +111,7 @@
  }
  function brandStats(){
   const key=root.G.pipelineStage,sel=root.SalesFilterState.state().brands||[];let list=[];
-  try{list=root.PipelineWorkspace.rows({unscoped:true,search:root.G.q}).filter(r=>r.group===key&&root.SalesScope.matches(r.owner,r.item));}catch(e){list=[];}
+  try{list=root.PipelineWorkspace.rows(undefined,{ignoreBrand:true}).filter(r=>r.group===key);}catch(e){list=[];}
   const names=[...new Set(['석민이앤씨','POUR솔루션','POUR공법','아파트스퀘어'].concat(list.map(r=>r.item.brand).filter(Boolean)))];
   return [{name:'전체',n:list.length,on:!sel.length}].concat(names.map(b=>({name:b,n:list.filter(r=>r.item.brand===b).length,on:sel.includes(b)})));
  }

@@ -61,7 +61,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const rowOf=k=>L.locator('.prv-row[data-key$="'+k+'"]').evaluate(r=>{const t=s=>{const n=r.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():null;};return {tag:t('.prv-a>em.prv-tag'),tagBtn:!!r.querySelector('.prv-a>em.prv-tag[role="button"]'),now:t('.prv-b>span'),base:t('.prv-b>small.base'),task:t('.prv-c>b'),due:t('.prv-c>small:first-of-type'),dueCls:r.querySelector('.prv-c>small:first-of-type').className,why:t('.prv-c>small.why'),btn:t(':scope>button'),act:r.querySelector(':scope>button').dataset.v,tab:r.dataset.tab,stale:t('.prv-c>small.why.stale')};});
   /* ① 미확인이어도 연락 약속은 기한으로 · 약속이 없을 때만 '기한 없음' */
   const pu=await rowOf('p-unk'),pn=await rowOf('p-none');
-  assert.deepEqual([pu.tag,pu.tagBtn,pu.now,pu.task,pu.due,pu.dueCls,pu.btn,pu.act],['미확인 · 분류 필요',true,'다음 연락일 지남 · 약속 있음','재통화 시도','35일 지남 · '+await md(-35)+' 약속','r','연락 기록','activity'],'미확인 + 약속: 기한 그대로 · 약속 업무 먼저');
+  assert.deepEqual([pu.tag,pu.tagBtn,pu.now,pu.task,pu.due,pu.dueCls,pu.btn,pu.act],['미확인 · 분류 필요',true,'기존 일정 35일 경과 · 약속 여부 확인','재통화 시도','35일 지남 · '+await md(-35)+' 등록 일정','r','연락 기록','activity'],'미확인 + 약속: 기한 그대로 · 약속 업무 먼저');
   assert.deepEqual([pn.tag,pn.task,pn.due,pn.dueCls,pn.btn,pn.act],['미확인 · 분류 필요','상태 재분류','기한 없음 · 분류 후 정해짐','g','분류하기','classify'],'약속이 없을 때만 기한 없음');
   assert.deepEqual((await L.locator('.prv-row').evaluateAll(l=>l.map(r=>r.dataset.key.replace(/^deal:/,'')))).slice(0,2),['p-unk','p-none'],'재분류 목록은 연락 약속 있는 건부터');
   /* ③ 관리 기간: 일반관리 = 발송일부터 총 3개월 · 해석 미확정 · '1~4개월' 문구 없음 */
@@ -82,21 +82,21 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* ④ 설정: 확정 / 잠정 + 출처 · 적용 예정 */
   await page.evaluate(()=>{goPage('rules');});await page.waitForSelector('#rules-admin .ra-row');await page.waitForTimeout(200);
   const RA=await page.evaluate(()=>{const row=l=>{const r=[...document.querySelectorAll('#rules-admin .ra-row')].find(x=>x.querySelector('.ra-l b').textContent===l);return r?r.querySelector('.ra-l').innerText.replace(/\s+/g,' ').trim():null;};return {focus:row('집중관리 기간'),general:row('일반관리 기간'),wait:row('장기 대기 연락 주기'),all:row('고객관리 기간'),pend:(document.querySelector('#ra-pending')||{innerText:''}).innerText.replace(/\s+/g,' ').trim(),chips:[...document.querySelectorAll('#rules-admin .ra-conf')].map(e=>e.textContent)};});
-  assert.match(RA.focus,/잠정/);assert.match(RA.focus,/출처 · 회의록 · 승인 전/);assert.match(RA.general,/잠정 · 해석 미확정/);assert.match(RA.general,/총 이 기간까지는 일반관리/);assert.match(RA.wait,/확정/);assert.match(RA.wait,/출처 · 회의 2026\.9/);assert.match(RA.all,/출처 · 회의 2026\.9 · 송보람 승인/);
+  assert.match(RA.focus,/잠정/);assert.match(RA.focus,/출처 · 관계관리 검토에 임시 사용 · 1개월=30일 환산/);assert.match(RA.general,/잠정 · 해석 미확정/);assert.match(RA.general,/총 이 기간까지는 일반관리/);assert.match(RA.wait,/확정/);assert.match(RA.wait,/현재 계산은 설정 일수/);assert.match(RA.all,/기간 잠정 · 해석 미확정/);assert.doesNotMatch(RA.all,/송보람 승인/);
   assert.match(RA.pend,/적용 예정/);assert.match(RA.pend,/→ 단계 이동 창/);assert.match(RA.pend,/→ 관계관리 재분류/);assert.match(RA.pend,/→ 상세 담당 변경/);
   /* ⑤ 계약 · 시공 4상태 */
   await page.evaluate(()=>{G.ps3=null;PipelineWorkspace.open('construction');});await page.waitForSelector('#pipeline-stage-v3[data-stage="construction"] .prv-row');await page.waitForTimeout(250);
-  assert.deepEqual(await V.locator('.ps3-tab').evaluateAll(l=>l.map(t=>[t.querySelector('.l').textContent,t.querySelector('span').textContent,Number(t.querySelector('.n').textContent)])),[['전체','이 단계 모든 현장',6],['계약 체결','계약일 · 금액 · 계약서',2],['착공 준비','착공일 미입력 · 착공일 확인',1],['시공 중','착공일 입력 후 · 주 1회 방문',2],['준공 확인','준공검사 · 고객 확인',1]],'4상태 + 전체 = 합');
+  assert.deepEqual(await V.locator('.ps3-tab').evaluateAll(l=>l.map(t=>[t.querySelector('.l').textContent,t.querySelector('span').textContent,Number(t.querySelector('.n').textContent)])),[['전체','이 단계 모든 현장',6],['계약 확인','계약일 · 금액 · 계약서',2],['착공 준비','착공일 미입력 · 착공일 확인',1],['시공 중','착공일 입력 후 · 주 1회 방문',2],['준공 확인','준공검사 · 고객 확인',1]],'4상태 + 전체 = 합');
   const ci=await rowOf('c-info'),ns=await rowOf('c-nostart'),cb=await rowOf('c-build'),cf=await rowOf('c-fin');
   assert.deepEqual([ci.tab,ci.task,ci.btn,ns.tab,ns.task,ns.btn,ns.act,cb.tab,cb.task,cb.btn,cf.tab,cf.task],['0','계약 정보 입력','정보 입력','1','착공일 확인','착공일 입력','stagefields','2','주간 현장 방문','현장 확인','3','준공 확인'],'계약일만으로 시공 중 아님 · 착공일 없으면 착공 준비');
   assert.equal(ns.stale,'"계약 체결 확인" 종료 대상','끝난 상태의 업무는 종료 대상 표시');
   assert.deepEqual(await V.locator('.ps3-reason').evaluateAll(l=>l.map(b=>[b.querySelector('span>b').textContent,Number(b.querySelector('.c').textContent)])),[['계약일 · 금액 없음',2],['착공일 미입력',1],['인계서 미확인',1],['시공 중 주 1회 방문 없음',2],['준공 확인 없음',1]]);
   /* ⑥⑦⑧ 실주: 기록 완료 = 사유 + 재영업 여부 · 경쟁사는 경쟁사 낙찰일 때만 · 왼쪽 칸 = 완성률 + 보완할 것 */
   await page.evaluate(()=>{G.ps3=null;PipelineWorkspace.open('lost');});await page.waitForSelector('#pipeline-stage-v3[data-stage="lost"] .prv-row');await page.waitForTimeout(250);
-  assert.deepEqual(await V.locator('.ps3-tab').evaluateAll(l=>l.map(t=>[t.querySelector('.l').textContent,Number(t.querySelector('.n').textContent)])),[['전체',4],['기록 보완 필요',2],['기록 완료',1],['재영업 가능 · 예',1]]);
-  assert.deepEqual(await V.locator('.prv-row').evaluateAll(l=>l.map(r=>[r.dataset.key.replace(/^deal:/,''),r.dataset.tab])).then(a=>a.sort()),[['l-cancel','1'],['l-comp','2'],['l-none','0'],['l-undecided','0']].sort());
+  assert.deepEqual(await V.locator('.ps3-tab').evaluateAll(l=>l.map(t=>[t.querySelector('.l').textContent,Number(t.querySelector('.n').textContent)])),[['전체',4],['기록 보완 필요',3],['기록 완료',1],['재영업 가능 · 예',0]]);
+  assert.deepEqual(await V.locator('.prv-row').evaluateAll(l=>l.map(r=>[r.dataset.key.replace(/^deal:/,''),r.dataset.tab])).then(a=>a.sort()),[['l-cancel','1'],['l-comp','0'],['l-none','0'],['l-undecided','0']].sort());
   const side=await V.locator('.ps3-diag').innerText();
-  assert.match(one(side),/결과 기록 완성률 50% 2 \/ 4/);assert.match(one(side),/보완할 것 2건/);assert.doesNotMatch(side,/평균 체류|왜 멈춰 있나/,'체류 · 왜 멈춰 있나는 없음');
+  assert.match(one(side),/결과 기록 완성률 25% 1 \/ 4/);assert.match(one(side),/보완할 것 3건/);assert.doesNotMatch(side,/평균 체류|왜 멈춰 있나/,'체류 · 왜 멈춰 있나는 없음');
   assert.deepEqual(await V.locator('.ps3-reason').evaluateAll(l=>l.map(b=>[b.querySelector('span>b').textContent,Number(b.querySelector('.c').textContent)])),[['실주 사유 미입력',1],['경쟁사 낙찰 · 경쟁사 · 낙찰가 미입력',1],['재영업 가능 여부 미입력',2],['재접촉 할 일 없음',0]],'경쟁사 필수는 경쟁사 낙찰 1건만 · 사업 취소는 해당 없음(세지 않음) · 미정은 미입력');
   assert.equal(one(await L.locator('.prv-row[data-key$="l-cancel"] .prv-b>small.base').innerText()),'기록 완료 · 경쟁사 해당 없음');
   /* ⑤ 자료 없음 3가지 */

@@ -86,7 +86,7 @@
  /* 이 문의 줄에만 붙은 기록으로 본 판정. 화면은 state(q) 를 쓴다(같은 건의 연락을 합친 것) */
  function own(q){
   if(!q||typeof q!=='object')return {firstAttemptAt:'',firstConnectedAt:'',attempts:0,spaced:0,unreachable:false,logs:[]};
-  const p=patchOf(q),sig=[(q.activities||[]).length,(p.activities||[]).length,q.status,q.first_response_at,q.responded_at,q.respondedAt,p.firstResponseAt,q.lastActivity,SV].join('|'),c=memo.get(q);
+  const p=patchOf(q),sig=[(q.activities||[]).length,(p.activities||[]).length,q.status,q.first_response_at,q.responded_at,q.respondedAt,p.firstResponseAt,q.lastActivity,SV,rule('unreachable_interval_days',1),rule('unreachable_attempts',3)].join('|'),c=memo.get(q);
   if(c&&c.sig===sig)return c.v;
   const S=server(q),L=logs(q),min=(a,b)=>!a?b||'':!b?a:(tOf(a)<=tOf(b)?a:b);
   let fa=S&&S.first_attempt_at||'',fc=S&&S.first_connected_at||'';

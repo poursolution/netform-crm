@@ -24,6 +24,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      deal('44444444-4444-4444-8444-444444444444','침묵 현장','이필선','silent',ok(4,'이소장'),{brand:'석민이앤씨'})],
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],campaigns:[]};
    G.smsBOff=true;/* B안(2026-10-03)은 verify-sms-b 에서 */LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
+   B.deals.filter(d=>d.code==='sent').forEach(d=>{d.stage_contexts={sent:{fields:{sent_date:new Date(Date.now()-10*864e5).toLocaleDateString('en-CA')}}};d.activities=[];});
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    /* 연락처는 시험 자료의 contacts 를 그대로 쓴다 */
    siteContacts=d=>d.contacts||[];contactInfo=d=>(d.contacts||[])[0]||{};
@@ -45,7 +46,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await v.locator('.plv-thead span').allInnerTexts(),['묶음 이름 · 출처','구분','대상','발송 가능','보낼 때','마지막 발송','']);
   assert.deepEqual(await v.locator('.plv-ghead b').allInnerTexts(),['지금 보낼 때','다가오는 시즌','정기 관계 문자','재활성']);
   assert.equal(await v.locator('.plv-row').count(),13);
-  assert.match(await v.locator('.plv-row[data-bundle="sent"]').innerText(),/자료 발송 후 무응답 — 후속 안내[\s\S]*영업팀[\s\S]*병목[\s\S]*3명[\s\S]*1명[\s\S]*지금[\s\S]*기록 없음[\s\S]*보내기/);
+  assert.match(await v.locator('.plv-row[data-bundle="sent"]').innerText(),/발송 후 반응 기록 미확인 — 후속 안내[\s\S]*영업팀[\s\S]*병목[\s\S]*3명[\s\S]*1명[\s\S]*지금[\s\S]*기록 없음[\s\S]*보내기/);
   assert.equal(await v.locator('.plv-row[data-bundle="y3"] .plv-c .r').count(),1,'발송 가능 0은 빨강');
   assert.match(await v.locator('.plv-row[data-bundle="yearend"]').innerText(),/12월 15일[\s\S]*D-\d+/);
   if(shot)await page.screenshot({path:shot+'-list.png',fullPage:true});
@@ -54,7 +55,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 보내기 창 */
   await v.locator('.plv-row[data-bundle="sent"] .plv-cta').click();await page.waitForTimeout(200);
   const d=page.locator('#smsDialog.on .sd-box');assert.equal(await d.count(),1);
-  assert.match(await d.locator('.sd-head').innerText(),/문자 보내기[\s\S]*자료 발송 후 무응답 — 후속 안내[\s\S]*발송 이력/);
+  assert.match(await d.locator('.sd-head').innerText(),/문자 보내기[\s\S]*발송 후 반응 기록 미확인 — 후속 안내[\s\S]*발송 이력/);
   assert.equal(await d.locator('.sd-steps span').count(),5);
   assert.match(await d.locator('.sd-sum').innerText(),/대상\s*3명[\s\S]*발송 가능\s*1명[\s\S]*자동 제외\s*2명/);
   assert.match(await d.locator('.sd-why').innerText(),/자동 제외 — [\s\S]*문자 수신동의 없음 1명[\s\S]*휴대폰번호 없음 1명|자동 제외 — [\s\S]*휴대폰번호 없음 1명[\s\S]*문자 수신동의 없음 1명/);

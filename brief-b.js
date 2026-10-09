@@ -11,7 +11,7 @@
     · 담당자별 진행 · 장기정체의 '전주 값'은 생성일 · 종료일 · 연락 기록으로 그 시점을 다시 계산한 것
    다음 주 반드시 끝낼 것: 규칙으로 뽑은 후보에 담당 · 기한을 정해 [등록] → 주간 스냅샷(report_snapshots.promises · 열쇠 = 보고 주 월요일)에 저장 → 다음 주 '전주 문제 → 결과' 표의 행이 되고, 결과는 그때 자료로 다시 센다.
    잔디: 서버 함수 crm-jandi(웹훅 주소는 서버 비밀값)로 실제 발송한다. 자동 발송 = 월요일 08:30 이후 관리자 화면이 열려 있으면 그 주 한 번(서버가 중복을 막는다), [다시 보내기] = 회의에서 정한 약속을 넣어 다시 발송. 보낸 시각은 스냅샷 payload.jandi 에 남는다.
-   확정 전환율 = 그 달 접수 문의 중 지금까지 계약된 비율 — 문의에 연결된 영업건의 계약, 연결 기록이 없으면 같은 현장에서 문의 접수 뒤에 체결된 계약으로 센다.
+   현재 전환율 = 그 달 접수 문의 중 지금까지 계약된 비율 — 문의에 연결된 영업건의 계약, 연결 기록이 없으면 같은 현장에서 문의 접수 뒤에 체결된 계약으로 센다.
    끄기: G.briefBOff=true → 이전 주간 브리핑(brief-v2). */
 (function(root){
  'use strict';
@@ -144,7 +144,7 @@
   const quotes=AD.filter(d=>quoteIn(d,w.a,w.b)),quotesP=AD.filter(d=>quoteIn(d,w.p,w.a));
   const con=contractsIn(L,w.a,w.b),conP=contractsIn(L,w.p,w.a);
   const loss=AD.filter(d=>isLoss(d)&&inW(closedKey(d))),lossP=AD.filter(d=>isLoss(d)&&inP(closedKey(d)));
-  /* 확정 전환율(코호트): 보고 주가 속한 달의 2달 전 달에 접수된 문의 중 지금까지 계약(수주)된 비율 */
+  /* 현재 전환율(코호트): 보고 주가 속한 달의 2달 전 달에 접수된 문의 중 지금까지 계약(수주)된 비율 */
   const cm=new Date(w.a+'T00:00:00');cm.setDate(1);cm.setMonth(cm.getMonth()-2);const ym=cm.getFullYear()+'-'+pad(cm.getMonth()+1);
   const cohort=AQ.filter(q=>K(R.inquiryCreatedAt(q)).slice(0,7)===ym),cwon=cohort.filter(q=>inquiryContract(q,L,AD)).length,linked=cohort.length;
   /* 영업 이동 */
@@ -158,7 +158,9 @@
    const q=newQ.filter(x=>R.inquirySalesOwner(x)===n).length,qt=quotes.filter(d=>R.repN(d.assignee)===n).length,c=contractsIn(L,w.a,w.b,n);
    const moves=mine.filter(d=>movedIn(d,w.a,w.b)||actedIn(d,w.a,w.b)).length+q+qt+c.count;
    let note,red=false;
-   if(!o1&&!c.count){note='진행 0건 — 배정 검토';red=true;}
+   const first=R.ExecWording?R.ExecWording.firstBefore(n):AQ.filter(x=>R.inquirySalesOwner(x)===n&&!R.isClosedInq(x)&&!R.inquiryResponded(x));
+   if(first.length){note='첫 연락 기록 미확인 '+first.length+'건 우선 확인';red=true;}
+   else if(!o1&&!c.count){note='진행 0건 — 배정 검토';red=true;}
    else if(!moves){note='이번 주 이동 0 — 기록 확인 필요';red=true;}
    else if(s1<s0)note='정체 '+(s0-s1)+'건 해소'+(c.count?' → 계약 '+c.count+'건':'');
    else if(s1>s0){note='정체 '+(s1-s0)+'건 늘어남';red=true;}
@@ -174,13 +176,13 @@
   const add=(kind,list,t,why,act,due,ownersOf)=>{if(!list.length)return;cands.push({kind,t,why,act,n:list.length,ids:list.map(x=>String(x.id||R.inqKey(x))),owners:(ownersOf||owners)(list),due});};
   const bid=OPEN.filter(d=>{const c=R.dealStage(d);return ['bidding','compete','imminent'].includes(c)&&soon(K(c==='bidding'?fld(d,'bidding','bid_deadline'):c==='compete'?fld(d,'compete','meeting_date'):fld(d,'imminent','expected_contract')));});
   add('bid_soon',bid,'입찰 · PT 임박 '+bid.length+'건 준비 확인',bid.slice(0,2).map(d=>d.site||'현장').join(' · ')+(bid.length>2?' 외 '+(bid.length-2):''),'제안서 · PT · 현설 준비 상태 확인','월요일');
-  const qd=OPEN.filter(d=>{if(groupOf(R.dealStage(d))!=='consulting')return false;const due=K(fld(d,'consulting','quote_due'));return due?due<w.today:(R.stageAge(d)||0)>5;});
-  add('quote_delay',qd,'견적 지연 '+qd.length+'건 발송','견적 예정일이 지났거나 5일 넘게 견적 준비 중','담당자별 원인 확인 · 견적 요청 재정리','월요일');
+  const qd=OPEN.filter(d=>{if(groupOf(R.dealStage(d))!=='consulting')return false;const due=K(fld(d,'consulting','quote_due'));return !!due&&due<w.today&&!!String(fld(d,'consulting','quote_request')||'').trim();});
+  add('quote_delay',qd,'견적 지연 '+qd.length+'건 발송','견적 요청이 등록되어 있고 예정일이 지난 건 · 단계 체류일만으로 지연 판정하지 않음','담당자별 원인 확인 · 견적 요청 재정리','월요일');
   const nr=AQ.filter(q=>!R.isClosedInq(q)&&R.inquiryAssigned(q)&&!R.inquiryResponded(q));
-  add('no_response',nr,'신규 문의 미응대 '+nr.length+'건 첫 연락','배정됐지만 첫 연락 기록이 없는 문의','담당자 첫 연락 · 결과 기록','월요일',list=>tally(list,q=>R.inquirySalesOwner(q)||'미배정').filter(o=>o[0]!=='미배정').slice(0,2).map(o=>o[0]));
+  add('no_response',nr,'첫 연락 기록 미확인 '+nr.length+'건 확인','배정됐지만 첫 연락 기록이 없는 문의','담당자 첫 연락 · 결과 기록','월요일',list=>tally(list,q=>R.inquirySalesOwner(q)||'미배정').filter(o=>o[0]!=='미배정').slice(0,2).map(o=>o[0]));
   const st=OPEN.filter(d=>(R.activityAge(d)||0)>STALE());
   add('stale60',st,STALE()+'일 이상 미접촉 '+st.length+'건 재접촉','마지막 연락이 '+STALE()+'일을 넘은 진행 건','재접촉 · 담당 재배정','수요일');
-  let nm=[];try{nm=R.managementStats(target).nextMissing||[];}catch(e){}
+  let nm=[];try{const J=R.PipelineJudge;nm=J.nextRate(J.metricSource('deal')).list;nm.forEach(d=>byId.set(String(d.id),d));}catch(e){}
   add('no_next',nm,'다음 행동 미등록 '+nm.length+'건 등록','진행 건인데 다음 할 일 · 날짜가 없음','담당자별 코칭 · 다음 행동 등록 요청','수요일');
   const ce=OPEN.filter(d=>{const c=R.dealStage(d);return c==='contract'?fld(d,'contract','contract_status')!=='체결 완료'&&soon(K(fld(d,'contract','contract_date'))):c==='imminent'&&soon(K(fld(d,'imminent','expected_contract')));});
   const ceAmt=ce.reduce((a,d)=>a+Number(fld(d,'contract','contract_amount')||d.amount||d.amt||0),0);
@@ -198,7 +200,7 @@
   const each=(get,ok,gone,when)=>ids.forEach(id=>{const o=get(String(id));if(!o){r2++;return;}if(ok(o)){r1++;if(when&&dueKey){let k='';try{k=when(o)||'';}catch(e){}if(k&&k>dueKey)late++;}}else if(gone(o))r2++;else left++;});
   const deal=id=>x.byId.get(id),closed=d=>!R.isOpen(d);
   if(pr.kind==='quote_delay'){L=['발송 완료','종료 · 다른 처리','자료 대기'];each(deal,d=>quoteIn(d,since,far)||['sent','relationship','competition','construction'].includes(groupOf(R.dealStage(d))),closed,d=>quoteIn(d,since,far)&&!quoteIn(d,since,dueEnd)?far:'');}
-  else if(pr.kind==='no_next'){L=['등록','종료','미완료'];each(deal,d=>R.isOpen(d)&&!!R.actionObj(d,R.itemPatch(d,'deal')||{}),closed);}
+  else if(pr.kind==='no_next'){L=['등록','종료','미완료'];each(deal,d=>R.isOpen(d)&&R.PipelineJudge.nextRate([d]).num===1,closed);}
   else if(pr.kind==='stale60'){L=['재접촉','관계관리 · 종료','미접촉'];each(deal,d=>R.isOpen(d)&&lastActKey(d,far)>=since&&groupOf(R.dealStage(d))!=='relationship',d=>closed(d)||(groupOf(R.dealStage(d))==='relationship'&&entered(d,'relationship',since,far)),d=>lastActKey(d,dueEnd)>=since?'':far);}
   else if(pr.kind==='bid_soon'){L=['정상 진행','종료','보완 필요'];each(deal,d=>R.isOpen(d)&&lastActKey(d,far)>=since,closed,d=>lastActKey(d,dueEnd)>=since?'':far);}
   else if(pr.kind==='contract_expected'){L=['계약','종료','진행 중'];const signed=new Map(),signedAt=new Map();x.L.rows.forEach(r=>(r.events||[]).forEach(e=>{if(e.kind==='signed'&&e.effective_date>=since){signed.set(String(r.deal_id),(signed.get(String(r.deal_id))||0)+(Number(e.amount_delta)||0));if(!signedAt.has(String(r.deal_id))||e.effective_date<signedAt.get(String(r.deal_id)))signedAt.set(String(r.deal_id),e.effective_date);}}));each(deal,d=>signed.has(String(d.id))||R.isWon(d),d=>closed(d)&&!R.isWon(d),d=>signedAt.get(String(d.id))||'');
@@ -252,7 +254,7 @@
   const rates=[['문의 적합률',pctText(fitR),pp(fitR,fitRp),'적합 '+x.fit+' ÷ 문의 '+x.newQ.length+' · 문의 품질'],
    ['영업 메이드율',pctText(made),pp(made,madeP),con?(pw.count||tf.count||tfL?'(직접 '+directCon.count+' + 협약 · 기술자문 '+pw.count+' + 타사 이관 '+tf.count+') ÷ (직접 '+directCon.count+' + 협약 · 기술자문 '+pw.count+' + 타사 이관 '+tf.count+' + 파이프라인 실주 '+(x.loss.length+tfL)+') · 배드핏 제외':'수주 '+directCon.count+' ÷ (수주 '+directCon.count+' + 파이프라인 실주 '+x.loss.length+') · 배드핏 제외'):'계약실적 원장을 읽은 뒤 계산합니다'],
    ['문의 → 계약 전환율',pctText(conv),pp(conv,convP),con?'계약 '+cN+' ÷ 문의 '+x.newQ.length+' · 이번 주 활동 비율':'계약실적 원장을 읽은 뒤 계산합니다'],
-   ['확정 전환율 ('+Number(x.ym.slice(5))+'월 문의)',pctText(coh),'',x.cohort.length?Number(x.ym.slice(5))+'월 문의 '+x.cohort.length+'건 중 지금까지 계약 '+x.cwon+'건 · 진짜 전환 성과':Number(x.ym.slice(5))+'월에 접수된 문의가 없습니다']];
+   ['현재 전환율 ('+Number(x.ym.slice(5))+'월 문의)',pctText(coh),'',x.cohort.length?Number(x.ym.slice(5))+'월 문의 '+x.cohort.length+'건 중 지금까지 계약 '+x.cwon+'건 · 현재까지 확인된 계약 결과':Number(x.ym.slice(5))+'월에 접수된 문의가 없습니다']];
   const lossT=tally(x.loss,lossReason),chg=x.loss.filter(d=>{try{return !!(R.DealKeyman&&R.DealKeyman.changeOf(d));}catch(e){return false;}}).length;
   const s1Old='<section class="bb-card bb-main"><div class="bb-cap"><span>이번 주 성과</span><small>견적문의가 계약까지 얼마나 이어졌나</small></div>'
    +'<div class="bb-funnel">'+fn.map(u=>'<div class="bb-fn'+u[4]+'"><span>'+h(u[0])+'</span><b>'+h(u[1])+'</b><em class="'+u[3]+'">'+h(u[2])+'</em></div>').join('')+'</div>'
@@ -266,19 +268,19 @@
     const ro=s=>{const c=s.charCodeAt(s.length-1)-0xAC00;return c>=0&&c<=11171&&c%28!==0&&c%28!==8?'으로':'로';};
     const steps=[['신규 견적문의',x.newQ.length,x.newQp.length],['적합 문의',x.fit,x.fitP],['견적 발송',x.quotes.length,x.quotesP.length],['신규 계약',con?cN:null,con?pN:null]];
     /* 끊긴 단계 = 앞 칸은 있는데 0이 된 첫 칸(원장을 못 읽은 계약 칸은 판단하지 않는다) */
-    let br=-1;for(let i=1;i<4;i++){if(steps[i][1]==null)break;if(steps[i-1][1]>0&&steps[i][1]===0){br=i;break;}}
+    const br=-1;/* 서로 다른 기간 발생 집합을 같은 문의의 이탈로 판정하지 않는다. */
     const sg=(a,b)=>a===b?['전주와 같음','']:a>b?['▲'+(a-b)+' 전주 대비','up']:['▼'+(b-a)+' 전주 대비','down'];
     const head=br>0?steps[br-1][0]+' '+steps[br-1][1]+'건이 '+steps[br][0]+ro(steps[br][0])+' 넘어가지 않았습니다 — 이번 주 '+steps[br][0]+' 0건':'문의 '+x.newQ.length+'건 → 견적 '+x.quotes.length+'건 → 계약 '+(con?cN+'건 · '+amt(cA):'원장 확인 중');
     const go=br===1?['inq','견적문의 '+steps[0][1]+'건 보기']:br===2?['inq','견적 대기 '+steps[1][1]+'건 보기']:br===3?['sent','견적 발송 '+steps[2][1]+'건 보기']:['contracts','계약 목록 보기'];
     const cells=steps.map((s,i)=>{const cut=i===br,prev=i?steps[i-1][1]:0,d=s[1]==null?['원장 확인 중','']:sg(s[1],s[2]);
-     const note=!i||s[1]==null?'':cut?'여기서 끊김 · '+prev+'건이 안 넘어옴':prev?Math.round(s[1]/prev*100)+'% 넘어옴':'';
+     const note=!i||s[1]==null?'':i===1?'신규 문의 중 분류 결과':'기간 발생 건수 · 동일 문의 전환 아님';
      return '<div class="bp2-step'+(cut?' cut':'')+'"><span class="l">'+h(s[0])+'</span><div class="v"><b>'+(s[1]==null?'—':s[1])+'</b><span>'+(s[1]==null?'':'건'+(i===3&&cA>0?' · '+h(amt(cA)):''))+'</span></div><span class="d '+d[1]+'">'+h(d[0])+'</span><span class="n">'+h(note)+'</span>'+(i<3?'<i class="ar" aria-hidden="true">→</i>':'')+'</div>';}).join('');
     const pv=(a,b)=>{if(a==null||b==null)return ['',''];const d=Math.round((a-b)*10)/10;return d?[(d>0?'▲':'▼')+Math.abs(d).toFixed(1)+'%p',d>0?'up':'down']:['',''];};
     const mo=Number(x.ym.slice(5)),bfw=flowOn()?'Bad Fit':'배드핏',wait='계약실적 원장을 읽은 뒤 계산합니다';
     const rs=[['문의 적합률',pctText(fitR),pv(fitR,fitRp),'적합 ÷ 문의 · 문의 품질'],
      ['영업 메이드율',pctText(made),pv(made,madeP),!con?wait:made==null?'이번 주 결과 난 건 없음':'수주 ÷ (수주 + 실주) · '+bfw+' 제외'],
      ['문의 → 계약',pctText(conv),pv(conv,convP),con?'이번 주 활동 비율':wait],
-     ['확정 전환율 ('+mo+'월 문의)',pctText(coh),['',''],x.cohort.length?mo+'월 문의 '+x.cohort.length+'건 중 지금까지 계약 '+x.cwon+'건':mo+'월에 접수된 문의가 없습니다']];
+     ['현재 전환율 ('+mo+'월 문의)',pctText(coh),['',''],x.cohort.length?mo+'월 문의 '+x.cohort.length+'건 중 지금까지 계약 '+x.cwon+'건':mo+'월에 접수된 문의가 없습니다']];
     /* 꼬리표: 수주(직접 / 협약 · 기술자문 / 타사 이관) · 파이프라인 실주(메이드율 포함) · 견적문의 종결(메이드율 제외) — 자세한 내역은 올려 두면 보인다 */
     const part=(n,a)=>n?n+'건 '+amt(a):'0';
     const who=pw.list.map(i=>(i.owner||'담당 미기록')+' · '+i.site+' · '+i.company+' 낙찰 '+amt(i.amount)).concat(tf.list.map(i=>i.owner+' · '+i.site+' · '+amt(i.amount)+' (타사 이관)')).join('\n');

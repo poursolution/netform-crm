@@ -25,7 +25,7 @@
    kpis:[K('전체 진행',eok(pipe),openN+'건 · 금액 미입력 '+noAmt),K('가중 예상',eok(sum(r=>r.forecast)),'단계 확률 적용'),K('확정 임박',eok(near),nearN+'건 · 경쟁·입찰~계약','good'),K('조치 필요',risk+'건','첫 연락 전 '+un+' · 정체 '+stale,risk?'bad':'')],
    cards:[{title:'어디서 막혔나',desc:'팀 전체 병목',bars:[['첫 연락 전',un],['다음 할 일 없음',sum(r=>r.noNext)],['정체',stale],['기한 초과',sum(r=>r.overdue)],['금액 미입력',noAmt]].filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]),empty:'막힌 곳이 없습니다'},
     {title:'누가 일이 몰렸나',desc:'담당별 Pipeline · 단위 억',bars:R.filter(r=>r.pipeline>0).sort((a,b)=>b.pipeline-a.pipeline).slice(0,5).map(r=>[r.nm,Math.round(r.pipeline/1e7)/10,r.current.length+'건']),empty:'진행 금액이 없습니다'},
-    {title:'이번 주 진전',desc:'지난 7일 실제 기록',rows:[['신규 기회',sum(r=>r.weekNew),'+'+sum(r=>r.weekNew)],['단계 진전',sum(r=>r.weekAdvanced),tracked?'+'+sum(r=>r.weekAdvanced):'수집 중'],['수주',sum(r=>r.weekWon),'+'+sum(r=>r.weekWon)]]}],
+    {title:'이번 주 진전',desc:'월~금 실제 기록',rows:[['신규 기회',sum(r=>r.weekNew),'+'+sum(r=>r.weekNew)],['단계 진전',sum(r=>r.weekAdvanced),tracked?'+'+sum(r=>r.weekAdvanced):'수집 중'],['수주',sum(r=>r.weekWon),'+'+sum(r=>r.weekWon)]]}],
    action:{title:'관리자가 할 일',desc:'코칭 · 약속',tasks}},{open:true,noToggle:true,taskButton:x=>{const c=root.repManagerComment(x.rep,root.repManagerWeekKey(0));return '<button type="button" class="it-btn'+(c?' ghost':'')+'" data-rv="promise" data-value="'+attr(x.rep)+'">'+(c?'약속 수정':'약속 등록')+'</button>'+(c?'<small class="it-done">이번 주 약속 · '+h(String(c.comment).slice(0,24))+'</small>':'');}});
  }
  function rowHtml(r){

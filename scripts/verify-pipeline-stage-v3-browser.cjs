@@ -23,7 +23,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     /* 컨설팅: 일정 없음 · 미팅 예정 · 미팅 지남(완료) · 견적 준비 */
     deal('c-none','일정 없는 컨설팅','이필선','consulting',{brand:'석민이앤씨',stage_entered_at:at(35)}),
     deal('c-plan','미팅 예정 컨설팅','이필선','consulting',{next_action:{id:'n1',type:'현장방문',text:'1차 미팅',due:day(3),status:'open'},stage_contexts:{first_contact:{fields:{needs:'옥상 누수',work_scope:'옥상 전체',expected_timing:'10월'}}}}),
-    deal('c-late','견적 늦은 컨설팅','황윤선','consulting',{amt:6e8,stage_entered_at:at(12),next_action:{id:'n2',type:'현장방문',text:'1차 미팅',due:day(-6),status:'open'},stage_contexts:{first_contact:{fields:{needs:'외벽 균열'}}}}),
+    deal('c-late','견적 늦은 컨설팅','황윤선','consulting',{amt:6e8,stage_entered_at:at(12),next_action:{id:'n2',type:'현장방문',text:'1차 미팅',due:day(-6),status:'open'},stage_contexts:{first_contact:{fields:{needs:'외벽 균열'}},consulting:{fields:{quote_request:'외벽 견적',quote_due:day(-1)}}}}),
     deal('c-ok','정상 컨설팅','황윤선','consulting',{brand:'',stage_entered_at:at(4),next_action:{id:'n3',type:'견적',text:'견적 작성',due:day(2),status:'open'},stage_contexts:{first_contact:{fields:{needs:'옥상 방수',work_scope:'옥상',expected_timing:'11월'}},consulting:{fields:{quote_request:'옥상 방수',quote_due:day(2)}}}}),
     /* 발송: 9일 전 발송 후속 없음 · 반응 기록 · 2일 전 발송 */
     deal('s-late','후속 없는 발송','이필선','sent',{amt:3.1e8,stage_contexts:{sent:{fields:{sent_date:day(-9),materials:['견적서']}}}}),
@@ -67,12 +67,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 단계마다: 탭 이름 · 기준 / 건수 [전체, 빨강, 2, 3] / 사유 4개 건수 / 버튼 3개 / 체류 기준 */
   const EXPECT={
    /* 2026-10-07 stage7: 컨설팅 = 물량 산출 기한(견적팀) · 사유 5개 / 발송 = 넷째 칸 '발송일 확인 필요'(s-nodate) / 경쟁 = 넷째 칸 '일정 미등록'(k-nodate) · 운영 제안 표시 / 계약 · 시공 = 시공 중 방문 없음은 시공 중 칸과 같은 조건 */
-   consulting:{name:'컨설팅 설계',goal:14,tabs:[['미팅 전 · 일정 없음','첫 통화에서 미팅 날짜 잡기'],['미팅 예정','미팅 전날 확인 연락'],['미팅 완료 · 견적 준비','미팅 후 견적 요청 등록']],n:[4,1,1,2],reasons:[['미팅 일정 없음',1],['물량 산출 기한 넘김',1],['필수 확인 미입력',2],['다음 행동 · 날짜 없음',1],['30일 넘게 머묾',1]],act:['미팅 잡기','확인 연락','견적 요청'],order:['c-none','c-plan','c-late','c-ok']},
-   sent:{name:'자료 발송완료',goal:14,tabs:[['7일 넘음 · 후속 없음','오늘 후속 연락'],['발송 후 7일 안','D+3 수신 확인'],['고객 반응 있음','다음 단계 판단'],['발송일 확인 필요','발송일 · 자료 · 수신자 입력']],n:[4,1,1,1,1],reasons:[['발송 후 7일 · 후속 없음',1],['발송일 미기록 · 판정 불가',1],['결정권자 미확인',3],['다음 행동 · 날짜 없음',3],['30일 넘게 머묾',0]],act:['후속 연락','수신 확인','단계 판단','정보 입력'],order:['s-late','s-wait','s-done','s-nodate'],amb:3},
+   consulting:{name:'컨설팅 설계',goal:14,tabs:[['미팅 여부 확인 필요','기존 기록 확인 후 일정 협의'],['미팅 예정','미팅 전날 확인 연락'],['미팅 기록 · 견적 준비','미팅 기록 · 견적 요청 확인']],n:[4,1,1,2],reasons:[['미팅 여부 확인 필요',1],['물량 산출 기한 넘김',1],['필수 확인 미입력',2],['다음 행동 · 날짜 없음',1],['30일 넘게 머묾',1]],act:['미팅 확인','확인 연락','견적 요청'],order:['c-none','c-plan','c-late','c-ok']},
+   sent:{name:'자료 발송완료',goal:14,tabs:[['7일 넘음 · 후속 없음','오늘 후속 연락'],['발송 후 7일 안','D+3 수신 확인 · 운영 제안'],['후속 확인 기록 있음','연결 · 반응 기록 기준'],['발송일 확인 필요','실제 발송 · 기존 증빙 확인']],n:[4,1,1,1,1],reasons:[['발송 후 7일 · 후속 없음',1],['발송일 미기록 · 판정 불가',1],['결정권자 미확인',3],['다음 행동 · 날짜 없음',3],['30일 넘게 머묾 · 진단 기준',0]],act:['후속 연락','수신 확인','단계 판단','증빙 확인'],order:['s-late','s-wait','s-done','s-nodate'],amb:3},
    /* 관계관리는 2026-10-07 v12(상태 5칸 · 업무 필터 · 전환 검토)로 바뀌어 전용 검사(scripts/verify-relationship-v12-browser.cjs)가 본다. 끄기(G.relV12Off) 경로의 예전 탭 3개는 아래 relOld 로 */
    competition:{name:'경쟁 · 입찰',goal:30,tabs:[['마감 D-7 이내','제안서 · 가격 확정 · 운영 제안'],['진행 중','일정 확인'],['결과 대기','개찰 다음날 결과 등록 · 운영 제안'],['일정 미등록','입찰 · PT 일정 확인']],n:[6,2,1,2,1],reasons:[['제안서 미공유',2],['결정 · 입찰 일정 미등록',1],['경쟁 공법 미확인',5],['결정권자 미확인',6],['결과 미등록',1]],act:['제안 준비','일정 확인','결과 등록','일정 입력'],order:null,amb:3},
    construction:{name:'계약 · 시공',goal:14,/* stage7_2 ⑤: 4상태 — 계약 체결 · 착공 준비(착공일 미입력 · 아직 안 온 착공일) · 시공 중(착공일 입력 후) · 준공 확인 */
-   tabs:[['계약 체결','계약일 · 금액 · 계약서'],['착공 준비','착공일 미입력 · 착공일 확인'],['시공 중','착공일 입력 후 · 주 1회 방문'],['준공 확인','준공검사 · 고객 확인']],n:[4,1,1,1,1],reasons:[['계약일 · 금액 없음',1],['착공일 미입력',0],['인계서 미확인',1],['시공 중 주 1회 방문 없음',1]/* 착공한 시공 중 건(9일 무연락)만 — 인계 중(착공 전)은 세지 않는다 */,['준공 확인 없음',1]],act:['정보 입력','착공일 입력','현장 확인','준공 확인'],order:null}};
+   tabs:[['계약 확인','계약일 · 금액 · 계약서'],['착공 준비','착공일 미입력 · 착공일 확인'],['시공 중','착공일 입력 후 · 주 1회 방문'],['준공 확인','준공검사 · 고객 확인']],n:[4,1,1,1,1],reasons:[['계약일 · 금액 없음',1],['착공일 미입력',0],['인계서 미확인',1],['시공 중 주 1회 방문 없음',1]/* 착공한 시공 중 건(9일 무연락)만 — 인계 중(착공 전)은 세지 않는다 */,['준공 확인 없음',1]],act:['정보 입력','착공일 입력','현장 확인','준공 확인'],order:null}};
   for(const key of Object.keys(EXPECT)){
    const E=EXPECT[key];await page.evaluate(k=>PipelineWorkspace.open(k),key);await page.waitForTimeout(350);
    assert.equal(await V.count(),1,key+': 공통 틀 v3');assert.equal((await page.locator('#pg-pipe>.cf-bar .cf-pill').first().innerText()).replace(/\s+/g,' ').trim().replace(/^전체 /,''),(await page.locator('#pipeline-stage-v3 .ps3-tab .n').first().innerText()).trim(),key+': 브랜드 칩 전체 = 목록 전체(2026-10-06 집계 ①)');assert.equal(await page.locator('#pipeline-stage-b').count(),0,key+': 예전 화면은 없다');
@@ -87,9 +87,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    /* 진단: 기준 넘김 = 빨강 상태 건수 · 평균 체류 · 기준 n일 */
    assert.match(s.diag,new RegExp('^단계 진단 ?'+E.n[0]+'건 · '));
    /* stage7 공통: 제목 숫자 = '기한 초과 n'(판정 함수의 기한 초과와 같은 수) · 아래 '확인 필요 n = 날짜 미입력 + 판정 불가'. '기준 넘김' 단어 없음 */
-   {const m=/^기한 초과 ?(\d+)건 ?확인 필요 (\d+) · 날짜 미입력 (\d+) · 판정 불가 (\d+)$/.exec(s.kpis[0]);assert.ok(m,key+': 제목 숫자 글 — '+s.kpis[0]);assert.equal(Number(m[2]),Number(m[3])+Number(m[4]),key+': 확인 필요 = 날짜 미입력 + 판정 불가');
+   if(key==='sent'){assert.match(s.kpis[0],/^발송 후 후속 지연 ?1건 ?판정 가능 3 /);assert.match(s.kpis[0],/4건 · 발송일 확인 1건$/);}else if(key==='competition'){assert.match(s.kpis[0],/^후속 업무 지연 ?0건 ?입찰 일정 없음 1 · 다음 행동일 없음 6 · 판정 불가 0$/);}else{const m=/^기한 초과 ?(\d+)건 ?확인 필요 (\d+) · 날짜 미입력 (\d+) · 판정 불가 (\d+)$/.exec(s.kpis[0]);assert.ok(m,key+': 제목 숫자 글 — '+s.kpis[0]);assert.equal(Number(m[2]),Number(m[3])+Number(m[4]),key+': 확인 필요 = 날짜 미입력 + 판정 불가');
     const T=await page.evaluate(k=>{const J=PipelineJudge,T=J.tally(PipelineWorkspace.rows({}).filter(r=>PipelineStages.group(r.code)===k).map(r=>r.item));return [T.late,T.nodate,T.norecord];},key);assert.deepEqual([Number(m[1]),Number(m[3]),Number(m[4])],T,key+': 판정 함수와 같은 수');}
-   assert.doesNotMatch(s.kpis[0]+s.diag+s.todo,/기준 넘김/,key+': 기준 넘김 단어 없음');assert.match(s.kpis[1],new RegExp('^평균 체류 ?\\d+일 ?기준 '+E.goal+'일$'));
+   assert.doesNotMatch(s.kpis[0]+s.diag+s.todo,/기준 넘김/,key+': 기준 넘김 단어 없음');assert.match(s.kpis[1],key==='sent'?/^평균 체류 ?\d+일 ?체류 진단 기준 14일$/:key==='competition'?/^평균 체류 ?\d+일 ?진입일 입력 6 \/ 6건$/:new RegExp('^평균 체류 ?\\d+일 ?기준 '+E.goal+'일$'));
    /* 왜 멈춰 있나: 사유(4~5개) · 첫 사유 = 빨강 상태 건수 */
    assert.deepEqual(s.reasons.map(r=>[r[0],Number(r[1])]),E.reasons,key+': 사유 건수');assert.equal(Number(s.reasons[0][1]),E.n[1],key+': 첫 사유 = 빨강 상태');
    assert.deepEqual(s.reasons.map(r=>r[2]),E.reasons.map(r=>Math.min(100,Math.round(r[1]/E.n[0]*100))+'%'),key+': 막대 = 건수 ÷ 전체');
@@ -130,14 +130,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await V.locator('.ps3-reason',{hasText:'30일 넘게 머묾'}).click();await page.waitForTimeout(200);assert.deepEqual(await V.locator('.ps3-row').evaluateAll(l=>l.map(r=>r.dataset.key.replace(/^deal:/,''))),['c-none']);
   await V.locator('.ps3-reason',{hasText:'30일 넘게 머묾'}).click();await page.waitForTimeout(200);assert.equal(await V.locator('.ps3-row').count(),4,'같은 사유를 다시 누르면 풀림');
   /* 버튼 = 그 현장 상세 + 상태별 액션 · 줄 = 상세 */
-  await V.locator('.ps3-row[data-key$="c-none"] button').click();assert.deepEqual(await page.evaluate(()=>[__open,__act]),['c-none',null]);await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>__act),'next','미팅 잡기 = 다음 할 일');
+  await V.locator('.ps3-row[data-key$="c-none"] button').click();assert.deepEqual(await page.evaluate(()=>[__open,__act]),['c-none',null]);await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>__act),'next','미팅 확인 = 다음 할 일');
   await page.evaluate(()=>{__open=null;__act=null;});await V.locator('.ps3-row[data-key$="c-ok"] .ps3-a').click();await page.waitForTimeout(250);assert.deepEqual(await page.evaluate(()=>[__open,__act]),['c-ok',null],'줄 = 상세만');
   /* 보드: 상태 3개 = 세로 칸 */
   await V.locator('.ps3-views button',{hasText:'보드'}).click();await page.waitForTimeout(250);
-  assert.deepEqual((await V.locator('.ps3-col .ch').allInnerTexts()).map(one),['미팅 전 · 일정 없음 1','미팅 예정 1','미팅 완료 · 견적 준비 2']);
+  assert.deepEqual((await V.locator('.ps3-col .ch').allInnerTexts()).map(one),['미팅 여부 확인 필요 1','미팅 예정 1','미팅 기록 · 견적 준비 2']);
   assert.deepEqual(await V.locator('.ps3-col').evaluateAll(l=>l.map(c=>c.querySelectorAll('.ps3-card').length)),[1,1,2]);
   /* 카드: 막힌 이유 · 다음 행동이 항상 보인다(마우스를 올리지 않아도) + 공종 · 영업건 번호(2026-10-05 정합성 ③ ④) */
-  assert.match(one(await V.locator('.ps3-card').first().innerText()),/^석민이앤씨 #cnone 35일 일정 없는 컨설팅 공종 미분류 · 이필선 · 2억 확인 필요 · 미팅 일정 없음 다음 행동 없음 미팅 잡기$/);
+  assert.match(one(await V.locator('.ps3-card').first().innerText()),/^석민이앤씨 #cnone 35일 일정 없는 컨설팅 공종 미분류 · 이필선 · 2억 확인 필요 · 미팅 여부 확인 필요 다음 행동 없음 미팅 확인$/);
   assert.deepEqual(await V.locator('.ps3-col').first().evaluate(n=>{const s=getComputedStyle(n),c=getComputedStyle(n.querySelector('.ps3-card button')),d=getComputedStyle(n.querySelector('.ch .c'));return [s.backgroundColor,s.borderTopLeftRadius,c.backgroundColor,c.color,c.fontSize,d.color];}),['rgb(238, 240, 244)','12px','rgb(245, 248, 255)','rgb(29, 63, 153)','12.5px','rgb(180, 35, 24)']);
   if(shot)await page.screenshot({path:shot.replace(/\.png$/,'-board.png')});
   await V.locator('.ps3-views button',{hasText:'리스트'}).click();await page.waitForTimeout(200);
@@ -149,11 +149,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.setViewportSize({width:900,height:1000});await page.waitForTimeout(300);
   assert.equal(await V.evaluate(v=>v.querySelector('.ps3-diag').getBoundingClientRect().bottom<=v.querySelector('.ps3-main').getBoundingClientRect().top+1),true,'좁으면 진단이 위로');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'가로 넘침 없음');
   await page.setViewportSize({width:1600,height:1000});
-  /* 목록 버튼은 새 상세 창의 자리로 간다(2026-10-05 대표 "미팅 잡기 누르면 최근에 만들어놨던 걸로 연결" · "이전 버전은 내 눈에 안 띄게"):
-     [미팅 잡기] → 상세 창의 가운데 입력칸(통화 중 표시 — 2026-10-06 정돈안: 연락 입구는 입력칸 하나) · 예전 '다음 할 일 설정' 창(#detailAction · .dp-next) 없음 · 머리줄 [⋯] 메뉴 없음 */
+  /* 목록 버튼은 새 상세 창의 자리로 간다(2026-10-05 대표 "미팅 확인 누르면 최근에 만들어놨던 걸로 연결" · "이전 버전은 내 눈에 안 띄게"):
+     [미팅 확인] → 상세 창의 가운데 입력칸(통화 중 표시 — 2026-10-06 정돈안: 연락 입구는 입력칸 하나) · 예전 '다음 할 일 설정' 창(#detailAction · .dp-next) 없음 · 머리줄 [⋯] 메뉴 없음 */
   await page.evaluate(()=>{drwDeal=window.__drwReal;if(window.__daReal)window.DetailActions.open=window.__daReal;window.__act=null;PipelineWorkspace.open('consulting');});await page.waitForTimeout(300);
   await page.locator('#pipeline-stage-v3 .ps3-row[data-key$="c-none"] button').click();await page.waitForSelector('#detailView.dv3 #ddvComposer.dvt-calling',{timeout:5000});
-  assert.deepEqual(await page.evaluate(()=>{const v=document.getElementById('detailView');return [!!v.querySelector('.nc-call.dvt-on'),v.querySelectorAll('#ddvComposer.dvt-calling').length,document.querySelectorAll('#detailAction,.dp-next').length,v.querySelectorAll('.da-more,.da-toolbar,.da-tools').length,/다음 할 일 설정/.test(v.innerText)];}),[true,1,0,0,false],'미팅 잡기 = 지금 할 일 카드');
+  assert.deepEqual(await page.evaluate(()=>{const v=document.getElementById('detailView');return [!!v.querySelector('.nc-call.dvt-on'),v.querySelectorAll('#ddvComposer.dvt-calling').length,document.querySelectorAll('#detailAction,.dp-next').length,v.querySelectorAll('.da-more,.da-toolbar,.da-tools').length,/다음 할 일 설정/.test(v.innerText)];}),[true,1,0,0,false],'미팅 확인 = 지금 할 일 카드');
   assert.match(await page.locator('#detailView .nc-call').innerText(),/통화 중 · 결과를 가운데에 적어 주세요/);assert.equal(await page.locator('#detailView .dv3-form').count(),0,'오른쪽 카드 안에 입력 틀을 펼치지 않는다');
   if(process.env.SHOT)await page.screenshot({path:process.env.SHOT});
   /* [견적 요청] → 이 단계 필수 정보 · [단계 판단] 류 → 단계 바꾸기 띠. 둘 다 예전 입력 창을 띄우지 않는다 */
@@ -167,7 +167,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(()=>[document.querySelectorAll('#detailView.dv3 #ddvComposer.dvt-calling').length,document.querySelectorAll('#detailAction,.dp-next').length]),[1,0],'열자마자 바로가기 = 지금 할 일 카드');
   await page.evaluate(()=>{try{closeDetail();}catch(e){}});await page.waitForTimeout(200);
   /* 수주 · 실주도 같은 틀(2026-10-06 대표 "이 기준으로 수주 · 실주 크기 및 배치 동일하게"): 상태 탭 4칸 = B안 막대 3칸, 사유 · 버튼은 B안 표 그대로 · 끄면 이전 화면 */
-  for(const [k,tabs,reason0] of [['won',['전체','수주 정보 미기록','계약일 · 착공 · 준공 확인','실적 · 완료 정보 완료'],'수주 유형 · 낙찰금액 · 낙찰사 미기록'],['lost',['전체','기록 보완 필요','기록 완료','재영업 가능 · 예'/* stage7 ⑦ */],'실주 사유 미입력']]){
+  for(const [k,tabs,reason0] of [['won',['전체','수주 정보 미기록','계약일 · 착공 · 준공 확인','실적 · 완료 정보 완료'],'수주 결과 항목 보완 필요'],['lost',['전체','기록 보완 필요','기록 완료','재영업 가능 · 예'/* stage7 ⑦ */],'실주 사유 미입력']]){
    await page.evaluate(k=>PipelineWorkspace.open(k),k);await page.waitForTimeout(300);
    assert.equal(await page.locator('#pipeline-stage-v3[data-stage="'+k+'"]').count(),1,k+': 공통 틀 v3');assert.equal(await page.locator('#pipeline-stage-b').count(),0,k+': 예전 화면 없음');
    assert.deepEqual(await page.locator('#pipeline-stage-v3 .ps3-tab .l').allInnerTexts(),tabs,k+' 탭');
