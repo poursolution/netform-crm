@@ -54,8 +54,15 @@
  const ro=w=>{const c=String(w).charCodeAt(String(w).length-1)-0xAC00;if(c<0||c>11171)return '로';const j=c%28;return j===0||j===8?'로':'으로';};
  const VIA={이메일:'이메일',메일:'이메일',카톡:'카카오톡',카카오톡:'카카오톡',카카오:'카카오톡',문자:'문자',팩스:'팩스'};
  /* 약속 한 줄의 이름 · 첫마디용 말 */
- function nameOf(type,m,when){
-  if(type==='material'){const obj=String(m[1]||'').replace(/\s+/g,' '),via=VIA[m[2]]||'',give=/보내|주기로|드리기로|제공|전달|준다|주신다/.test(m[3]);const t=[obj,via?via+ro(via):'',give?'보내기':'받기'].filter(Boolean).join(' ');return {title:t,say:[obj,via?via+ro(via):'',give?'보내드리기로':'받기로'].filter(Boolean).join(' ')};}
+ function nameOf(type,m,when,sentence){
+  if(type==='material'){
+   const obj=String(m[1]||'').replace(/\s+/g,' '),via=VIA[m[2]]||'',verb=String(m[3]||'');
+   const customer=/주신|주셨|주시겠/.test(verb)||/(?:고객|관리소장|소장|담당자)(?:님)?(?:이|가|은|는).{0,24}(?:보내|전달|제공)/.test(sentence||'');
+   const ours=/드리|드릴/.test(verb)||/(?:우리|저희|당사)(?:가|는)?.{0,24}(?:보내|전달|제공)/.test(sentence||'');
+   const actor=customer?'customer':ours?'staff':/받기로/.test(verb)?'customer':'unknown';
+   const action=actor==='customer'?'받기':actor==='staff'?'보내기':'전달 여부 확인';
+   return {title:[obj,via?via+ro(via):'',action].filter(Boolean).join(' '),say:[obj,'전달 여부를 확인'].join(' '),actor,recipient:actor==='customer'?'staff':actor==='staff'?'customer':'unknown'};
+  }
   if(type==='visit'){const pre=String(m[1]||'').trim(),w=/다음\s*날|이튿날/.test(pre)?'다음 날 ':/내일/.test(pre)?'내일 ':/모레/.test(pre)?'모레 ':when?md(when)+' ':'',kind=m[2]==='실측'?'실측':'방문';return {title:w+'현장 '+kind,say:w+'현장 '+kind+'하기로'};}
   if(type==='quote')return {title:'견적 보내기',say:'견적을 보내드리기로'};
   if(type==='recall')return {title:'다시 연락하기',say:'다시 연락드리기로'};
@@ -76,22 +83,28 @@
   const mo=+m[1],dd=+m[2];if(mo<1||mo>12||dd<1||dd>31)return '';
   let y=by,d=pad(y,mo,dd);if(base&&dayNo(d)-dayNo(base)>60)d=pad(y-1,mo,dd);return d;
  };
- const pad=(y,m,d)=>y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+ const pad=(y,m,d)=>{const v=new Date(Date.UTC(y,m-1,d));return v.getUTCFullYear()===y&&v.getUTCMonth()===m-1&&v.getUTCDate()===d?y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0'):'';};
  /* 메모 한 덩어리(기준 날짜 base = 메모에 찍힌 날, 없으면 '') → 통화 · 약속 후보 + 표시 구간 */
  function parse(text,base){
-  const calls=[],promises=[],ranges=[],seen=new Set();
+  const calls=[],promises=[],ranges=[],seen=new Set();let headingDate='';
   sentences(text).forEach(sn=>{
    const t=sn.text;
+   // Only explicit date/time-only lines provide context to the following call.
+   const heading=/^\s*\[?\d{4}\s*[.\/-]\s*\d{1,2}\s*[.\/-]\s*\d{1,2}(?:\s*(?:AM|PM|오전|오후))?(?:\s*\d{1,2}:\d{2}(?::\d{2})?)?\]?\s*$/i.test(t.trim());
+   if(heading){headingDate=dateIn(t,base);return;}
+   const context=headingDate;headingDate='';
    const cm=CALL_RE.exec(t);
    if(cm&&!NOT_CALL.test(t)){
-    const d=dateIn(t,base)||base||'',key='c-'+hash(t);
+    const d=dateIn(t,base)||context||base||'',key='c-'+hash(t);
     if(!seen.has(key)){seen.add(key);calls.push({key,date:d,sentence:t.trim(),phrase:cm[0]});ranges.push({s:sn.start+cm.index,e:sn.start+cm.index+cm[0].length,k:'call'});}
    }
    PROMISE.forEach(([type,re])=>{
-    const m=re.exec(t);if(!m)return;
-    const when=dateIn(t,base),nm=nameOf(type,m,when),key='p-'+type+'-'+hash(t);
+    let m=re.exec(t);
+    if(!m&&type==='visit'&&/(?:맞으면|가능하면|된다면|되면|경우)/.test(t))m=/((?:내일|모레|다음\s*날)\s*)?(?:현장\s*)?(방문|내방|실측)/.exec(t);
+    if(!m)return;
+    const when=dateIn(t,base),nm=nameOf(type,m,when,t),key='p-'+type+'-'+hash(t);
     if(seen.has(key))return;seen.add(key);
-    promises.push({key,type,title:nm.title,say:nm.say,date:base||when||'',sentence:t.trim(),phrase:m[0],when});
+    promises.push({key,type,title:nm.title,say:nm.say,actor:nm.actor||'unknown',recipient:nm.recipient||'unknown',certainty:/(?:맞으면|가능하면|된다면|되면|경우)/.test(t)?'conditional':/가능|검토|논의/.test(t)?'discussed':'unverified',date:context||base||when||'',sentence:t.trim(),phrase:m[0],when});
     ranges.push({s:sn.start+m.index,e:sn.start+m.index+m[0].length,k:'pro'});
    });
   });
@@ -139,7 +152,7 @@
  const memo=new WeakMap();
  function scan(q){
   if(!q||typeof q!=='object')return {memos:[],calls:[],promises:[]};
-  const raw=rawOf(q),sig=[String(raw['응대내용']||'').length,(raw.external_change_history||[]).length,SV,JSON.stringify(readPatch(q).memoReview||{}).length].join('|'),c=memo.get(q);
+  const raw=rawOf(q),sig=JSON.stringify([raw['응대내용']||'',raw.external_change_history||[],SV,readPatch(q).memoReview||{}]),c=memo.get(q);
   if(c&&c.sig===sig)return c.v;
   const memos=memosOf(q).map(m=>{const r=parse(m.text,m.at);return Object.assign({},m,{calls:r.calls,promises:r.promises,html:marked(m.text,r.ranges)});});
   const calls=[],promises=[];memos.forEach(m=>{m.calls.forEach(x=>calls.push(Object.assign({memoAt:m.at},x)));m.promises.forEach(x=>promises.push(Object.assign({memoAt:m.at},x)));});
@@ -173,7 +186,7 @@
  function opener(q,who){
   const rest=promises(q).filter(p=>p.res!=='완료');if(!on()||!rest.length)return '';
   const first=rest.map(p=>p.date||p.when).filter(Boolean).sort()[0]||'',when=first?(+first.slice(5,7))+'월에 ':'예전에 ';
-  return '"안녕하세요, 넷폼 '+who+'입니다. '+when+rest.map(p=>p.say).join(', ')+' 했었는데, 그 뒤 진행 상황 여쭤보려고 연락드렸습니다."';
+  return '"안녕하세요, 넷폼 '+who+'입니다. '+when+'기록에 '+rest.map(p=>'「'+p.sentence.replace(/\s+/g,' ').trim()+'」').join(', ')+'라고 남아 있어 확인드립니다. 이후 실제로 어떻게 진행됐는지 알려주실 수 있을까요?"';
  }
  /* ── 권한: 담당이 정해진 문의에서 담당 본인 또는 관리자 ── */
  const isAdmin=()=>{try{return !!root.inqCtlIsAdmin();}catch(e){return false;}};
