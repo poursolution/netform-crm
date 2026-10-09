@@ -18,6 +18,7 @@ function fixture(){
  r.window=r;vm.createContext(r);
  for(const f of ['pipeline-judge.js','kpi-b.js','kpi-v7.js','today-tower.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'..',f),'utf8'),r,{filename:f});
  r.KpiB.weekly().rows=[{promise_key:'kpi:1',week_start:'2026-09-28',numerator:106,denominator:1000},{promise_key:'kpi:2',week_start:'2026-09-28',numerator:13,denominator:1000}];
+ r.KpiB.weekly().actState='ready'; // fixture represents a fully loaded request history
  return {r,calls};
 }
 test('이번 주 표시·증감·추이·저장 모두 같은 분자와 분모: +89.4pp / +32.0pp',async()=>{
