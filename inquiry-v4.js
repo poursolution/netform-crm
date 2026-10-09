@@ -278,9 +278,9 @@
   toast(S.res+' → '+nt+' '+kday(nd));resetForm(S);if(nextKey)S.sel=nextKey;fresh();root.paint();
  }
  /* 메모 속 통화 보완 · 과거 약속 판단(InquiryMemo.run → 서버 + 이 PC) */
-  function memoAct(a,m,b){
+  async function memoAct(a,m,b){
    const S=st(),k=K(),q=root.inqCtlFind(m.key,false);if(!k||!q)return;S.memoErr='';
-   try{if(a==='memo-call')k.run('call_supplement',q,{key:b.dataset.v});else k.run('promise',q,{key:b.dataset.key,res:b.dataset.v});}
+   try{if(a==='memo-call')await k.run('call_supplement',q,{key:b.dataset.v});else await k.run('promise',q,{key:b.dataset.key,res:b.dataset.v});}
    catch(e){S.memoErr=String(e&&e.message||'저장하지 못했습니다');return render();}
    toast(a==='memo-call'?'실제 연결일을 보완했습니다':'약속 판단을 저장했습니다');fresh();root.paint();
   }

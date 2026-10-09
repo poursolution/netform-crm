@@ -7,8 +7,7 @@
     ② 과거 약속 확인함 — 메모에서 사진 회신 · 방문 · 견적 전달 · 재연락 · 회의 약속을 찾아 약속마다 [완료 / 미완료 / 확인 불가]를 받는다.
        완료 = 기록만 · 미완료 = 지금 할 일로 등록('… 다시 확인') · 확인 불가 = '첫 통화에서 물어볼 것'. 판단 없이 과거 약속을 새 업무로 만들지 않는다.
     ③ 날짜 계산 = 한국(Asia/Seoul) 날짜 기준 일수(오늘 날짜 − 기준 날짜). 접속 PC 의 시간대에 기대지 않는다.
-   저장: 서버 함수 crm_inquiry_memo_review_v1 · 읽기 crm_inquiry_memo_review_list_v1(sql/inquiry-memo-review-v1-20261008.sql). 설치 전에는 이 PC 의 기록(문의 patch.memoReview)으로 같은 판정을 하고,
-         보낼 기록은 localStorage(crm.inqMemo.outbox.v1)에 모아 두었다가 설치 뒤 보낸다(견적문의 흐름과 같은 방식).
+   저장: 서버 함수 crm_inquiry_memo_review_v1 · 읽기 crm_inquiry_memo_review_list_v1(sql/inquiry-memo-review-v1-20261008.sql). 서버 문의는 저장 응답을 확인한 뒤에만 판단을 표시한다. 기존 전송 대기 기록은 순서대로 재시도하되, 로컬 기록을 저장 완료로 간주하지 않는다.
    끄기: G.inqMemoOff=true → 날짜 · 메모 · 약속 칸과 첫마디 문장이 사라지고, 경과일 계산만 한국 날짜 기준으로 남는다. */
 (function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;else root.InquiryMemo=api;})(typeof window==='undefined'?globalThis:window,function(root){
  'use strict';
@@ -150,6 +149,8 @@
  const later=(a,b)=>!a?b:!b?a:(Date.parse(a.at||'')>=Date.parse(b.at||'')?a:b);
  function review(q){
   const id=String(q&&q.id||''),p=readPatch(q).memoReview||{},s=SRV.get(id)||{};
+  // A UUID identifies a persisted inquiry: local drafts are never confirmation.
+  if(UUID.test(id))return {call:s.call||null,promises:Object.assign({},s.promises||{})};
   const promises=Object.assign({},s.promises||{});
   Object.keys(p.promises||{}).forEach(k=>{promises[k]=later(promises[k],p.promises[k]);});
   return {call:later(s.call||null,p.call||null),promises};
@@ -236,19 +237,33 @@
  }
  function load(force){
   if(!on()||loadBusy||!can(LIST))return Promise.resolve(false);if(!force&&loadAt&&Date.now()-loadAt<120000)return Promise.resolve(false);
-  loadBusy=true;
-  return store().rpc(LIST,{}).then(r=>{loadAt=Date.now();if(takeServer(r.reviews)){try{root.paint&&root.paint();}catch(e){}}return true;}).catch(()=>{loadAt=Date.now();return false;}).finally(()=>{loadBusy=false;});
+  loadBusy=true;const version=SV;
+  return store().rpc(LIST,{}).then(r=>{loadAt=Date.now();if(version===SV&&takeServer(r.reviews)){try{root.paint&&root.paint();}catch(e){}}return true;}).catch(()=>{loadAt=Date.now();return false;}).finally(()=>{loadBusy=false;});
  }
  async function flush(){
   if(flushing||!on()||!root.ME||!can(RPC)||!outbox().length)return;flushing=true;let changed=false;
   try{while(outbox().length){const item=outbox()[0];
     if(Date.now()-Number(item.queued_at||0)>14*DAY){outbox().shift();keepOut();continue;}
     const body=Object.assign({},item);delete body.queued_at;
-    try{await store().rpc(RPC,body);changed=true;outbox().shift();keepOut();}
-    catch(e){if(e&&e.unavailable)break;if(/forbidden|invalid payload|담당자 또는 관리자만|찾을 수 없습니다|기술자문/.test(String(e&&e.message||''))){outbox().shift();keepOut();continue;}break;}}
+    try{const result=await store().rpc(RPC,body);ack(body,result);changed=true;outbox().shift();keepOut();}
+    catch(e){if(e&&e.unavailable)break;if(/forbidden|invalid payload|담당자 또는 관리자만|담당이 정해진 문의|찾을 수 없습니다|기술자문/.test(String(e&&e.message||''))){outbox().shift();keepOut();continue;}break;}}
   }finally{flushing=false;if(changed){loadAt=0;load(true);}}
  }
- const queue=body=>{outbox().push(Object.assign({queued_at:Date.now()},body));keepOut();flush();};
+ // Only a validated server response can publish a decision. Old queued patches
+ // remain recoverable, but cannot override the confirmed row after a rejection.
+ function ack(body,result){
+  const v=result&&result.review,kind=body.type==='call_supplement'?'call':'promise';
+  if(!result||result.ok!==true||String(result.inquiry_id)!==body.inquiry_id||!v||v.kind!==kind||v.item_key!==body.item_key||
+    (kind==='call'?v.on_date!==body.on_date:v.result!==body.result)||!v.decided_at)throw Error('서버 저장 확인 응답이 올바르지 않습니다. 다시 확인해 주세요.');
+  const old=SRV.get(body.inquiry_id)||{call:null,promises:{}},row={res:v.result||'',on_date:v.on_date||'',title:v.title||'',src:body.source_text||'',at:v.decided_at,by:v.decided_by||'',orig:v.original_at||''};
+  const next={call:old.call,promises:Object.assign({},old.promises)};
+  if(kind==='call')next.call=row;else next.promises[v.item_key]=row;
+  SRV.set(body.inquiry_id,next);SV++;
+ }
+ function persist(q,body,commit){
+  if(!UUID.test(String(q.id||''))){commit();return true;}
+  return store().rpc(RPC,body).then(result=>{ack(body,result);commit();return true;});
+ }
  function warm(){if(!on()||!root.ME)return;if(!loadAt||Date.now()-loadAt>120000)load();flush();}
  /* ── 저장 명령 ── */
  const save=()=>{try{root.saveLocal&&root.saveLocal();}catch(e){}};
@@ -263,12 +278,11 @@
   const cur=connection(q);if(cur.state==='ok')throw Error('이미 확인된 실제 연결일이 있습니다.');
   const created=day(createdOf(q));if(created&&it.date<created)throw Error('접수일보다 앞선 날짜는 보완할 수 없습니다.');if(it.date>today())throw Error('오늘 이후 날짜는 보완할 수 없습니다.');
   const at=new Date().toISOString(),p=patchFor(q);p.memoReview=p.memoReview||{promises:{}};
-  const before=JSON.parse(JSON.stringify(p.memoReview));
-  p.memoReview.call={key:it.key,res:'',on_date:it.date,src:it.sentence,at,by:meName(),orig:cur.orig||''};
+  const body={type:'call_supplement',inquiry_id:String(q.id),item_key:it.key,on_date:it.date,source_text:it.sentence.slice(0,600),original_at:cur.orig||'',request_id:uuid()};
+  return persist(q,body,()=>{p.memoReview.call={key:it.key,res:'',on_date:it.date,src:it.sentence,at,by:meName(),orig:cur.orig||''};
   note(q,'[메모 통화 보완] 메모에서 찾은 '+md(it.date)+' 통화로 실제 연결일을 보완했습니다 — 원래 값: '+(cur.orig?md(cur.orig)+(cur.state==='copy'?' (접수일 복사)':''):'없음'),at);
   save();
-  if(UUID.test(String(q.id||'')))queue({type:'call_supplement',inquiry_id:String(q.id),item_key:it.key,on_date:it.date,source_text:it.sentence.slice(0,600),original_at:cur.orig||'',request_id:uuid()});
-  void before;return true;
+  });
  }
  /* 약속 한 줄 판단: 완료 · 미완료 · 확인 불가 */
  function promiseDecide(q,o){
@@ -290,14 +304,26 @@
    try{ok=root.InquiryCommand.run('next_set',q,{text,due})===true;}catch(e){throw Error(e&&e.message||'지금 할 일로 등록하지 못했습니다.');}
    if(!ok)throw Error('지금 할 일로 등록하지 못했습니다 — 연결을 확인해 주세요.');
   }
-  p.memoReview.promises[it.key]={res,title:it.title,src:it.sentence,on_date:it.date||'',at,by:meName()};
+  const body={type:'promise',inquiry_id:String(q.id),item_key:it.key,title:it.title,source_text:it.sentence.slice(0,600),on_date:it.date||'',result:res,request_id:uuid()};
+  return persist(q,body,()=>{p.memoReview.promises[it.key]={res,title:it.title,src:it.sentence,on_date:it.date||'',at,by:meName()};
   note(q,'[과거 약속 확인] '+it.title+' — '+res+(res==='미완료'?' · 지금 할 일로 등록':res==='확인 불가'?' · 첫 통화에서 물어볼 것':' · 기록만')+(prev&&prev.res&&prev.res!==res?' (이전: '+prev.res+')':''),at);
   void had;save();
-  if(UUID.test(String(q.id||'')))queue({type:'promise',inquiry_id:String(q.id),item_key:it.key,title:it.title,source_text:it.sentence.slice(0,600),on_date:it.date||'',result:res,request_id:uuid()});
-  return true;
+  });
  }
  const HANDLERS={call_supplement:callSupplement,promise:promiseDecide};
- const run=(type,q,o)=>{const fn=HANDLERS[type];if(!fn)throw Error('알 수 없는 저장 명령입니다: '+type);if(!q)throw Error('문의를 찾지 못했습니다.');return fn(q,o||{});};
+ const saving=new Set();
+ const run=(type,q,o)=>{
+  const fn=HANDLERS[type];if(!fn)throw Error('알 수 없는 저장 명령입니다: '+type);if(!q)throw Error('문의를 찾지 못했습니다.');
+  const id=String(q.id||'');if(!UUID.test(id))return fn(q,o||{});
+  if(saving.has(id))throw Error('이 문의의 판단을 저장 중입니다. 잠시 후 다시 확인해 주세요.');
+  if(!can(RPC))throw Error('서버 저장 연결을 확인한 뒤 다시 판단해 주세요.');
+  saving.add(id);
+  return (async()=>{try{
+   await flush();
+   if(outbox().some(x=>x.inquiry_id===id))throw Error('이전 판단의 서버 확인이 남아 있습니다. 연결 후 다시 판단해 주세요.');
+   return await fn(q,o||{});
+  }finally{saving.delete(id);}})();
+ };
  /* ── 화면 조각(견적문의 v4 상세가 끼워 쓴다 · 누르는 곳은 data-i4 로 v4 가 받는다) ── */
  function datesHtml(q){
   if(!on())return '';const D=dates(q),c=D.conn;if(!hasMemo(q)&&c.state!=='copy'&&c.state!=='supplemented')return '';
