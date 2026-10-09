@@ -42,7 +42,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const sites=()=>V.locator('.i4-row .site').evaluateAll(l=>l.map(b=>b.textContent.replace(/^\[[^\]]*\]\s*/,'')));
   /* ① 숫자는 하나: 위 탭 = 브랜드 '전체' = 진행 중 전체 = 목록 건수, 뒤 네 칸의 합 = 전체 */
   assert.deepEqual(await page.evaluate(()=>[document.getElementById('pg-inq').classList.contains('inq-v4'),getComputedStyle(document.getElementById('inq-v3')).display,InquiryV4.on()]),[true,'none',true]);
-  assert.deepEqual((await V.locator('.i4-tab').allInnerTexts()).map(one),['5 진행 중 전체 종결 · 휴지통 제외','1 배정 필요 30분 안에 담당 지정','1 첫 연락 전 배정 후 2시간 안 첫 연락','1 후속 연락 필요 첫 연락 후 7일 넘게 연락 없음','2 정상 진행 마지막 연락 7일 안','0 연락처 보완 연락처 찾기 · 이관 기록 확인']);
+  assert.deepEqual((await V.locator('.i4-tab').allInnerTexts()).map(one),['5 진행 중 전체 종결 · 휴지통 제외','1 배정 필요 30분 안에 담당 지정','1 첫 연락 전 배정 후 2시간 안 첫 연락','1 후속 연락 필요 첫 연락 후 7일 넘게 연락 없음','2 정상 진행 마지막 연락 7일 안','0 기록 보완 연락처 찾기 · 이관 기록 확인']);
   {const n=await tabNums();assert.equal(n[1]+n[2]+n[3]+n[4]+n[5],n[0],'뒤 다섯 칸의 합 = 진행 중 전체');}
   assert.deepEqual(await page.evaluate(()=>[document.querySelector('.b2b-kinds a span').textContent,document.querySelector('.cf-brands .cf-pill em').textContent,[...document.querySelectorAll('.cf-brands .cf-pill em')].slice(1).reduce((s,e)=>s+Number(e.textContent),0),document.querySelector('#inq-v4 .cnt b').textContent]),['5','5',5,'5건']);
   assert.equal(one(await V.locator('.i4-flags .cnt').innerText()),'5건 · 오래된 순 · ↑ ↓ 이동');
@@ -146,6 +146,22 @@ assert.deepEqual(await rows().evaluateAll(l=>l.map(r=>[...r.querySelectorAll('.i
   await page.setViewportSize({width:1600,height:1000});await page.waitForTimeout(200);
   /* 두 칸은 화면 높이에 맞고 각 칸 안에서만 스크롤 */
   assert.equal(await page.evaluate(()=>{const p=document.querySelector('#inq-v4 .i4-panes').getBoundingClientRect();return p.bottom<=innerHeight&&p.height>=420&&getComputedStyle(document.querySelector('#inq-v4 .i4-list')).overflowY==='auto';}),true);
+  /* 이관 기록 후보: 기존 다섯 번째 상태/상세만 사용하며 저장 대기는 해제하지 않음. 합성 자료. */
+  await page.evaluate(()=>{
+   B.inquiries=[{id:'11111111-1111-4111-8111-111111111119',site:'합성 이관 검토 현장',brand:'POUR솔루션',status:'배정완료',assignee:'이필선',assigned_to:'이필선',assigned_at:'2026-01-16',created_at:'2026-01-16',at:'2026-01-16',phone:'010-0000-0000',raw:{'응대내용':'2026/01/16 PM 05:02 1차통화완료. 다음주 현장 미팅 예정'}}];
+   G.inqV4.tab='all';G.inqV4.sel='';G.inqV4.flag='';G.inqV4.sort='urgent';paint();
+  });await page.waitForTimeout(300);
+  assert.equal(await rows().count(),1);assert.match(await rows().first().innerText(),/이관 기록 확인 필요/);
+  assert.match(await rows().first().innerText(),/기한 없음/);assert.doesNotMatch(await rows().first().innerText(),/첫 연락 기한|실제 연결 후/);
+  await rows().first().click();await page.waitForTimeout(100);
+  assert.equal(await det.locator('.im-find').count(),0,'valid phone does not show missing-phone form');
+  assert.ok(await det.locator('.im-dates').count()||await det.getByText('접수일',{exact:false}).count(),'existing date evidence stays');
+  const classification=await page.evaluate(()=>{
+   const q=B.inquiries[0],p=detailPatchFor(q,'inq');p.memoReview={call:{on_date:'2026-01-16',at:'2026-10-09'}};InquiryV4.fresh();
+   const pending=InquiryV4.base()[0].st;
+   InquiryMemo.takeServer([{inquiry_id:q.id,kind:'call',on_date:'2026-01-16',decided_at:'2026-10-09'}]);InquiryV4.fresh();
+   const m=InquiryV4.base()[0],saved=m.review.required;return {pending,saved,step:m.step,st:m.st};
+  });assert.deepEqual(classification,{pending:5,saved:false,step:2,st:3});
   /* ⑪ 끄면 목록 v3 그대로 */
   const off=await page.evaluate(()=>{G.inqV4Off=true;paint();return [!!document.getElementById('inq-v4'),document.getElementById('pg-inq').classList.contains('inq-v4'),getComputedStyle(document.getElementById('inq-v3')).display!=='none',document.querySelectorAll('#inq-v3 .il-tab').length];});
   assert.deepEqual(off,[false,false,true,7]);
