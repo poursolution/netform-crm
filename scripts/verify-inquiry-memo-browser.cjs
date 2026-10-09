@@ -31,7 +31,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op,p)=>{window.__writes.push([op,p]);return 'req-'+window.__writes.length};
    window.__rpc=[];window.__reviews=[];
    SB={rpc:async(name,args)=>{__rpc.push([name,args]);
-    if(name==='crm_inquiry_memo_review_v1'){const p=args.p;if(p.type==='call_supplement'){__reviews=__reviews.filter(r=>!(r.inquiry_id===p.inquiry_id&&r.kind==='call'));__reviews.push({inquiry_id:p.inquiry_id,kind:'call',item_key:p.item_key,on_date:p.on_date,original_at:p.original_at,decided_at:new Date().toISOString(),decided_by:'이필선'});}return {data:{ok:true,type:p.type,inquiry_id:p.inquiry_id,review:{kind:p.type==='promise'?'promise':'call',item_key:p.item_key,title:p.title||'',result:p.result||null,on_date:p.on_date||null}}};}
+    if(name==='crm_inquiry_memo_review_v1'){
+     if(window.__rejectMemo)return {error:{message:'forbidden'}};
+     const p=args.p,kind=p.type==='promise'?'promise':'call';
+     const review={inquiry_id:p.inquiry_id,kind,item_key:p.item_key,title:p.title||'',source_text:p.source_text||'',result:p.result||null,on_date:p.on_date||null,original_at:p.original_at||null,decided_at:new Date().toISOString(),decided_by:'이필선'};
+     __reviews=__reviews.filter(r=>!(r.inquiry_id===p.inquiry_id&&r.kind===kind&&r.item_key===p.item_key));__reviews.push(review);
+     return {data:{ok:true,type:p.type,inquiry_id:p.inquiry_id,review}};
+    }
     if(name==='crm_inquiry_field_update_v1'){const p=args.p;return {data:{ok:true,inquiry_id:p.inquiry_id,field:p.field,value:p.value,raw_key:null}};}
     if(name==='crm_inquiry_memo_review_list_v1')return {data:{ok:true,reviews:__reviews}};
     return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
@@ -96,6 +102,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   {const call=await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_memo_review_v1').map(x=>x[1].p));assert.equal(call.length,1);assert.deepEqual([call[0].type,call[0].on_date,call[0].inquiry_id,/^c-/.test(call[0].item_key)],['call_supplement','2026-01-07',ANS_ID(),true]);}
   function ANS_ID(){return '22222222-2222-4222-8222-222222222222';}
   /* 약속: 미완료 = 지금 할 일 등록 · 완료 = 기록만 · 확인 불가 = 첫 통화에서 물어볼 것 */
+  /* 서버 거절: 완료 표식·성공 알림·응대 이력을 먼저 만들지 않는다. */
+  const historyBefore=await det.locator('.i4-log').innerText();
+  await page.evaluate(()=>{window.__rejectMemo=true;});
+  await det.locator('.im-p',{hasText:'다음 날 현장 방문'}).locator('button',{hasText:/^완료$/}).click();
+  await page.waitForFunction(()=>document.querySelector('#inq-v4 .i4-detail').textContent.includes('forbidden'));
+  assert.match(one(await det.locator('.im-prom .lb').innerText()),/^과거 약속 확인함 0 \/ 2$/);
+  assert.equal(await det.locator('.i4-log').innerText(),historyBefore);
+  if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'memo-save-rejected.png')});
+  await page.evaluate(()=>{window.__rejectMemo=false;__rpc=__rpc.filter(x=>x[0]!=='crm_inquiry_memo_review_v1'||x[1].p.type==='call_supplement');});
   const before=await page.evaluate(()=>__writes.length);
   await det.locator('.im-p',{hasText:'사진 이메일로 받기'}).locator('button',{hasText:/^미완료$/}).click();await page.waitForTimeout(250);
   assert.match(one(await det.locator('.im-prom .lb').innerText()),/^과거 약속 확인함 1 \/ 2$/);
@@ -142,7 +157,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.setViewportSize({width:1600,height:1000});await page.waitForTimeout(200);
   /* 서버가 내려 준 판단 읽기: 이 PC 의 판단을 지워도 서버 값으로 같은 화면 */
   await page.evaluate(()=>{const q=B.inquiries.find(x=>x.id===ANS);const p=detailPatchFor('inq',inqKey(q));delete p.memoReview;
-   __reviews.push({inquiry_id:ANS,kind:'promise',item_key:InquiryMemo.scan(q).promises[0].key,title:'사진 이메일로 받기',source_text:'x',on_date:'2026-01-07',result:'완료',decided_by:'이필선',decided_at:new Date().toISOString()},{inquiry_id:ANS,kind:'call',item_key:InquiryMemo.scan(q).calls[0].key,title:'',source_text:'x',on_date:'2026-01-07',result:null,original_at:'2026-01-06T09:00:00+09:00',decided_by:'이필선',decided_at:new Date().toISOString()});});
+   __reviews=[];__reviews.push({inquiry_id:ANS,kind:'promise',item_key:InquiryMemo.scan(q).promises[0].key,title:'사진 이메일로 받기',source_text:'x',on_date:'2026-01-07',result:'완료',decided_by:'이필선',decided_at:new Date().toISOString()},{inquiry_id:ANS,kind:'call',item_key:InquiryMemo.scan(q).calls[0].key,title:'',source_text:'x',on_date:'2026-01-07',result:null,original_at:'2026-01-06T09:00:00+09:00',decided_by:'이필선',decided_at:new Date().toISOString()});});
   await page.evaluate(async()=>{await InquiryMemo.load(true);InquiryV4.fresh();paint();});await page.waitForTimeout(200);
   await V.locator('.i4-row',{hasText:'천안두정'}).click();await page.waitForTimeout(150);
   assert.match(one(await det.locator('.im-prom .lb').innerText()),/^과거 약속 확인함 1 \/ 2$/,'서버 판단이 보인다');
