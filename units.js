@@ -63,6 +63,11 @@
  }
  function workOf(d){try{const w=R.dealWorkSummary(d);return w&&!/미분류/.test(w)?w:'공종 미분류';}catch(e){return String(d.work_name||d.work||'공종 미분류');}}
  function yearOf(d){const sc=d.stage_contexts||{},f=sc.first_contact&&sc.first_contact.fields||{};const y=String(d.construction_year||f.expected_timing||'');const m=/(20\d{2})/.exec(y);return m?m[1]:String(d.created||d.created_at||'').slice(0,4);}
+ /* 영업건 꼬리표(현장 공통 이력에서 어느 영업건인지): '2025 옥상방수' */
+ function tagOf(d){try{return (yearOf(d)+' '+workOf(d)).trim();}catch(e){return '';}}
+ /* 새 문의 3택의 결과 — 영업건이 어떻게 생겼는지: new_site(다른 현장 · 신규) / same_site(같은 현장 · 새 영업건) — 둘만 신규 영업건 수에 세고, 신규 현장 수는 new_site 만. 같은 영업건에 붙인 문의는 영업건을 만들지 않으므로 여기 오지 않는다 */
+ function newness(d){const sib=siblings(d),mine=String(d.created||d.created_at||'');const older=sib.some(x=>String(x.created||x.created_at||'')<mine);return older?'same_site':'new_site';}
+ function newCounts(deals){let n=0,sites=0;(deals||[]).forEach(d=>{n++;if(newness(d)==='new_site')sites++;});return {deals:n,sites};}
  function unit(d){
   let stage='';try{stage=R.stageLabel(R.dealStage(d));}catch(e){}
   return {id:String(d.id||''),short:'#'+String(d.id||'').replace(/-.*$/,'').slice(-6).toUpperCase(),work:workOf(d),year:yearOf(d),stage,amount:Number(R.oppAmt?R.oppAmt(d):d.amt)||0,responsible:responsible(d),roles:roles(d),brand:brand3(d),requests:requests(d),site:siteCommon(d)};
@@ -157,5 +162,5 @@
  }
  function onChange(e){const t=e.target;if(!t||!t.matches||!t.closest('.dvu'))return;const S=st(),k=t.dataset.dvuIn;if(k==='who')S.who=t.value;else if(k==='role')S.role=t.value;else if(/^b-/.test(k||'')){S.brand=S.brand||{};S.brand[k.slice(2)]=t.value;}}
  if(typeof document!=='undefined'){document.addEventListener('click',onClick,true);document.addEventListener('change',onChange,true);}
- return {on,avail,load,take,unit,roles,brand3,responsible,requests,siblings,siteCommon,receipt,handoverSummary,relationAfterLost,companySum,personal,html,assetLine,mount,ROLES,MAIN,RECEIPT_LABEL,SAVE,LIST,state:st,_rows:()=>rows};
+ return {on,avail,load,take,unit,tagOf,newness,newCounts,roles,brand3,responsible,requests,siblings,siteCommon,receipt,handoverSummary,relationAfterLost,companySum,personal,html,assetLine,mount,ROLES,MAIN,RECEIPT_LABEL,SAVE,LIST,state:st,_rows:()=>rows};
 });

@@ -18,6 +18,9 @@ test('영업건 단위 값: 책임자 = 다음 행동 담당 · 브랜드 3종 �
  assert.equal(ua.roles.main,'이필선');assert.deepEqual(ua.roles.list,[]);assert.equal(ua.roles.saved,false);
  assert.equal(ua.site.siblings.length,1);assert.equal(ua.site.acts,3,'연락 이력은 현장 공통(같은 현장 영업건 전체)');assert.equal(ua.site.contacts,1);
  assert.equal(ua.work,'옥상방수');assert.equal(ub.work,'재도장');
+ /* ② 연결: 영업건 꼬리표 · 신규 판정(같은 현장에 먼저 생긴 영업건이 있으면 same_site · 아니면 new_site) */
+ A.created='2025-11-20';Bd.created='2026-06-10';assert.equal(U.tagOf(A),'2025 옥상방수');assert.equal(U.tagOf(Bd),'2026 재도장');
+ assert.equal(U.newness(A),'new_site');assert.equal(U.newness(Bd),'same_site');assert.deepEqual(U.newCounts([A,Bd]),{deals:2,sites:1},'신규 영업건 2 · 신규 현장 1');
  /* 저장된 값이 있으면 그대로(주담당은 역할 목록에 들어오지 않는다) */
  U.take({deal_id:'a1',roles:[{name:'한준엽',role:'지원'},{name:'박현우',role:'시공 담당'},{name:'이필선',role:'지원'},{name:'아무나',role:'사장'}],brand_inflow:'석민이앤씨',brand_proposal:'POUR공법',brand_contract:'POUR공법'});
  const r=U.roles(A);assert.deepEqual(r.list,[{name:'한준엽',role:'지원'},{name:'박현우',role:'시공 담당'}]);assert.equal(r.saved,true);assert.equal(U.brand3(A).saved,true);

@@ -18,5 +18,7 @@
 #detailView .dvu-ho dl{margin:0;display:grid;grid-template-columns:64px minmax(0,1fr);gap:2px 8px}#detailView .dvu-ho dl>div{display:contents}#detailView .dvu-ho dt{color:#6b7280;font-size:11.5px}#detailView .dvu-ho dd{margin:0;font-size:12px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #detailView .dvu-rc{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin-top:2px}
 #detailView .dvu-ft{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid #f2f3f6;padding-top:7px}#detailView .dvu-ft>span{flex:1;min-width:140px;font-size:11.5px;color:#9ca3af}#detailView .dvu-ft em{flex:1 1 100%;font-style:normal;font-size:12px;font-weight:600;color:#b42318}
+/* 고객 자산 상세 · 관계 타임라인의 영업건 꼬리표 */
+#assetV2 .idv-meta .dvu-tag{font-style:normal;font-size:10.5px;font-weight:700;color:#374151;border:1px solid #e3e6ec;border-radius:4px;padding:0 5px;margin-left:4px;white-space:nowrap}
 /* 고객 자산 상세 · 지금 진행 중인 영업 줄 밑 한 줄 */
 #assetV2 .av-opp .dvu-al{display:block;font-size:11px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
