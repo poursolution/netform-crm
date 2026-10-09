@@ -54,12 +54,12 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const kpi=()=>V.locator('.ps3-kpis .over').innerText().then(one);
   /* ① 컨설팅 */
   assert.match(one(await V.locator('.ps3-head span').innerText()),/물량 산출 목표 3일 · 최대 5일 \(견적 요청 등록일부터 · 견적팀\)$/);assert.doesNotMatch(one(await V.locator('.ps3-head span').innerText()),/견적 처리/);
-  assert.equal(one(await V.locator('.ps3-tab').nth(3).locator('span').innerText()),'미팅 후 견적 요청 등록');
+  assert.equal(one(await V.locator('.ps3-tab').nth(3).locator('span').innerText()),'미팅 기록 · 견적 요청 확인');
   const cm=await rowOf('c-meet');assert.deepEqual([cm.task,cm.due,cm.why,cm.btn],['견적 요청 등록','기한 없음 · 설정값 확인','판정: 미팅 완료 '+(await page.evaluate(()=>PipelineJudge.md(DAY(-4))))+' · 견적 요청 전 견적 요청 등록','견적 요청'],'미팅 후 견적 요청 등록 = 별도 업무 · 기한은 설정값');
   const cr=await rowOf('c-req');assert.deepEqual([cr.task,cr.due,cr.why.replace(/\s*견적 예정일 입력$/,'')],['물량 산출 기한 확인 (견적팀)','날짜 미입력 · 기한 계산 안 함','판정: 견적 요청 등록 · 예정일 없음']);
   const cd=await rowOf('c-due');assert.deepEqual([cd.due,cd.dueCls,cd.why.slice(0,22)],['2일 지남','r','판정: 물량 산출 기한 '+(await page.evaluate(()=>PipelineJudge.md(DAY(-2))))]);
   assert.match(await kpi(),/^기한 초과 1건 확인 필요 2 · 날짜 미입력 2 · 판정 불가 0$/,'제목 숫자: 기한 초과(물량 산출 기한) 1 · 확인 필요 2');
-  assert.deepEqual((await V.locator('.ps3-reason span>b:first-child').allInnerTexts()),['미팅 일정 없음','물량 산출 기한 넘김','필수 확인 미입력','다음 행동 · 날짜 없음','30일 넘게 머묾']);
+  assert.deepEqual((await V.locator('.ps3-reason span>b:first-child').allInnerTexts()),['미팅 여부 확인 필요','물량 산출 기한 넘김','필수 확인 미입력','다음 행동 · 날짜 없음','30일 넘게 머묾']);
   /* 설정: '미팅 후 견적 요청 등록'은 보류(운영 제안) · 값이 없으니 기한 계산 안 함 · 값을 넣으면 계산 */
   assert.deepEqual(await page.evaluate(()=>{const r=CRMRules.ROWS.find(x=>x.k==='quote_request_days');return [r.st,r.l,r.unit,CRMRules.get('quote_request_days')===undefined];}),['hold','미팅 후 견적 요청 등록','일',true]);
   /* 값이 정해지면(회의 확정 뒤 설정에 값이 들어오면) 미팅 완료 + n일로 계산 — 지금은 보류 행이라 설정 화면에서 못 넣으므로 읽기 함수만 잠시 바꿔 본다 */
