@@ -14,6 +14,7 @@ test('문의 원문의 일시·붙여 쓴 통화 완료와 현장 미팅은 확�
 test('예정·부정 통화를 실제 통화 후보로 읽지 않으며 취소 예정은 방문 약속이 아니다',()=>{
  for(const text of ['1차통화예정','통화완료 예정','통화완료 아님','1차 통화 불가','통화 시도'])assert.equal(M.parse(text,'').calls.length,0,text);
  assert.equal(M.parse('현장 미팅 취소 예정','').promises.length,0);
+ assert.equal(M.needsReview({message:'다음주 월요일 현장 미팅 예정'}),false,'날짜 없는 새 약속만으로 이관 기록이라고 판단하지 않음');
  assert.equal(M.parse('2026/01/16 PM 05:02 1차 통화완료','').calls[0].date,'2026-01-16');
 });
 test('원문과 응대 메모가 같으면 후보를 중복 생성하지 않고 같은 길이 수정도 다시 읽는다',()=>{
