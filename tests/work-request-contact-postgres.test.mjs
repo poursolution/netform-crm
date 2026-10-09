@@ -1,6 +1,7 @@
 import {test,before,after,beforeEach} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
 import {PGlite} from '@electric-sql/pglite';
 import {fixture} from './aligo-database-fixture.mjs';
 const sql=f=>readFileSync(new URL('../sql/'+f,import.meta.url),'utf8');
@@ -54,6 +55,49 @@ const writeReview=p=>call(p,'crm_work_request_objectives_write_v1');
 const reviewBody=(context,extra={})=>({id:request,operation_id:id(70),expected_revision:context.revision,expected_updated_at:context.expected_updated_at,
  decisions:allAsks.slice(1).map(ask=>({ask,value:'not_needed',note:'고객과 필요 여부 확인'})),complete:true,...extra});
 const connectedReview=async()=>{await compound();await call2(body());return readReview();};
+
+// Exercise the real WorkRequest -> OpsStore -> PostgreSQL chain. Only the network boundary is simulated.
+function objectiveClient({storage=new Map(),loseWriteAck=false}={}){
+ const allowed=new Set(['crm_work_request_objectives_read_v1','crm_work_request_objectives_write_v1']);
+ const R={G:{},ME:{id:owner,name:'담당'},esc:String,escAttr:String,CRMRelease:{has:n=>allowed.has(n)},
+  localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},
+  SB:{rpc:async(name,{p})=>{assert.ok(allowed.has(name));let data;
+   try{data=await call(p,name);}catch(e){return {error:{code:e.code,message:e.message}};}
+   if(loseWriteAck&&name==='crm_work_request_objectives_write_v1')throw Error('response lost after commit');
+   return {data};}}
+ };
+ const context={window:R,document:{addEventListener(){}},Date,Map,Set,setTimeout:()=>{}};
+ for(const f of ['ops-store.js','work-request.js'])runInNewContext(readFileSync(new URL('../'+f,import.meta.url),'utf8'),context);
+ return {api:R.WorkRequest.objectives,R,storage};
+}
+
+test('integrated objective API accepts actual SQL ACK and preserves the linked quote followup',async()=>{
+ await compound();const contact=await call2(body({result:'견적요청'}));const x=objectiveClient(),c=await x.api.read(request);
+ const a=await x.api.write(reviewBody(c,{decisions:[
+  {ask:allAsks[1],value:'needed',note:'견적 요청 확인',next_action_id:contact.next_action_id},
+  {ask:allAsks[2],value:'not_needed',note:'방문은 필요 없다고 확인'}]}));
+ assert.equal(a.request_complete,true);assert.equal(x.storage.size,0);const fresh=await x.api.read(request);
+ assert.equal(fresh.request.status,'done');assert.equal(fresh.decisions[0].next_action.id,contact.next_action_id);
+ await db.exec('reset role');const task=(await db.query('select status,due_at from next_actions where id=$1',[contact.next_action_id])).rows[0];
+ assert.equal(task.status,'open');assert.ok(task.due_at);assert.equal((await db.query('select count(*)::int n from crm_security.work_request_objective_events')).rows[0].n,1);
+});
+
+test('integrated lost SQL ACK is recovered after reload without duplicate decisions or stale local state',async()=>{
+ await connectedReview();const storage=new Map(),a=objectiveClient({storage,loseWriteAck:true});const c=await a.api.read(request);
+ await assert.rejects(a.api.write(reviewBody(c)),/response lost/);assert.equal(storage.size,1);
+ const b=objectiveClient({storage});const replay=await b.api.retry(request);assert.equal(replay.replayed,true);assert.equal(storage.size,0);
+ const fresh=await b.api.read(request);assert.equal(fresh.revision,1);assert.equal(fresh.history_total,1);assert.equal(fresh.request_complete,true);
+ assert.equal(b.R.G.workReq,undefined,'receipt does not overwrite shared request state');
+});
+
+test('integrated PostgreSQL conflict clears retry state and allows fresh reviewed save',async()=>{
+ await connectedReview();const x=objectiveClient(),stale=await x.api.read(request);
+ await writeReview(reviewBody(stale,{operation_id:id(71),decisions:[],complete:false}));
+ await assert.rejects(x.api.write(reviewBody(stale)),e=>e.code==='40001'&&e.databaseRejected===true);
+ assert.equal(x.storage.size,0);let fresh=await x.api.read(request);assert.equal(fresh.revision,1);
+ await x.api.write(reviewBody(fresh,{operation_id:id(72)}));fresh=await x.api.read(request);
+ assert.equal(fresh.revision,2);assert.equal(fresh.request_complete,true);assert.equal(fresh.history_total,2);
+});
 
 test('objective context survives reload and allows requester/recipient only, including null recipient',async()=>{
  const c=await connectedReview();assert.equal(c.revision,0);assert.deepEqual(c.contact_proof.remaining_asks,allAsks.slice(1));assert.deepEqual(c.history,[]);
