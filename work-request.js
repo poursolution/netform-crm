@@ -15,6 +15,10 @@
  const ready=()=>{try{return !R.G.workRequestOff&&!!O()&&O().has(RPC.list)&&O().has(RPC.create)&&O().has(RPC.reply);}catch(e){return false;}};
  /* 저장소가 실제로 한 번 응답한 뒤에만 켠다 — 서버에 아직 없으면(SQL 적용 전) 예전 [독촉] 화면 그대로 */
  const enabled=()=>{if(!ready())return false;const S=st();if(!S.loaded){load();return false;}return true;};
+ /* 2026-10-09 받는 사람: 새 요청 도착 팝업(요청자 · 현장 · 해야 할 일 · 기한만) → [응대 시작] / [확인 · 나중에 처리] → 확인 뒤에는 오늘 업무 맨 위에 작은 '관리자 요청 · 미완료 n건' 카드 한 줄씩 · [처리하기]로 그 건만 펼침.
+    닫기(×) · 확인(seen) · 응대(working → 결과 · 다음 행동 저장 = done)는 서로 다른 상태 — 열어 보거나 닫은 것만으로 확인 · 완료 처리하지 않는다. 끄기 G.wrqPopOff=true 면 예전(펼친 카드 · 열면 담당 확인) */
+ const POP=()=>!R.G.wrqPopOff;
+ const X=S=>{S.open=S.open||{};S.popSeen=S.popSeen||{};return S;};
  const st=()=>R.G.workReq||(R.G.workReq={list:[],at:0,busy:false,loaded:false,modal:null,card:{},closing:{},seen:{}});
  const toast=(m,k)=>{if(typeof R.toast==='function')R.toast(m,k);};
  const rep=v=>{try{return R.repN(v)||'';}catch(e){return String(v||'').trim();}};
@@ -57,7 +61,7 @@
  function load(force){
   const S=st();if(!ready()||S.busy||(!force&&Date.now()-S.at<60000))return;
   S.busy=true;O().rpc(RPC.list,{days:30}).then(r=>{const before=JSON.stringify(S.list),first=!S.loaded;S.list=Array.isArray(r.requests)?r.requests:[];S.loaded=true;S.at=Date.now();
-   if(first||before!==JSON.stringify(S.list))repaint();setTimeout(autoClose,0);}).catch(()=>{S.at=Date.now();}).finally(()=>{S.busy=false;});
+   try{popCheck();}catch(e){}if(first||before!==JSON.stringify(S.list))repaint();setTimeout(autoClose,0);}).catch(()=>{S.at=Date.now();}).finally(()=>{S.busy=false;});
  }
  function repaint(){try{if(R.G.page==='today'||R.G.page==='mgmt'||document.getElementById('kpi-b'))R.paint();else if(document.getElementById('inq-inbox-dialog')&&R.InquiryDetailV2)R.InquiryDetailV2.reskin();}catch(e){}}
  const put=r=>{if(!r||!r.id)return;const S=st(),i=S.list.findIndex(x=>x.id===r.id);if(i>=0)S.list[i]=r;else S.list.unshift(r);};
@@ -178,8 +182,8 @@
   if(!done&&it){try{ev=evidence(r);}catch(e){ev=null;}
    try{if(r.target_type==='deal'){const at=R.salesActivityAt(it)||'';exec=!!at&&Date.parse(at)>=since;}else{const F=R.InquiryFlow;exec=!!(F&&F.on&&F.on()&&(F.state(it).logs||[]).some(l=>Date.parse(l.at)>=since));}}catch(e){}}
   const evid=r.kind==='contract'?'계약일 · 금액 · 계약서':r.kind==='award'?'낙찰사 · 금액 · 증빙':r.kind==='quote'?'견적 요청 · 예정일':isHandover(r)?'인수 확인':K.contact?'결과 · 다음 행동':'처리 기록';
-  const idx=done?4:ev?3:exec?2:seen?1:0;
-  const rows=[['요청',whenTxt(r.created_at)+(r.requested_by?' '+r.requested_by:'')],['담당 확인',seen?(r.to_name||'')+' 열어 봄':'열기 전'],['실행',idx>=2?(r.to_name||'')+' 기록 중':'기록 전'],['증빙',idx>=3?evid+' 확인':evid+' 전'],['완료',done?whenTxt(r.closed_at||r.updated_at)+(r.auto?' · 자동 판정':' · 확인'):'자동 판정']];
+  const idx=done?4:ev?3:(exec||r.status==='working')?2:seen?1:0;
+  const rows=[['요청',whenTxt(r.created_at)+(r.requested_by?' '+r.requested_by:'')],['담당 확인',seen?(r.to_name||'')+' 확인함':'확인 전'],['실행',idx>=2?(r.to_name||'')+' 기록 중':'기록 전'],['증빙',idx>=3?evid+' 확인':evid+' 전'],['완료',done?whenTxt(r.closed_at||r.updated_at)+(r.auto?' · 자동 판정':' · 확인'):'자동 판정']];
   return rows.map((s,i)=>({l:s[0],t:s[1],s:done?1:i<idx?1:i===idx?2:0}));
  }
  const stepsHtml=r=>'<div class="wrq-steps" aria-label="요청 단계">'+steps(r).map(s=>'<div class="'+(s.s===1?'done':s.s===2?'cur':'')+'"><span></span><b>'+h(s.l)+'</b><small>'+h(s.t)+'</small></div>').join('')+'</div>';
@@ -218,7 +222,7 @@
   if(!enabled())return '';load();const L=incoming();if(!L.length)return '';const S=st();
   const card=r=>{const C=S.card[r.id]||(S.card[r.id]={res:'',owner:'',busy:false,err:''}),br=r.kind==='branch',K=KIND[r.kind]||{},t=target(r),od=overdue(r);
    const ho=isHandover(r);
-   const head='<div class="hd"><em>'+(br?'본사 확인 요청':ho?'재배정 인계':'관리자 요청')+'</em><b>'+h(r.site)+'</b>'+(lateTxt(r)?'<span class="late">'+h(lateTxt(r))+'</span>':'')+(r.round>=2?'<span class="late">재확인 '+r.round+'회차</span>':'')+'<i></i><span class="by'+(od?' od':'')+'">'+h((r.requested_by||'관리자')+' · '+whenTxt(r.reasked_at||r.created_at)+' · '+(br?'기한 '+(r.due_label||''):(r.due_label||'')+'까지')+(od?' · 기한 지남':''))+'</span></div>'+stepsHtml(r);
+   const head='<div class="hd"><em>'+(br?'본사 확인 요청':ho?'재배정 인계':'관리자 요청')+'</em><b>'+h(r.site)+'</b>'+(lateTxt(r)?'<span class="late">'+h(lateTxt(r))+'</span>':'')+(r.round>=2?'<span class="late">재확인 '+r.round+'회차</span>':'')+'<i></i><span class="by'+(od?' od':'')+'">'+h((r.requested_by||'관리자')+' · '+whenTxt(r.reasked_at||r.created_at)+' · '+(br?'기한 '+(r.due_label||''):(r.due_label||'')+'까지')+(od?' · 기한 지남':''))+'</span>'+(POP()?'<button type="button" class="wrq-fold" data-wr="fold" data-id="'+r.id+'">접기</button>':'')+'</div>'+stepsHtml(r);
    /* ops_12 C⑧ 재배정 인계 카드: 이전 담당 → 새 담당 · 재배정자 · 사유 / 인계 메모 · 남은 할 일 · 마지막 연락 / [이전 담당에게 질문] [인수 확인] — 확인 전까지 관리자 화면 '인계 대기' */
    if(ho){const rows=handoverRows(r),first=rows.find(x=>x[0]==='')||rows[0]||['',''],rest=rows.filter(x=>x[0]);
     return '<article class="wrq-in wrq-ho" data-id="'+r.id+'">'+head+'<span class="memo"><b>'+h(first[1]||first[0])+'</b></span>'
@@ -240,14 +244,56 @@
      +'<div class="ft"><span>'+(C.res==='부재'?'부재 = 연락 시도로만 기록 · 최초 응대는 아직 미완료':C.res?'저장하면 관리자 요청 자동 완료':'결과를 골라야 저장')+'</span><button type="button" class="go" data-wr="save" data-id="'+r.id+'"'+(C.res&&!C.busy?'':' disabled')+'>'+(C.busy?'저장 중…':'저장')+'</button></div></article>';}
    return '<article class="wrq-in" data-id="'+r.id+'">'+head+'<span class="memo"><b>요청</b> '+h((r.asks||[]).join(' · ')||r.label)+(r.memo?'<br><span>"'+h(r.memo)+'"</span>':'')+'</span>'
     +'<div class="ft"><span>완료 조건 · '+h(K.done||'')+' — 입력되면 자동 완료 · 따로 [완료] 없음</span><button type="button" class="go" data-wr="go" data-id="'+r.id+'">열어서 입력</button></div></article>';};
-  /* 받은 사람이 화면을 열면 '담당 확인'으로 */
-  L.filter(r=>r.status==='sent'&&!S.closing['seen:'+r.id]).forEach(r=>{S.closing['seen:'+r.id]=true;O().rpc(RPC.reply,{id:r.id,action:'seen'}).then(x=>put(x.request)).catch(()=>{});});
+  /* 예전 방식(G.wrqPopOff)만: 받은 사람이 화면을 열면 '담당 확인'으로. 팝업 방식에서는 [확인] · [응대 시작]을 눌러야 확인 */
+  if(!POP())L.filter(r=>r.status==='sent'&&!S.closing['seen:'+r.id]).forEach(r=>{S.closing['seen:'+r.id]=true;O().rpc(RPC.reply,{id:r.id,action:'seen'}).then(x=>put(x.request)).catch(()=>{});});
   const LG=L.filter(r=>r.label===LEGACY_LABEL),rest=L.filter(r=>r.label!==LEGACY_LABEL);
   const bundle=LG.length?'<article class="wrq-in wrq-legacy"><div class="hd"><em>관리자 요청</em><b>'+h(LEGACY_LABEL+' '+LG.length+'건')+'</b><i></i><span class="by'+(LG.some(overdue)?' od':'')+'">'+h((LG[0].requested_by||'관리자')+' · '+whenTxt(LG[0].reasked_at||LG[0].created_at)+' · '+(LG[0].due_label||'')+'까지')+(LG.some(overdue)?' · 기한 지남':'')+'</span></div>'
    +'<span class="memo">예전 시스템에서 옮겨 온 자료입니다 · 한 건씩 [영업 재개]에서 지금 단계 · 다음 행동 · 날짜를 정하면 그 건은 자동으로 완료됩니다</span>'
    +'<div class="wrq-lg">'+LG.map(r=>'<div><b title="'+attr(r.site)+'">'+h(r.site)+'</b><button type="button" data-wr="resume" data-id="'+r.id+'">영업 재개</button></div>').join('')+'</div></article>':'';
-  return '<section class="wrq-top" aria-label="받은 요청">'+bundle+rest.map(card).join('')+'</section>';
+  if(!POP())return '<section class="wrq-top" aria-label="받은 요청">'+bundle+rest.map(card).join('')+'</section>';
+  X(S);const unseen=L.filter(r=>r.status==='sent').length,allBr=rest.length>0&&rest.every(r=>r.kind==='branch');
+  const sum='<div class="wrq-sum"><em>'+(allBr?'본사 확인 요청':'관리자 요청')+'</em><b>미완료 '+L.length+'건</b>'+(unseen?'<span class="new">확인 전 '+unseen+'건</span><button type="button" data-wr="popshow">새 요청 보기</button>':'')+'<i></i><span class="hint">확인 = 받았다는 표시만 · 결과와 다음 행동을 저장해야 완료</span></div>';
+  return '<section class="wrq-top wrq-compact" aria-label="받은 요청">'+sum+rest.map(r=>S.open[r.id]?card(r):row(r)).join('')+bundle+'</section>';
  }
+ /* 확인 뒤 작은 카드 한 줄: 현장 · 할 일 · 기한 · 상태 · [처리하기] */
+ const SHORT={first:'고객 연락',follow:'후속 연락',quote:'견적 등록',award:'낙찰결과 등록',contract:'계약정보 입력',handover:'인수 확인',support:'지원처리 확인',deadline:'마감 준비',branch:'본사 회신'};
+ const shortOf=r=>isHandover(r)?SHORT.handover:SHORT[r.kind]||r.label||'처리';
+ const dueTxt=r=>{const l=r.due_label||whenTxt(r.due_at);return r.kind==='branch'?'기한 '+l:l==='오늘 중'?'오늘까지':/안$/.test(l)?l:l+'까지';};
+ function row(r){const od=overdue(r),stt=r.status==='working'?['응대 중','wk']:r.status==='sent'?['확인 전','nw']:['확인함',''];
+  return '<div class="wrq-row'+(od?' od':'')+'" data-id="'+r.id+'"><i style="background:'+(BRAND[r.brand]||'#9aa0ab')+'"></i><b title="'+attr(r.site)+'">'+h(r.site)+'</b><span class="t">'+h(shortOf(r)+' · '+dueTxt(r))+(od?'<em>기한 지남</em>':'')+'</span><span class="st '+stt[1]+'">'+h(stt[0])+'</span><button type="button" class="go" data-wr="start" data-id="'+r.id+'">처리하기</button></div>';
+ }
+ /* ── 새 요청 도착 팝업 ── */
+ const TODO={first:'고객에게 연락한 뒤 통화 결과와 다음 일정을 등록해주세요.',follow:'고객에게 후속 연락한 뒤 고객 반응과 다음 일정을 등록해주세요.',quote:'견적 요청과 견적 예정일을 등록해주세요.',award:'낙찰사 · 낙찰금액 · 증빙을 등록해주세요.',contract:'계약일 · 계약금액 · 계약서를 등록해주세요.',handover:'인계 메모와 남은 할 일을 확인하고 [인수 확인]을 눌러주세요.',support:'처리 담당과 처리 예정일을 등록해주세요.',deadline:'제안 · 입찰 준비 상태와 제출일을 등록해주세요.',branch:'담당자를 지정하고 고객 첫 연락 진행 여부를 본사에 회신해주세요.'};
+ const eul=w=>{const c=String(w).charCodeAt(String(w).length-1);return c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28?'을':'를';};
+ const askOf=r=>r.kind==='first'||r.kind==='follow'?'고객 응대':isHandover(r)?'재배정 인계':String((KIND[r.kind]||{}).label||r.label||'처리').replace(/\s*요청$/,'');
+ const startLabel=r=>r.kind==='branch'?'회신하기':isHandover(r)?'인수 확인하기':r.kind==='first'||r.kind==='follow'?'응대 시작':'처리 시작';
+ function popText(r){const a=askOf(r);return {who:(r.requested_by||'관리자')+'님이 '+a+eul(a)+' 요청했습니다.',site:r.site||'',task:TODO[isHandover(r)?'handover':r.kind]||((r.asks||[]).join(' · ')||r.label||''),due:'처리 기한: '+(r.due_label||whenTxt(r.due_at))+(overdue(r)?' · 지남':''),start:startLabel(r)};}
+ function popModel(){const S=X(st());if(!S.pop)return null;const L=S.pop.ids.map(id=>S.list.find(r=>r.id===id)).filter(r=>r&&r.to_me&&r.status==='sent');return L.length?L:null;}
+ /* 새로 온(아직 팝업으로 보여 주지 않은) 확인 전 요청이 있으면 팝업 — 접속 중이면 도착 때, 접속하지 않았으면 다음 접속 때 */
+ function popCheck(){if(!POP())return;const S=X(st()),fresh=incoming().filter(r=>r.status==='sent'&&!S.popSeen[r.id]);if(!fresh.length){drawPop();return;}fresh.forEach(r=>{S.popSeen[r.id]=true;});S.pop={ids:(S.pop?S.pop.ids:[]).concat(fresh.map(r=>r.id))};drawPop();}
+ function drawPop(){
+  if(typeof document.createElement!=='function')return;const S=X(st()),L=popModel();let ov=document.getElementById('wrq-pop');
+  if(!L){if(S.pop)S.pop=null;ov?.remove();return;}
+  if(!ov){ov=document.createElement('div');ov.id='wrq-pop';ov.className='wrq-shade wrq-popshade';document.body.append(ov);ov.addEventListener('mousedown',e=>{if(e.target===ov)popClose();});ov.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();popClose();}});}
+  const LG=L.filter(r=>r.label===LEGACY_LABEL),rest=L.filter(r=>r.label!==LEGACY_LABEL),one=rest.length===1&&!LG.length,ft='<span>확인 = 받았다는 표시만 · 결과와 다음 행동을 저장해야 완료</span>';
+  const item=r=>{const t=popText(r);return '<article class="wrq-pop-item" data-id="'+r.id+'"><p class="who">'+h(t.who)+'</p><b class="site">'+h(t.site)+'</b><p class="task">'+h(t.task)+'</p><p class="due'+(overdue(r)?' od':'')+'">'+h(t.due)+'</p>'+(one?'':'<div class="bt"><button type="button" class="go" data-wr="start" data-id="'+r.id+'">'+h(t.start)+'</button><button type="button" data-wr="popack" data-id="'+r.id+'">확인 · 나중에 처리</button></div>')+'</article>';};
+  const lg=LG.length?'<article class="wrq-pop-item" data-id="'+LG[0].id+'"><p class="who">'+h((LG[0].requested_by||'관리자')+'님이 '+LEGACY_LABEL+' '+LG.length+'건을 요청했습니다.')+'</p><p class="task">예전 시스템에서 옮겨 온 자료입니다 · 오늘 업무의 [영업 재개]에서 한 건씩 정리해주세요.</p><p class="due">'+h('처리 기한: '+(LG[0].due_label||whenTxt(LG[0].due_at)))+'</p><div class="bt"><button type="button" data-wr="popack" data-id="'+LG.map(r=>r.id).join(',')+'">확인 · 나중에 처리</button></div></article>':'';
+  ov.innerHTML='<section class="wrq-pop" role="dialog" aria-modal="true" aria-label="새 요청"><header><b>'+(one?'새 요청':'새 요청 '+L.length+'건')+'</b><i></i><button type="button" class="wrq-x" data-wr="popclose" aria-label="닫기">×</button></header><div class="wrq-pop-body">'+rest.map(item).join('')+lg+'</div>'
+   +'<footer>'+ft+(one?'<button type="button" class="go" data-wr="start" data-id="'+rest[0].id+'">'+h(popText(rest[0]).start)+'</button><button type="button" data-wr="popack" data-id="'+rest[0].id+'">확인 · 나중에 처리</button>':'<button type="button" data-wr="popackall">모두 확인 · 나중에 처리</button>')+'</footer></section>';
+  try{const b=ov.querySelector('footer [data-wr="start"],[data-wr="popackall"]');b&&b.focus();}catch(e){}
+ }
+ /* [확인 · 나중에 처리] = 수신 확인(seen)만 기록 · 요청은 미완료로 남는다 */
+ function popAck(ids){const S=X(st());(ids||[]).forEach(id=>{const r=S.list.find(x=>x.id===id);if(S.pop)S.pop.ids=S.pop.ids.filter(x=>x!==id);if(!r||r.status!=='sent'||S.closing['seen:'+id])return;S.closing['seen:'+id]=true;
+   O().rpc(RPC.reply,{id,action:'seen'}).then(x=>put(x.request)).catch(()=>{}).finally(()=>{delete S.closing['seen:'+id];drawPop();repaint();});});drawPop();repaint();}
+ const popAckAll=()=>popAck((popModel()||[]).map(r=>r.id));
+ /* 닫기(×) = 아무것도 기록하지 않는다 · 작은 카드에 '확인 전' + [새 요청 보기] */
+ function popClose(){const S=X(st());S.pop=null;drawPop();repaint();}
+ function popShow(){const S=X(st()),ids=incoming().filter(r=>r.status==='sent').map(r=>r.id);if(!ids.length)return;ids.forEach(id=>{S.popSeen[id]=true;});S.pop={ids};drawPop();}
+ /* [응대 시작] · [처리하기] = 처리 중(working) + 그 건만 펼쳐서 전화 · 결과 · 다음 행동 입력 */
+ function start(id){const S=X(st()),r=S.list.find(x=>x.id===id);if(!r)return;S.open[id]=true;S.pop=null;drawPop();
+  if((r.status==='sent'||r.status==='seen')&&!S.closing['work:'+id]){S.closing['work:'+id]=true;O().rpc(RPC.reply,{id,action:'working'}).then(x=>put(x.request)).catch(()=>{}).finally(()=>{delete S.closing['work:'+id];repaint();});}
+  if(R.G.page!=='today'&&typeof R.goPage==='function'){try{R.goPage('today');return;}catch(e){}}repaint();}
+ function fold(id){const S=X(st());delete S.open[id];repaint();}
  /* [저장] = 실제 기록 저장(기존 저장 길) → 성공하면 요청 자동 완료. 부재는 연락 시도로만 남는다 */
  async function saveCard(id){
   const S=st(),r=S.list.find(x=>x.id===id),C=S.card[id];if(!r||!C||!C.res||C.busy)return;const t=target(r),nx=nxOf(r.target_type,C.res);
@@ -294,13 +340,19 @@
  function onClick(e){
   const b=e.target.closest('[data-wr]');if(!b||b.disabled)return;const a=b.dataset.wr,S=st(),id=b.dataset.id,M=S.modal;
   if(a==='resume'){const r=S.list.find(x=>x.id===id);if(r&&R.PipelineLegacy&&typeof R.PipelineLegacy.open==='function')R.PipelineLegacy.open(String(r.target_id),true);return;}
-  if(!b.closest('#pg-today')&&!b.closest('#wrq-modal'))return;e.preventDefault();e.stopPropagation();
+  if(!b.closest('#pg-today')&&!b.closest('#wrq-modal')&&!b.closest('#wrq-pop'))return;e.preventDefault();e.stopPropagation();
   if(a==='ask')return openModal(b.dataset.key);
   if(a==='close')return closeModal();
   if(a==='askpick'&&M){const n=Number(b.dataset.v);M.asks[n]=!M.asks[n];return drawModal();}
   if(a==='due'&&M){M.due=Number(b.dataset.v)||0;M.err='';return drawModal();}
   if(a==='send')return send();
   if(a==='reask')return reask(id);
+  if(a==='popclose')return popClose();
+  if(a==='popackall')return popAckAll();
+  if(a==='popack')return popAck(String(b.dataset.id||'').split(',').filter(Boolean));
+  if(a==='popshow')return popShow();
+  if(a==='start')return start(id);
+  if(a==='fold')return fold(id);
   const r=S.list.find(x=>x.id===id);if(!r)return;
   if(a==='check'){S.seen[id]=true;openTarget(r);return repaint();}
   if(a==='ack'){if(S.closing[id])return;S.closing[id]=true;return O().rpc(RPC.reply,{id,action:'done',result:'관리자 확인 · 전화로 전달'}).then(x=>{put(x.request);touch(x.request);toast('처리 확인으로 닫았습니다');noteDeal(x.request,'[내부 요청] '+lineEnd(x.request));repaint();}).catch(e=>toast('닫지 못했습니다: '+String(e&&e.message||e),'warn')).finally(()=>{delete S.closing[id];});}
@@ -315,5 +367,9 @@
  }
  document.addEventListener('click',onClick,true);
  document.addEventListener('change',e=>{const t=e.target;if(t&&t.matches&&t.matches('#pg-today [data-wr-in="owner"]')){const C=st().card[t.dataset.id];if(C){C.owner=t.value;repaint();}}},true);
- root.WorkRequest={enabled,load,reqFor,locked,cell,sideHtml,topHtml,history,autoClose,evidence,decorate,steps,HANDOVER_LABEL,isHandover,KIND,RPC,state:st,_dueAt:dueAt,_lineReq:lineReq,_lineEnd:lineEnd};
+ /* 접속 중 새 요청 도착: 2분마다 · 화면으로 돌아왔을 때 한 번 더 읽는다(load 안에서 1분 간격 제한) */
+ const poll=()=>{try{if(POP()&&ready()&&st().loaded&&(typeof document.visibilityState!=='string'||document.visibilityState==='visible'))load();}catch(e){}};
+ if(typeof setInterval==='function')setInterval(poll,120000);
+ document.addEventListener('visibilitychange',poll);
+ root.WorkRequest={enabled,load,reqFor,locked,cell,sideHtml,topHtml,history,autoClose,evidence,decorate,steps,HANDOVER_LABEL,isHandover,KIND,RPC,state:st,popCheck,popModel,popText,popAck,popAckAll,popClose,popShow,start,fold,_row:row,_dueAt:dueAt,_lineReq:lineReq,_lineEnd:lineEnd};
 })(window);

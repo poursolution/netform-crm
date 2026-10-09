@@ -75,3 +75,27 @@
 .wrq-in.wrq-ho .hd>em{background:#e8a09a}
 .wrq-hrows{display:grid;grid-template-columns:72px minmax(0,1fr);gap:5px 10px;font-size:12.5px}.wrq-hrows>span{color:#6b7280}.wrq-hrows>b{font-weight:500;min-width:0}
 .tv3 .wrq-in .ft button:not(.go){border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12px;font-weight:600;border-radius:7px;padding:6px 11px;cursor:pointer;min-height:0;box-shadow:none;width:auto;margin-right:6px}
+
+/* 2026-10-09 새 요청 도착 팝업(화면 가운데 · 요청자 · 현장 · 해야 할 일 · 기한만) → 확인 뒤 오늘 업무 맨 위 작은 카드 */
+.wrq-popshade{align-items:center;padding-top:0;z-index:1300}
+.wrq-pop{width:440px;max-width:calc(100% - 32px);max-height:calc(100vh - 80px);overflow:auto;background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(17,24,39,.3);display:flex;flex-direction:column;color:#15171c;font-size:13px}
+.wrq-pop>header{padding:14px 18px;border-bottom:1px solid #eef0f3;display:flex;align-items:center;gap:8px}.wrq-pop>header b{font-size:15px}.wrq-pop>header i{flex:1}
+.wrq-pop .wrq-x{border:0;background:none;font:inherit;font-size:18px;color:#6b7280;cursor:pointer;min-height:0;padding:0 2px;box-shadow:none;width:auto}
+.wrq-pop-body{padding:4px 18px;display:flex;flex-direction:column}
+.wrq-pop-item{padding:12px 0;border-bottom:1px solid #f2f3f6;display:flex;flex-direction:column;gap:5px}.wrq-pop-item:last-child{border-bottom:0}
+.wrq-pop-item .who{margin:0;font-size:13px;color:#374151}.wrq-pop-item .site{font-size:16px}.wrq-pop-item .task{margin:0;font-size:13px;line-height:1.5}
+.wrq-pop-item .due{margin:0;font-size:12.5px;font-weight:700}.wrq-pop-item .due.od{color:#b42318}
+.wrq-pop-item .bt{display:flex;gap:8px;margin-top:4px}
+.wrq-pop button:not(.wrq-x){border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:13px;font-weight:600;border-radius:8px;padding:8px 14px;cursor:pointer;min-height:0;box-shadow:none;width:auto;white-space:nowrap}
+.wrq-pop button.go{border:0;background:#15171c;color:#fff;font-weight:700;padding:9px 16px}
+.wrq-pop>footer{padding:12px 18px;border-top:1px solid #eef0f3;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.wrq-pop>footer span{flex:1;min-width:120px;font-size:11.5px;color:#9ca3af}
+.wrq-sum{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid #f2f3f6;flex-wrap:wrap}
+.wrq-sum>em{font-style:normal;font-size:11px;font-weight:800;color:#fff;background:#d14a3f;border-radius:4px;padding:2px 7px}.wrq-sum>b{font-size:14px}.wrq-sum .new{font-size:12px;font-weight:700;color:#b42318}.wrq-sum>i{flex:1}.wrq-sum .hint{font-size:11.5px;color:#9ca3af}
+.tv3 .wrq-sum button{border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12px;font-weight:700;border-radius:7px;padding:5px 10px;cursor:pointer;min-height:0;box-shadow:none;width:auto}
+.wrq-row{display:flex;align-items:center;gap:8px;padding:9px 16px;border-bottom:1px solid #f2f3f6;font-size:13px}.wrq-compact>.wrq-row:last-child{border-bottom:0}
+.wrq-row>i{width:3px;height:16px;border-radius:2px;flex:none}.wrq-row>b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:46%}
+.wrq-row .t{flex:1;min-width:0;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.wrq-row .t em{font-style:normal;font-weight:700;color:#b42318;margin-left:6px}
+.wrq-row .st{font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px;background:#f3f4f6;color:#6b7280;flex:none}.wrq-row .st.nw{color:#b42318;background:#fdecec}.wrq-row .st.wk{color:#2a52b8;background:#e8eefc}
+.tv3 .wrq-row .go{border:0;background:#15171c;color:#fff;font:inherit;font-size:12.5px;font-weight:700;border-radius:7px;padding:7px 14px;cursor:pointer;min-height:0;box-shadow:none;width:auto;white-space:nowrap;flex:none}
+.tv3 .wrq-in .wrq-fold{border:1px solid #d9dde4;background:#fff;color:#6b7280;font:inherit;font-size:11.5px;font-weight:600;border-radius:6px;padding:3px 9px;cursor:pointer;min-height:0;box-shadow:none;width:auto}
+@media(max-width:640px){.wrq-row{flex-wrap:wrap}.wrq-row>b{max-width:100%}}
