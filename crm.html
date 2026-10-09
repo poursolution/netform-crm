@@ -2995,14 +2995,15 @@ function applyOverrides(){
   migrateDealKeys();
   var stageRecovered=false,commands=Phase1.queue.list();
   (B.deals||[]).forEach(function(d){var p=LOCAL.deals[dealKey(d)];if(reconcileStagePatch(d,p,commands))stageRecovered=true;if(p)Object.assign(d,p)});
-  if(stageRecovered)saveLocal();
   /* 문의 담당자의 서버 정본은 localStorage의 오래된 빈 값보다 우선한다.
      단, 방금 보낸 배정 요청이 아직 진행 중일 때만 낙관적 화면값을 잠시 허용한다. */
   (B.inquiries||[]).forEach(function(q){
     var key=inqKey(q),p=LOCAL.inquiries[key];
+    if(typeof window.reconcileInquiryNextTruth==='function'&&window.reconcileInquiryNextTruth(q,p,key))stageRecovered=true;
     if(typeof window.mergeInquiryAssignmentTruth==='function')window.mergeInquiryAssignmentTruth(q,p,key);
     else if(p)Object.assign(q,p);
   });
+  if(stageRecovered)saveLocal();
 }
 function inPeriod(iso){if(!iso)return G.year==='전체';if(G.year==='전체')return true;
  if(iso.slice(0,4)!==G.year)return false;if(!G.quarter)return true;
