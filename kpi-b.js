@@ -105,12 +105,12 @@
   const live=new Set();M.forEach((m,i)=>m.todos.forEach(t=>{live.add(KEY(i)+'|'+t.tk);if(t.legacyTk)live.add(KEY(i)+'|'+t.legacyTk);}));
   /* 단계별 기준 요청(stage:단계:사유)도 같은 식으로: 그 건에 그 사유가 아직 붙어 있으면 미처리 */
   items.forEach(it=>(it.rs||[]).forEach(k=>live.add('stage:'+it.stage+':'+k+'|'+todoKey('deal',it.row.key))));try{(root.KpiV7&&root.KpiV7.inquiryLive?root.KpiV7.inquiryLive():[]).forEach(k=>live.add(k));}catch(e){}
-  const seen=new Set(),uniq=recent.filter(a=>{const k=a.promise_key+'|'+a.target_type+':'+a.target_id;if(seen.has(k))return false;seen.add(k);return true;});
+  const seen=new Set(),uniq=recent.filter(a=>{const k=a.promise_key+'|'+a.target_type+':'+a.target_id+(a.request_group_id?'|'+a.recipient_user_id:'');if(seen.has(k))return false;seen.add(k);return true;});
   const typeKind=t=>t==='inquiry'?'inq':t==='deal'?'deal':'rep';
   /* Disappearing from the selected scope is not evidence of completion. Legacy actions
      have no per-target completion receipt; keep those missing from live as unverified. */
-  const processed=[],unverified=uniq.filter(a=>!live.has(a.promise_key+'|'+todoKey(typeKind(a.target_type),a.target_id)));
-  const pending=uniq.filter(a=>live.has(a.promise_key+'|'+todoKind(a))&&now-Date.parse(a.created_at)>=864e5);
+  const processed=[],unverified=uniq.filter(a=>!live.has(a.promise_key+'|'+todoKey(typeKind(a.target_type),a.target_id))||(a.request_group_id&&!coachingReceiptCurrent(a)));
+  const pending=uniq.filter(a=>live.has(a.promise_key+'|'+todoKind(a))&&(!a.request_group_id||coachingReceiptCurrent(a))&&now-Date.parse(a.created_at)>=864e5);
   function todoKind(a){return todoKey(typeKind(a.target_type),a.target_id);}
   /* 요청 업무(2026-10-05 design_handoff_request): 오늘 업무에서 보낸 요청도 이 처리율의 자료다 — 처리 = 회신 · 기록으로 완료. 부재 · 답 대기는 아직 미처리, 취소한 요청은 세지 않는다 */
   const wrq=(()=>{try{const WR=root.WorkRequest;if(!WR||!WR.enabled())return [];return WR.state().list.filter(r=>r.status!=='cancelled'&&now-Date.parse(r.created_at||0)<28*864e5);}catch(e){return [];}})(),wrqDone=wrq.filter(r=>r.status==='done'||r.status==='replied').length;
@@ -120,7 +120,7 @@
   Object.assign(M[7],{ready:history.ready&&!workPending&&!unverified.length,unverified:unverified.length,readState:history.state});
   if(!M[7].ready){M[7].v=null;M[7].pendingReason=!history.ready?history.message:workPending?'요청 업무 계산 중':'완료 근거 미확인 '+unverified.length+'건';}
   /* 요청함 표시: 이번 주 조치 기록(서버) + 방금 누른 것(이 PC) */
-  const mon=O()?O().monday(0):'',done=new Set(W.acts.filter(a=>ymd(a.created_at)>=mon&&a.target_id).map(a=>a.promise_key+'|'+todoKey(typeKind(a.target_type),a.target_id)));
+  const mon=O()?O().monday(0):'',done=new Set(W.acts.filter(a=>ymd(a.created_at)>=mon&&a.target_id&&(!a.request_group_id||coachingReceiptCurrent(a))).map(a=>a.promise_key+'|'+todoKey(typeKind(a.target_type),a.target_id)));
   (root.G.kbDone||[]).forEach(k=>done.add(k));
   const weekly=J?J.inquiryWeek(J.metricSource('inq')):null;
   if(weekly)weekly.forEach((w,i)=>Object.assign(M[i],w,{v:pct(w.num,w.den)}));
@@ -219,6 +219,11 @@
   return ids.size===1?[...ids][0]:null;
  }
  function coachingReady(name){const fn='crm_kpi_request_send_v2';return requestStatus().ready&&!!coachingRecipient(name)&&!!O()?.has(fn)&&root.CRMRelease?.has(fn)===true;}
+ function coachingReceiptCurrent(a){
+  const inquiry=a.target_type==='inquiry',items=inquiry?root.B?.inquiries:root.B?.deals;
+  const d=(items||[]).find(x=>String(x.id)===String(a.target_id));
+  return !!d&&!!a.recipient_user_id&&coachingRecipient(root.repN(inquiry?(root.inquiryRoutedOwner?.(d)||d.assignee):d.assignee))===a.recipient_user_id;
+ }
  const coachingStore='nf_coaching_pending_groups_v1';
  const coachingActor=()=>String(root.ME?.id||root.ME?.user_id||'');
  function coachingGroup(name,key,targets,scope){
