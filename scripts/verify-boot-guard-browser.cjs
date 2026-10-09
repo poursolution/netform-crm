@@ -41,6 +41,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    assert.equal(one(await page.locator('#boot-fail').innerText()),'불러오기 실패 · 운영 데이터 연결이 10초 넘게 끝나지 않았습니다 다시 시도');
    await page.evaluate(()=>{document.getElementById('live').classList.add('on');});await page.waitForTimeout(1300);
    assert.equal(await page.locator('#boot-fail').count(),0,'연결되면 한 줄이 걷힌다');await ctx.close();}
+  /* 읽기 신호가 오는 동안(느린 정상 로딩)은 10초가 지나도 실패로 보지 않고, 신호가 끊긴 뒤 일정 시간 조용하면 알린다 */
+  {const {ctx,page}=await open('');await page.addInitScript(()=>{window.__bootGuardBeatWait=4000;});
+   await page.evaluate(()=>{window.__bootGuardBeatWait=4000;const g=document.getElementById('authGate');g.classList.remove('on');document.getElementById('live').classList.remove('on');});
+   for(let i=0;i<6;i++){await page.evaluate(()=>window.dispatchEvent(new CustomEvent('crm:read-state',{detail:{label:'핵심 데이터 연결 중',ready:false}})));await page.waitForTimeout(2000);}
+   assert.equal(await page.locator('#boot-fail').count(),0,'신호가 오는 동안은 안내가 없다(12초 지남)');await ctx.close();}
   {const {ctx,page}=await open('');
    await page.waitForTimeout(10300);
    assert.equal(await page.evaluate(()=>document.getElementById('authGate').classList.contains('on')),true);assert.equal(await page.locator('#boot-fail').count(),0,'로그인 화면에서는 연결 대기가 아니다');await ctx.close();}
