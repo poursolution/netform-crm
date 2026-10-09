@@ -15,7 +15,7 @@ test('운영 기준 v2 SQL: 권한 · 범위 · 빈 목록 · 적용 범위 이�
   await db.exec(v1);/* 운영에는 v1 이 먼저 적용돼 있다 */
   await db.exec(v2);await db.exec(v2);/* 두 번 돌려도 같은 결과 */
   const call=async body=>(await db.query('select public.crm_ops_rules_v1($1::jsonb) r',[JSON.stringify(body)])).rows[0].r;
-  let r=await call({});assert.equal(r.ok,true);assert.equal(r.contract,2);assert.equal(r.version,0);assert.deepEqual(r.rules,{});
+  let r=await call({});assert.equal(r.ok,true);assert.equal(r.contract,3);assert.equal(r.version,0);assert.deepEqual(r.rules,{});
   /* 새 항목 · 적용 범위 */
   await assert.rejects(call({set:{ongoing_unreachable_attempts:4,record_deadline_hour:11},apply:{effective_on:'2026-10-13',scope:'진행 중 영업건',existing:'keep'}}),/저장하지 않았습니다/);
   assert.equal((await call({})).version,0);
@@ -32,7 +32,7 @@ test('운영 기준 v2 SQL: 권한 · 범위 · 빈 목록 · 적용 범위 이�
   await assert.rejects(call({set:{first_contact_hours:5}}),/바꿀 수 없는 항목/);
   await assert.rejects(call({set:{assign_minutes:40},apply:{existing:'delete'}}),/저장하지 않았습니다/);
   await assert.rejects(call({set:{assign_minutes:40},apply:{effective_on:'13/10/2026'}}),/저장하지 않았습니다/);
-  await assert.rejects(call({set:{assign_minutes:40},apply:'keep'}),/저장하지 않았습니다/);
+  await assert.rejects(call({set:{assign_minutes:40},apply:'keep'}),/invalid apply/);
   /* 적용 범위 없이도 저장된다(예전 화면) · 같은 값은 이력에 안 남음 */
   r=await call({set:{assign_minutes:40}});assert.equal(r.changed,1);assert.equal(r.history[0].effective_on,null);
   r=await call({set:{assign_minutes:40}});assert.equal(r.changed,0);
