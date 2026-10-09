@@ -82,7 +82,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* ④ 설정: 확정 / 잠정 + 출처 · 적용 예정 */
   await page.evaluate(()=>{goPage('rules');});await page.waitForSelector('#rules-admin .ra-row');await page.waitForTimeout(200);
   const RA=await page.evaluate(()=>{const row=l=>{const r=[...document.querySelectorAll('#rules-admin .ra-row')].find(x=>x.querySelector('.ra-l b').textContent===l);return r?r.querySelector('.ra-l').innerText.replace(/\s+/g,' ').trim():null;};return {focus:row('집중관리 기간'),general:row('일반관리 기간'),wait:row('장기 대기 연락 주기'),all:row('고객관리 기간'),pend:(document.querySelector('#ra-pending')||{innerText:''}).innerText.replace(/\s+/g,' ').trim(),chips:[...document.querySelectorAll('#rules-admin .ra-conf')].map(e=>e.textContent)};});
-  assert.match(RA.focus,/잠정/);assert.match(RA.focus,/출처 · 회의록 · 승인 전/);assert.match(RA.general,/잠정 · 해석 미확정/);assert.match(RA.general,/총 이 기간까지는 일반관리/);assert.match(RA.wait,/확정/);assert.match(RA.wait,/현재 계산은 설정 일수/);assert.match(RA.all,/기간 잠정 · 해석 미확정/);assert.doesNotMatch(RA.all,/송보람 승인/);
+  assert.match(RA.focus,/잠정/);assert.match(RA.focus,/출처 · 관계관리 검토에 임시 사용 · 1개월=30일 환산/);assert.match(RA.general,/잠정 · 해석 미확정/);assert.match(RA.general,/총 이 기간까지는 일반관리/);assert.match(RA.wait,/확정/);assert.match(RA.wait,/현재 계산은 설정 일수/);assert.match(RA.all,/기간 잠정 · 해석 미확정/);assert.doesNotMatch(RA.all,/송보람 승인/);
   assert.match(RA.pend,/적용 예정/);assert.match(RA.pend,/→ 단계 이동 창/);assert.match(RA.pend,/→ 관계관리 재분류/);assert.match(RA.pend,/→ 상세 담당 변경/);
   /* ⑤ 계약 · 시공 4상태 */
   await page.evaluate(()=>{G.ps3=null;PipelineWorkspace.open('construction');});await page.waitForSelector('#pipeline-stage-v3[data-stage="construction"] .prv-row');await page.waitForTimeout(250);
