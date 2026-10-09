@@ -39,8 +39,11 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    SB={rpc:async(n,a)=>{__rpc.push([n,JSON.parse(JSON.stringify(a&&a.p||a||{}))]);const p=a&&a.p||{};
     if(n==='crm_deal_unit_list_v1')return {data:{ok:true,contract:1,units:Object.values(__units),events:[]}};
     if(n==='crm_deal_unit_save_v1'){const u={deal_id:p.deal_id,roles:p.roles||[],brand_inflow:p.brand_inflow||null,brand_proposal:p.brand_proposal||null,brand_contract:p.brand_contract||null,updated_by_name:'송보람',updated_at:new Date().toISOString()};__units[p.deal_id]=u;return {data:{ok:true,contract:1,unit:u}};}
-    if(n==='crm_work_request_list_v1')return {data:{ok:true,requests:[]}};
-    if(n==='crm_work_request_create_v1'){const r=Object.assign({id:'wr-'+(__rpc.length),status:'sent',created_at:new Date().toISOString(),requested_by:'송보람',by_me:true,to_me:false},p);return {data:{ok:true,request:r}};}
+    /* 요청 저장소 흉내: 만든 요청을 기억하고, 읽을 때 지금 로그인한 사람 기준으로 to_me · by_me 를 붙인다(받는 쪽 카드 검사용) */
+    window.__wr=window.__wr||[];const me=()=>String(ME&&ME.name||'');const view=r=>Object.assign({},r,{to_me:r.to_name===me(),by_me:r.requested_by===me()});
+    if(n==='crm_work_request_list_v1')return {data:{ok:true,requests:__wr.map(view)}};
+    if(n==='crm_work_request_create_v1'){const r=Object.assign({id:'wr-'+(__wr.length+1),status:'sent',created_at:new Date().toISOString(),requested_by:'송보람',round:1},p);__wr.push(r);return {data:{ok:true,request:view(r)}};}
+    if(n==='crm_work_request_reply_v1'){const r=__wr.find(x=>x.id===p.id);if(!r)return {error:{message:'없음'}};if(p.action==='seen'){if(r.status==='sent')r.status='seen';}else if(p.action==='done'){r.status='done';r.result=p.result||'';r.closed_at=new Date().toISOString();r.auto=!!p.auto;}return {data:{ok:true,request:view(r)}};}
     if(n==='crm_deal_win_list_v1')return {data:{ok:true,rows:[],advisory:[]}};
     return {data:{ok:true,tasks:[],entries:[],sites:[],rows:[],events:[]}};}};TOKEN='test';OpsStore.aiOn=()=>false;
    window.__open=async(i)=>{await DealWin.load();drwDeal(JSON.stringify(B.deals[i]));};
@@ -83,6 +86,17 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const wr=await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_work_request_create_v1').map(x=>x[1]));
   assert.equal(wr.length,1);assert.deepEqual([wr[0].kind,wr[0].label,wr[0].to_name,wr[0].target_type,wr[0].target_id],['support','시공 인계 수령 확인','박현우','deal','11111111-1111-4111-8111-111111111111']);
   assert.match(wr[0].memo,/공사 범위: 옥상방수[\s\S]*고객 약속: 하자 5년/);
+  await page.waitForTimeout(400);t=one(await page.locator('#detailView .dvu').innerText());assert.match(t,/수령 확인 대기 · 박현우 · 기한 3일 안/,'보낸 뒤 상자는 수령 확인 대기');
+  /* ③ 받는 쪽(시공 담당 박현우) 오늘 업무 맨 위: '시공 인계' 카드 = 인계 요약 5칸 + [수령 확인] → 요청 완료(결과 '수령 확인') → 보낸 쪽 상자 '수령 확인 완료' */
+  await page.evaluate(()=>{closeDetail&&closeDetail();ME={id:'rep-park',name:'박현우',role:'rep'};WorkRequest.load(true);});await page.waitForTimeout(500);await page.evaluate(()=>goPage('today'));await page.waitForTimeout(900);
+  const card=page.locator('#today-v2 .tv3 .wrq-top .wrq-in');assert.equal(await card.count(),1,'박현우에게 온 수령 확인 요청 한 장');
+  const ct=one(await card.innerText());assert.match(ct,/^시공 인계 \[경기 고양\] 햇빛마을23단지/);assert.match(ct,/공사 범위\s*옥상방수[\s\S]*제외 사항\s*미기록[\s\S]*금액\s*4\.2억[\s\S]*일정\s*착공 2026-11-03 · 준공 예정 2026-12-15[\s\S]*고객 약속\s*하자 5년 · 공사 중 소음 안내문/);
+  assert.match(ct,/수령 확인 전까지 영업 단계가 끝나지 않습니다\s*수령 확인$/);assert.equal(await card.locator('[data-wr="hoask"]').count(),0,'시공 인계에는 [이전 담당에게 질문] 없음');
+  await card.locator('[data-wr="hodone"]').click();await page.waitForTimeout(500);
+  const rp=await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_work_request_reply_v1'&&x[1].action==='done').map(x=>x[1].result));assert.deepEqual(rp,['수령 확인']);
+  assert.equal(await page.locator('#today-v2 .tv3 .wrq-top').count(),0,'수령 확인하면 카드가 사라진다');
+  await page.evaluate(()=>{ME={id:'admin',name:'송보람',role:'admin'};WorkRequest.load(true);});await page.waitForTimeout(400);await page.evaluate(()=>window.__open(0));await page.waitForSelector('#detailView .dvu');await page.waitForTimeout(500);
+  t=one(await page.locator('#detailView .dvu').innerText());assert.match(t,/수령 확인 완료 · \d+\.\d+ · 박현우/,'보낸 쪽 상자 = 수령 확인 완료');
   /* 같은 현장 다른 영업건(재도장) 상자는 따로: 책임자 · 금액 · 저장값 없음 */
   await page.evaluate(()=>{closeDetail&&closeDetail();});await page.waitForTimeout(200);await page.evaluate(()=>window.__open(1));await page.waitForSelector('#detailView .dvu');await page.waitForTimeout(500);
   t=one(await page.locator('#detailView .dvu').innerText());assert.match(t,/재도장 · 2026/);assert.match(t,/책임자 이필선/);assert.match(t,/금액 3\.1억/);assert.match(t,/추정 · 저장 전/);assert.match(t,/같은 현장 영업건 2건 \(옥상방수 2025\)/);assert.doesNotMatch(t,/시공 인계/);
