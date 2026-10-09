@@ -85,6 +85,17 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#reps-v2 .av-more summary').click();await page.locator('#reps-v2 [data-rv="team"]').click();await page.waitForTimeout(200);
   assert.equal(await page.locator('#rep-management-root .rm-team-board').count(),1,'팀 비교는 기존 화면 그대로');
   await page.evaluate(()=>repManagerView('people'));await page.waitForTimeout(200);assert.equal(await page.locator('#reps-v2').count(),1);
+  /* Legacy detail also uses bounded pages; unsaved comment survives redraw. */
+  await page.evaluate(()=>{B.deals=Array.from({length:45},(_,i)=>({id:'pg'+i,site:'쪽 현장 '+i,assignee:'이필선',brand:'POUR솔루션',created:'2026-07-01',updated:'2026-08-01',code:'sent',stage_code:'sent',grp:'영업·관리',amt:(45-i)*1e8}));paintRepManagement();RepsV2.open('이필선');});
+  await d.locator('textarea').fill('아직 저장하지 않은 코칭');assert.equal(await d.locator('.rd-row').count(),20);
+  await d.getByRole('button',{name:'3쪽',exact:true}).click();assert.equal(await d.locator('.rd-row').count(),5);assert.equal(await d.locator('.rd-row b').first().innerText(),'쪽 현장 40');assert.equal(await d.locator('textarea').inputValue(),'아직 저장하지 않은 코칭');
+  await d.locator('.rd-row').first().click();assert.equal(await page.evaluate(()=>__open),'pg40');
+  await page.evaluate(()=>RepsV2.open('이필선'));assert.equal(await d.locator('.rd-row b').first().innerText(),'쪽 현장 0');
+  await d.getByRole('button',{name:'2쪽',exact:true}).click();await page.evaluate(()=>{G.repManagerYear=2025;paintRepManagement();});assert.equal(await d.locator('.rd-row b').first().innerText(),'쪽 현장 0');
+  await page.evaluate(()=>{RepsV2.close();G.repManagerYear=2026;window.__oldRender=repManagerRenderDrawer;window.repManagerRenderDrawer=()=>{document.getElementById('perfDrawerBody').innerHTML=repManagerRiskList(REP_MANAGER_ROWS.find(r=>r.nm==='이필선'));};repManagerRenderDrawer();document.getElementById('perfDrawer').classList.add('on');document.getElementById('perfDrawer').setAttribute('aria-hidden','false');});
+  const legacy=page.locator('#perfDrawerBody');assert.equal(await legacy.locator('.rm-issue-list button').count(),20);
+  await legacy.getByRole('button',{name:'3쪽',exact:true}).click();assert.equal(await legacy.locator('.rm-issue-list button').count(),5);assert.equal(await page.evaluate(()=>REP_FLOW_DRAWER_CACHE[0].id),'pg40');
+  await page.evaluate(()=>{document.getElementById('perfDrawer').classList.remove('on');repManagerRenderDrawer=__oldRender;});
   /* 좁은 화면 · 끄기 */
   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(200);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'좁은 화면 넘침 없음');
@@ -95,3 +106,4 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   console.log(JSON.stringify({status:'PASS',list_frame:true,diagnosis:true,one_row_per_person:true,dialog_no_tabs:true,promise_saved_existing_path:true,row_opens_pipeline_detail:true,view_all_filters_today:true,more_menu_team_account:true,narrow:true,legacy_switch:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
+
