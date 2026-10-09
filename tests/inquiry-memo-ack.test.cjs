@@ -67,3 +67,15 @@ test('a read started before a successful save cannot erase its acknowledgement',
  const loading=t.M.load(true);await t.M.run('promise',t.q,{key:t.key,res:'완료'});resolve({ok:true,reviews:[]});await loading;
  assert.equal(t.M.promises(t.q)[0].res,'완료');
 });
+
+test('superseded server receipt rejection removes only the stale queue item and preserves confirmed completion',async()=>{
+ const t=setup();
+ t.M.takeServer([{inquiry_id:ID,kind:'promise',item_key:t.key,result:'완료',decided_at:'2026-10-09'}]);
+ t.patch.memoReview={promises:{[t.key]:{res:'미완료',at:'2099-01-01'}}};
+ t.storage.set('crm.inqMemo.outbox.v1',JSON.stringify([{queued_at:Date.now(),type:'promise',inquiry_id:ID,item_key:t.key,result:'미완료',request_id:'old'}]));
+ t.setReply(async()=>{throw Error('invalid payload: 이미 처리한 이전 요청입니다. 최신 판단을 다시 확인해 주세요');});
+ await t.M.flush();
+ assert.equal(t.M.promises(t.q)[0].res,'완료');
+ assert.equal(JSON.parse(t.storage.get('crm.inqMemo.outbox.v1')).length,0);
+ assert.equal(t.patch.activities,undefined);
+});
