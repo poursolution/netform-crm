@@ -229,7 +229,7 @@ begin
   if jsonb_typeof(d) is distinct from 'object' or d-array['ask','value','note','next_action_id']<>'{}'::jsonb
    or jsonb_typeof(d->'ask') is distinct from 'string' or not(r.asks ? (d->>'ask')) or d->>'ask'='고객 첫 연락'
    or coalesce(d->>'value','') not in ('needed','not_needed','unknown') or jsonb_typeof(d->'note') is distinct from 'string'
-   or length(btrim(d->>'note')) not between 1 and 2000 then raise exception 'invalid decisions' using errcode='22023'; end if;
+   or length(btrim(d->>'note')) not between 1 and 2000 or (d->>'note') !~ '[^[:space:]]' then raise exception 'invalid decisions' using errcode='22023'; end if;
   taskproof:=null;taskid:=null;
   if d->>'value'='needed' then
    begin taskid:=(d->>'next_action_id')::uuid;exception when others then raise exception 'REQUEST_FOLLOWUP_REQUIRED' using errcode='22023';end;
