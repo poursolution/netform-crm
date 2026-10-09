@@ -52,7 +52,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await w.locator('.rw-who em').evaluate(n=>[getComputedStyle(n).color,getComputedStyle(n).backgroundColor]),['rgb(180, 35, 24)','rgb(253, 236, 236)']);
   assert.deepEqual(await w.locator('.rw-kpi').evaluateAll(l=>l.map(n=>[n.children[0].textContent,n.children[1].textContent,getComputedStyle(n.children[1]).color])),[['진행 금액','63.9억','rgb(21, 23, 28)'],['손볼 건','13건','rgb(180, 35, 24)'],['메이드율','55.0%','rgb(21, 23, 28)'],['신규 배정','첫 연락 먼저','rgb(180, 35, 24)']]);
   /* 3. 왼쪽: 병목 한 문장 + 보조 한 줄 → 흐름 + 가장 많이 빠지는 구간 */
-  assert.deepEqual(await w.locator('.rw-neck').evaluate(n=>[[...n.children].map(c=>c.textContent),getComputedStyle(n).backgroundColor]),[['가장 큰 병목','진행 11건 중 7건이 다음 할 일 없음','신규 배정 3건도 아직 첫 연락 전'],'rgb(253, 236, 236)']);
+  assert.deepEqual(await w.locator('.rw-neck').evaluate(n=>[[...n.children].map(c=>c.textContent),getComputedStyle(n).backgroundColor]),[['가장 큰 병목','진행 11건 중 7건이 다음 할 일 없음','담당 문의 3건도 아직 첫 연락 전'],'rgb(253, 236, 236)']);
   assert.deepEqual(await w.locator('.rw-fl').evaluateAll(l=>l.map(n=>[n.children[0].textContent,n.children[2].textContent,n.querySelector('u').style.width,getComputedStyle(n.querySelector('u')).backgroundColor])),[['배정','4','20%','rgb(59, 108, 228)'],['응대','1','5%','rgb(59, 108, 228)'],['기회','20','100%','rgb(59, 108, 228)'],['경쟁','1','5%','rgb(59, 108, 228)'],['수주','0','0%','rgb(63, 179, 127)']]);
   assert.equal(await w.locator('.rw-drop').innerText(),'기회 → 경쟁에서 가장 많이 빠짐 (20 → 1)');
   /* 4. 이번 주 코칭 · 한 가지: 병목에 맞는 주제가 먼저 골라져 있고, 근거 숫자 + 약속 문장이 채워져 있다 */
@@ -63,7 +63,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await ai(),'AI진행 11건 중 7건 다음 할 일 없음 (등록률 36%)');assert.equal(await co.locator('.rw-ai b').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(59, 108, 228)');
   assert.equal(await txt(),'이번 주 금액 큰 7건부터 다음 할 일 · 날짜 등록');
   assert.equal(await co.locator('.rw-cof').innerText().then(s=>s.replace(/\s+/g,' ')),'다음 주 월요일 결과 자동 확인 코칭 저장');
-  await co.locator('.rw-chips button',{hasText:'첫 응대'}).click();assert.equal(await ai(),'AI신규 배정 3건 · 평균 첫 연결 6.8시간');assert.equal(await txt(),'밀린 첫 연락 3건 정리 · 금요일까지(신규 문의는 배정 후 2시간 안)');
+  await co.locator('.rw-chips button',{hasText:'첫 응대'}).click();assert.equal(await ai(),'AI첫 연락 전 3건 · 선택 기간 평균 첫 연결 6.8시간');assert.equal(await txt(),'밀린 첫 연락 3건 정리 · 금요일까지(신규 문의는 배정 후 2시간 안)');
   await co.locator('.rw-chips button',{hasText:'견적 지연'}).click();assert.equal(await ai(),'AI미팅 완료 건이 없어 아직 잴 수 없음','없는 숫자는 만들지 않는다');assert.equal(await txt(),'방문 후 3일 안에 견적 요청 등록');
   await page.evaluate(()=>{KpiB.stageItems=()=>[{stage:'consulting',bucket:'done',rs:['nodue'],stall:4,row:{item:{assignee:'이필선'}}},{stage:'consulting',bucket:'done',rs:[],stall:1,row:{item:{assignee:'이필선'}}},{stage:'consulting',bucket:'done',rs:['nodue'],stall:9,row:{item:{assignee:'황윤선'}}}];});
   await co.locator('.rw-chips button',{hasText:'약속 미이행'}).click();assert.equal(await ai(),'AI약속 4건 중 2건 기한 내 (50%)');assert.equal(await txt(),'기한 지난 약속 2건 이번 주 안에 완료 · 날짜 다시 잡기');
@@ -165,6 +165,33 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 11. 끄기 → 예전 사람별 창 */
   await page.evaluate(()=>{G.repWindowOff=true;RepsV2.open('이필선');});await page.waitForTimeout(200);
   assert.equal(await page.locator('#repsDialog.on .rd-box').count(),1);assert.equal(await page.locator('#repWindow.on').count(),0);
+  /* Current workload is cumulative; closed/converted/import-review records never become first-contact requests. */
+  const scope=await page.evaluate(()=>{
+   G.repWindowOff=false;G.execWordingOff=false;G.repManagerYear=2026;G.repManagerQuarter=0;
+   const q=(id,extra={})=>Object.assign({id,site:id,status:'배정완료',at:'2026-10-18T10:00:00+09:00',created_at:'2026-10-18T10:00:00+09:00',assigned_at:'2026-10-18T10:00:00+09:00',brand:'POUR솔루션',assignee:'이필선',assigned_to:'이필선'},extra);
+   B.inquiries=[q('current'),q('previous-year',{at:'2025-12-01',created_at:'2025-12-01',assigned_at:'2025-12-02'}),q('review',{raw:{'응대내용':'2026/01/16 PM 05:02 1차통화완료'}}),q('closed',{status:'배드핏'}),q('converted',{deal_id:'existing-deal'}),q('deleted',{deleted_at:'2026-10-19'}),q('other',{assignee:'황윤선',assigned_to:'황윤선'}),q('technical',{business_type:'기술자문'}),q('merged',{duplicate_resolution:'merged'}),q('connected',{responded_at:'2026-10-19T15:00:00+09:00'})];
+   const ids=a=>a.map(x=>x.id).sort();
+   const read=()=>{paintRepManagement();const r=REP_MANAGER_ROWS.find(x=>x.nm==='이필선'),m=RepWindow.groups(r);return {list:r.unresponded,listIds:ids(r.__load.first),coaching:ids(m.first),rows:ids(m.G.find(x=>x.k==='first').rows.map(x=>x.d)),period:ids(m.inq),total:m.total,metric:RepWindow.topics(r,m)[0].m.v,neck:RepWindow.neck({...r,current:[]},{...m,cur:[],noNext:[],over:[],stale:[]}).main};};
+   const initial=read(),review=InquiryListV3.contactReview(B.inquiries.find(x=>x.id==='review')).required;
+   G.repManagerYear=2025;const past=read();
+   G.brand='석민이앤씨';G.year=2024;G.q='unmatched';const filtered=read();
+   G.brand='전체';G.year='전체';G.q='';G.repManagerYear=2026;
+   B.inquiries.find(x=>x.id==='current').responded_at='2026-10-20T15:00:00+09:00';const afterContact=read();
+   B.inquiries.find(x=>x.id==='previous-year').assignee='황윤선';B.inquiries.find(x=>x.id==='previous-year').assigned_to='황윤선';
+   paintRepManagement();const r=REP_MANAGER_ROWS.find(x=>x.nm==='이필선'),empty=RepWindow.groups(r);
+   const emptyState={list:r.unresponded,first:empty.first.length,group:empty.G.some(x=>x.k==='first'),ai:RepWindow.topics(r,empty)[0].ai};
+   G.execWordingOff=true;const fallback=RepWindow.groups(r);const legacy={first:ids(fallback.first),expected:ids(fallback.inq.filter(x=>!inquiryResponded(x)))};
+   return {initial,past,filtered,afterContact,review,emptyState,legacy};
+  });
+  assert.equal(scope.review,true,'fixture really is an imported call review');
+  for(const data of [scope.initial,scope.past,scope.filtered]){
+   assert.deepEqual(data.listIds,['current','previous-year']);assert.deepEqual(data.coaching,data.listIds);assert.deepEqual(data.rows,data.listIds);assert.equal(data.list,2);assert.equal(data.metric,2);
+   assert.equal(data.neck,'담당 문의 중 2건이 아직 첫 연락 전','no mixed period denominator');
+  }
+  assert.ok(!scope.initial.period.includes('previous-year'));assert.deepEqual(scope.past.period,['previous-year']);
+  assert.deepEqual(scope.afterContact.coaching,['previous-year']);assert.equal(scope.afterContact.list,1);
+  assert.deepEqual({...scope.emptyState,ai:undefined},{list:0,first:0,group:false,ai:undefined});assert.doesNotMatch(scope.emptyState.ai,/모두 첫 연락 완료/,'excluded reviews are not reported as completed');
+  assert.deepEqual(scope.legacy.first,scope.legacy.expected,'off switch keeps the existing period-based path');
   assert.deepEqual(errs,[]);
   console.log(JSON.stringify({status:'PASS',opens_new_window:true,head_four_numbers:true,bottleneck_sentence:true,flow_and_drop:true,coaching_one_topic_prefilled:true,no_invented_numbers:true,past_coaching_result:true,groups_by_reason_top5:true,coaching_saved_existing_path:true,bulk_request_once:true,row_opens_detail:true,empty_person:true,narrow:true,legacy_switch:true}));
  }finally{await browser.close();srv.close();}
