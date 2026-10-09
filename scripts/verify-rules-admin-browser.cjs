@@ -8,7 +8,7 @@ const root=path.resolve(__dirname,'..'),shot=process.argv[2]||'';
 const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':t.endsWith('.png')?'image/png':'text/html');fs.createReadStream(t).pipe(res)});
 (async()=>{
  await new Promise(r=>srv.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({headless:true});
+ const browser=await chromium.launch({headless:true,executablePath:process.env.EDGE_PATH||undefined});
  try{
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});
@@ -87,14 +87,18 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await cf.locator('[data-ra="existing"][data-v="recalc"]').click();await page.waitForTimeout(80);
   await cf.locator('[data-ra-in="eff"]').fill('2026-10-13');await page.waitForTimeout(80);
   await cf.locator('[data-ra="cfsave"]').click();await page.waitForTimeout(500);
-  const ap=await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_ops_rules_v1'&&c[1].set).map(c=>c[1].apply));
-  assert.equal(ap.length,1);assert.equal(ap[0].effective_on,'2026-10-13');assert.equal(ap[0].existing,'recalc');assert.match(ap[0].scope,/담당 배정: 견적문의 · 미배정/);
-  assert.deepEqual(await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_ops_rules_v1'&&c[1].set).map(c=>c[1].set)),[{assign_minutes:20,nearby_map:false,reasons_lost:['관계 · 관리소장 변경','관계 · 입대의 · 회장 영향','관계 · 경쟁업체 기존 관계','공법 · 타 공법 선호','공법 · 특허 조건 불리','공법 · 설계 변경','가격 · 가격 경쟁','가격 · 예산 부족','가격 · 실행가 문제','사업 · 공사 취소','사업 · 연기','사업 · 예산 미확정','단가 인상']}],'바뀐 조건부 값만 서버로');
-  assert.equal(await page.locator('#rules-admin .ra-bar').count(),0,'저장 뒤 띠 사라짐');
-  assert.deepEqual(await page.evaluate(()=>[CRMRules.get('assign_minutes'),CRMRules.get('nearby_map'),CRMRules.reasons('lost').at(-1),OPS_RULES.inquiryAssignMinutes,OPS_RULES.towerFirstResponseHours]),[20,false,'단가 인상',20,2],'서버가 확인한 값이 공통 기준으로');
-  assert.match(await page.locator('#rules-admin .ra-hist').innerText(),/마지막 변경\s*\d{4}\.\d+\.\d+ · 송보람[\s\S]*담당 배정 30 → 20\s*적용일 2026-10-13 · 대상 담당 배정: 견적문의[\s\S]*기존 업무도 새 기준으로 다시 계산/,'변경 이력(누가 · 언제 · 전 → 후 · 적용일 · 대상 · 선택)');
-  assert.match(await page.locator('#rules-admin .ra-top').innerText(),/기준 v3 · /,'기준 버전 = 이력 건수');
-  assert.equal(await page.locator('#rules-admin .ra-cf').count(),0,'저장 뒤 확인 창 사라짐');
+  assert.equal(await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_ops_rules_v1'&&c[1].set).length),0,'지원하지 않는 적용 조건은 쓰기 전 차단');
+  assert.match(await cf.innerText(),/아직 연결되지 않아 저장하지 않았습니다/);
+  assert.equal(await page.locator('#rules-admin .ra-bar').count(),1,'변경 초안을 보존');
+  assert.equal(await cf.locator('[data-ra-in="eff"]').inputValue(),'2026-10-13');
+  assert.equal(await cf.locator('[data-ra="existing"][data-v="recalc"]').getAttribute('aria-pressed'),'true');
+  assert.deepEqual(await page.evaluate(()=>[CRMRules.get('assign_minutes'),OPS_RULES.inquiryAssignMinutes,Object.keys(RulesAdmin.state().draft).length]),[30,30,3]);
+  if(shot)await page.screenshot({path:shot+'-blocked.png',fullPage:true});
+  await page.locator('#rules-admin [data-ra="cfclose"]').click();
+  await page.locator('#rules-admin [data-ra="reset"]').click();
+  /* 독립 회귀 검사: 적용 조건 없는 기존 즉시 값 저장 API와 소비자는 유지. UI 저장 성공을 뜻하지 않는다. */
+  await page.evaluate(()=>CRMRules.save({assign_minutes:20,nearby_map:false,reasons_lost:CRMRules.reasons('lost').concat('단가 인상')}));
+  assert.deepEqual(await page.evaluate(()=>[CRMRules.get('assign_minutes'),OPS_RULES.inquiryAssignMinutes]),[20,20]);
   /* 모든 화면이 같은 기준: 견적문의 배정 기준 · 실주 원인 · 배드핏 사유 */
   await page.evaluate(()=>goPage('inq'));await page.waitForTimeout(400);
   assert.match(await page.locator('#inq-v3 .il-tab[data-v="unassigned"] small').innerText(),/^20분 안에 담당 지정$/);
@@ -113,6 +117,6 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{ME={id:'admin',name:'송보람',role:'admin'};paint();});await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'좁은 화면 넘침 없음');
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',sections7:true,apply_scope_confirm:true,conf_apply_states:true,fixed_locked:true,hold_off:true,conditional_edit_impact_bar:true,save_server_confirmed:true,history:true,one_rule_everywhere:true,gate_without_server:true,admin_only:true}));
+  console.log(JSON.stringify({status:'PASS',sections7:true,apply_scope_confirm:true,conf_apply_states:true,fixed_locked:true,hold_off:true,conditional_edit_impact_bar:true,unsupported_apply_blocked:true,draft_preserved:true,legacy_save_confirmed:true,one_rule_everywhere:true,gate_without_server:true,admin_only:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
