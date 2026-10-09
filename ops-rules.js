@@ -10,11 +10,15 @@
    협약시공사 수주의 기술자문 계약금액 · POUR 계약금액은 낙찰금액에 더하지 않는다(연결 계약 — 회사 매출 쪽 숫자). */
 (function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;else root.CRMRules=api;})(typeof window!=='undefined'?window:globalThis,function(root){
  'use strict';
- const VERSION='2026-10-04',RPC='crm_ops_rules_v1';
+ const VERSION='2026-10-10',RPC='crm_ops_rules_v1';
  /* rules.json 과 같은 기본값 */
  const DEFAULTS=Object.freeze({
   assign_minutes:30,first_contact_hours:2,unreachable_attempts:3,unreachable_interval_days:1,inactive_days:7,quote_followup_days:7,next_action_required:true,
   care_focus_months:1,care_general_months:3,long_wait_contact_days:60,transfer_result_check_days:14,
+  /* 2026-10-10 admin_request E: 진행 중 연락두절(회의 "월 간격 약 3회") · 기록 입력 마감(영업일 12:00 점검) — 값은 저장되고, 화면 연결은 표시된 적용 상태대로 */
+  ongoing_unreachable_attempts:3,record_deadline_hour:12,
+  /* day_zones §2: 받는 사람에게 팝업으로 알릴 '중요' 요청 종류(요청 이름). 비어 있으면 새 배정 · 긴급 기한 변경만 팝업 — 어떤 요청을 중요로 볼지는 대표 결정 전이라 기본 비어 있음 */
+  important_request_kinds:Object.freeze([]),
   split_own_transfer:true,stage_gates:true,
   reasons_bad_fit:Object.freeze(['수행불가 공종','규모 부적합','대상 고객 아님','서비스 범위 아님','기타']),/* 2026-10-05 대표 확정(design_handoff_inquiry_flow README 의 종결 표) — 설정 화면에서 바꿀 수 있다 */
   /* 실주 원인 4분류(2차 기능 3): '분류 · 세부 사유' — 관계 / 공법 / 가격 / 사업 */
@@ -29,16 +33,20 @@
   content_followup:false});
  /* 설정 화면 · 서버 검증이 같이 보는 항목표. k = 값 열쇠, st = fix | cond | hold */
  const N=(k,l,d,st,unit,step,min,max)=>({k,l,d,st,type:'num',unit,step,min,max}),T=(k,l,d,st)=>({k,l,d,st,type:'tg'}),C=(k,l,d,st)=>({k,l,d,st,type:'chips'}),X=(l,d,st,text)=>({k:'',l,d,st,type:'text',text});
+ /* 비어 있어도 되는 목록(값이 아직 정해지지 않은 항목) */
+ const CE=(k,l,d,st)=>Object.assign(C(k,l,d,st),{empty:true});
  const SECTIONS=[
   ['time','시간 기준','넘기면 오늘 업무 · 컨트롤타워에 놓침으로 표시',[
    N('assign_minutes','담당 배정','견적문의 접수 후 이 시간 안에 담당을 지정합니다.','cond','분',10,10,240),
    N('first_contact_hours','첫 연락','배정 후 이 시간 안에 첫 연락. 최초 응대 시각은 1회만 저장됩니다.','fix','시간'),
    N('unreachable_attempts','최초 문의 연락두절','최초 실제 연결 전의 시도 이력을 확인하는 기준입니다. 횟수 도달은 검토 제안이며 자동 종결·실주·발송하지 않습니다.','cond','회',1,1,10),
    N('unreachable_interval_days','연락두절 시도 간격','최초 실제 연결 전 문의에만 적용합니다. 운영 기본값 · 근거 확인 필요: 기본 1일은 회의에서 확정한 간격이 아닙니다. 진행 중 연락두절의 월 간격 기준과 구분합니다.','cond','일',1,1,7),
+   N('ongoing_unreachable_attempts','진행 중 연락두절','진행 중 영업건에서 월 간격으로 연락이 닿지 않은 횟수 기준(회의 "월 간격 약 3회"). 최초 문의 연락두절(위)과 다른 기준 · 아직 어느 화면 계산에도 연결되지 않아 값만 저장됩니다.','cond','회',1,1,10),
    N('inactive_days','활동 없음','진행 중 영업건에 기록이 이 기간 없으면 알림 · 놓침','fix','일'),
    N('quote_followup_days','견적 발송 후 후속','견적 발송 후 이 기간 안에 후속 확인이 없으면 지연','fix','일'),
    /* 2026-10-07 stage7 ①: '미팅 후 견적 요청 등록' 기한은 운영 제안(회의 확정 전) — 값이 정해지기 전에는 목록 기한이 '기한 없음 · 설정값 확인'. 물량 산출 3일 · 5일(견적팀)과는 다른 업무 */
    N('quote_request_days','미팅 후 견적 요청 등록','1차 미팅 후 며칠 안에 견적 요청을 등록하는지. 운영 제안 · 회의 확정 전이라 아직 기한을 계산하지 않습니다(물량 산출 목표 3일 · 최대 5일은 견적 요청 등록일부터 · 견적팀).','hold','일',1,1,14),
+   N('record_deadline_hour','기록 입력 마감','영업일 이 시각까지 전날 응대 기록이 들어왔는지 점검합니다(견적문의 머리 줄 "기록 점검 n시"). 기록 점검 시각이며 응대를 미뤄도 된다는 뜻은 아닙니다.','cond','시',1,9,18),
    T('next_action_required','다음 행동 필수','진행 중 영업건에 다음 행동·날짜를 기록하는 정책입니다. 이 설정의 입력 강제 연결과 기존 누락 진단은 별개입니다.','fix'),
    T('stage_gates','단계 이동 필수조건','단계별 필수값이 비면 [옮기기]를 잠급니다 — → 컨설팅 설계: 1차 현장미팅 / → 자료 발송완료: 발송일 · 발송 자료 · 다음 확인일 / → 관계관리: 자료 발송일 · 고객 반응 · 다음 행동 · 다음 확인일 / → 경쟁 · 입찰: 입찰 · 결정 일정 · 경쟁 상황 / → 계약 · 시공: 계약일 · 계약금액 / → 수주 · 실주: 수주 유형 · 낙찰금액 / 실주 원인','cond'),
    X('고객관리 기간','연락 주기는 회의 기준입니다. 집중·일반 관리 기간과 3개월 기산점은 잠정이며 자동 전환하지 않습니다.','cond','집중 1개월 · 일반 3개월: 잠정 / 대기 연락 2개월 1회: 일수 환산 확인 필요'),
@@ -75,17 +83,18 @@
   ['open','공개 · 권한','',[
    T('dashboard_public','영업 대시보드 공개','전체 · 개인 성과를 전 직원에게 공개','fix'),
    X('할 일 지정 권한','컨트롤타워 지정','fix','관리자 · 팀장'),
+   CE('important_request_kinds','중요 요청 (팝업)','요청 이름을 넣으면 그 요청은 받는 사람에게 팝업으로 뜹니다(예: 첫 연락 요청 · 계약정보 입력 요청). 비어 있으면 새 배정 · 긴급 기한 변경만 팝업이고 나머지 요청은 알림 목록으로 묶입니다. 어떤 요청을 중요로 볼지는 대표 결정 전.','cond'),
    C('approvers','예외 승인자','승인 요청 · 타사 이관 실적 인정은 이 사람들에게 갑니다 — 한 사람만 승인해도 됩니다. 본인이 올린 요청은 다른 승인자가 처리합니다. (계정 이름과 같아야 합니다)','cond')]],
   ['later','보류 · 추후','회의에서 잠정 · 추후로 정한 것',[
    T('content_followup','콘텐츠 후속관리','카드뉴스 · 영상 — 발송 대신 접촉 기록만','hold')]]];
  const ROWS=SECTIONS.flatMap(s=>s[3]),EDIT=ROWS.filter(r=>r.st==='cond'&&r.k),SPEC=Object.fromEntries(EDIT.map(r=>[r.k,r]));
- let over={},meta={updated_at:'',updated_by:'',history:[]},loaded=false,busy=false,warmed='';
+ let over={},meta={updated_at:'',updated_by:'',history:[],version:0,contract:1},loaded=false,busy=false,warmed='';
  /* 한 값 다듬기: 조건부 항목만, 형식 · 범위가 맞을 때만 받아들인다(아니면 undefined) */
  function clean(k,v){
   const r=SPEC[k];if(!r)return undefined;
   if(r.type==='num'){const n=Number(v);return Number.isFinite(n)&&Math.round(n)===n&&n>=r.min&&n<=r.max?n:undefined;}
   if(r.type==='tg')return typeof v==='boolean'?v:undefined;
-  if(r.type==='chips'){if(!Array.isArray(v))return undefined;const l=[...new Set(v.map(x=>String(x==null?'':x).trim()).filter(Boolean))];return l.length>=1&&l.length<=20&&l.every(x=>x.length<=30)?l:undefined;}
+  if(r.type==='chips'){if(!Array.isArray(v))return undefined;const l=[...new Set(v.map(x=>String(x==null?'':x).trim()).filter(Boolean))];return (l.length>=1||r.empty)&&l.length<=20&&l.every(x=>x.length<=30)?l:undefined;}
   return undefined;
  }
  const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
@@ -101,6 +110,7 @@
   /* 단계 바꾸기 '실주'의 사유 선택 = 실주 원인 목록 */
   try{const ST=root.StageTransition,f=ST&&ST.definitions&&ST.definitions.lost&&ST.definitions.lost.fields.find(x=>x.key==='close_reason');if(f){f.label='실주 원인';f.options=reasons('lost');}}catch(e){}
   O.unreachableAttempts=get('unreachable_attempts');O.unreachableIntervalDays=get('unreachable_interval_days');O.transferResultCheckDays=get('transfer_result_check_days');
+  O.recordDeadlineHour=get('record_deadline_hour');O.ongoingUnreachableAttempts=get('ongoing_unreachable_attempts');O.importantRequestKinds=get('important_request_kinds').slice();
  }
  /* 수주 유형 3가지(rules.json won_types) · 영업건에 붙는 수주 필드 이름(deal_fields) */
  const WON_TYPES=Object.freeze({won_own:Object.freeze({key:'own',label:'직접 수주',short:'직접 수주',hint:'자사가 직접 계약 · 시공'}),won_partner_tech:Object.freeze({key:'partner_tech',label:'협약시공사 수주 · 기술자문',short:'협약 · 기술자문',hint:'우리 영업 → 협약시공사 낙찰 → 기술자문 계약'}),won_transfer:Object.freeze({key:'transfer',label:'타사 이관 수주',short:'타사 이관',hint:'공식 이관 → 그 업체 낙찰 · 사전 보고 승인'})});
@@ -201,17 +211,22 @@
  function carePhase(quoteSentAt,now){const t=ms(quoteSentAt);if(!Number.isFinite(t))return '';const m=((now||Date.now())-t)/(864e5*30);return m<get('care_focus_months')?'focus':m<Math.max(get('care_general_months'),get('care_focus_months')+1)?'general':'long_wait';/* 2026-10-07 stage7_2 ③: 일반관리 = 발송일부터 총 기간 */}
  /* ── 서버 ── */
  const store=()=>root.OpsStore,available=()=>!!(store()&&store().has&&store().has(RPC));
- function take(r){apply(r.rules||{});meta={updated_at:r.updated_at||'',updated_by:r.updated_by_name||'',history:Array.isArray(r.history)?r.history:[]};loaded=true;try{root.dispatchEvent(new CustomEvent('crm-rules:changed',{detail:{rules:all()}}));}catch(e){}return all();}
+ function take(r){apply(r.rules||{});const hist=Array.isArray(r.history)?r.history:[];meta={updated_at:r.updated_at||'',updated_by:r.updated_by_name||'',history:hist,version:Number(r.version)||hist.length,contract:Number(r.contract)||1};loaded=true;try{root.dispatchEvent(new CustomEvent('crm-rules:changed',{detail:{rules:all()}}));}catch(e){}return all();}
  async function load(force){if(!available())return all();if(busy)return all();if(loaded&&!force)return all();busy=true;try{return take(await store().rpc(RPC,{}));}catch(e){return all();}finally{busy=false;}}
  /* 저장: 바뀐 조건부 값만 보낸다. 서버가 확인한 값만 화면에 적용한다 */
- async function save(changes){
+ /* 저장: 바뀐 조건부 값만 보낸다. 서버가 확인한 값만 화면에 적용한다.
+    apply = 적용 범위(promise_gap ③): {effective_on:'YYYY-MM-DD', scope:'대상 · 건수', existing:'keep'|'recalc'|'ask'} — 이력에만 남고 지난 판정은 소급 재계산하지 않는다(v1 서버는 이 칸을 무시한다) */
+ async function save(changes,apply){
   const set={};Object.keys(changes||{}).forEach(k=>{const v=clean(k,changes[k]);if(v===undefined)throw new Error((SPEC[k]?SPEC[k].l:k)+' 값이 범위를 벗어났습니다');set[k]=v;});
   if(!Object.keys(set).length)return all();if(!available())throw new Error('운영 기준 저장은 서버 적용 뒤에 쓸 수 있습니다');
-  return take(await store().rpc(RPC,{set}));
+  const body={set};if(apply&&typeof apply==='object'){const ap={};if(/^\d{4}-\d{2}-\d{2}$/.test(String(apply.effective_on||'')))ap.effective_on=apply.effective_on;if(apply.scope)ap.scope=String(apply.scope).slice(0,300);if(['keep','recalc','ask'].includes(apply.existing))ap.existing=apply.existing;if(Object.keys(ap).length)body.apply=ap;}
+  return take(await store().rpc(RPC,body));
  }
+ /* 기준 버전(근거 보기 · 이력 표시용): 서버 이력 건수 = 버전, 마지막 변경일. 서버 적용 전이면 v0 · 기본값 */
+ function version(){const at=String(meta.updated_at||'');const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(at);return {n:Number(meta.version)||0,at,label:'기준 v'+(Number(meta.version)||0)+(m?' · '+Number(m[2])+'.'+Number(m[3]):' · 기본값')};}
  /* 로그인하면 한 번 읽고, 값이 기본과 다르면 다시 그린다 */
  function warm(){const me=root.ME&&String(root.ME.id||root.ME.name||'');if(!me||warmed===me||!available())return;warmed=me;const before=JSON.stringify(all());load(true).then(()=>{if(JSON.stringify(all())!==before&&typeof root.paint==='function'){try{root.paint();}catch(e){}}});}
  if(typeof root.paint==='function'){const base=root.paint;root.paint=function(){try{sync();}catch(e){}const r=base.apply(this,arguments);try{warm();}catch(e){}return r;};}
  try{sync();}catch(e){}
- return {VERSION,RPC,DEFAULTS,SECTIONS,ROWS,SPEC,get,all,apply,clean,sync,load,save,available,meta:()=>meta,loaded:()=>loaded,pct,madeRate,dealResult,transferOf,winOf,performance,revenue,WON_TYPES,DEAL_FIELDS,approvers,isApprover,reasons,lostReason,lostCategory,lostGroups,LOST_ALIAS,PHASE2,PHASE3,PHASE4,PHASE5,amounts,salesPath,healthScore,miss,carePhase};
+ return {VERSION,RPC,DEFAULTS,SECTIONS,ROWS,SPEC,get,all,apply,clean,sync,load,save,version,available,meta:()=>meta,loaded:()=>loaded,pct,madeRate,dealResult,transferOf,winOf,performance,revenue,WON_TYPES,DEAL_FIELDS,approvers,isApprover,reasons,lostReason,lostCategory,lostGroups,LOST_ALIAS,PHASE2,PHASE3,PHASE4,PHASE5,amounts,salesPath,healthScore,miss,carePhase};
 });
