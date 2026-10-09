@@ -61,7 +61,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const rowOf=k=>L.locator('.prv-row[data-key$="'+k+'"]').evaluate(r=>{const t=s=>{const n=r.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():null;};return {tag:t('.prv-a>em.prv-tag'),tagBtn:!!r.querySelector('.prv-a>em.prv-tag[role="button"]'),now:t('.prv-b>span'),base:t('.prv-b>small.base'),task:t('.prv-c>b'),due:t('.prv-c>small:first-of-type'),dueCls:r.querySelector('.prv-c>small:first-of-type').className,why:t('.prv-c>small.why'),btn:t(':scope>button'),act:r.querySelector(':scope>button').dataset.v,tab:r.dataset.tab,stale:t('.prv-c>small.why.stale')};});
   /* ① 미확인이어도 연락 약속은 기한으로 · 약속이 없을 때만 '기한 없음' */
   const pu=await rowOf('p-unk'),pn=await rowOf('p-none');
-  assert.deepEqual([pu.tag,pu.tagBtn,pu.now,pu.task,pu.due,pu.dueCls,pu.btn,pu.act],['미확인 · 분류 필요',true,'다음 연락일 지남 · 약속 있음','재통화 시도','35일 지남 · '+await md(-35)+' 약속','r','연락 기록','activity'],'미확인 + 약속: 기한 그대로 · 약속 업무 먼저');
+  assert.deepEqual([pu.tag,pu.tagBtn,pu.now,pu.task,pu.due,pu.dueCls,pu.btn,pu.act],['미확인 · 분류 필요',true,'기존 일정 35일 경과 · 약속 여부 확인','재통화 시도','35일 지남 · '+await md(-35)+' 등록 일정','r','연락 기록','activity'],'미확인 + 약속: 기한 그대로 · 약속 업무 먼저');
   assert.deepEqual([pn.tag,pn.task,pn.due,pn.dueCls,pn.btn,pn.act],['미확인 · 분류 필요','상태 재분류','기한 없음 · 분류 후 정해짐','g','분류하기','classify'],'약속이 없을 때만 기한 없음');
   assert.deepEqual((await L.locator('.prv-row').evaluateAll(l=>l.map(r=>r.dataset.key.replace(/^deal:/,'')))).slice(0,2),['p-unk','p-none'],'재분류 목록은 연락 약속 있는 건부터');
   /* ③ 관리 기간: 일반관리 = 발송일부터 총 3개월 · 해석 미확정 · '1~4개월' 문구 없음 */
