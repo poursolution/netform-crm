@@ -94,15 +94,18 @@
   return '<div class="ra-row'+(changed?' chg':'')+'" data-k="'+attr(r.k||'')+'"><div class="ra-l"><div><b>'+h(r.l)+'</b><em style="color:'+t[1]+';background:'+t[2]+'">'+t[0]+'</em>'+(cf?'<em class="ra-conf" style="color:'+cs[0]+';background:'+cs[1]+'">'+h(cf[0])+'</em>':'')+(changed?'<em class="new">변경됨</em>':'')+'</div><span>'+h(r.d)+'</span>'+(cf?'<span class="ra-src">계산 시작점 · 예외 — '+h(cf[1])+'</span>':'')+(im?'<span class="ra-imp">'+h(im)+'</span>':'')+'</div><div class="ra-r">'+ctl+note+'</div></div>';
  }
  const when=v=>{const d=new Date(v);return Number.isFinite(d.getTime())?d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate():'';};
- const EXL={keep:'기존 업무 그대로 · 새 건부터',recalc:'기존 업무도 새 기준으로 다시 계산',ask:'담당자에게 확인 요청'};
+ /* 기존 업무 처리 3택 — 지금 서버는 선택을 이력에만 남기고 값은 즉시 적용한다(예약 적용 · 기존 업무 유지 엔진은 Codex 서버 몫). 보장 못 하는 ② ③ 은 잠금, ① 은 사실대로 이름 붙인다 */
+ const EXL={keep:'저장 즉시 모든 화면에 적용 · 선택은 이력에 기록',recalc:'기존 업무도 새 기준으로 다시 계산',ask:'담당자에게 확인 요청'};
+ const EX_LOCK={recalc:'예약 적용 엔진 전 · 선택 불가',ask:'예약 적용 엔진 전 · 선택 불가'};
  const diffOf=(C,S,k)=>{const a=C.get(k),b=S.draft[k];if(!Array.isArray(a))return show(a)+' → '+show(b);const add=b.filter(x=>!a.includes(x)),del=a.filter(x=>!b.includes(x));return a.length+'개 → '+b.length+'개'+(add.length?' (+'+add.join(', ')+')':'')+(del.length?' (−'+del.join(', ')+')':'');};
  /* 저장 전 적용 범위 확인(promise_gap ③ 시안 3): 바꾸는 것 · 적용일 · 대상 · 기존 업무 3택 */
  function confirmHtml(S,C,keys){
   const F=S.confirm;if(!F)return '';
   const lines=keys.map(k=>{const r=C.SPEC[k],v=S.draft[k],pv=previewOf(k,v);return '<div class="ra-cf-row"><span>바꾸는 것</span><b>'+h(r.l+' '+diffOf(C,S,k))+'</b><span>대상</span><span>'+h(scopeOf(k,v))+(pv?' · 미리보기 '+h(pv):'')+'</span></div>';}).join('');
-  const opts=[['keep','권장 · 약속한 날짜 · 지난 판정 안 바뀜'],['recalc',keys.map(k=>previewOf(k,S.draft[k])).filter(Boolean).join(' · ')||'미리보기 계산 없음 · 새 기준은 다음 판정부터'],['ask','담당이 건별로 고름 · 오늘 업무 묶음 [요청 보내기]로 보냅니다(자동 발송 없음)']];
-  return '<div class="ra-cf" role="dialog" aria-label="적용 범위 확인"><header><b>기준을 바꿀 때 · 적용 범위 확인</b><span>저장하면 이력에 누가 · 언제 · 무엇 · 적용일 · 대상 · 선택이 남습니다 · 지난 요청의 기한 · 판정은 다시 계산하지 않음(기준 버전 보존)</span></header>'
-   +lines+'<div class="ra-cf-row"><span>적용일</span><input type="date" data-ra-in="eff" value="'+attr(F.eff)+'" min="'+attr(KST())+'" aria-label="적용일"><span>기존 업무는</span><div class="ra-cf-opts">'+opts.map(o=>'<button type="button" data-ra="existing" data-v="'+o[0]+'" aria-pressed="'+(F.existing===o[0])+'"><b>'+h(EXL[o[0]])+'</b><small>'+h(o[1])+'</small></button>').join('')+'</div></div>'
+  const opts=[['keep','지금 기준을 읽는 모든 화면 · 기존 업무 계산도 새 값으로 바뀝니다 · 지난 요청의 기한 · 완료 판정은 다시 계산하지 않음'],['recalc',keys.map(k=>previewOf(k,S.draft[k])).filter(Boolean).join(' · ')||'미리보기 계산 없음'],['ask','담당이 건별로 고름']];
+  const rec=C.meta().contract>=2;
+  return '<div class="ra-cf" role="dialog" aria-label="적용 범위 확인"><header><b>기준을 바꿀 때 · 적용 범위 확인</b><span>'+(rec?'저장하면 이력에 누가 · 언제 · 무엇 · 적용일 · 대상이 남습니다':'이 서버는 적용일 · 대상을 이력에 남기지 않습니다(ops-rules v2 적용 전) · 값만 저장됩니다')+' · 값은 저장 즉시 적용되고 미래 적용일 · 기존 업무 유지는 예약 적용 엔진이 생기기 전까지 고를 수 없습니다</span></header>'
+   +lines+'<div class="ra-cf-row"><span>적용일</span><b class="ra-cf-now">'+h(F.eff)+' · 오늘(저장 즉시)</b><span>기존 업무는</span><div class="ra-cf-opts">'+opts.map(o=>{const lock=EX_LOCK[o[0]];return '<button type="button" data-ra="existing" data-v="'+o[0]+'" aria-pressed="'+(F.existing===o[0])+'"'+(lock?' disabled title="'+attr(lock)+'"':'')+'><b>'+h(EXL[o[0]])+'</b><small>'+h(lock?lock+' · '+o[1]:o[1])+'</small></button>';}).join('')+'</div></div>'
    +(S.err?'<p class="ra-cf-err">'+h(S.err)+'</p>':'')+'<footer><button type="button" data-ra="cfclose">닫기</button><button type="button" class="save" data-ra="cfsave"'+(S.busy?' disabled':'')+'>'+(S.busy?'저장 중…':'이대로 저장')+'</button></footer></div>';
  }
  function render(){
@@ -130,10 +133,12 @@
  function onKey(e){const t=e.target;if(!t.matches||!t.matches('[data-ra="add-input"]'))return;if(e.key==='Enter'){e.preventDefault();commitAdd(t);}if(e.key==='Escape'){e.preventDefault();e.stopPropagation();st().adding='';render();}}
  async function save(){
   const S=st(),F=S.confirm;if(S.busy||!Object.keys(S.draft).length||!F)return;
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(F.eff||''))){S.err='적용일을 골라 주세요.';return render();}
-  const keys=Object.keys(S.draft),scope=keys.map(k=>CR().SPEC[k].l+': '+scopeOf(k,S.draft[k])).join(' / ');
+  if(F.eff!==KST()||F.existing!=='keep'){S.err='지금은 저장 즉시 적용만 고를 수 있습니다(미래 적용일 · 기존 업무 유지는 예약 적용 엔진 전).';return render();}
+  const keys=Object.keys(S.draft),scope=keys.map(k=>CR().SPEC[k].l+': '+scopeOf(k,S.draft[k])).join(' / '),rec=CR().meta().contract>=2;
   S.busy=true;S.err='';render();
-  try{await CR().save(S.draft,{effective_on:F.eff,scope,existing:F.existing});S.draft={};S.confirm=null;if(typeof R.toast==='function')R.toast('운영 기준을 저장했습니다 — 연결된 항목에만 반영 · 적용일 '+F.eff+' · '+EXL[F.existing]);}
+  /* 적용 조건(apply)은 서버가 적용 조건을 받는다고(contract 2) 응답한 뒤에만 보낸다 — v1 서버가 조용히 버린 것을 성공으로 안내하지 않는다(코덱스 검토 P1) */
+  try{const r=await CR().save(S.draft,rec?{effective_on:F.eff,scope}:null);const bad=keys.filter(k=>JSON.stringify(r[k])!==JSON.stringify(CR().clean(k,S.draft[k])));if(bad.length)throw new Error('서버가 확인한 값이 요청과 다릅니다: '+bad.map(k=>CR().SPEC[k].l).join(', '));
+   S.draft={};S.confirm=null;if(typeof R.toast==='function')R.toast('운영 기준을 저장했습니다 — 연결된 항목에 즉시 반영'+(rec?' · 이력에 적용일 '+F.eff+' · 대상 기록':' · 이 서버는 적용일 · 대상을 이력에 남기지 않음'));}
   catch(e){S.err='저장하지 못했습니다: '+(e.message||e);}
   finally{S.busy=false;try{R.paint();}catch(e){render();}}
  }
@@ -143,7 +148,7 @@
   if(a==='reset'){S.draft={};S.adding='';S.err='';S.confirm=null;return render();}
   if(a==='save'){S.confirm={eff:KST(),existing:'keep'};S.err='';return render();}/* 바로 보내지 않고 적용 범위부터 확인 */
   if(a==='cfclose'){S.confirm=null;S.err='';return render();}
-  if(a==='existing'&&S.confirm){S.confirm.existing=b.dataset.v;return render();}
+  if(a==='existing'&&S.confirm){if(EX_LOCK[b.dataset.v])return;S.confirm.existing=b.dataset.v;return render();}
   if(a==='cfsave')return save();
   if(!r)return;
   if(a==='dec'||a==='inc'){const v=Math.max(r.min,Math.min(r.max,cur(k)+(a==='inc'?r.step:-r.step)));setDraft(k,v);return render();}
