@@ -102,5 +102,33 @@
   const den=(deals||[]).filter(d=>d&&open(d)&&!legacy(d)),num=den.filter(d=>{const x=nextOf(d);return !!(x&&x.text&&x.due);});
   return {num:num.length,den:den.length,pct:den.length?Math.round(num.length*100/den.length):null,target:TARGET.nextRate,list:den.filter(d=>!num.includes(d))};
  }
- root.PipelineJudge={on,meetingOf,sentOfDeal,field:fld,basis,missKind,missCounts,dueText,dueClass,isLate,state,STATE,tally,tallyText,line,touchLines,week,inWeek,dayKey,md,nextRate,TARGET,rules};
+ /* 지표의 현재 대상: 생성 연도·옛 영업 그룹·내부 직원 명단으로 진행 건을 누락시키지 않는다.
+    서버가 내려준 자료 안에서 기존 권한과 선택한 담당·브랜드·공종·검색을 유지한다. */
+ function metricSource(kind,owner){
+  const G=root.G||{},rep=v=>root.repN?root.repN(v):String(v||''),explicitOwner=owner!==undefined;
+  let scope={};try{scope=root.SalesScope.state();}catch(e){}
+  if(owner===undefined){try{owner=root.SalesScope.state().owner;}catch(e){owner=G.rep;}}
+  const admin=!!(root.todayIsAdmin&&root.todayIsAdmin()),me=rep(root.ME&&root.ME.name);
+  let list=(root.B&&root.B[kind==='inq'?'inquiries':'deals'])||[];
+  if(kind==='inq'&&root.operationalInquiries)list=root.operationalInquiries(list);
+  return list.filter(d=>{const o=kind==='inq'&&root.inquiryRoutedOwner?rep(root.inquiryRoutedOwner(d)):rep(d.assignee);
+   if(d.deleted_at||d.deletedAt||d.trashed_at)return false;
+   if(kind==='inq'&&root.InquiryB2B&&root.InquiryB2B.isAgreement(d))return false;
+   const narrow=['type','organization','assignment'].some(k=>scope[k]&&scope[k]!=='all');
+   const selected=explicitOwner||!narrow||!root.SalesScope||root.SalesScope.matches(o,d);
+   const brand=root.SalesFilterState&&root.SalesFilterState.matchesBrand?root.SalesFilterState.matchesBrand(d.brand):!G.brand||G.brand==='전체'||d.brand===G.brand;
+   return (admin||o===me)&&selected&&(!owner||owner==='전체'||o===owner)&&brand
+    &&(!G.workFilter||G.workFilter==='전체'||!root.workMatches||root.workMatches(d,G.workFilter))
+    &&(!G.q||JSON.stringify(d).toLowerCase().includes(String(G.q).toLowerCase()));});
+ }
+ /* 이번 주 접수와 이번 주 배정은 별개의 고객군. 표시·증감·저장·담당별 값이 함께 사용한다. */
+ function inquiryWeek(list){
+  const w=week(0),H=Number((root.OPS_RULES||{}).towerFirstResponseHours)||2;
+  const received=(list||[]).filter(q=>inWeek(root.inquiryCreatedAt(q),w));
+  const assigned=(list||[]).filter(q=>root.inquiryAssigned(q)&&inWeek(root.inquiryAssignedAt(q),w));
+  const same=received.filter(q=>root.inquiryAssigned(q)&&dayKey(root.inquiryAssignedAt(q))===dayKey(root.inquiryCreatedAt(q)));
+  const fast=assigned.filter(q=>{const a=Date.parse(root.inquiryAssignedAt(q)),f=Date.parse(root.inqCtlFirstResponseAt(q)),delta=f-a;return Number.isFinite(delta)&&delta>=0&&delta<=H*3600e3;});
+  return [{num:same.length,den:received.length},{num:fast.length,den:assigned.length}];
+ }
+ root.PipelineJudge={on,meetingOf,sentOfDeal,field:fld,basis,missKind,missCounts,dueText,dueClass,isLate,state,STATE,tally,tallyText,line,touchLines,week,inWeek,dayKey,md,nextRate,metricSource,inquiryWeek,TARGET,rules};
 })(window);

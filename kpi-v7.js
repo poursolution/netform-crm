@@ -18,7 +18,7 @@
  const repaint=()=>{if(R.G.page==='mgmt')try{R.paintMgmt();}catch(e){}};
  /* 지표(예전 화면과 같은 순번 = kpi:1~8)마다: 묶음 · 지표명 · 질문형 이름 · 원인 */
  const QN=[['견적문의','당일 배정률','들어온 날 담당을 정했나','contact'],['견적문의','2시간 첫 연락','배정 2시간 안에 실제 통화했나','contact'],['파이프라인','다음 할 일 등록률','진행 건마다 다음 할 일 · 날짜가 있나','rec'],['파이프라인','활동 기록률','최근 7일 안에 기록이 있나','rec'],
-  ['파이프라인','장기정체 비율','30일 넘게 멈춘 건 (낮을수록 좋음)','judge'],['파이프라인','방문 후 3일 견적','미팅 후 3일 안에 견적 요청했나','rec'],['실주','실주 사유 입력','실주 처리할 때 왜 졌는지 남겼나','rec'],['관리팀','조치 → 처리율','관리팀 요청이 기한 안에 처리됐나','judge']];
+  ['파이프라인','장기정체 비율','30일 넘게 멈춘 건 (낮을수록 좋음)','judge'],['파이프라인','방문 후 3일 견적','미팅 후 3일 안에 견적 요청했나','rec'],['실주','실주 정보 완성률','사유 · 재영업 여부 · 필요한 낙찰 정보를 남겼나','rec'],['관리팀','조치 → 처리율','관리팀 요청이 기한 안에 처리됐나','judge']];
  const CAUSES=['contact','rec','judge','none'],CL={contact:'고객 연락이 늦음',rec:'기록 · 입력을 안 남김',judge:'판단을 미룸',none:'아직 못 잼'};
  const b2b=()=>{try{return (R.InquiryB2BTab&&R.InquiryB2BTab.OWNER)||'조재연';}catch(e){return '조재연';}};
  const people=()=>K().names().filter(n=>n!==b2b());
@@ -28,13 +28,6 @@
  /* 이번 주 / 누적 분리(2026-10-06 집계 ⑤): 견적문의 지표 둘은 이번 주(월~금) 접수 · 배정 건만 세고, 누적 미처리는 따로 적는다. 지표마다 '대상: …' 한 줄(⑥ 같은 이름 = 같은 분모) */
  const J=()=>R.PipelineJudge&&R.PipelineJudge.on()?R.PipelineJudge:null;
  const TARGET=i=>{const T=(J()||{}).TARGET||{};return [T.sameDay||'이번 주 접수 견적문의',T.firstContact||'이번 주 배정된 견적문의',T.nextRate||'진행 중 영업건(과거 이관 제외)',T.activity||'진행 중 영업건',T.stale||'컨설팅 설계 · 관계관리 진행 건(과거 이관 제외)',T.quote3||'1차 미팅을 마친 컨설팅 설계 건',T.lostReason||'실주 처리된 영업건',T.action||'최근 28일 관리팀 요청'][i]||'';};
- function weekly(S){
-  const j=J();if(!j||!S)return null;const w=j.week(0),H=Number((R.OPS_RULES||{}).towerFirstResponseHours)||2;
-  const Q=(S.Q||[]).filter(q=>{try{return j.inWeek(R.inquiryCreatedAt(q),w);}catch(e){return false;}});
-  const same=Q.filter(q=>{try{const a=R.inquiryAssignedAt(q);return !!a&&j.dayKey(a)===j.dayKey(R.inquiryCreatedAt(q));}catch(e){return false;}});
-  const asg=Q.filter(q=>{try{return !!R.inquiryAssigned(q);}catch(e){return false;}}),fast=asg.filter(q=>{try{const a=Date.parse(R.inquiryAssignedAt(q)||''),f=Date.parse(R.inqCtlFirstResponseAt(q)||'');return Number.isFinite(a)&&Number.isFinite(f)&&f-a<=H*3600e3;}catch(e){return false;}});
-  return [{num:same.length,den:Q.length,cum:(S.unassigned||[]).length,cumL:'누적 미배정'},{num:fast.length,den:asg.length,cum:(S.noResponse||[]).length,cumL:'누적 첫 연락 전'}];
- }
  /* 담당자별 값은 지금 걸린 담당 필터와 상관없이(전원) 잰다 — 알약의 '미달 n' 이 고른 사람에 따라 바뀌지 않게 */
  function allItems(){
   const P=R.PipelineStageB,out=[];if(!P||!R.PipelineWorkspace)return out;let rows=[];try{rows=R.PipelineWorkspace.rows({unscoped:true});}catch(e){rows=[];}
@@ -60,12 +53,12 @@
  const reqSum=(x,noun)=>noun+' '+x.total+'건 중 요청 가능 '+x.can+'건'+(x.done?' · 이미 요청 중 '+x.done:'')+(x.none?' · 담당 없음 '+x.none:'');
  /* 핵심 지표 8줄 */
  function coreRows(C,PV,last){
-  const WK=last?null:weekly(C.S);
+
   return C.M.map((m,i)=>{
    const q=QN[i],g=m.def[4],lb=!!m.def[5];let v=m.v,num=m.num,den=m.den,cum='';
    if(last){const w=K().weekRowOf(i,-1);v=w?pct(w.numerator,w.denominator):null;num=w?w.numerator:0;den=w?w.denominator:0;}
-   else if(WK&&WK[i]){num=WK[i].num;den=WK[i].den;v=pct(num,den);cum=WK[i].cumL+' '+WK[i].cum+'건(이번 주 지표에는 안 들어감)';}
-   const pilot=PILOT.has(i),nd=v==null,bad=!pilot&&!nd&&(lb?v>g:v<g),gap=nd?0:Math.round(Math.abs(g-v)*10)/10,d=last||m.v==null||m.last==null?null:Math.round((m.v-m.last)*10)/10;
+   else if(i<2&&C.S){cum=(i===0?'누적 미배정 ':'누적 첫 연락 전 ')+((i===0?C.S.unassigned:C.S.noResponse)||[]).length+'건(이번 주 지표와 별도)';}
+   const pilot=PILOT.has(i),nd=v==null,bad=!pilot&&!nd&&(lb?v>g:v<g),gap=nd?0:Math.round(Math.abs(g-v)*10)/10,d=last||v==null||m.last==null?null:Math.round((v-m.last)*10)/10;
    const left=last?0:m.left,total=last?0:m.todos.length,RQ=last?null:reqSplit(m.todos);
    return {i,key:m.key,grp:q[0],l:q[1],q:q[2],cause:nd&&!pilot?'none':q[3],nd,bad,lb,v,g,gap,left,total,d,num,den,pilot,ok:!nd&&!bad&&!pilot,
     frac:den?num+' / '+den+'건':'아직 못 잼',goal:(lb?'≤ ':'')+g+'%',
@@ -77,6 +70,13 @@
  /* 단계별 기준: 파이프라인 각 단계 화면의 '그래서 뭘 해야 하나' 기준(빨강 사유)을 같은 함수로 — 기준 넘긴 건 = 그 사유가 붙은 건.
     지킨 비율 = 1 − 넘김 ÷ 대상. 대상 = 그 단계의 건(견적 요청 3일은 미팅을 마친 건, 견적문의는 배정된 건 · 후속 단계 건) */
  const BASE={consulting:{nodue:it=>it.bucket==='done'}};
+ function ruleBase(stage,key,items){
+  const bucket={focus7:'focus',month30:'normal',long60:'wait'}[key];
+  if(stage!=='relationship'||!bucket){const f=BASE[stage]&&BASE[stage][key];return {base:f?items.filter(f).length:items.length,unknown:0};}
+  const unclassified=items.filter(it=>it.bucket==='nodata').length,relevant=items.filter(it=>it.bucket===bucket);
+  const known=relevant.filter(it=>it.rs.includes(key)||Number.isFinite(it.seg?it.seg.contact:it.row.contactDays));
+  return {base:known.length,unknown:unclassified+relevant.length-known.length};
+ }
  function stageGroups(done){
   const P=R.PipelineStageB,out=[],isDone=(pk,kind,id)=>done.has(pk+'|'+kind+':'+id);
   const rule=(stage,k,t,how,targets,base)=>{const pk='stage:'+stage+':'+k,n=targets.length,b=Math.max(base,n),left=targets.filter(x=>!isDone(pk,x.kind,x.id)).length,rq=reqSplit(targets.map(x=>({owner:x.owner,done:isDone(pk,x.kind,x.id)})));return {stage,k,pk,t,how,targets,n,base:b,left,rq,p:b?Math.round((1-n/b)*1000)/10:null};};
@@ -92,8 +92,9 @@
    Object.keys(P.CFG).forEach(key=>{const list=rows.filter(r=>r.group===key);if(!list.length)return;let md=null;try{md=P.model(key,list);}catch(e){}if(!md)return;
     /* 실주 = 핵심 지표 7 · 측정 기준 a3 · 실주 화면과 같은 완료 판정(사유 + 재영업 여부, 경쟁사 낙찰이면 경쟁사 · 낙찰가) — 빨강이 아닌 두 사유도 같이 센다 */
     const LF=key==='lost'?['noreason','relist','nobid']:[],red=Object.keys(md.C.RS).filter(k=>md.isRed(k)||LF.includes(k));if(!red.length)return;
-    out.push({key,label:md.C.name,total:list.length,over:key==='lost'?md.items.filter(it=>it.bucket==='nore').length:md.items.filter(it=>it.red).length,rules:red.map(k=>{const hit=md.items.filter(it=>it.rs.includes(k)),bf=BASE[key]&&BASE[key][k];
-     return rule(key,k,md.C.RS[k][0],md.C.RS[k][3],hit.map(it=>({kind:'deal',id:String(it.row.key),name:it.row.site,owner:String(it.row.owner||''),why:md.C.RS[k][0],label:md.C.RS[k][2]})),bf?md.items.filter(bf).length:md.items.length);})});});}
+    out.push({key,label:md.C.name,total:list.length,over:key==='lost'?md.items.filter(it=>it.bucket==='nore').length:md.items.filter(it=>it.red).length,rules:red.map(k=>{const hit=md.items.filter(it=>it.rs.includes(k)),b=ruleBase(key,k,md.items);
+     const how=md.C.RS[k][3]+(key==='lost'?' · 해당 항목만 판단(전체 완성률과 별도)':key==='relationship'?' · 접촉 주기 기준(단계 진척과 별도)':'')+(b.unknown?' · 분류·접촉 확인 필요 '+b.unknown+'건(분모 제외)':'');
+     return Object.assign(rule(key,k,md.C.RS[k][0],how,hit.map(it=>({kind:'deal',id:String(it.row.key),name:it.row.site,owner:String(it.row.owner||''),why:md.C.RS[k][0],label:md.C.RS[k][2]})),b.base),{unknown:b.unknown});})});});}
   return out;
  }
  /* '조치 → 처리율'이 단계별 기준 요청도 세도록: 지금 기준을 넘긴 건의 열쇠(견적문의 몫) */
@@ -114,7 +115,7 @@
   const MG=mgmtMetrics(KMD);
   const miss=rows.filter(r=>r.bad).length,pilotN=rows.filter(r=>r.pilot).length,nd=rows.filter(r=>r.nd&&!r.pilot).length,hit=rows.length-miss-nd-pilotN,N=rows.length||1;
   const leftN=C.M.reduce((a,m)=>a+m.left,0),sentN=C.M.reduce((a,m)=>a+(m.todos.length-m.left),0);
-  const cmp=C.M.filter(m=>m.v!=null&&m.last!=null).map(m=>{const d=m.v-m.last;return m.def[5]?-d:d;}),up=cmp.filter(d=>d>0).length,dn=cmp.filter(d=>d<0).length;
+  const cmp=rows.filter(r=>!r.pilot&&r.d!=null).map(r=>r.lb?-r.d:r.d),up=cmp.filter(d=>d>0).length,dn=cmp.filter(d=>d<0).length;
   const stageOver=SG.reduce((a,g)=>a+g.over,0),ruleN=SG.reduce((a,g)=>a+g.rules.length,0);
   if(s.cause&&!CAUSES.includes(s.cause))s.cause='';
   const list=rows.filter(r=>!s.cause||r.cause===s.cause);
@@ -168,7 +169,8 @@
  }
  /* 묶어 보내기: 담당자별로 '관리자 한마디'에 한 줄 + 건마다 조치 기록(처리율 계산용) */
  function send(pkey,title,list){
-  const by=new Map();list.forEach(t=>{const o=t.owner&&t.owner!=='미배정'?t.owner:'';(by.get(o)||by.set(o,[]).get(o)).push(t);});
+  list=list.filter(t=>t.owner&&t.owner!=='미배정');if(!list.length)return;
+  const by=new Map();list.forEach(t=>{const o=t.owner;(by.get(o)||by.set(o,[]).get(o)).push(t);});
   let told=0;by.forEach((ts,o)=>{if(!o)return;const line=title+' — '+(ts[0].kind==='rep'?(ts[0].why||'확인 부탁드립니다'):ts.length+'건: '+ts.slice(0,3).map(t=>t.name).join(', ')+(ts.length>3?' 외 '+(ts.length-3)+'건':''));try{if(K().requestLine(o,line))told++;}catch(e){}});
   R.G.kbDone=(R.G.kbDone||[]).concat(list.map(t=>pkey+'|'+t.kind+':'+t.id));
   const o=O();if(o&&o.has('crm_kpi_action_log_v1')){const q=list.slice(),run=()=>{const t=q.shift();if(!t)return;return o.rpc('crm_kpi_action_log_v1',{promise_key:pkey,action:String(t.label||'요청').slice(0,80),target_type:t.kind==='deal'?'deal':t.kind==='rep'?'person':'inquiry',target_id:String(t.id).slice(0,80),target_name:String(t.name||'').slice(0,200),note:String(t.why||'').slice(0,500)}).catch(()=>{}).then(run);};
