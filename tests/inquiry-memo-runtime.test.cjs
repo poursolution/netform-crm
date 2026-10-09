@@ -29,7 +29,7 @@ test('메모 약속 확인 SQL: 권한 · 멱등 · 이력 · 읽기',async()=>{
   let a=await call({type:'call_supplement',request_id:rid(1),item_key:'c-71jeg9',on_date:'2026-01-07',source_text:'관리소장 통화 완료',original_at:'2026-01-06T00:00:00+09:00'});
   assert.equal(a.review.kind,'call');assert.equal(a.review.on_date,'2026-01-07');assert.equal(a.review.result,null);assert.equal(a.review.decided_by,'owner');
   assert.equal((await db.query("select to_char(first_connected_at at time zone 'Asia/Seoul','YYYY-MM-DD') d from crm_security.inquiry_flow_state where inquiry_id=$1",[q])).rows[0].d,'2026-01-06','첫 연락 기준 값 그대로');
-  a=await call({type:'call_supplement',request_id:rid(1),item_key:'c-71jeg9',on_date:'2026-01-07'});assert.equal(a.replayed,true,'같은 요청은 한 번');
+  a=await call({type:'call_supplement',request_id:rid(1),item_key:'c-71jeg9',on_date:'2026-01-07',source_text:'관리소장 통화 완료',original_at:'2026-01-06T00:00:00+09:00'});assert.equal(a.replayed,true,'같은 요청은 한 번');
   assert.equal((await db.query("select count(*)::int n from crm_security.inquiry_audit_events where action='flow_memo_call' and inquiry_id=$1",[q])).rows[0].n,1);
   /* 약속 판단 · 바꾸면 이전 값이 감사 기록에 */
   a=await call({type:'promise',request_id:rid(2),item_key:'p-material-x',title:'사진 이메일로 받기',source_text:'사진 이메일로 받기로 함',on_date:'2026-01-07',result:'미완료'});assert.equal(a.review.result,'미완료');
