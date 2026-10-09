@@ -174,7 +174,7 @@
  const copied=q=>{try{return on()&&connection(q).state==='copy';}catch(e){return false;}};
  const memoCallDay=q=>{try{const d=dates(q).memoCall;return d?d.date:'';}catch(e){return '';}};
  const hasMemo=q=>{try{return scan(q).memos.length>0;}catch(e){return false;}};
- const needsReview=q=>{if(!on())return false;const c=connection(q),s=scan(q);return (c.state==='none'||c.state==='copy')&&(s.calls.length>0||pending(q).length>0);};
+ const needsReview=q=>{if(!on())return false;const c=connection(q),s=scan(q);return (c.state==='none'||c.state==='copy')&&(s.calls.length>0||pending(q).some(p=>p.date&&diff(p.date)>0));};
  function opener(q,who){
   if(!on())return '';const rest=promises(q).filter(p=>p.res!=='완료'),s=scan(q);
   const original=memosOf(q).map(m=>m.text).join('\n');

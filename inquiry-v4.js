@@ -43,7 +43,8 @@
   function nextDueOf(q){try{const a=root.actionObj(q,root.itemPatch(q,'inq'));if(a&&a.text&&a.due){const d=String(a.due).slice(0,10);if(/^\d{4}-\d{2}-\d{2}$/.test(d))return d;}}catch(e){}return '';}
   function ext(m){
    const q=m.q,x=m.x,now=Date.now(),k=K(),noPhone=!m.phone&&!!(m.follow||(x.ageDays||0)>=1),s=noPhone?5:m.step===0?1:m.step===1?2:(m.follow&&m.late)?3:4;
-   const review=m.step===1&&!!(k&&k.needsReview&&k.needsReview(q));
+   const planned=nextDueOf(q)||!!(m.meet&&m.meet.dd>=0)||!!(replyOf(q)&&replyOf(q).dd>=0);
+   const review=m.step===1&&!planned&&!!(k&&k.needsReview&&k.needsReview(q));
    const lastAt=x.latest?Date.parse(x.latest.at||x.latest.occurred_at||x.latest.created_at):x.first?Date.parse(x.first):NaN;
    let basis,from;
    if(s===1){basis='접수 후';from=x.created;}
