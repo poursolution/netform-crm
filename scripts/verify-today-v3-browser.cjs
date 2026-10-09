@@ -85,7 +85,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   if(dump){process.exit(0);}
   /* ── 역할별 묶음(README 표) ── */
   const titles=k=>S[k].groups.map(g=>g.t.replace(/ \d+건$/,''));
-  assert.deepEqual(titles('mgr'),['오늘 안 넘기면 놓침','이번 주 새로 멈춘 건','계약 정보 빠짐']);assert.deepEqual(S.mgr.groups.map(g=>g.bulk),['문구 복사','문구 복사','문구 복사']/* 2026-10-06 집계 ⑦: [문구 복사] = 클립보드만 · [요청 보내기]는 요청 엔진이 있을 때 */);
+  assert.deepEqual(titles('mgr'),['오늘 안 넘기면 놓침','추가 확인이 필요한 업무','계약 정보 빠짐']);assert.deepEqual(S.mgr.groups.map(g=>g.bulk),['문구 복사','문구 복사','문구 복사']/* 2026-10-06 집계 ⑦: [문구 복사] = 클립보드만 · [요청 보내기]는 요청 엔진이 있을 때 */);
   assert.equal(S.mgr.groups[0].why,'배정 30분 · 첫 연락 2시간 · 오늘 마감','시간 기준 = 운영 기준 값');
   assert.deepEqual(titles('rep'),['오늘 연락할 곳','이번 주 안에','정보 채우기'].filter((t,i)=>S.rep.groups.some(g=>g.t.startsWith(t))));
   assert.deepEqual(titles('lead'),['본인 영업 · 오늘','팀원 코칭 · 입찰 준비']);assert.equal(S.lead.groups[1].bulk,'문구 복사');

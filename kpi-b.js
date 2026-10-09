@@ -62,10 +62,9 @@
   const assigned=S.Q.filter(root.inquiryAssigned);
   M.push({v:S.responseRate,num:(S.responseSla||[]).length,den:assigned.length,todos:S.noResponse.slice().sort((a,b)=>(ageDays(root.inquiryAssignedAt(b))||0)-(ageDays(root.inquiryAssignedAt(a))||0)).map(q=>{const n=ageDays(root.inquiryAssignedAt(q)||root.inquiryCreatedAt(q)),o=inqOwner(q);return T('inq',root.inqKey(q),q.site||'현장명 미입력',o,(n!=null&&n>0?n+'일째 ':'')+'CRM 연락 기록 없음',n!=null&&n>=30?'재배정 검토':'담당에게 요청',o);})});
   /* 3 다음 할 일(전 단계) — B안 'nonext' 사유와 같은 건 */
-  const nonext=open.filter(it=>it.rs.includes('nonext')),nextMissing=nonext.length?nonext.map(it=>it.row.item):S.nextMissing;
   /* 같은 분모 한 함수(PipelineJudge.nextRate · 진행 중 영업건 전체 · 과거 이관 제외) — 오늘 업무 '내 이번 주 기준'과 같은 값(2026-10-06 집계 ⑥) */
-  const NR=root.PipelineJudge&&root.PipelineJudge.on()?root.PipelineJudge.nextRate(S.D):null;
-  M.push({v:NR?NR.pct:pct(S.D.length-S.nextMissing.length,S.D.length),num:NR?NR.num:S.D.length-S.nextMissing.length,den:NR?NR.den:S.D.length,todos:byOwner(nextMissing,who).map(([o,n])=>T('rep',o,o,n+'건','다음 할 일 없음 '+n+'건','등록 요청',o))});
+  const J=root.PipelineJudge&&root.PipelineJudge.on()?root.PipelineJudge:null,NR=J?J.nextRate(J.metricSource('deal')):null,nextMissing=NR?NR.list:S.nextMissing;
+  M.push({v:NR?NR.pct:pct(S.D.length-S.nextMissing.length,S.D.length),num:NR?NR.num:S.D.length-S.nextMissing.length,den:NR?NR.den:S.D.length,todos:nextMissing.map(d=>Object.assign(T('deal',root.dealKey(d),d.site||'현장명 미입력',who(d),'다음 행동 · 날짜 미등록','등록 요청',who(d)),{legacyTk:todoKey('rep',who(d))}))});
   /* 4 활동 기록률 */
   const low=names().map(n=>({n,s:root.RecordingKPI?root.RecordingKPI.stats(n,0):{activity:null,deals:0}})).filter(x=>x.s.deals>0&&(x.s.activity==null||x.s.activity<70)).sort((a,b)=>(a.s.activity??-1)-(b.s.activity??-1));
   M.push({v:rk.activity,num:rk.activeN||0,den:rk.deals||0,todos:low.map(x=>T('rep',x.n,x.n,x.s.deals+'건',x.s.activity==null?'기록 없음 · 측정 불가':'7일 기록 '+x.s.activity+'%','기록 요청',x.n))});
@@ -80,7 +79,7 @@
   M.push({v:pct(lost.length-noR.length,lost.length),num:lost.length-noR.length,den:lost.length,todos:noR.map(it=>{const r=it.row;return T('deal',r.key,r.site,r.owner||'미배정',it.rs.includes('noreason')?'실주 사유 없음':it.rs.includes('relist')?'재영업 가능 여부 없음':'낙찰사 · 금액 미기록','사유 요청',r.owner);})});
   /* 8 관리팀 조치 → 처리율: 최근 28일 요청, 대상이 지금 할 일 목록에 없으면 처리됨 */
   const now=Date.now(),recent=W.acts.filter(a=>a.promise_key!=='kpi:8'&&now-Date.parse(a.created_at||0)<28*864e5&&a.target_id);
-  const live=new Set();M.forEach((m,i)=>m.todos.forEach(t=>live.add(KEY(i)+'|'+t.tk)));
+  const live=new Set();M.forEach((m,i)=>m.todos.forEach(t=>{live.add(KEY(i)+'|'+t.tk);if(t.legacyTk)live.add(KEY(i)+'|'+t.legacyTk);}));
   /* 단계별 기준 요청(stage:단계:사유)도 같은 식으로: 그 건에 그 사유가 아직 붙어 있으면 미처리 */
   items.forEach(it=>(it.rs||[]).forEach(k=>live.add('stage:'+it.stage+':'+k+'|'+todoKey('deal',it.row.key))));try{(root.KpiV7&&root.KpiV7.inquiryLive?root.KpiV7.inquiryLive():[]).forEach(k=>live.add(k));}catch(e){}
   const seen=new Set(),uniq=recent.filter(a=>{const k=a.promise_key+'|'+a.target_type+':'+a.target_id;if(seen.has(k))return false;seen.add(k);return true;});
@@ -94,7 +93,9 @@
   /* 요청함 표시: 이번 주 조치 기록(서버) + 방금 누른 것(이 PC) */
   const mon=O()?O().monday(0):'',done=new Set(W.acts.filter(a=>ymd(a.created_at)>=mon&&a.target_id).map(a=>a.promise_key+'|'+todoKey(typeKind(a.target_type),a.target_id)));
   (root.G.kbDone||[]).forEach(k=>done.add(k));
-  M.forEach((m,i)=>{m.i=i;m.def=DEF[i];m.key=KEY(i);m.todos.forEach(t=>{t.done=done.has(m.key+'|'+t.tk);});m.left=m.todos.filter(t=>!t.done).length;m.ok=m.v!=null&&(m.def[5]?m.v<=m.def[4]:m.v>=m.def[4]);
+  const weekly=J?J.inquiryWeek(J.metricSource('inq')):null;
+  if(weekly)weekly.forEach((w,i)=>Object.assign(M[i],w,{v:pct(w.num,w.den)}));
+  M.forEach((m,i)=>{m.i=i;m.def=DEF[i];m.key=KEY(i);m.todos.forEach(t=>{t.done=done.has(m.key+'|'+t.tk)||!!(t.legacyTk&&done.has(m.key+'|'+t.legacyTk));});m.left=m.todos.filter(t=>!t.done).length;m.ok=m.v!=null&&(m.def[5]?m.v<=m.def[4]:m.v>=m.def[4]);
    m.last=rateOf(weekRow(i,-1));const tr=[-3,-2,-1].map(o=>rateOf(weekRow(i,o)));tr.push(m.v);m.trend=tr;});
   return {S,M,items,done};
  }
@@ -138,9 +139,10 @@
  function personVals(n,C){
   const x=root.managementStats(n),rk=root.RecordingKPI?root.RecordingKPI.stats(n,0):{activity:null,deals:0};
   const mine=C.items.filter(it=>it.row.owner===n),open=mine.filter(it=>!['won','lost'].includes(it.stage)),cr=open.filter(it=>it.stage==='consulting'||it.stage==='relationship'),met=open.filter(it=>it.stage==='consulting'&&it.bucket==='done'),lost=mine.filter(it=>it.stage==='lost');
-  const measured=(x.D.length+x.Q.length)>0&&(rk.activity!=null||x.Q.length>0);
+  const J=root.PipelineJudge&&root.PipelineJudge.on()?root.PipelineJudge:null,NR=J?J.nextRate(J.metricSource('deal',n)):null,WK=J?J.inquiryWeek(J.metricSource('inq',n)):null;
+  const measured=NR?NR.den>0||!!(WK&&WK.some(w=>w.den>0))||mine.length>0:(x.D.length+x.Q.length)>0&&(rk.activity!=null||x.Q.length>0);
   if(!measured)return {n,measured:false};
-  return {n,measured:true,vals:[x.assignRate,x.responseRate,pct(x.D.length-x.nextMissing.length,x.D.length),rk.activity,pct(cr.filter(it=>it.rs.includes('long')||it.rs.includes('shift')||(it.stall||0)>=30).length,cr.length),pct(met.length-met.filter(it=>it.rs.includes('nodue')).length,met.length),pct(lost.length-lost.filter(it=>it.rs.includes('noreason')||it.rs.includes('nobid')).length,lost.length)]};
+  return {n,measured:true,vals:[WK?pct(WK[0].num,WK[0].den):x.assignRate,WK?pct(WK[1].num,WK[1].den):x.responseRate,NR?NR.pct:pct(x.D.length-x.nextMissing.length,x.D.length),rk.activity,pct(cr.filter(it=>it.rs.includes('long')||it.rs.includes('shift')||(it.stall||0)>=30).length,cr.length),pct(met.length-met.filter(it=>it.rs.includes('nodue')).length,met.length),pct(lost.length-lost.filter(it=>it.bucket==='nore').length,lost.length)]};
  }
  function peopleHtml(C){
   const S=ST(),col=S.sel<7?S.sel:3,P=names().map(n=>personVals(n,C)),measured=P.filter(p=>p.measured),nm=P.filter(p=>!p.measured);

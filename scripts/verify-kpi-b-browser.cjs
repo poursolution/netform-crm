@@ -12,6 +12,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});
   const page=await ctx.newPage(),errs=[];page.on('pageerror',e=>errs.push(e.message));
+  await page.addInitScript(()=>{const NativeDate=Date,now=Date.parse('2026-10-09T03:00:00Z');window.Date=class extends NativeDate{constructor(...a){super(...(a.length?a:[now]));}static now(){return now;}};});
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.KpiB&&window.KpiV2&&window.PipelineStageB&&window.OpsStore&&typeof paintMgmt==='function');
   await page.evaluate(()=>{
    const day=n=>new Date(Date.now()+n*864e5).toLocaleDateString('en-CA'),at=n=>new Date(Date.now()+n*864e5).toISOString();
@@ -45,13 +46,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const rows=v.locator('.kb-row');assert.equal(await rows.count(),8);
   assert.deepEqual(await rows.locator('.l b').allInnerTexts(),['1. 당일 배정률','2. 2시간 첫 연락','3. 다음 할 일 등록률','4. 활동 기록률','5. 장기정체 비율','6. 방문 후 3일 견적','7. 실주 사유 입력','8. 관리팀 조치 → 처리율']);
   assert.deepEqual(await v.locator('.kb-thead .r span').allInnerTexts(),['이번 주','지난주','4주 추이','목표','내 조치']);
-  const r1=rows.nth(0);assert.match(await r1.innerText(),/견적문의 · 접수 당일 담당 지정 ÷ 접수[\s\S]*75%[\s\S]*25% ▲[\s\S]*개선[\s\S]*95%[\s\S]*1건 남음/,'이번 주 75% · 지난주 저장값 25% ▲ · 미배정 1건');
+  const r1=rows.nth(0);assert.match(await r1.innerText(),/견적문의 · 접수 당일 담당 지정 ÷ 접수[\s\S]*66.7%[\s\S]*25% ▲[\s\S]*개선[\s\S]*95%[\s\S]*1건 남음/,'이번 주 접수 3건 중 당일 배정 2건(일요일 접수 제외) · 지난주 저장값 25% ▲ · 미배정 1건');
   assert.equal(await r1.locator('.v').evaluate(n=>n.style.color),'rgb(217, 58, 58)','미달 = 빨강');
   const r3=rows.nth(2);assert.match(await r3.innerText(),/다음 할 일 등록률[\s\S]*▲|▼/);assert.match(await r3.locator('.tr small').innerText(),/주째 악화|악화|개선|변화 없음/);
   assert.match(await rows.nth(6).innerText(),/실주 사유 입력[\s\S]*실주[\s\S]*0%[\s\S]*100%[\s\S]*1건 남음/);
   assert.match(await rows.nth(7).innerText(),/관리팀 조치 → 처리율[\s\S]*50%/,'요청 2건 중 정정훈 등록 요청은 목록에 없어 처리됨 · 신규 문의 1은 남음');
   /* 오른쪽 패널(1번 선택) */
-  const p=v.locator('.kb-panel');assert.match(await p.locator('.kb-sel').innerText(),/1번 지표를 올리려면\s*당일 배정률 75% → 목표 95%\s*미배정 견적문의를 오늘 담당 지정/);
+  const p=v.locator('.kb-panel');assert.match(await p.locator('.kb-sel').innerText(),/1번 지표를 올리려면\s*당일 배정률 66.7% → 목표 95%\s*미배정 견적문의를 오늘 담당 지정/);
   assert.deepEqual(await p.locator('.kb-chhead button').allInnerTexts(),['12주','6개월','1년']);assert.equal(await p.locator('.kb-plot>i').count(),12);
   assert.match(await p.locator('.kb-legend').innerText(),/관리팀 조치한 주[\s\S]*(12주 전|저장된 주)/);
   assert.match(await p.locator('.kb-link').innerText(),/파이프라인 · 견적문의 의 '관리자 할 일'과 같은 목록\s*견적문의로 이동 →/);

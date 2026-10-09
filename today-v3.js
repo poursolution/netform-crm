@@ -42,7 +42,7 @@
    const g1=live.filter(i=>['assign','first','tfapprove','transfer'].includes(i.rk)||i.x.dueDays===0),s1=new Set(g1.map(i=>i.key));
    const g3=live.filter(i=>!s1.has(i.key)&&i.rk==='contract'),s3=new Set(g3.map(i=>i.key));
    const g2=live.filter(i=>!s1.has(i.key)&&!s3.has(i.key)).sort((a,b)=>((a.days>=7&&a.days<=30)?0:1)-((b.days>=7&&b.days<=30)?0:1)||a.days-b.days);
-   groups=[G('오늘 안 넘기면 놓침','배정 '+(root.CRMRules?root.CRMRules.get('assign_minutes'):30)+'분 · 첫 연락 '+(root.CRMRules?root.CRMRules.get('first_contact_hours'):2)+'시간 · 오늘 마감','모두 담당에게 알림',g1.sort(byUrgent)),G('이번 주 새로 멈춘 건','7~30일 사이 기록 없음 · 지금 잡으면 살아남','담당별 코멘트',g2),G('계약 정보 빠짐','계약 · 시공 단계인데 계약일 · 금액 없음 — 실적에 안 잡힘','입력 요청 보내기',g3.sort((a,b)=>(b.amt||0)-(a.amt||0)))];
+   groups=[G('오늘 안 넘기면 놓침','배정 '+(root.CRMRules?root.CRMRules.get('assign_minutes'):30)+'분 · 첫 연락 '+(root.CRMRules?root.CRMRules.get('first_contact_hours'):2)+'시간 · 오늘 마감','모두 담당에게 알림',g1.sort(byUrgent)),G('추가 확인이 필요한 업무','앞선 긴급 · 계약정보 묶음을 제외한 현재 미처리 업무','담당별 코멘트',g2),G('계약 정보 빠짐','오늘 처리 목록 중 계약일 · 금액 누락 · 긴급 묶음과 과거 정리 대상은 별도','입력 요청 보내기',g3.sort((a,b)=>(b.amt||0)-(a.amt||0)))];
    /* 영업관리 화면(today-assist). ① 오늘 안 넘기면 놓침 = 기존 카드 묶음 그대로 맨 위(건수 · 문구 · 카드 4장 · 버튼을 바꾸지 않는다 — 2026-10-04 "기존 카드 상단으로 올려", 2026-10-05 "이거 자꾸 어디 가고": 카드를 없애거나 내리지 말 것).
        카드 아래 나머지 줄만 ②와 같은 표 줄로 보여 준다(2026-10-05 "① 오늘 안 넘기면 놓침도 ②번처럼"). ② 담당 배정 안 된 견적문의 표(①에 든 건을 추천 담당과 함께 다시 보여 주는 표 — aux: 큰 숫자 · 띠 · 실행 순서에 두 번 세지 않는다) ③ 이번 주 새로 멈춘 건 ④ 계약 정보 빠짐.
        끄면(G.todayAssistOff) 위 묶음 3개 그대로 */

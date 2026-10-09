@@ -67,7 +67,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(rows.length,8);assert.deepEqual(rows.map(r=>r.key).sort(),['kpi:1','kpi:2','kpi:3','kpi:4','kpi:5','kpi:6','kpi:7','kpi:8'],'지표 키는 예전 그대로');
   const order=rows.map(r=>r.cls==='bad'?0:r.cls==='ok'?1:2);assert.deepEqual(order,order.slice().sort((a,b)=>a-b),'미달 → 달성 → 아직 못 잼 순');
   for(const r of rows){const m=K.find(x=>x.key===r.key),f=v=>v==null?'–':(Math.round(v*10)/10)+'%';assert.equal(r.v,f(m.v),r.key+' 값');assert.ok(m.den?r.frac.startsWith(m.num+' / '+m.den+'건 · 목표 '):r.frac.startsWith('아직 못 잼 · 목표 '),r.key+' 분자/분모 '+r.frac);assert.match(r.meta,/^지난주 .+ · 누가 .+/);assert.equal(r.cls,m.v==null||m.pilot?'':m.ok?'ok':'bad');assert.match(r.why,m.pilot?/^시범 측정 · 평가 제외$/:m.v==null?/^아직 못 잼$/:m.ok?/^달성$/:/^미달 · [\d.]+%p (부족|초과)$/);assert.ok(!m.n?r.btn==='자동 측정':true,r.key+' 버튼 '+r.btn);/* 이번 주 값이 없어도 누적 미처리가 있으면 요청 버튼(2026-10-06 집계 ⑤) */}
-  const lost=rows.find(r=>r.key==='kpi:7');assert.deepEqual([lost.q,lost.sub,lost.v,lost.why,lost.btn],['실주 처리할 때 왜 졌는지 남겼나','실주 · 실주 사유 입력','0%','미달 · 100%p 부족','요청 가능 1건']);
+  const lost=rows.find(r=>r.key==='kpi:7');assert.deepEqual([lost.q,lost.sub,lost.v,lost.why,lost.btn],['사유 · 재영업 여부 · 필요한 낙찰 정보를 남겼나','실주 · 실주 정보 완성률','0%','미달 · 100%p 부족','요청 가능 1건']);
   assert.equal(rows.find(r=>r.key==='kpi:5').sub,'파이프라인 · 장기정체 비율');assert.match(rows.find(r=>r.key==='kpi:5').frac,/목표 ≤ 10%$/,'낮을수록 좋은 지표');
   assert.match(rows.find(r=>r.key==='kpi:3').meta,/^지난주 25% (▲|▼)[\d.]+%p · 누가 /,'지난주 저장값과 비교');
   if(shot)await page.screenshot({path:shot+'-core.png',fullPage:true});
