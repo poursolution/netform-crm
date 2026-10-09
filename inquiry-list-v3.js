@@ -127,11 +127,12 @@
  function exBlock(m){
   if(!m.ex.length)return '';const S=st(),k=attr(m.key),lk=m.link,can=linkable(),busy=S.linkBusy===m.key,dis=can&&!busy?'':' disabled';
   const same=lk.same?m.ex.find(d=>dealId(d)===lk.same)||m.att:null;
-  const title=lk.same?'같은 공사 · '+(same?dealWork(same):'기존 영업건')+' 건에 붙임':lk.isNew?'새 공사로 등록 · 같은 현장에 영업건 하나 추가':'이 현장에 영업건 '+m.ex.length+'개가 있어요 — 같은 공사인가요, 새 공사인가요?';
-  const rows=m.ex.slice(0,6).map(d=>{const id=dealId(d),on=lk.same===id;return '<div class="il-exrow"><span class="t">'+h(dealTag(d))+'</span><b>'+h(dealWork(d))+'</b><span class="w">'+h(root.repDisplay?root.repDisplay(root.repN(d.assignee)):root.repN(d.assignee))+'</span><i></i><button type="button" class="il-exbtn'+(on?' on':'')+'" data-il="ex-same" data-key="'+k+'" data-v="'+attr(id)+'"'+dis+'>'+(on?'붙임 ✓':'같은 공사 · 여기에 붙이기')+'</button></div>';}).join('');
-  const hint=(lk.isNew?'관리소장 · 연락처 · 이력은 현장 기준으로 함께 씁니다':'같은 공사면 기존 건의 견적 버전 · 이력에 이어집니다')+(m.ex.length>6?' · 나머지 '+(m.ex.length-6)+'건은 상세에서':'')+(can?'':' · 서버 적용 뒤에 고를 수 있습니다');
+  /* design_handoff_units ② 새 문의 3택: 같은 영업건에 추가 문의 / 같은 현장 · 새 영업건(추천 · 신규 영업건 수에 셈) / 다른 현장 · 신규(주소 · 관리사무소 전화가 다를 때만 — 현장이 다르면 이 상자가 뜨지 않고 그대로 신규) */
+  const title=lk.same?'같은 영업건에 추가 문의 · '+(same?dealWork(same):'기존 영업건')+' 건에 붙임':lk.isNew?'같은 현장 · 새 영업건으로 등록 · 기존 관계 · 담당을 이어받음':'이 현장에 영업건 '+m.ex.length+'개가 있어요 — 같은 영업건에 추가 문의인가요, 같은 현장의 새 영업건인가요?';
+  const rows=m.ex.slice(0,6).map(d=>{const id=dealId(d),on=lk.same===id;return '<div class="il-exrow"><span class="t">'+h(dealTag(d))+'</span><b>'+h(dealWork(d))+'</b><span class="w">'+h(root.repDisplay?root.repDisplay(root.repN(d.assignee)):root.repN(d.assignee))+'</span><i></i><button type="button" class="il-exbtn'+(on?' on':'')+'" data-il="ex-same" data-key="'+k+'" data-v="'+attr(id)+'"'+dis+'>'+(on?'붙임 ✓':'같은 영업건에 추가 문의')+'</button></div>';}).join('');
+  const hint=(lk.isNew?'관리소장 · 연락처 · 연락 이력은 현장 공통 · 단계 · 금액 · 다음 행동은 이 영업건만 · 신규 영업건 수에 셈':lk.same?'같은 영업건이면 기존 건의 견적 버전 · 이력에 이어집니다 · 새 영업건을 만들지 않음(신규 수에 안 셈) · 수주 건이면 하자 · 사후로':'같은 영업건 = 추가 문의(신규 아님) / 같은 현장 · 새 영업건 = 추천 · 신규 영업건 수에 셈 / 다른 현장 · 신규는 주소 · 관리사무소 전화가 다를 때만(현장 주소를 고치면 다른 현장으로)')+(m.ex.length>6?' · 나머지 '+(m.ex.length-6)+'건은 상세에서':'')+(can?'':' · 서버 적용 뒤에 고를 수 있습니다');
   const err=S.linkErr&&S.linkErr.key===m.key?S.linkErr.msg:'';
-  return '<div class="il-ex'+(lk.same||lk.isNew?' done':'')+'"><b>'+h(title)+'</b>'+rows+'<div class="il-exfoot"><span>'+h(busy?'저장하는 중…':hint)+'</span><button type="button" class="il-exnew'+(lk.isNew?' on':'')+'" data-il="ex-new" data-key="'+k+'"'+dis+'>'+(lk.isNew?'새 공사 ✓':'새 공사로 등록')+'</button></div>'+(err?'<div class="il-err">'+h(err)+'</div>':'')+'</div>';
+  return '<div class="il-ex'+(lk.same||lk.isNew?' done':'')+'"><b>'+h(title)+'</b>'+rows+'<div class="il-exfoot"><span>'+h(busy?'저장하는 중…':hint)+'</span><button type="button" class="il-exnew'+(lk.isNew?' on':'')+'" data-il="ex-new" data-key="'+k+'"'+dis+'>'+(lk.isNew?'같은 현장 · 새 영업건 ✓':'같은 현장 · 새 영업건 (추천)')+'</button></div>'+(err?'<div class="il-err">'+h(err)+'</div>':'')+'</div>';
  }
  function panel(m){
   const S=st(),k=attr(m.key),p=picks(m),nd=nextDate(m,p.n),recOpen=S.rec===m.key&&m.step>=1&&m.step<4;
@@ -154,7 +155,7 @@
  /* 상단 제목줄(제목 옆): 구글시트 연결 상태 · 고정 문구 — 공통 필터줄의 제목 함수가 이 문자열을 넣는다 */
  function headHtml(){
   const total=(root.B&&Array.isArray(root.B.inquiries)?root.B.inquiries.length:0),syncAt=Date.parse(root.LAST_INQUIRY_SYNC||''),mins=Number.isFinite(syncAt)?Math.max(0,Math.round((Date.now()-syncAt)/6e4)):null;
-  return '<span class="il-sheet"><i></i>구글시트 연결됨'+(mins!==null?' · '+(mins<1?'방금':mins+'분 전')+' 동기화':'')+' · '+total+'건</span><span class="il-fixed"><b>응대는 즉시</b> (배정 '+ASSIGN_MIN()+'분 · 첫 연락 '+FIRST_H()+'시간) · 기록 점검 12시</span>';
+  return '<span class="il-sheet"><i></i>구글시트 연결됨'+(mins!==null?' · '+(mins<1?'방금':mins+'분 전')+' 동기화':'')+' · '+total+'건</span><span class="il-fixed"><b>응대는 즉시</b> (배정 '+ASSIGN_MIN()+'분 · 첫 연락 '+FIRST_H()+'시간) · 기록 점검 '+(root.CRMRules?root.CRMRules.get('record_deadline_hour'):12)+'시</span>';
  }
  function render(){
   const page=document.getElementById('pg-inq');if(!page)return;let host=document.getElementById('inq-v3');
