@@ -53,6 +53,30 @@
  }
  root.inquiryDirectOwnerIdentity=directOwnerIdentity;
  root.inquiryQueueHasLiveAssignment=queueHasLiveAssignment;
+ // Called only when applying a fresh server bundle, before local patches.
+ // A saved browser snapshot is not the current task on another device.
+ root.reconcileInquiryNextTruth=function(q,patch,key){
+  if(!q||!patch||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(q.id||''))||
+   !Object.prototype.hasOwnProperty.call(q,'next_action'))return false;
+  var n=q.next_action;
+  if(n!==null&&(!n||typeof n!=='object'||Array.isArray(n)||!n.id||!['open','completed','cancelled'].includes(n.status)))return false;
+  try{
+   if(!root.Phase1||!root.Phase1.queue)return false;
+   var generated=Date.parse(root.B&&root.B.generated_at||'');
+   if(root.Phase1.queue.list().some(function(row){
+    if(String(row.object_id||row.payload&&row.payload.inquiry_id||'')!==String(key||q.id))return false;
+    var status=String(row.status||'').toLowerCase();
+    if(!['done','rejected','cancelled'].includes(status))return true;
+    var ackAt=Date.parse(row.ack&&(row.ack.server_at||row.ack.updated_at||row.ack.completed_at)||'');
+    return status==='done'&&Number.isFinite(generated)&&Number.isFinite(ackAt)&&ackAt>generated;
+   }))return false;
+  }catch(error){return false;}
+  var fields=['next_action','nextActionObj','nextAction','nextActionText','nextActionType','nextAssignee','next_action_date','nextActionDate','due'],draft={};
+  fields.forEach(function(field){if(Object.prototype.hasOwnProperty.call(patch,field)){draft[field]=patch[field];delete patch[field]}});
+  if(!Object.keys(draft).length)return false;
+  patch.recoveredNextActionDraft=draft;
+  return true;
+ };
  root.mergeInquiryAssignmentTruth=function(q,patch,key){
   q=objectOf(q);patch=objectOf(patch);key=key||q.id||q.inquiry_id||'';
   var previous=objectOf(q._assignmentServerTruth),freshSeen=['assigned_to','assignee_name','assignment_history'].some(function(field){return Object.prototype.hasOwnProperty.call(q,field)}),fresh=directOwnerIdentity(q),server=previous.seen?previous:fresh,seen=previous.seen||freshSeen,history=Array.isArray(q.assignment_history)?q.assignment_history:null;
