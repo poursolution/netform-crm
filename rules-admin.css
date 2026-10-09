@@ -43,3 +43,17 @@
 .ra-conf{font-style:normal;font-size:11px;font-weight:700;border-radius:4px;padding:2px 7px;margin-left:4px;white-space:nowrap}
 .ra-src{display:block;font-size:11.5px;color:#9ca3af;margin-top:2px}
 .ra-pend>p{margin:0;padding:11px 18px;font-size:12.5px;color:#374151;line-height:1.6;background:#fafbfc}
+/* 2026-10-10 admin_request E · promise_gap ③: 상단 묶음 숫자 · 빈 목록 · 적용 범위 확인 */
+.ra-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;background:#fff;border:1px solid #e8eaef;border-radius:12px;padding:10px 16px;margin-bottom:14px;font-size:12.5px;color:#6b7280}
+.ra-top b{font-size:13px;color:#15171c}.ra-top b.pre{color:#b42318}.ra-top span{flex:1 1 240px;min-width:0}
+.ra-none{font-size:12px;color:#9ca3af;padding:4px 2px}
+.ra-cf{position:fixed;left:var(--ra-left,228px);right:0;bottom:58px;z-index:46;background:#fff;border-top:1px solid #d9dde4;box-shadow:0 -10px 26px rgba(17,24,39,.12);padding:14px 28px;display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow:auto}
+.ra-cf>header{display:flex;flex-direction:column;gap:3px}.ra-cf>header b{font-size:14px}.ra-cf>header span{font-size:11.5px;color:#6b7280;line-height:1.5}
+.ra-cf-row{display:grid;grid-template-columns:76px minmax(0,1fr);gap:5px 10px;align-items:start;font-size:12.5px}.ra-cf-row>span:nth-child(odd){color:#6b7280;padding-top:2px}.ra-cf-row>b{font-size:13px}
+.ra-cf-row input[type=date]{font:inherit;font-size:13px;border:1px solid #d9dde4;border-radius:8px;padding:6px 10px;justify-self:start}
+.ra-cf-opts{display:flex;flex-direction:column;gap:5px}
+.ra-cf-opts button{border:1px solid #e3e6ec;background:#fff;border-radius:8px;padding:7px 10px;text-align:left;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.ra-cf-opts button[aria-pressed="true"]{border-color:#3b6ce4;background:#f8faff}
+.ra-cf-opts button b{font-size:12.5px}.ra-cf-opts button small{font-size:11.5px;color:#9ca3af}.ra-cf-opts button[aria-pressed="true"] small{color:#2a52b8}
+.ra-cf-err{margin:0;font-size:12px;font-weight:600;color:#b42318}
+.ra-cf>footer{display:flex;justify-content:flex-end;gap:8px}.ra-cf>footer button{border:1px solid #d9dde4;background:#fff;font-size:13px;font-weight:600;border-radius:8px;padding:8px 14px}.ra-cf>footer button.save{border:0;background:#15171c;color:#fff;font-weight:700}
+@media(max-width:900px){.ra-cf{left:0}}

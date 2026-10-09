@@ -154,7 +154,7 @@
  /* 상단 제목줄(제목 옆): 구글시트 연결 상태 · 고정 문구 — 공통 필터줄의 제목 함수가 이 문자열을 넣는다 */
  function headHtml(){
   const total=(root.B&&Array.isArray(root.B.inquiries)?root.B.inquiries.length:0),syncAt=Date.parse(root.LAST_INQUIRY_SYNC||''),mins=Number.isFinite(syncAt)?Math.max(0,Math.round((Date.now()-syncAt)/6e4)):null;
-  return '<span class="il-sheet"><i></i>구글시트 연결됨'+(mins!==null?' · '+(mins<1?'방금':mins+'분 전')+' 동기화':'')+' · '+total+'건</span><span class="il-fixed"><b>응대는 즉시</b> (배정 '+ASSIGN_MIN()+'분 · 첫 연락 '+FIRST_H()+'시간) · 기록 점검 12시</span>';
+  return '<span class="il-sheet"><i></i>구글시트 연결됨'+(mins!==null?' · '+(mins<1?'방금':mins+'분 전')+' 동기화':'')+' · '+total+'건</span><span class="il-fixed"><b>응대는 즉시</b> (배정 '+ASSIGN_MIN()+'분 · 첫 연락 '+FIRST_H()+'시간) · 기록 점검 '+(root.CRMRules?root.CRMRules.get('record_deadline_hour'):12)+'시</span>';
  }
  function render(){
   const page=document.getElementById('pg-inq');if(!page)return;let host=document.getElementById('inq-v3');

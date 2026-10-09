@@ -63,12 +63,19 @@ test('예전 실주 사유는 뜻이 같은 것만 지금 원인으로',()=>{
  assert.equal(R.lostCategory('가격 열세'),'가격');assert.equal(R.lostCategory('사업 · 연기'),'사업');assert.equal(R.lostCategory('견적 후 후속 지연'),'기타','분류가 없는 예전 사유는 기타');assert.equal(R.lostReason('견적 후 후속 지연'),'견적 후 후속 지연','뜻이 다른 것은 적힌 그대로');assert.equal(R.lostReason(''),'사유 미기록');
 });
 test('서버 함수의 허용 목록 · 범위 = 화면 항목표',()=>{
- const sql=read('sql/ops-rules-v1-20261004.sql'),lim=JSON.parse(sql.match(/lim constant jsonb:='(\{[^']+\})'/)[1]);
+ /* 2026-10-10 v2(sql/ops-rules-v2-20261010.sql)가 같은 함수 이름을 다시 정의한다 — 허용 목록은 최신 파일과 맞춘다 */
+ const sql=read('sql/ops-rules-v2-20261010.sql'),lim=JSON.parse(sql.match(/lim constant jsonb:='(\{[^']+\})'/)[1]);
  const nums=R.ROWS.filter(r=>r.st==='cond'&&r.type==='num');assert.deepEqual(Object.keys(lim).sort(),nums.map(r=>r.k).sort());nums.forEach(r=>assert.deepEqual(lim[r.k],[r.min,r.max],r.k));
  const arr=name=>sql.match(new RegExp(name+" constant text\\[\\]:=array\\[([^\\]]+)\\]"))[1].split(',').map(s=>s.trim().replace(/'/g,'')).sort();
  assert.deepEqual(arr('bools'),R.ROWS.filter(r=>r.st==='cond'&&r.type==='tg').map(r=>r.k).sort());
  assert.deepEqual(arr('lists'),R.ROWS.filter(r=>r.st==='cond'&&r.type==='chips').map(r=>r.k).sort());
- assert.match(sql,/관리자만 운영 기준을 바꿀 수 있습니다/);assert.match(sql,/insert into public\.crm_rule_history/);
+ assert.deepEqual(arr('empty_ok'),R.ROWS.filter(r=>r.st==='cond'&&r.type==='chips'&&r.empty).map(r=>r.k).sort(),'비어 있어도 되는 목록도 같아야 한다');
+ assert.match(sql,/관리자만 운영 기준을 바꿀 수 있습니다/);assert.match(sql,/insert into public\.crm_rule_history\(key,before,after,changed_by,changed_by_name,changed_at,effective_on,scope,existing_handling\)/);
+ /* 새 항목 · 빈 목록 허용 · 적용 범위는 화면 쪽 함수와 같이 */
+ assert.equal(R.get('ongoing_unreachable_attempts'),3);assert.equal(R.get('record_deadline_hour'),12);assert.deepEqual(R.get('important_request_kinds'),[]);
+ assert.deepEqual(R.clean('important_request_kinds',[]),[],'중요 요청 종류는 비어 있어도 된다');assert.equal(R.clean('reasons_lost',[]),undefined,'다른 목록은 1개 이상');
+ assert.equal(R.version().n,0);assert.equal(R.version().label,'기준 v0 · 기본값');
+ assert.match(read('inquiry-list-v3.js'),/기록 점검 '\+\(root\.CRMRules\?root\.CRMRules\.get\('record_deadline_hour'\):12\)\+'시/,'견적문의 머리 줄의 기록 점검 시각 = 설정값');
  assert.match(read('pc-manager-transport.js'),/'crm_ops_rules_v1'/);
 });
 test('메이드율은 한 함수로: 주간 브리핑 · 리포트 · 대시보드',()=>{
