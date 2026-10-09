@@ -3,8 +3,9 @@
 -- 바뀐 것:
 --  1) 조건부 항목 추가: ongoing_unreachable_attempts(진행 중 연락두절 · 월 간격 횟수 1~10) · record_deadline_hour(기록 입력 마감 시각 9~18) · important_request_kinds(팝업으로 알릴 '중요' 요청 종류 · 0~20개 — 비어 있으면 새 배정 · 긴급 기한 변경만 팝업)
 --  2) 변경 이력에 적용 범위를 함께 남긴다: effective_on(적용일) · scope(대상 · 단계 · 조건 · 건수) · existing_handling(기존 업무 처리 keep=그대로 · recalc=다시 계산 · ask=담당 확인)
---     아래 이력 칸은 기존 기록 보존용이다. 예약 적용·대상별 정책 보존 엔진이 없으므로 apply가 있는 쓰기는 변경 전에 거절한다.
---  3) 응답에 contract=2 · version(이력 건수 = 기준 버전) 을 넣는다.
+--     contract 3은 오늘(KST)의 즉시 적용만 허용한다. scope는 설명 이력이고 대상별 정책 필터가 아니다.
+--     예약 적용·기존 업무 처리 엔진이 없으므로 오늘 이외 날짜와 existing 키는 변경 전에 거절한다.
+--  3) 응답에 contract=3 · apply(검증·저장한 조건) · version(이력 건수 = 기준 버전)을 넣는다.
 -- 영업 데이터(문의 · 영업건 · 계약실적 · 요청)는 건드리지 않는다. 다시 실행해도 안전. 운영 적용: Supabase SQL 편집기에서 대표가 Run.
 
 alter table public.crm_rule_history add column if not exists effective_on date;
@@ -15,7 +16,7 @@ create or replace function public.crm_ops_rules_v1(p jsonb default '{}'::jsonb)
 returns jsonb language plpgsql volatile security definer set search_path='' as $fn$
 declare
  a record; k text; v jsonb; cur jsonb; old jsonb; n numeric; lo numeric; hi numeric; v_name text; v_at timestamptz:=clock_timestamp(); changed int:=0;
- v_eff date; v_scope text; v_ex text;
+ v_eff date; v_scope text; v_ex text; ap jsonb;
  -- 조건부 숫자 항목과 범위(ops-rules.js 의 SPEC 과 같아야 한다)
  lim constant jsonb:='{"assign_minutes":[10,240],"unreachable_attempts":[1,10],"unreachable_interval_days":[1,7],"long_wait_contact_days":[30,180],"transfer_result_check_days":[3,60],"nearby_radius_km":[1,20],"care_focus_months":[1,6],"care_general_months":[1,12],"ongoing_unreachable_attempts":[1,10],"record_deadline_hour":[9,18]}'::jsonb;
  bools constant text[]:=array['stage_gates','year_management','year_required_on_convert','year_future_skip_focus','auto_owner_attribution','owner_keep_on_reassign','nearby_map'];
@@ -31,9 +32,18 @@ begin
  if jsonb_typeof(p->'set')='object' then
   if a.permission_role<>'admin' then raise exception '관리자만 운영 기준을 바꿀 수 있습니다' using errcode='42501'; end if;
   select u.name into v_name from public.users u where u.user_id=a.user_id;
-  -- 빈 값·null도 의도한 적용 조건을 버리고 즉시 저장하는 우회로가 되어서는 안 된다.
+  -- v2 이력·칼럼은 보존한다. 지원하지 않는 적용 의미를 조용히 버리지 않는다.
   if p ? 'apply' then
-   raise exception '적용일·대상·기존 업무 처리 기능이 아직 연결되지 않아 저장하지 않았습니다' using errcode='22023';
+   ap:=p->'apply';
+   if jsonb_typeof(ap) is distinct from 'object' then raise exception 'invalid apply' using errcode='22023'; end if;
+   if exists(select 1 from jsonb_object_keys(ap) x where x not in ('effective_on','scope'))
+      or jsonb_typeof(ap->'effective_on') is distinct from 'string'
+      or ap->>'effective_on' is distinct from to_char(v_at at time zone 'Asia/Seoul','YYYY-MM-DD')
+      or jsonb_typeof(ap->'scope') is distinct from 'string'
+      or coalesce(ap->>'scope','') !~ '[^[:space:]]' or length(ap->>'scope')>300 then
+    raise exception '오늘(KST) 즉시 적용만 가능합니다. 예약 적용·기존 업무 처리 기능은 아직 연결되지 않아 저장하지 않았습니다' using errcode='22023';
+   end if;
+   v_eff:=(ap->>'effective_on')::date; v_scope:=ap->>'scope';
   end if;
   for k,v in select * from jsonb_each(p->'set') loop
    if lim ? k then
@@ -65,7 +75,7 @@ begin
     on conflict (key) do update set value=excluded.value,updated_by=excluded.updated_by,updated_at=excluded.updated_at;
   end if;
  end if;
- return jsonb_build_object('ok',true,'contract',2,'rules',cur,'changed',changed,
+ return jsonb_build_object('ok',true,'contract',3,'apply',ap,'rules',cur,'changed',changed,
   'version',(select count(*) from public.crm_rule_history),
   'updated_at',(select s.updated_at from public.crm_settings s where s.key='ops_rules'),
   'updated_by_name',(select u.name from public.crm_settings s join public.users u on u.user_id=s.updated_by where s.key='ops_rules'),
