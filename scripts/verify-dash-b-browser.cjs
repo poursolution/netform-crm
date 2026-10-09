@@ -130,8 +130,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(ap[0],['황윤선','0','마지막 기록 36일 전 (9/1)',0],'기록 없는 사람 먼저 · 마지막 기록 오래된 순');assert.deepEqual(ap[ap.length-1],['이필선','2','마지막 기록 어제 (10/6)',2]);assert.equal(ap.length,7);assert.ok(ap.slice(1,6).every(x=>x[1]==='0'&&x[2]==='마지막 기록 없음'));
   assert.deepEqual((await page.locator('#si-dash .db-apleg span').allInnerTexts()).map(one),['통화','문자 · 카카오','방문','견적 · 자료']);
   assert.deepEqual(await page.locator('#si-dash .db-conv').evaluateAll(l=>l.map(n=>[n.querySelector('div span').textContent,n.querySelector('div b').textContent,n.querySelector('small').textContent])),[['전화 시도 → 실제 연결','100%','1건 중 1건'],['연결 → 다음 할 일 등록','100%','연결된 현장 2곳 중 2곳'],['방문 → 3일 안 견적 요청','—','견적 전 단계 방문 0건 · 측정 대상 없음'],['견적 발송 → 7일 안 후속','—','이번 주 발송 0건 · 측정 대상 없음']]);
+  await page.evaluate(require('./kpi-request-browser-fixture.cjs'));
   await page.evaluate(()=>{__writes.length=0;const mem={};Phase1.storage.getItem=k=>k in mem?mem[k]:null;Phase1.storage.setItem=(k,v)=>{mem[k]=String(v);};});await page.locator('#si-dash .db-actband button').click();await page.waitForTimeout(250);
-  assert.equal(await page.locator('#si-dash .db-actband button').innerText(),'요청 보냄 ✓');assert.equal(await page.locator('#si-dash .db-actband button').isDisabled(),true);assert.equal(await page.evaluate(()=>__writes.filter(x=>x==='rep_manager_comment').length),6,'0건인 6명의 오늘 업무에 한 줄씩(관리팀 KPI 요청과 같은 길)');
+  assert.equal(await page.locator('#si-dash .db-actband button').innerText(),'요청 보냄 ✓');assert.equal(await page.locator('#si-dash .db-actband button').isDisabled(),true);assert.equal(await page.evaluate(()=>__deliveries.length),6,'0건인 6명의 오늘 업무에 한 줄씩(관리팀 KPI 요청과 같은 길)');
   if(shot)await page.screenshot({path:shot+'-dash-act.png',fullPage:true});
   assert.deepEqual(await page.locator('#si-dash .db-fg>span').allInnerTexts(),['2026.10.6 (화)','2026.10.5 (월)','2026.9.1 (화)']);
   assert.match(await page.locator('#si-dash .db-fg').first().innerText(),/전화\s*이필선\s*매탄 임박 · 관리소장 통화\s*4억/);
