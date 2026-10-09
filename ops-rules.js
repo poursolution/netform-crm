@@ -88,7 +88,7 @@
   ['later','보류 · 추후','회의에서 잠정 · 추후로 정한 것',[
    T('content_followup','콘텐츠 후속관리','카드뉴스 · 영상 — 발송 대신 접촉 기록만','hold')]]];
  const ROWS=SECTIONS.flatMap(s=>s[3]),EDIT=ROWS.filter(r=>r.st==='cond'&&r.k),SPEC=Object.fromEntries(EDIT.map(r=>[r.k,r]));
- let over={},meta={updated_at:'',updated_by:'',history:[],version:0,contract:1},loaded=false,busy=false,warmed='';
+ let over={},meta={updated_at:'',updated_by:'',history:[],version:0,contract:1},loaded=false,readPending=null,savePending=null,writeEpoch=0,warmed='';
  /* 한 값 다듬기: 조건부 항목만, 형식 · 범위가 맞을 때만 받아들인다(아니면 undefined) */
  function clean(k,v){
   const r=SPEC[k];if(!r)return undefined;
@@ -212,8 +212,13 @@
  /* ── 서버 ── */
  const store=()=>root.OpsStore,available=()=>!!(store()&&store().has&&store().has(RPC));
  function take(r){if(!r||r.ok!==true||!r.rules||typeof r.rules!=='object'||Array.isArray(r.rules))throw new Error('운영 기준 서버 응답을 확인하지 못했습니다');apply(r.rules);const hist=Array.isArray(r.history)?r.history:[];meta={updated_at:r.updated_at||'',updated_by:r.updated_by_name||'',history:hist,version:Number(r.version)||hist.length,contract:Number(r.contract)||1};loaded=true;try{root.dispatchEvent(new CustomEvent('crm-rules:changed',{detail:{rules:all()}}));}catch(e){}return all();}
- async function load(force){if(!available())return all();if(busy)return all();if(loaded&&!force)return all();busy=true;try{return take(await store().rpc(RPC,{}));}catch(e){return all();}finally{busy=false;}}
- /* 저장: 바뀐 조건부 값만 보낸다. 서버가 확인한 값만 화면에 적용한다 */
+ async function load(force){
+  if(!available())return all();
+  if(savePending){try{await savePending;}catch(e){}return all();}
+  if(readPending)return readPending;if(loaded&&!force)return all();
+  const epoch=writeEpoch,pending=(async()=>{try{const r=await store().rpc(RPC,{});return epoch===writeEpoch?take(r):all();}catch(e){return all();}})();
+  readPending=pending;try{return await pending;}finally{if(readPending===pending)readPending=null;}
+ }
  /* 저장: 바뀐 조건부 값만 보낸다. 서버가 확인한 값만 화면에 적용한다.
     apply 명령은 현행 v1/v2 서버에서 실행되지 않는다. 이력 저장을 예약 적용·기존 업무 보존으로 취급하지 않는다.
     지원 계약과 대상별 정책 버전이 연결되기 전에는 쓰기 RPC 전송 전에 거절한다. 기존 apply 없는 즉시 값 저장은 유지한다. */
@@ -221,9 +226,15 @@
   if(apply!==undefined)throw new Error('적용일·대상·기존 업무 처리 기능이 아직 연결되지 않아 저장하지 않았습니다. 기존 기준과 입력 내용은 유지됩니다.');
   const set={};Object.keys(changes||{}).forEach(k=>{const v=clean(k,changes[k]);if(v===undefined)throw new Error((SPEC[k]?SPEC[k].l:k)+' 값이 범위를 벗어났습니다');set[k]=v;});
   if(!Object.keys(set).length)return all();if(!available())throw new Error('운영 기준 저장은 서버 적용 뒤에 쓸 수 있습니다');
-  const r=await store().rpc(RPC,{set});
-  if(!r||r.ok!==true||!r.rules||typeof r.rules!=='object'||Array.isArray(r.rules)||Object.keys(set).some(k=>!same(r.rules[k],set[k])))throw new Error('운영 기준 저장 결과를 확인하지 못했습니다. 다시 조회해 확인해 주세요.');
-  return take(r);
+  if(savePending)throw new Error('운영 기준을 저장 중입니다. 결과 확인 후 다시 저장해 주세요.');
+  /* 저장 전에 시작한 조회는 늦게 도착해도 확정값·버전을 되돌릴 수 없다. */
+  writeEpoch++;readPending=null;
+  const pending=(async()=>{
+   const r=await store().rpc(RPC,{set});
+   if(!r||r.ok!==true||!r.rules||typeof r.rules!=='object'||Array.isArray(r.rules)||Object.keys(set).some(k=>!same(r.rules[k],set[k])))throw new Error('운영 기준 저장 결과를 확인하지 못했습니다. 다시 조회해 확인해 주세요.');
+   return take(r);
+  })();
+  savePending=pending;try{return await pending;}finally{if(savePending===pending)savePending=null;}
  }
  /* 기준 버전(근거 보기 · 이력 표시용): 서버 이력 건수 = 버전, 마지막 변경일. 서버 적용 전이면 v0 · 기본값 */
  function version(){const at=String(meta.updated_at||'');const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(at);return {n:Number(meta.version)||0,at,label:'기준 v'+(Number(meta.version)||0)+(m?' · '+Number(m[2])+'.'+Number(m[3]):' · 기본값')};}
