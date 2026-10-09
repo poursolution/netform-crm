@@ -44,6 +44,7 @@
   });
  }
 
+ const reviewOf=q=>root.InquiryListV3&&root.InquiryListV3.contactReview?root.InquiryListV3.contactReview(q):{required:false};
  function decorate(x){
   if(x.kind==='manager'){
    x.unassigned=false;x.band=x.overdue?1:x.dueDays===0?3:5;x.urgent=x.band<=2;x.lag=x.overdue?x.delay*24:0;return x;
@@ -69,6 +70,8 @@
  function prioritize(x){
   x.panel=panelOf(x);
   if(x.panel==='inquiry'){
+   x.contactReview=x.kind!=='manager'&&reviewOf(x.item).required;
+   if(x.contactReview){Object.assign(x,{responseLate:false,processingLate:false,overdue:false,promise:false,missingNext:false,due:'',dueDays:null,band:3,urgent:false,lag:0,delay:0,status:'이관 기록 확인',reason:'메모 통화 후보·실제 연결일 확인 필요',next:'과거 기록 확인',score:0});return x;}
    x.responseLate=x.kind!=='manager'&&!x.unassigned&&!root.inqCtlFirstResponseAt(x.item)&&root.inquiryResponseLate(x.item);
    x.processingLate=x.kind==='manager'?x.overdue:!x.unassigned&&!x.responseLate&&!!root.inqCtlFirstResponseAt(x.item)&&(x.overdue||/지연|정체/.test(x.reason));
    x.band=x.unassigned?0:x.responseLate?1:x.processingLate?2:3;
@@ -91,7 +94,7 @@
   const base=root.todayHomeData(),me=root.todayOwner();
   // Include overdue first responses even when the original recent-inquiry window has elapsed.
   const inquiry=base.Q.map(q=>base.inquiry.find(x=>x.key==='inq:'+root.inqKey(q))||
-   (root.inquiryResponseLate(q)?{key:'inq:'+root.inqKey(q),type:'inq',item:q,owner:root.repN(root.inquiryRoutedOwner(q)),stage:'배정완료',reason:'첫 연락 지연',next:'고객에게 연락하고 첫 연락 결과 기록',recent:root.todayRecent(q,'inq'),delay:0}:null)).filter(Boolean);
+   ((reviewOf(q).required||root.inquiryResponseLate(q))?{key:'inq:'+root.inqKey(q),type:'inq',item:q,owner:root.repN(root.inquiryRoutedOwner(q)),stage:'배정완료',reason:'첫 연락 지연',next:'고객에게 연락하고 첫 연락 결과 기록',recent:root.todayRecent(q,'inq'),delay:0}:null)).filter(Boolean);
   const pipeline=base.D.filter(d=>!relationship(d)).map(d=>{
    const entry=base.pipeline.find(x=>x.key==='deal:'+root.dealKey(d));if(entry)return entry;
    const a=root.actionObj(d,root.itemPatch(d,'deal')),meta=root.relationshipMeta(d),missing=!a||!a.text||dueDays(a.due)===null;

@@ -105,10 +105,11 @@
  /* ── ④ 업무량 5칸 + 신규 배정 판단 ── */
  const SCHED=[['PT',/PT/],['입찰',/입찰/],['현설',/현설|현장\s*설명/],['미팅',/미팅|회의/],['방문',/방문|실측|실사/]];
  const LIMIT={busy:6,fix:20};/* 잠정 기준(설정값 아님): 오늘 처리 6건 이상 = 여유 없음 · 기록 보완 20건 이상 = 기록 보완 먼저 */
+ const needsContactReview=q=>!!(R.InquiryListV3&&R.InquiryListV3.contactReview&&R.InquiryListV3.contactReview(q).required);
  function firstBefore(name){
   let L=[];try{L=R.operationalInquiries(R.B&&R.B.inquiries||[]);}catch(e){}
   return L.filter(q=>{
-   try{if(R.repN(ownerOfInq(q))!==name)return false;if(q.deleted_at||q.deletedAt)return false;if(R.isClosedInq&&R.isClosedInq(q))return false;if(R.inqCtlConverted&&R.inqCtlConverted(q))return false;return !(R.inqCtlFirstResponseAt&&R.inqCtlFirstResponseAt(q));}catch(e){return false;}
+   try{if(R.repN(ownerOfInq(q))!==name)return false;if(q.deleted_at||q.deletedAt)return false;if(R.isClosedInq&&R.isClosedInq(q))return false;if(R.inqCtlConverted&&R.inqCtlConverted(q))return false;return !needsContactReview(q)&&!(R.InquiryListV3&&R.InquiryListV3.contactAt?R.InquiryListV3.contactAt(q):(R.inqCtlFirstResponseAt&&R.inqCtlFirstResponseAt(q)));}catch(e){return false;}
   });
  }
  function loadOf(r,wsRows){
@@ -122,6 +123,7 @@
    try{let g='';try{g=R.PipelineStages.group(R.dealStage(d))||'';}catch(e){}const b=j.basis(d,g),mk=j.missKind(d,b);if(mk==='cur'||mk==='past')miss.push({d,mk});}catch(e){}
   });
   /* 이번 주 일정에는 오늘 처리에 이미 든 건(기한 도래)을 또 세지 않는다 · 오늘 날짜 일정은 오늘 처리 */
+  const review=R.operationalInquiries(R.B&&R.B.inquiries||[]).filter(q=>R.repN(ownerOfInq(q))===name&&needsContactReview(q));
   const fb=firstBefore(name),now=Date.now(),late=fb.filter(q=>{try{const a=Date.parse(R.inquiryAssignedAt(q)||'');return Number.isFinite(a)&&(now-a)/36e5>FIRST_H();}catch(e){return false;}});
   const rel={focus:0,normal:0,wait:0,hold:0,unk:0};let relUnknown=!Array.isArray(wsRows);
   (wsRows||[]).forEach(x=>{try{if(x.group!=='relationship'||R.repN(x.owner)!==name)return;const s=R.RelV12.state(x);if(rel[s.key]!=null)rel[s.key]++;else rel.unk++;}catch(e){relUnknown=true;}});
@@ -130,8 +132,8 @@
   const relN=Object.values(rel).reduce((a,n)=>a+n,0),relText=relUnknown?'집계 미확인':relN?[rel.focus?'집중 '+rel.focus:'',rel.normal?'일반 '+rel.normal:'',rel.wait?'대기 '+rel.wait:'',rel.hold?'보류 '+rel.hold:'',rel.unk?'분류 미확인 '+rel.unk:''].filter(Boolean).join(' · '):'0';
   const noNext=cur.filter(d=>{try{const a=R.actionObj(d,patch(d));return !(a&&String(a.text||'').trim()&&dk(a.due||a.due_at));}catch(e){return true;}}),stale=Number(r.stale)||0;
   let judge='가능';
-  if(fb.length)judge='첫 연락 먼저';else if(due.length>=LIMIT.busy)judge='여유 없음';else if(noNext.length||stale||rel.unk||relUnknown||miss.length>=LIMIT.fix)judge='기록 보완 먼저';
-  return {name,due,sched,first:fb,late,miss,noNext,stale,rel,relN,relUnknown,relText,schedText,judge,counts:{due:due.length,sched:sched.length,first:fb.length,fix:miss.length}};
+  if(fb.length)judge='첫 연락 먼저';else if(due.length>=LIMIT.busy)judge='여유 없음';else if(review.length||noNext.length||stale||rel.unk||relUnknown||miss.length>=LIMIT.fix)judge='기록 보완 먼저';
+  return {name,review,due,sched,first:fb,late,miss,noNext,stale,rel,relN,relUnknown,relText,schedText,judge,counts:{due:due.length,sched:sched.length,first:fb.length,fix:miss.length+review.length}};
  }
  function loadAll(rows){let ws=null;try{ws=R.PipelineWorkspace.rows({unscoped:true});}catch(e){}return (rows||[]).map(r=>loadOf(r,ws));}
  const JUDGE_STYLE={'가능':['#1f7a4d','#e8f6ee'],'기록 보완 먼저':['#3d4b8c','#edf0fb'],'여유 없음':['#b42318','#fdecec'],'첫 연락 먼저':['#b42318','#fdecec']};
@@ -183,10 +185,11 @@
   const rows=[];
   L.due.forEach(x=>rows.push(row(x,x.over?'기한 지남':'오늘까지',x.over?'bad':'ok',(x.a&&x.a.text||'다음 할 일')+' · '+md(x.k))));
   L.first.forEach(q=>rows.push(rowOfInq(q,'첫 연락 전','bad','배정 후 첫 연락 기록 없음')));
+  (L.review||[]).forEach(q=>rows.push(rowOfInq(q,'이관 기록 확인','na','메모 통화 후보·실제 연결일 확인 필요')));
   L.sched.forEach(x=>rows.push(row(x,x.kind,'ok','이번 주 '+md(x.k)+' · '+(x.a&&x.a.text||''))));
   L.miss.forEach(x=>rows.push(row(x,'기록 보완',x.mk==='cur'?'bad':'na',x.mk==='cur'?'현재 업무 · 기록 없음':'과거 이관 · 자료 확인')));
   const st=JUDGE_STYLE[L.judge]||JUDGE_STYLE['가능'];
-  return {title:L.name+' · 신규 배정 '+L.judge,tiles:[['오늘 처리',L.due.length+'건'],['첫 연락 전',L.first.length+'건'],['기록 보완',L.miss.length+'건']],cond:'오늘 처리(기한 도래 · 초과) · 이번 주 일정(미팅 · 현설 · PT · 입찰 · 방문) · 첫 연락 전 · 관리 고객(집중 · 일반 · 대기) · 기록 보완 5칸으로 판단 — 첫 연락 전이 있으면 첫 연락 먼저 → 오늘 처리 '+LIMIT.busy+'건 이상이면 여유 없음 → 기록 보완 '+LIMIT.fix+'건 이상이면 기록 보완 먼저 → 다음 행동 미등록·정체·관계 분류 미확인이 있으면 기록 보완 먼저 → 그 밖 가능',exc:'수주 · 실주 · 종료 · 과거 이관(진행 범위 밖) · 문턱 숫자는 잠정 기준(설정값 아님)',sum:'판단 = '+L.judge,rows,_st:st};
+  return {title:L.name+' · 신규 배정 '+L.judge,tiles:[['오늘 처리',L.due.length+'건'],['첫 연락 전',L.first.length+'건'],['기록 보완',(L.miss.length+(L.review||[]).length)+'건']],cond:'오늘 처리(기한 도래 · 초과) · 이번 주 일정(미팅 · 현설 · PT · 입찰 · 방문) · 첫 연락 전 · 관리 고객(집중 · 일반 · 대기) · 기록 보완 5칸으로 판단 — 첫 연락 전이 있으면 첫 연락 먼저 → 오늘 처리 '+LIMIT.busy+'건 이상이면 여유 없음 → 기록 보완 '+LIMIT.fix+'건 이상이면 기록 보완 먼저 → 다음 행동 미등록·정체·관계 분류 미확인이 있으면 기록 보완 먼저 → 그 밖 가능',exc:'수주 · 실주 · 종료 · 과거 이관(진행 범위 밖) · 문턱 숫자는 잠정 기준(설정값 아님)',sum:'판단 = '+L.judge,rows,_st:st};
  }
  /* ── ⑥ 기한 미루기 ── */
  const openDue=d=>{let a=null;try{a=R.actionObj(d,patch(d));}catch(e){}const k=a&&(a.due||a.due_at)?dk(a.due||a.due_at):'';return {a,k};};

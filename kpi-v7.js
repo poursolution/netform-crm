@@ -62,7 +62,7 @@
    const left=last?0:m.left,total=last?0:m.todos.length,RQ=last?null:reqSplit(m.todos);
    return {i,key:m.key,grp:q[0],l:q[1],q:q[2],cause:nd&&!pilot?'none':q[3],nd,bad,lb,v,g,gap,left,total,d,num,den,pilot,ok:!nd&&!bad&&!pilot,
     frac:den?num+' / '+den+'건':'아직 못 잼',goal:(lb?'≤ ':'')+g+'%',
-    meta:last?'지난주 금요일 저장본':(m.last==null?'지난주 –':'지난주 '+fmt(m.last)+' '+(d===0?'→ 그대로':(d>0?'▲':'▼')+Math.abs(d)+'%p'))+' · 누가 '+whoOf(i,m,PV)+(cum?' · '+cum:''),target:'대상: '+TARGET(i),
+    meta:last?'지난주 금요일 저장본':(m.last==null?'지난주 –':'지난주 '+fmt(m.last)+' '+(d===0?'→ 그대로':(d>0?'▲':'▼')+Math.abs(d)+'%p'))+' · 누가 '+whoOf(i,m,PV)+(cum?' · '+cum:''),target:'대상: '+TARGET(i)+(m.unknown?' · 기록·시각 미확인 '+m.unknown+'건(측정 불가·분모 제외)':''),
     reason:pilot?'시범 측정 · 평가 제외':nd?'아직 못 잼':bad?'미달 · '+gap+'%p '+(lb?'초과':'부족'):'달성',
     btn:last||!total?'':/* 이번 주 값이 '아직 못 잼'이어도 누적 미처리가 있으면 요청 버튼은 둔다(2026-10-06 집계 ⑤) */!left?'보냄 ✓':i===0?left+'건 배정':i===4?left+'건 판단 요청':i===3?'담당별 요청':i===7?left+'건 다시 확인':'요청 가능 '+RQ.can+'건',dis:!!RQ&&!RQ.can&&left>0&&![0,3,4,7].includes(i),reqSum:RQ&&total?reqSum(RQ,q[3]==='rec'?'미등록':'대상'):''};
   }).sort((a,b)=>(a.nd?2:a.bad?0:1)-(b.nd?2:b.bad?0:1)||b.gap-a.gap||a.i-b.i);
@@ -83,10 +83,11 @@
   try{const IL=R.InquiryListV3,IV=R.InquiryListV2;if(IL&&IV&&typeof IL.model==='function'&&typeof IV.rows==='function'){
    const ms=IV.rows().map(x=>IL.model(x)).filter(m=>m.step<4),RU=R.OPS_RULES||{},H=Number(RU.towerFirstResponseHours)||2,D=Number(RU.inquiryFollowDays)||7;
    const T=m=>({kind:'inq',id:String(m.key),name:m.site,owner:String(m.owner||''),why:m.elapsed||''});
-   const r1=ms.filter(m=>m.step===1),r2=ms.filter(m=>m.follow&&m.late);
+   const known=ms.filter(m=>!m.review?.required),unknown=ms.length-known.length,extra=unknown?' · 이관 기록 확인 '+unknown+'건(측정 불가·분모 제외)':'';
+   const r1=known.filter(m=>m.step===1),r2=known.filter(m=>m.follow&&m.late);
    if(ms.length)out.push({key:'inquiry',label:'견적문의',total:ms.length,over:new Set(r1.concat(r2).map(m=>m.key)).size,rules:[
-    rule('inquiry','nofirst','첫 연락 전','배정 후 '+H+'시간 안 첫 연락',r1.map(m=>Object.assign(T(m),{label:'첫 연락 요청'})),ms.filter(m=>m.step>=1).length),
-    rule('inquiry','stale','후속 연락 필요','첫 연락 후 '+D+'일 넘게 연락 없음',r2.map(m=>Object.assign(T(m),{label:'후속 연락 요청'})),ms.filter(m=>m.follow).length)]});
+    rule('inquiry','nofirst','첫 연락 전','배정 후 '+H+'시간 안 첫 연락'+extra,r1.map(m=>Object.assign(T(m),{label:'첫 연락 요청'})),known.filter(m=>m.step>=1).length),
+    rule('inquiry','stale','후속 연락 필요','첫 연락 후 '+D+'일 넘게 연락 없음'+extra,r2.map(m=>Object.assign(T(m),{label:'후속 연락 요청'})),known.filter(m=>m.follow).length)]});
   }}catch(e){}
   if(P&&R.PipelineWorkspace){let rows=[];try{rows=R.PipelineWorkspace.rows();}catch(e){rows=[];}
    Object.keys(P.CFG).forEach(key=>{const list=rows.filter(r=>r.group===key);if(!list.length)return;let md=null;try{md=P.model(key,list);}catch(e){}if(!md)return;

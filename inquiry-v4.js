@@ -20,8 +20,8 @@
  function st(){const g=root.G;if(!g.inqV4||!g.inqV4._v4)g.inqV4=Object.assign({},DEF,g.inqV4||{},{_v4:true});return g.inqV4;}
  const resetForm=S=>Object.assign(S,{res:'',con:'',rea:'',memo:'',when:'',pick:false,edit:'',draft:'',busy:false,err:'',memoErr:'',find:false,findErr:''});
  const RULES=()=>root.OPS_RULES||{},ASSIGN_MIN=()=>Number(RULES().inquiryAssignMinutes)||30,FIRST_H=()=>Number(RULES().towerFirstResponseHours)||2,FOLLOW_D=()=>Number(RULES().inquiryFollowDays)||7;
- const ST={1:['unassigned','배정 필요'],2:['nofirst','첫 연락 전'],3:['stale','후속 연락 필요'],4:['ok','정상 진행'],5:['nocontact','연락처 보완']};
- const TABS=()=>[['all','진행 중 전체','종결 · 휴지통 제외','#15171c',0],['unassigned','배정 필요',ASSIGN_MIN()+'분 안에 담당 지정','#b42318',1],['nofirst','첫 연락 전','배정 후 '+FIRST_H()+'시간 안 첫 연락','#b42318',2],['stale','후속 연락 필요','첫 연락 후 '+FOLLOW_D()+'일 넘게 연락 없음','#c0392b',3],['ok','정상 진행','마지막 연락 '+FOLLOW_D()+'일 안','#6b7280',4],['nocontact','연락처 보완','연락처 찾기 · 이관 기록 확인','#6b7280',5]];
+ const ST={1:['unassigned','배정 필요'],2:['nofirst','첫 연락 전'],3:['stale','후속 연락 필요'],4:['ok','정상 진행'],5:['nocontact','기록 보완']};
+ const TABS=()=>[['all','진행 중 전체','종결 · 휴지통 제외','#15171c',0],['unassigned','배정 필요',ASSIGN_MIN()+'분 안에 담당 지정','#b42318',1],['nofirst','첫 연락 전','배정 후 '+FIRST_H()+'시간 안 첫 연락','#b42318',2],['stale','후속 연락 필요','첫 연락 후 '+FOLLOW_D()+'일 넘게 연락 없음','#c0392b',3],['ok','정상 진행','마지막 연락 '+FOLLOW_D()+'일 안','#6b7280',4],['nocontact','기록 보완','연락처 찾기 · 이관 기록 확인','#6b7280',5]];
  const d3=x=>!!x&&x.dd>=0&&x.dd<=3;
  const FLAGS=[['info','필수정보 미입력','#c0392b',m=>m.follow&&m.miss.length>0],['meet','대표회의 · 기한 D-3','#b42318',m=>d3(m.meet)||d3(replyOf(m.q))],['today','오늘 들어온 문의','#2a52b8',m=>m.x.ageDays===0]];
  function replyOf(q){try{return L3().replyOf(q);}catch(e){return null;}}
@@ -42,14 +42,14 @@
   const dayNo=d=>Math.round(dayMs(d)/864e5);
   function nextDueOf(q){try{const a=root.actionObj(q,root.itemPatch(q,'inq'));if(a&&a.text&&a.due){const d=String(a.due).slice(0,10);if(/^\d{4}-\d{2}-\d{2}$/.test(d))return d;}}catch(e){}return '';}
   function ext(m){
-   const q=m.q,x=m.x,now=Date.now(),k=K(),noPhone=!m.phone&&!!(m.follow||(x.ageDays||0)>=1),s=noPhone?5:m.step===0?1:m.step===1?2:(m.follow&&m.late)?3:4;
+   const q=m.q,x=m.x,now=Date.now(),k=K(),noPhone=!m.phone&&!!(m.follow||(x.ageDays||0)>=1),s=m.step===0?1:noPhone||m.review.required?5:m.step===1?2:(m.follow&&m.late)?3:4;
    const lastAt=x.latest?Date.parse(x.latest.at||x.latest.occurred_at||x.latest.created_at):x.first?Date.parse(x.first):NaN;
    let basis,from;
    if(s===1){basis='접수 후';from=x.created;}
    else if(s===2){basis='배정 후';let a=NaN;try{a=Date.parse(root.inqCtlAssignedAt(q)||'');}catch(e){}from=Number.isFinite(a)?a:x.created;}
    else{basis=quoteSent(m)?'견적 발송 후':'마지막 연락 후';from=lastAt;}
    let g,due=null,dueDay='';
-   if(noPhone)g=4;
+   if(m.step!==0&&(noPhone||m.review.required))g=4;
    else if(m.step<=1){g=1;due=Number.isFinite(from)?from+(m.step===0?ASSIGN_MIN()*60000:FIRST_H()*3600000):null;}
    else{
     const rd=replyOf(q),cand=[];if(m.meet&&m.meet.dd>=0)cand.push(k?k.day(m.meet.date):'');if(rd&&rd.dd>=0)cand.push(k?k.day(rd.date):'');
@@ -59,7 +59,7 @@
     due=dueDay?dayMs(dueDay):null;
    }
    const days=Number.isFinite(from)?(k?k.span(from,now):span(now-from)):'—';
-   return Object.assign(m,{st:s,stLabel:ST[s][1],basis,from,el:days,g,gLabel:GROUP[g],due,dueDay,dc:s===4||s===5?'#6b7280':s===3?'#c0392b':'#b42318'});
+   return Object.assign(m,{st:s,stLabel:s===5?(noPhone?'연락처 보완':'이관 기록 확인'):ST[s][1],basis,from,el:m.review.required?'—':days,g,gLabel:GROUP[g],due,dueDay,dc:s===4||s===5?'#6b7280':s===3?'#c0392b':'#b42318'});
   }
   /* 목록 줄 오른쪽 세 줄(묶음 · 지금 상태 · 기한) — 보이는 줄만 계산한다 */
   function remain(ms){const k=K();return ms>=0?k.span(Date.now(),Date.now()+ms)+' 남음':k.span(Date.now()+ms,Date.now())+' 지남';}
@@ -78,7 +78,7 @@
    if(m.g===1){
     const hhmm=Number.isFinite(m.due)?(k.day(m.due)===k.today()?'오늘':k.md(m.due))+' '+k.hm(m.due)+'까지':'';
     l2=(m.step===0?'배정 기한 ':'첫 연락 기한 ')+(Number.isFinite(m.due)?remain(m.due-now):'—');l3=hhmm;col='#b42318';
-   }else if(m.g===4){l2='연락처 없음 · 연락처 보완 먼저';l3='기한 없음';col='#6b7280';}
+   }else if(m.g===4){l2=!m.phone?'연락처 없음 · 연락처 보완 먼저':L3().reviewText(m.review);l3='기한 없음';col='#6b7280';}
    else{
     let due='';
     if(m.dueDay){const dd=dayNo(m.dueDay)-dayNo(k.today());due=k.md(dayMs(m.dueDay))+'까지 · '+(dd===0?'오늘':dd>0?dd+'일 남음':(-dd)+'일 지남');if(dd<0)col='#c0392b';}
@@ -93,7 +93,7 @@
  const isCon=e=>e.kind==='contact'||(e.kind==='work'&&!!e.ch);
  /* 줄의 마지막 기록(보이는 줄만 계산한다) */
  function lastOf(m){
-  if(m._lc)return m._lc;let e=null;
+  if(m._lc)return m._lc;if(m.review.required)return (m._lc={when:'',at:NaN,text:L3().reviewText(m.review),real:false,res:''});let e=null;
   try{e=(DV().timeline?DV().timeline(m.q):[]).filter(isCon).sort((a,b)=>(Date.parse(b.at)||0)-(Date.parse(a.at)||0))[0]||null;}catch(err){}
   if(e){const c=conText(e);m._lc={when:ymd(e.at),at:Date.parse(e.at),text:c.text,real:c.real,res:e.res||''};}else m._lc={when:'',at:NaN,text:m.lastText,real:false,res:''};
   return m._lc;
@@ -121,7 +121,8 @@
  function compute(){
   const S=st(),all=base(),T=TABS();if(!T.some(t=>t[0]===S.tab))S.tab='all';if(S.flag&&!FLAGS.some(f=>f[0]===S.flag))S.flag='';
   const inTab=S.tab==='all'?all:all.filter(m=>ST[m.st][0]===S.tab),flag=FLAGS.find(f=>f[0]===S.flag)||null;
-  const INF=1e18,cmp=S.sort==='urgent'?(a,b)=>a.g-b.g||(a.due==null?INF:a.due)-(b.due==null?INF:b.due)||(a.x.created||0)-(b.x.created||0):S.sort==='old'?(a,b)=>(a.x.created||0)-(b.x.created||0):(a,b)=>(b.x.created||0)-(a.x.created||0);
+  T.forEach(t=>{if(t[0]==='nocontact')t[5]='연락처 없음 '+all.filter(m=>m.st===5&&!m.phone).length+' · 이관 기록 확인 '+all.filter(m=>m.st===5&&m.phone&&m.review.required).length;});
+  const INF=1e18,cmp=S.sort==='urgent'?(a,b)=>a.g-b.g||(a.g===4&&b.g===4?((a.review.undated?INF:Date.parse(a.x.first)||INF)-(b.review.undated?INF:Date.parse(b.x.first)||INF)):0)||(a.due==null?INF:a.due)-(b.due==null?INF:b.due)||(a.x.created||0)-(b.x.created||0):S.sort==='old'?(a,b)=>(a.x.created||0)-(b.x.created||0):(a,b)=>(b.x.created||0)-(a.x.created||0);
    const list=(flag?inTab.filter(flag[3]):inTab).slice().sort(cmp);
   return (VIEW={all,inTab,list,T});
  }
@@ -163,7 +164,7 @@
   return '<div class="i4-sec"><b class="lb">빠진 정보 <em>'+miss.length+'</em><span> / 9'+(miss.length?' · 누르면 바로 입력':' · 모두 채움')+'</span></b>'+(miss.length?'<div class="i4-chips">'+chips+'</div>':'')+'</div>';
  }
  /* 날짜 3개 · 이관 메모 원문(통화 노랑 · 약속 파랑) · 과거 약속 확인함 — 메모가 있는 문의에만 */
-  function memoBlocks(q,S,m){const k=K();if(!k||!k.on())return '';try{return (m&&m.st===5?k.findHtml(q,S.find,canFill(),S.findErr):'')+k.datesHtml(q)+k.memoHtml(q)+k.promiseHtml(q,S.memoErr);}catch(e){return '';}}
+  function memoBlocks(q,S,m){const k=K();if(!k||!k.on())return '';try{return (m&&m.st===5&&!m.phone?k.findHtml(q,S.find,canFill(),S.findErr):'')+k.datesHtml(q)+k.memoHtml(q)+k.promiseHtml(q,S.memoErr);}catch(e){return '';}}
   function opener(m){
    try{const k=K(),o=k&&k.opener(m.q,m.owner?repName(m.owner):String(root.ME&&root.ME.name||''));if(o)return o;}catch(e){}
   const q=m.q,who=m.owner?repName(m.owner):String(root.ME&&root.ME.name||''),wl=String(root.inqCtlWorkLabel(q)||''),topic=(wl&&!/미분류/.test(wl)?wl:'')||String(W().gist(q)||'').replace(/\s+/g,' ').slice(0,26)||'견적';let clue='';try{clue=IS()?IS().openerClue(q):'';}catch(e){}
@@ -246,7 +247,7 @@
   const cur=ix>=0?list[ix]:null;
   const keepList=host.querySelector('.i4-list')?host.querySelector('.i4-list').scrollTop:0,keepDet=host.querySelector('.i4-detail')?host.querySelector('.i4-detail').scrollTop:0;
   const act=document.activeElement,focusF=act&&host.contains(act)&&act.dataset?act.dataset.i4f:'',caret=focusF?act.selectionStart:null;
-  const tabs='<div class="i4-tabs" role="group" aria-label="상태 탭">'+V.T.map(t=>{const n=t[4]?V.all.filter(m=>m.st===t[4]).length:V.all.length,o=S.tab===t[0];return '<button type="button" class="i4-tab'+(o?' on':'')+'" data-i4="tab" data-v="'+t[0]+'" aria-pressed="'+o+'"><span><b class="n" style="color:'+(n?t[3]:'#c9cdd5')+'">'+n+'</b><b>'+h(t[1])+'</b></span><small>'+h(t[2])+'</small></button>';}).join('')+'</div>';
+  const tabs='<div class="i4-tabs" role="group" aria-label="상태 탭">'+V.T.map(t=>{const n=t[4]?V.all.filter(m=>m.st===t[4]).length:V.all.length,o=S.tab===t[0];return '<button type="button" class="i4-tab'+(o?' on':'')+'" data-i4="tab" data-v="'+t[0]+'"'+(t[5]?' title="'+attr(t[5])+'"':'')+' aria-pressed="'+o+'"><span><b class="n" style="color:'+(n?t[3]:'#c9cdd5')+'">'+n+'</b><b>'+h(t[1])+'</b></span><small>'+h(t[2])+'</small></button>';}).join('')+'</div>';
   const flags='<div class="i4-flags"><span class="lb">함께 확인</span>'+FLAGS.map(f=>{const n=V.inTab.filter(f[3]).length,o=S.flag===f[0];return '<button type="button" class="i4-flag'+(o?' on':'')+(n||o?'':' zero')+'" data-i4="flag" data-v="'+f[0]+'" aria-pressed="'+o+'">'+h(f[1])+' <b'+(o||!n?'':' style="color:'+f[2]+'"')+'>'+n+'</b></button>';}).join('')
    +'<i></i><span class="i4-more-slot"></span><span class="cnt"'+(CACHE.handed?' title="영업건으로 넘긴(전환 · 기존 영업건에 붙임) 문의 '+CACHE.handed+'건은 진행 중에서 빠집니다"':'')+'><b>'+list.length+'건</b> · '+(S.sort==='urgent'?'급한 순':S.sort==='old'?'오래된 순':'최근 순')+' · ↑ ↓ 이동</span><div class="i4-sorts"><button type="button" data-i4="sort" data-v="urgent" aria-pressed="'+(S.sort==='urgent')+'" title="① 신규 첫 연락 → ② 고객 약속 · 회의 → ③ 후속 기한 → ④ 과거 기록 정리">급한 순</button><button type="button" data-i4="sort" data-v="old" aria-pressed="'+(S.sort==='old')+'">오래된 순</button><button type="button" data-i4="sort" data-v="new" aria-pressed="'+(S.sort==='new')+'">최근 순</button></div></div>';
   const kt=KEEP.tools;if(kt&&host.contains(kt))kt.remove();

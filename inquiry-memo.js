@@ -185,12 +185,25 @@
   return {recv:createdOf(q),conn:c,memoCall:first,calls:sc.calls};
  }
  /* Shared read-only evidence for a review category. Never invent a connected date.
-    Screen placement/count integration is deferred to Claude's handoff. */
+    Review is cleared only by server-confirmed evidence, never by a queued local patch. */
+ const confirmedCallDay=q=>on()?String((SRV.get(String(q&&q.id||''))||{}).call?.on_date||''):'';
+ function confirmedContact(q){
+  if(!q)return false;
+  if((SRV.get(String(q.id||''))||{}).call)return true;
+  const F=flow(),has=(o,after)=>{const s=F&&F.server?F.server(o):null;return (s&&Array.isArray(s.logs)?s.logs:[]).some(l=>l.kind==='connected'&&Number.isFinite(ms(l.occurred_at||l.at))&&!(ms(l.occurred_at||l.at)<after));};
+  if(has(q,-Infinity))return true;
+  // Use the existing same-case relationship and receipt boundary, without expanding it.
+  const C=root.ContactState;
+  return !!(C&&C.on()&&C.siblings&&(C.siblings(q)||[]).some(s=>has(s,ms(createdOf(q))-60000)));
+ }
  function contactReview(q){
   const empty={required:false,reason:'',candidateDate:'',calls:[]};
   if(!q||!on())return empty;
-  const c=connection(q),calls=scan(q).calls;
-  if(c.state==='ok'||c.state==='supplemented')return empty;
+  const calls=scan(q).calls,F=flow(),s=F&&F.server?F.server(q):null;
+  // Flow.state/logs also contain optimistic patches. Read the server index directly.
+  if(confirmedContact(q))return empty;
+  const recv=createdOf(q),fc=String(s&&s.first_connected_at||q.first_response_at||q.responded_at||q.respondedAt||'');
+  const c={state:fc&&(Math.abs(ms(fc)-ms(recv))<60000||(!!day(fc)&&day(fc)===day(recv)))?'copy':'none'};
   const reason=c.state==='copy'?'copied_received_date':calls.length?'memo_call_unconfirmed':'';
   return {required:!!reason,reason,candidateDate:calls.map(x=>x.date).filter(Boolean).sort()[0]||'',calls:calls.map(x=>Object.assign({},x))};
  }
@@ -345,5 +358,5 @@
    +(open?(list.length?list.map(p=>'<div class="im-ph"><b>'+esc(p.text)+'</b><span>'+esc(p.from)+'</span><button type="button" class="im-btn" data-i4="phone-save" data-v="'+attr(p.text)+'"'+(canSave?'':' disabled')+'>이 번호로 저장</button></div>').join(''):'<span class="im-none">이관 기록 · 같은 현장에서 찾은 번호가 없습니다 — [전체 상세 ↗]에서 직접 입력해 주세요</span>'):'')
    +(err?'<div class="i4-err">'+esc(err)+'</div>':'')+'</div>';
  }
- return {on,day,diff,days,md,ymd,hm,span,today,phones,findHtml,addDays,parse,marked,sentences,memosOf,scan,promises,pending,pendingN,asks,connection,dates,contactReview,copied,memoCallDay,hasMemo,opener,canEdit,review,run,load,flush,warm,takeServer,datesHtml,memoHtml,promiseHtml,RPC,LIST,MARK,_srv:SRV};
+ return {on,day,diff,days,md,ymd,hm,span,today,phones,findHtml,addDays,parse,marked,sentences,memosOf,scan,promises,pending,pendingN,asks,connection,dates,contactReview,confirmedContact,confirmedCallDay,copied,memoCallDay,hasMemo,opener,canEdit,review,run,load,flush,warm,takeServer,datesHtml,memoHtml,promiseHtml,RPC,LIST,MARK,_srv:SRV};
 });

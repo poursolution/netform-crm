@@ -129,8 +129,9 @@
   const received=(list||[]).filter(q=>inWeek(root.inquiryCreatedAt(q),w));
   const assigned=(list||[]).filter(q=>root.inquiryAssigned(q)&&inWeek(root.inquiryAssignedAt(q),w));
   const same=received.filter(q=>root.inquiryAssigned(q)&&dayKey(root.inquiryAssignedAt(q))===dayKey(root.inquiryCreatedAt(q)));
-  const fast=assigned.filter(q=>{const a=Date.parse(root.inquiryAssignedAt(q)),f=Date.parse(root.inqCtlFirstResponseAt(q)),delta=f-a;return Number.isFinite(delta)&&delta>=0&&delta<=H*3600e3;});
-  return [{num:same.length,den:received.length},{num:fast.length,den:assigned.length}];
+  const measured=assigned.filter(q=>!(root.InquiryListV3&&root.InquiryListV3.slaUnknown&&root.InquiryListV3.slaUnknown(q)));
+  const fast=measured.filter(q=>{const a=Date.parse(root.inquiryAssignedAt(q)),f=Date.parse(root.inqCtlFirstResponseAt(q)),delta=f-a;return Number.isFinite(delta)&&delta>=0&&delta<=H*3600e3;});
+  return [{num:same.length,den:received.length},{num:fast.length,den:measured.length,unknown:assigned.length-measured.length,total:assigned.length}];
  }
  root.PipelineJudge={on,meetingOf,sentOfDeal,field:fld,basis,missKind,missCounts,dueText,dueClass,isLate,state,STATE,tally,tallyText,line,touchLines,week,inWeek,dayKey,md,nextRate,metricSource,inquiryWeek,TARGET,rules};
 })(window);
