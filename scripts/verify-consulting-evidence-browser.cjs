@@ -39,6 +39,7 @@ const srv=http.createServer((req,res)=>{const p=path.resolve(root,'.'+decodeURIC
   });
   for(const k of ['memo','planned','cancelled','future','dateOnly'])assert.deepEqual(cases[k],{bucket:'none',meeting:''},k);
   assert.equal(cases.done.bucket,'done');assert.ok(cases.done.meeting);assert.deepEqual(cases.quote,{bucket:'done',meeting:''});
+  assert.deepEqual(await page.evaluate(()=>{const d={id:'basis',code:'consulting',stage_code:'consulting',activities:[]},of=f=>PipelineJudge.basis({...d,stage_contexts:{consulting:{fields:f}}},'consulting');return [of({meeting_date:DAY(2)}).why,of({meeting_date:DAY(-2)}).kind,of({quote_due:DAY(-2)}).kind,of({quote_due:DAY(-2),quote_request:'견적 요청'}).kind];}),['미팅 예정 '+await page.evaluate(()=>PipelineJudge.md(DAY(2))),'none','none','date']);
   await V.locator('[data-ps3="view"][data-v="board"]').click();
   assert.equal(await V.locator('.ps3-card[data-key="consult-0"] button').innerText(),'담당 배정');
   assert.match(await V.locator('.ps3-card[data-key="consult-2"]').innerText(),/실행 여부 확인/);
