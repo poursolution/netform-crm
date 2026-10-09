@@ -47,11 +47,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      const r={id:'r'+(++seq),target_type:p.target_type,target_id:p.target_id,site:p.site,brand:p.brand,kind:p.kind,label:p.label,to_scope:p.to_scope,to_name:p.to_name,asks:p.asks,due_at:p.due_at,due_label:p.due_label,memo:p.memo,status:'sent',result:null,result_owner:null,next_text:null,next_due:null,reply_note:null,auto_done:false,round:1,requested_by:ME.name,replied_by:null,created_at:now(),reasked_at:null,seen_at:null,closed_at:null,updated_at:now(),_by:uid(),_to:U[p.to_name]||null};
      __db.unshift(r);return {data:{ok:true,request:J(r)}};}
     if(name==='crm_work_request_list_v1'){const rows=__db.filter(r=>p.target_type?(r.target_type===p.target_type&&r.target_id===p.target_id):(role()==='admin'||r._by===uid()||(r.to_scope==='user'&&r._to===uid())||(r.to_scope==='branch'&&role()==='branch')));return {data:{ok:true,requests:rows.map(J)}};}
-    if(name==='crm_work_request_inquiry_contact_v1'){
+    if(name==='crm_work_request_inquiry_contact_v1'||name==='crm_work_request_inquiry_contact_v2'){
+     const compound=name==='crm_work_request_inquiry_contact_v2';
      const r=__db.find(x=>x.id===p.id);if(!r||r._to!==uid())return err('받는 담당자만 기록할 수 있습니다');
-     const lid='20000000-0000-4000-8000-000000000001';Object.assign(r,{status:p.result==='부재'?'working':'done',result:p.result,next_text:p.next_text,next_due:p.next_due,replied_by:ME.name,closed_at:p.result==='부재'?null:now(),updated_at:now()});
+     const lid='20000000-0000-4000-8000-000000000001';Object.assign(r,{status:compound||p.result==='부재'?'working':'done',result:p.result,next_text:p.next_text,next_due:p.next_due,replied_by:ME.name,closed_at:compound||p.result==='부재'?null:now(),updated_at:now()});
      const state={inquiry_id:r.target_id,logs:[{id:lid,request_id:p.operation_id,result:p.result,kind:p.result==='부재'?'attempt':'connected',next_action:p.next_text,next_check_date:p.next_due,occurred_at:now()}]};
-     return {data:{ok:true,contract_version:1,operation_id:p.operation_id,inquiry_id:r.target_id,log_id:lid,next_action_id:'30000000-0000-4000-8000-000000000001',request:J(r),state,
+     return {data:{ok:true,contract_version:compound?2:1,completion:compound?{policy_version:'first-compound-v1',requested_asks:r.asks,satisfied_asks:p.result==='부재'?[]:['고객 첫 연락'],remaining_asks:r.asks.filter(x=>p.result==='부재'||x!=='고객 첫 연락'),contact_log_id:lid,request_complete:false}:undefined,operation_id:p.operation_id,inquiry_id:r.target_id,log_id:lid,next_action_id:'30000000-0000-4000-8000-000000000001',request:J(r),state,
       inquiry_update:{next_action_date:p.next_due},server_at:now()}};
     }
     if(name==='crm_work_request_reply_v1'){const r=__db.find(x=>x.id===p.id);if(!r)return err('요청을 찾을 수 없습니다');const mine=(r.to_scope==='user'&&r._to===uid())||(r.to_scope==='branch'&&role()==='branch');
@@ -232,6 +233,19 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await as({id:'u-kim',name:'김성민',role:'rep'});
   assert.equal(await page.locator('#today-v2 .tv3 [data-wr="ask"]').count(),0);assert.equal(await page.locator('#today-v2 .tv3 .wrq-wait').count(),0);
   assert.equal(await page.locator('#today-v2 .tv3 .wrq-top .wrq-in').count(),1,'김성민에게 온 후속 연락 요청');
+  /* 복합 요청은 기존 입력으로 응대만 저장하고, 확인하지 않은 견적·방문 항목은 완료하지 않는다. */
+  await page.evaluate(()=>{const r=__db.find(x=>x.id==='r3');r.asks=['고객 첫 연락','연락 후 견적 필요 여부 확인','현장방문 필요 여부 확인'];r.status='seen';r.closed_at=null;r.auto_done=false;__toasts.length=0;});
+  await as({id:'10000000-0000-4000-8000-000000000001',name:'이필선',role:'rep'});
+  {const c=page.locator('#today-v2 .tv3 .wrq-top .wrq-in').first();
+   await c.locator('.res button',{hasText:'견적요청'}).click();await page.waitForTimeout(150);
+   assert.equal(one(await c.locator('.ft').innerText()),'응대 저장 · 추가 확인 항목은 진행 중 저장');
+   await c.locator('[data-wr="save"]').click();await page.waitForTimeout(400);
+   assert.equal(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_work_request_inquiry_contact_v2').length),1);
+   assert.deepEqual(await page.evaluate(()=>{const r=__db.find(x=>x.id==='r3');return [r.status,r.closed_at,r.auto_done];}),['working',null,false]);
+   assert.equal(await page.locator('#today-v2 .tv3 .wrq-top .wrq-in').count(),1,'추가 확인이 남으면 요청을 숨기지 않는다');
+   assert.ok((await page.evaluate(()=>__toasts.join(' | '))).includes('추가 확인 항목이 남아 요청은 진행 중'));
+   assert.deepEqual(await page.evaluate(()=>__rec),[]);
+  }
   /* 12. 서버 저장소가 아직 없으면 예전 [독촉] 그대로(요청 버튼을 반쯤 보여 주지 않는다) */
   await page.evaluate(()=>{window.__srv=false;});await as({id:'u-admin',name:'송보람',role:'admin'});await page.evaluate(()=>WorkRequest.load(true));await page.waitForTimeout(400);await page.evaluate(()=>paint());await page.waitForTimeout(300);
   assert.equal(await page.evaluate(()=>WorkRequest.enabled()),false);assert.equal(await page.locator('#today-v2 .tv3 [data-wr]').count(),0);assert.equal(await page.locator('#today-v2 .tv3').evaluate(n=>n.classList.contains('wrq-on')),false);
