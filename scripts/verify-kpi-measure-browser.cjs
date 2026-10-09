@@ -45,6 +45,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    window.__rpc=[];SB={rpc:async(name,args)=>{__rpc.push([name,args&&args.p]);if(name==='crm_kpi_weekly_list_v1')return {data:{ok:true,rows:[]}};if(name==='crm_kpi_action_list_v1')return {data:{ok:true,actions:[]}};if(name==='crm_ops_settings_v1')return {data:{ok:true,settings:{}}};return {data:{ok:true,tasks:[],rows:[],actions:[]}};}};TOKEN='test';
    goPage('mgmt');
   });
+  await page.evaluate(require('./kpi-request-browser-fixture.cjs'));await page.evaluate(async()=>{await KpiB.load(true);paintMgmt();});
   await page.waitForTimeout(500);
   const v=page.locator('#kpi-v7');assert.equal(await v.count(),1);
   /* 1. 세 번째 탭 '측정 기준 13' */

@@ -13,11 +13,12 @@ function fixture(){
   managementStats:()=>({D:deals.slice(0,36),Q:inquiries,assignRate:7,responseRate:3.5,unassigned:[],noResponse:inquiries.slice(1),nextMissing:deals.slice(10,36),sameDayAssigned:[],responseSla:[]}),
   PERFORMANCE_TARGET_NAMES:['담당0'],RecordingKPI:{stats:()=>({deals:0,activeN:0,activity:null})},salesActivityAt:()=>'',
   PipelineStageB:{CFG:{},model:()=>({items:[]})},PipelineWorkspace:{rows:()=>[]},
-  OpsStore:{monday:n=>n===-1?'2026-09-28':'2026-10-05',rpc:async(n,p)=>{calls.push({n,p});return {saved:p.rows.length};},has:()=>false},
+  OpsStore:{monday:n=>n===-1?'2026-09-28':'2026-10-05',rpc:async(n,p)=>{calls.push({n,p});return {ok:true,week_start:p.week_start,saved:p.rows.length};},has:()=>false},
  };
  r.window=r;vm.createContext(r);
  for(const f of ['pipeline-judge.js','kpi-b.js','kpi-v7.js','today-tower.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'..',f),'utf8'),r,{filename:f});
  r.KpiB.weekly().rows=[{promise_key:'kpi:1',week_start:'2026-09-28',numerator:106,denominator:1000},{promise_key:'kpi:2',week_start:'2026-09-28',numerator:13,denominator:1000}];
+ r.KpiB.weekly().actState='ready'; // fixture represents a fully loaded request history
  return {r,calls};
 }
 test('이번 주 표시·증감·추이·저장 모두 같은 분자와 분모: +89.4pp / +32.0pp',async()=>{

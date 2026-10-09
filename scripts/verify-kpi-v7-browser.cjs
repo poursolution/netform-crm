@@ -36,6 +36,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    SB={rpc:async(name,args)=>{__rpc.push([name,args&&args.p]);if(name==='crm_kpi_weekly_list_v1')return {data:{ok:true,rows:__weekly}};if(name==='crm_kpi_action_list_v1')return {data:{ok:true,actions:__acts}};if(name==='crm_kpi_action_log_v1'){const a=Object.assign({created_at:new Date().toISOString(),actor_name:'송보람'},args.p);__acts.unshift(a);return {data:{ok:true,action:a}};}if(name==='crm_kpi_weekly_save_v1'){return {data:{ok:true,saved:args.p.rows.length}};}if(name==='crm_ops_settings_v1')return {data:{ok:true,settings:{}}};return {data:{ok:true,tasks:[],rows:[],actions:[]}};}};TOKEN='test';
    goPage('mgmt');
   });
+  await page.evaluate(require('./kpi-request-browser-fixture.cjs'));await page.evaluate(async()=>{await KpiB.load(true);paintMgmt();});
   await page.waitForTimeout(500);
   const v=page.locator('#kpi-v7');assert.equal(await v.count(),1,'새 KPI 화면(v7)');assert.equal(await page.locator('#kpi-b,#kpi-v2').count(),0,'예전 화면 없음');
   assert.equal(await page.evaluate(()=>document.getElementById('ptitle').textContent),'관리팀 KPI');
@@ -52,7 +53,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await v.locator('.k7-left').evaluate(n=>getComputedStyle(n).flexBasis),'380px');
   assert.deepEqual(await v.locator('.k7-left .k7-card>header b').allInnerTexts(),['KPI 진단','관리팀 지표','왜 멈춰 있나','그래서 뭘 해야 하나'],'ops_12 D⑩: 관리팀 지표 칸');
   assert.deepEqual(await v.locator('.k7-left .k7-mg .k7-tiles>div>span, .k7-left .k7-mg .k7-none').allInnerTexts().then(a=>a.length?a:['없음']),(await v.locator('.k7-left .k7-mg .k7-tiles').count())?['요청','기한 내 해결률','재요청률','평균 처리 시간','기한 변경']:['요청 저장소가 아직 서버에 없어 잴 수 없습니다'],'관리팀 지표 = 요청 · 기한 내 해결률 · 재요청률 · 평균 처리 시간(요청 엔진 기록)');
-  const K=await page.evaluate(()=>KpiV7.coreRows(KpiB.compute(),[],false).map(m=>({key:m.key,v:m.v,num:m.num,den:m.den,ok:m.ok,pilot:m.pilot,left:m.left,n:m.total})));/* 화면과 같은 줄 계산(견적문의 둘은 이번 주 월~금 · 2026-10-06 집계 ⑤) */
+  const K=await page.evaluate(()=>KpiV7.coreRows(KpiB.compute(),[],false).map(m=>({key:m.key,v:m.v,num:m.num,den:m.den,ready:KpiB.compute().M[m.i].ready,ok:m.ok,pilot:m.pilot,left:m.left,n:m.total})));/* 화면과 같은 줄 계산(견적문의 둘은 이번 주 월~금 · 2026-10-06 집계 ⑤) */
   const miss=K.filter(m=>m.v!=null&&!m.ok&&!m.pilot).length,pl=K.filter(m=>m.pilot).length,nd=K.filter(m=>m.v==null&&!m.pilot).length,hit=8-miss-nd-pl;/* 시범 측정(kpi:6)은 미달 · 달성에 넣지 않는다 */
   assert.match((await v.locator('.k7-leg').innerText()).replace(/\s+/g,' '),new RegExp('미달 '+miss+' ■ 달성 '+hit+' ■ 아직 못 잼 '+nd+(pl?' ■ 시범 · 평가 제외 '+pl:'')));
   assert.deepEqual(await v.locator('.k7-card:not(.k7-mg) .k7-tiles>div>span').allInnerTexts(),['목표 미달','남은 요청','지난주보다']);
@@ -66,17 +67,17 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const rows=await v.locator('.k7-list>.k7-row').evaluateAll(l=>l.map(n=>({key:n.dataset.kpi,cls:n.className.replace('k7-row','').trim(),q:n.querySelector('.q b').textContent,sub:n.querySelector('.q span').textContent,frac:n.querySelector('.m b').textContent,meta:n.querySelector('.m span').textContent,why:n.querySelector('.why').textContent,v:n.querySelector('.v').textContent,btn:(n.querySelector('.k7-req')||n.querySelector('.k7-auto')).textContent})));
   assert.equal(rows.length,8);assert.deepEqual(rows.map(r=>r.key).sort(),['kpi:1','kpi:2','kpi:3','kpi:4','kpi:5','kpi:6','kpi:7','kpi:8'],'지표 키는 예전 그대로');
   const order=rows.map(r=>r.cls==='bad'?0:r.cls==='ok'?1:2);assert.deepEqual(order,order.slice().sort((a,b)=>a-b),'미달 → 달성 → 아직 못 잼 순');
-  for(const r of rows){const m=K.find(x=>x.key===r.key),f=v=>v==null?'–':(Math.round(v*10)/10)+'%';assert.equal(r.v,f(m.v),r.key+' 값');assert.ok(m.den?r.frac.startsWith(m.num+' / '+m.den+'건 · 목표 '):r.frac.startsWith('아직 못 잼 · 목표 '),r.key+' 분자/분모 '+r.frac);assert.match(r.meta,/^지난주 .+ · 누가 .+/);assert.equal(r.cls,m.v==null||m.pilot?'':m.ok?'ok':'bad');assert.match(r.why,m.pilot?/^시범 측정 · 평가 제외$/:m.v==null?/^아직 못 잼$/:m.ok?/^달성$/:/^미달 · [\d.]+%p (부족|초과)$/);assert.ok(!m.n?r.btn==='자동 측정':true,r.key+' 버튼 '+r.btn);/* 이번 주 값이 없어도 누적 미처리가 있으면 요청 버튼(2026-10-06 집계 ⑤) */}
+  for(const r of rows){const m=K.find(x=>x.key===r.key),f=v=>v==null?'–':(Math.round(v*10)/10)+'%';assert.equal(r.v,f(m.v),r.key+' 값');assert.ok(m.den&&m.ready!==false?r.frac.startsWith(m.num+' / '+m.den+'건 · 목표 '):r.frac.startsWith('아직 못 잼 · 목표 '),r.key+' 분자/분모 '+r.frac);assert.match(r.meta,/^지난주 .+ · 누가 .+/);assert.equal(r.cls,m.v==null||m.pilot?'':m.ok?'ok':'bad');assert.match(r.why,m.pilot?/^시범 측정 · 평가 제외$/:m.v==null?/^(아직 못 잼|완료 근거 미확인 .*|요청 업무 계산 중)$/:m.ok?/^달성$/:/^미달 · [\d.]+%p (부족|초과)$/);assert.ok(!m.n?r.btn==='자동 측정':true,r.key+' 버튼 '+r.btn);/* 이번 주 값이 없어도 누적 미처리가 있으면 요청 버튼(2026-10-06 집계 ⑤) */}
   const lost=rows.find(r=>r.key==='kpi:7');assert.deepEqual([lost.q,lost.sub,lost.v,lost.why,lost.btn],['사유 · 재영업 여부 · 필요한 낙찰 정보를 남겼나','실주 · 실주 정보 완성률','0%','미달 · 100%p 부족','요청 가능 1건']);
   assert.equal(rows.find(r=>r.key==='kpi:5').sub,'파이프라인 · 장기정체 비율');assert.match(rows.find(r=>r.key==='kpi:5').frac,/목표 ≤ 10%$/,'낮을수록 좋은 지표');
   assert.match(rows.find(r=>r.key==='kpi:3').meta,/^지난주 25% (▲|▼)[\d.]+%p · 누가 /,'지난주 저장값과 비교');
   if(shot)await page.screenshot({path:shot+'-core.png',fullPage:true});
   /* 4. 요청 버튼 = 담당자 이번 주 관리자 한마디 한 줄 + 건마다 조치 기록 → '보냄 ✓' */
   await v.locator('.k7-row[data-kpi="kpi:7"] .k7-req').click();await page.waitForTimeout(500);
-  assert.deepEqual(await page.evaluate(()=>__rpc.filter(r=>r[0]==='crm_kpi_action_log_v1').map(r=>[r[1].promise_key,r[1].action,r[1].target_type,r[1].target_name])),[['kpi:7','사유 요청','deal','사유 없는 실주']]);
-  assert.deepEqual(await page.evaluate(()=>__writes.filter(w=>w[0]==='rep_manager_comment').map(w=>[w[1].rep_name,/\[KPI 요청\] 실주 사유 입력 — 1건: 사유 없는 실주/.test(w[1].comment)])),[['이필선',true]],'담당자 이번 주 관리자 한마디에 한 줄');
+  assert.deepEqual(await page.evaluate(()=>__deliveries.flatMap(p=>p.targets.map(t=>[p.promise_key,t.action,t.target_type,t.target_name]))),[['kpi:7','사유 요청','deal','사유 없는 실주']]);
+  assert.deepEqual(await page.evaluate(()=>__deliveries.map(p=>[p.rep_name,p.targets.length,p.promise_key])),[['이필선',1,'kpi:7']],'서버 확인된 전달 1건');assert.equal(await page.evaluate(()=>__writes.length),0,'미연결 pushWrite 우회 없음');
   assert.deepEqual(await page.locator('#kpi-v7 .k7-row[data-kpi="kpi:7"] .k7-req').evaluate(b=>[b.textContent,b.disabled,b.classList.contains('sent')]),['보냄 ✓',true,true]);
-  assert.match(await page.evaluate(()=>__toasts.slice(-1)[0]),/^1건 요청을 남겼습니다 · 담당 1명/);
+  assert.match(await page.evaluate(()=>__toasts.slice(-1)[0]),/^요청 저장 확인 1건/);
   /* 배정은 요청이 아니라 오늘 업무의 배정 표로 */
   await page.locator('#kpi-v7 .k7-row[data-kpi="kpi:1"] .k7-req').click();await page.waitForTimeout(400);assert.equal(await page.evaluate(()=>G.page),'today');assert.match(await page.evaluate(()=>__toasts.slice(-1)[0]),/담당 배정 안 된 견적문의/);
   await page.evaluate(()=>goPage('mgmt'));await page.waitForTimeout(400);
@@ -102,8 +103,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const srow=await page.locator('#kpi-v7 .k7-row[data-rule="stage:lost:noreason"]').evaluate(n=>({t:n.querySelector('.q b').textContent,how:n.querySelector('.q span').textContent,p:n.querySelector('.p b').textContent,n:n.querySelector('.n').textContent,btn:n.querySelector('.k7-req').textContent,bad:n.classList.contains('bad')}));
   assert.equal(srow.n,'1건');assert.equal(srow.p,'0%');assert.equal(srow.bad,true,'지킨 비율 80% 미만 빨강');assert.match(srow.how,/ · 기준 대상 1건$/);assert.equal(srow.btn,'요청 가능 1건');
   if(shot)await page.screenshot({path:shot+'-stage.png',fullPage:true});
-  {const n0=await page.evaluate(()=>__rpc.filter(r=>r[0]==='crm_kpi_action_log_v1').length);await page.locator('#kpi-v7 .k7-row[data-rule="stage:lost:noreason"] .k7-req').click();await page.waitForTimeout(500);
-   const a=await page.evaluate(n=>__rpc.filter(r=>r[0]==='crm_kpi_action_log_v1').slice(n).map(r=>[r[1].promise_key,r[1].target_type,r[1].target_name]),n0);assert.deepEqual(a,[['stage:lost:noreason','deal','사유 없는 실주']]);
+  {const n0=await page.evaluate(()=>__deliveries.length);await page.locator('#kpi-v7 .k7-row[data-rule="stage:lost:noreason"] .k7-req').click();await page.waitForTimeout(500);
+   const a=await page.evaluate(n=>__deliveries.slice(n).flatMap(p=>p.targets.map(t=>[p.promise_key,t.target_type,t.target_name])),n0);assert.deepEqual(a,[['stage:lost:noreason','deal','사유 없는 실주']]);
    assert.equal(await page.locator('#kpi-v7 .k7-row[data-rule="stage:lost:noreason"] .k7-req').innerText(),'보냄 ✓');}
   await page.locator('#kpi-v7 .k7-stage [data-v="consulting"]').click();await page.waitForTimeout(500);assert.notEqual(await page.evaluate(()=>G.page),'mgmt','단계로 이동');
   await page.evaluate(()=>goPage('mgmt'));await page.waitForTimeout(400);

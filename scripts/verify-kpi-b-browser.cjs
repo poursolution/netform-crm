@@ -36,6 +36,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    SB={rpc:async(name,args)=>{__rpc.push([name,args&&args.p]);if(name==='crm_kpi_weekly_list_v1')return {data:{ok:true,rows:__weekly}};if(name==='crm_kpi_action_list_v1')return {data:{ok:true,actions:__acts}};if(name==='crm_kpi_action_log_v1'){const a=Object.assign({created_at:new Date().toISOString(),actor_name:'송보람'},args.p);__acts.unshift(a);return {data:{ok:true,action:a}};}if(name==='crm_kpi_weekly_save_v1'){return {data:{ok:true,saved:args.p.rows.length}};}if(name==='crm_ops_settings_v1')return {data:{ok:true,settings:{}}};return {data:{ok:true,tasks:[],rows:[],actions:[]}};}};TOKEN='test';
    goPage('mgmt');
   });
+  await page.evaluate(require('./kpi-request-browser-fixture.cjs'));await page.evaluate(async()=>{await KpiB.load(true);paintMgmt();});
   await page.waitForTimeout(500);
   const v=page.locator('#kpi-b');assert.equal(await v.count(),1,'새 KPI 화면');assert.equal(await page.locator('#kpi-v2').count(),0,'v2 없음');
   assert.equal(await page.evaluate(()=>document.getElementById('ptitle').textContent),'관리팀 KPI');
@@ -50,7 +51,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await r1.locator('.v').evaluate(n=>n.style.color),'rgb(217, 58, 58)','미달 = 빨강');
   const r3=rows.nth(2);assert.match(await r3.innerText(),/다음 할 일 등록률[\s\S]*▲|▼/);assert.match(await r3.locator('.tr small').innerText(),/주째 악화|악화|개선|변화 없음/);
   assert.match(await rows.nth(6).innerText(),/실주 사유 입력[\s\S]*실주[\s\S]*0%[\s\S]*100%[\s\S]*1건 남음/);
-  assert.match(await rows.nth(7).innerText(),/관리팀 조치 → 처리율[\s\S]*50%/,'요청 2건 중 정정훈 등록 요청은 목록에 없어 처리됨 · 신규 문의 1은 남음');
+  assert.equal(await page.evaluate(()=>KpiB.compute().M[7].v),null,'목록에서 사라져도 완료 증거가 아니다');assert.equal(await page.evaluate(()=>KpiB.compute().M[7].unverified),1);
   /* 오른쪽 패널(1번 선택) */
   const p=v.locator('.kb-panel');assert.match(await p.locator('.kb-sel').innerText(),/1번 지표를 올리려면\s*당일 배정률 66.7% → 목표 95%\s*미배정 견적문의를 오늘 담당 지정/);
   assert.deepEqual(await p.locator('.kb-chhead button').allInnerTexts(),['12주','6개월','1년']);assert.equal(await p.locator('.kb-plot>i').count(),12);
@@ -68,8 +69,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   if(shot)await page.screenshot({path:shot+'-kpi.png',fullPage:true});
   /* 요청 = kpi_actions 기록 + 담당자 관리자 한마디(rep_manager_comment) → '요청함' · 자동 저장 없음(목록 열기만) */
   await page.locator('#kpi-b .kb-todo button').first().click();await page.waitForTimeout(300);
-  assert.deepEqual(await page.evaluate(()=>__rpc.filter(r=>r[0]==='crm_kpi_action_log_v1').map(r=>[r[1].promise_key,r[1].action,r[1].target_type,r[1].target_name])),[['kpi:7','사유 요청','deal','사유 없는 실주']]);
-  assert.deepEqual(await page.evaluate(()=>__writes.filter(w=>w[0]==='rep_manager_comment').map(w=>[w[1].rep_name,/\[KPI 요청\] 실주 사유 입력 — 사유 없는 실주/.test(w[1].comment)])),[['이필선',true]],'담당자 이번 주 관리자 한마디에 한 줄');
+  assert.deepEqual(await page.evaluate(()=>__deliveries.flatMap(p=>p.targets.map(t=>[p.promise_key,t.action,t.target_type,t.target_name]))),[['kpi:7','사유 요청','deal','사유 없는 실주']]);
+  assert.deepEqual(await page.evaluate(()=>__deliveries.map(p=>[p.rep_name,p.targets.length,p.promise_key])),[['이필선',1,'kpi:7']],'서버 확인된 전달 1건');assert.equal(await page.evaluate(()=>__writes.length),0,'미연결 pushWrite 우회 없음');
   assert.match(await page.locator('#kpi-b .kb-todo').first().innerText(),/요청함/);assert.match(await page.locator('#kpi-b .kb-todohead').innerText(),/0건 남음 · 1건 조치함/);
   assert.match(await page.locator('#kpi-b .kb-row').nth(6).innerText(),/완료/);
   /* 할 일 글자 클릭 = 기존 상세 */
@@ -84,7 +85,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const nmTxt=await pp.locator('.kb-nm').innerText();assert.match(nmTxt,/측정 불가 \d+명[\s\S]*기록이 없어 지표가 안 나옴[\s\S]*한 번에 기록 시작 요청/);
   assert.doesNotMatch(await pp.innerText(),/정정훈[\s\S]*0%/,'기록 없는 사람은 0%로 안 보임');
   await pp.locator('[data-kb="nm"]').click();await page.waitForTimeout(200);assert.match(await page.locator('#kpi-b .kb-nm button').innerText(),/요청함/);
-  assert.ok((await page.evaluate(()=>__writes.filter(w=>w[0]==='rep_manager_comment'&&/기록 시작/.test(w[1].comment)).length))>=1,'측정 불가 담당에게 기록 시작 요청');
+  assert.ok((await page.evaluate(()=>__deliveries.filter(p=>/기록 시작/.test(p.line)).length))>=1,'측정 불가 담당에게 기록 시작 요청');
   /* 좁은 화면 · 끄기 */
   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'좁은 화면 넘침 없음');
   await page.setViewportSize({width:1600,height:1000});
