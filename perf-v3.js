@@ -96,21 +96,21 @@
    const dir=MX.filter(r=>r.type==='직접 수주'),pt=MX.filter(r=>r.type==='협약 · 기술자문'),tf=MX.filter(r=>r.type==='타사 이관');
    const dirA=sum(dir,'amt'),ptA=sum(pt,'amt'),tfA=sum(tf,'amt'),dirR=sum(dir,'rev'),ptR=sum(pt,'rev');
    /* 매출 비율 = 매출 ÷ 수주실적 — 매출을 아는 줄만(미입력 · 타사 이관 제외) */
-   const ratioOf=l=>{const k=l.filter(known),a2=sum(k,'amt');return a2>0?Math.round(sum(k,'rev')/a2*100):null;},missN=l=>l.filter(r=>r.type==='협약 · 기술자문'&&r.unknown===r.n).reduce((s,r)=>s+r.n,0);
+   const ratioBase=l=>({amount:l.reduce((s,r)=>s+(Number(r.ratioAmount)||0),0),revenue:l.reduce((s,r)=>s+(Number(r.ratioRevenue)||0),0)}),ratioOf=l=>{const k=ratioBase(l);return k.amount>0?Math.round(k.revenue/k.amount*100):null;},missN=l=>l.reduce((s,r)=>s+(Number(r.unknown)||0),0);
    const pct=(v,l)=>v==null?(missN(l)?'미입력':'—'):v+'%'+(missN(l)?' · 미입력 '+missN(l)+'건 제외':'');
    const ptNames=[...new Set(pt.map(r=>r.company).filter(Boolean))],ptLabel='협약 · 기술자문'+(ptNames.length?' (낙찰 '+ptNames.slice(0,2).join(' · ')+(ptNames.length>2?' 외 '+(ptNames.length-2)+'곳':'')+')':'');
    const tops=[
     ['수주실적 · 낙찰금액 ('+tot.n+'건)',money(tot.amt),[['직접 수주',money(dirA),'#3b6ce4'],[ptLabel,money(ptA),'#e8a09a']].concat(tfA>0?[['타사 이관',money(tfA),'#9aa0ab']]:[])],
     ['회사 매출',money(tot.rev),[['직접 계약',money(dirR),'#3b6ce4'],['기술자문 · POUR 계약',pt.length&&missN(pt)===sum(pt,'n')?'미입력':money(ptR),'#e8a09a']]],
     /* 비율의 분자 · 분모를 같이 적는다(2026-10-07 점검: 분모 불명확) — 매출을 아는 줄만(미입력 · 타사 이관 제외) */
-    (()=>{const kn=MX.filter(known),ka=sum(kn,'amt'),kr=sum(kn,'rev');return ['매출 비율 = 매출 '+money(kr)+' ÷ 수주실적 '+money(ka)+(missN(MX)?' · 미입력 '+missN(MX)+'건 제외':'')+(tfA>0?' · 타사 이관 제외':''),ratioOf(MX)==null?pct(null,MX):ratioOf(MX)+'%',[['직접 수주',pct(ratioOf(dir),dir),'#3b6ce4'],['협약 · 기술자문',pct(ratioOf(pt),pt),'#e8a09a']]];})()];
+    (()=>{const rb=ratioBase(MX),ka=rb.amount,kr=rb.revenue;return ['매출 비율 = 매출 '+money(kr)+' ÷ 수주실적 '+money(ka)+(missN(MX)?' · 미입력 '+missN(MX)+'건 제외':'')+(tfA>0?' · 타사 이관 제외':''),ratioOf(MX)==null?pct(null,MX):ratioOf(MX)+'%',[['직접 수주',pct(ratioOf(dir),dir),'#3b6ce4'],['협약 · 기술자문',pct(ratioOf(pt),pt),'#e8a09a']]];})()];
    const mx=Math.max(1,...MX.map(r=>r.amt)),w=v=>Math.max(0,Math.min(100,Math.round(v/mx*100)));
    let prev='';
    const rows=MX.map(r=>{const first=r.brand!==prev;prev=r.brand;const c=D.BRC[r.brand]||'#9aa0ab',t=TG[r.type]||TG['직접 수주'],unk=r.type==='협약 · 기술자문'&&r.unknown===r.n,none=r.type==='타사 이관',ra=!unk&&!none&&r.amt>0?Math.round(r.rev/r.amt*100):null;
     /* 전액이어도 금액을 적는다 — 줄 금액을 더하면 위 '회사 매출'과 맞아야 한다(2026-10-07 점검: 합계 근거) */
     const sub=none?['회사 매출 없음',''] :unk?['→ 매출 미입력','red']:ra===100?['→ 매출 '+money(r.rev)+' · 전액','']:['→ 매출 '+money(r.rev)+' · '+ra+'%',ra!==null&&ra<60?'pf3-am':''];
     return '<div class="pf3-bx" role="row"><span class="pf3-bxb" style="color:'+c+'">'+(first?'<i style="background:'+c+'"></i>'+h(r.brand):'')+'</span><span class="pf3-bxc" title="'+attr(r.company)+'">'+h(r.company)+'</span><span><em style="color:'+t[0]+';background:'+t[1]+'">'+h(r.type)+'</em></span><span class="pf3-bxn">'+r.n+'</span><span class="pf3-bxw"><span class="pf3-bxbar"><i class="a" style="width:'+w(r.amt)+'%"></i><i class="r" style="width:'+(unk||none?0:w(r.rev))+'%"></i></span><b class="pf3-bxv">'+h(money(r.amt))+'</b><small class="'+sub[1]+'">'+h(sub[0])+'</small></span></div>';}).join('');
-   const totRatio=ratioOf(MX),total=MX.length>1?'<div class="pf3-bx tot" role="row"><span class="pf3-bxb">합계</span><span></span><span></span><span class="pf3-bxn">'+tot.n+'</span><span class="pf3-bxw"><b class="pf3-bxv">'+h(money(tot.amt))+'</b><small class="pf3-dk">→ 매출 '+h(money(tot.rev))+(totRatio==null?'':' · '+totRatio+'%')+'</small></span></div>':'';
+   const totRatio=ratioOf(MX),total=MX.length>1?'<div class="pf3-bx tot" role="row"><span class="pf3-bxb">합계</span><span></span><span></span><span class="pf3-bxn">'+tot.n+'</span><span class="pf3-bxw"><b class="pf3-bxv">'+h(money(tot.amt))+'</b><small class="pf3-dk">→ 매출 '+h(money(tot.rev))+(totRatio==null?'':' · 입력 확인분 '+totRatio+'%')+'</small></span></div>':'';
    /* 해석 한 줄: 협약 · 기술자문 수주가 가장 큰 유입 브랜드 */
    const josa=s=>{const ch=String(s).charCodeAt(String(s).length-1),j=ch>=0xAC00&&ch<=0xD7A3?(ch-0xAC00)%28:0;return j&&j!==8?'으로':'로';};
    const byB={};MX.forEach(r=>{const g=byB[r.brand]||(byB[r.brand]={brand:r.brand,amt:0,pt:0,cos:[]});g.amt+=r.amt;if(r.type==='협약 · 기술자문'){g.pt+=r.amt;if(r.company&&!g.cos.includes(r.company))g.cos.push(r.company);}});

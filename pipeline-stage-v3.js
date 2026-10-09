@@ -42,13 +42,13 @@
   return {name:K.name,goal:Q.stay,desc:K.desc(),closed:true,amountLabel:key==='won'?'수주 금액':'예상 금액',
    kpiLabel:key==='won'?'실적 정보 보완':'결과 정보 보완',
    /* stage7_2 ⑧: 왼쪽 칸은 체류 · 기준 · '왜 멈춰 있나' 대신 결과 기록 완성률 + 보완할 것(항목별 건수) */
-   doneOf:it=>key==='won'?it.bucket==='done':it.bucket!=='nore',
+   doneOf:it=>!it.rs.some(k=>key==='lost'?['noreason','relist','nobid'].includes(k):['wtype','cdate','cinfo'].includes(k)),
    fixLabel:{wtype:'수주 유형 · 낙찰금액 · 낙찰사',cdate:'계약일 · 착공 · 준공',cinfo:'계약 정보',noreason:'사유',nobid:'경쟁사 · 낙찰가',relist:'재영업 가능 여부',contact:'재접촉 할 일'},
    headNote:key==='won'?items=>'낙찰금액 입력 '+items.filter(x=>x.row.amount!=null&&Number(x.row.amount)>0).length+'건 기준':null,
    tabs:K.S.map(s=>[s[1],s[3]]),reasons:Object.keys(RS).map(k=>[k,RS[k][0]]),act:K.S.map(()=>['열기','']),todo:'',
    tab:it=>{const i=K.S.findIndex(s=>s[0]===it.bucket);return i<0?0:i;},
    has:Object.fromEntries(Object.keys(RS).map(k=>[k,it=>it.rs.includes(k)])),sub:it=>it.sub,
-   redOf:it=>!!it.red,redReason:red,
+   redOf:it=>it.rs.some(k=>key==='lost'?['noreason','relist','nobid'].includes(k):['wtype','cdate','cinfo'].includes(k)),redReason:red,
    btnOf:x=>{const rs=rsOf(x);return rs?[rs[2],rs[4]]:['열기',''];},
    nowOf:x=>{const d=x.row.item,v=x.it.values||{};return key==='won'?['수주',ymdDot(v.completionDate||v.contractDate||d.closed_at)||'날짜 미기록',x.row.amount!=null&&Number(x.row.amount)>0?money(x.row.amount):''].filter(Boolean).join(' · '):['실주',ymdDot(v.lossDate)||'실주일 미기록',lostCat(d)].filter(Boolean).join(' · ');},
    rowOpts:x=>{const rs=rsOf(x);return {base:rs?rs[0]:'기록 완료'+(/경쟁사 해당 없음/.test(x.sub||'')?' · 경쟁사 해당 없음':''),/* stage7_2 ⑥⑦ 사업 취소 · 중단 · 연기 · 예산 = 경쟁사 · 낙찰가 해당 없음(미기록으로 세지 않음) */dueText:x.red?'확인 필요 · 기한 아님':'기한 없음 · 끝 상태',dueClass:x.red?'amb':'g'};},
@@ -123,7 +123,7 @@
   const infoMiss=it=>!it.values.contractDate||!it.values.contractAmount,proofMiss=it=>!infoMiss(it)&&it.values.contractProof==='check';
   const STALE=/계약\s*체결\s*확인|계약\s*확인/;
   return {name:'계약 · 시공',goal:goalOf(key,14),desc:'계약 체결 → 착공 준비 → 시공 중(착공일 입력 후 주 1회 현장 방문) → 준공 확인 · 계약일만으로 시공 중으로 보지 않음',
-   tabs:[['계약 체결','계약일 · 금액 · 계약서'],['착공 준비','착공일 미입력 · 착공일 확인'],['시공 중','착공일 입력 후 · 주 1회 방문'],['준공 확인','준공검사 · 고객 확인']],
+   tabs:[['계약 확인','계약일 · 금액 · 계약서'],['착공 준비','착공일 미입력 · 착공일 확인'],['시공 중','착공일 입력 후 · 주 1회 방문'],['준공 확인','준공검사 · 고객 확인']],
    reasons:[['cinfo','계약일 · 금액 없음'],['nostart','착공일 미입력'],['handoff','인계서 미확인'],['site7','시공 중 주 1회 방문 없음'],['nofin','준공 확인 없음']],
    act:[['정보 입력','stagefields'],['착공일 입력','stagefields'],['현장 확인','activity'],['준공 확인','stage']],
    todo:'계약정보가 빠진 건은 오늘 입력하세요. 실적 · 인센티브 계산에 바로 쓰입니다. 착공일이 입력돼야 시공 중이 되며, 착공한 현장은 주 1회 현장 방문을 기록하세요.',

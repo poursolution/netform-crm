@@ -350,7 +350,7 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
   owners.sort((a,b)=>(a==='미배정')-(b==='미배정')||tot(b)-tot(a));
   const colT=c=>owners.reduce((s,o)=>s+n(o,c),0);
   const pick=(p,c)=>{let out=[];owners.forEach(o=>{if(p&&o!==p)return;COLS.forEach(cc=>{if(c&&cc[0]!==c)return;out=out.concat(cells[o+'|'+cc[0]]||[]);});});if(!c){const seen=new Set();out=out.slice().sort((a,b)=>b.d-a.d).filter(it=>!seen.has(it.key)&&seen.add(it.key));}return out.slice().sort((a,b)=>b.d-a.d);};
-  return {COLS,cells,owners,n,tot,colT,pick};
+  return {COLS,cells,owners,n,tot,colT,pick,unique:o=>pick(o,null).length};
  }
  const WHYC={unasg:'견적문의가 들어왔는데 담당이 없습니다. 배정이 먼저입니다.',first:()=>'배정 후 '+FIRST_H()+'시간 안에 첫 연락을 못 했습니다.',due:'다음 할 일 날짜가 지났는데 기록이 없습니다.',seven:()=>'마지막 연락 후 '+CONTACT_D()+'일이 넘었습니다.',next:'다음 할 일이 비어 있어 아무도 챙기지 않는 건입니다.',stall:'단계가 오래 그대로입니다.'};
  function shade(v,sev){if(!v)return ['#fafbfc','#c9cdd5'];const k=Math.min(1,v/50);if(sev===3)return ['rgba(209,74,63,'+(0.18+k*0.72).toFixed(2)+')',k>0.25||v>=10?'#fff':'#8f1d14'];if(sev===2)return ['rgba(224,164,58,'+(0.2+k*0.6).toFixed(2)+')','#5c3a00'];return ['rgba(17,26,46,'+(0.06+k*0.32).toFixed(2)+')','#15171c'];}
@@ -369,7 +369,7 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
   const top='<div class="db-hero">'+hero.map(k=>'<button type="button" class="db-hk'+(S.selC===k[3]&&!S.selP?' on':'')+'" data-db="cell" data-v="|'+k[3]+'"><span>'+k[0]+'</span><b class="'+(k[1]?'red':'mut')+'">'+k[1]+'</b><small>'+h(k[2])+'</small></button>').join('')+'<div class="db-first"><span>가장 먼저</span><b>'+h(firstLine)+'</b><small>표에서 칸을 누르면 옆(좁은 화면은 아래) 목록에 그 건들이 나옵니다</small></div></div>';
   const TOPC={3:'#d14a3f',2:'#e8a09a',1:'#9aa0ab'};
   const grid='<div class="db-mx" role="table" aria-label="담당자별 문제 건수"><span class="h"></span>'+M.COLS.map(c=>'<button type="button" class="hc'+(S.selC===c[0]&&!S.selP?' on':'')+'" style="border-top-color:'+TOPC[c[2]]+'" data-db="cell" data-v="|'+c[0]+'"><span>'+h(c[1])+'</span><small>'+M.colT(c[0])+'건</small></button>').join('')+'<span class="h r">지시</span>'
-   +M.owners.map(o=>'<button type="button" class="rn'+(S.selP===o&&!S.selC?' on':'')+'" data-db="cell" data-v="'+attr(o)+'|"><b class="'+(o==='미배정'?'red':'')+'">'+h(o)+'</b><small>합계 '+M.tot(o)+'</small></button>'
+   +M.owners.map(o=>'<button type="button" class="rn'+(S.selP===o&&!S.selC?' on':'')+'" data-db="cell" data-v="'+attr(o)+'|"><b class="'+(o==='미배정'?'red':'')+'">'+h(o)+'</b><small>위험 항목 '+M.tot(o)+'</small></button>'
     +M.COLS.map(c=>{const v=M.n(o,c[0]),sh=shade(v,c[2]);return '<button type="button" class="cl" data-db="cell" data-v="'+attr(o)+'|'+c[0]+'" aria-label="'+attr(o+' '+c[1]+' '+v+'건')+'"><span style="background:'+sh[0]+';color:'+sh[1]+(S.selP===o&&S.selC===c[0]?';outline:2px solid #15171c':'')+'">'+(v||'·')+'</span></button>';}).join('')
     +'<span class="as">'+(can?'<button type="button" data-db="assign-row" data-v="'+attr(o)+'">지정</button>':'')+'</span>').join('')+'</div>';
   const risks=[['견적 발송 · 영업 미전환',C.rows.inquiries.filter(x=>{try{return !!R.isAwaitingPromotion(x.item);}catch(e){return false;}}).length],[B.closedWord()+' 사유 미입력',C.bad.filter(x=>B.badfitReason(x)==='사유 미기록').length],['실주 사유 미입력',C.loss.filter(d=>B.lossReason(d)==='사유 미기록').length]].filter(x=>x[1]>0);
@@ -441,12 +441,12 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
    const n=near.get(String(it.id));if(n&&n.hot)add(W.near,n.due.replace(/\s*\d+\/\d+$/,'')+' D-'+n.dd,'near');
    if(sentKeyOf(it,K))add(W.quote,'견적 발송','quote');
    const dec=hasDecider(it);if(dec)add(W.decider,'결정권자 접촉','decider');
-   let m=null;try{m=R.relationshipMeta(it);}catch(e){}const sil=m&&m.days!=null?Number(m.days):null;if(sil!==null&&sil>W.silentDays)add(W.silent,sil+'일 무응답','silent');
+   let m=null;try{m=R.relationshipMeta(it);}catch(e){}const sil=m&&m.days!=null?Number(m.days):null;if(sil!==null&&sil>W.silentDays)add(W.silent,sil+'일 연락 기록 간격','silent');
    if(String(fldAny(it,'competitor')||'').trim())add(W.competitor,'경쟁사 있음','competitor');
    if(chgOf(it).some(e=>e.type==='관리소장 변경'))add(W.manager,'소장 변경','manager');
    if(n&&!n.k&&R.dealStage(it)==='contract')add(W.noinfo,'계약정보 없음','noinfo');
    const g=k=>f.find(v=>v.k===k),up=g('near')||g('timing')||g('amount')||g('quote'),dn=g('silent')||g('noinfo')||g('manager')||g('competitor');
-   const one=up&&dn?up.l+(up.k==='near'?'인데 ':' · ')+(dn.k==='silent'?sil+'일째 고객 반응 없음':dn.l):f.filter(v=>v.p>0).slice(0,2).map(v=>v.l).join(' · ');
+   const one=up&&dn?up.l+(up.k==='near'?'인데 ':' · ')+(dn.k==='silent'?sil+'일째 최근 연락 기록 없음':dn.l):f.filter(v=>v.p>0).slice(0,2).map(v=>v.l).join(' · ');
    const act=dn&&dn.k==='silent'?'후속 연락':dn&&dn.k==='noinfo'?'정보 입력':dn&&dn.k==='manager'?'재확인 통화':!dec?'회장 접촉':up&&up.k==='near'?'준비 확인':'열기';
    return {d,s,f,amt,one,act};}).filter(x=>x.s>=W.cut).sort((a,b)=>b.s-a.s||b.amt-a.amt);
  }
@@ -517,7 +517,7 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
  }
  /* 유입 브랜드 → 낙찰 시공사 → 수주실적 · 매출: 수주실적 = 낙찰금액, 매출 = 회사에 실제 들어오는 금액(직접 계약 · 기술자문 · POUR 계약). 타사 이관은 매출 없음 */
  function matrixRows(C){
-  const {P,L}=C,m=new Map(),add=(brand,company,type,n,amt,rev,unknown)=>{const k=brand+'\u0001'+company+'\u0001'+type,v=m.get(k)||{brand,company,type,n:0,amt:0,rev:0,unknown:0};v.n+=n;v.amt+=amt;v.rev+=rev;v.unknown+=unknown||0;m.set(k,v);};
+  const {P,L}=C,m=new Map(),add=(brand,company,type,n,amt,rev,unknown)=>{const k=brand+'\u0001'+company+'\u0001'+type,v=m.get(k)||{brand,company,type,n:0,amt:0,rev:0,unknown:0};v.n+=n;v.amt+=amt;v.rev+=rev;v.unknown+=unknown||0;if(!unknown&&type!=='타사 이관'){v.ratioAmount=(v.ratioAmount||0)+amt;v.ratioRevenue=(v.ratioRevenue||0)+rev;}m.set(k,v);};
   (L.rows||[]).forEach(r=>{if(r.advisory_id||C.DW?.isPartnerDeal?.(r.deal_id))return;const brand=String(r.brand||'').trim()||'브랜드 미기록';let w=null;try{w=C.DW&&C.DW.of({id:r.deal_id});}catch(e){}const company=w&&w.win_status==='confirmed'&&w.won_type==='own'&&w.award_company?String(w.award_company):brand;(r.events||[]).forEach(e=>{const k=e.effective_date;if(!(k>=P.a&&k<P.b))return;add(brand,company,'직접 수주',e.kind==='signed'?1:0,Number(e.amount_delta)||0,Number(e.amount_delta)||0);});});
   C.pt.list.forEach(x=>add(x.brand,x.company,'협약 · 기술자문',x.signedCount,x.amount,x.revenue,x.revKnown?0:1));
   C.tf.list.forEach(x=>add(String(x.brand||'').trim()||'브랜드 미기록',String(x.t&&(x.t.award_company||x.t.transfer_company)||'').trim()||'업체 미기록','타사 이관',1,x.amount,0));

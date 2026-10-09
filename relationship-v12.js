@@ -153,5 +153,6 @@
   if(a==='save')return save();
  },true);
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&st().dlg){close();}},true);
- root.RelV12={on,rules,tabs,WORKS,KEYS,LABEL,CYC,state,tabIndex,leftHtml,reviewLabel,REVIEW,openClassify,markOf,sentOf,week};
+ function of(d){let next=null,contactDays=null;try{next=root.actionObj(d,root.itemPatch(d,'deal'));}catch(e){}try{const at=dayKey(root.ContactState.of(d,'deal').lastConnectedAt);if(at&&at<=today())contactDays=diff(at,today());}catch(e){}return state({item:d,next,due:next&&(next.due||next.due_at)||'',contactDays});}
+ root.RelV12={of,on,rules,tabs,WORKS,KEYS,LABEL,CYC,state,tabIndex,leftHtml,reviewLabel,REVIEW,openClassify,markOf,sentOf,week};
 })(window);

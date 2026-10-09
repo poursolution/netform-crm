@@ -17,23 +17,25 @@
   const dashboard=root.DashboardData&&root.DashboardData.active(),admin=root.todayIsAdmin(),me=root.repN(root.ME?.name),base=dashboard?root.DashboardData.source():(root.B||{});if(dashboard)everyone=true;
   const deals=(base.deals||[]).filter(d=>everyone||admin||root.repN(d.assignee)===me).map(d=>{
    const next=root.briefNext(d),meta=root.relationshipMeta(d),old=root.issueSet(d),issues=[];
+   const rel=['rapport','silent','waiting'].includes(root.dealStage(d)),relationship=rel&&root.RelV12?.of?root.RelV12.of(d):null;
+   const relUnknown=rel&&(!relationship||relationship.key==='unk'),stageText=rel?'관계관리 · '+(relationship?relationship.label:'미확인'):root.stageLabel(root.dealStage(d));
    const due=next?.due&&Number.isFinite(Date.parse(next.due))?root.daysTo(next.due):null;
    if(due!==null&&due<0)issues.push('overdue');
    if(due!==null&&due<0&&(/약속/.test(String(next?.type||''))||/^\s*고객\s*약속/.test(String(next?.text||''))))issues.unshift('promise');/* 상세 '약속했어요' 칩=종류 '고객 약속', 결과 창 칩=문구 '고객 약속:' — 둘 다 *//* 고객 약속 미이행 — 관리자 예외 최우선 */
    if(!next?.text||due===null)issues.push('missing');
    /* 2026-10-07 exec_wording: 담당이 없는 진행 건도 조치 필요 — 빠진 사유까지 표시해야 합계가 맞는다 */
    if(!String(root.repN(d.assignee)||'').trim()||root.repN(d.assignee)==='미배정')issues.push('unassigned');
-   if(meta.days!==null&&meta.days>=(root.OPS_RULES?.contactWarnDays??7))issues.push('contact');
+   if(!relUnknown&&meta.days!==null&&meta.days>=(relationship?relationship.cycle||Infinity:root.OPS_RULES?.contactWarnDays??7))issues.push('contact');
    if(meta.days===null)issues.push('unknown');
-   if(old.includes('stale'))issues.push('stale');
+   if(!relUnknown&&old.includes('stale'))issues.push('stale');
    if(!(root.oppAmt(d)>0)&&!root.amountUnknownReason(d))issues.push('amount');
    /* 흐름 멈춤(2026-09-25 컨설턴트 '행동의 연속성'): 단계는 그대로인데 고객 접촉과 다음 할 일이 끊긴 영업.
       같은 '자료 발송완료'라도 꾸준히 움직인 건과 발송 후 아무 기록 없는 건을 구분한다. 기준 일수 = OPS_RULES.stallDays */
    const stallN=Number(root.OPS_RULES?.stallDays??7),age=root.stageAge?root.stageAge(d):null;
-   const stall=age!==null&&age>=stallN&&(meta.days===null||meta.days>=stallN)&&(issues.includes('missing')||issues.includes('overdue'));
+   const stall=!relUnknown&&age!==null&&age>=stallN&&(meta.days===null||meta.days>=stallN)&&(issues.includes('missing')||issues.includes('overdue'));
    if(stall)issues.push('stall');
-   const stallText=stall?root.stageLabel(root.dealStage(d))+' '+age+'일째 · '+(meta.days===null?'CRM 연락 기록 없음':'마지막 연락 '+meta.days+'일 전')+' · '+(issues.includes('missing')?'다음 할 일 없음':'기한 '+Math.abs(due)+'일 지남'):'';
-   return {key:'deal:'+root.dealKey(d),type:'deal',item:d,site:d.site||'현장명 미입력',owner:root.repN(d.assignee),brand:d.brand||'',created:d.created,active:root.towerActive(d)&&root.outcomeOf(d)==='open',won:root.isWon(d),wonAt:root.wonDate(d),wonAmount:root.hasWonAmt(d)?root.wonAmt(d):0,hasWonAmount:root.hasWonAmt(d),expected:root.oppAmt(d),stage:root.dealStage(d),stageLabel:root.stageLabel(root.dealStage(d)),issues,stallText,reason:stall?(issues.includes('promise')?'고객 약속 미이행 · ':'')+'진행 멈춤 — '+stallText:issues.map(k=>k==='overdue'?'기한 '+Math.abs(due)+'일 지남':k==='contact'?'마지막 연락 '+meta.days+'일 전':labels[k]).join(' · '),lastContact:meta.meaningfulAt||''};
+   const stallText=stall?stageText+' '+age+'일째 · '+(meta.days===null?'CRM 연락 기록 없음':'마지막 연락 '+meta.days+'일 전')+' · '+(issues.includes('missing')?'다음 할 일 없음':'기한 '+Math.abs(due)+'일 지남'):'';
+   return {key:'deal:'+root.dealKey(d),type:'deal',item:d,site:d.site||'현장명 미입력',owner:root.repN(d.assignee),brand:d.brand||'',created:d.created,active:root.towerActive(d)&&root.outcomeOf(d)==='open',won:root.isWon(d),wonAt:root.wonDate(d),wonAmount:root.hasWonAmt(d)?root.wonAmt(d):0,hasWonAmount:root.hasWonAmt(d),expected:root.oppAmt(d),stage:root.dealStage(d),stageLabel:stageText,relationship,issues,stallText,reason:relUnknown?'관계 상태 미확인 · 과거 기록·고객 반응 확인'+(issues.includes('missing')?' · 다음 행동 미등록':''):stall?(issues.includes('promise')?'고객 약속 미이행 · ':'')+'진행 멈춤 — '+stallText:issues.map(k=>k==='overdue'?'기한 '+Math.abs(due)+'일 지남':k==='contact'?'마지막 연락 '+meta.days+'일 전':labels[k]).join(' · '),lastContact:meta.meaningfulAt||''};
   });
   const inquiries=root.operationalInquiries(base.inquiries||[]).filter(q=>everyone||admin||root.inquiryRoutedOwner(q)===me||root.inquiryConsultant(q)===me).map(q=>({key:'inq:'+String(q.id||root.inqKey(q)),type:'inq',item:q,site:q.site||'현장명 미입력',owner:root.inquiryRoutedOwner(q)||'미배정',brand:q.brand||'',created:root.inquiryDate(q),stage:'inquiry',stageLabel:q.status||'견적문의',issues:[],reason:root.inquiryRoutedOwner(q)?'문의 내용과 후속처리 확인':'담당자 배정 필요'}));
   /* 담당 범위를 좁히지 않았을 때는 직원 명단에 있는 사람(영업 담당이 아닌 대표 등)의 영업건도 본다 — 파이프라인 · 오늘 업무와 같은 진행 건수가 되게(PipelineScope · 2026-10-05 정합성 ②) */

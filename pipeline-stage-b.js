@@ -120,30 +120,31 @@
   /* 수주 = 실적 · 완료 정보(2026-10-06 design_handoff_followup4 ②): 수주 유형 · 낙찰금액 · 낙찰사 / 계약일 · 착공 · 준공 확인 / 빠진 계약 정보. 준공 후 연락 · 추가 공사 업무는 여기서 만들지 않는다 → 확장관리 */
   won:{name:'수주',desc:()=>'끝 상태 · 계약이 끝난 건의 결과를 정확히 남기는 곳 · 수주 유형 · 낙찰금액(VAT 별도) · 낙찰사 → 계약일 · 착공 · 준공 확인 → 빠진 계약 정보 입력. 준공 후 연락 · 추가 공사는 확장관리에서',axis:'실적 · 완료 정보',
    S:[['result','수주 정보 미기록','#15171c','수주 유형 · 낙찰금액 · 낙찰사 기록'],['dates','계약일 · 착공 · 준공 확인','#8a909c','세 날짜 확인 · 기록'],['done','실적 · 완료 정보 완료','#d5d9e0','사후 연락은 확장관리에서']],
-   RS:{wtype:['수주 유형 · 낙찰금액 · 낙찰사 미기록',RED,'수주 정보','수주 유형 · 낙찰금액 · 낙찰사 기록','win'],cdate:['계약일 · 착공 · 준공 확인 안 됨',INK,'일정 확인','계약일 · 착공일 · 준공일 확인','stagefields'],cinfo:['빠진 계약 정보 입력',INK,'정보 입력','빠진 계약 정보 입력','stagefields']},
-   calc(r,v,q){let w=null;try{w=root.DealWin&&root.DealWin.resultOf?root.DealWin.resultOf(r.item):null;}catch(e){}const typed=!!(w&&w.type&&w.type!=='none'&&(w.amount||w.company)),dOk=!!(v.contractDate&&v.startDate&&v.completionDate),info=!!v.contractAmount;
+   RS:{wtype:['수주 결과 항목 보완 필요',RED,'수주 정보','수주 유형 · 낙찰금액 · 낙찰사 기록','win'],cdate:['계약일 · 착공 · 준공 확인 안 됨',INK,'일정 확인','계약일 · 착공일 · 준공일 확인','stagefields'],cinfo:['빠진 계약 정보 입력',INK,'정보 입력','빠진 계약 정보 입력','stagefields']},
+   calc(r,v,q){let w=null;try{w=root.DealWin&&root.DealWin.resultOf?root.DealWin.resultOf(r.item):null;}catch(e){}const missing={type:!(w&&w.type&&w.type!=='none'),amount:!(Number(w&&w.amount||r.amount)>0),company:!String(w&&w.company||'').trim()},typed=!Object.values(missing).some(Boolean),dOk=!!(v.contractDate&&v.startDate&&v.completionDate),info=!!v.contractAmount;
     const bucket=!typed?'result':!dOk?'dates':'done';
-    const sub=(typed?String(w.text||'수주 기록')+(w.amount?' · '+money(w.amount):''):'수주 유형 미기록')+' · '+(v.completionDate?'준공 '+ymd(v.completionDate):v.contractDate?'계약 '+ymd(v.contractDate):'계약일 미기록');
+    const sub=(typed?String(w.text||'수주 기록')+(w.amount?' · '+money(w.amount):''):'수주 유형 미기록')+' · '+(v.completionDate?'준공 '+String(v.completionDate).slice(0,10):v.contractDate?'계약 '+String(v.contractDate).slice(0,10):'계약일 미기록');
     const rs=[];if(!typed)rs.push('wtype');if(!dOk)rs.push('cdate');if(!info)rs.push('cinfo');
-    return {bucket,sub,rs};}},
+    return {bucket,sub,rs,missing};}},
   /* stage7 ⑦(2026-10-07) + stage7_2 ⑥⑦: 끝 상태. '차기 연도 → 대기 2개월 연락(전체)' 안내 삭제 · 재영업 가능 '예'인 건만 재접촉 할 일 · 실주 처리하면 기존 영업 업무는 서버가 닫는다 · 다시 열어도 실주 기록은 보존.
      '기록 완료' = 실주 사유 + 재영업 가능 여부(예 · 아니오) 둘 다. 경쟁사 · 낙찰가는 '경쟁사 낙찰'일 때만 필수 — 사업 취소 · 중단 · 연기 · 예산 같은 사유는 '해당 없음'(미기록으로 세지 않음) */
   lost:{name:'실주',desc:()=>'끝 상태 · 실주일 · 원인 · 고객 반응 · 재영업 가능 여부를 남기는 곳 · 재영업 가능 "예"인 건만 재접촉 할 일(이전 실주 결과는 그대로 보존)',axis:'실주 기록',
    S:[['nore','기록 보완 필요','#15171c','사유 · 재영업 여부 기록'],['rec','기록 완료','#d5d9e0','사유 + 재영업 여부 입력됨'],['re','재영업 가능 · 예','#8a909c','재접촉 할 일 하나']],
    RS:{noreason:['실주 사유 미입력',RED,'사유 기록','원인 · 고객 반응 기록','stage'],nobid:['경쟁사 낙찰 · 경쟁사 · 낙찰가 미입력',INK,'결과 기록','경쟁사 · 낙찰가 기록(경쟁사 낙찰일 때만)','stagefields'],relist:['재영업 가능 여부 미입력',INK,'여부 입력','재영업 가능 여부 입력','stagefields'],contact:['재접촉 할 일 없음',INK,'재접촉 등록','재접촉 할 일 하나 등록','next']},
    calc(r,v,q){const reason=v.lossReason&&v.lossReason!=='미기록'?v.lossReason:'',lf=((r.item.stage_contexts||{}).lost||{}).fields||{},eng=String(lf.reengage||(r.fields||{}).reengage||'').trim(),legacy=!eng&&!!v.recontact,
-    recorded=eng==='예'||eng==='아니오'||legacy,re=eng?eng==='예':legacy&&!/불가|없|낮/.test(String(v.recontact)),
-    compWin=/타사 선정|경쟁 패배|경쟁사 낙찰|타사 낙찰|경쟁업체/.test(reason),na=!!reason&&!compWin&&/취소|중단|연기|예산|사업/.test(reason),done=!!reason&&recorded;
+    recorded=eng==='예'||eng==='아니오',re=eng==='예',
+    compWin=/타사 선정|경쟁 패배|경쟁사 낙찰|타사 낙찰|경쟁업체/.test(reason),na=!!reason&&!compWin&&/취소|중단|연기|예산|사업/.test(reason),done=!!reason&&recorded&&(!compWin||!!v.competitor);
     const bucket=!done?'nore':re?'re':'rec';
-    const sub=(v.lossDate?ymd(v.lossDate)+' 실주':'실주일 미기록')+(reason?' · '+reason:'')+(eng?' · 재영업 '+eng:legacy?' · 재접촉 '+v.recontact:' · 재영업 가능 미정')+(na?' · 경쟁사 해당 없음':'');
+    const sub=(v.lossDate?String(v.lossDate).slice(0,10)+' 실주':'실주일 미기록')+(reason?' · '+reason:'')+(eng?' · 재영업 '+eng:legacy?' · 재접촉 '+v.recontact:' · 재영업 가능 미정')+(na?' · 경쟁사 해당 없음':'');
     const rs=[];if(!reason)rs.push('noreason');if(compWin&&!v.competitor)rs.push('nobid');if(!recorded)rs.push('relist');if(re&&!(r.next&&r.next.text))rs.push('contact');
     return {bucket,sub,rs,na};}} };
  function model(key,list){
   const C=CFG[key],q=rules(),built=root.PipelineListV2.build(key,list);
   const segOn=key==='relationship'&&!!SEG(),isRed=k=>segOn&&C.OVER?C.OVER.includes(k):!!(C.RS[k]&&C.RS[k][1]===RED),order=Object.keys(C.RS);
-  const items=built.map(x=>{const r=x.row,v=x.values||{};let c;try{c=C.calc(r,v,q);}catch(e){c={bucket:C.S[0][0],sub:'',rs:[]};}const first=c.rs.find(isRed)||c.rs[0]||'';return {row:r,values:v,bucket:c.bucket,sub:c.sub,rs:c.rs,seg:c.seg||null,first,red:c.rs.some(isRed),pri:(()=>{const i=order.findIndex(k=>c.rs.includes(k)&&isRed(k));return i<0?99:i;})(),stall:Number(r.stall)||0};});
+  const items=built.map(x=>{const r=x.row,v=x.values||{};let c;try{c=C.calc(r,v,q);}catch(e){c={bucket:C.S[0][0],sub:'',rs:[]};}const first=c.rs.find(isRed)||c.rs[0]||'';return {row:r,values:v,bucket:c.bucket,sub:c.sub,rs:c.rs,seg:c.seg||null,first,missing:c.missing||null,red:c.rs.some(isRed),pri:(()=>{const i=order.findIndex(k=>c.rs.includes(k)&&isRed(k));return i<0?99:i;})(),stall:Number(r.stall)||0};});
   items.sort((a,b)=>a.pri-b.pri||b.rs.length-a.rs.length||b.stall-a.stall||String(a.row.key).localeCompare(String(b.row.key)));
-  return {C,items,isRed,seg:segOn,q:segOn?segRules():q};
+  const missingCounts=key==='won'?Object.fromEntries(['type','amount','company'].map(k=>[k,items.filter(i=>i.missing&&i.missing[k]).length])):key==='lost'?Object.fromEntries(['noreason','relist','nobid'].map(k=>[k,items.filter(i=>i.rs.includes(k)).length])):null;
+  return {C,items,isRed,missingCounts,seg:segOn,q:segOn?segRules():q};
  }
  function rowHtml(C,it,reason){
   const r=it.row,k=reason||it.first,rs=k?C.RS[k]:null,bc=BRAND[r.item.brand]||'#9ca3af',S=C.S.find(s=>s[0]===it.bucket)||C.S[0],a=root.PipelineRowV11.primaryAction(r,rs?[rs[2],rs[4]]:['열기',''],['won','lost'].includes(r.group));

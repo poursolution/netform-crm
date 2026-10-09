@@ -72,7 +72,7 @@
   const cr=open.filter(it=>it.stage==='consulting'||it.stage==='relationship'),stale=cr.filter(it=>it.rs.includes('long')||it.rs.includes('shift')||(it.stall||0)>=30);
   M.push({v:pct(stale.length,cr.length),num:stale.length,den:cr.length,todos:stale.slice().sort((a,b)=>(Number(b.row.amount)||0)-(Number(a.row.amount)||0)).map(it=>{const r=it.row,amt=money(r.amount),kc=root.DealKeyman?root.DealKeyman.changeOf(r.item):null;return T('deal',r.key,r.site,r.owner||'미배정',[amt,(it.stall||0)+'일 정체',kc?'소장 변경':'',it.row.contactDays!=null?it.row.contactDays+'일 무응답':''].filter(Boolean).join(' · '),'상황 확인',r.owner);})});
   /* 6 방문 후 3일 견적 — 컨설팅 B안 '미팅 완료 · 견적 준비' 칸, 'nodue' 사유 */
-  const met=open.filter(it=>it.stage==='consulting'&&it.bucket==='done'),late=met.filter(it=>it.rs.includes('nodue'));
+  const meeting=it=>root.PipelineJudge&&root.PipelineJudge.meetingOf(it.row.item),met=open.filter(it=>it.stage==='consulting'&&meeting(it)),late=met.filter(it=>{const f=((it.row.item.stage_contexts||{}).consulting||{}).fields||{};return !f.quote_request&&root.daysTo(meeting(it))<-3;});
   M.push({v:pct(met.length-late.length,met.length),num:met.length-late.length,den:met.length,todos:late.map(it=>{const r=it.row;return T('deal',r.key,r.site,r.owner||'미배정',(r.due?'미팅 '+md(r.due)+' · ':'')+'견적 요청 없음 · '+(it.stall||0)+'일','견적 요청 확인',r.owner);})});
   /* 7 실주 사유 — B안 실주 'noreason' · 'nobid' */
   const lost=items.filter(it=>it.stage==='lost'),noR=lost.filter(it=>it.bucket==='nore');/* 2026-10-07 kpi_measure: 실주 화면 · 측정 기준 a3 와 같은 완료 판정 — 사유 + 재영업 가능 여부(경쟁사 낙찰일 때만 경쟁사 · 낙찰가) */
