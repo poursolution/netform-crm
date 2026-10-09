@@ -1,5 +1,12 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const M=require('../inquiry-memo.js'),BG=require('../boot-guard.js');
+test('독립된 일시 머리줄 아래 통화와 약속에 기록 날짜를 연결한다',()=>{
+ const text='2026/01/16 PM 05:02\n1차 통화완료\n유상 진단보고서 상담\n다음주 월요일 현장 미팅 후 아파트스퀘어 연계 진행 예정';
+ const r=M.parse(text,'');assert.equal(r.calls[0].date,'2026-01-16');assert.equal(r.promises[0].date,'2026-01-16');assert.equal(r.promises[0].when,'');
+ assert.equal(M.memoCallDay({raw:{응대내용:text}}),'2026-01-16');
+ const r2=M.parse(text+'\n2026/02/03 AM 10:00\n2차 통화완료','');assert.deepEqual(r2.calls.map(c=>c.date),['2026-01-16','2026-02-03']);
+ assert.equal(M.parse('2026/01/16 방문 예정\n1차 통화완료','').calls[0].date,'','일반 문장의 날짜를 다음 통화의 날짜로 추정하지 않음');
+});
 test('문의 원문의 일시·붙여 쓴 통화 완료와 현장 미팅은 확인 후보로만 읽는다',()=>{
  const text='유상 하자 진단보고서 요청. 2026/01/16 PM 05:02 1차통화완료. 다음주 월요일 현장 미팅 후 아파트스퀘어 연계 예정';
  for(const q of [{raw:{문의내용:text}},{message:text},{detail:{inquiry:text}},{content:text},{detail:text}]){
