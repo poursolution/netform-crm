@@ -41,6 +41,14 @@
   const contact=lastAgo!==null?lastAgo:(r.contactDays==null?null:r.contactDays);
   return {sent,focusFrom,timing,contactDays:contact,ageDays:ago(d.created||d.created_at),due:r.due,hasNext:!!(r.next&&r.next.text),meet,mgr};
  }
+ /* 발송 근거: 유효한 과거/오늘 발송일만 판정. 내부 메모·다음 업무는 후속 연락 근거가 아니다. */
+ function sentEvidence(r,v){
+  const at=(r.fields||{}).sent_date||'',age=since(at),eligible=age!==null&&age>=0;
+  let connectedAge=null;try{connectedAge=since(root.ContactState.of(r.item,'deal').lastConnectedAt);}catch(e){}
+  const reaction=!!String((v||{}).reaction||'').trim();
+  const followed=eligible&&(reaction||(connectedAge!==null&&connectedAge>=0&&connectedAge<age));
+  return {at,age,eligible,reaction,followed};
+ }
  const st=()=>root.G.psb||(root.G.psb={view:'list',bucket:'all',reason:null,page:1});
  const enabled=key=>!root.G.pipeStageBOff&&KEYS.includes(key||root.G.pipelineStage)&&!!root.PipelineListV2;
  const days=v=>{if(!v)return null;const n=root.daysTo(String(v).slice(0,10));return Number.isFinite(n)?n:null;};
@@ -67,13 +75,13 @@
     const rs=[];if(bucket==='none')rs.push('nodate');if(bucket==='done'&&((quoteDue&&days(quoteDue)<0)||(!quoteDue&&(r.stall||0)>q.quote)))rs.push('nodue');if(!v.needs||!fc.work_scope||!fc.expected_timing)rs.push('req');if(!r.next||!r.next.text||!r.due)rs.push('nonext');if((r.stall||0)>q.stay)rs.push('long');
     return {bucket,sub,rs};}},
   sent:{name:'자료 발송완료',desc:()=>'견적 · 자료를 보낸 단계 · 견적 발송은 완료가 아니라 후속관리 시작 — 발송일 기준 D+'+rules().follow+' 후속 연락',axis:'발송 후 후속 연락',
-   S:[['wait','D+7 전 · 후속 대기','#d5d9e0','7일 안에 반응 확인'],['late','7일 넘김 · 후속 없음','#15171c','오늘 후속 통화'],['done','후속 완료 · 반응 기록','#8a909c','결과 기록 + 다음 행동일']],
-   RS:{nofollow:['발송 후 7일 · 후속 없음',RED,'후속 통화','발송 7일 넘은 건은 오늘 후속 통화 → 결과 기록','activity'],meet:['대표회의 D-3 · 자료 회신',RED,'자료 제출','대표회의 전 비교 자료 · 개략 금액 먼저 발송','activity'],noreact:['반응 미기록',INK,'결과 기록','연락 결과(연결됨 · 검토중 · 자료요청 · 견적요청 · 보류 · 거절)를 기록','activity'],comp:['경쟁사 비교 중',INK,'조건 확인','경쟁사 · 가격 · 조건 변화 확인 → 비교표 · 사례로 설명','activity'],nonext:['다음 행동 · 날짜 없음',INK,'다음 행동','후속 통화 후 다음 행동일 지정','next']},
-   calc(r,v,q){const f=r.fields||{},sentAt=f.sent_date||'',sd=since(sentAt),stay=sd!==null?sd:(r.stall||0),ld=lastDays(r),reacted=!!v.reaction||(ld!==null&&sd!==null&&ld<sd),meet=days(r.date);
+   S:[['wait','발송 근거 · 후속 확인','#d5d9e0','발송 여부 확인 후 7일 안 연락'],['late','7일 넘김 · 후속 없음','#15171c','오늘 후속 통화'],['done','후속 완료 · 반응 기록','#8a909c','결과 기록 + 다음 행동일']],
+   RS:{nosent:['발송일 확인 필요',INK,'증빙 확인','담당 지정 → 기존 발송 증빙 확인 → 확인된 발송 정보 보완 → 후속 연락 설정','stagefields'],nofollow:['발송 후 7일 · 후속 없음',RED,'후속 통화','발송 7일 넘은 건은 오늘 후속 통화 → 결과 기록','activity'],meet:['대표회의 D-3 · 자료 회신',RED,'자료 제출','대표회의 전 비교 자료 · 개략 금액 먼저 발송','activity'],noreact:['반응 미기록',INK,'결과 기록','연락 결과(연결됨 · 검토중 · 자료요청 · 견적요청 · 보류 · 거절)를 기록','activity'],comp:['경쟁사 비교 중',INK,'조건 확인','경쟁사 · 가격 · 조건 변화 확인 → 비교표 · 사례로 설명','activity'],nonext:['다음 행동 · 날짜 없음',INK,'다음 행동','후속 통화 후 다음 행동일 지정','next']},
+   calc(r,v,q){const e=sentEvidence(r,v),sentAt=e.at,meet=days(r.date);
     /* stage7 ②: 발송일 있는 건만 7일 판정 — 없으면 'nodate'(발송일 확인 필요 · 7일 계산 안 함) */
-    const bucket=reacted?'done':!sentAt?'nodate':stay>q.follow?'late':'wait';
-    const sub=(sentAt?ymd(sentAt)+' 발송':'자료 · 수신자 없음')+(v.reaction?' · '+v.reaction:'')+(meet!==null&&meet>=0?' · 결정 '+ymd(r.date):'');
-    const rs=[];if(bucket==='late')rs.push('nofollow');if(meet!==null&&meet>=0&&meet<=q.d3)rs.push('meet');if(!v.reaction)rs.push('noreact');if(/가격|경쟁/.test(String(v.reaction||''))||v.competitor)rs.push('comp');if(!r.next||!r.next.text||!r.due)rs.push('nonext');
+    const bucket=!e.eligible?'nodate':e.followed?'done':e.age>q.follow?'late':'wait';
+    const sub=(e.eligible?ymd(sentAt)+' 발송':'발송 여부 · 기존 증빙 확인')+(v.reaction?' · '+v.reaction:'')+(meet!==null&&meet>=0?' · 결정 '+ymd(r.date):'');
+    const rs=[];if(bucket==='nodate')rs.push('nosent');if(bucket==='late')rs.push('nofollow');if(meet!==null&&meet>=0&&meet<=q.d3)rs.push('meet');if(!v.reaction)rs.push('noreact');if(/가격|경쟁/.test(String(v.reaction||''))||v.competitor)rs.push('comp');if(!r.next||!r.next.text||!r.due)rs.push('nonext');
     return {bucket,sub,rs};}},
   relationship:{name:'관계관리',desc:()=>'견적 후 관리 구분 · 집중관리(초기 1개월, '+rules().focus+'일 단위) → 일반관리(월 1회) → '+(SEG()?'대기관리('+Math.round(rules().wait/30)+'개월 1회) · 견적 발송일 · 공사 예정 시기로 매일 자동 분류':'대기('+Math.round(rules().wait/30)+'개월 1회)'),axis:'관리 구분',
    /* 기준 넘김 = 집중 7일+ · 일반 30일+ · 대기 연락일 지남(색과 따로 정한다 — 대기 줄은 회색 막대지만 기준 넘김에 든다) */
@@ -132,8 +140,8 @@
   return {C,items,isRed,seg:segOn,q:segOn?segRules():q};
  }
  function rowHtml(C,it,reason){
-  const r=it.row,k=reason||it.first,rs=k?C.RS[k]:null,bc=BRAND[r.item.brand]||'#9ca3af',S=C.S.find(s=>s[0]===it.bucket)||C.S[0];
-  return '<div class="psb-row" role="row" tabindex="0" data-psb="open" data-key="'+attr(r.key)+'" style="border-left-color:'+bc+'"><div class="l"><b title="'+attr(r.site)+'">'+h(r.site)+(root.advisoryBadge?root.advisoryBadge(r.item):'')+'</b><span><em style="color:'+bc+'">'+h(r.item.brand||'브랜드 미지정')+'</em> · '+h(r.owner||'미배정')+' · '+h(money(r.amount))+'</span></div><div class="r"><div class="s"><b style="color:'+(S[2]==='#15171c'?'#15171c':'#6b7280')+'">'+h(S[1].split(' · ')[0])+'</b><span>'+h(it.sub)+'</span></div><span class="i" style="color:'+(rs?rs[1]:'#6b7280')+'">'+h(rs?rs[0]:'정상')+'</span><b class="d'+(it.stall>rules().stay?' r':'')+'">'+it.stall+'일</b><button type="button" data-psb="act" data-key="'+attr(r.key)+'" data-v="'+attr(k||'')+'">'+h(rs?rs[2]:'열기')+'</button></div></div>';
+  const r=it.row,k=reason||it.first,rs=k?C.RS[k]:null,bc=BRAND[r.item.brand]||'#9ca3af',S=C.S.find(s=>s[0]===it.bucket)||C.S[0],a=root.PipelineRowV11.primaryAction(r,rs?[rs[2],rs[4]]:['열기',''],['won','lost'].includes(r.group));
+  return '<div class="psb-row" role="row" tabindex="0" data-psb="open" data-key="'+attr(r.key)+'" style="border-left-color:'+bc+'"><div class="l"><b title="'+attr(r.site)+'">'+h(r.site)+(root.advisoryBadge?root.advisoryBadge(r.item):'')+'</b><span><em style="color:'+bc+'">'+h(r.item.brand||'브랜드 미지정')+'</em> · '+h(r.owner||'미배정')+' · '+h(money(r.amount))+'</span></div><div class="r"><div class="s"><b style="color:'+(S[2]==='#15171c'?'#15171c':'#6b7280')+'">'+h(S[1].split(' · ')[0])+'</b><span>'+h(it.sub)+'</span></div><span class="i" style="color:'+(rs?rs[1]:'#6b7280')+'">'+h(rs?rs[0]:'정상')+'</span><b class="d'+(it.stall>rules().stay?' r':'')+'">'+it.stall+'일</b><button type="button" data-psb="act" data-key="'+attr(r.key)+'" data-v="'+attr(a[1])+'">'+h(a[0])+'</button></div></div>';
  }
  /* 목록 줄 v11(2026-10-06 design_handoff_pipeline_v11): 수주 · 실주(와 v3 를 끈 단계)도 같은 4칸 줄 + 펼침 — 그리기는 pipeline-row-v11.js */
  const V11=()=>root.PipelineRowV11&&root.PipelineRowV11.on()?root.PipelineRowV11:null;
@@ -142,29 +150,30 @@
   return {r,now:[rs?rs[0]:S0[1].split(' · ')[0],it.sub].filter(Boolean).join(' · '),task:rs?rs[3]:'',btn:rs?[rs[2],rs[4]]:['열기',''],stall:it.stall,goal:rules().stay,reasons:it.rs.map(q=>C.RS[q]&&C.RS[q][0]).filter(Boolean),closed,amountLabel:key==='won'?'수주 금액':'예상 금액',...(key==='competition'&&root.PipelineRowV11?.competitionEvidence?.(r)?.review?{forceTask:true,task:'기존 업무 처리 확인 → 다음 행동 갱신',staleNext:'기존 업무: '+(r.next?.text||'')+' · 입찰 일정도 확인',btn:['업무 확인','next']}:{})};
  }
  function cardHtml(C,it,reason){
-  const r=it.row,k=reason||it.first,rs=k?C.RS[k]:null,bc=BRAND[r.item.brand]||'#9ca3af',e=r.group==='competition'&&root.PipelineRowV11?.competitionEvidence?root.PipelineRowV11.competitionEvidence(r):null;
-  return '<div class="psb-card" role="button" tabindex="0" data-psb="open" data-key="'+attr(r.key)+'" style="border-left-color:'+bc+'"><div class="t"><b style="color:'+bc+'">'+h(r.item.brand||'브랜드 미지정')+'</b><i></i><b class="'+((e?e.age!==null&&e.age>rules().stay:it.stall>rules().stay)?'r':'')+'">'+h(e?e.ageText:it.stall+'일')+'</b></div><strong>'+h(r.site)+'</strong><span>'+h(it.sub)+' · '+h((e?'예상 ':'')+money(r.amount))+'</span><div class="b"><em style="color:'+(rs?rs[1]:'#6b7280')+'">'+h(e&&e.warning?e.warning:rs?rs[0]:'정상')+'</em><i></i><button type="button" data-psb="act" data-key="'+attr(r.key)+'" data-v="'+attr(e&&e.review?'next':k||'')+'">'+h(e&&e.review?'업무 확인':rs?rs[2]:'열기')+'</button></div></div>';
+  const r=it.row,k=reason||it.first,rs=k?C.RS[k]:null,bc=BRAND[r.item.brand]||'#9ca3af',e=r.group==='competition'&&root.PipelineRowV11?.competitionEvidence?root.PipelineRowV11.competitionEvidence(r):null,a=root.PipelineRowV11.primaryAction(r,e&&e.review?['업무 확인','next']:rs?[rs[2],rs[4]]:['열기',''],['won','lost'].includes(r.group));
+  return '<div class="psb-card" role="button" tabindex="0" data-psb="open" data-key="'+attr(r.key)+'" style="border-left-color:'+bc+'"><div class="t"><b style="color:'+bc+'">'+h(r.item.brand||'브랜드 미지정')+'</b><i></i><b class="'+((e?e.age!==null&&e.age>rules().stay:it.stall>rules().stay)?'r':'')+'">'+h(e?e.ageText:it.stall+'일')+'</b></div><strong>'+h(r.site)+'</strong><span>'+h(it.sub)+' · '+h((e?'예상 ':'')+money(r.amount))+'</span><div class="b"><em style="color:'+(rs?rs[1]:'#6b7280')+'">'+h(a[1]==='owner'?'담당자 미지정':e&&e.warning?e.warning:rs?rs[0]:'정상')+'</em><i></i><button type="button" data-psb="act" data-key="'+attr(r.key)+'" data-v="'+attr(a[1])+'">'+h(a[0])+'</button></div></div>';
  }
  function html(key,list){
   /* 관계관리 = 시안 '관계관리 세분화'의 확정 배치(pipeline-rel-b.js) */
   if(key==='relationship'&&SEG()&&root.PipelineRelB&&root.PipelineRelB.enabled())return root.PipelineRelB.html(list,model(key,list));
   const S=st(),{C,items,isRed}=model(key,list),q=rules();
-  const inB=items,byS=S.bucket==='all'?inB:inB.filter(i=>i.bucket===S.bucket),listed=S.reason?byS.filter(i=>i.rs.includes(S.reason)):byS;
-  const n=inB.length||1,cnt=k=>inB.filter(i=>i.bucket===k).length,W=C.S.map(s=>Math.round(cnt(s[0])/n*100));
+  const inB=items,byS=S.bucket==='all'?inB:inB.filter(i=>i.bucket===S.bucket||(key==='sent'&&S.bucket==='wait'&&i.bucket==='nodate')),listed=S.reason?byS.filter(i=>i.rs.includes(S.reason)):byS;
+  const n=inB.length||1,cnt=k=>inB.filter(i=>i.bucket===k||(key==='sent'&&k==='wait'&&i.bucket==='nodate')).length,W=C.S.map(s=>Math.round(cnt(s[0])/n*100));
   const sumAmt=inB.reduce((s,i)=>s+(Number(i.row.amount)||0),0),avg=Math.round(inB.reduce((s,i)=>s+i.stall,0)/n),redN=inB.filter(i=>i.red).length;
   const CE=key==='competition'&&root.PipelineRowV11?.competitionEvidence?inB.map(i=>root.PipelineRowV11.competitionEvidence(i.row)):null,ages=CE?CE.filter(e=>e.age!==null).map(e=>e.age):null;
   const reasons=Object.keys(C.RS).map(k=>({k,n:byS.filter(i=>i.rs.includes(k)).length})).filter(x=>x.n>0);
   const acts=(S.reason?[S.reason]:reasons.slice(0,3).map(x=>x.k)).map(k=>({tag:C.RS[k][0]+' '+byS.filter(i=>i.rs.includes(k)).length+'건',t:C.RS[k][3]}));
+  const SE=key==='sent'?inB.map(i=>sentEvidence(i.row,i.values)):null;
   const filters=[S.bucket!=='all'?(C.S.find(s=>s[0]===S.bucket)||[])[1]:null,S.reason?C.RS[S.reason][0]:null].filter(Boolean);
   const diag='<section class="psb-diag"><div class="psb-box"><header><b>단계 진단</b><span>'+inB.length+'건 · '+h((CE?'예상 ':'')+money(sumAmt))+'</span><i></i>'+(filters.length?'<button type="button" class="lnk" data-psb="clear">필터 해제</button>':'')+'</header>'
    +'<div class="psb-axis"><span>'+h(C.axis)+'</span><div class="bar">'+C.S.map((s,i)=>'<div style="width:'+W[i]+'%;background:'+s[2]+'"></div>').join('')+'</div><div class="leg">'+C.S.map(s=>'<button type="button" data-psb="bucket" data-v="'+s[0]+'" aria-pressed="'+(S.bucket===s[0])+'"><i style="background:'+s[2]+'"></i>'+h(s[1])+' <b>'+cnt(s[0])+'</b></button>').join('')+'</div></div>'
-   +'<div class="psb-kpis"><div><span>'+h(CE?'후속 업무 지연':'기준 넘김 (빨강)')+'</span><b style="color:'+(redN?RED:'#15171c')+'">'+(CE?CE.filter(e=>e.late).length:redN)+'건</b><small>'+h(CE?'다음 행동일 없음 '+CE.filter(e=>e.nextMissing).length:'오늘 처리할 것')+'</small></div><div><span>'+h(CE?'입찰 일정 미등록':C.S[0][1])+'</span><b>'+(CE?CE.filter(e=>e.scheduleMissing).length:cnt(C.S[0][0]))+'건</b><small>'+h(CE?'일정 없으면 D-7 판정 불가':C.S[0][3])+'</small></div><div><span>평균 체류</span><b>'+h(CE?(ages.length?Math.round(ages.reduce((a,b)=>a+b,0)/ages.length)+'일':'미확인'):avg+'일')+'</b><small>'+h(CE?'진입일 입력 '+ages.length+' / '+inB.length+'건':'이 단계에 머문 일수')+'</small></div></div></div>'
+   +'<div class="psb-kpis"><div><span>'+h(CE?'후속 업무 지연':SE?'발송 후 후속 지연':'기준 넘김 (빨강)')+'</span><b style="color:'+(redN?RED:'#15171c')+'">'+(CE?CE.filter(e=>e.late).length:SE?cnt('late'):redN)+'건</b><small>'+h(CE?'다음 행동일 없음 '+CE.filter(e=>e.nextMissing).length:SE?'판정 가능 '+SE.filter(e=>e.eligible).length+' / '+inB.length+'건':'오늘 처리할 것')+'</small></div><div><span>'+h(CE?'입찰 일정 미등록':C.S[0][1])+'</span><b>'+(CE?CE.filter(e=>e.scheduleMissing).length:cnt(C.S[0][0]))+'건</b><small>'+h(CE?'일정 없으면 D-7 판정 불가':C.S[0][3])+'</small></div><div><span>평균 체류</span><b>'+h(CE?(ages.length?Math.round(ages.reduce((a,b)=>a+b,0)/ages.length)+'일':'미확인'):avg+'일')+'</b><small>'+h(CE?'진입일 입력 '+ages.length+' / '+inB.length+'건':'이 단계에 머문 일수')+'</small></div></div></div>'
    +'<div class="psb-two"><div class="psb-box"><header><b>왜 멈춰 있나</b><span>누르면 오른쪽 현장이 걸러짐</span></header>'+(reasons.length?reasons.map(x=>'<button type="button" class="psb-reason" data-psb="reason" data-v="'+x.k+'" aria-pressed="'+(S.reason===x.k)+'"><span>'+h(C.RS[x.k][0])+'</span><b style="color:'+C.RS[x.k][1]+'">'+x.n+'</b><i><u style="width:'+(byS.length?Math.round(x.n/byS.length*100):0)+'%;background:'+(isRed(x.k)?RED:'#9aa0ab')+'"></u></i></button>').join(''):'<p class="psb-none">멈춘 사유가 없습니다</p>')+'</div>'
    +'<div class="psb-box"><header><b>그래서 뭘 해야 하나</b></header>'+(acts.length?acts.map(a=>'<div class="psb-act"><span>'+h(a.tag)+'</span><p>'+h(a.t)+'</p></div>').join(''):'<p class="psb-none">기준을 넘긴 현장이 없습니다</p>')+'</div></div></section>';
   const LP=root.ListPager,pg=LP.cut(listed,LP.page(S)),shown=pg.rows;
   const head='<div class="psb-lhead"><b>확인할 현장 <span>'+listed.length+'곳</span></b>'+(filters.length?'<em>'+h(filters.join(' · '))+'</em>':'')+'<i></i><div class="psb-views"><button type="button" data-psb="view" data-v="list" aria-pressed="'+(S.view==='list')+'">리스트</button><button type="button" data-psb="view" data-v="board" aria-pressed="'+(S.view==='board')+'">보드</button></div></div>';
   let body;
-  if(S.view==='board')body='<div class="psb-board">'+C.S.map(s=>{const selected=listed.filter(i=>i.bucket===s[0]),all=V11()?V11().sort(selected,i=>i.row):selected,cp=LP.cut(all,LP.page(S,'col:'+s[0])),cards=cp.rows;return '<div class="psb-col"><div class="ch"><i style="background:'+s[2]+'"></i><b>'+h(s[1])+'</b><span>'+all.length+'</span><em>'+h(s[3])+'</em></div>'+(cards.length?cards.map(i=>cardHtml(C,i,S.reason)).join(''):'<p class="psb-none">없음</p>')+LP.html(cp,{ns:'psb',v:'col:'+s[0],small:true,info:false})+'</div>';}).join('')+'</div>';
+  if(S.view==='board')body='<div class="psb-board">'+C.S.map(s=>{const selected=listed.filter(i=>i.bucket===s[0]||(key==='sent'&&s[0]==='wait'&&i.bucket==='nodate')),all=V11()?V11().sort(selected,i=>i.row):selected,cp=LP.cut(all,LP.page(S,'col:'+s[0])),cards=cp.rows;return '<div class="psb-col"><div class="ch"><i style="background:'+s[2]+'"></i><b>'+h(s[1])+'</b><span>'+all.length+'</span><em>'+h(s[3])+'</em></div>'+(cards.length?cards.map(i=>cardHtml(C,i,S.reason)).join(''):'<p class="psb-none">없음</p>')+LP.html(cp,{ns:'psb',v:'col:'+s[0],small:true,info:false})+'</div>';}).join('')+'</div>';
   else{const V=V11(),pv=V?LP.cut(V.sort(listed,i=>i.row),LP.page(S)):pg,rowsV=pv.rows;
    body='<div class="psb-list'+(V?' prv-list':'')+'">'+(V?V.head():'')+(rowsV.length?rowsV.map(i=>V?V.row(v11(key,C,i,S.reason),'psb','psb-row'):rowHtml(C,i,S.reason)).join(''):'<div class="psb-empty">해당하는 현장이 없습니다.</div>')+LP.html(pv,{ns:'psb',unit:'곳'})+'</div>';}
   return '<div id="pipeline-stage-b" class="psb" data-stage="'+key+'"><div class="psb-head"><b>'+h(C.name)+'</b><span>'+h(C.desc())+'</span></div><div class="psb-body">'+diag+'<section class="psb-main">'+head+body+'</section></div></div>';
@@ -189,7 +198,7 @@
   if(a==='view'){S.view=v;return root.paint();}
   if(a==='page'){root.ListPager.set(S,v,b.dataset.page);return root.paint();}
   e.stopPropagation();
-  if(a==='act')return open(b.dataset.key,b.closest('.prv-row')?(v||''):(C&&C.RS[v]?C.RS[v][4]:''));/* v11 줄의 버튼은 동작 이름을 그대로 넘긴다(보드 카드는 사유 키) */
+  if(a==='act')return open(b.dataset.key,b.closest('.prv-row')||['owner','contact','next','activity','stage','stagefields','win','support','expansion'].includes(v)?(v||''):(C&&C.RS[v]?C.RS[v][4]:''));/* v11 줄의 버튼은 동작 이름을 그대로 넘긴다(보드 카드는 사유 키) */
   if(a==='fix'){e.stopPropagation();return open(b.dataset.key,'stagefields');}/* 날짜 미입력 보완 단추(ops_12 A②) */
   if(a==='open'&&!e.target.closest('button'))return open(b.dataset.key);
  }
@@ -206,5 +215,5 @@
   root.CommonFilterBar?.mount('pipe');const bar=pg?.querySelector(':scope>.cf-bar');if(bar)bar.hidden=false;
   return true;
  };
- root.PipelineStageB={enabled,model,html,CFG,rules,open,segRules};
+ root.PipelineStageB={enabled,model,html,CFG,rules,open,segRules,sentEvidence};
 })(window);

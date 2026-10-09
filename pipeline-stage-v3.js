@@ -74,10 +74,10 @@
    has:{nodate:(it,t)=>t===0,nodue:it=>it.rs.includes('nodue'),req:it=>it.rs.includes('req'),nonext,long},sub:it=>it.sub};
   /* stage7 ②: 발송일 있는 건만 7일 판정 · 없으면 넷째 칸 '발송일 확인 필요'(판정 불가 · 7일 계산 안 함) → 발송일 · 자료 · 수신자 입력 */
   if(key==='sent')return {name:'자료 발송완료',goal:goalOf(key,14),desc:'견적 · 제안 자료를 보낸 뒤 고객 반응을 확인하는 단계 · 발송 후 '+Q.follow+'일 안 후속 · 발송일 있는 건만 '+Q.follow+'일 판정',
-   tabs:[[Q.follow+'일 넘음 · 후속 없음','오늘 후속 연락'],['발송 후 '+Q.follow+'일 안','D+3 수신 확인'],['고객 반응 있음','다음 단계 판단'],['발송일 확인 필요','발송일 · 자료 · 수신자 입력']],ambTab:3,
-   reasons:[['nofollow','발송 후 '+Q.follow+'일 · 후속 없음'],['nosent','발송일 미기록 · 판정 불가'],['nodecider','결정권자 미확인'],['nonext','다음 행동 · 날짜 없음'],['long',Q.stay+'일 넘게 머묾']],
-   act:[['후속 연락','activity'],['수신 확인','activity'],['단계 판단','stage'],['정보 입력','stagefields']],
-   todo:'보낸 지 '+Q.follow+'일 넘은 건은 오늘 반응을 확인하고, 결정권자 일정을 함께 물어보세요. 발송일이 없는 건은 발송일 · 자료 · 수신자를 먼저 입력하세요('+Q.follow+'일 계산 안 함).',
+   tabs:[[Q.follow+'일 넘음 · 후속 없음','오늘 후속 연락'],['발송 후 '+Q.follow+'일 안','D+3 수신 확인 · 운영 제안'],['후속 확인 기록 있음','연결 · 반응 기록 기준'],['발송일 확인 필요','실제 발송 · 기존 증빙 확인']],ambTab:3,
+   reasons:[['nofollow','발송 후 '+Q.follow+'일 · 후속 없음'],['nosent','발송일 미기록 · 판정 불가'],['nodecider','결정권자 미확인'],['nonext','다음 행동 · 날짜 없음'],['long',Q.stay+'일 넘게 머묾 · 진단 기준']],
+   act:[['후속 연락','activity'],['수신 확인','activity'],['단계 판단','stage'],['증빙 확인','stagefields']],
+   todo:'보낸 지 '+Q.follow+'일 넘은 건은 오늘 반응을 확인하고, 결정권자 일정을 함께 물어보세요. 미배정이면 담당 지정부터 하세요. 발송일이 없으면 실제 발송 여부와 기존 증빙을 먼저 확인하고, 확인된 날짜 · 자료 · 수신자만 보완하세요('+Q.follow+'일 계산 안 함). 다음 행동 등록만으로 고객 반응을 인정하지 않습니다.',
    tab:it=>it.bucket==='late'?0:it.bucket==='done'?2:it.bucket==='nodate'?3:1,
    has:{nofollow:(it,t)=>t===0,nosent:(it,t)=>t===3,nodecider:it=>!deciderKnown(it),nonext,long},sub:it=>it.sub};
   /* 관계관리 v12(2026-10-07 design_handoff_relationship_v12): 상태 5칸(집중 · 일반 · 대기 · 보류 · 미확인) + 업무 필터(상태와 별개) + 왼쪽 전환 검토 요청 · 재분류 진행률. 끄기 G.relV12Off */
@@ -145,8 +145,8 @@
   items.sort((a,b)=>a.tab-b.tab||b.stall-a.stall||String(a.row.key).localeCompare(String(b.row.key)));
   return {C,items};
  }
- const issueOf=(C,x)=>C.issueOf?C.issueOf(x):(x.tab===0?C.reasons[0][1]:C.tabs[x.tab][1]);
- const actOf=(C,x)=>C.btnOf?C.btnOf(x):C.act[x.tab];
+ const issueOf=(C,x)=>actOf(C,x)[1]==='owner'?'담당자 미지정':C.issueOf?C.issueOf(x):(x.tab===0?C.reasons[0][1]:C.tabs[x.tab][1]);
+ const actOf=(C,x)=>root.PipelineRowV11.primaryAction(x.row,C.btnOf?C.btnOf(x):C.act[x.tab],C.closed);
  const bcOf=r=>BRAND[r.item.brand]||'';
  /* 줄 · 카드에 항상 보이는 것(2026-10-05 정합성 ③ ④ — 마우스를 올려야 보이는 정보를 두지 않는다):
     다음 행동 · 기한 / 공종 · 사업연도 · 영업건 번호(같은 단지의 여러 건을 구분) / 같은 단지에 진행 건이 여럿이면 '같은 공사인지 확인' */
@@ -179,8 +179,8 @@
  }
  const competitionEvidence=r=>root.PipelineRowV11&&root.PipelineRowV11.competitionEvidence?root.PipelineRowV11.competitionEvidence(r):null;
  function cardHtml(C,x){
-  const r=x.row,bc=bcOf(r),e=C.key==='competition'?competitionEvidence(r):null,a=e&&e.review?['업무 확인','next']:actOf(C,x);
-  return '<div class="ps3-card" role="button" tabindex="0" data-ps3="open" data-key="'+attr(r.key)+'" style="border-left-color:'+(bc||'#e3e6ec')+'"><div class="t"><b style="color:'+(bc||'#9ca3af')+'">'+h(r.item.brand||'브랜드 미지정')+'</b><i></i><span class="no">'+h(noOf(r))+'</span><b class="d'+((e?e.age!==null&&e.age>C.goal:x.stall>C.goal)?' r':'')+'">'+h(e?e.ageText:x.stall+'일')+'</b></div><strong>'+h(r.site)+'</strong><span>'+h([workOf(r)+(bizYearOf(r)?' · '+bizYearOf(r):''),r.owner||'미배정',(e?'예상 ':'')+money(r.amount)].filter(Boolean).join(' · '))+'</span><span class="iss'+(x.red?' r':'')+'">'+h(e&&e.warning?e.warning:(x.red?'확인 필요 · ':'')+[issueOf(C,x),x.sub&&!String(issueOf(C,x)).includes(x.sub)?x.sub:''].filter(Boolean).join(' · '))+'</span><span class="nx'+(r.next&&r.next.text?'':' none')+'"><i>다음 행동</i> '+h(nextOf(r))+'</span>'+(dupOf(r)?'<span class="dup">'+h(dupOf(r))+'</span>':'')+'<button type="button" data-ps3="act" data-key="'+attr(r.key)+'" data-v="'+attr(a[1])+'">'+h(a[0])+'</button></div>';
+  const r=x.row,bc=bcOf(r),e=C.key==='competition'?competitionEvidence(r):null,a=actOf(C,x)[1]==='owner'?actOf(C,x):e&&e.review?root.PipelineRowV11.primaryAction(r,['업무 확인','next'],C.closed):actOf(C,x);
+  return '<div class="ps3-card" role="button" tabindex="0" data-ps3="open" data-key="'+attr(r.key)+'" style="border-left-color:'+(bc||'#e3e6ec')+'"><div class="t"><b style="color:'+(bc||'#9ca3af')+'">'+h(r.item.brand||'브랜드 미지정')+'</b><i></i><span class="no">'+h(noOf(r))+'</span><b class="d'+((e?e.age!==null&&e.age>C.goal:x.stall>C.goal)?' r':'')+'">'+h(e?e.ageText:x.stall+'일')+'</b></div><strong>'+h(r.site)+'</strong><span>'+h([workOf(r)+(bizYearOf(r)?' · '+bizYearOf(r):''),r.owner||'미배정',(e?'예상 ':'')+money(r.amount)].filter(Boolean).join(' · '))+'</span><span class="iss'+(x.red?' r':'')+'">'+h(e&&e.warning?e.warning:(x.red?'확인 필요 · ':'')+[issueOf(C,x),x.sub&&!String(issueOf(C,x)).includes(x.sub)?x.sub:''].filter(Boolean).join(' · '))+'</span><span class="nx'+(r.next&&r.next.text?'':' none')+'"><i>다음 행동</i> '+h(a[1]==='owner'?'담당자 배정':nextOf(r))+'</span>'+(dupOf(r)?'<span class="dup">'+h(dupOf(r))+'</span>':'')+'<button type="button" data-ps3="act" data-key="'+attr(r.key)+'" data-v="'+attr(a[1])+'">'+h(a[0])+'</button></div>';
  }
  function html(key,list){
   DUP=dupMap();
@@ -197,7 +197,9 @@
   const TL=(()=>{try{const J=root.PipelineJudge;return J&&J.on()?J.tally(items.map(x=>x.row&&x.row.item).filter(Boolean)):null;}catch(e){return null;}})();
   const CE=key==='competition'?items.map(x=>competitionEvidence(x.row)).filter(Boolean):null;
   const competitionKpi=CE?'<div class="over"><span>후속 업무 지연</span><b>'+CE.filter(e=>e.late).length+'건</b><small>입찰 일정 없음 '+CE.filter(e=>e.scheduleMissing).length+' · 다음 행동일 없음 '+CE.filter(e=>e.nextMissing).length+' · 판정 불가 '+(TL?TL.norecord:0)+'</small></div>':null;
-  const kpi1=competitionKpi||(C.closed?'<div class="over amb"><span>'+h(C.kpiLabel||'정보 보완')+'</span><b>'+over.toLocaleString('ko-KR')+'건</b><small>기한 초과 0 · 지연 아님 · 끝 상태</small></div>'
+  const SE=key==='sent'?items.map(x=>B.sentEvidence(x.row,x.it.values)):null;
+  const sentKpi=SE?'<div class="over"><span>발송 후 후속 지연</span><b>'+cnt(0)+'건</b><small>판정 가능 '+SE.filter(e=>e.eligible).length+' / '+total+'건 · 발송일 확인 '+SE.filter(e=>!e.eligible).length+'건</small></div>':null;
+  const kpi1=sentKpi||competitionKpi||(C.closed?'<div class="over amb"><span>'+h(C.kpiLabel||'정보 보완')+'</span><b>'+over.toLocaleString('ko-KR')+'건</b><small>기한 초과 0 · 지연 아님 · 끝 상태</small></div>'
    :'<div class="over"><span>기한 초과</span><b>'+(TL?TL.late:over).toLocaleString('ko-KR')+'건</b><small>확인 필요 '+(TL?TL.nodate+TL.norecord:0)+' · 날짜 미입력 '+(TL?TL.nodate:0)+' · 판정 불가 '+(TL?TL.norecord:0)+'</small></div>');
   /* stage7_2 ⑤: 자료 없음 3가지(자료발송 · 입찰 · 계약 단계) — 현재 업무 미수행만 평가 · 지연 통계에 들어간다 */
   const MS=(!C.closed&&!C.leftHtml&&['consulting','sent','competition','construction'].includes(key)&&TL&&root.PipelineJudge&&root.PipelineJudge.missCounts)?root.PipelineJudge.missCounts(TL):null;
@@ -207,7 +209,7 @@
   const ages=CE?CE.filter(e=>e.age!==null).map(e=>e.age):null,ageAvg=ages&&ages.length?Math.round(ages.reduce((a,b)=>a+b,0)/ages.length):null;
   /* 왼쪽: 단계 진단 */
   const diag=C.leftHtml?'<aside class="ps3-diag"><section class="ps3-box"><header><b>단계 진단</b><span>'+total.toLocaleString('ko-KR')+'건 · '+h(money(sumAmt))+'</span></header><div class="ps3-kpis"><div class="over"><span>다음 연락일 지남</span><b>'+over.toLocaleString('ko-KR')+'건</b><small>오늘 연락</small></div><div><span>평균 체류</span><b>'+avg+'일</b><small>기준 '+C.goal+'일</small></div></div></section>'+C.leftHtml(items,S)+'</aside>':'<aside class="ps3-diag"><section class="ps3-box"><header><b>단계 진단</b><span>'+total.toLocaleString('ko-KR')+'건 · '+h((CE?'예상 ':'')+money(sumAmt))+headNote+'</span></header>'
-   +'<div class="ps3-kpis">'+kpi1+(C.closed?'<div><span>결과 기록 완성률</span><b>'+donePct+'%</b><small>'+doneN+' / '+total+'</small></div>':'<div><span>평균 체류</span><b>'+h(CE?(ageAvg===null?'미확인':ageAvg+'일'):avg+'일')+'</b><small>'+h(CE?'진입일 입력 '+ages.length+' / '+total+'건':'기준 '+C.goal+'일')+'</small></div>')+'</div>'+(C.closed?'<span class="rv-bar" aria-label="결과 기록 완성률"><i style="width:'+Math.max(donePct>0?2:0,donePct)+'%"></i></span>':'')+'</section>'
+   +'<div class="ps3-kpis">'+kpi1+(C.closed?'<div><span>결과 기록 완성률</span><b>'+donePct+'%</b><small>'+doneN+' / '+total+'</small></div>':'<div><span>평균 체류</span><b>'+h(CE?(ageAvg===null?'미확인':ageAvg+'일'):avg+'일')+'</b><small>'+h(CE?'진입일 입력 '+ages.length+' / '+total+'건':(key==='sent'?'체류 진단 기준 ':'기준 ')+C.goal+'일')+'</small></div>')+'</div>'+(C.closed?'<span class="rv-bar" aria-label="결과 기록 완성률"><i style="width:'+Math.max(donePct>0?2:0,donePct)+'%"></i></span>':'')+'</section>'
    +missHtml+'<section class="ps3-box ps3-why"><header><b>'+(C.closed?'보완할 것 '+fixN+'건':'왜 멈춰 있나')+'</b><span>누르면 목록이 걸러짐</span></header>'
    +C.reasons.map((r,i)=>{const c=rsN(r[0]),on=S.reason===r[0];return '<button type="button" class="ps3-reason'+(on?' on':'')+((C.redReason?C.redReason(r[0]):i===0)?' first':'')+'" data-ps3="reason" data-v="'+r[0]+'" aria-pressed="'+on+'"><span><b>'+h(r[1])+'</b><b class="c">'+c.toLocaleString('ko-KR')+'</b></span><i><u style="width:'+(total?Math.min(100,Math.round(c/total*100)):0)+'%"></u></i></button>';}).join('')+'</section>'
    +'<section class="ps3-box"><header><b>그래서 뭘 해야 하나</b></header>'+(C.todoHtml?C.todoHtml(items,S):'<p class="ps3-todo">'+h(C.todo)+'</p>')+'</section></aside>';
