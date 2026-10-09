@@ -86,10 +86,10 @@
  function render(){const r=(root.REP_MANAGER_ROWS||[]).find(x=>x.nm===openRep);if(!r){close();return;}node().querySelector('.rd-box').innerHTML=dialogHtml(r);}
  function open(name){if(root.RepWindow&&root.RepWindow.enabled()){root.RepWindow.open(name);return;}if(!(root.REP_MANAGER_ROWS||[]).some(x=>x.nm===name))rows();openRep=name;returnFocus=document.activeElement;const m=node();render();if(!openRep)return;m.classList.add('on');m.querySelector('.xdv-close')?.focus();}
  function close(restore){if(root.RepWindow&&root.RepWindow.isOpen())root.RepWindow.close(restore);const m=document.getElementById('repsDialog');if(m)m.classList.remove('on');const f=returnFocus;openRep=null;returnFocus=null;if(restore!==false&&f&&f.isConnected)f.focus?.({preventScroll:true});}
- function onDialogClick(e){
+ async function onDialogClick(e){
   const b=e.target.closest('[data-rd]');if(!b||!openRep)return;const a=b.dataset.rd,r=(root.REP_MANAGER_ROWS||[]).find(x=>x.nm===openRep);if(!r)return;
   if(a==='close')close();
-  if(a==='save'){const ta=node().querySelector('textarea');if(!ta.value.trim()){ta.focus();return;}root.repManagerSaveComment(r.nm,'card');toast(r.nm+' · 이번 주 약속을 저장했습니다');}
+  if(a==='save'){const ta=node().querySelector('textarea');if(!ta.value.trim()){ta.focus();return;}if(b.disabled)return;b.disabled=true;try{if(await root.repManagerSaveComment(r.nm,'card'))toast(r.nm+' · 이번 주 약속을 저장했습니다');}finally{if(b.isConnected)b.disabled=false;}}
   if(a==='deal'){const d=r.riskDeals.find(x=>root.dealKey(x)===b.dataset.value);if(d){close(false);root.G._detailPopup=true;root.drwDeal(JSON.stringify(d));}}
   if(a==='all'){const name=r.nm;close(false);root.CommonFilterBar?.setOwner(name);root.goPage('today');}
  }

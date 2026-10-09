@@ -4103,8 +4103,46 @@ function repManagerWeekKey(offset){var w=briefWeekWindow(),d=new Date(w.startKey
 function repManagerLocalComments(){try{var a=JSON.parse(Phase1.storage.getItem(REP_MANAGER_COMMENT_KEY)||'[]');return Array.isArray(a)?a:[]}catch(e){return []}}
 function repManagerComments(){var all=[];[B&&B.repManagerComments,B&&B.rep_manager_comments,repManagerLocalComments()].forEach(function(a){if(Array.isArray(a))all=all.concat(a)});var seen={};return all.sort(function(a,b){return String(b.updated_at||b.updatedAt||b.created_at||'').localeCompare(String(a.updated_at||a.updatedAt||a.created_at||''))}).filter(function(x){var k=(x.rep_name||x.rep||'')+'|'+String(x.week_start||x.weekStart||'').slice(0,10);if(seen[k])return false;seen[k]=1;return true})}
 function repManagerComment(rep,week){return repManagerComments().filter(function(x){return (x.rep_name||x.rep)===rep&&String(x.week_start||x.weekStart||'').slice(0,10)===week})[0]||null}
-function repManagerSaveComment(rep,source){var id=source==='drawer'?'rm-drawer-comment':'rm-comment-'+REP_INTERNAL.indexOf(rep),el=$('#'+id),text=(el&&el.value||'').trim();if(!text)return;var week=repManagerWeekKey(0),actor=(ME&&ME.name)||'관리자',at=isoNow(),local=repManagerLocalComments().filter(function(x){return !(x.rep_name===rep&&x.week_start===week)}),old=repManagerComment(rep,week),row={rep_name:rep,week_start:week,comment:text,status:old&&old.status||'open',created_by:actor,updated_at:at};local.push(row);Phase1.storage.setItem(REP_MANAGER_COMMENT_KEY,JSON.stringify(local));pushWrite('rep_manager_comment',{rep_name:rep,week_start:week,comment:text,status:row.status,created_by:actor,updated_at:at});paintRepManagement();if(source==='drawer'){var i=REP_MANAGER_ROWS.map(function(r){return r.nm}).indexOf(rep);if(i>=0)repManagerOpenDrawer(i)}}
-function repManagerToggleComment(rep){var week=repManagerWeekKey(0),old=repManagerComment(rep,week);if(!old)return;var local=repManagerLocalComments().filter(function(x){return !(x.rep_name===rep&&x.week_start===week)}),status=old.status==='done'?'open':'done',at=isoNow(),row={rep_name:rep,week_start:week,comment:old.comment,status:status,created_by:old.created_by||((ME&&ME.name)||'관리자'),updated_at:at,completed_at:status==='done'?at:null};local.push(row);Phase1.storage.setItem(REP_MANAGER_COMMENT_KEY,JSON.stringify(local));pushWrite('rep_manager_comment',{rep_name:rep,week_start:week,comment:row.comment,status:status,created_by:row.created_by,updated_at:at,completed_at:row.completed_at});paintRepManagement()}
+/* Server acknowledgement is the only source of a saved coaching/comment state. */
+var REP_MANAGER_COMMENT_PENDING=new Set();
+async function repManagerCommentCommand(rep,week,send){
+ var actor=String(ME&&(ME.id||ME.user_id||ME.name)||''),key=actor+'|'+rep+'|'+week;
+ if(REP_MANAGER_COMMENT_PENDING.has(key))throw Error('이미 저장 중입니다');
+ REP_MANAGER_COMMENT_PENDING.add(key);
+ try{
+  var r=await send(),row=r&&r.comment;
+  if(!r||r.ok!==true||!row||row.rep_name!==rep||String(row.week_start||'').slice(0,10)!==week||!row.updated_at||!['open','done'].includes(row.status))throw Error('저장 응답을 확인하지 못했습니다');
+  if(actor!==String(ME&&(ME.id||ME.user_id||ME.name)||''))throw Error('로그인 계정이 변경되었습니다. 다시 조회해 주세요');
+  var local=repManagerLocalComments().filter(function(x){return !(x.rep_name===rep&&String(x.week_start||'').slice(0,10)===week)});local.push(row);
+  /* An acknowledged write remains saved even if the browser cache is full. */
+  if(B)B.repManagerComments=(B.repManagerComments||[]).filter(function(x){return !(x.rep_name===rep&&String(x.week_start||'').slice(0,10)===week)}).concat([row]);
+  try{Phase1.storage.setItem(REP_MANAGER_COMMENT_KEY,JSON.stringify(local))}catch(e){}
+  return row;
+ }finally{REP_MANAGER_COMMENT_PENDING.delete(key)}
+}
+async function repManagerCommitComment(rep,text,status){
+ var week=repManagerWeekKey(0),fn='crm_rep_manager_comment_save_v1';
+ return repManagerCommentCommand(rep,week,async function(){
+  var o=window.OpsStore;if(!o||!o.has(fn))throw Error('코칭 저장 연결 확인 필요');
+  var r=await o.rpc(fn,{rep_name:rep,week_start:week,comment:text,status:status});
+  if(!r||!r.comment||r.comment.comment!==text||r.comment.status!==status)throw Error('저장 내용이 일치하지 않습니다');
+  return r;
+ });
+}
+async function repManagerSaveComment(rep,source){
+ var id=source==='drawer'?'rm-drawer-comment':'rm-comment-'+REP_INTERNAL.indexOf(rep),el=$('#'+id),text=(el&&el.value||'').trim();if(!text)return false;
+ var old=repManagerComment(rep,repManagerWeekKey(0));
+ try{await repManagerCommitComment(rep,text,old&&old.status||'open');
+  /* Keep edits made while awaiting the server, including a newly opened drawer. */
+  if(el&&el.isConnected&&$('#'+id)===el&&el.value.trim()===text){paintRepManagement();if(source==='drawer'){var i=REP_MANAGER_ROWS.map(function(r){return r.nm}).indexOf(rep);if(i>=0)repManagerOpenDrawer(i)}}
+  return true;
+ }catch(e){toast('코칭 저장 확인 실패 · 입력을 유지했습니다','warn');return false}
+}
+async function repManagerToggleComment(rep){
+ var old=repManagerComment(rep,repManagerWeekKey(0));if(!old)return false;
+ try{await repManagerCommitComment(rep,old.comment,old.status==='done'?'open':'done');paintRepManagement();return true}
+ catch(e){toast('완료 상태 저장 확인 실패 · 기존 상태를 유지했습니다','warn');return false}
+}
 function repManagerFlowRow(r,i){var riskCls=r.risk>=4?'critical':r.risk?'':'ok',move=r.weekTracked?(r.weekAdvanced?'<b style="color:#18a66a">+'+r.weekAdvanced+'</b>':'<b style="color:#d64255">0</b>'):'<span class="muted">수집 중</span>',warnings=[];if(r.wonAmountMissing)warnings.push('확정금액 미입력 '+r.wonAmountMissing+'건');if(r.wonDateMissing)warnings.push('확정일 미입력 '+r.wonDateMissing+'건');var missing=warnings.length?'<small class="contract-missing">'+warnings.join(' · ')+'</small>':'<small>'+r.won+'건 · 계약완료일 기준</small>';return '<div class="rm-flow-grid row"><button class="rep-flow-name" data-i="'+i+'" onclick="repManagerOpenDrawer(Number(this.dataset.i))">'+esc(r.nm)+'<small>코칭 상세 →</small></button><div class="rep-flow-chain">'+repFlowStep('배정',r.assigned)+repFlowStep('응대',r.responded)+repFlowStep('기회',r.opps)+repFlowStep('경쟁',r.compete)+repFlowStep('수주',r.won,'won')+'</div><div class="rep-flow-money"><span>진행</span><b>'+eok(r.pipeline)+'</b></div><button class="rep-flow-money near contract-total" data-i="'+i+'" onclick="repManagerOpenDrawer(Number(this.dataset.i))"><span>확정 수주</span><b>'+eok(r.wonAmount)+'</b>'+missing+'</button><div class="rep-flow-move"><span>Stage 전진</span>'+move+'</div><button class="rm-risk-num '+riskCls+'" data-i="'+i+'" onclick="repManagerGo(Number(this.dataset.i),\'risk\')">'+r.risk+'건</button><div class="rm-diag '+r.diagnosis.k+'"><strong>'+esc(r.diagnosis.title)+'</strong><small>'+esc(r.diagnosis.text)+'</small></div></div>'}
 function repManagerGo(i,kind){var r=REP_MANAGER_ROWS[i];if(!r)return;closePerfDrawer();G.rep=r.nm;if(kind==='schedule')goPage('brief');else dashboardGoSnapshot(kind==='risk'?'risk':'active')}
 function repManagerStage(i,codes,label){REP_FLOW_ROWS=REP_MANAGER_ROWS;repFlowGoStage(i,codes,label)}
