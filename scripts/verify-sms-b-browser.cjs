@@ -23,6 +23,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      deal('44444444-4444-4444-8444-444444444444','침묵 현장','이필선','silent',ok(4,'이소장'),{brand:'석민이앤씨'})],
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],campaigns:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.sb=null;
+   B.deals.filter(d=>d.code==='sent').forEach(d=>{d.stage_contexts={sent:{fields:{sent_date:new Date(Date.now()-10*864e5).toLocaleDateString('en-CA')}}};d.activities=[];});
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    siteContacts=d=>d.contacts||[];contactInfo=d=>(d.contacts||[])[0]||{};
    window.__writes=[];window.pushWrite=(op,p)=>{__writes.push([op,p]);return 'req-'+__writes.length;};
@@ -42,7 +43,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await v.locator('.sb-why').innerText(),/왜 못 보내나[\s\S]*문자 수신동의 없음 1명[\s\S]*휴대폰번호 없음 1명/);
   /* 묶음 줄: 자료 발송 후 무응답 = 대상 3 · 가능 1 · 발송 기록 없음 → 빨강 '한 번도 안 보냄' */
   const sent=v.locator('.psb-row[data-key="sent"]');assert.equal(await sent.count(),1);
-  assert.match(await sent.innerText(),/자료 발송 후 무응답 — 후속 안내[\s\S]*병목 · 영업팀 · 영업 병목[\s\S]*지금 보낼 때[\s\S]*대상 3명 · 가능 1명 · 발송 기록 없음[\s\S]*병목 묶음 · 한 번도 안 보냄[\s\S]*0일[\s\S]*보내기/);
+  assert.match(await sent.innerText(),/발송 후 반응 기록 미확인 — 후속 안내[\s\S]*병목 · 영업팀 · 영업 병목[\s\S]*지금 보낼 때[\s\S]*대상 3명 · 가능 1명 · 발송 기록 없음[\s\S]*병목 묶음 · 한 번도 안 보냄[\s\S]*0일[\s\S]*보내기/);
   const order=await v.locator('.psb-row').evaluateAll(a=>a.map(n=>n.dataset.key));
   assert.ok(order.indexOf('sent')<order.indexOf('yearend'),'빨강(병목) 먼저 '+JSON.stringify(order));
   assert.equal(await v.locator('.psb-row').count(),13,'묶음 13개');
@@ -56,7 +57,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.locator('#sms-b .sb-top button').allInnerTexts().then(a=>a.filter(t=>!/테스트/.test(t))),['발송 이력','+ 문자 보내기']);
   /* 보내기 = 기존 v2 창(760px · 최종 확인란) · 발송 요청은 기존 campaignQueue 만 */
   await page.locator('#sms-b .psb-row[data-key="sent"] [data-sb="act"]').click();await page.waitForTimeout(250);
-  const d=page.locator('#smsDialog.on .sd-box');assert.equal(await d.count(),1,'v2 보내기 창');assert.match(await d.locator('.sd-head').innerText(),/문자 보내기[\s\S]*자료 발송 후 무응답 — 후속 안내/);
+  const d=page.locator('#smsDialog.on .sd-box');assert.equal(await d.count(),1,'v2 보내기 창');assert.match(await d.locator('.sd-head').innerText(),/문자 보내기[\s\S]*발송 후 반응 기록 미확인 — 후속 안내/);
   assert.deepEqual(await page.evaluate(()=>__writes.map(w=>w[0])),[],'여는 것만으로 발송 요청 없음');
   await page.keyboard.press('Escape');await page.waitForTimeout(150);
   /* 새 문자와 경남지사 진입도 최신 작성 창만 사용한다. 실제 발송 없음. */

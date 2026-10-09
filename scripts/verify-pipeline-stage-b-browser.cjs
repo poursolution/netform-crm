@@ -44,7 +44,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     /* 실주: 사유 없음 · 기록 완료 · 재영업 */
     deal('l-none','사유 없는 실주','이필선','lost',{outcome:'lost',closed_at:day(-3),stageHistory:[{from:'compete',to:'lost',at:day(-3)}]}),
     deal('l-rec','기록된 실주','황윤선','lost',{outcome:'lost',closed_at:day(-5),lost_reason:'가격 열세',stageHistory:[{from:'sent',to:'lost',at:day(-5)}],stage_contexts:{lost:{fields:{competitor:'타사 B'}}}}),
-    deal('l-re','재영업 실주','이필선','lost',{outcome:'lost',closed_at:day(-40),lost_reason:'공법',next_action:{id:'n9',text:'2027 재입찰 확인',due:day(60),status:'open'},stage_contexts:{lost:{fields:{competitor:'타사 C',recontact_possibility:'높음'}}}})
+    deal('l-re','재영업 실주','이필선','lost',{outcome:'lost',closed_at:day(-40),lost_reason:'공법',next_action:{id:'n9',text:'2027 재입찰 확인',due:day(60),status:'open'},stage_contexts:{lost:{fields:{competitor:'타사 C',recontact_possibility:'높음',reengage:'예'}}}})
    ],inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.pipeRowV11Off=true;/* 이 검사는 목록 줄 v11 이전의 줄(끄기 스위치 뒤)을 본다 — v11 줄은 scripts/verify-pipeline-row-v11-browser.cjs */ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.psb=null;G.pipeStageV3Off=true;/* 공통 틀 v3 는 verify-pipeline-stage-v3-browser.cjs — 이 검사는 끄기 스위치 뒤의 B안 */G.relSegOff=true;/* 관계관리 새 배치는 verify-relationship-segment-browser.cjs — 이 검사는 예전 화면(단계 이름 기준) */
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
@@ -81,7 +81,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#pipeline-stage-b .psb-row',{hasText:'정상 컨설팅'}).locator('.l').click();await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>__open),'c-ok');
   if(shot)await page.screenshot({path:shot+'-consulting.png',fullPage:true});
   /* 단계 전환: 발송 · 관계 · 경쟁 · 계약 · 수주 · 실주 — 막대 칸과 첫 빨강 사유 */
-  const expect={sent:[['발송 근거 · 후속 확인','7일 넘김 · 후속 없음','후속 완료 · 반응 기록'],'후속 없는 발송','발송 후 7일 · 후속 없음'],relationship:[['집중관리 · 7일 단위','일반관리 · 월 1회','대기 · 2개월 1회'],'집중 현장','집중관리 7일 넘게 연락 없음'],competition:[['참여 · 가격 결정 대기','서류 · 제안서 준비','제출 완료 · 결과 대기'],'입찰 D-2','마감 D-3 · 준비 안 됨'],construction:[['계약 진행','시공팀 인계','착공 · 시공 중'],'계약 진행','계약일 · 금액 미입력'],won:[['수주 정보 미기록','계약일 · 착공 · 준공 확인','실적 · 완료 정보 완료'],'','수주 유형 · 낙찰금액 · 낙찰사 미기록'],lost:[['기록 보완 필요','기록 완료','재영업 가능 · 예'/* stage7 ⑦ · stage7_2 ⑥ */],'사유 없는 실주','실주 사유 미입력']};
+  const expect={sent:[['발송 근거 · 후속 확인','7일 넘김 · 후속 없음','후속 완료 · 반응 기록'],'후속 없는 발송','발송 후 7일 · 후속 없음'],relationship:[['집중관리 · 7일 단위','일반관리 · 월 1회','대기 · 2개월 1회'],'집중 현장','집중관리 7일 넘게 연락 없음'],competition:[['참여 · 가격 결정 대기','서류 · 제안서 준비','제출 완료 · 결과 대기'],'입찰 D-2','마감 D-3 · 준비 안 됨'],construction:[['계약 진행','시공팀 인계','착공 · 시공 중'],'계약 진행','계약일 · 금액 미입력'],won:[['수주 정보 미기록','계약일 · 착공 · 준공 확인','실적 · 완료 정보 완료'],'','수주 결과 항목 보완 필요'],lost:[['기록 보완 필요','기록 완료','재영업 가능 · 예'/* stage7 ⑦ · stage7_2 ⑥ */],'사유 없는 실주','실주 사유 미입력']};
   for(const [key,[bars,firstSite,firstReason]] of Object.entries(expect)){
    await page.evaluate(k=>PipelineWorkspace.open(k),key);await page.waitForTimeout(300);
    assert.equal(await page.locator('#pipeline-stage-b').getAttribute('data-stage'),key);

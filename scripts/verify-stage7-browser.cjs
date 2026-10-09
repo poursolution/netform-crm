@@ -86,7 +86,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* ⑥ 수주 · ⑦ 실주: 끝 상태 · 제목 숫자 · 실주일 한국 시간 · 재영업 '예'만 재접촉 */
   await page.evaluate(()=>PipelineWorkspace.open('won'));await page.waitForSelector('#pipeline-stage-v3[data-stage="won"] .prv-row');await page.waitForTimeout(200);
   assert.match(await kpi(),/^실적 정보 보완 1건 기한 초과 0 · 지연 아님 · 끝 상태$/);assert.match(one(await V.locator('.ps3-diag .ps3-box header span').first().innerText()),/^1건 · 1\.4억 · 낙찰금액 입력 1건 기준$/);
-  const w1=await rowOf('w-1');assert.deepEqual([w1.now,w1.base,w1.due,w1.dueCls],['수주 · '+(await page.evaluate(()=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(DAY(-34));return m[1]+'.'+(+m[2])+'.'+(+m[3]);}))+' · 1.4억','수주 유형 · 낙찰금액 · 낙찰사 미기록','확인 필요 · 기한 아님','amb']);
+  const w1=await rowOf('w-1');assert.deepEqual([w1.now,w1.base,w1.due,w1.dueCls],['수주 · '+(await page.evaluate(()=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(DAY(-34));return m[1]+'.'+(+m[2])+'.'+(+m[3]);}))+' · 1.4억','수주 결과 항목 보완 필요','확인 필요 · 기한 아님','amb']);
   assert.match(one(await V.locator('.ps3-head span').innerText()),/^끝 상태 · /);
   await page.evaluate(()=>PipelineWorkspace.open('lost'));await page.waitForSelector('#pipeline-stage-v3[data-stage="lost"] .prv-row');await page.waitForTimeout(200);
   assert.match(await kpi(),/^결과 정보 보완 \d+건 기한 초과 0 · 지연 아님 · 끝 상태$/);assert.doesNotMatch(one(await V.locator('.ps3-head span').innerText()),/대기|2개월|차기 공사/);
