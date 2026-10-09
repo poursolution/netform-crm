@@ -91,7 +91,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    assert.deepEqual([(await b.locator('.prv-head span').allInnerTexts()).map(one),await b.locator('.ps3-diag .ps3-box').count()>=1,await b.locator('.prv-row.ps3-row').count(),await b.locator('.prv-more,.prv-main').count()],[['현장 · 담당','현재 상황','다음 업무 · 기한',''],true,1,0],key+': 같은 줄 · 진단은 그대로 · 펼침 없음');
    assert.deepEqual(await b.locator('.prv-row').first().evaluate(r=>{const t=s=>r.querySelector(s).innerText.replace(/\s+/g,' ').trim();return [t('.prv-a>b'),t('.prv-a>span'),t('.prv-b>small'),t('.prv-c>small'),t(':scope>button')];}),want,key);
    assert.match(one(await b.locator('.prv-b>span').first().innerText()),key==='won'?/^수주 · \d{4}\.\d{1,2}\.\d{1,2} · 9,200만$/:/^실주 · \d{4}\.\d{1,2}\.\d{1,2}$/,key+': 줄 = 결과 · 날짜 · 금액(stage7)');
-   assert.equal(one(await b.locator('.prv-b>small.base').first().innerText()),key==='won'?'수주 유형 · 낙찰금액 · 낙찰사 미기록':'실주 사유 미입력',key+': 기준일 줄 = 빠진 정보');
+   assert.equal(one(await b.locator('.prv-b>small.base').first().innerText()),key==='won'?'수주 결과 항목 보완 필요':'실주 사유 미입력',key+': 기준일 줄 = 빠진 정보');
    assert.equal(await b.locator('.prv-c>small').first().evaluate(n=>n.classList.contains('amb')&&getComputedStyle(n).color),'rgb(192, 57, 43)',key+': 확인 필요는 붉은 계열');
    if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'pipe-v11-'+key+'.png')});
   }
