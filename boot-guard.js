@@ -5,7 +5,7 @@
    이 파일은 의존 없이 먼저 떠서 ① 못 불러온 스크립트 이름을 모으고 ② Phase1 이 없으면 바로, ③ 10초가 지나도 연결이 안 되면 '불러오기 실패 · [다시 시도]' 한 줄을 띄운다(계속 도는 표시 대신). */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else{root.BootGuard=api;api.install(root);}})(typeof window==='undefined'?globalThis:window,function(){
  'use strict';
- const WAIT=10000;
+ const WAIT=10000,BEAT_WAIT=30000;
  function reason(root,failed){
   if(!root.PHASE1_CONFIG&&failed.some(f=>/phase1-config/.test(f)))return 'phase1-config.js 를 불러오지 못했습니다';
   if(!root.PHASE1_CONFIG)return '접속 설정(phase1-config.js)이 실행되지 않았습니다';
@@ -37,9 +37,12 @@
   doc.addEventListener('DOMContentLoaded',check);
   /* 이 PC 의 검사 · 개발 서버(127.0.0.1 · localhost)는 서버가 없어 늘 '연결 중'이다 — 10초 안내는 운영 주소에서만(검사가 강제로 켤 때만 예외) */
   const dev=/^(127\.0\.0\.1|localhost)$/.test(String(root.location&&root.location.hostname||''))&&!root.__bootGuardTimer;
-  if(!dev)root.setTimeout(()=>{if(waitingLogin(root)&&root.Phase1)return;if(!ready(root))show(reason(root,failed));},WAIT);
+  /* 정상 로딩이 느린 것(1000건 첫 읽기 등)을 실패로 보지 않는다: 읽기 상태 신호(crm:read-state — '핵심 데이터 연결 중' · '최신화 중' …)가 한 번이라도 왔으면 마지막 신호 뒤 BEAT_WAIT(30초) 동안 조용할 때만, 신호가 한 번도 없으면 WAIT(10초) 뒤에 알린다 */
+  let beats=0,last=Date.now();const beatWait=Number(root.__bootGuardBeatWait)||BEAT_WAIT;
+  root.addEventListener('crm:read-state',e=>{beats++;last=Date.now();if(e&&e.detail&&e.detail.ready&&ready(root))hide();});
+  if(!dev){const w=root.setInterval(()=>{if(ready(root)){root.clearInterval(w);return;}if(waitingLogin(root)&&root.Phase1)return;if(Date.now()-last>=(beats?beatWait:WAIT))show(reason(root,failed));},1000);}
   /* 늦게라도 연결되면 한 줄을 걷는다 */
   const t=root.setInterval(()=>{if(ready(root)){hide();root.clearInterval(t);}},1000);
  }
- return {install,reason,retryUrl,WAIT};
+ return {install,reason,retryUrl,WAIT,BEAT_WAIT};
 });
