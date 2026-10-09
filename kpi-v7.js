@@ -173,15 +173,7 @@
  /* 묶어 보내기: 담당자별로 '관리자 한마디'에 한 줄 + 건마다 조치 기록(처리율 계산용) */
  function send(pkey,title,list){
   if(K().canRequest&&!K().canRequest())return;
-  list=list.filter(t=>t.owner&&t.owner!=='미배정');if(!list.length)return;
-  const by=new Map();list.forEach(t=>{const o=t.owner;(by.get(o)||by.set(o,[]).get(o)).push(t);});
-  let told=0;by.forEach((ts,o)=>{if(!o)return;const line=title+' — '+(ts[0].kind==='rep'?(ts[0].why||'확인 부탁드립니다'):ts.length+'건: '+ts.slice(0,3).map(t=>t.name).join(', ')+(ts.length>3?' 외 '+(ts.length-3)+'건':''));try{if(K().requestLine(o,line))told++;}catch(e){}});
-  R.G.kbDone=(R.G.kbDone||[]).concat(list.map(t=>pkey+'|'+t.kind+':'+t.id));
-  const o=O();if(o&&o.has('crm_kpi_action_log_v1')){const q=list.slice(),run=()=>{const t=q.shift();if(!t)return;return o.rpc('crm_kpi_action_log_v1',{promise_key:pkey,action:String(t.label||'요청').slice(0,80),target_type:t.kind==='deal'?'deal':t.kind==='rep'?'person':'inquiry',target_id:String(t.id).slice(0,80),target_name:String(t.name||'').slice(0,200),note:String(t.why||'').slice(0,500)}).catch(()=>{}).then(run);};
-   Promise.all([run(),run(),run(),run()]).then(()=>{try{K().load(true);}catch(e){}});}
-  const owners=[...by.keys()].filter(Boolean).length,none=(by.get('')||[]).length;
-  toast(list.length+'건 요청을 남겼습니다 · 담당 '+owners+'명'+(told?' 오늘 업무 관리자 한마디':'')+(none?' · 담당 없는 '+none+'건은 배정 뒤 전달':''));
-  repaint();
+  return K().requestMany(pkey,title,list);
  }
  function onClick(e){
   const b=e.target.closest('#kpi-v7 [data-k7]');if(!b||b.disabled)return;const a=b.dataset.k7,v=b.dataset.v,s=ST();

@@ -2,7 +2,7 @@
    제목 한 줄 → 왼쪽 KPI 표 8줄(이번 주 · 지난주 ▲▼ · 4주 추이 · 목표 · 내 조치) / 오른쪽 선택 지표 패널(장기 추이 12주·6개월·1년 · 조치한 주 점 · 내가 할 일) → 아래 담당별(선택 지표 기준 · 측정 불가 묶음).
    ■ '내가 할 일'은 따로 만들지 않는다 — 견적문의(managementStats 미배정 · 무응답)와 파이프라인 단계별 B안의 '관리자 할 일' 사유(PipelineStageB.model → rs)를 그대로 쓴다. 어느 화면에서 처리해도 양쪽이 같이 줄어든다.
    ■ [요청] = kpi_actions 기록(crm_kpi_action_log_v1) + 담당자의 이번 주 관리자 한마디(rep_manager_comment, 기존 저장 경로)에 한 줄 추가 → 담당자 오늘 업무(모바일 '관리자 한마디')에 뜬다.
-     8번 '관리팀 조치 → 처리율' = 최근 28일 요청 중 그 대상이 지금 할 일 목록에서 사라진 것(처리됨) ÷ 요청.
+     8번 '관리팀 조치 → 처리율' = 최근 28일 요청의 확인된 처리만 집계. 목록에서 사라진 것은 완료 근거가 아님.
    ■ 주간 저장: kpi_weekly(promise_key 'kpi:n')에 [이번 주 결과 저장] 또는 금요일 18시 이후 처음 열 때 자동 저장(관리자, 주 1회). 지난주 · 4주 · 장기 추이는 이 값. 조치 점은 kpi_actions 의 주.
    ■ 기록이 없는 사람은 0%가 아니라 '측정 불가'. 색: 빨강 = 목표 미달, 화살표 초록/빨강 = 변화 방향. 브랜드 색 없음.
    끄기: G.kpiBOff=true → 관리팀 KPI v2. */
@@ -30,19 +30,35 @@
   ['실주 사유 입력','lost','실주','사유 + 재영업 여부 입력된 실주 ÷ 실주 건',100,false,'사유 없는 실주는 다음 영업에 쓸 수 없음 — 사유 입력 요청.'],
   ['관리팀 조치 → 처리율','mgmt','관리팀','최근 28일 요청 중 담당이 처리한 것 ÷ 요청',80,false,'요청만 하고 끝내지 않기 — 답이 없는 요청을 다시 확인.']];
  const KEY=i=>'kpi:'+(i+1);
- /* ── 저장소: 주간 결과(최대 52주) · 조치 기록(최근 200) ── */
+ /* ── 저장소: 주간 결과(최대 52주) · 조치 기록(커서 조회 · 완료 응답까지) ── */
  const W={state:'idle',rows:[],acts:[],actState:'idle',saved:false};
  /* A capped response is not a complete history. Never use it to authorize a duplicate request. */
  function requestStatus(){
-  const state=W.actState,ready=state==='ready';
-  return {state,ready,message:ready?'':state==='partial'?'요청 이력 일부만 조회됨 · 전체 확인 필요':state==='failed'?'요청 이력 조회 실패 · 다시 확인 필요':state==='off'?'요청 이력 조회 연결 필요':'요청 이력 계산 중'};
+  const state=W.sending?'saving':W.actState,ready=state==='ready';
+  return {state,ready,message:ready?'':state==='saving'?'요청 저장 확인 중':state==='partial'?'요청 이력 일부만 조회됨 · 전체 확인 필요':state==='failed'?'요청 이력 조회 실패 · 다시 확인 필요':state==='off'?'요청 이력 조회 연결 필요':'요청 이력 계산 중'};
  }
  function canRequest(){const s=requestStatus();if(!s.ready&&typeof root.toast==='function')root.toast(s.message,'warn');return s.ready;}
  function load(force){
   const o=O();if(!o){W.actState='off';return;}
   if(o.has('crm_kpi_weekly_list_v1')&&(W.state==='idle'||(force&&W.state!=='loading'))){W.state='loading';o.rpc('crm_kpi_weekly_list_v1',{weeks:52}).then(r=>{W.rows=(r.rows||[]).filter(x=>/^kpi:\d$/.test(String(x.promise_key)));W.state='ready';repaint();}).catch(e=>{W.state=e&&e.unavailable?'off':'failed';repaint();});}
-  if(!o.has('crm_kpi_action_list_v1')){W.actState='off';return;}
-  if(W.actState==='idle'||(force&&W.actState!=='loading')){W.actState='loading';o.rpc('crm_kpi_action_list_v1',{limit:200}).then(r=>{if(!r||!Array.isArray(r.actions))throw Error('Invalid request history');const raw=r.actions;W.acts=raw.filter(x=>/^(kpi:\d|stage:[\w:-]{1,60})$/.test(String(x.promise_key)));/* Count before filtering: unrelated rows can also fill the server limit. */W.actState=raw.length>=200?'partial':'ready';repaint();}).catch(()=>{W.actState='failed';repaint();});}
+  const fn='crm_kpi_action_list_v2';
+  if(!o.has(fn)||root.CRMRelease?.has(fn)===false){W.actState='off';return;}
+  if(W.actState==='idle'||(force&&W.actState!=='loading')){
+   W.actState='loading';
+   W.actPromise=(async()=>{
+    const all=[],seen=new Set(),cursors=new Set();let cursor=null;
+    for(let page=0;page<50;page++){
+     const r=await o.rpc(fn,{limit:200,cursor});
+     if(!r||r.ok!==true||r.contract_version!==2||!Array.isArray(r.actions)||r.actions.length>200||typeof r.has_more!=='boolean'
+       ||(r.has_more?(!r.actions.length||!r.next_cursor||typeof r.next_cursor!=='object'):r.next_cursor!==null))throw Error('Invalid request history');
+     for(const row of r.actions){if(!row.id||seen.has(row.id))throw Error('Duplicate request history');seen.add(row.id);all.push(row);}
+     if(!r.has_more){W.acts=all.filter(x=>/^(kpi:\d|stage:[\w:-]{1,60})$/.test(String(x.promise_key)));W.actState='ready';repaint();return;}
+     const next=JSON.stringify(r.next_cursor);if(cursors.has(next))throw Error('Request cursor stalled');cursors.add(next);cursor=r.next_cursor;
+    }
+    W.actState='partial';repaint();
+   })().catch(()=>{W.actState='failed';repaint();});
+  }
+  return W.actPromise;
  }
  const repaint=()=>{if(root.G.page==='mgmt')try{root.paintMgmt();}catch(e){}};
  const weekRow=(i,offset)=>{const o=O();if(!o)return null;const wk=o.monday(offset);return W.rows.find(x=>ymd(x.week_start)===wk&&x.promise_key===KEY(i))||null;};
@@ -173,27 +189,49 @@
   return '<div id="kpi-b" class="kb" data-workspace="kpi"><div class="kb-title"><h1>지표 8개 중 목표 달성 <em style="color:'+(hit>=4?INK:RED)+'">'+hit+'개</em> · 이번 주 내 조치 <b>'+(total-left)+' / '+total+'</b></h1><span>'+h((root.ME&&root.ME.name)||'')+' · 이번 주 '+h(period)+' · 지표마다 연결된 파이프라인 단계의 \'관리자 할 일\'이 그대로 아래 목록이 됩니다. 처리하면 조치 수와 처리율이 바로 올라갑니다.</span><i></i>'+saveBtn+'</div><div class="kb-body">'+tableHtml(C)+panelHtml(C)+'</div>'+peopleHtml(C)+'</div>';
  }
  /* ── 요청: kpi_actions 기록 + 담당자 이번 주 관리자 한마디에 한 줄(기존 저장 경로) ── */
- function requestLine(ownerName,line){
-  if(!canRequest())return false;
-  if(!ownerName||ownerName==='미배정'||!(root.REP_INTERNAL||[]).includes(ownerName))return false;
+ // Keep an unresolved command id across reloads; retry is the same event on the server.
+ async function requestLine(ownerName,line,pkey,targets){
+  const legacy=!pkey;if(legacy){pkey='stage:dashboard:comment';targets=[{target_type:'person',target_id:ownerName,target_name:ownerName,action:'기록 요청',note:String(line).slice(0,500)}];if(W.actState!=='ready')await load(W.actState==='failed'||W.actState==='off');}
+  const o=O(),fn='crm_kpi_request_send_v1';
+  if(W.actState!=='ready'||!o||!o.has(fn)||root.CRMRelease?.has(fn)===false)throw Error('요청 저장 연결 확인 필요');
+  if(!ownerName||ownerName==='미배정'||!(root.REP_INTERNAL||[]).includes(ownerName))throw Error('담당자 확인 필요');
+  const week=o.monday(0),store=root.Phase1.storage,storageKey='nf_kpi_pending_commands_v1';
+  const actor=String(root.ME?.id||root.ME?.user_id||root.ME?.name||'');
+  const signature=JSON.stringify([actor,week,ownerName,pkey,targets.map(t=>t.target_type+':'+t.target_id).sort(),legacy?line:'']);
+  let entries=JSON.parse(store.getItem(storageKey)||'{}');
+  if(!entries[signature]){entries[signature]={request_id:root.crypto.randomUUID(),rep_name:ownerName,week_start:week,promise_key:pkey,line,targets};store.setItem(storageKey,JSON.stringify(entries));}
+  const p=entries[signature],r=await o.rpc(fn,p);
+  const expected=new Set(p.targets.map(t=>t.target_type+':'+t.target_id));
+  if(r?.ok!==true||r.request_id!==p.request_id||!Array.isArray(r.actions)||r.actions.length!==expected.size
+    ||!r.comment||r.comment.rep_name!==ownerName||ymd(r.comment.week_start)!==week
+    ||r.actions.some(a=>!a.id||a.promise_key!==pkey||!expected.delete(a.target_type+':'+a.target_id))||expected.size)throw Error('요청 저장 응답 확인 필요');
+  // Only acknowledged actions participate in sent markers and duplicate prevention.
+  const ids=new Set(r.actions.map(a=>a.id));W.acts=r.actions.concat(W.acts.filter(a=>!ids.has(a.id)));
+  try{const local=root.repManagerLocalComments().filter(x=>!(x.rep_name===ownerName&&ymd(x.week_start)===week));local.push(r.comment);store.setItem(root.REP_MANAGER_COMMENT_KEY||'netform_crm_rep_manager_comments_v1',JSON.stringify(local));}catch(e){}
+  try{entries=JSON.parse(store.getItem(storageKey)||'{}');if(!legacy)delete entries[signature];store.setItem(storageKey,JSON.stringify(entries));}catch(e){}
+  return r;
+ }
+ async function requestMany(pkey,title,list){
+  if(!canRequest()||W.sending)return {sent:0,failed:0};
+  const done=compute().done,unique=new Map();
+  list.forEach(t=>{const key=t.kind+':'+t.id;if(t.owner&&t.owner!=='미배정'&&!done.has(pkey+'|'+key))unique.set(key,t);});
+  const by=new Map();unique.forEach(t=>{const group=by.get(t.owner)||[];group.push(t);by.set(t.owner,group);});
+  if(!by.size)return {sent:0,failed:0};
+  W.sending=true;repaint();let sent=0,failed=0;
   try{
-   const week=root.repManagerWeekKey(0),old=root.repManagerComment(ownerName,week),actor=(root.ME&&root.ME.name)||'관리자',at=root.isoNow(),text=((old&&old.comment)?old.comment.trim()+'\n':'')+'· [KPI 요청] '+line;
-   const local=root.repManagerLocalComments().filter(x=>!(x.rep_name===ownerName&&x.week_start===week)),row={rep_name:ownerName,week_start:week,comment:text,status:'open',created_by:actor,updated_at:at};
-   local.push(row);root.Phase1.storage.setItem(root.REP_MANAGER_COMMENT_KEY||'netform_crm_rep_manager_comments_v1',JSON.stringify(local));
-   /* 서버 저장: 새 함수(crm_rep_manager_comment_save_v1 · 2026-10-05)가 있으면 그쪽으로 — 예전 전송 명령(rep_manager_comment)은 연결돼 있지 않아 이 PC 에만 남았다 */
-   let sent=false;try{const o=O();if(o&&o.has('crm_rep_manager_comment_save_v1')){o.rpc('crm_rep_manager_comment_save_v1',{rep_name:ownerName,week_start:week,comment:text,status:'open'}).catch(e=>{if(typeof root.toast==='function')root.toast(ownerName+' 관리자 한마디를 서버에 저장하지 못했습니다: '+String(e&&e.message||e),'warn');});sent=true;}}catch(e){}
-   try{root.pushWrite('rep_manager_comment',{rep_name:ownerName,week_start:week,comment:text,status:'open',created_by:actor,updated_at:at});sent=true;}catch(e){}
-   return sent;
-  }catch(e){return false;}
+   for(const [owner,items] of by){for(let i=0;i<items.length;i+=200){const ts=items.slice(i,i+200);
+    const line=title+' — '+(ts[0].kind==='rep'?(ts[0].why||'확인 부탁드립니다'):ts.length+'건: '+ts.slice(0,3).map(t=>t.name||t.what||t.id).join(', ')+(ts.length>3?' 외 '+(ts.length-3)+'건':''));
+    const targets=ts.map(t=>({target_type:t.kind==='deal'?'deal':t.kind==='rep'?'person':'inquiry',target_id:String(t.id).slice(0,80),target_name:String(t.name||t.what||t.id).slice(0,200),action:String(t.label||'요청').slice(0,200),note:String(t.why||'').slice(0,500)}));
+    try{await requestLine(owner,line,pkey,targets);sent+=ts.length;}catch(e){failed+=ts.length;}
+   }}
+  }finally{W.sending=false;repaint();}
+  if(typeof root.toast==='function')root.toast('요청 저장 확인 '+sent+'건'+(failed?' · 확인 실패 '+failed+'건(같은 요청 다시 시도 가능)':''),failed?'warn':undefined);
+  return {sent,failed};
  }
  function request(b){
   if(!canRequest())return;
-  const i=Number(b.dataset.i),kind=b.dataset.kind,id=b.dataset.id,owner=b.dataset.owner,label=b.dataset.label,name=b.dataset.name,why=b.dataset.why,o=O();
-  const key=KEY(i)+'|'+todoKey(kind,id);root.G.kbDone=(root.G.kbDone||[]).concat(key);
-  if(o&&o.has('crm_kpi_action_log_v1'))o.rpc('crm_kpi_action_log_v1',{promise_key:KEY(i),action:label,target_type:kind==='deal'?'deal':kind==='rep'?'person':'inquiry',target_id:String(id).slice(0,80),target_name:String(name).slice(0,200),note:String(why).slice(0,500)}).then(()=>load(true)).catch(()=>{});
-  const to=kind==='rep'?id:owner,sent=requestLine(to,DEF[i][0]+' — '+name+(why?' ('+why+')':''));
-  if(typeof root.toast==='function')root.toast(sent?to+' 오늘 업무에 요청을 남겼습니다':'요청을 기록했습니다'+(to&&to!=='미배정'?'':' (담당 없음 — 오늘 업무 전달은 배정 뒤)'));
-  repaint();
+  const i=Number(b.dataset.i),d=b.dataset;
+  return requestMany(KEY(i),DEF[i][0],[{kind:d.kind,id:d.id,owner:d.kind==='rep'?d.id:d.owner,name:d.name,why:d.why,label:d.label}]);
  }
  function openTarget(kind,id){
   if(kind==='inq')return root.InquiryWorkbench.openFrom(id,'mgmt');
@@ -201,19 +239,19 @@
   if(kind==='rep'){if(root.RepsV2&&root.RepsV2.enabled()){root.RepsV2.open(id);return;}root.goPerfRep?.(id);}
  }
  function saveWeek(b){
-  if(!canRequest())return;
+  if(!canRequest()||W.saving)return Promise.resolve(false);
   const o=O(),C=compute(),rows=C.M.filter(m=>m.ready!==false&&(m.den>0||m.v!=null)).map(m=>({promise_key:m.key,numerator:Math.max(0,Math.min(m.num|0,m.den|0)),denominator:m.den|0})).filter(r=>r.denominator>0);
   if(!rows.length){if(typeof root.toast==='function')root.toast('저장할 지표가 없습니다(분모 0)','warn');return;}
   W.saving=true;if(b){b.disabled=true;b.textContent='저장 중…';}
-  o.rpc('crm_kpi_weekly_save_v1',{week_start:o.monday(0),rows}).then(r=>{if(typeof root.toast==='function')root.toast('이번 주 지표 '+r.saved+'개를 저장했습니다');}).catch(e=>{if(typeof root.toast==='function')root.toast(String(e.message||e),'warn');}).finally(()=>{W.saving=false;load(true);});
+  const week=o.monday(0);return o.rpc('crm_kpi_weekly_save_v1',{week_start:week,rows}).then(r=>{if(r?.ok!==true||r.week_start!==week||r.saved!==rows.length)throw Error('주간 저장 응답 확인 필요');if(typeof root.toast==='function')root.toast('이번 주 지표 '+r.saved+'개를 저장했습니다');return true;}).catch(e=>{if(typeof root.toast==='function')root.toast(String(e.message||e),'warn');return false;}).finally(()=>{W.saving=false;load(true);});
  }
  /* 금요일 18시 이후 처음 열면 자동 저장(관리자 · 주 1회 · 이 PC 기준) */
  function autoSave(){
-  const o=O();if(!o||!o.admin()||!o.has('crm_kpi_weekly_save_v1')||W.state!=='ready'||!requestStatus().ready)return;
+  const o=O();if(!o||!o.admin()||!o.has('crm_kpi_weekly_save_v1')||W.state!=='ready'||!requestStatus().ready||W.saving)return;
   const d=new Date();if(!(d.getDay()===5&&d.getHours()>=18)&&d.getDay()!==6&&d.getDay()!==0)return;
-  const mon=o.monday(0);if(W.rows.some(x=>ymd(x.week_start)===mon))return;
+  const mon=o.monday(0);if(W.autoAttempt===mon)return;if(W.rows.some(x=>ymd(x.week_start)===mon))return;
   let flag='';try{flag=root.Phase1.storage.getItem('nf_kpi_autosave')||'';}catch(e){}if(flag===mon)return;
-  try{root.Phase1.storage.setItem('nf_kpi_autosave',mon);}catch(e){}saveWeek(null);
+  W.autoAttempt=mon;return Promise.resolve(saveWeek(null)).then(ok=>{if(ok)try{root.Phase1.storage.setItem('nf_kpi_autosave',mon);}catch(e){}});
  }
  function onClick(e){
   const b=e.target.closest('#kpi-b [data-kb]');if(!b)return;const a=b.dataset.kb,S=ST();
@@ -224,7 +262,7 @@
   if(a==='req')return request(b);
   if(a==='open')return openTarget(b.dataset.kind,b.dataset.id);
   if(a==='ask'){const n=b.dataset.n;if(root.RepsV2&&root.RepsV2.enabled()){root.RepsV2.open(n);setTimeout(()=>(document.querySelector('#repWindow.on [data-rw-f="promise"]')||document.querySelector('#repsDialog textarea'))?.focus(),80);}else root.goPerfRep?.(n);return;}
-  if(a==='nm'){if(!canRequest())return;const C=compute();const nm=names().map(n=>personVals(n,C)).filter(p=>!p.measured);nm.forEach(p=>{requestLine(p.n,'기록 시작 — 통화 · 방문 결과와 다음 할 일을 CRM에 남겨 주세요');const o=O();if(o&&o.has('crm_kpi_action_log_v1'))o.rpc('crm_kpi_action_log_v1',{promise_key:KEY(3),action:'기록 시작 요청',target_type:'person',target_id:p.n,target_name:p.n}).catch(()=>{});});root.G.kbNmSent=O()?O().monday(0):'1';if(typeof root.toast==='function')root.toast(nm.length+'명에게 기록 시작 요청을 남겼습니다');return repaint();}
+  if(a==='nm'){if(!canRequest())return;const C=compute(),nm=names().map(n=>personVals(n,C)).filter(p=>!p.measured);return requestMany(KEY(3),'기록 시작',nm.map(p=>({kind:'rep',id:p.n,owner:p.n,name:p.n,why:'통화 · 방문 결과와 다음 할 일을 CRM에 남겨 주세요',label:'기록 시작 요청'}))).then(r=>{if(r.sent===nm.length&&!r.failed)root.G.kbNmSent=O()?O().monday(0):'1';repaint();});}
   if(a==='go'){e.preventDefault();const v=b.dataset.v;if(v==='inquiry')root.goPage('inq');else root.PipelineWorkspace.open(v);return;}
  }
  function boot(){
@@ -240,5 +278,5 @@
   wrapped.__kb=true;root.paintMgmt=wrapped;
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- root.KpiB={enabled,compute,DEF,stageItems,requestStatus,canRequest,/* 아래는 관리팀 KPI v7(kpi-v7.js)이 같은 계산 · 저장 경로를 쓰도록 */personVals,requestLine,saveWeek,autoSave,load,names,openTarget,weekly:()=>W,weekRowOf:weekRow};
+ root.KpiB={enabled,compute,DEF,stageItems,requestStatus,canRequest,requestMany,/* 아래는 관리팀 KPI v7(kpi-v7.js)이 같은 계산 · 저장 경로를 쓰도록 */personVals,requestLine,saveWeek,autoSave,load,names,openTarget,weekly:()=>W,weekRowOf:weekRow};
 })(window);

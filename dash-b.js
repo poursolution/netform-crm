@@ -312,11 +312,11 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
   return band+cards+'<div class="db-pipe2">'+pplSec+convSec+'</div>';
  }
  /* [n명에게 기록 요청]: 그 사람들의 오늘 업무 '관리자 한마디'에 한 줄(관리팀 KPI 요청과 같은 저장 길 KpiB.requestLine) */
- function askRecords(){
-  if(!canAssign())return;const C=core(),WA=weekActs(C),S=st();if(!WA.zero.length||S.actAsk===WA.W[0])return;
+ async function askRecords(){
+  if(!canAssign())return;const C=core(),WA=weekActs(C),S=st();if(!WA.zero.length||S.actAsk===WA.W[0]||S.actAskBusy)return;S.actAskBusy=true;
   const line='영업 기록 — 이번 주('+md(WA.W[0])+' – '+md(WA.W[6])+') CRM 기록 0건 · 통화 · 방문 · 견적 내용을 남겨 주세요';let sent=0;
-  WA.zero.forEach(n=>{try{if(R.KpiB&&R.KpiB.requestLine&&R.KpiB.requestLine(n,line))sent++;}catch(e){}});
-  if(sent){S.actAsk=WA.W[0];toast(sent+'명의 오늘 업무에 기록 요청을 남겼습니다');}
+  for(const n of WA.zero){try{if(R.KpiB&&R.KpiB.requestLine&&await R.KpiB.requestLine(n,line))sent++;}catch(e){}}S.actAskBusy=false;
+  if(sent){if(sent===WA.zero.length)S.actAsk=WA.W[0];toast(sent+'명의 오늘 업무에 기록 요청을 남겼습니다');}
   else{const text='[영업 기록 요청] '+WA.zero.join(' · ')+' — '+line;const done=()=>toast('요청 문구를 복사했습니다 — 잔디에 붙여 넣어 보내세요');try{navigator.clipboard.writeText(text).then(done,done);}catch(e){done();}}
   render();
  }
@@ -493,10 +493,10 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
     +'<section><b class="db-cwt">변화가 결과에 준 영향 <span>올해 · 결과가 난 현장</span></b>'+im.map(x=>'<div class="db-cwi"><b>'+h(x.l)+'</b><span class="db-cwb"><u><i class="cw-a" style="width:'+(x.a||0)+'%"></i></u><u><i class="cw-b" style="width:'+(x.b||0)+'%"></i></u></span><span class="db-cwp">'+(x.a===null?'<small>기록 없음</small>':'<b>'+x.a+'%</b> / '+(x.b===null?'—':x.b+'%'))+'</span></div>').join('')+'<span class="db-cwl">빨강 = 변화가 있던 현장 실주율 · 회색 = 변화 없던 현장 실주율</span></section></div>';}
   return '<section class="db-card flush db-cx">'+head+body+'</section>';
  }
- function dxAsk(id){
-  if(!canAssign()||!LASTX||!LASTX.diag)return;const r=LASTX.diag.find(x=>x.id===id),S=st(),P=period();if(!r||!r.to.length)return;const key=id+'|'+P.today;if(S.dxSent&&S.dxSent[key])return;
-  const line='컨트롤타워 — '+r.a+' · '+r.x;let sent=0;r.to.forEach(n=>{try{if(R.KpiB&&R.KpiB.requestLine&&R.KpiB.requestLine(n,line))sent++;}catch(e){}});
-  if(sent){(S.dxSent=S.dxSent||{})[key]=true;toast(sent+'명의 오늘 업무에 요청을 남겼습니다');render();}else toast('요청을 남기지 못했습니다 — 잠시 뒤 다시 시도해 주세요');
+ async function dxAsk(id){
+  if(!canAssign()||!LASTX||!LASTX.diag)return;const r=LASTX.diag.find(x=>x.id===id),S=st(),P=period();if(!r||!r.to.length)return;const key=id+'|'+P.today;if((S.dxSent&&S.dxSent[key])||S.dxAskBusy)return;S.dxAskBusy=true;
+  const line='컨트롤타워 — '+r.a+' · '+r.x;let sent=0;for(const n of r.to){try{if(R.KpiB&&R.KpiB.requestLine&&await R.KpiB.requestLine(n,line))sent++;}catch(e){}}S.dxAskBusy=false;
+  if(sent){if(sent===r.to.length)(S.dxSent=S.dxSent||{})[key]=true;toast(sent+'명의 오늘 업무에 요청을 남겼습니다');render();}else toast('요청을 남기지 못했습니다 — 잠시 뒤 다시 시도해 주세요');
  }
  function cxList(kind,id){
   if(!LASTX)return;const X=SI();
