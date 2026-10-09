@@ -86,7 +86,7 @@
  const HEAD0={urgent:['지난 기록 · AI 요약','AI 추천 행동 · 이유'],assign:['고객이 원한 것 · AI 요약','AI 추천 담당 · 이유'],stall:['멈춘 이유 · AI 요약','AI 추천 행동 · 이유'],contract:['빠진 정보 · AI 요약','AI 추천 행동 · 이유']};
  /* 요청 업무가 켜지면 칸 이름도 시안대로 'AI 추천 요청 · 이유'(배정 표는 그대로) */
  const HEAD=new Proxy(HEAD0,{get:(t,k)=>{const v=t[k];return v&&k!=='assign'&&R.WorkRequest&&R.WorkRequest.enabled()?[v[0],'AI 추천 요청 · 이유']:v;}});
- const NOTE={urgent:()=>'추천 행동 = 오늘 업무가 정한 할 일 그대로 · 아래 줄은 오늘 넘기면 생기는 일 · 줄을 누르면 그 건의 상세',assign:()=>'추천 기준: 같은 현장 기존 담당 > 같은 지역 진행 현장 > 업무량 · 협약문의는 '+b2bOwner()+' 자동 추천 · 연락처 없으면 먼저 확인 표시',stall:()=>'추천 행동 = 오늘 업무가 정한 할 일 그대로 · 줄을 누르면 그 건의 상세',contract:()=>'계약일 · 계약금액이 있어야 수주실적에 잡힙니다 · [입력 요청] = 담당에게 보낼 문구 복사'};
+ const NOTE={urgent:()=>'추천 행동 = 오늘 업무가 정한 할 일 그대로 · 아래 줄은 오늘 넘기면 생기는 일 · 줄을 누르면 그 건의 상세',assign:()=>'추천 기준: 같은 현장 기존 담당 > 같은 지역 진행 현장 > 업무량 · 협약문의는 '+b2bOwner()+' 자동 추천 · 연락처 없으면 먼저 확인 표시',stall:()=>'추천 행동 = 오늘 업무가 정한 할 일 그대로 · 줄을 누르면 그 건의 상세',contract:()=>'수주실적 = 낙찰금액(VAT 별도) · 낙찰일 기준 · 계약일 · 계약금액은 계약 실적 · 매출용 — 비어 있어도 수주실적에서 빠지지 않음 · [입력 요청] = 담당에게 보낼 문구 복사'};
  /* ① 카드 묶음의 카드 아래 나머지 줄: ②와 같은 표 줄(묶음 머리 · 카드 · 더 보기 버튼은 오늘 업무가 그린다) */
  function restHtml(items){return '<div class="ta-box ta-rest"><div class="ta-row hd"><span>브랜드</span><span>현장</span><span>'+HEAD.urgent[0]+'</span><span>'+HEAD.urgent[1]+'</span><span class="ta-d">경과</span><span></span></div>'+items.map(urgentRow).join('')+'</div>';}
  /* 오늘 업무(today-v3)가 묶음마다 부른다 */

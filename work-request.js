@@ -35,6 +35,11 @@
  const RK={first:'first',quote:'quote',silent:'follow',stallbig:'follow',after:'follow',transfer:'award',contract:'contract',deadline:'deadline'};
  const BRANCH_TO='경남지사장',BRANCH_RES=['담당 지정 완료','고객 첫 연락 완료','연락 시도 · 부재','진행 보류','본사 회수 요청'];
  const DUE_IN=['오늘 17:00','오늘 중','직접 지정'],DUE_BR=['오늘 중','내일 12시','3일 안'];
+ /* after_deploy ①: 밤(20시 이후) 요청의 기본 기한 = 다음 날 18:00 — 시안이 정한 값(운영 기준 확정 전 · 대표 확인 필요). 저장은 항상 절대 시각(due_at) */
+ const NIGHT_FROM=20,NIGHT_HOUR=18,DUE_NIGHT=['내일 '+NIGHT_HOUR+':00','오늘 중','직접 지정'];
+ const WD='일월화수목금토';
+ /* 기한 표시 = 절대 날짜 · 요일 · 시각 + 남은 시간(다음 날 열어도 '오늘'로 옮겨가지 않는다) */
+ function dueTxt(r){const t=new Date(r&&r.due_at||'');if(!Number.isFinite(t.getTime()))return r&&r.due_label||'';const left=t.getTime()-Date.now(),hrs=Math.round(Math.abs(left)/36e5),rel=left>=0?(hrs<1?'1시간 안':hrs<48?hrs+'시간 남음':Math.round(hrs/24)+'일 남음'):(hrs<1?'방금 지남':hrs<48?hrs+'시간 지남':Math.round(hrs/24)+'일 지남');return t.getFullYear()+'.'+(t.getMonth()+1)+'.'+t.getDate()+' ('+WD[t.getDay()]+') '+pad(t.getHours())+':'+pad(t.getMinutes())+' · '+rel;}
  /* 지사 건 기준(README): 7일 무응답 = 자동 확인 요청 · 14일 = 회수 검토 제안. 자동 요청은 한꺼번에 여러 건이 지사로 가므로 설정(OPS_RULES.workRequestBranchAuto=true)으로 켠다 — 기본은 꺼짐 */
  const RECALL_DAYS=()=>Number((R.OPS_RULES||{}).branchRecallDays)||14,SILENT_DAYS=()=>Number((R.OPS_RULES||{}).branchSilentDays)||7,BRANCH_AUTO=()=>(R.OPS_RULES||{}).workRequestBranchAuto===true;
  /* 통화 결과 → 다음 행동(규칙 · 기존 값): 문의는 견적문의 결과 마스터, 영업건은 상세의 다음 행동 표 */
@@ -51,6 +56,7 @@
   if(label==='오늘 중'){d.setHours(23,59,0,0);return d;}
   if(label==='내일 12시'){d.setDate(d.getDate()+1);d.setHours(12,0,0,0);return d;}
   if(label==='3일 안'){d.setDate(d.getDate()+3);d.setHours(23,59,0,0);return d;}
+  if(label==='내일 '+NIGHT_HOUR+':00'){d.setDate(d.getDate()+1);d.setHours(NIGHT_HOUR,0,0,0);return d;}
   const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(custom||''));if(!m)return null;return new Date(Number(m[1]),Number(m[2])-1,Number(m[3]),23,59,0,0);
  }
  /* ── 저장소 읽기 ── */
@@ -105,8 +111,8 @@
  function openModal(key){
   const i=findItem(key),me=meName(),q=i?reqFor(i,me):null;if(!q||q.self)return;
   if(openFor(q.type,q.id,q.kind)){toast('이미 답을 기다리는 같은 요청이 있습니다');return;}
-  const dues=q.scope==='branch'?DUE_BR:DUE_IN,late=new Date().getHours()>=17;
-  st().modal={key,q,i,asks:q.K.def.map((v,n)=>!!v||(q.recall&&q.K.asks[n]==='본사 회수 검토')),due:q.scope!=='branch'&&late?1:0,dues,custom:ymd(addDays(1)),busy:false,err:'',
+  const hr=new Date().getHours(),night=q.scope!=='branch'&&hr>=NIGHT_FROM,dues=q.scope==='branch'?DUE_BR:night?DUE_NIGHT:DUE_IN,late=hr>=17;
+  st().modal={key,q,i,asks:q.K.def.map((v,n)=>!!v||(q.recall&&q.K.asks[n]==='본사 회수 검토')),due:night?0:q.scope!=='branch'&&late?1:0,dues,custom:ymd(addDays(1)),busy:false,err:'',
    memo:q.kind==='branch'?'담당자 지정 후 고객 첫 연락 진행 여부를 CRM에 남겨 주세요.':q.kind==='first'?(i.short||'')+' 미응대 건입니다. 오늘 고객 연락 후 결과와 다음 일정을 CRM에 남겨주세요.':i.missTxt+(i.short&&!/^(0일|오늘|-)$/.test(i.short)&&i.rk!=='contract'?' · '+i.short:'')+' 건입니다. '+q.K.done+'까지 CRM에 남겨 주세요.'};
   drawModal();
  }
@@ -140,7 +146,7 @@
    .catch(e=>{const M2=st().modal;if(!M2)return;M2.busy=false;M2.err=e&&e.unavailable?'요청 저장소가 아직 서버에 적용되지 않았습니다.':/받는 사람을 찾을 수 없습니다/.test(String(e&&e.message))?q.to+'은(는) CRM 계정 · 영업이사 명단에 없어 요청을 남길 수 없습니다 — 전화로 전달해 주세요.':String(e&&e.message||e);drawModal();if(/이미 답을 기다리는/.test(M2.err))load(true);});
  }
  /* ── 응대 이력 줄 ── */
- const lineReq=r=>(r.requested_by||'관리자')+' → '+r.to_name+' · '+((r.asks||[]).join(' · ')||r.label)+' · 기한 '+(r.due_label||whenTxt(r.due_at));
+ const lineReq=r=>(r.requested_by||'관리자')+' → '+r.to_name+' · '+((r.asks||[]).join(' · ')||r.label)+' · 기한 '+dueTxt(r);
  function lineEnd(r){
   const who=r.replied_by||r.to_name;
   if(r.status==='replied')return who+' 회신 · '+(r.result||'')+(r.result_owner?' · '+r.result_owner:'')+(r.reply_note?' — '+r.reply_note:'');
@@ -157,7 +163,7 @@
   if(TG[key]&&TG[key].rows)rows=TG[key].rows;
   else if(!TG[key]){TG[key]={at:Date.now()};O().rpc(RPC.list,{target_type:type,target_id:String(id)}).then(r=>{TG[key].rows=Array.isArray(r.requests)?r.requests:[];if(JSON.stringify(TG[key].rows.map(x=>x.id+x.status))!==JSON.stringify(rows.map(x=>x.id+x.status)))repaint();}).catch(()=>{});}
   const out=[];rows.forEach(r=>{out.push({at:r.created_at,tag:'내부 요청',who:'시스템 · 내부 요청',text:lineReq(r)});
-   if(r.reasked_at)out.push({at:r.reasked_at,tag:'내부 요청',who:'시스템 · 내부 요청',text:'재확인 요청 ('+r.round+'회차) · 기한 '+(r.due_label||whenTxt(r.due_at))});
+   if(r.reasked_at)out.push({at:r.reasked_at,tag:'내부 요청',who:'시스템 · 내부 요청',text:'재확인 요청 ('+r.round+'회차) · 기한 바뀜 → '+dueTxt(r)});
    const e=lineEnd(r);if(e&&r.closed_at)out.push({at:r.closed_at,tag:'내부 요청',who:'시스템 · 내부 요청',text:e});});
   return out;
  }
@@ -178,9 +184,9 @@
   const seen=r.status!=='sent',done=r.status==='done'||r.status==='replied';let ev=null,exec=false;
   if(!done&&it){try{ev=evidence(r);}catch(e){ev=null;}
    try{if(r.target_type==='deal'){const at=R.salesActivityAt(it)||'';exec=!!at&&Date.parse(at)>=since;}else{const F=R.InquiryFlow;exec=!!(F&&F.on&&F.on()&&(F.state(it).logs||[]).some(l=>Date.parse(l.at)>=since));}}catch(e){}}
-  const evid=r.kind==='contract'?'계약일 · 금액 · 계약서':r.kind==='award'?'낙찰사 · 금액 · 증빙':r.kind==='quote'?'견적 요청 · 예정일':isHandover(r)?'인수 확인':K.contact?'결과 · 다음 행동':'처리 기록';
+  const evid=r.kind==='contract'?'계약일 · 금액 · 계약서':r.kind==='award'?'낙찰사 · 금액 · 결과 기록':r.kind==='quote'?'견적 요청 · 예정일':isHandover(r)?'인수 확인':K.contact?'통화 결과 + 다음 일정':'처리 기록';
   const idx=done?4:ev?3:exec?2:seen?1:0;
-  const rows=[['요청',whenTxt(r.created_at)+(r.requested_by?' '+r.requested_by:'')],['담당 확인',seen?(r.to_name||'')+' 열어 봄':'열기 전'],['실행',idx>=2?(r.to_name||'')+' 기록 중':'기록 전'],['증빙',idx>=3?evid+' 확인':evid+' 전'],['완료',done?whenTxt(r.closed_at||r.updated_at)+(r.auto?' · 자동 판정':' · 확인'):'자동 판정']];
+  const rows=[['요청',whenTxt(r.created_at)+(r.requested_by?' '+r.requested_by:'')],['담당 확인',seen?(r.to_name||'')+' 열어 봄':'열기 전'],['실행',idx>=2?(r.to_name||'')+' 기록 중':'기록 전'],['결과 기록',idx>=3?evid+' 기록됨':evid+' 전'],['완료',done?whenTxt(r.closed_at||r.updated_at)+(r.auto?' · 기록으로 완료':' · 확인'):'완료 조건: '+(K.contact?'통화 결과 + 다음 일정 등록':K.done||evid)]];
   return rows.map((s,i)=>({l:s[0],t:s[1],s:done?1:i<idx?1:i===idx?2:0}));
  }
  const stepsHtml=r=>'<div class="wrq-steps" aria-label="요청 단계">'+steps(r).map(s=>'<div class="'+(s.s===1?'done':s.s===2?'cur':'')+'"><span></span><b>'+h(s.l)+'</b><small>'+h(s.t)+'</small></div>').join('')+'</div>';
@@ -197,7 +203,7 @@
    const reply=ok||ab?lineEnd(r):'',note=od&&r.round>=2?(br?'지사 확인 요청 '+r.round+'회 미이행 → 본사 회수 검토 권장':r.label+' '+r.round+'회 미이행 → 재배정 검토 권장'):'',unreach=isOpen(r)&&r.to_reach===false?r.to_name+'은(는) CRM에서 이 요청을 볼 수 없습니다 · 전화로 전달하고, 처리되면 [처리 확인]':'';
    return '<div class="wrq-w"><div class="l1"><i style="background:'+(BRAND[r.brand]||'#9aa0ab')+'"></i><b title="'+attr(r.site)+'">'+h(r.site)+'</b><span class="wrq-pill '+pill[1]+'">'+h(pill[0])+'</span></div>'
     +'<span class="l2">'+h(r.to_name+'에게 · '+((r.asks||[]).join(' · ')||r.label))+'</span>'
-    +'<div class="l3"><span>'+h(whenTxt(r.reasked_at||r.created_at)+' · 기한 '+(r.due_label||whenTxt(r.due_at)))+'</span><i></i>'+btns.join('')+'</div>'
+    +'<div class="l3"><span>'+h(whenTxt(r.reasked_at||r.created_at)+' · 기한 '+dueTxt(r)+(r.round>=2?' · 기한 바뀜 '+whenTxt(r.reasked_at)+' (재확인 '+r.round+'회차)':''))+'</span><i></i>'+btns.join('')+'</div>'
     +stepsHtml(r)
     +(reply?'<span class="rp '+(ab?'amb':'ok')+'">'+h(reply)+'</span>':'')+(note?'<span class="nt">'+h(note)+'</span>':'')+(unreach?'<span class="ur">'+h(unreach)+'</span>':'')+'</div>';};
   return '<section class="wrq-wait"><header><b>답 기다리는 중</b><span>내가 요청한 일 '+L.length+'건</span></header>'+L.map(item).join('')+'<p class="ft">답변 대기 중엔 같은 요청 잠금 · 기한이 지나야 [재확인 요청] · 지사 건은 [본사 회수 검토]</p></section>';
@@ -219,7 +225,7 @@
   if(!enabled())return '';load();const L=incoming();if(!L.length)return '';const S=st();
   const card=r=>{const C=S.card[r.id]||(S.card[r.id]={res:'',owner:'',busy:false,err:''}),br=r.kind==='branch',K=KIND[r.kind]||{},t=target(r),od=overdue(r);
    const rc=isReceipt(r),ho=isHandover(r)||rc;
-   const head='<div class="hd"><em>'+(br?'본사 확인 요청':rc?'시공 인계':ho?'재배정 인계':'관리자 요청')+'</em><b>'+h(r.site)+'</b>'+(lateTxt(r)?'<span class="late">'+h(lateTxt(r))+'</span>':'')+(r.round>=2?'<span class="late">재확인 '+r.round+'회차</span>':'')+'<i></i><span class="by'+(od?' od':'')+'">'+h((r.requested_by||'관리자')+' · '+whenTxt(r.reasked_at||r.created_at)+' · '+(br?'기한 '+(r.due_label||''):(r.due_label||'')+'까지')+(od?' · 기한 지남':''))+'</span></div>'+stepsHtml(r);
+   const head='<div class="hd"><em>'+(br?'본사 확인 요청':rc?'시공 인계':ho?'재배정 인계':'관리자 요청')+'</em><b>'+h(r.site)+'</b>'+(lateTxt(r)?'<span class="late">'+h(lateTxt(r))+'</span>':'')+(r.round>=2?'<span class="late">재확인 '+r.round+'회차</span>':'')+'<i></i><span class="by'+(od?' od':'')+'">'+h((r.requested_by||'관리자')+' · '+whenTxt(r.reasked_at||r.created_at)+' · 기한 '+dueTxt(r)+(r.round>=2?' · 기한 바뀜 '+whenTxt(r.reasked_at):''))+'</span></div>'+stepsHtml(r);
    /* ops_12 C⑧ 재배정 인계 카드: 이전 담당 → 새 담당 · 재배정자 · 사유 / 인계 메모 · 남은 할 일 · 마지막 연락 / [이전 담당에게 질문] [인수 확인] — 확인 전까지 관리자 화면 '인계 대기' */
    if(ho){const rows=handoverRows(r),first=rows.find(x=>x[0]==='')||rows[0]||['',''],rest=rows.filter(x=>x[0]);
     return '<article class="wrq-in wrq-ho" data-id="'+r.id+'">'+head+'<span class="memo"><b>'+h(first[1]||first[0])+'</b></span>'
@@ -244,7 +250,7 @@
   /* 받은 사람이 화면을 열면 '담당 확인'으로 */
   L.filter(r=>r.status==='sent'&&!S.closing['seen:'+r.id]).forEach(r=>{S.closing['seen:'+r.id]=true;O().rpc(RPC.reply,{id:r.id,action:'seen'}).then(x=>put(x.request)).catch(()=>{});});
   const LG=L.filter(r=>r.label===LEGACY_LABEL),rest=L.filter(r=>r.label!==LEGACY_LABEL);
-  const bundle=LG.length?'<article class="wrq-in wrq-legacy"><div class="hd"><em>관리자 요청</em><b>'+h(LEGACY_LABEL+' '+LG.length+'건')+'</b><i></i><span class="by'+(LG.some(overdue)?' od':'')+'">'+h((LG[0].requested_by||'관리자')+' · '+whenTxt(LG[0].reasked_at||LG[0].created_at)+' · '+(LG[0].due_label||'')+'까지')+(LG.some(overdue)?' · 기한 지남':'')+'</span></div>'
+  const bundle=LG.length?'<article class="wrq-in wrq-legacy"><div class="hd"><em>관리자 요청</em><b>'+h(LEGACY_LABEL+' '+LG.length+'건')+'</b><i></i><span class="by'+(LG.some(overdue)?' od':'')+'">'+h((LG[0].requested_by||'관리자')+' · '+whenTxt(LG[0].reasked_at||LG[0].created_at)+' · 기한 '+dueTxt(LG[0]))+'</span></div>'
    +'<span class="memo">예전 시스템에서 옮겨 온 자료입니다 · 한 건씩 [영업 재개]에서 지금 단계 · 다음 행동 · 날짜를 정하면 그 건은 자동으로 완료됩니다</span>'
    +'<div class="wrq-lg">'+LG.map(r=>'<div><b title="'+attr(r.site)+'">'+h(r.site)+'</b><button type="button" data-wr="resume" data-id="'+r.id+'">영업 재개</button></div>').join('')+'</div></article>':'';
   return '<section class="wrq-top" aria-label="받은 요청">'+bundle+rest.map(card).join('')+'</section>';
@@ -350,5 +356,5 @@
  }
  document.addEventListener('click',onClick,true);
  document.addEventListener('change',e=>{const t=e.target;if(t&&t.matches&&t.matches('#pg-today [data-wr-in="owner"]')){const C=st().card[t.dataset.id];if(C){C.owner=t.value;repaint();}}},true);
- root.WorkRequest={enabled,load,reqFor,locked,cell,sideHtml,topHtml,history,autoClose,evidence,decorate,steps,HANDOVER_LABEL,RECEIPT_LABEL,isHandover,isReceipt,KIND,RPC,state:st,_dueAt:dueAt,_lineReq:lineReq,_lineEnd:lineEnd};
+ root.WorkRequest={enabled,load,reqFor,locked,cell,sideHtml,topHtml,history,autoClose,evidence,decorate,steps,dueTxt,NIGHT_FROM,NIGHT_HOUR,HANDOVER_LABEL,RECEIPT_LABEL,isHandover,isReceipt,KIND,RPC,state:st,_dueAt:dueAt,_lineReq:lineReq,_lineEnd:lineEnd};
 })(window);

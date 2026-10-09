@@ -42,7 +42,7 @@
    const g1=live.filter(i=>['assign','first','tfapprove','transfer'].includes(i.rk)||i.x.dueDays===0),s1=new Set(g1.map(i=>i.key));
    const g3=live.filter(i=>!s1.has(i.key)&&i.rk==='contract'),s3=new Set(g3.map(i=>i.key));
    const g2=live.filter(i=>!s1.has(i.key)&&!s3.has(i.key)).sort((a,b)=>((a.days>=7&&a.days<=30)?0:1)-((b.days>=7&&b.days<=30)?0:1)||a.days-b.days);
-   groups=[G('오늘 안 넘기면 놓침','배정 '+(root.CRMRules?root.CRMRules.get('assign_minutes'):30)+'분 · 첫 연락 '+(root.CRMRules?root.CRMRules.get('first_contact_hours'):2)+'시간 · 오늘 마감','모두 담당에게 알림',g1.sort(byUrgent)),G('추가 확인이 필요한 업무','앞선 긴급 · 계약정보 묶음을 제외한 현재 미처리 업무','담당별 코멘트',g2),G('계약 정보 빠짐','오늘 처리 목록 중 계약일 · 금액 누락 · 긴급 묶음과 과거 정리 대상은 별도','입력 요청 보내기',g3.sort((a,b)=>(b.amt||0)-(a.amt||0)))];
+   groups=[G('오늘 안 넘기면 놓침','배정 '+(root.CRMRules?root.CRMRules.get('assign_minutes'):30)+'분 · 첫 연락 '+(root.CRMRules?root.CRMRules.get('first_contact_hours'):2)+'시간 · 오늘 마감','모두 담당에게 알림',g1.sort(byUrgent)),G('추가 확인이 필요한 업무','앞선 긴급 · 계약정보 묶음을 제외한 현재 미처리 업무','담당별 코멘트',g2),G('계약 정보 빠짐','수주실적 = 낙찰금액(VAT 별도) · 낙찰일 기준 — 계약일 · 계약금액은 계약 실적 · 매출용이라 비어 있어도 수주실적에서 빠지지 않음 · 긴급 묶음과 과거 정리 대상은 별도','입력 요청 보내기',g3.sort((a,b)=>(b.amt||0)-(a.amt||0)))];
    /* 영업관리 화면(today-assist). ① 오늘 안 넘기면 놓침 = 기존 카드 묶음 그대로 맨 위(건수 · 문구 · 카드 4장 · 버튼을 바꾸지 않는다 — 2026-10-04 "기존 카드 상단으로 올려", 2026-10-05 "이거 자꾸 어디 가고": 카드를 없애거나 내리지 말 것).
        카드 아래 나머지 줄만 ②와 같은 표 줄로 보여 준다(2026-10-05 "① 오늘 안 넘기면 놓침도 ②번처럼"). ② 담당 배정 안 된 견적문의 표(①에 든 건을 추천 담당과 함께 다시 보여 주는 표 — aux: 큰 숫자 · 띠 · 실행 순서에 두 번 세지 않는다) ③ 이번 주 새로 멈춘 건 ④ 계약 정보 빠짐.
        끄면(G.todayAssistOff) 위 묶음 3개 그대로 */
@@ -58,7 +58,7 @@
    const g2=mine.filter(i=>i.rk==='decide').concat(teamAll.filter(i=>i.rk==='tfapprove')),s2=new Set(g2.map(i=>i.key));
    const g3=live.filter(i=>own(i)&&i.rk==='contract'&&!s2.has(i.key)),s3=new Set(g3.map(i=>i.key));
    const g1=live.filter(i=>own(i)&&!s2.has(i.key)&&!s3.has(i.key));
-   groups=[G('오늘 연락할 곳','본인 담당 · 오늘 넘기면 놓침','',g1.sort(byUrgent)),G('상무님 결정 요청','팀이 결정을 기다리는 것','',g2.sort(byUrgent)),G('본인 계약 정보 빠짐','실적에 안 잡힘','',g3)];
+   groups=[G('오늘 연락할 곳','본인 담당 · 오늘 넘기면 놓침','',g1.sort(byUrgent)),G('상무님 결정 요청','팀이 결정을 기다리는 것','',g2.sort(byUrgent)),G('본인 계약 정보 빠짐','계약 실적 · 매출용 — 수주실적(낙찰금액)에서는 빠지지 않음','',g3)];
    backSrc=mine.filter(i=>own(i)&&isBack(i));
   }else if(role==='lead'){
    groups=[G('본인 영업 · 오늘','본인 담당 · 오늘 넘기면 놓침','',live.filter(own).sort(byUrgent)),G('팀원 코칭 · 입찰 준비','팀원이 막힌 곳 · 팀장이 같이 봐야 함','팀원에게 코멘트',live.filter(i=>!own(i)).sort(byUrgent))];
@@ -208,8 +208,8 @@
   const whoLine=i=>{const own=i.x.owner===me,c=[i.i.name,i.i.role].filter(Boolean).join(' ');return team&&!own?'담당 '+(i.x.owner||'미배정')+' · '+([c,i.i.phone].filter(Boolean).join(' · ')||'연락처 확인 필요'):'담당 '+(c||'고객 미등록')+' · '+(i.i.phone||'연락처 확인 필요');};
   const reasonOf=i=>i.missTxt+(i.rk!=='decide'&&i.short&&!/^(0일|오늘)$/.test(i.short)&&i.rk!=='contract'?' · '+i.short:'');
   const WR=root.WorkRequest&&root.WorkRequest.enabled()?root.WorkRequest:null,wrBtn=(i,cls)=>{const w=WR&&team&&i.x.owner!==me?WR.cell(i,me):null;return w&&!w.self?w.btn.replace('class="go"',cls?'class="'+cls+'"':''):'';};
-  const card=(i,n)=>{const open=!!S.open[i.key],k=attr(i.key),own=i.x.owner===me,far=team&&!own;
-   return '<article class="tv3-card" data-key="'+k+'" style="border-left-color:'+i.bc+'"><header><i>'+(n+1)+'</i><b title="'+attr(reasonOf(i))+'">'+h(reasonOf(i))+'</b><em>'+h(SNAME[i.st]||i.sName)+'</em></header>'
+  const card=(i,n)=>{const open=!!S.open[i.key],k=attr(i.key),own=i.x.owner===me,far=team&&!own,first=true;/* after_deploy ⑤: 카드는 첫 묶음(오늘 안 넘기면 놓침)에만 — 뽑힌 이유 1개 앞에, 나머지 이유는 회색 참고 */
+   return '<article class="tv3-card" data-key="'+k+'" style="border-left-color:'+i.bc+'"><header><i>'+(n+1)+'</i><b title="'+attr(reasonOf(i))+'">'+(first?'뽑힌 이유 · ':'')+h(reasonOf(i))+'</b><em>'+h(SNAME[i.st]||i.sName)+'</em></header>'+(i.alerts&&i.alerts.length>1?'<div class="tv3-ref">'+i.alerts.filter(a=>a!==i.missTxt).slice(0,2).map(a=>'<span>참고 · '+h(a)+'</span>').join('')+'</div>':'')
     +'<div class="who"><span style="color:'+i.bc+'">'+h(i.brand||'브랜드 미입력')+'</span><b title="'+attr(i.i.site)+'">'+h(i.i.site)+'</b><small>'+h(whoLine(i))+'</small></div>'
     +'<dl><dt>원한 것</dt><dd>'+h(i.i.want||'기록 없음')+'</dd><dt>지난 기록</dt><dd>'+h(i.support?'[지원 요청] '+i.support.note:i.i.recent||(root.ContactState?root.ContactState.NONE:'CRM 연락 기록 없음'))+'</dd><dt>금액</dt><dd>'+h(i.amt?money(i.amt):'금액 미정')+'</dd></dl>'
     +'<div class="fold"><button type="button" data-t3="fold" data-key="'+k+'"><span>'+(far?'담당에게 보낼 말 · 놓치면':'첫마디 · 놓치면')+'</span><span>'+(open?'접기 ▴':'펼치기 ▾')+'</span></button>'+(open?'<div class="open"><span>'+h(W._line(i,role,me))+'</span><p><b>놓치면</b> '+h(i.loss)+'</p></div>':'')+'<p class="done"><b>완료 기준</b> <span>'+h(i.done)+'</span></p></div>'

@@ -97,11 +97,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#wrq-modal').count(),0,'보내면 창이 닫힌다');
   const sent=await page.evaluate(()=>__rpc.filter(c=>c[0]==='crm_work_request_create_v1').map(c=>c[1]));
   assert.equal(sent.length,1);assert.deepEqual([sent[0].target_type,sent[0].target_id,sent[0].kind,sent[0].label,sent[0].to_scope,sent[0].to_name,sent[0].asks,sent[0].due_label,new Date(sent[0].due_at).toLocaleString('sv-SE',{timeZone:'Asia/Seoul'}).slice(0,16)],['inquiry','00000001-0000-4000-8000-000000000001','branch','지사 확인 요청','branch','경남지사장',['실담당 지정 확인','고객 첫 연락 진행 확인','영업 진행 여부 확인'],'내일 12시','2026-10-08 12:00']);
+  /* after_deploy ①: 기한은 절대 날짜 · 요일 · 시각 + 남은 시간 — 기대값은 화면과 같은 함수로 만든다 */
+  const DUE={};for(const l of ['오늘 17:00','오늘 중','내일 12시','3일 안'])DUE[l]=await page.evaluate(l=>WorkRequest.dueTxt({due_at:WorkRequest._dueAt(l).toISOString()}),l);
   /* 3. 보내면 목록에서 빠지고 오른쪽 '답 기다리는 중' — 큰 숫자 = 줄 수 그대로 맞는다 */
   assert.deepEqual((await cards()).map(c=>c[0]),['[서울 강남] 강변삼부아파트','[서울 송파] 가락현대TWELVE','[대전] 웰니스병원'],'보낸 건은 목록에서 빠진다');assert.equal(await heroN(),'5');
   const waits=()=>v.locator('.wrq-wait .wrq-w').evaluateAll(l=>l.map(n=>[n.querySelector('.l1 b').textContent,n.querySelector('.wrq-pill').textContent,n.querySelector('.l2').textContent,n.querySelector('.l3 span').textContent,[...n.querySelectorAll('.l3 button')].map(b=>b.textContent).join(' | '),n.querySelector('.rp')?n.querySelector('.rp').textContent:'',n.querySelector('.nt')?n.querySelector('.nt').textContent:'']));
   assert.equal(one(await v.locator('.wrq-wait>header').innerText()),'답 기다리는 중 내가 요청한 일 1건');
-  assert.deepEqual(await waits(),[['[경북 경주] 전원하이빌','답변 대기','경남지사장에게 · 실담당 지정 확인 · 고객 첫 연락 진행 확인 · 영업 진행 여부 확인','오늘 10:00 · 기한 내일 12시','','','']]);
+  /* after_deploy ①: 기한은 상대 표현('내일 12시')이 아니라 절대 날짜 · 요일 · 시각 + 남은 시간 */
+  {const w=await waits();assert.equal(w.length,1);assert.deepEqual([w[0][0],w[0][1],w[0][2],w[0][4],w[0][5],w[0][6]],['[경북 경주] 전원하이빌','답변 대기','경남지사장에게 · 실담당 지정 확인 · 고객 첫 연락 진행 확인 · 영업 진행 여부 확인','','','']);assert.match(w[0][3],/^오늘 10:00 · 기한 \d{4}\.\d{1,2}\.\d{1,2} \([일월화수목금토]\) 12:00 · \d+시간 남음$/,w[0][3]);}
   assert.equal(await v.locator('.tv3-side>section').first().evaluate(n=>n.classList.contains('wrq-wait')),true,'오른쪽 칸 맨 위');assert.equal(await v.locator('.tv3-side>section').count(),4,'기존 일정 · 마감 · 기준은 그대로');
   assert.equal(await v.locator('.wrq-wait>.ft').innerText(),'답변 대기 중엔 같은 요청 잠금 · 기한이 지나야 [재확인 요청] · 지사 건은 [본사 회수 검토]');
   /* 4. 요청 창(내부 담당): 고객 번호 · 문의 · 처리 기한(오늘 17:00 / 오늘 중 / 직접 지정) · 완료 조건 3줄 · 지연일이 든 메모 */
@@ -120,14 +123,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.evaluate(async()=>{const r=await SB.rpc('crm_work_request_create_v1',{p:{target_type:'inquiry',target_id:'00000002-0000-4000-8000-000000000002',kind:'first',label:'첫 연락 요청',to_scope:'user',to_name:'이필선',asks:['고객 첫 연락'],due_at:new Date(Date.now()+3600e3).toISOString(),due_label:'오늘 중',memo:''}});return r.error&&r.error.message;}),'이미 답을 기다리는 같은 요청이 있습니다');
   /* 견적문의 상세 응대 이력: '시스템 · 내부 요청' 한 줄 */
   await page.evaluate(()=>{window.__tl=InquiryDetailV2;});
-  assert.deepEqual(await page.evaluate(()=>WorkRequest.history('inquiry','00000002-0000-4000-8000-000000000002').map(x=>[x.who,x.text])),[['시스템 · 내부 요청','송보람 → 이필선 · 고객 첫 연락 · 기한 오늘 17:00']]);
+  assert.deepEqual(await page.evaluate(()=>WorkRequest.history('inquiry','00000002-0000-4000-8000-000000000002').map(x=>[x.who,x.text])),[['시스템 · 내부 요청','송보람 → 이필선 · 고객 첫 연락 · 기한 '+DUE['오늘 17:00']]]);
   /* 5. 받는 사람(영업사원 이필선) 오늘 업무 맨 위: 빨간 '관리자 요청' → [전화] · 통화 결과 · 다음 행동(AI 표식) · [저장] */
   await page.evaluate(()=>{window.__rec=[];InquiryListV3.record=(q,o)=>{__rec.push([q.id,o.res,o.next,o.due]);return true;};});
   await as({id:'10000000-0000-4000-8000-000000000001',name:'이필선',role:'rep'});
   const top=page.locator('#today-v2 .tv3 .wrq-top');assert.equal(await top.count(),1);assert.equal(await page.locator('#today-v2 .tv3').evaluate(n=>n.firstElementChild.classList.contains('wrq-top')),true,'오늘 업무 맨 위');
   assert.equal(await top.locator('.wrq-in').count(),1,'내게 온 요청만');
   const c1=top.locator('.wrq-in').first();
-  assert.equal(one(await c1.locator('.hd').innerText()),'관리자 요청 [서울 강남] 강변삼부아파트 첫 연락 14일 지연 송보람 · 오늘 10:00 · 오늘 17:00까지');
+  assert.equal(one(await c1.locator('.hd').innerText()),'관리자 요청 [서울 강남] 강변삼부아파트 첫 연락 14일 지연 송보람 · 오늘 10:00 · 기한 '+DUE['오늘 17:00']);
   assert.equal(await c1.locator('.hd em').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(209, 74, 63)');
   assert.equal(await c1.locator('.memo').innerText(),'"14일 미응대 건입니다. 오늘 고객 연락 후 결과와 다음 일정을 CRM에 남겨주세요."');
   assert.equal(await c1.locator('.call').innerText(),'전화 010-1234-5612');assert.deepEqual(await c1.locator('.res button').allInnerTexts(),['연결됨','견적요청','검토중','부재']);
@@ -143,7 +146,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#today-v2 .tv3 .wrq-top').count(),0,'처리하면 맨 위 줄이 사라진다');
   /* 6. 보낸 사람 화면: ✓ 처리 완료 + 통화 결과 → 다음 행동 */
   await as({id:'u-admin',name:'송보람',role:'admin'});
-  {const W=await waits(),r2=W.find(x=>x[0]==='[서울 강남] 강변삼부아파트');assert.deepEqual(r2.slice(1),['✓ 처리 완료','이필선에게 · 고객 첫 연락','오늘 10:00 · 기한 오늘 17:00','진행 확인','이필선 · 처리 완료 · 연결됨 → 다음 행동: 다시 연락 · 10/10','']);
+  {const W=await waits(),r2=W.find(x=>x[0]==='[서울 강남] 강변삼부아파트');assert.deepEqual(r2.slice(1),['✓ 처리 완료','이필선에게 · 고객 첫 연락','오늘 10:00 · 기한 '+DUE['오늘 17:00'],'진행 확인','이필선 · 처리 완료 · 연결됨 → 다음 행동: 다시 연락 · 10/10','']);
    assert.equal(await v.locator('.wrq-w',{hasText:'강변삼부'}).locator('.wrq-pill').evaluate(n=>getComputedStyle(n).color),'rgb(31, 122, 77)');}
   /* 7. 부재: 실제 연결이 아니므로 '요청 처리 · 부재'(주황) — 최초 응대는 찍지 않는다(기록은 기존 길이 '시도'로 남긴다) */
   await v.locator('.tv3-card',{hasText:'가락현대'}).locator('[data-wr="ask"]').click();await page.waitForTimeout(200);await m.locator('[data-wr="send"]').click();await page.waitForTimeout(350);
@@ -158,7 +161,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 8. 지사 화면: '본사 확인 요청' → 처리 결과 하나 → (담당 지정 완료면) 실담당 → [본사에 회신] */
   await as({id:'u-jo',name:'조민준',role:'branch'});
   {const b=page.locator('#today-v2 .tv3 .wrq-top .wrq-in').first();assert.equal(await page.locator('#today-v2 .tv3 .wrq-top .wrq-in').count(),1);
-   assert.equal(one(await b.locator('.hd').innerText()),'본사 확인 요청 [경북 경주] 전원하이빌 송보람 · 오늘 10:00 · 기한 내일 12시');
+   assert.equal(one(await b.locator('.hd').innerText()),'본사 확인 요청 [경북 경주] 전원하이빌 송보람 · 오늘 10:00 · 기한 '+DUE['내일 12시']);
    assert.equal(one(await b.locator('.memo').innerText()),'요청 실담당 지정 확인 · 고객 첫 연락 진행 확인 · 영업 진행 여부 확인 "담당자 지정 후 고객 첫 연락 진행 여부를 CRM에 남겨 주세요."');
    assert.equal(await b.locator('.lb').innerText(),'처리 결과 · 하나 고르기');assert.deepEqual(await b.locator('.chips button').allInnerTexts(),['담당 지정 완료','고객 첫 연락 완료','연락 시도 · 부재','진행 보류','본사 회수 요청']);
    assert.equal(await b.locator('[data-wr="reply"]').isDisabled(),true);assert.equal(await b.locator('.own').count(),0);
@@ -171,7 +174,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    await b.locator('[data-wr="reply"]').click();await page.waitForTimeout(350);assert.equal(await page.locator('#today-v2 .tv3 .wrq-top').count(),0);}
   await as({id:'u-admin',name:'송보람',role:'admin'});
   {const r1=(await waits()).find(x=>x[0]==='[경북 경주] 전원하이빌');assert.deepEqual([r1[1],r1[4],r1[5]],['회신 완료','진행 확인','조민준 회신 · 담당 지정 완료 · 김훈']);
-   assert.deepEqual(await page.evaluate(()=>WorkRequest.history('inquiry','00000001-0000-4000-8000-000000000001').map(x=>x.text)),['송보람 → 경남지사장 · 실담당 지정 확인 · 고객 첫 연락 진행 확인 · 영업 진행 여부 확인 · 기한 내일 12시','조민준 회신 · 담당 지정 완료 · 김훈'],'요청 · 회신이 그 현장 응대 이력에 이어서 쌓인다');}
+   assert.deepEqual(await page.evaluate(()=>WorkRequest.history('inquiry','00000001-0000-4000-8000-000000000001').map(x=>x.text)),['송보람 → 경남지사장 · 실담당 지정 확인 · 고객 첫 연락 진행 확인 · 영업 진행 여부 확인 · 기한 '+DUE['내일 12시'],'조민준 회신 · 담당 지정 완료 · 김훈'],'요청 · 회신이 그 현장 응대 이력에 이어서 쌓인다');}
   if(shot)await page.screenshot({path:shot+'-wait.png',fullPage:true});
   /* [진행 확인] = 그 건 상세 열기 → 확인한 줄은 내려간다 */
   await v.locator('.wrq-w',{hasText:'전원하이빌'}).locator('[data-wr="check"]').click();await page.waitForTimeout(250);
@@ -182,12 +185,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await m.locator('[data-wr="send"]').click();await page.waitForTimeout(350);
   assert.equal((await rows()).some(r=>r[0]==='[경기 용인] 멈춘 현장'),false,'표 줄도 빠진다');
   assert.equal(await page.evaluate(()=>(__writes.filter(w=>w[0]==='activity').length>0)||true),true);
-  const before=await waits();assert.deepEqual(before.find(x=>x[0]==='[경기 용인] 멈춘 현장').slice(1,5),['답변 대기','김성민에게 · 수신 확인 · 고객 반응 기록','오늘 10:00 · 기한 오늘 17:00',''],'기한 전에는 재확인 버튼이 없다');
+  const before=await waits();assert.deepEqual(before.find(x=>x[0]==='[경기 용인] 멈춘 현장').slice(1,5),['답변 대기','김성민에게 · 수신 확인 · 고객 반응 기록','오늘 10:00 · 기한 '+DUE['오늘 17:00'],''],'기한 전에는 재확인 버튼이 없다');
   await page.clock.setFixedTime(new Date('2026-10-08T09:00:00+09:00'));await as({id:'u-admin',name:'송보람',role:'admin'});
   {const w=(await waits()).find(x=>x[0]==='[경기 용인] 멈춘 현장');assert.deepEqual([w[1],w[4],w[6]],['요청 미이행','재확인 요청','']);
    assert.equal(await v.locator('.wrq-w',{hasText:'멈춘 현장'}).locator('.wrq-pill').evaluate(n=>getComputedStyle(n).color),'rgb(180, 35, 24)');
    await v.locator('.wrq-w',{hasText:'멈춘 현장'}).locator('[data-wr="reask"]').click();await page.waitForTimeout(350);
-   const w2=(await waits()).find(x=>x[0]==='[경기 용인] 멈춘 현장');assert.deepEqual([w2[1],w2[3],w2[4]],['답변 대기','오늘 09:00 · 기한 오늘 17:00',''],'재확인 = 같은 줄의 기한을 다시 잡는다');
+   const w2=(await waits()).find(x=>x[0]==='[경기 용인] 멈춘 현장');assert.deepEqual([w2[1],w2[4]],['답변 대기',''],'재확인 = 같은 줄의 기한을 다시 잡는다');
+   /* after_deploy ①: 기한을 바꾸면 새 기한(절대 시각) + '기한 바뀜 · 시각 · 재확인 n회차' — 원래 기한(취소선)은 서버 이력 칸(Codex)이 생기면 */
+   assert.match(w2[3],/^오늘 09:00 · 기한 \d{4}\.\d{1,2}\.\d{1,2} \([일월화수목금토]\) 17:00 · \d+시간 (남음|지남) · 기한 바뀜 오늘 09:00 \(재확인 2회차\)$/,w2[3]);
    assert.deepEqual(await page.evaluate(()=>{const r=__db.find(x=>x.target_id==='stall1');return [r.round,r.status];}),[2,'sent']);}
   await page.clock.setFixedTime(new Date('2026-10-09T09:00:00+09:00'));await as({id:'u-admin',name:'송보람',role:'admin'});
   {const w=(await waits()).find(x=>x[0]==='[경기 용인] 멈춘 현장');assert.deepEqual([w[1],w[4],w[6]],['요청 미이행 · 2회','재확인 요청 | 재배정 검토','후속 연락 요청 2회 미이행 → 재배정 검토 권장']);
@@ -227,7 +232,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 관리팀 KPI 8번 '조치 → 처리율'의 자료 = 요청 업무(회신 · 기록으로 완료 ÷ 보낸 요청 · 취소 제외) */
   assert.deepEqual(await page.evaluate(()=>{const C=KpiB.compute(),k=C.M[7],all=__db.filter(r=>r.status!=='cancelled'),ok=all.filter(r=>r.status==='done'||r.status==='replied');return [k.wrq===all.length,k.den>=all.length,k.num>=ok.length,ok.length>0];}),[true,true,true,true]);
   /* 영업건 상세 응대 이력: '[내부 요청] …' 메모 줄 = '시스템 · 내부 요청' 표시 */
-  assert.deepEqual(await page.evaluate(()=>{const v=document.getElementById('detailView'),box=document.createElement('div');box.className='idv-thread';box.innerHTML='<div class="idv-msg"><div class="idv-meta"><em>내부 메모</em></div><div class="idv-bubble">[내부 요청] 송보람 → 김성민 · 수신 확인 · 기한 오늘 17:00</div></div><div class="idv-msg"><div class="idv-meta"><em>내부 메모</em></div><div class="idv-bubble">그냥 메모</div></div>';v.append(box);WorkRequest.decorate();const r=[...box.querySelectorAll('.idv-msg')].map(n=>[n.querySelector('.idv-meta em').textContent,n.querySelector('.idv-bubble').textContent]);box.remove();return r;}),[['시스템 · 내부 요청','송보람 → 김성민 · 수신 확인 · 기한 오늘 17:00'],['내부 메모','그냥 메모']]);
+  assert.deepEqual(await page.evaluate(()=>{const v=document.getElementById('detailView'),box=document.createElement('div');box.className='idv-thread';box.innerHTML='<div class="idv-msg"><div class="idv-meta"><em>내부 메모</em></div><div class="idv-bubble">[내부 요청] 송보람 → 김성민 · 수신 확인 · 기한 오늘 17:00</div></div><div class="idv-msg"><div class="idv-meta"><em>내부 메모</em></div><div class="idv-bubble">그냥 메모</div></div>';v.append(box);WorkRequest.decorate();const r=[...box.querySelectorAll('.idv-msg')].map(n=>[n.querySelector('.idv-meta em').textContent,n.querySelector('.idv-bubble').textContent]);box.remove();return r;}),[['시스템 · 내부 요청','송보람 → 김성민 · 수신 확인 · 기한 오늘 17:00'],['내부 메모','그냥 메모']]);/* 이 줄은 예전에 적힌 응대 이력 글 그대로(이력 글은 바꾸지 않는다) */
   /* 11. 권한: 영업사원 화면에는 요청 버튼 · '답 기다리는 중'이 없다(내 영업만) */
   await as({id:'u-kim',name:'김성민',role:'rep'});
   assert.equal(await page.locator('#today-v2 .tv3 [data-wr="ask"]').count(),0);assert.equal(await page.locator('#today-v2 .tv3 .wrq-wait').count(),0);
