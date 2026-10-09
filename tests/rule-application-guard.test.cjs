@@ -45,3 +45,41 @@ test('malformed or unconfirmed save ACK cannot reset the last confirmed client v
 test('network failure preserves the last confirmed client settings',async()=>{
  const w=client(async(n,p)=>{if(p.set)throw new Error('connection lost');return {ok:true,rules:{assign_minutes:40}}});await w.CRMRules.load();await assert.rejects(w.CRMRules.save({assign_minutes:10}),/connection lost/);assert.equal(w.CRMRules.get('assign_minutes'),40);
 });
+function deferred(){let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no});return {promise,resolve,reject};}
+const ack=(value,version)=>({ok:true,rules:{assign_minutes:value},version});
+test('late read cannot overwrite an acknowledged save or its version',async()=>{
+ const old=deferred();let reads=0;
+ const w=client((n,p)=>p.set?Promise.resolve(ack(10,2)):++reads===1?Promise.resolve(ack(40,1)):old.promise);
+ await w.CRMRules.load();const reading=w.CRMRules.load(true);await w.CRMRules.save({assign_minutes:10});
+ old.resolve(ack(40,1));await reading;
+ assert.equal(w.CRMRules.get('assign_minutes'),10);assert.equal(w.OPS_RULES.inquiryAssignMinutes,10);assert.equal(w.CRMRules.version().n,2);
+});
+test('read started before a write cannot publish stale values while the write is pending',async()=>{
+ const old=deferred(),writing=deferred();let reads=0;
+ const w=client((n,p)=>p.set?writing.promise:++reads===1?Promise.resolve(ack(40,2)):old.promise);
+ await w.CRMRules.load();const reading=w.CRMRules.load(true),saving=w.CRMRules.save({assign_minutes:10});
+ old.resolve(ack(30,1));await reading;assert.equal(w.CRMRules.get('assign_minutes'),40);
+ writing.resolve(ack(10,3));await saving;assert.equal(w.CRMRules.get('assign_minutes'),10);
+});
+test('concurrent loads share the pending read instead of resolving with defaults',async()=>{
+ const pending=deferred();let reads=0,secondDone=false;
+ const w=client(()=>{reads++;return pending.promise});const first=w.CRMRules.load(true),second=w.CRMRules.load(true).then(v=>{secondDone=true;return v});
+ await Promise.resolve();assert.equal(secondDone,false);assert.equal(reads,1);
+ pending.resolve(ack(40,1));await first;await second;assert.equal(w.CRMRules.get('assign_minutes'),40);
+});
+test('overlapping saves are rejected and a failed write releases the guard',async()=>{
+ const pending=deferred();let writes=0;
+ const w=client((n,p)=>{if(!p.set)return Promise.resolve(ack(40,1));writes++;return writes===1?pending.promise:Promise.resolve(ack(20,2))});
+ await w.CRMRules.load();const first=w.CRMRules.save({assign_minutes:10});
+ const firstFailure=assert.rejects(first,/connection lost/);
+ await assert.rejects(w.CRMRules.save({assign_minutes:20}),/저장 중/);assert.equal(writes,1);
+ pending.reject(new Error('connection lost'));await firstFailure;assert.equal(w.CRMRules.get('assign_minutes'),40);
+ await w.CRMRules.save({assign_minutes:20});assert.equal(writes,2);assert.equal(w.CRMRules.get('assign_minutes'),20);
+});
+test('load during a write waits for its confirmed result without starting another read',async()=>{
+ const pending=deferred();let reads=0,readDone=false;
+ const w=client((n,p)=>p.set?pending.promise:(reads++,Promise.resolve(ack(40,1))));await w.CRMRules.load();
+ const saving=w.CRMRules.save({assign_minutes:10}),reading=w.CRMRules.load(true).then(()=>{readDone=true});
+ await Promise.resolve();assert.equal(readDone,false);assert.equal(reads,1);
+ pending.resolve(ack(10,2));await saving;await reading;assert.equal(w.CRMRules.get('assign_minutes'),10);
+});
