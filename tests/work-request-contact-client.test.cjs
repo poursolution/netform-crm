@@ -2,6 +2,12 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const read=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
 const id=n=>'10000000-0000-4000-8000-'+String(n).padStart(12,'0');
+const objectiveAsks=['고객 첫 연락','연락 후 견적 필요 여부 확인'];
+const objectivePayload=()=>({id:id(20),operation_id:id(70),expected_revision:0,expected_updated_at:'2026-10-10T00:00:00Z',decisions:[{ask:objectiveAsks[1],value:'not_needed',note:'고객 확인'}],complete:true});
+function objectiveAck(p){const proof={contact_log_id:id(40),satisfied_asks:['고객 첫 연락'],requested_asks:objectiveAsks};return {
+ ok:true,contract_version:1,request_id:p.id,operation_id:p.operation_id,revision:1,policy_version:'first-compound-v1',expected_updated_at:'2026-10-10T01:00:00Z',
+ request:{id:p.id,target_type:'inquiry',kind:'first',status:p.complete?'done':'working',asks:objectiveAsks},request_complete:p.complete,
+ requested_asks:objectiveAsks,contact_proof:proof,decisions:p.decisions.map(d=>({...d,contact_log_id:id(40),next_action:d.value==='needed'?{id:d.next_action_id}:null}))};}
 function setup({storage=new Map(),gate=true,rpc,asks=['고객 첫 연락']}={}){
  const listeners={},calls=[],takes=[],messages=[];
  const q={id:id(10),assigned_to:id(1),status:'배정완료'};
@@ -29,6 +35,37 @@ function setup({storage=new Map(),gate=true,rpc,asks=['고객 첫 연락']}={}){
 test('only server-confirmed atomic ACK updates state; no legacy fire-and-forget or result-only completion',async()=>{
  const x=setup();await x.save();assert.equal(x.calls[0][0],'crm_work_request_inquiry_contact_v1');
  assert.equal(x.calls.some(c=>c[0]==='crm_work_request_reply_v1'),false);assert.equal(x.takes.length,1);assert.equal(x.q.status,'전화응대 완료');assert.equal(x.storage.size,0);
+});
+
+test('objective API is data-only, gated, and does not apply old receipt to customer or request state',async()=>{
+ const x=setup({rpc:async(_f,p)=>objectiveAck(p)}),p=objectivePayload();const a=await x.R.WorkRequest.objectives.write(p);
+ assert.equal(a.request_complete,true);assert.equal(x.calls[0][0],'crm_work_request_objectives_write_v1');assert.equal(x.r.status,'sent');assert.equal(x.q.status,'배정완료');assert.equal(x.storage.size,0);
+ const off=setup({gate:false});assert.equal(off.R.WorkRequest.objectives.enabled(),false);await assert.rejects(off.R.WorkRequest.objectives.write(p));assert.equal(off.calls.length,0);
+});
+test('objective lost response retries exact payload across reload and blocks edits while uncertain',async()=>{
+ const storage=new Map(),p=objectivePayload(),x=setup({storage,rpc:async()=>{throw Error('network');}});
+ await assert.rejects(x.R.WorkRequest.objectives.write(p));await assert.rejects(x.R.WorkRequest.objectives.write({...p,complete:false}));assert.equal(x.calls.length,1);
+ const y=setup({storage,rpc:async(_f,p)=>({...objectiveAck(p),replayed:true})});await y.R.WorkRequest.objectives.retry(p.id);
+ assert.deepEqual(y.calls[0][1],p);assert.equal(storage.size,0);assert.equal(y.r.status,'sent');
+});
+test('objective malformed ACK, login change and concurrent click never imply completion',async()=>{
+ for(const mutate of [a=>a.revision=5,a=>a.decisions[0].note='다른 판단',a=>a.contact_proof.satisfied_asks=[],a=>a.request.asks=[]]){
+  const x=setup({rpc:async(_f,p)=>{const a=objectiveAck(p);mutate(a);return a;}});await assert.rejects(x.R.WorkRequest.objectives.write(objectivePayload()));assert.equal(x.storage.size,1);assert.equal(x.r.status,'sent');
+ }
+ let release;const x=setup({rpc:(_f,p)=>new Promise(resolve=>{release=()=>resolve(objectiveAck(p));})});const pending=x.R.WorkRequest.objectives.write(objectivePayload());
+ await assert.rejects(x.R.WorkRequest.objectives.write(objectivePayload()));assert.equal(x.calls.length,1);x.R.ME.id=id(3);release();await assert.rejects(pending);assert.equal(x.storage.size,1);
+});
+test('objective definite rollback clears retry data; storage failure prevents RPC',async()=>{
+ const x=setup({rpc:async()=>{throw Object.assign(Error('conflict'),{code:'40001',databaseRejected:true});}});await assert.rejects(x.R.WorkRequest.objectives.write(objectivePayload()));assert.equal(x.storage.size,0);
+ const uncertain=setup({rpc:async()=>{throw Object.assign(Error('connection lost'),{code:'40001'});}});await assert.rejects(uncertain.R.WorkRequest.objectives.write(objectivePayload()));assert.equal(uncertain.storage.size,1);
+ const y=setup();y.R.localStorage.setItem=()=>{throw Error('quota');};await assert.rejects(y.R.WorkRequest.objectives.write(objectivePayload()));assert.equal(y.calls.length,0);
+});
+test('objective read validates context, account and twenty-row page without writing',async()=>{
+ const x=setup({rpc:async(_f,p)=>({...objectiveAck({...objectivePayload(),complete:false}),history:[],history_page:p.page,history_total:0,history_has_more:false})});
+ const c=await x.R.WorkRequest.objectives.read(id(20),2);assert.equal(c.client_actor_id,id(1));assert.equal(x.calls[0][0],'crm_work_request_objectives_read_v1');assert.equal(x.storage.size,0);
+ await assert.rejects(x.R.WorkRequest.objectives.read(id(20),0));assert.equal(x.calls.length,1);
+ const bad=setup({rpc:async()=>({...objectiveAck(objectivePayload()),history:Array(21).fill({}),history_page:1,history_total:21,history_has_more:false})});await assert.rejects(bad.R.WorkRequest.objectives.read(id(20)));
+ for(const file of ['pc-manager-transport.js','pc-error-state.js','work-request.js'])for(const name of ['crm_work_request_objectives_read_v1','crm_work_request_objectives_write_v1'])assert.ok(read(file).includes(name));
 });
 test('pending response has no optimistic completion and double-click cannot write twice',async()=>{
  let release;const x=setup({rpc:(_f,p,ack)=>new Promise(resolve=>{release=()=>resolve(ack(p));})});const pending=x.save();await x.save();
@@ -104,9 +141,9 @@ test('definite server rejection releases pending payload while uncertain errors 
  const y=setup({rpc:async()=>{throw Object.assign(Error('connection lost'),{code:'22023'});}});await y.save();assert.equal(y.storage.size,1);
 });
 test('OpsStore preserves only explicit PostgreSQL rollback evidence',async()=>{
- for(const code of ['22023','42501','PGRST301',undefined]){
+ for(const code of ['22023','42501','40001','PGRST301',undefined]){
   const R={ME:{},SB:{rpc:async()=>({error:{code,message:'rejected'}})}};
   vm.runInNewContext(read('ops-store.js'),{window:R,Date,Set,Map});
-  await assert.rejects(R.OpsStore.rpc('crm_work_request_inquiry_contact_v1',{}),e=>e.code===code&&e.databaseRejected===['22023','42501'].includes(code));
+  await assert.rejects(R.OpsStore.rpc('crm_work_request_inquiry_contact_v1',{}),e=>e.code===code&&e.databaseRejected===['22023','42501','40001'].includes(code));
  }
 });

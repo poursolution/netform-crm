@@ -49,6 +49,81 @@ beforeEach(async()=>{
 });
 after(async()=>{await db?.close();});
 
+const readReview=page=>call({id:request,...(page?{page}:{})},'crm_work_request_objectives_read_v1');
+const writeReview=p=>call(p,'crm_work_request_objectives_write_v1');
+const reviewBody=(context,extra={})=>({id:request,operation_id:id(70),expected_revision:context.revision,expected_updated_at:context.expected_updated_at,
+ decisions:allAsks.slice(1).map(ask=>({ask,value:'not_needed',note:'고객과 필요 여부 확인'})),complete:true,...extra});
+const connectedReview=async()=>{await compound();await call2(body());return readReview();};
+
+test('objective context survives reload and allows requester/recipient only, including null recipient',async()=>{
+ const c=await connectedReview();assert.equal(c.revision,0);assert.deepEqual(c.contact_proof.remaining_asks,allAsks.slice(1));assert.deepEqual(c.history,[]);
+ await as(admin);assert.equal((await readReview()).request_id,request);
+ await as(other);await assert.rejects(readReview(),/forbidden/);
+ await db.exec(`reset role;update crm_security.work_requests set to_user_id=null`);await as(other);await assert.rejects(readReview(),/forbidden/);
+ await as(owner);await assert.rejects(readReview(),/forbidden/);
+});
+test('objective completion requires real connection proof; absence and result text are insufficient',async()=>{
+ await compound();let c=await readReview();await assert.rejects(writeReview(reviewBody(c)),/REQUEST_CONTACT_PROOF_REQUIRED/);
+ await call2(body({result:'부재'}));c=await readReview();await assert.rejects(writeReview(reviewBody(c)),/REQUEST_CONTACT_PROOF_REQUIRED/);
+ await db.exec('reset role');assert.equal((await db.query('select count(*)::int n from crm_security.work_request_objective_events')).rows[0].n,0);
+});
+test('partial decisions stay working; explicit full review closes request without completing customer task',async()=>{
+ const c=await connectedReview();await db.exec('reset role');const plans=(await db.query('select * from next_actions')).rows;const inquiry=(await db.query('select * from inquiries')).rows;await as(owner);
+ const partial=reviewBody(c,{decisions:[{ask:allAsks[1],value:'unknown',note:'자료 회신 후 판단'}],complete:false});
+ const a=await writeReview(partial);assert.equal(a.request.status,'working');assert.equal(a.request_complete,false);assert.equal(a.revision,1);
+ const b=await writeReview(reviewBody(await readReview(),{operation_id:id(71)}));assert.equal(b.request.status,'done');assert.equal(b.request_complete,true);assert.equal(b.request.auto_done,false);
+ const reread=await readReview();assert.equal(reread.history.length,2);assert.equal(reread.history[1].decisions[0].value,'unknown');assert.equal(reread.request_complete,true);
+ await db.exec('reset role');assert.deepEqual((await db.query('select * from next_actions')).rows,plans);assert.deepEqual((await db.query('select * from inquiries')).rows,inquiry);
+});
+test('needed decisions require matching persisted followup, never a fabricated or other inquiry task',async()=>{
+ const c=await connectedReview();const decision={ask:allAsks[1],value:'needed',note:'고객 견적 요청 확인',next_action_id:id(90)};
+ await assert.rejects(writeReview(reviewBody(c,{decisions:[decision],complete:false})),/REQUEST_FOLLOWUP_REQUIRED/);
+ await db.exec(`reset role;insert into next_actions(id,inquiry_id,action_type,title,due_at,assignee_name,status) values('${id(90)}','${inq}','방문','현장 방문',now()+interval '2 day','담당','open')`);await as(owner);
+ await assert.rejects(writeReview(reviewBody(c,{decisions:[decision],complete:false})),/REQUEST_FOLLOWUP_REQUIRED/);
+ await db.exec(`reset role;update next_actions set action_type='견적' where id='${id(90)}'`);await as(owner);
+ const a=await writeReview(reviewBody(c,{decisions:[decision],complete:false}));assert.equal(a.decisions[0].next_action.id,id(90));assert.equal(a.request_complete,false);
+});
+test('objective CAS and operation receipts reject stale, changed and duplicate completion',async()=>{
+ const c=await connectedReview(),p=reviewBody(c),a=await writeReview(p);const again=await writeReview(p);assert.equal(again.replayed,true);assert.equal(again.revision,a.revision);
+ await assert.rejects(writeReview({...p,complete:false}),/REQUEST_ID_REUSE/);
+ await assert.rejects(writeReview({...p,operation_id:id(71)}),/REQUEST_CLOSED/);
+ await db.exec(`reset role;update crm_security.work_requests set status='working',closed_at=null`);await as(owner);
+ await assert.rejects(writeReview({...p,operation_id:id(72)}),/REQUEST_REVIEW_CONFLICT/);
+ const fresh=await readReview();await assert.rejects(writeReview(reviewBody(fresh,{operation_id:id(73),expected_updated_at:'2000-01-01T00:00:00Z'})),/REQUEST_REVIEW_CONFLICT/);
+});
+test('objective completion rejects unknown, missing, duplicate and invented decisions',async()=>{
+ const c=await connectedReview();for(const decisions of [[],[{ask:allAsks[1],value:'unknown',note:'미확인'}],
+ [{ask:allAsks[1],value:'not_needed',note:'확인'}],allAsks.slice(1).map(()=>({ask:allAsks[1],value:'not_needed',note:'확인'})),
+ [{ask:'고객 첫 연락',value:'not_needed',note:'확인'}],[{ask:allAsks[1],value:'not_needed',note:''}],
+ [{ask:allAsks[1],value:'not_needed',note:'확인',next_action_id:id(90)}]])await assert.rejects(writeReview(reviewBody(c,{decisions})));
+ assert.equal((await readReview()).revision,0);
+});
+test('objective writes reject admin proxy, reassignment, stage change and trash before persisting',async()=>{
+ const c=await connectedReview();for(const actor of [admin,other]){await as(actor);await assert.rejects(writeReview(reviewBody(c)),/forbidden/);}
+ for(const mutation of [`update inquiries set assigned_to='${other}'`,`update inquiries set status='실주'`,
+ `insert into crm_security.inquiry_audit_events(inquiry_id,action) values('${inq}','inquiry_trash')`,
+ `update crm_security.work_requests set status='cancelled'`]){
+  await db.exec('reset role;begin');try{await db.exec(mutation);await as(owner);await db.exec('savepoint attempted');await assert.rejects(writeReview(reviewBody(c)));await db.exec('rollback to attempted');}
+  finally{await db.exec('reset role;rollback');}
+ }
+ await as(owner);assert.equal((await readReview()).revision,0);
+});
+test('objective append failure rolls back completion and does not change customer work',async()=>{
+ const c=await connectedReview();await db.exec(`reset role;create function crm_security.fail_objective() returns trigger language plpgsql as $$begin raise exception 'objective failure';end$$;
+ create trigger fail_objective before insert on crm_security.work_request_objective_events for each row execute function crm_security.fail_objective()`);
+ try{await as(owner);await assert.rejects(writeReview(reviewBody(c)),/objective failure/);const after=await readReview();assert.equal(after.revision,0);assert.equal(after.request.status,'working');assert.equal(after.expected_updated_at,c.expected_updated_at);}
+ finally{await db.exec('reset role;drop trigger fail_objective on crm_security.work_request_objective_events;drop function crm_security.fail_objective()');}
+});
+test('objective history uses bounded twenty-row pages and private storage',async()=>{
+ let c=await connectedReview();for(let n=0;n<21;n++){await writeReview(reviewBody(c,{operation_id:id(100+n),decisions:[],complete:false}));c=await readReview();}
+ assert.equal(c.history.length,20);assert.equal(c.history_total,21);assert.equal(c.history_has_more,true);assert.equal(c.history[0].revision,21);
+ const p2=await readReview(2);assert.equal(p2.history.length,1);assert.equal(p2.history[0].revision,1);assert.equal(p2.history_has_more,false);
+ await assert.rejects(db.query('select * from crm_security.work_request_objective_events'),/permission denied/);
+ await db.exec('reset role');for(const role of ['anon','service_role']){
+  const p=(await db.query("select has_function_privilege($1,'public.crm_work_request_objectives_write_v1(jsonb)','EXECUTE') e,has_table_privilege($1,'crm_security.work_request_objective_events','SELECT') s",[role])).rows[0];assert.deepEqual(p,{e:false,s:false});
+ }
+});
+
 test('connected save commits response, pending customer task, completion and immutable retry receipt together',async()=>{
  const p=body(),a=await call(p);assert.equal(a.request.status,'done');assert.equal(a.request.to_user_id,owner);assert.equal(a.request.next_due,due);assert.ok(a.inquiry_update.first_response_at);
  assert.equal(a.state.logs[0].contact_result,'연결됨');assert.equal(a.state.logs[0].kind,'connected');
