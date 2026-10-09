@@ -27,8 +27,10 @@
  function inquiriesOf(r){
   try{const w=root.repManagerPeriodWindow();return root.operationalInquiries((root.B&&root.B.inquiries)||[]).filter(q=>!(q.deleted_at||q.deletedAt)&&root.inquiryRoutedOwner(q)===r.nm&&root.repFlowIn(root.inquiryAssignedAt(q)||root.inquiryCreatedAt(q),w));}catch(e){return [];}
  }
+ // Current first-contact work uses the list's canonical cohort. Period statistics stay separate.
+ const currentFirst=()=>!!(root.ExecWording&&root.ExecWording.on()&&typeof root.ExecWording.firstBefore==='function');
  function groups(r){
-  const cur=r.current||[],noNext=cur.filter(d=>issues(d).includes('nextMissing')),over=cur.filter(d=>!noNext.includes(d)&&issues(d).includes('overdue')),used=new Set(noNext.concat(over)),stale=(r.riskDeals||[]).filter(d=>!used.has(d)),inq=inquiriesOf(r),first=inq.filter(q=>!root.inquiryResponded(q));
+  const cur=r.current||[],noNext=cur.filter(d=>issues(d).includes('nextMissing')),over=cur.filter(d=>!noNext.includes(d)&&issues(d).includes('overdue')),used=new Set(noNext.concat(over)),stale=(r.riskDeals||[]).filter(d=>!used.has(d)),inq=inquiriesOf(r),first=currentFirst()?root.ExecWording.firstBefore(r.nm):inq.filter(q=>!root.inquiryResponded(q));
   const overDays=d=>{const n=nextOf(d),v=n&&n.due?root.daysTo(n.due):null;return v!==null&&v<0?-v:0;},stay=d=>{try{return num(root.stageAge(d));}catch(e){return 0;}};
   const sum=l=>l.reduce((a,d)=>a+amt(d),0),money=(l,pre)=>{const s=sum(l);return s?pre+eok(s):'금액 미정';},byAmt=l=>l.slice().sort((a,b)=>amt(b)-amt(a));
   const G=[];
@@ -50,7 +52,7 @@
   const c=M.cur.length,cand=[];
   if(M.noNext.length)cand.push({k:'nonext',n:M.noNext.length,main:'진행 '+c+'건 중 '+M.noNext.length+'건이 다음 할 일 없음',sub:'다음 할 일 없는 건도 '+M.noNext.length+'건'});
   if(M.over.length)cand.push({k:'overdue',n:M.over.length,main:'진행 '+c+'건 중 '+M.over.length+'건이 다음 할 일 날짜 지남',sub:'다음 할 일 날짜 지난 건도 '+M.over.length+'건 · 최장 '+M.overMax+'일'});
-  if(M.first.length)cand.push({k:'first',n:M.first.length,main:'신규 배정 '+M.inq.length+'건 중 '+M.first.length+'건이 아직 첫 연락 전',sub:'신규 배정 '+M.first.length+'건도 아직 첫 연락 전'});
+  if(M.first.length)cand.push({k:'first',n:M.first.length,main:(currentFirst()?'담당 문의 중 ':('신규 배정 '+M.inq.length+'건 중 '))+M.first.length+'건이 아직 첫 연락 전',sub:(currentFirst()?'담당 문의 ':'신규 배정 ')+M.first.length+'건도 아직 첫 연락 전'});
   if(M.stale.length)cand.push({k:'stale',n:M.stale.length,main:'진행 '+c+'건 중 '+M.stale.length+'건이 30일 넘게 같은 단계',sub:'30일 넘게 같은 단계인 건도 '+M.stale.length+'건'});
   if(!cand.length)return {ok:true,k:'',main:'지금 막힌 곳이 없습니다',sub:(r.diagnosis&&r.diagnosis.text)||''};
   const top=cand.slice().sort((a,b)=>b.n-a.n)[0],rest=cand.filter(x=>x!==top),second=rest.find(x=>x.k==='first')||rest.slice().sort((a,b)=>b.n-a.n)[0];
@@ -76,8 +78,9 @@
   let qd=3,qt=80,warn=80;try{qd=Number(root.PipelineStageB.rules().quote)||3;}catch(e){}try{qt=Number(root.KpiB.DEF[5][4])||80;}catch(e){}try{warn=Math.round(Number(root.CRMRules.PHASE2.promise_keeping.warn_below)*100)||80;}catch(e){}
   const c=M.cur.length,miss=M.noNext.length,rate=pct(c-miss,c),step=Math.min(10,miss),f=M.first.length;
   const due=M.cur.filter(d=>{const n=nextOf(d);return !!(n&&n.due);}),kept=due.filter(d=>root.daysTo(nextOf(d).due)>=0),keep=pct(kept.length,due.length),qr=q&&q.met?pct(q.met-q.late,q.met):null;
+  const firstAi=currentFirst()?(f?'첫 연락 전 '+f+'건':'현재 첫 연락 전 대상 없음')+(avg!=null?' · 선택 기간 평균 첫 연결 '+avg+'시간':''):null;
   return [
-   {l:T[0],ai:f?'신규 배정 '+f+'건 · '+(avg!=null?'평균 첫 연결 '+avg+'시간':'첫 연결 기록 없음'):(M.inq.length?'신규 배정 '+M.inq.length+'건 모두 첫 연락 완료'+(avg!=null?' · 평균 첫 연결 '+avg+'시간':''):'이 기간 신규 배정 없음'),txt:f?(root.ExecWording&&root.ExecWording.on()?'밀린 첫 연락 '+f+'건 정리 · 금요일까지(신규 문의는 배정 후 2시간 안)':'금요일까지 신규 배정 '+f+'건 첫 연락 완료'):OK,m:{l:'첫 연락 전',u:'건',v:f,to:0,lower:true}},
+   {l:T[0],ai:firstAi??(f?'신규 배정 '+f+'건 · '+(avg!=null?'평균 첫 연결 '+avg+'시간':'첫 연결 기록 없음'):(M.inq.length?'신규 배정 '+M.inq.length+'건 모두 첫 연락 완료'+(avg!=null?' · 평균 첫 연결 '+avg+'시간':''):'이 기간 신규 배정 없음')),txt:f?(root.ExecWording&&root.ExecWording.on()?'밀린 첫 연락 '+f+'건 정리 · 금요일까지(신규 문의는 배정 후 2시간 안)':'금요일까지 신규 배정 '+f+'건 첫 연락 완료'):OK,m:{l:'첫 연락 전',u:'건',v:f,to:0,lower:true}},
    {l:T[1],ai:c?'진행 '+c+'건 중 '+miss+'건 다음 할 일 없음 (등록률 '+rate+'%)':'진행 중인 현장 없음',txt:miss?'이번 주 금액 큰 '+step+'건부터 다음 할 일 · 날짜 등록':OK,m:{l:'다음 할 일 등록률',u:'%',v:rate,to:c?pct(c-miss+step,c):null}},
    {l:T[2],ai:!q||!q.met?'미팅 완료 건이 없어 아직 잴 수 없음':q.late?'방문 후 견적 요청 없이 평균 '+q.avg+'일 · 미팅 완료 '+q.met+'건 중 '+q.late+'건':'미팅 완료 '+q.met+'건 모두 '+qd+'일 안 견적 요청',txt:q&&q.met&&!q.late?OK:'방문 후 '+qd+'일 안에 견적 요청 등록',m:{l:'방문 후 '+qd+'일 견적',u:'%',v:qr,to:qr==null?null:Math.max(qt,qr)}},
    {l:T[3],ai:due.length?'약속 '+due.length+'건 중 '+kept.length+'건 기한 내 ('+keep+'%)':'날짜가 있는 다음 할 일이 없어 아직 잴 수 없음',txt:due.length&&keep<warn?'기한 지난 약속 '+(due.length-kept.length)+'건 이번 주 안에 완료 · 날짜 다시 잡기':OK,m:{l:'약속 기한 내',u:'%',v:keep,to:keep==null?null:Math.max(warn,keep)}}];
