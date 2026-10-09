@@ -1,6 +1,6 @@
 'use strict';
 /* 오늘 업무 · 영업관리 표 검사(2026-10-04 대표 시안 캡처 '담당 배정 안 된 견적문의' + "계약정보빠짐도 마찬가지로 · 이번 주 새로 멈춘 것도")
-   영업관리 화면: ① 오늘 안 넘기면 놓침 = 기존 카드 묶음 그대로 맨 위(카드 4장 · 없애거나 내리지 않는다) + 카드 아래 나머지 줄은 ②와 같은 표 줄 ② 담당 배정 안 된 견적문의 표(AI 요약 · AI 추천 담당 · 이유 · [추천대로 배정] [다른 사람] · 한 번에 배정 — ①의 건을 다시 보여 주는 표라 합계에 두 번 세지 않음) ③ 이번 주 새로 멈춘 건 ④ 계약 정보 빠짐
+   영업관리 화면: ① 오늘 안 넘기면 놓침 = 기존 카드 묶음 그대로 맨 위(카드 4장 · 없애거나 내리지 않는다) + 카드 아래 나머지 줄은 ②와 같은 표 줄 ② 담당 배정 안 된 견적문의 표(AI 요약 · AI 추천 담당 · 이유 · [추천대로 배정] [다른 사람] · 한 번에 배정 — ①의 건을 다시 보여 주는 표라 합계에 두 번 세지 않음) ③ 추가 확인이 필요한 업무 ④ 계약 정보 빠짐
    추천은 규칙(협약문의 → B2B / 같은 현장 기존 담당 / 같은 지역 진행 현장 / 업무량) — 자료에 있는 것만. 배정 저장은 기존 경로(inquiry_assign) · 한 번에 배정은 두 번 눌러야 · 큰 숫자 = 묶음 합계 = 줄 수 유지 · 다른 역할 화면은 그대로 · 끄면 예전 묶음 3개 */
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
@@ -39,7 +39,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const v=page.locator('#today-v2 .tv3');assert.equal(await v.getAttribute('data-role'),'mgr');
   /* 1. 묶음 4개: ① 오늘 안 넘기면 놓침 = 기존 카드 묶음 그대로 맨 위(2026-10-04 "기존 카드 상단으로 올려" · 2026-10-05 "이거 자꾸 어디 가고") + 카드 아래 나머지 줄은 ②와 같은 표 줄. 번호는 보이는 순서, 큰 숫자 = 묶음 합계 = 줄 수(② 표는 ①의 건을 다시 보여 주는 것이라 빼고 센다) */
   const G4=await v.locator('.tv3-group').evaluateAll(l=>l.map(g=>[g.querySelector(':scope>header i').textContent,g.querySelector(':scope>header b').textContent,g.dataset.kind||'cards',g.querySelector(':scope>header .n').textContent,g.querySelectorAll('.ta-row:not(.hd),.tv3-card,.tv3-row').length]));
-  assert.deepEqual(G4.map(g=>g.slice(0,3)),[['1','오늘 안 넘기면 놓침','cards'],['2','담당 배정 안 된 견적문의','assign'],['3','이번 주 새로 멈춘 건','stall'],['4','계약 정보 빠짐','contract']]);
+  assert.deepEqual(G4.map(g=>g.slice(0,3)),[['1','오늘 안 넘기면 놓침','cards'],['2','담당 배정 안 된 견적문의','assign'],['3','추가 확인이 필요한 업무','stall'],['4','계약 정보 빠짐','contract']]);
   {const C=v.locator('.tv3-group').first(),n1=Number(G4[0][3].replace('건','')),n2=Number(G4[1][3].replace('건',''));
    assert.equal(await C.evaluate(g=>g.classList.contains('first')&&!g.classList.contains('ta-group')),true,'맨 위 묶음 = 기존 카드 묶음');
    assert.deepEqual(await C.locator(':scope>header').evaluate(n=>[n.querySelector('span').textContent,n.querySelector('button').textContent]),['배정 30분 · 첫 연락 2시간 · 오늘 마감','문구 복사']);
@@ -50,7 +50,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    const u=await C.locator('.ta-rest .ta-row:not(.hd)').evaluateAll(l=>l.map(n=>({site:n.querySelector('.ta-st b').textContent,ai:n.querySelector('.ta-sm .ta-ai').textContent,rec:n.querySelector('.ta-rc b').textContent,why:n.querySelector('.ta-rc small').textContent,red:getComputedStyle(n.querySelector('.ta-d b')).color,btn:[...n.querySelectorAll('.ta-bt button')].map(b=>b.textContent)})));
    assert.equal(u.length,n1-Math.min(4,n1));const f=u.find(x=>/첫 연락 늦은 현장/.test(x.site));assert.ok(f,'첫 연락이 늦은 건은 표 줄에');assert.equal(f.ai,'AI');assert.match(f.rec,/^이필선 · 독촉$/);assert.match(f.why,/^놓치면 /);assert.deepEqual(f.btn,['추천대로 독촉','담당 화면']);assert.equal(f.red,'rgb(180, 35, 24)');}
   const total=Number(await v.getAttribute('data-total')),G3=G4.filter(g=>g[2]!=='assign');assert.equal(G3.reduce((s,g)=>s+g[4],0),total,'줄 수 = 큰 숫자');assert.equal(G3.reduce((s,g)=>s+Number(g[3].replace('건','')),0),total,'묶음 합계 = 큰 숫자(② 표는 두 번 세지 않는다)');
-  assert.deepEqual(await v.locator('.tv3-hero .leg span.on').evaluateAll(l=>l.map(n=>n.textContent.replace(/ \d+$/,''))),['오늘 안 넘기면 놓침','이번 주 새로 멈춘 건','계약 정보 빠짐'],'막대 = 세는 묶음 3개');
+  assert.deepEqual(await v.locator('.tv3-hero .leg span.on').evaluateAll(l=>l.map(n=>n.textContent.replace(/ \d+$/,''))),['오늘 안 넘기면 놓침','추가 확인이 필요한 업무','계약 정보 빠짐'],'막대 = 세는 묶음 3개');
   /* 좁은 목록 칸(노트북 1207px): 표 줄이 두 줄로 — 현장명 · 요약이 잘리지 않고 버튼이 줄 밖으로 나가지 않는다 */
   await page.setViewportSize({width:1207,height:914});await page.waitForTimeout(300);
   {const m=await page.evaluate(()=>{const r=document.querySelector('#today-v2 .ta-group[data-kind="assign"] .ta-row:not(.hd)'),b=x=>x.getBoundingClientRect(),R=b(r),c=[...r.children].map(b);return {main:Math.round(b(document.querySelector('#today-v2 .tv3-main')).width),st:Math.round(c[1].width),sm:Math.round(c[2].width),rc:Math.round(c[3].width),twoLines:c[2].top>c[1].bottom-2&&c[3].top>c[4].bottom-2,inside:c.every(x=>x.left>=R.left-1&&x.right<=R.right+1),over:document.documentElement.scrollWidth-innerWidth};});
@@ -97,7 +97,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.evaluate(()=>__toasts.slice(-1)[0]),'2건 배정');
   assert.equal(await page.locator('#today-v2 .ta-group[data-kind="assign"]').count(),0,'다 배정하면 표가 사라진다');
   assert.equal(await page.locator('#today-v2 .tv3-group>header i').first().innerText(),'1','남은 묶음 번호는 1부터');
-  /* 5. ③ 이번 주 새로 멈춘 건 · ④ 계약 정보 빠짐: 같은 표 틀 */
+  /* 5. ③ 추가 확인이 필요한 업무 · ④ 계약 정보 빠짐: 같은 표 틀 */
   const St=page.locator('#today-v2 .ta-group[data-kind="stall"]'),Ct=page.locator('#today-v2 .ta-group[data-kind="contract"]');
   assert.deepEqual(await St.locator('.ta-row.hd span').allInnerTexts(),['브랜드','현장','멈춘 이유 · AI 요약','AI 추천 행동 · 이유','경과','']);
   const sr=await St.locator('.ta-row:not(.hd)').first().evaluate(n=>({site:n.querySelector('.ta-st b').textContent,ai:n.querySelector('.ta-sm .ta-ai').textContent,rec:n.querySelector('.ta-rc b').textContent,dRed:getComputedStyle(n.querySelector('.ta-d b')).color,btn:[...n.querySelectorAll('.ta-bt button')].map(b=>b.textContent)}));
@@ -113,7 +113,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 6. 다른 역할은 그대로 · 끄면 예전 묶음 3개 */
   await seed({id:'rep1',name:'이필선',role:'rep'});await page.waitForTimeout(700);assert.equal(await page.locator('#today-v2 .ta-group').count(),0,'영업사원 화면은 그대로');
   await seed({id:'admin',name:'송보람',role:'admin'});await page.evaluate(()=>{G.todayAssistOff=true;paint();});await page.waitForTimeout(700);
-  assert.equal(await page.locator('#today-v2 .ta-group').count(),0);assert.deepEqual(await page.locator('#today-v2 .tv3-group>header b:first-of-type').allInnerTexts(),['오늘 안 넘기면 놓침','이번 주 새로 멈춘 건','계약 정보 빠짐'],'끄면 예전 묶음 3개');
+  assert.equal(await page.locator('#today-v2 .ta-group').count(),0);assert.deepEqual(await page.locator('#today-v2 .tv3-group>header b:first-of-type').allInnerTexts(),['오늘 안 넘기면 놓침','추가 확인이 필요한 업무','계약 정보 빠짐'],'끄면 예전 묶음 3개');
   assert.deepEqual(errs,[]);
   console.log(JSON.stringify({status:'PASS',existing_cards_on_top:true,rest_rows_as_table:true,narrow_two_line_rows:true,four_groups_numbered_in_order:true,total_equals_groups_equals_rows:true,assign_table_as_design:true,rec_rules_from_data:true,assign_through_existing_path:true,other_person_opens_existing_window:true,bulk_needs_two_clicks:true,stall_and_contract_tables:true,other_roles_untouched:true,switch:true}));
  }finally{await browser.close();srv.close();}
