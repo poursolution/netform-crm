@@ -235,7 +235,9 @@ begin
    begin taskid:=(d->>'next_action_id')::uuid;exception when others then raise exception 'REQUEST_FOLLOWUP_REQUIRED' using errcode='22023';end;
    select * into task from public.next_actions where id=taskid for update;
    if not found or task.inquiry_id is distinct from qid or task.assignee_name is distinct from a.display_name
-    or task.status not in ('open','completed') or (task.status='completed' and task.completed_at is null)
+    or coalesce(task.status,'') not in ('open','completed') or coalesce(task.title,'') !~ '[^[:space:]]'
+    or (task.status='open' and (task.due_at is null or not isfinite(task.due_at)))
+    or (task.status='completed' and (task.completed_at is null or not isfinite(task.completed_at)))
     or task.action_type is distinct from (case when d->>'ask'='연락 후 견적 필요 여부 확인' then '견적' else '방문' end) then
     raise exception 'REQUEST_FOLLOWUP_REQUIRED' using errcode='22023'; end if;
    taskproof:=jsonb_build_object('id',task.id,'title',task.title,'action_type',task.action_type,'due_at',task.due_at,'status',task.status,'completed_at',task.completed_at);
