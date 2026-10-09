@@ -31,7 +31,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op,p)=>{window.__writes.push([op,p]);return 'req-'+window.__writes.length};
    window.__rpc=[];window.__reviews=[];
    SB={rpc:async(name,args)=>{__rpc.push([name,args]);
-    if(name==='crm_inquiry_memo_review_v1'){const p=args.p;return {data:{ok:true,type:p.type,inquiry_id:p.inquiry_id,review:{kind:p.type==='promise'?'promise':'call',item_key:p.item_key,title:p.title||'',result:p.result||null,on_date:p.on_date||null}}};}
+    if(name==='crm_inquiry_memo_review_v1'){const p=args.p;if(p.type==='call_supplement'){__reviews=__reviews.filter(r=>!(r.inquiry_id===p.inquiry_id&&r.kind==='call'));__reviews.push({inquiry_id:p.inquiry_id,kind:'call',item_key:p.item_key,on_date:p.on_date,original_at:p.original_at,decided_at:new Date().toISOString(),decided_by:'이필선'});}return {data:{ok:true,type:p.type,inquiry_id:p.inquiry_id,review:{kind:p.type==='promise'?'promise':'call',item_key:p.item_key,title:p.title||'',result:p.result||null,on_date:p.on_date||null}}};}
     if(name==='crm_inquiry_field_update_v1'){const p=args.p;return {data:{ok:true,inquiry_id:p.inquiry_id,field:p.field,value:p.value,raw_key:null}};}
     if(name==='crm_inquiry_memo_review_list_v1')return {data:{ok:true,reviews:__reviews}};
     return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
@@ -49,19 +49,19 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* ④ 기본 정렬 = 급한 순 · 선택지 3개 */
   assert.deepEqual(await V.locator('.i4-sorts button').evaluateAll(l=>l.map(b=>[b.textContent,b.getAttribute('aria-pressed')])),[['급한 순','true'],['오래된 순','false'],['최근 순','false']]);
   assert.equal(one(await V.locator('.i4-flags .cnt').innerText()),'6건 · 급한 순 · ↑ ↓ 이동');
-  assert.deepEqual(await sites(),['담당 미정 이관단지','길음뉴타운9단지','천안두정E편한세상2차','문흥라인동산','메모 없는 단지','문의-0486']);
+  assert.deepEqual(await sites(),['문의-0486','담당 미정 이관단지','길음뉴타운9단지','문흥라인동산','메모 없는 단지','천안두정E편한세상2차']);
   /* 줄 오른쪽 세 줄 · 한국 날짜 일수 */
   const c3=await V.locator('.i4-row .c3').evaluateAll(l=>l.map(c=>[...c.children].map(x=>x.textContent.replace(/\s+/g,' ').trim())));
-  assert.deepEqual(c3.map(x=>x[0]),['① 신규 첫 연락','① 신규 첫 연락','② 고객 약속 · 회의','③ 후속 기한','③ 후속 기한','④ 과거 기록 정리']);
+  assert.deepEqual(c3.map(x=>x[0]),['① 신규 첫 연락','① 신규 첫 연락','① 신규 첫 연락','③ 후속 기한','③ 후속 기한','④ 과거 기록 정리']);
   assert.match(c3[0][1],/^배정 기한 \d+(시간|일) 지남$/);
-  assert.equal(c3[2][1],'과거 통화일 확인 필요 · 메모에 1.7 통화','천안두정: 실제 연결일 = 접수일 복사 → 확인 필요');assert.equal(c3[2][2],'메모 약속 2건 확인 전');
+  assert.equal(c3[5][1],'실제 연결일이 접수일 복사 · 확인 필요','복사된 연결일은 과거 기록 정리로 분리');assert.equal(c3[5][2],'기한 없음');
   assert.match(c3[3][1],/^실제 연결 후 8일 · \d+\.\d+ 통화$/,'밤 11시 반 통화: 시간으로는 8일이 안 됐어도 한국 날짜로 8일');
-  assert.deepEqual(c3[5].slice(1),['연락처 없음 · 연락처 보완 먼저','기한 없음']);
+  assert.match(await V.locator('.i4-row',{hasText:'문의-0486'}).locator('.c3').innerText(),/배정 기한/,'연락처도 없지만 미배정이면 담당 지정이 먼저');
   /* 상태 탭 6칸: 연락처 없는 과거 문의는 후속 연락 필요에서 빠지고 '연락처 보완' */
-  assert.deepEqual((await V.locator('.i4-tab').allInnerTexts()).map(one).map(t=>t.replace(/ \S.*$/,'')),['6','2','0','2','1','1']);
-  assert.deepEqual(await tabNums(),[6,2,0,2,1,1]);{const n=await tabNums();assert.equal(n[1]+n[2]+n[3]+n[4]+n[5],n[0]);}
+  assert.deepEqual((await V.locator('.i4-tab').allInnerTexts()).map(one).map(t=>t.replace(/ \S.*$/,'')),['6','3','0','1','1','1']);
+  assert.deepEqual(await tabNums(),[6,3,0,1,1,1]);{const n=await tabNums();assert.equal(n[1]+n[2]+n[3]+n[4]+n[5],n[0]);}
   await V.locator('[data-i4="tab"][data-v="nocontact"]').click();await page.waitForTimeout(120);
-  assert.deepEqual(await sites(),['문의-0486']);
+  assert.deepEqual(await sites(),['천안두정E편한세상2차']);
   await V.locator('[data-i4="tab"][data-v="stale"]').click();await page.waitForTimeout(120);
   assert.equal((await sites()).includes('문의-0486'),false,'후속 연락 필요에 없음');
   await V.locator('[data-i4="tab"][data-v="all"]').click();
@@ -80,7 +80,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(one(await det.locator('.im-prom .lb').innerText()),/^과거 약속 확인함 0 \/ 2$/);
   assert.deepEqual(await det.locator('.im-pt b').allInnerTexts(),['사진 이메일로 받기','다음 날 현장 방문']);
   assert.match(one(await det.locator('.i4-line').innerText()),/기록에 「사진 이메일로 받기로 함\.」, 「다음 날 방문 가능하다고 함\.」라고 남아 있어 확인드립니다\. 이후 실제로 어떻게 진행됐는지/);
-  assert.match(one(await det.locator('.i4-pill').innerText()),/^후속 연락 필요 · 과거 통화일 확인 필요 · 메모에 1\.7 통화$/);
+  assert.match(one(await det.locator('.i4-pill').innerText()),/^이관 기록 확인 · 실제 연결일이 접수일 복사 · 확인 필요$/);
   assert.deepEqual(await clip('#inq-v4 .im-cell, #inq-v4 .im-cell *, #inq-v4 .im-btn, #inq-v4 .im-ps button, #inq-v4 .im-pt *'),[],'새 칸의 글이 잘리지 않는다');
   if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'inq-memo.png')});
   /* 보완: 원래 값 보존 · 첫 연락 판정은 그대로 */
@@ -124,7 +124,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await V.locator('.i4-row',{hasText:'메모 없는 단지'}).click();await page.waitForTimeout(150);
   assert.deepEqual([await det.locator('.im-d3').count(),await det.locator('.im-memo').count(),await det.locator('.im-prom').count()],[0,0,0]);
   assert.match(one(await det.locator('.i4-line').innerText()),/^AI 첫마디 ?"안녕하세요, 넷폼 이필선입니다\. 문의 주신 /,'약속이 없으면 지금 첫마디 그대로');
-  /* 연락처 없는 과거 문의: 이관 기록에서 번호 후보 → 저장하면 후속 연락 목록으로 */
+  /* 합성 자료의 담당 지정 후 연락처 보완. 번호만 저장해도 통화 확인은 완료되지 않는다. */
+  await page.evaluate(()=>{const q=B.inquiries.find(x=>x.id===NOPH);q.assignee=q.assigned_to='이필선';q.assigned_at=q.created_at;InquiryV4.fresh();paint();});
   await V.locator('.i4-row',{hasText:'문의-0486'}).click();await page.waitForTimeout(150);
   assert.equal(one(await det.locator('.im-find .lb').innerText()),'연락처 보완 · 이관 기록 확인 연락처가 없어 연락할 수 없습니다 — 이관 기록에서 번호를 찾아 보세요');
   assert.equal(await det.locator('.im-ph').count(),0,'찾기 전에는 후보를 보이지 않는다');
@@ -133,7 +134,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await clip('#inq-v4 .im-find, #inq-v4 .im-find *'),[],'연락처 찾기 글이 잘리지 않는다');
   await det.locator('[data-i4="phone-save"]').click();await page.waitForTimeout(400);
   assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_field_update_v1').map(x=>[x[1].p.field,x[1].p.value])),[['phone','010-3333-4444']]);
-  assert.deepEqual(await tabNums(),[6,3,0,2,1,0],'연락처를 찾으면 연락처 보완에서 빠진다');
+  assert.deepEqual(await tabNums(),[6,2,0,2,1,1],'연락처를 찾아도 통화 후보 확인 전에는 기록 보완에 남는다');
+  assert.match(await V.locator('.i4-row',{hasText:'문의-0486'}).locator('.c3').innerText(),/이관 기록 확인 필요/);
   assert.equal((await sites()).includes('문의-0486'),true);
   /* 노트북 · 좁은 화면에서도 줄 오른쪽 글이 잘리지 않는다 */
   for(const w of [1200,1000]){await page.setViewportSize({width:w,height:800});await page.waitForTimeout(200);await page.evaluate(()=>{InquiryV4.state().detail=false;InquiryV4.render();});assert.deepEqual(await clip('#inq-v4 .i4-row .c3, #inq-v4 .i4-row .c3 *'),[],'폭 '+w+': 줄 오른쪽 글이 잘리지 않는다');}

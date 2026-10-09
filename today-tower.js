@@ -61,6 +61,7 @@
   let rk='',urg='';
   if(support&&role!=='mgr'){rk='decide';urg='now';}
   else if(x.unassigned){if(!team)return null;rk='assign';urg='now';}
+  else if(x.contactReview){rk='fix';urg='week';}
   else if(dl&&dl.n!==null&&dl.n>=0&&dl.n<=7&&role!=='mgr'){rk='deadline';urg=dl.n<=3?'now':'week';}
   else if(deal&&team&&root.DealTransfer&&root.DealTransfer.enabled()&&root.DealTransfer.awaiting(d)){rk='tfapprove';urg='today';}
   else if(deal&&root.DealTransfer&&root.DealTransfer.enabled()&&root.DealTransfer.checkDue(d)){rk='transfer';urg='today';}
@@ -82,12 +83,13 @@
   if(role==='mgr'&&(rk==='deadline'||rk==='decide'))return null;
   /* 경과일: 견적문의 · 첫 연락 전 = 접수부터, 그 뒤와 모든 단계 = 마지막 응대부터 */
   let days=0,dLabel='경과';
-  if(inq&&x.reassignmentPending){days=dayN(root.todayHoursFrom(x.reassignmentAt));dLabel='재배정 후';}
+  if(x.contactReview){days=0;dLabel='기한 없음';}
+  else if(inq&&x.reassignmentPending){days=dayN(root.todayHoursFrom(x.reassignmentAt));dLabel='재배정 후';}
   else if(inq){let fr=null;try{fr=root.inqCtlFirstResponseAt(d);}catch(e){}if(fr){days=dayN(root.todayHoursFrom(fr));dLabel='응대 후';}else{days=dayN(x.lag);dLabel='접수 후';}}
   else if(exp){days=x.dueDays!==null&&x.dueDays<0?-x.dueDays:0;dLabel='연락일 후';}
   else{days=relDays!=null?relDays:lastDays!=null?lastDays:(stAge||0);dLabel='응대 후';}
-  const short=rk==='deadline'&&dl?'D-'+dl.n:x.dueDays===0?'오늘':days+'일';if(x.dueDays===0&&rk==='promise')dLabel='약속';
-  const missTxt=x.reassignmentPending?'재배정 후 처리 기록 없음':rk==='decide'&&support?'지원 요청 '+support.days+'일째':rk==='promise'&&x.dueDays===0?'다음 연락일 도래(오늘)':MISS[rk];
+  const short=x.contactReview?'—':rk==='deadline'&&dl?'D-'+dl.n:x.dueDays===0?'오늘':days+'일';if(x.dueDays===0&&rk==='promise')dLabel='약속';
+  const missTxt=x.contactReview?'이관 기록 확인 · 확인 전 기한·성과 판정 제외':x.reassignmentPending?'재배정 후 처리 기록 없음':rk==='decide'&&support?'지원 요청 '+support.days+'일째':rk==='promise'&&x.dueDays===0?'다음 연락일 도래(오늘)':MISS[rk];
   return {x,key:x.key,st:col,rk,urg,days,dLabel,short,amt,deadline:dl,support,missTxt,code};
  }
  function info(x){

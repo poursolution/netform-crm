@@ -74,33 +74,45 @@
   try{return root.stageLabel(root.dealStage(d));}catch(e){return '진행 중';}
  }
  const dealWork=d=>{let w='';try{w=root.dealWorkSummary(d);}catch(e){}return w&&!/미분류/.test(w)?w:'공종 미분류';};
+ // One classification for list, Today, briefing and metrics. Assignment/closed/linked wins.
+ function contactReview(q){
+  const empty={required:false,reason:'',candidateDate:'',undated:false};
+  if(!q||!root.InquiryMemo||!root.inquiryAssigned(q)||root.inqCtlConverted(q)||attached(q)||(root.isClosedInq&&root.isClosedInq(q)))return empty;
+  const r=root.InquiryMemo.contactReview(q);
+  return {required:r.required,reason:r.reason,candidateDate:r.candidateDate,undated:r.required&&!r.candidateDate};
+ }
+ const contactAt=q=>(root.InquiryMemo&&root.InquiryMemo.confirmedCallDay(q))||root.inqCtlFirstResponseAt(q)||'';
+ const slaUnknown=q=>contactReview(q).required||!!(root.InquiryMemo&&root.InquiryMemo.confirmedCallDay(q));
+ function reviewText(r){return r.reason==='copied_received_date'?'실제 연결일이 접수일 복사 · 확인 필요':'이관 기록 확인 필요 · '+(r.candidateDate?'메모에 '+ymd(r.candidateDate)+' 통화 후보':'날짜 없는 통화 후보');}
  function model(x){
+  const verified=root.InquiryMemo&&root.InquiryMemo.confirmedCallDay(x.q);if(verified)x=Object.assign({},x,{first:verified});
   const q=x.q,now=Date.now(),link=linkOf(q),att=link.same?dealById(link.same):null,conv=!!root.inqCtlConverted(q),step=conv||att?4:!x.assigned?0:!x.first?1:2;
   const hours=Number.isFinite(x.created)?Math.max(0,(now-x.created)/36e5):null;
   const lastAt=x.latest?Date.parse(x.latest.at||x.latest.occurred_at||x.latest.created_at):x.first?Date.parse(x.first):NaN;
   const sinceLast=Number.isFinite(lastAt)?(root.InquiryMemo?root.InquiryMemo.days(lastAt,now):Math.floor((now-lastAt)/DAY)):null;/* 한국 날짜 기준 일수(2026-10-08 inquiry_memo ③) */
   const follow=step>=2&&step<4,meet=step<4?meetOf(q):null,miss=follow?missing(q):[];
-  const late=step===0?hours!==null&&hours>ASSIGN_MIN()/60:step===1?hours!==null&&hours>FIRST_H():follow?sinceLast!==null&&sinceLast>FOLLOW_D():false;
+  const review=contactReview(q);
+  const late=review.required?false:step===0?hours!==null&&hours>ASSIGN_MIN()/60:step===1?hours!==null&&hours>FIRST_H():follow?sinceLast!==null&&sinceLast>FOLLOW_D():false;
   const d=q.detail&&typeof q.detail==='object'?q.detail:{},r=q.raw&&typeof q.raw==='object'?q.raw:{};
   const brand=String(q.brand||root.inquiryBrandOf?.(q)||'').trim(),channel=d.channel||q.channel||r['상담채널']||d.inflow||q.source_channel||r['유입경로']||'채널 미기록';
   const phone=root.inqCtlContactLabel(q),digits=String(phone||'').replace(/\D/g,'');
   const owner=root.inquiryRoutedOwner(q);
-  const elapsed=step===4?'—':follow?(sinceLast===null?'—':sinceLast+'일째'):hours===null?'—':hours<1?Math.round(hours*60)+'분':hours<24?Math.floor(hours)+'시간 '+Math.round((hours%1)*60)+'분':Math.floor(hours/24)+'일';
-  const recv=step===4?(att&&!conv?'기존 영업건에 붙임':'영업건으로 전환'):follow?(Number.isFinite(lastAt)?ymd(lastAt)+' 연락 후':(root.ContactState?root.ContactState.none(q,'inq'):'CRM 연락 기록 없음')):x.ageDays===0?'오늘 '+hm(x.created)+' 접수':ymd(x.created)+' 접수';
+  const elapsed=review.required?'—':step===4?'—':follow?(sinceLast===null?'—':sinceLast+'일째'):hours===null?'—':hours<1?Math.round(hours*60)+'분':hours<24?Math.floor(hours)+'시간 '+Math.round((hours%1)*60)+'분':Math.floor(hours/24)+'일';
+  const recv=review.required?reviewText(review):step===4?(att&&!conv?'기존 영업건에 붙임':'영업건으로 전환'):follow?(Number.isFinite(lastAt)?ymd(lastAt)+' 연락 후':(root.ContactState?root.ContactState.none(q,'inq'):'CRM 연락 기록 없음')):x.ageDays===0?'오늘 '+hm(x.created)+' 접수':ymd(x.created)+' 접수';
   /* 경과 색: 기준 안 = 초록, 기준을 넘긴 후속 · 하루가 안 된 지연 = 주황, 하루 넘게 배정 · 첫 연락이 없으면 빨강 */
-  const ec=step===4?'#9ca3af':late?(follow||(hours!==null&&hours<24)?'#d97706':'#d93a3a'):'#1f7a4d';
-  const act=step===4?'영업건 보기':step===0?'담당 배정':step===1?'첫 연락':(meet&&meet.dd<=3&&meet.dd>=0)?'자료 제출':(!late&&miss.length)?'정보 보완':'후속 연락';
+  const ec=review.required?'#6b7280':step===4?'#9ca3af':late?(follow||(hours!==null&&hours<24)?'#d97706':'#d93a3a'):'#1f7a4d';
+  const act=review.required?'기록 확인':step===4?'영업건 보기':step===0?'담당 배정':step===1?'첫 연락':(meet&&meet.dd<=3&&meet.dd>=0)?'자료 제출':(!late&&miss.length)?'정보 보완':'후속 연락';
   const ex=(!conv||att)?siteDeals(q):[];
   /* 접촉 전 시도: '시도 n회'(기준 횟수에 닿으면 연락두절 종결 제안) — 첫 연락 지연 판정은 그대로 */
   const tries=step===1&&F()?F().attemptNote(q):'';
-  return {x,q,key:x.key,step,conv,att,link,ex,hours,sinceLast,follow,meet,miss,late,tries,brand,bc:BRAND[brand]||'#6b7280',channel,phone:digits.length>=8?phone:'',digits,owner,elapsed,recv,ec,act,
+  return {x,q,key:x.key,step,review,conv,att,link,ex,hours,sinceLast,follow,meet,miss,late,tries,brand,bc:BRAND[brand]||'#6b7280',channel,phone:digits.length>=8?phone:'',digits,owner,elapsed,recv,ec,act,
    site:q.site||'현장명 미입력',work:root.inqCtlWorkLabel(q),sum:W().gist(q)||'',who:[d.customerType||r['고객유형'],q.contact_name||q.contact].filter(v=>v&&String(v).trim()).join(' · ')||'고객 미입력',
    lastText:x.latest?[ymd(lastAt)+' '+(x.latest.type||'연락'),(/^고객 응대 기록/.test(String(x.latest.note||''))&&x.latest.result)?x.latest.result:(x.latest.note||x.latest.result)].filter(Boolean).join(' · '):(root.ContactState&&root.ContactState.on())?root.ContactState.recent(q,'inq'):x.first?ymd(Date.parse(x.first))+' 첫 연락':'CRM 연락 기록 없음'};
  }
  const TABS=[
   ['all','전체','시트에 들어온 모든 문의',()=>true,'#15171c'],
   ['unassigned','배정 필요',()=>ASSIGN_MIN()+'분 안에 담당 지정',m=>m.step===0,'#d93a3a'],
-  ['nofirst','첫 연락 전',()=>'배정 후 '+FIRST_H()+'시간 안 첫 연락',m=>m.step===1,'#d93a3a'],
+  ['nofirst','첫 연락 전',()=>'배정 후 '+FIRST_H()+'시간 안 첫 연락',m=>m.step===1&&!m.review.required,'#d93a3a'],
   ['stale','후속 연락 필요',()=>'첫 연락 후 '+FOLLOW_D()+'일 넘게 연락 없음',m=>m.follow&&m.late,'#d97706'],
   ['today','오늘 들어온 문의','오늘 0시 이후 접수',m=>m.x.ageDays===0,'#3b6ce4'],
   ['meet','대표회의 · 기한 D-3','정확한 견적이 늦으면 개략 금액 먼저',m=>!!m.meet&&m.meet.dd<=3&&m.meet.dd>=0&&m.step<4,'#d93a3a'],
@@ -133,7 +145,7 @@
    +'<span></span><div class="il-acts"><button type="button" class="dark" data-il="detail" data-key="'+k+'">상세 열기</button><button type="button" data-il="call" data-key="'+k+'"'+(m.digits?' data-tel="'+attr(m.digits)+'"':'')+'>전화</button>'+(F()?'':'<button type="button" data-il="sms" data-key="'+k+'">문자</button>')+'</div></div>';
  }
  function rowHtml(m){
-  const S=st(),on=S.open===m.key,k=attr(m.key),cls=m.step===0?' red':m.step===1?' dark':m.follow&&m.late?' amber':'';
+  const S=st(),on=S.open===m.key,k=attr(m.key),cls=m.review.required?'':m.step===0?' red':m.step===1?' dark':m.follow&&m.late?' amber':'';
   return '<div class="il-item'+(on?' open':'')+'"><div class="il-row" role="button" tabindex="0" data-il="toggle" data-key="'+k+'" style="border-left-color:'+m.bc+'">'
    +'<div class="il-l"><div class="il-brand"><b style="color:'+m.bc+'">'+h(m.brand||'브랜드 미지정')+'</b><span>'+h(m.channel)+'</span></div><div class="il-site"><b>'+h(m.site)+(m.ex.length&&!siteBadge(m)?'<u>기존 현장 · '+m.ex.length+'건</u>':'')+'</b><span>'+(siteBadge(m)?'<i class="il-sb '+siteBadge(m).k+'">'+h(siteBadge(m).text)+'</i>':'')+h(m.work)+(m.sum?' · '+h(m.sum):'')+(m.meet&&m.step<4?'<em> · 대표회의 '+h(ymd(m.meet.date))+' D'+(m.meet.dd<0?'+'+(-m.meet.dd):'-'+m.meet.dd)+'</em>':'')+(m.tries?'<em class="il-tries"> · '+h(m.tries)+'</em>':'')+'</span></div></div>'
    +'<div class="il-r"><div class="il-who"><span>'+h(m.who)+'</span><b class="'+(m.phone?'':'none')+'">'+h(m.phone||'연락처 없음')+'</b></div><span class="il-owner'+(m.owner?'':' none')+'">'+h(m.owner?root.repDisplay(m.owner):'미배정')+'</span><div class="il-el"><b style="color:'+m.ec+'">'+h(m.elapsed)+'</b><span>'+h(m.recv)+'</span></div><button type="button" class="il-act'+cls+'" data-il="act" data-key="'+k+'">'+h(m.act)+'</button></div></div>'
@@ -236,11 +248,11 @@
   if(a==='act'){
    if(m.step===0)return openDetail(key,root.inqCtlRoleView&&root.inqCtlRoleView()==='admin'?'rep':undefined);
    if(m.step===4)return m.att&&!m.conv?openDeal(m.att):openDetail(key);
-   if(m.act==='정보 보완')return openDetail(key);
+   if(m.review.required||m.act==='정보 보완')return openDetail(key);
    S.open=key;S.rec=key;return render();
   }
  }
  const base=root.paintInq;
  if(typeof base==='function')root.paintInq=function(){const r=base.apply(this,arguments);try{render();}catch(err){document.getElementById('pg-inq')?.classList.remove('inq-v3');document.getElementById('inq-v3')?.remove();if(root.console)root.console.warn('inquiry list v3: '+err.message);}return r;};
- root.InquiryListV3={link:(q,decision,id)=>saveLink({key:root.inqKey(q)},decision,id),record,isFirst,render,enabled,model,meetOf,replyOf,missing,need9,attached,siteDeals,linkOf,linkable,headHtml,dealTag,dealWork,openDeal,LINK_RPC,TABS:TABS.map(t=>t[0])};
+ root.InquiryListV3={link:(q,decision,id)=>saveLink({key:root.inqKey(q)},decision,id),record,isFirst,render,enabled,model,contactReview,contactAt,slaUnknown,reviewText,meetOf,replyOf,missing,need9,attached,siteDeals,linkOf,linkable,headHtml,dealTag,dealWork,openDeal,LINK_RPC,TABS:TABS.map(t=>t[0])};
 })(window);

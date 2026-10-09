@@ -21,11 +21,12 @@
  function contacts(q){const p=root.itemPatch(q,'inq')||{},seen=new Set();return [...(q.activities||[]),...(p.activities||[])].filter(a=>{const k=a.id||[a.at,a.type,a.note,a.result].join('|');if(seen.has(k))return false;seen.add(k);return /전화|통화|문자|SMS|카카오|이메일|메일|방문/i.test(a.type||'')&&Number.isFinite(Date.parse(a.at||a.occurred_at||a.created_at));}).sort((a,b)=>Date.parse(b.at||b.occurred_at||b.created_at)-Date.parse(a.at||a.occurred_at||a.created_at));}
  function info(q){
   const created=Date.parse(root.inquiryCreatedAt(q)||''),now=Date.now(),ageDays=Number.isFinite(created)?Math.max(0,Math.round((startOfDay(now)-startOfDay(created))/DAY)):null;
-  const assigned=root.inquiryAssigned(q),list=contacts(q),latest=list[0],first=root.inqCtlFirstResponseAt(q);
+  const assigned=root.inquiryAssigned(q),list=contacts(q),latest=list[0],first=root.InquiryListV3&&root.InquiryListV3.contactAt?root.InquiryListV3.contactAt(q):root.inqCtlFirstResponseAt(q);
   const lastAt=latest?Date.parse(latest.at||latest.occurred_at||latest.created_at):first?Date.parse(first):Date.parse(root.inquiryAssignedAt?.(q)||'')||created;
   const silent=Number.isFinite(lastAt)?(root.InquiryMemo?root.InquiryMemo.days(lastAt,now):Math.floor((now-lastAt)/DAY)):null;
-  const group=!assigned?'assign':silent!==null&&silent>=7?'stale':ageDays===0?'today':'active';
-  return {q,key:root.inqKey(q),ageDays,assigned,latest,first,created,group,silent};
+  const review=root.InquiryListV3&&root.InquiryListV3.contactReview?root.InquiryListV3.contactReview(q):{required:false};
+  const group=!assigned?'assign':review.required?'active':silent!==null&&silent>=7?'stale':ageDays===0?'today':'active';
+  return {q,key:root.inqKey(q),ageDays,assigned,latest,first,created,group,silent,review};
  }
  function rows(){return root.inqCtlScopeActive().filter(q=>W().task(q).kind!=='closed').map(info);}
  const md=t=>{if(!Number.isFinite(t))return '';const d=new Date(t);return (d.getMonth()+1)+'/'+d.getDate();};
@@ -36,8 +37,8 @@
   const work=root.inqCtlWorkLabel(q),channel=d.channel||q.channel||r['상담채널']||d.inflow||q.source_channel||r['유입경로']||'채널 미기록',brand=q.brand||root.inquiryBrandOf?.(q)||'브랜드 미지정';
   const lastText=x.latest?[x.latest.note,x.latest.result].filter(Boolean).join(' · ')||x.latest.type:x.first?'첫 연락 기록 있음':'문의 접수';
   const lastDate=x.latest?md(Date.parse(x.latest.at||x.latest.occurred_at||x.latest.created_at))+' · '+(x.latest.type||'연락'):x.first?md(Date.parse(x.first)):md(x.created);
-  const age=x.ageDays===null?'—':x.ageDays===0?'오늘':x.ageDays+'일',ageCls=x.ageDays===null?'':x.ageDays>=14?'hot':x.ageDays===0?'new':'';
-  const cta=!x.assigned?(admin?['배정','fill','rep']:['확인','line','none']):x.group==='today'&&!x.first?['첫 연락','line','process']:['후속 연락','line','process'];
+  const age=x.review.required?'—':x.ageDays===null?'—':x.ageDays===0?'오늘':x.ageDays+'일',ageCls=x.review.required?'':x.ageDays===null?'':x.ageDays>=14?'hot':x.ageDays===0?'new':'';
+  const cta=x.review.required?['기록 확인','line','none']:!x.assigned?(admin?['배정','fill','rep']:['확인','line','none']):x.group==='today'&&!x.first?['첫 연락','line','process']:['후속 연락','line','process'];
   return '<div class="iv-row" role="button" tabindex="0" data-k="'+attr(x.key)+'" data-group="'+x.group+'">'
    +'<div class="iv-c iv-site"><b>'+h(q.site||'현장명 미입력')+'</b><span>'+h(W().gist(q)||'문의 내용 확인 필요')+'</span></div>'
    +'<div class="iv-c iv-cust"><span>'+h(customer)+'</span><span class="'+(digits.length>=8?'':'warn')+'">'+h(digits.length>=8?phone:'연락처 없음')+'</span></div>'

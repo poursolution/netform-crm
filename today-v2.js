@@ -37,8 +37,8 @@
  function rowHtml(x,admin){
   const inquiry=x.panel==='inquiry',site=x.item.site||x.item.site_name||'현장명 미입력';
   const sub=inquiry?(x.item.contact_name||x.item.contact||root.inqCtlContactLabel?.(x.item)||'고객 미입력'):(root.contactInfo?.(x.item)?.managerName||x.item.brand||'');
-  const kind=inquiry?(x.kind==='manager'?'관리자 요청':root.inqCtlFirstResponseAt?.(x.item)?'문의 · 후속 연락':'신규 문의'):(KIND[x.kind]||'파이프라인')+(x.stage?' · '+x.stage:'');
-  const age=days(x.lag),ageText=x.panel==='pipeline'&&x.dueDays!==null&&x.dueDays!==undefined&&x.dueDays>=0?(x.dueDays===0?'오늘':x.dueDays+'일 남음'):age?age+'일':'오늘';
+  const kind=x.contactReview?'이관 기록 확인':inquiry?(x.kind==='manager'?'관리자 요청':root.inqCtlFirstResponseAt?.(x.item)?'문의 · 후속 연락':'신규 문의'):(KIND[x.kind]||'파이프라인')+(x.stage?' · '+x.stage:'');
+  const age=days(x.lag),ageText=x.contactReview?'—':x.panel==='pipeline'&&x.dueDays!==null&&x.dueDays!==undefined&&x.dueDays>=0?(x.dueDays===0?'오늘':x.dueDays+'일 남음'):age?age+'일':'오늘';
   const why=x.unassigned?(x.recent||(root.ContactState?root.ContactState.NONE:'CRM 연락 기록 없음')):x.reason||x.recent||'';
   const assign=x.unassigned&&admin;
   return '<div class="tv-row" role="button" tabindex="0" data-key="'+attr(x.key)+'"><div class="tv-c"><b>'+h(site)+'</b><span>'+h(sub)+'</span></div><span class="tv-kind">'+h(kind)+'</span><span class="tv-owner'+(x.unassigned?' none':'')+'">'+h(x.owner||'미배정')+'</span>'

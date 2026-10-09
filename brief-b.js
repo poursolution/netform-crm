@@ -178,7 +178,10 @@
   add('bid_soon',bid,'입찰 · PT 임박 '+bid.length+'건 준비 확인',bid.slice(0,2).map(d=>d.site||'현장').join(' · ')+(bid.length>2?' 외 '+(bid.length-2):''),'제안서 · PT · 현설 준비 상태 확인','월요일');
   const qd=OPEN.filter(d=>{if(groupOf(R.dealStage(d))!=='consulting')return false;const due=K(fld(d,'consulting','quote_due'));return !!due&&due<w.today&&!!String(fld(d,'consulting','quote_request')||'').trim();});
   add('quote_delay',qd,'견적 지연 '+qd.length+'건 발송','견적 요청이 등록되어 있고 예정일이 지난 건 · 단계 체류일만으로 지연 판정하지 않음','담당자별 원인 확인 · 견적 요청 재정리','월요일');
-  const nr=AQ.filter(q=>!R.isClosedInq(q)&&R.inquiryAssigned(q)&&!R.inquiryResponded(q));
+  const review=q=>!!(R.InquiryListV3&&R.InquiryListV3.contactReview&&R.InquiryListV3.contactReview(q).required);
+  const cr=AQ.filter(review);
+  add('contact_review',cr,'이관 기록 확인 '+cr.length+'건','메모 통화 후보·실제 연결일 확인 필요','통화·방문 실행 여부와 후속 업무 확인','금요일',list=>tally(list,q=>R.inquirySalesOwner(q)||'미배정').filter(o=>o[0]!=='미배정').slice(0,2).map(o=>o[0]));
+  const nr=AQ.filter(q=>!review(q)&&!(R.InquiryMemo&&R.InquiryMemo.confirmedCallDay(q))&&!R.isClosedInq(q)&&R.inquiryAssigned(q)&&!R.inquiryResponded(q));
   add('no_response',nr,'첫 연락 기록 미확인 '+nr.length+'건 확인','배정됐지만 첫 연락 기록이 없는 문의','담당자 첫 연락 · 결과 기록','월요일',list=>tally(list,q=>R.inquirySalesOwner(q)||'미배정').filter(o=>o[0]!=='미배정').slice(0,2).map(o=>o[0]));
   const st=OPEN.filter(d=>(R.activityAge(d)||0)>STALE());
   add('stale60',st,STALE()+'일 이상 미접촉 '+st.length+'건 재접촉','마지막 연락이 '+STALE()+'일을 넘은 진행 건','재접촉 · 담당 재배정','수요일');
@@ -206,6 +209,7 @@
   else if(pr.kind==='contract_expected'){L=['계약','종료','진행 중'];const signed=new Map(),signedAt=new Map();x.L.rows.forEach(r=>(r.events||[]).forEach(e=>{if(e.kind==='signed'&&e.effective_date>=since){signed.set(String(r.deal_id),(signed.get(String(r.deal_id))||0)+(Number(e.amount_delta)||0));if(!signedAt.has(String(r.deal_id))||e.effective_date<signedAt.get(String(r.deal_id)))signedAt.set(String(r.deal_id),e.effective_date);}}));each(deal,d=>signed.has(String(d.id))||R.isWon(d),d=>closed(d)&&!R.isWon(d),d=>signedAt.get(String(d.id))||'');
    /* 2차 기능 5: 지난주 계약 예상 → 이번 주 실제 계약(적중률) */
    const amtOf=d=>{try{return Number(R.oppAmt(d))||0;}catch(e){return 0;}};let ea=0,aa=0,an=0;ids.forEach(id=>{const d=deal(String(id));if(!d)return;ea+=amtOf(d);if(signed.has(String(d.id))||R.isWon(d)){an++;aa+=signed.get(String(d.id))||amtOf(d);}});fc={n:ids.length,amount:ea,won:an,wonAmount:aa};}
+  else if(pr.kind==='contact_review'){L=['기록 확인','종결','확인 필요'];each(id=>x.qById.get(id),q=>R.InquiryMemo&&R.InquiryMemo.confirmedContact(q)&&!R.isClosedInq(q),q=>R.isClosedInq(q),q=>K(R.inqCtlFirstResponseAt(q)||''));}
   else if(pr.kind==='no_response'){L=['첫 연락','종결','미응대'];each(id=>x.qById.get(id),q=>R.inquiryResponded(q)&&!badfit(q),q=>R.isClosedInq(q),q=>K(R.inqCtlFirstResponseAt(q)||''));}
   else left=ids.length;
   const n=ids.length||Number(pr.n)||0;

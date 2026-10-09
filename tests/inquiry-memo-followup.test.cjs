@@ -56,7 +56,7 @@ test('dated and undated memo calls require review without confirming actual cont
 test('copied receipt date requires review; real same-day contact does not',()=>{
  const t=setup(),at='2026-01-16T09:00:00+09:00',q={created_at:at,first_response_at:at};
  assert.equal(t.M.contactReview(q).reason,'copied_received_date');
- t.ctx.InquiryFlow={on:()=>true,firstConnectedAt:()=>at,state:()=>({logs:[{kind:'connected',at}]})};
+ t.ctx.InquiryFlow={on:()=>true,firstConnectedAt:()=>at,state:()=>({logs:[{kind:'connected',at}]}),server:()=>({logs:[{kind:'connected',occurred_at:at}]})};
  assert.equal(t.M.contactReview(q).required,false);
 });
 test('confirmed supplement clears review; no memo, failed call or feature-off does not create candidates',()=>{
