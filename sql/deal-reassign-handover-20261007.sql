@@ -15,7 +15,7 @@ declare
  rid uuid; did uuid; old_receipt crm_security.deal_reassignment_receipts%rowtype;
  owner_result jsonb; request_result jsonb; approval_result jsonb; ack jsonb;
  v_from text; v_to text; v_reason text; v_attr text; v_keep text;
- v_at timestamptz:=clock_timestamp(); aid uuid; cancelled jsonb;
+ v_at timestamptz:=clock_timestamp(); aid uuid; cancelled jsonb; transferred jsonb;
 begin
  select * into a from crm_security.actor();
  if not found or a.permission_role<>'admin' then raise exception '담당 변경은 관리자만 할 수 있습니다' using errcode='42501'; end if;
@@ -54,6 +54,21 @@ begin
  end if;
  update public.deals set owner_id=u.user_id,assignee_name=u.name,assignee_email=u.email,
   version=coalesce(version,0)+1,updated_at=v_at where id=did;
+ -- Transfer only open tasks explicitly assigned to the verified former owner.
+ -- Independent/unassigned tasks, deadlines, completion and source evidence stay intact.
+ with prior as materialized (
+  select n.id,n.assignee_name from public.next_actions n
+  where n.deal_id=did and n.status='open'
+    and nullif(btrim(n.assignee_name),'')=nullif(btrim(d.assignee_name),'')
+    and exists(select 1 from public.users x where x.user_id=d.owner_id and btrim(x.name)=btrim(d.assignee_name))
+    and (select count(*) from public.users x where btrim(x.name)=btrim(d.assignee_name))=1
+  order by n.id for update
+ ), changed as (
+  update public.next_actions n set assignee_name=u.name,updated_at=v_at
+  from prior t where n.id=t.id
+  returning n.id,t.assignee_name as previous_assignee,n.assignee_name
+ ) select coalesce(jsonb_agg(jsonb_build_object('id',id,'from',previous_assignee,'to',assignee_name) order by id),'[]'::jsonb)
+   into transferred from changed;
  -- Keep superseded handovers in history, but stop asking the previous recipient to accept them.
  perform pg_advisory_xact_lock(hashtextextended('handover:'||did::text,0));
  with changed as (
@@ -77,9 +92,11 @@ begin
  end if;
  insert into public.activities(deal_id,organization_id,actor_name,type,detail,occurred_at)
  values(did,d.organization_id,a.display_name,'담당자변경',jsonb_build_object('note',coalesce(nullif(v_from,''),'미배정')||' → '||u.name,
-  'result',v_reason,'from_owner_id',d.owner_id,'to_owner_id',u.user_id,'request_id',rid,'cancelled_handovers',cancelled),v_at) returning id into aid;
+  'result',v_reason,'from_owner_id',d.owner_id,'to_owner_id',u.user_id,'request_id',rid,'cancelled_handovers',cancelled,
+  'transferred_next_actions',transferred),v_at) returning id into aid;
  ack:=jsonb_build_object('ok',true,'deal_id',did,'owner_id',u.user_id,'assignee',u.name,'version',coalesce(d.version,0)+1,
-   'owner',owner_result->'owner','request',request_result->'request','approval',approval_result->'request','activity_id',aid,'server_at',v_at);
+   'owner',owner_result->'owner','request',request_result->'request','approval',approval_result->'request','activity_id',aid,'server_at',v_at,
+   'transferred_next_actions',transferred);
  insert into crm_security.deal_reassignment_receipts values(a.user_id,rid,p,ack,v_at);
  return ack;
 end $fn$;

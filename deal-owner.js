@@ -131,6 +131,16 @@
    if(String(R.ME?.id||R.ME?.name||'')!==identity)throw Error('로그인 사용자가 변경되었습니다. 새로고침 후 확인해 주세요');
    if(r.deal_id!==key||r.assignee!==o.to||!r.activity_id||!Number.isInteger(r.version))throw Error('담당 변경 저장 확인 응답이 올바르지 않습니다');
    const p=R.itemPatch(d,'deal');
+   // Apply only acknowledged task IDs; never infer a transfer from a local draft's owner.
+   const transfers=Array.isArray(r.transferred_next_actions)?r.transferred_next_actions:[];
+   for(const holder of [d,p])for(const field of ['next_action','nextActionObj']){
+    const task=holder[field];if(!task||task.status!=='open')continue;
+    const moved=transfers.find(x=>x&&x.id===task.id&&x.to===r.assignee&&typeof x.from==='string');
+    if(!moved)continue;
+    for(const ownerField of ['assignee','assignee_name']){
+     if(typeof task[ownerField]==='string'&&task[ownerField].trim()===moved.from.trim())task[ownerField]=moved.to;
+    }
+   }
    d.assignee=p.assignee=r.assignee;d.owner_id=r.owner_id;d.version=r.version;
    p.assignmentHistory=p.assignmentHistory||[];
    p.assignmentHistory.push({at:r.server_at,from:o.from,to:r.assignee,actor:rep(R.ME?.name),reason:o.reason,request_id:pending.requestId});

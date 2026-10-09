@@ -28,3 +28,22 @@ test('new commands are gated, allowlisted and named without changing markup or s
  assert.match(read('deal-owner.js'),/CRMRelease\?\.has\(RPC.change\)===false/);
  assert.match(read('deal-owner-v2.js'),/await R.saveAssigneeChange\(\)/);
 });
+
+test('reassignment applies ACK task IDs only, preserving drafts, independent owners and completed work',async()=>{
+ for(const variant of ['matching','draft','independent','completed','old-server']){
+  const r=context(),task={id:'saved-task',assignee:'이전담당',text:'견적 보내기',due:'2026-12-01',status:'open'};
+  if(variant==='draft')task.id='local-draft';
+  if(variant==='independent')task.assignee='지원담당';
+  if(variant==='completed')task.status='completed';
+  const before={...task},patch={nextActionObj:{...task}},d={id:'d',assignee:'이전담당',next_action:{...task},nextActionObj:{...task}};
+  let resolve;r.OpsStore={has:()=>true,rpc:()=>new Promise(yes=>{resolve=yes})};
+  r.itemPatch=()=>patch;r.toast=()=>{};vm.runInContext(read('deal-owner.js'),r);
+  const pending=r.DealOwner.change(d,{from:'이전담당',to:'새담당',reason:'변경',attr:'keep'});
+  assert.deepEqual(patch.nextActionObj,before,'no optimistic transfer before server ACK');
+  const ack={ok:true,deal_id:'d',assignee:'새담당',owner_id:'new',version:2,activity_id:'event',server_at:'2026-10-10'};
+  if(variant!=='old-server')ack.transferred_next_actions=[{id:'saved-task',from:'이전담당',to:'새담당'}];
+  resolve(ack);await pending;
+  const expected={...before,assignee:variant==='matching'?'새담당':before.assignee};
+  for(const actual of [patch.nextActionObj,d.next_action,d.nextActionObj])assert.deepEqual(actual,expected);
+ }
+});
