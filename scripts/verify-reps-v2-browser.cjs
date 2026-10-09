@@ -72,6 +72,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(()=>__commentCalls.map(x=>[x[0],x[1].rep_name,x[1].comment])),[['crm_rep_manager_comment_save_v2','이필선','금요일까지 신규 배정 첫 연락 완료']]);assert.equal(await page.evaluate(()=>__writes.length),0);
   assert.equal(await page.locator('#repsDialog.on .rd-promise textarea').inputValue(),'금요일까지 신규 배정 첫 연락 완료');assert.match(await page.locator('#repsDialog .rd-promise small').innerText(),/저장됨/);
   assert.match(await page.locator('#reps-v2 .pd-action').innerText(),/약속 수정[\s\S]*이번 주 약속 · 금요일까지/);
+  // Late success for a closed editor cannot replace another person's draft or comparison base.
+  await page.evaluate(()=>{__commentMode='hold';});await d.locator('[data-rd="save"]').click();
+  await page.evaluate(()=>RepsV2.open('황윤선'));await d.locator('textarea').fill('다른 담당자 초안');
+  const otherBase=await d.locator('textarea').getAttribute('data-comment-base');
+  await page.evaluate(()=>__resolveComment());await page.waitForTimeout(100);
+  assert.equal(await d.locator('textarea').inputValue(),'다른 담당자 초안');
+  assert.equal(await d.locator('textarea').getAttribute('data-comment-base'),otherBase);
+  await page.evaluate(()=>{__commentMode='ok';RepsV2.open('이필선');});
   /* 현장 줄 → 창을 닫고 그 현장의 파이프라인 상세 */
   await page.locator('#repsDialog .rd-row').first().click();await page.waitForTimeout(200);
   assert.equal(await page.evaluate(()=>window.__open),'d1');assert.equal(await page.locator('#repsDialog.on').count(),0);
