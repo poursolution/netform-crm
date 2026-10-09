@@ -2,10 +2,10 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const read=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
 const id=n=>'10000000-0000-4000-8000-'+String(n).padStart(12,'0');
-function setup({storage=new Map(),gate=true,rpc}={}){
+function setup({storage=new Map(),gate=true,rpc,asks=['고객 첫 연락']}={}){
  const listeners={},calls=[],takes=[],messages=[];
  const q={id:id(10),assigned_to:id(1),status:'배정완료'};
- const r={id:id(20),target_type:'inquiry',target_id:q.id,kind:'first',label:'첫 연락 요청',asks:['고객 첫 연락'],status:'sent',to_user_id:id(1),to_me:true};
+ const r={id:id(20),target_type:'inquiry',target_id:q.id,kind:'first',label:'첫 연락 요청',asks,status:'sent',to_user_id:id(1),to_me:true};
  let last;
  const R={G:{page:'today'},ME:{id:id(1),name:'담당'},B:{inquiries:[q]},esc:String,escAttr:String,repN:String,
   crypto:{randomUUID:()=>id(30)},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},
@@ -15,8 +15,9 @@ function setup({storage=new Map(),gate=true,rpc}={}){
   OpsStore:{has:()=>true,rpc:async(fn,p)=>{calls.push([fn,JSON.parse(JSON.stringify(p))]);if(fn==='crm_work_request_list_v1')return {ok:true,requests:[last||r]};
    const x=rpc?await rpc(fn,p,ack):ack(p);last=x.request;return x;}}
  };
- function ack(p){return {ok:true,contract_version:1,operation_id:p.operation_id,inquiry_id:q.id,log_id:id(40),next_action_id:id(50),server_at:new Date().toISOString(),
-  request:{...r,status:p.result==='부재'?'working':'done',result:p.result,next_text:p.next_text,next_due:p.next_due},
+ function ack(p){const compound=asks.length>1,satisfied=p.result==='부재'?[]:['고객 첫 연락'];return {ok:true,contract_version:compound?2:1,operation_id:p.operation_id,inquiry_id:q.id,log_id:id(40),next_action_id:id(50),server_at:new Date().toISOString(),
+  completion:compound?{policy_version:'first-compound-v1',requested_asks:asks,satisfied_asks:satisfied,remaining_asks:asks.filter(a=>!satisfied.includes(a)),contact_log_id:id(40),request_complete:false}:undefined,
+  request:{...r,status:compound||p.result==='부재'?'working':'done',closed_at:null,auto_done:!compound,result:p.result,next_text:p.next_text,next_due:p.next_due},
   state:{inquiry_id:q.id,logs:[{id:id(40),request_id:p.operation_id,result:p.result,kind:p.result==='부재'?'attempt':'connected',next_action:p.next_text,next_check_date:p.next_due}]},
   inquiry_update:{status:'전화응대 완료',next_action_date:p.next_due}};}
  const document={addEventListener:(n,f)=>listeners[n]=f,getElementById:()=>null};
@@ -60,7 +61,41 @@ test('account change/stale assignment never applies original ACK; basic request 
 test('migration mirror, transport and error registry stay coupled with strict release gate',()=>{
  const f='20261009211508_request_contact_atomic.sql';assert.equal(read('sql/'+f),read('supabase/migrations/'+f));
  for(const file of ['pc-manager-transport.js','pc-error-state.js'])assert.match(read(file),/crm_work_request_inquiry_contact_v1/);
- assert.match(read('work-request.js'),/CRMRelease.has\(RPC.contact\)!==true/);
+ assert.match(read('work-request.js'),/CRMRelease.has\(fn\)!==true/);
+});
+
+const compoundAsks=['고객 첫 연락','연락 후 견적 필요 여부 확인','현장방문 필요 여부 확인'];
+test('compound contact saves through v2 and never infers remaining objectives or full completion',async()=>{
+ for(const result of ['연결됨','검토중','견적요청','부재']){
+  const x=setup({asks:compoundAsks});x.S.card[x.r.id].res=result;await x.save();
+  assert.equal(x.calls[0][0],'crm_work_request_inquiry_contact_v2');assert.equal(x.S.list[0].status,'working');
+  assert.equal(x.takes.length,1);assert.equal(x.storage.size,0);assert.match(x.messages[0],/진행 중/);assert.doesNotMatch(x.messages[0],/요청 완료/);
+  assert.equal(x.calls.some(c=>c[0]==='crm_work_request_reply_v1'),false);
+ }
+});
+test('compound acknowledgement cannot claim done, omit or invent fulfilled objectives',async()=>{
+ for(const change of [a=>a.request.status='done',a=>a.request.closed_at=new Date().toISOString(),a=>a.request.auto_done=true,a=>a.completion=null,
+  a=>a.completion.request_complete=true,a=>a.completion.remaining_asks=[],a=>a.completion.satisfied_asks=compoundAsks,a=>a.completion.contact_log_id=id(90)]){
+  const x=setup({asks:compoundAsks,rpc:async(_f,p,ack)=>{const a=ack(p);change(a);return a;}});await x.save();
+  assert.equal(x.takes.length,0);assert.equal(x.r.status,'sent');assert.equal(x.storage.size,1);
+ }
+});
+test('all first-contact requests exclude local automatic close and unsupported asks never use legacy writes',async()=>{
+ for(const asks of [compoundAsks,['고객 첫 연락','임의 요청'],['현장방문 필요 여부 확인'],['고객 첫 연락','고객 첫 연락']]){
+  const x=setup({asks});assert.equal(x.R.WorkRequest.evidence(x.r),null);x.R.WorkRequest.autoClose();assert.equal(x.calls.length,0);
+  if(asks!==compoundAsks){await x.save();assert.equal(x.calls.length,0);assert.match(x.S.card[x.r.id].err,/확인 항목/);}
+ }
+});
+test('compound release gate, uncertain retry and account switch retain first-contact safeguards',async()=>{
+ const x=setup({asks:compoundAsks});x.R.CRMRelease.has=fn=>fn!=='crm_work_request_inquiry_contact_v2';await x.save();assert.equal(x.calls.length,0);
+ const storage=new Map(),a=setup({asks:compoundAsks,storage,rpc:async()=>{throw Error('network unknown');}});await a.save();
+ const b=setup({asks:compoundAsks,storage,rpc:async(_f,p,ack)=>({...ack(p),replayed:true})});await b.save();
+ assert.deepEqual(b.calls[0],a.calls[0]);assert.equal(b.takes.length,0);assert.equal(storage.size,0);
+ let c;c=setup({asks:compoundAsks,rpc:async(_f,p,ack)=>{c.R.ME.id=id(3);return ack(p);}});await c.save();assert.equal(c.takes.length,0);assert.equal(c.storage.size,1);
+});
+test('compound migration and exposed RPC registry accompany the feature',()=>{
+ const f='20261009215629_request_compound_contact.sql';assert.equal(read('sql/'+f),read('supabase/migrations/'+f));
+ for(const file of ['pc-manager-transport.js','pc-error-state.js'])assert.match(read(file),/crm_work_request_inquiry_contact_v2/);
 });
 
 test('definite server rejection releases pending payload while uncertain errors retain it',async()=>{

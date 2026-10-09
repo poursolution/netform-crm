@@ -36,6 +36,8 @@ before(async()=>{
  await db.exec(sql('work-request-v1-20261005.sql'));
  await db.exec(sql('20261009211508_request_contact_atomic.sql'));
  await db.exec(sql('20261009211508_request_contact_atomic.sql'));
+ await db.exec(sql('20261009215629_request_compound_contact.sql'));
+ await db.exec(sql('20261009215629_request_compound_contact.sql'));
  due=(await db.query("select ((now() at time zone 'Asia/Seoul')::date+2)::text d")).rows[0].d;
 });
 beforeEach(async()=>{
@@ -122,4 +124,80 @@ test('changed retry task cannot be overwritten by a new contact operation',async
  await call(body({result:'부재'}));await db.exec("reset role;update next_actions set title='고객이 별도로 잡은 방문'");const before=await counts();await as(owner);
  await assert.rejects(call(body({operation_id:id(31)})),/REQUEST_PLAN_CONFLICT/);assert.deepEqual(await counts(),before);
  assert.equal((await db.query('select title from next_actions')).rows[0].title,'고객이 별도로 잡은 방문');
+});
+
+const allAsks=['고객 첫 연락','연락 후 견적 필요 여부 확인','현장방문 필요 여부 확인'];
+const compound=async(asks=allAsks)=>{await db.exec('reset role');await db.query('update crm_security.work_requests set asks=$1::jsonb',[JSON.stringify(asks)]);await as(owner);};
+const call2=p=>call(p,'crm_work_request_inquiry_contact_v2');
+
+test('compound connection saves contact and next task but leaves all extra goals unresolved',async()=>{
+ await compound();const p=body({result:'견적요청'}),a=await call2(p);
+ assert.equal(a.contract_version,2);assert.equal(a.request.status,'working');assert.equal(a.request.closed_at,null);assert.equal(a.request.auto_done,false);
+ assert.deepEqual(a.completion,{policy_version:'first-compound-v1',requested_asks:allAsks,satisfied_asks:['고객 첫 연락'],remaining_asks:allAsks.slice(1),contact_log_id:a.log_id,request_complete:false});
+ assert.deepEqual(await counts(),{logs:1,tasks:1,receipts:1,audits:1});
+ assert.equal((await db.query('select status from next_actions')).rows[0].status,'open');
+ assert.equal((await db.query('select first_response_at is not null b from inquiries')).rows[0].b,true);
+ await as(owner);const retry=await call2(p);assert.equal(retry.replayed,true);assert.equal(retry.log_id,a.log_id);
+ await assert.rejects(call2(body({operation_id:id(31)})),/REQUEST_CONTACT_REVIEW_REQUIRED/,'already connected is reviewed, never another automatic contact');
+ assert.equal((await counts()).logs,1);
+});
+
+test('compound absence retries preserve original task and never complete unresolved quote/visit goals',async()=>{
+ await compound();const a=await call2(body({result:'부재'}));assert.deepEqual(a.completion.satisfied_asks,[]);assert.deepEqual(a.completion.remaining_asks,allAsks);
+ assert.equal(a.inquiry_update.first_response_at,null);await db.exec('reset role');const old=(await db.query('select * from next_actions')).rows[0];
+ await as(owner);const b=await call2(body({operation_id:id(31)}));assert.equal(b.request.status,'working');assert.deepEqual(b.completion.remaining_asks,allAsks.slice(1));
+ await db.exec('reset role');const before=(await db.query('select * from next_actions where id=$1',[old.id])).rows[0];
+ assert.equal(before.status,'completed');assert.deepEqual(before.due_at,old.due_at);assert.equal(before.title,old.title);
+ assert.equal((await db.query("select count(*)::int n from next_actions where status='open'")).rows[0].n,1);
+});
+
+test('compound old reply/automatic/manual result-only closure is blocked while seen and cancellation work',async()=>{
+ await compound();
+ for(const p of [{action:'done',result:'연결됨'},{action:'done',result:'부재',absent:true},{action:'done',result:'연락 기록 확인',auto:true},{action:'reply',result:'견적요청'}])
+  await assert.rejects(call({id:request,...p},'crm_work_request_reply_v1'),/REQUEST_CONTACT_PROOF_REQUIRED/);
+ const seen=await call({id:request,action:'seen'},'crm_work_request_reply_v1');assert.equal(seen.request.status,'seen');
+ await as(admin);const cancelled=await call({id:request,action:'cancel'},'crm_work_request_reply_v1');assert.equal(cancelled.request.status,'cancelled');
+});
+
+test('compound refuses invented/duplicate/missing objectives and cannot bypass v1 basic contract',async()=>{
+ for(const asks of [['고객 첫 연락'],[],['고객 첫 연락','임의 요청'],['고객 첫 연락','고객 첫 연락'],['연락 후 견적 필요 여부 확인','현장방문 필요 여부 확인'],{other:'고객 첫 연락'}]){
+  await compound(asks);await assert.rejects(call2(body()),/REQUEST_CONTACT_REVIEW_REQUIRED/);assert.equal((await counts()).logs,0);
+ }
+ await compound();await assert.rejects(call(body()),/REQUEST_CONTACT_REVIEW_REQUIRED/);
+ for(const extra of [{completion:{request_complete:true}},{fulfilled_asks:allAsks},{result:'통화완료'},{next_text:''},{next_due:'2000-01-01'}])await assert.rejects(call2(body(extra)));
+ assert.equal((await counts()).logs,0);
+});
+
+test('compound cannot overwrite plans, imported response, changed owner, converted or trashed inquiry',async()=>{
+ await compound();
+ for(const setup of ["update inquiries set next_action_date=current_date",`insert into next_actions(inquiry_id,action_type,title,due_at,assignee_name,status) values('${inq}','방문','약속한 방문',now(),'담당','open')`,
+  `update inquiries set raw='{"응대내용":"기존 응대 확인 필요"}'`,`update inquiries set assigned_to='${other}'`,"update inquiries set status='실주'",
+  `insert into crm_security.inquiry_audit_events(inquiry_id,action) values('${inq}','inquiry_trash')`]){
+  await db.exec('reset role;begin');try{await db.exec(setup);const before=await counts();await as(owner);await db.exec('savepoint attempt');await assert.rejects(call2(body()));
+   await db.exec('rollback to attempt');assert.deepEqual(await counts(),before);
+  }finally{await db.exec('rollback;reset role');}
+ }
+});
+
+test('compound failure after contact creation rolls back response, next task, request and receipt',async()=>{
+ await compound();await db.exec(`reset role;create function crm_security.synthetic_compound_fail() returns trigger language plpgsql as $$begin raise exception 'compound failure';end$$;
+ create trigger synthetic_compound_fail before insert on crm_security.work_request_contact_receipts for each row execute function crm_security.synthetic_compound_fail();`);
+ try{await as(owner);await assert.rejects(call2(body()),/compound failure/);assert.deepEqual(await counts(),{logs:0,tasks:0,receipts:0,audits:0});
+  assert.equal((await db.query('select first_response_at from inquiries')).rows[0].first_response_at,null);
+  assert.equal((await db.query('select status from crm_security.work_requests')).rows[0].status,'sent');
+ }finally{await db.exec('reset role;drop trigger synthetic_compound_fail on crm_security.work_request_contact_receipts;drop function crm_security.synthetic_compound_fail()');}
+});
+
+test('compound permissions and receipt replay preserve actor isolation and reassignment',async()=>{
+ await compound();for(const actor of [admin,other]){await as(actor);await assert.rejects(call2(body()),/받는 담당자/);}
+ await as(owner);const a=await call2(body());await db.exec(`reset role;update inquiries set assigned_to='${other}',next_action_date=current_date+20`);
+ const before=(await db.query('select * from inquiries')).rows;await as(owner);const retry=await call2(body());assert.equal(retry.replayed,true);assert.equal(retry.log_id,a.log_id);
+ await db.exec('reset role');assert.deepEqual((await db.query('select * from inquiries')).rows,before);
+ for(const role of ['anon','service_role'])assert.equal((await db.query("select has_function_privilege($1,'public.crm_work_request_inquiry_contact_v2(jsonb)','execute') f",[role])).rows[0].f,false);
+});
+
+test('compound objective order is preserved and unrelated request kinds retain existing reply behavior',async()=>{
+ await compound(['현장방문 필요 여부 확인','고객 첫 연락']);const a=await call2(body());assert.deepEqual(a.completion.remaining_asks,['현장방문 필요 여부 확인']);
+ await db.exec("reset role;update crm_security.work_requests set kind='support',label='지원처리 확인',status='sent'");await as(owner);
+ const b=await call({id:request,action:'done',result:'처리 확인'},'crm_work_request_reply_v1');assert.equal(b.request.status,'done');
 });
