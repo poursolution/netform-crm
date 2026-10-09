@@ -105,12 +105,12 @@
   const live=new Set();M.forEach((m,i)=>m.todos.forEach(t=>{live.add(KEY(i)+'|'+t.tk);if(t.legacyTk)live.add(KEY(i)+'|'+t.legacyTk);}));
   /* 단계별 기준 요청(stage:단계:사유)도 같은 식으로: 그 건에 그 사유가 아직 붙어 있으면 미처리 */
   items.forEach(it=>(it.rs||[]).forEach(k=>live.add('stage:'+it.stage+':'+k+'|'+todoKey('deal',it.row.key))));try{(root.KpiV7&&root.KpiV7.inquiryLive?root.KpiV7.inquiryLive():[]).forEach(k=>live.add(k));}catch(e){}
-  const seen=new Set(),uniq=recent.filter(a=>{const k=a.promise_key+'|'+a.target_type+':'+a.target_id;if(seen.has(k))return false;seen.add(k);return true;});
+  const seen=new Set(),uniq=recent.filter(a=>{const k=a.promise_key+'|'+a.target_type+':'+a.target_id+(a.request_group_id?'|'+a.recipient_user_id:'');if(seen.has(k))return false;seen.add(k);return true;});
   const typeKind=t=>t==='inquiry'?'inq':t==='deal'?'deal':'rep';
   /* Disappearing from the selected scope is not evidence of completion. Legacy actions
      have no per-target completion receipt; keep those missing from live as unverified. */
-  const processed=[],unverified=uniq.filter(a=>!live.has(a.promise_key+'|'+todoKey(typeKind(a.target_type),a.target_id)));
-  const pending=uniq.filter(a=>live.has(a.promise_key+'|'+todoKind(a))&&now-Date.parse(a.created_at)>=864e5);
+  const processed=[],unverified=uniq.filter(a=>!live.has(a.promise_key+'|'+todoKey(typeKind(a.target_type),a.target_id))||(a.request_group_id&&!coachingReceiptCurrent(a)));
+  const pending=uniq.filter(a=>live.has(a.promise_key+'|'+todoKind(a))&&(!a.request_group_id||coachingReceiptCurrent(a))&&now-Date.parse(a.created_at)>=864e5);
   function todoKind(a){return todoKey(typeKind(a.target_type),a.target_id);}
   /* 요청 업무(2026-10-05 design_handoff_request): 오늘 업무에서 보낸 요청도 이 처리율의 자료다 — 처리 = 회신 · 기록으로 완료. 부재 · 답 대기는 아직 미처리, 취소한 요청은 세지 않는다 */
   const wrq=(()=>{try{const WR=root.WorkRequest;if(!WR||!WR.enabled())return [];return WR.state().list.filter(r=>r.status!=='cancelled'&&now-Date.parse(r.created_at||0)<28*864e5);}catch(e){return [];}})(),wrqDone=wrq.filter(r=>r.status==='done'||r.status==='replied').length;
@@ -120,7 +120,7 @@
   Object.assign(M[7],{ready:history.ready&&!workPending&&!unverified.length,unverified:unverified.length,readState:history.state});
   if(!M[7].ready){M[7].v=null;M[7].pendingReason=!history.ready?history.message:workPending?'요청 업무 계산 중':'완료 근거 미확인 '+unverified.length+'건';}
   /* 요청함 표시: 이번 주 조치 기록(서버) + 방금 누른 것(이 PC) */
-  const mon=O()?O().monday(0):'',done=new Set(W.acts.filter(a=>ymd(a.created_at)>=mon&&a.target_id).map(a=>a.promise_key+'|'+todoKey(typeKind(a.target_type),a.target_id)));
+  const mon=O()?O().monday(0):'',done=new Set(W.acts.filter(a=>ymd(a.created_at)>=mon&&a.target_id&&(!a.request_group_id||coachingReceiptCurrent(a))).map(a=>a.promise_key+'|'+todoKey(typeKind(a.target_type),a.target_id)));
   (root.G.kbDone||[]).forEach(k=>done.add(k));
   const weekly=J?J.inquiryWeek(J.metricSource('inq')):null;
   if(weekly)weekly.forEach((w,i)=>Object.assign(M[i],w,{v:pct(w.num,w.den)}));
@@ -211,6 +211,52 @@
   try{entries=JSON.parse(store.getItem(storageKey)||'{}');if(!legacy)delete entries[signature];store.setItem(storageKey,JSON.stringify(entries));}catch(e){}
   return r;
  }
+
+ // Coaching requests preserve recipient identity and the selected cohort across retries/reloads.
+ function coachingRecipient(name){
+  const ids=new Set((root.B?.users||[]).filter(u=>u.active!==false&&(u.name||u.displayName||u.full_name)===name)
+   .map(u=>String(u.user_id||u.id||'')).filter(id=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)));
+  return ids.size===1?[...ids][0]:null;
+ }
+ function coachingReady(name){const fn='crm_kpi_request_send_v2';return requestStatus().ready&&!!coachingRecipient(name)&&!!O()?.has(fn)&&root.CRMRelease?.has(fn)===true;}
+ function coachingReceiptCurrent(a){
+  const inquiry=a.target_type==='inquiry',items=inquiry?root.B?.inquiries:root.B?.deals;
+  const d=(items||[]).find(x=>String(x.id)===String(a.target_id));
+  return !!d&&!!a.recipient_user_id&&coachingRecipient(root.repN(inquiry?(root.inquiryRoutedOwner?.(d)||d.assignee):d.assignee))===a.recipient_user_id;
+ }
+ const coachingStore='nf_coaching_pending_groups_v1';
+ const coachingActor=()=>String(root.ME?.id||root.ME?.user_id||'');
+ function coachingGroup(name,key,targets,scope){
+  if(!coachingReady(name))throw Error('코칭 요청 서버 연결 확인 필요');
+  const recipient=coachingRecipient(name),actor=coachingActor(),week=O().monday(0);
+  if(!actor)throw Error('로그인 계정 확인 필요');
+  const signature=JSON.stringify([actor,recipient,week,key]),store=root.Phase1.storage,entries=JSON.parse(store.getItem(coachingStore)||'{}');
+  if(entries[signature])return entries[signature];
+  if(!targets.length||targets.length>5000)throw Error('코칭 요청 대상 확인 필요');
+  const snapshot=JSON.parse(JSON.stringify({recipient_user_id:recipient,rep_name:name,week_start:week,promise_key:key,rule_version:'coaching-targets-v1',source_scope:scope,targets}));
+  const job={signature,actor,group_id:root.crypto.randomUUID(),snapshot,at:0,commands:[]};
+  for(let i=0;i<targets.length;i+=200)job.commands.push({request_id:root.crypto.randomUUID(),targets:snapshot.targets.slice(i,i+200)});
+  entries[signature]=job;store.setItem(coachingStore,JSON.stringify(entries));return job;
+ }
+ function coachingProgress(job,complete){
+  const store=root.Phase1.storage,entries=JSON.parse(store.getItem(coachingStore)||'{}');
+  if(entries[job.signature]?.group_id!==job.group_id)throw Error('요청 묶음이 변경되었습니다');
+  if(complete)delete entries[job.signature];else entries[job.signature]=job;
+  store.setItem(coachingStore,JSON.stringify(entries));
+ }
+ async function coachingSend(job,line){
+  const s=job.snapshot,idx=job.at,cmd=job.commands[idx],fn='crm_kpi_request_send_v2';
+  if(!coachingReady(s.rep_name)||coachingActor()!==job.actor||coachingRecipient(s.rep_name)!==s.recipient_user_id||O().monday(0)!==s.week_start)throw Error('요청 담당자 또는 기간 변경');
+  // Persist the complete payload before sending; even a lost ACK retries the identical command.
+  if(!cmd.payload){cmd.payload={request_id:cmd.request_id,group_id:job.group_id,batch_index:idx,recipient_user_id:s.recipient_user_id,rep_name:s.rep_name,week_start:s.week_start,promise_key:s.promise_key,line,targets:cmd.targets,snapshot:s};coachingProgress(job,false);}
+  const p=cmd.payload,r=await O().rpc(fn,p),expected=new Set(p.targets.map(t=>t.target_type+':'+t.target_id));
+  if(coachingActor()!==job.actor||r?.ok!==true||r.contract_version!==2||r.request_id!==p.request_id||r.group_id!==job.group_id||r.batch_index!==idx||r.recipient_user_id!==s.recipient_user_id||r.target_count!==s.targets.length
+   ||!Array.isArray(r.actions)||r.actions.length!==expected.size||!r.comment||r.comment.rep_name!==s.rep_name||ymd(r.comment.week_start)!==s.week_start||!r.comment.updated_at||r.comment.status!=='open'
+   ||r.actions.some(a=>!a.id||a.request_id!==p.request_id||a.request_group_id!==job.group_id||a.batch_index!==idx||a.recipient_user_id!==s.recipient_user_id||ymd(a.request_week)!==s.week_start||a.promise_key!==s.promise_key||!expected.delete(a.target_type+':'+a.target_id))||expected.size)throw Error('코칭 요청 저장 응답 확인 필요');
+  const ids=new Set(r.actions.map(a=>a.id));W.acts=r.actions.concat(W.acts.filter(a=>!ids.has(a.id)));
+  return r;
+ }
+
  async function requestMany(pkey,title,list){
   if(!canRequest()||W.sending)return {sent:0,failed:0};
   const done=compute().done,unique=new Map();
@@ -278,5 +324,5 @@
   wrapped.__kb=true;root.paintMgmt=wrapped;
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- root.KpiB={enabled,compute,DEF,stageItems,requestStatus,canRequest,requestMany,/* 아래는 관리팀 KPI v7(kpi-v7.js)이 같은 계산 · 저장 경로를 쓰도록 */personVals,requestLine,saveWeek,autoSave,load,names,openTarget,weekly:()=>W,weekRowOf:weekRow};
+ root.KpiB={enabled,compute,DEF,stageItems,coachingRecipient,coachingReady,coachingGroup,coachingSend,coachingProgress,requestStatus,canRequest,requestMany,/* 아래는 관리팀 KPI v7(kpi-v7.js)이 같은 계산 · 저장 경로를 쓰도록 */personVals,requestLine,saveWeek,autoSave,load,names,openTarget,weekly:()=>W,weekRowOf:weekRow};
 })(window);

@@ -107,11 +107,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 8. 일괄 요청 = 같은 한마디에 한 줄 추가 → 담당자 오늘 업무에 뜬다 · 묶음마다 한 번 */
   await w.locator('.rw-g[data-g="nonext"] [data-rw="bulk"]').click();await page.waitForTimeout(250);
   assert.equal(await page.evaluate(()=>repManagerComment('이필선',repManagerWeekKey(0)).comment),'[코칭 · 첫 응대] 목요일까지 신규 배정 3건 첫 연락 완료 (첫 연락 전 3건 → 0건)\n· [KPI 요청] [요청] 다음 할 일 등록 요청 — 다음 할 일 없음 7건 · 진행 46.5억');
-  assert.deepEqual(await page.evaluate(()=>__deliveries[0].targets.map(t=>({promise_key:__deliveries[0].promise_key,...t}))),[{promise_key:'kpi:3',action:'등록 요청',target_type:'person',target_id:'이필선',target_name:'이필선',note:'다음 할 일 없음 7건'}],'관리팀 KPI 3번의 같은 요청으로도 남는다');
+  assert.deepEqual(await page.evaluate(()=>__deliveries[0].targets.map(t=>[t.target_type,t.target_id,t.action])),[1,2,3,4,5,6,7].map(n=>['deal','n'+n,'등록 요청']),'실제 영업건 ID를 하나씩 저장한다');
+  assert.equal(await page.evaluate(()=>__deliveries[0].promise_key),'kpi:3');
   assert.deepEqual(await w.locator('.rw-g[data-g="nonext"] .rw-bulk').evaluate(n=>[n.textContent,n.disabled]),['요청함',true]);
   assert.deepEqual(await page.evaluate(()=>__toasts.slice(-1)),['이필선 오늘 업무에 요청을 남겼습니다 · 다음 할 일 등록 요청']);
   await w.locator('.rw-g[data-g="first"] [data-rw="bulk"]').click();await page.waitForTimeout(250);
   assert.match(await page.evaluate(()=>repManagerComment('이필선',repManagerWeekKey(0)).comment),/\n· \[KPI 요청\] \[요청\] 다음 할 일 등록 요청 — [^\n]+\n· \[KPI 요청\] \[요청\] 첫 연락 요청 — 신규 배정 · 첫 연락 전 3건$/);assert.equal(await page.evaluate(()=>__deliveries.length),2);assert.equal(await page.evaluate(()=>__writes.length),0,'queued optimistic writes are not used');
+  assert.deepEqual(await page.evaluate(()=>__deliveries[1].targets.map(t=>[t.target_type,t.target_id])),[1,2,3].map(n=>['inquiry','0000000'+n+'-0000-4000-8000-00000000000'+n]));
   /* 코칭을 다시 저장해도 요청 줄은 남는다 */
   await co.locator('[data-rw="save"]').click();await page.waitForTimeout(250);
   assert.match(await page.evaluate(()=>repManagerComment('이필선',repManagerWeekKey(0)).comment),/^\[코칭 · 첫 응대\] [^\n]+\n· \[KPI 요청\] \[요청\] 다음 할 일 등록 요청 — [^\n]+\n· \[KPI 요청\] \[요청\] 첫 연락 요청 — [^\n]+$/);
@@ -218,6 +220,35 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual({...scope.emptyState,ai:undefined},{list:0,first:0,group:false,ai:undefined});assert.doesNotMatch(scope.emptyState.ai,/모두 첫 연락 완료/,'excluded reviews are not reported as completed');
   assert.deepEqual(scope.legacy.first,scope.legacy.expected,'off switch keeps the existing period-based path');
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',opens_new_window:true,head_four_numbers:true,bottleneck_sentence:true,flow_and_drop:true,coaching_one_topic_prefilled:true,no_invented_numbers:true,past_coaching_result:true,groups_by_reason_paged:true,coaching_saved_existing_path:true,bulk_request_once:true,row_opens_detail:true,empty_person:true,narrow:true,legacy_switch:true}));
+  // A large group is acknowledged in bounded batches. Failed batches keep their original targets.
+  await page.evaluate(()=>{
+   RepsV2.close();G.repWindowOff=false;G.repsV2Off=false;G.repsBOff=false;__commentMode='ok';
+   const seed=B.deals[0];B.deals=Array.from({length:203},(_,i)=>({...seed,id:'batch-'+i,site:'합성 대상 '+i,amt:203-i}));B.inquiries=[];
+   paintRepManagement();RepWindow.open('이필선');
+   window.__batchCalls=[];window.__batchFail=true;const rpc=OpsStore.rpc.bind(OpsStore);
+   OpsStore.rpc=async(n,p)=>{if(n==='crm_kpi_request_send_v2'&&p.targets.some(t=>t.target_id.startsWith('batch-'))){__batchCalls.push(JSON.parse(JSON.stringify(p)));if(__batchCalls.length===2&&__batchFail)throw Error('synthetic second batch failure');}return rpc(n,p);};
+  });
+  const bulk=page.locator('#repWindow.on .rw-g[data-g="nonext"] .rw-bulk');
+  await bulk.click();await page.waitForTimeout(200);
+  assert.deepEqual(await page.evaluate(()=>__batchCalls.map(p=>p.targets.length)),[200,3]);
+  assert.equal(await bulk.isDisabled(),false);assert.notEqual(await bulk.innerText(),'요청함');
+  await page.evaluate(()=>{__batchFail=false;RepWindow.close();B.deals.push({...B.deals[0],id:'batch-new',site:'나중에 들어온 합성 대상'});paintRepManagement();RepWindow.open('이필선');});
+  await bulk.click();await page.waitForTimeout(200);
+  assert.deepEqual(await page.evaluate(()=>__batchCalls.map(p=>p.targets.length)),[200,3,3]);
+  assert.equal(await page.evaluate(()=>__batchCalls[1].request_id===__batchCalls[2].request_id),true,'미확인 배치는 같은 요청 ID로 재시도');
+  assert.equal(await page.evaluate(()=>__batchCalls[2].targets.some(t=>t.target_id==='batch-new')),false,'재시도 중 새 대상은 원래 요청에 섞지 않음');
+  assert.equal(await bulk.isDisabled(),false,'새로 유입된 대상은 요청 완료가 아님');
+  await bulk.click();await page.waitForTimeout(200);
+  assert.deepEqual(await page.evaluate(()=>__batchCalls.at(-1).targets.map(t=>t.target_id)),['batch-new'],'이미 저장 확인된 대상은 다시 보내지 않음');
+  assert.equal(await bulk.innerText(),'요청함');assert.equal(await bulk.isDisabled(),true);
+  assert.equal(await page.evaluate(()=>new Set(__deliveries.flatMap(p=>p.targets).filter(t=>t.target_id.startsWith('batch-')).map(t=>t.target_id)).size),204);
+  assert.equal(await page.evaluate(()=>__deliveries.flatMap(p=>p.targets).filter(t=>t.target_id.startsWith('batch-')).length),204);
+  await page.evaluate(()=>{RepWindow.close();B.deals=B.deals.slice(0,1).map(d=>({...d,assignee:'황윤선'}));paintRepManagement();RepWindow.open('황윤선');});
+  const reassigned=page.locator('#repWindow.on .rw-g[data-g="nonext"] .rw-bulk');
+  assert.notEqual(await reassigned.innerText(),'요청함','이전 담당자에게 보낸 요청은 새 담당자 요청이 아님');
+  assert.equal(await reassigned.isDisabled(),false);await reassigned.click();await page.waitForTimeout(150);
+  assert.equal(await reassigned.innerText(),'요청함');
+  assert.equal(await page.evaluate(()=>__deliveries.at(-1).recipient_user_id),'44444444-4444-4444-8444-444444444444');
+  console.log(JSON.stringify({status:'PASS',opens_new_window:true,head_four_numbers:true,bottleneck_sentence:true,flow_and_drop:true,coaching_one_topic_prefilled:true,no_invented_numbers:true,past_coaching_result:true,groups_by_reason_paged:true,coaching_saved_existing_path:true,bulk_request_once:true,bulk_actual_targets:true,partial_batch_retry:true,row_opens_detail:true,empty_person:true,narrow:true,legacy_switch:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
