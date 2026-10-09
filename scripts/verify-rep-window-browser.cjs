@@ -1,6 +1,6 @@
 'use strict';
 /* 영업사원 관리 · 사람 창 v2 검사(2026-10-04 design_handoff_rep_window · 영업사원 관리 창 v2.dc.html)
-   머리(이름 · 소속 · 상태 꼬리표 + 숫자 4개) / 왼쪽(가장 큰 병목 한 문장 → 흐름 + 가장 많이 빠지는 구간 → 이번 주 코칭 · 한 가지 → 지난 코칭 · 이번 주 결과) / 오른쪽(손볼 건: 사유별 묶음 · 금액 큰 순 5건 + 전체 보기 · 일괄 요청 1개)
+   머리(이름 · 소속 · 상태 꼬리표 + 숫자 4개) / 왼쪽(가장 큰 병목 한 문장 → 흐름 + 가장 많이 빠지는 구간 → 이번 주 코칭 · 한 가지 → 지난 코칭 · 이번 주 결과) / 오른쪽(손볼 건: 사유별 묶음 · 금액 큰 순 쪽 번호 · 한 쪽 최대 20건 · 일괄 요청 1개)
    숫자는 전부 자료에서 계산. 코칭 저장 · 일괄 요청은 기존 '주간 관리자 한마디'(rep_manager_comment) 한 길 — 새 저장소 없음. 끄면 예전 사람별 창. */
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
@@ -77,10 +77,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await w.locator('.rw-gh').evaluateAll(l=>l.map(n=>getComputedStyle(n.children[1]).color)),['rgb(180, 35, 24)','rgb(192, 57, 43)','rgb(180, 35, 24)','rgb(192, 57, 43)']);
   assert.equal(await w.locator('.rw-gh').first().evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(250, 251, 252)');
   const rows=k=>w.locator('.rw-g[data-g="'+k+'"] .rw-row').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent)));
-  assert.deepEqual(await rows('nonext'),[['강동 롯데캐슬퍼스트','날짜 없음','23억','열기'],['아시아선수촌아파트','날짜 없음','6.8억','열기'],['[경기 양주] 양주자이1단지','날짜 없음','5.5억','열기'],['대한제분(공장)','날짜 없음','4.9억','열기'],['[경기 의정부] 산들마을2단지','날짜 없음','4.3억','열기']]);
+  assert.deepEqual(await rows('nonext'),[['강동 롯데캐슬퍼스트','날짜 없음','23억','열기'],['아시아선수촌아파트','날짜 없음','6.8억','열기'],['[경기 양주] 양주자이1단지','날짜 없음','5.5억','열기'],['대한제분(공장)','날짜 없음','4.9억','열기'],['[경기 의정부] 산들마을2단지','날짜 없음','4.3억','열기'],['작은 현장','날짜 없음','2억','열기'],['금액 없는 현장','날짜 없음','-','열기']]);
   assert.equal(await w.locator('.rw-row').first().evaluate(n=>getComputedStyle(n).gridTemplateColumns.split(' ').slice(1).join(' ')),'90px 60px 52px');
   if(shot)await page.screenshot({path:shot+'-window.png'});
-  await w.locator('.rw-g[data-g="nonext"] [data-rw="all"]').click();assert.equal(await w.locator('.rw-g[data-g="nonext"] .rw-row').count(),7,'나머지 전체 보기');assert.deepEqual((await rows('nonext'))[6],['금액 없는 현장','날짜 없음','-','열기']);
+  assert.equal(await w.locator('.rw-g[data-g="nonext"] .rw-row').count(),7,'20건 이하는 한 쪽');assert.deepEqual((await rows('nonext'))[6],['금액 없는 현장','날짜 없음','-','열기']);
   await w.locator('.rw-g[data-g="overdue"] [data-rw="toggle"]').click();assert.deepEqual(await rows('overdue'),[['[경기 용인] 자봉마을써니밸리','30일 지남','7억','열기'],['[전북 군산] 미룡주공2단지','12일 지남','3.4억','열기']]);
   await w.locator('.rw-g[data-g="first"] [data-rw="toggle"]').click();assert.deepEqual((await rows('first')).map(r=>r.slice(1)),[['배정 후 CRM 연락 기록 없음','-','열기'],['배정 후 CRM 연락 기록 없음','-','열기'],['배정 후 CRM 연락 기록 없음','-','열기']]);
   await w.locator('.rw-g[data-g="nonext"] [data-rw="toggle"]').click();assert.equal(await w.locator('.rw-g[data-g="nonext"] .rw-row').count(),0);assert.equal((await heads())[0][4],'보기 ▾');
@@ -162,6 +162,22 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 순수 함수: 코칭 줄 쓰고 읽기 */
   assert.deepEqual(await page.evaluate(()=>[RepWindow.parse('[코칭 · 약속 미이행] 현재 양호 · 유지 (약속 기한 내 85% 유지)'),RepWindow.parse('금요일까지 첫 연락 완료\n· [KPI 요청] 다음 할 일 등록률 — 이필선'),RepWindow.parse('· [요청] 첫 연락 요청 — 3건'),RepWindow.coachLine({l:'견적 지연',m:{l:'방문 후 3일 견적',u:'%',v:null,to:null}},'방문 후 3일 안에 견적 요청 등록')]),
    [{topic:'약속 미이행',txt:'현재 양호 · 유지',m:{l:'약속 기한 내',from:85,u:'%',to:85}},{free:'금요일까지 첫 연락 완료'},null,'[코칭 · 견적 지연] 방문 후 3일 안에 견적 요청 등록']);
+  /* Bounded pages keep all target rows reachable and drafts intact. */
+  await page.evaluate(()=>{
+   B.deals=Array.from({length:45},(_,i)=>({id:'pg'+i,site:'쪽 현장 '+i,assignee:'이필선',brand:'POUR솔루션',created:'2026-07-01',updated:'2026-08-01',code:'sent',stage_code:'sent',grp:'영업·관리',amt:(45-i)*1e8}));B.inquiries=[];paintRepManagement();RepWindow.open('이필선');
+  });
+  const group=w.locator('.rw-g[data-g="nonext"]');
+  await w.locator('[data-rw-f="promise"]').fill('쪽 이동 후에도 보존할 초안');
+  assert.equal(await group.locator('.rw-row').count(),20);assert.equal(await group.locator('.lpg-info').innerText(),'1–20 / 45건');
+  await group.getByRole('button',{name:'2쪽',exact:true}).click();assert.equal(await group.locator('.rw-row').count(),20);assert.equal(await group.locator('.rw-row b').first().innerText(),'쪽 현장 20');
+  assert.equal(await w.locator('[data-rw-f="promise"]').inputValue(),'쪽 이동 후에도 보존할 초안');
+  await group.getByRole('button',{name:'3쪽',exact:true}).click();assert.equal(await group.locator('.rw-row').count(),5);assert.equal(await group.locator('.rw-row b').first().innerText(),'쪽 현장 40');
+  await group.locator('.rw-row a').first().click();assert.equal(await page.evaluate(()=>__open),'pg40','page three opens its own target');
+  await page.evaluate(()=>RepWindow.open('이필선'));assert.equal(await group.locator('.rw-row b').first().innerText(),'쪽 현장 0','reopening starts at one');
+  await group.getByRole('button',{name:'2쪽',exact:true}).click();await page.evaluate(()=>{G.repManagerYear=2025;paintRepManagement();});assert.equal(await group.locator('.rw-row b').first().innerText(),'쪽 현장 0','period change resets page');
+  await group.getByRole('button',{name:'3쪽',exact:true}).click();await page.evaluate(()=>{B.deals=B.deals.slice(0,21);paintRepManagement();});assert.equal(await group.locator('.rw-row').count(),1,'shrinking list clamps to final page');
+  assert.equal(await w.locator('[data-rw="all"]').count(),0,'no append-all path');
+  await page.evaluate(()=>{RepWindow.close();G.repManagerYear=2026;});
   /* 11. 끄기 → 예전 사람별 창 */
   await page.evaluate(()=>{G.repWindowOff=true;RepsV2.open('이필선');});await page.waitForTimeout(200);
   assert.equal(await page.locator('#repsDialog.on .rd-box').count(),1);assert.equal(await page.locator('#repWindow.on').count(),0);
@@ -193,6 +209,6 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual({...scope.emptyState,ai:undefined},{list:0,first:0,group:false,ai:undefined});assert.doesNotMatch(scope.emptyState.ai,/모두 첫 연락 완료/,'excluded reviews are not reported as completed');
   assert.deepEqual(scope.legacy.first,scope.legacy.expected,'off switch keeps the existing period-based path');
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',opens_new_window:true,head_four_numbers:true,bottleneck_sentence:true,flow_and_drop:true,coaching_one_topic_prefilled:true,no_invented_numbers:true,past_coaching_result:true,groups_by_reason_top5:true,coaching_saved_existing_path:true,bulk_request_once:true,row_opens_detail:true,empty_person:true,narrow:true,legacy_switch:true}));
+  console.log(JSON.stringify({status:'PASS',opens_new_window:true,head_four_numbers:true,bottleneck_sentence:true,flow_and_drop:true,coaching_one_topic_prefilled:true,no_invented_numbers:true,past_coaching_result:true,groups_by_reason_paged:true,coaching_saved_existing_path:true,bulk_request_once:true,row_opens_detail:true,empty_person:true,narrow:true,legacy_switch:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

@@ -1,7 +1,7 @@
 /* 영업사원 관리 · 사람 창 v2 (2026-10-04 design_handoff_rep_window · 영업사원 관리 창 v2.dc.html) — 사람을 눌렀을 때 뜨는 창만. 목록 · 다른 메뉴는 그대로.
    머리: 이름 · 소속 · 상태 꼬리표 + 숫자 4개(진행 금액 · 손볼 건 · 메이드율 · 업무량)
    왼쪽(판단 → 코칭): 가장 큰 병목 한 문장 + 보조 한 줄 → 흐름 막대(배정 → 응대 → 기회 → 경쟁 → 수주) + 가장 많이 빠지는 구간 → 이번 주 코칭 · 한 가지(첫 응대 · 다음 행동 · 견적 지연 · 약속 미이행) → 지난 코칭 · 이번 주 결과(전 → 후)
-   오른쪽(손볼 건): 사유별 묶음(다음 할 일 없음 · 날짜 지남 · 첫 연락 전 · 30일 넘게 같은 단계) — 묶음 제목에 사유 · 건수 · 걸린 금액 · [일괄 요청] 1개, 펼치면 금액 큰 순 5건 + 전체 보기. 줄에서는 사유를 되풀이하지 않는다.
+   오른쪽(손볼 건): 사유별 묶음(다음 할 일 없음 · 날짜 지남 · 첫 연락 전 · 30일 넘게 같은 단계) — 묶음 제목에 사유 · 건수 · 걸린 금액 · [일괄 요청] 1개, 펼치면 금액 큰 순 쪽 번호(한 쪽 최대 20건). 줄에서는 사유를 되풀이하지 않는다.
    ■ 자료는 목록과 같은 한 줄(repFlowData 의 r) · 메이드율은 대시보드와 같은 함수(BriefB.lib.made = CRMRules.madeRate) · 견적 지연은 관리팀 KPI '방문 후 3일 견적'과 같은 건(KpiB.stageItems).
    ■ 코칭 저장 · 일괄 요청은 기존 '주간 관리자 한마디'(rep_manager_comment) 한 길 — 새 저장소 없음. 담당자 오늘 업무(모바일 '관리자 한마디')에 그대로 뜬다.
      코칭 한 줄: "[코칭 · 주제] 약속 문장 (지표 전 → 목표)". 다음 주부터 같은 지표를 다시 계산해 '이번 주 결과'로 보여 준다(월요일 자동 확인).
@@ -129,10 +129,10 @@
    +'<div class="rw-past"><b>지난 코칭</b>'+pastHtml+'</div>';
   const reqs=linesOf(thisWeek).filter(isReq);
   const right='<div class="rw-rh"><b>지금 처리할 현장 '+M.total+'건</b><span>사유별로 묶음 · 금액 큰 순</span></div>'+(M.G.length?M.G.map(g=>{
-    const op=!!st.open[g.k],all=!!st.all[g.k],shown=op?(all?g.rows:g.rows.slice(0,5)):[],sent=reqs.some(s=>s.includes('[요청] '+g.bulk));
+    const op=!!st.open[g.k],pg=root.ListPager.cut(g.rows,root.ListPager.page(st,g.k)),shown=op?pg.rows:[],sent=reqs.some(s=>s.includes('[요청] '+g.bulk));
     return '<div class="rw-g" data-g="'+g.k+'"><div class="rw-gh"><b>'+h(g.t)+'</b><b style="color:'+g.c+'">'+g.n+'건</b><span>'+h(g.amt)+'</span><div class="rw-sp"></div><button type="button" class="rw-bulk'+(sent?' done':'')+'" data-rw="bulk" data-g="'+g.k+'"'+(sent||st.saving?' disabled':'')+'>'+(sent?'요청함':h(g.bulk))+'</button><button type="button" class="rw-tg" data-rw="toggle" data-g="'+g.k+'" aria-expanded="'+op+'">'+(op?'접기 ▴':'보기 ▾')+'</button></div>'
      +shown.map(x=>'<div class="rw-row"><b>'+h(x.d.site||'현장명 미입력')+'</b><span>'+h(x.note)+'</span><b class="a">'+h(amt(x.d)?eok(amt(x.d)):'-')+'</b><a href="#" data-rw="row" data-g="'+g.k+'" data-i="'+g.rows.indexOf(x)+'">열기</a></div>').join('')
-     +(op&&!all&&g.rows.length>5?'<button type="button" class="rw-all" data-rw="all" data-g="'+g.k+'">나머지 '+(g.rows.length-5)+'건 전체 보기</button>':'')+'</div>';
+     +(op?root.ListPager.html(pg,{ns:'rw',v:g.k}):'')+'</div>';
    }).join(''):'<p class="rw-none">지금 손볼 건이 없습니다.</p>');
   return head+'<div class="rw-body"><aside class="rw-left">'+left+'</aside><section class="rw-right">'+right+'</section></div>';
  }
@@ -145,10 +145,10 @@
   m.addEventListener('input',e=>{if(e.target.matches('[data-rw-f="promise"]')&&st)st.txt=e.target.value;});
   document.body.append(m);return m;
  }
- function render(){const r=rowOf();if(!r){close(false);return;}node().querySelector('.rw-box').innerHTML=html(r);}
+ function render(){if(st){const key=JSON.stringify([root.G.repManagerYear,root.G.repManagerQuarter,root.G.repManagerView]);if(st.periodKey!==key){root.ListPager.reset(st);st.periodKey=key;}}const r=rowOf();if(!r){close(false);return;}node().querySelector('.rw-box').innerHTML=html(r);}
  function open(name){
   if(!(root.REP_MANAGER_ROWS||[]).some(x=>x.nm===name))root.REP_MANAGER_ROWS=root.repFlowData(true);
-  cur=name;st={c:null,txt:null,open:null,all:{}};returnFocus=document.activeElement;const m=node();render();if(!cur)return;
+  cur=name;st={c:null,txt:null,open:null,pages:{}};returnFocus=document.activeElement;const m=node();render();if(!cur)return;
   m.classList.add('on');m.querySelector('.rw-x')?.focus();
  }
  function close(restore){const m=document.getElementById('repWindow');if(m)m.classList.remove('on');const f=returnFocus;cur=null;st=null;returnFocus=null;if(restore!==false&&f&&f.isConnected)f.focus?.({preventScroll:true});}
@@ -157,7 +157,7 @@
   if(a==='close'){close();return;}
   if(a==='pick'){st.c=Number(b.dataset.i);st.txt=null;render();return;}
   if(a==='toggle'){st.open[b.dataset.g]=!st.open[b.dataset.g];render();return;}
-  if(a==='all'){st.all[b.dataset.g]=true;render();return;}
+  if(a==='page'){root.ListPager.set(st,b.dataset.v,b.dataset.page);render();return;}
   const M=groups(r);
   if(a==='save'){
    const inp=node().querySelector('[data-rw-f="promise"]'),txt=(inp&&inp.value||'').trim();if(!txt){inp&&inp.focus();return;}
@@ -192,6 +192,18 @@
   }
  }
  function boot(){
+  // The disabled-v2 drawer uses the same pager without re-enabling its entry points.
+  const legacy=root.repManagerRiskList,legacyPage={};
+  if(typeof legacy==='function'&&!legacy.__rwPager){
+   const wrappedRisk=function(r){
+    const key=JSON.stringify([r.nm,root.G.repManagerYear,root.G.repManagerQuarter,root.REP_MANAGER_DRAWER_TAB]);
+    if(legacyPage.key!==key){root.ListPager.reset(legacyPage);legacyPage.key=key;}
+    const all=r.riskDeals.slice().sort((a,b)=>root.oppAmt(b)-root.oppAmt(a)),pg=root.ListPager.cut(all,root.ListPager.page(legacyPage));
+    return legacy.call(this,Object.assign({},r,{riskDeals:pg.rows}))+root.ListPager.html(pg,{ns:'rw-risk'});
+   };
+   wrappedRisk.__rwPager=true;root.repManagerRiskList=wrappedRisk;
+   document.addEventListener('click',e=>{const b=e.target.closest('#perfDrawerBody [data-rw-risk="page"]');if(!b)return;root.ListPager.set(legacyPage,null,b.dataset.page);root.repManagerRenderDrawer();});
+  }
   const base=root.paintRepManagement;if(typeof base!=='function'||base.__rw)return;
   const wrapped=function(){const r=base.apply(this,arguments);if(cur){try{if(enabled())render();else close(false);}catch(e){console.warn('[영업사원 창 v2]',e);}}return r;};
   wrapped.__rw=true;root.paintRepManagement=wrapped;
@@ -199,3 +211,4 @@
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
  root.RepWindow={enabled,open,close,groups,topics,neck,flow,made,parse,coachLine,isOpen:()=>!!cur};
 })(window);
+
