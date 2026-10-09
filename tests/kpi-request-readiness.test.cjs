@@ -52,6 +52,7 @@ test('actual request-engine completion remains countable; loading request engine
  assert.equal(r.KpiB.compute().M[7].v,null);
  loaded=true;Object.assign(state,{loaded:true,busy:false,list:[{status:'done',created_at:'2026-10-08'}]});
  const m=r.KpiB.compute().M[7];assert.equal(m.num,1);assert.equal(m.den,1);assert.equal(m.v,100);
+ state.busy=true;assert.equal(r.KpiB.compute().M[7].v,100,'loaded snapshot remains usable during refresh; provider repaints before busy clears');
 });
 
 test('v7 core and stage requests share execution guard; fallback requests and bulk entry are guarded',()=>{
