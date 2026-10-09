@@ -94,12 +94,6 @@
   for(const s of lines){const m=COACH.exec(s);if(m)return {topic:m[1],txt:m[2],m:m[3]?{l:m[3],from:Number(m[4]),u:m[5],to:m[6]!=null?Number(m[6]):Number(m[4])}:null};}
   const free=lines.filter(s=>!isReq(s));return free.length?{free:free.join(' ')}:null;
  }
- function write(rep,text){
-  const wk=week(0),actor=(root.ME&&root.ME.name)||'관리자',at=root.isoNow(),row={rep_name:rep,week_start:wk,comment:text,status:'open',created_by:actor,updated_at:at};
-  const local=root.repManagerLocalComments().filter(x=>!(x.rep_name===rep&&x.week_start===wk));local.push(row);
-  root.Phase1.storage.setItem(root.REP_MANAGER_COMMENT_KEY||'netform_crm_rep_manager_comments_v1',JSON.stringify(local));
-  root.pushWrite('rep_manager_comment',{rep_name:rep,week_start:wk,comment:text,status:'open',created_by:actor,updated_at:at});
- }
  /* 지난 코칭 = 이번 주보다 앞선 주에 남긴 가장 최근 것 */
  function past(rep){
   const wk=week(0),wkOf=x=>String(x.week_start||x.weekStart||'').slice(0,10);
@@ -128,12 +122,12 @@
    +'<div class="rw-flow"><b>흐름</b>'+FL.F.map((x,i)=>'<div class="rw-fl"><span>'+x[0]+'</span><i><u class="'+(i===4?'g':'')+'" style="width:'+Math.round(x[1]/FL.base*100)+'%"></u></i><b>'+x[1]+'</b></div>').join('')+'<span class="rw-drop">'+h(FL.drop)+'</span></div>'
    +'<div class="rw-co"><b>이번 주 코칭 · 한 가지</b><div class="rw-chips">'+T.map((x,i)=>'<button type="button" data-rw="pick" data-i="'+i+'" aria-pressed="'+(st.c===i)+'">'+h(x.l)+'</button>').join('')+'</div>'
    +'<span class="rw-ai"><b>AI</b>'+h(sel.ai)+'</span><input type="text" data-rw-f="promise" maxlength="200" aria-label="이번 주 약속" value="'+attr(txt)+'">'
-   +'<div class="rw-cof"><span>'+(savedIdx>=0?'저장됨 '+h(mdOf(thisWeek.updated_at||thisWeek.updatedAt||''))+' · 월요일 자동 확인':'다음 주 월요일 결과 자동 확인')+'</span><button type="button" data-rw="save">코칭 저장</button></div></div>'
+   +'<div class="rw-cof"><span>'+(savedIdx>=0?'저장됨 '+h(mdOf(thisWeek.updated_at||thisWeek.updatedAt||''))+' · 월요일 자동 확인':'다음 주 월요일 결과 자동 확인')+'</span><button type="button" data-rw="save"'+(st.saving?' disabled':'')+'>코칭 저장</button></div></div>'
    +'<div class="rw-past"><b>지난 코칭</b>'+pastHtml+'</div>';
   const reqs=linesOf(thisWeek).filter(isReq);
   const right='<div class="rw-rh"><b>지금 처리할 현장 '+M.total+'건</b><span>사유별로 묶음 · 금액 큰 순</span></div>'+(M.G.length?M.G.map(g=>{
     const op=!!st.open[g.k],all=!!st.all[g.k],shown=op?(all?g.rows:g.rows.slice(0,5)):[],sent=reqs.some(s=>s.includes('[요청] '+g.bulk));
-    return '<div class="rw-g" data-g="'+g.k+'"><div class="rw-gh"><b>'+h(g.t)+'</b><b style="color:'+g.c+'">'+g.n+'건</b><span>'+h(g.amt)+'</span><div class="rw-sp"></div><button type="button" class="rw-bulk'+(sent?' done':'')+'" data-rw="bulk" data-g="'+g.k+'"'+(sent?' disabled':'')+'>'+(sent?'요청함':h(g.bulk))+'</button><button type="button" class="rw-tg" data-rw="toggle" data-g="'+g.k+'" aria-expanded="'+op+'">'+(op?'접기 ▴':'보기 ▾')+'</button></div>'
+    return '<div class="rw-g" data-g="'+g.k+'"><div class="rw-gh"><b>'+h(g.t)+'</b><b style="color:'+g.c+'">'+g.n+'건</b><span>'+h(g.amt)+'</span><div class="rw-sp"></div><button type="button" class="rw-bulk'+(sent?' done':'')+'" data-rw="bulk" data-g="'+g.k+'"'+(sent||st.saving?' disabled':'')+'>'+(sent?'요청함':h(g.bulk))+'</button><button type="button" class="rw-tg" data-rw="toggle" data-g="'+g.k+'" aria-expanded="'+op+'">'+(op?'접기 ▴':'보기 ▾')+'</button></div>'
      +shown.map(x=>'<div class="rw-row"><b>'+h(x.d.site||'현장명 미입력')+'</b><span>'+h(x.note)+'</span><b class="a">'+h(amt(x.d)?eok(amt(x.d)):'-')+'</b><a href="#" data-rw="row" data-g="'+g.k+'" data-i="'+g.rows.indexOf(x)+'">열기</a></div>').join('')
      +(op&&!all&&g.rows.length>5?'<button type="button" class="rw-all" data-rw="all" data-g="'+g.k+'">나머지 '+(g.rows.length-5)+'건 전체 보기</button>':'')+'</div>';
    }).join(''):'<p class="rw-none">지금 손볼 건이 없습니다.</p>');
@@ -155,7 +149,7 @@
   m.classList.add('on');m.querySelector('.rw-x')?.focus();
  }
  function close(restore){const m=document.getElementById('repWindow');if(m)m.classList.remove('on');const f=returnFocus;cur=null;st=null;returnFocus=null;if(restore!==false&&f&&f.isConnected)f.focus?.({preventScroll:true});}
- function onClick(e){
+ async function onClick(e){
   const b=e.target.closest('[data-rw]');if(!b||!cur)return;const a=b.dataset.rw,r=rowOf();if(!r)return;
   if(a==='close'){close();return;}
   if(a==='pick'){st.c=Number(b.dataset.i);st.txt=null;render();return;}
@@ -165,16 +159,29 @@
   if(a==='save'){
    const inp=node().querySelector('[data-rw-f="promise"]'),txt=(inp&&inp.value||'').trim();if(!txt){inp&&inp.focus();return;}
    const t=topics(r,M)[st.c],keep=linesOf(commentOf(r.nm,week(0))).filter(isReq);
-   write(r.nm,[coachLine(t,txt)].concat(keep).join('\n'));st.txt=null;
-   toast(r.nm+' · 이번 주 코칭을 저장했습니다 · 다음 주 월요일에 결과가 보입니다');root.paintRepManagement();return;
+   if(st.saving)return;const state=st,chosen=st.c;state.saving=true;
+   node().querySelectorAll('[data-rw="save"],[data-rw="bulk"]').forEach(x=>x.disabled=true);
+   try{await root.repManagerCommitComment(r.nm,[coachLine(t,txt)].concat(keep).join('\n'),'open');
+    if(st===state&&st.c===chosen&&String(st.txt==null?txt:st.txt).trim()===txt)st.txt=null;
+    toast(r.nm+' · 이번 주 코칭을 저장했습니다 · 다음 주 월요일에 결과가 보입니다');
+   }catch(err){toast('코칭 저장 확인 실패 · 입력을 유지했습니다');}
+   finally{state.saving=false;if(st===state)root.paintRepManagement();}return;
   }
   const g=M.G.find(x=>x.k===b.dataset.g);if(!g)return;
   if(a==='bulk'){
    const lines=linesOf(commentOf(r.nm,week(0)));if(lines.some(s=>s.includes('[요청] '+g.bulk)))return;
-   write(r.nm,lines.concat('· [요청] '+g.bulk+' — '+g.t+' '+g.n+'건'+(g.amt&&g.amt!=='금액 미정'?' · '+g.amt:'')).join('\n'));
-   /* 다음 할 일 등록 요청은 관리팀 KPI 3번의 같은 요청으로도 남긴다(그 화면에서 '요청함'으로 보이게) */
-   try{const o=root.OpsStore;if(g.k==='nonext'&&o&&typeof o.has==='function'&&o.has('crm_kpi_action_log_v1'))Promise.resolve(o.rpc('crm_kpi_action_log_v1',{promise_key:'kpi:3',action:'등록 요청',target_type:'person',target_id:String(r.nm).slice(0,80),target_name:String(r.nm).slice(0,200),note:('다음 할 일 없음 '+g.n+'건').slice(0,500)})).catch(()=>{});}catch(err){}
-   toast(r.nm+' 오늘 업무에 요청을 남겼습니다 · '+g.bulk);root.paintRepManagement();return;
+   if(st.saving)return;const state=st;state.saving=true;
+   node().querySelectorAll('[data-rw="save"],[data-rw="bulk"]').forEach(x=>x.disabled=true);
+   try{
+    const k=root.KpiB;if(!k||!k.requestLine)throw Error('요청 저장 연결 확인 필요');
+    await root.repManagerCommentCommand(r.nm,week(0),async()=>{
+     if(!k.requestStatus().ready)await k.load(true);
+     const line='[요청] '+g.bulk+' — '+g.t+' '+g.n+'건'+(g.amt&&g.amt!=='금액 미정'?' · '+g.amt:'');
+     return k.requestLine(r.nm,line,g.k==='nonext'?'kpi:3':'stage:coaching:'+g.k,[{target_type:'person',target_id:r.nm,target_name:r.nm,action:g.k==='nonext'?'등록 요청':g.bulk,note:g.t+' '+g.n+'건'}]);
+    });
+    toast(r.nm+' 오늘 업무에 요청을 남겼습니다 · '+g.bulk);
+   }catch(err){toast('요청 저장 확인 실패 · 다시 시도해 주세요');}
+   finally{state.saving=false;if(st===state)root.paintRepManagement();}return;
   }
   if(a==='row'){
    e.preventDefault();const it=g.rows[Number(b.dataset.i)];if(!it)return;close(false);root.G._detailPopup=true;
