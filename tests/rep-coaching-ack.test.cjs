@@ -3,7 +3,7 @@ const html=fs.readFileSync(path.join(__dirname,'../crm.html'),'utf8');
 const source=html.slice(html.indexOf('var REP_MANAGER_COMMENT_PENDING='),html.indexOf('function repManagerFlowRow'));
 function setup(){
  const memory=new Map(),B={repManagerComments:[]},calls=[],toasts=[];
- let finish,fail;const el={value:'new coaching',isConnected:true};
+ let finish,fail;const attrs={'data-comment-base':'null'};const el={value:'new coaching',isConnected:true,getAttribute:k=>attrs[k]??null,hasAttribute:k=>k in attrs,setAttribute:(k,v)=>attrs[k]=v};
  const c={Set,Error,ME:{id:'admin',name:'manager'},B,REP_INTERNAL:['rep'],REP_MANAGER_ROWS:[{nm:'rep'}],REP_MANAGER_COMMENT_KEY:'comments',
   Phase1:{storage:{getItem:k=>memory.get(k),setItem:(k,v)=>memory.set(k,v)}},
   repManagerLocalComments:()=>JSON.parse(memory.get('comments')||'[]'),repManagerWeekKey:()=> '2026-10-05',
@@ -19,7 +19,7 @@ test('no local or rendered success before acknowledgement; accept server timesta
 });
 test('rejection preserves draft and old completion state; retry is available',async()=>{
  const x=setup();x.B.repManagerComments.push({rep_name:'rep',comment:'old',status:'done'});
- const p=x.c.repManagerSaveComment('rep','drawer');x.fail(Error('offline'));assert.equal(await p,false);assert.equal(x.el.value,'new coaching');assert.equal(x.B.repManagerComments[0].status,'done');assert.equal(x.calls.length,1);
+ x.el.setAttribute('data-comment-base',JSON.stringify(x.c.repManagerCommentBase(x.B.repManagerComments[0])));const p=x.c.repManagerSaveComment('rep','drawer');x.fail(Error('offline'));assert.equal(await p,false);assert.equal(x.el.value,'new coaching');assert.equal(x.B.repManagerComments[0].status,'done');assert.equal(x.calls.length,1);
  const retry=x.c.repManagerSaveComment('rep','drawer');x.ack({status:'done'});assert.equal(await retry,true);
 });
 test('double click does not issue a second write',async()=>{
@@ -42,4 +42,19 @@ test('completion toggle waits and uses server completion evidence',async()=>{
 test('disabled backend refuses write; cache failure after ACK is not a failed server save',async()=>{
  const x=setup();x.c.OpsStore.has=()=>false;assert.equal(await x.c.repManagerSaveComment('rep','card'),false);assert.equal(x.calls.length,0);
  x.c.OpsStore.has=()=>true;x.c.Phase1.storage.setItem=()=>{throw Error('quota')};const p=x.c.repManagerSaveComment('rep','card');x.ack();assert.equal(await p,true);assert.equal(x.B.repManagerComments[0].comment,'new coaching');
+});
+
+test('editor base stays frozen despite a newer cache row; conflict preserves draft',async()=>{
+ const x=setup(),original={updated_at:'2026-10-09T01:00:00Z',comment:'shown to editor',status:'open'};
+ x.el.setAttribute('data-comment-base',JSON.stringify(original));
+ x.B.repManagerComments.push({...original,comment:'another manager',updated_at:'2026-10-09T02:00:00Z'});
+ const p=x.c.repManagerSaveComment('rep','card');assert.equal(x.calls[0][0],'crm_rep_manager_comment_save_v2');
+ assert.deepEqual(JSON.parse(JSON.stringify(x.calls[0][1].expected)),original);
+ x.fail(Error('COACHING_CONFLICT'));assert.equal(await p,false);assert.equal(x.el.value,'new coaching');
+ assert.equal(x.B.repManagerComments[0].comment,'another manager');assert.equal(x.calls.length,1);
+});
+test('missing editor base never falls back to an unconditional save',async()=>{
+ const x=setup();x.el.hasAttribute=()=>false;
+ assert.equal(await x.c.repManagerSaveComment('rep','card'),false);assert.equal(x.calls.length,0);
+ await assert.rejects(x.c.repManagerCommitComment('rep','text','open'),/편집 기준/);
 });
