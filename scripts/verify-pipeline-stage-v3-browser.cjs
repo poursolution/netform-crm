@@ -68,7 +68,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const EXPECT={
    /* 2026-10-07 stage7: 컨설팅 = 물량 산출 기한(견적팀) · 사유 5개 / 발송 = 넷째 칸 '발송일 확인 필요'(s-nodate) / 경쟁 = 넷째 칸 '일정 미등록'(k-nodate) · 운영 제안 표시 / 계약 · 시공 = 시공 중 방문 없음은 시공 중 칸과 같은 조건 */
    consulting:{name:'컨설팅 설계',goal:14,tabs:[['미팅 전 · 일정 없음','첫 통화에서 미팅 날짜 잡기'],['미팅 예정','미팅 전날 확인 연락'],['미팅 완료 · 견적 준비','미팅 후 견적 요청 등록']],n:[4,1,1,2],reasons:[['미팅 일정 없음',1],['물량 산출 기한 넘김',1],['필수 확인 미입력',2],['다음 행동 · 날짜 없음',1],['30일 넘게 머묾',1]],act:['미팅 잡기','확인 연락','견적 요청'],order:['c-none','c-plan','c-late','c-ok']},
-   sent:{name:'자료 발송완료',goal:14,tabs:[['7일 넘음 · 후속 없음','오늘 후속 연락'],['발송 후 7일 안','D+3 수신 확인'],['고객 반응 있음','다음 단계 판단'],['발송일 확인 필요','발송일 · 자료 · 수신자 입력']],n:[4,1,1,1,1],reasons:[['발송 후 7일 · 후속 없음',1],['발송일 미기록 · 판정 불가',1],['결정권자 미확인',3],['다음 행동 · 날짜 없음',3],['30일 넘게 머묾',0]],act:['후속 연락','수신 확인','단계 판단','정보 입력'],order:['s-late','s-wait','s-done','s-nodate'],amb:3},
+   sent:{name:'자료 발송완료',goal:14,tabs:[['7일 넘음 · 후속 없음','오늘 후속 연락'],['발송 후 7일 안','D+3 수신 확인 · 운영 제안'],['후속 확인 기록 있음','연결 · 반응 기록 기준'],['발송일 확인 필요','실제 발송 · 기존 증빙 확인']],n:[4,1,1,1,1],reasons:[['발송 후 7일 · 후속 없음',1],['발송일 미기록 · 판정 불가',1],['결정권자 미확인',3],['다음 행동 · 날짜 없음',3],['30일 넘게 머묾 · 진단 기준',0]],act:['후속 연락','수신 확인','단계 판단','증빙 확인'],order:['s-late','s-wait','s-done','s-nodate'],amb:3},
    /* 관계관리는 2026-10-07 v12(상태 5칸 · 업무 필터 · 전환 검토)로 바뀌어 전용 검사(scripts/verify-relationship-v12-browser.cjs)가 본다. 끄기(G.relV12Off) 경로의 예전 탭 3개는 아래 relOld 로 */
    competition:{name:'경쟁 · 입찰',goal:30,tabs:[['마감 D-7 이내','제안서 · 가격 확정 · 운영 제안'],['진행 중','일정 확인'],['결과 대기','개찰 다음날 결과 등록 · 운영 제안'],['일정 미등록','입찰 · PT 일정 확인']],n:[6,2,1,2,1],reasons:[['제안서 미공유',2],['결정 · 입찰 일정 미등록',1],['경쟁 공법 미확인',5],['결정권자 미확인',6],['결과 미등록',1]],act:['제안 준비','일정 확인','결과 등록','일정 입력'],order:null,amb:3},
    construction:{name:'계약 · 시공',goal:14,/* stage7_2 ⑤: 4상태 — 계약 체결 · 착공 준비(착공일 미입력 · 아직 안 온 착공일) · 시공 중(착공일 입력 후) · 준공 확인 */
@@ -87,9 +87,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    /* 진단: 기준 넘김 = 빨강 상태 건수 · 평균 체류 · 기준 n일 */
    assert.match(s.diag,new RegExp('^단계 진단 ?'+E.n[0]+'건 · '));
    /* stage7 공통: 제목 숫자 = '기한 초과 n'(판정 함수의 기한 초과와 같은 수) · 아래 '확인 필요 n = 날짜 미입력 + 판정 불가'. '기준 넘김' 단어 없음 */
-   if(key==='competition'){assert.match(s.kpis[0],/^후속 업무 지연 ?0건 ?입찰 일정 없음 1 · 다음 행동일 없음 6 · 판정 불가 0$/);}else{const m=/^기한 초과 ?(\d+)건 ?확인 필요 (\d+) · 날짜 미입력 (\d+) · 판정 불가 (\d+)$/.exec(s.kpis[0]);assert.ok(m,key+': 제목 숫자 글 — '+s.kpis[0]);assert.equal(Number(m[2]),Number(m[3])+Number(m[4]),key+': 확인 필요 = 날짜 미입력 + 판정 불가');
+   if(key==='sent'){assert.match(s.kpis[0],/^발송 후 후속 지연 ?1건 ?판정 가능 3 /);assert.match(s.kpis[0],/4건 · 발송일 확인 1건$/);}else if(key==='competition'){assert.match(s.kpis[0],/^후속 업무 지연 ?0건 ?입찰 일정 없음 1 · 다음 행동일 없음 6 · 판정 불가 0$/);}else{const m=/^기한 초과 ?(\d+)건 ?확인 필요 (\d+) · 날짜 미입력 (\d+) · 판정 불가 (\d+)$/.exec(s.kpis[0]);assert.ok(m,key+': 제목 숫자 글 — '+s.kpis[0]);assert.equal(Number(m[2]),Number(m[3])+Number(m[4]),key+': 확인 필요 = 날짜 미입력 + 판정 불가');
     const T=await page.evaluate(k=>{const J=PipelineJudge,T=J.tally(PipelineWorkspace.rows({}).filter(r=>PipelineStages.group(r.code)===k).map(r=>r.item));return [T.late,T.nodate,T.norecord];},key);assert.deepEqual([Number(m[1]),Number(m[3]),Number(m[4])],T,key+': 판정 함수와 같은 수');}
-   assert.doesNotMatch(s.kpis[0]+s.diag+s.todo,/기준 넘김/,key+': 기준 넘김 단어 없음');assert.match(s.kpis[1],key==='competition'?/^평균 체류 ?\d+일 ?진입일 입력 6 \/ 6건$/:new RegExp('^평균 체류 ?\\d+일 ?기준 '+E.goal+'일$'));
+   assert.doesNotMatch(s.kpis[0]+s.diag+s.todo,/기준 넘김/,key+': 기준 넘김 단어 없음');assert.match(s.kpis[1],key==='sent'?/^평균 체류 ?\d+일 ?체류 진단 기준 14일$/:key==='competition'?/^평균 체류 ?\d+일 ?진입일 입력 6 \/ 6건$/:new RegExp('^평균 체류 ?\\d+일 ?기준 '+E.goal+'일$'));
    /* 왜 멈춰 있나: 사유(4~5개) · 첫 사유 = 빨강 상태 건수 */
    assert.deepEqual(s.reasons.map(r=>[r[0],Number(r[1])]),E.reasons,key+': 사유 건수');assert.equal(Number(s.reasons[0][1]),E.n[1],key+': 첫 사유 = 빨강 상태');
    assert.deepEqual(s.reasons.map(r=>r[2]),E.reasons.map(r=>Math.min(100,Math.round(r[1]/E.n[0]*100))+'%'),key+': 막대 = 건수 ÷ 전체');
