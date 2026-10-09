@@ -1,0 +1,22 @@
+/* 관리 단위 · 영업건 상자(units.js · 시안 '관리 단위 · 현장 아래 영업건') — 영업건 상세 오른쪽 · 가는 선 · 붉은 계열 · 접는 곳 없음. 끄기: G.dealUnitsOff=true */
+#detailView .dvu{background:#fff;border:1px solid #e8eaef;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:7px;font-size:12.5px;color:#15171c;margin-top:10px}
+#detailView .dvu>header{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}#detailView .dvu>header b{font-size:13.5px}#detailView .dvu>header small{font-size:11.5px;color:#6b7280;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#detailView .dvu-row{display:grid;grid-template-columns:64px minmax(0,1fr);gap:4px 10px;align-items:start;border-top:1px solid #f2f3f6;padding-top:7px}
+#detailView .dvu-row>span{color:#6b7280;font-size:12px;padding-top:2px}#detailView .dvu-row>div{min-width:0;display:flex;flex-direction:column;gap:3px}
+#detailView .dvu-row small{font-size:11.5px;color:#6b7280;line-height:1.45}#detailView .dvu-row b.ok{color:#1f7a4d}#detailView .dvu-row b.amb{color:#c0392b}
+#detailView .dvu-chips{flex-direction:row!important;flex-wrap:wrap;gap:5px!important;align-items:center}
+#detailView .dvu-chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;border:1px solid #e3e6ec;border-radius:999px;padding:2px 9px;white-space:nowrap}#detailView .dvu-chip small{font-size:11px;color:#6b7280}
+#detailView .dvu-chip.main{border-color:#15171c;font-weight:700}#detailView .dvu-chip.est{border-style:dashed;color:#6b7280}
+#detailView .dvu-chip button{border:0;background:none;color:#9ca3af;font-size:13px;padding:0 0 0 2px;line-height:1;cursor:pointer}#detailView .dvu-chip button:hover{color:#b42318}
+#detailView .dvu-est{font-style:normal;font-size:11px;font-weight:700;color:#c0392b;background:#fdf0ee;border-radius:4px;padding:1px 6px;white-space:nowrap}
+#detailView .dvu-add{display:inline-flex;gap:4px;align-items:center;flex-wrap:wrap}#detailView .dvu select{font:inherit;font-size:12px;border:1px solid #d9dde4;border-radius:7px;padding:3px 6px;background:#fff;max-width:150px}
+#detailView .dvu-add button,#detailView .dvu-ft button,#detailView .dvu-rc button{font:inherit;font-size:12px;font-weight:700;border:1px solid #d9dde4;background:#fff;border-radius:7px;padding:4px 10px;cursor:pointer;white-space:nowrap}
+#detailView .dvu-ft button.save{border:0;background:#15171c;color:#fff}#detailView .dvu button:disabled{opacity:.5;cursor:default}
+#detailView .dvu-b3{display:inline-flex;flex-wrap:wrap;gap:4px 6px;align-items:center}#detailView .dvu-b3 b{font-weight:700}
+#detailView .dvu-req{display:inline-flex;font-size:11.5px;font-weight:700;color:#3b6ce4;background:#eef3fe;border-radius:4px;padding:1px 6px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+#detailView .dvu-mute{color:#9ca3af}
+#detailView .dvu-ho dl{margin:0;display:grid;grid-template-columns:64px minmax(0,1fr);gap:2px 8px}#detailView .dvu-ho dl>div{display:contents}#detailView .dvu-ho dt{color:#6b7280;font-size:11.5px}#detailView .dvu-ho dd{margin:0;font-size:12px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#detailView .dvu-rc{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin-top:2px}
+#detailView .dvu-ft{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid #f2f3f6;padding-top:7px}#detailView .dvu-ft>span{flex:1;min-width:140px;font-size:11.5px;color:#9ca3af}#detailView .dvu-ft em{flex:1 1 100%;font-style:normal;font-size:12px;font-weight:600;color:#b42318}
+/* 고객 자산 상세 · 지금 진행 중인 영업 줄 밑 한 줄 */
+#assetV2 .av-opp .dvu-al{display:block;font-size:11px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}

@@ -83,7 +83,12 @@
    let next='',last='';try{const a=R.actionObj?R.actionObj(d,R.itemPatch(d,'deal')):null;if(a&&(a.text||a.due))next=String(a.text||'').trim()+(a.due?' · '+String(a.due).slice(0,10):'');}catch(e){}
    try{const c=R.ContactState?R.ContactState.of(d,'deal'):null;last=c&&(c.lastConnectedAt||c.lastAttemptAt)?String(c.lastConnectedAt||c.lastAttemptAt).slice(0,10)+(c.lastConnectedAt?' 통화 연결':' 연락 시도')+' · '+(before||''):'';}catch(e){}
    const me=rep(R.ME&&R.ME.name)||'관리자',at=new Date();at.setDate(at.getDate()+3);at.setHours(23,59,0,0);
-   const lines=[(before||'미배정')+' → '+to+' · '+me+' 재배정 · '+reason,'이전 담당: '+(before||'미배정'),'인계 메모: '+(memo||'없음'),'남은 할 일: '+(next||'등록된 다음 할 일 없음'),'마지막 연락: '+(last||'CRM 연락 기록 없음')];
+   /* design_handoff_units ③ 담당 변경 인계 요약: 고객 요구 · 최근 결과 · 남은 약속 · 자료 · 다음 행동 — 자료에 있는 것만 적는다 */
+   let want='',promises='',files='';
+   try{want=String(d.work_summary||d.goal||d.want||(d.raw&&d.raw['고객 요구'])||'').trim();}catch(e){}
+   try{const IM=R.InquiryMemo;if(IM&&IM.parse){const acts=[].concat(d.activities||[],(R.itemPatch(d,'deal')||{}).activities||[]);const pr=[];acts.forEach(a=>{try{(IM.parse(String(a.note||''),a.at||a.occurred_at).promises||[]).forEach(p=>{if(p&&p.title&&pr.length<3)pr.push(p.title+(p.due?' · '+String(p.due).slice(5,10).replace('-','.'):''));});}catch(e){}});promises=pr.join(' / ');}}catch(e){}
+   try{const n=R.execAttachments?(R.execAttachments(d)||[]).length:0;files=n?'첨부 '+n+'건':'';}catch(e){}
+   const lines=[(before||'미배정')+' → '+to+' · '+me+' 재배정 · '+reason,'이전 담당: '+(before||'미배정'),'고객 요구: '+(want||'기록 없음'),'최근 결과: '+(last||'CRM 연락 기록 없음'),'남은 약속: '+(promises||'기록된 약속 없음'),'자료: '+(files||'첨부 없음'),'인계 메모: '+(memo||'없음'),'남은 할 일: '+(next||'등록된 다음 할 일 없음'),'다음 행동: '+(next||'미등록 · 새 담당이 정합니다'),'마지막 연락: '+(last||'CRM 연락 기록 없음')];
    O.rpc(W.RPC.handover,{target_type:'deal',target_id:String(d.id),site:d.site||d.site_name||'',brand:d.brand||'',kind:'handover',label:W.HANDOVER_LABEL,to_scope:'user',to_name:to,asks:['인계 메모 확인','남은 할 일 확인','인수 확인'],due_at:at.toISOString(),due_label:'3일 안',memo:lines.join('\n')}).then(()=>{try{W.load(true);}catch(e){}}).catch(()=>{});
   }catch(e){}
  }
