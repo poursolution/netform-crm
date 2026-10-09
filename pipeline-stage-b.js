@@ -49,6 +49,16 @@
   const followed=eligible&&(reaction||(connectedAge!==null&&connectedAge>=0&&connectedAge<age));
   return {at,age,eligible,reaction,followed};
  }
+ /* 미팅 여부와 일정은 분리한다. 지난 일정은 완료가 아닌 결과 확인 대상이다. */
+ function consultingEvidence(r){
+  const d=r.item,cx=ctxOf(d),f=(cx.consulting||{}).fields||{},fc=(cx.first_contact||{}).fields||{};
+  let met='',connected='';try{met=root.PipelineJudge.meetingOf(d);}catch(e){}try{connected=root.ContactState.of(d,'deal').lastConnectedAt||'';}catch(e){}
+  const scheduled=nextIsVisit(r)?r.due:(f.meeting_date||fc.meeting_date||''),nd=days(scheduled),quote=!!String(f.quote_request||'').trim();
+  const bucket=met||quote?'done':nd!==null&&nd>=0?'plan':'none';
+  const task=bucket==='done'?(quote?'물량 산출 기한 확인 (견적팀)':'견적 요청 등록'):bucket==='plan'?'미팅 전날 확인 연락':nd!==null&&nd<0?'지난 미팅 일정의 실행 여부·결과 확인':connected?'기존 통화 내용·미팅 진행 여부 확인 → 미팅이 없었다면 일정 협의':'기존 연락·미팅 기록 확인 → 첫 연락 전이면 연락 후 일정 협의';
+  const sub=bucket==='done'?(met?'미팅 완료 기록 있음':'견적 요청 · 미팅 미확인'):bucket==='plan'?ymd(scheduled)+' 미팅 예정':nd!==null&&nd<0?ymd(scheduled)+' 예정 · 실행 여부 확인':'미팅 여부 확인 필요';
+  return {bucket,met,quote,scheduled,task,sub};
+ }
  const st=()=>root.G.psb||(root.G.psb={view:'list',bucket:'all',reason:null,page:1});
  const enabled=key=>!root.G.pipeStageBOff&&KEYS.includes(key||root.G.pipelineStage)&&!!root.PipelineListV2;
  const days=v=>{if(!v)return null;const n=root.daysTo(String(v).slice(0,10));return Number.isFinite(n)?n:null;};
@@ -65,15 +75,11 @@
  const CFG={
   /* stage7 ①(2026-10-07): '견적 처리 3일 · 5일' = 물량 산출 기한(견적 요청 등록일부터 · 견적팀). '미팅 후 견적 요청 등록'은 따로 둔 업무 · 기한은 설정값(운영 제안) */
   consulting:{name:'컨설팅 설계',desc:()=>'1차 현장미팅으로 고객 요구를 확인하고 견적을 준비하는 단계 · 물량 산출 목표 '+rules().quote+'일 · 최대 5일 (견적 요청 등록일부터 · 견적팀)',axis:'1차 현장미팅 진행',
-   S:[['none','미팅 전 · 일정 없음','#15171c','첫 통화에서 날짜 잡기'],['plan','미팅 예정','#8a909c','미팅 전날 확인 연락'],['done','미팅 완료 · 견적 준비','#d5d9e0','미팅 후 견적 요청 등록']],
-   RS:{nodate:['미팅 일정 없음',RED,'미팅 잡기','첫 통화에서 1차 미팅 날짜까지 잡기','next'],nodue:['물량 산출 기한 넘김',RED,'견적 요청','견적 요청 등록일부터 목표 3일 · 최대 5일(견적팀) · 대표회의 임박이면 개략 금액 먼저','stagefields'],req:['필수 확인 미입력',INK,'정보 보완','미팅 때 현재 문제 · 범위 · 시기 · 경쟁사 · 요청 자료 · 대표회의 일정 · 결정권자 채우기','stagefields'],nonext:['다음 행동 · 날짜 없음',INK,'다음 행동','모든 현장에 다음 행동 + 날짜 등록 (완료만 선택 불가)','next'],long:['30일 넘게 머묾',INK,'상태 확인','① 고객 반응 확인 → ② 추진 상태 확인 → ③ 근거 남기고 계속 · 대기 · 보류 · 실주 (30일 경과만으로 실주 처리하지 않음)','stage']},
-   calc(r,v,q){const f=r.fields||{},fc=(r.item.stage_contexts||{}).first_contact?.fields||{},visit=nextIsVisit(r),nd=r.days,quoteDue=v.quoteDue,past=visit&&nd!==null&&nd<0;
-    /* stage7 ①: 미팅 완료 = 지난 방문 일정 또는 방문 · 미팅 기록(종류가 방문 · 미팅 · 실측 · 실사) — 판정 함수와 같은 근거 */
-    const metLog=(()=>{try{return [].concat(r.item.activities||[]).some(a=>a&&/방문|미팅|실측|실사/.test(String(a.type||''))&&(()=>{const n=days(String(a.at||a.occurred_at||'').slice(0,10));return n!==null&&n<=0;})());}catch(e){return false;}})();
-    const bucket=(quoteDue||f.quote_request||past||metLog)?'done':(visit&&nd!==null&&nd>=0)?'plan':'none';
-    const sub=bucket==='plan'?ymd(r.due)+' 미팅 예정':bucket==='done'?(past?ymd(r.due)+' 미팅':metLog&&!f.quote_request?'미팅 완료 · 견적 요청 전':'견적 준비 중')+(quoteDue?' · 견적 '+ymd(quoteDue):''):'일정 없음';
-    const rs=[];if(bucket==='none')rs.push('nodate');if(bucket==='done'&&((quoteDue&&days(quoteDue)<0)||(!quoteDue&&(r.stall||0)>q.quote)))rs.push('nodue');if(!v.needs||!fc.work_scope||!fc.expected_timing)rs.push('req');if(!r.next||!r.next.text||!r.due)rs.push('nonext');if((r.stall||0)>q.stay)rs.push('long');
-    return {bucket,sub,rs};}},
+   S:[['none','미팅 여부 확인 필요','#15171c','기존 기록 확인 후 일정 협의'],['plan','미팅 예정','#8a909c','미팅 전날 확인 연락'],['done','미팅 기록 · 견적 준비','#d5d9e0','미팅 기록 · 견적 요청 확인']],
+   RS:{nodate:['미팅 여부 확인 필요',RED,'미팅 확인','기존 연락·미팅 기록 확인 → 미팅이 없었다면 일정 협의','next'],nodue:['물량 산출 기한 넘김',RED,'견적 요청','견적 요청 등록일부터 목표 3일 · 최대 5일(견적팀) · 대표회의 임박이면 개략 금액 먼저','stagefields'],req:['필수 확인 미입력',INK,'정보 보완','미팅 때 현재 문제 · 범위 · 시기 · 경쟁사 · 요청 자료 · 대표회의 일정 · 결정권자 채우기','stagefields'],nonext:['다음 행동 · 날짜 없음',INK,'다음 행동','모든 현장에 다음 행동 + 날짜 등록 (완료만 선택 불가)','next'],long:['30일 넘게 머묾',INK,'상태 확인','① 고객 반응 확인 → ② 추진 상태 확인 → ③ 근거 남기고 계속 · 대기 · 보류 · 실주 (30일 경과만으로 실주 처리하지 않음)','stage']},
+   calc(r,v,q){const e=consultingEvidence(r),fc=(ctxOf(r.item).first_contact||{}).fields||{},quoteDue=v.quoteDue;
+    const rs=[];if(e.bucket==='none')rs.push('nodate');if(e.quote&&quoteDue&&days(quoteDue)<0)rs.push('nodue');if(!v.needs||!fc.work_scope||!fc.expected_timing)rs.push('req');if(!r.next||!r.next.text||!r.due)rs.push('nonext');if((r.stall||0)>q.stay)rs.push('long');
+    return {bucket:e.bucket,sub:e.sub+(quoteDue?' · 견적 '+ymd(quoteDue):''),rs};}},
   sent:{name:'자료 발송완료',desc:()=>'견적 · 자료를 보낸 단계 · 견적 발송은 완료가 아니라 후속관리 시작 — 발송일 기준 D+'+rules().follow+' 후속 연락',axis:'발송 후 후속 연락',
    S:[['wait','발송 근거 · 후속 확인','#d5d9e0','발송 여부 확인 후 7일 안 연락'],['late','7일 넘김 · 후속 없음','#15171c','오늘 후속 통화'],['done','후속 완료 · 반응 기록','#8a909c','결과 기록 + 다음 행동일']],
    RS:{nosent:['발송일 확인 필요',INK,'증빙 확인','담당 지정 → 기존 발송 증빙 확인 → 확인된 발송 정보 보완 → 후속 연락 설정','stagefields'],nofollow:['발송 후 7일 · 후속 없음',RED,'후속 통화','발송 7일 넘은 건은 오늘 후속 통화 → 결과 기록','activity'],meet:['대표회의 D-3 · 자료 회신',RED,'자료 제출','대표회의 전 비교 자료 · 개략 금액 먼저 발송','activity'],noreact:['반응 미기록',INK,'결과 기록','연락 결과(연결됨 · 검토중 · 자료요청 · 견적요청 · 보류 · 거절)를 기록','activity'],comp:['경쟁사 비교 중',INK,'조건 확인','경쟁사 · 가격 · 조건 변화 확인 → 비교표 · 사례로 설명','activity'],nonext:['다음 행동 · 날짜 없음',INK,'다음 행동','후속 통화 후 다음 행동일 지정','next']},
@@ -147,7 +153,7 @@
  const V11=()=>root.PipelineRowV11&&root.PipelineRowV11.on()?root.PipelineRowV11:null;
  function v11(key,C,it,reason){
   const r=it.row,k=reason||it.first,rs=k?C.RS[k]:null,S0=C.S.find(s=>s[0]===it.bucket)||C.S[0],closed=key==='won'||key==='lost';
-  return {r,now:[rs?rs[0]:S0[1].split(' · ')[0],it.sub].filter(Boolean).join(' · '),task:rs?rs[3]:'',btn:rs?[rs[2],rs[4]]:['열기',''],stall:it.stall,goal:rules().stay,reasons:it.rs.map(q=>C.RS[q]&&C.RS[q][0]).filter(Boolean),closed,amountLabel:key==='won'?'수주 금액':'예상 금액',...(key==='competition'&&root.PipelineRowV11?.competitionEvidence?.(r)?.review?{forceTask:true,task:'기존 업무 처리 확인 → 다음 행동 갱신',staleNext:'기존 업무: '+(r.next?.text||'')+' · 입찰 일정도 확인',btn:['업무 확인','next']}:{})};
+  return {r,now:[rs?rs[0]:S0[1].split(' · ')[0],it.sub].filter(Boolean).join(' · '),task:key==='consulting'?consultingEvidence(r).task:rs?rs[3]:'',btn:rs?[rs[2],rs[4]]:['열기',''],stall:it.stall,goal:rules().stay,reasons:it.rs.map(q=>C.RS[q]&&C.RS[q][0]).filter(Boolean),closed,amountLabel:key==='won'?'수주 금액':'예상 금액',...(key==='competition'&&root.PipelineRowV11?.competitionEvidence?.(r)?.review?{forceTask:true,task:'기존 업무 처리 확인 → 다음 행동 갱신',staleNext:'기존 업무: '+(r.next?.text||'')+' · 입찰 일정도 확인',btn:['업무 확인','next']}:{})};
  }
  function cardHtml(C,it,reason){
   const r=it.row,k=reason||it.first,rs=k?C.RS[k]:null,bc=BRAND[r.item.brand]||'#9ca3af',e=r.group==='competition'&&root.PipelineRowV11?.competitionEvidence?root.PipelineRowV11.competitionEvidence(r):null,a=root.PipelineRowV11.primaryAction(r,e&&e.review?['업무 확인','next']:rs?[rs[2],rs[4]]:['열기',''],['won','lost'].includes(r.group));
@@ -215,5 +221,5 @@
   root.CommonFilterBar?.mount('pipe');const bar=pg?.querySelector(':scope>.cf-bar');if(bar)bar.hidden=false;
   return true;
  };
- root.PipelineStageB={enabled,model,html,CFG,rules,open,segRules,sentEvidence};
+ root.PipelineStageB={enabled,model,html,CFG,rules,open,segRules,sentEvidence,consultingEvidence};
 })(window);

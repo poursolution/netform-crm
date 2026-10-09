@@ -23,8 +23,8 @@
  const acts=d=>{const p=patch(d);return [].concat(d.activities||[],p.activities||[]);};
  const lastActAt=(d,re)=>acts(d).filter(a=>a&&re.test(String(a.type||'')+' '+String(a.note||''))).map(a=>dayKey(a.at||a.occurred_at||a.created_at)).filter(Boolean).sort().pop()||'';
  const lastContactAt=d=>{try{const v=root.ContactState.of(d,'deal');return dayKey(v.lastConnectedAt||v.lastAttemptAt||'');}catch(e){return '';}};
- /* 미팅일 · 후속 근거(KPI 측정 기준 · 판정 · 상세가 같은 근거): 미팅일 = 단계 칸의 미팅일 → 없으면 방문 · 미팅 · 실측 · 실사 기록 가운데 가장 나중 */
- const meetingOf=d=>dayKey(fld(d,'consulting','meeting_date')||fld(d,'first_contact','meeting_date')||'')||lastActAt(d,/방문|미팅|실측|실사/);
+ /* 완료된 방문 기록만 미팅 완료 근거다. 예정일·견적 요청·내부 메모는 완료를 증명하지 않는다. */
+ const meetingOf=d=>acts(d).filter(a=>a&&/^(현장방문|방문|미팅|실측|실사)$/.test(String(a.type||'').trim())&&!/예정|계획|취소|불발|미실시|미완료|못함|못했|안 함|안했|조건부|시간이 맞으면/.test(String(a.note||'')+' '+String(a.result||'')+' '+String(a.status||''))&&!/^(open|pending|cancelled|canceled|planned)$/.test(String(a.status||''))).map(a=>dayKey(a.at||a.occurred_at||a.created_at)).filter(k=>k&&daysTo(k)!==null&&daysTo(k)<=0).sort().pop()||'';
  const sentOfDeal=d=>dayKey(fld(d,'sent','sent_date')||'');
  /* ── ② 다음 업무 판정(근거) ── */
  function basis(d,key){

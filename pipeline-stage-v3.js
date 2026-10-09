@@ -64,13 +64,13 @@
   /* stage7 ①(2026-10-07 design_handoff_stage7): '견적 처리 3일 · 5일' = 물량 산출 기한(견적 요청 등록일부터 · 견적팀). '미팅 후 견적 요청 등록'은 따로 둔 업무 · 기한은 설정값(운영 제안) */
   const qrOf=d=>String((((ctxOf(d).consulting||{}).fields||{}).quote_request)||'').trim();
   if(key==='consulting')return {name:'컨설팅 설계',goal:goalOf(key,14),desc:'1차 현장미팅으로 고객 요구를 확인하고 견적을 준비하는 단계 · 물량 산출 목표 '+Q.quote+'일 · 최대 5일 (견적 요청 등록일부터 · 견적팀)',
-   tabs:[['미팅 전 · 일정 없음','첫 통화에서 미팅 날짜 잡기'],['미팅 예정','미팅 전날 확인 연락'],['미팅 완료 · 견적 준비','미팅 후 견적 요청 등록']],
-   reasons:[['nodate','미팅 일정 없음'],['nodue','물량 산출 기한 넘김'],['req','필수 확인 미입력'],['nonext','다음 행동 · 날짜 없음'],['long',Q.stay+'일 넘게 머묾']],
-   act:[['미팅 잡기','next'],['확인 연락','activity'],['견적 요청','stagefields']],
-   todo:'미팅 전 현장은 첫 통화에서 1차 미팅 날짜까지 잡고, 미팅 후 견적 요청을 등록하세요(등록 기한은 운영 제안 · 설정값). 물량 산출은 견적 요청 등록일부터 목표 '+Q.quote+'일 · 최대 5일(견적팀).',
+   tabs:[['미팅 여부 확인 필요','기존 기록 확인 후 일정 협의'],['미팅 예정','미팅 전날 확인 연락'],['미팅 기록 · 견적 준비','미팅 기록 · 견적 요청 확인']],
+   reasons:[['nodate','미팅 여부 확인 필요'],['nodue','물량 산출 기한 넘김'],['req','필수 확인 미입력'],['nonext','다음 행동 · 날짜 없음'],['long',Q.stay+'일 넘게 머묾']],
+   act:[['미팅 확인','next'],['확인 연락','activity'],['견적 요청','stagefields']],
+   todo:'담당 미지정이면 담당 배정부터 하세요. 기존 통화 내용·미팅 실행 여부를 확인하고 미팅이 없었다면 일정을 협의하세요. 지난 예정일만으로 미팅 완료를 판단하지 않습니다. 물량 산출은 견적 요청 등록일부터 목표 '+Q.quote+'일 · 최대 5일(견적팀).',
    tab:it=>it.bucket==='plan'?1:it.bucket==='done'?2:0,
-   taskOf:x=>x.tab===2?(qrOf(x.row.item)?'물량 산출 기한 확인 (견적팀)':'견적 요청 등록'):x.tab===1?'미팅 전날 확인 연락':'첫 통화에서 미팅 날짜 잡기',
-   nowOf:x=>x.tab===0?'미팅 일정 없음':x.sub,/* 상태 이름 + 같은 말 반복으로 줄이 길어지지 않게 */
+   taskOf:x=>B.consultingEvidence(x.row).task,
+   nowOf:x=>x.sub,/* 상태 이름 + 같은 말 반복으로 줄이 길어지지 않게 */
    has:{nodate:(it,t)=>t===0,nodue:it=>it.rs.includes('nodue'),req:it=>it.rs.includes('req'),nonext,long},sub:it=>it.sub};
   /* stage7 ②: 발송일 있는 건만 7일 판정 · 없으면 넷째 칸 '발송일 확인 필요'(판정 불가 · 7일 계산 안 함) → 발송일 · 자료 · 수신자 입력 */
   if(key==='sent')return {name:'자료 발송완료',goal:goalOf(key,14),desc:'견적 · 제안 자료를 보낸 뒤 고객 반응을 확인하는 단계 · 발송 후 '+Q.follow+'일 안 후속 · 발송일 있는 건만 '+Q.follow+'일 판정',
@@ -172,7 +172,7 @@
  function v11(key,C,x){
   const r=x.row,a=actOf(C,x),st0=x.tab===0?C.reasons[0][1]:C.tabs[x.tab][0],sub=x.sub&&!String(st0).includes(x.sub)&&!String(x.sub).includes(st0)?x.sub:'';
   /* 버튼 = 업무 동사: 연락할 일이면 '연락 기록'(미팅 날짜만 남은 컨설팅 건은 '일정 등록'), 나머지는 그 단계의 일(견적 요청 · 정보 입력 · 단계 판단 …). 수주 · 실주는 B안 표의 버튼 이름 그대로 */
-  const contact=a[1]==='next'||a[1]==='activity',btn=C.btnOf?[a[0],a[1]]:contact?[key==='consulting'&&x.tab===0&&r.last?'일정 등록':'연락 기록',a[1]]:[a[0],a[1]];
+  const contact=a[1]==='next'||a[1]==='activity',btn=C.btnOf?[a[0],a[1]]:contact?[key==='consulting'&&x.tab===0?'미팅 확인':'연락 기록',a[1]]:[a[0],a[1]];
   const o={r,now:C.nowOf?C.nowOf(x):[st0,sub].filter(Boolean).join(' · '),task:C.taskOf?C.taskOf(x):C.tabs[x.tab][1],btn,stall:x.stall,goal:C.goal,reasons:x.rs.map(k=>(C.reasons.find(q=>q[0]===k)||[])[1]).filter(Boolean),dup:dupOf(r),tab:x.tab,closed:!!C.closed,amountLabel:C.amountLabel,stage:key};
   if(C.rowOpts){try{Object.assign(o,C.rowOpts(x)||{});}catch(e){}}/* 관계관리 v12: 상태 · 주기 꼬리표 · 기준일 · 기한 글 */
   return o;
@@ -203,7 +203,7 @@
    :'<div class="over"><span>기한 초과</span><b>'+(TL?TL.late:over).toLocaleString('ko-KR')+'건</b><small>확인 필요 '+(TL?TL.nodate+TL.norecord:0)+' · 날짜 미입력 '+(TL?TL.nodate:0)+' · 판정 불가 '+(TL?TL.norecord:0)+'</small></div>');
   /* stage7_2 ⑤: 자료 없음 3가지(자료발송 · 입찰 · 계약 단계) — 현재 업무 미수행만 평가 · 지연 통계에 들어간다 */
   const MS=(!C.closed&&!C.leftHtml&&['consulting','sent','competition','construction'].includes(key)&&TL&&root.PipelineJudge&&root.PipelineJudge.missCounts)?root.PipelineJudge.missCounts(TL):null;
-  const missHtml=MS?'<section class="ps3-box ps3-miss"><header><b>자료 없음 3가지</b></header>'+[['현재 업무 미수행',MS.cur,'기준일 있고 기한 넘김 · 담당 평가 · 지연 통계 포함'],['과거 자료 미확인',MS.past,'이관 전 기록 · 보완 대상 · 평가 제외'],['해당 없음',MS.na,'그 단계에 필요 없는 정보 · 집계 제외']].map(x=>'<div class="ps3-ms"><span><b>'+h(x[0])+'</b> '+x[1]+'</span><small>'+h(x[2])+'</small></div>').join('')+'</section>':'';
+  const missHtml=MS?'<section class="ps3-box ps3-miss"><header><b>자료 없음 3가지</b></header>'+(key==='consulting'?[['일정·날짜 미입력',TL.nodate,'날짜 보완 대상 · 미수행 확정 아님'],['미팅·연락 기록 미확인',TL.norecord,'이관 전 기록 포함 · 기한·평가 판정 불가'],['해당 없음',TL.na,'그 단계에 필요 없는 정보 · 집계 제외']]:[['현재 업무 미수행',MS.cur,'기준일 있고 기한 넘김 · 담당 평가 · 지연 통계 포함'],['과거 자료 미확인',MS.past,'이관 전 기록 · 보완 대상 · 평가 제외'],['해당 없음',MS.na,'그 단계에 필요 없는 정보 · 집계 제외']]).map(x=>'<div class="ps3-ms"><span><b>'+h(x[0])+'</b> '+x[1]+'</span><small>'+h(x[2])+'</small></div>').join('')+'</section>':'';
   const doneN=C.closed&&C.doneOf?items.filter(x=>C.doneOf(x.it)).length:0,donePct=total?Math.round(doneN*1000/total)/10:0,fixN=total-doneN;
   const headNote=C.headNote?' · '+h(C.headNote(items)):'';
   const ages=CE?CE.filter(e=>e.age!==null).map(e=>e.age):null,ageAvg=ages&&ages.length?Math.round(ages.reduce((a,b)=>a+b,0)/ages.length):null;
