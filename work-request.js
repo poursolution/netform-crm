@@ -244,14 +244,14 @@
      +'<div class="ft"><span>'+(C.res==='부재'?'부재 = 연락 시도로만 기록 · 최초 응대는 아직 미완료':C.res?'저장하면 관리자 요청 자동 완료':'결과를 골라야 저장')+'</span><button type="button" class="go" data-wr="save" data-id="'+r.id+'"'+(C.res&&!C.busy?'':' disabled')+'>'+(C.busy?'저장 중…':'저장')+'</button></div></article>';}
    return '<article class="wrq-in" data-id="'+r.id+'">'+head+'<span class="memo"><b>요청</b> '+h((r.asks||[]).join(' · ')||r.label)+(r.memo?'<br><span>"'+h(r.memo)+'"</span>':'')+'</span>'
     +'<div class="ft"><span>완료 조건 · '+h(K.done||'')+' — 입력되면 자동 완료 · 따로 [완료] 없음</span><button type="button" class="go" data-wr="go" data-id="'+r.id+'">열어서 입력</button></div></article>';};
-  /* 예전 방식(G.wrqPopOff)만: 받은 사람이 화면을 열면 '담당 확인'으로. 팝업 방식에서는 [확인] · [응대 시작]을 눌러야 확인 */
-  if(!POP())L.filter(r=>r.status==='sent'&&!S.closing['seen:'+r.id]).forEach(r=>{S.closing['seen:'+r.id]=true;O().rpc(RPC.reply,{id:r.id,action:'seen'}).then(x=>put(x.request)).catch(()=>{});});
+  /* 예전 방식(G.wrqPopOff)과 '과거 자료 재개' 묶음만: 받은 사람이 화면을 열면 '담당 확인'으로. 팝업 방식의 일반 요청은 [확인] · [응대 시작]을 눌러야 확인 */
+  L.filter(r=>r.status==='sent'&&(!POP()||r.label===LEGACY_LABEL)&&!S.closing['seen:'+r.id]).forEach(r=>{S.closing['seen:'+r.id]=true;O().rpc(RPC.reply,{id:r.id,action:'seen'}).then(x=>put(x.request)).catch(()=>{});});
   const LG=L.filter(r=>r.label===LEGACY_LABEL),rest=L.filter(r=>r.label!==LEGACY_LABEL);
   const bundle=LG.length?'<article class="wrq-in wrq-legacy"><div class="hd"><em>관리자 요청</em><b>'+h(LEGACY_LABEL+' '+LG.length+'건')+'</b><i></i><span class="by'+(LG.some(overdue)?' od':'')+'">'+h((LG[0].requested_by||'관리자')+' · '+whenTxt(LG[0].reasked_at||LG[0].created_at)+' · '+(LG[0].due_label||'')+'까지')+(LG.some(overdue)?' · 기한 지남':'')+'</span></div>'
    +'<span class="memo">예전 시스템에서 옮겨 온 자료입니다 · 한 건씩 [영업 재개]에서 지금 단계 · 다음 행동 · 날짜를 정하면 그 건은 자동으로 완료됩니다</span>'
    +'<div class="wrq-lg">'+LG.map(r=>'<div><b title="'+attr(r.site)+'">'+h(r.site)+'</b><button type="button" data-wr="resume" data-id="'+r.id+'">영업 재개</button></div>').join('')+'</div></article>':'';
   if(!POP())return '<section class="wrq-top" aria-label="받은 요청">'+bundle+rest.map(card).join('')+'</section>';
-  X(S);const unseen=L.filter(r=>r.status==='sent').length,allBr=rest.length>0&&rest.every(r=>r.kind==='branch');
+  X(S);const unseen=rest.filter(r=>r.status==='sent').length,allBr=rest.length>0&&rest.every(r=>r.kind==='branch');
   const sum='<div class="wrq-sum"><em>'+(allBr?'본사 확인 요청':'관리자 요청')+'</em><b>미완료 '+L.length+'건</b>'+(unseen?'<span class="new">확인 전 '+unseen+'건</span><button type="button" data-wr="popshow">새 요청 보기</button>':'')+'<i></i><span class="hint">확인 = 받았다는 표시만 · 결과와 다음 행동을 저장해야 완료</span></div>';
   return '<section class="wrq-top wrq-compact" aria-label="받은 요청">'+sum+rest.map(r=>S.open[r.id]?card(r):row(r)).join('')+bundle+'</section>';
  }
@@ -268,17 +268,17 @@
  const askOf=r=>r.kind==='first'||r.kind==='follow'?'고객 응대':isHandover(r)?'재배정 인계':String((KIND[r.kind]||{}).label||r.label||'처리').replace(/\s*요청$/,'');
  const startLabel=r=>r.kind==='branch'?'회신하기':isHandover(r)?'인수 확인하기':r.kind==='first'||r.kind==='follow'?'응대 시작':'처리 시작';
  function popText(r){const a=askOf(r);return {who:(r.requested_by||'관리자')+'님이 '+a+eul(a)+' 요청했습니다.',site:r.site||'',task:TODO[isHandover(r)?'handover':r.kind]||((r.asks||[]).join(' · ')||r.label||''),due:'처리 기한: '+(r.due_label||whenTxt(r.due_at))+(overdue(r)?' · 지남':''),start:startLabel(r)};}
- function popModel(){const S=X(st());if(!S.pop)return null;const L=S.pop.ids.map(id=>S.list.find(r=>r.id===id)).filter(r=>r&&r.to_me&&r.status==='sent');return L.length?L:null;}
+ const popable=r=>r.status==='sent'&&r.label!==LEGACY_LABEL;/* '과거 자료 재개' 묶음(예전 시스템 이관 자료 · 한꺼번에 수십 건)은 팝업 없이 묶음 카드 그대로 */
+ function popModel(){const S=X(st());if(!S.pop)return null;const L=S.pop.ids.map(id=>S.list.find(r=>r.id===id)).filter(r=>r&&r.to_me&&popable(r));return L.length?L:null;}
  /* 새로 온(아직 팝업으로 보여 주지 않은) 확인 전 요청이 있으면 팝업 — 접속 중이면 도착 때, 접속하지 않았으면 다음 접속 때 */
- function popCheck(){if(!POP())return;const S=X(st()),fresh=incoming().filter(r=>r.status==='sent'&&!S.popSeen[r.id]);if(!fresh.length){drawPop();return;}fresh.forEach(r=>{S.popSeen[r.id]=true;});S.pop={ids:(S.pop?S.pop.ids:[]).concat(fresh.map(r=>r.id))};drawPop();}
+ function popCheck(){if(!POP())return;const S=X(st()),fresh=incoming().filter(r=>popable(r)&&!S.popSeen[r.id]);if(!fresh.length){drawPop();return;}fresh.forEach(r=>{S.popSeen[r.id]=true;});S.pop={ids:(S.pop?S.pop.ids:[]).concat(fresh.map(r=>r.id))};drawPop();}
  function drawPop(){
   if(typeof document.createElement!=='function')return;const S=X(st()),L=popModel();let ov=document.getElementById('wrq-pop');
   if(!L){if(S.pop)S.pop=null;ov?.remove();return;}
   if(!ov){ov=document.createElement('div');ov.id='wrq-pop';ov.className='wrq-shade wrq-popshade';document.body.append(ov);ov.addEventListener('mousedown',e=>{if(e.target===ov)popClose();});ov.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();popClose();}});}
-  const LG=L.filter(r=>r.label===LEGACY_LABEL),rest=L.filter(r=>r.label!==LEGACY_LABEL),one=rest.length===1&&!LG.length,ft='<span>확인 = 받았다는 표시만 · 결과와 다음 행동을 저장해야 완료</span>';
+  const rest=L,one=rest.length===1,ft='<span>확인 = 받았다는 표시만 · 결과와 다음 행동을 저장해야 완료</span>';
   const item=r=>{const t=popText(r);return '<article class="wrq-pop-item" data-id="'+r.id+'"><p class="who">'+h(t.who)+'</p><b class="site">'+h(t.site)+'</b><p class="task">'+h(t.task)+'</p><p class="due'+(overdue(r)?' od':'')+'">'+h(t.due)+'</p>'+(one?'':'<div class="bt"><button type="button" class="go" data-wr="start" data-id="'+r.id+'">'+h(t.start)+'</button><button type="button" data-wr="popack" data-id="'+r.id+'">확인 · 나중에 처리</button></div>')+'</article>';};
-  const lg=LG.length?'<article class="wrq-pop-item" data-id="'+LG[0].id+'"><p class="who">'+h((LG[0].requested_by||'관리자')+'님이 '+LEGACY_LABEL+' '+LG.length+'건을 요청했습니다.')+'</p><p class="task">예전 시스템에서 옮겨 온 자료입니다 · 오늘 업무의 [영업 재개]에서 한 건씩 정리해주세요.</p><p class="due">'+h('처리 기한: '+(LG[0].due_label||whenTxt(LG[0].due_at)))+'</p><div class="bt"><button type="button" data-wr="popack" data-id="'+LG.map(r=>r.id).join(',')+'">확인 · 나중에 처리</button></div></article>':'';
-  ov.innerHTML='<section class="wrq-pop" role="dialog" aria-modal="true" aria-label="새 요청"><header><b>'+(one?'새 요청':'새 요청 '+L.length+'건')+'</b><i></i><button type="button" class="wrq-x" data-wr="popclose" aria-label="닫기">×</button></header><div class="wrq-pop-body">'+rest.map(item).join('')+lg+'</div>'
+  ov.innerHTML='<section class="wrq-pop" role="dialog" aria-modal="true" aria-label="새 요청"><header><b>'+(one?'새 요청':'새 요청 '+L.length+'건')+'</b><i></i><button type="button" class="wrq-x" data-wr="popclose" aria-label="닫기">×</button></header><div class="wrq-pop-body">'+rest.map(item).join('')+'</div>'
    +'<footer>'+ft+(one?'<button type="button" class="go" data-wr="start" data-id="'+rest[0].id+'">'+h(popText(rest[0]).start)+'</button><button type="button" data-wr="popack" data-id="'+rest[0].id+'">확인 · 나중에 처리</button>':'<button type="button" data-wr="popackall">모두 확인 · 나중에 처리</button>')+'</footer></section>';
   try{const b=ov.querySelector('footer [data-wr="start"],[data-wr="popackall"]');b&&b.focus();}catch(e){}
  }
@@ -288,7 +288,7 @@
  const popAckAll=()=>popAck((popModel()||[]).map(r=>r.id));
  /* 닫기(×) = 아무것도 기록하지 않는다 · 작은 카드에 '확인 전' + [새 요청 보기] */
  function popClose(){const S=X(st());S.pop=null;drawPop();repaint();}
- function popShow(){const S=X(st()),ids=incoming().filter(r=>r.status==='sent').map(r=>r.id);if(!ids.length)return;ids.forEach(id=>{S.popSeen[id]=true;});S.pop={ids};drawPop();}
+ function popShow(){const S=X(st()),ids=incoming().filter(popable).map(r=>r.id);if(!ids.length)return;ids.forEach(id=>{S.popSeen[id]=true;});S.pop={ids};drawPop();}
  /* [응대 시작] · [처리하기] = 처리 중(working) + 그 건만 펼쳐서 전화 · 결과 · 다음 행동 입력 */
  function start(id){const S=X(st()),r=S.list.find(x=>x.id===id);if(!r)return;S.open[id]=true;S.pop=null;drawPop();
   if((r.status==='sent'||r.status==='seen')&&!S.closing['work:'+id]){S.closing['work:'+id]=true;O().rpc(RPC.reply,{id,action:'working'}).then(x=>put(x.request)).catch(()=>{}).finally(()=>{delete S.closing['work:'+id];repaint();});}

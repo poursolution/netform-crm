@@ -71,3 +71,9 @@ test('G.wrqPopOff restores the previous behaviour: expanded card and auto-seen o
  assert.match(html,/class="wrq-in"/);assert.doesNotMatch(html,/wrq-sum|wrq-row|data-wr="fold"/);assert.deepEqual(replies(calls),['seen']);
  api.popCheck();assert.equal(api.popModel(),null);
 });
+test("legacy '과거 자료 재개' bundle never pops up and keeps the old auto-seen on open",()=>{
+ const list=[req('L1',{label:'과거 자료 재개',kind:'support',site:'[경기 용인] 옛 현장'}),req('1')],{api,calls}=setup(list);
+ api.popCheck();assert.deepEqual((api.popModel()||[]).map(r=>r.id).join(),'1','일반 요청만 팝업');
+ const html=api.topHtml();assert.deepEqual(replies(calls),['seen'],'묶음은 열면 담당 확인(예전 그대로)');assert.equal(calls.find(c=>c.name==='crm_work_request_reply_v1').args.id,'L1');
+ assert.match(html,/wrq-legacy/);assert.match(html,/미완료 2건/);assert.match(html,/확인 전 1건/,'묶음은 확인 전 수에 들어가지 않는다');
+});
