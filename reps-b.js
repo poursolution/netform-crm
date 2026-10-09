@@ -32,7 +32,8 @@
  const act=r=>(Number(r.risk)||0)+(Number(r.unresponded)||0);
  function item(r){
   const k=r.diagnosis.k,load=root.repManagerLoadLevel(r),c=root.repManagerComment(r.nm,root.repManagerWeekKey(0)),EW=EWon();
-  const sub=stuck(r)+(r.unresponded?' · 첫 연락 전 '+r.unresponded+'건':'')+' · 진행 '+r.current.length+'건'+(c?' · 약속 있음':'');
+  const coaching=root.RepWindow?.parse(c&&c.comment);
+  const sub=stuck(r)+(r.unresponded?' · 첫 연락 전 '+r.unresponded+'건':'')+' · 진행 '+r.current.length+'건'+(coaching?' · 약속 있음':'');
   const rs=[];
   if(r.unresponded>=3)rs.push('first3');
   if(r.risk>=4&&r.weekTracked&&r.weekAdvanced===0)rs.push('risk4');
@@ -42,7 +43,7 @@
   if(r.noNext>0)rs.push('nonext');
   if(r.weekTracked&&r.weekAdvanced===0&&r.current.length)rs.push('noadv');
   if(load.cls==='heavy'||load.cls==='busy')rs.push('heavy');
-  if(k!=='ok'&&!c)rs.push('promise');
+  if(k!=='ok'&&!coaching)rs.push('promise');
   return {key:r.nm,site:r.nm,brand:'',brandText:team(r.nm),owner:EW&&r.__load?'신규 배정 '+r.__load.judge:'업무량 '+load.label,amountText:'Pipeline '+eok(r.pipeline),bucket:k,sub,rs,stall:EW?act(r):(Number(r.risk)||0),extra:{r}};
  }
  function topHtml(R){
