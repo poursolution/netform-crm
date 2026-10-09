@@ -8,7 +8,7 @@
  async function rpc(name,p){
   if(!has(name))throw Object.assign(new Error('저장소가 아직 연결되지 않았습니다'),{unavailable:true});
   const r=await root.SB.rpc(name,{p:p||{}});
-  if(r.error){if(r.error.code==='PGRST202'||/CONTRACT_UNAVAILABLE|PHASE1_RPC_DENIED|Could not find the function/i.test(String(r.error.message||''))){off.add(name);root.CRMRelease?.noteMissing?.(name);throw Object.assign(new Error('저장소가 아직 설치되지 않았습니다'),{unavailable:true});}throw Object.assign(new Error(r.error.message||'저장하지 못했습니다'),{code:r.error.code,databaseRejected:['22023','42501'].includes(r.error.code)});}
+  if(r.error){if(r.error.code==='PGRST202'||/CONTRACT_UNAVAILABLE|PHASE1_RPC_DENIED|Could not find the function/i.test(String(r.error.message||''))){off.add(name);root.CRMRelease?.noteMissing?.(name);throw Object.assign(new Error('저장소가 아직 설치되지 않았습니다'),{unavailable:true});}throw Object.assign(new Error(r.error.message||'저장하지 못했습니다'),{code:r.error.code,databaseRejected:['22023','42501','40001'].includes(r.error.code)});}
   if(!r.data||r.data.ok!==true)throw new Error('서버 확인 응답이 올바르지 않습니다');
   return r.data;
  }

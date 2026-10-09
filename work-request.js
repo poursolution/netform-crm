@@ -254,6 +254,52 @@
  const basicContact=r=>!!r&&r.target_type==='inquiry'&&r.kind==='first'&&r.label==='첫 연락 요청'&&JSON.stringify(r.asks)==='["고객 첫 연락"]';
  const actorId=()=>String(R.ME&&(R.ME.user_id||R.ME.id)||'');
  const UUID_CONTACT=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ // Data-only API for Claude's existing request view. No new controls or automatic writes.
+ const OBJECTIVE_RPC={read:'crm_work_request_objectives_read_v1',write:'crm_work_request_objectives_write_v1'},objectiveBusy=new Set();
+ const objectiveEnabled=()=>{try{return !R.G.workRequestOff&&Object.values(OBJECTIVE_RPC).every(fn=>O().has(fn)&&R.CRMRelease&&R.CRMRelease.has(fn)===true);}catch(e){return false;}};
+ const objectiveKey=(actor,id)=>'crm.work-objectives.v1:'+actor+':'+id;
+ function objectiveActor(id){const actor=actorId();if(!UUID_CONTACT.test(actor)||!UUID_CONTACT.test(id||'')||!objectiveEnabled())throw Error('요청 항목 저장·조회 기능이 아직 연결되지 않았습니다.');return actor;}
+ function objectiveBase(x,id){return x&&x.ok===true&&x.contract_version===1&&x.request_id===id&&Number.isInteger(x.revision)&&x.revision>=0&&
+  x.policy_version==='first-compound-v1'&&x.request&&x.request.id===id&&x.request.target_type==='inquiry'&&x.request.kind==='first'&&
+  Number.isFinite(Date.parse(x.expected_updated_at))&&Array.isArray(x.decisions)&&typeof x.request_complete==='boolean';}
+ async function objectiveRead(id,page=1){
+  const actor=objectiveActor(id);if(!Number.isInteger(page)||page<1||page>100000)throw Error('조회 쪽 번호를 확인해 주세요.');
+  const x=await O().rpc(OBJECTIVE_RPC.read,{id,page});
+  if(actorId()!==actor||!objectiveBase(x,id)||!Array.isArray(x.history)||x.history.length>20||x.history_page!==page||
+   !Number.isInteger(x.history_total)||x.history_total<x.history.length||typeof x.history_has_more!=='boolean')throw Error('요청 항목 조회 확인이 불완전합니다.');
+  return {...x,client_actor_id:actor};
+ }
+ function objectivePending(id){const actor=objectiveActor(id),raw=R.localStorage.getItem(objectiveKey(actor,id));return raw?JSON.parse(raw):null;}
+ async function objectiveWrite(input){
+  // Freeze payload before awaiting; an edited form cannot change an in-flight write.
+  const p=JSON.parse(JSON.stringify(input)),actor=objectiveActor(p.id),key=objectiveKey(actor,p.id);
+  if(!UUID_CONTACT.test(p.operation_id||'')||!Number.isInteger(p.expected_revision)||p.expected_revision<0||
+   !Number.isFinite(Date.parse(p.expected_updated_at))||!Array.isArray(p.decisions)||typeof p.complete!=='boolean')throw Error('저장할 요청 항목을 확인해 주세요.');
+  if(objectiveBusy.has(key))throw Error('이 요청을 저장하고 있습니다.');
+  const old=objectivePending(p.id),serialized=JSON.stringify(p);
+  if(old&&JSON.stringify(old)!==serialized)throw Error('앞선 저장 결과를 먼저 같은 내용으로 재확인해 주세요.');
+  R.localStorage.setItem(key,serialized);if(R.localStorage.getItem(key)!==serialized)throw Error('재시도 정보를 보관하지 못했습니다.');
+  objectiveBusy.add(key);
+  try{
+   let x;try{x=await O().rpc(OBJECTIVE_RPC.write,p);}catch(e){
+    // Only explicit database rejections prove rollback. Network/unknown errors keep exact retry data.
+    if(e&&e.databaseRejected===true&&['22023','40001','42501'].includes(e.code)&&actorId()===actor)R.localStorage.removeItem(key);
+    throw e;
+   }
+   const proof=x&&x.contact_proof;
+   if(actorId()!==actor||!objectiveBase(x,p.id)||x.operation_id!==p.operation_id||x.revision!==p.expected_revision+1||
+    x.request_complete!==p.complete||x.request.status!==(p.complete?'done':'working')||x.decisions.length!==p.decisions.length||
+    !proof||!UUID_CONTACT.test(proof.contact_log_id||'')||JSON.stringify(proof.satisfied_asks)!=='["고객 첫 연락"]'||
+    JSON.stringify(x.requested_asks)!==JSON.stringify(proof.requested_asks)||JSON.stringify(x.request.asks)!==JSON.stringify(x.requested_asks)||
+    p.decisions.some((d,i)=>{const a=x.decisions[i];return !a||a.ask!==d.ask||a.value!==d.value||a.note!==String(d.note||'').trim()||a.contact_log_id!==proof.contact_log_id||
+     (d.value==='needed'?(!a.next_action||a.next_action.id!==d.next_action_id):a.next_action!==null);}))throw Error('요청 항목 저장 확인이 불완전합니다. 같은 내용으로 재시도해 주세요.');
+   R.localStorage.removeItem(key);
+   // Receipts may be old. The caller must read fresh context, never copy this into inquiry/customer plans.
+   return x;
+  }finally{objectiveBusy.delete(key);}
+ }
+ const objectives={enabled:objectiveEnabled,read:objectiveRead,write:objectiveWrite,pending:objectivePending,
+  retry:async id=>{const p=objectivePending(id);if(!p)throw Error('재시도할 저장이 없습니다.');return objectiveWrite(p);}};
  async function saveInquiryContact(r,C,q,next,due){
   const actor=actorId(),key='crm.work-contact.v1:'+actor+':'+r.id,compound=compoundContact(r),fn=compound?RPC.compoundContact:RPC.contact;
   try{
@@ -356,5 +402,5 @@
  }
  document.addEventListener('click',onClick,true);
  document.addEventListener('change',e=>{const t=e.target;if(t&&t.matches&&t.matches('#pg-today [data-wr-in="owner"]')){const C=st().card[t.dataset.id];if(C){C.owner=t.value;repaint();}}},true);
- root.WorkRequest={enabled,load,reqFor,locked,cell,sideHtml,topHtml,history,autoClose,evidence,decorate,steps,HANDOVER_LABEL,isHandover,KIND,RPC,state:st,_dueAt:dueAt,_lineReq:lineReq,_lineEnd:lineEnd};
+ root.WorkRequest={enabled,load,reqFor,locked,cell,sideHtml,topHtml,history,autoClose,evidence,decorate,steps,HANDOVER_LABEL,isHandover,KIND,RPC,objectives,state:st,_dueAt:dueAt,_lineReq:lineReq,_lineEnd:lineEnd};
 })(window);
