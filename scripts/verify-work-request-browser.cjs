@@ -10,7 +10,7 @@ const root=path.resolve(__dirname,'..'),shot=process.argv[2]||'',dump=process.en
 const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':'text/html');fs.createReadStream(t).pipe(res)});
 (async()=>{
  await new Promise(r=>srv.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({headless:true});
+ const browser=await chromium.launch({headless:true,...(process.env.EDGE_PATH?{executablePath:process.env.EDGE_PATH}:{})});
  try{
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});
@@ -27,18 +27,18 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      deal('con1','[경기 하남] 고덕아이파크',{amt:2.1e8,code:'contract',stage_code:'contract',assignee:'정정훈',brand:'아파트스퀘어',next_action:{id:'n4',type:'방문',text:'계약 미팅',due:day(4),status:'open'}})],
     inquiries:[
      inq(1,'[경북 경주] 전원하이빌',12,{status:'배정완료',assignee:'경남지사',assigned_to:'경남지사',assignment_group:'gyeongnam',assigned_at:at(12)}),
-     inq(2,'[서울 강남] 강변삼부아파트',14,{status:'배정완료',assignee:'이필선',assigned_to:'이필선',assigned_at:at(14),raw:{'문의내용':'지하주차장 재도장 문의','상담채널':'전화','공사유형':'지하주차장 재도장'},work_type:'지하주차장 재도장'}),
-     inq(3,'[서울 송파] 가락현대TWELVE',14,{status:'배정완료',assignee:'이필선',assigned_to:'이필선',assigned_at:at(14)}),
+     inq(2,'[서울 강남] 강변삼부아파트',14,{status:'배정완료',assignee:'이필선',assigned_to:'10000000-0000-4000-8000-000000000001',assigned_at:at(14),raw:{'문의내용':'지하주차장 재도장 문의','상담채널':'전화','공사유형':'지하주차장 재도장'},work_type:'지하주차장 재도장'}),
+     inq(3,'[서울 송파] 가락현대TWELVE',14,{status:'배정완료',assignee:'이필선',assigned_to:'10000000-0000-4000-8000-000000000001',assigned_at:at(14)}),
      inq(4,'[대전] 웰니스병원',19,{status:'배정완료',brand:'석민이앤씨',assignee:'송보람',assigned_to:'송보람',assigned_at:at(19)})],activities:[],inquiryTrash:[],expansion_pool:[]};
    LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'u-admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.today3=null;G.todayAssist=null;G.tower=null;G.towerRole=null;G.todayQueueOwner='전체';G.workReq=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op,p)=>{__writes.push([op,p]);return 'req-'+__writes.length;};
    window.__open=[];TodayWorkQueue.open=(k,a)=>{__open.push([k,a||'']);};window.__toasts=[];window.toast=m=>{__toasts.push(String(m));};
    /* 가짜 저장소: sql/work-request-v1-20261005.sql 과 같은 규칙(관리자만 보냄 · 같은 요청 잠금 · 받는 사람만 회신 · 기한이 지나야 재확인) */
-   const U={'송보람':'u-admin','이필선':'u-lee','김성민':'u-kim','정정훈':'u-jung','조민준':'u-jo'};window.__db=[];window.__rpc=[];let seq=0;
+   const U={'송보람':'u-admin','이필선':'10000000-0000-4000-8000-000000000001','김성민':'u-kim','정정훈':'u-jung','조민준':'u-jo'};window.__db=[];window.__rpc=[];let seq=0;
    const role=()=>ME.role==='admin'?'admin':ME.role==='branch'?'branch':'rep',uid=()=>U[ME.name]||ME.id;
-   const J=r=>Object.assign({},r,{to_reach:r.to_scope==='branch'?true:!!r._to,open:['sent','seen','working'].includes(r.status),overdue:['sent','seen','working'].includes(r.status)&&Date.parse(r.due_at)<Date.now(),by_me:r._by===uid(),to_me:(r.to_scope==='user'&&r._to===uid())||(r.to_scope==='branch'&&role()==='branch')});
+   const J=r=>Object.assign({},r,{to_user_id:r._to,to_reach:r.to_scope==='branch'?true:!!r._to,open:['sent','seen','working'].includes(r.status),overdue:['sent','seen','working'].includes(r.status)&&Date.parse(r.due_at)<Date.now(),by_me:r._by===uid(),to_me:(r.to_scope==='user'&&r._to===uid())||(r.to_scope==='branch'&&role()==='branch')});
    const err=m=>({error:{message:m}}),now=()=>new Date().toISOString();
-   window.__srv=true;
+   window.__srv=true;window.CRMRelease={has:()=>true};
    SB={rpc:async(name,args)=>{const p=(args&&args.p)||{};__rpc.push([name,JSON.parse(JSON.stringify(p)),ME.name]);
     if(!window.__srv&&/^crm_work_request_/.test(name))return {error:{code:'PGRST202',message:'Could not find the function'}};
     if(name==='crm_work_request_create_v1'){if(role()!=='admin')return err('요청은 관리자만 보낼 수 있습니다');
@@ -47,6 +47,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      const r={id:'r'+(++seq),target_type:p.target_type,target_id:p.target_id,site:p.site,brand:p.brand,kind:p.kind,label:p.label,to_scope:p.to_scope,to_name:p.to_name,asks:p.asks,due_at:p.due_at,due_label:p.due_label,memo:p.memo,status:'sent',result:null,result_owner:null,next_text:null,next_due:null,reply_note:null,auto_done:false,round:1,requested_by:ME.name,replied_by:null,created_at:now(),reasked_at:null,seen_at:null,closed_at:null,updated_at:now(),_by:uid(),_to:U[p.to_name]||null};
      __db.unshift(r);return {data:{ok:true,request:J(r)}};}
     if(name==='crm_work_request_list_v1'){const rows=__db.filter(r=>p.target_type?(r.target_type===p.target_type&&r.target_id===p.target_id):(role()==='admin'||r._by===uid()||(r.to_scope==='user'&&r._to===uid())||(r.to_scope==='branch'&&role()==='branch')));return {data:{ok:true,requests:rows.map(J)}};}
+    if(name==='crm_work_request_inquiry_contact_v1'){
+     const r=__db.find(x=>x.id===p.id);if(!r||r._to!==uid())return err('받는 담당자만 기록할 수 있습니다');
+     const lid='20000000-0000-4000-8000-000000000001';Object.assign(r,{status:p.result==='부재'?'working':'done',result:p.result,next_text:p.next_text,next_due:p.next_due,replied_by:ME.name,closed_at:p.result==='부재'?null:now(),updated_at:now()});
+     const state={inquiry_id:r.target_id,logs:[{id:lid,request_id:p.operation_id,result:p.result,kind:p.result==='부재'?'attempt':'connected',next_action:p.next_text,next_check_date:p.next_due,occurred_at:now()}]};
+     return {data:{ok:true,contract_version:1,operation_id:p.operation_id,inquiry_id:r.target_id,log_id:lid,next_action_id:'30000000-0000-4000-8000-000000000001',request:J(r),state,
+      inquiry_update:{next_action_date:p.next_due},server_at:now()}};
+    }
     if(name==='crm_work_request_reply_v1'){const r=__db.find(x=>x.id===p.id);if(!r)return err('요청을 찾을 수 없습니다');const mine=(r.to_scope==='user'&&r._to===uid())||(r.to_scope==='branch'&&role()==='branch');
      if(p.action!=='cancel'&&!mine&&role()!=='admin')return err('받는 사람만 처리할 수 있습니다');if(!['sent','seen','working'].includes(r.status))return {data:{ok:true,request:J(r),already:true}};
      if(p.action==='seen'){if(r.status==='sent')r.status='seen';r.seen_at=r.seen_at||now();}
@@ -116,7 +123,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(()=>WorkRequest.history('inquiry','00000002-0000-4000-8000-000000000002').map(x=>[x.who,x.text])),[['시스템 · 내부 요청','송보람 → 이필선 · 고객 첫 연락 · 기한 오늘 17:00']]);
   /* 5. 받는 사람(영업사원 이필선) 오늘 업무 맨 위: 빨간 '관리자 요청' → [전화] · 통화 결과 · 다음 행동(AI 표식) · [저장] */
   await page.evaluate(()=>{window.__rec=[];InquiryListV3.record=(q,o)=>{__rec.push([q.id,o.res,o.next,o.due]);return true;};});
-  await as({id:'u-lee',name:'이필선',role:'rep'});
+  await as({id:'10000000-0000-4000-8000-000000000001',name:'이필선',role:'rep'});
   const top=page.locator('#today-v2 .tv3 .wrq-top');assert.equal(await top.count(),1);assert.equal(await page.locator('#today-v2 .tv3').evaluate(n=>n.firstElementChild.classList.contains('wrq-top')),true,'오늘 업무 맨 위');
   assert.equal(await top.locator('.wrq-in').count(),1,'내게 온 요청만');
   const c1=top.locator('.wrq-in').first();
@@ -131,8 +138,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await c1.locator('.res button',{hasText:'연결됨'}).click();await page.waitForTimeout(150);assert.equal(one(await c1.locator('.nx').innerText()),'다음 행동 AI다시 연락 · 10/10');assert.equal(one(await c1.locator('.ft').innerText()),'저장하면 관리자 요청 자동 완료 저장');
   if(shot)await page.screenshot({path:shot+'-rep-top.png',fullPage:true});
   await c1.locator('[data-wr="save"]').click();await page.waitForTimeout(400);
-  assert.deepEqual(await page.evaluate(()=>__rec),[['00000002-0000-4000-8000-000000000002','[전화 · 연결됨] 관리자 요청 처리','다시 연락','2026-10-10']],'실제 기록 저장(기존 문의 기록 길) 한 번');
-  assert.deepEqual(await page.evaluate(()=>{const c=__rpc.filter(x=>x[0]==='crm_work_request_reply_v1'&&x[1].action==='done').pop();return [c[1].id,c[1].result,c[1].next_text,c[1].next_due,c[1].absent,c[2]];}),['r2','연결됨','다시 연락','2026-10-10',false,'이필선'],'기록이 저장된 뒤 요청 자동 완료(따로 완료 버튼 없음)');
+  assert.deepEqual(await page.evaluate(()=>__rec),[],'이전 비동기 접수 경로를 호출하지 않는다');
+  assert.deepEqual(await page.evaluate(()=>{const c=__rpc.filter(x=>x[0]==='crm_work_request_inquiry_contact_v1').pop();return [c[1].id,c[1].result,c[1].next_text,c[1].next_due,c[2]];}),['r2','연결됨','다시 연락','2026-10-10','이필선'],'응대·다음 일정·요청을 한 서버 호출로 저장');
   assert.equal(await page.locator('#today-v2 .tv3 .wrq-top').count(),0,'처리하면 맨 위 줄이 사라진다');
   /* 6. 보낸 사람 화면: ✓ 처리 완료 + 통화 결과 → 다음 행동 */
   await as({id:'u-admin',name:'송보람',role:'admin'});
@@ -140,15 +147,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    assert.equal(await v.locator('.wrq-w',{hasText:'강변삼부'}).locator('.wrq-pill').evaluate(n=>getComputedStyle(n).color),'rgb(31, 122, 77)');}
   /* 7. 부재: 실제 연결이 아니므로 '요청 처리 · 부재'(주황) — 최초 응대는 찍지 않는다(기록은 기존 길이 '시도'로 남긴다) */
   await v.locator('.tv3-card',{hasText:'가락현대'}).locator('[data-wr="ask"]').click();await page.waitForTimeout(200);await m.locator('[data-wr="send"]').click();await page.waitForTimeout(350);
-  await as({id:'u-lee',name:'이필선',role:'rep'});
+  await as({id:'10000000-0000-4000-8000-000000000001',name:'이필선',role:'rep'});
   {const c=page.locator('#today-v2 .tv3 .wrq-top .wrq-in').first();await c.locator('.res button',{hasText:'부재'}).click();await page.waitForTimeout(150);await c.locator('[data-wr="save"]').click();await page.waitForTimeout(400);
-   assert.deepEqual(await page.evaluate(()=>__rec.at(-1)),['00000003-0000-4000-8000-000000000003','[전화 · 부재] 관리자 요청 처리','다시 전화','2026-10-08']);
-   assert.deepEqual(await page.evaluate(()=>{const r=__db.find(x=>x.id==='r3');return [r.status,r.result,r.next_due];}),['absent','부재','2026-10-08']);
+   assert.deepEqual(await page.evaluate(()=>__rec),[],'부재도 기존 기록 접수 경로를 사용하지 않는다');
+   assert.deepEqual(await page.evaluate(()=>{const r=__db.find(x=>x.id==='r3');return [r.status,r.result,r.next_due];}),['working','부재','2026-10-08']);
    assert.equal(await page.evaluate(()=>!!inqCtlFirstResponseAt(inqCtlFind('00000003-0000-4000-8000-000000000003',false))),false,'이 모듈은 최초 응대 시각을 찍지 않는다');}
   await as({id:'u-admin',name:'송보람',role:'admin'});
-  {const r3=(await waits()).find(x=>x[0]==='[서울 송파] 가락현대TWELVE');assert.deepEqual([r3[1],r3[5]],['요청 처리 · 부재','이필선 · 전화 시도 · 부재 → 다음 연락 10/08 (실제 연결 아님 · 최초 응대 미완료)']);
-   assert.deepEqual(await v.locator('.wrq-w',{hasText:'가락현대'}).evaluate(n=>[getComputedStyle(n.querySelector('.wrq-pill')).color,getComputedStyle(n.querySelector('.rp')).backgroundColor]),['rgb(192, 57, 43)','rgb(253, 240, 238)'],'주황');
-   assert.ok((await cards()).some(c=>c[0]==='[서울 송파] 가락현대TWELVE'),'연결이 안 됐으니 목록에 다시 나온다(다시 요청할 수 있다)');}
+  {const r3=(await waits()).find(x=>x[0]==='[서울 송파] 가락현대TWELVE');assert.equal(r3[1],'처리 중','부재만으로 연결 요청을 완료하지 않는다');
+   assert.equal((await cards()).some(c=>c[0]==='[서울 송파] 가락현대TWELVE'),false,'열린 요청이 남아 중복 요청을 막는다');}
   /* 8. 지사 화면: '본사 확인 요청' → 처리 결과 하나 → (담당 지정 완료면) 실담당 → [본사에 회신] */
   await as({id:'u-jo',name:'조민준',role:'branch'});
   {const b=page.locator('#today-v2 .tv3 .wrq-top .wrq-in').first();assert.equal(await page.locator('#today-v2 .tv3 .wrq-top .wrq-in').count(),1);
