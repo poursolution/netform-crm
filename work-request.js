@@ -170,8 +170,9 @@
    const em=m.querySelector('.idv-meta em'),k=m.querySelector('.idv-meta .dv3-kind');if(k){k.textContent='시스템 · 내부 요청';if(em)em.remove();}else if(em)em.textContent='시스템 · 내부 요청';b.textContent=t.replace(/^\[내부 요청\]\s*/,'');});
  }
  /* ── ops_12 C⑦ 요청 5단계: 요청 → 담당 확인 → 실행 → 증빙 → 완료 — 실제 기록으로 판정(담당 확인 = 받은 사람이 화면을 염 · 실행 = 요청 뒤 응대 기록 · 증빙 = 완료 조건 충족 · 완료 = 자동 판정 / 회신) ── */
- const HANDOVER_LABEL='재배정 인계';
+ const HANDOVER_LABEL='재배정 인계',RECEIPT_LABEL='시공 인계 수령 확인';/* design_handoff_units ③ 수주 → 시공 인계: 시공 담당이 [수령 확인]해야 영업 단계 종료 */
  const isHandover=r=>!!r&&(r.kind==='handover'||(r.kind==='support'&&r.label===HANDOVER_LABEL));
+ const isReceipt=r=>!!r&&r.kind==='support'&&r.label===RECEIPT_LABEL;
  function steps(r){
   const t=target(r),it=t.item,since=Date.parse(r.created_at)||0,K=KIND[r.kind]||{};
   const seen=r.status!=='sent',done=r.status==='done'||r.status==='replied';let ev=null,exec=false;
@@ -217,14 +218,14 @@
  function topHtml(){
   if(!enabled())return '';load();const L=incoming();if(!L.length)return '';const S=st();
   const card=r=>{const C=S.card[r.id]||(S.card[r.id]={res:'',owner:'',busy:false,err:''}),br=r.kind==='branch',K=KIND[r.kind]||{},t=target(r),od=overdue(r);
-   const ho=isHandover(r);
-   const head='<div class="hd"><em>'+(br?'본사 확인 요청':ho?'재배정 인계':'관리자 요청')+'</em><b>'+h(r.site)+'</b>'+(lateTxt(r)?'<span class="late">'+h(lateTxt(r))+'</span>':'')+(r.round>=2?'<span class="late">재확인 '+r.round+'회차</span>':'')+'<i></i><span class="by'+(od?' od':'')+'">'+h((r.requested_by||'관리자')+' · '+whenTxt(r.reasked_at||r.created_at)+' · '+(br?'기한 '+(r.due_label||''):(r.due_label||'')+'까지')+(od?' · 기한 지남':''))+'</span></div>'+stepsHtml(r);
+   const rc=isReceipt(r),ho=isHandover(r)||rc;
+   const head='<div class="hd"><em>'+(br?'본사 확인 요청':rc?'시공 인계':ho?'재배정 인계':'관리자 요청')+'</em><b>'+h(r.site)+'</b>'+(lateTxt(r)?'<span class="late">'+h(lateTxt(r))+'</span>':'')+(r.round>=2?'<span class="late">재확인 '+r.round+'회차</span>':'')+'<i></i><span class="by'+(od?' od':'')+'">'+h((r.requested_by||'관리자')+' · '+whenTxt(r.reasked_at||r.created_at)+' · '+(br?'기한 '+(r.due_label||''):(r.due_label||'')+'까지')+(od?' · 기한 지남':''))+'</span></div>'+stepsHtml(r);
    /* ops_12 C⑧ 재배정 인계 카드: 이전 담당 → 새 담당 · 재배정자 · 사유 / 인계 메모 · 남은 할 일 · 마지막 연락 / [이전 담당에게 질문] [인수 확인] — 확인 전까지 관리자 화면 '인계 대기' */
    if(ho){const rows=handoverRows(r),first=rows.find(x=>x[0]==='')||rows[0]||['',''],rest=rows.filter(x=>x[0]);
     return '<article class="wrq-in wrq-ho" data-id="'+r.id+'">'+head+'<span class="memo"><b>'+h(first[1]||first[0])+'</b></span>'
      +'<div class="wrq-hrows">'+rest.map(x=>'<span>'+h(x[0])+'</span><b>'+h(x[1])+'</b>').join('')+'</div>'
      +(C.err?'<p class="wrq-err">'+h(C.err)+'</p>':'')
-     +'<div class="ft"><span>확인 전까지 관리자 화면에 \'인계 대기\'</span><button type="button" data-wr="hoask" data-id="'+r.id+'">이전 담당에게 질문</button><button type="button" class="go" data-wr="hodone" data-id="'+r.id+'"'+(C.busy?' disabled':'')+'>'+(C.busy?'저장 중…':'인수 확인')+'</button></div></article>';}
+     +'<div class="ft"><span>'+(rc?'수령 확인 전까지 영업 단계가 끝나지 않습니다':'확인 전까지 관리자 화면에 \'인계 대기\'')+'</span>'+(rc?'':'<button type="button" data-wr="hoask" data-id="'+r.id+'">이전 담당에게 질문</button>')+'<button type="button" class="go" data-wr="hodone" data-id="'+r.id+'"'+(C.busy?' disabled':'')+'>'+(C.busy?'저장 중…':rc?'수령 확인':'인수 확인')+'</button></div></article>';}
    if(br){let reps=[];try{reps=(R.branchAssignableReps&&R.branchAssignableReps())||[];}catch(e){}
     return '<article class="wrq-in" data-id="'+r.id+'">'+head+'<span class="memo"><b>요청</b> '+h((r.asks||[]).join(' · ')||r.label)+(r.memo?'<br><span>"'+h(r.memo)+'"</span>':'')+'</span>'
      +'<b class="lb">처리 결과 · 하나 고르기</b><div class="chips">'+BRANCH_RES.map(l=>'<button type="button" data-wr="res" data-id="'+r.id+'" data-v="'+attr(l)+'" aria-pressed="'+(C.res===l)+'">'+l+'</button>').join('')+'</div>'
@@ -343,11 +344,11 @@
   if(a==='dial')return dial(target(r).digits);
   if(a==='res'){const C=S.card[id]||(S.card[id]={res:'',owner:'',busy:false,err:''});C.res=C.res===b.dataset.v?'':b.dataset.v;C.err='';return repaint();}
   if(a==='hoask'){const rows=handoverRows(r),prev=(rows.find(x=>x[0]==='이전 담당')||[])[1]||'이전 담당',txt=prev+'님, 인계받은 '+r.site+' 건 질문드립니다 — ';try{navigator.clipboard&&navigator.clipboard.writeText(txt);}catch(e){}toast('질문 문구를 복사했습니다 — 잔디 · 문자로 '+prev+'님께 보내 주세요');return;}
-  if(a==='hodone'){const C=S.card[id]||(S.card[id]={res:'',owner:'',busy:false,err:''});if(C.busy)return;C.busy=true;repaint();return O().rpc(RPC.reply,{id,action:'done',result:'인수 확인'}).then(x=>{put(x.request);touch(x.request);delete S.card[id];toast('인수를 확인했습니다 · 인계 대기가 풀립니다');noteDeal(x.request,'[내부 요청] '+lineEnd(x.request));repaint();}).catch(e=>{C.busy=false;C.err='저장하지 못했습니다: '+String(e&&e.message||e);repaint();});}
+  if(a==='hodone'){const C=S.card[id]||(S.card[id]={res:'',owner:'',busy:false,err:''});if(C.busy)return;C.busy=true;repaint();return O().rpc(RPC.reply,{id,action:'done',result:isReceipt(r)?'수령 확인':'인수 확인'}).then(x=>{put(x.request);touch(x.request);delete S.card[id];toast('인수를 확인했습니다 · 인계 대기가 풀립니다');noteDeal(x.request,'[내부 요청] '+lineEnd(x.request));repaint();}).catch(e=>{C.busy=false;C.err='저장하지 못했습니다: '+String(e&&e.message||e);repaint();});}
   if(a==='save')return saveCard(id);
   if(a==='reply')return replyCard(id);
  }
  document.addEventListener('click',onClick,true);
  document.addEventListener('change',e=>{const t=e.target;if(t&&t.matches&&t.matches('#pg-today [data-wr-in="owner"]')){const C=st().card[t.dataset.id];if(C){C.owner=t.value;repaint();}}},true);
- root.WorkRequest={enabled,load,reqFor,locked,cell,sideHtml,topHtml,history,autoClose,evidence,decorate,steps,HANDOVER_LABEL,isHandover,KIND,RPC,state:st,_dueAt:dueAt,_lineReq:lineReq,_lineEnd:lineEnd};
+ root.WorkRequest={enabled,load,reqFor,locked,cell,sideHtml,topHtml,history,autoClose,evidence,decorate,steps,HANDOVER_LABEL,RECEIPT_LABEL,isHandover,isReceipt,KIND,RPC,state:st,_dueAt:dueAt,_lineReq:lineReq,_lineEnd:lineEnd};
 })(window);

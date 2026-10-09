@@ -102,8 +102,8 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual(nul,['unclassified',true,true,false,true,'영업 재개'],'단계 값이 비어 있는 과거 이관 건도 영업 재개 띠 · 출발 단계 unclassified');
   await page.evaluate(()=>closeDetail());await page.waitForTimeout(250);
   /* ⑦ 담당 카드 [n건 담당에게 재개 요청]: 요청 엔진으로 한 건씩(중복은 건너뜀) · 받는 쪽 오늘 업무에는 한 묶음 카드 · 단계가 정해지면 자동 완료 */
-  await L.locator('.plg-owner',{hasText:'황윤선'}).locator('button').click();await page.waitForTimeout(900);
-  /* 카드 버튼은 마우스 좌표로 누른다(위치 지정 클릭 — 카드 전체가 role=button 이라 Playwright 의 요소 클릭이 카드로 잡히는 일이 있었다) */
+  /* 카드 버튼은 마우스 좌표로 한 번만 누른다(위치 지정 클릭 — 카드 전체가 role=button 이라 Playwright 의 요소 클릭이 카드로 잡히는 일이 있었다).
+     2026-10-10: 그 앞에 있던 요소 클릭이 환경에 따라 버튼에 닿아 요청이 두 번 가는('이미 요청한 2건 제외') 흔들림이 있어 한 번만 누른다 */
   const mouseClick=async loc=>{const bb=await loc.boundingBox();await page.mouse.click(bb.x+bb.width/2,bb.y+bb.height/2);};
   await mouseClick(L.locator('.plg-owner',{hasText:'황윤선'}).locator('button'));await page.waitForFunction(()=>SRV.reqs.length===2);await page.waitForTimeout(400);
   await page.waitForFunction(()=>SRV.reqs.length===2);await page.waitForTimeout(400);

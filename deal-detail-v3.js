@@ -675,6 +675,7 @@
    sum.classList.toggle('dv3-old',!rows.length&&!core.length);
    ensureSlot(sum,'stage');
    /* 결정 일정 · 협업 상자(decision-collab.js): 필수 정보 아래 */try{root.DecisionCollab&&root.DecisionCollab.mount(r,d,sum.nextElementSibling&&sum.nextElementSibling.classList.contains('dv3-slot')?sum.nextElementSibling:sum);}catch(e){}
+   /* 관리 단위 · 영업건 상자(units.js · design_handoff_units): 책임자 · 참여 역할 · 브랜드 3종 · 요청 · 현장 공통 — 협업 상자 아래 */try{root.DealUnits&&root.DealUnits.mount(r,d,closed);}catch(e){}
   }
   if(same()&&!closed&&!v.classList.contains('dv3-legacy'))sameRight(v,d,closed,r);else{const tk=r.querySelector(':scope>.dvs-task');if(tk)tk.remove();if(now)now.classList.remove('dv3-old');}
    /* 단계 바꾸기 카드는 오른쪽에서 빼고 창 머리글로 */
