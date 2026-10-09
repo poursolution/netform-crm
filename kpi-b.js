@@ -324,5 +324,5 @@
   wrapped.__kb=true;root.paintMgmt=wrapped;
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- root.KpiB={coachingRecipient,coachingReady,coachingGroup,coachingSend,coachingProgress,enabled,compute,DEF,stageItems,requestStatus,canRequest,requestMany,/* 아래는 관리팀 KPI v7(kpi-v7.js)이 같은 계산 · 저장 경로를 쓰도록 */personVals,requestLine,saveWeek,autoSave,load,names,openTarget,weekly:()=>W,weekRowOf:weekRow};
+ root.KpiB={enabled,compute,DEF,stageItems,coachingRecipient,coachingReady,coachingGroup,coachingSend,coachingProgress,requestStatus,canRequest,requestMany,/* 아래는 관리팀 KPI v7(kpi-v7.js)이 같은 계산 · 저장 경로를 쓰도록 */personVals,requestLine,saveWeek,autoSave,load,names,openTarget,weekly:()=>W,weekRowOf:weekRow};
 })(window);
