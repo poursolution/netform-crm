@@ -25,14 +25,18 @@ sql/ops-rules-v2-20261010.sql의 같은 RPC를 수정하되 응답 contract는 3
 
 ## Claude #555 연결
 
-#555의 {effective_on:오늘,scope} 형식을 지원한다. #553 base는 이미 병합된 claude/admin-request-rules 대신 master로 변경한다.
+#555의 {effective_on:오늘,scope} 형식을 지원한다. #553 base는 master로 변경했고 #556까지 최신 master를 통합했다.
 
-#555와 #553의 ops-rules.js save()가 겹치므로 전체 파일을 덮어쓰지 않는다. #553의 ACK 검증·load/save 잠금·writeEpoch 보호를 유지하고 #555의 KST 버전 날짜 표기도 보존한다. #555의 UI/CSS/HTML은 이 PR에서 변경하지 않는다. 검증용 합성 페이지에서만 해당 UI를 사용한다.
+#555와 #553의 ops-rules.js save()가 겹치므로 #553의 ACK 검증·load/save 잠금·writeEpoch 보호를 유지하고 #555의 KST 버전 날짜 표기도 보존했다.
+
+#555 커밋 4266f46376392a02023835c6e44b510cdb4b6b00의 rules-admin.js와 rules-admin.css는 수정 없이 통합한다. Codex가 새 디자인을 만들거나 배치·색·크기를 수정하지 않는다. crm.html은 최신 master 전체를 보존하고 rules-admin.css, ops-rules.js, rules-admin.js 세 파일 버전만 ar1에서 ar2로 바꾼다. #555를 나중에 별도로 병합하여 저장 보호를 덮어쓰지 않는다.
 
 ## 검증·운영 반영
 
 로컬 31개 통과: ops-rules.test.cjs, ops-rules-runtime.test.cjs, rule-application-guard.test.cjs. 실제 PostgreSQL 함수, 권한, KST 경계, 과거·미래·existing 거절, 범위 검증, 무변경 저장, ACK 불일치, 구서버 전송 차단, 응답 순서 경합을 포함한다.
 
-브라우저 합성 데이터 검사도 통과했다. 현재 master UI는 지원하지 않는 existing 명령을 보내므로 오류와 초안을 유지한다. #555의 UI/CSS를 수정하지 않고 로컬 검사 서버에만 연결한 별도 검사에서는 당일 조건 저장·이력 표시·v1 호환 저장·잠금이 모두 통과했다. #555 브라우저 테스트 서버 응답은 contract:3 및 apply 원문을 반환하도록 맞춰야 한다. 실제 운영 화면 반영 완료를 뜻하지 않는다.
+브라우저 검사 scripts/verify-rules-admin-browser.cjs는 합성 응답 대신 로컬 PGlite에 실제 v1/v2 SQL을 설치하고 호출한다. Claude 원본 화면 → #553 클라이언트 → 실제 SQL의 저장·DB 이력 3행·적용일/scope 원문·재조회 일치가 통과했다. 미래 적용일/existing 요청 거절 시 DB 불변, 구서버 응답 호환·잠금·관리자 전용·공통 계산 반영도 통과했다. 모든 자료는 합성 데이터이며 외부 네트워크 호출은 차단한다. 운영 반영 완료를 뜻하지 않는다.
+
+통합 전 #553 8866b697 커밋은 CI 38005377364가 통과했다. 화면 원본 통합 후 새 커밋의 CI를 별도로 확인해야 한다.
 
 운영 SQL 실행·병합·배포는 미실행이다. 기존 이력은 삭제·재작성하지 않는다. 운영 반영 승인 뒤 SQL을 먼저 적용하여 contract 3을 확인한 다음 클라이언트를 배포해야 한다. 향후 예약 기능은 새 계약으로 확장하며 과거 요청 기한을 소급 변경하지 않는다.
