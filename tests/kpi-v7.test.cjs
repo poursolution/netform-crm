@@ -22,7 +22,9 @@ test('요청 → 관리자 한마디: 관리자만 저장 · 그 표 한 줄만 
  assert.match(body,/create or replace function public\.crm_rep_manager_comment_list_v1\(p jsonb\)[\s\S]*?a\.permission_role in \('admin','branch'\) or c\.rep_user_id=a\.user_id/,'읽기: 관리자는 전원 · 그 밖은 본인 것만');
  assert.doesNotMatch(body,/public\.deals|public\.inquiries|contract_sales|delete\s+from/i,'다른 표는 건드리지 않는다');
  for(const fn of ['crm_rep_manager_comment_save_v1','crm_rep_manager_comment_list_v1'])assert.match(body,new RegExp('revoke all on function public\\.'+fn+'\\(jsonb\\) from public, anon;\\s*grant execute on function public\\.'+fn+'\\(jsonb\\) to authenticated;'),fn);
- assert.match(kb,/o\.has\('crm_rep_manager_comment_save_v1'\)\)\{o\.rpc\('crm_rep_manager_comment_save_v1',\{rep_name:ownerName,week_start:week,comment:text,status:'open'\}\)/);
+ assert.match(kb,/await o\.rpc\(fn,p\)/,'요청은 원자적 저장 RPC의 응답을 기다린다');
+ assert.match(kb,/fn='crm_kpi_request_send_v1'/);
+ assert.doesNotMatch(kb,/pushWrite\('rep_manager_comment'/,'로컬 성공이나 미연결 전송으로 우회하지 않는다');
  for(const fn of ['crm_rep_manager_comment_save_v1','crm_rep_manager_comment_list_v1'])assert.ok(read('pc-manager-transport.js').includes("'"+fn+"'"),fn+' 전송 허용 목록');
  assert.match(tv,/o\.rpc\('crm_rep_manager_comment_list_v1',\{weeks:2\}\)/,'담당자 화면이 서버에서 관리자 한마디를 읽는다');
  assert.match(tv,/if\(root\.G\.todayWordOff\|\|role==='mgr'\|\|!me\|\|typeof root\.repManagerComment!=='function'\)return '';/,'영업관리 화면에는 없다 · 끄기 스위치');

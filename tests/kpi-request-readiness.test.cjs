@@ -8,30 +8,35 @@ const action={promise_key:'kpi:3',target_type:'deal',target_id:'d26',created_at:
 
 test('delayed history cannot authorize requests, score zero, or persist a weekly snapshot',async()=>{
  const {r}=setup();let resolve;const writes=[];
- r.OpsStore.has=n=>['crm_kpi_action_list_v1','crm_kpi_weekly_save_v1'].includes(n);
- r.OpsStore.rpc=(n,p)=>{if(n==='crm_kpi_action_list_v1')return new Promise(ok=>{resolve=ok;});writes.push({n,p});return Promise.resolve({});};
+ r.OpsStore.has=n=>['crm_kpi_action_list_v2','crm_kpi_weekly_save_v1'].includes(n);
+ r.OpsStore.rpc=(n,p)=>{if(n==='crm_kpi_action_list_v2')return new Promise(ok=>{resolve=ok;});writes.push({n,p});return Promise.resolve({});};
  r.KpiB.load();const C=r.KpiB.compute(),rows=r.KpiV7.coreRows(C,[],false);
  assert.equal(r.KpiB.requestStatus().state,'loading');assert.equal(C.M[7].v,null);assert.equal(C.M[7].ready,false);
  assert.equal(rows.find(x=>x.i===2).dis,true);assert.match(rows.find(x=>x.i===2).reqSum,/계산 중/);
- assert.equal(r.KpiB.requestLine('담당0','test'),false);r.KpiB.saveWeek(null);assert.equal(writes.length,0);
- resolve({actions:[]});await tick();assert.equal(r.KpiB.canRequest(),true);
+ await assert.rejects(r.KpiB.requestLine('담당0','test','kpi:3',[]),/연결 확인/);r.KpiB.saveWeek(null);assert.equal(writes.length,0);
+ resolve({ok:true,contract_version:2,actions:[],has_more:false,next_cursor:null});await tick();assert.equal(r.KpiB.canRequest(),true);
  assert.equal(r.KpiB.compute().M[7].ready,true);
 });
 
-test('server cap is checked before filtering unrelated events; partial history stays blocked',async()=>{
- const {r}=setup();r.OpsStore.has=n=>n==='crm_kpi_action_list_v1';
- r.OpsStore.rpc=async()=>({actions:Array.from({length:200},(_,i)=>({promise_key:'unrelated',id:i}))});
- r.KpiB.load();await tick();assert.equal(r.KpiB.weekly().acts.length,0);
- assert.equal(r.KpiB.requestStatus().state,'partial');assert.equal(r.KpiB.canRequest(),false);
- assert.equal(r.KpiB.compute().M[7].v,null);
+test('all history pages load before ready, including rows outside KPI filters',async()=>{
+ const {r}=setup();let resolve;const calls=[];r.OpsStore.has=n=>n==='crm_kpi_action_list_v2';
+ r.OpsStore.rpc=async(n,p)=>{calls.push(p);return calls.length===1?{ok:true,contract_version:2,actions:Array.from({length:200},(_,i)=>({promise_key:'unrelated',id:'a'+i})),has_more:true,next_cursor:{after_id:'a199'}}:new Promise(ok=>resolve=ok);};
+ r.KpiB.load();await tick();assert.equal(r.KpiB.requestStatus().state,'loading');assert.equal(r.KpiB.canRequest(),false);
+ resolve({ok:true,contract_version:2,actions:[{...action,id:'last'}],has_more:false,next_cursor:null});await tick();
+ assert.equal(calls.length,2);assert.equal(r.KpiB.requestStatus().state,'ready');assert.equal(r.KpiB.weekly().acts.length,1);
+});
+
+test('a repeated cursor, duplicate row, and missing release capability cannot authorize requests',async()=>{
+ for(const duplicate of [true,false]){const {r}=setup();let n=0;r.OpsStore.has=()=>true;r.OpsStore.rpc=async()=>({ok:true,contract_version:2,actions:[{id:duplicate?'same':'id'+n++,promise_key:'other'}],has_more:true,next_cursor:{after_id:'same'}});r.KpiB.load();await tick();assert.equal(r.KpiB.canRequest(),false);assert.equal(r.KpiB.requestStatus().state,'failed');}
+ const {r}=setup();r.OpsStore.has=()=>true;r.CRMRelease={has:()=>false};r.KpiB.load();assert.equal(r.KpiB.requestStatus().state,'off');
 });
 
 test('failed/malformed refresh does not authorize with stale data; explicit retry can recover',async()=>{
- const {r}=setup();r.KpiB.weekly().acts=[action];r.OpsStore.has=n=>n==='crm_kpi_action_list_v1';
+ const {r}=setup();r.KpiB.weekly().acts=[action];r.OpsStore.has=n=>n==='crm_kpi_action_list_v2';
  r.OpsStore.rpc=async()=>{throw Error('offline');};r.KpiB.load();await tick();
  assert.equal(r.KpiB.requestStatus().state,'failed');assert.equal(r.KpiB.canRequest(),false);
  r.OpsStore.rpc=async()=>({});r.KpiB.load(true);await tick();assert.equal(r.KpiB.requestStatus().state,'failed');
- r.OpsStore.rpc=async()=>({actions:[]});r.KpiB.load(true);await tick();assert.equal(r.KpiB.canRequest(),true);
+ r.OpsStore.rpc=async()=>({ok:true,contract_version:2,actions:[],has_more:false,next_cursor:null});r.KpiB.load(true);await tick();assert.equal(r.KpiB.canRequest(),true);
 });
 
 test('owner filter cannot convert missing legacy target into processed, and unknown is not snapshotted',async()=>{
