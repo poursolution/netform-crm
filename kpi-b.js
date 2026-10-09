@@ -211,6 +211,47 @@
   try{entries=JSON.parse(store.getItem(storageKey)||'{}');if(!legacy)delete entries[signature];store.setItem(storageKey,JSON.stringify(entries));}catch(e){}
   return r;
  }
+
+ // Coaching requests preserve recipient identity and the selected cohort across retries/reloads.
+ function coachingRecipient(name){
+  const ids=new Set((root.B?.users||[]).filter(u=>u.active!==false&&(u.name||u.displayName||u.full_name)===name)
+   .map(u=>String(u.user_id||u.id||'')).filter(id=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)));
+  return ids.size===1?[...ids][0]:null;
+ }
+ function coachingReady(name){const fn='crm_kpi_request_send_v2';return requestStatus().ready&&!!coachingRecipient(name)&&!!O()?.has(fn)&&root.CRMRelease?.has(fn)===true;}
+ const coachingStore='nf_coaching_pending_groups_v1';
+ const coachingActor=()=>String(root.ME?.id||root.ME?.user_id||'');
+ function coachingGroup(name,key,targets,scope){
+  if(!coachingReady(name))throw Error('코칭 요청 서버 연결 확인 필요');
+  const recipient=coachingRecipient(name),actor=coachingActor(),week=O().monday(0);
+  if(!actor)throw Error('로그인 계정 확인 필요');
+  const signature=JSON.stringify([actor,recipient,week,key]),store=root.Phase1.storage,entries=JSON.parse(store.getItem(coachingStore)||'{}');
+  if(entries[signature])return entries[signature];
+  if(!targets.length||targets.length>5000)throw Error('코칭 요청 대상 확인 필요');
+  const snapshot=JSON.parse(JSON.stringify({recipient_user_id:recipient,rep_name:name,week_start:week,promise_key:key,rule_version:'coaching-targets-v1',source_scope:scope,targets}));
+  const job={signature,actor,group_id:root.crypto.randomUUID(),snapshot,at:0,commands:[]};
+  for(let i=0;i<targets.length;i+=200)job.commands.push({request_id:root.crypto.randomUUID(),targets:snapshot.targets.slice(i,i+200)});
+  entries[signature]=job;store.setItem(coachingStore,JSON.stringify(entries));return job;
+ }
+ function coachingProgress(job,complete){
+  const store=root.Phase1.storage,entries=JSON.parse(store.getItem(coachingStore)||'{}');
+  if(entries[job.signature]?.group_id!==job.group_id)throw Error('요청 묶음이 변경되었습니다');
+  if(complete)delete entries[job.signature];else entries[job.signature]=job;
+  store.setItem(coachingStore,JSON.stringify(entries));
+ }
+ async function coachingSend(job,line){
+  const s=job.snapshot,idx=job.at,cmd=job.commands[idx],fn='crm_kpi_request_send_v2';
+  if(!coachingReady(s.rep_name)||coachingActor()!==job.actor||coachingRecipient(s.rep_name)!==s.recipient_user_id||O().monday(0)!==s.week_start)throw Error('요청 담당자 또는 기간 변경');
+  // Persist the complete payload before sending; even a lost ACK retries the identical command.
+  if(!cmd.payload){cmd.payload={request_id:cmd.request_id,group_id:job.group_id,batch_index:idx,recipient_user_id:s.recipient_user_id,rep_name:s.rep_name,week_start:s.week_start,promise_key:s.promise_key,line,targets:cmd.targets,snapshot:s};coachingProgress(job,false);}
+  const p=cmd.payload,r=await O().rpc(fn,p),expected=new Set(p.targets.map(t=>t.target_type+':'+t.target_id));
+  if(coachingActor()!==job.actor||r?.ok!==true||r.contract_version!==2||r.request_id!==p.request_id||r.group_id!==job.group_id||r.batch_index!==idx||r.recipient_user_id!==s.recipient_user_id||r.target_count!==s.targets.length
+   ||!Array.isArray(r.actions)||r.actions.length!==expected.size||!r.comment||r.comment.rep_name!==s.rep_name||ymd(r.comment.week_start)!==s.week_start||!r.comment.updated_at||r.comment.status!=='open'
+   ||r.actions.some(a=>!a.id||a.request_id!==p.request_id||a.request_group_id!==job.group_id||a.batch_index!==idx||a.recipient_user_id!==s.recipient_user_id||ymd(a.request_week)!==s.week_start||a.promise_key!==s.promise_key||!expected.delete(a.target_type+':'+a.target_id))||expected.size)throw Error('코칭 요청 저장 응답 확인 필요');
+  const ids=new Set(r.actions.map(a=>a.id));W.acts=r.actions.concat(W.acts.filter(a=>!ids.has(a.id)));
+  return r;
+ }
+
  async function requestMany(pkey,title,list){
   if(!canRequest()||W.sending)return {sent:0,failed:0};
   const done=compute().done,unique=new Map();
@@ -278,5 +319,5 @@
   wrapped.__kb=true;root.paintMgmt=wrapped;
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- root.KpiB={enabled,compute,DEF,stageItems,requestStatus,canRequest,requestMany,/* 아래는 관리팀 KPI v7(kpi-v7.js)이 같은 계산 · 저장 경로를 쓰도록 */personVals,requestLine,saveWeek,autoSave,load,names,openTarget,weekly:()=>W,weekRowOf:weekRow};
+ root.KpiB={coachingRecipient,coachingReady,coachingGroup,coachingSend,coachingProgress,enabled,compute,DEF,stageItems,requestStatus,canRequest,requestMany,/* 아래는 관리팀 KPI v7(kpi-v7.js)이 같은 계산 · 저장 경로를 쓰도록 */personVals,requestLine,saveWeek,autoSave,load,names,openTarget,weekly:()=>W,weekRowOf:weekRow};
 })(window);

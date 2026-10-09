@@ -90,6 +90,20 @@
  const commentOf=(rep,wk)=>{try{return root.repManagerComment(rep,wk);}catch(e){return null;}};
  const linesOf=c=>String((c&&c.comment)||'').split('\n').map(s=>s.trim()).filter(Boolean);
  const isReq=s=>/^· \[/.test(s);
+ // A request receipt belongs to the actual targets, not to the owner as one synthetic target.
+ const requestKey=g=>g.k==='nonext'?'kpi:3':'stage:coaching:'+g.k;
+ function requestState(g,r){
+  const k=root.KpiB,ready=!!k?.coachingReady(r.nm),targets=[],seen=new Set();
+  for(const x of g.rows){
+   const id=String(x.d.id||'').trim(),type=g.kind==='inq'?'inquiry':'deal',key=type+':'+id;
+   if(!id||id.length>80)return {ready:false,sent:false,targets:[],done:new Set()};
+   if(seen.has(key))continue;seen.add(key);
+   targets.push({target_type:type,target_id:id,target_name:String(x.d.site||id).slice(0,200),action:g.k==='nonext'?'등록 요청':g.bulk,note:String(g.t+' · '+x.note).slice(0,500)});
+  }
+  const recipient=k?.coachingRecipient(r.nm),done=new Set();
+  if(ready)for(const a of k.weekly().acts){if(a.promise_key===requestKey(g)&&a.recipient_user_id===recipient&&String(a.request_week).slice(0,10)===week(0))done.add(a.target_type+':'+a.target_id);}
+  return {ready,sent:ready&&targets.length>0&&targets.every(t=>done.has(t.target_type+':'+t.target_id)),targets,done};
+ }
  const COACH=/^\[코칭 · ([^\]]+)\]\s*(.*?)(?:\s*\(([^()]*?) (\d+(?:\.\d+)?)(%|건)(?: → (\d+(?:\.\d+)?)(?:%|건)| 유지)\))?$/;
  function coachLine(t,txt){const m=t.m,tail=m&&m.v!=null&&m.to!=null?' ('+m.l+' '+m.v+m.u+(m.v===m.to?' 유지':' → '+m.to+m.u)+')':'';return '[코칭 · '+t.l+'] '+String(txt).trim()+tail;}
  function parse(comment){
@@ -128,10 +142,9 @@
    +'<span class="rw-ai"><b>AI</b>'+h(sel.ai)+'</span><input type="text" data-rw-f="promise" maxlength="200" aria-label="이번 주 약속" value="'+attr(txt)+'">'
    +'<div class="rw-cof"><span>'+(savedIdx>=0?'저장됨 '+h(mdOf(thisWeek.updated_at||thisWeek.updatedAt||''))+' · 월요일 자동 확인':'다음 주 월요일 결과 자동 확인')+'</span><button type="button" data-rw="save"'+(st.saving?' disabled':'')+'>코칭 저장</button></div></div>'
    +'<div class="rw-past"><b>지난 코칭</b>'+pastHtml+'</div>';
-  const reqs=linesOf(thisWeek).filter(isReq);
   const right='<div class="rw-rh"><b>지금 처리할 현장 '+M.total+'건</b><span>사유별로 묶음 · 금액 큰 순</span></div>'+(M.G.length?M.G.map(g=>{
-    const op=!!st.open[g.k],pg=root.ListPager.cut(g.rows,root.ListPager.page(st,g.k)),shown=op?pg.rows:[],sent=reqs.some(s=>s.includes('[요청] '+g.bulk));
-    return '<div class="rw-g" data-g="'+g.k+'"><div class="rw-gh"><b>'+h(g.t)+'</b><b style="color:'+g.c+'">'+g.n+'건</b><span>'+h(g.amt)+'</span><div class="rw-sp"></div><button type="button" class="rw-bulk'+(sent?' done':'')+'" data-rw="bulk" data-g="'+g.k+'"'+(sent||st.saving?' disabled':'')+'>'+(sent?'요청함':h(g.bulk))+'</button><button type="button" class="rw-tg" data-rw="toggle" data-g="'+g.k+'" aria-expanded="'+op+'">'+(op?'접기 ▴':'보기 ▾')+'</button></div>'
+    const op=!!st.open[g.k],pg=root.ListPager.cut(g.rows,root.ListPager.page(st,g.k)),shown=op?pg.rows:[],rs=requestState(g,r),sent=rs.sent;
+    return '<div class="rw-g" data-g="'+g.k+'"><div class="rw-gh"><b>'+h(g.t)+'</b><b style="color:'+g.c+'">'+g.n+'건</b><span>'+h(g.amt)+'</span><div class="rw-sp"></div><button type="button" class="rw-bulk'+(sent?' done':'')+'" data-rw="bulk" data-g="'+g.k+'"'+(sent||st.saving||!rs.ready?' disabled':'')+'>'+(sent?'요청함':h(g.bulk))+'</button><button type="button" class="rw-tg" data-rw="toggle" data-g="'+g.k+'" aria-expanded="'+op+'">'+(op?'접기 ▴':'보기 ▾')+'</button></div>'
      +shown.map(x=>'<div class="rw-row"><b>'+h(x.d.site||'현장명 미입력')+'</b><span>'+h(x.note)+'</span><b class="a">'+h(amt(x.d)?eok(amt(x.d)):'-')+'</b><a href="#" data-rw="row" data-g="'+g.k+'" data-i="'+g.rows.indexOf(x)+'">열기</a></div>').join('')
      +(op?root.ListPager.html(pg,{ns:'rw',v:g.k}):'')+'</div>';
    }).join(''):'<p class="rw-none">지금 손볼 건이 없습니다.</p>');
@@ -151,6 +164,7 @@
   if(!(root.REP_MANAGER_ROWS||[]).some(x=>x.nm===name))root.REP_MANAGER_ROWS=root.repFlowData(true);
   cur=name;st={c:null,txt:null,open:null,pages:{}};returnFocus=document.activeElement;const m=node();render();if(!cur)return;
   m.classList.add('on');m.querySelector('.rw-x')?.focus();
+  const state=st,k=root.KpiB;if(k&&!k.requestStatus().ready)Promise.resolve(k.load(true)).finally(()=>{if(st===state)render();});
  }
  function close(restore){const m=document.getElementById('repWindow');if(m)m.classList.remove('on');const f=returnFocus;cur=null;st=null;returnFocus=null;if(restore!==false&&f&&f.isConnected)f.focus?.({preventScroll:true});}
  async function onClick(e){
@@ -174,18 +188,21 @@
   }
   const g=M.G.find(x=>x.k===b.dataset.g);if(!g)return;
   if(a==='bulk'){
-   const before=commentOf(r.nm,week(0)),lines=linesOf(before);if(lines.some(s=>s.includes('[요청] '+g.bulk)))return;
    if(st.saving)return;const state=st;state.saving=true;
    node().querySelectorAll('[data-rw="save"],[data-rw="bulk"]').forEach(x=>x.disabled=true);
    try{
-    const k=root.KpiB;if(!k||!k.requestLine)throw Error('요청 저장 연결 확인 필요');
-    const saved=await root.repManagerCommentCommand(r.nm,week(0),async()=>{
-     if(!k.requestStatus().ready)await k.load(true);
-     const line='[요청] '+g.bulk+' — '+g.t+' '+g.n+'건'+(g.amt&&g.amt!=='금액 미정'?' · '+g.amt:'');
-     return k.requestLine(r.nm,line,g.k==='nonext'?'kpi:3':'stage:coaching:'+g.k,[{target_type:'person',target_id:r.nm,target_name:r.nm,action:g.k==='nonext'?'등록 요청':g.bulk,note:g.t+' '+g.n+'건'}]);
-    });
-    const added='· [KPI 요청] [요청] '+g.bulk+' — '+g.t+' '+g.n+'건'+(g.amt&&g.amt!=='금액 미정'?' · '+g.amt:'');
-    if(JSON.stringify(state.base)===JSON.stringify(root.repManagerCommentBase(before))&&saved.comment===[before&&before.comment,added].filter(Boolean).join('\n'))state.base=root.repManagerCommentBase(saved);
+    const k=root.KpiB;if(!k||!k.coachingSend)throw Error('요청 저장 연결 확인 필요');
+    if(!k.requestStatus().ready)await k.load(true);
+    const rs=requestState(g,r);if(!rs.ready||!rs.targets.length)throw Error('요청 대상 확인 필요');
+    const job=k.coachingGroup(r.nm,requestKey(g),rs.targets.filter(t=>!rs.done.has(t.target_type+':'+t.target_id)),{year:root.G.repManagerYear,quarter:root.G.repManagerQuarter,view:root.G.repManagerView});
+    while(job.at<job.commands.length){
+     const batch=job.commands[job.at].targets,before=commentOf(r.nm,job.snapshot.week_start);
+     const line='[요청] '+g.bulk+' — '+g.t+' '+batch.length+'건'+(job.snapshot.targets.length===g.n&&batch.length===g.n&&g.amt&&g.amt!=='금액 미정'?' · '+g.amt:'');
+     const saved=await root.repManagerCommentCommand(r.nm,job.snapshot.week_start,()=>k.coachingSend(job,line));
+     const added='· [KPI 요청] '+line;
+     if(JSON.stringify(state.base)===JSON.stringify(root.repManagerCommentBase(before))&&saved.comment===[before&&before.comment,added].filter(Boolean).join('\n'))state.base=root.repManagerCommentBase(saved);
+     job.at++;k.coachingProgress(job,job.at===job.commands.length);
+    }
     toast(r.nm+' 오늘 업무에 요청을 남겼습니다 · '+g.bulk);
    }catch(err){toast('요청 저장 확인 실패 · 다시 시도해 주세요');}
    finally{state.saving=false;if(st===state)root.paintRepManagement();}return;
