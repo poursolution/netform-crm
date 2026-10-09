@@ -82,18 +82,30 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#rules-admin [data-ra="save"]').click();await page.waitForTimeout(200);
   assert.equal(await page.evaluate(()=>__calls.filter(c=>c[1].set).length),0,'확인 전에는 서버에 안 보냄');
   const cf=page.locator('#rules-admin .ra-cf');assert.equal(await cf.count(),1);
-  assert.match(await cf.innerText(),/기준을 바꿀 때 · 적용 범위 확인[\s\S]*바꾸는 것\s*담당 배정 30 → 20\s*대상\s*견적문의 · 미배정 · 접수 후 20분 넘김 2건 \(지금 기준 2건\)[\s\S]*주변 현장 지도 켜짐 → 꺼짐\s*대상\s*영업건 상세 지도[\s\S]*실주 원인 12개 → 13개[\s\S]*적용일[\s\S]*기존 업무는[\s\S]*기존 업무 그대로 · 새 건부터[\s\S]*다시 계산[\s\S]*담당자에게 확인 요청/);
-  assert.equal(await cf.locator('[data-ra="existing"][aria-pressed="true"]').innerText().then(t=>/그대로/.test(t)),true,'기본 = 그대로 · 새 건부터');
-  await cf.locator('[data-ra="existing"][data-v="recalc"]').click();await page.waitForTimeout(80);
-  await cf.locator('[data-ra-in="eff"]').fill('2026-10-13');await page.waitForTimeout(80);
+  assert.match(await cf.innerText(),/기준을 바꿀 때 · 적용 범위 확인[\s\S]*바꾸는 것\s*담당 배정 30 → 20\s*대상\s*견적문의 · 미배정 · 접수 후 20분 넘김 2건 \(지금 기준 2건\)[\s\S]*주변 현장 지도 켜짐 → 꺼짐\s*대상\s*영업건 상세 지도[\s\S]*실주 원인 12개 → 13개[\s\S]*적용일\s*\d{4}-\d{2}-\d{2} · 오늘\(저장 즉시\)\s*기존 업무는[\s\S]*저장 즉시 모든 화면에 적용 · 선택은 이력에 기록[\s\S]*다시 계산[\s\S]*예약 적용 엔진 전 · 선택 불가[\s\S]*담당자에게 확인 요청/);
+  /* 코덱스 검토(2026-10-10): 서버는 적용 조건을 이력에만 남기고 값은 즉시 적용 → 미래 적용일 입력 없음 · ② ③ 잠금 · ① 이름은 사실대로 */
+  assert.equal(await cf.locator('[data-ra-in="eff"]').count(),0,'미래 적용일을 고르는 칸이 없다');
+  assert.equal(await cf.locator('[data-ra="existing"][aria-pressed="true"]').innerText().then(t=>/저장 즉시 모든 화면에 적용/.test(t)),true,'기본 = 즉시 적용(기록)');
+  assert.equal(await cf.locator('[data-ra="existing"][data-v="recalc"]').isDisabled(),true);assert.equal(await cf.locator('[data-ra="existing"][data-v="ask"]').isDisabled(),true);
+  assert.match(await cf.innerText(),/값은 저장 즉시 적용되고 미래 적용일 · 기존 업무 유지는 예약 적용 엔진이 생기기 전까지 고를 수 없습니다/);
+  const today=await page.evaluate(()=>new Date(Date.now()+9*36e5).toISOString().slice(0,10));
   await cf.locator('[data-ra="cfsave"]').click();await page.waitForTimeout(500);
   const ap=await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_ops_rules_v1'&&c[1].set).map(c=>c[1].apply));
-  assert.equal(ap.length,1);assert.equal(ap[0].effective_on,'2026-10-13');assert.equal(ap[0].existing,'recalc');assert.match(ap[0].scope,/담당 배정: 견적문의 · 미배정/);
+  assert.equal(ap.length,1);assert.equal(ap[0].effective_on,today,'적용일 = 오늘(즉시)');assert.equal(ap[0].existing,undefined,'보장 못 하는 선택은 보내지 않음');assert.match(ap[0].scope,/담당 배정: 견적문의 · 미배정/);
   assert.deepEqual(await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_ops_rules_v1'&&c[1].set).map(c=>c[1].set)),[{assign_minutes:20,nearby_map:false,reasons_lost:['관계 · 관리소장 변경','관계 · 입대의 · 회장 영향','관계 · 경쟁업체 기존 관계','공법 · 타 공법 선호','공법 · 특허 조건 불리','공법 · 설계 변경','가격 · 가격 경쟁','가격 · 예산 부족','가격 · 실행가 문제','사업 · 공사 취소','사업 · 연기','사업 · 예산 미확정','단가 인상']}],'바뀐 조건부 값만 서버로');
   assert.equal(await page.locator('#rules-admin .ra-bar').count(),0,'저장 뒤 띠 사라짐');
   assert.deepEqual(await page.evaluate(()=>[CRMRules.get('assign_minutes'),CRMRules.get('nearby_map'),CRMRules.reasons('lost').at(-1),OPS_RULES.inquiryAssignMinutes,OPS_RULES.towerFirstResponseHours]),[20,false,'단가 인상',20,2],'서버가 확인한 값이 공통 기준으로');
-  assert.match(await page.locator('#rules-admin .ra-hist').innerText(),/마지막 변경\s*\d{4}\.\d+\.\d+ · 송보람[\s\S]*담당 배정 30 → 20\s*적용일 2026-10-13 · 대상 담당 배정: 견적문의[\s\S]*기존 업무도 새 기준으로 다시 계산/,'변경 이력(누가 · 언제 · 전 → 후 · 적용일 · 대상 · 선택)');
-  assert.match(await page.locator('#rules-admin .ra-top').innerText(),/기준 v3 · /,'기준 버전 = 이력 건수');
+  assert.match(await page.locator('#rules-admin .ra-hist').innerText(),/마지막 변경\s*\d{4}\.\d+\.\d+ · 송보람[\s\S]*담당 배정 30 → 20\s*적용일 \d{4}-\d{2}-\d{2} · 대상 담당 배정: 견적문의/,'변경 이력(누가 · 언제 · 전 → 후 · 적용일 · 대상)');
+  /* v1 서버(contract 없음)면 적용 조건을 보내지 않고 값만 저장 · 안내 문구도 그대로 말한다 */
+  await page.evaluate(()=>{const base=SB.rpc;SB.rpc=async(n,a)=>{const r=await base(n,a);if(n==='crm_ops_rules_v1'&&r.data){delete r.data.contract;delete r.data.version;}return r;};return CRMRules.load(true);});await page.waitForTimeout(300);
+  await page.evaluate(()=>goPage('rules'));await page.waitForTimeout(300);
+  await row('담당 배정').locator('[data-ra="inc"]').click();await page.waitForTimeout(100);await page.locator('#rules-admin [data-ra="save"]').click();await page.waitForTimeout(200);
+  assert.match(await page.locator('#rules-admin .ra-cf').innerText(),/이 서버는 적용일 · 대상을 이력에 남기지 않습니다\(ops-rules v2 적용 전\)/);
+  await page.locator('#rules-admin [data-ra="cfsave"]').click();await page.waitForTimeout(500);
+  const last=await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_ops_rules_v1'&&c[1].set).at(-1)[1]);assert.deepEqual(last.set,{assign_minutes:30});assert.equal(last.apply,undefined,'v1 서버에는 apply 를 보내지 않음');
+  assert.equal(await page.locator('#rules-admin .ra-cf').count(),0);
+  await page.evaluate(()=>CRMRules.save({assign_minutes:20}));await page.waitForTimeout(200);/* 아래 '모든 화면이 같은 기준' 검사를 위해 20분으로 되돌림(이력 +1) */
+  assert.match(await page.locator('#rules-admin .ra-top').innerText(),/기준 v5 · /,'기준 버전 = 이력 건수(3건 + v1 서버 저장 1건 + 되돌림 1건)');
   assert.equal(await page.locator('#rules-admin .ra-cf').count(),0,'저장 뒤 확인 창 사라짐');
   /* 모든 화면이 같은 기준: 견적문의 배정 기준 · 실주 원인 · 배드핏 사유 */
   await page.evaluate(()=>goPage('inq'));await page.waitForTimeout(400);
