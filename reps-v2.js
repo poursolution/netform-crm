@@ -63,13 +63,14 @@
   if(openRep)render();
  }
  /* ── 사람별 창 ── */
- let openRep=null,returnFocus=null;
+ let openRep=null,returnFocus=null,detailPage={},draft=null;
  function node(){
   let m=document.getElementById('repsDialog');if(m)return m;
   m=document.createElement('div');m.id='repsDialog';m.className='rd-layer';m.innerHTML='<section class="rd-box" role="dialog" aria-modal="true" aria-labelledby="rdTitle"></section>';
   m.addEventListener('mousedown',e=>{if(e.target===m)close();});
   m.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close();}});
   m.addEventListener('click',onDialogClick);
+  m.addEventListener('input',e=>{if(e.target.matches('.rd-promise textarea'))draft=e.target.value;});
   document.body.append(m);return m;
  }
  function dialogHtml(r){
@@ -78,17 +79,20 @@
   const left='<p class="rd-diag '+r.diagnosis.k+'">'+h(r.diagnosis.text)+'</p>'
    +'<div class="rd-block"><b>흐름</b>'+flow.map((x,i)=>'<div class="rd-flow"><span>'+x[0]+'</span><i><em class="'+(i===4?'g':'')+'" style="width:'+Math.max(x[1]?4:0,Math.round(x[1]*100/base))+'%"></em></i><b>'+x[1]+'</b></div>').join('')+'</div>'
    +'<div class="rd-three"><div><span>Pipeline</span><b>'+h(eok(r.pipeline))+'</b></div><div class="'+(r.risk?'bad':'')+'"><span>조치 필요</span><b>'+r.risk+'건</b></div><div class="'+(load.cls==='heavy'||load.cls==='busy'?'bad':load.cls==='free'?'good':'')+'"><span>업무량</span><b>'+h(load.label)+'</b></div></div>'
-   +'<div class="rd-block rd-promise"><b>이번 주 약속</b><textarea id="rm-comment-'+idx+'" rows="3" maxlength="300" placeholder="예: 금요일까지 신규 배정 첫 연락 완료">'+h(c?c.comment:'')+'</textarea><div><button type="button" class="sv-primary" data-rd="save">저장</button>'+(c?'<small>'+(c.status==='done'?'완료 처리됨':'저장됨')+' · '+h(String(c.updated_at||'').slice(0,10))+'</small>':'')+'</div></div>';
-  const list=r.riskDeals.slice().sort((a,b)=>root.oppAmt(b)-root.oppAmt(a));
-  const right='<header><b>지금 처리할 현장</b><span>'+list.length+'건 · 금액 큰 순</span></header><div class="rd-list">'+(list.length?list.map(d=>'<button type="button" class="rd-row" data-rd="deal" data-value="'+attr(root.dealKey(d))+'"><b>'+h(d.site||'현장명 미입력')+'</b><em>'+h(root.perfIssueSummary(d))+'</em><span>'+h(root.oppAmt(d)?eok(root.oppAmt(d)):'금액 미입력')+'</span><u>처리</u></button>').join(''):'<p class="rd-none">조치가 필요한 현장이 없습니다.</p>')+'</div><button type="button" class="rd-all" data-rd="all">'+h(r.nm)+' 현장 전체보기 →</button>';
+   +'<div class="rd-block rd-promise"><b>이번 주 약속</b><textarea id="rm-comment-'+idx+'" rows="3" maxlength="300" placeholder="예: 금요일까지 신규 배정 첫 연락 완료">'+h(draft==null?(c?c.comment:''):draft)+'</textarea><div><button type="button" class="sv-primary" data-rd="save">저장</button>'+(c?'<small>'+(c.status==='done'?'완료 처리됨':'저장됨')+' · '+h(String(c.updated_at||'').slice(0,10))+'</small>':'')+'</div></div>';
+  const key=JSON.stringify([r.nm,root.G.repManagerYear,root.G.repManagerQuarter,root.G.repManagerView]);
+  if(detailPage.key!==key){root.ListPager.reset(detailPage);detailPage.key=key;}
+  const list=r.riskDeals.slice().sort((a,b)=>root.oppAmt(b)-root.oppAmt(a)),pg=root.ListPager.cut(list,root.ListPager.page(detailPage));
+  const right='<header><b>지금 처리할 현장</b><span>'+list.length+'건 · 금액 큰 순</span></header><div class="rd-list">'+(list.length?pg.rows.map(d=>'<button type="button" class="rd-row" data-rd="deal" data-value="'+attr(root.dealKey(d))+'"><b>'+h(d.site||'현장명 미입력')+'</b><em>'+h(root.perfIssueSummary(d))+'</em><span>'+h(root.oppAmt(d)?eok(root.oppAmt(d)):'금액 미입력')+'</span><u>처리</u></button>').join(''):'<p class="rd-none">조치가 필요한 현장이 없습니다.</p>')+root.ListPager.html(pg,{ns:'rd'})+'</div><button type="button" class="rd-all" data-rd="all">'+h(r.nm)+' 현장 전체보기 →</button>';
   return '<header class="rd-head"><h2 id="rdTitle">'+h(r.nm)+'</h2><em class="plv-tag '+t[1]+'">'+t[0]+'</em><span>'+h(team(r.nm))+'</span><button type="button" class="xdv-close" data-rd="close" aria-label="닫기">✕</button></header><div class="rd-body"><aside class="rd-left">'+left+'</aside><main class="rd-right">'+right+'</main></div>';
  }
  function render(){const r=(root.REP_MANAGER_ROWS||[]).find(x=>x.nm===openRep);if(!r){close();return;}node().querySelector('.rd-box').innerHTML=dialogHtml(r);}
- function open(name){if(root.RepWindow&&root.RepWindow.enabled()){root.RepWindow.open(name);return;}if(!(root.REP_MANAGER_ROWS||[]).some(x=>x.nm===name))rows();openRep=name;returnFocus=document.activeElement;const m=node();render();if(!openRep)return;m.classList.add('on');m.querySelector('.xdv-close')?.focus();}
+ function open(name){if(root.RepWindow&&root.RepWindow.enabled()){root.RepWindow.open(name);return;}if(!(root.REP_MANAGER_ROWS||[]).some(x=>x.nm===name))rows();openRep=name;detailPage={};draft=null;returnFocus=document.activeElement;const m=node();render();if(!openRep)return;m.classList.add('on');m.querySelector('.xdv-close')?.focus();}
  function close(restore){if(root.RepWindow&&root.RepWindow.isOpen())root.RepWindow.close(restore);const m=document.getElementById('repsDialog');if(m)m.classList.remove('on');const f=returnFocus;openRep=null;returnFocus=null;if(restore!==false&&f&&f.isConnected)f.focus?.({preventScroll:true});}
  async function onDialogClick(e){
   const b=e.target.closest('[data-rd]');if(!b||!openRep)return;const a=b.dataset.rd,r=(root.REP_MANAGER_ROWS||[]).find(x=>x.nm===openRep);if(!r)return;
   if(a==='close')close();
+  if(a==='page'){root.ListPager.set(detailPage,null,b.dataset.page);render();return;}
   if(a==='save'){const ta=node().querySelector('textarea');if(!ta.value.trim()){ta.focus();return;}if(b.disabled)return;b.disabled=true;try{if(await root.repManagerSaveComment(r.nm,'card'))toast(r.nm+' · 이번 주 약속을 저장했습니다');}finally{if(b.isConnected)b.disabled=false;}}
   if(a==='deal'){const d=r.riskDeals.find(x=>root.dealKey(x)===b.dataset.value);if(d){close(false);root.G._detailPopup=true;root.drwDeal(JSON.stringify(d));}}
   if(a==='all'){const name=r.nm;close(false);root.CommonFilterBar?.setOwner(name);root.goPage('today');}
@@ -104,3 +108,4 @@
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
  root.RepsV2={enabled,open,close};
 })(window);
+
