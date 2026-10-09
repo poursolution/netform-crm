@@ -79,7 +79,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(one(await det.locator('.im-src').first().innerText()),/^이관 메모 · 2026\.1\.7 · 원문$/);
   assert.match(one(await det.locator('.im-prom .lb').innerText()),/^과거 약속 확인함 0 \/ 2$/);
   assert.deepEqual(await det.locator('.im-pt b').allInnerTexts(),['사진 이메일로 받기','다음 날 현장 방문']);
-  assert.match(one(await det.locator('.i4-line').innerText()),/^AI 첫마디 ?"안녕하세요, 넷폼 이필선입니다\. 1월에 사진 이메일로 받기로, 다음 날 현장 방문하기로 했었는데, 그 뒤 진행 상황 여쭤보려고 연락드렸습니다\."$/);
+  assert.match(one(await det.locator('.i4-line').innerText()),/기록에 「사진 이메일로 받기로 함\.」, 「다음 날 방문 가능하다고 함\.」라고 남아 있어 확인드립니다\. 이후 실제로 어떻게 진행됐는지/);
   assert.match(one(await det.locator('.i4-pill').innerText()),/^후속 연락 필요 · 과거 통화일 확인 필요 · 메모에 1\.7 통화$/);
   assert.deepEqual(await clip('#inq-v4 .im-cell, #inq-v4 .im-cell *, #inq-v4 .im-btn, #inq-v4 .im-ps button, #inq-v4 .im-pt *'),[],'새 칸의 글이 잘리지 않는다');
   if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'inq-memo.png')});
@@ -109,10 +109,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await det.locator('.im-p',{hasText:'다음 날 현장 방문'}).locator('button',{hasText:'확인 불가'}).click();await page.waitForTimeout(250);
   assert.deepEqual(await det.locator('.im-ask span').allInnerTexts(),['· 다음 날 현장 방문 — 했는지 확인']);assert.equal(one(await det.locator('.im-ask b').innerText()),'첫 통화에서 물어볼 것');
   assert.equal(await page.evaluate(()=>{const q=B.inquiries.find(x=>x.id===ANS),a=actionObj(q,itemPatch(q,'inq'));return a&&a.text;}),'[과거 약속] 사진 이메일로 받기 다시 확인','확인 불가도 새 업무를 만들지 않는다');
-  assert.match(one(await det.locator('.i4-line').innerText()),/1월에 사진 이메일로 받기로, 다음 날 현장 방문하기로 했었는데/,'미완료 · 확인 불가는 첫마디에 남는다');
+  assert.match(one(await det.locator('.i4-line').innerText()),/기록에 「사진 이메일로 받기로 함\.」, 「다음 날 방문 가능하다고 함\.」/,'미완료 · 확인 불가는 첫마디에 남는다');
   if(process.env.SHOT_DIR){await det.locator('.im-prom').scrollIntoViewIfNeeded();await page.screenshot({path:path.join(process.env.SHOT_DIR,'inq-memo2.png')});}
   await det.locator('.im-p',{hasText:'다음 날 현장 방문'}).locator('button',{hasText:/^완료$/}).click();await page.waitForTimeout(250);
-  assert.match(one(await det.locator('.i4-line').innerText()),/1월에 사진 이메일로 받기로 했었는데/);assert.equal(await det.locator('.im-ask').count(),0);
+  assert.match(one(await det.locator('.i4-line').innerText()),/기록에 「사진 이메일로 받기로 함\.」라고 남아 있어/);assert.equal(await det.locator('.im-ask').count(),0);
   /* 서버 저장 · 서버에서 읽은 판단 */
   {const sent=await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_memo_review_v1').map(x=>[x[1].p.type,x[1].p.title,x[1].p.result]));
    assert.deepEqual(sent,[['call_supplement',undefined,undefined],['promise','사진 이메일로 받기','미완료'],['promise','다음 날 현장 방문','완료'],['promise','다음 날 현장 방문','확인 불가'],['promise','다음 날 현장 방문','완료']]);}
