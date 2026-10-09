@@ -2,7 +2,7 @@
    기존 SalesInsights.render 를 감싸 #si-dash · #si-control · #si-perf 를 시안 화면으로 바꾼다. 끄기: G.dashBOff=true → 예전 화면.
    지표는 주간 브리핑 · 월간 리포트와 같은 함수(BriefB.lib)로 계산한다 —
      계약실적 = 계약 체결일 기준 원장(체결 · 변경 · 취소 합) · 기술자문 낙찰은 따로 집계해 '별도'라고 적는다
-     영업 메이드율 = 수주 ÷ (수주 + 파이프라인 실주) · 배드핏 · 진행 중 제외 / 문의 적합률 = 적합 ÷ 문의 / 문의 → 계약 = 수주 ÷ 문의 / 확정 전환율 = 2달 전 달 문의 중 지금까지 계약
+     영업 메이드율 = 수주 ÷ (수주 + 파이프라인 실주) · 배드핏 · 진행 중 제외 / 문의 적합률 = 적합 ÷ 문의 / 문의 → 계약 = 수주 ÷ 문의 / 현재 전환율 = 2달 전 달 문의 중 지금까지 계약
    조치 필요 · 문제 표는 기존 분류(SalesInsights.rows 의 issues: overdue · contact · missing · stale · stall)를 그대로 쓴다.
    세 화면은 전 직원이 본다(화면 쪽 담당자 제한 없음 — 서버가 준 범위 그대로). [할 일 지정] · [담당자에게 알림]만 관리자 · 팀장.
    할 일 지정 = 기존 일괄 등록 창(PipelineBatch.openRows 'next') · 열기 = 기존 상세 · 근거 = 기존 근거 창. 알림은 문구 복사까지(개별 발송 경로 없음).
@@ -218,7 +218,7 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
   const quotes=AD.filter(d=>B.quoteIn(d,P.a,P.b)).length,conv=AD.filter(d=>inR(K(d.created),P.a,P.b)).length;
   const fun=[['견적문의',q.length+'건','전체 접수'],['적합 문의',fit+'건',B.closedText(bad,'ex')],['견적 발송',quotes+'건',fit&&quotes<=fit?'적합의 '+pt(B.pct(quotes,fit)):'기간 안 견적 발송'],['영업건 전환',conv+'건','파이프라인 진입'],['수주',L.ready?C.won+'건'+(C.perf>0?' · '+won(C.perf):''):'불러오는 중','실주 '+(loss.length+C.tfLost)+'건'+(C.pt.count?' · 협약 · 기술자문 '+C.pt.count+'건 포함':'')+(C.tf.count?' · 타사 이관 '+C.tf.count+'건 포함':'')]];
   const cd=new Date(P.ty,P.tm-3,1),cym=cd.getFullYear()+'-'+pad(cd.getMonth()+1),coM=cd.getMonth()+1,cohort=AQ.filter(x=>K(R.inquiryCreatedAt(x)).slice(0,7)===cym),cw=L.ready?cohort.filter(x=>B.inquiryContract(x,L,AD)).length:0;
-  const rates=[['영업 메이드율',pt(made),madeFx(C),'#15171c'],['문의 적합률',pt(B.pct(fit,q.length)),'적합 '+fit+' ÷ 문의 '+q.length,'#c9cdd5'],['문의 → 계약 전환율',L.ready?pt(B.pct(C.won,q.length)):'불러오는 중','수주 '+C.won+' ÷ 문의 '+q.length,'#c9cdd5'],['확정 전환율 ('+coM+'월 문의)',L.ready&&cohort.length?pt(B.pct(cw,cohort.length)):'아직 없음',coM+'월 문의 '+cohort.length+'건 중 지금까지 '+cw+'건 계약','#c9cdd5']];
+  const rates=[['영업 메이드율',pt(made),madeFx(C),'#15171c'],['문의 적합률',pt(B.pct(fit,q.length)),'적합 '+fit+' ÷ 문의 '+q.length,'#c9cdd5'],['문의 → 계약 전환율',L.ready?pt(B.pct(C.won,q.length)):'불러오는 중','수주 '+C.won+' ÷ 문의 '+q.length,'#c9cdd5'],['현재 전환율 ('+coM+'월 문의)',L.ready&&cohort.length?pt(B.pct(cw,cohort.length)):'아직 없음',coM+'월 문의 '+cohort.length+'건 중 지금까지 '+cw+'건 계약','#c9cdd5']];
   const top=(list,fn)=>{const t=B.tally(list,fn),a=t.slice(0,3),rest=t.slice(3).reduce((s,x)=>s+x[1],0);return a.map(x=>x[0]+' '+x[1]).concat(rest?['그 외 '+rest]:[]).join(' · ')||'해당 없음';};
   const funnelOld=()=>'<section class="db-card"><div class="db-ch"><b>견적문의가 계약까지</b><em>새 지표</em><span>'+h(P.label+' · 문의 접수 기준')+'</span></div>'
    +'<div class="db-fun">'+fun.map((u,i)=>'<div class="'+(i===fun.length-1?'last':'')+'"><span>'+u[0]+'</span><b>'+h(u[1])+'</b><small>'+h(u[2])+'</small></div>').join('')+'</div>'
@@ -540,13 +540,13 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
   const note=(topB?topB[0]+'로 들어온 수주실적 '+money(topB[1].all)+' 중 '+money(topB[1].pt)+'('+Math.round(topB[1].pt/topB[1].all*100)+'%)'+(topB[1].co.size===1&&topC?'가 '+topC[0]+' 낙찰':'가 협약시공사 낙찰')+' · 기술자문 구조라 회사 매출은 수주실적보다 작게 잡힙니다.':'협약시공사 · 기술자문 수주가 없어 수주실적과 회사 매출이 같습니다.')+' 매출 비율 = 매출 ÷ 수주실적.'+(tot.unknown?' 기술자문 · POUR 계약금액이 아직 입력되지 않은 '+tot.unknown+'건은 매출에 들어가지 않았습니다.':'');
   return '<section class="db-card flush db-bxs">'+head+'<div class="db-bxt">'+tops.map(t=>'<div><span>'+t[0]+'</span><b>'+h(t[1])+'</b><small>'+h(t[2])+'</small></div>').join('')+'</div><div class="db-bx">'+['유입 브랜드','낙찰 시공사','수주 유형'].map(l=>'<span class="bxh">'+l+'</span>').join('')+'<span class="bxh bxr">건수</span><span class="bxh bxr">수주실적</span><span class="bxh bxr">매출</span><span class="bxh">매출 비율</span>'+body+total+'</div><p class="db-bxn">'+h(note)+'</p></section>';
  }
- /* 문의 코호트 전환율(2차 기능 6): 같은 달에 들어온 문의가 결국 몇 건 계약됐나 — 접수 월 기준 최근 6개월. 수주 판정은 주간 브리핑의 '확정 전환율'과 같은 함수 */
+ /* 문의 코호트 전환율(2차 기능 6): 같은 달에 들어온 문의가 결국 몇 건 계약됐나 — 접수 월 기준 최근 6개월. 수주 판정은 주간 브리핑의 '현재 전환율'과 같은 함수 */
  function inquiryFate(C,x){const B=C.B;if(B.badfit(x))return 'badfit';if(C.L.ready&&B.inquiryContract(x,C.L,C.AD))return 'won';let d=null;try{d=R.linkedDeal(x);}catch(e){}if(d&&B.isLoss(d))return 'lost';return 'open';}
  function cohort(C){
   const {K,P,AQ,L}=C,rows=[];for(let i=5;i>=0;i--){const d=new Date(P.ty,P.tm-1-i,1),ym=d.getFullYear()+'-'+pad(d.getMonth()+1),q=AQ.filter(x=>K(R.inquiryCreatedAt(x)).slice(0,7)===ym),f=q.map(x=>inquiryFate(C,x));rows.push({m:(d.getMonth()+1)+'월',q:q.length,fit:f.filter(v=>v!=='badfit').length,won:f.filter(v=>v==='won').length,open:f.filter(v=>v==='open').length,lost:f.filter(v=>v==='lost').length,old:i>=(R.CRMRules?R.CRMRules.PHASE2.cohort_compare_after_months:3)});}
-  const head='<div class="db-ch"><b>접수 월별 · 같은 달에 들어온 문의가 결국 몇 건 계약됐나</b><span>최근 6개월 · 확정 전환율 = 수주 ÷ 문의</span></div>',max=Math.max(30,...rows.map(r=>r.q?r.won/r.q*100:0));
+  const head='<div class="db-ch"><b>접수 월별 · 같은 달에 들어온 문의가 결국 몇 건 계약됐나</b><span>최근 6개월 · 현재 전환율 = 수주 ÷ 문의</span></div>',max=Math.max(30,...rows.map(r=>r.q?r.won/r.q*100:0));
   const body=rows.map(r=>{const rate=r.q?Math.round(r.won/r.q*1000)/10:null;return '<span class="cow">'+r.m+'</span><span class="cor">'+r.q+'</span><span class="cor">'+r.fit+'</span><span class="cor cow">'+(L.ready?r.won:'—')+'</span><span class="cor com">'+(L.ready?r.open:'—')+'</span><span class="cor">'+r.lost+'</span><span class="cow cob">'+(!L.ready?'불러오는 중':rate===null?'문의 없음':rate.toFixed(1)+'%<u><i style="width:'+Math.round(rate/max*100)+'%"></i></u>')+'</span>';}).join('');
-  return '<section class="db-card db-cos">'+head+'<div class="db-co">'+['접수 월','문의','적합','수주','진행 중','실주'].map((l,i)=>'<span class="coh'+(i?' cor':'')+'">'+l+'</span>').join('')+'<span class="coh">확정 전환율</span>'+body+'</div><p class="db-con">최근 달은 아직 진행 중이 많아 전환율이 낮게 보입니다. '+(R.CRMRules?R.CRMRules.PHASE2.cohort_compare_after_months:3)+'개월 지난 달끼리 비교하세요.</p></section>';
+  return '<section class="db-card db-cos">'+head+'<div class="db-co">'+['접수 월','문의','적합','수주','진행 중','실주'].map((l,i)=>'<span class="coh'+(i?' cor':'')+'">'+l+'</span>').join('')+'<span class="coh">현재 전환율</span>'+body+'</div><p class="db-con">최근 달은 아직 진행 중이 많아 전환율이 낮게 보입니다. '+(R.CRMRules?R.CRMRules.PHASE2.cohort_compare_after_months:3)+'개월 지난 달끼리 비교하세요.</p></section>';
  }
  /* 유입경로 → 계약(2차 기능 7): 견적문의의 '유입경로' 값 기준 — 어디서 계약되는 문의가 들어오나 */
  const channelOf=q=>{const r=q&&q.raw&&typeof q.raw==='object'?q.raw:{};return String(r['유입경로']||q.source_channel||q.channel||r['상담채널']||'').trim()||'유입경로 미기록';};

@@ -32,19 +32,21 @@
   if(c.action==='inquiry_merge')band=strong>=2?'work':'maybe';
   else if(c.action==='site_merge')band=has('주소 동일')&&(has('관리사무소 전화 동일')||has('현장명 표기 일치'))?'work':'maybe';
   else if(c.action==='deal_review')band=has('동일 공종')&&(has('주소 동일')||has('현장 ID 동일')||has('현장명 표기 일치'))?'work':'maybe';
-  /* 같은 현장이지만 공종 · 사업유형 · 시기가 다른 복수 영업 = 같은 현장 · 다른 공사 */
-  else if(c.action==='site_link')band=has('주소 동일')||has('현장 ID 동일')||has('현장명 표기 일치')?'site':'maybe';
-  if(band==='work'&&(c.type==='inquiry'||c.type==='deal')){const ws=workState(c);if(ws==='diff')return 'site';if(ws==='unknown')return 'maybe';}
+  /* 후보 분류 type 대신 실제 A/B의 종류를 검사한다. 현장 후보로 묶인 문의·영업건도 같다.
+     같은 공종·접수일은 범위·공사 시기 확인을 대신하지 않는다. */
+  else if(c.action==='site_link')band=siteEvidence(c)&&workState(c)==='diff'?'site':'maybe';
+  if(band==='work'&&workState(c)!=='n/a')return 'maybe';
+  if(band==='work'&&c.type==='site')return 'maybe';
   return band;
  }
  /* 줄 · 비교 창 문구: 판정 이름 · 근거 · 버튼 · 상태 */
  const TAG={unk:['확인 불가','u'],siteunk:['같은 현장 · 공사 확인 필요','k'],site:['같은 현장 · 다른 공사','s'],work:['같은 공사','g'],maybe:['애매','a'],diff:['다른 건','m']};
- function tagOf(x){return x.band==='maybe'&&siteEvidence(x.c)&&workState(x.c)==='unknown'?TAG.siteunk:TAG[x.band];}
+ function tagOf(x){return x.band==='maybe'&&siteEvidence(x.c)&&workState(x.c)!=='n/a'?TAG.siteunk:TAG[x.band];}
  function whyOf(x){const c=x.c,ws=workState(c),R=(c.reasons||[]).slice();if(x.band==='maybe'&&siteEvidence(c)&&ws==='unknown')R.push('공종 · 범위 · 시기 미확인');if(ws==='diff'&&!R.some(r=>/공종 서로 다름/.test(r)))R.push('공종 다름');return R.join(' · ');}
- const CTA={work:['승인','판단 확정 전'],site:['현장만 묶기','판단 확정'],maybe:['비교하기','판단 확정 전'],unk:['자료 보완','판단 보류'],diff:['확인','판단 확정']};
+ const CTA={work:['비교하기','규칙 추천 · 확인 전'],site:['비교하기','규칙 추천 · 확인 전'],maybe:['비교하기','규칙 추천 · 확인 전'],unk:['자료 보완','근거 미확인'],diff:['비교하기','규칙 추천 · 확인 전']};
  /* 줄마다 A · B: 현장명 · 문의번호 · 브랜드 · 접수 시각 · 연락처 끝자리 · 공종 — 다른 값은 노랑 */
  const tailOf=r=>{const d=String(r.mobile||r.office||'').replace(/\D/g,'');return d?'…'+d.slice(-4):'연락처 없음';};
- const timeOf=at=>{const t=Date.parse(at);if(!Number.isFinite(t))return '접수 시각 없음';const k=new Date(t+9*36e5),p=n=>String(n).padStart(2,'0');return (k.getUTCMonth()+1)+'.'+k.getUTCDate()+' '+p(k.getUTCHours())+':'+p(k.getUTCMinutes());};
+ const timeOf=at=>{const t=Date.parse(at);if(!Number.isFinite(t))return '접수·등록 시각 미확인';const k=new Date(t+9*36e5),p=n=>String(n).padStart(2,'0');return k.getUTCFullYear()+'.'+(k.getUTCMonth()+1)+'.'+k.getUTCDate()+' '+p(k.getUTCHours())+':'+p(k.getUTCMinutes());};
  const noOf=r=>{const raw=r.raw||{},n=raw.inquiry_no||raw.no||raw.seq;return (r.ref.type==='inquiry'?'문의 ':r.ref.type==='deal'?'영업 ':'현장 ')+'#'+(n||String(r.ref.id).slice(-6));};
  const metaOf=r=>[noOf(r),r.brand||'브랜드 없음',timeOf(r.at),tailOf(r),(r.works||[]).filter(valid).join(' · ')||'공종 미입력'];
  function abHtml(c){
@@ -82,7 +84,7 @@
   else{
    const head='<div class="plv-thead" role="row" style="grid-template-columns:'+GRID+'"><span>대상 (A ↔ B) · 종류</span><span>판단</span><span>근거</span><span>제안</span><span></span></div>';
    const groups=ORDER.filter(k=>S.f==='all'||S.f===k).map(k=>{const b=BAND[k],list=m.cases.filter(x=>x.band===k),__pg=root.ListPager.cut(list,(S.more[k]||0)+1),shown=__pg.rows,rest=list.length-shown.length;return '<div class="plv-ghead" data-plv-group="'+k+'"><i style="background:'+b[2]+'"></i><b>'+h(b[0])+'</b><span>'+list.length+'건</span><small>· '+h(b[3])+'</small></div>'+(shown.length?shown.map(rowHtml).join(''):'<div class="plv-empty">해당하는 건이 없습니다</div>')+root.ListPager.html(__pg,{ns:'dv',attrs:'data-value="'+k+'"',small:true});}).join('');
-   table='<div class="plv-table" role="table" aria-label="중복 후보">'+head+groups+'<p class="dv-legend"><b>[판단 확정]</b> = 이 쌍의 관계만 기록 · 데이터 안 바뀜 &nbsp;/&nbsp; <b>[합치기 실행]</b> = 관리자 · 영향 미리보기 확인 후에만 · 같은 전화는 후보를 찾는 조건일 뿐 같은 현장의 근거가 아닙니다</p></div>';
+   table='<div class="plv-table" role="table" aria-label="중복 후보">'+head+groups+'<p class="dv-legend"><b>[비교하기]</b> = 원본 비교 · 판단 저장 아님 &nbsp;/&nbsp; <b>[합치기 실행]</b> = 관리자 · 영향 미리보기 확인 후에만 · 같은 전화는 후보를 찾는 조건일 뿐 같은 현장의 근거가 아닙니다</p></div>';
   }
   return intro+diagnosis(m)+band+table;
  }
@@ -120,7 +122,7 @@
   const sides=[c.a,c.b],insp=sides.filter(r=>r.ref.type==='inquiry').length,acts=sides.reduce((a,r)=>a+actsOf(r),0),att=sides.reduce((a,r)=>a+(((r.raw||{}).attachments||(r.raw||{}).files||[]).length),0);
   const closed=sides.some(r=>/종결|종료|배드핏|연락두절/.test(stOf(r))),won=sides.some(r=>{try{return r.ref.type==='deal'&&root.isWon(r.raw);}catch(e){return false;}});
   const noun=c.type==='inquiry'?'견적문의':c.type==='deal'?'영업기회':'현장';
-  return {rows,ready,ws,box:[['보존','문의 원본 '+insp+'건 · 응대 '+acts+'건 · 첨부 '+att],['집계 변화',noun+' 2 → 1'+(c.type==='inquiry'&&closed?' · 종결 −1':'')+(won?' · 수주 건 포함 — 실적 확인 필요':' · 실적 변화 없음')],['되돌리기','처리 완료 탭 · 30일 안 [연결 해제] · 원본 그대로 복구']]};
+  return {rows,ready,ws,box:[['보존','문의 원본 '+insp+'건 · 응대 '+acts+'건 · 첨부 '+att],['집계 변화',noun+' 2 → 1'+(c.type==='inquiry'&&closed?' · 종결 −1':'')+(won?' · 수주 건 포함 — 실적 확인 필요':' · 실적 변화 없음')],['되돌리기','지원 여부를 서버에서 확인해야 합니다 · 자동 복구를 보장하지 않습니다']]};
  }
  function previewHtml(c,P,band){
   const cell=(r)=>r.pick?'<span class="dv-pk"><button type="button" data-dk="'+r.k+'" data-v="A" aria-pressed="'+(r.sel==='A')+'">A 유지</button><button type="button" data-dk="'+r.k+'" data-v="B" aria-pressed="'+(r.sel==='B')+'">B 유지</button></span>':'<b>'+h(r.keep)+'</b>';
@@ -131,9 +133,9 @@
  function open(i){
   const U=root.DataCleanupUI,c=U.cases()[i];if(!c)return;const band=judge(c),b=BAND[band],ro=U.readOnly(),F=fields(c),ws=workState(c);
   const act=c.type==='contact'?{keep:'different_person',link:'',merge:'contact_move'}:c.type==='inquiry'?{keep:'separate',link:'inquiry_activity',merge:'inquiry_merge'}:c.type==='deal'?{keep:'separate',link:'site_link',merge:'deal_review'}:{keep:'separate',link:'site_link',merge:'site_merge'};
-  const siteunk=band==='maybe'&&siteEvidence(c)&&ws==='unknown',title=siteunk?TAG.siteunk[0]:band==='unk'?'확인 불가':b[0];
+  const siteunk=band==='maybe'&&siteEvidence(c)&&ws!=='n/a',title=siteunk?TAG.siteunk[0]:band==='unk'?'확인 불가':b[0];
   const showPv=c.type!=='contact'&&band!=='unk'&&band!=='diff',P=showPv?preview(c):null;
-  const mergeable=!ro&&band!=='unk'&&(c.type==='contact'||(band!=='diff'&&(c.type==='site'||ws==='same')))&&(!P||P.ready);
+  const mergeable=!ro&&band!=='unk'&&(c.type==='contact'||(band!=='diff'&&(ws==='n/a'&&c.type==='site'||ws==='same')))&&(!P||P.ready);
   const lockWhy=band==='unk'?'확인 불가 — 현장명 · 주소 · 공종을 채운 뒤 판단':ws==='diff'?'공종이 달라 같은 공사로 합칠 근거 부족 — 현장만 묶기를 권장':ws==='unknown'?'공종을 몰라 같은 공사인지 확인 필요':P&&!P.ready?'미리보기에서 항목마다 유지할 값을 고른 뒤 열립니다':'';
   const m=node();focusBack=document.activeElement;m.dataset.i=String(i);
   const wa=(c.a.works||[]).filter(valid).join(' · '),wb=(c.b.works||[]).filter(valid).join(' · ');
