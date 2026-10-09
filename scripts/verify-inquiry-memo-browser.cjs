@@ -147,7 +147,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal((await det.locator('.im-cell').nth(1).locator('b').innerText()),'2026.1.7','서버의 보완 날짜가 보인다');
   /* 원문에만 있는 과거 통화·미팅: 첫 연락 연체로 몰지 않고 기존 기록 정리 묶음에서 확인한다. */
   const imported=await page.evaluate(()=>{
-   const q={id:'77777777-7777-4777-8777-777777777777',site:'합성 진단 상담',status:'배정완료',at:'2026-01-16T08:00:00+09:00',created_at:'2026-01-16T08:00:00+09:00',brand:'POUR솔루션',phone:'010-0000-1234',assignee:'이필선',assigned_to:'이필선',assigned_at:'2026-01-16T09:00:00+09:00',raw:{문의내용:'유상 하자 진단보고서 상담. 2026/01/16 PM 05:02 1차통화완료. 다음주 월요일 현장 미팅 후 아파트스퀘어 연계 예정'}};
+   const q={id:'77777777-7777-4777-8777-777777777777',site:'합성 진단 상담',status:'배정완료',at:'2026-01-16T08:00:00+09:00',created_at:'2026-01-16T08:00:00+09:00',brand:'POUR솔루션',phone:'010-0000-1234',assignee:'이필선',assigned_to:'이필선',assigned_at:'2026-01-16T09:00:00+09:00',raw:{문의내용:'2026/01/16 PM 05:02\n1차 통화완료\n유상 하자 진단보고서 상담\n다음주 월요일 현장 미팅 후 아파트스퀘어 연계 진행 예정'}};
    B.inquiries.push(q);InquiryV4.state().sort='urgent';InquiryV4.fresh();paint();
    const m=InquiryV4.base().find(x=>x.q.id===q.id);return {g:m.g,due:m.due,review:m.review,label:m.stLabel,first:InquiryFlow.firstConnectedAt(q)};
   });
