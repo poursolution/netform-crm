@@ -80,18 +80,21 @@
  /* 메모 한 덩어리(기준 날짜 base = 메모에 찍힌 날, 없으면 '') → 통화 · 약속 후보 + 표시 구간 */
  function parse(text,base){
   const calls=[],promises=[],ranges=[],seen=new Set();
+  let sectionBase=base;
   sentences(text).forEach(sn=>{
    const t=sn.text;
+   // 이관 메모의 독립된 일시 머리줄은 그 아래 기록에 적용한다. 상대 날짜는 추정하지 않는다.
+   if(/^\s*\d{4}\s*[.\-/]\s*\d{1,2}\s*[.\-/]\s*\d{1,2}\s+(?:(?:AM|PM|오전|오후)\s*)?\d{1,2}:\d{2}(?::\d{2})?\s*$/i.test(t))sectionBase=dateIn(t,base)||base;
    const cm=CALL_RE.exec(t);
    if(cm&&!NOT_CALL.test(t)&&!/(?:통화|상담)\s*완료\s*(?:예정|목표|아님|아니|안\s*됨)/.test(t)){
-    const d=dateIn(t,base)||base||'',key='c-'+hash(t);
+    const d=dateIn(t,sectionBase)||sectionBase||'',key='c-'+hash(t);
     if(!seen.has(key)){seen.add(key);calls.push({key,date:d,sentence:t.trim(),phrase:cm[0]});ranges.push({s:sn.start+cm.index,e:sn.start+cm.index+cm[0].length,k:'call'});}
    }
    PROMISE.forEach(([type,re])=>{
     const m=re.exec(t);if(!m)return;if(type==='visit'&&/(?:방문|내방|실측|미팅)\s*(?:취소|불가|하지\s*않|안\s*함)/.test(m[0]))return;
-    const when=dateIn(t,base),nm=nameOf(type,m,when),key='p-'+type+'-'+hash(t);
+    const when=dateIn(t,sectionBase),nm=nameOf(type,m,when),key='p-'+type+'-'+hash(t);
     if(seen.has(key))return;seen.add(key);
-    promises.push({key,type,title:nm.title,say:nm.say,date:base||when||'',sentence:t.trim(),phrase:m[0],when});
+    promises.push({key,type,title:nm.title,say:nm.say,date:sectionBase||when||'',sentence:t.trim(),phrase:m[0],when});
     ranges.push({s:sn.start+m.index,e:sn.start+m.index+m[0].length,k:'pro'});
    });
   });
