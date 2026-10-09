@@ -211,16 +211,19 @@
  function carePhase(quoteSentAt,now){const t=ms(quoteSentAt);if(!Number.isFinite(t))return '';const m=((now||Date.now())-t)/(864e5*30);return m<get('care_focus_months')?'focus':m<Math.max(get('care_general_months'),get('care_focus_months')+1)?'general':'long_wait';/* 2026-10-07 stage7_2 ③: 일반관리 = 발송일부터 총 기간 */}
  /* ── 서버 ── */
  const store=()=>root.OpsStore,available=()=>!!(store()&&store().has&&store().has(RPC));
- function take(r){apply(r.rules||{});const hist=Array.isArray(r.history)?r.history:[];meta={updated_at:r.updated_at||'',updated_by:r.updated_by_name||'',history:hist,version:Number(r.version)||hist.length,contract:Number(r.contract)||1};loaded=true;try{root.dispatchEvent(new CustomEvent('crm-rules:changed',{detail:{rules:all()}}));}catch(e){}return all();}
+ function take(r){if(!r||r.ok!==true||!r.rules||typeof r.rules!=='object'||Array.isArray(r.rules))throw new Error('운영 기준 서버 응답을 확인하지 못했습니다');apply(r.rules);const hist=Array.isArray(r.history)?r.history:[];meta={updated_at:r.updated_at||'',updated_by:r.updated_by_name||'',history:hist,version:Number(r.version)||hist.length,contract:Number(r.contract)||1};loaded=true;try{root.dispatchEvent(new CustomEvent('crm-rules:changed',{detail:{rules:all()}}));}catch(e){}return all();}
  async function load(force){if(!available())return all();if(busy)return all();if(loaded&&!force)return all();busy=true;try{return take(await store().rpc(RPC,{}));}catch(e){return all();}finally{busy=false;}}
  /* 저장: 바뀐 조건부 값만 보낸다. 서버가 확인한 값만 화면에 적용한다 */
  /* 저장: 바뀐 조건부 값만 보낸다. 서버가 확인한 값만 화면에 적용한다.
-    apply = 적용 범위(promise_gap ③): {effective_on:'YYYY-MM-DD', scope:'대상 · 건수', existing:'keep'|'recalc'|'ask'} — 이력에만 남고 지난 판정은 소급 재계산하지 않는다(v1 서버는 이 칸을 무시한다) */
+    apply 명령은 현행 v1/v2 서버에서 실행되지 않는다. 이력 저장을 예약 적용·기존 업무 보존으로 취급하지 않는다.
+    지원 계약과 대상별 정책 버전이 연결되기 전에는 쓰기 RPC 전송 전에 거절한다. 기존 apply 없는 즉시 값 저장은 유지한다. */
  async function save(changes,apply){
+  if(apply!==undefined)throw new Error('적용일·대상·기존 업무 처리 기능이 아직 연결되지 않아 저장하지 않았습니다. 기존 기준과 입력 내용은 유지됩니다.');
   const set={};Object.keys(changes||{}).forEach(k=>{const v=clean(k,changes[k]);if(v===undefined)throw new Error((SPEC[k]?SPEC[k].l:k)+' 값이 범위를 벗어났습니다');set[k]=v;});
   if(!Object.keys(set).length)return all();if(!available())throw new Error('운영 기준 저장은 서버 적용 뒤에 쓸 수 있습니다');
-  const body={set};if(apply&&typeof apply==='object'){const ap={};if(/^\d{4}-\d{2}-\d{2}$/.test(String(apply.effective_on||'')))ap.effective_on=apply.effective_on;if(apply.scope)ap.scope=String(apply.scope).slice(0,300);if(['keep','recalc','ask'].includes(apply.existing))ap.existing=apply.existing;if(Object.keys(ap).length)body.apply=ap;}
-  return take(await store().rpc(RPC,body));
+  const r=await store().rpc(RPC,{set});
+  if(!r||r.ok!==true||!r.rules||typeof r.rules!=='object'||Array.isArray(r.rules)||Object.keys(set).some(k=>!same(r.rules[k],set[k])))throw new Error('운영 기준 저장 결과를 확인하지 못했습니다. 다시 조회해 확인해 주세요.');
+  return take(r);
  }
  /* 기준 버전(근거 보기 · 이력 표시용): 서버 이력 건수 = 버전, 마지막 변경일. 서버 적용 전이면 v0 · 기본값 */
  function version(){const at=String(meta.updated_at||'');const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(at);return {n:Number(meta.version)||0,at,label:'기준 v'+(Number(meta.version)||0)+(m?' · '+Number(m[2])+'.'+Number(m[3]):' · 기본값')};}
