@@ -145,6 +145,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await V.locator('.i4-row',{hasText:'천안두정'}).click();await page.waitForTimeout(150);
   assert.match(one(await det.locator('.im-prom .lb').innerText()),/^과거 약속 확인함 1 \/ 2$/,'서버 판단이 보인다');
   assert.equal((await det.locator('.im-cell').nth(1).locator('b').innerText()),'2026.1.7','서버의 보완 날짜가 보인다');
+  /* 실제 형식의 합성 원문: 날짜 점·줄바꿈 조건을 화면에서도 보존한다. */
+  await page.evaluate(()=>{const q=B.inquiries.find(x=>x.id===ANS);q.raw={응대내용:'[2026. 1. 7. 오후 5:06:44] 시설팀장님과 통화완료\n사진은 메일로 보내주신다고 하셨고\n내일아산에 가기때문에 시간이 맞으면\n내일바로 방문드리기로 함.'};InquiryV4.fresh();paint();});
+  assert.match(one(await det.locator('.im-cell').nth(2).innerText()),/2026.1.7/);
+  assert.match(one(await det.locator('.i4-line').innerText()),/시간이 맞으면 내일바로 방문드리기로 함/);
+  assert.match(one(await det.locator('.i4-line').innerText()),/실제로 어떻게 진행됐는지/);
+  assert.equal(await det.locator('.im-pt b').first().innerText(),'사진 이메일로 받기');
   /* 끄면: 새 칸 · 문장이 사라진다 */
   assert.deepEqual(await page.evaluate(()=>{G.inqMemoOff=true;InquiryV4.fresh();paint();return [document.querySelectorAll('#inq-v4 .im-prom, #inq-v4 .im-d3, #inq-v4 .im-memo').length];}),[0]);
   await page.evaluate(()=>{G.inqMemoOff=false;InquiryV4.fresh();paint();});

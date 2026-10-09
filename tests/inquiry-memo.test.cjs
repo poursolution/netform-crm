@@ -75,3 +75,37 @@ test('약속 판단 키는 원문 기반으로 유지하고 완료한 약속은 
  assert.equal(M.promises(q)[0].res,'완료');assert.equal(M.opener(q,'테스트담당'),'');
  M.takeServer([]);
 });
+
+const splitVisit='[2026. 1. 7. 오후 5:06:44] 시설팀장님과 통화완료\n사진은 메일로 보내주신다고 하셨고\n내일아산에 가기때문에 시간이 맞으면\n내일바로 방문드리기로 함.';
+test('운영 원문 형식: 점·공백·대괄호 날짜와 앞줄 방문 조건을 보존한다',()=>{
+ const q={raw:{응대내용:splitVisit}},r=M.scan(q),before=JSON.stringify(q);
+ assert.equal(r.calls[0].date,'2026-01-07');assert.equal(r.calls[0].key,'c-1lbia6r');
+ const visit=r.promises.find(p=>p.type==='visit');assert.equal(visit.key,'p-visit-n517yo');
+ assert.equal(visit.certainty,'conditional');assert.match(visit.sentence,/시간이 맞으면 내일바로 방문/);
+ assert.match(M.opener(q,'테스트'),/시간이 맞으면 내일바로 방문/);
+ assert.equal(M.connection(q).state,'none');assert.equal(JSON.stringify(q),before);
+ const html=M.marked(splitVisit,M.parse(splitVisit,'').ranges);
+ assert.equal(html.replace(/<\/?mark[^>]*>/g,''),splitVisit,'원문과 표시 오프셋 보존');
+});
+test('점 날짜를 포함한 기존 약속 판단 키와 완료 여부를 보존한다',()=>{
+ const q={id:'split-visit-test',raw:{응대내용:splitVisit}};
+ M.takeServer([{inquiry_id:q.id,kind:'promise',item_key:'p-visit-n517yo',result:'완료',decided_at:'2026-10-09T00:00:00Z'}]);
+ assert.equal(M.promises(q).find(p=>p.type==='visit').res,'완료');assert.doesNotMatch(M.opener(q,'테스트'),/방문드리기로/);
+ M.takeServer([]);
+ const tx='[2026. 1. 7. 오후 5:06:44] 사진 보내기로 함.';
+ const prior=M.sentences(tx,true).find(s=>s.text.includes('사진'));
+ let h=5381;for(const c of prior.text.replace(/\s+/g,''))h=((h<<5)+h+c.charCodeAt(0))>>>0;
+ assert.equal(M.parse(tx,'').promises[0].key,'p-material-'+h.toString(36));
+});
+test('날짜와 조건을 다음 별도 기록에 무조건 넘기지 않는다',()=>{
+ for(const stamp of ['[2026. 1. 7. 오후 5:06:44]','2026. 1. 7. PM 05:06'])assert.equal(M.parse(stamp+'\n1차통화완료','').calls[0].date,'2026-01-07');
+ assert.equal(M.parse('[2026. 1. 7. 오후 5:06:44] 부재 통화 안 됨','').calls.length,0);
+ for(const gap of ['.\n','\n\n'])assert.doesNotMatch(M.parse('시간이 맞으면'+gap+'방문드리기로 함.','').promises[0].sentence,/시간이 맞으면/);
+});
+test('현장 미팅 후 연계 예정은 확인할 후보이며 미팅 완료를 만들지 않는다',()=>{
+ const q={raw:{응대내용:'다음주 월요일 현장 미팅 후 아파트스퀘어 연계 진행 예정'}};
+ const r=M.scan(q);assert.equal(r.calls.length,0);assert.equal(r.promises[0].type,'visit');
+ assert.equal(r.promises[0].title,'현장 미팅');assert.match(M.opener(q,'테스트'),/다음주 월요일 현장 미팅 후 아파트스퀘어 연계 진행 예정/);
+ assert.match(M.opener(q,'테스트'),/실제로 어떻게 진행됐는지/);
+ for(const s of ['현장 미팅 완료','현장 미팅 취소','현장 미팅 여부 확인 필요'])assert.equal(M.parse(s,'').promises.length,0);
+});

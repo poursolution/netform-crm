@@ -63,15 +63,17 @@
    const action=actor==='customer'?'받기':actor==='staff'?'보내기':'전달 여부 확인';
    return {title:[obj,via?via+ro(via):'',action].filter(Boolean).join(' '),say:[obj,'전달 여부를 확인'].join(' '),actor,recipient:actor==='customer'?'staff':actor==='staff'?'customer':'unknown'};
   }
-  if(type==='visit'){const pre=String(m[1]||'').trim(),w=/다음\s*날|이튿날/.test(pre)?'다음 날 ':/내일/.test(pre)?'내일 ':/모레/.test(pre)?'모레 ':when?md(when)+' ':'',kind=m[2]==='실측'?'실측':'방문';return {title:w+'현장 '+kind,say:w+'현장 '+kind+'하기로'};}
+  if(type==='visit'){const pre=String(m[1]||'').trim(),w=/다음\s*날|이튿날/.test(pre)?'다음 날 ':/내일/.test(pre)?'내일 ':/모레/.test(pre)?'모레 ':when?md(when)+' ':'',kind=m[2]==='실측'?'실측':m[2]==='미팅'?'미팅':'방문';return {title:w+'현장 '+kind,say:w+'현장 '+kind+'하기로'};}
   if(type==='quote')return {title:'견적 보내기',say:'견적을 보내드리기로'};
   if(type==='recall')return {title:'다시 연락하기',say:'다시 연락드리기로'};
   return {title:'회의 일정 확인',say:'회의 일정을 확인하기로'};
  }
  const hash=s=>{let h=5381;const t=String(s).replace(/\s+/g,'');for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))>>>0;return h.toString(36);};
  /* 문장 나누기: 날짜의 점(9.30)은 끊지 않는다. 오프셋을 그대로 둬 원문에 표시를 겹칠 수 있게 한다 */
- function sentences(text){
-  const out=[],safe=String(text).replace(/(\d)\.(\d)/g,'$1․$2'),rr=/[^.\n;!?]+[.\n;!?]*/g;let m;
+ function sentences(text,legacy){
+  const stamp=/\[?\d{4}\s*[.\/-]\s*\d{1,2}\s*[.\/-]\s*\d{1,2}\.?\s*(?:(?:AM|PM|오전|오후)\s*)?\d{1,2}:\d{2}(?::\d{2})?\]?/gi;
+  const source=legacy?String(text):String(text).replace(stamp,s=>s.replace(/\./g,'․'));
+  const out=[],safe=source.replace(/(\d)\.(\d)/g,'$1․$2'),rr=/[^.\n;!?]+[.\n;!?]*/g;let m;
   while((m=rr.exec(safe))){const t=m[0];if(t.trim())out.push({text:String(text).slice(m.index,m.index+t.length),start:m.index});}
   return out;
  }
@@ -86,25 +88,29 @@
  const pad=(y,m,d)=>{const v=new Date(Date.UTC(y,m-1,d));return v.getUTCFullYear()===y&&v.getUTCMonth()===m-1&&v.getUTCDate()===d?y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0'):'';};
  /* 메모 한 덩어리(기준 날짜 base = 메모에 찍힌 날, 없으면 '') → 통화 · 약속 후보 + 표시 구간 */
  function parse(text,base){
-  const calls=[],promises=[],ranges=[],seen=new Set();let headingDate='';
-  sentences(text).forEach(sn=>{
+  const calls=[],promises=[],ranges=[],seen=new Set(),old=sentences(text,true),parts=sentences(text);let headingDate='';
+  // Keep persisted review identities even when timestamp punctuation no longer splits a line.
+  const identity=(sn,offset)=>{const at=sn.start+offset,prior=old.find(x=>x.start<=at&&at<x.start+x.text.length);return prior?prior.text:sn.text;};
+  parts.forEach((sn,index)=>{
    const t=sn.text;
    // Only explicit date/time-only lines provide context to the following call.
-   const heading=/^\s*\[?\d{4}\s*[.\/-]\s*\d{1,2}\s*[.\/-]\s*\d{1,2}(?:\s*(?:AM|PM|오전|오후))?(?:\s*\d{1,2}:\d{2}(?::\d{2})?)?\]?\s*$/i.test(t.trim());
+   const heading=/^\s*\[?\d{4}\s*[.\/-]\s*\d{1,2}\s*[.\/-]\s*\d{1,2}\.?(?:\s*(?:AM|PM|오전|오후))?(?:\s*\d{1,2}:\d{2}(?::\d{2})?)?\]?\s*$/i.test(t.trim());
    if(heading){headingDate=dateIn(t,base);return;}
    const context=headingDate;headingDate='';
    const cm=CALL_RE.exec(t);
    if(cm&&!NOT_CALL.test(t)){
-    const d=dateIn(t,base)||context||base||'',key='c-'+hash(t);
+    const d=dateIn(t,base)||context||base||'',key='c-'+hash(identity(sn,cm.index));
     if(!seen.has(key)){seen.add(key);calls.push({key,date:d,sentence:t.trim(),phrase:cm[0]});ranges.push({s:sn.start+cm.index,e:sn.start+cm.index+cm[0].length,k:'call'});}
    }
    PROMISE.forEach(([type,re])=>{
     let m=re.exec(t);
+    if(!m&&type==='visit')m=/(현장\s*)(미팅)\s*후[^.\n;!?]{0,32}(?:연계|진행)\s*예정/.exec(t);
     if(!m&&type==='visit'&&/(?:맞으면|가능하면|된다면|되면|경우)/.test(t))m=/((?:내일|모레|다음\s*날)\s*)?(?:현장\s*)?(방문|내방|실측)/.exec(t);
     if(!m)return;
-    const when=dateIn(t,base),nm=nameOf(type,m,when,t),key='p-'+type+'-'+hash(t);
+    const prior=parts[index-1],condition=type==='visit'&&prior&&/(?:맞으면|가능하면|된다면|되면|경우)\s*$/.test(prior.text.trim())&&!/\n[ \t]*\n/.test(prior.text)?prior.text.trim()+' ':'';
+    const evidence=condition+t.trim(),when=dateIn(t,base),nm=nameOf(type,m,when,evidence),key='p-'+type+'-'+hash(identity(sn,m.index));
     if(seen.has(key))return;seen.add(key);
-    promises.push({key,type,title:nm.title,say:nm.say,actor:nm.actor||'unknown',recipient:nm.recipient||'unknown',certainty:/(?:맞으면|가능하면|된다면|되면|경우)/.test(t)?'conditional':/가능|검토|논의/.test(t)?'discussed':'unverified',date:context||base||when||'',sentence:t.trim(),phrase:m[0],when});
+    promises.push({key,type,title:nm.title,say:nm.say,actor:nm.actor||'unknown',recipient:nm.recipient||'unknown',certainty:/(?:맞으면|가능하면|된다면|되면|경우)/.test(evidence)?'conditional':/가능|검토|논의/.test(evidence)?'discussed':'unverified',date:context||base||when||'',sentence:evidence,phrase:m[0],when});
     ranges.push({s:sn.start+m.index,e:sn.start+m.index+m[0].length,k:'pro'});
    });
   });
