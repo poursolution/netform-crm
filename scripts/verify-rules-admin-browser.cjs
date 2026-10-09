@@ -37,6 +37,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const row=l=>page.locator('#rules-admin .ra-row',{has:page.locator('.ra-l b',{hasText:new RegExp('^'+l+'$')})});
   /* 관계관리 v12(2026-10-07): 집중 · 일반관리 기간(개월)은 조건부 숫자 — 7일 · 월 1회 · 2개월은 회의 결정이라 설정 밖 */
   assert.match(await row('집중관리 기간').innerText(),/집중관리 기간\s*조건부[\s\S]*−\s*1\s*\+\s*개월/);assert.match(await row('일반관리 기간').innerText(),/일반관리 기간\s*조건부[\s\S]*−\s*3\s*\+\s*개월/);
+  assert.match(await row('고객관리 기간').innerText(),/기간 잠정 · 해석 미확정/);
+  assert.doesNotMatch(await row('고객관리 기간').innerText(),/송보람 승인|회의 확정/);
+  assert.match(await row('집중관리 기간').innerText(),/임시 적용/);
+  assert.match(await row('일반관리 기간').innerText(),/임시 적용/);
+  assert.match(await row('연락두절 시도 간격').innerText(),/운영 기본값 · 근거 확인 필요/);
+  assert.match(await row('주담당 자동 귀속').innerText(),/승인 근거 확인 필요/);
+  assert.match(await row('다음 행동 필수').innerText(),/설정 연결 미적용/);
+  assert.match(await row('향후 연도 건 집중관리 제외').innerText(),/설정 연결 미적용/);
   /* 단계 이동 필수조건(2차 기능 2) = 조건부 · 관리자가 켜고 끈다 */
   assert.match(await row('단계 이동 필수조건').innerText(),/단계 이동 필수조건\s*조건부[\s\S]*단계별 필수값이 비면 \[옮기기\]를 잠급니다/);
   /* 예외 승인자(2026-10-04 대표 지정) = 조건부 목록 · 기본 이승우 · 황윤선 */

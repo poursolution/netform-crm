@@ -60,7 +60,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    ['전체','이 단계 모든 현장','',8,false,false],
    ['집중관리','견적 후 1개월 · 7일 안 후속 통화','7일 = 회의 결정 · 1개월 = 잠정(설정)',3,false,true]/* 기한 지난 건이 있는 칸만 숫자 빨강 */,
    ['일반관리','집중 이후 ~ 발송일부터 3개월 · 최소 월 1회','월 1회 = 회의 결정 · 기간 = 해석 미확정(설정)',2,false,false],
-   ['대기','향후 추진 가능 · 2개월 1회','2개월 = 회의 결정',1,false,false],
+   ['대기','향후 추진 가능 · 60일 1회','회의 기준 2개월 1회 · 현재 60일 환산은 미확정',1,false,false],
    ['보류','고객이 중단 사유를 밝힘 · 재검토일에 확인','주기 미확정 · 재검토일만',1,false,true],
    ['미확인 · 기준일 확인 필요','견적 발송일 · 반응 · 시기 모름','자동 분류 안 함 · 재분류 대상',1,true,false]],'상태 6칸 · 기준 · 근거 · 건수 · 빨강 = 기한 지난 건이 있는 칸 · 미확인은 주황');
   assert.equal(await V.locator('.ps3-tabs').getAttribute('data-n'),'6');
@@ -85,7 +85,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual(byKey['f-mark-rev'].slice(0,6).concat(byKey['f-mark-rev'].slice(8)),['f-mark-rev','집중관리 · 7일 후속','focus','집중 1개월 지남 → 일반관리 검토','견적 '+d40+' · 집중 D+40','결정 일정 확인'/* 등록된 다음 할 일이 있으면 그것(v11 규칙) */,'전환 검토','classify'],'담당이 분류한 건은 기간이 지나도 자동 전환 없음 · 전환 검토만');
   assert.deepEqual(byKey['n-rev'],['n-rev','일반관리 · 월 1회','normal','고객 반응·추진 시기 재확인','견적 '+d130+' · 일반 4개월째 · 분류 전','전환 검토 · 사유 · 다음 확인일','10일 남음 · 연락 + 30일','','전환 검토','classify']);
   assert.deepEqual(byKey['wk-1'].slice(0,6),['wk-1','일반관리 · 월 1회','normal','CRM 연락 기록 없음','견적 '+d50+' · 일반 2개월째 · 분류 전','진행 확인 통화'],'약속 연락일이 있으면 그 날짜(기한은 판정 함수 글)');
-  assert.deepEqual(byKey['w-1'].slice(0,6),['w-1','대기 · 2개월 1회','wait','2027 봄 공사 · 장기수선 반영 대기',''+(await page.evaluate(()=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(DAY(-10));return (+m[2])+'.'+(+m[3]);}))+' 전환 · 향후 연도','대기 · 공사 시기 · 예산 확인']);
+  assert.deepEqual(byKey['w-1'].slice(0,6),['w-1','대기 · 60일 1회','wait','2027 봄 공사 · 장기수선 반영 대기',''+(await page.evaluate(()=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(DAY(-10));return (+m[2])+'.'+(+m[3]);}))+' 전환 · 향후 연도','대기 · 공사 시기 · 예산 확인']);
   assert.deepEqual(byKey['h-1'],['h-1','보류 · 재검토일','hold','보류 재검토일 도래 → 추진 여부','재검토 '+dr,'전환 검토 · 사유 · 다음 확인일','1일 지남 · 재검토일','r','전환 검토','classify']);
   assert.deepEqual(byKey['u-1'],['u-1','미확인 · 분류 필요','unk','CRM 연락 기록 없음','발송일 없음 · 기간 계산 안 함','상태 재분류','기한 없음 · 분류 후 정해짐','g','분류하기','classify']);
   assert.equal(rows.length,8);assert.deepEqual((await L.locator('.prv-head span').allInnerTexts()).map(one),['현장 · 담당','현재 상황','다음 업무 · 기한','']);
@@ -125,7 +125,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await page.locator('#rv-dlg [data-rv="save"]').click();await page.waitForSelector('#rv-dlg',{state:'detached'});await page.waitForTimeout(300);
   assert.deepEqual(await page.evaluate(()=>[__sf,__memo,__next]),[[['u-1',{sent_date:sentDay}]],[['u-1','[관계 상태] 대기 | 2027 하반기 공사 · 예산 반영 뒤 | '+nextDay+' | 없음 | 미정']],[['u-1','전화','공사 시기 · 예산 확인',nextDay]]],'발송일(단계 정보) + 표식 메모 + 다음 할 일(기존 저장 경로)');
   assert.deepEqual(await V.locator('.ps3-tab .n').allInnerTexts(),['8','3','2','2','1','0'],'미확인 → 대기로');assert.equal(one(await V.locator('.rv-prog').innerText()),'분류 끝남 4 / 8');
-  assert.deepEqual((await L.locator('.prv-row[data-key$="u-1"]').evaluate(r=>[r.querySelector('.prv-tag').textContent,r.querySelector('.prv-b>span').textContent,r.querySelector(':scope>button').textContent])),['대기 · 2개월 1회','2027 하반기 공사 · 예산 반영 뒤','연락 기록']);
+  assert.deepEqual((await L.locator('.prv-row[data-key$="u-1"]').evaluate(r=>[r.querySelector('.prv-tag').textContent,r.querySelector('.prv-b>span').textContent,r.querySelector(':scope>button').textContent])),['대기 · 60일 1회','2027 하반기 공사 · 예산 반영 뒤','연락 기록']);
   /* ⑧ [전환 검토](보류 재검토일 도래) → 창 머리 '전환 검토' · 지금 상태 보류가 골라져 있음 · 재검토일 칸 · Esc 로 닫힘. 자동으로 바뀐 것은 없다 */
   await L.locator('.prv-row[data-key$="h-1"]>button').click();await page.waitForSelector('#rv-dlg .rv-box2');
   assert.deepEqual(await page.evaluate(()=>{const b=document.querySelector('#rv-dlg .rv-box2');return [b.querySelector('header b').textContent,/기준일부터 확인 · 보류 재검토일 도래/.test(b.querySelector('header span').textContent),b.querySelector('.rv-states [aria-checked="true"] b').textContent,!!b.querySelector('[data-rv-in="review"]')];}),['전환 검토',true,'보류',true]);
