@@ -10,7 +10,7 @@
  'use strict';
  const R=root,h=v=>R.esc(String(v==null?'':v)),attr=v=>R.escAttr(String(v==null?'':v));
  const LEGACY_LABEL='과거 자료 재개';/* 과거 이관 · 분류 전 화면이 보내는 묶음 요청(pipeline-legacy.js) — 받는 쪽에서는 한 카드로 */
- const RPC={contact:'crm_work_request_inquiry_contact_v1',handover:'crm_work_request_handover_v1',create:'crm_work_request_create_v1',list:'crm_work_request_list_v1',reply:'crm_work_request_reply_v1',reask:'crm_work_request_reask_v1'};
+ const RPC={compoundContact:'crm_work_request_inquiry_contact_v2',contact:'crm_work_request_inquiry_contact_v1',handover:'crm_work_request_handover_v1',create:'crm_work_request_create_v1',list:'crm_work_request_list_v1',reply:'crm_work_request_reply_v1',reask:'crm_work_request_reask_v1'};
  const O=()=>R.OpsStore,T=()=>R.TodayWorkQueue;
  const ready=()=>{try{return !R.G.workRequestOff&&!!O()&&O().has(RPC.list)&&O().has(RPC.create)&&O().has(RPC.reply);}catch(e){return false;}};
  /* 저장소가 실제로 한 번 응답한 뒤에만 켠다 — 서버에 아직 없으면(SQL 적용 전) 예전 [독촉] 화면 그대로 */
@@ -237,7 +237,7 @@
      +'<div class="res"><span>통화 결과</span>'+resOf(r.target_type).map(l=>'<button type="button" data-wr="res" data-id="'+r.id+'" data-v="'+attr(l)+'" aria-pressed="'+(C.res===l)+'">'+l+'</button>').join('')+'</div>'
      +'<div class="nx"><span>다음 행동</span><span class="box"><em>AI</em>'+h(nxTxt)+'</span></div>'
      +(C.err?'<p class="wrq-err">'+h(C.err)+'</p>':'')
-     +'<div class="ft"><span>'+(C.res==='부재'?'부재 = 연락 시도로만 기록 · 최초 응대는 아직 미완료':C.res?'저장하면 관리자 요청 자동 완료':'결과를 골라야 저장')+'</span><button type="button" class="go" data-wr="save" data-id="'+r.id+'"'+(C.res&&!C.busy?'':' disabled')+'>'+(C.busy?'저장 중…':'저장')+'</button></div></article>';}
+     +'<div class="ft"><span>'+(C.res==='부재'?'부재 = 연락 시도로만 기록 · 최초 응대는 아직 미완료':C.res?(compoundContact(r)?'응대 저장 · 추가 확인 항목은 진행 중':'저장하면 관리자 요청 자동 완료'):'결과를 골라야 저장')+'</span><button type="button" class="go" data-wr="save" data-id="'+r.id+'"'+(C.res&&!C.busy?'':' disabled')+'>'+(C.busy?'저장 중…':'저장')+'</button></div></article>';}
    return '<article class="wrq-in" data-id="'+r.id+'">'+head+'<span class="memo"><b>요청</b> '+h((r.asks||[]).join(' · ')||r.label)+(r.memo?'<br><span>"'+h(r.memo)+'"</span>':'')+'</span>'
     +'<div class="ft"><span>완료 조건 · '+h(K.done||'')+' — 입력되면 자동 완료 · 따로 [완료] 없음</span><button type="button" class="go" data-wr="go" data-id="'+r.id+'">열어서 입력</button></div></article>';};
   /* 받은 사람이 화면을 열면 '담당 확인'으로 */
@@ -248,25 +248,32 @@
    +'<div class="wrq-lg">'+LG.map(r=>'<div><b title="'+attr(r.site)+'">'+h(r.site)+'</b><button type="button" data-wr="resume" data-id="'+r.id+'">영업 재개</button></div>').join('')+'</div></article>':'';
   return '<section class="wrq-top" aria-label="받은 요청">'+bundle+rest.map(card).join('')+'</section>';
  }
- // Phase 1 is limited to the existing single-purpose first-contact template.
+ // All inquiry first-contact objectives require persisted proof; local logs cannot close them.
+ const inquiryFirst=r=>!!r&&r.target_type==='inquiry'&&r.kind==='first';
+ const compoundContact=r=>inquiryFirst(r)&&r.label==='첫 연락 요청'&&Array.isArray(r.asks)&&r.asks.length>1&&r.asks.length<=3&&r.asks.includes('고객 첫 연락')&&new Set(r.asks).size===r.asks.length&&r.asks.every(x=>KIND.first.asks.includes(x));
  const basicContact=r=>!!r&&r.target_type==='inquiry'&&r.kind==='first'&&r.label==='첫 연락 요청'&&JSON.stringify(r.asks)==='["고객 첫 연락"]';
  const actorId=()=>String(R.ME&&(R.ME.user_id||R.ME.id)||'');
  const UUID_CONTACT=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  async function saveInquiryContact(r,C,q,next,due){
-  const actor=actorId(),key='crm.work-contact.v1:'+actor+':'+r.id;
+  const actor=actorId(),key='crm.work-contact.v1:'+actor+':'+r.id,compound=compoundContact(r),fn=compound?RPC.compoundContact:RPC.contact;
   try{
-   if(!UUID_CONTACT.test(actor)||!O().has(RPC.contact)||!R.CRMRelease||R.CRMRelease.has(RPC.contact)!==true)throw Error('문의 요청 저장 기능이 아직 연결되지 않았습니다.');
+   if(!UUID_CONTACT.test(actor)||!O().has(fn)||!R.CRMRelease||R.CRMRelease.has(fn)!==true)throw Error('문의 요청 저장 기능이 아직 연결되지 않았습니다.');
    let p;try{const old=R.localStorage.getItem(key);p=old?JSON.parse(old):null;}catch(e){throw Error('재시도 정보를 읽지 못했습니다. 저장을 시작하지 않았습니다.');}
    if(p&&(p.id!==r.id||!UUID_CONTACT.test(p.operation_id)))throw Error('이전 저장 정보를 확인해 주세요.');
    if(p&&p.result!==C.res)throw Error('앞선 저장 결과를 먼저 확인해야 합니다. 같은 결과를 선택해 재시도해 주세요.');
    if(!p){p={id:r.id,operation_id:R.crypto.randomUUID(),result:C.res,next_text:next,next_due:due};try{R.localStorage.setItem(key,JSON.stringify(p));if(R.localStorage.getItem(key)!==JSON.stringify(p))throw Error();}catch(e){throw Error('재시도 정보를 보관하지 못해 저장을 시작하지 않았습니다.');}}
-   const x=await O().rpc(RPC.contact,p),rq=x&&x.request,expected=p.result==='부재'?'working':'done';
+   const x=await O().rpc(fn,p),rq=x&&x.request,expected=compound||p.result==='부재'?'working':'done';
    const log=x&&x.state&&Array.isArray(x.state.logs)&&x.state.logs.find(l=>l.id===x.log_id);
-   if(!x||x.ok!==true||x.contract_version!==1||x.operation_id!==p.operation_id||x.inquiry_id!==r.target_id||
+   if(!x||x.ok!==true||x.contract_version!==(compound?2:1)||x.operation_id!==p.operation_id||x.inquiry_id!==r.target_id||
     !UUID_CONTACT.test(x.log_id||'')||!UUID_CONTACT.test(x.next_action_id||'')||!rq||rq.id!==r.id||rq.target_type!=='inquiry'||rq.target_id!==r.target_id||rq.to_user_id!==actor||
     rq.status!==expected||rq.result!==p.result||rq.next_text!==p.next_text||rq.next_due!==p.next_due||
     !x.state||x.state.inquiry_id!==r.target_id||!log||log.request_id!==p.operation_id||log.result!==p.result||log.kind!==(p.result==='부재'?'attempt':'connected')||
     log.next_action!==p.next_text||log.next_check_date!==p.next_due||!x.inquiry_update||x.inquiry_update.next_action_date!==p.next_due)throw Error('서버 저장 확인이 불완전합니다. 같은 결과로 재시도해 주세요.');
+   if(compound){const proof=x.completion,satisfied=p.result==='부재'?[]:['고객 첫 연락'],remaining=r.asks.filter(a=>!satisfied.includes(a));
+    if(!proof||proof.policy_version!=='first-compound-v1'||proof.request_complete!==false||proof.contact_log_id!==x.log_id||rq.closed_at!==null||rq.auto_done!==false||
+     JSON.stringify(rq.asks)!==JSON.stringify(r.asks)||JSON.stringify(proof.requested_asks)!==JSON.stringify(r.asks)||
+     JSON.stringify(proof.satisfied_asks)!==JSON.stringify(satisfied)||JSON.stringify(proof.remaining_asks)!==JSON.stringify(remaining))throw Error('요청별 저장 확인이 불완전합니다. 같은 결과로 재시도해 주세요.');
+   }
    if(actorId()!==actor)throw Error('로그인이 변경되었습니다. 원래 담당자로 저장 결과를 확인해 주세요.');
    // Replayed receipts describe the original commit; never overwrite newer assignment/plans.
    const current=target(r).item;
@@ -276,7 +283,7 @@
    }
    R.localStorage.removeItem(key);delete st().card[r.id];load(true);
    if(R.InquiryFlow&&R.InquiryFlow.load)R.InquiryFlow.load(true);
-   toast(p.result==='부재'?'부재와 재연락 일정을 저장했습니다 · 연결 요청은 진행 중':'응대와 다음 일정을 저장했습니다 · 첫 연락 요청 완료');
+   toast(p.result==='부재'?'부재와 재연락 일정을 저장했습니다 · 연결 요청은 진행 중':compound?'응대와 다음 일정을 저장했습니다 · 추가 확인 항목이 남아 요청은 진행 중':'응대와 다음 일정을 저장했습니다 · 첫 연락 요청 완료');
   }catch(e){if(e&&e.databaseRejected===true&&['22023','42501'].includes(e.code)){try{R.localStorage.removeItem(key);}catch(ignore){}}C.busy=false;C.err=String(e&&e.message||e);}
   repaint();
  }
@@ -287,7 +294,7 @@
   if(!nx||!nx[0]){C.err='이 결과는 상세 창에서 기록해 주세요.';return repaint();}
   const due=ymd(addDays(nx[1]));C.busy=true;C.err='';repaint();
   try{
-   if(basicContact(r)){await saveInquiryContact(r,C,t.item,nx[0],due);return;}
+   if(inquiryFirst(r)){if(!basicContact(r)&&!compoundContact(r))throw Error('요청의 확인 항목을 상세에서 확인해 주세요.');await saveInquiryContact(r,C,t.item,nx[0],due);return;}
    if(r.target_type==='inquiry'){if(!R.InquiryListV3||typeof R.InquiryListV3.record!=='function')throw Error('상세 창에서 기록해 주세요.');
     const ok=R.InquiryListV3.record(t.item,{res:'[전화 · '+C.res+'] 관리자 요청 처리',next:nx[0],due})===true;if(!ok)throw Error((document.getElementById('iq-msg')||{}).textContent||'기록을 저장하지 못했습니다.');}
    else{const D=R.DealDetailV3;if(!D||typeof D.record!=='function')throw Error('상세 저장 기능을 불러오지 못했습니다.');await D.record(t.item,{ch:'전화',res:C.res,memo:'관리자 요청 처리',P:{}});}
@@ -303,7 +310,7 @@
  }
  /* ── 실제 기록으로 자동 완료: 받은 사람(또는 관리자) 화면에서 완료 조건이 채워진 열린 요청을 닫는다 ── */
  function evidence(r){
-  if(basicContact(r))return null; // Only persisted atomic contact proof may complete this request.
+  if(inquiryFirst(r))return null; // Only persisted atomic contact proof may complete this request.
   const t=target(r),it=t.item;if(!it)return null;const since=Date.parse(r.created_at);
   if(r.label===LEGACY_LABEL){try{return R.PipelineScope&&R.PipelineScope.on()&&!R.PipelineScope.isLegacy(it)?{result:'영업 재개 확인',absent:false}:null;}catch(e){return null;}}
   try{
