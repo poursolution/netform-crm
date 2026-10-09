@@ -43,13 +43,14 @@
   function nextDueOf(q){try{const a=root.actionObj(q,root.itemPatch(q,'inq'));if(a&&a.text&&a.due){const d=String(a.due).slice(0,10);if(/^\d{4}-\d{2}-\d{2}$/.test(d))return d;}}catch(e){}return '';}
   function ext(m){
    const q=m.q,x=m.x,now=Date.now(),k=K(),noPhone=!m.phone&&!!(m.follow||(x.ageDays||0)>=1),s=noPhone?5:m.step===0?1:m.step===1?2:(m.follow&&m.late)?3:4;
+   const review=m.step===1&&!!(k&&k.needsReview&&k.needsReview(q));
    const lastAt=x.latest?Date.parse(x.latest.at||x.latest.occurred_at||x.latest.created_at):x.first?Date.parse(x.first):NaN;
    let basis,from;
    if(s===1){basis='접수 후';from=x.created;}
    else if(s===2){basis='배정 후';let a=NaN;try{a=Date.parse(root.inqCtlAssignedAt(q)||'');}catch(e){}from=Number.isFinite(a)?a:x.created;}
    else{basis=quoteSent(m)?'견적 발송 후':'마지막 연락 후';from=lastAt;}
    let g,due=null,dueDay='';
-   if(noPhone)g=4;
+   if(noPhone||review)g=4;
    else if(m.step<=1){g=1;due=Number.isFinite(from)?from+(m.step===0?ASSIGN_MIN()*60000:FIRST_H()*3600000):null;}
    else{
     const rd=replyOf(q),cand=[];if(m.meet&&m.meet.dd>=0)cand.push(k?k.day(m.meet.date):'');if(rd&&rd.dd>=0)cand.push(k?k.day(rd.date):'');
@@ -59,7 +60,7 @@
     due=dueDay?dayMs(dueDay):null;
    }
    const days=Number.isFinite(from)?(k?k.span(from,now):span(now-from)):'—';
-   return Object.assign(m,{st:s,stLabel:ST[s][1],basis,from,el:days,g,gLabel:GROUP[g],due,dueDay,dc:s===4||s===5?'#6b7280':s===3?'#c0392b':'#b42318'});
+   return Object.assign(m,{review,st:s,stLabel:review?'이관 기록 확인 필요':ST[s][1],basis,from,el:days,g,gLabel:GROUP[g],due,dueDay,dc:s===4||s===5?'#6b7280':s===3?'#c0392b':'#b42318'});
   }
   /* 목록 줄 오른쪽 세 줄(묶음 · 지금 상태 · 기한) — 보이는 줄만 계산한다 */
   function remain(ms){const k=K();return ms>=0?k.span(Date.now(),Date.now()+ms)+' 남음':k.span(Date.now()+ms,Date.now())+' 지남';}
@@ -78,7 +79,7 @@
    if(m.g===1){
     const hhmm=Number.isFinite(m.due)?(k.day(m.due)===k.today()?'오늘':k.md(m.due))+' '+k.hm(m.due)+'까지':'';
     l2=(m.step===0?'배정 기한 ':'첫 연락 기한 ')+(Number.isFinite(m.due)?remain(m.due-now):'—');l3=hhmm;col='#b42318';
-   }else if(m.g===4){l2='연락처 없음 · 연락처 보완 먼저';l3='기한 없음';col='#6b7280';}
+   }else if(m.g===4){l2=m.review?'이관 기록 확인 필요'+(mc?' · 메모에 '+k.md(mc)+' 통화':''):'연락처 없음 · 연락처 보완 먼저';l3=m.review?'과거 약속·현재 상태 확인 후 후속 등록':'기한 없음';col='#6b7280';}
    else{
     let due='';
     if(m.dueDay){const dd=dayNo(m.dueDay)-dayNo(k.today());due=k.md(dayMs(m.dueDay))+'까지 · '+(dd===0?'오늘':dd>0?dd+'일 남음':(-dd)+'일 지남');if(dd<0)col='#c0392b';}

@@ -46,7 +46,7 @@
  const OBJ='(사진|도면|자료|서류|현황|평면도|견적\\s*요청서)';
  const PROMISE=[
   ['material',new RegExp(OBJ+'[^.,;\\n]{0,14}?(?:(이메일|메일|카톡|카카오톡|카카오|문자|팩스)[^.,;\\n]{0,8}?)?(받기로|보내기로|보내\\s*주기로|주기로|드리기로|준다고|주신다|보내준다|보내주신다|제공\\s*하기로|전달\\s*하기로)(?:\\s*함|\\s*하다고\\s*함)?')],
-  ['visit',new RegExp('((?:다음\\s*날|이튿날|내일|모레|\\d{1,2}\\s*[./]\\s*\\d{1,2}|\\d{1,2}월\\s*\\d{1,2}일)\\s*)?(?:현장\\s*)?(방문|내방|실측)[^.,;\\n]{0,8}?'+COMMIT+'[^.,;\\n]{0,8}')],
+  ['visit',new RegExp('((?:다음\\s*주(?:\\s*[월화수목금토일]요일)?|다음\\s*날|이튿날|내일|모레|\\d{1,2}\\s*[./]\\s*\\d{1,2}|\\d{1,2}월\\s*\\d{1,2}일)\\s*)?(?:현장\\s*)?(방문|내방|실측|미팅)[^.,;\\n]{0,24}?'+COMMIT+'[^.,;\\n]{0,8}')],
   ['quote',/견적(?:서)?[^.,;\n]{0,8}?(?:보내|발송|전달|송부|드리|제출)(?:\s*드리)?(?:기로|겠|예정|하기로|할\s*것|해\s*주기로|해\s*준다고|준다고|주신다|가능)[^.,;\n]{0,6}/],
   ['recall',/(?:(?:다시|재)\s*(?:연락|전화|통화)[^.,;\n]{0,8}?(?:주기로|드리기로|하기로|예정|하겠|드리겠)|(?:연락|전화)\s*(?:주기로|드리기로|준다고|주신다고|오기로)|(\d+\s*일|이틀|사흘|일주일|내일|모레|다음\s*주)\s*(?:후|뒤)\s*(?:에\s*)?(?:연락|통화|전화)[^.,;\n]{0,6})(?:\s*함|\s*하다고\s*함)?/],
   ['meeting',/(?:대표\s*회의|입대의|입주자\s*대표\s*회의|이사회|총회|회의)[^.,;\n]{0,10}?(?:예정|상정|개최|안건|\d{1,2}\s*[./]\s*\d{1,2}|\d{1,2}월\s*\d{1,2}일)[^.,;\n]{0,8}/]
@@ -56,7 +56,7 @@
  /* 약속 한 줄의 이름 · 첫마디용 말 */
  function nameOf(type,m,when){
   if(type==='material'){const obj=String(m[1]||'').replace(/\s+/g,' '),via=VIA[m[2]]||'',give=/보내|주기로|드리기로|제공|전달|준다|주신다/.test(m[3]);const t=[obj,via?via+ro(via):'',give?'보내기':'받기'].filter(Boolean).join(' ');return {title:t,say:[obj,via?via+ro(via):'',give?'보내드리기로':'받기로'].filter(Boolean).join(' ')};}
-  if(type==='visit'){const pre=String(m[1]||'').trim(),w=/다음\s*날|이튿날/.test(pre)?'다음 날 ':/내일/.test(pre)?'내일 ':/모레/.test(pre)?'모레 ':when?md(when)+' ':'',kind=m[2]==='실측'?'실측':'방문';return {title:w+'현장 '+kind,say:w+'현장 '+kind+'하기로'};}
+  if(type==='visit'){const pre=String(m[1]||'').trim(),w=/다음\s*주/.test(pre)?pre+' ':/다음\s*날|이튿날/.test(pre)?'다음 날 ':/내일/.test(pre)?'내일 ':/모레/.test(pre)?'모레 ':when?md(when)+' ':'',kind=m[2]==='실측'?'실측':m[2]==='미팅'?'미팅':'방문';return {title:w+'현장 '+kind,say:w+'현장 '+kind+'하기로'};}
   if(type==='quote')return {title:'견적 보내기',say:'견적을 보내드리기로'};
   if(type==='recall')return {title:'다시 연락하기',say:'다시 연락드리기로'};
   return {title:'회의 일정 확인',say:'회의 일정을 확인하기로'};
@@ -83,12 +83,12 @@
   sentences(text).forEach(sn=>{
    const t=sn.text;
    const cm=CALL_RE.exec(t);
-   if(cm&&!NOT_CALL.test(t)){
+   if(cm&&!NOT_CALL.test(t)&&!/(?:통화|상담)\s*완료\s*(?:예정|목표|아님|아니|안\s*됨)/.test(t)){
     const d=dateIn(t,base)||base||'',key='c-'+hash(t);
     if(!seen.has(key)){seen.add(key);calls.push({key,date:d,sentence:t.trim(),phrase:cm[0]});ranges.push({s:sn.start+cm.index,e:sn.start+cm.index+cm[0].length,k:'call'});}
    }
    PROMISE.forEach(([type,re])=>{
-    const m=re.exec(t);if(!m)return;
+    const m=re.exec(t);if(!m)return;if(type==='visit'&&/(?:방문|내방|실측|미팅)\s*(?:취소|불가|하지\s*않|안\s*함)/.test(m[0]))return;
     const when=dateIn(t,base),nm=nameOf(type,m,when),key='p-'+type+'-'+hash(t);
     if(seen.has(key))return;seen.add(key);
     promises.push({key,type,title:nm.title,say:nm.say,date:base||when||'',sentence:t.trim(),phrase:m[0],when});
@@ -119,6 +119,10 @@
    const parts=rest.split(/(?=\[\d{4}-\d{2}-\d{2}[ T][\d:]{4,8}\])/);
    parts.forEach(p=>{const m=/^\[(\d{4}-\d{2}-\d{2})[ T][\d:]{4,8}\]\s*([\s\S]*)$/.exec(p.trim());if(m){if(m[2].trim())out.push({at:m[1],text:m[2].trim(),src:'이관 메모'});}else if(p.trim())out.push({at:'',text:p.trim(),src:'이관 메모 · 시각 미기록'});});
   }
+  // 문의 원문에도 과거 응대가 포함된다. 후보로만 읽고 CRM 응대 시각은 쓰지 않는다.
+  const detail=q.detail&&typeof q.detail==='object'?q.detail:{},texts=[q.message,typeof q.detail==='string'?q.detail:detail.inquiry,q.content,raw['문의내용'],detail.response,detail.note,raw['특이사항']];
+  const seen=new Set(out.map(m=>m.text.trim()));
+  texts.forEach(value=>{if(typeof value!=='string')return;const text=value.trim();if(!text||seen.has(text))return;const candidate=parse(text,'');if(!candidate.calls.length&&!candidate.promises.length)return;seen.add(text);out.push({at:'',text,src:'문의 원문 · 확인 후보'});});
   return out.sort((a,b)=>String(a.at||'~').localeCompare(String(b.at||'~')));
  }
  /* ── 저장된 판단(서버 + 이 PC) ── */
@@ -139,10 +143,10 @@
  const memo=new WeakMap();
  function scan(q){
   if(!q||typeof q!=='object')return {memos:[],calls:[],promises:[]};
-  const raw=rawOf(q),sig=[String(raw['응대내용']||'').length,(raw.external_change_history||[]).length,SV,JSON.stringify(readPatch(q).memoReview||{}).length].join('|'),c=memo.get(q);
+  const raw=rawOf(q),sig=JSON.stringify([raw['응대내용'],raw.external_change_history,q.message,q.detail,q.content,raw['문의내용'],raw['특이사항']]),c=memo.get(q);
   if(c&&c.sig===sig)return c.v;
   const memos=memosOf(q).map(m=>{const r=parse(m.text,m.at);return Object.assign({},m,{calls:r.calls,promises:r.promises,html:marked(m.text,r.ranges)});});
-  const calls=[],promises=[];memos.forEach(m=>{m.calls.forEach(x=>calls.push(Object.assign({memoAt:m.at},x)));m.promises.forEach(x=>promises.push(Object.assign({memoAt:m.at},x)));});
+  const calls=[],promises=[],keys=new Set();memos.forEach(m=>{m.calls.forEach(x=>{if(!keys.has(x.key)){keys.add(x.key);calls.push(Object.assign({memoAt:m.at},x));}});m.promises.forEach(x=>{if(!keys.has(x.key)){keys.add(x.key);promises.push(Object.assign({memoAt:m.at},x));}});});
   const v={memos,calls,promises};memo.set(q,{sig,v});return v;
  }
  /* 약속 + 판단(res = 완료 | 미완료 | 확인 불가 | '') */
@@ -170,8 +174,12 @@
  const copied=q=>{try{return on()&&connection(q).state==='copy';}catch(e){return false;}};
  const memoCallDay=q=>{try{const d=dates(q).memoCall;return d?d.date:'';}catch(e){return '';}};
  const hasMemo=q=>{try{return scan(q).memos.length>0;}catch(e){return false;}};
+ const needsReview=q=>{if(!on())return false;const c=connection(q),s=scan(q);return (c.state==='none'||c.state==='copy')&&(s.calls.length>0||pending(q).length>0);};
  function opener(q,who){
-  const rest=promises(q).filter(p=>p.res!=='완료');if(!on()||!rest.length)return '';
+  if(!on())return '';const rest=promises(q).filter(p=>p.res!=='완료'),s=scan(q);
+  const original=memosOf(q).map(m=>m.text).join('\n');
+  if(needsReview(q)&&/진단\s*보고서|하자\s*진단/.test(original))return '"안녕하세요, 넷폼 '+who+'입니다. 진단보고서 상담 기록을 확인하고 연락드렸습니다. '+(rest.some(p=>p.type==='visit')?'예정하셨던 현장 미팅 진행 여부와 ':'')+'진단보고서 제공 여부'+(/아파트스퀘어.*연계/.test(original)?', 아파트스퀘어 연계 결과':'')+'를 확인해도 될까요?"';
+  if(!rest.length)return needsReview(q)&&s.calls.length?'"안녕하세요, 넷폼 '+who+'입니다. 이전 통화 기록을 확인하고 후속 진행 상황을 여쭤보려고 연락드렸습니다."':'';
   const first=rest.map(p=>p.date||p.when).filter(Boolean).sort()[0]||'',when=first?(+first.slice(5,7))+'월에 ':'예전에 ';
   return '"안녕하세요, 넷폼 '+who+'입니다. '+when+rest.map(p=>p.say).join(', ')+' 했었는데, 그 뒤 진행 상황 여쭤보려고 연락드렸습니다."';
  }
@@ -313,5 +321,5 @@
    +(open?(list.length?list.map(p=>'<div class="im-ph"><b>'+esc(p.text)+'</b><span>'+esc(p.from)+'</span><button type="button" class="im-btn" data-i4="phone-save" data-v="'+attr(p.text)+'"'+(canSave?'':' disabled')+'>이 번호로 저장</button></div>').join(''):'<span class="im-none">이관 기록 · 같은 현장에서 찾은 번호가 없습니다 — [전체 상세 ↗]에서 직접 입력해 주세요</span>'):'')
    +(err?'<div class="i4-err">'+esc(err)+'</div>':'')+'</div>';
  }
- return {on,day,diff,days,md,ymd,hm,span,today,phones,findHtml,addDays,parse,marked,sentences,memosOf,scan,promises,pending,pendingN,asks,connection,dates,copied,memoCallDay,hasMemo,opener,canEdit,review,run,load,flush,warm,takeServer,datesHtml,memoHtml,promiseHtml,RPC,LIST,MARK,_srv:SRV};
+ return {on,day,diff,days,md,ymd,hm,span,today,phones,findHtml,addDays,parse,marked,sentences,memosOf,scan,promises,pending,pendingN,asks,connection,dates,copied,memoCallDay,hasMemo,needsReview,opener,canEdit,review,run,load,flush,warm,takeServer,datesHtml,memoHtml,promiseHtml,RPC,LIST,MARK,_srv:SRV};
 });
