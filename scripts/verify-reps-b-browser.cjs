@@ -28,6 +28,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    window.__open=null;drwDeal=s=>{window.__open=JSON.parse(s).id;};window.__account=0;window.AccountAdmin={open:()=>{window.__account++;}};
    goPage('repmanage');
   });
+  await page.evaluate(require('./coaching-ack-browser-fixture.cjs'));
   await page.waitForTimeout(300);
   const v=page.locator('#reps-b');assert.equal(await v.count(),1,'B안 보드');assert.equal(await page.locator('#reps-v2').count(),0,'v2 묶음 표 없음');
   assert.equal(await page.evaluate(()=>document.getElementById('ptitle').textContent),'영업사원 관리');
@@ -62,7 +63,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#reps-b .psb-row').first().locator('[data-sb="act"]').click();await page.waitForTimeout(300);
   assert.equal(await page.evaluate(()=>document.activeElement&&document.activeElement.matches('#repsDialog textarea')),true,'약속 칸 포커스');
   await page.locator('#repsDialog .rd-promise textarea').fill('금요일까지 신규 배정 첫 연락 완료');await page.locator('#repsDialog [data-rd="save"]').click();await page.waitForTimeout(250);
-  assert.deepEqual(await page.evaluate(()=>__writes.map(w=>[w[0],w[1]])),[['rep_manager_comment','이필선']],'약속 저장 = 기존 경로');
+  assert.deepEqual(await page.evaluate(()=>__commentCalls.map(x=>[x[0],x[1].rep_name,x[1].comment])),[['crm_rep_manager_comment_save_v1','이필선','금요일까지 신규 배정 첫 연락 완료']],'약속 저장 = 서버 확인 경로');assert.equal(await page.evaluate(()=>__writes.length),0,'확인 없는 쓰기 큐를 사용하지 않음');
   await page.keyboard.press('Escape');await page.waitForTimeout(200);
   assert.doesNotMatch(await page.locator('#reps-b .psb-row').first().innerText(),/이번 주 코칭 약속 없음/,'약속 뒤 사유 사라짐');
   /* 좁은 화면 · 끄기 */
