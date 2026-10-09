@@ -29,11 +29,11 @@
   /* 2026-10-07 stage7_2 ③: 일반관리 = 견적 발송일부터 총 g개월(기본값 · '해석 미확정' — 회의록 '초기 1개월, 이후 3개월까지'가 총 3개월인지 추가 3개월인지 확정 전). 집중보다 짧을 수 없다 */
   const gEnd=Math.max(g,f+1);return {focusMonths:f,generalMonths:g,generalEnd:gEnd,focusEnd:f*30,normalEnd:gEnd*30,focus,month,wait};
  }
- const CYC=()=>{const q=rules();return {focus:[q.focus,q.focus+'일 후속'],normal:[q.month,'월 1회'],wait:[q.wait,Math.round(q.wait/30)+'개월 1회'],hold:[null,'재검토일'],unk:[null,'분류 필요']};};
+ const CYC=()=>{const q=rules();return {focus:[q.focus,q.focus+'일 후속'],normal:[q.month,'월 1회'],wait:[q.wait,q.wait+'일 1회'],hold:[null,'재검토일'],unk:[null,'분류 필요']};};
  /* 상태 칸 6개(전체 + 5): 이름 · 기준 한 줄 · 근거 */
  function tabs(){
   const q=rules(),m=q.focusMonths,g=q.generalMonths;
-  return [['집중관리','견적 후 '+m+'개월 · '+q.focus+'일 안 후속 통화',q.focus+'일 = 회의 결정 · '+m+'개월 = 잠정(설정)'],['일반관리','집중 이후 ~ 발송일부터 '+q.generalEnd+'개월 · 최소 월 1회','월 1회 = 회의 결정 · 기간 = 해석 미확정(설정)'],['대기','향후 추진 가능 · '+Math.round(q.wait/30)+'개월 1회',Math.round(q.wait/30)+'개월 = 회의 결정'],['보류','고객이 중단 사유를 밝힘 · 재검토일에 확인','주기 미확정 · 재검토일만'],['미확인 · 기준일 확인 필요','견적 발송일 · 반응 · 시기 모름','자동 분류 안 함 · 재분류 대상']];
+  return [['집중관리','견적 후 '+m+'개월 · '+q.focus+'일 안 후속 통화',q.focus+'일 = 회의 결정 · '+m+'개월 = 잠정(설정)'],['일반관리','집중 이후 ~ 발송일부터 '+q.generalEnd+'개월 · 최소 월 1회','월 1회 = 회의 결정 · 기간 = 해석 미확정(설정)'],['대기','향후 추진 가능 · '+q.wait+'일 1회','회의 기준 2개월 1회 · 현재 '+q.wait+'일 환산은 미확정'],['보류','고객이 중단 사유를 밝힘 · 재검토일에 확인','주기 미확정 · 재검토일만'],['미확인 · 기준일 확인 필요','견적 발송일 · 반응 · 시기 모름','자동 분류 안 함 · 재분류 대상']];
  }
  const WORKS=[['od','다음 연락일 지남'],['wk','이번 주 연락'],['nx','다음 행동 미등록']];
  /* ── 표식 읽기: 가장 나중 기록이 정본 ── */

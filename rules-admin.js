@@ -9,11 +9,11 @@
  /* 지금 화면 계산에 실제로 쓰이는 항목(ops_12 B⑤ '적용 중' 알약 · 2026-10-07 코드 대조: CRMRules.get · OPS_RULES sync 로 읽히는 열쇠) — 나머지는 '설정 연결 미적용' */
  const WIRED=new Set(['approvers','stage_gates','assign_minutes','first_contact_hours','inactive_days','quote_followup_days','long_wait_contact_days','care_focus_months','care_general_months','unreachable_attempts','unreachable_interval_days','transfer_result_check_days','reasons_bad_fit','reasons_lost','reasons_transfer','contact_channels','owner_keep_on_reassign','auto_owner_attribution']);
  /* 2026-10-07 stage7_2 ④ — 항목마다 확정 / 잠정 + 출처 · 결정일 · 승인(시안의 출처 그대로 · 모르는 항목에는 만들어 넣지 않는다). 키 = 항목 열쇠, 열쇠가 없는 안내 줄은 이름 */
- const META={'고객관리 기간':['기간 잠정 · 해석 미확정','2026-10-02 회의 지침 · 연락 주기와 관리 기간을 구분'],care_focus_months:['잠정','회의록 · 승인 전'],care_general_months:['잠정 · 해석 미확정','회의록 · 승인 전 · 발송일부터 총 기간으로 둔 기본값'],long_wait_contact_days:['일수 환산 미확정','2026-10-02 회의: 2개월 1회 · 현재 계산은 설정 일수'],quote_request_days:['잠정','운영 제안 · 회의 확정 전']};
+ const META={'고객관리 기간':['기간 잠정 · 해석 미확정','2026-10-02 회의 지침 · 연락 주기와 관리 기간을 구분'],care_focus_months:['잠정','관계관리 검토에 임시 사용 · 1개월=30일 환산 · 10/16 후속 논의 예정(확정일 아님) · 평가 제외 보장 미검증'],care_general_months:['잠정 · 해석 미확정','관계관리 검토에 임시 사용 · 발송일부터 총 기간·1개월=30일 기본 계산 · 자동 상태 전환 없음 · 평가 제외 보장 미검증'],long_wait_contact_days:['일수 환산 미확정','2026-10-02 회의: 2개월 1회 · 현재 계산은 설정 일수'],quote_request_days:['잠정','운영 제안 · 회의 확정 전'],unreachable_interval_days:['운영 기본값 · 근거 확인 필요','2026-10-02 회의: 며칠 간격 약 3회 · 1일 확정 근거 없음 · 최초 연결 전 InquiryFlow 판정'],unreachable_attempts:['시도 후 사람이 판단','2026-10-02 회의: 최초 응대 약 3회 · 자동 종결 아님'],auto_owner_attribution:['승인 근거 확인 필요','최초 수신자 우선권은 잠정 · 실제 연결자 기준과 동일하다고 확정하지 않음'],'귀속 기준':['승인 근거 확인 필요','최초 수신·배정·실제 연결은 별개 사건']};
  const CONF=r=>META[r.k||r.l]||null;
  /* 적용 예정: 값은 저장되지만 아직 어느 화면 계산에도 안 쓰이는 규칙 + 앞으로 들어갈 화면 */
  const TARGET={next_action_required:'단계 이동 창',year_required_on_convert:'관계관리 재분류',owner_change_log:'상세 담당 변경'};
- const PILL=on=>'<span class="ra-pill" style="color:'+(on?'#1f7a4d':'#6b7280')+';background:'+(on?'#e8f6ee':'#f3f4f6')+'">'+(on?'적용 중':'설정 연결 미적용')+'</span>';
+ const PILL=(on,key)=>'<span class="ra-pill" style="color:'+(on?'#1f7a4d':'#6b7280')+';background:'+(on?'#e8f6ee':'#f3f4f6')+'">'+(on?(['care_focus_months','care_general_months'].includes(key)?'임시 적용':key==='unreachable_interval_days'?'설정값 적용':'적용 중'):'설정 연결 미적용')+'</span>';
  function st(){const g=R.G;if(!g.rulesAdmin)g.rulesAdmin={draft:{},adding:'',busy:false,err:''};return g.rulesAdmin;}
  const admin=()=>{try{return !!R.todayIsAdmin();}catch(e){return false;}};
  const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
@@ -28,7 +28,7 @@
  function impact(r,v){
   const base=CR().get(r.k);if(same(v,base))return '';
   if(r.k==='assign_minutes'){const a=unassignedOver(base),b=unassignedOver(v);return a===null||b===null?'접수 후 '+v+'분이 지나면 배정 필요로 표시됩니다':'바꾸면 지금 배정 기준을 넘긴 문의 '+a+'건 → '+b+'건';}
-  if(r.k==='unreachable_attempts')return '최초 문의 '+v+'회 시도 후 별도 후속관리로 넘어갑니다';
+  if(r.k==='unreachable_attempts')return '최초 연결 전 '+v+'회 시도 이력으로 검토 제안합니다 · 자동 종결 없음';
   if(r.k==='unreachable_interval_days')return '시도와 시도 사이를 '+v+'일로 봅니다';
   if(r.k==='long_wait_contact_days')return '장기 대기 고객 후속 확인 간격이 '+v+'일로 바뀝니다';
   if(r.k==='transfer_result_check_days')return '이관 후 '+v+'일에 담당자 오늘 업무에 결과 확인 생성';
@@ -43,7 +43,7 @@
   else if(r.type==='chips'){const list=v||[];ctl='<div class="ra-chips">'+list.map((c,i)=>edit?'<button type="button" class="ra-chip" data-ra="chip-del" data-k="'+attr(r.k)+'" data-i="'+i+'" title="눌러서 빼기"'+(list.length>1?'':' disabled')+'>'+h(c)+'<i>×</i></button>':'<span class="ra-chip">'+h(c)+'</span>').join('')
     +(edit?(S.adding===r.k?'<input class="ra-add" data-ra="add-input" data-k="'+attr(r.k)+'" maxlength="30" placeholder="새 항목 · Enter" aria-label="'+attr(r.l)+' 항목 추가">':'<button type="button" class="ra-plus" data-ra="add" data-k="'+attr(r.k)+'">+ 추가</button>'):'')+'</div>';}
   else ctl='<span class="ra-text">'+h(r.text)+'</span>';
-  const note=(r.st==='fix'?'<span class="ra-lock">정책 항목 · 설정 변경 불가</span>':'')+(r.k&&r.st!=='hold'?PILL(WIRED.has(r.k)):'');/* 항목마다 적용 중(초록) / 설정 연결 미적용(회색) 알약을 토글 옆에(ops_12 B⑤) */
+  const note=(r.st==='fix'?'<span class="ra-lock">정책 항목 · 설정 변경 불가</span>':'')+(r.k&&r.st!=='hold'?PILL(WIRED.has(r.k),r.k):'');/* 항목마다 적용 중(초록) / 설정 연결 미적용(회색) 알약을 토글 옆에(ops_12 B⑤) */
   const cf=CONF(r),cfOk=cf&&cf[0]==='확정';
   return '<div class="ra-row'+(changed?' chg':'')+'"><div class="ra-l"><div><b>'+h(r.l)+'</b><em style="color:'+t[1]+';background:'+t[2]+'">'+t[0]+'</em>'+(cf?'<em class="ra-conf" style="color:'+(cfOk?'#1f7a4d':'#c0392b')+';background:'+(cfOk?'#e8f6ee':'#fdeceb')+'">'+h(cf[0])+'</em>':'')+(changed?'<em class="new">변경됨</em>':'')+'</div><span>'+h(r.d)+'</span>'+(cf?'<span class="ra-src">출처 · '+h(cf[1])+'</span>':'')+(im?'<span class="ra-imp">'+h(im)+'</span>':'')+'</div><div class="ra-r">'+ctl+note+'</div></div>';
  }
