@@ -68,9 +68,9 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await page.evaluate(()=>{delete window.OPS_RULES.quoteRequestDays;paint();});await page.waitForTimeout(250);assert.equal((await rowOf('c-meet')).due,'기한 없음 · 설정값 확인');
   /* ② 발송 */
   await page.evaluate(()=>PipelineWorkspace.open('sent'));await page.waitForSelector('#pipeline-stage-v3[data-stage="sent"] .prv-row');await page.waitForTimeout(200);
-  assert.deepEqual(await V.locator('.ps3-tab .l').allInnerTexts(),['전체','7일 넘음 · 후속 없음','발송 후 7일 안','고객 반응 있음','발송일 확인 필요']);
-  const sn=await rowOf('s-nodate');assert.deepEqual([sn.tab,sn.now,sn.task,sn.due,sn.dueCls,sn.btn,sn.act],['3','발송일 확인 필요 · 자료 · 수신자 없음','발송일 · 자료 · 수신자 입력','발송일 확인 필요 · 7일 계산 안 함','g','정보 입력','stagefields']);
-  assert.match(sn.why,/^판정: 발송일 미등록 발송일 입력$/);assert.match(await kpi(),/^기한 초과 0건 확인 필요 1 · 날짜 미입력 1 · 판정 불가 0$/,'발송일 없는 건은 지연이 아니라 확인 필요');
+  assert.deepEqual(await V.locator('.ps3-tab .l').allInnerTexts(),['전체','7일 넘음 · 후속 없음','발송 후 7일 안','후속 확인 기록 있음','발송일 확인 필요']);
+  const sn=await rowOf('s-nodate');assert.deepEqual([sn.tab,sn.now,sn.task,sn.due,sn.dueCls,sn.btn,sn.act],['3','발송일 확인 필요 · 발송 여부 · 기존 증빙 확인','실제 발송 · 기존 증빙 확인','발송일 확인 필요 · 7일 계산 안 함','g','증빙 확인','stagefields']);
+  assert.match(sn.why,/^판정: 발송일 미등록 발송일 입력$/);assert.match(await kpi(),/^발송 후 후속 지연 0건 판정 가능 0 \/ 1건 · 발송일 확인 1건$/,'발송일 없는 건은 지연이 아니라 확인 필요');
   /* ④ 경쟁 */
   await page.evaluate(()=>PipelineWorkspace.open('competition'));await page.waitForSelector('#pipeline-stage-v3[data-stage="competition"] .prv-row');await page.waitForTimeout(200);
   assert.deepEqual(await V.locator('.ps3-tab').evaluateAll(l=>l.map(t=>[t.querySelector('.l').textContent,t.querySelector('span').textContent])),[['전체','이 단계 모든 현장'],['마감 D-7 이내','제안서 · 가격 확정 · 운영 제안'],['진행 중','일정 확인'],['결과 대기','개찰 다음날 결과 등록 · 운영 제안'],['일정 미등록','입찰 · PT 일정 확인']]);
