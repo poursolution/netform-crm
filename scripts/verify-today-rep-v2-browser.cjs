@@ -55,6 +55,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#today-v2 .trv-card').count(),4);assert.equal(await page.locator('#today-v2 [data-trv="more"]').count(),0);
   /* [결과] → 결과 6개(2열) → 고르면 그 건 상세가 결과가 채워진 채 열린다(직접 저장하지 않음) */
   const cB=page.locator('#today-v2 .trv-card',{hasText:'입찰 임박 현장'});
+  /* 기본: 카드 아래 펼침 없이 그 건의 상세 창(no_inline_expand) */
+  await cB.locator('[data-trv="result"]').click();await page.waitForTimeout(800);
+  assert.equal(await page.locator('#today-v2 .trv-results').count(),0,'카드 아래 결과 칩 펼침 없음');assert.equal(await page.evaluate(()=>!!CUR_DETAIL&&CUR_DETAIL.item.id),'soon1','[결과] = 그 건 상세 창');
+  await page.evaluate(()=>{closeDetail();G.rowInlineKeep=true;TodayV2.render();});await page.waitForTimeout(400);/* 되돌리기 스위치를 켜면 예전 펼침 */
   await cB.locator('[data-trv="result"]').click();await page.waitForTimeout(200);
   assert.deepEqual(await page.locator('#today-v2 .trv-results button').allInnerTexts(),['실사 잡음','견적 요청','나중에 다시','안 받음','번호 틀림','관심 없음']);
   assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.trv-results')).gridTemplateColumns.split(' ').length),2,'2열');

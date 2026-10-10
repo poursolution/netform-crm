@@ -167,7 +167,7 @@
   // No site-wide notes, sibling inquiries, contacts or another opportunity's activities.
   const own=x=>!x.opportunity_id||String(x.opportunity_id)===id(d);
   return [d.work,d.work_name,d.inquiry_content,d.inquiry_original,d.original_text]
-   .concat((d.legacy_notes||[]).filter(own).map(x=>x.body),(d.activities||[]).filter(own).map(x=>x.note||x.body))
+   .concat((d.legacy_notes||[]).filter(own).map(x=>typeof root.sayLegacyNote==='function'?String(root.sayLegacyNote(x.body)).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim():x.body),(d.activities||[]).filter(own).map(x=>x.note||x.body))
    .filter(x=>typeof x==='string'&&x.trim()).map(x=>x.trim()).filter((x,i,all)=>all.indexOf(x)===i).slice(0,12);
  }
  function signature(d){return JSON.stringify([id(d),records(d)]);}

@@ -323,17 +323,22 @@
  /* ── 주 버튼 = 그 일을 하는 화면(가운데 칸 한 곳) — 2026-10-10 design_handoff_detail_basic_fix ⑥
     견적 요청 등록 · 발송 내역 · 제출 확인 · 계약서 확인 · 사후 연락 · 실주 기록. 빠진 정보(자료 올리기 · 공사 시기 …)는 이 화면 안에서 바로 입력하고, 왼쪽 · 오른쪽으로 보내는 단추는 없다.
     저장하면 왼쪽 기본 정보 · 자료 값도 같이 바뀐다(같은 데이터). 저장은 전부 기존 길(단계 정보 saveSF · 자료 업로드 · 다음 업무). ── */
- const WORK={consulting:'quote',sent:'send',competition:'submit',construction:'contract',won:'after',lost:'lostrec'};
+ const WORK={consulting:'quote',sent:'send',relationship:'contact',competition:'submit',construction:'contract',won:'after',lost:'lostrec'};
  const IFX=()=>root.InlineFix&&root.InlineFix.engine&&root.InlineFix.engine()?root.InlineFix:null;
  /* 경쟁 · 입찰 = 일정이 하나도 없으면 [일정 입력], 있으면 [제출 확인] */
  const schedMissing=d=>!bidDay(d)&&!day(anyFld(d,'decision_date'))&&!day(anyFld(d,'briefing_date'))&&!day(anyFld(d,'meeting_date'));
- const WTITLE={quote:['견적 요청 등록','자료 올리기 → 공사 시기 → 범위 · 메모 → 등록'],send:['발송 내역 확인','기존 기록 → 발송일 · 수신자 · 보낸 자료 → 경과일 판정 → 후속 업무 → 저장'],sched:['입찰 · 결정 일정','기존 기록 → 일정 등록 → 남은 날 계산 → 준비 업무 → 저장'],submit:['제출 확인','공법 비교표 · 경쟁 업체 · 제출 접수증'],contract:['계약서 확인','계약서 파일 · 착공일 · 특이조건'],after:['사후 연락','전화 → 결과 · 재영업 · 다음 공사'],lostrec:['실주 기록','사유 · 확인한 내용 · 재영업']};
- const workRow=d=>{const g=groupOf(d),r=WORK[g]||'';if(g==='competition'&&r==='submit'&&IFX()&&schedMissing(d)&&['compete','bidding'].includes(String(safe(()=>root.dealStage(d),''))))return 'sched';if((r==='send'||r==='sched')&&!IFX())return '';return r;};
+ const WTITLE={quote:['견적 요청 등록','자료 올리기 → 공사 시기 → 범위 · 메모 → 등록'],send:['발송 내역 확인','기존 기록 → 발송일 · 수신자 · 보낸 자료 → 경과일 판정 → 후속 업무 → 저장'],sched:['입찰 · 결정 일정','기존 기록 → 일정 등록 → 남은 날 계산 → 준비 업무 → 저장'],submit:['제출 확인','공법 비교표 · 경쟁 업체 · 제출 접수증'],contract:['계약서 확인','계약서 파일 · 착공일 · 특이조건'],after:['사후 연락','전화 → 결과 · 재영업 · 다음 공사'],lostrec:['실주 기록','사유 · 확인한 내용 · 재영업'],contact:['연락 기록','연락 결과 → 관리 상태 → 다음 연락일']};
+ const workRow=d=>{const g=groupOf(d),r=WORK[g]||'';if(g==='relationship'&&r==='contact'&&!relState(d))return '';if(g==='competition'&&r==='submit'&&IFX()&&schedMissing(d)&&['compete','bidding'].includes(String(safe(()=>root.dealStage(d),''))))return 'sched';if((r==='send'||r==='sched')&&!IFX())return '';return r;};
  const hasWork=d=>!!workRow(d);
  const workTitle=d=>(WTITLE[workRow(d)]||['',''])[0];
  const workSub=d=>(WTITLE[workRow(d)]||['',''])[1];
  const legacyAct=d=>task(d,{}).btn.act0;
  const PLANS=['올해','내년','그 이후','미정'];
+ /* 관계관리 연락 기록 화면 — 상태 · 고객 약속은 관계관리 v12 의 판정 그대로(RelV12.of) */
+  const CRES=['연결됨','부재','회신대기','검토중','자료요청'],RSTATE=['집중관리','일반관리','대기','보류'],RNAME={focus:'집중관리',normal:'일반관리',wait:'대기',hold:'보류'};
+  const relState=d=>safe(()=>root.RelV12&&root.RelV12.on()?root.RelV12.of(d):null,null);
+  const relCur=rs=>rs&&rs.explicit&&RNAME[rs.key]?RNAME[rs.key]:'';
+  const relPromise=(d,rs)=>{if(!rs||!rs.customerPromise||!rs.promised||rs.promised<today())return null;const nt=nextOf(d);return {due:rs.promised,text:nt&&!nt.none?String(nt.text||'').trim():''};};
  const addWeekdays=(k,n)=>{let x=k;for(let i=0;i<n;){x=addDays(x,1);const w=new Date(x+'T00:00:00Z').getUTCDay();if(w!==0&&w!==6)i++;}return x;};
  const curPlan=d=>siteVal(d,'construction_plan');
  const lastMeeting=d=>{const L=acts(d).filter(a=>a&&/방문|미팅|실사/.test(String(a.type||''))&&String(a.note||'').trim()).sort((a,b)=>String(b.at||b.occurred_at||'').localeCompare(String(a.at||a.occurred_at||'')));return L[0]?String(L[0].note).replace(/\s+/g,' ').trim().slice(0,200):'';};
@@ -355,6 +360,14 @@
     +'<section>'+STEP(2,!!plan,'공사 시기')+chipsOf(S,'quote','plan',plan,PLANS)+'</section>'
     +'<section>'+STEP(3,true,'범위 · 메모',lastMeeting(d)?'미팅 기록에서 채움 · 고칠 수 있음':'')+ta(S,'quote','memo',memo,'범위 · 메모 (예: 옥상 방수 · 3개동 · 부분 보수 여부 확인 필요)')+'</section>'
     +foot('등록하면 견적 요청 기록 + 견적 예정일('+Q+'일)이 저장됩니다',wbtn('quote','draft','자료 없이 가견적',false,false)+wbtn('quote','go','견적 요청 등록',true,left>0))+'</div>';
+  }
+  if(row==='contact'){
+   const rs=relState(d),cur=relCur(rs),T0=today(),st=draft(S,'contact','state',cur),pr=relPromise(d,rs),res=draft(S,'contact','res',''),needSent=(st==='집중관리'||st==='일반관리')&&!(rs&&rs.sent),nd=draft(S,'contact','next',pr?pr.due:''),rsn=draft(S,'contact','reason',rs&&rs.mark&&rs.mark.reason&&rs.mark.reason!=='사유 없음'?rs.mark.reason:'');
+   return '<div class="dv7-work">'
+    +'<section>'+STEP(1,!!res,'연락 결과',res?'':'미입력')+chipsOf(S,'contact','res',res,CRES)+ta(S,'contact','memo','','통화 내용 한 줄 (선택)')+'</section>'
+    +'<section>'+STEP(2,!!st,'관리 상태',st?(cur===st?'지금 상태 그대로':'바뀜'):'미입력')+chipsOf(S,'contact','state',cur,RSTATE)+(rs&&!rs.sent?'<small class="dv7-hint">견적 발송일을 모르면 집중 · 일반은 고를 수 없습니다</small>':'')+(needSent?inp(S,'contact','sent','date','','견적 발송일 (확인된 날짜)'):'')+((st==='대기'||st==='보류')?inp(S,'contact','reason','text',rsn,st==='보류'?'고객이 밝힌 중단 사유':'대기 사유 (예: 2027 봄 공사 대기)'):'')+(st==='보류'?inp(S,'contact','review','date','','재검토일'):'')+'</section>'
+    +'<section>'+STEP(3,!!nd,'다음 연락일',pr?'고객과 한 약속 '+md(pr.due)+' 우선':'미입력')+inp(S,'contact','next','date',nd,'다음 연락일')+(pr?'<small class="dv7-hint">고객이 정한 날짜가 있어 그대로 둡니다 — 다른 날로 하려면 고객과 다시 합의한 날짜를 넣어 주세요</small>':'<small class="dv7-hint">'+(rs&&rs.cycle?'관리 주기 '+rs.cycle+'일 기준 · ':'')+'날짜를 직접 골라 주세요</small>')+'</section>'
+    +foot('저장하면 연락 기록 + 관리 상태 + 다음 연락일이 함께 남습니다',wbtn('contact','lost','실주 처리',false,false)+wbtn('contact','go','연락 기록 저장',true,!!(S&&S.cbusy)))+'</div>';
   }
   if(row==='submit'){
    const cmp=fileNames(d,/공법 비교표/,null),rc=fileNames(d,/제출 접수증/,null),cmpOk=!!(cmp.length||anyFld(d,'compare_attached')),rcOk=!!(rc.length||anyFld(d,'receipt_attached')),cp=draft(S,'submit','competitor',str(anyFld(d,'competitor'))||siteVal(d,'competitor'));
@@ -379,7 +392,8 @@
     +'<section>'+STEP(2,!!str(fld(d,'won','customer_reaction')),'사후 연락 결과 · 만족 · 하자')+ta(S,'after','customer_reaction',str(fld(d,'won','customer_reaction'))||siteVal(d,'customer_reaction'),'통화 결과 (만족도 · 하자 · 요청 사항)')+'</section>'
     +'<section>'+STEP(3,!!str(fld(d,'won','reengage')),'재영업 가능 여부')+chipsOf(S,'after','reengage',str(fld(d,'won','reengage')),['예','아니오','미정'])+'</section>'
     +'<section>'+STEP(4,!!str(fld(d,'won','recontact_possibility')),'추가 공종 · 다음 공사 시기')+inp(S,'after','recontact_possibility','text',str(fld(d,'won','recontact_possibility')),'예: 외벽 2028 · 장기수선')+'</section>'
-    +foot('저장하면 이 영업건의 사후 연락 기록이 됩니다',wbtn('after','go','사후 연락 기록 저장',true,false))+'</div>';
+    +'<section>'+STEP(5,false,'하자 접수','있을 때만')+'<div class="dv7-pair">'+inp(S,'after','defect_text','text','','하자 내용 (예: 101동 옥상 배수구 들뜸)')+inp(S,'after','defect_due','date','','처리 약속일')+'</div></section>'
+    +foot('저장하면 이 영업건의 사후 연락 기록이 됩니다',wbtn('after','defect','하자 접수',false,false)+'<button type="button" data-dv3="wnewdeal">추가 공종 → 확장관리 새 영업건</button>'+wbtn('after','go','사후 연락 기록 저장',true,false))+'</div>';
   }
   if(row==='lostrec'){
    const rs=str(fld(d,'lost','close_reason'))||str(d.close_reason||d.lost_reason||''),o=optsOf(d,'close_reason'),cats=[...new Set(o.map(x=>x.split(' · ')[0]))],cat=draft(S,'lostrec','cat',rs?rs.split(' · ')[0]:'');
@@ -409,6 +423,19 @@
   if(row==='contract'){
    const cs=safe(()=>DS().contract(d),{proof:false}),proof=!!(cs.proof||fileNames(d,null,/계약/).length);if(!proof)return {error:'계약서 파일을 올려 주세요'};
    out.fields={contract_document:'수령'};const cd0=v('contract_date',''),ca0=v('contract_amount','').replace(/[^\d]/g,'');if(cd0)out.fields.contract_date=cd0;if(ca0&&Number(ca0)>0)out.fields.contract_amount=Number(ca0);const sd=v('start_date','');if(sd)out.fields.start_date=sd;const sp=v('special','');if(sp)out.fields.special_terms=sp==='있음'?('있음'+(v('special_text','')?' · '+v('special_text',''):'')):sp;return out;
+  }
+  if(row==='contact'){
+   const rs=relState(d),cur=relCur(rs),pr=relPromise(d,rs),res=v('res',''),st=v('state',cur),reason=v('reason',''),review=v('review',''),sent=v('sent',''),nd=v('next',pr?pr.due:'');
+   if(!res)return {error:'연락 결과를 골라 주세요'};
+   if(!nd)return {error:'다음 연락일을 골라 주세요'};if(nd<T0)return {error:'다음 연락일은 오늘 이후로 골라 주세요'};
+   if((st==='집중관리'||st==='일반관리')&&!(rs&&rs.sent)&&!/^\d{4}-\d{2}-\d{2}$/.test(sent))return {error:'집중 · 일반은 견적 발송일이 있어야 고를 수 있습니다'};
+   if((st==='대기'||st==='보류')&&!reason)return {error:'사유를 적어 주세요'};if(st==='보류'&&!review)return {error:'보류는 재검토일이 필요합니다'};
+   const oldR=rs&&rs.mark&&rs.mark.reason&&rs.mark.reason!=='사유 없음'?rs.mark.reason:'';
+   out.contact={res,memo:v('memo',''),state:st,reason,review,sent:/^\d{4}-\d{2}-\d{2}$/.test(sent)?sent:'',next:nd,text:pr&&pr.due===nd?pr.text:'',markNeeded:!!st&&(st!==cur||(!!reason&&reason!==oldR))};return out;
+  }
+  if(row==='after'&&mode==='defect'){
+   const tx=v('defect_text','');if(!tx)return {error:'하자 내용을 적어 주세요'};
+   out.defect={text:tx.replace(/\|/g,'/'),recv:T0,due:v('defect_due','')};return out;
   }
   if(row==='after'||row==='lostrec'){
    const keys=row==='after'?['customer_reaction','reengage','recontact_possibility']:['close_reason','close_detail','competitor','reengage','recontact_possibility'];

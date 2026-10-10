@@ -29,7 +29,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     mk(3,'[서울 마포] 성산시영아파트','석민이앤씨','김성민','rapport',{amt:380000000,quote_versions:[{version_no:1,amount:410000000,created_at:day(-60)},{version_no:2,amount:380000000,created_at:day(-40)}],next_action:{id:'n3',text:'고객 약속: 입대의 결과 확인 연락',type:'전화',due:day(4),status:'open'}}),
     mk(4,'[경기 고양] 햇빛마을23단지','석민이앤씨','이필선','bidding',{amt:420000000,stage_contexts:{bidding:{fields:{bid_deadline:day(2)}}},next_action:{id:'n4',text:'제안서 팀장 공유 · 제출 준비',type:'후속접촉',due:day(1),status:'open'}}),
     mk(5,'[경기 평택] 평택비전지웰푸르지오','석민이앤씨','황윤선','contract',{amt:1120000000,stage_contexts:{contract:{fields:{contract_date:'2026-01-26',contract_amount:1043900000}}},next_action:{id:'n5',text:'계약 체결 확인',type:'전화',due:day(-3),status:'open'}}),
-    mk(6,'[경기 용인] 수지삼성래미안','POUR공법','정정훈','won',{outcome:'won',won_amount:140000000,closed_at:'2026-03-12',contract_date:'2026-03-12',amt:140000000,stage_contexts:{won:{fields:{completion_date:day(-40)}}}}),
+    mk(6,'[경기 용인] 수지삼성래미안','POUR공법','정정훈','won',{outcome:'won',won_amount:140000000,closed_at:'2026-03-12',contract_date:'2026-03-12',completion_date:day(-40),amt:140000000,stage_contexts:{won:{fields:{completion_date:day(-40)}}}}),
     mk(7,'[대구] 강북이진캐스빌','석민이앤씨','한준엽','lost',{outcome:'lost',closed_at:'2026-05-07',amt:350000000}),
     mk(8,'[부산] 과거 이관 단지','석민이앤씨','김성민','old_stage_x',{amt:380000000}),mk(9,'[경기 안양] 미팅 전 컨설팅 단지','POUR솔루션','이필선','consulting',{activities:[]}),mk(10,'[서울 마포] 나눔빌딩','석민이앤씨','황윤선','bidding',{amt:300000000})],
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],messageLogs:[],message_logs:[]};
@@ -55,7 +55,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* ① 7단계 + 과거 이관: 같은 구성 · 노트북에서 스크롤 없이 끝 · 업무 화면이 있는 단계는 확인할 정보 줄이 없다 */
   const TASK=['견적 요청 등록','발송 내역 확인 · 고객 반응 기록','입대의 결과 확인 연락','제안서 팀장 공유 · 제출 준비','계약 체결 확인','준공 후 사후 연락','실주 기록 완성','영업 재개 판단'];
   const BTN=['견적 요청 등록','발송 내역 확인','연락하고 결과 기록','제출 준비 확인','계약서 확인하기','사후 연락하기','실주 기록 채우기','영업 재개'];
-  const HASW=[true,true,false,true,true,true,true,false];
+  const HASW=[true,true,true,true,true,true,true,false];
   for(let i=0;i<8;i++){
    await open(i);const s=await snap(),closed=i===5||i===6;
    assert.equal(s.fit,true,(i+1)+'번: 오른쪽 칸이 스크롤 없이 끝난다(넘침 '+s.over+'px)');
@@ -149,20 +149,48 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await V.locator('.dv7-work input[data-dv3f="start_date"]').fill('2026-11-02');await V.locator('.dv7-chips button',{hasText:'없음'}).click();await page.waitForTimeout(250);
   const b4=(await saved()).length;await V.locator('.dv7-wfoot .pri').click();await page.waitForTimeout(600);
   assert.deepEqual((await saved()).slice(b4),[{contract_document:'수령',start_date:'2026-11-02',special_terms:'없음'}],'계약서 수령 · 착공일 · 특이조건');
+  /* 서버 확인 대기열(합성): 저장 명령을 모아 두고 모두 '완료'로 답한다 */
+  await page.evaluate(()=>{window.__ops=[];window.queueDetailContactOperation=(op,payload)=>{const id='op'+(__ops.length+1);__ops.push({id,op,payload});return id;};window.pushWrite=(k,payload)=>{const id='pw'+(__ops.length+1);__ops.push({id,op:k,payload});return id;};Phase1.queue.flush=async()=>{};Phase1.queue.list=()=>__ops.map(o=>({request_id:o.id,status:'done',ack:{ok:true,operation:o.op,activity_id:'act-'+o.id,next_action_id:'nx-'+o.id}}));});
   /* ⑥ 수주 사후 연락 · 실주 기록(종료 건 전용 저장 길) */
   await openWork(5);p=await P();assert.equal(p.head,'‹ 사후 연락 전화 → 결과 · 재영업 · 다음 공사');
   await V.locator('.dv7-ta').fill('만족 · 하자 없음');await V.locator('.dv7-chips button',{hasText:'예'}).first().click();await page.waitForTimeout(250);await V.locator('.dv7-work input[data-dv3f="recontact_possibility"]').fill('외벽 2028');
   const b5=(await saved()).length;await V.locator('.dv7-wfoot .pri').click();await page.waitForTimeout(600);
   assert.deepEqual((await saved()).slice(b5),[{customer_reaction:'만족 · 하자 없음',reengage:'예',recontact_possibility:'외벽 2028'}]);
+  /* 사후 연락 → 하자 접수([하자] 표식) · 추가 공종 → 확장관리 새 영업건 */
+  await openWork(5);await page.evaluate(()=>{__ops.length=0;});
+  await V.locator('.dv7-wfoot button',{hasText:'하자 접수'}).click();await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>__ops.length),0,'하자 내용이 없으면 접수하지 않는다');
+  await V.locator('.dv7-work input[data-dv3f="defect_text"]').fill('101동 옥상 배수구 들뜸');await V.locator('.dv7-work input[data-dv3f="defect_due"]').fill('2026-12-20');await V.locator('.dv7-wfoot button',{hasText:'하자 접수'}).click();await page.waitForTimeout(500);
+  assert.deepEqual(await page.evaluate(()=>__ops.map(o=>[o.op,o.payload.type,o.payload.note.replace(/접수 \d{4}-\d{2}-\d{2}/,'접수 오늘')])),[['activity','메모','[하자] 101동 옥상 배수구 들뜸 | 접수 오늘 | 담당 정정훈 | 약속 2026-12-20 | 미해결']],'기존 [하자] 표식으로 내부 메모에 남는다');
+  await openWork(5);assert.equal(await V.locator('.dv7-wfoot [data-dv3="wnewdeal"]').count(),1);
+  await V.locator('.dv7-wfoot [data-dv3="wnewdeal"]').click();await page.waitForTimeout(500);
+  assert.equal(await page.evaluate(()=>!!(window.EXPANSION_NEW_SOURCE&&String(EXPANSION_NEW_SOURCE.sourceOpportunityId)===String(B.deals[5].id))),true,'확장관리 새 영업건 창이 이 수주 건을 출발점으로 열린다');await page.evaluate(()=>{try{closeNewDeal();}catch(e){}});
   await openWork(6);p=await P();assert.equal(p.head,'‹ 실주 기록 사유 · 확인한 내용 · 재영업');
   await V.locator('.dv7-chips button',{hasText:'가격'}).first().click();await page.waitForTimeout(250);await V.locator('.dv7-work select[data-dv3f="close_reason"]').selectOption({index:1});await V.locator('.dv7-ta').fill('가격 차이 13%');await V.locator('.dv7-chips button',{hasText:'아니오'}).click();await page.waitForTimeout(250);
   const b6=(await saved()).length;await V.locator('.dv7-wfoot .pri').click();await page.waitForTimeout(600);
   assert.deepEqual((await saved()).slice(b6).map(f=>[Object.keys(f).sort().join(','),f.close_detail,f.reengage]),[['close_detail,close_reason,reengage','가격 차이 13%','아니오']]);
   /* ⑦ 관계관리 · 과거 이관: 업무 화면이 없는 단계 — 확인할 정보 3줄([채우기]) · 다른 칸으로 보내는 단추 없음 */
-  await open(2);await V.locator('.dv7-info button').click();await page.waitForTimeout(400);p=await P();
-  assert.deepEqual([p.p,p.head],['info','‹ 확인할 정보 이 단계에 필요한 것만 · 줄마다 바로 입력']);assert.deepEqual(await V.locator('.dv7-fill .dv7-fr .h b').allInnerTexts(),['관리 상태','경쟁사']);
-  assert.deepEqual([...new Set(p.acts)].filter(x=>['files','be'].includes(x)),[],'다른 칸으로 보내는 단추 없음');
+  await openWork(2);p=await P();
+  assert.equal(p.head,'‹ 연락 기록 연락 결과 → 관리 상태 → 다음 연락일');assert.deepEqual([...new Set(p.acts)].filter(x=>['files','be'].includes(x)),[],'다른 칸으로 보내는 단추 없음');
+  const promised=await page.evaluate(()=>new Date(Date.now()+4*864e5).toLocaleDateString('en-CA'));
+  assert.equal(await V.locator('.dv7-work input[data-dv3f="next"]').inputValue(),promised,'다음 연락일 = 고객이 정한 약속일 우선');
+  await page.evaluate(()=>{__ops.length=0;});
+  await V.locator('.dv7-wfoot .pri').click();await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>__ops.length),0,'연락 결과를 안 고르면 저장하지 않는다');
+  await V.locator('.dv7-chips button',{hasText:'집중관리'}).click();await page.waitForTimeout(250);await V.locator('.dv7-chips button',{hasText:'연결됨'}).click();await page.waitForTimeout(250);
+  await V.locator('.dv7-wfoot .pri').click();await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>__ops.length),0,'견적 발송일을 모르면 집중 · 일반으로 저장하지 않는다');
+  await V.locator('.dv7-chips button[data-f="state"][data-v="대기"]').click();await page.waitForTimeout(250);
+  await V.locator('.dv7-wfoot .pri').click();await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>__ops.length),0,'대기는 사유가 있어야 저장한다');
+  await V.locator('.dv7-work input[data-dv3f="reason"]').fill('2027 봄 공사 대기');await V.locator('.dv7-ta').fill('입대의 일정 확인 중이라고 함');await V.locator('.dv7-wfoot .pri').click();await page.waitForTimeout(700);
+  assert.deepEqual(await page.evaluate(()=>__ops.map(o=>o.op)),['activity','relationship_contact'],'관리 상태 표식 + 연락 기록(기존 길)');
+  assert.equal(await page.evaluate(()=>__ops[0].payload.note),'[관계 상태] 대기 | 2027 봄 공사 대기 | '+promised+' | 없음 | 미정');
+  assert.deepEqual(await page.evaluate(()=>{const a=__ops[1].payload;return [a.activity.type,a.activity.meaningful_contact,a.next_action.text,a.next_action.due_at];}),['전화',true,'고객 약속: 입대의 결과 확인 연락',promised],'연락 결과 + 고객 약속 그대로 유지한 다음 연락');
+  assert.equal((await P()).hidden,true,'저장하면 업무 화면이 닫힌다');
+  await openWork(2);await V.locator('.dv7-wfoot button',{hasText:'실주 처리'}).click();await page.waitForTimeout(500);assert.equal(await V.locator('.dv3-move').count()>0,true,'[실주 처리] = 단계 바꾸기 창');
   await open(7);await V.locator('.dv7-info button').click();await page.waitForTimeout(400);assert.deepEqual(await V.locator('.dv7-fill .dv7-fr .h b').allInnerTexts(),['단계 정하기','다음 행동 · 날짜','마지막 연락']);
+  /* 담당 미배정 줄 [담당 배정] → 상세 창 가운데 칸의 '담당 배정' 화면 */
+  await page.evaluate(()=>{closeDetail();B.deals[9].assignee='';B.deals[9].owner='';});await open(9);
+  await page.evaluate(()=>DealDetailV3.openFrom('owner'));await page.waitForTimeout(700);
+  {const o=await page.evaluate(()=>{const p=document.querySelector('#detailView .dv3-cpanel');return {shown:!!p&&!p.hidden,by:p&&p.dataset.by,text:p?p.innerText.replace(/\s+/g,' ').trim().slice(0,80):''};});
+   assert.deepEqual([o.shown,o.by],[true,'owner'],'[담당 배정] = 가운데 칸 담당 배정 화면: '+o.text);}
   /* ⑧ 근처 현장 = [···] 메뉴 */
   await open(1);await V.locator('.tf-more').click();await page.waitForTimeout(200);
   const menu=await V.locator('.tf-menu [role=menuitem]').allInnerTexts();assert.equal(menu[0],'근처 현장');assert.deepEqual(menu.filter(x=>/결정 일정|참여 · 브랜드|영업 판단|담당 · 실적 귀속|소장이 바뀌었어요/.test(x)),[]);

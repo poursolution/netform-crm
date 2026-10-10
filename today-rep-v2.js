@@ -105,8 +105,9 @@
   if(a==='more'){S.more=!S.more;return root.TodayV2.render();}
   if(a==='ai'){if(AIB.has(key))return;const X=T().data(),x=X.rows.find(r=>r.key===key)||UPCOMING.get(key);if(!x)return;const i=info(x);AIB.add(key);root.TodayV2.render();
    root.OpsStore.ai('call_opener',x.type==='inq'?'inquiry':'deal',x.item.id||key,{caller:root.ME&&root.ME.name||'',company:'넷폼',site:i.site,contact:[i.name,i.role].filter(Boolean).join(' '),stage:i.stage,want:i.want,recent:x.recent||'',goal:x.next||''}).then(s=>{AIO.set(key,s.suggestion||{});}).catch(e=>{if(typeof root.toast==='function')root.toast(String(e.message||e),'warn');}).finally(()=>{AIB.delete(key);root.TodayV2.render();});return;}
-  if(a==='result'){S.open=S.open===key?'':key;return root.TodayV2.render();}
-  if(a==='call'){dial(b.dataset.tel);S.open=key;return root.TodayV2.render();}
+  /* 2026-10-10 no_inline_expand: 카드 아래 결과 칩 펼침 없음 — [결과] · [전화] = 그 건의 상세 창(연락 입력). 되돌리기 G.rowInlineKeep */
+  if(a==='result'){if(!(root.G&&root.G.rowInlineKeep))return openKey(key,'contact');S.open=S.open===key?'':key;return root.TodayV2.render();}
+  if(a==='call'){dial(b.dataset.tel);if(!(root.G&&root.G.rowInlineKeep))return openKey(key,'contact');S.open=key;return root.TodayV2.render();}
   if(a==='rowcall'){dial(b.dataset.tel);return openKey(key,'contact');}
   if(a==='pick'){const r=RESULTS[Number(b.dataset.value)];S.open='';openKey(key,'contact');if(r)prefill(r[1]);return;}
   if(a==='sms'){openKey(key);setTimeout(()=>{const tab=document.querySelector('dialog[open] [data-idv="tab"][data-v="sms"], .inq-dialog [data-idv="tab"][data-v="sms"]');if(tab)tab.click();else if(root.InquiryDetailV2&&root.InquiryDetailV2.openSms&&root.InquiryDetailV2.openSms()){/* 문의 = 상세의 문자 작은 창 */}else if(root.CUR_DETAIL&&root.CUR_DETAIL.kind==='deal'&&typeof root.contactSms==='function')root.contactSms();},400);return;}
