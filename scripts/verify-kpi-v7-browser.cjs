@@ -122,6 +122,21 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 8. 좁은 화면 넘침 없음 · 끄면 예전 화면 */
   await page.setViewportSize({width:1207,height:914});await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'노트북 폭에서 옆으로 넘치지 않음');if(shot)await page.screenshot({path:shot+'-laptop.png',fullPage:true});
   await page.setViewportSize({width:1600,height:1000});
+  /* after_deploy 16: 묶음 보완 요청 — 보내기 전에 담당별 대상 · 진행 · 미리보기 · 제외. 고른 것만 간다 */
+  {const nb=await page.evaluate(()=>__deliveries.length);
+   await page.evaluate(()=>{const T=(id,name,owner,done)=>({kind:'deal',id,name,owner,why:'발송일 확인',label:'자료 발송 · 발송일',done:!!done}),all=[T('b1','현장 가','이필선'),T('b2','현장 나','이필선'),T('b3','현장 다','이필선',true),T('b4','현장 라','황윤선'),T('b5','현장 마','황윤선'),T('b6','현장 바','미배정')];KpiV7.bulkSend('test:bulk','자료 발송 · 발송일 보완',all.filter(t=>!t.done),all);});
+   const bk=page.locator('#k7-bulk'),tx=async l=>(await l.innerText()).replace(/\s+/g,' ').trim(),brow=()=>bk.locator('.k7b-row').evaluateAll(L=>L.map(r=>[...r.querySelectorAll(':scope>b,:scope>span')].map(n=>n.textContent).concat([r.classList.contains('off')])));
+   assert.equal(await bk.count(),1,'두 건 이상이면 바로 보내지 않고 미리보기 창');assert.equal(await page.evaluate(()=>__deliveries.length),nb,'아직 보내지 않음');
+   assert.match(await tx(bk.locator('.k7b-rule')),/묶음으로 되는 것 = 보완 요청만 · 고객 연결 완료 · 대기 · 실주 같은 판단은 한 건씩/);
+   assert.deepEqual(await brow(),[['이필선','자료 발송 · 발송일','2건','1 / 3',false],['황윤선','자료 발송 · 발송일','2건','0 / 2',false]],'담당별 대상 · 건수 · 진행(이미 조치 / 전체)');
+   assert.equal(await tx(bk.locator('.k7b-row').first().locator('.k7b-line')),'미리보기 '+await page.evaluate(()=>KpiB.lineOf('자료 발송 · 발송일 보완',[{kind:'deal',name:'현장 가'},{kind:'deal',name:'현장 나'}])),'미리보기 = 실제로 가는 글');
+   assert.equal(await tx(bk.locator('footer span')),'담당 2명 · 4건 · 미배정 1건은 배정 뒤 요청');assert.equal(await tx(bk.locator('[data-kb="send"]')),'담당 2명에게 요청 (4건)');
+   await bk.locator('.k7b-row').first().locator('[data-kb="open"]').click();assert.equal(await bk.locator('.k7b-items input').count(),2);
+   await bk.locator('.k7b-items input').nth(1).uncheck();assert.deepEqual((await brow())[0].slice(2,3),['1 / 2건']);assert.match(await tx(bk.locator('.k7b-row').first().locator('.k7b-line')),/— 1건: 현장 가$/);
+   await bk.locator('.k7b-row').nth(1).locator('[data-kb="owner"]').click();assert.equal((await brow())[1][4],true,'담당 통째로 제외');assert.equal(await tx(bk.locator('[data-kb="send"]')),'담당 1명에게 요청 (1건)');
+   assert.deepEqual(await bk.evaluate(el=>[...el.querySelectorAll('.k7b-card *')].filter(n=>n.children.length===0&&n.scrollWidth>n.clientWidth+1&&getComputedStyle(n).textOverflow!=='ellipsis').map(n=>n.textContent)),[],'넘치는 글 없음');
+   await bk.locator('[data-kb="send"]').click();await page.waitForTimeout(500);assert.equal(await bk.count(),0);
+   assert.deepEqual(await page.evaluate(n=>__deliveries.slice(n).map(p=>[p.rep_name,p.promise_key,p.targets.map(t=>t.target_name)]),nb),[['이필선','test:bulk',['현장 가']]],'제외한 건 · 담당은 가지 않는다');}
   await page.evaluate(()=>{G.kpiV7Off=true;paint();});await page.waitForTimeout(400);assert.equal(await page.locator('#kpi-v7').count(),0);assert.equal(await page.locator('#kpi-b').count(),1,'끄면 예전 KPI 화면');
   assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('#pg-mgmt>.cf-bar')).display!=='none'),true,'끄면 공통 필터줄도 다시 보인다');
   assert.deepEqual(errs,[]);

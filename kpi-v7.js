@@ -181,10 +181,40 @@
    +bar+'<div class="k7-body">'+left+'<section class="k7-right">'+tabs+body+'</section></div></div>';
  }
  /* 묶어 보내기: 담당자별로 '관리자 한마디'에 한 줄 + 건마다 조치 기록(처리율 계산용) */
- function send(pkey,title,list){
+ function send(pkey,title,list,all){
   if(K().canRequest&&!K().canRequest())return;
-  return K().requestMany(pkey,title,list);
+  /* after_deploy 16: 두 건 이상 = 묶음 — 보내기 전에 담당별 대상 · 진행 · 미리보기 · 제외를 보여 준다(한 건은 바로). 끄기 G.kpiBulkPreviewOff */
+   const ok=list.filter(t=>t.owner&&t.owner!=='미배정');
+   if(R.G.kpiBulkPreviewOff||ok.length<2||!K().lineOf)return K().requestMany(pkey,title,list);
+   ST().bulk={pkey,title,list:ok,all:(all||list).filter(t=>t.owner&&t.owner!=='미배정'),skip:list.length-ok.length,off:new Set(),open:'',pg:{}};bulkDraw();
  }
+ /* ── 묶음 보완 요청 미리보기 ── */
+  const keyOf=t=>t.kind+':'+t.id;
+  function bulkModel(){const b=ST().bulk;if(!b)return null;const by=new Map(),get=o=>by.get(o)||by.set(o,{owner:o,items:[],all:0,done:0}).get(o);
+   b.list.forEach(t=>get(t.owner).items.push(t));b.all.forEach(t=>{const g=by.get(t.owner);if(g){g.all++;if(t.done)g.done++;}});
+   const groups=[...by.values()].map(g=>{g.all=Math.max(g.all,g.items.length+g.done);g.on=g.items.filter(t=>!b.off.has(keyOf(t)));g.line=g.on.length?K().lineOf(b.title,g.on):'';return g;});
+   return {b,groups,people:groups.filter(g=>g.on.length).length,n:groups.reduce((s,g)=>s+g.on.length,0)};}
+  function bulkHtml(){const M=bulkModel();if(!M)return '';const b=M.b,PER=20;
+   const rows=M.groups.map(g=>{const off=!g.on.length,open=b.open===g.owner,pages=Math.max(1,Math.ceil(g.items.length/PER)),pg=Math.min(pages,Math.max(1,b.pg[g.owner]||1)),cut=g.items.slice((pg-1)*PER,pg*PER);
+    return '<div class="k7b-row'+(off?' off':'')+'" data-owner="'+attr(g.owner)+'"><b>'+h(g.owner)+'</b><span title="'+attr(g.items[0].label||b.title)+'">'+h(g.items[0].label||b.title)+'</span><span class="n">'+g.on.length+(g.on.length!==g.items.length?' / '+g.items.length:'')+'건</span><span class="n" title="이미 요청 · 조치한 건 / 이 담당의 전체 대상">'+g.done+' / '+g.all+'</span>'
+     +'<div class="k7b-act"><button type="button" data-kb="open" data-v="'+attr(g.owner)+'" aria-expanded="'+open+'">대상 '+(open?'접기':'보기')+'</button><button type="button" data-kb="owner" data-v="'+attr(g.owner)+'" aria-pressed="'+off+'">'+(off?'다시 포함':'제외')+'</button></div>'
+     +'<small class="k7b-line" title="'+attr(g.line)+'">'+(off?'이 담당은 보내지 않음':'<i>미리보기</i> '+h(g.line))+'</small>'
+     +(open?'<div class="k7b-items">'+cut.map(t=>'<label><input type="checkbox" data-kb="item" data-v="'+attr(keyOf(t))+'"'+(b.off.has(keyOf(t))?'':' checked')+'><span title="'+attr(t.name||t.what||t.id)+'">'+h(t.name||t.what||t.id)+'</span><em title="'+attr(t.why||'')+'">'+h(t.why||'')+'</em></label>').join('')
+      +(pages>1?'<div class="k7b-pg" role="group" aria-label="쪽">'+Array.from({length:pages},(_,i)=>'<button type="button" data-kb="pg" data-v="'+attr(g.owner)+'" data-page="'+(i+1)+'" aria-current="'+(pg===i+1?'page':'false')+'">'+(i+1)+'</button>').join('')+'</div>':'')+'</div>':'')+'</div>';}).join('');
+   return '<div class="k7b-card"><header><b>묶음 보완 요청</b><span title="'+attr(b.title)+'">'+h(b.title)+'</span></header>'
+    +'<p class="k7b-rule">묶음으로 되는 것 = <b>보완 요청</b>만 · 고객 연결 완료 · 대기 · 실주 같은 <b>판단</b>은 한 건씩</p>'
+    +'<div class="k7b-head"><span>담당</span><span>대상</span><span>건수</span><span>진행</span><span></span></div>'+rows
+    +'<footer><span>담당 '+M.people+'명 · '+M.n+'건'+(b.skip?' · 미배정 '+b.skip+'건은 배정 뒤 요청':'')+'</span><i></i><button type="button" data-kb="cancel">취소</button><button type="button" class="pri" data-kb="send"'+(M.n?'':' disabled')+'>'+h(M.n?reqBtnTxt({people:M.people,can:M.n}):'보낼 대상 없음')+'</button></footer></div>';}
+  function bulkDraw(){let el=document.getElementById('k7-bulk');if(!ST().bulk){if(el)el.remove();return;}if(!el){el=document.createElement('div');el.id='k7-bulk';el.className='k7-bulk';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');el.setAttribute('aria-label','묶음 보완 요청');document.body.append(el);}el.innerHTML=bulkHtml();}
+  function bulkClick(e){const el=document.getElementById('k7-bulk');if(!el||!el.contains(e.target))return;const b=ST().bulk;if(!b)return;if(e.target===el){ST().bulk=null;return bulkDraw();}
+   const t=e.target.closest('[data-kb]');if(!t||t.disabled)return;const a=t.dataset.kb,v=t.dataset.v;
+   if(a==='cancel'){ST().bulk=null;return bulkDraw();}
+   if(a==='open'){b.open=b.open===v?'':v;return bulkDraw();}
+   if(a==='pg'){b.pg[v]=Number(t.dataset.page)||1;return bulkDraw();}
+   if(a==='owner'){const its=b.list.filter(x=>x.owner===v),allOff=its.every(x=>b.off.has(keyOf(x)));its.forEach(x=>{if(allOff)b.off.delete(keyOf(x));else b.off.add(keyOf(x));});return bulkDraw();}
+   if(a==='item'){if(t.checked)b.off.delete(v);else b.off.add(v);return bulkDraw();}
+   if(a==='send'){const M=bulkModel(),sel=M.groups.reduce((L,g)=>L.concat(g.on),[]);ST().bulk=null;bulkDraw();if(sel.length)return K().requestMany(b.pkey,b.title,sel);}}
+  document.addEventListener('click',bulkClick);document.addEventListener('keydown',e=>{if(e.key==='Escape'&&ST().bulk){ST().bulk=null;bulkDraw();}});
  function onClick(e){
   const b=e.target.closest('#kpi-v7 [data-k7]');if(!b||b.disabled)return;const a=b.dataset.k7,v=b.dataset.v,s=ST();
   if(a==='tab'){s.tab=v==='stage'?'stage':v==='measure'?'measure':'core';return repaint();}
@@ -199,9 +229,10 @@
   if(a==='go'){e.preventDefault();try{if(v==='inquiry')R.goPage('inq');else R.PipelineWorkspace.open(v);}catch(x){}return;}
   if(a==='req'){const i=Number(v),m=K().compute().M[i];if(!m)return;const todos=m.todos.filter(t=>!t.done);if(!todos.length)return;
    if(i===0){try{R.goPage('today');}catch(x){}toast('오늘 업무의 \'담당 배정 안 된 견적문의\' 표에서 '+todos.length+'건을 배정할 수 있습니다');return;}
-   return send(m.key,K().DEF[i][0],todos.map(t=>({kind:t.kind,id:t.id,name:t.what,owner:t.kind==='rep'?t.id:t.owner,why:t.why,label:t.label})));}
+   const shape=t=>({kind:t.kind,id:t.id,name:t.what,owner:t.kind==='rep'?t.id:t.owner,why:t.why,label:t.label,done:!!t.done});
+    return send(m.key,K().DEF[i][0],todos.map(shape),m.todos.map(shape));}
   if(a==='sreq'){const C=K().compute(),done=C.done||new Set();let r=null;stageGroups(done).forEach(g=>g.rules.forEach(x=>{if(x.pk===v)r=Object.assign({label:g.label},x);}));if(!r)return;
-   const todo=r.targets.filter(t=>!done.has(r.pk+'|'+t.kind+':'+t.id));if(!todo.length)return;return send(r.pk,r.label+' · '+r.t,todo);}
+   const todo=r.targets.filter(t=>!done.has(r.pk+'|'+t.kind+':'+t.id));if(!todo.length)return;return send(r.pk,r.label+' · '+r.t,todo,r.targets.map(t=>Object.assign({},t,{done:done.has(r.pk+'|'+t.kind+':'+t.id)})));}
  }
  function boot(){
   const base=R.paintMgmt;if(typeof base!=='function'||base.__k7)return;
@@ -216,5 +247,5 @@
   wrapped.__k7=true;wrapped.__kb=true;R.paintMgmt=wrapped;
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- root.KpiV7={enabled,html,coreRows,stageGroups,inquiryLive,people,allItems,PILOT:PILOT};
+ root.KpiV7={enabled,html,coreRows,stageGroups,inquiryLive,people,allItems,PILOT:PILOT,bulkSend:send};
 })(window);

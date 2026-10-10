@@ -62,7 +62,7 @@ test('actual request-engine completion remains countable; loading request engine
 
 test('v7 core and stage requests share execution guard; fallback requests and bulk entry are guarded',()=>{
  const k=fs.readFileSync(path.join(__dirname,'../kpi-b.js'),'utf8'),v=fs.readFileSync(path.join(__dirname,'../kpi-v7.js'),'utf8');
- assert.match(v,/function send\(pkey,title,list\)\{\s*if\(K\(\)\.canRequest/);
+ assert.match(v,/function send\(pkey,title,list(?:,all)?\)\{\s*if\(K\(\)\.canRequest/);/* after_deploy 16: 묶음 미리보기용 넷째 인자(all)가 붙어도 첫 줄은 요청 가능 여부 확인 */
  assert.match(k,/function request\(b\)\{\s*if\(!canRequest\(\)\)/);
  assert.match(k,/if\(a==='nm'\)\{if\(!canRequest\(\)\)return/);
 });
