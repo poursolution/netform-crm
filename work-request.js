@@ -61,12 +61,25 @@
  }
  /* ── 저장소 읽기 ── */
  function load(force){
-  const S=st();if(!ready()||S.busy||(!force&&Date.now()-S.at<60000))return;
-  S.busy=true;O().rpc(RPC.list,{days:30}).then(r=>{const before=JSON.stringify(S.list),first=!S.loaded;S.list=Array.isArray(r.requests)?r.requests:[];S.loaded=true;S.at=Date.now();
-   if(first||before!==JSON.stringify(S.list))repaint();setTimeout(autoClose,0);}).catch(()=>{S.at=Date.now();}).finally(()=>{S.busy=false;});
+  const S=st();if(!ready())return;
+  if(S.busy){if(force)S.reloadPending=true;return;}
+  if(!force&&Date.now()-S.at<60000)return;
+  const epoch=S.writeEpoch||0,actor=R.ME,identity=String(actor&&(actor.user_id||actor.id||actor.name)||'');
+  const current=()=>R.G.workReq===S&&R.ME===actor&&String(R.ME&&(R.ME.user_id||R.ME.id||R.ME.name)||'')===identity;
+  S.busy=true;return Promise.resolve().then(()=>O().rpc(RPC.list,{days:30})).then(r=>{
+   if(!current())return;
+   // A query started before a confirmed write cannot replace that write's ACK.
+   if((S.writeEpoch||0)!==epoch){S.reloadPending=true;return;}
+   if(!r||r.ok!==true||!Array.isArray(r.requests))throw Error('Invalid request list acknowledgement');
+   const before=JSON.stringify(S.list),first=!S.loaded;S.list=r.requests;S.loaded=true;S.at=Date.now();
+   if(first||before!==JSON.stringify(S.list))repaint();setTimeout(autoClose,0);
+  }).catch(()=>{if(current())S.at=Date.now();}).finally(()=>{
+   S.busy=false;const again=S.reloadPending;S.reloadPending=false;
+   if(current()&&again)load(true);
+  });
  }
  function repaint(){try{if(R.G.page==='today'||R.G.page==='mgmt'||document.getElementById('kpi-b'))R.paint();else if(document.getElementById('inq-inbox-dialog')&&R.InquiryDetailV2)R.InquiryDetailV2.reskin();}catch(e){}}
- const put=r=>{if(!r||!r.id)return;const S=st(),i=S.list.findIndex(x=>x.id===r.id);if(i>=0)S.list[i]=r;else S.list.unshift(r);};
+ const put=r=>{if(!r||!r.id)return;const S=st(),i=S.list.findIndex(x=>x.id===r.id);S.writeEpoch=(S.writeEpoch||0)+1;if(i>=0)S.list[i]=r;else S.list.unshift(r);};
  const isOpen=r=>r.status==='sent'||r.status==='seen'||r.status==='working';
  const overdue=r=>isOpen(r)&&Date.parse(r.due_at)<Date.now();
  /* ── 오늘 업무 항목 → 요청 ── */
@@ -318,7 +331,11 @@
    if(r.target_type==='inquiry'){const F=R.InquiryFlow&&R.InquiryFlow.on&&R.InquiryFlow.on()?R.InquiryFlow:null;if(!F)return null;const L=(F.state(it).logs||[]).filter(l=>Date.parse(l.at)>=since);
     if(L.some(l=>l.kind==='connected'))return {result:'연락 기록 확인',absent:false};if(L.some(l=>l.kind==='attempt'))return {result:'부재',absent:true};return null;}
    const f=(k,n)=>{const c=it.stage_contexts&&it.stage_contexts[k];return c&&c.fields?c.fields[n]:'';};
-   if(r.kind==='quote')return f('consulting','quote_due')||f('consulting','quote_request')?{result:'견적 요청 · 예정일 입력 확인',absent:false}:null;
+   if(r.kind==='quote'){
+    const asks=Array.isArray(r.asks)&&r.asks.length?r.asks:KIND.quote.asks;
+    const proof={'견적 요청 등록':!!String(f('consulting','quote_request')||'').trim(),'견적 예정일 입력':!!String(f('consulting','quote_due')||'').trim()};
+    return asks.every(a=>proof[a]===true)?{result:'견적 요청 · 예정일 입력 확인',absent:false}:null;
+   }
    if(r.kind==='contract')return (f('contract','contract_date')||it.contract_date)&&(Number(f('contract','contract_amount')||it.contract_amount||it.won_amount)>0)?{result:'계약일 · 금액 입력 확인',absent:false}:null;
    if(r.kind==='award')return R.DealTransfer&&R.DealTransfer.enabled()&&!R.DealTransfer.checkDue(it)&&!R.DealTransfer.awaiting(it)?{result:'낙찰결과 등록 확인',absent:false}:null;
    if(r.kind==='first'||r.kind==='follow'){let at='';try{at=R.salesActivityAt(it)||'';}catch(e){}return at&&Date.parse(at)>=since?{result:'응대 기록 확인',absent:false}:null;}
