@@ -204,7 +204,8 @@
   try{while(outbox().length){const item=outbox()[0];
     if(Date.now()-Number(item.queued_at||0)>14*DAY){outbox().shift();keepOut();continue;}
     const body=Object.assign({},item);delete body.queued_at;
-    try{const r=await store().rpc(RPC,body);take(r.state);changed=true;outbox().shift();keepOut();}
+    try{const r=await store().rpc(RPC,body);take(r.state);changed=true;outbox().shift();keepOut();
+     if(body.type==='contact_log'&&r.ok===true&&r.log_id&&root.WorkRequest&&root.WorkRequest.load)root.WorkRequest.load(true);}
     catch(e){if(e&&e.unavailable)break;if(/forbidden|invalid payload|담당자 또는 관리자만|찾을 수 없습니다|기술자문/.test(String(e&&e.message||''))){outbox().shift();keepOut();continue;}break;}}
   }finally{flushing=false;if(changed){try{root.paint();}catch(e){}}}
  }

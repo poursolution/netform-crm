@@ -48,6 +48,11 @@ function productionText(text, file) {
     .replaceAll('src="/operational-overlay.js"', `src="./operational-overlay.js?v=${runtimeAssetVersion}"`)
     .replaceAll('src="/work-editor.js"', 'src="./work-editor.js"')
     .replace(/^ +$/gm, '');
+  if (file.endsWith('.html')) {
+    // Version the request/contact integration without editing the shared screen source.
+    next = next.replace(/src="(?:\.\/|\/)?(pc-manager-transport|pc-error-state|inquiry-flow|work-request)\.js(?:\?[^\"]*)?"/g,
+      (_, asset) => `src="./${asset}.js?v=${runtimeAssetVersion}"`);
+  }
   if (file === 'index.html') {
     // GitHub Pages consumes this front matter before serving the branch build.
     // The offline production builder emits ready-to-serve static HTML instead.
