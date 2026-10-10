@@ -77,6 +77,58 @@ test('OpsStore preserves only explicit PostgreSQL rollback evidence',async()=>{
 });
 
 const tick=()=>new Promise(setImmediate);
+function existingContact(x,result='연결됨'){
+ x.r.created_at=new Date(Date.now()-60000).toISOString();
+ const log={id:id(41),occurred_at:new Date().toISOString(),contact_result:result};
+ x.R.InquiryFlow.server=()=>({inquiry_id:x.q.id,logs:[log]});return log;
+}
+function linkAck(x,p,result='연결됨'){
+ return {ok:true,contract_version:1,inquiry_id:x.q.id,log_id:p.log_id,linked:true,next_action_id:id(71),
+  request:{...x.r,status:result==='부재'?'working':'done',next_text:'기존 후속 일정',next_due:'2026-10-12',result}};
+}
+test('server-loaded contact reconciliation has no optimistic completion and shares in-flight lock',async()=>{
+ const x=setup();existingContact(x);let release;
+ x.R.OpsStore.rpc=(fn,p)=>{x.calls.push([fn,p]);return fn==='crm_work_request_contact_link_v1'?new Promise(ok=>release=()=>ok(linkAck(x,p))):Promise.resolve({ok:true,requests:[x.S.list[0]]});};
+ x.R.WorkRequest.autoClose();x.R.WorkRequest.autoClose();await tick();assert.equal(x.calls.length,1);assert.equal(x.S.list[0].status,'sent');
+ release();await tick();assert.equal(x.S.list[0].status,'done');assert.equal(x.takes.length,0);
+ assert.equal(x.calls.some(c=>['crm_work_request_reply_v1','crm_work_request_inquiry_contact_v1'].includes(c[0])),false);
+});
+test('unavailable deployment, local-only records, proxy and stale assignment cannot reconcile',async()=>{
+ for(const mode of ['gate','local','proxy','owner','old','legacy']){
+  const x=setup();const log=existingContact(x);
+  if(mode==='gate')x.R.CRMRelease.has=()=>false;
+  if(mode==='local')delete x.R.InquiryFlow.server;
+  if(mode==='proxy'){x.r.to_me=false;x.R.todayIsAdmin=()=>true;}
+  if(mode==='owner')x.q.assigned_to=id(3);
+  if(mode==='old')log.occurred_at='2000-01-01T00:00:00Z';
+  if(mode==='legacy')delete log.contact_result;
+  x.R.WorkRequest.autoClose();await tick();assert.equal(x.calls.length,0,mode);
+ }
+});
+test('link invalid ACK and uncertain error leave request open and suppress rapid repeated calls',async()=>{
+ for(const fail of ['offline','wronglog','wrongowner','wrongstatus','missingtask']){
+  const x=setup();existingContact(x);x.R.OpsStore.rpc=async(fn,p)=>{x.calls.push([fn,p]);if(fail==='offline')throw Error('offline');const a=linkAck(x,p);
+   if(fail==='wronglog')a.log_id=id(99);if(fail==='wrongowner')a.request.to_user_id=id(3);if(fail==='wrongstatus')a.request.status='absent';if(fail==='missingtask')delete a.next_action_id;return a;};
+  x.R.WorkRequest.autoClose();await tick();x.R.WorkRequest.autoClose();await tick();assert.equal(x.calls.length,1,fail);assert.equal(x.S.list[0].status,'sent');
+ }
+});
+test('link result after account change or newer state never replaces current state',async()=>{
+ for(const mode of ['account','save']){
+  const x=setup();existingContact(x);let release;x.R.OpsStore.rpc=(fn,p)=>fn==='crm_work_request_contact_link_v1'?new Promise(ok=>release=()=>ok(linkAck(x,p))):Promise.resolve({ok:true,requests:[x.S.list[0]]});
+  x.R.WorkRequest.autoClose();await tick();if(mode==='account')x.R.ME.id=id(3);else {x.S.list=[{...x.r,status:'cancelled'}];x.S.gen=1;}
+  release();await tick();assert.equal(x.S.list[0].status,mode==='account'?'sent':'cancelled');
+ }
+});
+test('absence link remains working and a new stored log can be reconciled independently',async()=>{
+ const x=setup();let log=existingContact(x,'부재');x.R.OpsStore.rpc=async(fn,p)=>{x.calls.push([fn,p]);return fn==='crm_work_request_contact_link_v1'?linkAck(x,p,log.contact_result):{ok:true,requests:[x.S.list[0]]};};
+ x.R.WorkRequest.autoClose();await tick();assert.equal(x.S.list[0].status,'working');x.R.WorkRequest.autoClose();await tick();assert.equal(x.calls.filter(c=>c[0]==='crm_work_request_contact_link_v1').length,1);
+ log.id=id(42);log.contact_result='연결됨';x.R.WorkRequest.autoClose();await tick();assert.equal(x.S.list[0].status,'done');
+});
+test('contact-link SQL mirror, error name, allowlist and strict release gate are shipped together',()=>{
+ const f='20261010013000_request_contact_link.sql';assert.equal(read('sql/'+f),read('supabase/migrations/'+f));
+ for(const file of ['pc-manager-transport.js','pc-error-state.js'])assert.match(read(file),/crm_work_request_contact_link_v1/);
+ assert.match(read('work-request.js'),/CRMRelease.has\(CONTACT_LINK\)!==true/);
+});
 test('slow pre-save list cannot revert confirmed completion and schedules one current reload',async()=>{
  const x=setup(),pending=[];let reads=0;const original=x.R.OpsStore.rpc;
  x.R.OpsStore.rpc=(fn,p)=>fn==='crm_work_request_list_v1'?(reads++,new Promise(resolve=>pending.push(resolve))):original(fn,p);
