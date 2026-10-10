@@ -66,7 +66,7 @@ assert.deepEqual(await rows().evaluateAll(l=>l.map(r=>[...r.querySelectorAll('.i
   assert.equal(one(await det.locator('.i4-dh .r1').innerText()).startsWith('석민이앤씨 전화 · 담당 이필선'),true);
   assert.deepEqual((await det.locator('.i4-dh .r3 button').allInnerTexts()).map(one),['전화','문자','전체 상세 ↗']);
   assert.equal(one(await det.locator('.i4-raw').innerText()),'외벽 재도장 · 주차장 · 현장 확인 요청');
-  assert.match(one(await det.locator('.i4-sec .lb').nth(1).innerText()),/^빠진 정보 \d \/ 9 · 누르면 바로 입력$/);
+  assert.match(one(await det.locator('.i4-sec .lb',{hasText:'빠진 정보'}).first().innerText()),/^빠진 정보 \d \/ 9 · 누르면 바로 입력$/);/* 이관 자료에는 날짜 칸(접수일 · 실제 연결일 · 이관일)이 위에 더 있다(counting 12) */
   assert.match(one(await det.locator('.i4-line').innerText()),/^AI 첫마디 ?"안녕하세요, 넷폼 이필선입니다\. 문의 주신 .+ 건으로 연락드렸습니다\. 지금 통화 괜찮으실까요\?"$/);
   assert.equal(one(await det.locator('.i4-next').innerText()),'AI 다음 행동 결과를 고르면 제안');
   assert.deepEqual([await det.locator('[data-i4="save"]').isDisabled(),one(await det.locator('.i4-save span').innerText())],[true,'저장하면 다음 문의가 열립니다']);

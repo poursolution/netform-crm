@@ -70,6 +70,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await v.locator('.ac-foot').innerText(),'누적 수주 = 이 단지에서 지금까지 수주한 낙찰금액 합 · 진행 중 = 열려 있는 영업건 예상금액 합');
   /* 5. 왼쪽: 단지에 쌓인 금액 · 왜 멈춰 있나 */
   assert.deepEqual(await v.locator('.ac-num').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent))),[['누적 수주 (전 단지)','5.3억','수주한 단지 2곳 · 평균 2.7억'],['현재 영업기회','3.9억','2건 · 파이프라인과 같은 숫자'],['과거 검토 금액','0원','0건 · 이관 · 미정리 · 위험 판정은 정리 후'],['현재 위험 금액','3.7억','현재 영업기회 중 기한 초과 · 원인 확인 필요 단지']]);
+  /* counting 14: 대시보드 '진행 중 파이프라인'과 대조 — 건수 · 금액 · 차이 · 대조 목록(건마다 어느 쪽에만 있는지와 사유) */
+  {const rc=v.locator('.ac-recon');assert.equal(await rc.count(),1);const t=(await rc.innerText()).replace(/\s+/g,' ');assert.match(t,/^대시보드와 대조 대시보드 진행 중 파이프라인 \d+건 · \S+ 고객 자산 현재 영업기회 2건 · 3\.9억 차이 (없음 · 같은 숫자|\d+건 · \S+ 대조 목록 ▾) 같은 진행 범위\(수주 · 실주 · 과거 이관 제외\)/,t);
+   const X=await page.evaluate(()=>{const b=document.querySelector('#site-master .ac-recon [data-ac="recon"]');if(b)b.click();return null;});await page.waitForTimeout(250);
+   const m=/차이 (\d+)건/.exec(t);if(m){const rows=await v.locator('.ac-reconlist>div span').allInnerTexts();assert.equal(rows.length,Math.min(20,Number(m[1])));assert.ok(rows.every(x=>/^(대시보드에만|고객 자산에만) · \S/.test(x)),'건마다 어느 쪽에만 있는지 · 사유: '+rows.join(' | '));await v.locator('.ac-recon [data-ac="recon"]').click();await page.waitForTimeout(200);}}
   assert.deepEqual(await v.locator('.ac-num b').evaluateAll(l=>l.map(n=>getComputedStyle(n).color)),['rgb(21, 23, 28)','rgb(29, 63, 153)','rgb(107, 114, 128)','rgb(180, 35, 24)']);
   const why=await v.locator('.ac-why button').evaluateAll(l=>l.map(n=>[n.querySelector('b').textContent,n.querySelector('b.n').textContent,n.querySelector('span').textContent]));
   assert.deepEqual(why.slice(0,2),[['반복 실주 · 진행 금액 걸림','1','3.7억 걸림'],['실주 2회 · 수주 없음','1','재제안 시기 미등록']]);

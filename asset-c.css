@@ -71,3 +71,16 @@
 .ac-side .ac-split>div{display:flex;flex-direction:column;gap:3px;border:1px solid #eef0f3;border-radius:9px;padding:8px 10px}
 .ac-side .ac-split>div>span{font-size:11.5px;color:#6b7280}
 .ac-side .ac-split>div>i{display:flex;justify-content:space-between;gap:8px;font-style:normal;font-size:12.5px}.ac-side .ac-split>div>i>span{color:#374151;min-width:0}.ac-side .ac-split>div>i>b{font-weight:700}
+/* counting 14: 대시보드와 대조(건수 · 금액 · 차이 · 대조 목록) */
+.ac-side .ac-recon{display:flex;flex-direction:column;gap:6px}
+.ac-recon>div{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:12.5px}
+.ac-recon>div>span{color:#6b7280;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ac-recon>div>b{white-space:nowrap;font-variant-numeric:tabular-nums}
+.ac-recon>div.gap>b{color:#b42318}.ac-recon>div.same>b{color:#1f7a4d}
+.ac-recon>button{align-self:flex-start;height:28px;border:1px solid #d9dde4;border-radius:8px;background:#fff;color:#15171c;font:inherit;font-size:12px;font-weight:700;padding:0 10px;cursor:pointer;min-height:0;box-shadow:none;width:auto}
+.ac-recon>small{font-size:11.5px;color:#9ca3af;line-height:1.5}
+.ac-reconlist{display:flex;flex-direction:column;border-top:1px solid #eef0f3;margin-top:2px}
+.ac-reconlist>div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;padding:7px 0;border-bottom:1px solid #f3f4f6;font-size:12px}
+.ac-reconlist>div>b{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ac-reconlist>div>em{font-style:normal;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ac-reconlist>div>span{grid-column:1/-1;color:#6b7280;font-size:11.5px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
