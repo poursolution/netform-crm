@@ -129,6 +129,15 @@ test('contact-link SQL mirror, error name, allowlist and strict release gate are
  for(const file of ['pc-manager-transport.js','pc-error-state.js'])assert.match(read(file),/crm_work_request_contact_link_v1/);
  assert.match(read('work-request.js'),/CRMRelease.has\(CONTACT_LINK\)!==true/);
 });
+test('lost link ACK resolves from current server request without replaying contact or task writes',async()=>{
+ const x=setup();existingContact(x);let first=true,server;
+ x.R.OpsStore.rpc=async(fn,p)=>{x.calls.push([fn,p]);if(fn==='crm_work_request_list_v1')return {ok:true,requests:[server]};
+  if(first){first=false;server=linkAck(x,p).request;throw Error('lost ACK');}
+  return {...linkAck(x,p),linked:false,reason:'request_closed',request:server};};
+ x.R.WorkRequest.autoClose();await tick();assert.equal(x.S.list[0].status,'sent');
+ Object.values(x.S.contactLinks).forEach(e=>e.at=0);x.R.WorkRequest.autoClose();await tick();
+ assert.equal(x.S.list[0].status,'done');assert.equal(x.calls.filter(c=>c[0]==='crm_work_request_contact_link_v1').length,2);
+});
 test('slow pre-save list cannot revert confirmed completion and schedules one current reload',async()=>{
  const x=setup(),pending=[];let reads=0;const original=x.R.OpsStore.rpc;
  x.R.OpsStore.rpc=(fn,p)=>fn==='crm_work_request_list_v1'?(reads++,new Promise(resolve=>pending.push(resolve))):original(fn,p);
