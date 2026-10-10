@@ -21,7 +21,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    const deal=(id,site,extra)=>Object.assign({id,site,assignee:'이필선',brand:'POUR솔루션',created:day(-30),code:'consulting',stage_code:'consulting',grp:'영업·관리',amt:2e8,manager_name:'김소장',manager_mobile:'01077778888',last_activity_at:at(1)},extra||{});
    B={deals:[
     /* 지금 처리: 견적 발송 9일 · 후속 없음(진행 판단 필요) */
-    deal('silent1','[서울 송파] 서울체육고등학교',{amt:1.1e8,code:'sent',stage_code:'sent',last_activity_at:at(9),stage_contexts:{sent:{fields:{sent_date:day(-9)}}},next_action:{id:'n3',type:'전화',text:'견적 검토 확인',due:day(-2),status:'open'}}),
+    deal('silent1','[서울 송파] 서울체육고등학교',{amt:1.1e8,code:'sent',stage_code:'sent',last_activity_at:at(9),/* 접촉 기록이 있는 건 = 활동은 확인됨 → '진행 판단 필요'(기록 없는 건의 '활동 여부 확인'은 verify-day-extra-browser.cjs) */activities:[{id:'s1',type:'전화',note:'통화 완료 · 견적 설명',at:at(9),occurred_at:at(9),actor:'이필선',meaningful:true}],stage_contexts:{sent:{fields:{sent_date:day(-9)}}},next_action:{id:'n3',type:'전화',text:'견적 검토 확인',due:day(-2),status:'open'}}),
     /* 지금 처리: 오늘 약속(현장 실측) */
     deal('today1','[경기 화성] 동탄푸른마을',{amt:2.6e8,next_action:{id:'n7',type:'방문',text:'현장 실측',due:day(0)+'T14:00',status:'open'}}),
     /* 회신 대기: 대기 사유 + 다음 확인일(미래) — 지연으로 세지 않는다 */
@@ -81,7 +81,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* 4. 근거 보기: 이유를 누르면 적용 규칙(기준 버전) · 기준일 · 관련 기록(고객 접촉 / 내부 메모) · 빠진 것 */
   await page.locator('#today-v2 .tv3 .dz-row',{hasText:'서울체육고'}).locator('.dz-why').click();await page.waitForTimeout(300);
   const ev=one(await page.locator('#today-v2 .tv3 .dz-ev').innerText());
-  assert.match(ev,/^진행 판단 필요 · 왜\? 적용 규칙 견적 발송 후 7일 안 후속\(실제 발송일부터\) \(기준 v\d+ · [^)]+\) 기준일 .+ 관련 기록 고객 접촉 기록 없음 · 고객 접촉 0회 빠진 것 대기 사유 누르면 견적 발송 후 후속/,ev);
+  assert.match(ev,/^진행 판단 필요 · 왜\? 적용 규칙 견적 발송 후 7일 안 후속\(실제 발송일부터\) \(기준 v\d+ · [^)]+\) 기준일 .+ 관련 기록 \d+\.\d+ 고객 접촉 · 고객 접촉 1회 빠진 것 대기 사유 진전 결정권자 확인 요청 자료 확보 방문 확정 경쟁사 파악 결정 일정 다음 단계 조건 0 \/ 5 누르면 견적 발송 후 후속/,ev);/* day_zones 4-3 진전 확인: 근거 보기 안에 다음 단계 조건 5가지 */
   /* 5. 회신 대기 탭: 기다리는 것 · 다음 확인일 · 지연 아님 · [확인일 변경] */
   await page.locator('#today-v2 .tv3 .dz-tabs [data-v="wait"]').click();await page.waitForTimeout(300);
   const w=one(await page.locator('#today-v2 .tv3 .dz-table').innerText());

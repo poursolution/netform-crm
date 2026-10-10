@@ -137,6 +137,16 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    assert.deepEqual(await bk.evaluate(el=>[...el.querySelectorAll('.k7b-card *')].filter(n=>n.children.length===0&&n.scrollWidth>n.clientWidth+1&&getComputedStyle(n).textOverflow!=='ellipsis').map(n=>n.textContent)),[],'넘치는 글 없음');
    await bk.locator('[data-kb="send"]').click();await page.waitForTimeout(500);assert.equal(await bk.count(),0);
    assert.deepEqual(await page.evaluate(n=>__deliveries.slice(n).map(p=>[p.rep_name,p.promise_key,p.targets.map(t=>t.target_name)]),nb),[['이필선','test:bulk',['현장 가']]],'제외한 건 · 담당은 가지 않는다');}
+  /* day_zones §4-2: 요청 · 누락 함께 보기(전주 대비) · 반복된 요청 유형 → 점검할 곳. 요청이 줄었는데 미응대 · 기한 초과가 늘면 경고 한 줄 */
+  {const RH=await page.evaluate(()=>{const J=PipelineJudge,w0=J.week(0),w1=J.week(-1),W=WorkRequest.state();W.loaded=true;W.at=Date.now();
+    const mk=(id,mon,st,closed)=>({id,target_type:'deal',target_id:'d1',kind:'follow',label:'발송일 확인 요청',status:st,requested_by:'송보람',to_name:'이필선',round:1,created_at:mon+'T00:10:00+09:00',due_at:mon+'T00:30:00+09:00',closed_at:closed?mon+'T00:20:00+09:00':null});
+    W.list=[mk('a1',w0.mon,'sent'),mk('a2',w0.mon,'sent'),mk('a3',w0.mon,'sent'),mk('b1',w1.mon,'done',true),mk('b2',w1.mon,'done',true),mk('b3',w1.mon,'done',true),mk('b4',w1.mon,'done',true),Object.assign(mk('c1',w0.mon,'cancelled'),{reply_note:'[통합] 같은 요청'})];
+    const H=KpiV7.reqHealth(KpiB.compute()),today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Seoul'});paint();return {H,sameMonth:w0.mon.slice(0,7)===today.slice(0,7)};});await page.waitForTimeout(300);
+   assert.deepEqual(RH.H.tiles.slice(0,3).map(t=>[t[0],t[1],t[2]]),[['보낸 요청','3건','전주 4 ▼1'],['미응대','3건','전주 0 ▲3 · 기한이 지나도록 확인 없음'],['기한 초과','3건','전주 0 ▲3 · 이번 주 기한']]);
+   assert.equal(RH.H.warn,'요청은 줄었는데(4 → 3) 미응대 · 기한 초과 늘어남 — 요청 수 감소를 개선으로 보지 않습니다');
+   if(RH.sameMonth){assert.deepEqual(RH.H.repeat,[{label:'발송일 확인 요청',n:4,check:'자동 업무 생성 · 발송 후 후속 일정'}],'이번 달 3번 이상 반복된 유형 → 점검할 곳');assert.match(RH.H.quality,/이번 달 취소 1건 \(다른 요청에 통합 1 · 대상 오류 0\)/);}
+   const rh=page.locator('#kpi-v7 .k7-rh');assert.equal(await rh.count(),1);assert.match((await rh.innerText()).replace(/\s+/g,' '),/요청 · 누락 함께 보기 전주 대비 보낸 요청 3건 .*반복된 요청 유형 · 이번 달 .*담당 탓 전에 시스템 · 지침부터 확인/);
+   assert.deepEqual(await rh.evaluate(el=>[...el.querySelectorAll('.k7-rep *')].filter(n=>n.children.length===0&&n.scrollWidth>n.clientWidth+1&&getComputedStyle(n).textOverflow!=='ellipsis').map(n=>n.textContent)),[],'넘치는 글 없음');}
   await page.evaluate(()=>{G.kpiV7Off=true;paint();});await page.waitForTimeout(400);assert.equal(await page.locator('#kpi-v7').count(),0);assert.equal(await page.locator('#kpi-b').count(),1,'끄면 예전 KPI 화면');
   assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('#pg-mgmt>.cf-bar')).display!=='none'),true,'끄면 공통 필터줄도 다시 보인다');
   assert.deepEqual(errs,[]);

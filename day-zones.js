@@ -20,7 +20,7 @@
  const INFO=new Set(['data','contract','fix','tfapprove']);
  /* ── 회신 대기: 대기 사유 + 다음 확인일이 있는 영업건(확인일에 지금 처리로) ── */
  function waitDate(d){const v=d.expected_resume_at||d.wake_up_at||d.relationship_hold_until||'';const s=String(v||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(s)?s:'';}
- function waitingOf(d){const reason=String(d.waiting_reason||'').trim(),due=waitDate(d);if(!reason&&!due)return null;const today=KST();return {reason:reason||'대기 사유 미기록',due,future:!!due&&due>=today,indefinite:!!reason&&!due};}
+ function waitingOf(d){let reason=String(d.waiting_reason||'').trim(),due=waitDate(d);if(!reason&&!due){try{const a=R.actionObj?R.actionObj(d,R.itemPatch(d,'deal')):null,m=a&&/^고객 회신 대기:\s*(.+)$/.exec(String(a.text||''));if(m){reason=m[1].trim();const k=String(a.due||a.due_at||'').slice(0,10);due=/^\d{4}-\d{2}-\d{2}$/.test(k)?k:'';}}catch(e){}}if(!reason&&!due)return null;const today=KST();return {reason:reason||'대기 사유 미기록',due,future:!!due&&due>=today,indefinite:!!reason&&!due};}
  /* 같은 이유로 몇 번째 대기인가: 최근 60일 응대 기록 중 회신 대기(결과 · 글) 횟수 */
  function waitCount(d){try{const since=Date.now()-DAYS_BACK*864e5;return [].concat(d.activities||[],(R.itemPatch(d,'deal')||{}).activities||[]).filter(a=>Date.parse(a.at||a.occurred_at||'')>=since&&/회신\s*대기|회신대기/.test(String(a.result||'')+' '+String(a.note||''))).length;}catch(e){return 0;}}
  /* ── 약속 누락(promise_gap ①): 응대 기록 속 고객 약속(InquiryMemo.parse)인데 그 뒤 연결된 다음 행동이 없는 건 ── */
@@ -61,8 +61,10 @@
   /* 관리자 요청인데 같은 행동 업무가 없는 건 → 지금 처리에 요청 줄 하나 */
   RQ.forEach((rs,k)=>{if(seen.has(k))return;const r=rs[0];let item=null;try{item=k.startsWith('inq:')?R.inqCtlFind(String(r.target_id),false):((R.B&&R.B.deals)||[]).find(d=>String(d.id)===String(r.target_id));}catch(e){}if(!item)return;seen.add(k);if(!scopeOk(item,me))return;
    now.push({key:k,x:{type:k.startsWith('inq:')?'inq':'deal',item,owner:me},i:{site:r.site||item.site||item.site_name||'',brand:r.brand||item.brand||''},st:'',sName:'',rk:'req',missTxt:(rs[0].asks||[]).join(' · ')||r.label,short:'',act:'열어서 처리',done:'',reqs:rs,brand:r.brand||item.brand||'',reqOnly:true});});
+  /* 무기한 대기(4-3 기록 상태): 대기 사유는 있는데 확인일이 없는 건 — 따로 보여 주고 확인일을 정하게 한다 */
+  const nowait=[];(X.D||[]).forEach(d=>{try{if(!R.isOpen(d))return;const owner=R.repN(d.assignee)||'';if(!team&&owner!==me)return;const w=waitingOf(d);if(!w||!w.indefinite||!scopeOk(d,owner))return;const k='deal:'+String(d.id);nowait.push({key:k,x:{type:'deal',item:d,owner},i:{site:d.site||d.site_name||'현장명 미입력',brand:d.brand||''},st:'',sName:(()=>{try{return R.stageLabel(R.dealStage(d));}catch(e){return '';}})(),rk:'nowait',missTxt:'무기한 대기',short:'',act:'확인일 정하기',done:'',reqs:RQ.get(k)||[],wait:w,brand:d.brand||''});}catch(e){}});
   const gaps=promiseGaps(X.D||[],me,team).filter(g=>scopeOk(g.d,g.owner));
-  return {now,wait,info,gaps,me,team,total:now.length+wait.length+info.length+gaps.length};
+  return {now,wait,info,gaps,nowait,me,team,total:now.length+wait.length+info.length+gaps.length};
  }
  /* ── 근거 보기(4-3 ⑤): 적용 규칙(기준 버전) · 기준일 · 관련 기록(고객 접촉 / 내부 메모) · 빠진 것 ── */
  function evidence(i){
@@ -72,7 +74,7 @@
   if(deal){const acts=[].concat(d.activities||[],(()=>{try{return (R.itemPatch(d,'deal')||{}).activities||[];}catch(e){return [];}})());acts.forEach(a=>{let ok=false;try{ok=!!R.isMeaningfulContact(a.type,a.note,a.result||'',a.meaningful);}catch(e){}const at=String(a.at||a.occurred_at||'').slice(0,10);if(/메모/.test(String(a.type||''))||/^\[/.test(String(a.note||''))){memo++;if(at>lastMemo)lastMemo=at;}else if(ok){contact++;if(at>last)last=at;}});}
   let base='';try{if(i.rk==='first')base='접수 '+md(R.inquiryCreatedAt(d));else if(deal){const s=d.stage_entered_at||d.stageAt;base=s?'단계 진입 '+md(s)+(i.days?' → '+i.days+'일':''):(i.days?'마지막 응대 뒤 '+i.days+'일':'');}}catch(e){}
   const miss=[];if(deal){let a=null;try{a=R.actionObj(d,R.itemPatch(d,'deal'));}catch(e){}if(!a||!a.text)miss.push('다음 행동');if(!String(d.waiting_reason||'').trim()&&/month|silent|stallbig|stall/.test(i.rk))miss.push('대기 사유');}
-  return {rule:rule(ruleOf,ver),base:base||'기준일 계산 없음',records:deal?((last?md(last)+' 고객 접촉':'고객 접촉 기록 없음')+' · 고객 접촉 '+contact+'회'+(memo?' · 내부 메모 '+memo+'건(접촉 아님'+(lastMemo?' · '+md(lastMemo):'')+')':'')):'문의 응대 기록은 상세에서',missing:miss.length?miss.join(' · '):'없음'};
+  return {contact,rule:rule(ruleOf,ver),base:base||'기준일 계산 없음',records:deal?((last?md(last)+' 고객 접촉':'고객 접촉 기록 없음')+' · 고객 접촉 '+contact+'회'+(memo?' · 내부 메모 '+memo+'건(접촉 아님'+(lastMemo?' · '+md(lastMemo):'')+')':'')):'문의 응대 기록은 상세에서',missing:miss.length?miss.join(' · '):'없음'};
  }
  const rule=(t,ver)=>t+' ('+ver+')';
  /* ── §2 팝업: 새 배정(내게 새로 배정된 견적문의 · 첫 연락 전 · 아직 확인 안 함) — 다른 요청은 알림 목록 · 꼬리표. 확인은 이 PC 에 남긴다(localStorage) */
@@ -93,13 +95,16 @@
  function rowHtml(i,zone,S){
   const k=attr(i.key),bc=BRAND[i.brand||(i.i&&i.i.brand)]||'#9aa0ab',tags=(i.reqs||[]).slice(0,2).map(r=>'<span class="dz-req" title="'+attr((r.asks||[]).join(' · ')||r.label)+'">'+h(reqTag(r))+'</span>').join('');
   let task,why,sub,wc,btn;
-  if(zone==='wait'){const n=waitCount(i.x.item);task=i.wait.reason;why=n>=3?'같은 이유 '+n+'번째 대기':'고객 회신 대기';sub='확인 '+md(i.wait.due)+(n>=3?' · 재알림 대신 다음 셋 중 하나':'');wc=n>=3?'#8a5a00':'#6b7280';btn='확인일 변경';i.wait3=n>=3;}
+  if(zone==='nowait'){task=i.wait.reason;why='무기한 대기';sub='확인일 없음 · 확인일을 정하면 회신 대기로';wc='#6b7280';btn='확인일 정하기';}
+  else if(zone==='wait'){const n=waitCount(i.x.item);task=i.wait.reason;why=n>=3?'같은 이유 '+n+'번째 대기':'고객 회신 대기';sub='확인 '+md(i.wait.due)+(n>=3?' · 재알림 대신 다음 셋 중 하나':'');wc=n>=3?'#8a5a00':'#6b7280';btn='확인일 변경';i.wait3=n>=3;}
   else if(zone==='info'){task=String(i.done||i.missTxt||'');why=action(i);sub=String(i.missTxt||'')+(i.short&&!/^(0일|오늘|-|—)$/.test(i.short)?' · '+i.short:'');wc='#6b7280';btn=i.act||'입력';}
   else{task=i.reqOnly?String(i.missTxt||''):String((i.x&&i.x.next)||i.done||i.missTxt||'');why=i.reqOnly?'관리자 요청':action(i);sub=i.reqOnly?((i.reqs[0]&&i.reqs[0].memo)||''):(i.rk==='deadline'&&i.deadline?i.deadline.what+' '+md(i.deadline.date):String(i.missTxt||'')+(i.short&&!/^(0일|오늘|-|—)$/.test(i.short)?' · '+i.short:''));wc=/now|today/.test(i.urg||'')||i.rk==='deadline'?'#b42318':i.rk==='promise'?'#8a5a00':'#15171c';btn=i.reqOnly?'열어서 처리':(i.act||'전화');}
+  /* 4-3: CRM 에 접촉 기록이 없는 건은 '지연'으로 단정하지 않는다 — 활동 여부부터 확인(상황 4가지) */
+  const DX=R.DayExtra&&R.DayExtra.on()?R.DayExtra:null;let chk=false;if(DX&&zone==='now'&&!i.reqOnly&&DX.needsCheck(i)){why=DX.WORD;btn='활동 확인';wc='#15171c';chk=true;}
   const whyBtn='<button type="button" class="dz-why" data-dz="why" data-key="'+k+'" style="color:'+wc+'" aria-expanded="'+(S.why===i.key)+'">'+h(why)+'</button>';
-  const ev=S.why===i.key?(()=>{const e=evidence(i);return '<div class="dz-ev"><span>'+h(why)+' · 왜?</span><div><i>적용 규칙</i><b>'+h(e.rule)+'</b><i>기준일</i><b>'+h(e.base)+'</b><i>관련 기록</i><b>'+h(e.records)+'</b><i>빠진 것</i><b class="'+(e.missing==='없음'?'':'amb')+'">'+h(e.missing)+'</b>'+(opens(i)?'<i>누르면</i><b>'+h(opens(i))+'</b>':'')+'</div></div>';})():'';
+  const ev=S.why===i.key?(()=>{const e=evidence(i);return '<div class="dz-ev"><span>'+h(why)+' · 왜?</span><div><i>적용 규칙</i><b>'+h(e.rule)+'</b><i>기준일</i><b>'+h(e.base)+'</b><i>관련 기록</i><b>'+h(e.records)+'</b><i>빠진 것</i><b class="'+(e.missing==='없음'?'':'amb')+'">'+h(e.missing)+'</b>'+(DX&&i.x.type==='deal'?DX.progressHtml(i.x.item,e.contact||0):'')+(opens(i)?'<i>누르면</i><b>'+h(opens(i))+'</b>':'')+'</div></div>';})():'';
   return '<div class="dz-row" data-key="'+k+'" style="border-left-color:'+bc+'"><div class="c1"><b title="'+attr(i.i.site)+'">'+h(i.i.site)+'</b><div><span>'+h(i.sName||'')+'</span>'+tags+'</div></div><span class="c2" title="'+attr(task)+'">'+h(task)+'</span><div class="c3">'+whyBtn+'<small title="'+attr(sub)+'">'+h(sub)+'</small></div>'
-   +(i.reqOnly?'<button type="button" data-dz="open" data-key="'+k+'">'+h(btn)+'</button>':zone==='wait'&&i.wait3?'<span class="dz-btns dz-w3"><button type="button" data-dz="open" data-key="'+k+'" data-act="contact">결정권자에게 연락</button><button type="button" data-dz="judge" data-key="'+k+'">관리자 판단 요청</button><button type="button" data-dz="hold" data-key="'+k+'">보류로 전환</button></span>':zone==='wait'?'<button type="button" data-dz="open" data-key="'+k+'" data-act="next">'+h(btn)+'</button>':'<button type="button" data-t3="act" data-key="'+k+'" data-act="'+attr(i.act||'전화')+'"'+(i.i&&i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>'+h(btn)+'</button>')+'</div>'+ev;
+   +(i.reqOnly?'<button type="button" data-dz="open" data-key="'+k+'">'+h(btn)+'</button>':zone==='wait'&&i.wait3?'<span class="dz-btns dz-w3"><button type="button" data-dz="open" data-key="'+k+'" data-act="contact">결정권자에게 연락</button><button type="button" data-dz="judge" data-key="'+k+'">관리자 판단 요청</button><button type="button" data-dz="hold" data-key="'+k+'">보류로 전환</button></span>':(zone==='wait'||zone==='nowait')?'<button type="button" data-dz="open" data-key="'+k+'" data-act="next">'+h(btn)+'</button>':chk?'<button type="button" data-dz="chk" data-key="'+k+'" aria-expanded="'+!!(S.chk&&S.chk.key===i.key)+'">'+h(btn)+'</button>':'<button type="button" data-t3="act" data-key="'+k+'" data-act="'+attr(i.act||'전화')+'"'+(i.i&&i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>'+h(btn)+'</button>')+'</div>'+ev+(DX?DX.chkHtml(i,S):'');
  }
  function gapHtml(g,S){
   const k=attr(g.key),bc=BRAND[g.d.brand]||'#9aa0ab',busy=S.busy===g.key,ask=S.ask===g.key;
@@ -114,21 +119,22 @@
  }
  function html(Z,_S,pass){const S=st();/* 상태(구역 · 근거 보기 · 쪽)는 이 모듈 것 하나만 쓴다 */
   const P=R.ListPager;
-  const lists={now:Z.now.filter(pass),wait:Z.wait.filter(pass),info:Z.info.filter(pass),gaps:Z.gaps};
+  const lists={now:Z.now.filter(pass),wait:Z.wait.filter(pass),info:Z.info.filter(pass),gaps:Z.gaps},DX=R.DayExtra&&R.DayExtra.on()?R.DayExtra:null;if(!DX){S.rs='';S.closing=false;}
   if(!lists[S.zone]&&S.zone!=='now')S.zone='now';
   const tabs='<div class="dz-tabs" role="tablist">'+ZONES.map(z=>'<button type="button" role="tab" data-dz="zone" data-v="'+z[0]+'" aria-selected="'+(S.zone===z[0])+'"><span>'+h(z[1])+' <b'+(z[0]==='now'&&lists.now.length?' class="r"':'')+'>'+lists[z[0]].length+'</b></span><small>'+h(z[2])+'</small></button>').join('')+'</div>';
-  const z=ZONES.find(x=>x[0]===S.zone)||ZONES[0],list=lists[z[0]],pg=P?P.cut(list,P.page(S,'z'+z[0]),PER):{rows:list.slice(0,PER)};
+  const z=ZONES.find(x=>x[0]===S.zone)||ZONES[0],rz=z[0]==='now'&&DX&&S.rs==='nowait'?'nowait':z[0],list=rz==='nowait'?(Z.nowait||[]).filter(pass):z[0]==='now'&&DX&&S.rs?lists.now.filter(i=>DX.passRs(i,S)):lists[z[0]],pg=P?P.cut(list,P.page(S,'z'+z[0]),PER):{rows:list.slice(0,PER)};
   const head='<div class="dz-head"><span>현장</span><span>'+h(z[3])+'</span><span>먼저 하는 이유 · '+h(z[4])+'</span><span></span></div>';
-  const rows=pg.rows.length?pg.rows.map(i=>z[0]==='gaps'?gapHtml(i,S):rowHtml(i,z[0],S)).join(''):'<p class="dz-empty">'+(z[0]==='now'?'지금 처리할 건이 없습니다.':z[0]==='wait'?'회신을 기다리는 건이 없습니다.':z[0]==='info'?'보완할 기록이 없습니다.':'연결된 업무가 없는 약속이 없습니다.')+'</p>';
-  return popupHtml(Z.me)+hiddenHtml(Z)+'<section class="dz" data-zone="'+z[0]+'">'+tabs+'<div class="dz-table">'+head+rows+(P&&pg.pages>1?P.html(pg,{ns:'dz',v:'z'+z[0],small:true}):'')+'<div class="dz-note">'+h(z[5])+'</div></div></section>';
+  const rows=pg.rows.length?pg.rows.map(i=>z[0]==='gaps'?gapHtml(i,S):rowHtml(i,rz,S)).join(''):'<p class="dz-empty">'+(z[0]==='now'?'지금 처리할 건이 없습니다.':z[0]==='wait'?'회신을 기다리는 건이 없습니다.':z[0]==='info'?'보완할 기록이 없습니다.':'연결된 업무가 없는 약속이 없습니다.')+'</p>';
+  return popupHtml(Z.me)+hiddenHtml(Z)+'<section class="dz" data-zone="'+z[0]+'">'+tabs+(DX?'<div class="dx-bar">'+DX.stripHtml(Z,S)+'<i></i><button type="button" class="dx-closebtn" data-dz="close" aria-pressed="'+!!S.closing+'">오늘 마감</button></div>':'')+(DX&&S.closing?DX.closeHtml(Z,LASTX,S):'<div class="dz-table">'+head+rows+(P&&pg.pages>1?P.html(pg,{ns:'dz',v:'z'+z[0],small:true}):'')+'<div class="dz-note">'+h(rz==='nowait'?'대기 사유만 있고 확인일이 없는 건 · 확인일을 정하면 회신 대기로 옮겨집니다':z[5])+'</div></div>')+'</section>';
  }
  /* ── 누르기 ── */
  const toast=(m,k)=>{if(typeof R.toast==='function')R.toast(m,k);};
  const rerender=()=>{try{R.TodayV2.render();}catch(e){try{R.paint();}catch(e2){}}};
- let LAST=null;
+ let LAST=null,LASTX=null;
  function onClick(e){
   const b=e.target.closest('#today-v2 [data-dz]');if(!b||b.disabled)return;e.preventDefault();e.stopPropagation();const S=st(),a=b.dataset.dz,key=b.dataset.key;
-  if(a==='zone'){S.zone=b.dataset.v;S.why='';if(R.ListPager)R.ListPager.reset(S);return rerender();}
+  if(R.DayExtra&&R.DayExtra.on()&&R.DayExtra.onAction(a,b,S,LAST,LASTX))return;
+  if(a==='zone'){S.zone=b.dataset.v;S.why='';S.rs='';S.chk=null;S.closing=false;if(R.ListPager)R.ListPager.reset(S);return rerender();}
   if(a==='why'){S.why=S.why===key?'':key;return rerender();}
   if(a==='page'){if(R.ListPager)R.ListPager.set(S,b.dataset.v,b.dataset.page);return rerender();}
   if(a==='unhide'){const G=R.G;try{if(R.SalesFilterState)R.SalesFilterState.selectBrand('전체');}catch(e){}G.brand='전체';try{R.CommonFilterBar&&R.CommonFilterBar.setOwner&&R.CommonFilterBar.setOwner('전체');}catch(e){}G.todayQueueOwner='전체';try{R.CommonFilterBar&&R.CommonFilterBar.setSearch&&R.CommonFilterBar.setSearch('');}catch(e){}G.todayQueueSearch='';G.q='';try{R.paint();}catch(e){rerender();}return;}
@@ -163,5 +169,5 @@
   S.busy='';rerender();
  }
  if(typeof document!=='undefined'){document.addEventListener('click',onClick,true);document.addEventListener('input',e=>{const t=e.target;if(t&&t.matches&&t.matches('#today-v2 [data-dz-in="note"]'))st().note=t.value;},true);}
- return {on,build:(V,X)=>(LAST=build(V,X)),html,evidence,action,ACTION,waitingOf,waitCount,promiseGaps,reqMap,reqTag,newAssigns,ackAssign,ZONES,state:st,last:()=>LAST};
+ return {on,build:(V,X)=>{LASTX=X;return (LAST=build(V,X));},html,evidence,action,ACTION,waitingOf,waitCount,promiseGaps,reqMap,reqTag,newAssigns,ackAssign,ZONES,state:st,last:()=>LAST};
 });
