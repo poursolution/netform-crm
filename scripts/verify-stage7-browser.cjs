@@ -58,7 +58,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const cm=await rowOf('c-meet');assert.deepEqual([cm.task,cm.due,cm.why,cm.btn],['견적 요청 등록','기한 없음 · 설정값 확인','판정: 미팅 완료 '+(await page.evaluate(()=>PipelineJudge.md(DAY(-4))))+' · 견적 요청 전 견적 요청 등록','견적 요청'],'미팅 후 견적 요청 등록 = 별도 업무 · 기한은 설정값');
   const cr=await rowOf('c-req');assert.deepEqual([cr.task,cr.due,cr.why.replace(/\s*견적 예정일 입력$/,'')],['물량 산출 기한 확인 (견적팀)','날짜 미입력 · 기한 계산 안 함','판정: 견적 요청 등록 · 예정일 없음']);
   const cd=await rowOf('c-due');assert.deepEqual([cd.due,cd.dueCls,cd.why.slice(0,22)],['2일 지남','r','판정: 물량 산출 기한 '+(await page.evaluate(()=>PipelineJudge.md(DAY(-2))))]);
-  assert.match(await kpi(),/^기한 초과 1건 확인 필요 2 · 날짜 미입력 2 · 판정 불가 0$/,'제목 숫자: 기한 초과(물량 산출 기한) 1 · 확인 필요 2');
+  assert.match(await kpi(),/^기한 초과 판정 가능 1 \/ 3 판정 불가 · 일정 · 기록 미확인 2건 기한 안 · 해당 없음 0건 실제 기한 초과 1건 다음 업무 · 기존 기록 확인 → 일정 · 날짜 등록$/,'진단 칸(after_deploy 8): 판정 가능 1 / 3 · 판정 불가 2 · 실제 기한 초과(물량 산출 기한) 1');
   assert.deepEqual((await V.locator('.ps3-reason span>b:first-child').allInnerTexts()),['미팅 여부 확인 필요','물량 산출 기한 넘김','필수 확인 미입력','다음 행동 · 날짜 없음','30일 넘게 머묾']);
   /* 설정: '미팅 후 견적 요청 등록'은 보류(운영 제안) · 값이 없으니 기한 계산 안 함 · 값을 넣으면 계산 */
   assert.deepEqual(await page.evaluate(()=>{const r=CRMRules.ROWS.find(x=>x.k==='quote_request_days');return [r.st,r.l,r.unit,CRMRules.get('quote_request_days')===undefined];}),['hold','미팅 후 견적 요청 등록','일',true]);
@@ -70,7 +70,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await page.evaluate(()=>PipelineWorkspace.open('sent'));await page.waitForSelector('#pipeline-stage-v3[data-stage="sent"] .prv-row');await page.waitForTimeout(200);
   assert.deepEqual(await V.locator('.ps3-tab .l').allInnerTexts(),['전체','7일 넘음 · 후속 없음','발송 후 7일 안','후속 확인 기록 있음','발송일 확인 필요']);
   const sn=await rowOf('s-nodate');assert.deepEqual([sn.tab,sn.now,sn.task,sn.due,sn.dueCls,sn.btn,sn.act],['3','발송일 확인 필요 · 발송 여부 · 기존 증빙 확인','실제 발송 · 기존 증빙 확인','발송일 확인 필요 · 7일 계산 안 함','g','증빙 확인','stagefields']);
-  assert.match(sn.why,/^판정: 발송일 미등록 발송일 입력$/);assert.match(await kpi(),/^발송 후 후속 지연 0건 판정 가능 0 \/ 1건 · 발송일 확인 1건$/,'발송일 없는 건은 지연이 아니라 확인 필요');
+  assert.match(sn.why,/^판정: 발송일 미등록 발송일 입력$/);assert.match(await kpi(),/^발송 후 후속 지연 판정 가능 0 \/ 1 판정 불가 · 발송일 미확인 1건 확인 완료 · 기한 안 – 실제 지연 – 다음 업무 · 기존 발송 자료 · 수신자 · 발송일 확인$/,'발송일 없는 건은 지연 0건이 아니라 판정 불가(근거 없는 0건 금지)');
   /* ④ 경쟁 */
   await page.evaluate(()=>PipelineWorkspace.open('competition'));await page.waitForSelector('#pipeline-stage-v3[data-stage="competition"] .prv-row');await page.waitForTimeout(200);
   assert.deepEqual(await V.locator('.ps3-tab').evaluateAll(l=>l.map(t=>[t.querySelector('.l').textContent,t.querySelector('span').textContent])),[['전체','이 단계 모든 현장'],['마감 D-7 이내','제안서 · 가격 확정 · 운영 제안'],['진행 중','일정 확인'],['결과 대기','개찰 다음날 결과 등록 · 운영 제안'],['일정 미등록','입찰 · PT 일정 확인']]);
