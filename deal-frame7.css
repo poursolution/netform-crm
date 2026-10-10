@@ -70,8 +70,7 @@
 #detailView.ddv.dv3.dvt.dv7 .dv7-opener{font-size:12.5px;line-height:1.5;color:#15171c;background:#f5f8ff;border-left:3px solid #3b6ce4;border-radius:4px;padding:6px 9px;overflow-wrap:anywhere}
 #detailView.ddv.dv3.dvt.dv7 .dv7-opener>b{font-size:11px;font-weight:700;color:#3b6ce4;margin-right:4px}
 /* ════ 오른쪽 정리(design_handoff_detail_right_fix) — #detailView.dv7r. 오른쪽 칸 = 지금 처리 카드 하나(스크롤 없이 끝) · 나머지 상자는 가운데 칸 패널. 끄기: G.dealRightKeep=true ════ */
-#detailView.ddv.dv3.dvt.dv7r .dw-right>*:not(.dvs-task):not(.dv3-slot):not(#tf-card):not(.dv3-near){display:none!important}
-#detailView.ddv.dv3.dvt.dv7r .dw-right>.dv3-near{order:3;margin-top:16px;padding-top:14px;border-top:1px solid #eef0f3}/* 근처 현장 = 오른쪽 지금 처리 아래 그대로 */
+#detailView.ddv.dv3.dvt.dv7r .dw-right>*:not(.dvs-task):not(.dv3-slot):not(#tf-card){display:none!important}
 #detailView.ddv.dv3.dvt.dv7r .dw-right>#tf-card{order:2;margin-top:12px}/* 타사 이관 건의 상태 카드(낙찰결과 등록)는 기능이라 그대로 둔다 */
 #detailView.ddv.dv3.dvt.dv7r .dw-right{background:#fcfcfd}
 #detailView.ddv.dv3.dvt.dv7r .dvs-task{gap:13px;padding:0;border-bottom:0;margin-bottom:0}
@@ -133,7 +132,7 @@
 #detailView.ddv.dv3.dvt.dv7r .dv7-xrows button{flex:none;border:0;background:none;padding:0;margin:0;height:auto;min-height:0;width:auto;font:inherit;font-size:12px;font-weight:700;color:#2a52b8;cursor:pointer;box-shadow:none;white-space:nowrap}
 #detailView.ddv.dv3.dvt.dv7r .dv7-pbody{padding:14px 20px 20px;display:flex;flex-direction:column;gap:12px;min-width:0}
 #detailView.ddv.dv3.dvt.dv7r .dv7-pbody>*{display:none!important;margin:0}
-#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="info"] .dv7-pbody>.dv7-fill,#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="send"] .dv7-pbody>.dv7-fill,#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="info"] .dv7-pbody>.dv3-slot[data-slot="stage"]:not(:empty),#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="collab"] .dv7-pbody>.dcb,#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="units"] .dv7-pbody>.dvu,#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="prep"] .dv7-pbody>.dp6,#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="near"] .dv7-pbody>.dv3-near{display:flex!important}
+#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="info"] .dv7-pbody>.dv7-fill,#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="work"] .dv7-pbody>.dv7-fill,#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="info"] .dv7-pbody>.dv3-slot[data-slot="stage"]:not(:empty),#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="collab"] .dv7-pbody>.dcb,#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="units"] .dv7-pbody>.dvu,#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="prep"] .dv7-pbody>.dp6,#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="near"] .dv7-pbody>.dv3-near{display:flex!important}
 #detailView.ddv.dv3.dvt.dv7r .dv7-pbody>.da-stage-summary{flex-direction:column;border:0;box-shadow:none;background:none;padding:0;border-radius:0}
 
 #detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="near"] .dv7-pbody>.dv3-near{display:block!important}
@@ -181,3 +180,34 @@
 #detailView.ddv.dv3.dvt.dv7r .dvt-c4{margin:2px 0 0}
 #detailView.ddv.dv3.dvt.dv7r .dvt-c4 .lnk{border:0;background:none;padding:2px 0;margin:0;height:auto;min-height:0;width:auto;font:inherit;font-size:12px;font-weight:600;color:#6b7280;text-decoration:underline;text-decoration-color:#d9dde4;text-underline-offset:3px;cursor:pointer;box-shadow:none}
 #detailView.ddv.dv3.dvt.dv7r .dvt-c4 .lnk:hover{color:#15171c}
+
+/* ── 주 버튼 = 업무 화면(가운데 칸 한 곳) ── */
+#detailView.ddv.dv3.dvt.dv7r .dvs-primary.on{background:#f5f8ff;border:2px solid #3b6ce4;color:#1d3f99}
+#detailView.ddv.dv3.dvt.dv7r .dv7-work{display:flex;flex-direction:column;gap:14px;min-width:0}
+#detailView.ddv.dv3.dvt.dv7r .dv7-wsum{font-size:12px;color:#6b7280}
+#detailView.ddv.dv3.dvt.dv7r .dv7-work>section{display:flex;flex-direction:column;gap:8px;min-width:0}
+#detailView.ddv.dv3.dvt.dv7r .dv7-st{display:flex;align-items:center;gap:8px;font-size:13.5px}
+#detailView.ddv.dv3.dvt.dv7r .dv7-st>.n{flex:none;width:20px;height:20px;border-radius:50%;background:#15171c;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+#detailView.ddv.dv3.dvt.dv7r .dv7-st>.n.ok{background:#1f9d55}
+#detailView.ddv.dv3.dvt.dv7r .dv7-st>small{font-size:11.5px;color:#6b7280}
+#detailView.ddv.dv3.dvt.dv7r .dv7-drop{border:1.5px dashed #c9cdd5;background:#fafbfc;border-radius:10px;padding:16px;text-align:center;font:inherit;font-size:12.5px;color:#374151;height:auto;min-height:0;width:100%;margin:0;box-shadow:none;cursor:pointer}
+#detailView.ddv.dv3.dvt.dv7r .dv7-drop:hover:not(:disabled){border-color:#15171c}
+#detailView.ddv.dv3.dvt.dv7r .dv7-drop:disabled{opacity:.6;cursor:default}
+#detailView.ddv.dv3.dvt.dv7r .dv7-fl{display:flex;gap:6px;flex-wrap:wrap}
+#detailView.ddv.dv3.dvt.dv7r .dv7-fl>span{font-size:12px;background:#f3f4f6;border-radius:6px;padding:4px 9px;overflow-wrap:anywhere}
+#detailView.ddv.dv3.dvt.dv7r .dv7-hint{font-size:11.5px;color:#9ca3af}
+#detailView.ddv.dv3.dvt.dv7r .dv7-ta{height:auto;min-height:64px;padding:9px 11px;line-height:1.55;resize:vertical;flex:1 1 100%;max-width:none;font-family:inherit}
+#detailView.ddv.dv3.dvt.dv7r .dv7-work .dv7-in:not(.dv7-ta){max-width:360px}
+#detailView.ddv.dv3.dvt.dv7r .dv7-wbtns{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#detailView.ddv.dv3.dvt.dv7r .dv7-wbtns>button{border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12.5px;font-weight:700;border-radius:8px;padding:8px 14px;height:auto;min-height:0;width:auto;margin:0;box-shadow:none;cursor:pointer}
+#detailView.ddv.dv3.dvt.dv7r .dv7-wbtns>small{font-size:11.5px;color:#9ca3af}
+#detailView.ddv.dv3.dvt.dv7r .dv7-wfoot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid #eef0f3;padding:10px 0 2px;margin-top:2px;position:sticky;bottom:0;background:#fff;z-index:1}
+#detailView.ddv.dv3.dvt.dv7r .dv7-wfoot>span{flex:1 1 200px;font-size:12px;color:#6b7280;min-width:0}
+#detailView.ddv.dv3.dvt.dv7r .dv7-wfoot>button{border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12.5px;font-weight:600;border-radius:8px;padding:9px 14px;height:auto;min-height:0;width:auto;margin:0;box-shadow:none;cursor:pointer;white-space:nowrap}
+#detailView.ddv.dv3.dvt.dv7r .dv7-wfoot>button.pri{background:#15171c;border-color:#15171c;color:#fff;font-weight:700;padding:10px 18px}
+#detailView.ddv.dv3.dvt.dv7r .dv7-wfoot>button:disabled{background:#c9cdd5;border-color:#c9cdd5;color:#fff;cursor:default}
+#detailView.ddv.dv3.dvt.dv7r .dv7-work .dv7-chips{display:flex;flex-wrap:wrap;gap:6px}
+#detailView.ddv.dv3.dvt.dv7r .dv7-work .dv7-chips button{border:1px solid #d9dde4;background:#fff;color:#374151;font:inherit;font-size:12.5px;font-weight:600;border-radius:999px;padding:5px 13px;height:auto;min-height:0;width:auto;margin:0;box-shadow:none;cursor:pointer;white-space:nowrap}
+#detailView.ddv.dv3.dvt.dv7r .dv7-work .dv7-chips button[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}
+#detailView.ddv.dv3.dvt.dv7r .dv7-work section>.dv7-in:not(.dv7-ta){flex:0 0 auto;height:32px;width:100%}
+#detailView.ddv.dv3.dvt.dv7r .dv7-work section>select.dv7-in{max-width:360px}

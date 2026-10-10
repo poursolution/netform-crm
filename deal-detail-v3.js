@@ -634,7 +634,7 @@
    const RF=rfix(d);let opener='';try{const KO=S.calling&&root.DealKeyman&&root.DealKeyman.ai&&aiOn()?root.DealKeyman.ai(d):null;opener=KO&&KO.call&&KO.call.opener?String(KO.call.opener):'';}catch(e){}
    const lgc7=v.classList.contains('dv3-legacy');
    let ai='';if(RF){ai=opener?'"'+opener+'"':reco.replace(/ \(AI\)$/,'');}/* 단지 이력 안내는 왼쪽 '이 단지 지난 영업' 줄로 충분 */
-   const html=(RF?{taskHtml:F7.rightHtml}:(F7||DS)).taskHtml(d,{closed,primary,opener,ai,noResume:lgc7&&!v.querySelector('.dv3-headact .mv:not([disabled])'),tel:!!ci.mobile,calling:!!S.calling,req:S.req,guide:closed?'':lgc7?'영업을 다시 시작하려면 [영업 재개]에서 단계 · 다음 행동 · 날짜를 정해 주세요':String(root.dealStage(d))==='contract'?String(((root.CRMRules&&root.CRMRules.PHASE4&&root.CRMRules.PHASE4.playbook_tips)||{}).con||''):(hint?(hint.todo||hint.why):''),reco,nextHtml});
+   const html=(RF?{taskHtml:F7.rightHtml}:(F7||DS)).taskHtml(d,{closed,primary,opener,ai,workOpen:S.p7==='work',noResume:lgc7&&!v.querySelector('.dv3-headact .mv:not([disabled])'),tel:!!ci.mobile,calling:!!S.calling,req:S.req,guide:closed?'':lgc7?'영업을 다시 시작하려면 [영업 재개]에서 단계 · 다음 행동 · 날짜를 정해 주세요':String(root.dealStage(d))==='contract'?String(((root.CRMRules&&root.CRMRules.PHASE4&&root.CRMRules.PHASE4.playbook_tips)||{}).con||''):(hint?(hint.todo||hint.why):''),reco,nextHtml});
    if(tk.__h!==html){tk.__h=html;tk.innerHTML=html;}
    if(now)now.classList.add('dv3-old');
   }
@@ -746,7 +746,7 @@
   if(same()&&(f7(d)?(!closed||['won','lost'].includes(root.DealFrame7.groupOf(d))):(!closed&&!v.classList.contains('dv3-legacy'))))sameRight(v,d,closed,r);else{const tk=r.querySelector(':scope>.dvs-task');if(tk)tk.remove();if(now)now.classList.remove('dv3-old');}
    /* 단계 바꾸기 카드는 오른쪽에서 빼고 창 머리글로 */
   r.querySelectorAll(':scope>.ddv-switch').forEach(n=>n.classList.add('dv3-old'));
-  if(dr){r.querySelectorAll(':scope>.dcb,:scope>.dvu,:scope>.dp6').forEach(n=>n.remove());host.querySelectorAll(':scope>.dcb,:scope>.dvu,:scope>.dp6,:scope>.dv3-near').forEach(n=>n.remove());document.querySelectorAll('#detailView .dp6-plan').forEach(n=>n.remove());syncP7(v,d,dr);}
+  if(dr){r.querySelectorAll(':scope>.dcb,:scope>.dvu,:scope>.dp6,:scope>.dv3-near').forEach(n=>n.remove());host.querySelectorAll(':scope>.dcb,:scope>.dvu,:scope>.dp6').forEach(n=>n.remove());document.querySelectorAll('#detailView .dp6-plan').forEach(n=>n.remove());syncP7(v,d,dr);}
  }
  /* ════ 정돈안(2026-10-06 design_handoff_deal_detail_tidy · 시안 '영업건 상세 정돈안') — 배치만 정리한다. 저장 경로 · 단계 흐름 · 자료는 그대로. 끄기: G.dealTidyOff=true ════
     머리 = 브랜드 색 띠 + 글자 · '단계 · n일째' 꼬리표 하나 · 담당 · 예상 금액 · (같은 단지 수주 이력이 있으면) '✓ 기존 고객' 알약 · [단계 바꾸기 ▾] [···] [×]
@@ -880,13 +880,13 @@
  function drawer7(v){const c=v.querySelector('.dw-center');if(!c)return null;let p=c.querySelector(':scope>.dv7-drawer');if(!p){p=el('div','dv7-drawer','<div class="dv7-phead"></div><div class="dv7-pbody"></div>');p.hidden=true;const t=c.querySelector(':scope>.ddv-talk');if(t)c.insertBefore(p,t);else c.append(p);}return p;}
  function undrawer7(v,r){const p=v.querySelector('.dv7-drawer');if(!p)return;const s=p.querySelector('.da-stage-summary');if(s&&r&&!r.querySelector('.da-stage-summary'))r.append(s);p.remove();v.classList.remove('dv7p');}
  function syncP7(v,d,dr){
-  const S=st(d),F=root.DealFrame7,key=F.PANELS[S.p7]?S.p7:'';S.p7=key;
-  const head=dr.querySelector(':scope>.dv7-phead');
-  const hh=key?'<div class="t"><button type="button" data-dv3="p7close" aria-label="응대 이력으로 돌아가기">‹</button><b>'+h(F.PANELS[key][0])+'</b><span>'+h(F.PANELS[key][1])+'</span></div>':'';
+  const S=st(d),F=root.DealFrame7;let key=F.PANELS[S.p7]?S.p7:'';if(key==='work'&&!F.hasWork(d))key='info';S.p7=key;
+  const head=dr.querySelector(':scope>.dv7-phead'),P=key==='work'?[F.workTitle(d),F.workSub(d)]:F.PANELS[key];
+  const hh=key?'<div class="t"><button type="button" data-dv3="p7close" aria-label="응대 이력으로 돌아가기">‹</button><b>'+h(P[0])+'</b><span>'+h(P[1])+'</span></div>':'';
   if(head.__h!==hh){head.__h=hh;head.innerHTML=hh;}
-  /* [채우기] · [발송 내역 확인]: 이 패널만의 화면(확인할 정보 3줄 · 발송 내역) — 옛 '빠진 정보' 목록은 그리지 않는다 */
+  /* 주 버튼이 여는 업무 화면(견적 요청 등록 · 발송 내역 · 제출 확인 · 계약서 확인 · 사후 연락 · 실주 기록) · [채우기] 확인할 정보 — 옛 '빠진 정보' 목록은 그리지 않는다 */
   const body=dr.querySelector(':scope>.dv7-pbody');let fill=body.querySelector(':scope>.dv7-fill');if(!fill){fill=el('div','dv7-fill');body.prepend(fill);}
-  const fh=key==='info'?F.fillHtml(d,S):key==='send'?F.sendHtml(d,S):'';
+  const fh=key==='info'?F.fillHtml(d,S):key==='work'?F.workHtml(d,S):'';
   if(fill.__h!==fh){fill.__h=fh;fill.innerHTML=fh;}
   dr.dataset.p=key;if(dr.hidden===!!key)dr.hidden=!key;v.classList.toggle('dv7p',!!key);
   const cmp=v.querySelector('.dw-center .idv-composer');dr.style.bottom=(key&&cmp?cmp.offsetHeight:0)+'px';
@@ -906,6 +906,33 @@
   keys.forEach(k=>{const v=dr[k];if(v==null)return;if(Array.isArray(v)){fields[k]=v;return;}const s=String(v).trim();if(s!=='')fields[k]=s;});
   if(!Object.keys(fields).length){toast('저장할 값을 적어 주세요','warn');return;}
   saveSF(d,fields,()=>{if(S.fill)delete S.fill[row];});
+ }
+ /* 업무 화면의 [저장] — 화면 입력 + 지금 값 → 단계 정보 칸(saveSF) · 견적 요청이면 다음 업무까지. 저장하면 왼쪽 기본 정보 · 자료 값도 같이 바뀐다 */
+ function workSave(d,row,mode){
+  const S=st(d),F=root.DealFrame7,r=F.workFields(d,row,(S.fill&&S.fill[row])||{},mode);
+  if(r.error){toast(r.error,'warn');return;}
+  saveSF(d,r.fields,()=>{if(S.fill)delete S.fill[row];S.p7='';if(r.next)nextOutside(d,r.next).then(()=>root.renderDetail?.()).catch(e=>toast('견적 요청은 저장했지만 다음 업무를 등록하지 못했습니다: '+String(e&&e.message||e),'warn'));});
+ }
+ /* 화면 안에서 바로 올리기: 기존 자료 업로드(uploadExecAttachment) 그대로 — 분류 · 메모는 화면이 정한다. 올린 뒤 표식 칸(compare_attached · receipt_attached)이 있으면 단계 정보에 남긴다 */
+ function pickFiles(d,b){
+  const inp=document.createElement('input');inp.type='file';inp.multiple=true;inp.accept='image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx';
+  inp.onchange=()=>{const list=[...(inp.files||[])].slice(0,10);if(!list.length)return;if(list.some(f=>f.size>20*1024*1024)){toast('파일당 최대 20MB까지 올릴 수 있습니다','warn');return;}uploadHere(d,list,b.dataset.cat||'기타',b.dataset.memo||'',b.dataset.mark||'');};
+  inp.click();
+ }
+ async function uploadHere(d,list,cat,memo,mark){
+  const S=st(d);if(S.upBusy)return;S.upBusy=true;apply();
+  try{
+   const p=root.itemPatch(d,'deal'),rows=[];
+   for(const f of list){const c=cat==='auto'?(/^image\//.test(f.type||'')?'현장사진':'도면'):cat;rows.push(root.FIELD_DEMO?root.demoExecAttachment(d,f,c,[],memo):await root.uploadExecAttachment(d,f,c,[],memo));}
+   p.attachments=d.attachments=(root.execAttachments(d)||[]).concat(rows);
+   const note='자료 '+rows.length+'개 등록 · '+(cat==='auto'?'도면 · 현장 사진':cat)+(memo?' · '+memo:'');
+   if(root.FIELD_DEMO){p.activities=p.activities||d.activities||[];p.activities.push({type:'파일첨부',note,result:'',at:new Date().toISOString(),actor:root.ME&&root.ME.name||''});d.activities=p.activities;}
+   else{const row=root.logActivity('파일첨부',note,'',new Date().toISOString());root.pushWrite('activity',{opportunity_id:d.id,type:'파일첨부',note,result:'',occurred_at:row.at});}
+   try{root.saveLocal?.();}catch(e){}try{root.execTouch(d,'work',true);}catch(e){}
+   toast(rows.length+'개 파일을 올렸습니다');
+   S.upBusy=false;
+   if(mark)saveSF(d,{[mark]:KST(0)},()=>{});else root.renderDetail?.();
+  }catch(e){S.upBusy=false;toast('올리지 못했습니다 · '+String(e&&e.message||e),'warn');root.renderDetail?.();}
  }
  function fillGo(d,what){
   const v=view();if(what==='composer'||what==='win'){if(what==='win'){const b=document.querySelector('#wn-head [data-wn="open"]');if(b){b.click();return;}}closeP7();apply();setTimeout(()=>{try{const ta=view().querySelector('#ddvComposer textarea');if(ta){ta.scrollIntoView({block:'nearest'});ta.focus({preventScroll:true});}}catch(e){}},30);return;}
@@ -1000,13 +1027,16 @@
   if(a==='bsave'){baseSave(d);return;}
   if(a==='fsave'){fillSave(d,b.dataset.row);return;}
   if(a==='fgo'){fillGo(d,b.dataset.v);return;}
+  if(a==='wpick'){const S=st(d);S.fill=S.fill||{};const F=S.fill[b.dataset.row]=S.fill[b.dataset.row]||{};F[b.dataset.f]=F[b.dataset.f]===b.dataset.v&&b.dataset.f!=='construction_plan'?'':b.dataset.v;apply();return;}
+  if(a==='wsave'){workSave(d,b.dataset.row,b.dataset.mode);return;}
+  if(a==='upload'){pickFiles(d,b);return;}
   if(a==='sendpick'){const S=st(d);S.fill=S.fill||{};S.fill.send=Object.assign({},S.fill.send,{sent_date:b.dataset.date});apply();return;}
   if(a==='sendmat'){const S=st(d);S.fill=S.fill||{};const F=S.fill.send=S.fill.send||{},cur=Array.isArray(F.materials)?F.materials.slice():(Array.isArray(fieldsOf(d,'sent').materials)?fieldsOf(d,'sent').materials.slice():[]),i=cur.indexOf(b.dataset.v);if(i>=0)cur.splice(i,1);else cur.push(b.dataset.v);F.materials=cur;apply();return;}
-  if(a==='sendquote'){const S=st(d);if(!S.files){S.files=true;apply();}try{root.openExecQuoteForm();}catch(e){}return;}
+  if(a==='sendquote'){try{root.openExecQuoteForm();}catch(e){}return;}/* 견적 버전 입력칸은 이 화면 안(#execQuoteForm)에 열린다 */
   if(a==='sendnone'){saveSF(d,{sent_date_check:'확인 불가'},()=>{});return;}
   if(a==='p7close'){if(closeP7())apply();return;}
   if(a==='go7'){const x=(root.B.deals||[]).find(z=>String(z.id)===String(b.dataset.id));if(x)root.drwDeal(JSON.stringify(x));return;}
-   if(a==='primary'){const act=b.dataset.act||'';if(act==='send7'&&rfix(d)){openP7('send');return;}if(act==='files'){const S=st(d);if(!S.files){S.files=true;apply();}const t=view().querySelector('.dv3-left [data-dv3="files"]');if(t)try{t.scrollIntoView({block:'nearest'});}catch(e){}return;}if(act==='call'){try{root.contactDial('mobile');}catch(err){}return;}if(act==='activity'&&!view().querySelector('.nc-cta .nc-call')){const ta=view().querySelector('#ddvComposer textarea');if(ta){try{ta.scrollIntoView({block:'nearest'});ta.focus({preventScroll:true});}catch(e){}return;}}if(openFrom(act))return;startCall(d,true);return;}
+   if(a==='primary'){let act=b.dataset.act||'';if(act==='work7'){if(rfix(d)&&root.DealFrame7.hasWork(d)){const S=st(d);if(S.p7==='work'){closeP7();apply();}else openP7('work');return;}act=root.DealFrame7.legacyAct(d)||'';}if(act==='files'){const S=st(d);if(!S.files){S.files=true;apply();}const t=view().querySelector('.dv3-left [data-dv3="files"]');if(t)try{t.scrollIntoView({block:'nearest'});}catch(e){}return;}if(act==='call'){try{root.contactDial('mobile');}catch(err){}return;}if(act==='activity'&&!view().querySelector('.nc-cta .nc-call')){const ta=view().querySelector('#ddvComposer textarea');if(ta){try{ta.scrollIntoView({block:'nearest'});ta.focus({preventScroll:true});}catch(e){}return;}}if(openFrom(act))return;startCall(d,true);return;}
    if(a==='callnow'){try{root.contactDial('mobile');}catch(err){}startCall(d,true);return;}
    if(a==='spick'){const S=st(d);S.sedit='special_terms';S.sdraft='';commitStage(d,'special_terms',b.dataset.v);return;}
    if(a==='sptext'){const S=st(d);S.sedit='special_terms';S.sdraft=root.DealSame.special(d).text;apply();return;}
@@ -1023,7 +1053,7 @@
    if(tidy()){if(!S.calling)startCall(d,true);show('#ddvComposer');return true;}/* 정돈안: 연락 입구는 가운데 입력칸 하나 */
    if(!S.rec)S.rec={ch:'전화',res:'',memo:'',prog:{}};S.nextOpen=false;apply();show('.dv3-form');return true;
   }
-  if(act==='stagefields'){if(rfix(d)){openP7('info');return true;}if(tidy()&&!S.reqOpen){S.reqOpen=true;apply();}return !!(show('.da-stage-summary')||show('.dw-right'));}
+  if(act==='stagefields'){if(rfix(d)){openP7(root.DealFrame7.hasWork(d)?'work':'info');return true;}if(tidy()&&!S.reqOpen){S.reqOpen=true;apply();}return !!(show('.da-stage-summary')||show('.dw-right'));}
   if(act==='stage'){if(!S.mvOpen){closeIn('center');S.mvOpen=true;syncMove(v);}show('.dv3-move');return true;}
   /* 담당 정하기(오늘 업무의 [배정]): 가운데 칸의 담당 변경 */
   if(act==='owner'){const p=ensureCenter(v);if(p&&p.dataset.by==='owner'&&p.firstElementChild&&p.firstElementChild.children.length)return true;if(!centerToggle('owner'))root.DetailActions.open('owner');return true;}
@@ -1035,7 +1065,7 @@
  function nearMount(){
   const v=view(),cur=root.CUR_DETAIL,IS=root.InquirySite;
   if(!v||!v.classList.contains('dv3')||!cur||cur.kind!=='deal'||!IS||!IS.on()||!IS.dealNear){if(v)v.querySelectorAll('.dv3-near').forEach(n=>n.remove());return;}
-  const d=cur.item,S=st(d),r=v.querySelector('.dw-right');/* 근처 현장은 오른쪽 지금 처리 아래에 그대로(2026-10-10 대표) */if(!r)return;S.near=S.near||{};v.querySelectorAll('.dv3-near').forEach(n=>{if(n.parentElement!==r)n.remove();});
+  const d=cur.item,S=st(d),r=(rfix(d)&&v.querySelector('.dv7-drawer>.dv7-pbody'))||v.querySelector('.dw-right');/* 근처 현장 = [···] 메뉴 '근처 현장' 패널(detail_basic_fix ⑥) */if(!r)return;S.near=S.near||{};v.querySelectorAll('.dv3-near').forEach(n=>{if(n.parentElement!==r)n.remove();});
   let box=r.querySelector(':scope>.dv3-near');if(!box){box=el('div','dv3-near');box.addEventListener('click',onNearClick);}
   if(r.lastElementChild!==box)r.append(box);
   const html=IS.dealNear.html(d,S.near);if(box.__h!==html||!box.querySelector('.isd-near')){box.__h=html;box.innerHTML=html;}
