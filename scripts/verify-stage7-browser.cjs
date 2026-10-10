@@ -43,7 +43,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     deal('l-yes','재영업 예 실주','lost',{outcome:'lost',closed_at:day(-10)+'T15:00:00.000Z',lost_reason:'가격 · 가격 경쟁',stage_contexts:{lost:{fields:{close_reason:'가격 · 가격 경쟁',close_detail:'타사 단가',competitor:'A건설',reengage:'예'}}}}),
     deal('l-no','재영업 아니오 실주','lost',{outcome:'lost',closed_at:day(-3),lost_reason:'사업 · 공사 취소',stage_contexts:{lost:{fields:{close_reason:'사업 · 공사 취소',close_detail:'사업 취소',competitor:'B건설',reengage:'아니오'}}}})
    ],inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],messageLogs:[],message_logs:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.ps3=null;
+   LOCAL={deals:{},inquiries:{},expansionPool:[]};/* 이 검사는 오른쪽 상자의 기능을 본다 — 상자를 가운데 칸 패널로 옮긴 새 배치(detail_right_fix)는 verify-detail-right-fix-browser.cjs 가 본다 */G.dealRightKeep=true;AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.ps3=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    window.pushWrite=()=>'req';window.queueDetailContactOperation=()=>'op';SB={rpc:async()=>({data:{ok:true,tasks:[],entries:[],sites:[]}})};TOKEN='test';if(window.OpsStore)OpsStore.aiOn=()=>false;
    PipelineWorkspace.open('consulting');

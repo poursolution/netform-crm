@@ -26,7 +26,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      activities:[{id:'a1',type:'전화',note:'통화 완료 · 공법 비교표 가져가기로 함',at:T('2026-10-20'),actor:'이필선'}]},
     {id:D2,site:'[경기 화성] 동탄푸른마을',assignee:'이필선',brand:'POUR솔루션',created:'2026-10-02',code:'consulting',stage_code:'consulting',grp:'영업·관리',amt:2e8,nextActionObj:{id:'n2',type:'방문',text:'고객 약속: 현장 방문',due:'2026-10-23',status:'open'},lastMeaningfulContactAt:T('2026-10-19'),activities:[{id:'b1',type:'전화',note:'통화 완료',at:T('2026-10-19'),actor:'이필선'}]}],
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'rep1',name:'이필선',role:'rep'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.q='';G.dealPrep=null;G.dealPrepOff=false;
+   LOCAL={deals:{},inquiries:{}};/* 이 검사는 오른쪽 상자의 기능을 본다 — 상자를 가운데 칸 패널로 옮긴 새 배치(detail_right_fix)는 verify-detail-right-fix-browser.cjs 가 본다 */G.dealRightKeep=true;AUTH_ON=true;ME={id:'rep1',name:'이필선',role:'rep'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.q='';G.dealPrep=null;G.dealPrepOff=false;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
    window.__memo=[];window.__sf=[];window.__req=[];
    DealDetailV3.memo=async(d,note)=>{__memo.push([d.id,note]);d.activities=Array.isArray(d.activities)?d.activities:[];d.activities.push({id:'m'+__memo.length,type:'메모',note,at:new Date(Date.now()+__memo.length*1000).toISOString(),actor:'이필선'});};

@@ -45,7 +45,7 @@ test('서버 함수 · 허용 목록 · 오류 이름 · 요청 엔진 수령 �
  assert.match(sql,/allowed constant text\[\]:=array\['지원','외부영업','관리','시공 담당'\]/);assert.deepEqual([...U.ROLES],['지원','외부영업','관리','시공 담당']);assert.equal(U.MAIN,'주담당');
  assert.doesNotMatch(sql,/(update|insert into|delete from) (public\.deals|public\.crm_deal_owners|crm_security\.contract_sales|public\.next_actions|crm_security\.work_requests)\b/,'영업건 · 귀속 · 계약실적 · 다음 행동 · 요청은 건드리지 않는다');
  assert.match(read('work-request.js'),/RECEIPT_LABEL='시공 인계 수령 확인'/);assert.equal(U.RECEIPT_LABEL,'시공 인계 수령 확인');
- assert.match(read('deal-detail-v3.js'),/root\.DealUnits&&root\.DealUnits\.mount\(r,d,closed\)/);assert.match(read('asset-v2.js'),/root\.DealUnits\.assetLine\(d\)/);
+ assert.match(read('deal-detail-v3.js'),/root\.DealUnits&&root\.DealUnits\.mount\((r|host),d,closed\)/);assert.match(read('asset-v2.js'),/root\.DealUnits\.assetLine\(d\)/);
  assert.match(read('deal-owner-v2.js'),/'고객 요구: '|'남은 약속: '|'자료: '/);
  const html=read('crm.html');assert.ok(html.indexOf('deal-owner-v2.js?v=')<html.indexOf('units.js?v='),'units.js 는 deal-owner-v2.js 뒤');
 });

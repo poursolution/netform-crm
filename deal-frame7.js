@@ -91,7 +91,7 @@
  }
  function line2(d,o){
   o=o||{};const parts=['<span class="dvs-ch" style="color:'+attr(o.color||'#15171c')+'" title="영업 경로">'+esc(o.brand||'브랜드 미입력')+'</span>'];
-  amounts(d).forEach(a=>parts.push('<span class="dvs-w'+(a.big?' big':'')+(a.gray?' gray':'')+'"><span>'+esc(a.k)+'</span> <b>'+esc(a.v)+'</b></span>'));
+  amounts(d).forEach(a=>parts.push(o.amtAct&&a.k==='예상금액'?'<button type="button" class="dvs-w gray dv7-amt" data-dv3="'+attr(o.amtAct)+'" data-key="amount" title="예상 금액 고치기"><span>'+esc(a.k)+'</span> <b>'+esc(a.v)+'</b></button>':'<span class="dvs-w'+(a.big?' big':'')+(a.gray?' gray':'')+'"><span>'+esc(a.k)+'</span> <b>'+esc(a.v)+'</b></span>'));
   if(o.won)parts.push('<span class="dvt-won">✓ 기존 고객 · '+esc(o.won.year?o.won.year+' ':'')+'수주 '+esc(o.won.n||1)+'</span>');
   return '<div class="dvs-line2 dv7-line2">'+parts.join('')+'</div>';
  }
@@ -261,6 +261,48 @@
   return G;
  }
  const TAGC={'미입력':'miss','확인 필요':'chk','해당 없음':'na','기한 지남':'late','확인됨':'ok'};
+ /* ── 오른쪽 정리(2026-10-10 design_handoff_detail_right_fix): 오른쪽 칸 = 지금 처리 · 주 버튼 1개 · 다음 업무 · 일정 · AI 한 줄 · 확인할 정보 n 뿐.
+    먼저 확인 · 빠진 정보 · 진행 조건은 '확인할 정보 n' 한 줄로 합치고 [채우기] = 가운데 칸. 끄기: G.dealRightKeep=true ── */
+ const ALIAS=s=>String(s||'').replace(/\(.*?\)/g,'').replace(/\s/g,'').replace('공사시기','공사예정').replace('경쟁업체수','경쟁사').replace('의사결정자','결정권자').replace('계약서파일','계약서');
+ /* 확인할 정보: 이 단계 필수 정보 중 빠진 것 + 먼저 확인 중 안 채운 것 + (경쟁 · 입찰만) 진행 조건 · 입찰 준비 — 같은 정보는 한 번만 */
+ function infoList(d,ctx){
+  ctx=ctx||{};const g=groupOf(d),out=[],seen=[];
+  const add=(label,state,act,key)=>{const k=ALIAS(label);if(!k||seen.some(x=>x===k||x.includes(k)||k.includes(x)))return;seen.push(k);out.push({label:String(label).replace(/\(원\)$/,''),state:state||'미입력',act:act||'',key:key||''});};
+  ((ctx.req&&ctx.req.miss)||[]).forEach(l=>add(l,'미입력','box'));
+  first(d).filter(x=>OPEN.includes(x.s)).forEach(x=>{const l=x.l.replace(/\s·\s.*$/,'').replace(/\s맞는지$/,'').replace(/\s\d+\.\d+$/,'');
+   add(l==='공사 시기'?'공사 예정':l,x.s,/사진|접수증|계약서/.test(l)?'files':/공사 시기/.test(l)?'field':/비교표/.test(l)?'prep':/단계 정하기/.test(l)?'stage':/다음 행동|다음 연락/.test(l)?'next':/실적 정보/.test(l)?'win':/관리 상태/.test(l)?'rel':'',/공사 시기/.test(l)?'construction_plan':'');});
+  if(g==='competition'){
+   safe(()=>root.DealPrep.conds(d)||[],[]).filter(c=>c.st!=='고객 확인').forEach(c=>add(c.k,'미확인','prep'));
+   const L=prep(d),B=safe(()=>root.DealPrep.BID,[]),left=L?B.filter(x=>!(L.bid&&L.bid[x]&&L.bid[x].done)).length:0;if(left)add('입찰 준비 '+left+'개','미입력','prep');
+  }
+  return out;
+ }
+ /* 다음 업무 · 일정 한 줄 */
+ function nextLine(d){
+  const nt=nextOf(d),S=schedule(d),strip=t=>String(t||'').replace(/^\s*고객\s*약속\s*[:：]\s*/,'');
+  if(!nt.none&&nt.text)return {has:true,text:(nt.due?md(nt.due)+' ':'')+strip(nt.text),sub:nt.due?rel(nt.days):'날짜 미등록',late:!!nt.late};
+  if(S[0])return {has:true,text:md(S[0].date)+' '+S[0].label,sub:'고객 일정',late:false};
+  return {has:false,text:'등록 없음',sub:'',late:false};
+ }
+ function rightHtml(d,ctx){
+  ctx=ctx||{};const K=task(d,ctx),closed=!!ctx.closed,I=infoList(d,ctx),N=nextLine(d);
+  const names=I.slice(0,3).map(x=>x.label).join(' · ')+(I.length>3?' 외 '+(I.length-3):'');
+  return '<span class="dv7-lb">지금 처리</span>'
+   +'<div class="dvs-tt"><b>'+esc(K.text)+'</b><span><span class="k">'+esc(K.dueK)+'</span> <b class="'+esc(K.cls)+'">'+esc(K.due)+'</b></span></div>'
+   +'<div class="dvs-kv dv7-kvs"><span>확인됨</span><span>'+esc(K.ok)+'</span><span>확인할 것</span><span>'+esc(K.chk)+'</span><span>완료 조건</span><span>'+esc(K.done)+'</span></div>'
+   +'<div class="dvs-btns dv7-btns"><button type="button" class="fill dvs-primary" data-dv3="primary" data-act="'+attr(K.btn.act)+'"'+(ctx.noResume&&K.g==='legacy'?' disabled title="서버에 단계 값이 비어 있는 자료입니다 — 서버 보완 뒤에 영업 재개를 할 수 있습니다"':'')+'>'+esc(K.btn.label)+'</button></div>'
+   +'<div class="dv7-row dv7-next"><div><span>다음 업무 · 일정</span><b class="'+(N.late?'red':N.has?'':'none')+'">'+esc(N.text)+(N.sub?' <small>'+esc(N.sub)+'</small>':'')+'</b></div>'+(closed?'':'<button type="button" class="lnk" data-dv3="nextonly">'+(N.has?'변경':'등록하기')+'</button>')+'</div>'+(closed?'':(ctx.nextHtml||''))
+   +(ctx.ai?'<div class="dv7-ai"><em>AI</em>'+esc(ctx.ai)+'</div>':'')
+   +'<div class="dv7-row dv7-info"><div><span>확인할 정보 <b class="'+(I.length?'n':'z')+'">'+I.length+'</b></span><span class="l">'+esc(I.length?names:'모두 채웠습니다')+'</span></div><button type="button" data-dv3="p7" data-v="info">'+(I.length?'채우기':'보기')+'</button></div>';
+ }
+ /* 가운데 패널 머리 아래: 이 단계 상자에 칸이 없는 확인 항목(자료 · 공사 예정 · 진행 조건 …)은 여기서 그 자리로 보낸다 */
+ const XBTN={files:['자료 열기','files',''],field:['입력','field',''],prep:['진행 조건 · 입찰 준비 열기','p7','prep'],stage:['단계 정하기','mv',''],next:['다음 업무 등록','nextonly',''],};
+ function extraHtml(d,ctx){
+  const X=infoList(d,ctx).filter(x=>x.act!=='box');if(!X.length)return '';
+  return '<div class="dv7-xrows">'+X.map(x=>{const b=XBTN[x.act];return '<div><em class="t-'+(TAGC[x.state]||'miss')+'">'+esc(x.state)+'</em><span>'+esc(x.label)+'</span>'+(b?'<button type="button" data-dv3="'+b[1]+'"'+(b[2]?' data-v="'+b[2]+'"':'')+(x.key?' data-key="'+attr(x.key)+'"':'')+'>'+esc(b[0])+'</button>':'')+'</div>';}).join('')+'</div>';
+ }
+ const PANELS={info:['확인할 정보','이 단계에 필요한 것만 · 칸을 누르면 바로 입력'],collab:['결정 일정 · 막힌 곳 · 진척 · 특이조건 · 하자','기록하면 응대 이력에 남습니다'],units:['참여 · 브랜드','책임자 · 참여 역할 · 브랜드 · 요청 · 현장 공통'],prep:['영업 판단 · 내부 지원','진행 조건 · 관계자 · 입찰 준비 · 지원 요청 · 예상 수주일 · 단계 이력'],near:['근처 현장','반경 안에서 영업했던 곳']};
+ const MENU=[['collab','결정 일정 · 특이조건 · 하자'],['units','참여 · 브랜드'],['prep','영업 판단 · 내부 지원'],['near','근처 현장'],['owner','담당 · 실적 귀속']];
  function taskHtml(d,ctx){
   ctx=ctx||{};const K=task(d,ctx),closed=!!ctx.closed,tel=!!ctx.tel;
   const SCOPE='다음 업무 = 업무 · 기한만 저장 · 결과 기록 = 응대 이력 1건 · 칸 수정 = 그 칸만';
@@ -275,5 +317,5 @@
    +'<div class="dv7-grps">'+K.groups.map(G=>'<div class="dv7-grp"><b>'+esc(G.t)+'</b>'+G.items.map(m=>'<div><span>'+esc(m[0])+'</span><span class="'+esc(m[2])+'">'+esc(m[1])+'</span></div>').join('')+'</div>').join('')+'</div>'
    +(aux?'<div class="dvs-aux">'+aux+'</div>':'');
  }
- return {on,has,ST,groupOf,legacyOf,bar,barHtml,meta,metaHtml,amounts,line2,pos,posHtml,first,due,confirmed,task,schedule,groups,taskHtml,TASK,DONE,BTN,AFTER};
+ return {on,has,ST,groupOf,legacyOf,infoList,nextLine,rightHtml,extraHtml,PANELS,MENU,bar,barHtml,meta,metaHtml,amounts,line2,pos,posHtml,first,due,confirmed,task,schedule,groups,taskHtml,TASK,DONE,BTN,AFTER};
 });
