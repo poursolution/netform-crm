@@ -174,7 +174,7 @@
    else openR.push(mk(r,'처리 중','na',(r.label||'요청')+' · 기한 '+(r.due_at?md(dk(r.due_at)):'없음')));});
   const d1=make({id:'d1',g:'mgmt',label:'기한 내 해결률',ok:okR,bad:lateR,na:[],wait:openR,
    n:[['기한 내 해결',okR.length,''],['기한 넘김',lateR.length,'bad'],['처리 중',openR.length,'na']],
-   sub:(a,d)=>d?a+' / '+d+' · 요청 등록 기준':'이번 주 기한이 도래한 요청 없음',
+   sub:(a,d)=>d?a+' / '+d+'건 · 기한 지남 '+d+'건 · 기한 전 진행 중 '+openR.length+'건':'측정 대상 없음 · 기한이 도래한 요청 없음 · 기한 전 진행 중 '+openR.length+'건',
    f:'기한 안 완료된 요청 ÷ 이번 주 등록된 요청(처리 중이면서 기한 전인 것 제외)',inc:'요청 보내기로 등록된 건 · 이번 주(월~금)',exc:'문구 복사 · 취소된 요청 · 기한 전 처리 중',ver:'요청 5단계 기준 · '+VER()});
   const cl=week.filter(closed),mins=cl.map(r=>(Date.parse(r.closed_at)-Date.parse(r.created_at))/864e5).filter(Number.isFinite),avg=mins.length?mins.reduce((a,b)=>a+b,0)/mins.length:null,mx=mins.length?Math.max.apply(null,mins):null;
   const dayTxt=n=>n==null?'–':(Math.round(n*10)/10)+'일';

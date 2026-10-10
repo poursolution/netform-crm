@@ -51,7 +51,10 @@
  }
  /* 요청 버튼 숫자 설명(design_handoff_kpi_measure §4): '미등록 n건 중 요청 가능 n건 · 이미 요청 중 · 담당 없음' — 담당이 없는 건은 요청을 보낼 수 없어 따로 센다 */
  const reqSplit=list=>{const open=(list||[]).filter(t=>!t.done),none=open.filter(t=>!t.owner||t.owner==='미배정').length;return {total:(list||[]).length,done:(list||[]).length-open.length,none,can:open.length-none};};
- const reqSum=(x,noun)=>noun+' '+x.total+'건 중 요청 가능 '+x.can+'건'+(x.done?' · 이미 요청 중 '+x.done:'')+(x.none?' · 담당 없음 '+x.none:'');
+ /* after_deploy ③: 숫자마다 단위(건 / 명) — 요청 가능 건수와 그 담당 수를 함께 */
+ const reqSplit2=list=>{const x=reqSplit(list),owners=new Set((list||[]).filter(t=>!t.done&&t.owner&&t.owner!=='미배정').map(t=>t.owner));return Object.assign(x,{people:owners.size});};
+ const reqSum=(x,noun)=>noun+' '+x.total+'건 중 요청 가능 '+x.can+'건'+(x.people?' (담당 '+x.people+'명)':'')+(x.done?' · 이미 요청 중 '+x.done+'건':'')+(x.none?' · 담당 없음 '+x.none+'건':'');
+ const reqBtnTxt=x=>x.people?'담당 '+x.people+'명에게 요청 ('+x.can+'건)':'요청 가능 '+x.can+'건';
  /* 핵심 지표 8줄 */
  function coreRows(C,PV,last){
 
@@ -60,12 +63,12 @@
    if(last){const w=K().weekRowOf(i,-1);v=w?pct(w.numerator,w.denominator):null;num=w?w.numerator:0;den=w?w.denominator:0;}
    else if(i<2&&C.S){cum=(i===0?'누적 미배정 ':'누적 첫 연락 전 ')+((i===0?C.S.unassigned:C.S.noResponse)||[]).length+'건(이번 주 지표와 별도)';}
    const pilot=PILOT.has(i),nd=v==null,bad=!pilot&&!nd&&(lb?v>g:v<g),gap=nd?0:Math.round(Math.abs(g-v)*10)/10,d=last||v==null||m.last==null?null:Math.round((v-m.last)*10)/10;
-   const left=last?0:m.left,total=last?0:m.todos.length,RQ=last?null:reqSplit(m.todos);
+   const left=last?0:m.left,total=last?0:m.todos.length,RQ=last?null:reqSplit2(m.todos);
    return {i,key:m.key,grp:q[0],l:q[1],q:q[2],cause:nd&&!pilot?'none':q[3],nd,bad,lb,v,g,gap,left,total,d,num,den,pilot,ok:!nd&&!bad&&!pilot,
     frac:!last&&m.ready===false?'아직 못 잼':den?num+' / '+den+'건':'아직 못 잼',goal:(lb?'≤ ':'')+g+'%',
     meta:last?'지난주 금요일 저장본':(m.last==null?'지난주 –':'지난주 '+fmt(m.last)+' '+(d==null?'비교 보류':d===0?'→ 그대로':(d>0?'▲':'▼')+Math.abs(d)+'%p'))+' · 누가 '+whoOf(i,m,PV)+(cum?' · '+cum:''),target:'대상: '+TARGET(i)+(m.unknown?' · 기록·시각 미확인 '+m.unknown+'건(측정 불가·분모 제외)':''),
     reason:!last&&m.ready===false?m.pendingReason:pilot?'시범 측정 · 평가 제외':nd?'아직 못 잼':bad?'미달 · '+gap+'%p '+(lb?'초과':'부족'):'달성',
-    btn:last||!total?'':/* 이번 주 값이 '아직 못 잼'이어도 누적 미처리가 있으면 요청 버튼은 둔다(2026-10-06 집계 ⑤) */!left?'보냄 ✓':i===0?left+'건 배정':i===4?left+'건 판단 요청':i===3?'담당별 요청':i===7?left+'건 다시 확인':'요청 가능 '+RQ.can+'건',dis:!last&&!!K().requestStatus&&!K().requestStatus().ready||!!RQ&&!RQ.can&&left>0&&![0,3,4,7].includes(i),reqSum:!last&&K().requestStatus&&!K().requestStatus().ready?K().requestStatus().message:RQ&&total?reqSum(RQ,q[3]==='rec'?'미등록':'대상'):''};
+    btn:last||!total?'':/* 이번 주 값이 '아직 못 잼'이어도 누적 미처리가 있으면 요청 버튼은 둔다(2026-10-06 집계 ⑤) */!left?'보냄 ✓':i===0?left+'건 배정':i===4?left+'건 판단 요청':i===3?'담당별 요청':i===7?left+'건 다시 확인':reqBtnTxt(RQ),dis:!last&&!!K().requestStatus&&!K().requestStatus().ready||!!RQ&&!RQ.can&&left>0&&![0,3,4,7].includes(i),reqSum:!last&&K().requestStatus&&!K().requestStatus().ready?K().requestStatus().message:RQ&&total?reqSum(RQ,q[3]==='rec'?'기록 없음':'대상'):''};
   }).sort((a,b)=>(a.nd?2:a.bad?0:1)-(b.nd?2:b.bad?0:1)||b.gap-a.gap||a.i-b.i);
  }
  /* 단계별 기준: 파이프라인 각 단계 화면의 '그래서 뭘 해야 하나' 기준(빨강 사유)을 같은 함수로 — 기준 넘긴 건 = 그 사유가 붙은 건.
@@ -80,7 +83,7 @@
  }
  function stageGroups(done){
   const P=R.PipelineStageB,out=[],isDone=(pk,kind,id)=>done.has(pk+'|'+kind+':'+id);
-  const rule=(stage,k,t,how,targets,base)=>{const pk='stage:'+stage+':'+k,n=targets.length,b=Math.max(base,n),left=targets.filter(x=>!isDone(pk,x.kind,x.id)).length,rq=reqSplit(targets.map(x=>({owner:x.owner,done:isDone(pk,x.kind,x.id)})));return {stage,k,pk,t,how,targets,n,base:b,left,rq,p:b?Math.round((1-n/b)*1000)/10:null};};
+  const rule=(stage,k,t,how,targets,base)=>{const pk='stage:'+stage+':'+k,n=targets.length,b=Math.max(base,n),left=targets.filter(x=>!isDone(pk,x.kind,x.id)).length,rq=reqSplit2(targets.map(x=>({owner:x.owner,done:isDone(pk,x.kind,x.id)})));return {stage,k,pk,t,how,targets,n,base:b,left,rq,p:b?Math.round((1-n/b)*1000)/10:null};};
   try{const IL=R.InquiryListV3,IV=R.InquiryListV2;if(IL&&IV&&typeof IL.model==='function'&&typeof IV.rows==='function'){
    const ms=IV.rows().map(x=>IL.model(x)).filter(m=>m.step<4),RU=R.OPS_RULES||{},H=Number(RU.towerFirstResponseHours)||2,D=Number(RU.inquiryFollowDays)||7;
    const T=m=>({kind:'inq',id:String(m.key),name:m.site,owner:String(m.owner||''),why:m.elapsed||''});
@@ -105,11 +108,16 @@
  /* ops_12 D⑩ 관리팀 지표 — 요청 수보다 해결: 요청(이번 주 등록 · 문구 복사 제외) · 기한 내 해결률 · 재요청률 · 평균 처리 시간. 요청 엔진 기록(WorkRequest · 최근 30일)에서만 센다 */
  function mgmtMetrics(KMD){
   const W=R.WorkRequest;if(!W||!W.enabled||!W.enabled())return null;const L=W.state().list||[],j=J(),wk=j?j.week(0):null;
-  const week=L.filter(r=>wk&&j.inWeek(r.created_at,wk)&&r.status!=='cancelled');
-  const closed=L.filter(r=>r.closed_at&&(r.status==='done'||r.status==='replied')),onTime=closed.filter(r=>Date.parse(r.closed_at)<=Date.parse(r.due_at)).length;
+  const week=L.filter(r=>wk&&j.inWeek(r.created_at,wk)&&r.status!=='cancelled'),now=Date.now();
   const all=L.filter(r=>r.status!=='cancelled'),re=all.filter(r=>Number(r.round)>=2).length;
+  const isClosed=r=>!!r.closed_at&&(r.status==='done'||r.status==='replied'),closed=all.filter(isClosed);
+  /* after_deploy ②: 분모 = 기한이 지난 요청(완료 · 미완료 모두) · 기한 전 진행 중은 제외 · 분모 0 = 측정 대상 없음 */
+  const dueOver=all.filter(r=>{const d=Date.parse(r.due_at||'');return Number.isFinite(d)&&(d<now||isClosed(r));}),onTime=dueOver.filter(r=>isClosed(r)&&Date.parse(r.closed_at)<=Date.parse(r.due_at)).length,beforeDue=all.filter(r=>!isClosed(r)&&Date.parse(r.due_at||'')>=now),beforeDone=0;
   const avg=closed.length?closed.reduce((s,r)=>s+(Date.parse(r.closed_at)-Date.parse(r.created_at))/864e5,0)/closed.length:null;
-  return [['요청',week.length+'건','이번 주 등록 기준 · 문구 복사 제외'],['기한 내 해결률',closed.length?Math.round(onTime*100/closed.length)+'%':'–',closed.length?onTime+' / '+closed.length+' · 기한 안 처리':'완료된 요청 없음'],['재요청률',all.length?Math.round(re*100/all.length)+'%':'–',all.length?re+' / '+all.length+' · 같은 건 2번 이상 요청':'요청 없음'],['평균 처리 시간',avg==null?'–':(Math.round(avg*10)/10)+'일','요청 → 완료 · 최근 30일']].map(m=>{const d=KMD&&KMD.byId(m[0]==='기한 내 해결률'?'d1':m[0]==='평균 처리 시간'?'d2':'');return d?[m[0],d.vText,d.sub+' · 이번 주']:m;}).concat(R.ExecWording&&R.ExecWording.on()?[['기한 변경',R.ExecWording.postponeCount().n+'회','이번 주(월~금) · 원래 기한 · 사유와 함께 기록 · 지연 기록은 그대로']]:[]);/* 기한 내 해결률 · 평균 처리 시간 = 측정 기준 탭 d1 · d2 와 같은 값(이번 주 등록 요청) */
+  /* after_deploy ④: 요청 집계 = 기간 × 개별 / 묶음(같은 사람이 같은 이름으로 같은 분에 여러 건 = 묶음 1 · 대상 n건) */
+  const split=list=>{const g=new Map();list.forEach(r=>{const k=String(r.requested_by||'')+'|'+String(r.label||'')+'|'+String(r.created_at||'').slice(0,16);(g.get(k)||g.set(k,[]).get(k)).push(r);});let single=0,bundles=0,targets=0;g.forEach(v=>{if(v.length>=2){bundles++;targets+=v.length;}else single++;});return {single,bundles,targets,txt:'개별 '+single+'건'+(bundles?' · 묶음 '+bundles+' (대상 '+targets+'건)':'')};};
+  const d28=all.filter(r=>Date.parse(r.created_at||'')>=now-28*864e5),sw=split(week),s28=split(d28);
+  return [['요청',sw.txt,'이번 주(월~금) · 최근 28일 '+s28.txt+' · 문구 복사 제외'],['기한 내 해결률',dueOver.length?Math.round(onTime*100/dueOver.length)+'%':'측정 대상 없음',dueOver.length?onTime+' / '+dueOver.length+'건 · 기한 지남 '+dueOver.length+'건 · 기한 전 진행 중 '+beforeDue.length+'건':'기한 지남 0건 · 기한 전 진행 중 '+beforeDue.length+'건 · 기한 안 완료 ÷ 기한이 지난 요청'],['재요청률',all.length?Math.round(re*100/all.length)+'%':'–',all.length?re+' / '+all.length+' · 같은 건 2번 이상 요청':'요청 없음'],['평균 처리 시간',avg==null?'–':(Math.round(avg*10)/10)+'일','요청 → 완료 · 최근 30일']].map(m=>{const d=KMD&&KMD.byId(m[0]==='기한 내 해결률'?'d1':m[0]==='평균 처리 시간'?'d2':'');return d?[m[0],d.vText,d.sub+' · 이번 주']:m;}).concat(R.ExecWording&&R.ExecWording.on()?[['기한 변경',R.ExecWording.postponeCount().n+'회','이번 주(월~금) · 원래 기한 · 사유와 함께 기록 · 지연 기록은 그대로']]:[]);/* 기한 내 해결률 · 평균 처리 시간 = 측정 기준 탭 d1 · d2 와 같은 값(이번 주 등록 요청) */
  }
  /* design_handoff_units ④: 오늘 업무 · KPI · 성과 분석 · 고객 자산이 같은 영업건 단위로 세는지 — DealUnits.audit 한 함수 */
  function unitLine(){try{const U=R.DealUnits;if(!U||!U.on())return '';const a=U.audit((R.B&&R.B.deals)||[],(R.B&&R.B.inquiries)||[]);return '<p class="k7-unit">'+h(a.line)+'</p>';}catch(e){return '';}}
@@ -159,7 +167,7 @@
     +(SG.length?'<div class="k7-list">'+SG.map(g=>'<div class="k7-stage"><em>'+h(g.label)+'</em><span>'+g.total+'건 · 기준 넘김 <b class="'+(g.over?'r':'')+'">'+g.over+'건</b></span><i></i><button type="button" data-k7="go" data-v="'+attr(g.key)+'">단계로 이동 →</button></div>'
      +g.rules.map(r=>{const bad=r.p!=null&&r.p<80;return '<div class="k7-row '+(bad?'bad':'ok')+'" data-rule="'+attr(r.pk)+'"><div class="q"><b>'+h(r.t)+'</b><span>'+h(r.how+' · 기준 대상 '+r.base+'건')+'</span>'+(r.n?'<span class="k7-reqn">'+h(reqSum(r.rq,'기준 넘김'))+'</span>':'')+'</div>'
       +'<div class="p"><span><span>지킨 비율</span><b>'+(r.p==null?'–':r.p+'%')+'</b></span><i><u style="width:'+(r.p==null?0:Math.max(0,Math.min(100,r.p)))+'%"></u></i></div><b class="n'+(r.n?' r':'')+'">'+r.n+'건</b>'
-      +(r.n?reqBtn(r.left?'요청 가능 '+r.rq.can+'건':'보냄 ✓','sreq',r.pk,r.left&&!r.rq.can):'<span class="k7-auto">넘긴 건 없음</span>')+'</div>';}).join('')).join('')+'</div>':'<p class="k7-empty">이 조건에 해당하는 단계 건이 없습니다.</p>');
+      +(r.n?reqBtn(r.left?reqBtnTxt(r.rq):'보냄 ✓','sreq',r.pk,r.left&&!r.rq.can):'<span class="k7-auto">넘긴 건 없음</span>')+'</div>';}).join('')).join('')+'</div>':'<p class="k7-empty">이 조건에 해당하는 단계 건이 없습니다.</p>');
   }else{
    const head='<div class="k7-head"><b>확인할 지표 <span>'+list.length+'지표</span></b>'+(s.cause?'<button type="button" class="k7-clear" data-k7="clear">'+CL[s.cause]+' · 해제 ×</button>':'')+'<i></i><div class="k7-view">'+[['list','리스트'],['board','보드']].map(v=>'<button type="button" data-k7="view" data-v="'+v[0]+'" aria-pressed="'+(s.view===v[0])+'">'+v[1]+'</button>').join('')+'</div></div>';
    const cls=r=>r.pilot||r.nd?'':r.bad?' bad':' ok';
