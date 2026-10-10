@@ -71,6 +71,24 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await page.evaluate(()=>{G.deal=null;render();});await page.waitForTimeout(250);
   const back=await page.evaluate(()=>document.querySelector('.phone-body').scrollTop);
   assert.ok(Math.abs(back-target)<=4,'목록 위치 복원 '+back+' ≈ '+target);
+  /* ⑥b 내 현장 필터: PC 와 같은 조건(브랜드 · 공종) + 적용 조건 · 결과 수 */
+  await page.evaluate(()=>{G.deal=null;G.sub=null;G.tab='mine';G._og={};G.brandF='';G.workF='';G.filt='all';G.bizF='전체';DEALS.forEach((d,i)=>{d.brand=i%2?'POUR솔루션':'석민이앤씨';if(i<3)d.gj=['재도장','재도장(외부)'];else delete d.gj;});render();});await page.waitForTimeout(250);
+  assert.ok(await page.locator('#scr .mh-filter').count()===1,'필터 줄');
+  assert.deepEqual(await S.locator('.mh-frow').first().locator('button').allInnerTexts(),['전체','석민이앤씨','POUR솔루션']);assert.deepEqual(await S.locator('.mh-frow').nth(1).locator('button').allInnerTexts(),['전체','재도장']);
+  const total=await page.evaluate(()=>myDeals().filter(isOpen).length);assert.match(await txt('.mh-fres'),new RegExp('^'+total+'곳 \\(내 진행 '+total+'곳 중\\)$'),'조건 없을 때 결과 수');
+  await S.locator('.mh-frow').nth(1).locator('button',{hasText:'재도장'}).click();await page.waitForTimeout(250);
+  assert.match(await txt('.mh-fres'),new RegExp('^적용 조건 · 공종 재도장 → 3곳 \\(내 진행 '+total+'곳 중\\) 조건 지우기$'),'적용 조건 · 결과 수');
+  assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#scr .lrow[data-id]')].length),3,'목록도 같은 3곳');
+  await S.locator('.mh-fres button').click();await page.waitForTimeout(250);assert.match(await txt('.mh-fres'),new RegExp('^'+total+'곳'));
+  /* ⑥c 문의 정보 조회: PC 와 같은 칸 · 빈 칸은 '미입력' */
+  await page.evaluate(()=>{ADMIN.inquiries=[{key:'q1',nm:'[테스트] 문의 현장',rep:G.user.nm,status:'배정완료',phone:'01011112222',gj:'옥상방수',body:'옥상 누수',at:new Date().toISOString(),raw:{'공사 시기':'내년 봄','경쟁사':'없음','결정권자':'입대의 회장','대표회의':'2026-10-20'}}];G.deal=null;G.tab='today';G.sub={t:'inqAssigned',key:'q1'};render();});await page.waitForTimeout(250);
+  assert.match(await txt('.mh-inq .sec-h'),/^필수 확인 4 \/ 6 빈 칸 2개$/);
+  assert.deepEqual(await S.locator('.mh-inq .kv').allInnerTexts().then(l=>l.map(one)),['공사 시기 내년 봄','경쟁사 없음','요청 자료 미입력','결정권자 입대의 회장','대표회의 2026-10-20','자료 회신 기한 미입력']);
+  /* ⑥d 단계 바꾸기 = PC 와 같은 전환창(필수 정보 · 전환일) */
+  await page.evaluate(()=>{G.sub=null;G.deal='today1';G.tab='mine';render();nextSheet();});await page.waitForTimeout(250);
+  await page.evaluate(()=>{const b=document.querySelector('#sheetcard .cchip');if(b)b.click();});await page.waitForTimeout(250);
+  assert.match(await page.locator('#stage-transition-form').innerText().then(one),/전환일[\s\S]*확인할 정보/,'PC 와 같은 단계 전환 필수 정보 창');
+  await page.evaluate(()=>{closeSheet();});
   /* ⑦ 끄기 */
   await page.evaluate(()=>{G.mobileHubOff=true;G.deal=null;G.tab='find';render();});await page.waitForTimeout(200);
   assert.equal(await S.locator('.mh-hub').count(),0);assert.equal(await txt('.mv-title h1'),'새 현장을 등록합니다');
