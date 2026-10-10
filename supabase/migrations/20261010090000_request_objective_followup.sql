@@ -44,7 +44,7 @@ begin
  begin rid:=(p->>'id')::uuid;oid:=(p->>'operation_id')::uuid;stamp:=(p->>'expected_updated_at')::timestamptz;due:=(p->>'due_date')::date;
  exception when others then raise exception 'invalid payload' using errcode='22023';end;
  if rid is null or oid is null or stamp is null or not isfinite(stamp) or due is null or not isfinite(due) or p->>'due_date'<>to_char(due,'YYYY-MM-DD') then raise exception 'invalid payload' using errcode='22023';end if;
- origin:=p->>'plan_origin';mode:=p->>'mode';v_title:=btrim(p->>'title');reason:=btrim(p->>'reason');ask:=p->>'ask';evidence:=btrim(p->>'agreement_note');
+ origin:=p->>'plan_origin';mode:=p->>'mode';v_title:=regexp_replace(p->>'title','^[[:space:]]+|[[:space:]]+$','','g');reason:=regexp_replace(p->>'reason','^[[:space:]]+|[[:space:]]+$','','g');ask:=p->>'ask';evidence:=regexp_replace(p->>'agreement_note','^[[:space:]]+|[[:space:]]+$','','g');
  if coalesce(origin,'') not in ('customer_agreed','internal_plan') or coalesce(mode,'') not in ('create','additional','request_change')
   or jsonb_typeof(p->'title') is distinct from 'string' or coalesce(v_title,'') !~ '[^[:space:]]' or length(v_title)>500
   or jsonb_typeof(p->'reason') is distinct from 'string' or coalesce(reason,'') !~ '[^[:space:]]' or length(reason)>2000
@@ -126,8 +126,8 @@ begin
   and n.status in ('open','completed') and coalesce(n.title,'')~'[^[:space:]]' and ((n.status='open' and n.due_at is not null and isfinite(n.due_at)) or (n.status='completed' and n.completed_at is not null and isfinite(n.completed_at)));
  select coalesce(jsonb_agg(x.item order by x.due_at,x.id),'[]'::jsonb) into candidates from (
   select n.id,n.due_at,jsonb_build_object('id',n.id,'title',n.title,'action_type',n.action_type,'due_at',n.due_at,'status',n.status,'completed_at',n.completed_at,
-   'plan_origin',coalesce(e.payload->>'plan_origin','unknown'),'agreement_note',e.payload->>'agreement_note','source_recorded_at',e.created_at) item
-  from public.next_actions n left join lateral (select e.payload,e.created_at from crm_security.work_request_followup_events e where e.next_action_id=n.id and e.payload->>'title'=n.title and (e.payload->>'due_date')::date=(n.due_at at time zone 'Asia/Seoul')::date and e.actor_user_id=r.to_user_id order by e.created_at desc,e.id desc limit 1) e on true
+   'plan_origin',coalesce(e.ack->>'plan_origin','unknown'),'agreement_note',e.ack->>'agreement_note','source_recorded_at',e.created_at) item
+  from public.next_actions n left join lateral (select e.payload,e.ack,e.created_at from crm_security.work_request_followup_events e where e.next_action_id=n.id and e.ack->>'title'=n.title and (e.payload->>'due_date')::date=(n.due_at at time zone 'Asia/Seoul')::date and e.actor_user_id=r.to_user_id order by e.created_at desc,e.id desc limit 1) e on true
   where n.inquiry_id=qid and n.assignee_name=owner_name and n.action_type in ('견적','방문') and n.status in ('open','completed')
    and coalesce(n.title,'')~'[^[:space:]]' and ((n.status='open' and n.due_at is not null and isfinite(n.due_at)) or (n.status='completed' and n.completed_at is not null and isfinite(n.completed_at)))
   order by n.due_at,n.id limit 20 offset (candidate_page-1)*20) x;
@@ -137,7 +137,7 @@ begin
   'request',crm_security.work_request_json(r,a.user_id,a.permission_role),'expected_updated_at',r.updated_at,
   'policy_version','first-compound-v1','contact_proof',proof,'decisions',coalesce(latest->'decisions','[]'::jsonb),
   'request_complete',coalesce((latest->>'request_complete')::boolean,false) and r.status='done',
-  'followup_contract',1,'can_write',coalesce(can_write,false),'plan_context',crm_security.work_request_plan_context(qid),
+  'followup_contract',1,'can_write',coalesce(can_write,false),'plan_context',case when owner_name is not null then crm_security.work_request_plan_context(qid) else jsonb_build_object('token',md5('unavailable'),'available',false,'next_action_date',null,'open_task_count',0,'open_schedule_count',0,'tasks','[]'::jsonb,'schedules','[]'::jsonb) end,
   'followup_candidates',candidates,'candidate_total',candidate_total,'candidate_page',candidate_page,'candidate_has_more',candidate_total>candidate_page*20,
   'change_requests',changes,'change_request_total',change_total,'change_request_page',page_no,'change_request_has_more',change_total>page_no*20,
   'history',hist,'history_total',coalesce(rev,0),'history_page',page_no,'history_has_more',coalesce(rev,0)>page_no*20);
