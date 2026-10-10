@@ -145,8 +145,8 @@
    const sm=anyFld(d,'submitted_materials'),smv=Array.isArray(sm)?sm:[],bd=bidDay(d),late=!!bd&&diff(today(),bd)<0;
    const done=k=>!!(L&&L.bid&&L.bid[k]&&L.bid[k].done);
    const cp=str(anyFld(d,'competitor'))||siteVal(d,'competitor'),flag=str(anyFld(d,'competition_flag')),n=cp?cp.split(/[,\/·、]|\s{2,}/).map(x=>x.trim()).filter(Boolean).length:0;
-   const rc=done('제출 방법 · 접수증')||F.some(x=>/접수|제출/.test(String(x.category||'')+' '+String(x.name||x.file_name||'')));
-   return [done('제안서 · 공법 비교표')||smv.includes('비교자료')?T('확인됨','공법 비교표'):T('미입력','공법 비교표'),
+   const rc=done('제출 방법 · 접수증')||!!anyFld(d,'receipt_attached')||F.some(x=>/접수|제출/.test(String(x.category||'')+' '+String(x.name||x.file_name||'')+' '+String(x.memo||'')));
+   return [done('제안서 · 공법 비교표')||smv.includes('비교자료')||!!anyFld(d,'compare_attached')?T('확인됨','공법 비교표'):T('미입력','공법 비교표'),
     n?T('확인됨','경쟁 업체 '+n+'곳'):flag==='있음'?T('확인 필요','경쟁 업체 수'):T('미입력','경쟁 업체 수'),
     rc?T('확인됨','제출 접수증'):late?T('기한 지남','제출 접수증 · 마감 '+md(bd)):T('미입력','제출 접수증')];
   }
@@ -171,7 +171,7 @@
  /* ── 오른쪽: 할 일 · 기한 종류 + 기한 · 확인됨 / 확인할 것 / 완료 조건 · 주 버튼 ── */
  const TASK={legacy:'영업 재개 판단',consulting:'견적 요청 등록',sent:'발송 내역 확인 · 고객 반응 기록',relationship:'고객 합의 연락',competition:'제출 준비',construction:'계약 체결 확인',won:'준공 후 사후 연락',lost:'실주 기록 완성'};
  const DONE={legacy:'영업 재개(단계 · 다음 행동 · 날짜) 또는 종료 사유',consulting:'잔디 견적 요청 등록 + 견적 예정일',sent:'발송일 등록 + 고객 반응 기록',relationship:'결과 기록 + 다음 단계 판단',competition:'제출 접수증 첨부',won:'사후 연락 결과 + 재영업 여부',lost:'실주 사유 + 재영업 예 / 아니오'};
- const BTN={legacy:['영업 재개','stage'],consulting:['견적 요청 등록','stagefields'],sent:['발송 내역 확인','send7'],relationship:['연락하고 결과 기록','activity'],competition:['제출 준비 확인','stagefields'],construction:['계약 체결 확인','stagefields'],won:['사후 연락하기','call'],lost:['실주 기록 채우기','stagefields']};
+ const BTN={legacy:['영업 재개','stage'],consulting:['견적 요청 등록','stagefields'],sent:['발송 내역 확인','stagefields'],relationship:['연락하고 결과 기록','activity'],competition:['제출 준비 확인','stagefields'],construction:['계약 체결 확인','stagefields'],won:['사후 연락하기','call'],lost:['실주 기록 채우기','stagefields']};
  const AFTER=30;/* 준공 후 사후 연락 기준일(README 표 '준공 후 30일') */
  function due(d){
   const g=groupOf(d),nt=nextOf(d),b=judge(d),Tk=today(),Q=safe(()=>root.PipelineJudge.rules(),{follow:7,month:30,site:7});
@@ -203,7 +203,7 @@
   }
   /* 날짜 미입력 · 판정 불가 = 파랑(지연 아님) */
   if(g==='sent')return blue('발송 후 '+Q.follow+'일','발송일 없음 · 판정 불가');
-  if(g==='consulting')return blue('미팅 후 견적 요청',(b.why||'기한 없음')+' · 판정 불가');
+  if(g==='consulting')return blue('미팅 후 '+(Q.quote||3)+'일 기준',/미팅/.test(String(b.why||''))&&/미등록|없음|불가/.test(String(b.why||''))?'미팅 기록이 없어 판정 불가':(b.why||'기한 없음')+' · 판정 불가');
   if(g==='relationship')return blue('다음 연락일','연락 기록 없음 · 판정 불가');
   if(g==='competition')return blue('입찰 마감','일정 없음 · 판정 불가');
   if(g==='construction')return blue('내부 처리 기한','계약일 없음 · 판정 불가');
@@ -229,7 +229,8 @@
    const cs=safe(()=>DS().contract(d),{state:'none',proof:false});if(!cs.proof&&cs.state!=='none')btn=['계약서 확인하기','files'];else if(cs.state==='none')btn=['계약 정보 입력','stagefields'];
   }else if(!chk&&ctx.req&&ctx.req.miss&&ctx.req.miss.length)chk=ctx.req.miss.slice(0,3).join(' · ')+(ctx.req.miss.length>3?' 외 '+(ctx.req.miss.length-3)+'개':'');
   if(g==='consulting'&&str(fld(d,'consulting','quote_request')))btn=['견적 예정일 확인','stagefields'];
-  return {g,text,dueK:D.k,due:D.text,cls:D.cls,ok:ok||'확인된 것 없음',okNone:!ok,chk:chk||'없음',chkOpen:!!chk,done,btn:{label:btn[0],act:btn[1]},first:F,groups:groups(d)};
+  const act0=btn[1];if(WORK[g])btn[1]='work7';
+  return {g,text,dueK:D.k,due:D.text,cls:D.cls,ok:ok||'확인된 것 없음',okNone:!ok,chk:chk||'없음',chkOpen:!!chk,done,btn:{label:btn[0],act:btn[1],act0},first:F,groups:groups(d)};
  }
  /* ── 오른쪽 아래 요약: 고객 일정 · 추가 관리 · 참고정보 ── */
  function schedule(d){
@@ -285,13 +286,13 @@
   return '<span class="dv7-lb">지금 처리</span>'
    +'<div class="dvs-tt"><b>'+esc(K.text)+'</b><span><span class="k">'+esc(K.dueK)+'</span> <b class="'+esc(K.cls)+'">'+esc(K.due)+'</b></span></div>'
    +'<div class="dvs-kv dv7-kvs"><span>확인됨</span><span>'+esc(K.ok)+'</span><span>완료 조건</span><span>'+esc(K.done)+'</span></div>'
-   +'<div class="dvs-btns dv7-btns"><button type="button" class="fill dvs-primary" data-dv3="primary" data-act="'+attr(K.btn.act)+'"'+(ctx.noResume&&K.g==='legacy'?' disabled title="서버에 단계 값이 비어 있는 자료입니다 — 서버 보완 뒤에 영업 재개를 할 수 있습니다"':'')+'>'+esc(K.btn.label)+'</button></div>'
+   +'<div class="dvs-btns dv7-btns"><button type="button" class="fill dvs-primary'+(ctx.workOpen&&K.btn.act==='work7'?' on':'')+'" data-dv3="primary" data-act="'+attr(K.btn.act)+'"'+(ctx.noResume&&K.g==='legacy'?' disabled title="서버에 단계 값이 비어 있는 자료입니다 — 서버 보완 뒤에 영업 재개를 할 수 있습니다"':'')+'>'+esc(K.btn.label+(ctx.workOpen&&K.btn.act==='work7'?' · 가운데에서 진행 중':''))+'</button></div>'
    +'<div class="dv7-row dv7-next"><div><span>다음 업무 · 일정</span><b class="'+(N.late?'red':N.has?'':'none')+'">'+esc(N.text)+(N.sub?' <small>'+esc(N.sub)+'</small>':'')+'</b></div>'+(closed?'':'<button type="button" class="lnk" data-dv3="nextonly">'+(N.has?'변경':'등록하기')+'</button>')+'</div>'+(closed?'':(ctx.nextHtml||''))
    +(ctx.ai?'<div class="dv7-ai"><em>AI</em>'+esc(ctx.ai)+'</div>':'')
-   +'<div class="dv7-row dv7-info"><div><span>확인할 정보 <b class="'+(I.length?'n':'z')+'">'+I.length+'</b></span><span class="l">'+esc(I.length?names:'모두 채웠습니다')+'</span></div><button type="button" data-dv3="p7" data-v="info">'+(I.length?'채우기':'보기')+'</button></div>';
+   +(WORK[K.g]?'':'<div class="dv7-row dv7-info"><div><span>확인할 정보 <b class="'+(I.length?'n':'z')+'">'+I.length+'</b></span><span class="l">'+esc(I.length?names:'모두 채웠습니다')+'</span></div><button type="button" data-dv3="p7" data-v="info">'+(I.length?'채우기':'보기')+'</button></div>');
  }
  /* ── 가운데 칸 [채우기]: 확인할 정보 3줄만(줄마다 그 자리에서 입력 · 저장) ── */
- const ROWF={sent:['sent_date','recipient'],competitor:['competitor'],start:['start_date'],reason:['close_reason'],reengage:['reengage'],send:['sent_date','recipient','materials']};
+ const ROWF={sent:['sent_date','recipient'],competitor:['competitor'],start:['start_date'],reason:['close_reason'],reengage:['reengage'],send:['sent_date','recipient','materials','reaction','construction_plan']};
  const rowFields=r=>(ROWF[r]||[]).slice();
  const optsOf=(d,k)=>safe(()=>{const D=root.StageTransition.definitions,def=D[root.dealStage(d)]||D[groupOf(d)];const f=def&&def.fields.find(x=>x.key===k);return f&&f.options?f.options.slice():[];},[]);
  const draft=(S,row,f,cur)=>{const F=S&&S.fill&&S.fill[row];return F&&F[f]!=null?F[f]:cur;};
@@ -301,16 +302,13 @@
  const sv=row=>'<button type="button" class="pri" data-dv3="fsave" data-row="'+row+'">저장</button>';
  function fillRow(d,x,S){
   const k=x.key;let c='';
-  if(k==='sent')c=inp(S,'sent','sent_date','date',day(fld(d,'sent','sent_date')),'발송일')+inp(S,'sent','recipient','text',str(fld(d,'sent','recipient')),'수신자')+sv('sent')+bt('p7','발송 내역 확인 ›','send','lnk');
+  if(k==='sent')c=inp(S,'sent','sent_date','date',day(fld(d,'sent','sent_date')),'발송일')+inp(S,'sent','recipient','text',str(fld(d,'sent','recipient')),'수신자')+sv('sent');
   else if(k==='competitor')c=inp(S,'competitor','competitor','text',str(anyFld(d,'competitor'))||siteVal(d,'competitor'),'경쟁사 이름 (없으면 없음)')+sv('competitor');
   else if(k==='start')c=inp(S,'start','start_date','date',day(fld(d,'construction','start_date')||fld(d,'contract','start_date')),'착공일')+sv('start');
   else if(k==='reason')c=sel(S,'reason','close_reason',str(fld(d,'lost','close_reason'))||str(d.close_reason||d.lost_reason||''),optsOf(d,'close_reason'),'사유 선택')+sv('reason');
   else if(k==='reengage')c=sel(S,'reengage','reengage',str(fld(d,'lost','reengage')),optsOf(d,'reengage').length?optsOf(d,'reengage'):['예','아니오','미정'],'선택')+sv('reengage');
-  else if(k==='files')c=bt('files','자료 열기');
-  else if(k==='plan')c=bt('be','기본 정보에서 입력','plan');
   else if(k==='reaction')c=bt('fgo','응대 기록에 적기','composer')+'<small>고객 반응은 응대 기록 결과 칩에서</small>';
   else if(k==='rel')c=bt('fgo','관리 상태 정하기','rel');
-  else if(k==='compare')c=bt('files','자료 열기');
   else if(k==='win')c=bt('fgo','수주 정보 고치기','win');
   else if(k==='stage')c=bt('mv','영업 재개');
   else if(k==='next')c=bt('nextonly','다음 업무 등록');
@@ -333,13 +331,107 @@
    +'<section><b>① 기존 기록에서 찾기</b>'+(C.length?C.map(c=>'<div class="dv7-cand"><span>'+esc(md(c.date))+' · '+esc(c.type)+'</span><span>'+esc(c.text)+'</span><button type="button" data-dv3="sendpick" data-date="'+attr(c.date)+'">이걸로 등록</button></div>').join(''):'<p class="dv7-fnone">이메일 · 잔디 · 메모에서 찾은 발송 기록이 없습니다</p>')+'</section>'
    +'<section><b>② 직접 등록</b><div class="dv7-fr"><div class="h"><b>발송일 · 수신자</b></div><div class="c">'+inp(S,'send','sent_date','date',day(fld(d,'sent','sent_date')),'발송일')+inp(S,'send','recipient','text',str(fld(d,'sent','recipient')),'수신자')+'</div></div>'
    +'<div class="dv7-fr"><div class="h"><b>보낸 자료</b></div><div class="c dv7-chips">'+MATS.map(m=>'<button type="button" data-dv3="sendmat" data-v="'+attr(m)+'" aria-pressed="'+mats.includes(m)+'">'+esc(m)+'</button>').join('')+'</div></div>'
-   +'<div class="dv7-fr"><div class="h"><b>견적 버전</b></div><div class="c"><span>'+esc(q?'V'+(Number(q.version_no)||Q.length)+' · '+eok(q.amount):'등록된 견적 없음')+'</span><button type="button" class="lnk" data-dv3="sendquote">견적 버전 등록 ›</button></div></div></section>'
+   +'<div class="dv7-fr"><div class="h"><b>고객 반응</b></div><div class="c">'+sel(S,'send','reaction',str(fld(d,'sent','reaction')),optsOf(d,'reaction'),'반응 선택')+'</div></div>'
+   +'<div class="dv7-fr"><div class="h"><b>공사 시기</b></div>'+chipsOf(S,'send','construction_plan',curPlan(d),PLANS)+'</div>'
+   +'<div class="dv7-fr"><div class="h"><b>견적 버전</b></div><div class="c"><span>'+esc(q?'V'+(Number(q.version_no)||Q.length)+' · '+eok(q.amount):'등록된 견적 없음')+'</span><button type="button" class="lnk" data-dv3="sendquote">견적 버전 등록 ›</button></div></div><div id="execQuoteForm"></div></section>'
    +'<div class="dv7-sfoot">'+(ck==='확인 불가'?'<span class="note">발송일 확인 불가로 기록됨</span>':'<span></span>')+'<button type="button" data-dv3="sendnone">확인 불가</button><button type="button" class="pri" data-dv3="fsave" data-row="send">저장</button></div></div>';
+ }
+ /* ── 주 버튼 = 그 일을 하는 화면(가운데 칸 한 곳) — 2026-10-10 design_handoff_detail_basic_fix ⑥
+    견적 요청 등록 · 발송 내역 · 제출 확인 · 계약서 확인 · 사후 연락 · 실주 기록. 빠진 정보(자료 올리기 · 공사 시기 …)는 이 화면 안에서 바로 입력하고, 왼쪽 · 오른쪽으로 보내는 단추는 없다.
+    저장하면 왼쪽 기본 정보 · 자료 값도 같이 바뀐다(같은 데이터). 저장은 전부 기존 길(단계 정보 saveSF · 자료 업로드 · 다음 업무). ── */
+ const WORK={consulting:'quote',sent:'send',competition:'submit',construction:'contract',won:'after',lost:'lostrec'};
+ const WTITLE={quote:['견적 요청 등록','자료 올리기 → 공사 시기 → 범위 · 메모 → 등록'],send:['발송 내역','기존 기록에서 찾거나 직접 등록 · 확인할 수 없으면 [확인 불가]'],submit:['제출 확인','공법 비교표 · 경쟁 업체 · 제출 접수증'],contract:['계약서 확인','계약서 파일 · 착공일 · 특이조건'],after:['사후 연락','전화 → 결과 · 재영업 · 다음 공사'],lostrec:['실주 기록','사유 · 확인한 내용 · 재영업']};
+ const hasWork=d=>!!WORK[groupOf(d)];
+ const workRow=d=>WORK[groupOf(d)]||'';
+ const workTitle=d=>(WTITLE[workRow(d)]||['',''])[0];
+ const workSub=d=>(WTITLE[workRow(d)]||['',''])[1];
+ const legacyAct=d=>task(d,{}).btn.act0;
+ const PLANS=['올해','내년','그 이후','미정'];
+ const addWeekdays=(k,n)=>{let x=k;for(let i=0;i<n;){x=addDays(x,1);const w=new Date(x+'T00:00:00Z').getUTCDay();if(w!==0&&w!==6)i++;}return x;};
+ const curPlan=d=>siteVal(d,'construction_plan');
+ const lastMeeting=d=>{const L=acts(d).filter(a=>a&&/방문|미팅|실사/.test(String(a.type||''))&&String(a.note||'').trim()).sort((a,b)=>String(b.at||b.occurred_at||'').localeCompare(String(a.at||a.occurred_at||'')));return L[0]?String(L[0].note).replace(/\s+/g,' ').trim().slice(0,200):'';};
+ const fileNames=(d,memoRe,catRe)=>files(d).filter(x=>(memoRe&&memoRe.test(String(x.memo||'')))||(catRe&&catRe.test(String(x.category||'')))).map(x=>String(x.file_name||x.name||x.category||'파일'));
+ const STEP=(n,done,title,sub)=>'<div class="dv7-st"><span class="n'+(done?' ok':'')+'">'+n+'</span><b>'+esc(title)+'</b>'+(sub?'<small>'+esc(sub)+'</small>':'')+'</div>';
+ const chipsOf=(S,row,f,cur,opts)=>'<div class="dv7-chips">'+opts.map(o=>'<button type="button" data-dv3="wpick" data-row="'+row+'" data-f="'+f+'" data-v="'+attr(o)+'" aria-pressed="'+(draft(S,row,f,cur)===o)+'">'+esc(o)+'</button>').join('')+'</div>';
+ const upl=(label,cat,memo,mark,names,busy)=>'<button type="button" class="dv7-drop" data-dv3="upload" data-cat="'+attr(cat)+'" data-memo="'+attr(memo||'')+'" data-mark="'+attr(mark||'')+'"'+(busy?' disabled':'')+'>'+esc(busy?'올리는 중…':label)+'</button>'+(names.length?'<div class="dv7-fl">'+names.slice(0,6).map(n=>'<span>'+esc(n)+'</span>').join('')+(names.length>6?'<span>외 '+(names.length-6)+'개</span>':'')+'</div>':'');
+ const ta=(S,row,f,cur,ph)=>'<textarea class="dv7-in dv7-ta" data-dv3f="'+f+'" data-row="'+row+'" rows="3" placeholder="'+attr(ph)+'" aria-label="'+attr(ph)+'">'+esc(draft(S,row,f,cur))+'</textarea>';
+ const foot=(note,btns)=>'<div class="dv7-wfoot"><span>'+esc(note)+'</span>'+btns+'</div>';
+ const wbtn=(row,mode,label,pri,off)=>'<button type="button"'+(pri?' class="pri"':'')+' data-dv3="wsave" data-row="'+row+'" data-mode="'+mode+'"'+(off?' disabled':'')+'>'+esc(label)+'</button>';
+ function workHtml(d,S){
+  const row=workRow(d),busy=!!(S&&S.upBusy);
+  if(row==='send')return sendHtml(d,S);
+  if(row==='quote'){
+   const F=files(d),plan=draft(S,'quote','plan',curPlan(d)),memo=draft(S,'quote','memo',str(fld(d,'consulting','quote_request'))||lastMeeting(d)),left=(F.length?0:1)+(plan?0:1),Q=safe(()=>root.PipelineJudge.rules().quote,3)||3;
+   return '<div class="dv7-work">'
+    +'<div class="dv7-wsum">채울 것 '+left+'개 남음 · 여기서 다 입력</div>'
+    +'<section>'+STEP(1,F.length>0,'도면 · 현장 사진',F.length?F.length+'개 올림':'미입력')+upl('눌러서 올리기 · 사진 · 도면 PDF','auto','','',F.map(x=>String(x.file_name||x.name||x.category||'파일')),busy)+'<small class="dv7-hint">없으면 [자료 없이 가견적] — 견적팀에 \'자료 부족 · 가견적\'으로 전달</small></section>'
+    +'<section>'+STEP(2,!!plan,'공사 시기')+chipsOf(S,'quote','plan',plan,PLANS)+'</section>'
+    +'<section>'+STEP(3,true,'범위 · 메모',lastMeeting(d)?'미팅 기록에서 채움 · 고칠 수 있음':'')+ta(S,'quote','memo',memo,'범위 · 메모 (예: 옥상 방수 · 3개동 · 부분 보수 여부 확인 필요)')+'</section>'
+    +foot('등록하면 견적 요청 기록 + 견적 예정일('+Q+'일)이 저장됩니다',wbtn('quote','draft','자료 없이 가견적',false,false)+wbtn('quote','go','견적 요청 등록',true,left>0))+'</div>';
+  }
+  if(row==='submit'){
+   const cmp=fileNames(d,/공법 비교표/,null),rc=fileNames(d,/제출 접수증/,null),cmpOk=!!(cmp.length||anyFld(d,'compare_attached')),rcOk=!!(rc.length||anyFld(d,'receipt_attached')),cp=draft(S,'submit','competitor',str(anyFld(d,'competitor'))||siteVal(d,'competitor'));
+   return '<div class="dv7-work">'
+    +'<section>'+STEP(1,cmpOk,'공법 비교표',cmpOk?'올림':'미입력')+upl('눌러서 올리기 · 비교표 · 제안서','견적자료','공법 비교표','compare_attached',cmp,busy)+'</section>'
+    +'<section>'+STEP(2,!!cp,'경쟁 업체',cp?'':'미입력')+inp(S,'submit','competitor','text',cp,'경쟁 업체 이름 (없으면 없음)')+'</section>'
+    +'<section>'+STEP(3,rcOk,'제출 접수증',rcOk?'올림':'미입력')+upl('눌러서 올리기 · 접수증 사진 · PDF','기타','제출 접수증','receipt_attached',rc,busy)+'</section>'
+    +foot('제출 접수증이 있어야 제출 확인으로 기록됩니다',wbtn('submit','go','제출 확인',true,!rcOk))+'</div>';
+  }
+  if(row==='contract'){
+   const cs=safe(()=>DS().contract(d),{proof:false}),cf=fileNames(d,null,/계약/),sd=draft(S,'contract','start_date',day(fld(d,'construction','start_date')||fld(d,'contract','start_date'))),sp=safe(()=>DS().special(d),{v:'확인 필요',text:''}),sv=draft(S,'contract','special',sp.set===false?'':sp.v),proof=!!(cs.proof||cf.length);
+   return '<div class="dv7-work">'
+    +'<section>'+STEP(1,proof,'계약서 파일',proof?'올림':'미첨부')+upl('눌러서 올리기 · 계약서 PDF · 사진','계약관련','계약서','',cf,busy)+'</section>'
+    +'<section>'+STEP(2,!!sd,'착공일',sd?'':'미입력')+inp(S,'contract','start_date','date',sd,'착공일 (계약서와 대조)')+'</section>'
+    +'<section>'+STEP(3,!!sv,'특이조건')+chipsOf(S,'contract','special',sv,['없음','있음','확인 필요'])+(sv==='있음'?inp(S,'contract','special_text','text',draft(S,'contract','special_text',sp.text||''),'어떤 조건인가요 (예: 하자보증 2년 구두 약속)'):'')+'</section>'
+    +foot('계약서가 있어야 계약서 수령으로 기록됩니다',wbtn('contract','go','계약서 확인',true,!proof))+'</div>';
+  }
+  if(row==='after'){
+   return '<div class="dv7-work">'
+    +'<section>'+STEP(1,false,'전화')+'<div class="dv7-wbtns"><button type="button" data-dv3="callnow">사후 연락 전화 걸기</button><small>통화한 뒤 결과를 아래에 적어 주세요</small></div></section>'
+    +'<section>'+STEP(2,!!str(fld(d,'won','customer_reaction')),'사후 연락 결과 · 만족 · 하자')+ta(S,'after','customer_reaction',str(fld(d,'won','customer_reaction'))||siteVal(d,'customer_reaction'),'통화 결과 (만족도 · 하자 · 요청 사항)')+'</section>'
+    +'<section>'+STEP(3,!!str(fld(d,'won','reengage')),'재영업 가능 여부')+chipsOf(S,'after','reengage',str(fld(d,'won','reengage')),['예','아니오','미정'])+'</section>'
+    +'<section>'+STEP(4,!!str(fld(d,'won','recontact_possibility')),'추가 공종 · 다음 공사 시기')+inp(S,'after','recontact_possibility','text',str(fld(d,'won','recontact_possibility')),'예: 외벽 2028 · 장기수선')+'</section>'
+    +foot('저장하면 이 영업건의 사후 연락 기록이 됩니다',wbtn('after','go','사후 연락 기록 저장',true,false))+'</div>';
+  }
+  if(row==='lostrec'){
+   const rs=str(fld(d,'lost','close_reason'))||str(d.close_reason||d.lost_reason||''),o=optsOf(d,'close_reason');
+   return '<div class="dv7-work">'
+    +'<section>'+STEP(1,!!rs,'실주 사유',rs?'':'미입력')+sel(S,'lostrec','close_reason',rs,o,'사유 선택')+'</section>'
+    +'<section>'+STEP(2,!!str(fld(d,'lost','close_detail')),'확인한 내용 · 고객 반응')+ta(S,'lostrec','close_detail',str(fld(d,'lost','close_detail')),'고객에게 확인한 내용')+'</section>'
+    +'<section>'+STEP(3,!!str(fld(d,'lost','reengage')),'재영업 가능 여부')+chipsOf(S,'lostrec','reengage',str(fld(d,'lost','reengage')),['예','아니오','미정'])+'</section>'
+    +'<section>'+STEP(4,!!str(fld(d,'lost','recontact_possibility')),'재접촉 가능 시기')+inp(S,'lostrec','recontact_possibility','text',str(fld(d,'lost','recontact_possibility')),'예: 2027 상반기')+'</section>'
+    +foot('실주 사유와 재영업 여부가 있어야 실주 기록이 완성됩니다',wbtn('lostrec','go','실주 기록 저장',true,false))+'</div>';
+  }
+  return '';
+ }
+ /* 저장할 칸(순수) — 화면 입력(draft)과 지금 값을 합쳐 단계 정보 칸 · 다음 업무를 만든다. error 가 있으면 저장하지 않는다 */
+ function workFields(d,row,dr,mode){
+  dr=dr||{};const v=(k,cur)=>dr[k]!=null?String(dr[k]).trim():cur,T0=today(),out={fields:{}};
+  if(row==='quote'){
+   const F=files(d),plan=v('plan',curPlan(d)),memo=v('memo',str(fld(d,'consulting','quote_request'))||lastMeeting(d)),Q=safe(()=>root.PipelineJudge.rules().quote,3)||3,draftOnly=mode==='draft';
+   if(!draftOnly&&(!F.length||!plan))return {error:'도면 · 현장 사진을 올리고 공사 시기를 골라 주세요(자료가 없으면 [자료 없이 가견적])'};
+   const due=addWeekdays(T0,Q);out.fields={quote_request:(draftOnly&&!F.length?'자료 부족 · 가견적 — ':'')+(memo||'견적 요청'),quote_due:due};if(plan)out.fields.construction_plan=plan;
+   out.next={type:'후속접촉',text:'견적 회신 확인 · 견적 예정일 '+md(due),due,P:{}};return out;
+  }
+  if(row==='submit'){
+   const rcOk=fileNames(d,/제출 접수증/,null).length||anyFld(d,'receipt_attached');if(!rcOk)return {error:'제출 접수증을 올려 주세요'};
+   out.fields={submit_checked_at:T0};const cp=v('competitor',str(anyFld(d,'competitor')));if(cp)out.fields.competitor=cp;return out;
+  }
+  if(row==='contract'){
+   const cs=safe(()=>DS().contract(d),{proof:false}),proof=!!(cs.proof||fileNames(d,null,/계약/).length);if(!proof)return {error:'계약서 파일을 올려 주세요'};
+   out.fields={contract_document:'수령'};const sd=v('start_date','');if(sd)out.fields.start_date=sd;const sp=v('special','');if(sp)out.fields.special_terms=sp==='있음'?('있음'+(v('special_text','')?' · '+v('special_text',''):'')):sp;return out;
+  }
+  if(row==='after'||row==='lostrec'){
+   const keys=row==='after'?['customer_reaction','reengage','recontact_possibility']:['close_reason','close_detail','reengage','recontact_possibility'];
+   keys.forEach(k=>{const s=dr[k]!=null?String(dr[k]).trim():'';if(s)out.fields[k]=s;});
+   if(!Object.keys(out.fields).length)return {error:'저장할 내용을 적어 주세요'};return out;
+  }
+  return {error:'저장할 수 없는 화면입니다'};
  }
  const PANELS0={info:['확인할 정보','이 단계에 필요한 것만 · 줄마다 바로 입력'],send:['발송 내역','기존 기록에서 찾거나 직접 등록 · 확인할 수 없으면 [확인 불가]'],collab:['결정 일정 · 막힌 곳 · 진척 · 특이조건 · 하자','기록하면 응대 이력에 남습니다'],units:['참여 · 브랜드','책임자 · 참여 역할 · 브랜드 · 요청 · 현장 공통'],prep:['영업 판단 · 내부 지원','진행 조건 · 관계자 · 입찰 준비 · 지원 요청 · 예상 수주일 · 단계 이력'],near:['근처 현장','반경 안에서 영업했던 곳']};
  /* 가운데 패널은 확인할 정보 · 발송 내역 둘뿐 — 결정 일정 · 특이조건 · 하자 / 참여 · 브랜드 / 영업 판단 · 내부 지원 / 담당 · 실적 귀속은 없앴다(대표 2026-10-10 "필요없을거같아") */
- const PANELS={info:PANELS0.info,send:PANELS0.send};
- const MENU=[];
+ const PANELS={info:PANELS0.info,work:['',''],near:['근처 현장','반경 안에서 영업했던 곳']};
+ const MENU=[['near','근처 현장']];
 function taskHtml(d,ctx){
   ctx=ctx||{};const K=task(d,ctx),closed=!!ctx.closed,tel=!!ctx.tel;
   const SCOPE='다음 업무 = 업무 · 기한만 저장 · 결과 기록 = 응대 이력 1건 · 칸 수정 = 그 칸만';
@@ -354,5 +446,5 @@ function taskHtml(d,ctx){
    +'<div class="dv7-grps">'+K.groups.map(G=>'<div class="dv7-grp"><b>'+esc(G.t)+'</b>'+G.items.map(m=>'<div><span>'+esc(m[0])+'</span><span class="'+esc(m[2])+'">'+esc(m[1])+'</span></div>').join('')+'</div>').join('')+'</div>'
    +(aux?'<div class="dvs-aux">'+aux+'</div>':'');
  }
- return {on,has,ST,groupOf,legacyOf,infoList,nextLine,rightHtml,fillHtml,sendHtml,rowFields,PANELS,MENU,bar,barHtml,meta,metaHtml,amounts,line2,pos,posHtml,first,due,confirmed,task,schedule,groups,taskHtml,TASK,DONE,BTN,AFTER};
+ return {on,has,ST,groupOf,legacyOf,infoList,nextLine,rightHtml,fillHtml,sendHtml,rowFields,hasWork,workRow,workTitle,workSub,workHtml,workFields,legacyAct,PANELS,MENU,bar,barHtml,meta,metaHtml,amounts,line2,pos,posHtml,first,due,confirmed,task,schedule,groups,taskHtml,TASK,DONE,BTN,AFTER};
 });
