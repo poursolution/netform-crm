@@ -3,16 +3,27 @@
    목차 7묶음 · 꼬리표(확정 = 잠금 / 조건부 = − + · 토글 · 칩 추가 / 보류 = 꺼짐 고정) · 변경됨 + 영향 한 줄 + 남색 띠 [되돌리기] [저장]
    저장 = 서버(crm_ops_rules_v1)가 확인한 값만 적용 → 모든 화면이 같은 기준(견적문의 배정 기준 · 실주 원인 목록 등) · 변경 이력. 서버 함수가 없으면 기본값 + 잠금 */
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const {PGlite}=require('@electric-sql/pglite');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=path.resolve(__dirname,'..'),shot=process.argv[2]||'';
-const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':t.endsWith('.png')?'image/png':'text/html');fs.createReadStream(t).pipe(res)});
+const srv=http.createServer((req,res)=>{let t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':t.endsWith('.png')?'image/png':'text/html');fs.createReadStream(t).pipe(res)});
 (async()=>{
+ const db=new PGlite();
+ await db.exec(`create role anon;create role authenticated;create schema crm_security;
+ create table users(user_id uuid primary key,auth_uid uuid,name text,active boolean default true);
+ create table crm_settings(key text primary key,value jsonb not null,updated_by uuid,updated_at timestamptz not null default now());
+ create function crm_security.actor() returns table(user_id uuid,auth_uid uuid,display_name text,permission_role text) language sql as $$select u.user_id,u.auth_uid,u.name,'admin'::text from public.users u limit 1$$;
+ insert into users values('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','송보람',true);`);
+ await db.exec(fs.readFileSync(path.join(root,'sql/ops-rules-v1-20261004.sql'),'utf8'));
+ await db.exec(fs.readFileSync(path.join(root,'sql/ops-rules-v2-20261010.sql'),'utf8'));
+ const sqlCall=async p=>(await db.query('select public.crm_ops_rules_v1($1::jsonb) r',[JSON.stringify(p)])).rows[0].r;
  await new Promise(r=>srv.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({headless:true});
+ const browser=await chromium.launch({headless:true,executablePath:process.env.EDGE_PATH});
  try{
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});
   const page=await ctx.newPage(),errs=[];page.on('pageerror',e=>errs.push(e.message));
+  await page.exposeFunction('__rulesSql',async p=>{try{return {data:await sqlCall(p)}}catch(e){return {error:{message:e.message,code:e.code}}}});
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.CRMRules&&window.RulesAdmin&&window.OpsStore&&window.InquiryListV3);
   await page.evaluate(()=>{
    const at=m=>new Date(Date.now()-m*6e4).toISOString(),U=n=>'0000000'+n+'-0000-4000-8000-00000000000'+n;
@@ -23,7 +34,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
    /* 서버 흉내: 저장하면 값과 변경 이력을 돌려준다 */
    window.__rules={};window.__hist=[];window.__calls=[];
-   SB={rpc:async(name,args)=>{__calls.push([name,JSON.parse(JSON.stringify(args.p||{}))]);if(name==='crm_ops_rules_v1'){const set=args.p&&args.p.set,ap=(args.p&&args.p.apply)||{};if(set)Object.keys(set).forEach(k=>{__hist.unshift({key:k,before:__rules[k]===undefined?null:__rules[k],after:set[k],by:'송보람',at:new Date().toISOString(),effective_on:ap.effective_on||null,scope:ap.scope||null,existing:ap.existing||null});__rules[k]=set[k];});return {data:{ok:true,contract:2,version:__hist.length,rules:__rules,updated_at:__hist.length?__hist[0].at:null,updated_by_name:__hist.length?'송보람':null,history:__hist.slice(0,20)}};}if(name==='crm_ops_settings_v1')return {data:{ok:true,settings:{}}};return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
+   SB={rpc:async(name,args)=>{__calls.push([name,JSON.parse(JSON.stringify(args.p||{}))]);if(name==='crm_ops_rules_v1')return window.__rulesSql(args.p||{});if(name==='crm_ops_settings_v1')return {data:{ok:true,settings:{}}};return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
    goPage('rules');
   });
   await page.waitForTimeout(500);
@@ -94,6 +105,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(ap.length,1);assert.equal(ap[0].effective_on,today,'적용일 = 오늘(즉시)');assert.equal(ap[0].existing,undefined,'보장 못 하는 선택은 보내지 않음');assert.match(ap[0].scope,/담당 배정: 견적문의 · 미배정/);
   assert.deepEqual(await page.evaluate(()=>__calls.filter(c=>c[0]==='crm_ops_rules_v1'&&c[1].set).map(c=>c[1].set)),[{assign_minutes:20,nearby_map:false,reasons_lost:['관계 · 관리소장 변경','관계 · 입대의 · 회장 영향','관계 · 경쟁업체 기존 관계','공법 · 타 공법 선호','공법 · 특허 조건 불리','공법 · 설계 변경','가격 · 가격 경쟁','가격 · 예산 부족','가격 · 실행가 문제','사업 · 공사 취소','사업 · 연기','사업 · 예산 미확정','단가 인상']}],'바뀐 조건부 값만 서버로');
   assert.equal(await page.locator('#rules-admin .ra-bar').count(),0,'저장 뒤 띠 사라짐');
+  const stored=await sqlCall({});assert.equal(stored.contract,3);assert.equal(stored.version,3);assert.equal(stored.rules.assign_minutes,20);assert.equal(stored.rules.nearby_map,false);
+  assert.equal(stored.history.length,3);stored.history.forEach(h=>{assert.equal(h.effective_on,ap[0].effective_on);assert.equal(h.scope,ap[0].scope);assert.equal(h.existing,null);assert.equal(h.by,'송보람');});
+  const beforeInvalid=JSON.stringify(stored);
+  await assert.rejects(sqlCall({set:{assign_minutes:60},apply:{...ap[0],effective_on:'2099-01-01'}}),e=>e.code==='22023');
+  await assert.rejects(sqlCall({set:{assign_minutes:60},apply:{...ap[0],existing:'keep'}}),e=>e.code==='22023');
+  assert.equal(JSON.stringify(await sqlCall({})),beforeInvalid);
+  await page.evaluate(()=>CRMRules.load(true));assert.equal(await page.evaluate(()=>CRMRules.get('assign_minutes')),20);
+
   assert.deepEqual(await page.evaluate(()=>[CRMRules.get('assign_minutes'),CRMRules.get('nearby_map'),CRMRules.reasons('lost').at(-1),OPS_RULES.inquiryAssignMinutes,OPS_RULES.towerFirstResponseHours]),[20,false,'단가 인상',20,2],'서버가 확인한 값이 공통 기준으로');
   assert.match(await page.locator('#rules-admin .ra-hist').innerText(),/마지막 변경\s*\d{4}\.\d+\.\d+ · 송보람[\s\S]*담당 배정 30 → 20\s*적용일 \d{4}-\d{2}-\d{2} · 대상 담당 배정: 견적문의/,'변경 이력(누가 · 언제 · 전 → 후 · 적용일 · 대상)');
   /* v1 서버(contract 없음)면 적용 조건을 보내지 않고 값만 저장 · 안내 문구도 그대로 말한다 */
@@ -125,6 +144,6 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{ME={id:'admin',name:'송보람',role:'admin'};paint();});await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'좁은 화면 넘침 없음');
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',sections7:true,apply_scope_confirm:true,conf_apply_states:true,fixed_locked:true,hold_off:true,conditional_edit_impact_bar:true,save_server_confirmed:true,history:true,one_rule_everywhere:true,gate_without_server:true,admin_only:true}));
- }finally{await browser.close();srv.close();}
+  console.log(JSON.stringify({status:'PASS',real_sql:true,exact_history:true,rejected_writes_unchanged:true,sections7:true,apply_scope_confirm:true,conf_apply_states:true,fixed_locked:true,hold_off:true,conditional_edit_impact_bar:true,save_server_confirmed:true,history:true,one_rule_everywhere:true,gate_without_server:true,admin_only:true}));
+ }finally{await browser.close();srv.close();await db.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

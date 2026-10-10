@@ -88,7 +88,7 @@
   ['later','보류 · 추후','회의에서 잠정 · 추후로 정한 것',[
    T('content_followup','콘텐츠 후속관리','카드뉴스 · 영상 — 발송 대신 접촉 기록만','hold')]]];
  const ROWS=SECTIONS.flatMap(s=>s[3]),EDIT=ROWS.filter(r=>r.st==='cond'&&r.k),SPEC=Object.fromEntries(EDIT.map(r=>[r.k,r]));
- let over={},meta={updated_at:'',updated_by:'',history:[],version:0,contract:1},loaded=false,busy=false,warmed='';
+ let over={},meta={updated_at:'',updated_by:'',history:[],version:0,contract:1},loaded=false,readPending=null,savePending=null,writeEpoch=0,warmed='';
  /* 한 값 다듬기: 조건부 항목만, 형식 · 범위가 맞을 때만 받아들인다(아니면 undefined) */
  function clean(k,v){
   const r=SPEC[k];if(!r)return undefined;
@@ -211,25 +211,41 @@
  function carePhase(quoteSentAt,now){const t=ms(quoteSentAt);if(!Number.isFinite(t))return '';const m=((now||Date.now())-t)/(864e5*30);return m<get('care_focus_months')?'focus':m<Math.max(get('care_general_months'),get('care_focus_months')+1)?'general':'long_wait';/* 2026-10-07 stage7_2 ③: 일반관리 = 발송일부터 총 기간 */}
  /* ── 서버 ── */
  const store=()=>root.OpsStore,available=()=>!!(store()&&store().has&&store().has(RPC));
- function take(r){apply(r.rules||{});const hist=Array.isArray(r.history)?r.history:[];meta={updated_at:r.updated_at||'',updated_by:r.updated_by_name||'',history:hist,version:Number(r.version)||hist.length,contract:Number(r.contract)||1};loaded=true;try{root.dispatchEvent(new CustomEvent('crm-rules:changed',{detail:{rules:all()}}));}catch(e){}return all();}
- async function load(force){if(!available())return all();if(busy)return all();if(loaded&&!force)return all();busy=true;try{return take(await store().rpc(RPC,{}));}catch(e){return all();}finally{busy=false;}}
- /* 저장: 바뀐 조건부 값만 보낸다. 서버가 확인한 값만 화면에 적용한다 */
- /* 저장: 바뀐 조건부 값만 보낸다. 서버가 확인한 값만 화면에 적용한다.
-    apply = 적용 범위(promise_gap ③): {effective_on:'YYYY-MM-DD', scope:'대상 · 건수', existing:'keep'|'recalc'|'ask'} — 이력에만 남고 지난 판정은 소급 재계산하지 않는다(v1 서버는 이 칸을 무시한다) */
+ function take(r){if(!r||r.ok!==true||!r.rules||typeof r.rules!=='object'||Array.isArray(r.rules))throw new Error('운영 기준 서버 응답을 확인하지 못했습니다');apply(r.rules);const hist=Array.isArray(r.history)?r.history:[];meta={updated_at:r.updated_at||'',updated_by:r.updated_by_name||'',history:hist,version:Number(r.version)||hist.length,contract:Number(r.contract)||1};loaded=true;try{root.dispatchEvent(new CustomEvent('crm-rules:changed',{detail:{rules:all()}}));}catch(e){}return all();}
+ async function load(force){
+  if(!available())return all();
+  if(savePending){try{await savePending;}catch(e){}return all();}
+  if(readPending)return readPending;if(loaded&&!force)return all();
+  const epoch=writeEpoch,pending=(async()=>{try{const r=await store().rpc(RPC,{});return epoch===writeEpoch?take(r):all();}catch(e){return all();}})();
+  readPending=pending;try{return await pending;}finally{if(readPending===pending)readPending=null;}
+ }
+ /* contract 3: 오늘(KST) 즉시 적용 및 대상 설명 이력만 지원한다.
+    scope는 설명이며 대상별 정책 필터가 아니다. 예약·existing 명령은 전송 전 거절한다. */
  async function save(changes,apply){
+  let ap;
+  if(apply!==undefined&&apply!==null){
+   const today=new Date(Date.now()+9*36e5).toISOString().slice(0,10);
+   if(typeof apply!=='object'||Array.isArray(apply)||Object.keys(apply).some(k=>!['effective_on','scope'].includes(k))||
+    apply.effective_on!==today||typeof apply.scope!=='string'||!apply.scope.trim()||apply.scope.length>300)
+    throw new Error('오늘(KST) 즉시 적용만 가능합니다. 예약 적용·기존 업무 처리 기능은 아직 연결되지 않아 저장하지 않았습니다.');
+   if(!loaded||meta.contract<3)throw new Error('즉시 적용 검증 계약(contract 3)을 서버에서 확인한 뒤 저장할 수 있습니다. 다시 조회하거나 SQL 적용 상태를 확인해 주세요.');
+   ap={effective_on:apply.effective_on,scope:apply.scope};
+  }
   const set={};Object.keys(changes||{}).forEach(k=>{const v=clean(k,changes[k]);if(v===undefined)throw new Error((SPEC[k]?SPEC[k].l:k)+' 값이 범위를 벗어났습니다');set[k]=v;});
   if(!Object.keys(set).length)return all();if(!available())throw new Error('운영 기준 저장은 서버 적용 뒤에 쓸 수 있습니다');
-  const body={set};
-  /* 적용 조건은 서버가 contract 2 라고 응답한 뒤에만 보낸다(v1 서버는 조용히 버린다 — 코덱스 검토 2026-10-10). 보낸 적용 조건을 서버가 받지 않았으면 성공으로 보지 않는다 */
-  if(apply&&typeof apply==='object'){if(meta.contract<2)throw new Error('이 서버는 적용 조건(적용일 · 대상)을 받지 않습니다 — sql/ops-rules-v2-20261010.sql 적용 뒤에 쓸 수 있습니다');const ap={};if(/^\d{4}-\d{2}-\d{2}$/.test(String(apply.effective_on||'')))ap.effective_on=apply.effective_on;if(apply.scope)ap.scope=String(apply.scope).slice(0,300);if(['keep','recalc','ask'].includes(apply.existing))ap.existing=apply.existing;if(Object.keys(ap).length)body.apply=ap;}
-  const r=await store().rpc(RPC,body);
-  if(!r||r.ok!==true||!r.rules||typeof r.rules!=='object')throw new Error('서버 확인 응답이 올바르지 않습니다');
-  if(body.apply&&(Number(r.contract)||1)<2)throw new Error('서버가 적용 조건을 받지 않았습니다(contract '+(r.contract||1)+')');
-  const miss=Object.keys(set).filter(k=>JSON.stringify(r.rules[k])!==JSON.stringify(set[k]));if(miss.length)throw new Error('서버가 확인한 값이 요청과 다릅니다: '+miss.join(', '));
-  return take(r);
+  if(savePending)throw new Error('운영 기준을 저장 중입니다. 결과 확인 후 다시 저장해 주세요.');
+  /* 저장 전에 시작한 조회는 늦게 도착해도 확정값·버전을 되돌릴 수 없다. */
+  writeEpoch++;readPending=null;
+  const pending=(async()=>{
+   const r=await store().rpc(RPC,ap?{set,apply:ap}:{set});
+   if(!r||r.ok!==true||!r.rules||typeof r.rules!=='object'||Array.isArray(r.rules)||Object.keys(set).some(k=>!same(r.rules[k],set[k])))throw new Error('운영 기준 저장 결과를 확인하지 못했습니다. 다시 조회해 확인해 주세요.');
+   if(ap&&(r.contract!==3||!r.apply||Object.keys(r.apply).length!==2||r.apply.effective_on!==ap.effective_on||r.apply.scope!==ap.scope))throw new Error('서버가 확인한 적용 조건이 요청과 다릅니다. 다시 조회해 확인해 주세요.');
+   return take(r);
+  })();
+  savePending=pending;try{return await pending;}finally{if(savePending===pending)savePending=null;}
  }
  /* 기준 버전(근거 보기 · 이력 표시용): 서버 이력 건수 = 버전, 마지막 변경일. 서버 적용 전이면 v0 · 기본값 */
- function version(){const at=String(meta.updated_at||''),t=Date.parse(at),k=Number.isFinite(t)?new Date(t+9*36e5).toISOString().slice(0,10):'',m=/^(\d{4})-(\d{2})-(\d{2})/.exec(k);/* 한국 날짜 */return {n:Number(meta.version)||0,at,label:'기준 v'+(Number(meta.version)||0)+(m?' · '+Number(m[2])+'.'+Number(m[3]):' · 기본값')};}
+ function version(){const at=String(meta.updated_at||''),t=Date.parse(at),k=Number.isFinite(t)?new Date(t+9*36e5).toISOString().slice(0,10):'',m=/^(\d{4})-(\d{2})-(\d{2})/.exec(k);return {n:Number(meta.version)||0,at,label:'기준 v'+(Number(meta.version)||0)+(m?' · '+Number(m[2])+'.'+Number(m[3]):' · 기본값')};}
  /* 로그인하면 한 번 읽고, 값이 기본과 다르면 다시 그린다 */
  function warm(){const me=root.ME&&String(root.ME.id||root.ME.name||'');if(!me||warmed===me||!available())return;warmed=me;const before=JSON.stringify(all());load(true).then(()=>{if(JSON.stringify(all())!==before&&typeof root.paint==='function'){try{root.paint();}catch(e){}}});}
  if(typeof root.paint==='function'){const base=root.paint;root.paint=function(){try{sync();}catch(e){}const r=base.apply(this,arguments);try{warm();}catch(e){}return r;};}
