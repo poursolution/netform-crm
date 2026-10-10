@@ -257,6 +257,8 @@
   return r;
  }
 
+ /* 담당에게 가는 한 줄 — 묶음 요청 미리보기(kpi-v7)가 같은 글을 보여 주도록 한 곳에서 만든다 */
+ const lineOf=(title,ts)=>title+' — '+(ts[0].kind==='rep'?(ts[0].why||'확인 부탁드립니다'):ts.length+'건: '+ts.slice(0,3).map(t=>t.name||t.what||t.id).join(', ')+(ts.length>3?' 외 '+(ts.length-3)+'건':''));
  async function requestMany(pkey,title,list){
   if(!canRequest()||W.sending)return {sent:0,failed:0};
   const done=compute().done,unique=new Map();
@@ -266,7 +268,7 @@
   W.sending=true;repaint();let sent=0,failed=0;
   try{
    for(const [owner,items] of by){for(let i=0;i<items.length;i+=200){const ts=items.slice(i,i+200);
-    const line=title+' — '+(ts[0].kind==='rep'?(ts[0].why||'확인 부탁드립니다'):ts.length+'건: '+ts.slice(0,3).map(t=>t.name||t.what||t.id).join(', ')+(ts.length>3?' 외 '+(ts.length-3)+'건':''));
+    const line=lineOf(title,ts);
     const targets=ts.map(t=>({target_type:t.kind==='deal'?'deal':t.kind==='rep'?'person':'inquiry',target_id:String(t.id).slice(0,80),target_name:String(t.name||t.what||t.id).slice(0,200),action:String(t.label||'요청').slice(0,200),note:String(t.why||'').slice(0,500)}));
     try{await requestLine(owner,line,pkey,targets);sent+=ts.length;}catch(e){failed+=ts.length;}
    }}
@@ -324,5 +326,5 @@
   wrapped.__kb=true;root.paintMgmt=wrapped;
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- root.KpiB={enabled,compute,DEF,stageItems,coachingRecipient,coachingReady,coachingGroup,coachingSend,coachingProgress,requestStatus,canRequest,requestMany,/* 아래는 관리팀 KPI v7(kpi-v7.js)이 같은 계산 · 저장 경로를 쓰도록 */personVals,requestLine,saveWeek,autoSave,load,names,openTarget,weekly:()=>W,weekRowOf:weekRow};
+ root.KpiB={enabled,compute,DEF,stageItems,coachingRecipient,coachingReady,coachingGroup,coachingSend,coachingProgress,requestStatus,canRequest,requestMany,lineOf,/* 아래는 관리팀 KPI v7(kpi-v7.js)이 같은 계산 · 저장 경로를 쓰도록 */personVals,requestLine,saveWeek,autoSave,load,names,openTarget,weekly:()=>W,weekRowOf:weekRow};
 })(window);

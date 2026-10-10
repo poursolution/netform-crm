@@ -137,7 +137,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const F=page.locator('#nowCard .dv3-form');assert.equal(await F.count(),1,'카드 안에서 펼침');assert.equal(await page.locator('#ddvPanel,#detailAction').count(),0,'패널 · 창 없음');await rightIntact('연락 결과');
   assert.equal(await page.locator('#nowCard .nc-call').innerText(),'접기');
   assert.deepEqual(await F.locator('.dv3-pills').nth(0).locator('button').allInnerTexts(),['전화','문자','카카오','방문','이메일']);assert.equal(await F.locator('[data-dv3="rch"][aria-pressed="true"]').innerText(),'전화','기본 전화');
-  assert.deepEqual(await F.locator('.dv3-pills').nth(1).locator('button').allInnerTexts(),['연결됨','부재','검토중','자료요청','회신대기','방문 희망','다음 할 일 없음']);/* day_zones §4-1: 방문 희망 = 현장 방문 · 날짜 확정, 다음 할 일 없음 = 이유 필수 */
+  assert.deepEqual(await F.locator('.dv3-pills').nth(1).locator('button').allInnerTexts(),['연결됨','부재','검토중','자료요청','회신대기','방문 희망','견적 요청','다음 할 일 없음']);/* after_deploy 14: 견적 요청 = 견적 요청 등록(잔디) · day_zones §4-1: 방문 희망 = 현장 방문 · 날짜 확정, 다음 할 일 없음 = 이유 필수 */
   assert.match(await F.innerText(),/어떻게 연락했나요\?[\s\S]*결과[\s\S]*다음 업무\s*결과를 고르면 자동 제안[\s\S]*저장[\s\S]*저장하면 응대 이력에 쌓이고, 예정일에 오늘 업무로 다시 뜹니다 · 응대 완료 ≠ 단계 전환/);
   assert.equal(await F.locator('.dv3-save.off').count(),1,'수단 + 결과가 있어야 저장');
   await page.locator('#nowCard .dv3-save').click();await page.waitForTimeout(150);assert.match(await page.locator('#nowCard .dv3-recerr').innerText(),/연락 수단과 결과/);assert.deepEqual(await page.evaluate(()=>__ops),[]);

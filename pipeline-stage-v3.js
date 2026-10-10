@@ -196,11 +196,14 @@
   if(!C.closed&&a[1]!=='owner'){const nx=r.next&&r.next.text?String(r.next.text):'',contactNext=/전화|통화|연락|방문|문자|재통화|콜백|안부/.test(nx),info=x.rs.filter(k=>(INFO_RS[key]||[]).includes(k)).map(k=>(C.reasons.find(q=>q[0]===k)||[])[1]).filter(Boolean);
    if(btn[1]==='stagefields'&&contactNext){o.btn2=[btn[0],btn[1]];o.fixNote=info.length?info.join(' · '):String(o.task||btn[0]);o.btn=['연락 기록','activity'];}
    else if(['next','activity'].includes(btn[1])&&info.length){o.btn2=['정보 입력','stagefields'];o.fixNote=info.join(' · ');}}
+  {const IF=root.InlineFix,u=IF?IF.unknownNote(x):'';if(u)o.base=u;}/* after_deploy 13: '확인 불가'로 남긴 건은 그 사실을 줄에 — 날짜를 지어내지 않고 판정 불가 유지 */
   if(C.rowOpts){try{Object.assign(o,C.rowOpts(x)||{});}catch(e){}}/* 관계관리 v12: 상태 · 주기 꼬리표 · 기준일 · 기한 글 */
   return o;
  }
  /* 정보 보완으로 보는 사유(연락이 아니라 입력으로 풀리는 것) */
  const INFO_RS={sent:['nosent'],competition:['nodate'],construction:['cinfo','nostart','handoff']};
+ let LASTX=new Map();/* 마지막으로 그린 목록의 '키 → 줄'(그 자리 보완이 누른 줄을 찾는다) */
+ if(root.InlineFix)root.InlineFix.setFinder(k=>LASTX.get(k)||null);
  const competitionEvidence=r=>root.PipelineRowV11&&root.PipelineRowV11.competitionEvidence?root.PipelineRowV11.competitionEvidence(r):null;
  function cardHtml(C,x){
   const r=x.row,bc=bcOf(r),e=C.key==='competition'?competitionEvidence(r):null,a=actOf(C,x)[1]==='owner'?actOf(C,x):e&&e.review?root.PipelineRowV11.primaryAction(r,['업무 확인','next'],C.closed):actOf(C,x);
@@ -209,6 +212,7 @@
  function html(key,list){
   DUP=dupMap();
   const S=st(),{C,items}=model(key,list),LP=root.ListPager,total=items.length;
+  LASTX=new Map(items.map(x=>[x.row.key,x]));const IF=root.InlineFix&&root.InlineFix.on()?root.InlineFix:null,ifKey=IF?IF.openKey():'';
   const cnt=t=>items.filter(x=>x.tab===t).length,n=C.tabs.map((_,i)=>cnt(i)),over=items.filter(x=>x.red).length,hot=t=>items.some(x=>x.tab===t&&x.red);
   const rsN=k=>items.filter(x=>x.rs.includes(k)).length;
   if(S.reason&&!C.reasons.some(r=>r[0]===S.reason))S.reason=null;
@@ -248,7 +252,7 @@
   if(S.view==='board')body='<div class="ps3-board">'+C.tabs.map((t,i)=>{const selected=listed.filter(x=>x.tab===i),all=V11()?V11().sort(selected,x=>x.row):selected,cp=LP.cut(all,LP.page(S,'col:'+i)),cards=cp.rows;
     return '<div class="ps3-col"><div class="ch"><b title="'+attr(t[0])+'">'+h(t[0])+'</b><b class="c'+(i===0?' r':'')+'">'+n[i].toLocaleString('ko-KR')+'</b></div>'+(cards.length?cards.map(x=>cardHtml(C,x)).join(''):'<p class="ps3-none">없음</p>')+LP.html(cp,{ns:'ps3',v:'col:'+i,small:true,info:false})+'</div>';}).join('')+'</div>';
   else{const V=V11(),pg=LP.cut(V?V.sort(listed,x=>x.row):listed,LP.page(S));
-   body='<div class="ps3-list'+(V?' prv-list':'')+'" role="table" aria-label="확인할 현장">'+(V?V.head():'')+(pg.rows.length?pg.rows.map(x=>V?V.row(v11(key,C,x),'ps3','ps3-row'):rowHtml(C,x)).join(''):'<div class="ps3-empty">해당하는 현장이 없습니다</div>')+LP.html(pg,{ns:'ps3',unit:'곳'})+'</div>';}
+   body='<div class="ps3-list'+(V?' prv-list':'')+'" role="table" aria-label="확인할 현장">'+(V?V.head():'')+(V&&ifKey&&LASTX.has(ifKey)&&!pg.rows.some(x=>x.row.key===ifKey)?IF.html(key,LASTX.get(ifKey),true):'')+(pg.rows.length?pg.rows.map(x=>V?V.row(v11(key,C,x),'ps3','ps3-row')+(ifKey===x.row.key?IF.html(key,x,false):''):rowHtml(C,x)).join(''):'<div class="ps3-empty">해당하는 현장이 없습니다</div>')+LP.html(pg,{ns:'ps3',unit:'곳'})+'</div>';}
   return '<div id="pipeline-stage-v3" class="ps3" data-stage="'+key+'"><div class="ps3-top"><div class="ps3-head"><b>'+h(C.name)+'</b><span>'+h(C.desc)+'</span></div>'+tabs+'</div><div class="ps3-body">'+diag+'<section class="ps3-main">'+head+body+'</section></div></div>';
  }
  function onClick(e){
@@ -261,6 +265,8 @@
   e.stopPropagation();
   if(a==='act'&&v==='classify'&&root.RelV12)return root.RelV12.openClassify(b.dataset.key);/* 관계관리 v12 분류 · 전환 창 */
   if(a==='dup'){/* 중복 의심 → 데이터 정리 · 검토(관리자 화면 · 자동 합치기 없음) */let adm=false;try{adm=!!root.todayIsAdmin();}catch(x){}if(adm){try{root.goPage('dup');}catch(x){}}else if(typeof root.toast==='function')root.toast('중복 의심 건은 데이터 정리 · 검토(관리자 화면)에서 확인합니다 — 관리자에게 알려 주세요');return;}
+  /* after_deploy 13: 판정을 막는 빠진 정보(발송일 · 입찰 일정 · 계약 정보)는 상세를 열지 않고 그 줄 아래에서 보완 — 목록(v11 줄)에서만 */
+  if((a==='fix'||(a==='act'&&v==='stagefields'))&&b.closest('.prv-row')){const IF=root.InlineFix,x=LASTX.get(b.dataset.key),k=IF&&x?IF.kindOf(S.key,x):'';if(k)return IF.toggle(S.key,x,k);}
   if(a==='act')return B.open(b.dataset.key,v);
   if(a==='fix'){e.stopPropagation();return B.open(b.dataset.key,'stagefields');}/* 날짜 미입력 보완 단추 → 상세의 이 단계 필수 정보(ops_12 A②) */
   if(a==='open'&&!e.target.closest('button'))return B.open(b.dataset.key);

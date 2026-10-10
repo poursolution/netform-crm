@@ -52,7 +52,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await v.locator('.dv3-headact .mv').click();await page.waitForTimeout(200);await v.locator('.dv3-moves [data-stage="relationship"]').first().click();await page.waitForTimeout(600);
   const f=page.locator('#stage-transition-form');assert.equal(await f.count(),1);
   const rows=()=>f.locator('.sg-row').evaluateAll(l=>l.map(n=>[n.querySelector('b').textContent,n.querySelector('span').textContent,n.classList.contains('ok')]));
-  assert.deepEqual(await rows(),[['자료 발송일','2026-09-23',true],['고객 반응','필수 · 비어 있음',false],['다음 행동','필수 · 비어 있음',false],['다음 확인일','필수 · 비어 있음',false]].map(r=>r[0]==='다음 행동'?[r[0],'견적 검토 확인 · 2026-11-05',true]:r),'자료 발송일 = 기록에서 · 다음 행동 = 지금 잡혀 있는 것');
+  assert.deepEqual(await rows(),[['자료 발송일 · 수신자','2026-09-23 · 박영호 소장',true],['고객 반응','필수 · 비어 있음',false],['다음 행동','필수 · 비어 있음',false],['다음 확인일','필수 · 비어 있음',false]].map(r=>r[0]==='다음 행동'?[r[0],'견적 검토 확인 · 2026-11-05',true]:r),'자료 발송일 = 기록에서 · 다음 행동 = 지금 잡혀 있는 것');
   assert.match(await f.locator('.sg-msg').innerText(),/^빠진 항목: 고객 반응 · 다음 확인일 — 채우면 옮길 수 있습니다$/);
   const sub=f.locator('button[type="submit"]');assert.equal(await sub.getAttribute('aria-disabled'),'true');assert.equal(await sub.evaluate(n=>n.classList.contains('sg-locked')),true,'[옮기기] 잠금');
   await f.locator('.sg-row',{hasText:'고객 반응'}).click();assert.equal(await page.evaluate(()=>document.activeElement&&document.activeElement.id),'sf-reaction','줄을 누르면 그 칸으로');
@@ -60,6 +60,17 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual((await rows()).map(r=>r[2]),[true,true,true,true]);assert.match(await f.locator('.sg-msg').innerText(),/^필수조건을 모두 채웠습니다 — 남은 필수 입력을 채우면 옮길 수 있습니다$/,'창의 다른 필수 입력(관계관리 사유)이 남아 있으면 그렇게 말한다');
   await f.locator('button',{hasText:'공사 일정 미정'}).click();await page.waitForTimeout(200);assert.match(await f.locator('.sg-msg').innerText(),/^필수조건을 모두 채웠습니다 — 옮길 수 있습니다$/);assert.equal(await f.locator('button[type="submit"]').evaluate(n=>n.classList.contains('off')),false);
   assert.equal(await sub.getAttribute('aria-disabled'),null);assert.equal(await sub.evaluate(n=>n.classList.contains('sg-locked')),false,'채우면 열림');
+  /* after_deploy 15: 수신자가 없으면 잠기고, [예외로 진행 · 사유 입력]에 사유(5자 이상)를 적어야만 넘어간다 · 다 채워져 있으면 예외 버튼이 없다 */
+  assert.equal(await f.locator('.sg-ex').count(),0,'빠진 조건이 없으면 예외 버튼 없음');
+  await page.evaluate(()=>{const d=CUR_DETAIL.item;window.__rcp=d.stage_contexts.sent.fields.recipient;delete d.stage_contexts.sent.fields.recipient;StageGate.decorate();});
+  assert.deepEqual((await rows())[0],['자료 발송일 · 수신자','필수 · 비어 있음',false]);assert.equal(await sub.getAttribute('aria-disabled'),'true','수신자 없으면 잠금');
+  assert.equal(await f.locator('.sg-ex .sg-exon').innerText(),'예외로 진행 · 사유 입력');
+  await f.locator('.sg-ex .sg-exon').click();await f.locator('.sg-exwhy').fill('급함');await page.waitForTimeout(150);assert.equal(await sub.getAttribute('aria-disabled'),'true','사유가 짧으면 그대로 잠금');
+  await f.locator('.sg-exwhy').fill('수신자는 관리소 대표 메일 — 담당자 미확인');await page.waitForTimeout(150);
+  assert.deepEqual((await rows())[0],['자료 발송일 · 수신자','예외 진행 · 사유 기록',true]);assert.equal(await sub.getAttribute('aria-disabled'),null,'사유를 적으면 열림');
+  assert.equal(await f.locator('.sg-exwhy').inputValue(),'수신자는 관리소 대표 메일 — 담당자 미확인','입력 중인 사유 칸은 다시 그려도 그대로');
+  await f.locator('.sg-ex .sg-exoff').click();await page.waitForTimeout(100);assert.equal(await sub.getAttribute('aria-disabled'),'true','예외 취소 = 다시 잠금');
+  await page.evaluate(()=>{CUR_DETAIL.item.stage_contexts.sent.fields.recipient=window.__rcp;StageGate.decorate();});assert.equal(await sub.getAttribute('aria-disabled'),null);assert.equal(await f.locator('.sg-ex').count(),0);
   if(shot)await page.screenshot({path:shot+'-gate.png'});
   /* 4. 실주: 변화 이벤트가 있으면 원인 후보를 미리 고르고 한 줄로 알림 · 실주 원인 필수 */
   await page.evaluate(()=>{StageTransitionUI.close();StageTransitionUI.open(CUR_DETAIL.item,false,'lost');});await page.waitForTimeout(700);
