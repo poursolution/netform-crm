@@ -112,6 +112,7 @@
   pg?.classList.add('xv-on','xb-on');
   /* 필터줄(고정)의 위치 + 높이만큼 아래 목록 칸 이름 줄을 내려 고정 — 겹치지 않게 */{const cf=()=>{const g=document.getElementById('pg-expansion'),b=g&&g.querySelector(':scope>.cf-bar:not([hidden])');if(!g)return;const top=b?(parseFloat(getComputedStyle(b).top)||0):0;g.style.setProperty('--xb-cf',Math.round(top+(b?b.offsetHeight:0)+4)+'px');};cf();requestAnimationFrame(cf);if(!root.__xbCfBound){root.__xbCfBound=true;root.addEventListener('resize',cf);}}
   const s=scoped(),S=SB().state('expansion'),items=groupItems(s.rows.map(item));
+  CFG.overSplit=list=>{/* 실제 기한 초과 = 날짜가 확인된 기한 경과(다음 접촉일 지남 · 관계 연락 주기 넘김) / 기록 확인 필요 = 빨강이지만 준공일 · 공종 · 접촉 기록이 없어 판정할 수 없는 것 */const red=list.filter(i=>i.red&&i.bucket!=='hold');let over=0,check=0;red.forEach(i=>{if(kindOf(i.rs,!!(i.extra&&i.extra.r&&i.extra.r.completionDate)).kind==='miss')over++;else check++;});const live=list.filter(i=>i.bucket!=='hold').length;return {over,check,text:'기록 확인 필요 '+check+'건 · 대상 '+live+'건(보류 제외) · 날짜 기준 다음 접촉일 · 연락 주기 · 표본 판정 가능 '+(live-check)+'건'};};
   CFG.topHtml=topHtml(s);CFG.groupHead=root.G.boardV3Off?null:groupHead;
   /* 대상 수 나누기(contact_link ③): 사후 연락 대상 vs 기록 보완 필요(공종 · 연락 기록 없음 — 미실행으로 세지 않음) */
   {const live=items.filter(i=>i.bucket!=='hold'),kinds=live.map(i=>kindOf(i.rs,!!(i.extra&&i.extra.r&&i.extra.r.completionDate)).kind),miss=kinds.filter(k=>k==='miss').length,fix=kinds.filter(k=>k==='fix'),tgt=live.length-miss-fix.length;

@@ -48,7 +48,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const kpi=await d.locator('.db-kpi').evaluateAll(a=>a.map(n=>[n.querySelector('span').textContent,n.querySelector('b').textContent,n.querySelector('small').textContent]));
   assert.deepEqual(kpi.map(k=>k[0]),['이번 달 계약 (10월)','올해 수주실적','진행 중 파이프라인','견적문의','조치 필요','주간 활동']);
   assert.deepEqual(kpi[0].slice(1),['아직 없음','10월 7일째 · 9월 3억'],'실적 없는 달 = 아직 없음 + 직전 달');assert.equal(await d.locator('.db-kpi').first().locator('b').evaluate(n=>getComputedStyle(n).color),'rgb(156, 163, 175)','아직 없음은 회색');
-  assert.deepEqual(kpi[1].slice(1),['8억','낙찰금액 · VAT 별도 = 계약실적(계약 체결일) 8억(2건) · 협약 · 기술자문 없음 · 타사 이관 없음'],'수주실적(낙찰금액 · VAT 별도) = 계약실적(계약 체결일) + 협약 · 기술자문 + 타사 이관, 화면에서는 이름 붙여 나눠 적는다');assert.match(kpi[2][2],/^진행 7건 · 수주 · 실주 제외$/,'진행 건수 옆에 기준 한 줄(진행 범위는 PipelineScope 하나)');assert.deepEqual(kpi[3].slice(1),['4건','적합 3 · 종결 1 · Bad Fit 1']);
+  assert.deepEqual(kpi[1].slice(1),['8억','합산 = 계약실적(계약금액 · 계약일) 8억(2건) + 협약 수주(낙찰금액 · 낙찰일) 없음 + 기술자문 실적(낙찰금액 · 낙찰일) 없음 + 타사 이관(낙찰금액 · 낙찰일) 없음 · VAT 별도'],'수주실적(낙찰금액 · VAT 별도) = 계약실적(계약 체결일) + 협약 · 기술자문 + 타사 이관, 화면에서는 이름 붙여 나눠 적는다');assert.match(kpi[2][2],/^진행 7건 · 수주 · 실주 제외$/,'진행 건수 옆에 기준 한 줄(진행 범위는 PipelineScope 하나)');assert.deepEqual(kpi[3].slice(1),['4건','적합 3 · 종결 1 · Bad Fit 1']);
   const core=await page.evaluate(()=>{const C=DashB.core();return {risk:C.risk.length,od:C.cnt('overdue'),miss:C.cnt('missing'),made:C.made,active:C.active.length};});
   assert.equal(core.od,5);assert.equal(core.made,40,'메이드율 = 수주 2 ÷ (수주 2 + 실주 3) · 배드핏 제외');
   assert.equal(kpi[4][1],core.risk+'건');{const mm=/^기한 지남 5 \+ 다음 할 일 없음 (\d+) \+ 담당 미배정 (\d+)(?: \+ 그 밖 · 연락 · 정체 · 정보 부족 (\d+))? = (\d+)$/.exec(kpi[4][2]);assert.ok(mm,kpi[4][2]);assert.equal(5+Number(mm[1])+Number(mm[2])+Number(mm[3]||0),Number(mm[4]),'설명 합계 = 제목');assert.equal(Number(mm[4]),core.risk);assert.equal(Number(mm[1])+Number(mm[3]||0)>=core.miss-0,true);}/* exec_wording: 한 건은 한 사유 · 합계 = 제목 */
@@ -145,6 +145,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await c.locator('.db-first').innerText(),/가장 먼저\s*황윤선 기한 지남 5건 — .+ 단계에 몰려 있습니다 \(최장 17일\)/);
   assert.deepEqual(await c.locator('.db-mx .hc span').allInnerTexts(),['미배정','첫 연락 지연','기한 지남','마지막 연락 7일+','다음 할 일 없음','장기 정체']);
   assert.deepEqual(await c.locator('.db-mx .hc small').evaluateAll(a=>a.map(n=>n.textContent).slice(0,4)),['1건','1건','5건','5건']);
+  /* counting 9: 이관 전 날짜만 있는 건은 '마지막 연락 지연'으로 세지 않고 '이관 기록 확인'으로 따로 · 대상 · 날짜 기준 · 제외 · 표본 한 줄 */
+  {const t=(await c.locator('.db-c3').innerText()).replace(/\s+/g,' ');assert.match(t,/^마지막 연락 7일\+ 확인된 연락 지연 5건 이관 기록 확인 \d+건 정상 \d+건 대상 진행 영업건 \d+건 · 날짜 기준 마지막 고객 접촉일 · 제외 수주 · 실주 · 과거 이관 · 표본 판정 가능 \d+건/,t);
+   const n=t.match(/이관 기록 확인 (\d+)건 정상 (\d+)건 대상 진행 영업건 (\d+)건/).slice(1).map(Number);assert.equal(5+n[0]+n[1],n[2],'세 칸의 합 = 대상');
+   assert.deepEqual(await page.evaluate(()=>{const f=DashB._crmContact;return [f({id:'x1',created:'2026-03-01',activities:[{id:'a',type:'전화',note:'통화',at:'2026-03-02T01:00:00Z'}]}),f({id:'x2',created:'2026-03-01',activities:[],lastMeaningfulContactAt:'2026-03-02T01:00:00Z'}),f({id:'x3',created:new Date().toISOString(),activities:[]})];}),[true,false,true],'응대 기록이 있으면 확인된 기록 · 이관 전 날짜만 있으면 아님 · Live 뒤 등록 건은 CRM 기준');
+   await c.locator('.db-c3 [data-v="|sevenchk"]').click();await page.waitForTimeout(250);assert.match((await c.locator('.db-sel .hd').innerText()).replace(/\s+/g,' '),new RegExp('전체 · 이관 기록 확인 '+n[0]+'건'));assert.match(await c.locator('.db-sel .hd>span').innerText(),/지연으로 세지 않고 기록부터 확인합니다/);
+   await c.locator('.db-mx .hc[data-v="|due"]').click();await page.waitForTimeout(200);/* 원래 보던 열(기한 지남)로 */}
   assert.deepEqual(await c.locator('.db-mx .rn b').allInnerTexts(),['황윤선','이필선','미배정'],'문제 많은 순 · 미배정은 맨 아래');
   assert.equal(await c.locator('.db-mx').evaluate(n=>getComputedStyle(n).gridTemplateColumns.split(' ').length),8,'이름 + 6열 + 지시');
   assert.equal(await c.locator('.db-table').evaluate(n=>n.scrollWidth<=n.clientWidth&&getComputedStyle(n.querySelector('.db-mx')).overflowX==='visible'),true,'표는 안쪽 스크롤 없이');

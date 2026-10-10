@@ -238,3 +238,10 @@
 .db-cwi{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,2fr) 90px;gap:12px;align-items:center;font-size:12.5px;padding:5px 0}.db-cwb{display:flex;flex-direction:column;gap:3px}.db-cwb u{height:8px;background:#eef0f3;border-radius:4px;position:relative;display:block;text-decoration:none}.db-cwb i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;display:block}.db-cwb i.cw-a{background:#d14a3f}.db-cwb i.cw-b{background:#c9cdd5}
 .db-cwp{font-size:11.5px;text-align:right}.db-cwp b{color:#b42318}.db-cwp small{color:#9ca3af}.db-cwl{font-size:11.5px;color:#9ca3af}
 @media(max-width:900px){.db-dxh{display:none}.db-dxr{grid-template-columns:minmax(0,1fr)}.db-cwg{grid-template-columns:repeat(2,minmax(0,1fr))}.db-cwi{grid-template-columns:minmax(0,1fr)}.db-cwp{text-align:left}}
+/* counting 9 · 13: 마지막 연락 판정 3칸(확인된 연락 지연 · 이관 기록 확인 · 정상) + 대상 · 날짜 기준 · 제외 · 표본 한 줄 */
+.db-c3{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;background:#fff;border:1px solid #e8eaef;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:12.5px;color:#374151}
+.db-c3>b{font-size:12.5px;margin-right:4px;white-space:nowrap}
+.db-c3>button,.db-c3>.ok{display:inline-flex;align-items:baseline;gap:6px;border:1px solid #e3e6ec;border-radius:9px;background:#fff;padding:6px 11px;font:inherit;font-size:12.5px;color:#374151;white-space:nowrap;min-height:0;height:auto;width:auto;box-shadow:none}
+.db-c3>button{cursor:pointer}.db-c3>button:hover{background:#f6f7f9}.db-c3>button.on{border-color:#15171c}
+.db-c3 b.red{color:#b42318}.db-c3>button b,.db-c3>.ok b{font-variant-numeric:tabular-nums;color:#15171c}
+.db-c3>small{flex-basis:100%;font-size:11.5px;color:#6b7280;line-height:1.5}

@@ -30,8 +30,15 @@
   reasons_lost:['회의 확정','\'사업 · 연기\' · \'사업 · 예산 미확정\'은 실주 대신 보류 검토 안내(기회 상실이 확인된 건만 실주)'],
   auto_owner_attribution:['근거 확인 필요','승인 근거 확인 필요 · 현재 후보 기준은 최초 실제 연결'],
   '귀속 기준':['해석 미확정','주담당 = 문의 수신 · 배정 · 실제 연결 중 어느 시점인지 확정 필요'],
-  important_request_kinds:['해석 미확정','어떤 요청을 중요(팝업)로 볼지 대표 결정 전 · 비어 있으면 새 배정 · 긴급 기한 변경만 팝업']};
+  important_request_kinds:['잠정','기본값 = 관리자 첫 연락 요청(2026-10-10 대표 지정) · 입찰 · 계약 기한 변경 팝업은 기한 변경 사건이 저장된 뒤 · 확인 전까지 미확인 목록에 남음']};
  const CONF=r=>META[r.k||r.l]||null;
+ /* counting 15(2026-10-10): '켜짐' 하나로 보이던 것을 3칸으로 — 정책(확정 / 확정 전) · 누락 진단(판정 · 진단 함수가 이 값을 읽는가) · 입력 강제(입력 화면이 이 값으로 막는가).
+    코드 대조로만 적는다: DIAG = 오늘 업무 · 파이프라인 · KPI 판정이 읽는 값 / FORCE = 단계 이동 · 사유 · 승인 · 연락 수단 입력이 읽는 값 / PART = 일부 화면만. 나머지는 미연결 */
+ const DIAG=new Set(['assign_minutes','first_contact_hours','unreachable_attempts','unreachable_interval_days','inactive_days','quote_followup_days','record_deadline_hour','care_focus_months','care_general_months','long_wait_contact_days','transfer_result_check_days','next_action_required']);
+ const FORCE=new Set(['stage_gates','reasons_bad_fit','reasons_lost','reasons_transfer','contact_channels','approvers']),PART={next_action_required:'응대 기록 저장만 · 단계 이동 창은 미연결'};
+ const NEXT_WIRE=['next_action_required','year_future_skip_focus','ongoing_unreachable_attempts'];
+ function three(r){if(!r.k||r.st==='hold')return null;const c=CONF(r),pol=(c?c[0]==='회의 확정':r.st==='fix')?'확정':'확정 전',d=DIAG.has(r.k)?'적용':'미연결',f=FORCE.has(r.k)?'적용':PART[r.k]?'일부':'미연결';return {pol,d,f,ft:PART[r.k]||''};}
+ const threeHtml=r=>{const t=three(r);if(!t)return '';const cell=(l,v,ti)=>'<i class="'+(v==='적용'||v==='확정'?'on':v==='일부'?'part':'off')+'"'+(ti?' title="'+attr(ti)+'"':'')+'><u>'+l+'</u>'+v+'</i>';return '<span class="ra-3" aria-label="연결 상태">'+cell('정책',t.pol)+cell('누락 진단',t.d)+cell('입력 강제',t.f,t.ft)+'</span>';};
  /* 적용 예정: 값은 저장되지만 아직 어느 화면 계산에도 안 쓰이는 규칙 + 앞으로 들어갈 화면 */
  const TARGET={next_action_required:'단계 이동 창',year_required_on_convert:'관계관리 재분류',owner_change_log:'상세 담당 변경',ongoing_unreachable_attempts:'관계관리 · 진행 중 연락두절 판정'};
  /* 적용 상태 3가지(시안 E): 적용 중 / 임시 적용 / 값만 저장 */
@@ -91,7 +98,7 @@
   else ctl='<span class="ra-text">'+h(r.text)+'</span>';
   const ap=applyOf(r),note=(r.st==='fix'?'<span class="ra-lock">정책 항목 · 설정 변경 불가</span>':'')+PILL(ap,r.k);/* 항목마다 적용 상태 알약을 토글 옆에(ops_12 B⑤ · 시안 E) */
   const cf=CONF(r),cs=cf?CSTATE[cf[0]]:null;
-  return '<div class="ra-row'+(changed?' chg':'')+'" data-k="'+attr(r.k||'')+'"><div class="ra-l"><div><b>'+h(r.l)+'</b><em style="color:'+t[1]+';background:'+t[2]+'">'+t[0]+'</em>'+(cf?'<em class="ra-conf" style="color:'+cs[0]+';background:'+cs[1]+'">'+h(cf[0])+'</em>':'')+(changed?'<em class="new">변경됨</em>':'')+'</div><span>'+h(r.d)+'</span>'+(cf?'<span class="ra-src">계산 시작점 · 예외 — '+h(cf[1])+'</span>':'')+(im?'<span class="ra-imp">'+h(im)+'</span>':'')+'</div><div class="ra-r">'+ctl+note+'</div></div>';
+  return '<div class="ra-row'+(changed?' chg':'')+'" data-k="'+attr(r.k||'')+'"><div class="ra-l"><div><b>'+h(r.l)+'</b><em style="color:'+t[1]+';background:'+t[2]+'">'+t[0]+'</em>'+(cf?'<em class="ra-conf" style="color:'+cs[0]+';background:'+cs[1]+'">'+h(cf[0])+'</em>':'')+(changed?'<em class="new">변경됨</em>':'')+'</div><span>'+h(r.d)+'</span>'+(cf?'<span class="ra-src">계산 시작점 · 예외 — '+h(cf[1])+'</span>':'')+(im?'<span class="ra-imp">'+h(im)+'</span>':'')+threeHtml(r)+'</div><div class="ra-r">'+ctl+note+'</div></div>';
  }
  const when=v=>{const d=new Date(v);return Number.isFinite(d.getTime())?d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate():'';};
  /* 기존 업무 처리 3택 — 지금 서버는 선택을 이력에만 남기고 값은 즉시 적용한다(예약 적용 · 기존 업무 유지 엔진은 Codex 서버 몫). 보장 못 하는 ② ③ 은 잠금, ① 은 사실대로 이름 붙인다 */
@@ -118,7 +125,7 @@
    +(meta.history&&meta.history.length?meta.history.slice(0,5).map(x=>{const r=C.SPEC[x.key],ex=x.existing?EXL[x.existing]||x.existing:'';return '<p>'+h(when(x.at)+' '+(x.by||''))+'<br>'+h((r?r.l:x.key)+' '+(x.before==null?show(C.DEFAULTS[x.key]):show(x.before))+' → '+show(x.after))+(x.effective_on||x.scope||ex?'<br><small>'+h([x.effective_on?'적용일 '+x.effective_on:'',x.scope?'대상 '+x.scope:'',ex].filter(Boolean).join(' · '))+'</small>':'')+'</p>';}).join(''):'')+'</div></nav>';
   /* 상단 묶음 숫자(시안 E): 적용 중 n · 값만 저장 n · 확정 전 n · 기준 버전 */
   const rows=C.ROWS.filter(r=>r.st!=='hold'),nOn=rows.filter(r=>applyOf(r)==='적용 중'||applyOf(r)==='임시 적용').length,nSave=rows.filter(r=>applyOf(r)==='값만 저장').length,nPre=rows.filter(r=>{const c=CONF(r);return c&&c[0]!=='회의 확정';}).length;
-  const top='<div class="ra-top"><b>적용 중 '+nOn+'개</b><b>값만 저장 '+nSave+'개</b><b class="pre">확정 전 '+nPre+'개</b><span>'+h(ver.label)+' · 기준을 바꿔도 지난 요청의 기한 · 판정은 다시 계산하지 않음</span></div>';
+  const top='<div class="ra-top"><b>적용 중 '+nOn+'개</b><b>값만 저장 '+nSave+'개</b><b class="pre">확정 전 '+nPre+'개</b><span>'+h(ver.label)+' · 기준을 바꿔도 지난 요청의 기한 · 판정은 다시 계산하지 않음</span></div>'+(()=>{const T=rows.map(three).filter(Boolean),nd=T.filter(t=>t.d==='적용').length,nf=T.filter(t=>t.f==='적용').length,nn=T.filter(t=>t.d==='미연결'&&t.f==='미연결').length,nm=k=>(C.ROWS.find(r=>r.k===k)||{}).l||k;return '<div class="ra-top3"><span>누락 진단 적용 <b>'+nd+'</b></span><span>입력 강제 적용 <b>'+nf+'</b></span><span>미연결 <b>'+nn+'</b></span><small>연결 순서 · '+NEXT_WIRE.map(nm).map(h).join(' → ')+'</small></div>';})();
   const pend=[];C.SECTIONS.forEach(s=>s[3].forEach(r=>{if(r.k&&r.st!=='hold'&&!WIRED.has(r.k))pend.push((r.l)+' (→ '+(TARGET[r.k]||'적용 화면 미정')+')');}));
   const body=C.SECTIONS.map(s=>'<section class="ra-sec" id="ra-'+s[0]+'"><header><b>'+h(s[1])+'</b><span>'+h(s[2])+'</span></header>'+s[3].map(r=>rowHtml(r,can)).join('')+'</section>').join('')+(pend.length?'<section class="ra-sec ra-pend" id="ra-pending"><header><b>값만 저장 · 적용 예정</b><span>아래 설정값은 화면 계산에 연결되지 않았습니다 · 해당 기능 전체가 없다는 뜻은 아닙니다</span></header><p>'+pend.map(h).join(' · ')+'</p></section>':'');
   const gate=C.available()?'':'<div class="ra-gate">값을 바꾸려면 서버 적용(sql/ops-rules-v2-20261010.sql)이 필요합니다 — 그 전까지는 연결된 항목만 기본값으로 계산됩니다. 미연결 항목은 적용 상태를 확인해 주세요.</div>';

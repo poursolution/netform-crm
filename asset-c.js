@@ -81,6 +81,26 @@
   const head='<div class="ac-listhd"><b>확인할 단지 <span>'+x.rows.length.toLocaleString('ko-KR')+'곳</span></b><span>'+(x.status==='risk'?'진행 금액이 걸린 곳 먼저':'오래 연락 안 한 순')+'</span>'+(filters.length?'<button type="button" class="ac-clear" data-ac="clear">'+h(filters.join(' · '))+' · 해제</button>':'')+'<i></i><div class="ac-views"><span class="on">리스트</span><button type="button" data-ac="board">보드</button></div></div>';
   return '<section class="ac-top">'+title+rules+tabs+people+head+'</section>';
  }
+ /* counting 14(2026-10-10): 고객 자산 '현재 영업기회' ↔ 대시보드 '진행 중 파이프라인' 대조. 둘 다 같은 진행 범위(수주 · 실주 · 과거 이관 제외)로 세지만
+    고객 자산은 현장 단위(현장 번호 · 현장명이 없는 영업건은 빠짐) · 단지 담당 기준 필터라 차이가 날 수 있다 — 차이는 건수 · 금액 · 사유와 대조 목록으로 보인다(숫자를 맞춰 지어내지 않는다) */
+ function recon(M){
+  try{const SI=R.SalesInsights,PS=R.PipelineScope;if(!SI||!SI.rows)return null;const isLeg=d=>{try{return !!(PS&&PS.on()&&PS.isLegacy(d));}catch(e){return false;}},amt=d=>Number(R.oppAmt(d))||0;
+   const A=new Map(),inSite=new Set();M.forEach(m=>(m[0].deals||[]).forEach(d=>{inSite.add(String(d.id));if(R.isOpen(d)&&!isLeg(d))A.set(String(d.id),d);}));
+   const D=new Map();SI.rows(false,true).deals.filter(d=>d.active&&d.item).forEach(x=>D.set(String(x.item.id),x.item));
+   const sum=m=>[...m.values()].reduce((a,d)=>a+amt(d),0),siteName=d=>String(d.site||d.site_name||'현장명 미입력');
+   const whyD=d=>!(d.site_id||d.siteId||d.organization_id)&&!String(d.site||'').trim()?'현장 정보 없음 · 고객 자산은 현장 단위':inSite.has(String(d.id))?'고객 자산에서는 과거 이관 · 종료로 분류':'고객 자산 필터 밖(단지 담당 · 브랜드 · 상태)';
+   const whyA=d=>{let v=true;try{v=!PS||!PS.on()||PS.validStage(d);}catch(e){}return v?'대시보드 담당 · 브랜드 필터 밖':'단계 값이 진행 단계가 아님 · 분류 전';};
+   const rows=[...D.values()].filter(d=>!A.has(String(d.id))).map(d=>({id:String(d.id),site:siteName(d),side:'대시보드에만',why:whyD(d),amt:amt(d)})).concat([...A.values()].filter(d=>!D.has(String(d.id))).map(d=>({id:String(d.id),site:siteName(d),side:'고객 자산에만',why:whyA(d),amt:amt(d)})));
+   return {a:{n:A.size,sum:sum(A)},d:{n:D.size,sum:sum(D)},rows};
+  }catch(e){return null;}
+ }
+ function reconHtml(M){
+  const X=recon(M);if(!X)return '';const S=st(),gap=Math.abs(X.d.sum-X.a.sum),P=R.ListPager,pg=P?P.cut(X.rows,S.reconPage||1):{rows:X.rows.slice(0,20),pages:1,page:1};
+  return '<section class="ac-recon"><b>대시보드와 대조</b><div><span>대시보드 진행 중 파이프라인</span><b>'+X.d.n.toLocaleString('ko-KR')+'건 · '+h(won(X.d.sum))+'</b></div><div><span>고객 자산 현재 영업기회</span><b>'+X.a.n.toLocaleString('ko-KR')+'건 · '+h(won(X.a.sum))+'</b></div>'
+   +(X.rows.length?'<div class="gap"><span>차이</span><b>'+X.rows.length.toLocaleString('ko-KR')+'건 · '+h(won(gap))+'</b></div><button type="button" data-ac="recon" aria-expanded="'+!!S.recon+'">대조 목록 '+(S.recon?'▴':'▾')+'</button>':'<div class="same"><span>차이</span><b>없음 · 같은 숫자</b></div>')
+   +'<small>같은 진행 범위(수주 · 실주 · 과거 이관 제외) · 금액 = 예상 금액 · 차이 사유는 건마다</small>'
+   +(S.recon&&X.rows.length?'<div class="ac-reconlist">'+pg.rows.map(r=>'<div><b title="'+attr(r.site)+'">'+h(r.site)+'</b><em>'+h(won(r.amt))+'</em><span title="'+attr(r.side+' · '+r.why)+'">'+h(r.side+' · '+r.why)+'</span></div>').join('')+(P&&pg.pages>1?P.html(pg,{ns:'ac',v:'recon',small:true,info:false}):'')+'</div>':'')+'</section>';
+ }
  function sideHtml(x){
   const S=st(),M=x.scope.map(s=>[s,money(s)]);
   const accSites=M.filter(m=>m[1].acc>0),acc=accSites.reduce((a,m)=>a+m[1].acc,0),prog=M.reduce((a,m)=>a+m[1].prog,0),progN=M.reduce((a,m)=>a+m[1].progN,0),progSites=M.filter(m=>m[1].progN>0).length;
@@ -98,7 +118,7 @@
   const RS=AB().CFG.RS,sum=(k,f)=>M.filter(m=>reasonsOf(m[0]).includes(k)).reduce((a,m)=>a+f(m),0);
   const note={risk:k=>won(sum(k,m=>m[1].prog))+' 걸림',lost2:()=>'재제안 시기 미등록',recontact:k=>'진행 '+won(sum(k,m=>m[1].prog)),cold60:k=>'누적 수주 '+won(sum(k,m=>m[1].acc)),nokey:()=>'관리소장 · 입대의 회장 연락처 없음',dormant:()=>'장기수선 일정 확인 대상',wonamt:()=>'누적 수주 집계에서 빠짐',noaddr:()=>'근처 현장 · 지도에 안 나옴'};
   const why=Object.keys(RS).map(k=>({k,n:M.filter(m=>reasonsOf(m[0]).includes(k)).length})).filter(w=>w.n>0);
-  return '<aside class="ac-side"><section><b>단지에 쌓인 금액</b>'+nums.map(n=>'<div class="ac-num"><span>'+n[0]+'</span><b style="color:'+n[3]+'">'+h(n[1])+'</b><small>'+h(n[2])+'</small></div>').join('')+'</section>'+splits
+  return '<aside class="ac-side"><section><b>단지에 쌓인 금액</b>'+nums.map(n=>'<div class="ac-num"><span>'+n[0]+'</span><b style="color:'+n[3]+'">'+h(n[1])+'</b><small>'+h(n[2])+'</small></div>').join('')+'</section>'+reconHtml(M)+splits
    +'<section class="ac-why"><b>왜 멈춰 있나 <small>누르면 목록이 좁혀짐</small></b>'+(why.length?why.map(w=>'<button type="button" data-ac="why" data-v="'+w.k+'" aria-pressed="'+(S.why===w.k)+'"><b>'+h(rsName(w.k))+'</b><b class="n" style="color:'+(RS[w.k][1]==='#374151'?'#374151':w.k==='recontact'?'#c0392b':'#b42318')+'">'+w.n.toLocaleString('ko-KR')+'</b><span>'+h(note[w.k]?note[w.k](w.k):'')+'</span></button>').join(''):'<p>멈춰 있는 단지가 없습니다</p>')+'</section></aside>';
  }
  function rowHtml(s){
@@ -134,6 +154,8 @@
   if(a==='why'){S.why=S.why===v?'':v;S.page=1;return R.paintSites();}
   if(a==='clear'){R.G.siteStatus='전체';S.why='';S.page=1;if((R.SalesScope.state().owner||'전체')!=='전체')R.CommonFilterBar.setOwner('전체');return R.paintSites();}
   if(a==='rule'){S.rule=!S.rule;return R.paintSites();}
+  if(a==='recon'){S.recon=!S.recon;S.reconPage=1;return R.paintSites();}
+  if(a==='page'&&v==='recon'){S.reconPage=Number(b.dataset.page)||1;return R.paintSites();}
   /* 기술자문 원본 자료(프로젝트 기본 정보 · 계약 문서): 화면 아래 칸을 열고 닫는다 — 영업건과 관계없이 권한 안의 원본을 본다(technical-advisory-ui.js) */
   if(a==='advisory'){const pg=document.getElementById('pg-sites'),on=pg.classList.toggle('av-adv-on');b.setAttribute('aria-expanded',String(on));b.textContent='기술자문 원본 자료 '+(on?'▴':'▾');if(on){const lib=pg.querySelector('.advisory-library');if(lib&&lib.scrollIntoView)lib.scrollIntoView({block:'start'});try{R.TechnicalAdvisoryUI&&R.TechnicalAdvisoryUI.projects&&R.TechnicalAdvisoryUI.projects.shown();}catch(err){}}return;}
   if(a==='more'){S.more=!S.more;return R.paintSites();}
@@ -152,5 +174,5 @@
   wrapped.__ac=true;R.paintSites=wrapped;
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- root.AssetC={enabled,money,whyOf,actOf,scoped,state:st};
+ root.AssetC={enabled,money,whyOf,actOf,scoped,state:st,recon};
 })(window);

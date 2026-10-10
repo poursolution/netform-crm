@@ -368,16 +368,17 @@
  };
  /* ── 화면 조각(견적문의 v4 상세가 끼워 쓴다 · 누르는 곳은 data-i4 로 v4 가 받는다) ── */
  function datesHtml(q){
-  if(!on())return '';const D=dates(q),c=D.conn;if(!hasMemo(q)&&c.state!=='copy'&&c.state!=='supplemented')return '';
+  if(!on())return '';const D=dates(q),c=D.conn;let legacy=false,liveK='';try{legacy=!!root.ContactState.of(q,'inq').legacy;liveK=String((root.OPS_RULES||{}).liveFrom||'');}catch(e){}if(!hasMemo(q)&&c.state!=='copy'&&c.state!=='supplemented'&&!legacy)return '';/* 이관 자료는 메모가 없어도 날짜 칸을 보인다(실제 연결일 미확인 · 이관일) */
   const cell=(l,v,s,col)=>'<div class="im-cell"><span>'+esc(l)+'</span><b style="color:'+col+'">'+esc(v)+'</b><small>'+esc(s)+'</small></div>';
   let conn;
-  if(c.state==='copy')conn=cell('실제 연결일','확인 필요','지금 '+md(c.orig)+'로 저장됨 = 접수일 복사','#c0392b');
+  if(c.state==='copy')conn=cell('실제 연결일','미확인','지금 '+md(c.orig)+'로 저장됨 = 접수일 복사 · 연결일로 쓰지 않음','#c0392b');
   else if(c.state==='supplemented')conn=cell('실제 연결일',ymd(c.day),'메모 통화로 보완 · 원래 값 '+(c.orig?md(c.orig):'없음')+' 이력에 남음','#15171c');
   else if(c.state==='ok')conn=cell('실제 연결일',ymd(c.day),'통화 연결 · 회신 · 미팅 기록','#15171c');
-  else conn=cell('실제 연결일','아직 없음','통화 연결 · 회신 기록이 생기면 표시','#6b7280');
-  return '<div class="i4-sec im-dates"><b class="lb">날짜 <span>접수일 · 실제 연결일 · 메모 속 통화를 따로 봅니다</span></b><div class="im-d3">'
+  else conn=cell('실제 연결일',legacy?'미확인':'아직 없음',legacy?'이관 자료 · 연결 기록 없음 — 접수일로 대신하지 않음':'통화 연결 · 회신 기록이 생기면 표시','#6b7280');
+  return '<div class="i4-sec im-dates"><b class="lb">날짜 <span>접수일 · 실제 연결일 · 이관일 · 메모 속 통화를 따로 봅니다</span></b><div class="im-d3 im-d4">'
    +cell('접수일',ymd(D.recv)||'—','구글시트 접수 · 바뀌지 않음','#15171c')+conn
    +cell('메모 속 통화',D.memoCall?ymd(D.memoCall.date):'—',D.memoCall?'이관 메모에서 찾음 · 보완 후보':'메모에서 찾은 통화 없음',D.memoCall?'#15171c':'#6b7280')
+   +cell('이관일',legacy?'기록 없음':'해당 없음',legacy?'이관 자료(Live 기준일 '+(liveK?md(liveK):'')+' 전 접수) · 이관한 날은 저장돼 있지 않음':'Live 기준일 뒤 접수 · 이관 자료 아님','#6b7280')
    +'</div></div>';
  }
  function memoHtml(q){

@@ -72,7 +72,7 @@ test('서버 함수의 허용 목록 · 범위 = 화면 항목표',()=>{
  assert.deepEqual(arr('empty_ok'),R.ROWS.filter(r=>r.st==='cond'&&r.type==='chips'&&r.empty).map(r=>r.k).sort(),'비어 있어도 되는 목록도 같아야 한다');
  assert.match(sql,/관리자만 운영 기준을 바꿀 수 있습니다/);assert.match(sql,/insert into public\.crm_rule_history\(key,before,after,changed_by,changed_by_name,changed_at,effective_on,scope,existing_handling\)/);
  /* 새 항목 · 빈 목록 허용 · 적용 범위는 화면 쪽 함수와 같이 */
- assert.equal(R.get('ongoing_unreachable_attempts'),3);assert.equal(R.get('record_deadline_hour'),12);assert.deepEqual(R.get('important_request_kinds'),[]);
+ assert.equal(R.get('ongoing_unreachable_attempts'),3);assert.equal(R.get('record_deadline_hour'),12);assert.deepEqual(JSON.parse(JSON.stringify(R.get('important_request_kinds'))),['첫 연락 요청'],'중요 요청 팝업 기본값 = 관리자 첫 연락 요청(counting 16)');
  assert.deepEqual(R.clean('important_request_kinds',[]),[],'중요 요청 종류는 비어 있어도 된다');assert.equal(R.clean('reasons_lost',[]),undefined,'다른 목록은 1개 이상');
  assert.equal(R.version().n,0);assert.equal(R.version().label,'기준 v0 · 기본값');
  assert.match(read('inquiry-list-v3.js'),/기록 점검 '\+\(root\.CRMRules\?root\.CRMRules\.get\('record_deadline_hour'\):12\)\+'시/,'견적문의 머리 줄의 기록 점검 시각 = 설정값');
