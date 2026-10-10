@@ -191,12 +191,15 @@
  }
  function html(X,rows,legacy){
   const S=st(),W=TT(),V=build(X,rows,legacy),role=V.role,team=V.team,me=V.me;
-  const all=V.groups.filter(g=>!g.aux).flatMap(g=>g.items),total=all.length,gN=V.groups.filter(g=>g.items.length).length,backN=V.back.length;
+  const all=V.groups.filter(g=>!g.aux).flatMap(g=>g.items);
+  /* design_handoff_day_zones: 영업사원 · 팀장 · 상무 · 대표 화면은 목록을 4구역(지금 처리 · 회신 대기 · 정보 보완 · 약속 누락)으로 — 큰 숫자 = 구역 합계. 영업관리 카드 묶음은 그대로 */
+  const DZ=root.DayZones&&root.DayZones.on(role)?root.DayZones:null,Z=DZ?DZ.build(V,X):null;
+  const total=Z?Z.total:all.length,gN=Z?[Z.now,Z.wait,Z.info,Z.gaps].filter(l=>l.length).length:V.groups.filter(g=>g.items.length).length,backN=V.back.length;
   if(S.exec){if(!EXQ.length)S.exec=false;else{const d0=new Date();root.G.todayV3Sub=(d0.getMonth()+1)+'월 '+d0.getDate()+'일 ('+'일월화수목금토'[d0.getDay()]+') · '+SUB[role]+' · 실행 모드';return execHtml(V);}}
   const d=new Date();root.G.todayV3Sub=(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+'일월화수목금토'[d.getDay()]+') · '+SUB[role];
   /* 큰 숫자 + 막대 */
-  const SEG=['#15171c','#6b7280','#9aa0ab'],segs=V.groups.filter(g=>!g.aux).map((g,i)=>[g.t,g.items.length,SEG[i]||'#9aa0ab',true]).concat([['밀린 건',backN,'#e3e6ec',false]]),sum=segs.reduce((s,x)=>s+x[1],0);
-  const hero='<div class="tv3-hero"><div class="n"><span>'+HERO[role]+'</span><b>'+total+'건 <small>· '+gN+'묶음</small></b></div><div class="bar"><div class="track">'+segs.map(s=>'<span style="width:'+(sum?(s[1]/sum*100).toFixed(1):0)+'%;background:'+s[2]+'"></span>').join('')+'</div><div class="leg">'+segs.map(s=>'<span class="'+(s[3]?'on':'')+'">'+h(s[0])+' '+s[1]+'</span>').join('')+'<span class="mut">· 위 '+total+'건 = 앞 묶음 합계</span></div></div>'+(total?'<button type="button" class="tv3-go" data-t3="exec"><span>실행 모드로 처리 →</span><small>한 건씩 · 저장하면 다음 건</small></button>':'')+'</div>';
+  const SEG=['#15171c','#6b7280','#9aa0ab'],segs=(Z?[['지금 처리',Z.now.length,'#15171c',true],['회신 대기',Z.wait.length,'#6b7280',true],['정보 보완',Z.info.length,'#9aa0ab',true],['약속 누락',Z.gaps.length,'#c0392b',true]]:V.groups.filter(g=>!g.aux).map((g,i)=>[g.t,g.items.length,SEG[i]||'#9aa0ab',true])).concat([['밀린 건',backN,'#e3e6ec',false]]),sum=segs.reduce((s,x)=>s+x[1],0);
+  const hero='<div class="tv3-hero"><div class="n"><span>'+HERO[role]+'</span><b>'+total+'건 <small>· '+gN+(Z?'구역':'묶음')+'</small></b></div><div class="bar"><div class="track">'+segs.map(s=>'<span style="width:'+(sum?(s[1]/sum*100).toFixed(1):0)+'%;background:'+s[2]+'"></span>').join('')+'</div><div class="leg">'+segs.map(s=>'<span class="'+(s[3]?'on':'')+'">'+h(s[0])+' '+s[1]+'</span>').join('')+'<span class="mut">· 위 '+total+'건 = 앞 묶음 합계</span></div></div>'+(total?'<button type="button" class="tv3-go" data-t3="exec"><span>실행 모드로 처리 →</span><small>한 건씩 · 저장하면 다음 건</small></button>':'')+'</div>';
   /* 띠 2줄: 단계 · 담당자 — 목록에서 센다 */
   const showPeople=role==='mgr'||role==='lead',owners=[...new Set(all.map(i=>i.x.owner||'미배정'))].map(o=>[o,all.filter(i=>(i.x.owner||'미배정')===o).length]).sort((a,b)=>(a[0]==='미배정'?-1:0)-(b[0]==='미배정'?-1:0)||b[1]-a[1]);
   if(S.fStage&&!all.some(i=>i.st===S.fStage))S.fStage=null;if(S.fWho&&(!showPeople||!owners.some(o=>o[0]===S.fWho)))S.fWho=null;
@@ -219,7 +222,7 @@
   const row=(i,hot)=>{const k=attr(i.key),own=i.x.owner===me,far=team&&!own,who=far?(i.x.owner||'미배정'):([i.i.name,i.i.role].filter(Boolean).join(' ')||(team?i.x.owner:'고객 미등록')),noDay=i.rk==='contract'||i.rk==='data';
    return '<div class="tv3-row" role="button" tabindex="0" data-t3="open" data-key="'+k+'"><span class="bd" style="color:'+i.bc+'">'+h(i.brand||'미입력')+'</span><span class="c"><b>'+h(i.i.site)+'</b>'+(i.alerts&&i.alerts.length>1?'<em class="tv3-alert" title="'+attr(i.alerts.join(' · ')+' · '+(root.DecisionCollab&&i.x.type==='deal'?root.DecisionCollab.nextAlert(i.x.item):'같은 내용 하루 1회'))+'">경고 '+i.alerts.length+'</em>':'')+'<small>'+h([who,i.amt?money(i.amt):'금액 미정',i.missTxt,judgeOf(i)].filter(Boolean).join(' · '))+'</small></span><span class="d"><b'+(hot?' class="r"':'')+'>'+h(noDay?'-':i.short)+'</b><small>'+h(noDay?'':i.rk==='deadline'?(i.deadline?i.deadline.what:'마감'):i.dLabel)+'</small></span>'+(wrBtn(i,'')||'<button type="button" data-t3="act" data-key="'+k+'" data-act="'+attr(i.act)+'"'+(i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>'+h(i.act)+'</button>')+'</div>';};
   let shownNo=0;const kinded=V.groups.some(g=>g.kind);/* 표 묶음이 있으면 번호는 보이는 묶음 순서대로 */
-  const groupsHtml=V.groups.map((g,gi)=>{const items=g.items.filter(pass);if(!items.length)return '';shownNo++;
+  const groupsHtml=Z?DZ.html(Z,S,pass):V.groups.map((g,gi)=>{const items=g.items.filter(pass);if(!items.length)return '';shownNo++;
    if(g.kind&&g.kind!=='cards'&&root.TodayAssist)return root.TodayAssist.groupHtml(g,items,gi,shownNo,root.ListPager.page(S,'g'+gi));
    const first=g.kind?g.kind==='cards':gi===0,cards=first?items.slice(0,CARDS):[],rest=first?items.slice(CARDS):items,pg=root.ListPager.cut(rest,root.ListPager.page(S,'g'+gi),PER),shown=pg.rows;
    return '<section class="tv3-group'+(first?' first':'')+'" data-g="'+(gi+1)+'"><header><i>'+(kinded?shownNo:gi+1)+'</i><b>'+h(g.t)+'</b><b class="n">'+items.length+'건</b><span>'+h(g.why)+'</span><u></u>'+(g.bulk&&team?bulkBtns(gi):'')+'</header>'

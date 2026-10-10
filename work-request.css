@@ -72,6 +72,9 @@
 .wrq-steps>div>b{font-size:11.5px;font-weight:500;color:#9ca3af;white-space:nowrap}.wrq-steps>div.done>b,.wrq-steps>div.cur>b{color:#15171c}.wrq-steps>div.cur>b{font-weight:700}
 .wrq-steps>div>small{font-size:10.5px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wrq-in.wrq-ho{border-left:3px solid #e8a09a}
+/* 4구역 화면: 중요하지 않은 요청은 '알림 n건' 한 줄(기존 업무 줄의 꼬리표가 본체) */
+.wrq-in.wrq-soft{padding:10px 16px;gap:6px}.wrq-in.wrq-soft .hd>em.soft{background:#6b7280}.wrq-in.wrq-soft .hd>button{border:1px solid #d9dde4;background:#fff;font-size:12px;font-weight:700;border-radius:7px;padding:4px 10px;min-height:0;box-shadow:none;color:#15171c}
+.wrq-in.wrq-soft>.wrq-in{border-top:1px solid #f2f3f6;padding-left:0;padding-right:0}
 .wrq-in.wrq-ho .hd>em{background:#e8a09a}
 .wrq-hrows{display:grid;grid-template-columns:72px minmax(0,1fr);gap:5px 10px;font-size:12.5px}.wrq-hrows>span{color:#6b7280}.wrq-hrows>b{font-weight:500;min-width:0}
 .tv3 .wrq-in .ft button:not(.go){border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12px;font-weight:600;border-radius:7px;padding:6px 11px;cursor:pointer;min-height:0;box-shadow:none;width:auto;margin-right:6px}

@@ -63,7 +63,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     if(name==='crm_work_request_reask_v1'){const r=__db.find(x=>x.id===p.id);if(role()!=='admin')return err('재확인 요청은 관리자만 할 수 있습니다');if(!r||Date.parse(r.due_at)>=Date.now())return err('기한이 지난 뒤에 재확인을 요청할 수 있습니다');
      Object.assign(r,{round:r.round+1,due_at:p.due_at,due_label:p.due_label,status:'sent',reasked_at:now(),updated_at:now()});return {data:{ok:true,request:J(r)}};}
     return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
-   goPage('today');
+   G.dayZonesOff=true;/* 예전 묶음 구조 · 카드 흐름을 본다(4구역은 verify-day-zones-browser) */goPage('today');
   });
   const one=s=>String(s).replace(/\s+/g,' ').trim();
   const as=async(me)=>{await page.evaluate(me=>{ME=me;G.workReq=null;G.today3=null;G.todayQueueOwner='전체';paint();},me);await page.waitForTimeout(500);await page.evaluate(()=>paint());await page.waitForTimeout(250);};
@@ -135,8 +135,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await c1.locator('.memo').innerText(),'"14일 미응대 건입니다. 오늘 고객 연락 후 결과와 다음 일정을 CRM에 남겨주세요."');
   assert.equal(await c1.locator('.call').innerText(),'전화 010-1234-5612');assert.deepEqual(await c1.locator('.res button').allInnerTexts(),['연결됨','견적요청','검토중','부재']);
   assert.equal(one(await c1.locator('.nx').innerText()),'다음 행동 AI결과를 고르면 제안');assert.equal(one(await c1.locator('.ft').innerText()),'결과를 골라야 저장 저장');assert.equal(await c1.locator('[data-wr="save"]').isDisabled(),true);
-  assert.equal(await page.evaluate(()=>__db.find(r=>r.id==='r2').status),'seen','받은 사람이 화면을 열면 담당 확인');
-  await c1.locator('.res button',{hasText:'부재'}).click();await page.waitForTimeout(150);
+  assert.equal(await page.evaluate(()=>__db.find(r=>r.id==='r2').status),'sent','화면에 보였다고 담당 확인으로 적지 않는다(노출 ≠ 확인)');
+  await c1.locator('.res button',{hasText:'부재'}).click();await page.waitForTimeout(250);
+  assert.equal(await page.evaluate(()=>__db.find(r=>r.id==='r2').status),'seen','카드에서 무엇이든 누르면 그때 담당 확인');
   assert.equal(one(await c1.locator('.nx').innerText()),'다음 행동 AI다시 전화 · 10/08');assert.equal(one(await c1.locator('.ft').innerText()),'부재 = 연락 시도로만 기록 · 최초 응대는 아직 미완료 저장');
   await c1.locator('.res button',{hasText:'연결됨'}).click();await page.waitForTimeout(150);assert.equal(one(await c1.locator('.nx').innerText()),'다음 행동 AI다시 연락 · 10/10');assert.equal(one(await c1.locator('.ft').innerText()),'저장하면 관리자 요청 자동 완료 저장');
   if(shot)await page.screenshot({path:shot+'-rep-top.png',fullPage:true});

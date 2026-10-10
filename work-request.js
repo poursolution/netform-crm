@@ -247,13 +247,18 @@
      +'<div class="ft"><span>'+(C.res==='부재'?'부재 = 연락 시도로만 기록 · 최초 응대는 아직 미완료':C.res?'저장하면 관리자 요청 자동 완료':'결과를 골라야 저장')+'</span><button type="button" class="go" data-wr="save" data-id="'+r.id+'"'+(C.res&&!C.busy?'':' disabled')+'>'+(C.busy?'저장 중…':'저장')+'</button></div></article>';}
    return '<article class="wrq-in" data-id="'+r.id+'">'+head+'<span class="memo"><b>요청</b> '+h((r.asks||[]).join(' · ')||r.label)+(r.memo?'<br><span>"'+h(r.memo)+'"</span>':'')+'</span>'
     +'<div class="ft"><span>완료 조건 · '+h(K.done||'')+' — 입력되면 자동 완료 · 따로 [완료] 없음</span><button type="button" class="go" data-wr="go" data-id="'+r.id+'">열어서 입력</button></div></article>';};
-  /* 받은 사람이 화면을 열면 '담당 확인'으로 */
-  L.filter(r=>r.status==='sent'&&!S.closing['seen:'+r.id]).forEach(r=>{S.closing['seen:'+r.id]=true;O().rpc(RPC.reply,{id:r.id,action:'seen'}).then(x=>put(x.request)).catch(()=>{});});
-  const LG=L.filter(r=>r.label===LEGACY_LABEL),rest=L.filter(r=>r.label!==LEGACY_LABEL);
+  /* 담당 확인(seen)은 받은 사람이 카드에서 무엇이든 눌렀을 때만(onClick) — 화면에 보였다고 확인으로 적지 않는다(2026-10-10 코덱스 인계: 노출 ≠ 열람 ≠ 확인) */
+  const LG=L.filter(r=>r.label===LEGACY_LABEL),rest0=L.filter(r=>r.label!==LEGACY_LABEL);
+  const DZ=R.DayZones&&R.DayZones.on(R.G._towerRole)?R.DayZones:null,IMP=(()=>{try{return R.CRMRules.get('important_request_kinds')||[];}catch(e){return [];}})();
+  const isImp=r=>r.kind==='branch'||isHandover(r)||isReceipt(r)||IMP.includes(r.label);
+  const rest=DZ?rest0.filter(isImp):rest0,soft=DZ?rest0.filter(r=>!isImp(r)):[];
+  const byLabel=new Map();soft.forEach(r=>byLabel.set(r.label,(byLabel.get(r.label)||0)+1));
+  const softHtml=soft.length?'<article class="wrq-in wrq-soft"><div class="hd"><em class="soft">알림</em><b>'+h([...byLabel].map(x=>x[0]+' '+x[1]+'건').join(' · '))+'</b><i></i><span class="by">기존 업무 줄에 \''+h((soft[0].requested_by||'관리자'))+' 요청\' 꼬리표로 붙어 있습니다</span><button type="button" data-wr="softtoggle">'+(S.softOpen?'접기':'보기')+'</button></div>'+(S.softOpen?soft.map(card).join(''):'')+'</article>':'';
   const bundle=LG.length?'<article class="wrq-in wrq-legacy"><div class="hd"><em>관리자 요청</em><b>'+h(LEGACY_LABEL+' '+LG.length+'건')+'</b><i></i><span class="by'+(LG.some(overdue)?' od':'')+'">'+h((LG[0].requested_by||'관리자')+' · '+whenTxt(LG[0].reasked_at||LG[0].created_at)+' · 기한 '+dueTxt(LG[0]))+'</span></div>'
    +'<span class="memo">예전 시스템에서 옮겨 온 자료입니다 · 한 건씩 [영업 재개]에서 지금 단계 · 다음 행동 · 날짜를 정하면 그 건은 자동으로 완료됩니다</span>'
    +'<div class="wrq-lg">'+LG.map(r=>'<div><b title="'+attr(r.site)+'">'+h(r.site)+'</b><button type="button" data-wr="resume" data-id="'+r.id+'">영업 재개</button></div>').join('')+'</div></article>':'';
-  return '<section class="wrq-top" aria-label="받은 요청">'+bundle+rest.map(card).join('')+'</section>';
+  if(!bundle&&!rest.length&&!softHtml)return '';
+  return '<section class="wrq-top" aria-label="받은 요청">'+bundle+rest.map(card).join('')+softHtml+'</section>';
  }
  // Phase 1 is limited to the existing single-purpose first-contact template.
  const basicContact=r=>!!r&&r.target_type==='inquiry'&&r.kind==='first'&&r.label==='첫 연락 요청'&&JSON.stringify(r.asks)==='["고객 첫 연락"]';
@@ -342,7 +347,10 @@
   if(a==='due'&&M){M.due=Number(b.dataset.v)||0;M.err='';return drawModal();}
   if(a==='send')return send();
   if(a==='reask')return reask(id);
+  if(a==='softtoggle'){S.softOpen=!S.softOpen;return repaint();}
   const r=S.list.find(x=>x.id===id);if(!r)return;
+  /* 받은 사람이 카드에서 무엇이든 누르면 그때 '담당 확인'(seen) — 닫기 · 노출은 확인이 아니다 */
+  if(r.to_me&&r.status==='sent'&&!S.closing['seen:'+r.id]&&['res','dial','go','hoask','hodone','save','reply','resume'].includes(a)){S.closing['seen:'+r.id]=true;O().rpc(RPC.reply,{id:r.id,action:'seen'}).then(x=>put(x.request)).catch(()=>{});}
   if(a==='check'){S.seen[id]=true;openTarget(r);return repaint();}
   if(a==='ack'){if(S.closing[id])return;S.closing[id]=true;return O().rpc(RPC.reply,{id,action:'done',result:'관리자 확인 · 전화로 전달'}).then(x=>{put(x.request);touch(x.request);toast('처리 확인으로 닫았습니다');noteDeal(x.request,'[내부 요청] '+lineEnd(x.request));repaint();}).catch(e=>toast('닫지 못했습니다: '+String(e&&e.message||e),'warn')).finally(()=>{delete S.closing[id];});}
   if(a==='reassign'||a==='recall')return openTarget(r);
