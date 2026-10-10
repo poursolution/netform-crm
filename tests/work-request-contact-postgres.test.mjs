@@ -1,6 +1,7 @@
 import {test,before,after,beforeEach} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
 import {PGlite} from '@electric-sql/pglite';
 import {fixture} from './aligo-database-fixture.mjs';
 const sql=f=>readFileSync(new URL('../sql/'+f,import.meta.url),'utf8');
@@ -36,6 +37,8 @@ before(async()=>{
  await db.exec(sql('work-request-v1-20261005.sql'));
  await db.exec(sql('20261009211508_request_contact_atomic.sql'));
  await db.exec(sql('20261009211508_request_contact_atomic.sql'));
+ await db.exec(sql('20261010013000_request_contact_link.sql'));
+ await db.exec(sql('20261010013000_request_contact_link.sql'));
  due=(await db.query("select ((now() at time zone 'Asia/Seoul')::date+2)::text d")).rows[0].d;
 });
 beforeEach(async()=>{
@@ -122,4 +125,107 @@ test('changed retry task cannot be overwritten by a new contact operation',async
  await call(body({result:'부재'}));await db.exec("reset role;update next_actions set title='고객이 별도로 잡은 방문'");const before=await counts();await as(owner);
  await assert.rejects(call(body({operation_id:id(31)})),/REQUEST_PLAN_CONFLICT/);assert.deepEqual(await counts(),before);
  assert.equal((await db.query('select title from next_actions')).rows[0].title,'고객이 별도로 잡은 방문');
+});
+
+// Ordinary detail saves reuse the persisted log and already saved next action.
+const link=(log_id)=>call({id:request,log_id},'crm_work_request_contact_link_v1');
+async function ordinary(result='연결됨',{task=true,explicit=true}={}){
+ const p={type:'contact_log',inquiry_id:inq,request_id:id(60),channel:'전화',result,
+  content:'상세에서 기록',next_action:'고객 회신 확인',next_check_date:due,occurred_at:new Date().toISOString()};
+ if(explicit)p.contact_result=result;
+ const saved=await call(p,'crm_inquiry_command_v1');
+ if(task){await db.exec('reset role');await db.query(`insert into next_actions(id,inquiry_id,action_type,title,due_at,assignee_name,status,created_at,updated_at)
+ values($1,$2,'전화','고객 회신 확인',$3::date::timestamp at time zone 'Asia/Seoul','담당','open',clock_timestamp(),clock_timestamp())`,[id(70),inq,due]);await as(owner);}
+ return saved.log_id;
+}
+async function customerSnapshot(){await db.exec('reset role');return (await db.query(`select
+ (select jsonb_agg(to_jsonb(x) order by id) from inquiries x) inquiries,
+ (select jsonb_agg(to_jsonb(x) order by id) from next_actions x) tasks,
+ (select jsonb_agg(to_jsonb(x) order by id) from crm_security.inquiry_contact_logs x) logs,
+ (select jsonb_agg(to_jsonb(x) order by inquiry_id) from crm_security.inquiry_flow_state x) state,
+ (select count(*)::int from crm_security.work_request_contact_links) links`)).rows[0];}
+
+test('ordinary detail saved log links the request without creating a second contact or overwriting any plan',async()=>{
+ const lid=await ordinary();await db.exec(`reset role;insert into next_actions(inquiry_id,action_type,title,due_at,assignee_name,status,created_at) values('${inq}','방문','별도 방문 약속',now()+interval '5 days','담당','open',now())`);
+ const before=await customerSnapshot();await as(owner);const a=await link(lid);
+ assert.equal(a.linked,true);assert.equal(a.request.status,'done');assert.equal(a.next_action_id,id(70));
+ const after=await customerSnapshot();assert.deepEqual({...after,links:0},before);assert.equal(after.links,1);
+ await as(owner);const retry=await link(lid);assert.equal(retry.linked,false);assert.equal(retry.request.status,'done');assert.equal((await customerSnapshot()).links,1);
+});
+
+test('ordinary absence remains working, stores retry date, and repeated reconciliation changes nothing',async()=>{
+ const lid=await ordinary('부재');const a=await link(lid);assert.equal(a.request.status,'working');assert.equal(a.request.next_due,due);assert.equal(a.request.closed_at,null);
+ const before=await customerSnapshot();await as(owner);const b=await link(lid);assert.equal(b.replayed,true);assert.equal(b.linked,false);assert.deepEqual(await customerSnapshot(),before);
+ assert.equal(before.state[0].first_connected_at,null);
+});
+
+test('contact ACK arriving before next-action ACK does not prematurely complete; later persisted task resolves same contact',async()=>{
+ const lid=await ordinary('연결됨',{task:false});const a=await link(lid);assert.equal(a.reason,'followup_proof_missing');assert.equal(a.request.status,'sent');
+ await db.exec(`reset role;insert into next_actions(id,inquiry_id,action_type,title,due_at,assignee_name,status,created_at) values('${id(70)}','${inq}','전화','고객 회신 확인','${due}'::date::timestamp at time zone 'Asia/Seoul','담당','open',clock_timestamp())`);
+ await as(owner);assert.equal((await link(lid)).linked,true);const snapshot=await customerSnapshot();assert.equal(snapshot.logs.length,1);assert.equal(snapshot.tasks.length,1);
+});
+
+test('missing explicit result, unknown/foreign log and historical or reasked-before contact never complete',async()=>{
+ const old=await ordinary('연결됨',{explicit:false});assert.equal((await link(old)).reason,'contact_proof_missing');
+ await db.exec('reset role');await db.query("update crm_security.inquiry_contact_logs set contact_result='연결됨' where id=$1",[old]);await as(owner);
+ assert.equal((await link(id(999))).reason,'contact_proof_missing');
+ for(const change of ["occurred_at=now()-interval '1 day'","actor_user_id='"+other+"'","actor_auth_uid='"+other+"'","occurred_at='infinity'::timestamptz"]){
+  await db.exec('reset role;begin');try{await db.exec('update crm_security.inquiry_contact_logs set '+change);await as(owner);assert.equal((await link(old)).linked,false);}finally{await db.exec('rollback;reset role');}
+ }
+ await db.exec("update crm_security.work_requests set reasked_at=clock_timestamp()+interval '1 second'");await as(owner);assert.equal((await link(old)).linked,false);
+ assert.equal((await customerSnapshot()).links,0);
+});
+
+test('reassignment, admin proxy, trash, cancellation, stage conversion and compound objectives are guarded',async()=>{
+ const lid=await ordinary();for(const actor of [admin,other]){await as(actor);await assert.rejects(link(lid),/forbidden/);}
+ for(const change of ["status='실주'",`deal_id='${id(99)}'`,`qualified_at=now()`]){
+  await db.exec('reset role;begin');try{await db.exec('update inquiries set '+change);await as(owner);assert.equal((await link(lid)).reason,'stage_review');}finally{await db.exec('rollback;reset role');}
+ }
+ await db.exec(`update crm_security.work_requests set asks='["고객 첫 연락","현장방문 필요 여부 확인"]'`);await as(owner);assert.equal((await link(lid)).reason,'unsupported_objectives');
+ await db.exec("reset role;update crm_security.work_requests set status='cancelled'");await as(owner);assert.equal((await link(lid)).reason,'request_closed');
+ await db.exec(`reset role;update inquiries set assigned_to='${other}'`);await as(owner);await assert.rejects(link(lid),/forbidden/);
+ await db.exec(`reset role;update inquiries set assigned_to='${owner}';insert into crm_security.inquiry_audit_events(inquiry_id,action) values('${inq}','inquiry_trash')`);await as(owner);await assert.rejects(link(lid),/forbidden/);
+ assert.equal((await customerSnapshot()).links,0);
+});
+
+test('changed, cancelled, ambiguous or old followup cannot be reused as completion evidence',async()=>{
+ const lid=await ordinary();for(const change of ["title='다른 약속'","assignee_name='다른 담당'","status='cancelled'","due_at='infinity'::timestamptz","created_at=now()-interval '1 day'","status='completed',completed_at=null"]){
+  await db.exec('reset role;begin');try{await db.exec('update next_actions set '+change);await as(owner);assert.equal((await link(lid)).reason,'followup_proof_missing');}finally{await db.exec('rollback;reset role');}
+ }
+ await db.exec(`insert into next_actions(inquiry_id,action_type,title,due_at,assignee_name,status,created_at) select inquiry_id,action_type,title,due_at,assignee_name,status,created_at from next_actions`);await as(owner);
+ assert.equal((await link(lid)).reason,'followup_proof_missing');assert.equal((await customerSnapshot()).links,0);
+});
+
+test('older evidence cannot override a newer contact result; link insertion failure rolls back request status',async()=>{
+ const lid=await ordinary();await db.exec('reset role;begin');try{
+  await db.exec(`insert into crm_security.inquiry_contact_logs(inquiry_id,request_id,channel,result,contact_result,kind,content,occurred_at,actor_auth_uid,actor_user_id,actor_name)
+   values('${inq}','${id(61)}','전화','부재','부재','attempt','최근 부재',clock_timestamp(),'${owner}','${owner}','담당')`);await as(owner);assert.equal((await link(lid)).reason,'newer_contact_exists');
+ }finally{await db.exec('rollback;reset role');}
+ await db.exec(`create function crm_security.fail_link() returns trigger language plpgsql as $$begin raise exception 'link failure';end$$;
+ create trigger fail_link before insert on crm_security.work_request_contact_links for each row execute function crm_security.fail_link()`);
+ try{await as(owner);await assert.rejects(link(lid),/link failure/);await db.exec('reset role');assert.equal((await db.query('select status from crm_security.work_requests')).rows[0].status,'sent');assert.equal((await customerSnapshot()).links,0);}
+ finally{await db.exec('reset role;drop trigger fail_link on crm_security.work_request_contact_links;drop function crm_security.fail_link()');}
+});
+
+test('link proof is private and result-only/extra completion arguments cannot bypass persisted evidence',async()=>{
+ await db.exec('reset role');
+ for(const role of ['anon','authenticated','service_role']){
+  assert.equal((await db.query("select has_table_privilege($1,'crm_security.work_request_contact_links','SELECT,INSERT,UPDATE,DELETE') allowed",[role])).rows[0].allowed,false);
+ }
+ for(const role of ['anon','service_role'])assert.equal((await db.query("select has_function_privilege($1,'public.crm_work_request_contact_link_v1(jsonb)','execute') allowed",[role])).rows[0].allowed,false);
+ await as(owner);await assert.rejects(call({id:request,log_id:id(60),result:'연결됨'},'crm_work_request_contact_link_v1'),/invalid payload/);
+});
+
+test('actual WorkRequest client consumes the SQL serializer and ACK, preserving the existing customer task',async()=>{
+ const lid=await ordinary();const source=await call({days:30},'crm_work_request_list_v1');
+ // The production serializer is already installed by the two-results migration.
+ await db.exec('reset role');const state=(await db.query('select crm_security.inquiry_flow_state_json($1) s',[inq])).rows[0].s;await as(owner);
+ const calls=[],pending=[];const q={id:inq,assigned_to:owner};
+ const R={G:{page:'today'},ME:{id:owner,name:'담당'},esc:String,escAttr:String,repN:String,paint(){},inqCtlFind:()=>q,
+  CRMRelease:{has:()=>true},InquiryFlow:{server:()=>state},OpsStore:{has:()=>true,rpc:(fn,p)=>{calls.push(fn);const promise=call(p,fn);pending.push(promise);return promise;}}};
+ vm.runInNewContext(readFileSync(new URL('../work-request.js',import.meta.url),'utf8'),{window:R,document:{addEventListener(){},getElementById:()=>null},Date,Map,Set,setTimeout(){}});
+ Object.assign(R.WorkRequest.state(),{loaded:true,list:source.requests});R.WorkRequest.autoClose();
+ await new Promise(setImmediate);for(let i=0;i<pending.length;i++){await pending[i];await new Promise(setImmediate);}
+ assert.equal(R.WorkRequest.state().list[0].status,'done');assert.deepEqual(calls,['crm_work_request_contact_link_v1','crm_work_request_list_v1']);
+ const after=await customerSnapshot();assert.equal(after.logs.length,1);assert.equal(after.tasks.length,1);assert.equal(after.tasks[0].status,'open');assert.equal(after.links,1);assert.equal(after.logs[0].id,lid);
 });
