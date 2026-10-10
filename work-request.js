@@ -61,12 +61,13 @@
  }
  /* ── 저장소 읽기 ── */
  function load(force){
-  const S=st();if(!ready()||S.busy||(!force&&Date.now()-S.at<60000))return;
-  S.busy=true;O().rpc(RPC.list,{days:30}).then(r=>{const before=JSON.stringify(S.list),first=!S.loaded;S.list=Array.isArray(r.requests)?r.requests:[];S.loaded=true;S.at=Date.now();
-   if(first||before!==JSON.stringify(S.list))repaint();setTimeout(autoClose,0);}).catch(()=>{S.at=Date.now();}).finally(()=>{S.busy=false;});
+  const S=st();if(!ready())return;if(S.busy){if(force)S.again=true;return;}if(!force&&Date.now()-S.at<60000)return;
+  const gen=S.gen||0;S.again=false;
+  S.busy=true;O().rpc(RPC.list,{days:30}).then(r=>{if((S.gen||0)!==gen){/* 조회 중에 저장이 있었다 — 이 응답은 그 전 상태라 버리고 다시 읽는다(코덱스 검수 F3) */S.at=Date.now();S.loaded=true;S.again=true;return;}const before=JSON.stringify(S.list),first=!S.loaded;S.list=Array.isArray(r.requests)?r.requests:[];S.loaded=true;S.at=Date.now();
+   if(first||before!==JSON.stringify(S.list))repaint();setTimeout(autoClose,0);}).catch(()=>{S.at=Date.now();}).finally(()=>{S.busy=false;if(S.again){S.again=false;setTimeout(()=>load(true),0);}});
  }
  function repaint(){try{if(R.G.page==='today'||R.G.page==='mgmt'||document.getElementById('kpi-b'))R.paint();else if(document.getElementById('inq-inbox-dialog')&&R.InquiryDetailV2)R.InquiryDetailV2.reskin();}catch(e){}}
- const put=r=>{if(!r||!r.id)return;const S=st(),i=S.list.findIndex(x=>x.id===r.id);if(i>=0)S.list[i]=r;else S.list.unshift(r);};
+ const put=r=>{if(!r||!r.id)return;const S=st(),i=S.list.findIndex(x=>x.id===r.id);if(i>=0)S.list[i]=r;else S.list.unshift(r);S.gen=(S.gen||0)+1;/* 저장 세대(F3) */};
  const isOpen=r=>r.status==='sent'||r.status==='seen'||r.status==='working';
  const overdue=r=>isOpen(r)&&Date.parse(r.due_at)<Date.now();
  /* ── 오늘 업무 항목 → 요청 ── */
@@ -197,19 +198,20 @@
  function sideHtml(){
   if(!enabled())return '';load();try{autoBranch();}catch(e){}const L=waiting(),S=st();if(!L.length)return '';
   const item=r=>{const od=overdue(r),br=r.kind==='branch',ok=r.status==='replied'||r.status==='done',ab=r.status==='absent';
-   const pill=od?['요청 미이행'+(r.round>=2?' · '+r.round+'회':''),'bad']:ok?[r.status==='replied'?'회신 완료':'✓ 처리 완료','ok']:ab?['요청 처리 · 부재','amb']:isHandover(r)?['인계 대기','amb']:[r.status==='seen'?'담당 확인':r.status==='working'?'처리 중':'답변 대기','amb'];/* 인계 대기 = 새 담당이 [인수 확인] 전(ops_12 C⑧) */
+   const wa=r.status==='working'&&/부재/.test(String(r.result||''));/* 코덱스 검수 F5: 부재 + 재연락 일정 = 고객 회신 대기(담당 미착수와 구분) */
+   const pill=od?['요청 미이행'+(r.round>=2?' · '+r.round+'회':''),'bad']:ok?[r.status==='replied'?'회신 완료':'✓ 처리 완료','ok']:ab?['요청 처리 · 부재','amb']:isHandover(r)?['인계 대기','amb']:wa?['고객 회신 대기','amb']:[r.status==='seen'?'담당 확인':r.status==='working'?'처리 중':'답변 대기','amb'];/* 인계 대기 = 새 담당이 [인수 확인] 전(ops_12 C⑧) */
    const btns=od?['<button type="button" data-wr="reask" data-id="'+r.id+'">재확인 요청</button>'].concat(br?['<button type="button" data-wr="recall" data-id="'+r.id+'">본사 회수 검토</button>']:r.round>=2?['<button type="button" data-wr="reassign" data-id="'+r.id+'">재배정 검토</button>']:[]):(ok||ab)?['<button type="button" data-wr="check" data-id="'+r.id+'">진행 확인</button>']:[];
    /* day_zones §4: 열린 요청은 보낸 사람이 종료할 수 있다 — 완료 · 취소(사유) · 다른 요청에 통합 · 대상 오류 */
    if(isOpen(r))btns.push('<button type="button" data-wr="end" data-id="'+r.id+'" aria-expanded="'+(S.endOpen===r.id)+'">종료 ▾</button>');
    const E=S.endOpen===r.id?(S.end||(S.end={kind:'done',note:''})):null;
    const endHtml=E?'<div class="wrq-end"><div class="k">'+[['done','완료'],['cancel','취소 (사유)'],['merge','다른 요청에 통합'],['wrong','대상 오류']].map(x=>'<button type="button" data-wr="endkind" data-id="'+r.id+'" data-v="'+x[0]+'" aria-pressed="'+(E.kind===x[0])+'">'+x[1]+'</button>').join('')+'</div>'+(E.kind==='done'?'<span>요청자가 직접 완료로 닫습니다 · 결과 기록은 담당 몫</span>':'<input data-wr-in="endnote" maxlength="200" placeholder="'+(E.kind==='cancel'?'취소 사유 (필수)':E.kind==='merge'?'어느 요청에 합치나요 (필수)':'왜 대상이 아닌가요 (필수)')+'" value="'+attr(E.note||'')+'">')+'<div class="ft">'+(E.err?'<em>'+h(E.err)+'</em>':'')+'<button type="button" data-wr="endclose">닫기</button><button type="button" class="go" data-wr="endsave" data-id="'+r.id+'"'+(E.busy?' disabled':'')+'>'+(E.busy?'저장 중…':'종료')+'</button></div></div>':'';
    if(isOpen(r)&&r.to_reach===false)btns.push('<button type="button" data-wr="ack" data-id="'+r.id+'">처리 확인</button>');
-   const reply=ok||ab?lineEnd(r):'',note=od&&r.round>=2?(br?'지사 확인 요청 '+r.round+'회 미이행 → 본사 회수 검토 권장':r.label+' '+r.round+'회 미이행 → 재배정 검토 권장'):'',unreach=isOpen(r)&&r.to_reach===false?r.to_name+'은(는) CRM에서 이 요청을 볼 수 없습니다 · 전화로 전달하고, 처리되면 [처리 확인]':'';
+   const reply=ok||ab?lineEnd(r):wa?(r.to_name||'')+' · 전화 시도 · 부재'+(r.next_due?' → 재연락 '+mdK(r.next_due):' · 재연락 일정 없음')+' · 고객 회신 대기(담당 미착수 아님 · 최초 응대 미완료)':'',note=od&&r.round>=2?(br?'지사 확인 요청 '+r.round+'회 미이행 → 본사 회수 검토 권장':r.label+' '+r.round+'회 미이행 → 재배정 검토 권장'):'',unreach=isOpen(r)&&r.to_reach===false?r.to_name+'은(는) CRM에서 이 요청을 볼 수 없습니다 · 전화로 전달하고, 처리되면 [처리 확인]':'';
    return '<div class="wrq-w"><div class="l1"><i style="background:'+(BRAND[r.brand]||'#9aa0ab')+'"></i><b title="'+attr(r.site)+'">'+h(r.site)+'</b><span class="wrq-pill '+pill[1]+'">'+h(pill[0])+'</span></div>'
     +'<span class="l2">'+h(r.to_name+'에게 · '+((r.asks||[]).join(' · ')||r.label))+'</span>'
     +'<div class="l3"><span>'+h(whenTxt(r.reasked_at||r.created_at)+' · 기한 '+dueTxt(r)+(r.round>=2?' · 기한 바뀜 '+whenTxt(r.reasked_at)+' (재확인 '+r.round+'회차)':''))+'</span><i></i>'+btns.join('')+'</div>'
     +stepsHtml(r)
-    +(reply?'<span class="rp '+(ab?'amb':'ok')+'">'+h(reply)+'</span>':'')+(note?'<span class="nt">'+h(note)+'</span>':'')+(unreach?'<span class="ur">'+h(unreach)+'</span>':'')+endHtml+'</div>';};
+    +(reply?'<span class="rp '+(ab||wa?'amb':'ok')+'">'+h(reply)+'</span>':'')+(note?'<span class="nt">'+h(note)+'</span>':'')+(unreach?'<span class="ur">'+h(unreach)+'</span>':'')+endHtml+'</div>';};
   return '<section class="wrq-wait"><header><b>답 기다리는 중</b><span>내가 요청한 일 '+L.length+'건</span></header>'+L.map(item).join('')+'<p class="ft">답변 대기 중엔 같은 요청 잠금 · 기한이 지나야 [재확인 요청] · 지사 건은 [본사 회수 검토]</p></section>';
  }
  function autoBranch(){
@@ -337,7 +339,7 @@
    if(r.target_type==='inquiry'){const F=R.InquiryFlow&&R.InquiryFlow.on&&R.InquiryFlow.on()?R.InquiryFlow:null;if(!F)return null;const L=(F.state(it).logs||[]).filter(l=>Date.parse(l.at)>=since);
     if(L.some(l=>l.kind==='connected'))return {result:'연락 기록 확인',absent:false};if(L.some(l=>l.kind==='attempt'))return {result:'부재',absent:true};return null;}
    const f=(k,n)=>{const c=it.stage_contexts&&it.stage_contexts[k];return c&&c.fields?c.fields[n]:'';};
-   if(r.kind==='quote')return f('consulting','quote_due')||f('consulting','quote_request')?{result:'견적 요청 · 예정일 입력 확인',absent:false}:null;
+   if(r.kind==='quote'){/* 코덱스 검수 F4: 화면의 완료 조건(견적 요청 등록 + 예정일)과 같은 판정 — 요청에서 고른 목적마다 근거가 있어야 한다(OR 아님) */const asks=r.asks||[],needReq=!asks.length||asks.some(a=>/견적 요청 등록/.test(a)),needDue=!asks.length||asks.some(a=>/예정일/.test(a)),both=!needReq&&!needDue;const okReq=!(needReq||both)||!!f('consulting','quote_request'),okDue=!(needDue||both)||!!f('consulting','quote_due');return okReq&&okDue?{result:[needReq||both?'견적 요청 등록':'',needDue||both?'예정일 입력':''].filter(Boolean).join(' · ')+' 확인',absent:false}:null;}
    if(r.kind==='contract')return (f('contract','contract_date')||it.contract_date)&&(Number(f('contract','contract_amount')||it.contract_amount||it.won_amount)>0)?{result:'계약일 · 금액 입력 확인',absent:false}:null;
    if(r.kind==='award')return R.DealTransfer&&R.DealTransfer.enabled()&&!R.DealTransfer.checkDue(it)&&!R.DealTransfer.awaiting(it)?{result:'낙찰결과 등록 확인',absent:false}:null;
    if(r.kind==='first'||r.kind==='follow'){let at='';try{at=R.salesActivityAt(it)||'';}catch(e){}return at&&Date.parse(at)>=since?{result:'응대 기록 확인',absent:false}:null;}

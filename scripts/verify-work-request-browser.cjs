@@ -158,7 +158,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    assert.deepEqual(await page.evaluate(()=>{const r=__db.find(x=>x.id==='r3');return [r.status,r.result,r.next_due];}),['working','부재','2026-10-08']);
    assert.equal(await page.evaluate(()=>!!inqCtlFirstResponseAt(inqCtlFind('00000003-0000-4000-8000-000000000003',false))),false,'이 모듈은 최초 응대 시각을 찍지 않는다');}
   await as({id:'u-admin',name:'송보람',role:'admin'});
-  {const r3=(await waits()).find(x=>x[0]==='[서울 송파] 가락현대TWELVE');assert.equal(r3[1],'처리 중','부재만으로 연결 요청을 완료하지 않는다');
+  {const r3=(await waits()).find(x=>x[0]==='[서울 송파] 가락현대TWELVE');assert.equal(r3[1],'고객 회신 대기','부재만으로 연결 요청을 완료하지 않는다 — 보낸 사람에게는 처리 중이 아니라 고객 회신 대기(코덱스 검수 F5)');assert.match(r3[5],/^이필선 · 전화 시도 · 부재 → 재연락 10\/08 · 고객 회신 대기\(담당 미착수 아님 · 최초 응대 미완료\)$/,'결과 · 재연락 일정이 그 줄에: '+r3[5]);
    assert.equal((await cards()).some(c=>c[0]==='[서울 송파] 가락현대TWELVE'),false,'열린 요청이 남아 중복 요청을 막는다');}
   /* 8. 지사 화면: '본사 확인 요청' → 처리 결과 하나 → (담당 지정 완료면) 실담당 → [본사에 회신] */
   await as({id:'u-jo',name:'조민준',role:'branch'});
