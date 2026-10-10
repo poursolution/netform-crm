@@ -182,6 +182,7 @@
   return row;
  }
  function setNext(d,id,next,due){const obj={id,type:next.type,text:next.text,due,due_at:due,assignee:next.assignee,status:'open'},pd=patchOf(d);d.nextActionObj=pd.nextActionObj=obj;d.nextAction=pd.nextAction=due;d.nextActionText=pd.nextActionText=next.text;}
+ const leftTxt=()=>{try{const Z=root.G&&root.G.page==='today'&&root.DayZones&&root.DayZones.last?root.DayZones.last():null;return Z?' · 지금 처리 후속 '+Z.now.length+'건 남음':'';}catch(e){return '';}};
  const afterSave=d=>{root.saveLocal?.();root.renderDetail?.();root.TodayWorkQueue?.render?.();if(root.G?.page==='relationship'&&typeof root.paintRelationshipManagement==='function')root.paintRelationshipManagement();};
  /* 연락 기록 + 다음 할 일을 기존 큐로 저장(지금 할 일 카드의 연락 결과 · 가운데 응대 기록이 같이 쓴다) */
  async function writeContact(d,W){
@@ -215,7 +216,7 @@
   const P=R.prog||(R.prog={});R.busy=true;R.err='';apply();
   try{
    await writeContact(d,{ch:R.ch,note,at,meaningful:!['부재','회신대기'].includes(res),next,due,P});
-   const why=R.whyNo||'';S.rec=null;S.calling=false;toast(rej?'기록했습니다 · 다음 할 일 없음 · '+why+(/보류/.test(why)?' — 위 [단계 바꾸기]에서 대기 · 보류로':/실주/.test(why)?' — 위 [단계 바꾸기]에서 실주 처리로':/이관/.test(why)?' — 담당 변경에서 새 담당 지정':''):'기록했습니다 · 다음 업무 '+next.text+' · '+dd(due)+' · '+next.assignee);afterSave(d);
+   const why=R.whyNo||'';S.rec=null;S.calling=false;afterSave(d);toast((rej?'기록했습니다 · 다음 할 일 없음 · '+why+(/보류/.test(why)?' — 위 [단계 바꾸기]에서 대기 · 보류로':/실주/.test(why)?' — 위 [단계 바꾸기]에서 실주 처리로':/이관/.test(why)?' — 담당 변경에서 새 담당 지정':''):'기록했습니다 · 다음 업무 '+next.text+' · '+dd(due)+' · '+next.assignee)+leftTxt());
   }catch(e){R.busy=false;R.err=String(e.message||e);apply();}
  }
  /* 상세 밖(오늘 업무 실행 모드)에서도 같은 저장 경로 — 연결 원칙: 기록은 어디서 해도 같은 곳에 쌓인다 */
