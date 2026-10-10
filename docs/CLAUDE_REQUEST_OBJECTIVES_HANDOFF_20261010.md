@@ -1,4 +1,92 @@
-# Claude 인수인계 — 복합 요청의 확인 항목과 고객 회신 대기
+# Claude 인수인계 — 복합 요청 저장 계약 및 master 통합
+
+## 2026-10-10 최신 master 통합 및 Claude의 4개 질문에 대한 답
+
+이 절이 아래 초기 설계·이전 검사 기록보다 우선한다. 통합 기준 master: `69e52672e8ca358167b3786d44a5d14d4fc26437`. PR #550의 5개 충돌 파일을 정리하면서 master의 일반 응대 연결, 요청 조회 순서 보호, 받은/보낸 요청 기능, #579의 현재 화면을 유지했다. Codex는 입력 화면·배치·스타일을 추가하지 않았다. Claude의 `CLAUDE_REQUEST_OBJECTIVES_DISPLAY_DECISION_20261010.md`에 정한 위치는 그대로 사용한다.
+
+### 1. 연결 가능한 견적·방문 업무 후보
+
+`await WorkRequest.objectives.read(requestId, historyPage, candidatePage)`를 사용한다. 두 쪽 번호는 기본 1이며 각각 최대 20건이다. RPC는 `crm_work_request_objectives_read_v1({id, page, candidate_page})`이다.
+
+추가 응답:
+
+- `followup_contract: 1`
+- `followup_candidates`: 실제 저장된 `id`, `title`, `action_type`(견적/방문), `due_at`, `status`(open/completed), `completed_at`, `plan_origin`, `agreement_note`, `source_recorded_at`
+- `candidate_total`, `candidate_page`, `candidate_has_more`
+- `plan_context`: 전체 일정의 변경 감지 `token`, 문의 `next_action_date`, `open_task_count`, `open_schedule_count`, 열린 업무/일정 각 최초 20개인 `tasks`/`schedules`. 이 둘은 충돌 요약이며 전체 후보 목록이 아니다. 전체 견적·방문 후보는 위 candidate_page를 사용한다.
+- `change_requests`, `change_request_total`, `change_request_page`, `change_request_has_more`: 변경 제안 ACK 이력. historyPage로 최대 20건씩 조회한다.
+- `can_write`: 현재 요청 수신자·문의 담당자 일치 및 열린 요청 여부. 실제 연결 근거와 종결/이관 여부는 저장 때 다시 검증한다.
+
+다른 문의·다른 담당·취소 업무, 빈 제목, 유효 기한 없는 열린 업무, 완료시각 없는 완료 업무는 후보에서 제외한다. UUID를 생성하거나 화면 순번을 업무 ID로 보내지 않는다. 재배정되면 이전 담당의 후보를 돌려주지 않는다.
+
+### 2. 새 업무 저장 경로와 반환 ID
+
+`await WorkRequest.objectives.followup.write(payload)` → `crm_work_request_objective_followup_v1(p)`.
+
+```js
+const ctx = await WorkRequest.objectives.read(requestId, 1, 1);
+const ack = await WorkRequest.objectives.followup.write({
+  id: requestId,
+  operation_id: crypto.randomUUID(),
+  expected_revision: ctx.revision,
+  expected_updated_at: ctx.expected_updated_at,
+  plan_token: ctx.plan_context.token,
+  ask: '연락 후 견적 필요 여부 확인', // 또는 '현장방문 필요 여부 확인'
+  title: '확인된 후속 업무 내용',
+  due_date: 'YYYY-MM-DD',
+  plan_origin: 'internal_plan',
+  mode: 'additional',
+  reason: '기존 업무와 별도로 필요한 이유'
+});
+// ack.status === 'created'이고 next_action_id가 있는 경우에만 연결 후보로 사용한다.
+const fresh = await WorkRequest.objectives.read(requestId, 1, 1);
+// 기존 objectives.write의 needed 결정에 ack.next_action_id를 전달한다.
+// revision/expected_updated_at은 fresh를 사용한다.
+```
+
+현재 문의 담당자이자 요청 수신자인 계정만 저장한다. 실제 v2 연결 기록이 선행되어야 하며, 관리자 대리 저장은 추가하지 않았다. 새 견적·방문 업무와 출처 이력을 같은 트랜잭션으로 저장하고 `next_action_id`를 반환한다. 문의의 기존 다음 행동일·다른 업무·일정·관리자 요청 기한을 덮어쓰거나 취소하지 않는다. 항목 확인으로 관리자 요청이 완료되어도 새 후속 업무는 열린 상태를 유지한다.
+
+ACK: `ok`, `contract_version:1`, `policy_version:'objective-followup-v1'`, `operation_id`, `request_id`, `inquiry_id`, `event_id`, `next_action_id`, `status`, `mode`, `ask`, `plan_origin`, `title`, `due_date`, `agreement_note`, `reason`, `revision`, `expected_updated_at`, `server_at`, `plan_token_before`.
+
+응답 유실 시 입력을 지우거나 다른 저장 ID를 만들지 않는다. `WorkRequest.objectives.followup.pending(requestId)`와 `.retry(requestId)`를 사용한다. 같은 payload·operation_id는 같은 영수증을 반환하며 업무를 중복 생성하지 않는다. 서버의 명시적 롤백 오류는 재조회 후 수정 가능하고, 성공 여부를 모르는 네트워크 오류는 같은 저장을 재시도한다.
+
+### 3. 고객 합의와 내부 계획 저장
+
+- `plan_origin:'customer_agreed'`: 공백이 아닌 `agreement_note` 필수. 사용자가 확인한 합의 근거만 전달한다.
+- `plan_origin:'internal_plan'`: agreement_note는 보내지 않거나 빈 값. 날짜가 있다는 이유로 고객 약속이라고 추정하지 않는다.
+- 기존 업무의 출처는 `unknown`. 새 저장 이벤트가 있는 업무도 제목·날짜·담당이 바뀌면 기존 합의 표시를 그대로 재사용하지 않는다.
+
+출처는 신규 비공개 `crm_security.work_request_followup_events`에 요청·문의·업무·입력자·저장 ID·payload·ACK·기록시각과 함께 보존한다. `public.next_actions` 기존 열을 추가/대체하지 않았다. 테이블 직접 조회/변경 권한은 공개하지 않는다.
+
+### 4. 기존 일정 충돌 시 선택 계약
+
+| mode | 저장 결과 | 기존 일정 | needed 완료 근거 |
+|---|---|---|---|
+| `create` | 기존 계획이 전혀 없을 때만 새 업무 생성 | 보존 | 반환 업무 ID 사용 가능 |
+| `additional` | 명시적 사유로 별도 업무 생성 | 모두 보존 | 반환 업무 ID 사용 가능 |
+| `request_change` | 변경 제안 이력만 저장 | 날짜·내용·상태 모두 보존 | 사용 불가 |
+
+`request_change`는 `status:'change_requested', next_action_id:null`을 반환한다. 승인·반려·실제 일정 변경 엔진은 이번 PR에 없다. 제안 event_id를 업무 ID로 넘기거나 변경 완료라고 표시하면 안 된다. 아직 needed 조건을 충족하지 못하므로 항목은 미확인/진행 중으로 유지한다.
+
+`REQUEST_PLAN_CONFLICT`: create인데 기존 계획 있음. 사용자의 명시적 선택과 사유가 필요하다.
+`REQUEST_PLAN_CHANGED` / `REQUEST_REVIEW_CONFLICT`: 조회 뒤 문의·업무·일정 또는 요청이 변경됨. 자동 덮어쓰기하지 않고 재조회한다.
+`REQUEST_FOLLOWUP_EXISTS`: 같은 담당·유형·제목·날짜의 열린 업무가 존재함. 후보 재조회 후 실제 업무를 확인해 연결한다.
+`REQUEST_CONTACT_PROOF_REQUIRED`: v2의 실제 연결 근거 없음. 날짜를 복사하거나 연락 이력을 추정해서 우회하지 않는다.
+
+### 배포 순서와 남은 범위
+
+1. 기존 master 마이그레이션을 보존한 상태에서 `20261009215629_request_compound_contact.sql` 적용.
+2. 이어서 `20261010090000_request_objective_followup.sql` 적용. sql/과 supabase/migrations/는 각각 동일 파일이며 같은 DB에 두 사본을 별도로 적용할 필요는 없다.
+3. `pc-manager-transport.js` 허용 목록, `pc-error-state.js` 오류 이름, `ops-store.js`, `work-request.js`를 함께 배포하고 CRMRelease 설치 확인.
+4. Claude는 정해 둔 F2 입력 위치에 연결. `WorkRequest.objectives.enabled()`는 read/write/followup 세 RPC가 모두 확인돼야 true. 비활성일 때 기존 화면 유지.
+
+**현재는 Draft이며 운영 SQL 실행·master 병합·운영 배포는 하지 않았다.** 기존 일반 상세의 `crm_work_request_contact_link_v1`은 기본 요청 연결을 유지한다. 복합 목적의 연결 근거는 v2 응대 영수증 경로이며 일반 상세 저장만으로 복합 목적까지 처리된다고 주장하지 않는다. F2는 요청 카드의 기존 v2 응대 저장 후 남은 항목을 연결한다.
+
+검증: 클라이언트+실제 로컬 Postgres 94/94, 관련 흐름·인계·지사 경과일·SQL 등록·출시 계약 19/19, 합성 브라우저 요청 흐름 PASS. 응답 유실 후 재시도·중복 방지·재배정·충돌·권한·롤백·후속 일정 보존을 확인했다. 운영 고객 데이터와 외부 발송은 사용하지 않았다. GitHub 최종 커밋 CI는 별도로 확인한다.
+
+---
+
+## 이하: 최초 설계와 이전 검증 이력
 
 대상: 영업운영 CRM `poursolution/netform-crm`. 최초 준비 기준 커밋 `95d668a5ffa9860a98d0ec7a07209ddc1fcdb518`. 후속 통합 시 master의 #551 로딩 안내 수정을 그대로 보존한다.
 사용자 지침: Codex는 저장·판정·검증, Claude는 디자인 담당. 기존 화면 위치·크기·색·배치를 Codex가 변경하지 않는다.
