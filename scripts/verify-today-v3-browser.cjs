@@ -206,7 +206,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     ME={id:'rep1',name:'이필선',role:'rep'};out.rep=word();out.first=!!document.querySelector('#today-v2 .tv3>.tv3-word:first-child');
     B.rep_manager_comments[0].status='done';out.done=word();B.rep_manager_comments[0].status='open';G.todayWordOff=true;out.off=word();G.todayWordOff=false;
     ME={id:'admin',name:'송보람',role:'admin'};out.mgr=word();ME=keep[0];B.rep_manager_comments=keep[1];G.todayWordOff=keep[2];paint();return out;});
-   assert.match(r.rep,/^관리자 한마디 송보람 · \d+\/\d+ \[KPI 요청\] 실주 사유 입력 — 1건: 사유 없는 실주 \[KPI 요청\] 다음 할 일 등록률 — 2건$/,'담당자 화면 맨 위 관리자 한마디: '+r.rep);assert.equal(r.first,true);
+   assert.match(r.rep,/^관리자 한마디 송보람 · \d+\/\d+ 업무 요청 실주 사유 입력 — 1건: 사유 없는 실주 업무 요청 다음 할 일 등록률 — 2건$/,'담당자 화면 맨 위 관리자 한마디(day_zones §3: 줄머리 꼬리표 공지 · 업무 요청 · 코칭): '+r.rep);assert.equal(r.first,true);
    assert.deepEqual([r.done,r.off,r.mgr],['','',''],'처리된 것 · 끄기 · 영업관리 화면에는 없다');await page.waitForTimeout(300);}
   /* 노트북 폭(대표 화면 1207 × 914 · 2026-10-05 "봐봐"): 카드의 첫 버튼(class=main)에 화면 전체용 여백 규칙(body.shell-v2 .main · 941~1500px)이 걸려 버튼이 세로로 커지고, 4열이라 카드가 150px 로 찌그러졌다 → 버튼 3개는 같은 크기 한 줄, 카드 열 수는 목록 칸의 실제 폭으로 */
   await page.setViewportSize({width:1207,height:914});await page.waitForTimeout(300);

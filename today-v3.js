@@ -187,7 +187,10 @@
   let c=null;try{c=root.repManagerComment(me,root.repManagerWeekKey(0));}catch(e){}
   if(!c||c.status==='done'||!String(c.comment||'').trim())return '';
   const lines=String(c.comment).split('\n').map(x=>x.replace(/^·\s*/,'').trim()).filter(Boolean),show=lines.slice(-3),at=String(c.updated_at||c.updatedAt||c.created_at||'').slice(5,10).replace('-','/');
-  return '<div class="tv3-word" title="'+attr(lines.join('\n'))+'"><b>관리자 한마디</b><small>'+h([c.created_by||c.createdBy||'관리자',at].filter(Boolean).join(' · '))+'</small><div>'+show.map(l=>'<span>'+h(l)+'</span>').join('')+(lines.length>3?'<em>외 '+(lines.length-3)+'줄</em>':'')+'</div></div>';
+  /* day_zones §3: 공지 / 업무 요청 / 코칭을 같은 칸에 섞지 않고 줄머리 꼬리표로 구분 — [공지] [요청] [코칭] 머리가 있으면 그대로, 없으면 글로 판단(요청 · 요망 · 해 주세요 = 업무 요청, 그 외 = 코칭) */
+  const kindOf=l=>{const m=/^\[?(공지|업무 요청|KPI 요청|요청|코칭)\]?\s*[:·]?\s*/.exec(l);if(m)return [/요청/.test(m[1])?'업무 요청':m[1],l.slice(m[0].length)];return [/요청|요망|해 ?주세요|부탁/.test(l)?'업무 요청':'코칭',l];};
+  const KC={'공지':'#6b7280','업무 요청':'#3b6ce4','코칭':'#1f7a4d'};
+  return '<div class="tv3-word" title="'+attr(lines.join('\n'))+'"><b>관리자 한마디</b><small>'+h([c.created_by||c.createdBy||'관리자',at].filter(Boolean).join(' · '))+'</small><div>'+show.map(l=>{const [k,t]=kindOf(l);return '<span><i class="tv3-wk" style="color:'+KC[k]+'">'+h(k)+'</i>'+h(t)+'</span>';}).join('')+(lines.length>3?'<em>외 '+(lines.length-3)+'줄</em>':'')+'</div></div>';
  }
  function html(X,rows,legacy){
   const S=st(),W=TT(),V=build(X,rows,legacy),role=V.role,team=V.team,me=V.me;

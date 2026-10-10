@@ -25,14 +25,15 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     /* 지금 처리: 오늘 약속(현장 실측) */
     deal('today1','[경기 화성] 동탄푸른마을',{amt:2.6e8,next_action:{id:'n7',type:'방문',text:'현장 실측',due:day(0)+'T14:00',status:'open'}}),
     /* 회신 대기: 대기 사유 + 다음 확인일(미래) — 지연으로 세지 않는다 */
-    deal('wait1','[서울 마포] 성산시영아파트',{amt:1.5e8,code:'waiting',stage_code:'waiting',brand:'석민이앤씨',waiting_reason:'입대의 결과 회신 대기',expected_resume_at:day(4),last_activity_at:at(6)}),
+    deal('wait1','[서울 마포] 성산시영아파트',{amt:1.5e8,code:'waiting',stage_code:'waiting',brand:'석민이앤씨',waiting_reason:'입대의 결과 회신 대기',expected_resume_at:day(4),last_activity_at:at(6),activities:[1,2,3].map(n=>({id:'w'+n,type:'전화',note:'통화 시도 · 회신대기',result:'회신대기',at:at(n*7),occurred_at:at(n*7),actor:'이필선'}))}),
     /* 정보 보완: 경쟁 · 입찰인데 결정 일정이 없다(기록만 · 지연 아님) */
     deal('bid0','[경기 고양] 햇빛마을23단지',{amt:4.2e8,code:'compete',stage_code:'compete',brand:'석민이앤씨',next_action:{id:'n1',type:'전화',text:'입찰 서류 확인',due:day(2),status:'open'}}),
     /* 약속 누락: 응대 기록에 고객 약속이 있는데 그 뒤 다음 행동이 없다 */
     deal('gap1','[경기 수원] 평동동남아파트',{amt:1.2e8,code:'rapport',stage_code:'rapport',last_activity_at:at(3),activities:[{id:'g1',type:'전화',note:'통화 연결 · 관리소장 · 현장 사진을 이메일로 받기로 함 · 다음 주 화요일 현장 방문하기로 함',at:at(3),occurred_at:at(3),actor:'이필선',meaningful:true}]}),
     /* 요청만 있는 건: 관제탑 항목이 아닌데 관리자 요청이 와 있다 → 지금 처리에 요청 줄 */
     deal('far1','[충남 천안] 천안두정E편한세상2차',{amt:9e7,code:'rapport',stage_code:'rapport',next_action:{id:'n9',type:'전화',text:'공사 시기 확인',due:day(12),status:'open'},last_activity_at:at(2)})],
-    inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
+    inquiries:[{id:'aaaaaaaa-1111-4111-8111-111111111111',site:'[경기 수원] 수원장안힐스테이트',status:'배정완료',at:at(0.02),created_at:at(0.02),brand:'POUR솔루션',phone:'010-1234-5612',contact_name:'고객1',assignee:'이필선',assigned_to:'이필선',assigned_at:new Date(Date.now()-20*6e4).toISOString(),memo:'옥상 방수 견적 문의',raw:{'문의내용':'견적 문의'}}],activities:[],inquiryTrash:[],expansion_pool:[]};
+   try{localStorage.removeItem('crm.dz.assignSeen.v1');}catch(e){}
    LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'rep1',name:'이필선',role:'rep'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.today3=null;G.tower=null;G.towerRole=null;G.todayQueueOwner='전체';G.todayV3Off=false;G.dayZones=null;G.workReq=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op)=>{__writes.push(op);return 'req';};
    window.__open=[];TodayWorkQueue.open=(k,a)=>{__open.push([k,a||'']);};
@@ -50,6 +51,11 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   });
   await page.waitForSelector('#today-v2 .tv3 .dz');await page.waitForTimeout(900);
   const V=page.locator('#today-v2 .tv3');
+  /* 0. §2 팝업은 새 배정에만: 현장 · 첫 연락 기한(배정 후 2시간) · [응대 시작] [확인 · 나중에 처리] — 확인하면 이 PC 에 기억되어 다시 안 뜬다 */
+  const pop=page.locator('#today-v2 .dz-pop');assert.equal(await pop.count(),1,'새 배정 팝업');
+  const pt=one(await pop.innerText());assert.match(pt,/^새 배정 1건 첫 연락은 배정 후 2시간 안 · 팝업은 새 배정 · 긴급 기한 변경 · 중요 요청에만 \[경기 수원\] 수원장안힐스테이트 POUR솔루션 · 옥상 방수 견적 문의 첫 연락 기한 \d+\.\d+ \d{2}:\d{2} · 1\d\d분 남음 \(배정 후 2시간\) 응대 시작 확인 · 나중에 처리$/,pt);
+  await pop.locator('[data-dz="popok"]').click();await page.waitForTimeout(400);assert.equal(await page.locator('#today-v2 .dz-pop').count(),0,'확인 · 나중에 처리 → 팝업 닫힘(상태 변경 없음)');assert.equal(await page.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem('crm.dz.assignSeen.v1')||'{}')).length),1);
+  assert.equal(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_work_request_reply_v1').length),0,'팝업 확인은 요청 상태를 바꾸지 않는다');
   /* 1. 탭 4개 · 큰 숫자 = 구역 합계 */
   const tabs=await V.locator('.dz-tabs button').evaluateAll(l=>l.map(b=>[b.querySelector('span').textContent.replace(/\s+/g,' ').trim(),b.querySelector('small').textContent]));
   assert.deepEqual(tabs.map(t=>t[0].replace(/ \d+$/,'')),['지금 처리','회신 대기','정보 보완','약속 누락']);
@@ -79,8 +85,10 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* 5. 회신 대기 탭: 기다리는 것 · 다음 확인일 · 지연 아님 · [확인일 변경] */
   await page.locator('#today-v2 .tv3 .dz-tabs [data-v="wait"]').click();await page.waitForTimeout(300);
   const w=one(await page.locator('#today-v2 .tv3 .dz-table').innerText());
-  assert.match(w,/현장 기다리는 것 먼저 하는 이유 · 다음 확인일/);assert.match(w,/성산시영아파트[\s\S]*입대의 결과 회신 대기 고객 회신 대기 확인 \d+\.\d+ 확인일 변경/);assert.match(w,/대기 중은 지연으로 안 셈 · 확인일에 지금 처리로 올라옴/);
-  await page.locator('#today-v2 .tv3 .dz-row [data-dz="open"]').click();await page.waitForTimeout(100);assert.deepEqual(await page.evaluate(()=>__open.at(-1)),['deal:wait1','next'],'[확인일 변경] = 상세의 다음 행동');
+  assert.match(w,/현장 기다리는 것 먼저 하는 이유 · 다음 확인일/);/* §4 같은 이유 3번째 대기 → 재알림 대신 [결정권자에게 연락] [관리자 판단 요청] [보류로 전환] */
+  assert.match(w,/성산시영아파트[\s\S]*입대의 결과 회신 대기 같은 이유 3번째 대기 확인 \d+\.\d+ · 재알림 대신 다음 셋 중 하나 결정권자에게 연락 관리자 판단 요청 보류로 전환/);assert.match(w,/대기 중은 지연으로 안 셈 · 확인일에 지금 처리로 올라옴/);
+  await page.locator('#today-v2 .tv3 .dz-w3 [data-dz="open"]').click();await page.waitForTimeout(100);assert.deepEqual(await page.evaluate(()=>__open.at(-1)),['deal:wait1','contact'],'[결정권자에게 연락] = 상세의 연락');
+  await page.locator('#today-v2 .tv3 .dz-w3 [data-dz="judge"]').click();await page.waitForTimeout(400);assert.deepEqual(await page.evaluate(()=>__memo.map(m=>[m[0],m[1]])),[['wait1','[지원 요청] 같은 이유로 3번째 회신 대기 · 관리자 판단 요청 — 입대의 결과 회신 대기']],'관리자 판단 요청 = 지원 요청 메모(관리자 오늘 업무의 결정 요청으로)');await page.evaluate(()=>{__memo.length=0;});
   /* 6. 정보 보완 탭 */
   await page.locator('#today-v2 .tv3 .dz-tabs [data-v="info"]').click();await page.waitForTimeout(300);
   const inf=one(await page.locator('#today-v2 .tv3 .dz-table').innerText());assert.match(inf,/햇빛마을23단지[\s\S]*정보 보완 필요 CRM 필수정보 미입력/);assert.match(inf,/평가 · 지연에 안 셈/);

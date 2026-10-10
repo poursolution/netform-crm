@@ -59,6 +59,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      if(p.action==='seen'){if(r.status==='sent')r.status='seen';r.seen_at=r.seen_at||now();}
      else if(p.action==='reply'){if(!p.result)return err('처리 결과를 골라 주세요');if(p.result==='담당 지정 완료'&&!p.result_owner)return err('실담당을 골라 주세요');Object.assign(r,{status:'replied',result:p.result,result_owner:p.result_owner||null,replied_by:ME.name,closed_at:now()});}
      else if(p.action==='done'){Object.assign(r,{status:p.absent?'absent':'done',result:p.result,next_text:p.next_text||null,next_due:p.next_due||null,auto_done:!!p.auto,replied_by:ME.name,closed_at:now()});}
+     else if(p.action==='cancel'){Object.assign(r,{status:'cancelled',reply_note:p.note||null,replied_by:ME.name,closed_at:now()});}/* 요청 종료(취소 · 통합 · 대상 오류) = 서버 cancel + note */
      r.updated_at=now();return {data:{ok:true,request:J(r)}};}
     if(name==='crm_work_request_reask_v1'){const r=__db.find(x=>x.id===p.id);if(role()!=='admin')return err('재확인 요청은 관리자만 할 수 있습니다');if(!r||Date.parse(r.due_at)>=Date.now())return err('기한이 지난 뒤에 재확인을 요청할 수 있습니다');
      Object.assign(r,{round:r.round+1,due_at:p.due_at,due_label:p.due_label,status:'sent',reasked_at:now(),updated_at:now()});return {data:{ok:true,request:J(r)}};}
@@ -101,7 +102,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const DUE={};for(const l of ['오늘 17:00','오늘 중','내일 12시','3일 안'])DUE[l]=await page.evaluate(l=>WorkRequest.dueTxt({due_at:WorkRequest._dueAt(l).toISOString()}),l);
   /* 3. 보내면 목록에서 빠지고 오른쪽 '답 기다리는 중' — 큰 숫자 = 줄 수 그대로 맞는다 */
   assert.deepEqual((await cards()).map(c=>c[0]),['[서울 강남] 강변삼부아파트','[서울 송파] 가락현대TWELVE','[대전] 웰니스병원'],'보낸 건은 목록에서 빠진다');assert.equal(await heroN(),'5');
-  const waits=()=>v.locator('.wrq-wait .wrq-w').evaluateAll(l=>l.map(n=>[n.querySelector('.l1 b').textContent,n.querySelector('.wrq-pill').textContent,n.querySelector('.l2').textContent,n.querySelector('.l3 span').textContent,[...n.querySelectorAll('.l3 button')].map(b=>b.textContent).join(' | '),n.querySelector('.rp')?n.querySelector('.rp').textContent:'',n.querySelector('.nt')?n.querySelector('.nt').textContent:'']));
+  const waits=()=>v.locator('.wrq-wait .wrq-w').evaluateAll(l=>l.map(n=>[n.querySelector('.l1 b').textContent,n.querySelector('.wrq-pill').textContent,n.querySelector('.l2').textContent,n.querySelector('.l3 span').textContent,[...n.querySelectorAll('.l3 button')].filter(b=>b.dataset.wr!=='end'/* [종료 ▾]는 모든 열린 요청에 있다(day_zones §4) */).map(b=>b.textContent).join(' | '),n.querySelector('.rp')?n.querySelector('.rp').textContent:'',n.querySelector('.nt')?n.querySelector('.nt').textContent:'']));
   assert.equal(one(await v.locator('.wrq-wait>header').innerText()),'답 기다리는 중 내가 요청한 일 1건');
   /* after_deploy ①: 기한은 상대 표현('내일 12시')이 아니라 절대 날짜 · 요일 · 시각 + 남은 시간 */
   {const w=await waits();assert.equal(w.length,1);assert.deepEqual([w[0][0],w[0][1],w[0][2],w[0][4],w[0][5],w[0][6]],['[경북 경주] 전원하이빌','답변 대기','경남지사장에게 · 실담당 지정 확인 · 고객 첫 연락 진행 확인 · 영업 진행 여부 확인','','','']);assert.match(w[0][3],/^오늘 10:00 · 기한 \d{4}\.\d{1,2}\.\d{1,2} \([일월화수목금토]\) 12:00 · \d+시간 남음$/,w[0][3]);}
@@ -194,6 +195,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    const w2=(await waits()).find(x=>x[0]==='[경기 용인] 멈춘 현장');assert.deepEqual([w2[1],w2[4]],['답변 대기',''],'재확인 = 같은 줄의 기한을 다시 잡는다');
    /* after_deploy ①: 기한을 바꾸면 새 기한(절대 시각) + '기한 바뀜 · 시각 · 재확인 n회차' — 원래 기한(취소선)은 서버 이력 칸(Codex)이 생기면 */
    assert.match(w2[3],/^오늘 09:00 · 기한 \d{4}\.\d{1,2}\.\d{1,2} \([일월화수목금토]\) 17:00 · \d+시간 (남음|지남) · 기한 바뀜 오늘 09:00 \(재확인 2회차\)$/,w2[3]);
+
    assert.deepEqual(await page.evaluate(()=>{const r=__db.find(x=>x.target_id==='stall1');return [r.round,r.status];}),[2,'sent']);}
   await page.clock.setFixedTime(new Date('2026-10-09T09:00:00+09:00'));await as({id:'u-admin',name:'송보람',role:'admin'});
   {const w=(await waits()).find(x=>x[0]==='[경기 용인] 멈춘 현장');assert.deepEqual([w[1],w[4],w[6]],['요청 미이행 · 2회','재확인 요청 | 재배정 검토','후속 연락 요청 2회 미이행 → 재배정 검토 권장']);
@@ -238,6 +240,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await as({id:'u-kim',name:'김성민',role:'rep'});
   assert.equal(await page.locator('#today-v2 .tv3 [data-wr="ask"]').count(),0);assert.equal(await page.locator('#today-v2 .tv3 .wrq-wait').count(),0);
   assert.equal(await page.locator('#today-v2 .tv3 .wrq-top .wrq-in').count(),1,'김성민에게 온 후속 연락 요청');
+  /* day_zones §4 요청 종료 — 보낸 사람(관리자) 화면에서 · 다른 검사가 다 끝난 뒤 */
+  await as({id:'u-admin',name:'송보람',role:'admin'});await page.evaluate(()=>WorkRequest.load(true));await page.waitForTimeout(400);await page.evaluate(()=>paint());await page.waitForTimeout(300);  /* 재배정 검토까지 본 뒤 — 같은 요청을 보낸 사람이 종료한다 */
+  {   /* day_zones §4 요청 종료: 완료 · 취소(사유) · 다른 요청에 통합 · 대상 오류 — 보낸 사람이 [종료 ▾]로 닫는다 · 사유 없이는 안 닫힘 */
+   {const item=v.locator('.wrq-wait .wrq-w',{hasText:'[경기 용인] 멈춘 현장'});await item.locator('[data-wr="end"]').click();await page.waitForTimeout(200);
+    assert.deepEqual(await item.locator('.wrq-end .k button').allInnerTexts(),['완료','취소 (사유)','다른 요청에 통합','대상 오류']);
+    await item.locator('.wrq-end [data-wr="endkind"][data-v="wrong"]').click();await page.waitForTimeout(150);await item.locator('.wrq-end [data-wr="endsave"]').click();await page.waitForTimeout(200);assert.match(await item.locator('.wrq-end .ft em').innerText(),/사유를 적어 주세요/);
+    await item.locator('.wrq-end [data-wr-in="endnote"]').fill('같은 현장 다른 공사 건입니다');await item.locator('.wrq-end [data-wr="endsave"]').click();await page.waitForTimeout(500);
+    const cancel=await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_work_request_reply_v1'&&x[1].action==='cancel').map(x=>x[1].note));assert.deepEqual(cancel,['[대상 오류] 같은 현장 다른 공사 건입니다'],'서버에는 cancel + 앞머리 있는 사유');
+    assert.equal(await v.locator('.wrq-wait .wrq-w',{hasText:'[경기 용인] 멈춘 현장'}).count(),0,'닫은 요청은 답 기다리는 중에서 빠진다');}}
   /* 12. 서버 저장소가 아직 없으면 예전 [독촉] 그대로(요청 버튼을 반쯤 보여 주지 않는다) */
   await page.evaluate(()=>{window.__srv=false;});await as({id:'u-admin',name:'송보람',role:'admin'});await page.evaluate(()=>WorkRequest.load(true));await page.waitForTimeout(400);await page.evaluate(()=>paint());await page.waitForTimeout(300);
   assert.equal(await page.evaluate(()=>WorkRequest.enabled()),false);assert.equal(await page.locator('#today-v2 .tv3 [data-wr]').count(),0);assert.equal(await page.locator('#today-v2 .tv3').evaluate(n=>n.classList.contains('wrq-on')),false);
