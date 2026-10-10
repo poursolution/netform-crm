@@ -477,7 +477,7 @@ test('followup candidates use actual IDs, bounded pages, matching owner and vali
  const b=await call({id:request,candidate_page:2},'crm_work_request_objectives_read_v1');assert.equal(b.followup_candidates.length,2);
  assert.equal(new Set([...a.followup_candidates,...b.followup_candidates].map(x=>x.id)).size,22);assert.equal(a.plan_context.token,b.plan_context.token);
  await as(other);await assert.rejects(readReview(),/forbidden/);await as(admin);assert.equal((await readReview()).can_write,false);
- await db.exec(`reset role;update inquiries set assigned_to='${other}'`);await as(owner);assert.equal((await readReview()).followup_candidates.length,0);
+ await db.exec(`reset role;update inquiries set assigned_to='${other}'`);await as(owner);const reassigned=await readReview();assert.equal(reassigned.followup_candidates.length,0);assert.equal(reassigned.plan_context.available,false);assert.deepEqual(reassigned.plan_context.tasks,[]);assert.deepEqual(reassigned.plan_context.schedules,[]);
 });
 
 test('additional followup is atomic, returns a persisted ID and preserves original plans and request deadline',async()=>{
@@ -548,4 +548,9 @@ test('candidate pages, malformed source and unknown mode never bypass the server
  for(const candidate_page of [0,-1,1.5,'2',100001])await assert.rejects(call({id:request,candidate_page},'crm_work_request_objectives_read_v1'),/invalid/);
  for(const extra of [{mode:'replace'},{plan_origin:'assumed'},{due_date:'infinity'},{due_date:'2000-01-01'},{title:'\n\t '},{reason:' '},{plan_token:'guess'},{next_action_id:id(800)},{agreement_note:'고객 약속이라고 추정'}])await assert.rejects(followup(followupBody(c,extra)));
  const x=objectiveClient();await assert.rejects(x.api.followup.write(followupBody(c,{mode:'create'})),/REQUEST_PLAN_CONFLICT/);assert.equal(x.storage.size,0);
+});
+
+test('followup client accepts whitespace-normalized ACK and retains verified plan origin',async()=>{
+ await connectedReview();const x=objectiveClient(),c=await x.api.read(request);const a=await x.api.followup.write(followupBody(c,{title:'\n 견적 확인 \t',reason:'\t별도 업무\n',plan_origin:'customer_agreed',agreement_note:'\n고객 요청 확인\t'}));
+ assert.equal(a.title,'견적 확인');assert.equal(a.reason,'별도 업무');assert.equal(x.storage.size,0);const item=(await x.api.read(request)).followup_candidates.find(n=>n.id===a.next_action_id);assert.equal(item.plan_origin,'customer_agreed');assert.equal(item.agreement_note,'고객 요청 확인');
 });
