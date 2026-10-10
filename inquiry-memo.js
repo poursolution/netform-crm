@@ -96,7 +96,10 @@
    const heading=/^\s*\[?\d{4}\s*[.\/-]\s*\d{1,2}\s*[.\/-]\s*\d{1,2}\.?(?:\s*(?:AM|PM|오전|오후))?(?:\s*\d{1,2}:\d{2}(?::\d{2})?)?\]?\s*$/i.test(t.trim());
    if(heading){headingDate=dateIn(t,base);return;}
    const context=headingDate;headingDate='';
-   const cm=CALL_RE.exec(t);
+   // Imported telephone-response notes are candidates only; planned/failed responses are not evidence of a call.
+   const response=/전화\s*응대\s*(?:완료|함|했|하였)/.exec(t);
+   const pendingResponse=/전화\s*응대\s*(?:완료\s*)?(?:예정|필요|요망|하기로|할\s*것|해야|시도|미완료|못|안)/.test(t);
+   const cm=CALL_RE.exec(t)||(pendingResponse?null:response);
    if(cm&&!NOT_CALL.test(t)){
     const d=dateIn(t,base)||context||base||'',key='c-'+hash(identity(sn,cm.index));
     if(!seen.has(key)){seen.add(key);calls.push({key,date:d,sentence:t.trim(),phrase:cm[0]});ranges.push({s:sn.start+cm.index,e:sn.start+cm.index+cm[0].length,k:'call'});}
