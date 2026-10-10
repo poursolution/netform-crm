@@ -362,9 +362,39 @@
   }catch(e){}
   return null;
  }
+ // Link only server-loaded contact IDs. The server validates owner, timing, purpose
+ // and the already saved followup; this path never creates or rewrites a customer task.
+ const CONTACT_LINK='crm_work_request_contact_link_v1';
+ function linkSavedContact(r){
+  const S=st(),actor=R.ME,uid=String(actor&&(actor.user_id||actor.id)||'');
+  if(!basicContact(r)||!r.to_me||!UUID_CONTACT.test(uid)||!O().has(CONTACT_LINK)||!R.CRMRelease||R.CRMRelease.has(CONTACT_LINK)!==true)return;
+  const q=target(r).item,F=R.InquiryFlow;
+  if(!q||String(q.assigned_to)!==uid||!F||typeof F.server!=='function')return;
+  const state=F.server(q),since=Math.max(Date.parse(r.created_at)||Infinity,Date.parse(r.reasked_at)||0);
+  const logs=state&&Array.isArray(state.logs)?state.logs:[];
+  const l=logs.filter(x=>UUID_CONTACT.test(String(x.id||''))&&Date.parse(x.occurred_at)>=since)
+   .sort((a,b)=>Date.parse(b.occurred_at)-Date.parse(a.occurred_at))[0];
+  if(!l||!['연결됨','고객 회신','부재'].includes(l.contact_result))return;
+  const key=uid+':'+r.id+':'+l.id,attempts=S.contactLinks||(S.contactLinks={}),prior=attempts[key];
+  if(S.closing[r.id]||prior&&(prior.busy||prior.done||Date.now()-prior.at<60000))return;
+  const entry=attempts[key]={busy:true,at:Date.now(),done:false},epoch=S.gen||0;
+  const current=()=>R.ME===actor&&String(R.ME&&(R.ME.user_id||R.ME.id)||'')===uid&&R.G.workReq===S&&String(q.assigned_to)===uid;
+  S.closing[r.id]=true;
+  return Promise.resolve().then(()=>O().rpc(CONTACT_LINK,{id:r.id,log_id:l.id})).then(x=>{
+   if(!current())return;
+   if(!x||x.ok!==true||x.contract_version!==1||x.inquiry_id!==String(q.id)||x.log_id!==l.id||typeof x.linked!=='boolean'
+    ||!x.request||x.request.id!==r.id||x.request.target_id!==String(q.id)||x.request.to_user_id!==uid
+    ||x.linked&&(!UUID_CONTACT.test(String(x.next_action_id||''))||x.request.status!==(l.contact_result==='부재'?'working':'done')))throw Error('Invalid contact link acknowledgement');
+   entry.done=x.linked===true||x.replayed===true||x.reason==='request_closed';
+   if(x.linked){
+    if((S.gen||0)===epoch){put(x.request);delete TG['inquiry:'+q.id];repaint();}
+    load(true); // A concurrent save always wins over this response; read current state.
+   }
+  }).catch(()=>{}).finally(()=>{entry.busy=false;delete S.closing[r.id];});
+ }
  function autoClose(){
   if(!enabled())return;const S=st(),admin=(()=>{try{return !!R.todayIsAdmin();}catch(e){return false;}})();
-  S.list.filter(r=>isOpen(r)&&(r.to_me||admin)&&!S.closing[r.id]).forEach(r=>{const ev=evidence(r);if(!ev)return;S.closing[r.id]=true;
+  S.list.filter(r=>isOpen(r)&&(r.to_me||admin)&&!S.closing[r.id]).forEach(r=>{if(basicContact(r)){linkSavedContact(r);return;}const ev=evidence(r);if(!ev)return;S.closing[r.id]=true;
    O().rpc(RPC.reply,{id:r.id,action:'done',auto:true,result:ev.result,absent:ev.absent}).then(x=>{put(x.request);touch(x.request);noteDeal(x.request,'[내부 요청] '+lineEnd(x.request));repaint();}).catch(()=>{}).finally(()=>{delete S.closing[r.id];});});
  }
  /* ── 누르기 ── */
