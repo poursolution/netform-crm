@@ -86,7 +86,7 @@
   const v=document.getElementById('detailView'),d=cur();
   document.querySelectorAll('.do-card,.do-attr').forEach(n=>n.remove());
   if(!v||!d||!enabled())return;
-  const secs=[...v.querySelectorAll('.dw-left .dv3-sec')],title=x=>{const b=x.querySelector(':scope>header>b');return b?b.textContent.trim():'';},site=secs.find(x=>title(x)==='현장 정보')||secs.find(x=>/^(이 단지 영업 이력|같은 현장 다른 영업)$/.test(title(x)));/* 왼쪽 '현장 정보'가 빠진 뒤(2026-10-05)에는 영업 이력 칸 아래 */
+  const secs=[...v.querySelectorAll('.dw-left .dv3-sec')],title=x=>{const b=x.querySelector(':scope>header>b');return b?b.textContent.trim():'';},site=secs.find(x=>title(x)==='현장 정보')||secs.find(x=>/^(이 단지 영업 이력|같은 현장 다른 영업|지금 영업건)$/.test(title(x)));/* 왼쪽 '현장 정보'가 빠진 뒤(2026-10-05)에는 영업 이력 칸 아래 */
   if(site){const sec=document.createElement('section');sec.className='dv3-sec do-card';sec.innerHTML=cardHtml(d);site.after(sec);}
   /* 담당자 변경 창(기존 담당자 관리 상자)에 실적 귀속 선택을 얹는다 — 재배정돼도 귀속 유지가 켜져 있을 때 */
   const sel=document.getElementById('dv-assignee'),card=sel&&sel.closest('.dcard'),actions=card&&card.querySelector('.dactions');
