@@ -63,21 +63,27 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const hero=Number(await V.locator('.tv3-hero .n b').evaluate(b=>b.textContent.match(/^(\d+)건/)[1]));assert.equal(hero,n[0]+n[1]+n[2]+n[3],'큰 숫자 = 4구역 합계');
   assert.match(await V.locator('.tv3-hero .leg').innerText(),/지금 처리 \d+\s*회신 대기 1\s*정보 보완 1\s*약속 누락 \d+/);
   /* 2. 지금 처리 줄: 현장 · 단계 · 요청 꼬리표 / 할 일 / 먼저 하는 이유(행동 문구) + 근거 / 버튼 1개 */
-  const rows=await V.locator('.dz-table .dz-row').evaluateAll(l=>l.map(r=>({site:r.querySelector('.c1>b').textContent,stage:r.querySelector('.c1>div>span').textContent,tags:[...r.querySelectorAll('.dz-req')].map(t=>t.textContent),task:r.querySelector('.c2').textContent.trim(),why:r.querySelector('.dz-why').textContent,sub:r.querySelector('.c3 small').textContent,btn:(r.querySelector(':scope>button')||{}).textContent||''})));
+  const rows=await V.locator('.dz-table .dz-row').evaluateAll(l=>l.map(r=>({site:r.querySelector('.c1>b').textContent,stage:r.querySelector('.c1>div>span').textContent,tags:[...r.querySelectorAll('.dz-req')].map(t=>t.textContent),task:(r.querySelector('.c2').firstChild||{}).textContent.trim(),memo:(r.querySelector('.dz-reqmemo')||{}).textContent||'',why:r.querySelector('.dz-why').textContent,sub:r.querySelector('.c3 small').textContent,btn:(r.querySelector(':scope>button')||{}).textContent||''})));
   const sg=rows.find(r=>/서울체육고/.test(r.site));assert.ok(sg,'서울체육고 줄');assert.equal(sg.why,'진행 판단 필요','진단 문구 = 할 행동(정체 기준 초과 → 진행 판단 필요)');assert.match(sg.sub,/견적 발송 후 7일 · 후속 연락 없음 · \d+일/);assert.deepEqual(sg.tags,['송보람 요청 · 오늘 17:00'],'관리자 요청 = 기존 줄의 꼬리표');assert.equal(sg.task,'견적 검토 확인');assert.equal(sg.btn,'전화');
   const dt=rows.find(r=>/동탄/.test(r.site));assert.ok(dt);assert.equal(dt.why,'오늘 약속 · 연락');
-  const far=rows.find(r=>/천안두정/.test(r.site));assert.ok(far,'같은 업무가 없는 요청은 요청 줄 하나');assert.equal(far.why,'관리자 요청');assert.equal(far.task,'후속 연락 요청');assert.equal(far.btn,'열어서 처리');
+  const far=rows.find(r=>/천안두정/.test(r.site));assert.ok(far,'같은 업무가 없는 요청은 요청 줄 하나');assert.equal(far.why,'관리자 요청');assert.equal(far.task,'후속 연락 요청');assert.equal(far.btn,'처리하기');
   assert.equal(await V.locator('.dz-table .dz-row').evaluateAll(l=>l.every(r=>r.querySelectorAll(':scope>button,:scope>.dz-btns button').length===1)),true,'줄마다 버튼 1개');
-  /* 3. 요청은 카드가 아니라 '알림 n건' 한 줄 · 화면에 보였다고 담당 확인(seen)을 보내지 않는다 */
-  assert.equal(await V.locator('.wrq-top .wrq-in:not(.wrq-soft)').count(),0,'중요하지 않은 요청은 카드가 아님');
-  assert.match(one(await V.locator('.wrq-top .wrq-soft .hd').innerText()),/^알림 후속 연락 요청 2건 기존 업무 줄에 '송보람 요청' 꼬리표로 붙어 있습니다 보기$/);
+  /* 3. day_zones 4-4(최종 화면 순서): 위쪽 큰 요청 카드 없음 · 먼저 처리할 곳 카드 4장 · 요청은 줄 꼬리표 + 요청 문구 한 줄 + 줄 아래 입력 · 요청이 남은 건이 맨 위 · 종 알림 */
+  assert.equal(await V.locator('.wrq-top .wrq-in').count(),0,'위쪽 큰 관리자 요청 카드는 그리지 않는다');
+  assert.deepEqual(rows.slice(0,2).map(r=>r.tags.length),[1,1],'요청이 남은 줄이 목록 맨 위');assert.equal(sg.memo,'요청 · 수신 확인 후 반응을 남겨 주세요','할 일 아래 요청 문구 한 줄');
+  const cards=await V.locator('.dz-cards .tv3-card').evaluateAll(l=>l.map(c=>[c.querySelector('.who b').textContent,(c.querySelector('.tv3-reqtag .dz-req')||{}).textContent||'']));
+  assert.ok(cards.length>=1&&cards.length<=4,'먼저 처리할 곳 카드 1~4장: '+cards.length);assert.deepEqual(cards[0],['[서울 송파] 서울체육고등학교','송보람 요청 · 오늘 17:00'],'카드 = 목록 맨 위 줄과 같은 건 · 카드 안 요청 꼬리표');
+  assert.equal(await V.evaluate(v=>{const c=v.querySelector('.dz-cards'),z=v.querySelector('.dz'),h=v.querySelector('.tv3-hero');return !!(h.compareDocumentPosition(c)&4)&&!!(c.compareDocumentPosition(z)&4);}),true,'순서: 진행 막대 → 카드 → 4구역 목록');
+  assert.equal(hero,n[0]+n[1]+n[2]+n[3],'카드는 목록과 같은 건이라 큰 숫자에 다시 더하지 않는다');
+  assert.equal(one(await page.locator('.ib .wrq-belln').innerText()),'미확인 요청 2','종 알림');assert.equal(await page.evaluate(()=>{const b=document.querySelector('.ib').getBoundingClientRect(),u=document.querySelector('.sh-userwrap');if(!u)return true;const r=u.getBoundingClientRect();return b.right<=r.left+1||b.left>=r.right-1;}),true,'종 알림이 사용자 이름을 가리지 않는다');if(process.env.DZ_SHOT)await page.screenshot({path:process.env.DZ_SHOT,clip:{x:900,y:100,width:700,height:70}});
   assert.equal(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_work_request_reply_v1'&&x[1].action==='seen').length),0,'노출 ≠ 확인');
-  await V.locator('.wrq-top [data-wr="softtoggle"]').click();await page.waitForTimeout(300);
-  assert.equal(await page.locator('#today-v2 .tv3 .wrq-top .wrq-soft .wrq-in').count(),2,'[보기]를 누르면 카드가 펼쳐진다');
+  const sgRow=page.locator('#today-v2 .tv3 .dz-row',{hasText:'서울체육고'});await sgRow.locator('[data-dz="req"]').click();await page.waitForTimeout(300);
+  const rf=page.locator('#today-v2 .tv3 .dz-reqform .wrq-inline');assert.equal(await rf.count(),1,'[전화] → 그 줄 아래에 통화 결과 · 다음 행동 입력');assert.equal(await rf.locator('.hd').isVisible(),false,'머리 줄 · 5단계 바는 줄에 이미 있어 숨김');assert.equal(await rf.locator('.wrq-steps').isVisible(),false);
+  assert.deepEqual(await rf.locator('.res button').allInnerTexts(),['연결됨','자료요청','검토중','부재']);assert.equal(one(await rf.locator('.ft span').innerText()),'결과를 골라야 저장');
   assert.equal(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_work_request_reply_v1'&&x[1].action==='seen').length),0,'펼쳐 봐도 아직 확인 아님');
-  await page.locator('#today-v2 .tv3 .wrq-soft .wrq-in').first().locator('.res button').first().click();await page.waitForTimeout(300);
-  assert.equal(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_work_request_reply_v1'&&x[1].action==='seen').length),1,'카드에서 무엇이든 누르면 그때 담당 확인');
-  await page.locator('#today-v2 .tv3 .wrq-top [data-wr="softtoggle"]').click();await page.waitForTimeout(300);
+  await rf.locator('.res button').first().click();await page.waitForTimeout(300);
+  assert.equal(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_work_request_reply_v1'&&x[1].action==='seen').length),1,'줄 아래 입력에서 무엇이든 누르면 그때 담당 확인');assert.equal(one(await page.locator('.ib .wrq-belln').innerText()),'미확인 요청 1');
+  await page.locator('#today-v2 .tv3 .dz-row',{hasText:'서울체육고'}).locator('[data-dz="req"]').click();await page.waitForTimeout(300);assert.equal(await page.locator('#today-v2 .tv3 .dz-reqform').count(),0,'다시 누르면 접힘');
   /* 4. 근거 보기: 이유를 누르면 적용 규칙(기준 버전) · 기준일 · 관련 기록(고객 접촉 / 내부 메모) · 빠진 것 */
   await page.locator('#today-v2 .tv3 .dz-row',{hasText:'서울체육고'}).locator('.dz-why').click();await page.waitForTimeout(300);
   const ev=one(await page.locator('#today-v2 .tv3 .dz-ev').innerText());

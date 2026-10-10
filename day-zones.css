@@ -103,3 +103,13 @@
 #today-v2 .dx-open>em{font-style:normal;font-size:12px;font-weight:600;color:#b42318}
 #today-v2 .dx-copy{width:100%;box-sizing:border-box;min-height:96px;border:1px solid #d9dde4;border-radius:10px;padding:10px 12px;font:inherit;font-size:12.5px;line-height:1.55;color:#15171c;background:#fafbfc;resize:vertical}
 @media(max-width:1100px){#today-v2 .dx-sits{grid-template-columns:repeat(2,minmax(0,1fr))}#today-v2 .dx-cols{grid-template-columns:minmax(0,1fr)}#today-v2 .dx-form{grid-template-columns:minmax(0,1fr)}}
+/* day_zones 4-4: 요청 꼬리표(기한 지남 = 빨강) · 요청 문구 한 줄 · 줄 아래 입력 · 카드 안 꼬리표 */
+#today-v2 .dz-req.late{color:#b42318;background:#fdecec}
+#today-v2 .dz-row .c2{display:flex;flex-direction:column;gap:2px;min-width:0}
+#today-v2 .dz-reqmemo{font-size:11.5px;font-weight:400;color:#6b7280;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#today-v2 .dz-reqform{margin:0 18px 10px}
+#today-v2 .dz-reqform .wrq-in{margin:0 0 8px}
+#today-v2 .tv3-reqtag{display:flex;align-items:center;gap:6px;min-width:0;margin:-2px 0 2px}
+#today-v2 .tv3-reqtag>small{font-size:11.5px;color:#6b7280;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#today-v2 .dz-cards{margin-bottom:12px}
+#today-v2 .dz-pop-more{margin:6px 0 0;font-size:12px;color:#6b7280}
