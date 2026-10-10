@@ -31,7 +31,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     deal('t-build','시공 현장','황윤선','construction',{stage_contexts:{contract:{fields:{contract_status:'체결 완료',contract_date:day(-20),contract_amount:3e8}},construction:{fields:{start_date:day(7)}}}}),
     deal('w-1','수주 현장','이필선','won',{outcome:'won',won_amount:8e6,closed_at:day(-10),completion_date:day(-10)}),
     deal('l-none','사유 없는 실주','이필선','lost',{outcome:'lost',closed_at:day(-3),stageHistory:[{from:'compete',to:'lost',at:day(-3)}]}),
-    deal('l-done','사유 있는 실주','황윤선','lost',{outcome:'lost',closed_at:day(-5),lost_reason:'가격 열세',stageHistory:[{from:'sent',to:'lost',at:day(-5)}]})
+    deal('l-done','사유 있는 실주','황윤선','lost',{outcome:'lost',closed_at:day(-5),lost_reason:'가격 열세',/* 확인한 내용이 적힌 실주 = 확인된 원인(과제로 이어진다 · rules 6차 ⑧) */stage_contexts:{lost:{fields:{close_reason:'가격 열세',close_detail:'소장 통화 — 경쟁사 낙찰가가 12% 낮았다고 확인'}}},stageHistory:[{from:'sent',to:'lost',at:day(-5)}]})
    ],inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
    G.pipeStageBOff=true;/* 단계별 B안(2026-10-03) 뒤에 남는 v2 목록 검사 */LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
@@ -97,7 +97,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await v.locator('.pd-card').nth(0).innerText(),/가격 열세\s*1/);
   assert.match(await v.locator('.pd-card').nth(1).innerText(),/경쟁·입찰\s*1[\s\S]*자료 발송완료\s*1/);
   assert.match(await v.locator('.pd-card').nth(2).innerText(),/경쟁사가 기록된 실주 건이 없습니다/);
-  assert.match(await v.locator('.pd-action').innerText(),/그래서 뭘 해야 하나[\s\S]*가격 열세 1건[\s\S]*사유 미기록 1건/);
+  assert.match(await v.locator('.pd-action').innerText(),/그래서 뭘 해야 하나\s*확인된 원인 1건만 과제로[\s\S]*가격 열세 1건[\s\S]*사유 미기록 1건/);/* rules 6차 ⑧: 확인한 내용이 적힌 실주 원인만 개선 과제로(추측은 과제로 만들지 않는다) */
   await v.locator('.pd-toggle').click();await page.waitForTimeout(120);
   assert.equal(await v.locator('.pd-card').count(),0,'접으면 숫자만');assert.equal(await v.locator('.pd-kpi').count(),4);
   await v.locator('.pd-toggle').click();await page.waitForTimeout(120);

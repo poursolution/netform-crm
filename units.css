@@ -68,3 +68,5 @@
 #detailView .dp6-plan span{color:#6b7280;white-space:nowrap}
 #detailView .dp6-plan b{font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#15171c}
 #detailView .dp6-plan b.amb{color:#b42318}#detailView .dp6-plan b.r{color:#b42318}#detailView .dp6-plan b.ok{color:#1f7a4d}
+/* 글이 잘리지 않게: 상세 칸은 좁으므로 값 · 근거는 줄을 바꿔 다 보인다(말줄임 없음) */
+#detailView .dp6-row>b,#detailView .dp6-row>small,#detailView .dp6-pp>span,#detailView .dp6-sp>span,#detailView .dp6-sp>small,#detailView .dp6-h>span,#detailView .dp6-h>small,#detailView .dp6-kv>b,#detailView .dp6-ck>span,#detailView .dp6 header>span,#detailView .dp6-plan b,#detailView .dp6-pp>b,#detailView .dp6-sp>b,#detailView .dp6-h>b{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;word-break:keep-all;line-height:1.45}

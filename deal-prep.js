@@ -84,7 +84,8 @@
   let a=null;try{a=R.actionObj(d,patchOf(d));}catch(e){}const due=a&&String(a.due||a.due_at||'').slice(0,10);
   const need=openS.length?openS.map(r=>r.cause).join(' · '):(anyF(d,'support')&&anyF(d,'support')!=='없음'?anyF(d,'support')+' (단계 정보)':'없음');
   const okN=C.length-un.length,ready=okN===C.length&&(!bidOn||bd===BID.length);
-  return [['미확인',un.length?un.join(' · '):'없음',un.length?'amb':''],['필요 지원',need,''],['담당자 행동',a&&a.text?cut(a.text,34)+(due?' · '+md(due):''):'다음 행동 미등록',a&&a.text?'':'r'],['내부 지원',openS.length?openS.map(r=>r.to+'에게 '+r.cause+(r.due?' · '+md(r.due)+'까지':'')).join(' / '):'요청 없음',''],['준비 완료 조건',ready?'충족':'진행 조건 고객 확인 '+okN+' / '+C.length+(bidOn?' + 입찰 준비 '+bd+' / '+BID.length:''),ready?'ok':'']];
+  const few=l=>l.slice(0,2).join(' · ')+(l.length>2?' 외 '+(l.length-2):'');
+  return [['미확인',un.length?few(un):'없음',un.length?'amb':''],['필요 지원',need,''],['담당자 행동',a&&a.text?cut(a.text,34)+(due?' · '+md(due):''):'다음 행동 미등록',a&&a.text?'':'r'],['내부 지원',openS.length?openS.map(r=>r.to+'에게 '+r.cause+(r.due?' · '+md(r.due)+'까지':'')).join(' / '):'요청 없음',''],['준비 완료 조건',ready?'충족':'조건 확인 '+okN+' / '+C.length+(bidOn?' · 입찰 준비 '+bd+' / '+BID.length:''),ready?'ok':'']];
  }
  /* ── 그리기 ── */
  const pill=s=>'<em class="dp6-p '+(s==='고객 확인'||s==='최종 결정'?'ok':s==='담당 추정'||s==='영향'?'mid':'')+'">'+h(s)+'</em>';

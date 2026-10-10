@@ -63,7 +63,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const R=v.locator('.dw-right'),now=R.locator('#nowCard');
   assert.equal(await R.locator('.dk-ai:visible').count(),0,'AI 판단 카드 없음');assert.equal(await now.locator('.dv3-reco').count(),1,'추천 다음 행동은 지금 할 일 안 · 상자 하나');
   assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#detailView .dw-right>.dk-now')].filter(n=>getComputedStyle(n).display!=='none').length),0,'변경 감지 카드도 따로 없음');
-  assert.match(await now.innerText(),/지금 할 일[\s\S]*관리소장 변경 후 기존 견적 · 공법 조건 재확인[\s\S]*기존 견적 조건 유지 여부[\s\S]*공사 추진일정 변경 여부[\s\S]*AI\s*추천 다음 행동\s*통화 첫마디 보기\s*전화 · 새 소장에게 기존 견적 조건 설명 · 1일 뒤\s*연락하고 결과 남기기\s*연락 없이 다음 할 일만 정하기$/);
+  assert.match(await now.innerText(),/지금 할 일[\s\S]*관리소장 변경 후 기존 견적 · 공법 조건 재확인[\s\S]*기존 견적 조건 유지 여부[\s\S]*공사 추진일정 변경 여부[\s\S]*AI\s*추천 다음 행동\s*통화 첫마디 보기\s*전화 · 새 소장에게 기존 견적 조건 설명 · 1일 뒤\s*연락하고 결과 남기기\s*연락 없이 다음 할 일만 정하기\s*미확인[\s\S]*필요 지원[\s\S]*담당자 행동[\s\S]*내부 지원[\s\S]*준비 완료 조건[\s\S]*$/);/* rules 6차: 지금 할 일 아래 5줄 */
   assert.equal(await now.locator('.dv3-reco .dv3-aitag').count(),1,'AI 가 켜져 있으면 열 때 추천을 받아 온다');assert.equal(await now.locator('.nc-todo:visible,.nc-meta:visible,.nc-brief:visible,.ddv-done:visible,[data-dk="first"]').count(),0,'시안에 없는 줄은 보이지 않음');
   assert.equal(await now.locator('.dv3-sub').evaluate(n=>getComputedStyle(n).alignSelf),'center','아래 링크는 가운데');
   /* 머리글 줄: 단계 표식 · 담당 · 예상 금액 · 일수 · 빨간 사유 — 한 줄 전체 */

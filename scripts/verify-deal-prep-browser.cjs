@@ -87,9 +87,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 0. 지금 할 일 5줄 */
   const plan=await v.locator('.dp6-plan>div').evaluateAll(l=>l.map(r=>[r.querySelector('span').textContent,r.querySelector('b').textContent]));
   assert.deepEqual(plan.map(r=>r[0]),['미확인','필요 지원','담당자 행동','내부 지원','준비 완료 조건']);
-  assert.equal(plan[0][1],'추진 시기 · 공사 범위 · 결정 절차 · 경쟁 여부');assert.equal(plan[1][1],'기술 검토');assert.equal(plan[2][1],'입대의 PT · 현장 방문 · 10.23');assert.equal(plan[3][1],'박현우에게 기술 검토 · 10.23까지');assert.equal(plan[4][1],'진행 조건 고객 확인 1 / 5 + 입찰 준비 1 / 5');
+  assert.equal(plan[0][1],'추진 시기 · 공사 범위 외 2');assert.equal(plan[1][1],'기술 검토');assert.equal(plan[2][1],'입대의 PT · 현장 방문 · 10.23');assert.equal(plan[3][1],'박현우에게 기술 검토 · 10.23까지');assert.equal(plan[4][1],'조건 확인 1 / 5 · 입찰 준비 1 / 5');
   if(shot){await v.locator('.dp6').screenshot({path:shot});const pl=v.locator('.dp6-plan');assert.equal(await pl.evaluate(n=>n.getBoundingClientRect().height>40),true,'지금 할 일 5줄이 보이는 카드에 붙는다');await pl.locator('xpath=..').screenshot({path:shot.replace(/\.png$/,'-plan.png')});}else{assert.equal(await v.locator('.dp6-plan').evaluate(n=>n.getBoundingClientRect().height>40),true,'지금 할 일 5줄이 보이는 카드에 붙는다');}
-  assert.deepEqual(await v.evaluate(el=>[...el.querySelectorAll('.dp6 *,.dp6-plan *')].filter(n=>n.children.length===0&&n.scrollWidth>n.clientWidth+1&&getComputedStyle(n).textOverflow!=='ellipsis'&&getComputedStyle(n).whiteSpace==='nowrap').map(n=>n.textContent)),[],'넘치는 글 없음');
+  assert.deepEqual(await v.evaluate(el=>[...el.querySelectorAll('.dp6 *,.dp6-plan *')].filter(n=>n.children.length===0&&n.scrollWidth>n.clientWidth+1).map(n=>n.textContent)),[],'넘치는 글 · 잘린 글 없음(말줄임도 없음)');
   /* 끄기 */
   await page.evaluate(()=>{G.dealPrepOff=true;renderDetail();});await page.waitForTimeout(400);assert.equal(await v.locator('.dp6').count(),0);assert.equal(await v.locator('.dp6-plan').count(),0);
   assert.deepEqual(errs,[],'화면 오류 없음');
