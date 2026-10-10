@@ -1,0 +1,24 @@
+﻿/* 모바일 오늘 동선 (2026-10-10 대표 승인 · mobile_all 5번) — 디자인 규칙: 흰 카드 · 파랑 #3b6ce4 · 빨강은 늦음에만 */
+.mr-tabs{display:grid;grid-template-columns:1fr 1fr;background:#e9ebf0;border-radius:12px;padding:3px;margin:0 0 12px}
+.mr-tabs button{border:0;background:none;border-radius:10px;font-size:14px;font-weight:700;color:#6b7280;min-height:44px}
+.mr-tabs button[aria-selected="true"]{background:#fff;color:#15171c;box-shadow:0 1px 2px rgba(17,24,39,.1)}
+.mr-route>*:not(.mt-head):not(.mr-tabs):not(.mr){display:none!important}
+.mr{display:grid;gap:10px;margin:0 0 14px}
+.mr-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mr-bar span{font-size:12px;color:var(--sub,#8b95a1);word-break:keep-all;overflow-wrap:anywhere}
+.mr-loc{border:1.5px solid #3b6ce4;background:#fff;color:#2a52b8;border-radius:12px;font-size:13px;font-weight:800;padding:0 14px;min-height:44px}
+.mr-map{height:240px;border-radius:20px;overflow:hidden;background:#dfe4ec}
+.mr-note,.mr-none{margin:0;padding:13px 16px;background:#fff;border-radius:20px;font-size:12.5px;color:var(--sub,#8b95a1);line-height:1.5;word-break:keep-all}
+.mr-list{list-style:none;margin:0;padding:0;display:grid;background:#fff;border-radius:20px;overflow:hidden}
+.mr-list li{border-top:1px solid #f1f2f4}.mr-list li:first-child{border-top:0}
+.mr-list button{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;text-align:left;border:0;background:none;padding:12px 14px;min-height:60px}
+.mr-list i{width:26px;height:26px;border-radius:50%;background:#1b2340;color:#fff;font-size:13px;font-style:normal;font-weight:800;display:flex;align-items:center;justify-content:center}
+.mr-list b{display:block;font-size:14.5px;word-break:keep-all;overflow-wrap:anywhere}
+.mr-list small{display:block;font-size:12px;color:var(--sub,#8b95a1);margin-top:1px;word-break:keep-all;overflow-wrap:anywhere}
+.mr-list em{font-style:normal;font-size:12px;font-weight:800;color:#2a52b8;white-space:nowrap}
+.mr-miss,.mr-near{display:grid;gap:6px;background:#fff;border-radius:20px;padding:12px 14px}
+.mr-miss b,.mr-near b{font-size:13px}.mr-near b small,.mr-miss small{font-size:11.5px;font-weight:600;color:var(--sub,#8b95a1)}
+.mr-miss button,.mr-near button{display:flex;justify-content:space-between;gap:8px;text-align:left;border:0;background:var(--bg,#f2f4f6);border-radius:10px;padding:10px 12px;font-size:13px;min-height:44px}
+.mr-near em{font-style:normal;font-weight:800;color:#2a52b8}
+.mr-pin{width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#3b6ce4;color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center}
+.mr-me{width:16px;height:16px;border-radius:50%;background:#e8590c;border:3px solid #fff;box-shadow:0 0 0 2px rgba(232,89,12,.35)}
