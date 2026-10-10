@@ -83,3 +83,21 @@
 .wrq-in.wrq-ho .hd>em{background:#e8a09a}
 .wrq-hrows{display:grid;grid-template-columns:72px minmax(0,1fr);gap:5px 10px;font-size:12.5px}.wrq-hrows>span{color:#6b7280}.wrq-hrows>b{font-weight:500;min-width:0}
 .tv3 .wrq-in .ft button:not(.go){border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12px;font-weight:600;border-radius:7px;padding:6px 11px;cursor:pointer;min-height:0;box-shadow:none;width:auto;margin-right:6px}
+/* admin_request C · D: 보낸 요청(탭 · 줄 · 쪽 번호) · 확인된 상태 칩 · 반복 원인 */
+.tv3-side>section.wrq-sent{padding:0;gap:0;overflow:hidden}
+.wrq-sent>header{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:13px 16px 9px}
+.wrq-sent>header b{font-size:13.5px}.wrq-sent>header span{font-size:11.5px;color:#6b7280;white-space:nowrap}
+.wrq-stabs{display:flex;flex-wrap:wrap;gap:4px;padding:0 12px 9px;border-bottom:1px solid #f2f3f6}
+.wrq-stabs button{height:26px;min-height:0;width:auto;border:1px solid #e3e6ec;border-radius:13px;background:#fff;color:#374151;font:inherit;font-size:11.5px;font-weight:600;padding:0 8px;box-shadow:none;cursor:pointer;white-space:nowrap}
+.wrq-stabs button b{font-weight:700;font-variant-numeric:tabular-nums}
+.wrq-stabs button[aria-selected="true"]{background:#15171c;border-color:#15171c;color:#fff}
+.wrq-sr{padding:9px 16px;border-bottom:1px solid #f2f3f6;display:flex;flex-direction:column;gap:3px;min-width:0}
+.wrq-sr .l1{display:flex;align-items:center;gap:7px;min-width:0}
+.wrq-sr .l1>i{width:6px;height:6px;border-radius:50%;flex:none}
+.wrq-sr .l1>b{font-size:12.5px;min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wrq-sr .l2{font-size:12px;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wrq-sr small{font-size:11.5px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wrq-sent .none{margin:0;padding:14px 16px;font-size:12px;color:#6b7280}
+.wrq-dlg .wrq-states{flex-wrap:wrap;border:0;border-radius:0;overflow:visible;gap:5px}
+.wrq-dlg .wrq-states button{border:1px solid #e3e6ec;border-radius:7px}
+.wrq-dlg .wrq-third{display:block;margin-top:5px;font-size:11.5px;font-weight:600;color:#b42318}

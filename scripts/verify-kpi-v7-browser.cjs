@@ -144,6 +144,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     const H=KpiV7.reqHealth(KpiB.compute()),today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Seoul'});paint();return {H,sameMonth:w0.mon.slice(0,7)===today.slice(0,7)};});await page.waitForTimeout(300);
    assert.deepEqual(RH.H.tiles.slice(0,3).map(t=>[t[0],t[1],t[2]]),[['보낸 요청','3건','전주 4 ▼1'],['미응대','3건','전주 0 ▲3 · 기한이 지나도록 확인 없음'],['기한 초과','3건','전주 0 ▲3 · 이번 주 기한']]);
    assert.equal(RH.H.warn,'요청은 줄었는데(4 → 3) 미응대 · 기한 초과 늘어남 — 요청 수 감소를 개선으로 보지 않습니다');
+   assert.deepEqual(RH.H.flow,{neu:3,carry:0,late:3,done:0},'요청 흐름 4칸(admin_request F): 이번 주 신규 · 넘어온 미완료 · 기한 초과 · 완료');
    if(RH.sameMonth){assert.deepEqual(RH.H.repeat,[{label:'발송일 확인 요청',n:4,check:'자동 업무 생성 · 발송 후 후속 일정'}],'이번 달 3번 이상 반복된 유형 → 점검할 곳');assert.match(RH.H.quality,/이번 달 취소 1건 \(다른 요청에 통합 1 · 대상 오류 0\)/);}
    const rh=page.locator('#kpi-v7 .k7-rh');assert.equal(await rh.count(),1);assert.match((await rh.innerText()).replace(/\s+/g,' '),/요청 · 누락 함께 보기 전주 대비 보낸 요청 3건 .*반복된 요청 유형 · 이번 달 .*담당 탓 전에 시스템 · 지침부터 확인/);
    assert.deepEqual(await rh.evaluate(el=>[...el.querySelectorAll('.k7-rep *')].filter(n=>n.children.length===0&&n.scrollWidth>n.clientWidth+1&&getComputedStyle(n).textOverflow!=='ellipsis').map(n=>n.textContent)),[],'넘치는 글 없음');}
