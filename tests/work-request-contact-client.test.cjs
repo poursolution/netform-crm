@@ -75,3 +75,43 @@ test('OpsStore preserves only explicit PostgreSQL rollback evidence',async()=>{
   await assert.rejects(R.OpsStore.rpc('crm_work_request_inquiry_contact_v1',{}),e=>e.code===code&&e.databaseRejected===['22023','42501'].includes(code));
  }
 });
+
+const tick=()=>new Promise(setImmediate);
+test('slow pre-save list cannot revert confirmed completion and schedules one current reload',async()=>{
+ const x=setup(),pending=[];let reads=0;const original=x.R.OpsStore.rpc;
+ x.R.OpsStore.rpc=(fn,p)=>fn==='crm_work_request_list_v1'?(reads++,new Promise(resolve=>pending.push(resolve))):original(fn,p);
+ const stale=JSON.parse(JSON.stringify(x.r));const first=x.R.WorkRequest.load(true);await tick();
+ await x.save();assert.equal(x.S.list[0].status,'done');assert.equal(reads,1);
+ x.R.WorkRequest.load(true);x.R.WorkRequest.load(true);
+ pending.shift()({ok:true,requests:[stale]});await first;await tick();
+ assert.equal(x.S.list[0].status,'done');assert.equal(reads,2);
+ pending.shift()({ok:true,requests:[{...stale,status:'done'}]});await tick();
+ assert.equal(x.S.list[0].status,'done');assert.equal(reads,2);assert.equal(x.S.busy,false);
+});
+test('forced refresh is retained after an in-flight failure; malformed lists preserve confirmed state',async()=>{
+ const x=setup();let reject,reads=0;
+ x.R.OpsStore.rpc=()=>++reads===1?new Promise((_ok,no)=>reject=no):Promise.resolve({ok:true,requests:[{...x.r,status:'working'}]});
+ const first=x.R.WorkRequest.load(true);await tick();x.R.WorkRequest.load(true);reject(Error('offline'));await first;await tick();
+ assert.equal(reads,2);assert.equal(x.S.list[0].status,'working');
+ x.R.OpsStore.rpc=async()=>({ok:false,requests:[]});await x.R.WorkRequest.load(true);assert.equal(x.S.list[0].status,'working');
+});
+test('list response after identity or state replacement never changes the new session',async()=>{
+ for(const change of ['account','state']){const x=setup();let resolve;
+  x.R.OpsStore.rpc=()=>new Promise(ok=>resolve=ok);const read=x.R.WorkRequest.load(true);await tick();x.R.WorkRequest.load(true);
+  if(change==='account')x.R.ME.id=id(3);else x.R.G.workReq={list:[],loaded:false};
+  resolve({ok:true,requests:[{...x.r,status:'done'}]});await read;await tick();
+  assert.equal(x.S.list[0].status,'sent');assert.equal(x.S.busy,false);assert.equal(x.S.again,false);
+  if(change==='state')assert.equal(x.R.G.workReq.list.length,0);
+ }
+});
+test('quote completion requires every selected known objective, preserving single-objective requests',()=>{
+ const x=setup();x.R.dealKey=d=>d.id;const fields={};x.R.B.deals=[{id:'quote-deal',stage_contexts:{consulting:{fields}}}];
+ const r={target_type:'deal',target_id:'quote-deal',kind:'quote',asks:['견적 요청 등록','견적 예정일 입력']};
+ fields.quote_due='2026-10-20';assert.equal(x.R.WorkRequest.evidence(r),null);
+ fields.quote_request='   ';assert.equal(x.R.WorkRequest.evidence(r),null);
+ fields.quote_request='공식 견적 요청';assert.ok(x.R.WorkRequest.evidence(r));
+ delete fields.quote_due;assert.equal(x.R.WorkRequest.evidence(r),null);
+ assert.ok(x.R.WorkRequest.evidence({...r,asks:['견적 요청 등록']}));
+ assert.equal(x.R.WorkRequest.evidence({...r,asks:['미지원 확인 항목']}),null);
+ assert.equal(x.R.WorkRequest.evidence({...r,asks:[]}),null);
+});
