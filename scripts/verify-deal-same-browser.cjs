@@ -33,6 +33,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     {id:D3,site:'[서울] 진척이 멈춘 단지',assignee:'황윤선',brand:'POUR솔루션',created:'2026-06-01',code:'sent',stage_code:'sent',grp:'컨설팅·견적',amt:5e7,stageHistory:[{id:'h9',from:'consulting',to:'sent',at:'2026-08-28T10:00:00+09:00',actor:'황윤선'}],
      activities:[1,2,3,4,5].map(i=>act('s'+i,'전화','통화 연결 '+i,'2026-09-0'+i+'T10:00:00+09:00'))}],
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],messageLogs:[],message_logs:[]};
+   /* 이 검사는 '같은 정보 같은 판단' 층을 본다 — 그 위에 얹은 7단계 공통 틀(deal-frame7.js)은 verify-deal-frame7-browser.cjs 가 따로 본다 */G.dealFrame7Off=true;
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.dkOpen=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    window.__writes=[];window.pushWrite=(op,p)=>{__writes.push([op,p]);return 'req-'+__writes.length;};window.__rpc=[];

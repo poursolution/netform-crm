@@ -68,6 +68,7 @@
   /* 무기한 대기(4-3 기록 상태): 대기 사유는 있는데 확인일이 없는 건 — 따로 보여 주고 확인일을 정하게 한다 */
   const nowait=[];(X.D||[]).forEach(d=>{try{if(!R.isOpen(d))return;const owner=R.repN(d.assignee)||'';if(!team&&owner!==me)return;const w=waitingOf(d);if(!w||!w.indefinite||!scopeOk(d,owner))return;const k='deal:'+String(d.id);nowait.push({key:k,x:{type:'deal',item:d,owner},i:{site:d.site||d.site_name||'현장명 미입력',brand:d.brand||''},st:'',sName:(()=>{try{return R.stageLabel(R.dealStage(d));}catch(e){return '';}})(),rk:'nowait',missTxt:'무기한 대기',short:'',act:'확인일 정하기',done:'',reqs:RQ.get(k)||[],wait:w,brand:d.brand||''});}catch(e){}});
   {const w=i=>(i.reqs&&i.reqs.length)?(i.reqs.some(reqLate)?2:1):0;const idx=new Map(now.map((x,n)=>[x,n]));now.sort((a,b)=>w(b)-w(a)||idx.get(a)-idx.get(b));}
+  try{const DW=R.DayWord;if(DW&&DW.on())DW.infoRows(me,seen,scopeOk).forEach(r=>info.push(r));}catch(e){}
   const gaps=promiseGaps(X.D||[],me,team).filter(g=>scopeOk(g.d,g.owner));
   return {now,wait,info,gaps,nowait,me,team,total:now.length+wait.length+info.length+gaps.length};
  }
@@ -103,19 +104,30 @@
  const ZONES=[['now','지금 처리','오늘 연락 · 마감 · 방문 · 약속','할 일','기한','처리 후 다음 건 · 지연 · 평가 포함'],['wait','회신 대기','내가 할 일 없음 · 확인일만','기다리는 것','다음 확인일','대기 중은 지연으로 안 셈 · 확인일에 지금 처리로 올라옴'],['info','정보 보완','고객 연락 아님 · 기록만','빠진 것','이유','평가 · 지연에 안 셈 · 하루 몇 건씩 나눠 처리'],['gaps','약속 누락','약속은 있는데 업무 없음','약속 원문','응대일','[업무로 만들기] 또는 [이미 함] · 응대 완료 ≠ 약속 완료']];
  const BRAND={'석민이앤씨':'#e8590c','POUR솔루션':'#1f9d55','POUR공법':'#7048e8','아파트스퀘어':'#3b6ce4'};
  const PER=20;
+ const INLINE=()=>!!(R.G&&R.G.rowInlineKeep);
+ /* 줄 · 단추 → 상세 창. 오늘 업무 대기열에 있는 건은 그 길(필터 · 스크롤 복귀 포함), 없는 건(묶음 요청으로 보탠 종료 건 등)은 바로 연다 */
+ function openItem(i,act){
+  (i.reqs||[]).forEach(r=>{try{R.WorkRequest.markSeen(r.id);}catch(e){}});
+  let inQ=false;try{const D=R.TodayWorkQueue.data();inQ=D.rows.some(r=>r.key===i.key)||(D.backlog||[]).some(r=>r.key===i.key);}catch(e){}
+  const later=()=>{if(act&&i.x.type==='deal')setTimeout(()=>{try{R.DealDetailV3&&R.DealDetailV3.openFrom&&R.DealDetailV3.openFrom(act);}catch(e){}},300);};
+  if(inQ){try{R.TodayWorkQueue.open(i.key,act==='activity'?'contact':undefined);}catch(e){}if(act==='stagefields')later();return;}
+  if(i.x.type==='deal'){try{R.G._detailPopup=true;R.drwDeal(JSON.stringify(i.x.item));}catch(e){}later();return;}
+  try{R.TodayWorkQueue.open(i.key,act==='activity'?'contact':undefined);}catch(e){}
+ }
+ const findItem=key=>LAST?[].concat(LAST.now,LAST.wait,LAST.info,LAST.nowait||[]).find(x=>x.key===key)||null:null;
  function rowHtml(i,zone,S){
   const k=attr(i.key),bc=BRAND[i.brand||(i.i&&i.i.brand)]||'#9aa0ab',tags=(i.reqs||[]).slice(0,2).map(reqTagHtml).join(''),rq0=(i.reqs||[])[0]||null,WRQ=R.WorkRequest;
   let task,why,sub,wc,btn;
   if(zone==='nowait'){task=i.wait.reason;why='무기한 대기';sub='확인일 없음 · 확인일을 정하면 회신 대기로';wc='#6b7280';btn='확인일 정하기';}
   else if(zone==='wait'){const n=waitCount(i.x.item);task=i.wait.reason;why=n>=3?'같은 이유 '+n+'번째 대기':'고객 회신 대기';sub='확인 '+md(i.wait.due)+(n>=3?' · 재알림 대신 다음 셋 중 하나':'');wc=n>=3?'#8a5a00':'#6b7280';btn='확인일 변경';i.wait3=n>=3;}
-  else if(zone==='info'){task=String(i.done||i.missTxt||'');why=action(i);sub=String(i.missTxt||'')+(i.short&&!/^(0일|오늘|-|—)$/.test(i.short)?' · '+i.short:'');wc='#6b7280';btn=i.act||'입력';}
+  else if(zone==='info'){task=String(i.done||i.missTxt||'');why=action(i);sub=String(i.missTxt||'')+(i.short&&!/^(0일|오늘|-|—)$/.test(i.short)?' · '+i.short:'');wc='#6b7280';btn=i.act||'입력';if(i.bulk){why=i.bulk.why;sub=i.bulk.sub;wc='#2a52b8';}}
   else{task=i.reqOnly?String(i.missTxt||''):String((i.x&&i.x.next)||i.done||i.missTxt||'');why=i.reqOnly?'관리자 요청':action(i);sub=i.reqOnly?((i.reqs[0]&&i.reqs[0].memo)||''):(i.rk==='deadline'&&i.deadline?i.deadline.what+' '+md(i.deadline.date):String(i.missTxt||'')+(i.short&&!/^(0일|오늘|-|—)$/.test(i.short)?' · '+i.short:''));wc=/now|today/.test(i.urg||'')||i.rk==='deadline'?'#b42318':i.rk==='promise'?'#8a5a00':'#15171c';btn=i.reqOnly?'열어서 처리':(i.act||'전화');}
   /* 4-3: CRM 에 접촉 기록이 없는 건은 '지연'으로 단정하지 않는다 — 활동 여부부터 확인(상황 4가지) */
   const DX=R.DayExtra&&R.DayExtra.on()?R.DayExtra:null;let chk=false;if(DX&&zone==='now'&&!i.reqOnly&&DX.needsCheck(i)){why=DX.WORD;btn='활동 확인';wc='#15171c';chk=true;}
   const whyBtn='<button type="button" class="dz-why" data-dz="why" data-key="'+k+'" style="color:'+wc+'" aria-expanded="'+(S.why===i.key)+'">'+h(why)+'</button>';
   const ev=S.why===i.key?(()=>{const e=evidence(i);return '<div class="dz-ev"><span>'+h(why)+' · 왜?</span><div><i>적용 규칙</i><b>'+h(e.rule)+'</b><i>기준일</i><b>'+h(e.base)+'</b><i>관련 기록</i><b>'+h(e.records)+'</b><i>빠진 것</i><b class="'+(e.missing==='없음'?'':'amb')+'">'+h(e.missing)+'</b>'+(DX&&i.x.type==='deal'?DX.progressHtml(i.x.item,e.contact||0):'')+(opens(i)?'<i>누르면</i><b>'+h(opens(i))+'</b>':'')+'</div></div>';})():'';
   return '<div class="dz-row" data-key="'+k+'" style="border-left-color:'+bc+'"><div class="c1"><b title="'+attr(i.i.site)+'">'+h(i.i.site)+'</b><div><span>'+h(i.sName||'')+'</span>'+tags+'</div></div><span class="c2" title="'+attr(task)+'">'+h(task)+(rq0&&!i.reqOnly&&reqMemo(rq0)?'<small class="dz-reqmemo" title="'+attr(reqMemo(rq0))+'">요청 · '+h(cut(reqMemo(rq0),46))+'</small>':'')+'</span><div class="c3">'+whyBtn+'<small title="'+attr(sub)+'">'+h(sub)+'</small></div>'
-   +(rq0&&WRQ&&WRQ.inlineHtml&&!WRQ.isSpecial(rq0)&&!(R.G&&R.G.reqCardKeep)&&zone==='now'?'<button type="button" data-dz="req" data-key="'+k+'" aria-expanded="'+(S.reqOpen===i.key)+'">'+h(i.reqOnly?'처리하기':btn)+'</button>':i.reqOnly?'<button type="button" data-dz="open" data-key="'+k+'">'+h(btn)+'</button>':zone==='wait'&&i.wait3?'<span class="dz-btns dz-w3"><button type="button" data-dz="open" data-key="'+k+'" data-act="contact">결정권자에게 연락</button><button type="button" data-dz="judge" data-key="'+k+'">관리자 판단 요청</button><button type="button" data-dz="hold" data-key="'+k+'">보류로 전환</button></span>':(zone==='wait'||zone==='nowait')?'<button type="button" data-dz="open" data-key="'+k+'" data-act="next">'+h(btn)+'</button>':chk?'<button type="button" data-dz="chk" data-key="'+k+'" aria-expanded="'+!!(S.chk&&S.chk.key===i.key)+'">'+h(btn)+'</button>':'<button type="button" data-t3="act" data-key="'+k+'" data-act="'+attr(i.act||'전화')+'"'+(i.i&&i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>'+h(btn)+'</button>')+'</div>'+ev+(DX?DX.chkHtml(i,S):'')+(rq0&&S.reqOpen===i.key&&WRQ&&WRQ.inlineHtml&&zone==='now'?'<div class="dz-reqform">'+(i.reqs||[]).map(r=>WRQ.inlineHtml(r.id)).join('')+'</div>':'');
+   +(i.bulk?'<button type="button" data-dz="go" data-key="'+k+'" data-act="stagefields">'+h(btn)+'</button>':INLINE()&&rq0&&WRQ&&WRQ.inlineHtml&&!WRQ.isSpecial(rq0)&&!(R.G&&R.G.reqCardKeep)&&zone==='now'?'<button type="button" data-dz="req" data-key="'+k+'" aria-expanded="'+(S.reqOpen===i.key)+'">'+h(i.reqOnly?'처리하기':btn)+'</button>':i.reqOnly?'<button type="button" data-dz="go" data-key="'+k+'" data-act="activity">'+h(btn)+'</button>':zone==='wait'&&i.wait3?'<span class="dz-btns dz-w3"><button type="button" data-dz="open" data-key="'+k+'" data-act="contact">결정권자에게 연락</button><button type="button" data-dz="judge" data-key="'+k+'">관리자 판단 요청</button><button type="button" data-dz="hold" data-key="'+k+'">보류로 전환</button></span>':(zone==='wait'||zone==='nowait')?'<button type="button" data-dz="open" data-key="'+k+'" data-act="next">'+h(btn)+'</button>':chk?'<button type="button" data-dz="chk" data-key="'+k+'" aria-expanded="'+!!(S.chk&&S.chk.key===i.key)+'">'+h(btn)+'</button>':'<button type="button" data-t3="act" data-key="'+k+'" data-act="'+attr(i.act||'전화')+'"'+(i.i&&i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>'+h(btn)+'</button>')+'</div>'+ev+(DX?DX.chkHtml(i,S):'')+(INLINE()&&rq0&&S.reqOpen===i.key&&WRQ&&WRQ.inlineHtml&&zone==='now'?'<div class="dz-reqform">'+(i.reqs||[]).map(r=>WRQ.inlineHtml(r.id)).join('')+'</div>':'');
  }
  function gapHtml(g,S){
   const k=attr(g.key),bc=BRAND[g.d.brand]||'#9aa0ab',busy=S.busy===g.key,ask=S.ask===g.key;
@@ -142,11 +154,16 @@
  const toast=(m,k)=>{if(typeof R.toast==='function')R.toast(m,k);};
  const rerender=()=>{try{R.TodayV2.render();}catch(e){try{R.paint();}catch(e2){}}};
  let LAST=null,LASTX=null;
+ function onRow(e){
+  if(INLINE()||!e.target.closest)return;const row=e.target.closest('#today-v2 .dz .dz-row');if(!row||e.target.closest('button,a,input,select,textarea,label,mark'))return;const key=row.dataset.key,it=findItem(key);
+  if(it){openItem(it,'');return;}const g=LAST&&LAST.gaps.find(x=>x.key===key);if(g){try{R.G._detailPopup=true;R.drwDeal(JSON.stringify(g.d));}catch(err){}}
+ }
  function onClick(e){
   const b=e.target.closest('#today-v2 [data-dz]');if(!b||b.disabled)return;e.preventDefault();e.stopPropagation();const S=st(),a=b.dataset.dz,key=b.dataset.key;
   if(R.DayExtra&&R.DayExtra.on()&&R.DayExtra.onAction(a,b,S,LAST,LASTX))return;
   if(a==='req'){S.reqOpen=S.reqOpen===key?'':key;S.why='';S.chk=null;return rerender();}
-  if(a==='rqgo'||a==='rqok'){const id=b.dataset.id;ackAssign('rq:'+id);try{R.WorkRequest.markSeen(id);}catch(e){}if(a==='rqgo'){const it=LAST&&LAST.now.find(x=>(x.reqs||[]).some(r=>r.id===id));S.zone='now';S.rs='';S.closing=false;if(it)S.reqOpen=it.key;}return rerender();}
+  if(a==='go'){const it=findItem(key);if(it)openItem(it,b.dataset.act||'');return;}
+  if(a==='rqgo'||a==='rqok'){const id=b.dataset.id;ackAssign('rq:'+id);try{R.WorkRequest.markSeen(id);}catch(e){}if(a==='rqgo'){const it=LAST&&LAST.now.find(x=>(x.reqs||[]).some(r=>r.id===id));S.zone='now';S.rs='';S.closing=false;if(it){if(INLINE())S.reqOpen=it.key;else{rerender();openItem(it,'activity');return;}}}return rerender();}
   if(a==='zone'){S.zone=b.dataset.v;S.why='';S.reqOpen='';S.rs='';S.chk=null;S.closing=false;if(R.ListPager)R.ListPager.reset(S);return rerender();}
   if(a==='why'){S.why=S.why===key?'':key;return rerender();}
   if(a==='page'){if(R.ListPager)R.ListPager.set(S,b.dataset.v,b.dataset.page);return rerender();}
@@ -181,6 +198,6 @@
   catch(e){S.err='저장하지 못했습니다: '+String(e&&e.message||e);}
   S.busy='';rerender();
  }
- if(typeof document!=='undefined'){document.addEventListener('click',onClick,true);document.addEventListener('input',e=>{const t=e.target;if(t&&t.matches&&t.matches('#today-v2 [data-dz-in="note"]'))st().note=t.value;},true);}
+ if(typeof document!=='undefined'){document.addEventListener('click',onClick,true);document.addEventListener('click',onRow);document.addEventListener('click',e=>{/* [전화] 등 줄 · 카드의 단추로 여는 것도 요청을 본 것 */if(INLINE()||!e.target.closest)return;const b=e.target.closest('#today-v2 .dz .dz-row [data-t3="act"], #today-v2 .dz-cards [data-t3="act"]');if(!b)return;const it=findItem(b.dataset.key);if(it)(it.reqs||[]).forEach(r=>{try{R.WorkRequest.markSeen(r.id);}catch(x){}});},true);document.addEventListener('input',e=>{const t=e.target;if(t&&t.matches&&t.matches('#today-v2 [data-dz-in="note"]'))st().note=t.value;},true);}
  return {on,reqRowIds,reqTagHtml,reqMemo,newRequests,build:(V,X)=>{LASTX=X;return (LAST=build(V,X));},html,evidence,action,ACTION,waitingOf,waitCount,promiseGaps,reqMap,reqTag,newAssigns,ackAssign,ZONES,state:st,last:()=>LAST};
 });
