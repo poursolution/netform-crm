@@ -50,6 +50,7 @@
  function classify(x,role){
   const d=x.item,deal=x.type==='deal',inq=x.type==='inq',exp=x.type==='expansion',team=TEAM(role);
   let code='';try{code=deal?root.dealStage(d):'';}catch(e){}
+  const expansionReview=exp&&root.ExpansionB&&root.ExpansionB.classify?root.ExpansionB.classify(d):null;
   const col=inq||x.kind==='manager'?'inq':exp?'won':COL_OF[code]||'cons';
   const amt=deal?Number(root.oppAmt(d))||0:0;
   const f=deal?fieldsOf(d):{};
@@ -68,13 +69,13 @@
   else if(contractMissing&&team){rk='contract';urg='now';}
   else if(sentDays!==null&&sentDays>=7&&(x.overdue||x.missingNext||(lastDays!==null&&lastDays>=7))){rk=amt>=BIG()?'stallbig':'silent';urg='now';}
   else if(x.responseLate){rk='first';urg='today';}
-  else if(x.overdue){rk='promise';urg='today';}
+  else if(x.overdue&&!(expansionReview&&expansionReview.kind==='fix')){rk='promise';urg='today';}
   else if(code==='consulting'&&f['consulting.quote_due']&&daysTo(f['consulting.quote_due'])<0){rk='quote';urg='today';}/* 물량 산출 기한(견적 예정일)이 지난 건만 — 기한이 없는 건을 체류일 3일로 세지 않는다(PipelineJudge 와 같은 기준) */
   else if(code==='construction'&&lastDays!==null&&lastDays>=7&&(()=>{const n=since(f['construction.start_date']);return n!==null&&n>=0;})()){rk='site';urg='today';}/* 착공일이 입력된 현장만(계약 · 시공 화면 · KPI 와 같은 조건) */
   else if(deal&&col!=='won'&&relDays!==null&&relDays>=30&&code!=='waiting'){rk='month';urg='today';}
   else if(code==='waiting'&&relDays!==null&&relDays>=60){rk='long';urg='week';}
   else if(col==='bid'&&!(f['compete.decision_date']||f['imminent.decision_date']||f['bidding.decision_date']||f['bidding.bid_deadline'])){rk='data';urg='week';}
-  else if(exp){const ek=root.ExpansionB&&root.ExpansionB.classify?root.ExpansionB.classify(d):null;/* 확인된 미실행 = 사후 연락 · 약속일 · 관계 연락 / 기록 보완 = 미실행으로 세지 않음(확장관리 화면과 같은 분류) */if(ek&&ek.kind==='fix'){rk='fix';urg='week';}else if(ek&&ek.kind==='miss'&&ek.key==='late'){rk='promise';urg='today';}else if(ek&&ek.kind==='miss'&&ek.key==='wait60'){rk='long';urg='week';}else{rk=x.missingNext?'stall':'after';urg='week';}}/* 확장관리: 연락일이 지났거나 준공 후 계산된 건만 '사후 연락', 날짜 자체가 없으면 '다음 행동 · 날짜 없음' */
+  else if(exp){const ek=expansionReview;/* 확인된 미실행 = 사후 연락 · 약속일 · 관계 연락 / 기록 보완 = 미실행으로 세지 않음(확장관리 화면과 같은 분류) */if(ek&&ek.kind==='fix'){rk='fix';urg='week';}else if(ek&&ek.kind==='miss'&&ek.key==='late'){rk='promise';urg='today';}else if(ek&&ek.kind==='miss'&&ek.key==='wait60'){rk='long';urg='week';}else{rk=x.missingNext?'stall':'after';urg='week';}}/* 확장관리: 연락일이 지났거나 준공 후 계산된 건만 '사후 연락', 날짜 자체가 없으면 '다음 행동 · 날짜 없음' */
   else if(code==='completion'){const cd=since(d.completion_date)??stAge;if(!(cd!==null&&cd>=30&&(lastDays===null||lastDays>=30)))return null;rk='after';urg='week';}
   else if(x.reassignmentPending){rk='promise';urg='today';}
   else if(x.missingNext){rk='stall';urg='week';}

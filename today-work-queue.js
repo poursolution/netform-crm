@@ -31,8 +31,9 @@
    const due=explicit||hasBasis?r.nextContactAt:'',n=dueDays(due);
    if(n!==null&&n>0)return null;
    const inferred=!explicit&&hasBasis;
+   const review=!!(root.ExpansionB&&root.ExpansionB.classify&&root.ExpansionB.classify(r).kind==='fix');
    const reason=n===null?'다음 할 일 날짜 미입력':inferred?'준공 후 연락 시점 (자동 계산)':n<0?'다음 할 일 날짜 '+Math.abs(n)+'일 지남':'오늘 기존 고객 접촉';
-   return {key:'expansion:'+r.sourceOpportunityId,type:'expansion',kind:'expansion',item:r,owner:root.repN(r.owner)||'미배정',stage:root.ExpansionFlow.status(r)==='관계관리'?'관계 유지 연락':root.ExpansionFlow.status(r),reason,next:n===null?'확장관리에서 다음 할 일 날짜 등록':r.needNote||'기존 고객에게 연락하고 추가 공사 니즈 확인',recent:r.lastContactAt?'최근 연락 '+root.fmtD(r.lastContactAt):(root.ContactState?root.ContactState.NONE:'CRM 연락 기록 없음'),due,dueDays:n,inferred,overdue:!inferred&&n!==null&&n<0,missingNext:n===null,delay:n!==null&&n<0?-n:0};
+   return {key:'expansion:'+r.sourceOpportunityId,type:'expansion',kind:'expansion',item:r,owner:root.repN(r.owner)||'미배정',stage:root.ExpansionFlow.status(r)==='관계관리'?'관계 유지 연락':root.ExpansionFlow.status(r),reason,next:n===null?'확장관리에서 다음 할 일 날짜 등록':r.needNote||'기존 고객에게 연락하고 추가 공사 니즈 확인',recent:r.lastContactAt?'최근 연락 '+root.fmtD(r.lastContactAt):(root.ContactState?root.ContactState.NONE:'CRM 연락 기록 없음'),due,dueDays:n,inferred,overdue:!review&&!inferred&&n!==null&&n<0,missingNext:n===null,delay:n!==null&&n<0?-n:0};
   }).filter(Boolean);
  }
 
