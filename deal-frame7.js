@@ -229,7 +229,8 @@
    const cs=safe(()=>DS().contract(d),{state:'none',proof:false});if(!cs.proof&&cs.state!=='none')btn=['계약서 확인하기','files'];else if(cs.state==='none')btn=['계약 정보 입력','stagefields'];
   }else if(!chk&&ctx.req&&ctx.req.miss&&ctx.req.miss.length)chk=ctx.req.miss.slice(0,3).join(' · ')+(ctx.req.miss.length>3?' 외 '+(ctx.req.miss.length-3)+'개':'');
   if(g==='consulting'&&str(fld(d,'consulting','quote_request')))btn=['견적 예정일 확인','stagefields'];
-  const act0=btn[1];if(WORK[g])btn[1]='work7';
+  if(g==='competition'&&workRow(d)==='sched')btn=['일정 입력','stagefields'];
+  const act0=btn[1];if(hasWork(d))btn[1]='work7';
   return {g,text,dueK:D.k,due:D.text,cls:D.cls,ok:ok||'확인된 것 없음',okNone:!ok,chk:chk||'없음',chkOpen:!!chk,done,btn:{label:btn[0],act:btn[1],act0},first:F,groups:groups(d)};
  }
  /* ── 오른쪽 아래 요약: 고객 일정 · 추가 관리 · 참고정보 ── */
@@ -292,7 +293,7 @@
    +(WORK[K.g]?'':'<div class="dv7-row dv7-info"><div><span>확인할 정보 <b class="'+(I.length?'n':'z')+'">'+I.length+'</b></span><span class="l">'+esc(I.length?names:'모두 채웠습니다')+'</span></div><button type="button" data-dv3="p7" data-v="info">'+(I.length?'채우기':'보기')+'</button></div>');
  }
  /* ── 가운데 칸 [채우기]: 확인할 정보 3줄만(줄마다 그 자리에서 입력 · 저장) ── */
- const ROWF={sent:['sent_date','recipient'],competitor:['competitor'],start:['start_date'],reason:['close_reason'],reengage:['reengage'],send:['sent_date','recipient','materials','reaction','construction_plan']};
+ const ROWF={sent:['sent_date','recipient'],competitor:['competitor'],start:['start_date'],reason:['close_reason'],reengage:['reengage'],};
  const rowFields=r=>(ROWF[r]||[]).slice();
  const optsOf=(d,k)=>safe(()=>{const D=root.StageTransition.definitions,def=D[root.dealStage(d)]||D[groupOf(d)];const f=def&&def.fields.find(x=>x.key===k);return f&&f.options?f.options.slice():[];},[]);
  const draft=(S,row,f,cur)=>{const F=S&&S.fill&&S.fill[row];return F&&F[f]!=null?F[f]:cur;};
@@ -319,30 +320,16 @@
   const I=infoList(d);
   return I.length?'<div class="dv7-fill-rows">'+I.map(x=>fillRow(d,x,S)).join('')+'</div>':'<p class="dv7-fnone">모두 채웠습니다</p>';
  }
- /* ── [발송 내역 확인]: 기존 기록(이메일 · 잔디 · 메모)에서 찾은 후보 → [이걸로 등록] / 발송일 · 수신자 · 보낸 자료 · 견적 버전 / [확인 불가] ── */
- const MATS=['견적서','제안서','공법자료','기타자료'];
- function sendCands(d){
-  return acts(d).filter(a=>a&&day(a.at||a.occurred_at||a.created_at)&&/발송|보냄|보냈|전달|송부|이메일|메일/.test(String(a.type||'')+' '+String(a.note||''))&&!/^\[(확인|결정|막힌|진척|하자|내부)/.test(String(a.note||''))).map(a=>({date:day(a.at||a.occurred_at||a.created_at),type:String(a.type||'기록'),text:String(a.note||'').replace(/\s+/g,' ').slice(0,64)})).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
- }
- function sendHtml(d,S){
-  const F=(S&&S.fill&&S.fill.send)||{},curM=fld(d,'sent','materials'),mats=Array.isArray(F.materials)?F.materials:(Array.isArray(curM)?curM:[]);
-  const ck=str(fld(d,'sent','sent_date_check')),Q=quotes(d),q=Q[Q.length-1],C=sendCands(d);
-  return '<div class="dv7-send">'
-   +'<section><b>① 기존 기록에서 찾기</b>'+(C.length?C.map(c=>'<div class="dv7-cand"><span>'+esc(md(c.date))+' · '+esc(c.type)+'</span><span>'+esc(c.text)+'</span><button type="button" data-dv3="sendpick" data-date="'+attr(c.date)+'">이걸로 등록</button></div>').join(''):'<p class="dv7-fnone">이메일 · 잔디 · 메모에서 찾은 발송 기록이 없습니다</p>')+'</section>'
-   +'<section><b>② 직접 등록</b><div class="dv7-fr"><div class="h"><b>발송일 · 수신자</b></div><div class="c">'+inp(S,'send','sent_date','date',day(fld(d,'sent','sent_date')),'발송일')+inp(S,'send','recipient','text',str(fld(d,'sent','recipient')),'수신자')+'</div></div>'
-   +'<div class="dv7-fr"><div class="h"><b>보낸 자료</b></div><div class="c dv7-chips">'+MATS.map(m=>'<button type="button" data-dv3="sendmat" data-v="'+attr(m)+'" aria-pressed="'+mats.includes(m)+'">'+esc(m)+'</button>').join('')+'</div></div>'
-   +'<div class="dv7-fr"><div class="h"><b>고객 반응</b></div><div class="c">'+sel(S,'send','reaction',str(fld(d,'sent','reaction')),optsOf(d,'reaction'),'반응 선택')+'</div></div>'
-   +'<div class="dv7-fr"><div class="h"><b>공사 시기</b></div>'+chipsOf(S,'send','construction_plan',curPlan(d),PLANS)+'</div>'
-   +'<div class="dv7-fr"><div class="h"><b>견적 버전</b></div><div class="c"><span>'+esc(q?'V'+(Number(q.version_no)||Q.length)+' · '+eok(q.amount):'등록된 견적 없음')+'</span><button type="button" class="lnk" data-dv3="sendquote">견적 버전 등록 ›</button></div></div><div id="execQuoteForm"></div></section>'
-   +'<div class="dv7-sfoot">'+(ck==='확인 불가'?'<span class="note">발송일 확인 불가로 기록됨</span>':'<span></span>')+'<button type="button" data-dv3="sendnone">확인 불가</button><button type="button" class="pri" data-dv3="fsave" data-row="send">저장</button></div></div>';
- }
  /* ── 주 버튼 = 그 일을 하는 화면(가운데 칸 한 곳) — 2026-10-10 design_handoff_detail_basic_fix ⑥
     견적 요청 등록 · 발송 내역 · 제출 확인 · 계약서 확인 · 사후 연락 · 실주 기록. 빠진 정보(자료 올리기 · 공사 시기 …)는 이 화면 안에서 바로 입력하고, 왼쪽 · 오른쪽으로 보내는 단추는 없다.
     저장하면 왼쪽 기본 정보 · 자료 값도 같이 바뀐다(같은 데이터). 저장은 전부 기존 길(단계 정보 saveSF · 자료 업로드 · 다음 업무). ── */
  const WORK={consulting:'quote',sent:'send',competition:'submit',construction:'contract',won:'after',lost:'lostrec'};
- const WTITLE={quote:['견적 요청 등록','자료 올리기 → 공사 시기 → 범위 · 메모 → 등록'],send:['발송 내역','기존 기록에서 찾거나 직접 등록 · 확인할 수 없으면 [확인 불가]'],submit:['제출 확인','공법 비교표 · 경쟁 업체 · 제출 접수증'],contract:['계약서 확인','계약서 파일 · 착공일 · 특이조건'],after:['사후 연락','전화 → 결과 · 재영업 · 다음 공사'],lostrec:['실주 기록','사유 · 확인한 내용 · 재영업']};
- const hasWork=d=>!!WORK[groupOf(d)];
- const workRow=d=>WORK[groupOf(d)]||'';
+ const IFX=()=>root.InlineFix&&root.InlineFix.engine&&root.InlineFix.engine()?root.InlineFix:null;
+ /* 경쟁 · 입찰 = 일정이 하나도 없으면 [일정 입력], 있으면 [제출 확인] */
+ const schedMissing=d=>!bidDay(d)&&!day(anyFld(d,'decision_date'))&&!day(anyFld(d,'briefing_date'))&&!day(anyFld(d,'meeting_date'));
+ const WTITLE={quote:['견적 요청 등록','자료 올리기 → 공사 시기 → 범위 · 메모 → 등록'],send:['발송 내역 확인','기존 기록 → 발송일 · 수신자 · 보낸 자료 → 경과일 판정 → 후속 업무 → 저장'],sched:['입찰 · 결정 일정','기존 기록 → 일정 등록 → 남은 날 계산 → 준비 업무 → 저장'],submit:['제출 확인','공법 비교표 · 경쟁 업체 · 제출 접수증'],contract:['계약서 확인','계약서 파일 · 착공일 · 특이조건'],after:['사후 연락','전화 → 결과 · 재영업 · 다음 공사'],lostrec:['실주 기록','사유 · 확인한 내용 · 재영업']};
+ const workRow=d=>{const g=groupOf(d),r=WORK[g]||'';if(g==='competition'&&r==='submit'&&IFX()&&schedMissing(d)&&['compete','bidding'].includes(String(safe(()=>root.dealStage(d),''))))return 'sched';if((r==='send'||r==='sched')&&!IFX())return '';return r;};
+ const hasWork=d=>!!workRow(d);
  const workTitle=d=>(WTITLE[workRow(d)]||['',''])[0];
  const workSub=d=>(WTITLE[workRow(d)]||['',''])[1];
  const legacyAct=d=>task(d,{}).btn.act0;
@@ -359,7 +346,7 @@
  const wbtn=(row,mode,label,pri,off)=>'<button type="button"'+(pri?' class="pri"':'')+' data-dv3="wsave" data-row="'+row+'" data-mode="'+mode+'"'+(off?' disabled':'')+'>'+esc(label)+'</button>';
  function workHtml(d,S){
   const row=workRow(d),busy=!!(S&&S.upBusy);
-  if(row==='send')return sendHtml(d,S);
+  if(row==='send'||row==='sched'){const I=IFX();return I?'<div class="dv7-ifxwrap">'+I.panelHtml(d)+'</div>':'';}
   if(row==='quote'){
    const F=files(d),plan=draft(S,'quote','plan',curPlan(d)),memo=draft(S,'quote','memo',str(fld(d,'consulting','quote_request'))||lastMeeting(d)),left=(F.length?0:1)+(plan?0:1),Q=safe(()=>root.PipelineJudge.rules().quote,3)||3;
    return '<div class="dv7-work">'
@@ -378,11 +365,12 @@
     +foot('제출 접수증이 있어야 제출 확인으로 기록됩니다',wbtn('submit','go','제출 확인',true,!rcOk))+'</div>';
   }
   if(row==='contract'){
-   const cs=safe(()=>DS().contract(d),{proof:false}),cf=fileNames(d,null,/계약/),sd=draft(S,'contract','start_date',day(fld(d,'construction','start_date')||fld(d,'contract','start_date'))),sp=safe(()=>DS().special(d),{v:'확인 필요',text:''}),sv=draft(S,'contract','special',sp.set===false?'':sp.v),proof=!!(cs.proof||cf.length);
+   const cs=safe(()=>DS().contract(d),{proof:false}),cf=fileNames(d,null,/계약/),sd=draft(S,'contract','start_date',day(fld(d,'construction','start_date')||fld(d,'contract','start_date'))),sp=safe(()=>DS().special(d),{v:'확인 필요',text:''}),sv=draft(S,'contract','special',sp.set===false?'':sp.v),proof=!!(cs.proof||cf.length),cdt=draft(S,'contract','contract_date',cs.date||''),camt=draft(S,'contract','contract_amount',cs.amount?String(cs.amount):'');
    return '<div class="dv7-work">'
     +'<section>'+STEP(1,proof,'계약서 파일',proof?'올림':'미첨부')+upl('눌러서 올리기 · 계약서 PDF · 사진','계약관련','계약서','',cf,busy)+'</section>'
-    +'<section>'+STEP(2,!!sd,'착공일',sd?'':'미입력')+inp(S,'contract','start_date','date',sd,'착공일 (계약서와 대조)')+'</section>'
-    +'<section>'+STEP(3,!!sv,'특이조건')+chipsOf(S,'contract','special',sv,['없음','있음','확인 필요'])+(sv==='있음'?inp(S,'contract','special_text','text',draft(S,'contract','special_text',sp.text||''),'어떤 조건인가요 (예: 하자보증 2년 구두 약속)'):'')+'</section>'
+    +'<section>'+STEP(2,!!(cdt&&camt),'계약일 · 계약금액',cdt&&camt?'입력됨 · 계약서와 대조':'미입력')+'<div class="dv7-pair">'+inp(S,'contract','contract_date','date',cdt,'계약일')+inp(S,'contract','contract_amount','text',camt,'계약금액 (원 단위 숫자)')+'</div></section>'
+    +'<section>'+STEP(3,!!sd,'착공일',sd?'':'미입력')+inp(S,'contract','start_date','date',sd,'착공일 (계약서와 대조)')+'</section>'
+    +'<section>'+STEP(4,!!sv,'특이조건')+chipsOf(S,'contract','special',sv,['없음','있음','확인 필요'])+(sv==='있음'?inp(S,'contract','special_text','text',draft(S,'contract','special_text',sp.text||''),'어떤 조건인가요 (예: 하자보증 2년 구두 약속)'):'')+'</section>'
     +foot('계약서가 있어야 계약서 수령으로 기록됩니다',wbtn('contract','go','계약서 확인',true,!proof))+'</div>';
   }
   if(row==='after'){
@@ -394,12 +382,13 @@
     +foot('저장하면 이 영업건의 사후 연락 기록이 됩니다',wbtn('after','go','사후 연락 기록 저장',true,false))+'</div>';
   }
   if(row==='lostrec'){
-   const rs=str(fld(d,'lost','close_reason'))||str(d.close_reason||d.lost_reason||''),o=optsOf(d,'close_reason');
+   const rs=str(fld(d,'lost','close_reason'))||str(d.close_reason||d.lost_reason||''),o=optsOf(d,'close_reason'),cats=[...new Set(o.map(x=>x.split(' · ')[0]))],cat=draft(S,'lostrec','cat',rs?rs.split(' · ')[0]:'');
    return '<div class="dv7-work">'
-    +'<section>'+STEP(1,!!rs,'실주 사유',rs?'':'미입력')+sel(S,'lostrec','close_reason',rs,o,'사유 선택')+'</section>'
-    +'<section>'+STEP(2,!!str(fld(d,'lost','close_detail')),'확인한 내용 · 고객 반응')+ta(S,'lostrec','close_detail',str(fld(d,'lost','close_detail')),'고객에게 확인한 내용')+'</section>'
-    +'<section>'+STEP(3,!!str(fld(d,'lost','reengage')),'재영업 가능 여부')+chipsOf(S,'lostrec','reengage',str(fld(d,'lost','reengage')),['예','아니오','미정'])+'</section>'
-    +'<section>'+STEP(4,!!str(fld(d,'lost','recontact_possibility')),'재접촉 가능 시기')+inp(S,'lostrec','recontact_possibility','text',str(fld(d,'lost','recontact_possibility')),'예: 2027 상반기')+'</section>'
+    +'<section>'+STEP(1,!!rs,'실주 사유 · 4분류',rs?'':'미입력')+chipsOf(S,'lostrec','cat',cat,cats)+(cat?sel(S,'lostrec','close_reason',rs,o.filter(x=>x.split(' · ')[0]===cat),cat+' 세부 사유'):'')+'</section>'
+    +'<section>'+STEP(2,!!str(anyFld(d,'competitor')),'낙찰사',cat==='가격'||cat==='공법'||cat==='관계'?'경쟁사 낙찰일 때만':'')+inp(S,'lostrec','competitor','text',str(anyFld(d,'competitor'))||siteVal(d,'competitor'),'낙찰사 이름')+'</section>'
+    +'<section>'+STEP(3,!!str(fld(d,'lost','close_detail')),'확인한 내용 · 고객 반응')+ta(S,'lostrec','close_detail',str(fld(d,'lost','close_detail')),'고객에게 확인한 내용')+'</section>'
+    +'<section>'+STEP(4,!!str(fld(d,'lost','reengage')),'재영업 가능 여부')+chipsOf(S,'lostrec','reengage',str(fld(d,'lost','reengage')),['예','아니오','미정'])+'</section>'
+    +'<section>'+STEP(5,!!str(fld(d,'lost','recontact_possibility')),'재접촉 가능 시기')+inp(S,'lostrec','recontact_possibility','text',str(fld(d,'lost','recontact_possibility')),'예: 2027 상반기')+'</section>'
     +foot('실주 사유와 재영업 여부가 있어야 실주 기록이 완성됩니다',wbtn('lostrec','go','실주 기록 저장',true,false))+'</div>';
   }
   return '';
@@ -419,10 +408,10 @@
   }
   if(row==='contract'){
    const cs=safe(()=>DS().contract(d),{proof:false}),proof=!!(cs.proof||fileNames(d,null,/계약/).length);if(!proof)return {error:'계약서 파일을 올려 주세요'};
-   out.fields={contract_document:'수령'};const sd=v('start_date','');if(sd)out.fields.start_date=sd;const sp=v('special','');if(sp)out.fields.special_terms=sp==='있음'?('있음'+(v('special_text','')?' · '+v('special_text',''):'')):sp;return out;
+   out.fields={contract_document:'수령'};const cd0=v('contract_date',''),ca0=v('contract_amount','').replace(/[^\d]/g,'');if(cd0)out.fields.contract_date=cd0;if(ca0&&Number(ca0)>0)out.fields.contract_amount=Number(ca0);const sd=v('start_date','');if(sd)out.fields.start_date=sd;const sp=v('special','');if(sp)out.fields.special_terms=sp==='있음'?('있음'+(v('special_text','')?' · '+v('special_text',''):'')):sp;return out;
   }
   if(row==='after'||row==='lostrec'){
-   const keys=row==='after'?['customer_reaction','reengage','recontact_possibility']:['close_reason','close_detail','reengage','recontact_possibility'];
+   const keys=row==='after'?['customer_reaction','reengage','recontact_possibility']:['close_reason','close_detail','competitor','reengage','recontact_possibility'];
    keys.forEach(k=>{const s=dr[k]!=null?String(dr[k]).trim():'';if(s)out.fields[k]=s;});
    if(!Object.keys(out.fields).length)return {error:'저장할 내용을 적어 주세요'};return out;
   }
@@ -446,5 +435,5 @@ function taskHtml(d,ctx){
    +'<div class="dv7-grps">'+K.groups.map(G=>'<div class="dv7-grp"><b>'+esc(G.t)+'</b>'+G.items.map(m=>'<div><span>'+esc(m[0])+'</span><span class="'+esc(m[2])+'">'+esc(m[1])+'</span></div>').join('')+'</div>').join('')+'</div>'
    +(aux?'<div class="dvs-aux">'+aux+'</div>':'');
  }
- return {on,has,ST,groupOf,legacyOf,infoList,nextLine,rightHtml,fillHtml,sendHtml,rowFields,hasWork,workRow,workTitle,workSub,workHtml,workFields,legacyAct,PANELS,MENU,bar,barHtml,meta,metaHtml,amounts,line2,pos,posHtml,first,due,confirmed,task,schedule,groups,taskHtml,TASK,DONE,BTN,AFTER};
+ return {on,has,ST,groupOf,legacyOf,infoList,nextLine,rightHtml,fillHtml,rowFields,hasWork,workRow,workTitle,workSub,workHtml,workFields,legacyAct,PANELS,MENU,bar,barHtml,meta,metaHtml,amounts,line2,pos,posHtml,first,due,confirmed,task,schedule,groups,taskHtml,TASK,DONE,BTN,AFTER};
 });

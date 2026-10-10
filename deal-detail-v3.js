@@ -891,11 +891,13 @@
   dr.dataset.p=key;if(dr.hidden===!!key)dr.hidden=!key;v.classList.toggle('dv7p',!!key);
   const cmp=v.querySelector('.dw-center .idv-composer');dr.style.bottom=(key&&cmp?cmp.offsetHeight:0)+'px';
  }
+ /* 5단계 엔진(inline-fix.js) 연결: 저장 · 확인 불가 뒤 오른쪽 '지금 처리'를 바꾸고, [닫기]는 가운데 업무 화면을 닫는다 */
+ function hookIfx(){const I=root.InlineFix;if(!I||!I.hooks||I.hooks.__v3)return;I.hooks.__v3=true;I.hooks.change=()=>{try{apply();}catch(e){}};I.hooks.close=()=>{try{const d=root.CUR_DETAIL&&root.CUR_DETAIL.item;if(d){closeP7();apply();}}catch(e){}};}
  function openP7(key){
   if(key==='owner'){return false;/* 담당 · 실적 귀속 메뉴는 없앴다(대표) */const v0=view(),d0=root.CUR_DETAIL&&root.CUR_DETAIL.item;if(!v0||!d0)return false;st(d0).own7=!st(d0).own7;v0.classList.toggle('dv7-own',!!st(d0).own7);if(st(d0).own7){const c=v0.querySelector('.dv3-left .do-card');if(c){const f=c.querySelector('[data-do="fold"]');if(f&&/펼치기/.test(f.textContent))f.click();setTimeout(()=>{try{(v0.querySelector('.dv3-left .do-card')||c).scrollIntoView({block:'nearest'});}catch(e){}},60);}}return true;}
   const v=view(),d=root.CUR_DETAIL&&root.CUR_DETAIL.kind==='deal'?root.CUR_DETAIL.item:null;if(!v||!d||!rfix(d))return false;const S=st(d);
   closeIn('center');S.peek='';if(S.mvOpen){S.mvOpen=false;if(document.getElementById('stage-transition-form'))root.StageTransitionUI?.close();}
-  S.p7=key;apply();const dr=v.querySelector('.dv7-drawer');if(dr)try{dr.scrollTop=0;}catch(e){}return true;
+  hookIfx();if(key==='work'&&root.G.ifx&&root.G.ifx.done)root.G.ifx=null;S.p7=key;apply();const dr=v.querySelector('.dv7-drawer');if(dr)try{dr.scrollTop=0;}catch(e){}return true;
  }
  function closeP7(){const v=view(),d=root.CUR_DETAIL&&root.CUR_DETAIL.item;if(!v||!d)return false;const S=st(d);if(!S.p7)return false;S.p7='';const dr=v.querySelector('.dv7-drawer');if(dr)dr.hidden=true;v.classList.remove('dv7p');return true;}
  /* 확인할 정보 · 기본 정보 입력(저장은 기존 단계 정보 저장 길 saveSF 그대로) */
@@ -1030,10 +1032,6 @@
   if(a==='wpick'){const S=st(d);S.fill=S.fill||{};const F=S.fill[b.dataset.row]=S.fill[b.dataset.row]||{};F[b.dataset.f]=F[b.dataset.f]===b.dataset.v&&b.dataset.f!=='construction_plan'?'':b.dataset.v;apply();return;}
   if(a==='wsave'){workSave(d,b.dataset.row,b.dataset.mode);return;}
   if(a==='upload'){pickFiles(d,b);return;}
-  if(a==='sendpick'){const S=st(d);S.fill=S.fill||{};S.fill.send=Object.assign({},S.fill.send,{sent_date:b.dataset.date});apply();return;}
-  if(a==='sendmat'){const S=st(d);S.fill=S.fill||{};const F=S.fill.send=S.fill.send||{},cur=Array.isArray(F.materials)?F.materials.slice():(Array.isArray(fieldsOf(d,'sent').materials)?fieldsOf(d,'sent').materials.slice():[]),i=cur.indexOf(b.dataset.v);if(i>=0)cur.splice(i,1);else cur.push(b.dataset.v);F.materials=cur;apply();return;}
-  if(a==='sendquote'){try{root.openExecQuoteForm();}catch(e){}return;}/* 견적 버전 입력칸은 이 화면 안(#execQuoteForm)에 열린다 */
-  if(a==='sendnone'){saveSF(d,{sent_date_check:'확인 불가'},()=>{});return;}
   if(a==='p7close'){if(closeP7())apply();return;}
   if(a==='go7'){const x=(root.B.deals||[]).find(z=>String(z.id)===String(b.dataset.id));if(x)root.drwDeal(JSON.stringify(x));return;}
    if(a==='primary'){let act=b.dataset.act||'';if(act==='work7'){if(rfix(d)&&root.DealFrame7.hasWork(d)){const S=st(d);if(S.p7==='work'){closeP7();apply();}else openP7('work');return;}act=root.DealFrame7.legacyAct(d)||'';}if(act==='files'){const S=st(d);if(!S.files){S.files=true;apply();}const t=view().querySelector('.dv3-left [data-dv3="files"]');if(t)try{t.scrollIntoView({block:'nearest'});}catch(e){}return;}if(act==='call'){try{root.contactDial('mobile');}catch(err){}return;}if(act==='activity'&&!view().querySelector('.nc-cta .nc-call')){const ta=view().querySelector('#ddvComposer textarea');if(ta){try{ta.scrollIntoView({block:'nearest'});ta.focus({preventScroll:true});}catch(e){}return;}}if(openFrom(act))return;startCall(d,true);return;}

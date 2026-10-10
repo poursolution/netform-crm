@@ -266,7 +266,7 @@
   if(a==='act'&&v==='classify'&&root.RelV12)return root.RelV12.openClassify(b.dataset.key);/* 관계관리 v12 분류 · 전환 창 */
   if(a==='dup'){/* 중복 의심 → 데이터 정리 · 검토(관리자 화면 · 자동 합치기 없음) */let adm=false;try{adm=!!root.todayIsAdmin();}catch(x){}if(adm){try{root.goPage('dup');}catch(x){}}else if(typeof root.toast==='function')root.toast('중복 의심 건은 데이터 정리 · 검토(관리자 화면)에서 확인합니다 — 관리자에게 알려 주세요');return;}
   /* after_deploy 13: 판정을 막는 빠진 정보(발송일 · 입찰 일정 · 계약 정보)는 상세를 열지 않고 그 줄 아래에서 보완 — 목록(v11 줄)에서만 */
-  if((a==='fix'||(a==='act'&&v==='stagefields'))&&b.closest('.prv-row')){const IF=root.InlineFix,x=LASTX.get(b.dataset.key),k=IF&&x?IF.kindOf(S.key,x):'';if(k)return IF.toggle(S.key,x,k);}
+  if((a==='fix'||(a==='act'&&v==='stagefields'))&&b.closest('.prv-row')){const IF=root.InlineFix,x=LASTX.get(b.dataset.key),k=IF&&x?IF.kindOf(S.key,x):'';if(k)return IF.toggle(S.key,x,k);/* 기본: 줄 아래 펼침 없이 상세 창을 열고 가운데 칸에 그 단계 업무 화면(design_handoff_no_inline_expand) — 아래 B.open 이 한다 */}
   if(a==='act')return B.open(b.dataset.key,v);
   if(a==='fix'){e.stopPropagation();return B.open(b.dataset.key,'stagefields');}/* 날짜 미입력 보완 단추 → 상세의 이 단계 필수 정보(ops_12 A②) */
   if(a==='open'&&!e.target.closest('button'))return B.open(b.dataset.key);
