@@ -28,7 +28,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await css('#scr .mt-head h1','fontSize'),'25px');assert.equal(await css('#scr .mt-head h1','fontWeight'),'700');
   assert.equal(await page.evaluate(()=>{const h=document.querySelector('#scr .mt-head h1').getBoundingClientRect(),p=document.querySelector('#scr .mt-head p').getBoundingClientRect();return p.bottom<=h.top+1;}),true,'맥락 줄이 제목 위');
   /* 탭바: 글자만 · 4칸 · 선택 = 검정 굵게 + 파란 점 */
-  assert.deepEqual(await page.locator('#tabbar button .tl2').allInnerTexts(),['오늘','내 현장','등록','이번 주']);
+  assert.deepEqual(await page.locator('#tabbar button .tl2').allInnerTexts(),['오늘','내 현장','기록 · 등록','일정']);
   assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#tabbar svg')].every(n=>getComputedStyle(n).display==='none')),true,'아이콘 없음');
   assert.equal(await css('#tabbar button.on .tl2','fontSize'),'14px');assert.equal(await css('#tabbar button.on .tl2','fontWeight'),'700');assert.equal(await css('#tabbar button.on','color'),'rgb(21, 23, 28)');
   assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('#tabbar button.on'),'::after').backgroundColor),'rgb(59, 108, 228)','파란 점');
@@ -100,8 +100,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#tabbar button',{hasText:'내 현장'}).click();await page.waitForTimeout(250);
   assert.equal(await page.evaluate(()=>G.tab),'mine');assert.match(await page.locator('#scr .sec-h h2').first().innerText(),/^내 현장 \d+곳$/);assert.equal(await css('#scr .sec-h h2','fontSize'),'25px');assert.equal(await css('#scr .card','borderTopWidth'),'0px');assert.equal(await css('#scr .card','borderRadius'),'20px');
   if(shot)await page.screenshot({path:shot+'-mine.png'});
-  await page.locator('#tabbar button',{hasText:'이번 주'}).click();await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>G.tab),'my');assert.match(await page.locator('#scr .mv-title h1').innerText(),/님, 오늘 \d+곳 중 \d+곳을 처리했습니다$/);assert.match(await page.locator('#scr .mv-title p').innerText(),/^이번 주/);if(shot)await page.screenshot({path:shot+'-week.png'});
-  await page.locator('#tabbar button',{hasText:'등록'}).click();await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>G.tab),'find');assert.equal(await page.locator('#scr .mv-title h1').innerText(),'새 현장을 등록합니다');assert.match(await page.locator('#scr button[onclick="scanCard()"]').innerText(),/명함 · 현수막 찍기/);if(shot)await page.screenshot({path:shot+'-new.png'});
+  await page.locator('#tabbar button',{hasText:'일정'}).click();await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>G.tab),'my');assert.match(await page.locator('#scr .mv-title h1').innerText(),/님, 오늘 \d+곳 중 \d+곳을 처리했습니다$/);assert.match(await page.locator('#scr .mv-title p').innerText(),/^이번 주/);if(shot)await page.screenshot({path:shot+'-week.png'});
+  await page.locator('#tabbar button',{hasText:'등록'}).click();await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>G.tab),'find');assert.equal(await page.locator('#scr .mv-title h1').innerText(),'어느 현장에 기록하나요?');assert.equal(await page.locator('#scr .mh-sub').innerText(),'새 현장 등록');assert.match(await page.locator('#scr button[onclick="scanCard()"]').innerText(),/명함 · 현수막 찍기/);if(shot)await page.screenshot({path:shot+'-new.png'});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'가로 넘침 없음');
   assert.deepEqual(await page.evaluate(()=>__writes.filter(x=>x!=='opportunity_touch')),[],'틀만 바꾼다 — 쓰기 없음');
   /* 관리자 한마디: PC에서 남긴 코멘트가 그 영업사원의 오늘에만(완료 · 7일 지난 것 · 남의 것은 안 보임) */

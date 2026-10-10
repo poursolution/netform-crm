@@ -9,7 +9,7 @@
 (function(root){
  'use strict';
  const enabled=()=>!(root.G&&root.G.mobileV2Off);
- const TAB={mine:'내 현장',find:'등록',my:'이번 주',perf:'사람',rpt:'보고'};
+ const TAB={mine:'내 현장',find:'기록 · 등록',my:'일정',perf:'사람',rpt:'보고'};/* 2026-10-10 mobile_all: 오늘 / 내 현장 / 기록 · 등록 / 일정 */
  const given=nm=>String(nm||'').trim();/* 이름은 성까지 그대로(2026-10-05 대표) */
  function statusPill(){
   const bar=document.querySelector('#scr .home-bar');if(!bar)return;
@@ -53,7 +53,8 @@
   /* ④ 보고: PC에서 여는 것 안내 */
   if(G.mode==='admin'&&G.tab==='rpt'&&!body.querySelector('.mv-pcnote')){const el=document.createElement('div');el.className='mv-pcnote';el.innerHTML='<b>대표님 보고 · 주간 브리핑</b><span>슬라이드 8장과 한 페이지 보고, 주간 브리핑 저장본은 PC 화면의 리포트 · 주간 브리핑 메뉴에서 엽니다. KPI · 공종 분석 · 데이터 정리도 PC에서 봅니다.</span>';const sec=body.querySelector('.sec-h');(sec||body.firstElementChild).after(el);}
   /* ③ 등록: 제목 문장 · 버튼 이름 */
-  if(G.mode==='rep'&&G.tab==='find'&&!body.querySelector('.mv-title')){const intro=body.querySelector(':scope>.intro');if(intro){const el=document.createElement('div');el.className='mt-head mv-title';el.innerHTML='<h1>새 현장을 등록합니다</h1><p>등록 · 연락처까지 함께 저장</p>';intro.replaceWith(el);}
+  if(G.mode==='rep'&&G.tab==='find'){const hub=!!(root.MobileHub&&root.MobileHub.enabled());if(!hub&&!body.querySelector('.mv-title')){const intro=body.querySelector(':scope>.intro');if(intro){const el=document.createElement('div');el.className='mt-head mv-title';el.innerHTML='<h1>새 현장을 등록합니다</h1><p>등록 · 연락처까지 함께 저장</p>';intro.replaceWith(el);}}
+   if(hub){const intro=body.querySelector(':scope>.intro');if(intro)intro.remove();}/* 기록 · 등록: 위는 '어느 현장에 기록하나요?'(mobile-hub.js), 등록은 그 아래 */
    const scan=body.querySelector('button[onclick="scanCard()"]');if(scan){[...scan.childNodes].forEach(n=>{if(n.nodeType===3)n.nodeValue=' 명함 · 현수막 찍기';});}}
   if(G.mode==='admin'&&G.tab==='today'&&!body.querySelector('.mv-ctrl')){
    const b=document.createElement('button');b.type='button';b.className='mv-ctrl';b.innerHTML='<b>문의 관리</b><span>미배정 · 배정완료 · 응대중 문의를 보고 바로 배정합니다</span><em>열기</em>';

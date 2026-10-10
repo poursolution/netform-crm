@@ -185,7 +185,7 @@
      +'<span>담당</span><select data-dv3rec="who" aria-label="다음 업무 담당"'+dis+'>'+[who].concat(reps.filter(n=>n!==who)).filter(Boolean).map(n=>'<option value="'+attr(n)+'"'+(n===who?' selected':'')+'>'+h(n)+'</option>').join('')+'</select>'
      +'<span>일정</span><div class="dv3-pills">'+PLAN.map(([v,l])=>pill('rplan',v,E.plan===v,l)).join('')+'</div></div>'
      +(E.link?'<small class="dv3-reqlink">같은 영업건에 열린 연락 요청'+(E.link.by?' · 요청자 '+h(E.link.by):'')+' · 기한 '+h(dd(E.link.due))+' — 업무를 따로 만들지 않고 이 요청 기한에 맞춤</small>':'');
-   }else if(E.mode==='change')nx+='<div class="dv3-nxgrid"><span>바꿀 날짜</span>'+dates()+'</div><small class="dv3-ce-sub">기존 일정의 날짜만 바뀝니다 — 할 일 이름은 그대로, 완료로 세지 않습니다</small>';
+   }else if(E.mode==='change'){const later=!!(ex&&ex.due&&E.date&&E.date>ex.due);nx+='<div class="dv3-nxgrid"><span>바꿀 날짜</span>'+dates()+'</div>'+(later?'<input class="dv3-memo" data-dv3rec="reason" value="'+attr(E.reason)+'" maxlength="80" placeholder="미루는 사유 (필수) — 원래 기한 · 새 기한 · 사유가 기록됩니다" aria-label="미루는 사유"'+dis+'>':'')+'<small class="dv3-ce-sub">기존 일정의 날짜만 바뀝니다 — 할 일 이름은 그대로, 완료로 세지 않습니다'+(later?' · 미뤄도 지연 기록은 그대로 남습니다':'')+'</small>';}
    else if(E.mode==='keep')nx+='<small class="dv3-ce-sub">기존 일정 그대로 — 이 기록은 일정을 완료로 세거나 바꾸지 않습니다</small>';
    else nx+='<div class="dv3-pills dv3-whyno">'+WHYNO.map(w=>pill('rwhy',w,E.reason===w)).join('')+'</div><input class="dv3-memo" data-dv3rec="reason" value="'+attr(E.reason)+'" maxlength="80" placeholder="'+(C.isBadfit(R.res)?'배드핏 사유 (필수)':'다음 일정이 없는 이유 (필수)')+'" aria-label="사유"'+dis+'>';
   }
@@ -221,6 +221,7 @@
   const P=R.prog||(R.prog={});R.busy=true;R.err='';apply();
   try{
    await writeContact(d,{ch:R.ch,note:pl.note,at,meaningful:pl.meaningful,next,due,P,keepCurrent:!pl.completeCurrent});
+   if(pl.postpone&&!P.postponed){P.postponed=true;try{await root.ExecWording.logPostpone(d,{postpone:true,from:pl.postpone.from,to:pl.postpone.to,reason:pl.postpone.reason,over:pl.postpone.over});}catch(e){}}
    S.rec=null;S.calling=false;afterSave(d);
    const rows=C.summary(pl,{existing:ex});
    toast('기록했습니다 · '+rows.map(r=>r[0]+' '+r[1]).join(' · ')+(pl.badfit?' — 위 [단계 바꾸기]에서 종결(배드핏)로':'')+leftTxt());

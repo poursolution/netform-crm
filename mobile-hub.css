@@ -1,0 +1,23 @@
+/* 모바일 탭 정리 — 기록 · 등록 / 일정 (2026-10-10 mobile_all 4 · 5번) — 디자인 규칙: 배경 #f5f6f8 · 흰 카드(둥근 20) · 줄 사이 얇은 선 · 파랑 #3b6ce4 · 빨강은 늦음에만 */
+.mh-hub,.mh-sched{display:grid;gap:12px;margin:0 0 14px}
+.mh-card{display:grid;gap:3px;text-align:left;width:100%;border:0;background:#fff;border-radius:20px;padding:14px 16px;box-sizing:border-box;min-height:64px}
+.mh-card.now{background:#1b2340;color:#fff}
+.mh-card em{font-style:normal;font-size:11.5px;font-weight:800;color:#9db4ee}
+.mh-card small{font-size:11.5px;color:var(--sub,#8b95a1)}.mh-card.now small{color:#c9d6f7}
+.mh-card b{font-size:16px;letter-spacing:-.3px;word-break:keep-all;overflow-wrap:anywhere}
+.mh-card span{font-size:12.5px;color:var(--ink-2,#3b4148);word-break:keep-all;overflow-wrap:anywhere}.mh-card.now span{color:#e3eaff}
+.mh-list{display:grid;background:#fff;border-radius:20px;overflow:hidden}
+.mh-list .mh-card{border-radius:0;border-top:1px solid #f1f2f4}.mh-list .mh-card:first-child{border-top:0}
+.mh-more{border:0;background:none;color:#3b6ce4;font-size:13.5px;font-weight:800;padding:8px 4px;text-align:left;min-height:44px}
+.mh-sub{margin:6px 2px 0;font-size:17px;font-weight:800;letter-spacing:-.3px}
+.mh-none{margin:0;padding:14px 16px;background:#fff;border-radius:20px;font-size:13px;color:var(--sub,#8b95a1);line-height:1.5;word-break:keep-all}
+.mh-grp h3{margin:0 2px 6px;font-size:13px;font-weight:800;color:#5b6470}.mh-grp h3 em{font-style:normal;color:#9aa3ad;margin-left:3px}
+.mh-grp:first-of-type h3{color:#c0262f}
+.mh-rows{display:grid;background:#fff;border-radius:20px;overflow:hidden}
+.mh-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;border-top:1px solid #f1f2f4}.mh-row:first-child{border-top:0}
+.mh-main{display:grid;grid-template-columns:78px minmax(0,1fr);gap:10px;align-items:center;text-align:left;border:0;background:none;padding:12px 4px 12px 16px;min-height:56px}
+.mh-main i{font-style:normal;font-size:12px;font-weight:800;color:#2a52b8;white-space:nowrap}
+.mh-row.late .mh-main i{color:#c0262f}
+.mh-main b{display:block;font-size:14px;word-break:keep-all;overflow-wrap:anywhere}
+.mh-main small{display:block;font-size:12px;color:var(--sub,#8b95a1);margin-top:1px;word-break:keep-all;overflow-wrap:anywhere}
+.mh-move{border:0;background:none;color:#3b6ce4;font-size:12px;font-weight:800;padding:0 16px 0 6px;min-height:44px;white-space:nowrap}

@@ -107,6 +107,16 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual(await page.evaluate(()=>[__ops.map(o=>o.op),__ops[0].payload.note,__ops[1].payload.text,document.querySelectorAll('#detailView .dvt-calling,#detailView .dvt-res').length,document.querySelector('#detailView #nowCard .nc-call').textContent,document.querySelector('#detailView #nowCard .nc-stage').textContent]),
    [['activity','next_action'],'통화 완료 · 연결됨 — 소장 통화 — 12월 입대의 뒤 결정','다시 연락',0,'전화하고 결과 남기기','다음 할 일'],'기록 + 다음 할 일이 같이 저장되고, 오른쪽이 다음 할 일로 바뀐다');
   assert.match(await v.locator('#nowCard .dv3-title b').innerText(),/^다시 연락 · \d{4}\.\d{1,2}\.\d{1,2}\(.\)$/);
+  /* 일정 변경(기한 늦추기): 사유 필수 → 같은 업무를 새 날짜로(지금 일정을 완료로 세지 않음) + '[기한 변경] 원래 | 새 | 사유' 기록 */
+  await v.locator('#nowCard .nc-call').click();await page.waitForTimeout(250);
+  await v.locator('#ddvComposer textarea').fill('입대의 일정이 밀렸다고 함');await v.locator('.dvt-res [data-dv3="rres"][data-v="연결됨"]').click();await page.waitForTimeout(120);
+  assert.match(one(await v.locator('.dvt-res .dv3-ce-ex').innerText()),/^기존 일정 · 다시 연락 · /);assert.equal(await v.locator('.dvt-res [data-dv3="rmode"][aria-pressed="true"]').innerText(),'기존 일정 유지','앞으로 잡힌 일정이 있으면 기본은 그대로');
+  await v.locator('.dvt-res [data-dv3="rmode"]',{hasText:'일정 변경'}).click();await page.waitForTimeout(100);
+  await v.locator('.dvt-res [data-dv3="rday"]',{hasText:'7일 후'}).click();await page.waitForTimeout(120);
+  assert.equal(await v.locator('.dvt-res [data-dv3rec="reason"]').count(),1,'기한을 늦추면 사유 칸');
+  await v.locator('#ddvComposer .idv-save').click();await page.waitForTimeout(200);assert.match(one(await v.locator('.dvt-res .dv3-recerr').innerText()),/미루는 사유를 입력해 주세요/);assert.equal(await page.evaluate(()=>__ops.length),2,'사유 없이는 저장하지 않는다');
+  await v.locator('.dvt-res [data-dv3rec="reason"]').fill('고객 요청 · 입대의 후 연락');await v.locator('#ddvComposer .idv-save').click();await page.waitForFunction(()=>__ops.length>=5);await page.waitForTimeout(300);
+  assert.deepEqual(await page.evaluate(()=>__ops.slice(2).map(o=>[o.op,o.payload.type,o.payload.text||o.payload.note.replace(/\d{4}-\d{2}-\d{2}/g,'D'),o.actionId||''])),[['activity','전화','통화 완료 · 연결됨 — 입대의 일정이 밀렸다고 함',''],['next_action','전화','다시 연락',''],['activity','메모','[기한 변경] 원래 D | 새 D | 사유 고객 요청 · 입대의 후 연락','']],'같은 업무를 새 날짜로(완료 없음) + 기한 변경 기록');
   /* 목록의 [미팅 잡기] 류(openFrom)도 같은 입력칸으로 */
   assert.deepEqual(await page.evaluate(()=>[DealDetailV3.openFrom('next'),document.querySelectorAll('#detailView #ddvComposer.dvt-calling').length,document.querySelectorAll('#detailAction,.dp-next,#detailView .dv3-form').length]),[true,1,0]);
   await v.locator('#nowCard .nc-call').click();await page.waitForTimeout(150);
