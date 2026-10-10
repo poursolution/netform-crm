@@ -10,7 +10,7 @@
  'use strict';
  const R=root,h=v=>R.esc(String(v==null?'':v)),attr=v=>R.escAttr(String(v==null?'':v));
  const LEGACY_LABEL='과거 자료 재개';/* 과거 이관 · 분류 전 화면이 보내는 묶음 요청(pipeline-legacy.js) — 받는 쪽에서는 한 카드로 */
- const RPC={contact:'crm_work_request_inquiry_contact_v1',handover:'crm_work_request_handover_v1',create:'crm_work_request_create_v1',list:'crm_work_request_list_v1',reply:'crm_work_request_reply_v1',reask:'crm_work_request_reask_v1'};
+ const RPC={compoundContact:'crm_work_request_inquiry_contact_v2',contact:'crm_work_request_inquiry_contact_v1',handover:'crm_work_request_handover_v1',create:'crm_work_request_create_v1',list:'crm_work_request_list_v1',reply:'crm_work_request_reply_v1',reask:'crm_work_request_reask_v1'};
  const O=()=>R.OpsStore,T=()=>R.TodayWorkQueue;
  const ready=()=>{try{return !R.G.workRequestOff&&!!O()&&O().has(RPC.list)&&O().has(RPC.create)&&O().has(RPC.reply);}catch(e){return false;}};
  /* 저장소가 실제로 한 번 응답한 뒤에만 켠다 — 서버에 아직 없으면(SQL 적용 전) 예전 [독촉] 화면 그대로 */
@@ -297,7 +297,7 @@
      +'<div class="res"><span>통화 결과</span>'+resOf(r.target_type).map(l=>'<button type="button" data-wr="res" data-id="'+r.id+'" data-v="'+attr(l)+'" aria-pressed="'+(C.res===l)+'">'+l+'</button>').join('')+'</div>'
      +'<div class="nx"><span>다음 행동</span><span class="box"><em>AI</em>'+h(nxTxt)+'</span></div>'
      +(C.err?'<p class="wrq-err">'+h(C.err)+'</p>':'')
-     +'<div class="ft"><span>'+(C.res==='부재'?'부재 = 연락 시도로만 기록 · 최초 응대는 아직 미완료':C.res?'저장하면 관리자 요청 자동 완료':'결과를 골라야 저장')+'</span><button type="button" class="go" data-wr="save" data-id="'+r.id+'"'+(C.res&&!C.busy?'':' disabled')+'>'+(C.busy?'저장 중…':'저장')+'</button></div></article>';}
+     +'<div class="ft"><span>'+(C.res==='부재'?'부재 = 연락 시도로만 기록 · 최초 응대는 아직 미완료':C.res?(compoundContact(r)?'응대 저장 · 추가 확인 항목은 진행 중':'저장하면 관리자 요청 자동 완료'):'결과를 골라야 저장')+'</span><button type="button" class="go" data-wr="save" data-id="'+r.id+'"'+(C.res&&!C.busy?'':' disabled')+'>'+(C.busy?'저장 중…':'저장')+'</button></div></article>';}
    return '<article class="wrq-in" data-id="'+r.id+'">'+head+'<span class="memo"><b>요청</b> '+h((r.asks||[]).join(' · ')||r.label)+(r.memo?'<br><span>"'+h(r.memo)+'"</span>':'')+'</span>'
     +'<div class="ft"><span>완료 조건 · '+h(K.done||'')+' — 입력되면 자동 완료 · 따로 [완료] 없음</span><button type="button" class="go" data-wr="go" data-id="'+r.id+'">열어서 입력</button></div></article>';};
   /* 담당 확인(seen)은 받은 사람이 카드에서 무엇이든 눌렀을 때만(onClick) — 화면에 보였다고 확인으로 적지 않는다(2026-10-10 코덱스 인계: 노출 ≠ 열람 ≠ 확인) */
@@ -316,25 +316,103 @@
   if(!bundle&&!rest.length&&!softHtml)return '';
   return '<section class="wrq-top" aria-label="받은 요청">'+bundle+rest.map(card).join('')+softHtml+'</section>';
  }
- // Phase 1 is limited to the existing single-purpose first-contact template.
+ // All inquiry first-contact objectives require persisted proof; local logs cannot close them.
+ const inquiryFirst=r=>!!r&&r.target_type==='inquiry'&&r.kind==='first';
+ const compoundContact=r=>inquiryFirst(r)&&r.label==='첫 연락 요청'&&Array.isArray(r.asks)&&r.asks.length>1&&r.asks.length<=3&&r.asks.includes('고객 첫 연락')&&new Set(r.asks).size===r.asks.length&&r.asks.every(x=>KIND.first.asks.includes(x));
  const basicContact=r=>!!r&&r.target_type==='inquiry'&&r.kind==='first'&&r.label==='첫 연락 요청'&&JSON.stringify(r.asks)==='["고객 첫 연락"]';
  const actorId=()=>String(R.ME&&(R.ME.user_id||R.ME.id)||'');
  const UUID_CONTACT=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
- async function saveInquiryContact(r,C,q,next,due){
-  const actor=actorId(),key='crm.work-contact.v1:'+actor+':'+r.id;
+ // Data-only API for Claude's existing request view. No new controls or automatic writes.
+ const OBJECTIVE_RPC={read:'crm_work_request_objectives_read_v1',write:'crm_work_request_objectives_write_v1',followup:'crm_work_request_objective_followup_v1'},objectiveBusy=new Set();
+ const objectiveEnabled=()=>{try{return !R.G.workRequestOff&&Object.values(OBJECTIVE_RPC).every(fn=>O().has(fn)&&R.CRMRelease&&R.CRMRelease.has(fn)===true);}catch(e){return false;}};
+ const objectiveKey=(actor,id)=>'crm.work-objectives.v1:'+actor+':'+id;
+ function objectiveActor(id){const actor=actorId();if(!UUID_CONTACT.test(actor)||!UUID_CONTACT.test(id||'')||!objectiveEnabled())throw Error('요청 항목 저장·조회 기능이 아직 연결되지 않았습니다.');return actor;}
+ function objectiveBase(x,id){return x&&x.ok===true&&x.contract_version===1&&x.request_id===id&&Number.isInteger(x.revision)&&x.revision>=0&&
+  x.policy_version==='first-compound-v1'&&x.request&&x.request.id===id&&x.request.target_type==='inquiry'&&x.request.kind==='first'&&
+  Number.isFinite(Date.parse(x.expected_updated_at))&&Array.isArray(x.decisions)&&typeof x.request_complete==='boolean';}
+ async function objectiveRead(id,page=1,candidatePage=1){
+  const actor=objectiveActor(id);if(!Number.isInteger(page)||page<1||page>100000)throw Error('조회 쪽 번호를 확인해 주세요.');
+  if(!Number.isInteger(candidatePage)||candidatePage<1||candidatePage>100000)throw Error('조회 쪽 번호를 확인해 주세요.');
+  const x=await O().rpc(OBJECTIVE_RPC.read,{id,page,candidate_page:candidatePage});
+  if(actorId()!==actor||!objectiveBase(x,id)||!Array.isArray(x.history)||x.history.length>20||x.history_page!==page||
+   !Number.isInteger(x.history_total)||x.history_total<x.history.length||typeof x.history_has_more!=='boolean'||
+   x.followup_contract!==1||!Array.isArray(x.followup_candidates)||x.followup_candidates.length>20||x.candidate_page!==candidatePage||
+   !Number.isInteger(x.candidate_total)||x.candidate_total<x.followup_candidates.length||typeof x.candidate_has_more!=='boolean'||
+   !x.plan_context||!/^[0-9a-f]{32}$/.test(x.plan_context.token||'')||typeof x.can_write!=='boolean'||
+   x.followup_candidates.some(n=>!UUID_CONTACT.test(n.id||'')||!['견적','방문'].includes(n.action_type)||!['open','completed'].includes(n.status)||!['unknown','internal_plan','customer_agreed'].includes(n.plan_origin)))throw Error('요청 항목 조회 확인이 불완전합니다.');
+  return {...x,client_actor_id:actor};
+ }
+ function objectivePending(id){const actor=objectiveActor(id),raw=R.localStorage.getItem(objectiveKey(actor,id));return raw?JSON.parse(raw):null;}
+ async function objectiveWrite(input){
+  // Freeze payload before awaiting; an edited form cannot change an in-flight write.
+  const p=JSON.parse(JSON.stringify(input)),actor=objectiveActor(p.id),key=objectiveKey(actor,p.id);
+  if(!UUID_CONTACT.test(p.operation_id||'')||!Number.isInteger(p.expected_revision)||p.expected_revision<0||
+   !Number.isFinite(Date.parse(p.expected_updated_at))||!Array.isArray(p.decisions)||typeof p.complete!=='boolean')throw Error('저장할 요청 항목을 확인해 주세요.');
+  if(objectiveBusy.has(key))throw Error('이 요청을 저장하고 있습니다.');
+  const old=objectivePending(p.id),serialized=JSON.stringify(p);
+  if(old&&JSON.stringify(old)!==serialized)throw Error('앞선 저장 결과를 먼저 같은 내용으로 재확인해 주세요.');
+  R.localStorage.setItem(key,serialized);if(R.localStorage.getItem(key)!==serialized)throw Error('재시도 정보를 보관하지 못했습니다.');
+  objectiveBusy.add(key);
   try{
-   if(!UUID_CONTACT.test(actor)||!O().has(RPC.contact)||!R.CRMRelease||R.CRMRelease.has(RPC.contact)!==true)throw Error('문의 요청 저장 기능이 아직 연결되지 않았습니다.');
+   let x;try{x=await O().rpc(OBJECTIVE_RPC.write,p);}catch(e){
+    // Only explicit database rejections prove rollback. Network/unknown errors keep exact retry data.
+    if(e&&e.databaseRejected===true&&['22023','40001','42501'].includes(e.code)&&actorId()===actor)R.localStorage.removeItem(key);
+    throw e;
+   }
+   const proof=x&&x.contact_proof;
+   if(actorId()!==actor||!objectiveBase(x,p.id)||x.operation_id!==p.operation_id||x.revision!==p.expected_revision+1||
+    x.request_complete!==p.complete||x.request.status!==(p.complete?'done':'working')||x.decisions.length!==p.decisions.length||
+    !proof||!UUID_CONTACT.test(proof.contact_log_id||'')||JSON.stringify(proof.satisfied_asks)!=='["고객 첫 연락"]'||
+    JSON.stringify(x.requested_asks)!==JSON.stringify(proof.requested_asks)||JSON.stringify(x.request.asks)!==JSON.stringify(x.requested_asks)||
+    p.decisions.some((d,i)=>{const a=x.decisions[i];return !a||a.ask!==d.ask||a.value!==d.value||a.note!==String(d.note||'').trim()||a.contact_log_id!==proof.contact_log_id||
+     (d.value==='needed'?(!a.next_action||a.next_action.id!==d.next_action_id):a.next_action!==null);}))throw Error('요청 항목 저장 확인이 불완전합니다. 같은 내용으로 재시도해 주세요.');
+   R.localStorage.removeItem(key);
+   // Receipts may be old. The caller must read fresh context, never copy this into inquiry/customer plans.
+   return x;
+  }finally{objectiveBusy.delete(key);}
+ }
+ function followupPending(id){const actor=objectiveActor(id),raw=R.localStorage.getItem(objectiveKey(actor,id)+':followup');return raw?JSON.parse(raw):null;}
+ async function followupWrite(input){
+  const p=JSON.parse(JSON.stringify(input)),actor=objectiveActor(p.id),key=objectiveKey(actor,p.id)+':followup';
+  if(!UUID_CONTACT.test(p.operation_id||'')||!Number.isInteger(p.expected_revision)||p.expected_revision<0||!Number.isFinite(Date.parse(p.expected_updated_at))||
+   !/^[0-9a-f]{32}$/.test(p.plan_token||'')||!['create','additional','request_change'].includes(p.mode)||!['customer_agreed','internal_plan'].includes(p.plan_origin))throw Error('후속 업무 저장 내용을 확인해 주세요.');
+  if(objectiveBusy.has(key))throw Error('이 후속 업무를 저장하고 있습니다.');
+  const old=followupPending(p.id),serialized=JSON.stringify(p);if(old&&JSON.stringify(old)!==serialized)throw Error('앞선 저장 결과를 먼저 같은 내용으로 재확인해 주세요.');
+  R.localStorage.setItem(key,serialized);if(R.localStorage.getItem(key)!==serialized)throw Error('재시도 정보를 보관하지 못했습니다.');
+  objectiveBusy.add(key);
+  try{
+   let x;try{x=await O().rpc(OBJECTIVE_RPC.followup,p);}catch(e){if(e&&e.databaseRejected===true&&['22023','40001','42501'].includes(e.code)&&actorId()===actor)R.localStorage.removeItem(key);throw e;}
+   if(actorId()!==actor||!x||x.ok!==true||x.contract_version!==1||x.policy_version!=='objective-followup-v1'||x.operation_id!==p.operation_id||x.request_id!==p.id||
+    !UUID_CONTACT.test(x.inquiry_id||'')||!UUID_CONTACT.test(x.event_id||'')||x.mode!==p.mode||x.ask!==p.ask||x.plan_origin!==p.plan_origin||x.plan_token_before!==p.plan_token||
+    x.title!==String(p.title||'').trim()||x.due_date!==p.due_date||x.reason!==String(p.reason||'').trim()||
+    (x.agreement_note||'')!==String(p.agreement_note||'').trim()||
+    (p.mode==='request_change'?(x.status!=='change_requested'||x.next_action_id!==null):(x.status!=='created'||!UUID_CONTACT.test(x.next_action_id||''))))throw Error('후속 업무 저장 확인이 불완전합니다. 같은 내용으로 재시도해 주세요.');
+   R.localStorage.removeItem(key);return x;
+  }finally{objectiveBusy.delete(key);}
+ }
+ const objectives={enabled:objectiveEnabled,read:objectiveRead,write:objectiveWrite,pending:objectivePending,
+  retry:async id=>{const p=objectivePending(id);if(!p)throw Error('재시도할 저장이 없습니다.');return objectiveWrite(p);},
+  followup:{write:followupWrite,pending:followupPending,retry:async id=>{const p=followupPending(id);if(!p)throw Error('재시도할 저장이 없습니다.');return followupWrite(p);}}};
+ async function saveInquiryContact(r,C,q,next,due){
+  const actor=actorId(),key='crm.work-contact.v1:'+actor+':'+r.id,compound=compoundContact(r),fn=compound?RPC.compoundContact:RPC.contact;
+  try{
+   if(!UUID_CONTACT.test(actor)||!O().has(fn)||!R.CRMRelease||R.CRMRelease.has(fn)!==true)throw Error('문의 요청 저장 기능이 아직 연결되지 않았습니다.');
    let p;try{const old=R.localStorage.getItem(key);p=old?JSON.parse(old):null;}catch(e){throw Error('재시도 정보를 읽지 못했습니다. 저장을 시작하지 않았습니다.');}
    if(p&&(p.id!==r.id||!UUID_CONTACT.test(p.operation_id)))throw Error('이전 저장 정보를 확인해 주세요.');
    if(p&&p.result!==C.res)throw Error('앞선 저장 결과를 먼저 확인해야 합니다. 같은 결과를 선택해 재시도해 주세요.');
    if(!p){p={id:r.id,operation_id:R.crypto.randomUUID(),result:C.res,next_text:next,next_due:due};try{R.localStorage.setItem(key,JSON.stringify(p));if(R.localStorage.getItem(key)!==JSON.stringify(p))throw Error();}catch(e){throw Error('재시도 정보를 보관하지 못해 저장을 시작하지 않았습니다.');}}
-   const x=await O().rpc(RPC.contact,p),rq=x&&x.request,expected=p.result==='부재'?'working':'done';
+   const x=await O().rpc(fn,p),rq=x&&x.request,expected=compound||p.result==='부재'?'working':'done';
    const log=x&&x.state&&Array.isArray(x.state.logs)&&x.state.logs.find(l=>l.id===x.log_id);
-   if(!x||x.ok!==true||x.contract_version!==1||x.operation_id!==p.operation_id||x.inquiry_id!==r.target_id||
+   if(!x||x.ok!==true||x.contract_version!==(compound?2:1)||x.operation_id!==p.operation_id||x.inquiry_id!==r.target_id||
     !UUID_CONTACT.test(x.log_id||'')||!UUID_CONTACT.test(x.next_action_id||'')||!rq||rq.id!==r.id||rq.target_type!=='inquiry'||rq.target_id!==r.target_id||rq.to_user_id!==actor||
     rq.status!==expected||rq.result!==p.result||rq.next_text!==p.next_text||rq.next_due!==p.next_due||
     !x.state||x.state.inquiry_id!==r.target_id||!log||log.request_id!==p.operation_id||log.result!==p.result||log.kind!==(p.result==='부재'?'attempt':'connected')||
     log.next_action!==p.next_text||log.next_check_date!==p.next_due||!x.inquiry_update||x.inquiry_update.next_action_date!==p.next_due)throw Error('서버 저장 확인이 불완전합니다. 같은 결과로 재시도해 주세요.');
+   if(compound){const proof=x.completion,satisfied=p.result==='부재'?[]:['고객 첫 연락'],remaining=r.asks.filter(a=>!satisfied.includes(a));
+    if(!proof||proof.policy_version!=='first-compound-v1'||proof.request_complete!==false||proof.contact_log_id!==x.log_id||rq.closed_at!==null||rq.auto_done!==false||
+     JSON.stringify(rq.asks)!==JSON.stringify(r.asks)||JSON.stringify(proof.requested_asks)!==JSON.stringify(r.asks)||
+     JSON.stringify(proof.satisfied_asks)!==JSON.stringify(satisfied)||JSON.stringify(proof.remaining_asks)!==JSON.stringify(remaining))throw Error('요청별 저장 확인이 불완전합니다. 같은 결과로 재시도해 주세요.');
+   }
    if(actorId()!==actor)throw Error('로그인이 변경되었습니다. 원래 담당자로 저장 결과를 확인해 주세요.');
    // Replayed receipts describe the original commit; never overwrite newer assignment/plans.
    const current=target(r).item;
@@ -344,7 +422,7 @@
    }
    R.localStorage.removeItem(key);delete st().card[r.id];load(true);
    if(R.InquiryFlow&&R.InquiryFlow.load)R.InquiryFlow.load(true);
-   toast(p.result==='부재'?'부재와 재연락 일정을 저장했습니다 · 연결 요청은 진행 중':'응대와 다음 일정을 저장했습니다 · 첫 연락 요청 완료');
+   toast(p.result==='부재'?'부재와 재연락 일정을 저장했습니다 · 연결 요청은 진행 중':compound?'응대와 다음 일정을 저장했습니다 · 추가 확인 항목이 남아 요청은 진행 중':'응대와 다음 일정을 저장했습니다 · 첫 연락 요청 완료');
   }catch(e){if(e&&e.databaseRejected===true&&['22023','42501'].includes(e.code)){try{R.localStorage.removeItem(key);}catch(ignore){}}C.busy=false;C.err=String(e&&e.message||e);}
   repaint();
  }
@@ -355,7 +433,7 @@
   if(!nx||!nx[0]){C.err='이 결과는 상세 창에서 기록해 주세요.';return repaint();}
   const due=ymd(addDays(nx[1]));C.busy=true;C.err='';repaint();
   try{
-   if(basicContact(r)){await saveInquiryContact(r,C,t.item,nx[0],due);return;}
+   if(inquiryFirst(r)){if(!basicContact(r)&&!compoundContact(r))throw Error('요청의 확인 항목을 상세에서 확인해 주세요.');await saveInquiryContact(r,C,t.item,nx[0],due);return;}
    if(r.target_type==='inquiry'){if(!R.InquiryListV3||typeof R.InquiryListV3.record!=='function')throw Error('상세 창에서 기록해 주세요.');
     const ok=R.InquiryListV3.record(t.item,{res:'[전화 · '+C.res+'] 관리자 요청 처리',next:nx[0],due})===true;if(!ok)throw Error((document.getElementById('iq-msg')||{}).textContent||'기록을 저장하지 못했습니다.');}
    else{const D=R.DealDetailV3;if(!D||typeof D.record!=='function')throw Error('상세 저장 기능을 불러오지 못했습니다.');await D.record(t.item,{ch:'전화',res:C.res,memo:'관리자 요청 처리',P:{}});}
@@ -371,7 +449,7 @@
  }
  /* ── 실제 기록으로 자동 완료: 받은 사람(또는 관리자) 화면에서 완료 조건이 채워진 열린 요청을 닫는다 ── */
  function evidence(r){
-  if(basicContact(r))return null; // Only persisted atomic contact proof may complete this request.
+  if(inquiryFirst(r))return null; // Only persisted atomic contact proof may complete this request.
   const t=target(r),it=t.item;if(!it)return null;const since=Date.parse(r.created_at);
   if(r.label===LEGACY_LABEL){try{return R.PipelineScope&&R.PipelineScope.on()&&!R.PipelineScope.isLegacy(it)?{result:'영업 재개 확인',absent:false}:null;}catch(e){return null;}}
   try{
@@ -472,5 +550,5 @@
  function markSeen(id){const S=st(),r=S.list.find(x=>x.id===id);if(!r||!r.to_me||r.status!=='sent'||S.closing['seen:'+id])return;S.closing['seen:'+id]=true;O().rpc(RPC.reply,{id,action:'seen'}).then(x=>{put(x.request);bell();}).catch(()=>{}).finally(()=>{delete S.closing['seen:'+id];});}
  /* 종 알림: 미확인 요청 n — 누르면 오늘 업무로 */
  function bell(){try{const el=document.querySelector('.ib');if(!el)return;const n=enabled()?incoming().filter(r=>r.status==='sent').length:0;let b=el.querySelector('.wrq-belln');if(!n){if(b)b.remove();el.classList.remove('wrq-bell-on');if(el.dataset.wrqT){el.title=el.dataset.wrqT;}return;}if(!el.dataset.wrqT)el.dataset.wrqT=el.title||'';el.title='미확인 요청 '+n+'건 · 누르면 오늘 업무로';el.classList.add('wrq-bell-on');el.setAttribute('role','button');el.tabIndex=0;if(!b){b=document.createElement('b');b.className='wrq-belln';el.append(b);}b.textContent='미확인 요청 '+n;if(!el.__wrq){el.__wrq=true;el.addEventListener('click',()=>{try{if(R.DayZones){const Z=R.DayZones.state();Z.zone='now';Z.rs='';Z.closing=false;}R.goPage('today');}catch(e){}});}}catch(e){}}
- root.WorkRequest={enabled,load,inlineHtml,isImportant,isSpecial,markSeen,bell,incoming:()=>incoming(),reqFor,locked,cell,sideHtml,topHtml,history,autoClose,evidence,decorate,steps,dueTxt,NIGHT_FROM,NIGHT_HOUR,HANDOVER_LABEL,RECEIPT_LABEL,isHandover,isReceipt,KIND,RPC,state:st,_dueAt:dueAt,_lineReq:lineReq,_lineEnd:lineEnd};
+ root.WorkRequest={enabled,load,inlineHtml,isImportant,isSpecial,markSeen,bell,incoming:()=>incoming(),reqFor,locked,cell,sideHtml,topHtml,history,autoClose,evidence,decorate,steps,dueTxt,NIGHT_FROM,NIGHT_HOUR,HANDOVER_LABEL,RECEIPT_LABEL,isHandover,isReceipt,KIND,RPC,objectives,state:st,_dueAt:dueAt,_lineReq:lineReq,_lineEnd:lineEnd};
 })(window);
