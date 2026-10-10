@@ -70,7 +70,8 @@
 #detailView.ddv.dv3.dvt.dv7 .dv7-opener{font-size:12.5px;line-height:1.5;color:#15171c;background:#f5f8ff;border-left:3px solid #3b6ce4;border-radius:4px;padding:6px 9px;overflow-wrap:anywhere}
 #detailView.ddv.dv3.dvt.dv7 .dv7-opener>b{font-size:11px;font-weight:700;color:#3b6ce4;margin-right:4px}
 /* ════ 오른쪽 정리(design_handoff_detail_right_fix) — #detailView.dv7r. 오른쪽 칸 = 지금 처리 카드 하나(스크롤 없이 끝) · 나머지 상자는 가운데 칸 패널. 끄기: G.dealRightKeep=true ════ */
-#detailView.ddv.dv3.dvt.dv7r .dw-right>*:not(.dvs-task):not(.dv3-slot):not(#tf-card){display:none!important}
+#detailView.ddv.dv3.dvt.dv7r .dw-right>*:not(.dvs-task):not(.dv3-slot):not(#tf-card):not(.dv3-near){display:none!important}
+#detailView.ddv.dv3.dvt.dv7r .dw-right>.dv3-near{order:3;margin-top:16px;padding-top:14px;border-top:1px solid #eef0f3}/* 근처 현장 = 오른쪽 지금 처리 아래 그대로 */
 #detailView.ddv.dv3.dvt.dv7r .dw-right>#tf-card{order:2;margin-top:12px}/* 타사 이관 건의 상태 카드(낙찰결과 등록)는 기능이라 그대로 둔다 */
 #detailView.ddv.dv3.dvt.dv7r .dw-right{background:#fcfcfd}
 #detailView.ddv.dv3.dvt.dv7r .dvs-task{gap:13px;padding:0;border-bottom:0;margin-bottom:0}
@@ -176,3 +177,7 @@
 #detailView.ddv.dv3.dvt.dv7r .dv7-cand>span:nth-child(2){min-width:0;overflow-wrap:anywhere}
 #detailView.ddv.dv3.dvt.dv7r .dv7-sfoot{display:flex;align-items:center;justify-content:flex-end;gap:8px;border-top:1px solid #eef0f3;padding-top:12px}
 #detailView.ddv.dv3.dvt.dv7r .dv7-sfoot .note{margin-right:auto;font-size:12px;color:#2a52b8}
+/* 소장이 바뀌었어요 = 소장 칸 아래 작은 링크 */
+#detailView.ddv.dv3.dvt.dv7r .dvt-c4{margin:2px 0 0}
+#detailView.ddv.dv3.dvt.dv7r .dvt-c4 .lnk{border:0;background:none;padding:2px 0;margin:0;height:auto;min-height:0;width:auto;font:inherit;font-size:12px;font-weight:600;color:#6b7280;text-decoration:underline;text-decoration-color:#d9dde4;text-underline-offset:3px;cursor:pointer;box-shadow:none}
+#detailView.ddv.dv3.dvt.dv7r .dvt-c4 .lnk:hover{color:#15171c}

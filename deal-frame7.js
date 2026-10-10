@@ -310,7 +310,7 @@
   else if(k==='plan')c=bt('be','기본 정보에서 입력','plan');
   else if(k==='reaction')c=bt('fgo','응대 기록에 적기','composer')+'<small>고객 반응은 응대 기록 결과 칩에서</small>';
   else if(k==='rel')c=bt('fgo','관리 상태 정하기','rel');
-  else if(k==='compare')c=bt('p7','입찰 준비 열기','prep');
+  else if(k==='compare')c=bt('files','자료 열기');
   else if(k==='win')c=bt('fgo','수주 정보 고치기','win');
   else if(k==='stage')c=bt('mv','영업 재개');
   else if(k==='next')c=bt('nextonly','다음 업무 등록');
@@ -336,8 +336,10 @@
    +'<div class="dv7-fr"><div class="h"><b>견적 버전</b></div><div class="c"><span>'+esc(q?'V'+(Number(q.version_no)||Q.length)+' · '+eok(q.amount):'등록된 견적 없음')+'</span><button type="button" class="lnk" data-dv3="sendquote">견적 버전 등록 ›</button></div></div></section>'
    +'<div class="dv7-sfoot">'+(ck==='확인 불가'?'<span class="note">발송일 확인 불가로 기록됨</span>':'<span></span>')+'<button type="button" data-dv3="sendnone">확인 불가</button><button type="button" class="pri" data-dv3="fsave" data-row="send">저장</button></div></div>';
  }
- const PANELS={info:['확인할 정보','이 단계에 필요한 것만 · 줄마다 바로 입력'],send:['발송 내역','기존 기록에서 찾거나 직접 등록 · 확인할 수 없으면 [확인 불가]'],collab:['결정 일정 · 막힌 곳 · 진척 · 특이조건 · 하자','기록하면 응대 이력에 남습니다'],units:['참여 · 브랜드','책임자 · 참여 역할 · 브랜드 · 요청 · 현장 공통'],prep:['영업 판단 · 내부 지원','진행 조건 · 관계자 · 입찰 준비 · 지원 요청 · 예상 수주일 · 단계 이력'],near:['근처 현장','반경 안에서 영업했던 곳']};
- const MENU=[['collab','결정 일정 · 특이조건 · 하자'],['units','참여 · 브랜드'],['prep','영업 판단 · 내부 지원'],['near','근처 현장'],['owner','담당 · 실적 귀속']];
+ const PANELS0={info:['확인할 정보','이 단계에 필요한 것만 · 줄마다 바로 입력'],send:['발송 내역','기존 기록에서 찾거나 직접 등록 · 확인할 수 없으면 [확인 불가]'],collab:['결정 일정 · 막힌 곳 · 진척 · 특이조건 · 하자','기록하면 응대 이력에 남습니다'],units:['참여 · 브랜드','책임자 · 참여 역할 · 브랜드 · 요청 · 현장 공통'],prep:['영업 판단 · 내부 지원','진행 조건 · 관계자 · 입찰 준비 · 지원 요청 · 예상 수주일 · 단계 이력'],near:['근처 현장','반경 안에서 영업했던 곳']};
+ /* 가운데 패널은 확인할 정보 · 발송 내역 둘뿐 — 결정 일정 · 특이조건 · 하자 / 참여 · 브랜드 / 영업 판단 · 내부 지원 / 담당 · 실적 귀속은 없앴다(대표 2026-10-10 "필요없을거같아") */
+ const PANELS={info:PANELS0.info,send:PANELS0.send};
+ const MENU=[];
 function taskHtml(d,ctx){
   ctx=ctx||{};const K=task(d,ctx),closed=!!ctx.closed,tel=!!ctx.tel;
   const SCOPE='다음 업무 = 업무 · 기한만 저장 · 결과 기록 = 응대 이력 1건 · 칸 수정 = 그 칸만';
