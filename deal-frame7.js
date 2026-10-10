@@ -116,8 +116,7 @@
  function bidItem(d){const bd=bidDay(d);if(!bd)return T('해당 없음','입찰 마감');const n=diff(today(),bd);return n<0?T('기한 지남','입찰 마감 '+md(bd)+' · '+(-n)+'일 지남'):T('확인됨','입찰 마감 '+md(bd)+' · D-'+n);}
  function timing(d){
   const c=safe(()=>(root.DealPrep.conds(d)||[]).find(x=>x.k==='추진 시기'),null),v=(c&&str(c.v))||siteVal(d,'construction_plan');
-  if(c&&c.st==='고객 확인'&&v)return T('확인됨','공사 시기 '+v);
-  return v?T('확인 필요','공사 시기 '+v+' 맞는지'):T('미입력','공사 시기');
+  return v?T('확인됨','공사 시기 · '+v):T('미입력','공사 시기');
  }
  function first(d){
   const g=groupOf(d),L=prep(d),F=files(d);
@@ -172,7 +171,7 @@
  /* ── 오른쪽: 할 일 · 기한 종류 + 기한 · 확인됨 / 확인할 것 / 완료 조건 · 주 버튼 ── */
  const TASK={legacy:'영업 재개 판단',consulting:'견적 요청 등록',sent:'발송 내역 확인 · 고객 반응 기록',relationship:'고객 합의 연락',competition:'제출 준비',construction:'계약 체결 확인',won:'준공 후 사후 연락',lost:'실주 기록 완성'};
  const DONE={legacy:'영업 재개(단계 · 다음 행동 · 날짜) 또는 종료 사유',consulting:'잔디 견적 요청 등록 + 견적 예정일',sent:'발송일 등록 + 고객 반응 기록',relationship:'결과 기록 + 다음 단계 판단',competition:'제출 접수증 첨부',won:'사후 연락 결과 + 재영업 여부',lost:'실주 사유 + 재영업 예 / 아니오'};
- const BTN={legacy:['영업 재개','stage'],consulting:['견적 요청 등록','stagefields'],sent:['발송 내역 확인','stagefields'],relationship:['연락하고 결과 기록','activity'],competition:['제출 준비 확인','stagefields'],construction:['계약 체결 확인','stagefields'],won:['사후 연락하기','call'],lost:['실주 기록 채우기','stagefields']};
+ const BTN={legacy:['영업 재개','stage'],consulting:['견적 요청 등록','stagefields'],sent:['발송 내역 확인','send7'],relationship:['연락하고 결과 기록','activity'],competition:['제출 준비 확인','stagefields'],construction:['계약 체결 확인','stagefields'],won:['사후 연락하기','call'],lost:['실주 기록 채우기','stagefields']};
  const AFTER=30;/* 준공 후 사후 연락 기준일(README 표 '준공 후 30일') */
  function due(d){
   const g=groupOf(d),nt=nextOf(d),b=judge(d),Tk=today(),Q=safe(()=>root.PipelineJudge.rules(),{follow:7,month:30,site:7});
@@ -263,19 +262,15 @@
  const TAGC={'미입력':'miss','확인 필요':'chk','해당 없음':'na','기한 지남':'late','확인됨':'ok'};
  /* ── 오른쪽 정리(2026-10-10 design_handoff_detail_right_fix): 오른쪽 칸 = 지금 처리 · 주 버튼 1개 · 다음 업무 · 일정 · AI 한 줄 · 확인할 정보 n 뿐.
     먼저 확인 · 빠진 정보 · 진행 조건은 '확인할 정보 n' 한 줄로 합치고 [채우기] = 가운데 칸. 끄기: G.dealRightKeep=true ── */
- const ALIAS=s=>String(s||'').replace(/\(.*?\)/g,'').replace(/\s/g,'').replace('공사시기','공사예정').replace('경쟁업체수','경쟁사').replace('의사결정자','결정권자').replace('계약서파일','계약서');
- /* 확인할 정보: 이 단계 필수 정보 중 빠진 것 + 먼저 확인 중 안 채운 것 + (경쟁 · 입찰만) 진행 조건 · 입찰 준비 — 같은 정보는 한 번만 */
- function infoList(d,ctx){
-  ctx=ctx||{};const g=groupOf(d),out=[],seen=[];
-  const add=(label,state,act,key)=>{const k=ALIAS(label);if(!k||seen.some(x=>x===k||x.includes(k)||k.includes(x)))return;seen.push(k);out.push({label:String(label).replace(/\(원\)$/,''),state:state||'미입력',act:act||'',key:key||''});};
-  ((ctx.req&&ctx.req.miss)||[]).forEach(l=>add(l,'미입력','box'));
-  first(d).filter(x=>OPEN.includes(x.s)).forEach(x=>{const l=x.l.replace(/\s·\s.*$/,'').replace(/\s맞는지$/,'').replace(/\s\d+\.\d+$/,'');
-   add(l==='공사 시기'?'공사 예정':l,x.s,/사진|접수증|계약서/.test(l)?'files':/공사 시기/.test(l)?'field':/비교표/.test(l)?'prep':/단계 정하기/.test(l)?'stage':/다음 행동|다음 연락/.test(l)?'next':/실적 정보/.test(l)?'win':/관리 상태/.test(l)?'rel':'',/공사 시기/.test(l)?'construction_plan':'');});
-  if(g==='competition'){
-   safe(()=>root.DealPrep.conds(d)||[],[]).filter(c=>c.st!=='고객 확인').forEach(c=>add(c.k,'미확인','prep'));
-   const L=prep(d),B=safe(()=>root.DealPrep.BID,[]),left=L?B.filter(x=>!(L.bid&&L.bid[x]&&L.bid[x].done)).length:0;if(left)add('입찰 준비 '+left+'개','미입력','prep');
-  }
-  return out;
+ /* ── 확인할 정보 = 단계별 '먼저 확인' 3개 중 아직 안 채운 것(최대 3) — 2026-10-10 design_handoff_detail_basic_fix.
+    '무엇을 발송했나요?' · '담당 최종 검토' · 옛 '빠진 정보 n' 목록은 확인할 정보가 아니다(deal-same 의 빠진 정보 블록은 상세 창에서 그리지 않는다) ── */
+ const KEYS=[[/접수증|계약서/,'files'],[/도면|현장 사진/,'files'],[/공사 시기/,'plan'],[/발송일/,'sent'],[/고객 반응/,'reaction'],[/관리 상태/,'rel'],[/경쟁사|경쟁 업체/,'competitor'],[/공법 비교표/,'compare'],[/착공일/,'start'],[/실적 정보/,'win'],[/추가 공종/,'composer'],[/실주 사유/,'reason'],[/재영업/,'reengage'],[/단계 정하기/,'stage'],[/다음 행동|다음 연락/,'next'],[/마지막 연락|연락 기록/,'composer']];
+ const keyOf=l=>{const m=KEYS.find(k=>k[0].test(l));return m?m[1]:'composer';};
+ const LABEL={sent:'발송일 · 수신자',plan:'공사 시기',reaction:'고객 반응',rel:'관리 상태',compare:'공법 비교표',start:'착공일',win:'실적 정보',reason:'실주 사유',reengage:'재영업 가능 여부',stage:'단계 정하기',next:'다음 행동 · 날짜'};
+ function labelOf(k,l,g){if(k==='files')return /접수증/.test(l)?'제출 접수증':/계약서/.test(l)?'계약서 파일':'도면 · 현장 사진';if(k==='competitor')return g==='competition'?'경쟁 업체 수':'경쟁사';if(k==='composer')return /연락/.test(l)?'마지막 연락':'추가 공종';return LABEL[k]||l;}
+ function infoList(d){
+  const g=groupOf(d),seen={};
+  return first(d).filter(x=>OPEN.includes(x.s)).map(x=>{const k=keyOf(x.l);return {key:k,label:labelOf(k,x.l,g),state:x.s};}).filter(x=>{const id=x.key+'|'+x.label;if(seen[id])return false;seen[id]=1;return true;}).slice(0,3);
  }
  /* 다음 업무 · 일정 한 줄 */
  function nextLine(d){
@@ -285,25 +280,65 @@
   return {has:false,text:'등록 없음',sub:'',late:false};
  }
  function rightHtml(d,ctx){
-  ctx=ctx||{};const K=task(d,ctx),closed=!!ctx.closed,I=infoList(d,ctx),N=nextLine(d);
-  const names=I.slice(0,3).map(x=>x.label).join(' · ')+(I.length>3?' 외 '+(I.length-3):'');
+  ctx=ctx||{};const K=task(d,ctx),closed=!!ctx.closed,I=infoList(d),N=nextLine(d);
+  const names=I.map(x=>x.label).join(' · ');
   return '<span class="dv7-lb">지금 처리</span>'
    +'<div class="dvs-tt"><b>'+esc(K.text)+'</b><span><span class="k">'+esc(K.dueK)+'</span> <b class="'+esc(K.cls)+'">'+esc(K.due)+'</b></span></div>'
-   +'<div class="dvs-kv dv7-kvs"><span>확인됨</span><span>'+esc(K.ok)+'</span><span>확인할 것</span><span>'+esc(K.chk)+'</span><span>완료 조건</span><span>'+esc(K.done)+'</span></div>'
+   +'<div class="dvs-kv dv7-kvs"><span>확인됨</span><span>'+esc(K.ok)+'</span><span>완료 조건</span><span>'+esc(K.done)+'</span></div>'
    +'<div class="dvs-btns dv7-btns"><button type="button" class="fill dvs-primary" data-dv3="primary" data-act="'+attr(K.btn.act)+'"'+(ctx.noResume&&K.g==='legacy'?' disabled title="서버에 단계 값이 비어 있는 자료입니다 — 서버 보완 뒤에 영업 재개를 할 수 있습니다"':'')+'>'+esc(K.btn.label)+'</button></div>'
    +'<div class="dv7-row dv7-next"><div><span>다음 업무 · 일정</span><b class="'+(N.late?'red':N.has?'':'none')+'">'+esc(N.text)+(N.sub?' <small>'+esc(N.sub)+'</small>':'')+'</b></div>'+(closed?'':'<button type="button" class="lnk" data-dv3="nextonly">'+(N.has?'변경':'등록하기')+'</button>')+'</div>'+(closed?'':(ctx.nextHtml||''))
    +(ctx.ai?'<div class="dv7-ai"><em>AI</em>'+esc(ctx.ai)+'</div>':'')
    +'<div class="dv7-row dv7-info"><div><span>확인할 정보 <b class="'+(I.length?'n':'z')+'">'+I.length+'</b></span><span class="l">'+esc(I.length?names:'모두 채웠습니다')+'</span></div><button type="button" data-dv3="p7" data-v="info">'+(I.length?'채우기':'보기')+'</button></div>';
  }
- /* 가운데 패널 머리 아래: 이 단계 상자에 칸이 없는 확인 항목(자료 · 공사 예정 · 진행 조건 …)은 여기서 그 자리로 보낸다 */
- const XBTN={files:['자료 열기','files',''],field:['입력','field',''],prep:['진행 조건 · 입찰 준비 열기','p7','prep'],stage:['단계 정하기','mv',''],next:['다음 업무 등록','nextonly',''],};
- function extraHtml(d,ctx){
-  const X=infoList(d,ctx).filter(x=>x.act!=='box');if(!X.length)return '';
-  return '<div class="dv7-xrows">'+X.map(x=>{const b=XBTN[x.act];return '<div><em class="t-'+(TAGC[x.state]||'miss')+'">'+esc(x.state)+'</em><span>'+esc(x.label)+'</span>'+(b?'<button type="button" data-dv3="'+b[1]+'"'+(b[2]?' data-v="'+b[2]+'"':'')+(x.key?' data-key="'+attr(x.key)+'"':'')+'>'+esc(b[0])+'</button>':'')+'</div>';}).join('')+'</div>';
+ /* ── 가운데 칸 [채우기]: 확인할 정보 3줄만(줄마다 그 자리에서 입력 · 저장) ── */
+ const ROWF={sent:['sent_date','recipient'],competitor:['competitor'],start:['start_date'],reason:['close_reason'],reengage:['reengage'],send:['sent_date','recipient','materials']};
+ const rowFields=r=>(ROWF[r]||[]).slice();
+ const optsOf=(d,k)=>safe(()=>{const D=root.StageTransition.definitions,def=D[root.dealStage(d)]||D[groupOf(d)];const f=def&&def.fields.find(x=>x.key===k);return f&&f.options?f.options.slice():[];},[]);
+ const draft=(S,row,f,cur)=>{const F=S&&S.fill&&S.fill[row];return F&&F[f]!=null?F[f]:cur;};
+ const inp=(S,row,f,type,cur,ph)=>'<input class="dv7-in" type="'+type+'" data-dv3f="'+f+'" data-row="'+row+'" value="'+attr(draft(S,row,f,cur))+'" placeholder="'+attr(ph)+'" aria-label="'+attr(ph)+'">';
+ const sel=(S,row,f,cur,opts,ph)=>opts.length?'<select class="dv7-in" data-dv3f="'+f+'" data-row="'+row+'" aria-label="'+attr(ph)+'"><option value="">'+esc(ph)+'</option>'+opts.map(o=>'<option'+(draft(S,row,f,cur)===o?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>':inp(S,row,f,'text',cur,ph);
+ const bt=(a,l,v,cls)=>'<button type="button"'+(cls?' class="'+cls+'"':'')+' data-dv3="'+a+'"'+(v?' data-v="'+attr(v)+'"':'')+'>'+esc(l)+'</button>';
+ const sv=row=>'<button type="button" class="pri" data-dv3="fsave" data-row="'+row+'">저장</button>';
+ function fillRow(d,x,S){
+  const k=x.key;let c='';
+  if(k==='sent')c=inp(S,'sent','sent_date','date',day(fld(d,'sent','sent_date')),'발송일')+inp(S,'sent','recipient','text',str(fld(d,'sent','recipient')),'수신자')+sv('sent')+bt('p7','발송 내역 확인 ›','send','lnk');
+  else if(k==='competitor')c=inp(S,'competitor','competitor','text',str(anyFld(d,'competitor'))||siteVal(d,'competitor'),'경쟁사 이름 (없으면 없음)')+sv('competitor');
+  else if(k==='start')c=inp(S,'start','start_date','date',day(fld(d,'construction','start_date')||fld(d,'contract','start_date')),'착공일')+sv('start');
+  else if(k==='reason')c=sel(S,'reason','close_reason',str(fld(d,'lost','close_reason'))||str(d.close_reason||d.lost_reason||''),optsOf(d,'close_reason'),'사유 선택')+sv('reason');
+  else if(k==='reengage')c=sel(S,'reengage','reengage',str(fld(d,'lost','reengage')),optsOf(d,'reengage').length?optsOf(d,'reengage'):['예','아니오','미정'],'선택')+sv('reengage');
+  else if(k==='files')c=bt('files','자료 열기');
+  else if(k==='plan')c=bt('be','기본 정보에서 입력','plan');
+  else if(k==='reaction')c=bt('fgo','응대 기록에 적기','composer')+'<small>고객 반응은 응대 기록 결과 칩에서</small>';
+  else if(k==='rel')c=bt('fgo','관리 상태 정하기','rel');
+  else if(k==='compare')c=bt('p7','입찰 준비 열기','prep');
+  else if(k==='win')c=bt('fgo','수주 정보 고치기','win');
+  else if(k==='stage')c=bt('mv','영업 재개');
+  else if(k==='next')c=bt('nextonly','다음 업무 등록');
+  else c=bt('fgo','응대 기록에 적기','composer');
+  return '<div class="dv7-fr"><div class="h"><em class="t-'+(TAGC[x.state]||'miss')+'">'+esc(x.state)+'</em><b>'+esc(x.label)+'</b></div><div class="c">'+c+'</div></div>';
  }
- const PANELS={info:['확인할 정보','이 단계에 필요한 것만 · 칸을 누르면 바로 입력'],collab:['결정 일정 · 막힌 곳 · 진척 · 특이조건 · 하자','기록하면 응대 이력에 남습니다'],units:['참여 · 브랜드','책임자 · 참여 역할 · 브랜드 · 요청 · 현장 공통'],prep:['영업 판단 · 내부 지원','진행 조건 · 관계자 · 입찰 준비 · 지원 요청 · 예상 수주일 · 단계 이력'],near:['근처 현장','반경 안에서 영업했던 곳']};
+ function fillHtml(d,S){
+  const I=infoList(d);
+  return I.length?'<div class="dv7-fill-rows">'+I.map(x=>fillRow(d,x,S)).join('')+'</div>':'<p class="dv7-fnone">모두 채웠습니다</p>';
+ }
+ /* ── [발송 내역 확인]: 기존 기록(이메일 · 잔디 · 메모)에서 찾은 후보 → [이걸로 등록] / 발송일 · 수신자 · 보낸 자료 · 견적 버전 / [확인 불가] ── */
+ const MATS=['견적서','제안서','공법자료','기타자료'];
+ function sendCands(d){
+  return acts(d).filter(a=>a&&day(a.at||a.occurred_at||a.created_at)&&/발송|보냄|보냈|전달|송부|이메일|메일/.test(String(a.type||'')+' '+String(a.note||''))&&!/^\[(확인|결정|막힌|진척|하자|내부)/.test(String(a.note||''))).map(a=>({date:day(a.at||a.occurred_at||a.created_at),type:String(a.type||'기록'),text:String(a.note||'').replace(/\s+/g,' ').slice(0,64)})).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
+ }
+ function sendHtml(d,S){
+  const F=(S&&S.fill&&S.fill.send)||{},curM=fld(d,'sent','materials'),mats=Array.isArray(F.materials)?F.materials:(Array.isArray(curM)?curM:[]);
+  const ck=str(fld(d,'sent','sent_date_check')),Q=quotes(d),q=Q[Q.length-1],C=sendCands(d);
+  return '<div class="dv7-send">'
+   +'<section><b>① 기존 기록에서 찾기</b>'+(C.length?C.map(c=>'<div class="dv7-cand"><span>'+esc(md(c.date))+' · '+esc(c.type)+'</span><span>'+esc(c.text)+'</span><button type="button" data-dv3="sendpick" data-date="'+attr(c.date)+'">이걸로 등록</button></div>').join(''):'<p class="dv7-fnone">이메일 · 잔디 · 메모에서 찾은 발송 기록이 없습니다</p>')+'</section>'
+   +'<section><b>② 직접 등록</b><div class="dv7-fr"><div class="h"><b>발송일 · 수신자</b></div><div class="c">'+inp(S,'send','sent_date','date',day(fld(d,'sent','sent_date')),'발송일')+inp(S,'send','recipient','text',str(fld(d,'sent','recipient')),'수신자')+'</div></div>'
+   +'<div class="dv7-fr"><div class="h"><b>보낸 자료</b></div><div class="c dv7-chips">'+MATS.map(m=>'<button type="button" data-dv3="sendmat" data-v="'+attr(m)+'" aria-pressed="'+mats.includes(m)+'">'+esc(m)+'</button>').join('')+'</div></div>'
+   +'<div class="dv7-fr"><div class="h"><b>견적 버전</b></div><div class="c"><span>'+esc(q?'V'+(Number(q.version_no)||Q.length)+' · '+eok(q.amount):'등록된 견적 없음')+'</span><button type="button" class="lnk" data-dv3="sendquote">견적 버전 등록 ›</button></div></div></section>'
+   +'<div class="dv7-sfoot">'+(ck==='확인 불가'?'<span class="note">발송일 확인 불가로 기록됨</span>':'<span></span>')+'<button type="button" data-dv3="sendnone">확인 불가</button><button type="button" class="pri" data-dv3="fsave" data-row="send">저장</button></div></div>';
+ }
+ const PANELS={info:['확인할 정보','이 단계에 필요한 것만 · 줄마다 바로 입력'],send:['발송 내역','기존 기록에서 찾거나 직접 등록 · 확인할 수 없으면 [확인 불가]'],collab:['결정 일정 · 막힌 곳 · 진척 · 특이조건 · 하자','기록하면 응대 이력에 남습니다'],units:['참여 · 브랜드','책임자 · 참여 역할 · 브랜드 · 요청 · 현장 공통'],prep:['영업 판단 · 내부 지원','진행 조건 · 관계자 · 입찰 준비 · 지원 요청 · 예상 수주일 · 단계 이력'],near:['근처 현장','반경 안에서 영업했던 곳']};
  const MENU=[['collab','결정 일정 · 특이조건 · 하자'],['units','참여 · 브랜드'],['prep','영업 판단 · 내부 지원'],['near','근처 현장'],['owner','담당 · 실적 귀속']];
- function taskHtml(d,ctx){
+function taskHtml(d,ctx){
   ctx=ctx||{};const K=task(d,ctx),closed=!!ctx.closed,tel=!!ctx.tel;
   const SCOPE='다음 업무 = 업무 · 기한만 저장 · 결과 기록 = 응대 이력 1건 · 칸 수정 = 그 칸만';
   const sub=closed?'':'<div class="dv7-sub" title="'+attr(SCOPE)+'"><button type="button" data-dv3="callnow"'+(tel?'':' disabled title="휴대폰 번호가 없습니다"')+'>연락하기</button><button type="button" data-dv3="rec" aria-pressed="'+!!ctx.calling+'">결과 기록</button><button type="button" data-dv3="nextonly">다음 업무</button></div>';
@@ -317,5 +352,5 @@
    +'<div class="dv7-grps">'+K.groups.map(G=>'<div class="dv7-grp"><b>'+esc(G.t)+'</b>'+G.items.map(m=>'<div><span>'+esc(m[0])+'</span><span class="'+esc(m[2])+'">'+esc(m[1])+'</span></div>').join('')+'</div>').join('')+'</div>'
    +(aux?'<div class="dvs-aux">'+aux+'</div>':'');
  }
- return {on,has,ST,groupOf,legacyOf,infoList,nextLine,rightHtml,extraHtml,PANELS,MENU,bar,barHtml,meta,metaHtml,amounts,line2,pos,posHtml,first,due,confirmed,task,schedule,groups,taskHtml,TASK,DONE,BTN,AFTER};
+ return {on,has,ST,groupOf,legacyOf,infoList,nextLine,rightHtml,fillHtml,sendHtml,rowFields,PANELS,MENU,bar,barHtml,meta,metaHtml,amounts,line2,pos,posHtml,first,due,confirmed,task,schedule,groups,taskHtml,TASK,DONE,BTN,AFTER};
 });

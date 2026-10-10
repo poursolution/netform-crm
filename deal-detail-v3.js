@@ -557,12 +557,30 @@
    +'<section class="dv3-sec"><header><b>다른 연락처</b><span>'+C.others.length+'명</span><i></i>'+(closed?'':'<button type="button" class="lnk" data-dv3="addc" data-slot="others">+ 추가</button>')+'</header>'+others+slot('others')+'</section>';
  }
  /* 오른쪽 정리: 주소 · 공종 · 공사 예정 · 유입 경로는 왼쪽 '기본 정보' 한 곳(값을 누르면 그 자리에서 고침 · 저장 길은 그대로). 예상 금액은 머리에서 누르면 여기 한 줄로 고친다 */
+ /* 기본 정보 [입력] · [수정] = 누른 줄 바로 아래에서 입력 · 저장(관리정보 수정 패널은 열지 않는다 · detail_basic_fix).
+    주소 = 검색 입력칸 · 공종 = 기존 공종 분류 칩(그 줄 아래) · 공사 예정 · 유입 경로 = 칩. 저장 = 기존 단계 정보 저장 길(saveSF) — 주소 · 유입 경로는 영업건의 단계 정보 칸(site_address · inflow_path)에 남는다(종료 건은 읽기만) */
+ const BASE={addr:{k:'site_address',l:'주소',ph:'도로명 · 지번 검색',closedOk:false},plan:{k:'construction_plan',l:'공사 예정',opts:['올해','내년','그 이후','미정'],closedOk:true},inflow:{k:'inflow_path',l:'유입 경로',opts:['홈페이지','전화','소개','기존 고객'],closedOk:false}};
+ function baseVal(d,key){
+  const f=fieldsOf(d);
+  if(key==='addr')return String(f.site_address||d.address||d.site_address||(d.detail&&d.detail.address)||'').trim();
+  if(key==='inflow'){let q='';try{const x=(root.inqOfDeal&&root.inqOfDeal(d)||[])[0];q=x&&(x.inflow||x.channel||(x.detail&&(x.detail.inflow||x.detail.channel))||(x.raw&&(x.raw['유입경로']||x.raw['유입 경로'])))||'';}catch(e){}return String(f.inflow_path||d.inflow||d.channel||q||'').trim();}
+  const F=siteFields(d).find(x=>x.k==='construction_plan');return String(F&&F.v||'').trim();
+ }
+ function baseSave(d){
+  const S=st(d),key=S.be,B=BASE[key];if(!B)return;
+  if(S.bdraft==null){S.be='';apply();return;}
+  const val=String(S.bdraft).trim();if(val===baseVal(d,key)){S.be='';S.bdraft=null;apply();return;}
+  saveSF(d,{[B.k]:val||null},()=>{S.be='';S.bdraft=null;});
+ }
  function basicHtml(d,closed){
-  const F=siteFields(d),S=st(d),pick=k=>F.find(x=>x.k===k),addr=String(d.address||d.site_address||(d.detail&&d.detail.address)||'').trim();
-  let src='';try{const q=(root.inqOfDeal&&root.inqOfDeal(d)||[])[0];src=String(d.inflow||d.channel||(q&&(q.inflow||q.channel||(q.detail&&(q.detail.inflow||q.detail.channel))||(q.raw&&(q.raw['유입경로']||q.raw['유입 경로']))))||'').trim();}catch(e){}
-  const plain=(l,val)=>'<div class="dv3-row"><span>'+h(l)+'</span><button type="button" class="dv3-val'+(val?'':' empty')+'" data-dv3="info"'+(closed?' disabled':'')+'>'+h(val||'미입력')+'</button></div>';
-  const fr=k=>fieldRow(d,pick(k),closed).replace(/미분류 · 분류하기|미입력 · 입력하기/g,'미입력');/* 줄 끝에 [입력] · [수정]이 따로 붙는다 */
-  return '<section class="dv3-sec dv7-basic"><header><b>기본 정보</b></header>'+plain('주소',addr)+fr('work')+fr('construction_plan')+plain('유입 경로',src)+(S.edit==='amount'?fieldRow(d,pick('amount'),closed):'')+'<div class="dv3-slot" data-slot="site"></div></section>';
+  const S=st(d),F=siteFields(d),work=F.find(x=>x.k==='work'),can=key=>closed?(BASE[key].closedOk&&canCI()):canSF();
+  const row=key=>{const B=BASE[key],val=baseVal(d,key),open=S.be===key&&can(key);
+   const btn='<button type="button" class="dv3-val'+(val?'':' empty')+'" data-dv3="be" data-v="'+key+'"'+(can(key)?'':' disabled')+'>'+h(val||'미입력')+'</button>';
+   let ed='';
+   if(open){const cur=S.bdraft!=null?S.bdraft:val;
+    ed='<div class="dv7-be" data-be="'+key+'">'+(B.opts?'<div class="chips">'+B.opts.map(o=>'<button type="button" data-dv3="bpick" data-v="'+attr(o)+'" aria-pressed="'+(cur===o)+'">'+h(o)+'</button>').join('')+'</div>':'<input data-dv3be="'+key+'" value="'+attr(cur)+'" placeholder="'+attr(B.ph)+'" aria-label="'+attr(B.l)+'">')+'<div class="b"><button type="button" data-dv3="bcancel">취소</button><button type="button" class="pri" data-dv3="bsave"'+(S.busy?' disabled':'')+'>저장</button></div></div>';}
+   return '<div class="dv3-row"><span>'+h(B.l)+'</span>'+btn+'</div>'+ed;};
+  return '<section class="dv3-sec dv7-basic"><header><b>기본 정보</b></header>'+row('addr')+(work?fieldRow(d,work,closed).replace(/미분류 · 분류하기|미입력 · 입력하기/g,'미입력'):'')+row('plan')+row('inflow')+(S.edit==='amount'?fieldRow(d,F.find(x=>x.k==='amount'),closed):'')+'<div class="dv3-slot" data-slot="site"></div></section>';
  }
  function buildLeft(v,d,closed){
   const left=v.querySelector('.dw-left');if(!left)return;
@@ -615,7 +633,7 @@
    const primary=hint&&hint.btn?{label:hint.btn+(/하기$/.test(hint.btn)?'':'하기'),act:hint.why==='계약 정보 입력됨 · 증빙 확인 필요'?'files':String(hint.act||'')}:null,F7=f7(d)?root.DealFrame7:null;
    const RF=rfix(d);let opener='';try{const KO=S.calling&&root.DealKeyman&&root.DealKeyman.ai&&aiOn()?root.DealKeyman.ai(d):null;opener=KO&&KO.call&&KO.call.opener?String(KO.call.opener):'';}catch(e){}
    const lgc7=v.classList.contains('dv3-legacy');
-   let ai='';if(RF){const sth=String((v.querySelector('.dv3-left .sth-ai')||{}).textContent||'').replace(/^\s*AI\s*/,'').trim();ai=[opener?'"'+opener+'"':'',reco.replace(/ \(AI\)$/,''),sth].filter(Boolean).join(' · ');}
+   let ai='';if(RF){ai=opener?'"'+opener+'"':reco.replace(/ \(AI\)$/,'');}/* 단지 이력 안내는 왼쪽 '이 단지 지난 영업' 줄로 충분 */
    const html=(RF?{taskHtml:F7.rightHtml}:(F7||DS)).taskHtml(d,{closed,primary,opener,ai,noResume:lgc7&&!v.querySelector('.dv3-headact .mv:not([disabled])'),tel:!!ci.mobile,calling:!!S.calling,req:S.req,guide:closed?'':lgc7?'영업을 다시 시작하려면 [영업 재개]에서 단계 · 다음 행동 · 날짜를 정해 주세요':String(root.dealStage(d))==='contract'?String(((root.CRMRules&&root.CRMRules.PHASE4&&root.CRMRules.PHASE4.playbook_tips)||{}).con||''):(hint?(hint.todo||hint.why):''),reco,nextHtml});
    if(tk.__h!==html){tk.__h=html;tk.innerHTML=html;}
    if(now)now.classList.add('dv3-old');
@@ -683,9 +701,13 @@
       왼쪽에만 있던 공종 · 예상 금액은 이 상자 맨 위에(다른 곳에서는 고칠 수 없다), 고객 반응 · 의사결정자 · 경쟁사 · 공사 예정은 그 단계가 묻는 항목일 때 여기에 나온다.
       G.dealSiteInfoLeft=true 면 예전처럼 왼쪽 '현장 정보' + 오른쪽은 겹치지 않는 항목만 */
   let sum=r.querySelector('.da-stage-summary');const leftOn=!!root.G.dealSiteInfoLeft;
-  if(dr){const old=host.querySelector(':scope>.da-stage-summary');if(sum&&sum!==old){if(old)old.replaceWith(sum);else host.prepend(sum);}else if(!sum)sum=old;}
-   if(!sum&&!leftOn){sum=el('section','dcard da-info da-stage-summary dv3-made','<h3></h3>');const anchor=r.querySelector(':scope>.dv3-slot[data-slot="now"]')||now;if(dr)host.prepend(sum);else if(anchor)anchor.after(sum);else r.prepend(sum);}
-  if(sum){
+  if(dr){/* 오른쪽 정리(detail_basic_fix): '이 단계 필수 정보 · 빠진 정보 n' 상자(deal-same)는 상세 창에서 그리지 않는다 — 확인할 정보는 frame7 이 그린다 */
+   [r,host].forEach(x=>x.querySelectorAll(':scope>.da-stage-summary').forEach(n=>n.remove()));sum=null;
+   let sl=host.querySelector(':scope>.dv3-slot[data-slot="stage"]');if(!sl){sl=el('div','dv3-slot');sl.dataset.slot='stage';host.prepend(sl);}
+   try{root.DecisionCollab&&root.DecisionCollab.mount(host,d,sl);}catch(e){}try{root.DealUnits&&root.DealUnits.mount(host,d,closed);}catch(e){}try{root.DealPrep&&root.DealPrep.mount(host,d,closed);}catch(e){}
+  }
+   if(!sum&&!leftOn&&!dr){sum=el('section','dcard da-info da-stage-summary dv3-made','<h3></h3>');const anchor=r.querySelector(':scope>.dv3-slot[data-slot="now"]')||now;if(dr)host.prepend(sum);else if(anchor)anchor.after(sum);else r.prepend(sum);}
+  if(sum&&!dr){
    const S=st(d),sc=stageSchema(d),h3=sum.querySelector('h3'),shown={};
    sum.querySelectorAll('dl>dt').forEach(dt=>{const dd=dt.nextElementSibling;if(!dd||dd.tagName!=='DD')return;const c=dd.cloneNode(true);c.querySelectorAll('button').forEach(b=>b.remove());const tx=c.textContent.trim();shown[dt.textContent.trim()]={text:/^(미입력|—|-|–)?$/.test(tx)?'':tx,fill:dd.querySelector('.da-fill')};});
    const p=root.currentPatch?root.currentPatch():{},cur=sc?(((d.stage_contexts||p.stage_contexts||{})[sc.code]||{}).fields||{}):{};
@@ -860,8 +882,12 @@
  function syncP7(v,d,dr){
   const S=st(d),F=root.DealFrame7,key=F.PANELS[S.p7]?S.p7:'';S.p7=key;
   const head=dr.querySelector(':scope>.dv7-phead');
-  const hh=key?'<div class="t"><button type="button" data-dv3="p7close" aria-label="응대 이력으로 돌아가기">‹</button><b>'+h(F.PANELS[key][0])+'</b><span>'+h(F.PANELS[key][1])+'</span></div>'+(key==='info'?F.extraHtml(d,{req:S.req}):''):'';
+  const hh=key?'<div class="t"><button type="button" data-dv3="p7close" aria-label="응대 이력으로 돌아가기">‹</button><b>'+h(F.PANELS[key][0])+'</b><span>'+h(F.PANELS[key][1])+'</span></div>':'';
   if(head.__h!==hh){head.__h=hh;head.innerHTML=hh;}
+  /* [채우기] · [발송 내역 확인]: 이 패널만의 화면(확인할 정보 3줄 · 발송 내역) — 옛 '빠진 정보' 목록은 그리지 않는다 */
+  const body=dr.querySelector(':scope>.dv7-pbody');let fill=body.querySelector(':scope>.dv7-fill');if(!fill){fill=el('div','dv7-fill');body.prepend(fill);}
+  const fh=key==='info'?F.fillHtml(d,S):key==='send'?F.sendHtml(d,S):'';
+  if(fill.__h!==fh){fill.__h=fh;fill.innerHTML=fh;}
   dr.dataset.p=key;if(dr.hidden===!!key)dr.hidden=!key;v.classList.toggle('dv7p',!!key);
   const cmp=v.querySelector('.dw-center .idv-composer');dr.style.bottom=(key&&cmp?cmp.offsetHeight:0)+'px';
  }
@@ -872,6 +898,19 @@
   S.p7=key;apply();const dr=v.querySelector('.dv7-drawer');if(dr)try{dr.scrollTop=0;}catch(e){}return true;
  }
  function closeP7(){const v=view(),d=root.CUR_DETAIL&&root.CUR_DETAIL.item;if(!v||!d)return false;const S=st(d);if(!S.p7)return false;S.p7='';const dr=v.querySelector('.dv7-drawer');if(dr)dr.hidden=true;v.classList.remove('dv7p');return true;}
+ /* 확인할 정보 · 기본 정보 입력(저장은 기존 단계 정보 저장 길 saveSF 그대로) */
+ function fieldsOf(d,stage){const p=root.currentPatch?root.currentPatch():{},ctx=d.stage_contexts||p.stage_contexts||{};return stage?((ctx[stage]||{}).fields||{}):Object.assign({},...Object.values(ctx).map(x=>x&&x.fields||{}));}
+ function fillDraft(e){const t=e.target;if(!t||!t.dataset||!t.closest||!(t.dataset.dv3f||t.dataset.dv3be)||!t.closest('#detailView.dv3'))return;const d=root.CUR_DETAIL?.item;if(!d)return;const S=st(d);if(t.dataset.dv3be){S.bdraft=t.value;return;}S.fill=S.fill||{};const F=S.fill[t.dataset.row]=S.fill[t.dataset.row]||{};F[t.dataset.dv3f]=t.value;}
+ function fillSave(d,row){
+  const S=st(d),keys=root.DealFrame7.rowFields(row),dr=(S.fill&&S.fill[row])||{},fields={};
+  keys.forEach(k=>{const v=dr[k];if(v==null)return;if(Array.isArray(v)){fields[k]=v;return;}const s=String(v).trim();if(s!=='')fields[k]=s;});
+  if(!Object.keys(fields).length){toast('저장할 값을 적어 주세요','warn');return;}
+  saveSF(d,fields,()=>{if(S.fill)delete S.fill[row];});
+ }
+ function fillGo(d,what){
+  const v=view();if(what==='composer'||what==='win'){if(what==='win'){const b=document.querySelector('#wn-head [data-wn="open"]');if(b){b.click();return;}}closeP7();apply();setTimeout(()=>{try{const ta=view().querySelector('#ddvComposer textarea');if(ta){ta.scrollIntoView({block:'nearest'});ta.focus({preventScroll:true});}}catch(e){}},30);return;}
+  if(what==='rel'){try{root.RelV12.openClassify(String(root.dealKey?root.dealKey(d):d.id));}catch(e){toast('관리 상태를 정하는 창을 열지 못했습니다','warn');}return;}
+ }
  function ensureCenter(v){const c=v.querySelector('.dw-center');if(!c)return null;let p=c.querySelector(':scope>.dv3-cpanel');if(!p){p=el('div','dv3-cpanel','<div class="dv3-slot" data-slot="center"></div>');p.hidden=true;c.prepend(p);new MutationObserver(()=>{const on=!!p.firstElementChild.children.length;if(p.hidden===on)p.hidden=!on;if(!on)p.dataset.by='';}).observe(p.firstElementChild,{childList:true});}return p;}
  /* 같은 버튼을 다시 누르면 닫고(true), 다른 패널이 떠 있으면 닫은 뒤 새로 연다 · 단계 바꾸기 창은 접는다 */
  function centerToggle(tag){const v=view(),p=v&&ensureCenter(v);if(!p)return false;closeP7();{const d0=root.CUR_DETAIL?.item;if(d0&&st(d0).peek){st(d0).peek='';peekSync(v,d0);}}const had=!!p.firstElementChild.children.length,same=p.dataset.by===tag;if(had)closeIn('center');if(had&&same){p.dataset.by='';return true;}p.dataset.by=tag;want('center');const d=root.CUR_DETAIL?.item;if(d&&st(d).mvOpen){st(d).mvOpen=false;if(document.getElementById('stage-transition-form'))root.StageTransitionUI?.close();syncMove(v);}return false;}
@@ -932,7 +971,7 @@
   if(a==='info'||a==='amount'){
    if(closeIn('site'))return;want('site');
    if(a==='amount')root.DetailActions.open('amount');
-   else if(!root.DealPanelsV2?.open('info'))root.DetailActions.open('management');
+   else if(rfix(d)){openP7('info');}/* 관리정보 수정 창은 상세 창에서 열지 않는다(detail_basic_fix) */else if(!root.DealPanelsV2?.open('info'))root.DetailActions.open('management');
    return;
   }
   if(a==='files'){if(closeIn('files'))return;const S=st(d);S.files=!S.files;if(S.files)apply();else root.renderDetail?.();return;}
@@ -955,9 +994,19 @@
   if(a==='mvpick'){if(b.getAttribute('aria-disabled')==='true'){if(!b.classList.contains('cur'))toast(b.dataset.stage==='won'?(root.PipelineStages.group(root.dealStage(d))==='construction'?'수주는 준공 처리 뒤에 옮길 수 있습니다 — 「계약·시공」 옆의 [→ 준공]을 먼저 눌러 주세요':'수주는 준공 단계에서만 옮길 수 있습니다 — 먼저 계약·시공으로 옮겨 주세요'):'지금 단계에서는 바로 옮길 수 없는 단계입니다','warn');return;}if(b.getAttribute('aria-pressed')==='true')return;pickStage(d,b.dataset.stage,b.dataset.code);return;}
   if(a==='htab'){st(d).hist=b.dataset.v;apply();return;}
   if(a==='p7'){openP7(b.dataset.v||'info');return;}
+  if(a==='be'){const S=st(d);S.be=b.dataset.v||'';S.bdraft=null;apply();setTimeout(()=>{try{const n=view().querySelector('.dv7-be');if(n)n.scrollIntoView({block:'nearest'});const i=view().querySelector('.dv7-be input');if(i)i.focus({preventScroll:true});}catch(e){}},30);return;}
+  if(a==='bcancel'){const S=st(d);S.be='';S.bdraft=null;apply();return;}
+  if(a==='bpick'){const S=st(d);S.bdraft=b.dataset.v;apply();return;}
+  if(a==='bsave'){baseSave(d);return;}
+  if(a==='fsave'){fillSave(d,b.dataset.row);return;}
+  if(a==='fgo'){fillGo(d,b.dataset.v);return;}
+  if(a==='sendpick'){const S=st(d);S.fill=S.fill||{};S.fill.send=Object.assign({},S.fill.send,{sent_date:b.dataset.date});apply();return;}
+  if(a==='sendmat'){const S=st(d);S.fill=S.fill||{};const F=S.fill.send=S.fill.send||{},cur=Array.isArray(F.materials)?F.materials.slice():(Array.isArray(fieldsOf(d,'sent').materials)?fieldsOf(d,'sent').materials.slice():[]),i=cur.indexOf(b.dataset.v);if(i>=0)cur.splice(i,1);else cur.push(b.dataset.v);F.materials=cur;apply();return;}
+  if(a==='sendquote'){const S=st(d);if(!S.files){S.files=true;apply();}try{root.openExecQuoteForm();}catch(e){}return;}
+  if(a==='sendnone'){saveSF(d,{sent_date_check:'확인 불가'},()=>{});return;}
   if(a==='p7close'){if(closeP7())apply();return;}
   if(a==='go7'){const x=(root.B.deals||[]).find(z=>String(z.id)===String(b.dataset.id));if(x)root.drwDeal(JSON.stringify(x));return;}
-   if(a==='primary'){const act=b.dataset.act||'';if(act==='files'){const S=st(d);if(!S.files){S.files=true;apply();}const t=view().querySelector('.dv3-left [data-dv3="files"]');if(t)try{t.scrollIntoView({block:'nearest'});}catch(e){}return;}if(act==='call'){try{root.contactDial('mobile');}catch(err){}return;}if(act==='activity'&&!view().querySelector('.nc-cta .nc-call')){const ta=view().querySelector('#ddvComposer textarea');if(ta){try{ta.scrollIntoView({block:'nearest'});ta.focus({preventScroll:true});}catch(e){}return;}}if(openFrom(act))return;startCall(d,true);return;}
+   if(a==='primary'){const act=b.dataset.act||'';if(act==='send7'&&rfix(d)){openP7('send');return;}if(act==='files'){const S=st(d);if(!S.files){S.files=true;apply();}const t=view().querySelector('.dv3-left [data-dv3="files"]');if(t)try{t.scrollIntoView({block:'nearest'});}catch(e){}return;}if(act==='call'){try{root.contactDial('mobile');}catch(err){}return;}if(act==='activity'&&!view().querySelector('.nc-cta .nc-call')){const ta=view().querySelector('#ddvComposer textarea');if(ta){try{ta.scrollIntoView({block:'nearest'});ta.focus({preventScroll:true});}catch(e){}return;}}if(openFrom(act))return;startCall(d,true);return;}
    if(a==='callnow'){try{root.contactDial('mobile');}catch(err){}startCall(d,true);return;}
    if(a==='spick'){const S=st(d);S.sedit='special_terms';S.sdraft='';commitStage(d,'special_terms',b.dataset.v);return;}
    if(a==='sptext'){const S=st(d);S.sedit='special_terms';S.sdraft=root.DealSame.special(d).text;apply();return;}
@@ -1018,6 +1067,8 @@
  }
  function inField(e){const t=e.target;return t&&t.dataset&&t.dataset.dv3in&&t.closest('#detailView.dv3')?t:null;}
  function commitEl(t){const d=root.CUR_DETAIL?.item;if(!d||!t.isConnected)return;if(t.dataset.dv3in==='left')commitLeft(d,t.dataset.key,t.value);else commitStage(d,t.dataset.key,t.value);}
+ document.addEventListener('input',fillDraft,true);document.addEventListener('change',fillDraft,true);
+ document.addEventListener('keydown',e=>{const t=e.target;if(e.key!=='Enter'||!t||!t.dataset||!t.closest||!t.closest('#detailView.dv3'))return;const d=root.CUR_DETAIL?.item;if(!d)return;if(t.dataset.dv3f){e.preventDefault();fillSave(d,t.dataset.row);}else if(t.dataset.dv3be){e.preventDefault();baseSave(d);}},true);
  document.addEventListener('input',e=>{const t=inField(e),d=root.CUR_DETAIL?.item;if(!t||!d)return;const S=st(d);if(t.dataset.dv3in==='left')S.draft=t.value;else S.sdraft=t.value;});
  document.addEventListener('change',e=>{const t=inField(e);if(t&&(t.tagName==='SELECT'||t.type==='date'))commitEl(t);});
  document.addEventListener('keydown',e=>{const t=inField(e);if(!t)return;
@@ -1040,7 +1091,7 @@
  },true);
  document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||t.dataset.dv3Nextdate===undefined||!t.closest('#detailView.dv3'))return;const d=root.CUR_DETAIL?.item;if(d&&t.value)saveNextOnly(d,null,t.value);});
  document.addEventListener('click',onClick);
- root.DealDetailV3={panelMenu:d=>rfix(d)?root.DealFrame7.MENU:[],openPanel:openP7,enabled,apply,related,siteFields,stageSchema,record:recordOutside,memo:memoOutside,next:nextOutside,stageFields:stageFieldsOutside,NXT,openFrom,planOf:nextPlan,
+ root.DealDetailV3={rightFix:()=>{const d=root.CUR_DETAIL&&root.CUR_DETAIL.kind==='deal'?root.CUR_DETAIL.item:null;return !!d&&rfix(d);},panelMenu:d=>rfix(d)?root.DealFrame7.MENU:[],openPanel:openP7,enabled,apply,related,siteFields,stageSchema,record:recordOutside,memo:memoOutside,next:nextOutside,stageFields:stageFieldsOutside,NXT,openFrom,planOf:nextPlan,
   refreshCenter(){const d=root.CUR_DETAIL?.kind==='deal'&&root.CUR_DETAIL.item,v=view();if(d&&v&&enabled())buildCenter(v,d,!!d.outcome||d.lifecycle_status==='closed');},
   tidy,same,wonRow,peek:setPeek,peekOf:d=>(d&&ST[d.id]&&ST[d.id].peek)||'',canReplace:d=>!!d&&!isClosed(d)&&!!contacts(d).ci.mobile,replace:()=>{const d=root.CUR_DETAIL?.item;if(d&&!isClosed(d)&&contacts(d).ci.mobile)doReplace(d);}};/* record · memo · NXT 는 오늘 업무 실행 모드가 쓴다 */
 })(window);
