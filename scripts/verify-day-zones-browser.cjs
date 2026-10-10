@@ -114,9 +114,13 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    /* 끄기: 예전 상자 그대로 */
    assert.deepEqual(await page.evaluate(()=>{G.dayWordOff=true;paint();const r=[document.querySelectorAll('#today-v2 .tv3-word').length,document.querySelectorAll('#today-v2 .dwd-bulk,#today-v2 .dwd-coach').length];G.dayWordOff=false;B.rep_manager_comments=[];DayWord._reset();DayZones.state().zone='now';paint();return r;}),[1,0]);await page.waitForTimeout(400);}
   /* 4. 근거 보기: 이유를 누르면 적용 규칙(기준 버전) · 기준일 · 관련 기록(고객 접촉 / 내부 메모) · 빠진 것 */
+  /* 기본(줄 아래 펼침 없음)에서는 이유 글에 근거가 title 로 붙고 펼침 상자가 없다 */
+  assert.equal(await page.locator('#today-v2 .tv3 .dz-ev').count(),0,'기본: 줄 아래 근거 펼침 없음');
+  await page.evaluate(()=>{G.rowInlineKeep=true;paint();});await page.waitForTimeout(200);
   await page.locator('#today-v2 .tv3 .dz-row',{hasText:'서울체육고'}).locator('.dz-why').click();await page.waitForTimeout(300);
   const ev=one(await page.locator('#today-v2 .tv3 .dz-ev').innerText());
   assert.match(ev,/^진행 판단 필요 · 왜\? 적용 규칙 견적 발송 후 7일 안 후속\(실제 발송일부터\) \(기준 v\d+ · [^)]+\) 기준일 .+ 관련 기록 \d+\.\d+ 고객 접촉 · 고객 접촉 1회 빠진 것 대기 사유 진전 결정권자 확인 요청 자료 확보 방문 확정 경쟁사 파악 결정 일정 다음 단계 조건 0 \/ 5 누르면 견적 발송 후 후속/,ev);/* day_zones 4-3 진전 확인: 근거 보기 안에 다음 단계 조건 5가지 */
+  await page.evaluate(()=>{G.rowInlineKeep=false;paint();});
   /* 5. 회신 대기 탭: 기다리는 것 · 다음 확인일 · 지연 아님 · [확인일 변경] */
   await page.locator('#today-v2 .tv3 .dz-tabs [data-v="wait"]').click();await page.waitForTimeout(300);
   const w=one(await page.locator('#today-v2 .tv3 .dz-table').innerText());
@@ -131,6 +135,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await page.locator('#today-v2 .tv3 .dz-tabs [data-v="gaps"]').click();await page.waitForTimeout(300);
   const gaps=await page.locator('#today-v2 .tv3 .dz-gap').evaluateAll(l=>l.map(r=>({site:r.querySelector('.c1>b').textContent,who:r.querySelector('.c1>div>span').textContent,q:r.querySelector('.c2 mark').textContent,why:r.querySelector('.dz-gapwhy').textContent,sub:r.querySelector('.c3 small').textContent,btns:[...r.querySelectorAll('.dz-btns button')].map(b=>b.textContent)})));
   assert.ok(gaps.length>=1);assert.match(gaps[0].site,/평동동남/);assert.match(gaps[0].who,/^이필선 · \d+\.\d+ 응대 완료$/);assert.match(gaps[0].q,/사진|방문/);assert.equal(gaps[0].why,'업무 없음');assert.match(gaps[0].sub,/응대 완료 ≠ 약속 완료/);assert.deepEqual(gaps[0].btns,['업무로 만들기','이미 함']);
+  await page.evaluate(()=>{G.rowInlineKeep=true;paint();});
   /* [이미 함] = 근거 한 줄 필수 → 완료 / 미완료 / 확인 불가 → 내부 메모 '[약속 확인] …' */
   await page.locator('#today-v2 .tv3 .dz-gap').first().locator('[data-dz="did"]').click();await page.waitForTimeout(200);
   await page.locator('#today-v2 .tv3 .dz-ask [data-dz="didsave"][data-v="완료"]').click();await page.waitForTimeout(200);assert.match(await page.locator('#today-v2 .tv3 .dz-ask em').innerText(),/근거 한 줄을 적어 주세요/);
@@ -138,6 +143,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const memo=await page.evaluate(()=>__memo);assert.equal(memo.length,1);assert.equal(memo[0][0],'gap1');assert.match(memo[0][1],/^\[약속 확인\] 완료 · ".+" — 10\.7 사진 받아 견적 발송함$/);
   const left=await page.locator('#today-v2 .tv3 .dz-gap').count();
   if(left){await page.locator('#today-v2 .tv3 .dz-gap').first().locator('[data-dz="mk"]').click();await page.waitForTimeout(400);const nx=await page.evaluate(()=>__next);assert.equal(nx.length,1);assert.equal(nx[0][0],'gap1');assert.match(nx[0][1],/^고객 약속: /);assert.match(nx[0][2],/^\d{4}-\d{2}-\d{2}$/,'기한 = 약속 날짜 · 없으면 3일 후');}
+  await page.evaluate(()=>{G.rowInlineKeep=false;paint();});
   /* 8. 필터로 숨은 내 요청 안내 → [보기] = 필터 해제 */
   await page.evaluate(()=>{SalesFilterState.selectBrand('석민이앤씨');paint();});await page.waitForTimeout(500);
   assert.deepEqual(await page.evaluate(()=>{const Z=DayZones.last();return [].concat(Z.now,Z.wait,Z.info).map(i=>i.key).sort();}),['deal:bid0','deal:wait1'],'브랜드 필터는 구역 항목에도 똑같이(석민이앤씨 2건만)');
