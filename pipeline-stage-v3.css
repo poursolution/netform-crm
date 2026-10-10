@@ -36,6 +36,19 @@
 .ps3-kpis b{font-size:24px;line-height:1.25;color:#15171c}
 .ps3-kpis .over b{color:#b42318}
 .ps3-kpis small{font-size:12px;color:#9ca3af}
+/* after_deploy 8: 진단 칸 = 판정 가능 n / 전체 + 3줄(판정 불가 · 확인 완료 / 해당 없음 · 실제 문제) + 다음 업무 — 칸 폭 전체 */
+.ps3-kpis>.ps3-jd,.ps3-kpis>.ps3-jd+div{grid-column:1/-1}
+.ps3-kpis>.ps3-jd.calm{background:#f8f9fb}
+.ps3-kpis>.ps3-jd>b{font-size:17px;color:#15171c}
+.ps3-kpis .ps3-j3{display:flex;flex-direction:column;gap:3px;margin:4px 0}
+.ps3-kpis .ps3-j3>span{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#374151}
+.ps3-kpis .ps3-j3 i{font-style:normal;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ps3-kpis .ps3-j3 b{font-size:12px;line-height:1.4;color:#15171c;white-space:nowrap}
+.ps3-kpis .ps3-j3 .amb b,.ps3-kpis .ps3-j3 .amb i{color:#c0392b}.ps3-kpis .ps3-j3 .r b{color:#b42318}
+.ps3-kpis>.ps3-jd>small{color:#2a52b8;font-weight:600}.ps3-kpis>.ps3-jd>small+small{color:#9ca3af;font-weight:400}
+.ps3-kpis>.ps3-jd+div{flex-direction:row;align-items:baseline;gap:8px;flex-wrap:wrap}.ps3-kpis>.ps3-jd+div b{font-size:17px}
+/* after_deploy 12: 계약 · 시공 안내 = 수주실적 / 계약 실적 / 인센티브 3줄 */
+.ps3-amt3{display:grid;grid-template-columns:64px minmax(0,1fr);gap:4px 10px;font-size:12.5px;margin:0 0 8px}.ps3-amt3>span:nth-child(odd){color:#6b7280}.ps3-amt3>span:nth-child(even){color:#15171c;word-break:keep-all}
 :is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-reason{border:1px solid #e8eaef;background:#fff;border-radius:9px;padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:6px;margin:0;color:#15171c;box-shadow:none;height:auto;width:100%}
 :is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-reason.on{border-color:#15171c;background:#f8f9fb}
 :is(#pipeline-stage-v3,#expansion-b,#gyeongnam-b,#sms-b,#asset-b,#reps-b) .ps3-reason>span{display:flex;justify-content:space-between;gap:10px;font-size:14px}

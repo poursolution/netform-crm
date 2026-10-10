@@ -79,6 +79,8 @@
    act:[['후속 연락','activity'],['수신 확인','activity'],['단계 판단','stage'],['증빙 확인','stagefields']],
    todo:'보낸 지 '+Q.follow+'일 넘은 건은 오늘 반응을 확인하고, 결정권자 일정을 함께 물어보세요. 미배정이면 담당 지정부터 하세요. 발송일이 없으면 실제 발송 여부와 기존 증빙을 먼저 확인하고, 확인된 날짜 · 자료 · 수신자만 보완하세요('+Q.follow+'일 계산 안 함). 다음 행동 등록만으로 고객 반응을 인정하지 않습니다.',
    tab:it=>it.bucket==='late'?0:it.bucket==='done'?2:it.bucket==='nodate'?3:1,
+   /* after_deploy 8: 발송일이 있는 건만 판정 가능 — 발송일 없는 건을 '후속 지연 0건'으로 읽히게 두지 않는다 */
+   judge:(items,X)=>{const ok=X.SE?X.SE.filter(e=>e.eligible).length:items.filter(x=>x.tab!==3).length,un=X.total-ok,late=X.cnt(0);return {label:'발송 후 후속 지연',ok,all:X.total,un,unWhy:'발송일 미확인',fine:Math.max(0,ok-late),okLabel:'확인 완료 · 기한 안',prob:late,probLabel:'실제 지연',next:un?'기존 발송 자료 · 수신자 · 발송일 확인':late?'오늘 후속 연락 → 결과 기록':'없음'};},
    has:{nofollow:(it,t)=>t===0,nosent:(it,t)=>t===3,nodecider:it=>!deciderKnown(it),nonext,long},sub:it=>it.sub};
   /* 관계관리 v12(2026-10-07 design_handoff_relationship_v12): 상태 5칸(집중 · 일반 · 대기 · 보류 · 미확인) + 업무 필터(상태와 별개) + 왼쪽 전환 검토 요청 · 재분류 진행률. 끄기 G.relV12Off */
   if(key==='relationship'&&root.RelV12&&root.RelV12.on()){const RV=root.RelV12,TB=RV.tabs();
@@ -87,6 +89,7 @@
     reasons:RV.REVIEW.map(r=>[r[0],RV.reviewLabel(r[0])]),act:[['연락 기록','activity'],['연락 기록','activity'],['연락 기록','activity'],['연락 기록','activity'],['분류하기','classify']],
     todo:'',workFilters:RV.WORKS,workNote:'다음 행동 미등록 · 연락 기록 없음만으로 대기 · 보류로 판정하지 않음',
     prep:it=>{it.rv=RV.state(it.row);},tab:it=>RV.tabIndex(it.rv||(it.rv=RV.state(it.row))),
+    judge:(items,X)=>{const un=items.filter(x=>x.it.rv&&x.it.rv.key==='unk'&&!x.row.due).length,prob=items.filter(x=>x.red).length,ok=X.total-un;return {label:'다음 연락일 지남',ok,all:X.total,un,unWhy:'관계 상태 미확인',fine:Math.max(0,ok-prob),okLabel:'기한 안 · 확인 완료',prob,probLabel:'다음 연락일 지남',next:un?'관계 상태 분류(집중 · 일반 · 대기 · 보류)':prob?'오늘 연락':'없음'};},
     has:{toNormal:it=>it.rv.review==='toNormal',toWait:it=>it.rv.review==='toWait',holdDue:it=>it.rv.review==='holdDue'},
     work:(x,k)=>{const s=x.it.rv||RV.state(x.row);return k==='od'?s.od:k==='wk'?s.wk:k==='nx'?s.nx:true;},
     redOf:it=>!!it.rv.od,sub:it=>it.rv.now,
@@ -114,6 +117,8 @@
    todo:'마감 D-'+D7+' 이내 건은 제안서를 팀장과 공유하고, 개찰 다음날 결과를 등록하세요(둘 다 운영 제안). 기한 뒤 연락 기록이 있으면 기존 업무 처리 여부와 다음 행동을 먼저 확인하고, 결정 · 입찰 일정도 확인하세요(일정 없으면 D-'+D7+' 계산 안 함).',
    /* 결과 대기 = 제출했거나 마감 · 결정 일정이 지난 건 / 마감 D-7 이내 = 아직 내지 않았고 일정이 7일 안 / 일정 미등록 = 날짜 없음(제출 전) / 나머지 = 진행 중 */
    tab:it=>{const f=it.row.fields||{},dd=days(it.row.date),sub=/제출|완료/.test(String(f.bid_plan||f.position||''));if(!it.row.date&&!sub)return 3;return (sub||(dd!==null&&dd<0))?2:(dd!==null&&dd<=D7)?0:1;},
+   /* after_deploy 8: 일정이 등록된 건만 공유 여부를 판정할 수 있다. '제안서를 공유했다'는 기록 칸이 없어 D-7 이내 건은 '공유 확인 필요'로만 센다(미공유로 단정하지 않음) */
+   judge:(items,X)=>{const un=X.cnt(3),ok=X.total-un,prob=X.cnt(0),late=X.CE?X.CE.filter(e=>e.late).length:0,nx=X.CE?X.CE.filter(e=>e.nextMissing).length:0;return {label:'제안서 공유 · 마감 D-'+D7,ok,all:X.total,un,unWhy:'일정 미등록',fine:Math.max(0,ok-prob),okLabel:'기한 전 · 결과 대기',prob,probLabel:'D-'+D7+' 이내 · 공유 확인 필요',next:un?'입찰 · PT 일정 등록 → 공유 여부 판정':prob?'제안서 팀장 공유 · 가격 확정':'없음',extra:'후속 업무 지연 '+late+'건 · 입찰 일정 없음 '+(X.CE?X.CE.filter(e=>e.scheduleMissing).length:un)+' · 다음 행동일 없음 '+nx+' · 판정 불가 '+(X.TL?X.TL.norecord:0)};},
    has:{noprop:(it,t)=>t===0,nodate:it=>days(it.row.date)===null,nocomp:it=>!it.values.competitor,nodecider:it=>!deciderKnown(it),nores:it=>it.rs.includes('nores')},sub:it=>it.sub,
    rowOpts:x=>{const e=competitionEvidence(x.row);return e&&e.review?{forceTask:true,task:e.task,staleNext:'기존 업무: '+nextOf(x.row)+' · 입찰 일정도 확인',btn:['업무 확인','next']}:{};}};
   /* stage7_2 ⑤: 계약 · 시공 4상태 — 계약 체결 → 착공 준비(착공일 미입력 · 아직 안 온 착공일) → 시공 중(착공일이 입력되고 오늘 이전) → 준공 확인. 계약일만으로 '시공 중' 판정 금지.
@@ -122,20 +127,27 @@
   const started=it=>{const s=startOf(it),n=s?days(s):null;return n!==null&&n<=0;};
   const infoMiss=it=>!it.values.contractDate||!it.values.contractAmount,proofMiss=it=>!infoMiss(it)&&it.values.contractProof==='check';
   const STALE=/계약\s*체결\s*확인|계약\s*확인/;
+  /* after_deploy 10: 준공 확인은 항목별로 — 준공일 · 검사 결과(공사 완료 + 준공검사 완료) · 고객 확인(하자보증서 또는 준공서류 전달). 계약일 · 금액은 준공 판정과 무관한 별도 보완 */
+  const finMiss=it=>{const c=(ctxOf(it.row.item).completion||{}).fields||{},k=Array.isArray(c.completion_checks)?c.completion_checks:[],m=[];if(!(it.values.completionDate||c.completion_date))m.push('준공일');if(!(k.includes('공사 완료')&&k.includes('준공검사 완료')))m.push('검사 결과');if(!(k.includes('하자보증서 전달')||k.includes('준공서류 전달')))m.push('고객 확인');return m;};
+  const contractMissTxt=it=>[!it.values.contractDate?'계약일':'',!it.values.contractAmount?'계약금액':''].filter(Boolean).join(' · ');
   return {name:'계약 · 시공',goal:goalOf(key,14),desc:'계약 체결 → 착공 준비 → 시공 중(착공일 입력 후 주 1회 현장 방문) → 준공 확인 · 계약일만으로 시공 중으로 보지 않음',
    tabs:[['계약 확인','계약일 · 금액 · 계약서'],['착공 준비','착공일 미입력 · 착공일 확인'],['시공 중','착공일 입력 후 · 주 1회 방문'],['준공 확인','준공검사 · 고객 확인']],
    reasons:[['cinfo','계약일 · 금액 없음'],['nostart','착공일 미입력'],['handoff','인계서 미확인'],['site7','시공 중 주 1회 방문 없음'],['nofin','준공 확인 없음']],
    act:[['정보 입력','stagefields'],['착공일 입력','stagefields'],['현장 확인','activity'],['준공 확인','stage']],
-   todo:'계약정보가 빠진 건은 오늘 입력하세요. 실적 · 인센티브 계산에 바로 쓰입니다. 착공일이 입력돼야 시공 중이 되며, 착공한 현장은 주 1회 현장 방문을 기록하세요.',
+   /* after_deploy 12: '실적 · 인센티브 계산에 바로 쓰임' 삭제 → 수주실적 / 계약 실적 / 인센티브를 나눠 적는다(집계 함수 CRMRules.dealResult · amounts 와 같은 말) */
+   todo:'계약 정보가 빠진 건은 계약 실적 · 매출 집계를 위해 입력하세요(수주실적에서는 빠지지 않습니다). 착공일이 입력돼야 시공 중이 되며, 착공한 현장은 주 1회 현장 방문을 기록하세요.',
+   todoHtml:()=>'<div class="ps3-amt3"><span>수주실적</span><span>낙찰금액 · VAT 별도 · 낙찰일 — 계약 정보와 무관</span><span>계약 실적</span><span>계약일 · 계약금액 — 여기서 입력</span><span>인센티브</span><span>정산 규칙 확정 후 · 지금은 계산 안 함</span></div><p class="ps3-todo">계약 정보가 빠진 건은 계약 실적 · 매출 집계를 위해 입력하세요(수주실적에서는 빠지지 않습니다). 착공일이 입력돼야 시공 중이 되며, 착공한 현장은 주 1회 현장 방문을 기록하세요.</p>',
+   /* after_deploy 8: 계약 정보가 있어야 착공 · 인계 · 방문을 판정할 수 있다(준공 확인 칸은 계약 정보와 무관하게 판정) */
+   judge:(items,X)=>{const J=items.filter(x=>x.tab===3||!infoMiss(x.it)),un=X.total-J.length,PR=['nostart','handoff','site7','nofin'],prob=J.filter(x=>x.rs.some(k=>PR.includes(k))).length;return {label:'착공일 · 인계서 · 방문 · 준공',ok:J.length,all:X.total,un,unWhy:'계약 정보 없음',fine:J.length-prob,okLabel:'확인 완료 · 해당 없음(착공 전)',prob,probLabel:'확인 필요',next:un?'계약 정보 확인 → 착공 · 인계 판정':prob?'착공일 · 인계서 · 현장 방문 · 준공 확인':'없음'};},
    tab:it=>(it.row.code==='completion'||it.values.completionDate)?3:(it.row.code==='construction'&&!infoMiss(it))?(started(it)?2:1):0,
    redOf:(it,t)=>t===0&&infoMiss(it),/* 빨강 = 계약 정보가 빠진 건만(계약 체결 중인 정상 건은 빨강 아님) */
-   nowOf:x=>{const names=['계약 체결','착공 준비','시공 중','준공 확인'];if(x.tab>0)return [names[x.tab],x.sub].filter(Boolean).join(' · ');const head=infoMiss(x.it)?'계약일 · 금액 없음':((root.DealSame&&root.DealSame.on()?root.DealSame.contract(x.row.item).text:'')||'계약 체결 확인 중');return [head,x.sub&&x.sub!==head?x.sub:''].filter(Boolean).join(' · ');},
+   nowOf:x=>{const names=['계약 체결','착공 준비','시공 중','준공 확인'];if(x.tab===3)return '준공 상태 · '+(finMiss(x.it).length?'확인 필요':'확인 완료');if(x.tab>0)return [names[x.tab],x.sub].filter(Boolean).join(' · ');const head=infoMiss(x.it)?'계약일 · 금액 없음':((root.DealSame&&root.DealSame.on()?root.DealSame.contract(x.row.item).text:'')||'계약 체결 확인 중');return [head,x.sub&&x.sub!==head?x.sub:''].filter(Boolean).join(' · ');},
     issueOf:x=>x.tab===0?(infoMiss(x.it)?'계약일 · 금액 없음':(root.DealSame&&root.DealSame.on()?root.DealSame.contract(x.row.item).text:'')||'계약 체결 확인 중'):[['계약 체결','계약일 · 금액 · 계약서'],['착공 준비','착공일 미입력 · 착공일 확인'],['시공 중','착공일 입력 후 · 주 1회 방문'],['준공 확인','준공검사 · 고객 확인']][x.tab][1],/* 같은 정보 같은 판단: 입력된 계약 정보는 그대로 보이고 증빙만 '확인 필요'(2026-10-08) */
     taskOf:x=>x.tab===0?(infoMiss(x.it)?'계약 정보 입력':proofMiss(x.it)?'계약서 확인':'계약 체결 확인'):x.tab===1?(startOf(x.it)?'착공 준비':'착공일 확인'):x.tab===2?'주간 현장 방문':'준공 확인',
    btnOf:x=>x.tab===0?(infoMiss(x.it)?['정보 입력','stagefields']:proofMiss(x.it)?['계약서 확인','stagefields']:['계약 확인','stagefields']):x.tab===1?(startOf(x.it)?['착공 준비','stagefields']:['착공일 입력','stagefields']):x.tab===2?['현장 확인','activity']:['준공 확인','stage'],
-   rowOpts:x=>{const nx=x.row.next&&x.row.next.text?String(x.row.next.text):'';return x.tab>0&&STALE.test(nx)?{forceTask:true,staleNext:'"'+nx.trim()+'" 종료 대상'}:{};},
-   has:{cinfo:(it,t)=>t===0&&infoMiss(it),nostart:(it,t)=>t===1&&!startOf(it),handoff:(it,t)=>(t===1||t===2)&&it.rs.includes('handoff'),site7:(it,t)=>t===2&&it.rs.includes('site7'),nofin:(it,t)=>t===3&&!finOk(it)},
-   sub:(it,t)=>t===0?(!it.values.contractDate&&!it.values.contractAmount?'계약일 · 금액 미입력':!it.values.contractDate?'계약일 미입력':!it.values.contractAmount?'계약금액 미입력':proofMiss(it)?'계약 정보 입력됨 · 증빙 확인 필요':'계약 체결 확인 중'):t===1?(startOf(it)?'착공 '+ymd(startOf(it))+' 예정':'착공일 미입력'):it.sub};
+   rowOpts:x=>{const nx=x.row.next&&x.row.next.text?String(x.row.next.text):'',o=x.tab>0&&STALE.test(nx)?{forceTask:true,staleNext:'"'+nx.trim()+'" 종료 대상'}:{};if(x.tab===3){const m=finMiss(x.it),cm=contractMissTxt(x.it);o.base=m.length?'빠진 정보 · '+m.join(' · '):'준공일 · 검사 결과 · 고객 확인 완료';if(cm)o.side='별도 보완 · '+cm+' (준공 판정과 무관)';}return o;},
+   has:{cinfo:(it,t)=>t===0&&infoMiss(it),nostart:(it,t)=>t===1&&!startOf(it),handoff:(it,t)=>(t===1||t===2)&&it.rs.includes('handoff'),site7:(it,t)=>t===2&&it.rs.includes('site7'),nofin:(it,t)=>t===3&&finMiss(it).length>0},
+   sub:(it,t)=>t===0?(!it.values.contractDate&&!it.values.contractAmount?'계약일 · 금액 미입력':!it.values.contractDate?'계약일 미입력':!it.values.contractAmount?'계약금액 미입력':proofMiss(it)?'계약 정보 입력됨 · 증빙 확인 필요':'계약 체결 확인 중'):t===1?(startOf(it)?'착공 '+ymd(startOf(it))+' 예정':'착공일 미입력'):t===3?(finMiss(it).length?'빠진 정보 · '+finMiss(it).join(' · '):'준공일 · 검사 결과 · 고객 확인 완료'):it.sub};
  }
  /* 줄마다 상태(탭) · 걸린 사유를 붙인다. 정렬: 빨강 상태 → 다음 상태 → 체류 긴 순 */
  function model(key,list){
@@ -159,8 +171,14 @@
  /* 같은 단지의 진행 건 수(모든 단계 · 진행 범위 안에서) */
  let DUP=new Map();
  const siteKeyOf=r=>{const d=r.item,id=d.cleanup_site_id||d.site_id||d.siteId;if(id)return 'id:'+id;let k='';try{k=root.normSite?root.normSite(r.site):String(r.site||'');}catch(e){}return k&&k.length>=2?'n:'+k:'';};
- function dupMap(){const m=new Map();try{root.PipelineWorkspace.rows({unscoped:true}).forEach(r=>{if(['won','lost','expansion','legacy'].includes(r.group))return;const k=siteKeyOf(r);if(k)m.set(k,(m.get(k)||0)+1);});}catch(e){}return m;}
- const dupOf=r=>{const k=siteKeyOf(r),n=k?DUP.get(k)||0:0;return n>1?'같은 단지 진행 '+n+'건 · 같은 공사인지 확인':'';};
+ function dupMap(){const m=new Map();try{root.PipelineWorkspace.rows({unscoped:true}).forEach(r=>{if(['won','lost','expansion','legacy'].includes(r.group))return;const k=siteKeyOf(r);if(k)(m.get(k)||m.set(k,[]).get(k)).push({id:String(r.item.id||r.key),work:workOf(r),year:bizYearOf(r)});});}catch(e){}return m;}
+ /* after_deploy 11: 같은 단지에 진행 건이 여럿이면 공종 · 연도 · 영업건 번호로 구분해 보여 주고, 공종 · 연도가 같으면 '중복 의심' → 데이터 정리 · 검토(자동으로 합치지 않는다). 공종 미분류 · 연도 미입력은 의심으로 단정하지 않는다 */
+ const dupInfo=r=>{const k=siteKeyOf(r),L=k?DUP.get(k)||[]:[];if(L.length<2)return null;const me=String(r.item.id||r.key),w=workOf(r),y=bizYearOf(r),unk=w==='공종 미분류',sameW=L.filter(o=>o.id!==me&&o.work===w).length,sameWY=L.filter(o=>o.id!==me&&o.work===w&&o.year===y).length,id=[unk?'':w,y,noOf(r)].filter(Boolean).join(' · ');
+  if(!unk&&y&&sameWY>0)return {n:L.length,suspect:true,text:'중복 의심 · 같은 공종 · 연도 '+(sameWY+1)+'건 · '+noOf(r)};
+  if(unk)return {n:L.length,suspect:false,text:'같은 단지 진행 '+L.length+'건 · 공종 미분류 · '+[y,noOf(r)].filter(Boolean).join(' · ')};
+  if(!y&&sameW>0)return {n:L.length,suspect:false,text:'같은 단지 진행 '+L.length+'건 · 같은 공종 · 연도 미입력 · '+noOf(r)};
+  return {n:L.length,suspect:false,text:'같은 단지 진행 '+L.length+'건 · '+id};};
+ const dupOf=r=>{const d=dupInfo(r);return d?d.text+(d.suspect?' → 데이터 검토':''):'';};
  function rowHtml(C,x){
   const r=x.row,bc=bcOf(r),a=actOf(C,x);
   return '<div class="ps3-row" role="row" tabindex="0" data-ps3="open" data-key="'+attr(r.key)+'" data-tab="'+x.tab+'" style="border-left-color:'+(bc||'#e3e6ec')+'"><div class="ps3-l"><div class="ps3-a"><b title="'+attr(r.site)+'">'+h(r.site)+(root.advisoryBadge?root.advisoryBadge(r.item):'')+'</b><span><em style="color:'+(bc||'#9ca3af')+'">'+h(r.item.brand||'브랜드 미지정')+'</em> · '+h(r.owner||'미배정')+' · '+h(money(r.amount))+'</span><small class="ps3-meta">'+h(metaOf(r))+'</small>'+(dupOf(r)?'<small class="ps3-dup">'+h(dupOf(r))+'</small>':'')+'</div>'
@@ -173,10 +191,16 @@
   const r=x.row,a=actOf(C,x),st0=x.tab===0?C.reasons[0][1]:C.tabs[x.tab][0],sub=x.sub&&!String(st0).includes(x.sub)&&!String(x.sub).includes(st0)?x.sub:'';
   /* 버튼 = 업무 동사: 연락할 일이면 '연락 기록'(미팅 날짜만 남은 컨설팅 건은 '일정 등록'), 나머지는 그 단계의 일(견적 요청 · 정보 입력 · 단계 판단 …). 수주 · 실주는 B안 표의 버튼 이름 그대로 */
   const contact=a[1]==='next'||a[1]==='activity',btn=C.btnOf?[a[0],a[1]]:contact?[key==='consulting'&&x.tab===0?'미팅 확인':'연락 기록',a[1]]:[a[0],a[1]];
-  const o={r,now:C.nowOf?C.nowOf(x):[st0,sub].filter(Boolean).join(' · '),task:C.taskOf?C.taskOf(x):C.tabs[x.tab][1],btn,stall:x.stall,goal:C.goal,reasons:x.rs.map(k=>(C.reasons.find(q=>q[0]===k)||[])[1]).filter(Boolean),dup:dupOf(r),tab:x.tab,closed:!!C.closed,amountLabel:C.amountLabel,stage:key};
+  const o={r,now:C.nowOf?C.nowOf(x):[st0,sub].filter(Boolean).join(' · '),task:C.taskOf?C.taskOf(x):C.tabs[x.tab][1],btn,stall:x.stall,goal:C.goal,reasons:x.rs.map(k=>(C.reasons.find(q=>q[0]===k)||[])[1]).filter(Boolean),dup:dupOf(r),dupInfo:dupInfo(r),tab:x.tab,closed:!!C.closed,amountLabel:C.amountLabel,stage:key};
+  /* after_deploy 9: 연락할 일과 정보 보완을 한 버튼에 섞지 않는다 — 등록된 다음 할 일이 연락이면 그게 '먼저'(연락 기록), 빠진 정보 입력은 '보완'(정보 입력) 줄로 따로. 반대로 연락 버튼인데 빠진 정보가 있으면 보완 줄을 덧붙인다 */
+  if(!C.closed&&a[1]!=='owner'){const nx=r.next&&r.next.text?String(r.next.text):'',contactNext=/전화|통화|연락|방문|문자|재통화|콜백|안부/.test(nx),info=x.rs.filter(k=>(INFO_RS[key]||[]).includes(k)).map(k=>(C.reasons.find(q=>q[0]===k)||[])[1]).filter(Boolean);
+   if(btn[1]==='stagefields'&&contactNext){o.btn2=[btn[0],btn[1]];o.fixNote=info.length?info.join(' · '):String(o.task||btn[0]);o.btn=['연락 기록','activity'];}
+   else if(['next','activity'].includes(btn[1])&&info.length){o.btn2=['정보 입력','stagefields'];o.fixNote=info.join(' · ');}}
   if(C.rowOpts){try{Object.assign(o,C.rowOpts(x)||{});}catch(e){}}/* 관계관리 v12: 상태 · 주기 꼬리표 · 기준일 · 기한 글 */
   return o;
  }
+ /* 정보 보완으로 보는 사유(연락이 아니라 입력으로 풀리는 것) */
+ const INFO_RS={sent:['nosent'],competition:['nodate'],construction:['cinfo','nostart','handoff']};
  const competitionEvidence=r=>root.PipelineRowV11&&root.PipelineRowV11.competitionEvidence?root.PipelineRowV11.competitionEvidence(r):null;
  function cardHtml(C,x){
   const r=x.row,bc=bcOf(r),e=C.key==='competition'?competitionEvidence(r):null,a=actOf(C,x)[1]==='owner'?actOf(C,x):e&&e.review?root.PipelineRowV11.primaryAction(r,['업무 확인','next'],C.closed):actOf(C,x);
@@ -199,7 +223,11 @@
   const competitionKpi=CE?'<div class="over"><span>후속 업무 지연</span><b>'+CE.filter(e=>e.late).length+'건</b><small>입찰 일정 없음 '+CE.filter(e=>e.scheduleMissing).length+' · 다음 행동일 없음 '+CE.filter(e=>e.nextMissing).length+' · 판정 불가 '+(TL?TL.norecord:0)+'</small></div>':null;
   const SE=key==='sent'?items.map(x=>B.sentEvidence(x.row,x.it.values)):null;
   const sentKpi=SE?'<div class="over"><span>발송 후 후속 지연</span><b>'+cnt(0)+'건</b><small>판정 가능 '+SE.filter(e=>e.eligible).length+' / '+total+'건 · 발송일 확인 '+SE.filter(e=>!e.eligible).length+'건</small></div>':null;
-  const kpi1=sentKpi||competitionKpi||(C.closed?'<div class="over amb"><span>'+h(C.kpiLabel||'정보 보완')+'</span><b>'+over.toLocaleString('ko-KR')+'건</b><small>기한 초과 0 · 지연 아님 · 끝 상태</small></div>'
+  /* after_deploy 8: 진단 칸 = '판정 가능 n / 전체' + 판정 불가 · 확인 완료 / 해당 없음 · 실제 문제 + 다음 업무. '0건'은 판정 가능한 건이 있을 때만 쓴다(없으면 –) */
+  const JD=C.closed?null:C.judge?C.judge(items,{TL,SE,CE,cnt,rsN,total}):TL?(()=>{const un=TL.nodate+TL.norecord;return {label:'기한 초과',ok:TL.late+TL.ok,all:total,un,unWhy:'일정 · 기록 미확인',fine:TL.ok+TL.na,okLabel:'기한 안 · 해당 없음',prob:TL.late,probLabel:'실제 기한 초과',next:un?'기존 기록 확인 → 일정 · 날짜 등록':TL.late?'기한 넘긴 건 오늘 처리':'없음'};})():null;
+  const jrow=(l,n,cls,show)=>'<span class="'+(cls||'')+'"><i>'+h(l)+'</i><b>'+(show?Number(n).toLocaleString('ko-KR')+'건':'–')+'</b></span>';
+  const jbox=J=>'<div class="over ps3-jd'+(J.prob?'':' calm')+'" data-ok="'+J.ok+'" data-all="'+J.all+'"><span>'+h(J.label)+'</span><b>판정 가능 '+Number(J.ok).toLocaleString('ko-KR')+' / '+Number(J.all).toLocaleString('ko-KR')+'</b><div class="ps3-j3">'+jrow('판정 불가 · '+J.unWhy,J.un,J.un?'amb':'',true)+jrow(J.okLabel,J.fine,'',J.ok>0||J.fine>0)+jrow(J.probLabel,J.prob,J.prob?'r':'',J.ok>0)+'</div><small>다음 업무 · '+h(J.next)+'</small>'+(J.extra?'<small>'+h(J.extra)+'</small>':'')+'</div>';
+  const kpi1=JD?jbox(JD):sentKpi||competitionKpi||(C.closed?'<div class="over amb"><span>'+h(C.kpiLabel||'정보 보완')+'</span><b>'+over.toLocaleString('ko-KR')+'건</b><small>기한 초과 0 · 지연 아님 · 끝 상태</small></div>'
    :'<div class="over"><span>기한 초과</span><b>'+(TL?TL.late:over).toLocaleString('ko-KR')+'건</b><small>확인 필요 '+(TL?TL.nodate+TL.norecord:0)+' · 날짜 미입력 '+(TL?TL.nodate:0)+' · 판정 불가 '+(TL?TL.norecord:0)+'</small></div>');
   /* stage7_2 ⑤: 자료 없음 3가지(자료발송 · 입찰 · 계약 단계) — 현재 업무 미수행만 평가 · 지연 통계에 들어간다 */
   const MS=(!C.closed&&!C.leftHtml&&['consulting','sent','competition','construction'].includes(key)&&TL&&root.PipelineJudge&&root.PipelineJudge.missCounts)?root.PipelineJudge.missCounts(TL):null;
@@ -208,7 +236,7 @@
   const headNote=C.headNote?' · '+h(C.headNote(items)):'';
   const ages=CE?CE.filter(e=>e.age!==null).map(e=>e.age):null,ageAvg=ages&&ages.length?Math.round(ages.reduce((a,b)=>a+b,0)/ages.length):null;
   /* 왼쪽: 단계 진단 */
-  const diag=C.leftHtml?'<aside class="ps3-diag"><section class="ps3-box"><header><b>단계 진단</b><span>'+total.toLocaleString('ko-KR')+'건 · '+h(money(sumAmt))+'</span></header><div class="ps3-kpis"><div class="over"><span>다음 연락일 지남</span><b>'+over.toLocaleString('ko-KR')+'건</b><small>오늘 연락</small></div><div><span>평균 체류</span><b>'+avg+'일</b><small>기준 '+C.goal+'일</small></div></div></section>'+C.leftHtml(items,S)+'</aside>':'<aside class="ps3-diag"><section class="ps3-box"><header><b>단계 진단</b><span>'+total.toLocaleString('ko-KR')+'건 · '+h((CE?'예상 ':'')+money(sumAmt))+headNote+'</span></header>'
+  const diag=C.leftHtml?'<aside class="ps3-diag"><section class="ps3-box"><header><b>단계 진단</b><span>'+total.toLocaleString('ko-KR')+'건 · '+h(money(sumAmt))+'</span></header><div class="ps3-kpis">'+(JD?jbox(JD):'<div class="over"><span>다음 연락일 지남</span><b>'+over.toLocaleString('ko-KR')+'건</b><small>오늘 연락</small></div>')+'<div><span>평균 체류</span><b>'+avg+'일</b><small>기준 '+C.goal+'일</small></div></div></section>'+C.leftHtml(items,S)+'</aside>':'<aside class="ps3-diag"><section class="ps3-box"><header><b>단계 진단</b><span>'+total.toLocaleString('ko-KR')+'건 · '+h((CE?'예상 ':'')+money(sumAmt))+headNote+'</span></header>'
    +'<div class="ps3-kpis">'+kpi1+(C.closed?'<div><span>결과 기록 완성률</span><b>'+donePct+'%</b><small>'+doneN+' / '+total+'</small></div>':'<div><span>평균 체류</span><b>'+h(CE?(ageAvg===null?'미확인':ageAvg+'일'):avg+'일')+'</b><small>'+h(CE?'진입일 입력 '+ages.length+' / '+total+'건':(key==='sent'?'체류 진단 기준 ':'기준 ')+C.goal+'일')+'</small></div>')+'</div>'+(C.closed?'<span class="rv-bar" aria-label="결과 기록 완성률"><i style="width:'+Math.max(donePct>0?2:0,donePct)+'%"></i></span>':'')+'</section>'
    +missHtml+'<section class="ps3-box ps3-why"><header><b>'+(C.closed?'보완할 것 '+fixN+'건':'왜 멈춰 있나')+'</b><span>누르면 목록이 걸러짐</span></header>'
    +C.reasons.map((r,i)=>{const c=rsN(r[0]),on=S.reason===r[0];return '<button type="button" class="ps3-reason'+(on?' on':'')+((C.redReason?C.redReason(r[0]):i===0)?' first':'')+'" data-ps3="reason" data-v="'+r[0]+'" aria-pressed="'+on+'"><span><b>'+h(r[1])+'</b><b class="c">'+c.toLocaleString('ko-KR')+'</b></span><i><u style="width:'+(total?Math.min(100,Math.round(c/total*100)):0)+'%"></u></i></button>';}).join('')+'</section>'
@@ -232,6 +260,7 @@
   if(a==='page'){LP.set(S,v,b.dataset.page);return root.paint();}
   e.stopPropagation();
   if(a==='act'&&v==='classify'&&root.RelV12)return root.RelV12.openClassify(b.dataset.key);/* 관계관리 v12 분류 · 전환 창 */
+  if(a==='dup'){/* 중복 의심 → 데이터 정리 · 검토(관리자 화면 · 자동 합치기 없음) */let adm=false;try{adm=!!root.todayIsAdmin();}catch(x){}if(adm){try{root.goPage('dup');}catch(x){}}else if(typeof root.toast==='function')root.toast('중복 의심 건은 데이터 정리 · 검토(관리자 화면)에서 확인합니다 — 관리자에게 알려 주세요');return;}
   if(a==='act')return B.open(b.dataset.key,v);
   if(a==='fix'){e.stopPropagation();return B.open(b.dataset.key,'stagefields');}/* 날짜 미입력 보완 단추 → 상세의 이 단계 필수 정보(ops_12 A②) */
   if(a==='open'&&!e.target.closest('button'))return B.open(b.dataset.key);
@@ -248,5 +277,5 @@
   root.CommonFilterBar?.mount('pipe');const bar=pg?.querySelector(':scope>.cf-bar');if(bar)bar.hidden=false;
   return true;
  };
- root.PipelineStageV3={enabled,cfg,model,html,KEYS};
+ root.PipelineStageV3={enabled,cfg,model,html,KEYS,dupInfo:r=>{DUP=dupMap();return dupInfo(r);}};
 })(window);

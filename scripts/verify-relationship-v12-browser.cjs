@@ -73,7 +73,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual(await V.locator('.ps3-diag .ps3-box header b').allInnerTexts().then(l=>l.map(one)),['단계 진단','전환 검토 요청 3','기존 8건 재분류']);
   assert.deepEqual(await V.locator('.rv-rev').evaluateAll(l=>l.map(b=>[b.querySelector('span').textContent,b.querySelector('b').textContent,b.dataset.v])),[['집중 1개월 지남 → 일반관리 검토','1','toNormal'],['일반 3개월 지남 → 고객 반응·추진 시기 재확인','1','toWait'],['보류 재검토일 도래','1','holdDue']]);
   assert.equal(one(await V.locator('.rv-prog').innerText()),'분류 끝남 3 / 8');assert.match(one(await V.locator('.rv-box .rv-note').first().innerText()),/자동으로 바꾸지 않음/);
-  assert.equal(await V.locator('.ps3-kpis .over b').innerText(),'3건','다음 연락일 지남 = 업무 필터와 같은 수');
+  assert.equal(await V.locator('.ps3-kpis .ps3-j3>span').nth(2).locator('b').innerText(),'3건','다음 연락일 지남 = 업무 필터와 같은 수(after_deploy 8: 진단 칸 셋째 줄)');assert.match(await V.locator('.ps3-kpis .ps3-jd>b').innerText(),/^판정 가능 \d+ \/ \d+$/);
   /* ④ 목록 줄: v11 4칸 그대로 + 상태 꼬리표(현장 아래) · 기준일(현재 상황 둘째 줄) · 상태 주기로 정한 기한 · 버튼 */
   const mdn=n=>page.evaluate(n=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(DAY(n));return (+m[2])+'.'+(+m[3]);},n);/* 줄 안 글은 짧게(2026-10-07 대표 "내용 넘어가는 것 하지 말아") — 기준일은 월.일 */
   const d10=await mdn(-10),d20=await mdn(-20),d40=await mdn(-40),d130=await mdn(-130),d50=await mdn(-50),dr=await mdn(-1);
