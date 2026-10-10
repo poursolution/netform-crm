@@ -66,3 +66,6 @@
 #detailView.ddv.dv3.dv7 .dv3-move .sf-field>small{color:#2a52b8}
 #detailView.dv7 .dp6-plan b.amb{color:#2a52b8}
 #detailView.dv7 .dp6-p.mid{background:#eef3fe;color:#2a52b8}
+/* 통화 중: 첫마디(AI 가 만든 것이 있을 때만) */
+#detailView.ddv.dv3.dvt.dv7 .dv7-opener{font-size:12.5px;line-height:1.5;color:#15171c;background:#f5f8ff;border-left:3px solid #3b6ce4;border-radius:4px;padding:6px 9px;overflow-wrap:anywhere}
+#detailView.ddv.dv3.dvt.dv7 .dv7-opener>b{font-size:11px;font-weight:700;color:#3b6ce4;margin-right:4px}

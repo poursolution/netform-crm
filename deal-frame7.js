@@ -256,6 +256,7 @@
   const aux=[ctx.guide?'<span><b>지침</b> '+esc(ctx.guide)+'</span>':'',ctx.reco?'<span><b>추천</b> '+esc(ctx.reco)+'</span>':''].filter(Boolean).join('');
   return '<span class="dv7-lb">지금 처리</span>'
    +'<div class="dvs-tt"><b>'+esc(K.text)+'</b><span><span class="k">'+esc(K.dueK)+'</span> <b class="'+esc(K.cls)+'">'+esc(K.due)+'</b></span></div>'
+   +(ctx.opener?'<div class="dv7-opener"><b>첫마디</b> '+esc(ctx.opener)+'</div>':'')
    +'<div class="dvs-kv"><span>확인됨</span><span class="'+(K.okNone?'none':'')+'">'+esc(K.ok)+'</span><span>확인할 것</span><span class="'+(K.chkOpen?'chk':'none')+'">'+esc(K.chk)+'</span><span>완료 조건</span><span>'+esc(K.done)+'</span></div>'
    +'<div class="dvs-btns dv7-btns"><button type="button" class="fill dvs-primary" data-dv3="primary" data-act="'+attr(K.btn.act)+'">'+esc(K.btn.label)+'</button>'+sub+'</div>'+(closed?'':(ctx.nextHtml||''))
    +(K.first.length?'<div class="dv7-first"><b>먼저 확인 · '+K.first.length+'</b>'+K.first.map(f=>'<span class="it"><em class="t-'+TAGC[f.s]+'">'+esc(f.s)+'</em><span>'+esc(f.l)+'</span></span>').join('')+'</div>':'')
