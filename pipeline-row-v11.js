@@ -59,7 +59,7 @@
   let tagHtml='',staleHtml='';try{const DC=root.DecisionCollab,tg=DC&&DC.on()&&!noOwner?DC.tags(d):null;if(tg&&tg.block)tagHtml='<em class="dcb-tag'+(tg.block==='고객'?'':' in')+'">'+h(tg.block)+'</em>';if(tg&&tg.stale)staleHtml='<small class="dcb-stale" title="'+attr(tg.stale)+'">'+h(tg.stale)+'</small>';}catch(e){}
   /* stage7 ⑤: 세부 상태가 정한 업무가 등록된 다음 할 일보다 앞설 때(o.forceTask — 예: 계약 확인이 끝난 건의 '계약 체결 확인' → '주간 현장 방문') · 이전 업무는 o.staleNext 로 '종료 대상' 표시 */
   const task=noOwner?'담당자 배정':hasNext&&!o.forceTask?String(r.next.text).trim():(o.task||''),lt=lastTouch(r),last=lt?'최근 연락 '+ymdDot(lt):NOLOG;
-  const key=attr(r.key),A='data-'+ns;
+  const key=attr(r.key),A='data-'+ns,fix2=!noOwner&&Array.isArray(o.btn2)&&o.btn2[0]&&btn[1]!=='contact'?o.btn2:null;
   /* 판정 하나(2026-10-06 집계 · 판정 정리 · pipeline-judge.js): 최근 연락 두 줄(시도 / 실제 연결) · 기한 상태 3가지 · 다음 업무 아래 '판정: 근거' */
   const J=root.PipelineJudge&&root.PipelineJudge.on()?root.PipelineJudge:null,jb=J&&!noOwner?J.basis(d,o.stage):null,tl=J?J.touchLines(d):null;
   /* 2026-10-07 대표 "내용 넘어가는 것 하지 말아": 보완 단추([발송일 입력] 등)가 같이 있는 줄은 근거만 — 추천 행동 문구는 단추 이름과 같은 말이라 줄이 길어지기만 한다 */
@@ -68,10 +68,14 @@
   const dueHtml=o.dueText?'<small class="'+attr(o.dueClass||'')+'">'+h(o.dueText)+'</small>'+(jb?'<small class="why">'+h(jl)+'</small>':'')/* 관계관리 v12: 상태 주기로 정한 기한 글 */:jb?'<small class="'+J.dueClass(jb)+'">'+h(J.dueText(jb))+'</small><small class="why">'+h(jl)+(jb.fix?' <u '+A+'="fix" data-key="'+key+'" role="button" tabindex="0">'+h(jb.fix)+'</u>':'')+'</small>':'<small class="'+(due!=null&&due<0?'r':due==null?'g':'')+'">'+h(dueText(due,r.due))+'</small>';
   const lastHtml=tl?'<small title="'+attr(tl.attempt)+'">'+h(tl.attempt)+'</small><small class="cn'+(tl.hasConnect?'':' none')+'">'+h(tl.connect)+'</small>':'<small>'+h(last)+'</small>';
   return '<div class="prv-row '+(cls||'')+'" role="row" tabindex="0" '+A+'="open" data-key="'+key+'"'+(o.tab!=null?' data-tab="'+attr(o.tab)+'"':'')+' style="border-left-color:'+(bc||'#e3e6ec')+'">'
-   +'<div class="prv-a"><b title="'+attr(r.site)+'">'+h(r.site)+(root.advisoryBadge?root.advisoryBadge(d):'')+'</b><span><em style="color:'+(bc||'#9ca3af')+'">'+h(d.brand||'브랜드 미지정')+'</em> · '+h(workOf(r))+' · <i'+(noOwner?' class="r"':'')+'>'+h(owner||'미배정')+'</i></span>'+(o.tag?'<em class="prv-tag '+attr(o.tagClass||'')+'"'+(o.tagAct?' '+A+'="act" data-key="'+key+'" data-v="'+attr(o.tagAct)+'" role="button" tabindex="0" title="눌러서 분류하기"':'')+'>'+h(o.tag)+'</em>':'')+'</div>'
-   +'<div class="prv-b"><span title="'+attr(now)+'">'+tagHtml+h(now)+'</span>'+staleHtml+lastHtml+(o.base?'<small class="base" title="'+attr(o.base)+'">'+h(o.base)+'</small>':'')+'</div>'
-   +'<div class="prv-c"><b'+(task?'':' class="none"')+' title="'+attr(task)+'">'+h(task||'다음 업무 없음')+'</b>'+dueHtml+(o.staleNext?'<small class="why stale" title="'+attr(o.staleNext)+'">'+h(o.staleNext)+'</small>':'')+'</div>'
-   +'<button type="button" '+A+'="act" data-key="'+key+'" data-v="'+attr(btn[1])+'">'+h(btn[0])+'</button></div>';
+   +'<div class="prv-a"><b title="'+attr(r.site)+'">'+h(r.site)+(root.advisoryBadge?root.advisoryBadge(d):'')+'</b><span><em style="color:'+(bc||'#9ca3af')+'">'+h(d.brand||'브랜드 미지정')+'</em> · '+h(workOf(r))+' · <i'+(noOwner?' class="r"':'')+'>'+h(owner||'미배정')+'</i></span>'
+    /* after_deploy 11: 같은 단지에 진행 건이 여럿이면 공종 · 연도 · 영업건 번호로 구분 · 공종 · 연도도 같으면 '중복 의심' → 데이터 검토 */
+    +(o.dupInfo?'<small class="prv-dup'+(o.dupInfo.suspect?' sus':'')+'" title="'+attr(o.dupInfo.text)+'">'+h(o.dupInfo.text)+(o.dupInfo.suspect?' <u '+A+'="dup" data-key="'+key+'" role="button" tabindex="0">데이터 검토</u>':'')+'</small>':'')+(o.tag?'<em class="prv-tag '+attr(o.tagClass||'')+'"'+(o.tagAct?' '+A+'="act" data-key="'+key+'" data-v="'+attr(o.tagAct)+'" role="button" tabindex="0" title="눌러서 분류하기"':'')+'>'+h(o.tag)+'</em>':'')+'</div>'
+   +'<div class="prv-b"><span title="'+attr(now)+'">'+tagHtml+h(now)+'</span>'+staleHtml+lastHtml+(o.base?'<small class="base" title="'+attr(o.base)+'">'+h(o.base)+'</small>':'')+(o.side?'<small class="side" title="'+attr(o.side)+'">'+h(o.side)+'</small>':'')+'</div>'
+   +'<div class="prv-c"><b'+(task?'':' class="none"')+' title="'+attr(task)+'">'+(fix2?'<i class="prv-first">먼저</i>':'')+h(task||'다음 업무 없음')+'</b>'+dueHtml+(o.staleNext?'<small class="why stale" title="'+attr(o.staleNext)+'">'+h(o.staleNext)+'</small>':'')+'</div>'
+   +'<button type="button" '+A+'="act" data-key="'+key+'" data-v="'+attr(btn[1])+'">'+h(btn[0])+'</button>'
+   /* after_deploy 9: 보완 줄 — 연락할 일(위 버튼)과 정보 입력을 나눈다. 같은 건이라 건수는 1번 */
+   +(fix2?'<div class="prv-fix"><i>보완</i><span title="'+attr(o.fixNote||'')+'">'+h(o.fixNote||'정보 입력')+'</span><button type="button" '+A+'="act" data-key="'+key+'" data-v="'+attr(o.btn2[1])+'">'+h(o.btn2[0])+'</button></div>':'')+'</div>';
  }
  root.PipelineRowV11={on,head,row,sort,dueText,competitionEvidence,primaryAction};
 })(window);

@@ -29,7 +29,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
      deal(6,'[충남 천안] 먼곳아파트','won','이필선',{grp:'수주 성공',closed_at:'2024-06-10',contract_date:'2024-06-10',won_amount:1e8}),
      deal(7,'[경기 화성] 동탄새빛캐슬','sent','황윤선',{site_id:U(2),created:'2026-09-01'})],
     inquiries:[{id:A,site:SITE,site_id:U(1),address:ADDR,status:'현장방문예정',at:'2026-01-13T15:18:00+09:00',created_at:'2026-01-13T15:18:00+09:00',brand:'석민이앤씨',phone:'031-378-5034',work_type:'도로 보수',assignee:'이필선',assigned_to:'이필선',assigned_at:'2026-01-13T15:30:00+09:00',responded_at:'2026-01-13T19:01:00+09:00',raw:{'문의내용':'도로 보수 견적 문의','건물주소':ADDR}}],activities:[]};
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};TOKEN='t';G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';
+   LOCAL={deals:{},inquiries:{}};/* 이 검사는 오른쪽 상자의 기능을 본다 — 상자를 가운데 칸 패널로 옮긴 새 배치(detail_right_fix)는 verify-detail-right-fix-browser.cjs 가 본다 */G.dealRightKeep=true;AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};TOKEN='t';G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
    const C=[37.2005,127.0975];window.C=C;
    /* 좌표 저장소: 2번(가까움) · 6번(멀리)은 좌표가 있고, 1번 · 3번은 주소만, 4번 · 5번은 이름만 */

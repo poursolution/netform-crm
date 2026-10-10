@@ -22,7 +22,7 @@
   const d=deal(),F=k=>val(f,k);
   if(to==='consulting')return [['1차 현장미팅 일정 또는 완료',met(d),'']];
   if(to==='sent')return [['발송일',F('sent_date'),'sent_date'],['발송 자료',F('materials'),'materials'],['다음 확인일',F('followup_date'),'followup_date']];
-  if(['rapport','silent','waiting'].includes(to))return [['자료 발송일',String(sc(d,'sent').sent_date||''),''],['고객 반응',to==='rapport'?F('reaction'):to==='silent'?F('relationship_reason'):F('statement')||F('reason'),to==='rapport'?'reaction':to==='silent'?'relationship_reason':'reason'],['다음 행동',F('contact_date')?(to==='waiting'?'재접촉':'고객 재접촉'):nextOf(d),'contact_date'],['다음 확인일',F('contact_date'),'contact_date']];
+  if(['rapport','silent','waiting'].includes(to))return [['자료 발송일 · 수신자',(s=>s.sent_date&&s.recipient?String(s.sent_date).slice(0,10)+' · '+s.recipient:'')(sc(d,'sent')),''],['고객 반응',to==='rapport'?F('reaction'):to==='silent'?F('relationship_reason'):F('statement')||F('reason'),to==='rapport'?'reaction':to==='silent'?'relationship_reason':'reason'],['다음 행동',F('contact_date')?(to==='waiting'?'재접촉':'고객 재접촉'):nextOf(d),'contact_date'],['다음 확인일',F('contact_date'),'contact_date']];
   if(to==='compete')return [['입찰/결정 일정',F('meeting_date'),'meeting_date'],['경쟁 상황',F('competition_type'),'competition_type']];
   if(to==='imminent')return [['입찰/결정 일정',F('expected_contract'),'expected_contract'],['경쟁 상황',F('final_terms'),'final_terms']];
   if(to==='bidding')return [['입찰/결정 일정',F('bid_deadline'),'bid_deadline'],['경쟁 상황',F('bid_terms'),'bid_terms']];
@@ -33,35 +33,44 @@
   return [];
  }
  const checks=f=>f.__sgChk||(f.__sgChk={});
+ /* 예외로 진행: 사유(5자 이상)를 적으면 기록에서만 확인되는 조건을 사유로 대신한다. 입력 칸이 있는 필수값은 그 칸에 채워야 한다(서버 검증 그대로) */
+ const exOf=f=>f.__sgEx||(f.__sgEx={open:false,why:''});
  function model(f){
-  const to=(f.querySelector('#sf-target')||{}).value||'',rows=gates(f,to),skip=String((f.querySelector('#sf-skip')||{}).value||'').trim().length>=5,C=checks(f);
+  const to=(f.querySelector('#sf-target')||{}).value||'',rows=gates(f,to),X=exOf(f),ex=X.open&&String(X.why||'').trim().length>=5,skip=ex||String((f.querySelector('#sf-skip')||{}).value||'').trim().length>=5,C=checks(f);
   /* 기록에서만 확인하는 조건(채울 칸이 없는 것)은 줄을 눌러 직접 체크하거나, 단계 건너뛰기 사유를 적으면 그 사유로 대신한다 */
-  const list=rows.map(([l,v,k])=>{const hand=!k&&!v&&!!C[to+'|'+l];return {l,k,rec:!!v,hand,v:v||(hand?'직접 확인 · 기록에 남김':(!k&&skip?'건너뛰기 사유로 대신':'')),ok:!!v||hand||(!k&&skip)};});
-  return {to,list,ok:list.every(x=>x.ok),miss:list.filter(x=>!x.ok)};
+  const list=rows.map(([l,v,k])=>{const hand=!k&&!v&&!!C[to+'|'+l];return {l,k,rec:!!v,hand,v:v||(hand?'직접 확인 · 기록에 남김':(!k&&skip?(ex?'예외 진행 · 사유 기록':'건너뛰기 사유로 대신'):'')),ok:!!v||hand||(!k&&skip),byEx:!v&&!hand&&!k&&ex};});
+  return {to,list,ok:list.every(x=>x.ok),miss:list.filter(x=>!x.ok),ex,exList:list.filter(x=>x.byEx)};
  }
  function decorate(){
   const f=form();if(!f)return;let box=f.querySelector('.sg-box');const btn=f.querySelector('button[type="submit"]');
-  if(!enabled()){box?.remove();if(btn){btn.classList.remove('sg-locked');btn.removeAttribute('aria-disabled');}return;}
-  const M=model(f);if(!M.list.length){box?.remove();if(btn){btn.classList.remove('sg-locked');btn.removeAttribute('aria-disabled');}return;}
+  if(!enabled()){box?.remove();f.querySelector('.sg-ex')?.remove();if(btn){btn.classList.remove('sg-locked');btn.removeAttribute('aria-disabled');}return;}
+  const M=model(f);if(!M.list.length){box?.remove();f.querySelector('.sg-ex')?.remove();if(btn){btn.classList.remove('sg-locked');btn.removeAttribute('aria-disabled');}return;}
   if(!box){box=document.createElement('div');box.className='sg-box';const at=f.querySelector('#sf-error')||f.querySelector(':scope>footer');if(at)at.before(box);else f.append(box);}
   const html='<div class="sg-hd"><b>옮기기 전 필수조건</b><span>'+(M.ok?'모두 채웠습니다':M.miss.length+'개 비어 있음')+'</span></div>'+'<div class="sg-rows">'+M.list.map((x,i)=>'<button type="button" class="sg-row'+(x.ok?' ok':'')+'" data-sg="'+h(x.k)+'" data-i="'+i+'"'+(!x.k&&!x.rec?' aria-pressed="'+x.hand+'" title="확인했으면 눌러서 체크 · 단계 변경 기록에 남습니다"':'')+'><i>'+(x.ok?'✓':'')+'</i><b>'+h(x.l)+'</b><span>'+h(x.ok?x.v:'필수 · 비어 있음')+'</span></button>').join('')+'</div>'
    +'<p class="sg-msg'+(M.ok?' ok':'')+'">'+h(M.ok?(btn&&btn.classList.contains('off')?'필수조건을 모두 채웠습니다 — 남은 필수 입력을 채우면 옮길 수 있습니다':'필수조건을 모두 채웠습니다 — 옮길 수 있습니다'):'빠진 항목: '+M.miss.map(x=>x.l).join(' · ')+(M.miss.every(x=>!x.k)?' — 확인했으면 그 줄을 눌러 체크해 주세요':' — 채우면 옮길 수 있습니다'))+'</p>';
   if(box.__h!==html){box.__h=html;box.innerHTML=html;}
+  /* [예외로 진행 · 사유 입력] — 빠진 조건이 있을 때만. 입력 중인 칸을 다시 그리지 않도록 상자 밖에 따로 둔다 */
+  {const X=exOf(f);let xb=f.querySelector('.sg-ex');const need=X.open||M.miss.length>0;
+   if(!need){xb?.remove();}else{if(!xb){xb=document.createElement('div');xb.className='sg-ex';box.after(xb);}const mode=X.open?'open':'closed';
+    if(xb.dataset.mode!==mode){xb.dataset.mode=mode;xb.innerHTML=X.open?'<label><span>예외로 진행하는 사유</span><input type="text" class="sg-exwhy" maxlength="120" placeholder="5자 이상 — 단계 변경 기록에 남습니다" aria-label="예외로 진행하는 사유"></label><button type="button" class="sg-exoff">예외 취소</button>':'<button type="button" class="sg-exon">예외로 진행 · 사유 입력</button><span>빠진 조건을 채우지 못할 때만 · 사유가 기록에 남습니다</span>';if(X.open){const i=xb.querySelector('.sg-exwhy');if(i)i.value=X.why||'';}}}}
   if(btn){btn.classList.toggle('sg-locked',!M.ok);if(M.ok)btn.removeAttribute('aria-disabled');else btn.setAttribute('aria-disabled','true');}
  }
  const later=()=>{[0,300].forEach(ms=>setTimeout(()=>{try{decorate();}catch(e){}},ms));};
  function wrap(){const UI=R.StageTransitionUI;if(!UI||typeof UI.open!=='function'||UI.open.__sg)return;const base=UI.open;UI.open=function(){const r=base.apply(this,arguments);later();return r;};UI.open.__sg=true;}
  wrap();document.addEventListener('DOMContentLoaded',wrap);
- ['input','change'].forEach(ev=>document.addEventListener(ev,e=>{const f=form();if(!f||!f.contains(e.target))return;if(e.target.id==='sf-target')later();else setTimeout(()=>{try{decorate();}catch(x){}},0);},true));
+ ['input','change'].forEach(ev=>document.addEventListener(ev,e=>{const f=form();if(!f||!f.contains(e.target))return;if(e.target.classList&&e.target.classList.contains('sg-exwhy'))exOf(f).why=e.target.value;if(e.target.id==='sf-target')later();else setTimeout(()=>{try{decorate();}catch(x){}},0);},true));
  /* 줄을 누르면 그 칸으로. 잠긴 [옮기기]: 채울 칸이 있는 조건은 기존 검증이 알려 주고, 기록에서만 확인하는 조건이 비었으면 여기서 막는다 */
  document.addEventListener('click',e=>{
   const f=form();if(!f||!f.contains(e.target))return;
+  if(e.target.closest('.sg-exon')){e.preventDefault();exOf(f).open=true;decorate();const i=f.querySelector('.sg-exwhy');if(i)i.focus();return;}
+  if(e.target.closest('.sg-exoff')){e.preventDefault();const X=exOf(f);X.open=false;X.why='';decorate();return;}
   const row=e.target.closest('.sg-row');if(row){e.preventDefault();const k=row.dataset.sg;
    if(!k){const M0=model(f),x=M0.list[Number(row.dataset.i)];if(x&&!x.rec){const C=checks(f),key=M0.to+'|'+x.l;C[key]=!C[key];decorate();return;}}
    const el=k?(f.querySelector('#sf-'+k)||f.querySelector('[name="sf-'+k+'"]')):f.querySelector('#sf-skip');if(el){el.focus();try{el.scrollIntoView({block:'center'});}catch(x){}}return;}
   const btn=e.target.closest('button[type="submit"]');if(!btn||!enabled())return;const M=model(f),hard=M.miss.filter(x=>!x.k);
   if(hard.length){e.preventDefault();e.stopPropagation();const err=f.querySelector('#sf-error');if(err)err.textContent='필수조건이 비어 있습니다: '+hard.map(x=>x.l).join(' · ')+' — 확인했으면 그 줄을 눌러 체크해 주세요'+(f.querySelector('#sf-skip')?' (또는 건너뛰기 사유를 5자 이상 적어 주세요)':'')+'.';return;}
   /* 직접 체크한 조건은 단계 변경 기록(메모)에 함께 남긴다 */
+  {const memo0=f.querySelector('#sf-memo'),X=exOf(f);if(M.exList&&M.exList.length&&memo0){const line='[예외 진행] 사유: '+String(X.why).trim()+' · 빠진 조건: '+M.exList.map(x=>x.l).join(' · ');if(!memo0.value.includes(line))memo0.value=(memo0.value.trim()?memo0.value.trim()+'\n':'')+line;}}
   const hand=M.list.filter(x=>x.hand),memo=f.querySelector('#sf-memo');if(hand.length&&memo){const line='[필수조건 직접 확인] '+hand.map(x=>x.l).join(' · ');if(!memo.value.includes(line))memo.value=(memo.value.trim()?memo.value.trim()+'\n':'')+line;}
  },true);
  root.StageGate={enabled,decorate,model:()=>{const f=form();return f?model(f):null;}};

@@ -51,9 +51,19 @@
 .ra-cf>header{display:flex;flex-direction:column;gap:3px}.ra-cf>header b{font-size:14px}.ra-cf>header span{font-size:11.5px;color:#6b7280;line-height:1.5}
 .ra-cf-row{display:grid;grid-template-columns:76px minmax(0,1fr);gap:5px 10px;align-items:start;font-size:12.5px}.ra-cf-row>span:nth-child(odd){color:#6b7280;padding-top:2px}.ra-cf-row>b{font-size:13px}
 .ra-cf-row input[type=date]{font:inherit;font-size:13px;border:1px solid #d9dde4;border-radius:8px;padding:6px 10px;justify-self:start}
+.ra-cf-now{font-size:13px}
+.ra-cf-opts button:disabled{opacity:.55;cursor:not-allowed;background:#fafbfc}
 .ra-cf-opts{display:flex;flex-direction:column;gap:5px}
 .ra-cf-opts button{border:1px solid #e3e6ec;background:#fff;border-radius:8px;padding:7px 10px;text-align:left;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.ra-cf-opts button[aria-pressed="true"]{border-color:#3b6ce4;background:#f8faff}
 .ra-cf-opts button b{font-size:12.5px}.ra-cf-opts button small{font-size:11.5px;color:#9ca3af}.ra-cf-opts button[aria-pressed="true"] small{color:#2a52b8}
 .ra-cf-err{margin:0;font-size:12px;font-weight:600;color:#b42318}
 .ra-cf>footer{display:flex;justify-content:flex-end;gap:8px}.ra-cf>footer button{border:1px solid #d9dde4;background:#fff;font-size:13px;font-weight:600;border-radius:8px;padding:8px 14px}.ra-cf>footer button.save{border:0;background:#15171c;color:#fff;font-weight:700}
 @media(max-width:900px){.ra-cf{left:0}}
+/* counting 15: 연결 상태 3칸(정책 · 누락 진단 · 입력 강제) — 어디까지 실제로 연결됐는지 */
+#rules-admin .ra-3{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+#rules-admin .ra-3 i{font-style:normal;font-size:11px;border:1px solid #e3e6ec;border-radius:6px;padding:1px 7px;color:#6b7280;background:#fff;white-space:nowrap}
+#rules-admin .ra-3 i u{text-decoration:none;color:#9ca3af;margin-right:4px}
+#rules-admin .ra-3 i.on{color:#1f7a4d;border-color:#cfe6d8;background:#f3faf6}
+#rules-admin .ra-3 i.part{color:#374151;border-color:#d9dde4;background:#f6f7f9}
+.ra-top3{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;background:#fff;border:1px solid #e8eaef;border-radius:12px;padding:8px 16px;margin:-6px 0 14px;font-size:12.5px;color:#6b7280}
+.ra-top3 b{color:#15171c}.ra-top3 small{font-size:11.5px;color:#6b7280}

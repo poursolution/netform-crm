@@ -318,7 +318,7 @@
   });
  }
 
- function open(key,a,b){if(!active())return false;if(key==='contact')contactPanel(a,b);else if(key==='work')root.openWorkEdit();else if(key==='info')infoPanel();else if(key==='next')nextPanel();else return false;return true;}
+ function open(key,a,b){if(!active())return false;if(key==='contact')contactPanel(a,b);else if(key==='work')root.openWorkEdit();else if(key==='info'){const V=root.DealDetailV3;if(V&&V.rightFix&&V.rightFix()&&V.openPanel)V.openPanel('info');else infoPanel();}else if(key==='next')nextPanel();else return false;return true;}
  function boot(){
   const oc=root.openQuickContact;if(typeof oc==='function')root.openQuickContact=function(mode,key){if(active()){contactPanel(mode,key);return;}return oc.apply(this,arguments);};
   const ow=root.openWorkEdit;if(typeof ow==='function')root.openWorkEdit=function(){

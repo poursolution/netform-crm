@@ -1,0 +1,64 @@
+/* 빠진 정보를 그 자리에서 보완 — 목록 줄 아래 칸(after_deploy 13 · 시안 '그 자리에서 보완 · 후속 연결 시안.dc.html')
+   줄과 같은 왼쪽 띠 · 연한 바탕. 강조는 지금 단계의 파랑 하나, 문제는 붉은 계열. 글은 칸 밖으로 넘치지 않는다 */
+#pg-pipe .ifx{margin:0;padding:14px 18px 14px 21px;border:0;border-left:3px solid #e3e6ec;border-bottom:1px solid #e3e6ec;background:#fafbfc;font-size:12.5px;color:#15171c;cursor:default}
+#pg-pipe .ifx *{box-sizing:border-box}
+#pg-pipe .ifx-moved{display:flex;gap:10px;align-items:baseline;margin-bottom:10px;min-width:0}
+#pg-pipe .ifx-moved b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#pg-pipe .ifx-moved span{color:#6b7280;white-space:nowrap}
+#pg-pipe .ifx-top{display:flex;align-items:center;gap:12px;min-width:0;flex-wrap:wrap}
+#pg-pipe .ifx-top>b{font-size:13px;font-weight:700;white-space:nowrap}
+#pg-pipe .ifx-top>span{font-size:11.5px;color:#6b7280;white-space:nowrap;font-variant-numeric:tabular-nums}
+#pg-pipe .ifx-steps{display:flex;gap:14px;margin-left:auto;min-width:0;flex-wrap:wrap}
+#pg-pipe .ifx-steps button{all:unset;display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:500;color:#9ca3af;white-space:nowrap;cursor:default}
+#pg-pipe .ifx-steps button i{width:7px;height:7px;border-radius:50%;background:#e3e6ec;flex:none}
+#pg-pipe .ifx-steps button.past{color:#15171c;cursor:pointer}
+#pg-pipe .ifx-steps button.past i{background:#15171c}
+#pg-pipe .ifx-steps button.now{color:#15171c;font-weight:700}
+#pg-pipe .ifx-steps button.now i{background:#3b6ce4}
+#pg-pipe .ifx-steps button:focus-visible{outline:2px solid #3b6ce4;outline-offset:2px;border-radius:4px}
+#pg-pipe .ifx-body{margin-top:12px;padding:12px 14px;border:1px solid #e3e6ec;border-radius:10px;background:#fff;min-width:0}
+#pg-pipe .ifx-body b{font-weight:700}
+#pg-pipe .ifx-s1>b,#pg-pipe .ifx-s4>b{display:block;font-size:12px;color:#6b7280;margin-bottom:8px}
+#pg-pipe .ifx-cand{display:grid;grid-template-columns:minmax(0,1fr) auto 72px;gap:12px;align-items:center;padding:7px 0;border-top:1px solid #f0f1f4}
+#pg-pipe .ifx-cand:first-of-type{border-top:0}
+#pg-pipe .ifx-cand>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pg-pipe .ifx-cand>span i{font-style:normal;font-weight:700;color:#374151;margin-right:4px}
+#pg-pipe .ifx-cand>em{font-style:normal;color:#6b7280;white-space:nowrap;font-variant-numeric:tabular-nums}
+#pg-pipe .ifx-cand.on>span{font-weight:700}
+#pg-pipe .ifx-none{margin:0;color:#6b7280;line-height:1.55}
+#pg-pipe .ifx-s2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px;align-items:end}
+#pg-pipe .ifx-s4 .ifx-s2{margin-top:10px}
+#pg-pipe .ifx-f{display:flex;flex-direction:column;gap:5px;min-width:0;margin:0}
+#pg-pipe .ifx-f.wide{grid-column:1/-1}
+#pg-pipe .ifx-f>span,#pg-pipe .ifx-ro>span{font-size:11.5px;color:#6b7280}
+#pg-pipe .ifx-f input{height:34px;width:100%;min-width:0;border:1px solid #d9dde4;border-radius:8px;background:#fff;padding:0 10px;font:inherit;font-size:12.5px;color:#15171c;margin:0;box-shadow:none}
+#pg-pipe .ifx-f input:focus{outline:2px solid #3b6ce4;outline-offset:-1px;border-color:#3b6ce4}
+#pg-pipe .ifx-ro{display:flex;flex-direction:column;gap:5px;min-width:0;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-bottom:8px}
+#pg-pipe .ifx-chips,#pg-pipe .ifx-modes{display:flex;gap:6px;flex-wrap:wrap}
+#pg-pipe .ifx-chips button,#pg-pipe .ifx-modes button{height:30px;min-height:0;width:auto;border:1px solid #d9dde4;border-radius:15px;background:#fff;color:#374151;font:inherit;font-size:12px;font-weight:600;padding:0 11px;margin:0;box-shadow:none;cursor:pointer;white-space:nowrap}
+#pg-pipe .ifx-chips button[aria-pressed="true"],#pg-pipe .ifx-modes button[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}
+#pg-pipe .ifx-s3{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+#pg-pipe .ifx-s3>span{color:#374151;white-space:nowrap}
+#pg-pipe .ifx-s3>b{font-size:20px;font-variant-numeric:tabular-nums;white-space:nowrap}
+#pg-pipe .ifx-s3>em{font-style:normal;font-weight:700;margin-left:6px;white-space:nowrap}
+#pg-pipe .ifx-s3>em.r{color:#b42318}
+#pg-pipe .ifx-s3>small{flex-basis:100%;font-size:11.5px;color:#6b7280}
+#pg-pipe .ifx-keep{margin:0 0 8px;color:#374151;line-height:1.5}
+#pg-pipe .ifx-unk>b,#pg-pipe .ifx-done>b{display:block;font-size:13px}
+#pg-pipe .ifx-unk>p{margin:5px 0 10px;color:#6b7280;line-height:1.5}
+#pg-pipe .ifx-done ul{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;color:#374151}
+#pg-pipe .ifx-done li{padding-left:12px;position:relative;line-height:1.5}
+#pg-pipe .ifx-done li:before{content:'';position:absolute;left:0;top:8px;width:5px;height:5px;border-radius:50%;background:#9ca3af}
+#pg-pipe .ifx-err{margin:10px 0 0;color:#b42318;font-size:12px;line-height:1.5}
+#pg-pipe .ifx-foot{display:flex;align-items:center;gap:8px;margin-top:12px}
+#pg-pipe .ifx-foot>i{flex:1}
+#pg-pipe .ifx-foot button,#pg-pipe .ifx-cand button{height:32px;min-height:0;width:auto;border:1px solid #d9dde4;border-radius:8px;background:#fff;color:#15171c;font:inherit;font-size:12.5px;font-weight:700;padding:0 14px;margin:0;box-shadow:none;cursor:pointer;white-space:nowrap}
+#pg-pipe .ifx-cand button{height:28px;padding:0 10px;font-size:12px}
+#pg-pipe .ifx-foot button:hover:not(:disabled),#pg-pipe .ifx-cand button:hover{background:#f3f4f6}
+#pg-pipe .ifx-foot button.pri{background:#15171c;border-color:#15171c;color:#fff}
+#pg-pipe .ifx-foot button.pri:hover:not(:disabled){background:#2a2d35}
+#pg-pipe .ifx-foot button.unk{border-color:transparent;background:transparent;color:#6b7280;font-weight:600;padding:0 4px;text-decoration:underline;text-underline-offset:3px}
+#pg-pipe .ifx-foot button:disabled{opacity:.55;cursor:default}
+@media(max-width:1100px){#pg-pipe .ifx-s2{grid-template-columns:minmax(0,1fr)}#pg-pipe .ifx-steps{margin-left:0;gap:10px}#pg-pipe .ifx-cand{grid-template-columns:minmax(0,1fr) 72px}#pg-pipe .ifx-cand>em{grid-column:1;grid-row:2}}
+#pg-pipe .ifx-s4 .ifx-s2{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:1100px){#pg-pipe .ifx-s4 .ifx-s2{grid-template-columns:minmax(0,1fr)}}

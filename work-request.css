@@ -72,6 +72,39 @@
 .wrq-steps>div>b{font-size:11.5px;font-weight:500;color:#9ca3af;white-space:nowrap}.wrq-steps>div.done>b,.wrq-steps>div.cur>b{color:#15171c}.wrq-steps>div.cur>b{font-weight:700}
 .wrq-steps>div>small{font-size:10.5px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wrq-in.wrq-ho{border-left:3px solid #e8a09a}
+/* 요청 종료(완료 · 취소 사유 · 다른 요청에 통합 · 대상 오류) */
+.wrq-end{margin-top:4px;background:#f8f9fb;border:1px solid #eef0f3;border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:6px;font-size:12px}
+.wrq-end .k{display:flex;flex-wrap:wrap;gap:4px}.wrq-end .k button{border:1px solid #d9dde4;background:#fff;border-radius:999px;padding:3px 9px;font-size:11.5px;font-weight:600;color:#374151}.wrq-end .k button[aria-pressed="true"]{background:#15171c;color:#fff;border-color:#15171c}
+.wrq-end>span{color:#6b7280;font-size:11.5px}.wrq-end input{font:inherit;font-size:12px;border:1px solid #d9dde4;border-radius:7px;padding:5px 9px;min-width:0}
+.wrq-end .ft{display:flex;gap:6px;justify-content:flex-end;align-items:center;flex-wrap:wrap}.wrq-end .ft em{flex:1;font-style:normal;color:#b42318;font-weight:600}.wrq-end .ft button{border:1px solid #d9dde4;background:#fff;border-radius:7px;padding:4px 10px;font-size:12px;font-weight:700;color:#15171c}.wrq-end .ft button.go{border:0;background:#15171c;color:#fff}
+/* 4구역 화면: 중요하지 않은 요청은 '알림 n건' 한 줄(기존 업무 줄의 꼬리표가 본체) */
+.wrq-in.wrq-soft{padding:10px 16px;gap:6px}.wrq-in.wrq-soft .hd>em.soft{background:#6b7280}.wrq-in.wrq-soft .hd>button{border:1px solid #d9dde4;background:#fff;font-size:12px;font-weight:700;border-radius:7px;padding:4px 10px;min-height:0;box-shadow:none;color:#15171c}
+.wrq-in.wrq-soft>.wrq-in{border-top:1px solid #f2f3f6;padding-left:0;padding-right:0}
 .wrq-in.wrq-ho .hd>em{background:#e8a09a}
 .wrq-hrows{display:grid;grid-template-columns:72px minmax(0,1fr);gap:5px 10px;font-size:12.5px}.wrq-hrows>span{color:#6b7280}.wrq-hrows>b{font-weight:500;min-width:0}
 .tv3 .wrq-in .ft button:not(.go){border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12px;font-weight:600;border-radius:7px;padding:6px 11px;cursor:pointer;min-height:0;box-shadow:none;width:auto;margin-right:6px}
+/* admin_request C · D: 보낸 요청(탭 · 줄 · 쪽 번호) · 확인된 상태 칩 · 반복 원인 */
+.tv3-side>section.wrq-sent{padding:0;gap:0;overflow:hidden}
+.wrq-sent>header{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:13px 16px 9px}
+.wrq-sent>header b{font-size:13.5px}.wrq-sent>header span{font-size:11.5px;color:#6b7280;white-space:nowrap}
+.wrq-stabs{display:flex;flex-wrap:wrap;gap:4px;padding:0 12px 9px;border-bottom:1px solid #f2f3f6}
+.wrq-stabs button{height:26px;min-height:0;width:auto;border:1px solid #e3e6ec;border-radius:13px;background:#fff;color:#374151;font:inherit;font-size:11.5px;font-weight:600;padding:0 8px;box-shadow:none;cursor:pointer;white-space:nowrap}
+.wrq-stabs button b{font-weight:700;font-variant-numeric:tabular-nums}
+.wrq-stabs button[aria-selected="true"]{background:#15171c;border-color:#15171c;color:#fff}
+.wrq-sr{padding:9px 16px;border-bottom:1px solid #f2f3f6;display:flex;flex-direction:column;gap:3px;min-width:0}
+.wrq-sr .l1{display:flex;align-items:center;gap:7px;min-width:0}
+.wrq-sr .l1>i{width:6px;height:6px;border-radius:50%;flex:none}
+.wrq-sr .l1>b{font-size:12.5px;min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wrq-sr .l2{font-size:12px;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wrq-sr small{font-size:11.5px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wrq-sent .none{margin:0;padding:14px 16px;font-size:12px;color:#6b7280}
+.wrq-dlg .wrq-states{flex-wrap:wrap;border:0;border-radius:0;overflow:visible;gap:5px}
+.wrq-dlg .wrq-states button{border:1px solid #e3e6ec;border-radius:7px}
+.wrq-dlg .wrq-third{display:block;margin-top:5px;font-size:11.5px;font-weight:600;color:#b42318}
+/* day_zones 4-4: 목록 줄 아래에 펼친 요청 입력 — 머리 줄 · 5단계 바 · 문구 상자는 줄에 이미 있어 숨긴다 */
+.wrq-in.wrq-inline>.hd,.wrq-in.wrq-inline>.wrq-steps,.wrq-in.wrq-inline>.memo{display:none}
+.wrq-in.wrq-inline{box-shadow:none;border:1px solid #d9dde4;border-radius:12px;padding:12px 14px}
+.wrq-in.wrq-inline .call{align-self:flex-start;height:34px;padding:0 14px;font-size:12.5px}
+/* 종 알림: 미확인 요청 n */
+.ib.wrq-bell-on{cursor:pointer;display:inline-flex!important;align-items:center;gap:6px;width:auto!important;min-width:36px;padding:0 10px!important;border-radius:18px!important;white-space:nowrap;flex:none}
+.ib .wrq-belln{font-size:11.5px;font-weight:700;color:#b42318;background:#fdecec;border-radius:10px;padding:2px 8px;white-space:nowrap}

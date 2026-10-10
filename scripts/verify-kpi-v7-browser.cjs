@@ -68,7 +68,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(rows.length,8);assert.deepEqual(rows.map(r=>r.key).sort(),['kpi:1','kpi:2','kpi:3','kpi:4','kpi:5','kpi:6','kpi:7','kpi:8'],'지표 키는 예전 그대로');
   const order=rows.map(r=>r.cls==='bad'?0:r.cls==='ok'?1:2);assert.deepEqual(order,order.slice().sort((a,b)=>a-b),'미달 → 달성 → 아직 못 잼 순');
   for(const r of rows){const m=K.find(x=>x.key===r.key),f=v=>v==null?'–':(Math.round(v*10)/10)+'%';assert.equal(r.v,f(m.v),r.key+' 값');assert.ok(m.den&&m.ready!==false?r.frac.startsWith(m.num+' / '+m.den+'건 · 목표 '):r.frac.startsWith('아직 못 잼 · 목표 '),r.key+' 분자/분모 '+r.frac);assert.match(r.meta,/^지난주 .+ · 누가 .+/);assert.equal(r.cls,m.v==null||m.pilot?'':m.ok?'ok':'bad');assert.match(r.why,m.pilot?/^시범 측정 · 평가 제외$/:m.v==null?/^(아직 못 잼|완료 근거 미확인 .*|요청 업무 계산 중)$/:m.ok?/^달성$/:/^미달 · [\d.]+%p (부족|초과)$/);assert.ok(!m.n?r.btn==='자동 측정':true,r.key+' 버튼 '+r.btn);/* 이번 주 값이 없어도 누적 미처리가 있으면 요청 버튼(2026-10-06 집계 ⑤) */}
-  const lost=rows.find(r=>r.key==='kpi:7');assert.deepEqual([lost.q,lost.sub,lost.v,lost.why,lost.btn],['사유 · 재영업 여부 · 필요한 낙찰 정보를 남겼나','실주 · 실주 정보 완성률','0%','미달 · 100%p 부족','요청 가능 1건']);
+  const lost=rows.find(r=>r.key==='kpi:7');assert.deepEqual([lost.q,lost.sub,lost.v,lost.why,lost.btn],['사유 · 재영업 여부 · 필요한 낙찰 정보를 남겼나','실주 · 실주 정보 완성률','0%','미달 · 100%p 부족','담당 1명에게 요청 (1건)']);/* after_deploy ③: 숫자마다 단위(명 · 건) */
   assert.equal(rows.find(r=>r.key==='kpi:5').sub,'파이프라인 · 장기정체 비율');assert.match(rows.find(r=>r.key==='kpi:5').frac,/목표 ≤ 10%$/,'낮을수록 좋은 지표');
   assert.match(rows.find(r=>r.key==='kpi:3').meta,/^지난주 25% (▲|▼)[\d.]+%p · 누가 /,'지난주 저장값과 비교');
   if(shot)await page.screenshot({path:shot+'-core.png',fullPage:true});
@@ -101,7 +101,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const heads=await page.locator('#kpi-v7 .k7-stage').evaluateAll(l=>l.map(n=>[n.querySelector('em').textContent,n.querySelector('span').textContent.replace(/\s+/g,' '),n.querySelector('button').textContent]));
   assert.deepEqual(heads,SG.map(g=>[g.label,g.total+'건 · 기준 넘김 '+g.over+'건','단계로 이동 →']));
   const srow=await page.locator('#kpi-v7 .k7-row[data-rule="stage:lost:noreason"]').evaluate(n=>({t:n.querySelector('.q b').textContent,how:n.querySelector('.q span').textContent,p:n.querySelector('.p b').textContent,n:n.querySelector('.n').textContent,btn:n.querySelector('.k7-req').textContent,bad:n.classList.contains('bad')}));
-  assert.equal(srow.n,'1건');assert.equal(srow.p,'0%');assert.equal(srow.bad,true,'지킨 비율 80% 미만 빨강');assert.match(srow.how,/ · 기준 대상 1건$/);assert.equal(srow.btn,'요청 가능 1건');
+  assert.equal(srow.n,'1건');assert.equal(srow.p,'0%');assert.equal(srow.bad,true,'지킨 비율 80% 미만 빨강');assert.match(srow.how,/ · 기준 대상 1건$/);assert.equal(srow.btn,'담당 1명에게 요청 (1건)');
   if(shot)await page.screenshot({path:shot+'-stage.png',fullPage:true});
   {const n0=await page.evaluate(()=>__deliveries.length);await page.locator('#kpi-v7 .k7-row[data-rule="stage:lost:noreason"] .k7-req').click();await page.waitForTimeout(500);
    const a=await page.evaluate(n=>__deliveries.slice(n).flatMap(p=>p.targets.map(t=>[p.promise_key,t.target_type,t.target_name])),n0);assert.deepEqual(a,[['stage:lost:noreason','deal','사유 없는 실주']]);
@@ -122,6 +122,32 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 8. 좁은 화면 넘침 없음 · 끄면 예전 화면 */
   await page.setViewportSize({width:1207,height:914});await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'노트북 폭에서 옆으로 넘치지 않음');if(shot)await page.screenshot({path:shot+'-laptop.png',fullPage:true});
   await page.setViewportSize({width:1600,height:1000});
+  /* after_deploy 16: 묶음 보완 요청 — 보내기 전에 담당별 대상 · 진행 · 미리보기 · 제외. 고른 것만 간다 */
+  {const nb=await page.evaluate(()=>__deliveries.length);
+   await page.evaluate(()=>{const T=(id,name,owner,done)=>({kind:'deal',id,name,owner,why:'발송일 확인',label:'자료 발송 · 발송일',done:!!done}),all=[T('b1','현장 가','이필선'),T('b2','현장 나','이필선'),T('b3','현장 다','이필선',true),T('b4','현장 라','황윤선'),T('b5','현장 마','황윤선'),T('b6','현장 바','미배정')];KpiV7.bulkSend('test:bulk','자료 발송 · 발송일 보완',all.filter(t=>!t.done),all);});
+   const bk=page.locator('#k7-bulk'),tx=async l=>(await l.innerText()).replace(/\s+/g,' ').trim(),brow=()=>bk.locator('.k7b-row').evaluateAll(L=>L.map(r=>[...r.querySelectorAll(':scope>b,:scope>span')].map(n=>n.textContent).concat([r.classList.contains('off')])));
+   assert.equal(await bk.count(),1,'두 건 이상이면 바로 보내지 않고 미리보기 창');assert.equal(await page.evaluate(()=>__deliveries.length),nb,'아직 보내지 않음');
+   assert.match(await tx(bk.locator('.k7b-rule')),/묶음으로 되는 것 = 보완 요청만 · 고객 연결 완료 · 대기 · 실주 같은 판단은 한 건씩/);
+   assert.deepEqual(await brow(),[['이필선','자료 발송 · 발송일','2건','1 / 3',false],['황윤선','자료 발송 · 발송일','2건','0 / 2',false]],'담당별 대상 · 건수 · 진행(이미 조치 / 전체)');
+   assert.equal(await tx(bk.locator('.k7b-row').first().locator('.k7b-line')),'미리보기 '+await page.evaluate(()=>KpiB.lineOf('자료 발송 · 발송일 보완',[{kind:'deal',name:'현장 가'},{kind:'deal',name:'현장 나'}])),'미리보기 = 실제로 가는 글');
+   assert.equal(await tx(bk.locator('footer span')),'담당 2명 · 4건 · 미배정 1건은 배정 뒤 요청');assert.equal(await tx(bk.locator('[data-kb="send"]')),'담당 2명에게 요청 (4건)');
+   await bk.locator('.k7b-row').first().locator('[data-kb="open"]').click();assert.equal(await bk.locator('.k7b-items input').count(),2);
+   await bk.locator('.k7b-items input').nth(1).uncheck();assert.deepEqual((await brow())[0].slice(2,3),['1 / 2건']);assert.match(await tx(bk.locator('.k7b-row').first().locator('.k7b-line')),/— 1건: 현장 가$/);
+   await bk.locator('.k7b-row').nth(1).locator('[data-kb="owner"]').click();assert.equal((await brow())[1][4],true,'담당 통째로 제외');assert.equal(await tx(bk.locator('[data-kb="send"]')),'담당 1명에게 요청 (1건)');
+   assert.deepEqual(await bk.evaluate(el=>[...el.querySelectorAll('.k7b-card *')].filter(n=>n.children.length===0&&n.scrollWidth>n.clientWidth+1&&getComputedStyle(n).textOverflow!=='ellipsis').map(n=>n.textContent)),[],'넘치는 글 없음');
+   await bk.locator('[data-kb="send"]').click();await page.waitForTimeout(500);assert.equal(await bk.count(),0);
+   assert.deepEqual(await page.evaluate(n=>__deliveries.slice(n).map(p=>[p.rep_name,p.promise_key,p.targets.map(t=>t.target_name)]),nb),[['이필선','test:bulk',['현장 가']]],'제외한 건 · 담당은 가지 않는다');}
+  /* day_zones §4-2: 요청 · 누락 함께 보기(전주 대비) · 반복된 요청 유형 → 점검할 곳. 요청이 줄었는데 미응대 · 기한 초과가 늘면 경고 한 줄 */
+  {const RH=await page.evaluate(()=>{const J=PipelineJudge,w0=J.week(0),w1=J.week(-1),W=WorkRequest.state();W.loaded=true;W.at=Date.now();
+    const mk=(id,mon,st,closed)=>({id,target_type:'deal',target_id:'d1',kind:'follow',label:'발송일 확인 요청',status:st,requested_by:'송보람',to_name:'이필선',round:1,created_at:mon+'T00:10:00+09:00',due_at:mon+'T00:30:00+09:00',closed_at:closed?mon+'T00:20:00+09:00':null});
+    W.list=[mk('a1',w0.mon,'sent'),mk('a2',w0.mon,'sent'),mk('a3',w0.mon,'sent'),mk('b1',w1.mon,'done',true),mk('b2',w1.mon,'done',true),mk('b3',w1.mon,'done',true),mk('b4',w1.mon,'done',true),Object.assign(mk('c1',w0.mon,'cancelled'),{reply_note:'[통합] 같은 요청'})];
+    const H=KpiV7.reqHealth(KpiB.compute()),today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Seoul'});paint();return {H,sameMonth:w0.mon.slice(0,7)===today.slice(0,7)};});await page.waitForTimeout(300);
+   assert.deepEqual(RH.H.tiles.slice(0,3).map(t=>[t[0],t[1],t[2]]),[['보낸 요청','3건','전주 4 ▼1'],['미응대','3건','전주 0 ▲3 · 기한이 지나도록 확인 없음'],['기한 초과','3건','전주 0 ▲3 · 이번 주 기한']]);
+   assert.equal(RH.H.warn,'요청은 줄었는데(4 → 3) 미응대 · 기한 초과 늘어남 — 요청 수 감소를 개선으로 보지 않습니다');
+   assert.deepEqual(RH.H.flow,{neu:3,carry:0,late:3,done:0},'요청 흐름 4칸(admin_request F): 이번 주 신규 · 넘어온 미완료 · 기한 초과 · 완료');
+   if(RH.sameMonth){assert.deepEqual(RH.H.repeat,[{label:'발송일 확인 요청',n:4,check:'자동 업무 생성 · 발송 후 후속 일정'}],'이번 달 3번 이상 반복된 유형 → 점검할 곳');assert.match(RH.H.quality,/이번 달 취소 1건 \(다른 요청에 통합 1 · 대상 오류 0\)/);}
+   const rh=page.locator('#kpi-v7 .k7-rh');assert.equal(await rh.count(),1);assert.match((await rh.innerText()).replace(/\s+/g,' '),/요청 · 누락 함께 보기 전주 대비 보낸 요청 3건 .*반복된 요청 유형 · 이번 달 .*담당 탓 전에 시스템 · 지침부터 확인/);
+   assert.deepEqual(await rh.evaluate(el=>[...el.querySelectorAll('.k7-rep *')].filter(n=>n.children.length===0&&n.scrollWidth>n.clientWidth+1&&getComputedStyle(n).textOverflow!=='ellipsis').map(n=>n.textContent)),[],'넘치는 글 없음');}
   await page.evaluate(()=>{G.kpiV7Off=true;paint();});await page.waitForTimeout(400);assert.equal(await page.locator('#kpi-v7').count(),0);assert.equal(await page.locator('#kpi-b').count(),1,'끄면 예전 KPI 화면');
   assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('#pg-mgmt>.cf-bar')).display!=='none'),true,'끄면 공통 필터줄도 다시 보인다');
   assert.deepEqual(errs,[]);

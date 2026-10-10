@@ -19,6 +19,24 @@ function setup(Q){
  w.todayHomeData=()=>({admin:true,Q,D:[],inquiry:[],pipeline:[]});
  return w;
 }
+test('telephone response completion is an unconfirmed dated candidate across the shared review path',()=>{
+ for(const text of ['3/26 전화응대완료','3/26 전화 응대 완료']){
+  const x=q('telephone',{received_at:'2026-03-26T00:00:00Z',raw:{응대내용:text}}),before=JSON.stringify(x),w=setup([x]);
+  const calls=w.InquiryMemo.parse(text,'2026-03-26').calls;
+  assert.equal(calls.length,1);assert.equal(calls[0].date,'2026-03-26');
+  assert.equal(w.InquiryMemo.contactReview(x).required,true);
+  const m=w.InquiryV4.compute().all[0];assert.equal(m.st,5);assert.equal(m.g,4);assert.equal(m.late,false);assert.equal(m.due,null);
+  assert.equal(w.inquiryResponseLate(x),false);assert.equal(JSON.stringify(x),before);
+ }
+});
+
+test('planned, incomplete and absent telephone responses do not become call evidence',()=>{
+ const w=setup([]);
+ for(const text of ['3/26 전화응대완료 예정','3/26 전화 응대 예정','3/26 전화응대 미완료','3/26 전화응대완료 못함','3/26 전화응대 시도 부재']){
+  assert.equal(w.InquiryMemo.parse(text,'2026-03-26').calls.length,0,text);
+ }
+});
+
 test('server acknowledgement, not optimistic local call/supplement, clears review',()=>{
  const x=q('queued'),w=setup([x]),M=w.InquiryMemo;
  assert.equal(M.contactReview(x).required,true);

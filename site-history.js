@@ -132,6 +132,13 @@
   let wt='';try{const x=W&&W.r.dealId?((R.B&&R.B.deals)||[]).find(z=>String(z.id)===W.r.dealId):null,res=x&&R.DealWin&&R.DealWin.enabled()?R.DealWin.resultOf(x):null;wt=res&&res.text?res.text:'';}catch(e){}
   const wl=W?'<div class="sth-won"><b>✓ '+h((W.ym?W.ym+' ':'')+'수주 완료'+(W.r.amount?' · '+fmt(W.r.amount):''))+'</b><span>'+h([wt,W.r.hint,W.r.who].filter(Boolean).join(' · '))+'</span></div>':'';
   const list=rows.map(r=>rowTidy(d,r,S,edit,peek)).join('')+(isNew?'<div class="sth-row ed new" data-key="new">'+formHtml(d,null,S)+'</div>':'');
+  /* 7단계 공통 틀(deal-frame7.js): 지금 영업건 / 이 단지 지난 영업 n 으로 나눠 보인다 — 줄 · 단추는 그대로 */
+  if(R.DealFrame7&&R.DealFrame7.on()&&R.DealFrame7.has(d)){const cur=rows.filter(r=>r.cur),past=rows.filter(r=>!r.cur),row=r=>rowTidy(d,r,S,edit,peek),pw=past.filter(r=>r.tag==='수주'),ps=pw.reduce((s,r)=>s+(Number(r.amount)||0),0);
+   return '<section class="dv3-sec sth sth-tidy sth-7" data-deal="'+attr(d.id)+'"><header class="sth-hd"><b>지금 영업건</b></header><div class="sth-list">'+cur.map(row).join('')+'</div>'
+    +'<header class="sth-hd sth-past"><b>이 단지 지난 영업 '+past.length+'</b>'+(pw.length?'<span>지난 수주 '+pw.length+'건 · '+h(ps?R.fmtAmt(ps):'금액 미정')+'</span>':'')+'</header>'+wl
+    +(past.length||isNew?'<div class="sth-list">'+past.map(row).join('')+(isNew?'<div class="sth-row ed new" data-key="new">'+formHtml(d,null,S)+'</div>':'')+'</div>':'<p class="sth-nopast">없음 · 첫 영업</p>')
+    +'<div class="sth-ai"><b>AI</b>'+h(aiLine(rows))+'</div>'
+    +(edit?'<div class="sth-more"><button type="button" class="sth-add" data-sth="add"'+(S.edit?' disabled':'')+'>+ 이력 추가</button></div>':'')+'</section>';}
   return '<section class="dv3-sec sth sth-tidy" data-deal="'+attr(d.id)+'"><header class="sth-hd"><b>이 단지 영업 이력</b><span>'+rows.length+'건'+(won.length?' · 누적 수주 '+h(sum?R.fmtAmt(sum):'금액 미정'):'')+'</span></header>'
    +wl+'<div class="sth-list">'+list+'</div>'
    +'<div class="sth-ai"><b>AI</b>'+h(aiLine(rows))+'</div>'

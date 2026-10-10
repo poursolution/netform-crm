@@ -74,18 +74,29 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   let d=page.locator('#dupDialog.on .dv-box');assert.equal(await d.count(),1);
   assert.match(await d.locator('.dv-judge').innerText(),/판단 · 같은 현장 · 공사 확인 필요[\s\S]*빈 값 · '미입력'은 일치 근거로 쓰지 않습니다/);
   assert.match(await d.locator('.dv-warn').innerText(),/공종을 알 수 없음[\s\S]*같은 공사는 공종 · 범위 · 추진 시기까지 맞아야 합니다/);
-  assert.ok(await d.locator('.dv-cmp>div span').allInnerTexts().then(a=>['문의번호','접수 시각','연락처 끝자리'].every(k=>a.includes(k))),'비교 표에 문의번호 · 접수 시각 · 연락처 끝자리');
-  assert.deepEqual(await d.locator('.dv-pvt>.h').allInnerTexts(),['항목','A · 먼저 등록','B','유지할 값']);assert.deepEqual(await d.locator('.dv-pvt>*').evaluateAll(l=>l.filter((n,i)=>i>=4&&(i-4)%4===0).map(n=>n.textContent)),['담당','상태','다음 업무','공종','브랜드 · 접수']);
-  assert.deepEqual(await d.locator('.dv-pvb>div b').allInnerTexts(),['보존','집계 변화','되돌리기']);assert.match(await d.locator('.dv-pvb').innerText(),/문의 원본 2건 · 응대 0건 · 첨부 0[\s\S]*견적문의 2 → 1 · 실적 변화 없음[\s\S]*지원 여부를 서버에서 확인해야 합니다 · 자동 복구를 보장하지 않습니다/);
-  assert.equal(await d.locator('.dv-primary[data-dd]').isDisabled(),true,'공종을 모르면 합치기 실행 잠금');assert.match(await d.locator('.dv-primary[data-dd]').getAttribute('title'),/공종을 몰라 같은 공사인지 확인 필요/);assert.equal(await d.locator('.dv-primary[data-dd]').innerText(),'합치기 실행');
-  assert.deepEqual(await d.locator('.dv-foot button').allInnerTexts().then(a=>a.filter(x=>x!=='같은 상담으로 연결')),['다른 건 · 그대로 두기','현장만 묶기','합치기 실행']);
+  assert.ok(await d.locator('.dv-cmp>div span').allInnerTexts().then(a=>['문의번호','접수 시각','연락처'].every(k=>a.includes(k))),'비교 표에 문의번호 · 접수 시각 · 연락처');
+  assert.deepEqual(await d.locator('.dv-pvt>.h').allInnerTexts(),['항목','원본 A','원본 B','유지할 값']);assert.deepEqual(await d.locator('.dv-pvt>*').evaluateAll(l=>l.filter((n,i)=>i>=4&&(i-4)%4===0).map(n=>n.textContent)),['담당','상태','다음 업무','공종','브랜드 · 접수']);
+  assert.deepEqual(await d.locator('.dv-pvb>div b').allInnerTexts(),['보존','현장 수','영업건 수','견적문의 수','수주실적','되돌리기']);assert.match(await d.locator('.dv-pvb').innerText(),/문의 원본 2건 · 응대 0건 · 첨부 0[\s\S]*현장 수\s*\d → 1[\s\S]*영업건 수\s*0 → 0[\s\S]*견적문의 수\s*2 → 1[\s\S]*변화 없음 · 수주 0건[\s\S]*미지원/);
+  /* data_review 13: 숫자마다 계산 근거 펼침 */
+  assert.equal(await d.locator('.dv-pvb details').count(),6);assert.match(await d.locator('.dv-pvb>div').nth(2).locator('details small').evaluate(n=>n.textContent),/^원본 A · B에 영업건 없음 — 문의만$/);assert.match(await d.locator('.dv-pvb>div').nth(5).locator('details small').evaluate(n=>n.textContent),/되돌리기 지원 전까지 \[합치기\] 잠금 · 현장 연결만 가능/);
+  assert.equal(await d.locator('.dv-primary[data-dd]').isDisabled(),true,'공종을 모르면 합치기 실행 잠금');assert.match(await d.locator('.dv-primary[data-dd]').getAttribute('title'),/공종을 몰라 같은 공사인지 확인 필요/);assert.equal(await d.locator('.dv-primary[data-dd]').innerText(),'합치기 (확인 후)');
+  assert.deepEqual(await d.locator('.dv-foot button').allInnerTexts().then(a=>a.filter(x=>x!=='같은 상담으로 연결')),['다른 공사로 유지','담당에게 범위 확인 요청','현장만 묶기','합치기 (확인 후)']);
+  /* data_review 9 · 11 · 12: 원본 A · B(먼저 등록 문구 없음) · 선후는 접수 시각 칸의 '먼저' · 다음 확인까지만 · 값 상태 3가지 */
+  assert.deepEqual(await d.locator('.dv-cmp .dv-ch b').allInnerTexts(),['원본 A','원본 B']);assert.equal(await d.evaluate(n=>/먼저 등록/.test(n.textContent)),false,"'먼저 등록' 문구 없음");
+  assert.equal(await d.locator('.dv-cmp>div',{hasText:'접수 시각'}).evaluate(n=>(n.textContent.match(/ · 먼저/g)||[]).length),1,'접수 시각이 이른 쪽 한 곳에만 먼저');
+  assert.match(await d.locator('.dv-judge').innerText(),/다음 확인: 공사 범위 · 실제 추진 시기 · 기존 상담 관계/);assert.equal(await d.locator('.dv-judge').evaluate(n=>/제안: 합치기/.test(n.textContent)),false,'애매한 건에 합치기 추천 없음');
+  assert.deepEqual(await d.locator('.dv-vs i').allInnerTexts(),['값 있음','값 없음 (확인됨)','불러오지 못함']);
+  await d.locator('[data-dask]').click();await page.waitForTimeout(150);assert.match(await d.locator('#dvAskOut').innerText(),/^\[범위 확인 요청\] .+ — 원본 A\(문의 #.+\) · 원본 B\(문의 #.+\)가 같은 공사인지 공사 범위 · 실제 추진 시기 · 기존 상담 관계를 확인해 주세요\.$/);
   await page.keyboard.press('Escape');
   /* 4. 같은 공사 — 항목마다 유지값을 고른 뒤에만 합치기 실행 */
   await page.evaluate(async()=>{window.CRM_CLEANUP_WRITE=true;TOKEN='t';SB.rpc=async(n)=>{__rpc.push(n);if(n==='crm_cleanup_state')return {data:{ok:true,reviews:[],links:[],sites:[],moves:[]}};if(n==='crm_improvement_task_list_v1')return {data:{ok:true,tasks:[]}};return {error:{message:'not in test'}};};await DataCleanupUI.refresh();});await page.waitForTimeout(400);
   await v.locator('.plv-row',{hasText:'[인천] 연수한양'}).locator('.plv-cta').click();await page.waitForTimeout(200);d=page.locator('#dupDialog.on .dv-box');
+  /* data_review 13: 되돌리기 미지원이면 같은 공사여도 [합치기 실행] 잠금 · 현장 연결만 */
+  assert.equal(await d.locator('.dv-primary[data-dd]').isDisabled(),true);assert.match(await d.locator('.dv-primary[data-dd]').getAttribute('title'),/되돌리기 미지원 — 지원 전까지 합치기 잠금 · 현장 연결만 가능/);
+  await page.evaluate(()=>{DupV2.close();DataCleanupUI.canUndo=()=>true;});await v.locator('.plv-row',{hasText:'[인천] 연수한양'}).locator('.plv-cta').click();await page.waitForTimeout(200);d=page.locator('#dupDialog.on .dv-box');assert.match(await d.locator('.dv-pvb').innerText(),/되돌리기\s*지원 · 처리 완료 탭에서 연결 해제/);
   assert.equal(await d.locator('.dv-warn').count(),0,'같은 공사는 경고 없음');
   assert.deepEqual(await d.locator('.dv-pvt .dv-pk').count(),1,'담당이 다른 것만 고른다(먼저 등록 자동 선택 없음)');assert.equal(await d.locator('.dv-pk button[aria-pressed="true"]').count(),0,'아무것도 미리 고르지 않음');
-  assert.equal(await d.locator('.dv-primary[data-dd]').isDisabled(),true);assert.match(await d.locator('.dv-note').innerText(),/대표 기록은 '먼저 등록'으로 자동 정하지 않습니다[\s\S]*미리보기에서 항목마다 유지할 값을 고른 뒤 열립니다/);
+  assert.equal(await d.locator('.dv-primary[data-dd]').isDisabled(),true);assert.match(await d.locator('.dv-note').innerText(),/대표 기록을 자동으로 정하지 않습니다[\s\S]*미리보기에서 항목마다 유지할 값을 고른 뒤 열립니다/);
   await d.locator('.dv-pk button[data-v="B"]').click();await page.waitForTimeout(150);d=page.locator('#dupDialog.on .dv-box');
   assert.equal(await d.locator('.dv-pk button[aria-pressed="true"]').innerText(),'B 유지');assert.equal(await d.locator('.dv-primary[data-dd]').isDisabled(),false,'고른 뒤에 합치기 실행이 열린다');
   /* [합치기 실행] = 기존 서버 처리 창(미리보기 → 확인 → 처리)으로 — 이 화면은 데이터를 바꾸지 않는다 */
@@ -102,8 +113,38 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await d.locator('.dv-warn').innerText(),/확인 불가[\s\S]*같은 전화는 후보를 찾는 조건일 뿐입니다/);assert.equal(await d.locator('.dv-pv').count(),0,'확인 불가에는 합치기 미리보기가 없다');assert.equal(await d.locator('.dv-primary[data-dd]').isDisabled(),true);assert.equal(await d.locator('[data-dd="defer"]').innerText(),'판단 보류 · 자료 보완');
   await page.keyboard.press('Escape');
   assert.equal(await page.evaluate(()=>__writes.length),0,'이 화면은 데이터를 쓰지 않는다');
+  /* 7. data_review 8 · 10 · 12(2026-10-10): 현장 그룹 · '기타' 공종 · 연락처 값 상태 — 새 자료로 다시 그린다 */
+  await page.evaluate(async()=>{
+   const at=n=>new Date(Date.now()-n*864e5).toISOString(),id=n=>'0000000'+String(n).padStart(2,'0')+'-0000-4000-8000-0000000000'+String(n).padStart(2,'0');
+   const inq=(n,site,addr,work,extra)=>Object.assign({id:id(n),site,address:addr,office_phone:'',status:'접수',brand:'POUR솔루션',assignee:'',at:at(n*20),created_at:at(n*20)},work?{workItems:[work],primaryWork:work}:{},extra||{});
+   B.deals=[];B.inquiries=[
+    inq(11,'[경기 성남] 청솔마을','성남시 분당구 정자일로 120','옥상>옥상방수',{phone:'010-2222-2281'}),inq(12,'[경기 성남] 청솔마을','성남시 분당구 정자일로 120','옥상>기타',{brand:'석민이앤씨',status:'종결'}),
+    inq(13,'[경기 성남] 청솔마을','성남시 분당구 정자일로 120','지하주차장>에폭시'),inq(14,'[경기 성남] 청솔마을','성남시 분당구 정자일로 120','옥상>옥상방수',{brand:'POUR공법'}),
+    inq(15,'[경기 성남] 까치마을','성남시 분당구 미금로 33','옥상>기타',{brand:'석민이앤씨',status:'종결'}),inq(16,'[경기 성남] 까치마을','성남시 분당구 미금로 33','옥상>옥상방수',{status:'현장방문 예정',raw:{'문의자 연락처':'031-555-4402'}})];
+   delete DataCleanupUI.canUndo;G.dupV2=null;await DataCleanupUI.refresh();});await page.waitForTimeout(500);
+  const M=await page.evaluate(()=>{const U=DataCleanupUI,cs=U.active().map(c=>({c,i:U.cases().indexOf(c),band:DupV2.judge(c)})),CL=DupV2.clusters(cs),k=U.active().find(c=>/까치마을/.test(c.a.name));
+   return {pairs:cs.length,groups:CL.map(g=>[g.recs.length,g.pairs.length,g.band]),kkachi:k?[DupV2.workState(k),DupV2.judge(k),DupV2.phoneState(k.a).s,DupV2.phoneState(k.b).s,DupV2.phoneState(k.a).text,DupV2.phoneState(k.b).text]:null};});
+  assert.equal(M.groups.length,1,'원본 3건 이상인 현장만 그룹: '+JSON.stringify(M));assert.equal(M.groups[0][0],4,'청솔마을 원본 4건');assert.ok(M.groups[0][1]>=3,'쌍 여러 개가 그룹 하나로');
+  /* 10: '옥상 > 기타'는 범위 불명확 → 다른 공사로 단정하지 않고 확인 필요 */
+  assert.deepEqual(M.kkachi.slice(0,2),['unknown','maybe'],"'기타' 공종 = 공사 동일 확인 필요");
+  /* 12: 견적문의 상세와 같은 칸(문의자 연락처)을 읽는다 · 정말 없는 값은 '없음(확인됨)' */
+  assert.deepEqual([M.kkachi[2],M.kkachi[3]].sort(),['has','none']);assert.ok([M.kkachi[4],M.kkachi[5]].includes('…4402'),'문의자 연락처를 읽음');assert.ok([M.kkachi[4],M.kkachi[5]].includes('연락처 없음(확인됨)'));
+  const gr=v.locator('.dv-g');assert.equal(await gr.count(),1,'그룹 줄 1개');assert.equal(await v.locator('.plv-row.dv-r',{hasText:'청솔마을'}).count(),0,'그룹에 든 쌍은 줄마다 반복하지 않는다');
+  const gt=(await gr.locator('.dv-gr').innerText()).replace(/\s+/g,' ');assert.match(gt,/\[경기 성남\] 청솔마을 성남시 분당구 정자일로 120 · 원본 4건 같은 현장 주소 동일.* 공사 동일 · 확인 필요 쌍 \d+개를 한 줄로 원본 보기 ▾/,gt);
+  await gr.locator('[data-dv="group"]').click();await page.waitForTimeout(250);
+  const og=await v.locator('.dv-g .dv-gor').evaluateAll(l=>l.map(r=>[r.querySelector('i').textContent].concat([...r.querySelectorAll('span')].map(s=>s.textContent))));
+  assert.deepEqual(og.map(r=>r[0]),['A','B','C','D']);assert.deepEqual(og.map(r=>r[1]).sort(),['옥상>기타','옥상>옥상방수','옥상>옥상방수','지하주차장>에폭시'],'펼치면 원본마다 공종');assert.ok(og.every(r=>/^\d{4}\.\d{1,2}\.\d{1,2} 접수$/.test(r[2])),'접수일');assert.ok(og.some(r=>r[3]==='종결')&&og.some(r=>r[4]==='POUR공법'),'상태 · 브랜드');
+  assert.equal(await v.locator('.dv-g .dv-gp button').count(),M.groups[0][1],'쌍 비교 버튼 = 쌍 수');
+  assert.deepEqual(await v.evaluate(el=>[...el.querySelectorAll('.dv-g *')].filter(n=>n.children.length===0&&n.scrollWidth>n.clientWidth+1&&getComputedStyle(n).textOverflow!=='ellipsis').map(n=>n.textContent)),[],'그룹 줄: 넘치는 글 없음');
+  await v.locator('.dv-g .dv-gp button').first().click();await page.waitForTimeout(250);d=page.locator('#dupDialog.on .dv-box');assert.equal(await d.count(),1,'쌍 비교 버튼 → 원본 비교 창');await page.keyboard.press('Escape');
+  /* 까치마을: 한 쌍은 예전 줄 그대로 · 근거에 '기타' 범위 불명확 · 비교 창은 다음 확인까지만 */
+  const kr=v.locator('.plv-row.dv-r',{hasText:'까치마을'});assert.equal(await kr.count(),1);assert.match(await kr.innerText(),/'기타' 공종 · 범위 불명확/);
+  await kr.locator('.plv-cta').click();await page.waitForTimeout(250);d=page.locator('#dupDialog.on .dv-box');
+  assert.match(await d.locator('.dv-primary[data-dd]').getAttribute('title'),/'기타' 공종은 범위가 불명확해 같은 공사인지 확인 필요 — 다른 공사로 단정하지 않음/);assert.equal(await d.locator('.dv-primary[data-dd]').isDisabled(),true);
+  assert.equal(await d.locator('.dv-cmp>div',{hasText:'문의자 연락처'}).count(),1,'비교 표에 문의자 연락처 줄');assert.equal(await d.locator('.dv-vs [data-dopen]').count(),2,'[원본 A 열기] [원본 B 열기]');
+  await page.keyboard.press('Escape');
   assert.deepEqual(errs,[],'페이지 오류 없음 '+errs.join(' | '));
-  if(shot){await v.locator('.plv-row',{hasText:'[인천] 연수한양'}).locator('.plv-cta').click();await page.waitForTimeout(200);await page.screenshot({path:shot+'-compare.png'});}
+  if(shot){await page.screenshot({path:shot+'-list.png'});await v.locator('.plv-row.dv-r',{hasText:'까치마을'}).locator('.plv-cta').click();await page.waitForTimeout(200);await page.screenshot({path:shot+'-compare.png'});}
   console.log('verify-data-review-rules-browser ok');
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

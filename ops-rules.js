@@ -18,7 +18,7 @@
   /* 2026-10-10 admin_request E: 진행 중 연락두절(회의 "월 간격 약 3회") · 기록 입력 마감(영업일 12:00 점검) — 값은 저장되고, 화면 연결은 표시된 적용 상태대로 */
   ongoing_unreachable_attempts:3,record_deadline_hour:12,
   /* day_zones §2: 받는 사람에게 팝업으로 알릴 '중요' 요청 종류(요청 이름). 비어 있으면 새 배정 · 긴급 기한 변경만 팝업 — 어떤 요청을 중요로 볼지는 대표 결정 전이라 기본 비어 있음 */
-  important_request_kinds:Object.freeze([]),
+  important_request_kinds:Object.freeze(['첫 연락 요청']),/* counting 16(2026-10-10 대표 지정): 중요 요청 팝업 기본값 = 관리자 첫 연락 요청. 서버에 저장된 값이 있으면 그 값이 우선 */
   split_own_transfer:true,stage_gates:true,
   reasons_bad_fit:Object.freeze(['수행불가 공종','규모 부적합','대상 고객 아님','서비스 범위 아님','기타']),/* 2026-10-05 대표 확정(design_handoff_inquiry_flow README 의 종결 표) — 설정 화면에서 바꿀 수 있다 */
   /* 실주 원인 4분류(2차 기능 3): '분류 · 세부 사유' — 관계 / 공법 / 가격 / 사업 */
@@ -83,7 +83,7 @@
   ['open','공개 · 권한','',[
    T('dashboard_public','영업 대시보드 공개','전체 · 개인 성과를 전 직원에게 공개','fix'),
    X('할 일 지정 권한','컨트롤타워 지정','fix','관리자 · 팀장'),
-   CE('important_request_kinds','중요 요청 (팝업)','요청 이름을 넣으면 그 요청은 받는 사람에게 팝업으로 뜹니다(예: 첫 연락 요청 · 계약정보 입력 요청). 비어 있으면 새 배정 · 긴급 기한 변경만 팝업이고 나머지 요청은 알림 목록으로 묶입니다. 어떤 요청을 중요로 볼지는 대표 결정 전.','cond'),
+   CE('important_request_kinds','중요 요청 (팝업)','요청 이름을 넣으면 그 요청은 받는 사람에게 팝업으로 뜹니다(예: 첫 연락 요청 · 계약정보 입력 요청). 기본값 = 첫 연락 요청. 비우면 새 배정 · 긴급 기한 변경만 팝업이고 나머지 요청은 알림 목록으로 묶입니다. 받은 사람이 확인하기 전까지 미확인 목록에 남습니다.','cond'),
    C('approvers','예외 승인자','승인 요청 · 타사 이관 실적 인정은 이 사람들에게 갑니다 — 한 사람만 승인해도 됩니다. 본인이 올린 요청은 다른 승인자가 처리합니다. (계정 이름과 같아야 합니다)','cond')]],
   ['later','보류 · 추후','회의에서 잠정 · 추후로 정한 것',[
    T('content_followup','콘텐츠 후속관리','카드뉴스 · 영상 — 발송 대신 접촉 기록만','hold')]]];
@@ -219,11 +219,17 @@
  async function save(changes,apply){
   const set={};Object.keys(changes||{}).forEach(k=>{const v=clean(k,changes[k]);if(v===undefined)throw new Error((SPEC[k]?SPEC[k].l:k)+' 값이 범위를 벗어났습니다');set[k]=v;});
   if(!Object.keys(set).length)return all();if(!available())throw new Error('운영 기준 저장은 서버 적용 뒤에 쓸 수 있습니다');
-  const body={set};if(apply&&typeof apply==='object'){const ap={};if(/^\d{4}-\d{2}-\d{2}$/.test(String(apply.effective_on||'')))ap.effective_on=apply.effective_on;if(apply.scope)ap.scope=String(apply.scope).slice(0,300);if(['keep','recalc','ask'].includes(apply.existing))ap.existing=apply.existing;if(Object.keys(ap).length)body.apply=ap;}
-  return take(await store().rpc(RPC,body));
+  const body={set};
+  /* 적용 조건은 서버가 contract 2 라고 응답한 뒤에만 보낸다(v1 서버는 조용히 버린다 — 코덱스 검토 2026-10-10). 보낸 적용 조건을 서버가 받지 않았으면 성공으로 보지 않는다 */
+  if(apply&&typeof apply==='object'){if(meta.contract<2)throw new Error('이 서버는 적용 조건(적용일 · 대상)을 받지 않습니다 — sql/ops-rules-v2-20261010.sql 적용 뒤에 쓸 수 있습니다');const ap={};if(/^\d{4}-\d{2}-\d{2}$/.test(String(apply.effective_on||'')))ap.effective_on=apply.effective_on;if(apply.scope)ap.scope=String(apply.scope).slice(0,300);if(['keep','recalc','ask'].includes(apply.existing))ap.existing=apply.existing;if(Object.keys(ap).length)body.apply=ap;}
+  const r=await store().rpc(RPC,body);
+  if(!r||r.ok!==true||!r.rules||typeof r.rules!=='object')throw new Error('서버 확인 응답이 올바르지 않습니다');
+  if(body.apply&&(Number(r.contract)||1)<2)throw new Error('서버가 적용 조건을 받지 않았습니다(contract '+(r.contract||1)+')');
+  const miss=Object.keys(set).filter(k=>JSON.stringify(r.rules[k])!==JSON.stringify(set[k]));if(miss.length)throw new Error('서버가 확인한 값이 요청과 다릅니다: '+miss.join(', '));
+  return take(r);
  }
  /* 기준 버전(근거 보기 · 이력 표시용): 서버 이력 건수 = 버전, 마지막 변경일. 서버 적용 전이면 v0 · 기본값 */
- function version(){const at=String(meta.updated_at||'');const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(at);return {n:Number(meta.version)||0,at,label:'기준 v'+(Number(meta.version)||0)+(m?' · '+Number(m[2])+'.'+Number(m[3]):' · 기본값')};}
+ function version(){const at=String(meta.updated_at||''),t=Date.parse(at),k=Number.isFinite(t)?new Date(t+9*36e5).toISOString().slice(0,10):'',m=/^(\d{4})-(\d{2})-(\d{2})/.exec(k);/* 한국 날짜 */return {n:Number(meta.version)||0,at,label:'기준 v'+(Number(meta.version)||0)+(m?' · '+Number(m[2])+'.'+Number(m[3]):' · 기본값')};}
  /* 로그인하면 한 번 읽고, 값이 기본과 다르면 다시 그린다 */
  function warm(){const me=root.ME&&String(root.ME.id||root.ME.name||'');if(!me||warmed===me||!available())return;warmed=me;const before=JSON.stringify(all());load(true).then(()=>{if(JSON.stringify(all())!==before&&typeof root.paint==='function'){try{root.paint();}catch(e){}}});}
  if(typeof root.paint==='function'){const base=root.paint;root.paint=function(){try{sync();}catch(e){}const r=base.apply(this,arguments);try{warm();}catch(e){}return r;};}

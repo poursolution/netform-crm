@@ -53,3 +53,35 @@ body:has(#pg-dup.on #dups.dv-on) #periodbar,body:has(#pg-dup.on #dups.dv-on) #re
 .dv-pvb{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.dv-pvb>div{background:#f8f9fb;border-radius:9px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;font-size:12.5px;line-height:1.5}.dv-pvb b{font-size:11.5px;color:#6b7280}
 @media(max-width:700px){.dv-pvt{grid-template-columns:70px minmax(0,1fr) minmax(0,1fr)}.dv-pvt>:nth-child(4n){grid-column:1/-1}.dv-pvb{grid-template-columns:minmax(0,1fr)}}
 .dv-r .plv-tag{white-space:normal;line-height:1.35;display:inline-block;max-width:100%;overflow:visible;text-overflow:clip}.dv-r .plv-c>span[title]{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.45}
+/* data_review 8 ~ 13 (2026-10-10): 현장 그룹 줄 · 값 상태 3가지 · 범위 확인 요청 문구 · 계산 근거 펼침 */
+#dup-v2 .dv-g{border-bottom:1px solid #f0f1f4}
+#dup-v2 .dv-g>.dv-gr{cursor:default;border-bottom:0}
+#dup-v2 .dv-gr .plv-site small{display:block;font-size:11.5px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#dup-v2 .dv-gr .plv-c>small{font-size:11.5px;color:#6b7280;white-space:nowrap}
+#dup-v2 .dv-gr .plv-tag{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#dup-v2 .dv-go{margin:0 18px 12px;border:1px solid #e3e6ec;border-radius:10px;background:#fafbfc;padding:6px 12px}
+#dup-v2 .dv-gor{display:grid;grid-template-columns:22px minmax(0,1.4fr) 120px minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center;padding:7px 0;border-top:1px solid #f0f1f4;font-size:12.5px}
+#dup-v2 .dv-gor:first-child{border-top:0}
+#dup-v2 .dv-gor>i{font-style:normal;font-weight:700;width:20px;height:20px;border-radius:50%;background:#15171c;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center}
+#dup-v2 .dv-gor>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#374151}
+#dup-v2 .dv-gp{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 0 4px;border-top:1px solid #f0f1f4}
+#dup-v2 .dv-gp>span{font-size:11.5px;font-weight:700;color:#6b7280;margin-right:2px}
+#dup-v2 .dv-gp button{height:28px;border:1px solid #d9dde4;border-radius:14px;background:#fff;color:#15171c;font:inherit;font-size:12px;font-weight:600;padding:0 10px;cursor:pointer;white-space:nowrap;min-height:0;box-shadow:none;width:auto}
+#dup-v2 .dv-gp button:hover{background:#f3f4f6}
+#dupDialog .dv-vs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0 0;font-size:11.5px}
+#dupDialog .dv-vs i{font-style:normal;border-radius:10px;padding:2px 8px;white-space:nowrap}
+#dupDialog .dv-vs i.has{background:#e8f6ee;color:#1f7a4d}#dupDialog .dv-vs i.none{background:#f3f4f6;color:#6b7280}#dupDialog .dv-vs i.fail{background:#fdecec;color:#b42318}
+#dupDialog .dv-vs b{color:#b42318;font-weight:700;margin-left:4px}
+#dupDialog .dv-vs button{height:26px;border:1px solid #d9dde4;border-radius:7px;background:#fff;color:#15171c;font:inherit;font-size:11.5px;font-weight:700;padding:0 9px;cursor:pointer;min-height:0;box-shadow:none;width:auto}
+#dupDialog .dv-askout{margin:8px 0 0;font-size:12px;line-height:1.55;color:#374151;background:#f8f9fb;border-radius:8px;padding:8px 10px;word-break:keep-all}
+#dupDialog .dv-askout:empty{display:none}
+#dupDialog .dv-pvb details{margin-top:3px}
+#dupDialog .dv-pvb summary{font-size:11.5px;color:#2a52b8;cursor:pointer;list-style:none}
+#dupDialog .dv-pvb summary::-webkit-details-marker{display:none}
+#dupDialog .dv-pvb details small{display:block;margin-top:3px;font-size:11.5px;color:#6b7280;line-height:1.5;word-break:keep-all}
+@media(max-width:1100px){#dup-v2 .dv-gor{grid-template-columns:22px minmax(0,1fr) minmax(0,1fr)}#dup-v2 .dv-gor>span:nth-of-type(n+3){display:none}}
+/* 비교 창 본문이 길어져도 비교 표가 눌려 사라지지 않게(세로로 쌓인 칸은 줄어들지 않고 본문이 스크롤된다) */
+#dupDialog .dv-body>*{flex-shrink:0}
+#dup-v2 .dv-gr .dv-gw{display:flex;align-items:center;gap:8px;min-width:0}
+#dup-v2 .dv-gr .dv-gw>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#374151;font-size:12.5px}
+#dup-v2 .dv-gr .dv-gw>em{flex:none}

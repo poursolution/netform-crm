@@ -36,7 +36,7 @@
   /* 어디에 돈이 쌓였나: 분류 70% 이상이면 확정 공종, 아니면 키워드 추정 기준 */
   const byGroup=new Map();let basis='확정 공종 기준';
   if(rate>=70){data.open.forEach(d=>{const k=root.workAnalysisGroup(root.workAnalysisPrimary(d));byGroup.set(k,(byGroup.get(k)||0)+amt(d));});}
-  else{basis='키워드 추정 기준 · 분류 전';m.rows.filter(r=>root.isOpen(r.d)).forEach(r=>{const k=r.scope==='unclassified'?(r.guess?r.guess.groups[0]:'근거 부족'):root.workAnalysisGroup(root.workAnalysisPrimary(r.d));byGroup.set(k,(byGroup.get(k)||0)+amt(r.d));});}
+  else{basis='키워드 추정 기준 · 분류 전';m.rows.filter(r=>data.open.includes(r.d)).forEach(r=>{const k=r.scope==='unclassified'?(r.guess?r.guess.groups[0]:'근거 부족'):root.workAnalysisGroup(root.workAnalysisPrimary(r.d));byGroup.set(k,(byGroup.get(k)||0)+amt(r.d));});}
   const money=[...byGroup].filter(x=>x[1]>0).sort((a,b)=>(a[0]==='근거 부족')-(b[0]==='근거 부족')||b[1]-a[1]).slice(0,5).map(([k,v])=>[k,Math.round(v/1e7)/10,'']);
   const wonAmtList=won.filter(d=>root.hasWonAmt(d)&&root.wonAmt(d)>0),avg=l=>l.length?Math.round(l.reduce((a,d)=>a+root.wonAmt(d),0)/l.length/1e4).toLocaleString('ko-KR')+'만':'–';
   const per=new Map();wonAmtList.forEach(d=>{const k=root.workAnalysisGroup(root.workAnalysisPrimary(d));(per.get(k)||per.set(k,[]).get(k)).push(d);});
