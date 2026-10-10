@@ -139,6 +139,21 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.equal(s.kv[1],'실주일 2026.5.7 · 낙찰사 A건설');assert.deepEqual(s.btns,[['실주 기록 채우기',true]]);
   assert.deepEqual(s.first,[['미입력','실주 사유'],['확인 필요','재영업 가능 여부 · 미정'],['해당 없음','다음 연락 · 재영업 예일 때만']]);
   if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'deal-frame7.png')});
+  /* ⑧ 과거 이관 · 분류 전(아직 단계가 없는 건 — 운영 자료의 다수)도 같은 틀: 막대에 '지금' 없음 · 할 일 = 영업 재개 판단 · 주 버튼 [영업 재개] */
+  await page.evaluate(async()=>{const d=JSON.parse(JSON.stringify(B.deals[2]));d.id='99999999-1111-4111-8111-111111111111';d.site='[부산] 과거 이관 단지';d.code='old_stage_x';d.stage_code='old_stage_x';d.quote_versions=[];B.deals.push(d);window.__lg=PipelineScope.isLegacy(d);try{closeDetail();}catch(e){}await DealWin.load();drwDeal(JSON.stringify(d));});
+  await page.waitForSelector('#detailView.dv7.dv3-legacy .dvs-task .dv7-lb');await page.waitForTimeout(700);assert.equal(await page.evaluate(()=>window.__lg),true);
+  s=await snap();
+  assert.deepEqual(s.barL,BAR);assert.deepEqual(s.bar,['-','-','-','-','-','-','-'],'과거 이관 건은 막대에 지금 · 지나온 단계가 없다');
+  assert.equal(s.lb,'지금 처리');assert.equal(s.steps,'none');assert.equal(s.now,'none','예전 지금 할 일 카드 대신 같은 카드');
+  assert.match(s.meta,/^현재 건 · 공종 미분류 · 추진 2025 · 등록 2025\.9\.10 · #/);assert.equal(s.line2,'석민이앤씨 예상금액 3.8억 · 참고');
+  assert.equal(s.task,'영업 재개 판단');assert.equal(s.due,'고객 약속 기한 '+await md(4)+' · 4일 남음');
+  assert.equal(s.kv[5],'영업 재개(단계 · 다음 행동 · 날짜) 또는 종료 사유');
+  assert.deepEqual(s.btns,[['영업 재개',true],['연락하기',false],['결과 기록',false],['다음 업무',false]]);
+  assert.deepEqual(s.first.map(f=>f[1].split(' · ')[0].replace(/ \d+\.\d+$/,'')),['단계 정하기','다음 행동','마지막 연락']);
+  assert.deepEqual(s.left.slice(0,3),['단지 공통','연락처 · 결정권자','지금 영업건']);
+  assert.deepEqual(await amber(),[],'과거 이관 건에도 갈색 · 황토색 없음');assert.deepEqual(await clip(),[]);
+  assert.equal(await page.evaluate(()=>{const t=document.querySelector('#detailView .detailtop'),b=document.querySelector('#detailView .dv7-bar');return b.getBoundingClientRect().width>t.getBoundingClientRect().width*0.8;}),true,'머리 막대가 한 줄 전체 폭(글자가 옆으로 흩어지지 않는다)');
+  await V.locator('.dvs-primary').click();await page.waitForTimeout(300);assert.equal(await V.locator('.dv3-move').evaluate(n=>!n.hidden),true,'[영업 재개] = 단계 정하는 창');
   /* 기한 날짜는 목록과 같은 판정 함수 */
   assert.equal(await page.evaluate(()=>{const d=B.deals[0];return DealFrame7.due(d).date===PipelineJudge.basis(d).due;}),true);
   /* 끄기: 같은 정보 같은 판단 화면 그대로 */

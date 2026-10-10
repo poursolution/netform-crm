@@ -361,7 +361,7 @@
   const top=v.querySelector('.detailtop'),sub=$('dv-sub');if(!top||!sub)return;
   /* 과거 이관 · 분류 전(PipelineScope): 아직 어느 단계도 아니다 — '컨설팅 설계'라고 적지 않고, [단계 바꾸기] 대신 [영업 재개](서버에 저장된 예전 단계 값에서 출발) */
   const S=st(d),PSC=root.PipelineScope,legacy=!closed&&!!(PSC&&PSC.on()&&PSC.isLegacy(d)),from=legacy?(PSC.fromCode?PSC.fromCode(d):PSC.rawCode(d)):root.dealStage(d),T=root.StageTransition,P=root.PipelineStages;let choices=[];try{choices=closed||!T||(legacy&&!from)?[]:T.choices(from);}catch(e){}
-  v.classList.toggle('dv3-legacy',legacy);v.classList.toggle('dv7',!legacy&&f7(d));S.mvLabel=legacy?'영업 재개':'단계 바꾸기';
+  v.classList.toggle('dv3-legacy',legacy);v.classList.toggle('dv7',f7(d));S.mvLabel=legacy?'영업 재개':'단계 바꾸기';
   if(S.mvFrom&&S.mvFrom!==from)S.mvOpen=false;S.mvFrom=from;
   const group=legacy?'legacy':P.group(from,root.outcomeOf?root.outcomeOf(d):null),gname=legacy?PSC.LABEL:((STAGES.find(s=>s[0]===group)||[])[1]||root.stageLabel(from)),sname=legacy?'예전 단계 '+PSC.oldStage(d):root.stageLabel(from);
   /* 브랜드 칩(색 채움) 하나만 */
@@ -604,7 +604,8 @@
    const nextHtml=S.nextOpen?'<div class="dv3-nextonly"><span>다시 연락</span>'+[['내일',1],['3일 후',3],['7일 후',7]].map(([l,n])=>'<button type="button" data-dv3="nextpick" data-v="'+n+'"'+(S.nbusy?' disabled':'')+'>'+l+'</button>').join('')+(S.nextDate?'<input type="date" data-dv3-nextdate min="'+KST(0)+'" aria-label="다음 연락 날짜"'+(S.nbusy?' disabled':'')+'>':'<button type="button" class="lnk" data-dv3="nextmore">직접 정하기</button>')+'<button type="button" class="lnk gray" data-dv3="nextcancel">취소</button></div>':'';
    const primary=hint&&hint.btn?{label:hint.btn+(/하기$/.test(hint.btn)?'':'하기'),act:hint.why==='계약 정보 입력됨 · 증빙 확인 필요'?'files':String(hint.act||'')}:null,F7=f7(d)?root.DealFrame7:null;
    let opener='';try{const KO=S.calling&&root.DealKeyman&&root.DealKeyman.ai&&aiOn()?root.DealKeyman.ai(d):null;opener=KO&&KO.call&&KO.call.opener?String(KO.call.opener):'';}catch(e){}
-   const html=(F7||DS).taskHtml(d,{closed,primary,opener,tel:!!ci.mobile,calling:!!S.calling,req:S.req,guide:closed?'':String(root.dealStage(d))==='contract'?String(((root.CRMRules&&root.CRMRules.PHASE4&&root.CRMRules.PHASE4.playbook_tips)||{}).con||''):(hint?(hint.todo||hint.why):''),reco,nextHtml});
+   const lgc7=v.classList.contains('dv3-legacy');
+   const html=(F7||DS).taskHtml(d,{closed,primary,opener,noResume:lgc7&&!v.querySelector('.dv3-headact .mv:not([disabled])'),tel:!!ci.mobile,calling:!!S.calling,req:S.req,guide:closed?'':lgc7?'영업을 다시 시작하려면 [영업 재개]에서 단계 · 다음 행동 · 날짜를 정해 주세요':String(root.dealStage(d))==='contract'?String(((root.CRMRules&&root.CRMRules.PHASE4&&root.CRMRules.PHASE4.playbook_tips)||{}).con||''):(hint?(hint.todo||hint.why):''),reco,nextHtml});
    if(tk.__h!==html){tk.__h=html;tk.innerHTML=html;}
    if(now)now.classList.add('dv3-old');
   }
@@ -706,7 +707,7 @@
    /* 관리 단위 · 영업건 상자(units.js · design_handoff_units): 책임자 · 참여 역할 · 브랜드 3종 · 요청 · 현장 공통 — 협업 상자 아래 */try{root.DealUnits&&root.DealUnits.mount(r,d,closed);}catch(e){}
   /* 영업 판단 · 준비 지원(deal-prep.js · design_handoff_rules 6차): 진행 조건 · 관계자 · 입찰 준비 · 지원 요청 · 방문 전 요약 · 예상 수주일 · 단계 이력 — 관리 단위 상자 아래 + 지금 할 일 5줄 */try{root.DealPrep&&root.DealPrep.mount(r,d,closed);}catch(e){}
   }
-  if(same()&&!v.classList.contains('dv3-legacy')&&(!closed||(f7(d)&&['won','lost'].includes(root.DealFrame7.groupOf(d)))))sameRight(v,d,closed,r);else{const tk=r.querySelector(':scope>.dvs-task');if(tk)tk.remove();if(now)now.classList.remove('dv3-old');}
+  if(same()&&(f7(d)?(!closed||['won','lost'].includes(root.DealFrame7.groupOf(d))):(!closed&&!v.classList.contains('dv3-legacy'))))sameRight(v,d,closed,r);else{const tk=r.querySelector(':scope>.dvs-task');if(tk)tk.remove();if(now)now.classList.remove('dv3-old');}
    /* 단계 바꾸기 카드는 오른쪽에서 빼고 창 머리글로 */
   r.querySelectorAll(':scope>.ddv-switch').forEach(n=>n.classList.add('dv3-old'));
  }
