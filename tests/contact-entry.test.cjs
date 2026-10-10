@@ -64,6 +64,29 @@ test('일정 변경이 기한을 늦추면 사유가 필수(원래 기한 · 새
  const over=CE.plan({res:'부재',ch:'전화',mode:'change',date:'2026-10-14',reason:'일정 겹침'},{today:T,existing:ex('2026-10-08')});
  assert.equal(over.postpone.over,2,'지난 기한은 며칠 지났는지 함께');
 });
+test('고객 정보 변경(공사 시기)은 바뀐 것만 미리보기 · 저장 뒤 변경으로 적는다',()=>{
+ const e=ex('2026-10-13');
+ const p=CE.plan({res:'연결됨',ch:'전화',memo:'내년 봄 공사로 보고 있음',mode:'keep',info:{construction_plan:'내년'}},{today:T,existing:e,currentPlan:'미정'});
+ assert.deepEqual(p.info,{construction_plan:'내년'});assert.match(p.preview,/ · 고객 정보 변경 · 공사 시기 내년$/);
+ assert.deepEqual(CE.summary(p,{existing:e}).filter(r=>r[0]==='변경'),[['변경','공사 시기 → 내년']]);
+ const same=CE.plan({res:'연결됨',ch:'전화',memo:'그대로',mode:'keep',info:{construction_plan:'내년'}},{today:T,existing:e,currentPlan:'내년'});
+ assert.equal(same.info,null,'지금 값과 같으면 바꾸지 않는다');assert.doesNotMatch(same.preview,/고객 정보 변경/);
+ assert.equal(CE.plan({res:'연결됨',ch:'전화',memo:'x',mode:'keep'},{today:T,existing:e}).info,null);
+});
+test('처리한 관리자 요청: 지정한 것만 · 연락 시도는 진행 중 · 다음 업무가 있어야 완료',()=>{
+ const e=ex('2026-10-10'),rq=[{id:'r1',title:'후속 연락 요청',on:true},{id:'r2',title:'안 고른 요청',on:false}];
+ const ok=CE.plan({res:'연결됨',ch:'전화',memo:'결과 들음',mode:'new',purpose:'견적서 발송',date:'2026-10-16',requests:rq},{today:T,existing:e});
+ assert.deepEqual(ok.requests.map(r=>[r.id,r.state,r.next_text,r.next_due]),[['r1','done','견적서 발송','2026-10-16']],'고르지 않은 요청은 건드리지 않는다');
+ assert.match(ok.preview,/ · 관리자 요청 "후속 연락 요청" 완료$/);
+ assert.deepEqual(CE.summary(ok,{existing:e}).filter(r=>/요청/.test(r[1])),[['완료','관리자 요청 "후속 연락 요청"']]);
+ const miss=CE.plan({res:'부재',ch:'전화',mode:'new',purpose:'다시 전화',date:'2026-10-11',requests:rq},{today:T,existing:e});
+ assert.equal(miss.requests[0].state,'working','부재는 연락 시도로만 — 요청은 진행 중');assert.match(miss.preview,/진행 중으로 남김\(연락 시도\)$/);
+ const none=CE.plan({res:'연결됨',ch:'전화',memo:'올해는 어렵다고 함',mode:'none',reason:'내년 예산',requests:rq},{today:T,existing:e});
+ assert.equal(none.requests[0].state,'blocked','다음 업무가 없으면 완료 조건 미충족');assert.deepEqual(CE.summary(none,{existing:e}).filter(r=>/요청/.test(r[1])),[['남음','관리자 요청 "후속 연락 요청" — 완료 조건 미충족']]);
+ const keep=CE.plan({res:'연결됨',ch:'전화',memo:'그대로',mode:'keep',requests:rq},{today:T,existing:ex('2026-10-13')});
+ assert.equal(keep.requests[0].state,'done','앞날 일정이 그대로 있으면 다음 업무 조건을 채운다');
+ assert.deepEqual(CE.plan({res:'연결됨',ch:'전화',memo:'x',mode:'keep'},{today:T,existing:ex('2026-10-13')}).requests,[]);
+});
 test('다음 일정 없음은 사유가 필수 · 배드핏은 종결 검토 + 사유 필수(종결은 단계 바꾸기에서 따로)',()=>{
  const none=CE.plan({res:'연결됨',ch:'전화',memo:'올해는 어렵다고 함',mode:'none',reason:''},{today:T});
  assert.equal(none.ok,false);assert.match(none.error,/이유/);

@@ -60,8 +60,9 @@
  function apply(){
   if(!enabled())return;
   const G=root.G,scr=root.document.getElementById('scr'),body=scr&&scr.querySelector('.body');
-  if(G&&G.user&&!G.deal&&G.sub&&(G.sub.t==='inq'||G.sub.t==='inqAssigned'))return applyInq();
+  if(G&&G.user&&!G.deal&&G.sub&&(G.sub.t==='inq'||G.sub.t==='inqAssigned')){applyInq();if(root.MobileInquiry)root.MobileInquiry.decorate();return;}
   if(body&&G&&G.user&&!G.deal&&!G.sub&&G.mode==='rep'&&G.tab==='mine')applyMine(body);
+  if(body&&G&&G.user&&!G.deal&&!G.sub&&G.mode==='rep'&&G.tab==='today'&&root.MobileRequests)root.MobileRequests.decorate(body);
   if(!body||!G||!G.user||G.deal||G.sub||G.mode!=='rep')return;
   if(G.tab==='find'&&!body.querySelector('.mh-hub')){const t=body.querySelector(':scope>.mv-title'),el=root.document.createElement('div');el.innerHTML=hubHtml();if(t)t.remove();body.prepend(el.firstElementChild);}
   if(G.tab==='my'&&!body.querySelector('.mh-sched')){const t=body.querySelector(':scope>.mv-title'),el=root.document.createElement('div');el.innerHTML=scheduleHtml();(t||body.firstElementChild).after(el.firstElementChild);}

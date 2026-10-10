@@ -116,7 +116,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* ⑨ 고객 정보 변경 ▾ + 다음 일정 없음은 사유 필수 */
   await reset();await open('d2');await chip('연결됨').click();await page.waitForTimeout(100);
   await C.locator('.ce-infobtn').click();await page.waitForTimeout(100);
-  assert.deepEqual(await C.locator('.ce-infobody > div > span').allInnerTexts(),['공종','결정권자 · 담당자','공사 시기 · 대표회의']);
+  assert.deepEqual(await C.locator('.ce-infobody > div > span').allInnerTexts(),['공종','결정권자 · 담당자','공사 시기','대표회의 일정']);
   await C.locator('textarea[data-ce-in="memo"]').fill('올해는 어렵다고 함');await C.locator('.ce-chip[data-ce="mode"]',{hasText:'다음 일정 없음'}).click();await page.waitForTimeout(100);
   assert.equal(await prev(),'다음 일정이 없는 이유를 넣어 주세요');
   /* ⑧b 일정 변경으로 기한을 늦추면 사유 필수 → '[기한 변경] 원래 | 새 | 사유' 기록(PC 와 같은 표식) */

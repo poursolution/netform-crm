@@ -59,3 +59,10 @@
 .ce-undo{border:0;background:none;color:var(--blue);font-size:11.5px;font-weight:800;padding:0 4px}
 .ce-chip.ai{box-shadow:inset 0 0 0 1.5px var(--blue)}.ce-chip.ai::after,.ce-date.ai::after{content:'AI 추천';margin-left:6px;font-size:10.5px;font-weight:800;color:var(--blue)}
 .ce-date.ai{border-color:var(--blue)}.ce-date.ai::after{position:absolute;top:-8px;right:8px;background:#fff;padding:0 4px;margin:0}
+.ce-reqs{display:grid;gap:8px}
+.ce-req{display:grid;grid-template-columns:22px minmax(0,1fr);gap:9px;align-items:start;padding:10px 12px;border-radius:12px;background:var(--bg);font-size:13px}
+.ce-req.off{opacity:.7}
+.ce-req input{width:20px;height:20px;margin-top:1px}
+.ce-req b{display:block;font-size:13.5px;word-break:keep-all}
+.ce-req small{display:block;font-size:11.5px;color:var(--sub);margin-top:1px;word-break:keep-all;overflow-wrap:anywhere}
+.ce-req em{display:block;font-style:normal;font-size:12px;font-weight:700;color:var(--blue-dark);margin-top:3px;line-height:1.45;word-break:keep-all}

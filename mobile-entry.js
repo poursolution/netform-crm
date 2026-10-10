@@ -20,13 +20,18 @@
  function loadDraft(id){try{const s=store(),j=s&&JSON.parse(s.getItem(KEY)||'null');if(j&&String(j.id)===String(id)&&Date.now()-Number(j.at||0)<LIFE)return j.s;}catch(e){}return null;}
  function saveDraft(id,S){try{const s=store();if(s)s.setItem(KEY,JSON.stringify({id:String(id),at:Date.now(),s:S}));}catch(e){}}
  function clearDraft(){try{const s=store();if(s)s.removeItem(KEY);}catch(e){}}
- let S=null,busy=false,progress={},last=null;
+ let S=null,busy=false,progress={},last=null,lastMemo='';
  const dateOptions=()=>{const t=kst(),mon=(()=>{const x=new Date(t+'T00:00:00Z'),w=x.getUTCDay();return CE.addDays(t,((8-w)%7)||7);})();return [['내일',CE.addDays(t,1)],['3일 후',CE.addDays(t,3)],['다음 주 월요일',mon]];};
- const ctxOf=d=>({today:kst(),existing:existingOf(d)});
- const planOf=d=>CE.plan(Object.assign({ch:'전화'},S),ctxOf(d));
+ const MF=()=>root.MobileFields&&root.MobileFields.ready()?root.MobileFields:null;
+ const curPlan=d=>{try{return root.MobileFields?root.MobileFields.planOf(d):'';}catch(e){return '';}};
+ const ctxOf=d=>({today:kst(),existing:existingOf(d),currentPlan:curPlan(d)});
+ const MR=()=>root.MobileRequests&&root.MobileRequests.enabled()?root.MobileRequests:null;
+ const reqsOf=d=>{const R=MR();return R?R.forDeal(d.id):[];};
+ const withInfo=()=>{const d=dealById(root.G&&root.G.deal),R=MR();return Object.assign({ch:'전화'},S,{info:S&&S.cplan?{construction_plan:S.cplan}:null,requests:d&&R&&S?reqsOf(d).map(r=>({id:r.id,title:R.labelOf(r),on:!!(S.reqOn&&S.reqOn[r.id])&&R.isContact(r)})):[]});};
+ const planOf=d=>CE.plan(withInfo(),ctxOf(d));
  function fresh(d){
   const ex=existingOf(d),dflt=CE.defaults('연결됨',ex,kst());
-  return {res:'',memo:'',mode:dflt.mode,purpose:dflt.purpose,date:dflt.date,reason:'',plan:'internal',info:false,touchedNext:false};
+  return {res:'',memo:'',mode:dflt.mode,purpose:dflt.purpose,date:dflt.date,reason:'',plan:'internal',info:false,touchedNext:false,reqOn:{}};
  }
  /* 결과를 고르면 다음 업무 제안도 그 결과에 맞게(직접 고친 뒤에는 건드리지 않는다) */
  function pickResult(d,res){
@@ -56,11 +61,13 @@
    nx+='<input type="text" class="ce-in" data-ce-in="reason" maxlength="80" value="'+attr(S.reason)+'" placeholder="'+(CE.isBadfit(S.res)?'배드핏 사유 (필수)':'다음 일정이 없는 이유 (예: 내년 예산 · 3월 재확인)')+'" aria-label="사유">';
   }
   nx+='</section>';
+  const RQ=MR(),rl=RQ&&d?reqsOf(d):[];
+  const reqHtml=rl.length?'<section class="ce-reqs"><b class="ce-q"><i>4</i>이 기록으로 처리한 관리자 요청 <small>직접 고른 것만 · 자동 완료 없음</small></b>'+rl.map(r=>{const st=pl&&pl.requests?pl.requests.find(x=>x.id===r.id):null,can=RQ.isContact(r),why=!can?'이 요청은 PC 에서 처리합니다':!S.res?'':!st?'':st.state==='done'?'✓ 완료 조건 충족 — 저장하면 요청이 완료로 닫힙니다':st.state==='working'?'연락 시도로 기록 — 요청은 진행 중으로 남습니다':'완료 조건 미충족 — 다음 업무가 있어야 합니다 · 요청은 남음';return '<label class="ce-req'+(can?'':' off')+'"><input type="checkbox" data-ce-in="req" data-id="'+attr(r.id)+'"'+(S.reqOn&&S.reqOn[r.id]&&can?' checked':'')+(can?'':' disabled')+'><span><b>'+h(RQ.labelOf(r))+'</b><small>'+h((r.requested_by||'관리자')+' · 기한 '+RQ.dueTxt(r))+'</small>'+(why?'<em>'+h(why)+'</em>':'')+(can&&S.reqOn&&S.reqOn[r.id]?'<small>완료 조건 · '+h(RQ.COND.join(' · '))+'</small>':'')+'</span></label>';}).join('')+'</section>':'';
   const info='<div class="ce-info"><button type="button" class="ce-infobtn" data-ce="info" aria-expanded="'+!!S.info+'">고객 정보 변경 '+(S.info?'▴':'▾')+' <small>바뀐 것만 · 공종 · 결정권자</small></button>'
-   +(S.info?'<div class="ce-infobody"><div><span>공종</span><b>'+h(root.bizOf?root.bizOf(d):'')+'</b><button type="button" data-ce="edit-work">수정</button></div><div><span>결정권자 · 담당자</span><b>'+h((c.name?c.name+(c.role?' '+c.role:''):'미입력'))+'</b><button type="button" data-ce="edit-contact">수정</button></div><div><span>공사 시기 · 대표회의</span><b>PC 상세에서 입력</b></div></div>':'')+'</div>';
+   +(S.info?'<div class="ce-infobody"><div><span>공종</span><b>'+h(root.bizOf?root.bizOf(d):'')+'</b><button type="button" data-ce="edit-work">수정</button></div><div><span>결정권자 · 담당자</span><b>'+h((c.name?c.name+(c.role?' '+c.role:''):'미입력'))+'</b><button type="button" data-ce="edit-contact">수정</button></div>'+(MF()&&!d.outcome?'<div><span>공사 시기</span><div class="ce-chips" style="grid-column:2/4">'+root.MobileFields.PLANS.map(v=>'<button type="button" class="ce-chip sm" data-ce="iplan" data-v="'+attr(v)+'" aria-pressed="'+((S.cplan||curPlan(d))===v)+'">'+h(v)+'</button>').join('')+'</div></div>':'<div><span>공사 시기</span><b>'+h(curPlan(d)||'미입력')+'</b></div>')+'<div><span>대표회의 일정</span><b>PC 상세에서 입력</b></div></div>':'')+'</div>';
   const err=S.err?'<p class="ce-err" role="alert">'+h(S.err)+'</p>':'';
   const foot='<div class="ce-foot"><span class="ce-prev">'+(pl&&pl.ok?'<b>저장하면</b> '+h(pl.preview):h(pl&&pl.error||'연락 결과를 골라 주세요'))+'</span><button type="button" class="btn btn-primary ce-save" data-ce="save"'+(busy?' disabled':'')+'>'+(busy?'확인 중…':'기록 저장')+'</button></div>';
-  return '<div class="ce">'+res+note+nx+info+err+'</div>'+foot;
+  return '<div class="ce">'+res+note+nx+reqHtml+info+err+'</div>'+foot;
  }
  function paint(d,fromState){
   const card=root.document.getElementById('sheetcard');if(!card)return;
@@ -90,6 +97,8 @@
    if(a==='res'){pickResult(dd,v);S.err='';paint(dd);}
    else if(a==='mode'){S.mode=v;S.touchedNext=true;S.err='';if(v==='new'&&!S.date){S.date=CE.addDays(kst(),1);}paint(dd);}
    else if(a==='date'){S.date=v;S.touchedNext=true;S.err='';paint(dd);}
+   else if(a==='iplan'){S.cplan=v;S.err='';paint(dd);}
+   else if(a==='quote'){root.closeSheet();if(root.MobileFields)root.MobileFields.quoteSheet(lastMemo);}
    else if(a==='info'){S.info=!S.info;paint(dd);}
    else if(a==='edit-work'){saveDraft(dd.id,S);if(typeof root.workSheetM==='function')root.workSheetM();}
    else if(a==='edit-contact'){saveDraft(dd.id,S);if(typeof root.contactEditSheetM==='function')root.contactEditSheetM();}
@@ -106,6 +115,7 @@
    if(k==='memo')S.memo=t.value;else if(k==='purpose'){S.purpose=t.value;S.touchedNext=true;}else if(k==='reason')S.reason=t.value;
    else if(k==='date'){S.date=t.value;S.touchedNext=true;const dd=dealById(card._ceDeal);if(dd&&/^\d{4}-\d{2}-\d{2}$/.test(t.value))paint(dd);}
    else if(k==='plan'){S.plan=t.checked?'customer':'internal';}
+   else if(k==='req'){S.reqOn=Object.assign({},S.reqOn,{[t.dataset.id]:t.checked});const dd1=dealById(card._ceDeal);if(dd1)paint(dd1);return;}
    const dd=dealById(card._ceDeal);if(dd&&k!=='date'){const pv=card.querySelector('.ce-prev'),pl=S.res?planOf(dd):null;if(pv)pv.innerHTML=pl&&pl.ok?'<b>저장하면</b> '+h(pl.preview):h(pl&&pl.error||'연락 결과를 골라 주세요');saveDraft(dd.id,S);}
   });
  }
@@ -149,7 +159,7 @@
  async function save(d,card){
   if(busy)return;
   const ta=card.querySelector('textarea[data-ce-in="memo"]');if(ta)S.memo=ta.value;
-  const ctx=ctxOf(d),pl=CE.plan(Object.assign({ch:'전화'},S),ctx);
+  const ctx=ctxOf(d),pl=CE.plan(withInfo(),ctx);
   if(!pl.ok){S.err=pl.error;paint(d);return;}
   if(!root.Phase1||!root.Phase1.queue||typeof root.queueMobileContactOperation!=='function'){S.err='로그인 상태에서만 저장할 수 있습니다.';paint(d);return;}
   busy=true;S.err='';paint(d);
@@ -173,11 +183,16 @@
    }else if(pl.completeCurrent){d.nextAction=d.nextActionObj=null;}
    if(pl.meaningful)d.contactAt=at;d.lastAt=at;
    try{root.G.done[root.doneKey({ref:d.id})]=1;}catch(e){}
-   last={pl,ctx};clearDraft();busy=false;S=null;progress={};
-   const rows=CE.summary(pl,Object.assign({},ctx,{openRequests:[]}));
+   let infoErr='';
+   if(pl.info){try{await root.MobileFields.save(d,{construction_plan:pl.info.construction_plan},'결과 남기기에서 함께 변경');}catch(e){infoErr=String(e&&e.message||e);pl.info=null;}}
+   const resLabel=S.res;
+   if(pl.requests&&pl.requests.length&&root.MobileRequests){for(const rq of pl.requests){if(rq.state!=='done'&&rq.state!=='working')continue;const req=reqsOf(d).find(x=>x.id===rq.id);try{await root.MobileRequests.complete(req||{id:rq.id,kind:'first'},{result:resLabel,absent:rq.state==='working',next_text:rq.next_text,next_due:rq.next_due});}catch(e){rq.state='failed';rq.err=String(e&&e.message||e);}}}
+   const ch0=S.ch;lastMemo=String(S.memo||'');last={pl,ctx};clearDraft();busy=false;S=null;progress={};
+   const rows=CE.summary(pl,Object.assign({},ctx,{openRequests:[]}));if(infoErr)rows.push(['남음','공사 시기는 저장하지 못했습니다: '+infoErr]);
+   const quoteOk=ch0==='방문'&&pl.meaningful&&!d.outcome&&String(d.code)==='consulting'&&root.MobileFields&&root.MobileFields.ready();
    const k={저장:'ok',완료:'ok',변경:'chg',신규:'new',남음:'left'};
    const c=root.document.getElementById('sheetcard');
-   c.innerHTML='<div class="sheet-grip"></div><div class="ce-done"><b class="ce-dt">저장했습니다</b><small>'+h(d.nm)+'</small><ul>'+rows.map(r=>'<li class="'+k[r[0]]+'"><em>'+h(r[0])+'</em><span>'+h(r[1])+'</span></li>').join('')+'</ul><div class="ce-donebtn"><button type="button" class="btn btn-line" data-ce="close">닫기</button><button type="button" class="btn btn-primary" data-ce="next">다음 건으로</button></div></div>';
+   c.innerHTML='<div class="sheet-grip"></div><div class="ce-done"><b class="ce-dt">저장했습니다</b><small>'+h(d.nm)+'</small><ul>'+rows.map(r=>'<li class="'+k[r[0]]+'"><em>'+h(r[0])+'</em><span>'+h(r[1])+'</span></li>').join('')+'</ul><div class="ce-donebtn"><button type="button" class="btn btn-line" data-ce="close">닫기</button><button type="button" class="btn btn-primary" data-ce="next">다음 건으로</button></div>'+(quoteOk?'<button type="button" class="btn btn-line" data-ce="quote" style="margin-top:8px">견적 요청 등록</button>':'')+'</div>';
    try{root.saveLocal&&root.saveLocal();}catch(e){}
   }catch(e){busy=false;S.err=String(e&&e.message||e);paint(d);}
  }
