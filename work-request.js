@@ -78,7 +78,7 @@
    if(current()&&again)load(true);
   });
  }
- function repaint(){try{if(R.G.page==='today'||R.G.page==='mgmt'||document.getElementById('kpi-b'))R.paint();else if(document.getElementById('inq-inbox-dialog')&&R.InquiryDetailV2)R.InquiryDetailV2.reskin();}catch(e){}}
+ function repaint(){try{bell();}catch(e){}try{if(R.G.page==='today'||R.G.page==='mgmt'||document.getElementById('kpi-b'))R.paint();else if(document.getElementById('inq-inbox-dialog')&&R.InquiryDetailV2)R.InquiryDetailV2.reskin();}catch(e){}}
  const put=r=>{if(!r||!r.id)return;const S=st(),i=S.list.findIndex(x=>x.id===r.id);if(i>=0)S.list[i]=r;else S.list.unshift(r);S.gen=(S.gen||0)+1;/* 저장 세대(F3) */};
  const isOpen=r=>r.status==='sent'||r.status==='seen'||r.status==='working';
  const overdue=r=>isOpen(r)&&Date.parse(r.due_at)<Date.now();
@@ -273,6 +273,7 @@
  /* ── 받는 사람: 오늘 업무 맨 위 ── */
  const incoming=()=>st().list.filter(r=>r.to_me&&isOpen(r)).sort((a,b)=>String(a.due_at).localeCompare(String(b.due_at)));
  function lateTxt(r){const i=(()=>{try{const V=R.TodayV3&&R.TodayV3.current?R.TodayV3.current():null,t=target(r);return V&&t.key?V.mine.find(x=>x.key===t.key):null;}catch(e){return null;}})();if(!i)return '';return r.kind==='first'?'첫 연락 '+(i.short||'')+' 지연':i.missTxt+(i.short&&!/^(0일|오늘|-)$/.test(i.short)&&i.rk!=='contract'?' · '+i.short:'');}
+ let CARD=null;/* 받은 요청 한 건의 입력 묶음(전화 · 결과 · 다음 행동 · 저장 / 지사 회신 / 인수 확인) — 위쪽 카드와 목록 줄 아래가 같은 것을 쓴다 */
  function topHtml(){
   if(!enabled())return '';load();const L=incoming();if(!L.length)return '';const S=st();
   const card=r=>{const C=S.card[r.id]||(S.card[r.id]={res:'',owner:'',busy:false,err:''}),br=r.kind==='branch',K=KIND[r.kind]||{},t=target(r),od=overdue(r);
@@ -300,10 +301,13 @@
    return '<article class="wrq-in" data-id="'+r.id+'">'+head+'<span class="memo"><b>요청</b> '+h((r.asks||[]).join(' · ')||r.label)+(r.memo?'<br><span>"'+h(r.memo)+'"</span>':'')+'</span>'
     +'<div class="ft"><span>완료 조건 · '+h(K.done||'')+' — 입력되면 자동 완료 · 따로 [완료] 없음</span><button type="button" class="go" data-wr="go" data-id="'+r.id+'">열어서 입력</button></div></article>';};
   /* 담당 확인(seen)은 받은 사람이 카드에서 무엇이든 눌렀을 때만(onClick) — 화면에 보였다고 확인으로 적지 않는다(2026-10-10 코덱스 인계: 노출 ≠ 열람 ≠ 확인) */
-  const LG=L.filter(r=>r.label===LEGACY_LABEL),rest0=L.filter(r=>r.label!==LEGACY_LABEL);
+  CARD=card;const LG=L.filter(r=>r.label===LEGACY_LABEL),rest0=L.filter(r=>r.label!==LEGACY_LABEL);
   const DZ=R.DayZones&&R.DayZones.on(R.G._towerRole)?R.DayZones:null,IMP=(()=>{try{return R.CRMRules.get('important_request_kinds')||[];}catch(e){return [];}})();
   const isImp=r=>r.kind==='branch'||isHandover(r)||isReceipt(r)||IMP.includes(r.label);
-  const rest=DZ?rest0.filter(isImp):rest0,soft=DZ?rest0.filter(r=>!isImp(r)):[];
+  /* 4구역 화면: 요청마다 목록 줄(꼬리표 + 줄 아래 입력)이 있으므로 위쪽 큰 카드를 그리지 않는다. 줄이 없는 요청(대상이 화면 자료에 없음)만 예전 카드로 남긴다. 되돌리기 G.reqCardKeep=true */
+  const rowIds=DZ&&!R.G.reqCardKeep&&DZ.reqRowIds?DZ.reqRowIds():null;
+  /* 인계(재배정 · 시공 수령) · 지사 확인 요청은 '관리자 요청' 카드가 아니라 따로 처리하는 카드라 그대로 둔다 */
+  const rest=rowIds?rest0.filter(r=>isSpecial(r)||!rowIds.has(r.id)):DZ?rest0.filter(isImp):rest0,soft=rowIds?[]:DZ?rest0.filter(r=>!isImp(r)):[];
   const byLabel=new Map();soft.forEach(r=>byLabel.set(r.label,(byLabel.get(r.label)||0)+1));
   const softHtml=soft.length?'<article class="wrq-in wrq-soft"><div class="hd"><em class="soft">알림</em><b>'+h([...byLabel].map(x=>x[0]+' '+x[1]+'건').join(' · '))+'</b><i></i><span class="by">기존 업무 줄에 \''+h((soft[0].requested_by||'관리자'))+' 요청\' 꼬리표로 붙어 있습니다</span><button type="button" data-wr="softtoggle">'+(S.softOpen?'접기':'보기')+'</button></div>'+(S.softOpen?soft.map(card).join(''):'')+'</article>':'';
   const bundle=LG.length?'<article class="wrq-in wrq-legacy"><div class="hd"><em>관리자 요청</em><b>'+h(LEGACY_LABEL+' '+LG.length+'건')+'</b><i></i><span class="by'+(LG.some(overdue)?' od':'')+'">'+h((LG[0].requested_by||'관리자')+' · '+whenTxt(LG[0].reasked_at||LG[0].created_at)+' · 기한 '+dueTxt(LG[0]))+'</span></div>'
@@ -459,5 +463,14 @@
  document.addEventListener('click',onClick,true);
  document.addEventListener('change',e=>{const t=e.target;if(t&&t.matches&&t.matches('#pg-today [data-wr-in="owner"]')){const C=st().card[t.dataset.id];if(C){C.owner=t.value;repaint();}}},true);
  document.addEventListener('input',e=>{const t=e.target;if(t&&t.matches&&t.matches('#pg-today [data-wr-in="endnote"]')){const E=st().end;if(E)E.note=t.value;}},true);
- root.WorkRequest={enabled,load,reqFor,locked,cell,sideHtml,topHtml,history,autoClose,evidence,decorate,steps,dueTxt,NIGHT_FROM,NIGHT_HOUR,HANDOVER_LABEL,RECEIPT_LABEL,isHandover,isReceipt,KIND,RPC,state:st,_dueAt:dueAt,_lineReq:lineReq,_lineEnd:lineEnd};
+ /* 목록 줄 아래에 펼치는 같은 입력 묶음(5단계 바 · 문구 상자 · 머리 줄은 줄에 이미 있어 숨긴다 — work-request.css .wrq-inline) */
+ function inlineHtml(id){const r=incoming().find(x=>x.id===id);if(!r)return '';if(!CARD)topHtml();return CARD?CARD(r).replace('class="wrq-in','class="wrq-in wrq-inline'):'';}
+ const isSpecial=r=>!!r&&(r.kind==='branch'||isHandover(r)||isReceipt(r));
+ const impKinds=()=>{try{return R.CRMRules.get('important_request_kinds')||[];}catch(e){return [];}};
+ const isImportant=r=>!!r&&(r.kind==='branch'||isHandover(r)||isReceipt(r)||impKinds().includes(r.label));
+ /* 담당 확인(seen): 팝업의 [응대 시작] · [확인 · 나중에 처리]가 부른다 — 닫기(×) · 화면 노출은 확인이 아니다 */
+ function markSeen(id){const S=st(),r=S.list.find(x=>x.id===id);if(!r||!r.to_me||r.status!=='sent'||S.closing['seen:'+id])return;S.closing['seen:'+id]=true;O().rpc(RPC.reply,{id,action:'seen'}).then(x=>{put(x.request);bell();}).catch(()=>{}).finally(()=>{delete S.closing['seen:'+id];});}
+ /* 종 알림: 미확인 요청 n — 누르면 오늘 업무로 */
+ function bell(){try{const el=document.querySelector('.ib');if(!el)return;const n=enabled()?incoming().filter(r=>r.status==='sent').length:0;let b=el.querySelector('.wrq-belln');if(!n){if(b)b.remove();el.classList.remove('wrq-bell-on');if(el.dataset.wrqT){el.title=el.dataset.wrqT;}return;}if(!el.dataset.wrqT)el.dataset.wrqT=el.title||'';el.title='미확인 요청 '+n+'건 · 누르면 오늘 업무로';el.classList.add('wrq-bell-on');el.setAttribute('role','button');el.tabIndex=0;if(!b){b=document.createElement('b');b.className='wrq-belln';el.append(b);}b.textContent='미확인 요청 '+n;if(!el.__wrq){el.__wrq=true;el.addEventListener('click',()=>{try{if(R.DayZones){const Z=R.DayZones.state();Z.zone='now';Z.rs='';Z.closing=false;}R.goPage('today');}catch(e){}});}}catch(e){}}
+ root.WorkRequest={enabled,load,inlineHtml,isImportant,isSpecial,markSeen,bell,incoming:()=>incoming(),reqFor,locked,cell,sideHtml,topHtml,history,autoClose,evidence,decorate,steps,dueTxt,NIGHT_FROM,NIGHT_HOUR,HANDOVER_LABEL,RECEIPT_LABEL,isHandover,isReceipt,KIND,RPC,state:st,_dueAt:dueAt,_lineReq:lineReq,_lineEnd:lineEnd};
 })(window);
