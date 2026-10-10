@@ -46,11 +46,11 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const md=n=>page.evaluate(n=>window.__md(n),n);
   const open=async i=>{await page.evaluate(i=>window.__open(i),i);await page.waitForSelector('#detailView.dv7r .dvs-task .dv7-lb');await page.waitForTimeout(700);};
   const snap=()=>page.evaluate(()=>{const v=document.getElementById('detailView'),r=v.querySelector('.dw-right'),t=s=>{const n=v.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():null;};
-   return {fit:r.scrollHeight<=r.clientHeight+1,over:r.scrollHeight-r.clientHeight,vis:[...r.children].filter(n=>getComputedStyle(n).display!=='none').map(n=>n.className.split(' ')[0]),
+   return {fit:(()=>{const t=r.querySelector('.dvs-task').getBoundingClientRect(),b=r.getBoundingClientRect();return t.bottom<=b.bottom+1;})(),over:Math.round(r.querySelector('.dvs-task').getBoundingClientRect().bottom-r.getBoundingClientRect().bottom),vis:[...r.children].filter(n=>getComputedStyle(n).display!=='none'&&!n.classList.contains('dv3-near')).map(n=>n.className.split(' ')[0]),near:r.querySelectorAll(':scope>.dv3-near').length,
     parts:[...v.querySelectorAll('.dvs-task>*')].filter(n=>getComputedStyle(n).display!=='none').map(n=>n.className.split(' ').pop()),
     lb:t('.dv7-lb'),task:t('.dvs-tt>b'),due:t('.dvs-tt>span'),kv:[...v.querySelectorAll('.dv7-kvs>span')].map(n=>n.textContent),btns:[...v.querySelectorAll('.dvs-task button')].filter(b=>b.offsetParent).map(b=>[b.textContent.trim(),b.classList.contains('fill')]),
     next:t('.dv7-next>div'),info:t('.dv7-info>div'),ai:t('.dv7-ai'),old:v.querySelectorAll('.dw-right .dv7-first,.dw-right .dv7-grps,.dw-right .dv7-sub,.dw-right .dvs-aux:not([style*="none"])').length,
-    right:[...r.querySelectorAll('.da-stage-summary,.dcb,.dvu,.dp6,.dv3-near')].length,drawerHidden:v.querySelector('.dv7-drawer').hidden,inDrawer:[...v.querySelectorAll('.dv7-pbody>*')].map(n=>n.className.split(' ').filter(c=>/^(dv7-fill|dv3-slot|dcb|dvu|dp6|dv3-near)$/.test(c))[0]||n.className),summ:v.querySelectorAll('.da-stage-summary').length,
+    right:[...r.querySelectorAll('.da-stage-summary,.dcb,.dvu,.dp6')].length,drawerHidden:v.querySelector('.dv7-drawer').hidden,inDrawer:[...v.querySelectorAll('.dv7-pbody>*')].map(n=>n.className.split(' ').filter(c=>/^(dv7-fill|dv3-slot|dcb|dvu|dp6|dv3-near)$/.test(c))[0]||n.className),summ:v.querySelectorAll('.da-stage-summary').length,
     left:[...v.querySelectorAll('.dv3-left .dv7-h, .dv3-left header>b')].map(n=>n.textContent.trim()),leftAi:getComputedStyle(v.querySelector('.dv3-left .sth-ai')||v).display,plan:v.querySelectorAll('.dp6-plan').length};});
   /* ① 7단계 + 과거 이관: 같은 구성 · 노트북에서 스크롤 없이 끝 · 확인할 정보는 단계별 최대 3개 */
   const TASK=['견적 요청 등록','발송 내역 확인 · 고객 반응 기록','입대의 결과 확인 연락','제안서 팀장 공유 · 제출 준비','계약 체결 확인','준공 후 사후 연락','실주 기록 완성','영업 재개 판단'];
@@ -68,7 +68,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    assert.ok(Number(s.info.match(/^확인할 정보 (\d+)/)[1])<=3,'확인할 정보는 단계별 최대 3개');assert.doesNotMatch(s.info,/담당 최종 검토|무엇을 발송했나요|결정권자 · /);
    assert.equal(s.old,0,'먼저 확인 · 요약 묶음 · 보조 단추 · 지침 줄은 오른쪽에 없다');assert.equal(s.right,0,'예전 상자는 오른쪽에 남지 않는다');assert.equal(s.plan,0,'지금 할 일 5줄도 확인할 정보로 합침');
    assert.equal(s.summ,0,'deal-same 의 이 단계 필수 정보 · 빠진 정보 블록은 상세 창 어디에도 그리지 않는다');
-   assert.equal(s.drawerHidden,true);assert.deepEqual(s.inDrawer.filter(x=>x!=='dv3-slot'),['dv7-fill','dcb','dvu','dp6','dv3-near'],'상자들은 가운데 칸 패널에(기능 그대로)');
+   assert.equal(s.drawerHidden,true);assert.deepEqual(s.inDrawer.filter(x=>x!=='dv3-slot'),['dv7-fill'],'가운데 패널 = 확인할 정보 · 발송 내역 화면 하나 — 근처 현장은 오른쪽에 그대로');assert.equal(s.near,1,'근처 현장은 오른쪽 지금 처리 아래에 그대로');assert.equal(await V.locator('.dw-right>.dv3-near').evaluate(n=>n.getBoundingClientRect().top>=document.querySelector('#detailView .dvs-task').getBoundingClientRect().bottom),true);
    assert.deepEqual(s.left.slice(0,4),['연락처 · 결정권자','기본 정보','지금 영업건','이 단지 지난 영업 0']);assert.equal(s.leftAi,'none','왼쪽 AI 문장은 오른쪽 한 줄로');
    assert.equal(s.ai,null,'AI 결과가 없으면 문장을 지어내지 않는다');
    assert.equal(await V.locator('.dvs-kv>span').nth(1).evaluate(n=>getComputedStyle(n).fontSize),'11.5px');
@@ -135,37 +135,25 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual((await saved()).slice(b4).map(f=>[Object.keys(f).sort().join(','),f.materials,f.recipient]),[['materials,recipient,sent_date',['견적서','제안서'],'임석재 소장']],'발송 내역 저장 = 발송일 · 수신자 · 보낸 자료');
   await V.locator('.dv7-send [data-dv3="sendnone"]').click();await page.waitForTimeout(500);assert.deepEqual((await saved()).slice(-1),[{sent_date_check:'확인 불가'}],'[확인 불가] = 발송일 확인 불가로 기록');
   await V.locator('.dv7-phead [data-dv3="p7close"]').click();await page.waitForTimeout(300);p=await P();assert.equal(p.hidden,true);assert.equal(await V.locator('.idv-thread').isVisible(),true);
-  /* ⑤ [···] 메뉴: 오른쪽에서 뺀 상자 4개 */
+  /* ⑤ [···] 메뉴: 결정 일정 · 특이조건 · 하자 / 참여 · 브랜드 / 영업 판단 · 내부 지원 / 담당 · 실적 귀속은 없앴다(대표 "필요없을거같아") · 소장이 바뀌었어요는 소장 칸으로 */
   await V.locator('.tf-more').click();await page.waitForTimeout(200);
-  assert.deepEqual((await V.locator('.tf-menu [role=menuitem]').allInnerTexts()).slice(0,4),['결정 일정 · 특이조건 · 하자','참여 · 브랜드','영업 판단 · 내부 지원','근처 현장']);
-  for(const [label,key,cls,title] of [['결정 일정 · 특이조건 · 하자','collab','dcb','결정 일정 · 막힌 곳 · 진척 · 특이조건 · 하자'],['참여 · 브랜드','units','dvu','참여 · 브랜드'],['영업 판단 · 내부 지원','prep','dp6','영업 판단 · 내부 지원'],['근처 현장','near','dv3-near','근처 현장']]){
-   if(!(await V.locator('.tf-menu').count())){await V.locator('.tf-more').click();await page.waitForTimeout(200);}
-   await V.locator('.tf-menu [role=menuitem]',{hasText:label}).click();await page.waitForTimeout(500);p=await P();
-   assert.equal(p.p,key,label);assert.deepEqual(p.shown.filter(x=>x!=='dv3-slot'),[cls],label+' 패널에는 그 상자만');assert.match(p.head,new RegExp('^‹ '+title.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
-   assert.equal((await snap()).fit,true,'패널을 열어도 오른쪽은 그대로');
-  }
-  /* 담당 = 머리 한 곳: 왼쪽 담당 정보 카드는 평소 숨김 · [···] '담당 · 실적 귀속'에서 펼친다 */
-  assert.equal(await V.locator('.dv3-left .do-card').evaluate(n=>getComputedStyle(n).display),'none');
-  await V.locator('.tf-more').click();await page.waitForTimeout(200);await V.locator('.tf-menu [role=menuitem]',{hasText:'담당 · 실적 귀속'}).click();await page.waitForTimeout(500);
-  assert.notEqual(await V.locator('.dv3-left .do-card').evaluate(n=>getComputedStyle(n).display),'none','담당 정보 카드가 왼쪽에 펼쳐진다');
-  /* 값도 근거도 없는 줄은 '미확인' 한 단어 */
-  await V.locator('.tf-more').click();await page.waitForTimeout(200);await V.locator('.tf-menu [role=menuitem]',{hasText:'영업 판단 · 내부 지원'}).click();await page.waitForTimeout(400);
-  assert.equal(one(await V.locator('.dv7-pbody .dp6 .dp6-row.nov').first().innerText()),'예산 미확인');
-  /* 협업 상자의 기능은 패널 안에서 그대로(결정 일정 기록 창) */
-  await V.locator('.tf-more').click();await page.waitForTimeout(200);await V.locator('.tf-menu [role=menuitem]',{hasText:'결정 일정 · 특이조건 · 하자'}).click();await page.waitForTimeout(400);
-  await V.locator('.dv7-pbody .dcb [data-dc]',{hasText:'결정 일정 기록'}).first().click();await page.waitForTimeout(300);assert.ok(await V.locator('.dv7-pbody .dcb .dcb-form').count()>=1,'결정 일정 기록 창이 패널 안에서 열린다');
-  /* 응대 기록 입력칸의 [막힌 곳 · 진척 표시] = 같은 패널 */
-  await V.locator('.dv7-phead [data-dv3="p7close"]').click();await page.waitForTimeout(300);
-  assert.equal(one(await V.locator('#ddvComposer .dv7-blk').innerText()),'+ 막힌 곳 · 진척 표시');await V.locator('#ddvComposer .dv7-blk').click();await page.waitForTimeout(400);p=await P();assert.equal(p.p,'collab');
-  /* 다음 업무 [등록하기] = 그 줄 아래 빠른 선택(기존 저장 길) */
-  await V.locator('.dv7-next button').click();await page.waitForTimeout(200);assert.deepEqual(await V.locator('.dvs-task .dv3-nextonly button').allInnerTexts(),['내일','3일 후','7일 후','직접 정하기','취소']);
-  await V.locator('.dvs-task .dv3-nextonly [data-dv3="nextcancel"]').click();await page.waitForTimeout(200);
+  const menu=await V.locator('.tf-menu [role=menuitem]').allInnerTexts();
+  assert.deepEqual(menu.filter(x=>/결정 일정|참여 · 브랜드|영업 판단|내부 지원|담당 · 실적 귀속|근처 현장|소장이 바뀌었어요/.test(x)),[],'빼기로 한 메뉴는 없다: '+menu);
+  assert.ok(menu.includes('담당자 변경')&&menu.includes('보류')&&menu.includes('실주 처리'),'나머지 메뉴는 그대로: '+menu);
+  await V.locator('.tf-more').click();await page.waitForTimeout(150);
+  assert.equal(await V.locator('.dv7-drawer .dcb,.dv7-drawer .dvu,.dv7-drawer .dp6').count(),0,'협업 · 관리 단위 · 영업 판단 상자는 상세 창에 그리지 않는다');
+  assert.equal(await V.locator('#ddvComposer .dv7-blk').count(),0,'입력칸의 막힌 곳 · 진척 표시 단추도 없다');assert.equal(await page.evaluate(()=>document.querySelectorAll('#detailView .dp6-plan').length),0);
+  /* 소장이 바뀌었어요 = 소장 칸(연락처 줄 아래) */
+  assert.equal(one(await V.locator('.dv3-left .dv3-mgr .dvt-c4 button').innerText()),'소장이 바뀌었어요');
+  assert.equal(await V.locator('.dv3-left .dv3-mgr .dvt-c2').evaluate(n=>n.parentElement.querySelector('.dvt-c4')!==null&&n.compareDocumentPosition(n.parentElement.querySelector('.dvt-c4'))&4?true:false),true,'전화 · 문자 줄 아래');
+  await V.locator('.dvt-c4 button').click();await page.waitForTimeout(300);assert.ok(await V.locator('.dv3-left .dv3-mgr [data-dv3repl], .dv3-left .dv3-mgr .dv3-repl').count()>=1,'소장 바뀜 입력이 소장 칸에서 열린다');
+  await page.evaluate(()=>{const d=CUR_DETAIL.item;DealDetailV3.apply();});
   /* ⑥ 경쟁 · 입찰: 비교표 · 경쟁 업체 수 · 접수증 3줄(진행 조건 · 입찰 준비는 [···] 메뉴) */
   await open(3);s=await snap();assert.equal(s.info,'확인할 정보 3 공법 비교표 · 경쟁 업체 수 · 제출 접수증');
   await V.locator('.dv7-info button').click();await page.waitForTimeout(400);
   assert.deepEqual(await V.locator('.dv7-fill .dv7-fr .h b').allInnerTexts(),['공법 비교표','경쟁 업체 수','제출 접수증']);
   assert.equal(await V.locator('.dv7-fr',{hasText:'경쟁 업체 수'}).locator('input[data-dv3f="competitor"]').count(),1);
-  await V.locator('.dv7-fr',{hasText:'공법 비교표'}).locator('[data-dv3="p7"]').click();await page.waitForTimeout(400);p=await P();assert.equal(p.p,'prep','공법 비교표 = 입찰 준비(영업 판단 · 내부 지원) 패널');
+  assert.equal(await V.locator('.dv7-fr',{hasText:'공법 비교표'}).locator('[data-dv3="files"]').count(),1,'공법 비교표 = 자료 열기');
   /* 계약 · 시공 · 실주 */
   await open(4);await V.locator('.dv7-info button').click();await page.waitForTimeout(400);assert.deepEqual(await V.locator('.dv7-fill .dv7-fr .h b').allInnerTexts(),['계약서 파일','착공일']);
   await open(6);await V.locator('.dv7-info button').click();await page.waitForTimeout(400);assert.deepEqual(await V.locator('.dv7-fill .dv7-fr .h b').allInnerTexts(),['실주 사유','재영업 가능 여부']);assert.equal(await V.locator('.dv7-fill select[data-dv3f="reengage"]').count(),1);

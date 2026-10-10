@@ -41,7 +41,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 1. [··· 기타 처리] 메뉴: 담당자 변경 · 타사 이관 등록 · 보류 · 실주 처리 — 상시 버튼 아님 */
   assert.deepEqual(await v.locator('.dv3-headact button:visible').allInnerTexts(),['단계 바꾸기 ▾','···']);assert.equal(await page.locator('#tf-card').count(),0,'등록 전에는 이관 상자 없음');
   await v.locator('.tf-more').click();await page.waitForTimeout(150);
-  assert.deepEqual(await v.locator('.tf-menu button').allInnerTexts(),['결정 일정 · 특이조건 · 하자','참여 · 브랜드','영업 판단 · 내부 지원','근처 현장','담당 · 실적 귀속','☆ 즐겨찾기','담당자 변경','타사 이관 등록','승인 요청','보류','실주 처리']);/* 오른쪽 정리: 오른쪽에서 뺀 상자 · 담당 정보는 이 메뉴에서 *//* 정돈안: 즐겨찾기도 이 메뉴에서 */
+  assert.deepEqual(await v.locator('.tf-menu button').allInnerTexts(),['☆ 즐겨찾기','담당자 변경','타사 이관 등록','승인 요청','보류','실주 처리']);/* 정돈안: 즐겨찾기도 이 메뉴에서 *//* 정돈안: 즐겨찾기도 이 메뉴에서 */
   await v.locator('.tf-menu [data-tf="m-lost"]').click();await page.waitForTimeout(150);assert.deepEqual(await page.evaluate(()=>__opened),['lost'],'실주 처리 = 기존 단계 전환');
   await v.locator('.tf-more').click();await v.locator('.tf-menu [data-tf="m-reg"]').click();await page.waitForTimeout(200);
   /* 2. 등록 창: 필수값 · 사유는 운영 기준 목록 · 미보고 경고 */
