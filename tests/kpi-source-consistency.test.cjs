@@ -38,7 +38,7 @@ test('오늘 업무·KPI는 과거 생성 연도 및 내부 담당 명단과 무
  assert.equal(today[1].v,'17%');assert.match(today[1].goal,/진행 156건 중 26건/);
  assert.equal(m.todos.length,m.den-m.num);assert.equal(new Set(m.todos.map(t=>t.id)).size,130);
  const row=r.KpiV7.coreRows(r.KpiB.compute(),[],false).find(x=>x.i===2);
- assert.match(row.reqSum,/미등록 130건 중 요청 가능 129건 · 담당 없음 1/);
+ assert.match(row.reqSum,/기록 없음 130건 중 요청 가능 129건 \(담당 \d+명\) · 담당 없음 1건/);/* after_deploy ③: 숫자마다 단위(건 · 명) */
  r.G.rep='담당0';const filtered=r.KpiB.compute().M[2],own=r.KpiB.personVals('담당0',{items:[]});
  assert.equal(filtered.den,31);assert.equal(filtered.num,6);assert.equal(own.vals[2],filtered.v);
  r.todayIsAdmin=()=>false;r.ME.name='담당1';r.G.rep='전체';
@@ -75,7 +75,7 @@ test('기존 담당자 묶음 요청 이력은 보존하되 미등록 건수를 
  const m=r.KpiB.compute().M[2],done=m.todos.filter(t=>t.done).length,none=m.todos.filter(t=>!t.owner||t.owner==='미배정').length;
  assert.equal(done,25);assert.equal(none,1);assert.equal(m.todos.length,130);
  const row=r.KpiV7.coreRows(r.KpiB.compute(),[],false).find(x=>x.i===2);
- assert.match(row.reqSum,/미등록 130건 중 요청 가능 104건 · 이미 요청 중 25 · 담당 없음 1/);
+ assert.match(row.reqSum,/기록 없음 130건 중 요청 가능 104건 \(담당 \d+명\) · 이미 요청 중 25건 · 담당 없음 1건/);
 });
 test('관계관리 미분류·접촉 미확인은 준수 분모에서 제외하고 각 주기는 해당 구분만 센다',()=>{
  const {r}=fixture();const items=[{bucket:'nodata',rs:['nosent'],row:{contactDays:null}},
