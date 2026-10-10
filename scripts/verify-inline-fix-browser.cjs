@@ -168,7 +168,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
 
   /* ── after_deploy 14: 결과별 후속 업무 제안(응대 기록이 쓰는 함수) ── */
   const PL=await page.evaluate(()=>{const d=B.deals.find(x=>x.id==='s-late'),pick=P=>P?[P.purpose,P.due,P.type,P.text,P.link?[P.link.by,P.link.due,P.link.applied]:null]:null,q=DealDetailV3.planOf(d,{res:'견적요청'}),a0=DealDetailV3.planOf(d,{res:'부재'});
-   const W=WorkRequest.state();W.list=(W.list||[]).concat([{id:'rq1',target_type:'deal',target_id:'s-late',kind:'follow',status:'sent',requested_by:'송보람',to_name:'이필선',due_at:new Date(Date.now()+2*864e5).toISOString(),created_at:new Date().toISOString()}]);
+   const W=WorkRequest.state();W.loaded=true;W.at=Date.now();/* 요청 목록은 서버 확인 응답(ok + requests)이 있어야 읽힌 것으로 본다 — 검사에서는 읽힌 상태로 둔다 */W.list=(W.list||[]).concat([{id:'rq1',target_type:'deal',target_id:'s-late',kind:'follow',status:'sent',requested_by:'송보람',to_name:'이필선',due_at:new Date(Date.now()+2*864e5).toISOString(),created_at:new Date().toISOString()}]);
    return {on:WorkRequest.enabled(),n:DealUnits.requests(d).length,q:pick(q),a0:pick(a0),a1:pick(DealDetailV3.planOf(d,{res:'부재'})),a2:pick(DealDetailV3.planOf(d,{res:'부재',day:1})),m:pick(DealDetailV3.planOf(d,{res:'자료요청'})),t:__day(0),t1:__day(1),t2:__day(2)};});
   assert.deepEqual(PL.q,['견적 요청 등록(잔디) · 물량 산출 3일 목표',PL.t,'후속접촉','견적 요청 등록(잔디) · 물량 산출 3일 목표',null],'견적 요청 → 견적 요청 등록 · 오늘');
   assert.deepEqual(PL.a0,['다시 전화',PL.t1,'전화','다시 전화',null],'요청이 없으면 내일 재연락');
