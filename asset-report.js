@@ -18,12 +18,20 @@
  }
  let WS=null;
  const wsMap=()=>{if(WS&&Date.now()-WS.at<1500)return WS.map;const m=new Map();try{R.PipelineWorkspace.rows({unscoped:true}).forEach(r=>m.set(String(r.key),r));}catch(e){}WS={at:Date.now(),map:m};return m;};
+ function relationshipOf(d){
+  let g='';try{g=R.PipelineStages.group(R.dealStage(d))||'';}catch(e){}
+  if(g!=='relationship')return null;
+  const unknown={key:'unk',label:'미확인 · 기준일 확인 필요',od:false};
+  const row=wsMap().get(String(d.id||R.dealKey(d)));
+  if(!row||!R.RelV12||!R.RelV12.on())return unknown;
+  try{return R.RelV12.state(Object.assign({},row,{item:d}))||unknown;}catch(e){return unknown;}
+ }
  /* 한 단지의 열린 영업건이 상태별 주기를 넘겼나(late) · 분류 보완 대상인가(fix) */
  function relOf(s){
-  let late=0,fix=0;const j=J(),map=wsMap();
+  let late=0,fix=0;const j=J();
   (s.open||[]).forEach(d=>{
    let g='';try{g=R.PipelineStages.group(R.dealStage(d))||'';}catch(e){}
-   if(g==='relationship'){const row=map.get(String(d.id||R.dealKey(d)));if(row){try{const st=R.RelV12.state(row);if(st.key==='unk')fix++;else if(st.od)late++;}catch(e){}}return;}
+   if(g==='relationship'){const st=relationshipOf(d);if(!st||st.key==='unk')fix++;else if(st.od)late++;return;}
    try{if(j&&j.isLate(j.basis(d,g)))late++;}catch(e){}
   });
   return {late,fix};
@@ -90,6 +98,6 @@
    +'<div class="rb-cb"><span>'+(bad?'걸린 항목 '+bad+'개':'모두 통과')+'</span><i></i><button type="button" data-rb="recheck">고친 뒤 다시 확인</button><button type="button" class="pri" data-rb="caution">'+(bad?'주의 표시 붙여 '+(action==='send'?'보내기':'저장'):(action==='send'?'보내기':'저장'))+'</button></div></section>';
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootAsset);else bootAsset();
- root.AssetReport={on,cycleRows,adjust,relOf};
+ root.AssetReport={on,cycleRows,adjust,relOf,relationshipOf};
  root.ReportCheck={run,mark,clearFlags,panelHtml,cautionOf,OLD_STAGE};
 })(window);

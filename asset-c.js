@@ -25,12 +25,12 @@
  function money(s){
   const hit=memo.get(s.key);if(hit)return hit;
   let acc=0,accN=0,prog=0,progN=0,cur=0,curN=0,leg=0,legN=0,noTime=true;
-  const PS=R.PipelineScope,isLeg=d=>{try{return !!(PS&&PS.on()&&PS.isLegacy(d));}catch(e){return false;}};
+  const PS=R.PipelineScope,isCurrent=d=>{try{return PS&&PS.on()?PS.isActive(d):R.isOpen(d);}catch(e){return false;}};
   (s.deals||[]).forEach(d=>{
    let r=null;try{r=R.DealWin&&R.DealWin.enabled()?R.DealWin.resultOf(d):null;}catch(e){}
    if(r&&r.done){accN++;acc+=Number(r.amount)||0;return;}
    if(!r&&R.isWon(d)){accN++;acc+=Number(R.wonAmt(d))||0;return;}
-   if(R.isOpen(d)){const a=Number(R.oppAmt(d))||0;progN++;prog+=a;if(isLeg(d)){legN++;leg+=a;}else{curN++;cur+=a;}}/* decision_collab ⑧: 진행 금액 = 현재 영업기회 vs 과거 미정리 · 이관 */
+   if(R.isOpen(d)){const a=Number(R.oppAmt(d))||0;progN++;prog+=a;if(isCurrent(d)){curN++;cur+=a;}else{legN++;leg+=a;}}/* decision_collab ⑧: 진행 금액 = 현재 영업기회 vs 과거 미정리 · 이관 */
   });
   (s.lost||[]).forEach(d=>{const f=d.stage_contexts&&d.stage_contexts.lost&&d.stage_contexts.lost.fields||{};if(String(f.recontact_possibility||d.recontact_possibility||'').trim())noTime=false;});
   const v={acc,accN,prog,progN,cur,curN,leg,legN,noReproposal:noTime};memo.set(s.key,v);return v;
@@ -40,6 +40,7 @@
  /* 이유 한 줄 — 꼬리표와 같은 말은 쓰지 않는다(금액 · 사유만) */
  function whyOf(s,m){
   const ld=s.lastDays,lost=s.lost.length,late=ld!==null&&ld>=28?ld+'일 연락 없음':'';
+  if(arOn()&&s.relFix&&!s.relLate)return '미확인 · 분류 필요 '+s.relFix+'건';
   if(s.health==='risk'||s.health==='recontact'){
    if(m.prog>0)return ['진행 '+won(m.prog),lost?'실주 '+lost+'건':'',late].filter(Boolean).join(' · ');
    if(lost)return '실주 '+lost+'회 · '+(m.noReproposal?'사유 확인 후 재제안 시기 없음':'재제안 시기 등록됨')+(late&&!m.noReproposal?' · '+late:'');
@@ -47,10 +48,10 @@
   }
   if(s.health==='customer')return ld!==null&&ld>=wait()?'수주 고객 · '+Math.round(wait()/30)+'개월 관계 연락 시기':'수주 '+m.accN+'건'+(ld!==null?' · 마지막 연락 '+ld+'일 전':'');
   if(s.health==='dormant')return ld===null?'기록 없음 · 장기수선 일정 확인 대상':'1년 넘게 움직임 없음 · 장기수선 일정 확인 대상';
-  let work='';try{const d=(s.open||[]).slice().sort((a,b)=>(Number(R.oppAmt(b))||0)-(Number(R.oppAmt(a))||0))[0];if(d){const w=R.dealWorkSummary(d);work=(w&&!/미분류|미기록/.test(w)?w+' ':'')+((R.StageTransition.definitions[R.dealStage(d)]||{}).label||'진행')+' 중';}}catch(e){}
+  let work='';try{const d=(s.open||[]).slice().sort((a,b)=>(Number(R.oppAmt(b))||0)-(Number(R.oppAmt(a))||0))[0];if(d){const w=R.dealWorkSummary(d);work=(w&&!/미분류|미기록/.test(w)?w+' ':'')+(arOn()&&R.AssetReport.relationshipOf&&R.AssetReport.relationshipOf(d)?R.AssetReport.relationshipOf(d).label:((R.StageTransition.definitions[R.dealStage(d)]||{}).label||'진행'))+' 중';}}catch(e){}
   return [m.accN?'수주 '+m.accN+'건':'',work||(m.progN?'진행 '+m.progN+'건':'')].filter(Boolean).join(' · ')||'최근 연락 '+(ld===null?'기록 없음':ld+'일 전');
  }
- const actOf=(s,m)=>(s.health==='risk'||s.health==='recontact')?(m.prog>0||!s.lost.length?'연락':'재제안'):s.health==='customer'?'안부 연락':'열기';
+ const actOf=(s,m)=>arOn()&&s.relFix&&!s.relLate?'열기':(s.health==='risk'||s.health==='recontact')?(m.prog>0||!s.lost.length?'연락':'재제안'):s.health==='customer'?'안부 연락':'열기';
  /* ── 범위: 공통 필터줄(브랜드 · 담당자 · 검색) + 관계 상태 탭 + 사유 ── */
  function scoped(){
   memo=new Map();

@@ -165,7 +165,7 @@
  /* ⑤ 견적 버전(서버 것이 있으면 서버, 없으면 이 PC 에 적어 둔 것) · 예전 다음 할 일 문장 속 금액 읽기 */
  function quotes(q){const S=server(q),p=patchOf(q),L=S&&Array.isArray(S.quotes)&&S.quotes.length?S.quotes:(Array.isArray(p.quoteVersions)?p.quoteVersions:[]);return L.slice().sort((a,b)=>Number(a.version_no)-Number(b.version_no));}
  const parseQuoteText=t=>{const m=/예상\s*([0-9,]+)\s*만원/.exec(String(t||''));return m?Number(m[1].replace(/,/g,''))*10000:0;};
- root.InquiryFlow={on,RESULT,OLD,RESULTS,NEXT,TWO,CHANNELS,kindOf,readLine,logOf,logs,state,own,firstConnectedAt,firstAttemptAt,attempts,attemptNote,meetingDate,replyDue,phoneHandler,legacyResponded,server,load,take,RPC,LIST,
+ root.InquiryFlow={on,revision:()=>SV,RESULT,OLD,RESULTS,NEXT,TWO,CHANNELS,kindOf,readLine,logOf,logs,state,own,firstConnectedAt,firstAttemptAt,attempts,attemptNote,meetingDate,replyDue,phoneHandler,legacyResponded,server,load,take,RPC,LIST,
   CLOSE,closeReasons,closeReasonText,closeOf,QUALIFY_TEXT,statusQualifies,qualifiedBy,isQualified,quotes,parseQuoteText,
   _reset(){SRV.clear();CLOSED.clear();SV++;loadAt=0;}};
 
