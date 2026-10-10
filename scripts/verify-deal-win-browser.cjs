@@ -90,7 +90,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(()=>{const C=DashB.core();return [CRMRules.dealResult(B.deals[0]),C.pt.count,C.pt.amount,C.pt.revenue,C.perf,C.won,C.made,CRMRules.madeRate(1,0,1,2)];}),['won_partner_tech',2,1928900000,870340000,2428900000,3,75,75]);
   await page.evaluate(()=>{document.getElementById('detailView')&&typeof closeDetail==='function'&&closeDetail();goPage('dash');});await page.waitForTimeout(500);
   const kpi=await page.locator('#si-dash .db-kpi').nth(1).evaluate(n=>[n.querySelector('span').textContent,n.querySelector('b').textContent,n.querySelector('small').textContent]);
-  assert.deepEqual(kpi,['올해 수주실적','24.3억','낙찰금액 · VAT 별도 = 계약실적(계약 체결일) 5억(1건) · 협약 · 기술자문 19.3억(2건) · 타사 이관 없음'],'대시보드: 합산하되 3줄로 나눠 적는다');
+  assert.deepEqual(kpi,['올해 수주실적','24.3억','합산 = 계약실적(계약금액 · 계약일) 5억(1건) + 협약 수주(낙찰금액 · 낙찰일) 없음 + 기술자문 실적(낙찰금액 · 낙찰일) 19.3억(2건) + 타사 이관(낙찰금액 · 낙찰일) 없음 · VAT 별도'],'대시보드: 합산하되 3줄로 나눠 적는다');
   /* 영업 Funnel(2026-10-05): 메이드율은 머리 오른쪽, 식은 '영업력' 상자 아래 한 줄 */
   assert.deepEqual([await page.locator('#si-dash .db-f6 .db-ch .mr b').innerText(),await page.locator('#si-dash .db-f6x').innerText()],['75.0%','(직접 1 + 협약 · 기술자문 2 + 타사 이관 0) ÷ (직접 1 + 협약 · 기술자문 2 + 타사 이관 0 + 실주 1) · 배드핏 제외']);
   await page.locator('#si-dash .db-secs [data-v="people"]').click();await page.waitForTimeout(200);
