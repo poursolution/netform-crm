@@ -27,7 +27,7 @@ const srv=http.createServer((req,res)=>{const p=path.resolve(root,'.'+decodeURIC
   const V=page.locator('#pipeline-stage-v3');await V.waitFor();
   assert.equal(await page.evaluate(()=>PipelineListV2.brandStats()[0].n),24,'brand count includes the same known non-sales owners as the list');
   assert.equal(await V.locator('.ps3-tab[data-v="-1"] .n').innerText(),'24');
-  assert.match((await V.locator('.ps3-kpis').innerText()).replace(/\s+/g,' '),/발송 후 후속 지연 0건 판정 가능 0 \/ 24건 · 발송일 확인 24건/);
+  assert.match((await V.locator('.ps3-kpis').innerText()).replace(/\s+/g,' '),/발송 후 후속 지연 판정 가능 0 \/ 24 판정 불가 · 발송일 미확인 24건 확인 완료 · 기한 안 – 실제 지연 – 다음 업무 · 기존 발송 자료 · 수신자 · 발송일 확인/);
   assert.match(await V.locator('.ps3-todo').innerText(),/실제 발송 여부와 기존 증빙을 먼저 확인/);
   assert.equal(await V.locator('.prv-row[data-key="sent-0"] button').innerText(),'담당 배정');
   await V.locator('[data-ps3="view"][data-v="board"]').click();
