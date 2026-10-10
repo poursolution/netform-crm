@@ -63,9 +63,12 @@
    if(!DATE.test(date)){out.error='다음 업무의 날짜를 골라 주세요';return out;}
    if(today&&date<today){out.error='다음 업무 날짜는 오늘 이후로 골라 주세요';return out;}
   }
+  let postpone=null;
   if(mode==='change'){
    if(!DATE.test(date)){out.error='바꿀 날짜를 골라 주세요';return out;}
    if(today&&date<today){out.error='바꿀 날짜는 오늘 이후로 골라 주세요';return out;}
+   /* 기한 미루기(exec_wording): 지금 열린 기한보다 늦추면 원래 기한 · 새 기한 · 사유(필수)를 '[기한 변경]' 기록으로 남긴다 */
+   if(DATE.test(String(ex.due||''))&&date>ex.due){if(!reason){out.error='미루는 사유를 입력해 주세요 (원래 기한 · 새 기한 · 사유가 기록됩니다)';return out;}postpone={from:ex.due,to:date,reason,over:today&&ex.due<today?Math.round((Date.parse(today+'T00:00:00Z')-Date.parse(ex.due+'T00:00:00Z'))/864e5):0};}
   }
   if(mode==='none'&&!reason){out.error=out.badfit?'배드핏은 사유가 있어야 합니다':'다음 일정이 없는 이유를 넣어 주세요';return out;}
   out.reason=mode==='none'?reason:'';
@@ -76,13 +79,13 @@
    out.next={type,text:(S.plan==='customer'?'고객 약속: ':'')+purpose,purpose,due:date,who:S.who||'',plan:S.plan==='customer'?'customer':'internal'};
   }else if(mode==='none'){out.completeCurrent=!!ex;}
   else if(mode==='change'){out.change={text:ex.text,type:ex.type||'전화',due:date,from:ex.due||'',id:ex.id||''};}
-  out.mode=mode;
+  out.mode=mode;out.postpone=postpone;
   const p=out.parts;
   p.push(out.attempt?'연락 시도 1건 기록':'응대 기록 1건 저장 (실제 연결)');
   if(out.completeCurrent)p.push('기존 일정 "'+ex.text+'" 완료');
   if(mode==='new')p.push(out.next.purpose+' 일정 1건 등록 · '+md(date));
   if(mode==='keep')p.push('기존 일정 유지 · 새 일정 없음');
-  if(mode==='change')p.push('기존 일정 "'+ex.text+'" 날짜만 변경 · '+md(date));
+  if(mode==='change')p.push('기존 일정 "'+ex.text+'" 날짜만 변경 · '+md(date)+(postpone?' · 미룬 사유 기록':''));
   if(mode==='none')p.push('다음 일정 없음 · 사유 기록');
   if(out.badfit)p.push('배드핏 종결 검토 (사유 필수) — 종결은 [단계 바꾸기]에서 따로');
   out.preview=p.join(' · ');out.ok=true;return out;
@@ -93,7 +96,7 @@
   if(!pl||!pl.ok)return rows;
   rows.push(['저장',pl.attempt?'연락 시도 1건':'응대 기록 1건 (실제 연결)']);
   if(pl.completeCurrent&&ex)rows.push(['완료','기존 일정 "'+ex.text+'"']);
-  if(pl.change)rows.push(['변경','기존 일정 "'+pl.change.text+'" → '+md(pl.change.due)]);
+  if(pl.change)rows.push(['변경','기존 일정 "'+pl.change.text+'" → '+md(pl.change.due)+(pl.postpone?' · 사유 '+pl.postpone.reason:'')]);
   if(pl.next)rows.push(['신규',pl.next.purpose+' · '+md(pl.next.due)]);
   if(pl.mode==='keep'&&ex)rows.push(['남음','기존 일정 "'+ex.text+'"'+(ex.due?' · '+md(String(ex.due).slice(0,10)):'')]);
   if(pl.mode==='none')rows.push(['남음','다음 일정 없음 · 사유 '+pl.reason]);

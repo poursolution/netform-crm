@@ -119,6 +119,34 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual(await C.locator('.ce-infobody > div > span').allInnerTexts(),['공종','결정권자 · 담당자','공사 시기 · 대표회의']);
   await C.locator('textarea[data-ce-in="memo"]').fill('올해는 어렵다고 함');await C.locator('.ce-chip[data-ce="mode"]',{hasText:'다음 일정 없음'}).click();await page.waitForTimeout(100);
   assert.equal(await prev(),'다음 일정이 없는 이유를 넣어 주세요');
+  /* ⑧b 일정 변경으로 기한을 늦추면 사유 필수 → '[기한 변경] 원래 | 새 | 사유' 기록(PC 와 같은 표식) */
+  await reset();await open('d1');await chip('연결됨').click();await page.waitForTimeout(100);
+  await C.locator('textarea[data-ce-in="memo"]').fill('입대의 일정이 밀렸다고 함');await C.locator('.ce-chip[data-ce="mode"]',{hasText:'일정 변경'}).click();await page.waitForTimeout(100);
+  await C.locator('.ce-pick input').evaluate((n,v)=>{n.value=v;n.dispatchEvent(new Event('input',{bubbles:true}));},await kst(10));await page.waitForTimeout(150);
+  assert.equal(await C.locator('input[data-ce-in="reason"]').count(),1,'늦추면 사유 칸');assert.equal(await prev(),'미루는 사유를 입력해 주세요 (원래 기한 · 새 기한 · 사유가 기록됩니다)');
+  await C.locator('input[data-ce-in="reason"]').fill('고객 요청 · 입대의 후 연락');await page.waitForTimeout(100);
+  await C.locator('.ce-save').click();await page.waitForTimeout(600);
+  assert.deepEqual((await ops()).map(o=>[o[0],o[1],o[2]]),[['activity','전화',''],['next_action','전화','대표회의 결과 확인'],['activity','메모','']],'기록 + 같은 업무를 새 날짜로 + 기한 변경 기록(완료 없음)');
+  assert.equal(await page.evaluate(()=>__ops[2].payload.note.replace(/\d{4}-\d{2}-\d{2}/g,'D')),'[기한 변경] 원래 D | 새 D | 사유 고객 요청 · 입대의 후 연락');
+  /* ⑧c 방문 결과: 같은 3칸 · 활동 종류만 방문 */
+  await reset();await page.evaluate(()=>{G.deal='d2';G.sub=null;render();MobileEntry.open({ch:'방문'});});await page.waitForTimeout(350);
+  assert.match(await txt('.intro'),/^방문 어떻게 됐나요\?/);assert.match(await txt('.ce-sub'),/^방문 결과 — 연결됨 = 만났음 · 부재 = 담당자 없음/);
+  await chip('연결됨').click();await C.locator('textarea[data-ce-in="memo"]').fill('옥상 실측함 · 입대의 후 결정');await page.waitForTimeout(100);
+  assert.match(await prev(),/응대 기록 1건 저장 \(실제 연결\) · 기존 일정 "첫 연락" 완료 · /,'방문 일정을 완료로 닫는 것을 저장 전에 확인');
+  await C.locator('.ce-save').click();await page.waitForTimeout(600);
+  assert.deepEqual((await ops()).map(o=>[o[0],o[1]]),[['next_action_complete',''],['activity','방문'],['next_action','전화']]);
+  assert.equal((await memoNotes())[0],'방문 완료 · 연결됨 — 옥상 실측함 · 입대의 후 결정');
+  /* ⑧d 일정 바꾸기(다른 기록 없이 날짜만): 늦추면 사유 필수 */
+  await reset();await page.evaluate(()=>{G.deal='d1';G.sub=null;render();MobileEntry.reschedule();});await page.waitForTimeout(350);
+  assert.match(await txt('.ce-ex'),/^기존 일정 대표회의 결과 확인 · /);
+  await C.locator('.ce-date',{hasText:'다음 주 월요일'}).click();await page.waitForTimeout(100);
+  assert.match(await prev(),/^저장하면 기존 일정 "대표회의 결과 확인" 날짜만 변경 · .* · 완료로 세지 않음$/,'앞당기면 사유 없이');
+  await C.locator('.ce-pick input').evaluate((n,v)=>{n.value=v;n.dispatchEvent(new Event('input',{bubbles:true}));},await kst(12));await page.waitForTimeout(150);
+  await C.locator('.ce-save').click();await page.waitForTimeout(200);assert.match(await txt('.ce-err'),/미루는 사유를 입력해 주세요/);assert.equal(await page.evaluate(()=>__ops.length),0);
+  await C.locator('input[data-ce-in="rs-reason"]').fill('고객 요청');await C.locator('.ce-save').click();await page.waitForTimeout(600);
+  assert.deepEqual((await ops()).map(o=>[o[0],o[1],o[2],o[4]]),[['next_action','전화','대표회의 결과 확인',''],['activity','메모','','']],'같은 업무를 새 날짜로 + 기한 변경 기록(완료 · 기록 없음)');
+  assert.deepEqual(await C.locator('.ce-done li em').allInnerTexts(),['변경','남음']);
+  assert.equal(await page.evaluate(()=>[DEALS[0].nextAction.text,DEALS[0].nextAction.due_at===__kst(12)]).then(x=>x.join()),'대표회의 결과 확인,true');
   /* ⑨b 말하기(휴대폰 음성 인식) · AI로 정리(로그인 상태에서만 · 추천 표시만) */
   await reset();await page.evaluate(()=>{window.SpeechRecognition=class{start(){setTimeout(()=>{this.onresult({resultIndex:0,results:[Object.assign([{transcript:'소장님 다음 주 화요일 방문 확정'}],{isFinal:true})]});this.onend();},50);}stop(){this.onend();}};});
   await open('d2');await chip('연결됨').click();await page.waitForTimeout(100);

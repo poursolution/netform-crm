@@ -43,13 +43,26 @@ test('기존 일정 유지 · 변경 · 완료는 서로 다른 처리다(몰래
  const keep=CE.plan({res:'연결됨',ch:'전화',memo:'검토 중',mode:'keep'},{today:T,existing:ex('2026-10-13')});
  assert.equal(keep.completeCurrent,false);assert.equal(keep.next,null);assert.equal(keep.change,null);
  assert.equal(keep.preview,'응대 기록 1건 저장 (실제 연결) · 기존 일정 유지 · 새 일정 없음');
- const chg=CE.plan({res:'연결됨',ch:'전화',memo:'날짜 미뤄 달라고 함',mode:'change',date:'2026-10-20'},{today:T,existing:ex('2026-10-13')});
+ const chg=CE.plan({res:'연결됨',ch:'전화',memo:'날짜 미뤄 달라고 함',mode:'change',date:'2026-10-20',reason:'고객 요청'},{today:T,existing:ex('2026-10-13')});
  assert.equal(chg.completeCurrent,false);assert.deepEqual(chg.change,{text:'대표회의 결과 확인',type:'전화',due:'2026-10-20',from:'2026-10-13',id:'a1'});
- assert.match(chg.preview,/기존 일정 "대표회의 결과 확인" 날짜만 변경 · 10\.20 \(화\)$/);
+ assert.match(chg.preview,/기존 일정 "대표회의 결과 확인" 날짜만 변경 · 10\.20 \(화\) · 미룬 사유 기록$/);
  const nw=CE.plan({res:'연결됨',ch:'전화',memo:'결과 들음',mode:'new',purpose:'견적서 발송',date:'2026-10-16'},{today:T,existing:ex('2026-10-10')});
  assert.equal(nw.completeCurrent,true,'수행한 업무는 완료 + 후속 업무 생성');
  assert.equal(nw.preview,'응대 기록 1건 저장 (실제 연결) · 기존 일정 "대표회의 결과 확인" 완료 · 견적서 발송 일정 1건 등록 · 10.16 (금)');
  assert.equal(CE.plan({res:'연결됨',ch:'전화',memo:'x',mode:'keep'},{today:T}).ok,false,'이어받을 일정이 없으면 유지는 고를 수 없다');
+});
+test('일정 변경이 기한을 늦추면 사유가 필수(원래 기한 · 새 기한 · 사유) — 당기는 것은 사유 없이',()=>{
+ const e=ex('2026-10-13');
+ const late=CE.plan({res:'연결됨',ch:'전화',memo:'미뤄 달라고 함',mode:'change',date:'2026-10-20'},{today:T,existing:e});
+ assert.equal(late.ok,false);assert.match(late.error,/미루는 사유/);
+ const ok=CE.plan({res:'연결됨',ch:'전화',memo:'미뤄 달라고 함',mode:'change',date:'2026-10-20',reason:'고객 요청 · 입대의 후 연락'},{today:T,existing:e});
+ assert.equal(ok.ok,true);assert.deepEqual(ok.postpone,{from:'2026-10-13',to:'2026-10-20',reason:'고객 요청 · 입대의 후 연락',over:0});
+ assert.match(ok.preview,/날짜만 변경 · 10\.20 \(화\) · 미룬 사유 기록$/);
+ assert.match(CE.summary(ok,{existing:e})[1][1],/→ 10\.20 \(화\) · 사유 고객 요청/);
+ const early=CE.plan({res:'연결됨',ch:'전화',memo:'앞당기자고 함',mode:'change',date:'2026-10-11'},{today:T,existing:e});
+ assert.equal(early.ok,true);assert.equal(early.postpone,null,'앞당기는 것은 미루기가 아니다');
+ const over=CE.plan({res:'부재',ch:'전화',mode:'change',date:'2026-10-14',reason:'일정 겹침'},{today:T,existing:ex('2026-10-08')});
+ assert.equal(over.postpone.over,2,'지난 기한은 며칠 지났는지 함께');
 });
 test('다음 일정 없음은 사유가 필수 · 배드핏은 종결 검토 + 사유 필수(종결은 단계 바꾸기에서 따로)',()=>{
  const none=CE.plan({res:'연결됨',ch:'전화',memo:'올해는 어렵다고 함',mode:'none',reason:''},{today:T});

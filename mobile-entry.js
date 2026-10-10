@@ -37,7 +37,7 @@
  function sheetHtml(d){
   const ex=existingOf(d),pl=S.res?planOf(d):null,c=root.contactInfoM?root.contactInfoM(d):{};
   const chip=(act,v,on,label,cls)=>'<button type="button" class="ce-chip'+(cls?' '+cls:'')+(act==='res'&&S.ai&&S.ai.res===v?' ai':'')+'" data-ce="'+act+'" data-v="'+attr(v)+'" aria-pressed="'+!!on+'">'+h(label||v)+'</button>';
-  const res='<section><b class="ce-q"><i>1</i>연락 결과 <small>PC 기준 값</small></b><div class="ce-chips">'+CE.VALUES.map(v=>chip('res',v,S.res===v)).join('')+'</div></section>';
+  const res='<section><b class="ce-q"><i>1</i>연락 결과 <small>PC 기준 값</small></b><div class="ce-chips">'+CE.VALUES.map(v=>chip('res',v,S.res===v)).join('')+'</div>'+(S.ch==='방문'?'<small class="ce-sub">방문 결과 — 연결됨 = 만났음 · 부재 = 담당자 없음 (일정이 취소 · 연기됐으면 [일정 바꾸기])</small>':'')+'</section>';
   const note=!S.res?'':CE.showNote(S.res)
    ?'<section><b class="ce-q"><i>2</i>상담 내용 <small>이번에 새로 확인한 것 한 번만</small></b><div class="ce-say"><textarea data-ce-in="memo" rows="3" maxlength="300" placeholder="예) 다음 주 대표회의에서 검토 · 금요일까지 견적서 보내 달라고 함">'+h(S.memo)+'</textarea><button type="button" class="ce-mic" data-ce="mic" aria-pressed="false">말하기</button>'+(root.TOKEN&&root.SUPABASE_URL?'<button type="button" class="ce-tidy" data-ce="tidy">AI로 정리</button>':'')+'<small class="ce-hint"'+(S.aiHint?'':' hidden')+'>'+h(S.aiHint||'')+(S.aiRaw?' <button type="button" class="ce-undo" data-ce="undo">원문으로</button>':'')+'</small></div></section>'
    :'<p class="ce-miss">부재 · 번호 오류는 상담 내용 칸 없음 · 연락 시도로만 기록</p>';
@@ -49,7 +49,7 @@
     +'<div class="ce-dates">'+dateOptions().map(x=>'<button type="button" class="ce-date'+(S.ai&&S.ai.date===x[1]?' ai':'')+'" data-ce="date" data-v="'+x[1]+'" aria-pressed="'+(S.date===x[1])+'">'+x[0]+'<small>'+h(CE.md(x[1]))+'</small></button>').join('')+'<label class="ce-date ce-pick" aria-pressed="'+(!!S.date&&!dateOptions().some(x=>x[1]===S.date))+'">날짜 선택<small>'+h(S.date?CE.md(S.date):'')+'</small><input type="date" data-ce-in="date" min="'+kst()+'" value="'+attr(S.date)+'"></label></div>'
     +'<label class="ce-agree"><input type="checkbox" data-ce-in="plan"'+(S.plan==='customer'?' checked':'')+'> 고객과 합의한 날짜</label>';
   }else if(S.mode==='change'&&ex){
-   nx+='<div class="ce-dates">'+dateOptions().map(x=>'<button type="button" class="ce-date" data-ce="date" data-v="'+x[1]+'" aria-pressed="'+(S.date===x[1])+'">'+x[0]+'<small>'+h(CE.md(x[1]))+'</small></button>').join('')+'<label class="ce-date ce-pick" aria-pressed="'+(!!S.date&&!dateOptions().some(x=>x[1]===S.date))+'">날짜 선택<small>'+h(S.date?CE.md(S.date):'')+'</small><input type="date" data-ce-in="date" min="'+kst()+'" value="'+attr(S.date)+'"></label></div><p class="ce-sub">기존 일정의 날짜만 바뀝니다 — 할 일 이름은 그대로, 완료로 세지 않습니다</p>';
+   nx+='<div class="ce-dates">'+dateOptions().map(x=>'<button type="button" class="ce-date" data-ce="date" data-v="'+x[1]+'" aria-pressed="'+(S.date===x[1])+'">'+x[0]+'<small>'+h(CE.md(x[1]))+'</small></button>').join('')+'<label class="ce-date ce-pick" aria-pressed="'+(!!S.date&&!dateOptions().some(x=>x[1]===S.date))+'">날짜 선택<small>'+h(S.date?CE.md(S.date):'')+'</small><input type="date" data-ce-in="date" min="'+kst()+'" value="'+attr(S.date)+'"></label></div>'+(ex.due&&S.date&&S.date>ex.due?'<input type="text" class="ce-in" data-ce-in="reason" maxlength="80" value="'+attr(S.reason)+'" placeholder="미루는 사유 (필수) — 원래 기한 · 새 기한 · 사유가 기록됩니다" aria-label="미루는 사유">':'')+'<p class="ce-sub">기존 일정의 날짜만 바뀝니다 — 할 일 이름은 그대로, 완료로 세지 않습니다</p>';
   }else if(S.mode==='keep'&&ex){
    nx+='<p class="ce-sub">기존 일정 그대로 — 이 기록은 일정을 완료로 세거나 바꾸지 않습니다</p>';
   }else if(S.mode==='none'){
@@ -69,12 +69,13 @@
   card.innerHTML='<div class="sheet-grip"></div>'+(head||'')+sheetHtml(d);card.scrollTop=keepTop;
   saveDraft(d.id,S);
  }
- function open(){
+ function open(opts){
   const d=dealById(root.G&&root.G.deal);if(!d)return;
   const c=root.contactInfoM?root.contactInfoM(d):{};
-  S=loadDraft(d.id)||fresh(d);busy=false;progress={};S.err='';
-  root.openSheet(root.intro('var(--blue-50)','var(--blue-dark)',root.IC.phone,'통화 어떻게 됐나요?',h(d.nm)+(c.name?' · '+h(c.name):'')),'');
-  const card=root.document.getElementById('sheetcard');if(card)card.classList.add('ce-card');
+  const ch=opts&&opts.ch==='방문'?'방문':'전화';
+  S=loadDraft(d.id);if(S&&(S.ch||'전화')!==ch)S=null;S=S||fresh(d);S.ch=ch;busy=false;progress={};S.err='';
+  root.openSheet(root.intro('var(--blue-50)','var(--blue-dark)',root.IC.phone,ch==='방문'?'방문 어떻게 됐나요?':'통화 어떻게 됐나요?',h(d.nm)+(c.name?' · '+h(c.name):'')),'');
+  const card=root.document.getElementById('sheetcard');if(card){card.classList.add('ce-card');card._ceMode='entry';}
   paint(d);wire(d);
  }
  let wired=false;
@@ -85,6 +86,7 @@
   card.addEventListener('click',e=>{
    const b=e.target.closest('[data-ce]');if(!b||!card.classList.contains('ce-card'))return;const dd=dealById(card._ceDeal);if(!dd||busy)return;
    const a=b.dataset.ce,v=b.dataset.v;
+   if(card._ceMode==='rs'){if(a==='rs-date'){RS.date=v;RS.err='';paintRs(dd);}else if(a==='rs-save')saveRs(dd);else if(a==='close'){root.closeSheet();root.render();}return;}
    if(a==='res'){pickResult(dd,v);S.err='';paint(dd);}
    else if(a==='mode'){S.mode=v;S.touchedNext=true;S.err='';if(v==='new'&&!S.date){S.date=CE.addDays(kst(),1);}paint(dd);}
    else if(a==='date'){S.date=v;S.touchedNext=true;S.err='';paint(dd);}
@@ -100,6 +102,7 @@
   });
   card.addEventListener('input',e=>{
    const t=e.target.closest('[data-ce-in]');if(!t||!card.classList.contains('ce-card'))return;const k=t.dataset.ceIn;
+   if(card._ceMode==='rs'){const dd0=dealById(card._ceDeal);if(k==='rs-reason'&&RS){RS.reason=t.value;const pv=card.querySelector('.ce-prev');if(pv&&dd0&&t.value.trim()){const ex=existingOf(dd0);pv.innerHTML='<b>저장하면</b> 기존 일정 "'+h(ex.text)+'" 날짜만 변경 · '+h(CE.md(RS.date))+' · 미룬 사유 기록 · 완료로 세지 않음';}}else if(k==='rs-date'&&RS){RS.date=t.value;RS.err='';if(dd0&&/^\d{4}-\d{2}-\d{2}$/.test(t.value))paintRs(dd0);}return;}
    if(k==='memo')S.memo=t.value;else if(k==='purpose'){S.purpose=t.value;S.touchedNext=true;}else if(k==='reason')S.reason=t.value;
    else if(k==='date'){S.date=t.value;S.touchedNext=true;const dd=dealById(card._ceDeal);if(dd&&/^\d{4}-\d{2}-\d{2}$/.test(t.value))paint(dd);}
    else if(k==='plan'){S.plan=t.checked?'customer':'internal';}
@@ -135,10 +138,10 @@
    }catch(e){S.aiHint=String(e&&e.message||e);}
    paint(d,true);
   }
- async function confirmOp(op,payload,actionId){
-  const Q=root.Phase1.queue;let id=progress[op];
-  if(id&&(Q.list().find(q=>q.request_id===id)||{}).status==='rejected'){delete progress[op];id=null;}
-  if(!id){id=root.queueMobileContactOperation(op,payload,actionId);progress[op]=id;}
+ async function confirmOp(op,payload,actionId,slot){
+  const Q=root.Phase1.queue,key=slot||op;let id=progress[key];
+  if(id&&(Q.list().find(q=>q.request_id===id)||{}).status==='rejected'){delete progress[key];id=null;}
+  if(!id){id=root.queueMobileContactOperation(op,payload,actionId);progress[key]=id;}
   await Q.flush();const row=Q.list().find(q=>q.request_id===id);
   if(!row||row.status!=='done'||!row.ack||row.ack.ok!==true)throw Error(row&&row.error||'서버 확인 대기 중 — 다시 누르면 같은 요청을 확인합니다.');
   return row;
@@ -154,7 +157,7 @@
   try{
    const cur=openNext(d);
    if(pl.completeCurrent&&cur&&UUID.test(String(cur.id||''))&&!progress.completed){await confirmOp('next_action_complete',{opportunity_id:d.id},cur.id);progress.completed=true;cur.status='done';cur.completed_at=new Date().toISOString();}
-   const activity={type:'전화',note:pl.note,result:'',occurred_at:at};
+   const activity={type:S.ch==='방문'?'방문':'전화',note:pl.note,result:'',occurred_at:at};
    const rec=await confirmOp('activity',{opportunity_id:d.id,...activity});
    d.activities=Array.isArray(d.activities)?d.activities:[];
    if(!d.activities.some(x=>x.id===rec.ack.activity_id))d.activities.push({id:rec.ack.activity_id,type:activity.type,note:activity.note,result:'',at,occurred_at:at,meaningful:pl.meaningful});
@@ -166,6 +169,7 @@
     const next={type:pl.change.type,text:ex.promise?'고객 약속: '+pl.change.text:pl.change.text,due_at:pl.change.due};
     const sch=await confirmOp('next_action',{opportunity_id:d.id,...next});
     d.nextAction=d.nextActionObj={id:sch.ack.next_action_id,opportunity_id:d.id,type:next.type,text:next.text,due:next.due_at,due_at:next.due_at,status:'open'};
+    if(pl.postpone)await confirmOp('activity',{opportunity_id:d.id,type:'메모',note:'[기한 변경] 원래 '+pl.postpone.from+(pl.postpone.over>0?' ('+pl.postpone.over+'일 지남)':'')+' | 새 '+pl.postpone.to+' | 사유 '+pl.postpone.reason,result:'',occurred_at:at},undefined,'postpone');
    }else if(pl.completeCurrent){d.nextAction=d.nextActionObj=null;}
    if(pl.meaningful)d.contactAt=at;d.lastAt=at;
    try{root.G.done[root.doneKey({ref:d.id})]=1;}catch(e){}
@@ -177,7 +181,43 @@
    try{root.saveLocal&&root.saveLocal();}catch(e){}
   }catch(e){busy=false;S.err=String(e&&e.message||e);paint(d);}
  }
+ /* ── 일정 바꾸기(2026-10-10 mobile_all 4번 흐름 7): 다른 기록 없이 지금 일정의 날짜만. 늦추면 사유 필수 → PC 와 같은 '[기한 변경] 원래 | 새 | 사유' 기록, 일정 이름은 그대로 · 완료로 세지 않는다 ── */
+ let RS=null;
+ function rsHtml(d){
+  const ex=existingOf(d),later=!!(ex&&ex.due&&RS.date&&RS.date>ex.due);
+  const pv=!RS.date?'새 날짜를 골라 주세요':later&&!RS.reason.trim()?'미루는 사유를 입력해 주세요':'<b>저장하면</b> 기존 일정 "'+h(ex.text)+'" 날짜만 변경 · '+h(CE.md(RS.date))+(later?' · 미룬 사유 기록':'')+' · 완료로 세지 않음';
+  return '<div class="ce"><section><b class="ce-q"><i>1</i>지금 일정</b><p class="ce-ex"><em>기존 일정</em> '+h(ex.text)+(ex.due?' · '+h(CE.md(ex.due)):'')+(ex.promise?' · 고객 합의':'')+'</p></section>'
+   +'<section><b class="ce-q"><i>2</i>새 날짜</b><div class="ce-dates">'+dateOptions().map(x=>'<button type="button" class="ce-date" data-ce="rs-date" data-v="'+x[1]+'" aria-pressed="'+(RS.date===x[1])+'">'+x[0]+'<small>'+h(CE.md(x[1]))+'</small></button>').join('')+'<label class="ce-date ce-pick" aria-pressed="'+(!!RS.date&&!dateOptions().some(x=>x[1]===RS.date))+'">날짜 선택<small>'+h(RS.date?CE.md(RS.date):'')+'</small><input type="date" data-ce-in="rs-date" min="'+kst()+'" value="'+attr(RS.date)+'"></label></div></section>'
+   +(later?'<section><b class="ce-q"><i>3</i>미루는 사유 <small>필수</small></b><input type="text" class="ce-in" data-ce-in="rs-reason" maxlength="80" value="'+attr(RS.reason)+'" placeholder="예: 고객 요청 · 입대의 후 연락" aria-label="미루는 사유"><p class="ce-sub">미뤄도 지연 기록은 남습니다 · 관리팀 지표 \'기한 변경 n회\'로 따로 셉니다</p></section>':'')
+   +(RS.err?'<p class="ce-err" role="alert">'+h(RS.err)+'</p>':'')+'</div><div class="ce-foot"><span class="ce-prev">'+pv+'</span><button type="button" class="btn btn-primary ce-save" data-ce="rs-save"'+(busy?' disabled':'')+'>'+(busy?'확인 중…':'일정 바꾸기')+'</button></div>';
+ }
+ function paintRs(d){const card=root.document.getElementById('sheetcard');if(!card||!RS)return;const keep=card.querySelector('.ce')?card.scrollTop:0,head=card.querySelector('.intro')?card.querySelector('.intro').outerHTML+'<div style="height:12px"></div>':'';card.innerHTML='<div class="sheet-grip"></div>'+head+rsHtml(d);card.scrollTop=keep;}
+ function reschedule(){
+  const d=dealById(root.G&&root.G.deal);if(!d)return;
+  if(!existingOf(d)){if(typeof root.toast==='function')root.toast('바꿀 일정이 없습니다 — 결과 남기기에서 새 업무를 잡아 주세요');return;}
+  RS={date:'',reason:'',err:''};busy=false;progress={};
+  root.openSheet(root.intro('var(--blue-50)','var(--blue-dark)',root.IC.phone,'일정 바꾸기',h(d.nm)),'');
+  const card=root.document.getElementById('sheetcard');if(card){card.classList.add('ce-card');card._ceMode='rs';}
+  paintRs(d);wire(d);
+ }
+ async function saveRs(d){
+  if(busy)return;const ex=existingOf(d);if(!ex||!RS)return;const T=kst(),later=!!(ex.due&&RS.date>ex.due);
+  if(!RS.date){RS.err='새 날짜를 골라 주세요';return paintRs(d);}
+  if(RS.date<T){RS.err='새 날짜는 오늘 이후로 골라 주세요';return paintRs(d);}
+  if(later&&!RS.reason.trim()){RS.err='미루는 사유를 입력해 주세요 (원래 기한 · 새 기한 · 사유가 기록됩니다)';return paintRs(d);}
+  if(!root.Phase1||!root.Phase1.queue||typeof root.queueMobileContactOperation!=='function'){RS.err='로그인 상태에서만 저장할 수 있습니다.';return paintRs(d);}
+  busy=true;RS.err='';paintRs(d);
+  try{
+   const next={type:ex.type||'전화',text:(ex.promise?'고객 약속: ':'')+ex.text,due_at:RS.date},sch=await confirmOp('next_action',{opportunity_id:d.id,...next},undefined,'rsnext');
+   d.nextAction=d.nextActionObj={id:sch.ack.next_action_id,opportunity_id:d.id,type:next.type,text:next.text,due:next.due_at,due_at:next.due_at,status:'open'};
+   if(later){const over=ex.due<T?Math.round((Date.parse(T+'T00:00:00Z')-Date.parse(ex.due+'T00:00:00Z'))/864e5):0;await confirmOp('activity',{opportunity_id:d.id,type:'메모',note:'[기한 변경] 원래 '+ex.due+(over>0?' ('+over+'일 지남)':'')+' | 새 '+RS.date+' | 사유 '+RS.reason.trim(),result:'',occurred_at:new Date().toISOString()},undefined,'rsmemo');}
+   busy=false;const rows=[['변경','기존 일정 "'+ex.text+'" → '+CE.md(RS.date)+(later?' · 사유 '+RS.reason.trim():'')],['남음','할 일 이름은 그대로 · 완료로 세지 않음']];RS=null;
+   const c=root.document.getElementById('sheetcard');
+   c.innerHTML='<div class="sheet-grip"></div><div class="ce-done"><b class="ce-dt">일정을 바꿨습니다</b><small>'+h(d.nm)+'</small><ul>'+rows.map(r=>'<li class="'+(r[0]==='변경'?'chg':'left')+'"><em>'+h(r[0])+'</em><span>'+h(r[1])+'</span></li>').join('')+'</ul><div class="ce-donebtn"><button type="button" class="btn btn-primary" data-ce="close" style="grid-column:1/-1">닫기</button></div></div>';
+   try{root.saveLocal&&root.saveLocal();}catch(e){}
+  }catch(e){busy=false;RS.err=String(e&&e.message||e);paintRs(d);}
+ }
  const old=root.dealCallSheetM;
  root.dealCallSheetM=function(){if(!CE.on())return old.apply(this,arguments);return open();};
- root.MobileEntry=Object.freeze({open,state:()=>S,last:()=>last,existingOf});
+ root.MobileEntry=Object.freeze({open,reschedule,state:()=>S,last:()=>last,existingOf});
 })(window);
