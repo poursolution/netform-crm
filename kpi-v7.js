@@ -120,7 +120,33 @@
   return [['요청',sw.txt,'이번 주(월~금) · 최근 28일 '+s28.txt+' · 문구 복사 제외'],['기한 내 해결률',dueOver.length?Math.round(onTime*100/dueOver.length)+'%':'측정 대상 없음',dueOver.length?onTime+' / '+dueOver.length+'건 · 기한 지남 '+dueOver.length+'건 · 기한 전 진행 중 '+beforeDue.length+'건':'기한 지남 0건 · 기한 전 진행 중 '+beforeDue.length+'건 · 기한 안 완료 ÷ 기한이 지난 요청'],['재요청률',all.length?Math.round(re*100/all.length)+'%':'–',all.length?re+' / '+all.length+' · 같은 건 2번 이상 요청':'요청 없음'],['평균 처리 시간',avg==null?'–':(Math.round(avg*10)/10)+'일','요청 → 완료 · 최근 30일']].map(m=>{const d=KMD&&KMD.byId(m[0]==='기한 내 해결률'?'d1':m[0]==='평균 처리 시간'?'d2':'');return d?[m[0],d.vText,d.sub+' · 이번 주']:m;}).concat(R.ExecWording&&R.ExecWording.on()?[['기한 변경',R.ExecWording.postponeCount().n+'회','이번 주(월~금) · 원래 기한 · 사유와 함께 기록 · 지연 기록은 그대로']]:[]);/* 기한 내 해결률 · 평균 처리 시간 = 측정 기준 탭 d1 · d2 와 같은 값(이번 주 등록 요청) */
  }
  /* design_handoff_units ④: 오늘 업무 · KPI · 성과 분석 · 고객 자산이 같은 영업건 단위로 세는지 — DealUnits.audit 한 함수 */
- function unitLine(){try{const U=R.DealUnits;if(!U||!U.on())return '';const a=U.audit((R.B&&R.B.deals)||[],(R.B&&R.B.inquiries)||[]);return '<p class="k7-unit">'+h(a.line)+'</p>';}catch(e){return '';}}
+ /* day_zones §4-2(2026-10-10): 관리자 화면 · 반복 원인 — 보낸 요청 · 미응대 · 기한 초과 · 기록 누락을 전주와 함께 본다(요청 수가 줄어든 것만으로 개선이라 하지 않는다).
+    반복된 요청 유형(이번 달 3번 이상) = 담당 탓 전에 점검할 곳(자동 업무 생성 · 입력 화면 · 필수값 · 지침). 요청 저장소(WorkRequest) · 지표(KpiB) 그대로 — 새로 저장하는 것 없음 */
+  const kday=v=>{const t=new Date(v||'');return Number.isFinite(t.getTime())?t.toLocaleDateString('en-CA',{timeZone:'Asia/Seoul'}):'';};
+  const RH_CHECK={first:'자동 업무 생성 · 첫 연락 기한 알림',follow:'자동 업무 생성 · 발송 후 후속 일정',quote:'입력 화면 · 견적 요청 등록 칸',award:'필수값 · 낙찰 정보',contract:'필수값 · 계약 정보',deadline:'자동 업무 생성 · 마감 알림',support:'지침 · 지원 요청 기준',branch:'지침 · 지사 인계 절차'};
+  function reqHealth(C){
+   const W=R.WorkRequest;if(!W||!W.enabled||!W.enabled())return null;const j=J();if(!j||!j.week||!j.inWeek)return null;
+   const ALL=W.state().list||[],L=ALL.filter(r=>r.status!=='cancelled'),w0=j.week(0),w1=j.week(-1),now=Date.now(),inW=(v,w)=>!!v&&!!w&&j.inWeek(v,w);
+   const sent=w=>L.filter(r=>inW(r.created_at,w)).length,past=r=>Number.isFinite(Date.parse(r.due_at||''))&&Date.parse(r.due_at)<now;
+   const noAns=w=>L.filter(r=>inW(r.due_at,w)&&past(r)&&r.status==='sent').length;
+   const late=w=>L.filter(r=>inW(r.due_at,w)&&past(r)&&(!r.closed_at||Date.parse(r.closed_at)>Date.parse(r.due_at))).length;
+   const m=C&&C.M&&C.M[3],miss0=m&&m.den?m.den-m.num:null;let wr=null;try{wr=K().weekRowOf?K().weekRowOf(3,-1):null;}catch(e){}const miss1=wr&&wr.denominator?wr.denominator-wr.numerator:null;
+   const delta=(a,b)=>a==null||b==null?'전주 값 없음':a===b?'전주와 같음 ('+b+')':'전주 '+b+' '+(a>b?'▲':'▼')+Math.abs(a-b);
+   const S=[sent(w0),sent(w1)],N=[noAns(w0),noAns(w1)],O2=[late(w0),late(w1)],up=[miss0!=null&&miss1!=null&&miss0>miss1?'기록 누락':'',N[0]>N[1]?'미응대':'',O2[0]>O2[1]?'기한 초과':''].filter(Boolean);
+   const tiles=[['보낸 요청',S[0]+'건',delta(S[0],S[1])],['미응대',N[0]+'건',delta(N[0],N[1])+' · 기한이 지나도록 확인 없음'],['기한 초과',O2[0]+'건',delta(O2[0],O2[1])+' · 이번 주 기한'],['기록 누락',miss0==null?'측정 불가':miss0+'건',delta(miss0,miss1)+' · 활동 기록 없는 영업건']];
+   const warn=S[0]<S[1]&&up.length?'요청은 줄었는데('+S[1]+' → '+S[0]+') '+up.join(' · ')+' 늘어남 — 요청 수 감소를 개선으로 보지 않습니다':'';
+   const mon=kday(new Date()).slice(0,7),by=new Map();
+   ALL.forEach(r=>{if(kday(r.created_at).slice(0,7)!==mon)return;const key=String(r.kind||'')+'|'+String(r.label||'');(by.get(key)||by.set(key,{kind:r.kind,label:String(r.label||((W.KIND&&W.KIND[r.kind]||{}).label)||'요청'),n:0}).get(key)).n++;});
+   const repeat=[...by.values()].filter(x=>x.n>=3).sort((a,b)=>b.n-a.n).map(x=>({label:x.label,n:x.n,check:RH_CHECK[x.kind]||'지침 · 입력 화면'}));
+   const cancelled=ALL.filter(r=>r.status==='cancelled'&&kday(r.closed_at||r.updated_at||r.created_at).slice(0,7)===mon),head=p=>cancelled.filter(r=>String(r.reply_note||'').startsWith(p)).length;
+   return {tiles,warn,repeat,quality:'요청 품질 · 이번 달 취소 '+cancelled.length+'건 (다른 요청에 통합 '+head('[통합]')+' · 대상 오류 '+head('[대상 오류]')+') · 기한 수정 · 문구 불명확 수는 저장 칸이 없어 아직 못 셈'};
+  }
+  function rhHtml(C){
+   let H=null;try{H=reqHealth(C);}catch(e){H=null;}if(!H)return '';
+   return '<section class="k7-card k7-rh"><header><b>요청 · 누락 함께 보기</b><span>전주 대비</span></header><div class="k7-tiles">'+H.tiles.map(m=>'<div><span>'+h(m[0])+'</span><b>'+h(m[1])+'</b><small>'+h(m[2])+'</small></div>').join('')+'</div>'+(H.warn?'<p class="k7-rhwarn" role="note">'+h(H.warn)+'</p>':'')
+    +'<div class="k7-rep"><b>반복된 요청 유형 · 이번 달</b>'+(H.repeat.length?H.repeat.map(x=>'<div><span title="'+attr(x.label)+'">'+h(x.label)+'</span><b>'+x.n+'회</b><small title="'+attr(x.check)+'">점검할 곳 · '+h(x.check)+'</small></div>').join(''):'<p>같은 유형이 3번 이상 반복된 요청이 없습니다</p>')+'<small>담당 탓 전에 시스템 · 지침부터 확인</small></div><p class="k7-unit">'+h(H.quality)+'</p></section>';
+  }
+  function unitLine(){try{const U=R.DealUnits;if(!U||!U.on())return '';const a=U.audit((R.B&&R.B.deals)||[],(R.B&&R.B.inquiries)||[]);return '<p class="k7-unit">'+h(a.line)+'</p>';}catch(e){return '';}}
  function html(){
   const s=ST(),C=K().compute(),PV=personVals(),rows=coreRows(C,PV,s.last),SG=stageGroups(C.done||new Set()),o=O(),w=K().weekly();
   const KM=R.KpiMeasure&&R.KpiMeasure.enabled()?R.KpiMeasure:null,KMD=KM?KM.compute():null;/* 측정 기준 탭 · 왼쪽 관리팀 지표가 같은 계산(한 번만) */
@@ -154,7 +180,7 @@
    +'<div class="k7-leg"><span><i class="a">■</i> 미달 <b>'+miss+'</b></span><span><i class="b">■</i> 달성 <b>'+hit+'</b></span><span><i class="c">■</i> 아직 못 잼 <b>'+nd+'</b></span>'+(pilotN?'<span><i class="d">■</i> 시범 · 평가 제외 <b>'+pilotN+'</b></span>':'')+'</div>'
    +'<div class="k7-tiles"><div><span>목표 미달</span><b class="r">'+miss+'지표</b><small>오늘 처리</small></div><div><span>남은 요청</span><b>'+leftN+'건</b><small>보냄 '+sentN+'건</small></div><div><span>지난주보다</span><b>'+(cmp.length?'<span class="up">▲'+up+'</span> · <span class="dn">▼'+dn+'</span>':'–')+'</b><small>'+(cmp.length?'나아짐 · 나빠짐':'지난주 저장본 없음')+'</small></div></div>'
    +'<span class="k7-over">단계별 기준 넘긴 건 <b>'+stageOver+'건</b> · 오른쪽 \'단계별 기준\' 탭</span></section>'
-   +'<section class="k7-card k7-mg"><header><b>관리팀 지표</b><span>요청 수보다 해결</span></header>'+(MG?'<div class="k7-tiles">'+MG.map(m=>'<div><span>'+h(m[0])+'</span><b>'+h(m[1])+'</b><small>'+h(m[2])+'</small></div>').join('')+'</div>':'<p class="k7-none">요청 저장소가 아직 서버에 없어 잴 수 없습니다</p>')+unitLine()+'</section>'/* ops_12 D⑩ · design_handoff_units ④ 집계 단위 한 줄 */
+   +'<section class="k7-card k7-mg"><header><b>관리팀 지표</b><span>요청 수보다 해결</span></header>'+(MG?'<div class="k7-tiles">'+MG.map(m=>'<div><span>'+h(m[0])+'</span><b>'+h(m[1])+'</b><small>'+h(m[2])+'</small></div>').join('')+'</div>':'<p class="k7-none">요청 저장소가 아직 서버에 없어 잴 수 없습니다</p>')+unitLine()+'</section>'+rhHtml(C)/* ops_12 D⑩ · design_handoff_units ④ 집계 단위 한 줄 */
    +'<section class="k7-card"><header><b>왜 멈춰 있나</b><span>누르면 오른쪽이 걸러짐</span></header>'+causes+'</section>'
    +'<section class="k7-card"><header><b>그래서 뭘 해야 하나</b></header>'+acts+'</section></div>';
   /* 오른쪽 */
@@ -247,5 +273,5 @@
   wrapped.__k7=true;wrapped.__kb=true;R.paintMgmt=wrapped;
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- root.KpiV7={enabled,html,coreRows,stageGroups,inquiryLive,people,allItems,PILOT:PILOT,bulkSend:send};
+ root.KpiV7={enabled,html,coreRows,stageGroups,inquiryLive,people,allItems,PILOT:PILOT,bulkSend:send,reqHealth};
 })(window);
