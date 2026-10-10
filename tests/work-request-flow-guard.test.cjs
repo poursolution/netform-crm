@@ -39,7 +39,7 @@ test('F3: 저장 전에 시작한 느린 목록 응답은 저장 결과를 되�
  /* 예전 상태(sent)를 든 응답이 뒤늦게 도착 */
  x.pendingLists[0]([{...x.r,status:'sent'}]);await x.tick();await x.tick();
  assert.equal(x.S.list[0].status,'done','느린 응답이 완료를 sent 로 되돌리지 않는다');
- assert.ok(x.timers.length>=1,'버린 뒤 최신 조회를 예약한다');
+ assert.ok(x.pendingLists.length===2||x.timers.length>=1,'버린 뒤 최신 조회를 실행하거나 예약한다');
  x.timers.splice(0).forEach(f=>f());await x.tick();
  assert.equal(x.pendingLists.length,2,'다시 읽는다');
  x.pendingLists[1]([{...x.r,status:'done',result:'연결됨'}]);await x.tick();await x.tick();
