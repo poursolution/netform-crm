@@ -83,7 +83,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.equal(D.mv,'영업 재개 ▴');assert.match(D.band,/^영업 재개 — 어느 단계로 올릴까요\? 단계 · 다음 행동 · 날짜를 정하면 그때부터 진행 건이 됩니다$/);
   assert.deepEqual(D.stages.filter(s=>['컨설팅 설계','자료 발송완료','관계관리','경쟁·입찰','계약·시공'].includes(s[0])).map(s=>s.slice(1)),[[false,false],[false,false],[false,false],[false,false],[false,false]],'다섯 단계 모두 고를 수 있고 지금 단계 표시는 없다');
   /* 과거 이관 건도 7단계 공통 틀(deal-frame7.js): 할 일 = 영업 재개 판단 · 주 버튼 [영업 재개] · 안내 한 줄 */
-  assert.match(D.now,/^영업 재개 판단 \| 지침 영업을 다시 시작하려면 \[영업 재개\]에서 단계 · 다음 행동 · 날짜를 정해 주세요/,D.now);assert.equal(D.btn,'영업 재개');
+  assert.match(D.now,/^영업 재개 판단 \|/,D.now);/* 지침 줄은 오른쪽 정리에서 뺐다 — 안내는 주 버튼 [영업 재개]와 단계 정하는 창 */assert.equal(D.btn,'영업 재개');
   /* 단계를 고르면 기존 전환 창 — 출발 단계는 서버에 저장된 예전 값(검증된 고객)이다 */
   await page.locator('#detailView .dv3-moves [data-stage="relationship"]').click();await page.waitForSelector('#stage-transition-form');
   assert.match(one(await page.locator('#stage-transition-form header p').innerText()),/^과거 이관 · 검증된 고객 → /);

@@ -34,6 +34,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     mk(8,'[서울 강북] 두 번째 컨설팅 단지','POUR솔루션','이필선','consulting',{next_action:{id:'n8',text:'미팅 일정 잡기',type:'전화',due:day(3),status:'open'}}),
     mk(9,'[경기 평택] 평택비전지웰푸르지오','석민이앤씨','황윤선','won',{site_id:S5,created:'2023-01-10',outcome:'won',won_amount:120000000,closed_at:'2023-06-01',contract_date:'2023-06-01',amt:120000000,activities:[]})],
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],messageLogs:[],message_logs:[]};
+   /* 이 검사는 7단계 틀의 머리 · 왼쪽 · 단계별 값을 본다(오른쪽은 되돌리기 스위치 뒤의 예전 배치). 오른쪽 정리는 verify-detail-right-fix-browser.cjs */G.dealRightKeep=true;
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.dkOpen=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    window.pushWrite=()=>'req';window.__dial=0;window.contactDial=()=>{__dial++;};

@@ -33,7 +33,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     {id:D3,site:'[서울 송파] 실주한 단지',assignee:'황윤선',brand:'석민이앤씨',created:'2025-03-01',code:'lost',stage_code:'lost',outcome:'lost',closed_at:'2025-09-01',grp:'종료',amt:200000000,work_summary:'외벽',
      stage_contexts:{lost:{fields:{close_reason:'가격 · 가격 경쟁',close_detail:'A건설 낙찰',reengage:'예',lesson:'장기수선 옥상 2027 반영',recontact_possibility:'2027-03-01'}}},activities:[]}],
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],messageLogs:[],message_logs:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.dkOpen=null;
+   LOCAL={deals:{},inquiries:{},expansionPool:[]};/* 이 검사는 오른쪽 상자의 기능을 본다 — 상자를 가운데 칸 패널로 옮긴 새 배치(detail_right_fix)는 verify-detail-right-fix-browser.cjs 가 본다 */G.dealRightKeep=true;AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.dkOpen=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    window.__writes=[];window.pushWrite=(op,p)=>{__writes.push([op,p]);return 'req-'+__writes.length;};window.__rpc=[];window.__units={};
    SB={rpc:async(n,a)=>{__rpc.push([n,JSON.parse(JSON.stringify(a&&a.p||a||{}))]);const p=a&&a.p||{};

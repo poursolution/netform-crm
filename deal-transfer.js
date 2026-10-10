@@ -79,7 +79,8 @@
   const aq=R.ApprovalRequest&&R.ApprovalRequest.enabled()?R.ApprovalRequest:null;
    /* 영업건 상세 정돈안(2026-10-06): 버튼은 [···] 하나, 즐겨찾기 · 소장이 바뀌었어요도 이 메뉴에서 */
    const V3=R.DealDetailV3,T=!!(V3&&V3.tidy&&V3.tidy()),fv=T?document.querySelector('#detailView .exec-favorite'):null;
-   const items=(T?[].concat(fv?[['fav',String(fv.textContent||'즐겨찾기').trim()]]:[],V3.canReplace&&V3.canReplace(d)?[['repl','소장이 바뀌었어요']]:[]):[]).concat([['owner','담당자 변경'],[t?'info':'reg',t?'타사 이관 정보':'타사 이관 등록',true,ready]],aq?[['approval','승인 요청',false,aq.available()]]:[],[['hold','보류'],['lost','실주 처리']],R.DealDiscard&&R.DealDiscard.can&&R.DealDiscard.can(d)?[['discard','휴지통으로 보내기']]:[]/* 예전 시스템에서 옮겨 온 열린 건만(deal-discard.js) · 30일 보관 뒤 삭제 */);
+   const pm=(()=>{try{return V3&&V3.panelMenu?V3.panelMenu(d).map(x=>['p7-'+x[0],x[1]]):[];}catch(e){return [];}})();/* 오른쪽 정리: 오른쪽에서 뺀 상자는 이 메뉴에서 가운데 칸으로 연다 */
+   const items=pm.concat(T?[].concat(fv?[['fav',String(fv.textContent||'즐겨찾기').trim()]]:[],V3.canReplace&&V3.canReplace(d)?[['repl','소장이 바뀌었어요']]:[]):[]).concat([['owner','담당자 변경'],[t?'info':'reg',t?'타사 이관 정보':'타사 이관 등록',true,ready]],aq?[['approval','승인 요청',false,aq.available()]]:[],[['hold','보류'],['lost','실주 처리']],R.DealDiscard&&R.DealDiscard.can&&R.DealDiscard.can(d)?[['discard','휴지통으로 보내기']]:[]/* 예전 시스템에서 옮겨 온 열린 건만(deal-discard.js) · 30일 보관 뒤 삭제 */);
    wrap.innerHTML='<button type="button" class="tf-more" data-tf="menu" aria-haspopup="menu" aria-expanded="'+!!S.menu+'"'+(T?' aria-label="기타 처리" title="즐겨찾기 · 소장 바뀜 · 담당 변경 · 실주 처리"':'')+'>'+(T?'···':'··· 기타 처리')+'</button>'+(S.menu?'<div class="tf-menu" role="menu">'+items.map(m=>{const off=m.length>3&&!m[3];return '<button type="button" role="menuitem" data-tf="m-'+m[0]+'" class="'+(m[2]?'hot':'')+'"'+(off?' disabled title="서버 적용 뒤에 쓸 수 있습니다"':'')+'>'+h(m[1])+(off?' <small>서버 적용 대기</small>':'')+'</button>';}).join('')+'</div>':'');
   /* 상태 꼬리표: 단계 칩 옆 */
   const row=head.parentElement;row?.querySelectorAll('.tf-badge').forEach(n=>n.remove());
@@ -181,6 +182,7 @@
   if(a==='menu'){S.menu=!S.menu;return decorate();}
   S.menu=false;
   if(a==='m-discard'){decorate();try{R.DealDiscard.ask(d);}catch(err){}return;}
+  if(a.indexOf('m-p7-')===0){decorate();try{R.DealDetailV3.openPanel(a.slice(5));}catch(err){}return;}
   if(a==='m-fav'){decorate();document.querySelector('#detailView .exec-favorite')?.click();return;}
   if(a==='m-repl'){decorate();try{R.DealDetailV3.replace();}catch(err){}return;}
   if(a==='m-owner'){decorate();document.querySelector('.dv3-headact [data-dv3="owner"]')?.click();return;}

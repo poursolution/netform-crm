@@ -106,7 +106,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual(await page.evaluate(()=>['s-live','s-past','s-norec'].map(id=>{const d=B.deals.find(x=>x.id===id);return PipelineJudge.missKind(d,PipelineJudge.basis(d,'sent'));})),['cur','past','past']);
   /* ④ 실적 귀속 두 기준 */
   assert.deepEqual(await page.evaluate(()=>['o-diff','o-same'].map(id=>{const a=DealOwner.attribution(B.deals.find(x=>x.id===id));return [a.received&&a.received.name,a.connected&&a.connected.name,a.differ,a.pending];})),[['이필선','황윤선',true,true],['황윤선','황윤선',false,false]]);
-  await page.evaluate(()=>{DealOwner.state().open=true;G._detailPopup=true;drwDeal(JSON.stringify(B.deals.find(x=>x.id==='o-diff')));});await page.waitForSelector('#detailView.on .do-grid',{timeout:8000});
+  await page.evaluate(()=>{DealOwner.state().open=true;G.dealRightKeep=true;/* 담당 정보 카드의 내용을 본다 — 새 배치에서는 [···] '담당 · 실적 귀속'에서 펼친다(verify-detail-right-fix-browser.cjs) */G._detailPopup=true;drwDeal(JSON.stringify(B.deals.find(x=>x.id==='o-diff')));});await page.waitForSelector('#detailView.on .do-grid',{timeout:8000});
   const card=one(await page.locator('#detailView .do-grid').innerText());
   assert.match(card,/최초 연락 받은 사원 이필선/);assert.match(card,/회의 잠정안/);assert.match(card,/최초 실제 연결된 사원 황윤선/);assert.match(card,/현재 설정/);assert.match(card,/귀속 확인 필요 두 사람이 다릅니다\(이필선 · 황윤선\)/);
   await page.evaluate(()=>{try{closeDetail();}catch(e){}});
