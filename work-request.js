@@ -388,8 +388,8 @@
    entry.done=x.linked===true||x.replayed===true||x.reason==='request_closed';
    if(x.linked){
     if((S.gen||0)===epoch){put(x.request);delete TG['inquiry:'+q.id];repaint();}
-    load(true); // A concurrent save always wins over this response; read current state.
    }
+   if(entry.done)load(true); // Includes a committed write whose original ACK was lost.
   }).catch(()=>{}).finally(()=>{entry.busy=false;delete S.closing[r.id];});
  }
  function autoClose(){
