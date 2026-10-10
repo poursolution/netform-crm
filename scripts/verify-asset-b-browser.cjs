@@ -17,13 +17,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    const S=(n)=>'aaaaaaaa-0000-4000-8000-00000000000'+n;
    const deal=(id,site,sid,owner,code,extra)=>Object.assign({id,site,site_id:S(sid),assignee:owner,brand:'POUR솔루션',created:day(-200),updated:day(-200),code,stage_code:code,grp:'영업·관리',amt:1e8},extra||{});
    B={deals:[
-     deal('d1','예현마을현대홈타운아파트',1,'황윤선','consulting',{amt:37e7,created:day(-150),updated:day(-120)}),
+     deal('d1','예현마을현대홈타운아파트',1,'황윤선','consulting',{activities:[{id:'contact-d1',type:'전화',result:'연결됨',at:at(-120)}],amt:37e7,created:day(-150),updated:day(-120)}),
      deal('d2','예현마을현대홈타운아파트',1,'황윤선','lost',{outcome:'lost',amt:4e8,closed_at:day(-300),lost_reason:'가격 열세',created:day(-400),updated:day(-300)}),
      deal('d3','예현마을현대홈타운아파트',1,'황윤선','lost',{outcome:'lost',amt:35e7,closed_at:day(-250),created:day(-350),updated:day(-250)}),
      deal('d4','시범현대아파트',2,'이필선','consulting',{amt:2e7,created:day(-20),updated:day(-9),next_action:{id:'n1',text:'견적 확인 전화',due:day(3),status:'open'},activities:[{id:'a1',type:'전화',note:'소장 통화 — 견적 검토 중',at:at(-9)}]}),
      deal('d5','시범현대아파트',2,'이필선','won',{outcome:'won',won_amount:4e6,closed_at:day(-100),completion_date:day(-100),created:day(-160),updated:day(-100)}),
-     deal('d6','오산 원동 e편한세상',3,'한준엽','lost',{outcome:'lost',amt:14e7,closed_at:day(-412),created:day(-500),updated:day(-412),brand:'석민이앤씨'}),
-     deal('d7','수주 뒤 조용한 단지',4,'김성민','won',{outcome:'won',won_amount:3e7,closed_at:day(-80),completion_date:day(-80),created:day(-200),updated:day(-80),manager_name:'박소장',manager_mobile:'01011112222'})],
+     deal('d6','오산 원동 e편한세상',3,'한준엽','lost',{activities:[{id:'contact-d6',type:'전화',result:'연결됨',at:at(-412)}],outcome:'lost',amt:14e7,closed_at:day(-412),created:day(-500),updated:day(-412),brand:'석민이앤씨'}),
+     deal('d7','수주 뒤 조용한 단지',4,'김성민','won',{activities:[{id:'contact-d7',type:'전화',result:'연결됨',at:at(-80)}],outcome:'won',won_amount:3e7,closed_at:day(-80),completion_date:day(-80),created:day(-200),updated:day(-80),manager_name:'박소장',manager_mobile:'01011112222'})],
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.sb=null;G.siteStatus='전체';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';

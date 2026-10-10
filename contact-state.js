@@ -94,6 +94,33 @@
   if(m&&m.outboundAt){la=max(la,m.outboundAt);fa=min(fa,m.outboundAt);}
   return {kind:'deal',firstAttemptAt:fa,firstConnectedAt:fc,lastAttemptAt:la,lastConnectedAt:lc,attempts:n,attemptRes:res,next:nextOf(d,'deal'),legacy:dayKey(d.created||d.created_at||d.opened_at)<live()};
  }
+ /* Customer-asset contact dates require evidence on this record. Do not use
+    generic timestamps, inferred first response, sibling-name matching or queued patches. */
+ function contactDates(item,type){
+  if(!item||typeof item!=='object')return [];
+  const dates=new Set(),F=root.InquiryFlow;
+  const add=at=>{const t=tOf(at);if(Number.isFinite(t)&&t<=Date.now())dates.add(String(at));};
+  (Array.isArray(item.activities)?item.activities:[]).forEach(a=>{
+   if(!a)return;
+   const kind=String(a.type||''),res=String(a.contact_result||a.result||''),note=String(a.note||'');
+   if(/메모|시스템|단계|배정|수정|체크|이관/.test(kind))return;
+   // A scheduled visit/call is not a completed contact, even if the type contains 방문/전화.
+   if(/예정|예약|계획|요청|취소/.test(kind)||(!res&&!a.flow&&/예정|예약|계획|하기로|취소/.test(note)))return;
+   let l=null;try{l=F&&F.logOf?F.logOf(a):null;}catch(e){}
+   if(l&&l.kind==='connected')add(l.at);
+  });
+  if(type==='inq'||type==='inquiry'){
+   let s=null;try{s=F&&F.server?F.server(item):null;}catch(e){}
+   (s&&Array.isArray(s.logs)?s.logs:[]).forEach(l=>{if(l&&l.kind==='connected')add(l.occurred_at||l.at);});
+   try{if(root.InquiryMemo&&root.InquiryMemo.confirmedCallDay)add(root.InquiryMemo.confirmedCallDay(item));}catch(e){}
+  }else{
+   // These fields explicitly store customer contact; contactAt/lastActivity may be imported timestamps.
+   [item.lastMeaningfulContactAt,item.last_meaningful_contact_at,item.last_customer_contact_at].forEach(add);
+   refsOf(item).forEach(q=>contactDates(q,'inq').forEach(add));
+  }
+  return [...dates].sort((a,b)=>tOf(a)-tOf(b));
+ }
+ const contactRevision=()=>[root.InquiryFlow&&root.InquiryFlow.revision?root.InquiryFlow.revision():0,root.InquiryMemo&&root.InquiryMemo.revision?root.InquiryMemo.revision():0].join('|');
  const isInq=type=>type==='inq'||type==='inquiry';
  function of(item,type){
   if(!item||typeof item!=='object')return {kind:isInq(type)?'inq':'deal',firstAttemptAt:'',firstConnectedAt:'',lastAttemptAt:'',lastConnectedAt:'',attempts:0,attemptRes:'',next:null,legacy:false};
@@ -117,5 +144,5 @@
   if(att)return ['연락 시도 '+ymd(att),v.attemptRes||'',v.attempts>1?v.attempts+'회':'','실제 연결 '+NOT_YET].filter(Boolean).join(' · ');
   return noneOf(v);
  }
- root.ContactState={on,NONE,NONE_OLD,NOT_YET,caseKey,shadows,shadowOf,siblings,of,lines,recent,none,ymd,md,_reset(){IDX=null;}};
+ root.ContactState={on,NONE,NONE_OLD,NOT_YET,caseKey,shadows,shadowOf,siblings,of,lines,recent,none,contactDates,contactRevision,ymd,md,_reset(){IDX=null;}};
 })(typeof window!=='undefined'?window:globalThis);
