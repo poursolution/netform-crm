@@ -129,12 +129,21 @@
  /* 결과별 다음 행동(규칙 · 며칠 뒤) — 10/16 확정 전이라 OPS_RULES.contactNext 로 바꿀 수 있다 */
  const NXT=Object.assign({'연결됨':['다시 연락',3],'부재':['다시 전화',1],'검토중':['결과 확인',7],'자료요청':['자료 보내기',1],'회신대기':['회신 확인',3],'거절':[null,0]},(root.OPS_RULES&&root.OPS_RULES.contactNext)||{});
  /* day_zones §4-1: 결과 → 다음 업무 제안. 방문 희망 = 현장 방문 · 날짜는 고객과 정한 날(기본 제안 없음). '거절' 칩의 이름은 '다음 할 일 없음' — 이유 필수 */
- const RES_EXTRA={'방문희망':['현장 방문',null]},RES_LABEL={'거절':'다음 할 일 없음','방문희망':'방문 희망'},nxOf=res=>NXT[res]||RES_EXTRA[res]||null;
+ /* after_deploy 14: 견적 요청 = 견적 요청 등록(잔디) · 오늘 — 물량 산출 목표일은 운영 기준(견적 처리 일수) */
+ const quoteDays=()=>{try{return Number(root.PipelineStageB.rules().quote)||3;}catch(e){return 3;}};
+ const RES_EXTRA={'방문희망':['현장 방문',null],'견적요청':['견적 요청 등록(잔디)',0]},RES_LABEL={'거절':'다음 할 일 없음','방문희망':'방문 희망','견적요청':'견적 요청'},nxOf=res=>res==='견적요청'?['견적 요청 등록(잔디) · 물량 산출 '+quoteDays()+'일 목표',0]:NXT[res]||RES_EXTRA[res]||null;
+ /* 같은 영업건에 열려 있는 연락 요청(첫 연락 · 후속 연락) — 전화 업무를 또 만들지 않고 그 요청의 요청자 · 기한에 맞춘다 */
+ const kstDay=v=>{const t=new Date(v||'');return Number.isFinite(t.getTime())?new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(t):'';};
+ const reqLink=d=>{try{if(!d||!d.id||!root.DealUnits||!root.DealUnits.requests)return null;return root.DealUnits.requests(d).find(r=>['first','follow'].includes(String(r.kind)))||null;}catch(e){return null;}};
  const WHYNO=['고객이 연락 거절','공사 계획 없음 → 보류','다른 담당으로 이관','실주 처리'],PLAN=[['customer','고객 합의'],['internal','내부 계획']];
  const BAD_PURPOSE=/^(연락|연락하기|전화|전화하기|통화|콜|팔로업|후속)$/;
  const repsFor=d=>{try{if(root.DealOwnerV2&&root.DealOwnerV2.people)return root.DealOwnerV2.people(d)||[];}catch(e){}try{return (root.SalesScope&&root.SalesScope.people?root.SalesScope.people().map(p=>p.name):[])||[];}catch(e){return [];}};
  /* 다음 업무 한 묶음(목적 · 예정일 · 담당 · 일정 구분) — 응대 기록 저장이 쓴다 */
- function nextPlan(d,R){const res=R.res,nx=res?nxOf(res):null;if(!nx||!nx[0])return null;const purpose=String(R.purpose!=null?R.purpose:nx[0]).trim(),day=R.day??nx[1],due=R.date||(day!=null?KST(day):''),who=root.repN(R.who||d.assignee)||root.repN(root.ME?.name)||'',plan=R.plan||'internal';return {purpose,due,who,plan,text:(plan==='customer'?'고객 약속: ':'')+purpose,type:/방문|실측|미팅/.test(purpose)?'방문':/자료|견적|사진|메일|발송/.test(purpose)?'후속접촉':'전화'};}
+ function nextPlan(d,R){const res=R.res,nx=res?nxOf(res):null;if(!nx||!nx[0])return null;const purpose=String(R.purpose!=null?R.purpose:nx[0]).trim(),day=R.day??nx[1],who=root.repN(R.who||d.assignee)||root.repN(root.ME?.name)||'',plan=R.plan||'internal',type=/방문|실측|미팅/.test(purpose)?'방문':/자료|견적|사진|메일|발송/.test(purpose)?'후속접촉':'전화';
+  let due=R.date||(day!=null?KST(day):'');const lr=type==='전화'?reqLink(d):null,rk=lr?kstDay(lr.due_at):'',link=lr&&rk?{by:String(lr.requested_by||''),due:rk,applied:R.day==null&&!R.date}:null;
+  if(link&&link.applied)due=rk<KST(0)?KST(0):rk;/* 날짜를 직접 고르지 않았으면 요청 기한(지났으면 오늘) */
+  return {purpose,due,who,plan,link,text:(plan==='customer'?'고객 약속: ':'')+purpose+(link&&link.applied&&link.by?' · 요청 '+link.by:''),type};}
+ const linkLine=P=>P&&P.link?'<small class="dv3-reqlink">같은 영업건에 열린 연락 요청'+(P.link.by?' · 요청자 '+h(P.link.by):'')+' · 기한 '+h(dd(P.link.due))+(P.link.applied?' — 업무를 따로 만들지 않고 이 요청 기한에 맞춤':' — 예정일을 직접 정함')+'</small>':'';
  const KST=n=>{const t=new Date();t.setDate(t.getDate()+n);return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(t);};
  const dd=iso=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso||''));if(!m)return '';const x=new Date(Date.UTC(+m[1],+m[2]-1,+m[3]));return +m[1]+'.'+(+m[2])+'.'+(+m[3])+'('+'일월화수목금토'[x.getUTCDay()]+')';};
  const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -142,24 +151,24 @@
  function recNote(ch,res,memo){
   const head=res==='부재'?(ch==='전화'?'부재중 (전화 안 받음)':ch+' · 부재 (응답 없음)')
    :res==='회신대기'?(['문자','카카오','이메일'].includes(ch)?ch+' 발송 · 회신대기':ch==='전화'?'통화 시도 · 회신대기':'방문 · 부재 · 회신대기')
-   :(ch==='전화'?'통화 완료':ch==='방문'?'방문 완료':ch+' 답변 받음')+' · '+(res==='거절'?'다음 할 일 없음':res==='방문희망'?'방문 희망':res);
+   :(ch==='전화'?'통화 완료':ch==='방문'?'방문 완료':ch+' 답변 받음')+' · '+(res==='거절'?'다음 할 일 없음':res==='방문희망'?'방문 희망':res==='견적요청'?'견적 요청':res);
   return head+(memo?' — '+memo:'');
  }
  function formHtml(R){
-  const res=R.res,nx=res?nxOf(res):null,day=R.day??(nx?nx[1]:null),rej=res==='거절',P=rej?null:nextPlan({assignee:(root.CUR_DETAIL&&root.CUR_DETAIL.item||{}).assignee},R),ok=R.ch&&res&&(rej?!!R.whyNo:!!(P&&P.due&&P.purpose));
+  const res=R.res,nx=res?nxOf(res):null,day=R.day??(nx?nx[1]:null),rej=res==='거절',P=rej?null:nextPlan(root.CUR_DETAIL&&root.CUR_DETAIL.item||{},R),ok=R.ch&&res&&(rej?!!R.whyNo:!!(P&&P.due&&P.purpose)),lk=!!(P&&P.link&&P.link.applied);
   const pill=(act,v,on,label)=>'<button type="button" data-dv3="'+act+'" data-v="'+attr(v)+'" aria-pressed="'+!!on+'"'+(R.busy?' disabled':'')+'>'+h(label||v)+'</button>';
   const reps=repsFor(root.CUR_DETAIL&&root.CUR_DETAIL.item||{}),who=P?P.who:'';
   return '<span class="q">어떻게 연락했나요?</span><div class="dv3-pills">'+RCH.map(c=>pill('rch',c,R.ch===c)).join('')+'</div>'
    +'<span class="q">결과</span><div class="dv3-pills">'+Object.keys(NXT).filter(x=>x!=='거절').concat(Object.keys(RES_EXTRA),['거절']).map(x=>pill('rres',x,res===x,RES_LABEL[x]||x)).join('')+'</div>'
    +'<input class="dv3-memo" data-dv3rec="memo" value="'+attr(R.memo||'')+'" placeholder="한 줄 메모 (선택) — 예: 12월 입대의 후 결정" aria-label="한 줄 메모"'+(R.busy?' disabled':'')+'>'
    /* day_zones §4-1: 다음 업무 = 목적 · 예정일 · 담당 + 고객 합의 / 내부 계획 — 결과를 고르면 자동 제안, 그 자리에서 고침. 다음 할 일 없음 = 이유 필수 */
-   +'<div class="dv3-recnext"><div><span>다음 업무</span><b>'+h(!res?'결과를 고르면 자동 제안':rej?'없음 · 이유 필수':P.purpose+' · '+(P.due?dd(P.due):'날짜 확정 필요')+' · '+(who||'담당 미정')+' · '+(P.plan==='customer'?'고객 합의':'내부 계획'))+'</b></div>'
+   +'<div class="dv3-recnext"><div><span>다음 업무</span><b>'+h(!res?'결과를 고르면 자동 제안':rej?'없음 · 이유 필수':P.purpose+' · '+(P.due?dd(P.due):'날짜 확정 필요')+' · '+(who||'담당 미정')+' · '+(P.plan==='customer'?'고객 합의':'내부 계획'))+'</b>'+(res&&!rej?linkLine(P):'')+'</div>'
    +(res&&!rej?'<div class="dv3-nxgrid"><span>목적</span><input data-dv3rec="purpose" value="'+attr(P.purpose)+'" maxlength="60" placeholder="무엇을 하나요 (연락하기만은 안 됨)" aria-label="다음 업무 목적"'+(R.busy?' disabled':'')+'>'
-    +'<span>예정일</span><div class="dv3-pills">'+[['내일',1],['3일 후',3],['7일 후',7]].map(([l,n])=>pill('rday',n,!R.date&&day===n,l)).join('')+pill('rdate','',!!R.date,'날짜 지정')+(R.date||R.pick?'<input type="date" data-dv3rec="date" value="'+attr(R.date||'')+'" min="'+attr(KST(0))+'" aria-label="예정일">':'')+'</div>'
+    +'<span>예정일</span><div class="dv3-pills">'+[['내일',1],['3일 후',3],['7일 후',7]].map(([l,n])=>pill('rday',n,!R.date&&!lk&&day===n,l)).join('')+pill('rdate','',!!R.date,'날짜 지정')+(R.date||R.pick?'<input type="date" data-dv3rec="date" value="'+attr(R.date||'')+'" min="'+attr(KST(0))+'" aria-label="예정일">':'')+'</div>'
     +'<span>담당</span><select data-dv3rec="who" aria-label="다음 업무 담당"'+(R.busy?' disabled':'')+'>'+[who].concat(reps.filter(n=>n!==who)).filter(Boolean).map(n=>'<option value="'+attr(n)+'"'+(n===who?' selected':'')+'>'+h(n)+'</option>').join('')+'</select>'
     +'<span>일정</span><div class="dv3-pills">'+PLAN.map(([v,l])=>pill('rplan',v,P.plan===v,l)).join('')+'</div></div>':'')
    +(rej?'<div class="dv3-pills dv3-whyno">'+WHYNO.map(w=>pill('rwhy',w,R.whyNo===w)).join('')+'</div>':'')+'</div>'
-   +'<button type="button" class="dv3-save'+(ok?'':' off')+'" data-dv3="rsave"'+(R.busy?' disabled':'')+'>'+(R.busy?'확인 중…':'저장')+'</button>'
+   +'<button type="button" class="dv3-save'+(ok?'':' off')+'" data-dv3="rsave"'+(R.busy?' disabled':'')+'>'+(R.busy?'확인 중…':R.err&&R.prog?'재시도':'저장')+'</button>'
    +(R.err?'<p class="dv3-recerr" role="alert">'+h(R.err)+'</p>':'')
    +'<span class="dv3-recnote">'+(rej?'저장하면 응대 기록만 남고 다음 업무는 없습니다 · 보류 · 이관 · 실주는 저장 뒤 그 처리로 이어집니다':'저장하면 응대 이력에 쌓이고, 예정일에 오늘 업무로 다시 뜹니다 · 응대 완료 ≠ 단계 전환(단계 조건은 따로)')+'</span>';
  }
@@ -226,11 +235,12 @@
   d.activities=Array.isArray(d.activities)?d.activities:[];if(!d.activities.some(x=>x.id===rec.ack.activity_id))d.activities.unshift({id:rec.ack.activity_id,type:'메모',note,at,occurred_at:at,actor:root.repN(root.ME?.name)});try{root.saveLocal?.();}catch(e){}
  }
  /* 단계 정보 몇 칸만 저장(상세 밖 — 관계관리 재분류의 견적 발송일). 서버 확인 뒤에만 화면에 반영 */
- async function stageFieldsOutside(d,fields){
+ async function stageFieldsOutside(d,fields,reason){
   if(!root.SB||!root.SB.rpc)throw Error('로그인 상태에서만 저장할 수 있습니다.');if(isClosed(d))throw Error('종료된 영업건은 단계 정보를 바꿀 수 없습니다.');
-  const code=root.dealStage(d),r=await root.SB.rpc(SF_RPC,{p:{deal_id:String(d.id),stage_code:code,fields,reason:'상세에서 바로 입력'}});
+  const code=root.dealStage(d),P={deal_id:String(d.id),stage_code:code,fields,reason:String(reason||'').trim()||'상세에서 바로 입력'},r=await root.SB.rpc(SF_RPC,{p:P});/* 사유는 비우지 않는다(서버 감사 기록) */
   if(r.error)throw Error(r.error.message||'저장 실패');if(!r.data||r.data.ok!==true||!r.data.stage_context)throw Error('서버 확인 응답이 올바르지 않습니다.');
-  const ctx=r.data.stage_context,p=root.currentPatch?root.currentPatch():null;d.stage_contexts=Object.assign({},d.stage_contexts||{},{[code]:ctx});d.stageContexts=d.stage_contexts;if(p)p.stage_contexts=d.stage_contexts;if(r.data.version!=null)d.version=r.data.version;try{root.saveLocal?.();}catch(e){}
+  let p=null;try{p=root.itemPatch?root.itemPatch(d,'deal'):null;}catch(e){}
+  const ctx=r.data.stage_context;d.stage_contexts=Object.assign({},d.stage_contexts||{},{[code]:ctx});d.stageContexts=d.stage_contexts;if(p&&p.stage_contexts)p.stage_contexts=d.stage_contexts;if(r.data.version!=null)d.version=r.data.version;try{root.saveLocal?.();}catch(e){}
  }
  /* 다음 행동만 등록(지금 할 일을 닫지 않는다) — 변화 이벤트의 '확인할 일'이 쓴다 */
  async function nextOutside(d,o){
@@ -741,7 +751,7 @@
   const pill=(act,v,on,label)=>'<button type="button" data-dv3="'+act+'" data-v="'+attr(v)+'" aria-pressed="'+!!on+'"'+(R.busy?' disabled':'')+'>'+h(label||v)+'</button>';
   return '<div class="r"><span>수단</span><div class="dv3-pills">'+RCH.map(c=>pill('rch',c,R.ch===c)).join('')+'</div></div>'
    +'<div class="r"><span>결과</span><div class="dv3-pills">'+Object.keys(NXT).filter(x=>x!=='거절').concat(Object.keys(RES_EXTRA),['거절']).map(x=>pill('rres',x,res===x,RES_LABEL[x]||x)).join('')+'</div></div>'
-   +(res?'<div class="r"><span>다음 업무</span><b>'+h(rej?'없음 · 이유 필수':P.purpose+' · '+(P.due?dd(P.due):'날짜 확정 필요')+' · '+(P.who||'담당 미정')+' · '+(P.plan==='customer'?'고객 합의':'내부 계획'))+'</b>'+(rej?'<div class="dv3-pills dv3-whyno">'+WHYNO.map(w=>pill('rwhy',w,R.whyNo===w)).join('')+'</div>':'<div class="dv3-pills">'+[['내일',1],['3일 후',3],['7일 후',7]].map(([l,n])=>pill('rday',n,!R.date&&day===n,l)).join('')+pill('rdate','',!!R.date,'날짜 지정')+(R.date||R.pick?'<input type="date" data-dv3rec="date" value="'+attr(R.date||'')+'" min="'+attr(KST(0))+'" aria-label="예정일">':'')+PLAN.map(([v,l])=>pill('rplan',v,P.plan===v,l)).join('')+'</div>')+'</div>':'')
+   +(res?'<div class="r"><span>다음 업무</span><b>'+h(rej?'없음 · 이유 필수':P.purpose+' · '+(P.due?dd(P.due):'날짜 확정 필요')+' · '+(P.who||'담당 미정')+' · '+(P.plan==='customer'?'고객 합의':'내부 계획'))+'</b>'+(rej?'':linkLine(P))+(rej?'<div class="dv3-pills dv3-whyno">'+WHYNO.map(w=>pill('rwhy',w,R.whyNo===w)).join('')+'</div>':'<div class="dv3-pills">'+[['내일',1],['3일 후',3],['7일 후',7]].map(([l,n])=>pill('rday',n,!R.date&&!(P.link&&P.link.applied)&&day===n,l)).join('')+pill('rdate','',!!R.date,'날짜 지정')+(R.date||R.pick?'<input type="date" data-dv3rec="date" value="'+attr(R.date||'')+'" min="'+attr(KST(0))+'" aria-label="예정일">':'')+PLAN.map(([v,l])=>pill('rplan',v,P.plan===v,l)).join('')+'</div>')+'</div>':'')
    +(R.err?'<p class="dv3-recerr" role="alert">'+h(R.err)+'</p>':'');
  }
  function callingSync(box,d){
@@ -988,7 +998,7 @@
  },true);
  document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||t.dataset.dv3Nextdate===undefined||!t.closest('#detailView.dv3'))return;const d=root.CUR_DETAIL?.item;if(d&&t.value)saveNextOnly(d,null,t.value);});
  document.addEventListener('click',onClick);
- root.DealDetailV3={enabled,apply,related,siteFields,stageSchema,record:recordOutside,memo:memoOutside,next:nextOutside,stageFields:stageFieldsOutside,NXT,openFrom,
+ root.DealDetailV3={enabled,apply,related,siteFields,stageSchema,record:recordOutside,memo:memoOutside,next:nextOutside,stageFields:stageFieldsOutside,NXT,openFrom,planOf:nextPlan,
   refreshCenter(){const d=root.CUR_DETAIL?.kind==='deal'&&root.CUR_DETAIL.item,v=view();if(d&&v&&enabled())buildCenter(v,d,!!d.outcome||d.lifecycle_status==='closed');},
   tidy,same,wonRow,peek:setPeek,peekOf:d=>(d&&ST[d.id]&&ST[d.id].peek)||'',canReplace:d=>!!d&&!isClosed(d)&&!!contacts(d).ci.mobile,replace:()=>{const d=root.CUR_DETAIL?.item;if(d&&!isClosed(d)&&contacts(d).ci.mobile)doReplace(d);}};/* record · memo · NXT 는 오늘 업무 실행 모드가 쓴다 */
 })(window);
