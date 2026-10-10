@@ -41,9 +41,27 @@
   return '<section class="mh-sched" aria-label="일정"><div class="sec-h"><h2>일정 '+S.total+'건</h2><span>'+(late?'기한 지남 '+late+' · ':'')+'오늘 '+md(S.T)+'</span></div>'
    +(S.groups.length?S.groups.map(g=>'<div class="mh-grp"><h3>'+h(g.l)+' <em>'+g.rows.length+'</em></h3><div class="mh-rows">'+g.rows.map(row).join('')+'</div></div>').join(''):'<p class="mh-none">앞으로 잡힌 일정이 없습니다 — 현장에서 결과를 남기며 다음 업무를 잡아 주세요</p>')+'</section>';
  }
+ /* 문의 정보 조회(mobile_all 1번 '문의 정보'): PC 문의 상세와 같은 칸 · 같은 자리(raw 의 한글 칸 이름)에서 읽는다. 입력은 서버 함수 허용 범위 때문에 PC 에서 — 빈 칸은 정상처럼 보이지 않고 '미입력'으로 */
+ const INQ_FIELDS=['공사 시기','경쟁사','요청 자료','결정권자','대표회의','자료 회신 기한'];
+ function inqQ(){const G=root.G,s=G&&G.sub,A=root.ADMIN||{};if(!s)return null;if(s.t==='inqAssigned')return (A.inquiries||[]).find(x=>String(x.key)===String(s.key))||null;if(s.t==='inq')return (A.assign||[])[s.i]||null;return null;}
+ function inqInfoHtml(q){const r=q&&q.raw&&typeof q.raw==='object'?q.raw:{},v=k=>{const x=r[k];return x!=null&&String(x).trim()&&String(x).trim()!=='-'?String(x).trim():'';};const rows=INQ_FIELDS.map(k=>[k,v(k)]),miss=rows.filter(x=>!x[1]).length;return '<div class="card mh-inq" aria-label="문의 정보"><div class="sec-h" style="margin:0 0 6px"><h2>필수 확인 '+(rows.length-miss)+' / '+rows.length+'</h2><span>'+(miss?'빈 칸 '+miss+'개':'모두 확인됨')+'</span></div>'+rows.map(x=>'<div class="kv"><span class="k">'+h(x[0])+'</span><span class="v'+(x[1]?'':' mh-empty')+'">'+h(x[1]||'미입력')+'</span></div>').join('')+(miss?'<div class="hint" style="margin-top:6px">빈 칸은 PC 문의 상세에서 입력합니다</div>':'')+'</div>';}
+ function applyInq(){const scr=root.document.getElementById('scr'),body=scr&&scr.querySelector('.body');if(!body||body.querySelector('.mh-inq'))return;const q=inqQ();if(!q)return;const first=body.querySelector(':scope>.card');const el=root.document.createElement('div');el.innerHTML=inqInfoHtml(q);if(first)first.after(el.firstElementChild);else body.append(el.firstElementChild);}
+ /* 내 현장 필터(mobile_all 1번 '검색 · 필터'): PC 와 같은 조건(브랜드 · 공종)을 필터 줄 + 적용 조건 · 결과 수로. 담당은 로그인한 나로 정해져 있고(권한 그대로) 현장명은 위 [검색]이 한다 */
+ const worksOf=d=>{try{return (root.workItemsM(d)||[]).map(w=>w&&w.group).filter(Boolean);}catch(e){return [];}};
+ const uniq=a=>[...new Set(a)];
+ function filterHtml(){
+  const G=root.G,all=mine(),brands=uniq(all.map(d=>String(d.brand||'').trim()).filter(Boolean)),works=uniq([].concat(...all.map(worksOf))),bf=G.brandF||'전체',wf=G.workF||'전체';
+  const chip=(a,v,on)=>'<button type="button" class="cchip '+(on?'b':'gr')+'" style="font-size:12px;padding:10px 8px" data-mh="'+a+'" data-v="'+attr(v)+'" aria-pressed="'+on+'">'+h(v)+'</button>';
+  const n=all.filter(d=>typeof root.fdeal!=='function'||root.fdeal(d)).length,cond=[bf!=='전체'?'브랜드 '+bf:'',wf!=='전체'?'공종 '+wf:''].filter(Boolean);
+  if(!brands.length&&!works.length)return '';
+  return '<div class="mh-filter" aria-label="필터">'+(brands.length?'<div class="mh-frow"><span>브랜드</span><div class="chiprow">'+['전체'].concat(brands).map(b=>chip('brand',b,bf===b)).join('')+'</div></div>':'')+(works.length?'<div class="mh-frow"><span>공종</span><div class="chiprow">'+['전체'].concat(works).map(b=>chip('work',b,wf===b)).join('')+'</div></div>':'')+'<div class="mh-fres">'+(cond.length?'적용 조건 · '+h(cond.join(' · '))+' → ':'')+'<b>'+n+'곳</b> <small>(내 진행 '+all.length+'곳 중)</small>'+(cond.length?' <button type="button" data-mh="fclear">조건 지우기</button>':'')+'</div></div>';
+ }
+ function applyMine(body){if(body.querySelector('.mh-filter'))return;const html=filterHtml();if(!html)return;const anchor=body.querySelector(':scope>.chiprow')||body.querySelector(':scope>.sec-h'),el=root.document.createElement('div');el.innerHTML=html;if(anchor)anchor.after(el.firstElementChild);}
  function apply(){
   if(!enabled())return;
   const G=root.G,scr=root.document.getElementById('scr'),body=scr&&scr.querySelector('.body');
+  if(G&&G.user&&!G.deal&&G.sub&&(G.sub.t==='inq'||G.sub.t==='inqAssigned'))return applyInq();
+  if(body&&G&&G.user&&!G.deal&&!G.sub&&G.mode==='rep'&&G.tab==='mine')applyMine(body);
   if(!body||!G||!G.user||G.deal||G.sub||G.mode!=='rep')return;
   if(G.tab==='find'&&!body.querySelector('.mh-hub')){const t=body.querySelector(':scope>.mv-title'),el=root.document.createElement('div');el.innerHTML=hubHtml();if(t)t.remove();body.prepend(el.firstElementChild);}
   if(G.tab==='my'&&!body.querySelector('.mh-sched')){const t=body.querySelector(':scope>.mv-title'),el=root.document.createElement('div');el.innerHTML=scheduleHtml();(t||body.firstElementChild).after(el.firstElementChild);}
@@ -56,6 +74,9 @@
   const b=e.target.closest('#scr [data-mh]');if(!b||!enabled())return;const a=b.dataset.mh,id=b.dataset.id;
   if(a==='open')return go(id);
   if(a==='mine'){const G=root.G;G.tab='mine';G.deal=null;G.sub=null;return root.render();}
+  if(a==='brand'){root.G.brandF=b.dataset.v==='전체'?'':b.dataset.v;return root.render();}
+  if(a==='work'){root.G.workF=b.dataset.v==='전체'?'':b.dataset.v;return root.render();}
+  if(a==='fclear'){root.G.brandF='';root.G.workF='';return root.render();}
   if(a==='visit')return go(id,()=>{if(root.MobileEntry)root.MobileEntry.open({ch:'방문'});else if(root.dealCallSheetM)root.dealCallSheetM();});
   if(a==='move')return go(id,()=>{if(root.MobileEntry&&root.MobileEntry.reschedule)root.MobileEntry.reschedule();});
  });
@@ -64,6 +85,7 @@
  let pos={},prevDeal=null,prevTab=null;
  function boot(){
   const base=root.render;if(typeof base!=='function')return;
+  const baseF=root.fdeal;if(typeof baseF==='function'&&!baseF.__mh)root.fdeal=Object.assign(function(d){if(enabled()&&root.G){const bf=root.G.brandF,wf=root.G.workF;if(bf&&String(d.brand||'').trim()!==bf)return false;if(wf&&!worksOf(d).includes(wf))return false;}return baseF.apply(this,arguments);},{__mh:true});
   root.render=function(){
    const G=root.G;let restore=null;
    if(enabled()&&G){
@@ -79,5 +101,5 @@
   try{if(enabled()&&root.G){prevDeal=root.G.deal;prevTab=root.G.tab;apply();}}catch(e){}
  }
  if(root.document.readyState==='loading')root.document.addEventListener('DOMContentLoaded',boot);else boot();
- root.MobileHub=Object.freeze({enabled,apply,scheduleRows,hubHtml,scheduleHtml});
+ root.MobileHub=Object.freeze({enabled,apply,scheduleRows,hubHtml,scheduleHtml,inqInfoHtml});
 })(window);
