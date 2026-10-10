@@ -139,11 +139,12 @@
    ALL.forEach(r=>{if(kday(r.created_at).slice(0,7)!==mon)return;const key=String(r.kind||'')+'|'+String(r.label||'');(by.get(key)||by.set(key,{kind:r.kind,label:String(r.label||((W.KIND&&W.KIND[r.kind]||{}).label)||'요청'),n:0}).get(key)).n++;});
    const repeat=[...by.values()].filter(x=>x.n>=3).sort((a,b)=>b.n-a.n).map(x=>({label:x.label,n:x.n,check:RH_CHECK[x.kind]||'지침 · 입력 화면'}));
    const cancelled=ALL.filter(r=>r.status==='cancelled'&&kday(r.closed_at||r.updated_at||r.created_at).slice(0,7)===mon),head=p=>cancelled.filter(r=>String(r.reply_note||'').startsWith(p)).length;
-   return {tiles,warn,repeat,quality:'요청 품질 · 이번 달 취소 '+cancelled.length+'건 (다른 요청에 통합 '+head('[통합]')+' · 대상 오류 '+head('[대상 오류]')+') · 기한 수정 · 문구 불명확 수는 저장 칸이 없어 아직 못 셈'};
+   const open=r=>['sent','seen','working'].includes(r.status),flow={neu:S[0],carry:L.filter(r=>open(r)&&kday(r.created_at)<w0.mon).length,late:L.filter(r=>open(r)&&past(r)).length,done:L.filter(r=>(r.status==='done'||r.status==='replied')&&inW(r.closed_at,w0)).length};
+   return {flow,tiles,warn,repeat,quality:'요청 품질 · 이번 달 취소 '+cancelled.length+'건 (다른 요청에 통합 '+head('[통합]')+' · 대상 오류 '+head('[대상 오류]')+') · 기한 수정 · 문구 불명확 수는 저장 칸이 없어 아직 못 셈'};
   }
   function rhHtml(C){
    let H=null;try{H=reqHealth(C);}catch(e){H=null;}if(!H)return '';
-   return '<section class="k7-card k7-rh"><header><b>요청 · 누락 함께 보기</b><span>전주 대비</span></header><div class="k7-tiles">'+H.tiles.map(m=>'<div><span>'+h(m[0])+'</span><b>'+h(m[1])+'</b><small>'+h(m[2])+'</small></div>').join('')+'</div>'+(H.warn?'<p class="k7-rhwarn" role="note">'+h(H.warn)+'</p>':'')
+   return '<section class="k7-card k7-rh"><header><b>요청 · 누락 함께 보기</b><span>전주 대비</span></header><div class="k7-tiles">'+H.tiles.map(m=>'<div><span>'+h(m[0])+'</span><b>'+h(m[1])+'</b><small>'+h(m[2])+'</small></div>').join('')+'</div><p class="k7-flow">요청 흐름 · 이번 주 신규 <b>'+H.flow.neu+'</b> · 넘어온 미완료 <b>'+H.flow.carry+'</b> · 기한 초과 <b'+(H.flow.late?' class="r"':'')+'>'+H.flow.late+'</b> · 완료 <b>'+H.flow.done+'</b></p>'+(H.warn?'<p class="k7-rhwarn" role="note">'+h(H.warn)+'</p>':'')
     +'<div class="k7-rep"><b>반복된 요청 유형 · 이번 달</b>'+(H.repeat.length?H.repeat.map(x=>'<div><span title="'+attr(x.label)+'">'+h(x.label)+'</span><b>'+x.n+'회</b><small title="'+attr(x.check)+'">점검할 곳 · '+h(x.check)+'</small></div>').join(''):'<p>같은 유형이 3번 이상 반복된 요청이 없습니다</p>')+'<small>담당 탓 전에 시스템 · 지침부터 확인</small></div><p class="k7-unit">'+h(H.quality)+'</p></section>';
   }
   function unitLine(){try{const U=R.DealUnits;if(!U||!U.on())return '';const a=U.audit((R.B&&R.B.deals)||[],(R.B&&R.B.inquiries)||[]);return '<p class="k7-unit">'+h(a.line)+'</p>';}catch(e){return '';}}

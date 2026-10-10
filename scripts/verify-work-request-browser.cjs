@@ -106,17 +106,28 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(one(await v.locator('.wrq-wait>header').innerText()),'답 기다리는 중 내가 요청한 일 1건');
   /* after_deploy ①: 기한은 상대 표현('내일 12시')이 아니라 절대 날짜 · 요일 · 시각 + 남은 시간 */
   {const w=await waits();assert.equal(w.length,1);assert.deepEqual([w[0][0],w[0][1],w[0][2],w[0][4],w[0][5],w[0][6]],['[경북 경주] 전원하이빌','답변 대기','경남지사장에게 · 실담당 지정 확인 · 고객 첫 연락 진행 확인 · 영업 진행 여부 확인','','','']);assert.match(w[0][3],/^오늘 10:00 · 기한 \d{4}\.\d{1,2}\.\d{1,2} \([일월화수목금토]\) 12:00 · \d+시간 남음$/,w[0][3]);}
-  assert.equal(await v.locator('.tv3-side>section').first().evaluate(n=>n.classList.contains('wrq-wait')),true,'오른쪽 칸 맨 위');assert.equal(await v.locator('.tv3-side>section').count(),4,'기존 일정 · 마감 · 기준은 그대로');
+  assert.equal(await v.locator('.tv3-side>section').first().evaluate(n=>n.classList.contains('wrq-wait')),true,'오른쪽 칸 맨 위');assert.equal(await v.locator('.tv3-side>section').count(),5,'기존 일정 · 마감 · 기준은 그대로 + 보낸 요청');
+  /* admin_request C: 요청자 화면 '보낸 요청' — 탭 6개 · 줄 = 현장 · 담당 · 할 일 · 상태 · 기한 */
+  {const sent=v.locator('.tv3-side>section.wrq-sent');assert.equal(await sent.count(),1);assert.equal(await v.locator('.tv3-side>section').nth(1).evaluate(n=>n.classList.contains('wrq-sent')),true,'답 기다리는 중 바로 아래');
+   assert.deepEqual((await sent.locator('.wrq-stabs button').allInnerTexts()).map(one),['전체 1','미확인 1','진행 0','회신 대기 0','기한 초과 0','완료 0']);
+   const sr=await sent.locator('.wrq-sr').evaluateAll(l=>l.map(n=>[n.querySelector('.l1 b').textContent,n.querySelector('.wrq-pill').textContent,n.querySelector('.l2').textContent,n.querySelector('small').textContent]));
+   assert.equal(sr.length,1);assert.deepEqual(sr[0].slice(0,3),['[경북 경주] 전원하이빌','미확인','경남지사장 · 실담당 지정 확인 · 고객 첫 연락 진행 확인 · 영업 진행 여부 확인']);assert.match(sr[0][3],/^기한 \d{4}\.\d{1,2}\.\d{1,2} \([일월화수목금토]\) 12:00 · /);
+   await sent.locator('[data-wr="senttab"][data-v="done"]').click();await page.waitForTimeout(250);assert.equal(one(await v.locator('.wrq-sent .none').innerText()),'해당하는 요청이 없습니다');await v.locator('.wrq-sent [data-wr="senttab"][data-v="all"]').click();await page.waitForTimeout(250);}
   assert.equal(await v.locator('.wrq-wait>.ft').innerText(),'답변 대기 중엔 같은 요청 잠금 · 기한이 지나야 [재확인 요청] · 지사 건은 [본사 회수 검토]');
   /* 4. 요청 창(내부 담당): 고객 번호 · 문의 · 처리 기한(오늘 17:00 / 오늘 중 / 직접 지정) · 완료 조건 3줄 · 지연일이 든 메모 */
   await v.locator('.tv3-card').first().locator('[data-wr="ask"]').click();await page.waitForTimeout(200);
-  assert.equal(await m.locator('header b').innerText(),'첫 연락 요청');assert.deepEqual(await m.locator('.wrq-form>.k').allInnerTexts(),['현장','현재 상태','고객','문의','요청 대상','요청 내용','처리 기한','완료 조건','메모']);
+  assert.equal(await m.locator('header b').innerText(),'첫 연락 요청');assert.deepEqual(await m.locator('.wrq-form>.k').allInnerTexts(),['현장','현재 상태','고객','문의','요청 대상','요청 내용','확인된 상태','처리 기한','완료 조건','메모']);/* admin_request D: 확인된 상태 = 요청 문구의 기준 */
   assert.equal(await m.locator('.wrq-form>b').first().innerText(),'[서울 강남] 강변삼부아파트 · POUR솔루션 · 담당 이필선');assert.deepEqual(await m.locator('.wrq-tags span').allInnerTexts(),['첫 연락 전 · 14일 지연']);
   assert.equal(await m.locator('.wrq-form>b').nth(1).innerText(),'010-1234-5612');
   assert.deepEqual(await m.locator('.wrq-asks button').evaluateAll(l=>l.map(b=>[b.textContent.replace('✓',''),b.getAttribute('aria-pressed')])),[['고객 첫 연락','true'],['연락 후 견적 필요 여부 확인','false'],['현장방문 필요 여부 확인','false']]);
-  assert.deepEqual(await m.locator('.wrq-dues button').allInnerTexts(),['오늘 17:00','오늘 중','직접 지정']);
-  assert.deepEqual(await m.locator('.wrq-cond>*').allInnerTexts(),['✓ 고객 연락 시도','✓ 통화 결과 기록','✓ 다음 행동 + 날짜 등록','이 기록이 저장되면 자동 완료 · 따로 [완료] 없음']);
-  assert.equal(one(await m.locator('.wrq-memo').innerText()),'AI14일 미응대 건입니다. 오늘 고객 연락 후 결과와 다음 일정을 CRM에 남겨주세요.');
+  assert.deepEqual(await m.locator('.wrq-dues:not(.wrq-states) button').allInnerTexts(),['오늘 17:00','오늘 중','직접 지정']);
+  /* CRM 에 접촉 기록이 없는 건 = '응대 여부 모름'이 기본(미응대라고 단정하지 않는다) · 상태를 바꾸면 문구 · 완료 안내가 따라 바뀐다 */
+  assert.deepEqual(await m.locator('.wrq-states button').evaluateAll(l=>l.map(b=>[b.textContent,b.getAttribute('aria-pressed')])),[['응대 여부 모름','true'],['미응대 확인','false'],['고객이 연락일 지정','false'],['자료 부족','false']]);
+  assert.deepEqual(await m.locator('.wrq-cond>*').allInnerTexts(),['✓ 고객 연락 시도','✓ 통화 결과 기록','✓ 다음 행동 + 날짜 등록','기존 응대가 확인되면 담당이 [회신] · 새 연락 기록이 저장되면 자동 완료']);
+  assert.equal(one(await m.locator('.wrq-memo').innerText()),'AI14일 지남 · CRM 연락 기록 없음 — 기존 통화 여부를 확인하고 결과를 등록해 주세요. 연락 전이었다면 연락 후 결과와 다음 일정을 남겨 주세요.');
+  await m.locator('.wrq-states [data-v="promised"]').click();await page.waitForTimeout(120);assert.equal(one(await m.locator('.wrq-memo').innerText()),'AI14일 지남 · 고객이 정한 약속일에 연락하도록 일정을 확인해 주세요.');
+  await m.locator('.wrq-states [data-v="none"]').click();await page.waitForTimeout(120);assert.equal(one(await m.locator('.wrq-cond small').innerText()),'이 기록이 저장되면 자동 완료 · 따로 [완료] 없음');
+  assert.equal(one(await m.locator('.wrq-memo').innerText()),'AI14일 지남 · 첫 연락 후 결과와 다음 일정을 남겨 주세요. 부재면 재연락 일정을 정해 주세요.');
   if(shot)await page.screenshot({path:shot+'-modal-rep.png'});
   await m.locator('[data-wr="send"]').click();await page.waitForTimeout(350);
   assert.equal(await heroN(),'4');assert.equal((await waits()).length,2);
@@ -133,7 +144,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const c1=top.locator('.wrq-in').first();
   assert.equal(one(await c1.locator('.hd').innerText()),'관리자 요청 [서울 강남] 강변삼부아파트 첫 연락 14일 지연 송보람 · 오늘 10:00 · 기한 '+DUE['오늘 17:00']);
   assert.equal(await c1.locator('.hd em').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(209, 74, 63)');
-  assert.equal(await c1.locator('.memo').innerText(),'"14일 미응대 건입니다. 오늘 고객 연락 후 결과와 다음 일정을 CRM에 남겨주세요."');
+  assert.equal(await c1.locator('.memo').innerText(),'"14일 지남 · 첫 연락 후 결과와 다음 일정을 남겨 주세요. 부재면 재연락 일정을 정해 주세요."');
   assert.equal(await c1.locator('.call').innerText(),'전화 010-1234-5612');assert.deepEqual(await c1.locator('.res button').allInnerTexts(),['연결됨','견적요청','검토중','부재']);
   assert.equal(one(await c1.locator('.nx').innerText()),'다음 행동 AI결과를 고르면 제안');assert.equal(one(await c1.locator('.ft').innerText()),'결과를 골라야 저장 저장');assert.equal(await c1.locator('[data-wr="save"]').isDisabled(),true);
   assert.equal(await page.evaluate(()=>__db.find(r=>r.id==='r2').status),'sent','화면에 보였다고 담당 확인으로 적지 않는다(노출 ≠ 확인)');
