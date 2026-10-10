@@ -54,12 +54,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 비교 창 */
   await v.locator('.plv-row',{hasText:'강동 롯데캐슬퍼스트'}).locator('.plv-cta').click();await page.waitForTimeout(200);
   const d=page.locator('#dupDialog.on .dv-box');assert.equal(await d.count(),1);assert.equal(await page.evaluate(()=>Math.round(document.querySelector('.dv-box').getBoundingClientRect().width)),760);
-  assert.match(await d.locator('.dv-judge.a').innerText(),/판단 · 같은 현장 · 공사 확인 필요[\s\S]*근거: 주소 동일 · 관리사무소 전화 동일[\s\S]*제안: 정보 보완 뒤 판단[\s\S]*확률은 표시하지 않습니다/);
-  assert.deepEqual(await d.locator('.dv-cmp>div:not(.dv-ch) span').allInnerTexts(),['종류','이름','주소','관리사무소 전화','담당','사업유형','단계','금액','등록','접수 시각','연락처 끝자리']);
+  assert.match(await d.locator('.dv-judge.a').innerText(),/판단 · 같은 현장 · 공사 확인 필요[\s\S]*근거: 주소 동일 · 관리사무소 전화 동일[\s\S]*다음 확인: 공사 범위 · 실제 추진 시기 · 기존 상담 관계[\s\S]*확률은 표시하지 않습니다/);/* data_review 11: 애매한 건에는 합치기를 추천하지 않고 다음 확인까지만 */
+  assert.deepEqual(await d.locator('.dv-cmp>div:not(.dv-ch) span').allInnerTexts(),['종류','이름','주소','관리사무소 전화','담당','사업유형','단계','금액','등록','접수 시각','연락처']);
   assert.deepEqual(await d.locator('.dv-cmp>div.diff span').allInnerTexts(),['이름','담당','등록','접수 시각'],'서로 다른 값만 노란 칸');
   assert.equal(await d.locator('.dv-cmp>div.diff em').first().evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(255, 248, 225)');
-  assert.match(await d.locator('.dv-note').innerText(),/대표 기록은 '먼저 등록'으로 자동 정하지 않습니다[\s\S]*어떤 원본도 지우지 않습니다[\s\S]*검토 전용이라 아래 버튼이 잠겨 있습니다/);
-  assert.deepEqual(await d.locator('.dv-foot button').allInnerTexts(),['다른 건 · 그대로 두기','현장만 묶기','합치기 실행']);assert.equal(await d.locator('.dv-foot button:disabled').count(),3,'검토 전용 = 잠김');
+  assert.match(await d.locator('.dv-note').innerText(),/대표 기록을 자동으로 정하지 않습니다[\s\S]*어떤 원본도 지우지 않습니다[\s\S]*검토 전용이라 아래 버튼이 잠겨 있습니다/);
+  assert.deepEqual(await d.locator('.dv-foot button').allInnerTexts(),['다른 공사로 유지','담당에게 범위 확인 요청','현장만 묶기','합치기 (확인 후)']);assert.equal(await d.locator('.dv-foot button:disabled').count(),3,'검토 전용 = 잠김(범위 확인 요청 문구 복사만 열림)');
   if(shot)await page.screenshot({path:shot+'-compare.png'});
   await page.keyboard.press('Escape');assert.equal(await page.locator('#dupDialog.on').count(),0);
   /* 서버 처리 경로가 켜진 상태: 버튼 → 기존 «미리보기 → 확인 → 처리» 창(고른 처리 방식으로) + 처리 이력 */
@@ -67,7 +67,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal((await v.locator('.plv-pills button').allInnerTexts())[6],'처리 완료 1');
   await v.locator('.plv-row',{hasText:'역북금강아파트'}).locator('.plv-cta').click();await page.waitForTimeout(200);
   /* 문의끼리: 예전 [연결만] 자리는 상담 연결 버튼(inquiry-consultation-link.js) — 서버 함수가 허용 목록에 없으면 잠긴 채 보인다 */
-  assert.equal(await d.locator('.dv-foot button:disabled:not([data-icl])').count(),0);assert.deepEqual(await d.locator('.dv-foot [data-icl]').evaluateAll(l=>l.map(b=>[b.textContent.trim(),b.disabled,b.title])),[['같은 상담으로 연결',true,'서버 적용 뒤에 열립니다']]);assert.equal(await d.locator('[data-dd="inquiry_activity"]').count(),0,'옛 연결만 경로 없음');
+  assert.deepEqual(await d.locator('.dv-foot button:disabled:not([data-icl])').evaluateAll(l=>l.map(b=>[b.classList.contains('dv-primary'),/되돌리기 미지원|확인 필요/.test(b.title)])),[[true,true]],'합치기만 잠김(되돌리기 미지원 또는 공사 확인 전) · 나머지는 열림');assert.deepEqual(await d.locator('.dv-foot [data-icl]').evaluateAll(l=>l.map(b=>[b.textContent.trim(),b.disabled,b.title])),[['같은 상담으로 연결',true,'서버 적용 뒤에 열립니다']]);assert.equal(await d.locator('[data-dd="inquiry_activity"]').count(),0,'옛 연결만 경로 없음');
+  /* 되돌리기를 서버 경로가 지원한다고 알려 줄 때만 [합치기 실행]이 열린다(data_review 13) */
+  await page.evaluate(()=>{DupV2.close();DataCleanupUI.canUndo=()=>true;});await v.locator('.plv-row',{hasText:'역북금강아파트'}).locator('.plv-cta').click();await page.waitForTimeout(200);
   await d.locator('.dv-foot [data-dd="inquiry_merge"]').click();await page.waitForTimeout(300);
   assert.equal(await page.locator('#dupDialog.on').count(),0);assert.equal(await page.locator('#cleanup-dialog').count(),1,'기존 처리 창');assert.equal(await page.locator('#cleanup-action').inputValue(),'inquiry_merge','고른 처리 방식으로 열림');
   assert.equal(await page.locator('#cleanup-save').isDisabled(),true,'미리보기 전에는 처리할 수 없음');
