@@ -25,7 +25,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     activities:[act('a'+n+'1','방문','현장 방문 · 2개 층 바닥 들뜸 확인',day(-12)+'T15:00:00+09:00',who),act('a'+n+'2','전화','통화 연결 · 방문 일정 협의',day(-30)+'T10:20:00+09:00',who)]},extra||{});
    B={deals:[
     mk(1,'[서울 노원] 상계주공7단지','POUR솔루션','이필선','consulting',{next_action:{id:'n1',text:'견적 요청 등록',type:'후속접촉',due:day(-7),status:'open'}}),
-    mk(2,'[경기 평택] 오뚜기 포승공장','POUR솔루션','이필선','sent',{amt:57400000,address:'경기 평택시 포승읍 포승공단'}),
+    mk(2,'[경기 평택] 오뚜기 포승공장','POUR솔루션','이필선','sent',{amt:57400000,address:'경기 평택시 포승읍 포승공단',activities:[act('a21','이메일','견적서 발송 · 임석재 소장',day(-20)+'T11:00:00+09:00','이필선'),act('a22','방문','현장 방문 · 2개 층 바닥 들뜸 확인',day(-12)+'T15:00:00+09:00','이필선')]}),
     mk(3,'[서울 마포] 성산시영아파트','석민이앤씨','김성민','rapport',{amt:380000000,quote_versions:[{version_no:1,amount:410000000,created_at:day(-60)},{version_no:2,amount:380000000,created_at:day(-40)}],next_action:{id:'n3',text:'고객 약속: 입대의 결과 확인 연락',type:'전화',due:day(4),status:'open'}}),
     mk(4,'[경기 고양] 햇빛마을23단지','석민이앤씨','이필선','bidding',{amt:420000000,stage_contexts:{bidding:{fields:{bid_deadline:day(2)}}},next_action:{id:'n4',text:'제안서 팀장 공유 · 제출 준비',type:'후속접촉',due:day(1),status:'open'}}),
     mk(5,'[경기 평택] 평택비전지웰푸르지오','석민이앤씨','황윤선','contract',{amt:1120000000,stage_contexts:{contract:{fields:{contract_date:'2026-01-26',contract_amount:1043900000}}},next_action:{id:'n5',text:'계약 체결 확인',type:'전화',due:day(-3),status:'open'}}),
@@ -37,7 +37,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    window.pushWrite=()=>'req';window.__rpc=[];
    SB={rpc:async(n,a)=>{__rpc.push([n,a]);if(n==='crm_deal_win_list_v1')return {data:{ok:true,rows:[],advisory:[]}};
-    if(n==='crm_deal_stage_fields_update_v1'){const p=a.p||{};return {data:{ok:true,deal_id:p.deal_id||p.opportunity_id,stage:p.stage,fields:p.fields||{},version:2,stage_contexts:{[p.stage||'sent']:{fields:p.fields||{}}}}};}
+    if(n==='crm_deal_stage_fields_update_v1'){const p=a.p||{};return {data:{ok:true,deal_id:p.deal_id||p.opportunity_id,stage:p.stage,fields:p.fields||{},version:2,stage_context:{to:p.stage_code||'sent',fields:p.fields||{}}}};}
     return {data:{ok:true,tasks:[],entries:[],sites:[],requests:[],links:[],rows:[]}};}};TOKEN='test';OpsStore.aiOn=()=>false;
    window.__open=async(i)=>{try{closeDetail();}catch(e){}await DealWin.load();drwDeal(JSON.stringify(B.deals[i]));};
    window.__md=n=>{const t=new Date(Date.now()+n*864e5);return (t.getMonth()+1)+'.'+t.getDate();};
@@ -50,56 +50,92 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     parts:[...v.querySelectorAll('.dvs-task>*')].filter(n=>getComputedStyle(n).display!=='none').map(n=>n.className.split(' ').pop()),
     lb:t('.dv7-lb'),task:t('.dvs-tt>b'),due:t('.dvs-tt>span'),kv:[...v.querySelectorAll('.dv7-kvs>span')].map(n=>n.textContent),btns:[...v.querySelectorAll('.dvs-task button')].filter(b=>b.offsetParent).map(b=>[b.textContent.trim(),b.classList.contains('fill')]),
     next:t('.dv7-next>div'),info:t('.dv7-info>div'),ai:t('.dv7-ai'),old:v.querySelectorAll('.dw-right .dv7-first,.dw-right .dv7-grps,.dw-right .dv7-sub,.dw-right .dvs-aux:not([style*="none"])').length,
-    right:[...r.querySelectorAll('.da-stage-summary,.dcb,.dvu,.dp6,.dv3-near')].length,drawerHidden:v.querySelector('.dv7-drawer').hidden,inDrawer:[...v.querySelectorAll('.dv7-pbody>*')].map(n=>n.className.split(' ').filter(c=>/^(da-stage-summary|dv3-slot|dcb|dvu|dp6|dv3-near)$/.test(c))[0]||n.className),
+    right:[...r.querySelectorAll('.da-stage-summary,.dcb,.dvu,.dp6,.dv3-near')].length,drawerHidden:v.querySelector('.dv7-drawer').hidden,inDrawer:[...v.querySelectorAll('.dv7-pbody>*')].map(n=>n.className.split(' ').filter(c=>/^(dv7-fill|dv3-slot|dcb|dvu|dp6|dv3-near)$/.test(c))[0]||n.className),summ:v.querySelectorAll('.da-stage-summary').length,
     left:[...v.querySelectorAll('.dv3-left .dv7-h, .dv3-left header>b')].map(n=>n.textContent.trim()),leftAi:getComputedStyle(v.querySelector('.dv3-left .sth-ai')||v).display,plan:v.querySelectorAll('.dp6-plan').length};});
-  /* ① 7단계 + 과거 이관: 같은 구성 · 노트북에서 스크롤 없이 끝 */
+  /* ① 7단계 + 과거 이관: 같은 구성 · 노트북에서 스크롤 없이 끝 · 확인할 정보는 단계별 최대 3개 */
   const TASK=['견적 요청 등록','발송 내역 확인 · 고객 반응 기록','입대의 결과 확인 연락','제안서 팀장 공유 · 제출 준비','계약 체결 확인','준공 후 사후 연락','실주 기록 완성','영업 재개 판단'];
   const BTN=['견적 요청 등록','발송 내역 확인','연락하고 결과 기록','제출 준비 확인','계약서 확인하기','사후 연락하기','실주 기록 채우기','영업 재개'];
+  const INFO=['도면 · 현장 사진 · 공사 시기','발송일 · 수신자 · 고객 반응 · 공사 시기','관리 상태 · 경쟁사','공법 비교표 · 경쟁 업체 수 · 제출 접수증','계약서 파일 · 착공일','실적 정보 · 추가 공종','실주 사유 · 재영업 가능 여부','단계 정하기 · 다음 행동 · 날짜 · 마지막 연락'];
   for(let i=0;i<8;i++){
    await open(i);const s=await snap(),closed=i===5||i===6;
    assert.equal(s.fit,true,(i+1)+'번: 오른쪽 칸이 스크롤 없이 끝난다(넘침 '+s.over+'px)');
    assert.deepEqual(s.vis,['dvs-task'],(i+1)+'번: 오른쪽에는 지금 처리 카드 하나만: '+s.vis);
-   assert.deepEqual(s.parts,['dv7-lb','dvs-tt','dv7-kvs','dv7-btns','dv7-next','dv7-ai','dv7-info'],(i+1)+'번: 지금 처리 · 주 버튼 · 다음 업무 · AI 한 줄 · 확인할 정보 순서: '+s.parts);
+   assert.deepEqual(s.parts,['dv7-lb','dvs-tt','dv7-kvs','dv7-btns','dv7-next','dv7-info'],(i+1)+'번: 지금 처리 · 주 버튼 · 다음 업무 · 확인할 정보 순서(AI 한 줄은 AI 결과가 있을 때만): '+s.parts);
    assert.equal(s.lb,'지금 처리');assert.equal(s.task,TASK[i]);
-   assert.deepEqual([s.kv[0],s.kv[2],s.kv[4]],['확인됨','확인할 것','완료 조건'],'세 줄은 회색 작은 글씨로만');
+   assert.deepEqual([s.kv.length,s.kv[0],s.kv[2]],[4,'확인됨','완료 조건'],'확인됨 · 완료 조건만 회색 작은 글씨(확인할 것 줄은 지움): '+s.kv);
    assert.deepEqual(s.btns,closed?[[BTN[i],true],['채우기',false]]:[[BTN[i],true],[i===1||i===7?'등록하기':'변경',false],['채우기',false]],(i+1)+'번: 주 버튼 1개 · 보조 단추(연락하기 · 결과 기록 · 다음 업무) 없음: '+JSON.stringify(s.btns));
-   assert.match(s.next,/^다음 업무 · 일정 /);assert.match(s.info,/^확인할 정보 \d+ /);
+   assert.match(s.next,/^다음 업무 · 일정 /);assert.equal(s.info.replace(/^확인할 정보 \d+ /,''),INFO[i],(i+1)+'번: 확인할 정보 = 단계 표의 먼저 확인 3개 안: '+s.info);
+   assert.ok(Number(s.info.match(/^확인할 정보 (\d+)/)[1])<=3,'확인할 정보는 단계별 최대 3개');assert.doesNotMatch(s.info,/담당 최종 검토|무엇을 발송했나요|결정권자 · /);
    assert.equal(s.old,0,'먼저 확인 · 요약 묶음 · 보조 단추 · 지침 줄은 오른쪽에 없다');assert.equal(s.right,0,'예전 상자는 오른쪽에 남지 않는다');assert.equal(s.plan,0,'지금 할 일 5줄도 확인할 정보로 합침');
-   assert.equal(s.drawerHidden,true);assert.deepEqual(s.inDrawer.filter(x=>x!=='dv3-slot'),['da-stage-summary','dcb','dvu','dp6','dv3-near'],'상자들은 가운데 칸 패널에(기능 그대로)');
+   assert.equal(s.summ,0,'deal-same 의 이 단계 필수 정보 · 빠진 정보 블록은 상세 창 어디에도 그리지 않는다');
+   assert.equal(s.drawerHidden,true);assert.deepEqual(s.inDrawer.filter(x=>x!=='dv3-slot'),['dv7-fill','dcb','dvu','dp6','dv3-near'],'상자들은 가운데 칸 패널에(기능 그대로)');
    assert.deepEqual(s.left.slice(0,4),['연락처 · 결정권자','기본 정보','지금 영업건','이 단지 지난 영업 0']);assert.equal(s.leftAi,'none','왼쪽 AI 문장은 오른쪽 한 줄로');
-   assert.match(s.ai,/^AI\S/);
+   assert.equal(s.ai,null,'AI 결과가 없으면 문장을 지어내지 않는다');
    assert.equal(await V.locator('.dvs-kv>span').nth(1).evaluate(n=>getComputedStyle(n).fontSize),'11.5px');
    assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#detailView .dvs-task *')].filter(e=>e.offsetParent&&e.scrollWidth>e.clientWidth+1&&getComputedStyle(e).overflow!=='visible').length),0,'글 잘림 없음');
   }
+  /* AI 한 줄 = 정말 한 줄: 첫마디 또는 다음 행동 제안 1문장(단지 이력 문장은 붙이지 않는다) */
+  await open(1);
+  await page.evaluate(()=>{OpsStore.aiOn=()=>true;DealKeyman.ai=()=>({next:{how:'전화',what:'임석재 소장에게 자료 수신 확인',days:0}});DealDetailV3.apply();});await page.waitForTimeout(400);
+  let s=await snap();assert.equal(s.ai,'AI전화 · 임석재 소장에게 자료 수신 확인 · 오늘');assert.doesNotMatch(s.ai,/이 단지와는|첫 영업/);assert.equal(s.fit,true);
+  await page.evaluate(()=>{OpsStore.aiOn=()=>false;delete DealKeyman.ai;DealDetailV3.apply();});
   /* ② 자료 발송완료: 값 */
-  await open(1);let s=await snap();
+  await open(1);s=await snap();
   assert.equal(s.due,'발송 후 7일 발송일 없음 · 판정 불가');assert.equal(s.next,'다음 업무 · 일정 등록 없음');
-  assert.equal(s.info,'확인할 정보 8 결정권자 · 담당 최종 검토 · 무엇을 발송했나요? 외 5','빠진 정보 · 먼저 확인을 한 줄로 합침(같은 것은 한 번)');
-  /* 왼쪽 기본 정보: 주소 · 공종 · 공사 예정 · 유입 경로 — 값을 누르면 그 자리에서 고친다 */
+  assert.equal(s.info,'확인할 정보 3 발송일 · 수신자 · 고객 반응 · 공사 시기','자료 발송완료 = 발송일 · 수신자 / 고객 반응 / 공사 시기');
+  /* 왼쪽 기본 정보: [입력] · [수정] = 누른 줄 아래에서 바로(관리정보 수정 패널을 열지 않는다) */
   assert.deepEqual(await V.locator('.dv7-basic .dv3-row').evaluateAll(l=>l.map(r=>[r.querySelector('span').textContent,r.querySelector('.dv3-val').textContent,getComputedStyle(r.querySelector('.dv3-val'),'::after').content])),[['주소','경기 평택시 포승읍 포승공단','"수정"'],['공종','미입력','"입력"'],['공사 예정','미입력','"입력"'],['유입 경로','미입력','"입력"']]);
+  const mgmt=()=>page.evaluate(()=>[document.querySelectorAll('#ddvPanel,#detailAction,.dp-info').length,/관리정보 수정/.test(document.getElementById('detailView').innerText)]);
+  const saved=()=>page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_deal_stage_fields_update_v1').map(x=>x[1].p.fields));
   await V.locator('.dv7-basic .dv3-row',{hasText:'공사 예정'}).locator('.dv3-val').click();await page.waitForTimeout(300);
-  assert.equal(await V.locator('.dv7-basic input[data-dv3in="left"][data-key="construction_plan"]').count(),1,'공사 예정 = 왼쪽에서 바로 입력');
-  await page.keyboard.press('Escape');await page.waitForTimeout(200);
+  assert.deepEqual(await V.locator('.dv7-be .chips button').allInnerTexts(),['올해','내년','그 이후','미정'],'공사 예정 = 칩 1개 선택');assert.deepEqual(await mgmt(),[0,false],'관리정보 수정 패널은 열리지 않는다');
+  assert.equal(await V.locator('.dv7-basic .dv3-row',{hasText:'공사 예정'}).evaluate(n=>n.nextElementSibling.className),'dv7-be','누른 줄 바로 아래에 펼침');
+  await V.locator('.dv7-be .chips button',{hasText:'내년'}).click();await page.waitForTimeout(200);await V.locator('.dv7-be [data-dv3="bsave"]').click();await page.waitForTimeout(500);
+  assert.deepEqual(await saved(),[{construction_plan:'내년'}]);
+  await V.locator('.dv7-basic .dv3-row',{hasText:'유입 경로'}).locator('.dv3-val').click();await page.waitForTimeout(300);
+  assert.deepEqual(await V.locator('.dv7-be .chips button').allInnerTexts(),['홈페이지','전화','소개','기존 고객']);
+  await V.locator('.dv7-be .chips button',{hasText:'소개'}).click();await V.locator('.dv7-be [data-dv3="bsave"]').click();await page.waitForTimeout(500);
+  assert.deepEqual((await saved()).slice(1),[{inflow_path:'소개'}]);
+  await V.locator('.dv7-basic .dv3-row',{hasText:'주소'}).locator('.dv3-val').click();await page.waitForTimeout(300);
+  assert.equal(await V.locator('.dv7-be input[data-dv3be="addr"]').inputValue(),'경기 평택시 포승읍 포승공단','주소 = 검색 입력칸 1개');
+  await V.locator('.dv7-be input').fill('경기 평택시 포승읍 새길 1');await V.locator('.dv7-be input').press('Enter');await page.waitForTimeout(500);
+  assert.deepEqual((await saved()).slice(2),[{site_address:'경기 평택시 포승읍 새길 1'}],'주소는 Enter · 저장으로');assert.deepEqual(await mgmt(),[0,false]);
+  await V.locator('.dv7-basic .dv3-row',{hasText:'주소'}).locator('.dv3-val').click();await page.waitForTimeout(250);await V.locator('.dv7-be [data-dv3="bcancel"]').click();await page.waitForTimeout(250);assert.equal(await V.locator('.dv7-be').count(),0,'취소 = 접힘');
+  assert.equal(await V.locator('.dv7-basic .dv3-row',{hasText:'공종'}).locator('.dv3-val').getAttribute('data-dv3'),'work','공종 = 기존 공종 분류 칩(그 줄 아래)');
   /* 머리 예상금액 = 누르면 고치는 자리(오른쪽 표에는 없다) */
-  assert.equal(await V.locator('.dv7-line2 .dv7-amt').count(),1);assert.equal(await V.locator('.dv7-pbody .dv3-row',{hasText:'예상 금액'}).count(),0);
-  /* ③ [채우기] = 가운데 칸 패널: 응대 이력 자리에 뜨고 입력칸은 그대로 보인다 */
+  assert.equal(await V.locator('.dv7-line2 .dv7-amt').count(),1);assert.equal(await V.locator('.dv7-pbody .dv3-row').count(),0);
+  /* ③ [채우기] = 가운데 칸: 확인할 정보 3줄만(줄마다 그 자리에서 입력 · 저장) */
   await V.locator('.dv7-info button').click();await page.waitForTimeout(400);
   const P=()=>page.evaluate(()=>{const v=document.getElementById('detailView'),d=v.querySelector('.dv7-drawer'),r=d.getBoundingClientRect(),c=v.querySelector('.idv-composer').getBoundingClientRect(),ce=v.querySelector('.dw-center').getBoundingClientRect();
-   return {p:d.dataset.p,hidden:d.hidden,head:d.querySelector('.dv7-phead .t')?d.querySelector('.dv7-phead .t').innerText.replace(/\s+/g,' ').trim():'',shown:[...d.querySelectorAll('.dv7-pbody>*')].filter(n=>getComputedStyle(n).display!=='none').map(n=>n.className.split(' ').filter(c=>/^(da-stage-summary|dv3-slot|dcb|dvu|dp6|dv3-near)$/.test(c))[0]),aboveComposer:Math.abs(r.bottom-c.top)<=2,inCenter:Math.abs(r.left-ce.left)<=1&&Math.abs(r.right-ce.right)<=1,composer:c.height>40};});
-  let p=await P();assert.deepEqual([p.p,p.hidden,p.head],['info',false,'‹ 확인할 정보 이 단계에 필요한 것만 · 칸을 누르면 바로 입력']);assert.deepEqual(p.shown.filter(x=>x!=='dv3-slot'),['da-stage-summary'],'확인할 정보 패널 = 이 단계 정보 상자 하나');
+   return {p:d.dataset.p,hidden:d.hidden,head:d.querySelector('.dv7-phead .t')?d.querySelector('.dv7-phead .t').innerText.replace(/\s+/g,' ').trim():'',shown:[...d.querySelectorAll('.dv7-pbody>*')].filter(n=>getComputedStyle(n).display!=='none').map(n=>n.className.split(' ').filter(c=>/^(dv7-fill|dv3-slot|dcb|dvu|dp6|dv3-near)$/.test(c))[0]),aboveComposer:Math.abs(r.bottom-c.top)<=2,inCenter:Math.abs(r.left-ce.left)<=1&&Math.abs(r.right-ce.right)<=1,composer:c.height>40,text:d.innerText.replace(/\s+/g,' ').trim()};});
+  let p=await P();assert.deepEqual([p.p,p.hidden,p.head],['info',false,'‹ 확인할 정보 이 단계에 필요한 것만 · 줄마다 바로 입력']);assert.deepEqual(p.shown.filter(x=>x!=='dv3-slot'),['dv7-fill'],'확인할 정보 패널 = 3줄 화면 하나');
   assert.deepEqual([p.aboveComposer,p.inCenter,p.composer],[true,true,true],'가운데 칸 안 · 응대 기록 입력칸 바로 위까지');
-  assert.deepEqual(await V.locator('.dv7-pbody .da-stage-summary .dv3-row>span').allInnerTexts(),['결정권자','담당 최종 검토','무엇을 발송했나요?','견적 Version','수신자','발송일','고객 반응']);
-  assert.deepEqual(await V.locator('.dv7-xrows>div').evaluateAll(l=>l.map(r=>r.innerText.replace(/\s+/g,' ').trim())),['미입력 공사 예정 입력'],'상자에 칸이 없는 확인 항목은 패널 머리 아래에서 그 자리로');
-  /* 패널 안에서 바로 입력 → 기존 저장 길 */
-  await V.locator('.dv7-pbody .dv3-row',{hasText:'수신자'}).locator('.dv3-val').click();await page.waitForTimeout(300);
-  const inp=V.locator('.dv7-pbody input[data-dv3in="stage"][data-key="recipient"]');assert.equal(await inp.count(),1);await inp.fill('임석재 소장');await inp.press('Enter');await page.waitForTimeout(600);
-  assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_deal_stage_fields_update_v1').map(x=>x[1].p.fields)),[{recipient:'임석재 소장'}],'패널에서 채운 값은 같은 저장 함수로');
+  assert.deepEqual(await V.locator('.dv7-fill .dv7-fr .h b').allInnerTexts(),['발송일 · 수신자','고객 반응','공사 시기'],'오른쪽과 같은 3개');
+  assert.doesNotMatch(p.text,/빠진 정보|담당 최종 검토|무엇을 발송했나요|견적 Version|입력됨|완료$|공사 예정/,'옛 빠진 정보 목록 · 공사 예정 중복 · 담당 최종 검토 · [완료] 없음: '+p.text);
+  /* 공사 시기 줄은 왼쪽 기본 정보로 안내(가운데에 다시 안 나옴) */
+  await V.locator('.dv7-fr',{hasText:'공사 시기'}).locator('[data-dv3="be"]').click();await page.waitForTimeout(300);assert.equal(await V.locator('.dv7-basic .dv7-be').count(),1,'공사 시기 = 왼쪽 기본 정보에서만 입력');
+  await V.locator('.dv7-be [data-dv3="bcancel"]').click();await page.waitForTimeout(250);
+  /* 줄에서 바로 입력 → 기존 저장 길 */
+  const before=(await saved()).length;
+  await V.locator('.dv7-fill input[data-dv3f="sent_date"]').fill('2026-10-01');await V.locator('.dv7-fill input[data-dv3f="recipient"]').fill('임석재 소장');await V.locator('.dv7-fill [data-dv3="fsave"]').click();await page.waitForTimeout(600);
+  assert.deepEqual((await saved()).slice(before),[{sent_date:'2026-10-01',recipient:'임석재 소장'}],'발송일 · 수신자 = 한 줄에서 같은 저장 함수로');
   p=await P();assert.equal(p.p,'info','저장 뒤에도 패널은 열린 채');
-  /* [‹] = 응대 이력으로 */
+  /* 고객 반응 = 응대 기록 입력칸으로 */
+  await V.locator('.dv7-fr',{hasText:'고객 반응'}).locator('[data-dv3="fgo"]').click();await page.waitForTimeout(400);p=await P();assert.equal(p.hidden,true);assert.equal(await page.evaluate(()=>document.activeElement&&document.activeElement.tagName),'TEXTAREA','고객 반응 = 가운데 응대 기록 입력칸');
+  /* ④ [발송 내역 확인] = 발송 내역 화면(기존 기록 찾기 → 발송일 · 수신자 · 보낸 자료 · 견적 버전 · 확인 불가) */
+  await V.locator('.dvs-primary').click();await page.waitForTimeout(500);p=await P();
+  assert.deepEqual([p.p,p.hidden,p.head],['send',false,'‹ 발송 내역 기존 기록에서 찾거나 직접 등록 · 확인할 수 없으면 [확인 불가]']);assert.deepEqual(p.shown.filter(x=>x!=='dv3-slot'),['dv7-fill']);
+  assert.match(p.text,/① 기존 기록에서 찾기 \d+\.\d+ · 이메일 .*견적서 발송 · 임석재 소장 이걸로 등록 ② 직접 등록 발송일 · 수신자 보낸 자료 견적서 제안서 공법자료 기타자료 견적 버전 등록된 견적 없음 견적 버전 등록 › 확인 불가 저장/,p.text);
+  assert.doesNotMatch(p.text,/무엇을 발송했나요|담당 최종 검토/,'질문 문구 대신 [보낸 자료]');
+  await V.locator('.dv7-cand button').click();await page.waitForTimeout(300);assert.match(await V.locator('.dv7-send input[data-dv3f="sent_date"]').inputValue(),/^\d{4}-\d{2}-\d{2}$/,'[이걸로 등록] = 발송일 채움');
+  await V.locator('.dv7-send [data-dv3="sendmat"]',{hasText:'견적서'}).click();await V.locator('.dv7-send [data-dv3="sendmat"]',{hasText:'제안서'}).click();await page.waitForTimeout(250);
+  assert.deepEqual(await V.locator('.dv7-send [data-dv3="sendmat"]').evaluateAll(l=>l.map(b=>b.getAttribute('aria-pressed'))),['true','true','false','false']);
+  await V.locator('.dv7-send input[data-dv3f="recipient"]').fill('임석재 소장');
+  const b4=(await saved()).length;await V.locator('.dv7-send [data-dv3="fsave"]').click();await page.waitForTimeout(600);
+  assert.deepEqual((await saved()).slice(b4).map(f=>[Object.keys(f).sort().join(','),f.materials,f.recipient]),[['materials,recipient,sent_date',['견적서','제안서'],'임석재 소장']],'발송 내역 저장 = 발송일 · 수신자 · 보낸 자료');
+  await V.locator('.dv7-send [data-dv3="sendnone"]').click();await page.waitForTimeout(500);assert.deepEqual((await saved()).slice(-1),[{sent_date_check:'확인 불가'}],'[확인 불가] = 발송일 확인 불가로 기록');
   await V.locator('.dv7-phead [data-dv3="p7close"]').click();await page.waitForTimeout(300);p=await P();assert.equal(p.hidden,true);assert.equal(await V.locator('.idv-thread').isVisible(),true);
-  /* 주 버튼(발송 내역 확인) = 같은 패널 */
-  await V.locator('.dvs-primary').click();await page.waitForTimeout(400);p=await P();assert.deepEqual([p.p,p.hidden],['info',false]);
-  /* ④ [···] 메뉴: 오른쪽에서 뺀 상자 4개 */
+  /* ⑤ [···] 메뉴: 오른쪽에서 뺀 상자 4개 */
   await V.locator('.tf-more').click();await page.waitForTimeout(200);
   assert.deepEqual((await V.locator('.tf-menu [role=menuitem]').allInnerTexts()).slice(0,4),['결정 일정 · 특이조건 · 하자','참여 · 브랜드','영업 판단 · 내부 지원','근처 현장']);
   for(const [label,key,cls,title] of [['결정 일정 · 특이조건 · 하자','collab','dcb','결정 일정 · 막힌 곳 · 진척 · 특이조건 · 하자'],['참여 · 브랜드','units','dvu','참여 · 브랜드'],['영업 판단 · 내부 지원','prep','dp6','영업 판단 · 내부 지원'],['근처 현장','near','dv3-near','근처 현장']]){
@@ -124,18 +160,20 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* 다음 업무 [등록하기] = 그 줄 아래 빠른 선택(기존 저장 길) */
   await V.locator('.dv7-next button').click();await page.waitForTimeout(200);assert.deepEqual(await V.locator('.dvs-task .dv3-nextonly button').allInnerTexts(),['내일','3일 후','7일 후','직접 정하기','취소']);
   await V.locator('.dvs-task .dv3-nextonly [data-dv3="nextcancel"]').click();await page.waitForTimeout(200);
-  /* ⑤ 경쟁 · 입찰: 진행 조건 · 입찰 준비도 확인할 정보에 포함 · 그 자리로 보내는 단추 */
-  await open(3);s=await snap();assert.match(s.info,/^확인할 정보 1\d /);
+  /* ⑥ 경쟁 · 입찰: 비교표 · 경쟁 업체 수 · 접수증 3줄(진행 조건 · 입찰 준비는 [···] 메뉴) */
+  await open(3);s=await snap();assert.equal(s.info,'확인할 정보 3 공법 비교표 · 경쟁 업체 수 · 제출 접수증');
   await V.locator('.dv7-info button').click();await page.waitForTimeout(400);
-  const xr=await V.locator('.dv7-xrows>div').evaluateAll(l=>l.map(r=>r.innerText.replace(/\s+/g,' ').trim()));
-  assert.ok(xr.includes('미확인 예산 진행 조건 · 입찰 준비 열기')&&xr.some(x=>/^미입력 입찰 준비 \d+개 /.test(x)),'경쟁 · 입찰: '+JSON.stringify(xr));
-  await V.locator('.dv7-xrows button',{hasText:'진행 조건 · 입찰 준비 열기'}).first().click();await page.waitForTimeout(400);p=await P();assert.equal(p.p,'prep');
-  /* 계약 · 시공: 특이조건은 확인할 정보에 포함 */
-  await open(4);await V.locator('.dv7-info button').click();await page.waitForTimeout(400);assert.equal(await V.locator('.dv7-pbody .da-stage-summary .dvs-sp').count(),1,'계약 단계 = 특이조건 선택이 확인할 정보 패널에');
+  assert.deepEqual(await V.locator('.dv7-fill .dv7-fr .h b').allInnerTexts(),['공법 비교표','경쟁 업체 수','제출 접수증']);
+  assert.equal(await V.locator('.dv7-fr',{hasText:'경쟁 업체 수'}).locator('input[data-dv3f="competitor"]').count(),1);
+  await V.locator('.dv7-fr',{hasText:'공법 비교표'}).locator('[data-dv3="p7"]').click();await page.waitForTimeout(400);p=await P();assert.equal(p.p,'prep','공법 비교표 = 입찰 준비(영업 판단 · 내부 지원) 패널');
+  /* 계약 · 시공 · 실주 */
+  await open(4);await V.locator('.dv7-info button').click();await page.waitForTimeout(400);assert.deepEqual(await V.locator('.dv7-fill .dv7-fr .h b').allInnerTexts(),['계약서 파일','착공일']);
+  await open(6);await V.locator('.dv7-info button').click();await page.waitForTimeout(400);assert.deepEqual(await V.locator('.dv7-fill .dv7-fr .h b').allInnerTexts(),['실주 사유','재영업 가능 여부']);assert.equal(await V.locator('.dv7-fill select[data-dv3f="reengage"]').count(),1);
   if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'detail-right-fix.png')});
-  /* ⑥ 끄기: 예전처럼 오른쪽에 쌓인다 */
+  /* ⑦ 끄기: 예전처럼 오른쪽에 쌓인다 */
   await page.evaluate(()=>{closeDetail();G.dealRightKeep=true;drwDeal(JSON.stringify(B.deals[1]));});await page.waitForSelector('#detailView.dv7 .dvs-task .dv7-lb');await page.waitForTimeout(600);
   assert.deepEqual(await page.evaluate(()=>{const v=document.getElementById('detailView'),r=v.querySelector('.dw-right');return [v.classList.contains('dv7r'),v.querySelectorAll('.dv7-drawer').length,r.querySelectorAll(':scope>.da-stage-summary,:scope>.dcb,:scope>.dvu,:scope>.dp6').length,v.querySelectorAll('.dv7-basic').length,v.querySelectorAll('.dv7-first').length];}),[false,0,4,0,1]);
+
   assert.deepEqual(errs,[],'화면 오류 없음: '+errs.join(' | '));
   console.log('detail right fix ok');
  }finally{await browser.close();srv.close();}

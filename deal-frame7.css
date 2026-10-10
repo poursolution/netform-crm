@@ -132,7 +132,7 @@
 #detailView.ddv.dv3.dvt.dv7r .dv7-xrows button{flex:none;border:0;background:none;padding:0;margin:0;height:auto;min-height:0;width:auto;font:inherit;font-size:12px;font-weight:700;color:#2a52b8;cursor:pointer;box-shadow:none;white-space:nowrap}
 #detailView.ddv.dv3.dvt.dv7r .dv7-pbody{padding:14px 20px 20px;display:flex;flex-direction:column;gap:12px;min-width:0}
 #detailView.ddv.dv3.dvt.dv7r .dv7-pbody>*{display:none!important;margin:0}
-#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="info"] .dv7-pbody>.da-stage-summary:not(.dv3-old),#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="info"] .dv7-pbody>.dv3-slot[data-slot="stage"],#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="collab"] .dv7-pbody>.dcb,#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="units"] .dv7-pbody>.dvu,#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="prep"] .dv7-pbody>.dp6,#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="near"] .dv7-pbody>.dv3-near{display:flex!important}
+#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="info"] .dv7-pbody>.dv7-fill,#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="send"] .dv7-pbody>.dv7-fill,#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="info"] .dv7-pbody>.dv3-slot[data-slot="stage"]:not(:empty),#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="collab"] .dv7-pbody>.dcb,#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="units"] .dv7-pbody>.dvu,#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="prep"] .dv7-pbody>.dp6,#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="near"] .dv7-pbody>.dv3-near{display:flex!important}
 #detailView.ddv.dv3.dvt.dv7r .dv7-pbody>.da-stage-summary{flex-direction:column;border:0;box-shadow:none;background:none;padding:0;border-radius:0}
 
 #detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="near"] .dv7-pbody>.dv3-near{display:block!important}
@@ -142,3 +142,37 @@
 #detailView.ddv.dv3.dvt.dv7r:not(.dv7-own) .dv3-left .do-card{display:none}
 /* 값도 근거도 없는 줄은 '미확인' 한 단어 */
 #detailView.dv7r .dp6-row.nov>b,#detailView.dv7r .dp6-row.nov>small{display:none}
+
+/* ── 기본 정보 줄 아래 입력(관리정보 수정 패널 없이) ── */
+#detailView.ddv.dv3.dvt.dv7r .dv7-be{display:flex;flex-direction:column;gap:8px;background:#f8f9fb;border:1px solid #dfe5f7;border-radius:8px;padding:9px 10px;margin:2px 0 6px}
+#detailView.ddv.dv3.dvt.dv7r .dv7-be input{height:32px;border:1px solid #d9dde4;border-radius:7px;padding:0 9px;font:inherit;font-size:12.5px;background:#fff;color:#15171c;min-width:0;width:100%;box-sizing:border-box;margin:0;box-shadow:none}
+#detailView.ddv.dv3.dvt.dv7r .dv7-be .chips{display:flex;flex-wrap:wrap;gap:5px}
+#detailView.ddv.dv3.dvt.dv7r .dv7-be .chips button{border:1px solid #d9dde4;background:#fff;color:#374151;font:inherit;font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px;height:auto;min-height:0;width:auto;margin:0;box-shadow:none;cursor:pointer}
+#detailView.ddv.dv3.dvt.dv7r .dv7-be .chips button[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}
+#detailView.ddv.dv3.dvt.dv7r .dv7-be .b{display:flex;gap:6px;justify-content:flex-end}
+#detailView.ddv.dv3.dvt.dv7r .dv7-be .b button{border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:11.5px;border-radius:6px;padding:4px 10px;height:auto;min-height:0;width:auto;margin:0;box-shadow:none;cursor:pointer}
+#detailView.ddv.dv3.dvt.dv7r .dv7-be .b button.pri,#detailView.ddv.dv3.dvt.dv7r .dv7-sfoot button.pri,#detailView.ddv.dv3.dvt.dv7r .dv7-fr button.pri{background:#15171c;border-color:#15171c;color:#fff;font-weight:700}
+/* ── [채우기] 가운데 칸: 확인할 정보 3줄 · 발송 내역 ── */
+#detailView.ddv.dv3.dvt.dv7r .dv7-fill{flex-direction:column;gap:6px;min-width:0}
+#detailView.ddv.dv3.dvt.dv7r .dv7-fill-rows{display:flex;flex-direction:column}
+#detailView.ddv.dv3.dvt.dv7r .dv7-fr{display:flex;flex-direction:column;gap:6px;padding:11px 0;border-top:1px solid #f2f3f6;min-width:0}
+#detailView.ddv.dv3.dvt.dv7r .dv7-fr:first-child{border-top:0}
+#detailView.ddv.dv3.dvt.dv7r .dv7-fr .h{display:flex;align-items:center;gap:8px;font-size:13px}
+#detailView.ddv.dv3.dvt.dv7r .dv7-fr .h em{font-style:normal;font-size:11px;font-weight:700;border-radius:4px;padding:0 5px;line-height:1.6;white-space:nowrap;color:#6b7280;background:#f3f4f6}
+#detailView.ddv.dv3.dvt.dv7r .dv7-fr .h em.t-chk{color:#2a52b8;background:#eef3fe}
+#detailView.ddv.dv3.dvt.dv7r .dv7-fr .h em.t-late{color:#b42318;background:#fdecec}
+#detailView.ddv.dv3.dvt.dv7r .dv7-fr .c{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
+#detailView.ddv.dv3.dvt.dv7r .dv7-fr .c>small{font-size:11.5px;color:#9ca3af}
+#detailView.ddv.dv3.dvt.dv7r .dv7-in{height:32px;border:1px solid #d9dde4;border-radius:7px;padding:0 9px;font:inherit;font-size:12.5px;background:#fff;color:#15171c;min-width:0;flex:1 1 130px;max-width:240px;box-sizing:border-box;margin:0;box-shadow:none}
+#detailView.ddv.dv3.dvt.dv7r .dv7-fr .c button,#detailView.ddv.dv3.dvt.dv7r .dv7-sfoot button,#detailView.ddv.dv3.dvt.dv7r .dv7-cand button{border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12px;font-weight:700;border-radius:7px;padding:6px 11px;height:auto;min-height:0;width:auto;margin:0;box-shadow:none;cursor:pointer;white-space:nowrap}
+#detailView.ddv.dv3.dvt.dv7r .dv7-fr .c button.lnk{border:0;background:none;padding:2px 0;color:#2a52b8}
+#detailView.ddv.dv3.dvt.dv7r .dv7-chips button[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}
+#detailView.ddv.dv3.dvt.dv7r .dv7-chips button{border-radius:999px}
+#detailView.ddv.dv3.dvt.dv7r .dv7-fnone{margin:0;font-size:12.5px;color:#6b7280;padding:6px 0}
+#detailView.ddv.dv3.dvt.dv7r .dv7-send{display:flex;flex-direction:column;gap:14px}
+#detailView.ddv.dv3.dvt.dv7r .dv7-send>section>b{display:block;font-size:13px;margin-bottom:4px}
+#detailView.ddv.dv3.dvt.dv7r .dv7-cand{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid #f2f3f6;font-size:12.5px}
+#detailView.ddv.dv3.dvt.dv7r .dv7-cand>span:first-child{color:#6b7280;white-space:nowrap}
+#detailView.ddv.dv3.dvt.dv7r .dv7-cand>span:nth-child(2){min-width:0;overflow-wrap:anywhere}
+#detailView.ddv.dv3.dvt.dv7r .dv7-sfoot{display:flex;align-items:center;justify-content:flex-end;gap:8px;border-top:1px solid #eef0f3;padding-top:12px}
+#detailView.ddv.dv3.dvt.dv7r .dv7-sfoot .note{margin-right:auto;font-size:12px;color:#2a52b8}
