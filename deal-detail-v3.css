@@ -257,3 +257,6 @@ html:not(.crm-solo) #detailView.ddv.dv3{inset:16px max(16px,calc((100vw - 1640px
 #detailView.ddv.dv3 .ddv-talk .idv-msg[data-dv3k="chg"] .idv-meta em{display:none}
 #detailView.ddv.dv3 .dv3-slot[data-slot="fform"] .dact.pri{background:#15171c;border-color:#15171c;color:#fff}
 #detailView.ddv.dv3 .now-card.dv3-now .dv3-title>b,#detailView.ddv.dv3 .now-card.dv3-now .dv3-chg>b{letter-spacing:-.02em}
+
+/* day_zones §4-1: 다음 업무 = 목적 · 예정일 · 담당 · 일정 구분 · 다음 할 일 없음 이유 */
+.dv3-nxgrid{display:grid;grid-template-columns:52px minmax(0,1fr);gap:6px 10px;align-items:center;font-size:12.5px;margin-top:6px}.dv3-nxgrid>span{color:#6b7280}.dv3-nxgrid input[data-dv3rec="purpose"],.dv3-nxgrid select{font:inherit;font-size:12.5px;border:1px solid #d9dde4;border-radius:7px;padding:5px 9px;min-width:0;max-width:100%}.dv3-nxgrid input[type=date],.dv3-pills input[type=date]{font:inherit;font-size:12px;border:1px solid #d9dde4;border-radius:7px;padding:3px 7px}.dv3-whyno button{color:#b42318}

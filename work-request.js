@@ -61,12 +61,13 @@
  }
  /* ── 저장소 읽기 ── */
  function load(force){
-  const S=st();if(!ready()||S.busy||(!force&&Date.now()-S.at<60000))return;
-  S.busy=true;O().rpc(RPC.list,{days:30}).then(r=>{const before=JSON.stringify(S.list),first=!S.loaded;S.list=Array.isArray(r.requests)?r.requests:[];S.loaded=true;S.at=Date.now();
-   if(first||before!==JSON.stringify(S.list))repaint();setTimeout(autoClose,0);}).catch(()=>{S.at=Date.now();}).finally(()=>{S.busy=false;});
+  const S=st();if(!ready())return;if(S.busy){if(force)S.again=true;return;}if(!force&&Date.now()-S.at<60000)return;
+  const gen=S.gen||0;S.again=false;
+  S.busy=true;O().rpc(RPC.list,{days:30}).then(r=>{if((S.gen||0)!==gen){/* 조회 중에 저장이 있었다 — 이 응답은 그 전 상태라 버리고 다시 읽는다(코덱스 검수 F3) */S.at=Date.now();S.loaded=true;S.again=true;return;}const before=JSON.stringify(S.list),first=!S.loaded;S.list=Array.isArray(r.requests)?r.requests:[];S.loaded=true;S.at=Date.now();
+   if(first||before!==JSON.stringify(S.list))repaint();setTimeout(autoClose,0);}).catch(()=>{S.at=Date.now();}).finally(()=>{S.busy=false;if(S.again){S.again=false;setTimeout(()=>load(true),0);}});
  }
  function repaint(){try{if(R.G.page==='today'||R.G.page==='mgmt'||document.getElementById('kpi-b'))R.paint();else if(document.getElementById('inq-inbox-dialog')&&R.InquiryDetailV2)R.InquiryDetailV2.reskin();}catch(e){}}
- const put=r=>{if(!r||!r.id)return;const S=st(),i=S.list.findIndex(x=>x.id===r.id);if(i>=0)S.list[i]=r;else S.list.unshift(r);};
+ const put=r=>{if(!r||!r.id)return;const S=st(),i=S.list.findIndex(x=>x.id===r.id);if(i>=0)S.list[i]=r;else S.list.unshift(r);S.gen=(S.gen||0)+1;/* 저장 세대(F3) */};
  const isOpen=r=>r.status==='sent'||r.status==='seen'||r.status==='working';
  const overdue=r=>isOpen(r)&&Date.parse(r.due_at)<Date.now();
  /* ── 오늘 업무 항목 → 요청 ── */
@@ -152,7 +153,7 @@
   if(r.status==='replied')return who+' 회신 · '+(r.result||'')+(r.result_owner?' · '+r.result_owner:'')+(r.reply_note?' — '+r.reply_note:'');
   if(r.status==='done')return who+' · 처리 완료'+(r.result?' · '+r.result:'')+(r.next_text?' → 다음 행동: '+r.next_text+(r.next_due?' · '+mdK(r.next_due):''):'');
   if(r.status==='absent')return who+' · 전화 시도 · 부재'+(r.next_due?' → 다음 연락 '+mdK(r.next_due):'')+' (실제 연결 아님 · 최초 응대 미완료)';
-  if(r.status==='cancelled')return '요청 취소';
+  if(r.status==='cancelled'){const n=String(r.reply_note||'');const m=/^\[(통합|대상 오류|취소)\]\s*(.*)$/.exec(n);return m?(m[1]==='통합'?'다른 요청에 통합':m[1]==='대상 오류'?'대상 오류':'요청 취소')+(m[2]?' · '+m[2]:''):'요청 취소'+(n?' · '+n:'');}
   return '';
  }
  /* 그 현장의 '시스템 · 내부 요청' 줄(요청 → 재확인 → 회신 · 완료). 목록에 없는 현장은 한 번 읽어 온다 */
@@ -195,17 +196,22 @@
  /* ── 보낸 사람: 답 기다리는 중 ── */
  function waiting(){const S=st(),dayAgo=Date.now()-864e5;return S.list.filter(r=>r.by_me&&(isOpen(r)||(r.closed_at&&Date.parse(r.closed_at)>=dayAgo&&r.status!=='cancelled'&&!S.seen[r.id]))).sort((a,b)=>(overdue(b)?1:0)-(overdue(a)?1:0)||String(b.updated_at).localeCompare(String(a.updated_at)));}
  function sideHtml(){
-  if(!enabled())return '';load();try{autoBranch();}catch(e){}const L=waiting();if(!L.length)return '';
+  if(!enabled())return '';load();try{autoBranch();}catch(e){}const L=waiting(),S=st();if(!L.length)return '';
   const item=r=>{const od=overdue(r),br=r.kind==='branch',ok=r.status==='replied'||r.status==='done',ab=r.status==='absent';
-   const pill=od?['요청 미이행'+(r.round>=2?' · '+r.round+'회':''),'bad']:ok?[r.status==='replied'?'회신 완료':'✓ 처리 완료','ok']:ab?['요청 처리 · 부재','amb']:isHandover(r)?['인계 대기','amb']:[r.status==='seen'?'담당 확인':r.status==='working'?'처리 중':'답변 대기','amb'];/* 인계 대기 = 새 담당이 [인수 확인] 전(ops_12 C⑧) */
+   const wa=r.status==='working'&&/부재/.test(String(r.result||''));/* 코덱스 검수 F5: 부재 + 재연락 일정 = 고객 회신 대기(담당 미착수와 구분) */
+   const pill=od?['요청 미이행'+(r.round>=2?' · '+r.round+'회':''),'bad']:ok?[r.status==='replied'?'회신 완료':'✓ 처리 완료','ok']:ab?['요청 처리 · 부재','amb']:isHandover(r)?['인계 대기','amb']:wa?['고객 회신 대기','amb']:[r.status==='seen'?'담당 확인':r.status==='working'?'처리 중':'답변 대기','amb'];/* 인계 대기 = 새 담당이 [인수 확인] 전(ops_12 C⑧) */
    const btns=od?['<button type="button" data-wr="reask" data-id="'+r.id+'">재확인 요청</button>'].concat(br?['<button type="button" data-wr="recall" data-id="'+r.id+'">본사 회수 검토</button>']:r.round>=2?['<button type="button" data-wr="reassign" data-id="'+r.id+'">재배정 검토</button>']:[]):(ok||ab)?['<button type="button" data-wr="check" data-id="'+r.id+'">진행 확인</button>']:[];
+   /* day_zones §4: 열린 요청은 보낸 사람이 종료할 수 있다 — 완료 · 취소(사유) · 다른 요청에 통합 · 대상 오류 */
+   if(isOpen(r))btns.push('<button type="button" data-wr="end" data-id="'+r.id+'" aria-expanded="'+(S.endOpen===r.id)+'">종료 ▾</button>');
+   const E=S.endOpen===r.id?(S.end||(S.end={kind:'done',note:''})):null;
+   const endHtml=E?'<div class="wrq-end"><div class="k">'+[['done','완료'],['cancel','취소 (사유)'],['merge','다른 요청에 통합'],['wrong','대상 오류']].map(x=>'<button type="button" data-wr="endkind" data-id="'+r.id+'" data-v="'+x[0]+'" aria-pressed="'+(E.kind===x[0])+'">'+x[1]+'</button>').join('')+'</div>'+(E.kind==='done'?'<span>요청자가 직접 완료로 닫습니다 · 결과 기록은 담당 몫</span>':'<input data-wr-in="endnote" maxlength="200" placeholder="'+(E.kind==='cancel'?'취소 사유 (필수)':E.kind==='merge'?'어느 요청에 합치나요 (필수)':'왜 대상이 아닌가요 (필수)')+'" value="'+attr(E.note||'')+'">')+'<div class="ft">'+(E.err?'<em>'+h(E.err)+'</em>':'')+'<button type="button" data-wr="endclose">닫기</button><button type="button" class="go" data-wr="endsave" data-id="'+r.id+'"'+(E.busy?' disabled':'')+'>'+(E.busy?'저장 중…':'종료')+'</button></div></div>':'';
    if(isOpen(r)&&r.to_reach===false)btns.push('<button type="button" data-wr="ack" data-id="'+r.id+'">처리 확인</button>');
-   const reply=ok||ab?lineEnd(r):'',note=od&&r.round>=2?(br?'지사 확인 요청 '+r.round+'회 미이행 → 본사 회수 검토 권장':r.label+' '+r.round+'회 미이행 → 재배정 검토 권장'):'',unreach=isOpen(r)&&r.to_reach===false?r.to_name+'은(는) CRM에서 이 요청을 볼 수 없습니다 · 전화로 전달하고, 처리되면 [처리 확인]':'';
+   const reply=ok||ab?lineEnd(r):wa?(r.to_name||'')+' · 전화 시도 · 부재'+(r.next_due?' → 재연락 '+mdK(r.next_due):' · 재연락 일정 없음')+' · 고객 회신 대기(담당 미착수 아님 · 최초 응대 미완료)':'',note=od&&r.round>=2?(br?'지사 확인 요청 '+r.round+'회 미이행 → 본사 회수 검토 권장':r.label+' '+r.round+'회 미이행 → 재배정 검토 권장'):'',unreach=isOpen(r)&&r.to_reach===false?r.to_name+'은(는) CRM에서 이 요청을 볼 수 없습니다 · 전화로 전달하고, 처리되면 [처리 확인]':'';
    return '<div class="wrq-w"><div class="l1"><i style="background:'+(BRAND[r.brand]||'#9aa0ab')+'"></i><b title="'+attr(r.site)+'">'+h(r.site)+'</b><span class="wrq-pill '+pill[1]+'">'+h(pill[0])+'</span></div>'
     +'<span class="l2">'+h(r.to_name+'에게 · '+((r.asks||[]).join(' · ')||r.label))+'</span>'
     +'<div class="l3"><span>'+h(whenTxt(r.reasked_at||r.created_at)+' · 기한 '+dueTxt(r)+(r.round>=2?' · 기한 바뀜 '+whenTxt(r.reasked_at)+' (재확인 '+r.round+'회차)':''))+'</span><i></i>'+btns.join('')+'</div>'
     +stepsHtml(r)
-    +(reply?'<span class="rp '+(ab?'amb':'ok')+'">'+h(reply)+'</span>':'')+(note?'<span class="nt">'+h(note)+'</span>':'')+(unreach?'<span class="ur">'+h(unreach)+'</span>':'')+'</div>';};
+    +(reply?'<span class="rp '+(ab||wa?'amb':'ok')+'">'+h(reply)+'</span>':'')+(note?'<span class="nt">'+h(note)+'</span>':'')+(unreach?'<span class="ur">'+h(unreach)+'</span>':'')+endHtml+'</div>';};
   return '<section class="wrq-wait"><header><b>답 기다리는 중</b><span>내가 요청한 일 '+L.length+'건</span></header>'+L.map(item).join('')+'<p class="ft">답변 대기 중엔 같은 요청 잠금 · 기한이 지나야 [재확인 요청] · 지사 건은 [본사 회수 검토]</p></section>';
  }
  function autoBranch(){
@@ -217,6 +223,16 @@
  function reask(id){
   const r=st().list.find(x=>x.id===id);if(!r||!overdue(r))return;const br=r.kind==='branch',label=br?'내일 12시':(new Date().getHours()>=17?'오늘 중':'오늘 17:00'),at=dueAt(label);
   O().rpc(RPC.reask,{id,due_at:at.toISOString(),due_label:label}).then(x=>{put(x.request);touch(x.request);toast(r.to_name+'에게 재확인 요청을 보냈습니다 · 기한 '+label);noteDeal(x.request,'[내부 요청] 재확인 요청 ('+x.request.round+'회차) · '+r.to_name+' · 기한 '+label);repaint();}).catch(e=>toast('재확인 요청을 보내지 못했습니다: '+String(e&&e.message||e),'warn'));
+ }
+ /* 요청 종료(day_zones §4): 완료 = done(결과 '요청자 확인 · 완료'), 취소 · 통합 · 대상 오류 = cancel + 앞머리 있는 사유(서버 reply_note). 응대 이력에도 한 줄 */
+ async function endRequest(id){
+  const S=st(),r=S.list.find(x=>x.id===id),E=S.end;if(!r||!E||E.busy)return;const note=String(E.note||'').trim();
+  if(E.kind!=='done'&&!note){E.err='사유를 적어 주세요';return repaint();}
+  E.busy=true;E.err='';repaint();
+  try{const body=E.kind==='done'?{id,action:'done',result:'요청자 확인 · 완료'}:{id,action:'cancel',note:(E.kind==='merge'?'[통합] ':E.kind==='wrong'?'[대상 오류] ':'[취소] ')+note};
+   const x=await O().rpc(RPC.reply,body);put(x.request);touch(x.request);S.endOpen='';S.end=null;noteDeal(x.request,'[내부 요청] '+(lineEnd(x.request)||'요청 종료'));toast(E.kind==='done'?'요청을 완료로 닫았습니다':E.kind==='merge'?'다른 요청에 통합하고 닫았습니다':E.kind==='wrong'?'대상 오류로 닫았습니다':'요청을 취소했습니다');}
+  catch(e){E.busy=false;E.err='닫지 못했습니다: '+String(e&&e.message||e);}
+  repaint();
  }
  /* ── 받는 사람: 오늘 업무 맨 위 ── */
  const incoming=()=>st().list.filter(r=>r.to_me&&isOpen(r)).sort((a,b)=>String(a.due_at).localeCompare(String(b.due_at)));
@@ -247,13 +263,18 @@
      +'<div class="ft"><span>'+(C.res==='부재'?'부재 = 연락 시도로만 기록 · 최초 응대는 아직 미완료':C.res?'저장하면 관리자 요청 자동 완료':'결과를 골라야 저장')+'</span><button type="button" class="go" data-wr="save" data-id="'+r.id+'"'+(C.res&&!C.busy?'':' disabled')+'>'+(C.busy?'저장 중…':'저장')+'</button></div></article>';}
    return '<article class="wrq-in" data-id="'+r.id+'">'+head+'<span class="memo"><b>요청</b> '+h((r.asks||[]).join(' · ')||r.label)+(r.memo?'<br><span>"'+h(r.memo)+'"</span>':'')+'</span>'
     +'<div class="ft"><span>완료 조건 · '+h(K.done||'')+' — 입력되면 자동 완료 · 따로 [완료] 없음</span><button type="button" class="go" data-wr="go" data-id="'+r.id+'">열어서 입력</button></div></article>';};
-  /* 받은 사람이 화면을 열면 '담당 확인'으로 */
-  L.filter(r=>r.status==='sent'&&!S.closing['seen:'+r.id]).forEach(r=>{S.closing['seen:'+r.id]=true;O().rpc(RPC.reply,{id:r.id,action:'seen'}).then(x=>put(x.request)).catch(()=>{});});
-  const LG=L.filter(r=>r.label===LEGACY_LABEL),rest=L.filter(r=>r.label!==LEGACY_LABEL);
+  /* 담당 확인(seen)은 받은 사람이 카드에서 무엇이든 눌렀을 때만(onClick) — 화면에 보였다고 확인으로 적지 않는다(2026-10-10 코덱스 인계: 노출 ≠ 열람 ≠ 확인) */
+  const LG=L.filter(r=>r.label===LEGACY_LABEL),rest0=L.filter(r=>r.label!==LEGACY_LABEL);
+  const DZ=R.DayZones&&R.DayZones.on(R.G._towerRole)?R.DayZones:null,IMP=(()=>{try{return R.CRMRules.get('important_request_kinds')||[];}catch(e){return [];}})();
+  const isImp=r=>r.kind==='branch'||isHandover(r)||isReceipt(r)||IMP.includes(r.label);
+  const rest=DZ?rest0.filter(isImp):rest0,soft=DZ?rest0.filter(r=>!isImp(r)):[];
+  const byLabel=new Map();soft.forEach(r=>byLabel.set(r.label,(byLabel.get(r.label)||0)+1));
+  const softHtml=soft.length?'<article class="wrq-in wrq-soft"><div class="hd"><em class="soft">알림</em><b>'+h([...byLabel].map(x=>x[0]+' '+x[1]+'건').join(' · '))+'</b><i></i><span class="by">기존 업무 줄에 \''+h((soft[0].requested_by||'관리자'))+' 요청\' 꼬리표로 붙어 있습니다</span><button type="button" data-wr="softtoggle">'+(S.softOpen?'접기':'보기')+'</button></div>'+(S.softOpen?soft.map(card).join(''):'')+'</article>':'';
   const bundle=LG.length?'<article class="wrq-in wrq-legacy"><div class="hd"><em>관리자 요청</em><b>'+h(LEGACY_LABEL+' '+LG.length+'건')+'</b><i></i><span class="by'+(LG.some(overdue)?' od':'')+'">'+h((LG[0].requested_by||'관리자')+' · '+whenTxt(LG[0].reasked_at||LG[0].created_at)+' · 기한 '+dueTxt(LG[0]))+'</span></div>'
    +'<span class="memo">예전 시스템에서 옮겨 온 자료입니다 · 한 건씩 [영업 재개]에서 지금 단계 · 다음 행동 · 날짜를 정하면 그 건은 자동으로 완료됩니다</span>'
    +'<div class="wrq-lg">'+LG.map(r=>'<div><b title="'+attr(r.site)+'">'+h(r.site)+'</b><button type="button" data-wr="resume" data-id="'+r.id+'">영업 재개</button></div>').join('')+'</div></article>':'';
-  return '<section class="wrq-top" aria-label="받은 요청">'+bundle+rest.map(card).join('')+'</section>';
+  if(!bundle&&!rest.length&&!softHtml)return '';
+  return '<section class="wrq-top" aria-label="받은 요청">'+bundle+rest.map(card).join('')+softHtml+'</section>';
  }
  // Phase 1 is limited to the existing single-purpose first-contact template.
  const basicContact=r=>!!r&&r.target_type==='inquiry'&&r.kind==='first'&&r.label==='첫 연락 요청'&&JSON.stringify(r.asks)==='["고객 첫 연락"]';
@@ -318,7 +339,7 @@
    if(r.target_type==='inquiry'){const F=R.InquiryFlow&&R.InquiryFlow.on&&R.InquiryFlow.on()?R.InquiryFlow:null;if(!F)return null;const L=(F.state(it).logs||[]).filter(l=>Date.parse(l.at)>=since);
     if(L.some(l=>l.kind==='connected'))return {result:'연락 기록 확인',absent:false};if(L.some(l=>l.kind==='attempt'))return {result:'부재',absent:true};return null;}
    const f=(k,n)=>{const c=it.stage_contexts&&it.stage_contexts[k];return c&&c.fields?c.fields[n]:'';};
-   if(r.kind==='quote')return f('consulting','quote_due')||f('consulting','quote_request')?{result:'견적 요청 · 예정일 입력 확인',absent:false}:null;
+   if(r.kind==='quote'){/* 코덱스 검수 F4: 화면의 완료 조건(견적 요청 등록 + 예정일)과 같은 판정 — 요청에서 고른 목적마다 근거가 있어야 한다(OR 아님) */const asks=r.asks||[],needReq=!asks.length||asks.some(a=>/견적 요청 등록/.test(a)),needDue=!asks.length||asks.some(a=>/예정일/.test(a)),both=!needReq&&!needDue;const okReq=!(needReq||both)||!!f('consulting','quote_request'),okDue=!(needDue||both)||!!f('consulting','quote_due');return okReq&&okDue?{result:[needReq||both?'견적 요청 등록':'',needDue||both?'예정일 입력':''].filter(Boolean).join(' · ')+' 확인',absent:false}:null;}
    if(r.kind==='contract')return (f('contract','contract_date')||it.contract_date)&&(Number(f('contract','contract_amount')||it.contract_amount||it.won_amount)>0)?{result:'계약일 · 금액 입력 확인',absent:false}:null;
    if(r.kind==='award')return R.DealTransfer&&R.DealTransfer.enabled()&&!R.DealTransfer.checkDue(it)&&!R.DealTransfer.awaiting(it)?{result:'낙찰결과 등록 확인',absent:false}:null;
    if(r.kind==='first'||r.kind==='follow'){let at='';try{at=R.salesActivityAt(it)||'';}catch(e){}return at&&Date.parse(at)>=since?{result:'응대 기록 확인',absent:false}:null;}
@@ -342,7 +363,14 @@
   if(a==='due'&&M){M.due=Number(b.dataset.v)||0;M.err='';return drawModal();}
   if(a==='send')return send();
   if(a==='reask')return reask(id);
+  if(a==='softtoggle'){S.softOpen=!S.softOpen;return repaint();}
+  if(a==='end'){S.endOpen=S.endOpen===id?'':id;S.end={kind:'done',note:'',err:''};return repaint();}
+  if(a==='endclose'){S.endOpen='';S.end=null;return repaint();}
+  if(a==='endkind'){if(S.end){S.end.kind=b.dataset.v;S.end.err='';}return repaint();}
+  if(a==='endsave')return endRequest(id);
   const r=S.list.find(x=>x.id===id);if(!r)return;
+  /* 받은 사람이 카드에서 무엇이든 누르면 그때 '담당 확인'(seen) — 닫기 · 노출은 확인이 아니다 */
+  if(r.to_me&&r.status==='sent'&&!S.closing['seen:'+r.id]&&['res','dial','go','hoask','resume'].includes(a)){/* 저장 · 회신 · 인수/수령 확인은 그 자체가 상태를 바꾸므로 따로 seen 을 보내지 않는다(원자 저장 순서 보존) */S.closing['seen:'+r.id]=true;O().rpc(RPC.reply,{id:r.id,action:'seen'}).then(x=>put(x.request)).catch(()=>{});}
   if(a==='check'){S.seen[id]=true;openTarget(r);return repaint();}
   if(a==='ack'){if(S.closing[id])return;S.closing[id]=true;return O().rpc(RPC.reply,{id,action:'done',result:'관리자 확인 · 전화로 전달'}).then(x=>{put(x.request);touch(x.request);toast('처리 확인으로 닫았습니다');noteDeal(x.request,'[내부 요청] '+lineEnd(x.request));repaint();}).catch(e=>toast('닫지 못했습니다: '+String(e&&e.message||e),'warn')).finally(()=>{delete S.closing[id];});}
   if(a==='reassign'||a==='recall')return openTarget(r);
@@ -356,5 +384,6 @@
  }
  document.addEventListener('click',onClick,true);
  document.addEventListener('change',e=>{const t=e.target;if(t&&t.matches&&t.matches('#pg-today [data-wr-in="owner"]')){const C=st().card[t.dataset.id];if(C){C.owner=t.value;repaint();}}},true);
+ document.addEventListener('input',e=>{const t=e.target;if(t&&t.matches&&t.matches('#pg-today [data-wr-in="endnote"]')){const E=st().end;if(E)E.note=t.value;}},true);
  root.WorkRequest={enabled,load,reqFor,locked,cell,sideHtml,topHtml,history,autoClose,evidence,decorate,steps,dueTxt,NIGHT_FROM,NIGHT_HOUR,HANDOVER_LABEL,RECEIPT_LABEL,isHandover,isReceipt,KIND,RPC,state:st,_dueAt:dueAt,_lineReq:lineReq,_lineEnd:lineEnd};
 })(window);
