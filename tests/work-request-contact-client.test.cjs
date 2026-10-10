@@ -61,7 +61,7 @@ test('objective definite rollback clears retry data; storage failure prevents RP
  const y=setup();y.R.localStorage.setItem=()=>{throw Error('quota');};await assert.rejects(y.R.WorkRequest.objectives.write(objectivePayload()));assert.equal(y.calls.length,0);
 });
 test('objective read validates context, account and twenty-row page without writing',async()=>{
- const x=setup({rpc:async(_f,p)=>({...objectiveAck({...objectivePayload(),complete:false}),history:[],history_page:p.page,history_total:0,history_has_more:false})});
+ const x=setup({rpc:async(_f,p)=>({...objectiveAck({...objectivePayload(),complete:false}),history:[],history_page:p.page,history_total:0,history_has_more:false,followup_contract:1,followup_candidates:[],candidate_page:p.candidate_page,candidate_total:0,candidate_has_more:false,can_write:true,plan_context:{token:"a".repeat(32)}})});
  const c=await x.R.WorkRequest.objectives.read(id(20),2);assert.equal(c.client_actor_id,id(1));assert.equal(x.calls[0][0],'crm_work_request_objectives_read_v1');assert.equal(x.storage.size,0);
  await assert.rejects(x.R.WorkRequest.objectives.read(id(20),0));assert.equal(x.calls.length,1);
  const bad=setup({rpc:async()=>({...objectiveAck(objectivePayload()),history:Array(21).fill({}),history_page:1,history_total:21,history_has_more:false})});await assert.rejects(bad.R.WorkRequest.objectives.read(id(20)));
