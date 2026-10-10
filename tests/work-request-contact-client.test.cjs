@@ -100,7 +100,7 @@ test('list response after identity or state replacement never changes the new se
   x.R.OpsStore.rpc=()=>new Promise(ok=>resolve=ok);const read=x.R.WorkRequest.load(true);await tick();x.R.WorkRequest.load(true);
   if(change==='account')x.R.ME.id=id(3);else x.R.G.workReq={list:[],loaded:false};
   resolve({ok:true,requests:[{...x.r,status:'done'}]});await read;await tick();
-  assert.equal(x.S.list[0].status,'sent');assert.equal(x.S.busy,false);assert.equal(x.S.reloadPending,false);
+  assert.equal(x.S.list[0].status,'sent');assert.equal(x.S.busy,false);assert.equal(x.S.again,false);
   if(change==='state')assert.equal(x.R.G.workReq.list.length,0);
  }
 });
