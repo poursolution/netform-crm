@@ -49,7 +49,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const v=page.locator('#detailView.dv3');assert.equal(await v.count(),1);
   /* 1. 담당 정보 상자: 현장 정보 아래 · 현재 담당 / 최초 담당 / 실적 귀속 / 변경 이력 */
   const card=v.locator('.dw-left .do-card');assert.equal(await card.count(),1);
-  assert.match(await card.evaluate(n=>n.previousElementSibling.querySelector('header b').textContent),/^(이 단지 영업 이력|같은 현장 다른 영업)$/,'왼쪽 현장 정보가 빠진 뒤에는 영업 이력 칸 아래');
+  assert.match(await card.evaluate(n=>n.previousElementSibling.querySelector('header b').textContent),/^(이 단지 영업 이력|같은 현장 다른 영업|지금 영업건)$/,'왼쪽 현장 정보가 빠진 뒤에는 영업 이력 칸 아래(7단계 공통 틀에서는 제목이 지금 영업건)');
   /* 접어 둔 채로 시작: 머리줄 = 담당 정보 + 지금 담당 이름 + [펼치기](2026-10-05 대표) → 펼치면 예전 내용 그대로, 다시 누르면 접힘 */
   assert.deepEqual(await card.evaluate(n=>[[...n.querySelectorAll(':scope>header>*')].map(x=>x.textContent).filter(Boolean),n.querySelectorAll('.do-grid,.do-hist').length,n.querySelector('[data-do="fold"]').getAttribute('aria-expanded')]),[['담당 정보','김성민','펼치기'],0,'false']);
   await card.locator('[data-do="fold"]').click();await page.waitForTimeout(250);

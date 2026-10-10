@@ -113,3 +113,6 @@
 #today-v2 .tv3-reqtag>small{font-size:11.5px;color:#6b7280;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #today-v2 .dz-cards{margin-bottom:12px}
 #today-v2 .dz-pop-more{margin:6px 0 0;font-size:12px;color:#6b7280}
+/* 줄 클릭 = 상세 창(줄 아래 펼침 없음) */
+#today-v2 .dz .dz-row{cursor:pointer}
+#today-v2 .dz .dz-row:hover{background:#fafbfc}

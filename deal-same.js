@@ -150,9 +150,9 @@
    +(sp.v==='있음'&&!closed?(editing?'<input class="dv3-in" data-dv3in="stage" data-key="special_terms" value="'+attr(draft!=null?draft:sp.text)+'" placeholder="어떤 조건인가요 (예: 하자보증 2년 구두 약속)" aria-label="특이조건 내용">':'<button type="button" class="dvs-sptx'+(sp.text?'':' empty')+'" data-dv3="sptext">'+esc(sp.text||'내용 적기')+'</button>'):'')+'</div>';
  }
  /* 이력 탭 [전체 · 고객 접촉 · 내부 변경] — 접촉 수 = 고객 접촉만 */
- function histBar(counts,active){
+ function histBar(counts,active,plain){
   const T=[['all','전체',counts.all],['cust','고객 접촉',counts.cust],['sys','내부 변경',counts.sys]];
-  return '<span class="dvs-area on">현재 영업건</span><div class="dvs-htabs" role="group" aria-label="이력 구분">'+T.map(([k,l,n])=>'<button type="button" data-dv3="htab" data-v="'+k+'" aria-pressed="'+(active===k)+'">'+esc(l)+' '+n+'</button>').join('')+'</div><span class="dvs-hnote">고객 접촉 = 연락 시도 <b>'+counts.tries+'</b> · 실제 연결 <b>'+counts.conn+'</b> · 내부 변경은 따로</span>';
+  return (plain?'':'<span class="dvs-area on">현재 영업건</span>')+'<div class="dvs-htabs" role="group" aria-label="이력 구분">'+T.map(([k,l,n])=>'<button type="button" data-dv3="htab" data-v="'+k+'" aria-pressed="'+(active===k)+'">'+esc(l)+' '+n+'</button>').join('')+'</div><span class="dvs-hnote">'+(plain?'':'고객 접촉 = ')+'연락 시도 <b>'+counts.tries+'</b> · 실제 연결 <b>'+counts.conn+'</b>'+(plain?'':' · 내부 변경은 따로')+'</span>';
  }
  return {on,day,dot,md,stamp,eok,wonText,dueKind,dueKinds,contract,special,SPECIAL,progressEvents,lastProgress,histKind,CUSTOMER,nextTask,facts,winInfo,line2,taskHtml,specialHtml,histBar};
 });
