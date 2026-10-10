@@ -121,7 +121,7 @@
   const tfm=C.DT?C.DT.wonIn(ms,mk(P.ty,P.tm+1),C.target):{count:0,amount:0},ptm=C.DW?C.DW.partnerIn(ms,mk(P.ty,P.tm+1),C.target):{count:0,amount:0},k1=val(L.ready,cm.net+ptm.amount+tfm.amount,won(cm.net+ptm.amount+tfm.amount)),k2=val(L.ready,C.perf,won(C.perf)),k3=val(true,exp,won(exp));
   const cards=[
    ['이번 달 계약 ('+P.tm+'월)',k1[0],k1[1],P.tm+'월 '+P.td+'일째'+(cm.count+ptm.count>0?' · 계약 '+(cm.count+ptm.count)+'건':'')+' · '+(pmD.getMonth()+1)+'월 '+(pm.net>0?won(pm.net):'없음'),P.y===P.ty?'cs-month':'',P.tm],
-   [P.thisYear?'올해 수주실적':P.label+' 수주실적',k2[0],k2[1],'낙찰금액 · VAT 별도 = 계약실적(계약 체결일) '+(con.net>0?won(con.net):'없음')+'('+con.count+'건) · 협약 · 기술자문 '+(C.pt.amount>0?won(C.pt.amount)+'('+C.pt.count+'건)':'없음')+' · 타사 이관 '+(C.tf.amount>0?won(C.tf.amount)+'('+C.tf.count+'건)':'없음')+(adv&&adv.n&&!adv.merged?' · 기술자문 낙찰 '+won(adv.sum)+' 별도':''),'ev','contract'],
+   [P.thisYear?'올해 수주실적':P.label+' 수주실적',k2[0],k2[1],(()=>{const tech=C.pt.list.filter(x=>x.tech),ta=tech.reduce((s,x)=>s+(Number(x.amount)||0),0),tn=tech.reduce((s,x)=>s+(Number(x.signedCount)||0),0),pa=C.pt.amount-ta,pn=C.pt.count-tn,f=(a,n)=>a>0?won(a)+'('+n+'건)':'없음';return '합산 = 계약실적(계약금액 · 계약일) '+f(con.net,con.count)+' + 협약 수주(낙찰금액 · 낙찰일) '+f(pa,pn)+' + 기술자문 실적(낙찰금액 · 낙찰일) '+f(ta,tn)+' + 타사 이관(낙찰금액 · 낙찰일) '+f(C.tf.amount,C.tf.count)+' · VAT 별도';})()+(adv&&adv.n&&!adv.merged?' · 기술자문 낙찰 '+won(adv.sum)+' 별도':''),'ev','contract'],
    ['진행 중 파이프라인',k3[0],k3[1],scopeSub(active.length),'ev','active',root.PipelineScope&&root.PipelineScope.on()?root.PipelineScope.basis():''],
    ['견적문의',q.length+'건','','적합 '+fit+' · '+B.closedText(bad,'n'),'ev','inquiries'],
    ['조치 필요',risk.length+'건',risk.length?'red':'',AS?AS.text:'기한 지남 '+cnt('overdue')+' · 다음 할 일 없음 '+cnt('missing'),'go','control','',AS&&risk.length?'action':''],
@@ -329,12 +329,14 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
 
  /* ── 2. 컨트롤타워 ── */
  let LAST=null;
+ /* CRM 에 남은 고객 접촉 기록이 있는가 — 전화 · 문자 · 방문 · 메일 응대 기록이 한 줄이라도 있거나, Live 기준일 뒤에 등록된 영업건. 이관 전 자료의 '마지막 연락' 칸(날짜만)뿐인 건은 아니다 */
+ function crmContact(item){try{const p=R.itemPatch(item,'deal')||{},acts=[].concat(item.activities||[],p.activities||[]);if(acts.some(a=>a&&/전화|문자|카카오|카톡|방문|이메일|메일|통화/.test(String(a.type||''))))return true;const v=R.ContactState&&R.ContactState.of?R.ContactState.of(item,'deal'):null;return !(v&&v.legacy);}catch(e){return true;}}
  function ctlModel(C){
   const {B,K,P,active}=C,now=P.now.getTime(),liveK=String(RULE().liveFrom||'');
   const COLS=[['unasg','미배정',3],['first','첫 연락 지연',3],['due','기한 지남',3],['seven','마지막 연락 '+CONTACT_D()+'일+',2],['next','다음 할 일 없음',1],['stall','장기 정체',1]];
   const inq=C.rows.inquiries.filter(x=>{const q=x.item;try{if(R.inqCtlConverted(q))return false;if(typeof R.isClosedInq==='function'&&R.isClosedInq(q))return false;}catch(e){}return !B.badfit(q);});
   const days=x=>{const t=Date.parse(R.inquiryCreatedAt(x.item)||'');return Number.isFinite(t)?Math.max(0,Math.floor((now-t)/864e5)):0;};
-  const cells={},put=(o,c,x,kind,d,stage,reason)=>{(cells[o+'|'+c]=cells[o+'|'+c]||[]).push({key:x.key,site:x.site,owner:o,kind,d,stage,reason,x,col:c});};
+  const chk=[],cells={},put=(o,c,x,kind,d,stage,reason)=>{(cells[o+'|'+c]=cells[o+'|'+c]||[]).push({key:x.key,site:x.site,owner:o,kind,d,stage,reason,x,col:c});};
   inq.forEach(x=>{const q=x.item;let asg=false;try{asg=!!R.inquiryAssigned(q);}catch(e){}
    if(!asg)return put('미배정','unasg',x,'inq',days(x),'견적문의','담당자 없음');
    let first='';try{first=R.inqCtlFirstResponseAt(q);}catch(e){}if(first)return;
@@ -343,16 +345,18 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
    put(x.owner||'미배정','first',x,'inq',days(x),'견적문의','배정 후 CRM 연락 기록 없음');});
   active.forEach(d=>{const o=d.owner||'미배정',age=ageOf(d);
    if(d.issues.includes('overdue'))put(o,'due',d,'deal',overdueDays(d),d.stageLabel,'기한 지남');
-   if(d.issues.includes('contact')){let m=null;try{m=R.relationshipMeta(d.item);}catch(e){}const n=m&&m.days!=null?m.days:0;put(o,'seven',d,'deal',n,d.stageLabel,'마지막 연락 '+n+'일 전');}
+   if(d.issues.includes('contact')){let m=null;try{m=R.relationshipMeta(d.item);}catch(e){}const n=m&&m.days!=null?m.days:0;if(crmContact(d.item))put(o,'seven',d,'deal',n,d.stageLabel,'마지막 연락 '+n+'일 전');else chk.push({key:d.key,site:d.site,owner:o,kind:'deal',d:n,stage:d.stageLabel,reason:'이관 전 기록의 날짜 '+n+'일 전 · CRM 연락 기록 없음',x:d,col:'sevenchk'});}
+   else{let m=null;try{m=R.relationshipMeta(d.item);}catch(e){}if(m&&m.days==null&&!crmContact(d.item))chk.push({key:d.key,site:d.site,owner:o,kind:'deal',d:0,stage:d.stageLabel,reason:'연락 날짜 없음 · 이관 기록 확인',x:d,col:'sevenchk'});}
    if(d.issues.includes('missing'))put(o,'next',d,'deal',age,d.stageLabel,'다음 할 일 없음');
    if(d.issues.includes('stale'))put(o,'stall',d,'deal',age,d.stageLabel,'단계 '+age+'일째');});
   const n=(o,c)=>(cells[o+'|'+c]||[]).length,owners=[...new Set(Object.keys(cells).map(k=>k.split('|')[0]))],tot=o=>COLS.reduce((s,c)=>s+n(o,c[0]),0);
   owners.sort((a,b)=>(a==='미배정')-(b==='미배정')||tot(b)-tot(a));
   const colT=c=>owners.reduce((s,o)=>s+n(o,c),0);
-  const pick=(p,c)=>{let out=[];owners.forEach(o=>{if(p&&o!==p)return;COLS.forEach(cc=>{if(c&&cc[0]!==c)return;out=out.concat(cells[o+'|'+cc[0]]||[]);});});if(!c){const seen=new Set();out=out.slice().sort((a,b)=>b.d-a.d).filter(it=>!seen.has(it.key)&&seen.add(it.key));}return out.slice().sort((a,b)=>b.d-a.d);};
-  return {COLS,cells,owners,n,tot,colT,pick,unique:o=>pick(o,null).length};
+  const pick=(p,c)=>{if(c==='sevenchk')return chk.filter(x=>!p||x.owner===p).sort((a,b)=>b.d-a.d);let out=[];owners.forEach(o=>{if(p&&o!==p)return;COLS.forEach(cc=>{if(c&&cc[0]!==c)return;out=out.concat(cells[o+'|'+cc[0]]||[]);});});if(!c){const seen=new Set();out=out.slice().sort((a,b)=>b.d-a.d).filter(it=>!seen.has(it.key)&&seen.add(it.key));}return out.slice().sort((a,b)=>b.d-a.d);};
+  return {COLS,cells,owners,n,tot,colT,pick,chk,unique:o=>pick(o,null).length};
  }
- const WHYC={unasg:'견적문의가 들어왔는데 담당이 없습니다. 배정이 먼저입니다.',first:()=>'배정 후 '+FIRST_H()+'시간 안에 첫 연락을 못 했습니다.',due:'다음 할 일 날짜가 지났는데 기록이 없습니다.',seven:()=>'마지막 연락 후 '+CONTACT_D()+'일이 넘었습니다.',next:'다음 할 일이 비어 있어 아무도 챙기지 않는 건입니다.',stall:'단계가 오래 그대로입니다.'};
+ const XCOL={sevenchk:['sevenchk','이관 기록 확인']};
+ const WHYC={sevenchk:'연락 날짜가 이관 전 기록에만 있거나 CRM 연락 기록이 없습니다 — 지연으로 세지 않고 기록부터 확인합니다.',unasg:'견적문의가 들어왔는데 담당이 없습니다. 배정이 먼저입니다.',first:()=>'배정 후 '+FIRST_H()+'시간 안에 첫 연락을 못 했습니다.',due:'다음 할 일 날짜가 지났는데 기록이 없습니다.',seven:()=>'마지막 연락 후 '+CONTACT_D()+'일이 넘었습니다.',next:'다음 할 일이 비어 있어 아무도 챙기지 않는 건입니다.',stall:'단계가 오래 그대로입니다.'};
  function shade(v,sev){if(!v)return ['#fafbfc','#c9cdd5'];const k=Math.min(1,v/50);if(sev===3)return ['rgba(209,74,63,'+(0.18+k*0.72).toFixed(2)+')',k>0.25||v>=10?'#fff':'#8f1d14'];if(sev===2)return ['rgba(224,164,58,'+(0.2+k*0.6).toFixed(2)+')','#5c3a00'];return ['rgba(17,26,46,'+(0.06+k*0.32).toFixed(2)+')','#15171c'];}
  function ctl(C){
   const S=st(),M=LAST=ctlModel(C),{B,P,active,AQ,K}=C,can=canAssign();
@@ -373,8 +377,11 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
     +M.COLS.map(c=>{const v=M.n(o,c[0]),sh=shade(v,c[2]);return '<button type="button" class="cl" data-db="cell" data-v="'+attr(o)+'|'+c[0]+'" aria-label="'+attr(o+' '+c[1]+' '+v+'건')+'"><span style="background:'+sh[0]+';color:'+sh[1]+(S.selP===o&&S.selC===c[0]?';outline:2px solid #15171c':'')+'">'+(v||'·')+'</span></button>';}).join('')
     +'<span class="as">'+(can?'<button type="button" data-db="assign-row" data-v="'+attr(o)+'">지정</button>':'')+'</span>').join('')+'</div>';
   const risks=[['견적 발송 · 영업 미전환',C.rows.inquiries.filter(x=>{try{return !!R.isAwaitingPromotion(x.item);}catch(e){return false;}}).length],[B.closedWord()+' 사유 미입력',C.bad.filter(x=>B.badfitReason(x)==='사유 미기록').length],['실주 사유 미입력',C.loss.filter(d=>B.lossReason(d)==='사유 미기록').length]].filter(x=>x[1]>0);
-  const table='<section class="db-card flush db-table"><div class="db-ch pad"><b>누가 · 무엇이 끊겼나</b><span>칸 = 건수 · 진할수록 많음 · 빨간 열 = 오늘 손대야 함</span></div>'+(M.owners.length?grid:'<p class="db-empty">끊긴 건이 없습니다.</p>')+'<div class="db-risk"><b>데이터 위험</b>'+(risks.length?risks.map(r=>'<span>'+r[0]+' '+r[1]+'</span>').join(''):'<i>없음</i>')+'</div></section>';
-  const list=M.pick(S.selP,S.selC),cdef=M.COLS.find(c=>c[0]===S.selC),why=cdef?(typeof WHYC[cdef[0]]==='function'?WHYC[cdef[0]]():WHYC[cdef[0]]):S.selP?S.selP+'님 담당 건 중 문제가 있는 전체입니다.':'칸을 하나 골라 주세요.';
+  const sv=M.colT('seven'),ck=M.chk.length,okN=Math.max(0,active.length-sv-ck);
+  /* counting 9 · 13: 마지막 연락 판정 3칸 + 숫자 카드 공통 한 줄(대상 · 날짜 기준 · 제외 · 표본 · 근거 목록 = 눌러서 옆 목록) */
+  const c3='<div class="db-c3" role="group" aria-label="마지막 연락 판정"><b>마지막 연락 '+CONTACT_D()+'일+</b><button type="button" class="'+(S.selC==='seven'&&!S.selP?'on':'')+'" data-db="cell" data-v="|seven"><span>확인된 연락 지연</span><b class="'+(sv?'red':'')+'">'+sv+'건</b></button><button type="button" class="'+(S.selC==='sevenchk'&&!S.selP?'on':'')+'" data-db="cell" data-v="|sevenchk"><span>이관 기록 확인</span><b>'+ck+'건</b></button><span class="ok"><span>정상</span><b>'+okN+'건</b></span><small>대상 진행 영업건 '+active.length+'건 · 날짜 기준 마지막 고객 접촉일 · 제외 수주 · 실주 · 과거 이관 · 표본 판정 가능 '+(sv+okN)+'건 · 근거 목록 = 숫자를 누르면 옆 목록 · 이관 전 날짜만 있는 건은 지연으로 세지 않음(오늘 업무와 같은 판정)</small></div>';
+  const table=c3+'<section class="db-card flush db-table"><div class="db-ch pad"><b>누가 · 무엇이 끊겼나</b><span>칸 = 건수 · 진할수록 많음 · 빨간 열 = 오늘 손대야 함</span></div>'+(M.owners.length?grid:'<p class="db-empty">끊긴 건이 없습니다.</p>')+'<div class="db-risk"><b>데이터 위험</b>'+(risks.length?risks.map(r=>'<span>'+r[0]+' '+r[1]+'</span>').join(''):'<i>없음</i>')+'</div></section>';
+  const list=M.pick(S.selP,S.selC),cdef=M.COLS.find(c=>c[0]===S.selC)||XCOL[S.selC],why=cdef?(typeof WHYC[cdef[0]]==='function'?WHYC[cdef[0]]():WHYC[cdef[0]]):S.selP?S.selP+'님 담당 건 중 문제가 있는 전체입니다.':'칸을 하나 골라 주세요.';
   const hasSel=!!(S.selP||S.selC);
   const side='<section class="db-card flush db-sel"><div class="hd"><div><b>'+h((S.selP||'전체')+' · '+(cdef?cdef[1]:'모든 문제'))+'</b><b class="red">'+(hasSel?list.length:0)+'건</b><i class="db-sp"></i>'+(hasSel?'<button type="button" class="lnk" data-db="clear">선택 해제</button>':'')+'</div><span>'+h(why)+'</span>'
    +(can?'<div class="db-btns"><button type="button" class="dark" data-db="assign"'+(hasSel&&list.length?'':' disabled')+'>이 '+(hasSel?list.length:0)+'건 할 일 지정</button><button type="button" data-db="notify"'+(hasSel&&list.length?'':' disabled')+'>담당자에게 알림</button></div>':'<small class="db-perm">할 일 지정 · 알림은 관리자 · 팀장만 할 수 있습니다</small>')+'</div>'
@@ -666,5 +673,5 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
  ewRegister();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ewRegister);
  /* 월 문의 수 — 월별 막대(견적문의)와 같은 조건. 리포트 · 보고서 검증이 같은 숫자를 비교한다(asset_report ⑨) */
  function monthQ(a,b){const C=core();return C.AQ.filter(x=>!!C.K(R.inquiryCreatedAt(x))&&C.K(R.inquiryCreatedAt(x))>=a&&C.K(R.inquiryCreatedAt(x))<b).length;}
- root.DashB={enabled,monthQ,render,core,people,ctlModel,period,nearList,channelOf,weekActs,actKind,stageEvents,diagRows,priList,changeWeek,impact,lib:{brandRows,matrixRows,inquiryFate,pendingStats,eok,won,mk,BRC,MINREC,LOWMADE,MINCLOSED}};
+ root.DashB={enabled,monthQ,render,core,people,ctlModel,_crmContact:crmContact,period,nearList,channelOf,weekActs,actKind,stageEvents,diagRows,priList,changeWeek,impact,lib:{brandRows,matrixRows,inquiryFate,pendingStats,eok,won,mk,BRC,MINREC,LOWMADE,MINCLOSED}};
 })(window);

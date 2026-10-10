@@ -82,7 +82,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await clip('#inq-v4 .i4-row .c3, #inq-v4 .i4-row .c3 *'),[],'줄 오른쪽 글이 잘리지 않는다');
   /* ① 날짜 3개 · 메모 원문 표시 · ② 과거 약속 확인함 (천안두정) */
   await V.locator('.i4-row',{hasText:'천안두정'}).click();await page.waitForTimeout(150);
-  assert.deepEqual(await det.locator('.im-cell').evaluateAll(l=>l.map(c=>[...c.children].map(x=>x.textContent.replace(/\s+/g,' ').trim()))),[['접수일','2026.1.6','구글시트 접수 · 바뀌지 않음'],['실제 연결일','확인 필요','지금 1.6로 저장됨 = 접수일 복사'],['메모 속 통화','2026.1.7','이관 메모에서 찾음 · 보완 후보']]);
+  assert.deepEqual(await det.locator('.im-cell').evaluateAll(l=>l.map(c=>[...c.children].map(x=>x.textContent.replace(/\s+/g,' ').trim()))),[['접수일','2026.1.6','구글시트 접수 · 바뀌지 않음'],['실제 연결일','미확인','지금 1.6로 저장됨 = 접수일 복사 · 연결일로 쓰지 않음'],['메모 속 통화','2026.1.7','이관 메모에서 찾음 · 보완 후보'],['이관일','기록 없음','이관 자료(Live 기준일 10.1 전 접수) · 이관한 날은 저장돼 있지 않음']]);/* counting 12: 접수일 복사는 '미확인' · 이관일 칸 */
   assert.deepEqual([await det.locator('mark.im-call').allInnerTexts(),await det.locator('mark.im-pro').allInnerTexts()],[['관리소장 통화 완료'],['사진 이메일로 받기로 함','다음 날 방문 가능하다고 함']]);
   assert.match(one(await det.locator('.im-src').first().innerText()),/^이관 메모 · 2026\.1\.7 · 원문$/);
   assert.match(one(await det.locator('.im-prom .lb').innerText()),/^과거 약속 확인함 0 \/ 2$/);

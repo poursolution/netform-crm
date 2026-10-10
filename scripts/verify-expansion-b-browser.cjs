@@ -59,7 +59,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 공용 틀(2026-10-06 "리스트에서 이질감 없이"): 파이프라인 v3 와 같은 틀 — 상태 탭 4칸([전체] + 막대 3칸) · 진단 숫자 3개 · 사유 · 할 일 */
   assert.deepEqual(await v.locator('.ps3-tabs .ps3-tab').evaluateAll(l=>l.map(b=>b.querySelector('.l').textContent+' '+b.querySelector('.n').textContent)),['전체 6','사후 연락 · 관계 유지 4','니즈 확인 1','보류 · 전환 완료 1']);
   assert.equal(await page.locator('#expansion-b .ps3-head b').evaluate(n=>getComputedStyle(n).fontSize),'22px','제목 글자 = 파이프라인 v3');
-  assert.match(await v.locator('.ps3-kpis').innerText(),/기준 넘김\s*2건[\s\S]*니즈 확인\s*1건[\s\S]*평균 준공 후\s*\d+일/);
+  assert.match(await v.locator('.ps3-kpis').innerText(),/실제 기한 초과\s*1건\s*기록 확인 필요 1건 · 대상 5건\(보류 제외\) · 날짜 기준 다음 접촉일 · 연락 주기 · 표본 판정 가능 4건[\s\S]*니즈 확인\s*1건[\s\S]*평균 준공 후\s*\d+일/);/* counting 11: 빨강 2건 = 실제 기한 초과 1 + 기록 확인 필요 1 */
   const reasons=await v.locator('.ps3-reason>span>b:first-child').allInnerTexts();
   assert.deepEqual(reasons,['다음 접촉일 지남','사후 연락 기록 확인 필요','관계 연락 주기 넘김','니즈 확인 → 전환 대기','공종 미분류'],'사유 순서 = 표 순서 '+JSON.stringify(reasons));
   assert.match(await v.locator('.ps3-diag>.ps3-box').nth(2).innerText(),/그래서 뭘 해야 하나[\s\S]*다음 접촉일 지남 1건[\s\S]*사후 연락 기록 확인 필요 1건[\s\S]*관계 연락 주기 넘김 1건/);

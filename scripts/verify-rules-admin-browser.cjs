@@ -50,7 +50,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await row('최초 문의 연락두절').innerText(),/근거 확인 필요[\s\S]*며칠 간격 약 3회[\s\S]*적용 중/);
   assert.match(await row('진행 중 연락두절').innerText(),/진행 중 연락두절\s*조건부\s*회의 확정[\s\S]*월 간격 약 3회[\s\S]*−\s*3\s*\+\s*회\s*값만 저장/);
   assert.match(await row('기록 입력 마감').innerText(),/기록 입력 마감\s*조건부\s*회의 확정[\s\S]*−\s*12\s*\+\s*시\s*적용 중/);
-  assert.match(await row('중요 요청 \\(팝업\\)').innerText(),/해석 미확정[\s\S]*비어 있음 · 값 미정[\s\S]*\+ 추가[\s\S]*적용 중/);
+  assert.match(await row('중요 요청 \\(팝업\\)').innerText(),/잠정[\s\S]*기본값 = 관리자 첫 연락 요청[\s\S]*첫 연락 요청[\s\S]*\+ 추가[\s\S]*적용 중/);/* counting 16: 중요 요청 팝업 기본값 */
+  /* counting 15: 연결 상태 3칸 — 정책 · 누락 진단 · 입력 강제(어디까지 실제로 연결됐는지) */
+  const three=async l=>(await row(l).locator('.ra-3 i').allInnerTexts()).map(x=>x.replace(/\s+/g,' ').trim());
+  assert.deepEqual(await three('견적 발송 후 후속'),['정책확정','누락 진단적용','입력 강제미연결']);
+  assert.deepEqual(await three('단계 이동 필수조건'),['정책확정 전','누락 진단미연결','입력 강제적용'],'단계 이동 필수조건 = 입력 강제');
+  assert.deepEqual((await three('다음 행동 필수')).slice(1),['누락 진단적용','입력 강제일부'],'다음 행동 필수 = 진단은 적용 · 입력은 응대 기록만');
+  assert.deepEqual((await three('진행 중 연락두절')).slice(1),['누락 진단미연결','입력 강제미연결']);
+  assert.match((await page.locator('.ra-top3').innerText()).replace(/\s+/g,' '),/^누락 진단 적용 \d+ 입력 강제 적용 \d+ 미연결 \d+ 연결 순서 · 다음 행동 필수 → 향후 연도 건 집중관리 제외 → 진행 중 연락두절$/);
   assert.match(await row('귀속 기준').innerText(),/해석 미확정[\s\S]*문의 수신 · 배정 · 실제 연결 중/);
   assert.match(await row('실주 원인').innerText(),/회의 확정[\s\S]*실주 대신 보류 검토 안내/);
   assert.match(await row('주담당 자동 귀속').innerText(),/승인 근거 확인 필요/);

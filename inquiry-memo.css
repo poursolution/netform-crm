@@ -44,3 +44,6 @@
 @media (max-width:1279px){
  #inq-v4 .im-d3{grid-template-columns:minmax(0,1fr)}
 }
+/* counting 12: 날짜 4칸(접수일 · 실제 연결일 · 메모 속 통화 · 이관일) — 좁으면 2칸씩 */
+#inq-v4 .im-d3.im-d4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1500px){#inq-v4 .im-d3.im-d4{grid-template-columns:repeat(2,minmax(0,1fr))}}
