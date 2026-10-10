@@ -80,6 +80,8 @@
   }else if(mode==='none'){out.completeCurrent=!!ex;}
   else if(mode==='change'){out.change={text:ex.text,type:ex.type||'전화',due:date,from:ex.due||'',id:ex.id||''};}
   out.mode=mode;out.postpone=postpone;
+  /* 고객 정보 변경(바뀐 것만): 공사 시기 — 지금 값과 같으면 저장하지 않는다. 기록 저장이 고객 정보를 몰래 바꾸지 않도록 미리보기 · 저장 뒤 화면에 따로 적는다 */
+  const ip=S.info&&typeof S.info==='object'&&S.info.construction_plan?String(S.info.construction_plan):'';out.info=ip&&ip!==String(C.currentPlan||'')?{construction_plan:ip}:null;
   const p=out.parts;
   p.push(out.attempt?'연락 시도 1건 기록':'응대 기록 1건 저장 (실제 연결)');
   if(out.completeCurrent)p.push('기존 일정 "'+ex.text+'" 완료');
@@ -88,6 +90,12 @@
   if(mode==='change')p.push('기존 일정 "'+ex.text+'" 날짜만 변경 · '+md(date)+(postpone?' · 미룬 사유 기록':''));
   if(mode==='none')p.push('다음 일정 없음 · 사유 기록');
   if(out.badfit)p.push('배드핏 종결 검토 (사유 필수) — 종결은 [단계 바꾸기]에서 따로');
+  if(out.info)p.push('고객 정보 변경 · 공사 시기 '+out.info.construction_plan);
+  /* 처리한 관리자 요청(지정한 것만 · 자동 완료 금지): 연락 시도(부재 · 번호 오류)는 요청이 진행 중으로 남고, 실제 연결 + 다음 업무(새로 잡거나 기존 앞날 일정 유지 · 변경)가 있을 때만 완료 조건을 채운다 */
+  const nextOk=!!(out.next||out.change||(mode==='keep'&&ex&&DATE.test(String(ex.due||''))&&ex.due>=today));
+  const nx0=out.next||out.change||(mode==='keep'&&ex?{text:ex.text,due:ex.due}:null);
+  out.requests=(Array.isArray(S.requests)?S.requests:[]).filter(r=>r&&r.on&&r.id).map(r=>({id:r.id,title:String(r.title||'관리자 요청'),state:out.attempt?'working':(out.badfit||!nextOk)?'blocked':'done',next_text:nx0?String(nx0.text||nx0.purpose||''):'',next_due:nx0?String(nx0.due||''):''}));
+  out.requests.forEach(r=>p.push('관리자 요청 "'+r.title+'" '+(r.state==='done'?'완료':r.state==='working'?'진행 중으로 남김(연락 시도)':'완료 조건 미충족 · 요청은 남음')));
   out.preview=p.join(' · ');out.ok=true;return out;
  }
  /* 저장 뒤 보여 줄 구분: 저장된 기록 · 완료된 업무 · 바뀐 일정 · 새 일정 · 남은 업무 */
@@ -100,6 +108,8 @@
   if(pl.next)rows.push(['신규',pl.next.purpose+' · '+md(pl.next.due)]);
   if(pl.mode==='keep'&&ex)rows.push(['남음','기존 일정 "'+ex.text+'"'+(ex.due?' · '+md(String(ex.due).slice(0,10)):'')]);
   if(pl.mode==='none')rows.push(['남음','다음 일정 없음 · 사유 '+pl.reason]);
+  if(pl.info)rows.push(['변경','공사 시기 → '+pl.info.construction_plan]);
+  (pl.requests||[]).forEach(r=>rows.push([r.state==='done'?'완료':'남음','관리자 요청 "'+r.title+'"'+(r.state==='working'?' — 진행 중 · 연락 시도로 기록':r.state==='blocked'?' — 완료 조건 미충족':r.state==='failed'?' — 처리하지 못했습니다: '+(r.err||'서버 확인 없음'):'')]));
   (C.openRequests||[]).forEach(r=>rows.push(['남음','관리자 요청 "'+r.title+'" — '+(C.requestMet&&C.requestMet(r)?'조건 확인 필요':'아직 진행 중')]));
   return rows;
  }

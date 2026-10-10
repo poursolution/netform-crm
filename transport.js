@@ -6,7 +6,7 @@
  const origin=new URL(c.url).origin,base=`crm:production:${REF}:v${VERSION}:`,nativeLocal=root.localStorage,nativeSession=root.sessionStorage;
  const fetchNative=root.fetch.bind(root),webSocketNative=root.WebSocket,requests=[],blocked=[];let client,profile=null,epoch=0,activeUid=null,controllers=new Set(),sdkChannel=null,realtimeChannel=null,realtimeStatus='CLOSED';
  const realtimeListeners=new Map();
- const rpcAllow=new Set(['crm_profile_scoped_v2','crm_read_scoped_v2','crm_contacts_scoped_v2','crm_write_command_v2','crm_operational_source_v1','crm_operational_changes_v1','crm_expansion_note','crm_expansion_context','crm_my_credential_state_v1'/* 임시 비밀번호 변경 강제(2026-10-05) */]);
+ const rpcAllow=new Set(['crm_profile_scoped_v2','crm_read_scoped_v2','crm_contacts_scoped_v2','crm_write_command_v2','crm_operational_source_v1','crm_operational_changes_v1','crm_expansion_note','crm_expansion_context','crm_my_credential_state_v1'/* 임시 비밀번호 변경 강제(2026-10-05) */,'crm_deal_stage_fields_update_v1','crm_work_request_list_v1','crm_work_request_reply_v1','crm_inquiry_command_v1','crm_inquiry_flow_list_v1'/* 2026-10-10 대표 승인(design_handoff_mobile_all): 모바일도 PC 와 같은 서버 함수로 — 단계 정보 저장 · 요청 목록/회신 · 문의 응대 기록. 서버가 로그인 · 담당 · 권한을 그대로 검사한다 */]);
  function allowed(input){const u=new URL(typeof input==='string'?input:input.url||String(input),location.href);
   if(u.origin===location.origin)return u;
   if(u.origin===origin&&(u.pathname.startsWith('/auth/v1/')||u.pathname.startsWith('/storage/v1/object/upload/sign/crm-site-files/deals/')||u.pathname==='/functions/v1/crm-ai'/* AI 제안 서버 함수(2026-10-03) — 사용자 토큰으로만, 결과는 제안 저장 */||rpcAllow.has(u.pathname.replace('/rest/v1/rpc/',''))&&u.pathname.startsWith('/rest/v1/rpc/')))return u;
