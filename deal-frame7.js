@@ -27,9 +27,13 @@
  const fld=(d,s,k)=>{const c=ctxAll(d)[s],v=c&&c.fields?c.fields[k]:undefined;return v==null?'':v;};
  const anyFld=(d,k)=>{const c=ctxAll(d);let out='';Object.keys(c).forEach(s=>{const v=c[s]&&c[s].fields&&c[s].fields[k];if(!out&&v!=null&&v!=='')out=v;});return out;};
  const str=v=>Array.isArray(v)?v.join(' · '):String(v==null?'':v).trim();
- const groupOf=d=>safe(()=>root.PipelineStages.group(root.dealStage(d),root.outcomeOf?root.outcomeOf(d):null)||'','');
+ /* 과거 이관 · 분류 전(PipelineScope): 아직 어느 단계도 아니다 — 같은 틀을 쓰되 막대에 '지금'이 없고, 할 일은 영업 재개 판단 */
+ const legacyOf=d=>safe(()=>!!(root.PipelineScope&&root.PipelineScope.on()&&root.PipelineScope.isLegacy(d)),false);
+ const groupOf=d=>legacyOf(d)?'legacy':safe(()=>root.PipelineStages.group(root.dealStage(d),root.outcomeOf?root.outcomeOf(d):null)||'','');
+ const lastContact=d=>safe(()=>{const v=root.ContactState.of(d,'deal');return day(v.lastConnectedAt||v.lastAttemptAt||'');},'');
+ const liveFrom=()=>String(safe(()=>root.OPS_RULES.liveFrom,'')||'2026-10-01');
  const idx=g=>ST.findIndex(s=>s[0]===g);
- const has=d=>idx(groupOf(d))>=0;
+ const has=d=>{const g=groupOf(d);return g==='legacy'||idx(g)>=0;};
  const eok=(n,dec)=>DS().eok(n,dec==null?2:dec);
  const acts=d=>[].concat(d&&d.activities||[],patchOf(d).activities||[]);
  const files=d=>safe(()=>d.id?root.execAttachments(d):[],[]);
@@ -41,7 +45,7 @@
  const prep=d=>safe(()=>root.DealPrep&&root.DealPrep.on()?root.DealPrep.read(d):null,null);
  /* ── 머리: 7단계 막대(지금 = 파랑 · 지나온 단계 = 검정 · 나머지 회색. 수주 · 실주는 앞 5단계를 지나온 것으로) ── */
  function bar(d){
-  const s=idx(groupOf(d));if(s<0)return [];const end=s>=5;
+  const g0=groupOf(d);if(g0==='legacy')return ST.map(([k,l])=>({key:k,label:l,cur:false,past:false}));const s=idx(g0);if(s<0)return [];const end=s>=5;
   return ST.map(([k,l],i)=>({key:k,label:l,cur:i===s,past:end?i<5:i<s}));
  }
  function barHtml(d){
@@ -117,6 +121,12 @@
  }
  function first(d){
   const g=groupOf(d),L=prep(d),F=files(d);
+  if(g==='legacy'){
+   const old=safe(()=>String(root.PipelineScope.oldStage(d)||''),''),nt=nextOf(d),lc=lastContact(d);
+   return [T(old?'확인 필요':'미입력','단계 정하기'+(old?' · 예전 단계 '+old:'')),
+    nt.none||!nt.due?T('미입력','다음 행동 · 날짜'):nt.days<0?T('기한 지남','다음 행동 '+md(nt.due)+' · '+(-nt.days)+'일 지남'):T('확인됨','다음 행동 '+md(nt.due)),
+    lc?(lc<liveFrom()?T('확인 필요','마지막 연락 '+md(lc)+' · 이관 전 기록'):T('확인됨','마지막 연락 '+md(lc))):T('미입력','연락 기록')];
+  }
   if(g==='consulting'){
    const n=F.length,rq=str(fld(d,'consulting','required_materials'));
    return [n?T('확인됨','도면 · 현장 사진 '+n+'개'):rq?T('확인 필요','도면 · 현장 사진 · 요청만 기록됨'):T('미입력','도면 · 현장 사진'),timing(d),bidItem(d)];
@@ -160,14 +170,15 @@
  }
  const OPEN=['미입력','확인 필요','기한 지남'];
  /* ── 오른쪽: 할 일 · 기한 종류 + 기한 · 확인됨 / 확인할 것 / 완료 조건 · 주 버튼 ── */
- const TASK={consulting:'견적 요청 등록',sent:'발송 내역 확인 · 고객 반응 기록',relationship:'고객 합의 연락',competition:'제출 준비',construction:'계약 체결 확인',won:'준공 후 사후 연락',lost:'실주 기록 완성'};
- const DONE={consulting:'잔디 견적 요청 등록 + 견적 예정일',sent:'발송일 등록 + 고객 반응 기록',relationship:'결과 기록 + 다음 단계 판단',competition:'제출 접수증 첨부',won:'사후 연락 결과 + 재영업 여부',lost:'실주 사유 + 재영업 예 / 아니오'};
- const BTN={consulting:['견적 요청 등록','stagefields'],sent:['발송 내역 확인','stagefields'],relationship:['연락하고 결과 기록','activity'],competition:['제출 준비 확인','stagefields'],construction:['계약 체결 확인','stagefields'],won:['사후 연락하기','call'],lost:['실주 기록 채우기','stagefields']};
+ const TASK={legacy:'영업 재개 판단',consulting:'견적 요청 등록',sent:'발송 내역 확인 · 고객 반응 기록',relationship:'고객 합의 연락',competition:'제출 준비',construction:'계약 체결 확인',won:'준공 후 사후 연락',lost:'실주 기록 완성'};
+ const DONE={legacy:'영업 재개(단계 · 다음 행동 · 날짜) 또는 종료 사유',consulting:'잔디 견적 요청 등록 + 견적 예정일',sent:'발송일 등록 + 고객 반응 기록',relationship:'결과 기록 + 다음 단계 판단',competition:'제출 접수증 첨부',won:'사후 연락 결과 + 재영업 여부',lost:'실주 사유 + 재영업 예 / 아니오'};
+ const BTN={legacy:['영업 재개','stage'],consulting:['견적 요청 등록','stagefields'],sent:['발송 내역 확인','stagefields'],relationship:['연락하고 결과 기록','activity'],competition:['제출 준비 확인','stagefields'],construction:['계약 체결 확인','stagefields'],won:['사후 연락하기','call'],lost:['실주 기록 채우기','stagefields']};
  const AFTER=30;/* 준공 후 사후 연락 기준일(README 표 '준공 후 30일') */
  function due(d){
   const g=groupOf(d),nt=nextOf(d),b=judge(d),Tk=today(),Q=safe(()=>root.PipelineJudge.rules(),{follow:7,month:30,site:7});
   const date=(k,v,n)=>({k,text:md(v)+' · '+rel(n),cls:n<0?'red':'',date:v});
   const blue=(k,text)=>({k,text,cls:'blue',date:''});
+  if(g==='legacy')return nt.due&&!nt.none?date((nt.kind==='고객 약속'?'고객 약속':'등록된 다음 업무')+' 기한',nt.due,nt.days):blue('기한','단계 없음 · 판정 불가');
   if(g==='won'){
    const cp=day(d.completion_date||fld(d,'won','completion_date')||fld(d,'completion','completion_date')),k='준공 후 '+AFTER+'일';
    if(!cp)return blue(k,'준공일 없음 · 판정 불가');
@@ -201,7 +212,8 @@
  }
  function confirmed(d){
   const g=groupOf(d),o=[],Q=quotes(d),q=Q[Q.length-1],amt=Number(d&&(d.amount??d.amt))||0;
-  if(g==='consulting'){const mt=safe(()=>root.PipelineJudge.meetingOf(d),'');if(mt)o.push(md(mt)+' 미팅 완료');if(str(fld(d,'consulting','quote_request')))o.push('견적 요청 등록');const qd=day(fld(d,'consulting','quote_due'));if(qd)o.push('견적 예정 '+md(qd));}
+  if(g==='legacy'){const lc=lastContact(d),n=acts(d).filter(Boolean).length;if(lc)o.push('마지막 연락 '+md(lc));if(n)o.push('응대 기록 '+n+'건');}
+  else if(g==='consulting'){const mt=safe(()=>root.PipelineJudge.meetingOf(d),'');if(mt)o.push(md(mt)+' 미팅 완료');if(str(fld(d,'consulting','quote_request')))o.push('견적 요청 등록');const qd=day(fld(d,'consulting','quote_due'));if(qd)o.push('견적 예정 '+md(qd));}
   else if(g==='sent'){if(q)o.push('견적 V'+(Number(q.version_no)||Q.length));if(amt)o.push('예상 '+eok(amt));const sd=day(fld(d,'sent','sent_date'));if(sd)o.push('발송 '+md(sd));}
   else if(g==='relationship'){if(q)o.push('견적 V'+(Number(q.version_no)||Q.length));const up=schedule(d)[0];if(up)o.push(up.label+' '+md(up.date));const sd=safe(()=>root.RelV12.sentOf(d),'');if(sd)o.push('발송 '+md(sd));}
   else if(g==='competition'){const br=day(anyFld(d,'briefing_date'));if(br&&br<=today())o.push('현설 '+md(br));if(acts(d).some(a=>/PT|프레젠|제안\s*발표/.test(String(a&&a.type||'')+' '+String(a&&a.note||''))))o.push('PT 기록');const L=prep(d),B=safe(()=>root.DealPrep.BID,[]);if(L&&B.length){const n=B.filter(x=>L.bid&&L.bid[x]&&L.bid[x].done).length;o.push('입찰 준비 '+n+' / '+B.length);}}
@@ -211,7 +223,7 @@
  }
  function task(d,ctx){
   ctx=ctx||{};const g=groupOf(d),nt=nextOf(d),F=first(d),D=due(d),closed=g==='won'||g==='lost';
-  let text=closed||nt.none?TASK[g]||'다음 업무 등록':String(nt.text).replace(/^\s*고객\s*약속\s*[:：]\s*/,'');
+  let text=closed||nt.none||g==='legacy'?TASK[g]||'다음 업무 등록':String(nt.text).replace(/^\s*고객\s*약속\s*[:：]\s*/,'');
   let ok=confirmed(d).join(' · '),chk=F.filter(x=>OPEN.includes(x.s)).map(x=>x.l.replace(/\s·\s.*$/,'').replace(/\s맞는지$/,'')).join(' · '),done=DONE[g]||'결과 기록',btn=(BTN[g]||['결과 기록','activity']).slice();
   if(g==='construction'){/* 계약 정보는 한 근거(DealSame.facts)를 그대로 */
    const X=safe(()=>DS().facts(d,ctx),null);if(X){ok=X.done;chk=X.todo==='없음'?'':X.todo;done=X.cond;}
@@ -258,10 +270,10 @@
    +'<div class="dvs-tt"><b>'+esc(K.text)+'</b><span><span class="k">'+esc(K.dueK)+'</span> <b class="'+esc(K.cls)+'">'+esc(K.due)+'</b></span></div>'
    +(ctx.opener?'<div class="dv7-opener"><b>첫마디</b> '+esc(ctx.opener)+'</div>':'')
    +'<div class="dvs-kv"><span>확인됨</span><span class="'+(K.okNone?'none':'')+'">'+esc(K.ok)+'</span><span>확인할 것</span><span class="'+(K.chkOpen?'chk':'none')+'">'+esc(K.chk)+'</span><span>완료 조건</span><span>'+esc(K.done)+'</span></div>'
-   +'<div class="dvs-btns dv7-btns"><button type="button" class="fill dvs-primary" data-dv3="primary" data-act="'+attr(K.btn.act)+'">'+esc(K.btn.label)+'</button>'+sub+'</div>'+(closed?'':(ctx.nextHtml||''))
+   +'<div class="dvs-btns dv7-btns"><button type="button" class="fill dvs-primary" data-dv3="primary" data-act="'+attr(K.btn.act)+'"'+(ctx.noResume&&K.g==='legacy'?' disabled title="서버에 단계 값이 비어 있는 자료입니다 — 서버 보완 뒤에 영업 재개를 할 수 있습니다"':'')+'>'+esc(K.btn.label)+'</button>'+sub+'</div>'+(closed?'':(ctx.nextHtml||''))
    +(K.first.length?'<div class="dv7-first"><b>먼저 확인 · '+K.first.length+'</b>'+K.first.map(f=>'<span class="it"><em class="t-'+TAGC[f.s]+'">'+esc(f.s)+'</em><span>'+esc(f.l)+'</span></span>').join('')+'</div>':'')
    +'<div class="dv7-grps">'+K.groups.map(G=>'<div class="dv7-grp"><b>'+esc(G.t)+'</b>'+G.items.map(m=>'<div><span>'+esc(m[0])+'</span><span class="'+esc(m[2])+'">'+esc(m[1])+'</span></div>').join('')+'</div>').join('')+'</div>'
    +(aux?'<div class="dvs-aux">'+aux+'</div>':'');
  }
- return {on,has,ST,groupOf,bar,barHtml,meta,metaHtml,amounts,line2,pos,posHtml,first,due,confirmed,task,schedule,groups,taskHtml,TASK,DONE,BTN,AFTER};
+ return {on,has,ST,groupOf,legacyOf,bar,barHtml,meta,metaHtml,amounts,line2,pos,posHtml,first,due,confirmed,task,schedule,groups,taskHtml,TASK,DONE,BTN,AFTER};
 });

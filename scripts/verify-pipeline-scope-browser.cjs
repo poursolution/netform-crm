@@ -77,12 +77,13 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await L.locator('.plg-row[data-key="l1"]>button').click();await page.waitForSelector('#detailView.dv3 .dv3-move:not([hidden])',{timeout:5000});
   const D=await page.evaluate(()=>{const v=document.getElementById('detailView'),t=s=>{const n=v.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():'';};
    return {legacy:v.classList.contains('dv3-legacy'),badge:t('.dv3-stagebadge'),sub:t('.dv3-subrow .tx'),mv:t('.dv3-headact .mv'),band:t('.dv3-move .hd'),steps:getComputedStyle(v.querySelector('.ddv-steps')||v).display,
-    stages:[...v.querySelectorAll('.dv3-moves [data-stage]')].map(b=>[b.textContent.trim(),b.classList.contains('cur'),b.getAttribute('aria-disabled')==='true']),now:t('.dv3-title')};});
+    stages:[...v.querySelectorAll('.dv3-moves [data-stage]')].map(b=>[b.textContent.trim(),b.classList.contains('cur'),b.getAttribute('aria-disabled')==='true']),now:t('.dvs-task .dvs-tt>b')+' | '+t('.dvs-task .dvs-aux'),btn:t('.dvs-task .dvs-primary')};});
   await shot('resume');
   assert.equal(D.legacy,true);assert.equal(D.badge,'과거 이관 · 분류 전');assert.match(D.sub,/예전 단계 검증된 고객$/);assert.doesNotMatch(D.sub,/컨설팅|일째/);
   assert.equal(D.mv,'영업 재개 ▴');assert.match(D.band,/^영업 재개 — 어느 단계로 올릴까요\? 단계 · 다음 행동 · 날짜를 정하면 그때부터 진행 건이 됩니다$/);
   assert.deepEqual(D.stages.filter(s=>['컨설팅 설계','자료 발송완료','관계관리','경쟁·입찰','계약·시공'].includes(s[0])).map(s=>s.slice(1)),[[false,false],[false,false],[false,false],[false,false],[false,false]],'다섯 단계 모두 고를 수 있고 지금 단계 표시는 없다');
-  assert.match(D.now,/^과거 이관 · 분류 전 영업을 다시 시작하려면 위 \[영업 재개\]에서 단계 · 다음 행동 · 날짜를 정해 주세요$/);
+  /* 과거 이관 건도 7단계 공통 틀(deal-frame7.js): 할 일 = 영업 재개 판단 · 주 버튼 [영업 재개] · 안내 한 줄 */
+  assert.match(D.now,/^영업 재개 판단 \| 지침 영업을 다시 시작하려면 \[영업 재개\]에서 단계 · 다음 행동 · 날짜를 정해 주세요/,D.now);assert.equal(D.btn,'영업 재개');
   /* 단계를 고르면 기존 전환 창 — 출발 단계는 서버에 저장된 예전 값(검증된 고객)이다 */
   await page.locator('#detailView .dv3-moves [data-stage="relationship"]').click();await page.waitForSelector('#stage-transition-form');
   assert.match(one(await page.locator('#stage-transition-form header p').innerText()),/^과거 이관 · 검증된 고객 → /);
