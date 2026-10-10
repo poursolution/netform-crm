@@ -22,3 +22,51 @@
 #assetV2 .idv-meta .dvu-tag{font-style:normal;font-size:10.5px;font-weight:700;color:#374151;border:1px solid #e3e6ec;border-radius:4px;padding:0 5px;margin-left:4px;white-space:nowrap}
 /* 고객 자산 상세 · 지금 진행 중인 영업 줄 밑 한 줄 */
 #assetV2 .av-opp .dvu-al{display:block;font-size:11px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+/* 영업 판단 · 준비 지원(deal-prep.js · rules 6차) — 관리 단위 상자와 같은 결 */
+#detailView .dp6{background:#fff;border:1px solid #e8eaef;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:12px;font-size:12.5px;color:#15171c;margin-top:10px}
+#detailView .dp6>h3{margin:0;font-size:13.5px}
+#detailView .dp6>section{display:flex;flex-direction:column;gap:5px;min-width:0}
+#detailView .dp6 header{display:flex;align-items:baseline;gap:8px;min-width:0}
+#detailView .dp6 header>b{font-size:12.5px;white-space:nowrap}
+#detailView .dp6 header>span{font-size:11.5px;color:#6b7280;min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#detailView .dp6 header>button,#detailView .dp6 .dp6-btns button{height:26px;min-height:0;width:auto;border:1px solid #d9dde4;border-radius:7px;background:#fff;color:#15171c;font:inherit;font-size:11.5px;font-weight:700;padding:0 9px;box-shadow:none;cursor:pointer;white-space:nowrap}
+#detailView .dp6 .dp6-btns{display:flex;gap:6px;justify-content:flex-end}
+#detailView .dp6 .dp6-btns button.pri{background:#15171c;border-color:#15171c;color:#fff}
+#detailView .dp6 button:disabled{opacity:.55;cursor:default}
+#detailView .dp6-row{display:grid;grid-template-columns:64px auto minmax(0,1fr);gap:2px 8px;align-items:center;text-align:left;border:0;border-top:1px solid #f0f1f4;background:none;padding:6px 0;font:inherit;font-size:12.5px;color:#15171c;min-height:0;height:auto;width:100%;box-shadow:none;cursor:pointer}
+#detailView .dp6-row>span{color:#6b7280;white-space:nowrap}
+#detailView .dp6-row>b{font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#detailView .dp6-row>small{grid-column:1/-1;font-size:11px;color:#9ca3af;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#detailView .dp6-p{font-style:normal;font-size:11px;font-weight:700;border-radius:10px;padding:1px 8px;background:#f3f4f6;color:#6b7280;white-space:nowrap}
+#detailView .dp6-p.ok{background:#e8f6ee;color:#1f7a4d}#detailView .dp6-p.mid{background:#fdecec;color:#b42318}
+#detailView .dp6-edit{display:flex;flex-direction:column;gap:7px;border:1px solid #d9dde4;border-radius:10px;padding:9px 10px;background:#fafbfc}
+#detailView .dp6-edit label{display:flex;flex-direction:column;gap:4px;margin:0}
+#detailView .dp6-edit label>span{font-size:11.5px;color:#6b7280}
+#detailView .dp6-edit input{height:32px;border:1px solid #d9dde4;border-radius:8px;padding:0 9px;font:inherit;font-size:12.5px;background:#fff;color:#15171c;min-width:0;width:100%;box-sizing:border-box;margin:0;box-shadow:none}
+#detailView .dp6-chips{display:flex;flex-wrap:wrap;gap:5px}
+#detailView .dp6-chips button{height:27px;min-height:0;width:auto;border:1px solid #d9dde4;border-radius:14px;background:#fff;color:#374151;font:inherit;font-size:11.5px;font-weight:600;padding:0 9px;box-shadow:none;cursor:pointer;white-space:nowrap}
+#detailView .dp6-chips button[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}
+#detailView .dp6-pp,#detailView .dp6-sp,#detailView .dp6-h{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr) auto;gap:2px 8px;align-items:baseline;border-top:1px solid #f0f1f4;padding:6px 0}
+#detailView .dp6-pp>b,#detailView .dp6-sp>b,#detailView .dp6-h>b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#detailView .dp6-pp>span,#detailView .dp6-sp>span,#detailView .dp6-h>span{color:#374151;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#detailView .dp6-sp>small,#detailView .dp6-h>small{grid-column:1/-1;font-size:11.5px;color:#6b7280;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#detailView .dp6-ck{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:8px;align-items:center;text-align:left;border:0;border-top:1px solid #f0f1f4;background:none;padding:6px 0;font:inherit;font-size:12.5px;color:#15171c;min-height:0;height:auto;width:100%;box-shadow:none;cursor:pointer}
+#detailView .dp6-ck>i{width:16px;height:16px;border:1.5px solid #d14a3f;border-radius:4px;font-style:normal;font-size:11px;line-height:13px;text-align:center;color:#fff}
+#detailView .dp6-ck.on>i{background:#15171c;border-color:#15171c}
+#detailView .dp6-ck>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#detailView .dp6-ck.on>span{color:#6b7280}
+#detailView .dp6-ck>small{font-size:11px;color:#9ca3af;white-space:nowrap}
+#detailView .dp6-kv{display:grid;grid-template-columns:64px minmax(0,1fr);gap:4px 8px}
+#detailView .dp6-kv>span{color:#6b7280}#detailView .dp6-kv>b{font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#detailView .dp6-clash{margin:2px 0 0;color:#b42318;font-size:12px;font-weight:600;line-height:1.5}
+#detailView .dp6-note{font-size:11px;color:#9ca3af;line-height:1.5}
+#detailView .dp6-none{margin:0;color:#6b7280;font-size:12px;line-height:1.5}
+#detailView .dp6-low{font-style:normal;color:#6b7280;font-weight:700}
+#detailView .dp6-err{margin:0;color:#b42318;font-size:12px;font-weight:600}
+#detailView .dp6-plan{display:grid;grid-template-columns:86px minmax(0,1fr);gap:5px 8px;margin-top:10px;padding-top:10px;border-top:1px dashed #e3e6ec;font-size:12.5px}
+#detailView .dp6-plan>div{display:contents}
+#detailView .dp6-plan span{color:#6b7280;white-space:nowrap}
+#detailView .dp6-plan b{font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#15171c}
+#detailView .dp6-plan b.amb{color:#b42318}#detailView .dp6-plan b.r{color:#b42318}#detailView .dp6-plan b.ok{color:#1f7a4d}
+/* 글이 잘리지 않게: 상세 칸은 좁으므로 값 · 근거는 줄을 바꿔 다 보인다(말줄임 없음) */
+#detailView .dp6-row>b,#detailView .dp6-row>small,#detailView .dp6-pp>span,#detailView .dp6-sp>span,#detailView .dp6-sp>small,#detailView .dp6-h>span,#detailView .dp6-h>small,#detailView .dp6-kv>b,#detailView .dp6-ck>span,#detailView .dp6 header>span,#detailView .dp6-plan b,#detailView .dp6-pp>b,#detailView .dp6-sp>b,#detailView .dp6-h>b{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;word-break:keep-all;line-height:1.45}
