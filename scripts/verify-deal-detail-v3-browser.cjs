@@ -137,47 +137,55 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const F=page.locator('#nowCard .dv3-form');assert.equal(await F.count(),1,'카드 안에서 펼침');assert.equal(await page.locator('#ddvPanel,#detailAction').count(),0,'패널 · 창 없음');await rightIntact('연락 결과');
   assert.equal(await page.locator('#nowCard .nc-call').innerText(),'접기');
   assert.deepEqual(await F.locator('.dv3-pills').nth(0).locator('button').allInnerTexts(),['전화','문자','카카오','방문','이메일']);assert.equal(await F.locator('[data-dv3="rch"][aria-pressed="true"]').innerText(),'전화','기본 전화');
-  assert.deepEqual(await F.locator('.dv3-pills').nth(1).locator('button').allInnerTexts(),['연결됨','부재','검토중','자료요청','회신대기','방문 희망','견적 요청','다음 할 일 없음']);/* after_deploy 14: 견적 요청 = 견적 요청 등록(잔디) · day_zones §4-1: 방문 희망 = 현장 방문 · 날짜 확정, 다음 할 일 없음 = 이유 필수 */
-  assert.match(await F.innerText(),/어떻게 연락했나요\?[\s\S]*결과[\s\S]*다음 업무\s*결과를 고르면 자동 제안[\s\S]*저장[\s\S]*저장하면 응대 이력에 쌓이고, 예정일에 오늘 업무로 다시 뜹니다 · 응대 완료 ≠ 단계 전환/);
+  /* 2026-10-10 mobile_all 2번: 연락 결과 = PC 값 5가지 · 상담 내용 · 다음 업무(기존 일정 유지 · 변경 · 새 업무 · 없음) · 저장 전 미리보기 (모바일 결과 창과 같은 입력 · contact-entry.js) */
+  assert.deepEqual(await F.locator('.dv3-pills').nth(1).locator('button').allInnerTexts(),['연결됨','회신 받음','부재','번호 오류','배드핏']);
+  assert.match(await F.innerText(),/어떻게 연락했나요\?[\s\S]*연락 결과[\s\S]*저장[\s\S]*저장하면 응대 이력에 쌓입니다 · 응대 완료 ≠ 단계 전환/);assert.doesNotMatch(await F.innerText(),/다음 업무/,'결과를 고르기 전에는 다음 업무 칸이 없다');
   assert.equal(await F.locator('.dv3-save.off').count(),1,'수단 + 결과가 있어야 저장');
-  await page.locator('#nowCard .dv3-save').click();await page.waitForTimeout(150);assert.match(await page.locator('#nowCard .dv3-recerr').innerText(),/연락 수단과 결과/);assert.deepEqual(await page.evaluate(()=>__ops),[]);
+  await page.locator('#nowCard .dv3-save').click();await page.waitForTimeout(150);assert.match(await page.locator('#nowCard .dv3-recerr').innerText(),/연락 결과를 골라 주세요/);assert.deepEqual(await page.evaluate(()=>__ops),[]);
   await page.locator('#nowCard [data-dv3="rres"]',{hasText:'부재'}).click();await page.waitForTimeout(120);
-  assert.match(await page.locator('#nowCard .dv3-recnext').innerText(),/다음 업무\s*다시 전화 · \d{4}\.\d+\.\d+\(.\) · .+ · 내부 계획[\s\S]*목적[\s\S]*예정일[\s\S]*내일\s*3일 후\s*7일 후\s*날짜 지정[\s\S]*담당[\s\S]*일정[\s\S]*고객 합의\s*내부 계획/);/* day_zones §4-1: 목적 · 예정일 · 담당 · 일정 구분 자동 제안 */assert.equal(await page.locator('#nowCard [data-dv3="rday"][aria-pressed="true"]').innerText(),'내일','부재 → 내일');
-  await page.locator('#nowCard [data-dv3="rres"]',{hasText:'검토중'}).click();await page.waitForTimeout(120);
-  assert.match(await page.locator('#nowCard .dv3-recnext').innerText(),/결과 확인/);assert.equal(await page.locator('#nowCard [data-dv3="rday"][aria-pressed="true"]').innerText(),'7일 후','검토중 → 7일 후');
+  assert.equal(await page.locator('#nowCard [data-dv3="rmode"][aria-pressed="true"]').innerText(),'기존 일정 유지','앞으로 잡힌 일정이 있으면 기본은 그대로 · 몰래 바꾸지 않는다');
+  await page.locator('#nowCard [data-dv3="rmode"]',{hasText:'새 업무'}).click();await page.waitForTimeout(120);
+  assert.match(await page.locator('#nowCard .dv3-recnext').innerText(),/다음 업무[\s\S]*(기존 일정|지금 잡힌 다음 업무 없음)[\s\S]*할 일[\s\S]*예정일[\s\S]*내일\s*3일 후\s*7일 후\s*날짜 지정[\s\S]*담당[\s\S]*일정[\s\S]*고객 합의\s*내부 계획/);assert.equal(await page.locator('#nowCard [data-dv3="rday"][aria-pressed="true"]').innerText(),'내일','부재 → 내일');
+  assert.match(await page.locator('#nowCard .dv3-ce-note').innerText(),/^부재 · 번호 오류는 상담 내용 칸 없음 · 연락 시도로만 기록$/);assert.equal(await page.locator('#nowCard [data-dv3rec="memo"]').count(),0,'부재 = 상담 내용 칸 없음');
+  assert.match(await page.locator('#nowCard .dv3-ce-prev').innerText(),/^저장하면 연락 시도 1건 기록 · (기존 일정 .* 완료 · )?다시 전화 일정 1건 등록 · \d+\.\d+ \(.\)$/,'저장 전 미리보기');
+  await page.locator('#nowCard [data-dv3="rres"]',{hasText:'연결됨'}).click();await page.waitForTimeout(120);await page.locator('#nowCard [data-dv3="rmode"]',{hasText:'새 업무'}).click();await page.waitForTimeout(120);
+  assert.equal(await page.locator('#nowCard [data-dv3rec="purpose"]').inputValue(),'다시 연락');assert.equal(await page.locator('#nowCard [data-dv3="rday"][aria-pressed="true"]').innerText(),'3일 후','연결됨 → 3일 후');
+  await page.locator('#nowCard .dv3-save').click();await page.waitForTimeout(150);assert.match(await page.locator('#nowCard .dv3-recerr').innerText(),/상담 내용을 한 줄 적어 주세요/);assert.deepEqual(await page.evaluate(()=>__ops),[],'상담 내용 없이는 저장 안 됨');
+  await page.locator('#nowCard [data-dv3rec="purpose"]').fill('결과 확인');await page.waitForTimeout(80);
+  await page.locator('#nowCard [data-dv3="rday"]',{hasText:'7일 후'}).click();await page.waitForTimeout(120);
   await page.locator('#nowCard [data-dv3="rday"]',{hasText:'3일 후'}).click();await page.waitForTimeout(120);
-  await page.locator('#nowCard .dv3-memo').fill('12월 입대의 후 결정');
+  await page.locator('#nowCard [data-dv3rec="memo"]').fill('12월 입대의 후 결정');
   await page.locator('#nowCard [data-dv3="rch"]',{hasText:'방문'}).click();await page.waitForTimeout(120);
-  assert.equal(await page.locator('#nowCard .dv3-memo').inputValue(),'12월 입대의 후 결정','다시 그려도 메모 유지');
+  assert.equal(await page.locator('#nowCard [data-dv3rec="memo"]').inputValue(),'12월 입대의 후 결정','다시 그려도 상담 내용 유지');
   await page.locator('#nowCard [data-dv3="rch"]',{hasText:'전화'}).click();await page.waitForTimeout(120);
   if(shot)await page.screenshot({path:shot+'-record.png'});
   assert.deepEqual(await page.evaluate(()=>__ops),[],'고르는 것만으로 저장 없음');
   await page.locator('#nowCard .dv3-save').click();await page.waitForTimeout(500);
-  assert.deepEqual(await page.evaluate(()=>__ops.map(o=>[o.op,o.payload.type,o.payload.note||o.payload.text,o.payload.due_at||''])),[['activity','전화','통화 완료 · 검토중 — 12월 입대의 후 결정',''],['next_action','전화','결과 확인',await day(3)]],'저장 = 연락 기록 + 다음 할 일(기존 경로)');
+  assert.deepEqual(await page.evaluate(()=>__ops.map(o=>[o.op,o.payload.type,o.payload.note||o.payload.text,o.payload.due_at||''])),[['activity','전화','통화 완료 · 연결됨 — 12월 입대의 후 결정',''],['next_action','전화','결과 확인',await day(3)]],'저장 = 연락 기록 + 다음 할 일(기존 경로)');
   assert.equal(await page.locator('#nowCard .dv3-form').count(),0,'저장 뒤 접힘');assert.equal(await page.locator('#nowCard .nc-call').innerText(),'연락하고 결과 남기기');
-  assert.match(await page.locator('#detailView .dw-center').innerText(),/통화 완료 · 검토중 — 12월 입대의 후 결정/,'가운데 응대 이력에 쌓임');
+  assert.match(await page.locator('#detailView .dw-center').innerText(),/통화 완료 · 연결됨 — 12월 입대의 후 결정/,'가운데 응대 이력에 쌓임');
   assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#detailView .idv-thread .idv-meta')].every(n=>/\d{4}\.\d{1,2}\.\d{1,2} \d{2}:\d{2}/.test(n.innerText))),true,'기록마다 연도 표시');
   assert.equal(await page.evaluate(()=>CUR_DETAIL.item.nextActionObj.text),'결과 확인','다음 할 일 반영');
-  /* 거절 = 다음 행동 없이 저장 */
+  /* 배드핏 = 다음 일정 없음 + 사유 필수(기록만 — 종결은 단계 바꾸기에서 따로) */
   await page.locator('#nowCard .nc-call').click();await page.waitForTimeout(200);
-  await page.locator('#nowCard [data-dv3="rch"]',{hasText:'문자'}).click();await page.waitForTimeout(100);await page.locator('#nowCard [data-dv3="rres"]',{hasText:'다음 할 일 없음'}).click();await page.waitForTimeout(120);
-  assert.match(await page.locator('#nowCard .dv3-recnext').innerText(),/없음 · 이유 필수/);assert.equal(await page.locator('#nowCard [data-dv3="rday"]').count(),0);
-  /* day_zones §4-1: 다음 할 일 없음 = 이유 필수(고객이 연락 거절 · 공사 계획 없음 → 보류 · 다른 담당으로 이관 · 실주 처리) — 이유 없이는 저장되지 않는다 */
-  await page.locator('#nowCard .dv3-save').click();await page.waitForTimeout(300);assert.match(await page.locator('#nowCard .dv3-recerr').innerText(),/다음 할 일이 없는 이유를 골라 주세요/);
+  await page.locator('#nowCard [data-dv3="rch"]',{hasText:'문자'}).click();await page.waitForTimeout(100);await page.locator('#nowCard [data-dv3="rres"]',{hasText:'배드핏'}).click();await page.waitForTimeout(120);
+  assert.deepEqual(await page.locator('#nowCard [data-dv3="rmode"]').allInnerTexts(),['다음 일정 없음'],'배드핏은 다음 일정 없음만');assert.equal(await page.locator('#nowCard [data-dv3="rday"]').count(),0);
+  /* 다음 일정 없음 = 이유 필수(고객이 연락 거절 · 공사 계획 없음 → 보류 · 다른 담당으로 이관 · 실주 처리) — 이유 없이는 저장되지 않는다 */
+  await page.locator('#nowCard .dv3-save').click();await page.waitForTimeout(300);assert.match(await page.locator('#nowCard .dv3-recerr').innerText(),/배드핏은 사유가 있어야 합니다/);
   assert.deepEqual(await page.locator('#nowCard [data-dv3="rwhy"]').allInnerTexts(),['고객이 연락 거절','공사 계획 없음 → 보류','다른 담당으로 이관','실주 처리']);
   await page.locator('#nowCard [data-dv3="rwhy"]',{hasText:'고객이 연락 거절'}).click();await page.waitForTimeout(120);
+  assert.match(await page.locator('#nowCard .dv3-ce-prev').innerText(),/배드핏 종결 검토 \(사유 필수\) — 종결은 \[단계 바꾸기\]에서 따로$/);
   await page.locator('#nowCard .dv3-save').click();await page.waitForTimeout(500);
-  assert.deepEqual(await page.evaluate(()=>__ops.slice(2).map(o=>[o.op,o.payload.type,o.payload.note])),[['activity','문자','문자 답변 받음 · 다음 할 일 없음 — 이유: 고객이 연락 거절']],'다음 할 일 없음 = 기록만 · 이유를 함께');
-  /* day_zones §4-1: 방문 희망 = 현장 방문 · 고객과 정한 날짜 필수(기본 제안 없음) · 고객 합의 → 다음 업무 글머리 '고객 약속: ' · 목적이 '연락하기'만이면 저장 불가 */
+  assert.deepEqual(await page.evaluate(()=>__ops.slice(2).map(o=>[o.op,o.payload.type,o.payload.note])),[['activity','문자','문자 답변 받음 · 배드핏 종결 검토 · 이유: 고객이 연락 거절']],'배드핏 = 기록만 · 이유를 함께');
+  /* 고객과 정한 방문 날짜 = 새 업무(방문) + 고객 합의 → 다음 업무 글머리 '고객 약속: ' · 목적이 '연락하기'만이면 저장 불가 */
   await page.locator('#nowCard .nc-call').click();await page.waitForTimeout(200);
-  await page.locator('#nowCard [data-dv3="rch"]',{hasText:'전화'}).click();await page.waitForTimeout(100);await page.locator('#nowCard [data-dv3="rres"]',{hasText:'방문 희망'}).click();await page.waitForTimeout(150);
-  assert.match(await page.locator('#nowCard .dv3-recnext').innerText(),/다음 업무\s*현장 방문 · 날짜 확정 필요/);assert.equal(await page.locator('#nowCard [data-dv3="rday"][aria-pressed="true"]').count(),0,'방문 희망은 날짜를 고객과 정한다 — 기본 제안 없음');
-  await page.locator('#nowCard .dv3-save').click();await page.waitForTimeout(250);assert.match(await page.locator('#nowCard .dv3-recerr').innerText(),/고객과 정한 방문 날짜를 지정해 주세요/);
+  await page.locator('#nowCard [data-dv3="rch"]',{hasText:'전화'}).click();await page.waitForTimeout(100);await page.locator('#nowCard [data-dv3="rres"]',{hasText:'연결됨'}).click();await page.waitForTimeout(150);await page.locator('#nowCard [data-dv3="rmode"]',{hasText:'새 업무'}).click();await page.waitForTimeout(120);
+  await page.locator('#nowCard [data-dv3rec="memo"]').fill('방문 일정 협의');
   await page.locator('#nowCard [data-dv3="rdate"]').click();await page.waitForTimeout(150);const visitDay=await day(5);await page.locator('#nowCard [data-dv3rec="date"]').fill(visitDay);await page.waitForTimeout(250);
   await page.locator('#nowCard [data-dv3="rplan"][data-v="customer"]').click();await page.waitForTimeout(150);
   await page.locator('#nowCard [data-dv3rec="purpose"]').fill('연락하기');await page.waitForTimeout(100);await page.locator('#nowCard .dv3-save').click();await page.waitForTimeout(250);assert.match(await page.locator('#nowCard .dv3-recerr').innerText(),/'연락하기'만으로는 저장되지 않습니다/);
   await page.locator('#nowCard [data-dv3rec="purpose"]').fill('현장 방문 · 옥상 실측');await page.waitForTimeout(100);await page.locator('#nowCard .dv3-save').click();await page.waitForTimeout(500);
-  assert.deepEqual(await page.evaluate(()=>__ops.slice(3).map(o=>[o.op,o.payload.type,o.payload.note||o.payload.text,o.payload.due_at||''])),[['activity','전화','통화 완료 · 방문 희망',''],['next_action','방문','고객 약속: 현장 방문 · 옥상 실측',visitDay]],'고객 합의 = 고객 약속 글머리 · 방문 = 방문 종류 · 고객과 정한 날');
+  assert.deepEqual(await page.evaluate(()=>__ops.slice(3).map(o=>[o.op,o.payload.type,o.payload.note||o.payload.text,o.payload.due_at||''])),[['activity','전화','통화 완료 · 연결됨 — 방문 일정 협의',''],['next_action','방문','고객 약속: 현장 방문 · 옥상 실측',visitDay]],'고객 합의 = 고객 약속 글머리 · 방문 = 방문 종류 · 고객과 정한 날');
   /* 연락 없이 다음 할 일만 정하기: 그 자리 칩 */
   await page.locator('#nowCard [data-dv3="nextonly"]').click();await page.waitForTimeout(150);
   assert.match(await page.locator('#nowCard .dv3-nextonly').innerText(),/다시 연락\s*내일\s*3일 후\s*7일 후/);assert.equal(await page.locator('#ddvPanel').count(),0);

@@ -61,7 +61,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{window.__dc=0;const o=dealCallSheetM;dealCallSheetM=function(){__dc++;return o.apply(this,arguments)};});await dock.locator('[data-mv="result"]').click();await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>__dc),1,'결과 남기기 = 기존 함수');
   /* 남길 말: 말하면 글자로, 통화 기록 뒤에 붙어 저장 요청에 실린다(실제 전송 없음 — 대기열을 가짜로) */
   await page.evaluate(()=>{window.SpeechRecognition=class{start(){setTimeout(()=>{this.onresult({resultIndex:0,results:[Object.assign([{transcript:'소장님 다음 주 화요일 방문 확정'}],{isFinal:true})]});this.onend();},50);}stop(){this.onend();}};});
-  await page.evaluate(()=>{closeSheet();dealCallSheetM();});await page.waitForTimeout(250);
+  /* 예전 결과 창(끄기 스위치 G.contactEntryOff)의 말하기 · AI 정리 · 저장 — 새 결과 창은 verify-mobile-entry-browser */
+  await page.evaluate(()=>{G.contactEntryOff=true;closeSheet();dealCallSheetM();});await page.waitForTimeout(250);
   await page.locator('#sheetcard .ml-chip[data-chip="ongoing"]').click();assert.equal(await page.locator('#sheetcard .ml-mic').innerText(),'말하기');assert.equal(await page.locator('#sheetcard .ml-note').isVisible(),false,'약속 칸은 약속을 골랐을 때만');
   await page.locator('#sheetcard .ml-mic').click();await page.waitForTimeout(300);
   assert.equal(await page.locator('#sheetcard .ml-say textarea').inputValue(),'소장님 다음 주 화요일 방문 확정');
@@ -87,7 +88,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    return {ok,ops};});
   assert.equal(sent.ok,true);{const act=sent.ops.find(x=>x[0]==='activity');assert.match(act[1].note,/^통화 완료 · 진행 중 \(\d+\/\d+ 다시 확인\) — 소장님 다음 주 화요일 방문 확정$/);}
   await page.waitForTimeout(800);
-  await page.evaluate(()=>{closeSheet();nav('today');});await page.waitForTimeout(300);
+  await page.evaluate(()=>{G.contactEntryOff=false;closeSheet();nav('today');});await page.waitForTimeout(300);
   /* 헤더: 로고 · 연결 상태 알약 · 알림 */
   assert.equal(await page.locator('#scr .home-bar .mv-status').innerText(),'예시 데이터');
   await page.evaluate(()=>{LIVE=true;render();});assert.equal(await page.locator('#scr .home-bar .mv-status.ok').innerText(),'연결됨');

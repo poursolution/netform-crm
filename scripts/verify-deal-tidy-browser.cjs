@@ -97,11 +97,11 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* ⑥ [전화하고 결과 남기기] = 가운데 입력칸으로(파란 테두리 · 통화 중 표시). AI 가 꺼져 있으면 결과 · 다음 행동일을 그 자리에서 고르고, 기존 연락 기록 경로로 저장한다 */
   await v.locator('#nowCard .nc-call').click();await page.waitForSelector('#detailView #ddvComposer.dvt-calling .dvt-res');await page.waitForTimeout(350);
   assert.deepEqual(await page.evaluate(()=>{const v=document.getElementById('detailView'),ta=v.querySelector('#ddvComposer textarea');return [v.querySelector('#nowCard .nc-call').textContent,document.activeElement===ta,getComputedStyle(ta).borderTopColor,ta.placeholder.slice(0,11),v.querySelectorAll('.dv3-form').length,[...v.querySelectorAll('.dvt-res .r>span')].map(n=>n.textContent)];}),
-   ['통화 중 · 결과를 가운데에 적어 주세요',true,'rgb(59, 108, 228)','통화 결과를 한 줄로',0,['수단','결과']]);
+   ['통화 중 · 결과를 가운데에 적어 주세요',true,'rgb(59, 108, 228)','통화 결과를 한 줄로',0,['수단','연락 결과']]);
   await v.locator('#ddvComposer .idv-save').click();await page.waitForTimeout(200);
-  assert.deepEqual([one(await v.locator('.dvt-res .dv3-recerr').innerText()),await page.evaluate(()=>__ops.length)],['연락 수단과 결과를 골라 주세요.',0],'결과를 고르기 전에는 저장하지 않는다');
+  assert.deepEqual([one(await v.locator('.dvt-res .dv3-recerr').innerText()),await page.evaluate(()=>__ops.length)],['연락 결과를 골라 주세요',0],'결과를 고르기 전에는 저장하지 않는다');
   await v.locator('#ddvComposer textarea').fill('소장 통화 — 12월 입대의 뒤 결정');await v.locator('.dvt-res [data-dv3="rres"][data-v="연결됨"]').click();await page.waitForTimeout(150);
-  assert.match(one(await v.locator('.dvt-res').innerText()),/다음 업무 다시 연락 · \d{4}\.\d{1,2}\.\d{1,2}\(.\) · 황윤선 · 내부 계획 내일 3일 후 7일 후 날짜 지정 고객 합의 내부 계획/);/* day_zones §4-1: 목적 · 예정일 · 담당 · 일정 구분 */
+  assert.match(one(await v.locator('.dvt-res').innerText()),/상담 내용 위 입력칸에 이번에 새로 확인한 것을 한 번만 적습니다 다음 업무 지금 잡힌 다음 업무 없음 새 업무 다음 일정 없음 할 일 예정일 내일 3일 후 7일 후 날짜 지정 담당 황윤선( \S+)* 일정 고객 합의 내부 계획 저장 전 저장하면 응대 기록 1건 저장 \(실제 연결\) · 다시 연락 일정 1건 등록 · \d+\.\d+ \(.\)/);/* day_zones §4-1: 목적 · 예정일 · 담당 · 일정 구분 */
   assert.equal(await v.locator('#ddvComposer textarea').inputValue(),'소장 통화 — 12월 입대의 뒤 결정','고르는 동안 적은 글이 지워지지 않는다');
   await v.locator('#ddvComposer .idv-save').click();await page.waitForFunction(()=>__ops.length>=2);await page.waitForTimeout(400);
   assert.deepEqual(await page.evaluate(()=>[__ops.map(o=>o.op),__ops[0].payload.note,__ops[1].payload.text,document.querySelectorAll('#detailView .dvt-calling,#detailView .dvt-res').length,document.querySelector('#detailView #nowCard .nc-call').textContent,document.querySelector('#detailView #nowCard .nc-stage').textContent]),
