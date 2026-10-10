@@ -123,7 +123,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await page.evaluate(()=>{try{StageTransitionUI.close();}catch(e){}closeDetail();});
   /* 단계가 정해진 건(과거 이관에서 벗어남)은 요청이 자동 완료된다 */
   await page.evaluate(async()=>{const d=B.deals.find(x=>x.id===U(3));d.code='first_contact';d.stage_code='first_contact';WorkRequest.autoClose();await new Promise(r=>setTimeout(r,300));paint();});await page.waitForTimeout(300);
-  assert.deepEqual(await page.evaluate(()=>[SRV.reqs.map(r=>r.status),[...document.querySelectorAll('#pg-today .wrq-lg>div b')].map(n=>n.textContent)]),[['seen','done'],['[대전] 싸이언스빌']]);/* 요청은 자료 순서대로 싸이언스빌 → 행당대림. 행당대림은 단계를 정해 완료, 싸이언스빌은 받는 사람이 화면을 열어 '담당 확인' 상태로 남음 */
+  assert.deepEqual(await page.evaluate(()=>[SRV.reqs.map(r=>r.status),[...document.querySelectorAll('#pg-today .wrq-lg>div b')].map(n=>n.textContent)]),[['sent','done'],['[대전] 싸이언스빌']]);/* 요청은 자료 순서대로 싸이언스빌 → 행당대림. 행당대림은 단계를 정해 완료, 싸이언스빌은 아직 안 눌러 '미확인'(화면에 보였다고 담당 확인으로 적지 않음 · 2026-10-10) */
   /* ⑧ 상세 [···] 메뉴: 과거 이관 건에만 '이 자료 삭제' */
   await page.evaluate(()=>{ME={id:'adm',name:'송보람',role:'admin'};goPage('pipe');PipelineWorkspace.open('legacy');});await page.waitForSelector('#pipeline-legacy .plg-row');
   await page.evaluate(()=>{G._detailPopup=true;drwDeal(JSON.stringify(B.deals.find(x=>x.id===U(4))));});await page.waitForSelector('#detailView.on.dv3 .tf-more');await page.locator('#detailView .tf-more').click();await page.waitForTimeout(150);

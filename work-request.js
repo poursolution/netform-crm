@@ -350,7 +350,7 @@
   if(a==='softtoggle'){S.softOpen=!S.softOpen;return repaint();}
   const r=S.list.find(x=>x.id===id);if(!r)return;
   /* 받은 사람이 카드에서 무엇이든 누르면 그때 '담당 확인'(seen) — 닫기 · 노출은 확인이 아니다 */
-  if(r.to_me&&r.status==='sent'&&!S.closing['seen:'+r.id]&&['res','dial','go','hoask','hodone','save','reply','resume'].includes(a)){S.closing['seen:'+r.id]=true;O().rpc(RPC.reply,{id:r.id,action:'seen'}).then(x=>put(x.request)).catch(()=>{});}
+  if(r.to_me&&r.status==='sent'&&!S.closing['seen:'+r.id]&&['res','dial','go','hoask','resume'].includes(a)){/* 저장 · 회신 · 인수/수령 확인은 그 자체가 상태를 바꾸므로 따로 seen 을 보내지 않는다(원자 저장 순서 보존) */S.closing['seen:'+r.id]=true;O().rpc(RPC.reply,{id:r.id,action:'seen'}).then(x=>put(x.request)).catch(()=>{});}
   if(a==='check'){S.seen[id]=true;openTarget(r);return repaint();}
   if(a==='ack'){if(S.closing[id])return;S.closing[id]=true;return O().rpc(RPC.reply,{id,action:'done',result:'관리자 확인 · 전화로 전달'}).then(x=>{put(x.request);touch(x.request);toast('처리 확인으로 닫았습니다');noteDeal(x.request,'[내부 요청] '+lineEnd(x.request));repaint();}).catch(e=>toast('닫지 못했습니다: '+String(e&&e.message||e),'warn')).finally(()=>{delete S.closing[id];});}
   if(a==='reassign'||a==='recall')return openTarget(r);
