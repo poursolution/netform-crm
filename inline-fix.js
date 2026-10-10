@@ -9,7 +9,11 @@
 (function(root){
  'use strict';
  const h=v=>root.esc(String(v==null?'':v)),attr=v=>root.escAttr(String(v==null?'':v));
- const on=()=>!root.G.inlineFixOff&&!!(root.DealDetailV3&&root.DealDetailV3.stageFields&&root.StageTransition&&root.StageTransition.definitions);
+ /* engine = 5단계 보완 엔진(상세 창 가운데 칸이 쓴다) · on = 목록 줄 아래 펼침(2026-10-10 design_handoff_no_inline_expand: 모든 목록에서 줄 아래 펼침 금지 → 기본 꺼짐 · 되돌리기 G.inlineFixKeep) */
+ const engine=()=>!root.G.inlineFixOff&&!!(root.DealDetailV3&&root.DealDetailV3.stageFields&&root.StageTransition&&root.StageTransition.definitions);
+ const on=()=>!!root.G.inlineFixKeep&&engine();
+ /* 기존 기록에서 찾은 글은 HTML 태그를 지운 글자만(과거 메모의 <p><strong> 같은 표시가 그대로 보이던 것) */
+ const plain=s=>String(s==null?'':s).replace(/<br\s*\/?>|<\/p>|<\/div>|<\/li>/gi,' ').replace(/<[^>]*>/g,'').replace(/&nbsp;/gi,' ').replace(/&lt;/gi,'<').replace(/&gt;/gi,'>').replace(/&quot;/gi,'"').replace(/&#39;/gi,"'").replace(/&amp;/gi,'&').replace(/\s+/g,' ').trim();
  const today=()=>new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Seoul'});
  const dayKey=v=>{if(!v)return '';const J=root.PipelineJudge;let k='';try{k=J&&J.dayKey?J.dayKey(v):'';}catch(e){}if(!k){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(v));k=m?m[0]:'';}return k;};
  const ms=k=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(k||''));return m?Date.UTC(+m[1],+m[2]-1,+m[3]):NaN;};
@@ -62,7 +66,7 @@
  }
  function candidates(d,kind){
   const K=KIND[kind],out=[],seen=new Set(),t0=today();
-  const push=(src,text,at)=>{const date=dayKey(at);text=String(text||'').replace(/\s+/g,' ').trim();if(!date||date>t0||!text||!K.re.test(text))return;const k=date+'|'+text.slice(0,40);if(seen.has(k))return;seen.add(k);out.push({src,text:clip(text,48),date,when:kind==='schedule'?explicitDate(text,date):'',raw:text});};
+  const push=(src,text,at)=>{const date=dayKey(at);text=plain(text);if(!date||date>t0||!text||!K.re.test(text))return;const k=date+'|'+text.slice(0,40);if(seen.has(k))return;seen.add(k);out.push({src,text:clip(text,48),date,when:kind==='schedule'?explicitDate(text,date):'',raw:text});};
   const acts=[].concat(Array.isArray(d.activities)?d.activities:[],Array.isArray(patchOf(d).activities)?patchOf(d).activities:[]);
   acts.forEach(a=>{if(!a||a.type==='단계정보')return;push(String(a.type||'기록'),[a.note,a.result].filter(Boolean).join(' · '),a.occurred_at||a.at||a.created_at);});
   (Array.isArray(d.legacy_notes)?d.legacy_notes:[]).forEach(n=>{if(n)push('과거 메모',n.body,n.occurred_at||n.recorded_at);});
@@ -156,7 +160,19 @@
  }
  /* ── 동작 ── */
  let finder=null;/* 단계 화면이 넘겨 주는 '키 → 그 줄' 찾기 */
- const rowX=()=>{const S=st();return S&&finder?finder(S.key):null;};
+ const rowX=()=>{const S=st();if(!S)return null;return (finder?finder(S.key):null)||detailXByKey(S.key);};
+ /* ── 상세 창 가운데 칸 ── */
+ const dealKey=d=>{try{return String(root.dealKey?root.dealKey(d):d.id);}catch(e){return String(d.id);}};
+ const allRows=()=>{try{return root.PipelineWorkspace.rows({unscoped:true})||[];}catch(e){return [];}};
+ function detailXByKey(key){const row=allRows().find(r=>String(r.key)===String(key));return row?{row,rs:[]}:null;}
+ function detailX(d){const row=allRows().find(r=>String(r.item&&r.item.id)===String(d.id));return row?{row,rs:[]}:null;}
+ const inDetail=b=>!!(b&&b.closest&&b.closest('#detailView'));
+ function changed(){try{root.InlineFix.hooks.change&&root.InlineFix.hooks.change();}catch(e){}}
+ function closeDetail(){root.G.ifx=null;try{root.InlineFix.hooks.close&&root.InlineFix.hooks.close();}catch(e){}}
+ /* 상세 창에서 쓸 수 있는 종류: 자료 발송완료 = 발송 증빙 · 경쟁 입찰 = 일정 */
+ function kindForDeal(d){const code=codeOf(d);return code==='sent'?'sent':['compete','bidding'].includes(code)?'schedule':'';}
+ function ensure(d){if(!engine())return null;const kind=kindForDeal(d);if(!kind)return null;const S=st(),x=detailX(d);if(!x)return null;if(S&&S.key===x.row.key&&S.kind===kind)return S;if(S&&S.busy)return S;start('detail',x,kind);return st();}
+ function panelHtml(d){const S=ensure(d);if(!S)return '';const x=detailX(d);return x?html('detail',x,false):'';}
  function redraw(){const S=st(),p=document.querySelector('[data-ifx-panel]');if(!S||!p)return repaint();const x=rowX();if(!x)return repaint();const moved=p.classList.contains('moved'),t=document.createElement('div');t.innerHTML=html(S.stage,x,moved);if(t.firstChild)p.replaceWith(t.firstChild);}
  function repaint(){try{root.paint();}catch(e){}}
  function toggle(stage,x,kind){const S=st();if(S&&S.key===x.row.key){if(S.busy)return;root.G.ifx=null;return repaint();}if(S&&S.busy)return;start(stage,x,kind);repaint();}
@@ -176,19 +192,19 @@
     P.mode==='new'?'오늘 업무 · "'+String(P.text).trim()+'" '+md(P.due)+' 추가':P.reqs.length?'오늘 업무 · 열린 요청 '+P.reqs.length+'건으로 처리 · 새 업무 없음':P.hasNext?'오늘 업무 · 기존 다음 업무 유지':'오늘 업무 · 새 업무 없음'];
    S.done=true;S.busy=false;
    try{root.saveLocal&&root.saveLocal();}catch(e){}try{root.TodayWorkQueue&&root.TodayWorkQueue.render&&root.TodayWorkQueue.render();}catch(e){}
-   repaint();const dg=diagNow();if(dg){S.sync.push('진단 · 판정 가능 '+dg.ok+' / '+dg.all+(S.kind==='sent'?' · '+J.text:''));redraw();}
+   repaint();const dg=diagNow();if(dg){S.sync.push('진단 · 판정 가능 '+dg.ok+' / '+dg.all+(S.kind==='sent'?' · '+J.text:''));redraw();}changed();
   }catch(e){S.busy=false;S.err=String(e&&e.message||e||'저장 실패');redraw();}
  }
  async function saveUnknown(){
   const S=st(),x=rowX();if(!S||!x||S.busy)return;const K=KIND[S.kind],note=String(S.unkNote||'').trim();
   if(!note){S.err='어디를 확인했는지 적어 주세요';return redraw();}
   S.busy=true;S.err='';redraw();
-  try{await root.DealDetailV3.stageFields(x.row.item,{[K.checkKey]:'확인 불가',[K.basisKey]:note},K.unReason);S.done=true;S.busy=false;try{root.saveLocal&&root.saveLocal();}catch(e){}repaint();S.diag=diagNow();redraw();}
+  try{await root.DealDetailV3.stageFields(x.row.item,{[K.checkKey]:'확인 불가',[K.basisKey]:note},K.unReason);S.done=true;S.busy=false;try{root.saveLocal&&root.saveLocal();}catch(e){}repaint();S.diag=diagNow();redraw();changed();}
   catch(e){S.busy=false;S.err=String(e&&e.message||e||'저장 실패');redraw();}
  }
  function onClick(e){
   const b=e.target.closest('[data-ifx]');if(!b||b.disabled||!b.closest('[data-ifx-panel]'))return;const S=st();if(!S)return;e.stopPropagation();const a=b.dataset.ifx,v=b.dataset.v,x=rowX();
-  if(a==='close'){root.G.ifx=null;return repaint();}
+  if(a==='close'){root.G.ifx=null;if(inDetail(b)){try{root.InlineFix.hooks.close&&root.InlineFix.hooks.close();}catch(x){}return;}return repaint();}
   if(S.busy)return;S.err='';
   if(a==='use'){const c=S.cands[+v];if(!c)return;S.pick=+v;S.basis=md(c.date)+' '+c.src+' 기록에서 가져옴';
    if(S.kind==='sent'){S.draft.sent_date=c.date;if(!(S.draft.materials||[]).length){const m=[];if(/견적/.test(c.raw))m.push('견적서');if(/제안/.test(c.raw))m.push('제안서');if(/공법/.test(c.raw))m.push('공법자료');S.draft.materials=m;}}
@@ -213,9 +229,9 @@
   root.document.addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('[data-ifx-panel]'))e.stopPropagation();},true);}
  /* 목록 줄에 남기는 한 줄: 확인 불가로 남긴 건 */
  function unknownNote(x){
-  if(!on()||!x||!x.row)return '';const d=x.row.item,f=curFields(d),c=curCtx(d);
+  if(!engine()||!x||!x.row)return '';const d=x.row.item,f=curFields(d),c=curCtx(d);
   for(const k of Object.keys(KIND)){const K=KIND[k];if(f[K.checkKey]==='확인 불가')return K.unkWord+(c.edited_at?' · '+md(dayKey(c.edited_at))+' 확인':'')+' · 판정 불가 유지';}
   return '';
  }
- root.InlineFix={on,kindOf,openKey,toggle,html,candidates,judge,propose,check,unknownNote,KIND,setFinder:f=>{finder=f;},_explicitDate:explicitDate,_weekday:weekday};
+ root.InlineFix={on,engine,hooks:{},plain,kindForDeal,ensure,panelHtml,close:closeDetail,kindOf,openKey,toggle,html,candidates,judge,propose,check,unknownNote,KIND,setFinder:f=>{finder=f;},_explicitDate:explicitDate,_weekday:weekday};
 })(window);

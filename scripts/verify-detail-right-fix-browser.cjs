@@ -31,7 +31,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     mk(5,'[경기 평택] 평택비전지웰푸르지오','석민이앤씨','황윤선','contract',{amt:1120000000,stage_contexts:{contract:{fields:{contract_date:'2026-01-26',contract_amount:1043900000}}},next_action:{id:'n5',text:'계약 체결 확인',type:'전화',due:day(-3),status:'open'}}),
     mk(6,'[경기 용인] 수지삼성래미안','POUR공법','정정훈','won',{outcome:'won',won_amount:140000000,closed_at:'2026-03-12',contract_date:'2026-03-12',amt:140000000,stage_contexts:{won:{fields:{completion_date:day(-40)}}}}),
     mk(7,'[대구] 강북이진캐스빌','석민이앤씨','한준엽','lost',{outcome:'lost',closed_at:'2026-05-07',amt:350000000}),
-    mk(8,'[부산] 과거 이관 단지','석민이앤씨','김성민','old_stage_x',{amt:380000000}),mk(9,'[경기 안양] 미팅 전 컨설팅 단지','POUR솔루션','이필선','consulting',{activities:[]})],
+    mk(8,'[부산] 과거 이관 단지','석민이앤씨','김성민','old_stage_x',{amt:380000000}),mk(9,'[경기 안양] 미팅 전 컨설팅 단지','POUR솔루션','이필선','consulting',{activities:[]}),mk(10,'[서울 마포] 나눔빌딩','석민이앤씨','황윤선','bidding',{amt:300000000})],
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],messageLogs:[],message_logs:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.dkOpen=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
@@ -116,17 +116,21 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await openWork(0);
   await V.locator('.dv7-ta').fill('옥상 방수');const b1=(await saved()).length;await V.locator('.dv7-wfoot button',{hasText:'자료 없이 가견적'}).click();await page.waitForTimeout(700);
   assert.match((await saved()).slice(b1)[0].quote_request,/^옥상 방수$|^자료 부족 · 가견적 — 옥상 방수$/,'자료 없이도 가견적으로 저장');
-  /* ③ 자료 발송완료: 발송 내역 화면 한 곳(발송일 · 수신자 · 보낸 자료 · 고객 반응 · 공사 시기 · 견적 버전 · 확인 불가) */
+  /* ③ 자료 발송완료 = 발송 내역 확인: 줄 아래 펼침이 아니라 가운데 칸에서 같은 5단계(기존 기록 → 발송일 · 수신자 · 보낸 자료 → 경과일 판정 → 후속 업무 → 저장) */
   await openWork(1);p=await P();
-  assert.deepEqual([p.p,p.head],['work','‹ 발송 내역 기존 기록에서 찾거나 직접 등록 · 확인할 수 없으면 [확인 불가]']);
-  assert.match(p.text,/① 기존 기록에서 찾기 \d+\.\d+ · 이메일 .*견적서 발송 · 임석재 소장 이걸로 등록 ② 직접 등록 발송일 · 수신자 보낸 자료 견적서 제안서 공법자료 기타자료 고객 반응 반응 선택 .* 공사 시기 올해내년그 이후미정 견적 버전 등록된 견적 없음 견적 버전 등록 › 확인 불가 저장/,p.text);
-  assert.doesNotMatch(p.text,/무엇을 발송했나요|담당 최종 검토/);assert.deepEqual([...new Set(p.acts)].filter(x=>['files','be','fgo'].includes(x)),[],'다른 칸으로 보내는 단추 없음');
-  await V.locator('.dv7-cand button').click();await page.waitForTimeout(300);
-  await V.locator('.dv7-send [data-dv3="sendmat"]',{hasText:'견적서'}).click();await page.waitForTimeout(200);
-  await V.locator('.dv7-send input[data-dv3f="recipient"]').fill('임석재 소장');await V.locator('.dv7-send select[data-dv3f="reaction"]').selectOption('검토중');await V.locator('.dv7-send .dv7-chips button',{hasText:'올해'}).click();await page.waitForTimeout(250);
-  const b2=(await saved()).length;await V.locator('.dv7-send [data-dv3="fsave"]').click();await page.waitForTimeout(600);
-  assert.deepEqual((await saved()).slice(b2).map(f=>[Object.keys(f).sort().join(','),f.reaction,f.construction_plan,f.materials]),[['construction_plan,materials,reaction,recipient,sent_date','검토중','올해',['견적서']]],'발송 내역 저장 = 한 번에');
-  await V.locator('.dv7-send [data-dv3="sendnone"]').click();await page.waitForTimeout(500);assert.deepEqual((await saved()).slice(-1),[{sent_date_check:'확인 불가'}]);
+  assert.deepEqual([p.p,p.head],['work','‹ 발송 내역 확인 기존 기록 → 발송일 · 수신자 · 보낸 자료 → 경과일 판정 → 후속 업무 → 저장']);
+  assert.equal(await V.locator('.dv7-drawer .ifx[data-kind="sent"]').count(),1,'5단계 보완이 가운데 칸 안에 있다');assert.equal(await page.locator('#pipeline-stage-v3 .ifx, .prv-row + .ifx').count(),0,'목록 줄 아래에는 없다');
+  assert.match(one(await V.locator('.ifx-s1').innerText()),/기존 첨부 · 이력에서 찾음 .*이메일 견적서 발송 · 임석재 소장/,'기존 기록 후보(HTML 태그 없는 글자)');
+  await V.locator('.ifx-cand button').click();await page.waitForTimeout(300);
+  await V.locator('.ifx input[data-ifxf="recipient"]').fill('임석재 소장');await V.locator('.ifx-foot .pri').click();await page.waitForTimeout(300);
+  assert.match(one(await V.locator('.ifx-s3').innerText()),/발송 .* → 오늘/,'경과일 판정');await V.locator('.ifx-foot .pri').click();await page.waitForTimeout(300);
+  await V.locator('.ifx-modes button',{hasText:'등록 안 함'}).click();await page.waitForTimeout(200);
+  const b2=(await saved()).length;await V.locator('.ifx-foot .pri').click();await page.waitForTimeout(800);
+  {const f=(await saved()).slice(b2)[0];assert.ok(f.sent_date&&f.recipient==='임석재 소장'&&Array.isArray(f.materials)&&f.sent_basis,'발송일 · 수신자 · 보낸 자료 · 근거가 한 번에 저장: '+JSON.stringify(f));}
+  assert.match(one(await V.locator('.ifx-done').innerText()),/저장됨/);await V.locator('.ifx-foot .pri',{hasText:'닫기'}).click();await page.waitForTimeout(400);p=await P();assert.equal(p.hidden,true,'[닫기] = 업무 화면 닫힘');
+  /* 경쟁 · 입찰: 일정이 하나도 없으면 [일정 입력] = 같은 5단계(입찰 · 결정 일정) */
+  await open(9);assert.equal(one(await V.locator('.dvs-primary').innerText()),'일정 입력');await V.locator('.dvs-primary').click();await page.waitForTimeout(500);
+  assert.equal(await V.locator('.dv7-drawer .ifx[data-kind="schedule"]').count(),1);assert.match((await P()).head,/^‹ 입찰 · 결정 일정 /);
   /* ④ 경쟁 · 입찰 제출 확인 */
   await openWork(3);p=await P();
   assert.deepEqual([p.p,p.head],['work','‹ 제출 확인 공법 비교표 · 경쟁 업체 · 제출 접수증']);assert.equal(await V.locator('.dv7-wfoot .pri').isDisabled(),true,'접수증이 없으면 제출 확인은 잠김');
@@ -151,7 +155,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const b5=(await saved()).length;await V.locator('.dv7-wfoot .pri').click();await page.waitForTimeout(600);
   assert.deepEqual((await saved()).slice(b5),[{customer_reaction:'만족 · 하자 없음',reengage:'예',recontact_possibility:'외벽 2028'}]);
   await openWork(6);p=await P();assert.equal(p.head,'‹ 실주 기록 사유 · 확인한 내용 · 재영업');
-  await V.locator('.dv7-work select[data-dv3f="close_reason"]').selectOption({index:1});await V.locator('.dv7-ta').fill('가격 차이 13%');await V.locator('.dv7-chips button',{hasText:'아니오'}).click();await page.waitForTimeout(250);
+  await V.locator('.dv7-chips button',{hasText:'가격'}).first().click();await page.waitForTimeout(250);await V.locator('.dv7-work select[data-dv3f="close_reason"]').selectOption({index:1});await V.locator('.dv7-ta').fill('가격 차이 13%');await V.locator('.dv7-chips button',{hasText:'아니오'}).click();await page.waitForTimeout(250);
   const b6=(await saved()).length;await V.locator('.dv7-wfoot .pri').click();await page.waitForTimeout(600);
   assert.deepEqual((await saved()).slice(b6).map(f=>[Object.keys(f).sort().join(','),f.close_detail,f.reengage]),[['close_detail,close_reason,reengage','가격 차이 13%','아니오']]);
   /* ⑦ 관계관리 · 과거 이관: 업무 화면이 없는 단계 — 확인할 정보 3줄([채우기]) · 다른 칸으로 보내는 단추 없음 */

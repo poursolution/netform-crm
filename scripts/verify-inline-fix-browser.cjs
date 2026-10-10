@@ -17,7 +17,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);
   await page.waitForFunction(()=>window.InlineFix&&window.PipelineStageV3&&window.PipelineRowV11&&window.PipelineWorkspace&&window.DealDetailV3&&window.Phase1);
   await page.evaluate(()=>{
-   window.G=window.G||{};G.dealSameOff=true;
+   window.G=window.G||{};G.dealSameOff=true;G.inlineFixKeep=true;/* 목록 줄 아래 펼침은 기본으로 꺼졌다(no_inline_expand) — 이 검사는 5단계 엔진 자체를 되돌리기 스위치로 본다. 기본 동작(상세 가운데 칸)은 verify-detail-right-fix-browser.cjs */
    const day=n=>new Date(Date.now()+n*864e5).toLocaleDateString('en-CA',{timeZone:'Asia/Seoul'}),at=n=>new Date(Date.now()-n*864e5).toISOString();window.__day=day;
    const deal=(id,site,owner,code,extra)=>Object.assign({id,site,assignee:owner,brand:'석민이앤씨',created:day(-60),stage_entered_at:at(30),code,stage_code:code,grp:'영업·관리',amt:2e8,office_phone:'0511234567'},extra||{});
    B={deals:[
