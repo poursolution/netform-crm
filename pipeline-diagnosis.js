@@ -111,12 +111,12 @@
     action:{title:'그래서 뭘 반복할까',desc:'수주 패턴에서 나온 실행 과제',tasks:tasks(whyBars.map(([k,c])=>[k,c]).concat(gaps)).map(t=>TODO[t.label]?t:Object.assign(t,{todo:'«'+t.label+'»로 이긴 방식을 다음 제안에도 반복하기',who:'영업팀'}))}};
   }
   /* 실주 */
-  const q=quarterStart(),thisQ=items.filter(x=>String(x.values.lossDate||'').slice(0,10)>=q),reasonOf=x=>x.values.lossReason&&x.values.lossReason!=='미기록'?x.values.lossReason:'',recorded=items.filter(reasonOf),none=n-recorded.length;
+  const q=quarterStart(),thisQ=items.filter(x=>String(x.values.lossDate||'').slice(0,10)>=q),reasonOf=x=>x.values.lossReason&&x.values.lossReason!=='미기록'?x.values.lossReason:'',recorded=items.filter(reasonOf),none=n-recorded.length,detailOf=x=>{try{const it=x.row&&x.row.item||{},f=((it.stage_contexts||{}).lost||{}).fields||{};return String(f.close_detail||it.close_detail||'').trim();}catch(e){return '';}},confirmed=recorded.filter(detailOf),guessN=recorded.length-confirmed.length;
   const whyBars=tally(recorded,reasonOf,'').map(([k,c])=>[k,c,money(sum(recorded.filter(x=>reasonOf(x)===k),amt))]),top=whyBars[0],where=x=>{const c=x.shape.cells[1];return c.tag||'';};
   const rivals=new Map();items.forEach(x=>{const c=competitorOf(x);if(!c)return;const v=rivals.get(c)||{n:0,why:new Map()};v.n++;const r=reasonOf(x);if(r)v.why.set(r,(v.why.get(r)||0)+1);rivals.set(c,v);});
   return {accent:'red',kpis:[K('이번 분기 실주',thisQ.length+'건','전체 '+n+'건',thisQ.length?'bad':''),K('실주 금액',total,'기록된 예상 금액 합'),K('가장 많은 사유',top?top[0]+' '+pct(top[1],recorded.length)+'%':'–',top?top[1]+'건 · 사유 기록 '+recorded.length+'건 중':'기록된 사유 없음',top?'bad':''),K('사유 미기록',pct(none,n)+'%',none+'건 — 기록해야 배울 수 있어요',none?'warn':'')],
-   cards:[{title:'왜 졌나',desc:'실주 사유 · 기록된 '+recorded.length+'건',bars:whyBars,empty:'실주 사유가 기록된 건이 없습니다'},{title:'어디서 졌나',desc:'실주 직전 단계',bars:tally(items,where,'단계 미기록',6)},{title:'누구에게 졌나',desc:'경쟁사 · 주된 이유',rows:[...rivals].sort((a,b)=>b[1].n-a[1].n).slice(0,5).map(([c,v])=>[c,v.n,[...v.why].sort((a,b)=>b[1]-a[1])[0]?.[0]||'이유 미기록']),empty:'경쟁사가 기록된 실주 건이 없습니다'}],
-   action:{title:'그래서 뭘 해야 하나',desc:'실주 패턴에서 나온 개선 과제',tasks:tasks(whyBars.map(([k,c])=>[k,c]).concat(none?[['사유 미기록',none]]:[]).sort((a,b)=>b[1]-a[1]))}};
+   cards:[{title:'왜 졌나',desc:'실주 사유 · 기록된 '+recorded.length+'건 · 확인 '+confirmed.length+' · 추측 '+guessN,bars:whyBars,empty:'실주 사유가 기록된 건이 없습니다'},{title:'어디서 졌나',desc:'실주 직전 단계',bars:tally(items,where,'단계 미기록',6)},{title:'누구에게 졌나',desc:'경쟁사 · 주된 이유',rows:[...rivals].sort((a,b)=>b[1].n-a[1].n).slice(0,5).map(([c,v])=>[c,v.n,[...v.why].sort((a,b)=>b[1]-a[1])[0]?.[0]||'이유 미기록']),empty:'경쟁사가 기록된 실주 건이 없습니다'}],
+   action:{title:'그래서 뭘 해야 하나',desc:'확인된 원인 '+confirmed.length+'건만 과제로'+(guessN?' · 추측 '+guessN+'건은 실주 복기로 확인 뒤':''),tasks:tasks(tally(confirmed,reasonOf,'').map(([k,c])=>[k,c]).concat(none?[['사유 미기록',none]]:[]).sort((a,b)=>b[1]-a[1]))}};
  }
  /* 공통 그리기 */
  function bars(card){
