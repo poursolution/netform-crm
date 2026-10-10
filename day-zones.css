@@ -1,0 +1,39 @@
+/* 오늘 업무 4구역(day-zones.js · 시안 '하루 업무 구역 · 마감 요약') — 밑줄 탭 + 표 한 장. 붉은 계열 · 글 넘침 없음. 끄기: G.dayZonesOff=true */
+#today-v2 .dz{background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden}
+#today-v2 .dz-tabs{display:flex;border-bottom:1px solid #e3e6ec;overflow-x:auto}
+#today-v2 .dz-tabs button{border:0;background:none;padding:10px 16px;margin-bottom:-1px;border-bottom:2px solid transparent;display:flex;flex-direction:column;align-items:flex-start;gap:2px;white-space:nowrap;min-height:0;box-shadow:none;border-radius:0;color:#15171c}
+#today-v2 .dz-tabs button span{font-size:14px;font-weight:500}#today-v2 .dz-tabs button span b{color:#15171c}#today-v2 .dz-tabs button span b.r{color:#b42318}
+#today-v2 .dz-tabs button small{font-size:11px;color:#9ca3af}
+#today-v2 .dz-tabs button[aria-selected="true"]{border-bottom-color:#15171c}#today-v2 .dz-tabs button[aria-selected="true"] span{font-weight:700}
+#today-v2 .dz-head,#today-v2 .dz-row{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.3fr) minmax(0,1fr) 120px;gap:14px;align-items:center;padding:12px 18px}
+#today-v2 .dz-head{padding:9px 18px;font-size:11.5px;color:#9ca3af;border-bottom:1px solid #eef0f3}
+#today-v2 .dz-row{border-top:1px solid #f2f3f6;border-left:3px solid #9aa0ab}#today-v2 .dz-row:first-of-type{border-top:0}
+#today-v2 .dz-row .c1{display:flex;flex-direction:column;gap:3px;min-width:0}#today-v2 .dz-row .c1>b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#today-v2 .dz-row .c1>div{display:flex;gap:6px;align-items:center;flex-wrap:wrap}#today-v2 .dz-row .c1>div>span{font-size:12px;color:#6b7280}
+#today-v2 .dz-req{font-size:11px;font-weight:700;color:#3b6ce4;background:#eef3fe;border-radius:4px;padding:1px 6px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+#today-v2 .dz-row .c2{font-size:13px;font-weight:600;line-height:1.45;min-width:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+#today-v2 .dz-row .c2 mark{background:#eef3fe;border-radius:3px;padding:0 4px;font-weight:500}
+#today-v2 .dz-row .c3{display:flex;flex-direction:column;gap:2px;min-width:0}#today-v2 .dz-row .c3 small{font-size:11.5px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#today-v2 .dz-why{border:0;background:none;padding:0;text-align:left;font-size:12px;font-weight:700;min-height:0;box-shadow:none;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+#today-v2 .dz-gapwhy{font-size:12px;font-weight:700;color:#8a5a00}
+#today-v2 .dz-row>button,#today-v2 .dz-btns button{height:34px;border:1px solid #d9dde4;background:#fff;font-size:12.5px;font-weight:700;border-radius:8px;white-space:nowrap;min-height:0;box-shadow:none;color:#15171c;padding:0 10px}
+#today-v2 .dz-btns{display:flex;gap:6px;justify-content:flex-end}#today-v2 .dz-btns button.pri{border:0;background:#15171c;color:#fff}#today-v2 .dz-btns button:disabled{opacity:.5}
+#today-v2 .dz-ev{margin:0 18px 10px;border:1px solid #d9dde4;border-radius:12px;box-shadow:0 10px 26px rgba(17,24,39,.12);padding:13px 15px;display:flex;flex-direction:column;gap:7px;background:#fff}
+#today-v2 .dz-ev>span{font-size:11.5px;font-weight:700;color:#b42318}#today-v2 .dz-ev>div{display:grid;grid-template-columns:76px minmax(0,1fr);gap:4px 10px;font-size:12.5px}
+#today-v2 .dz-ev i{font-style:normal;color:#6b7280}#today-v2 .dz-ev b{font-weight:500;min-width:0;word-break:keep-all}#today-v2 .dz-ev b.amb{color:#8a5a00;font-weight:700}
+#today-v2 .dz-ask{margin:0 18px 10px;background:#fffaf0;border:1px solid #f5dfa8;border-radius:10px;padding:9px 12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px}
+#today-v2 .dz-ask>span{font-weight:700;color:#8a5a00}#today-v2 .dz-ask input{flex:1 1 220px;font:inherit;font-size:12.5px;border:1px solid #d9dde4;border-radius:7px;padding:5px 9px;min-width:0}
+#today-v2 .dz-ask button{border:1px solid #d9dde4;background:#fff;font-size:12px;font-weight:700;border-radius:7px;padding:5px 10px;min-height:0;box-shadow:none;color:#15171c}#today-v2 .dz-ask em{flex:1 1 100%;font-style:normal;font-size:12px;font-weight:600;color:#b42318}
+#today-v2 .dz-note{padding:9px 18px;border-top:1px solid #eef0f3;font-size:11.5px;color:#6b7280}
+#today-v2 .dz-empty{margin:0;padding:22px 18px;text-align:center;font-size:13px;color:#6b7280}
+#today-v2 .dz-hidden{background:#eef3fe;border-radius:8px;padding:8px 12px;font-size:12.5px;color:#1d3f99;display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+#today-v2 .dz-hidden b{font-weight:700}#today-v2 .dz-hidden button{border:0;background:none;color:#2a52b8;font-weight:700;font-size:12.5px;padding:0;min-height:0;box-shadow:none;cursor:pointer}
+#today-v2 .dz-w3{display:flex;flex-direction:column;gap:4px}#today-v2 .dz-w3 button{height:28px;font-size:11.5px;padding:0 8px}
+/* §2 새 배정 팝업 */
+#today-v2 .dz-pop{position:fixed;inset:0;z-index:60;background:rgba(17,24,39,.35);display:flex;align-items:center;justify-content:center;padding:16px}
+#today-v2 .dz-pop-box{width:100%;max-width:440px;background:#fff;border-radius:14px;box-shadow:0 20px 50px rgba(17,24,39,.25);padding:18px 20px;display:flex;flex-direction:column;gap:10px}
+#today-v2 .dz-pop-box>header{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}#today-v2 .dz-pop-box>header b{font-size:15px}#today-v2 .dz-pop-box>header span{flex:1 1 100%;font-size:11.5px;color:#6b7280}#today-v2 .dz-pop-box>header button{border:1px solid #d9dde4;background:#fff;font-size:11.5px;border-radius:7px;padding:3px 9px;min-height:0;box-shadow:none;color:#15171c}
+#today-v2 .dz-pop-row{display:flex;flex-direction:column;gap:4px;border-top:1px solid #f2f3f6;padding-top:10px}#today-v2 .dz-pop-row>b{font-size:15px;line-height:1.4}#today-v2 .dz-pop-row>span{font-size:12.5px;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#today-v2 .dz-pop-row>small{font-size:12px;color:#b42318;font-weight:700}
+#today-v2 .dz-pop-row>div{display:flex;gap:8px;margin-top:4px}#today-v2 .dz-pop-row>div button{flex:1;border:1px solid #d9dde4;background:#fff;font-size:13px;font-weight:600;border-radius:9px;padding:9px 0;min-height:0;box-shadow:none;color:#15171c}#today-v2 .dz-pop-row>div button.pri{border:0;background:#15171c;color:#fff;font-weight:700}
+#today-v2 .dz-pop-box>p{margin:0;font-size:11.5px;color:#9ca3af}
+@media(max-width:900px){#today-v2 .dz-head{display:none}#today-v2 .dz-row{grid-template-columns:minmax(0,1fr) 110px;gap:8px 12px}#today-v2 .dz-row .c2,#today-v2 .dz-row .c3{grid-column:1/-1}}

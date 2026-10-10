@@ -101,7 +101,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await v.locator('#ddvComposer .idv-save').click();await page.waitForTimeout(200);
   assert.deepEqual([one(await v.locator('.dvt-res .dv3-recerr').innerText()),await page.evaluate(()=>__ops.length)],['연락 수단과 결과를 골라 주세요.',0],'결과를 고르기 전에는 저장하지 않는다');
   await v.locator('#ddvComposer textarea').fill('소장 통화 — 12월 입대의 뒤 결정');await v.locator('.dvt-res [data-dv3="rres"][data-v="연결됨"]').click();await page.waitForTimeout(150);
-  assert.match(one(await v.locator('.dvt-res').innerText()),/다음 행동 다시 연락 · \d{4}\.\d{1,2}\.\d{1,2}\(.\) 내일 3일 후 7일 후/);
+  assert.match(one(await v.locator('.dvt-res').innerText()),/다음 업무 다시 연락 · \d{4}\.\d{1,2}\.\d{1,2}\(.\) · 황윤선 · 내부 계획 내일 3일 후 7일 후 날짜 지정 고객 합의 내부 계획/);/* day_zones §4-1: 목적 · 예정일 · 담당 · 일정 구분 */
   assert.equal(await v.locator('#ddvComposer textarea').inputValue(),'소장 통화 — 12월 입대의 뒤 결정','고르는 동안 적은 글이 지워지지 않는다');
   await v.locator('#ddvComposer .idv-save').click();await page.waitForFunction(()=>__ops.length>=2);await page.waitForTimeout(400);
   assert.deepEqual(await page.evaluate(()=>[__ops.map(o=>o.op),__ops[0].payload.note,__ops[1].payload.text,document.querySelectorAll('#detailView .dvt-calling,#detailView .dvt-res').length,document.querySelector('#detailView #nowCard .nc-call').textContent,document.querySelector('#detailView #nowCard .nc-stage').textContent]),
