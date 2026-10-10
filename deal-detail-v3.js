@@ -910,9 +910,37 @@
   saveSF(d,fields,()=>{if(S.fill)delete S.fill[row];});
  }
  /* 업무 화면의 [저장] — 화면 입력 + 지금 값 → 단계 정보 칸(saveSF) · 견적 요청이면 다음 업무까지. 저장하면 왼쪽 기본 정보 · 자료 값도 같이 바뀐다 */
+ /* 관계관리 연락 기록: 연락 결과(기존 연락 기록 경로) + 관리 상태 표식(기존 내부 메모 경로) + 다음 연락일. 새 저장소 없음 — 재시도하면 같은 요청을 확인한다 */
+ async function contactOutside(d,o){
+  const res=o.res,nx=nxOf(res)||['다시 연락',3];if(!root.Phase1?.queue||(typeof root.pushWrite!=='function'&&typeof root.queueDetailContactOperation!=='function'))throw Error('로그인 상태에서만 저장할 수 있습니다.');
+  const ch='전화',next={type:'전화',text:o.text||nx[0],due_at:o.due,assignee:root.repN(d.assignee)||root.repN(root.ME?.name)||''};
+  await writeContact(d,{ch,note:recNote(ch,res,String(o.memo||'').trim()),at:o.at||new Date().toISOString(),meaningful:!['부재','회신대기'].includes(res),next,due:o.due,P:o.P||{}});
+  try{root.saveLocal?.();}catch(e){}
+ }
+ async function contactSave(d,c){
+  const S=st(d);if(S.cbusy)return;S.cbusy=true;const P=S.cprog||(S.cprog={});apply();
+  try{
+   if(c.sent&&!P.sent){await stageFieldsOutside(d,{sent_date:c.sent});P.sent=true;}
+   if(c.markNeeded&&!P.mark){await memoOutside(d,'[관계 상태] '+c.state+' | '+(c.reason||'사유 없음')+' | '+c.next+' | '+(c.review||'없음')+' | 미정',P.m||(P.m={}));P.mark=true;}
+   await contactOutside(d,{res:c.res,memo:c.memo,due:c.next,text:c.text,at:P.at||(P.at=new Date().toISOString()),P:P.c||(P.c={})});
+   S.cbusy=false;S.cprog=null;if(S.fill)delete S.fill.contact;S.p7='';toast('연락 결과를 기록했습니다 · 다음 연락일 '+c.next.slice(5).replace('-','.'));afterSave(d);
+  }catch(e){S.cbusy=false;toast('저장하지 못했습니다: '+String(e&&e.message||e)+' — 다시 누르면 같은 요청을 확인합니다','warn');apply();}
+ }
+ /* 사후 연락 → 하자 접수: 결정 일정 · 협업의 '[하자]' 표식 그대로(미해결이면 확장관리 재영업 대신 '하자 먼저') */
+ async function defectSave(d,x){
+  const S=st(d);if(S.dbusy)return;S.dbusy=true;apply();
+  try{
+   const who=root.repN(d.assignee)||root.repN(root.ME?.name)||'미지정';
+   await memoOutside(d,'[하자] '+x.text+' | 접수 '+x.recv+' | 담당 '+who+' | 약속 '+(x.due||'없음')+' | 미해결',S.dprog||(S.dprog={}));
+   S.dbusy=false;S.dprog=null;if(S.fill&&S.fill.after){delete S.fill.after.defect_text;delete S.fill.after.defect_due;}toast('하자를 접수했습니다');afterSave(d);
+  }catch(e){S.dbusy=false;toast('접수하지 못했습니다: '+String(e&&e.message||e),'warn');apply();}
+ }
  function workSave(d,row,mode){
+  if(mode==='lost'){closeP7();openFrom('stage');return;}
   const S=st(d),F=root.DealFrame7,r=F.workFields(d,row,(S.fill&&S.fill[row])||{},mode);
   if(r.error){toast(r.error,'warn');return;}
+  if(r.contact){contactSave(d,r.contact);return;}
+  if(r.defect){defectSave(d,r.defect);return;}
   saveSF(d,r.fields,()=>{if(S.fill)delete S.fill[row];S.p7='';if(r.next)nextOutside(d,r.next).then(()=>root.renderDetail?.()).catch(e=>toast('견적 요청은 저장했지만 다음 업무를 등록하지 못했습니다: '+String(e&&e.message||e),'warn'));});
  }
  /* 화면 안에서 바로 올리기: 기존 자료 업로드(uploadExecAttachment) 그대로 — 분류 · 메모는 화면이 정한다. 올린 뒤 표식 칸(compare_attached · receipt_attached)이 있으면 단계 정보에 남긴다 */
@@ -1031,6 +1059,7 @@
   if(a==='fgo'){fillGo(d,b.dataset.v);return;}
   if(a==='wpick'){const S=st(d);S.fill=S.fill||{};const F=S.fill[b.dataset.row]=S.fill[b.dataset.row]||{};F[b.dataset.f]=F[b.dataset.f]===b.dataset.v&&b.dataset.f!=='construction_plan'?'':b.dataset.v;apply();return;}
   if(a==='wsave'){workSave(d,b.dataset.row,b.dataset.mode);return;}
+  if(a==='wnewdeal'){let r=null;try{r=(root.expansionRecords?root.expansionRecords():[]).find(x=>String(x.sourceOpportunityId)===String(d.id));}catch(err){}if(!r||typeof root.expansionOpenNew!=='function'){toast('준공일이 입력된 수주 건만 확장관리에서 새 영업건을 만들 수 있습니다 — 준공일을 먼저 입력해 주세요','warn');return;}root.expansionOpenNew(r.id);return;}
   if(a==='upload'){pickFiles(d,b);return;}
   if(a==='p7close'){if(closeP7())apply();return;}
   if(a==='go7'){const x=(root.B.deals||[]).find(z=>String(z.id)===String(b.dataset.id));if(x)root.drwDeal(JSON.stringify(x));return;}

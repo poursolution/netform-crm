@@ -166,7 +166,7 @@
   p.addEventListener('click',e=>{
    const w=e.target.closest('[data-work]'),pm=e.target.closest('[data-primary]'),c=e.target.closest('[data-combo]');
    if(e.target.closest('[data-aiguess]')){if(aiBusy)return;aiBusy=true;aiErr='';draw();
-    const notes=[].concat((item.legacy_notes||[]).slice(0,3).map(n=>n.body),(item.activities||[]).slice(0,5).map(a=>a.note)).filter(Boolean).map(v=>String(v).slice(0,200));
+    const notes=[].concat((item.legacy_notes||[]).slice(0,3).map(n=>n.body),(item.activities||[]).slice(0,5).map(a=>a.note)).filter(Boolean).map(v=>(typeof root.sayLegacyNote==='function'?String(root.sayLegacyNote(v)).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim():String(v)).slice(0,200));/* 과거 메모의 <p><strong> 같은 표시는 지우고 글자만 AI 에 보낸다 */
     root.OpsStore.ai('work_guess','deal',item.id,{site:item.site||'',work_name:item.work_name||item.work||'',notes}).then(s=>{const r=s.suggestion||{},keys=(r.keys||[]).filter(root.knownWorkKey);aiId=s.id||'';g={label:keys.length?keys.map(k=>k.replace('>',' ')).join(' + '):'근거 부족',basis:(r.basis||'')+' · AI 추정'+(r.confidence?' ('+({high:'확신 높음',medium:'보통',low:'낮음'}[r.confidence]||r.confidence)+')':''),keys};gk=keys.slice();if(r.primary&&keys.includes(r.primary))gk=[r.primary].concat(keys.filter(k=>k!==r.primary));}).catch(err=>{aiErr=String(err.message||err);}).finally(()=>{aiBusy=false;draw();});return;}
    if(e.target.closest('[data-guess]')){W.items=gk.slice();W.primary=W.items[0]||'';if(aiId)root.OpsStore.decide(aiId,'accepted');draw();return;}
    if(w){const k=w.dataset.work,i=W.items.indexOf(k);if(i>=0)W.items.splice(i,1);else W.items.push(k);if(!W.items.includes(W.primary))W.primary=W.items[0]||'';draw();return;}
