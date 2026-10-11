@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 /* 견적 원가계산 대조 — 인천 솔밭아파트 옥상 싱글 방수 견적서 엑셀 3건(원가계산서 칸 E6~E30)과 같은 결과 */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),path=require('path'),C=require('../quote-calc.js');
 const RK={G10:'indirectLabor',G13:'accident',G14:'employment',G18:'safety',G19:'asbestos',G20:'wageClaim',G21:'otherExp',G22:'environment',G23:'retire'};
@@ -22,4 +22,14 @@ test('총공사비 = 공급가액 10만원 아래 절삭 · 단수정리 음수'
 test('건강 · 연금 · 요양은 옵션 · 일반관리비 · 이윤은 입력(비우면 0)',()=>{
  const a=C.costSheet({area:100,unit:{mat:1000,lab:2000,exp:0}}),b=C.costSheet({area:100,unit:{mat:1000,lab:2000,exp:0},health:true});
  assert.equal(a.health+a.pension+a.care+a.general+a.profit,0);assert.equal(b.health,Math.floor(200000*0.03595));assert.ok(b.sum>a.sum);
+});
+
+test('자재 단가 = 포장 단가 ÷ 포장 수량, 100원 단위 올림 — 통합관리표 단가표(개인) → 솔밭 견적서 단가',()=>{
+ const M=C.materialUnit;
+ assert.equal(M(178500,20),9000);/* 코트재 8,925 */
+ assert.equal(M(187800,20),9400);/* 상도코트재 9,390 */
+ assert.equal(M(116000,20),5800);/* 106 파우더 */
+ assert.equal(M(236300,100),2400);/* 슈퍼복합압축시트 2,363 */
+ assert.equal(M(85900,100),900);/* 압축강화시트 859 */
+ assert.equal(M(178500,20,50),8950);assert.equal(M(0,20),0);assert.equal(M(100,0),0);
 });
