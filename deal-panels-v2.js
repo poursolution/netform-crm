@@ -139,7 +139,10 @@
   const primary=q('dp-primary').checked||S.replace;
   /* 기존 저장 함수(pc-primary-contact.js)가 읽는 값: 관계정보는 바꾸지 않음(''), 대표 지정은 '지금 대표와 같은 사람을 고친다'는 형태로 전달 */
   const prim=root.contactInfo(item,root.itemPatch(item,'deal'));
-  root.QUICK_CONTACT={pcRoot:p,item,key:root.dealKey(item),contactKey:editing?(key||editing.personKey||''):'',mode:primary?'primary':'new',overflow:document.body.style.overflow,pcDecision:'',pcTone:'',pcConsentInput:consentInput,pcConsentFields:consentFields,pcOriginal:editing?Object.assign({},editing):primary?{mobile:prim.mobile}:{}};
+  const pcActor=JSON.stringify([root.Phase1?.profile?.auth_uid||'',root.Phase1?.profile?.user_id||'',root.ME?.id||'',root.ME?.role||'']);
+  const priorForm=root.QUICK_CONTACT;
+  root.QUICK_CONTACT={pcRoot:p,item,key:root.dealKey(item),contactKey:editing?(key||editing.personKey||''):'',mode:primary?'primary':'new',overflow:document.body.style.overflow,pcDecision:'',pcTone:'',pcConsentInput:consentInput,pcConsentFields:consentFields,pcActor,pcOriginal:editing?Object.assign({},editing):primary?{mobile:prim.mobile}:{}};
+  if(priorForm?.pcRoot===p&&p.isConnected&&priorForm.item===item&&priorForm.pcActor===pcActor)root.QUICK_CONTACT=Object.assign(priorForm,root.QUICK_CONTACT);
   const legacy=$('quickContactBody');if(legacy)legacy.innerHTML='';
   root.saveQuickContact();
  }

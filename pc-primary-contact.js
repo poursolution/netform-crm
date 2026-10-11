@@ -49,6 +49,12 @@
   if(root.CUR_DETAIL?.item?.id!==item.id)return;
   root.renderDetail();root.showDetailErr(message,success);
  }
+ function inputStamp(form){
+  const field=id=>form.pcRoot?form.pcRoot.querySelector('#'+id):document.getElementById(id);
+  const text=id=>String(field(id)?.value||'').trim(),date=field('qc-consent-at');
+  return JSON.stringify([text('qc-name'),String(root.phoneN(text('qc-mobile'))||'').replace(/\D/g,''),text('qc-role'),text('qc-office'),text('qc-email'),text('qc-decision-role'),text('qc-relation-tone'),
+   ...['qc-sms','qc-kakao','qc-block'].map(id=>!!field(id)?.checked),text('qc-block-reason'),date?.type==='hidden'?null:text('qc-consent-at')]);
+ }
  function sync(){
   if(!root.Phase1?.queue)return;
   const queue=root.Phase1.queue.list();
@@ -58,10 +64,12 @@
     entry.status=q.status;
     if(q.status!=='uncertain')pending.delete(id);
     if(entry.form&&root.QUICK_CONTACT===entry.form)(entry.form.pcReport||root.quickContactErr)(q.status==='uncertain'?'서버 응답이 불확실합니다. 저장을 다시 누르면 동일한 요청을 확인합니다.':'저장 요청이 거절되었거나 충돌했습니다. 입력 내용은 유지됩니다.');
-    repaint(entry.item,q.status==='uncertain'?'서버 응답을 확인하지 못했습니다. 기존 대표를 유지하며, 재시도 시 같은 요청을 확인합니다.':'대표 지정 요청이 거절되었거나 충돌했습니다. 기존 대표는 유지됩니다. 최신 정보와 권한을 확인해 주세요.',false);
+    const activeForm=entry.form&&root.QUICK_CONTACT===entry.form&&root.CUR_DETAIL?.item===entry.item&&(!entry.form.pcRoot||entry.form.pcRoot.isConnected);
+    if(!activeForm)repaint(entry.item,q.status==='uncertain'?'서버 응답을 확인하지 못했습니다. 기존 대표를 유지하며, 재시도 시 같은 요청을 확인합니다.':'대표 지정 요청이 거절되었거나 충돌했습니다. 기존 대표는 유지됩니다. 최신 정보와 권한을 확인해 주세요.',false);
    }
    if(!q||q.status!=='done'||!q.ack)return;
    const {item,c,payload}=entry;
+   const edited=entry.form&&root.QUICK_CONTACT===entry.form&&entry.inputStamp!==inputStamp(entry.form);
    // The queue validates the full RPC receipt before marking it done.
    if(q.operation!=='contact_upsert'||q.object_id!==id||q.ack.person_key!==payload.person_key)return;
    const effective=q.ack.contact_consent_contract==='preserve-omitted-v1'?q.ack.consent:null;
@@ -81,8 +89,10 @@
    if(payload.office_phone)item.office_phone=payload.office_phone;
    if(payload.office_email)item.office_email=payload.office_email;
    }
-   if(entry.form&&root.QUICK_CONTACT===entry.form){if(entry.form.pcInlineContact)root.QUICK_CONTACT=null;else root.closeQuickContact();}
-   pending.delete(id);root.saveLocal();repaint(item,entry.form?'연락처가 서버에 저장되었습니다.':'대표 연락처가 서버에 저장되었습니다.');
+   if(!edited&&entry.form&&root.QUICK_CONTACT===entry.form){if(entry.form.pcInlineContact)root.QUICK_CONTACT=null;else root.closeQuickContact();}
+   pending.delete(id);root.saveLocal();
+   if(edited)(entry.form.pcReport||root.quickContactErr)('앞선 요청은 저장되었습니다. 변경한 입력은 아직 저장되지 않았습니다. 확인 후 다시 저장해 주세요.');
+   else repaint(item,entry.form?'연락처가 서버에 저장되었습니다.':'대표 연락처가 서버에 저장되었습니다.');
   });
  }
  root.pcSetPrimaryContact=function(key){
@@ -114,6 +124,7 @@
   const item=form.item,entry=pending.get(item.id);
   if(entry){
    if(entry.form!==form){report('진행 중인 연락처 저장을 먼저 확인해 주세요.');return;}
+   if(entry.inputStamp!==inputStamp(form)){report('앞선 요청의 저장 확인이 남았습니다. 변경한 입력은 보존되며 아직 전송하지 않습니다. 앞선 요청 확인 후 다시 저장해 주세요.');return;}
    if(entry.status==='uncertain'){entry.status='sending';root.Phase1.queue.flush().catch(()=>{}).finally(sync);}
    return;
   }
@@ -135,7 +146,7 @@
    if(!root.Phase1?.queue)throw Error('저장 연결을 확인해 주세요.');
    const requestId=root.pushWrite('contact_upsert',payload);
    if(typeof requestId!=='string')throw Error('저장 요청을 확인할 수 없습니다.');
-   pending.set(item.id,{item,c,payload,raw,form,requestId});report('서버 저장을 확인 중입니다.');sync();
+   pending.set(item.id,{item,c,payload,raw,form,requestId,inputStamp:inputStamp(form)});report('서버 저장을 확인 중입니다.');sync();
   }catch(e){report('저장하지 못했습니다. '+e.message);}
  };
  root.addEventListener('phase1:queue',sync);
