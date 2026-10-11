@@ -12,7 +12,7 @@
  const enabled=()=>!(root.G&&(root.G.mobileRouteOff||root.G.mobileV2Off));
  const ready=()=>!!(root.Phase1&&typeof root.Phase1.rpc==='function'&&root.Phase1.profile);
  const kst=n=>{try{return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(Date.now()+(n||0)*864e5));}catch(e){return new Date(Date.now()+(n||0)*864e5).toISOString().slice(0,10);}};
- const M={st:'idle',key:'',pts:new Map(),sdk:'none',me:null,meErr:'',view:'list',map:null,sig:''};
+ const M={st:'idle',key:'',pts:new Map(),sdk:'none',me:null,meErr:'',view:'list',map:null,sig:'',page:1};
  const day=v=>String(v||'').slice(0,10);
  const mine=()=>{try{return (root.myDeals?root.myDeals():[]).filter(d=>typeof root.isOpen!=='function'||root.isOpen(d));}catch(e){return [];}};
  const openNext=d=>{const a=d&&d.nextAction;return a&&a.status==='open'?a:null;};
@@ -76,18 +76,33 @@
    +(near.length?'<div class="mr-near"><b>근처 관계관리 현장 <small>방문지 '+NEAR_KM+'km 안 · 추천만 합니다</small></b>'+near.map(x=>'<button type="button" data-mr="open" data-id="'+attr(x.d.id)+'"><span>'+h(x.d.nm)+'</span><em>'+kmTxt(x.k)+'</em></button>').join('')+'</div>':'')
    +'</section>';
  }
+ function approvedModel(){
+  const stops=stopsToday(),ordered=order(stops,M.me),route=ordered.route,near=nearRel(route);
+  const why=M.st==='nostore'?'현장 좌표 저장소가 아직 없습니다':M.st==='error'?'현장 좌표를 불러오지 못했습니다':M.st==='loading'||M.st==='idle'?'현장 좌표를 불러오는 중입니다':!M.key?'지도 키가 등록되지 않아 순서 목록만 보여 드립니다':M.sdk==='error'?'카카오 지도를 불러오지 못했습니다':M.sdk!=='ready'?'지도를 불러오는 중입니다':'';
+  const rows=route.map((s,i)=>({id:String(s.d.id),name:s.d.nm,number:i+1,leg:i===0&&!M.me?'출발':'약 '+minOf(s.leg)+'분 · '+kmTxt(s.leg),missing:false})).concat(ordered.missing.map(s=>({id:String(s.d.id),name:s.d.nm,number:'—',leg:'좌표 미확인',missing:true})));
+  const pg=root.ListPager.cut(rows,M.page);M.page=pg.page;
+  const locationNote=M.meErr||(M.me?'내 위치에서 가까운 곳부터':'내 위치 표식을 누르면 위치를 확인합니다');
+  const note=[stops.length?'오늘 방문 '+stops.length+'건':'오늘 방문 일정이 없습니다',why,route.length?'이동 시간은 직선거리 기준 어림값':'',locationNote,near.length?'근처 관계관리 '+near.length+'곳 · '+near.map(x=>x.d.nm+' '+kmTxt(x.k)).join(' · ')+' · 추천만, 일정 변경 없음':''].filter(Boolean).join(' · ');
+  return {view:M.view,rows:pg.rows,note,locationNote,me:!!M.me,pager:root.ListPager.html(pg,{ns:'route',unit:'건'})};
+ }
+ function decorateApproved(frame){
+  if(!enabled()||!frame)return;if(!root.MobileApprovedRoute)throw Error('APPROVED_ROUTE_RENDERER_REQUIRED');
+  if(M.view==='route')geoLoad();root.MobileApprovedRoute.decorate(frame,approvedModel());
+ }
  /* 번호 핀 · 순서선 · 내 위치 */
  function drawMap(){
-  const box=root.document.getElementById('mr-map');if(!box||M.sdk!=='ready'||!root.kakao||!root.kakao.maps)return;
+  const approved=root.document.getElementById('approved-route-map'),box=approved||root.document.getElementById('mr-map');if(!box||M.sdk!=='ready'||!root.kakao||!root.kakao.maps)return;
+  const locationControl=approved?.querySelector('.approved-route-location');
   const R=order(stopsToday(),M.me).route;if(!R.length)return;const K=root.kakao.maps,sig=JSON.stringify([R.map(s=>[s.d.id,s.pt.lat,s.pt.lng]),M.me]);
   if(box.dataset.sig===sig)return;box.dataset.sig=sig;
   try{
    const ll=p=>new K.LatLng(p.lat,p.lng),pts=R.map(s=>s.pt).concat(M.me?[M.me]:[]),map=new K.Map(box,{center:ll(R[0].pt),level:6});M.map=map;
+   if(locationControl){locationControl.style.zIndex='1';box.append(locationControl);}
    const bounds=new K.LatLngBounds();pts.forEach(p=>bounds.extend(ll(p)));
    if(R.length>1||M.me)map.setBounds(bounds);
    const path=(M.me?[M.me]:[]).concat(R.map(s=>s.pt)).map(ll);if(path.length>1)new K.Polyline({map,path,strokeWeight:4,strokeColor:'#3b6ce4',strokeOpacity:.8});
-   R.forEach((s,i)=>{new K.CustomOverlay({map,position:ll(s.pt),yAnchor:1,content:'<div class="mr-pin"><span style="transform:rotate(45deg)">'+(i+1)+'</span></div>'});});
-   if(M.me)new K.CustomOverlay({map,position:ll(M.me),yAnchor:.5,content:'<div class="mr-me" title="내 위치"></div>'});
+   R.forEach((s,i)=>{new K.CustomOverlay({map,position:ll(s.pt),yAnchor:1,content:approved?root.MobileApprovedRoute.pinHTML(i+1,s.d.nm):'<div class="mr-pin"><span style="transform:rotate(45deg)">'+(i+1)+'</span></div>'});});
+   if(M.me)new K.CustomOverlay({map,position:ll(M.me),yAnchor:.5,content:approved?root.MobileApprovedRoute.locationHTML():'<div class="mr-me" title="내 위치"></div>'});
   }catch(e){box.textContent='지도를 그리지 못했습니다';}
  }
  function decorate(body){
@@ -99,9 +114,11 @@
  }
  root.document.addEventListener('click',e=>{
   const b=e.target.closest('#scr [data-mr]');if(!b||!enabled())return;const a=b.dataset.mr;
-  if(a==='view'){M.view=b.dataset.v==='route'?'route':'list';return root.render();}
+  if(a==='view'){M.page=1;M.view=b.dataset.v==='route'?'route':'list';return root.render();}
   if(a==='locate')return locate();
-  if(a==='open'){const G=root.G;G.deal=b.dataset.id;G.sub=null;return root.render();}
+  if(a==='open'){if(!mine().some(d=>String(d.id)===b.dataset.id))return;const G=root.G;if(root.MobileGuideShell){root.MobileGuideShell.state.returnTab='today';root.MobileGuideShell.state.detailView='';}G.deal=b.dataset.id;G.sub=null;return root.render();}
  });
- root.MobileRoute=Object.freeze({enabled,decorate,order,stopsToday,km,minOf,state:()=>M,routeHtml,_set:(k,v)=>{M[k]=v;}});
+ root.document.addEventListener('click',e=>{const b=e.target.closest('.approved-route [data-route="page"]');if(!b)return;const n=Number(b.dataset.page);if(Number.isInteger(n)&&n>0){M.page=n;rerender();}});
+ root.document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-mr][role="button"]')){e.preventDefault();e.target.click();}});
+ root.MobileRoute=Object.freeze({enabled,decorate,decorateApproved,drawMap,approvedModel,order,stopsToday,km,minOf,state:()=>M,routeHtml,_set:(k,v)=>{M[k]=v;}});
 })(window);

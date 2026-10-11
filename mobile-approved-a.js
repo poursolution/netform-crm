@@ -26,6 +26,7 @@
   });
   if(model.message){const p=document.createElement('p');p.textContent=model.message;p.style.cssText='font-size:13px;color:#6b7280;line-height:1.5';body.append(p);}
   [...nav.children].forEach((el,i)=>{el.dataset.gs='tab';el.dataset.tab=['today','mine','record','schedule'][i];el.setAttribute('role','button');el.tabIndex=0;});
+  w.MobileRoute?.decorateApproved(frame);
   return box.innerHTML;
  }
  w.MobileApprovedA={render};

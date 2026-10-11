@@ -9,7 +9,7 @@
   const box=document.createElement('div');box.innerHTML=w.MobileApprovedDSource;
   const frame=box.firstElementChild;frame.className='approved-d';
   const [head,context,request,body,footer]=frame.children;
-  head.className='cd-head';const back=action(head.firstElementChild,'close',null,'cd-back');back.setAttribute('aria-label','뒤로');
+  head.className='cd-head';const back=action(head.firstElementChild,'close',null,'cd-back');back.setAttribute('aria-label','뒤로');if(s.ch==='방문')head.lastElementChild.textContent='방문 결과';
   const work=w.dealWorkSummaryM?w.dealWorkSummaryM(d):d.work_type||'';
   context.className='cd-context';context.textContent=[work,d.construction_year||d.planned_year,d.nm,contact.name&&[contact.name,contact.role].filter(Boolean).join(' '),d.contactAt?'최근 '+ce.md(String(d.contactAt).slice(0,10))+' 통화':''].filter(Boolean).join(' · ');
   request.className='cd-request';

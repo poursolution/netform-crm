@@ -12,8 +12,19 @@
  const kst=v=>{try{return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(v?new Date(v):new Date());}catch(e){return day(new Date().toISOString());}};
  const dealById=id=>(root.DEALS||[]).find(x=>String(x.id)===String(id));
  const openNext=d=>{const a=d&&d.nextAction;return a&&a.status==='open'?a:null;};
- const isPromise=a=>!!a&&(/약속/.test(String(a.type||''))||/^\s*고객\s*약속/.test(String(a.text||'')));
+ const isPromise=a=>!!a&&(a.promise===true||a.date_basis==='customer_agreed'||/약속/.test(String(a.type||''))||/^\s*고객\s*약속/.test(String(a.text||'')));
  const existingOf=d=>{const a=openNext(d);if(!a||!String(a.text||'').trim())return null;return {id:a.id||'',text:String(a.text).replace(/^\s*고객\s*약속\s*:?\s*/,'').trim()||String(a.text),due:day(a.due||a.due_at),type:a.type||'전화',promise:isPromise(a)};};
+ const actionDay=v=>{if(root.MobileScheduleModel?.day)return root.MobileScheduleModel.day(v)||'';const value=String(v||'');return /^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value?value:value&&Number.isFinite(Date.parse(value))?kst(value):'';};
+ const actionSnapshot=a=>a&&({id:String(a.id||'').toLowerCase(),text:String(a.text||a.title||'').replace(/^\s*고객\s*약속\s*:?\s*/,'').trim(),due:actionDay(a.due_on||a.due||a.due_at||a.scheduled_at),type:String(a.type||a.action_type||'전화'),promise:isPromise(a)});
+ function selectedExisting(d,value){
+  if(!value||!UUID.test(String(value.id||'')))throw Error('선택한 원래 업무를 다시 확인해 주세요.');
+  const rows=Array.isArray(d.openNextActions)?d.openNextActions:[d.nextActionObj,d.nextAction].filter(Boolean);
+  const a=rows.find(x=>String(x.id).toLowerCase()===String(value.id).toLowerCase()),current=actionSnapshot(a);
+  if(!a||a.status!=='open'||a.opportunity_id&&String(a.opportunity_id)!==String(d.id)||!current.text||!current.due||JSON.stringify(current)!==JSON.stringify(actionSnapshot(value)))throw Error('선택한 업무가 바뀌었습니다. 원래 업무를 다시 열어 주세요.');
+  return current;
+ }
+ const existingFor=d=>S&&String(activeID)===String(d.id)&&S.existing?S.existing:existingOf(d);
+ const hasDraftInput=s=>!!s&&(!!s.res||!!s.memo||!!s.reason||!!s.cplan||s.touchedNext||Object.values(s.reqOn||{}).some(Boolean));
  /* 작성 중 내용 복원: 뒤로 가기 · 다른 창을 다녀와도 같은 현장이면 이어서(30분) */
  const KEY='crm:call-entry:v1',LIFE=30*60000;
  const store=()=>{try{return root.sessionStorage||null;}catch(e){return null;}};
@@ -26,25 +37,25 @@
  const dateOptions=()=>{const t=kst(),mon=(()=>{const x=new Date(t+'T00:00:00Z'),w=x.getUTCDay();return CE.addDays(t,((8-w)%7)||7);})();return [['내일',CE.addDays(t,1)],['3일 후',CE.addDays(t,3)],['다음 주 월요일',mon]];};
  const MF=()=>root.MobileFields&&root.MobileFields.ready()?root.MobileFields:null;
  const curPlan=d=>{try{return root.MobileFields?root.MobileFields.planOf(d):'';}catch(e){return '';}};
- const ctxOf=d=>({today:kst(),existing:existingOf(d),currentPlan:curPlan(d),scheduleV1:root.ScheduleFlow?.enabled()===true});
+ const ctxOf=d=>({today:kst(),existing:existingFor(d),currentPlan:curPlan(d),scheduleV1:root.ScheduleFlow?.enabled()===true});
  const MR=()=>root.MobileRequests&&root.MobileRequests.enabled()?root.MobileRequests:null;
  const reqsOf=d=>{if(String(d.id)===String(activeID)&&progress.requestSnapshot)return progress.requestSnapshot;const R=MR();return R?R.forDeal(d.id):[];};
  const withInfo=()=>{const d=dealById(root.G&&root.G.deal),R=MR();return Object.assign({ch:'전화'},S,{info:S&&S.cplan?{construction_plan:S.cplan}:null,requests:d&&R&&S?reqsOf(d).map(r=>({id:r.id,title:R.labelOf(r),on:!!(S.reqOn&&S.reqOn[r.id])&&R.isContact(r)})):[]});};
- const signatureOf=input=>JSON.stringify(['ch','res','memo','mode','purpose','date','reason','plan','who','info','requests'].map(k=>input[k]));
+ const signatureOf=input=>JSON.stringify(['ch','res','memo','mode','purpose','date','reason','plan','who','info','requests'].map(k=>input[k]).concat(input.existing?[input.existing]:[]));
  const planOf=d=>{const input=withInfo();if(progress.signature){if(progress.signature!==signatureOf(input))return {ok:false,error:'저장 확인 중 입력값이 바뀌었습니다. 원래 입력으로 재시도해 주세요.'};if(progress.pl&&progress.ctx)return progress.pl;}return CE.plan(input,ctxOf(d));};
- function fresh(d){
-  const ex=existingOf(d),dflt=CE.defaults('연결됨',ex,kst());
+ function fresh(d,selected){
+  const ex=selected||existingOf(d),dflt=CE.defaults('연결됨',ex,kst());
   return {res:'',memo:'',mode:dflt.mode,purpose:dflt.purpose,date:dflt.date,reason:'',plan:'internal',info:false,touchedNext:false,reqOn:{}};
  }
  /* 결과를 고르면 다음 업무 제안도 그 결과에 맞게(직접 고친 뒤에는 건드리지 않는다) */
  function pickResult(d,res){
   S.res=res;
-  if(!S.touchedNext){const dflt=CE.defaults(res,existingOf(d),kst());S.mode=dflt.mode;S.purpose=dflt.purpose;S.date=dflt.date;}
+  if(!S.touchedNext){const dflt=CE.defaults(res,existingFor(d),kst());S.mode=dflt.mode;S.purpose=dflt.purpose;S.date=dflt.date;}
   if(CE.isBadfit(res))S.mode='none';
  }
  function sheetHtml(d){
-  const ex=progress.signature&&progress.ctx?progress.ctx.existing:existingOf(d),pl=S.res?planOf(d):null,c=root.contactInfoM?root.contactInfoM(d):{};
-  if(root.MobileContactView&&S.ch!=='방문')return root.MobileContactView.render({s:S,d,ex,plan:pl,ce:CE,contact:c,requests:reqsOf(d),requestApi:MR(),busy,frozen:!!progress.signature,fields:MF(),currentPlan:curPlan(d),dateOptions:dateOptions(),today:kst()});
+  const ex=progress.signature&&progress.ctx?progress.ctx.existing:existingFor(d),pl=S.res?planOf(d):null,c=root.contactInfoM?root.contactInfoM(d):{};
+  if(root.MobileContactView)return root.MobileContactView.render({s:S,d,ex,plan:pl,ce:CE,contact:c,requests:reqsOf(d),requestApi:MR(),busy,frozen:!!progress.signature,fields:MF(),currentPlan:curPlan(d),dateOptions:dateOptions(),today:kst()});
   const chip=(act,v,on,label,cls)=>'<button type="button" class="ce-chip'+(cls?' '+cls:'')+(act==='res'&&S.ai&&S.ai.res===v?' ai':'')+'" data-ce="'+act+'" data-v="'+attr(v)+'" aria-pressed="'+!!on+'">'+h(label||v)+'</button>';
   const res='<section><b class="ce-q"><i>1</i>연락 결과 <small>PC 기준 값</small></b><div class="ce-chips">'+CE.VALUES.map(v=>chip('res',v,S.res===v)).join('')+'</div>'+(S.ch==='방문'?'<small class="ce-sub">방문 결과 — 연결됨 = 만났음 · 부재 = 담당자 없음 (일정이 취소 · 연기됐으면 [일정 바꾸기])</small>':'')+'</section>';
   const note=!S.res?'':CE.showNote(S.res)
@@ -77,7 +88,7 @@
   const card=root.document.getElementById('sheetcard');if(!card)return;
   const keepTop=card.querySelector('.ce')?card.scrollTop:0,ta=card.querySelector('textarea[data-ce-in="memo"]');if(ta&&!fromState)S.memo=ta.value;
   const head=card.querySelector('.intro')?card.querySelector('.intro').outerHTML+'<div style="height:12px"></div>':'';
-  const fullPage=!!root.MobileContactView&&S.ch!=='방문';
+  const fullPage=!!root.MobileContactView;
   card.classList.toggle('ce-page',fullPage);root.document.getElementById('sheetwrap')?.classList.toggle('ce-page-wrap',fullPage);
   const background=root.document.getElementById('scr');if(background)background.inert=fullPage;
   card.innerHTML=(fullPage?'':'<div class="sheet-grip"></div>'+(head||''))+sheetHtml(d);card.scrollTop=keepTop;
@@ -85,17 +96,23 @@
  }
  function open(opts){
   if(busy)return;
-  if(root.MobileGuideShell&&opts?.ch==='방문'){root.toast('방문 결과 화면은 Claude 원본 연결 작업 중입니다.');return;}
   if(root.MobileGuideShell&&(typeof root.MobileContactView?.render!=='function'||typeof root.MobileApprovedDSource!=='string')){root.toast('연락 결과 화면을 불러오지 못했습니다. 다시 열어 주세요.');return;}
   const d=dealById(root.G&&root.G.deal);if(!d)return;
   const c=root.contactInfoM?root.contactInfoM(d):{};
-  const ch=opts&&opts.ch==='방문'?'방문':'전화';
+  let selected=null;
+  try{if(opts?.existing){selected=selectedExisting(d,opts.existing);if(opts.ch==='방문'&&!/방문|실측|미팅/.test(selected.type))throw Error('방문 업무를 다시 확인해 주세요.');}}catch(e){root.toast(String(e.message||e));return false;}
+  const requestedCh=opts?.ch;let ch=requestedCh==='방문'?'방문':'전화';
   owner=root.MobileSaveJournal?.owner()||'';sessionToken=root.MobileSaveJournal?.session()||'';activeID=d.id;progressMode='contact';progress={};recoveryError='';S=null;
   try{store()?.removeItem(KEY);S=loadDraft(d.id);}catch(e){recoveryError=String(e.message||e);}
-  if(S&&(S.ch||'전화')!==ch&&!progress.signature)S=null;S=S||fresh(d);if(!progress.signature)S.ch=ch;busy=false;S.err=recoveryError;
+  if(S&&!requestedCh)ch=S.ch||'전화';
+  if(S&&((S.ch||'전화')!==ch||selected&&JSON.stringify(S.existing||existingOf(d))!==JSON.stringify(selected))){
+   if(progress.signature||hasDraftInput(S)){root.toast('작성하던 결과가 남아 있습니다. 원래 업무의 입력을 먼저 확인해 주세요.');return false;}S=null;
+  }
+  S=S||fresh(d,selected);if(!progress.signature){S.ch=ch;if(selected)S.existing=selected;}
+  busy=false;S.err=recoveryError;
   root.openSheet(root.intro('var(--blue-50)','var(--blue-dark)',root.IC.phone,ch==='방문'?'방문 어떻게 됐나요?':'통화 어떻게 됐나요?',h(d.nm)+(c.name?' · '+h(c.name):'')),'');
   const card=root.document.getElementById('sheetcard');if(card){card.classList.add('ce-card');card._ceMode='entry';}
-  paint(d);wire(d);
+  paint(d);wire(d);return true;
  }
  let wired=false;
  function wire(d){
@@ -212,6 +229,7 @@
  async function save(d,card){
   if(busy)return;
   const ta=card.querySelector('textarea[data-ce-in="memo"]');if(ta)S.memo=ta.value;
+  if(!progress.signature&&S.existing){try{selectedExisting(d,S.existing);}catch(e){S.err=String(e.message||e);paint(d);return;}}
   const input=withInfo(),signature=signatureOf(input);
   if(progress.signature&&progress.signature!==signature){S.err='저장 확인 중 입력값이 바뀌었습니다. 원래 입력으로 재시도해 주세요.';paint(d);return;}
   const ctx=progress.ctx||ctxOf(d),pl=progress.pl||CE.plan(input,ctx);
@@ -338,7 +356,7 @@
  // A reviewed transcript may change only this exact local draft. It never saves an activity.
  const inputHandles=new WeakMap();
  const draftCopy=v=>JSON.parse(JSON.stringify(v));
- const targetStamp=d=>JSON.stringify([d.id,d.version,d.code,d.outcome,d.rep,d.site_id,d.contact_id,d.nextAction]);
+ const targetStamp=d=>JSON.stringify([d.id,d.version,d.code,d.outcome,d.rep,d.site_id,d.contact_id,d.nextAction,d.openNextActions]);
  function captureInputDraft(){
   const d=dealById(activeID);
   if(!d||!S||busy||progress.signature||progressMode!=='contact'||String(root.G?.deal)!==String(activeID)||!root.myDeals?.().some(x=>String(x.id)===String(activeID)))return {ok:false,error:'INPUT_DRAFT_UNAVAILABLE'};
@@ -363,7 +381,7 @@
   if(typeof memo!=='string'||!memo.trim()||memo.length>300)return {ok:false,error:'INPUT_MEMO_INVALID'};
   const snap=inputHandles.get(handle),updated=draftCopy(S);updated.memo=memo;
   try{saveDraft(snap.id,updated,true);}catch(e){return {ok:false,error:String(e.message||e)};}
-  S=updated;inputHandles.delete(handle);open();return {ok:true,localOnly:true};
+  S=updated;inputHandles.delete(handle);open({ch:updated.ch,existing:updated.existing});return {ok:true,localOnly:true};
  }
  root.MobileEntry=Object.freeze({open,reschedule,state:()=>S,last:()=>last,existingOf,captureInputDraft,inputDraftCurrent,applyInputDraft});
 })(window);
