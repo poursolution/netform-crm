@@ -20,7 +20,7 @@
 | `crm_security.quote_versions` | 기존 8개 열만 존재: id, deal_id, version_no, amount, reason, actor_auth_uid, actor_user_id, created_at |
 | base_amount / submit_amount / markup_items / 문서 연결 열 | 없음 |
 | public.crm_quote_requests / crm_labor_rates / crm_cost_rates / crm_material_prices / crm_method_specs / crm_brand_templates | 6개 모두 없음 |
-| crm_schedule_list_v1 / crm_schedule_write_v1 / crm_schedule_receipt_v1 / crm_inquiry_response_confirm_v1 | 없음. 기존 후보 기능 게이트는 계속 OFF |
+| crm_schedule_list_v1 / crm_schedule_write_v1 / crm_schedule_receipt_v1 / crm_inquiry_response_confirm_v1 | 최초 점검 당시 미설치. 후속 사용자 승인으로 2026-10-11 설치·서버 활성화 완료. 아래 견적 RPC 4개와 구분 |
 
 이 결과는 검사 시점의 설치 상태이며, 저장소 코드가 없다는 뜻이 아니다. 기존 일정·기존 견적 기능 전체가 없다는 뜻도 아니다.
 
@@ -115,3 +115,16 @@ source44 Q-T 원본에는 별도 계산 버튼이 없다. 공법·수량을 바�
 모바일 전용 계산·상태·권한·화면 추가 없음. 새 디자인 결정이 필요하지 않은 검증을 완료했다. 서버 구현과 운영 설치가 남아 있어 견적 v3 모바일 저장을 켜지 않았다. 문서 작성은 Claude에게 메시지를 발송했다는 뜻이 아니다.
 
 참고: [Supabase Database Functions](https://supabase.com/docs/guides/database/functions), 공식 변경 로그를 확인했다. 이번 발견은 문서 추정이 아니라 저장소 SQL 실행 및 해당 운영 카탈로그의 읽기 결과에 근거한다.
+
+## 서버 설치 이후 견적 계약 재확인
+
+2026-10-11 일정·응대·연락처 SQL 설치 이후에도 public/crm_security의 `crm_quote_compose_v1`, `crm_cost_standard_list_v1`, `crm_quote_version_save_v1`, `crm_quote_submit_confirm_v1`을 다시 조회한 결과는 **0행**이었다. 이번 3개 SQL 승인 범위에 견적 SQL 설치는 포함하지 않았다.
+
+master #596 소스에서 추가 확인한 연결 문제는 다음과 같다.
+
+- `sql/quote-v3-step4-20261011.sql`의 제출금액 확정은 Vn+1을 만들지만 `excel_file_id`·`pdf_file_id`를 복사하거나 새 문서를 생성하지 않는다. 기준금액 PDF를 변경된 고객 제출금액의 PDF로 표시하거나 보내면 안 된다. 버전·금액·문서가 일치하는 공통 조회와 생성 계약이 필요하다.
+- `quote-composer.js` 및 PC 저장 성공 처리의 로컬 `quote_versions` 행은 반환 `quote_version_id`를 보존하지 않는다. 저장 ACK 뒤 공통 상세를 다시 읽어 UUID·금액·상태·PDF를 함께 확정해야 한다.
+- 간단견적·공법견적 저장에는 operation/request UUID와 저장 영수증이 없으며, 재시도 시 새 수정본이 중복될 수 있다. 응답 유실 확인을 새 저장 호출로 대신하지 않는다.
+- Q-T의 초안/확인 요청과 서버 `final` 저장 상태, PC 로컬 계산과 서버 계산 경로가 아직 일치하지 않는다. 모바일만 별도 계산·상태·권한을 만들지 않는다.
+
+이 결과는 견적 담당 서버 구현을 위한 계약 인수인계다. 이 문서 갱신으로 PC 견적 SQL·화면·모바일 디자인을 변경하거나 기능을 활성화하지 않았다.
