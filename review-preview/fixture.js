@@ -53,7 +53,7 @@
    {id:'44444444-4444-4444-8444-444444444444',kind:'deal',name:'[화성] 동탄푸른마을',brand:'POUR솔루션',color:'#1f9d55',stage:'컨설팅 설계',due:'오늘',dueColor:'#15171c',task:'현장 방문',why:'방문 약속 14:00',button:'방문 결과 입력'}
   ];
   window.__approvedAExample={title:'필선님, 오늘 6곳',progress:'2 / 6',progressPercent:33,notifications:2,batch:'묶음 요청 · 송보람 · 실주 사유 12건',areas:['지금 처리 4','회신 대기 3','정보 보완 12','약속 2'],rows};
-  const original=DEALS[0];DEALS=rows.map((r,i)=>({...structuredClone(original),id:r.id,nm:r.name,brand:r.brand,code:i===1?'bidding':'consulting',nextAction:{...original.nextAction,text:r.task}})).filter((r,i)=>i!==0);
+  const original=DEALS[0];DEALS=rows.map((r,i)=>({...structuredClone(original),id:r.id,nm:r.name,brand:r.brand,code:i===1?'bidding':'consulting',nextAction:{...original.nextAction,id:i===2?'55555555-5555-4555-8555-555555555555':aid,type:i===2?'방문':original.nextAction.type,text:r.task}})).filter((r,i)=>i!==0);
   // The first approved card is a real inquiry view, never a deal disguised as an inquiry.
   // Only this local review server supplies the shared in-memory PC RPC fixture.
   const queue=Phase1.queue,otherRpc=Phase1.rpc;
