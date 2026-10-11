@@ -149,8 +149,23 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await V.locator('.dv7-work input[data-dv3f="start_date"]').fill('2026-11-02');await V.locator('.dv7-chips button',{hasText:'없음'}).click();await page.waitForTimeout(250);
   const b4=(await saved()).length;await V.locator('.dv7-wfoot .pri').click();await page.waitForTimeout(600);
   assert.deepEqual((await saved()).slice(b4),[{contract_document:'수령',start_date:'2026-11-02',special_terms:'없음'}],'계약서 수령 · 착공일 · 특이조건');
-  /* 서버 확인 대기열(합성): 저장 명령을 모아 두고 모두 '완료'로 답한다 */
-  await page.evaluate(()=>{window.__ops=[];window.queueDetailContactOperation=(op,payload)=>{const id='op'+(__ops.length+1);__ops.push({id,op,payload});return id;};window.pushWrite=(k,payload)=>{const id='pw'+(__ops.length+1);__ops.push({id,op:k,payload});return id;};Phase1.queue.flush=async()=>{};Phase1.queue.list=()=>__ops.map(o=>({request_id:o.id,status:'done',ack:{ok:true,operation:o.op,activity_id:'act-'+o.id,next_action_id:'nx-'+o.id}}));});
+  /* 합성 서버 ACK도 실제 확인 계약(actor/object/version/UUID)을 따른다. ok 하나만으로 후속 저장을 허용하지 않는다. */
+  await page.evaluate(()=>{
+   window.__ops=[];window.__invalidActivityAck=false;
+   const enqueue=(op,payload)=>{
+    const id=crypto.randomUUID(),object_id=payload.opportunity_id||payload.source_opportunity_id,
+     d=B.deals.find(x=>x.id===object_id),expected_version=d?.version||0,auth_uid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',user_id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    const command={id,op,payload,request_id:id,operation:op,object_id,expected_version,auth_uid,user_id};
+    const ack={contract_version:1,ok:true,replayed:false,request_id:id,operation:op,object_id,actor_auth_uid:auth_uid,actor_user_id:user_id,
+     previous_version:expected_version,version:expected_version+(op==='relationship_contact'?2:1),activity_id:crypto.randomUUID(),next_action_id:crypto.randomUUID(),audit_event_id:crypto.randomUUID(),
+     meaningful_contact:payload.meaningful_contact===true,occurred_at:payload.occurred_at||new Date().toISOString(),server_at:new Date().toISOString(),
+     activity_request_id:crypto.randomUUID(),next_request_id:crypto.randomUUID()};
+    if(['activity','relationship_contact'].includes(op))OperationalAdapter.validateAck(ack,command);
+    __ops.push({...command,ack});return id;
+   };
+   window.queueDetailContactOperation=enqueue;window.pushWrite=enqueue;Phase1.queue.flush=async()=>{};
+   Phase1.queue.list=()=>__ops.map(o=>({...o,status:'done',ack:__invalidActivityAck&&o.op==='activity'?{ok:true}:o.ack}));
+  });
   /* ⑥ 수주 사후 연락 · 실주 기록(종료 건 전용 저장 길) */
   await openWork(5);p=await P();assert.equal(p.head,'‹ 사후 연락 전화 → 결과 · 재영업 · 다음 공사');
   await V.locator('.dv7-ta').fill('만족 · 하자 없음');await V.locator('.dv7-chips button',{hasText:'예'}).first().click();await page.waitForTimeout(250);await V.locator('.dv7-work input[data-dv3f="recontact_possibility"]').fill('외벽 2028');
@@ -179,7 +194,15 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await V.locator('.dv7-wfoot .pri').click();await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>__ops.length),0,'견적 발송일을 모르면 집중 · 일반으로 저장하지 않는다');
   await V.locator('.dv7-chips button[data-f="state"][data-v="대기"]').click();await page.waitForTimeout(250);
   await V.locator('.dv7-wfoot .pri').click();await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>__ops.length),0,'대기는 사유가 있어야 저장한다');
-  await V.locator('.dv7-work input[data-dv3f="reason"]').fill('2027 봄 공사 대기');await V.locator('.dv7-ta').fill('입대의 일정 확인 중이라고 함');await V.locator('.dv7-wfoot .pri').click();await page.waitForTimeout(700);
+  await V.locator('.dv7-work input[data-dv3f="reason"]').fill('2027 봄 공사 대기');await V.locator('.dv7-ta').fill('입대의 일정 확인 중이라고 함');
+  const beforeContact=await page.evaluate(()=>JSON.stringify({activities:B.deals[2].activities,next:B.deals[2].next_action}));
+  await page.evaluate(()=>{__invalidActivityAck=true;});await V.locator('.dv7-wfoot .pri').click();await page.waitForTimeout(500);
+  assert.deepEqual(await page.evaluate(()=>__ops.map(o=>o.op)),['activity'],'ok만 있는 ACK 뒤에는 고객 연락 저장을 보내지 않는다');
+  assert.equal(await page.evaluate(()=>JSON.stringify({activities:B.deals[2].activities,next:B.deals[2].next_action})),beforeContact,'확인되지 않은 메모·연락·일정은 반영하지 않는다');
+  assert.equal((await P()).hidden,false,'저장 근거가 없으면 입력 화면을 유지한다');assert.equal(await V.locator('.dv7-ta').inputValue(),'입대의 일정 확인 중이라고 함');
+  const retryId=await page.evaluate(()=>__ops[0].request_id);
+  await page.evaluate(()=>{__invalidActivityAck=false;});await V.locator('.dv7-wfoot .pri').click();await page.waitForTimeout(700);
+  assert.equal(await page.evaluate(()=>__ops[0].request_id),retryId,'재시도는 같은 메모 요청을 확인한다');
   assert.deepEqual(await page.evaluate(()=>__ops.map(o=>o.op)),['activity','relationship_contact'],'관리 상태 표식 + 연락 기록(기존 길)');
   assert.equal(await page.evaluate(()=>__ops[0].payload.note),'[관계 상태] 대기 | 2027 봄 공사 대기 | '+promised+' | 없음 | 미정');
   assert.deepEqual(await page.evaluate(()=>{const a=__ops[1].payload;return [a.activity.type,a.activity.meaningful_contact,a.next_action.text,a.next_action.due_at];}),['전화',true,'고객 약속: 입대의 결과 확인 연락',promised],'연락 결과 + 고객 약속 그대로 유지한 다음 연락');
