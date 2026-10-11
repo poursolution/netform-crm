@@ -5,6 +5,7 @@
    저장은 기존 경로 그대로. AI 표식은 시안 그대로. 끄면(G.inqDetailV3Off) v2 배치 */
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+const installInquiry=require('../tests/pc-inquiry-fixture.cjs');
 const root=path.resolve(__dirname,'..'),shot=process.argv[2]||'',dump=process.env.IQ3_DUMP==='1';
 const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':'text/html');fs.createReadStream(t).pipe(res)});
 (async()=>{
@@ -16,6 +17,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const page=await ctx.newPage(),errs=[];page.on('pageerror',e=>errs.push(e.message));
   await page.clock.setFixedTime(new Date('2026-10-03T19:00:00+09:00'));
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.InquiryDetailV2&&window.InquiryWorkbench&&window.InquiryListV3);
+  await page.addScriptTag({content:'window.__installInquiryMock=('+installInquiry.toString()+');'});
   await page.evaluate(()=>{
    const A='22222222-2222-4222-8222-222222222222',U='11111111-1111-4111-8111-111111111111';
    B={deals:[],inquiries:[
@@ -24,9 +26,28 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op,p)=>{window.__writes.push([op,p]);return 'req-'+window.__writes.length};
    window.__rpc=[];SB={rpc:async(name,args)=>{__rpc.push([name,args&&args.p]);if(name==='crm_inquiry_field_update_v1')return {data:{ok:true,value:args.p.value}};return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
+   // Keep the production gate on. Only the RPC boundary uses synthetic data;
+   // PCInquirySave, ScheduleContract and InquiryResponseContract run unchanged.
+   const uid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',auth='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+   window.__scheduleMocks={};window.__scheduleRpc=[];
+   for(const q of B.inquiries){
+    let serial=0;const host={crypto:{randomUUID:()=>++serial===1?uid:serial===2?auth:crypto.randomUUID()}};
+    const f=__installInquiryMock(host,q.id);
+    Object.assign(f.state,{status:q.status,first_response_at:q.first_response_at||q.responded_at||null,responded_at:q.responded_at||null});
+    __scheduleMocks[q.id]={f,rpc:host.Phase1.rpc};
+   }
+   window.CRMRelease=Object.assign(window.CRMRelease||{},{has:n=>n!=='crm_inquiry_flow_list_v1',noteMissing:()=>{}});
+   window.Phase1={profile:{auth_uid:auth,user_id:uid,name:'송보람'},rpc:async(name,args)=>{
+    const p=args.p||{},entry=__scheduleMocks[p.target_id||p.inquiry_id];
+    if(!entry)throw Error('Unexpected synthetic inquiry target');
+    __scheduleRpc.push({name,p:structuredClone(p)});const result=await entry.rpc(name,args);
+    if(result.state?.logs)result.state.logs=result.state.logs.map(l=>({...l,kind:InquiryFlow.kindOf(l.result),actor_name:'송보람'}));
+    return result;
+   }};
    goPage('inq');window.A=A;window.U=U;
   });
   await page.evaluate(()=>InquiryWorkbench.open(A));await page.waitForTimeout(400);
+  assert.equal(await page.evaluate(()=>CRM_SCHEDULE_V1===true&&PCInquirySave.selected()&&InquiryResponseContract.enabled()),true,'production schedule/response gate stays on');
   const d=page.locator('#inq-inbox-dialog.idv.idv3');assert.equal(await d.count(),1,'상세 v3');
   const tx=sel=>d.locator(sel).evaluateAll(l=>l.map(n=>n.innerText.replace(/\s+/g,' ').trim()));
   if(dump){console.log(JSON.stringify({r1:await tx('.idv3-top .r1'),r2:await tx('.idv3-top .r2'),steps:await tx('.idv3-steps span'),c1:await tx('.idv3-c1'),chead:await tx('.idv3-chead'),ev:await tx('.idv3-ev'),comp:await tx('.idv3-composer'),c3:await tx('.idv3-c3')},null,1));if(shot)await page.screenshot({path:shot+'-open.png'});process.exit(0);}
@@ -95,14 +116,18 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await d.locator('.idv3-rc',{hasText:/^부재$/}).click();await page.waitForTimeout(150);
   assert.match((await tx('.idv3-sug'))[0],/^AI ?다음 행동 다시 연락 · 2026\.10\.4\(일\) ?바꾸기$/);assert.equal(await d.locator('.idv3-foot .idv-save.on').count(),1);
   const w0=await page.evaluate(()=>__writes.length);await d.locator('.idv3-foot .idv-save').click();await page.waitForTimeout(500);
-  assert.ok(await page.evaluate(n=>__writes.length>n,w0),'기존 저장 경로로 저장');
-  const ev=await tx('.idv3-ev');assert.match(ev[ev.length-1],/송보람|정정훈/);assert.match(ev[ev.length-1],/· 전화 · 부재 ?→ 다음 행동: 다시 연락 — \[전화 · 부재\] · 10\.4$/,'새 서버 함수가 없는 동안은 다음 할 일 문장에 결과 줄을 붙여 둔다(있으면 행동만 — verify-inquiry-flow)');
-  assert.deepEqual(await page.evaluate(n=>__writes.slice(n).map(x=>x[0]),w0),['next_action'],'부재 = 연락 시도 — 단계 진행(최초응대)이 아니라 다음 할 일만');assert.equal(await page.evaluate(()=>inqCtlFirstResponseAt(inqCtlFind(A,false))),'','부재만으로는 최초응대가 아니다');
+  const saved=await page.evaluate(n=>{const f=__scheduleMocks[A].f;return {logs:[...f.logs.values()],rows:f.rows,responses:f.responses.size,schedules:[...f.schedules.values()],legacy:__writes.slice(n),pending:!!PCInquirySave.pending(A)};},w0);
+  assert.deepEqual([saved.logs.length,saved.rows.length,saved.responses,saved.schedules.length,saved.legacy,saved.pending],[1,1,0,1,[],false],'부재는 응대 기록·일정 ACK만 저장하며 최초응대 진행과 구 저장 호출 없음');
+  assert.equal(saved.logs[0].result,'부재');assert.equal(saved.logs[0].contact_result,'부재');assert.deepEqual([saved.rows[0].title,saved.rows[0].due_on,saved.rows[0].status],['다시 연락','2026-10-04','open']);assert.deepEqual(saved.schedules[0].cancelled_action_ids,[]);assert.deepEqual(saved.schedules[0].completed_action_ids,[]);
+  const ev=await tx('.idv3-ev');assert.match(ev[ev.length-1],/송보람|정정훈/);assert.match(ev[ev.length-1],/전화 · 부재/,'서버 확인한 연락 시도가 응대 이력에 반영');
+  assert.equal(await page.evaluate(()=>inqCtlFirstResponseAt(inqCtlFind(A,false))),'','부재만으로는 최초응대가 아니다');
   assert.match((await tx('.idv3-chead'))[0],/시도 1 · 연결 0$/);
   assert.match((await tx('.idv3-pill'))[0],/^첫 연락 전 · .+ · 시도 1회$/,'부재 뒤에도 첫 연락 전 그대로 + 시도 n회');assert.equal(await d.locator('.idv3-pill.red').count(),1);
   /* 내부 메모 */
   await d.locator('.idv3-tabs [data-v="memo"]').click();await page.waitForTimeout(150);assert.equal(await d.locator('.idv3-res').count(),0);await d.locator('#spLogNote').fill('회장 의견 영향이 큰 현장');await d.locator('.idv3-foot .idv-save').click();await page.waitForTimeout(400);
-  assert.match((await tx('.idv3-ev')).pop(),/· 내부 메모 ?회장 의견 영향이 큰 현장$/);await d.locator('.idv3-tabs [data-v="call"]').click();await page.waitForTimeout(150);
+  // Fixed clock gives the local memo and confirmed RPC log the same timestamp;
+  // validate the record itself rather than array tie order across the two sources.
+  const memoEvents=await tx('.idv3-ev');assert.equal(memoEvents.filter(e=>/· 내부 메모 ?회장 의견 영향이 큰 현장$/.test(e)).length,1,'내부 메모가 한 건 보존됨: '+JSON.stringify(memoEvents));await d.locator('.idv3-tabs [data-v="call"]').click();await page.waitForTimeout(150);
   /* 오른쪽: 지금 할 일 1개 · 첫마디 · 전화 / 다음 단계 / 근처 현장 · 담당 변경 */
   assert.match((await tx('.idv3-now'))[0],/^지금 할 일 ?첫 연락 전화 ?첫마디 ?"안녕하세요, 넷폼 .+ 지금 통화 괜찮으실까요\?" ?전화 010-5436-0662 ?문자$/);
   assert.match((await tx('.idv3-next'))[0],/^다음 단계 · 현장방문 \/ 견적 ?현장방문 일정 ?견적서 발송 ?1차 현장방문 완료 또는 견적 발송 완료 중 먼저 → 파이프라인 전환$/);
@@ -158,6 +183,6 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{G.inqDetailV3Off=true;InquiryWorkbench.open(A);});await page.waitForTimeout(400);
   assert.equal(await page.locator('#inq-inbox-dialog.idv3').count(),0);assert.deepEqual(await page.locator('#inq-inbox-dialog .idv-ctabs [role=tab]').allInnerTexts(),['응대 기록','내부 메모'],'끄면 v2 배치(문자 탭은 두 배치 모두 없앴다)');
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',head_one_pill_steps4:true,left_quote_info4_need9_inline:true,center_two_tabs_result_chips:true,optional_line_saves_existing_path:true,ai_badge_as_design:true,right_one_todo_next_step_near:true,assign_uses_existing:true,work_pick_like_pipeline:true,narrow:true,legacy_switch:true}));
+  console.log(JSON.stringify({status:'PASS',head_one_pill_steps4:true,left_quote_info4_need9_inline:true,center_two_tabs_result_chips:true,optional_line_server_ack:true,production_schedule_gate_on:true,attempt_not_first_contact:true,no_legacy_contact_write:true,ai_badge_as_design:true,right_one_todo_next_step_near:true,assign_uses_existing:true,work_pick_like_pipeline:true,narrow:true,legacy_switch:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
