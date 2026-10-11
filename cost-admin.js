@@ -9,7 +9,7 @@
  'use strict';
  const R=root,h=v=>R.esc?R.esc(String(v==null?'':v)):String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),attr=h;
  const QS=()=>R.QuoteStandards,PAGE=20;
- const KIND={labor:{name:'노임',file:'임금실태 조사표(PDF)',accept:'.pdf,application/pdf',hint:'대한건설협회 임금실태 조사표 · 공표일 열(예 2026.9.1)마다 한 줄씩'},cost:{name:'원가 요율',file:'조달청 제비율 적용기준(xlsx)',accept:'.xlsx',hint:'간접공사비(제비율) 적용기준 · 적용시기 입찰공고분부터'},material:{name:'자재 단가',file:'통합관리표(xlsx)',accept:'.xlsx',hint:'통합관리표의 「단가표(개인)」 시트'}};
+ const KIND={labor:{name:'노임',file:'임금실태 조사표(PDF)',accept:'.pdf,application/pdf',hint:'대한건설협회 임금실태 조사표 · 공표일 열(예 2026.9.1)마다 한 줄씩'},cost:{name:'원가 요율',file:'조달청 제비율 적용기준(xlsx)',accept:'.xlsx',hint:'간접공사비(제비율) 적용기준 · 적용시기 입찰공고분부터'},material:{name:'자재 단가',file:'통합관리표(xlsx)',accept:'.xlsx',hint:'통합관리표의 「단가표(개인)」 시트'},method:{name:'공법 기준',file:'통합관리표(xlsx)',accept:'.xlsx',hint:'통합관리표의 공법별 일위대가 시트(싱글 · 금속기와 · 슬라브 …) — 재료 · 노무 구성'}};
  const CAT={statutory:'법정',company:'회사 기준',needs_check:'확인 필요'};
  const S={list:null,err:'',busy:false,pend:null,page:1,msg:null,tab:'cost'};
  const fmt=n=>n==null?'—':Number(n).toLocaleString('ko-KR');
@@ -19,7 +19,7 @@
   if(document.getElementById('ca-style'))return;
   const s=document.createElement('style');s.id='ca-style';
   s.textContent='#cost-admin{padding:20px 24px;max-width:1180px}#cost-admin h2{margin:0 0 4px;font-size:18px}#cost-admin .ca-sub{color:var(--sub);font-size:12.5px;margin:0 0 16px}'
-   +'.ca-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.ca-card{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px}.ca-card.on{border-color:var(--blue)}.ca-card h3{margin:0 0 6px;font-size:14px}.ca-card .ca-big{font-size:13px;font-weight:800}.ca-card small{display:block;color:var(--sub);font-size:11.5px;margin-top:3px;line-height:1.5}.ca-card .ca-act{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}'
+   +'.ca-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.ca-card{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px}.ca-card.on{border-color:var(--blue)}.ca-card h3{margin:0 0 6px;font-size:14px}.ca-card .ca-big{font-size:13px;font-weight:800}.ca-card small{display:block;color:var(--sub);font-size:11.5px;margin-top:3px;line-height:1.5}.ca-card .ca-act{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}'
    +'.ca-pend{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px}.ca-pend h3{margin:0 0 4px;font-size:14px}.ca-fields{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}.ca-fields label{display:block;font-size:11px;color:var(--sub);margin-bottom:3px}.ca-fields input{border:1px solid var(--line-2);border-radius:8px;padding:7px 9px;font:inherit;font-size:12.5px}'
    +'.ca-chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}.ca-chips i{font-style:normal;border-radius:999px;background:#eef2f7;color:var(--ink-2);padding:3px 9px;font-size:11px;font-weight:800}.ca-chips i.up{background:#fdeceb;color:#c0392b}.ca-chips i.new{background:var(--blue-50);color:var(--blue-dark)}'
    +'.ca-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}.ca-tbl th{text-align:left;color:var(--sub);font-weight:800;border-bottom:1px solid var(--line);padding:6px 6px;white-space:nowrap}.ca-tbl td{border-bottom:1px solid var(--line);padding:6px 6px;vertical-align:middle}.ca-tbl td.n{text-align:right;font-variant-numeric:tabular-nums}.ca-tbl .same{color:var(--sub)}.ca-tbl .up{color:#c0392b;font-weight:800}.ca-tbl .down{color:#1d3f99;font-weight:800}.ca-tbl .new{color:#1d3f99}.ca-tbl input{width:100%;min-width:70px;border:1px solid var(--line-2);border-radius:6px;padding:4px 6px;font:inherit;font-size:12px}'
@@ -42,6 +42,7 @@
   for(let p=1;p<=doc.numPages;p++){const tc=await(await doc.getPage(p)).getTextContent();pages.push(tc.items.filter(i=>String(i.str).trim()).map(i=>({s:i.str,x:Math.round(i.transform[4]*10)/10,y:Math.round(i.transform[5]*10)/10})));}
   return pages;}
  async function readFile(kind,file){
+  if(kind==='method')return readMethod(file);
   const buf=await file.arrayBuffer(),ext=(file.name.split('.').pop()||'').toLowerCase();
   if(kind==='labor'){
    if(ext!=='pdf')throw new Error('노임은 임금실태 조사표 PDF 를 올려 주세요');
@@ -57,6 +58,12 @@
   }
   const name=Object.keys(sheets).find(n=>/단가표\(개인\)/.test(n));if(!name)throw new Error('「단가표(개인)」 시트를 찾지 못했습니다. 통합관리표 파일이 맞는지 확인해 주세요');
   const parsed=QS().parseMaterialPrices(cells(name));return {kind,file:file.name,source:parsed.source,parsed,rows:parsed.items.map(i=>Object.assign({},i)),notes:parsed.notes,effective:parsed.price_date};
+ }
+ async function readMethod(file){
+  const buf=await file.arrayBuffer();if((file.name.split('.').pop()||'').toLowerCase()!=='xlsx')throw new Error('엑셀(xlsx) 파일을 올려 주세요');
+  const sheets=R.QuoteExcel.parseBook(await R.QuoteExcel.unzip(buf));if(!sheets['싱글']&&!sheets['금속기와'])throw new Error('공법별 일위대가 시트(싱글 · 금속기와 …)를 찾지 못했습니다. 통합관리표 파일이 맞는지 확인해 주세요');
+  const parsed=QS().parseMethodSpecs(sheets);if(!parsed.specs.length)throw new Error('공법 구성을 읽지 못했습니다');
+  return {kind:'method',file:file.name,source:parsed.source,parsed,rows:parsed.specs.map(s=>({method:s.method,composition:s.composition,effective_from:parsed.effective_from,source:parsed.source})),notes:parsed.notes,effective:parsed.effective_from};
  }
  /* ---------- 상태 ---------- */
  const rowsOf=kind=>S.list?S.list[kind]||[]:[];
@@ -88,7 +95,10 @@
    return {html:'<table class="ca-tbl"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>',total:trades.length};
   }
   const diff=QS().diff(kind,rows,cur),slice=diff.slice((S.page-1)*PAGE,S.page*PAGE);
-  if(kind==='cost'){
+  if(kind==='method'){
+   head='<tr><th>공법</th><th>재료</th><th>노무</th><th>경비(잡재료비 등)</th><th>변화</th></tr>';
+   body=slice.map(d=>{const c=d.row.composition||{};return '<tr><td>'+h(d.row.method)+'</td><td>'+h((c.materials||[]).length+'종 · '+(c.materials||[]).slice(0,3).map(m=>m.name).join(', ')+((c.materials||[]).length>3?' …':''))+'</td><td>'+h((c.labor||[]).map(l=>l.name+' '+l.qty+'인').join(' · '))+'</td><td>'+h((c.misc||[]).map(x=>x.name+' '+pct(x.pct)).join(' · '))+'</td><td>'+(d.change==='up'?'<span class="up">변경</span>':changeCell(d))+'</td></tr>';}).join('');
+  }else if(kind==='cost'){
    head='<tr><th>항목</th><th>구분</th><th>분류</th><th>계산 대상</th><th>이전 → 새 값</th><th>변화</th>'+(pend?'<th>출처</th>':'')+'</tr>';
    body=slice.map(d=>{const r=d.row,i=rows.indexOf(r),man=pend&&r.manual;
     return '<tr><td>'+h(r.item)+'</td><td>'+h(r.tier||'')+'</td><td>'+h(CAT[r.category]||r.category)+'</td><td>'+h(r.base_of||'')+'</td><td class="n">'
@@ -102,6 +112,7 @@
  }
  function pager(total){const n=Math.ceil(total/PAGE);if(n<=1)return '';let b='';for(let i=1;i<=n;i++)b+='<button type="button" data-ca="pg" data-i="'+i+'"'+(i===S.page?' aria-current="page"':'')+'>'+i+'</button>';return '<div class="ca-pg">'+b+'</div>';}
  function chips(v,t){
+  if(v.kind==='method')return '<div class="ca-chips"><i>공법 '+t.total+'개</i><i class="new">새 공법 '+(t.diff||[]).filter(d=>d.change==='new').length+'</i><i class="up">변경 '+(t.diff||[]).filter(d=>d.change==='up').length+'</i><i>같음 '+(t.diff||[]).filter(d=>d.change==='same').length+'</i></div>';
   if(v.kind==='labor')return '<div class="ca-chips"><i>직종 '+t.total+'개</i><i>공표일 '+((v.dates||[]).length)+'개</i><i>노임 '+v.rows.length+'줄</i></div>';
   const c={new:0,same:0,up:0,down:0,blank:0};(t.diff||[]).forEach(d=>c[d.change]++);
   return '<div class="ca-chips"><i>항목 '+t.total+'개</i><i class="new">새 항목 '+c.new+'</i><i class="up">오름 '+c.up+'</i><i>내림 '+c.down+'</i><i>같음 '+c.same+'</i></div>';
@@ -119,7 +130,7 @@
   const L=S.list||{},can=!!L.can_manage;
   let html='<h2>원가 기준</h2><p class="ca-sub">노임 · 원가 요율 · 자재 단가가 바뀔 때마다 파일을 올립니다. 읽은 값을 이전 값과 비교해 확인한 뒤 승인하면, 그 시행일 이후 견적의 원가계산서에 적용됩니다. 이미 확정 · 발송한 견적은 다시 계산하지 않습니다.</p>';
   if(S.err)html+='<div class="ca-msg cae">'+h(S.err)+'</div>';
-  html+='<div class="ca-cards">'+['cost','labor','material'].map(k=>{const a=activeSummary(k),dr=drafts(k).length;
+  html+='<div class="ca-cards">'+['cost','labor','material','method'].map(k=>{const a=activeSummary(k),dr=drafts(k).length;
    return '<div class="ca-card'+(S.tab===k?' on':'')+'" data-ca="tab" data-k="'+k+'"><h3>'+KIND[k].name+'</h3><div class="ca-big">'+(a.cur?'사용 중 · 시행일 '+h(a.cur):'승인된 기준 없음')+'</div><small>'+(a.cur?'항목 '+a.n+'개 · 지난 기준 '+a.past+'개'+(a.src?'<br>출처 '+h(a.src.slice(0,46)):''):KIND[k].hint)+'</small>'
     +(dr?'<small style="color:#c0392b;font-weight:800">승인 대기 초안 '+dr+'줄</small>':'')
     +(can?'<div class="ca-act"><label class="dact pri" style="cursor:pointer">파일 올리기<input type="file" data-ca="file" data-k="'+k+'" accept="'+attr(KIND[k].accept)+'" hidden></label></div>':'')+'</div>';}).join('')+'</div>';
@@ -156,7 +167,7 @@
  async function stage(){
   const p=S.pend;if(!p)return;const rows=p.rows.map(r=>Object.assign({},r,{source:r.manual?(r.source||''):(r.source||p.source)}));
   const eff=p.kind==='labor'?'':p.effective;
-  const rows2=rows.map(r=>p.kind==='cost'?Object.assign({},r,{effective_from:eff||r.effective_from}):p.kind==='material'?Object.assign({},r,{price_date:eff||r.price_date}):r);
+  const rows2=rows.map(r=>p.kind==='cost'||p.kind==='method'?Object.assign({},r,{effective_from:eff||r.effective_from}):p.kind==='material'?Object.assign({},r,{price_date:eff||r.price_date}):r);
   try{const r=await call('crm_cost_standard_stage_v1',{kind:p.kind,source:p.source,rows:rows2});S.pend=null;await load();
    say('초안 '+r.staged+'줄을 저장했습니다.'+(r.skipped.length?' 같은 시행일에 이미 승인된 '+r.skipped.length+'줄은 건너뛰었습니다.':'')+' 아래에서 확인하고 승인해 주세요.');}catch(e){say(String(e.message||e),'err');}
   render();
@@ -167,7 +178,7 @@
   const host=document.getElementById('cost-admin');if(!host||host.dataset.caBound)return;host.dataset.caBound='1';
   host.addEventListener('change',e=>{const t=e.target,a=t.dataset&&t.dataset.ca;
    if(a==='file'&&t.files&&t.files[0]){onFile(t.dataset.k,t.files[0]);t.value='';}
-   else if(a==='eff'&&S.pend){S.pend.effective=t.value;S.pend.rows.forEach(r=>{if(S.pend.kind==='cost')r.effective_from=t.value;else if(S.pend.kind==='material')r.price_date=t.value;});render();}
+   else if(a==='eff'&&S.pend){S.pend.effective=t.value;S.pend.rows.forEach(r=>{if(S.pend.kind==='cost'||S.pend.kind==='method')r.effective_from=t.value;else if(S.pend.kind==='material')r.price_date=t.value;});render();}
    else if(a==='source'&&S.pend){S.pend.source=t.value;S.pend.rows.forEach(r=>{if(!r.manual)r.source=t.value;});render();}
    else if(a==='rate'&&S.pend){const r=S.pend.rows[+t.dataset.i],v=Number(String(t.value).replace(/,/g,''));r.rate=t.value.trim()===''||!Number.isFinite(v)?null:Math.round(v*1e6)/1e8;render();}
    else if(a==='src'&&S.pend){S.pend.rows[+t.dataset.i].source=t.value;render();}
