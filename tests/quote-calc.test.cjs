@@ -19,9 +19,16 @@ for(const i of [1,2,3])test('솔밭 견적서 '+i+' — 원가계산서 모든 �
 test('총공사비 = 공급가액 10만원 아래 절삭 · 단수정리 음수',()=>{
  const {out}=run(2);assert.deepEqual([out.supply,out.base,out.rounding],[182172502,182100000,-72502]);
 });
-test('건강 · 연금 · 요양은 옵션 · 일반관리비 · 이윤은 입력(비우면 0)',()=>{
- const a=C.costSheet({area:100,unit:{mat:1000,lab:2000,exp:0}}),b=C.costSheet({area:100,unit:{mat:1000,lab:2000,exp:0},health:true});
- assert.equal(a.health+a.pension+a.care+a.general+a.profit,0);assert.equal(b.health,Math.floor(200000*0.03595));assert.ok(b.sum>a.sum);
+test('건강 · 연금 · 요양: 30일 미만이면 빼고 그 외엔 넣는다 · 퇴직공제는 기본 제외 · 일반관리비 · 이윤은 입력(비우면 0)',()=>{
+ const u={mat:1000,lab:2000,exp:0},a=C.costSheet({area:100,unit:u,durationDays:20}),b=C.costSheet({area:100,unit:u,durationDays:30}),c=C.costSheet({area:100,unit:u});
+ assert.equal(a.health+a.pension+a.care,0);assert.equal(a.general+a.profit+a.retire,0);
+ assert.equal(b.health,Math.floor(200000*0.03595));assert.ok(b.pension>0&&b.care>0&&b.sum>a.sum);assert.equal(c.health,b.health,'기간 없으면 넣는다');
+ assert.equal(C.costSheet({area:100,unit:u,durationDays:400,retire:true}).retire,Math.floor(200000*0.023));assert.equal(C.costSheet({area:100,unit:u,durationDays:400}).retire,0);
+ assert.equal(C.costSheet({area:100,unit:u,health:false,durationDays:90}).health,0);
+});
+test('노임 · 요율은 견적일 이전 시행일 중 가장 늦은 열 — 지금(2026-10-11)은 2026.9.1',()=>{
+ const col=[{effective_from:'2025-01-01',w:221506},{effective_from:'2025-09-01',w:224490},{effective_from:'2026-01-01',w:226122},{effective_from:'2026-09-01',w:228717}];
+ assert.equal(C.pickEffective(col,'2026-10-11').w,228717);assert.equal(C.pickEffective(col,'2026-06-23').w,226122);assert.equal(C.pickEffective(col,'2026-09-01').w,228717);assert.equal(C.pickEffective(col,'2024-12-31'),null);
 });
 
 test('자재 단가 = 포장 단가 ÷ 포장 수량, 100원 단위 올림 — 통합관리표 단가표(개인) → 솔밭 견적서 단가',()=>{
