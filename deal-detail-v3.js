@@ -659,11 +659,11 @@
    const fields=leftOn?F.map(x=>fieldRow(d,x,closed)).join(''):'';
   const others=C.others.length?C.others.map(c=>{const k=String(c.personKey||(root.phoneN(c.mobile)?'mobile:'+root.phoneN(c.mobile):'')),tel=root.phoneN(c.mobile);return '<div class="dv3-other"><button type="button" class="nm" data-dv3="editc" data-slot="others" data-key="'+attr(k)+'"'+(closed?' disabled':'')+'>'+h(c.name||'이름 미입력')+'</button><span>'+h(c.role||'담당자')+'</span><i></i>'+(tel?'<a href="tel:'+attr(tel)+'">'+h(root.phoneFmt(c.mobile))+'</a>':'<span class="empty">번호 없음</span>')+'</div>';}).join(''):'<p class="dv3-none">다른 연락처가 없습니다</p>';
   const slot=n=>'<div class="dv3-slot" data-slot="'+n+'"></div>';
-  return (same()?'<span class="dvs-area">단지 공통</span>':'')+(f7(d)?'<b class="dv7-h">연락처 · 결정권자</b>':'')+'<section class="dv3-sec dv3-mgr">'+(tidy()?mgrTidy(d,C,closed,SS,chg):mgr)+slot('mgr')+'</section>'+(rfix(d)?basicHtml(d,closed):'')
+  return (same()?'<span class="dvs-area">단지 공통</span>':'')+(f7(d)?'<b class="dv7-h">연락처 · 결정권자</b>':'')+'<section class="dv3-sec dv3-mgr">'+(tidy()?mgrTidy(d,C,closed,SS,chg):mgr)+slot('mgr')+'</section>'
    +(root.SiteHistory&&root.SiteHistory.enabled()?root.SiteHistory.html(d,closed)/* 이 단지 영업 이력(2026-10-05 design_handoff_site_history) — 끄면(G.siteHistoryOff) 아래 예전 칸 */:'<section class="dv3-sec"><header><b>같은 현장 다른 영업</b><span>'+rel.length+'건'+(rel.length?' · 누르면 그 건이 열림':'')+'</span></header>'+relHtml+'</section>')
    +(leftOn?'<section class="dv3-sec"><header><b>현장 정보</b><i></i>'+(closed&&!ciOk?'':'<small>누르면 바로 수정</small>')+'</header>'+fields+slot('site')+'</section>':'')/* 2026-10-05 대표 "두 개 중복되는 것 같은데 오른쪽만 남겨 줘" — 기본은 오른쪽 '이 단계 필수 정보' 하나 */
    +'<section class="dv3-sec"><header><b>자료</b><span>사진 '+fc.photos+' · 견적서 '+fc.quotes+' · 기타 '+fc.etc+'</span><i></i><button type="button" class="lnk" data-dv3="files">'+(SS.files?'접기':'자료 보기')+'</button></header>'+(SS.files?filesHtml(d,SS,closed):'')+slot('fform')+slot('files')+'</section>'
-   +'<section class="dv3-sec"><header><b>다른 연락처</b><span>'+C.others.length+'명</span><i></i>'+(closed?'':'<button type="button" class="lnk" data-dv3="addc" data-slot="others">+ 추가</button>')+'</header>'+others+slot('others')+'</section>';
+   +'<section class="dv3-sec"><header><b>다른 연락처</b><span>'+C.others.length+'명</span><i></i>'+(closed?'':'<button type="button" class="lnk" data-dv3="addc" data-slot="others">+ 추가</button>')+'</header>'+others+slot('others')+'</section>'+(rfix(d)?basicHtml(d,closed):'')/* 기본 정보는 왼쪽 맨 아래(2026-10-12 대표 · 모든 단계 같음) */;
  }
  /* 오른쪽 정리: 주소 · 공종 · 공사 예정 · 유입 경로는 왼쪽 '기본 정보' 한 곳(값을 누르면 그 자리에서 고침 · 저장 길은 그대로). 예상 금액은 머리에서 누르면 여기 한 줄로 고친다 */
  /* 기본 정보 [입력] · [수정] = 누른 줄 바로 아래에서 입력 · 저장(관리정보 수정 패널은 열지 않는다 · detail_basic_fix).

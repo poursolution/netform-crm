@@ -69,7 +69,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    if(!HASW[i]){assert.ok(Number(s.info.match(/^확인할 정보 (\d+)/)[1])<=3,'확인할 정보는 최대 3개');assert.doesNotMatch(s.info,/담당 최종 검토|무엇을 발송했나요|결정권자 · /);}
    assert.equal(s.old,0);assert.equal(s.right,0);assert.equal(s.plan,0);assert.equal(s.summ,0,'deal-same 의 빠진 정보 블록은 그리지 않는다');
    assert.equal(s.drawerHidden,true);assert.deepEqual(s.inDrawer.filter(x=>x!=='dv3-slot'),['dv7-fill','dv3-near'],'가운데 패널 = 업무 화면 · 근처 현장 패널 둘뿐(협업 · 관리 단위 · 영업 판단은 없음)');
-   assert.deepEqual(s.left.slice(0,4),['연락처 · 결정권자','기본 정보','지금 영업건','이 단지 지난 영업 0']);assert.equal(s.leftAi,'none');assert.equal(s.ai,null);
+   assert.deepEqual(s.left.slice(0,3),['연락처 · 결정권자','지금 영업건','이 단지 지난 영업 0']);assert.equal(s.left[s.left.length-1],'기본 정보','기본 정보는 왼쪽 맨 아래(모든 단계 같음)');assert.equal(s.leftAi,'none');assert.equal(s.ai,null);
    assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#detailView .dvs-task *')].filter(e=>e.offsetParent&&e.scrollWidth>e.clientWidth+1&&getComputedStyle(e).overflow!=='visible').length),0,'글 잘림 없음');
   }
   /* AI 한 줄 = 정말 한 줄 */
