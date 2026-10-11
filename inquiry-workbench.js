@@ -210,6 +210,7 @@
   }
   if(storeOnly(q)){overlay.classList.add('inq-store-view');const manage=overlay.querySelectorAll('aside')[1];if(manage)manage.innerHTML='<h3>업무 관리</h3><p class="inq-store-note">POUR스토어로 이관된 문의입니다. CRM에서는 조회만 지원하며, 견적·구매 진행은 스토어에서 관리합니다.</p>';center.querySelectorAll('button').forEach(el=>el.remove());}
   document.body.append(overlay);document.body.classList.add('inq-dialog-open');Object.entries(draft).forEach(([id,value])=>{const el=document.getElementById(id);if(el&&overlay.contains(el))el.value=value});
+  if(!previous&&root.G.inqAct==='process')try{const held=root.PCInquirySave?.pending(String(q.id));if(held?.surface==='workbench'){for(const [id,key] of [['iq-did','did'],['iq-res','res'],['iq-next','next'],['iq-due','due']]){const el=overlay.querySelector('#'+id);if(el&&typeof held.form?.[key]==='string')el.value=held.form[key];}}}catch(e){root.iqMsg(e.message);}
   if(sameAction&&focused&&overlay.contains(document.getElementById(focused)))document.getElementById(focused).focus();else if(previous)(overlay.querySelector('.sp-form input,.sp-form select')||overlay.querySelector('.inq-dialog-close')).focus();
   overlay.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close()}if(e.key==='Tab'){const list=Array.from(overlay.querySelectorAll('button,input,select,textarea,a[href]')).filter(n=>!n.disabled&&n.getClientRects().length);if(e.shiftKey&&document.activeElement===list[0]){e.preventDefault();list.at(-1)?.focus()}else if(!e.shiftKey&&document.activeElement===list.at(-1)){e.preventDefault();list[0]?.focus()}}});
  }
@@ -223,6 +224,18 @@
  const oldRole=root.inqCtlSetRoleView;root.inqCtlSetRoleView=function(v){dismiss();root.G.inqLegacyView=false;root.G.inqCompactMetric='';return oldRole(v)};
  function saveProcess(){
   const q=root.inqCtlFind(modalKey,false);if(!allowed(q))return;
+  try{if(root.CRM_SCHEDULE_V1===true||root.PCInquirySave?.route(q)){
+   const get=id=>String((document.getElementById(id)||{}).value||'').trim(),o={did:get('iq-did'),res:get('iq-res'),next:get('iq-next'),due:get('iq-due'),surface:'workbench'};
+   if(!o.did||!o.res){root.iqMsg('한 일과 결과를 모두 입력해 주세요.');return false;}
+   if(!o.next||!o.due){root.iqMsg('다음 할 일과 기한도 입력해 주세요.');return false;}
+   if(!root.InquiryListV3?.record)throw Error('서버 저장 연결을 확인할 수 없습니다. 입력을 유지한 채 다시 시도해 주세요.');
+   const key=modalKey,owner=root.MobileSaveJournal?.owner?.(),session=root.MobileSaveJournal?.session?.();
+   const current=()=>modalKey===key&&owner===root.MobileSaveJournal?.owner?.()&&session===root.MobileSaveJournal?.session?.();
+   return Promise.resolve(root.InquiryListV3.record(q,o)).then(ok=>{
+    if(ok===true&&current()&&o.did===get('iq-did')&&o.res===get('iq-res')&&o.next===get('iq-next')&&o.due===get('iq-due')){root.G.inqAct=null;root.G.iqForm=null;root.paint();}
+    return ok===true;
+   }).catch(e=>{if(current())root.iqMsg(e.message||'저장 연결을 확인해 주세요.');return false;});
+  }}catch(e){root.iqMsg(e.message||'저장 연결을 확인해 주세요.');return false;}
   /* 저장은 명령 하나(InquiryCommand · contact_log): 시도 · 첫 접촉 · 후속을 거기서 가른다(2026-10-05 견적문의 흐름 ①) */
   if(root.InquiryCommand&&root.InquiryFlow&&root.InquiryFlow.on()){
    const g=id=>String((document.getElementById(id)||{}).value||'').trim(),o={did:g('iq-did'),res:g('iq-res'),next:g('iq-next'),due:g('iq-due')};

@@ -62,7 +62,7 @@
  function contactDraft(d){
   const empty={ch:'전화',res:'',memo:'',prog:{}};
   if(!root.MobileSaveJournal||!root.Phase1?.profile)return empty;
-  try{const j=root.MobileSaveJournal.read('pc_contact',d.id);return j?{...j.input,prog:j.progress,busy:false,err:'저장 확인이 남아 있습니다. 같은 입력으로 재시도해 주세요.'}:empty;}
+  try{const j=root.MobileSaveJournal.read('pc_contact',d.id);return j?{...j.input,prog:j.progress,busy:false,...(j.input.recoveryOnly?{recoveryError:'다른 입력 경로의 저장 확인이 남아 있습니다. 원래 입력 화면에서 같은 내용으로 재시도해 주세요.'}:{}),err:'저장 확인이 남아 있습니다. 같은 입력으로 재시도해 주세요.'}:empty;}
   catch(e){return {...empty,recoveryError:String(e.message||e),err:String(e.message||e)};}
  }
 
@@ -166,7 +166,7 @@
  }
  /* ── 상담 결과 · 한 번만 쓰기 (2026-10-10 design_handoff_mobile_all 2번 · contact-entry.js 와 모바일 결과 창이 같은 입력 · 같은 저장 계획) ──
     연락 결과(연결됨 · 회신 받음 · 부재 · 번호 오류 · 배드핏) · 상담 내용 · 다음 업무(기존 일정 유지 · 변경 · 새 업무 · 없음) + 저장 전 미리보기.
-    저장은 기존 길(writeContact) 그대로 — 유지 · 변경은 지금 일정을 완료로 세지 않고, 새 업무 · 없음만 지금 일정을 완료로 닫는다. 끄기: G.contactEntryOff */
+    저장은 기존 길(writeContact) 그대로 — 응대 입력만으로 기존 일정을 완료하지 않는다. 공통 일정 엔진이 켜지면 추가·변경도 기존 업무를 보존한다. 끄기: G.contactEntryOff */
  const CE=()=>root.ContactEntry&&root.ContactEntry.on()?root.ContactEntry:null;
  const exOf=d=>{try{const a=root.actionObj?root.actionObj(d,patchOf(d)):null;if(!a||!String(a.text||'').trim())return null;return {id:a.id||'',text:String(a.text).replace(/^\s*고객\s*약속\s*:?\s*/,'').trim()||String(a.text),due:String(a.due||a.due_at||'').slice(0,10),type:a.type||'전화',promise:/약속/.test(String(a.type||''))||/^\s*고객\s*약속/.test(String(a.text||''))};}catch(e){return null;}};
  /* 입력(R) + 기본 제안 → 저장 계획에 넣을 값. 같은 영업건에 열린 연락 요청이 있으면 날짜를 따로 고르지 않은 새 전화 업무는 그 요청 기한을 따른다 */
@@ -233,7 +233,7 @@
   try{
    await writeContact(d,{ch:R.ch,note:pl.note,at,meaningful:pl.meaningful,next,due,P,change:pl.change,schedulePlan:pl,existing:ex,input:R,keepCurrent:!pl.completeCurrent});
 
-   S.rec=null;S.calling=false;afterSave(d);
+   if(S.rec===R){S.rec=null;S.calling=false;}afterSave(d);
    const rows=C.summary(pl,{existing:ex});
    toast('기록했습니다 · '+rows.map(r=>r[0]+' '+r[1]).join(' · ')+(pl.badfit?' — 위 [단계 바꾸기]에서 종결(배드핏)로':'')+leftTxt());
   }catch(e){R.busy=false;if(pl.scheduleV1&&!P.act&&!P.schedule?.prepared){R.prog={};try{root.MobileSaveJournal.drop('pc_contact',d.id,P.owner);}catch(_){}}R.err=String(e.message||e);apply();}
@@ -259,7 +259,7 @@
  /* 같은 요청을 두 번 만들지 않는다: 다시 누르면 앞서 넣은 요청의 서버 확인만 다시 본다 */
  async function confirmOp(d,P,slot,operation,payload,actionId,persist){
   const Q=root.Phase1.queue;let id=P[slot];
-  if(!id){id=root.queueDetailContactOperation(operation,{opportunity_id:d.id,...payload},actionId);P[slot]=id;if(persist)persist();}
+  if(!id){const enqueue=P.surface==='today'&&operation==='activity'?root.queueTodayContactOperation:root.queueDetailContactOperation;id=enqueue(operation,{opportunity_id:d.id,...payload},actionId);P[slot]=id;if(persist)persist();}
   let failure;try{await Q.flush();}catch(e){failure=e;}const row=Q.list().find(q=>q.request_id===id);
   if(row?.status!=='done'||row.ack?.ok!==true)throw Error(row?.error||'서버 확인 대기 중 — 다시 누르면 같은 요청을 확인합니다.');
   root.OperationalAdapter.validateAck(row.ack,row);
@@ -269,12 +269,26 @@
  const leftTxt=()=>{try{const Z=root.G&&root.G.page==='today'&&root.DayZones&&root.DayZones.last?root.DayZones.last():null;return Z?' · 지금 처리 후속 '+Z.now.length+'건 남음':'';}catch(e){return '';}};
  const afterSave=d=>{root.saveLocal?.();root.renderDetail?.();root.TodayWorkQueue?.render?.();if(root.G?.page==='relationship'&&typeof root.paintRelationshipManagement==='function')root.paintRelationshipManagement();};
  /* 연락 기록 + 다음 할 일을 기존 큐로 저장(지금 할 일 카드의 연락 결과 · 가운데 응대 기록이 같이 쓴다) */
+ function guardedContact(d,W){
+  if(W.schedulePlan||root.ScheduleFlow?.enabled()!==true)return W;
+  const J=root.MobileSaveJournal,P=W.P,owner=J.owner();J.assertOwner(owner);
+  const signature=JSON.stringify([W.ch,W.note,!!W.meaningful,W.next||null,W.due||'']),saved=J.read('pc_contact',d.id);
+  if(saved){if(saved.progress?.legacySignature!==signature)throw Error('저장 확인 중인 응대가 있습니다. 원래 입력 화면에서 같은 내용으로 재시도해 주세요.');Object.assign(P,saved.progress);}
+  if(P.legacySignature&&P.legacySignature!==signature)throw Error('저장 확인 중 입력값이 바뀌었습니다. 원래 입력으로 재시도해 주세요.');
+  P.owner=P.owner||owner;J.assertOwner(P.owner);P.legacySignature=signature;P.contactAt=P.contactAt||W.at;
+  const ex=Object.prototype.hasOwnProperty.call(P,'existing')?P.existing:exOf(d),next=ex?null:W.next;
+  P.existing=ex;P.plan=P.plan||{ok:true,scheduleV1:true,mode:ex?'keep':next?'new':'none',completeCurrent:false,next:next?{type:next.type,text:next.text,purpose:next.text,due:W.due,who:next.assignee||'',plan:'internal'}:null,change:null};
+  return {...W,at:P.contactAt,next:P.plan.next?{type:P.plan.next.type,text:P.plan.next.text,due_at:P.plan.next.due,assignee:P.plan.next.who}:null,due:P.plan.next?.due||'',schedulePlan:P.plan,existing:ex,keepCurrent:true,input:{ch:W.ch,res:'',memo:W.note,recoveryOnly:true}};
+ }
  async function writeContact(d,W){
+  W=guardedContact(d,W);
   const pd=patchOf(d),Q=root.Phase1.queue,P=W.P,next=W.next,due=W.due,rel=!!next&&!W.change&&!W.schedulePlan?.scheduleV1&&['rapport','silent','waiting'].includes(String(root.dealStage(d)));
   const addAct=id=>{d.activities=Array.isArray(d.activities)?d.activities:[];if(!d.activities.some(x=>x.id===id))d.activities.unshift({id,type:W.ch,note:W.note,at:W.at,occurred_at:W.at,actor:root.repN(root.ME?.name)});};
-  const flow=!!next&&W.schedulePlan?.scheduleV1;
-  const persist=()=>{const {prog,busy,...input}=W.input;root.MobileSaveJournal.write('pc_contact',d.id,{at:Date.now(),input,progress:P},P.owner);};
-  if(flow){root.MobileSaveJournal.assertOwner(P.owner);await root.ScheduleFlow.begin(d,W.schedulePlan,W.existing,P,persist);root.MobileSaveJournal.assertOwner(P.owner);}
+  const guarded=W.schedulePlan?.scheduleV1===true,flow=!!next&&guarded,session=guarded?root.MobileSaveJournal.session():'';
+  const guard=()=>{root.MobileSaveJournal.assertOwner(P.owner);root.MobileSaveJournal.assertSession(session);};
+  const persist=()=>{guard();const {prog,busy,...input}=W.input;root.MobileSaveJournal.write('pc_contact',d.id,{at:Date.now(),input,progress:P},P.owner);};
+  if(guarded)persist();
+  if(flow){await root.ScheduleFlow.begin(d,W.schedulePlan,W.existing,P,persist);guard();}
   if(rel){
    const id=P.rel||(P.rel=root.pushWrite('relationship_contact',{opportunity_id:String(d.id),activity:{type:W.ch,note:W.note,result:'',occurred_at:W.at,meaningful_contact:!!W.meaningful},next_action:{type:next.type,text:next.text,due_at:due}}));
    await Q.flush();const row=Q.list().find(x=>x.request_id===id);
@@ -285,10 +299,12 @@
   /* 지금 할 일(서버에 저장된 것)이 있으면 먼저 완료로 닫는다 — 기한 내 처리 집계의 근거 */
   const cur=root.actionObj?root.actionObj(d,pd):null;
   if(cur&&UUID.test(String(cur.id||''))&&!P.completed&&!W.keepCurrent){await confirmOp(d,P,'done','next_action_complete',{},cur.id);P.completed=cur.id;d.completed_actions=(Array.isArray(d.completed_actions)?d.completed_actions:[]).concat([{id:cur.id,type:cur.type,text:cur.text,due_at:cur.due_at||cur.due,status:'completed',completed_at:new Date().toISOString()}]);}
-  const rec=await confirmOp(d,P,'act','activity',{type:W.ch,note:W.note,result:'',occurred_at:W.at},undefined,flow?persist:undefined);if(flow)root.MobileSaveJournal.assertOwner(P.owner);addAct(rec.ack.activity_id);
-  if(flow){const saved=await root.ScheduleFlow.finish(d,P,rec.ack,persist);root.ScheduleFlow.project(d,saved,pd);root.MobileSaveJournal.drop('pc_contact',d.id,P.owner);}
+  const rec=await confirmOp(d,P,'act','activity',{type:W.ch,note:W.note,result:'',occurred_at:W.at},undefined,guarded?persist:undefined);if(guarded)guard();addAct(rec.ack.activity_id);
+  if(guarded&&!flow&&Number.isSafeInteger(rec.ack.version)&&(!Number.isSafeInteger(d.version)||d.version<rec.ack.version)){d.version=pd.version=rec.ack.version;}
+  if(flow){const saved=await root.ScheduleFlow.finish(d,P,rec.ack,persist);guard();root.ScheduleFlow.project(d,saved,pd);}
   else if(next){const payload=W.change?{intent:'postpone',action_id:W.change.id,due_at:due}:next;const sch=await confirmOp(d,P,'next','next_action',payload);setNext(d,sch.ack.next_action_id,next,due);}
   else if(P.completed){d.nextActionObj=pd.nextActionObj=null;d.nextAction=pd.nextAction='';d.nextActionText=pd.nextActionText='';}
+  if(guarded){guard();root.MobileSaveJournal.drop('pc_contact',d.id,P.owner);}
  }
  async function saveRec(d){if(CE())return saveRecCE(d);
   const S=st(d),R=S.rec;if(!R||R.busy)return;
@@ -313,14 +329,17 @@
   const rel=!rej&&['rapport','silent','waiting'].includes(String(root.dealStage(d)));
   if(!root.Phase1?.queue||(rel?typeof root.pushWrite!=='function':typeof root.queueDetailContactOperation!=='function'))throw Error('로그인 상태에서만 저장할 수 있습니다.');
   const ch=o.ch||'전화',day=o.day??nx[1],due=rej?'':KST(day),assignee=root.repN(d.assignee)||root.repN(root.ME?.name)||'',next=rej?null:{type:nx[0]==='자료 보내기'?'후속접촉':'전화',text:nx[0],due_at:due,assignee};
-  await writeContact(d,{ch,note:recNote(ch,res,String(o.memo||'').trim()),at:o.at||new Date().toISOString(),meaningful:!['부재','회신대기'].includes(res),next,due,P:o.P||{}});
+  const P=o.P||{};if(root.G?.page==='today')P.surface='today';
+  await writeContact(d,{ch,note:recNote(ch,res,String(o.memo||'').trim()),at:o.at||new Date().toISOString(),meaningful:!['부재','회신대기'].includes(res),next,due,P});
   try{root.saveLocal?.();}catch(e){}
   return {next,due};
  }
  /* 내부 메모 한 줄(다음 행동은 건드리지 않는다) */
  async function memoOutside(d,note,P){
   if(!root.Phase1?.queue||typeof root.queueDetailContactOperation!=='function')throw Error('로그인 상태에서만 저장할 수 있습니다.');
-  const at=new Date().toISOString(),rec=await confirmOp(d,P||{},'memo','activity',{type:'메모',note,result:'',occurred_at:at});
+  P=P||{};if(root.G?.page==='today')P.surface='today';
+  const J=root.MobileSaveJournal,owner=J.owner(),session=J.session();J.assertOwner(owner);
+  const at=P.at||(P.at=new Date().toISOString()),rec=await confirmOp(d,P,'memo','activity',{type:'메모',note,result:'',occurred_at:at});J.assertOwner(owner);J.assertSession(session);
   d.activities=Array.isArray(d.activities)?d.activities:[];if(!d.activities.some(x=>x.id===rec.ack.activity_id))d.activities.unshift({id:rec.ack.activity_id,type:'메모',note,at,occurred_at:at,actor:root.repN(root.ME?.name)});try{root.saveLocal?.();}catch(e){}
  }
  /* 단계 정보 몇 칸만 저장(상세 밖 — 관계관리 재분류의 견적 발송일). 서버 확인 뒤에만 화면에 반영 */
@@ -1198,7 +1217,7 @@
   if(!enabled()||!v.classList.contains('ddv')||!cur||cur.kind!=='deal'){if(v.classList.contains('dv3'))cleanup(v);return;}
   const d=cur.item,closed=!!d.outcome||d.lifecycle_status==='closed';
   v.classList.add('dv3');v.classList.toggle('dvt',tidy());
-  {const S0=st(d);if(S0.calling&&S0.callN!=null&&(Array.isArray(d.activities)?d.activities:[]).length>S0.callN){S0.calling=false;S0.rec=null;}}/* 기록이 쌓였으면 통화 표시를 끈다 */
+  {const S0=st(d);if(S0.calling&&S0.callN!=null&&!(S0.rec&&(S0.rec.busy||S0.rec.prog))&&(Array.isArray(d.activities)?d.activities:[]).length>S0.callN){S0.calling=false;S0.rec=null;}}/* 진행 중인 응대·일정 저장은 활동 ACK만으로 닫지 않는다. 전체 성공은 saveRecCE가 닫는다. */
   if(!v.__dv3){v.__dv3=true;new MutationObserver(list=>{for(const m of list)for(const n of m.addedNodes)if(n.nodeType===1&&(n.id==='ddvPanel'||n.id==='detailAction'))relocate(n);syncFilesLabel(v);syncMove(v);}).observe(v,{childList:true,subtree:true});}
   wrapWork();wrapClose();wrapDetailClose();$('dv3-consbox')?.remove();
   const act=document.activeElement,keepFocus=act&&act.dataset&&act.dataset.dv3in?[act.dataset.dv3in,act.dataset.key,act.selectionStart]:null,keepMemo=!!(act&&act.dataset&&act.dataset.dv3rec),keepRepl=act&&act.dataset&&act.dataset.dv3repl||'';
