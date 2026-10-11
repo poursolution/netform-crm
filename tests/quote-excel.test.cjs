@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 /* 견적서 엑셀 올리기 · 읽기 · 자동 확인 5가지 — 시험용 xlsx 를 직접 만들어(zip + xml) 같은 경로로 읽는다 */
 const test=require('node:test'),assert=require('node:assert/strict'),zlib=require('zlib'),fs=require('fs'),path=require('path');
 const X=require('../quote-excel.js'),C=require('../quote-calc.js');
@@ -52,4 +52,10 @@ test('엑셀이 아니거나 필요한 시트가 없으면 이유를 알려 준�
  await assert.rejects(()=>run(Buffer.from('not a zip file at all, just text')),/엑셀\(xlsx\) 파일이 아닙니다/);
  const {result}=await run(makeXlsx({'갑지':{D10:'x'}}));assert.equal(result.checks.find(c=>c.key==='structure').status,'fail');assert.match(result.checks.find(c=>c.key==='structure').msg,/원가계산서, 집계표/);
  assert.equal(X.excelDate(45798),'2025-05-21');assert.equal(X.excelDate(''),'');
+});
+
+test('이름만 남은 빈 공종 줄(수량도 금액도 0)은 쓰지 않은 줄로 빼고 통과 · 전부 비어 있으면 막힘',async()=>{
+ const a=await run(build({sum:{A6:'2. 기타공사',C6:'식',D6:1,F6:0,H6:0,J6:0,L6:0},items:{A20:'2. 기타공사',C20:'식',D20:0}}));
+ const q=a.result.checks.find(c=>c.key==='qty');assert.equal(q.status,'pass');assert.match(q.msg,/빈 공종 줄 1개/);assert.deepEqual(a.read.ignoredRows,['2. 기타공사']);
+ const b=await run(build({sum:{L5:0,F5:0,H5:0,J5:0},items:{D4:0}}));assert.equal(b.result.checks.find(c=>c.key==='qty').status,'fail');
 });

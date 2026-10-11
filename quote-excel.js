@@ -77,8 +77,11 @@
   add('structure','구조(정해진 시트 · 칸)',miss.length?'fail':(read.cost&&read.summary&&read.summary.rows.length?'pass':'fail'),miss.length?'없는 시트: '+miss.join(', '):(read.summary&&read.summary.rows.length?'':'집계표에 공종이 없습니다'));
   /* 2 고른 공종 수량 > 0 */
   if(read.summary&&read.summary.rows.length){
-   const bad=read.summary.rows.filter(r=>{const it=read.items.find(i=>i.name===r.name);return !((it&&it.qty>0)||r.qty>0)||!(r.total>0);}).map(r=>r.name);
-   add('qty','고른 공종 수량 > 0',bad.length?'fail':'pass',bad.length?'수량 또는 금액이 0인 공종: '+bad.join(', '):'');
+   /* 이름만 남은 빈 공종 줄(수량도 금액도 0)은 쓰지 않은 줄 — 줄여서 무시한다(대표 2026-10-11). 한쪽만 0이면 막는다 */
+   const used=[],unused=[];for(const r of read.summary.rows){const it=read.items.find(i=>i.name===r.name),q=(it?it.qty:0)>0;(!q&&!(r.total>0)&&!(it?false:r.qty>1)?unused:used).push({r,q});}
+   read.ignoredRows=unused.map(x=>x.r.name);
+   const bad=used.filter(x=>!(x.q||x.r.qty>0)||!(x.r.total>0)).map(x=>x.r.name);
+   add('qty','고른 공종 수량 > 0',!used.length?'fail':bad.length?'fail':'pass',!used.length?'고른 공종이 없습니다(모든 줄이 비어 있습니다)':bad.length?'수량 또는 금액이 0인 공종: '+bad.join(', '):(unused.length?'빈 공종 줄 '+unused.length+'개는 쓰지 않은 줄로 보고 뺐습니다':''));
   }else add('qty','고른 공종 수량 > 0','fail','집계표를 읽지 못했습니다');
   /* 3 항목별 재계산 = 공급가액 */
   if(read.cost&&read.summary&&Q){
