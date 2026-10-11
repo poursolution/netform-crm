@@ -1,0 +1,107 @@
+{
+  "I-1": {
+    "context": "옥상 방수 · 2026 · 동탄푸른마을 · 14:00 방문 일정",
+    "transcript": "",
+    "micLabel": "누르고 말하기",
+    "statusText": "음성 입력 준비 전 · 직접 입력할 수 있습니다.",
+    "canSpeak": false,
+    "recording": false,
+    "provenance": {
+      "kind": "approved-design-example-only",
+      "source": "source43/Codex 모바일 디자인 가이드 · 예시.dc.html",
+      "screen": "I-1",
+      "frame": "375×680",
+      "note": "Source42 differs only by height640. Source43 I2 stale10.11(금) is deliberately not adopted as a confirmed date."
+    },
+    "blockedReason": "합성 예시입니다. 음성·명함 결과와 공통 저장 계약을 확인하기 전에는 업무·연락처를 저장하지 않습니다."
+  },
+  "I-2": {
+    "transcript": "소장님 만났고 옥상 누수 보수 견적 요청받았습니다. 도면은 아직 없고, 금요일까지 견적을 원하십니다.",
+    "dateCandidate": {
+      "id": "date-candidate",
+      "text": "금요일"
+    },
+    "candidates": [
+      {
+        "id": "candidate-0",
+        "kind": "visit",
+        "title": "방문 일정 완료",
+        "detail": "오늘 14:00 · 이 방문이 맞나요"
+      },
+      {
+        "id": "candidate-1",
+        "kind": "quote_request",
+        "title": "견적 요청",
+        "detail": "상담 내용 · 사진 이어받음 · 도면 없음 표시"
+      },
+      {
+        "id": "candidate-2",
+        "kind": "followup",
+        "title": "견적 발송 업무 · 날짜 확인 필요",
+        "detail": "\"금요일\" → 날짜 확인"
+      },
+      {
+        "id": "candidate-3",
+        "kind": "stage",
+        "title": "단계 바꾸기",
+        "detail": "제안 안 함 · 필요하면 따로"
+      }
+    ],
+    "selectedIds": [],
+    "preview": "선택한 후속 업무 없음 · 날짜 확인 전 · 운영 저장 없음",
+    "dateConfirmed": false,
+    "canSave": false,
+    "suggestionLabel": "예시 후보",
+    "provenance": {
+      "kind": "approved-design-example-only",
+      "source": "source43/Codex 모바일 디자인 가이드 · 예시.dc.html",
+      "screen": "I-2",
+      "frame": "375×680",
+      "note": "Source42 differs only by height640. Source43 I2 stale10.11(금) is deliberately not adopted as a confirmed date."
+    },
+    "blockedReason": "합성 예시입니다. 음성·명함 결과와 공통 저장 계약을 확인하기 전에는 업무·연락처를 저장하지 않습니다."
+  },
+  "I-3": {
+    "photoLabel": "명함 사진",
+    "helper": "읽은 값 · 틀리면 고쳐 주세요",
+    "fields": [
+      {
+        "id": "name",
+        "label": "이름",
+        "value": "최민우",
+        "uncertain": false
+      },
+      {
+        "id": "role",
+        "label": "역할",
+        "value": "관리과장",
+        "uncertain": false
+      },
+      {
+        "id": "phone",
+        "label": "휴대폰",
+        "value": "010-82O1-3320",
+        "uncertain": true
+      },
+      {
+        "id": "company",
+        "label": "회사",
+        "value": "동탄푸른마을 관리사무소",
+        "uncertain": false
+      }
+    ],
+    "siteId": "55555555-5555-4555-8555-555555555555",
+    "siteLabel": "[화성] 동탄푸른마을 · 지금 보던 현장",
+    "duplicateNote": "이 번호가 [화성] 동탄2신도시 현장에도 있어요 · 같은 분?",
+    "validationState": "invalid",
+    "canSave": false,
+    "provenance": {
+      "kind": "approved-design-example-only",
+      "source": "source43/Codex 모바일 디자인 가이드 · 예시.dc.html",
+      "screen": "I-3",
+      "frame": "375×680",
+      "note": "Source42 differs only by height640. Source43 I2 stale10.11(금) is deliberately not adopted as a confirmed date."
+    },
+    "blockedReason": "합성 예시입니다. 음성·명함 결과와 공통 저장 계약을 확인하기 전에는 업무·연락처를 저장하지 않습니다."
+  }
+}

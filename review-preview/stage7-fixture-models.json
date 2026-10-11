@@ -1,0 +1,286 @@
+{
+  "K-1": {
+    "title": "견적 요청",
+    "context": "옥상 방수 · 2026 · [수원] 매탄임광아파트 · 석민이앤씨",
+    "preview": "견적 요청 1건 · 견적팀(잔디) 알림 · 고객 약속 10.16 (금)",
+    "inherited": {
+      "title": "상담 내용 · 사진 6장",
+      "tag": "이어받음",
+      "detail": "옥상 슁글 들뜸 · 배수로 막힘 · 사진 6장 · 도면 없음"
+    },
+    "inheritedHint": "방문 기록 · 10.8",
+    "works": [
+      {
+        "id": "chip-0",
+        "label": "슁글",
+        "selected": true
+      },
+      {
+        "id": "chip-1",
+        "label": "금속기와",
+        "selected": false
+      },
+      {
+        "id": "chip-2",
+        "label": "슬라브",
+        "selected": false
+      },
+      {
+        "id": "chip-3",
+        "label": "배수로",
+        "selected": true
+      },
+      {
+        "id": "chip-4",
+        "label": "PVC",
+        "selected": false
+      },
+      {
+        "id": "chip-5",
+        "label": "기타공사",
+        "selected": false
+      }
+    ],
+    "quantities": [
+      {
+        "id": "row-0",
+        "label": "슁글",
+        "value": "약 1,200 ㎡ · 실측 필요"
+      },
+      {
+        "id": "row-1",
+        "label": "배수로",
+        "value": "모름 · m"
+      }
+    ],
+    "dates": [
+      {
+        "id": "chip-0",
+        "label": "금 10.16",
+        "selected": true
+      },
+      {
+        "id": "chip-1",
+        "label": "날짜 고르기",
+        "selected": false
+      },
+      {
+        "id": "chip-2",
+        "label": "약속 없음",
+        "selected": false
+      }
+    ],
+    "provenance": {
+      "kind": "approved-design-example-only",
+      "source": "source44/design_handoff_quote_v3/견적서 · 모바일 흐름.dc.html",
+      "sourceReadme": "source44/design_handoff_quote_v3/README.md:87-89",
+      "screen": "K-1",
+      "recordingDate": "2026-10-11",
+      "dateBasis": "Original example dates preserved; 2026-10-16 Friday and 2026-10-19 Monday agree with source. Future schedule/history is fictional example data.",
+      "amountBasis": "K3/K5 매탄임광 V2 290,000,000원 is source44 적산 기준금액, not an inferred customer submission amount. K4 동탄푸른마을 is a separate source example."
+    },
+    "primaryEnabled": false,
+    "secondaryEnabled": false,
+    "blockedReason": "승인된 디자인 예시입니다. 견적 서버 저장·제출금액 계산·발송 계약이 연결되지 않아 저장·발송할 수 없습니다."
+  },
+  "K-2": {
+    "title": "견적 진행",
+    "context": "옥상 방수 · 2026 · [수원] 매탄임광아파트 · 석민이앤씨",
+    "preview": "고객과 다시 정하면 → 고객 응대 기록으로 (약속일은 그때 바뀜)",
+    "steps": [
+      {
+        "title": "요청함",
+        "detail": "10.8 15:10 · 필선",
+        "state": 2
+      },
+      {
+        "title": "자료 보완 필요",
+        "detail": "도면 없음 → 실측 10.9 완료",
+        "state": 2
+      },
+      {
+        "title": "작성 중",
+        "detail": "견적팀 박지훈 · 내부 완료 예정 10.19 (월)",
+        "state": 1
+      },
+      {
+        "title": "완료 · 최종본",
+        "detail": "",
+        "state": 0
+      }
+    ],
+    "conflict": "고객 약속 10.16 (금) · 내부 완료 예정 10.19 (월) → 3일 늦음",
+    "adjustment": {
+      "title": "앞당기기 요청함 · 10.12",
+      "tag": "답 대기",
+      "detail": "견적팀 답 기다림 · 받아들이면 내부 예정일이 바뀜 (요청만으론 안 바뀜)"
+    },
+    "question": {
+      "title": "배수로 길이 확인 부탁드려요",
+      "tag": "질문 1",
+      "detail": "박지훈 · 10.9 16:20 · 답변 기다림"
+    },
+    "provenance": {
+      "kind": "approved-design-example-only",
+      "source": "source44/design_handoff_quote_v3/견적서 · 모바일 흐름.dc.html",
+      "sourceReadme": "source44/design_handoff_quote_v3/README.md:87-89",
+      "screen": "K-2",
+      "recordingDate": "2026-10-11",
+      "dateBasis": "Original example dates preserved; 2026-10-16 Friday and 2026-10-19 Monday agree with source. Future schedule/history is fictional example data.",
+      "amountBasis": "K3/K5 매탄임광 V2 290,000,000원 is source44 적산 기준금액, not an inferred customer submission amount. K4 동탄푸른마을 is a separate source example."
+    },
+    "primaryEnabled": false,
+    "secondaryEnabled": false,
+    "blockedReason": "승인된 디자인 예시입니다. 견적 서버 저장·제출금액 계산·발송 계약이 연결되지 않아 저장·발송할 수 없습니다."
+  },
+  "K-3": {
+    "title": "견적 V2 확인",
+    "context": "옥상 방수 · 2026 · [수원] 매탄임광아파트 · 석민이앤씨",
+    "preview": "확인하면 \"영업 확인 완료\" 기록 · 발송 준비",
+    "quote": {
+      "title": "옥상 방수 견적 V2 · 최종본",
+      "tag": "도착",
+      "detail": "석민 공사 견적서 · 슁글 + 배수로 템플릿 · 단가 기준 26.03.25 이후"
+    },
+    "amountRows": [
+      {
+        "id": "row-0",
+        "label": "견적 금액",
+        "value": "2억 9,000만 · VAT 별도"
+      },
+      {
+        "id": "row-1",
+        "label": "슁글 방수 (직접공사비)",
+        "value": "1억 1,764만"
+      },
+      {
+        "id": "row-2",
+        "label": "배수로 방수 (직접공사비)",
+        "value": "4,842만"
+      },
+      {
+        "id": "row-3",
+        "label": "기타공사 (직접공사비)",
+        "value": "2,400만"
+      },
+      {
+        "id": "row-4",
+        "label": "간접비 · 관리비 · 이윤",
+        "value": "9,994만"
+      },
+      {
+        "id": "row-5",
+        "label": "유효기간",
+        "value": "석민 양식 · 없음"
+      },
+      {
+        "id": "row-6",
+        "label": "V1 대비",
+        "value": "−9,000만 · 옥탑 · 두겁 제외"
+      }
+    ],
+    "pdf": {
+      "title": "견적서 PDF",
+      "tag": "보기",
+      "detail": "석민_매탄임광_옥상방수_V2.pdf · 4쪽 · 엑셀과 같은 금액 확인됨",
+      "id": "fixture-pdf",
+      "enabled": false
+    },
+    "note": "엑셀 수정은 PC에서 견적팀이 · 금액이 이상하면 [견적팀에 확인 요청]",
+    "provenance": {
+      "kind": "approved-design-example-only",
+      "source": "source44/design_handoff_quote_v3/견적서 · 모바일 흐름.dc.html",
+      "sourceReadme": "source44/design_handoff_quote_v3/README.md:87-89",
+      "screen": "K-3",
+      "recordingDate": "2026-10-11",
+      "dateBasis": "Original example dates preserved; 2026-10-16 Friday and 2026-10-19 Monday agree with source. Future schedule/history is fictional example data.",
+      "amountBasis": "K3/K5 매탄임광 V2 290,000,000원 is source44 적산 기준금액, not an inferred customer submission amount. K4 동탄푸른마을 is a separate source example."
+    },
+    "primaryEnabled": false,
+    "secondaryEnabled": false,
+    "blockedReason": "승인된 디자인 예시입니다. 견적 서버 저장·제출금액 계산·발송 계약이 연결되지 않아 저장·발송할 수 없습니다.",
+    "versionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2"
+  },
+  "K-4": {
+    "title": "견적 V1 확인",
+    "context": "옥상 방수 · 2026 · [화성] 동탄푸른마을 · 석민이앤씨",
+    "preview": "발송 1건 · 안 A · B 두 PDF",
+    "quote": {
+      "title": "금속기와 도포만 · 두 안",
+      "tag": "최종본",
+      "detail": "석민 공사 견적서 · 한 견적 안에 안 A · B"
+    },
+    "options": [
+      {
+        "id": "chip-0",
+        "label": "안 A · 1회 도포",
+        "selected": true,
+        "value": "6,800만 · VAT 별도"
+      },
+      {
+        "id": "chip-1",
+        "label": "안 B · 2회 도포",
+        "selected": true,
+        "value": "9,400만 · VAT 별도"
+      }
+    ],
+    "note": "고객이 한 안을 고르면 → 응대 기록에서 [안 B 선택] → 현재 견적 금액 = 9,400만",
+    "provenance": {
+      "kind": "approved-design-example-only",
+      "source": "source44/design_handoff_quote_v3/견적서 · 모바일 흐름.dc.html",
+      "sourceReadme": "source44/design_handoff_quote_v3/README.md:87-89",
+      "screen": "K-4",
+      "recordingDate": "2026-10-11",
+      "dateBasis": "Original example dates preserved; 2026-10-16 Friday and 2026-10-19 Monday agree with source. Future schedule/history is fictional example data.",
+      "amountBasis": "K3/K5 매탄임광 V2 290,000,000원 is source44 적산 기준금액, not an inferred customer submission amount. K4 동탄푸른마을 is a separate source example."
+    },
+    "primaryEnabled": false,
+    "secondaryEnabled": false,
+    "blockedReason": "승인된 디자인 예시입니다. 견적 서버 저장·제출금액 계산·발송 계약이 연결되지 않아 저장·발송할 수 없습니다."
+  },
+  "K-5": {
+    "title": "견적 이력",
+    "context": "옥상 방수 · 2026 · [수원] 매탄임광아파트 · 석민이앤씨",
+    "preview": "",
+    "dispatch": {
+      "title": "V2 발송 · 박정호 소장 · 이메일",
+      "tag": "고객 검토 중",
+      "detail": "10.16 10:12 · 견적 V2 + 시방서 + 입대의 자료 · 성공 · 보낸 주소 고정"
+    },
+    "next": {
+      "title": "다음 업무 · 10.23 반응 확인",
+      "tag": "예정",
+      "detail": "발송 D+7 · 같은 영업건에 열린 반응 확인이 있으면 새로 만들지 않음"
+    },
+    "versions": [
+      {
+        "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2",
+        "label": "V2 · 10.16",
+        "value": "2.9억 · 고객 검토 중",
+        "replaced": false,
+        "enabled": true
+      },
+      {
+        "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1",
+        "label": "V1 · 8.18",
+        "value": "3.8억 · 대체됨",
+        "replaced": true,
+        "enabled": true
+      }
+    ],
+    "note": "V2 사유: 관리소장 변경 · 예산 축소 → 옥탑 · 두겁 제외 (변화 기록 9.20과 연결)",
+    "provenance": {
+      "kind": "approved-design-example-only",
+      "source": "source44/design_handoff_quote_v3/견적서 · 모바일 흐름.dc.html",
+      "sourceReadme": "source44/design_handoff_quote_v3/README.md:87-89",
+      "screen": "K-5",
+      "recordingDate": "2026-10-11",
+      "dateBasis": "Original example dates preserved; 2026-10-16 Friday and 2026-10-19 Monday agree with source. Future schedule/history is fictional example data.",
+      "amountBasis": "K3/K5 매탄임광 V2 290,000,000원 is source44 적산 기준금액, not an inferred customer submission amount. K4 동탄푸른마을 is a separate source example."
+    },
+    "primaryEnabled": false,
+    "secondaryEnabled": false,
+    "blockedReason": "승인된 디자인 예시입니다. 견적 서버 저장·제출금액 계산·발송 계약이 연결되지 않아 저장·발송할 수 없습니다.",
+    "versionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2"
+  }
+}
