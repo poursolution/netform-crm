@@ -1,117 +1,178 @@
-﻿'use strict';
-/* 모바일 문의 응대 결과 — PC 와 같은 값 · 같은 저장 (2026-10-10 대표 승인 · mobile_all) — 합성 자료. 서버 함수(crm_inquiry_command_v1)는 가짜 응답.
-   확인: 연락 결과 PC 값 5가지 / 부재 · 번호 오류 = 연락 시도(상담 내용 없음 · 단계 그대로) / 연결됨 · 회신 받음 = 실제 연결(첫 접촉이면 단계 진행)
-         / 저장 순서 = 서버 응대 기록 확인 → 단계 진행 → 다음 행동일(inquiry_next_set) / 서버가 거절하면 아무것도 안 보냄 / 배드핏 = 종결 + 사유 필수 / 끄기 스위치 */
-const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+'use strict';
+/* Approved A → inquiry D. Actual ContactEntry + PCInquirySave + schedule/response
+ * contracts run against the same synthetic RPC fixture as the PC save tests.
+ * No retired inquiry sheet, production I/O, implicit request completion or UI edits.
+ */
+const assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
-const root=path.resolve(__dirname,'..');
-const srv=http.createServer((req,res)=>{const rel=decodeURIComponent(new URL(req.url,'http://127.0.0.1').pathname).replace(/^\/+/,'')||'mobile.html';let dir=root,t=path.resolve(dir,rel);if(!fs.existsSync(t)&&process.env.MOBILE_TEST_BASE){dir=path.resolve(process.env.MOBILE_TEST_BASE);t=path.resolve(dir,rel);}if(!t.startsWith(dir+path.sep)||!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type',t.endsWith('.html')?'text/html; charset=utf-8':t.endsWith('.css')?'text/css':'application/javascript; charset=utf-8');fs.createReadStream(t).pipe(res)});
-const one=s=>String(s||'').replace(/\s+/g,' ').trim();
-const QID='aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa';
+const server=require('../review-preview/server.cjs');
+const {launchOptions}=require('../review-preview/review-environment.cjs');
+const install=require('../tests/pc-inquiry-fixture.cjs');
+const QID='aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',TASK='bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb';
 (async()=>{
- await new Promise(r=>srv.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({headless:true,...(process.env.BROWSER_EXECUTABLE?{executablePath:process.env.BROWSER_EXECUTABLE}:{})}),errs=[];
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const origin='http://127.0.0.1:'+server.address().port;let browser;
  try{
-  const ctx=await browser.newContext({viewport:{width:390,height:844},timezoneId:'Asia/Seoul'});
-  await ctx.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
-  const page=await ctx.newPage();page.on('pageerror',e=>errs.push(e.message));
-  await page.goto(`http://127.0.0.1:${srv.address().port}/mobile.html?demo=1`,{waitUntil:'domcontentloaded'});
-  await page.waitForFunction(()=>window.ContactEntry&&window.MobileInquiry&&typeof render==='function'&&window.OperationalUI&&typeof queueInquiryNextSet==='function');
-  const setup=(o)=>page.evaluate(o=>{
-   for(const key of Object.keys(sessionStorage))if(key.startsWith('crm:mobile-save:'))sessionStorage.removeItem(key);
-   const kst=n=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(Date.now()+n*864e5));window.__kst=kst;
-   G.user=REPS.find(r=>r.role==='dual')||REPS[0];G.mode='rep';DEMO=true;window.toast=()=>{};
-   ADMIN.inquiries=[{key:'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',id:'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',nm:'[테스트] 문의 현장',rep:G.user.nm,status:o.status||'배정완료',phone:'01011112222',gj:'옥상방수',body:'옥상 누수',at:new Date().toISOString(),raw:{status:o.status||'배정완료'}}];
-   DEALS=[];G._today=[{kind:'inquiry',ref:'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',nm:'[테스트] 문의 현장'}];G.done={};G.deal=null;G.tab='today';G.sub={t:'inqAssigned',key:'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa'};
-   window.__rpc=[];window.__w=[];window.__fail=!!o.fail;window.__ackMode=o.ackMode||'';
-   const original=window.__originalPushWrite||(window.__originalPushWrite=window.pushWrite);
-   window.pushWrite=(op,p)=>{__w.push([op,p]);return original(op,p);};
-   const real=window.__realPhase1||(window.__realPhase1=window.Phase1);
-   const profile={name:'테스트',allowed_modes:['rep'],auth_uid:'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',user_id:'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa'},rows=[];
-   const queue={list:()=>rows,enqueue:(op,id,v,p,rid)=>{const row={...OperationalAdapter.normalize(op,id,v,p),request_id:rid||crypto.randomUUID(),auth_uid:profile.auth_uid,user_id:profile.user_id,status:'pending'};rows.push(row);return row;},flush:async()=>{
-    for(const row of rows.filter(x=>x.status==='pending')){
-     const at=new Date().toISOString(),aid=crypto.randomUUID();
-     const ack={contract_version:1,ok:true,request_id:row.request_id,operation:row.operation,object_id:row.object_id,replayed:false,actor_auth_uid:row.auth_uid,actor_user_id:row.user_id,intent:row.payload.intent,inquiry_audit_event_id:aid,server_at:at};
-     if(row.operation==='inquiry_assign')Object.assign(ack,{response:row.payload.response,status:'전화응대 완료',changed:true,first_response_at:at,responded_at:at,next_action_date:null,updated_at:at});
-     else Object.assign(ack,{next_action_id:aid,next_action_date:row.payload.due_at,cancelled_action_ids:[],assignee_name:'테스트'});
-     OperationalAdapter.validateAck(ack,row);row.ack=ack;row.status='done';
-    }dispatchEvent(new Event('phase1:queue'));return rows;
-   }};
-   window.Phase1=Object.assign({},real,{profile,queue,rpc:async(name,args)=>{
-    const p=args.p;__rpc.push([name,p]);if(__fail)throw Error('서버가 거절했습니다');
-    if(p.type==='close')return {ok:true,status:'배드핏'};
-    const id=crypto.randomUUID(),ack={ok:true,type:'contact_log',log_id:id,inquiry_id:p.inquiry_id,state:{inquiry_id:p.inquiry_id,logs:[{...p,id}]}};
-    if(__ackMode==='bare')return {ok:true};
-    if(__ackMode==='inquiry')ack.state.inquiry_id=crypto.randomUUID();
-    if(__ackMode==='request')ack.state.logs[0].request_id=crypto.randomUUID();
-    if(__ackMode==='content')ack.state.logs[0].content='다른 기록';
-    return ack;
-   }});
-   render();},o);
-  await setup({});await page.waitForTimeout(300);
-  const S=page.locator('#scr'),C=page.locator('#sheetcard'),txt=async s=>one(await C.locator(s).first().innerText());
-  /* ① 문의 상세: 예전 결과 3칩 대신 [연락 결과 남기기] */
-  assert.equal(await S.locator('.mi-open').count(),1);assert.equal(await S.locator('button[onclick*="recordInquiryResponse"]').count(),0,'예전 결과 3가지는 가린다');
-  await S.locator('.mi-open').click();await page.waitForTimeout(300);
-  assert.deepEqual(await C.locator('.ce-chips').first().locator('.ce-chip').allInnerTexts(),['연결됨','회신 받음','부재','번호 오류','배드핏'],'PC 연락 결과 값');
-  /* ② 연결됨(첫 접촉): 상담 내용 필수 · 서버 기록 → 단계 진행 → 다음 행동일 */
-  await C.locator('.ce-chip',{hasText:/^연결됨$/}).click();await page.waitForTimeout(100);
-  assert.match(await txt('.ce-prev'),/상담 내용을 한 줄 적어 주세요/);
-  await C.locator('textarea[data-ce-in="memo"],textarea[data-mi-in="memo"]').fill('금요일까지 견적서 보내 달라고 함');await C.locator('input[data-mi-in="purpose"]').fill('견적 준비');await C.locator('.ce-date',{hasText:'3일 후'}).click();await page.waitForTimeout(100);
-  assert.match(await txt('.ce-prev'),/ · 서버 확인 · 견적 준비 일정 1건 등록 · \d+\.\d+ \(.\) · 첫 통화 완료로 단계 진행$/);
-  await C.locator('.ce-save').click();await page.waitForTimeout(600);
-  const d3=await page.evaluate(()=>__kst(3));
-  assert.deepEqual(await page.evaluate(()=>__rpc.map(r=>[r[0],r[1].type,r[1].inquiry_id,r[1].channel,r[1].result,r[1].contact_result,r[1].content,r[1].next_action,r[1].next_check_date])),[['crm_inquiry_command_v1','contact_log',QID,'전화','연결됨','연결됨','금요일까지 견적서 보내 달라고 함','견적 준비',d3]],'서버 응대 기록(PC 와 같은 명령)');
-  assert.deepEqual(await page.evaluate(()=>__w.map(w=>[w[0],w[1].response||w[1].intent,w[1].status||w[1].text,w[1].due_at||''])),[['inquiry_assign','진행됨 — 다음 잡음','전화응대 완료',''],['next_action','inquiry_next_set','견적 준비',d3]],'단계 진행 → 다음 행동일');
-  assert.deepEqual(await C.locator('.ce-done li em').allInnerTexts(),['저장','신규']);
-  /* ③ 부재: 연락 시도 · 단계 그대로 */
-  await setup({});await page.waitForTimeout(250);await page.evaluate(()=>MobileInquiry.open(ADMIN.inquiries[0],null));await page.waitForTimeout(250);
-  await C.locator('.ce-chip',{hasText:/^부재$/}).click();await page.waitForTimeout(100);
-  assert.equal(await C.locator('textarea').count(),0,'부재 = 상담 내용 칸 없음');
-  await C.locator('.ce-save').click();await page.waitForTimeout(600);
-  assert.deepEqual(await page.evaluate(()=>__rpc.map(r=>[r[1].result,r[1].content,r[1].next_action])),[['부재','','다시 전화']]);
-  assert.deepEqual(await page.evaluate(()=>__w.map(w=>w[0])),['next_action'],'시도는 단계를 올리지 않는다(다음 행동일만)');
-  /* ④ 번호 오류 → 서버 값 '번호오류' */
-  await setup({});await page.waitForTimeout(250);await page.evaluate(()=>MobileInquiry.open(ADMIN.inquiries[0],null));await page.waitForTimeout(250);
-  await C.locator('.ce-chip',{hasText:/^번호 오류$/}).click();await C.locator('.ce-save').click();await page.waitForTimeout(600);
-  assert.deepEqual(await page.evaluate(()=>__rpc.map(r=>[r[1].result,r[1].next_action])),[['번호오류','연락처 확인']]);
-  /* ⑤ 서버가 거절하면 아무것도 안 보낸다 */
-  await setup({fail:true});await page.waitForTimeout(250);await page.evaluate(()=>MobileInquiry.open(ADMIN.inquiries[0],null));await page.waitForTimeout(250);
-  await C.locator('.ce-chip',{hasText:/^부재$/}).click();await C.locator('.ce-save').click();await page.waitForTimeout(600);
-  assert.match(await txt('.ce-err'),/서버가 거절했습니다/);assert.equal(await page.evaluate(()=>__w.length),0,'서버 확인 전에는 단계 · 다음 행동을 보내지 않는다');
-  assert.equal(await page.evaluate(()=>ADMIN.inquiries[0].status),'배정완료');
-  /* ⑥ 배드핏: 사유 필수 · 종결 · 다음 할 일 없음 */
-  await setup({});await page.waitForTimeout(250);await page.evaluate(()=>MobileInquiry.open(ADMIN.inquiries[0],null));await page.waitForTimeout(250);
-  await C.locator('.ce-chip',{hasText:/^배드핏$/}).click();await page.waitForTimeout(100);
-  assert.match(await txt('.ce-prev'),/종결 사유를 골라 주세요/);assert.deepEqual(await C.locator('[data-mi="reason"]').allInnerTexts(),['수행불가 공종','규모 부적합','대상 고객 아님','서비스 범위 아님','기타']);
-  await C.locator('[data-mi="reason"]',{hasText:'기타'}).click();assert.match(await txt('.ce-prev'),/기타 사유는 상담 내용에 적어 주세요/);
-  await C.locator('textarea[data-mi-in="memo"]').fill('자체 보수 완료');await C.locator('[data-mi="reason"]',{hasText:'규모 부적합'}).click();await C.locator('.ce-save').click();await page.waitForTimeout(600);
-  assert.deepEqual(await page.evaluate(()=>__rpc.map(r=>[r[1].type,r[1].kind,r[1].reason,r[1].detail])),[['close','bad_fit','규모 부적합','자체 보수 완료']]);
-  assert.equal(await page.evaluate(()=>__w.length),0,'종결은 다음 할 일을 만들지 않는다');assert.equal(await page.evaluate(()=>ADMIN.inquiries[0].status),'배드핏');
-  /* ⑦ 오늘 업무의 문의 통화 결과도 같은 창 */
-  await setup({});await page.waitForTimeout(250);await page.evaluate(()=>{G.sub=null;render();G._today=[{kind:'inquiry',ref:'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',nm:'[테스트] 문의 현장'}];callFlow(0);});await page.waitForTimeout(300);
-  assert.deepEqual(await C.locator('.ce-chips').first().locator('.ce-chip').allInnerTexts(),['연결됨','회신 받음','부재','번호 오류','배드핏']);
-  /* ⑧ 끄기 */
-  await setup({});await page.evaluate(()=>{G.mobileInqOff=true;render();});await page.waitForTimeout(250);
-  assert.equal(await S.locator('.mi-open').count(),0);assert.ok(await S.locator('button[onclick*="recordInquiryResponse"]').count()>=3,'끄면 예전 결과 3가지');
-  await page.evaluate(()=>{G.mobileInqOff=false;});
-  /* 응대 기록 근거가 없거나 다른 기록이면 후속 쓰기와 완료 표시를 막는다. */
-  for(const ackMode of ['bare','inquiry','request','content']){
-   await setup({ackMode});await page.evaluate(()=>MobileInquiry.open(ADMIN.inquiries[0],0));
-   await C.locator('[data-mi="res"][data-v="부재"]').click();await C.locator('.ce-save').click();
-   await C.locator('.ce-err').waitFor();assert.match(await txt('.ce-err'),/서버 저장 근거/);
-   assert.equal(await page.evaluate(()=>__w.length),0);assert.equal(await C.locator('.ce-done').count(),0);
-   assert.deepEqual(await page.evaluate(()=>G.done),{});
+  browser=await chromium.launch(launchOptions());
+  const context=await browser.newContext({viewport:{width:390,height:844},timezoneId:'Asia/Seoul'});
+  const errors=[],networkWrites=[],checks=[];
+  await context.route('**/*',route=>{const r=route.request();if(!['GET','HEAD'].includes(r.method())){networkWrites.push(r.url());return route.abort();}return new URL(r.url()).origin===origin?route.continue():route.abort();});
+  const page=await context.newPage();page.setDefaultTimeout(10000);page.on('pageerror',e=>errors.push(e.message));
+  async function setup(options={}){
+   await page.goto(origin+'/mobile.html?demo=1&review=inquiry&screen=B',{waitUntil:'domcontentloaded'});
+   await page.locator('.approved-b').waitFor();
+   await page.waitForFunction(()=>window.MobileInquiryEntry&&window.PCInquirySave&&window.InquiryFlow&&window.InquiryScheduleFlow);
+   await page.addScriptTag({content:'window.__installInquiryMock=('+install.toString()+');'});
+   return page.evaluate(({options,QID,TASK})=>{
+    closeSheet();sessionStorage.clear();delete window.__approvedAExample;delete window.__approvedBCExample;
+    const f=window.__f=__installInquiryMock(window,QID),originalRpc=Phase1.rpc;
+    window.__legacyWrites=[];window.__toasts=[];window.toast=text=>__toasts.push(String(text));
+    window.pushWrite=(...args)=>{__legacyWrites.push(args);throw Error('Legacy mobile write must not run');};
+    Phase1.queue={list:()=>[],flush:async()=>{},enqueue:()=>{throw Error('Legacy queue must not run');}};
+    Phase1.profile.name='합성 문의 담당자';Phase1.profile.allowed_modes=['rep'];
+    G.user={...G.user,id:f.uid,nm:'합성 문의 담당자'};REPS=[G.user];G.mode='rep';G.tab='today';G.deal=null;G.sub=null;G.done={};DEALS=[];
+    const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date());
+    const due=ContactEntry.addDays(today,5),raw={id:QID,status:'배정완료',site_name:'[합성] 문의 응대 검증',site:'[합성] 문의 응대 검증',assignee:G.user.nm,assigned_to:f.uid,assigned_at:new Date().toISOString(),phone:'01000000000',contact_name:'합성 고객',work_type:'옥상 방수',created_at:new Date().toISOString(),activities:[]};
+    if(options.existing){const task={id:TASK,inquiry_id:QID,title:'기존 방문 약속',action_type:'방문',status:'open',due_on:due,due_at:due+'T14:00:00+09:00',date_basis:'customer_agreed',completed_at:null};f.rows.push(task);raw.nextActionObj={...task,text:task.title,type:task.action_type,due};}
+    const q=inquiryViewM(raw);/* Use the actual loaded-inquiry view shape, including assigned/done. */
+    if(raw.nextActionObj)q.nextActionObj=structuredClone(raw.nextActionObj);
+    ADMIN.inquiries=[q];window.__raw=raw;window.__view=q;window.__day={today,tomorrow:ContactEntry.addDays(today,1),due};
+    Object.assign(MobileRequests.state(),{list:[],loaded:true,busy:false,off:false,at:Date.now()});
+    const request={id:'cccccccc-3333-4333-8333-cccccccccccc',target_type:'inquiry',target_id:QID,status:'sent',open:true,asks:['첫 연락','견적 필요 확인'],to_me:true};
+    MobileRequests.state().list=[request];window.__requestBefore=JSON.stringify(request);
+    Phase1.rpc=async(name,args)=>{
+     const result=await originalRpc(name,args);
+     if(name==='crm_inquiry_command_v1'&&result.state){
+      result.state.logs.forEach(log=>{log.kind=InquiryFlow.kindOf(log.result);});
+      if(options.ackMode==='inquiry')result.state.inquiry_id=crypto.randomUUID();
+      if(options.ackMode==='request')result.state.logs[0].request_id=crypto.randomUUID();
+      if(options.ackMode==='content')result.state.logs[0].content='다른 응대 기록';
+     }
+     return result;
+    };
+    f.badAck=options.ackMode==='bare';f.loss=options.loss||'';f.hold=options.hold||'';
+    if(options.gateOff)CRM_SCHEDULE_V1=false;
+    window.__business=()=>({logs:[...f.logs.values()].map(l=>({type:l.type,channel:l.channel,result:l.result,contact_result:l.contact_result,content:l.content,next_action:l.next_action,next_check_date:l.next_check_date})),status:raw.status,firstResponse:!!raw.first_response_at,rows:f.rows.map(r=>({title:r.title,action_type:r.action_type,due_on:r.due_on,date_basis:r.date_basis,status:r.status,completed_at:r.completed_at})),responseCount:f.responses.size,scheduleCount:f.schedules.size});
+    render();return {...__day};
+   },{options,QID,TASK});
   }
-  /* 한국시간 자정과 성공 뒤 닫기: 기존 업무 ID·날짜를 보존한다. */
-  await setup({});await page.evaluate(()=>{ADMIN.inquiries[0].nextActionObj={id:'bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb',text:'기존 방문',due_at:'2026-11-30T15:00:00Z',status:'open'};MobileInquiry.open(ADMIN.inquiries[0],null);});
-  await C.locator('[data-mi="res"][data-v="부재"]').click();assert.equal(await C.locator('[data-mi-in="date"]').inputValue(),'2026-12-01');
-  await C.locator('.ce-save').click();await C.locator('.ce-done').waitFor();assert.equal(await page.evaluate(()=>__w.length),0);
-  assert.equal(await page.evaluate(()=>__rpc[0][1].next_check_date),'2026-12-01');
-  assert.equal(await page.evaluate(()=>ADMIN.inquiries[0].nextActionObj.id),'bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb');
-  await page.evaluate(()=>{window.__closeCount=0;const close=window.closeSheet;window.closeSheet=function(){__closeCount++;return close.apply(this,arguments);};});
-  await C.locator('[data-mi="close"]').click();assert.equal(await page.evaluate(()=>__closeCount),1);
-  assert.deepEqual(errs,[],'화면 오류 없음: '+errs.join(' | '));
-  console.log('verify-mobile-inquiry: ok');
- }finally{await browser.close();srv.close();}
-})().catch(e=>{console.error(e);process.exit(1);});
+  const D=page.locator('.approved-d');
+  async function safe(){
+   assert.equal(await page.locator('#tabbar button').count(),0);
+   assert.equal(await page.locator('#scr .mi-open,#scr button[onclick*="recordInquiryResponse"],#sheetcard .mi-done,#sheetcard .ce-done,#scr .mh-hub,#scr .flow-strip').count(),0,'No retired inquiry or mobile content');
+   assert.deepEqual(await page.evaluate(()=>__legacyWrites),[],'No legacy writes');
+   assert.deepEqual(await page.evaluate(()=>G.done),{},'No automatic today-task completion');
+   assert.equal(await page.evaluate(()=>JSON.stringify(MobileRequests.state().list[0])),await page.evaluate(()=>__requestBefore),'Compound administrator request remains open');
+  }
+  async function open(){await page.locator('.approved-a [data-gs="task"][data-id="'+QID+'"]').click();await D.waitFor();await safe();}
+  async function pick(result,memo){await D.locator('[data-ce="res"][data-v="'+result+'"]').click();if(memo!==undefined)await D.locator('[data-ce-in="memo"]').fill(memo);}
+  const save=()=>D.locator('[data-ce="save"]').click();
+  const saved=async(returnSelector='.approved-a')=>{await page.waitForFunction(()=>MobileInquiryEntry.state()===null&&__toasts.includes('응대 기록을 저장했습니다.'));await page.locator(returnSelector).waitFor();assert.equal(await D.isVisible(),false,'Confirmed save returns to its approved source screen');};
+  const business=()=>page.evaluate(()=>__business());
+
+  // Normal save includes an actual in-flight server boundary and existing customer promise.
+  await setup({existing:true,hold:'crm_inquiry_command_v1'});await open();
+  assert.deepEqual(await D.locator('[data-ce="res"]').allTextContents(),['연결됨','회신 받음','부재','번호 오류','배드핏']);
+  assert.equal(await D.locator('.cd-results,.cd-note,.cd-next-section').count(),3,'Original D has the three approved sections');
+  assert.match(await D.locator('.cd-context').innerText(),/문의 응대 검증/);
+  await pick('연결됨','방문 약속은 유지하고 견적 준비 자료를 확인했습니다.');
+  assert.equal(await D.locator('[data-ce="mode"][data-v="keep"]').getAttribute('aria-pressed'),'true');
+  await D.locator('[data-ce="close"]').click();await page.locator('.approved-a').waitFor();assert.equal(await page.evaluate(()=>__f.calls.length),0,'Leaving an unsaved draft never writes to CRM');await open();
+  assert.equal(await D.locator('[data-ce-in="memo"]').inputValue(),'방문 약속은 유지하고 견적 준비 자료를 확인했습니다.','Unsaved text survives approved back/reentry');
+  assert.equal(await D.locator('[data-ce="mode"][data-v="keep"]').getAttribute('aria-pressed'),'true');
+  const originalTask=await page.evaluate(()=>structuredClone(__f.rows[0]));
+  await save();await page.waitForFunction(()=>typeof __f.release==='function');
+  assert.equal(await D.locator('[data-ce="save"]').isDisabled(),true);
+  assert.equal(await page.evaluate(()=>__raw.status),'배정완료');assert.equal(await page.evaluate(()=>__f.responses.size+__f.schedules.size),0);
+  await D.locator('[data-ce="save"]').dispatchEvent('click');assert.equal(await page.evaluate(()=>__f.calls.filter(c=>c.name==='crm_inquiry_command_v1').length),1,'Busy click cannot send a second contact');
+  await page.evaluate(()=>{__f.hold='';__f.release();});await saved();
+  const mobileBusiness=await business();assert.equal(mobileBusiness.status,'전화응대 완료');assert.equal(mobileBusiness.responseCount,1);assert.equal(mobileBusiness.scheduleCount,0);
+  assert.deepEqual(await page.evaluate(()=>__f.rows[0]),originalTask,'Customer promise ID, time and completion state are preserved');
+  assert.equal(await page.evaluate(()=>__raw.nextActionObj.id),TASK);await safe();
+  await page.locator('.approved-a').waitFor();
+  assert.equal(await page.locator('.approved-a [data-gs="task"][data-id="'+QID+'"]').count(),0,'Confirmed first response leaves first-contact tasks without a fake local done flag');
+  const opened=await page.evaluate(()=>MobileInquiryEntry.restore(__view.key));assert.equal(opened.ok,true);await D.waitFor();assert.equal(await page.evaluate(()=>__f.logs.size),1);await safe();
+  checks.push('A → original D; busy/ACK protection; one confirmed contact; existing customer appointment and request stay open; safe reentry');
+
+  // The same plan executed by the PC save engine must produce the same business outcome.
+  await setup({existing:true});
+  await page.evaluate(async()=>{
+   const ex=PCInquirySave.existing(__raw),form={ch:'전화',res:'연결됨',memo:'방문 약속은 유지하고 견적 준비 자료를 확인했습니다.',mode:'keep',purpose:'',date:'',reason:'',plan:'internal'};
+   const plan=ContactEntry.plan(form,{today:__day.today,existing:ex,scheduleV1:true}),values=InquiryFlow.TWO.of(form.res,'관심 있음');
+   await PCInquirySave.save(__raw,{ch:form.ch,result:values.res,contact_result:values.contact_result,customer_reaction:values.customer_reaction,text:plan.note,next:ex.text,due:ex.due,plan,existing:ex},form,'detail');
+  });
+  assert.deepEqual(await business(),mobileBusiness,'Actual shared PC engine: same record, stage, date basis, task count and completion');
+  checks.push('PC/mobile parity through the real shared PCInquirySave engine and identical server-contract fixture');
+
+  // Absence needs no invented consultation and cannot complete first response or a request.
+  const dates=await setup();await open();await pick('부재');
+  assert.equal(await D.locator('.cd-note').isVisible(),false);assert.equal(await D.locator('[data-ce-in="memo"]:visible').count(),0);
+  await save();await saved();let state=await business();
+  assert.equal(state.logs[0].result,'부재');assert.equal(state.logs[0].contact_result,'부재');assert.equal(state.status,'배정완료');assert.equal(state.firstResponse,false);assert.equal(state.responseCount,0);
+  assert.equal(state.scheduleCount,0);assert.equal(state.rows.length,0,'Absence alone does not invent a retry appointment');await safe();
+  await setup();await open();await pick('부재');await D.locator('[data-ce="mode"][data-v="new"]').click();await D.locator('[data-ce-in="purpose"]').fill('다시 전화');
+  await D.locator('[data-ce="date-open"]').click();await D.locator('[data-ce="date"][data-v="'+dates.tomorrow+'"]').filter({hasText:/^내일 /}).click();await save();await saved();state=await business();
+  assert.equal(state.scheduleCount,1);assert.equal(state.rows[0].due_on,dates.tomorrow);assert.equal(state.rows[0].status,'open');assert.equal(state.rows[0].completed_at,null);assert.equal(state.responseCount,0);await safe();
+  checks.push('Absence needs only the result and creates no task implicitly; an explicitly selected retry stays open without connection/stage/request completion');
+
+  // Explicit no-next-task is distinct from absence's default retry plan.
+  await setup();await open();await pick('번호 오류');await D.locator('[data-ce="mode"][data-v="none"]').click();
+  assert.equal(await D.locator('[data-ce="save"]').isDisabled(),false,'Number-error attempt also needs no invented consultation or mandatory follow-up');await D.locator('[data-ce-in="reason"]').fill('관리팀에서 올바른 번호 확인 중');await save();await saved();state=await business();
+  assert.equal(state.logs[0].result,'번호오류');assert.equal(state.status,'배정완료');assert.equal(state.rows.length,0);assert.equal(state.responseCount,0);await safe();
+  checks.push('Number error maps to PC value; explicit no-next reason records the attempt without inventing or completing a task');
+
+  // Contact committed but response was lost: close/reenter/retry the same immutable input.
+  await setup({existing:true,loss:'crm_inquiry_command_v1'});await open();await pick('회신 받음','고객이 기존 방문 약속을 유지한다고 회신했습니다.');await save();await D.locator('.ce-err').waitFor();
+  assert.match(await D.locator('.ce-err').innerText(),/response lost/);const requestId=await page.evaluate(()=>[...__f.logs.keys()][0]);
+  assert.equal(await page.evaluate(()=>__raw.status),'배정완료');assert.equal(await page.evaluate(()=>__f.responses.size),0);
+  const draft=await D.locator('[data-ce-in="memo"]').inputValue();await D.locator('[data-ce="close"]').click();await page.locator('.approved-a').waitFor();
+  await page.locator('.approved-a [data-gs="pending"]').click();await page.locator('.approved-i4').waitFor();
+  const recover=page.locator('.approved-i4 [data-gs="recover"][data-kind="pc_inquiry"][data-id="'+QID+'"]');assert.equal(await recover.count(),1,'One grouped pending inquiry links back to the original input');await recover.click();await D.waitFor();
+  assert.equal(await D.locator('[data-ce-in="memo"]').inputValue(),draft);await save();await saved('.approved-i4');
+  assert.deepEqual(await page.evaluate(()=>[...__f.logs.keys()]),[requestId]);assert.equal(await page.evaluate(()=>__f.responses.size),1);assert.equal(await page.evaluate(()=>__f.rows.length),1);
+  assert.equal((await business()).logs[0].result,'고객 회신');await safe();
+  assert.equal(await page.locator('.approved-i4 [data-gs="recover"][data-id="'+QID+'"]').count(),0,'Confirmed pending group clears without creating a second contact');
+  checks.push('Committed contact response loss: A pending → original I-4 → original D restores draft; retry keeps UUID, contact count and appointment');
+
+  // Unverified acknowledgements must not advance the workflow or clear the input.
+  for(const ackMode of ['bare','inquiry','request','content']){
+   await setup({ackMode});await open();await pick('연결됨','검증할 상담 원문');await save();await D.locator('.ce-err').waitFor();
+   assert.match(await D.locator('.ce-err').innerText(),/저장 근거/);assert.equal(await D.locator('[data-ce-in="memo"]').inputValue(),'검증할 상담 원문');
+   assert.equal(await page.evaluate(()=>__f.responses.size+__f.schedules.size),0);assert.equal(await page.evaluate(()=>__raw.status),'배정완료');assert.notEqual(await D.locator('[data-ce="save"]').innerText(),'저장됨');await safe();
+  }
+  checks.push('Missing/wrong-target/wrong-request/wrong-content ACK preserves input and blocks every subsequent write');
+
+  // Schedule committed but response was lost: recovery must use its receipt.
+  await setup({loss:'crm_schedule_write_v1'});await open();await pick('연결됨','자료 준비 후 연락하기로 했습니다.');await save();await D.locator('.ce-err').waitFor();
+  assert.match(await D.locator('.ce-err').innerText(),/응대 기록은 저장됐습니다/);
+  const ids=await page.evaluate(()=>({logs:[...__f.logs.keys()],responses:[...__f.responses.keys()],schedules:[...__f.schedules.keys()]}));
+  await save();await saved();assert.deepEqual(await page.evaluate(()=>({logs:[...__f.logs.keys()],responses:[...__f.responses.keys()],schedules:[...__f.schedules.keys()]})),ids);assert.equal(await page.evaluate(()=>__f.rows.length),1);await safe();
+  checks.push('Partial schedule response failure retries receipt only: one contact, one response, one open task');
+
+  // Missing release is a real blocked save, never an alternate legacy success path.
+  await setup({gateOff:true});await open();await pick('연결됨','연결 확인 전 보관할 상담 내용');
+  assert.equal(await D.locator('[data-ce="save"]').isDisabled(),true);await D.locator('[data-ce="save"]').dispatchEvent('click');
+  assert.equal(await D.locator('[data-ce-in="memo"]').inputValue(),'연결 확인 전 보관할 상담 내용');assert.equal(await page.evaluate(()=>__f.calls.length),0);await safe();
+  await setup();await open();await pick('배드핏');assert.equal(await D.locator('[data-ce="save"]').isDisabled(),true);await D.locator('[data-ce="save"]').dispatchEvent('click');assert.equal(await page.evaluate(()=>__f.calls.length),0);await safe();
+  checks.push('Release-off and unsupported close stay blocked in original D; no retired UI or legacy write fallback');
+
+  // The user's actual review link must work without this test's setup/injected ADMIN fixture.
+  await page.goto(origin+'/mobile.html?demo=1&review=guide&screen=A&reset=1',{waitUntil:'domcontentloaded'});await page.locator('.approved-a').waitFor();
+  const first=page.locator('.approved-a [data-gs="task"]').first();assert.equal(await first.getAttribute('data-kind'),'inquiry');
+  const previewId=await first.getAttribute('data-id');assert.equal(previewId,await page.evaluate(()=>__review.inquiry.id));
+  const previewBefore=await page.evaluate(()=>({logs:__review.inquiry.fixture.logs.size,rows:__review.inquiry.fixture.rows.length,responses:__review.inquiry.fixture.responses.size}));
+  assert.deepEqual(previewBefore,{logs:0,rows:0,responses:0});await first.click();await D.waitFor();
+  assert.match(await D.locator('.cd-context').innerText(),/수원장안힐스테이트/);assert.equal(await page.locator('#scr .mi-open,#scr .mh-hub,#scr .flow-strip,#sheetcard .ce-done').count(),0);
+  await pick('부재');assert.equal(await D.locator('.cd-note').isVisible(),false);assert.equal(await D.locator('[data-ce="save"]').isDisabled(),false);
+  if(process.argv[2])await page.screenshot({path:process.argv[2]});
+  await save();await page.waitForFunction(()=>MobileInquiryEntry.state()===null&&__review.inquiry.fixture.logs.size===1);await page.locator('.approved-a').waitFor();
+  assert.equal(await D.isVisible(),false);
+  const previewAfter=await page.evaluate(()=>({results:[...__review.inquiry.fixture.logs.values()].map(l=>l.result),rows:__review.inquiry.fixture.rows.length,responses:__review.inquiry.fixture.responses.size,status:__review.inquiry.raw.status,example:typeof __approvedAExample,done:G.done,calls:__review.inquiry.fixture.calls.filter(c=>c.name==='crm_inquiry_command_v1').length}));
+  assert.deepEqual(previewAfter,{results:['부재'],rows:0,responses:0,status:'배정완료',example:'undefined',done:{},calls:1});
+  assert.equal(await page.locator('.approved-a [data-gs="task"][data-kind="inquiry"][data-id="'+previewId+'"]').count(),1,'An absent customer remains an unresolved first-contact task in the actual review link');
+  assert.equal(await page.locator('#tabbar button,#scr .mi-open,#scr .mh-hub,#scr .flow-strip').count(),0);
+  checks.push('Unmodified user preview ?screen=A: real inquiry card → original D → result-only absence save → actual A counts, no false completion');
+  assert.deepEqual(errors,[],'No browser errors');assert.deepEqual(networkWrites,[],'No external or production writes');
+  console.log(JSON.stringify({test:'verify-mobile-inquiry',passed:checks.length,checks,boundary:'Synthetic server RPCs; real approved routes and shared PC save contracts; no production verification claim'},null,2));
+ }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
+})().catch(error=>{console.error(error);process.exitCode=1;});
