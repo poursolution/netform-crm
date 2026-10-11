@@ -16,7 +16,7 @@ const server=http.createServer((req,res)=>{
  else for(const dir of [candidate,baseline]){const p=path.resolve(dir,rel);if(p.startsWith(dir+path.sep)&&fs.existsSync(p)&&fs.statSync(p).isFile()){file=p;break;}}
  if(!file){res.writeHead(404);return res.end();}
  res.setHeader('Content-Type',types[ext]);if(req.method==='HEAD')return res.end();
- if(ext==='.html')return res.end(fs.readFileSync(file,'utf8').replace('</body>','<script src="review-fixture.js"></script></body>'));
+ if(ext==='.html')return res.end(fs.readFileSync(file,'utf8').replace('</body>','<script src="review-preview/inquiry-rpc-fixture.js"></script><script src="review-fixture.js"></script></body>'));
  fs.createReadStream(file).pipe(res);
 });
 if(require.main===module)server.listen(8767,'127.0.0.1',()=>console.log('Synthetic mobile review: http://127.0.0.1:8767/mobile.html?demo=1&review=contact'));

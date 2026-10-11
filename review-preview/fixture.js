@@ -1,5 +1,5 @@
 /* Synthetic, memory-only fixture for candidate D. No production data changes. */
-(function prepareFixture(){
+(async function prepareFixture(){
  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',prepareFixture,{once:true});return;}
  'use strict';
  const params=new URLSearchParams(location.search),scenario=params.get('review')||'contact';
@@ -48,12 +48,41 @@
  if(params.get('screen')==='A'){
   document.title='Claude A 원본 적용 · 예시 데이터 · 운영 아님';
   const rows=[
-   {id,kind:'deal',name:'[수원] 수원장안힐스테이트',brand:'POUR솔루션',color:'#1f9d55',stage:'견적문의',due:'2일 지남',dueColor:'#b42318',task:'고객 첫 연락',why:'접수 후 2일 · 송보람 요청 18:00',button:'전화하고 기록'},
+   {id,kind:'inquiry',name:'[수원] 수원장안힐스테이트',brand:'POUR솔루션',color:'#1f9d55',stage:'견적문의',due:'2일 지남',dueColor:'#b42318',task:'고객 첫 연락',why:'접수 후 2일 · 송보람 요청 18:00',button:'전화하고 기록'},
    {id:'33333333-3333-4333-8333-333333333333',kind:'deal',name:'[고양] 햇빛마을23단지',brand:'석민이앤씨',color:'#e8590c',stage:'경쟁·입찰',due:'D-2',dueColor:'#b42318',task:'제안서 팀장 공유',why:'입찰 마감 10.6 11:00',button:'제출 확인'},
    {id:'44444444-4444-4444-8444-444444444444',kind:'deal',name:'[화성] 동탄푸른마을',brand:'POUR솔루션',color:'#1f9d55',stage:'컨설팅 설계',due:'오늘',dueColor:'#15171c',task:'현장 방문',why:'방문 약속 14:00',button:'방문 결과 입력'}
   ];
   window.__approvedAExample={title:'필선님, 오늘 6곳',progress:'2 / 6',progressPercent:33,notifications:2,batch:'묶음 요청 · 송보람 · 실주 사유 12건',areas:['지금 처리 4','회신 대기 3','정보 보완 12','약속 2'],rows};
-  const original=DEALS[0];DEALS=rows.map((r,i)=>({...structuredClone(original),id:r.id,nm:r.name,brand:r.brand,code:i===1?'bidding':'consulting',nextAction:{...original.nextAction,text:r.task}}));
+  const original=DEALS[0];DEALS=rows.map((r,i)=>({...structuredClone(original),id:r.id,nm:r.name,brand:r.brand,code:i===1?'bidding':'consulting',nextAction:{...original.nextAction,text:r.task}})).filter((r,i)=>i!==0);
+  // The first approved card is a real inquiry view, never a deal disguised as an inquiry.
+  // Only this local review server supplies the shared in-memory PC RPC fixture.
+  const queue=Phase1.queue,otherRpc=Phase1.rpc;
+  if(typeof window.__installReviewInquiryRPC!=='function')await new Promise((resolve,reject)=>{
+   const script=document.createElement('script');script.src='review-preview/inquiry-rpc-fixture.js';
+   script.onload=()=>{script.remove();resolve();};script.onerror=()=>{script.remove();reject(Error('합성 문의 저장 연결을 불러오지 못했습니다.'));};document.head.append(script);
+  });
+  const install=window.__installReviewInquiryRPC;
+  if(typeof install!=='function')throw Error('합성 문의 저장 연결을 불러오지 못했습니다. 운영 연결을 대신 사용하지 않습니다.');
+  const f=install(window,id),inquiryRpc=Phase1.rpc;
+  Phase1.queue=queue;Object.assign(Phase1.profile,{name:rep.nm,display_name:rep.nm,allowed_modes:['rep']});
+  G.user={...rep,id:f.uid};REPS=[G.user];
+  const received=new Date(Date.now()-2*864e5).toISOString(),raw={id,status:'배정완료',site:rows[0].name,site_name:rows[0].name,assignee:G.user.nm,assigned_user_id:f.uid,assigned_to:f.uid,assigned_at:received,phone:'01000000000',contact_name:'합성 고객',work_type:'옥상 방수',created_at:received,activities:[]};
+  ADMIN.inquiries=[inquiryViewM(raw)];
+  Object.assign(request,{target_type:'inquiry',target_id:id});Object.assign(MobileRequests.state(),{list:[structuredClone(request)],loaded:true,busy:false,at:Date.now()});
+  Phase1.rpc=async(name,args)=>{
+   if(name==='crm_work_request_list_v1')return otherRpc(name,args);
+   const value=await inquiryRpc(name,args);
+   if(name==='crm_inquiry_command_v1'&&value.state)value.state.logs.forEach(log=>{log.kind=InquiryFlow.kindOf(log.result);});
+   return value;
+  };
+  const save=PCInquirySave.save;
+  window.PCInquirySave=Object.freeze({...PCInquirySave,save:async function(q,...args){
+   const value=await save.call(this,q,...args);
+   if(value===true&&String(q.id)===id)delete window.__approvedAExample;
+   return value;
+  }});
+  window.__review.inquiry={fixture:f,raw,view:ADMIN.inquiries[0],id};
+  document.title='Claude A → 문의 D · 합성 예시 · 메모리 저장만 · 운영 아님';
   G.deal=null;G.tab='today';render();
   }else if(['B','C'].includes(params.get('screen'))){
   document.title='Claude '+params.get('screen')+' 원본 적용 · 예시 데이터 · 운영 아님';
