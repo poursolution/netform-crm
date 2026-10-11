@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "checks": 8,
+  "results": [
+    "Actual authAdmit ignores saved admin view, retains server role and enters authorized rep only",
+    "Missing rep authorization fails closed without assigning rep privileges",
+    "Saved admin mode with explicit rep permission renders approved A and one shared request-list read, no legacy renderer",
+    "C → D joins the pending read and renders its actual request as unselected, with no seen/reply or save write",
+    "Read completion and rerenders do not poll repeatedly or mark requests seen",
+    "Navigating away while request data loads cannot reopen stale contact input",
+    "An account change rejects the late response and cannot open old-account D or retain its request rows",
+    "A non-rep profile is routed to the existing explicit PC URL without showing retired mobile content"
+  ],
+  "productionCalls": 0,
+  "networkWrites": 0,
+  "designChanged": false
+}
