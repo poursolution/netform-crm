@@ -1,14 +1,14 @@
 const test=require('node:test'),assert=require('node:assert/strict'),crypto=require('node:crypto');
 const install=require('./pc-inquiry-fixture.cjs'),schedule=require('../schedule-contract'),response=require('../inquiry-response-contract'),flow=require('../inquiry-schedule-flow'),save=require('../pc-inquiry-save');
 function setup(){
- const root={crypto,addEventListener:()=>{}},id=crypto.randomUUID(),f=install(root,id),records=new Map(),patch={};
+ const identityEvents={},root={crypto,addEventListener:(n,fn)=>identityEvents[n]=fn},id=crypto.randomUUID(),f=install(root,id),records=new Map(),patch={};
  f.session=0;
  root.MobileSaveJournal={session:()=>String(f.session),assertSession:s=>{assert.equal(s,String(f.session),'session changed');},owner:()=>root.Phase1.profile.auth_uid+':'+root.Phase1.profile.user_id,assertOwner:o=>{assert.equal(o,root.MobileSaveJournal.owner(),'identity changed');},read:(k,id)=>records.has(id)?structuredClone(records.get(id)):null,write:(k,id,d)=>{if(f.quota)throw Error('quota');records.set(id,structuredClone(d));},drop:(k,id)=>records.delete(id)};
  root.InquiryFlow={kindOf:r=>['부재','번호오류'].includes(r)?'attempt':['연결됨','고객 회신','검토중','자료요청','견적요청','보류','거절'].includes(r)?'connected':'',readLine:s=>{const m=/^\[([^·]+) · ([^\]]+)\]\s*(.*)$/.exec(s);return m?{ch:m[1],res:m[2],text:m[3]}:null;},take:()=>{}};
  root.InquiryCommand={needsProgress:q=>q.status==='배정완료'};root.itemPatch=()=>patch;root.saveLocal=()=>{};
  root.ScheduleContract=schedule(root);root.InquiryResponseContract=response(root);root.InquiryScheduleFlow=flow(root);root.PCInquirySave=save(root);
  const q={id,status:'배정완료',raw:{}},options={ch:'전화',result:'연결됨',text:'상담 완료',next:'견적 준비',due:'2026-11-20',contact_result:'연결됨',customer_reaction:''};
- return {...f,f,root,q,options,records,patch,api:root.PCInquirySave,run:()=>root.PCInquirySave.save(q,options,{text:options.text},'detail')};
+ return {...f,f,root,q,options,records,patch,identityEvents,api:root.PCInquirySave,run:()=>root.PCInquirySave.save(q,options,{text:options.text},'detail')};
 }
 test('PC contact -> first response -> schedule; projects only confirmed server data',async()=>{const f=setup();assert.equal(await f.run(),true);assert.equal(f.logs.size,1);assert.equal(f.responses.size,1);assert.equal(f.schedules.size,1);assert.equal(f.q.status,'전화응대 완료');assert.equal(f.q.nextActionObj.id,f.rows[0].id);assert.equal(f.records.size,0);assert.equal(f.patch.nextActionObj.id,f.rows[0].id);});
 test('absence records attempt without first-response or completion',async()=>{const f=setup();Object.assign(f.options,{result:'부재',contact_result:'부재'});await f.run();assert.equal(f.responses.size,0);assert.equal(f.q.status,'배정완료');assert(f.rows.every(x=>x.status==='open'));});
@@ -83,4 +83,60 @@ test('local browser inquiry fixture is exactly the PC synthetic RPC function',()
  const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),sandbox={window:{}};
  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../review-preview/inquiry-rpc-fixture.js'),'utf8'),sandbox);
  assert.equal(sandbox.window.__installReviewInquiryRPC.toString(),install.toString());
+});
+
+test('synthetic response confirmation requires the actual connected log and uses confirmation time',async()=>{
+ const f=setup(),rpc=(name,p)=>f.root.Phase1.rpc(name,{p}),contact={type:'contact_log',inquiry_id:f.id,request_id:crypto.randomUUID(),channel:'전화',result:'연결됨',content:'과거 응대 확인',occurred_at:'2020-01-02T03:04:05.000Z'};
+ const log=await rpc('crm_inquiry_command_v1',contact),p={inquiry_id:f.id,request_id:crypto.randomUUID(),contact_log_id:log.log_id,expected_token:'00000000000000000000000000000001'};
+ const before=Date.now(),ack=await rpc('crm_inquiry_response_confirm_v1',p),after=Date.now();
+ assert(Date.parse(ack.first_response_at)>=before&&Date.parse(ack.first_response_at)<=after,'same clock_timestamp semantics as SQL');
+ assert.equal(ack.first_response_at,ack.responded_at);assert.equal(ack.first_response_at,ack.updated_at);
+ assert.notEqual(ack.first_response_at,contact.occurred_at,'old contact date is not silently adopted as the confirmation date');
+ assert.equal(f.logs.get(contact.request_id).occurred_at,contact.occurred_at);
+ const replay=await rpc('crm_inquiry_response_confirm_v1',p);assert.equal(replay.first_response_at,ack.first_response_at);assert.equal(replay.replayed,true);assert.equal(f.responses.size,1);
+ await assert.rejects(()=>rpc('crm_inquiry_response_confirm_v1',{...p,contact_log_id:crypto.randomUUID()}),/REQUEST_ID_REUSE/);
+});
+
+test('synthetic first-response cannot be confirmed from an absent, attempted or other-actor log',async()=>{
+ for(const mode of ['missing','attempt','actor']){
+  const f=setup(),rpc=(name,p)=>f.root.Phase1.rpc(name,{p}),rid=crypto.randomUUID();let lid=crypto.randomUUID();
+  if(mode!=='missing'){const ack=await rpc('crm_inquiry_command_v1',{type:'contact_log',inquiry_id:f.id,request_id:rid,channel:'전화',result:mode==='attempt'?'부재':'연결됨',content:''});lid=ack.log_id;if(mode==='actor')f.logs.get(rid).actor_user_id=crypto.randomUUID();}
+  await assert.rejects(()=>rpc('crm_inquiry_response_confirm_v1',{inquiry_id:f.id,request_id:crypto.randomUUID(),contact_log_id:lid,expected_token:'00000000000000000000000000000001'}),/CONTACT_REQUIRED/);
+  assert.equal(f.responses.size,0);assert.equal(f.state.first_response_at,null);assert.equal(f.state.status,'배정완료');
+ }
+});
+
+test('pending milestone blocks new contact before journal or RPC and keeps its recovery record',async()=>{
+ const f=setup(),milestone={request_id:crypto.randomUUID(),input:{kind:'visit_done',date:'2026-10-10'},progress:{sent:true}};
+ f.root.PCInquiryMilestoneSave={pending:id=>id===f.id?milestone:null};
+ const before=structuredClone(milestone);await assert.rejects(f.run,/방문·견적 기록/);
+ assert.equal(f.calls.length,0);assert.equal(f.records.size,0);assert.deepEqual(milestone,before);assert.equal(f.q.status,'배정완료');
+});
+
+function coldRoot(f){const events={},root={...f.root,addEventListener:(n,fn)=>events[n]=fn};root.ScheduleContract=schedule(root);root.InquiryResponseContract=response(root);root.InquiryScheduleFlow=flow(root);root.PCInquirySave=save(root);return {root,events,run:()=>root.PCInquirySave.save(f.q,f.options,{text:f.options.text},'detail')};}
+test('cold reload after each partial commit preserves contact, response and schedule command IDs',async()=>{
+ for(const name of ['crm_inquiry_command_v1','crm_inquiry_response_confirm_v1','crm_schedule_write_v1']){
+  const f=setup();f.identityEvents['phase1:identity-cleared']();f.f.loss=name;await assert.rejects(f.run,/lost/);const pending=structuredClone(f.records.get(f.id)),r=coldRoot(f);await r.run();
+  assert.equal(f.logs.size,1,name);assert.equal(f.responses.size,1,name);assert.equal(f.rows.length,1,name);assert.equal(f.records.size,0,name);assert.equal(f.q.status,'전화응대 완료');
+  assert.equal([...f.logs.keys()][0],pending.progress.contact.request_id);if(pending.progress.responsePrepared)assert.deepEqual([...f.responses.values()][0].request_id,pending.progress.responsePrepared.command.request_id);
+  if(pending.progress.inquirySchedule.prepared)assert.equal([...f.schedules.keys()][0],pending.progress.inquirySchedule.prepared.command.request_id);
+  const replay=f.calls.filter(c=>c.name===name);if(name==='crm_schedule_write_v1')assert.equal(replay.length,1,'receipt reconciliation must not send schedule twice');else assert.deepEqual(replay.at(-1).p,replay[0].p,'original write payload and CAS token remain unchanged');
+ }
+});
+test('same document relogin cannot revive an old contact journal with a new epoch',async()=>{
+ const f=setup();f.f.loss='crm_inquiry_response_confirm_v1';await assert.rejects(f.run,/lost/);const before=structuredClone(f.records.get(f.id)),count=f.calls.length;f.identityEvents['phase1:identity-cleared']();await assert.rejects(f.run,/IDENTITY_CHANGED/);assert.equal(f.calls.length,count);assert.deepEqual(f.records.get(f.id),before);assert.equal(f.q.status,'배정완료');
+});
+test('cold recovery with changed owner or revoked write scope keeps the original input untouched',async()=>{
+ for(const mode of ['owner','scope']){const f=setup();f.f.loss='crm_inquiry_command_v1';await assert.rejects(f.run,/lost/);const before=structuredClone(f.records.get(f.id)),r=coldRoot(f),rpc=r.root.Phase1.rpc;
+  r.root.Phase1={...r.root.Phase1,rpc:async(n,p)=>{const out=await rpc(n,p);if(n==='crm_schedule_list_v1'){if(mode==='owner')out.owner_id=crypto.randomUUID();else out.writable=false;}return out;}};
+  await assert.rejects(r.run,/RECOVERY_SCOPE_CHANGED/);assert.deepEqual(f.records.get(f.id),before);assert.equal(f.logs.size,1);assert.equal(f.responses.size,0);assert.equal(f.rows.length,0);
+ }
+});
+test('logout during the cold recovery read cannot start another write or clear the journal',async()=>{
+ const f=setup();f.f.loss='crm_inquiry_command_v1';await assert.rejects(f.run,/lost/);const before=structuredClone(f.records.get(f.id)),r=coldRoot(f),rpc=r.root.Phase1.rpc;
+ r.root.Phase1={...r.root.Phase1,rpc:async(n,p)=>{const out=await rpc(n,p);if(n==='crm_schedule_list_v1')r.events['phase1:identity-cleared']();return out;}};
+ await assert.rejects(r.run,/IDENTITY_CHANGED/);assert.deepEqual(f.records.get(f.id),before);assert.equal(f.logs.size,1);assert.equal(f.responses.size,0);
+});
+test('pending message reminder blocks contact without changing either draft',async()=>{
+ const f=setup(),reminder={input:{title:'문자 보내기',due:'2026-11-20'}};f.root.PCInquiryReminderSave={pending:()=>reminder};await assert.rejects(f.run,/문자·카카오 예약/);assert.equal(f.calls.length,0);assert.equal(f.records.size,0);assert.equal(reminder.input.title,'문자 보내기');
 });

@@ -3,7 +3,7 @@ const contract=require('../schedule-contract'),flow=require('../schedule-flow'),
 function fixture(count=1){
  const id=randomUUID(),uid=randomUUID(),rows=Array.from({length:count},(_,i)=>({id:randomUUID(),title:'업무 '+i,action_type:'전화',status:'open',due_on:'2026-10-25',due_at:'2026-10-24T15:00:00Z',date_basis:'unconfirmed'}));
  let version=1,serial=1,owner=uid,failAfter=false,failRefresh=false;const events=new Map(),writes=[],pages=[],stored=[];
- const root={crypto:{randomUUID},CRM_SCHEDULE_V1:true,CRMRelease:{has:()=>true},Phase1:{profile:{auth_uid:uid,user_id:uid}},addEventListener:()=>{}};
+ const identityEvents={},root={crypto:{randomUUID},CRM_SCHEDULE_V1:true,CRMRelease:{has:()=>true},Phase1:{profile:{auth_uid:uid,user_id:uid}},addEventListener:(n,fn)=>identityEvents[n]=fn};
  const token=()=>serial.toString(16).padStart(32,'0');
  root.Phase1.rpc=async(name,{p})=>{
   if(name==='crm_schedule_list_v1'){
@@ -21,7 +21,7 @@ function fixture(count=1){
  root.ScheduleContract=contract(root);const api=flow(root),d={id,version},progress={},existing=rows[0]?{id:rows[0].id,text:rows[0].title,due:rows[0].due_on}:null;
  const plan={next:{type:'후속접촉',text:'견적 발송',due:'2026-10-26',plan:'internal'}};
  const persist=()=>stored.push(structuredClone(progress));
- return {root,api,d,progress,existing,plan,rows,writes,pages,stored,events,persist,
+ return {root,api,d,progress,existing,plan,rows,writes,pages,stored,events,identityEvents,persist,
   activity(){const previous_version=version;version++;serial++;return {ok:true,operation:'activity',object_id:id,actor_auth_uid:uid,actor_user_id:uid,previous_version,version};},
   mutate(){rows[0].title='다른 사람이 바꿈';serial++;},reassign(){owner=randomUUID();serial++;},loseResponse(){failAfter=true;},loseRefresh(){failRefresh=true;}};
 }
@@ -42,4 +42,13 @@ test('session invalidated during receipt prevents a new schedule write',async()=
  await f.api.begin(f.d,f.plan,f.existing,f.progress,persist);const ack=f.activity(),rpc=f.root.Phase1.rpc;
  f.root.Phase1.rpc=async(name,args)=>{const r=await rpc(name,args);if(name==='crm_schedule_receipt_v1')valid=false;return r;};
  await assert.rejects(()=>f.api.finish(f.d,f.progress,ack,persist),/SESSION_ENDED/);assert.equal(f.writes.length,0);
+});
+
+test('cold reload after a lost schedule ACK recovers one original task and request',async()=>{
+ const f=fixture();f.identityEvents['phase1:identity-cleared']();await f.api.begin(f.d,f.plan,f.existing,f.progress,f.persist);const contact=f.activity();f.loseResponse();await assert.rejects(()=>f.api.finish(f.d,f.progress,contact,f.persist),/response lost/);
+ const original=structuredClone(f.progress.schedule.prepared.command),root={...f.root,addEventListener:()=>{}};root.ScheduleContract=contract(root);const api=flow(root);
+ await api.begin(f.d,f.plan,f.existing,f.progress,f.persist);await api.finish(f.d,f.progress,contact,f.persist);assert.equal(f.writes.length,1);assert.equal(f.rows.length,2);assert.deepEqual(f.progress.schedule.prepared.command,original);assert.equal(f.progress.schedule.context.identity.epoch,0);
+});
+test('same document session reset does not reconcile an old schedule journal',async()=>{
+ const f=fixture();await f.api.begin(f.d,f.plan,f.existing,f.progress,f.persist);const contact=f.activity();f.loseResponse();await assert.rejects(()=>f.api.finish(f.d,f.progress,contact,f.persist),/response lost/);const pages=f.pages.length;f.identityEvents['phase1:identity-cleared']();await assert.rejects(()=>f.api.begin(f.d,f.plan,f.existing,f.progress,f.persist),/IDENTITY_CHANGED/);assert.equal(f.pages.length,pages);assert.equal(f.writes.length,1);
 });

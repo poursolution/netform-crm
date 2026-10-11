@@ -39,13 +39,24 @@ test('상세 응대 저장 실패는 입력과 기존 제어 상태를 남기며
  assert.equal(f.messages[0],'server acknowledgement missing');assert.equal(f.s.pcSaving,false);assert.equal(f.s.text,JSON.parse(before).text);assert.equal(f.s.next,'고객 약속 확인');assert.equal(f.s.due,'2026-10-20');assert.equal(f.toasts.length,0);assert.equal(f.repaints(),0);assert.equal(f.calls.length,1);assert.deepEqual(f.controls.map(x=>x.disabled),[false,true]);
  const legacy=detailSaveFixture(false);await legacy.run();assert.equal(legacy.calls.length,1);assert.equal(legacy.calls[0].route,'legacy');assert.equal(legacy.calls[0].args[0],'contact_log');assert.equal(legacy.calls[0].args[2].text,'이번 상담 원문');
 });
+
+test('상세 저장 ACK 뒤 현재 문의 목록을 갱신하며 다른 문의나 새 입력을 지우지 않는다',async()=>{
+ for(const change of ['same','selection','input']){
+  const f=detailSaveFixture();let paints=0;f.root.G={inqSelKey:f.q.id};f.root.paint=()=>paints++;
+  const job=f.run();assert.equal(paints,0,'ACK 이전에는 목록 완료 표시 없음');
+  if(change==='selection')f.root.G.inqSelKey='other-inquiry';if(change==='input')f.s.text='저장 중 다른 입력';
+  f.resolve(true);await job;
+  assert.equal(paints,change==='same'?1:0);assert.equal(f.toasts.length,change==='same'?1:0);
+  if(change!=='same')assert.equal(f.s.text,change==='input'?'저장 중 다른 입력':' 이번 상담 원문 ');
+ }
+});
 test('기존 문자 버튼과 가운데 문자/카카오 버튼은 실제 발송으로 저장하지 않고 문구·일정을 유지한다',async()=>{
  for(const kind of ['legacy','sms','kakao','failure']){
   const writes=[],copied=[],messages=[],toasts=[],q={phone:'010-0000-0000',activities:[],nextAction:{text:'기존 고객 약속',due:'2026-10-20'}},s={smsText:'보존할 문구',smsTpl:'첫 인사',smsWhen:'now',smsCh:kind==='kakao'?'kakao':'sms',smsOpen:true},before=JSON.stringify(q);
   const root={navigator:{userAgent:kind==='sms'?'Android':'Desktop',clipboard:{writeText:async value=>{if(kind==='failure')throw Error('denied');copied.push(value);}}},location:{href:'unchanged'},inquiryAssigned:()=>true,iqMsg:value=>messages.push(value),InquiryCommand:{run:(...args)=>{writes.push(args);throw Error('발송 근거 없는 CRM 저장');}}};
   root.InquiryMessageHandoff=require('../inquiry-message-handoff.js')(root);
   const context={root,toast:value=>toasts.push(value),timeline:()=>[],phoneOf:()=>({digits:'01000000000'}),sms4Cur:()=>({t:{k:'첫 인사'}}),smsConsent:()=>({}),sms4Days:()=>3,sms4Due:()=> '2026-10-20',sms4Block:()=>false,reskinFrom:()=>assert.fail('외부 앱 이동이 입력창을 재구성해서는 안 됨')};
-  vm.runInNewContext(detailSection('async function manualMessage(q,s,channel){',' /* 기록자는')+detailSection('function smsGo4(q,s){',' function smsForm(q,s,digits,v3)'),context);
+  vm.runInNewContext(detailSection('async function manualMessage(q,s,channel){',' /* 기록자는')+detailSection('async function smsGo4(q,s){',' function smsForm(q,s,digits,v3)'),context);
   await (kind==='legacy'?context.smsSend(q,s):context.smsGo4(q,s));
   assert.deepEqual(writes,[]);assert.equal(JSON.stringify(q),before);assert.equal(s.smsText,'보존할 문구');assert.equal(s.smsTpl,'첫 인사');assert.equal(s.smsOpen,true);assert.equal(s.messageHandoffBusy,false);
   if(kind==='sms'){assert.match(root.location.href,/^sms:01000000000\?body=/);assert.deepEqual(copied,[]);}
@@ -182,8 +193,10 @@ test('④ ⑤ 전환 기준 하나 · 견적 = 버전: 상세 · 전환 대기 �
  assert.match(sql.replace(/\r\n/g,'\n'),/a constant text:=\$a\$status_value !~ '견적\.\*발송'\$a\$;\n b constant text:=\$b\$status_value !~ '견적\.\*발송\|현장\[\[:space:\]\]\*방문\[\[:space:\]\]\*완료'\$b\$;/,'서버 전환 명령의 조건 한 곳');
  assert.match(sql,/if n<>1 then raise exception '전환 조건을 바꿀 자리가 %곳입니다\(1곳이어야 함\) — 아무것도 바꾸지 않았습니다',n; end if;/,'자리가 정확히 1곳이 아니면 멈춘다');
  assert.match(fl,/const ready=loadedOk&&can\(RPC\),msg=ready\?promote\(q\):'서버 적용 뒤 전환 대기 목록에서 파이프라인으로 넘길 수 있습니다';/,'방문 완료 전환은 서버가 받는 것이 확인된 뒤에만 보낸다');
- assert.match(dv,/const stepConverts=s=>!FL\(\)\|\|\(s\.step==='visit'\?s\.visitMode==='완료':s\.step==='quote'\?s\.quoteMode==='완료':false\);/,'예정은 저장만');assert.match(dv,/\(FL\(\)\?h\(FL\(\)\.QUALIFY_TEXT\):/,'상세 문구 = 같은 기준');
- assert.match(dv,/root\.InquiryCommand\.run\('quote_send',q,\{amount:s\.quoteAmt\?Number\(s\.quoteAmt\)\*10000:0,date:s\.quoteDate,sent:s\.quoteMode==='완료'\}\)/,'견적 금액은 견적 버전으로(원)');
+ const buttonCtx={root:{CRM_SCHEDULE_V1:true},FL:()=>F};vm.runInNewContext(detailSection('const stepConverts=', ' const visitToggle=')+'\nthis.readButton=stepBtn;',buttonCtx);
+ for(const step of ['visit','quote'])for(const mode of ['예정','완료'])assert.equal(buttonCtx.readButton({step,visitMode:mode,quoteMode:mode}),'저장','보존 계약은 사실 저장만 약속한다');
+ buttonCtx.root.CRM_SCHEDULE_V1=false;assert.equal(buttonCtx.readButton({step:'visit',visitMode:'예정'}),'저장');assert.equal(buttonCtx.readButton({step:'visit',visitMode:'완료'}),'저장하고 파이프라인으로','기존 계약은 기존 안내 유지');assert.match(dv,/\(FL\(\)\?h\(FL\(\)\.QUALIFY_TEXT\):/,'상세 문구 = 같은 전환 자격 기준');
+ assert.match(dv,/root\.InquiryCommand\.run\('quote_send',q,\{amount:form\.quoteAmt\?Number\(form\.quoteAmt\)\*10000:0,date:form\.quoteDate,sent:form\.quoteMode==='완료'\}\)/,'제출시 보관한 견적 금액을 견적 버전으로(원)');
  assert.doesNotMatch(fl,/예상 '\+|만원'\)/,'명령은 다음 할 일 문장에 금액을 넣지 않는다');assert.match(fl,/nextSet\(q,'고객 반응 확인',follow\)/);assert.match(fl,/const f=plusDays\(sentDay,7\);return f>today\?f:plusDays\(today,1\);/,'후속 = 보낸 날 + 7일 · 같은 날 할 일 금지');
  assert.match(sql,/v_draft:=coalesce\(\(p->>'draft'\)='true',false\);/);assert.match(sql,/if found and lv\.sent_at is null then/,'초안은 같은 버전을 고쳐 쓴다');
 });

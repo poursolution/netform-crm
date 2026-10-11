@@ -15,7 +15,7 @@ module.exports=function install(root,id){
    const replayed=f.logs.has(p.request_id);
    if(replayed){const old=f.logs.get(p.request_id);for(const key of ['inquiry_id','channel','result','content','next_action','next_check_date'])if((old[key]||'')!==(p[key]||''))throw Error('REQUEST_ID_REUSE');}
    else{
-    const at=p.occurred_at||'2026-10-11T01:00:00.000Z';
+    const at=p.occurred_at||new Date().toISOString();
     f.logs.set(p.request_id,{id:uuid(),...p,kind,occurred_at:at,actor_name:root.ME?.name||'합성 담당자',actor_auth_uid:auth,actor_user_id:uid});
     const s=f.flowState;s['first_'+kind+'_at']=s['first_'+kind+'_at']||at;s[kind+'_count']++;
     if(!s['last_'+kind+'_at']||Date.parse(at)>Date.parse(s['last_'+kind+'_at']))s['last_'+kind+'_at']=at;
@@ -24,9 +24,14 @@ module.exports=function install(root,id){
    return {ok:true,type:'contact_log',log_id:l.id,kind:l.kind,replayed,state:{inquiry_id:id,...f.flowState,logs:structuredClone([...f.logs.values()].sort((a,b)=>Date.parse(a.occurred_at)-Date.parse(b.occurred_at)))}};
   }
   if(name==='crm_inquiry_response_confirm_v1'){
-   if(f.responses.has(p.request_id))return {...f.responses.get(p.request_id),replayed:true};
+   if(f.responses.has(p.request_id)){const old=f.responses.get(p.request_id);for(const key of ['inquiry_id','contact_log_id','expected_token'])if(old[key]!==p[key])throw Error('REQUEST_ID_REUSE');return {...old,replayed:true};}
    if(p.expected_token!==hex(f.serial))throw Error('SCHEDULE_STALE');
-   f.serial++;Object.assign(f.state,{status:'전화응대 완료',first_response_at:'2026-10-11T01:00:00.000Z',responded_at:'2026-10-11T01:00:00.000Z',updated_at:'2026-10-11T01:00:00.000Z'});
+   const log=[...f.logs.values()].find(l=>l.id===p.contact_log_id&&l.inquiry_id===id&&l.kind==='connected'&&l.actor_auth_uid===auth&&l.actor_user_id===uid);
+   if(!log)throw Error('INQUIRY_RESPONSE_CONTACT_REQUIRED');
+   if(!['접수','신규','담당자 배정','배정완료',''].includes(f.state.status||'')||f.state.first_response_at||f.state.responded_at)throw Error('INQUIRY_RESPONSE_STATE_CONFLICT');
+   // SQL uses confirmation clock_timestamp(), independently of the contact's occurred_at.
+   const at=new Date().toISOString();
+   f.serial++;Object.assign(f.state,{status:'전화응대 완료',first_response_at:at,responded_at:at,updated_at:at});
    const a={ok:true,contract:'crm.inquiry-response.v1',...p,actor_auth_uid:auth,actor_user_id:uid,owner_id:uid,...f.state,stage_history_id:uuid(),inquiry_audit_event_id:uuid(),token:hex(f.serial),cancelled_action_ids:[],completed_action_ids:[]};f.responses.set(p.request_id,a);lose();return a;
   }
   if(name==='crm_schedule_receipt_v1')return {ok:true,contract:'crm.schedule.v1',request_id:p.request_id,found:f.schedules.has(p.request_id),ack:f.schedules.get(p.request_id)||null};
