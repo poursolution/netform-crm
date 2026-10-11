@@ -22,8 +22,16 @@ module.exports=function install(root,id){
   if(name==='crm_schedule_receipt_v1')return {ok:true,contract:'crm.schedule.v1',request_id:p.request_id,found:f.schedules.has(p.request_id),ack:f.schedules.get(p.request_id)||null};
   if(name==='crm_schedule_write_v1'){
    if(p.expected_token!==hex(f.serial))throw Error('SCHEDULE_STALE');
-   const row={id:uuid(),inquiry_id:id,action_type:p.action_type,title:p.title,status:'open',due_on:p.due_on,due_at:p.due_on+'T00:00:00+09:00',date_basis:p.date_basis,completed_at:null};f.rows.push(row);f.serial++;f.guard++;
-   const a={ok:true,contract:'crm.schedule.v1',target_type:'inquiry',target_id:id,request_id:p.request_id,operation:'add',actor_auth_uid:auth,actor_user_id:uid,due_on:p.due_on,date_basis:p.date_basis,action_id:row.id,event_id:uuid(),action_status:'open',after:row,token:hex(f.serial),cancelled_action_ids:[],completed_action_ids:[]};f.schedules.set(p.request_id,a);lose();return a;
+   let row,before=null;
+   if(p.operation==='reschedule'){
+    row=f.rows.find(x=>x.id===p.action_id);if(!row||row.status!=='open')throw Error('SCHEDULE_ACTION_CONFLICT');
+    if(row.date_basis==='customer_agreed'||/^\s*고객\s*약속/.test(row.title))throw Error('SCHEDULE_CUSTOMER_AGREEMENT_REQUIRED');
+    before=structuredClone(row);Object.assign(row,{due_on:p.due_on,due_at:p.due_on+'T00:00:00+09:00',date_basis:p.date_basis,completed_at:null});
+   }else if(p.operation==='add'){
+    row={id:uuid(),inquiry_id:id,action_type:p.action_type,title:p.title,status:'open',due_on:p.due_on,due_at:p.due_on+'T00:00:00+09:00',date_basis:p.date_basis,completed_at:null};f.rows.push(row);
+   }else throw Error('SCHEDULE_INVALID_INPUT');
+   f.serial++;f.guard++;
+   const a={ok:true,contract:'crm.schedule.v1',target_type:'inquiry',target_id:id,request_id:p.request_id,operation:p.operation,actor_auth_uid:auth,actor_user_id:uid,due_on:p.due_on,date_basis:p.date_basis,action_id:row.id,event_id:uuid(),action_status:'open',before,after:structuredClone(row),token:hex(f.serial),cancelled_action_ids:[],completed_action_ids:[]};f.schedules.set(p.request_id,a);lose();return a;
   }
   throw Error('Unexpected RPC '+name);
  }};

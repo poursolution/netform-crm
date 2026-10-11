@@ -9,6 +9,14 @@ function load(extra){
  win.window=win;vm.runInNewContext(read('inquiry-flow.js'),win);return win;
 }
 const at=d=>new Date(Date.now()-d*864e5).toISOString();
+test('모바일 읽기 로드는 PC 판정을 공유하되 과거 발송함을 실행하거나 쓰기를 노출하지 않는다',async()=>{
+ const writes=[],w=load({document:{currentScript:{getAttribute:k=>k==='data-read-only'?'true':null}},OpsStore:{has:()=>true,rpc:async(name)=>{writes.push(name);return {states:[]};}},localStorage:{getItem:()=>JSON.stringify([{queued_at:Date.now(),type:'contact_log'}]),setItem:()=>assert.fail('과거 발송함 변경')}});
+ assert.equal(w.InquiryFlow.kindOf('고객 회신'),'connected');assert.equal(w.InquiryFlow.TWO.CONTACT[1][1],'고객 회신');
+ assert.equal(w.InquiryCommand.needsProgress({status:'배정완료'}),true);
+ assert.equal(w.InquiryCommand.run,undefined);assert.equal(w.InquiryCommand.flush,undefined);assert.equal(w.InquiryCommand._queue,undefined);
+ w.InquiryFlow.firstConnectedAt({id:'read-only',status:'접수'});await Promise.resolve();
+ assert.deepEqual(writes,['crm_inquiry_flow_list_v1']);
+});
 function detailSection(from,to){const source=read('inquiry-detail-v2.js'),a=source.indexOf(from),b=source.indexOf(to,a+from.length);assert.ok(a>=0&&b>a,'실제 상세 처리 함수를 찾는다');return source.slice(a,b);}
 function detailSaveFixture(protectedRoute=true){
  const calls=[],messages=[],toasts=[],controls=[{disabled:false},{disabled:true}],q={id:'synthetic-inquiry',status:'배정완료'},s={tab:'call',text:' 이번 상담 원문 ',ch:'전화',res:'연결됨',con:'연결됨',rea:'검토중',next:'고객 약속 확인',due:'2026-10-20'},suggestion={ch:'전화',res:'연결됨',act:'고객 약속 확인',due:s.due,none:false};

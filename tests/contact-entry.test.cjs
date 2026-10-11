@@ -35,9 +35,19 @@ test('기록 첫머리가 유효 접촉 분류와 맞는다(부재 · 시도 = �
 test('다음 업무: 이미 앞으로 잡힌 일정이 있으면 기본은 그대로 둠, 아니면 결과에 맞는 새 업무',()=>{
  assert.deepEqual(CE.defaults('연결됨',ex('2026-10-13'),T),{mode:'keep',purpose:'',date:''});
  assert.deepEqual(CE.defaults('연결됨',ex('2026-10-10'),T),{mode:'keep',purpose:'',date:''},'오늘 기한도 응대 저장만으로 완료되지 않음');
- assert.deepEqual(CE.defaults('부재',null,T),{mode:'new',purpose:'다시 전화',date:'2026-10-11'});
- assert.deepEqual(CE.defaults('번호 오류',null,T),{mode:'new',purpose:'연락처 확인',date:'2026-10-11'});
+ assert.deepEqual(CE.defaults('부재',null,T),{mode:'none',purpose:'',date:''});
+ assert.deepEqual(CE.defaults('번호 오류',null,T),{mode:'none',purpose:'',date:''});
  assert.equal(CE.defaults('배드핏',ex('2026-10-13'),T).mode,'none');
+});
+
+test('부재·번호 오류는 결과만 저장할 수 있고 기존 일정·요청은 완료하지 않는다',()=>{
+ for(const res of ['부재','번호 오류']){
+  const p=CE.plan({res,mode:'none',requests:[{id:'request',on:true,title:'고객 연결'}]},{today:T,existing:ex('2026-10-13')});
+  assert.equal(p.ok,true);assert.equal(p.next,null);assert.equal(p.change,null);assert.equal(p.completeCurrent,false);
+  assert.equal(p.requests[0].state,'working');assert.equal(p.reason,'');assert.doesNotMatch(p.preview,/사유 기록/);
+  assert.doesNotMatch(CE.summary(p,{existing:ex('2026-10-13')}).flat().join(' '),/· 사유/);
+ }
+ for(const res of ['연결됨','회신 받음','배드핏'])assert.equal(CE.plan({res,memo:'상담 내용',mode:'none'},{today:T}).ok,false);
 });
 test('기존 일정 유지 · 변경 · 완료는 서로 다른 처리다(몰래 바꾸지 않음)',()=>{
  const keep=CE.plan({res:'연결됨',ch:'전화',memo:'검토 중',mode:'keep'},{today:T,existing:ex('2026-10-13')});
