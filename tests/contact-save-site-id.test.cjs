@@ -5,24 +5,24 @@ const adapter = require('../operational-adapter.js');
 
 const source = fs.readFileSync('crm.html', 'utf8');
 
-function consentSaveFixture({mobile='010-1234-5678', name='테스트 소장', sms=true, kakao=false, blocked=false, consentAt='2026-10-05T00:00:00Z', scoped=false}={}) {
+function consentSaveFixture({mobile='010-1234-5678', name='테스트 소장', sms=true, kakao=false, blocked=false, consentAt='2026-10-05T00:00:00Z', scoped=false, oldSms=false, oldKakao=false, oldBlocked=false, itemFields={}}={}) {
   const values={'qc-name':name,'qc-mobile':mobile,'qc-role':'관리소장','qc-decision-role':'','qc-relation-tone':'','qc-consent-at':'','qc-block-reason':'','qc-office':'','qc-email':''};
   const checks={'qc-sms':sms,'qc-kakao':kakao,'qc-block':blocked};
   const errorBox={style:{},textContent:''};let globalReads=0;
   const selected=id=>id==='qc-err'?errorBox:({value:values[id]??'',checked:!!checks[id]});
   const document={getElementById:id=>{globalReads++;return scoped?{value:'',checked:false}:selected(id);}};
-  const writes=[],messages=[],item={id:'11111111-1111-4111-8111-111111111111',site:'테스트 현장'};
+  const writes=[],messages=[],item={id:'11111111-1111-4111-8111-111111111111',site:'테스트 현장',...itemFields};
   const root={contactDirectoryHTML:()=>'',phoneN:value=>String(value||''),addEventListener:()=>{},
-    QUICK_CONTACT:{item,mode:'primary',pcDecision:'',pcTone:'',pcConsentInput:'',pcOriginal:{mobile,consentAt},...(scoped?{pcRoot:{querySelector:selector=>selected(selector.slice(1))}}:{})},
+    QUICK_CONTACT:{item,mode:'primary',pcDecision:'',pcTone:'',pcConsentInput:'',pcOriginal:{mobile,consentAt,smsConsent:oldSms,kakaoConsent:oldKakao,sendBlocked:oldBlocked},...(scoped?{pcRoot:{querySelector:selector=>selected(selector.slice(1))}}:{})},
     quickContactErr:message=>messages.push(message),contactInfo:()=>({mobile}),itemPatch:()=>({}),
     Phase1:{queue:{list:()=>[]}},pushWrite:(operation,payload)=>{writes.push({operation,payload});return 'test-request';}};
   require('node:vm').runInNewContext(fs.readFileSync('pc-primary-contact.js','utf8'),{window:root,document});
-  root.saveQuickContact();return {writes,messages,item,errorBox,globalReads};
+  root.saveQuickContact();return {writes,messages,item,errorBox,globalReads,root};
 }
 
 test('selected contact form wins over stale duplicate IDs for both channels and withdrawal',()=>{
   for(const [sms,kakao] of [[true,false],[false,true],[false,false],[true,true]]){
-    const r=consentSaveFixture({scoped:true,sms,kakao});assert.equal(r.writes.length,1);
+    const r=consentSaveFixture({scoped:true,sms,kakao,oldSms:!sms,oldKakao:!kakao});assert.equal(r.writes.length,1);
     assert.equal(r.writes[0].payload.manager_mobile,'01012345678');assert.equal(r.writes[0].payload.manager_name,'테스트 소장');
     assert.equal(r.writes[0].payload.sms_consent,sms);assert.equal(r.writes[0].payload.kakao_consent,kakao);
     assert.equal(r.globalReads,0);assert.equal(r.messages.length,0);assert.equal(r.item.contact,undefined);
@@ -45,7 +45,8 @@ test('consent save accepts formatted mobile and queues its canonical identity wi
   const result=consentSaveFixture();assert.equal(result.writes.length,1);
   const {operation,payload}=result.writes[0];assert.equal(operation,'contact_upsert');
   assert.equal(payload.manager_mobile,'01012345678');assert.equal(payload.person_key,'mobile:01012345678');
-  assert.equal(payload.sms_consent,true);assert.equal(payload.kakao_consent,false);
+  assert.equal(payload.sms_consent,true);assert.equal(Object.hasOwn(payload,'kakao_consent'),false,'unchanged unchecked channel is omitted, not revoked');
+  assert.equal(payload.consent_at,'2026-10-05T00:00:00Z');for(const key of ['send_blocked','opt_out_at','send_blocked_reason'])assert.equal(Object.hasOwn(payload,key),false,key+' unchanged');
   assert.equal(result.item.contact,undefined);assert.equal(result.messages.some(x=>x.includes('11자리')),false);
 });
 
@@ -56,25 +57,32 @@ test('consent validation still blocks missing evidence and invalid customer iden
 });
 
 test('consent withdrawal and send block remain disabled in the queued payload',()=>{
-  const withdrawn=consentSaveFixture({sms:false,consentAt:null}).writes[0].payload;
+  const withdrawn=consentSaveFixture({sms:false,kakao:false,oldSms:true,oldKakao:true,consentAt:null}).writes[0].payload;
   assert.equal(withdrawn.sms_consent,false);assert.equal(withdrawn.kakao_consent,false);
   const blocked=consentSaveFixture({blocked:true}).writes[0].payload;
   assert.equal(blocked.send_blocked,true);assert.equal(blocked.sms_consent,false);assert.equal(blocked.kakao_consent,false);
 });
 
 test('PC contact normalization fix has a fresh browser asset version',()=>{
-  assert.ok(source.includes('pc-primary-contact.js?v=20261006-consent-scope'));
+  const primary=source.match(/pc-primary-contact\.js\?v=([^"' >]+)/);assert.ok(primary,'shared contact module must be loaded with a cache version');
+  assert.notEqual(primary[1],'20261006-consent-scope','new sparse consent contract must not reuse the previous browser asset version');
   /* deal-panels-v2 도 이 뒤에 고쳐졌다(관리정보 수정은 상세 기본 화면에서 안 연다 · 2026-10-10) — 새 버전 표식이면 된다 */
   assert.match(source,/deal-panels-v2\.js\?v=(?!20261006-consent-scope)[^"' >]+/);
   /* deal-detail-v3 는 이 뒤에도 고쳐졌다(같은 정보 같은 판단 · 2026-10-08) — 새 버전 표식이면 된다 */
   assert.match(source,/deal-detail-v3\.js\?v=(?!20261006-consent-scope)[^"' >]+/);
 });
 
-test('existing Deal contact saves pass canonical Site ID into person history', () => {
-  const calls = source.match(/upsertPerson\(c,item\.site,office,at,item\.cleanup_site_id\|\|item\.site_id\|\|item\.siteId\|\|' '\)/g) || [];
-  assert.equal(calls.length, 0, 'guard against an accidental spaced empty fallback');
-  const exact = source.match(/upsertPerson\(c,item\.site,office,at,item\.cleanup_site_id\|\|item\.site_id\|\|item\.siteId\|\|''\)/g) || [];
-  assert.equal(exact.length, 4);
+test('existing Deal contact saves pass the canonical Site ID to the shared server command', () => {
+  const ids=['22222222-2222-4222-8222-222222222222','33333333-3333-4333-8333-333333333333','44444444-4444-4444-8444-444444444444'];
+  for(const [itemFields,expected] of [[{cleanup_site_id:ids[0],site_id:ids[1],siteId:ids[2]},ids[0]],[{site_id:ids[1],siteId:ids[2]},ids[1]],[{siteId:ids[2]},ids[2]],[{},null]]){
+    const r=consentSaveFixture({itemFields});assert.equal(r.writes.length,1);
+    assert.equal(r.writes[0].payload.site_id,expected);assert.equal(r.writes[0].operation,'contact_upsert');
+    assert.equal(r.item.contact,undefined,'server confirmation must precede local contact projection');
+  }
+  const start=source.lastIndexOf('saveContactInfo=function(){'),end=source.indexOf('\n};',start)+3;
+  assert.ok(start>=0&&end>start,'current legacy entry must exist');const delegated=source.slice(start,end);
+  assert.match(delegated,/window\.saveQuickContact\(\)/,'legacy entry must use the same contact save path');
+  assert.doesNotMatch(delegated,/upsertPerson\(|saveLocal\(|pushWrite\(/,'legacy entry cannot maintain a separate optimistic contact history');
 });
 
 test('new Deal creation remains unlinked until a canonical Site exists', () => {
@@ -91,22 +99,24 @@ test('contact command contract preserves a valid Site ID and rejects an invalid 
   const dealId = '11111111-1111-4111-8111-111111111111';
   const siteId = '22222222-2222-4222-8222-222222222222';
   const payload = {opportunity_id: dealId, site_id: siteId, person_key: 'mobile:01012345678', site_name: '한빛아파트', manager_name: '김소장', manager_mobile: '01012345678', manager_role: '관리소장'};
-  assert.equal(adapter.normalize('contact_upsert', dealId, 1, payload).payload.site_id, siteId);
-  assert.throws(() => adapter.normalize('contact_upsert', dealId, 1, {...payload, site_id: 'same-name-only'}), /INVALID_CONTACT_PAYLOAD/);
+  assert.equal(adapter.normalize('contact_upsert', dealId, 1, payload, adapter.toRpc({operation:'contact_upsert'})).payload.site_id, siteId);
+  assert.throws(() => adapter.normalize('contact_upsert', dealId, 1, {...payload, site_id: 'same-name-only'}, 'crm_contact_command_v1'), /INVALID_CONTACT_PAYLOAD/);
 });
 
 test('contact updates use the read Deal version and validate the Production receipt', () => {
   const crypto=require('node:crypto');
   const object_id=crypto.randomUUID(),request_id=crypto.randomUUID(),auth_uid=crypto.randomUUID(),user_id=crypto.randomUUID();
   const payload={opportunity_id:object_id,person_key:'mobile:01000000000',site_name:'synthetic',manager_name:'test',manager_mobile:'01000000000',manager_role:'관리소장',sms_consent:true,consent_at:'2026-09-01T00:00:00Z'};
-  const command={...adapter.normalize('contact_upsert',object_id,7,payload),request_id,auth_uid,user_id};
+  const command={...adapter.normalize('contact_upsert',object_id,7,payload,'crm_contact_command_v1'),request_id,auth_uid,user_id};
   const ack={contract_version:1,ok:true,replayed:false,operation:'contact_upsert',object_id,request_id,
     actor_auth_uid:auth_uid,actor_user_id:user_id,contact_id:crypto.randomUUID(),person_key:payload.person_key,
-    previous_version:7,version:8,audit_event_id:crypto.randomUUID(),server_at:'2026-09-19T00:00:00Z'};
+    previous_version:7,version:8,audit_event_id:crypto.randomUUID(),server_at:'2026-09-19T00:00:00Z',
+    contact_consent_contract:'preserve-omitted-v1',consent:{sms_consent:true,kakao_consent:false,consent_at:payload.consent_at,opt_out_at:null,send_blocked:false,send_blocked_reason:null}};
   assert.equal(adapter.validateAck(ack,command),ack);
-  for(const invalid of [{previous_version:0},{version:7},{audit_event_id:null},{person_key:'wrong'},{sms_consent:false}])
+  for(const rpc of [undefined,'crm_write_command_v2'])assert.throws(()=>adapter.normalize('contact_upsert',object_id,7,payload,rpc),/CONTACT_STORAGE_CONTRACT_REQUIRED/);
+  for(const invalid of [{previous_version:0},{version:7},{audit_event_id:null},{person_key:'wrong'},{sms_consent:false},{contact_consent_contract:undefined},{consent:undefined},{consent:{...ack.consent,sms_consent:false}},{consent:{...ack.consent,consent_at:null}}])
     assert.throws(()=>adapter.validateAck({...ack,...invalid},command),/ACK_CONTRACT_MISMATCH/);
-  assert.throws(()=>adapter.normalize('contact_upsert',object_id,undefined,payload),/READ_VERSION_REQUIRED/);
+  assert.throws(()=>adapter.normalize('contact_upsert',object_id,undefined,payload,'crm_contact_command_v1'),/READ_VERSION_REQUIRED/);
 });
 
 test('contact UI queues current versions, advances on receipt, and refuses missing versions', () => {
