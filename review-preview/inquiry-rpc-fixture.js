@@ -2,6 +2,7 @@
 window.__installReviewInquiryRPC=(function install(root,id){
  const uuid=()=>root.crypto.randomUUID(),uid=uuid(),auth=uuid(),hex=n=>n.toString(16).padStart(32,'0');
  const f={rows:[],logs:new Map(),responses:new Map(),schedules:new Map(),calls:[],serial:1,guard:1,hold:'',loss:'',badAck:false,quota:false,
+  flowState:{first_attempt_at:null,last_attempt_at:null,first_connected_at:null,last_connected_at:null,attempt_count:0,connected_count:0},
   state:{status:'배정완료',first_response_at:null,responded_at:null,updated_at:'2026-10-11T00:00:00.000Z'}};
  root.CRM_SCHEDULE_V1=true;root.CRMRelease={has:()=>true,noteMissing:()=>{}};
  root.Phase1={profile:{auth_uid:auth,user_id:uid},rpc:async(name,{p})=>{
@@ -9,9 +10,18 @@ window.__installReviewInquiryRPC=(function install(root,id){
   const lose=()=>{if(f.loss===name){f.loss='';throw Error('response lost');}};
   if(name==='crm_schedule_list_v1')return {ok:true,contract:'crm.schedule.v1',target_type:'inquiry',target_id:id,enabled:true,writable:true,version:null,token:hex(f.serial),inquiry_guard:hex(f.guard),response_state:{...f.state},owner_id:uid,actor_auth_uid:auth,actor_user_id:uid,page:p.page,per:20,total:f.rows.length,items:structuredClone(f.rows.slice((p.page-1)*20,p.page*20))};
   if(name==='crm_inquiry_command_v1'){
-   if(!f.logs.has(p.request_id))f.logs.set(p.request_id,{id:uuid(),...p,actor_auth_uid:auth,actor_user_id:uid});
+   const kind=['부재','통화불가','번호오류','회신대기'].includes(p.result)?'attempt':['연결됨','고객 회신','검토중','자료요청','견적요청','보류','거절','연락 완료','대표회의 예정','재견적 요청','경쟁사 비교','계약 검토'].includes(p.result)?'connected':null;
+   if(p.type!=='contact_log'||!kind)throw Error('invalid payload');
+   const replayed=f.logs.has(p.request_id);
+   if(replayed){const old=f.logs.get(p.request_id);for(const key of ['inquiry_id','channel','result','content','next_action','next_check_date'])if((old[key]||'')!==(p[key]||''))throw Error('REQUEST_ID_REUSE');}
+   else{
+    const at=p.occurred_at||'2026-10-11T01:00:00.000Z';
+    f.logs.set(p.request_id,{id:uuid(),...p,kind,occurred_at:at,actor_name:root.ME?.name||'합성 담당자',actor_auth_uid:auth,actor_user_id:uid});
+    const s=f.flowState;s['first_'+kind+'_at']=s['first_'+kind+'_at']||at;s[kind+'_count']++;
+    if(!s['last_'+kind+'_at']||Date.parse(at)>Date.parse(s['last_'+kind+'_at']))s['last_'+kind+'_at']=at;
+   }
    const l=f.logs.get(p.request_id);lose();if(f.badAck)return {ok:true};
-   return {ok:true,type:'contact_log',log_id:l.id,state:{inquiry_id:id,logs:[...f.logs.values()]}};
+   return {ok:true,type:'contact_log',log_id:l.id,kind:l.kind,replayed,state:{inquiry_id:id,...f.flowState,logs:structuredClone([...f.logs.values()].sort((a,b)=>Date.parse(a.occurred_at)-Date.parse(b.occurred_at)))}};
   }
   if(name==='crm_inquiry_response_confirm_v1'){
    if(f.responses.has(p.request_id))return {...f.responses.get(p.request_id),replayed:true};
