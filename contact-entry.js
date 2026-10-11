@@ -41,6 +41,7 @@
   if(isBadfit(res))return {mode:'none',purpose:'',date:''};
   const ex=existing&&existing.text?existing:null;
   if(ex)return {mode:'keep',purpose:'',date:''};
+  if(isAttempt(res))return {mode:'none',purpose:'',date:''};
   const s=SUGGEST[res]||['다시 연락',3];
   return {mode:'new',purpose:s[0]||'',date:addDays(today,s[1])};
  }
@@ -73,7 +74,7 @@
    /* 기한 미루기(exec_wording): 지금 열린 기한보다 늦추면 원래 기한 · 새 기한 · 사유(필수)를 '[기한 변경]' 기록으로 남긴다 */
    if(DATE.test(String(ex.due||''))&&date>ex.due){if(!reason){out.error='미루는 사유를 입력해 주세요 (원래 기한 · 새 기한 · 사유가 기록됩니다)';return out;}postpone={from:ex.due,to:date,reason,over:today&&ex.due<today?Math.round((Date.parse(today+'T00:00:00Z')-Date.parse(ex.due+'T00:00:00Z'))/864e5):0};}
   }
-  if(mode==='none'&&!reason){out.error=out.badfit?'배드핏은 사유가 있어야 합니다':'다음 일정이 없는 이유를 넣어 주세요';return out;}
+  if(mode==='none'&&!reason&&!out.attempt){out.error=out.badfit?'배드핏은 사유가 있어야 합니다':'다음 일정이 없는 이유를 넣어 주세요';return out;}
   out.reason=mode==='none'?reason:'';
   out.note=note(ch,res,memo,out.reason)+(postpone?' [기한 변경 요청] 원래 '+postpone.from+' | 새 '+postpone.to+' | 사유 '+postpone.reason:'');
   const type=/방문|실측|미팅/.test(purpose)?'방문':/자료|견적|사진|메일|발송/.test(purpose)?'후속접촉':'전화';
@@ -91,7 +92,7 @@
   if(mode==='new')p.push(out.next.purpose+' 일정 1건 등록 · '+md(date));
   if(mode==='keep')p.push('기존 일정 유지 · 새 일정 없음');
   if(mode==='change')p.push('기존 일정 "'+ex.text+'" 날짜만 변경 · '+md(date)+(postpone?' · 미룬 사유 기록':''));
-  if(mode==='none')p.push(ex?'새 일정 없음 · 기존 일정은 미완료로 유지 · 사유 기록':'다음 일정 없음 · 사유 기록');
+  if(mode==='none')p.push((ex?'새 일정 없음 · 기존 일정은 미완료로 유지':'다음 일정 없음')+(reason?' · 사유 기록':''));
   if(out.badfit)p.push('배드핏 종결 검토 (사유 필수) — 종결은 [단계 바꾸기]에서 따로');
   if(out.info)p.push('고객 정보 변경 · 공사 시기 '+out.info.construction_plan);
   /* 처리한 관리자 요청(지정한 것만 · 자동 완료 금지): 연락 시도(부재 · 번호 오류)는 요청이 진행 중으로 남고, 실제 연결 + 다음 업무(새로 잡거나 기존 앞날 일정 유지 · 변경)가 있을 때만 완료 조건을 채운다 */
@@ -110,7 +111,7 @@
   if(pl.change)rows.push(['변경','기존 일정 "'+pl.change.text+'" → '+md(pl.change.due)+(pl.postpone?' · 사유 '+pl.postpone.reason:'')]);
   if(pl.next)rows.push(['신규',pl.next.purpose+' · '+md(pl.next.due)]);
   if(pl.mode==='keep'&&ex)rows.push(['남음','기존 일정 "'+ex.text+'"'+(ex.due?' · '+md(String(ex.due).slice(0,10)):'')]);
-  if(pl.mode==='none')rows.push(['남음',(ex?'기존 일정 "'+ex.text+'" 미완료 유지 · 새 일정 없음':'다음 일정 없음')+' · 사유 '+pl.reason]);
+  if(pl.mode==='none')rows.push(['남음',(ex?'기존 일정 "'+ex.text+'" 미완료 유지 · 새 일정 없음':'다음 일정 없음')+(pl.reason?' · 사유 '+pl.reason:'')]);
   if(pl.info)rows.push(['변경','공사 시기 → '+pl.info.construction_plan]);
   (pl.requests||[]).forEach(r=>rows.push([r.state==='done'?'완료':'남음','관리자 요청 "'+r.title+'"'+(r.state==='working'?' — 진행 중 · 연락 시도로 기록':r.state==='blocked'?' — 완료 조건 미충족':r.state==='failed'?' — 처리하지 못했습니다: '+(r.err||'서버 확인 없음'):'')]));
   (C.openRequests||[]).forEach(r=>rows.push(['남음','관리자 요청 "'+r.title+'" — '+(C.requestMet&&C.requestMet(r)?'조건 확인 필요':'아직 진행 중')]));

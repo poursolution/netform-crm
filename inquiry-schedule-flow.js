@@ -16,6 +16,21 @@
   return {...c,items};
  }
  function identity(c){root.ScheduleContract.assertContext(c);}
+ function scheduleInput(plan,existing,found){
+  const day=value=>/^\d{4}-\d{2}-\d{2}$/.test(value||'')&&Number.isFinite(Date.parse(value+'T00:00:00Z'))&&new Date(value+'T00:00:00Z').toISOString().slice(0,10)===value;
+  if(plan.change){
+   const n=plan.change;
+   if(!existing||n.id!==existing.id||n.from!==existing.due||n.text!==existing.text||!day(n.due)||n.due===existing.due||typeof n.reason!=='string'||!n.reason.trim()||n.reason.length>500)fail('SCHEDULE_INVALID_INPUT');
+   if(found.date_basis==='customer_agreed'||found.customer_agreed===true||existing.promise||/^\s*고객\s*약속/.test(found.title)||/약속/.test(found.action_type||''))fail('SCHEDULE_CUSTOMER_AGREEMENT_REQUIRED');
+   return {operation:'reschedule',action_id:existing.id,due_on:n.due,date_basis:'internal_plan',reason:n.reason};
+  }
+  if(plan.next){
+   const n=plan.next,explicit=Object.hasOwn(plan,'mode'),type=explicit?n.type:n.type||'전화';
+   if(!['전화','방문','후속접촉','기타'].includes(type)||typeof n.purpose!=='string'||!n.purpose.trim()||n.purpose.length>500||!day(n.due)||((explicit||n.plan!==undefined)&&!['customer','internal'].includes(n.plan)))fail('SCHEDULE_INVALID_INPUT');
+   return {operation:'add',action_type:type,title:n.purpose,due_on:n.due,date_basis:n.plan==='customer'?'customer_agreed':'internal_plan'};
+  }
+  return null;
+ }
  async function begin(id,plan,existing,progress,persist,status){
   if(!enabled())fail('SCHEDULE_RELEASE_DISABLED');
   if(progress.inquirySchedule){const s=progress.inquirySchedule;identity(s.context);if(s.context.target_id!==id)fail('SCHEDULE_INVALID_TARGET');persist();return;}
@@ -23,8 +38,9 @@
   if(status!==undefined&&c.response_state.status!==status)fail('SCHEDULE_STALE');
   const found=existing&&c.items.find(n=>n.id===existing.id);
   if(existing?(!found||found.title!==existing.text||found.due_on!==existing.due):c.items.length)fail('SCHEDULE_STALE');
-  const input=plan.next?{operation:'add',action_type:'전화',title:plan.next.purpose,due_on:plan.next.due,date_basis:'internal_plan'}:null;
-  progress.inquirySchedule={context:clone(c),input,request_id:root.crypto.randomUUID()};persist();
+  const input=scheduleInput(plan,existing,found),request_id=root.crypto.randomUUID();
+  if(input)root.ScheduleContract.prepare(c,input,request_id); // Validate the real write contract before recording contact.
+  progress.inquirySchedule={context:clone(c),input,request_id};persist();
  }
  async function finish(id,progress,responseAck,persist){
   const api=root.ScheduleContract,s=progress.inquirySchedule;if(!s)fail('SCHEDULE_CONTEXT_REQUIRED');

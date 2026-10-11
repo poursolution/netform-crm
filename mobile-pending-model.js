@@ -3,10 +3,11 @@
  'use strict';
  const prefix='crm:mobile-save:v1:',uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
  const object=v=>!!v&&typeof v==='object'&&!Array.isArray(v),valid=v=>typeof v==='string'&&uuid.test(v);
- const kinds=['contact','inquiry','reschedule'],allowedStates=['pending','sending','uncertain','rejected','conflict','done'];
+ const kinds=['contact','inquiry','pc_inquiry','reschedule'],allowedStates=['pending','sending','uncertain','rejected','conflict','done'];
  const problem=code=>{throw Error(code);};
  function actor(){const p=root.Phase1?.profile;return valid(p?.auth_uid)&&valid(p?.user_id)?{auth:p.auth_uid,user:p.user_id,key:p.auth_uid+':'+p.user_id}:null;}
- function targetExists(kind,id){const sets=kind==='inquiry'?[root.INQUIRIES,root.B?.inquiries]:[root.DEALS];return sets.some(rows=>Array.isArray(rows)&&rows.some(d=>String(d?.id||d?.inquiry_id||'')===id));}
+ const inquiryKind=kind=>kind==='inquiry'||kind==='pc_inquiry';
+ function targetExists(kind,id){const sets=inquiryKind(kind)?[root.INQUIRIES,root.B?.inquiries,root.ADMIN?.inquiries]:[root.DEALS];return sets.some(rows=>Array.isArray(rows)&&rows.some(d=>String(d?.id||d?.inquiry_id||d?.key||'')===id));}
  function read(){
   const a=actor();if(!a)return {ok:false,status:'login-required',count:null,groups:[],unlinked_operations:null,errors:['LOGIN_REQUIRED']};
   const errors=[],groups=[],used=new Set();let unlinked=null;
@@ -23,10 +24,11 @@
    for(let i=0;i<store.length;i++){const key=store.key(i);if(typeof key==='string'&&key.startsWith(currentPrefix))keys.push(key);}
    for(const key of keys){
     const suffix=key.slice(currentPrefix.length),split=suffix.indexOf(':'),kind=suffix.slice(0,split),id=suffix.slice(split+1);
-    if(!kinds.includes(kind))continue; // PC, quote and unrelated drafts are outside this view.
+    if(!kinds.includes(kind))continue; // Quote and unrelated drafts are outside this view.
     if(split<0||!valid(id))problem('JOURNAL_TARGET_INVALID');
     const value=journal.read(kind,id);if(!object(value)||!object(value.progress))problem('JOURNAL_INVALID');
-    const p=value.progress,submitted=kind==='inquiry'?typeof p.inputKey==='string'&&!!p.inputKey:typeof p.signature==='string'&&!!p.signature;
+    if(kind==='pc_inquiry'&&value.surface!=='mobile-d')continue;
+    const p=value.progress,submitted=kind==='pc_inquiry'?p.contactSent===true:kind==='inquiry'?typeof p.inputKey==='string'&&!!p.inputKey:typeof p.signature==='string'&&!!p.signature;
     if(!submitted)continue;
     const input=object(p.input)?p.input:object(value.input)?value.input:{},plan=object(p.pl)?p.pl:object(p.plan)?p.plan:{};
     const parts=[],requestIds=new Set(),adminIds=new Set();
@@ -50,7 +52,25 @@
      else if(s.checked&&!s.input)part('schedule','done',s.request_id);
      else part('schedule','pending',s.request_id);
     }
-    if(kind==='inquiry'){
+    if(kind==='pc_inquiry'){
+     const contact=p.contact;
+     if(!object(contact)||contact.inquiry_id!==id||!valid(contact.request_id))problem('JOURNAL_CONTACT_INVALID');
+     if(p.logAck){
+      if(!valid(p.logAck.log_id)||p.logAck.request_id!==contact.request_id||p.logAck.inquiry_id!==id)problem('JOURNAL_CONTACT_ACK_INVALID');
+      part('activity','done',contact.request_id);
+     }else part('activity','pending',contact.request_id,'server-confirmation-pending');
+     if(p.needsResponse){
+      const command=p.responsePrepared?.command,ack=p.responseAck;
+      if(command&&(command.inquiry_id!==id||!valid(command.request_id)))problem('JOURNAL_RESPONSE_INVALID');
+      if(ack&&(!command||ack.ok!==true||ack.contract!=='crm.inquiry-response.v1'||ack.inquiry_id!==id||ack.request_id!==command.request_id
+       ||ack.contact_log_id!==p.logAck?.log_id||ack.actor_auth_uid!==a.auth||ack.actor_user_id!==a.user||ack.status!=='전화응대 완료'
+       ||ack.completed_action_ids?.length!==0||ack.cancelled_action_ids?.length!==0))problem('JOURNAL_RESPONSE_ACK_INVALID');
+      part('inquiry-progress',ack?'done':'pending',command?.request_id);
+     }
+     if(p.inquirySchedule)schedule(p.inquirySchedule);else part('schedule','pending');
+     // A surviving journal still needs the controller's final current-state projection/drop.
+     if(parts.every(x=>x.state==='done'))part('refresh','pending');
+    }else if(kind==='inquiry'){
      if(input.res==='배드핏')part('close',p.closed?.ok===true?'done':'pending',null,p.closePending&&!p.closed?'server-confirmation-pending':undefined);
      else{
       if(p.logged){if(!valid(p.logAck?.log_id)||p.logAck?.request_id!==p.rid||p.logAck?.inquiry_id!==id)problem('JOURNAL_CONTACT_ACK_INVALID');part('activity','done',p.rid);}
@@ -85,9 +105,9 @@
     const has=state=>parts.some(x=>x.state===state),pending=parts.some(x=>x.state!=='done');
     const state=has('conflict')?'conflict':has('done')&&pending?'partial':has('failed')?'failed':pending?'pending':'done';
     const exists=targetExists(kind,id),canResume=exists&&state!=='conflict'&&pending&&kind!=='reschedule';
-    groups.push({id:kind+':'+id,kind,target_type:kind==='inquiry'?'inquiry':'deal',target_id:id,state,pending,
-     recorded_at:typeof p.at==='string'?p.at:Number.isFinite(value.at)?new Date(value.at).toISOString():null,
-     result:typeof input.res==='string'?input.res:'',activity_type:kind==='reschedule'?'일정 변경':input.ch==='방문'?'방문 결과':'응대 기록',
+    groups.push({id:kind+':'+id,kind,target_type:inquiryKind(kind)?'inquiry':'deal',target_id:id,state,pending,
+     recorded_at:typeof p.at==='string'?p.at:typeof p.contact?.occurred_at==='string'?p.contact.occurred_at:Number.isFinite(value.at)?new Date(value.at).toISOString():null,
+     result:typeof input.res==='string'?input.res:typeof input.result==='string'?input.result:'',activity_type:kind==='reschedule'?'일정 변경':input.ch==='방문'?'방문 결과':'응대 기록',
      parts,request_ids:[...requestIds],admin_request_ids:[...adminIds],
      resume:{kind,target_id:id,allowed:canResume,reason:!pending?'already-confirmed':!exists?'target-not-loaded':state==='conflict'?'conflict-review-required':kind==='reschedule'?'approved-screen-unavailable':null}});
    }

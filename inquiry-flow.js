@@ -17,6 +17,7 @@
    끄기: G.inqFlowOff=true → 판정 · 저장 모두 예전 방식. */
 (function(root){
  'use strict';
+ const readOnly=root.document?.currentScript?.getAttribute('data-read-only')==='true';
  const RPC='crm_inquiry_command_v1',LIST='crm_inquiry_flow_list_v1',DAY=864e5,OUT_KEY='crm.inqFlow.outbox.v1';
  const RESULT=Object.freeze({attempt:Object.freeze(['부재','통화불가','번호오류']),connected:Object.freeze(['연결됨','고객 회신','검토중','자료요청','견적요청'])});
  const OLD=Object.freeze({wait:Object.freeze(['회신대기']),connected:Object.freeze(['보류','거절','연락 완료','대표회의 예정','재견적 요청','경쟁사 비교','계약 검토'])});
@@ -70,7 +71,7 @@
    if(sig(next)!==sig(SRV)||csig(nc)!==csig(CLOSED)){SRV.clear();next.forEach((v,k)=>SRV.set(k,v));CLOSED.clear();nc.forEach((v,k)=>CLOSED.set(k,v));SV++;try{root.paint();}catch(e){}}return true;})
    .catch(()=>{loadAt=Date.now();return false;}).finally(()=>{loadBusy=false;});
  }
- function warm(){if(!on()||!root.ME)return;if(!loadAt||Date.now()-loadAt>120000)load();flush();}
+ function warm(){if(!on()||!root.ME)return;if(!loadAt||Date.now()-loadAt>120000)load();if(!readOnly)flush();}
  /* ── 판정 ── */
  function logs(q){
   const p=patchOf(q),seen=new Set(),out=[];
@@ -330,5 +331,5 @@
  }
  const HANDLERS={contact_log:contactLog,memo:memoLog,field_set:fieldSet,schedule_set:(q,o)=>fieldSet(q,{field:o&&o.schedule_type==='reply_due'?'reply_due':'meeting_date',value:o&&o.at}),close:closeInquiry,visit,quote_send:quoteSend,next_set:(q,o)=>nextSet(q,String(o&&o.text||'').slice(0,500),String(o&&o.due||''))};/* next_set = 다음 할 일만(문자 예약 알림) */
  function run(type,q,payload){const fn=HANDLERS[type];if(!fn)throw Error('알 수 없는 저장 명령입니다: '+type);if(!q)throw Error('문의를 찾지 못했습니다.');return fn(q,payload||{});}
- root.InquiryCommand={run,isFirst,needsProgress,flush,types:()=>Object.keys(HANDLERS),_handlers:HANDLERS,_withFields:withFields,_nextSet:nextSet,_queue:queue,_outbox:outbox};
+ root.InquiryCommand=readOnly?Object.freeze({isFirst,needsProgress}):{run,isFirst,needsProgress,flush,types:()=>Object.keys(HANDLERS),_handlers:HANDLERS,_withFields:withFields,_nextSet:nextSet,_queue:queue,_outbox:outbox};
 })(window);

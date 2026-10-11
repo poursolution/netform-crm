@@ -66,8 +66,9 @@
   const head=card.querySelector('.intro')?card.querySelector('.intro').outerHTML+'<div style="height:12px"></div>':'';
   card.innerHTML='<div class="sheet-grip"></div>'+head+html();card.scrollTop=keep;
  }
- function open(q,i){
-  if(busy)return;
+  function open(q,i){
+   if(root.MobileGuideShell){if(typeof root.MobileInquiryEntry?.open==='function')return root.MobileInquiryEntry.open(q);root.toast?.('연락 결과 화면을 불러오지 못했습니다. 다시 열어 주세요.');return {ok:false};}
+   if(busy)return;
   if(!q)return;if(typeof root.inquiryStateM==='function'&&root.inquiryStateM(q)!=='assigned'&&!UUID.test(idOf(q))){if(typeof root.toast==='function')root.toast('담당이 정해진 문의만 결과를 남길 수 있습니다');return;}
   S={q,i:i==null?null:i,res:'',memo:'',purpose:'',date:'',reason:'',touched:false,err:''};busy=false;PROG={};owner=journal()?.owner()||'';sessionToken=journal()?.session()||'';recoveryError='';
   try{const saved=journal().read('inquiry',idOf(q));if(saved){PROG=saved.progress||{};Object.assign(S,PROG.input||saved.input||{});}}catch(e){recoveryError=String(e.message||e);S.err=recoveryError;}
@@ -203,8 +204,9 @@
  }
  /* 예전 결과 창 대신 새 창: 오늘 업무의 문의 통화 결과 · 문의 상세의 연락 결과 */
  const baseFlow=root.callFlow;
- if(typeof baseFlow==='function')root.callFlow=function(i){const q=typeof root.todayInquiry==='function'?root.todayInquiry(i):null;if(q&&enabled())return open(q,i);return baseFlow.apply(this,arguments);};
- function decorate(){
+  if(typeof baseFlow==='function')root.callFlow=function(i){const q=typeof root.todayInquiry==='function'?root.todayInquiry(i):null;if(q&&(root.MobileGuideShell||enabled()))return open(q,i);return baseFlow.apply(this,arguments);};
+  function decorate(){
+   if(root.MobileGuideShell)return;
   if(!enabled())return;const G=root.G,s=G&&G.sub;if(!s||s.t!=='inqAssigned')return;
   const scr=root.document.getElementById('scr'),body=scr&&scr.querySelector('.body');if(!body||body.querySelector('.mi-open'))return;
   const q=((root.ADMIN&&root.ADMIN.inquiries)||[]).find(x=>String(x.key)===String(s.key));if(!q)return;
