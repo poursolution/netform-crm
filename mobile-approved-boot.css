@@ -6,6 +6,11 @@ html:not([data-mobile-approved-view="approved"]):not([data-mobile-approved-view=
   visibility: hidden !important;
   pointer-events: none !important;
 }
+/* 승인된 화면이 떠 있는 동안에는 예전 폰 목업 틀(.phone 392px · 테두리 · 둥근 모서리 · 가짜 상태바)이 어떤 경우에도 겹치지 않는다 —
+   승인 화면은 자기 틀(375×740)을 이미 갖고 있어 바깥 틀이 한 겹 더 생기면 안쪽이 어긋난다(2026-10-12 대표 화면). 본문 클래스(claude-shell) · 다른 스타일 파일 로딩 순서와 무관하게 적용. */
+html[data-mobile-approved-view="approved"] .stage{display:block!important;padding:0!important}
+html[data-mobile-approved-view="approved"] .phone{width:100%!important;max-width:none!important;margin:0!important;height:100vh!important;height:100dvh!important;max-height:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#e9ebef!important}
+html[data-mobile-approved-view="approved"] .statusbar,html[data-mobile-approved-view="approved"] .mock-side{display:none!important}
 /* Debug/query routes must not reopen the retired flow map or navigation. */
 .mock-nav, #flowwrap { display: none !important; }
 html[data-mobile-approved-view="login"] #tabbar,
