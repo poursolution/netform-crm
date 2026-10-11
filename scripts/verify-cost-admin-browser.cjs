@@ -21,10 +21,10 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await page.evaluate(()=>{
    B={deals:[],inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],messageLogs:[],message_logs:[]};LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};TOKEN='test';
-   window.__db={labor:[],cost:[],material:[],events:[]};window.__rpc=[];window.__can=true;
-   const D=window.__db,keyOf={labor:r=>r.trade+'|'+r.effective_from,cost:r=>r.item+'|'+(r.tier||'')+'|'+r.effective_from,material:r=>r.item+'|'+(r.spec||'')+'|'+r.price_date};
+   window.__db={labor:[],cost:[],material:[],method:[],events:[]};window.__rpc=[];window.__can=true;
+   const D=window.__db,keyOf={labor:r=>r.trade+'|'+r.effective_from,cost:r=>r.item+'|'+(r.tier||'')+'|'+r.effective_from,material:r=>r.item+'|'+(r.spec||'')+'|'+r.price_date,method:r=>r.method+'|'+r.effective_from};
    SB={rpc:async(n,a)=>{const p=a.p||{};__rpc.push([n,p]);
-    if(n==='crm_cost_standard_list_v1')return {data:{ok:true,labor:D.labor,cost:D.cost,material:D.material,events:D.events,can_manage:__can}};
+    if(n==='crm_cost_standard_list_v1')return {data:{ok:true,labor:D.labor,cost:D.cost,material:D.material,method:D.method,events:D.events,can_manage:__can}};
     if(n==='crm_cost_standard_stage_v1'){D[p.kind]=D[p.kind].filter(r=>r.status!=='draft');const skipped=[];let st=0;for(const r of p.rows){if(D[p.kind].some(x=>keyOf[p.kind](x)===keyOf[p.kind](r))){skipped.push(r.item||r.trade);continue;}D[p.kind].push(Object.assign({},r,{status:'draft',source:r.source||p.source}));st++;}D.events.unshift({kind:p.kind,action:'stage',row_count:st,skipped_count:skipped.length,actor_name:'송보람',created_at:new Date().toISOString()});return {data:{ok:true,kind:p.kind,staged:st,skipped}};}
     if(n==='crm_cost_standard_approve_v1'){const d=D[p.kind].filter(r=>r.status==='draft');if(!d.length)return {error:{message:'승인할 초안이 없습니다'}};if(d.some(r=>!String(r.source||'').trim()))return {error:{message:'출처가 없는 항목이 있습니다'}};d.forEach(r=>{r.status='active';r.approved_by='송보람'});D.events.unshift({kind:p.kind,action:'approve',row_count:d.length,skipped_count:0,actor_name:'송보람',created_at:new Date().toISOString()});return {data:{ok:true,kind:p.kind,approved:d.length,effective_from:d.map(r=>r.effective_from||r.price_date).sort()[0]}};}
     if(n==='crm_cost_standard_discard_v1'){const k=D[p.kind].filter(r=>r.status==='draft').length;D[p.kind]=D[p.kind].filter(r=>r.status!=='draft');return {data:{ok:true,kind:p.kind,discarded:k}};}
@@ -34,8 +34,8 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await page.waitForSelector('#cost-admin .ca-card');
   const T=()=>page.locator('#cost-admin').innerText().then(one);
   /* ① 카드 3개 · 아직 승인된 기준 없음 */
-  assert.equal(await page.locator('#cost-admin .ca-card').count(),3);assert.equal((await T()).match(/승인된 기준 없음/g).length,3);
-  assert.equal(await page.locator('#cost-admin input[type=file]').count(),3);
+  assert.equal(await page.locator('#cost-admin .ca-card').count(),4);assert.equal((await T()).match(/승인된 기준 없음/g).length,4);
+  assert.equal(await page.locator('#cost-admin input[type=file]').count(),4);
   /* ② 엉뚱한 파일 */
   const matX=makeXlsx({'단가표(개인)':fx('material-prices-cells-20260812.json').cells});
   await page.setInputFiles('#cost-admin input[data-k="cost"]',{name:'통합관리표.xlsx',mimeType:'application/octet-stream',buffer:matX});
@@ -89,6 +89,13 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* ⑩ 다시 올린 노임: 같은 시행일 줄은 건너뜀 */
   await page.evaluate(pages=>{const parsed=QuoteStandards.parseWageRows(pages),source='x';CostAdmin.preview('labor',{kind:'labor',file:'again.pdf',source,parsed,rows:QuoteStandards.wageToRows(parsed,source),notes:[],dates:parsed.dates});},fx('wage-2026h2-items.json'));
   await page.click('[data-ca="stage"]');await page.waitForFunction(()=>/건너뛰었습니다/.test(document.getElementById('cost-admin').innerText));
+  /* ⑩-2 공법 기준(통합관리표의 공법별 일위대가) */
+  const methX=makeXlsx(fx('method-sheets-20260825.json'));
+  await page.setInputFiles('#cost-admin input[data-k="method"]',{name:'통합관리표.xlsx',mimeType:'application/octet-stream',buffer:methX});await page.waitForSelector('#ca-view');
+  t=await T();assert.match(t,/공법 기준 · 올린 파일 미리보기/);assert.match(t,/공법 9개/);assert.match(t,/새 공법 9/);assert.match(t,/싱글 7종 · POUR 코트재Ⅰ, POUR 코트재Ⅱ, POUR 상도코트재 … 특수방수공 0\.11인 · 보통인부 0\.08인 잡재료비 2%/);assert.equal(await page.inputValue('#ca-view input[data-ca="eff"]'),'2026-08-12');
+  await page.evaluate(()=>{window.__rpc.length=0});await page.click('[data-ca="stage"]');await page.waitForFunction(()=>/승인 전 확인/.test(document.getElementById('cost-admin').innerText));
+  const ms=await page.evaluate(()=>__rpc.find(x=>x[0]==='crm_cost_standard_stage_v1')[1]);assert.equal(ms.kind,'method');assert.equal(ms.rows.length,9);assert.deepEqual(Object.keys(ms.rows[0]).sort(),['composition','effective_from','method','source']);assert.equal(ms.rows[0].composition.materials[0].ref.item,'POUR 코트재Ⅰ(회색)');
+  await page.click('[data-ca="approve"]');await page.waitForFunction(()=>/공법 기준 9줄을 승인/.test(document.getElementById('cost-admin').innerText));
   /* ⑪ 관리자가 아니면 올리기 단추가 없다 */
   await page.evaluate(()=>{__can=false;CostAdmin.reload();});await page.waitForSelector('#cost-admin .ca-card');await page.waitForTimeout(200);
   assert.equal(await page.locator('#cost-admin input[type=file]').count(),0);

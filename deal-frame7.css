@@ -136,6 +136,7 @@
 #detailView.ddv.dv3.dvt.dv7r .dv7-pbody>.da-stage-summary{flex-direction:column;border:0;box-shadow:none;background:none;padding:0;border-radius:0}
 
 #detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="near"] .dv7-pbody>.dv3-near{display:block!important}
+#detailView.ddv.dv3.dvt.dv7r .dv7-drawer[data-p="quote"] .dv7-pbody>.dv7-fill{display:block!important}
 #detailView.ddv.dv3.dvt.dv7r .dv7-pbody>.dv3-slot:empty{display:none!important}
 #detailView.ddv.dv3.dvt.dv7r .dv7-pbody>.dvu,#detailView.ddv.dv3.dvt.dv7r .dv7-pbody>.dp6{margin-top:0}
 /* 담당 = 머리 한 곳: 왼쪽 담당 정보 카드는 [···] '담당 · 실적 귀속'에서 펼칠 때만 */

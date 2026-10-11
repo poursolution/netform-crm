@@ -8,7 +8,8 @@ function makeZip(files){const parts=[],cd=[];let off=0;for(const [name,text] of 
  const cdb=Buffer.concat(cd),e=Buffer.alloc(22);e.writeUInt32LE(0x06054b50,0);e.writeUInt16LE(cd.length/2,8);e.writeUInt16LE(cd.length/2,10);e.writeUInt32LE(cdb.length,12);e.writeUInt32LE(off,16);return Buffer.concat([...parts,cdb,e]);}
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 function sheetXml(cells){const byRow={};for(const [ref,v] of Object.entries(cells)){const r=ref.match(/\d+/)[0];(byRow[r]=byRow[r]||[]).push([ref,v]);}
- return '<worksheet><sheetData>'+Object.entries(byRow).map(([r,cs])=>'<row r="'+r+'">'+cs.map(([ref,v])=>typeof v==='number'?'<c r="'+ref+'"><v>'+v+'</v></c>':'<c r="'+ref+'" t="inlineStr"><is><t>'+esc(v)+'</t></is></c>').join('')+'</row>').join('')+'</sheetData></worksheet>';}
+ const cell=(ref,v)=>{if(v&&typeof v==='object'){const f='<f>'+esc(v.f)+'</f>';return typeof v.v==='number'?'<c r="'+ref+'">'+f+'<v>'+v.v+'</v></c>':'<c r="'+ref+'" t="str">'+f+'<v>'+esc(v.v)+'</v></c>';}return typeof v==='number'?'<c r="'+ref+'"><v>'+v+'</v></c>':'<c r="'+ref+'" t="inlineStr"><is><t>'+esc(v)+'</t></is></c>';};
+ return '<worksheet><sheetData>'+Object.entries(byRow).map(([r,cs])=>'<row r="'+r+'">'+cs.map(([ref,v])=>cell(ref,v)).join('')+'</row>').join('')+'</sheetData></worksheet>';}
 function makeXlsx(sheets){const names=Object.keys(sheets),files={'xl/workbook.xml':'<workbook><sheets>'+names.map((n,i)=>'<sheet name="'+esc(n)+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>').join('')+'</sheets></workbook>','xl/_rels/workbook.xml.rels':'<Relationships>'+names.map((n,i)=>'<Relationship Id="rId'+(i+1)+'" Target="worksheets/sheet'+(i+1)+'.xml"/>').join('')+'</Relationships>'};
  names.forEach((n,i)=>files['xl/worksheets/sheet'+(i+1)+'.xml']=sheetXml(sheets[n]));return makeZip(files);}
 module.exports={makeXlsx,makeZip};

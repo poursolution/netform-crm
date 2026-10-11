@@ -108,10 +108,48 @@
   }
   return {kind:'material',price_date,source,items,notes};
  }
- /* ---------- 이전 값과 비교 (승인 전 확인) ---------- */
- const keyOf={labor:r=>r.trade,cost:r=>r.item+'|'+(r.tier||''),material:r=>r.item+'|'+(r.spec||'')};
- const valOf={labor:r=>r.daily_wage,cost:r=>r.rate,material:r=>r.unit_price};
- const labelOf={labor:r=>r.trade,cost:r=>r.item+(r.tier?' · '+r.tier:''),material:r=>r.item+(r.spec?' · '+r.spec:'')};
+ /* ---------- 공법 기준 (통합관리표의 공법별 일위대가 시트) ----------
+    1㎡(또는 단위)당 재료 · 노무 구성을 읽는다. 재료 단가는 값이 아니라 「단가표(개인)」의 어느 품목을 포장 수량으로 나눈 것인지(ref)로 저장 —
+    견적일에 맞는 자재 단가에서 다시 계산해야 하므로. 단가표를 거치지 않는 재료는 fixed(고정 단가). 잡재료비 · 공구손료는 경비(재료비 n% · 인건비 n%). */
+ const METHOD_SHEETS=['싱글','금속기와','슬라브','PVC','우레탄','에폭시(상도)','에폭시(PMQ)','단면복구(탄성)','표면강화'];
+ const METHOD_LABEL={'슬라브':'슬라브(듀얼)'};
+ const LABOR_ALIAS={'특수방수공':'특별인부'};/* 통합관리표의 226,122원 = 임금실태 조사표 특별인부 2026.1.1 */
+ const sv=(S,ref)=>{const c=S&&S[ref];return c==null?undefined:(typeof c==='object'?c.v:c);};
+ const sf=(S,ref)=>{const c=S&&S[ref];return c&&typeof c==='object'?c.f:'';};
+ function priceRef(sheets,sheetName,ref,depth){
+  if(depth>6)return null;const S=sheets[sheetName],f=norm(sf(S,ref));
+  if(!f){const v=sv(S,ref);return typeof v==='number'?{fixed:v}:null;}
+  let inner=f;const m0=inner.match(/^ROUNDUP\((.*),\s*0\)$/);if(m0)inner=m0[1];
+  const m=inner.match(/^'단가표\(개인\)'!([A-Z]+)(\d+)(?:\/([\d.]+))?$/);
+  if(m){const P=sheets['단가표(개인)'],nameCol=m[1]==='D'?'A':m[1]==='J'?'G':null,specCol=m[1]==='D'?'B':m[1]==='J'?'H':null;
+   if(!nameCol)return null;return {item:norm(sv(P,nameCol+m[2])),spec:norm(sv(P,specCol+m[2])),divisor:m[3]?Number(m[3]):1};}
+  const r=inner.match(/^'?([^'!]+)'?!([A-Z]+\d+)$/);if(r&&sheets[r[1]])return priceRef(sheets,r[1],r[2],depth+1);
+  return null;
+ }
+ function parseMethodSpecs(sheets){
+  const specs=[],notes=[],A1=norm(sv(sheets['단가표(개인)'],'A1')),dm=A1.match(/(\d{4})\.(\d{1,2})\.(\d{1,2})/),priceDate=dm?iso(dm[1],dm[2],dm[3]):'';
+  for(const name of METHOD_SHEETS){
+   const S=sheets[name];if(!S){notes.push(name+': 시트가 없어 건너뜀');continue;}
+   const mats=[],labor=[],misc=[];let sec='';
+   for(let r=7;r<=40;r++){
+    const b=norm(sv(S,'B'+r)).replace(/\s+/g,' ');if(!b)continue;
+    if(/^재 ?료 ?비$/.test(b)){sec='mat';continue;}if(/^노 ?무 ?비$/.test(b)){sec='lab';continue;}
+    if(/소 ?계|합 ?계|^\*/.test(b))continue;
+    const c=norm(sv(S,'C'+r)),mm=c.match(/(재료비|인건비)의\s*(\d+(?:\.\d+)?)%/);
+    if(mm){misc.push({name:b,of:mm[1]==='재료비'?'mat':'lab',pct:frac(mm[2])});continue;}
+    const qty=Number(sv(S,'F'+r)),unit=norm(sv(S,'D'+r));if(!(qty>0))continue;
+    if(sec==='mat'){const ref=priceRef(sheets,name,'E'+r,0);if(!ref){notes.push(name+' · '+b+': 단가를 찾지 못해 건너뜀');continue;}
+     mats.push(Object.assign({name:b,spec:c,unit,qty},ref.fixed!=null?{fixed:ref.fixed}:{ref}));}
+    else if(sec==='lab'){labor.push({name:b,trade:LABOR_ALIAS[b]||b,qty,sheet_wage:Number(sv(S,'E'+r))||null});}
+   }
+   if(!mats.length&&!labor.length){notes.push(name+': 구성을 읽지 못해 건너뜀');continue;}
+   specs.push({method:METHOD_LABEL[name]||name,sheet:name,composition:{materials:mats,labor,misc}});
+  }
+  return {kind:'method',effective_from:priceDate,source:A1||'통합관리표 공법별 일위대가',specs,notes};
+ } /* ---------- 이전 값과 비교 (승인 전 확인) ---------- */
+ const keyOf={labor:r=>r.trade,cost:r=>r.item+'|'+(r.tier||''),material:r=>r.item+'|'+(r.spec||''),method:r=>r.method};
+ const valOf={labor:r=>r.daily_wage,cost:r=>r.rate,material:r=>r.unit_price,method:r=>JSON.stringify(r.composition||null)};
+ const labelOf={labor:r=>r.trade,cost:r=>r.item+(r.tier?' · '+r.tier:''),material:r=>r.item+(r.spec?' · '+r.spec:''),method:r=>r.method};
  /* 같은 항목의 '지금 쓰는 값' = 시행일이 새 기준 시행일 이전인 것 중 가장 늦은 것(초안 제외) */
  function latestBefore(kind,rows,key,date){
   const dk=kind==='material'?'price_date':'effective_from';
@@ -121,8 +159,9 @@
   const dk=kind==='material'?'price_date':'effective_from';
   return staged.map(n=>{
    const key=keyOf[kind](n),prev=latestBefore(kind,current,key,n[dk]),pv=prev?valOf[kind](prev):null,nv=valOf[kind](n);
-   const change=pv==null?'new':nv==null?'blank':Number(pv)===Number(nv)?'same':Number(nv)>Number(pv)?'up':'down';
-   return {key,label:labelOf[kind](n),prev:pv,next:nv,change,pct:pv>0&&nv!=null?Math.round((nv/pv-1)*10000)/100:null,row:n};
+   const isM=kind==='method';
+   const change=pv==null?'new':nv==null?'blank':isM?(pv===nv?'same':'up'):Number(pv)===Number(nv)?'same':Number(nv)>Number(pv)?'up':'down';
+   return {key,label:labelOf[kind](n),prev:pv,next:nv,change,pct:!isM&&pv>0&&nv!=null?Math.round((nv/pv-1)*10000)/100:null,row:n};
   });
  }
  /* ---------- 승인 점검 ---------- */
@@ -131,7 +170,7 @@
   if(!rows||!rows.length)p.push('승인할 항목이 없습니다');
   if(!/^\d{4}-\d{2}-\d{2}$/.test(String(effective||'')))p.push('시행일을 정해 주세요');
   const noSrc=(rows||[]).filter(r=>!norm(r.source));if(noSrc.length)p.push('출처가 없는 항목 '+noSrc.length+'개 — 출처 없이는 승인할 수 없습니다');
-  const pending=(rows||[]).filter(r=>(kind==='cost'&&(r.rate==null||!(r.rate>=0)))||(kind==='labor'&&!(r.daily_wage>0))||(kind==='material'&&!(r.unit_price>0)));
+  const pending=(rows||[]).filter(r=>(kind==='cost'&&(r.rate==null||!(r.rate>=0)))||(kind==='labor'&&!(r.daily_wage>0))||(kind==='material'&&!(r.unit_price>0))||(kind==='method'&&!(r.composition&&Array.isArray(r.composition.materials))));
   if(pending.length)p.push('값이 비어 있는 항목 '+pending.length+'개: '+pending.slice(0,5).map(r=>labelOf[kind](r)).join(', ')+(pending.length>5?' …':''));
   return p;
  }
@@ -151,5 +190,5 @@
   return {rates,missing,basis};
  }
  function wageOn(laborRows,trade,date){const r=pickByDate('labor',laborRows,trade,date);return r?Number(r.daily_wage):null;}
- return {SIZES,DEFAULT_TIER,CALC_ITEMS,frac,parseCostRates,parseWageRows,wageToRows,parseMaterialPrices,diff,latestBefore,approvalProblems,toCalcRates,wageOn,keyOf,labelOf};
+ return {SIZES,DEFAULT_TIER,CALC_ITEMS,frac,parseCostRates,parseWageRows,wageToRows,parseMaterialPrices,parseMethodSpecs,METHOD_SHEETS,diff,latestBefore,approvalProblems,toCalcRates,wageOn,keyOf,labelOf};
 });
