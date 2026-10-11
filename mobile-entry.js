@@ -30,7 +30,8 @@
  const MR=()=>root.MobileRequests&&root.MobileRequests.enabled()?root.MobileRequests:null;
  const reqsOf=d=>{if(String(d.id)===String(activeID)&&progress.requestSnapshot)return progress.requestSnapshot;const R=MR();return R?R.forDeal(d.id):[];};
  const withInfo=()=>{const d=dealById(root.G&&root.G.deal),R=MR();return Object.assign({ch:'전화'},S,{info:S&&S.cplan?{construction_plan:S.cplan}:null,requests:d&&R&&S?reqsOf(d).map(r=>({id:r.id,title:R.labelOf(r),on:!!(S.reqOn&&S.reqOn[r.id])&&R.isContact(r)})):[]});};
- const planOf=d=>CE.plan(withInfo(),ctxOf(d));
+ const signatureOf=input=>JSON.stringify(['ch','res','memo','mode','purpose','date','reason','plan','who','info','requests'].map(k=>input[k]));
+ const planOf=d=>{const input=withInfo();if(progress.signature){if(progress.signature!==signatureOf(input))return {ok:false,error:'저장 확인 중 입력값이 바뀌었습니다. 원래 입력으로 재시도해 주세요.'};if(progress.pl&&progress.ctx)return progress.pl;}return CE.plan(input,ctxOf(d));};
  function fresh(d){
   const ex=existingOf(d),dflt=CE.defaults('연결됨',ex,kst());
   return {res:'',memo:'',mode:dflt.mode,purpose:dflt.purpose,date:dflt.date,reason:'',plan:'internal',info:false,touchedNext:false,reqOn:{}};
@@ -42,7 +43,7 @@
   if(CE.isBadfit(res))S.mode='none';
  }
  function sheetHtml(d){
-  const ex=existingOf(d),pl=S.res?planOf(d):null,c=root.contactInfoM?root.contactInfoM(d):{};
+  const ex=progress.signature&&progress.ctx?progress.ctx.existing:existingOf(d),pl=S.res?planOf(d):null,c=root.contactInfoM?root.contactInfoM(d):{};
   if(root.MobileContactView&&S.ch!=='방문')return root.MobileContactView.render({s:S,d,ex,plan:pl,ce:CE,contact:c,requests:reqsOf(d),requestApi:MR(),busy,frozen:!!progress.signature,fields:MF(),currentPlan:curPlan(d),dateOptions:dateOptions(),today:kst()});
   const chip=(act,v,on,label,cls)=>'<button type="button" class="ce-chip'+(cls?' '+cls:'')+(act==='res'&&S.ai&&S.ai.res===v?' ai':'')+'" data-ce="'+act+'" data-v="'+attr(v)+'" aria-pressed="'+!!on+'">'+h(label||v)+'</button>';
   const res='<section><b class="ce-q"><i>1</i>연락 결과 <small>PC 기준 값</small></b><div class="ce-chips">'+CE.VALUES.map(v=>chip('res',v,S.res===v)).join('')+'</div>'+(S.ch==='방문'?'<small class="ce-sub">방문 결과 — 연결됨 = 만났음 · 부재 = 담당자 없음 (일정이 취소 · 연기됐으면 [일정 바꾸기])</small>':'')+'</section>';
@@ -211,7 +212,7 @@
  async function save(d,card){
   if(busy)return;
   const ta=card.querySelector('textarea[data-ce-in="memo"]');if(ta)S.memo=ta.value;
-  const input=withInfo(),signature=JSON.stringify(['ch','res','memo','mode','purpose','date','reason','plan','who','info','requests'].map(k=>input[k]));
+  const input=withInfo(),signature=signatureOf(input);
   if(progress.signature&&progress.signature!==signature){S.err='저장 확인 중 입력값이 바뀌었습니다. 원래 입력으로 재시도해 주세요.';paint(d);return;}
   const ctx=progress.ctx||ctxOf(d),pl=progress.pl||CE.plan(input,ctx);
   if(!pl.ok){S.err=pl.error;paint(d);return;}
