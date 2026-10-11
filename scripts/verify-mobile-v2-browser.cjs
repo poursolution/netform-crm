@@ -2,7 +2,8 @@
 /* The original v2 visual contract has been replaced by the approved Claude A/B/C/D
  * source frames. Check those source declarations, responsive geometry, actual input
  * handoff and fail-closed legacy switches. This is not a test of an invented v2 skin.
- * Route/map, password entry, admin/report/ICS entry gaps remain separately tracked;
+ * Route/map behavior is covered by verify-mobile-route-browser.cjs; password,
+ * admin/report/ICS entry gaps remain separately tracked;
  * their retired controls are not restored to make this visual smoke pass.
  */
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
@@ -42,7 +43,26 @@ const shot=process.argv[2]||'';
     const b=document.createElement('div');b.innerHTML=html;const source=b.firstElementChild,actual=document.querySelector('.approved-'+screen.toLowerCase());
     const differences=[],pairs=[];
     const tree=(a,b,name)=>{const aa=[a,...a.querySelectorAll('*')],bb=[b,...b.querySelectorAll('*')];if(aa.length!==bb.length){differences.push(name+': node count '+aa.length+'/'+bb.length);return;}aa.forEach((n,i)=>pairs.push([name+':'+i,n,bb[i]]));};
-    if(mode==='listing'){
+    if(screen==='A'){
+     // A now hosts the separately supplied Claude list/map toggle. Compare every
+     // original A node and every added source node, rather than ignoring additions.
+     const copy=actual.cloneNode(true),tabs=copy.querySelectorAll('.approved-route-tabs');
+     if(tabs.length!==1)differences.push('A route toggle count '+tabs.length+'/1');
+     else{
+      const tab=tabs[0],body=copy.children[1];
+      if(body.children[1]!==tab)differences.push('A route toggle: expected slot after summary');
+      const reference=document.createElement('div');reference.innerHTML=window.MobileApprovedRouteSource;
+      const expected=reference.firstElementChild,button=expected.querySelector('button').cloneNode(true);expected.replaceChildren();
+      [['list','목록'],['route','오늘 동선']].forEach(([value,label],i)=>{
+       const node=button.cloneNode(true),on=i===0;node.textContent=label;
+       node.style.background=on?'#fff':'transparent';node.style.color=on?'#15171c':'#8b919c';node.style.boxShadow=on?'0 1px 2px rgba(0,0,0,0.1)':'none';expected.append(node);
+       const actualButton=tab.children[i];
+       if(!actualButton||actualButton.textContent!==label||actualButton.dataset.mr!=='view'||actualButton.dataset.v!==value||actualButton.getAttribute('aria-selected')!==String(on))differences.push('A route toggle: source label/action/selection '+value);
+      });
+      tree(tab,expected,'A approved route toggle');tab.remove();
+     }
+     tree(copy,source,'A source frame');
+    }else if(mode==='listing'){
      pairs.push(['frame',actual,source]);[...actual.children].forEach((node,i)=>pairs.push(['region '+i,node,source.children[i]]));
      [...actual.children[3].children].forEach((node,i)=>tree(node,source.children[3].children[i],'row '+i));
     }else if(mode==='contact'){
@@ -54,12 +74,12 @@ const shot=process.argv[2]||'';
     for(const [label,a,b]of pairs){if(!a||!b){differences.push(label+': missing source/bound node');continue;}for(const key of new Set([...a.style,...b.style]))if(a.style.getPropertyValue(key)!==b.style.getPropertyValue(key))differences.push(label+': '+key+' '+a.style.getPropertyValue(key)+' / '+b.style.getPropertyValue(key));}
     return {count:pairs.length,differences};
    },{html:references[screen],screen,mode});
-   assert(result.count>10,'Meaningful source nodes compared');assert.deepEqual(result.differences,[],screen+' approved inline declarations');return result.count;
+   assert.deepEqual(result.differences,[],screen+' approved inline declarations');assert(result.count>10,'Meaningful source nodes compared');return result.count;
   }
   await open('A');const aCount=await compare('A');await safe();
   assert.deepEqual(await page.locator('.approved-a [data-gs="tab"]').allTextContents(),['오늘','내 현장','기록 · 등록','일정']);
   assert.equal(await page.locator('.approved-a [data-gs="task"]').count(),3);
-  checks.push('A: '+aCount+' original nodes retain all supplied inline declarations, including title, cards, brand borders and four-tab grid');
+  checks.push('A: '+aCount+' source nodes retain all supplied inline declarations, including the exact original A frame and separately approved list/map toggle');
   await open('B');const bCount=await compare('B','listing');
   assert.equal(await page.locator('.approved-row').count(),6);
   await page.locator('.approved-row').first().click();await page.locator('.approved-c').waitFor();
@@ -115,6 +135,6 @@ const shot=process.argv[2]||'';
   checks.push('Former v2/hub/contact switches never restore old layout or the retired three-value result sheet');
   assert.deepEqual(errors,[]);assert.deepEqual(writes,[]);
   const font='https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css';assert.deepEqual(external.filter(url=>url!==font),[]);
-  console.log(JSON.stringify({test:'verify-mobile-v2',status:'PASS',passed:checks.length,checks,boundary:'Approved source visual/input smoke only; no production I/O. Missing route/password/admin/ICS entries are not restored or claimed verified.'},null,2));
+  console.log(JSON.stringify({test:'verify-mobile-v2',status:'PASS',passed:checks.length,checks,boundary:'Approved source visual/input smoke only; no production I/O. Route engine behavior is tested separately; missing password/admin/ICS entries are not restored or claimed verified.'},null,2));
  }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(error=>{console.error(error);process.exitCode=1;});

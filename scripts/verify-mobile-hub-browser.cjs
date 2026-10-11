@@ -130,11 +130,19 @@ const one=value=>String(value||'').replace(/\s+/g,' ').trim();
   assert.match(one(await page.locator('.approved-f [data-task-id][data-id="'+data.call+'"]').innerText()),/^미확인/,'Day-only deadline is not a fabricated appointment time');
   const week=await page.evaluate(()=>MobileScheduleModel.read().days);
   assert.deepEqual(await page.locator('[data-gs="schedule-day"]').evaluateAll(nodes=>nodes.map(node=>node.dataset.date)),week.map(day=>day.date));
-  await visit.click();await page.locator('.approved-c').waitFor();assert.equal(await page.evaluate(()=>G.deal),data.visit);
-  await page.locator('[data-gs="pending-task"]').click();
-  assert.equal(await page.locator('.approved-c').count(),1,'Unconnected visit action stays on approved detail');
-  assert.equal(await page.locator('#sheetwrap.open').count(),0,'Never open the retired visit form');
-  assert.match(await page.evaluate(()=>__hubToasts.at(-1)),/원본 연결 작업 중/);
+  const originalVisit=await page.evaluate(id=>structuredClone(DEALS.find(d=>d.id===id).nextAction),data.visit);
+  const visitDraft=()=>page.evaluate(()=>({deal:G.deal,ch:MobileEntry.state()?.ch,existing:MobileEntry.state()?.existing,mode:MobileEntry.state()?.mode,rows:__review.rows.length,replies:__review.replies.length}));
+  await visit.click();await page.locator('.approved-d').waitFor();assert.equal(await page.evaluate(()=>G.deal),data.visit);
+  assert.match(await page.locator('.approved-d .cd-head').innerText(),/방문 결과/);
+  assert.deepEqual(await visitDraft(),{deal:data.visit,ch:'방문',existing:{id:originalVisit.id,text:originalVisit.text,due:originalVisit.due,type:'방문',promise:false},mode:'keep',rows:0,replies:0});
+  assert.equal(await page.evaluate(()=>document.getElementById('scr').inert),true,'Visit D protects its underlying detail while open');
+  assert.equal(await page.locator('#sheetcard .sheet-grip,#sheetcard .intro,#sheetcard .ce-infobody,#sheetcard [data-mf]').count(),0,'Visit uses approved D, never the retired visit form');
+  await page.locator('.approved-d [data-ce="close"]').click();await page.locator('.approved-c').waitFor();
+  assert.equal(await page.evaluate(()=>document.getElementById('scr').inert),false);
+  await page.locator('.approved-c [data-gs="pending-task"]').click();await page.locator('.approved-d').waitFor();
+  assert.deepEqual(await visitDraft(),{deal:data.visit,ch:'방문',existing:{id:originalVisit.id,text:originalVisit.text,due:originalVisit.due,type:'방문',promise:false},mode:'keep',rows:0,replies:0},'C re-entry retains the exact visit and creates no operation');
+  assert.deepEqual(await page.evaluate(id=>DEALS.find(d=>d.id===id).nextAction,data.visit),originalVisit,'Opening or leaving a visit result cannot complete or replace its task');
+  await page.locator('.approved-d [data-ce="close"]').click();await page.locator('.approved-c').waitFor();
   await page.locator('.approved-c [data-gs="back"]').click();await page.locator('.approved-f').waitFor();
   // Choose a visible non-today calendar day even when tomorrow belongs to next week.
   const otherDay=week.find(day=>day.date!==data.todayDate).date;
@@ -144,7 +152,7 @@ const one=value=>String(value||'').replace(/\s+/g,' ').trim();
   assert.deepEqual(await ids('.approved-f [data-task-id]'),expected);
   if(!expected.length)assert.match(await page.locator('.approved-f').innerText(),/선택한 날짜의 등록 일정 없음/);
   await page.locator('.approved-f [data-gs="tab"]').click();await page.locator('.approved-a').waitFor();
-  await safe();assert.equal(await snapshot(),initial);checks.push('F: scoped dated tasks, unknown time retained, calendar day changes, visit → approved C → schedule, no invented legacy action');
+  await safe();assert.equal(await snapshot(),initial);checks.push('F: scoped dated tasks, unknown time retained, visit → approved D with exact task → C re-entry → schedule; original task preserved without writes or legacy forms');
 
   // 5. Contact save is a real approved D interaction, with ACK withheld and a retryable failure.
   await page.locator('.approved-a [data-gs="task"][data-id="'+data.call+'"]').click();await page.locator('.approved-c').waitFor();
