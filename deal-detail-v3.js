@@ -593,7 +593,7 @@
   const tab=FT.includes(S.ftab)?S.ftab:'전체',list=rows.filter(x=>tab==='전체'||x.k===tab);
   return '<div class="dv3-files"><div class="dv3-pills">'+FT.map(l=>'<button type="button" data-dv3="ftab" data-v="'+l+'" aria-pressed="'+(tab===l)+'">'+l+'</button>').join('')+'</div>'
    +(list.length?list.map(x=>'<div class="dv3-frow"><em>'+x.k+'</em><span title="'+attr(x.t)+'">'+h(x.t)+'</span></div>').join(''):'<span class="dv3-none">아직 등록된 자료가 없습니다</span>')
-   +(closed?'':'<div class="dv3-fadd"><button type="button" data-dv3="fadd" data-v="photo">+ 사진</button><button type="button" data-dv3="fadd" data-v="quote">+ 견적 버전</button><button type="button" data-dv3="fadd" data-v="file">+ 자료</button></div>')+'</div>';
+   +(closed?'':'<div class="dv3-fadd"><button type="button" data-dv3="fadd" data-v="photo">+ 사진</button><button type="button" data-dv3="fadd" data-v="quote">+ 견적 버전</button>'+(root.quoteSubmitReady&&root.quoteSubmitReady()&&quotes.length&&!root.quoteSubmitDone(quotes[quotes.length-1])?'<button type="button" data-dv3="fadd" data-v="submit">제출금액 만들기</button>':'')+'<button type="button" data-dv3="fadd" data-v="file">+ 자료</button></div>')+'</div>';
  }
  /* ── 왼쪽 ── */
  /* 현장 정보 한 줄(칸 안에서 바로 입력) — 오른쪽 상자 맨 위의 공종 · 예상 금액과, 왼쪽 '현장 정보'(G.dealSiteInfoLeft 로 되살릴 때)가 같이 쓴다 */
@@ -1104,7 +1104,7 @@
   }
   if(a==='files'){if(closeIn('files'))return;const S=st(d);S.files=!S.files;if(S.files)apply();else root.renderDetail?.();return;}
   if(a==='ftab'){st(d).ftab=b.dataset.v;apply();return;}
-  if(a==='fadd'){try{if(b.dataset.v==='quote')root.openExecQuoteForm();else root.openExecAttachPicker(b.dataset.v);}catch(err){}return;}
+  if(a==='fadd'){try{if(b.dataset.v==='quote')root.openExecQuoteForm();else if(b.dataset.v==='submit')root.openQuoteSubmitForm();else root.openExecAttachPicker(b.dataset.v);}catch(err){}return;}
   if(a==='cons'){const C=contacts(d);if(b.dataset.k==='key'){const p=patchOf(d);p.keyPerson=p.keyPerson||{};p.keyPerson[C.key]=!p.keyPerson[C.key];root.saveLocal?.();apply();return;}saveConsent(d,C,b.dataset.k);return;}
   /* 연락하고 결과 남기기 */
   if(a==='rec'){const S=st(d);if(S.rec&&S.rec.busy)return;if(tidy()){startCall(d,!S.calling);return;}S.rec=S.rec?null:{ch:'전화',res:'',memo:'',prog:{}};apply();return;}

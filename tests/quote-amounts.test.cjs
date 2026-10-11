@@ -38,3 +38,16 @@ test('확정 · 보낸 견적은 자동 재계산 금지 · 0원 · 수량 0 최
  assert.deepEqual(Q.finalCheck({base_amount:1e8,markup_type:'multiplier',work_items:[{qty:100}]}),['가산을 정했으면 고객 제출금액을 확정해 주세요']);
  assert.deepEqual(Q.finalCheck({base_amount:1e8,submit_amount:1.5e8,markup_type:'multiplier',work_items:[{qty:100}]}),[]);
 });
+
+test('가산 여러 방식 동시 적용 — 배수 → ㎡당 → 정액 → 10만원 아래 절삭',()=>{
+ const m=Q.markupMulti(170000000,[{type:'area',value:17000,area:1000},{type:'multiplier',value:1.52}]);
+ assert.deepEqual([m.steps.map(s=>s.type),m.raw,m.submit,m.added,m.pct,m.error],[['multiplier','area'],275400000,275400000,105400000,62,'']);/* 1.7억×1.52=2.584억 + 1.7천만 = 2.754억 */
+ assert.equal(Q.markupMulti(170000000,[{type:'flat',value:1234567},{type:'multiplier',value:1.1}]).submit,188200000,'1.7억×1.1=1.87억 + 1,234,567 = 188,234,567 → 188,200,000');
+ assert.equal(Q.markupMulti(170000000,[{type:'area',value:17000,area:1000}]).submit,Q.markup(170000000,{type:'area',value:17000,area:1000}).submit,'한 가지만 쓰면 기존 계산과 같다');
+ assert.equal(Q.markupMulti(170000000,[]).submit,170000000);assert.equal(Q.markupMulti(170000000,[{type:'none'}]).submit,170000000);
+});
+test('가산 여러 방식 — 같은 방식 두 번 · 빠진 값 · 알 수 없는 방식은 이유를 돌려준다',()=>{
+ assert.match(Q.markupMulti(1e8,[{type:'flat',value:1},{type:'flat',value:2}]).error,/한 번만/);
+ assert.match(Q.markupMulti(1e8,[{type:'multiplier'}]).error,/배수/);assert.match(Q.markupMulti(1e8,[{type:'area',value:100}]).error,/적용 면적/);
+ assert.match(Q.markupMulti(1e8,[{type:'x',value:1}]).error,/알 수 없는/);assert.match(Q.markupMulti(0,[]).error,/기준금액/);
+});
