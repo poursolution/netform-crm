@@ -2,7 +2,7 @@
 /* 상담 결과 · 한 번만 쓰기(2026-10-10 mobile_all 2번) — PC · 모바일이 같이 쓰는 입력 규칙 */
 const test=require('node:test'),assert=require('node:assert/strict'),CE=require('../contact-entry.js');
 const T='2026-10-10';
-const ex=(due,extra)=>Object.assign({id:'a1',text:'대표회의 결과 확인',due,type:'전화'},extra||{});
+const ex=(due,extra)=>Object.assign({id:'99999999-9999-4999-8999-999999999999',text:'대표회의 결과 확인',due,type:'전화'},extra||{});
 
 test('연락 결과는 PC 값 다섯 가지뿐이다',()=>{
  assert.deepEqual(CE.VALUES,['연결됨','회신 받음','부재','번호 오류','배드핏']);
@@ -34,7 +34,7 @@ test('기록 첫머리가 유효 접촉 분류와 맞는다(부재 · 시도 = �
 });
 test('다음 업무: 이미 앞으로 잡힌 일정이 있으면 기본은 그대로 둠, 아니면 결과에 맞는 새 업무',()=>{
  assert.deepEqual(CE.defaults('연결됨',ex('2026-10-13'),T),{mode:'keep',purpose:'',date:''});
- assert.deepEqual(CE.defaults('연결됨',ex('2026-10-10'),T),{mode:'new',purpose:'다시 연락',date:'2026-10-13'},'오늘 일정을 처리한 것 → 새 업무');
+ assert.deepEqual(CE.defaults('연결됨',ex('2026-10-10'),T),{mode:'keep',purpose:'',date:''},'오늘 기한도 응대 저장만으로 완료되지 않음');
  assert.deepEqual(CE.defaults('부재',null,T),{mode:'new',purpose:'다시 전화',date:'2026-10-11'});
  assert.deepEqual(CE.defaults('번호 오류',null,T),{mode:'new',purpose:'연락처 확인',date:'2026-10-11'});
  assert.equal(CE.defaults('배드핏',ex('2026-10-13'),T).mode,'none');
@@ -44,14 +44,14 @@ test('기존 일정 유지 · 변경 · 완료는 서로 다른 처리다(몰래
  assert.equal(keep.completeCurrent,false);assert.equal(keep.next,null);assert.equal(keep.change,null);
  assert.equal(keep.preview,'응대 기록 1건 저장 (실제 연결) · 기존 일정 유지 · 새 일정 없음');
  const chg=CE.plan({res:'연결됨',ch:'전화',memo:'날짜 미뤄 달라고 함',mode:'change',date:'2026-10-20',reason:'고객 요청'},{today:T,existing:ex('2026-10-13')});
- assert.equal(chg.completeCurrent,false);assert.deepEqual(chg.change,{text:'대표회의 결과 확인',type:'전화',due:'2026-10-20',from:'2026-10-13',id:'a1'});
+ assert.equal(chg.completeCurrent,false);assert.deepEqual(chg.change,{text:'대표회의 결과 확인',type:'전화',due:'2026-10-20',from:'2026-10-13',id:'99999999-9999-4999-8999-999999999999',reason:'고객 요청'});
  assert.match(chg.preview,/기존 일정 "대표회의 결과 확인" 날짜만 변경 · 10\.20 \(화\) · 미룬 사유 기록$/);
  const nw=CE.plan({res:'연결됨',ch:'전화',memo:'결과 들음',mode:'new',purpose:'견적서 발송',date:'2026-10-16'},{today:T,existing:ex('2026-10-10')});
- assert.equal(nw.completeCurrent,true,'수행한 업무는 완료 + 후속 업무 생성');
- assert.equal(nw.preview,'응대 기록 1건 저장 (실제 연결) · 기존 일정 "대표회의 결과 확인" 완료 · 견적서 발송 일정 1건 등록 · 10.16 (금)');
+ assert.equal(nw.ok,false,'기존 업무 취소 위험이 있는 추가 경로는 막음');assert.equal(nw.completeCurrent,false);
+ assert.match(nw.error,/기존 업무를 보존/);
  assert.equal(CE.plan({res:'연결됨',ch:'전화',memo:'x',mode:'keep'},{today:T}).ok,false,'이어받을 일정이 없으면 유지는 고를 수 없다');
 });
-test('일정 변경이 기한을 늦추면 사유가 필수(원래 기한 · 새 기한 · 사유) — 당기는 것은 사유 없이',()=>{
+test('일정 변경이 기한을 늦추면 사유가 필수(원래 기한 · 새 기한 · 사유) — 앞당기기는 서버 지원 전 차단',()=>{
  const e=ex('2026-10-13');
  const late=CE.plan({res:'연결됨',ch:'전화',memo:'미뤄 달라고 함',mode:'change',date:'2026-10-20'},{today:T,existing:e});
  assert.equal(late.ok,false);assert.match(late.error,/미루는 사유/);
@@ -60,7 +60,7 @@ test('일정 변경이 기한을 늦추면 사유가 필수(원래 기한 · 새
  assert.match(ok.preview,/날짜만 변경 · 10\.20 \(화\) · 미룬 사유 기록$/);
  assert.match(CE.summary(ok,{existing:e})[1][1],/→ 10\.20 \(화\) · 사유 고객 요청/);
  const early=CE.plan({res:'연결됨',ch:'전화',memo:'앞당기자고 함',mode:'change',date:'2026-10-11'},{today:T,existing:e});
- assert.equal(early.ok,true);assert.equal(early.postpone,null,'앞당기는 것은 미루기가 아니다');
+ assert.equal(early.ok,false);assert.match(early.error,/앞당기기/);
  const over=CE.plan({res:'부재',ch:'전화',mode:'change',date:'2026-10-14',reason:'일정 겹침'},{today:T,existing:ex('2026-10-08')});
  assert.equal(over.postpone.over,2,'지난 기한은 며칠 지났는지 함께');
 });
@@ -74,7 +74,7 @@ test('고객 정보 변경(공사 시기)은 바뀐 것만 미리보기 · 저�
  assert.equal(CE.plan({res:'연결됨',ch:'전화',memo:'x',mode:'keep'},{today:T,existing:e}).info,null);
 });
 test('처리한 관리자 요청: 지정한 것만 · 연락 시도는 진행 중 · 다음 업무가 있어야 완료',()=>{
- const e=ex('2026-10-10'),rq=[{id:'r1',title:'후속 연락 요청',on:true},{id:'r2',title:'안 고른 요청',on:false}];
+ const e=null,rq=[{id:'r1',title:'후속 연락 요청',on:true},{id:'r2',title:'안 고른 요청',on:false}];
  const ok=CE.plan({res:'연결됨',ch:'전화',memo:'결과 들음',mode:'new',purpose:'견적서 발송',date:'2026-10-16',requests:rq},{today:T,existing:e});
  assert.deepEqual(ok.requests.map(r=>[r.id,r.state,r.next_text,r.next_due]),[['r1','done','견적서 발송','2026-10-16']],'고르지 않은 요청은 건드리지 않는다');
  assert.match(ok.preview,/ · 관리자 요청 "후속 연락 요청" 완료$/);
@@ -91,7 +91,7 @@ test('다음 일정 없음은 사유가 필수 · 배드핏은 종결 검토 + �
  const none=CE.plan({res:'연결됨',ch:'전화',memo:'올해는 어렵다고 함',mode:'none',reason:''},{today:T});
  assert.equal(none.ok,false);assert.match(none.error,/이유/);
  const ok=CE.plan({res:'연결됨',ch:'전화',memo:'올해는 어렵다고 함',mode:'none',reason:'2027 예산 · 3월 재확인'},{today:T,existing:ex('2026-10-10')});
- assert.equal(ok.ok,true);assert.equal(ok.completeCurrent,true);assert.match(ok.note,/ · 이유: 2027 예산 · 3월 재확인 — /);
+ assert.equal(ok.ok,true);assert.equal(ok.completeCurrent,false);assert.match(ok.note,/ · 이유: 2027 예산 · 3월 재확인 — /);
  const bad=CE.plan({res:'배드핏',ch:'전화',memo:'공사 계획 없음',reason:''},{today:T});
  assert.equal(bad.ok,false);assert.match(bad.error,/배드핏은 사유/);
  const b2=CE.plan({res:'배드핏',ch:'전화',memo:'공사 계획 없음',reason:'자체 보수 완료'},{today:T});
@@ -106,9 +106,9 @@ test('새 업무는 \'연락하기\'만으로 저장되지 않고 오늘 이전 
  assert.equal(c.next.text,'고객 약속: 회의 결과 확인');assert.equal(c.next.plan,'customer');
 });
 test('저장 뒤 구분: 저장된 기록 · 완료된 업무 · 바뀐 일정 · 새 일정 · 남은 업무',()=>{
- const e=ex('2026-10-10');
+ const e=null;
  const p=CE.plan({res:'연결됨',ch:'전화',memo:'결과 들음',mode:'new',purpose:'견적서 발송',date:'2026-10-16'},{today:T,existing:e});
- assert.deepEqual(CE.summary(p,{existing:e}),[['저장','응대 기록 1건 (실제 연결)'],['완료','기존 일정 "대표회의 결과 확인"'],['신규','견적서 발송 · 10.16 (금)']]);
+ assert.deepEqual(CE.summary(p,{existing:e}),[['저장','응대 기록 1건 (실제 연결)'],['신규','견적서 발송 · 10.16 (금)']]);
  const k=CE.plan({res:'부재',ch:'전화',mode:'keep'},{today:T,existing:ex('2026-10-13')});
  assert.deepEqual(CE.summary(k,{existing:ex('2026-10-13'),openRequests:[{title:'고객 요구 확인'}]}),[['저장','연락 시도 1건'],['남음','기존 일정 "대표회의 결과 확인" · 10.13 (화)'],['남음','관리자 요청 "고객 요구 확인" — 아직 진행 중']]);
 });
