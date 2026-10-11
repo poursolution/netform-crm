@@ -9,7 +9,7 @@ const root=path.resolve(__dirname,'..'),shot=process.argv[2]||'',dump=process.en
 const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':'text/html');fs.createReadStream(t).pipe(res)});
 (async()=>{
  await new Promise(r=>srv.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({headless:true});
+ const browser=await chromium.launch(require('../review-preview/review-environment.cjs').launchOptions());
  try{
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'||(shot&&u.hostname==='cdn.jsdelivr.net')?r.continue():r.abort()});
@@ -74,12 +74,16 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    assert.deepEqual(tp.slice(0,4),[['첫 인사','추천 · 지금 상황','true'],['부재 후','전화 연결 안 됨','false'],['자료 요청','도면 · 사진 요청','false'],['견적 발송 안내','견적서 보낸 뒤','false']]);
    const ta=S.locator('.ds2-text');assert.match(await ta.inputValue(),/^안녕하세요 .+님, 넷폼 .+입니다\./,'문구는 자동으로 채워 둔다');
    assert.match(await S.locator('.ds2-bytes').innerText(),/^\d+byte · (SMS|LMS)$/);assert.deepEqual(await S.locator('.ds2-vars button').allInnerTexts(),['+ 현장명','+ 담당자']);
-   assert.deepEqual(await S.locator('.ds2-when').evaluate(n=>[...n.children].map(c=>c.textContent)),['보낸 뒤','회신 확인 · 3일 후 (자동 등록)']);
+   assert.deepEqual(await S.locator('.ds2-when').evaluate(n=>[...n.children].map(c=>c.textContent)),['보낸 뒤','실제 발송 후 결과 확인 · 후속 업무 자동 등록 없음']);
    assert.equal(await S.locator('.ds2-phone .ds2-bubble').innerText(),await ta.inputValue(),'폰 미리보기 = 보낼 문구');assert.equal(await S.locator('.ds2-phone>span').innerText(),'고객 폰에 보이는 모습');
-   assert.deepEqual(await S.locator('.ds2-ft button').evaluateAll(l=>l.map(n=>[n.textContent,n.dataset.idv,n.disabled])),[['문구 복사','sms-copy',false],['문구 복사하고 기록','sms-send',false]],'보내기 · 기록은 기존 버튼 경로 그대로');
+   assert.deepEqual(await S.locator('.ds2-ft button').evaluateAll(l=>l.map(n=>[n.textContent,n.dataset.idv,n.disabled])),[['문구 복사','sms-copy',false],['문구 복사','sms-send',false]],'문구 복사는 발송 완료와 구분');
    assert.equal(await page.locator('#inq-inbox-dialog .idv3-thread').evaluate(n=>getComputedStyle(n).display),'none','문자를 쓰는 동안 가운데 칸 전체를 쓴다');
    /* 적는 동안: 미리보기 · 바이트만 바뀌고 포커스 유지, 비우면 버튼 잠김 */
    await ta.fill('테스트 문구');assert.equal(await S.locator('.ds2-bubble').innerText(),'테스트 문구');assert.equal(await S.locator('.ds2-bytes').innerText(),'11byte · SMS');assert.equal(await page.evaluate(()=>document.activeElement&&document.activeElement.matches('[data-idv="smstext"]')),true);
+   const writesBeforeCopy=await page.evaluate(()=>__writes.length);
+   await S.locator('[data-idv="sms-copy"]').click();await S.locator('[data-idv="sms-send"]').click();
+   assert.equal(await ta.inputValue(),'테스트 문구','복사 후에도 입력 문구 유지');
+   assert.equal(await page.evaluate(()=>__writes.length),writesBeforeCopy,'복사만으로 연락 기록·다음 업무 저장 없음');
    await ta.fill('');assert.deepEqual(await S.locator('.ds2-ft button').evaluateAll(l=>l.map(n=>n.disabled)),[true,true]);
    await S.locator('.ds2-vars button',{hasText:'현장명'}).click();await page.waitForTimeout(150);assert.equal(await page.locator('#inq-inbox-dialog [data-idv="smstext"]').inputValue(),'천안두정E편한세상2차','넣기 칩 = 실제 현장명');
    await page.locator('#inq-inbox-dialog .ds2-tpls button',{hasText:'자료 요청'}).click();await page.waitForTimeout(150);assert.match(await page.locator('#inq-inbox-dialog [data-idv="smstext"]').inputValue(),/도면이나 현장 사진/);

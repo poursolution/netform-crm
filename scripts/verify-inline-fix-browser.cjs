@@ -9,7 +9,7 @@ const root=path.resolve(__dirname,'..'),shot=process.argv[2]||'';
 const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':'text/html');fs.createReadStream(t).pipe(res)});
 (async()=>{
  await new Promise(r=>srv.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({headless:true});
+ const browser=await chromium.launch(require('../review-preview/review-environment.cjs').launchOptions());
  try{
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});
@@ -36,8 +36,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    window.__open=null;window.__act=null;drwDeal=s=>{window.__open=JSON.parse(s).id;};window.DetailActions=Object.assign(window.DetailActions||{},{open:k=>{window.__act=k;}});
    window.CRMRelease=Object.assign(window.CRMRelease||{},{has:()=>true,noteMissing(){}});
    window.__sf=[];window.__sfFail=0;SB={rpc:async(name,args)=>{if(name!=='crm_deal_stage_fields_update_v1')return {data:{ok:true,tasks:[]}};if(window.__sfFail>0){window.__sfFail--;return {data:null,error:{message:'서버 연결 실패'}};}__sf.push(JSON.parse(JSON.stringify(args.p)));const d=B.deals.find(x=>x.id===args.p.deal_id);if(d.stage_code!==args.p.stage_code)return {data:null,error:{message:'단계가 바뀌었습니다',code:'PT409'}};const prev=(d.stage_contexts||{})[args.p.stage_code]||{},fields=Object.assign({},prev.fields||{});Object.entries(args.p.fields).forEach(([k,v])=>{if(v==null)delete fields[k];else fields[k]=v;});return {data:{ok:true,version:(d.version||1)+1,stage_context:{to:args.p.stage_code,fields,edited_at:new Date().toISOString(),edited_by:'송보람'}},error:null};}};TOKEN='test';
-   window.__ops=[];window.__opFail=0;window.queueDetailContactOperation=(op,payload,actionId)=>{const id='op-'+(__ops.length+1);__ops.push({id,op,payload,actionId,ok:!(window.__opFail>0)});if(window.__opFail>0)window.__opFail--;return id;};
-   Phase1.queue.flush=async()=>{};Phase1.queue.list=()=>__ops.map(o=>{const ok=o.ok;o.ok=true;/* 두 번째 확인에서는 서버가 받는다 */return {request_id:o.id,object_id:o.payload.opportunity_id,operation:o.op,status:ok?'done':'pending',payload:o.payload,ack:ok?{ok:true,operation:o.op,next_action_id:'srv-'+o.id}:null,error:ok?'':'서버 확인 대기 중'};});
+   window.__ops=[];window.__opFail=0;window.queueDetailContactOperation=(op,payload,actionId)=>{
+    const id=crypto.randomUUID(),d=B.deals.find(x=>x.id===payload.opportunity_id),expected_version=d?.version||0;
+    const command={id,op,payload,actionId,request_id:id,object_id:payload.opportunity_id,operation:op,expected_version,auth_uid:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',user_id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'};
+    const ack={contract_version:1,ok:true,replayed:false,request_id:id,operation:op,object_id:command.object_id,actor_auth_uid:command.auth_uid,actor_user_id:command.user_id,previous_version:expected_version,version:expected_version+1,next_action_id:crypto.randomUUID(),audit_event_id:crypto.randomUUID(),cancelled_action_ids:[],due_at:payload.due_at,assignee_name:payload.assignee,server_at:new Date().toISOString()};
+    OperationalAdapter.validateAck(ack,command);/* 같은 계약을 통과한 서버 응답만 완료로 사용한다. */
+    __ops.push({...command,ack,ok:!(window.__opFail>0)});if(window.__opFail>0)window.__opFail--;return id;
+   };
+   Phase1.queue.flush=async()=>{};Phase1.queue.list=()=>__ops.map(o=>{const ok=o.ok;o.ok=true;/* 두 번째 확인에서는 같은 요청 · 같은 서버 ID가 확인된다. */return {...o,status:ok?'done':'pending',ack:ok?o.ack:null,error:ok?'':'서버 확인 대기 중'};});
    PipelineWorkspace.open('sent');
   });
   await page.waitForTimeout(400);
@@ -125,8 +131,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await tx(panel().locator('.ifx-err')),/^서버 연결 실패$/);assert.equal(await tx(panel().locator('[data-ifx="save"]')),'재시도');assert.equal(await page.evaluate(()=>__sf.length),2);
   await page.evaluate(()=>{window.__opFail=1;});await panel().locator('[data-ifx="save"]').click();await page.waitForTimeout(250);
   assert.match(await tx(panel().locator('.ifx-err')),/등록한 정보는 저장됐습니다 · 후속 업무만 다시 시도합니다/);assert.equal(await page.evaluate(()=>__sf.length),3,'단계 정보는 저장됨');
+  const retryIdentity=await page.evaluate(()=>({request:__ops[1].request_id,next:__ops[1].ack.next_action_id}));
+  assert.equal(await page.evaluate(()=>B.deals.find(d=>d.id==='s-c').nextActionObj||null),null,'후속 업무 ACK 대기 중에는 완료로 반영하지 않는다');
   await panel().locator('[data-ifx="save"]').click();await page.waitForTimeout(300);
   assert.equal(await page.evaluate(()=>__sf.length),3,'재시도가 단계 정보를 다시 보내지 않는다');assert.equal(await page.evaluate(()=>__ops.length),2,'후속 업무도 같은 요청 하나');
+  assert.deepEqual(await page.evaluate(()=>({request:__ops[1].request_id,next:B.deals.find(d=>d.id==='s-c').nextActionObj?.id})),retryIdentity,'재시도는 동일 요청의 검증된 서버 업무 ID를 반영한다');
   assert.match(await tx(panel().locator('.ifx-done b')),/저장됨 · 한 번에 반영/);assert.deepEqual(await diag(),[4,5]);
   await panel().locator('[data-ifx="close"]').click();await page.waitForTimeout(100);
 

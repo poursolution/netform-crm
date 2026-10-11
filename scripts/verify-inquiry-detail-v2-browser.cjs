@@ -7,7 +7,7 @@ const root=path.resolve(__dirname,'..'),shot=process.argv[2]||'';
 const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':'text/html');fs.createReadStream(t).pipe(res)});
 (async()=>{
  await new Promise(r=>srv.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({headless:true});
+ const browser=await chromium.launch(require('../review-preview/review-environment.cjs').launchOptions());
  try{
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'||(shot&&u.hostname==='cdn.jsdelivr.net')?r.continue():r.abort()});
@@ -44,20 +44,20 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await d.locator('[data-idv="save"]').click();await page.waitForTimeout(250);
   assert.deepEqual(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return (p.activities||[]).map(a=>[a.type,a.note,a.actor]);}),[['카카오','[카카오 · 연결됨] 카톡으로 담당 정해지면 다시 연락드린다고 안내','송보람']],'배정 전 기록 저장 · 기록자 = 로그인한 사람');
   assert.match(await d.locator('.idv-ev.ct').innerText(),/고객 접점[\s\S]*카카오\s*· 연결됨[\s\S]*카톡으로 담당 정해지면/);assert.match(await d.locator('.idv-chead').innerText(),/연락 시도 1 · 실제 연결 1/);
-  /* 문자(2026-10-03): 탭 열면 '첫 인사' 문구가 이미 채워져 있고 버튼 하나 — PC는 복사, 휴대폰은 문자 앱 + 이력에 «문자 · 회신대기». CRM 직접 발송은 아직 연결 전이라고 맨 위에 적음 */
+  /* 문자(2026-10-03): 탭 열면 '첫 인사' 문구가 이미 채워져 있고 버튼 하나 — PC는 복사, 휴대폰은 문자 앱 이동만; 실제 발송 증거가 아니므로 이력·후속 업무를 만들지 않음. CRM 직접 발송은 아직 연결 전이라고 맨 위에 적음 */
   await d.locator('.idv-ctabs [data-v="sms"]').click();await page.waitForTimeout(150);
   assert.match(await d.locator('.idv-smsnote').innerText(),/문구는 자동으로 만들어 둡니다[\s\S]*CRM 직접 발송은 서버 적용 뒤에 열립니다/,'로그인 없는 시험 환경 = 직접 발송 버튼 없음');
   assert.match(await d.locator('#spLogNote').inputValue(),/^안녕하세요 김소장님/,'탭 열자마자 첫 인사 문구 채워짐');
   assert.equal(await d.locator('[data-idv="sms-open"]').count(),0,'문자 앱 열기 별도 버튼 없음');
-  assert.match(await d.locator('[data-idv="sms-send"]').innerText(),/^(문구 복사하고 기록|문자 앱으로 보내고 기록)$/);
+  assert.match(await d.locator('[data-idv="sms-send"]').innerText(),/^(문구 복사|문자로 이동)$/);
   assert.deepEqual(await d.locator('.idv-tpls .idv-chip').allInnerTexts(),['첫 인사','부재 후','자료 요청','견적 발송 안내'],'대표회의 없는 건은 4개');
   await d.locator('.idv-tpls .idv-chip',{hasText:'첫 인사'}).click();await page.waitForTimeout(150);
   assert.match(await d.locator('#spLogNote').inputValue(),/^안녕하세요 김소장님, 넷폼 .*입니다\. .* 문의 주셔서 연락드렸습니다\./);
   assert.match(await d.locator('.idv-smsto').innerText(),/받는 사람\s*김소장 · 010-1111-2222\s*\d+byte · (SMS|LMS)/);
   await d.locator('[data-idv="sms-copy"]').click();
   await d.locator('[data-idv="sms-send"]').click();await page.waitForTimeout(250);
-  assert.equal(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return (p.activities||[]).length;}),2,'보낸 문자도 이력에');
-  assert.match(await d.locator('.idv-ev.ct').last().innerText(),/문자\s*· 회신대기/);
+  assert.equal(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return (p.activities||[]).length;}),1,'복사와 앱 이동은 응대 기록을 추가하지 않는다');
+  assert.equal(await d.locator('.idv-ev.ct').count(),1,'실제 응대 기록만 유지');
   /* CRM 직접 발송(2026-10-03 "진행해"): 서버 함수 + 로그인 + 010 번호면 [CRM에서 보내기] — 두 번 눌러 확인 → crm_inquiry_sms_request_v1 → 이력 «문자 · 회신대기 (CRM 발송)» → 목록 함수의 상태가 타임라인에 */
   await page.evaluate(()=>{window.__sms=[];window.__smsRows=[];SB={rpc:async(name,args)=>{if(name==='crm_inquiry_sms_request_v1'){__sms.push(args.p);const row={id:'cccccccc-0000-4000-8000-00000000000'+__sms.length,status:'queued',body:args.p.text,phone:'01011112222',requested_by_name:'송보람',created_at:new Date().toISOString()};__smsRows.unshift(row);return {data:{ok:true,id:row.id,status:'queued',phone:row.phone}};}if(name==='crm_inquiry_sms_list_v1')return {data:{ok:true,rows:__smsRows}};return {data:{ok:true,tasks:[]}};}};TOKEN='test';});
   await d.locator('.idv-ctabs [data-v="sms"]').click();await page.waitForTimeout(250);
@@ -68,7 +68,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await d.locator('[data-idv="sms-crm"]').innerText(),/^정말 보내기 · 010-1111-2222$/,'한 번 누르면 확인 단계');assert.deepEqual(await page.evaluate(()=>__sms),[],'확인 전에는 요청 없음');
   await d.locator('[data-idv="sms-crm"]').click();await page.waitForTimeout(400);
   const req=await page.evaluate(()=>__sms);assert.equal(req.length,1);assert.equal(req[0].inquiry_id,'11111111-1111-4111-8111-111111111111');assert.match(req[0].text,/^김소장님, 넷폼 .*입니다\. 전화드렸는데 연결이 안 되어/);assert.match(req[0].request_id,/^[0-9a-f-]{36}$/);
-  assert.equal(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return (p.activities||[]).length;}),3,'요청 뒤 이력 기록');
+  assert.equal(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return (p.activities||[]).length;}),2,'CRM 발송 요청 뒤에만 이력 기록');
   assert.match(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return p.activities.at(-1).note;}),/^\[문자 · 회신대기\] .*\(CRM 발송\)$/);
   assert.match(await d.locator('.idv-thread').innerText(),/CRM 문자 대기 중 · 실행기가 보내면 갱신/,'전송 상태가 타임라인에');
   await page.evaluate(()=>{__smsRows[0].status='sent';__smsRows[0].delivered_at=new Date().toISOString();});

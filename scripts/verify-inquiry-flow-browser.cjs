@@ -14,7 +14,7 @@ const root=path.resolve(__dirname,'..'),shot=process.argv[2]||'';
 const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':t.endsWith('.png')?'image/png':'text/html');fs.createReadStream(t).pipe(res)});
 (async()=>{
  await new Promise(r=>srv.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({headless:true});
+ const browser=await chromium.launch(require('../review-preview/review-environment.cjs').launchOptions());
  try{
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});
@@ -165,7 +165,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await modal.locator('#inq-close-type').selectOption('transfer');await page.waitForTimeout(150);assert.deepEqual(await modal.locator('#inq-close-kind option').allInnerTexts(),['이관처를 골라 주세요','POUR스토어','B2B 협약']);assert.equal(await modal.locator('#inq-ctl-confirm').innerText(),'이관 처리로');
   await modal.locator('#inq-close-kind').selectOption('B2B 협약');await modal.locator('#inq-ctl-confirm').click();await page.waitForTimeout(200);assert.match(await modal.locator('#inq-ctl-error').innerText(),/공종이 협약인 문의만/,'다른 문의를 협약으로 바꾸지 않는다');
   await modal.locator('#inq-close-kind').selectOption('POUR스토어');await modal.locator('#inq-ctl-confirm').click();await page.waitForTimeout(250);assert.equal(await page.locator('#inquiryControlTitle').innerText(),'POUR스토어 이관','스토어 이관 = 기존 이관 창');await page.evaluate(()=>closeInquiryControlModal());
-  /* ── ③ 문자 탭 · CRM 발송 큐 없음 · 수단 문자 = 가운데 칸 문자 보내기 → 기록(회신대기 = 연락 시도) ── */
+  /* ── ③ 문자 탭 · CRM 발송 큐 없음 · 수단 문자 = 가운데 칸 문구 작성 → 복사/앱 이동; 실제 발송·후속 업무는 별도 확인 ── */
   await page.evaluate(()=>{__rpc.length=0;__writes.length=0;InquiryWorkbench.open(X);});await page.waitForTimeout(400);
   assert.deepEqual(await dd.locator('.idv3-tabs [role=tab]').allInnerTexts(),['응대 기록','내부 메모'],'상세 문자 탭 없음');
   await dd.locator('.idv3-rc',{hasText:/^연결됨$/}).click();await page.waitForTimeout(150);await dd.locator('.idv3-rc',{hasText:/^관심 있음$/}).click();await page.waitForTimeout(150);await dd.locator('[data-idv="edit-sug"]').click();await page.waitForTimeout(150);
@@ -173,8 +173,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await dd.locator('.idv3-smswrap .ds2.iq-ds2 [data-idv="smstext"]').count(),1,'수단 문자 = 가운데 칸 문자 보내기');assert.equal(await dd.locator('[data-idv="sms-crm"]').count(),0,'CRM 직접 발송 버튼 없음');
   assert.deepEqual(await dd.locator('.ds2-ft button').evaluateAll(l=>l.map(n=>n.dataset.idv)),['sms-back','sms-copy','sms-go']);
   await dd.locator('.ds2-ft [data-idv="sms-go"]').click();await page.waitForTimeout(600);
-  assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_command_v1').map(x=>[x[1].type,x[1].channel,x[1].result])),[['contact_log','문자','회신대기']],'보낸 문자 = 응대 기록(수단 문자 · 회신대기)');
-  assert.equal(await page.evaluate(()=>__rpc.filter(x=>/sms_request|sms_list/.test(x[0])).length),0,'문자 발송 큐 함수는 부르지 않는다');assert.ok(await dd.locator('.idv3-res').count()>=1,'기록하면 응대 기록 칸으로 돌아온다');/* 결과 두 줄이면 2줄 */
+  assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_command_v1').map(x=>[x[1].type,x[1].channel,x[1].result])),[],'앱 이동과 복사만으로 연락 시도·후속 업무를 만들지 않는다');
+  assert.equal(await page.evaluate(()=>__rpc.filter(x=>/sms_request|sms_list/.test(x[0])).length),0,'문자 발송 큐 함수는 부르지 않는다');assert.equal(await dd.locator('.idv3-smswrap [data-idv="smstext"]').count(),1,'작성 중 문구를 유지한다');assert.deepEqual(await page.evaluate(()=>__writes),[],'기존 영업계획도 변경하지 않는다');/* 결과 두 줄이면 2줄 */
   await page.evaluate(()=>InquiryWorkbench.close());await page.waitForTimeout(200);
   /* ── ④ ⑤ 전환 기준 하나 · 견적 = 버전 ── */
   assert.equal(await page.evaluate(()=>InquiryFlow.QUALIFY_TEXT),'1차 현장방문 완료 또는 견적 발송 완료 중 먼저 → 파이프라인 전환');
