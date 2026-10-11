@@ -57,7 +57,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await page.evaluate(()=>closeSheet());
   /* ⑤ [일정 변경] → 일정 바꾸기(날짜만) */
   await page.evaluate(()=>{G.deal=null;G.tab='today';render();});await tab('일정');
-  await S.locator('.mh-row',{hasText:'내일 현장'}).locator('.mh-move').click();await page.waitForTimeout(700);
+  await S.locator('.mh-row',{hasText:'내일 현장'}).first().locator('.mh-move').first().click();await page.waitForTimeout(700);
   assert.equal(await page.evaluate(()=>G.deal),'tom1');assert.match(await page.locator('#sheetcard .intro').innerText().then(one),/^일정 바꾸기/);assert.match(await page.locator('#sheetcard .ce-ex').innerText().then(one),/^기존 일정 자료 보내기 · /);
   await page.evaluate(()=>closeSheet());
   /* ⑥ 상세에서 돌아오면 목록 위치 복원 */
