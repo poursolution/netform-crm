@@ -15,6 +15,41 @@
  const due=d=>{const n=w.dueDays?.(d),x=next(d);return !x?'다음 업무 미등록':n==null?'기한 미입력':n<0?Math.abs(n)+'일 지남':n===0?'오늘까지':w.ContactEntry.md(x.due||x.due_at);};
  const dueColor=d=>w.dueDays?.(d)<0?'#b42318':'#15171c';
  const listScroller=()=>w.document.querySelector('.approved-list');
+ let requestRead=null,requestReadOwner='',pcRedirected=false,taskClick=0;
+ const requestOwner=()=>{const p=w.Phase1?.profile;return p?.auth_uid&&p?.user_id?p.auth_uid+':'+p.user_id+':'+(w.MobileSaveJournal?.session?.()||''):'';};
+ function loadRequests(){
+  const owner=requestOwner();
+  if(!owner||!w.G?.user||w.G.mode!=='rep'||(!w.LIVE&&!w.DEMO)||typeof w.MobileRequests?.load!=='function')return Promise.resolve();
+  if(requestRead&&requestReadOwner===owner)return requestRead;
+  requestReadOwner=owner;
+  const job=Promise.resolve().then(()=>w.MobileRequests.load()).catch(()=>{});
+  requestRead=job;job.finally(()=>{if(requestRead===job)requestRead=null;});return job;
+ }
+ async function openContact(){
+  const owner=requestOwner(),id=String(w.G?.deal||'');
+  await loadRequests();
+  if(owner!==requestOwner()||w.G?.mode!=='rep'||String(w.G.deal||'')!==id||!mine().some(d=>String(d.id)===id))return;
+  w.MobileEntry.open();
+ }
+ async function openRequestedTask(id,requestId,click){
+  const owner=requestOwner(),tab=w.G.tab,deal=w.G.deal;
+  if(!mine().some(d=>String(d.id)===id)||!w.MobileRequests?.forDeal(id)?.some(r=>r.id===requestId))return w.toast('현재 현장에 연결된 요청을 다시 확인해 주세요.');
+  let failure='';
+  try{
+   if(typeof w.MobileRequests?.acknowledge!=='function')throw Error('요청 확인 연결을 불러오지 못했습니다.');
+   const result=await w.MobileRequests.acknowledge(requestId,'deal',id);
+   if(result!==true)throw Error('요청 확인 결과를 확인하지 못했습니다.');
+  }catch(e){failure=String(e?.message||e);}
+  if(click!==taskClick||owner!==requestOwner()||w.G.mode!=='rep'||w.G.tab!==tab||w.G.deal!==deal||!mine().some(d=>String(d.id)===id))return;
+  w.G.deal=id;run();if(failure)w.toast('요청 확인 실패 · '+failure);
+ }
+ function mobileMode(){
+  if(!w.G?.user||(!w.LIVE&&!w.DEMO)||w.G.mode==='rep')return true;
+  if(w.Phase1?.profile?.allowed_modes?.includes('rep')){w.G.mode='rep';w.G.sub=null;return true;}
+  w.MobileApprovedBoot?.hold();
+  if(!pcRedirected){pcRedirected=true;w.location.assign('./?view=pc');}
+  return false;
+ }
  function registrationContext(){
   const api=w.MobileRegistrationContext,owner=w.MobileSaveJournal?.owner()||'';
   if(S.registrationOwner!==owner){
@@ -101,7 +136,7 @@
  }
  function today(){
   const rows=w.buildToday();w.G._today=rows;const completed=rows.filter(t=>w.isDone(t)).length;
-  const model=w.__approvedAExample||{title:w.G.user.nm+'님, 오늘 할 일 '+rows.length+'개',progress:completed+' / '+rows.length,progressPercent:rows.length?completed/rows.length*100:0,areas:['지금 처리 '+rows.length,'회신 대기 · 확인 필요','정보 보완 · 확인 필요','약속 · 확인 필요'],rows:rows.map(t=>{const d=t.kind==='deal'?mine().find(x=>String(x.id)===String(t.ref)):null;return {id:t.ref,kind:t.kind,name:t.nm,brand:d?brand(d):'견적문의',color:color(d||{}),stage:d?label(d):'견적문의',due:d?due(d):'',dueColor:d?dueColor(d):'#15171c',task:d?next(d)?.text||t.why:t.why,why:t.sub||'',button:'업무 확인'};})};
+  const model=w.__approvedAExample||{title:w.G.user.nm+'님, 오늘 할 일 '+rows.length+'개',progress:completed+' / '+rows.length,progressPercent:rows.length?completed/rows.length*100:0,areas:['지금 처리 '+rows.length,'회신 대기 · 확인 필요','정보 보완 · 확인 필요','약속 · 확인 필요'],rows:rows.map(t=>{const d=t.kind==='deal'?mine().find(x=>String(x.id)===String(t.ref)):null,R=w.MobileRequests,r=d?R?.forDeal(d.id)?.[0]:null;return {id:t.ref,kind:t.kind,name:t.nm,brand:d?brand(d):'견적문의',color:color(d||{}),stage:d?label(d):'견적문의',due:d?due(d):'',dueColor:d?dueColor(d):'#15171c',task:d?next(d)?.text||t.why:t.why,why:r?[(r.requested_by||'관리자')+' 요청',R.labelOf(r),R.dueTxt(r)].filter(Boolean).join(' · '):t.sub||'',button:r?'요청 확인':'업무 확인',requestId:r?.id||''};})};
   const html=w.MobileApprovedA.render(S.area!=='now'?{...model,rows:[],message:'이 구역은 공통 집계 연결 작업 중입니다.'}:model);
   const snapshot=pendingSnapshot();
   if(snapshot.ok&&snapshot.count===0&&snapshot.unlinked_operations===0)return html;
@@ -119,7 +154,7 @@
   const views={mine:listing,today,pending,record:registration,'registration-match':registrationMatches,schedule,'day-close':dayClose};
   scr.classList.add('gs-screen','gs-approved-frame');scr.classList.toggle('gs-approved-a',!d&&w.G.tab==='today');scr.innerHTML=d?detailScreen(d):views[w.G.tab]();tab.innerHTML='';tab.classList.add('gs-tabhost');
   if(!d&&w.G.tab==='mine'&&listScroller())listScroller().scrollTop=S.scroll;
-  w.MobileApprovedBoot?.ready();return true;
+  w.MobileApprovedBoot?.ready();loadRequests();return true;
  }
  function run(){w.render();}
  function openContactCard(){
@@ -131,11 +166,13 @@
   w.contactEditSheetM=openContactCard;
   w.saveContactM=unavailable;
   w.addEventListener('phase1:identity-cleared',()=>{
+   requestRead=null;requestReadOwner='';pcRedirected=false;taskClick++;
    Object.assign(S,{q:'',stage:'',page:1,pendingPage:1,scroll:0,returnTab:'mine',area:'now',entryAction:'',scheduleDay:'',schedulePage:1,newQuery:'',selectedSite:'',registrationPage:1,registrationOwner:'',registrationError:'',closePages:{done:1,open:1,tomorrow:1}});resetDetail({force:true});
    try{const prefix=w.MobileRegistrationContext?.draftPrefix||'crm:mobile-registration:v1:';Object.keys(w.sessionStorage).filter(k=>k.startsWith(prefix)).forEach(k=>w.sessionStorage.removeItem(k));}catch(e){}
   });
   const previous=w.render;
   w.render=function(){
+   if(!mobileMode())return;
    w.MobileInputFlow?.syncContext();
    w.MobileQuoteFlow?.syncContext();
    if(show())return;
@@ -149,11 +186,12 @@
    const result=previous.apply(this,arguments);w.MobileApprovedBoot?.login();return result;
   };
   w.document.addEventListener('click',e=>{const b=e.target.closest('[data-gs]');if(!b)return;const k=b.dataset.gs;
+   taskClick++;
    if((k==='e-newsite'||k.startsWith('j4-'))&&!registrationOwnerMatches())return;
    if(b.tagName==='A')e.preventDefault();if(b.getAttribute('aria-disabled')==='true'){if(b.title)w.toast(b.title);return;}
    if(k==='deal'){
     if(!mine().some(d=>String(d.id)===b.dataset.id))return w.toast('현재 조회 범위의 영업건을 다시 선택해 주세요.');
-    if(!resetDetail())return;S.scroll=listScroller()?.scrollTop||0;S.returnTab=w.G.tab;w.G.deal=b.dataset.id;w.G.sub=null;const entry=S.entryAction;S.entryAction='';run();if(entry==='contact')w.MobileEntry.open();
+    if(!resetDetail())return;S.scroll=listScroller()?.scrollTop||0;S.returnTab=w.G.tab;w.G.deal=b.dataset.id;w.G.sub=null;const entry=S.entryAction;S.entryAction='';run();if(entry==='contact')openContact();
    }
    else if(k==='back'||k==='stage-confirmation-back'){if(S.detailView==='input'){const r=w.MobileInputFlow?.back(mine().find(x=>String(x.id)===String(w.G.deal)));if(r?.render)run();if(!r?.ok&&r?.note)w.toast(r.note);return;}if(S.detailView==='quote'&&w.MobileQuoteFlow?.back(mine().find(x=>String(x.id)===String(w.G.deal)))){run();return;}if(S.detailView){if(!resetDetail())return;run();return;}if(!resetDetail())return;const registrationBack=w.G.tab==='registration-match';w.G.deal=null;w.G.tab=registrationBack?'record':S.returnTab;run();}
    else if(k==='tab'){if(!['today','mine','record','schedule'].includes(b.dataset.tab))return unavailable();if(!resetDetail())return;w.G.tab=b.dataset.tab;w.G.deal=null;w.G.sub=null;S.entryAction='';S.page=1;S.scroll=0;run();}
@@ -197,7 +235,7 @@
    else if(k==='day-close-page'){if(!Object.hasOwn(S.closePages,b.dataset.group))return;const n=Number(b.dataset.page);if(Number.isInteger(n)&&n>0){S.closePages[b.dataset.group]=n;run();}}
    else if(k==='stage'||k==='area'){S[k]=b.dataset.value;S.page=1;S.scroll=0;run();}
    else if(k==='page'){w.ListPager.set(S,null,b.dataset.page);S.scroll=0;run();}
-   else if(k==='contact')w.MobileEntry.open();
+   else if(k==='contact')openContact();
    else if(k==='contact-card')openContactCard();
    else if(k==='pending-task'){
     const d=mine().find(x=>String(x.id)===String(w.G.deal)),n=next(d);
@@ -221,7 +259,7 @@
     if(!resetDetail())return;S.returnTab='pending';w.G.tab='pending';w.G.sub=null;
     if(g.kind==='pc_inquiry'){w.G.deal=null;run();w.MobileInquiryEntry.restore(g.target_id);}else{w.G.deal=g.target_id;run();w.MobileEntry.open();}
    }
-   else if(k==='task'){if(!resetDetail())return;S.returnTab='today';if(b.dataset.kind==='deal'){w.G.deal=b.dataset.id;run();}else if(b.dataset.kind==='inquiry'){const r=w.MobileInquiryEntry?.open(inquiry(b.dataset.id));if(!r?.ok)w.toast(r?.error||'문의 응대 연결을 확인해 주세요.');}else unavailable();}
+   else if(k==='task'){if(!resetDetail())return;S.returnTab='today';if(b.dataset.kind==='deal'){if(b.dataset.requestId)openRequestedTask(b.dataset.id,b.dataset.requestId,taskClick);else{w.G.deal=b.dataset.id;run();}}else if(b.dataset.kind==='inquiry'){const r=w.MobileInquiryEntry?.open(inquiry(b.dataset.id));if(!r?.ok)w.toast(r?.error||'문의 응대 연결을 확인해 주세요.');}else unavailable();}
    else if(k==='phone'||k==='sms'){
     const d=mine().find(x=>String(x.id)===String(w.G.deal)),c=w.contactInfoM(d),phone=w.phoneN(c.mobile||c.officeTel);
     if(w.DEMO)return w.toast('예시 화면에서는 외부 앱을 실행하지 않습니다.');

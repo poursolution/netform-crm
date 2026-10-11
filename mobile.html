@@ -912,7 +912,7 @@ async function authRestore(){
   if(!s)return false;
   return await authAdmit(s);
 }
-async function authAdmit(session){try{var p=await Phase1.admit(session);TOKEN=session.access_token;G.user={id:p.user_id,auth_uid:p.auth_uid,nm:p.name,email:session.user.email,role:p.allowed_modes.includes('admin')?p.source_role:'rep',source_role:p.source_role,permission_role:p.permission_role};G.mode=p.allowed_modes.includes(savedMode())?savedMode():'rep';G.loginErr=null;return true;}catch(e){await Phase1.signOut();TOKEN=null;G.user=null;G.loginErr=e.message;return false;}}
+async function authAdmit(session){try{var p=await Phase1.admit(session);if(!p.allowed_modes.includes('rep'))throw Error('MODE_DENIED');TOKEN=session.access_token;G.user={id:p.user_id,auth_uid:p.auth_uid,nm:p.name,email:session.user.email,role:p.allowed_modes.includes('admin')?p.source_role:'rep',source_role:p.source_role,permission_role:p.permission_role};G.mode='rep';G.loginErr=null;return true;}catch(e){await Phase1.signOut();TOKEN=null;G.user=null;G.loginErr=e.message;return false;}}
 async function doSignIn(){
   if(!authReady()){G.loginErr='로그인 모듈을 불러오지 못했습니다. 통신 상태를 확인해 주세요.';return rLogin()}
   var nm=(G.lgName||'').trim(), pw=G.lgPw||'';

@@ -48,15 +48,23 @@
  function markSeen(r){
   const owner=syncOwner(),generation=epoch,startedRevision=revision;
   if(!owner||!r||!r.to_me||r.status!=='sent'||S.seen[r.id])return;S.seen[r.id]=true;
-  rpc(REPLY,{id:r.id,action:'seen'}).then(x=>{
+  return rpc(REPLY,{id:r.id,action:'seen'}).then(x=>{
    if(!currentSession(owner,generation))return;
    if(startedRevision!==revision){delete S.seen[r.id];S.at=0;return;}
    const next=x?.request;
    if(x?.ok!==true||!next||next.id!==r.id||next.target_type!==r.target_type||next.target_id!==r.target_id||next.to_me!==true||
      next.kind!==r.kind||Number(next.round||1)!==Number(r.round||1)||String(next.due_at||'')!==String(r.due_at||'')||
      !['seen','working','done','cancelled'].includes(next.status))throw Error('Invalid seen acknowledgement');
-   put(next);
-  }).catch(()=>{if(currentSession(owner,generation))delete S.seen[r.id];});
+   put(next);return true;
+  }).catch(()=>{if(currentSession(owner,generation))delete S.seen[r.id];return false;});
+ }
+ // Only the request explicitly identified on the approved task card is acknowledged.
+ async function acknowledge(id,targetType,targetId){
+  if(!enabled()||!ready())return false;
+  const r=incoming().find(x=>String(x.id)===String(id)&&x.target_type===targetType&&String(x.target_id)===String(targetId));
+  if(!r)return false;
+  if(r.status!=='sent')return true;
+  return await markSeen(r)===true;
  }
  /* 이 기록으로 처리한 요청 닫기(지정한 것만): 연락 기록 저장이 서버에 확인된 뒤에 부른다. result = 연락 결과, absent = 연락 시도(진행 중으로 남김) */
  async function complete(r,o){
@@ -104,5 +112,5 @@
  root.document.addEventListener('click',e=>{const b=e.target.closest('#scr [data-mq]');if(!b||!enabled())return;if(b.dataset.mq==='open')open(b.dataset.id);});
  root.addEventListener?.('phase1:identity-cleared',()=>reset(''));
  root.addEventListener?.('phase1:profile',syncOwner);
- root.MobileRequests=Object.freeze({enabled,load,incoming,forDeal,isContact,labelOf,dueTxt,complete,decorate,html,state:()=>{syncOwner();return S;},COND,KIND_LABEL,_put:put});
+ root.MobileRequests=Object.freeze({enabled,load,incoming,forDeal,isContact,labelOf,dueTxt,complete,acknowledge,decorate,html,state:()=>{syncOwner();return S;},COND,KIND_LABEL,_put:put});
 })(window);

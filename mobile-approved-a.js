@@ -21,6 +21,7 @@
    meta.children[1].textContent=t.stage;meta.children[3].textContent=t.due;meta.children[3].style.color=t.dueColor;
    name.textContent=t.name;task.textContent=t.task;why.textContent=t.why;action.textContent=t.button;
    action.dataset.gs='task';action.dataset.kind=t.kind;action.dataset.id=t.id;action.setAttribute('role','button');action.tabIndex=0;
+   if(t.requestId)action.dataset.requestId=t.requestId;
    body.append(c);
   });
   if(model.message){const p=document.createElement('p');p.textContent=model.message;p.style.cssText='font-size:13px;color:#6b7280;line-height:1.5';body.append(p);}
