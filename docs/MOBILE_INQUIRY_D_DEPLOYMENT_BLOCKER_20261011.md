@@ -1,10 +1,64 @@
 # 승인 문의 D — 운영 저장 배포 차단 근거
 
+## 최신 상태 — 사용자 승인 후 서버 설치·활성화
+
+2026-10-11 사용자가 **“서버 설치·검증·활성화 승인”**을 명시했다. 아래 설치 전 감사 기록 이후, 루트 작업에서 승인된 3개 마이그레이션과 서버 플래그 활성화를 완료했다. **서버 계약 설치·활성화와 운영 UI 배포/실사용 저장 성공은 구분한다. 이 문서 갱신 시점에 UI 배포는 아직 완료로 확인하지 않았다.**
+
+### 설치 이력과 현재 설정
+
+운영 마이그레이션 목록에서 다음 순서와 버전을 확인했다.
+
+| 순서 | 버전 | 이름 |
+|---|---|---|
+| 1 | `20261011112839` | `contact_consent_preserve_omitted` |
+| 2 | `20261011112905` | `schedule_preserve_v1` |
+| 3 | `20261011112915` | `inquiry_response_preserve_v1` |
+
+설치 직후 `schedule_v1_settings.enabled=false`를 확인했다. 그 후 루트 작업이 승인 범위에서 true로 변경했고, 이 감사에서도 SELECT로 **enabled=true**를 다시 확인했다. 아래 설치 전의 ‘미설치/비활성’ 표는 과거 시점의 근거로 남기며 현재 상태를 뜻하지 않는다.
+
+### 설치 후 완료한 읽기 전용 검증
+
+- 신규 public RPC 5개가 모두 존재한다. 연락처 함수는 `(uuid,text,uuid,integer,jsonb)`, 일정 3개와 응대 확인은 `(jsonb)`로 후보와 동일하다. 모두 SECURITY DEFINER와 빈 search_path다.
+- 신규 5개 public 함수 및 3개 private 일정 보조 함수의 실제 본문을 후보 SQL과 비교했다. CRLF 및 앞뒤 공백만 정규화한 MD5 기준 **8/8 일치**다. 기존 79개 사용 컬럼은 설치 후 다시 조회해 **79/79 존재·타입 호환**을 확인했다.
+- `crm_release_manifest_v1()`은 새 5개 RPC를 모두 포함한다. 연락처 wrapper의 `preserve-omitted-v1`, 일정의 `crm.schedule.v1`, 응대 확인의 `crm.inquiry-response.v1` 표식을 확인했다.
+- 기존 go 함수도 설치 후 `contact_consent_contract` 및 `preserve-omitted-v1` 표식이 실제 본문에 존재한다. `md5(pg_get_functiondef(...))`는 설치 전 `a0209794d0844913f287bd9da509e3e1`에서 설치 후 `3b3257674288f428d5527852d9268828`로 바뀌었다. go 본문 전체를 위 8/8 비교에 포함했다고 해석하지 않는다.
+- 새 private 테이블 `schedule_v1_settings`, `schedule_v1_events`, `inquiry_response_v1_receipts`는 모두 RLS=true이고 정책은 0개다. PUBLIC/anon/authenticated/service_role 직접 SELECT·INSERT·UPDATE·DELETE 권한은 모두 없다. 3개 private 보조 함수도 이 4개 역할에 직접 EXECUTE가 없다.
+
+### public 함수 실행 권한의 실제 상태
+
+| RPC | authenticated | anon / PUBLIC | service_role |
+|---|---|---|---|
+| `crm_contact_command_v1` | 허용 | 거절 | 거절 |
+| `crm_schedule_list_v1` | 허용 | 거절 | 허용 |
+| `crm_schedule_write_v1` | 허용 | 거절 | 허용 |
+| `crm_schedule_receipt_v1` | 허용 | 거절 | 허용 |
+| `crm_inquiry_response_confirm_v1` | 허용 | 거절 | 허용 |
+
+이 차이는 원본 SQL의 명시 REVOKE 범위와 일치한다. 연락처 SQL은 service_role도 회수하고, 일정/응대 SQL은 PUBLIC·anon·authenticated를 회수한 뒤 authenticated를 다시 부여한다. 설치 환경의 service_role public 함수 기본권한은 4개에 남는다. 이 감사에서 정책을 임의로 바꾸지 않았다.
+
+EXECUTE 권한이 있어도 일정/응대는 `auth.uid()`와 `actor()`, 대상 scope·현재 담당을 확인하는 본문을 거친다. service_role이라는 이유만으로 담당 검증을 생략하는 코드는 없다. 후속 루트 검증에서 `auth.uid() IS NULL`과 `enabled=true`를 먼저 확인한 뒤, 읽기 전용 트랜잭션과 고정 합성 UUID로 새 5개 RPC를 호출했다. 일정 조회·저장·영수증·문의 응대 확인은 모두 `42501 SCHEDULE_FORBIDDEN`, 연락처 저장은 `42501 forbidden`으로 초기 권한 검사에서 거절됐다. **인증 정보 없는 호출 5/5 차단을 확인했으며, 로그인 사용자 저장 성공을 검증한 것은 아니다.** 고객 데이터 쓰기·메시지 발송은 하지 않았다. 기존 go 함수의 `effective_contact_consent` 병합 표식도 재확인했다.
+
+### 변경 관련 Advisors 결과
+
+신규 객체와 연락처 계약 관련 객체만 추려 확인했다. 아래 경고는 ‘프로젝트 전체 이상 없음’ 판정이 아니다.
+
+- 신규 private 3개 테이블의 RLS 정책 없음은 INFO다. 직접 권한을 모두 회수하고 SECURITY DEFINER 경로만 사용하는 현재 설계와 함께 검토했다. [RLS 정책 없음 안내](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)
+- 신규 public 5개 함수의 authenticated SECURITY DEFINER 실행은 WARN이다. 의도한 RPC 경로이며 actor/scope 검사와 빈 search_path를 확인했다. 익명 공개로 바꾸거나 검사를 제거하지 않았다. [SECURITY DEFINER 실행 권한 안내](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable)
+- 신규 `schedule_v1_action_history` 인덱스 미사용은 INFO다. 막 설치된 감사 인덱스를 삭제하지 않았다. 기존 `contact_compat_state`의 FK 인덱스 INFO도 보였으며 이번 설치에서 인덱스 구조를 바꾼 항목은 아니다. [미사용 인덱스 안내](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index), [FK 인덱스 안내](https://supabase.com/docs/guides/database/database-linter?lint=0001_unindexed_foreign_keys)
+
+**클라이언트 연결:** PR #597의 `crm.html`과 `mobile.html`은 공통 일정 모듈 전에 `CRM_SCHEDULE_V1=true`를 설정하고 관련 6개 모듈의 캐시를 갱신한다. 집중 검사 84개가 통과했으며 서버 disabled/writable=false·권한/대상 불일치·허위 ACK는 계속 차단한다. 로컬 운영 조립 368개 자산과 해시 검사도 통과했다.
+
+**남은 배포 확인:** 클라이언트 변경은 GitHub 검토 브랜치에 있으며 운영 UI/자산 배포는 아직 하지 않았다. 실제 로그인 권한에서 읽기/ACK 수신, 실제 저장·기기 간 반영·개인 알림은 별도 검증이 필요하다. 이 감사는 카탈로그·설정·인증 없는 호출 거절과 로컬 합성 검사 근거이며 실제 고객 저장 성공을 대신하지 않는다.
+
+---
+
+## 설치 전 감사 이력 — 아래는 승인·설치 이전 상태
+
 확인일: 2026-10-11. 대상: `poursolution/netform-crm`. 이 문서는 준비 상태와 읽기 전용 확인 결과이며 SQL 설치·권한 변경·기능 활성화 승인이 아니다.
 
 후속 실행 상태: 연락처 보존 마이그레이션 설치 요청은 자동 승인 검토가 실행 전에 거절했다. GitHub 동기화 요청에 운영 스키마·공통 저장 경로·실행 권한 변경의 구체적 승인이 포함되지 않았다는 사유다. 실제 SQL 설치·권한 변경·게이트 활성화는 실행되지 않았다. 같은 작업을 다른 경로로 우회 실행하지 않는다.
 
-## 현재 결론
+## 설치 전 결론
 
 승인 D 화면의 로컬 연결과 운영 서버 저장은 별개다. 운영 서버에 필수 계약이 없어 **GitHub/화면 배포만으로 문의 D 저장 완료라고 표시할 수 없다.** 로컬 합성 예시는 메모리 RPC를 사용하며 운영 검증 결과가 아니다.
 
