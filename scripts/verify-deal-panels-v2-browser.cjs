@@ -19,7 +19,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      next_action:{id:'n1',text:'PT 준비',due:day(2),status:'open'},activities:[{id:'a1',type:'전화',note:'통화 완료 · 진행 중',at:at(-3)}],stage_contexts:{compete:{fields:{competition_type:'PT'}}}}],inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],messageLogs:[],message_logs:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.dealSmsV2Off=true;/* 이 검사는 예전 메시지 본문을 본다 — 새 문자 보내기 v2 는 verify-deal-sms-v2 */ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
-   window.__writes=[];window.pushWrite=(op,p)=>{__writes.push([op,p]);return 'req-'+__writes.length;};
+   window.__contactFlushes=0;Phase1.queue.flush=async()=>{__contactFlushes++;};window.__writes=[];window.pushWrite=(op,p)=>{const id=crypto.randomUUID();__writes.push([op,p,id]);return id;};
    window.__rpc=[];SB={rpc:async(name,args)=>{__rpc.push([name,args]);if(name==='crm_deal_stage_fields_update_v1')return {data:{ok:true,version:2,stage_context:{fields:Object.assign({competition_type:'PT'},args.p.fields)}}};return {data:{ok:true,tasks:[]}};}};
    /* 공종 저장 경로(Phase11): 서버 읽기·저장을 흉내 낸다 */
    /* 공종 저장 경로(Phase11): 시험에는 로그인이 없어 같은 약속(최신값 읽기 → 창 열기 → 저장)만 흉내 낸다 */
@@ -52,14 +52,53 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await panel.locator('[data-chips="sms"] [data-v="yes"]').click();
   await panel.locator('[data-dp="save"]').click();await page.waitForTimeout(400);
   const w=await page.evaluate(()=>__writes.filter(x=>['activity','contact_upsert'].includes(x[0])).map(x=>[x[0],x[1].manager_name||x[1].note,x[1].manager_role||x[1].result,x[1].sms_consent,x[1].kakao_consent,!!x[1].consent_at,x[1].is_primary]));
-  assert.deepEqual(w[0],['contact_upsert','박새롬','관리소장',true,false,true,true],'기존 연락처 · 수신동의 저장 경로로 요청 — 문자만 동의, 카카오는 모름');
-  assert.deepEqual(w.slice(1).map(x=>x.slice(0,3)),[['activity','연락처 등록 — 박새롬 · 관리소장','010-9876-5432']],'저장하면 응대 이력에 시스템 기록 한 줄');
+  assert.deepEqual(w[0],['contact_upsert','박새롬','관리소장',true,undefined,true,true],'기존 연락처 · 수신동의 저장 경로로 요청 — 문자만 동의, 카카오는 모름');
+  assert.deepEqual(w.slice(1).map(x=>x.slice(0,3)),[['activity','연락처 등록 — 박새롬 · 관리소장','010-9876-5432']],'연락처 등록의 시스템 기록 한 줄');
+  assert.deepEqual(await page.evaluate(()=>{const p=__writes.find(x=>x[0]==='activity')[1];return [p.type,p.meaningful_contact===true];}),['연락처',false],'등록 이력은 고객 통화가 아닌 연락처 기록');
+  assert.equal(await page.evaluate(()=>Object.hasOwn(__writes[0][1],'kakao_consent')),false,'모름은 기존 동의 철회(false)로 전송하지 않는다');
   assert.equal(await page.evaluate(()=>__writes.filter(x=>x[0]==='contact_upsert')[0][1].manager_mobile),'01098765432','번호는 010 숫자 11자리로 저장');
   assert.match(await page.locator('#qc-err').innerText(),/서버 저장을 확인 중/);
   /* 시험에는 서버 응답이 없다 — 응답을 흉내 내 화면 반영까지 확인 */
-  await page.evaluate(()=>{const i=__writes.findIndex(x=>x[0]==='contact_upsert'),id='req-'+(i+1),p=__writes[i][1];/* 연락처 저장 요청(그 뒤의 시스템 기록이 아니라) */Phase1.queue.list=()=>[{request_id:id,operation:'contact_upsert',object_id:B.deals[0].id,status:'done',ack:{person_key:p.person_key,contact_id:'c0000000-0000-4000-8000-000000000001'}}];dispatchEvent(new Event('phase1:queue'));});await page.waitForTimeout(400);
+  await page.evaluate(()=>{const i=__writes.findIndex(x=>x[0]==='contact_upsert'),id=__writes[i][2],p=__writes[i][1];Phase1.queue.list=()=>[{request_id:id,operation:'contact_upsert',object_id:B.deals[0].id,status:'uncertain',payload:p}];dispatchEvent(new Event('phase1:queue'));});await page.waitForTimeout(200);
+  assert.equal(await page.evaluate(()=>B.deals[0].manager_name),'김소장','서버 확인 전에는 기존 대표를 유지한다');
+  assert.equal(await panel.locator('#qc-name').inputValue(),'박새롬','응답 유실 뒤에도 입력을 유지한다');
+  await panel.locator('#qc-name').fill('박새롬 수정 중');await panel.locator('[data-dp="save"]').click();await page.waitForTimeout(100);
+  assert.deepEqual(await page.evaluate(()=>[__contactFlushes,__writes.filter(x=>x[0]==='contact_upsert').length]),[0,1],'불확실한 요청과 달라진 입력은 새 저장도 재전송도 하지 않는다');
+  assert.equal(await panel.locator('#qc-name').inputValue(),'박새롬 수정 중','수정 입력을 조용히 버리지 않는다');
+  assert.match(await panel.locator('#qc-err').innerText(),/변경한 입력은 보존/);
+  await panel.locator('#qc-name').fill('박새롬');
+  await page.evaluate(()=>{window.__contactForm=QUICK_CONTACT;window.__contactActor=ME;ME={...ME,id:'different-fixture-account'};});
+  await panel.locator('[data-dp="save"]').click();await page.waitForTimeout(80);
+  assert.equal(await page.evaluate(()=>QUICK_CONTACT===__contactForm),false,'다른 계정은 이전 폼 객체를 재사용하지 않는다');
+  assert.deepEqual(await page.evaluate(()=>[__contactFlushes,__writes.filter(x=>x[0]==='contact_upsert').length]),[0,1],'계정이 달라진 입력으로 이전 요청을 재전송하지 않는다');
+  await page.evaluate(()=>{ME=__contactActor;QUICK_CONTACT=__contactForm;});
+  const firstRequest=await page.evaluate(()=>__writes.find(x=>x[0]==='contact_upsert')[2]);
+  await panel.locator('[data-dp="save"]').click();await page.waitForTimeout(120);
+  assert.equal(await page.evaluate(()=>__contactFlushes),1,'동일 폼의 저장 버튼으로 기존 요청을 다시 확인한다');
+  assert.equal(await page.evaluate(()=>__writes.filter(x=>x[0]==='contact_upsert').length),1,'불확실한 저장은 새 요청을 만들지 않는다');
+  assert.equal(await page.evaluate(()=>__writes.find(x=>x[0]==='contact_upsert')[2]),firstRequest);
+  await panel.evaluate(p=>{p.querySelector('#qc-decision-role').value='검토자';p.querySelector('#qc-relation-tone').value='긍정';});
+  await page.evaluate(()=>{const i=__writes.findIndex(x=>x[0]==='contact_upsert'),payload=__writes[i][1],object_id=B.deals[0].id,request_id=__writes[i][2],auth_uid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',user_id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+   const command={request_id,operation:'contact_upsert',object_id,expected_version:0,auth_uid,user_id,payload};
+   const ack={contract_version:1,ok:true,replayed:false,request_id,operation:'contact_upsert',object_id,actor_auth_uid:auth_uid,actor_user_id:user_id,previous_version:0,version:1,person_key:payload.person_key,contact_id:crypto.randomUUID(),audit_event_id:crypto.randomUUID(),server_at:new Date().toISOString(),contact_consent_contract:'preserve-omitted-v1',consent:{sms_consent:true,kakao_consent:false,consent_at:payload.consent_at,opt_out_at:null,send_blocked:false,send_blocked_reason:payload.send_blocked_reason??null}};
+   OperationalAdapter.validateAck(ack,command);Phase1.queue.list=()=>[{...command,status:'done',ack}];dispatchEvent(new Event('phase1:queue'));});await page.waitForTimeout(400);
   assert.equal(await page.evaluate(()=>B.deals[0].manager_name),'박새롬','서버 확인 뒤 새 소장이 대표');
-  assert.equal(await page.locator('#ddvPanel').count(),0,'저장되면 패널 닫힘');
+  assert.deepEqual(await panel.evaluate(p=>[p.querySelector('#qc-name').value,p.querySelector('#qc-decision-role').value,p.querySelector('#qc-relation-tone').value]),['박새롬','검토자','긍정'],'다른 값이 같아도 미지원 관계 입력의 편집을 늦은 ACK가 닫지 않는다');
+  assert.match(await panel.locator('#qc-err').innerText(),/앞선 요청은 저장되었습니다.*변경한 입력은 아직 저장되지/);
+  await panel.locator('[data-dp="close"]').first().click();await page.waitForTimeout(100);
+  assert.equal(await page.locator('#ddvPanel').count(),0,'사용자가 입력을 닫으면 패널 닫힘');
+  /* 거절은 완료가 아니며, 수정 후에는 새 요청을 만든다. 같은 번호라도 다른 폼은 이전 요청을 재사용하지 않는다. */
+  await page.evaluate(()=>openQuickContact('new'));await page.waitForTimeout(100);
+  await panel.locator('#qc-name').fill('수정 전 담당자');await panel.locator('#qc-mobile').fill('01033334444');
+  await panel.locator('[data-dp="save"]').click();await page.waitForTimeout(100);
+  const rejectedId=await page.evaluate(()=>__writes.filter(x=>x[0]==='contact_upsert').at(-1)[2]);
+  await page.evaluate(()=>{const w=__writes.filter(x=>x[0]==='contact_upsert').at(-1);Phase1.queue.list=()=>[{request_id:w[2],operation:'contact_upsert',object_id:B.deals[0].id,status:'rejected',payload:w[1],error:'합성 저장 거절'}];dispatchEvent(new Event('phase1:queue'));});await page.waitForTimeout(100);
+  assert.equal(await panel.locator('#qc-name').inputValue(),'수정 전 담당자','거절된 입력도 그 자리에서 고칠 수 있다');
+  assert.equal(await page.evaluate(()=>B.deals[0].manager_name),'박새롬','거절로 확인된 대표를 바꾸지 않는다');
+  await panel.locator('#qc-name').fill('수정 후 담당자');await panel.locator('[data-dp="save"]').click();await page.waitForTimeout(100);
+  assert.notEqual(await page.evaluate(()=>__writes.filter(x=>x[0]==='contact_upsert').at(-1)[2]),rejectedId,'거절된 요청의 입력 수정은 새 요청 ID를 사용한다');
+  assert.equal(await page.evaluate(()=>__writes.filter(x=>x[0]==='contact_upsert').at(-1)[1].manager_name),'수정 후 담당자');
+  await page.evaluate(()=>{window.__fixtureAfterContact={B,ME};dispatchEvent(new Event('phase1:identity-cleared'));});assert.equal(await page.locator('#authGate.on').count(),1,'계정 초기화는 실제 인증 게이트를 연다');await page.evaluate(()=>{AUTH_ON=true;B=__fixtureAfterContact.B;ME=__fixtureAfterContact.ME;document.getElementById('authGate').classList.remove('on');});await panel.locator('[data-dp="close"]').first().click();await page.waitForTimeout(100);
   /* ── 2. 공종 분류 ── */
   await page.evaluate(()=>openWorkEdit());await page.waitForTimeout(400);
   assert.equal(await panel.count(),1);assert.equal(await inColumn(),true);

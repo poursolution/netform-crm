@@ -48,6 +48,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      __db.unshift(r);return {data:{ok:true,request:J(r)}};}
     if(name==='crm_work_request_list_v1'){const rows=__db.filter(r=>p.target_type?(r.target_type===p.target_type&&r.target_id===p.target_id):(role()==='admin'||r._by===uid()||(r.to_scope==='user'&&r._to===uid())||(r.to_scope==='branch'&&role()==='branch')));return {data:{ok:true,requests:rows.map(J)}};}
     if(name==='crm_work_request_inquiry_contact_v1'){
+     if(window.__badContactAck)return {data:{ok:true}};
      const r=__db.find(x=>x.id===p.id);if(!r||r._to!==uid())return err('받는 담당자만 기록할 수 있습니다');
      const lid='20000000-0000-4000-8000-000000000001';Object.assign(r,{status:p.result==='부재'?'working':'done',result:p.result,next_text:p.next_text,next_due:p.next_due,replied_by:ME.name,closed_at:p.result==='부재'?null:now(),updated_at:now()});
      const state={inquiry_id:r.target_id,logs:[{id:lid,request_id:p.operation_id,result:p.result,kind:p.result==='부재'?'attempt':'connected',next_action:p.next_text,next_check_date:p.next_due,occurred_at:now()}]};
@@ -151,9 +152,16 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await c1.locator('.res button',{hasText:'부재'}).click();await page.waitForTimeout(250);
   assert.equal(await page.evaluate(()=>__db.find(r=>r.id==='r2').status),'seen','카드에서 무엇이든 누르면 그때 담당 확인');
   assert.equal(one(await c1.locator('.nx').innerText()),'다음 행동 AI다시 전화 · 10/08');assert.equal(one(await c1.locator('.ft').innerText()),'부재 = 연락 시도로만 기록 · 최초 응대는 아직 미완료 저장');
-  await c1.locator('.res button',{hasText:'연결됨'}).click();await page.waitForTimeout(150);assert.equal(one(await c1.locator('.nx').innerText()),'다음 행동 AI다시 연락 · 10/10');assert.equal(one(await c1.locator('.ft').innerText()),'저장하면 관리자 요청 자동 완료 저장');
+  await c1.locator('.res button',{hasText:'연결됨'}).click();await page.waitForTimeout(150);assert.equal(one(await c1.locator('.nx').innerText()),'다음 행동 AI다시 연락 · 10/10');assert.equal(one(await c1.locator('.ft').innerText()),'서버 확인 후 첫 연락 요청 완료 저장');
   if(shot)await page.screenshot({path:shot+'-rep-top.png',fullPage:true});
-  await c1.locator('[data-wr="save"]').click();await page.waitForTimeout(400);
+  const beforeContact=await page.evaluate(()=>JSON.stringify(B.inquiries.find(q=>q.id==='00000002-0000-4000-8000-000000000002')));
+  await page.evaluate(()=>{window.__badContactAck=true;});await c1.locator('[data-wr="save"]').click();await page.waitForTimeout(300);
+  assert.equal(await page.evaluate(()=>__db.find(r=>r.id==='r2').status),'seen','확인 근거 없는 응답은 요청 완료가 아니다');
+  assert.equal(await page.evaluate(()=>JSON.stringify(B.inquiries.find(q=>q.id==='00000002-0000-4000-8000-000000000002'))),beforeContact,'불완전 ACK는 응대·다음 일정에 반영하지 않는다');
+  assert.equal(await c1.count(),1,'재시도할 요청 카드를 유지한다');
+  const retryOperation=await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_work_request_inquiry_contact_v1').at(-1)[1].operation_id);
+  await page.evaluate(()=>{window.__badContactAck=false;});await c1.locator('[data-wr="save"]').click();await page.waitForTimeout(400);
+  assert.equal(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_work_request_inquiry_contact_v1').at(-1)[1].operation_id),retryOperation,'재시도는 같은 응대 요청 ID를 사용한다');
   assert.deepEqual(await page.evaluate(()=>__rec),[],'이전 비동기 접수 경로를 호출하지 않는다');
   assert.deepEqual(await page.evaluate(()=>{const c=__rpc.filter(x=>x[0]==='crm_work_request_inquiry_contact_v1').pop();return [c[1].id,c[1].result,c[1].next_text,c[1].next_due,c[2]];}),['r2','연결됨','다시 연락','2026-10-10','이필선'],'응대·다음 일정·요청을 한 서버 호출로 저장');
   assert.equal(await page.locator('#today-v2 .tv3 .wrq-top').count(),0,'처리하면 맨 위 줄이 사라진다');
@@ -265,6 +273,6 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.evaluate(()=>WorkRequest.enabled()),false);assert.equal(await page.locator('#today-v2 .tv3 [data-wr]').count(),0);assert.equal(await page.locator('#today-v2 .tv3').evaluate(n=>n.classList.contains('wrq-on')),false);
   assert.ok((await page.locator('#today-v2 .tv3').innerText()).includes('독촉'),'저장소가 없으면 예전 버튼');
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',buttons_named_by_situation:true,small_request_window:true,leaves_list_into_waiting:true,duplicate_lock:true,rep_top_request_auto_complete:true,absent_is_attempt_only:true,branch_reply_with_owner:true,overdue_reask_reassign_recall:true,history_system_lines:true,auto_complete_from_records:true,branch_recall_suggest_auto_off_by_default:true,unreachable_recipient_tracked_and_ack:true,kpi8_source:true,deal_history_label:true,fallback_without_server:true}));
+  console.log(JSON.stringify({status:'PASS',buttons_named_by_situation:true,small_request_window:true,leaves_list_into_waiting:true,duplicate_lock:true,rep_top_request_server_confirmed_result:true,absent_is_attempt_only:true,branch_reply_with_owner:true,overdue_reask_reassign_recall:true,history_system_lines:true,completion_requires_confirmed_result_records:true,branch_recall_suggest_auto_off_by_default:true,unreachable_recipient_tracked_and_ack:true,kpi8_source:true,deal_history_label:true,fallback_without_server:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
