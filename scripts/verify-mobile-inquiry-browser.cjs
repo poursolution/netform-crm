@@ -5,12 +5,12 @@
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=path.resolve(__dirname,'..');
-const srv=http.createServer((req,res)=>{const rel=decodeURIComponent(new URL(req.url,'http://127.0.0.1').pathname).replace(/^\/+/,'')||'mobile.html',t=path.resolve(root,rel);if(!t.startsWith(root+path.sep)||!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type',t.endsWith('.html')?'text/html; charset=utf-8':t.endsWith('.css')?'text/css':'application/javascript; charset=utf-8');fs.createReadStream(t).pipe(res)});
+const srv=http.createServer((req,res)=>{const rel=decodeURIComponent(new URL(req.url,'http://127.0.0.1').pathname).replace(/^\/+/,'')||'mobile.html';let dir=root,t=path.resolve(dir,rel);if(!fs.existsSync(t)&&process.env.MOBILE_TEST_BASE){dir=path.resolve(process.env.MOBILE_TEST_BASE);t=path.resolve(dir,rel);}if(!t.startsWith(dir+path.sep)||!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type',t.endsWith('.html')?'text/html; charset=utf-8':t.endsWith('.css')?'text/css':'application/javascript; charset=utf-8');fs.createReadStream(t).pipe(res)});
 const one=s=>String(s||'').replace(/\s+/g,' ').trim();
 const QID='aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa';
 (async()=>{
  await new Promise(r=>srv.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({headless:true}),errs=[];
+ const browser=await chromium.launch({headless:true,...(process.env.BROWSER_EXECUTABLE?{executablePath:process.env.BROWSER_EXECUTABLE}:{})}),errs=[];
  try{
   const ctx=await browser.newContext({viewport:{width:390,height:844},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
@@ -18,14 +18,35 @@ const QID='aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa';
   await page.goto(`http://127.0.0.1:${srv.address().port}/mobile.html?demo=1`,{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>window.ContactEntry&&window.MobileInquiry&&typeof render==='function'&&window.OperationalUI&&typeof queueInquiryNextSet==='function');
   const setup=(o)=>page.evaluate(o=>{
+   for(const key of Object.keys(sessionStorage))if(key.startsWith('crm:mobile-save:'))sessionStorage.removeItem(key);
    const kst=n=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(Date.now()+n*864e5));window.__kst=kst;
    G.user=REPS.find(r=>r.role==='dual')||REPS[0];G.mode='rep';DEMO=true;window.toast=()=>{};
    ADMIN.inquiries=[{key:'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',id:'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',nm:'[테스트] 문의 현장',rep:G.user.nm,status:o.status||'배정완료',phone:'01011112222',gj:'옥상방수',body:'옥상 누수',at:new Date().toISOString(),raw:{status:o.status||'배정완료'}}];
    DEALS=[];G._today=[{kind:'inquiry',ref:'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',nm:'[테스트] 문의 현장'}];G.done={};G.deal=null;G.tab='today';G.sub={t:'inqAssigned',key:'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa'};
-   window.__rpc=[];window.__w=[];window.__fail=!!o.fail;
-   window.pushWrite=(op,p)=>{__w.push([op,p]);return 'req-'+__w.length;};
+   window.__rpc=[];window.__w=[];window.__fail=!!o.fail;window.__ackMode=o.ackMode||'';
+   const original=window.__originalPushWrite||(window.__originalPushWrite=window.pushWrite);
+   window.pushWrite=(op,p)=>{__w.push([op,p]);return original(op,p);};
    const real=window.__realPhase1||(window.__realPhase1=window.Phase1);
-   window.Phase1=Object.assign({},real,{profile:Object.assign({},real.profile||{},{name:'테스트',allowed_modes:['rep']}),rpc:async(name,args)=>{__rpc.push([name,args.p]);if(__fail)throw Error('서버가 거절했습니다');return {ok:true,status:args.p.type==='close'?'배드핏':undefined};}});
+   const profile={name:'테스트',allowed_modes:['rep'],auth_uid:'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',user_id:'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa'},rows=[];
+   const queue={list:()=>rows,enqueue:(op,id,v,p,rid)=>{const row={...OperationalAdapter.normalize(op,id,v,p),request_id:rid||crypto.randomUUID(),auth_uid:profile.auth_uid,user_id:profile.user_id,status:'pending'};rows.push(row);return row;},flush:async()=>{
+    for(const row of rows.filter(x=>x.status==='pending')){
+     const at=new Date().toISOString(),aid=crypto.randomUUID();
+     const ack={contract_version:1,ok:true,request_id:row.request_id,operation:row.operation,object_id:row.object_id,replayed:false,actor_auth_uid:row.auth_uid,actor_user_id:row.user_id,intent:row.payload.intent,inquiry_audit_event_id:aid,server_at:at};
+     if(row.operation==='inquiry_assign')Object.assign(ack,{response:row.payload.response,status:'전화응대 완료',changed:true,first_response_at:at,responded_at:at,next_action_date:null,updated_at:at});
+     else Object.assign(ack,{next_action_id:aid,next_action_date:row.payload.due_at,cancelled_action_ids:[],assignee_name:'테스트'});
+     OperationalAdapter.validateAck(ack,row);row.ack=ack;row.status='done';
+    }dispatchEvent(new Event('phase1:queue'));return rows;
+   }};
+   window.Phase1=Object.assign({},real,{profile,queue,rpc:async(name,args)=>{
+    const p=args.p;__rpc.push([name,p]);if(__fail)throw Error('서버가 거절했습니다');
+    if(p.type==='close')return {ok:true,status:'배드핏'};
+    const id=crypto.randomUUID(),ack={ok:true,type:'contact_log',log_id:id,inquiry_id:p.inquiry_id,state:{inquiry_id:p.inquiry_id,logs:[{...p,id}]}};
+    if(__ackMode==='bare')return {ok:true};
+    if(__ackMode==='inquiry')ack.state.inquiry_id=crypto.randomUUID();
+    if(__ackMode==='request')ack.state.logs[0].request_id=crypto.randomUUID();
+    if(__ackMode==='content')ack.state.logs[0].content='다른 기록';
+    return ack;
+   }});
    render();},o);
   await setup({});await page.waitForTimeout(300);
   const S=page.locator('#scr'),C=page.locator('#sheetcard'),txt=async s=>one(await C.locator(s).first().innerText());
@@ -73,6 +94,23 @@ const QID='aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa';
   /* ⑧ 끄기 */
   await setup({});await page.evaluate(()=>{G.mobileInqOff=true;render();});await page.waitForTimeout(250);
   assert.equal(await S.locator('.mi-open').count(),0);assert.ok(await S.locator('button[onclick*="recordInquiryResponse"]').count()>=3,'끄면 예전 결과 3가지');
+  await page.evaluate(()=>{G.mobileInqOff=false;});
+  /* 응대 기록 근거가 없거나 다른 기록이면 후속 쓰기와 완료 표시를 막는다. */
+  for(const ackMode of ['bare','inquiry','request','content']){
+   await setup({ackMode});await page.evaluate(()=>MobileInquiry.open(ADMIN.inquiries[0],0));
+   await C.locator('[data-mi="res"][data-v="부재"]').click();await C.locator('.ce-save').click();
+   await C.locator('.ce-err').waitFor();assert.match(await txt('.ce-err'),/서버 저장 근거/);
+   assert.equal(await page.evaluate(()=>__w.length),0);assert.equal(await C.locator('.ce-done').count(),0);
+   assert.deepEqual(await page.evaluate(()=>G.done),{});
+  }
+  /* 한국시간 자정과 성공 뒤 닫기: 기존 업무 ID·날짜를 보존한다. */
+  await setup({});await page.evaluate(()=>{ADMIN.inquiries[0].nextActionObj={id:'bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb',text:'기존 방문',due_at:'2026-11-30T15:00:00Z',status:'open'};MobileInquiry.open(ADMIN.inquiries[0],null);});
+  await C.locator('[data-mi="res"][data-v="부재"]').click();assert.equal(await C.locator('[data-mi-in="date"]').inputValue(),'2026-12-01');
+  await C.locator('.ce-save').click();await C.locator('.ce-done').waitFor();assert.equal(await page.evaluate(()=>__w.length),0);
+  assert.equal(await page.evaluate(()=>__rpc[0][1].next_check_date),'2026-12-01');
+  assert.equal(await page.evaluate(()=>ADMIN.inquiries[0].nextActionObj.id),'bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb');
+  await page.evaluate(()=>{window.__closeCount=0;const close=window.closeSheet;window.closeSheet=function(){__closeCount++;return close.apply(this,arguments);};});
+  await C.locator('[data-mi="close"]').click();assert.equal(await page.evaluate(()=>__closeCount),1);
   assert.deepEqual(errs,[],'화면 오류 없음: '+errs.join(' | '));
   console.log('verify-mobile-inquiry: ok');
  }finally{await browser.close();srv.close();}
