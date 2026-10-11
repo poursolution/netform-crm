@@ -33,9 +33,13 @@
  }
  /* 원가계산서. input: {area, lines|unit:{mat,lab,exp}, rates, generalPct, profitPct, retire:boolean(기본 false), health:boolean(기본 = durationDays>=30, 없으면 true), durationDays} */
  function costSheet(input){
-  const R=Object.assign({},DEFAULT_RATES,input.rates||{}),u=input.unit||unitCost(input.lines),area=n0(input.area);
-  const direct={mat:INT(u.mat*area),lab:INT(u.lab*area),exp:INT(u.exp*area)};
-  const E8=direct.mat,E9=direct.lab,E12=direct.exp;
+  const u=input.unit||unitCost(input.lines),area=n0(input.area);
+  return fromDirect(Object.assign({},input,{mat:INT(u.mat*area),lab:INT(u.lab*area),exp:INT(u.exp*area),unit:u}));
+ }
+ /* 직접공사비 합계(재료 · 노무 · 경비)에서 바로 원가계산서 — 엑셀을 올렸을 때 '항목별 재계산 = 공급가액' 확인에도 같은 산식을 쓴다 */
+ function fromDirect(input){
+  const R=Object.assign({},DEFAULT_RATES,input.rates||{}),u=input.unit||{mat:0,lab:0,exp:0};
+  const E8=n0(input.mat),E9=n0(input.lab),E12=n0(input.exp);
   const E10=INT(E9*R.indirectLabor),E11=E9+E10;
   const E13=INT(E11*R.accident),E14=INT(E11*R.employment);
   const hl=healthApplies(input);const E15=hl?INT(E9*R.health):0,E16=hl?INT(E9*R.pension):0,E17=hl?INT(E15*R.care):0;
@@ -46,6 +50,5 @@
   const E26=INT(E25*n0(input.generalPct)),E27=INT((E11+E24+E26)*n0(input.profitPct));
   const E28=E25+E26+E27,E30=Math.floor(E28/100000)*100000;
   return {directMaterial:E8,directLabor:E9,indirectLabor:E10,labor:E11,expense:E12,accident:E13,employment:E14,health:E15,pension:E16,care:E17,safety:E18,asbestos:E19,wageClaim:E20,otherExp:E21,environment:E22,retire:E23,subtotalC:E24,sum:E25,general:E26,profit:E27,supply:E28,rounding:E30-E28,base:E30,unit:{mat:u.mat,lab:u.lab,exp:u.exp}};
- }
- return {INT,DEFAULT_RATES,healthApplies,pickEffective,materialUnit,unitCost,costSheet};
+ } return {INT,DEFAULT_RATES,fromDirect,healthApplies,pickEffective,materialUnit,unitCost,costSheet};
 });
