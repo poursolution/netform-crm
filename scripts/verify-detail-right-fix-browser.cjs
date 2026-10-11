@@ -11,7 +11,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
 const one=s=>String(s||'').replace(/\s+/g,' ').trim();
 (async()=>{
  await new Promise(r=>srv.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({headless:true}),errs=[];
+ const browser=await chromium.launch(require('../review-preview/review-environment.cjs').launchOptions()),errs=[];
  try{
   const ctx=await browser.newContext({viewport:{width:1366,height:768},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
@@ -151,7 +151,8 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual((await saved()).slice(b4),[{contract_document:'수령',start_date:'2026-11-02',special_terms:'없음'}],'계약서 수령 · 착공일 · 특이조건');
   /* 합성 서버 ACK도 실제 확인 계약(actor/object/version/UUID)을 따른다. ok 하나만으로 후속 저장을 허용하지 않는다. */
   await page.evaluate(()=>{
-   window.__ops=[];window.__invalidActivityAck=false;
+   window.__ops=[];window.__invalidActivityAck=false;window.__memoNotices=[];const originalToast=window.toast;window.toast=(...args)=>{__memoNotices.push(args);return originalToast?.(...args);};
+   window.Phase1={...Phase1,profile:{auth_uid:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',user_id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'}};
    const enqueue=(op,payload)=>{
     const id=crypto.randomUUID(),object_id=payload.opportunity_id||payload.source_opportunity_id,
      d=B.deals.find(x=>x.id===object_id),expected_version=d?.version||0,auth_uid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',user_id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -173,9 +174,15 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual((await saved()).slice(b5),[{customer_reaction:'만족 · 하자 없음',reengage:'예',recontact_possibility:'외벽 2028'}]);
   /* 사후 연락 → 하자 접수([하자] 표식) · 추가 공종 → 확장관리 새 영업건 */
   await openWork(5);await page.evaluate(()=>{__ops.length=0;});
+  await page.evaluate(()=>{G.page='today';}); // 오늘 업무를 배경으로 연 같은 대상 상세도 상세의 저장 경로를 사용한다.
   await V.locator('.dv7-wfoot button',{hasText:'하자 접수'}).click();await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>__ops.length),0,'하자 내용이 없으면 접수하지 않는다');
-  await V.locator('.dv7-work input[data-dv3f="defect_text"]').fill('101동 옥상 배수구 들뜸');await V.locator('.dv7-work input[data-dv3f="defect_due"]').fill('2026-12-20');await V.locator('.dv7-wfoot button',{hasText:'하자 접수'}).click();await page.waitForTimeout(500);
-  assert.deepEqual(await page.evaluate(()=>__ops.map(o=>[o.op,o.payload.type,o.payload.note.replace(/접수 \d{4}-\d{2}-\d{2}/,'접수 오늘')])),[['activity','메모','[하자] 101동 옥상 배수구 들뜸 | 접수 오늘 | 담당 정정훈 | 약속 2026-12-20 | 미해결']],'기존 [하자] 표식으로 내부 메모에 남는다');
+  await V.locator('.dv7-work input[data-dv3f="defect_text"]').fill('101동 옥상 배수구 들뜸');await V.locator('.dv7-work input[data-dv3f="defect_due"]').fill('2026-12-20');
+  await page.evaluate(()=>{window.__savedProfile=Phase1.profile;Phase1.profile=null;});await V.locator('.dv7-wfoot button',{hasText:'하자 접수'}).click();await page.waitForTimeout(250);
+  assert.equal(await page.evaluate(()=>__ops.length),0,'실제 세션이 없으면 내부 메모도 저장하지 않는다');
+  assert.equal(await V.locator('.dv7-work input[data-dv3f="defect_text"]').inputValue(),'101동 옥상 배수구 들뜸','인증 실패 후 하자 원문 보존');
+  assert.equal(await V.locator('.dv7-work input[data-dv3f="defect_due"]').inputValue(),'2026-12-20','인증 실패 후 약속일 보존');
+  await page.evaluate(()=>{Phase1.profile=__savedProfile;});await V.locator('.dv7-wfoot button',{hasText:'하자 접수'}).click();await page.waitForTimeout(500);
+  assert.deepEqual(await page.evaluate(()=>__ops.map(o=>[o.op,o.payload.type,o.payload.note.replace(/접수 \d{4}-\d{2}-\d{2}/,'접수 오늘')])),[['activity','메모','[하자] 101동 옥상 배수구 들뜸 | 접수 오늘 | 담당 정정훈 | 약속 2026-12-20 | 미해결']],'기존 [하자] 표식으로 내부 메모에 남는다: '+JSON.stringify(await page.evaluate(()=>({notices:__memoNotices,profile:Phase1.profile,page:G.page}))));
   await openWork(5);assert.equal(await V.locator('.dv7-wfoot [data-dv3="wnewdeal"]').count(),1);
   await V.locator('.dv7-wfoot [data-dv3="wnewdeal"]').click();await page.waitForTimeout(500);
   assert.equal(await page.evaluate(()=>!!(window.EXPANSION_NEW_SOURCE&&String(EXPANSION_NEW_SOURCE.sourceOpportunityId)===String(B.deals[5].id))),true,'확장관리 새 영업건 창이 이 수주 건을 출발점으로 열린다');await page.evaluate(()=>{try{closeNewDeal();}catch(e){}});
@@ -203,10 +210,15 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const retryId=await page.evaluate(()=>__ops[0].request_id);
   await page.evaluate(()=>{__invalidActivityAck=false;});await V.locator('.dv7-wfoot .pri').click();await page.waitForTimeout(700);
   assert.equal(await page.evaluate(()=>__ops[0].request_id),retryId,'재시도는 같은 메모 요청을 확인한다');
-  assert.deepEqual(await page.evaluate(()=>__ops.map(o=>o.op)),['activity','relationship_contact'],'관리 상태 표식 + 연락 기록(기존 길)');
+  assert.deepEqual(await page.evaluate(()=>__ops.map(o=>o.op)),['activity','activity'],'관리 상태 표식 + 연락 기록; 이미 열린 고객 약속은 교체하거나 완료하지 않는다');
   assert.equal(await page.evaluate(()=>__ops[0].payload.note),'[관계 상태] 대기 | 2027 봄 공사 대기 | '+promised+' | 없음 | 미정');
-  assert.deepEqual(await page.evaluate(()=>{const a=__ops[1].payload;return [a.activity.type,a.activity.meaningful_contact,a.next_action.text,a.next_action.due_at];}),['전화',true,'고객 약속: 입대의 결과 확인 연락',promised],'연락 결과 + 고객 약속 그대로 유지한 다음 연락');
+  assert.deepEqual(await page.evaluate(()=>{const a=__ops[1].payload;return [a.type,a.meaningful_contact,a.note];}),['전화',true,'통화 완료 · 연결됨 — 입대의 일정 확인 중이라고 함'],'연결된 연락의 결과와 실제 통화 판정이 공통 활동 저장에 그대로 전달된다');
+  assert.equal(await page.evaluate(()=>JSON.stringify(B.deals[2].next_action)),JSON.stringify(JSON.parse(beforeContact).next),'원래 고객 약속의 ID·날짜·내용·열림 상태를 그대로 유지한다');
   assert.equal((await P()).hidden,true,'저장하면 업무 화면이 닫힌다');
+  const contactCount=await page.evaluate(()=>__ops.length);
+  await page.evaluate(()=>DealDetailV3.record(B.deals[2],{res:'부재',memo:'합성 부재 확인',P:{}}));
+  assert.deepEqual(await page.evaluate(n=>__ops.slice(n).map(o=>[o.op,o.payload.type,o.payload.meaningful_contact]),contactCount),[['activity','전화',false]],'오늘을 배경으로 한 같은 대상 상세의 부재 기록은 통화 시도로만 저장한다');
+  assert.equal(await page.evaluate(()=>JSON.stringify(B.deals[2].next_action)),JSON.stringify(JSON.parse(beforeContact).next),'부재 시에도 기존 고객 약속을 완료하거나 새 일정으로 바꾸지 않는다');
   await openWork(2);await V.locator('.dv7-wfoot button',{hasText:'실주 처리'}).click();await page.waitForTimeout(500);assert.equal(await V.locator('.dv3-move').count()>0,true,'[실주 처리] = 단계 바꾸기 창');
   await open(7);await V.locator('.dv7-info button').click();await page.waitForTimeout(400);assert.deepEqual(await V.locator('.dv7-fill .dv7-fr .h b').allInnerTexts(),['단계 정하기','다음 행동 · 날짜','마지막 연락']);
   /* 담당 미배정 줄 [담당 배정] → 상세 창 가운데 칸의 '담당 배정' 화면 */

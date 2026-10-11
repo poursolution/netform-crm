@@ -29,6 +29,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.dkOpen=null;G.siteHistoryOff=true;G.dealSiteInfoLeft=true;G.dealTidyOff=true;/* 이 검사는 정돈안 이전 배치(끄기 스위치 뒤)를 본다 — 정돈안은 scripts/verify-deal-tidy-browser.cjs *//* 이 검사는 '같은 현장 다른 영업' + 왼쪽 '현장 정보'가 있는 예전 배치를 본다 — 기본 배치(오른쪽만)는 verify-deal-right-only-browser.cjs */
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    window.__writes=[];window.__ops=[];window.__contactOps=[];window.__contactStates={};
+   window.Phase1={...Phase1,profile:{auth_uid:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',user_id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'}};
    window.CRM_SCHEDULE_V1=false; // Explicit gate-OFF compatibility/overwrite protection; gate-ON real flow is exercised in verify-deal-tidy-browser.
    const row=(op,payload,actionId)=>{
     const id=crypto.randomUUID(),object_id=payload.opportunity_id,d=B.deals.find(x=>x.id===object_id),expected_version=d?.version||0;

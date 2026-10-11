@@ -6,10 +6,12 @@
    ② 종결 4종 — 사유 필수 · 고르는 즉시 종결 · '배드핏 종결 검토' 다음 할 일 없음 · 다른 업체 선택 = 상담종결
    ③ 문자 = 1:1 문자 보내기(가운데 칸 · design_handoff_inquiry_sms) → 응대 기록 '문자 · 회신대기'(연락 시도). CRM 발송 큐 · 목록 문자 버튼 · 문자 탭은 없음
    ④ 전환 = 1차 현장방문 완료 또는 견적 발송 완료 중 먼저('예정'은 전환 아님) — 상세 문구 · 전환 대기 목록 · 전송 계층이 같은 기준
-   ⑤ 견적 = 버전(금액은 원 · 다음 할 일 문장에 금액 없음) · 보내면 후속 할 일 = 보낸 날 + 7일 '고객 반응 확인'
+   ⑤ 견적 = 버전(금액은 원) · 기존 일정 유지 · 자동 D+7/파이프라인 전환은 확인된 별도 저장 계약 전까지 보류
    서버는 흉내(저장 명령 · 읽기 함수가 같은 모양으로 응답). 끄면(G.inqFlowOff) 예전 판정 */
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+const installInquiry=require('../tests/pc-inquiry-fixture.cjs');
+const installMilestone=require('../tests/pc-inquiry-milestone-fixture.cjs');
 const root=path.resolve(__dirname,'..'),shot=process.argv[2]||'';
 const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':t.endsWith('.png')?'image/png':'text/html');fs.createReadStream(t).pipe(res)});
 (async()=>{
@@ -20,6 +22,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});
   const page=await ctx.newPage(),errs=[];page.on('pageerror',e=>errs.push(e.message));
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.InquiryFlow&&window.InquiryCommand&&window.InquiryListV3&&window.InquiryDetailV2&&window.InquiryWorkbench);
+  await page.addScriptTag({content:'window.__installInquiryMock=('+installInquiry.toString()+');'});
+  await page.addScriptTag({content:'window.__installMilestoneMock=('+installMilestone.toString()+');'});
   await page.evaluate(()=>{
    const at=(d,h)=>new Date(Date.now()-d*864e5-(h||0)*36e5).toISOString(),day=d=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(Date.now()+d*864e5));
    const A='22222222-2222-4222-8222-222222222222',R='66666666-6666-4666-8666-666666666666',M='44444444-4444-4444-8444-444444444444',C='77777777-7777-4777-8777-777777777777';
@@ -54,6 +58,24 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     if(name==='crm_inquiry_field_update_v1')return {data:{ok:true,value:p.value}};
     return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
    window.CRMRelease=Object.assign(window.CRMRelease||{},{has:n=>true,noteMissing:()=>{}});
+   // Use the installed response/schedule contracts with the production flag ON.
+   // Legacy field/close commands still use their existing fixture above.
+   const uid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',auth='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+   window.__scheduleMocks={};
+   window.__inquiryMock=id=>{
+    if(!__scheduleMocks[id]){let serial=0;const host={crypto:{randomUUID:()=>++serial===1?uid:serial===2?auth:crypto.randomUUID()}};
+     const f=__installInquiryMock(host,id),q=inqCtlFind(id,false);Object.assign(f.state,{status:q.status,first_response_at:q.first_response_at||null,responded_at:q.responded_at||null});__installMilestoneMock(host,id,f);__scheduleMocks[id]={f,rpc:host.Phase1.rpc};}
+    return __scheduleMocks[id];
+   };
+   window.Phase1={profile:{auth_uid:auth,user_id:uid,name:'송보람'},rpc:async(name,args)=>{
+    const p=args.p||{};
+    if(name.startsWith('crm_inquiry_milestone_')||name.startsWith('crm_schedule_')||name==='crm_inquiry_response_confirm_v1'||name==='crm_inquiry_command_v1'&&p.type==='contact_log'){
+     __rpc.push([name,structuredClone(p)]);const entry=__inquiryMock(p.target_id||p.inquiry_id),result=await entry.rpc(name,args);
+     if(name==='crm_inquiry_command_v1'||name==='crm_inquiry_milestone_save_v1')Object.assign(st(p.inquiry_id),result.state);
+     return result;
+    }
+    const result=await SB.rpc(name,args);if(result.error)throw Error(result.error.message);return result.data;
+   }};
    try{localStorage.removeItem('crm.inqFlow.outbox.v1');}catch(e){}
    G.inqV4Off=true;/* 흐름 판정 · 저장을 목록 v3 의 줄에서 누르며 본다(끄기 스위치 뒤) — 보이는 화면의 저장은 verify-inquiry-v4-browser.cjs */goPage('inq');window.A=A;window.R=R;window.M=M;window.C=C;
   });
@@ -74,7 +96,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.locator('#inq-v3 .il-rec .il-chip.on').allInnerTexts(),['부재','내일'],'부재 → 내일 다시 연락 제안');
   await page.locator('#inq-v3 .il-save button').click();await page.waitForTimeout(600);
   const w1=await page.evaluate(()=>__writes.map(x=>[x[0],x[1].text||x[1].result||'']));
-  assert.deepEqual(w1,[['next_action','다시 연락']],'부재 = 연락 시도: 단계 진행(inquiry_status) 없이 다음 할 일만 · 문장은 행동만 '+JSON.stringify(w1));
+  assert.deepEqual(w1,[],'부재 저장은 기존 큐로 우회하지 않는다');
+  assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_schedule_write_v1').map(x=>[x[1].operation,x[1].title])),[['add','다시 연락']],'서버 일정 ACK로 다음 연락 한 건만 추가');
   const sent=await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_command_v1').map(x=>[x[1].type,x[1].inquiry_id,x[1].channel,x[1].result]));
   assert.deepEqual(sent,[['contact_log','22222222-2222-4222-8222-222222222222','전화','부재']],'응대 기록은 저장 명령 하나로 서버에');
   assert.equal(await tabN('nofirst'),2,'✅ 부재 저장 뒤에도 첫 연락 전 탭에 그대로');
@@ -86,7 +109,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   if(shot)await page.screenshot({path:shot+'-attempt.png'});
   /* 접촉 없이 3회(하루 간격) → 연락두절 종결 제안(제안만 — 상태는 그대로) */
   await page.evaluate(()=>{const q=inqCtlFind(A,false),p=itemPatch(q,'inq');const at=d=>new Date(Date.now()-d*864e5).toISOString();
-   p.activities.push({id:'fu-a',type:'전화',note:'고객 응대 기록',result:'[전화 · 통화불가] ',at:at(2),actor:'이필선',flow:{ch:'전화',res:'통화불가',kind:'attempt',rid:''}},{id:'fu-b',type:'전화',note:'고객 응대 기록',result:'[전화 · 부재] ',at:at(1),actor:'이필선'});paint();});await page.waitForTimeout(300);
+   (p.activities||(p.activities=[])).push({id:'fu-a',type:'전화',note:'고객 응대 기록',result:'[전화 · 통화불가] ',at:at(2),actor:'이필선',flow:{ch:'전화',res:'통화불가',kind:'attempt',rid:''}},{id:'fu-b',type:'전화',note:'고객 응대 기록',result:'[전화 · 부재] ',at:at(1),actor:'이필선'});paint();});await page.waitForTimeout(300);
   assert.deepEqual(await page.evaluate(()=>{const s=InquiryFlow.state(inqCtlFind(A,false));return [s.attempts,s.spaced,s.unreachable,inqCtlFind(A,false).status];}),[3,3,true,'배정완료']);
   assert.match(await row('한강신도시반도유보라').locator('.il-site em.il-tries').innerText(),/^ · 시도 3회 · 연락두절 종결 제안$/);
   await page.evaluate(()=>InquiryWorkbench.open(A));await page.waitForTimeout(400);
@@ -99,14 +122,21 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{__writes.length=0;});
   await d.locator('.idv3-rc',{hasText:/^연결됨$/}).click();await page.waitForTimeout(150);await d.locator('.idv3-rc',{hasText:/^관심 있음$/}).click();await page.waitForTimeout(150);await d.locator('#iq-res').fill('소장님과 통화 · 방문 일정 조율');await d.locator('.idv3-foot .idv-save').click();await page.waitForTimeout(700);
   const w2=await page.evaluate(()=>__writes.map(x=>[x[0],x[1].intent||'',x[1].result||x[1].text||'']));
-  assert.equal(w2.length,1,JSON.stringify(w2));assert.equal(w2[0][0],'inquiry_status');assert.equal(w2[0][1],'progress');assert.match(w2[0][2],/^\[전화 · 연결됨\] 소장님과 통화/);
-  assert.deepEqual(await page.evaluate(()=>{const q=inqCtlFind(A,false),s=InquiryFlow.state(q),S=InquiryFlow.server(q);return [!!inqCtlFirstResponseAt(q),inquiryResponded(q),s.attempts,!!S.first_connected_at,S.attempt_count,S.connected_count];}),[true,true,3,true,1,1],'접촉 뒤: 최초응대 완료 · 그 전 시도 수는 남는다');
+  assert.deepEqual(w2,[],'응대 확인은 옛 inquiry_status 큐를 사용하지 않는다');
+  assert.match(await page.locator('#iq-msg').innerText(),/기존 일정과 다음 행동이 다릅니다/,'추천만으로 기존 일정을 덮어쓰지 않음');
+  assert.equal(await d.locator('#iq-res').inputValue(),'소장님과 통화 · 방문 일정 조율','충돌 시 상담 원문 보존');
+  await d.locator('[data-idv="edit-sug"]').click();await d.locator('#iq-next').fill('다시 연락');
+  await d.locator('#iq-due').fill(await page.evaluate(()=>__inquiryMock(A).f.rows[0].due_on));
+  await d.locator('.idv3-foot .idv-save').click();await page.waitForTimeout(600);
+  assert.equal(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_response_confirm_v1').length),1,'실제 연결의 서버 확인은 한 번 '+await page.locator('#iq-msg').innerText());
+  assert.equal(await page.evaluate(()=>__inquiryMock(A).f.rows.length),1,'연결 후에도 기존 재연락 일정은 유지');
+  assert.deepEqual(await page.evaluate(()=>{const q=inqCtlFind(A,false),s=InquiryFlow.state(q),S=InquiryFlow.server(q);return [!!inqCtlFirstResponseAt(q),inquiryResponded(q),s.attempts,!!S.first_connected_at,S.attempt_count,S.connected_count];}),[true,true,3,true,1,1],'접촉 뒤: 최초응대 완료 · 그 전 시도 수는 남는다 '+JSON.stringify(await page.evaluate(()=>InquiryFlow.state(inqCtlFind(A,false)).logs)));
   assert.equal(await tabN('nofirst'),1,'접촉하면 첫 연락 전 탭에서 빠진다');assert.deepEqual(await kpi(),[0,4],'늦은 접촉(2시간 넘김)은 분자에 안 들어간다');
   assert.equal(await page.evaluate(()=>!!document.querySelector('body>#iq-did,body>#iq-next,body>#iq-due,#inqActText,#inqActDue')),false,'임시 입력칸은 남기지 않는다');
   await page.evaluate(()=>InquiryWorkbench.close());await page.waitForTimeout(200);
   /* 배정 직후 2시간 안 접촉 → 분자에 들어간다 */
-  await page.evaluate(()=>{const N='88888888-8888-4888-8888-888888888888',now=new Date(Date.now()-36e5).toISOString();B.inquiries.push({id:N,site:'[부산] 해운대자이',status:'배정완료',at:now,created_at:now,brand:'석민이앤씨',phone:'051-000-2222',contact_name:'김소장',assignee:'이필선',assigned_to:'이필선',assigned_at:now,raw:{'문의내용':'주차장 방수'}});window.N=N;__writes.length=0;
-   InquiryCommand.run('contact_log',inqCtlFind(N,false),{ch:'전화',result:'고객 회신',text:'문자 보고 전화 주심',next:'다시 연락',due:new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(Date.now()+3*864e5))});paint();});await page.waitForTimeout(500);
+  await page.evaluate(async()=>{const N='88888888-8888-4888-8888-888888888888',now=new Date(Date.now()-36e5).toISOString();B.inquiries.push({id:N,site:'[부산] 해운대자이',status:'배정완료',at:now,created_at:now,brand:'석민이앤씨',phone:'051-000-2222',contact_name:'김소장',assignee:'이필선',assigned_to:'이필선',assigned_at:now,raw:{'문의내용':'주차장 방수'}});window.N=N;__writes.length=0;
+   await PCInquirySave.save(inqCtlFind(N,false),{ch:'전화',result:'고객 회신',text:'문자 보고 전화 주심',next:'다시 연락',due:new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(Date.now()+3*864e5))});paint();});await page.waitForTimeout(500);
   assert.deepEqual(await kpi(),[1,5],'2시간 안 접촉은 분자 +1');
   /* ⑥ 대표회의 ≠ 자료 회신 기한: D-3 탭은 대표회의만 */
   await page.locator('#inq-v3 .il-tab[data-v="meet"]').click();await page.waitForTimeout(300);
@@ -184,31 +214,33 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await dd.locator('.idv3-next small').innerText(),/^1차 현장방문 완료 또는 견적 발송 완료 중 먼저 → 파이프라인 전환$/,'상세 문구 = 같은 기준');
   await dd.locator('.idv3-next [data-idv="step"][data-v="quote"]').click();await page.waitForTimeout(150);await dd.locator('[data-idv="quoteAmt"]').fill('1850');await dd.locator('[data-idv="quoteDate"]').fill(day(2));await page.waitForTimeout(200);
   assert.equal(await dd.locator('[data-idv="handoff"]').innerText(),'저장','발송 예정 = 저장만');await dd.locator('[data-idv="handoff"]').click();await page.waitForTimeout(700);
-  assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_command_v1').map(x=>[x[1].type,x[1].amount,x[1].draft])),[['quote_send',18500000,true]],'금액 = 견적 초안(원)');
-  assert.deepEqual(await page.evaluate(()=>__writes.map(x=>[x[0],x[1].text||''])),[['next_action','견적서 발송']],'다음 할 일 문장에 금액을 넣지 않는다 · 전환 요청 없음');
+  assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_milestone_save_v1').map(x=>[x[1].kind,x[1].amount])),[['quote_draft',18500000]],'금액 = 견적 초안(원), 서버 확인 이후만 완료');
+  assert.deepEqual(await page.evaluate(()=>__writes),[],'옛 다음 행동/전환 큐 호출 없음');
+  assert.deepEqual(await page.evaluate(()=>__inquiryMock(X).f.rows.map(x=>[x.title,x.due_on])),[['견적서 발송',day(2)]],'명시한 발송 예정만 일정으로 연결');
   assert.deepEqual(await page.evaluate(()=>{const q=inqCtlFind(X,false);return [q.status,inqCtlConverted(q),InquiryFlow.isQualified(q),isAwaitingPromotion(q),InquiryConversion.candidates().length];}),['견적서 발송예정',false,false,false,0],'발송 예정은 전환 · 전환 대기가 아니다');
-  /* 견적 발송 완료: 버전에 보낸 날 · 후속 할 일 = +7일 고객 반응 확인 · 파이프라인 전환 */
+  /* 견적 발송 사실: 버전 확인, 원일정 유지. D+7 신규/자동전환을 만들어내지 않음. */
   await page.evaluate(()=>{__rpc.length=0;__writes.length=0;if(!document.getElementById('inq-inbox-dialog'))InquiryWorkbench.open(X);});await page.waitForTimeout(400);
   await dd.locator('.idv3-next [data-idv="step"][data-v="quote"]').click();await page.waitForTimeout(150);await dd.locator('[data-idv="quoteMode"][data-v="완료"]').click();await page.waitForTimeout(150);
   assert.equal(await dd.locator('[data-idv="handoff"]').isDisabled(),true,'발송 완료는 금액이 있어야 한다');await dd.locator('[data-idv="quoteAmt"]').fill('1850');await page.waitForTimeout(150);
-  assert.equal(await dd.locator('[data-idv="handoff"]').innerText(),'저장하고 파이프라인으로');await dd.locator('[data-idv="handoff"]').click();await page.waitForTimeout(800);
-  assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_command_v1').map(x=>[x[1].type,x[1].amount,x[1].draft])),[['quote_send',18500000,false]]);
+  assert.equal(await dd.locator('[data-idv="handoff"]').innerText(),'저장');await dd.locator('[data-idv="handoff"]').click();await page.waitForTimeout(800);
+  assert.deepEqual(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_milestone_save_v1').map(x=>[x[1].kind,x[1].amount])),[['quote_sent',18500000]]);
   const after=await page.evaluate(()=>{const q=inqCtlFind(X,false),p=itemPatch(q,'inq'),S=InquiryFlow.server(q),w=__writes.map(x=>[x[0],x[1].stage_code||'',x[1].reason||x[1].text||'']);const add=n=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(Date.now()+n*864e5));return {st:q.status,conv:!!inqCtlConverted(q),by:InquiryFlow.qualifiedBy(q),na:[p.nextActionObj&&p.nextActionObj.text,p.nextActionObj&&p.nextActionObj.due===add(7)],quotes:InquiryFlow.quotes(q).map(v=>[v.version_no,v.amount,!!v.sent_at]),w};});
-  assert.equal(after.st,'견적서 발송완료');assert.equal(after.conv,true,'견적 발송 완료 = 전환');assert.equal(after.by,'quote_sent');assert.deepEqual(after.na,['고객 반응 확인',true],'후속 할 일 = 보낸 날 + 7일 · 고객 반응 확인(같은 날 아님)');
-  assert.deepEqual(after.quotes,[[1,18500000,true]],'초안이던 v1 에 보낸 날이 찍힌다');assert.deepEqual(after.w,[['opportunity_create','sent','견적 발송완료로 파이프라인 인계']],'전환 요청 1건 · 다음 할 일 문장에 금액 없음');
+  assert.equal(after.st,'견적서 발송완료');assert.equal(after.conv,false,'사실 저장을 파이프라인 인계 완료로 오인하지 않음');assert.equal(after.by,'quote_sent');
+  assert.deepEqual(await page.evaluate(()=>__inquiryMock(X).f.rows.map(x=>[x.title,x.due_on,x.status])),[['견적서 발송',day(2),'open']],'기존 일정 보존, 자동 후속 추가·기존 완료 없음');
+  assert.deepEqual(after.quotes,[[1,18500000,true]],'초안이던 v1 에 보낸 날이 찍힌다');assert.deepEqual(after.w,[],'전환 요청을 저장 근거 없이 보내지 않음');
   /* 1차 현장방문: 예정 = 저장만 / 완료 = 전환(컨설팅 설계) */
   await page.evaluate(()=>{const mk=(id,site)=>{const now=new Date(Date.now()-864e5).toISOString();return {id,site,status:'전화응대 완료',at:now,created_at:now,brand:'석민이앤씨',phone:'031-111-2222',contact_name:'소장',assignee:'이필선',assigned_to:'이필선',assigned_at:now,responded_at:now,raw:{'문의내용':'외벽 균열 보수'}};};window.V1='99999999-0000-4000-8000-000000000002';window.V2='99999999-0000-4000-8000-000000000003';B.inquiries.push(mk(V1,'[경기 화성] 동탄시범'),mk(V2,'[경기 안산] 고잔푸르지오'));__rpc.length=0;__writes.length=0;InquiryWorkbench.open(V1);});await page.waitForTimeout(400);
   await dd.locator('.idv3-next [data-idv="step"][data-v="visit"]').click();await page.waitForTimeout(150);assert.deepEqual(await dd.locator('[data-idv="visitMode"]').evaluateAll(l=>l.map(n=>n.textContent+':'+n.getAttribute('aria-pressed'))),['방문 예정:true','방문 완료:false']);
   await dd.locator('[data-idv="visitDate"]').fill(day(3));await dd.locator('[data-idv="visitTime"]').fill('14:00');await page.waitForTimeout(200);assert.equal(await dd.locator('[data-idv="handoff"]').innerText(),'저장');await dd.locator('[data-idv="handoff"]').click();await page.waitForTimeout(700);
-  assert.deepEqual(await page.evaluate(()=>{const q=inqCtlFind(V1,false);return [q.status,inqCtlConverted(q),InquiryFlow.isQualified(q),__writes.map(x=>x[0]+':'+(x[1].text||'')).join(),__rpc.filter(x=>x[0]==='crm_inquiry_command_v1').map(x=>x[1].type+':'+x[1].done).join()];}),['현장방문예정',false,false,'next_action:현장방문 14:00','visit:false'],'방문 예정은 전환이 아니다');
+  assert.deepEqual(await page.evaluate(()=>{const q=inqCtlFind(V1,false);return [q.status,inqCtlConverted(q),InquiryFlow.isQualified(q),__writes.length,__inquiryMock(V1).f.rows.map(x=>x.title),__rpc.filter(x=>x[0]==='crm_inquiry_milestone_save_v1').map(x=>x[1].kind)];}),['현장방문예정',false,false,0,['현장방문 14:00'],['visit_planned']],'방문 예정 = 서버가 확인한 내부 일정 한 건');
   await page.evaluate(()=>{__rpc.length=0;__writes.length=0;if(!document.getElementById('inq-inbox-dialog'))InquiryWorkbench.open(V1);});await page.waitForTimeout(400);
   await dd.locator('.idv3-next [data-idv="step"][data-v="visit"]').click();await page.waitForTimeout(150);await dd.locator('[data-idv="visitMode"][data-v="완료"]').click();await page.waitForTimeout(150);await dd.locator('[data-idv="visitDate"]').fill(day(0));await page.waitForTimeout(200);
-  assert.equal(await dd.locator('[data-idv="handoff"]').innerText(),'저장하고 파이프라인으로');await dd.locator('[data-idv="handoff"]').click();await page.waitForTimeout(800);
-  assert.deepEqual(await page.evaluate(()=>{const q=inqCtlFind(V1,false);return [q.status,!!inqCtlConverted(q),InquiryFlow.qualifiedBy(q),JSON.stringify(__writes.map(x=>[x[0],x[1].stage_code||'',x[1].reason||'']))];}),['현장방문 완료',true,'visit_done',JSON.stringify([['opportunity_create','consulting','현장방문 완료 상태로 파이프라인 인계']])],'1차 현장방문 완료 = 전환(컨설팅 설계)');
-  /* 서버 흐름 함수가 아직 없으면(SQL 적용 전) 방문 완료는 저장만 하고 전환 요청을 보내지 않는다 — 전환 대기로 남는다 */
-  assert.deepEqual(await page.evaluate(async()=>{const keep=CRMRelease.has;CRMRelease.has=n=>!/^crm_inquiry_(command|flow_list)_v1$/.test(n);__writes.length=0;const q=inqCtlFind(V2,false);
-   const r=await InquiryCommand.run('visit',q,{date:new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date()),done:true});CRMRelease.has=keep;
-   return [q.status,r.promoted,/서버 적용 뒤/.test(r.msg),__writes.filter(x=>x[0]==='opportunity_create').length,InquiryFlow.isQualified(q),isAwaitingPromotion(q)];}),['현장방문 완료',false,true,0,true,true],'SQL 적용 전: 저장만 · 전환 대기');
+  assert.equal(await dd.locator('[data-idv="handoff"]').innerText(),'저장');await dd.locator('[data-idv="handoff"]').click();await page.waitForTimeout(800);
+  assert.deepEqual(await page.evaluate(()=>{const q=inqCtlFind(V1,false);return [q.status,!!inqCtlConverted(q),InquiryFlow.qualifiedBy(q),__writes.length,__inquiryMock(V1).f.rows.map(x=>x.status)];}),['현장방문 완료',false,'visit_done',0,['open']],'방문 사실 저장으로 다른 약속 완료·파이프라인 생성을 추정하지 않음');
+  /* 설치 전: 원래 입력/상태 보존. 로컬 사실 성공이나 옛 큐로 우회 금지. */
+  assert.deepEqual(await page.evaluate(async()=>{const keep=CRMRelease.has;CRMRelease.has=n=>!n.startsWith('crm_inquiry_milestone_');__writes.length=0;const q=inqCtlFind(V2,false);let message='';
+   try{await InquiryCommand.run('visit',q,{date:new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date()),done:true});}catch(e){message=e.message;}finally{CRMRelease.has=keep;}
+   return [q.status,/아직 연결/.test(message),__writes.length,InquiryFlow.isQualified(q)];}),['전화응대 완료',true,0,false],'미설치 저장을 완료로 표시하지 않음');
   /* 전송 계층도 같은 기준: 현장방문 완료는 받고, 예정은 거절 */
   assert.deepEqual(await page.evaluate(()=>{const P=s=>({intent:'inquiry_promote_create',inquiry_id:V2,promotion_mode:'auto',inquiry_status:s,owner:'이필선',from:'',to:/견적.*발송\s*완료/.test(s)?'sent':'consulting',note:/견적.*발송\s*완료/.test(s)?'견적 발송완료로 파이프라인 인계':/견적.*발송/.test(s)?'견적 준비 단계로 파이프라인 인계':s+' 상태로 파이프라인 인계',name:'고잔푸르지오',work_name:'',brand:'석민이앤씨',client_ref:'local-1'});return ['현장방문 완료','견적서 발송완료','현장방문예정','전화응대 완료'].map(s=>{try{OperationalAdapter.normalize('opportunity_create',V2,0,P(s));return 'ok';}catch(e){return String(e.code||e.message);}});}),['ok','ok','INQUIRY_PROMOTION_INTENT_NOT_CONNECTED','INQUIRY_PROMOTION_INTENT_NOT_CONNECTED']);
   if(shot)await page.screenshot({path:shot+'-flow2.png'});
@@ -219,6 +251,6 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.evaluate(()=>QUALIFY_ST.test('견적서 발송예정')&&inqStatusQualifies('견적서 발송예정')),true,'끄면 예전 전환 기준(발송 예정도 전환)');
   await page.evaluate(()=>{G.inqFlowOff=false;paint();});await page.waitForTimeout(200);
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',close_four_kinds_reason_required:true,no_direct_sms_ui:true,one_qualified_rule:true,quote_versions_followup_7d:true,attempt_keeps_no_first_tab:true,kpi_2h_numerator_excludes_attempt:true,attempt_count_and_unreachable_suggestion:true,first_connected_on_contact:true,single_command:true,meeting_vs_reply_due:true,phone_handler_survives_reload:true,server_state_shared:true,off_switch:true}));
+  console.log(JSON.stringify({status:'PASS',close_four_kinds_reason_required:true,no_direct_sms_ui:true,one_qualified_rule:true,quote_versions_existing_schedule_preserved:true,milestone_missing_blocks_without_local_success:true,automatic_promotion_not_implemented:true,attempt_keeps_no_first_tab:true,kpi_2h_numerator_excludes_attempt:true,attempt_count_and_unreachable_suggestion:true,first_connected_on_contact:true,meeting_vs_reply_due:true,phone_handler_survives_reload:true,server_state_shared:true,off_switch:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

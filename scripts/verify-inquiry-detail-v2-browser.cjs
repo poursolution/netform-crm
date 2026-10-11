@@ -3,6 +3,8 @@
    저장은 기존 함수(배정·연락 결과·메모·체크·상태 변경)를 그대로 부르는지 확인한다 */
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+const installInquiry=require('../tests/pc-inquiry-fixture.cjs');
+const installMilestone=require('../tests/pc-inquiry-milestone-fixture.cjs');
 const root=path.resolve(__dirname,'..'),shot=process.argv[2]||'';
 const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':'text/html');fs.createReadStream(t).pipe(res)});
 (async()=>{
@@ -13,6 +15,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'||(shot&&u.hostname==='cdn.jsdelivr.net')?r.continue():r.abort()});
   const page=await ctx.newPage(),errs=[];page.on('pageerror',e=>errs.push(e.message));
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.InquiryDetailV2&&window.InquiryWorkbench);
+  await page.addScriptTag({content:'window.__installInquiryMock=('+installInquiry.toString()+');'});
+  await page.addScriptTag({content:'window.__installMilestoneMock=('+installMilestone.toString()+');'});
   await page.evaluate(()=>{
    const at=d=>new Date(Date.now()-d*864e5).toISOString();
    const U='11111111-1111-4111-8111-111111111111',A='22222222-2222-4222-8222-222222222222';
@@ -22,6 +26,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    LOCAL={deals:{},inquiries:{}};AUTH_ON=true;G.inqDetailV3Off=true;G.inqFlowOff=true;G.inqSmsQueueOn=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};/* 시험 환경엔 로그인 저장소가 없다 */window.__writes=[];window.pushWrite=(op,p)=>{window.__writes.push([op,p]);return 'req-'+window.__writes.length};goPage('inq');
    window.U=U;window.A=A;
+   const uid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',auth='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+   window.__scheduleMocks={};window.__scheduleRpc=[];
+   for(const q of B.inquiries){let serial=0;const host={crypto:{randomUUID:()=>++serial===1?uid:serial===2?auth:crypto.randomUUID()}};const f=__installInquiryMock(host,q.id);Object.assign(f.state,{status:q.status});__installMilestoneMock(host,q.id,f);__scheduleMocks[q.id]={f,rpc:host.Phase1.rpc};}
+   window.CRMRelease=Object.assign(window.CRMRelease||{},{has:n=>n!=='crm_inquiry_flow_list_v1',noteMissing:()=>{}});
+   window.Phase1={profile:{auth_uid:auth,user_id:uid,name:'송보람'},storage:{setItem:()=>{},getItem:()=>null},rpc:async(name,args)=>{
+    const p=args.p||{},entry=__scheduleMocks[p.target_id||p.inquiry_id];if(!entry)throw Error('Unexpected synthetic inquiry target');
+    __scheduleRpc.push({name,p:structuredClone(p)});const q=inqCtlFind(p.target_id||p.inquiry_id,false);if(name==='crm_schedule_list_v1'&&!entry.f.responses.size&&!entry.f.milestones.size)entry.f.state.status=q.status;
+    const result=await entry.rpc(name,args);if(name==='crm_schedule_list_v1'&&!inquiryAssigned(q))Object.assign(result,{writable:false,owner_id:null});return result;
+   }};
   });
   /* 미배정 문의: 머리·진행 막대·배정 칸 */
   await page.evaluate(()=>InquiryWorkbench.open(U));await page.waitForTimeout(300);
@@ -34,7 +47,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await d.locator('.idv-fh .idv-miss').innerText(),/^미입력 \d+$/);assert.equal(await d.locator('.idv-missing, .idv-need').count(),0,'보완 필요 상자 · 필수 확인 칩 없음(빠진 수는 제목 옆 하나)');
   assert.equal(await d.locator('.idv-primary').innerText(),'담당자를 선택하세요');assert.equal(await d.locator('.idv-primary').isDisabled(),true);
   const reps=await d.locator('.idv-rep').evaluateAll(ns=>ns.map(n=>n.dataset.v));assert.ok(reps.includes('__branch__')&&reps.length>=2,'추천 담당자 + 지사 '+reps.join(','));
-  /* 2026-10-03 inquiry_v2 상세보기: 응대 기록은 내용 한 칸 — 배정 전에도 남긴다(수단 · 결과를 자동으로 읽어 머리에 적음) */
+  /* 2026-10-03 inquiry_v2 상세보기: 응대 입력은 내용 한 칸 — 미배정에서는 입력을 보존하고 공통 저장 사전검사가 차단한다 */
   assert.equal(await d.locator('.idv-composer.idv-locked').count(),0,'배정 전에도 입력칸 열림');
   assert.deepEqual(await d.locator('.idv-ctabs [role=tab]').allInnerTexts(),['응대 기록','문자 보내기','내부 메모']);
   assert.match(await d.locator('.idv-chead').innerText(),/응대 이력\s*\d+건\s*연락 시도 0 · 실제 연결 0\s*최초 응대 아직 없음/);
@@ -42,8 +55,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await d.locator('#iq-res').fill('카톡으로 담당 정해지면 다시 연락드린다고 안내');await page.waitForTimeout(150);
   assert.match(await d.locator('.idv-sug').innerText(),/자동\s*카카오 · 연결됨\s*→ 다음 행동: 다시 연락 · \d{4}\.\d+\.\d+\([일월화수목금토]\)\s*바꾸기/,'내용에서 수단 · 결과를 읽고 다음 행동 제안');
   await d.locator('[data-idv="save"]').click();await page.waitForTimeout(250);
-  assert.deepEqual(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return (p.activities||[]).map(a=>[a.type,a.note,a.actor]);}),[['카카오','[카카오 · 연결됨] 카톡으로 담당 정해지면 다시 연락드린다고 안내','송보람']],'배정 전 기록 저장 · 기록자 = 로그인한 사람');
-  assert.match(await d.locator('.idv-ev.ct').innerText(),/고객 접점[\s\S]*카카오\s*· 연결됨[\s\S]*카톡으로 담당 정해지면/);assert.match(await d.locator('.idv-chead').innerText(),/연락 시도 1 · 실제 연결 1/);
+  assert.equal(await page.evaluate(()=>__scheduleMocks[U].f.logs.size),0,'미배정 owner 없음: 공통 일정 사전검사에서 응대 쓰기 차단');
+  assert.equal(await page.evaluate(()=>__writes.filter(x=>x[0]==='inquiry_status'||x[0]==='next_action').length),0,'미배정 차단 뒤 옛 저장으로 우회하지 않음');
+  assert.equal(await d.locator('#iq-res').inputValue(),'카톡으로 담당 정해지면 다시 연락드린다고 안내','차단된 원문 보존');
+  assert.match(await d.locator('#iq-msg').innerText(),/SCHEDULE_RELEASE_DISABLED|서버|연결|저장/);
+  await page.evaluate(()=>{G.inqFlowOff=false;});await d.locator('[data-idv="save"]').click();await page.waitForTimeout(150);
+  assert.equal(await page.evaluate(()=>__scheduleMocks[U].f.logs.size),0,'Flow ON도 같은 사전검사');
+  assert.equal(await page.evaluate(()=>(itemPatch(inqCtlFind(U,false),'inq').activities||[]).length),0,'Flow OFF가 로컬 연락 완료를 만들지 않음');
+  assert.equal(await d.locator('#iq-res').inputValue(),'카톡으로 담당 정해지면 다시 연락드린다고 안내');
+  await page.evaluate(()=>{G.inqFlowOff=true;});
   /* 문자(2026-10-03): 탭 열면 '첫 인사' 문구가 이미 채워져 있고 버튼 하나 — PC는 복사, 휴대폰은 문자 앱 이동만; 실제 발송 증거가 아니므로 이력·후속 업무를 만들지 않음. CRM 직접 발송은 아직 연결 전이라고 맨 위에 적음 */
   await d.locator('.idv-ctabs [data-v="sms"]').click();await page.waitForTimeout(150);
   assert.match(await d.locator('.idv-smsnote').innerText(),/문구는 자동으로 만들어 둡니다[\s\S]*CRM 직접 발송은 서버 적용 뒤에 열립니다/,'로그인 없는 시험 환경 = 직접 발송 버튼 없음');
@@ -56,8 +76,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await d.locator('.idv-smsto').innerText(),/받는 사람\s*김소장 · 010-1111-2222\s*\d+byte · (SMS|LMS)/);
   await d.locator('[data-idv="sms-copy"]').click();
   await d.locator('[data-idv="sms-send"]').click();await page.waitForTimeout(250);
-  assert.equal(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return (p.activities||[]).length;}),1,'복사와 앱 이동은 응대 기록을 추가하지 않는다');
-  assert.equal(await d.locator('.idv-ev.ct').count(),1,'실제 응대 기록만 유지');
+  assert.equal(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return (p.activities||[]).length;}),0,'복사와 앱 이동은 응대 기록을 추가하지 않는다');
+  assert.equal(await d.locator('.idv-ev.ct').count(),0,'실제 응대 저장 없이 기록을 만들지 않는다');
   /* CRM 직접 발송(2026-10-03 "진행해"): 서버 함수 + 로그인 + 010 번호면 [CRM에서 보내기] — 두 번 눌러 확인 → crm_inquiry_sms_request_v1 → 이력 «문자 · 회신대기 (CRM 발송)» → 목록 함수의 상태가 타임라인에 */
   await page.evaluate(()=>{window.__sms=[];window.__smsRows=[];SB={rpc:async(name,args)=>{if(name==='crm_inquiry_sms_request_v1'){__sms.push(args.p);const row={id:'cccccccc-0000-4000-8000-00000000000'+__sms.length,status:'queued',body:args.p.text,phone:'01011112222',requested_by_name:'송보람',created_at:new Date().toISOString()};__smsRows.unshift(row);return {data:{ok:true,id:row.id,status:'queued',phone:row.phone}};}if(name==='crm_inquiry_sms_list_v1')return {data:{ok:true,rows:__smsRows}};return {data:{ok:true,tasks:[]}};}};TOKEN='test';});
   await d.locator('.idv-ctabs [data-v="sms"]').click();await page.waitForTimeout(250);
@@ -68,7 +88,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await d.locator('[data-idv="sms-crm"]').innerText(),/^정말 보내기 · 010-1111-2222$/,'한 번 누르면 확인 단계');assert.deepEqual(await page.evaluate(()=>__sms),[],'확인 전에는 요청 없음');
   await d.locator('[data-idv="sms-crm"]').click();await page.waitForTimeout(400);
   const req=await page.evaluate(()=>__sms);assert.equal(req.length,1);assert.equal(req[0].inquiry_id,'11111111-1111-4111-8111-111111111111');assert.match(req[0].text,/^김소장님, 넷폼 .*입니다\. 전화드렸는데 연결이 안 되어/);assert.match(req[0].request_id,/^[0-9a-f-]{36}$/);
-  assert.equal(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return (p.activities||[]).length;}),2,'CRM 발송 요청 뒤에만 이력 기록');
+  assert.equal(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return (p.activities||[]).length;}),1,'CRM 발송 요청 뒤에만 이력 기록');
   assert.match(await page.evaluate(()=>{const p=itemPatch(inqCtlFind(G.inqSelKey,false),'inq');return p.activities.at(-1).note;}),/^\[문자 · 회신대기\] .*\(CRM 발송\)$/);
   assert.match(await d.locator('.idv-thread').innerText(),/CRM 문자 대기 중 · 실행기가 보내면 갱신/,'전송 상태가 타임라인에');
   await page.evaluate(()=>{__smsRows[0].status='sent';__smsRows[0].delivered_at=new Date().toISOString();});
@@ -84,7 +104,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{
    const assignmentQueue=[];
    window.pushWrite=(op,p)=>{__writes.push([op,p]);const request_id='req-'+__writes.length;assignmentQueue.push({request_id,operation:op,object_id:p.inquiry_id,payload:p,status:'pending'});return request_id;};
-   window.Phase1={profile:{auth_uid:'admin'},queue:{list:()=>assignmentQueue,flush:async()=>{for(const x of assignmentQueue){x.status='done';x.ack={assigned_to:'aaaaaaaa-0000-4000-8000-000000000001'};}}},read:async(resource,args)=>{const q=B.inquiries.find(q=>q.id===args.id),last=assignmentQueue.filter(x=>x.object_id===args.id).at(-1);return {data:{item:{...q,assigned_to:'aaaaaaaa-0000-4000-8000-000000000001',assignee_name:last.payload.to,status:'배정완료',assignment_history:[]}}};}};
+   Object.assign(window.Phase1,{queue:{list:()=>assignmentQueue,flush:async()=>{for(const x of assignmentQueue){x.status='done';x.ack={assigned_to:'aaaaaaaa-0000-4000-8000-000000000001'};}}},read:async(resource,args)=>{const q=B.inquiries.find(q=>q.id===args.id),last=assignmentQueue.filter(x=>x.object_id===args.id).at(-1);return {data:{item:{...q,assigned_to:'aaaaaaaa-0000-4000-8000-000000000001',assignee_name:last.payload.to,status:'배정완료',assignment_history:[]}}};}});
   });
   await d.locator('.idv-primary').click();await page.waitForTimeout(300);
   assert.equal(await page.evaluate(()=>inquiryRoutedOwner(inqCtlFind(U,false))),'이필선','기존 배정 경로로 저장');
@@ -94,8 +114,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await page.locator('#idv-toast').innerText(),/이필선 배정[\s\S]*되돌리기/);
   /* 근처 현장(기존 같은 지역 로직) */
   assert.match(await d.locator('.idv-near').innerText(),/근처 현장 1곳[\s\S]*신갈현대아파트/);
-  /* 배정된 건의 응대 기록: 내용 → 자동 읽기(부재 → 내일 재연락) → 저장 = 기존 progress 명령 + 다음 행동 */
+  /* 배정된 건의 응대 기록: 결과 확인 → contact ACK → 첫 응대 확인 → 별도 일정 저장 */
   assert.match(await d.locator('.idv-nowbox').innerText(),/^첫마디[\s\S]*지금 다음 행동[\s\S]*담당\s*이필선[\s\S]*견적 요청은 에이전트 · 잔디로 접수합니다 · 물량 산출 3일\(최대 5일\)/,'오른쪽: 첫마디 · 지금 다음 행동 · 담당');
+  await page.evaluate(()=>{G.inqFlowOff=false;});
   await d.locator('#iq-res').fill('소장님 전화 안 받음');await page.waitForTimeout(150);
   assert.match(await d.locator('.idv-sug').innerText(),/전화 · 부재\s*→ 다음 행동: 다시 연락 · /);
   await d.locator('[data-idv="edit-sug"]').click();await page.waitForTimeout(150);
@@ -104,9 +125,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await d.locator('.idv-sugedit .idv-chip.on').allInnerTexts(),['전화','검토중','다시 연락','7일 후'],'결과를 바꾸면 날짜도 규칙대로');
   const due=await page.evaluate(()=>{const x=new Date(Date.now()+3*864e5);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')});
   await d.locator('#iq-next').fill('방문 일정 확정 전화');await d.locator('#iq-due').fill(due);
-  await d.locator('.idv-save').click();await page.waitForTimeout(300);
-  const w=await page.evaluate(()=>__writes.filter(w=>w[0]==='inquiry_status'&&w[1].intent==='progress').map(w=>w[1]));
-  assert.equal(w.length,1,'연락 결과 = 기존 progress 명령');assert.match(String(w[0].result),/^\[전화 · 검토중\] 소장님 전화 안 받음$/);assert.equal(w[0].next,'방문 일정 확정 전화');assert.equal(w[0].due,due);
+  await page.evaluate(()=>{__scheduleMocks[U].f.hold='crm_inquiry_command_v1';});
+  await d.locator('.idv-save').click();await page.waitForFunction(()=>!!__scheduleMocks[U].f.release);
+  assert.equal(await d.locator('#iq-res').inputValue(),'소장님 전화 안 받음','ACK 전 원문 유지');
+  assert.equal(await page.evaluate(()=>__scheduleMocks[U].f.responses.size),0,'ACK 전 단계 진행 없음');
+  assert.equal(await page.evaluate(()=>__scheduleMocks[U].f.rows.length),0,'ACK 전 다음 일정 생성 없음');
+  await page.evaluate(()=>__scheduleMocks[U].f.release());await page.waitForFunction(()=>document.querySelector('#inq-inbox-dialog #iq-res')?.value==='');
+  const saved=await page.evaluate(()=>{const f=__scheduleMocks[U].f;return {logs:[...f.logs.values()],responses:f.responses.size,rows:f.rows,legacy:__writes.filter(w=>w[0]==='inquiry_status'||w[0]==='next_action')};});
+  assert.equal(saved.logs.length,1,'연락 기록 서버 ACK 1건');assert.equal(saved.logs[0].result,'검토중');assert.equal(saved.logs[0].content,'소장님 전화 안 받음');assert.equal(saved.logs[0].next_action,'방문 일정 확정 전화');assert.equal(saved.logs[0].next_check_date,due);
+  assert.equal(saved.responses,1,'연결된 첫 응대만 서버 확인');assert.equal(saved.rows.length,1);assert.equal(saved.rows[0].due_on,due);assert.equal(saved.rows[0].status,'open');assert.deepEqual(saved.legacy,[],'옛 단계/일정 저장 우회 없음');
   assert.match(await d.locator('.idv-thread').innerText(),/전화\s*· 검토중[\s\S]*소장님 전화 안 받음[\s\S]*→ 다음 행동: 방문 일정 확정 전화/);
   assert.equal(await d.locator('#iq-res').inputValue(),'','저장 후 입력 초기화');
   /* 확인 항목 → 기존 체크 명령 */
@@ -116,14 +143,48 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 내부 메모 → 기존 기록 함수 */
   await d.locator('[data-idv="tab"][data-v="memo"]').click();await d.locator('#spLogNote').fill('가격 민감 — 비교 견적 중');await d.locator('.idv-save').click();await page.waitForTimeout(200);
   assert.equal(await d.locator('.idv-ev.mm').count(),1,'내부 메모 종류');
-  /* 다음 단계: 현장방문 일정 → 기존 상태 변경(자동 유입 규칙은 기존 그대로) */
+  /* 같은 문의에 이미 있는 후속 업무는 방문 예정 입력으로 덮거나 완료하지 않는다. */
   await d.locator('[data-idv="step"][data-v="visit"]').click();
   assert.equal(await d.locator('[data-idv="handoff"]').isDisabled(),true);
+  assert.equal(await d.locator('[data-idv="handoff"]').innerText(),'저장','사실 저장을 자동 파이프라인 전환으로 안내하지 않음');
   await d.locator('[data-idv="visitDate"]').fill(due);
   await d.locator('[data-idv="handoff"]').click();await page.waitForTimeout(400);
-  assert.equal(await page.evaluate(()=>inqCtlFind(U,false).status),'현장방문예정','상태 변경');
+  assert.equal(await page.evaluate(()=>inqCtlFind(U,false).status),'전화응대 완료','기존 후속 업무가 있으면 방문 예정 상태를 선반영하지 않음');
+  assert.match(await d.locator('[data-idv-err]').innerText(),/기존 일정/);
+  assert.equal(await d.locator('[data-idv="visitDate"]').inputValue(),due,'충돌 입력 보존');
+  assert.deepEqual(await page.evaluate(()=>__scheduleMocks[U].f.rows),saved.rows,'기존 업무 ID·기한·상태 유지');
+  assert.equal(await page.evaluate(()=>__scheduleMocks[U].f.milestones.size),0,'충돌 후 사실 쓰기 없음');
+  /* 기존 일정 없는 다른 문의에서 실제 ACK를 확인하고, 응답 유실 뒤 원문/요청 번호로 복구한다. */
+  await page.evaluate(()=>{InquiryWorkbench.close();InquiryWorkbench.open(A);});
+  await d.locator('[data-idv="step"][data-v="visit"]').click();
+  await d.locator('[data-idv="visitDate"]').fill(due);
+  await page.evaluate(()=>{__scheduleMocks[A].f.milestoneHold='crm_inquiry_milestone_save_v1';__scheduleMocks[A].f.milestoneLoss='crm_inquiry_milestone_save_v1';});
+  await d.locator('[data-idv="handoff"]').click();await page.waitForFunction(()=>!!__scheduleMocks[A].f.milestoneRelease);
+  assert.equal(await page.evaluate(()=>inqCtlFind(A,false).status),'배정완료','사실 ACK 전 상태 유지');
+  assert.equal(await d.locator('[data-idv="visitDate"]').inputValue(),due,'ACK 전 입력 유지');
+  assert.equal(await page.evaluate(()=>__scheduleMocks[A].f.rows.length),1,'일정 ACK 1건은 별도로 확인됨');
+  await page.evaluate(()=>{__scheduleMocks[A].f.milestoneHold='';__scheduleMocks[A].f.milestoneRelease();});
+  await page.waitForFunction(()=>/response lost/.test(document.querySelector('[data-idv-err]')?.textContent||''));
+  const requestId=await page.evaluate(()=>[...__scheduleMocks[A].f.milestones.keys()][0]);
+  assert.equal(await page.evaluate(()=>inqCtlFind(A,false).status),'배정완료','응답 유실은 성공으로 추정하지 않음');
+  await page.evaluate(()=>{InquiryWorkbench.close();InquiryWorkbench.open(A);});
+  assert.equal(await d.locator('[data-idv="visitDate"]').inputValue(),due,'재진입 시 제출 날짜 복구');
+  assert.equal(await d.locator('[data-idv="handoff"]').innerText(),'저장');
+  await d.locator('[data-idv="handoff"]').click();await page.waitForFunction(()=>inqCtlFind(A,false).status==='현장방문예정');
+  const milestone=await page.evaluate(()=>{const f=__scheduleMocks[A].f;return {ids:[...f.milestones.keys()],rows:f.rows,ack:[...f.milestones.values()][0].ack,deals:B.deals.length};});
+  assert.deepEqual(milestone.ids,[requestId],'같은 사실 요청 번호로 중복 없이 복구');
+  assert.equal(milestone.rows.length,1);assert.equal(milestone.rows[0].status,'open');assert.equal(milestone.rows[0].due_on,due);
+  assert.equal(milestone.ack.promoted,false);assert.deepEqual(milestone.ack.completed_action_ids,[]);assert.deepEqual(milestone.ack.cancelled_action_ids,[]);assert.equal(milestone.deals,1,'사실 저장만으로 영업건 생성 없음');
   assert.equal(await page.locator('#inq-inbox-dialog.idv').count(),1);
-  assert.equal(await d.locator('.idv-steps .done').count()>=3,true,'진행 막대 전진');
+  assert.equal(await d.locator('.idv-steps .done').count(),2,'방문 예정은 방문 완료나 인계가 아님');
+  await d.locator('[data-idv="step"][data-v="visit"]').click();await d.locator('[data-idv="visitMode"][data-v="완료"]').click();
+  await d.locator('[data-idv="visitDate"]').fill(await page.evaluate(()=>new Date(Date.now()+9*3600000).toISOString().slice(0,10)));
+  assert.equal(await d.locator('[data-idv="handoff"]').innerText(),'저장','방문 완료 기록도 자동 전환을 약속하지 않음');
+  await d.locator('[data-idv="handoff"]').click();await page.waitForFunction(()=>inqCtlFind(A,false).status==='현장방문 완료'||!!document.querySelector('[data-idv-err]')?.textContent);
+  assert.equal(await page.evaluate(()=>inqCtlFind(A,false).status),'현장방문 완료',await d.locator('[data-idv-err]').count()?await d.locator('[data-idv-err]').innerText():'방문 완료 사실 ACK');
+  assert.equal(await d.locator('.idv-steps .done').count(),3,'명시적 방문 완료 사실 ACK 뒤에만 진행 막대 전진');
+  assert.deepEqual(await page.evaluate(()=>__scheduleMocks[A].f.rows),milestone.rows,'완료 사실 기록이 기존 방문 업무를 자동 완료하거나 취소하지 않음');
+  assert.equal(await page.evaluate(()=>B.deals.length),1,'완료 사실 기록만으로 파이프라인 자동 생성 없음');
   if(shot)await page.screenshot({path:shot+'-assigned.png'});
   /* 딤 클릭으로 닫기, 예전 창 전환 스위치 */
   await page.mouse.click(5,5);assert.equal(await page.locator('#inq-inbox-dialog').count(),0,'딤 클릭 닫기');

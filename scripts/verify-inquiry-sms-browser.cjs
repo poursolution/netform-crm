@@ -5,6 +5,7 @@
    ✅ 문구 복사·앱 이동은 발송 증거가 아님: 문구·이력·일정 보존, CRM 쓰기 없음 ✅ 수신 거부 = 보내기 잠금 · 모름 = 광고성 문구 금지 ✅ 명시적 예약 = 내일 알림(응대 기록 아님) */
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+const installInquiry=require('../tests/pc-inquiry-fixture.cjs');
 const root=path.resolve(__dirname,'..'),shot=process.argv[2]||'';
 const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':t.endsWith('.png')?'image/png':'text/html');fs.createReadStream(t).pipe(res)});
 (async()=>{
@@ -15,6 +16,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'||(shot&&u.hostname==='cdn.jsdelivr.net')?r.continue():r.abort()});
   const page=await ctx.newPage(),errs=[];page.on('pageerror',e=>errs.push(e.message));
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.InquiryWorkbench&&window.InquiryDetailV2&&window.InquiryFlow&&window.InquiryCommand&&window.InquiryListV3);
+  await page.addScriptTag({content:'window.__installInquiryMock=('+installInquiry.toString()+');'});
   const K=await page.evaluate(()=>{
    const at=h=>new Date(Date.now()-h*36e5).toISOString(),day=n=>new Date(Date.now()+n*864e5).toLocaleDateString('en-CA');
    const inq=(id,site,phone,extra)=>Object.assign({id,site,site_name:site,brand:'POUR솔루션',status:'전화응대 완료',assignee:'이필선',assigned_at:at(50),contact_name:'윤덕명',phone,work_type:'재도장',first_response_at:at(48),responded_at:at(48),created:at(60),received_at:at(60),raw:{'문의내용':'재도장 문의','공사유형':'재도장','상담채널':'전화','문의자 연락처':phone},activities:[]},extra||{});
@@ -27,6 +29,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    window.__copies=[];window.__copyFail=false;Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{if(__copyFail)throw Error('clipboard denied');__copies.push(text);}}});
    window.__rpc=[];window.CRMRelease=Object.assign(window.CRMRelease||{},{has:()=>true,noteMissing(){}});
    window.OpsStore=Object.assign(window.OpsStore||{},{has:()=>true,aiOn:()=>false,rpc:async(name,body)=>{__rpc.push([name,JSON.parse(JSON.stringify(body||{}))]);if(name==='crm_inquiry_flow_list_v1')return {states:[],closed:[]};if(name==='crm_inquiry_command_v1')return {ok:true,state:{inquiry_id:body.inquiry_id,first_attempt_at:body.occurred_at,first_connected_at:null,attempt_count:1,logs:[]}};return {};}});
+   const uid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',auth='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';let serial=0;const host={crypto:{randomUUID:()=>++serial===1?uid:serial===2?auth:crypto.randomUUID()}};
+   const q=B.inquiries[0],f=__installInquiryMock(host,q.id);window.__scheduleF=f;window.__scheduleRpc=[];Object.assign(f.state,{status:q.status,first_response_at:q.first_response_at,responded_at:q.responded_at});
+   f.rows.push({id:crypto.randomUUID(),inquiry_id:q.id,title:'기존 고객 방문 약속',action_type:'방문',status:'open',date_basis:'customer_agreed',due_on:day(5),due_at:day(5)+'T00:00:00+09:00',completed_at:null});
+   window.Phase1={profile:{auth_uid:auth,user_id:uid,name:'이필선'},storage:{getItem:()=>null,setItem:()=>{}},rpc:async(n,p)=>{__scheduleRpc.push({name:n,p:structuredClone(p.p)});return host.Phase1.rpc(n,p);}};
+   InquiryScheduleFlow.project(q,{target_id:q.id,items:f.rows});
    goPage('inq');
    return {A:inqKey(B.inquiries[0]),NO:inqKey(B.inquiries[1]),YES:inqKey(B.inquiries[2]),tom:day(1),d3:day(3),d1:day(1)};
   });
@@ -57,7 +64,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await P.locator('[data-idv="sms-days"]').click();await page.waitForTimeout(150);assert.equal(one(await P.locator('.ds2-when').innerText()),afterText,'후속 날짜 후보 변경도 자동 등록으로 표시하지 않는다');
   await P.locator('[data-idv="sms-ch"][data-v="kakao"]').click();await page.waitForTimeout(150);assert.equal(one(await P.locator('.ds2-hd b').innerText()),'카카오 보내기');assert.equal(one(await P.locator('.ds2-ft .go').innerText()),'카카오 문구 복사');
   await P.locator('[data-idv="sms-ch"][data-v="sms"]').click();await page.waitForTimeout(150);
-  await P.locator('[data-idv="sms-when"][data-v="later"]').click();await page.waitForTimeout(150);assert.equal(one(await P.locator('.ds2-ft .go').innerText()),'예약하기');assert.match(await P.locator('.ds2-ft>span').innerText(),/자동 발송이 아니라, 정한 시각에 보내기를 알려 주는 알림을 등록합니다/);
+  await P.locator('[data-idv="sms-when"][data-v="later"]').click();await page.waitForTimeout(150);assert.equal(one(await P.locator('.ds2-ft .go').innerText()),'예약하기');assert.match(await P.locator('.ds2-ft>span').innerText(),/날짜 기준 내부 업무[\s\S]*자동 발송·정시 알림을 보장하지 않습니다/);
   await P.locator('[data-idv="sms-when"][data-v="now"]').click();await page.waitForTimeout(150);
   /* 수신 동의 모름 = 광고성 문구 금지 */
   await P.locator('[data-idv="smstext"]').fill('(광고) 가을 할인 이벤트 안내드립니다');await page.waitForTimeout(150);assert.equal(await P.locator('.ds2-bubble').innerText(),'(광고) 가을 할인 이벤트 안내드립니다','입력 중 미리보기');
@@ -79,13 +86,26 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await P.locator('.ds2-ft .go').click();await page.waitForTimeout(150);assert.match(await dd.locator('#iq-msg').innerText(),/문구를 복사하지 못했습니다.*입력은 그대로 유지했습니다/);assert.equal(await page.evaluate(()=>__copies.length),copies);await unchanged('복사 실패');
   await page.evaluate(()=>{__copyFail=false;});await P.locator('.ds2-ft .go').click();await page.waitForTimeout(150);assert.equal(await page.evaluate(()=>__copies.length),copies+1);await unchanged('복사 재시도');
   if(shot)await page.screenshot({path:shot+'-copied.png'});
-  /* 예약 = 내일 알림(응대 기록 아님) */
+  /* 명시적 예약 = 별도 내부 업무(응대/발송 기록 아님). ACK 유실 복구도 같은 요청으로만 처리한다. */
   await P.locator('[data-idv="sms-ch"][data-v="sms"]').click();await P.locator('.ds2-tpls button').first().click();await page.evaluate(()=>{__rpc.length=0;});
-  await P.locator('[data-idv="sms-when"][data-v="later"]').click();await page.waitForTimeout(150);await P.locator('.ds2-ft .go').click();await page.waitForTimeout(500);
+  await P.locator('[data-idv="sms-when"][data-v="later"]').click();await page.waitForTimeout(150);
+  const reminderText=await P.locator('[data-idv="smstext"]').inputValue(),originalRows=await page.evaluate(()=>structuredClone(__scheduleF.rows));
+  await page.evaluate(()=>{__scheduleF.hold='crm_schedule_write_v1';__scheduleF.loss='crm_schedule_write_v1';});
+  await P.locator('.ds2-ft .go').click();await page.waitForFunction(()=>!!__scheduleF.release);
+  assert.equal(await dd.locator('.idv3-smswrap').count(),1,'ACK 전 예약 화면 유지');assert.equal(await P.locator('[data-idv="smstext"]').inputValue(),reminderText);assert.equal(await P.locator('.ds2-ft .go').isDisabled(),true,'확인 중 중복 클릭 차단');
+  assert.deepEqual(await page.evaluate(()=>__scheduleF.rows),originalRows,'ACK 전 기존 일정만 존재');
+  await page.evaluate(()=>{__scheduleF.hold='';__scheduleF.release();});await page.waitForFunction(()=>/response lost/.test(document.querySelector('#iq-msg')?.textContent||''));
+  const reminderRequest=await page.evaluate(()=>[...__scheduleF.schedules.keys()][0]);
+  assert.equal(await dd.locator('.idv3-smswrap').count(),1,'응답 유실을 저장 성공으로 표시하지 않음');assert.equal(await P.locator('[data-idv="smstext"]').inputValue(),reminderText);
+  await page.evaluate(k=>{InquiryWorkbench.close();InquiryWorkbench.open(k);},K.A);
+  assert.equal(await dd.locator('.idv3-smswrap').count(),1,'재진입한 원문·예약 입력 복구');assert.equal(await P.locator('[data-idv="smstext"]').inputValue(),reminderText);assert.match(await P.locator('.ds2-ft>span').innerText(),new RegExp(K.tom));
+  await P.locator('.ds2-ft .go').click();await page.waitForFunction(()=>!document.querySelector('.idv3-smswrap'));
   assert.equal(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_command_v1'&&x[1].type==='contact_log').length),0,'예약은 연락 시도로 남기지 않는다');assert.equal(await dd.locator('.idv3-smswrap').count(),0);
-  assert.deepEqual(await page.evaluate(()=>__writes),[['next_action',{inquiry_id:K.A,type:'전화',text:'문자 보내기 · 현장방문 일정 확인 (09:00)',due_at:K.tom}]],'명시적 예약만 다음 업무 1건을 등록한다');
+  assert.deepEqual(await page.evaluate(()=>__writes),[],'옛 next_action 경로로 저장하지 않음');
+  const added=await page.evaluate(()=>({rows:__scheduleF.rows,requests:[...__scheduleF.schedules.keys()],logs:__scheduleF.logs.size,responses:__scheduleF.responses.size}));
+  assert.deepEqual(added.requests,[reminderRequest]);assert.equal(added.rows.length,2,'기존 업무 외에 명시한 알림 업무 한 건만 추가');assert.deepEqual(added.rows[0],originalRows[0]);assert.equal(added.rows[1].title,'문자 보내기 · 현장방문 일정 확인 (09:00)');assert.equal(added.rows[1].due_on,K.tom);assert.equal(added.rows[1].date_basis,'internal_plan');assert.equal(added.rows[1].status,'open');assert.equal(added.logs,0);assert.equal(added.responses,0);
   const reminded=await contactState();assert.equal(reminded.attempts,before.attempts);assert.equal(reminded.firstAttempt,before.firstAttempt);assert.equal(reminded.firstConnected,before.firstConnected);assert.equal(reminded.logs,before.logs,'예약의 내부 일정 기록을 고객 응대에 포함하지 않는다');
-  assert.equal(await page.evaluate(k=>{const q=inqCtlFind(k,false),a=actionObj(q,itemPatch(q,'inq'));return a&&a.text+'|'+String(a.due).slice(0,10);},K.A),'문자 보내기 · 현장방문 일정 확인 (09:00)|'+K.tom,'내일 알림 = 다음 할 일');
+  assert.equal(await page.evaluate(k=>{const q=inqCtlFind(k,false),a=actionObj(q,itemPatch(q,'inq'));return a&&a.text+'|'+String(a.due).slice(0,10);},K.A),originalRows[0].title+'|'+originalRows[0].due_on,'기존 고객 약속을 새 알림으로 덮지 않음');
   await page.evaluate(()=>InquiryWorkbench.close());await page.waitForTimeout(200);
   /* 수신 거부 = 보내기 잠금 · 수신 동의 = 초록 꼬리표 */
   await page.evaluate(k=>InquiryWorkbench.open(k),K.NO);await page.waitForTimeout(450);await dd.locator('[data-idv="sms-open"]').click();await page.waitForTimeout(250);
