@@ -141,7 +141,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   {const RH=await page.evaluate(()=>{const J=PipelineJudge,w0=J.week(0),w1=J.week(-1),W=WorkRequest.state();W.loaded=true;W.at=Date.now();
     const mk=(id,mon,st,closed)=>({id,target_type:'deal',target_id:'d1',kind:'follow',label:'발송일 확인 요청',status:st,requested_by:'송보람',to_name:'이필선',round:1,created_at:mon+'T00:10:00+09:00',due_at:mon+'T00:30:00+09:00',closed_at:closed?mon+'T00:20:00+09:00':null});
     W.list=[mk('a1',w0.mon,'sent'),mk('a2',w0.mon,'sent'),mk('a3',w0.mon,'sent'),mk('b1',w1.mon,'done',true),mk('b2',w1.mon,'done',true),mk('b3',w1.mon,'done',true),mk('b4',w1.mon,'done',true),Object.assign(mk('c1',w0.mon,'cancelled'),{reply_note:'[통합] 같은 요청'})];
-    const H=KpiV7.reqHealth(KpiB.compute()),today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Seoul'});paint();return {H,sameMonth:w0.mon.slice(0,7)===today.slice(0,7)};});await page.waitForTimeout(300);
+    const H=KpiV7.reqHealth(KpiB.compute()),today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Seoul'});paint();return {H,sameMonth:w0.mon.slice(0,7)===today.slice(0,7)&&w1.mon.slice(0,7)!==today.slice(0,7)/* 전주 월요일이 같은 달이면 전주 요청도 '이번 달' 반복에 들어가 기대 숫자(4)가 달라진다 — 이 검사는 전주가 지난달일 때만 */};});await page.waitForTimeout(300);
    assert.deepEqual(RH.H.tiles.slice(0,3).map(t=>[t[0],t[1],t[2]]),[['보낸 요청','3건','전주 4 ▼1'],['미응대','3건','전주 0 ▲3 · 기한이 지나도록 확인 없음'],['기한 초과','3건','전주 0 ▲3 · 이번 주 기한']]);
    assert.equal(RH.H.warn,'요청은 줄었는데(4 → 3) 미응대 · 기한 초과 늘어남 — 요청 수 감소를 개선으로 보지 않습니다');
    assert.deepEqual(RH.H.flow,{neu:3,carry:0,late:3,done:0},'요청 흐름 4칸(admin_request F): 이번 주 신규 · 넘어온 미완료 · 기한 초과 · 완료');
