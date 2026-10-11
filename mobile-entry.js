@@ -1,8 +1,8 @@
 /* 모바일 결과 창 — 상담 결과 · 한 번만 쓰기 (2026-10-10 design_handoff_mobile_all 2번 · PC 상세 가운데 칸과 같은 입력 · 같은 저장 계획)
    ① 연락 결과(PC 값 5가지) ② 상담 내용(부재 · 번호 오류는 칸 없음) ③ 다음 업무(기존 일정 유지 · 변경 · 새 업무 · 없음) + [고객 정보 변경 ▾] + 저장 전 미리보기.
-   현장 · 영업건 · 담당 · 연락처는 열려 있는 상세에서 이어받는다. 저장은 mobile-loop.js 와 같은 길(queueMobileContactOperation: 완료 → 기록 → 다음 업무)이고,
+   현장 · 영업건 · 담당 · 연락처는 열려 있는 상세에서 이어받는다. 저장은 queueMobileContactOperation으로 기록 → 선택한 일정 변경을 확인하고,
    기록 1건 저장이 일정 · 요청 · 고객 정보를 몰래 바꾸지 않는다 — 바뀌는 것은 미리보기 · 저장 뒤 화면에 구분해서 적는다.
-   끄기: G.contactEntryOff=true → 예전 결과 창(mobile-loop.js). */
+   승인 셸에서는 끄기·로딩 실패로 예전 입력 창을 다시 열지 않는다. */
 (function(root){
  'use strict';
  const CE=root.ContactEntry;if(!CE||typeof root.dealCallSheetM!=='function')return;
@@ -13,20 +13,22 @@
  const dealById=id=>(root.DEALS||[]).find(x=>String(x.id)===String(id));
  const openNext=d=>{const a=d&&d.nextAction;return a&&a.status==='open'?a:null;};
  const isPromise=a=>!!a&&(/약속/.test(String(a.type||''))||/^\s*고객\s*약속/.test(String(a.text||'')));
- const existingOf=d=>{const a=openNext(d);if(!a||!String(a.text||'').trim())return null;return {id:a.id||'',text:String(a.text).replace(/^\s*고객\s*약속\s*:?\s*/,'').trim()||String(a.text),due:day(a.due_at||a.due),type:a.type||'전화',promise:isPromise(a)};};
+ const existingOf=d=>{const a=openNext(d);if(!a||!String(a.text||'').trim())return null;return {id:a.id||'',text:String(a.text).replace(/^\s*고객\s*약속\s*:?\s*/,'').trim()||String(a.text),due:day(a.due||a.due_at),type:a.type||'전화',promise:isPromise(a)};};
  /* 작성 중 내용 복원: 뒤로 가기 · 다른 창을 다녀와도 같은 현장이면 이어서(30분) */
  const KEY='crm:call-entry:v1',LIFE=30*60000;
  const store=()=>{try{return root.sessionStorage||null;}catch(e){return null;}};
- function loadDraft(id){try{const s=store(),j=s&&JSON.parse(s.getItem(KEY)||'null');if(j&&String(j.id)===String(id)&&Date.now()-Number(j.at||0)<LIFE)return j.s;}catch(e){}return null;}
- function saveDraft(id,S){try{const s=store();if(s)s.setItem(KEY,JSON.stringify({id:String(id),at:Date.now(),s:S}));}catch(e){}}
- function clearDraft(){try{const s=store();if(s)s.removeItem(KEY);}catch(e){}}
- let S=null,busy=false,progress={},last=null,lastMemo='';
+ function loadDraft(id){const j=root.MobileSaveJournal.read('contact',id);if(j&&(j.progress?.signature||Date.now()-Number(j.at||0)<LIFE)){progress=j.progress||{};return JSON.parse(JSON.stringify(progress.input||j.input));}return null;}
+ function saveDraft(id,input,strict=false){try{if(recoveryError)throw Error(recoveryError);assertSession();root.MobileSaveJournal.write('contact',id,{at:Date.now(),input,progress},owner);}catch(e){if(input)input.err=String(e.message||e);if(strict)throw e;}}
+ function clearDraft(){root.MobileSaveJournal.drop('contact',activeID,owner);try{store()?.removeItem(KEY);}catch(e){}}
+ let S=null,busy=false,progress={},last=null,lastMemo='',owner='',activeID='',progressMode='contact',recoveryError='',sessionToken='';
+ function assertSession(){root.MobileSaveJournal.assertOwner(owner);root.MobileSaveJournal.assertSession(sessionToken);}
+ function persistProgress(){if(recoveryError)throw Error(recoveryError);assertSession();if(progressMode==='reschedule')root.MobileSaveJournal.write('reschedule',activeID,{input:RS,progress},owner);else saveDraft(activeID,S,true);}
  const dateOptions=()=>{const t=kst(),mon=(()=>{const x=new Date(t+'T00:00:00Z'),w=x.getUTCDay();return CE.addDays(t,((8-w)%7)||7);})();return [['내일',CE.addDays(t,1)],['3일 후',CE.addDays(t,3)],['다음 주 월요일',mon]];};
  const MF=()=>root.MobileFields&&root.MobileFields.ready()?root.MobileFields:null;
  const curPlan=d=>{try{return root.MobileFields?root.MobileFields.planOf(d):'';}catch(e){return '';}};
- const ctxOf=d=>({today:kst(),existing:existingOf(d),currentPlan:curPlan(d)});
+ const ctxOf=d=>({today:kst(),existing:existingOf(d),currentPlan:curPlan(d),scheduleV1:root.ScheduleFlow?.enabled()===true});
  const MR=()=>root.MobileRequests&&root.MobileRequests.enabled()?root.MobileRequests:null;
- const reqsOf=d=>{const R=MR();return R?R.forDeal(d.id):[];};
+ const reqsOf=d=>{if(String(d.id)===String(activeID)&&progress.requestSnapshot)return progress.requestSnapshot;const R=MR();return R?R.forDeal(d.id):[];};
  const withInfo=()=>{const d=dealById(root.G&&root.G.deal),R=MR();return Object.assign({ch:'전화'},S,{info:S&&S.cplan?{construction_plan:S.cplan}:null,requests:d&&R&&S?reqsOf(d).map(r=>({id:r.id,title:R.labelOf(r),on:!!(S.reqOn&&S.reqOn[r.id])&&R.isContact(r)})):[]});};
  const planOf=d=>CE.plan(withInfo(),ctxOf(d));
  function fresh(d){
@@ -41,6 +43,7 @@
  }
  function sheetHtml(d){
   const ex=existingOf(d),pl=S.res?planOf(d):null,c=root.contactInfoM?root.contactInfoM(d):{};
+  if(root.MobileContactView&&S.ch!=='방문')return root.MobileContactView.render({s:S,d,ex,plan:pl,ce:CE,contact:c,requests:reqsOf(d),requestApi:MR(),busy,frozen:!!progress.signature,fields:MF(),currentPlan:curPlan(d),dateOptions:dateOptions(),today:kst()});
   const chip=(act,v,on,label,cls)=>'<button type="button" class="ce-chip'+(cls?' '+cls:'')+(act==='res'&&S.ai&&S.ai.res===v?' ai':'')+'" data-ce="'+act+'" data-v="'+attr(v)+'" aria-pressed="'+!!on+'">'+h(label||v)+'</button>';
   const res='<section><b class="ce-q"><i>1</i>연락 결과 <small>PC 기준 값</small></b><div class="ce-chips">'+CE.VALUES.map(v=>chip('res',v,S.res===v)).join('')+'</div>'+(S.ch==='방문'?'<small class="ce-sub">방문 결과 — 연결됨 = 만났음 · 부재 = 담당자 없음 (일정이 취소 · 연기됐으면 [일정 바꾸기])</small>':'')+'</section>';
   const note=!S.res?'':CE.showNote(S.res)
@@ -54,7 +57,7 @@
     +'<div class="ce-dates">'+dateOptions().map(x=>'<button type="button" class="ce-date'+(S.ai&&S.ai.date===x[1]?' ai':'')+'" data-ce="date" data-v="'+x[1]+'" aria-pressed="'+(S.date===x[1])+'">'+x[0]+'<small>'+h(CE.md(x[1]))+'</small></button>').join('')+'<label class="ce-date ce-pick" aria-pressed="'+(!!S.date&&!dateOptions().some(x=>x[1]===S.date))+'">날짜 선택<small>'+h(S.date?CE.md(S.date):'')+'</small><input type="date" data-ce-in="date" min="'+kst()+'" value="'+attr(S.date)+'"></label></div>'
     +'<label class="ce-agree"><input type="checkbox" data-ce-in="plan"'+(S.plan==='customer'?' checked':'')+'> 고객과 합의한 날짜</label>';
   }else if(S.mode==='change'&&ex){
-   nx+='<div class="ce-dates">'+dateOptions().map(x=>'<button type="button" class="ce-date" data-ce="date" data-v="'+x[1]+'" aria-pressed="'+(S.date===x[1])+'">'+x[0]+'<small>'+h(CE.md(x[1]))+'</small></button>').join('')+'<label class="ce-date ce-pick" aria-pressed="'+(!!S.date&&!dateOptions().some(x=>x[1]===S.date))+'">날짜 선택<small>'+h(S.date?CE.md(S.date):'')+'</small><input type="date" data-ce-in="date" min="'+kst()+'" value="'+attr(S.date)+'"></label></div>'+(ex.due&&S.date&&S.date>ex.due?'<input type="text" class="ce-in" data-ce-in="reason" maxlength="80" value="'+attr(S.reason)+'" placeholder="미루는 사유 (필수) — 원래 기한 · 새 기한 · 사유가 기록됩니다" aria-label="미루는 사유">':'')+'<p class="ce-sub">기존 일정의 날짜만 바뀝니다 — 할 일 이름은 그대로, 완료로 세지 않습니다</p>';
+   nx+='<div class="ce-dates">'+dateOptions().map(x=>'<button type="button" class="ce-date" data-ce="date" data-v="'+x[1]+'" aria-pressed="'+(S.date===x[1])+'">'+x[0]+'<small>'+h(CE.md(x[1]))+'</small></button>').join('')+'<label class="ce-date ce-pick" aria-pressed="'+(!!S.date&&!dateOptions().some(x=>x[1]===S.date))+'">날짜 선택<small>'+h(S.date?CE.md(S.date):'')+'</small><input type="date" data-ce-in="date" min="'+kst()+'" value="'+attr(S.date)+'"></label></div>'+(ex.due&&S.date&&(S.date>ex.due||root.ScheduleFlow?.enabled())?'<input type="text" class="ce-in" data-ce-in="reason" maxlength="80" value="'+attr(S.reason)+'" placeholder="날짜 변경 사유 (필수) — 원래 기한 · 새 기한 · 사유가 기록됩니다" aria-label="미루는 사유">':'')+'<p class="ce-sub">기존 일정의 날짜만 바뀝니다 — 할 일 이름은 그대로, 완료로 세지 않습니다</p>';
   }else if(S.mode==='keep'&&ex){
    nx+='<p class="ce-sub">기존 일정 그대로 — 이 기록은 일정을 완료로 세거나 바꾸지 않습니다</p>';
   }else if(S.mode==='none'){
@@ -73,14 +76,22 @@
   const card=root.document.getElementById('sheetcard');if(!card)return;
   const keepTop=card.querySelector('.ce')?card.scrollTop:0,ta=card.querySelector('textarea[data-ce-in="memo"]');if(ta&&!fromState)S.memo=ta.value;
   const head=card.querySelector('.intro')?card.querySelector('.intro').outerHTML+'<div style="height:12px"></div>':'';
-  card.innerHTML='<div class="sheet-grip"></div>'+(head||'')+sheetHtml(d);card.scrollTop=keepTop;
+  const fullPage=!!root.MobileContactView&&S.ch!=='방문';
+  card.classList.toggle('ce-page',fullPage);root.document.getElementById('sheetwrap')?.classList.toggle('ce-page-wrap',fullPage);
+  const background=root.document.getElementById('scr');if(background)background.inert=fullPage;
+  card.innerHTML=(fullPage?'':'<div class="sheet-grip"></div>'+(head||''))+sheetHtml(d);card.scrollTop=keepTop;
   saveDraft(d.id,S);
  }
  function open(opts){
+  if(busy)return;
+  if(root.MobileGuideShell&&opts?.ch==='방문'){root.toast('방문 결과 화면은 Claude 원본 연결 작업 중입니다.');return;}
+  if(root.MobileGuideShell&&(typeof root.MobileContactView?.render!=='function'||typeof root.MobileApprovedDSource!=='string')){root.toast('연락 결과 화면을 불러오지 못했습니다. 다시 열어 주세요.');return;}
   const d=dealById(root.G&&root.G.deal);if(!d)return;
   const c=root.contactInfoM?root.contactInfoM(d):{};
   const ch=opts&&opts.ch==='방문'?'방문':'전화';
-  S=loadDraft(d.id);if(S&&(S.ch||'전화')!==ch)S=null;S=S||fresh(d);S.ch=ch;busy=false;progress={};S.err='';
+  owner=root.MobileSaveJournal?.owner()||'';sessionToken=root.MobileSaveJournal?.session()||'';activeID=d.id;progressMode='contact';progress={};recoveryError='';S=null;
+  try{store()?.removeItem(KEY);S=loadDraft(d.id);}catch(e){recoveryError=String(e.message||e);}
+  if(S&&(S.ch||'전화')!==ch&&!progress.signature)S=null;S=S||fresh(d);if(!progress.signature)S.ch=ch;busy=false;S.err=recoveryError;
   root.openSheet(root.intro('var(--blue-50)','var(--blue-dark)',root.IC.phone,ch==='방문'?'방문 어떻게 됐나요?':'통화 어떻게 됐나요?',h(d.nm)+(c.name?' · '+h(c.name):'')),'');
   const card=root.document.getElementById('sheetcard');if(card){card.classList.add('ce-card');card._ceMode='entry';}
   paint(d);wire(d);
@@ -91,17 +102,33 @@
   card._ceDeal=d.id;
   if(wired)return;wired=true;
   card.addEventListener('click',e=>{
-   const b=e.target.closest('[data-ce]');if(!b||!card.classList.contains('ce-card'))return;const dd=dealById(card._ceDeal);if(!dd||busy)return;
+   const b=e.target.closest('[data-ce]');if(!b||!card.classList.contains('ce-card'))return;const dd=dealById(card._ceDeal);if(!dd)return;
    const a=b.dataset.ce,v=b.dataset.v;
+   if(b.tagName==='A')e.preventDefault();
+   if(a==='close'){root.closeSheet();root.render();return;}
+   if(busy||card._ceMode==='entry'&&(!S||progress.signature&&a!=='save'))return;
    if(card._ceMode==='rs'){if(a==='rs-date'){RS.date=v;RS.err='';paintRs(dd);}else if(a==='rs-save')saveRs(dd);else if(a==='close'){root.closeSheet();root.render();}return;}
    if(a==='res'){pickResult(dd,v);S.err='';paint(dd);}
    else if(a==='mode'){S.mode=v;S.touchedNext=true;S.err='';if(v==='new'&&!S.date){S.date=CE.addDays(kst(),1);}paint(dd);}
-   else if(a==='date'){S.date=v;S.touchedNext=true;S.err='';paint(dd);}
+   else if(a==='date'){S.date=v;S.datePanel=false;S.touchedNext=true;S.err='';paint(dd);}
+   else if(a==='date-open'){S.datePanel=true;paint(dd);}
+   else if(a==='date-close'){S.datePanel=false;paint(dd);}
    else if(a==='iplan'){S.cplan=v;S.err='';paint(dd);}
-   else if(a==='quote'){root.closeSheet();if(root.MobileFields)root.MobileFields.quoteSheet(lastMemo);}
-   else if(a==='info'){S.info=!S.info;paint(dd);}
-   else if(a==='edit-work'){saveDraft(dd.id,S);if(typeof root.workSheetM==='function')root.workSheetM();}
-   else if(a==='edit-contact'){saveDraft(dd.id,S);if(typeof root.contactEditSheetM==='function')root.contactEditSheetM();}
+   else if(a==='quote'){
+    try{
+     if(!last||last.deal_id!==String(dd.id))throw Error('방문을 저장한 영업건을 다시 열어 주세요.');
+     root.MobileSaveJournal.assertOwner(last.owner);root.MobileSaveJournal.assertSession(last.sessionToken);
+     if(root.MobileFields)root.MobileFields.quoteSheet(lastMemo,last.deal_id);
+    }catch(err){if(typeof root.toast==='function')root.toast(String(err.message||err));}
+   }
+   else if(a==='info'){if(root.MobileGuideShell)return root.toast('고객 정보 변경 화면은 Claude 원본 연결 작업 중입니다.');S.info=!S.info;paint(dd);}
+   else if(a==='edit-work'){saveDraft(dd.id,S);if(root.MobileGuideShell)return root.toast('공종 수정 화면은 Claude 원본 연결 작업 중입니다.');if(typeof root.workSheetM==='function')root.workSheetM();}
+   else if(a==='edit-contact'){saveDraft(dd.id,S);if(root.MobileGuideShell)return root.toast('연락처 수정 화면은 Claude 원본 연결 작업 중입니다.');if(typeof root.contactEditSheetM==='function')root.contactEditSheetM();}
+   else if(a==='input-mic'){
+    const handle=captureInputDraft();
+    if(!handle.ok||!root.MobileInputFlow?.open(dd,'I-1',{draftHandle:handle}))return root.toast('현재 상담 입력을 먼저 확인해 주세요.');
+    root.MobileGuideShell.state.detailView='input';root.render();
+   }
    else if(a==='mic')mic(card,b);
    else if(a==='tidy')tidy(dd,card,b);
    else if(a==='undo'){S.memo=S.aiRaw||S.memo;S.aiRaw='';S.aiHint='원문으로 되돌렸습니다.';paint(dd,true);}
@@ -111,12 +138,13 @@
   });
   card.addEventListener('input',e=>{
    const t=e.target.closest('[data-ce-in]');if(!t||!card.classList.contains('ce-card'))return;const k=t.dataset.ceIn;
-   if(card._ceMode==='rs'){const dd0=dealById(card._ceDeal);if(k==='rs-reason'&&RS){RS.reason=t.value;const pv=card.querySelector('.ce-prev');if(pv&&dd0&&t.value.trim()){const ex=existingOf(dd0);pv.innerHTML='<b>저장하면</b> 기존 일정 "'+h(ex.text)+'" 날짜만 변경 · '+h(CE.md(RS.date))+' · 미룬 사유 기록 · 완료로 세지 않음';}}else if(k==='rs-date'&&RS){RS.date=t.value;RS.err='';if(dd0&&/^\d{4}-\d{2}-\d{2}$/.test(t.value))paintRs(dd0);}return;}
+   if(busy||progress.signature||card._ceMode==='entry'&&!S)return;
+   if(card._ceMode==='rs'){const dd0=dealById(card._ceDeal);if(k==='rs-reason'&&RS){RS.reason=t.value;const pv=card.querySelector('.ce-prev');if(pv&&dd0&&t.value.trim()){const ex=existingOf(dd0);pv.innerHTML='<b>저장하면</b> 기존 일정 "'+h(ex.text)+'" 날짜만 변경 · '+h(CE.md(RS.date))+' · 미룬 사유 기록 · 완료로 세지 않음';}}else if(k==='rs-date'&&RS){RS.date=t.value;RS.err='';if(dd0&&/^\d{4}-\d{2}-\d{2}$/.test(t.value))paintRs(dd0);}try{persistProgress();}catch(e){if(RS)RS.err=String(e.message||e);}return;}
    if(k==='memo')S.memo=t.value;else if(k==='purpose'){S.purpose=t.value;S.touchedNext=true;}else if(k==='reason')S.reason=t.value;
    else if(k==='date'){S.date=t.value;S.touchedNext=true;const dd=dealById(card._ceDeal);if(dd&&/^\d{4}-\d{2}-\d{2}$/.test(t.value))paint(dd);}
    else if(k==='plan'){S.plan=t.checked?'customer':'internal';}
    else if(k==='req'){S.reqOn=Object.assign({},S.reqOn,{[t.dataset.id]:t.checked});const dd1=dealById(card._ceDeal);if(dd1)paint(dd1);return;}
-   const dd=dealById(card._ceDeal);if(dd&&k!=='date'){const pv=card.querySelector('.ce-prev'),pl=S.res?planOf(dd):null;if(pv)pv.innerHTML=pl&&pl.ok?'<b>저장하면</b> '+h(pl.preview):h(pl&&pl.error||'연락 결과를 골라 주세요');saveDraft(dd.id,S);}
+   const dd=dealById(card._ceDeal);if(dd&&k!=='date'){const pv=card.querySelector('.ce-prev'),pl=S.res?planOf(dd):null;if(pv)pv.textContent=pl&&pl.ok?pl.preview:pl&&pl.error||'연락 결과를 골라 주세요';const saveButton=card.querySelector('[data-ce="save"]');if(saveButton&&card.classList.contains('ce-page'))saveButton.disabled=busy||!pl?.ok;saveDraft(dd.id,S);}
   });
  }
  function mic(card,btn){
@@ -124,11 +152,29 @@
   if(!ta||!hint)return;
   if(!SR){hint.hidden=false;hint.textContent='이 휴대폰은 음성 입력을 지원하지 않습니다 — 직접 적어 주세요.';return;}
   if(btn._rec){try{btn._rec.stop();}catch(e){}return;}
-  const r=new SR();r.lang='ko-KR';r.continuous=true;r.interimResults=true;const base=ta.value?ta.value.replace(/\s+$/,'')+' ':'';let fin='';
-  r.onresult=ev=>{let itv='';for(let i=ev.resultIndex;i<ev.results.length;i++){const s=ev.results[i][0].transcript;if(ev.results[i].isFinal)fin+=s;else itv+=s;}ta.value=(base+fin+itv).slice(0,300);S.memo=ta.value;};
-  r.onerror=ev=>{hint.hidden=false;hint.textContent='음성 인식이 안 됩니다('+(ev&&ev.error||'')+') — 직접 적어 주세요.';};
-  r.onend=()=>{btn._rec=null;btn.textContent='말하기';btn.setAttribute('aria-pressed','false');if(ta.value){hint.hidden=false;hint.textContent='글자로 바꿨습니다 — 고칠 수 있습니다.';}};
-  try{r.start();}catch(err){hint.hidden=false;hint.textContent='마이크를 시작할 수 없습니다 — 직접 적어 주세요.';return;}
+  const inputState=S,inputOwner=owner,wrap=root.document.getElementById('sheetwrap');
+  const current=()=>S===inputState&&!busy&&!progress.signature&&card.contains(ta)&&wrap?.classList.contains('open')&&root.MobileSaveJournal.owner()===inputOwner&&root.MobileSaveJournal.session()===sessionToken;
+  const r=new SR();r.lang='ko-KR';r.continuous=true;r.interimResults=true;
+  const base=ta.value?ta.value.replace(/\s+$/,'')+' ':'';let fin='',lastValue=ta.value,ended=false,failed=false;
+  const reset=()=>{btn._rec=null;btn.textContent='말하기';btn.setAttribute('aria-pressed','false');};
+  const observer=new MutationObserver(()=>{if(!current())cancel();});
+  const cleanup=()=>{observer.disconnect();ta.removeEventListener('input',manual);root.removeEventListener('phase1:identity-cleared',cancel);root.removeEventListener('phase1:profile',check);};
+  const cancel=()=>{if(ended)return;ended=true;cleanup();if(current())reset();else btn._rec=null;try{r.abort();}catch(e){}};
+  const check=()=>{if(!current())cancel();};
+  r.onresult=ev=>{
+   if(ended)return;if(!current()||ta.value!==lastValue){cancel();return;}
+   let itv='';for(let i=ev.resultIndex;i<ev.results.length;i++){const s=ev.results[i][0].transcript;if(ev.results[i].isFinal)fin+=s;else itv+=s;}
+   lastValue=(base+fin+itv).slice(0,300);ta.value=lastValue;S.memo=lastValue;
+   ta.dispatchEvent(new Event('input',{bubbles:true}));
+  };
+  r.onerror=ev=>{if(ended)return;if(!current()){cancel();return;}failed=true;hint.hidden=false;hint.textContent='음성 인식이 안 됩니다('+(ev&&ev.error||'')+') — 직접 적어 주세요.';cancel();};
+  r.onend=()=>{if(ended)return;ended=true;cleanup();if(!current())return;reset();if(!failed&&ta.value){hint.hidden=false;hint.textContent='글자로 바꿨습니다 — 고칠 수 있습니다.';}};
+  // Only physical/manual input invalidates recognition; our synthetic input persists the draft.
+  const manual=ev=>{if(ta.value!==lastValue)cancel();};
+  ta.addEventListener('input',manual);
+  observer.observe(card,{childList:true,subtree:true});if(wrap)observer.observe(wrap,{attributes:true,attributeFilter:['class']});
+  root.addEventListener('phase1:identity-cleared',cancel);root.addEventListener('phase1:profile',check);
+  try{r.start();}catch(err){failed=true;ended=true;cleanup();hint.hidden=false;hint.textContent='마이크를 시작할 수 없습니다 — 직접 적어 주세요.';return;}
   btn._rec=r;btn.textContent='그만';btn.setAttribute('aria-pressed','true');hint.hidden=false;hint.textContent='듣는 중… 끝나면 [그만]을 누르세요.';
  }
  /* AI로 정리(로그인 상태에서만): 원문 → 정리문(상담 내용 칸 교체 · 원문 되돌리기) + 결과 · 날짜는 '추천' 표시만 — 고르는 것은 사람이다. 서버 함수 crm-ai(memo_tidy)를 그대로 쓴다 */
@@ -136,103 +182,187 @@
   async function tidy(d,card,btn){
    const ta=card.querySelector('textarea[data-ce-in="memo"]');if(!ta)return;const raw=ta.value.replace(/\s+/g,' ').trim();
    if(!raw){S.aiHint='먼저 말하거나 적어 주세요.';paint(d);return;}
+   const inputState=S,inputOwner=owner,inputValue=ta.value,wrap=root.document.getElementById('sheetwrap');
+   const current=()=>S===inputState&&!busy&&!progress.signature&&card.contains(ta)&&wrap?.classList.contains('open')&&root.MobileSaveJournal.owner()===inputOwner&&root.MobileSaveJournal.session()===sessionToken;
    btn.disabled=true;btn.textContent='정리 중…';
    try{
     const r=await root.fetch(root.SUPABASE_URL+'/functions/v1/crm-ai',{method:'POST',headers:{apikey:root.SUPABASE_ANON,Authorization:'Bearer '+root.TOKEN,'Content-Type':'application/json'},body:JSON.stringify({kind:'memo_tidy',subject_type:'deal',subject_id:String(d.id),input:{site:d.nm||'',stage:String(d.code||''),today:kst(),raw}})});
     const j=await r.json().catch(()=>null);
+    if(!current()||ta.value!==inputValue)return;
     if(!r.ok||!j||j.ok!==true||!j.suggestion)throw new Error({AI_DISABLED:'AI 제안이 꺼져 있습니다',AI_NOT_CONFIGURED:'AI 키가 서버에 없습니다',FORBIDDEN:'AI 제안을 쓸 권한이 없습니다',AI_UPSTREAM:'AI 서버가 응답하지 않았습니다',AI_BAD_OUTPUT:'AI 답을 읽지 못했습니다'}[j&&j.error]||'AI 정리를 받지 못했습니다');
     const s=j.suggestion.suggestion||{};if(!s.memo)throw new Error('AI가 정리할 내용을 찾지 못했습니다');
     S.aiRaw=raw;S.memo=s.memo;S.ai={res:AI_NAME[s.result]||'',date:s.next&&s.next.date||''};
     const nx=s.next&&s.next.date?'다음 확인 '+s.next.date.slice(5).replace('-','/')+(s.next.text?' · '+s.next.text:''):'';
     S.aiHint='AI 정리(제안) — '+[AI_NAME[s.result]?'결과는 「'+AI_NAME[s.result]+'」':'',nx].filter(Boolean).join(' · ')+(S.ai.res||nx?' 로 추천합니다. ':'')+'상담 내용은 고칠 수 있고, 고르는 것은 직접 합니다.';
-   }catch(e){S.aiHint=String(e&&e.message||e);}
-   paint(d,true);
+   }catch(e){if(!current()||ta.value!==inputValue)return;S.aiHint=String(e&&e.message||e);}
+   finally{if(current()){btn.disabled=false;btn.textContent='AI로 정리';}}
+   if(current())paint(d,true);
   }
  async function confirmOp(op,payload,actionId,slot){
+  assertSession();
   const Q=root.Phase1.queue,key=slot||op;let id=progress[key];
-  if(id&&(Q.list().find(q=>q.request_id===id)||{}).status==='rejected'){delete progress[key];id=null;}
-  if(!id){id=root.queueMobileContactOperation(op,payload,actionId);progress[key]=id;}
-  await Q.flush();const row=Q.list().find(q=>q.request_id===id);
+  if(!id){id=root.queueMobileContactOperation(op,payload,actionId);progress[key]=id;persistProgress();}
+  let failure;try{await Q.flush();}catch(e){failure=e;}const row=Q.list().find(q=>q.request_id===id);
   if(!row||row.status!=='done'||!row.ack||row.ack.ok!==true)throw Error(row&&row.error||'서버 확인 대기 중 — 다시 누르면 같은 요청을 확인합니다.');
+  root.OperationalAdapter.validateAck(row.ack,row);
+  assertSession();
   return row;
  }
  async function save(d,card){
   if(busy)return;
   const ta=card.querySelector('textarea[data-ce-in="memo"]');if(ta)S.memo=ta.value;
-  const ctx=ctxOf(d),pl=CE.plan(withInfo(),ctx);
+  const input=withInfo(),signature=JSON.stringify(['ch','res','memo','mode','purpose','date','reason','plan','who','info','requests'].map(k=>input[k]));
+  if(progress.signature&&progress.signature!==signature){S.err='저장 확인 중 입력값이 바뀌었습니다. 원래 입력으로 재시도해 주세요.';paint(d);return;}
+  const ctx=progress.ctx||ctxOf(d),pl=progress.pl||CE.plan(input,ctx);
   if(!pl.ok){S.err=pl.error;paint(d);return;}
   if(!root.Phase1||!root.Phase1.queue||typeof root.queueMobileContactOperation!=='function'){S.err='로그인 상태에서만 저장할 수 있습니다.';paint(d);return;}
+  progress.signature=signature;progress.ctx=ctx;progress.pl=pl;progress.input=progress.input||JSON.parse(JSON.stringify(S));
+  progress.requestSnapshot=progress.requestSnapshot||JSON.parse(JSON.stringify(reqsOf(d)));
+  try{persistProgress();}catch(e){S.err=String(e.message||e);paint(d);return;}
   busy=true;S.err='';paint(d);
+  const savingView=card.querySelector('.ce');
   const at=progress.at||(progress.at=new Date().toISOString()),ex=ctx.existing;
   try{
+   persistProgress();
+   const flow=pl.scheduleV1&&(pl.next||pl.change);
+   if(flow)await root.ScheduleFlow.begin(d,pl,ctx.existing,progress,persistProgress);
    const cur=openNext(d);
-   if(pl.completeCurrent&&cur&&UUID.test(String(cur.id||''))&&!progress.completed){await confirmOp('next_action_complete',{opportunity_id:d.id},cur.id);progress.completed=true;cur.status='done';cur.completed_at=new Date().toISOString();}
+   // Saving a contact result does not prove that the existing task is complete.
    const activity={type:S.ch==='방문'?'방문':'전화',note:pl.note,result:'',occurred_at:at};
    const rec=await confirmOp('activity',{opportunity_id:d.id,...activity});
    d.activities=Array.isArray(d.activities)?d.activities:[];
    if(!d.activities.some(x=>x.id===rec.ack.activity_id))d.activities.push({id:rec.ack.activity_id,type:activity.type,note:activity.note,result:'',at,occurred_at:at,meaningful:pl.meaningful});
-   if(pl.next){
+   if(flow){
+    const saved=await root.ScheduleFlow.finish(d,progress,rec.ack,persistProgress);assertSession();root.ScheduleFlow.project(d,saved);
+   }else if(pl.next){
     const next={type:pl.next.type,text:pl.next.text,due_at:pl.next.due};
     const sch=await confirmOp('next_action',{opportunity_id:d.id,...next});
     d.nextAction=d.nextActionObj={id:sch.ack.next_action_id,opportunity_id:d.id,type:next.type,text:next.text,due:next.due_at,due_at:next.due_at,status:'open'};
    }else if(pl.change){
     const next={type:pl.change.type,text:ex.promise?'고객 약속: '+pl.change.text:pl.change.text,due_at:pl.change.due};
-    const sch=await confirmOp('next_action',{opportunity_id:d.id,...next});
-    d.nextAction=d.nextActionObj={id:sch.ack.next_action_id,opportunity_id:d.id,type:next.type,text:next.text,due:next.due_at,due_at:next.due_at,status:'open'};
-    if(pl.postpone)await confirmOp('activity',{opportunity_id:d.id,type:'메모',note:'[기한 변경] 원래 '+pl.postpone.from+(pl.postpone.over>0?' ('+pl.postpone.over+'일 지남)':'')+' | 새 '+pl.postpone.to+' | 사유 '+pl.postpone.reason,result:'',occurred_at:at},undefined,'postpone');
+    const sch=await confirmOp('next_action',{opportunity_id:d.id,intent:'postpone',action_id:pl.change.id,due_at:next.due_at});
+    d.nextAction=d.nextActionObj={...cur,id:sch.ack.next_action_id,opportunity_id:d.id,type:next.type,text:next.text,due:next.due_at,due_at:next.due_at,status:'open'};
    }else if(pl.completeCurrent){d.nextAction=d.nextActionObj=null;}
    if(pl.meaningful)d.contactAt=at;d.lastAt=at;
-   try{root.G.done[root.doneKey({ref:d.id})]=1;}catch(e){}
-   let infoErr='';
-   if(pl.info){try{await root.MobileFields.save(d,{construction_plan:pl.info.construction_plan},'결과 남기기에서 함께 변경');}catch(e){infoErr=String(e&&e.message||e);pl.info=null;}}
+   // The task remains open until its own completion condition is confirmed.
+   let infoErr=progress.infoError||'';
+   if(pl.info&&!progress.infoHandled){try{await root.MobileFields.save(d,{construction_plan:pl.info.construction_plan},'결과 남기기에서 함께 변경');}catch(e){infoErr=String(e&&e.message||e);pl.info=null;}progress.infoHandled=true;progress.infoError=infoErr;persistProgress();}
    const resLabel=S.res;
-   if(pl.requests&&pl.requests.length&&root.MobileRequests){for(const rq of pl.requests){if(rq.state!=='done'&&rq.state!=='working')continue;const req=reqsOf(d).find(x=>x.id===rq.id);try{await root.MobileRequests.complete(req||{id:rq.id,kind:'first'},{result:resLabel,absent:rq.state==='working',next_text:rq.next_text,next_due:rq.next_due});}catch(e){rq.state='failed';rq.err=String(e&&e.message||e);}}}
-   const ch0=S.ch;lastMemo=String(S.memo||'');last={pl,ctx};clearDraft();busy=false;S=null;progress={};
+   if(pl.requests&&pl.requests.length){
+    progress.requestResults=progress.requestResults||{};
+    for(const rq of pl.requests){
+     if((rq.state!=='done'&&rq.state!=='working')||progress.requestResults[rq.id])continue;
+     assertSession();
+     const req=reqsOf(d).find(x=>x.id===rq.id);
+     try{
+      if(!req||!root.MobileRequests?.enabled())throw Error('요청 저장 연결을 확인해 주세요.');
+      const saved=await root.MobileRequests.complete(req,{result:resLabel,absent:rq.state==='working',next_text:rq.next_text,next_due:rq.next_due,activity:rec.ack});
+      assertSession();
+      progress.requestResults[rq.id]={id:saved.id,status:saved.status};persistProgress();
+     }catch(e){throw Error('응대 기록은 저장됐습니다. 관리자 요청 처리 확인이 남았습니다: '+String(e&&e.message||e));}
+    }
+   }
+   assertSession();
+   const ch0=S.ch;lastMemo=String(S.memo||'');last={pl,ctx,deal_id:String(d.id),owner,sessionToken};clearDraft();busy=false;S=null;progress={};
    const rows=CE.summary(pl,Object.assign({},ctx,{openRequests:[]}));if(infoErr)rows.push(['남음','공사 시기는 저장하지 못했습니다: '+infoErr]);
    const quoteOk=ch0==='방문'&&pl.meaningful&&!d.outcome&&String(d.code)==='consulting'&&root.MobileFields&&root.MobileFields.ready();
    const k={저장:'ok',완료:'ok',변경:'chg',신규:'new',남음:'left'};
    const c=root.document.getElementById('sheetcard');
-   c.innerHTML='<div class="sheet-grip"></div><div class="ce-done"><b class="ce-dt">저장했습니다</b><small>'+h(d.nm)+'</small><ul>'+rows.map(r=>'<li class="'+k[r[0]]+'"><em>'+h(r[0])+'</em><span>'+h(r[1])+'</span></li>').join('')+'</ul><div class="ce-donebtn"><button type="button" class="btn btn-line" data-ce="close">닫기</button><button type="button" class="btn btn-primary" data-ce="next">다음 건으로</button></div>'+(quoteOk?'<button type="button" class="btn btn-line" data-ce="quote" style="margin-top:8px">견적 요청 등록</button>':'')+'</div>';
+   if(c.contains(savingView)&&c.classList.contains('ce-page')){
+    savingView.classList.add('ce-done');
+    c.querySelectorAll('input,textarea,button:not(.cd-back)').forEach(el=>el.disabled=true);
+    const sb=c.querySelector('.ce-save');if(sb)sb.textContent='저장됨';
+    const pv=c.querySelector('.ce-prev');if(pv)pv.textContent=rows.map(r=>r[1]).join(' · ');
+    root.toast?.('저장됨 · '+rows.map(r=>r[1]).join(' · '));
+   }else if(c.contains(savingView))c.innerHTML='<div class="sheet-grip"></div><div class="ce-done"><b class="ce-dt">저장했습니다</b><small>'+h(d.nm)+'</small><ul>'+rows.map(r=>'<li class="'+k[r[0]]+'"><em>'+h(r[0])+'</em><span>'+h(r[1])+'</span></li>').join('')+'</ul><div class="ce-donebtn"><button type="button" class="btn btn-line" data-ce="close">닫기</button><button type="button" class="btn btn-primary" data-ce="next">다음 건으로</button></div>'+(quoteOk?'<button type="button" class="btn btn-line" data-ce="quote" style="margin-top:8px">견적 요청 등록</button>':'')+'</div>';
    try{root.saveLocal&&root.saveLocal();}catch(e){}
-  }catch(e){busy=false;S.err=String(e&&e.message||e);paint(d);}
+  }catch(e){busy=false;if(pl.scheduleV1&&!progress.activity&&!progress.schedule?.prepared){progress={};saveDraft(activeID,S);}S.err=String(e&&e.message||e);if(card.contains(savingView))paint(d);}
  }
  /* ── 일정 바꾸기(2026-10-10 mobile_all 4번 흐름 7): 다른 기록 없이 지금 일정의 날짜만. 늦추면 사유 필수 → PC 와 같은 '[기한 변경] 원래 | 새 | 사유' 기록, 일정 이름은 그대로 · 완료로 세지 않는다 ── */
  let RS=null;
  function rsHtml(d){
-  const ex=existingOf(d),later=!!(ex&&ex.due&&RS.date&&RS.date>ex.due);
-  const pv=!RS.date?'새 날짜를 골라 주세요':later&&!RS.reason.trim()?'미루는 사유를 입력해 주세요':'<b>저장하면</b> 기존 일정 "'+h(ex.text)+'" 날짜만 변경 · '+h(CE.md(RS.date))+(later?' · 미룬 사유 기록':'')+' · 완료로 세지 않음';
+  const ex=RS.existing||existingOf(d),later=!!(ex&&ex.due&&RS.date&&RS.date>ex.due),needReason=later||(root.ScheduleFlow?.enabled()===true&&RS.date!==ex.due);
+  const pv=!RS.date?'새 날짜를 골라 주세요':needReason&&!RS.reason.trim()?'날짜 변경 사유를 입력해 주세요':'<b>저장하면</b> 기존 일정 "'+h(ex.text)+'" 날짜만 변경 · '+h(CE.md(RS.date))+(later?' · 미룬 사유 기록':'')+' · 완료로 세지 않음';
   return '<div class="ce"><section><b class="ce-q"><i>1</i>지금 일정</b><p class="ce-ex"><em>기존 일정</em> '+h(ex.text)+(ex.due?' · '+h(CE.md(ex.due)):'')+(ex.promise?' · 고객 합의':'')+'</p></section>'
    +'<section><b class="ce-q"><i>2</i>새 날짜</b><div class="ce-dates">'+dateOptions().map(x=>'<button type="button" class="ce-date" data-ce="rs-date" data-v="'+x[1]+'" aria-pressed="'+(RS.date===x[1])+'">'+x[0]+'<small>'+h(CE.md(x[1]))+'</small></button>').join('')+'<label class="ce-date ce-pick" aria-pressed="'+(!!RS.date&&!dateOptions().some(x=>x[1]===RS.date))+'">날짜 선택<small>'+h(RS.date?CE.md(RS.date):'')+'</small><input type="date" data-ce-in="rs-date" min="'+kst()+'" value="'+attr(RS.date)+'"></label></div></section>'
-   +(later?'<section><b class="ce-q"><i>3</i>미루는 사유 <small>필수</small></b><input type="text" class="ce-in" data-ce-in="rs-reason" maxlength="80" value="'+attr(RS.reason)+'" placeholder="예: 고객 요청 · 입대의 후 연락" aria-label="미루는 사유"><p class="ce-sub">미뤄도 지연 기록은 남습니다 · 관리팀 지표 \'기한 변경 n회\'로 따로 셉니다</p></section>':'')
+   +(needReason?'<section><b class="ce-q"><i>3</i>날짜 변경 사유 <small>필수</small></b><input type="text" class="ce-in" data-ce-in="rs-reason" maxlength="80" value="'+attr(RS.reason)+'" placeholder="예: 고객 요청 · 입대의 후 연락" aria-label="미루는 사유"><p class="ce-sub">미뤄도 지연 기록은 남습니다 · 관리팀 지표 \'기한 변경 n회\'로 따로 셉니다</p></section>':'')
    +(RS.err?'<p class="ce-err" role="alert">'+h(RS.err)+'</p>':'')+'</div><div class="ce-foot"><span class="ce-prev">'+pv+'</span><button type="button" class="btn btn-primary ce-save" data-ce="rs-save"'+(busy?' disabled':'')+'>'+(busy?'확인 중…':'일정 바꾸기')+'</button></div>';
  }
- function paintRs(d){const card=root.document.getElementById('sheetcard');if(!card||!RS)return;const keep=card.querySelector('.ce')?card.scrollTop:0,head=card.querySelector('.intro')?card.querySelector('.intro').outerHTML+'<div style="height:12px"></div>':'';card.innerHTML='<div class="sheet-grip"></div>'+head+rsHtml(d);card.scrollTop=keep;}
+ function paintRs(d){const card=root.document.getElementById('sheetcard');if(!card||!RS)return;try{persistProgress();}catch(e){RS.err=String(e.message||e);}const keep=card.querySelector('.ce')?card.scrollTop:0,head=card.querySelector('.intro')?card.querySelector('.intro').outerHTML+'<div style="height:12px"></div>':'';card.innerHTML='<div class="sheet-grip"></div>'+head+rsHtml(d);card.scrollTop=keep;}
  function reschedule(){
+  if(root.MobileGuideShell){root.toast('연락 결과의 기존 업무 날짜 변경을 이용해 주세요.');return;}
   const d=dealById(root.G&&root.G.deal);if(!d)return;
   if(!existingOf(d)){if(typeof root.toast==='function')root.toast('바꿀 일정이 없습니다 — 결과 남기기에서 새 업무를 잡아 주세요');return;}
-  RS={date:'',reason:'',err:''};busy=false;progress={};
+  if(busy)return;RS={date:'',reason:'',err:'',existing:existingOf(d)};busy=false;progress={};owner=root.MobileSaveJournal?.owner()||'';sessionToken=root.MobileSaveJournal?.session()||'';activeID=d.id;progressMode='reschedule';recoveryError='';
+  try{const saved=root.MobileSaveJournal.read('reschedule',d.id);if(saved){progress=saved.progress||{};RS=JSON.parse(JSON.stringify(progress.input||saved.input||RS));}}catch(e){recoveryError=String(e.message||e);RS.err=recoveryError;}
   root.openSheet(root.intro('var(--blue-50)','var(--blue-dark)',root.IC.phone,'일정 바꾸기',h(d.nm)),'');
   const card=root.document.getElementById('sheetcard');if(card){card.classList.add('ce-card');card._ceMode='rs';}
   paintRs(d);wire(d);
  }
  async function saveRs(d){
-  if(busy)return;const ex=existingOf(d);if(!ex||!RS)return;const T=kst(),later=!!(ex.due&&RS.date>ex.due);
+  if(busy||!RS)return;const ex=RS.existing;if(!ex)return;const T=kst(),later=!!(ex.due&&RS.date>ex.due);
+  const modern=!!progress.schedule||root.ScheduleFlow?.enabled()===true;
+  const issue=CE.rescheduleError(ex,RS.date,T,modern);if(issue){RS.err=issue;return paintRs(d);}
+  const signature=JSON.stringify([RS.date,RS.reason]);if(progress.signature&&progress.signature!==signature){RS.err='저장 확인 중 입력값이 바뀌었습니다. 원래 입력으로 재시도해 주세요.';return paintRs(d);}
   if(!RS.date){RS.err='새 날짜를 골라 주세요';return paintRs(d);}
   if(RS.date<T){RS.err='새 날짜는 오늘 이후로 골라 주세요';return paintRs(d);}
-  if(later&&!RS.reason.trim()){RS.err='미루는 사유를 입력해 주세요 (원래 기한 · 새 기한 · 사유가 기록됩니다)';return paintRs(d);}
+  if((later||modern)&&!RS.reason.trim()){RS.err='미루는 사유를 입력해 주세요 (원래 기한 · 새 기한 · 사유가 기록됩니다)';return paintRs(d);}
   if(!root.Phase1||!root.Phase1.queue||typeof root.queueMobileContactOperation!=='function'){RS.err='로그인 상태에서만 저장할 수 있습니다.';return paintRs(d);}
-  busy=true;RS.err='';paintRs(d);
+  progress.signature=signature;progress.input=progress.input||JSON.parse(JSON.stringify(RS));try{persistProgress();}catch(e){RS.err=String(e.message||e);return paintRs(d);}busy=true;RS.err='';paintRs(d);
+  const card=root.document.getElementById('sheetcard'),savingView=card.querySelector('.ce');
   try{
-   const next={type:ex.type||'전화',text:(ex.promise?'고객 약속: ':'')+ex.text,due_at:RS.date},sch=await confirmOp('next_action',{opportunity_id:d.id,...next},undefined,'rsnext');
+   const at=progress.at||(progress.at=new Date().toISOString());
+   persistProgress();
+   if(modern){
+    await root.ScheduleFlow.begin(d,{change:{id:ex.id,due:RS.date,reason:RS.reason.trim()}},ex,progress,persistProgress);
+    const saved=await root.ScheduleFlow.finish(d,progress,null,persistProgress);assertSession();root.ScheduleFlow.project(d,saved);
+   }else{
+   await confirmOp('activity',{opportunity_id:d.id,type:'메모',note:'[기한 변경 요청] 원래 '+ex.due+' | 새 '+RS.date+' | 사유 '+RS.reason.trim(),result:'',occurred_at:at},undefined,'rsmemo');
+   const next={type:ex.type||'전화',text:(ex.promise?'고객 약속: ':'')+ex.text,due_at:RS.date},sch=await confirmOp('next_action',{opportunity_id:d.id,intent:'postpone',action_id:ex.id,due_at:RS.date},undefined,'rsnext');
    d.nextAction=d.nextActionObj={id:sch.ack.next_action_id,opportunity_id:d.id,type:next.type,text:next.text,due:next.due_at,due_at:next.due_at,status:'open'};
-   if(later){const over=ex.due<T?Math.round((Date.parse(T+'T00:00:00Z')-Date.parse(ex.due+'T00:00:00Z'))/864e5):0;await confirmOp('activity',{opportunity_id:d.id,type:'메모',note:'[기한 변경] 원래 '+ex.due+(over>0?' ('+over+'일 지남)':'')+' | 새 '+RS.date+' | 사유 '+RS.reason.trim(),result:'',occurred_at:new Date().toISOString()},undefined,'rsmemo');}
-   busy=false;const rows=[['변경','기존 일정 "'+ex.text+'" → '+CE.md(RS.date)+(later?' · 사유 '+RS.reason.trim():'')],['남음','할 일 이름은 그대로 · 완료로 세지 않음']];RS=null;
+
+   }
+   assertSession();root.MobileSaveJournal.drop('reschedule',activeID,owner);busy=false;const rows=[['변경','기존 일정 "'+ex.text+'" → '+CE.md(RS.date)+(later?' · 사유 '+RS.reason.trim():'')],['남음','할 일 이름은 그대로 · 완료로 세지 않음']];RS=null;
    const c=root.document.getElementById('sheetcard');
-   c.innerHTML='<div class="sheet-grip"></div><div class="ce-done"><b class="ce-dt">일정을 바꿨습니다</b><small>'+h(d.nm)+'</small><ul>'+rows.map(r=>'<li class="'+(r[0]==='변경'?'chg':'left')+'"><em>'+h(r[0])+'</em><span>'+h(r[1])+'</span></li>').join('')+'</ul><div class="ce-donebtn"><button type="button" class="btn btn-primary" data-ce="close" style="grid-column:1/-1">닫기</button></div></div>';
+   if(c.contains(savingView))c.innerHTML='<div class="sheet-grip"></div><div class="ce-done"><b class="ce-dt">일정을 바꿨습니다</b><small>'+h(d.nm)+'</small><ul>'+rows.map(r=>'<li class="'+(r[0]==='변경'?'chg':'left')+'"><em>'+h(r[0])+'</em><span>'+h(r[1])+'</span></li>').join('')+'</ul><div class="ce-donebtn"><button type="button" class="btn btn-primary" data-ce="close" style="grid-column:1/-1">닫기</button></div></div>';
    try{root.saveLocal&&root.saveLocal();}catch(e){}
-  }catch(e){busy=false;RS.err=String(e&&e.message||e);paintRs(d);}
+  }catch(e){busy=false;if(modern&&!progress.schedule?.prepared){progress={};try{persistProgress();}catch(_){}}RS.err=String(e&&e.message||e);if(card.contains(savingView))paintRs(d);}
  }
  const old=root.dealCallSheetM;
- root.dealCallSheetM=function(){if(!CE.on())return old.apply(this,arguments);return open();};
- root.MobileEntry=Object.freeze({open,reschedule,state:()=>S,last:()=>last,existingOf});
+ const originalOpenSheet=root.openSheet,originalCloseSheet=root.closeSheet;
+ function clearPage(){root.document.getElementById('sheetcard')?.classList.remove('ce-page');root.document.getElementById('sheetwrap')?.classList.remove('ce-page-wrap');const background=root.document.getElementById('scr');if(background)background.inert=false;}
+ root.openSheet=function(){clearPage();return originalOpenSheet.apply(this,arguments);};
+ root.closeSheet=function(){clearPage();return originalCloseSheet.apply(this,arguments);};
+ root.dealCallSheetM=function(){if(!CE.on()){if(root.MobileGuideShell){root.toast('현재 연락 결과 입력이 꺼져 있습니다.');return;}return old.apply(this,arguments);}return open();};
+ // A reviewed transcript may change only this exact local draft. It never saves an activity.
+ const inputHandles=new WeakMap();
+ const draftCopy=v=>JSON.parse(JSON.stringify(v));
+ const targetStamp=d=>JSON.stringify([d.id,d.version,d.code,d.outcome,d.rep,d.site_id,d.contact_id,d.nextAction]);
+ function captureInputDraft(){
+  const d=dealById(activeID);
+  if(!d||!S||busy||progress.signature||progressMode!=='contact'||String(root.G?.deal)!==String(activeID)||!root.myDeals?.().some(x=>String(x.id)===String(activeID)))return {ok:false,error:'INPUT_DRAFT_UNAVAILABLE'};
+  try{
+   saveDraft(activeID,S,true);
+   const handle=Object.freeze({ok:true,dealId:String(activeID),memo:String(S.memo||''),draftStamp:JSON.stringify(S)});
+   inputHandles.set(handle,{owner,sessionToken,id:String(activeID),input:JSON.stringify(S),target:targetStamp(d),at:Date.now()});
+   return handle;
+  }catch(e){return {ok:false,error:String(e.message||e)};}
+ }
+ function inputDraftCurrent(handle){
+  const snap=inputHandles.get(handle),d=snap&&dealById(snap.id);
+  try{
+   if(!snap||!d||Date.now()-snap.at>LIFE||busy||progress.signature||progressMode!=='contact'||!S||JSON.stringify(S)!==snap.input||targetStamp(d)!==snap.target||String(root.G?.deal)!==snap.id||!root.myDeals?.().some(x=>String(x.id)===snap.id))return false;
+   root.MobileSaveJournal.assertOwner(snap.owner);root.MobileSaveJournal.assertSession(snap.sessionToken);
+   const saved=root.MobileSaveJournal.read('contact',snap.id);
+   return !!saved&&!saved.progress?.signature&&JSON.stringify(saved.input)===snap.input;
+  }catch{return false;}
+ }
+ function applyInputDraft(handle,memo){
+  if(!inputDraftCurrent(handle))return {ok:false,error:'INPUT_DRAFT_CHANGED'};
+  if(typeof memo!=='string'||!memo.trim()||memo.length>300)return {ok:false,error:'INPUT_MEMO_INVALID'};
+  const snap=inputHandles.get(handle),updated=draftCopy(S);updated.memo=memo;
+  try{saveDraft(snap.id,updated,true);}catch(e){return {ok:false,error:String(e.message||e)};}
+  S=updated;inputHandles.delete(handle);open();return {ok:true,localOnly:true};
+ }
+ root.MobileEntry=Object.freeze({open,reschedule,state:()=>S,last:()=>last,existingOf,captureInputDraft,inputDraftCurrent,applyInputDraft});
 })(window);

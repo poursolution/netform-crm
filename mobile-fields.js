@@ -12,25 +12,53 @@
  const dealById=id=>(root.DEALS||[]).find(x=>String(x.id)===String(id));
  const closed=d=>!!(d&&d.outcome);
  const ready=()=>!!(root.Phase1&&typeof root.Phase1.rpc==='function'&&root.Phase1.profile);
+ const identity=()=>{const p=root.Phase1&&root.Phase1.profile;return p&&p.auth_uid&&p.user_id?p.auth_uid+':'+p.user_id:'';};
+ // A re-login with the same IDs is a new session. Keep this token in memory only;
+ // account-scoped draft keys must remain stable across a normal page reload.
+ let sessionEpoch=0,sessionActor=identity();
+ const session=()=>{const actor=identity();if(actor!==sessionActor){sessionActor=actor;sessionEpoch++;}return actor?actor+':'+sessionEpoch:'';};
+ root.addEventListener('phase1:identity-cleared',()=>{sessionEpoch++;sessionActor='';});
+ root.addEventListener('phase1:profile',()=>{session();});
+ function assertSession(token){if(!token||token!==session())throw Error('로그인 상태가 바뀌었습니다. 저장 결과를 다시 조회한 뒤 화면을 열어 주세요.');}
+ function protectQuote(d){
+  if(root.CRM_SCHEDULE_V1===true)throw Error('기존 일정을 보존하는 견적 요청 연결을 확인 중입니다. 방문 기록과 기존 일정은 유지됩니다.');
+  const j=root.MobileSaveJournal;
+  if(j&&j.owner())for(const kind of ['contact','reschedule','pc_contact']){
+   const p=j.read(kind,String(d.id));
+   if(p&&p.progress&&p.progress.schedule)throw Error('이 영업건의 일정 저장 확인이 남아 있습니다. 기존 저장을 먼저 확인해 주세요.');
+  }
+ }
  const ctxAll=d=>d&&(d.stage_contexts||d.stageContexts)||{};
  const planOf=d=>{let out='';Object.keys(ctxAll(d)).forEach(k=>{const v=ctxAll(d)[k]&&ctxAll(d)[k].fields&&ctxAll(d)[k].fields.construction_plan;if(!out&&v)out=String(v);});return out;};
  /* 현재 단계의 단계 정보 몇 칸 저장(PC DealDetailV3.stageFields 와 같은 요청 · 같은 응답 확인) */
  async function save(d,fields,reason){
   if(!d)throw Error('영업건을 찾지 못했습니다.');if(closed(d))throw Error('종료된 영업건은 단계 정보를 바꿀 수 없습니다.');
   if(!ready())throw Error('로그인 상태에서만 저장할 수 있습니다.');
+  if(Object.keys(fields||{}).some(k=>k==='quote_request'||k==='quote_due'))protectQuote(d);
+  const actor=session();if(!actor)throw Error('로그인 계정을 확인한 뒤 다시 열어 주세요.');
   const code=String(d.code||''),P={deal_id:String(d.id),stage_code:code,fields,reason:String(reason||'').trim()||'모바일에서 바로 입력'};
   const r=await root.Phase1.rpc(RPC,{p:P});
-  if(!r||r.ok!==true||!r.stage_context)throw Error('서버 확인 응답이 올바르지 않습니다.');
+  assertSession(actor);if(String(d.code)!==code)throw Error('계정이나 단계가 바뀌었습니다. 저장 결과를 다시 조회해 주세요.');
+  if(!r||r.ok!==true||r.deal_id!==P.deal_id||r.stage_code!==code||!Number.isSafeInteger(r.version)||r.version<1
+   ||!r.stage_context||r.stage_context.to!==code||!r.stage_context.fields
+   ||Object.keys(fields).some(k=>fields[k]===null?r.stage_context.fields[k]!=null:JSON.stringify(r.stage_context.fields[k])!==JSON.stringify(fields[k])))throw Error('서버 확인 응답이 올바르지 않습니다.');
   const ctx=r.stage_context;d.stage_contexts=Object.assign({},d.stage_contexts||{},{[code]:ctx});d.stageContexts=d.stage_contexts;if(r.version!=null)d.version=r.version;
   try{root.saveLocal&&root.saveLocal();}catch(e){}
   return ctx;
  }
  /* ── 견적 요청 시트 ── */
- let Q=null,busy=false;
+ let Q=null,busy=false,recoveryError='',quoteSession='';
+ function persist(){
+  if(recoveryError)throw Error(recoveryError);
+  assertSession(quoteSession);
+  const j=root.MobileSaveJournal;if(!j||typeof j.write!=='function')throw Error('입력 복원 저장소를 사용할 수 없습니다. 저장하지 않았습니다.');
+  j.write('quote',Q.deal_id,Q,Q.owner);
+ }
+ function retain(){try{persist();}catch(e){Q.err=String(e.message||e);}}
  const filesOf=d=>{try{return (root.dealAttachmentsM?root.dealAttachmentsM(d):[]).length;}catch(e){return 0;}};
  const mdk=k=>{const m=/^\d{4}-(\d{2})-(\d{2})/.exec(String(k||''));return m?(+m[1])+'.'+(+m[2]):'';};
  function plan(d){
-  const due=addWeekdays(kst(0),QUOTE_DAYS),memo=String(Q.memo||'').trim(),files=filesOf(d),pl=Q.plan||'';
+  const due=Q.due,memo=String(Q.memo||'').trim(),files=filesOf(d),pl=Q.plan||'';
   if(!memo)return {ok:false,error:'범위 · 메모를 한 줄 적어 주세요 (예: 옥상 방수 · 3개동 · 부분 보수 여부 확인 필요)'};
   if(!pl)return {ok:false,error:'공사 시기를 골라 주세요'};
   const fields={quote_request:(files?'':'자료 부족 · 가견적 — ')+memo,quote_due:due,construction_plan:pl},next={type:'후속접촉',text:'견적 회신 확인 · 견적 예정일 '+mdk(due),due_at:due};
@@ -44,10 +72,22 @@
    +(Q.err?'<p class="ce-err" role="alert">'+h(Q.err)+'</p>':'')+'</div><div class="ce-foot"><span class="ce-prev">'+(p.ok?'<b>저장하면</b> '+h(p.preview):h(p.error))+'</span><button type="button" class="btn btn-primary ce-save" data-mf="save"'+(busy?' disabled':'')+'>'+(busy?'확인 중…':'견적 요청 등록')+'</button></div>';
  }
  function paint(d){const card=root.document.getElementById('sheetcard');if(!card)return;const keep=card.scrollTop,head=card.querySelector('.intro')?card.querySelector('.intro').outerHTML+'<div style="height:12px"></div>':'';card.innerHTML='<div class="sheet-grip"></div>'+head+html(d);card.scrollTop=keep;}
- function quoteSheet(prefill){
+ function quoteSheet(prefill,expectedDealId){
+  if(busy)return;
+  if(expectedDealId!=null&&String(root.G&&root.G.deal)!==String(expectedDealId)){
+   if(typeof root.toast==='function')root.toast('선택한 영업건이 바뀌었습니다. 방문을 저장한 영업건을 다시 열어 주세요.');return;
+  }
   const d=dealById(root.G&&root.G.deal);if(!d)return;
   if(closed(d)||String(d.code)!=='consulting'){if(typeof root.toast==='function')root.toast('견적 요청은 컨설팅 설계 단계에서만 등록합니다');return;}
-  Q={memo:String(prefill||'').slice(0,300),plan:planOf(d)||'',err:''};busy=false;
+  Q={deal_id:String(d.id),stage_code:String(d.code),memo:String(prefill||'').slice(0,300),plan:planOf(d)||'',due:addWeekdays(kst(0),QUOTE_DAYS),owner:identity(),err:''};busy=false;recoveryError='';quoteSession=session();
+  try{
+   if(!root.MobileSaveJournal)throw Error('입력 복원 저장소를 사용할 수 없습니다. 저장하지 않았습니다.');
+   const saved=root.MobileSaveJournal.read('quote',String(d.id));
+   if(saved){
+    if(saved.deal_id!==Q.deal_id||saved.owner!==Q.owner||saved.stage_code!==Q.stage_code||typeof saved.memo!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(saved.due||'')||!['',...PLANS].includes(saved.plan))throw Error('저장 복원 정보를 확인하지 못했습니다. 기존 저장 결과를 먼저 확인해 주세요.');
+    Q=saved;
+   }
+  }catch(e){recoveryError=String(e.message||e);Q.err=recoveryError;}
   root.openSheet(root.intro('var(--blue-50)','var(--blue-dark)',root.IC.chart,'견적 요청 등록',h(d.nm)),'');
   const card=root.document.getElementById('sheetcard');if(card){card.classList.add('ce-card');card._ceMode='mf';card._ceDeal=d.id;}
   paint(d);wire();
@@ -56,27 +96,53 @@
  function wire(){
   const card=root.document.getElementById('sheetcard');if(!card||wired)return;wired=true;
   card.addEventListener('click',async e=>{
-   const b=e.target.closest('[data-mf]');if(!b||card._ceMode!=='mf'||busy)return;const d=dealById(card._ceDeal);if(!d||!Q)return;const a=b.dataset.mf;
-   if(a==='plan'){Q.plan=b.dataset.v;Q.err='';paint(d);}
-   else if(a==='close'){root.closeSheet();root.render();}
+   const b=e.target.closest('[data-mf]');if(!b||card._ceMode!=='mf'||busy)return;const a=b.dataset.mf;
+   if(a==='close'){root.closeSheet();root.render();return;}
+   const d=dealById(card._ceDeal);if(!d||!Q)return;
+   if(a==='plan'){Q.plan=b.dataset.v;Q.err='';retain();paint(d);}
    else if(a==='save'){
     const ta=card.querySelector('textarea[data-mf-in="memo"]');if(ta)Q.memo=ta.value;
     const p=plan(d);if(!p.ok){Q.err=p.error;return paint(d);}
     if(!ready()||typeof root.queueMobileContactOperation!=='function'){Q.err='로그인 상태에서만 저장할 수 있습니다.';return paint(d);}
     busy=true;Q.err='';paint(d);
+    const savingView=card.querySelector('.ce');
     try{
-     await save(d,p.fields,'모바일 견적 요청 등록');
+     assertSession(quoteSession);
+     if(Q.deal_id!==String(d.id)||String(root.G&&root.G.deal)!==Q.deal_id)throw Error('선택한 영업건이 바뀌었습니다. 작성하던 영업건을 다시 열어 주세요.');
+     protectQuote(d);
+     if(!Q.owner||Q.owner!==identity())throw Error('로그인 계정이 바뀌었습니다. 현재 계정으로 화면을 다시 열어 주세요.');
+     if(Q.stage_code!==String(d.code)||closed(d))throw Error('영업건 상태가 바뀌었습니다. 저장 결과를 다시 확인해 주세요.');
+     persist();
+     const signature=JSON.stringify(p.fields);
+     if(Q.savedFields&&Q.savedFields!==signature)throw Error('견적 요청은 이미 저장됐습니다. 원래 입력으로 남은 다음 업무 저장을 확인해 주세요.');
+     if(!Q.savedFields){
+      if(Q.fieldsSent)throw Error('견적 요청 정보의 저장 결과를 확인하지 못했습니다. 서버 기록 확인 전에는 다시 보내지 않습니다.');
+      Q.fieldsSent=true;persist();
+      try{await save(d,p.fields,'모바일 견적 요청 등록');}
+      catch(e){if(['22023','42501','PT409'].includes(String(e&&e.code||''))){Q.fieldsSent=false;persist();}throw e;}
+      Q.savedFields=signature;persist();
+     }
+     protectQuote(d); // The feature flag or another save may change while the RPC is pending.
+     if(String(root.G&&root.G.deal)!==Q.deal_id)throw Error('선택한 영업건이 바뀌었습니다. 저장한 견적 요청의 다음 업무를 원래 영업건에서 확인해 주세요.');
      /* 다음 업무: 지금 열린 일정이 있으면 같은 업무를 새 날짜로 — 서버가 열린 업무를 하나로 유지(PC 와 같다) */
-     const Qu=root.Phase1.queue;let id=Q.nid;if(!id){id=root.queueMobileContactOperation('next_action',{opportunity_id:d.id,type:p.next.type,text:p.next.text,due_at:p.next.due_at});Q.nid=id;}
-     await Qu.flush();const row=Qu.list().find(q=>q.request_id===id);
+     const Qu=root.Phase1.queue;let id=Q.nid;if(!id){
+      if(Q.queueStarted)throw Error('다음 업무의 요청 번호를 확인하지 못했습니다. 기존 전송 대기를 확인해 주세요.');
+      Q.queueStarted=true;persist();
+      id=root.queueMobileContactOperation('next_action',{opportunity_id:d.id,type:p.next.type,text:p.next.text,due_at:p.next.due_at});Q.nid=id;persist();
+     }
+     await Qu.flush();assertSession(quoteSession);const row=Qu.list().find(q=>q.request_id===id);
      if(!row||row.status!=='done'||!row.ack||row.ack.ok!==true)throw Error((row&&row.error)||'견적 요청은 저장했지만 다음 업무를 확인하지 못했습니다 — 다시 누르면 같은 요청을 확인합니다.');
+     if(Q.owner!==identity()||row.operation!=='next_action'||row.object_id!==String(d.id)||row.ack.request_id!==id
+      ||!root.OperationalAdapter||typeof root.OperationalAdapter.validateAck!=='function')throw Error('다음 업무의 서버 저장 근거를 확인하지 못했습니다.');
+     root.OperationalAdapter.validateAck(row.ack,row);
+     root.MobileSaveJournal.drop('quote',Q.deal_id,Q.owner);
      d.nextAction=d.nextActionObj={id:row.ack.next_action_id,opportunity_id:d.id,type:p.next.type,text:p.next.text,due:p.next.due_at,due_at:p.next.due_at,status:'open'};
      busy=false;const q0=Q;Q=null;
-     card.innerHTML='<div class="sheet-grip"></div><div class="ce-done"><b class="ce-dt">견적 요청을 등록했습니다</b><small>'+h(d.nm)+'</small><ul><li class="ok"><em>저장</em><span>견적 요청 기록 · 견적 예정일 '+h(mdk(p.due))+'</span></li><li class="new"><em>신규</em><span>'+h(p.next.text)+'</span></li><li class="chg"><em>변경</em><span>공사 시기 → '+h(q0.plan)+'</span></li></ul><div class="ce-donebtn"><button type="button" class="btn btn-primary" data-mf="close" style="grid-column:1/-1">닫기</button></div></div>';
-    }catch(err){busy=false;Q.err=String(err&&err.message||err);paint(d);}
+     if(card.contains(savingView))card.innerHTML='<div class="sheet-grip"></div><div class="ce-done"><b class="ce-dt">견적 요청을 등록했습니다</b><small>'+h(d.nm)+'</small><ul><li class="ok"><em>저장</em><span>견적 요청 기록 · 견적 예정일 '+h(mdk(p.due))+'</span></li><li class="new"><em>신규</em><span>'+h(p.next.text)+'</span></li><li class="chg"><em>변경</em><span>공사 시기 → '+h(q0.plan)+'</span></li></ul><div class="ce-donebtn"><button type="button" class="btn btn-primary" data-mf="close" style="grid-column:1/-1">닫기</button></div></div>';
+    }catch(err){busy=false;Q.err=String(err&&err.message||err);if(card.contains(savingView))paint(d);}
    }
   });
-  card.addEventListener('input',e=>{const t=e.target.closest('[data-mf-in]');if(!t||card._ceMode!=='mf'||!Q)return;Q.memo=t.value;const d=dealById(card._ceDeal),pv=card.querySelector('.ce-prev');if(d&&pv){const p=plan(d);pv.innerHTML=p.ok?'<b>저장하면</b> '+h(p.preview):h(p.error);}});
+  card.addEventListener('input',e=>{const t=e.target.closest('[data-mf-in]');if(!t||card._ceMode!=='mf'||!Q||busy)return;Q.memo=t.value;retain();const d=dealById(card._ceDeal),pv=card.querySelector('.ce-prev');if(d&&pv){const p=plan(d);pv.innerHTML=Q.err?h(Q.err):p.ok?'<b>저장하면</b> '+h(p.preview):h(p.error);}});
  }
  root.MobileFields=Object.freeze({save,quoteSheet,planOf,ready,PLANS,RPC});
 })(window);

@@ -1,0 +1,12 @@
+/* Fail closed until an approved renderer explicitly marks its DOM ready.
+   This must load in <head>, before any former mobile renderer executes. */
+html:not([data-mobile-approved-view="approved"]):not([data-mobile-approved-view="login"]) #stage,
+html:not([data-mobile-approved-view="approved"]):not([data-mobile-approved-view="login"]) #sheetwrap,
+html:not([data-mobile-approved-view="approved"]):not([data-mobile-approved-view="login"]) #toast {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+/* Debug/query routes must not reopen the retired flow map or navigation. */
+.mock-nav, #flowwrap { display: none !important; }
+html[data-mobile-approved-view="login"] #tabbar,
+html[data-mobile-approved-view="login"] #sheetwrap { display: none !important; }

@@ -1,6 +1,32 @@
 (function(root){
  'use strict';
  const pending=new Map();
+ const consentKeys=['sms_consent','kakao_consent','consent_at','opt_out_at','send_blocked','send_blocked_reason'];
+ const consentNames={sms_consent:'smsConsent',kakao_consent:'kakaoConsent',consent_at:'consentAt',opt_out_at:'optOutAt',send_blocked:'sendBlocked',send_blocked_reason:'sendBlockedReason'};
+ function consentPatch(form,field,value,mobile){
+  if(form.pcConsentFields?.length===0)return {};
+  const old=form.pcOriginal||{},same=String(root.phoneN(old.mobile)||'').replace(/\D/g,'')===mobile,out={},explicit=form.pcConsentFields;
+  for(const [key,id] of [['sms_consent','qc-sms'],['kakao_consent','qc-kakao'],['send_blocked','qc-block']]){
+   const node=field(id);if(!node)continue;
+   if(explicit?explicit.includes(key):!!node.checked!==(old[consentNames[key]]===true))out[key]=!!node.checked;
+  }
+  const date=field('qc-consent-at');
+  if(date&&value('qc-consent-at')!==String(form.pcConsentInput||'')){
+   const input=value('qc-consent-at');if(input&&!Number.isFinite(Date.parse(input)))throw Error('동의 확인 일시를 확인해 주세요.');
+   out.consent_at=input?new Date(input).toISOString():null;
+  }
+  const reason=field('qc-block-reason');
+  if(reason&&value('qc-block-reason')!==String(old.sendBlockedReason||'').trim())out.send_blocked_reason=value('qc-block-reason')||null;
+  if(out.send_blocked===true){out.sms_consent=false;out.kakao_consent=false;out.opt_out_at=same&&old.optOutAt||new Date().toISOString();}
+  else if(out.send_blocked===false)out.opt_out_at=null;
+  if(out.sms_consent===true||out.kakao_consent===true){
+   if(!Object.prototype.hasOwnProperty.call(out,'consent_at')&&same&&old.consentAt)out.consent_at=old.consentAt;
+   if(!out.consent_at)throw Error('수신 동의 확인 일시를 입력해 주세요.');
+   // A deliberate grant clears a known refusal; unchanged controls never do so.
+   if(same&&old.sendBlocked){out.send_blocked=false;out.opt_out_at=null;}
+  }
+  return out;
+ }
  const original=root.contactDirectoryHTML;
  if(typeof original!=='function')return;
  root.contactDirectoryHTML=function(item,p){
@@ -31,18 +57,23 @@
    if(q&&['uncertain','rejected','conflict'].includes(q.status)&&entry.status!==q.status){
     entry.status=q.status;
     if(q.status!=='uncertain')pending.delete(id);
-    if(entry.form&&root.QUICK_CONTACT===entry.form)root.quickContactErr(q.status==='uncertain'?'서버 응답이 불확실합니다. 저장을 다시 누르면 동일한 요청을 확인합니다.':'저장 요청이 거절되었거나 충돌했습니다. 입력 내용은 유지됩니다.');
+    if(entry.form&&root.QUICK_CONTACT===entry.form)(entry.form.pcReport||root.quickContactErr)(q.status==='uncertain'?'서버 응답이 불확실합니다. 저장을 다시 누르면 동일한 요청을 확인합니다.':'저장 요청이 거절되었거나 충돌했습니다. 입력 내용은 유지됩니다.');
     repaint(entry.item,q.status==='uncertain'?'서버 응답을 확인하지 못했습니다. 기존 대표를 유지하며, 재시도 시 같은 요청을 확인합니다.':'대표 지정 요청이 거절되었거나 충돌했습니다. 기존 대표는 유지됩니다. 최신 정보와 권한을 확인해 주세요.',false);
    }
    if(!q||q.status!=='done'||!q.ack)return;
    const {item,c,payload}=entry;
    // The queue validates the full RPC receipt before marking it done.
    if(q.operation!=='contact_upsert'||q.object_id!==id||q.ack.person_key!==payload.person_key)return;
-   const contact=Object.assign({},c,{managerName:c.name,managerMobile:c.mobile,managerRole:c.role,personKey:payload.person_key});
+   const effective=q.ack.contact_consent_contract==='preserve-omitted-v1'?q.ack.consent:null;
+   const savedConsent={},camelConsent={};
+   if(effective)for(const key of consentKeys){savedConsent[key]=effective[key];camelConsent[consentNames[key]]=effective[key];}
+   const contact=Object.assign({},c,camelConsent,{managerName:c.name,managerMobile:c.mobile,managerRole:c.role,personKey:payload.person_key});
    if(entry.raw){
     item.contacts=Array.isArray(item.contacts)?item.contacts:[];
     const index=item.contacts.findIndex(x=>x.person_key===payload.person_key);
-    if(index<0)item.contacts.push(entry.raw);else item.contacts[index]=Object.assign({},item.contacts[index],entry.raw);
+    if(index<0)item.contacts.push(Object.assign({},entry.raw,savedConsent));else item.contacts[index]=Object.assign({},item.contacts[index],entry.raw,savedConsent);
+   }else if(effective){
+    const raw=(item.contacts||[]).find(x=>x.person_key===payload.person_key);if(raw)Object.assign(raw,savedConsent);
    }
    if(payload.is_primary||payload.manager_role==='관리소장'){
    root.itemPatch(item,'deal').contact=contact;item.contact=contact;
@@ -50,7 +81,7 @@
    if(payload.office_phone)item.office_phone=payload.office_phone;
    if(payload.office_email)item.office_email=payload.office_email;
    }
-   if(entry.form&&root.QUICK_CONTACT===entry.form)root.closeQuickContact();
+   if(entry.form&&root.QUICK_CONTACT===entry.form){if(entry.form.pcInlineContact)root.QUICK_CONTACT=null;else root.closeQuickContact();}
    pending.delete(id);root.saveLocal();repaint(item,entry.form?'연락처가 서버에 저장되었습니다.':'대표 연락처가 서버에 저장되었습니다.');
   });
  }
@@ -68,8 +99,7 @@
   if(!c||!/^010\d{8}$/.test(root.phoneN(c.mobile))){root.showDetailErr('등록된 휴대폰 연락처를 확인해 주세요.');return;}
   const payload={opportunity_id:item.id,site_id:item.cleanup_site_id||item.site_id||item.siteId||null,person_key:'mobile:'+root.phoneN(c.mobile),site_name:item.site,
    office_phone:c.officeTel||null,office_email:c.officeEmail||null,manager_name:c.name,manager_mobile:c.mobile,
-   manager_role:c.role,is_primary:true,sms_consent:c.smsConsent,kakao_consent:c.kakaoConsent,
-   consent_at:c.consentAt||null,opt_out_at:c.optOutAt||null,send_blocked:c.sendBlocked,send_blocked_reason:c.sendBlockedReason||null};
+   manager_role:c.role,is_primary:true};
   try{
    if(!root.Phase1?.queue)throw new Error('저장 연결을 확인해 주세요.');
    const requestId=root.pushWrite('contact_upsert',payload);
@@ -80,7 +110,7 @@
  };
  root.saveQuickContact=function(){
   const form=root.QUICK_CONTACT;if(!form)return;
-  const report=msg=>{const box=form.pcRoot?.querySelector('#qc-err');if(box){box.style.display='block';box.style.color='var(--danger)';box.style.background='var(--danger-bg)';box.textContent=msg;}else root.quickContactErr(msg);};
+  const report=msg=>{if(form.pcReport){form.pcReport(msg);return;}const box=form.pcRoot?.querySelector('#qc-err');if(box){box.style.display='block';box.style.color='var(--danger)';box.style.background='var(--danger-bg)';box.textContent=msg;}else root.quickContactErr(msg);};
   const item=form.item,entry=pending.get(item.id);
   if(entry){
    if(entry.form!==form){report('진행 중인 연락처 저장을 먼저 확인해 주세요.');return;}
@@ -94,20 +124,13 @@
   /* 번호는 숫자만 남겨 검사 · 저장한다(2026-10-04 대표 캡처): 저장돼 있던 번호나 입력에 하이픈(010-1234-5678)이 있으면 '11자리 번호를 확인해 주세요'로 매번 거절됐다 — 동의 칩 · 연락처 등록/수정 모두 */
   const mobile=String(root.phoneN(value('qc-mobile'))||'').replace(/\D/g,''),name=value('qc-name'),role=value('qc-role'),old=form.pcOriginal||{};
   if(!name||!/^010\d{8}$/.test(mobile)){report('성명과 010으로 시작하는 11자리 휴대폰 번호를 확인해 주세요.');return;}
-  let consentAt=old.consentAt||null;
-  if(value('qc-consent-at')!==form.pcConsentInput){
-   const input=value('qc-consent-at');
-   if(input&&!Number.isFinite(Date.parse(input))){report('동의 확인 일시를 확인해 주세요.');return;}
-   consentAt=input?new Date(input).toISOString():null;
-  }
-  const blocked=checked('qc-block'),sms=!blocked&&checked('qc-sms'),kakao=!blocked&&checked('qc-kakao');
-  if((sms||kakao)&&!consentAt){report('수신 동의 확인 일시를 입력해 주세요.');return;}
+  let consent;try{consent=consentPatch(form,field,value,mobile);}catch(e){report(e.message);return;}
   const key='mobile:'+mobile,primary=root.contactInfo(item,root.itemPatch(item,'deal'));
   const payload={opportunity_id:item.id,site_id:item.cleanup_site_id||item.site_id||item.siteId||null,person_key:key,site_name:item.site,office_phone:value('qc-office')||null,office_email:value('qc-email')||null,
    manager_name:name,manager_mobile:mobile,manager_role:role,is_primary:role==='관리소장'||(form.mode!=='new'&&root.phoneN(primary.mobile)===root.phoneN(old.mobile)),
-   sms_consent:sms,kakao_consent:kakao,consent_at:consentAt,opt_out_at:blocked?(old.optOutAt||new Date().toISOString()):null,send_blocked:blocked,send_blocked_reason:value('qc-block-reason')||null};
-  const raw={person_key:key,name,mobile,role,office_phone:payload.office_phone,office_email:payload.office_email,sms_consent:sms,kakao_consent:kakao,consent_at:consentAt,opt_out_at:payload.opt_out_at,send_blocked:blocked,send_blocked_reason:payload.send_blocked_reason};
-  const c={name,mobile,role,personKey:key,officeTel:payload.office_phone,officeEmail:payload.office_email,smsConsent:sms,kakaoConsent:kakao,consentAt,optOutAt:payload.opt_out_at,sendBlocked:blocked,sendBlockedReason:payload.send_blocked_reason};
+   ...consent};
+  const raw={person_key:key,name,mobile,role,office_phone:payload.office_phone,office_email:payload.office_email};
+  const c={name,mobile,role,personKey:key,officeTel:payload.office_phone,officeEmail:payload.office_email};
   try{
    if(!root.Phase1?.queue)throw Error('저장 연결을 확인해 주세요.');
    const requestId=root.pushWrite('contact_upsert',payload);

@@ -36,11 +36,11 @@
   const r=String(reason||'').trim(),m=String(memo||'').trim();
   return t[0]+(r?' · 이유: '+r:'')+(m?' — '+m:'');
  }
- /* 들어올 때의 기본 다음 업무: 이미 앞으로 잡힌 일정(오늘보다 뒤)이 있으면 그대로 두는 쪽, 아니면 결과에 맞는 새 업무 */
+ /* 기존 업무는 기한 경과 여부와 무관하게 유지한다. 응대 입력만으로 완료를 추정하지 않는다. */
  function defaults(res,existing,today){
   if(isBadfit(res))return {mode:'none',purpose:'',date:''};
   const ex=existing&&existing.text?existing:null;
-  if(ex&&DATE.test(String(ex.due||''))&&String(ex.due)>String(today||''))return {mode:'keep',purpose:'',date:''};
+  if(ex)return {mode:'keep',purpose:'',date:''};
   const s=SUGGEST[res]||['다시 연락',3];
   return {mode:'new',purpose:s[0]||'',date:addDays(today,s[1])};
  }
@@ -59,36 +59,39 @@
   if((mode==='keep'||mode==='change')&&!ex){out.error='이어받을 기존 일정이 없습니다 — 새 업무나 다음 일정 없음을 골라 주세요';return out;}
   const purpose=String(S.purpose==null?'':S.purpose).trim(),date=String(S.date||''),reason=String(S.reason||'').trim();
   if(mode==='new'){
+   if(ex&&!C.scheduleV1){out.error='기존 업무를 보존하는 추가 저장 경로가 아직 연결되지 않았습니다. 기존 일정 유지 또는 날짜 변경을 선택해 주세요';return out;}
    if(!purpose||BAD_PURPOSE.test(purpose)){out.error='다음 업무의 할 일을 적어 주세요 (\'연락하기\'만으로는 저장되지 않습니다)';return out;}
    if(!DATE.test(date)){out.error='다음 업무의 날짜를 골라 주세요';return out;}
    if(today&&date<today){out.error='다음 업무 날짜는 오늘 이후로 골라 주세요';return out;}
   }
   let postpone=null;
   if(mode==='change'){
+   const issue=rescheduleError(ex,date,today,C.scheduleV1);if(issue){out.error=issue;return out;}
    if(!DATE.test(date)){out.error='바꿀 날짜를 골라 주세요';return out;}
+   if(C.scheduleV1&&!reason){out.error='날짜 변경 사유를 입력해 주세요';return out;}
    if(today&&date<today){out.error='바꿀 날짜는 오늘 이후로 골라 주세요';return out;}
    /* 기한 미루기(exec_wording): 지금 열린 기한보다 늦추면 원래 기한 · 새 기한 · 사유(필수)를 '[기한 변경]' 기록으로 남긴다 */
    if(DATE.test(String(ex.due||''))&&date>ex.due){if(!reason){out.error='미루는 사유를 입력해 주세요 (원래 기한 · 새 기한 · 사유가 기록됩니다)';return out;}postpone={from:ex.due,to:date,reason,over:today&&ex.due<today?Math.round((Date.parse(today+'T00:00:00Z')-Date.parse(ex.due+'T00:00:00Z'))/864e5):0};}
   }
   if(mode==='none'&&!reason){out.error=out.badfit?'배드핏은 사유가 있어야 합니다':'다음 일정이 없는 이유를 넣어 주세요';return out;}
   out.reason=mode==='none'?reason:'';
-  out.note=note(ch,res,memo,out.reason);
+  out.note=note(ch,res,memo,out.reason)+(postpone?' [기한 변경 요청] 원래 '+postpone.from+' | 새 '+postpone.to+' | 사유 '+postpone.reason:'');
   const type=/방문|실측|미팅/.test(purpose)?'방문':/자료|견적|사진|메일|발송/.test(purpose)?'후속접촉':'전화';
   if(mode==='new'){
-   out.completeCurrent=!!ex;
+   out.completeCurrent=false;
    out.next={type,text:(S.plan==='customer'?'고객 약속: ':'')+purpose,purpose,due:date,who:S.who||'',plan:S.plan==='customer'?'customer':'internal'};
-  }else if(mode==='none'){out.completeCurrent=!!ex;}
-  else if(mode==='change'){out.change={text:ex.text,type:ex.type||'전화',due:date,from:ex.due||'',id:ex.id||''};}
-  out.mode=mode;out.postpone=postpone;
+  }else if(mode==='none'){out.completeCurrent=false;}
+  else if(mode==='change'){out.change={text:ex.text,type:ex.type||'전화',due:date,from:ex.due||'',id:ex.id||'',reason};}
+  out.mode=mode;out.postpone=postpone;out.scheduleV1=C.scheduleV1===true;
   /* 고객 정보 변경(바뀐 것만): 공사 시기 — 지금 값과 같으면 저장하지 않는다. 기록 저장이 고객 정보를 몰래 바꾸지 않도록 미리보기 · 저장 뒤 화면에 따로 적는다 */
   const ip=S.info&&typeof S.info==='object'&&S.info.construction_plan?String(S.info.construction_plan):'';out.info=ip&&ip!==String(C.currentPlan||'')?{construction_plan:ip}:null;
   const p=out.parts;
-  p.push(out.attempt?'연락 시도 1건 기록':'응대 기록 1건 저장 (실제 연결)');
+  p.push(out.attempt?'연락 시도 1건 기록':out.badfit?'종결 검토 기록 1건':'응대 기록 1건 저장 (실제 연결)');
   if(out.completeCurrent)p.push('기존 일정 "'+ex.text+'" 완료');
   if(mode==='new')p.push(out.next.purpose+' 일정 1건 등록 · '+md(date));
   if(mode==='keep')p.push('기존 일정 유지 · 새 일정 없음');
   if(mode==='change')p.push('기존 일정 "'+ex.text+'" 날짜만 변경 · '+md(date)+(postpone?' · 미룬 사유 기록':''));
-  if(mode==='none')p.push('다음 일정 없음 · 사유 기록');
+  if(mode==='none')p.push(ex?'새 일정 없음 · 기존 일정은 미완료로 유지 · 사유 기록':'다음 일정 없음 · 사유 기록');
   if(out.badfit)p.push('배드핏 종결 검토 (사유 필수) — 종결은 [단계 바꾸기]에서 따로');
   if(out.info)p.push('고객 정보 변경 · 공사 시기 '+out.info.construction_plan);
   /* 처리한 관리자 요청(지정한 것만 · 자동 완료 금지): 연락 시도(부재 · 번호 오류)는 요청이 진행 중으로 남고, 실제 연결 + 다음 업무(새로 잡거나 기존 앞날 일정 유지 · 변경)가 있을 때만 완료 조건을 채운다 */
@@ -102,17 +105,25 @@
  function summary(pl,ctx){
   const C=ctx||{},ex=C.existing&&C.existing.text?C.existing:null,rows=[];
   if(!pl||!pl.ok)return rows;
-  rows.push(['저장',pl.attempt?'연락 시도 1건':'응대 기록 1건 (실제 연결)']);
+  rows.push(['저장',pl.attempt?'연락 시도 1건':pl.badfit?'종결 검토 기록 1건':'응대 기록 1건 (실제 연결)']);
   if(pl.completeCurrent&&ex)rows.push(['완료','기존 일정 "'+ex.text+'"']);
   if(pl.change)rows.push(['변경','기존 일정 "'+pl.change.text+'" → '+md(pl.change.due)+(pl.postpone?' · 사유 '+pl.postpone.reason:'')]);
   if(pl.next)rows.push(['신규',pl.next.purpose+' · '+md(pl.next.due)]);
   if(pl.mode==='keep'&&ex)rows.push(['남음','기존 일정 "'+ex.text+'"'+(ex.due?' · '+md(String(ex.due).slice(0,10)):'')]);
-  if(pl.mode==='none')rows.push(['남음','다음 일정 없음 · 사유 '+pl.reason]);
+  if(pl.mode==='none')rows.push(['남음',(ex?'기존 일정 "'+ex.text+'" 미완료 유지 · 새 일정 없음':'다음 일정 없음')+' · 사유 '+pl.reason]);
   if(pl.info)rows.push(['변경','공사 시기 → '+pl.info.construction_plan]);
   (pl.requests||[]).forEach(r=>rows.push([r.state==='done'?'완료':'남음','관리자 요청 "'+r.title+'"'+(r.state==='working'?' — 진행 중 · 연락 시도로 기록':r.state==='blocked'?' — 완료 조건 미충족':r.state==='failed'?' — 처리하지 못했습니다: '+(r.err||'서버 확인 없음'):'')]));
   (C.openRequests||[]).forEach(r=>rows.push(['남음','관리자 요청 "'+r.title+'" — '+(C.requestMet&&C.requestMet(r)?'조건 확인 필요':'아직 진행 중')]));
   return rows;
  }
+ function rescheduleError(ex,date,today,scheduleV1=false){
+  if(!ex||! /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(ex.id||'')))return '기존 업무 번호를 확인한 뒤 날짜를 변경해 주세요';
+  if(!DATE.test(String(date||'')))return '바꿀 날짜를 골라 주세요';
+  if(!DATE.test(String(ex.due||'')))return '원래 기한을 확인한 뒤 날짜를 변경해 주세요';
+  if(scheduleV1){if(date<today)return '바꿀 날짜는 오늘 이후로 골라 주세요';if(date===ex.due)return '원래 날짜와 같습니다';return '';}
+  if(date<=ex.due||date<=today)return '현재 서버는 원래 기한보다 늦은 미래 날짜로 연기만 지원합니다. 앞당기기는 아직 저장할 수 없습니다';
+  return '';
+ }
  const on=()=>!(root&&root.G&&root.G.contactEntryOff);
- return {on,RESULTS,VALUES,CHANNELS,MODES,SUGGEST,BAD_PURPOSE,kindOf,isAttempt,isBadfit,needsNote,showNote,meaningful,head,note,defaults,plan,summary,md,addDays};
+ return {on,rescheduleError,RESULTS,VALUES,CHANNELS,MODES,SUGGEST,BAD_PURPOSE,kindOf,isAttempt,isBadfit,needsNote,showNote,meaningful,head,note,defaults,plan,summary,md,addDays};
 });

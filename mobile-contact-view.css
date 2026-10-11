@@ -1,0 +1,39 @@
+/* Claude D original frame and component behavior. No alternate contact layout. */
+@font-face{font-family:ClaudeMobilePretendard;src:url('./fonts/PretendardVariable.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
+.sheet.ce-page-wrap{position:fixed;inset:0;z-index:100}
+.ce-page-wrap>.sheet-bg{background:#e9ebef;animation:none}
+body.mv2 .sheet-card.ce-page,body .sheet-card.ce-page{position:absolute;inset:0;margin:0;width:100%;max-width:none;height:100%;height:100dvh;max-height:none;border:0;border-radius:0;padding:16px 0;background:#e9ebef;display:flex;align-items:center;justify-content:flex-start;flex-direction:column;overflow:auto;animation:none;box-shadow:none;color:#15171c;font-family:ClaudeMobilePretendard,Pretendard,'Malgun Gothic',sans-serif;letter-spacing:normal;box-sizing:border-box}
+.approved-d{position:relative;flex:none;max-width:100%;max-height:100%;font-family:inherit;letter-spacing:normal}
+.approved-d *{box-sizing:border-box}
+.approved-d [hidden]{display:none!important}
+.approved-d button,.approved-d input,.approved-d textarea{font-family:inherit}
+.approved-d .cd-native{margin:0;appearance:none;position:relative}
+.approved-d button.cd-native{border:0;padding:0;background:none;cursor:pointer;color:inherit;text-align:center;line-height:normal}
+.approved-d .ce-chip,.approved-d .ce-chip.sm{min-height:0}
+.approved-d button.cd-native::after{content:'';position:absolute;inset:50% 0 auto;transform:translateY(-50%);height:max(44px,100%);min-width:44px}
+.approved-d .cd-back{font-weight:400}
+.approved-d .cd-body{overflow-y:auto!important;min-height:0;scrollbar-width:none}
+.approved-d .cd-memo{display:block;width:100%;resize:vertical;min-width:0;font-weight:400;color:#15171c;background:#fff}
+.approved-d .cd-request label{display:flex;gap:8px;align-items:center;min-height:28px;line-height:1.5}
+.approved-d .cd-request input{width:18px;height:18px;flex:none;accent-color:#15171c}
+.approved-d .cd-request small{display:block;font-size:12px}
+.approved-d .ce-foot{position:static;bottom:auto;flex:none;background:white;margin:0;border-radius:0;box-shadow:none}
+.approved-d .ce-infobtn{font-weight:400;padding:0}
+.approved-d .ce-save:disabled{background:#c9cdd5!important;cursor:default}
+.approved-d .ce-in{width:100%;min-height:48px;border:1px solid #d9dde4;border-radius:10px;padding:10px 12px;font-size:15px;background:#fff}
+.approved-d .cd-date-open{min-height:44px;background:#fff;border:1px solid #d9dde4;border-radius:10px;font-size:14px;color:#15171c}
+.approved-d .ce-agree{display:flex;align-items:center;gap:8px;min-height:44px;font-size:13px}
+.approved-d .ce-agree input{width:18px;height:18px}
+.approved-d .ce-err{color:#b42318;font-size:13px;line-height:1.5;margin:0}
+.approved-d input:focus-visible,.approved-d textarea:focus-visible,.approved-d button:focus-visible{outline:2px solid #3b6ce4;outline-offset:2px}
+.approved-d .cd-date-layer{position:absolute;inset:0;z-index:2;display:flex;align-items:flex-end}
+.approved-d .cd-date-backdrop{position:absolute;inset:0;border:0;background:rgba(17,24,39,.3)}
+.approved-d .cd-date-sheet{position:relative;width:100%;display:flex;flex-direction:column;gap:14px;padding:12px 16px max(16px,env(safe-area-inset-bottom));background:white;border-radius:18px 18px 0 0;box-shadow:0 -8px 24px rgba(17,24,39,.12)}
+.approved-d .cd-grip{width:38px;height:4px;border-radius:4px;background:#d9dde4;margin:0 auto}
+.approved-d .ce-dates{display:grid;grid-template-columns:1fr;gap:8px}
+.approved-d .ce-date{min-height:44px;border:1px solid #d9dde4;border-radius:10px;padding:10px;background:white;font-size:14px;color:#15171c}
+.approved-d .ce-date[aria-pressed=true]{border-color:#3b6ce4;color:#3b6ce4}
+.approved-d .cd-direct{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:700}
+.approved-d .cd-direct input{min-height:48px;width:100%;max-width:100%;font-size:15px;border:1px solid #d9dde4;border-radius:10px;padding:10px;background:white;color:#15171c}
+.approved-d .cd-confirm{height:48px;min-height:48px;width:100%;border:0;border-radius:10px;background:#15171c;color:white;font-size:15px;font-weight:700;cursor:pointer}
+@media(prefers-reduced-motion:reduce){.approved-d *{animation:none!important;transition:none!important}}

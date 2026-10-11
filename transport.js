@@ -6,7 +6,7 @@
  const origin=new URL(c.url).origin,base=`crm:production:${REF}:v${VERSION}:`,nativeLocal=root.localStorage,nativeSession=root.sessionStorage;
  const fetchNative=root.fetch.bind(root),webSocketNative=root.WebSocket,requests=[],blocked=[];let client,profile=null,epoch=0,activeUid=null,controllers=new Set(),sdkChannel=null,realtimeChannel=null,realtimeStatus='CLOSED';
  const realtimeListeners=new Map();
- const rpcAllow=new Set(['crm_profile_scoped_v2','crm_read_scoped_v2','crm_contacts_scoped_v2','crm_write_command_v2','crm_operational_source_v1','crm_operational_changes_v1','crm_expansion_note','crm_expansion_context','crm_my_credential_state_v1'/* 임시 비밀번호 변경 강제(2026-10-05) */,'crm_deal_stage_fields_update_v1','crm_work_request_list_v1','crm_work_request_reply_v1','crm_inquiry_command_v1','crm_inquiry_flow_list_v1','crm_site_geo_list_v1'/* 2026-10-10 대표 승인(design_handoff_mobile_all): 모바일도 PC 와 같은 서버 함수로 — 단계 정보 저장 · 요청 목록/회신 · 문의 응대 기록. 서버가 로그인 · 담당 · 권한을 그대로 검사한다 */]);
+ const rpcAllow=new Set(['crm_contact_command_v1','crm_inquiry_response_confirm_v1','crm_schedule_list_v1','crm_schedule_write_v1','crm_schedule_receipt_v1','crm_profile_scoped_v2','crm_read_scoped_v2','crm_contacts_scoped_v2','crm_write_command_v2','crm_operational_source_v1','crm_operational_changes_v1','crm_expansion_note','crm_expansion_context','crm_my_credential_state_v1'/* 임시 비밀번호 변경 강제(2026-10-05) */,'crm_deal_stage_fields_update_v1','crm_work_request_list_v1','crm_work_request_reply_v1','crm_inquiry_command_v1','crm_inquiry_flow_list_v1','crm_site_geo_list_v1'/* 2026-10-10 대표 승인(design_handoff_mobile_all): 모바일도 PC 와 같은 서버 함수로 — 단계 정보 저장 · 요청 목록/회신 · 문의 응대 기록. 서버가 로그인 · 담당 · 권한을 그대로 검사한다 */]);
  function allowed(input){const u=new URL(typeof input==='string'?input:input.url||String(input),location.href);
   if(u.origin===location.origin)return u;
   if(u.origin===origin&&(u.pathname.startsWith('/auth/v1/')||u.pathname.startsWith('/storage/v1/object/upload/sign/crm-site-files/deals/')||u.pathname==='/functions/v1/crm-ai'/* AI 제안 서버 함수(2026-10-03) — 사용자 토큰으로만, 결과는 제안 저장 */||rpcAllow.has(u.pathname.replace('/rest/v1/rpc/',''))&&u.pathname.startsWith('/rest/v1/rpc/')))return u;
@@ -113,7 +113,8 @@
  }
  function enqueue(operation,objectId,expectedVersion,payload,requestId=crypto.randomUUID()){
   if(!profile)throw Error('AUTH_REQUIRED');
-  const normalized=root.OperationalAdapter.normalize(operation,objectId,expectedVersion,payload);
+  const writeRpc=root.OperationalAdapter.toRpc({operation});
+  const normalized=root.OperationalAdapter.normalize(operation,objectId,expectedVersion,payload,writeRpc);
   const rows=list();if(rows.some(r=>r.request_id===requestId))throw Error('LOCAL_REQUEST_ID_REUSE');
   const command={request_id:requestId,operation:normalized.operation,object_id:normalized.object_id,expected_version:normalized.expected_version,payload:JSON.parse(JSON.stringify(normalized.payload)),auth_uid:profile.auth_uid,user_id:profile.user_id,status:'pending',tries:0};rows.push(command);save(rows);return command;
  }
@@ -122,8 +123,8 @@
  async function flush(){if(flushing&&flushingEpoch===epoch)return flushing;const generation=epoch,uid=activeUid;
   const job=(async()=>{for(const snapshot of list().filter(q=>q.status==='pending'||q.status==='uncertain')){
    if(epoch!==generation||activeUid!==uid)throw Error('IDENTITY_CHANGED');
-   let rows=list(),q=rows.find(x=>x.request_id===snapshot.request_id);if(!q||q.auth_uid!==uid)throw Error('QUEUE_IDENTITY_MISMATCH');q.status='sending';q.tries++;save(rows);
-   try{const ack=await rpc('crm_write_command_v2',{p_request_id:q.request_id,p_operation:q.operation,p_object_id:q.object_id,p_expected_version:q.expected_version,p_payload:q.payload});validateAck(ack,q);
+   let rows=list(),q=rows.find(x=>x.request_id===snapshot.request_id);if(!q||q.auth_uid!==uid||q.user_id!==profile?.user_id)throw Error('QUEUE_IDENTITY_MISMATCH');q.status='sending';q.tries++;save(rows);
+   try{const ack=await rpc(root.OperationalAdapter.toRpc(q),{p_request_id:q.request_id,p_operation:q.operation,p_object_id:q.object_id,p_expected_version:q.expected_version,p_payload:q.payload});validateAck(ack,q);
     if(epoch!==generation)throw Error('IDENTITY_CHANGED');rows=list();q=rows.find(x=>x.request_id===snapshot.request_id);if(!q)throw Error('QUEUE_CHANGED');q.status='done';q.ack=ack;delete q.error;save(rows);
    }catch(error){if(epoch!==generation)throw error;rows=list();q=rows.find(x=>x.request_id===snapshot.request_id);if(q){q.status=error.status===409?'conflict':error.status>=400&&error.status<500?'rejected':'uncertain';q.error=error.code||error.message;save(rows);}throw error;}
   }return list();})();flushing=job;flushingEpoch=generation;try{return await job;}finally{if(flushing===job)flushing=null;}

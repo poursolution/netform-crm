@@ -117,8 +117,12 @@
  function saveContact(p,S,cur,editing,key){
   const item=root.CUR_DETAIL.item,q=id=>p.querySelector('#'+id);
   const sm=S.sms||S.consent||'ask',kk=S.kakao||S.consent||'ask',yes=sm==='yes'||kk==='yes',both=sm==='no'&&kk==='no';
+  const prior=k=>!editing?'ask':editing.sendBlocked?'no':editing[k==='sms'?'smsConsent':'kakaoConsent']?'yes':new RegExp((k==='sms'?'문자':'카카오')+' 거부').test(String(editing.sendBlockedReason||''))?'no':'ask';
+  const consentFields=[];if(sm!==prior('sms'))consentFields.push('sms_consent');if(kk!==prior('kakao'))consentFields.push('kakao_consent');
+  if(consentFields.length&&both!==!!editing?.sendBlocked)consentFields.push('send_blocked');
+  const consentChanged=consentFields.length>0,consentInput=editing?.consentAt||'',grant=(consentFields.includes('sms_consent')&&sm==='yes')||(consentFields.includes('kakao_consent')&&kk==='yes');
   q('qc-sms').checked=sm==='yes';q('qc-kakao').checked=kk==='yes';q('qc-block').checked=both;
-  q('qc-consent-at').value=yes?localNow():'';q('qc-block-reason').value=both?'고객 수신 거부':sm==='no'?'문자 거부':kk==='no'?'카카오 거부':yes?'통화 중 구두 동의':'';
+  q('qc-consent-at').value=grant?localNow():consentInput;q('qc-block-reason').value=consentChanged?(both?'고객 수신 거부':sm==='no'?'문자 거부':kk==='no'?'카카오 거부':yes?'통화 중 구두 동의':''):(editing?.sendBlockedReason||'');
   const name=q('qc-name').value.trim(),digits=normPhone(q('qc-mobile').value),mobile=digits;
   if(!name||!/^010\d{8}$/.test(digits)){root.quickContactErr('이름과 010으로 시작하는 11자리 휴대폰 번호를 확인해 주세요.');return;}
   /* 소장 바뀜: 기존 소장은 지우지 않고 '이전 소장'으로 남긴다 */
@@ -135,7 +139,7 @@
   const primary=q('dp-primary').checked||S.replace;
   /* 기존 저장 함수(pc-primary-contact.js)가 읽는 값: 관계정보는 바꾸지 않음(''), 대표 지정은 '지금 대표와 같은 사람을 고친다'는 형태로 전달 */
   const prim=root.contactInfo(item,root.itemPatch(item,'deal'));
-  root.QUICK_CONTACT={pcRoot:p,item,key:root.dealKey(item),contactKey:editing?(key||editing.personKey||''):'',mode:primary?'primary':'new',overflow:document.body.style.overflow,pcDecision:'',pcTone:'',pcConsentInput:'',pcOriginal:editing?{mobile:editing.mobile,consentAt:editing.consentAt||null,optOutAt:editing.optOutAt||null}:primary?{mobile:prim.mobile}:{}};
+  root.QUICK_CONTACT={pcRoot:p,item,key:root.dealKey(item),contactKey:editing?(key||editing.personKey||''):'',mode:primary?'primary':'new',overflow:document.body.style.overflow,pcDecision:'',pcTone:'',pcConsentInput:consentInput,pcConsentFields:consentFields,pcOriginal:editing?Object.assign({},editing):primary?{mobile:prim.mobile}:{}};
   const legacy=$('quickContactBody');if(legacy)legacy.innerHTML='';
   root.saveQuickContact();
  }
