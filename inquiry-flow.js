@@ -17,6 +17,7 @@
    끄기: G.inqFlowOff=true → 판정 · 저장 모두 예전 방식. */
 (function(root){
  'use strict';
+ const readOnly=root.document?.currentScript?.getAttribute('data-read-only')==='true';
  const RPC='crm_inquiry_command_v1',LIST='crm_inquiry_flow_list_v1',DAY=864e5,OUT_KEY='crm.inqFlow.outbox.v1';
  const RESULT=Object.freeze({attempt:Object.freeze(['부재','통화불가','번호오류']),connected:Object.freeze(['연결됨','고객 회신','검토중','자료요청','견적요청'])});
  const OLD=Object.freeze({wait:Object.freeze(['회신대기']),connected:Object.freeze(['보류','거절','연락 완료','대표회의 예정','재견적 요청','경쟁사 비교','계약 검토'])});
@@ -70,7 +71,7 @@
    if(sig(next)!==sig(SRV)||csig(nc)!==csig(CLOSED)){SRV.clear();next.forEach((v,k)=>SRV.set(k,v));CLOSED.clear();nc.forEach((v,k)=>CLOSED.set(k,v));SV++;try{root.paint();}catch(e){}}return true;})
    .catch(()=>{loadAt=Date.now();return false;}).finally(()=>{loadBusy=false;});
  }
- function warm(){if(!on()||!root.ME)return;if(!loadAt||Date.now()-loadAt>120000)load();flush();}
+ function warm(){if(!on()||!root.ME)return;if(!loadAt||Date.now()-loadAt>120000)load();if(!readOnly)flush();}
  /* ── 판정 ── */
  function logs(q){
   const p=patchOf(q),seen=new Set(),out=[];
@@ -188,7 +189,11 @@
     이미 응대한 문의(응대 시각이 있는데 상태 이름만 그대로인 것 포함)의 후속 연락은 상태를 건드리지 않는다 — 다음 할 일만 다시 잡는다(2026-10-04) */
  const needsProgress=q=>PRE.includes(String(q&&q.status||''))&&!(q.responded_at||q.respondedAt||q.first_response_at);
  /* 다음 할 일만 다시 잡는다(상태는 그대로) */
+ function protectLegacySchedule(q){
+  if(root.CRM_SCHEDULE_V1===true||root.PCInquirySave?.route(q))throw Error('기존 업무를 교체하는 저장 경로는 잠겨 있습니다. 일정 보존 연결이 확인된 응대 입력을 사용해 주세요.');
+ }
  function nextSet(q,text,due){
+  protectLegacySchedule(q);
   if(typeof root.applyInqBulkAction!=='function')throw Error('다음 할 일 저장 연결을 확인해 주세요.');
   const key=root.inqKey(q),keepSel=root.INQ_SEL,keepMode=root.G.inqBulkMode,keepNotice=root.G.inqNotice;let ok=false;root.INQ_SEL={[key]:true};
   try{ok=withFields({inqActText:text,inqActDue:due},()=>root.applyInqBulkAction()===true);}finally{root.INQ_SEL=keepSel||{};root.G.inqBulkMode=keepMode;root.G.inqNotice=keepNotice;}
@@ -211,6 +216,7 @@
  }
  /* ① 응대 기록: 시도면 최초응대 · 단계는 그대로(다음 할 일만), 첫 접촉이면 단계 진행(접수 → 전화응대 완료), 그 뒤 접촉이면 다음 할 일만 */
  function contactLog(q,o){
+  protectLegacySchedule(q);
   o=o||{};const did=String(o.did||'고객 응대 기록').trim();
   let ch=String(o.ch||'').trim(),res=String(o.result||'').trim(),text=String(o.text||'').trim(),line=String(o.line||'').trim();
   if(line){const r=readLine(line);if(r){ch=ch||r.ch;res=res||r.res;if(!text)text=r.text;}}
@@ -288,6 +294,8 @@
  function localNext(q,text,due,id){const p=patchFor(q);p.nextActionObj={id:id||('na-'+Date.now()),type:'전화',text,due,status:'open'};q.nextActionText=p.nextActionText=text;q.nextAction=p.nextAction=due;}
  /* 1차 현장방문: 일정(예정) = 상태 + 그날 할 일 / 완료 = 전환 기준 충족 → 파이프라인 */
  async function visit(q,o){
+  if(root.PCInquiryMilestoneSave?.route(q))return root.PCInquiryMilestoneSave.save(q,'visit',o);
+  protectLegacySchedule(q);
   o=o||{};const date=String(o.date||''),time=String(o.time||''),done=!!o.done,today=todayStr();
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date))throw Error('방문 날짜를 넣어 주세요.');
   if(done&&date>today)throw Error('방문 완료는 오늘까지의 날짜로 적어 주세요.');
@@ -300,6 +308,8 @@
  }
  /* 견적: 금액은 견적 버전으로(원). 발송 완료 = 후속 할 일(보낸 날 + 7일 · 고객 반응 확인) + 전환 / 발송 예정 = 상태 + 발송일 할 일(금액이 있으면 초안 버전) */
  async function quoteSend(q,o){
+  if(root.PCInquiryMilestoneSave?.route(q))return root.PCInquiryMilestoneSave.save(q,'quote_send',o);
+  protectLegacySchedule(q);
   o=o||{};const amount=Math.round(Number(o.amount||0))||0,sent=!!o.sent,today=todayStr(),date=/^\d{4}-\d{2}-\d{2}$/.test(String(o.date||''))?String(o.date):'';
   if(sent&&!(amount>0))throw Error('보낸 견적 금액을 넣어 주세요.');
   if(sent&&date&&date>today)throw Error('보낸 날은 오늘까지의 날짜로 적어 주세요.');
@@ -323,5 +333,5 @@
  }
  const HANDLERS={contact_log:contactLog,memo:memoLog,field_set:fieldSet,schedule_set:(q,o)=>fieldSet(q,{field:o&&o.schedule_type==='reply_due'?'reply_due':'meeting_date',value:o&&o.at}),close:closeInquiry,visit,quote_send:quoteSend,next_set:(q,o)=>nextSet(q,String(o&&o.text||'').slice(0,500),String(o&&o.due||''))};/* next_set = 다음 할 일만(문자 예약 알림) */
  function run(type,q,payload){const fn=HANDLERS[type];if(!fn)throw Error('알 수 없는 저장 명령입니다: '+type);if(!q)throw Error('문의를 찾지 못했습니다.');return fn(q,payload||{});}
- root.InquiryCommand={run,isFirst,needsProgress,flush,types:()=>Object.keys(HANDLERS),_handlers:HANDLERS,_withFields:withFields,_nextSet:nextSet,_queue:queue,_outbox:outbox};
+ root.InquiryCommand=readOnly?Object.freeze({isFirst,needsProgress}):{run,isFirst,needsProgress,flush,types:()=>Object.keys(HANDLERS),_handlers:HANDLERS,_withFields:withFields,_nextSet:nextSet,_queue:queue,_outbox:outbox};
 })(window);

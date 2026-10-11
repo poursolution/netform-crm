@@ -1,0 +1,13 @@
+{
+  "scope": "Local synthetic tests only. Function definitions, no production rows, project identifiers, credentials or runtime data.",
+  "functions": [
+    {
+      "name": "actor",
+      "definition": "CREATE OR REPLACE FUNCTION crm_security.actor()\n RETURNS TABLE(user_id uuid, auth_uid uuid, display_name text, permission_role text)\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\n SELECT u.user_id,u.auth_uid,u.name,r.permission_role\n FROM public.users u JOIN crm_security.access_review r ON r.user_id=u.user_id\n WHERE auth.uid() IS NOT NULL AND u.auth_uid=auth.uid() AND u.active AND r.approved\n   AND r.reviewed_auth_uid=u.auth_uid AND r.source_role=u.role AND r.expires_at>now()\n   AND (SELECT count(*) FROM public.users x WHERE x.auth_uid=u.auth_uid)=1\n$function$\n"
+    },
+    {
+      "name": "can_deal",
+      "definition": "CREATE OR REPLACE FUNCTION crm_security.can_deal(target uuid, writing boolean DEFAULT false)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\n SELECT EXISTS(\n  SELECT 1 FROM crm_security.actor() a JOIN public.deals d ON d.id=target\n  WHERE a.permission_role='admin'\n     OR (a.permission_role='rep' AND d.owner_id=a.user_id)\n     OR (a.permission_role='branch' AND EXISTS(\n       SELECT 1 FROM crm_security.object_scope s\n       WHERE s.user_id=a.user_id AND s.deal_id=d.id AND s.expires_at>now()\n         AND (NOT writing OR s.can_write)\n     ))\n )\n$function$\n"
+    }
+  ]
+}

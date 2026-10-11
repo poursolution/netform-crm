@@ -9,6 +9,61 @@ function load(extra){
  win.window=win;vm.runInNewContext(read('inquiry-flow.js'),win);return win;
 }
 const at=d=>new Date(Date.now()-d*864e5).toISOString();
+test('모바일 읽기 로드는 PC 판정을 공유하되 과거 발송함을 실행하거나 쓰기를 노출하지 않는다',async()=>{
+ const writes=[],w=load({document:{currentScript:{getAttribute:k=>k==='data-read-only'?'true':null}},OpsStore:{has:()=>true,rpc:async(name)=>{writes.push(name);return {states:[]};}},localStorage:{getItem:()=>JSON.stringify([{queued_at:Date.now(),type:'contact_log'}]),setItem:()=>assert.fail('과거 발송함 변경')}});
+ assert.equal(w.InquiryFlow.kindOf('고객 회신'),'connected');assert.equal(w.InquiryFlow.TWO.CONTACT[1][1],'고객 회신');
+ assert.equal(w.InquiryCommand.needsProgress({status:'배정완료'}),true);
+ assert.equal(w.InquiryCommand.run,undefined);assert.equal(w.InquiryCommand.flush,undefined);assert.equal(w.InquiryCommand._queue,undefined);
+ w.InquiryFlow.firstConnectedAt({id:'read-only',status:'접수'});await Promise.resolve();
+ assert.deepEqual(writes,['crm_inquiry_flow_list_v1']);
+});
+function detailSection(from,to){const source=read('inquiry-detail-v2.js'),a=source.indexOf(from),b=source.indexOf(to,a+from.length);assert.ok(a>=0&&b>a,'실제 상세 처리 함수를 찾는다');return source.slice(a,b);}
+function detailSaveFixture(protectedRoute=true){
+ const calls=[],messages=[],toasts=[],controls=[{disabled:false},{disabled:true}],q={id:'synthetic-inquiry',status:'배정완료'},s={tab:'call',text:' 이번 상담 원문 ',ch:'전화',res:'연결됨',con:'연결됨',rea:'검토중',next:'고객 약속 확인',due:'2026-10-20'},suggestion={ch:'전화',res:'연결됨',act:'고객 약속 확인',due:s.due,none:false};
+ let resolve,reject,repaint=0;
+ const pending=new Promise((yes,no)=>{resolve=yes;reject=no;});
+ const root={inqCtlRoleMatch:()=>true,inquiryAssigned:()=>true,iqMsg:message=>messages.push(message),InquiryFlow:{TWO:{of:()=>({contact_result:'연결됨',customer_reaction:'검토중'})}},MobileSaveJournal:{owner:()=> 'synthetic-owner',assertOwner:owner=>assert.equal(owner,'synthetic-owner')},PCInquirySave:{route:()=>protectedRoute,save:(...args)=>{calls.push({route:'protected',args});return pending;}},InquiryCommand:{run:(...args)=>{calls.push({route:'legacy',args});return true;}}};
+ const context={root,document:{getElementById:id=>id==='inq-inbox-dialog'?{classList:{contains:()=>true}}:id==='iq-due'?{value:s.due}:null,querySelectorAll:()=>controls},FL:()=>root.InquiryFlow,sugOf:()=>suggestion,reskinFrom:()=>repaint++,toast:message=>toasts.push(message),resShow:r=>r,kday:()=>s.due};
+ vm.runInNewContext(detailSection('async function save(q,s){','  async function smsCrm(q,s){'),context);
+ return {q,s,root,calls,messages,toasts,controls,resolve,reject,run:()=>context.save(q,s),repaints:()=>repaint};
+}
+test('상세 응대 저장은 서버 확인 전 원문을 유지하고 중복 클릭·기존 경로 동시 저장을 막는다',async()=>{
+ const f=detailSaveFixture(),job=f.run();
+ assert.equal(f.s.pcSaving,true);assert.equal(f.s.text,' 이번 상담 원문 ');assert.equal(f.toasts.length,0);assert.equal(f.repaints(),0);assert(f.controls.every(x=>x.disabled));
+ await f.run();assert.equal(f.calls.length,1);assert.equal(f.calls[0].route,'protected');
+ const [q,options,form,surface]=f.calls[0].args;assert.equal(q,f.q);assert.equal(surface,'detail');assert.deepEqual(JSON.parse(JSON.stringify(options)),{ch:'전화',result:'연결됨',text:'이번 상담 원문',next:'고객 약속 확인',due:'2026-10-20',contact_result:'연결됨',customer_reaction:'검토중'});assert.equal(form.text,' 이번 상담 원문 ');
+ f.resolve(true);await job;assert.equal(f.s.pcSaving,false);assert.equal(f.s.text,'');assert.equal(f.repaints(),1);assert.equal(f.toasts.length,1);assert.deepEqual(f.controls.map(x=>x.disabled),[false,true]);assert.equal(f.calls.length,1);
+});
+test('상세 응대 저장 실패는 입력과 기존 제어 상태를 남기며 기존 저장 경로로 재전송하지 않는다',async()=>{
+ const f=detailSaveFixture(),before=JSON.stringify(f.s),job=f.run();f.reject(Error('server acknowledgement missing'));await job;
+ assert.equal(f.messages[0],'server acknowledgement missing');assert.equal(f.s.pcSaving,false);assert.equal(f.s.text,JSON.parse(before).text);assert.equal(f.s.next,'고객 약속 확인');assert.equal(f.s.due,'2026-10-20');assert.equal(f.toasts.length,0);assert.equal(f.repaints(),0);assert.equal(f.calls.length,1);assert.deepEqual(f.controls.map(x=>x.disabled),[false,true]);
+ const legacy=detailSaveFixture(false);await legacy.run();assert.equal(legacy.calls.length,1);assert.equal(legacy.calls[0].route,'legacy');assert.equal(legacy.calls[0].args[0],'contact_log');assert.equal(legacy.calls[0].args[2].text,'이번 상담 원문');
+});
+
+test('상세 저장 ACK 뒤 현재 문의 목록을 갱신하며 다른 문의나 새 입력을 지우지 않는다',async()=>{
+ for(const change of ['same','selection','input']){
+  const f=detailSaveFixture();let paints=0;f.root.G={inqSelKey:f.q.id};f.root.paint=()=>paints++;
+  const job=f.run();assert.equal(paints,0,'ACK 이전에는 목록 완료 표시 없음');
+  if(change==='selection')f.root.G.inqSelKey='other-inquiry';if(change==='input')f.s.text='저장 중 다른 입력';
+  f.resolve(true);await job;
+  assert.equal(paints,change==='same'?1:0);assert.equal(f.toasts.length,change==='same'?1:0);
+  if(change!=='same')assert.equal(f.s.text,change==='input'?'저장 중 다른 입력':' 이번 상담 원문 ');
+ }
+});
+test('기존 문자 버튼과 가운데 문자/카카오 버튼은 실제 발송으로 저장하지 않고 문구·일정을 유지한다',async()=>{
+ for(const kind of ['legacy','sms','kakao','failure']){
+  const writes=[],copied=[],messages=[],toasts=[],q={phone:'010-0000-0000',activities:[],nextAction:{text:'기존 고객 약속',due:'2026-10-20'}},s={smsText:'보존할 문구',smsTpl:'첫 인사',smsWhen:'now',smsCh:kind==='kakao'?'kakao':'sms',smsOpen:true},before=JSON.stringify(q);
+  const root={navigator:{userAgent:kind==='sms'?'Android':'Desktop',clipboard:{writeText:async value=>{if(kind==='failure')throw Error('denied');copied.push(value);}}},location:{href:'unchanged'},inquiryAssigned:()=>true,iqMsg:value=>messages.push(value),InquiryCommand:{run:(...args)=>{writes.push(args);throw Error('발송 근거 없는 CRM 저장');}}};
+  root.InquiryMessageHandoff=require('../inquiry-message-handoff.js')(root);
+  const context={root,toast:value=>toasts.push(value),timeline:()=>[],phoneOf:()=>({digits:'01000000000'}),sms4Cur:()=>({t:{k:'첫 인사'}}),smsConsent:()=>({}),sms4Days:()=>3,sms4Due:()=> '2026-10-20',sms4Block:()=>false,reskinFrom:()=>assert.fail('외부 앱 이동이 입력창을 재구성해서는 안 됨')};
+  vm.runInNewContext(detailSection('async function manualMessage(q,s,channel){',' /* 기록자는')+detailSection('async function smsGo4(q,s){',' function smsForm(q,s,digits,v3)'),context);
+  await (kind==='legacy'?context.smsSend(q,s):context.smsGo4(q,s));
+  assert.deepEqual(writes,[]);assert.equal(JSON.stringify(q),before);assert.equal(s.smsText,'보존할 문구');assert.equal(s.smsTpl,'첫 인사');assert.equal(s.smsOpen,true);assert.equal(s.messageHandoffBusy,false);
+  if(kind==='sms'){assert.match(root.location.href,/^sms:01000000000\?body=/);assert.deepEqual(copied,[]);}
+  else assert.equal(root.location.href,'unchanged');
+  if(kind==='failure'){assert.equal(toasts.length,0);assert.match(messages[0],/복사하지 못했습니다/);}else{assert.equal(messages.length,0);assert.match(toasts[0],/실제 발송 여부는 아직 확인되지 않았습니다/);}
+ }
+});
 test('① 결과 마스터: 시도(부재 · 통화불가 · 번호오류)와 접촉(연결됨 · 고객 회신 · 검토중 · 자료요청 · 견적요청)을 한곳에서 가른다',()=>{
  const F=load().InquiryFlow;
  assert.deepEqual([...F.RESULT.attempt],['부재','통화불가','번호오류']);assert.deepEqual([...F.RESULT.connected],['연결됨','고객 회신','검토중','자료요청','견적요청']);
@@ -47,14 +102,15 @@ test('⑥ ⑦ 대표회의와 자료 회신 기한은 따로 · 전화 응대자
  F.take({inquiry_id:'z',phone_handler:'이필선',meeting_date:'2026-11-02',reply_due:'2026-10-20'});const q={id:'z',raw:{'전화응대자':'조현식','대표회의':'2026-10-12'}};
  assert.equal(F.phoneHandler(q),'이필선','서버 phone_handler 가 먼저');assert.equal(ymd(F.meetingDate(q)),'2026-11-2');assert.equal(ymd(F.replyDue(q)),'2026-10-20');
 });
-test('화면: 판정 함수 두 개가 InquiryFlow 를 쓰고, 목록 · 상세 · 작업대 저장이 InquiryCommand 하나로 간다',()=>{
+test('화면: 판정은 InquiryFlow · 보호된 상세 저장은 PCInquirySave · 기존 목록과 작업대는 InquiryCommand로 간다',()=>{
  const html=read('crm.html'),l3=read('inquiry-list-v3.js'),dv=read('inquiry-detail-v2.js'),wb=read('inquiry-workbench.js'),fl=read('inquiry-flow.js');
  has(html,/function inqCtlFirstResponseAt\(q\)\{\n[^\n]*\n if\(window\.InquiryFlow&&InquiryFlow\.on\(\)\)return InquiryFlow\.firstConnectedAt\(q\);/,'최초응대 판정 = InquiryFlow');
  has(html,/function inquiryResponded\(q\)\{if\(window\.InquiryFlow&&InquiryFlow\.on\(\)\)return !!InquiryFlow\.firstConnectedAt\(q\);return inquiryRespondedLegacy\(q\)\}/,'응대함 판정 = InquiryFlow');
  has(html,/<script src="\.\/inquiry-flow\.js\?v=[a-z0-9-]+"><\/script><link rel="stylesheet" href="\.\/inquiry-list-v2\.css/,'목록 · 상세보다 먼저 불러온다');
  assert.match(l3,/if\(F\(\)&&root\.InquiryCommand\)return root\.InquiryCommand\.run\('contact_log',q,\{did:o\.did,line:String\(o\.res\|\|''\)\.trim\(\),next:o\.next,due:o\.due,contact_result:o\.contact_result,customer_reaction:o\.customer_reaction\}\)===true;/,'목록 · 오늘 업무의 결과 기록');
  assert.match(l3,/RES=\(\)=>F\(\)\?F\(\)\.RESULTS\.slice\(\):RES_OLD/,'목록 결과 칩 = 마스터');assert.match(l3,/let cand=F\(\)\?F\(\)\.meetingDate\(q\):/,'D-3 판정은 대표회의만');
- assert.match(dv,/root\.InquiryCommand\.run\('contact_log',q,Object\.assign\(\{ch:g\.ch,result:g\.res,text,next:nextText,due\}/,'상세 응대 기록');assert.match(dv,/root\.InquiryCommand\.run\('memo',q,\{text\}\)/,'상세 내부 메모');
+ has(dv,/const options=Object\.assign\(\{ch:g\.ch,result:g\.res,text,next:nextText,due\}/,'상세 응대 기록의 공통 입력');
+ has(dv,/if\(root\.PCInquirySave\?\.route\(q\)\)[\s\S]*?await root\.PCInquirySave\.save\(q,options,form,'detail'\);root\.MobileSaveJournal\.assertOwner\(owner\);[\s\S]*?else if\(root\.InquiryCommand\.run\('contact_log',q,options\)!==true\)/,'보호된 저장은 서버 확인을 기다리고 기존 경로는 route=false에만 사용');assert.match(dv,/root\.InquiryCommand\.run\('memo',q,\{text\}\)/,'상세 내부 메모');
  assert.match(dv,/await root\.InquiryCommand\.run\('field_set',q,\{field,value\}\)/,'상세 칸 저장');assert.match(dv,/RES3=\(\)=>FL\(\)\?FL\(\)\.RESULTS\.map\(r=>\[r,r\]\)/,'상세 결과 칩 = 마스터');
  assert.match(wb,/root\.InquiryCommand\.run\('contact_log',q,\{did:o\.did,line:o\.res,next:o\.next,due:o\.due\}\)/,'작업대 처리 저장');assert.match(wb,/root\.InquiryFlow\.phoneHandler\(q\)/,'전화 응대자 읽기');
  /* 시도는 단계 진행(iqApply)으로 보내지 않는다 */
@@ -100,7 +156,7 @@ test('② 종결 4종: 종류는 한곳에서 읽는다 — 다른 업체 선택
  F.take({inquiry_id:'s1',close_kind:'consult_end',close_reason:'단순 문의'});assert.equal(k({id:'s1',status:'종결'}),'consult_end|단순 문의','서버 종결 종류가 먼저');
  const bb=read('brief-b.js');assert.match(bb,/let m=\/Bad Fit · \(\[\^—·\]\+\)\/\.exec\(r\);if\(m\)return m\[1\]\.trim\(\);/);assert.match(bb,/if\(\/\^연락두절 ·\/\.test\(r\)\)return '연락두절';m=\/상담종결 · \(\[\^—·\]\+\)\/\.exec\(r\);if\(m\)return '상담종결 · '\+m\[1\]\.trim\(\);/,'브리핑 · 대시보드의 사유 읽기도 종류대로');
 });
-test('② ③ 화면: [배드핏] 칩 = 종결 창(다음 할 일을 만들지 않는다) · 문자 = 1:1 보내기(가운데 칸) · 연락 시도로 기록 · CRM 발송 큐는 꺼 둠',()=>{
+test('② ③ 화면: 배드핏은 종결 창 · 문자 복사/앱 이동은 발송 기록이 아님 · CRM 발송 큐는 꺼 둠',()=>{
  const html=read('crm.html'),dv=read('inquiry-detail-v2.js'),l3=read('inquiry-list-v3.js'),fl=read('inquiry-flow.js');
  has(html,/if\(window\.InquiryFlow&&InquiryFlow\.on\(\)\)\{var first=InquiryFlow\.state\(q\)\.unreachable\?'unreachable':'bad_fit',opts=\[\['bad_fit',/,'종결 창 = 4종(연락두절 제안이면 연락두절이 먼저)');
  has(html,/return InquiryCommand\.run\('close',q,\{kind:type,reason:cat,detail:reason\}\)\.then\(/,'종결 저장 = 명령 하나');
@@ -111,8 +167,12 @@ test('② ③ 화면: [배드핏] 칩 = 종결 창(다음 할 일을 만들지 �
  /* ③ */
  assert.match(dv,/\(FL\(\)\?\[\['call','응대 기록'\],\['memo','내부 메모'\]\]:\[\['call','응대 기록'\],\['sms','문자'\],\['memo','내부 메모'\]\]\)/,'상세 문자 탭 없음');
  assert.match(dv,/const crmSendable=digits=>!!\(root\.G\.inqSmsQueueOn&&root\.SB&&/,'CRM 직접 발송 큐 = 꺼 둔 플래그(서버 코드는 그대로)');
- assert.match(dv,/if\(k==='ch'\)\{s\.ch=v;if\(FL\(\)&&v==='문자'\)\{if\(document\.getElementById\('inq-inbox-dialog'\)\?\.classList\.contains\('idv3'\)\)\{s\.smsOpen=true;/,'수단 문자 = 가운데 칸 문자 보내기');assert.match(dv,/root\.InquiryCommand\.run\('contact_log',q,\{ch:'문자',result:'회신대기',text,next:'회신 확인',due:due3\}\)/,'예전 틀의 보낸 문자 = 응대 기록');
- assert.match(dv,/if\(s\.smsOpen&&!closedStatus\(q\)\)return smsPanel4\(q,s\);/,'[문자] → 가운데 칸(응대 이력 자리)이 문자 보내기로');assert.match(dv,/root\.InquiryCommand\.run\('contact_log',q,\{ch,result:'회신대기',text:title\+' '\+ch\+' 발송 — '\+text,next:title\+' 회신 확인 전화',due\}\)/,'보내면 회신대기(연락 시도) + 다음 확인일');
+ assert.match(dv,/if\(k==='ch'\)\{s\.ch=v;if\(FL\(\)&&v==='문자'\)\{if\(document\.getElementById\('inq-inbox-dialog'\)\?\.classList\.contains\('idv3'\)\)\{s\.smsOpen=true;/,'수단 문자 = 가운데 칸 문자 보내기');
+ has(dv,/function smsSend\(q,s\)\{return manualMessage\(q,s,'sms'\);\}/,'기존 문자 버튼도 발송 기록을 만들지 않는 공통 경로');
+ assert.match(dv,/if\(s\.smsOpen&&!closedStatus\(q\)\)return smsPanel4\(q,s\);/,'[문자] → 가운데 칸(응대 이력 자리)이 문자 보내기로');
+ has(dv,/return manualMessage\(q,s,ch==='카카오'\?'kakao':'sms'\);/,'가운데 문자/카카오 버튼도 같은 외부 앱 전달 경로');
+ const manual=detailSection('async function manualMessage(q,s,channel){',' function smsSend(q,s)');
+ assert.doesNotMatch(manual,/InquiryCommand|splitSave|nextSet|iqApply|SB\.rpc|pushWrite/,'복사/앱 이동에서 응대·단계·일정을 저장하지 않는다');
  assert.match(dv,/class="idv3-callrow"><button type="button" class="idv3-call" data-idv="dial"/,'전화 옆 [문자]');assert.match(read('inquiry-detail-v3.css'),/\.idv3-callrow\{display:grid;grid-template-columns:minmax\(0,1\.7fr\) minmax\(0,1fr\);gap:6px\}/,'전화 : 문자 = 1.7 : 1');
  assert.match(read('sql/inquiry-flow-v1-20261005.sql'),/when p_result in \('부재','통화불가','번호오류','회신대기'\) then 'attempt'/,'서버도 회신대기 = 시도');
  assert.match(l3,/\(F\(\)\?'':'<button type="button" data-il="sms" data-key="'\+k\+'">문자<\/button>'\)/,'목록 문자 버튼 없음');
@@ -133,8 +193,10 @@ test('④ ⑤ 전환 기준 하나 · 견적 = 버전: 상세 · 전환 대기 �
  assert.match(sql.replace(/\r\n/g,'\n'),/a constant text:=\$a\$status_value !~ '견적\.\*발송'\$a\$;\n b constant text:=\$b\$status_value !~ '견적\.\*발송\|현장\[\[:space:\]\]\*방문\[\[:space:\]\]\*완료'\$b\$;/,'서버 전환 명령의 조건 한 곳');
  assert.match(sql,/if n<>1 then raise exception '전환 조건을 바꿀 자리가 %곳입니다\(1곳이어야 함\) — 아무것도 바꾸지 않았습니다',n; end if;/,'자리가 정확히 1곳이 아니면 멈춘다');
  assert.match(fl,/const ready=loadedOk&&can\(RPC\),msg=ready\?promote\(q\):'서버 적용 뒤 전환 대기 목록에서 파이프라인으로 넘길 수 있습니다';/,'방문 완료 전환은 서버가 받는 것이 확인된 뒤에만 보낸다');
- assert.match(dv,/const stepConverts=s=>!FL\(\)\|\|\(s\.step==='visit'\?s\.visitMode==='완료':s\.step==='quote'\?s\.quoteMode==='완료':false\);/,'예정은 저장만');assert.match(dv,/\(FL\(\)\?h\(FL\(\)\.QUALIFY_TEXT\):/,'상세 문구 = 같은 기준');
- assert.match(dv,/root\.InquiryCommand\.run\('quote_send',q,\{amount:s\.quoteAmt\?Number\(s\.quoteAmt\)\*10000:0,date:s\.quoteDate,sent:s\.quoteMode==='완료'\}\)/,'견적 금액은 견적 버전으로(원)');
+ const buttonCtx={root:{CRM_SCHEDULE_V1:true},FL:()=>F};vm.runInNewContext(detailSection('const stepConverts=', ' const visitToggle=')+'\nthis.readButton=stepBtn;',buttonCtx);
+ for(const step of ['visit','quote'])for(const mode of ['예정','완료'])assert.equal(buttonCtx.readButton({step,visitMode:mode,quoteMode:mode}),'저장','보존 계약은 사실 저장만 약속한다');
+ buttonCtx.root.CRM_SCHEDULE_V1=false;assert.equal(buttonCtx.readButton({step:'visit',visitMode:'예정'}),'저장');assert.equal(buttonCtx.readButton({step:'visit',visitMode:'완료'}),'저장하고 파이프라인으로','기존 계약은 기존 안내 유지');assert.match(dv,/\(FL\(\)\?h\(FL\(\)\.QUALIFY_TEXT\):/,'상세 문구 = 같은 전환 자격 기준');
+ assert.match(dv,/root\.InquiryCommand\.run\('quote_send',q,\{amount:form\.quoteAmt\?Number\(form\.quoteAmt\)\*10000:0,date:form\.quoteDate,sent:form\.quoteMode==='완료'\}\)/,'제출시 보관한 견적 금액을 견적 버전으로(원)');
  assert.doesNotMatch(fl,/예상 '\+|만원'\)/,'명령은 다음 할 일 문장에 금액을 넣지 않는다');assert.match(fl,/nextSet\(q,'고객 반응 확인',follow\)/);assert.match(fl,/const f=plusDays\(sentDay,7\);return f>today\?f:plusDays\(today,1\);/,'후속 = 보낸 날 + 7일 · 같은 날 할 일 금지');
  assert.match(sql,/v_draft:=coalesce\(\(p->>'draft'\)='true',false\);/);assert.match(sql,/if found and lv\.sent_at is null then/,'초안은 같은 버전을 고쳐 쓴다');
 });

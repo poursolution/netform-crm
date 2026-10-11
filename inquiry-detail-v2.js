@@ -146,9 +146,9 @@
  /* 결과 마스터 · 시도/접촉 구분은 InquiryFlow 한 곳(2026-10-05 견적문의 흐름 ①). 끄면(G.inqFlowOff) 예전 목록 */
  const FL=()=>root.InquiryFlow&&root.InquiryFlow.on()?root.InquiryFlow:null;
  const isConn=r=>FL()?FL().kindOf(r)==='connected':CONNECTED.includes(r),isTry=r=>FL()?FL().kindOf(r)==='attempt':false;
- /* 다음 단계(견적문의 흐름 ④ ⑤): 전환 기준은 InquiryFlow 한 곳 — '예정'은 저장만, 방문 완료 · 견적 발송 완료가 전환. 견적 발송 완료는 금액이 있어야 한다(견적 = 버전) */
+ /* 다음 단계: 보존 계약은 사실만 저장한다. 기존 전환 자격과 실제 파이프라인 전환은 별개다. */
  const stepOk=s=>s.step==='visit'?!!s.visitDate:s.step==='quote'?(FL()&&s.quoteMode==='완료'?!!s.quoteAmt:!!(s.quoteAmt||s.quoteDate)):false;
- const stepConverts=s=>!FL()||(s.step==='visit'?s.visitMode==='완료':s.step==='quote'?s.quoteMode==='완료':false);
+ const stepConverts=s=>root.CRM_SCHEDULE_V1!==true&&(!FL()||(s.step==='visit'?s.visitMode==='완료':s.step==='quote'?s.quoteMode==='완료':false));
  const stepBtn=s=>stepConverts(s)?'저장하고 파이프라인으로':'저장';
  const visitToggle=s=>FL()?'<div class="idv-two small"><button type="button" data-idv="visitMode" data-v="예정" aria-pressed="'+(s.visitMode!=='완료')+'">방문 예정</button><button type="button" data-idv="visitMode" data-v="완료" aria-pressed="'+(s.visitMode==='완료')+'">방문 완료</button></div>':'';
  const wonTxt=n=>{n=Math.round(Number(n)||0);const e=Math.floor(n/1e8),m=Math.round((n%1e8)/1e4);return e?e+'억'+(m?' '+m.toLocaleString('ko-KR')+'만원':' 원'):m.toLocaleString('ko-KR')+'만원';};
@@ -220,19 +220,19 @@
   if(!s.smsTpl&&!(s.smsText||'').trim()){s.smsTpl=rec&&T[rec]?rec:'첫 인사';s.smsText=T[s.smsTpl]||'';}
   const text=s.smsText||'',has=!!text.trim(),bytes=smsBytes(text),mobile=/Android|iPhone|iPad/i.test(navigator.userAgent),crm=crmSendable(digits);if(crm)loadSms(q);
   const owner=String(root.repDisplay(root.inquiryRoutedOwner(q)||root.ME?.name||'')||'').trim(),brand=String(q.brand||(root.inquiryBrandOf?root.inquiryBrandOf(q):'')||'').trim(),assigned=root.inquiryAssigned(q);
-  const foot=!digits?'연락처가 없어 보낼 수 없습니다':crm?'보내면 넷폼 발신번호로 바로 발송되고 응대 이력에 "문자 · 회신대기"로 남습니다':(mobile?'휴대폰 문자 앱이 열리고':'문구가 복사되고')+' 응대 이력에 "문자 · 회신대기"로 남습니다';
+  const foot=!digits?'연락처가 없어 보낼 수 없습니다':crm?'보내면 넷폼 발신번호로 바로 발송되고 응대 이력에 "문자 · 회신대기"로 남습니다':'문구 복사·앱 이동만으로 발송 이력이나 후속 업무를 등록하지 않습니다';
   const go=crm?'<button type="button" data-idv="sms-send"'+(has?'':' disabled')+'>'+(mobile?'문자 앱으로':'복사해서')+' 직접 보내기</button><button type="button" class="go'+(s.smsConfirm?' idv-confirm':'')+'" data-idv="sms-crm"'+(s.smsBusy||!has?' disabled':'')+'>'+(s.smsBusy?'요청 중…':s.smsConfirm?'정말 보내기 · '+h(root.phoneFmt(digits)):'CRM에서 보내기')+'</button>'
-   :'<button type="button" class="go" data-idv="sms-send"'+(digits&&has?'':' disabled')+'>'+(digits?(mobile?'문자 앱으로 보내고 기록':'문구 복사하고 기록'):'연락처 없음')+'</button>';
+   :'<button type="button" class="go" data-idv="sms-send"'+(digits&&has?'':' disabled')+'>'+(digits?(mobile?'문자로 이동':'문구 복사'):'연락처 없음')+'</button>';
   return '<div class="ds2 iq-ds2"><div class="ds2-hd"><b>문자 보내기</b><span>'+h((q.contact_name||q.contact||'고객')+' · '+(digits?root.phoneFmt(digits):'연락처 없음'))+'</span>'+(digits?'':'<em class="bad">연락처 없음</em>')+'<i></i></div>'
    +'<div class="ds2-body"><div class="ds2-main">'
    +'<div class="ds2-blk"><span class="ds2-lb">무엇을 보낼까 <small><b>AI</b>문의 상황 기준</small></span><div class="ds2-tpls">'+Object.keys(T).map(k=>'<button type="button" data-idv="tpl" data-v="'+attr(k)+'" aria-pressed="'+(s.smsTpl===k)+'"><b>'+h(k)+'</b><span>'+h(k===rec?'추천 · 지금 상황':SMS_SUB[k]||'')+'</span></button>').join('')+'</div></div>'
    +'<div class="ds2-blk"><div class="ds2-row"><b>보낼 문구</b><span class="ds2-bytes">'+bytes+'byte · '+(bytes>90?'LMS':'SMS')+'</span></div><textarea id="spLogNote" class="ds2-text" data-idv="smstext" placeholder="보낼 문자" aria-label="보낼 문구">'+h(text)+'</textarea><div class="ds2-vars">'+smsVars(q).map(x=>'<button type="button" data-idv="smsvar" data-v="'+attr(x[1])+'">+ '+x[0]+'</button>').join('')+'</div></div>'
-   +'<div class="ds2-when"><b>보낸 뒤</b><span>'+(assigned?'회신 확인 · 3일 후 (자동 등록)':'배정 전 — 이력에만 남습니다')+'</span></div>'
+   +'<div class="ds2-when"><b>보낸 뒤</b><span>'+(crm?(assigned?'CRM 발송 후 회신 확인 · 3일 후 (자동 등록)':'CRM 발송은 이력에만 남습니다'):'실제 발송 후 결과 확인 · 후속 업무 자동 등록 없음')+'</span></div>'
    +'</div><div class="ds2-phone"><div class="ds2-dev"><div class="ds2-scr"><div class="ds2-bar"><span>'+h(new Date().toTimeString().slice(0,5))+'</span><span class="notch"></span><span>LTE</span></div><div class="ds2-from"><span style="background:'+(SMS_BC[brand]||'#15171c')+'">'+h((brand||'넷폼').slice(0,1))+'</span><small>'+h((brand||'넷폼')+(owner?' · '+owner:''))+'</small></div><div class="ds2-chat"><div class="ds2-bubble">'+h(text)+'</div></div><div class="ds2-home"></div></div></div><span>고객 폰에 보이는 모습</span></div></div>'
    +'<div class="ds2-ft"><span class="'+(digits?'':'bad')+'">'+h(foot)+'</span><button type="button" class="b" data-idv="sms-copy"'+(has?'':' disabled')+'>문구 복사</button>'+go+'</div><select id="spLogType" hidden><option selected>메일·메시지</option></select></div>';
  }
  /* 견적문의 상세 · 문자 보내기(2026-10-05 design_handoff_inquiry_sms): 오른쪽 '지금 할 일'의 [문자] → 가운데 칸(응대 이력 자리)이 문자 보내기로 바뀐다. 팝오버 · 오른쪽 패널 없음.
-    파이프라인 문자 보내기와 같은 틀(.ds2 · deal-sms-v2.css). 보내면 응대 이력에 '문자 · 회신대기' = 연락 시도(최초 응대는 안 찍힘) + 다음 확인일 자동 등록.
+    파이프라인 문자 보내기와 같은 틀(.ds2 · deal-sms-v2.css). 문구 복사·외부 앱 이동은 발송 증거가 아니므로 연락 시도·다음 확인일을 생성하지 않는다.
     수신 동의: 같은 번호가 영업건 연락처에 있으면 그 값을, 없으면 '모름'(1:1 안내 문구만 · 광고성 문구 금지). 거부면 보내기 잠금 */
  const SMS4_DAYS=[1,2,3,7],SMS4_AD=/\(광고\)|할인|이벤트|프로모션|특가|무료\s*(체험|쿠폰)|홍보/;
  function smsOwnerPhone(q){try{const own=root.inquiryRoutedOwner(q)||(root.ME&&root.ME.name)||'';const u=(root.B&&root.B.users||[]).find(x=>root.repN(x.name||x.display_name)===root.repN(own));const m=/01[016789][-\s.]?\d{3,4}[-\s.]?\d{4}/.exec(String(u&&(u.phone||u.mobile)||''));return m?m[0]:'';}catch(e){return '';}}
@@ -254,7 +254,7 @@
  const sms4Due=n=>{const d=new Date();d.setDate(d.getDate()+n);return ymdDash(d);};
  const sms4DayText=n=>n===1?'내일':n+'일 후';
  const sms4Block=(q,s,digits,C)=>!digits?'연락처가 없어 보낼 수 없습니다':C.k==='no'?'수신 거부 고객입니다 — 보낼 수 없습니다':C.k==='unknown'&&SMS4_AD.test(s.smsText||'')?'수신 동의를 모르는 고객에게는 문의 안내 문구만 보낼 수 있습니다(광고성 문구 제외)':s.smsWhen==='later'&&!root.inquiryAssigned(q)?'담당 배정 뒤에 예약할 수 있습니다':'';
- const sms4Foot=(s,block)=>block||(s.smsWhen==='later'?'자동 발송이 아니라, 정한 시각에 보내기를 알려 주는 알림을 등록합니다':'보내면 응대 이력에 "'+(s.smsCh==='kakao'?'카카오':'문자')+' · 회신대기"(연락 시도)로 남고, 다음 확인이 오늘 업무에 잡힙니다');
+ const sms4Foot=(s,block)=>block||(s.smsWhen==='later'?(s._reminderDue?s._reminderDue+' · ':'')+'날짜 기준 내부 업무를 등록합니다. 09:00은 업무 제목이며 자동 발송·정시 알림을 보장하지 않습니다':'문구 복사·앱 이동은 발송 완료가 아닙니다. 응대 이력과 후속 업무를 자동 등록하지 않습니다');
  /* 입력 중에는 다시 그리지 않고 바이트 · 미리보기 · 보내기 잠금만 바꾼다(커서 유지) */
  function sms4Live(p4,q,s){const n=smsBytes(s.smsText),bb=p4.querySelector('.ds2-bytes'),pv=p4.querySelector('.ds2-bubble'),has=!!(s.smsText||'').trim(),block=sms4Block(q,s,phoneOf(q).digits,smsConsent(phoneOf(q).digits)),ft=p4.querySelector('.ds2-ft>span'),go=p4.querySelector('.ds2-ft .go'),cp=p4.querySelector('[data-idv="sms-copy"]');
   if(bb)bb.textContent=n+'byte · '+(n>90?'LMS':'SMS');if(pv)pv.textContent=s.smsText;if(ft){ft.textContent=sms4Foot(s,block);ft.className=block?'bad':'';}if(go)go.disabled=!has||!!block;if(cp)cp.disabled=!has;}
@@ -264,40 +264,46 @@
   const text=s.smsText||'',has=!!text.trim(),bytes=smsBytes(text),days=sms4Days(s,t),due=sms4Due(days),owner=String(root.repDisplay(root.inquiryRoutedOwner(q)||root.ME?.name||'')||'').trim(),brand=String(q.brand||(root.inquiryBrandOf?root.inquiryBrandOf(q):'')||'').trim(),op=smsOwnerPhone(q);
   const block=sms4Block(q,s,digits,C),foot=sms4Foot(s,block);
   const seg=on=>' aria-pressed="'+!!on+'"',vars=smsVars(q).concat(op?[['담당 연락처',op]]:[]);
-  const after=assigned?t.k+' 회신 확인 전화 · '+sms4DayText(days)+' ('+kday(new Date(due+'T00:00:00'))+') 자동 등록':'배정 전 — 이력에만 남습니다';
+  const after='실제 발송 후 결과 확인 · 후속 업무 자동 등록 없음';
   return '<div class="idv3-smswrap"><div class="ds2 iq-ds2 iq-sms4"><div class="ds2-hd"><button type="button" class="ds2-back" data-idv="sms-back" aria-label="응대 이력으로">‹</button><b>'+chName+' 보내기</b><span>'+h((q.contact_name||q.contact||'고객')+' · '+(digits?ph.text:'연락처 없음'))+'</span><em class="'+C.cls+'">'+h(C.tag)+'</em><i></i><div class="ds2-seg" role="group" aria-label="채널"><button type="button" data-idv="sms-ch" data-v="sms"'+seg(ch==='sms')+'>문자</button><button type="button" data-idv="sms-ch" data-v="kakao"'+seg(ch==='kakao')+'>카카오</button></div></div>'
    +'<div class="ds2-body"><div class="ds2-main">'
    +'<div class="ds2-blk"><span class="ds2-lb">무엇을 보낼까 <small><b>AI</b>'+h('견적문의'+(x.last?' · 마지막 기록 "'+x.last.slice(0,24)+(x.last.length>24?'…':'')+'" 기준':' 단계 기준'))+'</small></span><div class="ds2-tpls">'+x.T.map((y,n)=>'<button type="button" data-idv="tpl4" data-v="'+attr(y.k)+'"'+seg(i===n&&s.smsTpl!=='직접')+'><b>'+h(y.k)+'</b><span>'+h(n===x.rec?'추천 · 지금 상황':y.sub)+'</span></button>').join('')+'</div></div>'
    +'<div class="ds2-blk"><div class="ds2-row"><b>보낼 문구</b><span class="ds2-bytes">'+bytes+'byte · '+(bytes>90?'LMS':'SMS')+'</span></div><textarea id="spLogNote" class="ds2-text" data-idv="smstext" placeholder="보낼 문자" aria-label="보낼 문구">'+h(text)+'</textarea><div class="ds2-vars">'+vars.map(v=>'<button type="button" data-idv="smsvar" data-v="'+attr(v[1])+'">+ '+v[0]+'</button>').join('')+(op?'':'<button type="button" disabled title="담당 연락처가 등록돼 있지 않습니다">+ 담당 연락처</button>')+'</div></div>'
    +'<div class="ds2-when"><b>언제</b><div class="ds2-seg" role="group" aria-label="언제"><button type="button" data-idv="sms-when" data-v="now"'+seg(!later)+'>지금</button><button type="button" data-idv="sms-when" data-v="later"'+seg(later)+'>예약 · 내일 09:00</button></div><u></u><b>보낸 뒤</b><span>'+h(after)+'</span>'+(assigned?'<button type="button" class="ds2-lnk" data-idv="sms-days">바꾸기</button>':'')+'</div>'
    +'</div><div class="ds2-phone"><div class="ds2-dev"><div class="ds2-scr"><div class="ds2-bar"><span>'+h(new Date().toTimeString().slice(0,5))+'</span><span class="notch"></span><span>LTE</span></div><div class="ds2-from"><span style="background:'+(SMS_BC[brand]||'#15171c')+'">'+h((brand||'넷폼').slice(0,1))+'</span><small>'+h((brand||'넷폼')+(owner?' · '+owner:''))+'</small></div><div class="ds2-chat"><div class="ds2-bubble'+(ch==='kakao'?' kk':'')+'">'+h(text)+'</div></div><div class="ds2-home"></div></div></div><span>고객 폰에 보이는 모습</span></div></div>'
-   +'<div class="ds2-ft"><span class="'+(block?'bad':'')+'">'+h(foot)+'</span><button type="button" data-idv="sms-back">취소</button><button type="button" class="b" data-idv="sms-copy"'+(has?'':' disabled')+'>문구 복사</button><button type="button" class="go" data-idv="sms-go"'+(!has||block?' disabled':'')+'>'+(later?'예약하기':'휴대폰 '+chName+'앱으로 보내기')+'</button></div><select id="spLogType" hidden><option selected>메일·메시지</option></select></div><div class="spmsg idv-err" id="iq-msg"></div></div>';
+   +'<div class="ds2-ft"><span class="'+(block?'bad':'')+'">'+h(foot)+'</span><button type="button" data-idv="sms-back">취소</button><button type="button" class="b" data-idv="sms-copy"'+(has?'':' disabled')+'>문구 복사</button><button type="button" class="go" data-idv="sms-go"'+(!has||block?' disabled':'')+'>'+(later?'예약하기':ch==='kakao'?'카카오 문구 복사':/Android|iPhone|iPad/i.test(navigator.userAgent)?'문자로 이동':'문자 문구 복사')+'</button></div><select id="spLogType" hidden><option selected>메일·메시지</option></select></div><div class="spmsg idv-err" id="iq-msg"></div></div>';
  }
- function smsGo4(q,s){
+ async function smsGo4(q,s){
   const L=timeline(q),ph=phoneOf(q),digits=ph.digits,{t}=sms4Cur(q,s,L),C=smsConsent(digits),text=(s.smsText||'').trim(),ch=s.smsCh==='kakao'?'카카오':'문자',title=s.smsTpl==='직접'?'직접 쓴 문구':t.k,days=sms4Days(s,t),due=sms4Due(days),assigned=!!root.inquiryAssigned(q);
   if(!text||sms4Block(q,s,digits,C))return reskinFrom();
   if(!root.InquiryCommand){root.iqMsg('저장 연결을 확인해 주세요.');return;}
   if(s.smsWhen==='later'){/* 예약 = 내일 보내기 알림(자동 발송 아님) — 응대 기록 · 연락 시도로 세지 않는다 */
-   if(!assigned)return;const at=sms4Due(1);
+   if(!assigned||s.reminderBusy)return;const at=s._reminderDue||sms4Due(1);
+   if(root.CRM_SCHEDULE_V1===true||root.PCInquiryReminderSave?.route(q)){
+    const api=root.PCInquiryReminderSave;if(!api?.save){root.iqMsg('알림 업무 저장 연결을 확인할 수 없습니다. 입력을 유지했습니다.');return;}
+    const key=curKey,j=root.MobileSaveJournal,owner=j.owner(),session=j.session?.(),form=Object.fromEntries(['smsText','smsTpl','smsCh','smsWhen','smsDays'].map(k=>[k,s[k]])),current=()=>curKey===key&&root.G?.inqSelKey===key&&!!document.getElementById('inq-inbox-dialog')&&Object.keys(form).every(k=>s[k]===form[k]);
+    const controls=[...document.querySelectorAll('#inq-inbox-dialog .iq-sms4 input,#inq-inbox-dialog .iq-sms4 textarea,#inq-inbox-dialog .iq-sms4 button')].map(el=>[el,el.disabled]);s.reminderBusy=true;controls.forEach(([el])=>{el.disabled=true;});
+    try{const r=await api.save(q,{channel:ch==='카카오'?'kakao':'sms',title:ch+' 보내기 · '+title+' (09:00)',due:at},form);j.assertOwner(owner);if(session!==undefined)j.assertSession(session);if(r?.ok!==true)throw Error('알림 업무 저장 확인 응답이 올바르지 않습니다.');if(!current())return;s.smsOpen=false;s.smsSent=null;delete s._reminderDue;delete s._reminderRestored;root.paint?.();reskinFrom();toast(r.label+' · '+r.msg);}
+    catch(e){try{j.assertOwner(owner);if(session!==undefined)j.assertSession(session);}catch(ignore){return;}if(current())root.iqMsg(e.message||'예약을 저장하지 못했습니다. 입력을 유지했습니다.');}
+    finally{s.reminderBusy=false;controls.forEach(([el,disabled])=>{el.disabled=disabled;});}return;
+   }
    try{if(root.InquiryCommand.run('next_set',q,{text:'문자 보내기 · '+title+' (09:00)',due:at})!==true){root.iqMsg('예약을 저장하지 못했습니다.');return;}}catch(e){root.iqMsg(e.message||'예약을 저장하지 못했습니다.');return;}
    s.smsOpen=false;s.smsSent=null;reskinFrom();toast('내일 09:00 '+ch+' 보내기 알림을 등록했습니다');return;}
-  try{if(root.InquiryCommand.run('contact_log',q,{ch,result:'회신대기',text:title+' '+ch+' 발송 — '+text,next:title+' 회신 확인 전화',due})!==true)return;}catch(e){root.iqMsg(e.message||'저장하지 못했습니다.');return;}
-  const mob=/Android|iPhone|iPad/i.test(navigator.userAgent);copyText(text,()=>{});if(mob&&ch==='문자')setTimeout(()=>{location.href='sms:'+digits+'?body='+encodeURIComponent(text);},120);
-  Object.assign(s,{smsOpen:false,smsText:'',smsTpl:'',smsDays:0,smsWhen:'now',smsSent:{ch,due:assigned?due:''}});reskinFrom();
-  toast((mob&&ch==='문자'?'문자 앱으로 보냅니다':'문구를 복사했습니다 — 휴대폰 '+ch+'에 붙여 넣어 보내세요')+(assigned?' · 다음 확인 '+kday(new Date(due+'T00:00:00')):' · 이력에 기록'));
+  return manualMessage(q,s,ch==='카카오'?'kakao':'sms');
  }
+
  function smsForm(q,s,digits,v3){if(v3&&!root.G.inqSmsV2Off)return smsForm3(q,s,digits);const T=smsTemplates(q);if(!s.smsTpl&&!(s.smsText||'').trim()){s.smsTpl='첫 인사';s.smsText=T['첫 인사']||'';}const bytes=smsBytes(s.smsText||''),mobile=/Android|iPhone|iPad/i.test(navigator.userAgent);
    const crm=crmSendable(digits);if(crm)loadSms(q);
-  return '<div class="idv-smsnote"><b>문구는 자동으로 만들어 둡니다 — 고칠 것만 고치고 아래 버튼 하나만 누르세요.</b><span>'+(crm?'[CRM에서 보내기]를 누르면 넷폼 발신번호로 고객 휴대폰에 바로 발송됩니다(대표 PC의 문자 실행기가 보냄 · 24시간 안 3건까지). 응대 이력에 «문자 · 회신대기»로 기록되고 전송 결과가 이력에 뜹니다.':'CRM 직접 발송은 '+(digits?'서버 적용 뒤에 열립니다.':'010 휴대폰 번호가 있어야 합니다.')+' 지금은 '+(mobile?'휴대폰 문자 앱이 열리고':'문구가 복사되고')+' 응대 이력에 «문자 · 회신대기»로 바로 기록됩니다.')+'</span></div>'
+  return '<div class="idv-smsnote"><b>문구는 자동으로 만들어 둡니다 — 고칠 것만 고치고 아래 버튼 하나만 누르세요.</b><span>'+(crm?'[CRM에서 보내기]를 누르면 넷폼 발신번호로 고객 휴대폰에 바로 발송됩니다(대표 PC의 문자 실행기가 보냄 · 24시간 안 3건까지). 응대 이력에 «문자 · 회신대기»로 기록되고 전송 결과가 이력에 뜹니다.':'CRM 직접 발송은 '+(digits?'서버 적용 뒤에 열립니다.':'010 휴대폰 번호가 있어야 합니다.')+' 문구 복사·앱 이동은 발송 완료가 아니며, 응대 이력·후속 업무를 자동 등록하지 않습니다.')+'</span></div>'
     +'<div class="idv-tpls"><span class="tag">AI</span><small>상황에 맞는 문구</small>'+Object.keys(T).map(k=>'<button type="button" class="idv-chip'+(s.smsTpl===k?' on':'')+'" data-idv="tpl" data-v="'+attr(k)+'">'+h(k)+'</button>').join('')+'</div>'
     +'<div class="idv-smsto"><span>받는 사람</span><b class="'+(digits?'':'bad')+'">'+h((q.contact_name||q.contact||'고객')+' · '+(digits?root.phoneFmt(digits):'연락처 없음'))+'</b><i></i><span>'+bytes+'byte · '+(bytes>90?'LMS':'SMS')+'</span></div>'
     +'<textarea id="spLogNote" rows="3" data-idv="smstext" placeholder="보낼 문자">'+h(s.smsText||'')+'</textarea>'
-    +'<div class="idv-formfoot"><span>'+(root.inquiryAssigned(q)?'기록되면 3일 뒤 「회신 확인」이 오늘 업무에 생깁니다':'배정 전 — 이력에만 남습니다')+'</span><button type="button" class="lnk" data-idv="sms-copy">문구만 복사</button>'+(crm?'<button type="button" class="lnk" data-idv="sms-send">'+(mobile?'문자 앱으로':'복사해서')+' 직접 보내기</button><button type="button" class="idv-save'+((s.smsText||'').trim()&&!s.smsBusy?' on':'')+(s.smsConfirm?' idv-confirm':'')+'" data-idv="sms-crm"'+(s.smsBusy?' disabled':'')+'>'+(s.smsBusy?'요청 중…':s.smsConfirm?'정말 보내기 · '+h(root.phoneFmt(digits)):'CRM에서 보내기')+'</button>':'<button type="button" class="idv-save'+((s.smsText||'').trim()&&digits?' on':'')+'" data-idv="sms-send"'+(digits?'':' disabled')+'>'+(digits?(mobile?'문자 앱으로 보내고 기록':'문구 복사하고 기록'):'연락처 없음')+'</button>')+'</div><select id="spLogType" hidden><option selected>메일·메시지</option></select>';}
+    +'<div class="idv-formfoot"><span>'+'문구 복사·앱 이동은 발송 완료가 아니며 이력·후속 업무를 자동 등록하지 않습니다'+'</span><button type="button" class="lnk" data-idv="sms-copy">문구만 복사</button>'+(crm?'<button type="button" class="lnk" data-idv="sms-send">'+(mobile?'문자 앱으로':'복사해서')+' 직접 보내기</button><button type="button" class="idv-save'+((s.smsText||'').trim()&&!s.smsBusy?' on':'')+(s.smsConfirm?' idv-confirm':'')+'" data-idv="sms-crm"'+(s.smsBusy?' disabled':'')+'>'+(s.smsBusy?'요청 중…':s.smsConfirm?'정말 보내기 · '+h(root.phoneFmt(digits)):'CRM에서 보내기')+'</button>':'<button type="button" class="idv-save'+((s.smsText||'').trim()&&digits?' on':'')+'" data-idv="sms-send"'+(digits?'':' disabled')+'>'+(digits?(mobile?'문자로 이동':'문구 복사'):'연락처 없음')+'</button>')+'</div><select id="spLogType" hidden><option selected>메일·메시지</option></select>';}
  function col2(q,s){
   const L=timeline(q),contacts=L.filter(e=>e.kind==='contact'||(e.kind==='work'&&e.ch)),conN=contacts.filter(e=>CONNECTED.includes(e.res)).length,firstAt=root.inqCtlFirstResponseAt(q);
   const checks=(root.itemPatch(q,'inq')||{}).checks||[],doneN=CHECKS.filter((_,i)=>checks[i]).length;
   const body=L.map(e=>{const K=KIND[e.kind];return '<div class="idv-ev '+K[1]+'"><i></i><div><div class="idv-evmeta"><span>'+h(fmt(e.at))+(e.who?' · '+h(e.who):'')+'</span><em class="k">'+K[0]+'</em>'+(e.ch?'<b>'+h(e.ch)+'</b>':'')+(e.res?'<b class="'+(e.res==='연결됨'?'ok':/부재|거절/.test(e.res)?'bad':'')+'">· '+h(e.res)+'</b>':'')+'<i class="sp"></i>'+(e.src?'<em class="s">'+h(e.src)+'</em>':'')+'</div>'+(e.text?'<div class="idv-evtext">'+h(e.text)+'</div>':'')+(e.next?'<span class="idv-evnext">→ 다음 행동: <b>'+h(e.next)+'</b></span>':'')+'</div></div>';}).join('');
-  const assignedNow=root.inquiryAssigned(q),tabs=FL()?[['call','응대 기록'],['memo','내부 메모']]:[['call','응대 기록'],['sms','문자 보내기'],['memo','내부 메모']],thint={call:'적기만 하면 수단 · 결과 · 다음 행동을 채웁니다',sms:'보낸 문자는 자동으로 응대 이력에 남습니다',memo:'팀 내부용 · 고객에게 보이지 않음'}[s.tab]||'',phone=String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'').trim(),digits=phone.replace(/\D/g,'');
+  const assignedNow=root.inquiryAssigned(q),tabs=FL()?[['call','응대 기록'],['memo','내부 메모']]:[['call','응대 기록'],['sms','문자 보내기'],['memo','내부 메모']],thint={call:'적기만 하면 수단 · 결과 · 다음 행동을 채웁니다',sms:'문구 복사·앱 이동은 발송 완료가 아닙니다',memo:'팀 내부용 · 고객에게 보이지 않음'}[s.tab]||'',phone=String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'').trim(),digits=phone.replace(/\D/g,'');
   let form='';
   if(s.tab==='call'){const g=sugOf(q,s),has=!!g.T;
    form='<textarea id="iq-res" rows="2" data-idv="text" placeholder="무슨 일이 있었는지 한 줄로 (예: 관리소장 통화. 10월 입대의 후 결정 예정)">'+h(s.text)+'</textarea>'
@@ -340,7 +346,7 @@
   else if(handed){const d=root.linkedDeal?.(q);next='<div class="idv-card done"><b>파이프라인 인계 완료</b><p>'+h(d?root.stageNoLabel(root.dealStage(d))+' 단계에 등록됨':'영업건으로 전환되었습니다')+(d&&root.oppAmt(d)?' · '+h(root.fmtAmt(root.oppAmt(d))):'')+'</p>'+(d?'<button type="button" class="idv-link" data-idv="goto-deal">파이프라인에서 보기 →</button>':'')+'</div>';}
   else if(!gn){
    const ok=stepOk(s);
-   next='<div class="idv-card step"><small>다음 단계</small><b>현장방문 · 견적</b><p>'+(FL()?h(FL().QUALIFY_TEXT):'둘 중 하나를 저장하면 파이프라인 ‘컨설팅 설계’ 단계로 자동 등록됩니다')+'</p><div class="idv-two"><button type="button" data-idv="step" data-v="visit" aria-pressed="'+(s.step==='visit')+'">현장방문 일정</button><button type="button" data-idv="step" data-v="quote" aria-pressed="'+(s.step==='quote')+'">견적서 발송</button></div>'
+   next='<div class="idv-card step"><small>다음 단계</small><b>현장방문 · 견적</b><p>'+(FL()?h(FL().QUALIFY_TEXT):root.CRM_SCHEDULE_V1===true?'방문·견적 사실을 저장합니다. 파이프라인 전환은 별도로 확인합니다.':'둘 중 하나를 저장하면 파이프라인 ‘컨설팅 설계’ 단계로 자동 등록됩니다')+'</p><div class="idv-two"><button type="button" data-idv="step" data-v="visit" aria-pressed="'+(s.step==='visit')+'">현장방문 일정</button><button type="button" data-idv="step" data-v="quote" aria-pressed="'+(s.step==='quote')+'">견적서 발송</button></div>'
     +(s.step==='visit'?visitToggle(s)+'<div class="idv-fields"><input type="date" data-idv="visitDate" aria-label="방문 날짜" value="'+attr(s.visitDate)+'"><input type="time" data-idv="visitTime" aria-label="방문 시간" value="'+attr(s.visitTime)+'"></div><p class="idv-note">상태가 ‘현장방문 예정’으로 바뀝니다</p>':'')
     +(s.step==='quote'?'<div class="idv-two small"><button type="button" data-idv="quoteMode" data-v="예정" aria-pressed="'+(s.quoteMode==='예정')+'">발송 예정</button><button type="button" data-idv="quoteMode" data-v="완료" aria-pressed="'+(s.quoteMode==='완료')+'">발송 완료</button></div><div class="idv-fields"><input inputmode="numeric" data-idv="quoteAmt" aria-label="예상 금액(만원)" placeholder="예상 금액 (만원)" value="'+attr(s.quoteAmt)+'"><input type="date" data-idv="quoteDate" aria-label="견적 날짜" value="'+attr(s.quoteDate)+'"></div>':'')
     +(s.step?'<button type="button" class="idv-primary'+(ok?' on':'')+'" data-idv="handoff"'+(ok?'':' disabled')+'>'+stepBtn(s)+'</button><div class="idv-err" data-idv-err></div>':'')+'</div>';
@@ -456,7 +462,7 @@
     +(s.step==='visit'?visitToggle(s)+'<div class="idv-fields"><input type="date" data-idv="visitDate" aria-label="방문 날짜" value="'+attr(s.visitDate)+'"><input type="time" data-idv="visitTime" aria-label="방문 시간" value="'+attr(s.visitTime)+'"></div>':'')
     +(s.step==='quote'?'<div class="idv-two small"><button type="button" data-idv="quoteMode" data-v="예정" aria-pressed="'+(s.quoteMode==='예정')+'">발송 예정</button><button type="button" data-idv="quoteMode" data-v="완료" aria-pressed="'+(s.quoteMode==='완료')+'">발송 완료</button></div><div class="idv-fields"><input inputmode="numeric" data-idv="quoteAmt" aria-label="예상 금액(만원)" placeholder="예상 금액 (만원)" value="'+attr(s.quoteAmt)+'"><input type="date" data-idv="quoteDate" aria-label="견적 날짜" value="'+attr(s.quoteDate)+'"></div>':'')
     +(s.step?'<button type="button" class="idv-primary'+(ok?' on':'')+'" data-idv="handoff"'+(ok?'':' disabled')+'>'+stepBtn(s)+'</button><div class="idv-err" data-idv-err></div>':'')
-    +'<small>'+(FL()?h(FL().QUALIFY_TEXT):'둘 중 하나 저장 → 파이프라인 ‘컨설팅 설계’로 자동 전환')+'</small></div>';}
+    +'<small>'+(FL()?h(FL().QUALIFY_TEXT):root.CRM_SCHEDULE_V1===true?'방문·견적 사실 저장 · 파이프라인 전환은 별도 확인':'둘 중 하나 저장 → 파이프라인 ‘컨설팅 설계’로 자동 전환')+'</small></div>';}
   const n=W().related(q),list=(n.list||[]).slice(0,5);
   const bottom='<div class="idv3-bottom"><button type="button" class="nr" data-idv="near-toggle"'+(list.length?'':' disabled')+'>근처 현장 <b>'+list.length+'곳</b>'+(n.region?' · '+h(n.region):'')+'</button>'+(admin&&!handed?'<button type="button" class="idv-link" data-idv="reassign">담당 변경</button>':'')+'</div>'
    +(s.nearOpen&&list.length?'<div class="idv-near idv3-near">'+list.map(x=>{const d=x.d,amt=root.oppAmt(d);return '<button type="button" class="idv-ncard mine" data-idv="near" data-v="'+attr(root.dealKey(d))+'"><span class="n1"><b>'+h(String(d.site||'').replace(/^\s*\[[^\]]*\]\s*/,''))+'</b></span><span class="n2"><i></i>'+h(root.stageNoLabel(root.dealStage(d)))+' · '+h(root.repN(d.assignee))+(amt?' · '+h(root.fmtAmt(amt)):'')+'</span></button>';}).join('')+'</div>':'');
@@ -468,6 +474,9 @@
  function reskin(){
   const overlay=document.getElementById('inq-inbox-dialog');if(!overlay||root.G.inqDetailV2Off||overlay.classList.contains('inq-store-view'))return;
   const key=root.G.inqSelKey,q=root.inqCtlFind?.(key,false);if(!q)return;curKey=key;const s=st(key);
+  try{root.PCInquirySave?.restore(String(q.id||key),s,'detail');}catch(e){root.iqMsg(e.message);}
+  try{root.PCInquiryMilestoneSave?.restore(String(q.id||key),s);}catch(e){root.iqMsg(e.message);}
+  try{root.PCInquiryReminderSave?.restore(String(q.id||key),s);}catch(e){root.iqMsg(e.message);}
   const scroll=overlay.querySelector('.idv-thread')?.scrollTop;
   const dlg=overlay.querySelector('.inq-dialog');if(!dlg)return;
   overlay.classList.add('idv');
@@ -476,6 +485,7 @@
   dlg.innerHTML=v3?header3(q)+'<div class="idv-body idv3-body"><aside class="idv-c1 idv3-c1" aria-label="문의자와 현장">'+col13(q,s)+'</aside><main class="idv-c2 idv3-c2" aria-label="문의와 응대">'+col23(q,s)+'</main><aside class="idv-c3 idv3-c3" aria-label="문의 업무 관리">'+col33(q,s)+'</aside></div>'
    :header(q)+'<div class="idv-body"><aside class="idv-c1" aria-label="문의자와 현장">'+col1(q,s)+'</aside><main class="idv-c2" aria-label="문의와 응대">'+col2(q,s)+'</main><aside class="idv-c3" aria-label="문의 업무 관리">'+col3(q,s)+'</aside></div>';
   mountWorkPick(dlg,q,s);
+  if(s.pcSaving)dlg.querySelectorAll('input,textarea,select,button').forEach(el=>{el.disabled=true;});
   /* 근처 현장 지도(inquiry-site.js): 다시 그릴 때마다 지도 상자를 제자리에 꽂는다 */
   if(v3&&IS()&&IS().mount){try{IS().mount(dlg);}catch(e){}}
   /* 경남지사로 넘긴 문의(본사 관리자): 머리 막대·오른쪽 칸을 '지사 진행 확인'으로 — 담당 변경을 고르는 중에는 기존 배정 칸 그대로 */
@@ -567,9 +577,10 @@
  const pad2=n=>String(n).padStart(2,'0'),ymdDash=d=>d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()),ymdDot=d=>d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate(),kday=d=>ymdDot(d)+'('+'일월화수목금토'[d.getDay()]+')';
  const recLine=(res,d)=>'통화 결과: '+res+' → 다음 연락 '+kday(d);
  function nextDay(q,label){if(label==='대표회의 다음날'){const m=meetOf(q);if(m){const d=new Date(m.date);d.setDate(d.getDate()+1);return ymdDash(d);}}const d=new Date();d.setDate(d.getDate()+({'내일':1,'3일 후':3,'7일 후':7}[label]||7));return ymdDash(d);}
- function save(q,s){
+ async function save(q,s){
+  if(s.pcSaving)return;
   const text=s.text.trim(),v3=!!document.getElementById('inq-inbox-dialog')?.classList.contains('idv3');if(!text&&!(v3&&s.tab==='call'&&s.res))return;
-  if(FL()&&root.InquiryCommand){
+  if((FL()||root.CRM_SCHEDULE_V1===true||root.PCInquirySave?.route(q))&&root.InquiryCommand){
    /* 저장은 명령 하나(InquiryCommand): 응대 기록 = contact_log(시도면 최초응대 · 단계는 그대로), 내부 메모 = memo. 화면이 숨은 입력칸을 만들어 예전 함수를 돌려 부르지 않는다 */
    if(!root.inqCtlRoleMatch(q))return;
    const reset=()=>Object.assign(s,{text:'',ch:'',res:'',con:'',rea:'',act:'',nday:'',due:'',next:'',edit:false,aiRead:false});
@@ -577,8 +588,18 @@
     if(s.tab==='call'){
      const g=sugOf(q,s),assigned=!!root.inquiryAssigned(q),nextText=(s.next||'').trim()||(g.none?'배드핏 종결 검토':g.act),due=(document.getElementById('iq-due')||{}).value||g.due;
      if(assigned&&(!nextText||!due)){root.iqMsg('다음 행동과 날짜가 있어야 저장됩니다.');return;}
-     if(root.InquiryCommand.run('contact_log',q,Object.assign({ch:g.ch,result:g.res,text,next:nextText,due},s.con?{contact_result:root.InquiryFlow.TWO.of(s.con,s.rea).contact_result,customer_reaction:root.InquiryFlow.TWO.of(s.con,s.rea).customer_reaction}:{}))!==true){root.iqMsg((document.getElementById('iq-msg')||{}).textContent||'저장하지 못했습니다.');return;}
-     reset();reskinFrom();toast(assigned?g.ch+' · '+resShow(g.res)+(g.none?'':' → '+nextText+' '+kday(new Date(due+'T00:00:00'))):'응대 기록을 저장했습니다');return;
+     const options=Object.assign({ch:g.ch,result:g.res,text,next:nextText,due},s.con?{contact_result:root.InquiryFlow.TWO.of(s.con,s.rea).contact_result,customer_reaction:root.InquiryFlow.TWO.of(s.con,s.rea).customer_reaction}:{});
+     let refresh=false;
+     if(root.PCInquirySave?.route(q)){
+      const owner=root.MobileSaveJournal.owner(),session=root.MobileSaveJournal.session?.(),selected=root.G?.inqSelKey,form=Object.fromEntries(['tab','text','ch','res','con','rea','act','nday','due','next'].map(k=>[k,s[k]]));
+      s.pcSaving=true;
+      const controls=[...document.querySelectorAll('#inq-inbox-dialog input,#inq-inbox-dialog textarea,#inq-inbox-dialog select,#inq-inbox-dialog button')].map(el=>[el,el.disabled]);controls.forEach(([el])=>{el.disabled=true;});
+      try{await root.PCInquirySave.save(q,options,form,'detail');root.MobileSaveJournal.assertOwner(owner);if(session!==undefined)root.MobileSaveJournal.assertSession(session);}
+      finally{s.pcSaving=false;controls.forEach(([el,disabled])=>{el.disabled=disabled;});}
+      if(root.G?.inqSelKey!==selected||!document.getElementById('inq-inbox-dialog')||Object.keys(form).some(k=>s[k]!==form[k]))return;
+      refresh=true;
+     }else if(root.InquiryCommand.run('contact_log',q,options)!==true){root.iqMsg((document.getElementById('iq-msg')||{}).textContent||'저장하지 못했습니다.');return;}
+     reset();delete s._pcRestored;delete s._pcDue;if(refresh)root.paint?.();reskinFrom();toast(assigned?g.ch+' · '+resShow(g.res)+(g.none?'':' → '+nextText+' '+kday(new Date(due+'T00:00:00'))):'응대 기록을 저장했습니다');return;
     }
     root.InquiryCommand.run('memo',q,{text});s.text='';reskinFrom();toast('내부 메모를 저장했습니다');
    }catch(e){root.iqMsg(e.message||'저장하지 못했습니다.');}
@@ -612,24 +633,21 @@
    }catch(err){root.iqMsg?.(String(err.message||err));toast(String(err.message||err),'warn');}
    finally{s.smsBusy=false;reskinFrom();}
   }
- function copyText(text,done){try{const p=navigator.clipboard&&navigator.clipboard.writeText(text);if(p&&p.then)p.then(done).catch(done);else done();}catch(err){done();}}
+ async function copyText(text,done){try{await root.InquiryMessageHandoff.copy(text);done();}catch(e){root.iqMsg(e.message||'문구를 복사하지 못했습니다.');}}
  /* 문자(2026-10-03 대표: "문자를 내가 직접 쓰라는 거냐" → 버튼 하나로): 문구는 자동, 누르면 PC는 복사 · 휴대폰은 문자 앱 열기 + 응대 이력에 «문자 · 회신대기» 기록, 배정된 건은 3일 뒤 '회신 확인'이 오늘 업무에(같은 저장 경로).
     CRM 직접 발송(알리고 큐)은 영업건 · 수신동의 연락처가 있어야 하고 실행기가 켜져 있어야 해서 문의 단계에는 아직 연결 전 */
- function smsSend(q,s){
-  const text=(s.smsText||'').trim(),digits=String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'').replace(/\D/g,'');if(!text||!digits)return;
-  if(FL()&&root.InquiryCommand){/* 저장은 명령 하나(contact_log · 수단 문자 · 회신대기 = 접촉 아님) */
-   const mob=/Android|iPhone|iPad/i.test(navigator.userAgent),assigned=!!root.inquiryAssigned(q),due3=nextDay(q,'3일 후');
-   try{if(root.InquiryCommand.run('contact_log',q,{ch:'문자',result:'회신대기',text,next:'회신 확인',due:due3})!==true)return;}catch(e){root.iqMsg(e.message||'저장하지 못했습니다.');return;}
-   copyText(text,()=>{});if(mob)setTimeout(()=>{location.href='sms:'+digits+'?body='+encodeURIComponent(text);},120);
-   s.smsText='';s.smsTpl='';s.tab='call';s.ch='';reskinFrom();toast((mob?'문자 앱으로 보냅니다':'문구를 복사했습니다 — 휴대폰 문자에 붙여 넣어 보내세요')+(assigned?' · 회신 확인 '+kday(new Date(due3+'T00:00:00')):' · 이력에 기록'));return;}
-  const line='[문자 · 회신대기] '+text,mobile=/Android|iPhone|iPad/i.test(navigator.userAgent);
-  copyText(text,()=>{});if(mobile)setTimeout(()=>{location.href='sms:'+digits+'?body='+encodeURIComponent(text);},120);
-  const sent=mobile?'문자 앱으로 보냅니다':'문구를 복사했습니다 — 휴대폰 문자에 붙여 넣어 보내세요';
-  if(!root.inquiryAssigned(q)){tempField('select','spLogType','문자');tempField('textarea','spLogNote',line);root.splitSaveLog();stampActor(q);s.smsText='';s.smsTpl='';reskinFrom();toast(sent+' · 이력에 기록');return;}
-  const due=nextDay(q,'3일 후');tempField('input','iq-did','고객 응대 기록');tempField('textarea','iq-res',line);tempField('input','iq-next','회신 확인');tempField('input','iq-due',due);
-  const ok=W().saveProcess();['iq-did','iq-res','iq-next','iq-due'].forEach(id=>{const el=document.getElementById(id);if(el&&el.hidden&&el.parentElement===document.getElementById('inq-inbox-dialog'))el.remove();});
-  if(ok===true){s.smsText='';s.smsTpl='';reskinFrom();toast(sent+' · 회신 확인 '+kday(new Date(due+'T00:00:00')));}
+ async function manualMessage(q,s,channel){
+  if(s.messageHandoffBusy)return;
+  const text=String(s.smsText||'').trim(),phone=String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'');
+  s.messageHandoffBusy=true;
+  try{
+   const result=await root.InquiryMessageHandoff.open({text,phone,channel});
+   // Keep the draft and selected template. Opening/copying cannot establish delivery or a follow-up obligation.
+   toast(result.message);
+  }catch(e){root.iqMsg(e.message||'문자 앱 연결을 확인해 주세요.');}
+  finally{s.messageHandoffBusy=false;}
  }
+ function smsSend(q,s){return manualMessage(q,s,'sms');}
  /* 기록자는 지금 로그인한 사람으로(배정 전에는 담당자가 없다) */
  function stampActor(q){try{const a=(root.itemPatch(q,'inq')||{}).activities,last=a&&a[a.length-1],me=root.repN(root.ME?.name);if(last&&me&&me!=='미배정'&&(!last.actor||last.actor==='미배정'))last.actor=me;root.saveLocal?.();}catch(e){}}
  async function assign(q,s){
@@ -652,17 +670,21 @@
  }
  function handoff(q,s,btn){
   const key=curKey,site=q.site||'문의',err=document.querySelector('#inq-inbox-dialog [data-idv-err]');
-  if(FL()&&root.InquiryCommand){
-   /* 저장은 명령 하나(visit · quote_send): 방문 완료 / 견적 발송 완료 = 전환 기준 충족 → 파이프라인, '예정'은 저장만. 견적 금액은 견적 버전으로(다음 할 일 문장에 넣지 않는다) */
+  if((FL()||root.CRM_SCHEDULE_V1===true||root.PCInquiryMilestoneSave?.route(q))&&root.InquiryCommand){
+   /* 같은 명령을 통해 보호 계약으로 저장한다. 사실 저장의 ACK는 파이프라인 전환 증거가 아니다. */
    if(s.busy)return;s.busy=true;if(btn){btn.disabled=true;btn.textContent='저장 확인 중…';}
-   const job=s.step==='visit'?root.InquiryCommand.run('visit',q,{date:s.visitDate,time:s.visitTime,done:s.visitMode==='완료'}):root.InquiryCommand.run('quote_send',q,{amount:s.quoteAmt?Number(s.quoteAmt)*10000:0,date:s.quoteDate,sent:s.quoteMode==='완료'});
-   Promise.resolve(job).then(r=>{Object.assign(s,{step:'',visitDate:'',visitTime:'',visitMode:'예정',quoteAmt:'',quoteDate:'',quoteMode:'예정'});
+   const protectedRoute=root.CRM_SCHEDULE_V1===true||root.PCInquiryMilestoneSave?.route(q),j=root.MobileSaveJournal,owner=protectedRoute?j?.owner():null,session=protectedRoute?j?.session?.():undefined;
+   const form=Object.fromEntries(['step','visitDate','visitTime','visitMode','quoteAmt','quoteDate','quoteMode'].map(k=>[k,s[k]])),current=()=>curKey===key&&root.G?.inqSelKey===key&&!!document.getElementById('inq-inbox-dialog')&&Object.keys(form).every(k=>s[k]===form[k]);
+   const identity=()=>{if(protectedRoute){j.assertOwner(owner);if(session!==undefined)j.assertSession(session);}};
+   const job=Promise.resolve().then(()=>form.step==='visit'?root.InquiryCommand.run('visit',q,{date:form.visitDate,time:form.visitTime,done:form.visitMode==='완료'}):root.InquiryCommand.run('quote_send',q,{amount:form.quoteAmt?Number(form.quoteAmt)*10000:0,date:form.quoteDate,sent:form.quoteMode==='완료'}));
+   Promise.resolve(job).then(r=>{identity();if(protectedRoute&&r?.ok!==true)throw Error('저장 확인 응답이 올바르지 않습니다.');if(protectedRoute&&!current())return;Object.assign(s,{step:'',visitDate:'',visitTime:'',visitMode:'예정',quoteAmt:'',quoteDate:'',quoteMode:'예정'});
      if(document.getElementById('inq-inbox-dialog'))reskinFrom();else W().open(key,'none');
      toast(r.promoted?site+' → 파이프라인 등록':site+' · '+r.label+' 저장'+(r.msg&&!r.promoted?' · '+r.msg:''));try{root.paint();}catch(e){}})
-    .catch(e=>{const m=String(e&&e.message||e);const el=document.querySelector('#inq-inbox-dialog [data-idv-err]');if(el)el.textContent=m;fail('저장하지 못했습니다: '+m);})
-    .finally(()=>{s.busy=false;const b=document.querySelector('#inq-inbox-dialog [data-idv="handoff"]');if(b){b.disabled=!stepOk(s);b.textContent=stepBtn(s);}});
+    .catch(e=>{if(protectedRoute){try{identity();}catch(ignore){return;}if(!current())return;}const m=String(e&&e.message||e);const el=document.querySelector('#inq-inbox-dialog [data-idv-err]');if(el)el.textContent=m;fail('저장하지 못했습니다: '+m);})
+    .finally(()=>{s.busy=false;if(curKey!==key||root.G?.inqSelKey!==key)return;const b=document.querySelector('#inq-inbox-dialog [data-idv="handoff"]');if(b){b.disabled=!stepOk(s);b.textContent=stepBtn(s);}});
    return;
   }
+  if(root.CRM_SCHEDULE_V1===true||root.PCInquirySave?.route(q)){fail('기존 업무를 보존하는 방문·견적 저장 연결을 먼저 확인해 주세요.');return;}
   try{
    let status,text,due;
    if(s.step==='visit'){status='현장방문예정';text='현장방문'+(s.visitTime?' '+s.visitTime:'');due=s.visitDate;}

@@ -3,7 +3,7 @@ const source=fs.readFileSync('relationship-management.js','utf8'),transport=fs.r
 test('PC and mobile expose the same authenticated review operation',()=>{
  const pc=fs.readFileSync('pc-manager-transport.js','utf8');
  const body=s=>s.slice(s.indexOf(' function acknowledgeFailure('),s.indexOf(' function inquiryDirectPayload('));
- assert.equal(body(pc),body(transport));
+ assert.equal(body(pc).replace(/\r\n/g,'\n'),body(transport).replace(/\r\n/g,'\n'),'review implementations must match apart from platform line endings');
  for(const s of [pc,transport])assert.match(s,/queue:\{enqueue,flush,list,validateAck,acknowledgeFailure\}/);
 });
 test('relationship activity dates cross UTC midnight in Korea without changing date-only schedules',()=>{

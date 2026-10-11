@@ -11,7 +11,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
 const one=s=>String(s||'').replace(/\s+/g,' ').trim();
 (async()=>{
  await new Promise(r=>srv.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({headless:true}),errs=[];
+ const browser=await chromium.launch(require('../review-preview/review-environment.cjs').launchOptions()),errs=[];
  try{
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
@@ -31,11 +31,19 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.dkOpen=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    window.__writes=[];window.pushWrite=(op,p)=>{__writes.push([op,p]);return 'req-'+__writes.length;};
-   window.__ops=[];window.queueDetailContactOperation=(op,payload,actionId)=>{const id='op-'+(__ops.length+1);__ops.push({id,op,payload,actionId});return id;};
-   Phase1.queue.flush=async()=>{};Phase1.queue.list=()=>__ops.map(o=>({request_id:o.id,object_id:o.payload.opportunity_id,operation:o.op,status:'done',payload:o.payload,ack:{ok:true,operation:o.op,activity_id:'srv-'+o.id,next_action_id:'srv-'+o.id}}));
+   window.__ops=[];window.__invalidAck=false;
+   window.queueDetailContactOperation=(op,payload,actionId)=>{
+    const id=crypto.randomUUID(),object_id=payload.opportunity_id,d=B.deals.find(x=>x.id===object_id),expected_version=d?.version||0;
+    const command={id,op,payload,actionId,request_id:id,object_id,operation:op,expected_version,auth_uid:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',user_id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'};
+    const ack={contract_version:1,ok:true,replayed:false,request_id:id,operation:op,object_id,actor_auth_uid:command.auth_uid,actor_user_id:command.user_id,previous_version:expected_version,version:expected_version+1,activity_id:crypto.randomUUID(),audit_event_id:crypto.randomUUID(),meaningful_contact:payload.meaningful_contact===true,occurred_at:payload.occurred_at||new Date().toISOString(),cancelled_action_ids:[],due_at:payload.due_at||'',assignee_name:payload.assignee||'',next_action_id:payload.intent==='postpone'?payload.action_id:crypto.randomUUID(),server_at:new Date().toISOString()};
+    if(payload.intent==='postpone')Object.assign(ack,{intent:'postpone',due_at:payload.due_at,previous_due_at:(d.nextActionObj||d.next_action).due,postpone_count:1,postpone_event_id:crypto.randomUUID(),audit_event_id:crypto.randomUUID()});
+    OperationalAdapter.validateAck(ack,command);__ops.push({...command,ack});return id;
+   };
+   Phase1.queue.flush=async()=>{};Phase1.queue.list=()=>__ops.map(o=>({...o,status:'done',ack:__invalidAck?{ok:true}:o.ack}));
    SB={rpc:async()=>({data:{ok:true,tasks:[],entries:[],sites:[]}})};TOKEN='test';OpsStore.aiOn=()=>false;
    drwDeal(JSON.stringify(B.deals[0]));
   });
+  await page.evaluate(require('../tests/pc-detail-schedule-fixture.cjs'));
   await page.waitForSelector('#detailView.ddv.dv3.dvt .sth-tidy');await page.waitForTimeout(500);
   const v=page.locator('#detailView.dv3.dvt');
   /* ① 머리: 한 줄 — 브랜드는 색 띠 + 글자(채운 칩 아님) · 단계 + 체류일 꼬리표 하나 · 기존 고객 알약 · 사유 문장은 머리에 없다 */
@@ -103,9 +111,16 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await v.locator('#ddvComposer textarea').fill('소장 통화 — 12월 입대의 뒤 결정');await v.locator('.dvt-res [data-dv3="rres"][data-v="연결됨"]').click();await page.waitForTimeout(150);
   assert.match(one(await v.locator('.dvt-res').innerText()),/상담 내용 위 입력칸에 이번에 새로 확인한 것을 한 번만 적습니다 다음 업무 지금 잡힌 다음 업무 없음 새 업무 다음 일정 없음 할 일 예정일 내일 3일 후 7일 후 날짜 지정 담당 황윤선( \S+)* 일정 고객 합의 내부 계획 저장 전 저장하면 응대 기록 1건 저장 \(실제 연결\) · 다시 연락 일정 1건 등록 · \d+\.\d+ \(.\)/);/* day_zones §4-1: 목적 · 예정일 · 담당 · 일정 구분 */
   assert.equal(await v.locator('#ddvComposer textarea').inputValue(),'소장 통화 — 12월 입대의 뒤 결정','고르는 동안 적은 글이 지워지지 않는다');
-  await v.locator('#ddvComposer .idv-save').click();await page.waitForFunction(()=>__ops.length>=2);await page.waitForTimeout(400);
-  assert.deepEqual(await page.evaluate(()=>[__ops.map(o=>o.op),__ops[0].payload.note,__ops[1].payload.text,document.querySelectorAll('#detailView .dvt-calling,#detailView .dvt-res').length,document.querySelector('#detailView #nowCard .nc-call').textContent,document.querySelector('#detailView #nowCard .nc-stage').textContent]),
-   [['activity','next_action'],'통화 완료 · 연결됨 — 소장 통화 — 12월 입대의 뒤 결정','다시 연락',0,'전화하고 결과 남기기','다음 할 일'],'기록 + 다음 할 일이 같이 저장되고, 오른쪽이 다음 할 일로 바뀐다');
+  const beforeActivity=await page.evaluate(()=>JSON.stringify([CUR_DETAIL.item.activities,CUR_DETAIL.item.nextActionObj]));
+  await page.evaluate(()=>{__invalidAck=true;});await v.locator('#ddvComposer .idv-save').click();await page.waitForTimeout(250);
+  assert.equal(await page.evaluate(()=>__ops.length),1,'활동은 한 번 요청한다');assert.equal(await page.evaluate(()=>__scheduleWrites.length),0,'활동 ACK 확인 전에는 다음 업무를 저장하지 않는다');
+  assert.equal(await page.evaluate(()=>JSON.stringify([CUR_DETAIL.item.activities,CUR_DETAIL.item.nextActionObj])),beforeActivity,'불완전 ACK는 연락·일정에 반영하지 않는다');
+  assert.equal(await v.locator('#ddvComposer textarea').inputValue(),'소장 통화 — 12월 입대의 뒤 결정');
+  const retryId=await page.evaluate(()=>__ops[0].request_id);await page.evaluate(()=>{__invalidAck=false;});
+  await v.locator('#ddvComposer .idv-save').click();await page.waitForFunction(()=>__scheduleWrites.length===1);await page.waitForTimeout(400);
+  assert.equal(await page.evaluate(()=>__ops[0].request_id),retryId,'같은 요청을 확인하고 활동을 중복 등록하지 않는다');
+  assert.deepEqual(await page.evaluate(()=>[__ops.map(o=>o.op),__ops[0].payload.note,__scheduleWrites[0].title,document.querySelectorAll('#detailView .dvt-calling,#detailView .dvt-res').length,document.querySelector('#detailView #nowCard .nc-call').textContent,document.querySelector('#detailView #nowCard .nc-stage').textContent]),
+   [['activity'],'통화 완료 · 연결됨 — 소장 통화 — 12월 입대의 뒤 결정','다시 연락',0,'전화하고 결과 남기기','다음 할 일'],'기록 + 다음 할 일이 같이 저장되고, 오른쪽이 다음 할 일로 바뀐다');
   assert.match(await v.locator('#nowCard .dv3-title b').innerText(),/^다시 연락 · \d{4}\.\d{1,2}\.\d{1,2}\(.\)$/);
   /* 일정 변경(기한 늦추기): 사유 필수 → 같은 업무를 새 날짜로(지금 일정을 완료로 세지 않음) + '[기한 변경] 원래 | 새 | 사유' 기록 */
   await v.locator('#nowCard .nc-call').click();await page.waitForTimeout(250);
@@ -114,9 +129,33 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await v.locator('.dvt-res [data-dv3="rmode"]',{hasText:'일정 변경'}).click();await page.waitForTimeout(100);
   await v.locator('.dvt-res [data-dv3="rday"]',{hasText:'7일 후'}).click();await page.waitForTimeout(120);
   assert.equal(await v.locator('.dvt-res [data-dv3rec="reason"]').count(),1,'기한을 늦추면 사유 칸');
-  await v.locator('#ddvComposer .idv-save').click();await page.waitForTimeout(200);assert.match(one(await v.locator('.dvt-res .dv3-recerr').innerText()),/미루는 사유를 입력해 주세요/);assert.equal(await page.evaluate(()=>__ops.length),2,'사유 없이는 저장하지 않는다');
-  await v.locator('.dvt-res [data-dv3rec="reason"]').fill('고객 요청 · 입대의 후 연락');await v.locator('#ddvComposer .idv-save').click();await page.waitForFunction(()=>__ops.length>=5);await page.waitForTimeout(300);
-  assert.deepEqual(await page.evaluate(()=>__ops.slice(2).map(o=>[o.op,o.payload.type,o.payload.text||o.payload.note.replace(/\d{4}-\d{2}-\d{2}/g,'D'),o.actionId||''])),[['activity','전화','통화 완료 · 연결됨 — 입대의 일정이 밀렸다고 함',''],['next_action','전화','다시 연락',''],['activity','메모','[기한 변경] 원래 D | 새 D | 사유 고객 요청 · 입대의 후 연락','']],'같은 업무를 새 날짜로(완료 없음) + 기한 변경 기록');
+  await v.locator('#ddvComposer .idv-save').click();await page.waitForTimeout(200);assert.match(one(await v.locator('.dvt-res .dv3-recerr').innerText()),/날짜 변경 사유를 입력해 주세요/);assert.equal(await page.evaluate(()=>__ops.length),1,'사유 없이는 활동을 저장하지 않는다');assert.equal(await page.evaluate(()=>__scheduleWrites.length),1,'사유 없이는 기존 일정을 바꾸지 않는다');
+  await v.locator('.dvt-res [data-dv3rec="reason"]').fill('고객 요청 · 입대의 후 연락');await page.evaluate(()=>{__scheduleLoss=true;});await v.locator('#ddvComposer .idv-save').click();await page.waitForFunction(()=>__scheduleWrites.length===2);await page.waitForTimeout(300);
+  assert.match(await v.locator('.dvt-res .dv3-recerr').innerText(),/합성 일정 응답 유실/);
+  const scheduleRetry=await page.evaluate(()=>({id:__scheduleWrites[1].request_id,activity:__ops[1].request_id}));
+  assert.equal(await v.locator('#ddvComposer textarea').inputValue(),'입대의 일정이 밀렸다고 함');
+  await v.locator('#ddvComposer .idv-save').click();await page.waitForFunction(()=>document.querySelectorAll('#detailView .dvt-res').length===0);
+  assert.deepEqual(await page.evaluate(()=>({writes:__scheduleWrites.length,activities:__ops.length,id:__scheduleWrites[1].request_id,activity:__ops[1].request_id})),{writes:2,activities:2,...scheduleRetry},'응답 유실 재시도는 동일 영수증으로 복구하고 일정·활동을 복제하지 않는다');
+  assert.deepEqual(await page.evaluate(()=>__ops.slice(1).map(o=>[o.op,o.payload.type,o.payload.text||(o.payload.note||'').replace(/\d{4}-\d{2}-\d{2}/g,'D'),o.actionId||''])),[['activity','전화','통화 완료 · 연결됨 — 입대의 일정이 밀렸다고 함 [기한 변경 요청] 원래 D | 새 D | 사유 고객 요청 · 입대의 후 연락','']],'원래 기한·변경일·사유는 응대에 한 번 기록하고 기존 일정은 완료하지 않는다');
+  assert.deepEqual(await page.evaluate(()=>{const o=__scheduleWrites[1],s=__scheduleServer(B.deals[0].id),first=s.receipts.get(__scheduleWrites[0].request_id),ack=s.receipts.get(o.request_id);return [o.operation,o.action_id===first.action_id,ack.action_id===o.action_id,o.due_on,__ops.some(x=>x.op==='next_action_complete'),s.items.length,s.items[0].status];}),['reschedule',true,true,await page.evaluate(()=>DAY(7)),false,1,'open'],'변경은 같은 업무 ID로 저장하고 완료 요청은 없다');
+  /* 기존 일정 유지도 응답이 불확실하면 같은 활동 요청을 복원한다. 닫기/재진입은 새 저장이 아니다. */
+  await v.locator('#nowCard .nc-call').click();await page.waitForTimeout(150);
+  await v.locator('#ddvComposer textarea').fill('기존 약속 유지 · 원문 보관');
+  await v.locator('.dvt-res [data-dv3="rres"][data-v="연결됨"]').click();
+  assert.equal(await v.locator('.dvt-res [data-dv3="rmode"][aria-pressed="true"]').innerText(),'기존 일정 유지');
+  await page.evaluate(()=>{__invalidAck=true;});await v.locator('#ddvComposer .idv-save').click();
+  await page.waitForFunction(()=>__ops.length===3);await page.waitForTimeout(150);
+  const keepId=await page.evaluate(()=>__ops[2].request_id);
+  assert.equal(await page.evaluate(()=>MobileSaveJournal.read('pc_contact',B.deals[0].id).progress.act),keepId,'유지 모드도 불확실 활동 ID를 보관한다');
+  await page.evaluate(()=>{closeDetail();drwDeal(JSON.stringify(B.deals[0]));});await page.waitForSelector('#detailView.dvt #nowCard .nc-call');
+  await v.locator('#nowCard .nc-call').click();await page.waitForTimeout(150);
+  assert.equal(await v.locator('#ddvComposer textarea').inputValue(),'기존 약속 유지 · 원문 보관','재진입은 원문을 복원한다');
+  await v.locator('#ddvComposer textarea').fill('불확실 요청과 다른 내용');await v.locator('#ddvComposer .idv-save').click();
+  await page.waitForTimeout(150);assert.equal(await page.evaluate(()=>__ops.length),3,'불확실 요청의 입력을 바꿔 새 ID로 저장하지 않는다');
+  assert.match(await v.locator('.dvt-res .dv3-recerr').innerText(),/입력값이 바뀌었습니다/);
+  await v.locator('#ddvComposer textarea').fill('기존 약속 유지 · 원문 보관');await page.evaluate(()=>{__invalidAck=false;});
+  await v.locator('#ddvComposer .idv-save').click();await page.waitForFunction(()=>document.querySelectorAll('#detailView .dvt-res').length===0);
+  assert.deepEqual(await page.evaluate(()=>({activities:__ops.length,id:__ops[2].request_id,schedules:__scheduleWrites.length,journal:MobileSaveJournal.read('pc_contact',B.deals[0].id)})),{activities:3,id:keepId,schedules:2,journal:null},'동일 요청 ACK 후에만 입력을 닫고 유지 중인 일정은 바꾸지 않는다');
   /* 목록의 [미팅 잡기] 류(openFrom)도 같은 입력칸으로 */
   assert.deepEqual(await page.evaluate(()=>[DealDetailV3.openFrom('next'),document.querySelectorAll('#detailView #ddvComposer.dvt-calling').length,document.querySelectorAll('#detailAction,.dp-next,#detailView .dv3-form').length]),[true,1,0]);
   await v.locator('#nowCard .nc-call').click();await page.waitForTimeout(150);

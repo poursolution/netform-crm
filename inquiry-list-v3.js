@@ -118,8 +118,29 @@
   ['meet','대표회의 · 기한 D-3','정확한 견적이 늦으면 개략 금액 먼저',m=>!!m.meet&&m.meet.dd<=3&&m.meet.dd>=0&&m.step<4,'#d93a3a'],
   ['info','필수정보 미입력','첫 상담 후 필수 9개 확인',m=>m.follow&&m.miss.length>0,'#d97706']];
  function opener(m){const me=root.ME&&root.ME.name||'';const topic=String(m.sum||m.work||'문의').replace(/\s+/g,' ').slice(0,26);return '안녕하세요, 넷폼 '+me+'입니다. 문의 주신 '+topic+' 건으로 연락드렸습니다. 지금 통화 괜찮으실까요?'+(m.meet&&m.meet.dd<=3&&m.meet.dd>=0?' (대표회의 전에 보실 수 있게 개략 금액부터 보내드리겠습니다)':'');}
- function picks(m){const S=st(),p=S.pick[m.key]||{},f=F();const hasMeet=!!(m.meet&&m.meet.dd>=0),r=p.r||(f?'연결됨':hasMeet?'대표회의 예정':'연락 완료');return {r,n:p.n||(f?(hasMeet&&f.kindOf(r)!=='attempt'?'대표회의 다음날':(f.NEXT[r]||[])[1]||'7일 후'):(hasMeet?'대표회의 다음날':'7일 후')),hasMeet};}
- function nextDate(m,n){if(n==='대표회의 다음날'&&m.meet){const d=new Date(m.meet.date);d.setDate(d.getDate()+1);return d;}return addDays({'내일':1,'3일 후':3,'7일 후':7}[n]||7);}
+ function restorePick(m){
+  const S=st(),j=root.MobileSaveJournal;let p=S.pick[m.key]||{},owner,session;
+  try{
+   owner=j?.owner?.();session=j?.session?.();
+   if(p._pcRestored&&(p._pcOwner!==owner||p._pcSession!==session)){delete S.pick[m.key];p={};}
+   if(!owner||!root.PCInquirySave?.pending)return p;
+   const d=root.PCInquirySave.pending(String(m.q?.id||m.key));
+   if(owner!==j.owner()||session!==j.session?.())throw Error('로그인 상태가 바뀌었습니다. 문의를 다시 열어 주세요.');
+   if(!d&&p._pcRestored)throw Error('보관된 저장 상태가 바뀌었습니다. 문의를 다시 조회해 주세요.');
+   delete p._restoreError;
+   if(!d||d.surface!=='list-v3')return p;
+   const input=d.input,form=d.form,contact=d.progress?.contact,id=contact?.request_id;
+   if(!id||String(contact.inquiry_id)!==String(m.q?.id||m.key)||!form||typeof form.res!=='string'||!input||!/^\d{4}-\d{2}-\d{2}$/.test(input.due||'')||form.due!==input.due||form.next!==input.next)throw Error('보관된 입력을 확인할 수 없습니다. 원문을 유지한 채 다시 확인해 주세요.');
+   if(dayStr(new Date(input.due+'T12:00:00'))!==input.due)throw Error('보관된 날짜를 확인할 수 없습니다. 원문을 유지한 채 다시 확인해 주세요.');
+   if(p._pcRestored===id)return p;
+   const delta=Math.round((Date.parse(input.due+'T12:00:00')-Date.parse(dayStr(new Date(contact.occurred_at))+'T12:00:00'))/DAY);
+   const selected=form._listPick&&typeof form._listPick==='object'?form._listPick:{};
+   p={r:input.result,n:typeof selected.n==='string'?selected.n:({1:'내일',3:'3일 후',7:'7일 후'}[delta]||''),_pcDue:input.due,_pcRestored:id,_pcOwner:owner,_pcSession:session,_pendingForm:JSON.parse(JSON.stringify(form))};
+   S.pick[m.key]=p;return p;
+  }catch(e){p._restoreError=String(e.message||e);S.pick[m.key]=p;return p;}
+ }
+ function picks(m){const p=restorePick(m),f=F();const hasMeet=!!(m.meet&&m.meet.dd>=0),r=p.r||(f?'연결됨':hasMeet?'대표회의 예정':'연락 완료');return {...p,r,n:p._pcRestored?p.n:p.n||(f?(hasMeet&&f.kindOf(r)!=='attempt'?'대표회의 다음날':(f.NEXT[r]||[])[1]||'7일 후'):(hasMeet?'대표회의 다음날':'7일 후')),hasMeet};}
+ function nextDate(m,n){const p=st().pick[m.key];if(p?._pcDue)return new Date(p._pcDue+'T12:00:00');if(n==='대표회의 다음날'&&m.meet){const d=new Date(m.meet.date);d.setDate(d.getDate()+1);return d;}return addDays({'내일':1,'3일 후':3,'7일 후':7}[n]||7);}
  const kday=d=>d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate()+'('+'일월화수목금토'[d.getDay()]+')';
  /* 추천 담당(규칙: 공종 경험 · 업무량 · 지역) — 관리자의 배정 칸이 만든 추천을 그대로 읽는다 */
  function recRep(q){try{if(!(root.inqCtlIsAdmin&&root.inqCtlIsAdmin())||typeof root.inqCtlAssignInline!=='function')return '';const box=document.createElement('div');box.innerHTML=root.inqCtlAssignInline(q);const b=box.querySelector('.inq-ctl-rep.recommended');if(!b)return '';const name=(b.querySelector('strong')?.childNodes[0]?.textContent||b.dataset.r||'').trim(),why=(b.querySelector('small')?.textContent||'').trim();return name?name+(why?' · '+why:''):'';}catch(e){return '';}}
@@ -194,6 +215,11 @@
  const FIRST_DONE='전화응대 완료';
  const isFirst=q=>!root.inqCtlFirstResponseAt(q)&&String(q&&q.status||'')!==FIRST_DONE;
  function record(q,o){
+  /* Shared ACK-aware save owns first response and schedule preservation. Never fall back after activation. */
+  if(root.CRM_SCHEDULE_V1===true||root.PCInquirySave?.route(q)){
+   if(!root.PCInquirySave?.save)throw Error('서버 저장 연결을 확인할 수 없습니다. 입력을 유지한 채 다시 시도해 주세요.');
+   return root.PCInquirySave.save(q,{...o,line:String(o.res||'').trim()},o,o.surface||'list-v3');
+  }
   /* 저장은 명령 하나(InquiryCommand · contact_log): 시도면 최초응대 · 단계는 그대로, 첫 접촉이면 단계 진행, 그 뒤는 다음 할 일만 */
   if(F()&&root.InquiryCommand)return root.InquiryCommand.run('contact_log',q,{did:o.did,line:String(o.res||'').trim(),next:o.next,due:o.due,contact_result:o.contact_result,customer_reaction:o.customer_reaction})===true;
   const did=String(o.did||'고객 응대 기록').trim(),res=String(o.res||'').trim(),next=String(o.next||'').trim(),due=String(o.due||'');
@@ -206,12 +232,15 @@
   if(ok){try{const p=root.itemPatch(q,'inq'),at=new Date().toISOString();p.activities=p.activities||[];p.activities.push({id:'fu-'+Date.now(),type:'전화',note:did,result:res,at,actor:root.repN(q.assignee)});q.lastActivity=p.lastActivity=at;if(typeof root.touchCustomer==='function')root.touchCustomer(p,'전화',at);if(typeof root.saveLocal==='function')root.saveLocal();}catch(e){}}
   return ok;
  }
- function saveRec(m,errEl){
-  const q=root.inqCtlFind(m.key,false);if(!q)return;const p=picks(m);if(!p.r||!p.n){if(errEl)errEl.textContent='결과와 다음 행동일을 모두 골라 주세요.';return;}
-  const f=F(),nd=nextDate(m,p.n),text=f?'[전화 · '+p.r+']':'통화 결과: '+p.r+' → 다음 연락 '+kday(nd),nextText=f?((f.NEXT[p.r]||[])[0]||'다시 연락'):'다음 연락 · '+p.r;
+ async function saveRec(m,errEl){
+  const q=root.inqCtlFind(m.key,false);if(!q)return;const p=picks(m);if(p._restoreError){if(errEl)errEl.textContent=p._restoreError;return;}if(!p.r||(!p.n&&!p._pcRestored)){if(errEl)errEl.textContent='결과와 다음 행동일을 모두 골라 주세요.';return;}
+  const f=F(),nd=nextDate(m,p.n),text=f?'[전화 · '+p.r+']':'통화 결과: '+p.r+' → 다음 연락 '+kday(nd),nextText=p._pendingForm?.next||(f?((f.NEXT[p.r]||[])[0]||'다시 연락'):'다음 연락 · '+p.r);
+  const S=st(),selected=S.rec,picked=JSON.stringify(S.pick[m.key]||{}),owner=root.MobileSaveJournal?.owner?.(),session=root.MobileSaveJournal?.session?.(),protectedSave=root.CRM_SCHEDULE_V1===true||root.PCInquirySave?.route(q);
   const before=JSON.parse(JSON.stringify(q)),patch=root.itemPatch(q,'inq'),beforePatch=JSON.parse(JSON.stringify(patch));
-  let ok=false;try{ok=record(q,{res:text,next:nextText,due:dayStr(nd)})===true;}catch(e){Object.keys(q).forEach(k=>delete q[k]);Object.assign(q,before);Object.keys(patch).forEach(k=>delete patch[k]);Object.assign(patch,beforePatch);if(errEl)errEl.textContent=e.message||'저장 연결을 확인해 주세요.';}
-  if(ok){const S=st();S.rec=null;delete S.pick[m.key];if(typeof root.toast==='function')root.toast(f?p.r+' → '+nextText+' '+kday(nd):text);root.paint();}
+  const form=p._pendingForm||{res:text,next:nextText,due:dayStr(nd),_listPick:{r:p.r,n:p.n}};
+  let ok=false;try{ok=(await record(q,form))===true;}catch(e){if(!protectedSave){Object.keys(q).forEach(k=>delete q[k]);Object.assign(q,before);Object.keys(patch).forEach(k=>delete patch[k]);Object.assign(patch,beforePatch);}if(errEl)errEl.textContent=e.message||'저장 연결을 확인해 주세요.';}
+  if(protectedSave&&(owner!==root.MobileSaveJournal?.owner?.()||session!==root.MobileSaveJournal?.session?.()||S!==st()||selected!==S.rec||picked!==JSON.stringify(S.pick[m.key]||{})))return;
+  if(ok){S.rec=null;delete S.pick[m.key];if(typeof root.toast==='function')root.toast(f?p.r+' → '+nextText+' '+kday(nd):text);root.paint();}
   else if(errEl&&!errEl.textContent)errEl.textContent=(document.getElementById('iq-msg')||{}).textContent||'저장하지 못했습니다.';
  }
  /* 기존 현장 판단 저장 — 서버가 확인한 뒤에만 화면에 반영한다. decision: same(영업건 id) | new | clear */
@@ -239,7 +268,7 @@
   if(a==='page'){S.page=Number(b.dataset.page)||1;S.open=null;S.rec=null;return root.paint();}
   if(a==='toggle'){if(e.target.closest('button,a,input,select'))return;S.open=S.open===key?null:key;if(S.open!==key)S.rec=null;return render();}
   const m=find(key);if(!m)return;e.stopPropagation();
-  if(a==='res'||a==='next'){const p=S.pick[key]||(S.pick[key]={});/* 결과를 바꾸면 다음 행동일 제안도 그 결과에 맞게 따라간다(직접 고른 날짜는 그대로) */if(a==='res')p.r=v;else p.n=v;return render();}
+  if(a==='res'||a==='next'){const restored=picks(m);if(restored._pcRestored||restored._restoreError){const err=b.closest('.il-rec')?.querySelector('[data-il-err]');if(err)err.textContent=restored._restoreError||'보관된 입력으로 저장 결과를 먼저 확인해 주세요.';return;}const p=S.pick[key]||(S.pick[key]={});/* 결과를 바꾸면 다음 행동일 제안도 그 결과에 맞게 따라간다(직접 고른 날짜는 그대로) */if(a==='res')p.r=v;else p.n=v;return render();}
   if(a==='save')return saveRec(m,b.closest('.il-rec')?.querySelector('[data-il-err]'));
   if(a==='ex-same')return saveLink(m,m.link.same===v?'clear':'same',m.link.same===v?null:v);
   if(a==='ex-new')return saveLink(m,m.link.isNew?'clear':'new',null);

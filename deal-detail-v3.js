@@ -58,6 +58,14 @@
  const isClosed=d=>!!d&&(!!d.outcome||d.lifecycle_status==='closed');
  const canCI=()=>!root.G.closedEditOff&&!!(root.SB&&typeof root.SB.rpc==='function')&&!(root.CRMRelease&&root.CRMRelease.has(CI_RPC)===false);
  const ST={};const st=d=>ST[d.id]||(ST[d.id]={edit:'',draft:'',sedit:'',sdraft:'',busy:false});
+ root.addEventListener('phase1:identity-cleared',()=>{for(const id of Object.keys(ST))delete ST[id];});
+ function contactDraft(d){
+  const empty={ch:'전화',res:'',memo:'',prog:{}};
+  if(!root.MobileSaveJournal||!root.Phase1?.profile)return empty;
+  try{const j=root.MobileSaveJournal.read('pc_contact',d.id);return j?{...j.input,prog:j.progress,busy:false,...(j.input.recoveryOnly?{recoveryError:'다른 입력 경로의 저장 확인이 남아 있습니다. 원래 입력 화면에서 같은 내용으로 재시도해 주세요.'}:{}),err:'저장 확인이 남아 있습니다. 같은 입력으로 재시도해 주세요.'}:empty;}
+  catch(e){return {...empty,recoveryError:String(e.message||e),err:String(e.message||e)};}
+ }
+
  const toast=(m,k)=>{if(typeof root.toast==='function')root.toast(m,k);};
  async function saveSF(d,fields,done,amount){
   const S=st(d),code=root.dealStage(d),closed=isClosed(d),rpc=closed?CI_RPC:SF_RPC;if(S.busy)return;S.busy=true;
@@ -158,9 +166,9 @@
  }
  /* ── 상담 결과 · 한 번만 쓰기 (2026-10-10 design_handoff_mobile_all 2번 · contact-entry.js 와 모바일 결과 창이 같은 입력 · 같은 저장 계획) ──
     연락 결과(연결됨 · 회신 받음 · 부재 · 번호 오류 · 배드핏) · 상담 내용 · 다음 업무(기존 일정 유지 · 변경 · 새 업무 · 없음) + 저장 전 미리보기.
-    저장은 기존 길(writeContact) 그대로 — 유지 · 변경은 지금 일정을 완료로 세지 않고, 새 업무 · 없음만 지금 일정을 완료로 닫는다. 끄기: G.contactEntryOff */
+    저장은 기존 길(writeContact) 그대로 — 응대 입력만으로 기존 일정을 완료하지 않는다. 공통 일정 엔진이 켜지면 추가·변경도 기존 업무를 보존한다. 끄기: G.contactEntryOff */
  const CE=()=>root.ContactEntry&&root.ContactEntry.on()?root.ContactEntry:null;
- const exOf=d=>{try{const a=root.actionObj?root.actionObj(d,patchOf(d)):null;if(!a||!String(a.text||'').trim())return null;return {id:a.id||'',text:String(a.text).replace(/^\s*고객\s*약속\s*:?\s*/,'').trim()||String(a.text),due:String(a.due_at||a.due||'').slice(0,10),type:a.type||'전화',promise:/약속/.test(String(a.type||''))||/^\s*고객\s*약속/.test(String(a.text||''))};}catch(e){return null;}};
+ const exOf=d=>{try{const a=root.actionObj?root.actionObj(d,patchOf(d)):null;if(!a||!String(a.text||'').trim())return null;return {id:a.id||'',text:String(a.text).replace(/^\s*고객\s*약속\s*:?\s*/,'').trim()||String(a.text),due:String(a.due||a.due_at||'').slice(0,10),type:a.type||'전화',promise:/약속/.test(String(a.type||''))||/^\s*고객\s*약속/.test(String(a.text||''))};}catch(e){return null;}};
  /* 입력(R) + 기본 제안 → 저장 계획에 넣을 값. 같은 영업건에 열린 연락 요청이 있으면 날짜를 따로 고르지 않은 새 전화 업무는 그 요청 기한을 따른다 */
  function ceEff(d,R){
   const C=CE(),ex=exOf(d),T=KST(0),dflt=R.res?C.defaults(R.res,ex,T):{mode:'new',purpose:'',date:''};
@@ -171,7 +179,7 @@
  }
  function ceMode(R,v){const C=CE();R.mode=v;R.day=undefined;R.date='';R.pick=false;if(v==='new'&&C){const s=C.SUGGEST[R.res]||['다시 연락',3];if(R.purpose==null||R.purpose==='')R.purpose=s[0]||'';R.day=s[1]||3;}}
  function ceParts(R){
-  const C=CE(),d=root.CUR_DETAIL&&root.CUR_DETAIL.item||{},ex=exOf(d),E=ceEff(d,R),T=KST(0),pl=R.res?C.plan(E,{today:T,existing:ex}):null,dis=R.busy?' disabled':'';
+  const C=CE(),d=root.CUR_DETAIL&&root.CUR_DETAIL.item||{},ex=exOf(d),E=ceEff(d,R),T=KST(0),pl=R.res?C.plan(E,{today:T,existing:ex,scheduleV1:root.ScheduleFlow?.enabled()===true}):null,dis=R.busy?' disabled':'';
   const pill=(act,v,on,label)=>'<button type="button" data-dv3="'+act+'" data-v="'+attr(v)+'" aria-pressed="'+!!on+'"'+dis+'>'+h(label||v)+'</button>';
   const ch=RCH.map(c=>pill('rch',c,R.ch===c)).join(''),res=C.VALUES.map(v=>pill('rres',v,R.res===v)).join('');
   const dates=()=>'<div class="dv3-pills">'+[['내일',1],['3일 후',3],['7일 후',7]].map(([l,n])=>pill('rday',n,!R.date&&!R.pick&&!(E.link&&E.mode==='new')&&E.date===KST(n),l)).join('')+pill('rdate','',!!R.date||!!R.pick,'날짜 지정')+(R.date||R.pick?'<input type="date" data-dv3rec="date" value="'+attr(R.date||'')+'" min="'+attr(T)+'" aria-label="예정일">':'')+'</div>';
@@ -185,7 +193,7 @@
      +'<span>담당</span><select data-dv3rec="who" aria-label="다음 업무 담당"'+dis+'>'+[who].concat(reps.filter(n=>n!==who)).filter(Boolean).map(n=>'<option value="'+attr(n)+'"'+(n===who?' selected':'')+'>'+h(n)+'</option>').join('')+'</select>'
      +'<span>일정</span><div class="dv3-pills">'+PLAN.map(([v,l])=>pill('rplan',v,E.plan===v,l)).join('')+'</div></div>'
      +(E.link?'<small class="dv3-reqlink">같은 영업건에 열린 연락 요청'+(E.link.by?' · 요청자 '+h(E.link.by):'')+' · 기한 '+h(dd(E.link.due))+' — 업무를 따로 만들지 않고 이 요청 기한에 맞춤</small>':'');
-   }else if(E.mode==='change'){const later=!!(ex&&ex.due&&E.date&&E.date>ex.due);nx+='<div class="dv3-nxgrid"><span>바꿀 날짜</span>'+dates()+'</div>'+(later?'<input class="dv3-memo" data-dv3rec="reason" value="'+attr(E.reason)+'" maxlength="80" placeholder="미루는 사유 (필수) — 원래 기한 · 새 기한 · 사유가 기록됩니다" aria-label="미루는 사유"'+dis+'>':'')+'<small class="dv3-ce-sub">기존 일정의 날짜만 바뀝니다 — 할 일 이름은 그대로, 완료로 세지 않습니다'+(later?' · 미뤄도 지연 기록은 그대로 남습니다':'')+'</small>';}
+   }else if(E.mode==='change'){const later=!!(ex&&ex.due&&E.date&&E.date>ex.due);nx+='<div class="dv3-nxgrid"><span>바꿀 날짜</span>'+dates()+'</div>'+((later||root.ScheduleFlow?.enabled())?'<input class="dv3-memo" data-dv3rec="reason" value="'+attr(E.reason)+'" maxlength="80" placeholder="날짜 변경 사유 (필수) — 원래 기한 · 새 기한 · 사유가 기록됩니다" aria-label="미루는 사유"'+dis+'>':'')+'<small class="dv3-ce-sub">기존 일정의 날짜만 바뀝니다 — 할 일 이름은 그대로, 완료로 세지 않습니다'+(later?' · 미뤄도 지연 기록은 그대로 남습니다':'')+'</small>';}
    else if(E.mode==='keep')nx+='<small class="dv3-ce-sub">기존 일정 그대로 — 이 기록은 일정을 완료로 세거나 바꾸지 않습니다</small>';
    else nx+='<div class="dv3-pills dv3-whyno">'+WHYNO.map(w=>pill('rwhy',w,E.reason===w)).join('')+'</div><input class="dv3-memo" data-dv3rec="reason" value="'+attr(E.reason)+'" maxlength="80" placeholder="'+(C.isBadfit(R.res)?'배드핏 사유 (필수)':'다음 일정이 없는 이유 (필수)')+'" aria-label="사유"'+dis+'>';
   }
@@ -211,21 +219,24 @@
  }
  async function saveRecCE(d){
   const S=st(d),R=S.rec;if(!R||R.busy)return;
-  const C=CE(),E=ceEff(d,R),ex=exOf(d),pl=C.plan(E,{today:KST(0),existing:ex});
+  if(R.recoveryError){R.err=R.recoveryError;apply();return;}
+  const C=CE(),E=ceEff(d,R),signature=JSON.stringify(E);
+  if(R.prog?.signature&&R.prog.signature!==signature){R.err='저장 확인 중 입력값이 바뀌었습니다. 원래 입력으로 재시도해 주세요.';apply();return;}
+  const ex=R.prog?.existing||exOf(d),pl=R.prog?.plan||C.plan(E,{today:KST(0),existing:ex,scheduleV1:root.ScheduleFlow?.enabled()===true});
   if(!R.ch){R.err='연락 수단을 골라 주세요.';apply();return;}
   if(!pl.ok){R.err=pl.error;apply();return;}
-  const relStage=['rapport','silent','waiting'].includes(String(root.dealStage(d))),relPath=!!(pl.next||pl.change)&&relStage;
+  const relStage=['rapport','silent','waiting'].includes(String(root.dealStage(d))),relPath=!!pl.next&&!pl.scheduleV1&&relStage;
   if(!root.Phase1?.queue||(relPath?typeof root.pushWrite!=='function':typeof root.queueDetailContactOperation!=='function')){R.err='로그인 상태에서만 저장할 수 있습니다.';apply();return;}
   const who=root.repN(E.who||d.assignee)||root.repN(root.ME?.name)||'',at=R.at||(R.at=new Date().toISOString());
   const next=pl.next?{type:pl.next.type,text:pl.next.text,due_at:pl.next.due,assignee:who}:pl.change?{type:ex.type||'전화',text:(ex.promise?'고객 약속: ':'')+ex.text,due_at:pl.change.due,assignee:who}:null,due=next?next.due_at:'';
-  const P=R.prog||(R.prog={});R.busy=true;R.err='';apply();
+  const P=R.prog||(R.prog={});P.signature=signature;P.existing=ex;P.plan=pl;P.owner=P.owner||root.MobileSaveJournal?.owner();R.busy=true;R.err='';apply();
   try{
-   await writeContact(d,{ch:R.ch,note:pl.note,at,meaningful:pl.meaningful,next,due,P,keepCurrent:!pl.completeCurrent});
-   if(pl.postpone&&!P.postponed){P.postponed=true;try{await root.ExecWording.logPostpone(d,{postpone:true,from:pl.postpone.from,to:pl.postpone.to,reason:pl.postpone.reason,over:pl.postpone.over});}catch(e){}}
-   S.rec=null;S.calling=false;afterSave(d);
+   await writeContact(d,{ch:R.ch,note:pl.note,at,meaningful:pl.meaningful,next,due,P,change:pl.change,schedulePlan:pl,existing:ex,input:R,keepCurrent:!pl.completeCurrent});
+
+   if(S.rec===R){S.rec=null;S.calling=false;}afterSave(d);
    const rows=C.summary(pl,{existing:ex});
    toast('기록했습니다 · '+rows.map(r=>r[0]+' '+r[1]).join(' · ')+(pl.badfit?' — 위 [단계 바꾸기]에서 종결(배드핏)로':'')+leftTxt());
-  }catch(e){R.busy=false;R.err=String(e.message||e);apply();}
+  }catch(e){R.busy=false;if(pl.scheduleV1&&!P.act&&!P.schedule?.prepared){R.prog={};try{root.MobileSaveJournal.drop('pc_contact',d.id,P.owner);}catch(_){}}R.err=String(e.message||e);apply();}
  }
  function formHtml(R){if(CE())return ceForm(R);
   const res=R.res,nx=res?nxOf(res):null,day=R.day??(nx?nx[1]:null),rej=res==='거절',P=rej?null:nextPlan(root.CUR_DETAIL&&root.CUR_DETAIL.item||{},R),ok=R.ch&&res&&(rej?!!R.whyNo:!!(P&&P.due&&P.purpose)),lk=!!(P&&P.link&&P.link.applied);
@@ -246,21 +257,38 @@
    +'<span class="dv3-recnote">'+(rej?'저장하면 응대 기록만 남고 다음 업무는 없습니다 · 보류 · 이관 · 실주는 저장 뒤 그 처리로 이어집니다':'저장하면 응대 이력에 쌓이고, 예정일에 오늘 업무로 다시 뜹니다 · 응대 완료 ≠ 단계 전환(단계 조건은 따로)')+'</span>';
  }
  /* 같은 요청을 두 번 만들지 않는다: 다시 누르면 앞서 넣은 요청의 서버 확인만 다시 본다 */
- async function confirmOp(d,P,slot,operation,payload,actionId){
+ async function confirmOp(d,P,slot,operation,payload,actionId,persist){
   const Q=root.Phase1.queue;let id=P[slot];
-  if(id&&Q.list().find(q=>q.request_id===id)?.status==='rejected'){delete P[slot];id=null;}
-  if(!id){id=root.queueDetailContactOperation(operation,{opportunity_id:d.id,...payload},actionId);P[slot]=id;}
-  await Q.flush();const row=Q.list().find(q=>q.request_id===id);
+  if(!id){const enqueue=P.surface==='today'&&operation==='activity'?root.queueTodayContactOperation:root.queueDetailContactOperation;id=enqueue(operation,{opportunity_id:d.id,...payload},actionId);P[slot]=id;if(persist)persist();}
+  let failure;try{await Q.flush();}catch(e){failure=e;}const row=Q.list().find(q=>q.request_id===id);
   if(row?.status!=='done'||row.ack?.ok!==true)throw Error(row?.error||'서버 확인 대기 중 — 다시 누르면 같은 요청을 확인합니다.');
+  root.OperationalAdapter.validateAck(row.ack,row);
   return row;
  }
  function setNext(d,id,next,due){const obj={id,type:next.type,text:next.text,due,due_at:due,assignee:next.assignee,status:'open'},pd=patchOf(d);d.nextActionObj=pd.nextActionObj=obj;d.nextAction=pd.nextAction=due;d.nextActionText=pd.nextActionText=next.text;}
  const leftTxt=()=>{try{const Z=root.G&&root.G.page==='today'&&root.DayZones&&root.DayZones.last?root.DayZones.last():null;return Z?' · 지금 처리 후속 '+Z.now.length+'건 남음':'';}catch(e){return '';}};
  const afterSave=d=>{root.saveLocal?.();root.renderDetail?.();root.TodayWorkQueue?.render?.();if(root.G?.page==='relationship'&&typeof root.paintRelationshipManagement==='function')root.paintRelationshipManagement();};
  /* 연락 기록 + 다음 할 일을 기존 큐로 저장(지금 할 일 카드의 연락 결과 · 가운데 응대 기록이 같이 쓴다) */
+ function guardedContact(d,W){
+  if(W.schedulePlan||root.ScheduleFlow?.enabled()!==true)return W;
+  const J=root.MobileSaveJournal,P=W.P,owner=J.owner();J.assertOwner(owner);
+  const signature=JSON.stringify([W.ch,W.note,!!W.meaningful,W.next||null,W.due||'']),saved=J.read('pc_contact',d.id);
+  if(saved){if(saved.progress?.legacySignature!==signature)throw Error('저장 확인 중인 응대가 있습니다. 원래 입력 화면에서 같은 내용으로 재시도해 주세요.');Object.assign(P,saved.progress);}
+  if(P.legacySignature&&P.legacySignature!==signature)throw Error('저장 확인 중 입력값이 바뀌었습니다. 원래 입력으로 재시도해 주세요.');
+  P.owner=P.owner||owner;J.assertOwner(P.owner);P.legacySignature=signature;P.contactAt=P.contactAt||W.at;
+  const ex=Object.prototype.hasOwnProperty.call(P,'existing')?P.existing:exOf(d),next=ex?null:W.next;
+  P.existing=ex;P.plan=P.plan||{ok:true,scheduleV1:true,mode:ex?'keep':next?'new':'none',completeCurrent:false,next:next?{type:next.type,text:next.text,purpose:next.text,due:W.due,who:next.assignee||'',plan:'internal'}:null,change:null};
+  return {...W,at:P.contactAt,next:P.plan.next?{type:P.plan.next.type,text:P.plan.next.text,due_at:P.plan.next.due,assignee:P.plan.next.who}:null,due:P.plan.next?.due||'',schedulePlan:P.plan,existing:ex,keepCurrent:true,input:{ch:W.ch,res:'',memo:W.note,recoveryOnly:true}};
+ }
  async function writeContact(d,W){
-  const pd=patchOf(d),Q=root.Phase1.queue,P=W.P,next=W.next,due=W.due,rel=!!next&&['rapport','silent','waiting'].includes(String(root.dealStage(d)));
+  W=guardedContact(d,W);
+  const pd=patchOf(d),Q=root.Phase1.queue,P=W.P,next=W.next,due=W.due,rel=!!next&&!W.change&&!W.schedulePlan?.scheduleV1&&['rapport','silent','waiting'].includes(String(root.dealStage(d)));
   const addAct=id=>{d.activities=Array.isArray(d.activities)?d.activities:[];if(!d.activities.some(x=>x.id===id))d.activities.unshift({id,type:W.ch,note:W.note,at:W.at,occurred_at:W.at,actor:root.repN(root.ME?.name)});};
+  const guarded=W.schedulePlan?.scheduleV1===true,flow=!!next&&guarded,session=guarded?root.MobileSaveJournal.session():'';
+  const guard=()=>{root.MobileSaveJournal.assertOwner(P.owner);root.MobileSaveJournal.assertSession(session);};
+  const persist=()=>{guard();const {prog,busy,...input}=W.input;root.MobileSaveJournal.write('pc_contact',d.id,{at:Date.now(),input,progress:P},P.owner);};
+  if(guarded)persist();
+  if(flow){await root.ScheduleFlow.begin(d,W.schedulePlan,W.existing,P,persist);guard();}
   if(rel){
    const id=P.rel||(P.rel=root.pushWrite('relationship_contact',{opportunity_id:String(d.id),activity:{type:W.ch,note:W.note,result:'',occurred_at:W.at,meaningful_contact:!!W.meaningful},next_action:{type:next.type,text:next.text,due_at:due}}));
    await Q.flush();const row=Q.list().find(x=>x.request_id===id);
@@ -271,9 +299,12 @@
   /* 지금 할 일(서버에 저장된 것)이 있으면 먼저 완료로 닫는다 — 기한 내 처리 집계의 근거 */
   const cur=root.actionObj?root.actionObj(d,pd):null;
   if(cur&&UUID.test(String(cur.id||''))&&!P.completed&&!W.keepCurrent){await confirmOp(d,P,'done','next_action_complete',{},cur.id);P.completed=cur.id;d.completed_actions=(Array.isArray(d.completed_actions)?d.completed_actions:[]).concat([{id:cur.id,type:cur.type,text:cur.text,due_at:cur.due_at||cur.due,status:'completed',completed_at:new Date().toISOString()}]);}
-  const rec=await confirmOp(d,P,'act','activity',{type:W.ch,note:W.note,result:'',occurred_at:W.at});addAct(rec.ack.activity_id);
-  if(next){const sch=await confirmOp(d,P,'next','next_action',next);setNext(d,sch.ack.next_action_id,next,due);}
+  const rec=await confirmOp(d,P,'act','activity',{type:W.ch,note:W.note,result:'',occurred_at:W.at,meaningful_contact:!!W.meaningful},undefined,guarded?persist:undefined);if(guarded)guard();addAct(rec.ack.activity_id);
+  if(guarded&&!flow&&Number.isSafeInteger(rec.ack.version)&&(!Number.isSafeInteger(d.version)||d.version<rec.ack.version)){d.version=pd.version=rec.ack.version;}
+  if(flow){const saved=await root.ScheduleFlow.finish(d,P,rec.ack,persist);guard();root.ScheduleFlow.project(d,saved,pd);}
+  else if(next){const payload=W.change?{intent:'postpone',action_id:W.change.id,due_at:due}:next;const sch=await confirmOp(d,P,'next','next_action',payload);setNext(d,sch.ack.next_action_id,next,due);}
   else if(P.completed){d.nextActionObj=pd.nextActionObj=null;d.nextAction=pd.nextAction='';d.nextActionText=pd.nextActionText='';}
+  if(guarded){guard();root.MobileSaveJournal.drop('pc_contact',d.id,P.owner);}
  }
  async function saveRec(d){if(CE())return saveRecCE(d);
   const S=st(d),R=S.rec;if(!R||R.busy)return;
@@ -298,14 +329,21 @@
   const rel=!rej&&['rapport','silent','waiting'].includes(String(root.dealStage(d)));
   if(!root.Phase1?.queue||(rel?typeof root.pushWrite!=='function':typeof root.queueDetailContactOperation!=='function'))throw Error('로그인 상태에서만 저장할 수 있습니다.');
   const ch=o.ch||'전화',day=o.day??nx[1],due=rej?'':KST(day),assignee=root.repN(d.assignee)||root.repN(root.ME?.name)||'',next=rej?null:{type:nx[0]==='자료 보내기'?'후속접촉':'전화',text:nx[0],due_at:due,assignee};
-  await writeContact(d,{ch,note:recNote(ch,res,String(o.memo||'').trim()),at:o.at||new Date().toISOString(),meaningful:!['부재','회신대기'].includes(res),next,due,P:o.P||{}});
+  const P=o.P||{};contactSurface(d,P);
+  await writeContact(d,{ch,note:recNote(ch,res,String(o.memo||'').trim()),at:o.at||new Date().toISOString(),meaningful:!['부재','회신대기'].includes(res),next,due,P});
   try{root.saveLocal?.();}catch(e){}
   return {next,due};
  }
  /* 내부 메모 한 줄(다음 행동은 건드리지 않는다) */
+ function contactSurface(d,P){
+  const detail=root.CUR_DETAIL,connected=detail?.kind==='deal'&&String(detail.item?.id)===String(d.id);
+  if(!connected&&root.G?.page==='today')P.surface='today';else if(P.surface==='today')delete P.surface;
+ }
  async function memoOutside(d,note,P){
   if(!root.Phase1?.queue||typeof root.queueDetailContactOperation!=='function')throw Error('로그인 상태에서만 저장할 수 있습니다.');
-  const at=new Date().toISOString(),rec=await confirmOp(d,P||{},'memo','activity',{type:'메모',note,result:'',occurred_at:at});
+  P=P||{};contactSurface(d,P);
+  const J=root.MobileSaveJournal,owner=J.owner(),session=J.session();J.assertOwner(owner);
+  const at=P.at||(P.at=new Date().toISOString()),rec=await confirmOp(d,P,'memo','activity',{type:'메모',note,result:'',occurred_at:at});J.assertOwner(owner);J.assertSession(session);
   d.activities=Array.isArray(d.activities)?d.activities:[];if(!d.activities.some(x=>x.id===rec.ack.activity_id))d.activities.unshift({id:rec.ack.activity_id,type:'메모',note,at,occurred_at:at,actor:root.repN(root.ME?.name)});try{root.saveLocal?.();}catch(e){}
  }
  /* 단계 정보 몇 칸만 저장(상세 밖 — 관계관리 재분류의 견적 발송일). 서버 확인 뒤에만 화면에 반영 */
@@ -578,7 +616,7 @@
   const box=el('div','','<input id="qc-name" value="'+attr(f.name||C.ci.name||'')+'"><input id="qc-mobile" value="'+attr(root.phoneN(f.mobile||C.ci.mobile))+'"><input id="qc-role" value="'+attr(f.role||C.ci.role||'관리소장')+'"><input type="checkbox" id="qc-sms"'+(sms?' checked':'')+'><input type="checkbox" id="qc-kakao"'+(kakao?' checked':'')+'><input type="checkbox" id="qc-block"'+(f.sendBlocked&&!on?' checked':'')+'><input id="qc-consent-at" value="'+((sms||kakao)&&!f.consentAt?localNow():'')+'"><input id="qc-block-reason" value="'+attr(sms||kakao?'통화 중 구두 동의':(f.sendBlocked&&!on?f.sendBlockedReason||'':''))+'"><input id="qc-decision-role" value=""><input id="qc-relation-tone" value=""><input id="qc-office" value="'+attr(f.officeTel||d.office_phone||'')+'"><input id="qc-email" value="'+attr(f.officeEmail||'')+'"><div id="qc-err"></div>');
   box.id='dv3-consbox';box.hidden=true;view().append(box);
   const legacy=$('quickContactBody');if(legacy)legacy.innerHTML='';
-  root.QUICK_CONTACT={pcRoot:box,item:d,key:root.dealKey(d),contactKey:C.key,mode:'primary',overflow:document.body.style.overflow,pcDecision:'',pcTone:'',pcConsentInput:'',pcOriginal:{mobile:f.mobile||C.ci.mobile,consentAt:f.consentAt||null,optOutAt:f.optOutAt||null}};
+  root.QUICK_CONTACT={pcRoot:box,item:d,key:root.dealKey(d),contactKey:C.key,mode:'primary',overflow:document.body.style.overflow,pcDecision:'',pcTone:'',pcConsentInput:'',pcConsentFields:[k==='sms'?'sms_consent':'kakao_consent',...(f.sendBlocked&&on?['send_blocked']:[])],pcOriginal:Object.assign({},f,{mobile:f.mobile||C.ci.mobile,consentAt:f.consentAt||null,optOutAt:f.optOutAt||null})};
   root.saveQuickContact();
   const msg=box.querySelector('#qc-err').textContent.trim();box.remove();
   if(msg&&!/확인 중/.test(msg))toast(msg,'warn');else toast((k==='sms'?'문자':'카카오')+' '+(on?'동의':'미동의')+' — 서버 저장을 확인하고 있습니다');
@@ -875,14 +913,14 @@
   if(on&&S.rec&&!aiOn()){const t=resHtml(S.rec);if(!res){res=el('div','dvt-res');const f=box.querySelector('.dv3-cfoot');if(f)f.before(res);else box.append(res);}if(res.dataset.h!==t){res.innerHTML=t;res.dataset.h=t;}}else if(res)res.remove();
  }
  function startCall(d,on){
-  const S=st(d),v=view();S.calling=!!on;if(on)S.p7='';S.callN=(Array.isArray(d.activities)?d.activities:[]).length;S.rec=on&&!aiOn()?{ch:'전화',res:'',memo:'',prog:{}}:null;S.nextOpen=false;S.peek='';
+  const S=st(d),v=view();S.calling=!!on;if(on)S.p7='';S.callN=(Array.isArray(d.activities)?d.activities:[]).length;S.rec=on&&!aiOn()?contactDraft(d):null;S.nextOpen=false;S.peek='';
   if(on){
    closeIn('center');if(S.mvOpen){S.mvOpen=false;if(document.getElementById('stage-transition-form'))root.StageTransitionUI?.close();}
    const tab=v.querySelector('#ddvComposer [role=tab][data-type="전화"]');if(tab&&tab.getAttribute('aria-selected')!=='true')tab.click();
    const K=root.DealKeyman&&root.DealKeyman.ai&&aiOn()?root.DealKeyman.ai(d):null;if(K&&!(K.call&&K.call.opener)&&!K.busyCall){try{root.DealKeyman.ask(d,'call_opener');}catch(e){}}
   }
   apply();
-  if(on){const ta=v.querySelector('#ddvComposer textarea');if(ta){if(S.rec)S.rec.memo=ta.value;try{ta.focus({preventScroll:true});ta.scrollIntoView({block:'nearest'});}catch(e){}}}
+  if(on){const ta=v.querySelector('#ddvComposer textarea');if(ta){if(S.rec?.prog?.signature)ta.value=S.rec.memo||'';else if(S.rec)S.rec.memo=ta.value;try{ta.focus({preventScroll:true});ta.scrollIntoView({block:'nearest'});}catch(e){}}}
  }
  /* ── 이 단지 영업 이력 줄을 누르면: 가운데 칸만 그 영업건 요약으로. 창 전체 전환은 [이 건 전체 열기 ↗]만 ── */
  function peekMiss(x){
@@ -1108,7 +1146,7 @@
   if(a==='fadd'){try{if(b.dataset.v==='quote')root.openExecQuoteForm();else if(b.dataset.v==='submit')root.openQuoteSubmitForm();else if(b.dataset.v==='compose')openP7('quote');else root.openExecAttachPicker(b.dataset.v);}catch(err){}return;}
   if(a==='cons'){const C=contacts(d);if(b.dataset.k==='key'){const p=patchOf(d);p.keyPerson=p.keyPerson||{};p.keyPerson[C.key]=!p.keyPerson[C.key];root.saveLocal?.();apply();return;}saveConsent(d,C,b.dataset.k);return;}
   /* 연락하고 결과 남기기 */
-  if(a==='rec'){const S=st(d);if(S.rec&&S.rec.busy)return;if(tidy()){startCall(d,!S.calling);return;}S.rec=S.rec?null:{ch:'전화',res:'',memo:'',prog:{}};apply();return;}
+  if(a==='rec'){const S=st(d);if(S.rec&&S.rec.busy)return;if(tidy()){startCall(d,!S.calling);return;}S.rec=S.rec?null:contactDraft(d);apply();return;}
   if(a==='rch'||a==='rres'||a==='rday'||a==='rdate'||a==='rplan'||a==='rwhy'||a==='rmode'){const R=st(d).rec;if(!R||R.busy)return;if(a==='rch')R.ch=b.dataset.v;else if(a==='rres'){R.res=b.dataset.v;R.day=undefined;R.purpose=undefined;R.date='';R.pick=false;R.whyNo='';R.mode=undefined;R.reason='';}else if(a==='rmode'){ceMode(R,b.dataset.v);}else if(a==='rday'){R.day=Number(b.dataset.v);R.date='';R.pick=false;}else if(a==='rdate'){R.pick=true;R.day=undefined;}else if(a==='rplan')R.plan=b.dataset.v;else{R.whyNo=b.dataset.v;R.reason=b.dataset.v;}R.err='';apply();return;}
   if(a==='rsave'){saveRec(d);return;}
   if(a==='line'){const S=st(d),K=root.DealKeyman&&root.DealKeyman.ai?root.DealKeyman.ai(d):null;S.line=!S.line;if(S.line&&K&&!(K.call&&K.call.opener)&&!K.busyCall)root.DealKeyman.ask(d,'call_opener');else apply();return;}
@@ -1150,7 +1188,7 @@
   if(act==='next'||act==='activity'){
    if(!v.querySelector('.nc-cta .nc-call'))return !!show('.dw-right');/* 종결된 건: 카드만 보여 준다 */
    if(tidy()){if(!S.calling)startCall(d,true);show('#ddvComposer');return true;}/* 정돈안: 연락 입구는 가운데 입력칸 하나 */
-   if(!S.rec)S.rec={ch:'전화',res:'',memo:'',prog:{}};S.nextOpen=false;apply();show('.dv3-form');return true;
+   if(!S.rec)S.rec=contactDraft(d);S.nextOpen=false;apply();show('.dv3-form');return true;
   }
   if(act==='stagefields'){if(rfix(d)){openP7(root.DealFrame7.hasWork(d)?'work':'info');return true;}if(tidy()&&!S.reqOpen){S.reqOpen=true;apply();}return !!(show('.da-stage-summary')||show('.dw-right'));}
   if(act==='stage'){if(!S.mvOpen){closeIn('center');S.mvOpen=true;syncMove(v);}show('.dv3-move');return true;}
@@ -1183,7 +1221,7 @@
   if(!enabled()||!v.classList.contains('ddv')||!cur||cur.kind!=='deal'){if(v.classList.contains('dv3'))cleanup(v);return;}
   const d=cur.item,closed=!!d.outcome||d.lifecycle_status==='closed';
   v.classList.add('dv3');v.classList.toggle('dvt',tidy());
-  {const S0=st(d);if(S0.calling&&S0.callN!=null&&(Array.isArray(d.activities)?d.activities:[]).length>S0.callN){S0.calling=false;S0.rec=null;}}/* 기록이 쌓였으면 통화 표시를 끈다 */
+  {const S0=st(d);if(S0.calling&&S0.callN!=null&&!(S0.rec&&(S0.rec.busy||S0.rec.prog))&&(Array.isArray(d.activities)?d.activities:[]).length>S0.callN){S0.calling=false;S0.rec=null;}}/* 진행 중인 응대·일정 저장은 활동 ACK만으로 닫지 않는다. 전체 성공은 saveRecCE가 닫는다. */
   if(!v.__dv3){v.__dv3=true;new MutationObserver(list=>{for(const m of list)for(const n of m.addedNodes)if(n.nodeType===1&&(n.id==='ddvPanel'||n.id==='detailAction'))relocate(n);syncFilesLabel(v);syncMove(v);}).observe(v,{childList:true,subtree:true});}
   wrapWork();wrapClose();wrapDetailClose();$('dv3-consbox')?.remove();
   const act=document.activeElement,keepFocus=act&&act.dataset&&act.dataset.dv3in?[act.dataset.dv3in,act.dataset.key,act.selectionStart]:null,keepMemo=!!(act&&act.dataset&&act.dataset.dv3rec),keepRepl=act&&act.dataset&&act.dataset.dv3repl||'';

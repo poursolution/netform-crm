@@ -18,7 +18,7 @@
  const on=()=>!(root.G&&root.G.inqV4Off)&&!!L3()&&L3().enabled()&&!!F()&&!!root.InquiryCommand&&!!root.ListPager;
  const DEF={tab:'all',flag:'',sort:'urgent',sel:'',page:1,res:'',memo:'',when:'',pick:false,edit:'',draft:'',busy:false,err:'',detail:false};
  function st(){const g=root.G;if(!g.inqV4||!g.inqV4._v4)g.inqV4=Object.assign({},DEF,g.inqV4||{},{_v4:true});return g.inqV4;}
- const resetForm=S=>Object.assign(S,{res:'',con:'',rea:'',memo:'',when:'',pick:false,edit:'',draft:'',busy:false,err:'',memoErr:'',find:false,findErr:''});
+ const resetForm=S=>Object.assign(S,{_pcDue:null,_pcRestored:null,res:'',con:'',rea:'',memo:'',when:'',pick:false,edit:'',draft:'',busy:false,err:'',memoErr:'',find:false,findErr:''});
  const RULES=()=>root.OPS_RULES||{},ASSIGN_MIN=()=>Number(RULES().inquiryAssignMinutes)||30,FIRST_H=()=>Number(RULES().towerFirstResponseHours)||2,FOLLOW_D=()=>Number(RULES().inquiryFollowDays)||7;
  const ST={1:['unassigned','배정 필요'],2:['nofirst','첫 연락 전'],3:['stale','후속 연락 필요'],4:['ok','정상 진행'],5:['nocontact','기록 보완']};
  const TABS=()=>[['all','진행 중 전체','종결 · 휴지통 제외','#15171c',0],['unassigned','배정 필요',ASSIGN_MIN()+'분 안에 담당 지정','#b42318',1],['nofirst','첫 연락 전','배정 후 '+FIRST_H()+'시간 안 첫 연락','#b42318',2],['stale','후속 연락 필요','첫 연락 후 '+FOLLOW_D()+'일 넘게 연락 없음','#c0392b',3],['ok','정상 진행','마지막 연락 '+FOLLOW_D()+'일 안','#6b7280',4],['nocontact','기록 보완','연락처 찾기 · 이관 기록 확인','#6b7280',5]];
@@ -174,11 +174,13 @@
  const RES_ORDER=['연결됨','부재','검토중','자료요청','견적요청','회신대기'];
  const results=()=>{const R=F().RESULTS.slice();return RES_ORDER.filter(r=>R.includes(r)).concat(R.filter(r=>!RES_ORDER.includes(r)));};
  const hasMeet=m=>!!(m.meet&&m.meet.dd>=0);
+ function restoreSave(m,S){try{root.PCInquirySave?.restore(m.key,S,'v4');}catch(e){S.err=e.message;}}
  const whenOf=(m,S)=>S.when||(S.res?(hasMeet(m)&&F().kindOf(S.res)!=='attempt'?'대표회의 다음날':((F().NEXT[S.res]||[])[1]||'7일 후')):'');
- function dueOf(m,w){if(w==='대표회의 다음날'&&m.meet){const d=new Date(m.meet.date);d.setDate(d.getDate()+1);return d;}const d=new Date();d.setDate(d.getDate()+({'내일':1,'3일 후':3,'7일 후':7}[w]||7));return d;}
+ function dueOf(m,w){const S=st();if(S._pcDue)return new Date(S._pcDue+'T00:00:00');if(w==='대표회의 다음날'&&m.meet){const d=new Date(m.meet.date);d.setDate(d.getDate()+1);return d;}const d=new Date();d.setDate(d.getDate()+({'내일':1,'3일 후':3,'7일 후':7}[w]||7));return d;}
  const nextText=r=>(F().NEXT[r]||[])[0]||'다시 연락';
  function recordHtml(m,S){
   if(m.step===0)return '<div class="i4-rec"><b class="ttl">응대 기록</b><div class="i4-assign"><span>담당이 정해지기 전입니다 — 배정 뒤에 응대 기록을 남깁니다.</span>'+(isAdmin()?'<button type="button" data-i4="assign">담당 배정</button>':'')+'</div></div>';
+  restoreSave(m,S);
   const w=whenOf(m,S),nd=w?dueOf(m,w):null,att=S.res&&F().kindOf(S.res)==='attempt',opts=['내일','3일 후','7일 후'].concat(hasMeet(m)?['대표회의 다음날']:[]);
   /* 결과 두 줄(2026-10-06 design_handoff_followup4): 연락 결과 → 실제 연결일 때만 고객 반응. 칩 자리만 바뀌고 다른 칸은 그대로 */
   const T=F().TWO,real=T.isReal(S.con),chip=(k,l,on)=>'<button type="button" class="i4-chip'+(on?' on':'')+'" data-i4="'+k+'" data-v="'+attr(l)+'" aria-pressed="'+on+'">'+h(l)+'</button>';
@@ -259,6 +261,7 @@
   host.__sel=S.sel;
   if(focusF){const el=host.querySelector('[data-i4f="'+focusF+'"]');if(el){el.focus();try{if(caret!=null&&el.type!=='date')el.setSelectionRange(caret,caret);}catch(e){}}}
   try{root.PCRouter&&root.PCRouter.replace&&root.PCRouter.replace();}catch(e){}
+  if(S.busy)host.querySelectorAll('.i4-rec input,.i4-rec textarea,.i4-rec button').forEach(el=>{el.disabled=true;});
  }
  const find=key=>VIEW.list.find(m=>m.key===key)||base().find(m=>m.key===key)||null;
  function select(key,quiet){const S=st();if(!key||S.sel===key){if(!quiet&&key){S.detail=true;render();}return;}S.sel=key;resetForm(S);S.detail=!quiet;if(on())render();}
@@ -266,10 +269,27 @@
  function dial(d){if(!d)return;const a=document.createElement('a');a.href='tel:'+d;a.style.display='none';document.body.append(a);a.click();a.remove();}
  const toast=(m,k)=>{try{if(typeof root.toast==='function')root.toast(m,k);}catch(e){}};
  /* 응대 기록 저장 → 다음 문의 */
- function save(){
+ async function save(){
   const S=st(),m=find(S.sel);if(!m||!S.res||S.busy||m.step===0)return;const q=root.inqCtlFind(m.key,false);if(!q)return;
   const order=VIEW.list.map(x=>x.key),p=order.indexOf(m.key),nextKey=order[p+1]||order[p-1]||'';
   const w=whenOf(m,S),nd=dueOf(m,w),nt=nextText(S.res),memo=String(S.memo||'').trim(),line='[전화 · '+S.res+']'+(memo?' '+memo:'');
+  let protectedSave=false;try{protectedSave=root.PCInquirySave?.route(q);}catch(e){S.err=e.message;return render();}
+  if(protectedSave){
+   const owner=root.MobileSaveJournal.owner(),selectedKey=S.sel;
+   const form=Object.fromEntries(['res','con','rea','memo','when','pick'].map(k=>[k,S[k]]));
+   const options=Object.assign({res:line,next:nt,due:S._pcDue||dayStr(nd)},S.con?root.InquiryFlow.TWO.of(S.con,S.rea):{});
+   // TWO.res is a master result, not a formatted line.
+   options.line=line;delete options.res;
+   S.busy=true;S.err='';render();
+   const controls=[...document.querySelectorAll('#inq-v4 .i4-rec input,#inq-v4 .i4-rec textarea,#inq-v4 .i4-rec button')].map(el=>[el,el.disabled]);controls.forEach(([el])=>{el.disabled=true;});
+   try{
+    await root.PCInquirySave.save(q,options,form,'v4');root.MobileSaveJournal.assertOwner(owner);
+    if(S.sel===selectedKey){resetForm(S);delete S._pcDue;delete S._pcRestored;if(nextKey)S.sel=nextKey;}
+    toast('응대 기록과 다음 업무를 서버에서 확인했습니다');fresh();root.paint();
+   }catch(e){if(S.sel===selectedKey)S.err=e.message||'저장하지 못했습니다.';}
+   finally{controls.forEach(([el,disabled])=>{el.disabled=disabled;});S.busy=false;render();}
+   return;
+  }
   const before=JSON.parse(JSON.stringify(q)),patch=root.itemPatch(q,'inq'),beforePatch=JSON.parse(JSON.stringify(patch));
   let ok=false;S.err='';
   try{ok=L3().record(q,Object.assign({res:line,next:nt,due:dayStr(nd)},S.con?{contact_result:root.InquiryFlow.TWO.of(S.con,S.rea).contact_result,customer_reaction:root.InquiryFlow.TWO.of(S.con,S.rea).customer_reaction}:{}))===true;}
@@ -318,9 +338,10 @@
   if(a==='miss'){if(v==='다음 행동 · 날짜'){const r=document.querySelector('#inq-v4 .i4-rec');if(r&&r.scrollIntoView)r.scrollIntoView({block:'nearest'});return;}if(!FIELD[v]||!canFill())return openFull(m.key);S.edit=v;S.draft='';S.err='';render();const i=document.querySelector('#inq-v4 [data-i4f="draft"]');if(i)i.focus();return;}
   if(a==='miss-cancel'){S.edit='';S.draft='';return render();}
   if(a==='miss-save')return saveMiss();
-  if(a==='con'||a==='rea'){const T=F().TWO;if(a==='con'){S.con=S.con===v?'':v;if(!T.isReal(S.con))S.rea='';}else S.rea=S.rea===v?'':v;S.res=T.res(S.con,S.rea);S.when='';S.pick=false;S.err='';return render();}
+  if(S.busy)return;
+  if(a==='con'||a==='rea'){delete S._pcDue;const T=F().TWO;if(a==='con'){S.con=S.con===v?'':v;if(!T.isReal(S.con))S.rea='';}else S.rea=S.rea===v?'':v;S.res=T.res(S.con,S.rea);S.when='';S.pick=false;S.err='';return render();}
   if(a==='pick'){S.pick=!S.pick;return render();}
-  if(a==='when'){S.when=v;return render();}
+  if(a==='when'){delete S._pcDue;S.when=v;return render();}
   if(a==='save')return save();
    if(a==='memo-call'||a==='promise')return memoAct(a,m,b);
    if(a==='phone-find'){S.find=!S.find;S.findErr='';return render();}

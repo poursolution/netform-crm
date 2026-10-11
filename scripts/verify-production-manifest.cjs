@@ -15,6 +15,12 @@ function verify(base=root){
  const errors=[];
  if(manifest.source_commit!==head)errors.push(`SOURCE_COMMIT_MISMATCH:${manifest.source_commit}:${head}`);
  if(manifest.build_id!==head.slice(0,12))errors.push(`BUILD_ID_MISMATCH:${manifest.build_id||'missing'}:${head.slice(0,12)}`);
+ for(const name of ['fonts/PretendardVariable.woff2','fonts/OFL.txt']){
+  if(!/^[0-9a-f]{64}$/.test(manifest.files_sha256?.[name]||''))errors.push(`MISSING_REQUIRED_ASSET_HASH:${name}`);
+  const source=path.join(root,name),file=path.join(base,name);
+  if(!fs.existsSync(source))errors.push(`MISSING_APPROVED_ASSET:${name}`);
+  else if(fs.existsSync(file)&&hash(file)!==hash(source))errors.push(`APPROVED_ASSET_MISMATCH:${name}`);
+ }
  for(const [name,expected] of Object.entries(manifest.files_sha256||{})){
   const file=path.join(base,name);
   if(!fs.existsSync(file))errors.push(`MISSING_RUNTIME_FILE:${name}`);

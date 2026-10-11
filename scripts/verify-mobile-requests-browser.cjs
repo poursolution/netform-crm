@@ -1,94 +1,56 @@
-﻿'use strict';
-/* 모바일 관리자 요청 (2026-10-10 대표 승인 · mobile_all) — 합성 자료. 요청 목록 · 회신 서버 함수는 가짜 응답.
-   확인: 오늘 위 '관리자 요청' 줄(내게 온 열린 요청만) · 누르면 담당 확인(seen) + 상세 / 결과 남기기에서 직접 고른 요청만 닫음(자동 완료 없음)
-         / 연락 시도(부재)는 진행 중으로 남음 / 다음 업무가 없으면 완료 조건 미충족 / 연락 요청이 아닌 요청은 PC 에서 / 실패하면 남음 표시 */
-const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+'use strict';
+// Approved D request handling; synthetic ACKs only. The retired request-list UI is not opened.
+const assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
-const root=path.resolve(__dirname,'..');
-const srv=http.createServer((req,res)=>{const rel=decodeURIComponent(new URL(req.url,'http://127.0.0.1').pathname).replace(/^\/+/,'')||'mobile.html',t=path.resolve(root,rel);if(!t.startsWith(root+path.sep)||!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type',t.endsWith('.html')?'text/html; charset=utf-8':t.endsWith('.css')?'text/css':'application/javascript; charset=utf-8');fs.createReadStream(t).pipe(res)});
-const one=s=>String(s||'').replace(/\s+/g,' ').trim();
+const server=require('../review-preview/server.cjs');
+const {launchOptions}=require('../review-preview/review-environment.cjs');
 (async()=>{
- await new Promise(r=>srv.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({headless:true}),errs=[];
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const origin='http://127.0.0.1:'+server.address().port,browser=await chromium.launch(launchOptions()),checks=[];
+ async function run(name,body,scenario='contact'){
+  const context=await browser.newContext({viewport:{width:375,height:812},timezoneId:'Asia/Seoul'}),errors=[],writes=[];
+  await context.route('**/*',r=>{if(!['GET','HEAD'].includes(r.request().method())){writes.push(r.request().method());return r.abort();}return new URL(r.request().url()).origin===origin?r.continue():r.abort();});
+  const page=await context.newPage();page.setDefaultTimeout(10000);page.on('pageerror',e=>errors.push(e.message));
+  const view=page.locator('.approved-d'),read=()=>page.evaluate(()=>structuredClone({rows:__review.rows,replies:__review.replies,request:__review.request,deal:DEALS[0],state:MobileEntry.state(),journal:MobileSaveJournal.read('contact',DEALS[0].id)}));
+  async function fill(result='연결됨',selected=true){await view.locator('[data-ce="res"][data-v="'+result+'"]').click();if(['연결됨','회신 받음'].includes(result))await view.locator('[data-ce-in="memo"]').fill('합성 상담: 고객 회의 후 회신 예정');if(selected)await view.locator('[data-ce-in="req"]').check();}
+  const save=()=>view.locator('[data-ce="save"]').click(),success=()=>page.waitForFunction(()=>MobileEntry.state()===null&&document.querySelector('.approved-d [data-ce="save"]')?.textContent==='저장됨'),failure=()=>page.waitForFunction(()=>!!MobileEntry.state()?.err);
+  try{
+   await page.goto(origin+'/mobile.html?demo=1&review='+scenario+'&reset=1',{waitUntil:'domcontentloaded'});await view.waitFor();
+   await body({page,view,fill,save,success,failure,read});
+   assert.deepEqual(errors,[]);assert.deepEqual(writes,[]);assert.equal(await page.locator('#scr .mq,#scr .mh-hub,#scr .mv-now').count(),0);checks.push(name);
+  }finally{await context.close();}
+ }
  try{
-  const ctx=await browser.newContext({viewport:{width:390,height:844},timezoneId:'Asia/Seoul'});
-  await ctx.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
-  const page=await ctx.newPage();page.on('pageerror',e=>errs.push(e.message));
-  await page.goto(`http://127.0.0.1:${srv.address().port}/mobile.html?demo=1`,{waitUntil:'domcontentloaded'});
-  await page.waitForFunction(()=>window.ContactEntry&&window.MobileEntry&&window.MobileRequests&&typeof render==='function'&&window.OperationalUI);
-  const setup=(failReply)=>page.evaluate(failReply=>{
-   const kst=n=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(Date.now()+n*864e5));window.__kst=kst;
-   try{sessionStorage.removeItem('crm:call-entry:v1');}catch(e){}
-   G.user=REPS.find(r=>r.role==='dual')||REPS[0];G.mode='rep';DEMO=true;window.toast=()=>{};
-   DEALS=[{id:'d1',nm:'[수원] 첫 연락 요청 현장',code:'consulting',sub:'방수',rep:G.user.nm,amt:1e8,activities:[],tl:[],manager_name:'박정호',manager_mobile:'01056464400',nextAction:{id:'11111111-1111-4111-8111-111111111111',type:'전화',text:'첫 연락',due:kst(0),due_at:kst(0),status:'open'}},
-          {id:'d2',nm:'[서울] 견적 확인 현장',code:'consulting',sub:'재도장',rep:G.user.nm,amt:5e7,activities:[],tl:[],manager_name:'김정훈',manager_mobile:'01091622210',nextAction:null}];
-   G._today=[];G.done={};G.deal=null;G.sub=null;G.tab='today';
-   window.__ops=[];window.__rpc=[];window.__reqs=[
-    {id:'r1',status:'sent',target_type:'deal',target_id:'d1',kind:'first',label:'첫 연락 요청',to_me:true,requested_by:'송보람',site:'[수원] 첫 연락 요청 현장',due_at:new Date(Date.now()+5*36e5).toISOString(),round:1,memo:'오늘 고객 연락 후 결과와 다음 일정을 남겨 주세요.'},
-    {id:'r2',status:'seen',target_type:'deal',target_id:'d2',kind:'quote',label:'견적 진행 확인',to_me:true,requested_by:'송보람',site:'[서울] 견적 확인 현장',due_at:new Date(Date.now()-3*36e5).toISOString(),round:1},
-    {id:'r3',status:'sent',target_type:'deal',target_id:'d1',kind:'follow',label:'후속 연락 요청',to_me:false,requested_by:'송보람',site:'남에게 온 요청',due_at:new Date(Date.now()+5*36e5).toISOString(),round:1},
-    {id:'r4',status:'done',target_type:'deal',target_id:'d1',kind:'first',label:'끝난 요청',to_me:true,requested_by:'송보람',site:'끝난 요청',due_at:new Date(Date.now()-5*36e5).toISOString(),round:1}];
-   window.queueMobileContactOperation=(op,payload,actionId)=>{const id='op'+(__ops.length+1);__ops.push({id,op,payload,actionId});return id;};
-   Phase1.queue.flush=async()=>{};Phase1.queue.list=()=>__ops.map(o=>({request_id:o.id,status:'done',ack:{ok:true,operation:o.op,activity_id:'act-'+o.id,next_action_id:'nx-'+o.id}}));
-   const real=window.__realPhase1||(window.__realPhase1=window.Phase1);
-   window.Phase1=Object.assign({},real,{profile:Object.assign({},real.profile||{},{name:'테스트',allowed_modes:['rep']}),rpc:async(name,args)=>{__rpc.push([name,args.p]);
-    if(name==='crm_work_request_list_v1')return {ok:true,requests:JSON.parse(JSON.stringify(__reqs))};
-    if(name==='crm_work_request_reply_v1'){if(failReply&&args.p.action==='done')throw Error('서버가 거절했습니다');const r=__reqs.find(x=>x.id===args.p.id);if(args.p.action==='seen')r.status='seen';else r.status=args.p.absent?'working':'done';return {ok:true,request:JSON.parse(JSON.stringify(r))};}
-    throw Error('unexpected rpc '+name);}});
-   MobileRequests.state().list=[];MobileRequests.state().at=0;MobileRequests.state().off=false;
-   render();},failReply);
-  await setup(false);await page.waitForTimeout(500);
-  const S=page.locator('#scr');
-  /* ① 오늘 위 관리자 요청: 내게 온 열린 요청만 */
-  assert.match(one(await S.locator('.mq .sec-h').innerText()),/^관리자 요청 2건/);
-  assert.deepEqual(await S.locator('.mq-row b').allInnerTexts(),['[서울] 견적 확인 현장','[수원] 첫 연락 요청 현장'],'기한 순 · 남에게 온 것 · 끝난 것 제외');
-  assert.equal(await S.locator('.mq-row.late').count(),1,'기한 지난 요청은 빨강');
-  /* ② 누르면 담당 확인(seen) + 현장 상세 */
-  await S.locator('.mq-row',{hasText:'첫 연락 요청 현장'}).click();await page.waitForTimeout(400);
-  assert.equal(await page.evaluate(()=>G.deal),'d1');assert.deepEqual(await page.evaluate(()=>__rpc.filter(r=>r[1]&&r[1].action).map(r=>[r[1].id,r[1].action])),[['r1','seen']],'누르면 그때 담당 확인');
-  /* ③ 결과 남기기: 이 현장 요청이 보이고 자동으로 닫히지 않는다 */
-  await page.evaluate(()=>dealCallSheetM());await page.waitForTimeout(300);
-  const C=page.locator('#sheetcard');
-  assert.equal(await C.locator('.ce-req').count(),1,'이 현장의 내게 온 열린 요청(첫 연락 요청)');
-  await C.locator('.ce-chip',{hasText:/^연결됨$/}).click();await C.locator('textarea[data-ce-in="memo"]').fill('옥상 상태 확인 · 견적서 먼저 받고 싶다고 함');await page.waitForTimeout(100);
-  await C.locator('.ce-chip[data-ce="mode"]',{hasText:'새 업무'}).click();await C.locator('input[data-ce-in="purpose"]').fill('견적서 발송');await page.waitForTimeout(100);
-  await page.evaluate(()=>{__rpc.length=0;});
-  await C.locator('.ce-save').click();await page.waitForTimeout(700);
-  assert.equal(await page.evaluate(()=>__rpc.filter(r=>r[1]&&r[1].action==='done').length),0,'고르지 않으면 요청을 닫지 않는다(자동 완료 없음)');
-  assert.deepEqual(await C.locator('.ce-done li em').allInnerTexts(),['저장','완료','신규'],'요청 줄 없음');
-  /* ④ 직접 고르면 닫는다 — 실제 연결 + 다음 업무 */
-  await setup(false);await page.waitForTimeout(400);await page.evaluate(()=>{G.deal='d1';render();dealCallSheetM();});await page.waitForTimeout(300);
-  await C.locator('.ce-chip',{hasText:/^연결됨$/}).click();await C.locator('textarea[data-ce-in="memo"]').fill('옥상 상태 확인');await C.locator('.ce-chip[data-ce="mode"]',{hasText:'새 업무'}).click();await C.locator('input[data-ce-in="purpose"]').fill('견적서 발송');
-  await C.locator('.ce-req input').check();await page.waitForTimeout(150);
-  assert.match(one(await C.locator('.ce-req').innerText()),/첫 연락 요청 송보람 · 기한 .* ✓ 완료 조건 충족 — 저장하면 요청이 완료로 닫힙니다 완료 조건 · 고객 연락 시도 · 통화 결과 기록 · 다음 행동 \+ 날짜 등록/);
-  assert.match(one(await C.locator('.ce-prev').innerText()),/ · 관리자 요청 "첫 연락 요청" 완료$/);
-  await page.evaluate(()=>{__rpc.length=0;});await C.locator('.ce-save').click();await page.waitForTimeout(700);
-  const due=await page.evaluate(()=>__kst(3));
-  assert.deepEqual(await page.evaluate(()=>__rpc.map(r=>[r[0],r[1]])),[['crm_work_request_reply_v1',{id:'r1',action:'done',result:'연결됨',next_text:'견적서 발송',next_due:due,absent:false}]],'기록 저장 뒤 지정한 요청만 · 같은 회신 함수');
-  assert.deepEqual(await C.locator('.ce-done li').allInnerTexts().then(l=>l.map(one)),['저장 응대 기록 1건 (실제 연결)','완료 기존 일정 "첫 연락"','신규 견적서 발송 · '+await page.evaluate(()=>ContactEntry.md(__kst(3))),'완료 관리자 요청 "첫 연락 요청"']);
-  /* ⑤ 부재 = 연락 시도 → 요청은 진행 중으로 남음 */
-  await setup(false);await page.waitForTimeout(400);await page.evaluate(()=>{G.deal='d1';render();dealCallSheetM();});await page.waitForTimeout(300);
-  await C.locator('.ce-chip',{hasText:/^부재$/}).click();await C.locator('.ce-req input').check();await page.waitForTimeout(150);
-  assert.match(one(await C.locator('.ce-req em').innerText()),/^연락 시도로 기록 — 요청은 진행 중으로 남습니다$/);
-  await page.evaluate(()=>{__rpc.length=0;});await C.locator('.ce-save').click();await page.waitForTimeout(700);
-  assert.deepEqual(await page.evaluate(()=>__rpc.map(r=>[r[1].action,r[1].result,r[1].absent])),[['done','부재',true]]);
-  assert.ok((await C.locator('.ce-done li').allInnerTexts().then(l=>l.map(one))).includes('남음 관리자 요청 "첫 연락 요청" — 진행 중 · 연락 시도로 기록'));
-  /* ⑥ 다음 업무가 없으면 완료 조건 미충족 */
-  await setup(false);await page.waitForTimeout(400);await page.evaluate(()=>{G.deal='d1';render();dealCallSheetM();});await page.waitForTimeout(300);
-  await C.locator('.ce-chip',{hasText:/^연결됨$/}).click();await C.locator('textarea[data-ce-in="memo"]').fill('올해는 어렵다고 함');await C.locator('.ce-chip[data-ce="mode"]',{hasText:'다음 일정 없음'}).click();await C.locator('input[data-ce-in="reason"]').fill('내년 예산');await C.locator('.ce-req input').check();await page.waitForTimeout(150);
-  assert.match(one(await C.locator('.ce-req em').innerText()),/^완료 조건 미충족 — 다음 업무가 있어야 합니다 · 요청은 남음$/);
-  await page.evaluate(()=>{__rpc.length=0;});await C.locator('.ce-save').click();await page.waitForTimeout(700);
-  assert.equal(await page.evaluate(()=>__rpc.filter(r=>r[1]&&r[1].action==='done').length),0,'조건이 안 채워지면 닫지 않는다');
-  /* ⑦ 회신이 실패하면 기록은 남고 요청은 남음으로 안내 */
-  await setup(true);await page.waitForTimeout(400);await page.evaluate(()=>{G.deal='d1';render();dealCallSheetM();});await page.waitForTimeout(300);
-  await C.locator('.ce-chip',{hasText:/^연결됨$/}).click();await C.locator('textarea[data-ce-in="memo"]').fill('옥상 상태 확인');await C.locator('.ce-chip[data-ce="mode"]',{hasText:'새 업무'}).click();await C.locator('input[data-ce-in="purpose"]').fill('견적서 발송');await C.locator('.ce-req input').check();
-  await C.locator('.ce-save').click();await page.waitForTimeout(700);
-  assert.ok((await C.locator('.ce-done li').allInnerTexts().then(l=>l.map(one))).includes('남음 관리자 요청 "첫 연락 요청" — 처리하지 못했습니다: 서버가 거절했습니다'));
-  assert.equal(await page.evaluate(()=>__ops.filter(o=>o.op==='activity').length),1,'연락 기록은 저장됨');
-  /* ⑧ 연락 요청이 아닌 요청(견적)은 PC 에서 */
-  await setup(false);await page.waitForTimeout(400);await page.evaluate(()=>{G.deal='d2';render();dealCallSheetM();});await page.waitForTimeout(300);
-  assert.match(one(await C.locator('.ce-req').innerText()),/견적 진행 확인[\s\S]*이 요청은 PC 에서 처리합니다/);assert.equal(await C.locator('.ce-req input').isDisabled(),true);
-  assert.deepEqual(errs,[],'화면 오류 없음: '+errs.join(' | '));
-  console.log('verify-mobile-requests: ok');
- }finally{await browser.close();srv.close();}
-})().catch(e=>{console.error(e);process.exit(1);});
+  await run('request data filters recipients, closed rows and target before rendering D',async({page,view})=>{
+   const got=await page.evaluate(()=>{const r=__review.request,id=n=>'99999999-9999-4999-8999-'+String(n).padStart(12,'0');Object.assign(r,{due_at:'2026-10-15T00:00:00Z'});Object.assign(MobileRequests.state(),{list:[structuredClone(r),{...r,id:id(1),status:'seen',kind:'quote',label:'견적 진행 확인',due_at:'2026-10-12T00:00:00Z'},{...r,id:id(2),to_me:false},{...r,id:id(3),status:'done'},{...r,id:id(4),target_id:id(5),due_at:'2026-10-20T00:00:00Z'}]});closeSheet();MobileEntry.open();return {incoming:MobileRequests.incoming().map(x=>x.id),deal:MobileRequests.forDeal(DEALS[0].id).map(x=>x.id),id:r.id,other:id(1),foreign:id(4)};});
+   assert.deepEqual(got.incoming,[got.other,got.id,got.foreign]);assert.deepEqual(got.deal,[got.other,got.id]);assert.equal(await view.locator('[data-ce-in="req"]').count(),2);assert.equal(await view.locator('[data-ce-in="req"]:disabled').count(),1);assert.equal(await page.evaluate(()=>__review.replies.length),0,'Viewing is not acknowledgement');
+  });
+  await run('request acknowledgement rejects foreign, closed and mismatched targets',async({page,read})=>{
+   const outcomes=await page.evaluate(async()=>{
+    const r=__review.request,other='99999999-9999-4999-8999-999999999999',out=[];
+    out.push(await MobileRequests.acknowledge(other,'deal',r.target_id));
+    out.push(await MobileRequests.acknowledge(r.id,'inquiry',r.target_id));
+    out.push(await MobileRequests.acknowledge(r.id,'deal',other));
+    MobileRequests._put({...r,to_me:false});out.push(await MobileRequests.acknowledge(r.id,'deal',r.target_id));
+    MobileRequests._put({...r,status:'done'});out.push(await MobileRequests.acknowledge(r.id,'deal',r.target_id));
+    return out;
+   });assert.deepEqual(outcomes,[false,false,false,false,false]);assert.deepEqual((await read()).replies,[]);
+  });
+  await run('unselected request is never automatically completed',async({fill,save,success,read})=>{await fill('연결됨',false);await save();await success();const a=await read();assert.equal(a.request.status,'sent');assert.deepEqual(a.replies,[]);assert.deepEqual(a.rows.map(r=>r.operation),['activity']);assert.equal(a.deal.nextAction.status,'open');});
+  await run('selected first-contact request completes only after matching activity ACK',async({fill,save,success,read})=>{const before=(await read()).deal.nextAction;await fill();await save();await success();const a=await read();assert.deepEqual(a.replies,[{id:a.request.id,action:'done',result:'연결됨',next_text:before.text,next_due:before.due}]);assert.equal(a.request.status,'done');assert.equal(a.request.open,false);assert(a.request.closed_at);assert.equal(a.rows[0].ack.meaningful_contact,true);assert.deepEqual(a.deal.nextAction,before);});
+  for(const result of ['부재','번호 오류'])await run(result+' stays working and does not prove actual connection',async({fill,save,success,read})=>{await fill(result);await save();await success();const a=await read();assert.deepEqual(a.replies,[{id:a.request.id,action:'working'}]);assert.equal(a.request.status,'working');assert.equal(a.request.open,true);assert.equal(a.request.closed_at,null);assert.equal(a.rows[0].ack.meaningful_contact,false);assert.equal(a.deal.contactAt||'','');});
+  await run('no next schedule leaves request unresolved without inventing a task',async({page,view,fill,save,success,read})=>{await view.locator('[data-ce="close"]').click();await page.evaluate(()=>{MobileSaveJournal.drop('contact',DEALS[0].id,MobileSaveJournal.owner());DEALS[0].nextAction=null;DEALS[0].nextActionObj=null;MobileEntry.open();});await fill();await view.locator('[data-ce="mode"][data-v="none"]').click();await view.locator('[data-ce-in="reason"]').fill('고객의 다음 검토 시점 확인 필요');await save();await success();const a=await read();assert.deepEqual(a.replies,[]);assert.equal(a.request.status,'sent');assert.equal(a.deal.nextAction,null);assert.deepEqual(a.rows.map(r=>r.operation),['activity']);});
+  await run('compound and non-contact requests are disabled rather than wholly completed',async({page,view,fill,save,success,read})=>{assert.equal(await view.locator('[data-ce-in="req"]').isDisabled(),true);await page.evaluate(()=>{Object.assign(__review.request,{kind:'quote',label:'견적 진행 확인'});MobileRequests._put(structuredClone(__review.request));closeSheet();MobileEntry.open();});assert.equal(await view.locator('[data-ce-in="req"]').isDisabled(),true);await fill('연결됨',false);await save();await success();assert.deepEqual((await read()).replies,[]);},'compound');
+  await run('failed reply preserves one activity and retries only the original request',async({page,view,fill,save,success,failure,read})=>{await fill();await save();await failure();const before=await read();assert.equal(before.rows.length,1);assert.equal(before.rows[0].status,'done');assert.equal(before.request.status,'sent');assert(before.journal);await view.locator('[data-ce="close"]').click();await page.evaluate(()=>MobileEntry.open());assert.deepEqual((await read()).replies,[]);assert.equal(await view.locator('[data-ce-in="memo"]').isDisabled(),true);await save();await success();const a=await read();assert.deepEqual(a.rows.map(r=>r.request_id),before.rows.map(r=>r.request_id));assert.equal(a.deal.activities.length,1);assert.equal(a.replies.length,1);assert.equal(a.request.status,'done');assert.equal(a.journal,null);},'retry');
+  await run('changed request deadline rejects completion without discarding confirmed activity',async({page,fill,save,failure,read})=>{await fill();await page.evaluate(()=>{const rpc=Phase1.rpc;Phase1.rpc=async(name,args)=>{if(name==='crm_work_request_list_v1')return {ok:true,requests:[{...__review.request,due_at:'2099-01-01T00:00:00Z'}]};return rpc(name,args);};});await save();await failure();const a=await read();assert.match(a.state.err,/기한이 바뀌었습니다/);assert.equal(a.deal.activities.length,1);assert.deepEqual(a.replies,[]);assert.equal(a.request.status,'sent');});
+  await run('missing or wrong actor/contact evidence cannot issue a reply',async({page,read})=>{const out=await page.evaluate(async()=>{const r=__review.request,p=Phase1.profile,proof={ok:true,operation:'activity',object_id:r.target_id,activity_id:crypto.randomUUID(),actor_auth_uid:p.auth_uid,actor_user_id:p.user_id,meaningful_contact:true},opts={result:'연결됨',absent:false,next_text:'회신 확인',next_due:'2099-01-02'},errors=[];for(const value of [null,{...proof,actor_user_id:'99999999-9999-4999-8999-999999999999'},{...proof,object_id:'99999999-9999-4999-8999-999999999999'},{...proof,meaningful_contact:false}]){try{await MobileRequests.complete(r,{...opts,activity:value});errors.push('UNEXPECTED_SUCCESS');}catch(e){errors.push(e.message);}}return errors;});assert.equal(out.length,4);assert(out.every(x=>/서버 응대 기록|실제 연결 판정/.test(x)));assert.deepEqual((await read()).replies,[]);assert.deepEqual((await read()).rows,[]);});
+  console.log(JSON.stringify({test:'approved mobile D request handling',passed:checks.length,checks,boundary:'Synthetic in-memory RPC/ACK only; network writes blocked. The following list-entry requirement must also pass.'},null,2));
+  await run('approved A request entry acknowledges seen without completing it',async({page,view,read})=>{
+   await view.locator('[data-ce="close"]').click();await page.evaluate(()=>{G.deal=null;G.sub=null;G.tab='today';DEALS[0].nextAction.due=DEALS[0].nextAction.due_at=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date());Object.assign(__review.request,{due_at:'2026-10-11T00:00:00Z'});MobileRequests._put({...__review.request});MobileRequests._put({...__review.request,id:'99999999-9999-4999-8999-999999999999',due_at:'2099-01-01T00:00:00Z'});render();});
+   await page.locator('.approved-a [data-gs="task"]').first().click();await page.locator('.approved-c').waitFor();
+   const a=await read();assert.equal(a.request.status,'seen');assert.deepEqual(a.replies,[{id:a.request.id,action:'seen'}]);assert.equal(a.request.open,true);assert.deepEqual(a.rows,[]);
+   assert.equal(await page.evaluate(()=>MobileRequests.state().list.find(r=>r.id==='99999999-9999-4999-8999-999999999999').status),'sent','Another request for the same deal is not acknowledged');
+  });
+  console.log('verify-mobile-requests: all required flows passed');
+ }finally{await browser.close();await new Promise(r=>server.close(r));}
+})().catch(e=>{console.error(e);server.close();process.exitCode=1;});

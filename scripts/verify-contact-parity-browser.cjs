@@ -1,90 +1,78 @@
 'use strict';
-/* PC · 모바일 같은 작업 → 같은 저장 (2026-10-10 design_handoff_mobile_all 완료 판정 · 통과 기준 5 'PC 일치')
-   같은 영업건 · 같은 입력(연락 결과 · 상담 내용 · 다음 업무)을 PC 상세 가운데 칸과 모바일 결과 창에서 각각 저장하고,
-   서버로 가는 저장 명령(완료 → 기록 → 다음 업무 · 기한 변경 기록)이 같은지 비교한다 — 합성 자료. */
+// Real PC composer and approved mobile D, identical synthetic records and confirmed queue contracts.
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
-const root=path.resolve(__dirname,'..');
-const srv=http.createServer((req,res)=>{const rel=decodeURIComponent(new URL(req.url,'http://127.0.0.1').pathname).replace(/^\/+/,'')||'mobile.html',t=path.resolve(root,rel);if(!t.startsWith(root+path.sep)||!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type',t.endsWith('.html')?'text/html; charset=utf-8':t.endsWith('.css')?'text/css':'application/javascript; charset=utf-8');fs.createReadStream(t).pipe(res)});
-const kst=n=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(Date.now()+n*864e5));
+const env=require('../review-preview/review-environment.cjs'),root=path.resolve(__dirname,'..');
+const server=http.createServer((req,res)=>{
+ if(!['GET','HEAD'].includes(req.method)){res.writeHead(405);return res.end();}
+ const rel=decodeURIComponent(new URL(req.url,'http://127.0.0.1').pathname).replace(/^\/+/, '')||'mobile.html';let file;
+ for(const dir of [root,env.baseline]){const p=path.resolve(dir,rel);if(p.startsWith(dir+path.sep)&&fs.existsSync(p)&&fs.statSync(p).isFile()){file=p;break;}}
+ if(!file){res.writeHead(404);return res.end();}res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type',file.endsWith('.html')?'text/html; charset=utf-8':file.endsWith('.css')?'text/css':'application/javascript; charset=utf-8');
+ if(rel==='mobile.html')return res.end(fs.readFileSync(file,'utf8').replace('</body>','<script src="review-preview/fixture.js"></script></body>'));fs.createReadStream(file).pipe(res);
+});
 const ID='11111111-1111-4111-8111-111111111111',AID='99999999-9999-4999-8999-999999999999';
-/* 시나리오: ex = 지금 열린 일정(며칠 뒤) */
-const CASES=[
- {name:'연결됨 · 새 업무(오늘 일정 처리)',ex:0,res:'연결됨',memo:'금요일까지 견적서 보내 달라고 함',mode:'new',purpose:'견적서 발송',date:kst(4)},
- {name:'부재 · 기존 일정 유지',ex:5,res:'부재',mode:'keep'},
- {name:'회신 받음 · 일정 변경(앞당김)',ex:5,res:'회신 받음',memo:'앞당기자고 함',mode:'change',date:kst(2)},
- {name:'연결됨 · 일정 변경(늦춤 + 사유)',ex:5,res:'연결됨',memo:'입대의 일정이 밀렸다고 함',mode:'change',date:kst(12),reason:'고객 요청 · 입대의 후 연락'},
- {name:'번호 오류 · 새 업무',ex:0,res:'번호 오류',mode:'new',purpose:'연락처 확인',date:kst(1)},
- {name:'연결됨 · 다음 일정 없음 + 사유',ex:0,res:'연결됨',memo:'올해는 어렵다고 함',mode:'none',reason:'2027 예산 · 3월 재확인'},
- {name:'배드핏 · 다음 일정 없음 + 사유',ex:0,res:'배드핏',memo:'공사 계획 없다고 함',mode:'none',reason:'자체 보수 완료'}
+const cases=[
+ {name:'connected new task preserves an existing task by blocking the unsupported add',ex:0,res:'연결됨',memo:'합성 고객 회의',mode:'new',purpose:'견적서 발송',after:4,blocked:true},
+ {name:'connected new follow-up when no task exists',ex:null,res:'연결됨',memo:'합성 고객 회의',mode:'new',purpose:'견적서 발송',after:4},
+ {name:'absence keeps a future customer task open',ex:5,res:'부재',mode:'keep'},
+ {name:'earlier date cannot bypass the preserving schedule contract',ex:5,res:'회신 받음',memo:'합성 일정 협의',mode:'change',after:2,blocked:true},
+ {name:'postpone retains the original task ID and reason',ex:5,res:'연결됨',memo:'합성 일정 협의',mode:'change',after:12,reason:'고객 회의 일정 변경'},
+ {name:'wrong number creates contact verification without claiming connection',ex:null,res:'번호 오류',mode:'new',purpose:'연락처 확인',after:1},
+ {name:'no next task requires a reason and creates only activity',ex:null,res:'연결됨',memo:'합성 검토 연기',mode:'none',reason:'내년 검토 시점 확인 필요'},
+ {name:'bad fit recording does not close a deal or its existing task',ex:0,res:'배드핏',memo:'합성 자체 보수 완료',mode:'none',reason:'자체 보수 완료'},
+ {name:'ACK failure retains input and retry uses the same activity ID',ex:0,res:'연결됨',memo:'합성 저장 실패 후 재시도 원문',mode:'keep',failOnce:true}
 ];
-const MODE={keep:'기존 일정 유지',change:'일정 변경',new:'새 업무',none:'다음 일정 없음'};
-const norm=o=>[o.op,o.payload.type||'',String(o.payload.note||o.payload.text||'').replace(/\d{4}-\d{2}-\d{2}/g,'D'),o.payload.due_at||'',o.actionId||''];
-(async()=>{
- await new Promise(r=>srv.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({headless:true}),errs=[];
- try{
-  const port=srv.address().port;
-  /* ── PC ── */
-  const pcCtx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});await pcCtx.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
-  const pc=await pcCtx.newPage();pc.on('pageerror',e=>errs.push('pc '+e.message));
-  await pc.goto(`http://127.0.0.1:${port}/crm.html`);await pc.waitForFunction(()=>window.DealDetailV3&&window.ContactEntry&&window.OpsStore&&window.DealKeyman);
-  const pcBoot=()=>pc.evaluate(([id,aid,exDue])=>{
-   const day=n=>new Date(Date.now()+n*864e5).toLocaleDateString('en-CA');
-   B={deals:[{id,site:'[경기 용인] 일치 검증 단지',assignee:'황윤선',brand:'석민이앤씨',created:day(-34),code:'first_contact',stage_code:'first_contact',grp:'영업·관리',amt:5e7,manager_name:'이영수',manager_mobile:'01000001234',contacts:[{person_key:'mobile:01000001234',name:'이영수',role:'관리소장',mobile:'01000001234',status:'current'}],activities:[],stage_contexts:{},next_action:{id:aid,type:'전화',text:'대표회의 결과 확인',due:day(exDue),due_at:day(exDue),status:'open'}}],inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],messageLogs:[],message_logs:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
-   document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
-   window.__writes=[];window.pushWrite=(op,p)=>{__writes.push([op,p]);return 'req-'+__writes.length;};
-   window.__ops=[];window.queueDetailContactOperation=(op,payload,actionId)=>{const i='op-'+(__ops.length+1);__ops.push({id:i,op,payload,actionId});return i;};
-   Phase1.queue.flush=async()=>{};Phase1.queue.list=()=>__ops.map(o=>({request_id:o.id,object_id:o.payload.opportunity_id,operation:o.op,status:'done',payload:o.payload,ack:{ok:true,operation:o.op,activity_id:'srv-'+o.id,next_action_id:'srv-'+o.id}}));
-   SB={rpc:async()=>({data:{ok:true,tasks:[],entries:[],sites:[]}})};TOKEN='test';OpsStore.aiOn=()=>false;
-   try{closeDetail();}catch(e){}drwDeal(JSON.stringify(B.deals[0]));
-  },[ID,AID,0]);
-  const pcRun=async c=>{
-   await pc.evaluate(([id,aid,exDue])=>{const day=n=>new Date(Date.now()+n*864e5).toLocaleDateString('en-CA');try{closeDetail();}catch(e){}LOCAL={deals:{},inquiries:{},expansionPool:[]};/* 앞 시나리오가 남긴 로컬 변경 지움 */B.deals[0].next_action={id:aid,type:'전화',text:'대표회의 결과 확인',due:day(exDue),due_at:day(exDue),status:'open'};B.deals[0].activities=[];{const p=itemPatch(B.deals[0],'deal');['nextActionObj','nextAction','nextActionText','activities'].forEach(k=>{delete p[k];delete B.deals[0][k];});}window.__ops.length=0;drwDeal(JSON.stringify(B.deals[0]));},[ID,AID,c.ex]);
-   await pc.waitForSelector('#detailView.dv3.dvt .sth-tidy');await pc.waitForTimeout(400);
-   const v=pc.locator('#detailView.dv3.dvt');
-   await pc.evaluate(()=>DealDetailV3.openFrom('activity'));await pc.waitForTimeout(300);/* 오른쪽 [연락하고 결과 기록] = 가운데 입력칸 */
-   await v.locator('#ddvComposer textarea').fill(c.memo||'');await v.locator('.dvt-res [data-dv3="rres"]',{hasText:new RegExp('^'+c.res+'$')}).click();await pc.waitForTimeout(120);
-   if(c.memo)await v.locator('#ddvComposer textarea').fill(c.memo);
-   await v.locator('.dvt-res [data-dv3="rmode"]',{hasText:MODE[c.mode]}).click();await pc.waitForTimeout(100);
-   if(c.mode==='new'){await v.locator('.dvt-res [data-dv3rec="purpose"]').fill(c.purpose);}
-   if(c.mode==='new'||c.mode==='change'){await v.locator('.dvt-res [data-dv3="rdate"]').click();await pc.waitForTimeout(100);await v.locator('.dvt-res [data-dv3rec="date"]').fill(c.date);await pc.waitForTimeout(150);}
-   if(c.reason)await v.locator('.dvt-res [data-dv3rec="reason"]').fill(c.reason);
-   const n0=await pc.evaluate(()=>__ops.length);
-   await v.locator('#ddvComposer .idv-save').click();await pc.waitForTimeout(900);
-   return pc.evaluate(()=>__ops.map(o=>({op:o.op,payload:o.payload,actionId:o.actionId})));
-  };
-  await pcBoot();
-  /* ── 모바일 ── */
-  const moCtx=await browser.newContext({viewport:{width:390,height:844},timezoneId:'Asia/Seoul'});await moCtx.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
-  const mo=await moCtx.newPage();mo.on('pageerror',e=>errs.push('mobile '+e.message));
-  await mo.goto(`http://127.0.0.1:${port}/mobile.html?demo=1`,{waitUntil:'domcontentloaded'});await mo.waitForFunction(()=>window.ContactEntry&&window.MobileEntry&&typeof render==='function'&&window.OperationalUI);
-  const moRun=async c=>{
-   await mo.evaluate(([id,aid,exDue])=>{const kst=n=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(Date.now()+n*864e5));try{sessionStorage.removeItem('crm:call-entry:v1');}catch(e){}
-    G.user=REPS.find(r=>r.role==='dual')||REPS[0];G.mode='rep';DEMO=true;window.toast=()=>{};DEALS=[{id,nm:'[경기 용인] 일치 검증 단지',code:'consulting',sub:'방수',rep:G.user.nm,amt:5e7,activities:[],tl:[],manager_name:'이영수',manager_mobile:'01000001234',nextAction:{id:aid,type:'전화',text:'대표회의 결과 확인',due:kst(exDue),due_at:kst(exDue),status:'open'}}];
-    G._today=[];G.done={};G.deal=id;G.sub=null;G.tab='today';render();
-    window.__ops=[];window.queueMobileContactOperation=(op,payload,actionId)=>{const i='op'+(__ops.length+1);__ops.push({id:i,op,payload,actionId});return i;};
-    Phase1.queue.flush=async()=>{};Phase1.queue.list=()=>__ops.map(o=>({request_id:o.id,status:'done',ack:{ok:true,operation:o.op,activity_id:'act-'+o.id,next_action_id:'nx-'+o.id}}));dealCallSheetM();},[ID,AID,c.ex]);
-   await mo.waitForTimeout(350);const C=mo.locator('#sheetcard');
-   await C.locator('.ce-chip',{hasText:new RegExp('^'+c.res+'$')}).click();await mo.waitForTimeout(100);
-   if(c.memo)await C.locator('textarea[data-ce-in="memo"]').fill(c.memo);
-   await C.locator('.ce-chip[data-ce="mode"]',{hasText:MODE[c.mode]}).click();await mo.waitForTimeout(100);
-   if(c.mode==='new')await C.locator('input[data-ce-in="purpose"]').fill(c.purpose);
-   if(c.mode==='new'||c.mode==='change'){await C.locator('.ce-pick input').evaluate((n,v)=>{n.value=v;n.dispatchEvent(new Event('input',{bubbles:true}));},c.date);await mo.waitForTimeout(150);}
-   if(c.reason)await C.locator('input[data-ce-in="reason"]').fill(c.reason);
-   await mo.waitForTimeout(80);await C.locator('.ce-save').click();await mo.waitForTimeout(700);
-   return mo.evaluate(()=>__ops.map(o=>({op:o.op,payload:o.payload,actionId:o.actionId})));
-  };
-  /* ── 비교 ── */
-  const out=[];
-  for(const c of CASES){
-   const a=(await pcRun(c)).map(norm),b=(await moRun(c)).map(norm);
-   assert.ok(a.length>=1,'PC 저장 명령이 있다: '+c.name);
-   assert.deepEqual(b,a,'PC · 모바일 저장 명령이 같다 — '+c.name+'\nPC '+JSON.stringify(a)+'\n모바일 '+JSON.stringify(b));
-   out.push(c.name+' → '+a.map(x=>x[0]+(x[1]?'('+x[1]+')':'')).join(' · '));
+function installQueue(){
+ const id='11111111-1111-4111-8111-111111111111';window.__ops=[];window.__flushReject=false;window.__flushes=0;
+ window.Phase1={...Phase1,profile:{auth_uid:id,user_id:id,name:'합성 담당자',allowed_modes:['rep','admin']},rpc:async()=>{throw Error('Unexpected RPC');},queue:{list:()=>__ops,flush:async()=>{
+  __flushes++;if(__flushReject){__flushReject=false;throw Error('합성 ACK 실패');}
+  for(const row of __ops){if(row.status==='done')continue;const at=new Date().toISOString();row.ack={contract_version:1,ok:true,request_id:row.request_id,operation:row.operation,object_id:row.object_id,replayed:false,actor_auth_uid:id,actor_user_id:id,previous_version:0,version:1,activity_id:crypto.randomUUID(),audit_event_id:crypto.randomUUID(),meaningful_contact:!/부재|번호 오류/.test(row.payload.note),occurred_at:at,server_at:at};
+   if(row.operation==='next_action')Object.assign(row.ack,{next_action_id:crypto.randomUUID(),cancelled_action_ids:[],due_at:row.payload.due_at,assignee_name:'합성 담당자'});
+   if(row.payload.intent==='postpone')Object.assign(row.ack,{intent:'postpone',next_action_id:row.payload.action_id,previous_due_at:window.__existingDue,postpone_count:1,postpone_event_id:crypto.randomUUID()});OperationalAdapter.validateAck(row.ack,row);row.status='done';
   }
-  assert.deepEqual(errs,[],'화면 오류 없음: '+errs.join(' | '));
-  console.log('verify-contact-parity: ok\n'+out.join('\n'));
- }finally{await browser.close();srv.close();}
-})().catch(e=>{console.error(e);process.exit(1);});
+ }}};
+ const enqueue=(operation,payload,actionId)=>{if(!['activity','next_action'].includes(operation))throw Error('Unexpected completion/write '+operation);const cmd=OperationalAdapter.normalize(operation,id,0,{intent:'standalone',...payload,...(actionId?{action_id:actionId}:{})});const q={...cmd,request_id:crypto.randomUUID(),auth_uid:id,user_id:id,status:'pending'};__ops.push(q);return q.request_id;};
+ window.queueDetailContactOperation=enqueue;window.queueMobileContactOperation=enqueue;window.CRM_SCHEDULE_V1=false;
+}
+function initPC(c){
+ const id='11111111-1111-4111-8111-111111111111',aid='99999999-9999-4999-8999-999999999999';
+ const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date()),day=n=>ContactEntry.addDays(today,n);window.__caseDate=day(c.after||0);window.__existingDue=c.ex===null?'':day(c.ex);window.__flushReject=!!c.failOnce;
+ const task=c.ex===null?null:{id:aid,type:'전화',text:'대표회의 결과 확인',due:day(c.ex),due_at:day(c.ex),status:'open'};
+ B={deals:[{id,site:'합성 일치 검증 현장',assignee:'합성 담당자',brand:'석민이앤씨',created:day(-34),code:'consulting',stage_code:'consulting',grp:'영업·관리',amt:0,version:0,manager_name:'합성 담당자',manager_mobile:'',contacts:[],activities:[],stage_contexts:{},next_action:task}],inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],messageLogs:[],message_logs:[]};
+ LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id,name:'합성 담당자',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>{throw Error('Unexpected legacy write');};window.toast=()=>{};SB={rpc:async()=>({data:{ok:true,tasks:[],entries:[],sites:[]}})};OpsStore.aiOn=()=>false;try{closeDetail();}catch{}drwDeal(JSON.stringify(B.deals[0]));
+}
+function initMobile(c){
+ closeSheet();sessionStorage.clear();const d=DEALS[0],today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date()),day=n=>ContactEntry.addDays(today,n);window.__caseDate=day(c.after||0);window.__existingDue=c.ex===null?'':day(c.ex);window.__flushReject=!!c.failOnce;
+ d.nm='합성 일치 검증 현장';d.activities=[];d.tl=[];d.version=0;d.contactAt='';d.outcome='';d.nextAction=c.ex===null?null:{id:'99999999-9999-4999-8999-999999999999',type:'전화',text:'대표회의 결과 확인',due:day(c.ex),due_at:day(c.ex),status:'open'};d.nextActionObj=d.nextAction;Object.assign(MobileRequests.state(),{list:[],at:Date.now(),loaded:true,off:false});G.deal=d.id;G.sub=null;render();MobileEntry.open();
+}
+const normalized=rows=>rows.map(r=>({operation:r.operation,object_id:r.object_id,type:r.payload.type||'',note:r.payload.note||'',text:r.payload.text||'',intent:r.payload.intent||'',due:r.payload.due_at||'',actionId:r.payload.action_id||''}));
+(async()=>{
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+server.address().port,browser=await chromium.launch(env.launchOptions()),checks=[],errors=[],writes=[];
+ async function make(width){const c=await browser.newContext({viewport:{width,height:1000},timezoneId:'Asia/Seoul'});await c.route('**/*',r=>{if(!['GET','HEAD'].includes(r.request().method())){writes.push(r.request().method());return r.abort();}return new URL(r.request().url()).origin===origin?r.continue():r.abort();});const p=await c.newPage();p.setDefaultTimeout(12000);p.on('pageerror',e=>errors.push(e.message));return {context:c,page:p};}
+ try{
+  for(const c of cases){
+   const pc=await make(1600),mo=await make(375);
+   try{
+    await pc.page.goto(origin+'/crm.html');await pc.page.waitForFunction(()=>window.DealDetailV3&&window.ContactEntry&&window.OperationalAdapter&&window.OpsStore);await pc.page.evaluate(installQueue);await pc.page.evaluate(initPC,c);await pc.page.evaluate(()=>DealDetailV3.openFrom('activity'));
+    const pv=pc.page.locator('#detailView.dv3.dvt');await pv.locator('[data-dv3="rres"][data-v="'+c.res+'"]').click();if(c.memo)await pv.locator('#ddvComposer textarea').fill(c.memo);await pv.locator('[data-dv3="rmode"][data-v="'+c.mode+'"]').click();
+    if(c.mode==='new')await pv.locator('[data-dv3rec="purpose"]').fill(c.purpose);
+    if(['new','change'].includes(c.mode)){await pv.locator('[data-dv3="rdate"]').click();await pv.locator('[data-dv3rec="date"]').fill(await pc.page.evaluate(()=>__caseDate));}
+    if(c.reason)await pv.locator('[data-dv3rec="reason"]').fill(c.reason);
+    await mo.page.goto(origin+'/mobile.html?demo=1&review=contact&reset=1');await mo.page.locator('.approved-d').waitFor();await mo.page.evaluate(installQueue);await mo.page.evaluate(initMobile,c);const mv=mo.page.locator('.approved-d');
+    await mv.locator('[data-ce="res"][data-v="'+c.res+'"]').click();if(c.memo)await mv.locator('[data-ce-in="memo"]').fill(c.memo);await mv.locator('[data-ce="mode"][data-v="'+c.mode+'"]').click();
+    if(c.mode==='new')await mv.locator('[data-ce-in="purpose"]').fill(c.purpose);
+    if(['new','change'].includes(c.mode)){await mv.locator('[data-ce="date-open"]').click();await mv.locator('[data-ce-in="date"]').fill(await mo.page.evaluate(()=>__caseDate));await mv.locator('.cd-date-sheet [data-ce="date-close"]').click();}
+    if(c.reason)await mv.locator('[data-ce-in="reason"]').fill(c.reason);
+    const pSave=pv.locator('#ddvComposer .idv-save'),mSave=mv.locator('[data-ce="save"]');
+    if(c.blocked){await pSave.click();assert.equal(await mSave.isDisabled(),true);assert.deepEqual(await pc.page.evaluate(()=>__ops),[]);assert.deepEqual(await mo.page.evaluate(()=>__ops),[]);checks.push(c.name+' (both block without writes)');continue;}
+    await pSave.click();await mSave.click();
+    if(c.failOnce){await pv.locator('.dv3-recerr').waitFor();await mo.page.waitForFunction(()=>MobileEntry.state()?.err);const pa=await pc.page.evaluate(()=>__ops.map(x=>x.request_id)),ma=await mo.page.evaluate(()=>__ops.map(x=>x.request_id));assert.equal(pa.length,1);assert.equal(ma.length,1);assert.equal(await pc.page.evaluate(()=>CUR_DETAIL.item.activities.length),0);assert.equal(await mo.page.evaluate(()=>DEALS[0].activities.length),0);assert.equal(await pv.locator('#ddvComposer textarea').inputValue(),c.memo);assert.equal(await mv.locator('[data-ce-in="memo"]').inputValue(),c.memo);await pSave.click();await mSave.click();assert.deepEqual(await pc.page.evaluate(()=>__ops.map(x=>x.request_id)),pa);assert.deepEqual(await mo.page.evaluate(()=>__ops.map(x=>x.request_id)),ma);}
+    await mo.page.waitForFunction(()=>MobileEntry.state()===null);await pc.page.waitForFunction(()=>__ops.length>0&&__ops.every(x=>x.status==='done'));
+    const pr=await pc.page.evaluate(()=>structuredClone(__ops)),mr=await mo.page.evaluate(()=>structuredClone(__ops));assert(pr.length>0);assert.deepEqual(normalized(mr),normalized(pr),c.name);assert(!mr.some(x=>x.operation==='next_action_complete'));
+    const projection=isPC=>{const d=isPC?CUR_DETAIL.item:DEALS[0],n=isPC?actionObj(d,itemPatch(d,'deal')):d.nextAction,ack=__ops.find(row=>row.operation==='next_action')?.ack;return {task:n?{type:n.type,text:n.text,due:n.due||n.due_at,status:n.status,idConfirmed:n.id===(ack?.next_action_id||'99999999-9999-4999-8999-999999999999')}:null,notes:(d.activities||[]).map(a=>a.note),stage:d.code||d.stage_code,outcome:d.outcome||'',completed:(d.completed_actions||[]).length};};
+    const pp=await pc.page.evaluate(projection,true),mp=await mo.page.evaluate(projection,false);assert.deepEqual(mp,pp,'Confirmed activity/task projection matches: '+c.name);assert.equal(mp.notes.length,1);assert.equal(mp.completed,0);assert.equal(mp.outcome,'');if(mp.task){assert.equal(mp.task.idConfirmed,true);assert.equal(mp.task.status,'open');}assert.equal(await mo.page.locator('#scr .mv-now,#scr .mh-hub,#scr .flow-strip').count(),0);checks.push(c.name);
+   }finally{await pc.context.close();await mo.context.close();}
+  }
+  assert.deepEqual(errors,[]);assert.deepEqual(writes,[]);console.log(JSON.stringify({test:'PC and approved mobile D contact parity',passed:checks.length,checks,boundary:'Actual composer events and shared command/ACK validation with synthetic in-memory transport; production and network writes blocked.'},null,2));
+ }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
+})().catch(e=>{console.error(e);server.close();process.exitCode=1;});

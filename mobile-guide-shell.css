@@ -1,0 +1,54 @@
+/* Supplied A/B/C frames. Only host, scrolling, input semantics and focus behavior. */
+body.claude-shell{font-family:ClaudeMobilePretendard,Pretendard,'Malgun Gothic',sans-serif;background:#e9ebef}
+body.claude-shell .stage{padding:0!important;display:block}
+body.claude-shell .phone{width:100%;max-width:none;margin:auto;height:100dvh;max-height:none;border:0;border-radius:0;box-shadow:none;background:#e9ebef}
+body.claude-shell .statusbar,body.claude-shell .mock-nav,body.claude-shell .mock-side{display:none!important}
+body.claude-shell #scr.gs-screen{padding:16px 0;overflow-y:auto;flex:1;min-height:0;background:#e9ebef;color:#15171c;font-family:inherit;display:flex;justify-content:center;align-items:flex-start}
+body.claude-shell #tabbar.gs-tabhost:empty{display:none!important}
+.approved-a,.approved-bc,.approved-i4{flex:none;font-family:ClaudeMobilePretendard,Pretendard,sans-serif;letter-spacing:normal;max-width:100%}
+.approved-a *,.approved-bc *,.approved-i4 *{box-sizing:border-box}
+.approved-a [role=button],.approved-bc [role=button],.approved-i4 [role=button]{cursor:pointer}
+.approved-a [role=button]:focus-visible,.approved-bc [role=button]:focus-visible,.approved-i4 [role=button]:focus-visible,.approved-search:focus-visible{outline:2px solid #3b6ce4;outline-offset:2px}
+.approved-bc .approved-search{font-family:inherit;min-width:0;width:0;color:#15171c!important;outline-offset:-2px;line-height:normal}
+.approved-search::placeholder{color:#9ca3af;opacity:1}
+.approved-bc .approved-stages{overflow-x:auto!important;scrollbar-width:none}
+.approved-bc .approved-list,.approved-bc .approved-detail-body{overflow-y:auto!important;min-height:0;scrollbar-width:none}
+.approved-bc [hidden]{display:none!important}
+.approved-bc .approved-empty{font-size:14px;line-height:1.5;color:#6b7280;padding:16px;display:block}
+.approved-bc nav.lpg button.lpg-b{min-height:44px!important;min-width:44px!important}
+@media(prefers-reduced-motion:reduce){.approved-a *,.approved-bc *{transition:none!important;animation:none!important}}
+
+/* E / F / H / J-4 keep the supplied frames; only native input and scrolling behavior. */
+.approved-ej,.approved-f,.approved-h{flex:none;font-family:ClaudeMobilePretendard,Pretendard,sans-serif;letter-spacing:normal;max-width:100%;color:#15171c}
+.approved-ej *,.approved-f *,.approved-h *{box-sizing:border-box}
+.approved-ej [role=button],.approved-f [role=button],.approved-h [role=button]{cursor:pointer}
+.approved-ej [role=button]:focus-visible,.approved-f [role=button]:focus-visible,.approved-h [role=button]:focus-visible{outline:2px solid #3b6ce4;outline-offset:2px}
+.approved-ej-body{overflow-y:auto;min-height:0}
+.approved-h-body{overflow-y:auto;min-height:0}
+.approved-h-body>div{flex:none}
+.approved-ej .approved-ej-input{font-family:inherit;width:100%;min-width:0;color:inherit;background:#fff;appearance:none;flex-shrink:0}
+.approved-ej .approved-ej-input:focus-visible{outline:2px solid #3b6ce4;outline-offset:2px}
+.approved-ej nav.lpg button,.approved-f nav.lpg button,.approved-h nav.lpg button{min-height:44px;min-width:44px}
+/* G / J-1 / J-2 retain Claude's original nodes and inline styles. */
+.approved-gj,.approved-j1{flex:none;font-family:ClaudeMobilePretendard,Pretendard,sans-serif;letter-spacing:normal;max-width:100%;color:#15171c}
+.approved-gj *,.approved-j1 *{box-sizing:border-box}
+.approved-gj [role=button],.approved-j1 [role=button]{cursor:pointer}
+.approved-gj [role=button]:focus-visible,.approved-j1 [role=button]:focus-visible{outline:2px solid #3b6ce4;outline-offset:2px}
+.approved-gj-body{overflow-y:auto;min-height:0;max-height:100%}
+.approved-j1>div:last-child{overflow-y:auto;min-height:0}
+/* Quote v3 uses Claude's 375px frames; only native semantics and host scrolling. */
+.approved-quote,.approved-quote-extra{flex:none;font-family:ClaudeMobilePretendard,Pretendard,sans-serif;letter-spacing:normal;max-width:100%;color:#15171c}
+.approved-quote *,.approved-quote-extra *{box-sizing:border-box}
+.approved-quote [role=button],.approved-quote-extra [role=button]{cursor:pointer}
+.approved-quote [role=button]:focus-visible,.approved-quote-extra [role=button]:focus-visible{outline:2px solid #3b6ce4;outline-offset:2px}
+.approved-quote-body,.approved-quote-extra>div:nth-child(3){overflow-y:auto;min-height:0}
+.approved-quote .approved-quote-quantity{appearance:none;border:0;padding:0;background:transparent;font-family:inherit;color:inherit;min-width:0;text-align:right;width:50%;outline-offset:2px}
+/* I1-I3: original inline design with native editing and narrow viewport scrolling. */
+.approved-input{flex:none;font-family:ClaudeMobilePretendard,Pretendard,sans-serif;letter-spacing:normal;max-width:100%;color:#15171c}
+.approved-input *{box-sizing:border-box}
+.approved-input [hidden]{display:none!important}
+.approved-input [role=button],.approved-input [role=checkbox]{cursor:pointer}
+.approved-input [role=button]:focus-visible,.approved-input [role=checkbox]:focus-visible{outline:2px solid #3b6ce4;outline-offset:2px}
+.approved-input-body{overflow-y:auto;min-height:0}
+.approved-input-body>div{flex-shrink:0}
+.approved-input [contenteditable]{outline:none;white-space:pre-wrap;overflow-wrap:anywhere}

@@ -133,30 +133,35 @@
   return '<div class="tv3 tv3-ex" data-role="'+role+'" data-exec="on" data-total="'+total+'">'+bar+'<div class="tv3-exbody">'+side+main+right+'</div></div>';
  }
  /* 문의 저장 = 목록의 줄 안 결과 기록과 같은 함수(InquiryListV3.record) */
- function saveInquiry(q,res,memo){
+ async function saveInquiry(q,res,memo){
   const nx=NXT()[res];if(!nx)throw Error('결과를 골라 주세요.');
   const d=new Date();d.setDate(d.getDate()+nx[1]);const due=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   /* 첫 응대 = 단계 진행, 이미 응대한 문의 = 다음 할 일 등록(상태는 그대로) — InquiryListV3.record 한 길 */
   if(!root.InquiryListV3||typeof root.InquiryListV3.record!=='function')throw Error('현재 단계는 상세 창에서 처리해 주세요.');
-  const ok=root.InquiryListV3.record(q,{res:('[전화 · '+res+'] '+String(memo||'').trim()).trim(),next:nx[0],due})===true;
+  const ok=(await root.InquiryListV3.record(q,{res:('[전화 · '+res+'] '+String(memo||'').trim()).trim(),next:nx[0],due}))===true;
   if(!ok)throw Error((document.getElementById('iq-msg')||{}).textContent||'저장하지 못했습니다.');
  }
  async function execSave(){
   const S=st(),idx=EXQ.findIndex(x=>x.i.key===S.ek);if(idx<0||!S.er||S.ebusy)return;
-  const cur=EXQ[idx],i=cur.i,me=root.repN(root.ME&&root.ME.name),role=root.G._towerRole||'rep',manage=role!=='rep'&&i.x.owner!==me,D=root.DealDetailV3,rerender=()=>root.TodayV2.render();
+  const queue=EXQ,cur=queue[idx],i=cur.i,result=S.er,memo=S.em,me=root.repN(root.ME&&root.ME.name),role=root.G._towerRole||'rep',manage=role!=='rep'&&i.x.owner!==me,D=root.DealDetailV3,rerender=()=>root.TodayV2.render();
+  const identity=()=>{try{return JSON.stringify([root.MobileSaveJournal?.owner?.()||'',root.MobileSaveJournal?.session?.()||'',root.Phase1?.profile?.auth_uid||'',root.Phase1?.profile?.user_id||'',root.ME?.name||'',root.G._towerRole||'rep']);}catch(e){return '';}};
+  const actor=identity(),sameState=()=>!!actor&&root.G.today3===S&&identity()===actor,current=()=>sameState()&&S.exec&&EXQ===queue&&S.ek===i.key&&S.er===result&&S.em===memo;
   S.ebusy=true;S.eerr='';rerender();
   try{
    const P=EPROG[i.key]||(EPROG[i.key]={});
-   if(manage){if(i.x.type==='deal'&&D&&D.memo)await D.memo(i.x.item,'['+ROLE_L[role]+' · '+S.er+'] '+i.missTxt+(String(S.em||'').trim()?' — '+String(S.em).trim():''),P);}
-   else if(S.er==='실주'){if(i.x.type==='deal'){root.G._detailPopup=true;root.drwDeal(JSON.stringify(i.x.item));setTimeout(()=>{try{root.StageTransitionUI.open(i.x.item,false,'lost');}catch(e){}},350);}else openKey(i.key);}
-   else if(i.x.type==='deal'){if(!D||!D.record)throw Error('상세 저장 기능을 불러오지 못했습니다.');await D.record(i.x.item,{ch:'전화',res:S.er,memo:S.em,P});}
-   else if(i.x.type==='inq')saveInquiry(i.x.item,S.er,S.em);
+   if(manage){if(i.x.type==='deal'&&D&&D.memo)await D.memo(i.x.item,'['+ROLE_L[role]+' · '+result+'] '+i.missTxt+(String(memo||'').trim()?' — '+String(memo).trim():''),P);}
+   else if(result==='실주'){if(i.x.type==='deal'){root.G._detailPopup=true;root.drwDeal(JSON.stringify(i.x.item));setTimeout(()=>{try{root.StageTransitionUI.open(i.x.item,false,'lost');}catch(e){}},350);}else openKey(i.key);}
+   else if(i.x.type==='deal'){if(!D||!D.record)throw Error('상세 저장 기능을 불러오지 못했습니다.');await D.record(i.x.item,{ch:'전화',res:result,memo,P});}
+   else if(i.x.type==='inq')await saveInquiry(i.x.item,result,memo);
    else{openKey(i.key,'contact');}
-   S.ed[i.key]=true;delete EPROG[i.key];
-   let nx=idx;for(let n=1;n<=EXQ.length;n++){const j=(idx+n)%EXQ.length;if(!S.ed[EXQ[j].i.key]){nx=j;break;}}
-   S.ek=EXQ[nx].i.key;S.er='';S.em='';
-  }catch(e){S.eerr='저장하지 못했습니다: '+String(e.message||e);}
-  S.ebusy=false;rerender();
+   if(!sameState())return;
+   delete EPROG[i.key];
+   if(!current())return;
+   S.ed[i.key]=true;
+   let nx=idx;for(let n=1;n<=queue.length;n++){const j=(idx+n)%queue.length;if(!S.ed[queue[j].i.key]){nx=j;break;}}
+   S.ek=queue[nx].i.key;S.er='';S.em='';
+  }catch(e){if(current())S.eerr='저장하지 못했습니다: '+String(e.message||e);}
+  finally{if(sameState()){S.ebusy=false;if(S.exec)rerender();}}
  }
  /* ── 오른쪽 '회사 이번 주'(대표): 이번 달 수주실적 · 메이드율 · 계약 임박 — 대시보드 · 주간 브리핑과 같은 함수 ── */
  function companyWeek(){

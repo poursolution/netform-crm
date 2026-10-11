@@ -5,6 +5,7 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
+const installInquiry = require('../tests/pc-inquiry-fixture.cjs');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 
 const root = path.resolve(__dirname, '..');
@@ -221,8 +222,8 @@ async function run() {
     await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */
       InquiryWorkbench.open('inq-1','process');
       const saved=iqApply;let captured=null;iqApply=(q,target)=>{captured={id:q.id,target};return false};
-      InquiryWorkbench.saveProcess();iqApply=saved;
-      if(captured.id!=='inq-1'||captured.target!=='step:1')throw Error('First response must not advance to quote');
+      const incomplete=InquiryWorkbench.saveProcess();iqApply=saved;
+      if(incomplete!==false||captured)throw Error('Missing result must not send a legacy stage change');
       const q={...B.inquiries[1],nextActionObj:{text:'약속한 확인',due:'2099-01-01'}};
       Phase1.queue={list:()=>[{object_id:q.id,operation:'inquiry_status',status:'pending'}]};
       if(!InquiryWorkbench.task(q).needed)throw Error('Pending write cannot clear today');
@@ -251,15 +252,30 @@ async function run() {
     await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */closeDetail();__writes.splice(0,__writes.length,...__writes.filter(w=>w[0]!=='opportunity_touch'));});/* 영업 상세 열람 기록은 업무 쓰기가 아니다 */
     await page.evaluate(()=>goPage('inq'));
     assert.equal(await page.evaluate(()=>__writes.length),0);
-    const save=await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */ Phase1.storage={setItem:()=>{}};
-      const q={...B.inquiries[0],id:'10000000-0000-4000-8000-000000000001',first_response_at:null,responded_at:null};B.inquiries=[q];LOCAL.inquiries={};
+    await page.addScriptTag({content:'window.__installInquiryTest='+installInquiry.toString()});
+    await page.evaluate(()=>{
+      G.dashBOff=true;
+      const id='10000000-0000-4000-8000-000000000001',f=window.__inquiryFixture=__installInquiryTest(window,id);
+      Phase1.queue={list:()=>[],flush:async()=>{}};Phase1.subscribe=()=>()=>{};Phase1.storage={setItem:()=>{},getItem:()=>null};
+      const q={...B.inquiries[0],id,assigned_to:f.uid,status:'배정완료',first_response_at:null,responded_at:null};delete q.nextActionObj;delete q.nextAction;delete q.nextActionText;B.inquiries=[q];LOCAL.inquiries={};
       InquiryWorkbench.open(q.id,'process');
       document.getElementById('iq-did').value='고객 통화';document.getElementById('iq-res').value='사진 전달 약속';document.getElementById('iq-next').value='사진 수신 확인';document.getElementById('iq-due').value='2099-01-01';
-      const result=InquiryWorkbench.saveProcess();return {result,writes:__writes,needed:InquiryWorkbench.task(q).needed,error:document.getElementById("iq-msg")?.textContent};
     });
-    assert.equal(save.result,true,JSON.stringify(save));assert.equal(save.writes.length,1);assert.equal(save.writes[0][0],'inquiry_status');assert.equal(save.writes[0][1].intent,'progress');assert.equal(save.writes[0][1].target,'step:1');assert.equal(save.needed,false);
+    const unknown=await page.evaluate(async()=>({ok:await InquiryWorkbench.saveProcess(),calls:__inquiryFixture.calls.length,text:document.getElementById('iq-res').value,error:document.getElementById('iq-msg')?.textContent}));
+    assert.equal(unknown.ok,false);assert.equal(unknown.calls,0);assert.equal(unknown.text,'사진 전달 약속');assert.match(unknown.error,/연락 결과/,'free text cannot infer a confirmed connection');
+    await page.locator('#iq-res').fill('[전화 · 연결됨] 사진 전달 약속');
+    await page.evaluate(()=>{__inquiryFixture.hold='crm_inquiry_command_v1';__inquiryFixture.badAck=true;window.__saveJob=InquiryWorkbench.saveProcess();});
+    await page.waitForFunction(()=>typeof __inquiryFixture.release==='function');
+    assert.deepEqual(await page.evaluate(()=>({status:B.inquiries[0].status,schedules:__inquiryFixture.schedules.size,text:document.getElementById('iq-res').value})),{status:'배정완료',schedules:0,text:'[전화 · 연결됨] 사진 전달 약속'},'ACK pending keeps original status, schedule and input');
+    const failed=await page.evaluate(async()=>{__inquiryFixture.release();return {ok:await __saveJob,status:B.inquiries[0].status,logs:__inquiryFixture.logs.size,schedules:__inquiryFixture.schedules.size,responses:__inquiryFixture.responses.size,text:document.getElementById('iq-res').value,request:PCInquirySave.pending(B.inquiries[0].id).progress.contact.request_id};});
+    assert.equal(failed.ok,false);assert.equal(failed.status,'배정완료');assert.equal(failed.logs,1);assert.equal(failed.schedules,0);assert.equal(failed.responses,0);assert.equal(failed.text,'[전화 · 연결됨] 사진 전달 약속');
+    await page.evaluate(()=>{const id=B.inquiries[0].id;InquiryWorkbench.close();InquiryWorkbench.open(id,'process');});
+    assert.equal(await page.locator('#iq-res').inputValue(),failed.text,'reentry restores original submitted form');
+    assert.equal(await page.locator('#iq-due').inputValue(),'2099-01-01');
+    const save=await page.evaluate(async()=>{__inquiryFixture.hold='';__inquiryFixture.badAck=false;const result=await InquiryWorkbench.saveProcess(),q=B.inquiries[0],f=__inquiryFixture;return {result,error:document.getElementById('iq-msg')?.textContent,writes:__writes,needed:InquiryWorkbench.task(q).needed,logs:f.logs.size,responses:f.responses.size,schedules:f.schedules.size,status:q.status,request:Array.from(f.logs.values())[0].request_id,next:q.nextActionObj};});
+    assert.equal(save.result,true,JSON.stringify(save));assert.equal(save.writes.length,0,'no legacy fallback writes');assert.equal(save.logs,1);assert.equal(save.responses,1);assert.equal(save.schedules,1);assert.equal(save.status,'전화응대 완료');assert.equal(save.request,failed.request,'retry uses same confirmed activity');assert.equal(save.next.text,'사진 수신 확인');assert.equal(save.next.due,'2099-01-01');assert.equal(save.needed,false);
 
-    console.log(JSON.stringify({status:'PASS',admin_rows:4,rep_rows:2,brand_multiselect:true,brand_counts:true,contact_search:true,seven_columns:true,action_geometry:true,wide_dialog:true,draft_preserved:true,foreign_inquiry_blocked:true,existing_assignment:true,viewports:[1920,1440,1024,760,390],external_writes:0,synthetic_progress_commands:1}));
+    console.log(JSON.stringify({status:'PASS',admin_rows:4,rep_rows:2,brand_multiselect:true,brand_counts:true,contact_search:true,seven_columns:true,action_geometry:true,wide_dialog:true,draft_preserved:true,foreign_inquiry_blocked:true,existing_assignment:true,viewports:[1920,1440,1024,760,390],external_writes:0,synthetic_confirmed_responses:1,original_input_retry:true}));
   } finally {await browser.close();await new Promise(resolve=>srv.close(resolve));}
 }
 run().catch(error=>{console.error(error.stack||error);process.exitCode=1});

@@ -9,11 +9,12 @@ const {chromium} = require(process.env.PLAYWRIGHT_PATH || 'playwright');
   for (const file of ['crm.html', 'mobile.html']) {
     const source = fs.readFileSync(path.join(root, file), 'utf8');
     assert.match(source, /src="account-password.js\?v=/);
-    assert.match(source, /onclick="CRMPassword.open\(\)"/);
+    if (file === 'crm.html') assert.match(source, /class="account-password-trigger" onclick="CRMPassword.open\(\)"/);
+    // Approved mobile intentionally has no manual account menu or retired header.
   }
   const browser = await chromium.launch({headless: true, executablePath: process.env.EDGE_PATH});
   try {
-    for (const width of [375, 1280]) {
+    for (const width of [320, 375, 1280]) {
       const page = await browser.newPage({viewport: {width, height: 800}});
       await page.setContent('<button id="trigger" onclick="CRMPassword.open()">비밀번호 변경</button>');
       await page.addStyleTag({path: path.join(root, 'account-password.css')});
@@ -80,25 +81,80 @@ const {chromium} = require(process.env.PLAYWRIGHT_PATH || 'playwright');
       for (const width of [320, 375]) {
         const page = await browser.newPage({viewport: {width, height: 800}});
         await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
-        await page.goto(`http://127.0.0.1:${server.address().port}/mobile.html?demo=1`);
+        await page.goto(`http://127.0.0.1:${server.address().port}/mobile.html`);
+        await page.waitForFunction(() => !!window.MobileGuideShell && !!window.CRMPassword);
         for (const allowed_modes of [['rep'], ['rep', 'admin']]) {
           await page.evaluate(modes => {
-            window.Phase1 = {profile: {auth_uid: 'test-user', allowed_modes: modes}};
-            window.SB = {auth: {}};
+            window.passwordBoundary = { credentialReads: [], passwordWrites: [], signOuts: 0 };
+            window.Phase1 = {
+              profile: {auth_uid: 'test-user', allowed_modes: modes},
+              rpc: async name => {
+                passwordBoundary.credentialReads.push(name);
+                if (name !== 'crm_my_credential_state_v1') throw Error('Unexpected RPC: ' + name);
+                return {ok: true, must_change: window.mustChangePassword === true};
+              },
+              signOut: async () => {
+                passwordBoundary.signOuts++;
+                Phase1.profile = null;
+                window.dispatchEvent(new Event('phase1:identity-cleared'));
+                render();
+              },
+              queue: {list: () => []}
+            };
+            window.SB = {auth: {
+              getUser: async () => ({data: {user: {id: 'test-user'}}}),
+              updateUser: async value => {
+                passwordBoundary.passwordWrites.push(value);
+                return {data: {user: {id: 'test-user'}}};
+              }
+            }};
+            // Exercise the existing logout boundary without a provider or reload.
+            window.doSignOut = () => Phase1.signOut();
+            window.mustChangePassword = false;
+            LIVE = true; DEMO = false;
             G.user = {id: 'test-user', nm: '테스트담당자'};
             G.mode = 'rep'; G.tab = 'today'; G.sub = null; G.deal = null;
             render();
           }, allowed_modes);
-          const buttons = await page.locator('.home-bar button').evaluateAll(elements => elements.map(el => ({text: el.textContent, left: el.getBoundingClientRect().left, right: el.getBoundingClientRect().right})));
-          assert.ok(buttons.every(b => b.left >= 0 && b.right <= width), `mobile header fits ${width}px: ${JSON.stringify(buttons)}`);
-          await page.getByRole('button', {name: '비밀번호 변경', exact: true}).click();
-          await page.getByRole('dialog').waitFor();
-          await page.getByRole('button', {name: '취소', exact: true}).click();
+          assert.equal(await page.locator('.approved-a').isVisible(), true);
+          assert.equal(await page.locator('.home-bar').count(), 0, 'retired mobile header is not rendered');
+          assert.equal(await page.getByRole('button', {name: '비밀번호 변경', exact: true}).count(), 0,
+            'approved mobile has no invented manual password menu');
+          const frame = await page.locator('.approved-a').boundingBox();
+          assert.ok(frame && frame.x >= 0 && frame.x + frame.width <= width + 1,
+            `approved mobile fits ${width}px`);
+          assert.equal(await page.evaluate(() => typeof CRMPassword.checkForced), 'function');
+          await page.evaluate(() => CRMPassword.checkForced());
+          assert.equal(await page.getByRole('dialog').count(), 0, 'ordinary login does not invent an account dialog');
+
+          // Existing login event, credential RPC and forced dialog; no new UI entry.
+          await page.evaluate(() => {
+            window.mustChangePassword = true;
+            window.dispatchEvent(new Event('phase1:profile'));
+          });
+          await page.getByRole('dialog', {name: '비밀번호를 먼저 바꿔 주세요'}).waitFor();
+          const dialogBox = await page.getByRole('dialog').boundingBox();
+          assert.ok(dialogBox.x >= 0 && dialogBox.x + dialogBox.width <= width,
+            `forced password dialog fits ${width}px`);
+          await page.keyboard.press('Escape');
+          assert.equal(await page.getByRole('dialog').isVisible(), true, 'forced change cannot be dismissed before completion');
+          assert.deepEqual(await page.evaluate(() => passwordBoundary.passwordWrites), [], 'opening forced change never writes');
+          await page.getByLabel('현재 비밀번호', {exact: true}).fill('temporary-example-password');
+          await page.getByLabel('새 비밀번호', {exact: true}).fill('private-draft-password');
+          await page.getByRole('button', {name: '로그아웃', exact: true}).click();
           await page.getByRole('dialog').waitFor({state: 'detached'});
+          assert.equal(await page.evaluate(() => passwordBoundary.signOuts), 1);
+          assert.equal(await page.locator('.approved-a').count(), 0, 'identity clearing removes the private approved screen');
+          assert.equal(await page.locator('.login').isVisible(), true);
+          assert.equal(await page.locator('.home-bar').count(), 0, 'logout never restores the retired authenticated header');
+          assert.deepEqual(await page.evaluate(() => passwordBoundary.passwordWrites), [], 'logout does not submit the password draft');
+          assert.ok((await page.evaluate(() => passwordBoundary.credentialReads)).every(name => name === 'crm_my_credential_state_v1'));
+          await page.evaluate(() => CRMPassword.open());
+          assert.equal(await page.getByRole('dialog').count(), 0, 'logged-out identity cannot open a password editor');
         }
         await page.close();
       }
     } finally {await new Promise(resolve => server.close(resolve));}
-    console.log('PASS password dialog at 375/1280px and real mobile header at 320/375px: validation, errors, cleanup, focus, in-flight lock, logout, rep/admin entry points');
+    console.log('PASS shared password safety at 320/375/1280px; PC manual-entry binding; approved mobile at 320/375px: no retired header/new account menu, credential RPC forced-change path, logout and identity cleanup. LIMITATION: approved mobile has no manual password-change menu; this test does not claim that entry is supported. All authentication is synthetic.');
   } finally {await browser.close();}
 })().catch(error => {console.error(error); process.exitCode = 1;});

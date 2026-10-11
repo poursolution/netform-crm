@@ -9,7 +9,7 @@ const earlyBootFixture="<script>\nloadData=async function(){};AUTH_ON=true;ME={i
 const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':t.endsWith('.png')?'image/png':'text/html');if(t.endsWith('crm.html')&&new URL(req.url,'http://localhost').searchParams.get('boot')==='early')return res.end(fs.readFileSync(t,'utf8').replace('</body>',earlyBootFixture+'</body>'));fs.createReadStream(t).pipe(res)});
 (async()=>{
  await new Promise(r=>srv.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({headless:true,...(process.env.EDGE_PATH?{executablePath:process.env.EDGE_PATH}:{})});
+ const browser=await chromium.launch({...require('../review-preview/review-environment.cjs').launchOptions(),...(process.env.EDGE_PATH?{executablePath:process.env.EDGE_PATH}:{})});
  try{
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});
@@ -178,9 +178,23 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await ex.locator('.tv3-excard').innerText(),/^2 \/ 7[\s\S]*서울체육고등학교/,'저장하면 다음 건');assert.equal(await ex.locator('.tv3-exrec .memo').inputValue(),'');
   /* 왼쪽에서 골라 가기 · 문의는 목록의 줄 안 저장과 같은 함수 */
   await ex.locator('.tv3-exlist button',{hasText:'인천SK스카이뷰'}).click();await page.waitForTimeout(200);assert.match(await ex.locator('.tv3-excard').innerText(),/^6 \/ 7[\s\S]*견적문의[\s\S]*인천SK스카이뷰/);
-  await ex.locator('.tv3-exrec .chips button',{hasText:'부재'}).click();await ex.locator('.tv3-exrec .save').click();await page.waitForTimeout(400);
+  await page.evaluate(source=>{
+   const q=B.inquiries.find(x=>/인천SK스카이뷰/.test(x.site||''));
+   const install=(0,eval)('('+source+')');window.__inqFixture=install(window,q.id);__inqFixture.state.status=q.status;
+   __inqFixture.hold='crm_inquiry_command_v1';
+  },require('../tests/pc-inquiry-fixture.cjs').toString());
+  await ex.locator('.tv3-exrec .chips button',{hasText:'부재'}).click();await ex.locator('.tv3-exrec .save').click();
+  await page.waitForFunction(()=>typeof __inqFixture.release==='function');
+  assert.match(await ex.locator('.tv3-exlist .hd').innerText(),/1 \/ 7$/,'서버 ACK 전에는 문의를 완료로 세거나 다음 건으로 넘기지 않는다');
+  assert.equal(await page.evaluate(()=>__inqFixture.schedules.size),0,'연락 ACK 전에 일정 저장 없음');
+  assert.match(await ex.locator('.tv3-excard').innerText(),/인천SK스카이뷰/,'처리 중인 문의 원문 유지');
+  await page.evaluate(()=>{__inqFixture.hold='';__inqFixture.release();});
+  await page.waitForFunction(()=>__inqFixture.schedules.size===1);await page.waitForTimeout(400);
   /* 부재 = 연락 시도(2026-10-05 견적문의 흐름 ①): 단계 진행(최초응대)이 아니라 다음 할 일만 — 저장은 목록 · 상세와 같은 명령(InquiryCommand) */
-  assert.deepEqual(await page.evaluate(()=>__iq),[],'부재만으로는 단계 진행(iqApply)을 부르지 않는다');assert.equal(await page.evaluate(()=>__writes.filter(x=>x==='next_action').length),1,'문의 부재 = 다음 할 일 등록 1건');
+  assert.deepEqual(await page.evaluate(()=>__iq),[],'부재만으로는 단계 진행(iqApply)을 부르지 않는다');
+  assert.deepEqual(await page.evaluate(()=>({logs:__inqFixture.logs.size,responses:__inqFixture.responses.size,schedules:__inqFixture.schedules.size,legacy:__writes.filter(x=>x==='next_action').length})),{logs:1,responses:0,schedules:1,legacy:0},'공통 RPC로 연락 시도 1건·열린 일정 1건, 최초 응대·구 저장 없음');
+  assert.equal(await page.evaluate(()=>__inqFixture.rows.every(x=>x.status==='open'&&x.completed_at===null)),true,'연락 시도만으로 후속 업무를 완료하지 않는다');
+  assert.match(await ex.locator('.tv3-exlist .hd').innerText(),/2 \/ 7$/,'연락·일정 ACK가 확인된 뒤에만 완료 수 증가');
   assert.equal(await page.evaluate(()=>{const q=B.inquiries.find(x=>/인천SK스카이뷰/.test(x.site||''));return [inqCtlFirstResponseAt(q),InquiryFlow.state(q).attempts].join('|');}),'|1','최초응대는 그대로 비어 있고 시도 1회');
   /* 나머지를 끝내면 완료 화면 → 목록으로 */
   for(let n=0;n<5;n++){await ex.locator('.tv3-exrec .chips button',{hasText:'연결됨'}).click();await ex.locator('.tv3-exrec .save').click();await page.waitForTimeout(300);}
@@ -235,6 +249,51 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(re.history,['','2026-03-11T04:15:00Z','2026-03-11T04:15:00Z','2026-03-11T04:15:00Z']);
   if(shot)await page.screenshot({path:shot+'-reassignment.png',fullPage:true});
 
+  /* 실제 실행모드 → PC 전용 activity facade → 공통 일정 엔진. 상세 창을 가짜로 열지 않는다. */
+  await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);
+  await page.waitForFunction(()=>window.TodayV3&&window.DealDetailV3&&window.ScheduleFlow);
+  await page.evaluate(()=>{window.__actualPushWrite=window.pushWrite;});await seed(ROLES[0][1]);
+  await page.evaluate(()=>{
+   B.deals=[B.deals.find(d=>d.id==='bid1'),B.deals.find(d=>d.id==='quote1')];B.inquiries=[];
+   B.deals.forEach((d,i)=>{d.id=`6666666${i}-6666-4666-8666-66666666666${i}`;d.version=0;d.activities=[];if(d.next_action)d.next_action.id='77777777-7777-4777-8777-777777777777';});
+   delete B.deals[1].next_action;CUR_DETAIL=null;LOCAL={deals:{},inquiries:{}};G.today3=null;
+   window.__ops=[];window.__invalidAck=false;window.__held=true;window.__release=null;
+   const gate=new Promise(r=>{__release=r;});
+   const auth='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',user='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+   window.Phase1={profile:{auth_uid:auth,user_id:user},queue:{
+    enqueue(operation,object_id,expected_version,payload){
+     const request_id=crypto.randomUUID(),row={request_id,object_id,expected_version,operation,op:operation,payload,auth_uid:auth,user_id:user,status:'pending'};
+     row.ack={contract_version:1,ok:true,replayed:false,request_id,operation,object_id,actor_auth_uid:auth,actor_user_id:user,previous_version:expected_version,version:expected_version+1,activity_id:crypto.randomUUID(),audit_event_id:crypto.randomUUID(),meaningful_contact:false,occurred_at:payload.occurred_at,server_at:new Date().toISOString(),cancelled_action_ids:[]};
+     OperationalAdapter.validateAck(row.ack,row);__ops.push(row);return row;
+    },list:()=>__ops.map(x=>({...x})),flush:async()=>{if(__held)await gate;__ops.forEach(x=>{x.status='done';});}
+   }};window.pushWrite=__actualPushWrite;
+  });
+  await page.evaluate(require('../tests/pc-detail-schedule-fixture.cjs'));
+  await page.evaluate(()=>paint());await page.locator('#today-v2 .tv3-go').click();
+  const live=page.locator('#today-v2 .tv3.tv3-ex');
+  await live.locator('.tv3-exlist button',{hasText:'햇빛마을23단지'}).click();
+  await live.locator('.tv3-exrec .chips button',{hasText:'부재'}).click();
+  const existing=await page.evaluate(()=>JSON.stringify(B.deals[0].next_action));
+  await live.locator('.tv3-exrec .save').click();await page.waitForFunction(()=>__ops.length===1);
+  assert.equal(await page.evaluate(()=>CUR_DETAIL),null,'오늘 실행 저장을 위해 상세 창 상태를 위조하지 않는다');
+  assert.match(await live.locator('.tv3-exlist .hd').innerText(),/0 \/ 2$/,'실제 activity ACK 전에는 완료하지 않는다');
+  assert.deepEqual(await page.evaluate(()=>__ops.map(x=>x.operation)),['activity'],'부재는 활동 한 건만 저장하고 기존 업무 완료 명령은 없다');
+  const blocked=await page.evaluate(()=>{
+   const id=B.deals[0].id,p={opportunity_id:id,type:'전화',note:'차단 확인',occurred_at:new Date().toISOString()},before=__ops.length,errors=[];
+   if(!G.today3.exec||!G.today3.ebusy||G.today3.ed[G.today3.ek])throw Error('active guard fixture is not ready');
+   for(const op of ['next_action','next_action_complete'])try{queueTodayContactOperation(op,p);}catch(e){errors.push(e.code||e.message);}
+   try{queueDetailContactOperation('activity',p);}catch(e){errors.push(e.code||e.message);}
+   return {errors,unchanged:before===__ops.length};
+  });
+  assert.equal(blocked.errors.length,3,'현재 행 처리 중에도 오늘 facade는 일정 변경·완료 불가, 상세 facade도 열린 상세 필요');assert.equal(blocked.unchanged,true);
+  await page.evaluate(()=>{__held=false;__release();});await page.waitForFunction(()=>G.today3.ed[G.today3.ek]||Object.keys(G.today3.ed).length===1);
+  assert.equal(await page.evaluate(()=>JSON.stringify(B.deals[0].next_action)),existing,'기존 업무와 원래 기한 유지');
+  assert.equal(await page.evaluate(()=>__scheduleWrites.length),0,'기존 업무가 있으면 새 후속 업무를 복제하지 않는다');
+  await live.locator('.tv3-exlist button',{hasText:'동탄푸른마을'}).click();
+  await live.locator('.tv3-exrec .chips button',{hasText:'연결됨'}).click();await live.locator('.tv3-exrec .memo').fill('물량 확인 후 견적 검토');
+  await live.locator('.tv3-exrec .save').click();await page.waitForFunction(()=>G.today3.ed&&Object.keys(G.today3.ed).length===2);
+  assert.deepEqual(await page.evaluate(()=>({ops:__ops.map(x=>x.operation),writes:__scheduleWrites.map(x=>[x.operation,x.date_basis]),count:__scheduleServer(B.deals[1].id).items.length})),{ops:['activity','activity'],writes:[['add','internal_plan']],count:1},'일정이 없는 건만 공통 서버 계약으로 한 건 추가한다');
+  assert.equal(await live.getAttribute('data-exec'),'done');
   assert.deepEqual(errs,[]);
   console.log(JSON.stringify({status:'PASS',five_roles:true,hero_equals_groups_equals_rows:true,strips_same_source:true,first_group_cards4:true,red_only_first:true,backlog_split_over_90:true,role_groups_readme:true,side_panels:true,existing_open_paths:true,no_write_on_render:true,exec_same_list_same_order:true,exec_saves_existing_paths:true,exec_manage_chips:true,legacy_switch:true}));
  }finally{await browser.close();srv.close();}

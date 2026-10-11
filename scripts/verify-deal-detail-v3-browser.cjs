@@ -9,7 +9,7 @@ const root=path.resolve(__dirname,'..'),shot=process.argv[2]||'';
 const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':'text/html');fs.createReadStream(t).pipe(res)});
 (async()=>{
  await new Promise(r=>srv.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({headless:true});
+ const browser=await chromium.launch(require('../review-preview/review-environment.cjs').launchOptions());
  try{
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});
@@ -28,9 +28,24 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],messageLogs:[],message_logs:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.dkOpen=null;G.siteHistoryOff=true;G.dealSiteInfoLeft=true;G.dealTidyOff=true;/* 이 검사는 정돈안 이전 배치(끄기 스위치 뒤)를 본다 — 정돈안은 scripts/verify-deal-tidy-browser.cjs *//* 이 검사는 '같은 현장 다른 영업' + 왼쪽 '현장 정보'가 있는 예전 배치를 본다 — 기본 배치(오른쪽만)는 verify-deal-right-only-browser.cjs */
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
-   window.__writes=[];window.pushWrite=(op,p)=>{__writes.push([op,p]);return 'req-'+__writes.length;};
-   window.__ops=[];window.queueDetailContactOperation=(op,payload,actionId)=>{const id='op-'+(__ops.length+1);__ops.push({id,op,payload,actionId});return id;};
-   Phase1.queue.flush=async()=>{};Phase1.queue.list=()=>__ops.map(o=>({request_id:o.id,object_id:o.payload.opportunity_id,operation:o.op,status:'done',payload:o.payload,ack:{ok:true,operation:o.op,activity_id:'srv-'+o.id,next_action_id:'srv-'+o.id}})).concat(__writes.map((w,i)=>w[0]==='contact_upsert'?{request_id:'req-'+(i+1),object_id:w[1].opportunity_id,operation:'contact_upsert',status:'done',payload:w[1],ack:{ok:true,operation:'contact_upsert',person_key:w[1].person_key,contact_id:'c-'+i}}:null).filter(Boolean));
+   window.__writes=[];window.__ops=[];window.__contactOps=[];window.__contactStates={};
+   window.Phase1={...Phase1,profile:{auth_uid:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',user_id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'}};
+   window.CRM_SCHEDULE_V1=false; // Explicit gate-OFF compatibility/overwrite protection; gate-ON real flow is exercised in verify-deal-tidy-browser.
+   const row=(op,payload,actionId)=>{
+    const id=crypto.randomUUID(),object_id=payload.opportunity_id,d=B.deals.find(x=>x.id===object_id),expected_version=d?.version||0;
+    const command={id,op,payload,actionId,request_id:id,object_id,operation:op,expected_version,auth_uid:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',user_id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'};
+    const ack={contract_version:1,ok:true,replayed:false,request_id:id,operation:op,object_id,actor_auth_uid:command.auth_uid,actor_user_id:command.user_id,previous_version:expected_version,version:expected_version+1,activity_id:crypto.randomUUID(),audit_event_id:crypto.randomUUID(),meaningful_contact:payload.meaningful_contact===true,occurred_at:payload.occurred_at||new Date().toISOString(),cancelled_action_ids:[],due_at:payload.due_at||'',assignee_name:payload.assignee||'',next_action_id:payload.intent==='postpone'?payload.action_id:crypto.randomUUID(),server_at:new Date().toISOString()};
+    if(payload.intent==='postpone')Object.assign(ack,{intent:'postpone',previous_due_at:(d.nextActionObj||d.next_action).due,postpone_count:1,postpone_event_id:crypto.randomUUID()});
+    if(op==='contact_upsert'){
+     const consent=Object.assign({sms_consent:false,kakao_consent:false,consent_at:null,opt_out_at:null,send_blocked:false,send_blocked_reason:null},__contactStates[payload.person_key]||{});
+     for(const k of Object.keys(consent))if(Object.hasOwn(payload,k))consent[k]=payload[k];
+     Object.assign(ack,{person_key:payload.person_key,contact_id:crypto.randomUUID(),contact_consent_contract:'preserve-omitted-v1',consent});__contactStates[payload.person_key]=consent;
+    }
+    OperationalAdapter.validateAck(ack,command);return {...command,status:'done',ack};
+   };
+   window.pushWrite=(op,p)=>{__writes.push([op,p]);if(op==='contact_upsert'){const r=row(op,p);__contactOps.push(r);return r.request_id;}return 'req-'+__writes.length;};
+   window.queueDetailContactOperation=(op,payload,actionId)=>{const r=row(op,payload,actionId);__ops.push(r);return r.request_id;};
+   Phase1.queue.flush=async()=>{};Phase1.queue.list=()=>__ops.concat(__contactOps);
    window.__sf=[];SB={rpc:async(name,args)=>{if(name==='crm_deal_stage_fields_update_v1'){__sf.push(args.p);const d=B.deals.find(x=>x.id===args.p.deal_id),cur=((d.stage_contexts||{})[args.p.stage_code]||{}).fields||{},fields=Object.assign({},cur);Object.entries(args.p.fields).forEach(([k,v])=>{if(v==null)delete fields[k];else fields[k]=v;});return {data:{ok:true,version:(d.version||1)+1,stage_context:{fields}}};}
    if(name==='crm_deal_closed_info_update_v1'){window.__ci=window.__ci||[];__ci.push(args.p);if(window.__ciMissing)return {error:{code:'PGRST202',message:'function not found'}};const d=B.deals.find(x=>x.id===args.p.deal_id),cur=((d.stage_contexts||{})[args.p.stage_code]||{}).fields||{},fields=Object.assign({},cur);Object.entries(args.p.fields||{}).forEach(([k,v])=>{if(v==null)delete fields[k];else fields[k]=v;});return {data:{ok:true,version:(d.version||1)+1,stage_code:args.p.stage_code,stage_context:{to:args.p.stage_code,fields},amount:args.p.amount!=null?args.p.amount:(d.amount??d.amt??null)}};}
    return {data:{ok:true,tasks:[]}};}};TOKEN='test';
@@ -147,7 +162,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#nowCard [data-dv3="rmode"]',{hasText:'새 업무'}).click();await page.waitForTimeout(120);
   assert.match(await page.locator('#nowCard .dv3-recnext').innerText(),/다음 업무[\s\S]*(기존 일정|지금 잡힌 다음 업무 없음)[\s\S]*할 일[\s\S]*예정일[\s\S]*내일\s*3일 후\s*7일 후\s*날짜 지정[\s\S]*담당[\s\S]*일정[\s\S]*고객 합의\s*내부 계획/);assert.equal(await page.locator('#nowCard [data-dv3="rday"][aria-pressed="true"]').innerText(),'내일','부재 → 내일');
   assert.match(await page.locator('#nowCard .dv3-ce-note').innerText(),/^부재 · 번호 오류는 상담 내용 칸 없음 · 연락 시도로만 기록$/);assert.equal(await page.locator('#nowCard [data-dv3rec="memo"]').count(),0,'부재 = 상담 내용 칸 없음');
-  assert.match(await page.locator('#nowCard .dv3-ce-prev').innerText(),/^저장하면 연락 시도 1건 기록 · (기존 일정 .* 완료 · )?다시 전화 일정 1건 등록 · \d+\.\d+ \(.\)$/,'저장 전 미리보기');
+  assert.match(await page.locator('#nowCard .dv3-ce-prev').innerText(),/기존 업무를 보존하는 추가 저장 경로가 아직 연결되지 않았습니다/,'추가 일정 계약이 없으면 기존 일정 덮어쓰기 차단');
+  const originalNext=await page.evaluate(()=>JSON.stringify(B.deals[0].next_action));
+  await page.locator('#nowCard .dv3-save').click();await page.waitForTimeout(100);
+  assert.deepEqual(await page.evaluate(()=>__ops),[],'차단된 새 업무는 연락 기록도 먼저 저장하지 않는다');
+  assert.equal(await page.evaluate(()=>JSON.stringify(B.deals[0].next_action)),originalNext);
   await page.locator('#nowCard [data-dv3="rres"]',{hasText:'연결됨'}).click();await page.waitForTimeout(120);await page.locator('#nowCard [data-dv3="rmode"]',{hasText:'새 업무'}).click();await page.waitForTimeout(120);
   assert.equal(await page.locator('#nowCard [data-dv3rec="purpose"]').inputValue(),'다시 연락');assert.equal(await page.locator('#nowCard [data-dv3="rday"][aria-pressed="true"]').innerText(),'3일 후','연결됨 → 3일 후');
   await page.locator('#nowCard .dv3-save').click();await page.waitForTimeout(150);assert.match(await page.locator('#nowCard .dv3-recerr').innerText(),/상담 내용을 한 줄 적어 주세요/);assert.deepEqual(await page.evaluate(()=>__ops),[],'상담 내용 없이는 저장 안 됨');
@@ -160,12 +179,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#nowCard [data-dv3="rch"]',{hasText:'전화'}).click();await page.waitForTimeout(120);
   if(shot)await page.screenshot({path:shot+'-record.png'});
   assert.deepEqual(await page.evaluate(()=>__ops),[],'고르는 것만으로 저장 없음');
+  await page.locator('#nowCard [data-dv3="rmode"]',{hasText:'기존 일정 유지'}).click();await page.waitForTimeout(120);
   await page.locator('#nowCard .dv3-save').click();await page.waitForTimeout(500);
-  assert.deepEqual(await page.evaluate(()=>__ops.map(o=>[o.op,o.payload.type,o.payload.note||o.payload.text,o.payload.due_at||''])),[['activity','전화','통화 완료 · 연결됨 — 12월 입대의 후 결정',''],['next_action','전화','결과 확인',await day(3)]],'저장 = 연락 기록 + 다음 할 일(기존 경로)');
+  assert.deepEqual(await page.evaluate(()=>__ops.map(o=>[o.op,o.payload.type,o.payload.note||o.payload.text,o.payload.due_at||''])),[['activity','전화','통화 완료 · 연결됨 — 12월 입대의 후 결정','']],'기존 일정 유지 = 응대만 저장하고 기존 업무를 완료하거나 복제하지 않는다');
   assert.equal(await page.locator('#nowCard .dv3-form').count(),0,'저장 뒤 접힘');assert.equal(await page.locator('#nowCard .nc-call').innerText(),'연락하고 결과 남기기');
   assert.match(await page.locator('#detailView .dw-center').innerText(),/통화 완료 · 연결됨 — 12월 입대의 후 결정/,'가운데 응대 이력에 쌓임');
   assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#detailView .idv-thread .idv-meta')].every(n=>/\d{4}\.\d{1,2}\.\d{1,2} \d{2}:\d{2}/.test(n.innerText))),true,'기록마다 연도 표시');
-  assert.equal(await page.evaluate(()=>CUR_DETAIL.item.nextActionObj.text),'결과 확인','다음 할 일 반영');
+  assert.equal(await page.evaluate(()=>JSON.stringify(B.deals[0].next_action)),originalNext,'기존 일정의 이름·기한·상태 보존');
   /* 배드핏 = 다음 일정 없음 + 사유 필수(기록만 — 종결은 단계 바꾸기에서 따로) */
   await page.locator('#nowCard .nc-call').click();await page.waitForTimeout(200);
   await page.locator('#nowCard [data-dv3="rch"]',{hasText:'문자'}).click();await page.waitForTimeout(100);await page.locator('#nowCard [data-dv3="rres"]',{hasText:'배드핏'}).click();await page.waitForTimeout(120);
@@ -176,8 +196,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#nowCard [data-dv3="rwhy"]',{hasText:'고객이 연락 거절'}).click();await page.waitForTimeout(120);
   assert.match(await page.locator('#nowCard .dv3-ce-prev').innerText(),/배드핏 종결 검토 \(사유 필수\) — 종결은 \[단계 바꾸기\]에서 따로$/);
   await page.locator('#nowCard .dv3-save').click();await page.waitForTimeout(500);
-  assert.deepEqual(await page.evaluate(()=>__ops.slice(2).map(o=>[o.op,o.payload.type,o.payload.note])),[['activity','문자','문자 답변 받음 · 배드핏 종결 검토 · 이유: 고객이 연락 거절']],'배드핏 = 기록만 · 이유를 함께');
-  /* 고객과 정한 방문 날짜 = 새 업무(방문) + 고객 합의 → 다음 업무 글머리 '고객 약속: ' · 목적이 '연락하기'만이면 저장 불가 */
+  assert.deepEqual(await page.evaluate(()=>__ops.slice(1).map(o=>[o.op,o.payload.type,o.payload.note])),[['activity','문자','문자 답변 받음 · 배드핏 종결 검토 · 이유: 고객이 연락 거절']],'배드핏 = 기록만 · 이유를 함께');
+  await page.evaluate(()=>{closeDetail();G._detailPopup=true;drwDeal(JSON.stringify(B.deals[2]));});await page.waitForTimeout(500);
+  /* 기존 일정 없는 별도 합성 영업건: 고객과 정한 방문 날짜 = 새 업무(방문) + 고객 합의 → 다음 업무 글머리 '고객 약속: ' · 목적이 '연락하기'만이면 저장 불가 */
   await page.locator('#nowCard .nc-call').click();await page.waitForTimeout(200);
   await page.locator('#nowCard [data-dv3="rch"]',{hasText:'전화'}).click();await page.waitForTimeout(100);await page.locator('#nowCard [data-dv3="rres"]',{hasText:'연결됨'}).click();await page.waitForTimeout(150);await page.locator('#nowCard [data-dv3="rmode"]',{hasText:'새 업무'}).click();await page.waitForTimeout(120);
   await page.locator('#nowCard [data-dv3rec="memo"]').fill('방문 일정 협의');
@@ -185,7 +206,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#nowCard [data-dv3="rplan"][data-v="customer"]').click();await page.waitForTimeout(150);
   await page.locator('#nowCard [data-dv3rec="purpose"]').fill('연락하기');await page.waitForTimeout(100);await page.locator('#nowCard .dv3-save').click();await page.waitForTimeout(250);assert.match(await page.locator('#nowCard .dv3-recerr').innerText(),/'연락하기'만으로는 저장되지 않습니다/);
   await page.locator('#nowCard [data-dv3rec="purpose"]').fill('현장 방문 · 옥상 실측');await page.waitForTimeout(100);await page.locator('#nowCard .dv3-save').click();await page.waitForTimeout(500);
-  assert.deepEqual(await page.evaluate(()=>__ops.slice(3).map(o=>[o.op,o.payload.type,o.payload.note||o.payload.text,o.payload.due_at||''])),[['activity','전화','통화 완료 · 연결됨 — 방문 일정 협의',''],['next_action','방문','고객 약속: 현장 방문 · 옥상 실측',visitDay]],'고객 합의 = 고객 약속 글머리 · 방문 = 방문 종류 · 고객과 정한 날');
+  assert.deepEqual(await page.evaluate(()=>__ops.slice(2).map(o=>[o.op,o.payload.type,o.payload.note||o.payload.text,o.payload.due_at||''])),[['activity','전화','통화 완료 · 연결됨 — 방문 일정 협의',''],['next_action','방문','고객 약속: 현장 방문 · 옥상 실측',visitDay]],'고객 합의 = 고객 약속 글머리 · 방문 = 방문 종류 · 고객과 정한 날');
+  assert.equal(await page.evaluate(()=>JSON.stringify(B.deals[0].next_action)),originalNext,'다른 건의 방문 저장도 원래 영업건 일정을 바꾸지 않는다');
+  await page.evaluate(()=>{closeDetail();G._detailPopup=true;drwDeal(JSON.stringify(B.deals[0]));});await page.waitForTimeout(500);
   /* 연락 없이 다음 할 일만 정하기: 그 자리 칩 */
   await page.locator('#nowCard [data-dv3="nextonly"]').click();await page.waitForTimeout(150);
   assert.match(await page.locator('#nowCard .dv3-nextonly').innerText(),/다시 연락\s*내일\s*3일 후\s*7일 후/);assert.equal(await page.locator('#ddvPanel').count(),0);
@@ -197,7 +220,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#nowCard [data-dv3="nextpick"]',{hasText:'7일 후'}).click();await page.waitForTimeout(300);
   /* 기한 미루기(exec_wording): 지금 열린 기한보다 늦추면 원래 기한 · 새 기한 · 사유(필수) */
   assert.equal(await page.locator('#ew-postpone').count(),1,'기한을 미루면 사유 창');await page.locator('#ew-postpone textarea').fill('고객 요청');await page.locator('#ew-postpone button[type=submit]').click();await page.waitForTimeout(500);
-  assert.deepEqual(await page.evaluate(()=>__ops.slice(5).filter(o=>o.op==='next_action').map(o=>[o.op,o.payload.text,o.payload.due_at])),[['next_action','다시 연락',await day(7)]]);assert.equal(await page.evaluate(()=>__ops.slice(5).some(o=>o.op==='activity'&&/^\[기한 변경\] 원래 .+\| 새 .+\| 사유 고객 요청$/.test(String(o.payload.note)))),true,'미룬 기록(원래 기한 · 새 기한 · 사유)');assert.equal(await page.locator('#nowCard .dv3-nextonly').count(),0);
+  assert.deepEqual(await page.evaluate(()=>__ops.slice(4).filter(o=>o.op==='next_action').map(o=>[o.op,o.payload.text,o.payload.due_at])),[['next_action','다시 연락',await day(7)]]);assert.equal(await page.evaluate(()=>__ops.slice(4).some(o=>o.op==='activity'&&/^\[기한 변경\] 원래 .+\| 새 .+\| 사유 고객 요청$/.test(String(o.payload.note)))),true,'미룬 기록(원래 기한 · 새 기한 · 사유)');assert.equal(await page.locator('#nowCard .dv3-nextonly').count(),0);
   assert.deepEqual(await page.evaluate(()=>__writes.map(w=>w[0]).filter(o=>o!=='opportunity_touch')),[],'여기까지 다른 저장 없음');
   /* 소장이 바뀌었어요: 관리소장 카드 안 '새 관리소장 등록' 상자 */
   await page.locator('.dv3-left [data-dv3="replace"]').click();await page.waitForTimeout(250);
@@ -219,7 +242,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('.dv3-left [data-dv3="cons"][data-k="key"]').innerText(),'핵심 담당자 확인');assert.equal(await page.evaluate(()=>__writes.filter(w=>w[0]==='contact_upsert').length),1,'핵심 담당자 확인은 이 PC 표시');
   await page.locator('.dv3-left [data-dv3="cons"][data-k="sms"]').click();await page.waitForTimeout(400);
   const cs=await page.evaluate(()=>{const w=__writes.filter(w=>w[0]==='contact_upsert').at(-1)[1];return [w.manager_name,w.sms_consent,w.kakao_consent,!!w.consent_at,w.send_blocked];});
-  assert.deepEqual(cs,['이정민',true,false,true,false],'문자 동의 = 기존 연락처 저장');assert.equal(await page.locator('.dv3-left [data-dv3="cons"][data-k="sms"]').innerText(),'문자 동의');assert.equal(await page.locator('.dv3-left [data-dv3="cons"][data-k="kakao"]').innerText(),'카카오 미동의');
+  assert.deepEqual(cs,['이정민',true,undefined,true,undefined],'문자 동의만 변경하고 카카오·발송차단 값은 생략');assert.equal(await page.locator('.dv3-left [data-dv3="cons"][data-k="sms"]').innerText(),'문자 동의');assert.equal(await page.locator('.dv3-left [data-dv3="cons"][data-k="kakao"]').innerText(),'카카오 미동의');
   /* 담당자 변경 · 단계 바꾸기: 머리글에서 — 오른쪽은 그대로 */
   await page.locator('#detailView .dv3-headact .tf-more').click();await page.locator('#detailView .tf-menu [data-tf="m-owner"]').click();await page.waitForTimeout(350);
   assert.equal(await page.locator('#detailView .dw-center>.dv3-cpanel:not([hidden])>.dv3-slot[data-slot="center"]>#detailAction').count(),1,'담당자 변경 = 가운데 패널');await rightIntact('담당자 변경');

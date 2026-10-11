@@ -23,6 +23,7 @@ const accounts = {
   '경남지사': 'gyeongnam'
 };
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
+const requiredFontAssets = ['fonts/PretendardVariable.woff2', 'fonts/OFL.txt'];
 
 function copyTree(from, to) {
   fs.mkdirSync(to, { recursive: true });
@@ -77,6 +78,14 @@ function build() {
     if (!entry.isFile() || !/\.(?:html|js|css)$/.test(entry.name)) continue;
     fs.copyFileSync(path.join(root, entry.name), path.join(output, entry.name));
   }
+  // Preserve the approved local font and its license as binary release assets.
+  // The compatibility snapshot predates this font; a missing source must fail.
+  for (const name of requiredFontAssets) {
+    const from = path.join(root, name), to = path.join(output, name);
+    if (!fs.existsSync(from) || !fs.statSync(from).isFile()) throw Error(`MISSING_APPROVED_ASSET:${name}`);
+    fs.mkdirSync(path.dirname(to), { recursive: true });
+    fs.copyFileSync(from, to);
+  }
   // The standalone orphan-customer browser was replaced by canonical Site review.
   // Remove stale copies that may still exist in the assembled compatibility snapshot.
   for (const legacy of ['organization-history-reader.js', 'organization-history-view.js']) {
@@ -107,6 +116,7 @@ function build() {
     if (!runtimeFiles.includes(required)) throw Error(`CURRENT_RUNTIME_ASSET_MISSING:${required}`);
   }
   if (!fs.readFileSync(path.join(output, 'pc-organization-history.js'), 'utf8').includes('crm_site_linked_assets_v1')) throw Error('CURRENT_CUSTOMER_ASSET_UI_MISSING');
+  const releaseFiles = [...new Set([...runtimeFiles, ...requiredFontAssets])].sort();
   const manifest = {
     project_ref: ref,
     status: 'PRODUCTION_31_OP_UI_ASSEMBLED_PENDING_E2E',
@@ -119,10 +129,10 @@ function build() {
     allowed_hosts: ['poursolution.github.io', '127.0.0.1', 'localhost'],
     external_n8n_body_accessed: false,
     ui_release: `commit-${buildId}`,
-    files_sha256: Object.fromEntries(runtimeFiles.sort().map(file => [file, hash(fs.readFileSync(path.join(output, file)))]))
+    files_sha256: Object.fromEntries(releaseFiles.map(file => [file, hash(fs.readFileSync(path.join(output, file)))]))
   };
   fs.writeFileSync(path.join(output, 'production-ui-manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
-  return { output, files: runtimeFiles.length, status: manifest.status };
+  return { output, files: releaseFiles.length, status: manifest.status };
 }
 
 function applyToRoot() {
