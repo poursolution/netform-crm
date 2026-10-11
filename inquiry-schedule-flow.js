@@ -33,7 +33,7 @@
  }
  async function begin(id,plan,existing,progress,persist,status){
   if(!enabled())fail('SCHEDULE_RELEASE_DISABLED');
-  if(progress.inquirySchedule){const s=progress.inquirySchedule;identity(s.context);if(s.context.target_id!==id)fail('SCHEDULE_INVALID_TARGET');persist();return;}
+  if(progress.inquirySchedule){const s=progress.inquirySchedule,api=root.ScheduleContract;if(s.context.target_id!==id)fail('SCHEDULE_INVALID_TARGET');if(api.needsResume(s.context)){const r=await api.resume(s.context,s.prepared);s.context=clone(r.context);if(r.prepared)s.prepared=clone(r.prepared);persist();}identity(s.context);persist();return;}
   const c=await read(id);if(!c.ready)fail('SCHEDULE_RELEASE_DISABLED');
   if(status!==undefined&&c.response_state.status!==status)fail('SCHEDULE_STALE');
   const found=existing&&c.items.find(n=>n.id===existing.id);
@@ -44,7 +44,8 @@
  }
  async function finish(id,progress,responseAck,persist){
   const api=root.ScheduleContract,s=progress.inquirySchedule;if(!s)fail('SCHEDULE_CONTEXT_REQUIRED');
-  if(!enabled())fail('SCHEDULE_RELEASE_DISABLED');identity(s.context);
+  if(!enabled())fail('SCHEDULE_RELEASE_DISABLED');
+  if(api.needsResume(s.context)){const r=await api.resume(s.context,s.prepared);s.context=clone(r.context);if(r.prepared)s.prepared=clone(r.prepared);persist();}identity(s.context);
   if(s.context.target_id!==id)fail('SCHEDULE_INVALID_TARGET');
   if(!s.prepared&&!s.checked){
    const c=await read(id);if(!c.ready||c.owner_id!==s.context.owner_id||c.inquiry_guard!==s.context.inquiry_guard)fail('SCHEDULE_STALE');

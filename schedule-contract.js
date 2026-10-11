@@ -6,10 +6,18 @@
  'use strict';
  const names=['crm_schedule_list_v1','crm_schedule_write_v1','crm_schedule_receipt_v1'];
  const contract='crm.schedule.v1',uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ const documentKey='__crmScheduleDocumentV1';
+ if(!Object.hasOwn(root,documentKey))Object.defineProperty(root,documentKey,{value:root.crypto?.randomUUID?.()||Date.now().toString(36)+':'+Math.random().toString(36).slice(2)});
+ const documentId=root[documentKey];
  let epoch=0;root.addEventListener?.('phase1:identity-cleared',()=>{epoch++;});
  const fail=code=>{throw Error(code);};
- function actor(){const p=root.Phase1?.profile;if(!uuid.test(p?.auth_uid||'')||!uuid.test(p?.user_id||''))fail('AUTH_REQUIRED');return {auth:p.auth_uid,user:p.user_id,epoch};}
- function same(a){const b=actor();if(a.auth!==b.auth||a.user!==b.user||a.epoch!==b.epoch)fail('IDENTITY_CHANGED');}
+ function actor(){const p=root.Phase1?.profile;if(!uuid.test(p?.auth_uid||'')||!uuid.test(p?.user_id||''))fail('AUTH_REQUIRED');return {auth:p.auth_uid,user:p.user_id,epoch,document:documentId};}
+ function same(a){const b=actor();if(!a||a.auth!==b.auth||a.user!==b.user||a.epoch!==b.epoch||(a.document&&a.document!==b.document))fail('IDENTITY_CHANGED');}
+ function needsResume(c){
+  const a=c?.identity,b=actor();if(!a||a.auth!==b.auth||a.user!==b.user)fail('IDENTITY_CHANGED');
+  if(!a.document||a.document===b.document){if(a.epoch!==b.epoch)fail('IDENTITY_CHANGED');return false;}
+  return true;
+ }
  function gate(){return root.CRM_SCHEDULE_V1===true&&names.every(n=>root.CRMRelease?.has?.(n)===true);}
  function target(kind,id){if(!['deal','inquiry'].includes(kind)||!uuid.test(id||''))fail('SCHEDULE_INVALID_TARGET');}
  async function rpc(name,p,a){same(a);try{const r=await root.Phase1.rpc(name,{p});same(a);return r;}catch(e){if(e.code==='PGRST202')root.CRMRelease?.noteMissing?.(name);throw e;}}
@@ -60,5 +68,19 @@
   return r.found?ack(r.ack,prepared):null; // null means unknown/not committed, NEVER complete or automatic new UUID
  }
  function assertContext(c){same(c.identity);target(c.target_type,c.target_id);}
- return Object.freeze({list,prepare,write,receipt,assertContext,enabled:gate});
+ async function resume(saved,prepared){
+  needsResume(saved);target(saved.target_type,saved.target_id);
+  const a=saved.identity;
+  if(saved.actor_auth_uid!==a.auth||saved.actor_user_id!==a.user||!uuid.test(saved.owner_id||''))fail('SCHEDULE_RECOVERY_CONTEXT_MISMATCH');
+  if(prepared){const p=prepared.command,i=prepared.identity;
+   if(!i||i.auth!==a.auth||i.user!==a.user||i.epoch!==a.epoch||i.document!==a.document||!p
+    ||p.target_type!==saved.target_type||p.target_id!==saved.target_id||!uuid.test(p.request_id||'')||!/^[a-f0-9]{32}$/.test(p.expected_token||''))fail('SCHEDULE_RECOVERY_CONTEXT_MISMATCH');
+  }
+  // A document restart may renew only the actor binding. The original CAS token, command and UUID remain immutable.
+  const current=await list(saved.target_type,saved.target_id,1);
+  if(!current.ready||current.owner_id!==saved.owner_id)fail('SCHEDULE_RECOVERY_SCOPE_CHANGED');
+  const identity=Object.freeze({...current.identity}),copy=x=>JSON.parse(JSON.stringify(x));
+  return {context:Object.freeze({...copy(saved),identity}),prepared:prepared?Object.freeze({...copy(prepared),command:Object.freeze(copy(prepared.command)),identity}):null,current};
+ }
+ return Object.freeze({list,prepare,write,receipt,assertContext,needsResume,resume,enabled:gate});
 });

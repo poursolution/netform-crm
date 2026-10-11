@@ -146,9 +146,9 @@
  /* 결과 마스터 · 시도/접촉 구분은 InquiryFlow 한 곳(2026-10-05 견적문의 흐름 ①). 끄면(G.inqFlowOff) 예전 목록 */
  const FL=()=>root.InquiryFlow&&root.InquiryFlow.on()?root.InquiryFlow:null;
  const isConn=r=>FL()?FL().kindOf(r)==='connected':CONNECTED.includes(r),isTry=r=>FL()?FL().kindOf(r)==='attempt':false;
- /* 다음 단계(견적문의 흐름 ④ ⑤): 전환 기준은 InquiryFlow 한 곳 — '예정'은 저장만, 방문 완료 · 견적 발송 완료가 전환. 견적 발송 완료는 금액이 있어야 한다(견적 = 버전) */
+ /* 다음 단계: 보존 계약은 사실만 저장한다. 기존 전환 자격과 실제 파이프라인 전환은 별개다. */
  const stepOk=s=>s.step==='visit'?!!s.visitDate:s.step==='quote'?(FL()&&s.quoteMode==='완료'?!!s.quoteAmt:!!(s.quoteAmt||s.quoteDate)):false;
- const stepConverts=s=>!FL()||(s.step==='visit'?s.visitMode==='완료':s.step==='quote'?s.quoteMode==='완료':false);
+ const stepConverts=s=>root.CRM_SCHEDULE_V1!==true&&(!FL()||(s.step==='visit'?s.visitMode==='완료':s.step==='quote'?s.quoteMode==='완료':false));
  const stepBtn=s=>stepConverts(s)?'저장하고 파이프라인으로':'저장';
  const visitToggle=s=>FL()?'<div class="idv-two small"><button type="button" data-idv="visitMode" data-v="예정" aria-pressed="'+(s.visitMode!=='완료')+'">방문 예정</button><button type="button" data-idv="visitMode" data-v="완료" aria-pressed="'+(s.visitMode==='완료')+'">방문 완료</button></div>':'';
  const wonTxt=n=>{n=Math.round(Number(n)||0);const e=Math.floor(n/1e8),m=Math.round((n%1e8)/1e4);return e?e+'억'+(m?' '+m.toLocaleString('ko-KR')+'만원':' 원'):m.toLocaleString('ko-KR')+'만원';};
@@ -254,7 +254,7 @@
  const sms4Due=n=>{const d=new Date();d.setDate(d.getDate()+n);return ymdDash(d);};
  const sms4DayText=n=>n===1?'내일':n+'일 후';
  const sms4Block=(q,s,digits,C)=>!digits?'연락처가 없어 보낼 수 없습니다':C.k==='no'?'수신 거부 고객입니다 — 보낼 수 없습니다':C.k==='unknown'&&SMS4_AD.test(s.smsText||'')?'수신 동의를 모르는 고객에게는 문의 안내 문구만 보낼 수 있습니다(광고성 문구 제외)':s.smsWhen==='later'&&!root.inquiryAssigned(q)?'담당 배정 뒤에 예약할 수 있습니다':'';
- const sms4Foot=(s,block)=>block||(s.smsWhen==='later'?'자동 발송이 아니라, 정한 시각에 보내기를 알려 주는 알림을 등록합니다':'문구 복사·앱 이동은 발송 완료가 아닙니다. 응대 이력과 후속 업무를 자동 등록하지 않습니다');
+ const sms4Foot=(s,block)=>block||(s.smsWhen==='later'?(s._reminderDue?s._reminderDue+' · ':'')+'날짜 기준 내부 업무를 등록합니다. 09:00은 업무 제목이며 자동 발송·정시 알림을 보장하지 않습니다':'문구 복사·앱 이동은 발송 완료가 아닙니다. 응대 이력과 후속 업무를 자동 등록하지 않습니다');
  /* 입력 중에는 다시 그리지 않고 바이트 · 미리보기 · 보내기 잠금만 바꾼다(커서 유지) */
  function sms4Live(p4,q,s){const n=smsBytes(s.smsText),bb=p4.querySelector('.ds2-bytes'),pv=p4.querySelector('.ds2-bubble'),has=!!(s.smsText||'').trim(),block=sms4Block(q,s,phoneOf(q).digits,smsConsent(phoneOf(q).digits)),ft=p4.querySelector('.ds2-ft>span'),go=p4.querySelector('.ds2-ft .go'),cp=p4.querySelector('[data-idv="sms-copy"]');
   if(bb)bb.textContent=n+'byte · '+(n>90?'LMS':'SMS');if(pv)pv.textContent=s.smsText;if(ft){ft.textContent=sms4Foot(s,block);ft.className=block?'bad':'';}if(go)go.disabled=!has||!!block;if(cp)cp.disabled=!has;}
@@ -273,12 +273,20 @@
    +'</div><div class="ds2-phone"><div class="ds2-dev"><div class="ds2-scr"><div class="ds2-bar"><span>'+h(new Date().toTimeString().slice(0,5))+'</span><span class="notch"></span><span>LTE</span></div><div class="ds2-from"><span style="background:'+(SMS_BC[brand]||'#15171c')+'">'+h((brand||'넷폼').slice(0,1))+'</span><small>'+h((brand||'넷폼')+(owner?' · '+owner:''))+'</small></div><div class="ds2-chat"><div class="ds2-bubble'+(ch==='kakao'?' kk':'')+'">'+h(text)+'</div></div><div class="ds2-home"></div></div></div><span>고객 폰에 보이는 모습</span></div></div>'
    +'<div class="ds2-ft"><span class="'+(block?'bad':'')+'">'+h(foot)+'</span><button type="button" data-idv="sms-back">취소</button><button type="button" class="b" data-idv="sms-copy"'+(has?'':' disabled')+'>문구 복사</button><button type="button" class="go" data-idv="sms-go"'+(!has||block?' disabled':'')+'>'+(later?'예약하기':ch==='kakao'?'카카오 문구 복사':/Android|iPhone|iPad/i.test(navigator.userAgent)?'문자로 이동':'문자 문구 복사')+'</button></div><select id="spLogType" hidden><option selected>메일·메시지</option></select></div><div class="spmsg idv-err" id="iq-msg"></div></div>';
  }
- function smsGo4(q,s){
+ async function smsGo4(q,s){
   const L=timeline(q),ph=phoneOf(q),digits=ph.digits,{t}=sms4Cur(q,s,L),C=smsConsent(digits),text=(s.smsText||'').trim(),ch=s.smsCh==='kakao'?'카카오':'문자',title=s.smsTpl==='직접'?'직접 쓴 문구':t.k,days=sms4Days(s,t),due=sms4Due(days),assigned=!!root.inquiryAssigned(q);
   if(!text||sms4Block(q,s,digits,C))return reskinFrom();
   if(!root.InquiryCommand){root.iqMsg('저장 연결을 확인해 주세요.');return;}
   if(s.smsWhen==='later'){/* 예약 = 내일 보내기 알림(자동 발송 아님) — 응대 기록 · 연락 시도로 세지 않는다 */
-   if(!assigned)return;const at=sms4Due(1);
+   if(!assigned||s.reminderBusy)return;const at=s._reminderDue||sms4Due(1);
+   if(root.CRM_SCHEDULE_V1===true||root.PCInquiryReminderSave?.route(q)){
+    const api=root.PCInquiryReminderSave;if(!api?.save){root.iqMsg('알림 업무 저장 연결을 확인할 수 없습니다. 입력을 유지했습니다.');return;}
+    const key=curKey,j=root.MobileSaveJournal,owner=j.owner(),session=j.session?.(),form=Object.fromEntries(['smsText','smsTpl','smsCh','smsWhen','smsDays'].map(k=>[k,s[k]])),current=()=>curKey===key&&root.G?.inqSelKey===key&&!!document.getElementById('inq-inbox-dialog')&&Object.keys(form).every(k=>s[k]===form[k]);
+    const controls=[...document.querySelectorAll('#inq-inbox-dialog .iq-sms4 input,#inq-inbox-dialog .iq-sms4 textarea,#inq-inbox-dialog .iq-sms4 button')].map(el=>[el,el.disabled]);s.reminderBusy=true;controls.forEach(([el])=>{el.disabled=true;});
+    try{const r=await api.save(q,{channel:ch==='카카오'?'kakao':'sms',title:ch+' 보내기 · '+title+' (09:00)',due:at},form);j.assertOwner(owner);if(session!==undefined)j.assertSession(session);if(r?.ok!==true)throw Error('알림 업무 저장 확인 응답이 올바르지 않습니다.');if(!current())return;s.smsOpen=false;s.smsSent=null;delete s._reminderDue;delete s._reminderRestored;root.paint?.();reskinFrom();toast(r.label+' · '+r.msg);}
+    catch(e){try{j.assertOwner(owner);if(session!==undefined)j.assertSession(session);}catch(ignore){return;}if(current())root.iqMsg(e.message||'예약을 저장하지 못했습니다. 입력을 유지했습니다.');}
+    finally{s.reminderBusy=false;controls.forEach(([el,disabled])=>{el.disabled=disabled;});}return;
+   }
    try{if(root.InquiryCommand.run('next_set',q,{text:'문자 보내기 · '+title+' (09:00)',due:at})!==true){root.iqMsg('예약을 저장하지 못했습니다.');return;}}catch(e){root.iqMsg(e.message||'예약을 저장하지 못했습니다.');return;}
    s.smsOpen=false;s.smsSent=null;reskinFrom();toast('내일 09:00 '+ch+' 보내기 알림을 등록했습니다');return;}
   return manualMessage(q,s,ch==='카카오'?'kakao':'sms');
@@ -338,7 +346,7 @@
   else if(handed){const d=root.linkedDeal?.(q);next='<div class="idv-card done"><b>파이프라인 인계 완료</b><p>'+h(d?root.stageNoLabel(root.dealStage(d))+' 단계에 등록됨':'영업건으로 전환되었습니다')+(d&&root.oppAmt(d)?' · '+h(root.fmtAmt(root.oppAmt(d))):'')+'</p>'+(d?'<button type="button" class="idv-link" data-idv="goto-deal">파이프라인에서 보기 →</button>':'')+'</div>';}
   else if(!gn){
    const ok=stepOk(s);
-   next='<div class="idv-card step"><small>다음 단계</small><b>현장방문 · 견적</b><p>'+(FL()?h(FL().QUALIFY_TEXT):'둘 중 하나를 저장하면 파이프라인 ‘컨설팅 설계’ 단계로 자동 등록됩니다')+'</p><div class="idv-two"><button type="button" data-idv="step" data-v="visit" aria-pressed="'+(s.step==='visit')+'">현장방문 일정</button><button type="button" data-idv="step" data-v="quote" aria-pressed="'+(s.step==='quote')+'">견적서 발송</button></div>'
+   next='<div class="idv-card step"><small>다음 단계</small><b>현장방문 · 견적</b><p>'+(FL()?h(FL().QUALIFY_TEXT):root.CRM_SCHEDULE_V1===true?'방문·견적 사실을 저장합니다. 파이프라인 전환은 별도로 확인합니다.':'둘 중 하나를 저장하면 파이프라인 ‘컨설팅 설계’ 단계로 자동 등록됩니다')+'</p><div class="idv-two"><button type="button" data-idv="step" data-v="visit" aria-pressed="'+(s.step==='visit')+'">현장방문 일정</button><button type="button" data-idv="step" data-v="quote" aria-pressed="'+(s.step==='quote')+'">견적서 발송</button></div>'
     +(s.step==='visit'?visitToggle(s)+'<div class="idv-fields"><input type="date" data-idv="visitDate" aria-label="방문 날짜" value="'+attr(s.visitDate)+'"><input type="time" data-idv="visitTime" aria-label="방문 시간" value="'+attr(s.visitTime)+'"></div><p class="idv-note">상태가 ‘현장방문 예정’으로 바뀝니다</p>':'')
     +(s.step==='quote'?'<div class="idv-two small"><button type="button" data-idv="quoteMode" data-v="예정" aria-pressed="'+(s.quoteMode==='예정')+'">발송 예정</button><button type="button" data-idv="quoteMode" data-v="완료" aria-pressed="'+(s.quoteMode==='완료')+'">발송 완료</button></div><div class="idv-fields"><input inputmode="numeric" data-idv="quoteAmt" aria-label="예상 금액(만원)" placeholder="예상 금액 (만원)" value="'+attr(s.quoteAmt)+'"><input type="date" data-idv="quoteDate" aria-label="견적 날짜" value="'+attr(s.quoteDate)+'"></div>':'')
     +(s.step?'<button type="button" class="idv-primary'+(ok?' on':'')+'" data-idv="handoff"'+(ok?'':' disabled')+'>'+stepBtn(s)+'</button><div class="idv-err" data-idv-err></div>':'')+'</div>';
@@ -454,7 +462,7 @@
     +(s.step==='visit'?visitToggle(s)+'<div class="idv-fields"><input type="date" data-idv="visitDate" aria-label="방문 날짜" value="'+attr(s.visitDate)+'"><input type="time" data-idv="visitTime" aria-label="방문 시간" value="'+attr(s.visitTime)+'"></div>':'')
     +(s.step==='quote'?'<div class="idv-two small"><button type="button" data-idv="quoteMode" data-v="예정" aria-pressed="'+(s.quoteMode==='예정')+'">발송 예정</button><button type="button" data-idv="quoteMode" data-v="완료" aria-pressed="'+(s.quoteMode==='완료')+'">발송 완료</button></div><div class="idv-fields"><input inputmode="numeric" data-idv="quoteAmt" aria-label="예상 금액(만원)" placeholder="예상 금액 (만원)" value="'+attr(s.quoteAmt)+'"><input type="date" data-idv="quoteDate" aria-label="견적 날짜" value="'+attr(s.quoteDate)+'"></div>':'')
     +(s.step?'<button type="button" class="idv-primary'+(ok?' on':'')+'" data-idv="handoff"'+(ok?'':' disabled')+'>'+stepBtn(s)+'</button><div class="idv-err" data-idv-err></div>':'')
-    +'<small>'+(FL()?h(FL().QUALIFY_TEXT):'둘 중 하나 저장 → 파이프라인 ‘컨설팅 설계’로 자동 전환')+'</small></div>';}
+    +'<small>'+(FL()?h(FL().QUALIFY_TEXT):root.CRM_SCHEDULE_V1===true?'방문·견적 사실 저장 · 파이프라인 전환은 별도 확인':'둘 중 하나 저장 → 파이프라인 ‘컨설팅 설계’로 자동 전환')+'</small></div>';}
   const n=W().related(q),list=(n.list||[]).slice(0,5);
   const bottom='<div class="idv3-bottom"><button type="button" class="nr" data-idv="near-toggle"'+(list.length?'':' disabled')+'>근처 현장 <b>'+list.length+'곳</b>'+(n.region?' · '+h(n.region):'')+'</button>'+(admin&&!handed?'<button type="button" class="idv-link" data-idv="reassign">담당 변경</button>':'')+'</div>'
    +(s.nearOpen&&list.length?'<div class="idv-near idv3-near">'+list.map(x=>{const d=x.d,amt=root.oppAmt(d);return '<button type="button" class="idv-ncard mine" data-idv="near" data-v="'+attr(root.dealKey(d))+'"><span class="n1"><b>'+h(String(d.site||'').replace(/^\s*\[[^\]]*\]\s*/,''))+'</b></span><span class="n2"><i></i>'+h(root.stageNoLabel(root.dealStage(d)))+' · '+h(root.repN(d.assignee))+(amt?' · '+h(root.fmtAmt(amt)):'')+'</span></button>';}).join('')+'</div>':'');
@@ -467,6 +475,8 @@
   const overlay=document.getElementById('inq-inbox-dialog');if(!overlay||root.G.inqDetailV2Off||overlay.classList.contains('inq-store-view'))return;
   const key=root.G.inqSelKey,q=root.inqCtlFind?.(key,false);if(!q)return;curKey=key;const s=st(key);
   try{root.PCInquirySave?.restore(String(q.id||key),s,'detail');}catch(e){root.iqMsg(e.message);}
+  try{root.PCInquiryMilestoneSave?.restore(String(q.id||key),s);}catch(e){root.iqMsg(e.message);}
+  try{root.PCInquiryReminderSave?.restore(String(q.id||key),s);}catch(e){root.iqMsg(e.message);}
   const scroll=overlay.querySelector('.idv-thread')?.scrollTop;
   const dlg=overlay.querySelector('.inq-dialog');if(!dlg)return;
   overlay.classList.add('idv');
@@ -570,7 +580,7 @@
  async function save(q,s){
   if(s.pcSaving)return;
   const text=s.text.trim(),v3=!!document.getElementById('inq-inbox-dialog')?.classList.contains('idv3');if(!text&&!(v3&&s.tab==='call'&&s.res))return;
-  if(FL()&&root.InquiryCommand){
+  if((FL()||root.CRM_SCHEDULE_V1===true||root.PCInquirySave?.route(q))&&root.InquiryCommand){
    /* 저장은 명령 하나(InquiryCommand): 응대 기록 = contact_log(시도면 최초응대 · 단계는 그대로), 내부 메모 = memo. 화면이 숨은 입력칸을 만들어 예전 함수를 돌려 부르지 않는다 */
    if(!root.inqCtlRoleMatch(q))return;
    const reset=()=>Object.assign(s,{text:'',ch:'',res:'',con:'',rea:'',act:'',nday:'',due:'',next:'',edit:false,aiRead:false});
@@ -579,14 +589,17 @@
      const g=sugOf(q,s),assigned=!!root.inquiryAssigned(q),nextText=(s.next||'').trim()||(g.none?'배드핏 종결 검토':g.act),due=(document.getElementById('iq-due')||{}).value||g.due;
      if(assigned&&(!nextText||!due)){root.iqMsg('다음 행동과 날짜가 있어야 저장됩니다.');return;}
      const options=Object.assign({ch:g.ch,result:g.res,text,next:nextText,due},s.con?{contact_result:root.InquiryFlow.TWO.of(s.con,s.rea).contact_result,customer_reaction:root.InquiryFlow.TWO.of(s.con,s.rea).customer_reaction}:{});
+     let refresh=false;
      if(root.PCInquirySave?.route(q)){
-      const owner=root.MobileSaveJournal.owner(),form=Object.fromEntries(['tab','text','ch','res','con','rea','act','nday','due','next'].map(k=>[k,s[k]]));
+      const owner=root.MobileSaveJournal.owner(),session=root.MobileSaveJournal.session?.(),selected=root.G?.inqSelKey,form=Object.fromEntries(['tab','text','ch','res','con','rea','act','nday','due','next'].map(k=>[k,s[k]]));
       s.pcSaving=true;
       const controls=[...document.querySelectorAll('#inq-inbox-dialog input,#inq-inbox-dialog textarea,#inq-inbox-dialog select,#inq-inbox-dialog button')].map(el=>[el,el.disabled]);controls.forEach(([el])=>{el.disabled=true;});
-      try{await root.PCInquirySave.save(q,options,form,'detail');root.MobileSaveJournal.assertOwner(owner);}
+      try{await root.PCInquirySave.save(q,options,form,'detail');root.MobileSaveJournal.assertOwner(owner);if(session!==undefined)root.MobileSaveJournal.assertSession(session);}
       finally{s.pcSaving=false;controls.forEach(([el,disabled])=>{el.disabled=disabled;});}
+      if(root.G?.inqSelKey!==selected||!document.getElementById('inq-inbox-dialog')||Object.keys(form).some(k=>s[k]!==form[k]))return;
+      refresh=true;
      }else if(root.InquiryCommand.run('contact_log',q,options)!==true){root.iqMsg((document.getElementById('iq-msg')||{}).textContent||'저장하지 못했습니다.');return;}
-     reset();delete s._pcRestored;delete s._pcDue;reskinFrom();toast(assigned?g.ch+' · '+resShow(g.res)+(g.none?'':' → '+nextText+' '+kday(new Date(due+'T00:00:00'))):'응대 기록을 저장했습니다');return;
+     reset();delete s._pcRestored;delete s._pcDue;if(refresh)root.paint?.();reskinFrom();toast(assigned?g.ch+' · '+resShow(g.res)+(g.none?'':' → '+nextText+' '+kday(new Date(due+'T00:00:00'))):'응대 기록을 저장했습니다');return;
     }
     root.InquiryCommand.run('memo',q,{text});s.text='';reskinFrom();toast('내부 메모를 저장했습니다');
    }catch(e){root.iqMsg(e.message||'저장하지 못했습니다.');}
@@ -657,15 +670,18 @@
  }
  function handoff(q,s,btn){
   const key=curKey,site=q.site||'문의',err=document.querySelector('#inq-inbox-dialog [data-idv-err]');
-  if(FL()&&root.InquiryCommand){
-   /* 저장은 명령 하나(visit · quote_send): 방문 완료 / 견적 발송 완료 = 전환 기준 충족 → 파이프라인, '예정'은 저장만. 견적 금액은 견적 버전으로(다음 할 일 문장에 넣지 않는다) */
+  if((FL()||root.CRM_SCHEDULE_V1===true||root.PCInquiryMilestoneSave?.route(q))&&root.InquiryCommand){
+   /* 같은 명령을 통해 보호 계약으로 저장한다. 사실 저장의 ACK는 파이프라인 전환 증거가 아니다. */
    if(s.busy)return;s.busy=true;if(btn){btn.disabled=true;btn.textContent='저장 확인 중…';}
-   const job=Promise.resolve().then(()=>s.step==='visit'?root.InquiryCommand.run('visit',q,{date:s.visitDate,time:s.visitTime,done:s.visitMode==='완료'}):root.InquiryCommand.run('quote_send',q,{amount:s.quoteAmt?Number(s.quoteAmt)*10000:0,date:s.quoteDate,sent:s.quoteMode==='완료'}));
-   Promise.resolve(job).then(r=>{Object.assign(s,{step:'',visitDate:'',visitTime:'',visitMode:'예정',quoteAmt:'',quoteDate:'',quoteMode:'예정'});
+   const protectedRoute=root.CRM_SCHEDULE_V1===true||root.PCInquiryMilestoneSave?.route(q),j=root.MobileSaveJournal,owner=protectedRoute?j?.owner():null,session=protectedRoute?j?.session?.():undefined;
+   const form=Object.fromEntries(['step','visitDate','visitTime','visitMode','quoteAmt','quoteDate','quoteMode'].map(k=>[k,s[k]])),current=()=>curKey===key&&root.G?.inqSelKey===key&&!!document.getElementById('inq-inbox-dialog')&&Object.keys(form).every(k=>s[k]===form[k]);
+   const identity=()=>{if(protectedRoute){j.assertOwner(owner);if(session!==undefined)j.assertSession(session);}};
+   const job=Promise.resolve().then(()=>form.step==='visit'?root.InquiryCommand.run('visit',q,{date:form.visitDate,time:form.visitTime,done:form.visitMode==='완료'}):root.InquiryCommand.run('quote_send',q,{amount:form.quoteAmt?Number(form.quoteAmt)*10000:0,date:form.quoteDate,sent:form.quoteMode==='완료'}));
+   Promise.resolve(job).then(r=>{identity();if(protectedRoute&&r?.ok!==true)throw Error('저장 확인 응답이 올바르지 않습니다.');if(protectedRoute&&!current())return;Object.assign(s,{step:'',visitDate:'',visitTime:'',visitMode:'예정',quoteAmt:'',quoteDate:'',quoteMode:'예정'});
      if(document.getElementById('inq-inbox-dialog'))reskinFrom();else W().open(key,'none');
      toast(r.promoted?site+' → 파이프라인 등록':site+' · '+r.label+' 저장'+(r.msg&&!r.promoted?' · '+r.msg:''));try{root.paint();}catch(e){}})
-    .catch(e=>{const m=String(e&&e.message||e);const el=document.querySelector('#inq-inbox-dialog [data-idv-err]');if(el)el.textContent=m;fail('저장하지 못했습니다: '+m);})
-    .finally(()=>{s.busy=false;const b=document.querySelector('#inq-inbox-dialog [data-idv="handoff"]');if(b){b.disabled=!stepOk(s);b.textContent=stepBtn(s);}});
+    .catch(e=>{if(protectedRoute){try{identity();}catch(ignore){return;}if(!current())return;}const m=String(e&&e.message||e);const el=document.querySelector('#inq-inbox-dialog [data-idv-err]');if(el)el.textContent=m;fail('저장하지 못했습니다: '+m);})
+    .finally(()=>{s.busy=false;if(curKey!==key||root.G?.inqSelKey!==key)return;const b=document.querySelector('#inq-inbox-dialog [data-idv="handoff"]');if(b){b.disabled=!stepOk(s);b.textContent=stepBtn(s);}});
    return;
   }
   if(root.CRM_SCHEDULE_V1===true||root.PCInquirySave?.route(q)){fail('기존 업무를 보존하는 방문·견적 저장 연결을 먼저 확인해 주세요.');return;}

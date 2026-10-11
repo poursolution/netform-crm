@@ -55,6 +55,8 @@
   try{
    if(!root.InquiryResponseContract?.enabled?.()||!root.CRMRelease?.has?.(rpc))fail('서버 저장 연결을 확인할 수 없습니다. 입력을 유지한 채 다시 시도해 주세요.');
    const assert=()=>{j.assertOwner(owner);if(session!==undefined)j.assertSession(session);};assert();
+   if(root.PCInquiryMilestoneSave?.pending?.(id))fail('확인 중인 방문·견적 기록을 먼저 같은 입력으로 저장해 주세요.');
+   if(root.PCInquiryReminderSave?.pending?.(id))fail('확인 중인 문자·카카오 예약을 먼저 같은 입력으로 저장해 주세요.');
    const p=input(o);d=pending(id);
    if(d&&JSON.stringify(d.input)!==JSON.stringify(p))fail('저장 확인 중인 입력이 바뀌었습니다. 문의를 다시 열어 보관된 입력으로 재시도해 주세요.');
    if(!d){
@@ -71,6 +73,7 @@
    if(!g.logAck){g.contactSent=true;persist();sent=true;const r=await root.Phase1.rpc(rpc,{p:g.contact});assert();g.logAck=contactAck(r,g.contact);g.logState=r.state;persist();}
    if(g.needsResponse&&!g.responseAck){
     if(!g.responsePrepared){g.responsePrepared=root.InquiryResponseContract.prepare(g.inquirySchedule.context,g.logAck,root.crypto.randomUUID());persist();}
+    else if(root.ScheduleContract.needsResume(g.responsePrepared.context)){g.responsePrepared=await root.InquiryResponseContract.resume(g.responsePrepared);persist();}
     g.responseAck=await root.InquiryResponseContract.confirm(g.responsePrepared);persist();
    }
    const current=await root.InquiryScheduleFlow.finish(id,g,g.responseAck||null,persist);assert();

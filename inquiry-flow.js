@@ -294,6 +294,7 @@
  function localNext(q,text,due,id){const p=patchFor(q);p.nextActionObj={id:id||('na-'+Date.now()),type:'전화',text,due,status:'open'};q.nextActionText=p.nextActionText=text;q.nextAction=p.nextAction=due;}
  /* 1차 현장방문: 일정(예정) = 상태 + 그날 할 일 / 완료 = 전환 기준 충족 → 파이프라인 */
  async function visit(q,o){
+  if(root.PCInquiryMilestoneSave?.route(q))return root.PCInquiryMilestoneSave.save(q,'visit',o);
   protectLegacySchedule(q);
   o=o||{};const date=String(o.date||''),time=String(o.time||''),done=!!o.done,today=todayStr();
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date))throw Error('방문 날짜를 넣어 주세요.');
@@ -307,6 +308,7 @@
  }
  /* 견적: 금액은 견적 버전으로(원). 발송 완료 = 후속 할 일(보낸 날 + 7일 · 고객 반응 확인) + 전환 / 발송 예정 = 상태 + 발송일 할 일(금액이 있으면 초안 버전) */
  async function quoteSend(q,o){
+  if(root.PCInquiryMilestoneSave?.route(q))return root.PCInquiryMilestoneSave.save(q,'quote_send',o);
   protectLegacySchedule(q);
   o=o||{};const amount=Math.round(Number(o.amount||0))||0,sent=!!o.sent,today=todayStr(),date=/^\d{4}-\d{2}-\d{2}$/.test(String(o.date||''))?String(o.date):'';
   if(sent&&!(amount>0))throw Error('보낸 견적 금액을 넣어 주세요.');

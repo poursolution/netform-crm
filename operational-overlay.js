@@ -25,7 +25,7 @@
   let journalEpoch=0,journalActor=journalOwner();
   function journalSession(){const actor=journalOwner();if(actor!==journalActor){journalActor=actor;journalEpoch++;}return actor?actor+':'+journalEpoch:'';}
   function journalAssertSession(token){if(!token||token!==journalSession())throw error('로그인 상태가 바뀌었습니다. 저장 결과를 다시 조회한 뒤 화면을 열어 주세요.');}
-  function journalKey(kind,id){if(!['inquiry','contact','reschedule','pc_contact','pc_inquiry','quote'].includes(kind)||!UUID.test(String(id||'')))throw error('MOBILE_RECOVERY_TARGET_INVALID');const owner=journalOwner();if(!owner)throw error('MOBILE_RECOVERY_LOGIN_REQUIRED');return journalPrefix+owner+':'+kind+':'+id;}
+  function journalKey(kind,id){if(!['inquiry','contact','reschedule','pc_contact','pc_inquiry','pc_milestone','pc_reminder','quote'].includes(kind)||!UUID.test(String(id||'')))throw error('MOBILE_RECOVERY_TARGET_INVALID');const owner=journalOwner();if(!owner)throw error('MOBILE_RECOVERY_LOGIN_REQUIRED');return journalPrefix+owner+':'+kind+':'+id;}
   function journalAssert(owner){if(!owner||owner!==journalOwner())throw error('로그인 계정이 바뀌었습니다. 현재 계정으로 화면을 다시 열어 주세요.');}
   root.MobileSaveJournal=Object.freeze({owner:journalOwner,assertOwner:journalAssert,session:journalSession,assertSession:journalAssertSession,
    read(kind,id){const key=journalKey(kind,id);let raw;try{raw=root.sessionStorage.getItem(key);}catch(e){throw error('입력 복원 저장소를 사용할 수 없습니다. 저장하지 않았습니다.');}if(!raw)return null;try{const j=JSON.parse(raw);if(j.v!==1||j.owner!==journalOwner()||j.kind!==kind||j.id!==String(id)||!j.value||typeof j.value!=='object')throw Error();return j.value;}catch(e){throw error('저장 복원 정보가 손상됐습니다. 기존 요청을 확인하기 전 새로 저장할 수 없습니다.');}},

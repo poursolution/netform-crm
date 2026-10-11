@@ -22,5 +22,11 @@
    fail('INQUIRY_RESPONSE_ACK_MISMATCH');
   return r;
  }
- return Object.freeze({enabled,prepare,confirm});
+ async function resume(prepared){
+  const p=prepared?.command,c=prepared?.context;
+  if(!c||!p||c.target_type!=='inquiry'||p.inquiry_id!==c.target_id||p.expected_token!==c.token||!uuid.test(p.request_id||'')||!uuid.test(p.contact_log_id||''))fail('INQUIRY_RESPONSE_INVALID_INPUT');
+  const rebound=await root.ScheduleContract.resume(c);
+  return Object.freeze({context:rebound.context,command:Object.freeze(JSON.parse(JSON.stringify(p)))});
+ }
+ return Object.freeze({enabled,prepare,confirm,resume});
 });

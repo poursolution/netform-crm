@@ -299,7 +299,7 @@
   /* 지금 할 일(서버에 저장된 것)이 있으면 먼저 완료로 닫는다 — 기한 내 처리 집계의 근거 */
   const cur=root.actionObj?root.actionObj(d,pd):null;
   if(cur&&UUID.test(String(cur.id||''))&&!P.completed&&!W.keepCurrent){await confirmOp(d,P,'done','next_action_complete',{},cur.id);P.completed=cur.id;d.completed_actions=(Array.isArray(d.completed_actions)?d.completed_actions:[]).concat([{id:cur.id,type:cur.type,text:cur.text,due_at:cur.due_at||cur.due,status:'completed',completed_at:new Date().toISOString()}]);}
-  const rec=await confirmOp(d,P,'act','activity',{type:W.ch,note:W.note,result:'',occurred_at:W.at},undefined,guarded?persist:undefined);if(guarded)guard();addAct(rec.ack.activity_id);
+  const rec=await confirmOp(d,P,'act','activity',{type:W.ch,note:W.note,result:'',occurred_at:W.at,meaningful_contact:!!W.meaningful},undefined,guarded?persist:undefined);if(guarded)guard();addAct(rec.ack.activity_id);
   if(guarded&&!flow&&Number.isSafeInteger(rec.ack.version)&&(!Number.isSafeInteger(d.version)||d.version<rec.ack.version)){d.version=pd.version=rec.ack.version;}
   if(flow){const saved=await root.ScheduleFlow.finish(d,P,rec.ack,persist);guard();root.ScheduleFlow.project(d,saved,pd);}
   else if(next){const payload=W.change?{intent:'postpone',action_id:W.change.id,due_at:due}:next;const sch=await confirmOp(d,P,'next','next_action',payload);setNext(d,sch.ack.next_action_id,next,due);}
@@ -329,15 +329,19 @@
   const rel=!rej&&['rapport','silent','waiting'].includes(String(root.dealStage(d)));
   if(!root.Phase1?.queue||(rel?typeof root.pushWrite!=='function':typeof root.queueDetailContactOperation!=='function'))throw Error('로그인 상태에서만 저장할 수 있습니다.');
   const ch=o.ch||'전화',day=o.day??nx[1],due=rej?'':KST(day),assignee=root.repN(d.assignee)||root.repN(root.ME?.name)||'',next=rej?null:{type:nx[0]==='자료 보내기'?'후속접촉':'전화',text:nx[0],due_at:due,assignee};
-  const P=o.P||{};if(root.G?.page==='today')P.surface='today';
+  const P=o.P||{};contactSurface(d,P);
   await writeContact(d,{ch,note:recNote(ch,res,String(o.memo||'').trim()),at:o.at||new Date().toISOString(),meaningful:!['부재','회신대기'].includes(res),next,due,P});
   try{root.saveLocal?.();}catch(e){}
   return {next,due};
  }
  /* 내부 메모 한 줄(다음 행동은 건드리지 않는다) */
+ function contactSurface(d,P){
+  const detail=root.CUR_DETAIL,connected=detail?.kind==='deal'&&String(detail.item?.id)===String(d.id);
+  if(!connected&&root.G?.page==='today')P.surface='today';else if(P.surface==='today')delete P.surface;
+ }
  async function memoOutside(d,note,P){
   if(!root.Phase1?.queue||typeof root.queueDetailContactOperation!=='function')throw Error('로그인 상태에서만 저장할 수 있습니다.');
-  P=P||{};if(root.G?.page==='today')P.surface='today';
+  P=P||{};contactSurface(d,P);
   const J=root.MobileSaveJournal,owner=J.owner(),session=J.session();J.assertOwner(owner);
   const at=P.at||(P.at=new Date().toISOString()),rec=await confirmOp(d,P,'memo','activity',{type:'메모',note,result:'',occurred_at:at});J.assertOwner(owner);J.assertSession(session);
   d.activities=Array.isArray(d.activities)?d.activities:[];if(!d.activities.some(x=>x.id===rec.ack.activity_id))d.activities.unshift({id:rec.ack.activity_id,type:'메모',note,at,occurred_at:at,actor:root.repN(root.ME?.name)});try{root.saveLocal?.();}catch(e){}

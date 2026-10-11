@@ -17,7 +17,7 @@
  function existingMatches(row,ex){return row&&ex&&row.id===ex.id&&row.due_on===ex.due
   &&row.title.replace(/^\s*고객\s*약속\s*:?\s*/,'').trim()===String(ex.text).replace(/^\s*고객\s*약속\s*:?\s*/,'').trim();}
  async function begin(d,plan,existing,progress,persist){
-  if(progress.schedule){const s=progress.schedule;root.ScheduleContract.prepare(s.context,s.input,s.request_id);persist();return s;}
+  if(progress.schedule){const s=progress.schedule,api=root.ScheduleContract;if(api.needsResume(s.context)){const r=await api.resume(s.context,s.prepared);s.context=copy(r.context);if(r.prepared)s.prepared=copy(r.prepared);persist();}api.prepare(s.context,s.input,s.request_id);persist();return s;}
   if(!enabled())fail('SCHEDULE_RELEASE_DISABLED');
   const context=await read(d.id);
   if(!context.ready)fail('SCHEDULE_RELEASE_DISABLED');
@@ -34,6 +34,7 @@
  async function finish(d,progress,activityAck,persist){
   const s=progress.schedule,api=root.ScheduleContract;if(!s)fail('SCHEDULE_CONTEXT_REQUIRED');
   if(!enabled())fail('SCHEDULE_RELEASE_DISABLED');
+  if(api.needsResume(s.context)){const r=await api.resume(s.context,s.prepared);s.context=copy(r.context);if(r.prepared)s.prepared=copy(r.prepared);persist();}
   if(!s.prepared){
    const c=await read(d.id),v=s.context.version;
    if(!c.ready||c.owner_id!==s.context.owner_id||actions(c)!==actions(s.context))fail('SCHEDULE_STALE');
