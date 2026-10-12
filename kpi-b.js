@@ -15,7 +15,8 @@
  const pct=(a,b)=>b?Math.round(a*1000/b)/10:null;
  const fmt=v=>v==null?'–':(Math.round(v*10)/10)+'%';
  const names=()=>(root.PERFORMANCE_TARGET_NAMES||[]).slice();
- const ymd=v=>String(v||'').slice(0,10),md=v=>{const s=ymd(v);return s?Number(s.slice(5,7))+'/'+Number(s.slice(8,10)):'';};
+ /* 시각이 붙은 값(UTC 'Z' · +09:00)은 한국 날짜로 — 월요일 0~9시에 기록한 것이 일요일로 잡혀 '이번 주 조치'에서 빠지던 오류 */
+ const ymd=v=>{const s=String(v||'');if(/T\d\d:\d\d/.test(s)&&/(Z|[+-]\d\d:?\d\d)$/.test(s)){const t=Date.parse(s);if(Number.isFinite(t))return new Date(t+9*36e5).toISOString().slice(0,10);}return s.slice(0,10);},md=v=>{const s=ymd(v);return s?Number(s.slice(5,7))+'/'+Number(s.slice(8,10)):'';};
  const ageDays=v=>{const t=Date.parse(v||'');return Number.isFinite(t)?Math.max(0,Math.floor((Date.now()-t)/864e5)):null;};
  const money=v=>{const n=Number(v)||0;if(!n)return '';if(n>=1e8)return (Math.round(n/1e7)/10)+'억';if(n>=1e4)return Math.round(n/1e4).toLocaleString('ko-KR')+'만';return n.toLocaleString('ko-KR');};
  const ST=()=>root.G.kb||(root.G.kb={sel:0,rg:'12w',more:false});
