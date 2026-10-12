@@ -37,7 +37,14 @@ const {launchOptions}=require('./review-environment.cjs');
    const page=await ctx.newPage();await page.goto(origin+'/mobile.html?demo=1&screen=A',{waitUntil:'domcontentloaded'});await page.locator('.approved-a').waitFor();
    await page.evaluate(()=>{const d=DEALS[0],e=document.createElement('span');e.dataset.gs='deal';e.dataset.id=d.id;document.body.append(e);e.click();});await page.waitForTimeout(350);
    await page.locator('[data-gs=contact]').first().click();await page.waitForTimeout(450);
-   assert.deepEqual(await page.evaluate(scan),[],w+'px 연락 결과 시트 — 폰 목업 틀이 남아 있음');await ctx.close();
+   assert.deepEqual(await page.evaluate(scan),[],w+'px 연락 결과 시트 — 폰 목업 틀이 남아 있음');
+   /* 새 현장 등록: 1단계(이름 · 주소) → 2~4단계(영업 등록 입력) 도 틀 없이, 입력이 보이고 이름이 이어진다 */
+   await page.evaluate(()=>{G.deal=null;G.tab='record';closeSheet();render();});await page.waitForTimeout(300);
+   await page.locator('[data-gs-e-query]').fill('틀검사단지');await page.locator('[data-gs=e-newsite]').last().click();await page.waitForTimeout(300);
+   assert.deepEqual(await page.evaluate(scan),[],w+'px 새 현장 1단계 — 폰 목업 틀이 남아 있음');
+   await page.locator('[data-gs=j4-new]').first().click();await page.waitForTimeout(500);
+   assert.equal(await page.locator('#pname').inputValue(),'틀검사단지','2단계에 입력한 현장 이름이 이어짐');assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('pname')).visibility),'visible','2단계 입력이 보임');
+   assert.deepEqual(await page.evaluate(scan),[],w+'px 새 현장 2단계 — 폰 목업 틀이 남아 있음');await ctx.close();
   }
   console.log('mobile frame ok');
  }finally{if(browser)await browser.close();server.close();}
