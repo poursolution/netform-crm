@@ -135,6 +135,7 @@
  }
  function detailScreen(d){
   if(S.detailView==='input')return w.MobileInputFlow?.render(d)||'';
+  if(S.detailView==='qlive')return w.MobileQuoteLive?.render(d)||'';
   if(S.detailView==='quote')return w.MobileQuoteFlow?.render(d)||'';
   if(S.detailView==='confirmation')return stageConfirmation(d);
   if(S.detailView==='evidence'){
@@ -281,7 +282,7 @@
     const d=mine().find(x=>String(x.id)===String(w.G.deal)),n=next(d);
     // The existing PC task name identifies this workflow; never infer it from a free-form memo.
     if(openVisit(d,n?.id))return;
-    if(n?.text==='견적 요청 등록'&&w.MobileQuoteFlow?.open(d,'K-1')){S.detailView='quote';run();}else unavailable();
+    if(n?.text==='견적 요청 등록'&&w.MobileQuoteFlow?.open(d,'K-1')){S.detailView='quote';run();}else if(/견적|제출금액/.test(n?.text||'')&&w.MobileQuoteLive){w.MobileQuoteLive.reset();S.detailView='qlive';run();}else unavailable();
    }
    else if(k.startsWith('input-')){
     const d=mine().find(x=>String(x.id)===String(w.G.deal)),r=S.detailView==='input'?w.MobileInputFlow?.handle(d,k,b.dataset):null;
@@ -309,7 +310,9 @@
   });
   w.document.addEventListener('click',e=>{const b=e.target.closest('[data-pending="page"]');if(!b)return;const n=Number(b.dataset.page);if(Number.isInteger(n)&&n>0){S.pendingPage=n;run();}});
   w.document.addEventListener('click',e=>{const b=e.target.closest('[data-schedule="page"],[data-registration="page"]');if(!b)return;const n=Number(b.dataset.page);if(Number.isInteger(n)&&n>0){if(b.hasAttribute('data-schedule'))S.schedulePage=n;else S.registrationPage=n;run();}});
-  w.document.addEventListener('click',e=>{const b=e.target.closest('[data-stage-evidence="page"]');if(!b)return;const n=Number(b.dataset.page);if(Number.isInteger(n)&&n>0){S.evidencePage=n;run();}});
+  w.document.addEventListener('input',e=>{const r=e.target.closest('[data-quote-live]');if(!r||S.detailView!=='qlive')return;w.MobileQuoteLive.preview(r,mine().find(x=>String(x.id)===String(w.G.deal)));});
+w.document.addEventListener('click',e=>{const b=e.target.closest('[data-ql-act="confirm"]');if(!b||S.detailView!=='qlive')return;const r=b.closest('[data-quote-live]'),d=mine().find(x=>String(x.id)===String(w.G.deal));if(d)w.MobileQuoteLive.confirm(d,r,run);});
+w.document.addEventListener('click',e=>{const b=e.target.closest('[data-stage-evidence="page"]');if(!b)return;const n=Number(b.dataset.page);if(Number.isInteger(n)&&n>0){S.evidencePage=n;run();}});
   w.document.addEventListener('click',e=>{const b=e.target.closest('[data-quote-review="page"]');if(!b||S.detailView!=='quote')return;const d=mine().find(x=>String(x.id)===String(w.G.deal));w.MobileQuoteFlow?.page(d,b.dataset.page);run();});
   w.document.addEventListener('click',e=>{const b=e.target.closest('[data-input-review="page"]');if(!b||S.detailView!=='input')return;const d=mine().find(x=>String(x.id)===String(w.G.deal));w.MobileInputFlow?.page(d,b.dataset.page);run();});
   w.document.addEventListener('input',e=>{
