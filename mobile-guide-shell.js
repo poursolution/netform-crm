@@ -81,10 +81,27 @@
   const m=w.MobileScheduleModel?.read({selectedDay:S.scheduleDay||undefined,now:w.__approvedScheduleNow});
   return w.MobileApprovedF?.render(m,{page:S.schedulePage})||'';
  }
+ function dayData(){
+  const rows=w.G._today||w.buildToday(),mk=x=>({nm:x.nm,what:x.why||x.sub||''});
+  const tom=new Date(Date.now()+864e5).toISOString().slice(0,10);
+  return {done:rows.filter(x=>w.isDone(x)).map(x=>({nm:x.nm,what:w.doneLabel(x)||'처리 완료'})),open:rows.filter(x=>!w.isDone(x)).map(mk),tomorrow:mine().filter(d=>String(next(d)?.due||next(d)?.due_at||'').slice(0,10)===tom).map(d=>({nm:d.nm,what:next(d).text||'다음 업무'}))};
+ }
+ function dayText(){
+  const t=dayData(),md=w.ContactEntry.md(new Date().toISOString().slice(0,10)),ln=(h,a)=>h+' '+a.length+'건'+a.map(x=>'\n- '+x.nm+' · '+x.what).join('');
+  return '['+md+' 오늘 마감] '+w.G.user.nm+'\n'+ln('완료',t.done)+'\n'+ln('미완료',t.open)+'\n'+ln('내일',t.tomorrow);
+ }
+ async function closeDay(){
+  const text=dayText();
+  try{if(w.navigator.share){await w.navigator.share({text});S.shareState='shared';w.toast('마감 내용을 공유했습니다');}
+   else{await w.navigator.clipboard.writeText(text);S.shareState='copied';w.toast('마감 내용을 복사했습니다. 잔디에 붙여 넣어 공유하세요');}}
+  catch(e){if(e&&e.name==='AbortError')return;S.shareState='failed';w.toast('공유하지 못했습니다. 다시 눌러 주세요');}
+  run();
+ }
  function dayClose(){
   if(typeof w.MobileApprovedHSource!=='string')return '';
   const m=w.__approvedHExample||w.MobileDayCloseModel?.read()||{};
-  const model={...m,canClose:false,blockedReason:m.blockedReason||'마감 저장·공유 확인 경로가 아직 연결되지 않았습니다.'};
+  const t=dayData();
+  const model={...m,done:{count:t.done.length,rows:t.done.map(x=>({text:x.nm+' · '+x.what}))},open:{count:t.open.length,rows:t.open.map(x=>({text:x.nm+' · '+x.what}))},tomorrow:{count:t.tomorrow.length,rows:t.tomorrow.map(x=>({text:x.nm+' · '+x.what}))},canClose:true,blockedReason:'',shareState:S.shareState||'idle'};
   ['done','open','tomorrow'].forEach(k=>{model[k]={...m[k],page:S.closePages[k]};});
   return w.MobileApprovedH?.render(model)||'';
  }
@@ -107,7 +124,7 @@
   const siblings=sid?mine().filter(x=>String(x.site_id||x.cleanup_site_id)===String(sid)&&String(x.id)!==String(d.id)):[];
   const activities=(d.activities||[]).slice().sort((x,y)=>String(y.at||y.occurred_at||'').localeCompare(String(x.at||x.occurred_at||'')));
   const contactTask=!n||/전화|통화|연락|회신/.test(n.type||'');
-  return w.MobileApprovedBC.detail({name:d.nm,brand:brand(d),color:color(d),stage:label(d),owner:d.rep||'담당 미지정',siblings:siblings.length?'이 단지 영업 '+(siblings.length+1)+'건 · '+siblings.map(work).filter(Boolean).join(' / '):'',task:n?.text||'기존 기록 확인 후 다음 업무 정하기',context:due(d),action:contactTask?'contact':'pending-task',actionLabel:contactTask?'연락 결과 기록':n?.text||'업무 확인',followup:'',contactName:[c.name,c.role].filter(Boolean).join(' · ')||'연락처 확인 필요',phone:c.mobile||c.officeTel||'',history:activities.slice(0,3).map(x=>({meta:[String(x.at||x.occurred_at||'').slice(0,10),x.type].filter(Boolean).join(' · '),note:x.note||x.result||''})),more:['확인 필요 ›','확인 필요 ›',siblings.length+'건 ›','확인 필요 ›'],...(w.__approvedBCExample?.details?.[d.id]||{})});
+  return w.MobileApprovedBC.detail({name:d.nm,brand:brand(d),color:color(d),stage:label(d),owner:d.rep||'담당 미지정',siblings:siblings.length?'이 단지 영업 '+(siblings.length+1)+'건 · '+siblings.map(work).filter(Boolean).join(' / '):'',task:n?.text||'기존 기록 확인 후 다음 업무 정하기',context:due(d),action:contactTask?'contact':'pending-task',actionLabel:contactTask?'연락 결과 기록':n?.text||'업무 확인',followup:'',contactName:[c.name,c.role].filter(Boolean).join(' · ')||'연락처 확인 필요',phone:c.mobile||c.officeTel||'',history:activities.slice(0,3).map(x=>({meta:[String(x.at||x.occurred_at||'').slice(0,10),x.type].filter(Boolean).join(' · '),note:x.note||x.result||''})),more:[activities.filter(x=>/발송|송부|제출|전달|보냄/.test((x.type||'')+(x.note||''))).length+'건 ›',(()=>{const A=w.stageGuideItemsM?.(d)||[];return A.filter((x,i)=>w.stageGuideStatusM(d,x,i)).length+'/'+A.length+' ›';})(),siblings.length+'건 ›',(d.address||d.addr||'').trim()?'지도 보기 ›':'주소 없음'],...(w.__approvedBCExample?.details?.[d.id]||{})});
  }
  function stageConfirmation(d){
   if(typeof w.MobileApprovedJ1Source!=='string'||typeof w.MobileStageConfirmationModel?.read!=='function'||typeof w.MobileApprovedJ1?.render!=='function')return '';
@@ -135,9 +152,20 @@
   S.detailView='';S.evidencePage=1;w.MobileStageReview?.reset();return true;
  }
  function today(){
-  const rows=w.buildToday();w.G._today=rows;const completed=rows.filter(t=>w.isDone(t)).length;
-  const model=w.__approvedAExample||{title:w.G.user.nm+'님, 오늘 할 일 '+rows.length+'개',progress:completed+' / '+rows.length,progressPercent:rows.length?completed/rows.length*100:0,areas:['지금 처리 '+rows.length,'회신 대기 · 확인 필요','정보 보완 · 확인 필요','약속 · 확인 필요'],rows:rows.map(t=>{const d=t.kind==='deal'?mine().find(x=>String(x.id)===String(t.ref)):null,R=w.MobileRequests,r=d?R?.forDeal(d.id)?.[0]:null;return {id:t.ref,kind:t.kind,name:t.nm,brand:d?brand(d):'견적문의',color:color(d||{}),stage:d?label(d):'견적문의',due:d?due(d):'',dueColor:d?dueColor(d):'#15171c',task:d?next(d)?.text||t.why:t.why,why:r?[(r.requested_by||'관리자')+' 요청',R.labelOf(r),R.dueTxt(r)].filter(Boolean).join(' · '):t.sub||'',button:r?'요청 확인':'업무 확인',requestId:r?.id||''};})};
-  const html=w.MobileApprovedA.render(S.area!=='now'?{...model,rows:[],message:'이 구역은 공통 집계 연결 작업 중입니다.'}:model);
+  const rows=w.buildToday();w.G._today=rows;
+  const inNow=new Set(rows.filter(t=>t.kind==='deal').map(t=>String(t.ref)));
+  const openDeals=mine().filter(d=>w.isOpen?.(d)&&!inNow.has(String(d.id)));
+  const row=(d,why,button)=>({id:d.id,kind:'deal',name:d.nm,brand:brand(d),color:color(d),stage:label(d),due:due(d),dueColor:dueColor(d),task:next(d)?.text||'다음 업무 확인',why,button});
+  const md=d=>{const x=next(d);return x?w.ContactEntry.md(x.due||x.due_at):'';};
+  const byDue=(a,b)=>(w.dueDays(a)??999)-(w.dueDays(b)??999);
+  const AR={
+   waiting:openDeals.filter(d=>next(d)&&/회신|답변|대기|결과 확인|검토|수신|회의 결과/.test(next(d).text||'')).sort(byDue).slice(0,20).map(d=>({...row(d,'확인일 '+md(d),'확인일 변경'),dueColor:'#6b7280'})),
+   info:openDeals.map(d=>{const A=w.stageGuideItemsM?.(d)||[],miss=A.filter((x,i)=>!w.stageGuideStatusM(d,x,i)&&x.required!==false).length;return [d,miss];}).filter(p=>p[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,20).map(p=>row(p[0],'확인할 정보 '+p[1]+'개','정보 채우기')),
+   promise:openDeals.filter(d=>{const n=next(d),k=w.dueDays(d);return n&&/약속|방문|미팅|회의|제출|견적 발송/.test(n.text||'')&&k!=null&&k<=7;}).sort(byDue).slice(0,20).map(d=>row(d,'약속 '+md(d),'약속 확인'))
+  };
+  const completed=rows.filter(t=>w.isDone(t)).length;
+  const model=w.__approvedAExample||{title:w.G.user.nm+'님, 오늘 할 일 '+rows.length+'개',progress:completed+' / '+rows.length,progressPercent:rows.length?completed/rows.length*100:0,areas:['지금 처리 '+rows.length,'회신 대기 '+AR.waiting.length,'정보 보완 '+AR.info.length,'약속 '+AR.promise.length],rows:rows.map(t=>{const d=t.kind==='deal'?mine().find(x=>String(x.id)===String(t.ref)):null,R=w.MobileRequests,r=d?R?.forDeal(d.id)?.[0]:null;return {id:t.ref,kind:t.kind,name:t.nm,brand:d?brand(d):'견적문의',color:color(d||{}),stage:d?label(d):'견적문의',due:d?due(d):'',dueColor:d?dueColor(d):'#15171c',task:d?next(d)?.text||t.why:t.why,why:r?[(r.requested_by||'관리자')+' 요청',R.labelOf(r),R.dueTxt(r)].filter(Boolean).join(' · '):t.sub||'',button:r?'요청 확인':'업무 확인',requestId:r?.id||''};})};
+  const html=w.MobileApprovedA.render(S.area!=='now'&&AR[S.area]?{...model,rows:AR[S.area],message:AR[S.area].length?'':'해당하는 현장이 없습니다.'}:model);
   const snapshot=pendingSnapshot();
   if(snapshot.ok&&snapshot.count===0&&snapshot.unlinked_operations===0)return html;
   const box=w.document.createElement('div');box.innerHTML=html;
@@ -204,6 +232,8 @@
    }
    else if(k==='back'||k==='stage-confirmation-back'){if(S.detailView==='input'){const r=w.MobileInputFlow?.back(mine().find(x=>String(x.id)===String(w.G.deal)));if(r?.render)run();if(!r?.ok&&r?.note)w.toast(r.note);return;}if(S.detailView==='quote'&&w.MobileQuoteFlow?.back(mine().find(x=>String(x.id)===String(w.G.deal)))){run();return;}if(S.detailView){if(!resetDetail())return;run();return;}if(!resetDetail())return;const registrationBack=w.G.tab==='registration-match';w.G.deal=null;w.G.tab=registrationBack?'record':S.returnTab;run();}
    else if(k==='tab'){if(!['today','mine','record','schedule'].includes(b.dataset.tab))return unavailable();if(!resetDetail())return;w.G.tab=b.dataset.tab;w.G.deal=null;w.G.sub=null;S.entryAction='';S.page=1;S.scroll=0;run();}
+   else if(k==='more'&&b.dataset.value==='이 단지 다른 영업'){const d0=mine().find(x=>String(x.id)===String(w.G.deal)),sid=d0&&(d0.site_id||d0.cleanup_site_id),sib=sid?mine().filter(x=>String(x.site_id||x.cleanup_site_id)===String(sid)&&String(x.id)!==String(d0.id)):[];if(!sib.length)w.toast('이 단지의 다른 영업이 없습니다');else if(sib.length===1){w.G.deal=sib[0].id;S.detailView='';run();}else w.toast(sib.map(x=>x.nm+' · '+work(x)).join(' / '));}
+   else if(k==='more'&&b.dataset.value==='근처 현장'){const d0=mine().find(x=>String(x.id)===String(w.G.deal)),ad=((d0&&(d0.address||d0.addr))||'').trim();if(!ad)w.toast('주소가 없어 지도를 열 수 없습니다');else w.open('https://map.kakao.com/?q='+encodeURIComponent(ad),'_blank','noopener');}
    else if(k==='more'&&(b.dataset.value==='자료 발송 내역'||b.dataset.value==='영업 조건')){S.detailView=b.dataset.value==='자료 발송 내역'?'evidence':'confirmation';S.evidencePage=1;run();}
    else if(k==='stage-change'){
     const d=mine().find(x=>String(x.id)===String(w.G.deal));
@@ -240,7 +270,7 @@
    }
    else if(k==='e-card')w.toast(b.dataset.entry==='materials'?'사진·자료 입력 원본 화면과 업로드 연결을 확인 중입니다.':'일정 등록 원본 화면과 저장 연결을 확인 중입니다.');
    else if(k==='schedule-day'){if(!w.MobileScheduleModel?.dateOnly(b.dataset.date))return;S.scheduleDay=b.dataset.date;S.schedulePage=1;run();}
-   else if(k==='day-close')w.toast('마감 저장·공유 확인 경로가 아직 연결되지 않았습니다.');
+   else if(k==='day-close')closeDay();
    else if(k==='day-close-page'){if(!Object.hasOwn(S.closePages,b.dataset.group))return;const n=Number(b.dataset.page);if(Number.isInteger(n)&&n>0){S.closePages[b.dataset.group]=n;run();}}
    else if(k==='stage'||k==='area'){S[k]=b.dataset.value;S.page=1;S.scroll=0;run();}
    else if(k==='page'){w.ListPager.set(S,null,b.dataset.page);S.scroll=0;run();}
