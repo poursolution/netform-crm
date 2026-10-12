@@ -23,11 +23,12 @@
  }
  function render(d){
   if(mode==='req')return renderReq(d);
+  if(mode==='send')return renderSend(d);
   const A=versions(d),last=A[A.length-1];
   const rows=A.slice().reverse().map(v=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid #eef0f3;font-size:14px"><b>V'+esc(v.version_no)+'</b><span style="color:#6b7280">기준 '+won(w.QuoteAmounts?w.QuoteAmounts.baseOf(v):v.amount)+'</span><b style="color:'+(done(v)?'#15171c':'#b42318')+'">'+(done(v)?won(v.submit_amount||v.amount):'제출금액 미확정')+'</b></div>').join('');
   let body;
   if(!last)body='<p style="font-size:14px;line-height:1.6;color:#374151">등록된 견적이 없습니다. 견적팀이 적산 기준금액을 올리면 여기서 제출금액을 만들 수 있습니다.</p>';
-  else if(done(last))body='<p style="font-size:14px;line-height:1.6;color:#374151">V'+esc(last.version_no)+' 제출금액 <b>'+won(last.submit_amount||last.amount)+'</b>(VAT 별도)이 확정되어 있습니다. 새 기준금액 수정본이 올라오면 다시 가산할 수 있습니다.</p>';
+  else if(done(last))body='<p style="font-size:14px;line-height:1.6;color:#374151">V'+esc(last.version_no)+' 제출금액 <b>'+won(last.submit_amount||last.amount)+'</b>(VAT 별도)이 확정되어 있습니다. 새 기준금액 수정본이 올라오면 다시 가산할 수 있습니다.</p><span data-ql-act="tosend" role="button" tabindex="0" style="min-height:48px;border-radius:12px;background:#15171c;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center">고객 발송 기록</span>';
   else{
    const f=(k,l,ph,m)=>'<label style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:#374151">'+l+'<input data-ql="'+k+'" inputmode="decimal" placeholder="'+ph+'" style="height:46px;border:1px solid #d9dde4;border-radius:10px;padding:0 12px;font-size:16px"></label>';
    body='<div style="background:#fff;border:1px solid #e8eaef;border-radius:14px;padding:12px 13px;font-size:14px">V'+esc(last.version_no)+' 적산 기준금액 <b>'+won(w.QuoteAmounts?w.QuoteAmounts.baseOf(last):last.amount)+'</b><div style="font-size:12.5px;color:#6b7280;margin-top:4px">기준금액은 고칠 수 없습니다. 배수 → ㎡당 → 정액 순서로 가산합니다.</div></div>'
@@ -60,7 +61,7 @@
   }catch(e){msg=String(e&&e.message||e);}
   busy=false;after();
  }
- const shell=(d,inner)=>'<div class="approved-quote" data-quote-live style="display:flex;flex-direction:column;background:#f5f6f8"><div style="height:56px;flex:none;background:#fff;display:flex;align-items:center;gap:8px;padding:0 8px;border-bottom:1px solid #eef0f3"><span data-gs="back" role="button" tabindex="0" aria-label="뒤로" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px">‹</span><b style="font-size:17px">견적 요청 등록</b></div><div style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px"><div style="font-size:15px;font-weight:700">'+esc(d.nm)+'</div>'+(msg?'<div role="status" style="font-size:13.5px;color:#b42318">'+esc(msg)+'</div>':'')+inner+'</div></div>';
+ const shell=(d,inner)=>'<div class="approved-quote" data-quote-live style="display:flex;flex-direction:column;background:#f5f6f8"><div style="height:56px;flex:none;background:#fff;display:flex;align-items:center;gap:8px;padding:0 8px;border-bottom:1px solid #eef0f3"><span data-gs="back" role="button" tabindex="0" aria-label="뒤로" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px">‹</span><b style="font-size:17px">'+(mode==='send'?'고객 발송 기록':'견적 요청 등록')+'</b></div><div style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px"><div style="font-size:15px;font-weight:700">'+esc(d.nm)+'</div>'+(msg?'<div role="status" style="font-size:13.5px;color:#b42318">'+esc(msg)+'</div>':'')+inner+'</div></div>';
  const ctxOf=d=>((d.stage_contexts||{}).consulting||{}).fields||{};
  const kst=(add)=>new Date(Date.now()+9*36e5+add*864e5).toISOString().slice(0,10);
  function renderReq(d){
@@ -89,5 +90,30 @@
    msg='견적 요청을 등록했습니다. 견적 예정일 '+due;
   }catch(e){msg=String(e&&e.message||e);}
   busy=false;after();
- } w.MobileQuoteLive=Object.freeze({render,preview,confirm,reset(m){msg='';busy=false;mode=m||'';},reqPreview,submitReq});
+ } function renderSend(d){
+  const A=versions(d),last=A[A.length-1],inp='height:46px;border:1px solid #d9dde4;border-radius:10px;padding:0 12px;font-size:16px;background:#fff';
+  const lab=(l,h)=>'<label style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:#374151">'+l+h+'</label>';
+  return shell(d,'<div style="background:#fff;border:1px solid #e8eaef;border-radius:14px;padding:12px 13px;font-size:14px;line-height:1.55">'+(last?'V'+esc(last.version_no)+' 제출금액 <b>'+won(last.submit_amount||last.amount)+'</b>(VAT 별도)':'등록된 견적 없음')+'</div>'
+   +lab('발송일','<input data-ql="sdate" type="date" value="'+kst(0)+'" max="'+kst(0)+'" style="'+inp+'">')
+   +lab('받는 사람(필수)','<input data-ql="sto" maxlength="60" placeholder="예: 관리소장 김OO" style="'+inp+'">')
+   +lab('보낸 방법','<select data-ql="sway" style="'+inp+'"><option>이메일</option><option>카카오톡</option><option>문자</option><option>직접 전달</option></select>')
+   +lab('다음 확인일 (기본 +3일)','<input data-ql="snext" type="date" value="'+kst(3)+'" style="'+inp+'">')
+   +'<div style="font-size:12.5px;color:#6b7280">저장하면 발송 기록과 다음 확인 연락 일정이 남습니다. 단계를 발송 완료로 옮기는 것은 상세의 [단계 변경]에서 합니다.</div>'
+   +'<span data-ql-act="send" role="button" tabindex="0" style="min-height:48px;border-radius:12px;background:#15171c;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center">발송 기록 저장</span>');
+ }
+ function submitSend(d,root,after){
+  if(busy)return;
+  const q=k=>root.querySelector('[data-ql="'+k+'"]')?.value||'',to=q('sto').trim(),sd=q('sdate'),nx=q('snext'),way=q('sway');
+  if(to.length<2){msg='받는 사람을 입력해 주세요.';return after();}
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(sd)||sd>kst(0)){msg='발송일은 오늘 이전 날짜로 입력해 주세요.';return after();}
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(nx)||nx<sd||nx<kst(0)){msg='다음 확인일은 오늘 이후로 입력해 주세요.';return after();}
+  if(typeof w.queueMobileContactOperation!=='function'){msg='이 기기에서는 기록을 저장할 수 없습니다.';return after();}
+  try{
+   const last=versions(d)[versions(d).length-1],cur=d.nextAction&&d.nextAction.status==='open'?d.nextAction:null;
+   w.queueMobileContactOperation('activity',{opportunity_id:String(d.id),intent:'standalone',type:'견적발송',note:(last?'견적 V'+last.version_no+' ':'')+'발송 · '+way+' · 받는 사람 '+to+' · 발송일 '+sd,occurred_at:new Date().toISOString(),meaningful_contact:false});
+   w.queueMobileContactOperation('next_action',{opportunity_id:String(d.id),intent:'standalone',type:'전화',text:'견적 발송 후 확인 연락',due_at:nx});
+   msg='발송 기록을 저장했습니다(서버 반영 대기 중일 수 있음). 다음 확인 '+nx;
+  }catch(e){msg='저장하지 못했습니다: '+String(e&&e.message||e);}
+  after();
+ } w.MobileQuoteLive=Object.freeze({render,preview,confirm,reset(m){msg='';busy=false;mode=m||'';},reqPreview,submitReq,submitSend,toSend(){mode='send';msg='';}});
 })(window);
