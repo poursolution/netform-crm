@@ -90,7 +90,7 @@ const shot=process.argv[2]||'';
    for(const width of [320,375,480]){
     await page.setViewportSize({width,height:812});
     const r=await page.locator('.approved-'+screen.toLowerCase()).evaluate(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,border:getComputedStyle(el).borderWidth,radius:getComputedStyle(el).borderRadius,doc:document.documentElement.scrollWidth,client:el.clientWidth,scroll:el.scrollWidth}));
-    assert.equal(r.width,Math.min(width,375));assert.equal(r.height,740);assert.equal(r.border,'8px');assert.equal(r.radius,'28px');assert(r.doc<=width&&r.scroll<=r.client,screen+' has no horizontal overflow at '+width);
+    assert.equal(r.width,Math.min(width,480),'틀 없이 화면 폭(최대 480px)');assert.equal(r.height,812,'화면 높이');assert.equal(r.border,'0px','그림의 폰 목업 테두리를 앱에 넣지 않는다');assert.equal(r.radius,'0px');assert(r.doc<=width&&r.scroll<=r.client,screen+' has no horizontal overflow at '+width);
    }
    if(shot)await page.locator('.approved-'+screen.toLowerCase()).screenshot({path:shot+'-'+screen.toLowerCase()+'.png'});
   }
