@@ -23,7 +23,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    B={deals:[],inquiries:[
      {id:A,site:'[충남 천안] 천안두정E편한세상2차',address:'충남 천안시 서북구 노태산로 145',status:'배정완료',at:'2026-10-01T11:48:00+09:00',created_at:'2026-10-01T11:48:00+09:00',brand:'POUR솔루션',phone:'010-5436-0662',contact_name:'신수진 시설팀장',work_type:'에폭시',assignee:'정정훈',assigned_to:'정정훈',assigned_at:'2026-10-01T12:00:00+09:00',raw:{'문의내용':'지하주차장 에폭시 일부 들뜸, 부분 보수 견적 받을 수 있는지 문의','상담채널':'전화','공사유형':'에폭시','건물주소':'충남 천안시 서북구 노태산로 145'}},
      {id:U,site:'[경기 용인] 동백 호수마을',status:'접수',at:'2026-10-03T10:00:00+09:00',created_at:'2026-10-03T10:00:00+09:00',brand:'석민이앤씨',phone:'',contact_name:'',raw:{'문의내용':'옥상 방수 견적 문의'}}],activities:[],inquiryTrash:[]};
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';
+   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;G.inqV5Off=true;/* 이 검사는 견적문의 v4 화면을 본다(흐름 v5 는 verify-inquiry-v5-browser) */ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op,p)=>{window.__writes.push([op,p]);return 'req-'+window.__writes.length};
    window.__rpc=[];SB={rpc:async(name,args)=>{__rpc.push([name,args&&args.p]);if(name==='crm_inquiry_field_update_v1')return {data:{ok:true,value:args.p.value}};return {error:{message:'CONTRACT_UNAVAILABLE'}};}};
    // Keep the production gate on. Only the RPC boundary uses synthetic data;

@@ -21,7 +21,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    /* 견적문의 45건 */
    const inq=i=>({id:'0000'+pad(i)+'00-0000-4000-8000-0000000000'+pad(i),site:'문의 현장 '+pad(i),status:'배정완료',at:at(i),created_at:at(i),received_at:at(i),brand:'POUR솔루션',assignee:'이필선',assigned_to:'이필선',assigned_at:at(i),phone:'010-1234-56'+pad(i),contact_name:'고객'+i});
    B={deals,inquiries:Array.from({length:45},(_,i)=>inq(i+1)),activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.psb=null;G.prb=null;G.inqV3=null;
+   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.inqV5Off=true;/* 이 검사는 견적문의 v4 화면을 본다(흐름 v5 는 verify-inquiry-v5-browser) */ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.psb=null;G.prb=null;G.inqV3=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
    window.CRMRelease=Object.assign(window.CRMRelease||{},{has:()=>true,noteMissing(){}});
    PipelineWorkspace.open('relationship');

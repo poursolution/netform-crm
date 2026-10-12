@@ -302,7 +302,7 @@
   if(on()&&can(RPC)&&UUID.test(String(q.id||''))){try{const r=await store().rpc(RPC,{type:'visit',inquiry_id:String(q.id),date,time,done});take(r.state);}catch(e){if(!(e&&e.unavailable))throw e;}}
   if(done){const p=patchFor(q);p.visitDoneAt=p.visitDoneAt||new Date(date+'T'+(time||'12:00')+':00').toISOString();setStatus(q,'현장방문 완료');saveLocal();
    /* 전환 요청은 서버가 '현장방문 완료' 상태를 받는 것이 확인된 뒤에만 보낸다(같은 SQL 이 흐름 함수와 전환 조건을 함께 설치한다). 그 전에는 저장만 — 전환 대기 목록에 남는다 */
-   const ready=loadedOk&&can(RPC),msg=ready?promote(q):'서버 적용 뒤 전환 대기 목록에서 파이프라인으로 넘길 수 있습니다';saveLocal();return {done:true,promoted:!!root.inqCtlConverted(q),label:'1차 현장방문 완료',msg};}
+   /* 견적문의 흐름 v5(2026-10-13): 방문 완료는 04 현장방문 / 견적 단계에 머문다 — 견적 발송 완료를 저장할 때 파이프라인(컨설팅 설계)으로 넘어간다 */ if(root.InquiryV5&&root.InquiryV5.on()){saveLocal();return {done:true,promoted:false,label:'1차 현장방문 완료',msg:'견적서 발송을 저장하면 파이프라인으로 넘어갑니다'};} const ready=loadedOk&&can(RPC),msg=ready?promote(q):'서버 적용 뒤 전환 대기 목록에서 파이프라인으로 넘길 수 있습니다';saveLocal();return {done:true,promoted:!!root.inqCtlConverted(q),label:'1차 현장방문 완료',msg};}
   if(date>=today&&root.inquiryAssigned(q)&&nextSet(q,'현장방문'+(time?' '+time:''),date)!==true)throw Error('다음 할 일을 저장하지 못했습니다.');
   setStatus(q,'현장방문예정');saveLocal();return {done:false,promoted:false,label:'현장방문 일정',msg:''};
  }

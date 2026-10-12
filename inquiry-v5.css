@@ -1,0 +1,61 @@
+/* 견적문의 흐름 v5 — 화살표 띠 4칸 + 확인 필요 칩 + 보드 4칸 (design_handoff_inquiry_flow_v5). 끄기: G.inqV5Off */
+#pg-inq.inq-v5 #inq-v4{display:none}
+#pg-inq.b2b-on #inq-v5{display:none}
+#inq-v5{display:flex;flex-direction:column;gap:12px;margin-top:10px;color:#15171c;word-break:keep-all}
+#inq-v5 button{font:inherit;margin:0;height:auto;box-shadow:none;cursor:pointer}
+/* 화살표 띠 */
+#inq-v5 .i5-band{display:flex;align-items:stretch;height:64px}
+#inq-v5 .i5-step{flex:1;min-width:0;border:0;border-radius:0;padding:0 18px 0 26px;margin-left:-8px;display:flex;align-items:center;gap:10px;text-align:left;transition:background-color .15s ease}
+#inq-v5 .i5-step:first-child{margin-left:0;padding-left:16px}
+#inq-v5 .i5-step .i5-n{font-size:24px;letter-spacing:-0.02em;flex:none;font-variant-numeric:tabular-nums}
+#inq-v5 .i5-step span{display:flex;flex-direction:column;gap:1px;min-width:0}
+#inq-v5 .i5-step small{font-size:11px;font-weight:800;opacity:.75}
+#inq-v5 .i5-step em{font-style:normal;font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#inq-v5 .i5-step:focus-visible{outline:2px solid #3b6ce4;outline-offset:-4px}
+/* 확인 필요 칩 */
+#inq-v5 .i5-warn{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#inq-v5 .i5-warn .i5-lb{font-size:12px;font-weight:700;color:#6b7280;margin-right:4px}
+#inq-v5 .i5-chip{border:1px solid #e3e6ec;background:#fff;color:#374151;font-size:12.5px;font-weight:600;border-radius:999px;padding:5px 12px;white-space:nowrap}
+#inq-v5 .i5-chip b{color:#b42318}
+#inq-v5 .i5-chip.zero b{color:#c9cdd5}
+#inq-v5 .i5-chip.on{background:#15171c;border-color:#15171c;color:#fff}
+#inq-v5 .i5-chip.on b{color:#fff}
+#inq-v5 .i5-warn .i5-hint{font-size:11.5px;color:#9ca3af}
+#inq-v5 .i5-warn>i{flex:1}
+#inq-v5 .i5-clear{border:0;background:none;color:#6b7280;font-size:12px;text-decoration:underline;padding:0 4px}
+/* 보드 */
+#inq-v5 .i5-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:start}
+#inq-v5 .i5-col{background:#eef0f4;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0;transition:opacity .15s ease,background-color .15s ease}
+#inq-v5 .i5-col.on{background:#e3e8f5}
+#inq-v5 .i5-col.dim{opacity:.4}
+#inq-v5 .i5-col header{display:flex;flex-direction:column;gap:2px;padding:2px 4px 4px}
+#inq-v5 .i5-col header b{font-size:13.5px;white-space:nowrap}
+#inq-v5 .i5-col header span{font-size:12.5px;color:#6b7280}
+#inq-v5 .i5-col header small{font-size:11.5px;color:#6b7280;line-height:1.4}
+#inq-v5 .i5-card{border:1px solid #e8eaef;border-left:3px solid #6b7280;background:#fff;border-radius:9px;padding:10px 11px;text-align:left;display:flex;flex-direction:column;gap:5px;min-width:0;overflow:hidden;overflow-wrap:anywhere;color:#15171c;transition:opacity .15s ease,box-shadow .15s ease}
+#inq-v5 .i5-card:hover{border-color:#c9cdd5}
+#inq-v5 .i5-card.dim{opacity:.35}
+#inq-v5 .i5-card.hit{box-shadow:0 0 0 2px #15171c}
+#inq-v5 .i5-card .i5-br{font-size:11.5px;font-weight:700}
+#inq-v5 .i5-card .i5-site{font-size:13.5px;line-height:1.35}
+#inq-v5 .i5-card .i5-ev{font-size:12px;color:#6b7280;line-height:1.4}
+#inq-v5 .i5-card .i5-nx{font-size:12.5px;line-height:1.4;border-top:1px solid #f2f3f6;padding-top:6px}
+#inq-v5 .i5-card .i5-nx i{font-style:normal;color:#9ca3af;font-weight:600}
+#inq-v5 .i5-card .i5-due{font-size:12px;color:#6b7280;font-weight:500}
+#inq-v5 .i5-card .i5-due.late{color:#b42318;font-weight:700}
+#inq-v5 .i5-card .i5-tag{align-self:flex-start;font-size:11px;font-weight:700;color:#b42318;background:#fdecec;border-radius:4px;padding:1px 6px}
+#inq-v5 .i5-col .i5-rest{font-size:11.5px;color:#9ca3af;padding:0 4px}
+#inq-v5 .i5-empty{font-size:12px;color:#9ca3af;padding:14px 4px}
+#inq-v5 .i5-col nav.lpg{padding:2px 0 0}
+@media (max-width:1100px){#inq-v5 .i5-board{grid-template-columns:repeat(2,minmax(0,1fr))}#inq-v5 .i5-step em{font-size:12.5px}}
+/* 상세 창의 진행 막대 — 4칸 화살표 · 칸마다 근거 한 줄 */
+.idv3-steps.i5-mini{display:flex;gap:0;align-items:stretch;height:44px;margin-top:4px}
+.idv3-steps.i5-mini>div{flex:1;min-width:0;background:#eef0f3;color:#9ca3af;margin-left:-7px;padding:0 18px 0 20px;display:flex;flex-direction:column;justify-content:center;gap:1px;overflow:hidden}
+.idv3-steps.i5-mini>div:first-child{margin-left:0;padding-left:12px}
+.idv3-steps.i5-mini b{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.idv3-steps.i5-mini span{font-size:11px;font-weight:400;color:inherit;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.idv3-steps.i5-mini .done{background:#15171c;color:#fff}
+.idv3-steps.i5-mini .done span{color:#fff}
+.idv3-steps.i5-mini .cur{background:#3b6ce4;color:#fff}
+.idv3-steps.i5-mini .cur b{font-weight:800}
+.idv3-steps.i5-mini .cur span{color:#fff;font-weight:400}
