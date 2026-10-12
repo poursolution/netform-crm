@@ -81,6 +81,7 @@
   const m=w.MobileScheduleModel?.read({selectedDay:S.scheduleDay||undefined,now:w.__approvedScheduleNow});
   return w.MobileApprovedF?.render(m,{page:S.schedulePage})||'';
  }
+ const guideOn=(d,x,i)=>x.auto?!!w.stageGuideAutoM(d,x.auto):!!((d.stage_checklist||{})[d.code]||{})[i];
  function dayData(){
   const rows=w.G._today||w.buildToday(),mk=x=>({nm:x.nm,what:x.why||x.sub||''});
   const tom=new Date(Date.now()+864e5).toISOString().slice(0,10);
@@ -124,7 +125,7 @@
   const siblings=sid?mine().filter(x=>String(x.site_id||x.cleanup_site_id)===String(sid)&&String(x.id)!==String(d.id)):[];
   const activities=(d.activities||[]).slice().sort((x,y)=>String(y.at||y.occurred_at||'').localeCompare(String(x.at||x.occurred_at||'')));
   const contactTask=!n||/전화|통화|연락|회신/.test(n.type||'');
-  return w.MobileApprovedBC.detail({name:d.nm,brand:brand(d),color:color(d),stage:label(d),owner:d.rep||'담당 미지정',siblings:siblings.length?'이 단지 영업 '+(siblings.length+1)+'건 · '+siblings.map(work).filter(Boolean).join(' / '):'',task:n?.text||'기존 기록 확인 후 다음 업무 정하기',context:due(d),action:contactTask?'contact':'pending-task',actionLabel:contactTask?'연락 결과 기록':n?.text||'업무 확인',followup:'',contactName:[c.name,c.role].filter(Boolean).join(' · ')||'연락처 확인 필요',phone:c.mobile||c.officeTel||'',history:activities.slice(0,3).map(x=>({meta:[String(x.at||x.occurred_at||'').slice(0,10),x.type].filter(Boolean).join(' · '),note:x.note||x.result||''})),more:[activities.filter(x=>/발송|송부|제출|전달|보냄/.test((x.type||'')+(x.note||''))).length+'건 ›',(()=>{const A=w.stageGuideItemsM?.(d)||[];return A.filter((x,i)=>w.stageGuideStatusM(d,x,i)).length+'/'+A.length+' ›';})(),siblings.length+'건 ›',(d.address||d.addr||'').trim()?'지도 보기 ›':'주소 없음'],...(w.__approvedBCExample?.details?.[d.id]||{})});
+  return w.MobileApprovedBC.detail({name:d.nm,brand:brand(d),color:color(d),stage:label(d),owner:d.rep||'담당 미지정',siblings:siblings.length?'이 단지 영업 '+(siblings.length+1)+'건 · '+siblings.map(work).filter(Boolean).join(' / '):'',task:n?.text||'기존 기록 확인 후 다음 업무 정하기',context:due(d),action:contactTask?'contact':'pending-task',actionLabel:contactTask?'연락 결과 기록':n?.text||'업무 확인',followup:'',contactName:[c.name,c.role].filter(Boolean).join(' · ')||'연락처 확인 필요',phone:c.mobile||c.officeTel||'',history:activities.slice(0,3).map(x=>({meta:[String(x.at||x.occurred_at||'').slice(0,10),x.type].filter(Boolean).join(' · '),note:x.note||x.result||''})),more:[activities.filter(x=>/발송|송부|제출|전달|보냄/.test((x.type||'')+(x.note||''))).length+'건 ›',(()=>{const A=w.stageGuideItemsM?.(d)||[];return A.filter((x,i)=>guideOn(d,x,i)).length+'/'+A.length+' ›';})(),siblings.length+'건 ›',(d.address||d.addr||'').trim()?'지도 보기 ›':'주소 없음'],...(w.__approvedBCExample?.details?.[d.id]||{})});
  }
  function stageConfirmation(d){
   if(typeof w.MobileApprovedJ1Source!=='string'||typeof w.MobileStageConfirmationModel?.read!=='function'||typeof w.MobileApprovedJ1?.render!=='function')return '';
@@ -160,7 +161,7 @@
   const byDue=(a,b)=>(w.dueDays(a)??999)-(w.dueDays(b)??999);
   const AR={
    waiting:openDeals.filter(d=>next(d)&&/회신|답변|대기|결과 확인|검토|수신|회의 결과/.test(next(d).text||'')).sort(byDue).slice(0,20).map(d=>({...row(d,'확인일 '+md(d),'확인일 변경'),dueColor:'#6b7280'})),
-   info:openDeals.map(d=>{const A=w.stageGuideItemsM?.(d)||[],miss=A.filter((x,i)=>!w.stageGuideStatusM(d,x,i)&&x.required!==false).length;return [d,miss];}).filter(p=>p[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,20).map(p=>row(p[0],'확인할 정보 '+p[1]+'개','정보 채우기')),
+   info:openDeals.map(d=>{const A=w.stageGuideItemsM?.(d)||[],miss=A.filter((x,i)=>!guideOn(d,x,i)&&x.required!==false).length;return [d,miss];}).filter(p=>p[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,20).map(p=>row(p[0],'확인할 정보 '+p[1]+'개','정보 채우기')),
    promise:openDeals.filter(d=>{const n=next(d),k=w.dueDays(d);return n&&/약속|방문|미팅|회의|제출|견적 발송/.test(n.text||'')&&k!=null&&k<=7;}).sort(byDue).slice(0,20).map(d=>row(d,'약속 '+md(d),'약속 확인'))
   };
   const completed=rows.filter(t=>w.isDone(t)).length;
