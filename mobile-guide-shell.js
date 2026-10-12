@@ -238,7 +238,7 @@
    else if(k==='more'&&(b.dataset.value==='자료 발송 내역'||b.dataset.value==='영업 조건')){S.detailView=b.dataset.value==='자료 발송 내역'?'evidence':'confirmation';S.evidencePage=1;run();}
    else if(k==='stage-change'){
     const d=mine().find(x=>String(x.id)===String(w.G.deal));
-    if(d?.code!=='consulting')return w.toast('이 단계의 전환 화면은 승인된 원본과 공통 저장 조건을 확인 중입니다.');
+    if(!d)return;if(d.code!=='consulting')return w.nextSheet?w.nextSheet():w.toast('단계를 바꿀 수 없습니다');
     S.detailView='transition';run();
    }
    else if(k==='g-evidence'){
