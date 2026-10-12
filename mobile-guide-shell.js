@@ -339,7 +339,15 @@ w.document.addEventListener('click',e=>{const b=e.target.closest('[data-stage-ev
    if(e.isComposing||composingInputs.has(e.target))return;
    run();const input=w.document.querySelector('['+key+']');input?.focus();input?.setSelectionRange(pos,pos);
   };
-  w.document.addEventListener('compositionstart',e=>{if(e.target.matches(registrationInputs))composingInputs.add(e.target);});
+  /* 단계 칩 줄 — 마우스(PC 브라우저)에서도 옆으로 넘길 수 있게: 휠 · 끌기. 터치는 기본 스크롤 */
+(()=>{let drag=null,moved=false;
+ w.document.addEventListener('wheel',e=>{const r=e.target.closest?.('.approved-stages');if(!r||r.scrollWidth<=r.clientWidth)return;const dx=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY;r.scrollLeft+=dx;e.preventDefault();},{passive:false});
+ w.document.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')return;const r=e.target.closest?.('.approved-stages');if(!r||r.scrollWidth<=r.clientWidth)return;drag={r,x:e.clientX,l:r.scrollLeft};moved=false;});
+ w.document.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x;if(Math.abs(dx)>4)moved=true;if(moved)drag.r.scrollLeft=drag.l-dx;});
+ const end=()=>{drag=null;};w.document.addEventListener('pointerup',end);w.document.addEventListener('pointercancel',end);
+ w.document.addEventListener('click',e=>{if(moved&&e.target.closest?.('.approved-stages')){e.stopPropagation();e.preventDefault();moved=false;}},true);
+})();
+w.document.addEventListener('compositionstart',e=>{if(e.target.matches(registrationInputs))composingInputs.add(e.target);});
   w.document.addEventListener('compositionend',e=>{if(e.target.matches(registrationInputs)){composingInputs.delete(e.target);registrationInput(e);}});
   w.document.addEventListener('input',registrationInput);
   w.document.addEventListener('input',e=>{if(!e.target.matches('[data-quote-quantity]'))return;const d=mine().find(x=>String(x.id)===String(w.G.deal));

@@ -26,6 +26,19 @@ const {launchOptions}=require('./review-environment.cjs');
    await page.waitForTimeout(100);const b=await frame();ok(b);
    assert.deepEqual(errors,[],'화면 오류 없음');await ctx.close();
   }
+  /* 모든 화면(시트로 뜨는 연락 결과 포함)에 폰 목업 틀(테두리 4px 이상 · 둥근 모서리 16px 이상인 큰 상자)이 남지 않는다 */
+  const scan=()=>[...document.querySelectorAll('body *')].filter(e=>{const c=getComputedStyle(e),r=e.getBoundingClientRect();return r.width>200&&r.height>300&&parseFloat(c.borderTopWidth)>=4&&parseFloat(c.borderTopLeftRadius)>=16;}).map(e=>String(e.className||e.tagName));
+  for(const w of [780,390]){
+   const ctx=await browser.newContext({viewport:{width:w,height:900},timezoneId:'Asia/Seoul'});await ctx.route('**/*',r=>new URL(r.request().url()).origin===origin?r.continue():r.abort());
+   for(const scr of ['A','B','C','D','E','F','G','H','I-1','I-2','I-3','J-1','J-2','J-3','J-4','K-1','K-2','K-3','K-4','K-5','Q-S','Q-N','Q-T','Q-M','E-1','E-2','E-3']){
+    const page=await ctx.newPage();await page.goto(origin+'/mobile.html?demo=1&screen='+scr,{waitUntil:'domcontentloaded'});await page.waitForTimeout(450);
+    assert.deepEqual(await page.evaluate(scan),[],w+'px 화면 '+scr+' — 폰 목업 틀이 남아 있음');await page.close();
+   }
+   const page=await ctx.newPage();await page.goto(origin+'/mobile.html?demo=1&screen=A',{waitUntil:'domcontentloaded'});await page.locator('.approved-a').waitFor();
+   await page.evaluate(()=>{const d=DEALS[0],e=document.createElement('span');e.dataset.gs='deal';e.dataset.id=d.id;document.body.append(e);e.click();});await page.waitForTimeout(350);
+   await page.locator('[data-gs=contact]').first().click();await page.waitForTimeout(450);
+   assert.deepEqual(await page.evaluate(scan),[],w+'px 연락 결과 시트 — 폰 목업 틀이 남아 있음');await ctx.close();
+  }
   console.log('mobile frame ok');
  }finally{if(browser)await browser.close();server.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

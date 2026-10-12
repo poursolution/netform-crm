@@ -109,7 +109,7 @@ const shot=process.argv[2]||'';
     memoHeight:el.querySelector('textarea').getBoundingClientRect().height,font:getComputedStyle(el.querySelector('textarea')).fontSize,
     results:[...el.querySelectorAll('[data-ce="res"]')].map(n=>({visual:n.getBoundingClientRect().height,hit:parseFloat(getComputedStyle(n,'::after').height)})),
     modes:[...el.querySelectorAll('[data-ce="mode"]')].map(n=>({visual:n.getBoundingClientRect().height,hit:parseFloat(getComputedStyle(n,'::after').height)})),save:el.querySelector('.ce-save').getBoundingClientRect().height}));
-   assert.equal(r.width,Math.min(width,375));assert.equal(r.height,740);assert(r.doc<=width);assert.equal(r.memoHeight,96);assert.equal(r.font,'14.5px');
+   assert.equal(r.width,Math.min(width,480));assert.equal(r.height,812);assert(r.doc<=width);assert.equal(r.memoHeight,96);assert.equal(r.font,'14.5px');
    assert(r.results.every(n=>n.visual===40&&n.hit>=44));assert(r.modes.every(n=>n.visual===38&&n.hit>=44));assert.equal(r.save,48);
   }
   if(shot)await page.locator('.approved-d').screenshot({path:shot+'-d.png'});

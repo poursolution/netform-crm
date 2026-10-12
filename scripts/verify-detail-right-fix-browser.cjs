@@ -31,7 +31,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     mk(5,'[경기 평택] 평택비전지웰푸르지오','석민이앤씨','황윤선','contract',{amt:1120000000,stage_contexts:{contract:{fields:{contract_date:'2026-01-26',contract_amount:1043900000}}},next_action:{id:'n5',text:'계약 체결 확인',type:'전화',due:day(-3),status:'open'}}),
     mk(6,'[경기 용인] 수지삼성래미안','POUR공법','정정훈','won',{outcome:'won',won_amount:140000000,closed_at:'2026-03-12',contract_date:'2026-03-12',completion_date:day(-40),amt:140000000,stage_contexts:{won:{fields:{completion_date:day(-40)}}}}),
     mk(7,'[대구] 강북이진캐스빌','석민이앤씨','한준엽','lost',{outcome:'lost',closed_at:'2026-05-07',amt:350000000}),
-    mk(8,'[부산] 과거 이관 단지','석민이앤씨','김성민','old_stage_x',{amt:380000000}),mk(9,'[경기 안양] 미팅 전 컨설팅 단지','POUR솔루션','이필선','consulting',{activities:[]}),mk(10,'[서울 마포] 나눔빌딩','석민이앤씨','황윤선','bidding',{amt:300000000})],
+    mk(8,'[부산] 과거 이관 단지','석민이앤씨','김성민','old_stage_x',{amt:380000000,activities:[act('a81','방문','현장 방문 · 2개 층 바닥 들뜸 확인','2026-08-20T15:00:00+09:00','김성민'),act('a82','전화','통화 연결 · 방문 일정 협의','2026-07-30T10:20:00+09:00','김성민')]}),mk(9,'[경기 안양] 미팅 전 컨설팅 단지','POUR솔루션','이필선','consulting',{activities:[]}),mk(10,'[서울 마포] 나눔빌딩','석민이앤씨','황윤선','bidding',{amt:300000000})],
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],messageLogs:[],message_logs:[]};
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.dkOpen=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
