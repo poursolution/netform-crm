@@ -7,7 +7,7 @@
  const num=v=>{const x=Number(String(v==null?'':v).replace(/,/g,'').trim());return Number.isFinite(x)?x:NaN;};
  const versions=d=>Array.isArray(d.quote_versions)?d.quote_versions:Array.isArray(d.quoteVersions)?d.quoteVersions:[];
  const done=x=>!!x&&(Number(x.submit_amount)>0||/^제출금액 확정/.test(String(x.reason||'')));
- let busy=false,msg='';
+ let busy=false,msg='',mode='';
  function items(root){
   const q=k=>root.querySelector('[data-ql="'+k+'"]'),out=[];
   const mul=num(q('mul')?.value),ar=num(q('ar')?.value),are=num(q('are')?.value),fl=num(q('fl')?.value);
@@ -22,6 +22,7 @@
   return {last,base,its,r:w.QuoteAmounts.markupMulti(base,its)};
  }
  function render(d){
+  if(mode==='req')return renderReq(d);
   const A=versions(d),last=A[A.length-1];
   const rows=A.slice().reverse().map(v=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid #eef0f3;font-size:14px"><b>V'+esc(v.version_no)+'</b><span style="color:#6b7280">기준 '+won(w.QuoteAmounts?w.QuoteAmounts.baseOf(v):v.amount)+'</span><b style="color:'+(done(v)?'#15171c':'#b42318')+'">'+(done(v)?won(v.submit_amount||v.amount):'제출금액 미확정')+'</b></div>').join('');
   let body;
@@ -59,5 +60,34 @@
   }catch(e){msg=String(e&&e.message||e);}
   busy=false;after();
  }
- w.MobileQuoteLive=Object.freeze({render,preview,confirm,reset(){msg='';busy=false;}});
+ const shell=(d,inner)=>'<div class="approved-quote" data-quote-live style="display:flex;flex-direction:column;background:#f5f6f8"><div style="height:56px;flex:none;background:#fff;display:flex;align-items:center;gap:8px;padding:0 8px;border-bottom:1px solid #eef0f3"><span data-gs="back" role="button" tabindex="0" aria-label="뒤로" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px">‹</span><b style="font-size:17px">견적 요청 등록</b></div><div style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px"><div style="font-size:15px;font-weight:700">'+esc(d.nm)+'</div>'+(msg?'<div role="status" style="font-size:13.5px;color:#b42318">'+esc(msg)+'</div>':'')+inner+'</div></div>';
+ const ctxOf=d=>((d.stage_contexts||{}).consulting||{}).fields||{};
+ const kst=(add)=>new Date(Date.now()+9*36e5+add*864e5).toISOString().slice(0,10);
+ function renderReq(d){
+  const f=ctxOf(d),Q=Number(w.PipelineJudge?.rules?.().quote)||3;
+  const inp='height:46px;border:1px solid #d9dde4;border-radius:10px;padding:0 12px;font-size:16px;background:#fff';
+  return shell(d,(f.quote_request?'<div style="background:#fff;border:1px solid #e8eaef;border-radius:14px;padding:12px 13px;font-size:14px;line-height:1.55">이미 등록된 요청: '+esc(f.quote_request)+(f.quote_due?'<br>견적 예정일 '+esc(f.quote_due):'')+'</div>':'')
+   +'<label style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:#374151">요청 범위 · 메모(필수)<textarea data-ql="req" rows="4" maxlength="500" placeholder="예: 옥상 방수 1,200㎡ · 우레탄 도막 · 11월 착공 희망" style="border:1px solid #d9dde4;border-radius:10px;padding:10px 12px;font-size:16px;background:#fff">'+esc(f.quote_request||'')+'</textarea></label>'
+   +'<label style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:#374151">견적 예정일 (기본: 오늘 + '+Q+'일)<input data-ql="due" type="date" value="'+esc(f.quote_due||kst(Q))+'" style="'+inp+'"></label>'
+   +'<div style="font-size:12.5px;color:#6b7280">등록하면 견적 요청 기록과 견적 예정일이 저장되고, 견적팀이 기준금액을 올리면 제출금액을 만들 수 있습니다.</div>'
+   +'<span data-ql-act="req" role="button" tabindex="0" style="min-height:48px;border-radius:12px;background:#15171c;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center">견적 요청 등록</span>');
+ }
+ function reqPreview(){}
+ async function submitReq(d,root,after){
+  if(busy)return;
+  const req=(root.querySelector('[data-ql="req"]')?.value||'').trim(),due=root.querySelector('[data-ql="due"]')?.value||'';
+  if(req.length<2){msg='요청 범위·메모를 입력해 주세요.';return after();}
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(due)||due<kst(0)){msg='견적 예정일은 오늘 이후 날짜로 입력해 주세요.';return after();}
+  if(d.code!=='consulting'){msg='컨설팅 단계에서만 견적 요청을 등록할 수 있습니다.';return after();}
+  if(!w.Phase1||typeof w.Phase1.rpc!=='function'){msg='서버에 연결된 상태에서만 등록할 수 있습니다.';return after();}
+  busy=true;
+  try{
+   const r=await w.Phase1.rpc('crm_deal_stage_fields_update_v1',{p:{deal_id:String(d.id),stage_code:'consulting',fields:{quote_request:req,quote_due:due},reason:'모바일 견적 요청 등록'}});
+   if(!r||r.ok!==true||!r.stage_context)throw Error('서버 확인 응답이 올바르지 않습니다.');
+   d.stage_contexts=Object.assign({},d.stage_contexts||{},{consulting:r.stage_context});d.stageContexts=d.stage_contexts;
+   if(r.version!=null)d.version=r.version;
+   msg='견적 요청을 등록했습니다. 견적 예정일 '+due;
+  }catch(e){msg=String(e&&e.message||e);}
+  busy=false;after();
+ } w.MobileQuoteLive=Object.freeze({render,preview,confirm,reset(m){msg='';busy=false;mode=m||'';},reqPreview,submitReq});
 })(window);
