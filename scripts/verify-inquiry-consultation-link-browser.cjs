@@ -24,7 +24,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     {id:A,site:'[서울 강동] 성내스테이',status:'배정완료',at:at(0,6),created_at:at(0,6),brand:'POUR솔루션',phone:'010-4400-1750',contact_name:'김소장',assignee:'이필선',assigned_to:'이필선',assigned_at:at(0,5),responded_at:at(0,2),address:'서울 강동구 성내로 54',raw:{'문의내용':'누수 관련 견적문의','상담채널':'홈페이지','건물주소':'서울 강동구 성내로 54'},activities:[{id:'ev-a1',type:'전화',note:'기존 인젝션 부위 재누수 · 가능한 공법 설명',at:at(0,2),actor:'이필선'}]},
     {id:P,site:'[서울] 성내스테이',status:'접수',at:at(0,5),created_at:at(0,5),brand:'POUR공법',phone:'010-4400-1618',contact_name:'관리소장',address:'서울시 강동구 성내로 54',raw:{'문의내용':'1층~지하2층 누수, 방문견적 요청','상담채널':'구글시트','건물주소':'서울시 강동구 성내로 54'}}],
     activities:[],inquiryTrash:[],inquiryCleanupArchived:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';
+   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;G.inqV5Off=true;/* 이 검사는 견적문의 v4 화면을 본다(흐름 v5 는 verify-inquiry-v5-browser) */ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    /* 가짜 서버: 미리보기 · 쓰기(버전 검사) — 계정은 UUID */
    const PV='crm_inquiry_consultation_preview_v1',WR='crm_inquiry_consultation_write_v1';

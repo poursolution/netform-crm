@@ -148,7 +148,8 @@
  const isConn=r=>FL()?FL().kindOf(r)==='connected':CONNECTED.includes(r),isTry=r=>FL()?FL().kindOf(r)==='attempt':false;
  /* 다음 단계: 보존 계약은 사실만 저장한다. 기존 전환 자격과 실제 파이프라인 전환은 별개다. */
  const stepOk=s=>s.step==='visit'?!!s.visitDate:s.step==='quote'?(FL()&&s.quoteMode==='완료'?!!s.quoteAmt:!!(s.quoteAmt||s.quoteDate)):false;
- const stepConverts=s=>root.CRM_SCHEDULE_V1!==true&&(!FL()||(s.step==='visit'?s.visitMode==='완료':s.step==='quote'?s.quoteMode==='완료':false));
+ const V5=()=>!!(root.InquiryV5&&root.InquiryV5.on());/* 견적문의 흐름 v5: 방문 완료만으로는 넘기지 않는다 — 견적 발송 완료를 저장할 때만 파이프라인으로 */
+ const stepConverts=s=>root.InquiryV5&&root.InquiryV5.on()?(s.step==='quote'&&s.quoteMode==='완료'):root.CRM_SCHEDULE_V1!==true&&(!FL()||(s.step==='visit'?s.visitMode==='완료':s.step==='quote'?s.quoteMode==='완료':false));
  const stepBtn=s=>stepConverts(s)?'저장하고 파이프라인으로':'저장';
  const visitToggle=s=>FL()?'<div class="idv-two small"><button type="button" data-idv="visitMode" data-v="예정" aria-pressed="'+(s.visitMode!=='완료')+'">방문 예정</button><button type="button" data-idv="visitMode" data-v="완료" aria-pressed="'+(s.visitMode==='완료')+'">방문 완료</button></div>':'';
  const wonTxt=n=>{n=Math.round(Number(n)||0);const e=Math.floor(n/1e8),m=Math.round((n%1e8)/1e4);return e?e+'억'+(m?' '+m.toLocaleString('ko-KR')+'만원':' 원'):m.toLocaleString('ko-KR')+'만원';};
@@ -386,7 +387,7 @@
   const names=['접수','담당 배정','현장방문 / 견적','파이프라인 전환'];
   return '<div class="idv3-top"><div class="r1"><i class="bar" style="background:'+bc+'"></i><b style="color:'+bc+'">'+h(brand||'브랜드 미지정')+'</b><span>'+h([work].concat(String(sum).split(' · ').map(x=>x.trim()).filter(x=>x&&!work.includes(x)&&x!=='견적 요청'),[inflow?(/문의$/.test(inflow)?inflow:inflow+' 문의'):'']).filter(v=>v&&String(v).trim()).join(' · '))+'</span><i class="sp"></i><span class="idv3-pill '+pill[0]+'">'+h(pill[1])+'</span><button type="button" class="inq-dialog-close idv-close idv3-x" aria-label="닫기" onclick="InquiryWorkbench.close()">×</button></div>'
    +'<div class="r2"><h2 id="inq-dialog-title">'+h(q.site||'현장명 미입력')+'</h2><span>'+h(customer)+(ph.text?' · <b>'+h(ph.text)+'</b>':'')+'</span><small>'+h(dateOnly(S0.created)+' 접수 · 담당 '+owner)+'</small></div>'
-   +'<div class="idv3-steps">'+stepsOf(q).map((x,i)=>'<div class="'+(x.done?'done':x.cur?'cur':'')+'"><i></i><span>'+(x.cur?'지금 · ':'')+names[i]+'</span></div>').join('')+'</div></div>';
+   +(V5()?root.InquiryV5.stepsHtml(q):'<div class="idv3-steps">'+stepsOf(q).map((x,i)=>'<div class="'+(x.done?'done':x.cur?'cur':'')+'"><i></i><span>'+(x.cur?'지금 · ':'')+names[i]+'</span></div>').join('')+'</div>')+'</div>';
  }
  function col13(q,s){
   const f=new Map(W().sourceFields(q)),r0=q.raw&&typeof q.raw==='object'?q.raw:{},can=fieldEditable(),can2=need2Editable();
@@ -458,11 +459,11 @@
   if(attD&&!handed)next='<div class="idv3-next"><span class="lb">기존 영업건에 붙임</span><p>'+h([L3().dealTag?L3().dealTag(attD):'',L3().dealWork?L3().dealWork(attD):'',root.repN(attD.assignee)].filter(Boolean).join(' · '))+'</p><button type="button" class="idv-link" data-idv="goto-att">영업건 보기 →</button></div>';
   else if(handed){const d=root.linkedDeal?.(q);next='<div class="idv3-next"><span class="lb">파이프라인 전환 완료</span><p>'+h(d?root.stageNoLabel(root.dealStage(d))+' 단계에 등록됨':'영업건으로 전환되었습니다')+(d&&root.oppAmt(d)?' · '+h(root.fmtAmt(root.oppAmt(d))):'')+'</p>'+(d?'<button type="button" class="idv-link" data-idv="goto-deal">파이프라인에서 보기 →</button>':'')+'</div>';}
   else{const ok=stepOk(s);
-   next='<div class="idv3-next"><span class="lb">다음 단계 · 현장방문 / 견적</span><div class="two"><button type="button" data-idv="step" data-v="visit" aria-pressed="'+(s.step==='visit')+'">현장방문 일정</button><button type="button" data-idv="step" data-v="quote" aria-pressed="'+(s.step==='quote')+'">견적서 발송</button></div>'
+   next='<div class="idv3-next"><span class="lb">'+(V5()?'다음 단계 · 04 현장방문 / 견적':'다음 단계 · 현장방문 / 견적')+'</span><div class="two"><button type="button" data-idv="step" data-v="visit" aria-pressed="'+(s.step==='visit')+'">현장방문 일정</button><button type="button" data-idv="step" data-v="quote" aria-pressed="'+(s.step==='quote')+'">견적서 발송</button></div>'
     +(s.step==='visit'?visitToggle(s)+'<div class="idv-fields"><input type="date" data-idv="visitDate" aria-label="방문 날짜" value="'+attr(s.visitDate)+'"><input type="time" data-idv="visitTime" aria-label="방문 시간" value="'+attr(s.visitTime)+'"></div>':'')
     +(s.step==='quote'?'<div class="idv-two small"><button type="button" data-idv="quoteMode" data-v="예정" aria-pressed="'+(s.quoteMode==='예정')+'">발송 예정</button><button type="button" data-idv="quoteMode" data-v="완료" aria-pressed="'+(s.quoteMode==='완료')+'">발송 완료</button></div><div class="idv-fields"><input inputmode="numeric" data-idv="quoteAmt" aria-label="예상 금액(만원)" placeholder="예상 금액 (만원)" value="'+attr(s.quoteAmt)+'"><input type="date" data-idv="quoteDate" aria-label="견적 날짜" value="'+attr(s.quoteDate)+'"></div>':'')
     +(s.step?'<button type="button" class="idv-primary'+(ok?' on':'')+'" data-idv="handoff"'+(ok?'':' disabled')+'>'+stepBtn(s)+'</button><div class="idv-err" data-idv-err></div>':'')
-    +'<small>'+(FL()?h(FL().QUALIFY_TEXT):root.CRM_SCHEDULE_V1===true?'방문·견적 사실 저장 · 파이프라인 전환은 별도 확인':'둘 중 하나 저장 → 파이프라인 ‘컨설팅 설계’로 자동 전환')+'</small></div>';}
+    +'<small>'+(V5()?'견적서 발송(완료)을 저장하면 자동으로 파이프라인 · '+h(root.InquiryV5.promoStage())+' 단계로 넘어갑니다 · 따로 넘기는 버튼 없음':FL()?h(FL().QUALIFY_TEXT):root.CRM_SCHEDULE_V1===true?'방문·견적 사실 저장 · 파이프라인 전환은 별도 확인':'둘 중 하나 저장 → 파이프라인 ‘컨설팅 설계’로 자동 전환')+'</small></div>';}
   const n=W().related(q),list=(n.list||[]).slice(0,5);
   const bottom='<div class="idv3-bottom"><button type="button" class="nr" data-idv="near-toggle"'+(list.length?'':' disabled')+'>근처 현장 <b>'+list.length+'곳</b>'+(n.region?' · '+h(n.region):'')+'</button>'+(admin&&!handed?'<button type="button" class="idv-link" data-idv="reassign">담당 변경</button>':'')+'</div>'
    +(s.nearOpen&&list.length?'<div class="idv-near idv3-near">'+list.map(x=>{const d=x.d,amt=root.oppAmt(d);return '<button type="button" class="idv-ncard mine" data-idv="near" data-v="'+attr(root.dealKey(d))+'"><span class="n1"><b>'+h(String(d.site||'').replace(/^\s*\[[^\]]*\]\s*/,''))+'</b></span><span class="n2"><i></i>'+h(root.stageNoLabel(root.dealStage(d)))+' · '+h(root.repN(d.assignee))+(amt?' · '+h(root.fmtAmt(amt)):'')+'</span></button>';}).join('')+'</div>':'');
@@ -677,7 +678,9 @@
    const form=Object.fromEntries(['step','visitDate','visitTime','visitMode','quoteAmt','quoteDate','quoteMode'].map(k=>[k,s[k]])),current=()=>curKey===key&&root.G?.inqSelKey===key&&!!document.getElementById('inq-inbox-dialog')&&Object.keys(form).every(k=>s[k]===form[k]);
    const identity=()=>{if(protectedRoute){j.assertOwner(owner);if(session!==undefined)j.assertSession(session);}};
    const job=Promise.resolve().then(()=>form.step==='visit'?root.InquiryCommand.run('visit',q,{date:form.visitDate,time:form.visitTime,done:form.visitMode==='완료'}):root.InquiryCommand.run('quote_send',q,{amount:form.quoteAmt?Number(form.quoteAmt)*10000:0,date:form.quoteDate,sent:form.quoteMode==='완료'}));
-   Promise.resolve(job).then(r=>{identity();if(protectedRoute&&r?.ok!==true)throw Error('저장 확인 응답이 올바르지 않습니다.');if(protectedRoute&&!current())return;Object.assign(s,{step:'',visitDate:'',visitTime:'',visitMode:'예정',quoteAmt:'',quoteDate:'',quoteMode:'예정'});
+   Promise.resolve(job).then(r=>{identity();if(protectedRoute&&r?.ok!==true)throw Error('저장 확인 응답이 올바르지 않습니다.');
+     /* 견적문의 흐름 v5: 견적 발송 완료가 서버에 저장되면 그 자리에서 기존 전환 경로(autoPromote → 서버 전환 명령)로 영업건을 만든다. 따로 넘기는 버튼은 없다 */
+     if(V5()&&form.step==='quote'&&form.quoteMode==='완료'&&!r.promoted&&typeof root.autoPromote==='function'&&!root.inqCtlConverted(q)){try{const pm=String(root.autoPromote(q)||'');r=Object.assign({},r,{promoted:!!root.inqCtlConverted(q),msg:pm||r.msg});}catch(pe){r=Object.assign({},r,{msg:'파이프라인 전환은 하지 못했습니다 — '+String(pe&&pe.message||pe)});}}if(protectedRoute&&!current())return;Object.assign(s,{step:'',visitDate:'',visitTime:'',visitMode:'예정',quoteAmt:'',quoteDate:'',quoteMode:'예정'});
      if(document.getElementById('inq-inbox-dialog'))reskinFrom();else W().open(key,'none');
      toast(r.promoted?site+' → 파이프라인 등록':site+' · '+r.label+' 저장'+(r.msg&&!r.promoted?' · '+r.msg:''));try{root.paint();}catch(e){}})
     .catch(e=>{if(protectedRoute){try{identity();}catch(ignore){return;}if(!current())return;}const m=String(e&&e.message||e);const el=document.querySelector('#inq-inbox-dialog [data-idv-err]');if(el)el.textContent=m;fail('저장하지 못했습니다: '+m);})

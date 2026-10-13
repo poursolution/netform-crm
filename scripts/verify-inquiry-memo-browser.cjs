@@ -27,7 +27,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     {id:NOPH,site:'[경기] 문의-0486',status:'접수',at:at(5),created_at:at(5),brand:'POUR솔루션',phone:'',contact_name:'',raw:{'문의내용':'방수 문의','상담채널':'홈페이지','응대내용':'[2026-02-03 10:00:00] 관리소장 010-3333-4444 번호로 통화 완료.'}},
     {id:OK,site:'[부산] 메모 없는 단지',status:'배정완료',at:at(3),created_at:at(3),brand:'POUR공법',phone:'051-222-3344',contact_name:'관리소장',assignee:'이필선',assigned_to:'이필선',assigned_at:at(2.9),responded_at:at(2),raw:{'문의내용':'공법 설명 요청','상담채널':'홈페이지'},activities:[{type:'전화',note:'[전화 · 연결됨] 자료 안내',at:at(2),actor:'이필선'}]}],
     activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;G.inqDetailV3Off=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';G.inqV3=null;G.inqV4=null;
+   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;G.inqV5Off=true;/* 이 검사는 견적문의 v4 화면을 본다(흐름 v5 는 verify-inquiry-v5-browser) */G.inqDetailV3Off=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';G.inqV3=null;G.inqV4=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op,p)=>{window.__writes.push([op,p]);return 'req-'+window.__writes.length};
    window.__rpc=[];window.__reviews=[];
    SB={rpc:async(name,args)=>{__rpc.push([name,args]);

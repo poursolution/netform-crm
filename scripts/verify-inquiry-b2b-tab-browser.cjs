@@ -27,7 +27,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      ag(4,'(주)도시관리서비스','2026-09-10','홈페이지','최경아 대리','02-2085-7300','협력사 등록 절차와 필요 서류 안내 부탁드립니다.',{status:'협약완료',close_reason:'협약완료 · 협력사 등록 완료',updated_at:T('2026-09-15')}),
      Object.assign(ag(6,'시트에서 온 협약문의','2026-09-01','','','','',{status:'종결',close_reason:'종결',contact:'',contact_name:'',phone:'',channel:''}),{work:'',work_type:'',detail:null,raw:{'공사유형':'협약 문의','고객성함':'한소라','고객연락처':'010-2222-3333','상담채널':'구글폼','문의내용':'시트로 들어온 협약 문의 원문'}}),
      ag(5,'예전 배드핏 처리 업체','2026-08-20','전화','담당자','02-000-0000','협약 문의였으나 예전에 배드핏으로 처리',{status:'배드핏'})],activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'a1',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.q='';
+   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.inqV5Off=true;/* 이 검사는 견적문의 v4 화면을 본다(흐름 v5 는 verify-inquiry-v5-browser) */ME={id:'a1',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
    window.__calls=[];window.__mode='ok';const api=window.InquiryB2B;
    window.InquiryB2B=Object.assign({},api,{complete:async(q,result,note)=>{api.request(q,result,note);__calls.push([q.id,result,note]);if(__mode==='uncertain')return {saved:false,queue_status:'uncertain'};if(__mode==='conflict')throw Error('B2B_STATE_CONFLICT');return {saved:true,result,note:note.trim(),completed_at:new Date().toISOString(),sync_status:'pending'};}});
