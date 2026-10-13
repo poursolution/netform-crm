@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head><script src="./boot-guard.js?v=bg2"></script><script src="./phase1-config.js"></script><script src="./operational-adapter.js?v=contact-consent1"></script><script src="./pc-manager-transport.js?v=qv4-contact-consent1"></script><script src="./release-contract.js?v=mr1"></script><script src="./list-pager.js?v=lp1"></script><script src="./contact-state.js?v=cs1"></script><script src="./inquiry-memo.js?v=20261010-call-candidate"></script><script src="./deal-same.js?v=f71"></script><link rel="stylesheet" href="./deal-frame7.css?v=qv4"><script src="./deal-frame7.js?v=qv4"></script><script src="./pipeline-scope.js?v=tr1"></script><script src="./motion.js?v=mo1"></script><script src="./inquiry-conversion.js?v=mr1"></script><script src="./site-address-evidence.js?v=20260917-1"></script><script src="./construction-year.js?v=20260915-structure-1"></script><script src="./external-performance.js?v=20260909-1"></script><script src="./business-attribution.js?v=20260909-1"></script><script src="./contract-performance.js?v=20260909-1"></script>
+<head><script src="./boot-guard.js?v=bg2"></script><script src="./phase1-config.js"></script><script src="./operational-adapter.js?v=ps1"></script><script src="./pc-manager-transport.js?v=qv4-contact-consent1"></script><script src="./release-contract.js?v=mr1"></script><script src="./list-pager.js?v=lp1"></script><script src="./contact-state.js?v=cs1"></script><script src="./inquiry-memo.js?v=20261010-call-candidate"></script><script src="./deal-same.js?v=f71"></script><link rel="stylesheet" href="./deal-frame7.css?v=qv4"><script src="./deal-frame7.js?v=qv4"></script><script src="./pipeline-scope.js?v=tr1"></script><script src="./motion.js?v=mo1"></script><script src="./inquiry-conversion.js?v=mr1"></script><script src="./site-address-evidence.js?v=20260917-1"></script><script src="./construction-year.js?v=20260915-structure-1"></script><script src="./external-performance.js?v=20260909-1"></script><script src="./business-attribution.js?v=20260909-1"></script><script src="./contract-performance.js?v=20260909-1"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>넷폼 영업관리 CRM</title>
@@ -7223,8 +7223,7 @@ function splitSaveStatus(){
    v4 까지 /견적.*발송/ 이라 예정 건도 «자료 발송완료(sent)»로 올라갔다.
    실데이터에서 «견적서 발송예정»이 가장 많은 상태 중 하나라 영향이 컸다. */
 function qualifyStage(status){
-  var t=String(status||'');
-  if(/견적.*발송\s*완료/.test(t))return 'sent';
+  /* 2026-10-13 견적문의 흐름 v5(대표 확정): 방문 완료 · 견적 발송 완료 모두 컨설팅 설계로 넘긴다 — 전송 계층(promotionStage) · 서버(crm_inquiry_pipeline_stage_v1)와 같은 값 */
   return 'consulting';
 }
 /* v4.2 P0(§7 §8): 인계 단계 이름은 여기서 STAGE_MASTER 로부터 뽑는다.
