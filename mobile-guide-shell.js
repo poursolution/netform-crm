@@ -177,6 +177,14 @@
  function show(){
   if(!w.G?.user||(!w.LIVE&&!w.DEMO)||w.G.mode!=='rep'||w.G.sub)return false;
   const d=w.G.deal!=null?mine().find(x=>String(x.id)===String(w.G.deal)):null;
+  if(!d&&w.G.tab==='prospect-form'&&typeof w.rProspect==='function'){
+   w.document.body.classList.add('claude-shell');w.document.getElementById('stage').style.display='';
+   const sc=w.document.getElementById('scr'),tb=w.document.getElementById('tabbar');sc.classList.add('gs-screen','gs-approved-frame','gs-prospect');sc.classList.remove('gs-approved-a');
+   w.rProspect('<div class="gs-reg-head"><span data-gs="back" role="button" tabindex="0" aria-label="뒤로">‹</span><b>새 현장 등록 · 2 / 4</b></div>');
+   const wrap=w.document.createElement('div');wrap.className='approved-quote';while(sc.firstChild)wrap.append(sc.firstChild);sc.append(wrap);
+   tb.innerHTML='';tb.classList.add('gs-tabhost');w.MobileApprovedBoot?.ready();return true;
+  }
+  w.document.getElementById('scr')?.classList.remove('gs-prospect');
   if(!d&&!['mine','today','pending','record','registration-match','schedule','day-close'].includes(w.G.tab))return false;
   w.document.body.classList.add('claude-shell');
   w.document.getElementById('stage').style.display='';
@@ -268,7 +276,7 @@
    }
    else if(k==='j4-new'){
     try{w.MobileRegistrationContext.saveDraft(S.newQuery,S.selectedSite);S.registrationError='';}catch(e){S.registrationError=String(e.message||e);run();w.toast('입력 임시 보관에 실패했습니다. 현재 내용을 유지하고 다시 시도해 주세요.');return;}
-    w.toast('등록 2~4단계와 서버 저장 연결이 아직 준비되지 않았습니다.');
+    w.G.pnm=S.newQuery||'';w.G.deal=null;w.G.sub=null;S.returnTab='record';w.G.tab='prospect-form';run();
    }
    else if(k==='e-card')w.toast(b.dataset.entry==='materials'?'사진·자료 입력 원본 화면과 업로드 연결을 확인 중입니다.':'일정 등록 원본 화면과 저장 연결을 확인 중입니다.');
    else if(k==='schedule-day'){if(!w.MobileScheduleModel?.dateOnly(b.dataset.date))return;S.scheduleDay=b.dataset.date;S.schedulePage=1;run();}

@@ -68,3 +68,9 @@ body .sheet-card.ce-page>[class*="approved-"]{width:100%!important;max-width:480
 body .sheet-card.ce-page>[class*="approved-"]>div{min-width:0}
 body .sheet-card.ce-page>[class*="approved-"]>div:nth-child(2){overflow-y:auto!important;min-height:0}
 @media (min-width:481px){body .sheet-card.ce-page{background:#e9ebef!important}body .sheet-card.ce-page>[class*="approved-"]{box-shadow:0 0 0 1px #e3e6ec!important}}
+/* 새 현장 등록 2~4단계(기존 영업 등록 입력을 그대로 쓴다) — 화면 전체 · 안쪽 스크롤 */
+body.claude-shell #scr.gs-screen.gs-prospect{display:block!important;overflow-y:auto!important;height:100vh;height:100dvh;max-width:480px;margin:0 auto;background:#f5f6f8!important}
+body.claude-shell #scr.gs-prospect .gs-reg-head{height:56px;display:flex;align-items:center;gap:8px;padding:0 8px;background:#fff;border-bottom:1px solid #eef0f3;position:sticky;top:0;z-index:2}
+body.claude-shell #scr.gs-prospect .gs-reg-head span{width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px}
+body.claude-shell #scr.gs-prospect .gs-reg-head b{font-size:17px}
+body.claude-shell #scr.gs-prospect .body{padding:12px 16px 40px}
