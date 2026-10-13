@@ -128,9 +128,9 @@
    ['주간 활동',wkA.length+'건',zero?'red':'','이번 주 · '+names.length+'명 중 '+zero+'명 0건','ev','activity']];
   const kpis='<div class="db-kpis">'+cards.map(c=>'<button type="button" class="db-kpi"'+(c[4]?' data-db="'+c[4]+'" data-v="'+attr(c[5])+'"':' disabled')+(c[6]?' title="'+attr(c[6])+'"':'')+'><span>'+h(c[0])+'</span><div><b class="'+c[2]+'">'+h(c[1])+'</b><small>'+(c[7]?'<span class="ew-j" role="button" tabindex="0" data-ew-why="'+c[7]+'">'+h(c[3])+'</span>':h(c[3]))+'</small></div></button>').join('')+'</div>';
   /* '오늘 먼저 볼 것' 검은 띠는 뺐다(2026-10-04 대표) — 같은 숫자가 위 카드에 있고, 계약 임박은 파이프라인 탭에서 본다 */
-  const secs=[['perf','성과','문의 → 계약 · 추이 · 브랜드'],['people','사람','담당자별 · 이번 주 기록'],['pipe','파이프라인','단계 · 계약 임박'],['act','활동','최근 기록']];
+  const secs=[['perf','성과','문의 → 계약 · 추이 · 브랜드'],['people','사람','담당자별 · 이번 주 기록'],['pipe','파이프라인',v3()?'단계 · 담당 · 체류':'단계 · 계약 임박'],['act','활동','최근 기록']];
   const tabs='<div class="db-secs" role="tablist">'+secs.map(t=>'<button type="button" role="tab" aria-selected="'+(S.sec===t[0])+'" data-db="sec" data-v="'+t[0]+'">'+t[1]+'<span>'+t[2]+'</span></button>').join('')+'</div>';
-  return kpis+tabs+(S.sec==='people'?secPeople(C,PP):S.sec==='pipe'?secPipe(C,N):S.sec==='act'?secAct(C):secPerf(C));
+  return kpis+(v3()?judgeAll(C,N)+todayBand(C,N):'')+tabs+(S.sec==='people'?secPeople(C,PP):S.sec==='pipe'?secPipe(C,N):S.sec==='act'?secAct(C):secPerf(C));
  }
  function brandRows(C){
   const {B,P,L,q,loss}=C;
@@ -281,11 +281,11 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
   const openQ=C.rows.inquiries.filter(x=>{const q=x.item;try{if(R.inqCtlConverted(q))return false;if(typeof R.isClosedInq==='function'&&R.isClosedInq(q))return false;}catch(e){}return true;}).map(x=>{const t=Date.parse(R.inquiryCreatedAt(x.item)||'');return Number.isFinite(t)?Math.max(0,Math.floor((nowT-t)/864e5)):null;}).filter(v=>v!==null);
   const dw=[{k:'inq',l:'견적문의',d:avgOf(openQ),g:DWL.inq}].concat(defs.map(df=>({k:DK[df.key],l:SH[df.key]==='컨설팅'?'컨설팅 설계':(SH[df.key]||df.label),d:avgOf(active.filter(x=>PS().group(x.stage)===df.key).map(ageOf)),g:DWL[DK[df.key]]})));
   const dmax=Math.max(60,...dw.map(x=>Math.max(x.d||0,x.g||0))),over=dw.filter(x=>x.d!==null&&x.d>x.g).sort((a,b)=>(b.d-b.g)-(a.d-a.g))[0];
-  const dwSec='<section class="db-card db-dwells"><div class="db-ch"><b>단계에 평균 며칠 머무나</b><span>세로선 = 기준</span></div>'+dw.map(x=>{const o2=x.d!==null&&x.d>x.g;return '<div class="db-dwell"><span>'+h(x.l)+'</span><i>'+(x.d===null?'':'<u style="width:'+Math.min(100,Math.round(x.d/dmax*100))+'%;background:'+(o2?'#d14a3f':'#3b6ce4')+'"></u>')+'<s style="left:'+Math.min(100,Math.round(x.g/dmax*100))+'%"></s></i><b class="'+(o2?'red':x.d===null?'mut':'')+'">'+(x.d===null?'건 없음':x.d+'일')+'</b></div>';}).join('')
+  const dwSec='<section class="db-card db-dwells'+(v3()?' v3':'')+'"><div class="db-ch"><b>단계에 평균 며칠 머무나</b><span>세로선 = 기준</span></div>'+dw.map(x=>{const o2=x.d!==null&&x.d>x.g;return '<div class="db-dwell"><span>'+h(x.l)+'</span><i>'+(x.d===null?'':'<u style="width:'+Math.min(100,Math.round(x.d/dmax*100))+'%;background:'+(o2?'#d14a3f':'#3b6ce4')+'"></u>')+'<s style="left:'+Math.min(100,Math.round(x.g/dmax*100))+'%"></s></i><b class="'+(o2?'red':x.d===null?'mut':'')+'">'+(x.d===null?'건 없음':x.d+'일')+'</b>'+(v3()?'<small>기준 '+x.g+'일</small>':'')+'</div>';}).join('')
    +'<p class="db-dwnote">'+h(over?over.l+' 단계가 기준('+over.g+'일)보다 '+(over.d-over.g)+'일 길게 머묾 · '+HINT[over.k]:'모든 단계가 기준 안에 있습니다')+'</p></section>';
   return '<section class="db-card"><div class="db-ch"><b>진행 중 '+active.length+'건'+(exp>0?' · '+h(won(exp)):'')+'</b><span>단계 클릭 = 그 단계 목록 · 빨간 숫자 = 조치 필요</span></div><div class="db-flow">'+flow+'</div><div class="db-ended"><span>끝난 영업 <i>· 전체 기간 누적</i></span><span>수주 <b>'+wonN+'</b></span><span>실주 <b>'+lostN+'</b></span>'+(expN?'<span>확장관리로 이어짐 <b>'+expN+'</b></span>':'')+'<i class="db-sp"></i><span>조치 필요 합계 <b class="red">'+risk.length+'</b></span></div></section>'
-   +'<div class="db-pipe2">'+whoSec+dwSec+'</div>'
-   +'<section class="db-card"><div class="db-ch"><b>계약 임박 · 다음 달 전망</b><span>날짜 확인된 계약 예정 '+N.filter(n=>n.k).length+'건'+(sum(N.filter(n=>n.k))>0?' · '+h(won(sum(N.filter(n=>n.k)))):'')+(N.some(n=>!n.k)?' · 기한 미등록 후반 단계 '+N.filter(n=>!n.k).length+'건':'')+' · 기한 가까운 순</span></div>'+(N.length?'<div class="db-nears">'+top.map(card).join('')+'</div><p class="db-note">위 '+top.length+'건 '+(sum(top)>0?h(won(sum(top))):'금액 없음')+(rest.length?' · 나머지 '+rest.length+'건 '+(sum(rest)>0?h(won(sum(rest))):'금액 없음'):'')+' · 이번 주 기한 '+hot.length+'건'+(sum(hot)>0?' '+h(won(sum(hot))):'')+'</p>':'<p class="db-empty">경쟁 · 입찰 · 계약 검토 단계에 있는 건이 없습니다.</p>')+'</section>';
+   +'<div class="db-pipe2">'+(v3()?whoV3(C,defs,SH):whoSec)+dwSec+'</div>'
+   +(v3()?'':'<section class="db-card"><div class="db-ch"><b>계약 임박 · 다음 달 전망</b><span>날짜 확인된 계약 예정 '+N.filter(n=>n.k).length+'건'+(sum(N.filter(n=>n.k))>0?' · '+h(won(sum(N.filter(n=>n.k)))):'')+(N.some(n=>!n.k)?' · 기한 미등록 후반 단계 '+N.filter(n=>!n.k).length+'건':'')+' · 기한 가까운 순</span></div>'+(N.length?'<div class="db-nears">'+top.map(card).join('')+'</div><p class="db-note">위 '+top.length+'건 '+(sum(top)>0?h(won(sum(top))):'금액 없음')+(rest.length?' · 나머지 '+rest.length+'건 '+(sum(rest)>0?h(won(sum(rest))):'금액 없음'):'')+' · 이번 주 기한 '+hot.length+'건'+(sum(hot)>0?' '+h(won(sum(hot))):'')+'</p>':'<p class="db-empty">경쟁 · 입찰 · 계약 검토 단계에 있는 건이 없습니다.</p>')+'</section>');
  }
  function actExtra(C){
   const {B,P}=C,WA=weekActs(C),W=WA.W,names=C.names,all=WA.list,K4=['call','msg','visit','quote'],AC=['#3b6ce4','#9ab6f2','#1f9d55','#e8a09a'],AL=['통화','문자 · 카카오','방문','견적 · 자료'];
@@ -323,6 +323,7 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
  function secAct(C){
   const A=C.A.slice(0,40),G=[];A.forEach(x=>{let g=G.find(z=>z.k===x.k);if(!g){g={k:x.k,items:[]};G.push(g);}if(g.items.length<5)g.items.push(x);});
   const dl=k=>{const d=new Date(k+'T00:00:00');return d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate()+' ('+'일월화수목금토'[d.getDay()]+')';};
+  if(v3())return actExtra(C)+feedV3(C);
   return actExtra(C)+'<section class="db-card"><div class="db-ch"><b>최근 활동</b><span>날짜별 · 행 클릭 = 현장 상세</span><i class="db-sp"></i><button type="button" class="db-more" data-db="ev" data-v="activity-all">전체 보기 →</button></div>'
    +(G.length?'<div class="db-feed">'+G.slice(0,8).map(g=>'<div class="db-fg"><span>'+dl(g.k)+'</span><div>'+g.items.map(f=>'<button type="button" data-db="open" data-v="'+attr(f.key)+'"><em>'+h(f.type.slice(0,6))+'</em><b class="'+(f.owner==='미배정'?'red':'')+'">'+h(f.owner||'미배정')+'</b><span>'+h(siteShort(f.site)+(f.text?' · '+f.text:''))+'</span><b class="amt">'+(f.amt>0?h(won(f.amt)):'')+'</b></button>').join('')+'</div></div>').join('')+'</div>':'<p class="db-empty">영업 기록이 아직 없습니다.</p>')+'</section>';
  }
@@ -597,6 +598,77 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
   return verdict+(ranked.length?'<div class="db-pcs">'+ranked.map(card).join('')+'</div>':'<p class="db-empty">진행 · 수주 기록이 있는 담당자가 없습니다.</p>')+(quiet.length?'<span class="db-quiet">진행 · 수주 기록 없음: '+h(quiet.join(' · '))+'</span>':'')+'<div class="db-row3">'+tech+madeCard+brandCard+'</div>'+matrix(C)+cohort(C)+channel(C)+pending;
  }
 
+ /* ── 영업 대시보드 v3 (2026-10 확정 · design_handoff_dashboard README 'v3 정리' · 시안 '영업 대시보드 v3.dc.html') ──
+    공통: 판단 카드 3장 — '판단 근거'는 기본 접힘(한 줄을 누르면 그 화면 3장이 같이 펼쳐진다). 숫자는 화면의 다른 칸과 같은 함수에서 읽는다(따로 계산한 값 없음).
+    끄기: G.dashV3Off=true → v2 배치 */
+ const v3=()=>!R.G.dashV3Off;
+ const LPg=()=>root.ListPager;
+ function judgeCards(cards){
+  const S=st(),open=!!S.basis;
+  return '<div class="db-judges">'+cards.map((j,i)=>'<section class="db-judge"><div class="jh"><span>'+'①②③'[i]+'</span><b>'+h(j.t)+'</b></div><div class="jv"><b class="'+(j.vc||'')+'">'+h(j.v)+'</b><span>'+h(j.s)+'</span></div>'
+   +(j.rows.length?j.rows.map(r=>'<'+(r.open?'button type="button" data-db="open" data-v="'+attr(r.open)+'"':'div')+' class="jr"><span title="'+attr(r.a)+'">'+h(r.a)+'</span><b class="'+(r.c||'')+'">'+h(r.b)+'</b></'+(r.open?'button':'div')+'>').join(''):'<div class="jr none"><span>'+h(j.empty||'해당하는 건이 없습니다')+'</span></div>')
+   +'<button type="button" class="jb" data-db="basis" aria-expanded="'+open+'"><span>판단 근거</span><span>'+(open?'접기 ▴':'펼치기 ▾')+'</span></button>'
+   +(open?'<div class="jbasis">'+j.basis.map(b=>'<span>'+h(b[0])+'</span><span>'+h(b[1])+'</span>').join('')+'</div>':'')
+   +(j.link?'<button type="button" class="jl" data-db="'+j.link[1]+'" data-v="'+attr(j.link[2])+'">'+h(j.link[0])+' →</button>':'')+'</section>').join('')+'</div>';
+ }
+ /* 월~금 영업일: 이번 달 전체와 오늘까지 */
+ function bizDays(P){let all=0,done=0;const last=new Date(P.ty,P.tm,0).getDate();for(let d=1;d<=last;d++){const w=new Date(P.ty,P.tm-1,d).getDay();if(w===0||w===6)continue;all++;if(d<=P.td)done++;}return {all,done};}
+ const nextOf=d=>{try{const nx=R.briefNext(d.item),t=nx&&nx.due?R.daysTo(nx.due):null;return {text:nx&&nx.text?String(nx.text):'',due:nx&&nx.due?String(nx.due).slice(0,10):'',dd:t};}catch(e){return {text:'',due:'',dd:null};}};
+ /* 오늘 놓치면 안 되는 일: 오늘 마감 + 1억 이상 기한 지남 — 오늘 마감 먼저, 그다음 금액 큰 순 */
+ function mustToday(C){
+  return C.risk.map(d=>({d,nx:nextOf(d),amt:Number(d.expected)||0})).filter(x=>x.nx.dd===0||(x.nx.dd!==null&&x.nx.dd<0&&x.amt>=1e8))
+   .sort((a,b)=>(a.nx.dd===0?0:1)-(b.nx.dd===0?0:1)||b.amt-a.amt||a.nx.dd-b.nx.dd);
+ }
+ /* 이번 달 결정 날짜가 있는 곳(오늘 이후 · 월말까지) */
+ function monthNear(C,N){const P=C.P,end=mk(P.ty,P.tm+1);return N.filter(n=>n.k&&n.k>=P.today&&n.k<end);}
+ function judgeAll(C,N){
+  const {B,P,L,risk}=C,ms=mk(P.ty,P.tm),me=mk(P.ty,P.tm+1),cm=B.contractsIn(L,ms,me,null,'direct'),tfm=C.DT?C.DT.wonIn(ms,me,C.target):{count:0,amount:0},ptm=C.DW?C.DW.partnerIn(ms,me,C.target):{count:0,amount:0};
+  const cur=cm.net+ptm.amount+tfm.amount,curN=cm.count+ptm.count+tfm.count,MN=monthNear(C,N),fore=MN.reduce((s,n)=>s+n.amount,0),target=Number((R.OPS_RULES||{}).monthTarget)||0,bd=bizDays(P);
+  const noDate=N.filter(n=>!n.k).length,past=N.filter(n=>n.k&&n.k<P.today).length,MT=mustToday(C),top=MT.slice(0,4);
+  const j1=target>0?(()=>{const pct=Math.round(cur/target*100),line=bd.all?Math.round(bd.done/bd.all*100):0,gap=target-cur-fore;
+    return {t:'이번 달 목표 대비',v:eok(cur)+' / '+eok(target),s:pct+'% · 오늘 기준선 '+line+'%',vc:pct<line?'red':'',rows:[{a:'확정 (계약 · 낙찰 · VAT 별도)',b:L.ready?won(cur):'불러오는 중'},{a:'날짜 잡힌 전망',b:'+'+won(fore),c:'blue'},gap>0?{a:'전망까지 더해도 부족',b:won(gap),c:'red'}:{a:'전망까지 더하면',b:'목표 넘김',c:''}],
+     basis:[['대상',P.tm+'월 계약 · 낙찰 확정 '+curN+'건 (직접 · 협약 · 승인된 타사 이관)'],['계산','계약 · 낙찰 금액 합(VAT 별도) ÷ 월 목표 '+eok(target)+' · 기준선 = 경과 영업일 '+bd.done+' / '+bd.all],['제외','날짜 없는 전망 · 예상금액']],link:curN?['수주 '+curN+'건 목록','cs-month',P.tm]:null};})()
+   :{t:'이번 달 목표 대비',v:L.ready?(cur>0?won(cur):'아직 없음'):'불러오는 중',s:'월 목표값 입력 후 대비 표시',vc:cur>0?'':'mut',rows:[{a:'확정 (계약 · 낙찰 · VAT 별도)',b:L.ready?(cur>0?won(cur):'아직 없음'):'불러오는 중'},{a:'날짜 잡힌 전망',b:fore>0?'+'+won(fore):'없음',c:fore>0?'blue':'mut'},{a:'목표 대비',b:'목표값 입력 후 표시',c:'mut'}],
+     basis:[['대상',P.tm+'월 계약 · 낙찰 확정 '+curN+'건 (직접 · 협약 · 승인된 타사 이관)'],['계산','계약 · 낙찰 금액 합(VAT 별도) · 월 목표값이 없어 대비 · 기준선은 계산하지 않음(영업일 '+bd.done+' / '+bd.all+' 경과)'],['제외','날짜 없는 전망 · 예상금액']],link:curN?['수주 '+curN+'건 목록','cs-month',P.tm]:null};
+  const j2={t:'계약 가능성 높은 곳',v:MN.length?MN.length+'곳'+(fore>0?' · '+eok(fore):''):'없음',s:'이번 달 결정 날짜가 있는 곳만',vc:MN.length?'':'mut',empty:'이번 달 결정 날짜가 잡힌 곳이 없습니다',
+   rows:MN.slice(0,3).map(n=>({a:siteShort(n.d.site)+' · '+n.due,b:n.amount>0?eok(n.amount):'금액 미정',c:n.amount>0?'':'mut',open:'deal:'+R.dealKey(n.d)})),
+   basis:[['대상','경쟁 · 입찰 · 계약 체결 전 단계 중 '+P.tm+'월 결정일 등록 '+MN.length+'곳'],['계산','결정일(입찰 마감 · PT · 계약 예정) 오늘 ~ 월말 · 금액 = 계약금액 → 예상금액 순'],['제외','결정일 없음 '+noDate+'곳 · 날짜 지난 '+past+'곳']],link:MN.length?[MN.length+'곳 목록','ev','near']:null};
+  const j3={t:'오늘 놓치면 안 되는 일',v:top.length+'건',s:'조치 필요 '+risk.length+'건 중',vc:top.length?'red':'mut',empty:'오늘 마감 · 고액 기한 지남이 없습니다',
+   rows:top.slice(0,3).map(x=>({a:siteShort(x.d.site)+(x.nx.text?' · '+x.nx.text:''),b:x.nx.dd===0?'오늘':(-x.nx.dd)+'일 지남',c:'red',open:x.d.key})),
+   basis:[['대상','오늘 마감 '+MT.filter(x=>x.nx.dd===0).length+'건 · 1억 이상 기한 지남 '+MT.filter(x=>x.nx.dd!==0).length+'건'],['계산','오늘 마감 먼저 → 금액 큰 순 상위 4'],['제외','과거 이관 · 보류 · 기한 없는 건(컨트롤타워에서 봄)']],link:['컨트롤타워에서 '+risk.length+'건','go','control']};
+  return judgeCards([j1,j2,j3]);
+ }
+ function todayBand(C,N){
+  const hot=N.filter(n=>n.hot),sum=hot.reduce((s,n)=>s+n.amount,0),P=C.P;
+  const head=hot.length?'이번 주 기한 '+hot.length+'건'+(sum>0?' · '+eok(sum):'')+' — '+hot.slice(0,2).map(n=>siteShort(n.d.site)+' '+n.due).join(', ')+(hot.length>2?' 외 '+(hot.length-2)+'건':''):'이번 주 기한이 잡힌 계약 · 입찰 예정이 없습니다';
+  const sub=(P.thisYear?'올해':P.label)+' 수주실적 '+(C.L.ready?won(C.perf):'불러오는 중')+' · 메이드율 '+pt(C.made)+' · 손봐야 할 '+C.risk.length+'건 중 기한 지남 '+C.cnt('overdue')+'건';
+  return '<section class="db-today"><div><span>오늘 먼저 볼 것</span><b>'+h(head)+'</b><small>'+h(sub)+'</small></div><button type="button" data-db="go" data-v="control">컨트롤타워에서 처리 →</button></section>';
+ }
+ /* 파이프라인 탭: 담당 × 5단계 표(건수 · 조치 n · 얇은 막대) + 평균 체류(숫자 아래 기준) — '계약 임박' 카드는 맨 위 '계약 가능성'과 겹쳐 뺐다 */
+ function whoV3(C,defs,SH){
+  const {active}=C;
+  const who=[...new Set(active.map(d=>d.owner||'미배정'))].map(o=>{const mine=active.filter(d=>(d.owner||'미배정')===o),cells=defs.map(df=>{const l=mine.filter(x=>PS().group(x.stage)===df.key);return {n:l.length,f:l.filter(x=>x.issues.length).length};});return {o,cells,t:mine.length,f:mine.filter(x=>x.issues.length).length};}).sort((a,b)=>(a.o==='미배정')-(b.o==='미배정')||b.t-a.t||a.o.localeCompare(b.o,'ko'));
+  const smax=defs.map((df,i)=>Math.max(1,...who.map(r=>r.cells[i].n)));let worst=null;who.forEach(r=>r.cells.forEach((c,i)=>{if(c.f&&(!worst||c.f>worst.c.f))worst={r,c,i};}));
+  const stT=defs.map((df,i)=>({l:SH[df.key]||df.label,f:who.reduce((s,r)=>s+r.cells[i].f,0)})).sort((a,b)=>b.f-a.f)[0];
+  const note=worst?worst.r.o+' '+(SH[defs[worst.i].key]||defs[worst.i].label)+' '+worst.c.n+'건 중 '+worst.c.f+'건이 조치 필요'+(stT&&stT.f>worst.c.f?' · 조치 필요는 '+stT.l+' 단계가 가장 많음('+stT.f+'건)':''):'조치가 필요한 건이 없습니다';
+  return '<section class="db-card flush db-whos"><div class="db-ch pad"><b>누가 어느 단계를 쥐고 있나</b><span>칸마다 진행 건수 · 빨강 = 그중 조치 필요</span></div>'
+   +(who.length?'<div class="db-who3 hd" role="row"><span>담당</span>'+defs.map(df=>'<span>'+h(SH[df.key]||df.label)+'</span>').join('')+'<span class="r">합계 · 조치</span></div>'
+    +who.map(r=>'<div class="db-who3" role="row"><b class="'+(r.o==='미배정'?'red':'')+'">'+h(r.o)+'</b>'+r.cells.map((c,i)=>'<div class="wc"><div><b class="'+(c.n?'':'z')+'">'+c.n+'</b>'+(c.f?'<em>조치 '+c.f+'</em>':'')+'</div><i><u style="width:'+Math.round(c.n/smax[i]*100)+'%"></u><s style="width:'+Math.round(c.f/smax[i]*100)+'%"></s></i></div>').join('')+'<span class="r"><b>'+r.t+'</b> · <b class="red">'+r.f+'</b></span></div>').join('')
+    +'<div class="db-who3leg"><span><i class="g"></i>진행 건수 (단계 안에서 비교)</span><span><i class="r"></i>그중 조치 필요</span></div><p class="db-whonote">'+h(note)+'</p>':'<p class="db-empty">진행 중인 영업건이 없습니다.</p>')+'</section>';
+ }
+ /* 활동 탭: 최근 활동 = 표(날짜 · 담당 · 현장 · 한 일 · 결과 · 다음 행동 · 금액) — 최근 7일 */
+ const RESV={call:['연결됨','ok'],visit:['방문','ok'],try:['부재','mut'],msg:['보냄','mut'],quote:['발송','mut'],etc:['기록','mut']};
+ function feedV3(C){
+  const P=C.P,from=C.B.addDays(P.today,-6),rows=C.A.filter(x=>x.k>=from&&x.k<=P.today).map(x=>{const k=actKind(x),d=C.deals.find(z=>z.key===x.key),nx=d?nextOf(d):{text:'',due:''};return {x,k,real:k==='call'||k==='visit',next:nx.text?nx.text+(nx.due?' · '+md(nx.due):''):''};});
+  const real=rows.filter(r=>r.real),tries=rows.filter(r=>r.k==='try'||r.k==='msg').length,noNext=rows.filter(r=>!r.next).length,realNo=real.filter(r=>!r.next),unSites=[...new Set(rows.filter(r=>(r.x.owner||'미배정')==='미배정').map(r=>r.x.key))].length;
+  const S=st(),LP=LPg(),pg=LP?LP.cut(rows,LP.page(S,'fd')):{rows:rows.slice(0,20),pages:1};
+  const dl=k=>{const d=new Date(k+'T00:00:00');return (d.getMonth()+1)+'.'+d.getDate()+' ('+'일월화수목금토'[d.getDay()]+')';};
+  const note=!rows.length?'최근 7일 영업 기록이 없습니다 — 기록이 없으면 연결 · 후속을 잴 수 없습니다':real.length?'실제 연결 '+real.length+'건 중 다음 행동이 없는 건 '+realNo.length+'건'+(realNo.length?'('+siteShort(realNo[0].x.site)+(realNo.length>1?' 외 '+(realNo.length-1):'')+')':'')+(unSites?' · 미배정 현장 '+unSites+'곳은 담당 없음':''):'최근 7일 실제 연결이 없습니다 — 연락 시도만 '+tries+'건'+(unSites?' · 미배정 현장 '+unSites+'곳은 담당 없음':'');
+  return '<section class="db-card db-fd"><div class="db-ch"><b>최근 활동</b><span class="fs">최근 7일 <b>'+rows.length+'건</b> · 실제 연결 <b class="'+(real.length?'ok':'red')+'">'+real.length+'</b> · 연락 시도만 '+tries+' · 다음 행동 없음 <b class="red">'+noNext+'</b></span><i class="db-sp"></i><button type="button" class="db-more" data-db="ev" data-v="activity-all">전체 보기 →</button></div>'
+   +(rows.length?'<div class="db-fdr hd" role="row"><span>날짜</span><span>담당</span><span>현장</span><span>한 일</span><span>결과</span><span>다음 행동</span><span class="r">금액</span></div>'
+    +pg.rows.map(r=>'<button type="button" class="db-fdr" role="row" data-db="open" data-v="'+attr(r.x.key)+'"><span class="d">'+dl(r.x.k)+'</span><b class="'+((r.x.owner||'미배정')==='미배정'?'red':'')+'">'+h(r.x.owner||'미배정')+'</b><span class="s" title="'+attr(r.x.site)+'">'+h(siteShort(r.x.site))+'</span><span class="k">'+h(r.x.type.slice(0,6))+'</span><em class="'+RESV[r.k][1]+'">'+RESV[r.k][0]+'</em><span class="n'+(r.next?'':' red')+'" title="'+attr(r.next)+'">'+h(r.next||'없음 · 정하기')+'</span><b class="r">'+(r.x.amt>0?h(eok(r.x.amt)):'')+'</b></button>').join('')
+    +(LP?LP.html(pg,{ns:'db',v:'fd',unit:'건',small:true}):''):'')+'<p class="db-dwnote">'+h(note)+'</p></section>';
+ }
  function render(){
   const page=R.G.page,host=document.getElementById('si-'+page),pg=document.getElementById('pg-'+page);if(!host||!pg)return;
   pg.classList.add('si-active','db-on');
@@ -625,6 +697,8 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
   if(a==='go')return R.goPage(v);
   if(a==='quarter'){f.quarter=Number(v);f.month=0;return R.paint();}
   if(a==='sec'){S.sec=v;return render();}
+  if(a==='basis'){S.basis=!S.basis;return render();}
+  if(a==='page'){if(LPg())LPg().set(S,v,Number(b.dataset.page)||1);return render();}
   if(a==='cell'){const i=v.lastIndexOf('|');S.selP=v.slice(0,i)||null;S.selC=v.slice(i+1)||null;S.touched=true;return render();}
   if(a==='clear'){S.selP=null;S.selC=null;S.touched=true;return render();}
   if(a==='open')return X.openRecord(v);
@@ -645,6 +719,7 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
   if(a==='inq-month'){const a0=mk(P.y,Number(v)),b0=mk(P.y,Number(v)+1),list=evRows(C.rows.inquiries.filter(x=>{const k=C.K(R.inquiryCreatedAt(x.item));return k>=a0&&k<b0;}));return X.openEvidence(P.y+'년 '+v+'월 문의 근거','접수 기준 '+list.length+'건',list);}
   if(a==='brand-ev')return X.openEvidence(v+' 계약 근거','계약 원장 기록',X.contractEvidence({brand:v}));
   if(a==='ev'){
+   if(v==='near'){const MN=monthNear(C,nearList(C)),list=MN.map(n=>{const row=C.deals.find(x=>x.item===n.d);return row?Object.assign(X.evRow(row),{reason:n.due+(n.amount>0?' · '+won(n.amount):' · 금액 미정')}):null;}).filter(Boolean);return X.openEvidence('계약 가능성 높은 곳 · '+list.length+'곳',P.tm+'월 결정 날짜가 있는 곳 · 기한 가까운 순',list);}
    if(v==='contract')return X.openEvidence(P.label+' 계약 근거','계약 체결 · 변경 · 취소 원장 기록',X.contractEvidence({}));
    if(v==='active')return X.openEvidence('진행 파이프라인 · '+C.active.length+'건','현재 진행 중',C.active.map(x=>Object.assign(X.evRow(x),{reason:x.reason||'진행 중'})));
    if(v==='inquiries'){const list=evRows(C.rows.inquiries.filter(x=>C.inR(C.K(R.inquiryCreatedAt(x.item)),P.a,P.b)));return X.openEvidence('견적문의 · '+list.length+'건',P.label+' 접수 기준',list);}

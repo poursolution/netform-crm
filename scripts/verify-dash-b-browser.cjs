@@ -53,7 +53,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(core.od,5);assert.equal(core.made,40,'메이드율 = 수주 2 ÷ (수주 2 + 실주 3) · 배드핏 제외');
   assert.equal(kpi[4][1],core.risk+'건');{const mm=/^기한 지남 5 \+ 다음 할 일 없음 (\d+) \+ 담당 미배정 (\d+)(?: \+ 그 밖 · 연락 · 정체 · 정보 부족 (\d+))? = (\d+)$/.exec(kpi[4][2]);assert.ok(mm,kpi[4][2]);assert.equal(5+Number(mm[1])+Number(mm[2])+Number(mm[3]||0),Number(mm[4]),'설명 합계 = 제목');assert.equal(Number(mm[4]),core.risk);assert.equal(Number(mm[1])+Number(mm[3]||0)>=core.miss-0,true);}/* exec_wording: 한 건은 한 사유 · 합계 = 제목 */
   assert.match(kpi[5][1],/^2건$/);assert.match(kpi[5][2],/^이번 주 · \d+명 중 \d+명 0건$/,'주간 활동 = 이번 주(월–일) — 사람 탭 · 활동 탭과 같은 기간');
-  assert.equal(await d.locator('.db-band').count(),0,'오늘 먼저 볼 것 검은 띠는 없다(2026-10-04 대표)');assert.ok(!/오늘 먼저 볼 것/.test(await d.innerText()));
+  assert.equal(await d.locator('.db-band').count(),0,'오늘 먼저 볼 것 검은 띠는 없다(2026-10-04 대표)');// v3(2026-10 확정): 숫자 6칸 → 판단 카드 3장(판단 근거 기본 접힘) → 오늘 먼저 볼 것(흰 바탕 · 빨간 왼쪽 선) → 탭
+  {const o1=s=>s.replace(/\s+/g,' ').trim(),J=(await d.locator('.db-judge').allInnerTexts()).map(o1);
+   assert.deepEqual(J,['① 이번 달 목표 대비 아직 없음 월 목표값 입력 후 대비 표시 확정 (계약 · 낙찰 · VAT 별도) 아직 없음 날짜 잡힌 전망 +7.5억 목표 대비 목표값 입력 후 표시 판단 근거 펼치기 ▾','② 계약 가능성 높은 곳 2곳 · 7.5억 이번 달 결정 날짜가 있는 곳만 매탄 임박 · 입찰 마감 10/9 4억 계약 검토 · 계약 예정 10/27 3.5억 판단 근거 펼치기 ▾ 2곳 목록 →','③ 오늘 놓치면 안 되는 일 4건 조치 필요 5건 중 기한 지난 현장 1 · 후속 통화 17일 지남 기한 지난 현장 2 · 후속 통화 17일 지남 기한 지난 현장 3 · 후속 통화 17일 지남 판단 근거 펼치기 ▾ 컨트롤타워에서 5건 →'],'판단 카드 3장 — 목표값이 없으면 지어내지 않고 입력 후 표시');
+   assert.equal(await d.locator('.db-judge .jbasis').count(),0,'판단 근거 기본 접힘');await d.locator('.db-judge .jb').first().click();await page.waitForTimeout(150);
+   assert.equal(await d.locator('.db-judge .jbasis').count(),3,'한 번 누르면 3장 함께');assert.match(o1(await d.locator('.db-judge .jbasis').nth(2).innerText()),/^대상 오늘 마감 0건 · 1억 이상 기한 지남 5건 계산 오늘 마감 먼저 → 금액 큰 순 상위 4 제외 /);
+   await d.locator('.db-judge .jb').first().click();await page.waitForTimeout(150);assert.equal(await d.locator('.db-judge .jbasis').count(),0);
+   assert.equal(o1(await d.locator('.db-today').innerText()),'오늘 먼저 볼 것 이번 주 기한 1건 · 4억 — 매탄 임박 입찰 마감 10/9 올해 수주실적 8억 · 메이드율 40.0% · 손봐야 할 5건 중 기한 지남 5건 컨트롤타워에서 처리 →');
+   assert.deepEqual(await d.locator('.db-today').evaluate(n=>[getComputedStyle(n).backgroundColor,getComputedStyle(n).borderLeftColor]),['rgb(255, 255, 255)','rgb(209, 74, 63)'],'흰 바탕 · 빨간 왼쪽 선');
+   assert.equal(await d.evaluate(n=>{const t=['.db-kpis','.db-judges','.db-today','.db-secs'].map(s=>n.querySelector(s).getBoundingClientRect().top);return t.every((v,i)=>!i||v>t[i-1]);}),true,'순서: 숫자 → 판단 → 오늘 먼저 볼 것 → 탭');}
   assert.deepEqual(await d.locator('.db-secs button').evaluateAll(a=>a.map(n=>n.childNodes[0].textContent)),['성과','사람','파이프라인','활동']);
   /* 성과(5차 블록 1 · 2026-10-05): 영업 Funnel 6칸 + 단계별 전주 대비 표 — 숫자 · 문장은 전부 자료에서 */
   const one0=s=>s.replace(/\s+/g,' ').trim();
@@ -106,17 +114,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const stg=await page.locator('#si-dash .db-stage').evaluateAll(a=>a.map(n=>[n.querySelector(':scope>span').textContent,n.querySelector(':scope>div b').textContent,n.querySelector(':scope>em').textContent]));
   assert.equal(stg.length,5);assert.deepEqual(stg.map(s=>s[0].slice(0,2)),['01','02','03','04','05']);assert.deepEqual(stg[1].slice(1),['5건','조치 필요 5']);assert.equal(stg[3][1],'1건');assert.equal(stg[4][1],'1건');
   assert.match(await page.locator('#si-dash .db-ended').innerText(),/끝난 영업 · 전체 기간 누적\s*수주 2\s*실주 3[\s\S]*조치 필요 합계 \d+/);
-  const near=await page.locator('#si-dash .db-near').evaluateAll(a=>a.map(n=>[n.querySelector('em').textContent,n.querySelector('em').className,n.querySelector(':scope>div span').textContent,n.querySelector(':scope>div b').textContent]));
-  assert.deepEqual(near,[['D-2','hot','입찰 마감 10/9','4억'],['D-20','','계약 예정 10/27','3.5억']],'기한 가까운 순 · 7일 이내 빨강');
-  assert.match(await page.locator('#si-dash .db-note').innerText(),/^위 2건 7\.5억 · 이번 주 기한 1건 4억$/);
+  assert.equal(await page.locator('#si-dash .db-near').count(),0,'v3: 계약 임박 카드는 맨 위 계약 가능성과 겹쳐 뺐다');
+
   /* 보강(2026-10-05 시안): 누가 어느 단계를 쥐고 있나 · 단계에 평균 며칠 머무나 */
   const one=s=>s.replace(/\s+/g,' ').trim();
-  assert.deepEqual((await page.locator('#si-dash .db-who .wh').allInnerTexts()).map(one),['담당','컨설팅','자료 발송','관계관리','경쟁·입찰','계약·시공','합계']);
-  const who=await page.locator('#si-dash .db-who').evaluate(n=>{const c=[...n.children].slice(7).map(x=>x.textContent.trim()),rows=[];for(let i=0;i<c.length;i+=7)rows.push(c.slice(i,i+7));return rows;});
-  assert.deepEqual(who,[['황윤선','0','5 (5)','0','0','0','5'],['이필선','0','0','0','1','1','2']],'담당 × 5단계 진행 건수 · 괄호 = 조치 필요 · 합계 많은 순');
-  const shades=await page.locator('#si-dash .db-who .wc').evaluateAll(l=>l.slice(0,2).map(n=>n.style.background));assert.notEqual(shades[0],shades[1],'진할수록 많음');
+  assert.deepEqual((await page.locator('#si-dash .db-who3').allInnerTexts()).map(one),['담당 컨설팅 자료 발송 관계관리 경쟁·입찰 계약·시공 합계 · 조치','황윤선 0 5 조치 5 0 0 0 5 · 5','이필선 0 0 0 1 1 2 · 0'],'담당 × 5단계: 건수 · 조치 n · 끝 칸 합계 · 조치');
+  assert.deepEqual(await page.locator('#si-dash .db-who3:not(.hd)').first().locator('.wc').nth(1).evaluate(n=>[n.querySelector('i u').style.width,n.querySelector('i s').style.width,getComputedStyle(n.querySelector('i s')).backgroundColor]),['100%','100%','rgb(209, 74, 63)'],'얇은 막대: 회색 = 단계 안 상대 비율 · 빨강 = 조치 몫');
+  assert.equal(await page.locator('#si-dash .db-who3:not(.hd)').first().locator('.wc b').first().evaluate(n=>getComputedStyle(n).color),'rgb(201, 205, 213)','0은 흐린 회색');
   assert.equal(await page.locator('#si-dash .db-whonote').innerText(),'황윤선 자료 발송 5건 중 5건이 조치 필요');
-  const dw=await page.locator('#si-dash .db-dwell').evaluateAll(l=>l.map(n=>[n.children[0].textContent,n.children[2].textContent,n.children[2].className,!!n.querySelector('u'),n.querySelector('s').style.left]));
+  const dw=await page.locator('#si-dash .db-dwell').evaluateAll(l=>l.map(n=>[n.children[0].textContent,n.children[2].textContent,n.children[2].className,!!n.querySelector('u'),n.querySelector('s').style.left,n.querySelector('small').textContent]));assert.deepEqual(dw.map(x=>x[5]),['기준 2일','기준 7일','기준 14일','기준 60일','기준 30일','기준 14일'],'숫자 아래 기준 n일');
   assert.deepEqual(dw.map(x=>x[0]),['견적문의','컨설팅 설계','자료 발송','관계관리','경쟁·입찰','계약·시공']);assert.deepEqual(dw[1].slice(1,4),['건 없음','mut',false]);assert.deepEqual(dw[2].slice(1,4),['248일','red',true],'기준 넘으면 빨강');assert.match(dw[0][1],/^\d+일$/);
   assert.ok(dw.every(x=>/%$/.test(x[4])),'세로선 = 기준');assert.equal(await page.locator('#si-dash .db-dwnote').first().innerText(),'자료 발송 단계가 기준(14일)보다 234일 길게 머묾 · 견적 후 후속이 늦는 구간');
   if(shot)await page.screenshot({path:shot+'-dash-pipe.png',fullPage:true});
@@ -134,9 +140,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{__writes.length=0;const mem={};Phase1.storage.getItem=k=>k in mem?mem[k]:null;Phase1.storage.setItem=(k,v)=>{mem[k]=String(v);};});await page.locator('#si-dash .db-actband button').click();await page.waitForTimeout(250);
   assert.equal(await page.locator('#si-dash .db-actband button').innerText(),'요청 보냄 ✓');assert.equal(await page.locator('#si-dash .db-actband button').isDisabled(),true);assert.equal(await page.evaluate(()=>__deliveries.length),6,'0건인 6명의 오늘 업무에 한 줄씩(관리팀 KPI 요청과 같은 길)');
   if(shot)await page.screenshot({path:shot+'-dash-act.png',fullPage:true});
-  assert.deepEqual(await page.locator('#si-dash .db-fg>span').allInnerTexts(),['2026.10.6 (화)','2026.10.5 (월)','2026.9.1 (화)']);
-  assert.match(await page.locator('#si-dash .db-fg').first().innerText(),/전화\s*이필선\s*매탄 임박 · 관리소장 통화\s*4억/);
-  await page.locator('#si-dash .db-fg button').first().click();assert.deepEqual(await page.evaluate(()=>__opened),['n1'],'행 클릭 = 현장 상세');
+  // v3: 최근 활동 = 표(날짜 · 담당 · 현장 · 한 일 · 결과 · 다음 행동 · 금액) · 최근 7일
+  assert.equal(one(await page.locator('#si-dash .db-fd .db-ch').innerText()),'최근 활동 최근 7일 2건 · 실제 연결 2 · 연락 시도만 0 · 다음 행동 없음 0 전체 보기 →');
+  assert.deepEqual((await page.locator('#si-dash .db-fdr').allInnerTexts()).map(one),['날짜 담당 현장 한 일 결과 다음 행동 금액','10.6 (화) 이필선 매탄 임박 전화 연결됨 입찰 준비 · 10/9 4억','10.5 (월) 이필선 계약 검토 방문 방문 계약서 검토 · 10/20 3억']);
+  assert.equal(one(await page.locator('#si-dash .db-fd .db-dwnote').innerText()),'실제 연결 2건 중 다음 행동이 없는 건 0건');
+  await page.locator('#si-dash button.db-fdr').first().click();assert.deepEqual(await page.evaluate(()=>__opened),['n1'],'행 클릭 = 현장 상세');
   /* ── 2. 컨트롤타워 ── */
   await page.locator('#si-dash [data-db="go"][data-v="control"]').first().click();await page.waitForTimeout(400);
   const c=page.locator('#si-control .db-shell');assert.equal(await c.count(),1);assert.equal(await page.locator('#ptitle').innerText(),'컨트롤타워');
