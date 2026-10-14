@@ -143,3 +143,48 @@
 .pf3-lt>span{min-width:0;display:flex;flex-direction:column;gap:1px}.pf3-lt>span>small{font-size:11px;color:#9ca3af}
 .pf3-lt>b.r{text-align:right}.pf3-lt>b.red{color:#b42318}
 @media (max-width:900px){.pf3-lt{grid-template-columns:90px minmax(0,1fr) 56px minmax(0,1fr) 56px}}
+
+/* ── 영업 대시보드 v3 · 성과 분석 (README 'v3 정리') ── */
+.pf3.v3{display:flex;flex-direction:column;gap:16px}
+.pf3-ceo{background:#fff;border:1px solid #e8eaef;border-left:3px solid #15171c;border-radius:12px;padding:16px 20px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.pf3-ceo>div{display:flex;flex-direction:column;gap:4px;min-width:0}.pf3-ceo>div+div{border-left:1px solid #eef0f3;padding-left:18px}
+.pf3-ceo span{font-size:11.5px;font-weight:700;color:#6b7280}.pf3-ceo span.red{color:#b42318}.pf3-ceo span.mut{color:#6b7280}.pf3-ceo span.blue{color:#2a52b8}
+.pf3-ceo b{font-size:17px;line-height:1.35;letter-spacing:-0.01em}.pf3-ceo small{font-size:12px;color:#6b7280;line-height:1.5}
+.pf3.v3 .pf3-pending{padding:0 2px}
+.pf3-crit{background:#fff;border:1px solid #e8eaef;border-left:3px solid #15171c;border-radius:12px;padding:14px 18px;display:flex;flex-direction:column;gap:10px}
+.pf3-crit .c1{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.pf3-crit .c1 b{font-size:15px}.pf3-crit .c1 span{font-size:12px;color:#6b7280}
+.pf3-crit .c2{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:#374151}.pf3-crit .c2 b{color:#6b7280}.pf3-crit .c2 b.red{color:#b42318}
+.pf3-h2{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding-top:6px}.pf3-h2 b{font-size:15px}.pf3-h2 span{font-size:12px;color:#6b7280}
+#pf3-more,.pf3-h2+.pf3-money{scroll-margin-top:120px}
+.pf3-pt{background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden}
+.pf3-pr{display:grid;grid-template-columns:64px 76px minmax(130px,1fr) 64px 76px 44px 52px minmax(0,2fr);gap:12px;align-items:center;padding:11px 16px;border-bottom:1px solid #f2f3f6;font-size:13px}
+.pf3-pr>*{min-width:0}.pf3-pr .r{text-align:right;white-space:nowrap}.pf3-pr .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pf3-pr .mut{color:#c9cdd5}.pf3-pr .red{color:#b42318}
+.pf3-pr.grp{padding:8px 16px 0;border-bottom:0;font-size:10.5px;font-weight:700;white-space:nowrap}.pf3-pr.grp .ev{grid-column:2/6;border-bottom:2px solid #15171c;padding-bottom:3px;color:#15171c}.pf3-pr.grp .rf{grid-column:6/8;border-bottom:2px solid #c9cdd5;padding-bottom:3px;color:#6b7280}
+.pf3-pr.hd{padding:6px 16px 9px;font-size:11px;color:#9ca3af;border-bottom-color:#eef0f3;white-space:nowrap}
+.pf3-pr .mb{display:flex;align-items:center;gap:8px}.pf3-pr .mb>i{flex:1;height:10px;background:#f0f1f4;border-radius:5px;position:relative;display:block}
+.pf3-pr .mb>i u{position:absolute;left:0;top:0;bottom:0;border-radius:5px;display:block}.pf3-pr .mb>i s{position:absolute;top:-3px;bottom:-3px;border-left:1.5px dashed #6b7280;display:block}
+.pf3-pr .mb>span{flex:none;display:flex;flex-direction:column;align-items:flex-end;line-height:1.2;white-space:nowrap}.pf3-pr .mb small{font-size:10.5px;color:#9ca3af}
+.pf3-pr .ref{color:#6b7280}.pf3-pr .why{font-size:12px;color:#374151;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pf3-pn{margin:0;padding:10px 16px;font-size:12px;color:#374151}.pf3-pn span{color:#9ca3af}
+.pf3-money{background:#fff;border:1px solid #e8eaef;border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+.pf3-money .top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}.pf3-money .top>div{display:flex;flex-direction:column;gap:2px}.pf3-money .top>div span{font-size:12px;color:#6b7280}
+.pf3-money .top b{font-size:30px;letter-spacing:-0.02em}.pf3-money .top b.blue{color:#2a52b8}.pf3-money .top b small{font-size:16px}.pf3-money .top .ar{font-size:22px;color:#c9cdd5}.pf3-money .top>i{flex:1}
+.pf3-money .top .why{font-size:12.5px;color:#374151;max-width:440px;line-height:1.5}
+.pf3-mbar{display:flex;height:26px;border-radius:6px;overflow:hidden;gap:2px}.pf3-mbar span{display:flex;align-items:center;position:relative;min-width:0;overflow:hidden}
+.pf3-mbar .d{background:#3b6ce4;color:#fff;font-size:12px;font-weight:700;padding-left:10px;white-space:nowrap}
+.pf3-mbar .p,.pf3-mbar .t{background:#f3f4f6}.pf3-mbar .p i{position:absolute;left:0;top:0;bottom:0;background:#e8a09a;display:block}
+.pf3-mbar em{position:relative;font-style:normal;font-size:12px;font-weight:700;color:#15171c;padding-left:10px;white-space:nowrap}
+.pf3-mleg{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:#6b7280}.pf3-mleg span{display:flex;align-items:center;gap:5px}.pf3-mleg i{width:10px;height:10px;border-radius:2px;display:block}
+.pf3-mleg i.d{background:#3b6ce4}.pf3-mleg i.p{background:#e8a09a}.pf3-mleg i.g{background:#f3f4f6;border:1px solid #e3e6ec}
+.pf3-money .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;border-top:1px solid #f0f1f4;padding-top:14px}
+.pf3-mc{display:flex;flex-direction:column;gap:7px;border-left:3px solid #9aa0ab;padding-left:12px;min-width:0}
+.pf3-mc .t{display:flex;align-items:baseline;gap:8px}.pf3-mc .t b{font-size:13.5px}.pf3-mc .t span{font-size:11.5px;color:#9ca3af}
+.pf3-mc .v{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.pf3-mc .v b{font-size:22px}.pf3-mc .v span{font-size:12.5px;color:#2a52b8;font-weight:700}
+.pf3-mc .r{display:flex;justify-content:space-between;gap:8px;font-size:12.5px}.pf3-mc .r span{color:#6b7280;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pf3-mc .r b{font-weight:600;flex:none}
+.pf3-mc .lk{margin-top:auto;align-self:flex-start;border:0;background:none;padding:0;font-size:12px;font-weight:600;color:#2a52b8;cursor:pointer}
+.pf3-more{background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden}
+.pf3-more>.hd{padding:10px 14px;border-bottom:1px solid #eef0f3;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.pf3-more>.hd b{font-size:13.5px;margin-right:6px}.pf3-more>.hd i{flex:1}.pf3-more>.hd span{font-size:11.5px;color:#9ca3af}
+.pf3-more>.hd button{border:1px solid #d9dde4;background:#fff;color:#374151;font-size:12px;font-weight:600;border-radius:999px;padding:5px 12px;cursor:pointer}
+.pf3-more>.hd button[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}
+.pf3-more>.bd{padding:12px 14px}.pf3-more>.bd>section{border:0;padding:0;box-shadow:none}
+@media (max-width:1100px){.pf3-ceo{grid-template-columns:repeat(2,minmax(0,1fr))}.pf3-money .cards{grid-template-columns:1fr}.pf3-pt{overflow-x:auto}.pf3-pr{min-width:860px}}
