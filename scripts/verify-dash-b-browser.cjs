@@ -181,6 +181,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* '가장 먼저' 띠 = 흰 바탕 + 왼쪽 빨간 선(5차) */
   assert.deepEqual(await c.locator('.db-first').evaluate(n=>{const s=getComputedStyle(n);return [s.backgroundColor,s.borderLeftColor,s.borderLeftWidth,getComputedStyle(n.querySelector('span')).color];}),['rgb(255, 255, 255)','rgb(209, 74, 63)','4px','rgb(180, 35, 24)']);
   /* 추가 분석(5차 블록 6 · 7 · 5): 점검 지표 아래 · 하나씩 보기 — 진단 → 인사이트 → 액션 / 지금 잡아야 할 현장 / 관계 변화 */
+  await page.evaluate(()=>{G.dashV3Off=true;paint();});await page.waitForTimeout(250);// 아래 묶음은 v2 '추가 분석'(끄기 스위치로 남아 있는 화면) 검사
   {const x=page.locator('#si-control .db-cx'),one1=s=>s.replace(/\s+/g,' ').trim();assert.equal(await x.count(),1);
    assert.equal(await page.locator('#si-control .db-shell').evaluate(n=>[...n.children].map(e=>e.className.split(' ').pop()).join(' ')),'db-tool db-hero db-ctl db-health db-cx','기존 구역은 그대로 · 맨 아래에 덧붙임');
    assert.equal(one1(await x.locator('.db-cxt').innerText()),'추가 분석 진단 → 인사이트 → 액션 지금 잡아야 할 현장 관계 변화 하나씩 보기');assert.deepEqual(await x.locator('.db-cxt button').evaluateAll(l=>l.map(b=>b.getAttribute('aria-pressed'))),['true','false','false']);
@@ -230,7 +231,23 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    await page.evaluate(()=>{G.dashB.cx=0;window.__me2=ME;ME={id:'rep1',name:'이필선',role:'rep'};paint();});await page.waitForTimeout(300);
    assert.deepEqual(await page.locator('#si-control .db-dxr').nth(1).locator('.db-dx3 button').evaluate(b=>[b.textContent,b.disabled]),['황윤선에게 요청',true]);
    await page.evaluate(()=>{ME=window.__me2;G.ctlExtraOff=true;paint();});await page.waitForTimeout(250);assert.equal(await page.locator('#si-control .db-cx').count(),0,'끄면 추가 분석만 숨김');assert.equal(await page.locator('#si-control .db-health').count(),1);
-   await page.evaluate(()=>{G.ctlExtraOff=false;B.deals=JSON.parse(__keepDeals);paint();});await page.waitForTimeout(300);}
+   await page.evaluate(()=>{G.ctlExtraOff=false;G.dashV3Off=false;paint();});await page.waitForTimeout(300);
+  // v3 ② 컨트롤타워: 판단 카드 3장 → (기존) 숫자 3칸 · 표 · 점검 지표 → 맨 아래 관계 변화 원인별 3칸 · '추가 분석' 탭 블록 없음
+  {const c3=page.locator('#si-control .db-shell'),o=s=>s.replace(/\s+/g,' ').trim();
+   assert.equal(await c3.evaluate(n=>[...n.children].map(e=>e.className.split(' ').pop()).join(' ')),'db-tool db-judges db-hero db-ctl db-health db-rel');assert.equal(await c3.locator('.db-cx').count(),0,'추가 분석 탭 블록 삭제');
+   assert.deepEqual((await c3.locator('.db-judge').allInnerTexts()).map(o),['① 오늘 먼저 처리할 것 5건 조치 필요 5건 중 기한 지남 5건 담당 미지정 0건 다음 행동 없음 0건 판단 근거 펼치기 ▾ 5건 목록 →','② 누구에게 몰렸나 5건 황윤선 · 기한 지난 업무 황윤선 5 판단 근거 펼치기 ▾ 담당 × 문제 표 →','③ 답 기다리는 요청 확인 불가 요청 기록을 아직 불러오지 못했습니다 요청 저장소 연결 뒤에 표시됩니다 판단 근거 펼치기 ▾ 오늘 업무에서 보기 →'],'요청 저장소가 없으면 숫자를 지어내지 않는다');
+   assert.equal(await c3.locator('.db-judge .jbasis').count(),0,'판단 근거 기본 접힘');
+   assert.equal(o(await c3.locator('.db-rel .db-ch').innerText()),'관계 변화 이번 주 고객 쪽에서 바뀐 곳 3곳 — 왜 바뀌었는지로 나눔 10/1 이후 · 판정 기준은 제안 · 확정 전 (연락 공백 7일 초과 = 못 챙김)');
+   assert.deepEqual((await c3.locator('.db-relc').allInnerTexts()).map(o),['우리가 못 챙김 2 연락 공백 · 후속이 늦어진 뒤에 알게 됨 기한 지난 현장 3 관리소장 변경 34일 연락 공백 뒤 알게 됨 기한 지난 현장 4 새 경쟁사 8일 연락 공백 뒤 알게 됨 담당에게 이번 주 안 재접촉 · 고액은 팀장 동행 담당 1명에게 요청','어쩔 수 없음 0 인사이동 · 입대의 교체 · 예산 · 공고 조건 해당하는 곳이 없습니다 새 담당자에게 기존 견적 · 공법 다시 설명','원인 미확인 1 기록에 원인이 없음 기한 지난 현장 1 견적금액 변경 수정 이유 미기록 담당에게 원인 한 줄 기록 요청 기록 요청'],'원인별 3칸: 현장 · 무엇이 · 왜 + 할 일 1개 + 버튼');
+   assert.deepEqual(await c3.locator('.db-relc').evaluateAll(l=>l.map(n=>getComputedStyle(n).backgroundColor)),['rgb(255, 247, 246)','rgb(255, 255, 255)','rgb(250, 251, 252)']);
+   assert.equal(o(await c3.locator('.db-reli').innerText()),'이런 변화가 생긴 현장의 실주율 · 관리소장 변경 100% (변화 없는 현장 약 50%)');
+   assert.equal(o(await c3.locator('.db-rele').innerText()),'그 밖에 이번 주 신규 문의 2 ▲2 수주 전환 0 실주 0 7일+ 정체 신규 1 자료 발송완료 1 정체 해소 1 전화 1 · 실주율은 올해 결과가 난 현장 기준');
+   assert.deepEqual(await c3.locator('.db-relc .rr').evaluateAll(l=>l.filter(r=>[...r.querySelectorAll('b,span')].some(e=>e.scrollWidth>e.clientWidth+1&&!e.title)).length),0,'줄 글 넘침 없음');
+   await page.evaluate(()=>{for(const k of Object.keys(__mem))delete __mem[k];});await c3.locator('.db-relc.miss .rf button').first().click();await page.waitForTimeout(300);
+   assert.match(await page.evaluate(()=>Object.values(__mem).join(' | ')),/컨트롤타워 — 관계 변화\(연락 공백 뒤 확인\) 기한 지난 현장 3 · 기한 지난 현장 4 · 이번 주 안 재접촉/,'담당자 오늘 업무에 남는 한 줄');
+   assert.deepEqual(await page.locator('#si-control .db-relc.miss .rf button').first().evaluate(b=>[b.textContent,b.disabled]),['요청 보냄 ✓',true]);
+   await page.locator('#si-control .db-relc.unknown .rr').first().click();assert.equal(await page.evaluate(()=>__opened.at(-1)),'o1','줄 = 현장 상세');
+   if(shot)await page.screenshot({path:shot+'-control-v3.png',fullPage:true});}  await page.evaluate(()=>{B.deals=JSON.parse(__keepDeals);paint();});await page.waitForTimeout(300);}
   if(shot)await page.screenshot({path:shot+'-control.png',fullPage:true});
   /* 권한: 영업사원은 보기만 — 할 일 지정 · 알림 · 줄 끝 [지정] 없음 */
   await page.evaluate(()=>{window.__me=ME;ME={id:'rep1',name:'이필선',role:'rep'};paint();});await page.waitForTimeout(300);
