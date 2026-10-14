@@ -610,7 +610,7 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
    +(j.rows.length?j.rows.map(r=>'<'+(r.open?'button type="button" data-db="open" data-v="'+attr(r.open)+'"':'div')+' class="jr"><span title="'+attr(r.a)+'">'+h(r.a)+'</span><b class="'+(r.c||'')+'">'+h(r.b)+'</b></'+(r.open?'button':'div')+'>').join(''):'<div class="jr none"><span>'+h(j.empty||'해당하는 건이 없습니다')+'</span></div>')
    +'<button type="button" class="jb" data-db="basis" aria-expanded="'+open+'"><span>판단 근거</span><span>'+(open?'접기 ▴':'펼치기 ▾')+'</span></button>'
    +(open?'<div class="jbasis">'+j.basis.map(b=>'<span>'+h(b[0])+'</span><span>'+h(b[1])+'</span>').join('')+'</div>':'')
-   +(j.link?'<button type="button" class="jl" data-db="'+j.link[1]+'" data-v="'+attr(j.link[2])+'">'+h(j.link[0])+' →</button>':'')+'</section>').join('')+'</div>';
+   +(j.link?'<button type="button" class="jl" data-'+(j.link[3]||'db')+'="'+j.link[1]+'" data-v="'+attr(j.link[2])+'">'+h(j.link[0])+' →</button>':'')+'</section>').join('')+'</div>';
  }
  /* 월~금 영업일: 이번 달 전체와 오늘까지 */
  function bizDays(P){let all=0,done=0;const last=new Date(P.ty,P.tm,0).getDate();for(let d=1;d<=last;d++){const w=new Date(P.ty,P.tm-1,d).getDay();if(w===0||w===6)continue;all++;if(d<=P.td)done++;}return {all,done};}
@@ -765,6 +765,7 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
   if(a==='quarter'){f.quarter=Number(v);f.month=0;return R.paint();}
   if(a==='sec'){S.sec=v;return render();}
   if(a==='basis'){S.basis=!S.basis;return render();}
+  if(a==='scroll'){const el=document.getElementById(v);if(el)try{el.scrollIntoView({block:'start',behavior:'smooth'});}catch(err){el.scrollIntoView();}return;}
   if(a==='page'){if(LPg())LPg().set(S,v,Number(b.dataset.page)||1);return render();}
   if(a==='cell'){const i=v.lastIndexOf('|');S.selP=v.slice(0,i)||null;S.selC=v.slice(i+1)||null;S.touched=true;return render();}
   if(a==='clear'){S.selP=null;S.selC=null;S.touched=true;return render();}
@@ -789,6 +790,7 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
   if(a==='brand-ev')return X.openEvidence(v+' 계약 근거','계약 원장 기록',X.contractEvidence({brand:v}));
   if(a==='ev'){
    if(v==='near'){const MN=monthNear(C,nearList(C)),list=MN.map(n=>{const row=C.deals.find(x=>x.item===n.d);return row?Object.assign(X.evRow(row),{reason:n.due+(n.amount>0?' · '+won(n.amount):' · 금액 미정')}):null;}).filter(Boolean);return X.openEvidence('계약 가능성 높은 곳 · '+list.length+'곳',P.tm+'월 결정 날짜가 있는 곳 · 기한 가까운 순',list);}
+   if(v==='tech'){const list=C.pt.list.filter(x=>x.tech).map(x=>{const row=C.deals.find(r=>r.item===x.deal||String(r.item.id)===String(x.dealId));return row?Object.assign(X.evRow(row),{reason:String(x.company||'')+' 낙찰 · '+won(x.amount)}):null;}).filter(Boolean);return X.openEvidence('기술자문 낙찰실적 · '+list.length+'건',P.label+' · 수주실적에 포함',list);}
    if(v==='ctl-top'){const list=ctlTop(C).map(x=>Object.assign(X.evRow(x.d),{reason:(x.od>0?'기한 '+x.od+'일 지남':x.d.reason||'조치 필요')+(x.amt>0?' · '+won(x.amt):'')}));return X.openEvidence('오늘 먼저 처리할 것 · '+list.length+'건','조치 필요 '+C.risk.length+'건 중 · 기한 지남 먼저 · 금액 큰 순',list);}
    if(v==='contract')return X.openEvidence(P.label+' 계약 근거','계약 체결 · 변경 · 취소 원장 기록',X.contractEvidence({}));
    if(v==='active')return X.openEvidence('진행 파이프라인 · '+C.active.length+'건','현재 진행 중',C.active.map(x=>Object.assign(X.evRow(x),{reason:x.reason||'진행 중'})));
@@ -818,5 +820,5 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
  ewRegister();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ewRegister);
  /* 월 문의 수 — 월별 막대(견적문의)와 같은 조건. 리포트 · 보고서 검증이 같은 숫자를 비교한다(asset_report ⑨) */
  function monthQ(a,b){const C=core();return C.AQ.filter(x=>!!C.K(R.inquiryCreatedAt(x))&&C.K(R.inquiryCreatedAt(x))>=a&&C.K(R.inquiryCreatedAt(x))<b).length;}
- root.DashB={enabled,monthQ,render,core,people,ctlModel,_crmContact:crmContact,period,nearList,channelOf,weekActs,actKind,stageEvents,diagRows,priList,changeWeek,impact,lib:{brandRows,matrixRows,inquiryFate,pendingStats,eok,won,mk,BRC,MINREC,LOWMADE,MINCLOSED}};
+ root.DashB={enabled,monthQ,render,core,people,ctlModel,_crmContact:crmContact,period,nearList,channelOf,weekActs,actKind,stageEvents,diagRows,priList,changeWeek,impact,lib:{brandRows,matrixRows,inquiryFate,pendingStats,eok,won,mk,BRC,MINREC,LOWMADE,MINCLOSED,judgeCards,v3,FIRST_H}};
 })(window);

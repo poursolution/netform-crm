@@ -155,7 +155,7 @@
   const tabs='<section class="pf3-tabs"><div class="th" role="tablist">'+TB.map((t,i)=>'<button type="button" role="tab" data-pf3="tab" data-v="'+i+'" aria-selected="'+(tab===i)+'">'+t[0]+'</button>').join('')+'<i></i><span>'+h(TB[tab][1])+'</span></div>'+(tab===0?tMatrix():tab===1?tCohort():tab===2?tChannel():tAdvisory())+'</section>';
   /* ── 추가 분석(5차 블록 2 · 3 · 4 — 2026-10-05 영업분석블록.dc.html): 영업 성과(기준 전환) · 영업 행동 · 실주 분석. 하나씩 보기.
        숫자 · 문장은 전부 자료에서. 표본이 없으면 '—' · '기록 부족'으로 둔다(지어내지 않는다). 끄기: G.perfExtraOff=true ── */
-  function extra(){
+  function extra(only){
    const K=C.K,AD=C.AD,loss=C.loss,inP=k=>!!k&&k>=P.a&&k<P.b,XT=['영업 성과','영업 행동','실주 분석'],xt=Math.max(0,Math.min(2,Number(S.xt)||0));
    const dealOf=id=>AD.find(d=>String(d.id)===String(id))||null,ctx=d=>d&&(d.stage_contexts||(R.itemPatch(d,'deal')||{}).stage_contexts)||{};
    const workOf=d=>{if(!d)return '공종 미기록';let w=String(d.primary_work||d.primaryWork||'').trim();if(!w){try{w=String(R.dealWorkSummary(d)||'').split(' · ')[0].trim();}catch(e){}}return !w||/미분류|미기록/.test(w)?'공종 미기록':w;};
@@ -172,6 +172,26 @@
     C.tf.list.forEach(x=>recs.push({won:1,lost:0,amt:x.amount,owner:String(x.owner||'').trim()||'귀속 미기록',brand:String(x.brand||'').trim()||'브랜드 미기록',d:x.d||dealOf(x.t&&x.t.deal_id),partner:'타사 이관'}));}
    loss.forEach(d=>recs.push({won:0,lost:1,amt:0,owner:R.repN(d.assignee)||'미배정',brand:String(d.brand||'').trim()||'브랜드 미기록',d,partner:''}));
    const DIMS=[['담당자',r=>r.owner],['브랜드',r=>r.brand],['공종',r=>workOf(r.d)],['지역',r=>regionOf(r.d)],['유입경로',r=>chanOf(r.d)],['협약업체',r=>r.partner]];
+   /* 계획 대비 실제(약속 지킴 · 다음 할 일 이행 · 견적 예정 대비) — 영업 행동 탭과 성과 분석 v3 담당자별 표 '약속 이행'이 같은 계산 */
+   function planCalc(){
+    const sentK=d=>K(ctx(d).sent&&ctx(d).sent.fields&&ctx(d).sent.fields.sent_date||'');
+    /* 계획 대비 실제 · 최근 4주: 영업 인사이트 '흐름 품질'과 같은 판정 — 기한이 온 다음 할 일(끝낸 것 + 열려 있는 것) 중 기한 안에 끝낸 비율 = 다음 할 일 이행,
+       그중 고객 약속만 = 약속 지킴. 견적 예정 대비 = 견적 예정일보다 늦어진 평균 일수(예정일이 최근 4주 안 · 아직 안 보냈으면 오늘까지) */
+    const warn=Math.round(Number(R.CRMRules&&R.CRMRules.PHASE2&&R.CRMRules.PHASE2.promise_keeping&&R.CRMRules.PHASE2.promise_keeping.warn_below||0.8)*100);
+    const from=C.B.addDays(P.today,-27),mon=C.B.addDays(P.today,-((new Date(P.ty,P.tm-1,P.td).getDay()+6)%7));
+    const isPromise=x=>/약속/.test(String(x&&x.type||''))||/^\s*고객\s*약속/.test(String(x&&(x.text||x.title)||''));
+    const by=new Map(),slot=n=>{let v=by.get(n);if(!v){v={n,p:[0,0],d:[0,0],q:[]};by.set(n,v);}return v;},off=[];
+    C.deals.forEach(d=>{const it=d.item||{},owner=d.owner&&d.owner!=='미배정'?d.owner:'';if(!owner)return;const v=slot(owner),site=String(d.site||it.site||'');
+     const open=it.nextActionObj||it.next_action,list=[].concat(Array.isArray(it.completed_actions)?it.completed_actions:[],open&&typeof open==='object'&&open.status!=='completed'&&(open.due_at||open.due)?[Object.assign({},open,{status:'open'})]:[]);
+     list.forEach(x=>{const dd=K(x.due_at||x.due||'');if(!dd||dd<from)return;const done=x.status==='completed'&&x.completed_at?K(x.completed_at):'';if(!done&&dd>=P.today)return;/* 아직 기한 전 */
+      const ok=!!done&&done<=dd,pr=isPromise(x);v.d[1]++;if(ok)v.d[0]++;if(pr){v.p[1]++;if(ok)v.p[0]++;}
+      if(!ok&&(done||dd)>=mon)off.push({k:pr?'고객 약속':'다음 할 일',t:site+' · '+md(dd)+' '+String(x.text||x.title||'다음 할 일')+' → '+(done?md(done)+' 완료':'미실행'),d:done?'+'+C.B.between(dd,done)+'일':'미이행',o:done?C.B.between(dd,done):999});});
+     const cx=ctx(it),qk=K(cx.consulting&&cx.consulting.fields&&cx.consulting.fields.quote_due||''),sk=sentK(it);
+     if(qk&&qk>=from&&(sk||qk<P.today)){const late=Math.max(0,C.B.between(qk,sk||P.today));v.q.push(late);if(late>0&&(sk||P.today)>=mon)off.push({k:'견적 약속',t:site+' · '+md(qk)+' 예정 → '+(sk?md(sk)+' 발송':'아직 발송 전'),d:'+'+late+'일',o:late});}});
+    off.sort((a,b)=>b.o-a.o||a.t.localeCompare(b.t,'ko'));
+    const pc2=a=>a[1]?Math.round(a[0]/a[1]*100):null,plan=C.names.map(n=>by.get(n)).filter(v=>v&&(v.d[1]||v.q.length)).map(v=>({n:v.n,keep:pc2(v.p),pn:v.p,run:pc2(v.d),dn:v.d,late:v.q.length?Math.round(v.q.reduce((s,x)=>s+x,0)/v.q.length*10)/10:null,qn:v.q.length}));
+    return {warn,off,plan,by};
+   }
    function tPerf(){
     const dim=Math.max(0,Math.min(5,Number(S.dim)||0)),fn=DIMS[dim][1],m=new Map();
     recs.forEach(r=>{const k=fn(r);if(!k)return;const v=m.get(k)||{l:k,w:0,lo:0,a:0};v.w+=r.won;v.lo+=r.lost;v.a+=r.amt;m.set(k,v);});
@@ -217,33 +237,88 @@
        if(wb&&df)good.push(l);}
       return '<b>'+l+'</b><b class="r g">'+(w?w.v+u+' <small>'+w.n+'건</small>':'—')+'</b><span class="r b">'+(lo?lo.v+u+' <small>'+lo.n+'건</small>':'—')+'</span><span class="r">'+h(d)+'</span>';}).join('');
     const left='<section class="pf3-xb"><div class="hd"><b>수주한 현장 vs 실주한 현장 · 평균 행동</b></div><div class="g4"><span class="hh">행동</span><span class="hh r g">수주 '+wonD.length+'건</span><span class="hh r b">실주 '+loss.length+'건</span><span class="hh r">차이</span>'+rows+'</div><div class="pb">'+(good.length?'플레이북 후보 · 수주한 현장은 <b>'+h(good.join(' · '))+'</b>에서 실주한 현장보다 좋았습니다':'플레이북 후보 · 기록(첫 연락 · 견적 발송일 · 연락처 · 견적 버전)이 쌓이면 수주 현장의 공통점을 여기에 적습니다')+'</div></section>';
-    /* 계획 대비 실제 · 최근 4주: 영업 인사이트 '흐름 품질'과 같은 판정 — 기한이 온 다음 할 일(끝낸 것 + 열려 있는 것) 중 기한 안에 끝낸 비율 = 다음 할 일 이행,
-       그중 고객 약속만 = 약속 지킴. 견적 예정 대비 = 견적 예정일보다 늦어진 평균 일수(예정일이 최근 4주 안 · 아직 안 보냈으면 오늘까지) */
-    const warn=Math.round(Number(R.CRMRules&&R.CRMRules.PHASE2&&R.CRMRules.PHASE2.promise_keeping&&R.CRMRules.PHASE2.promise_keeping.warn_below||0.8)*100);
-    const from=C.B.addDays(P.today,-27),mon=C.B.addDays(P.today,-((new Date(P.ty,P.tm-1,P.td).getDay()+6)%7));
-    const isPromise=x=>/약속/.test(String(x&&x.type||''))||/^\s*고객\s*약속/.test(String(x&&(x.text||x.title)||''));
-    const by=new Map(),slot=n=>{let v=by.get(n);if(!v){v={n,p:[0,0],d:[0,0],q:[]};by.set(n,v);}return v;},off=[];
-    C.deals.forEach(d=>{const it=d.item||{},owner=d.owner&&d.owner!=='미배정'?d.owner:'';if(!owner)return;const v=slot(owner),site=String(d.site||it.site||'');
-     const open=it.nextActionObj||it.next_action,list=[].concat(Array.isArray(it.completed_actions)?it.completed_actions:[],open&&typeof open==='object'&&open.status!=='completed'&&(open.due_at||open.due)?[Object.assign({},open,{status:'open'})]:[]);
-     list.forEach(x=>{const dd=K(x.due_at||x.due||'');if(!dd||dd<from)return;const done=x.status==='completed'&&x.completed_at?K(x.completed_at):'';if(!done&&dd>=P.today)return;/* 아직 기한 전 */
-      const ok=!!done&&done<=dd,pr=isPromise(x);v.d[1]++;if(ok)v.d[0]++;if(pr){v.p[1]++;if(ok)v.p[0]++;}
-      if(!ok&&(done||dd)>=mon)off.push({k:pr?'고객 약속':'다음 할 일',t:site+' · '+md(dd)+' '+String(x.text||x.title||'다음 할 일')+' → '+(done?md(done)+' 완료':'미실행'),d:done?'+'+C.B.between(dd,done)+'일':'미이행',o:done?C.B.between(dd,done):999});});
-     const cx=ctx(it),qk=K(cx.consulting&&cx.consulting.fields&&cx.consulting.fields.quote_due||''),sk=sentK(it);
-     if(qk&&qk>=from&&(sk||qk<P.today)){const late=Math.max(0,C.B.between(qk,sk||P.today));v.q.push(late);if(late>0&&(sk||P.today)>=mon)off.push({k:'견적 약속',t:site+' · '+md(qk)+' 예정 → '+(sk?md(sk)+' 발송':'아직 발송 전'),d:'+'+late+'일',o:late});}});
-    off.sort((a,b)=>b.o-a.o||a.t.localeCompare(b.t,'ko'));
-    const pc2=a=>a[1]?Math.round(a[0]/a[1]*100):null,plan=C.names.map(n=>by.get(n)).filter(v=>v&&(v.d[1]||v.q.length)).map(v=>({n:v.n,keep:pc2(v.p),pn:v.p,run:pc2(v.d),dn:v.d,late:v.q.length?Math.round(v.q.reduce((s,x)=>s+x,0)/v.q.length*10)/10:null,qn:v.q.length}));
+    const {warn,off,plan}=planCalc();
     const right='<section class="pf3-xb"><div class="hd"><b>계획 대비 실제 · 담당자별 · 최근 4주</b></div>'+(plan.length?'<div class="g4 p"><span class="hh">담당</span><span class="hh r">약속 지킴</span><span class="hh r">견적 예정 대비</span><span class="hh r">다음 할 일 이행</span>'
       +plan.map(p=>'<b>'+h(p.n)+'</b><b class="r'+(p.keep!==null&&p.keep<warn?' red':'')+'" title="'+p.pn[0]+' / '+p.pn[1]+'건">'+(p.keep===null?'—':p.keep+'%')+'</b><b class="r'+(p.late!==null&&p.late>2?' red':'')+'" title="견적 예정 '+p.qn+'건">'+(p.late===null?'—':'+'+p.late+'일')+'</b><b class="r'+(p.run!==null&&p.run<warn?' red':'')+'" title="'+p.dn[0]+' / '+p.dn[1]+'건">'+(p.run===null?'—':p.run+'%')+'</b>').join('')+'</div>':'<p class="pf3-empty">최근 4주 안에 기한이 온 다음 할 일 · 견적 예정이 없습니다.</p>')
      +'<div class="off"><b>이번 주 어긋난 것</b>'+(off.length?off.slice(0,3).map(v=>'<div><span>'+v.k+'</span><span class="t" title="'+attr(v.t)+'">'+h(v.t)+'</span><b>'+h(v.d)+'</b></div>').join('')+(off.length>3?'<small>외 '+(off.length-3)+'건</small>':''):'<small>이번 주에 어긋난 약속 · 견적 예정이 없습니다</small>')+'</div></section>';
     return '<div class="pf3-xbs">'+left+right+'</div>';
    }
+   if(only==='beh')return tBeh();if(only==='lost')return tLost();if(only==='plan')return planCalc();
    return '<section class="pf3-x"><div class="pf3-xt"><b>추가 분석</b>'+XT.map((l,i)=>'<button type="button" data-pf3="xt" data-v="'+i+'" aria-pressed="'+(xt===i)+'">'+l+'</button>').join('')+'<i></i><span>하나씩 보기</span></div>'+(xt===0?tPerf():xt===1?tBeh():tLost())+'</section>';
   }
   const extraSec=R.G.perfExtraOff?'':extra();
   /* ── ⑤ 아직 판단 못 하는 것 ── */
   const pend=D.pendingStats(),pending='<div class="pf3-pending"><b>아직 판단 못 하는 것</b><span>기록이 '+MINREC+'건 쌓이면 자동으로 보입니다</span>'+pend.map(p=>p[1]>=MINREC?'<span>'+h(p[0])+' <b>'+h(p[2])+'</b> <small>'+p[1]+'건 기준</small></span>':'<span>'+h(p[0])+' <i><u style="width:'+Math.min(100,p[1]*100/MINREC)+'%"></u></i> '+p[1]+'/'+MINREC+'</span>').join('')+'</div>';
+   /* ── 영업 대시보드 v3 · 성과 분석(2026-10 확정 · README 'v3 정리'): 대표 한 줄 4칸 → 판단 카드 3장 → 아직 판단 못 하는 것 → 사람(기준 3줄 + 담당자별 표: 평가 4칸 + 참고 2칸) → 돈은 어디서 들어오나 → 더 보기(하나씩).
+      기존 '유입 브랜드 → 낙찰사' 표와 기술자문 탭은 '돈' 3칸으로 대신한다. 숫자는 위와 같은 계산(people · matrixRows · 원장). 끄기: G.dashV3Off ── */
+   if(D.v3&&D.v3()&&D.judgeCards){
+    const FH=D.FIRST_H?D.FIRST_H():2,team=made,elig=PP.filter(p=>p.made!==null&&p.w+p.l>=MINC),few=PP.filter(p=>p.w+p.l>0&&p.w+p.l<MINC);
+    const lossN=C.loss.length,lossMiss=C.loss.filter(d=>B.lossReason(d)==='사유 미기록').length,lossRec=lossN-lossMiss;
+    const dir=MX.filter(r=>r.type==='직접 수주'),pt=MX.filter(r=>r.type==='협약 · 기술자문'),tf=MX.filter(r=>r.type==='타사 이관'),sm=(l,k)=>l.reduce((s,r)=>s+(Number(r[k])||0),0);
+    const dirA=sm(dir,'amt'),ptA=sm(pt,'amt'),tfA=sm(tf,'amt'),dirR=sm(dir,'rev'),ptR=sm(pt,'rev'),dirN=sm(dir,'n'),ptN=sm(pt,'n'),revPct=tot.amt>0?Math.round(tot.rev/tot.amt*100):null;
+    /* 대표 한 줄 4칸: 올해 실적 · 잘 안 되는 곳 · 아직 모르는 것 · 결정해 주실 것 — 전부 자료에서 고른 문장(규칙 · 확정 전) */
+    const worst=team===null?null:elig.filter(p=>p.made<team).sort((a,b)=>a.made-b.made)[0];
+    const ceo=[['올해 실적','',L.ready?'수주 '+amt(C.perf)+(tot.rev>0?' · 매출 '+eok(tot.rev):''):'불러오는 중','목표 대비는 목표값 입력 후 표시'+(avg>0?' · 월평균 '+eok(avg):'')],
+     ['잘 안 되는 곳','red',worst?worst.n+' 메이드율 '+worst.made.toFixed(0)+'%':'두드러진 곳 없음',worst?'팀 '+team.toFixed(0)+'%보다 '+Math.round(team-worst.made)+'%p 낮음 · 결과 확정 '+(worst.w+worst.l)+'건(실주 '+worst.l+')':'결과 확정 '+MINC+'건 이상 담당 기준'],
+     ['아직 모르는 것','mut',lossMiss?'왜 졌는지':'없음',lossMiss?'실주 '+lossN+'건 중 '+lossMiss+'건 사유 미기록 · 원인 판단 불가':lossN?'실주 '+lossN+'건 사유 모두 기록됨':'실주가 아직 없습니다'],
+     ['결정해 주실 것','blue',lossN&&lossMiss*2>lossN?'실주 사유 입력 의무화':few.length&&!elig.length?'평가 기준 표본 확인':'없음',lossN&&lossMiss*2>lossN?'실주 '+lossN+'건 중 '+lossMiss+'건 미기록 — 실주 처리 때 사유를 필수로':few.length&&!elig.length?'결과 확정 '+MINC+'건 이상 담당이 없어 사람 평가는 아직 이릅니다':'지금 자료로는 결정이 필요한 항목이 없습니다']];
+    const ceoSec='<section class="pf3-ceo">'+ceo.map(c=>'<div><span class="'+c[1]+'">'+h(c[0])+'</span><b>'+h(c[2])+'</b><small>'+h(c[3])+'</small></div>').join('')+'</section>';
+    /* 판단 카드 3장 */
+    const mons=n;
+    const j1={t:P.thisYear?'올해 얼마 벌었나':P.label+' 얼마 벌었나',v:L.ready?amt(C.perf):'불러오는 중',s:L.ready&&tot.rev>0?'수주실적 · 회사 매출 '+eok(tot.rev)+(revPct!==null?' ('+revPct+'%)':''):'수주실적 = 낙찰금액 · VAT 별도',vc:C.perf>0?'':'mut',
+     rows:L.ready?[{a:'직접 수주 '+dirN+'건',b:money(dirA)},{a:'협약 · 기술자문 '+ptN+'건',b:money(ptA)}].concat(tfA?[{a:'타사 이관 '+sm(tf,'n')+'건',b:money(tfA)}]:[]).concat([{a:'월평균'+(mons?' (1~'+mons+'월)':''),b:avg>0?eok(avg):'아직 없음',c:avg>0?'':'mut'}]):[],empty:'계약 원장을 불러오는 중입니다',
+     basis:[['대상',P.label+' 낙찰 확정 '+C.won+'건 (직접 · 협약 · 승인된 타사 이관)'],['계산','수주실적 = 낙찰금액 합(VAT 별도) · 매출 = 직접 계약 + 기술자문 · POUR 계약'],['제외','예상금액 · 낙찰일 없는 건']],link:C.won?['수주 '+C.won+'건','ev','contract']:null};
+    const hi=elig.slice().sort((a,b)=>b.made-a.made),gap=hi.length>=2?Math.round(hi[0].made-hi[hi.length-1].made):null,closedW=elig.reduce((s,p)=>s+p.w,0),closedN=elig.reduce((s,p)=>s+p.w+p.l,0);
+    const j2={t:'담당별 차이',v:gap===null?'판단 불가':gap+'%p',s:gap===null?'결과 확정 '+MINC+'건 이상 담당이 2명 미만':'최고 '+hi[0].made.toFixed(0)+'% · 최저 '+hi[hi.length-1].made.toFixed(0)+'%'+(team!==null?' · 팀 '+team.toFixed(0)+'%':''),vc:gap===null?'mut':'',
+     rows:hi.length?hi.slice(0,2).concat(hi.length>2?[hi[hi.length-1]]:[]).map(p=>({a:p.n+' · 결과 확정 '+(p.w+p.l)+'건',b:p.made.toFixed(0)+'%',c:p.made<LOW?'red':''})):[],empty:'아직 비교할 담당이 없습니다',
+     basis:[['대상',P.label+' 결과 확정 '+MINC+'건 이상 담당 '+elig.length+'명'],['계산','담당별 메이드율 · 최고 − 최저 · 팀 = 수주 '+C.won+' ÷ 결과 확정 '+closed+(closedN?' (비교 대상 '+closedW+' ÷ '+closedN+')':'')],['제외',few.length?few.map(p=>p.n+' 결과 확정 '+(p.w+p.l)+'건').join(' · ')+' (표본 적음)':'표본 적은 담당 없음']],link:PP.length?['담당자별 표','scroll','pf3-ppl']:null};
+    const RT=B.tally(C.loss.filter(d=>B.lossReason(d)!=='사유 미기록'),d=>{try{return R.CRMRules.lostCategory(B.lossReason(d))||'기타';}catch(e){return '기타';}});
+    const j3={t:'왜 졌나',v:lossN?lossRec+' / '+lossN:'실주 없음',s:lossN?'실주 사유가 기록된 건':P.label+' 파이프라인 실주가 없습니다',vc:lossN&&lossMiss*2>lossN?'red':lossN?'':'mut',
+     rows:lossN?RT.slice(0,2).map(t=>({a:t[0],b:t[1]+'건'})).concat([{a:'사유 미기록',b:lossMiss+'건',c:lossMiss?'red':'mut'}]):[],empty:'실주가 생기면 사유별로 보입니다',
+     basis:[['대상',P.label+' 파이프라인 실주 '+lossN+'건 (Bad Fit 제외)'],['계산','실주 사유(관계 · 공법 · 가격 · 사업 · 기타)가 입력된 건만 셈'],['판단',lossMiss*2>lossN&&lossN?'사유 '+lossMiss+'건 미기록 → 원인 판단 불가 · 정보 보완':'기록된 사유 비율 '+(lossN?Math.round(lossRec/lossN*100):0)+'%']],link:lossN?['실주 '+lossN+'건 · 실주 분석','more','1','pf3']:null};
+    const judges=D.judgeCards([j1,j2,j3]);
+    /* 사람: 기준 3줄 + 담당자별 표(평가 4칸 + 참고 2칸) */
+    const plan=(()=>{try{return extra('plan');}catch(e){return null;}})(),keepOf=n=>{const v=plan&&plan.by&&plan.by.get(n);return v&&v.p[1]?{v:Math.round(v.p[0]/v.p[1]*100),t:v.p[0]+' / '+v.p[1]+'건'}:null;},warnK=plan?plan.warn:80;
+    const liveK=String((R.OPS_RULES||{}).liveFrom||'');
+    const fc=new Map();q.forEach(x=>{let asg=false,owner='';try{asg=!!R.inquiryAssigned(x);owner=R.repN(R.inquiryRoutedOwner(x))||'';}catch(e){}if(!asg||!owner)return;if(liveK&&C.K(R.inquiryCreatedAt(x))<liveK)return;
+     let f='';try{f=R.inqCtlFirstResponseAt(x);}catch(e){}const a=Date.parse((R.inquiryAssignedAt&&R.inquiryAssignedAt(x))||x.assigned_at||R.inquiryCreatedAt(x)||''),t=Date.parse(f||'');const v=fc.get(owner)||[0,0];v[1]++;if(Number.isFinite(t)&&Number.isFinite(a)&&(t-a)/36e5<=FH)v[0]++;fc.set(owner,v);});
+    const fcOf=n=>{const v=fc.get(n);return v&&v[1]?{v:Math.round(v[0]/v[1]*100),t:v[0]+' / '+v[1]+'건'}:null;};
+    const crit='<section class="pf3-crit"><div class="c1"><b>사람 · 평가는 아래 표 \'평가\' 4칸(수주실적 · 메이드율 · 약속 이행 · '+FH+'시간 첫 연락)만으로</b><span>대표님 판단 기준</span></div>'
+     +'<div class="c2"><b>\'참고\' 칸</b><span>진행 건수 · 손볼 건 — 일이 많은지 · 막혔는지 보는 용도, 잘하고 못하고가 아님</span></div>'
+     +'<div class="c2"><b class="red">평가에서 빼는 것</b><span>기록 없음을 \'안 했다\'로 보기 · 결과 확정 '+MINC+'건 미만 메이드율'+(few.length?'('+few.slice(0,2).map(p=>p.n+' '+(p.w+p.l)+'건').join(' · ')+(few.length>2?' 외 '+(few.length-2)+'명':'')+')':'')+' · 담당 바뀌기 전 데이터 · 사유 없는 실주'+(lossN?'('+lossN+'건 중 '+lossMiss+'건)':'')+'</span></div></section>';
+    const tl=team===null?50:Math.round(team);
+    const prow=p=>{const k=keepOf(p.n),f=fcOf(p.n),sm2=p.w+p.l<MINC,mc=p.made===null?'#c9cdd5':sm2?'#9aa0ab':p.made<LOW?'#d14a3f':'#3b6ce4';
+     return '<div class="pf3-pr" role="row"><b class="n">'+h(p.n)+'</b><b class="r'+(p.yr>0?'':' mut')+'">'+h(p.yr>0?eok(p.yr):'아직 없음')+'</b>'
+      +'<span class="mb"><i><u style="width:'+(p.made===null?0:Math.max(0,Math.min(100,p.made)))+'%;background:'+mc+'"></u><s style="left:'+tl+'%"></s></i><span><b style="color:'+(p.made===null?'#9ca3af':sm2?'#6b7280':p.made<LOW?'#b42318':'#15171c')+'">'+(p.made===null?'—':p.made.toFixed(0)+'%')+(sm2&&p.made!==null?' · 표본 적음':'')+'</b><small>수주 '+p.w+' · 실주 '+p.l+'</small></span></span>'
+      +'<b class="r'+(k?(k.v<warnK?' red':''):' mut')+'"'+(k?' title="'+attr(k.t)+'"':'')+'>'+(k?k.v+'%':'—')+'</b><b class="r'+(f?(f.v<80?' red':''):' mut')+'"'+(f?' title="'+attr(f.t)+'"':'')+'>'+(f?f.v+'%':'—')+'</b>'
+      +'<span class="r ref">'+p.prog+'</span><span class="r ref">'+p.fix+'</span><span class="why" title="'+attr(p.why||'')+'">'+h(p.why||(p.fix?'손볼 건 '+p.fix+'건':'막힌 곳 없음'))+'</span></div>';};
+    const low2=team===null?[]:elig.filter(p=>team-p.made>=10);
+    const madeNote=team===null?'결과가 나와야 메이드율을 비교할 수 있습니다.':(low2.length?low2.map(p=>p.n+' '+p.made.toFixed(0)+'%').join(' · ')+'는 팀 '+team.toFixed(0)+'%보다 '+Math.round(team-Math.max(...low2.map(p=>p.made)))+'%p 이상 낮습니다.':'팀 '+team.toFixed(0)+'%에서 10%p 넘게 낮은 담당은 없습니다.')+(few.length?' '+few.map(p=>p.n).join(' · ')+'은(는) 결과 확정 '+MINC+'건 미만이라 아직 판단하지 않습니다.':'');
+    const pplSec='<div class="pf3-h2" id="pf3-ppl"><b>담당자별</b><span>'+h(P.label)+' · 메이드율 = 수주 ÷ (수주 + 실주) · 배드핏 제외 · 점선 = 팀 '+tl+'%</span></div>'
+     +'<section class="pf3-pt">'+(ranked.length?'<div class="pf3-pr grp"><span></span><span class="ev">평가 · 이 4칸으로 판단</span><span class="rf">참고</span><span></span></div><div class="pf3-pr hd"><span>담당</span><span class="r">수주실적</span><span>메이드율 (수주 · 실주)</span><span class="r">약속 이행</span><span class="r">'+FH+'시간 첫 연락</span><span class="r">진행</span><span class="r">손볼 건</span><span>왜</span></div>'+ranked.map(prow).join(''):'<p class="pf3-empty">진행 · 수주 기록이 있는 담당자가 없습니다.</p>')
+     +'<p class="pf3-pn">'+h(madeNote)+(quiet.length?' <span>진행 · 수주 기록 없음: '+h(quiet.map(x=>x===b2b()?x+'(B2B 협약 전담)':x).join(' · '))+'</span>':'')+'</p></section>';
+    /* 돈은 어디서 들어오나 */
+    const ptCos=[...new Set(pt.map(r=>r.company).filter(Boolean))],gone=tot.amt-tot.rev,unkN=sm(pt,'unknown');
+    const ro=s=>{const ch=String(s).charCodeAt(String(s).length-1),j=ch>=0xAC00&&ch<=0xD7A3?(ch-0xAC00)%28:0;return j&&j!==8?'으로':'로';};
+    const why=!L.ready?'계약 원장을 불러오는 중입니다':gone<=0?'직접 수주만 있어 수주실적이 그대로 회사 매출입니다':'빠지는 '+eok(gone)+'은 '+(ptA?'협약 · 기술자문 건 — 시공사'+(ptCos.length?'('+ptCos.slice(0,2).join(' · ')+(ptCos.length>2?' 외 '+(ptCos.length-2)+'곳':'')+')':'')+'가 낙찰받고 우리는 기술자문료만 받는 구조':'')+(tfA?(ptA?' · ':'')+'타사 이관 '+eok(tfA)+'은 회사 매출 없음':'')+(unkN?' · 매출 미입력 '+unkN+'건은 0으로 셈':'');
+    const W=v=>tot.amt>0?Math.max(0,v/tot.amt*100).toFixed(1):'0';
+    const bar=tot.amt>0?'<div class="pf3-mbar">'+(dirA>0?'<span class="d" style="width:'+W(dirA)+'%">직접 수주 '+h(eok(dirA))+' · 전액 매출</span>':'')+(ptA>0?'<span class="p" style="width:'+W(ptA)+'%"><i style="width:'+(ptA>0?Math.min(100,ptR/ptA*100).toFixed(1):0)+'%"></i><em>협약 · 기술자문 '+h(eok(ptA))+' → 매출 '+h(eok(ptR))+'</em></span>':'')+(tfA>0?'<span class="t" style="width:'+W(tfA)+'%"><em>타사 이관 '+h(eok(tfA))+'</em></span>':'')+'</div><div class="pf3-mleg"><span><i class="d"></i>직접 계약 매출</span><span><i class="p"></i>기술자문 · POUR 계약 매출</span><span><i class="g"></i>시공사 몫 (우리 매출 아님)</span></div>':'';
+    const byBrand=new Map();MX.forEach(r=>{const g=byBrand.get(r.brand)||{brand:r.brand,n:0,amt:0,rev:0,rows:[]};g.n+=r.n;g.amt+=r.amt;g.rev+=r.rev;g.rows.push(r);byBrand.set(r.brand,g);});
+    const bcards=[...byBrand.values()].sort((a,b)=>b.amt-a.amt).slice(0,2).map(g=>{const c=D.BRC[g.brand]||'#9aa0ab';return '<div class="pf3-mc" style="border-left-color:'+c+'"><div class="t"><b style="color:'+c+'">'+h(g.brand)+ro(g.brand)+' 들어온 것</b><span>'+g.n+'건</span></div><div class="v"><b>'+h(money(g.amt))+'</b>'+(g.amt>0?'<span>→ 매출 '+h(money(g.rev))+' · '+Math.round(g.rev/g.amt*100)+'%</span>':'')+'</div>'
+     +g.rows.slice(0,3).map(r=>'<div class="r"><span>'+h(r.type==='직접 수주'?'직접 수주 '+r.n+'건':r.company+' '+(r.type==='타사 이관'?'이관 ':'낙찰 ')+r.n+'건')+'</span><b>'+h(r.type==='직접 수주'?money(r.amt)+' · 전액 매출':r.type==='타사 이관'?money(r.amt)+' · 매출 없음':money(r.amt)+' → 매출 '+(r.unknown===r.n?'미입력':money(r.rev)))+'</b></div>').join('')+'<button type="button" class="lk" data-db="brand-ev" data-v="'+attr(g.brand)+'">건별 보기 →</button></div>';}).join('');
+    const tech=C.pt.list.filter(x=>x.tech),techA=tech.reduce((s,x)=>s+(Number(x.amount)||0),0),techTop=B.tally(tech,x=>R.repN(x.owner)||'귀속 미지정')[0];
+    const tcard='<div class="pf3-mc" style="border-left-color:#15171c"><div class="t"><b>기술자문 낙찰실적</b><span>'+tech.length+'건 · 수주실적에 포함</span></div><div class="v"><b>'+h(money(techA))+'</b></div>'+(techTop?'<div class="r"><span>귀속 상위 · '+h(techTop[0])+' '+techTop[1]+'건</span><b>'+h(money(tech.filter(x=>(R.repN(x.owner)||'귀속 미지정')===techTop[0]).reduce((s,x)=>s+(Number(x.amount)||0),0)))+'</b></div>':'<div class="r"><span>'+h(P.label)+' 기술자문 낙찰이 아직 없습니다</span></div>')+''+(tech.length?'<button type="button" class="lk" data-db="ev" data-v="tech">건별 보기 →</button>':'')+'</div>';
+    const moneySec='<div class="pf3-h2"><b>돈은 어디서 들어오나</b><span>'+h(P.label)+' · 수주실적 = 낙찰금액 · 매출 = 회사에 들어오는 금액</span></div>'
+     +'<section class="pf3-money"><div class="top"><div><span>'+h(P.thisYear?'올해':P.label)+' 수주실적 · 낙찰금액 '+tot.n+'건</span><b>'+h(L.ready?money(tot.amt):'불러오는 중')+'</b></div><span class="ar">→</span><div><span>그중 회사에 들어오는 돈</span><b class="blue">'+h(L.ready?money(tot.rev):'불러오는 중')+(revPct!==null?' <small>'+revPct+'%</small>':'')+'</b></div><i></i><span class="why">'+h(why)+'</span></div>'+bar
+     +'<div class="cards">'+bcards+tcard+'</div></section>';
+    /* 더 보기: 하나씩 */
+    const MT=[['영업 행동',()=>extra('beh')],['실주 분석',()=>extra('lost')],['브랜드별 문의 → 수주',()=>funnel],['단계별 선행 → 결과',()=>leadSec],['접수 월별 전환',()=>'<div class="pf3-tb0">'+tCohort()+'</div>'],['유입경로',()=>'<div class="pf3-tb0">'+tChannel()+'</div>']];
+    const mt=Math.max(0,Math.min(MT.length-1,Number(S.mt)||0));
+    const moreSec='<div class="pf3-h2" id="pf3-more"><b>더 보기</b><span>하나씩 골라서</span></div><section class="pf3-more"><div class="hd"><b>추가 분석</b>'+MT.map((x,i)=>'<button type="button" data-pf3="more" data-v="'+i+'" aria-pressed="'+(mt===i)+'">'+x[0]+'</button>').join('')+'<i></i><span>하나씩 보기</span></div><div class="bd">'+MT[mt][1]()+'</div></section>';
+    return '<div class="pf3 v3">'+ceoSec+judges+pending+crit+pplSec+moneySec+moreSec+'</div>';
+   }
   return '<div class="pf3">'+head+'<div class="pf3-mid">'+peopleSec+funnel+'</div>'+tabs+extraSec+leadSec+pending+'</div>';/* 새 구역은 기존 아래(탭 · 표 다음 · '아직 판단 못 하는 것' 앞) */
  }
- document.addEventListener('click',e=>{const b=e.target.closest('#si-perf [data-pf3]');if(!b)return;const k=b.dataset.pf3,v=Number(b.dataset.v)||0;if(k==='tab')st().tab=v;else if(k==='xt')st().xt=v;else if(k==='dim')st().dim=v;else return;try{R.DashB.render();}catch(err){}});
+ document.addEventListener('click',e=>{const b=e.target.closest('#si-perf [data-pf3]');if(!b)return;const k=b.dataset.pf3,v=Number(b.dataset.v)||0;if(k==='tab')st().tab=v;else if(k==='more'){st().mt=v;try{R.DashB.render();}catch(err){}const el=document.getElementById('pf3-more');if(el&&b.classList.contains('jl'))try{el.scrollIntoView({block:'start',behavior:'smooth'});}catch(err){}return;}else if(k==='xt')st().xt=v;else if(k==='dim')st().dim=v;else return;try{R.DashB.render();}catch(err){}});
  root.PerfV3={enabled,html,state:st};
 })(window);
