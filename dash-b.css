@@ -284,3 +284,23 @@ button.db-fdr{cursor:pointer}button.db-fdr:hover{background:#fafbfc}
 .db-fdr em{font-style:normal;font-size:11.5px;font-weight:700;border-radius:5px;padding:2px 7px;justify-self:start}.db-fdr em.ok{color:#1f7a4d;background:#ecf8f1}.db-fdr em.mut{color:#6b7280;background:#f3f4f6}
 .db-fdr .n{font-size:12.5px}.db-fdr .n.red{color:#b42318}.db-fdr .r{text-align:right;font-size:12.5px;color:#374151}
 @media (max-width:1100px){.db-judges{grid-template-columns:1fr}}
+/* ── 대시보드 v3 ② 컨트롤타워: 관계 변화 원인별 3칸 ── */
+.db-rel .fs{font-size:12.5px;color:#374151}
+.db-relg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.db-relc{padding:14px 18px 16px;border-right:1px solid #f0f1f4;display:flex;flex-direction:column;gap:10px;min-width:0;background:#fff}
+.db-relc:last-child{border-right:0}.db-relc.miss{background:#fff7f6}.db-relc.unknown{background:#fafbfc}
+.db-relc .rh{display:flex;flex-direction:column;gap:2px}.db-relc .rh>div{display:flex;align-items:baseline;gap:8px}.db-relc .rh b{font-size:15px}.db-relc .rh b.n{font-size:22px}.db-relc .rh span{font-size:12px;color:#6b7280}
+.db-relc.miss .rh b{color:#b42318}.db-relc.unknown .rh b{color:#6b7280}
+.db-relc .rr{display:flex;flex-direction:column;gap:2px;border:0;border-top:1px solid #eceef2;padding:8px 0 0;background:none;text-align:left;color:#15171c;border-radius:0;cursor:pointer;min-width:0}
+.db-relc .rr>div{display:flex;gap:6px;align-items:baseline;min-width:0}.db-relc .rr b{font-size:13.5px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.db-relc .rr>div span{flex:none;font-size:11.5px;color:#6b7280}.db-relc .rr>span{font-size:12px;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.db-relc .rr:hover b{color:#2a52b8}
+.db-relc .rm{font-size:12px;color:#9ca3af;border-top:1px solid #eceef2;padding-top:8px}
+.db-relc .rf{margin-top:auto;display:flex;flex-direction:column;gap:6px;border-top:1px solid #eceef2;padding-top:10px}.db-relc .rf>span{font-size:12.5px;font-weight:600}
+.db-relc .rf button{height:34px;border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:12.5px;font-weight:700;border-radius:8px;cursor:pointer}
+.db-relc .rf button.dark{background:#15171c;border-color:#15171c;color:#fff}.db-relc .rf button:disabled{opacity:.5;cursor:default}
+.db-relc .rf button.lnk{height:auto;border:0;background:none;color:#6b7280;font-size:12px;font-weight:600;text-decoration:underline;text-align:left;padding:0}
+.db-reli{margin:0;padding:10px 18px;border-top:1px solid #eef0f3;font-size:12px;color:#6b7280}.db-reli .red{color:#b42318}
+.db-rele{padding:10px 18px 12px;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;font-size:12px;color:#6b7280}.db-rele>b{color:#374151}.db-rele>span{color:#9ca3af}
+.db-rele button{border:0;background:none;padding:0;font-size:12px;color:#6b7280;cursor:pointer}.db-rele button:disabled{cursor:default}.db-rele button b{color:#15171c}.db-rele button b.mut{color:#c9cdd5}.db-rele button b.cw-bad{color:#b42318}.db-rele button b.cw-ok{color:#1f7a4d}.db-rele button small{font-size:11.5px;color:#9ca3af}
+@media (max-width:1100px){.db-relg{grid-template-columns:1fr}.db-relc{border-right:0;border-bottom:1px solid #f0f1f4}}
