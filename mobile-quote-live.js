@@ -25,6 +25,14 @@
   if(mode==='req')return renderReq(d);
   if(mode==='send')return renderSend(d);
   const A=versions(d),last=A[A.length-1];
+  /* 견적 진행 · 도착 확인: 요청(단계 입력 quote_request · quote_due) → 견적팀 작업 → 기준금액 도착(견적 버전) → 제출금액 확정 */
+  const F=ctxOf(d),due=String(F.quote_due||''),dd=/^\d{4}-\d{2}-\d{2}$/.test(due)?Math.round((Date.parse(due+'T00:00:00Z')-Date.parse(kst(0)+'T00:00:00Z'))/864e5):null;
+  const stTxt=last?(done(last)?['제출금액 확정 · V'+esc(last.version_no),'#1f7a4d']:['견적 도착 · V'+esc(last.version_no)+' — 제출금액을 만들 차례','#2a52b8']):F.quote_request?(dd!==null&&dd<0?['예정일 '+(-dd)+'일 지남 · 아직 도착 전 — 견적팀에 확인','#b42318']:['견적팀 작업 중 — '+(dd===0?'오늘':dd!==null?dd+'일 뒤':'예정일 미정')+' 도착 예정','#6b7280']):null;
+  const prog=F.quote_request||last?'<div style="background:#fff;border:1px solid #e8eaef;border-radius:14px;padding:12px 13px;display:flex;flex-direction:column;gap:6px;font-size:13.5px"><b style="font-size:12px;color:#6b7280">견적 진행</b>'
+   +(F.quote_request?'<div style="display:flex;gap:8px"><span style="flex:none;color:#6b7280">요청</span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(F.quote_request)+'</span></div>':'')
+   +(due?'<div style="display:flex;gap:8px"><span style="flex:none;color:#6b7280">예정일</span><b style="color:'+(dd!==null&&dd<0&&!last?'#b42318':'#15171c')+'">'+esc(due.slice(5).replace('-','.'))+(dd===null?'':dd<0?' · '+(-dd)+'일 지남':dd===0?' · 오늘':' · D-'+dd)+'</b></div>':'')
+   +(stTxt?'<b style="color:'+stTxt[1]+'">'+stTxt[0]+'</b>':'')+'</div>'
+   :(d.code==='consulting'?'<span data-ql-act="toreq" role="button" tabindex="0" style="min-height:48px;border-radius:12px;border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center">견적 요청 등록</span>':'');
   const rows=A.slice().reverse().map(v=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid #eef0f3;font-size:14px"><b>V'+esc(v.version_no)+'</b><span style="color:#6b7280">기준 '+won(w.QuoteAmounts?w.QuoteAmounts.baseOf(v):v.amount)+'</span><b style="color:'+(done(v)?'#15171c':'#b42318')+'">'+(done(v)?won(v.submit_amount||v.amount):'제출금액 미확정')+'</b></div>').join('');
   let body;
   if(!last)body='<p style="font-size:14px;line-height:1.6;color:#374151">등록된 견적이 없습니다. 견적팀이 적산 기준금액을 올리면 여기서 제출금액을 만들 수 있습니다.</p>';
@@ -38,7 +46,7 @@
     +'<span data-ql-act="confirm" role="button" tabindex="0" style="min-height:48px;border-radius:12px;background:#15171c;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center">제출금액 확정</span>';
   }
   return '<div class="approved-quote" data-quote-live style="display:flex;flex-direction:column;background:#f5f6f8"><div style="height:56px;flex:none;background:#fff;display:flex;align-items:center;gap:8px;padding:0 8px;border-bottom:1px solid #eef0f3"><span data-gs="back" role="button" tabindex="0" aria-label="뒤로" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px">‹</span><b style="font-size:17px">제출금액 만들기</b></div>'
-   +'<div style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px"><div style="font-size:15px;font-weight:700">'+esc(d.nm)+'</div>'+(msg?'<div role="status" style="font-size:13.5px;color:#b42318">'+esc(msg)+'</div>':'')+body+(rows?'<div><div style="font-size:13px;color:#6b7280;margin-bottom:4px">견적 버전</div>'+rows+'</div>':'')+'</div></div>';
+   +'<div style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px"><div style="font-size:15px;font-weight:700">'+esc(d.nm)+'</div>'+(msg?'<div role="status" style="font-size:13.5px;color:#b42318">'+esc(msg)+'</div>':'')+prog+body+(rows?'<div><div style="font-size:13px;color:#6b7280;margin-bottom:4px">견적 버전</div>'+rows+'</div>':'')+'</div></div>';
  }
  function preview(root,d){
   const el=root.querySelector('[data-ql="preview"]');if(!el)return;
@@ -115,5 +123,5 @@
    msg='발송 기록을 저장했습니다(서버 반영 대기 중일 수 있음). 다음 확인 '+nx;
   }catch(e){msg='저장하지 못했습니다: '+String(e&&e.message||e);}
   after();
- } w.MobileQuoteLive=Object.freeze({render,preview,confirm,reset(m){msg='';busy=false;mode=m||'';},reqPreview,submitReq,submitSend,toSend(){mode='send';msg='';}});
+ } w.MobileQuoteLive=Object.freeze({render,preview,confirm,reset(m){msg='';busy=false;mode=m||'';},reqPreview,submitReq,submitSend,toSend(){mode='send';msg='';},toReq(){mode='req';msg='';}});
 })(window);
