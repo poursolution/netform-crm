@@ -148,5 +148,7 @@
  if(root.addEventListener)root.addEventListener('keydown',e=>{if((e.key==='ArrowDown'||e.key==='ArrowUp')&&root.G&&root.G.page==='inq'&&on()){const p=document.getElementById('pg-inq');if(p&&p.classList.contains('inq-v5')&&!p.classList.contains('b2b-on'))e.stopImmediatePropagation();}},true);
  /* v5 에서는 목록 옆 상세가 없으므로 주소에 '고른 문의'를 남기지 않는다 */
  if(V4()&&typeof V4().selected==='function'){const sel=V4().selected;V4().selected=function(){return on()?'':sel.apply(this,arguments);};}
- root.InquiryV5={on,render,compute,stageOf,facts,stepsHtml,promoStage,state:st,STAGES:()=>STG.map(g=>g[0]+' '+g[1]),CHIPS:CHIPS.slice()};
+ root.InquiryV5={on,render,compute,stageOf,facts,stepsHtml,promoStage,state:st,STAGES:()=>STG.map(g=>g[0]+' '+g[1]),CHIPS:CHIPS.slice(),
+  /* 토스 방식 목록(inquiry-toss.js)이 같은 판정을 쓰도록 내놓는다 — 새로 계산하지 않는다 */
+  lib:{dueOf,evOf,nextOf,outOf,warn:k=>{const w=WARN.find(x=>x[0]===k);return w?{key:w[0],chip:w[1],tag:w[2],why:w[4]()}:null;},STG:()=>STG.map(g=>g.slice())}};
 })(window);
