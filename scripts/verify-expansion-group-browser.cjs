@@ -40,16 +40,18 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.waitForSelector('#expansion-b .prv-list .prv-row');await page.waitForTimeout(400);
   const one=s=>String(s||'').replace(/\s+/g,' ').trim(),box=el=>{const b=el.getBoundingClientRect();return {l:Math.round(b.left),t:Math.round(b.top),w:Math.round(b.width),h:Math.round(b.height),b:Math.round(b.bottom)};};
   /* ① 머리 줄 = 일반 줄과 같은 4칸 */
+  /* 준공일은 오늘 기준 168일 전(합성 자료) — 달 표기는 그 날짜에서 계산(날짜가 지나며 깨지지 않게) */
+  const CM=(()=>{const d=new Date(Date.now()-168*864e5);return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0');})();
   const H=await page.evaluate(()=>{const site=document.querySelector('#expansion-b .xb-site'),row=document.querySelector('#expansion-b .prv-list>.prv-row:not(.xb-site):not(.xb-sub)'),btn=site.querySelector(':scope>button'),cs=getComputedStyle(btn);return {cls:site.classList.contains('prv-row'),cols:[getComputedStyle(site).gridTemplateColumns,getComputedStyle(row).gridTemplateColumns],kids:[...site.children].map(c=>c.className||c.tagName),text:[...site.children].map(c=>c.innerText.replace(/\s+/g,' ').trim()),btn:[btn.textContent,Math.round(btn.getBoundingClientRect().height),cs.borderRadius,cs.backgroundColor,cs.borderTopColor,btn.dataset.v],bg:getComputedStyle(site).backgroundColor,dup:[...document.querySelectorAll('#expansion-b .prv-list b')].filter(b=>b.textContent.includes('정릉중앙하이츠빌2단지아파트')).length};});
   assert.equal(H.cls,true,'머리 줄도 prv-row 틀');assert.equal(H.cols[0],H.cols[1],'머리 줄 칸 폭 = 일반 줄 칸 폭: '+H.cols.join(' | '));assert.deepEqual(H.kids,['prv-a','prv-b','prv-c','BUTTON']);
-  assert.deepEqual(H.text,['정릉중앙하이츠빌2단지아파트 석민이앤씨 · 황윤선 · 계약 2건 · 1억','사후 연락 2026.04 준공 · 기록 보완 필요','다음 접촉일 2일 지남 두 계약 한 번에 기록','연락']);
+  assert.deepEqual(H.text,['정릉중앙하이츠빌2단지아파트 석민이앤씨 · 황윤선 · 계약 2건 · 1억','사후 연락 '+CM+' 준공 · 기록 보완 필요','다음 접촉일 2일 지남 두 계약 한 번에 기록','연락']);
   assert.deepEqual(H.btn,['연락',34,'8px','rgb(255, 255, 255)','rgb(217, 221, 228)','sitenote'],'다른 줄과 같은 흰 버튼 · 같은 이름');
   /* 2026-10-13 대표 '혼자 따로 논다': 머리 줄의 바탕 · 왼쪽 선 · 글자 크기가 일반 줄과 같다 */
   const L=await page.evaluate(()=>{const f=el=>{const c=getComputedStyle(el),b=getComputedStyle(el.querySelector('.prv-a>b'));return [c.backgroundColor,c.borderLeftWidth,c.borderLeftStyle,b.fontSize,b.fontWeight];},site=document.querySelector('#expansion-b .xb-site'),row=document.querySelector('#expansion-b .prv-list>.prv-row:not(.xb-site):not(.xb-sub)');return {a:f(site),b:f(row),same:getComputedStyle(site).borderLeftColor===getComputedStyle(site.nextElementSibling).borderLeftColor};});
   assert.deepEqual(L.a,L.b,'머리 줄 모양 = 일반 줄 모양');assert.equal(L.same,true,'왼쪽 선 = 그 단지 브랜드 색');if(process.argv[2])await page.screenshot({path:process.argv[2]});assert.equal(H.dup,1,'같은 현장명은 한 번만');
   /* ② 계약 줄 */
   const S=await page.evaluate(()=>[...document.querySelectorAll('#expansion-b .xb-sub')].map(s=>({t:[...s.children].map(c=>c.innerText.replace(/\s+/g,' ').trim()),pad:getComputedStyle(s.querySelector('.prv-a')).paddingLeft,cls:s.children[3].className})));
-  assert.deepEqual(S.map(x=>x.t[0]),['계약 1 · 옥상 방수 · 7,300만 · 2026.04 준공 석민이앤씨 · 황윤선','계약 2 · 재도장 · 2,870만 · 2026.04 준공 석민이앤씨 · 황윤선']);assert.deepEqual(S.map(x=>x.t[3]),['위 단지 줄에서','위 단지 줄에서']);assert.deepEqual(S.map(x=>x.pad),['16px','16px'],'들여쓰기 유지');
+  assert.deepEqual(S.map(x=>x.t[0]),['계약 1 · 옥상 방수 · 7,300만 · '+CM+' 준공 석민이앤씨 · 황윤선','계약 2 · 재도장 · 2,870만 · '+CM+' 준공 석민이앤씨 · 황윤선']);assert.deepEqual(S.map(x=>x.t[3]),['위 단지 줄에서','위 단지 줄에서']);assert.deepEqual(S.map(x=>x.pad),['16px','16px'],'들여쓰기 유지');
   /* 단지 줄 아닌 곳은 그대로: 한 건짜리 줄은 현장명 · 버튼 [연락] */
   assert.equal(await page.locator('#expansion-b .prv-list>.prv-row:not(.xb-site):not(.xb-sub)').first().locator(':scope>button').innerText(),'연락');
   /* ③ 필터줄과 목록 칸 이름 줄: 스크롤해도 겹치지 않음 */
