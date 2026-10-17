@@ -31,7 +31,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     {id:id(7),site:'[서울 은평] 녹번역e편한세상',status:'현장방문예정',at:at(4),created_at:at(4),brand:'POUR솔루션',phone:'02-300-1180',contact_name:'김소장',...rep,assigned_at:at(3.9),responded_at:at(3),raw:{'문의내용':'옥상 방수 견적','상담채널':'홈페이지'},activities:[{type:'전화',note:'방문 일정 협의',at:at(3),actor:'이필선'}]},
     {id:id(8),site:'[경기 광교] 광교한빛아파트',status:'견적서 발송예정',at:at(6),created_at:at(6),brand:'POUR솔루션',phone:'031-300-1180',contact_name:'최과장',...rep,assigned_at:at(5.9),responded_at:at(4),raw:{'문의내용':'옥상 방수 견적','상담채널':'전화'},activities:[{type:'전화',note:'견적 범위 확인',at:at(4),actor:'이필선'}]}],
     activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';G.inqV3=null;G.inqV4=null;G.inqV5=null;
+   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';G.inqV3=null;G.inqV4=null;G.inqV5=null;G.inqTossOff=true;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op,p)=>{window.__writes.push([op,p]);return 'req-'+window.__writes.length};
    SB={rpc:async()=>({error:{message:'CONTRACT_UNAVAILABLE'}})};
    window.Phase1={profile:{auth_uid:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',user_id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',name:'송보람'},rpc:async()=>{throw Error('CONTRACT_UNAVAILABLE');}};
