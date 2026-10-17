@@ -26,7 +26,10 @@
   b.innerHTML='<b>서버 적용 대기</b><span>배포된 화면이 쓰는 서버 함수 '+list.length+'개가 운영 DB에 없습니다. 해당 SQL을 먼저 적용해 주세요 — 그 전까지 관련 기능은 숨깁니다.</span><button type="button" aria-label="배너 닫기">✕ 닫기</button><code>'+list.map(esc).join(' · ')+'</code>';
   b.querySelector('button').onclick=()=>b.remove();
  }
- function noteMissing(name){name=String(name||'');if(!name||missing.has(name))return;missing.add(name);banner();emit();}
+ /* 운영 함수 목록(매니페스트)에 있는 함수는 '없음'으로 보지 않는다(2026-10-18 — 함수 10개가 운영 DB에 있고 응답도 200인데 배너가 떴다).
+    호출이 다른 이유(로그인 갱신 · 연결 끊김 · 화면 쪽 오류)로 실패해도 그것은 '서버 적용 대기'가 아니다. */
+ let have=null;
+ function noteMissing(name){name=String(name||'');if(!name||missing.has(name))return;if(have&&have.has(name)){try{root.console&&root.console.warn('release: '+name+' 는 운영 함수 목록에 있음 — 호출 실패를 함수 없음으로 보지 않음');}catch(e){}return;}missing.add(name);banner();emit();}
  async function check(force){
   if(busy||(checked&&!force)||!root.SB?.rpc||!isAdmin())return;
   busy=true;
@@ -34,12 +37,14 @@
    const r=await root.SB.rpc('crm_release_manifest_v1',{});
    if(r.error){if(r.error.code==='PGRST202')noteMissing('crm_release_manifest_v1');return;}
    if(r.data?.ok!==true||!Array.isArray(r.data.functions))return;
-   const have=new Set(r.data.functions);
+   have=new Set(r.data.functions);
+   /* 목록이 오기 전에 '없음'으로 적힌 것 가운데 실제로 있는 것은 지운다 */
+   let fixed=false;[...missing].forEach(n=>{if(have.has(n)){missing.delete(n);fixed=true;}});
    (root.CRM_RPC_ALLOW||[]).forEach(n=>{if(!have.has(n))noteMissing(n);});
-   checked=true;banner();
+   checked=true;banner();if(fixed)emit();
   }catch(e){}finally{busy=false;}
  }
  root.CRMRelease={has:name=>!missing.has(String(name||'')),noteMissing,check,missing:()=>[...missing]};
  root.addEventListener('phase1:profile',()=>{setTimeout(()=>check(),1500);setTimeout(()=>check(),6000);});
- root.addEventListener('phase1:identity-cleared',()=>{missing.clear();checked=false;document.getElementById('crm-release-banner')?.remove();emit();});
+ root.addEventListener('phase1:identity-cleared',()=>{missing.clear();checked=false;have=null;document.getElementById('crm-release-banner')?.remove();emit();});
 })(window);
