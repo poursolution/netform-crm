@@ -63,3 +63,4 @@
 #inq-toss .tq-p2:hover{background:#e8ebf0}
 #inq-toss .tq-more-slot:empty{display:none}
 @media (max-width:1180px){#inq-toss .tq-wrap{grid-template-columns:minmax(0,1fr)}#inq-toss .tq-side{position:static}}
+@media (max-width:760px){#inq-toss{padding:16px 12px;border-radius:16px}#inq-toss .tq-hero{font-size:21px}#inq-toss .tq-stages{grid-template-columns:repeat(2,minmax(0,1fr))}#inq-toss .tq-row{grid-template-columns:44px minmax(0,1fr) 92px;gap:10px;padding:10px 8px}#inq-toss .tq-row .tq-c{display:none}#inq-toss .tq-d{width:42px;height:42px}}

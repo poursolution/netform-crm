@@ -88,7 +88,11 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{const at=d=>new Date(Date.now()-d*864e5).toISOString();for(let n=20;n<36;n++)B.inquiries.push({id:id(n),site:'[합성] 추가 단지 '+n,status:'배정완료',at:at(3),created_at:at(3),brand:'석민이앤씨',phone:'02-000-00'+n,contact_name:'소장',assignee:'이필선',assigned_to:'이필선',assigned_at:at(2.9),responded_at:at(1),raw:{'문의내용':'문의','상담채널':'전화'},activities:[{type:'전화',note:'통화',at:at(1),actor:'이필선'}]});InquiryV4.fresh();paint();});
   await page.waitForTimeout(300);assert.equal(await T.locator('.tq-row').count(),20);assert.equal(await T.locator('nav.lpg').count(),1);
   await T.locator('nav.lpg button[data-page="2"]:not(.lpg-arrow)').click();assert.equal(await T.locator('.tq-row').count(),4);
-  /* ⑨ 끄면 v5 */
+  /* ⑨ 좁은 화면(390) 넘침 없음 */
+  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(150);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'좁은 화면 넘침 없음');
+  await page.setViewportSize({width:1600,height:1000});
+  /* ⑩ 끄면 v5 */
   assert.deepEqual(await page.evaluate(()=>{G.inqTossOff=true;paint();return [!!document.getElementById('inq-toss'),document.getElementById('pg-inq').classList.contains('inq-toss'),getComputedStyle(document.getElementById('inq-v5')).display!=='none'];}),[false,false,true]);
   assert.deepEqual(errs,[],'화면 오류 없음');
   console.log('inquiry toss ok');
