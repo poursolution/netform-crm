@@ -24,6 +24,7 @@
  function render(d){
   if(mode==='req')return renderReq(d);
   if(mode==='send')return renderSend(d);
+  if(mode==='draft')return renderDraft(d);
   const A=versions(d),last=A[A.length-1];
   /* 견적 진행 · 도착 확인: 요청(단계 입력 quote_request · quote_due) → 견적팀 작업 → 기준금액 도착(견적 버전) → 제출금액 확정 */
   const F=ctxOf(d),due=String(F.quote_due||''),dd=/^\d{4}-\d{2}-\d{2}$/.test(due)?Math.round((Date.parse(due+'T00:00:00Z')-Date.parse(kst(0)+'T00:00:00Z'))/864e5):null;
@@ -46,9 +47,10 @@
     +'<span data-ql-act="confirm" role="button" tabindex="0" style="min-height:48px;border-radius:12px;background:#15171c;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center">제출금액 확정</span>';
   }
   return '<div class="approved-quote" data-quote-live style="display:flex;flex-direction:column;background:#f5f6f8"><div style="height:56px;flex:none;background:#fff;display:flex;align-items:center;gap:8px;padding:0 8px;border-bottom:1px solid #eef0f3"><span data-gs="back" role="button" tabindex="0" aria-label="뒤로" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px">‹</span><b style="font-size:17px">제출금액 만들기</b></div>'
-   +'<div style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px"><div style="font-size:15px;font-weight:700">'+esc(d.nm)+'</div>'+(msg?'<div role="status" style="font-size:13.5px;color:#b42318">'+esc(msg)+'</div>':'')+prog+body+(rows?'<div><div style="font-size:13px;color:#6b7280;margin-bottom:4px">견적 버전</div>'+rows+'</div>':'')+'</div></div>';
+   +'<div style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px"><div style="font-size:15px;font-weight:700">'+esc(d.nm)+'</div>'+(msg?'<div role="status" style="font-size:13.5px;color:#b42318">'+esc(msg)+'</div>':'')+prog+body+(!last||done(last)?'<span data-ql-act="todraft" role="button" tabindex="0" style="min-height:48px;border-radius:12px;border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center">'+(last?'새 수정본 견적 작성':'견적 작성 (간단 · 공법)')+'</span>':'')+(rows?'<div><div style="font-size:13px;color:#6b7280;margin-bottom:4px">견적 버전</div>'+rows+'</div>':'')+'</div></div>';
  }
- function preview(root,d){
+ function preview(root,d,t){
+  if(mode==='draft'){if(t&&t.dataset&&t.dataset.qd)draftField(t);return;}
   const el=root.querySelector('[data-ql="preview"]');if(!el)return;
   const c=calc(d,root);if(!c)return;
   if(c.r.error&&c.its.length){el.innerHTML='<span style="color:#b42318">'+esc(c.r.error)+'</span>';return;}
@@ -69,7 +71,7 @@
   }catch(e){msg=String(e&&e.message||e);}
   busy=false;after();
  }
- const shell=(d,inner)=>'<div class="approved-quote" data-quote-live style="display:flex;flex-direction:column;background:#f5f6f8"><div style="height:56px;flex:none;background:#fff;display:flex;align-items:center;gap:8px;padding:0 8px;border-bottom:1px solid #eef0f3"><span data-gs="back" role="button" tabindex="0" aria-label="뒤로" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px">‹</span><b style="font-size:17px">'+(mode==='send'?'고객 발송 기록':'견적 요청 등록')+'</b></div><div style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px"><div style="font-size:15px;font-weight:700">'+esc(d.nm)+'</div>'+(msg?'<div role="status" style="font-size:13.5px;color:#b42318">'+esc(msg)+'</div>':'')+inner+'</div></div>';
+ const shell=(d,inner)=>'<div class="approved-quote" data-quote-live style="display:flex;flex-direction:column;background:#f5f6f8"><div style="height:56px;flex:none;background:#fff;display:flex;align-items:center;gap:8px;padding:0 8px;border-bottom:1px solid #eef0f3"><span data-gs="back" role="button" tabindex="0" aria-label="뒤로" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px">‹</span><b style="font-size:17px">'+(mode==='send'?'고객 발송 기록':mode==='draft'?'견적 작성':'견적 요청 등록')+'</b></div><div style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px"><div style="font-size:15px;font-weight:700">'+esc(d.nm)+'</div>'+(msg?'<div role="status" style="font-size:13.5px;color:#b42318">'+esc(msg)+'</div>':'')+inner+'</div></div>';
  const ctxOf=d=>((d.stage_contexts||{}).consulting||{}).fields||{};
  const kst=(add)=>new Date(Date.now()+9*36e5+add*864e5).toISOString().slice(0,10);
  function renderReq(d){
@@ -123,5 +125,68 @@
    msg='발송 기록을 저장했습니다(서버 반영 대기 중일 수 있음). 다음 확인 '+nx;
   }catch(e){msg='저장하지 못했습니다: '+String(e&&e.message||e);}
   after();
- } w.MobileQuoteLive=Object.freeze({render,preview,confirm,reset(m){msg='';busy=false;mode=m||'';},reqPreview,submitReq,submitSend,toSend(){mode='send';msg='';},toReq(){mode='req';msg='';}});
+ } /* ── 견적 작성(간단견적 · 공법견적) — PC '견적 작성'과 같은 계산(QuoteCompose)과 같은 저장 함수(crm_quote_version_save_v1 · 서버가 다시 계산해 다르면 저장 안 함).
+    모바일은 원가 기준을 고치거나 올리지 않는다 — 승인된 기준을 읽기만 한다(crm_cost_standard_list_v1). 확정하면 새 수정본(Vn+1), 이어서 제출금액 만들기. ── */
+ const DR={kind:'simple',simple:[{name:'',qty:'',unit:'',price:''}],items:[{method:'',area:''}],std:null,stdErr:'',stdBusy:false,memo:''};
+ const numv=v=>{const n=Number(String(v==null?'':v).replace(/,/g,''));return Number.isFinite(n)?n:0;};
+ function loadStd(after){
+  if(DR.std||DR.stdBusy||DR.stdTried)return;DR.stdTried=true;if(!w.Phase1||typeof w.Phase1.rpc!=='function'){DR.stdErr='서버에 연결된 상태에서만 공법 기준을 읽을 수 있습니다';return;}
+  DR.stdBusy=true;Promise.resolve(w.Phase1.rpc('crm_cost_standard_list_v1',{p:{}})).then(o=>{if(!o||o.ok!==true)throw Error('기준을 불러오지 못했습니다');DR.std=o;DR.stdErr='';}).catch(e=>{DR.stdErr=String(e&&e.message||e);}).finally(()=>{DR.stdBusy=false;after&&after();});
+ }
+ const today=()=>kst(0);
+ function draftInput(){return {date:today(),items:DR.items.filter(x=>x.method&&numv(x.area)>0).map(x=>({method:x.method,area:numv(x.area)})),extras:[],generalPct:0,profitPct:0,retire:false};}
+ function draftCalc(){
+  const C=w.QuoteCompose;if(!C)return {ok:false,err:'견적 계산 모듈을 불러오지 못했습니다'};
+  if(DR.kind==='simple'){const r=C.simple(DR.simple);return {ok:!!r&&r.ok,base:r?r.total:0,r};}
+  if(!DR.std)return {ok:false,err:DR.stdErr||'승인된 공법 기준을 불러오는 중입니다'};
+  const r=C.compose(draftInput(),DR.std);return {ok:!!r&&r.ok,base:r&&r.sheet?r.sheet.base:0,r,missing:r?r.missing:[]};
+ }
+ function draftRes(){
+  const c=draftCalc();
+  if(c.err)return '<span style="color:#6b7280">'+esc(c.err)+'</span>'+(DR.kind==='method'&&DR.stdErr?' <span data-ql-act="dstd" role="button" tabindex="0" style="color:#2a52b8;font-weight:700">다시 불러오기</span>':'');
+  if(c.missing&&c.missing.length)return '<span style="color:#b42318">승인된 기준이 없어 계산할 수 없습니다 — '+esc(c.missing.slice(0,3).join(' · '))+'</span>';
+  if(!c.ok)return '<span style="color:#6b7280">'+(DR.kind==='simple'?'항목 · 수량 · 단가를 넣어 주세요':'공법과 수량(㎡)을 넣어 주세요')+'</span>';
+  return '<b style="font-size:16px">'+(DR.kind==='simple'?'합계 ':'적산 기준금액 ')+won(c.base)+'</b> <span style="color:#6b7280">VAT 별도'+(DR.kind==='method'?' · 공급가액에서 10만원 아래 절삭':'')+'</span>';
+ }
+ function renderDraft(d){
+  if(DR.kind==='method')loadStd(()=>{const r=document.querySelector('[data-quote-live] [data-ql="dres"]');if(r)r.innerHTML=draftRes();const sel=document.querySelector('[data-quote-live]');if(sel&&w.MobileGuideShell)try{w.render();}catch(e){}});
+  const inp='height:44px;border:1px solid #d9dde4;border-radius:10px;padding:0 10px;font-size:16px;background:#fff;min-width:0;width:100%;box-sizing:border-box';
+  const tab=(k,l)=>'<span data-ql-act="dkind" data-v="'+k+'" role="button" tabindex="0" aria-pressed="'+(DR.kind===k)+'" style="flex:1;min-height:44px;border-radius:10px;border:1px solid '+(DR.kind===k?'#15171c':'#d9dde4')+';background:'+(DR.kind===k?'#15171c':'#fff')+';color:'+(DR.kind===k?'#fff':'#15171c')+';font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center">'+l+'</span>';
+  const methods=DR.std?[...new Set((DR.std.method||[]).filter(m=>m.status!=='draft').map(m=>m.method))]:[];
+  let rows='';
+  if(DR.kind==='simple')rows=DR.simple.map((x,i)=>'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 0;border-top:1px solid #eef0f3"><input data-qd="sn" data-i="'+i+'" placeholder="항목" value="'+esc(x.name)+'" style="'+inp+';grid-column:1/-1"><input data-qd="sq" data-i="'+i+'" inputmode="decimal" placeholder="수량" value="'+esc(x.qty)+'" style="'+inp+'"><input data-qd="su" data-i="'+i+'" placeholder="단위 (㎡ · 식)" value="'+esc(x.unit)+'" style="'+inp+'"><input data-qd="sp" data-i="'+i+'" inputmode="decimal" placeholder="단가(원)" value="'+esc(x.price)+'" style="'+inp+'"><span data-ql-act="drm" data-i="'+i+'" role="button" tabindex="0" style="min-height:44px;display:flex;align-items:center;justify-content:center;color:#6b7280;font-size:13px">줄 지우기</span></div>').join('');
+  else rows=(DR.std&&!methods.length?'<p style="font-size:13px;color:#b42318">승인된 공법 기준이 없습니다 — PC [원가 기준]에서 올리고 승인해야 합니다.</p>':'')+DR.items.map((x,i)=>'<div style="display:grid;grid-template-columns:1fr 96px;gap:6px;padding:10px 0;border-top:1px solid #eef0f3"><select data-qd="im" data-i="'+i+'" style="'+inp+'"><option value="">공법 선택</option>'+methods.map(m=>'<option'+(m===x.method?' selected':'')+'>'+esc(m)+'</option>').join('')+'</select><input data-qd="ia" data-i="'+i+'" inputmode="decimal" placeholder="수량 ㎡" value="'+esc(x.area)+'" style="'+inp+'"><span data-ql-act="drm" data-i="'+i+'" role="button" tabindex="0" style="grid-column:1/-1;min-height:36px;display:flex;align-items:center;justify-content:flex-end;color:#6b7280;font-size:13px">줄 지우기</span></div>').join('');
+  return shell(d,'<div style="display:flex;gap:6px">'+tab('simple','간단견적')+tab('method','공법견적')+'</div>'
+   +'<div style="font-size:12.5px;color:#6b7280">'+(DR.kind==='simple'?'항목 · 수량 · 단위 · 단가 → 합계 (원가계산서 없음)':'공법 + 수량(㎡) → 원가계산서 → 적산 기준금액 · 승인된 기준을 견적일에 맞게 고름')+'</div>'
+   +'<div>'+rows+'</div><span data-ql-act="dadd" role="button" tabindex="0" style="min-height:44px;border:1px dashed #c9cdd5;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#2a52b8;font-size:14px;font-weight:600">+ '+(DR.kind==='simple'?'항목':'공법')+' 추가</span>'
+   +'<label style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:#374151">메모(선택)<input data-qd="memo" maxlength="200" value="'+esc(DR.memo)+'" style="'+inp+'"></label>'
+   +'<div data-ql="dres" style="background:#f5f6f8;border-radius:12px;padding:12px;font-size:14px;line-height:1.55">'+draftRes()+'</div>'
+   +'<span data-ql-act="dok" role="button" tabindex="0" style="min-height:48px;border-radius:12px;background:#15171c;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center">견적 확정 (새 수정본)</span>'
+   +'<div style="font-size:12px;color:#6b7280">확정하면 새 수정본이 만들어지고, 이어서 제출금액을 만듭니다. 원가 기준은 모바일에서 고치지 않습니다.</div>');
+ }
+ function draftField(el){
+  const k=el.dataset.qd,i=Number(el.dataset.i)||0,v=el.value;
+  if(k==='memo')DR.memo=v;else if(k[0]==='s'){const x=DR.simple[i];if(!x)return;x[{sn:'name',sq:'qty',su:'unit',sp:'price'}[k]]=v;}else{const x=DR.items[i];if(!x)return;x[{im:'method',ia:'area'}[k]]=v;}
+  const r=el.closest('[data-quote-live]'),res=r&&r.querySelector('[data-ql="dres"]');if(res)res.innerHTML=draftRes();
+ }
+ async function draftOk(d,after){
+  if(busy)return;const c=draftCalc();if(!c.ok){msg=c.err||'계산이 끝나지 않았습니다 — 입력을 확인해 주세요';return after();}
+  if(!w.Phase1||typeof w.Phase1.rpc!=='function'){msg='서버에 연결된 상태에서만 확정할 수 있습니다';return after();}
+  const payload=DR.kind==='simple'?{deal_id:String(d.id),kind:'simple',simple_items:c.r.rows.map(x=>({name:x.name,qty:x.qty,unit:x.unit,price:x.price})),expected_base:c.base,memo:DR.memo}:Object.assign({deal_id:String(d.id),kind:'method',expected_base:c.base,memo:DR.memo},draftInput());
+  busy=true;
+  try{const o=await w.Phase1.rpc('crm_quote_version_save_v1',{p:payload});if(!o||o.ok!==true)throw Error('서버 응답을 확인하지 못했습니다');
+   d.quote_versions=versions(d).concat([{version_no:o.version_no,amount:o.amount,base_amount:o.base_amount,kind:o.kind,reason:o.reason,created_at:o.server_at||new Date().toISOString()}]);d.quote_amount=o.amount;
+   DR.simple=[{name:'',qty:'',unit:'',price:''}];DR.items=[{method:'',area:''}];DR.memo='';mode='';msg='견적 V'+o.version_no+'을 확정했습니다 — '+won(o.amount)+' (VAT 별도). 이어서 제출금액을 만드세요.';}
+  catch(e){msg=String(e&&e.message||e);}
+  busy=false;after();
+ }
+ function draftAct(a,el,d,after){
+  if(a==='todraft'){mode='draft';msg='';return after();}
+  if(a==='dkind'){DR.kind=el.dataset.v==='method'?'method':'simple';return after();}
+  if(a==='dstd'){DR.stdTried=false;DR.stdErr='';return after();}
+  if(a==='dadd'){if(DR.kind==='simple')DR.simple.push({name:'',qty:'',unit:'',price:''});else DR.items.push({method:'',area:''});return after();}
+  if(a==='drm'){const i=Number(el.dataset.i)||0,L=DR.kind==='simple'?DR.simple:DR.items;L.splice(i,1);if(!L.length)L.push(DR.kind==='simple'?{name:'',qty:'',unit:'',price:''}:{method:'',area:''});return after();}
+  if(a==='dok')return draftOk(d,after);
+ }
+ w.MobileQuoteLive=Object.freeze({render,preview,confirm,reset(m){msg='';busy=false;mode=m||'';},reqPreview,submitReq,submitSend,toSend(){mode='send';msg='';},toReq(){mode='req';msg='';},draftAct});
 })(window);
