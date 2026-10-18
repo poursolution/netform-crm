@@ -555,6 +555,8 @@ body.exec .tc h4{margin:0;font-size:clamp(19px,1.6vw,30px);color:var(--tk-ink)}
 body.exec .tc p{margin:.5vh 0 0;font-size:clamp(14px,1.1vw,20px);color:var(--tk-sub);font-weight:600}
 /* 단계형 장: 키우지 않는 화면은 살짝 흐리게(이름 등 세부가 읽히지 않게) */
 body.exec .vstp .sf .vimg::before{content:'';position:absolute;inset:-10px;background:inherit;filter:blur(2.6px);z-index:1}
+body.exec .tteam{margin:0 0 .6vh;display:flex;align-items:center;gap:.8vw;font-size:clamp(15px,1.15vw,21px);font-weight:700;color:var(--tk-sub)}
+body.exec .tteam span{background:var(--tk-ink);color:#fff;border-radius:999px;padding:.4vh .9vw;font-size:.85em;font-weight:800}
 body.exec #card .who{margin:-1vh 0 0;font-size:clamp(15px,1.2vw,21px);font-weight:600;color:var(--tk-sub)}
 body.exec #card .who b{display:inline-block;margin-right:10px;padding:3px 10px;border-radius:999px;background:var(--tk-blue-bg);color:var(--tk-blue);font-size:.85em}
 body.exec .sv.go .box{opacity:1}
@@ -2805,6 +2807,31 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
   const TR={p05:'문의 한 건을 열어, 무엇이 달라졌는지 보겠습니다.',p34:'그래서 무엇을 위해 만들었는지부터 말씀드리겠습니다.',b06:'영업건이 되면 단계마다 다음 일이 붙습니다.',b07:'담당자는 그 현장에서 기록하고 다음 일을 이어갑니다.',b10:'그럼 관리자는 어떻게 개입하는지 보겠습니다.',g01:'실제 업무를 보면 이렇습니다.',g02:'여기서 제 보완점과도 만납니다.',g03:'그래서 한 현장을 처음부터 끝까지 같은 곳에서 보도록 했습니다.',g05:'누락과 반복 업무는 이렇게 관리하겠습니다.',g06:'이 일을 누가 어떻게 이어갈지 말씀드리겠습니다.',h02:'제가 맡을 연결 구간은 이렇습니다.',h03:'이 일을 매일과 매주 이렇게 운영하겠습니다.',c14:'그리고 남은 기록은 다음 업무에 쓰겠습니다.',d01:'계획부터 끝날 때까지 이렇게 지키겠습니다.',g07:'마지막으로 말씀드리겠습니다.'};
   const OR=['s01','g01','g02','g03','g04','g05','g06','d01'];
   E_.forEach(s=>{if(TT[s.id])s.title='00 · '+TT[s.id];if(TR[s.id])s.transition=TR[s.id];s.bm=OR.includes(s.id)});
+  {let n=0;E_.forEach(s=>{s.title=s.title.replace(/^[0-9]+ · /,String(++n).padStart(2,'0')+' · ')})}} /* 재편 3: 영업 → 현장 연결이 아니라 영업관리 · 현장관리 두 업무를 나란히(대표: "현장업무는 현장업무, 영업업무는 그중 하나") */
+ {const RM=['s01','h03'];for(let i=E_.length-1;i>=0;i--)if(RM.includes(E_[i].id))E_.splice(i,1);
+  const TOC=[['나의 문제인식','계획을 실행 · 마감까지 이어가지 못했던 점과 앞으로의 행동'],['영업관리','문의 한 건 · 단계마다 다음 일 · 관리자의 개입'],['현장관리','한 현장에서 공사범위 · 소장님 전달 · 진행 · 준공, 마감 전 확인'],['인수인계와 향후계획','희선님께 넘길 영업관리 · 제가 맡을 일 · 매일 · 매주 운영']];
+  window.EXEC_VIS.t00=()=>'<div class="vis vtoc"><p class="tteam"><span>서비스운영팀</span>영업관리와 현장관리는 한 팀에서 함께 운영하는 두 업무입니다</p>'+TOC.map((x,i)=>'<div class="tc'+(i===2?' o':'')+'" style="--d:'+(.25+i*.12)+'s"><b>PART '+(i+1)+'</b><div><h4>'+x[0]+'</h4><p>'+x[1]+'</p></div></div>').join('')+'</div>';
+  {const t=E_.find(s=>s.id==='t00');if(t)t.steps[0].script=`오늘 발표의 중심은 한 문장입니다. 매번 물어서 확인하던 업무를, 기록을 보고 다음 조치를 정하는 방식으로 바꾸고 있습니다.
+영업관리와 현장관리는 서비스운영팀 한 팀에서 함께 운영하는 두 업무입니다. 두 업무 각각에서 왜 바꿨는지, 실제로 무엇이 달라졌는지, 앞으로 누가 어떻게 운영할지를 네 부분으로 말씀드리겠습니다.
+화면은 하나씩 설명하기보다, 이 변화를 보여 주는 근거로 필요한 만큼만 보여 드리겠습니다.`}
+  window.EXEC_STP.b06.eb='PART 2 영업관리 — 문의 한 건에서';window.EXEC_STP.b07.eb='PART 2 영업관리 — 단계마다 다음 일';window.EXEC_STP.b08.eb='PART 2 영업관리 — 관리자의 개입';window.EXEC_STP.g04.eb='PART 3 현장관리 — 한 현장에서';
+  Object.assign(window.__EBX,{b06:window.EXEC_STP.b06.eb,b07:window.EXEC_STP.b07.eb,b08:window.EXEC_STP.b08.eb,b09:'PART 2 영업관리 — 담당자 기록',b10:'PART 2 영업관리 — 담당자가 바뀌어도',
+   g01:'PART 3 현장관리 · 문제',g02:'PART 3 현장관리 · 실제 업무',g03:'PART 3 현장관리 · 나의 보완점',g04:window.EXEC_STP.g04.eb,g05:'PART 3 현장관리 · 마감 전에',g06:'PART 3 현장관리 · 누락과 반복',
+   h01:'PART 4 인수인계와 향후계획 · 희선님 인수인계',h02:'PART 4 인수인계와 향후계획 · 역할',c13:'PART 4 인수인계와 향후계획 · 매일',c14:'PART 4 인수인계와 향후계획 · 매주',d01:'PART 4 인수인계와 향후계획 · 기록 활용',g07:'PART 4 인수인계와 향후계획 · 실행 약속'});
+  /* 역할: 영업↔현장 연결 → 현장관리 · 기준 개선 */
+  window.EXEC_VIS.h02=()=>'<div class="vis vrole4">'+[['영','영업담당자',['고객 응대 · 현장 영업','요구 · 결과 기록','다음 업무 · 일정']],['희','희선님 · 일상 영업관리',['신규 문의 · 배정 확인','기록 · 일정 · 후속 점검','미처리 확인 요청','주간 영업현황']],['송','송보람 · 현장관리 · 기준 개선',['현장 준비 · 진행 · 마무리','빠진 현장 · 남은 업무 확인','영업관리 기준 · 개선','판단이 필요한 예외']],['대','대표 · 상무',['협의 · 승인 · 판단','권한은 지금 기준 그대로']]].map(r=>'<div class="rc"><span class="ini">'+r[0]+'</span><b>'+r[1]+'</b><ul>'+r[2].map(t=>'<li>'+t+'</li>').join('')+'</ul></div>').join('')+'</div>';
+  {const s=E_.find(x=>x.id==='h02');if(s){s.card.h='일상 영업관리는 희선님이 이어받고,<br><em>저는 현장관리와 기준 개선을 맡겠습니다.</em>';s.keyMessage='일상 영업관리는 희선님이 이어받고, 저는 현장관리와 기준 개선을 맡겠습니다.';
+   s.steps[0].script=`영업담당자는 지금처럼 고객 응대와 현장 영업, 확인된 요구와 결과 기록, 다음 업무와 일정을 맡습니다.
+희선님은 신규 문의와 배정 상태 확인, 기록 · 일정 · 후속조치 점검, 미처리 확인 요청, 주간 영업현황 정리를 맡는 방향입니다.
+저는 현장관리의 준비 · 진행 · 마무리와 빠진 현장 · 남은 업무 확인을 맡고, 영업관리는 기준을 보완하고 판단이 필요한 예외만 함께 보겠습니다.
+대표님과 상무님의 협의 · 승인 권한은 지금 기준 그대로이고, 희선님이 맡은 건을 제가 다시 처리하는 이중 운영으로 가지 않겠습니다.`}}
+  /* 마무리 */
+  {const q=E_.find(s=>s.id==='q16');if(q){q.card.h='영업관리는 희선님이 이어가도록 넘기고,<br><em>저는 현장관리를 마감까지 챙기겠습니다.</em>';
+   q.steps[0].script=`제 보완점은 계획을 세운 뒤 실행과 마감까지 충분히 이어가지 못했던 점이었습니다.
+그래서 오늘 말씀드린 변화의 중심은, 매번 물어서 확인하던 업무를 기록을 보고 다음 조치를 정하는 방식으로 바꾸는 것입니다.
+일상 영업관리는 희선님이 이어갈 수 있도록 업무 기준과 진행 중인 건을 함께 넘기겠습니다.
+저는 현장관리에서 계획한 일이 기한 안에 끝나는지, 빠진 현장과 남은 업무가 없는지까지 확인하겠습니다. 감사합니다.`}}
+  const TR={b08:'다음은 현장관리입니다.',g01:'실제 업무를 보면 이렇습니다.',g06:'이 일을 누가 어떻게 이어갈지 말씀드리겠습니다.',h02:'이 일을 매일과 매주 이렇게 운영하겠습니다.'};E_.forEach(s=>{if(TR[s.id])s.transition=TR[s.id]});
   {let n=0;E_.forEach(s=>{s.title=s.title.replace(/^[0-9]+ · /,String(++n).padStart(2,'0')+' · ')})}} E_.forEach(s=>{s.part='E';if(s.view==='pc'){s.view='card';s.shot=true;s.card={eb:s.title.replace(/^[0-9]+ · /,''),h:s.keyMessage}}});E_.forEach(s=>{if(s.shot&&s.card)s.card.eb=s.card.eb.replace(/^개선 (\d) · /,'PART 2 개선 $1 · ')});E_.forEach(s=>{if((window.__STPIDS||[]).includes(s.id)){s.shot=false;s.vis='stp:'+s.id;s.card.eb=window.EXEC_STP[s.id].eb}});{if(window.__EBX)E_.forEach(s=>{if(window.__EBX[s.id]&&s.card)s.card.eb=window.__EBX[s.id]});const EN={};E_.forEach(s=>{if(EN[s.id]&&s.card&&s.card.eb)s.card.eb=s.card.eb.replace(/개선 \d/,'개선 '+EN[s.id])})}
  const RO=R_.filter(s=>s.id!=='f7').concat(R_.filter(s=>s.id==='f7'));
  const ordered=WHO==='exec'?E_:WHO==='rep'?RO:[...A_.flatMap(s=>s.id==='m4'?[s,g('a3s')]:[s]),amap,...tours.flatMap(t=>t.page==='pipe'?[t,g('a4')]:[t])];
